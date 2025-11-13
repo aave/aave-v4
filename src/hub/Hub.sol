@@ -537,6 +537,18 @@ contract Hub is IHub, AccessManaged {
   }
 
   /// @inheritdoc IHubBase
+  function getAssetPremiumOwedRay(uint256 assetId) external view returns (uint256) {
+    Asset storage asset = _assets[assetId];
+    return
+      Premium.calculatePremiumDebtRay(
+        asset.realizedPremiumRay,
+        asset.premiumShares,
+        asset.getDrawnIndex(),
+        asset.premiumOffsetRay
+      );
+  }
+
+  /// @inheritdoc IHubBase
   function getAssetDrawnShares(uint256 assetId) external view returns (uint256) {
     return _assets[assetId].drawnShares;
   }
@@ -617,6 +629,19 @@ contract Hub is IHub, AccessManaged {
     Asset storage asset = _assets[assetId];
     SpokeData storage spokeData = _spokes[assetId][spoke];
     return _getSpokeDrawn(asset, spokeData) + _getSpokePremium(asset, spokeData);
+  }
+
+  /// @inheritdoc IHubBase
+  function getSpokePremiumOwedRay(uint256 assetId, address spoke) external view returns (uint256) {
+    Asset storage asset = _assets[assetId];
+    SpokeData storage spokeData = _spokes[assetId][spoke];
+    return
+      Premium.calculatePremiumDebtRay(
+        spokeData.realizedPremiumRay,
+        spokeData.premiumShares,
+        asset.getDrawnIndex(),
+        spokeData.premiumOffsetRay
+      );
   }
 
   /// @inheritdoc IHubBase
@@ -862,7 +887,7 @@ contract Hub is IHub, AccessManaged {
     uint256 drawn = _getSpokeDrawn(asset, spoke);
     uint256 premiumRay = _getSpokePremiumRay(asset, spoke);
     require(drawnAmount <= drawn, SurplusDrawnRestored(drawn));
-    require(premiumAmountRay <= premiumRay, SurplusPremiumRestored(premiumRay));
+    require(premiumAmountRay <= premiumRay, SurplusPremiumRayRestored(premiumRay));
   }
 
   function _validateReportDeficit(
@@ -877,7 +902,7 @@ contract Hub is IHub, AccessManaged {
     uint256 drawn = _getSpokeDrawn(asset, spoke);
     uint256 premiumRay = _getSpokePremiumRay(asset, spoke);
     require(drawnAmount <= drawn, SurplusDrawnDeficitReported(drawn));
-    require(premiumAmountRay <= premiumRay, SurplusPremiumDeficitReported(premiumRay));
+    require(premiumAmountRay <= premiumRay, SurplusPremiumRayDeficitReported(premiumRay));
   }
 
   function _validateEliminateDeficit(SpokeData storage spoke, uint256 amount) internal view {

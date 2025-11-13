@@ -225,4 +225,11 @@ interface ISpokeBase {
   /// @param user The address of the user.
   /// @return The total debt amount.
   function getUserTotalDebt(uint256 reserveId, address user) external view returns (uint256);
+
+  /// @notice Returns the full precision premium debt of a specific user for a given reserve.
+  /// @dev It reverts if the reserve associated with the given reserve identifier is not listed.
+  /// @param reserveId The identifier of the reserve.
+  /// @param user The address of the user.
+  /// @return The amount of premium debt, expressed in asset units and scaled by RAY.
+  function getUserPremiumDebtRay(uint256 reserveId, address user) external view returns (uint256);
 }

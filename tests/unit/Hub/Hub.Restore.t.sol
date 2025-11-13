@@ -75,7 +75,7 @@ contract HubRestoreTest is HubBase {
     vm.stopPrank();
   }
 
-  function test_restore_revertsWith_SurplusPremiumRestored() public {
+  function test_restore_revertsWith_SurplusPremiumRayRestored() public {
     uint256 drawAmount = 100e18;
     _addLiquidity(daiAssetId, drawAmount);
     _drawLiquidity(daiAssetId, drawAmount, true, true, address(spoke1));
@@ -108,7 +108,9 @@ contract HubRestoreTest is HubBase {
       restoredPremiumRay: premiumRestoredRay
     });
 
-    vm.expectRevert(abi.encodeWithSelector(IHub.SurplusPremiumRestored.selector, spokePremiumRay));
+    vm.expectRevert(
+      abi.encodeWithSelector(IHub.SurplusPremiumRayRestored.selector, spokePremiumRay)
+    );
     vm.prank(address(spoke1));
     hub1.restore(daiAssetId, drawnRestored, premiumDelta);
   }

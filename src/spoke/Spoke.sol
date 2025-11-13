@@ -625,6 +625,18 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     return drawnDebt + premiumDebt;
   }
 
+  /// @inheritdoc ISpokeBase
+  function getUserPremiumDebtRay(uint256 reserveId, address user) external view returns (uint256) {
+    Reserve storage reserve = _getReserve(reserveId);
+    UserPosition storage userPosition = _userPositions[user][reserveId];
+    (, , uint256 realizedPremiumRay, uint256 accruedPremiumRay) = _getUserDebt(
+      reserve.hub,
+      reserve.assetId,
+      userPosition
+    );
+    return realizedPremiumRay + accruedPremiumRay;
+  }
+
   /// @inheritdoc ISpoke
   function getUserPosition(
     uint256 reserveId,
@@ -964,8 +976,8 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
 
   /// @return The user's drawn debt.
   /// @return The user's premium debt.
-  /// @return The user's realized premium debt, in asset units + RAY.
-  /// @return The user's accrued premium debt, in asset units + RAY.
+  /// @return The user's realized premium debt, expressed in asset units and scaled by RAY.
+  /// @return The user's accrued premium debt, expressed in asset units and scaled by RAY.
   function _getUserDebt(
     IHubBase hub,
     uint256 assetId,

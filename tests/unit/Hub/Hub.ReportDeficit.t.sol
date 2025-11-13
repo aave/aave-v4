@@ -73,7 +73,7 @@ contract HubReportDeficitTest is HubBase {
     );
   }
 
-  function test_reportDeficit_fuzz_revertsWith_SurplusPremiumDeficitReported(
+  function test_reportDeficit_fuzz_revertsWith_SurplusPremiumRayDeficitReported(
     uint256 drawnAmount
   ) public {
     drawnAmount = bound(drawnAmount, 1, MAX_SUPPLY_AMOUNT);
@@ -98,7 +98,7 @@ contract HubReportDeficitTest is HubBase {
     uint256 premiumDeficitRay = vm.randomUint(spokePremiumRay + 1, UINT256_MAX);
 
     vm.expectRevert(
-      abi.encodeWithSelector(IHub.SurplusPremiumDeficitReported.selector, spokePremiumRay)
+      abi.encodeWithSelector(IHub.SurplusPremiumRayDeficitReported.selector, spokePremiumRay)
     );
     vm.prank(address(spoke1));
     hub1.reportDeficit(

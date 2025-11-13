@@ -8,9 +8,9 @@ pragma solidity ^0.8.0;
 interface IHubBase {
   /// @notice Changes to premium owed accounting.
   /// @dev sharesDelta The change in premium shares.
-  /// @dev offsetDeltaRay The change in premium offset, expressed in asset units + RAY.
-  /// @dev accruedPremiumRay The accrued premium, expressed in asset units + RAY.
-  /// @dev restoredPremiumRay The restored premium, expressed in asset units + RAY.
+  /// @dev offsetDeltaRay The change in premium offset, expressed in asset units and scaled by RAY.
+  /// @dev accruedPremiumRay The accrued premium, expressed in asset units and scaled by RAY.
+  /// @dev restoredPremiumRay The restored premium, expressed in asset units and scaled by RAY.
   struct PremiumDelta {
     int256 sharesDelta;
     int256 offsetDeltaRay;
@@ -247,6 +247,11 @@ interface IHubBase {
   /// @return The total amount of the assets owed.
   function getAssetTotalOwed(uint256 assetId) external view returns (uint256);
 
+  /// @notice Returns the full precision premium of the specified asset owed to the Hub.
+  /// @param assetId The identifier of the asset.
+  /// @return The amount of premium owed, expressed in asset units and scaled by RAY.
+  function getAssetPremiumOwedRay(uint256 assetId) external view returns (uint256);
+
   /// @notice Returns the amount of drawn shares of the specified asset.
   /// @param assetId The identifier of the asset.
   /// @return The amount of drawn shares.
@@ -255,8 +260,8 @@ interface IHubBase {
   /// @notice Returns the information regarding premium shares of the specified asset.
   /// @param assetId The identifier of the asset.
   /// @return The amount of premium shares owed to the asset.
-  /// @return The premium offset of the asset, in asset units + RAY.
-  /// @return The realized premium of the asset, in asset units + RAY.
+  /// @return The premium offset of the asset, expressed in asset units and scaled by RAY.
+  /// @return The realized premium of the asset, expressed in asset units and scaled by RAY.
   function getAssetPremiumData(uint256 assetId) external view returns (uint256, uint256, uint256);
 
   /// @notice Returns the amount of available liquidity for the specified asset.
@@ -296,6 +301,12 @@ interface IHubBase {
   /// @return The total amount of the asset owed.
   function getSpokeTotalOwed(uint256 assetId, address spoke) external view returns (uint256);
 
+  /// @notice Returns the full precision premium of the specified asset owed to the Hub by the specified spoke.
+  /// @param assetId The identifier of the asset.
+  /// @param spoke The address of the spoke.
+  /// @return The amount of premium owed, expressed in asset units and scaled by RAY.
+  function getSpokePremiumOwedRay(uint256 assetId, address spoke) external view returns (uint256);
+
   /// @notice Returns the amount of drawn shares of the specified asset by the specified spoke.
   /// @param assetId The identifier of the asset.
   /// @param spoke The address of the spoke.
@@ -306,8 +317,8 @@ interface IHubBase {
   /// @param assetId The identifier of the asset.
   /// @param spoke The address of the spoke.
   /// @return The amount of premium shares.
-  /// @return The premium offset, in asset units + RAY.
-  /// @return The realized premium, in asset units + RAY.
+  /// @return The premium offset, expressed in asset units and scaled by RAY.
+  /// @return The realized premium, expressed in asset units and scaled by RAY.
   function getSpokePremiumData(
     uint256 assetId,
     address spoke
