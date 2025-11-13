@@ -1514,6 +1514,28 @@ abstract contract Base is Test {
       );
   }
 
+  function _calculateRestoreAmounts(
+    uint256 restoreAmount,
+    uint256 drawn,
+    uint256 premium
+  ) internal view returns (uint256 baseAmount, uint256 premiumAmount) {
+    if (restoreAmount <= premium) {
+      return (0, restoreAmount);
+    }
+
+    return (drawn.min(restoreAmount - premium), premium);
+  }
+
+  function _calculateRestoreAmounts(
+    ISpoke spoke,
+    uint256 reserveId,
+    address user,
+    uint256 repayAmount
+  ) internal view returns (uint256 baseAmount, uint256 premiumAmount) {
+    (uint256 userDrawnDebt, uint256 userPremiumDebt) = spoke.getUserDebt(reserveId, user);
+    return _calculateRestoreAmounts(repayAmount, userDrawnDebt, userPremiumDebt);
+  }
+
   function _getExpectedPremiumDelta(
     ISpoke spoke,
     address user,
@@ -1536,13 +1558,12 @@ abstract contract Base is Test {
       restoredPremiumRay: 0 // populated below
     });
 
-    (, uint256 premiumDebtRestored) = _calculateExactRestoreAmount(
-      userDebt.drawnDebt,
-      userDebt.premiumDebt,
+    (, uint256 premiumAmountToRestore) = _calculateRestoreAmounts(
       repayAmount,
-      assetId
+      userDebt.drawnDebt,
+      userDebt.premiumDebt
     );
-    expectedPremiumDelta.restoredPremiumRay = (premiumDebtRestored * WadRayMath.RAY).min(
+    expectedPremiumDelta.restoredPremiumRay = (premiumAmountToRestore * WadRayMath.RAY).min(
       userPosition.realizedPremiumRay + expectedPremiumDelta.accruedPremiumRay
     );
 
