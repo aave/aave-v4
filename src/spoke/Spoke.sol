@@ -1020,7 +1020,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     }
 
     if (amount < premiumDebt) {
-      // amount.toRay() cannot underflow here
+      // amount.toRay() cannot overflow here
       return (0, amount.toRay());
     }
 
