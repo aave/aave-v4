@@ -17,9 +17,9 @@ interface IHub is IHubBase, IAccessManaged {
   /// @dev swept The outstanding liquidity which has been invested by the reinvestment controller, expressed in asset units.
   /// @dev realizedPremiumRay The interest-free premium already accrued across all spokes, expressed in asset units and scaled by RAY.
   /// @dev premiumOffsetRay The total premium offset across all spokes, used to calculate the premium, expressed in asset units and scaled by RAY.
-  /// @dev liquidityFee The protocol fee charged on drawn and premium liquidity growth, expressed in BPS.
   /// @dev drawnShares The total drawn shares across all spokes.
   /// @dev premiumShares The total premium shares across all spokes.
+  /// @dev liquidityFee The protocol fee charged on drawn and premium liquidity growth, expressed in BPS.
   /// @dev drawnIndex The drawn index which monotonically increases according to the drawn rate, expressed in RAY.
   /// @dev drawnRate The rate at which drawn assets grows, expressed in RAY.
   /// @dev lastUpdateTimestamp The timestamp of the last accrual.
@@ -40,9 +40,9 @@ interface IHub is IHubBase, IAccessManaged {
     //
     uint200 premiumOffsetRay;
     //
-    uint16 liquidityFee;
     uint120 drawnShares;
     uint120 premiumShares;
+    uint16 liquidityFee;
     //
     uint120 drawnIndex;
     uint96 drawnRate;
