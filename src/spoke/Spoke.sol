@@ -306,7 +306,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     );
     uint256 restoredShares = reserve.hub.restore(reserve.assetId, drawnDebtRestored, premiumDelta);
 
-    userPosition.settlePremiumDebt(premiumDelta.accruedPremiumRay, premiumDelta.restoredPremiumRay);
+    userPosition.applyPremiumDelta(premiumDelta);
     userPosition.drawnShares -= restoredShares.toUint120();
     if (userPosition.drawnShares == 0) {
       _positionStatus[onBehalfOf].setBorrowing(reserveId, false);
@@ -901,10 +901,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
         restoredPremiumRay: realizedPremiumRay + accruedPremiumRay
       });
       uint256 deficitShares = hub.reportDeficit(assetId, drawnDebtReported, premiumDelta);
-      userPosition.settlePremiumDebt(
-        premiumDelta.accruedPremiumRay,
-        premiumDelta.restoredPremiumRay
-      );
+      userPosition.applyPremiumDelta(premiumDelta);
       userPosition.drawnShares -= deficitShares.toUint120();
       positionStatus.setBorrowing(reserveId, false);
     }

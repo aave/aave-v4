@@ -278,17 +278,22 @@ library LiquidationLogic {
       );
   }
 
-  /// @notice Settles the premium debt by realizing change in premium and resetting premium shares and offset.
-  function settlePremiumDebt(
-    ISpoke.UserPosition storage debtPosition,
-    uint256 accruedPremiumRay,
-    uint256 restoredPremiumRay
+  /// @notice Applies the premium delta to the user position.
+  function applyPremiumDelta(
+    ISpoke.UserPosition storage userPosition,
+    IHubBase.PremiumDelta memory premiumDelta
   ) internal {
-    debtPosition.premiumShares = 0;
-    debtPosition.premiumOffsetRay = 0;
-    debtPosition.realizedPremiumRay = (debtPosition.realizedPremiumRay +
-      accruedPremiumRay -
-      restoredPremiumRay).toUint200();
+    userPosition.premiumShares = userPosition
+      .premiumShares
+      .add(premiumDelta.sharesDelta)
+      .toUint120();
+    userPosition.premiumOffsetRay = userPosition
+      .premiumOffsetRay
+      .add(premiumDelta.offsetDeltaRay)
+      .toUint200();
+    userPosition.realizedPremiumRay = (userPosition.realizedPremiumRay +
+      premiumDelta.accruedPremiumRay -
+      premiumDelta.restoredPremiumRay).toUint200();
   }
 
   /// @dev Invoked by `liquidateUser` method.
@@ -364,7 +369,7 @@ library LiquidationLogic {
       drawnDebtToLiquidate,
       premiumDelta
     );
-    debtPosition.settlePremiumDebt(premiumDelta.accruedPremiumRay, premiumDelta.restoredPremiumRay);
+    debtPosition.applyPremiumDelta(premiumDelta);
     debtPosition.drawnShares -= drawnSharesLiquidated.toUint120();
 
     bool isDebtPositionEmpty = false;
