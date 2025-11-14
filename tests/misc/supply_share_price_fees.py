@@ -19,12 +19,16 @@ def percentMulDown(a, b):
 def divUp(a, b):
     return (a + b - 1) / b
 
+def premiumDebtRay(realizedPremiumRay, premiumShares, drawnIndex, premiumOffsetRay):
+    return realizedPremiumRay + premiumShares * drawnIndex - premiumOffsetRay
+
 def premiumDebt(realizedPremiumRay, premiumShares, drawnIndex, premiumOffsetRay):
-    return divUp(realizedPremiumRay + premiumShares * drawnIndex - premiumOffsetRay, RAY)
+    return divUp(premiumDebtRay(realizedPremiumRay, premiumShares, drawnIndex, premiumOffsetRay), RAY)
 
 def unrealizedFeeAmount(drawnShares, previousIndex, drawnIndex, realizedPremiumRay, premiumShares, premiumOffsetRay, liquidityFee):
     liquidityGrowthDrawn = rayMulUp(drawnShares, drawnIndex) - rayMulUp(drawnShares, previousIndex)
     liquidityGrowthPremium = premiumDebt(realizedPremiumRay, premiumShares, drawnIndex, premiumOffsetRay) - premiumDebt(realizedPremiumRay, premiumShares, previousIndex, premiumOffsetRay)
+    # wrongLiquidityGrowthPremium = divUp(premiumDebtRay(realizedPremiumRay, premiumShares, drawnIndex, premiumOffsetRay) - premiumDebtRay(realizedPremiumRay, premiumShares, previousIndex, premiumOffsetRay), RAY)
     return percentMulDown(liquidityGrowthDrawn + liquidityGrowthPremium, liquidityFee)
 
 def check(propertyDescription):
