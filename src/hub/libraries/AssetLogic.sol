@@ -63,12 +63,12 @@ library AssetLogic {
   function premium(IHub.Asset storage asset, uint256 drawnIndex) internal view returns (uint256) {
     return
       Premium
-        .calculatePremiumRay(
-          asset.realizedPremiumRay,
-          asset.premiumShares,
-          drawnIndex,
-          asset.premiumOffsetRay
-        )
+        .calculatePremiumRay({
+          premiumShares: asset.premiumShares,
+          drawnIndex: drawnIndex,
+          premiumOffsetRay: asset.premiumOffsetRay,
+          realizedPremiumRay: asset.realizedPremiumRay
+        })
         .fromRayUp();
   }
 
@@ -188,18 +188,18 @@ library AssetLogic {
     uint256 realizedPremiumRay = asset.realizedPremiumRay;
     uint120 premiumShares = asset.premiumShares;
     uint256 premiumOffsetRay = asset.premiumOffsetRay;
-    uint256 premiumRayAfter = Premium.calculatePremiumRay(
-      realizedPremiumRay,
-      premiumShares,
-      drawnIndex,
-      premiumOffsetRay
-    );
-    uint256 premiumRayBefore = Premium.calculatePremiumRay(
-      realizedPremiumRay,
-      premiumShares,
-      previousIndex,
-      premiumOffsetRay
-    );
+    uint256 premiumRayAfter = Premium.calculatePremiumRay({
+      premiumShares: premiumShares,
+      drawnIndex: drawnIndex,
+      premiumOffsetRay: premiumOffsetRay,
+      realizedPremiumRay: realizedPremiumRay
+    });
+    uint256 premiumRayBefore = Premium.calculatePremiumRay({
+      premiumShares: premiumShares,
+      drawnIndex: previousIndex,
+      premiumOffsetRay: premiumOffsetRay,
+      realizedPremiumRay: realizedPremiumRay
+    });
     uint256 liquidityGrowthPremium = premiumRayAfter.fromRayUp() - premiumRayBefore.fromRayUp();
 
     return (liquidityGrowthDrawn + liquidityGrowthPremium).percentMulDown(liquidityFee);

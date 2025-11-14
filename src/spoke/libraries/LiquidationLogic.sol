@@ -409,7 +409,6 @@ library LiquidationLogic {
 
   /// @notice Calculates the liquidation amounts.
   /// @dev Invoked by `liquidateUser` method.
-  /// @return The liquidation amounts.
   function _calculateLiquidationAmounts(
     CalculateLiquidationAmountsParams memory params
   ) internal pure returns (LiquidationAmounts memory) {

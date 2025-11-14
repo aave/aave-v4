@@ -857,11 +857,11 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
 
       uint256 oldPremiumShares = userPosition.premiumShares;
       uint256 oldPremiumOffsetRay = userPosition.premiumOffsetRay;
-      uint256 accruedPremiumRay = Premium.calculateAccruedPremiumRay(
-        oldPremiumShares,
-        drawnIndex,
-        oldPremiumOffsetRay
-      );
+      uint256 accruedPremiumRay = Premium.calculateAccruedPremiumRay({
+        premiumShares: oldPremiumShares,
+        drawnIndex: drawnIndex,
+        premiumOffsetRay: oldPremiumOffsetRay
+      });
 
       uint256 newPremiumShares = userPosition.drawnShares.percentMulUp(newRiskPremium);
       uint256 newPremiumOffsetRay = newPremiumShares * drawnIndex;
@@ -985,11 +985,11 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
   ) internal view returns (uint256, uint256, uint256, uint256) {
     uint256 drawnIndex = hub.getAssetDrawnIndex(assetId);
     uint256 realizedPremiumRay = userPosition.realizedPremiumRay;
-    uint256 accruedPremiumRay = Premium.calculateAccruedPremiumRay(
-      userPosition.premiumShares,
-      drawnIndex,
-      userPosition.premiumOffsetRay
-    );
+    uint256 accruedPremiumRay = Premium.calculateAccruedPremiumRay({
+      premiumShares: userPosition.premiumShares,
+      drawnIndex: drawnIndex,
+      premiumOffsetRay: userPosition.premiumOffsetRay
+    });
     return (
       userPosition.drawnShares.rayMulUp(drawnIndex),
       (realizedPremiumRay + accruedPremiumRay).fromRayUp(),
@@ -1015,6 +1015,12 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     require(config.liquidationFee <= PercentageMath.PERCENTAGE_FACTOR, InvalidLiquidationFee());
   }
 
+  /// @dev Calculates the drawn debt and premium debt to restore for the given amount.
+  /// @param drawnDebt The maximum amount of drawn debt that can be restored.
+  /// @param premiumDebtRay The maximum amount of premium debt that can be restored, expressed in asset units and scaled by RAY.
+  /// @param amount The amount to restore.
+  /// @return The amount of drawn debt to restore.
+  /// @return The amount of premium debt to restore, expressed in asset units and scaled by RAY.
   function _calculateRestoreAmount(
     uint256 drawnDebt,
     uint256 premiumDebtRay,
@@ -1024,10 +1030,12 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     if (amount >= drawnDebt + premiumDebt) {
       return (drawnDebt, premiumDebtRay);
     }
-    uint256 amountRay = amount.toRay();
-    if (amountRay <= premiumDebtRay) {
-      return (0, amountRay);
+
+    if (amount < premiumDebt) {
+      // amount.toRay() cannot underflow here
+      return (0, amount.toRay());
     }
+
     return (amount - premiumDebt, premiumDebtRay);
   }
 

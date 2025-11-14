@@ -20,18 +20,23 @@ library Premium {
   }
 
   /// @notice Calculates the premium debt with full precision.
-  /// @param realizedPremiumRay The realized premium, expressed in asset units and scaled by RAY.
   /// @param premiumShares The number of premium shares.
   /// @param drawnIndex The current drawn index.
   /// @param premiumOffsetRay The premium offset, expressed in asset units and scaled by RAY.
+  /// @param realizedPremiumRay The realized premium, expressed in asset units and scaled by RAY.
   /// @return The premium debt, expressed in asset units and scaled by RAY.
   function calculatePremiumRay(
-    uint256 realizedPremiumRay,
     uint256 premiumShares,
     uint256 drawnIndex,
-    uint256 premiumOffsetRay
+    uint256 premiumOffsetRay,
+    uint256 realizedPremiumRay
   ) internal pure returns (uint256) {
     return
-      realizedPremiumRay + calculateAccruedPremiumRay(premiumShares, drawnIndex, premiumOffsetRay);
+      realizedPremiumRay +
+      calculateAccruedPremiumRay({
+        premiumShares: premiumShares,
+        drawnIndex: drawnIndex,
+        premiumOffsetRay: premiumOffsetRay
+      });
   }
 }

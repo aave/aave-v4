@@ -9,7 +9,7 @@
   "permitReserve + supply (multicall)": "175820",
   "permitReserve + supply + enable collateral (multicall)": "221305",
   "repay: full": "169806",
-  "repay: partial": "188876",
+  "repay: partial": "188790",
   "setUserPositionManagerWithSig: disable": "44914",
   "setUserPositionManagerWithSig: enable": "68943",
   "supply + enable collateral (multicall)": "167696",

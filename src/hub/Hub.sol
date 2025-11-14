@@ -540,12 +540,12 @@ contract Hub is IHub, AccessManaged {
   function getAssetPremiumRay(uint256 assetId) external view returns (uint256) {
     Asset storage asset = _assets[assetId];
     return
-      Premium.calculatePremiumRay(
-        asset.realizedPremiumRay,
-        asset.premiumShares,
-        asset.getDrawnIndex(),
-        asset.premiumOffsetRay
-      );
+      Premium.calculatePremiumRay({
+        premiumShares: asset.premiumShares,
+        drawnIndex: asset.getDrawnIndex(),
+        premiumOffsetRay: asset.premiumOffsetRay,
+        realizedPremiumRay: asset.realizedPremiumRay
+      });
   }
 
   /// @inheritdoc IHubBase
@@ -817,12 +817,12 @@ contract Hub is IHub, AccessManaged {
     SpokeData storage spoke
   ) internal view returns (uint256) {
     return
-      Premium.calculatePremiumRay(
-        spoke.realizedPremiumRay,
-        spoke.premiumShares,
-        asset.getDrawnIndex(),
-        spoke.premiumOffsetRay
-      );
+      Premium.calculatePremiumRay({
+        premiumShares: spoke.premiumShares,
+        drawnIndex: asset.getDrawnIndex(),
+        premiumOffsetRay: spoke.premiumOffsetRay,
+        realizedPremiumRay: spoke.realizedPremiumRay
+      });
   }
 
   /// @dev Spoke with maximum cap have unlimited add capacity.
@@ -949,12 +949,12 @@ contract Hub is IHub, AccessManaged {
     uint256 realizedPremiumRay,
     PremiumDelta calldata premiumDelta
   ) internal pure returns (uint120, uint256, uint256) {
-    uint256 premiumRayBefore = Premium.calculatePremiumRay(
-      realizedPremiumRay,
-      premiumShares,
-      drawnIndex,
-      premiumOffsetRay
-    );
+    uint256 premiumRayBefore = Premium.calculatePremiumRay({
+      premiumShares: premiumShares,
+      drawnIndex: drawnIndex,
+      premiumOffsetRay: premiumOffsetRay,
+      realizedPremiumRay: realizedPremiumRay
+    });
 
     uint256 newPremiumShares = premiumShares.add(premiumDelta.sharesDelta);
     uint256 newPremiumOffsetRay = premiumOffsetRay.add(premiumDelta.offsetDeltaRay);
@@ -962,12 +962,12 @@ contract Hub is IHub, AccessManaged {
       premiumDelta.accruedPremiumRay -
       premiumDelta.restoredPremiumRay;
 
-    uint256 premiumRayAfter = Premium.calculatePremiumRay(
-      newRealizedPremiumRay,
-      newPremiumShares,
-      drawnIndex,
-      newPremiumOffsetRay
-    );
+    uint256 premiumRayAfter = Premium.calculatePremiumRay({
+      premiumShares: newPremiumShares,
+      drawnIndex: drawnIndex,
+      premiumOffsetRay: newPremiumOffsetRay,
+      realizedPremiumRay: newRealizedPremiumRay
+    });
 
     require(
       premiumRayAfter + premiumDelta.restoredPremiumRay == premiumRayBefore,
