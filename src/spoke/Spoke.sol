@@ -36,31 +36,21 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
   using LiquidationLogic for *;
 
   /// @inheritdoc ISpoke
-  uint256 public constant MAX_ALLOWED_ASSET_ID = type(uint16).max;
-
-  /// @inheritdoc ISpoke
-  uint24 public constant MAX_ALLOWED_COLLATERAL_RISK = 1000_00; // 1000.00%
-
-  /// @inheritdoc ISpoke
-  uint256 public constant MAX_ALLOWED_DYNAMIC_CONFIG_KEY = type(uint24).max;
-
-  /// @inheritdoc ISpoke
   bytes32 public constant SET_USER_POSITION_MANAGER_TYPEHASH =
     // keccak256('SetUserPositionManager(address positionManager,address user,bool approve,uint256 nonce,uint256 deadline)')
     0x758d23a3c07218b7ea0b4f7f63903c4e9d5cbde72d3bcfe3e9896639025a0214;
 
   /// @inheritdoc ISpoke
-  uint64 public constant HEALTH_FACTOR_LIQUIDATION_THRESHOLD =
-    LiquidationLogic.HEALTH_FACTOR_LIQUIDATION_THRESHOLD;
-
-  /// @inheritdoc ISpoke
-  uint256 public constant DUST_LIQUIDATION_THRESHOLD = LiquidationLogic.DUST_LIQUIDATION_THRESHOLD;
-
-  /// @inheritdoc ISpoke
-  uint8 public constant ORACLE_DECIMALS = 8;
-
-  /// @inheritdoc ISpoke
   address public immutable ORACLE;
+
+  uint256 internal constant MAX_ALLOWED_ASSET_ID = type(uint16).max;
+  uint24 internal constant MAX_ALLOWED_COLLATERAL_RISK = 1000_00; // 1000.00%
+  uint256 internal constant MAX_ALLOWED_DYNAMIC_CONFIG_KEY = type(uint24).max;
+  uint64 internal constant HEALTH_FACTOR_LIQUIDATION_THRESHOLD =
+    LiquidationLogic.HEALTH_FACTOR_LIQUIDATION_THRESHOLD;
+  uint256 internal constant DUST_LIQUIDATION_THRESHOLD =
+    LiquidationLogic.DUST_LIQUIDATION_THRESHOLD;
+  uint8 internal constant ORACLE_DECIMALS = 8;
 
   uint256 internal _reserveCount;
   mapping(address user => mapping(uint256 reserveId => UserPosition)) internal _userPositions;
@@ -867,8 +857,9 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
       uint256 newPremiumOffsetRay = newPremiumShares * drawnIndex;
 
       userPosition.premiumShares = newPremiumShares.toUint120();
-      userPosition.premiumOffsetRay = newPremiumOffsetRay;
-      userPosition.realizedPremiumRay += accruedPremiumRay;
+      userPosition.premiumOffsetRay = newPremiumOffsetRay.toUint200();
+      userPosition.realizedPremiumRay = (userPosition.realizedPremiumRay + accruedPremiumRay)
+        .toUint200();
 
       IHubBase.PremiumDelta memory premiumDelta = IHubBase.PremiumDelta({
         sharesDelta: newPremiumShares.signedSub(oldPremiumShares),

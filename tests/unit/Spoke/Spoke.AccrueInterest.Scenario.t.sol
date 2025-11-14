@@ -6,7 +6,7 @@ import 'tests/unit/Spoke/SpokeBase.t.sol';
 
 contract SpokeAccrueInterestScenarioTest is SpokeBase {
   using SharesMath for uint256;
-  using WadRayMath for uint256;
+  using WadRayMath for *;
   using PercentageMath for uint256;
   using SafeCast for uint256;
 

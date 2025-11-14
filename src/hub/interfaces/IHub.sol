@@ -36,9 +36,9 @@ interface IHub is IHubBase, IAccessManaged {
     uint120 deficit;
     uint120 swept;
     //
-    uint256 realizedPremiumRay;
+    uint200 realizedPremiumRay;
     //
-    uint256 premiumOffsetRay;
+    uint200 premiumOffsetRay;
     //
     uint16 liquidityFee;
     uint120 drawnShares;
@@ -83,9 +83,9 @@ interface IHub is IHubBase, IAccessManaged {
     uint120 drawnShares;
     uint120 premiumShares;
     //
-    uint256 premiumOffsetRay;
+    uint200 premiumOffsetRay;
     //
-    uint256 realizedPremiumRay;
+    uint200 realizedPremiumRay;
     //
     uint120 addedShares;
     uint40 addCap;

@@ -74,9 +74,9 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
     uint120 drawnShares;
     uint120 premiumShares;
     //
-    uint256 realizedPremiumRay;
+    uint200 realizedPremiumRay;
     //
-    uint256 premiumOffsetRay;
+    uint200 premiumOffsetRay;
     //
     uint120 suppliedShares;
     uint24 dynamicConfigKey;
@@ -510,33 +510,9 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
   /// @return The address of the library.
   function getLiquidationLogic() external pure returns (address);
 
-  /// @notice Returns the maximum allowed value for an asset identifier.
-  /// @return The maximum asset identifier value (inclusive).
-  function MAX_ALLOWED_ASSET_ID() external view returns (uint256);
-
-  /// @notice Returns the maximum allowed collateral risk value for a reserve.
-  /// @return The maximum collateral risk value, expressed in bps (e.g. 100_00 is 100.00%).
-  function MAX_ALLOWED_COLLATERAL_RISK() external view returns (uint24);
-
-  /// @notice Returns the maximum allowed value for a dynamic configuration key.
-  /// @return The maximum dynamic configuration key value (inclusive).
-  function MAX_ALLOWED_DYNAMIC_CONFIG_KEY() external view returns (uint256);
-
   /// @notice Returns the type hash for the SetUserPositionManager intent.
   /// @return The bytes-encoded EIP-712 struct hash representing the intent.
   function SET_USER_POSITION_MANAGER_TYPEHASH() external view returns (bytes32);
-
-  /// @notice Returns the minimum health factor below which a position is considered unhealthy and subject to liquidation.
-  /// @return The minimum health factor considered healthy, expressed in WAD (18 decimals) (e.g. 1e18 is 1.00).
-  function HEALTH_FACTOR_LIQUIDATION_THRESHOLD() external view returns (uint64);
-
-  /// @notice Returns the maximum amount considered as dust for a user's collateral and debt balances after a liquidation.
-  /// @return The maximum amount considered as dust, expressed in USD with 26 decimals.
-  function DUST_LIQUIDATION_THRESHOLD() external view returns (uint256);
-
-  /// @notice Returns the number of decimals used by the oracle.
-  /// @return The number of decimals.
-  function ORACLE_DECIMALS() external view returns (uint8);
 
   /// @notice Returns the address of the AaveOracle contract.
   function ORACLE() external view returns (address);

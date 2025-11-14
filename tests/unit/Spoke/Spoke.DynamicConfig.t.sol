@@ -99,7 +99,7 @@ contract SpokeDynamicConfigTest is SpokeBase {
 
     MockSpoke(address(spoke1)).setReserveDynamicConfigKey(
       reserveId,
-      uint24(spoke1.MAX_ALLOWED_DYNAMIC_CONFIG_KEY())
+      uint24(Constants.MAX_ALLOWED_DYNAMIC_CONFIG_KEY)
     );
 
     vm.expectRevert(ISpoke.MaximumDynamicConfigKeyReached.selector, address(spoke1));
@@ -372,7 +372,7 @@ contract SpokeDynamicConfigTest is SpokeBase {
 
     // existing users: alice, bob
     // alice still healthy
-    assertGt(_getUserHealthFactor(spoke1, alice), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
+    assertGt(_getUserHealthFactor(spoke1, alice), Constants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
     // bob cannot borrow after collateral is disabled
     vm.expectRevert(ISpoke.HealthFactorBelowThreshold.selector);
     Utils.borrow(spoke1, _wethReserveId(spoke1), bob, 1e18, bob);

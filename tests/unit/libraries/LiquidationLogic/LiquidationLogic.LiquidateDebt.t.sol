@@ -280,10 +280,9 @@ contract LiquidationLogicLiquidateDebtTest is LiquidationLogicBaseTest {
     initialPosition.drawnShares -= drawnSharesLiquidated.toUint120();
     initialPosition.premiumShares = 0;
     initialPosition.premiumOffsetRay = 0;
-    initialPosition.realizedPremiumRay =
-      initialPosition.realizedPremiumRay +
+    initialPosition.realizedPremiumRay = (initialPosition.realizedPremiumRay +
       accruedPremiumRay -
-      premiumToLiquidateRay;
+      premiumToLiquidateRay).toUint200();
     assertEq(newPosition, initialPosition);
   }
 

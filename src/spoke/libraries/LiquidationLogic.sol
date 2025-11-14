@@ -286,10 +286,9 @@ library LiquidationLogic {
   ) internal {
     debtPosition.premiumShares = 0;
     debtPosition.premiumOffsetRay = 0;
-    debtPosition.realizedPremiumRay =
-      debtPosition.realizedPremiumRay +
+    debtPosition.realizedPremiumRay = (debtPosition.realizedPremiumRay +
       accruedPremiumRay -
-      restoredPremiumRay;
+      restoredPremiumRay).toUint200();
   }
 
   /// @dev Invoked by `liquidateUser` method.

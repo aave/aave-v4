@@ -948,7 +948,7 @@ contract Hub is IHub, AccessManaged {
     uint256 premiumOffsetRay,
     uint256 realizedPremiumRay,
     PremiumDelta calldata premiumDelta
-  ) internal pure returns (uint120, uint256, uint256) {
+  ) internal pure returns (uint120, uint200, uint200) {
     uint256 premiumRayBefore = Premium.calculatePremiumRay({
       premiumShares: premiumShares,
       drawnIndex: drawnIndex,
@@ -973,6 +973,10 @@ contract Hub is IHub, AccessManaged {
       premiumRayAfter + premiumDelta.restoredPremiumRay == premiumRayBefore,
       InvalidPremiumChange()
     );
-    return (newPremiumShares.toUint120(), newPremiumOffsetRay, newRealizedPremiumRay);
+    return (
+      newPremiumShares.toUint120(),
+      newPremiumOffsetRay.toUint200(),
+      newRealizedPremiumRay.toUint200()
+    );
   }
 }
