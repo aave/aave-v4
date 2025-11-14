@@ -283,4 +283,66 @@ contract SpokeGettersTest is SpokeBase {
     assertEq(hub1.getAddedAssets(assetId), supplyAmount);
     assertEq(hub1.getAddedShares(assetId), hub1.previewAddByAssets(assetId, supplyAmount));
   }
+
+  function test_premiumRayGetters() public {
+    // 2 user, single spoke
+    _mockInterestRateBps(25_00);
+    Utils.approve(spoke, _daiReserveId(spoke), alice, 9_000e18);
+    Utils.supplyCollateral(spoke, _daiReserveId(spoke), alice, 9_000e18, alice); // CR 20%
+    Utils.approve(spoke, _usdxReserveId(spoke), bob, 18_000e18);
+    Utils.supplyCollateral(spoke, _usdxReserveId(spoke), bob, 18_000e18, bob); // CR 50%
+    _openSupplyPosition(spoke, _wethReserveId(spoke), 5e18); // liquidity provision
+    Utils.borrow(spoke, _wethReserveId(spoke), alice, 1e18, alice);
+    Utils.borrow(spoke, _wethReserveId(spoke), bob, 2e18, bob);
+    skip(365 days);
+
+    // check premium in ray across spoke and hub
+    uint256 assetDrawnIndex = hub1.getAssetDrawnIndex(wethAssetId);
+    uint256 alicePremiumDebtRay = spoke.getUserPremiumDebtRay(_wethReserveId(spoke), alice);
+    assertEq(alicePremiumDebtRay, 0.2e18 * (assetDrawnIndex - 1e27));
+    uint256 bobPremiumDebtRay = spoke.getUserPremiumDebtRay(_wethReserveId(spoke), bob);
+    assertEq(bobPremiumDebtRay, 1e18 * (assetDrawnIndex - 1e27));
+
+    uint256 spokePremiumDebtRay = hub1.getSpokePremiumRay(wethAssetId, address(spoke));
+    assertEq(spokePremiumDebtRay, alicePremiumDebtRay + bobPremiumDebtRay);
+
+    uint256 assetPremiumDebtRay = hub1.getAssetPremiumRay(wethAssetId);
+    assertEq(assetPremiumDebtRay, spokePremiumDebtRay);
+
+    // realize premium
+    assertEq(spoke.getUserPosition(_wethReserveId(spoke), alice).realizedPremiumRay, 0);
+    assertEq(spoke.getUserPosition(_wethReserveId(spoke), bob).realizedPremiumRay, 0);
+    vm.prank(alice);
+    spoke.updateUserRiskPremium(alice);
+    vm.prank(bob);
+    spoke.updateUserRiskPremium(bob);
+    // make sure getters are correct after realizing premium
+    assertEq(spoke.getUserPremiumDebtRay(_wethReserveId(spoke), alice), alicePremiumDebtRay);
+    assertEq(spoke.getUserPremiumDebtRay(_wethReserveId(spoke), bob), bobPremiumDebtRay);
+    assertEq(
+      hub1.getSpokePremiumRay(wethAssetId, address(spoke)),
+      alicePremiumDebtRay + bobPremiumDebtRay
+    );
+    assertEq(hub1.getAssetPremiumRay(wethAssetId), alicePremiumDebtRay + bobPremiumDebtRay);
+
+    // introduce another spoke
+    Utils.approve(spoke, _daiReserveId(spoke), carol, 1_000e18);
+    Utils.supplyCollateral(spoke1, _daiReserveId(spoke1), carol, 1_000e18, carol);
+    Utils.borrow(spoke1, _wethReserveId(spoke), carol, 0.1e18, carol);
+
+    skip(365 days);
+
+    // check premium in ray is consistent across spoke and hub
+    spokePremiumDebtRay = hub1.getSpokePremiumRay(wethAssetId, address(spoke));
+    alicePremiumDebtRay = spoke.getUserPremiumDebtRay(_wethReserveId(spoke), alice);
+    bobPremiumDebtRay = spoke.getUserPremiumDebtRay(_wethReserveId(spoke), bob);
+    assertEq(spokePremiumDebtRay, alicePremiumDebtRay + bobPremiumDebtRay);
+
+    uint256 spoke1PremiumDebtRay = hub1.getSpokePremiumRay(wethAssetId, address(spoke1));
+    uint256 carolPremiumDebtRay = spoke1.getUserPremiumDebtRay(_wethReserveId(spoke1), carol);
+    assertEq(spoke1PremiumDebtRay, carolPremiumDebtRay);
+
+    assetPremiumDebtRay = hub1.getAssetPremiumRay(wethAssetId);
+    assertEq(assetPremiumDebtRay, spokePremiumDebtRay + spoke1PremiumDebtRay);
+  }
 }

@@ -5,7 +5,7 @@ pragma solidity ^0.8.0;
 import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
 import {SafeERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
 import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
-import {IHub} from 'src/hub/interfaces/IHub.sol';
+import {IHub, IHubBase} from 'src/hub/interfaces/IHub.sol';
 import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 import {PositionStatusMap} from 'src/spoke/libraries/PositionStatusMap.sol';
 import {LiquidationLogic} from 'src/spoke/libraries/LiquidationLogic.sol';
@@ -101,11 +101,11 @@ contract LiquidationLogicWrapper {
   }
 
   function setDebtPositionPremiumOffsetRay(uint256 premiumOffsetRay) public {
-    _userPositions[_borrower][_debtReserveId].premiumOffsetRay = premiumOffsetRay;
+    _userPositions[_borrower][_debtReserveId].premiumOffsetRay = premiumOffsetRay.toUint200();
   }
 
   function setDebtPositionRealizedPremiumRay(uint256 realizedPremiumRay) public {
-    _userPositions[_borrower][_debtReserveId].realizedPremiumRay = realizedPremiumRay;
+    _userPositions[_borrower][_debtReserveId].realizedPremiumRay = realizedPremiumRay.toUint200();
   }
 
   function setBorrowerCollateralStatus(uint256 reserveId, bool status) public {
@@ -193,7 +193,7 @@ contract LiquidationLogicWrapper {
 
   function calculateLiquidationAmounts(
     LiquidationLogic.CalculateLiquidationAmountsParams memory params
-  ) public pure returns (uint256, uint256, uint256) {
+  ) public pure returns (LiquidationLogic.LiquidationAmounts memory) {
     return LiquidationLogic._calculateLiquidationAmounts(params);
   }
 
@@ -214,7 +214,7 @@ contract LiquidationLogicWrapper {
 
   function liquidateCollateral(
     LiquidationLogic.LiquidateCollateralParams memory params
-  ) public returns (bool) {
+  ) public returns (uint256, uint256, bool) {
     return
       LiquidationLogic._liquidateCollateral(
         _reserves[_collateralReserveId],
@@ -223,7 +223,9 @@ contract LiquidationLogicWrapper {
       );
   }
 
-  function liquidateDebt(LiquidationLogic.LiquidateDebtParams memory params) public returns (bool) {
+  function liquidateDebt(
+    LiquidationLogic.LiquidateDebtParams memory params
+  ) public returns (uint256, IHubBase.PremiumDelta memory, bool) {
     return
       LiquidationLogic._liquidateDebt(
         _reserves[_debtReserveId],

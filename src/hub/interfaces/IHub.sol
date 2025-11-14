@@ -15,11 +15,11 @@ interface IHub is IHubBase, IAccessManaged {
   /// @dev decimals The number of decimals of the underlying asset.
   /// @dev deficit The amount of outstanding bad debt across all spokes, expressed in asset units.
   /// @dev swept The outstanding liquidity which has been invested by the reinvestment controller, expressed in asset units.
-  /// @dev realizedPremiumRay The interest-free premium debt already accrued across all spokes, expressed in asset units + RAY.
-  /// @dev premiumOffsetRay The total premium offset across all spokes, used to calculate the premium, expressed in asset units + RAY.
-  /// @dev liquidityFee The protocol fee charged on drawn and premium liquidity growth, expressed in BPS.
+  /// @dev realizedPremiumRay The interest-free premium already accrued across all spokes, expressed in asset units and scaled by RAY.
+  /// @dev premiumOffsetRay The total premium offset across all spokes, used to calculate the premium, expressed in asset units and scaled by RAY.
   /// @dev drawnShares The total drawn shares across all spokes.
   /// @dev premiumShares The total premium shares across all spokes.
+  /// @dev liquidityFee The protocol fee charged on drawn and premium liquidity growth, expressed in BPS.
   /// @dev drawnIndex The drawn index which monotonically increases according to the drawn rate, expressed in RAY.
   /// @dev drawnRate The rate at which drawn assets grows, expressed in RAY.
   /// @dev lastUpdateTimestamp The timestamp of the last accrual.
@@ -36,13 +36,13 @@ interface IHub is IHubBase, IAccessManaged {
     uint120 deficit;
     uint120 swept;
     //
-    uint256 realizedPremiumRay;
+    uint200 realizedPremiumRay;
     //
-    uint256 premiumOffsetRay;
+    uint200 premiumOffsetRay;
     //
-    uint16 liquidityFee;
     uint120 drawnShares;
     uint120 premiumShares;
+    uint16 liquidityFee;
     //
     uint120 drawnIndex;
     uint96 drawnRate;
@@ -68,10 +68,10 @@ interface IHub is IHubBase, IAccessManaged {
   }
 
   /// @notice Spoke position and configuration data.
-  /// @dev premiumShares The premium shares of a spoke for a given asset.
-  /// @dev premiumOffsetRay The premium offset of a spoke for a given asset, used to calculate the premium, expressed in asset units + RAY.
-  /// @dev realizedPremiumRay The interest-free premium debt already accrued for a spoke for a given asset, expressed in asset units + RAY.
   /// @dev drawnShares The drawn shares of a spoke for a given asset.
+  /// @dev premiumShares The premium shares of a spoke for a given asset.
+  /// @dev premiumOffsetRay The premium offset of a spoke for a given asset, used to calculate the premium, expressed in asset units and scaled by RAY.
+  /// @dev realizedPremiumRay The interest-free premium already accrued for a spoke for a given asset, expressed in asset units and scaled by RAY.
   /// @dev addedShares The added shares of a spoke for a given asset.
   /// @dev addCap The maximum amount that can be added by a spoke, expressed in whole assets (not scaled by decimals). A value of `MAX_ALLOWED_SPOKE_CAP` indicates no cap.
   /// @dev drawCap The maximum amount that can be drawn by a spoke, expressed in whole assets (not scaled by decimals). A value of `MAX_ALLOWED_SPOKE_CAP` indicates no cap.
@@ -83,9 +83,9 @@ interface IHub is IHubBase, IAccessManaged {
     uint120 drawnShares;
     uint120 premiumShares;
     //
-    uint256 premiumOffsetRay;
+    uint200 premiumOffsetRay;
     //
-    uint256 realizedPremiumRay;
+    uint200 realizedPremiumRay;
     //
     uint120 addedShares;
     uint40 addCap;
@@ -196,16 +196,24 @@ interface IHub is IHubBase, IAccessManaged {
   /// @param drawCap The current `drawCap` of the asset, expressed in whole assets (not scaled by decimals).
   error DrawCapExceeded(uint256 drawCap);
 
-  /// @notice Thrown when a surplus amount is restored.
-  /// @param maxAllowedRestore The maximum allowed restore amount.
-  error SurplusAmountRestored(uint256 maxAllowedRestore);
+  /// @notice Thrown when a surplus amount of drawn is restored.
+  /// @param maxAllowedRestore The maximum allowed drawn amount to restore.
+  error SurplusDrawnRestored(uint256 maxAllowedRestore);
+
+  /// @notice Thrown when a surplus amount of premium is restored.
+  /// @param maxAllowedRestoreRay The maximum allowed premium amount to restore, expressed in asset units and scaled by RAY.
+  error SurplusPremiumRayRestored(uint256 maxAllowedRestoreRay);
 
   /// @notice Thrown when the premium change is invalid.
   error InvalidPremiumChange();
 
-  /// @notice Thrown when a surplus on existing deficit is reported.
-  /// @param amount The amount of surplus on existing deficit assets.
-  error SurplusDeficitReported(uint256 amount);
+  /// @notice Thrown when a surplus amount of drawn is reported as deficit.
+  /// @param maxAllowedDeficit The maximum allowed drawn to report as deficit.
+  error SurplusDrawnDeficitReported(uint256 maxAllowedDeficit);
+
+  /// @notice Thrown when a surplus amount of premium is reported as deficit.
+  /// @param maxAllowedDeficitRay The maximum allowed premium to report as deficit, expressed in asset units and scaled by RAY.
+  error SurplusPremiumRayDeficitReported(uint256 maxAllowedDeficitRay);
 
   /// @notice Thrown when a spoke is not active.
   error SpokeNotActive();

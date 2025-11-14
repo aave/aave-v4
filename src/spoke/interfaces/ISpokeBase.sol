@@ -70,18 +70,26 @@ interface ISpokeBase {
   /// @param collateralReserveId The identifier of the reserve used as collateral, to receive as a result of the liquidation.
   /// @param debtReserveId The identifier of the reserve to be repaid with the liquidation.
   /// @param user The address of the borrower getting liquidated.
-  /// @param debtToLiquidate The debt amount of borrowed reserve to be liquidated.
-  /// @param collateralToLiquidate The total amount of collateral asset to be liquidated, inclusive of liquidation fee.
   /// @param liquidator The address of the liquidator.
-  /// @param receiveShares True if the liquidator receives collateral in supplied shares rather than underlying assets.
+  /// @param receiveShares True if the liquidator received collateral in supplied shares rather than underlying assets.
+  /// @param debtToLiquidate The debt amount of borrowed reserve to be liquidated.
+  /// @param drawnSharesToLiquidate The amount of drawn shares to be liquidated.
+  /// @param premiumDelta A struct representing the changes to premium debt after liquidation.
+  /// @param collateralToLiquidate The total amount of collateral asset to be liquidated, inclusive of liquidation fee.
+  /// @param collateralSharesToLiquidate The total amount of collateral shares to liquidate.
+  /// @param collateralSharesToLiquidator The amount of collateral shares that the liquidator received.
   event LiquidationCall(
     uint256 indexed collateralReserveId,
     uint256 indexed debtReserveId,
     address indexed user,
-    uint256 debtToLiquidate,
-    uint256 collateralToLiquidate,
     address liquidator,
-    bool receiveShares
+    bool receiveShares,
+    uint256 debtToLiquidate,
+    uint256 drawnSharesToLiquidate,
+    IHubBase.PremiumDelta premiumDelta,
+    uint256 collateralToLiquidate,
+    uint256 collateralSharesToLiquidate,
+    uint256 collateralSharesToLiquidator
   );
 
   /// @notice Supplies an amount of underlying asset of the specified reserve.
@@ -217,4 +225,11 @@ interface ISpokeBase {
   /// @param user The address of the user.
   /// @return The total debt amount.
   function getUserTotalDebt(uint256 reserveId, address user) external view returns (uint256);
+
+  /// @notice Returns the full precision premium debt of a specific user for a given reserve.
+  /// @dev It reverts if the reserve associated with the given reserve identifier is not listed.
+  /// @param reserveId The identifier of the reserve.
+  /// @param user The address of the user.
+  /// @return The amount of premium debt, expressed in asset units and scaled by RAY.
+  function getUserPremiumDebtRay(uint256 reserveId, address user) external view returns (uint256);
 }

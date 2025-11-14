@@ -98,6 +98,8 @@ contract SpokeOperations_Gas_Tests is SpokeBase {
     spoke.supply(reserveId.dai, 1000e18, bob);
     spoke.setUsingAsCollateral(reserveId.dai, true, bob);
     spoke.borrow(reserveId.dai, 500e18, bob);
+    skip(100);
+    spoke.borrow(reserveId.dai, 1e18, bob);
     vm.stopPrank();
 
     skip(100);

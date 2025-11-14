@@ -6,6 +6,7 @@ import 'tests/unit/libraries/LiquidationLogic/LiquidationLogic.Base.t.sol';
 
 contract LiquidationLogicLiquidateUserTest is LiquidationLogicBaseTest {
   using SafeCast for *;
+  using WadRayMath for uint256;
 
   IHub hub2;
 
@@ -140,7 +141,6 @@ contract LiquidationLogicLiquidateUserTest is LiquidationLogicBaseTest {
         0
       )
     );
-    liquidationLogicWrapper.setDebtPositionRealizedPremiumRay(realizedPremiumRay);
 
     // Mock user debt position
     liquidationLogicWrapper.setDebtPositionDrawnShares(
@@ -150,6 +150,9 @@ contract LiquidationLogicLiquidateUserTest is LiquidationLogicBaseTest {
     liquidationLogicWrapper.setDebtPositionPremiumShares(premiumDebtShares);
     liquidationLogicWrapper.setDebtPositionPremiumOffsetRay(
       _calculatePremiumAssetsRay(hub2, wethAssetId, premiumDebtShares) - params.accruedPremiumRay
+    );
+    liquidationLogicWrapper.setDebtPositionRealizedPremiumRay(
+      params.premiumDebt.toRay() - params.accruedPremiumRay
     );
 
     // Mint tokens to liquidator and approve spoke

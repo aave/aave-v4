@@ -7,7 +7,7 @@ import 'tests/Base.t.sol';
 contract SpokeBase is Base {
   using SafeCast for *;
   using PercentageMath for *;
-  using WadRayMath for uint256;
+  using WadRayMath for *;
   using KeyValueList for KeyValueList.List;
 
   struct TestData {
@@ -635,8 +635,9 @@ contract SpokeBase is Base {
       .previewRestoreByAssets(assetId, debtAmount)
       .percentMulUp(userAccountData.riskPremium)
       .toUint120();
-    userPos.premiumOffsetRay = _calculatePremiumAssetsRay(hub1, assetId, userPos.premiumShares);
-    userPos.realizedPremiumRay = expectedRealizedPremiumRay;
+    userPos.premiumOffsetRay = _calculatePremiumAssetsRay(hub1, assetId, userPos.premiumShares)
+      .toUint200();
+    userPos.realizedPremiumRay = expectedRealizedPremiumRay.toUint200();
     userPos.suppliedShares = hub1.previewAddByAssets(assetId, suppliedAmount).toUint120();
   }
 
@@ -646,11 +647,12 @@ contract SpokeBase is Base {
     ISpoke spoke,
     uint256 reserveId,
     address user
-  ) internal view returns (uint256) {
+  ) internal view returns (uint200) {
     uint256 assetId = spoke.getReserve(reserveId).assetId;
     ISpoke.UserPosition memory userPos = getUserInfo(spoke, user, assetId);
     return
-      _calculateAccruedPremiumRay(hub1, assetId, userPos.premiumShares, userPos.premiumOffsetRay);
+      _calculateAccruedPremiumRay(hub1, assetId, userPos.premiumShares, userPos.premiumOffsetRay)
+        .toUint200();
   }
 
   /// assert that realized premium matches naively calculated value
@@ -833,7 +835,7 @@ contract SpokeBase is Base {
   }
 
   function _isHealthy(ISpoke spoke, uint256 healthFactor) internal view returns (bool) {
-    return healthFactor >= spoke.HEALTH_FACTOR_LIQUIDATION_THRESHOLD();
+    return healthFactor >= Constants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD;
   }
 
   function _calculateExpectedUserRP(address user, ISpoke spoke) internal view returns (uint256) {

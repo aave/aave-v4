@@ -98,10 +98,6 @@ contract HubBase is Base {
   ) internal {
     address tempSpoke = vm.randomAddress();
 
-    int256 sharesDelta = int256(amount);
-    int256 premiumOffsetDeltaRay = _calculatePremiumAssetsRay(hub1, assetId, uint256(amount))
-      .toInt256();
-
     vm.prank(HUB_ADMIN);
     hub1.addSpoke(
       assetId,
@@ -115,11 +111,30 @@ contract HubBase is Base {
       })
     );
 
-    Utils.draw(hub1, assetId, tempSpoke, vm.randomAddress(), amount);
+    _drawLiquidity(assetId, amount, withPremium, skipTime, tempSpoke);
+  }
+
+  // @dev Draws liquidity from the Hub via a random spoke and skips time
+  function _drawLiquidity(uint256 assetId, uint256 amount, bool premium) internal {
+    _drawLiquidity(assetId, amount, premium, true);
+  }
+
+  function _drawLiquidity(
+    uint256 assetId,
+    uint256 amount,
+    bool withPremium,
+    bool skipTime,
+    address spoke
+  ) internal {
+    int256 sharesDelta = int256(amount);
+    int256 premiumOffsetDeltaRay = _calculatePremiumAssetsRay(hub1, assetId, uint256(amount))
+      .toInt256();
+
+    Utils.draw(hub1, assetId, spoke, vm.randomAddress(), amount);
 
     if (withPremium) {
       // inflate premium data to create premium debt
-      vm.prank(tempSpoke);
+      vm.prank(spoke);
       hub1.refreshPremium(assetId, IHubBase.PremiumDelta(sharesDelta, premiumOffsetDeltaRay, 0, 0));
     }
 
@@ -132,17 +147,12 @@ contract HubBase is Base {
       assertGt(premium, 0); // non-zero premium debt
       // restore premium data
       uint256 accruedPremiumRay = _calculateAccruedPremiumRay(hub1, assetId);
-      vm.prank(tempSpoke);
+      vm.prank(spoke);
       hub1.refreshPremium(
         assetId,
         IHubBase.PremiumDelta(-sharesDelta, -premiumOffsetDeltaRay, accruedPremiumRay, 0)
       );
     }
-  }
-
-  // @dev Draws liquidity from the Hub via a random spoke and skips time
-  function _drawLiquidity(uint256 assetId, uint256 amount, bool premium) internal {
-    _drawLiquidity(assetId, amount, premium, true);
   }
 
   /// @dev Draws liquidity from the Hub via a specific spoke which is already active

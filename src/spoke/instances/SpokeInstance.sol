@@ -2,6 +2,7 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity 0.8.28;
 
+import {LiquidationLogic} from 'src/spoke/libraries/LiquidationLogic.sol';
 import {Spoke} from 'src/spoke/Spoke.sol';
 
 /// @title SpokeInstance
@@ -25,7 +26,7 @@ contract SpokeInstance is Spoke {
     require(authority != address(0), InvalidAddress());
     __AccessManaged_init(authority);
     if (_liquidationConfig.targetHealthFactor == 0) {
-      _liquidationConfig.targetHealthFactor = HEALTH_FACTOR_LIQUIDATION_THRESHOLD;
+      _liquidationConfig.targetHealthFactor = LiquidationLogic.HEALTH_FACTOR_LIQUIDATION_THRESHOLD;
       emit UpdateLiquidationConfig(_liquidationConfig);
     }
   }

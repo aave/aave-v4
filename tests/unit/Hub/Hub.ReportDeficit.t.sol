@@ -49,71 +49,63 @@ contract HubReportDeficitTest is HubBase {
     hub1.reportDeficit(usdxAssetId, 0, IHubBase.PremiumDelta(0, 0, 0, 0));
   }
 
-  function test_reportDeficit_surplus_drawn_revertsWith_SurplusDeficitReported() public {
-    uint256 skipTime = 2000 days;
-    uint256 drawAmount = 999e18;
-
-    Utils.add({
-      hub: hub1,
-      assetId: daiAssetId,
-      caller: address(spoke1),
-      amount: drawAmount * 2,
-      user: alice
-    });
-
-    Utils.draw({
-      hub: hub1,
-      assetId: daiAssetId,
-      caller: address(spoke1),
-      amount: drawAmount,
-      to: address(spoke1)
-    });
-
-    // skip to accrue interest
-    skip(skipTime);
-
-    uint256 drawn = hub1.getAssetTotalOwed(daiAssetId);
-
-    // We report 1 wei extra, but it rounds down to the correct number of shares
-    assertEq(
-      hub1.previewRestoreByAssets(daiAssetId, drawn),
-      hub1.previewRestoreByAssets(daiAssetId, drawn + 1)
-    );
-
-    vm.expectRevert(abi.encodeWithSelector(IHub.SurplusDeficitReported.selector, drawn));
-    vm.prank(address(spoke1));
-    hub1.reportDeficit(daiAssetId, drawn + 1, IHubBase.PremiumDelta(0, 0, 0, 0));
-  }
-
-  function test_reportDeficit_fuzz_revertsWith_SurplusDeficitReported(
-    uint256 drawnAmount,
-    uint256 skipTime,
-    uint256 baseAmount,
-    uint256 premiumAmountRay
+  function test_reportDeficit_fuzz_revertsWith_SurplusDrawnDeficitReported(
+    uint256 drawnAmount
   ) public {
-    skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
     drawnAmount = bound(drawnAmount, 1, MAX_SUPPLY_AMOUNT);
 
     // draw usdx liquidity to be restored
-    Utils.draw({
-      hub: hub1,
-      assetId: daiAssetId,
-      caller: address(spoke1),
-      amount: drawnAmount,
-      to: address(spoke1)
-    });
-
-    // skip to accrue interest
-    skip(skipTime);
-
-    premiumAmountRay = bound(premiumAmountRay, 0, UINT256_MAX - baseAmount);
+    _drawLiquidity(usdxAssetId, drawnAmount, true, true, address(spoke1));
 
     (uint256 drawn, uint256 premium) = hub1.getSpokeOwed(usdxAssetId, address(spoke1));
-    vm.assume(baseAmount > drawn || premium > premiumAmountRay.fromRayUp());
+    assertGt(drawn, 0);
+    assertGt(premium, 0);
 
-    vm.expectRevert(abi.encodeWithSelector(IHub.SurplusDeficitReported.selector, premium));
+    uint256 drawnDeficit = vm.randomUint(drawn + 1, UINT256_MAX);
+    uint256 premiumDeficitRay = vm.randomUint(0, UINT256_MAX);
+
+    vm.expectRevert(abi.encodeWithSelector(IHub.SurplusDrawnDeficitReported.selector, drawn));
     vm.prank(address(spoke1));
-    hub1.reportDeficit(usdxAssetId, baseAmount, IHubBase.PremiumDelta(0, 0, 0, premiumAmountRay));
+    hub1.reportDeficit(
+      usdxAssetId,
+      drawnDeficit,
+      IHubBase.PremiumDelta(0, 0, 0, premiumDeficitRay)
+    );
+  }
+
+  function test_reportDeficit_fuzz_revertsWith_SurplusPremiumRayDeficitReported(
+    uint256 drawnAmount
+  ) public {
+    drawnAmount = bound(drawnAmount, 1, MAX_SUPPLY_AMOUNT);
+
+    // draw usdx liquidity to be restored
+    _drawLiquidity(usdxAssetId, drawnAmount, true, true, address(spoke1));
+
+    (uint256 drawn, uint256 premium) = hub1.getSpokeOwed(usdxAssetId, address(spoke1));
+    assertGt(drawn, 0);
+    assertGt(premium, 0);
+
+    IHub.SpokeData memory spokeData = hub1.getSpoke(usdxAssetId, address(spoke1));
+    uint256 spokePremiumRay = _calculatePremiumRay(
+      hub1,
+      usdxAssetId,
+      spokeData.realizedPremiumRay,
+      spokeData.premiumShares,
+      spokeData.premiumOffsetRay
+    );
+
+    uint256 drawnDeficit = vm.randomUint(0, drawn);
+    uint256 premiumDeficitRay = vm.randomUint(spokePremiumRay + 1, UINT256_MAX);
+
+    vm.expectRevert(
+      abi.encodeWithSelector(IHub.SurplusPremiumRayDeficitReported.selector, spokePremiumRay)
+    );
+    vm.prank(address(spoke1));
+    hub1.reportDeficit(
+      usdxAssetId,
+      drawnDeficit,
+      IHubBase.PremiumDelta(0, 0, 0, premiumDeficitRay)
+    );
   }
 
   function test_reportDeficit_with_premium() public {
@@ -173,7 +165,7 @@ contract HubReportDeficitTest is HubBase {
 
     if (
       premiumDelta.restoredPremiumRay >
-      _calculatePremiumDebtRay(
+      _calculatePremiumRay(
         hub1,
         usdxAssetId,
         asset.realizedPremiumRay,

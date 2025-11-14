@@ -39,6 +39,7 @@ import {Roles} from 'src/libraries/types/Roles.sol';
 import {Rescuable, IRescuable} from 'src/utils/Rescuable.sol';
 import {NoncesKeyed, INoncesKeyed} from 'src/utils/NoncesKeyed.sol';
 import {UnitPriceFeed} from 'src/misc/UnitPriceFeed.sol';
+import {AccessManagerEnumerable} from 'src/access/AccessManagerEnumerable.sol';
 
 // hub
 import {HubConfigurator, IHubConfigurator} from 'src/hub/HubConfigurator.sol';
@@ -140,7 +141,7 @@ abstract contract Base is Test {
   ISpoke internal spoke2;
   ISpoke internal spoke3;
   AssetInterestRateStrategy internal irStrategy;
-  AccessManager internal accessManager;
+  IAccessManager internal accessManager;
 
   // TODO: remove after migrating to other mock users
   address internal USER1 = makeAddr('USER1');
@@ -282,7 +283,7 @@ abstract contract Base is Test {
 
   function deployFixtures() internal virtual {
     vm.startPrank(ADMIN);
-    accessManager = new AccessManager(ADMIN);
+    accessManager = IAccessManager(address(new AccessManagerEnumerable(ADMIN)));
     hub1 = new Hub(address(accessManager));
     irStrategy = new AssetInterestRateStrategy(address(hub1));
     (spoke1, oracle1) = _deploySpokeWithOracle(ADMIN, address(accessManager), 'Spoke 1 (USD)');
@@ -903,7 +904,7 @@ abstract contract Base is Test {
    * 3: WBTC
    */
   function hub2Fixture() internal returns (IHub, AssetInterestRateStrategy) {
-    IAccessManager accessManager2 = new AccessManager(ADMIN);
+    IAccessManager accessManager2 = IAccessManager(address(new AccessManagerEnumerable(ADMIN)));
     IHub hub2 = new Hub(address(accessManager2));
     vm.label(address(hub2), 'Hub2');
     AssetInterestRateStrategy hub2IrStrategy = new AssetInterestRateStrategy(address(hub2));
@@ -970,7 +971,7 @@ abstract contract Base is Test {
    * 3: WETH
    */
   function hub3Fixture() internal returns (IHub, AssetInterestRateStrategy) {
-    IAccessManager accessManager3 = new AccessManager(ADMIN);
+    IAccessManager accessManager3 = IAccessManager(address(new AccessManagerEnumerable(ADMIN)));
     IHub hub3 = new Hub(address(accessManager3));
     AssetInterestRateStrategy hub3IrStrategy = new AssetInterestRateStrategy(address(hub3));
 
@@ -1513,6 +1514,28 @@ abstract contract Base is Test {
       );
   }
 
+  function _calculateRestoreAmounts(
+    uint256 restoreAmount,
+    uint256 drawn,
+    uint256 premium
+  ) internal view returns (uint256 baseAmount, uint256 premiumAmount) {
+    if (restoreAmount <= premium) {
+      return (0, restoreAmount);
+    }
+
+    return (drawn.min(restoreAmount - premium), premium);
+  }
+
+  function _calculateRestoreAmounts(
+    ISpoke spoke,
+    uint256 reserveId,
+    address user,
+    uint256 repayAmount
+  ) internal view returns (uint256 baseAmount, uint256 premiumAmount) {
+    (uint256 userDrawnDebt, uint256 userPremiumDebt) = spoke.getUserDebt(reserveId, user);
+    return _calculateRestoreAmounts(repayAmount, userDrawnDebt, userPremiumDebt);
+  }
+
   function _getExpectedPremiumDelta(
     ISpoke spoke,
     address user,
@@ -1535,13 +1558,12 @@ abstract contract Base is Test {
       restoredPremiumRay: 0 // populated below
     });
 
-    (, uint256 premiumDebtRestored) = _calculateExactRestoreAmount(
-      userDebt.drawnDebt,
-      userDebt.premiumDebt,
+    (, uint256 premiumAmountToRestore) = _calculateRestoreAmounts(
       repayAmount,
-      assetId
+      userDebt.drawnDebt,
+      userDebt.premiumDebt
     );
-    expectedPremiumDelta.restoredPremiumRay = (premiumDebtRestored * WadRayMath.RAY).min(
+    expectedPremiumDelta.restoredPremiumRay = (premiumAmountToRestore * WadRayMath.RAY).min(
       userPosition.realizedPremiumRay + expectedPremiumDelta.accruedPremiumRay
     );
 
@@ -2022,11 +2044,11 @@ abstract contract Base is Test {
     uint256 premiumOffsetRay
   ) internal view returns (uint256) {
     return
-      _calculatePremiumDebtRay(hub, assetId, realizedPremiumRay, premiumShares, premiumOffsetRay)
+      _calculatePremiumRay(hub, assetId, realizedPremiumRay, premiumShares, premiumOffsetRay)
         .fromRayUp();
   }
 
-  function _calculatePremiumDebtRay(
+  function _calculatePremiumRay(
     IHub hub,
     uint256 assetId,
     uint256 realizedPremiumRay,
@@ -2042,7 +2064,7 @@ abstract contract Base is Test {
     return realizedPremiumRay + accruedPremiumRay;
   }
 
-  function _calculatePremiumDebtRay(
+  function _calculatePremiumRay(
     ISpoke spoke,
     uint256 reserveId,
     uint256 realizedPremiumRay,
@@ -2051,8 +2073,7 @@ abstract contract Base is Test {
   ) internal view returns (uint256) {
     IHub hub = _hub(spoke, reserveId);
     uint256 assetId = spoke.getReserve(reserveId).assetId;
-    return
-      _calculatePremiumDebtRay(hub, assetId, realizedPremiumRay, premiumShares, premiumOffsetRay);
+    return _calculatePremiumRay(hub, assetId, realizedPremiumRay, premiumShares, premiumOffsetRay);
   }
 
   function _calculatePremiumAssetsRay(
