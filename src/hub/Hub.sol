@@ -215,7 +215,7 @@ contract Hub is IHub, AccessManaged {
     uint256 liquidity = asset.liquidity + amount;
     require(
       asset.underlying.balanceOf(address(this)) >= liquidity,
-      InsufficientLiquidity(liquidity)
+      InsufficientTransferred(liquidity)
     );
     uint120 shares = asset.toAddedSharesDown(amount).toUint120();
     require(shares > 0, InvalidShares());
@@ -301,7 +301,7 @@ contract Hub is IHub, AccessManaged {
     uint256 liquidity = asset.liquidity + drawnAmount + premiumAmount;
     require(
       asset.underlying.balanceOf(address(this)) >= liquidity,
-      InsufficientLiquidity(liquidity)
+      InsufficientTransferred(liquidity)
     );
     asset.liquidity = liquidity.toUint120();
 
