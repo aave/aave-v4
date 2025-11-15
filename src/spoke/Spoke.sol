@@ -66,7 +66,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
   /// @dev Number of reserves listed in the Spoke.
   uint256 internal _reserveCount;
 
-  /// @dev Map of user addresses to their positions per reserve.
+  /// @dev Map of user addresses and reserve identifiers to user positions.
   mapping(address user => mapping(uint256 reserveId => UserPosition)) internal _userPositions;
 
   /// @dev Map of user addresses to their position status.
