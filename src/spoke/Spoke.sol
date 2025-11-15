@@ -1007,7 +1007,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
   /// @param drawnDebt The maximum amount of drawn debt that can be restored.
   /// @param premiumDebtRay The maximum amount of premium debt that can be restored, expressed in asset units and scaled by RAY.
   /// @param amount The amount to restore.
-  /// @return The amount of drawn debt to restore.
+  /// @return The amount of drawn debt to restore, expressed in asset units.
   /// @return The amount of premium debt to restore, expressed in asset units and scaled by RAY.
   function _calculateRestoreAmount(
     uint256 drawnDebt,
