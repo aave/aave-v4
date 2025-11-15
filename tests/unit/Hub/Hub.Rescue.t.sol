@@ -160,7 +160,7 @@ contract HubRescueTest is HubBase {
   }
 
   /// @dev Another spoke cannot improperly rescue liquidity fee without transferring underlying tokens
-  function test_cannot_rescue_liquidity_fee_reverts_with_InvalidAmountReceived() public {
+  function test_cannot_rescue_liquidity_fee_reverts_with_InsufficientTransferred() public {
     IERC20 underlying = IERC20(hub1.getAsset(daiAssetId).underlying);
 
     // spoke1, alice add dai
@@ -191,7 +191,7 @@ contract HubRescueTest is HubBase {
     // Cannot add liquidity fee amount without transferring underlying tokens
     vm.expectRevert(
       abi.encodeWithSelector(
-        IHub.InsufficientLiquidity.selector,
+        IHub.InsufficientTransferred.selector,
         hub1.getAssetLiquidity(daiAssetId) + liquidityFee
       )
     );
