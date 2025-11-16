@@ -1292,31 +1292,27 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
       precision = 0;
     }
 
-    // uint256 riskPremiumEventCount;
-    // for (uint256 i = 0; i < logs.length; i++) {
-    //   if (logs[i].topics[0] == ISpoke.UpdateUserRiskPremium.selector) {
-    //     riskPremiumEventCount += 1;
+    uint256 riskPremiumEventCount;
+    for (uint256 i = 0; i < logs.length; i++) {
+      if (logs[i].topics[0] == ISpoke.UpdateUserRiskPremium.selector) {
+        riskPremiumEventCount += 1;
 
-    //     assertEq(address(uint160(uint256(logs[i].topics[1]))), address(params.user));
-    //     uint256 actualUserRiskPremium = abi.decode(logs[i].data, (uint256));
-    //     assertApproxEqRel(
-    //       actualUserRiskPremium,
-    //       liquidationMetadata.expectedUserRiskPremium,
-    //       precision,
-    //       'user risk premium: event'
-    //     );
-    //   }
-    // }
+        assertEq(address(uint160(uint256(logs[i].topics[1]))), address(params.user));
+        uint256 actualUserRiskPremium = abi.decode(logs[i].data, (uint256));
+        assertApproxEqRel(
+          actualUserRiskPremium,
+          liquidationMetadata.expectedUserRiskPremium,
+          precision,
+          'user risk premium: event'
+        );
+      }
+    }
 
-    // uint256 riskPremiumEventExpectedCount = 1;
-    // if (
-    //   !accountsInfoBefore.hasPositiveRiskPremium &&
-    //   !accountsInfoAfter.hasPositiveRiskPremium &&
-    //   !liquidationMetadata.hasDeficit
-    // ) {
-    //   riskPremiumEventExpectedCount = 0;
-    // }
-    // assertEq(riskPremiumEventCount, riskPremiumEventExpectedCount, 'riskPremiumEventExpectedCount');
+    uint256 riskPremiumEventExpectedCount = 1;
+    if (!accountsInfoBefore.hasPositiveRiskPremium && !accountsInfoAfter.hasPositiveRiskPremium) {
+      riskPremiumEventExpectedCount = 0;
+    }
+    assertEq(riskPremiumEventCount, riskPremiumEventExpectedCount, 'riskPremiumEventExpectedCount');
 
     assertEq(
       accountsInfoAfter.hasPositiveRiskPremium,
