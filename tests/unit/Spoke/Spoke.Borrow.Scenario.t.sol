@@ -616,7 +616,7 @@ contract SpokeBorrowScenarioTest is SpokeBase {
     Utils.borrow(spoke1, debtReserveId, alice, debtBorrowAmount, alice);
 
     ISpoke.UserAccountData memory userAccountData = spoke1.getUserAccountData(alice);
-    assertEq(_calculateExpectedUserRP(alice, spoke1), userAccountData.riskPremium);
+    assertEq(_calculateExpectedUserRP(spoke1, alice), userAccountData.riskPremium);
     assertEq(coll2Value, userAccountData.totalCollateralValue); // coll1 is not included
   }
 }

@@ -138,7 +138,7 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
 
     // Check Bob's risk premium
     uint256 bobRp = _getUserRiskPremium(spoke2, bob);
-    assertEq(bobRp, _calculateExpectedUserRP(bob, spoke2), 'user risk premium Before');
+    assertEq(bobRp, _calculateExpectedUserRP(spoke2, bob), 'user risk premium Before');
 
     // Store base borrow rates
     Rates memory rates;
@@ -455,7 +455,7 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
         abi.encodeCall(Spoke.getUserTotalDebt, (_daiReserveId(spoke2), bob)),
         abi.encode(spoke2.getUserTotalDebt(_daiReserveId(spoke2), bob) + 1e18) // Debt amount seen in the borrow function when calculating user rp
       );
-      bobRp = _calculateExpectedUserRP(bob, spoke2);
+      bobRp = _calculateExpectedUserRP(spoke2, bob);
       vm.clearMockedCalls();
 
       // Bob borrows more dai to trigger accrual

@@ -95,7 +95,7 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
 
     assertEq(
       _getUserRiskPremium(spoke2, bob),
-      _calculateExpectedUserRP(bob, spoke2),
+      _calculateExpectedUserRP(spoke2, bob),
       'Bob user risk premium after repay'
     );
   }
@@ -163,7 +163,7 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
 
     assertEq(
       _getUserRiskPremium(spoke2, bob),
-      _calculateExpectedUserRP(bob, spoke2),
+      _calculateExpectedUserRP(spoke2, bob),
       'Bob user risk premium after disabling collateral'
     );
   }
@@ -242,7 +242,7 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
 
     assertEq(
       _getUserRiskPremium(spoke2, bob),
-      _calculateExpectedUserRP(bob, spoke2),
+      _calculateExpectedUserRP(spoke2, bob),
       'Bob user risk premium after withdrawing collateral'
     );
   }
@@ -354,7 +354,7 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
     );
     assertEq(
       _getUserRiskPremium(spoke2, bob),
-      _calculateExpectedUserRP(bob, spoke2),
+      _calculateExpectedUserRP(spoke2, bob),
       'Bob user risk premium after borrow matches expected'
     );
 
@@ -377,7 +377,7 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
     );
     assertEq(
       _getUserRiskPremium(spoke2, bob),
-      _calculateExpectedUserRP(bob, spoke2),
+      _calculateExpectedUserRP(spoke2, bob),
       'Bob user risk premium after interest accrual matches expected'
     );
   }
@@ -466,7 +466,7 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
     );
     assertEq(
       _getUserRiskPremium(spoke2, bob),
-      _calculateExpectedUserRP(bob, spoke2),
+      _calculateExpectedUserRP(spoke2, bob),
       'Bob user risk premium after borrow matches expected'
     );
 
@@ -490,7 +490,7 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
 
     assertEq(
       bobRiskPremium,
-      _calculateExpectedUserRP(bob, spoke2),
+      _calculateExpectedUserRP(spoke2, bob),
       'Bob user risk premium after collateral accrual matches expected'
     );
   }
@@ -573,7 +573,7 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
     );
     assertEq(
       _getUserRiskPremium(spoke2, bob),
-      _calculateExpectedUserRP(bob, spoke2),
+      _calculateExpectedUserRP(spoke2, bob),
       'Bob user risk premium after borrow matches expected'
     );
 
@@ -612,7 +612,7 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
     assertGt(bobRiskPremium, _getCollateralRisk(spoke2, _daiReserveId(spoke2)));
     assertEq(
       bobRiskPremium,
-      _calculateExpectedUserRP(bob, spoke2),
+      _calculateExpectedUserRP(spoke2, bob),
       'Bob user risk premium after collateral accrual matches expected'
     );
   }
@@ -681,7 +681,7 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
     );
     assertEq(
       _getUserRiskPremium(spoke2, bob),
-      _calculateExpectedUserRP(bob, spoke2),
+      _calculateExpectedUserRP(spoke2, bob),
       'Bob user risk premium after borrow matches expected'
     );
 
@@ -713,7 +713,7 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
 
     assertEq(
       _getUserRiskPremium(spoke2, bob),
-      _calculateExpectedUserRP(bob, spoke2),
+      _calculateExpectedUserRP(spoke2, bob),
       'Bob user risk premium after borrowing more matches expected'
     );
   }
@@ -777,7 +777,7 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
     );
     assertEq(
       _getUserRiskPremium(spoke1, bob),
-      _calculateExpectedUserRP(bob, spoke1),
+      _calculateExpectedUserRP(spoke1, bob),
       'Bob user risk premium after borrow matches expected'
     );
 
@@ -798,7 +798,7 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
     );
     assertEq(
       _getUserRiskPremium(spoke1, bob),
-      _calculateExpectedUserRP(bob, spoke1),
+      _calculateExpectedUserRP(spoke1, bob),
       'Bob user risk premium after supplying lower collateral-risk reserve matches expected'
     );
   }
@@ -862,7 +862,7 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
     );
     assertEq(
       _getUserRiskPremium(spoke2, bob),
-      _calculateExpectedUserRP(bob, spoke2),
+      _calculateExpectedUserRP(spoke2, bob),
       'Bob user risk premium after borrow matches expected'
     );
 
@@ -882,7 +882,7 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
     );
     assertEq(
       _getUserRiskPremium(spoke2, bob),
-      _calculateExpectedUserRP(bob, spoke2),
+      _calculateExpectedUserRP(spoke2, bob),
       'Bob user risk premium after price change matches expected'
     );
   }

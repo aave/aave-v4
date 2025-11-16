@@ -164,7 +164,7 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
     uint256 usdxSupplyValue = _getValue(spoke1, reservesIds.usdx, vars.usdxSupplyAmount);
     assertLt(daiDebtValue, usdxSupplyValue);
 
-    vars.expectedUserRiskPremium = _calculateExpectedUserRP(alice, spoke1);
+    vars.expectedUserRiskPremium = _calculateExpectedUserRP(spoke1, alice);
 
     assertEq(
       _getUserRiskPremium(spoke1, alice),
@@ -192,7 +192,7 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
 
     assertEq(
       _getUserRiskPremium(spoke1, alice),
-      _calculateExpectedUserRP(alice, spoke1),
+      _calculateExpectedUserRP(spoke1, alice),
       'user risk premium after weth supply'
     );
 
@@ -256,8 +256,8 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
     Utils.borrow(spoke1, usdxInfo.reserveId, alice, aliceUsdxInfo.borrowAmount, alice);
 
     ExpectedUserRp memory expectedUserRp;
-    expectedUserRp.bobRiskPremium = _calculateExpectedUserRP(bob, spoke1);
-    expectedUserRp.aliceRiskPremium = _calculateExpectedUserRP(alice, spoke1);
+    expectedUserRp.bobRiskPremium = _calculateExpectedUserRP(spoke1, bob);
+    expectedUserRp.aliceRiskPremium = _calculateExpectedUserRP(spoke1, alice);
 
     assertEq(_getUserRiskPremium(spoke1, bob), expectedUserRp.bobRiskPremium, 'bob risk premium');
     assertEq(
@@ -346,12 +346,12 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
     // Ensure the calculated risk premium would match
     assertEq(
       _getUserRiskPremium(spoke1, bob),
-      _calculateExpectedUserRP(bob, spoke1),
+      _calculateExpectedUserRP(spoke1, bob),
       'bob risk premium after time skip'
     );
     assertEq(
       _getUserRiskPremium(spoke1, alice),
-      _calculateExpectedUserRP(alice, spoke1),
+      _calculateExpectedUserRP(spoke1, alice),
       'alice risk premium after time skip'
     );
 
@@ -476,7 +476,7 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
       'alice usdx premium drawn shares after repay should not match'
     );
 
-    expectedUserRp.aliceRiskPremium = _calculateExpectedUserRP(alice, spoke1);
+    expectedUserRp.aliceRiskPremium = _calculateExpectedUserRP(spoke1, alice);
     assertEq(
       _getUserRiskPremium(spoke1, alice),
       expectedUserRp.aliceRiskPremium,
@@ -642,8 +642,8 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
     }
 
     // Calculate expected risk premiums
-    uint256 bobExpectedRiskPremium = _calculateExpectedUserRP(bob, spoke1);
-    uint256 aliceExpectedRiskPremium = _calculateExpectedUserRP(alice, spoke1);
+    uint256 bobExpectedRiskPremium = _calculateExpectedUserRP(spoke1, bob);
+    uint256 aliceExpectedRiskPremium = _calculateExpectedUserRP(spoke1, alice);
 
     // Verify initial risk premiums
     assertEq(_getUserRiskPremium(spoke1, bob), bobExpectedRiskPremium, 'bob initial risk premium');
@@ -794,7 +794,7 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
       Utils.repay(spoke1, _daiReserveId(spoke1), bob, repayAmount, bob);
 
       // Bob's risk premium should change
-      bobExpectedRiskPremium = _calculateExpectedUserRP(bob, spoke1);
+      bobExpectedRiskPremium = _calculateExpectedUserRP(spoke1, bob);
 
       // Verify his new risk premium
       assertEq(
@@ -834,7 +834,7 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
       Utils.borrow(spoke1, _usdxReserveId(spoke1), alice, additionalBorrow, alice);
 
       // Alice's risk premium should change
-      aliceExpectedRiskPremium = _calculateExpectedUserRP(alice, spoke1);
+      aliceExpectedRiskPremium = _calculateExpectedUserRP(spoke1, alice);
 
       // Verify her new risk premium
       assertEq(
@@ -943,7 +943,7 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
     // Check bob's user risk premium
     assertEq(
       _getUserRiskPremium(spoke1, bob),
-      _calculateExpectedUserRP(bob, spoke1),
+      _calculateExpectedUserRP(spoke1, bob),
       'user risk premium'
     );
 
@@ -953,7 +953,7 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
     // Recheck bob's user risk premium
     assertEq(
       _getUserRiskPremium(spoke1, bob),
-      _calculateExpectedUserRP(bob, spoke1),
+      _calculateExpectedUserRP(spoke1, bob),
       'user risk premium after time skip'
     );
   }
