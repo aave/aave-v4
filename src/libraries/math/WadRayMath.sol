@@ -171,6 +171,14 @@ library WadRayMath {
     }
   }
 
+  /// @notice Removes RAY precision from a given value, rounding down.
+  /// @return b = a / RAY.
+  function fromRayDown(uint256 a) internal pure returns (uint256 b) {
+    assembly ('memory-safe') {
+      b := div(a, RAY)
+    }
+  }
+
   /// @notice Converts value from basis points to WAD, rounding down.
   /// @dev Reverts if intermediate multiplication overflows.
   /// @return b = floor(a * WAD / PERCENTAGE_FACTOR) in WAD units.

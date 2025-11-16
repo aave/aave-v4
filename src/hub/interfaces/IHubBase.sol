@@ -71,15 +71,15 @@ interface IHubBase {
   /// @param spoke The address of the spoke.
   /// @param drawnShares The amount of drawn shares reported as deficit.
   /// @param premiumDelta The premium delta data struct.
-  /// @param drawnAmount The amount of drawn assets reported as deficit.
-  /// @param premiumAmount The amount of premium assets reported as deficit.
+  /// @param drawnAmount The amount of drawn assets reported as deficit, expressed in asset units.
+  /// @param premiumAmountRay The amount of premium assets reported as deficit, expressed in asset units and scaled by RAY.
   event ReportDeficit(
     uint256 indexed assetId,
     address indexed spoke,
     uint256 drawnShares,
     PremiumDelta premiumDelta,
     uint256 drawnAmount,
-    uint256 premiumAmount
+    uint256 premiumAmountRay
   );
 
   /// @notice Emitted on the `transferShares` action.
@@ -269,10 +269,10 @@ interface IHubBase {
   /// @return The amount of available liquidity.
   function getAssetLiquidity(uint256 assetId) external view returns (uint256);
 
-  /// @notice Returns the amount of deficit of the specified asset.
+  /// @notice Returns the amount of deficit with full precision of the specified asset.
   /// @param assetId The identifier of the asset.
-  /// @return The amount of deficit.
-  function getAssetDeficit(uint256 assetId) external view returns (uint256);
+  /// @return The amount of deficit, expressed in asset units and scaled by RAY.
+  function getAssetDeficitRay(uint256 assetId) external view returns (uint256);
 
   /// @notice Returns the total amount of the specified assets added to the Hub by the specified spoke.
   /// @dev If spoke is `asset.feeReceiver`, includes converted `unrealizedFeeShares` in return value.
@@ -324,9 +324,9 @@ interface IHubBase {
     address spoke
   ) external view returns (uint256, uint256, uint256);
 
-  /// @notice Returns the amount of a given spoke's deficit for the specified asset.
+  /// @notice Returns the amount of a given spoke's deficit with full precision for the specified asset.
   /// @param assetId The identifier of the asset.
   /// @param spoke The address of the spoke.
-  /// @return The amount of deficit.
-  function getSpokeDeficit(uint256 assetId, address spoke) external view returns (uint256);
+  /// @return The amount of deficit, expressed in asset units and scaled by RAY.
+  function getSpokeDeficitRay(uint256 assetId, address spoke) external view returns (uint256);
 }

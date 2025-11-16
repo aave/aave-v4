@@ -13,7 +13,7 @@ interface IHub is IHubBase, IAccessManaged {
   /// @dev liquidity The liquidity available to be accessed, expressed in asset units.
   /// @dev realizedFees The amount of fees realized but not yet minted, expressed in asset units.
   /// @dev decimals The number of decimals of the underlying asset.
-  /// @dev deficit The amount of outstanding bad debt across all spokes, expressed in asset units.
+  /// @dev addedShares The total shares added across all spokes.
   /// @dev swept The outstanding liquidity which has been invested by the reinvestment controller, expressed in asset units.
   /// @dev realizedPremiumRay The interest-free premium already accrued across all spokes, expressed in asset units and scaled by RAY.
   /// @dev premiumOffsetRay The total premium offset across all spokes, used to calculate the premium, expressed in asset units and scaled by RAY.
@@ -27,13 +27,13 @@ interface IHub is IHubBase, IAccessManaged {
   /// @dev irStrategy The address of the interest rate strategy.
   /// @dev reinvestmentController The address of the reinvestment controller.
   /// @dev feeReceiver The address of the fee receiver spoke.
-  /// @dev addedShares The total shares added across all spokes.
+  /// @dev deficitRay The amount of outstanding bad debt across all spokes, expressed in asset units and scaled by RAY.
   struct Asset {
     uint120 liquidity;
     uint120 realizedFees;
     uint8 decimals;
     //
-    uint120 deficit;
+    uint120 addedShares;
     uint120 swept;
     //
     uint200 realizedPremiumRay;
@@ -56,7 +56,7 @@ interface IHub is IHubBase, IAccessManaged {
     //
     address feeReceiver;
     //
-    uint120 addedShares;
+    uint200 deficitRay;
   }
 
   /// @notice Asset configuration. Subset of the `Asset` struct.
@@ -78,7 +78,7 @@ interface IHub is IHubBase, IAccessManaged {
   /// @dev riskPremiumThreshold The maximum ratio of premium to drawn shares a spoke can have, expressed in BPS. A value of `MAX_RISK_PREMIUM_THRESHOLD` indicates no threshold.
   /// @dev active True if the spoke is prevented from performing any actions.
   /// @dev paused True if the spoke is prevented from performing actions that instantly update the liquidity.
-  /// @dev deficit The deficit reported by a spoke for a given asset, expressed in asset units.
+  /// @dev deficitRay The deficit reported by a spoke for a given asset, expressed in asset units and scaled by RAY.
   struct SpokeData {
     uint120 drawnShares;
     uint120 premiumShares;
@@ -94,7 +94,7 @@ interface IHub is IHubBase, IAccessManaged {
     bool active;
     bool paused;
     //
-    uint120 deficit;
+    uint200 deficitRay;
   }
 
   /// @notice Spoke configuration data. Subset of the `SpokeData` struct.
