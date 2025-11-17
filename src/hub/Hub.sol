@@ -214,7 +214,7 @@ contract Hub is IHub, AccessManaged {
 
     uint256 liquidity = asset.liquidity + amount;
     uint256 balance = asset.underlying.balanceOf(address(this));
-    require(balance >= liquidity, InsufficientTransferred(liquidity - balance));
+    require(balance >= liquidity, InsufficientTransferred(liquidity.uncheckedSub(balance)));
     uint120 shares = asset.toAddedSharesDown(amount).toUint120();
     require(shares > 0, InvalidShares());
     asset.addedShares += shares;
@@ -298,7 +298,7 @@ contract Hub is IHub, AccessManaged {
 
     uint256 liquidity = asset.liquidity + drawnAmount + premiumAmount;
     uint256 balance = asset.underlying.balanceOf(address(this));
-    require(balance >= liquidity, InsufficientTransferred(liquidity - balance));
+    require(balance >= liquidity, InsufficientTransferred(liquidity.uncheckedSub(balance)));
     asset.liquidity = liquidity.toUint120();
 
     asset.updateDrawnRate(assetId);

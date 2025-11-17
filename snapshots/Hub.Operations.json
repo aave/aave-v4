@@ -1,6 +1,6 @@
 {
-  "add": "87849",
-  "add: with transfer": "109456",
+  "add": "87780",
+  "add: with transfer": "109387",
   "draw": "120583",
   "eliminateDeficit: full": "59756",
   "eliminateDeficit: partial": "69332",
@@ -10,9 +10,9 @@
   "remove: full": "76661",
   "remove: partial": "81308",
   "reportDeficit": "112658",
-  "restore: full": "77746",
-  "restore: full - with transfer": "145684",
-  "restore: partial": "86376",
-  "restore: partial - with transfer": "136009",
+  "restore: full": "77677",
+  "restore: full - with transfer": "145615",
+  "restore: partial": "86307",
+  "restore: partial - with transfer": "135940",
   "transferShares": "67922"
 }
