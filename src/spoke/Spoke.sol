@@ -211,11 +211,6 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     uint256 suppliedShares = reserve.hub.add(reserve.assetId, amount);
     userPosition.suppliedShares += suppliedShares.toUint120();
 
-    if (_positionStatus[onBehalfOf].isUsingAsCollateral(reserveId)) {
-      uint256 newRiskPremium = _calculateUserAccountData(onBehalfOf).riskPremium;
-      _notifyRiskPremiumUpdate(onBehalfOf, newRiskPremium);
-    }
-
     emit Supply(reserveId, msg.sender, onBehalfOf, suppliedShares, amount);
 
     return (suppliedShares, amount);
@@ -405,14 +400,12 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     }
     positionStatus.setUsingAsCollateral(reserveId, usingAsCollateral);
 
-    uint256 newRiskPremium;
     if (usingAsCollateral) {
       _refreshDynamicConfig(onBehalfOf, reserveId);
-      newRiskPremium = _calculateUserAccountData(onBehalfOf).riskPremium;
     } else {
-      newRiskPremium = _refreshAndValidateUserAccountData(onBehalfOf).riskPremium;
+      uint256 newRiskPremium = _refreshAndValidateUserAccountData(onBehalfOf).riskPremium;
+      _notifyRiskPremiumUpdate(onBehalfOf, newRiskPremium);
     }
-    _notifyRiskPremiumUpdate(onBehalfOf, newRiskPremium);
 
     emit SetUsingAsCollateral(reserveId, msg.sender, onBehalfOf, usingAsCollateral);
   }
@@ -789,25 +782,18 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
         .fromBpsDown();
     }
 
-    uint256 debtValueLeftToCover = accountData.totalDebtValue;
-    if (
-      debtValueLeftToCover == 0 || accountData.healthFactor < HEALTH_FACTOR_LIQUIDATION_THRESHOLD
-    ) {
-      // riskPremium is 0 when user has no debt or is unhealthy
-      return accountData;
-    }
     collateralInfo.sortByKey(); // sort by collateral risk in ASC, collateral value in DESC
-
+    uint256 debtValueLeftToCover = accountData.totalDebtValue;
     // runs until either the collateral or debt is exhausted
     for (uint256 index = 0; index < collateralInfo.length(); ++index) {
       (uint256 collateralRisk, uint256 userCollateralValue) = collateralInfo.get(index);
-      userCollateralValue = userCollateralValue.min(debtValueLeftToCover);
-      accountData.riskPremium += userCollateralValue * collateralRisk;
-      debtValueLeftToCover = debtValueLeftToCover.uncheckedSub(userCollateralValue);
-
       if (debtValueLeftToCover == 0) {
         break;
       }
+
+      userCollateralValue = userCollateralValue.min(debtValueLeftToCover);
+      accountData.riskPremium += userCollateralValue * collateralRisk;
+      debtValueLeftToCover = debtValueLeftToCover.uncheckedSub(userCollateralValue);
     }
 
     if (debtValueLeftToCover < accountData.totalDebtValue) {
