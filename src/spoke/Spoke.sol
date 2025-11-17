@@ -210,10 +210,10 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     uint256 suppliedShares = reserve.hub.add(reserve.assetId, amount);
     userPosition.suppliedShares += suppliedShares.toUint120();
 
-    // if (_positionStatus[onBehalfOf].isUsingAsCollateral(reserveId)) {
-    //   uint256 newRiskPremium = _calculateUserAccountData(onBehalfOf).riskPremium;
-    //   _notifyRiskPremiumUpdate(onBehalfOf, newRiskPremium);
-    // }
+    if (_positionStatus[onBehalfOf].isUsingAsCollateral(reserveId)) {
+      uint256 newRiskPremium = _calculateUserAccountData(onBehalfOf).riskPremium;
+      _notifyRiskPremiumUpdate(onBehalfOf, newRiskPremium);
+    }
 
     emit Supply(reserveId, msg.sender, onBehalfOf, suppliedShares, amount);
 
@@ -405,14 +405,14 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     }
     positionStatus.setUsingAsCollateral(reserveId, usingAsCollateral);
 
-    // uint256 newRiskPremium;
+    uint256 newRiskPremium;
     if (usingAsCollateral) {
       _refreshDynamicConfig(onBehalfOf, reserveId);
-      // newRiskPremium = _calculateUserAccountData(onBehalfOf).riskPremium;
+      newRiskPremium = _calculateUserAccountData(onBehalfOf).riskPremium;
     } else {
-      uint256 newRiskPremium = _refreshAndValidateUserAccountData(onBehalfOf).riskPremium;
-      _notifyRiskPremiumUpdate(onBehalfOf, newRiskPremium);
+      newRiskPremium = _refreshAndValidateUserAccountData(onBehalfOf).riskPremium;
     }
+    _notifyRiskPremiumUpdate(onBehalfOf, newRiskPremium);
 
     emit SetUsingAsCollateral(reserveId, msg.sender, onBehalfOf, usingAsCollateral);
   }
@@ -542,6 +542,18 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
   }
 
   /// @inheritdoc ISpoke
+  function getReserveConfig(uint256 reserveId) external view returns (ReserveConfig memory) {
+    Reserve storage reserve = _getReserve(reserveId);
+    return
+      ReserveConfig({
+        paused: reserve.paused,
+        frozen: reserve.frozen,
+        borrowable: reserve.borrowable,
+        collateralRisk: reserve.collateralRisk
+      });
+  }
+
+  /// @inheritdoc ISpoke
   function getDynamicReserveConfig(
     uint256 reserveId,
     uint24 dynamicConfigKey
@@ -551,15 +563,13 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
   }
 
   /// @inheritdoc ISpoke
-  function isUsingAsCollateral(uint256 reserveId, address user) external view returns (bool) {
+  function isCollateralOrBorrowed(
+    uint256 reserveId,
+    address user
+  ) external view returns (bool, bool) {
     _getReserve(reserveId);
-    return _positionStatus[user].isUsingAsCollateral(reserveId);
-  }
-
-  /// @inheritdoc ISpoke
-  function isBorrowing(uint256 reserveId, address user) external view returns (bool) {
-    _getReserve(reserveId);
-    return _positionStatus[user].isBorrowing(reserveId);
+    PositionStatus storage positionStatus = _positionStatus[user];
+    return (positionStatus.isUsingAsCollateral(reserveId), positionStatus.isBorrowing(reserveId));
   }
 
   /// @inheritdoc ISpokeBase

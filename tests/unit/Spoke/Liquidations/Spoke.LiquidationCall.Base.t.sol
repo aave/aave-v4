@@ -342,7 +342,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
 
     uint256 index = 0;
     for (uint256 reserveId = 0; reserveId < params.spoke.getReserveCount(); reserveId++) {
-      if (!params.spoke.isUsingAsCollateral(reserveId, params.user)) {
+      if (!isUsingAsCollateral(params.spoke, params.user, reserveId)) {
         continue;
       }
 
@@ -491,7 +491,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
 
     {
       for (uint256 reserveId = 0; reserveId < params.spoke.getReserveCount(); reserveId++) {
-        if (params.spoke.isBorrowing(reserveId, params.user)) {
+        if (isBorrowing(params.spoke, params.user, reserveId)) {
           vars.userReservePosition = params.spoke.getUserPosition(reserveId, params.user);
           uint256 assetId = _assetId(params.spoke, reserveId);
           if (reserveId == params.debtReserveId) {
@@ -735,12 +735,13 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
     LiquidationMetadata memory liquidationMetadata
   ) internal virtual {
     assertEq(
-      params.spoke.isUsingAsCollateral(params.collateralReserveId, params.user),
+      isUsingAsCollateral(params.spoke, params.user, params.collateralReserveId),
       true,
       'user position status: using as collateral'
     );
     assertEq(
-      params.spoke.isBorrowing(params.debtReserveId, params.user) || liquidationMetadata.hasDeficit,
+      isBorrowing(params.spoke, params.user, params.debtReserveId) ||
+        liquidationMetadata.hasDeficit,
       liquidationMetadata.debtToLiquidate < accountsInfoBefore.userBalanceInfo.borrowedFromSpoke,
       'user position status: borrowing'
     );
@@ -1316,7 +1317,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
     );
 
     for (uint256 reserveId = 0; reserveId < params.spoke.getReserveCount(); reserveId++) {
-      if (params.spoke.isBorrowing(reserveId, params.user)) {
+      if (isBorrowing(params.spoke, params.user, reserveId)) {
         ISpoke.UserPosition memory userPosition = params.spoke.getUserPosition(
           reserveId,
           params.user

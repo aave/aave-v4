@@ -176,9 +176,9 @@ contract SpokePositionManagerTest is SpokeBase {
 
     assertEq(spoke1.getUserPosition(reserveId, POSITION_MANAGER), posBefore);
     assertEq(spoke1.getUserTotalDebt(reserveId, POSITION_MANAGER), 0);
-    assertFalse(spoke1.isBorrowing(reserveId, POSITION_MANAGER));
+    assertFalse(isBorrowing(spoke1, POSITION_MANAGER, reserveId));
     assertEq(spoke1.getUserTotalDebt(reserveId, alice), amount);
-    assertTrue(spoke1.isBorrowing(reserveId, alice));
+    assertTrue(isBorrowing(spoke1, alice, reserveId));
 
     _disablePositionManager();
     vm.expectRevert(ISpoke.Unauthorized.selector);
@@ -223,15 +223,15 @@ contract SpokePositionManagerTest is SpokeBase {
     assertEq(spoke1.getUserPosition(reserveId, POSITION_MANAGER), posBefore);
     assertEq(spoke1.getUserTotalDebt(reserveId, POSITION_MANAGER), 0);
     assertEq(spoke1.getUserTotalDebt(reserveId, alice), amount - repayAmount);
-    assertFalse(spoke1.isBorrowing(reserveId, POSITION_MANAGER));
-    assertTrue(spoke1.isBorrowing(reserveId, alice));
+    assertFalse(isBorrowing(spoke1, POSITION_MANAGER, reserveId));
+    assertTrue(isBorrowing(spoke1, alice, reserveId));
 
     Utils.repay(spoke1, reserveId, POSITION_MANAGER, type(uint256).max, alice);
     assertEq(spoke1.getUserPosition(reserveId, POSITION_MANAGER), posBefore);
     assertEq(spoke1.getUserTotalDebt(reserveId, POSITION_MANAGER), 0);
     assertEq(spoke1.getUserTotalDebt(reserveId, alice), 0);
-    assertFalse(spoke1.isBorrowing(reserveId, POSITION_MANAGER));
-    assertFalse(spoke1.isBorrowing(reserveId, alice));
+    assertFalse(isBorrowing(spoke1, POSITION_MANAGER, reserveId));
+    assertFalse(isBorrowing(spoke1, alice, reserveId));
 
     _disablePositionManager();
     vm.expectRevert(ISpoke.Unauthorized.selector);
@@ -240,7 +240,7 @@ contract SpokePositionManagerTest is SpokeBase {
 
   function test_onlyPositionManager_on_usingAsCollateral() public {
     uint256 reserveId = _usdxReserveId(spoke1);
-    assertFalse(spoke1.isUsingAsCollateral(reserveId, alice));
+    assertFalse(isUsingAsCollateral(spoke1, alice, reserveId));
 
     bool usingAsCollateral = true;
 
@@ -253,7 +253,7 @@ contract SpokePositionManagerTest is SpokeBase {
     emit ISpoke.SetUsingAsCollateral(reserveId, POSITION_MANAGER, alice, usingAsCollateral);
     Utils.setUsingAsCollateral(spoke1, reserveId, POSITION_MANAGER, usingAsCollateral, alice);
 
-    assertEq(spoke1.isUsingAsCollateral(reserveId, alice), usingAsCollateral);
+    assertEq(isUsingAsCollateral(spoke1, alice, reserveId), usingAsCollateral);
 
     _disablePositionManager();
     vm.expectRevert(ISpoke.Unauthorized.selector);

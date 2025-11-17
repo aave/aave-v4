@@ -81,7 +81,7 @@ contract NativeTokenGatewayTest is SpokeBase {
     assertEq(tokenList.weth.balanceOf(address(hub1)), prevHubBalance + amount);
     _checkFinalBalances();
 
-    assertFalse(spoke1.isUsingAsCollateral(_wethReserveId(spoke1), bob));
+    assertFalse(isUsingAsCollateral(spoke1, bob, _wethReserveId(spoke1)));
   }
 
   function test_supplyNative_revertsWith_SpokeNotRegistered() public {
@@ -163,7 +163,7 @@ contract NativeTokenGatewayTest is SpokeBase {
     assertEq(tokenList.weth.balanceOf(address(hub1)), prevHubBalance + amount);
     _checkFinalBalances();
 
-    assertTrue(spoke1.isUsingAsCollateral(_wethReserveId(spoke1), bob));
+    assertTrue(isUsingAsCollateral(spoke1, bob, _wethReserveId(spoke1)));
   }
 
   function test_withdrawNative() public {

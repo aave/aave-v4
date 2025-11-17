@@ -160,7 +160,10 @@ contract SpokeConfigTest is SpokeBase {
     );
 
     assertEq(spoke1.getReserveConfig(reserveId), newReserveConfig);
-    assertEq(spoke1.getDynamicReserveConfig(reserveId), newDynReserveConfig);
+    assertEq(
+      spoke1.getDynamicReserveConfig(reserveId, getReserveLastDynamicConfigKey(spoke1, reserveId)),
+      newDynReserveConfig
+    );
   }
 
   function test_addReserve_fuzz_revertsWith_AssetNotListed() public {

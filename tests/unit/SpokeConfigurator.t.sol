@@ -383,7 +383,8 @@ contract SpokeConfiguratorTest is SpokeBase {
     uint16 newCollateralFactor = PercentageMath.PERCENTAGE_FACTOR.toUint16() / 2;
 
     ISpoke.DynamicReserveConfig memory expectedDynamicReserveConfig = spoke.getDynamicReserveConfig(
-      reserveId
+      reserveId,
+      getReserveLastDynamicConfigKey(spoke, reserveId)
     );
     expectedDynamicReserveConfig.collateralFactor = newCollateralFactor;
 
@@ -404,7 +405,10 @@ contract SpokeConfiguratorTest is SpokeBase {
 
     assertEq(dynamicConfigKey, expectedConfigKey);
     assertEq(spoke.getReserve(reserveId).dynamicConfigKey, expectedConfigKey);
-    assertEq(spoke.getDynamicReserveConfig(reserveId), expectedDynamicReserveConfig);
+    assertEq(
+      spoke.getDynamicReserveConfig(reserveId, getReserveLastDynamicConfigKey(spoke, reserveId)),
+      expectedDynamicReserveConfig
+    );
   }
 
   function test_updateCollateralFactor_revertsWith_OwnableUnauthorizedAccount() public {
@@ -461,7 +465,8 @@ contract SpokeConfiguratorTest is SpokeBase {
     uint32 newLiquidationBonus = PercentageMath.PERCENTAGE_FACTOR.toUint32() + 1;
 
     ISpoke.DynamicReserveConfig memory expectedDynamicReserveConfig = spoke.getDynamicReserveConfig(
-      reserveId
+      reserveId,
+      getReserveLastDynamicConfigKey(spoke, reserveId)
     );
     expectedDynamicReserveConfig.maxLiquidationBonus = newLiquidationBonus;
 
@@ -482,7 +487,10 @@ contract SpokeConfiguratorTest is SpokeBase {
 
     assertEq(dynamicConfigKey, expectedConfigKey);
     assertEq(spoke.getReserve(reserveId).dynamicConfigKey, expectedConfigKey);
-    assertEq(spoke.getDynamicReserveConfig(reserveId), expectedDynamicReserveConfig);
+    assertEq(
+      spoke.getDynamicReserveConfig(reserveId, getReserveLastDynamicConfigKey(spoke, reserveId)),
+      expectedDynamicReserveConfig
+    );
   }
 
   function test_updateMaxLiquidationBonus_revertsWith_OwnableUnauthorizedAccount() public {
@@ -539,7 +547,8 @@ contract SpokeConfiguratorTest is SpokeBase {
     uint16 newLiquidationFee = PercentageMath.PERCENTAGE_FACTOR.toUint16() / 2;
 
     ISpoke.DynamicReserveConfig memory expectedDynamicReserveConfig = spoke.getDynamicReserveConfig(
-      reserveId
+      reserveId,
+      getReserveLastDynamicConfigKey(spoke, reserveId)
     );
     expectedDynamicReserveConfig.liquidationFee = newLiquidationFee;
 
@@ -560,7 +569,10 @@ contract SpokeConfiguratorTest is SpokeBase {
 
     assertEq(dynamicConfigKey, expectedConfigKey);
     assertEq(spoke.getReserve(reserveId).dynamicConfigKey, expectedConfigKey);
-    assertEq(spoke.getDynamicReserveConfig(reserveId), expectedDynamicReserveConfig);
+    assertEq(
+      spoke.getDynamicReserveConfig(reserveId, getReserveLastDynamicConfigKey(spoke, reserveId)),
+      expectedDynamicReserveConfig
+    );
   }
 
   function test_updateLiquidationFee_revertsWith_OwnableUnauthorizedAccount() public {
@@ -643,7 +655,10 @@ contract SpokeConfiguratorTest is SpokeBase {
       newDynamicReserveConfig
     );
 
-    assertEq(spoke.getDynamicReserveConfig(reserveId), newDynamicReserveConfig);
+    assertEq(
+      spoke.getDynamicReserveConfig(reserveId, getReserveLastDynamicConfigKey(spoke, reserveId)),
+      newDynamicReserveConfig
+    );
     assertEq(actualConfigKey, expectedConfigKey);
   }
 

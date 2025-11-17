@@ -437,13 +437,6 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
   /// @param reserveId The identifier of the reserve.
   function getReserveConfig(uint256 reserveId) external view returns (ReserveConfig memory);
 
-  /// @notice Returns the dynamic reserve configuration struct data in storage.
-  /// @dev It reverts if the reserve associated with the given reserve identifier is not listed.
-  /// @param reserveId The identifier of the reserve.
-  function getDynamicReserveConfig(
-    uint256 reserveId
-  ) external view returns (DynamicReserveConfig memory);
-
   /// @notice Returns the dynamic reserve configuration struct at the specified key.
   /// @dev It reverts if the reserve associated with the given reserve identifier is not listed.
   /// @dev Does not revert if `dynamicConfigKey` is unset.
@@ -454,18 +447,17 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
     uint24 dynamicConfigKey
   ) external view returns (DynamicReserveConfig memory);
 
-  /// @notice Returns true if the reserve is set as collateral for the user.
+  /// @notice Returns a pair of flags if the reserve is set as collateral and as borrowed for the user.
   /// @dev It reverts if the reserve associated with the given reserve identifier is not listed.
   /// @dev Even if enabled as collateral, it will only count towards user position if the collateral factor is greater than 0.
   /// @param reserveId The identifier of the reserve.
   /// @param user The address of the user.
-  function isUsingAsCollateral(uint256 reserveId, address user) external view returns (bool);
-
-  /// @notice Returns true if the user is borrowing the reserve.
-  /// @dev It reverts if the reserve associated with the given reserve identifier is not listed.
-  /// @param reserveId The identifier of the reserve.
-  /// @param user The address of the user.
-  function isBorrowing(uint256 reserveId, address user) external view returns (bool);
+  /// @return True if the reserve is enabled as collateral for the user.
+  /// @return True if the reserve is borrowed by the user.
+  function isCollateralOrBorrowed(
+    uint256 reserveId,
+    address user
+  ) external view returns (bool, bool);
 
   /// @notice Returns the user position struct in storage.
   /// @dev It reverts if the reserve associated with the given reserve identifier is not listed.
