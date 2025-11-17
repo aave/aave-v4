@@ -1226,7 +1226,6 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
     LiquidationMetadata memory liquidationMetadata,
     Vm.Log[] memory logs
   ) internal view {
-    uint256 precision = 0.1e18;
     uint256 riskPremiumEventCount;
     for (uint256 i = 0; i < logs.length; i++) {
       if (logs[i].topics[0] == ISpoke.UpdateUserRiskPremium.selector) {
@@ -1237,7 +1236,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
         assertApproxEqRel(
           actualUserRiskPremium,
           liquidationMetadata.expectedUserRiskPremium,
-          precision,
+          0.1e18,
           'user risk premium: event'
         );
       }
