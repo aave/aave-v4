@@ -355,19 +355,20 @@ contract Hub is IHub, AccessManaged {
     _validateEliminateDeficit(callerSpoke, amount);
 
     uint256 deficitRay = coveredSpoke.deficitRay;
+    uint256 deficitAmountRay = deficitRay;
     if (amount < deficitRay.fromRayUp()) {
-      deficitRay = amount.toRay();
+      deficitAmountRay = amount.toRay();
     }
 
-    uint120 shares = asset.toAddedSharesUp(amount).toUint120();
+    uint120 shares = asset.toAddedSharesUp(deficitAmountRay).toUint120();
     asset.addedShares -= shares;
     callerSpoke.addedShares -= shares;
-    asset.deficitRay -= amount.toRay().toUint200();
-    coveredSpoke.deficitRay = uint256(deficitRay).uncheckedSub(amount.toRay()).toUint200();
+    asset.deficitRay -= deficitAmountRay.toUint200();
+    coveredSpoke.deficitRay = deficitRay.uncheckedSub(deficitAmountRay).toUint200();
 
     asset.updateDrawnRate(assetId);
 
-    emit EliminateDeficit(assetId, msg.sender, spoke, shares, amount);
+    emit EliminateDeficit(assetId, msg.sender, spoke, shares, deficitAmountRay);
 
     return shares;
   }

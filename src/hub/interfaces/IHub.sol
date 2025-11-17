@@ -169,13 +169,13 @@ interface IHub is IHubBase, IAccessManaged {
   /// @param callerSpoke The spoke that eliminated the deficit using its supplied shares.
   /// @param coveredSpoke The spoke for which the deficit was eliminated.
   /// @param shares The amount of shares removed.
-  /// @param amount The amount of deficit eliminated.
+  /// @param deficitAmountRay The amount of deficit eliminated, expressed in asset units and scaled by RAY.
   event EliminateDeficit(
     uint256 indexed assetId,
     address indexed callerSpoke,
     address indexed coveredSpoke,
     uint256 shares,
-    uint256 amount
+    uint256 deficitAmountRay
   );
 
   /// @notice Thrown when an underlying asset is already listed.
