@@ -210,10 +210,10 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     uint256 suppliedShares = reserve.hub.add(reserve.assetId, amount);
     userPosition.suppliedShares += suppliedShares.toUint120();
 
-    if (_positionStatus[onBehalfOf].isUsingAsCollateral(reserveId)) {
-      uint256 newRiskPremium = _calculateUserAccountData(onBehalfOf).riskPremium;
-      _notifyRiskPremiumUpdate(onBehalfOf, newRiskPremium);
-    }
+    // if (_positionStatus[onBehalfOf].isUsingAsCollateral(reserveId)) {
+    //   uint256 newRiskPremium = _calculateUserAccountData(onBehalfOf).riskPremium;
+    //   _notifyRiskPremiumUpdate(onBehalfOf, newRiskPremium);
+    // }
 
     emit Supply(reserveId, msg.sender, onBehalfOf, suppliedShares, amount);
 
@@ -405,14 +405,14 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     }
     positionStatus.setUsingAsCollateral(reserveId, usingAsCollateral);
 
-    uint256 newRiskPremium;
+    // uint256 newRiskPremium;
     if (usingAsCollateral) {
       _refreshDynamicConfig(onBehalfOf, reserveId);
-      newRiskPremium = _calculateUserAccountData(onBehalfOf).riskPremium;
+      // newRiskPremium = _calculateUserAccountData(onBehalfOf).riskPremium;
     } else {
-      newRiskPremium = _refreshAndValidateUserAccountData(onBehalfOf).riskPremium;
+      uint256 newRiskPremium = _refreshAndValidateUserAccountData(onBehalfOf).riskPremium;
+      _notifyRiskPremiumUpdate(onBehalfOf, newRiskPremium);
     }
-    _notifyRiskPremiumUpdate(onBehalfOf, newRiskPremium);
 
     emit SetUsingAsCollateral(reserveId, msg.sender, onBehalfOf, usingAsCollateral);
   }
@@ -539,26 +539,6 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
   /// @inheritdoc ISpoke
   function getReserve(uint256 reserveId) external view returns (Reserve memory) {
     return _getReserve(reserveId);
-  }
-
-  /// @inheritdoc ISpoke
-  function getReserveConfig(uint256 reserveId) external view returns (ReserveConfig memory) {
-    Reserve storage reserve = _getReserve(reserveId);
-    return
-      ReserveConfig({
-        paused: reserve.paused,
-        frozen: reserve.frozen,
-        borrowable: reserve.borrowable,
-        collateralRisk: reserve.collateralRisk
-      });
-  }
-
-  /// @inheritdoc ISpoke
-  function getDynamicReserveConfig(
-    uint256 reserveId
-  ) external view returns (DynamicReserveConfig memory) {
-    Reserve storage reserve = _getReserve(reserveId);
-    return _dynamicConfig[reserveId][reserve.dynamicConfigKey];
   }
 
   /// @inheritdoc ISpoke
