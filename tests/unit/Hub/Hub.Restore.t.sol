@@ -150,7 +150,7 @@ contract HubRestoreTest is HubBase {
     tokenList.dai.transferFrom(alice, address(hub1), restoreDrawnAmount / 2);
 
     vm.expectRevert(
-      abi.encodeWithSelector(IHub.InsufficientTransferred.selector, expectedLiquidity)
+      abi.encodeWithSelector(IHub.InsufficientTransferred.selector, restoreDrawnAmount / 2)
     );
     hub1.restore(daiAssetId, restoreDrawnAmount, premium, premiumDelta);
     vm.stopPrank();

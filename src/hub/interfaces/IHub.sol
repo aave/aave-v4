@@ -191,8 +191,8 @@ interface IHub is IHubBase, IAccessManaged {
   error InsufficientLiquidity(uint256 liquidity);
 
   /// @notice Thrown when the transferred liquidity is insufficient.
-  /// @param liquidity The current transferred liquidity.
-  error InsufficientTransferred(uint256 liquidity);
+  /// @param liquidityNeeded The amount of additional liquidity needed to perform the action.
+  error InsufficientTransferred(uint256 liquidityNeeded);
 
   /// @notice Thrown when the draw cap is exceeded.
   /// @param drawCap The current `drawCap` of the asset, expressed in whole assets (not scaled by decimals).

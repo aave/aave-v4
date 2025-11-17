@@ -189,12 +189,7 @@ contract HubRescueTest is HubBase {
     assertGt(liquidityFee, 0);
 
     // Cannot add liquidity fee amount without transferring underlying tokens
-    vm.expectRevert(
-      abi.encodeWithSelector(
-        IHub.InsufficientTransferred.selector,
-        hub1.getAssetLiquidity(daiAssetId) + liquidityFee
-      )
-    );
+    vm.expectRevert(abi.encodeWithSelector(IHub.InsufficientTransferred.selector, liquidityFee));
 
     vm.prank(address(rescueSpoke));
     hub1.add(daiAssetId, liquidityFee);
