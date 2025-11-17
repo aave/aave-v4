@@ -7,6 +7,7 @@ import 'tests/Base.t.sol';
 /// forge-config: default.isolate = true
 contract HubOperations_Gas_Tests is Base {
   using SafeCast for *;
+  using WadRayMath for uint256;
 
   function setUp() public override {
     deployFixtures();
@@ -264,10 +265,10 @@ contract HubOperations_Gas_Tests is Base {
     hub1.eliminateDeficit(daiAssetId, 100e18, address(spoke1));
     vm.snapshotGasLastCall('Hub.Operations', 'eliminateDeficit: partial');
 
-    uint256 deficit = hub1.getAssetDeficit(daiAssetId);
+    uint256 deficitRay = hub1.getAssetDeficitRay(daiAssetId);
 
     vm.prank(address(spoke1));
-    hub1.eliminateDeficit(daiAssetId, deficit, address(spoke1));
+    hub1.eliminateDeficit(daiAssetId, deficitRay.fromRayUp(), address(spoke1));
     vm.snapshotGasLastCall('Hub.Operations', 'eliminateDeficit: full');
   }
 }

@@ -5,6 +5,8 @@ pragma solidity ^0.8.0;
 import 'tests/unit/Hub/HubBase.t.sol';
 
 contract HubEliminateDeficitTest is HubBase {
+  using WadRayMath for uint256;
+
   uint256 assetId;
   uint256 deficitAmount;
   address callerSpoke;
@@ -28,7 +30,7 @@ contract HubEliminateDeficitTest is HubBase {
 
   function test_eliminateDeficit_revertsWith_InvalidAmount_ZeroAmountWithDeficit() public {
     _createDeficit(assetId, coveredSpoke, deficitAmount);
-    assertEq(hub1.getSpokeDeficit(assetId, coveredSpoke), deficitAmount);
+    assertEq(hub1.getSpokeDeficitRay(assetId, coveredSpoke), deficitAmount.toRay());
     vm.expectRevert(IHub.InvalidAmount.selector);
     vm.prank(callerSpoke);
     hub1.eliminateDeficit(assetId, 0, coveredSpoke);
@@ -65,7 +67,8 @@ contract HubEliminateDeficitTest is HubBase {
     _createDeficit(assetId, coveredSpoke, deficitAmount);
     _createDeficit(assetId, otherSpoke, deficitAmount2);
 
-    uint256 clearedDeficit = vm.randomUint(1, deficitAmount);
+    uint256 clearedDeficitRay = vm.randomUint(1, deficitAmount.toRay());
+    uint256 clearedDeficit = clearedDeficitRay.fromRayUp();
 
     Utils.add(hub1, assetId, callerSpoke, clearedDeficit + 1, alice);
     assertGe(hub1.getSpokeAddedAssets(assetId, callerSpoke), clearedDeficit);
@@ -87,13 +90,19 @@ contract HubEliminateDeficitTest is HubBase {
     uint256 removedShares = hub1.eliminateDeficit(assetId, clearedDeficit, coveredSpoke);
 
     assertEq(removedShares, expectedRemoveShares);
-    assertEq(hub1.getAssetDeficit(assetId), deficitAmount2 + deficitAmount - clearedDeficit);
+    assertEq(
+      hub1.getAssetDeficitRay(assetId),
+      deficitAmount2.toRay() + deficitAmount.toRay() - clearedDeficitRay
+    );
     assertEq(hub1.getAddedShares(assetId), assetSuppliedShares - expectedRemoveShares);
     assertEq(
       hub1.getSpokeAddedShares(assetId, callerSpoke),
       spokeAddedShares - expectedRemoveShares
     );
-    assertEq(hub1.getSpokeDeficit(assetId, coveredSpoke), deficitAmount - clearedDeficit);
+    assertEq(
+      hub1.getSpokeDeficitRay(assetId, coveredSpoke),
+      deficitAmount.toRay() - clearedDeficitRay
+    );
     assertGe(getAddExRate(assetId), addExRate);
     _assertBorrowRateSynced(hub1, assetId, 'eliminateDeficit');
   }
