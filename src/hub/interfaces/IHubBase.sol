@@ -71,15 +71,13 @@ interface IHubBase {
   /// @param spoke The address of the spoke.
   /// @param drawnShares The amount of drawn shares reported as deficit.
   /// @param premiumDelta The premium delta data struct.
-  /// @param drawnAmount The amount of drawn assets reported as deficit, expressed in asset units.
-  /// @param premiumAmountRay The amount of premium assets reported as deficit, expressed in asset units and scaled by RAY.
+  /// @param deficitAmountRay The amount of deficit reported, expressed in asset units and scaled by RAY.
   event ReportDeficit(
     uint256 indexed assetId,
     address indexed spoke,
     uint256 drawnShares,
     PremiumDelta premiumDelta,
-    uint256 drawnAmount,
-    uint256 premiumAmountRay
+    uint256 deficitAmountRay
   );
 
   /// @notice Emitted on the `transferShares` action.
