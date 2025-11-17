@@ -649,7 +649,7 @@ contract SpokeSupplyTest is SpokeBase {
     }
   }
 
-  /// test that during a supply action with existing debt assets, premium is not refreshed
+  /// test that during a supply action with existing debt assets, risk premium is not refreshed
   function test_supply_does_not_update_risk_premium() public {
     _openSupplyPosition(spoke1, _usdxReserveId(spoke1), MAX_SUPPLY_AMOUNT);
     _openSupplyPosition(spoke1, _daiReserveId(spoke1), MAX_SUPPLY_AMOUNT);
@@ -668,7 +668,8 @@ contract SpokeSupplyTest is SpokeBase {
       _getCollateralRisk(spoke1, _daiReserveId(spoke1)),
       _getCollateralRisk(spoke1, _wethReserveId(spoke1))
     );
-    // bob does another supply action of the lower collateral risk asset
+    // bob does another supply action of the lower collateral risk reserve
+    // risk premium should not be refreshed
     Utils.supplyCollateral(spoke1, _wethReserveId(spoke1), bob, 10_000e18, bob);
 
     // on-the-fly RP calc does not match initial value

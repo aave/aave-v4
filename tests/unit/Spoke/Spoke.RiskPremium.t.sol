@@ -142,7 +142,7 @@ contract SpokeRiskPremiumTest is SpokeBase {
   }
 
   // Supply multiple collaterals, and borrow one reserve. Then change the price of debt reserve such that collaterals are insufficient to cover the debt
-  // User rp should be weighted sum of the collaterals
+  // User risk premium should be weighted sum of the collaterals
   function test_riskPremium_collateral_insufficient_to_cover_debt() public {
     uint256 wbtcSupplyAmount = 1e8;
     uint256 daiSupplyAmount = 1000e18;
