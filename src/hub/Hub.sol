@@ -360,7 +360,7 @@ contract Hub is IHub, AccessManaged {
       deficitAmountRay = amount.toRay();
     }
 
-    uint120 shares = asset.toAddedSharesUp(deficitAmountRay).toUint120();
+    uint120 shares = asset.toAddedSharesUp(deficitAmountRay.fromRayUp()).toUint120();
     asset.addedShares -= shares;
     callerSpoke.addedShares -= shares;
     asset.deficitRay -= deficitAmountRay.toUint200();
