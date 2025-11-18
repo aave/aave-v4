@@ -1,7 +1,7 @@
 {
-  "add": "90196",
-  "add: with transfer": "111838",
-  "draw": "107734",
+  "add": "90212",
+  "add: with transfer": "111854",
+  "draw": "107733",
   "eliminateDeficit: full": "62124",
   "eliminateDeficit: partial": "71772",
   "mintFeeShares": "86229",
@@ -10,9 +10,9 @@
   "remove: full": "79093",
   "remove: partial": "83740",
   "reportDeficit": "121107",
-  "restore: full": "86169",
-  "restore: full - with transfer": "197186",
-  "restore: partial": "94535",
-  "restore: partial - with transfer": "144226",
+  "restore: full": "86184",
+  "restore: full - with transfer": "197201",
+  "restore: partial": "94550",
+  "restore: partial - with transfer": "144241",
   "transferShares": "73024"
 }

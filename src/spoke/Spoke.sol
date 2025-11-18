@@ -5,7 +5,9 @@ pragma solidity 0.8.28;
 import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
 import {IERC20Permit} from 'src/dependencies/openzeppelin/IERC20Permit.sol';
 import {SignatureChecker} from 'src/dependencies/openzeppelin/SignatureChecker.sol';
-import {AccessManagedUpgradeable} from 'src/dependencies/openzeppelin-upgradeable/AccessManagedUpgradeable.sol';
+import {
+  AccessManagedUpgradeable
+} from 'src/dependencies/openzeppelin-upgradeable/AccessManagedUpgradeable.sol';
 import {SafeTransferLib} from 'src/dependencies/solady/SafeTransferLib.sol';
 import {EIP712} from 'src/dependencies/solady/EIP712.sol';
 import {MathUtils} from 'src/libraries/math/MathUtils.sol';
@@ -43,23 +45,51 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
   /// @inheritdoc ISpoke
   address public immutable ORACLE;
 
+  /// @dev The maximum allowed value for an asset identifier (inclusive).
   uint256 internal constant MAX_ALLOWED_ASSET_ID = type(uint16).max;
+
+  /// @dev The maximum allowed collateral risk value for a reserve, expressed in bps (e.g. 100_00 is 100.00%).
   uint24 internal constant MAX_ALLOWED_COLLATERAL_RISK = 1000_00; // 1000.00%
+
+  /// @dev The maximum allowed value for a dynamic configuration key (inclusive).
   uint256 internal constant MAX_ALLOWED_DYNAMIC_CONFIG_KEY = type(uint24).max;
+
+  /// @dev The minimum health factor below which a position is considered unhealthy and subject to liquidation.
+  /// @dev Expressed in WAD (18 decimals) (e.g. 1e18 is 1.00).
   uint64 internal constant HEALTH_FACTOR_LIQUIDATION_THRESHOLD =
     LiquidationLogic.HEALTH_FACTOR_LIQUIDATION_THRESHOLD;
+
+  /// @dev The maximum amount considered as dust for a user's collateral and debt balances after a liquidation.
+  /// @dev Expressed in USD with 26 decimals.
   uint256 internal constant DUST_LIQUIDATION_THRESHOLD =
     LiquidationLogic.DUST_LIQUIDATION_THRESHOLD;
+
+  /// @dev The number of decimals used by the oracle.
   uint8 internal constant ORACLE_DECIMALS = 8;
 
+  /// @dev Number of reserves listed in the Spoke.
   uint256 internal _reserveCount;
+
+  /// @dev Map of user addresses and reserve identifiers to user positions.
   mapping(address user => mapping(uint256 reserveId => UserPosition)) internal _userPositions;
+
+  /// @dev Map of user addresses to their position status.
   mapping(address user => PositionStatus) internal _positionStatus;
+
+  /// @dev Map of reserve identifiers to their Reserve data.
   mapping(uint256 reserveId => Reserve) internal _reserves;
+
+  /// @dev Map of position manager addresses to their configuration data.
   mapping(address positionManager => PositionManagerConfig) internal _positionManager;
+
+  /// @dev Map of reserve identifiers and dynamic configuration keys to the dynamic configuration data.
   mapping(uint256 reserveId => mapping(uint24 dynamicConfigKey => DynamicReserveConfig))
-    internal _dynamicConfig; // dictionary of dynamic configs per reserve
+    internal _dynamicConfig;
+
+  /// @dev Liquidation configuration for the Spoke.
   LiquidationConfig internal _liquidationConfig;
+
+  /// @dev Map of hub addresses and asset identifiers to whether the reserve exists.
   mapping(address hub => mapping(uint256 assetId => bool)) internal _reserveExists;
 
   /// @notice Modifier that checks if the caller is an approved positionManager for `onBehalfOf`.
