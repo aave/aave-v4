@@ -900,7 +900,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
       userPosition.drawnShares -= deficitShares.toUint120();
       positionStatus.setBorrowing(reserveId, false);
 
-      emit ReportDeficit(user, reserveId, deficitShares, premiumDelta);
+      emit ReportDeficit(reserveId, user, deficitShares, premiumDelta);
     }
   }
 

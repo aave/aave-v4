@@ -209,13 +209,13 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
   );
 
   /// @notice Emitted on liquidations that report deficit to the Hub.
-  /// @param user The address of the user.
   /// @param reserveId The identifier of the reserve.
+  /// @param user The address of the user.
   /// @param drawnShares The amount of drawn shares reported as deficit.
   /// @param premiumDelta The premium delta data struct reported as deficit.
   event ReportDeficit(
-    address indexed user,
     uint256 indexed reserveId,
+    address indexed user,
     uint256 drawnShares,
     IHubBase.PremiumDelta premiumDelta
   );
