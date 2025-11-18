@@ -48,8 +48,8 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
   /// @dev The maximum allowed value for an asset identifier (inclusive).
   uint256 internal constant MAX_ALLOWED_ASSET_ID = type(uint16).max;
 
-  /// @dev The maximum allowed collateral risk value for a reserve, expressed in bps (e.g. 100_00 is 100.00%).
-  uint24 internal constant MAX_ALLOWED_COLLATERAL_RISK = 1000_00; // 1000.00%
+  /// @dev The maximum allowed collateral risk value for a reserve, expressed in BPS (e.g. 100_00 is 100.00%).
+  uint24 internal constant MAX_ALLOWED_COLLATERAL_RISK = 1000_00;
 
   /// @dev The maximum allowed value for a dynamic configuration key (inclusive).
   uint256 internal constant MAX_ALLOWED_DYNAMIC_CONFIG_KEY = type(uint24).max;
@@ -831,7 +831,9 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
       // riskPremium is 0 when user has no debt or is unhealthy
       return accountData;
     }
-    collateralInfo.sortByKey(); // sort by collateral risk in ASC, collateral value in DESC
+
+    // sort by collateral risk in ASC, collateral value in DESC
+    collateralInfo.sortByKey();
 
     // runs until either the collateral or debt is exhausted
     for (uint256 index = 0; index < collateralInfo.length(); ++index) {

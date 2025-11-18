@@ -39,7 +39,7 @@ contract AaveOracle is IAaveOracle {
     AggregatorV3Interface targetSource = AggregatorV3Interface(source);
     require(targetSource.decimals() == DECIMALS, InvalidSourceDecimals(reserveId));
     _sources[reserveId] = targetSource;
-    _getSourcePrice(reserveId); // check if the source is valid
+    _getSourcePrice(reserveId);
     emit UpdateReserveSource(reserveId, source);
   }
 
