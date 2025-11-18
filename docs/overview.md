@@ -84,8 +84,6 @@ This parameter is configurable and part of the Spoke's risk parameters. This mea
 
 $CR_i$ is the Collateral Risk of the asset $i$
 
-> 💡 This parameter only applies if an asset is utilized as collateral.
-
 ### User Risk Premium
 
 The User Risk Premium $RP_u$ represents the quality of assets used as collateral by the user $u$ to borrow against. It depends on multiple dynamic parameters:
@@ -273,7 +271,7 @@ The lower the HF of a position becomes, the larger the bonus the liquidators rec
 
 Once a user becomes liquidatable, the protocol offers a minimum liquidation bonus equal to
 
-$$ minLB = (maxLB - 100\%) \times lbFactor + 100\% $$
+$$ minLB = (maxLB - 100\\%) \times lbFactor + 100\\% $$
 
 where
 
@@ -292,44 +290,5 @@ $$
 where
 
 - $HF\_LIQ\_THRESHOLD$: per Spoke. Represents the health factor threshold under which the user becomes liquidatable. Equals 1.
-- $hf_{beforeLiq}$: per user. Represents the user’s health factor before liquidation. Exact formula detailed below.
+- $hf_{beforeLiq}$: per user. Represents the user’s health factor before liquidation.
 - $hfForMaxBonus$: per Spoke. Represents the health factor threshold under which the protocol awards the maximum liquidation bonus.
-
-### Implications of the Dutch-auction mechanism
-
-Awarding a higher liquidation bonus as the health factor decreases introduces a potential issue: if a user’s health factor decreases due to liquidation, liquidators are incentivized to split the liquidation into multiple smaller parts to obtain higher liquidation bonuses. This increases the chances of the user creating bad debt to the system and affects the overall user experience.
-
-### When does health factor decrease after liquidation?
-
-$$
-\begin{align*}
-& hf_{beforeLiq} = \frac{C}{D} = \frac{\sum_{i=1}^n c_i \times cf_i}{D} \\
-& hf_{afterLiq} = \frac{\left(\sum_{i=1,i\neq k}^n c_i \times cf_i\right) + (c_k - l \times lb_k) \times cf_k}{D - l}
-\end{align*}
-$$
-
-$$
-\begin{align*}
-& hf_{afterLiq} < hf_{beforeLiq} \\
-& \equiv \frac{\left(\sum_{i=1,i\neq k}^n c_i \times cf_i\right) + (c_k - l \times lb_k) \times cf_k}{D - l} < \frac{C}{D} \\
-& \equiv \left[\left(\sum_{i=1,i\neq k}^n c_i \times cf_i\right) + (c_k - l \times lb_k) \times cf_k\right] \times D < C \times (D - l) \\
-& \equiv \left[\left(\sum_{i=1,i\neq k}^n c_i \times cf_i\right) + c_k \times cf_k - l \times lb_k \times cf_k\right] \times D < D \times C - l \times C \\
-& \equiv \left[\left(\sum_{i=1}^n c_i \times cf_i\right) - l \times lb_k \times cf_k\right] \times D < D \times C - l \times C \\
-& \equiv D \times C - D \times l \times lb_k \times cf_k < D \times C - l \times C \\
-& \equiv D \times l \times lb_k \times cf_k > l \times C \\
-& \equiv D \times lb_k \times cf_k > C, \text{since } l > 0 \\
-& \equiv lb_k \times cf_k > \frac{C}{D}, \text{since } D > 0 \\
-& \equiv lb_k \times cf_k > hf_{beforeLiq}
-\end{align*}
-$$
-
-where
-
-- $C$ is the user’s total collateral value in USD, weighted by collateral factors.
-- $c_i$ is the user’s $i$-th collateral value in USD: the supplied amount of the user’s $i$-th collateral multiplied by the collateral’s price.
-- $cf_i$ is the user’s $i$-th collateral factor. Note that this can differ from the latest collateral factor of that specific collateral, given that liquidations do not refresh users’ dynamic configurations.
-- $D$ is the user’s total debt value in USD.
-- $l$ is the amount of debt liquidated in USD.
-- $lb_k$ is the liquidation bonus determined by the Dutch-auction algorithm described above, based on user’s dynamic configuration key for the $k$-th collateral.
-- $hf_{beforeLiq}$ is the user’s health factor before the liquidation.
-- $hf_{afterLiq}$ is the user’s health factor after the liquidation.
