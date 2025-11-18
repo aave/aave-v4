@@ -5,7 +5,9 @@ pragma solidity 0.8.28;
 import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
 import {IERC20Permit} from 'src/dependencies/openzeppelin/IERC20Permit.sol';
 import {SignatureChecker} from 'src/dependencies/openzeppelin/SignatureChecker.sol';
-import {AccessManagedUpgradeable} from 'src/dependencies/openzeppelin-upgradeable/AccessManagedUpgradeable.sol';
+import {
+  AccessManagedUpgradeable
+} from 'src/dependencies/openzeppelin-upgradeable/AccessManagedUpgradeable.sol';
 import {SafeTransferLib} from 'src/dependencies/solady/SafeTransferLib.sol';
 import {EIP712} from 'src/dependencies/solady/EIP712.sol';
 import {MathUtils} from 'src/libraries/math/MathUtils.sol';
@@ -396,13 +398,13 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
       params
     );
 
+    uint256 newRiskPremium = 0;
     if (isUserInDeficit) {
       _reportDeficit(user);
     } else {
-      // new risk premium only needs to be propagated if no deficit exists
-      uint256 newRiskPremium = _calculateUserAccountData(user).riskPremium;
-      _notifyRiskPremiumUpdate(user, newRiskPremium);
+      newRiskPremium = _calculateUserAccountData(user).riskPremium;
     }
+    _notifyRiskPremiumUpdate(user, newRiskPremium);
   }
 
   /// @inheritdoc ISpoke
@@ -902,9 +904,9 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
       userPosition.settlePremiumDebt(premiumDelta.realizedDelta);
       userPosition.drawnShares -= deficitShares.toUint120();
       positionStatus.setBorrowing(reserveId, false);
-    }
 
-    emit UpdateUserRiskPremium(user, 0);
+      emit ReportDeficit(reserveId, user, deficitShares, premiumDelta);
+    }
   }
 
   function _getReserve(uint256 reserveId) internal view returns (Reserve storage) {

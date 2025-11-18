@@ -490,7 +490,9 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
     }
 
     {
-      for (uint256 reserveId = 0; reserveId < params.spoke.getReserveCount(); reserveId++) {
+      for (uint256 i = params.spoke.getReserveCount(); i != 0; ) {
+        i--;
+        uint256 reserveId = i;
         if (_isBorrowing(params.spoke, reserveId, params.user)) {
           vars.userReservePosition = params.spoke.getUserPosition(reserveId, params.user);
           uint256 assetId = _assetId(params.spoke, reserveId);
@@ -539,6 +541,19 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
                 ),
                 1
               );
+              vm.expectEmit(address(params.spoke));
+              emit ISpoke.ReportDeficit({
+                reserveId: reserveId,
+                user: params.user,
+                drawnShares: targetHub
+                  .previewRestoreByAssets(assetId, userReserveDrawnDebt)
+                  .toUint120(),
+                premiumDelta: IHubBase.PremiumDelta({
+                  sharesDelta: -vars.userReservePosition.premiumShares.toInt256(),
+                  offsetDelta: -vars.userReservePosition.premiumOffset.toInt256(),
+                  realizedDelta: -vars.userReservePosition.realizedPremium.toInt256()
+                })
+              });
             }
           }
         }
@@ -1295,11 +1310,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
     }
 
     uint256 riskPremiumEventExpectedCount = 1;
-    if (
-      !accountsInfoBefore.hasPositiveRiskPremium &&
-      !accountsInfoAfter.hasPositiveRiskPremium &&
-      !liquidationMetadata.hasDeficit
-    ) {
+    if (!accountsInfoBefore.hasPositiveRiskPremium && !accountsInfoAfter.hasPositiveRiskPremium) {
       riskPremiumEventExpectedCount = 0;
     }
     assertEq(riskPremiumEventCount, riskPremiumEventExpectedCount, 'riskPremiumEventExpectedCount');
