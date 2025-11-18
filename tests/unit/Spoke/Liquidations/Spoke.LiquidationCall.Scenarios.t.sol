@@ -302,4 +302,31 @@ contract SpokeLiquidationCallScenariosTest is SpokeLiquidationCallBaseTest {
       'Deficit should be 0'
     );
   }
+
+  /// @dev when receiving shares, liquidator can already have setUsingAsCollateral
+  function test_scenario_liquidator_usingAsCollateral() public {
+    uint256 collateralReserveId = _wethReserveId(spoke);
+    uint256 debtReserveId = _daiReserveId(spoke);
+    // liquidator can receive shares even if they have already set as collateral
+    bool receiveShares = true;
+
+    // liquidator sets as collateral
+    vm.prank(liquidator);
+    spoke.setUsingAsCollateral(collateralReserveId, true, liquidator);
+
+    _increaseCollateralSupply(spoke, collateralReserveId, 10e18, user);
+    _makeUserLiquidatable(spoke, user, debtReserveId, 0.95e18);
+    _checkedLiquidationCall(
+      CheckedLiquidationCallParams({
+        spoke: spoke,
+        collateralReserveId: collateralReserveId,
+        debtReserveId: debtReserveId,
+        user: user,
+        debtToCover: type(uint256).max,
+        liquidator: liquidator,
+        isSolvent: true,
+        receiveShares: receiveShares
+      })
+    );
+  }
 }

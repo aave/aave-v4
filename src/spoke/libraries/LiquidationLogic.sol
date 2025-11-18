@@ -150,7 +150,7 @@ library LiquidationLogic {
       positions[params.user][params.collateralReserveId].suppliedShares
     );
     _validateLiquidationCall(
-      positionStatus,
+      positionStatus[params.user].isUsingAsCollateral(params.collateralReserveId),
       ValidateLiquidationCallParams({
         user: params.user,
         liquidator: params.liquidator,
@@ -384,9 +384,9 @@ library LiquidationLogic {
   /// @notice Validates the liquidation call.
   /// @param params The validate liquidation call params.
   function _validateLiquidationCall(
-    mapping(address user => ISpoke.PositionStatus) storage positionStatus,
+    bool isBorrowerUsingAsCollateral,
     ValidateLiquidationCallParams memory params
-  ) internal view {
+  ) internal pure {
     require(params.user != params.liquidator, ISpoke.SelfLiquidation());
     require(params.debtToCover > 0, ISpoke.InvalidDebtToCover());
     require(!params.collateralReservePaused && !params.debtReservePaused, ISpoke.ReservePaused());
@@ -397,17 +397,11 @@ library LiquidationLogic {
       ISpoke.HealthFactorNotBelowThreshold()
     );
     require(
-      params.collateralFactor > 0 &&
-        positionStatus[params.user].isUsingAsCollateral(params.collateralReserveId),
+      params.collateralFactor > 0 && isBorrowerUsingAsCollateral,
       ISpoke.CollateralCannotBeLiquidated()
     );
-    // liquidator cannot receive collateral shares if the reserve is frozen or if it is being used as collateral
     if (params.receiveShares) {
-      require(
-        !params.collateralReserveFrozen &&
-          !positionStatus[params.liquidator].isUsingAsCollateral(params.collateralReserveId),
-        ISpoke.CannotReceiveShares()
-      );
+      require(!params.collateralReserveFrozen, ISpoke.CannotReceiveShares());
     }
   }
 

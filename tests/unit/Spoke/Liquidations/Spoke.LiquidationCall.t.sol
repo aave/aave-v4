@@ -84,11 +84,6 @@ abstract contract SpokeLiquidationCallHelperTest is SpokeLiquidationCallBaseTest
     _checkedLiquidationCall(
       CheckedLiquidationCallParams({
         spoke: spoke,
-        // collateralHub: _hub(spoke, collateralReserveId),
-        // debtHub: _hub(spoke, debtReserveId),
-        // collateralAssetId: _assetId(spoke, collateralReserveId),
-        // debtAssetId: _assetId(spoke, debtReserveId),
-        // userDebtPosition: spoke.getUserPosition(debtReserveId, user),
         collateralReserveId: collateralReserveId,
         debtReserveId: debtReserveId,
         user: user,
