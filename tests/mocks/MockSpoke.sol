@@ -28,6 +28,10 @@ contract MockSpoke is Spoke, Test {
 
   function initialize(address) external override {}
 
+  function setOracle(address oracle_) external {
+    return;
+  }
+
   // same as spoke's borrow, but without health factor check
   function borrowWithoutHfCheck(
     uint256 reserveId,

@@ -18,6 +18,10 @@ contract SpokeInstance is Spoke {
     _disableInitializers();
   }
 
+  function setOracle(address oracle_) external {
+    return;
+  }
+
   /// @notice Initializer.
   /// @dev The authority contract must implement the `AccessManaged` interface for access control.
   /// @param authority The address of the authority contract which manages permissions.
