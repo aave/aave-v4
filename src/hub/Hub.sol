@@ -330,7 +330,9 @@ contract Hub is IHub, AccessManaged {
     spoke.drawnShares -= drawnShares;
     _applyPremiumDelta(asset, spoke, premiumDelta);
 
-    uint256 deficitAmountRay = drawnShares * asset.drawnIndex + premiumDelta.restoredPremiumRay;
+    uint256 deficitAmountRay = uint256(drawnShares) *
+      asset.drawnIndex +
+      premiumDelta.restoredPremiumRay;
     asset.deficitRay += deficitAmountRay.toUint200();
     spoke.deficitRay += deficitAmountRay.toUint200();
 
@@ -355,15 +357,12 @@ contract Hub is IHub, AccessManaged {
     _validateEliminateDeficit(callerSpoke, amount);
 
     uint256 deficitRay = coveredSpoke.deficitRay;
-    uint256 deficitAmountRay = deficitRay;
-    if (amount < deficitRay.fromRayUp()) {
-      deficitAmountRay = amount.toRay();
-    }
+    uint256 deficitAmountRay = (amount < deficitRay.fromRayUp()) ? amount.toRay() : deficitRay;
 
     uint120 shares = asset.toAddedSharesUp(deficitAmountRay.fromRayUp()).toUint120();
     asset.addedShares -= shares;
     callerSpoke.addedShares -= shares;
-    asset.deficitRay -= deficitAmountRay.toUint200();
+    asset.deficitRay = asset.deficitRay.uncheckedSub(deficitAmountRay).toUint200();
     coveredSpoke.deficitRay = deficitRay.uncheckedSub(deficitAmountRay).toUint200();
 
     asset.updateDrawnRate(assetId);

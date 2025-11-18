@@ -138,18 +138,19 @@ contract HubReportDeficitTest is HubBase {
       skipTime
     );
 
+    IHub.Asset memory asset = hub1.getAsset(usdxAssetId);
+
     baseAmount = bound(baseAmount, 0, params.drawn);
+    uint256 drawnShares = hub1.previewRestoreByAssets(usdxAssetId, baseAmount);
     premiumAmountRay = bound(premiumAmountRay, 0, params.premiumRay);
-    vm.assume(baseAmount.toRay() + premiumAmountRay > 0);
+    uint256 totalDeficitRay = drawnShares * hub1.getAssetDrawnIndex(usdxAssetId) + premiumAmountRay;
+    vm.assume(totalDeficitRay > 0);
 
     params.deficitRayBefore = hub1.getAssetDeficitRay(usdxAssetId);
     params.supplyExchangeRateBefore = hub1.previewRemoveByShares(usdxAssetId, WadRayMath.RAY);
     params.liquidityBefore = hub1.getAssetLiquidity(usdxAssetId);
     params.balanceBefore = IERC20(hub1.getAsset(usdxAssetId).underlying).balanceOf(address(spoke1));
     uint256 drawnSharesBefore = hub1.getAsset(usdxAssetId).drawnShares;
-    uint256 totalDeficitRay = baseAmount.toRay() + premiumAmountRay;
-
-    IHub.Asset memory asset = hub1.getAsset(usdxAssetId);
 
     IHubBase.PremiumDelta memory premiumDelta = _getExpectedPremiumDelta(
       spoke1,
@@ -159,7 +160,6 @@ contract HubReportDeficitTest is HubBase {
     );
     premiumDelta.restoredPremiumRay = premiumAmountRay; // premiumAmountRay is capped to premiumRay already
 
-    uint256 baseDeficitShares = hub1.previewRestoreByAssets(usdxAssetId, baseAmount);
     uint256 expectedNewPremiumShares = premiumDelta.sharesDelta < 0
       ? asset.premiumShares - uint256(-premiumDelta.sharesDelta)
       : asset.premiumShares + uint256(premiumDelta.sharesDelta);
@@ -168,9 +168,7 @@ contract HubReportDeficitTest is HubBase {
       vm.expectRevert(stdError.arithmeticError);
       vm.prank(address(spoke1));
       hub1.reportDeficit(usdxAssetId, baseAmount, premiumDelta);
-    } else if (
-      expectedNewPremiumShares > (drawnSharesBefore - baseDeficitShares).percentMulUp(1000_00)
-    ) {
+    } else if (expectedNewPremiumShares > (drawnSharesBefore - drawnShares).percentMulUp(1000_00)) {
       vm.expectRevert(IHub.InvalidPremiumChange.selector);
       vm.prank(address(spoke1));
       hub1.reportDeficit(usdxAssetId, baseAmount, premiumDelta);
@@ -179,10 +177,9 @@ contract HubReportDeficitTest is HubBase {
       emit IHubBase.ReportDeficit(
         usdxAssetId,
         address(spoke1),
-        hub1.previewRestoreByAssets(usdxAssetId, baseAmount),
+        drawnShares,
         premiumDelta,
-        baseAmount,
-        premiumAmountRay
+        totalDeficitRay
       );
       vm.prank(address(spoke1));
       hub1.reportDeficit(usdxAssetId, baseAmount, premiumDelta);
@@ -206,11 +203,7 @@ contract HubReportDeficitTest is HubBase {
         minimumAssetsPerDrawnShare(hub1, usdxAssetId) + 1,
         'drawn debt'
       );
-      assertEq(
-        drawnSharesAfter,
-        drawnSharesBefore - hub1.previewRestoreByAssets(usdxAssetId, baseAmount),
-        'base drawn shares'
-      );
+      assertEq(drawnSharesAfter, drawnSharesBefore - drawnShares, 'base drawn shares');
       assertApproxEqAbs(
         params.premiumRayAfter,
         params.premiumRay - premiumAmountRay,
