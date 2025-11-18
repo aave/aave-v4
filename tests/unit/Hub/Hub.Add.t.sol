@@ -85,13 +85,16 @@ contract HubAddTest is HubBase {
     vm.stopPrank();
   }
 
-  function test_add_revertsWith_InsufficientLiquidity() public {
+  function test_add_revertsWith_InsufficientTransferred() public {
     uint256 amount = 100e18;
+    uint256 transferAmount = 90e18;
 
     vm.startPrank(address(spoke1));
-    tokenList.dai.transferFrom(alice, address(hub1), 90e18);
+    tokenList.dai.transferFrom(alice, address(hub1), transferAmount);
 
-    vm.expectRevert(abi.encodeWithSelector(IHub.InsufficientLiquidity.selector, amount));
+    vm.expectRevert(
+      abi.encodeWithSelector(IHub.InsufficientTransferred.selector, amount - transferAmount)
+    );
     hub1.add(daiAssetId, amount);
     vm.stopPrank();
   }

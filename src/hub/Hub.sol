@@ -39,10 +39,19 @@ contract Hub is IHub, AccessManaged {
   /// @inheritdoc IHub
   uint24 public constant MAX_RISK_PREMIUM_THRESHOLD = type(uint24).max;
 
+  /// @dev Number of assets listed in the Hub.
   uint256 internal _assetCount;
+
+  /// @dev Map of asset identifiers to Asset data.
   mapping(uint256 assetId => Asset) internal _assets;
+
+  /// @dev Map of asset identifiers and spoke addresses to Spoke data.
   mapping(uint256 assetId => mapping(address spoke => SpokeData)) internal _spokes;
+
+  /// @dev Map of asset identifiers to set of spoke addresses.
   mapping(uint256 assetId => EnumerableSet.AddressSet) internal _assetToSpokes;
+
+  /// @dev Set of underlying addresses listed as assets in the Hub.
   EnumerableSet.AddressSet internal _underlyingAssets;
 
   /// @dev Constructor.
@@ -213,10 +222,8 @@ contract Hub is IHub, AccessManaged {
     _validateAdd(asset, spoke, amount);
 
     uint256 liquidity = asset.liquidity + amount;
-    require(
-      asset.underlying.balanceOf(address(this)) >= liquidity,
-      InsufficientLiquidity(liquidity)
-    );
+    uint256 balance = asset.underlying.balanceOf(address(this));
+    require(balance >= liquidity, InsufficientTransferred(liquidity.uncheckedSub(balance)));
     uint120 shares = asset.toAddedSharesDown(amount).toUint120();
     require(shares > 0, InvalidShares());
     asset.addedShares += shares;
@@ -299,10 +306,8 @@ contract Hub is IHub, AccessManaged {
     _applyPremiumDelta(asset, spoke, premiumDelta, premiumAmount);
 
     uint256 liquidity = asset.liquidity + drawnAmount + premiumAmount;
-    require(
-      asset.underlying.balanceOf(address(this)) >= liquidity,
-      InsufficientLiquidity(liquidity)
-    );
+    uint256 balance = asset.underlying.balanceOf(address(this));
+    require(balance >= liquidity, InsufficientTransferred(liquidity.uncheckedSub(balance)));
     asset.liquidity = liquidity.toUint120();
 
     asset.updateDrawnRate(assetId);

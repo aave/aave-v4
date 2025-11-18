@@ -5,7 +5,9 @@ pragma solidity 0.8.28;
 import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
 import {IERC20Permit} from 'src/dependencies/openzeppelin/IERC20Permit.sol';
 import {SignatureChecker} from 'src/dependencies/openzeppelin/SignatureChecker.sol';
-import {AccessManagedUpgradeable} from 'src/dependencies/openzeppelin-upgradeable/AccessManagedUpgradeable.sol';
+import {
+  AccessManagedUpgradeable
+} from 'src/dependencies/openzeppelin-upgradeable/AccessManagedUpgradeable.sol';
 import {SafeTransferLib} from 'src/dependencies/solady/SafeTransferLib.sol';
 import {EIP712} from 'src/dependencies/solady/EIP712.sol';
 import {MathUtils} from 'src/libraries/math/MathUtils.sol';
@@ -61,14 +63,29 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
   /// @inheritdoc ISpoke
   address public immutable ORACLE;
 
+  /// @dev Number of reserves listed in the Spoke.
   uint256 internal _reserveCount;
+
+  /// @dev Map of user addresses and reserve identifiers to user positions.
   mapping(address user => mapping(uint256 reserveId => UserPosition)) internal _userPositions;
+
+  /// @dev Map of user addresses to their position status.
   mapping(address user => PositionStatus) internal _positionStatus;
+
+  /// @dev Map of reserve identifiers to their Reserve data.
   mapping(uint256 reserveId => Reserve) internal _reserves;
+
+  /// @dev Map of position manager addresses to their configuration data.
   mapping(address positionManager => PositionManagerConfig) internal _positionManager;
+
+  /// @dev Map of reserve identifiers and dynamic configuration keys to the dynamic configuration data.
   mapping(uint256 reserveId => mapping(uint24 dynamicConfigKey => DynamicReserveConfig))
-    internal _dynamicConfig; // dictionary of dynamic configs per reserve
+    internal _dynamicConfig;
+
+  /// @dev Liquidation configuration for the Spoke.
   LiquidationConfig internal _liquidationConfig;
+
+  /// @dev Map of hub addresses and asset identifiers to whether the reserve exists.
   mapping(address hub => mapping(uint256 assetId => bool)) internal _reserveExists;
 
   /// @notice Modifier that checks if the caller is an approved positionManager for `onBehalfOf`.
