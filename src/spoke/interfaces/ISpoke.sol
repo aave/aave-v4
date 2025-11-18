@@ -447,7 +447,7 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
     uint24 dynamicConfigKey
   ) external view returns (DynamicReserveConfig memory);
 
-  /// @notice Returns a pair of flags if the reserve is set as collateral and as borrowed for the user.
+  /// @notice Returns a pair of flags signifying if the reserve is set as collateral and if it is borrowed by the user.
   /// @dev It reverts if the reserve associated with the given reserve identifier is not listed.
   /// @dev Even if enabled as collateral, it will only count towards user position if the collateral factor is greater than 0.
   /// @param reserveId The identifier of the reserve.

@@ -1959,7 +1959,7 @@ abstract contract Base is Test {
     if (debtAmount == 0) return 1;
     IPriceOracle oracle = IPriceOracle(spoke.ORACLE());
     ISpoke.Reserve memory collData = spoke.getReserve(collReserveId);
-    ISpoke.DynamicReserveConfig memory colDynConf = spoke.getDynamicReserveConfig(
+    ISpoke.DynamicReserveConfig memory collDynConf = spoke.getDynamicReserveConfig(
       collReserveId,
       getReserveLastDynamicConfigKey(spoke, collReserveId)
     );
@@ -1976,7 +1976,7 @@ abstract contract Base is Test {
 
     return
       normalizedDebtAmount.wadDivUp(
-        normalizedCollPrice.toWad().percentMulDown(colDynConf.collateralFactor)
+        normalizedCollPrice.toWad().percentMulDown(collDynConf.collateralFactor)
       );
   }
 
