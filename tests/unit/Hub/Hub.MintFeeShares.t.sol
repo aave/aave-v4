@@ -63,7 +63,7 @@ contract HubMintFeeSharesTest is HubBase {
         daiAssetId,
         asset.liquidity,
         hub1.previewRestoreByShares(daiAssetId, hub1.getAssetDrawnShares(daiAssetId)),
-        asset.deficit,
+        asset.deficitRay,
         asset.swept
       )
     );

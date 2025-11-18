@@ -162,7 +162,7 @@ contract HubBase is Base {
     uint256 reserveId,
     uint256 amount,
     uint256 skipTime
-  ) internal returns (uint256 drawn, uint256 premium) {
+  ) internal returns (uint256 drawn, uint256 premiumRay) {
     assertTrue(hub1.getSpoke(assetId, spoke).active);
 
     deal(hub1.getAsset(assetId).underlying, alice, amount * 2);
@@ -171,9 +171,11 @@ contract HubBase is Base {
 
     skip(skipTime);
 
-    (drawn, premium) = hub1.getAssetOwed(assetId);
+    (drawn, ) = hub1.getAssetOwed(assetId);
     assertGt(drawn, 0); // non-zero drawn debt
-    assertGt(premium, 0); // non-zero premium debt
+
+    premiumRay = hub1.getAssetPremiumRay(assetId);
+    assertGt(premiumRay, 0); // non-zero premium debt
   }
 
   /// @dev Adds liquidity to the Hub via a random spoke

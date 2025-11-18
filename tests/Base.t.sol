@@ -1415,10 +1415,6 @@ abstract contract Base is Test {
     return hub1.previewRestoreByShares(assetId, MAX_SUPPLY_AMOUNT);
   }
 
-  function getDeficit(IHub hub, uint256 assetId) internal view returns (uint256) {
-    return hub.getAsset(assetId).deficit;
-  }
-
   function getAssetDrawnRate(IHub hub, uint256 assetId) internal view returns (uint256) {
     return hub.getAsset(assetId).drawnRate;
   }
@@ -2481,7 +2477,7 @@ abstract contract Base is Test {
         assetId,
         asset.liquidity,
         drawn,
-        asset.deficit,
+        asset.deficitRay,
         asset.swept
       ),
       string.concat('base borrow rate after ', operation)
