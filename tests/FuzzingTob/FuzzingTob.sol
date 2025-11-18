@@ -4,6 +4,7 @@ pragma experimental ABIEncoderV2;
 import {PropertiesLibString} from './PropertiesLibString.sol';
 
 // Interface imports
+import {WETH9} from 'src/dependencies/weth/WETH9.sol';
 import {IHub} from 'src/hub/interfaces/IHub.sol';
 import {IHubBase} from 'src/hub/interfaces/IHubBase.sol';
 import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
@@ -70,6 +71,7 @@ import {PositionStatusMap} from 'src/spoke/libraries/PositionStatusMap.sol';
 // Test contract imports
 import {TestnetERC20} from 'tests/mocks/TestnetERC20.sol';
 import {MockPriceFeed} from 'tests/mocks/MockPriceFeed.sol';
+import {Constants} from 'tests/Constants.sol';
 
 // Forge imports
 import {Vm, VmSafe} from 'lib/forge-std/src/Vm.sol';
@@ -597,21 +599,26 @@ contract FuzzingBase is PropertiesConstants, PropertiesAsserts {
   uint256 internal usdcAssetId = 2;
   uint256 internal dai2AssetId = 3;
 
-  Decimals internal decimals = Decimals({usdc: 6, usdy: 18, dai: 18, wbtc: 8, weth: 18});
+  Decimals decimals = Decimals({usdx: 6, usdc: 6, usdy: 18, dai: 18, wbtc: 8, weth: 18, usdz: 18});
 
   struct Decimals {
+    uint8 usdx;
     uint8 usdc;
     uint8 dai;
     uint8 wbtc;
     uint8 usdy;
     uint8 weth;
+    uint8 usdz;
   }
 
   struct SpokeInfo {
+    ReserveInfo weth;
     ReserveInfo wbtc;
     ReserveInfo dai;
+    ReserveInfo usdx;
     ReserveInfo usdc;
-    ReserveInfo dai2; // Special case: dai listed twice on hub and spoke2 (unique assetIds)
+    ReserveInfo usdy;
+    ReserveInfo usdz;
     uint256 MAX_ALLOWED_ASSET_ID;
     uint256[] reserveIds;
   }
@@ -705,7 +712,32 @@ contract FuzzingBase is PropertiesConstants, PropertiesAsserts {
     }
   }
 
+  struct TokenList {
+    WETH9 weth;
+    TestnetERC20 usdx;
+    TestnetERC20 dai;
+    TestnetERC20 wbtc;
+    TestnetERC20 usdy;
+    TestnetERC20 usdz;
+  }
+
   function configureTokenList() internal {
+    TokenList memory tokenList;
+    tokenList = TokenList(
+      new WETH9(),
+      new TestnetERC20('USDX', 'USDX', 6),
+      new TestnetERC20('DAI', 'DAI', decimals.dai),
+      new TestnetERC20('WBTC', 'WBTC', decimals.wbtc),
+      new TestnetERC20('USDY', 'USDY', decimals.usdy),
+      new TestnetERC20('USDZ', 'USDZ', decimals.usdz)
+    );
+    uint256 wethAssetId = 0;
+    uint256 usdxAssetId = 1;
+    uint256 daiAssetId = 2;
+    uint256 wbtcAssetId = 3;
+    uint256 usdyAssetId = 4;
+    uint256 usdzAssetId = 5;
+
     IHub.SpokeConfig memory spokeConfig = IHub.SpokeConfig({
       active: true,
       paused: false,
