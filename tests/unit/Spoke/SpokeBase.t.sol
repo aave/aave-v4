@@ -878,11 +878,6 @@ contract SpokeBase is Base {
 
     if (vars.totalDebtValue == 0) {
       return 0;
-    } else {
-      vars.healthFactor = vars.healthFactor.wadDivDown(vars.totalDebtValue).fromBpsDown();
-      if (vars.healthFactor < Constants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD) {
-        return 0;
-      }
     }
 
     // Gather up list of reserves as collateral to sort by collateral risk
