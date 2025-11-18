@@ -85,7 +85,7 @@ contract Hub is IHub, AccessManaged {
     uint256 lastUpdateTimestamp = block.timestamp;
     _assets[assetId] = Asset({
       liquidity: 0,
-      deficit: 0,
+      deficitRay: 0,
       swept: 0,
       addedShares: 0,
       drawnShares: 0,
@@ -330,14 +330,15 @@ contract Hub is IHub, AccessManaged {
     spoke.drawnShares -= drawnShares;
     _applyPremiumDelta(asset, spoke, premiumDelta);
 
-    uint256 premiumAmount = premiumDelta.restoredPremiumRay.fromRayUp();
-    uint120 deficitAmount = (drawnAmount + premiumAmount).toUint120();
-    asset.deficit += deficitAmount;
-    spoke.deficit += deficitAmount;
+    uint256 deficitAmountRay = uint256(drawnShares) *
+      asset.drawnIndex +
+      premiumDelta.restoredPremiumRay;
+    asset.deficitRay += deficitAmountRay.toUint200();
+    spoke.deficitRay += deficitAmountRay.toUint200();
 
     asset.updateDrawnRate(assetId);
 
-    emit ReportDeficit(assetId, msg.sender, drawnShares, premiumDelta, drawnAmount, premiumAmount);
+    emit ReportDeficit(assetId, msg.sender, drawnShares, premiumDelta, deficitAmountRay);
 
     return drawnShares;
   }
@@ -355,18 +356,18 @@ contract Hub is IHub, AccessManaged {
     asset.accrue();
     _validateEliminateDeficit(callerSpoke, amount);
 
-    uint256 deficit = coveredSpoke.deficit;
-    require(amount <= deficit, InvalidAmount());
+    uint256 deficitRay = coveredSpoke.deficitRay;
+    uint256 deficitAmountRay = (amount < deficitRay.fromRayUp()) ? amount.toRay() : deficitRay;
 
-    uint120 shares = asset.toAddedSharesUp(amount).toUint120();
+    uint120 shares = asset.toAddedSharesUp(deficitAmountRay.fromRayUp()).toUint120();
     asset.addedShares -= shares;
     callerSpoke.addedShares -= shares;
-    asset.deficit -= amount.toUint120();
-    coveredSpoke.deficit = deficit.uncheckedSub(amount).toUint120();
+    asset.deficitRay = asset.deficitRay.uncheckedSub(deficitAmountRay).toUint200();
+    coveredSpoke.deficitRay = deficitRay.uncheckedSub(deficitAmountRay).toUint200();
 
     asset.updateDrawnRate(assetId);
 
-    emit EliminateDeficit(assetId, msg.sender, spoke, shares, amount);
+    emit EliminateDeficit(assetId, msg.sender, spoke, shares, deficitAmountRay);
 
     return shares;
   }
@@ -565,8 +566,8 @@ contract Hub is IHub, AccessManaged {
   }
 
   /// @inheritdoc IHubBase
-  function getAssetDeficit(uint256 assetId) external view returns (uint256) {
-    return _assets[assetId].deficit;
+  function getAssetDeficitRay(uint256 assetId) external view returns (uint256) {
+    return _assets[assetId].deficitRay;
   }
 
   /// @inheritdoc IHub
@@ -653,8 +654,8 @@ contract Hub is IHub, AccessManaged {
   }
 
   /// @inheritdoc IHubBase
-  function getSpokeDeficit(uint256 assetId, address spoke) external view returns (uint256) {
-    return _spokes[assetId][spoke].deficit;
+  function getSpokeDeficitRay(uint256 assetId, address spoke) external view returns (uint256) {
+    return _spokes[assetId][spoke].deficitRay;
   }
 
   /// @inheritdoc IHub
@@ -865,7 +866,8 @@ contract Hub is IHub, AccessManaged {
     uint256 owed = _getSpokeDrawn(asset, spoke) + _getSpokePremium(asset, spoke);
     require(
       drawCap == MAX_ALLOWED_SPOKE_CAP ||
-        drawCap * MathUtils.uncheckedExp(10, asset.decimals) >= owed + amount + spoke.deficit,
+        drawCap * MathUtils.uncheckedExp(10, asset.decimals) >=
+        owed + amount + uint256(spoke.deficitRay).fromRayUp(),
       DrawCapExceeded(drawCap)
     );
   }

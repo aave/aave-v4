@@ -29,7 +29,7 @@ contract HubDrawTest is HubBase {
           assetId,
           assetBefore.liquidity - assetBefore.swept - amount,
           hub1.previewRestoreByShares(assetId, assetBefore.drawnShares + shares),
-          assetBefore.deficit,
+          assetBefore.deficitRay,
           assetBefore.swept
         )
       )
@@ -43,7 +43,7 @@ contract HubDrawTest is HubBase {
         assetId: assetId,
         liquidity: assetBefore.liquidity - assetBefore.swept - amount,
         drawn: hub1.previewRestoreByShares(assetId, assetBefore.drawnShares + shares),
-        deficit: assetBefore.deficit,
+        deficit: assetBefore.deficitRay,
         swept: assetBefore.swept
       }),
       hub1.getAssetAccruedFees(assetId)
@@ -115,7 +115,7 @@ contract HubDrawTest is HubBase {
           assetId,
           assetBefore.liquidity - assetBefore.swept - amount,
           hub1.previewRestoreByShares(assetId, assetBefore.drawnShares + shares),
-          assetBefore.deficit,
+          assetBefore.deficitRay,
           assetBefore.swept
         )
       )
@@ -129,7 +129,7 @@ contract HubDrawTest is HubBase {
         assetId: assetId,
         liquidity: assetBefore.liquidity - assetBefore.swept - amount,
         drawn: hub1.previewRestoreByShares(assetId, assetBefore.drawnShares + shares),
-        deficit: assetBefore.deficit,
+        deficit: assetBefore.deficitRay,
         swept: assetBefore.swept
       }),
       hub1.getAssetAccruedFees(assetId)
