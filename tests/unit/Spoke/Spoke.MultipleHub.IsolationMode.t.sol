@@ -163,7 +163,7 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
       'bob supplied amount of reserve A on new spoke'
     );
     assertTrue(
-      isUsingAsCollateral(newSpoke, bob, isolationVars.reserveAId),
+      _isUsingAsCollateral(newSpoke, isolationVars.reserveAId, bob),
       'bob using reserve A as collateral on new spoke'
     );
     assertEq(

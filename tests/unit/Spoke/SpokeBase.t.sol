@@ -430,7 +430,7 @@ contract SpokeBase is Base {
         vm.prank(user);
         spoke.repay(reserveId, debt, user);
         assertEq(spoke.getUserTotalDebt(reserveId, user), 0, 'user debt not zero');
-        assertFalse(isBorrowing(spoke, user, reserveId));
+        assertFalse(_isBorrowing(spoke, reserveId, user));
         // If the user has no debt in any asset (hf will be max), user risk premium should be zero
         if (_getUserHealthFactor(spoke, user) == UINT256_MAX) {
           assertEq(_getUserRiskPremium(spoke, user), 0, 'user risk premium not zero');
@@ -482,9 +482,9 @@ contract SpokeBase is Base {
   ) internal view returns (uint256) {
     IPriceOracle oracle = IPriceOracle(spoke.ORACLE());
     ISpoke.Reserve memory collData = spoke.getReserve(collReserveId);
-    ISpoke.DynamicReserveConfig memory colDynConf = spoke.getDynamicReserveConfig(
-      collReserveId,
-      getReserveLastDynamicConfigKey(spoke, collReserveId)
+    ISpoke.DynamicReserveConfig memory colDynConf = _getLatestDynamicReserveConfig(
+      spoke,
+      collReserveId
     );
     uint256 collPrice = oracle.getReservePrice(collReserveId);
     uint256 collAssetUnits = 10 ** hub1.getAsset(collData.assetId).decimals;
@@ -530,7 +530,7 @@ contract SpokeBase is Base {
     // user debt
     DebtData memory expectedUserDebt = _calcExpectedUserDebt(assetId, expectedUserPos);
     DebtData memory userDebt = _getUserDebt(spoke, reserveId, user);
-    assertEq(isBorrowing(spoke, user, reserveId), userDebt.totalDebt > 0);
+    assertEq(_isBorrowing(spoke, reserveId, user), userDebt.totalDebt > 0);
 
     // assertions
     _assertUserPosition(userPos, expectedUserPos, label);
@@ -852,7 +852,7 @@ contract SpokeBase is Base {
         spoke.getUserTotalDebt(reserveId, user)
       );
 
-      if (isUsingAsCollateral(spoke, user, reserveId)) {
+      if (_isUsingAsCollateral(spoke, reserveId, user)) {
         vars.dynamicConfigKey = refreshDynamicConfig
           ? spoke.getReserve(reserveId).dynamicConfigKey
           : spoke.getUserPosition(reserveId, user).dynamicConfigKey;
@@ -882,7 +882,7 @@ contract SpokeBase is Base {
     // Gather up list of reserves as collateral to sort by collateral risk
     KeyValueList.List memory reserveCollateralRisk = KeyValueList.init(vars.activeCollateralCount);
     for (uint256 reserveId; reserveId < vars.reserveCount; ++reserveId) {
-      if (isUsingAsCollateral(spoke, user, reserveId)) {
+      if (_isUsingAsCollateral(spoke, reserveId, user)) {
         reserveCollateralRisk.add(vars.idx, _getCollateralRisk(spoke, reserveId), reserveId);
         ++vars.idx;
       }
@@ -959,7 +959,7 @@ contract SpokeBase is Base {
     uint256 reserveId
   ) internal view returns (DynamicConfig memory) {
     ISpoke.UserPosition memory pos = spoke.getUserPosition(reserveId, user);
-    return DynamicConfig(pos.dynamicConfigKey, isUsingAsCollateral(spoke, user, reserveId));
+    return DynamicConfig(pos.dynamicConfigKey, _isUsingAsCollateral(spoke, reserveId, user));
   }
 
   function assertEq(DynamicConfig[] memory a, DynamicConfig[] memory b) internal pure {
@@ -1038,11 +1038,7 @@ contract SpokeBase is Base {
   ) internal view returns (uint32) {
     return
       (PercentageMath.PERCENTAGE_FACTOR - 1)
-        .percentDivDown(
-          spoke
-            .getDynamicReserveConfig(reserveId, getReserveLastDynamicConfigKey(spoke, reserveId))
-            .collateralFactor
-        )
+        .percentDivDown(_getLatestDynamicReserveConfig(spoke, reserveId).collateralFactor)
         .toUint32();
   }
 
@@ -1059,11 +1055,7 @@ contract SpokeBase is Base {
   ) internal view returns (uint16) {
     return
       (PercentageMath.PERCENTAGE_FACTOR - 1)
-        .percentDivDown(
-          spoke
-            .getDynamicReserveConfig(reserveId, getReserveLastDynamicConfigKey(spoke, reserveId))
-            .maxLiquidationBonus
-        )
+        .percentDivDown(_getLatestDynamicReserveConfig(spoke, reserveId).maxLiquidationBonus)
         .toUint16();
   }
 

@@ -178,7 +178,7 @@ contract SignatureGatewayTest is SignatureGatewayBaseTest {
     Utils.supplyCollateral(spoke1, p.reserveId, alice, 1e18, alice);
     bytes memory signature = _sign(alicePk, _getTypedDataHash(gateway, p));
 
-    if (isUsingAsCollateral(spoke1, alice, p.reserveId) != p.useAsCollateral) {
+    if (_isUsingAsCollateral(spoke1, p.reserveId, alice) != p.useAsCollateral) {
       vm.expectEmit(address(spoke1));
       emit ISpoke.SetUsingAsCollateral(p.reserveId, address(gateway), alice, p.useAsCollateral);
     }

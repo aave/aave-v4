@@ -44,7 +44,7 @@ contract SpokeMulticall is SpokeBase {
     assertEq(bobSupplied, supplyAmount, 'Bob supplied dai amount');
 
     // Check the collateral
-    assertEq(isUsingAsCollateral(spoke1, bob, daiReserveId), true, 'Bob using as collateral');
+    assertEq(_isUsingAsCollateral(spoke1, daiReserveId, bob), true, 'Bob using as collateral');
   }
 
   /// Supply and update user risk premium using multicall
@@ -181,20 +181,8 @@ contract SpokeMulticall is SpokeBase {
     );
     assertEq(spoke1.getReserveConfig(usdzReserveId), usdzConfig);
     assertEq(spoke1.getReserveConfig(usdaReserveId), usdaConfig);
-    assertEq(
-      spoke1.getDynamicReserveConfig(
-        usdzReserveId,
-        getReserveLastDynamicConfigKey(spoke1, usdzReserveId)
-      ),
-      usdzDynConfig
-    );
-    assertEq(
-      spoke1.getDynamicReserveConfig(
-        usdaReserveId,
-        getReserveLastDynamicConfigKey(spoke1, usdaReserveId)
-      ),
-      usdaDynConfig
-    );
+    assertEq(_getLatestDynamicReserveConfig(spoke1, usdzReserveId), usdzDynConfig);
+    assertEq(_getLatestDynamicReserveConfig(spoke1, usdaReserveId), usdaDynConfig);
   }
 
   /// Update multiple reserve configs using multicall

@@ -160,9 +160,7 @@ contract SpokeGettersTest is SpokeBase {
         healthFactorForMaxBonus: 0,
         liquidationBonusFactor: 0,
         healthFactor: healthFactor,
-        maxLiquidationBonus: spoke
-          .getDynamicReserveConfig(reserveId, getReserveLastDynamicConfigKey(spoke, reserveId))
-          .maxLiquidationBonus
+        maxLiquidationBonus: _getLatestDynamicReserveConfig(spoke, reserveId).maxLiquidationBonus
       }),
       'calc should match'
     );
@@ -205,9 +203,7 @@ contract SpokeGettersTest is SpokeBase {
         healthFactorForMaxBonus: healthFactorForMaxBonus,
         liquidationBonusFactor: liquidationBonusFactor,
         healthFactor: healthFactor,
-        maxLiquidationBonus: spoke
-          .getDynamicReserveConfig(reserveId, getReserveLastDynamicConfigKey(spoke, reserveId))
-          .maxLiquidationBonus
+        maxLiquidationBonus: _getLatestDynamicReserveConfig(spoke, reserveId).maxLiquidationBonus
       }),
       'calc should match'
     );
