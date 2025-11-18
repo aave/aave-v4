@@ -26,7 +26,7 @@ contract SpokeInstance is Spoke {
     require(authority != address(0), InvalidAddress());
     __AccessManaged_init(authority);
     if (_liquidationConfig.targetHealthFactor == 0) {
-      _liquidationConfig.targetHealthFactor = LiquidationLogic.HEALTH_FACTOR_LIQUIDATION_THRESHOLD;
+      _liquidationConfig.targetHealthFactor = HEALTH_FACTOR_LIQUIDATION_THRESHOLD;
       emit UpdateLiquidationConfig(_liquidationConfig);
     }
   }
