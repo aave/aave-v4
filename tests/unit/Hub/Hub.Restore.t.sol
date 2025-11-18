@@ -119,7 +119,7 @@ contract HubRestoreTest is HubBase {
     hub1.restore(daiAssetId, 1, 0, premiumDelta);
   }
 
-  function test_restore_revertsWith_InsufficientLiquidity() public {
+  function test_restore_revertsWith_InsufficientTransferred() public {
     uint256 daiAmount = 100e18;
     uint256 wethAmount = 10e18;
     uint256 drawAmount = daiAmount / 2;
@@ -149,7 +149,9 @@ contract HubRestoreTest is HubBase {
     vm.startPrank(address(spoke1));
     tokenList.dai.transferFrom(alice, address(hub1), restoreDrawnAmount / 2);
 
-    vm.expectRevert(abi.encodeWithSelector(IHub.InsufficientLiquidity.selector, expectedLiquidity));
+    vm.expectRevert(
+      abi.encodeWithSelector(IHub.InsufficientTransferred.selector, restoreDrawnAmount / 2)
+    );
     hub1.restore(daiAssetId, restoreDrawnAmount, premium, premiumDelta);
     vm.stopPrank();
   }

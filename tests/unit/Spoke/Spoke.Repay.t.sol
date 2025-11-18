@@ -170,7 +170,7 @@ contract SpokeRepayTest is SpokeBase {
       0,
       'user total debt after full repay'
     );
-    assertFalse(spoke1.isBorrowing(_daiReserveId(spoke1), bob));
+    assertFalse(_isBorrowing(spoke1, _daiReserveId(spoke1), bob));
 
     _assertHubLiquidity(hub1, daiAssetId, 'spoke1.repay');
   }
@@ -573,7 +573,7 @@ contract SpokeRepayTest is SpokeBase {
 
     // Verify that Bob's debt is fully cleared after repayment
     assertEq(bobDaiAfter.totalDebt, 0, 'Bob dai debt should be cleared');
-    assertFalse(spoke1.isBorrowing(_daiReserveId(spoke1), bob));
+    assertFalse(_isBorrowing(spoke1, _daiReserveId(spoke1), bob));
 
     // Verify that his DAI balance was reduced by the full debt amount
     assertEq(

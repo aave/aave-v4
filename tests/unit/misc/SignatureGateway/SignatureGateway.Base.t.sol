@@ -209,8 +209,8 @@ contract SignatureGatewayBaseTest is SpokeBase {
     for (uint256 reserveId; reserveId < spoke.getReserveCount(); ++reserveId) {
       assertEq(spoke.getUserSuppliedShares(reserveId, address(_gateway)), 0);
       assertEq(spoke.getUserTotalDebt(reserveId, address(_gateway)), 0); // rounds up so asset validation is enough
-      assertFalse(spoke.isUsingAsCollateral(reserveId, address(_gateway)));
-      assertFalse(spoke.isBorrowing(reserveId, address(_gateway)));
+      assertFalse(_isUsingAsCollateral(spoke, reserveId, address(_gateway)));
+      assertFalse(_isBorrowing(spoke, reserveId, address(_gateway)));
     }
   }
 }

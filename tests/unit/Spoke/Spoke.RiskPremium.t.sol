@@ -48,7 +48,7 @@ contract SpokeRiskPremiumTest is SpokeBase {
     Utils.supply(spoke1, _daiReserveId(spoke1), bob, 100e18, bob);
     // Assert Bob has no collateral set
     for (uint256 reserveId = 0; reserveId < spoke1.getReserveCount(); reserveId++) {
-      assertEq(spoke1.isUsingAsCollateral(reserveId, bob), false, 'bob collateral set');
+      assertEq(_isUsingAsCollateral(spoke1, reserveId, bob), false, 'bob collateral set');
     }
     // Bob doesn't set dai as collateral, despite supplying, so his user rp is 0
     assertEq(_getUserRiskPremium(spoke1, bob), 0, 'user risk premium');
