@@ -184,7 +184,7 @@ contract AssetInterestRateStrategyTest is Base {
     assertEq(variableBorrowRate, rateData.baseVariableBorrowRate.bpsToRay());
   }
 
-  function test_calculateInterestRate_ZeroDebtZeroLiquidity() public {
+  function test_calculateInterestRate_ZeroDebtZeroLiquidity() public view {
     test_calculateInterestRate_fuzz_ZeroDebt(0);
   }
 

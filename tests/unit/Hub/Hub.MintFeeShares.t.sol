@@ -106,7 +106,7 @@ contract HubMintFeeSharesTest is HubBase {
 
     vm.recordLogs();
     Utils.mintFeeShares(hub1, daiAssetId, ADMIN);
-    Vm.Log[] memory entries = vm.getRecordedLogs();
+    vm.getRecordedLogs();
     _assertEventNotEmitted(IHub.MintFeeShares.selector);
   }
 
@@ -142,7 +142,7 @@ contract HubMintFeeSharesTest is HubBase {
 
     vm.recordLogs();
     Utils.mintFeeShares(hub1, daiAssetId, ADMIN);
-    Vm.Log[] memory entries = vm.getRecordedLogs();
+    vm.getRecordedLogs();
     _assertEventNotEmitted(IHub.MintFeeShares.selector);
 
     assertEq(hub1.getAsset(daiAssetId).realizedFees, 1, 'realized fees after');

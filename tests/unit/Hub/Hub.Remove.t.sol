@@ -257,8 +257,6 @@ contract HubRemoveTest is HubBase {
     drawAmount = bound(drawAmount, 1, daiAmount); // within added dai amount
     skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
 
-    uint256 lastUpdateTimestamp = vm.getBlockTimestamp();
-
     // add and draw dai liquidity to accrue interest
     // add from spoke2, draw from spoke1
     _addAndDrawLiquidity({

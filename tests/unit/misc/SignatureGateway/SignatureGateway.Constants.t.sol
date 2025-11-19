@@ -9,7 +9,6 @@ contract SignatureGatewayConstantsTest is SignatureGatewayBaseTest {
     vm.expectRevert();
     new SignatureGateway(address(0));
 
-    address spoke = vm.randomAddress();
     assertEq(Ownable2Step(address(gateway)).owner(), ADMIN);
     assertEq(Ownable2Step(address(gateway)).pendingOwner(), address(0));
     assertEq(gateway.rescueGuardian(), ADMIN);

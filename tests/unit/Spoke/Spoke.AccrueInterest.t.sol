@@ -36,7 +36,7 @@ contract SpokeAccrueInterestTest is SpokeBase {
     updateLiquidityFee(hub1, wbtcAssetId, 0);
   }
 
-  function test_accrueInterest_NoActionTaken() public {
+  function test_accrueInterest_NoActionTaken() public view {
     _assertSingleUserProtocolDebt(
       spoke1,
       _daiReserveId(spoke1),

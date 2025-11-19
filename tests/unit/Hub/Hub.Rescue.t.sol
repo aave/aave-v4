@@ -5,12 +5,12 @@ pragma solidity ^0.8.0;
 import 'tests/unit/Hub/HubBase.t.sol';
 
 contract HubRescueTest is HubBase {
-  address rescueSpoke;
+  address internal _rescueSpoke;
 
   function setUp() public override {
     super.setUp();
 
-    rescueSpoke = makeAddr('rescueSpoke');
+    _rescueSpoke = makeAddr('rescueSpoke');
 
     IHub.SpokeConfig memory spokeConfig = IHub.SpokeConfig({
       active: true,
@@ -20,7 +20,7 @@ contract HubRescueTest is HubBase {
       riskPremiumThreshold: Constants.MAX_ALLOWED_COLLATERAL_RISK
     });
     vm.prank(ADMIN);
-    hub1.addSpoke(daiAssetId, rescueSpoke, spokeConfig);
+    hub1.addSpoke(daiAssetId, _rescueSpoke, spokeConfig);
   }
 
   /// @dev Rescue of funds directly transferred to the hub & ensure asset liquidity tracking is not impacted.
@@ -43,17 +43,17 @@ contract HubRescueTest is HubBase {
     Utils.add({hub: hub1, assetId: daiAssetId, caller: address(spoke2), amount: 7.5e22, user: bob});
 
     uint256 prevHubBalance = underlying.balanceOf(address(hub1));
-    uint256 prevRescueBalance = underlying.balanceOf(rescueSpoke);
+    uint256 prevRescueBalance = underlying.balanceOf(_rescueSpoke);
 
     (uint256 rescueAmount, uint256 rescueAddedShares, uint256 rescueWithdrawnShares) = _rescue(
       hub1,
-      rescueSpoke,
+      _rescueSpoke,
       daiAssetId,
       underlying
     );
 
     uint256 finalHubBalance = underlying.balanceOf(address(hub1));
-    uint256 finalRescueBalance = underlying.balanceOf(rescueSpoke);
+    uint256 finalRescueBalance = underlying.balanceOf(_rescueSpoke);
 
     // spoke1, alice remove dai
     Utils.remove({
@@ -134,17 +134,17 @@ contract HubRescueTest is HubBase {
     });
 
     uint256 prevHubBalance = underlying.balanceOf(address(hub1));
-    uint256 prevRescueBalance = underlying.balanceOf(rescueSpoke);
+    uint256 prevRescueBalance = underlying.balanceOf(_rescueSpoke);
 
     (uint256 rescueAmount, uint256 rescueAddedShares, uint256 rescueWithdrawnShares) = _rescue(
       hub1,
-      rescueSpoke,
+      _rescueSpoke,
       daiAssetId,
       underlying
     );
 
     uint256 finalHubBalance = underlying.balanceOf(address(hub1));
-    uint256 finalRescueBalance = underlying.balanceOf(rescueSpoke);
+    uint256 finalRescueBalance = underlying.balanceOf(_rescueSpoke);
 
     // check amounts & balances
     assertApproxEqAbs(
@@ -161,8 +161,6 @@ contract HubRescueTest is HubBase {
 
   /// @dev Another spoke cannot improperly rescue liquidity fee without transferring underlying tokens
   function test_cannot_rescue_liquidity_fee_reverts_with_InsufficientTransferred() public {
-    IERC20 underlying = IERC20(hub1.getAsset(daiAssetId).underlying);
-
     // spoke1, alice add dai
     Utils.add({
       hub: hub1,
@@ -191,7 +189,7 @@ contract HubRescueTest is HubBase {
     // Cannot add liquidity fee amount without transferring underlying tokens
     vm.expectRevert(abi.encodeWithSelector(IHub.InsufficientTransferred.selector, liquidityFee));
 
-    vm.prank(address(rescueSpoke));
+    vm.prank(address(_rescueSpoke));
     hub1.add(daiAssetId, liquidityFee);
 
     assertEq(hub1.getAssetAccruedFees(daiAssetId), liquidityFee, 'accrued liquidity fee');

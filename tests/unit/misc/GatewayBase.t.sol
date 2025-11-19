@@ -17,7 +17,7 @@ contract GatewayBaseTest is Base {
     spoke1.updatePositionManager(address(gateway), true);
   }
 
-  function test_constructor() public {
+  function test_constructor() public view {
     assertEq(gateway.owner(), address(ADMIN));
     assertEq(gateway.pendingOwner(), address(0));
 

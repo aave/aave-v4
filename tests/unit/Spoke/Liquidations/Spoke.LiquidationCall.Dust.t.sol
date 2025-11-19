@@ -9,15 +9,15 @@ contract SpokeLiquidationCallDustTest is SpokeLiquidationCallBaseTest {
   using PercentageMath for uint256;
   using SafeCast for *;
 
-  ISpoke spoke;
+  ISpoke _spoke;
   address liquidator = makeAddr('liquidator');
 
   function setUp() public virtual override {
     super.setUp();
-    spoke = spoke1;
+    _spoke = spoke1;
 
     vm.prank(SPOKE_ADMIN);
-    spoke.updateLiquidationConfig(
+    _spoke.updateLiquidationConfig(
       ISpoke.LiquidationConfig({
         targetHealthFactor: 1.000001e18,
         healthFactorForMaxBonus: 0.9e18,
@@ -25,25 +25,25 @@ contract SpokeLiquidationCallDustTest is SpokeLiquidationCallBaseTest {
       })
     );
 
-    _updateMaxLiquidationBonus(spoke, _daiReserveId(spoke), 111_00);
-    _updateMaxLiquidationBonus(spoke, _usdxReserveId(spoke), 100_00);
-    _updateMaxLiquidationBonus(spoke, _usdyReserveId(spoke), 100_00);
+    _updateMaxLiquidationBonus(_spoke, _daiReserveId(_spoke), 111_00);
+    _updateMaxLiquidationBonus(_spoke, _usdxReserveId(_spoke), 100_00);
+    _updateMaxLiquidationBonus(_spoke, _usdyReserveId(_spoke), 100_00);
 
-    deal(spoke, _usdxReserveId(spoke), liquidator, 1e30);
-    deal(spoke, _daiReserveId(spoke), liquidator, 1e30);
-    deal(spoke, _usdyReserveId(spoke), liquidator, 1e30);
+    deal(_spoke, _usdxReserveId(_spoke), liquidator, 1e30);
+    deal(_spoke, _daiReserveId(_spoke), liquidator, 1e30);
+    deal(_spoke, _usdyReserveId(_spoke), liquidator, 1e30);
 
-    Utils.approve(spoke, _usdxReserveId(spoke), liquidator, type(uint256).max);
-    Utils.approve(spoke, _daiReserveId(spoke), liquidator, type(uint256).max);
-    Utils.approve(spoke, _usdyReserveId(spoke), liquidator, type(uint256).max);
+    Utils.approve(_spoke, _usdxReserveId(_spoke), liquidator, type(uint256).max);
+    Utils.approve(_spoke, _daiReserveId(_spoke), liquidator, type(uint256).max);
+    Utils.approve(_spoke, _usdyReserveId(_spoke), liquidator, type(uint256).max);
 
-    _updateCollateralFactor(spoke, _daiReserveId(spoke), 90_00);
-    _updateCollateralFactor(spoke, _usdxReserveId(spoke), 99_99);
-    _updateCollateralFactor(spoke, _usdyReserveId(spoke), 99_99);
+    _updateCollateralFactor(_spoke, _daiReserveId(_spoke), 90_00);
+    _updateCollateralFactor(_spoke, _usdxReserveId(_spoke), 99_99);
+    _updateCollateralFactor(_spoke, _usdyReserveId(_spoke), 99_99);
 
-    _openSupplyPosition(spoke, _daiReserveId(spoke), 1e30);
-    _openSupplyPosition(spoke, _usdxReserveId(spoke), 1e30);
-    _openSupplyPosition(spoke, _usdyReserveId(spoke), 1e30);
+    _openSupplyPosition(_spoke, _daiReserveId(_spoke), 1e30);
+    _openSupplyPosition(_spoke, _usdxReserveId(_spoke), 1e30);
+    _openSupplyPosition(_spoke, _usdyReserveId(_spoke), 1e30);
   }
 
   /// @dev debtToTarget is limiting factor that would result in dust collateral
@@ -54,7 +54,7 @@ contract SpokeLiquidationCallDustTest is SpokeLiquidationCallBaseTest {
     uint256 targetHealthFactor = 1.0001e18;
 
     vm.prank(SPOKE_ADMIN);
-    spoke.updateLiquidationConfig(
+    _spoke.updateLiquidationConfig(
       ISpoke.LiquidationConfig({
         targetHealthFactor: targetHealthFactor.toUint128(),
         healthFactorForMaxBonus: 0.99e18,
@@ -63,49 +63,61 @@ contract SpokeLiquidationCallDustTest is SpokeLiquidationCallBaseTest {
     );
 
     _updateCollateralFactorAndLiquidationBonus(
-      spoke,
-      _daiReserveId(spoke),
+      _spoke,
+      _daiReserveId(_spoke),
       collateralFactor,
       liquidationBonus
     );
-    _increaseCollateralSupply(spoke, _daiReserveId(spoke), 1010e18, alice); // $1010
-    _increaseCollateralSupply(spoke, _usdyReserveId(spoke), 10_000e18, alice);
+    _increaseCollateralSupply(_spoke, _daiReserveId(_spoke), 1010e18, alice); // $1010
+    _increaseCollateralSupply(_spoke, _usdyReserveId(_spoke), 10_000e18, alice);
 
     Utils.borrow({
-      spoke: spoke,
-      reserveId: _usdyReserveId(spoke),
+      spoke: _spoke,
+      reserveId: _usdyReserveId(_spoke),
       caller: alice,
       amount: 9_000e18,
       onBehalfOf: alice
     });
-    _borrowToBeAtHf(spoke, alice, _usdxReserveId(spoke), 0.9999e18);
+    _borrowToBeAtHf(_spoke, alice, _usdxReserveId(_spoke), 0.9999e18);
 
     uint256 debtToTarget = liquidationLogicWrapper.calculateDebtToTargetHealthFactor(
       _getCalculateDebtToTargetHealthFactorParams(
-        spoke,
-        _daiReserveId(spoke),
-        _usdxReserveId(spoke),
+        _spoke,
+        _daiReserveId(_spoke),
+        _usdxReserveId(_spoke),
         alice
       )
     );
 
     // debtToTarget (~$11) as limiting factor would result in dust collateral
     assertLt(
-      _getCollateralValue(spoke, _daiReserveId(spoke), alice) -
-        _convertAmountToValue(spoke, _usdxReserveId(spoke), debtToTarget),
+      _getCollateralValue(_spoke, _daiReserveId(_spoke), alice) -
+        _convertAmountToValue(_spoke, _usdxReserveId(_spoke), debtToTarget),
       LiquidationLogic.DUST_LIQUIDATION_THRESHOLD
     );
 
     // debtToTarget would result in dust collateral, therefore reverts
     vm.startPrank(liquidator);
     vm.expectRevert(ISpoke.MustNotLeaveDust.selector);
-    spoke.liquidationCall(_daiReserveId(spoke), _usdxReserveId(spoke), alice, debtToTarget, false);
+    _spoke.liquidationCall(
+      _daiReserveId(_spoke),
+      _usdxReserveId(_spoke),
+      alice,
+      debtToTarget,
+      false
+    );
 
     // valid debtToCover succeeds
-    spoke.liquidationCall(_daiReserveId(spoke), _usdxReserveId(spoke), alice, UINT256_MAX, false);
+    _spoke.liquidationCall(
+      _daiReserveId(_spoke),
+      _usdxReserveId(_spoke),
+      alice,
+      UINT256_MAX,
+      false
+    );
     vm.stopPrank();
 
-    assertEq(spoke.getUserSuppliedAssets(_daiReserveId(spoke), alice), 0);
+    assertEq(_spoke.getUserSuppliedAssets(_daiReserveId(_spoke), alice), 0);
   }
 
   /// @dev debtToCover would theoretically results in debt dust, but is allowed to proceed because collateral reserve was fully liquidated
@@ -115,7 +127,7 @@ contract SpokeLiquidationCallDustTest is SpokeLiquidationCallBaseTest {
     uint256 targetHealthFactor = 1.0001e18;
 
     vm.prank(SPOKE_ADMIN);
-    spoke.updateLiquidationConfig(
+    _spoke.updateLiquidationConfig(
       ISpoke.LiquidationConfig({
         targetHealthFactor: targetHealthFactor.toUint128(),
         healthFactorForMaxBonus: 0.99e18,
@@ -124,30 +136,30 @@ contract SpokeLiquidationCallDustTest is SpokeLiquidationCallBaseTest {
     );
 
     _updateCollateralFactorAndLiquidationBonus(
-      spoke,
-      _daiReserveId(spoke),
+      _spoke,
+      _daiReserveId(_spoke),
       collateralFactor,
       liquidationBonus
     );
-    _increaseCollateralSupply(spoke, _daiReserveId(spoke), 1100e18, alice); // $1100
-    _increaseCollateralSupply(spoke, _usdyReserveId(spoke), 10_000e18, alice);
+    _increaseCollateralSupply(_spoke, _daiReserveId(_spoke), 1100e18, alice); // $1100
+    _increaseCollateralSupply(_spoke, _usdyReserveId(_spoke), 10_000e18, alice);
 
     Utils.borrow({
-      spoke: spoke,
-      reserveId: _usdyReserveId(spoke),
+      spoke: _spoke,
+      reserveId: _usdyReserveId(_spoke),
       caller: alice,
       amount: 9_000e18,
       onBehalfOf: alice
     });
-    _borrowToBeAtHf(spoke, alice, _usdxReserveId(spoke), 0.98e18);
+    _borrowToBeAtHf(_spoke, alice, _usdxReserveId(_spoke), 0.98e18);
 
     uint256 debtToCover = 1800e6;
 
     uint256 debtToTarget = liquidationLogicWrapper.calculateDebtToTargetHealthFactor(
       _getCalculateDebtToTargetHealthFactorParams(
-        spoke,
-        _daiReserveId(spoke),
-        _usdxReserveId(spoke),
+        _spoke,
+        _daiReserveId(_spoke),
+        _usdxReserveId(_spoke),
         alice
       )
     );
@@ -155,24 +167,30 @@ contract SpokeLiquidationCallDustTest is SpokeLiquidationCallBaseTest {
     // debtToTarget > debtToCover, so debtToTarget doesn't come into play
     assertGt(debtToTarget, debtToCover);
     // debtToCover would result in debt dust
-    uint256 theoreticalRemainingDebt = spoke.getUserTotalDebt(_usdxReserveId(spoke), alice) -
+    uint256 theoreticalRemainingDebt = _spoke.getUserTotalDebt(_usdxReserveId(_spoke), alice) -
       debtToCover;
     assertLt(
-      _convertAmountToValue(spoke, _usdxReserveId(spoke), theoreticalRemainingDebt),
+      _convertAmountToValue(_spoke, _usdxReserveId(_spoke), theoreticalRemainingDebt),
       LiquidationLogic.DUST_LIQUIDATION_THRESHOLD
     );
 
     vm.startPrank(liquidator);
     // if debtToCover results in collateral dust, it should revert; $500 in collateral would remain
     vm.expectRevert(ISpoke.MustNotLeaveDust.selector);
-    spoke.liquidationCall(_daiReserveId(spoke), _usdxReserveId(spoke), alice, 600e6, false);
+    _spoke.liquidationCall(_daiReserveId(_spoke), _usdxReserveId(_spoke), alice, 600e6, false);
 
-    spoke.liquidationCall(_daiReserveId(spoke), _usdxReserveId(spoke), alice, debtToCover, false);
+    _spoke.liquidationCall(
+      _daiReserveId(_spoke),
+      _usdxReserveId(_spoke),
+      alice,
+      debtToCover,
+      false
+    );
     vm.stopPrank();
 
-    assertEq(spoke.getUserSuppliedAssets(_daiReserveId(spoke), alice), 0);
+    assertEq(_spoke.getUserSuppliedAssets(_daiReserveId(_spoke), alice), 0);
     // debtToLiquidate has been adjusted because collateral reserve was fully liquidated, so more debt remains than theoreticalRemainingDebt
-    assertGt(spoke.getUserTotalDebt(_usdxReserveId(spoke), alice), theoreticalRemainingDebt);
+    assertGt(_spoke.getUserTotalDebt(_usdxReserveId(_spoke), alice), theoreticalRemainingDebt);
   }
 
   /// @dev debt dust allowed if all collateral is liquidated
@@ -182,7 +200,7 @@ contract SpokeLiquidationCallDustTest is SpokeLiquidationCallBaseTest {
     uint256 targetHealthFactor = 1.1e18;
 
     vm.prank(SPOKE_ADMIN);
-    spoke.updateLiquidationConfig(
+    _spoke.updateLiquidationConfig(
       ISpoke.LiquidationConfig({
         targetHealthFactor: targetHealthFactor.toUint128(),
         healthFactorForMaxBonus: 0.99e18,
@@ -191,30 +209,30 @@ contract SpokeLiquidationCallDustTest is SpokeLiquidationCallBaseTest {
     );
 
     _updateCollateralFactorAndLiquidationBonus(
-      spoke,
-      _daiReserveId(spoke),
+      _spoke,
+      _daiReserveId(_spoke),
       collateralFactor,
       liquidationBonus
     );
-    _increaseCollateralSupply(spoke, _daiReserveId(spoke), 1100e18, alice); // $1100
-    _increaseCollateralSupply(spoke, _usdyReserveId(spoke), 10_000e18, alice);
+    _increaseCollateralSupply(_spoke, _daiReserveId(_spoke), 1100e18, alice); // $1100
+    _increaseCollateralSupply(_spoke, _usdyReserveId(_spoke), 10_000e18, alice);
 
     Utils.borrow({
-      spoke: spoke,
-      reserveId: _usdyReserveId(spoke),
+      spoke: _spoke,
+      reserveId: _usdyReserveId(_spoke),
       caller: alice,
       amount: 9_500e18,
       onBehalfOf: alice
     });
-    _borrowToBeAtHf(spoke, alice, _usdxReserveId(spoke), 0.999e18);
+    _borrowToBeAtHf(_spoke, alice, _usdxReserveId(_spoke), 0.999e18);
 
     uint256 debtToCover = 1200e6; // $1200, enough to liquidate whole coll reserve
 
     uint256 debtToTarget = liquidationLogicWrapper.calculateDebtToTargetHealthFactor(
       _getCalculateDebtToTargetHealthFactorParams(
-        spoke,
-        _daiReserveId(spoke),
-        _usdxReserveId(spoke),
+        _spoke,
+        _daiReserveId(_spoke),
+        _usdxReserveId(_spoke),
         alice
       )
     );
@@ -224,18 +242,24 @@ contract SpokeLiquidationCallDustTest is SpokeLiquidationCallBaseTest {
     vm.startPrank(liquidator);
     // if debtToCover results in collateral and dust, it will revert; $500 in collateral would remain
     vm.expectRevert(ISpoke.MustNotLeaveDust.selector);
-    spoke.liquidationCall(_daiReserveId(spoke), _usdxReserveId(spoke), alice, 600e6, false);
+    _spoke.liquidationCall(_daiReserveId(_spoke), _usdxReserveId(_spoke), alice, 600e6, false);
 
-    spoke.liquidationCall(_daiReserveId(spoke), _usdxReserveId(spoke), alice, debtToCover, false);
+    _spoke.liquidationCall(
+      _daiReserveId(_spoke),
+      _usdxReserveId(_spoke),
+      alice,
+      debtToCover,
+      false
+    );
     vm.stopPrank();
 
-    assertEq(spoke.getUserSuppliedAssets(_daiReserveId(spoke), alice), 0);
+    assertEq(_spoke.getUserSuppliedAssets(_daiReserveId(_spoke), alice), 0);
     // dust is allowed on debt reserve
     assertLt(
       _convertAmountToValue(
-        spoke,
-        _usdxReserveId(spoke),
-        spoke.getUserTotalDebt(_usdxReserveId(spoke), alice)
+        _spoke,
+        _usdxReserveId(_spoke),
+        _spoke.getUserTotalDebt(_usdxReserveId(_spoke), alice)
       ),
       LiquidationLogic.DUST_LIQUIDATION_THRESHOLD
     );
@@ -248,7 +272,7 @@ contract SpokeLiquidationCallDustTest is SpokeLiquidationCallBaseTest {
     uint256 targetHealthFactor = 1.1e18;
 
     vm.prank(SPOKE_ADMIN);
-    spoke.updateLiquidationConfig(
+    _spoke.updateLiquidationConfig(
       ISpoke.LiquidationConfig({
         targetHealthFactor: targetHealthFactor.toUint128(),
         healthFactorForMaxBonus: 0.99e18,
@@ -257,30 +281,30 @@ contract SpokeLiquidationCallDustTest is SpokeLiquidationCallBaseTest {
     );
 
     _updateCollateralFactorAndLiquidationBonus(
-      spoke,
-      _daiReserveId(spoke),
+      _spoke,
+      _daiReserveId(_spoke),
       collateralFactor,
       liquidationBonus
     );
-    _increaseCollateralSupply(spoke, _daiReserveId(spoke), 2100e18, alice); // $2100
-    _increaseCollateralSupply(spoke, _usdyReserveId(spoke), 10_000e18, alice);
+    _increaseCollateralSupply(_spoke, _daiReserveId(_spoke), 2100e18, alice); // $2100
+    _increaseCollateralSupply(_spoke, _usdyReserveId(_spoke), 10_000e18, alice);
 
     Utils.borrow({
-      spoke: spoke,
-      reserveId: _usdyReserveId(spoke),
+      spoke: _spoke,
+      reserveId: _usdyReserveId(_spoke),
       caller: alice,
       amount: 10_500e18,
       onBehalfOf: alice
     });
-    _borrowToBeAtHf(spoke, alice, _usdxReserveId(spoke), 0.999e18);
+    _borrowToBeAtHf(_spoke, alice, _usdxReserveId(_spoke), 0.999e18);
 
     uint256 debtToCover = 1200e6; // $1200, enough to liquidate whole coll reserve
 
     uint256 debtToTarget = liquidationLogicWrapper.calculateDebtToTargetHealthFactor(
       _getCalculateDebtToTargetHealthFactorParams(
-        spoke,
-        _daiReserveId(spoke),
-        _usdxReserveId(spoke),
+        _spoke,
+        _daiReserveId(_spoke),
+        _usdxReserveId(_spoke),
         alice
       )
     );
@@ -290,15 +314,21 @@ contract SpokeLiquidationCallDustTest is SpokeLiquidationCallBaseTest {
     vm.startPrank(liquidator);
     // if debtToCover results in collateral and dust, it will revert; $500 in collateral would remain
     vm.expectRevert(ISpoke.MustNotLeaveDust.selector);
-    spoke.liquidationCall(_daiReserveId(spoke), _usdxReserveId(spoke), alice, 600e6, false);
+    _spoke.liquidationCall(_daiReserveId(_spoke), _usdxReserveId(_spoke), alice, 600e6, false);
 
-    spoke.liquidationCall(_daiReserveId(spoke), _usdxReserveId(spoke), alice, debtToCover, false);
+    _spoke.liquidationCall(
+      _daiReserveId(_spoke),
+      _usdxReserveId(_spoke),
+      alice,
+      debtToCover,
+      false
+    );
     vm.stopPrank();
 
-    assertEq(spoke.getUserTotalDebt(_usdxReserveId(spoke), alice), 0);
+    assertEq(_spoke.getUserTotalDebt(_usdxReserveId(_spoke), alice), 0);
     // dust is allowed on coll reserve
     assertLt(
-      _getCollateralValue(spoke, _daiReserveId(spoke), alice),
+      _getCollateralValue(_spoke, _daiReserveId(_spoke), alice),
       LiquidationLogic.DUST_LIQUIDATION_THRESHOLD
     );
   }

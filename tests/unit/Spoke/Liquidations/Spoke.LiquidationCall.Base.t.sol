@@ -152,7 +152,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
         debtToCover
       );
     try liquidationLogicWrapper.calculateLiquidationAmounts(params) returns (
-      LiquidationLogic.LiquidationAmounts memory liquidationAmounts
+      LiquidationLogic.LiquidationAmounts memory
     ) {} catch {
       ISpoke.UserAccountData memory userAccountData = spoke.getUserAccountData(user);
       uint256 liquidationBonus = spoke.getLiquidationBonus(
@@ -407,8 +407,8 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
     vars.userDebtPosition = params.spoke.getUserPosition(params.debtReserveId, params.user);
     vars.collateralHub = _hub(params.spoke, params.collateralReserveId);
     vars.debtHub = _hub(params.spoke, params.debtReserveId);
-    vars.debtAssetId = _assetId(params.spoke, params.debtReserveId);
-    vars.collateralAssetId = _assetId(params.spoke, params.collateralReserveId);
+    vars.debtAssetId = _spokeAssetId(params.spoke, params.debtReserveId);
+    vars.collateralAssetId = _spokeAssetId(params.spoke, params.collateralReserveId);
 
     (vars.userDrawnDebt, vars.userPremiumDebt) = params.spoke.getUserDebt(
       params.debtReserveId,
@@ -480,7 +480,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
         uint256 reserveId = i;
         if (_isBorrowing(params.spoke, reserveId, params.user)) {
           vars.userReservePosition = params.spoke.getUserPosition(reserveId, params.user);
-          uint256 assetId = _assetId(params.spoke, reserveId);
+          uint256 assetId = _spokeAssetId(params.spoke, reserveId);
 
           if (reserveId == params.debtReserveId) {
             vars.userReservePosition.drawnShares -= _hub(params.spoke, reserveId)
@@ -564,13 +564,13 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
         ),
         suppliedInSpoke: spoke.getUserSuppliedAssets(collateralReserveId, addr),
         addedInHub: _hub(spoke, collateralReserveId).getSpokeAddedAssets(
-          _assetId(spoke, collateralReserveId),
+          _spokeAssetId(spoke, collateralReserveId),
           addr
         ),
         debtErc20Balance: getAssetUnderlyingByReserveId(spoke, debtReserveId).balanceOf(addr),
         borrowedFromSpoke: spoke.getUserTotalDebt(debtReserveId, addr),
         drawnFromHub: _hub(spoke, debtReserveId).getSpokeTotalOwed(
-          _assetId(spoke, debtReserveId),
+          _spokeAssetId(spoke, debtReserveId),
           addr
         )
       });
@@ -653,7 +653,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
 
     uint256 collateralSharesToLiquidate = _hub(params.spoke, params.collateralReserveId)
       .previewRemoveByAssets(
-        _assetId(params.spoke, params.collateralReserveId),
+        _spokeAssetId(params.spoke, params.collateralReserveId),
         liquidationAmounts.collateralToLiquidate
       );
 
@@ -661,13 +661,13 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
     if (params.receiveShares && liquidationAmounts.collateralToLiquidator > 0) {
       collateralSharesToLiquidator = _hub(params.spoke, params.collateralReserveId)
         .previewAddByAssets(
-          _assetId(params.spoke, params.collateralReserveId),
+          _spokeAssetId(params.spoke, params.collateralReserveId),
           liquidationAmounts.collateralToLiquidator
         );
     } else {
       collateralSharesToLiquidator = _hub(params.spoke, params.collateralReserveId)
         .previewRemoveByAssets(
-          _assetId(params.spoke, params.collateralReserveId),
+          _spokeAssetId(params.spoke, params.collateralReserveId),
           liquidationAmounts.collateralToLiquidator
         );
     }
@@ -1242,13 +1242,16 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
       if (logs[i].topics[0] == IHubBase.TransferShares.selector) {
         transferSharesEventCount += 1;
 
-        assertEq(uint256(logs[i].topics[1]), _assetId(params.spoke, params.collateralReserveId));
+        assertEq(
+          uint256(logs[i].topics[1]),
+          _spokeAssetId(params.spoke, params.collateralReserveId)
+        );
         address sender = address(uint160(uint256(logs[i].topics[2])));
         address receiver = address(uint160(uint256(logs[i].topics[3])));
         uint256 shares = abi.decode(logs[i].data, (uint256));
         uint256 expectedShares = _hub(params.spoke, params.collateralReserveId)
           .previewRemoveByAssets(
-            _assetId(params.spoke, params.collateralReserveId),
+            _spokeAssetId(params.spoke, params.collateralReserveId),
             liquidationMetadata.collateralToLiquidate - liquidationMetadata.collateralToLiquidator
           );
         assertApproxEqAbs(shares, expectedShares, 1);

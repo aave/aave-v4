@@ -607,7 +607,6 @@ contract SpokeBorrowScenarioTest is SpokeBase {
     assertEq(_getCollateralFactor(spoke1, coll1ReserveId), 0); // initially
     assertNotEq(_getCollateralFactor(spoke1, coll2ReserveId), 0);
 
-    uint256 coll1Value = _getValue(spoke1, coll1ReserveId, coll1Amount);
     uint256 coll2Value = _getValue(spoke1, coll2ReserveId, coll2Amount);
 
     Utils.supplyCollateral(spoke1, coll1ReserveId, alice, coll1Amount, alice);

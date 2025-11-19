@@ -297,7 +297,9 @@ contract SpokeLiquidationCallScenariosTest is SpokeLiquidationCallBaseTest {
     assertEq(spoke.getUserSuppliedAssets(_wethReserveId(spoke), user), 1, 'Collateral should be 1');
     assertEq(spoke.getUserTotalDebt(_daiReserveId(spoke), user), 0, 'Debt should be 0');
     assertEq(
-      _hub(spoke, _daiReserveId(spoke)).getAssetDeficitRay(_assetId(spoke, _daiReserveId(spoke))),
+      _hub(spoke, _daiReserveId(spoke)).getAssetDeficitRay(
+        _spokeAssetId(spoke, _daiReserveId(spoke))
+      ),
       0,
       'Deficit should be 0'
     );

@@ -306,7 +306,7 @@ contract LiquidationLogicLiquidationAmountsTest is LiquidationLogicBaseTest {
 
   function _calculateRawLiquidationAmounts(
     LiquidationLogic.CalculateLiquidationAmountsParams memory params
-  ) internal returns (LiquidationLogic.LiquidationAmounts memory) {
+  ) internal view returns (LiquidationLogic.LiquidationAmounts memory) {
     uint256 liquidationBonus = liquidationLogicWrapper.calculateLiquidationBonus({
       healthFactorForMaxBonus: params.healthFactorForMaxBonus,
       liquidationBonusFactor: params.liquidationBonusFactor,
@@ -339,7 +339,7 @@ contract LiquidationLogicLiquidationAmountsTest is LiquidationLogicBaseTest {
 
   function _calculateAdjustedLiquidationAmounts(
     LiquidationLogic.CalculateLiquidationAmountsParams memory params
-  ) internal returns (LiquidationLogic.LiquidationAmounts memory) {
+  ) internal view returns (LiquidationLogic.LiquidationAmounts memory) {
     uint256 liquidationBonus = liquidationLogicWrapper.calculateLiquidationBonus({
       healthFactorForMaxBonus: params.healthFactorForMaxBonus,
       liquidationBonusFactor: params.liquidationBonusFactor,

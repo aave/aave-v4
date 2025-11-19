@@ -113,7 +113,6 @@ contract LiquidationLogicLiquidateDebtTest is LiquidationLogicBaseTest {
 
     uint256 debtToLiquidate = vm.randomUint(1, drawnDebt + premiumDebtRay.fromRayUp());
     (uint256 drawnToLiquidate, uint256 premiumToLiquidateRay) = _calculateLiquidationAmounts(
-      drawnDebt,
       premiumDebtRay,
       debtToLiquidate
     );
@@ -129,7 +128,6 @@ contract LiquidationLogicLiquidateDebtTest is LiquidationLogicBaseTest {
     uint256 initialLiquidatorBalance = asset.balanceOf(liquidator);
 
     expectCall(
-      drawnDebt,
       initialPosition.premiumShares,
       initialPosition.premiumOffsetRay,
       accruedPremiumRay,
@@ -137,19 +135,15 @@ contract LiquidationLogicLiquidateDebtTest is LiquidationLogicBaseTest {
       premiumToLiquidateRay
     );
 
-    (
-      uint256 drawnSharesLiquidated,
-      IHubBase.PremiumDelta memory premiumDelta,
-      bool isPositionEmpty
-    ) = liquidationLogicWrapper.liquidateDebt(
-        LiquidationLogic.LiquidateDebtParams({
-          debtReserveId: reserveId,
-          debtToLiquidate: debtToLiquidate,
-          accruedPremiumRay: accruedPremiumRay,
-          liquidator: liquidator,
-          user: user
-        })
-      );
+    (uint256 drawnSharesLiquidated, , bool isPositionEmpty) = liquidationLogicWrapper.liquidateDebt(
+      LiquidationLogic.LiquidateDebtParams({
+        debtReserveId: reserveId,
+        debtToLiquidate: debtToLiquidate,
+        accruedPremiumRay: accruedPremiumRay,
+        liquidator: liquidator,
+        user: user
+      })
+    );
 
     assertEq(drawnSharesLiquidated, hub.previewRestoreByAssets(assetId, drawnToLiquidate));
     assertEq(isPositionEmpty, debtToLiquidate == drawnDebt + premiumDebtRay.fromRayUp());
@@ -233,7 +227,6 @@ contract LiquidationLogicLiquidateDebtTest is LiquidationLogicBaseTest {
   }
 
   function expectCall(
-    uint256 drawnDebt,
     uint256 premiumShares,
     uint256 premiumOffsetRay,
     uint256 accruedPremiumRay,
@@ -276,7 +269,7 @@ contract LiquidationLogicLiquidateDebtTest is LiquidationLogicBaseTest {
     uint256 drawnSharesLiquidated,
     uint256 accruedPremiumRay,
     uint256 premiumToLiquidateRay
-  ) internal {
+  ) internal pure {
     initialPosition.drawnShares -= drawnSharesLiquidated.toUint120();
     initialPosition.premiumShares = 0;
     initialPosition.premiumOffsetRay = 0;
@@ -287,10 +280,9 @@ contract LiquidationLogicLiquidateDebtTest is LiquidationLogicBaseTest {
   }
 
   function _calculateLiquidationAmounts(
-    uint256 drawnDebt,
     uint256 premiumDebtRay,
     uint256 debtToLiquidate
-  ) internal returns (uint256, uint256) {
+  ) internal pure returns (uint256, uint256) {
     uint256 debtToLiquidateRay = debtToLiquidate.toRay();
     uint256 premiumToLiquidateRay = _min(premiumDebtRay, debtToLiquidateRay);
     uint256 drawnToLiquidate = debtToLiquidate - premiumToLiquidateRay.fromRayUp();

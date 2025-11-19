@@ -125,13 +125,6 @@ abstract contract Base is Test {
   uint256 internal constant MAX_LIQUIDATION_PROTOCOL_FEE_PERCENTAGE =
     PercentageMath.PERCENTAGE_FACTOR;
 
-  // TODO: remove after migrating to token list
-  IERC20 internal usdc;
-  IERC20 internal dai;
-  IERC20 internal usdt;
-  IERC20 internal eth;
-  IERC20 internal wbtc;
-
   IAaveOracle internal oracle1;
   IAaveOracle internal oracle2;
   IAaveOracle internal oracle3;
@@ -142,10 +135,6 @@ abstract contract Base is Test {
   ISpoke internal spoke3;
   AssetInterestRateStrategy internal irStrategy;
   IAccessManager internal accessManager;
-
-  // TODO: remove after migrating to other mock users
-  address internal USER1 = makeAddr('USER1');
-  address internal USER2 = makeAddr('USER2');
 
   address internal alice = makeAddr('alice');
   address internal bob = makeAddr('bob');
@@ -175,7 +164,7 @@ abstract contract Base is Test {
   uint256 internal mintAmount_USDY = MAX_SUPPLY_AMOUNT;
   uint256 internal mintAmount_USDZ = MAX_SUPPLY_AMOUNT;
 
-  Decimals internal decimals = Decimals({usdx: 6, usdy: 18, dai: 18, wbtc: 8, weth: 18, usdz: 18});
+  Decimals internal _decimals = Decimals({usdx: 6, usdy: 18, dai: 18, wbtc: 8, weth: 18, usdz: 18});
 
   struct Decimals {
     uint8 usdx;
@@ -290,11 +279,6 @@ abstract contract Base is Test {
     (spoke2, oracle2) = _deploySpokeWithOracle(ADMIN, address(accessManager), 'Spoke 2 (USD)');
     (spoke3, oracle3) = _deploySpokeWithOracle(ADMIN, address(accessManager), 'Spoke 3 (USD)');
     treasurySpoke = ITreasurySpoke(new TreasurySpoke(TREASURY_ADMIN, address(hub1)));
-    dai = new MockERC20();
-    eth = new MockERC20();
-    usdc = new MockERC20();
-    usdt = new MockERC20();
-    wbtc = new MockERC20();
     vm.stopPrank();
 
     vm.label(address(spoke1), 'spoke1');
@@ -359,11 +343,11 @@ abstract contract Base is Test {
   function deployMintAndApproveTokenList() internal {
     tokenList = TokenList(
       new WETH9(),
-      new TestnetERC20('USDX', 'USDX', decimals.usdx),
-      new TestnetERC20('DAI', 'DAI', decimals.dai),
-      new TestnetERC20('WBTC', 'WBTC', decimals.wbtc),
-      new TestnetERC20('USDY', 'USDY', decimals.usdy),
-      new TestnetERC20('USDZ', 'USDZ', decimals.usdz)
+      new TestnetERC20('USDX', 'USDX', _decimals.usdx),
+      new TestnetERC20('DAI', 'DAI', _decimals.dai),
+      new TestnetERC20('WBTC', 'WBTC', _decimals.wbtc),
+      new TestnetERC20('USDY', 'USDY', _decimals.usdy),
+      new TestnetERC20('USDZ', 'USDZ', _decimals.usdz)
     );
 
     vm.label(address(tokenList.weth), 'WETH');
@@ -1539,7 +1523,7 @@ abstract contract Base is Test {
         userDrawnDebt,
         userPremiumDebt,
         repayAmount,
-        _assetId(spoke, reserveId)
+        _spokeAssetId(spoke, reserveId)
       );
   }
 
@@ -1547,7 +1531,7 @@ abstract contract Base is Test {
     uint256 restoreAmount,
     uint256 drawn,
     uint256 premium
-  ) internal view returns (uint256 baseAmount, uint256 premiumAmount) {
+  ) internal pure returns (uint256 baseAmount, uint256 premiumAmount) {
     if (restoreAmount <= premium) {
       return (0, restoreAmount);
     }
@@ -2197,7 +2181,7 @@ abstract contract Base is Test {
     return IHub(address(spoke.getReserve(reserveId).hub));
   }
 
-  function _assetId(ISpoke spoke, uint256 reserveId) internal view returns (uint256) {
+  function _spokeAssetId(ISpoke spoke, uint256 reserveId) internal view returns (uint256) {
     return spoke.getReserve(reserveId).assetId;
   }
 

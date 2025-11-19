@@ -149,7 +149,6 @@ contract SpokeMultipleHubTest is SpokeBase {
   /// @dev Test showcasing collateral on hub 3 can suffice for debt position on hub 1
   function test_borrow_thirdHub() public {
     uint256 hub1BorrowAmount = 50_000e18;
-    uint256 hub3DaiBorrowAmount = 1e18;
     uint256 daiSupplyAmount = 100_000e18;
 
     // Bob supply to spoke 1 on hub 1

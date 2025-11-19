@@ -834,10 +834,10 @@ contract SpokeBase is Base {
   }
 
   function _isHealthy(ISpoke spoke, address user) internal view returns (bool) {
-    return _isHealthy(spoke, spoke.getUserAccountData(user).healthFactor);
+    return _isHealthy(spoke.getUserAccountData(user).healthFactor);
   }
 
-  function _isHealthy(ISpoke spoke, uint256 healthFactor) internal view returns (bool) {
+  function _isHealthy(uint256 healthFactor) internal pure returns (bool) {
     return healthFactor >= Constants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD;
   }
 

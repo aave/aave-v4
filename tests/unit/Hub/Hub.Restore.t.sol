@@ -161,7 +161,6 @@ contract HubRestoreTest is HubBase {
 
   function test_restore_revertsWith_InsufficientTransferred() public {
     uint256 daiAmount = 100e18;
-    uint256 wethAmount = 10e18;
     uint256 drawAmount = daiAmount / 2;
     _addAndDrawLiquidity({
       hub: hub1,
@@ -183,8 +182,6 @@ contract HubRestoreTest is HubBase {
       reserveId: daiAssetId,
       premiumRestored: premium
     });
-
-    uint256 expectedLiquidity = hub1.getAssetLiquidity(daiAssetId) + restoreDrawnAmount + premium;
 
     vm.startPrank(address(spoke1));
     tokenList.dai.transferFrom(alice, address(hub1), restoreDrawnAmount / 2);
@@ -499,7 +496,6 @@ contract HubRestoreTest is HubBase {
 
     (uint256 drawn, uint256 premium) = hub1.getSpokeOwed(daiAssetId, address(spoke1));
     uint256 drawnRestored = drawn;
-    uint256 restoreAmount = drawnRestored + premium;
 
     IHubBase.PremiumDelta memory premiumDelta = _getExpectedPremiumDelta({
       spoke: spoke1,
@@ -549,7 +545,6 @@ contract HubRestoreTest is HubBase {
 
     (uint256 drawn, uint256 premium) = hub1.getSpokeOwed(daiAssetId, address(spoke1));
     uint256 drawnRestored = drawn;
-    uint256 restoreAmount = drawnRestored + premium;
 
     IHubBase.PremiumDelta memory premiumDelta = _getExpectedPremiumDelta({
       spoke: spoke1,
@@ -591,7 +586,6 @@ contract HubRestoreTest is HubBase {
 
     (uint256 drawn, uint256 premium) = hub1.getSpokeOwed(daiAssetId, address(spoke1));
     uint256 drawnRestored = drawn;
-    uint256 restoreAmount = drawnRestored + premium;
 
     IHubBase.PremiumDelta memory premiumDelta = _getExpectedPremiumDelta({
       spoke: spoke1,
@@ -633,7 +627,6 @@ contract HubRestoreTest is HubBase {
 
     (uint256 drawn, uint256 premium) = hub1.getSpokeOwed(daiAssetId, address(spoke1));
     uint256 drawnRestored = drawn;
-    uint256 restoreAmount = drawnRestored + premium;
 
     IHubBase.PremiumDelta memory premiumDelta = _getExpectedPremiumDelta({
       spoke: spoke1,
@@ -672,7 +665,6 @@ contract HubRestoreTest is HubBase {
 
     (uint256 drawn, uint256 premium) = hub1.getSpokeOwed(daiAssetId, address(spoke1));
     uint256 drawnRestored = drawn;
-    uint256 restoreAmount = drawnRestored + premium;
 
     IHubBase.PremiumDelta memory premiumDelta = _getExpectedPremiumDelta({
       spoke: spoke1,
@@ -693,7 +685,6 @@ contract HubRestoreTest is HubBase {
   /// @dev Restore partial amount of drawn after time has passed (no premium).
   function test_restore_partial_drawn() public {
     uint256 daiAmount = 100e18;
-    uint256 wethAmount = 10e18;
     uint256 drawAmount = daiAmount / 2;
     _addAndDrawLiquidity({
       hub: hub1,
@@ -725,7 +716,6 @@ contract HubRestoreTest is HubBase {
     vm.stopPrank();
 
     AssetPosition memory daiData = getAssetPosition(hub1, daiAssetId);
-    address feeReceiver = _getFeeReceiver(hub1, daiAssetId);
 
     // hub
     assertApproxEqAbs(
@@ -908,7 +898,6 @@ contract HubRestoreTest is HubBase {
     vm.stopPrank();
 
     AssetPosition memory daiData = getAssetPosition(hub1, daiAssetId);
-    address daiFeeReceiver = _getFeeReceiver(hub1, daiAssetId);
 
     // asset
     assertEq(daiData.drawn, 0, 'asset drawn');
@@ -1011,7 +1000,6 @@ contract HubRestoreTest is HubBase {
     vm.stopPrank();
 
     AssetPosition memory daiData = getAssetPosition(hub1, daiAssetId);
-    address daiFeeReceiver = _getFeeReceiver(hub1, daiAssetId);
 
     // asset
     assertEq(daiData.drawn, 0, 'asset drawn');

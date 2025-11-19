@@ -190,7 +190,6 @@ contract TreasurySpokeTest is SpokeBase {
     updateLiquidityFee(hub1, spoke1.getReserve(reserveId).assetId, 100_00);
 
     assertEq(treasurySpoke.getSuppliedShares(reserveId), 0);
-    uint256 lastDrawnIndex = hub1.getAsset(assetId).drawnIndex;
 
     // create debt
     address tempUser = _openDebtPosition(spoke1, reserveId, amount, true);

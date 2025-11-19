@@ -27,9 +27,9 @@ contract LiquidationLogicWrapper {
   ISpoke.LiquidationConfig internal liquidationConfig;
   ISpoke.DynamicReserveConfig internal dynamicCollateralConfig;
 
-  constructor(address borrower, address liquidator) {
-    _borrower = borrower;
-    _liquidator = liquidator;
+  constructor(address borrower_, address liquidator_) {
+    _borrower = borrower_;
+    _liquidator = liquidator_;
   }
 
   function setBorrower(address borrower) public {
