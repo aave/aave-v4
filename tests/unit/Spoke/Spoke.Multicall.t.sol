@@ -44,7 +44,7 @@ contract SpokeMulticall is SpokeBase {
     assertEq(bobSupplied, supplyAmount, 'Bob supplied dai amount');
 
     // Check the collateral
-    assertEq(spoke1.isUsingAsCollateral(daiReserveId, bob), true, 'Bob using as collateral');
+    assertEq(_isUsingAsCollateral(spoke1, daiReserveId, bob), true, 'Bob using as collateral');
   }
 
   /// Supply and update user risk premium using multicall
@@ -151,25 +151,27 @@ contract SpokeMulticall is SpokeBase {
     usdaReserveExpected.borrowable = usdaConfig.borrowable;
     usdaReserveExpected.collateralRisk = usdaConfig.collateralRisk;
 
-    // Set up the multicall
-    bytes[] memory calls = new bytes[](2);
-    calls[0] = abi.encodeCall(
-      ISpoke.addReserve,
-      (address(hub1), usdzAssetId, _deployMockPriceFeed(spoke1, 1e8), usdzConfig, usdzDynConfig)
-    );
-    calls[1] = abi.encodeCall(
-      ISpoke.addReserve,
-      (address(hub1), usdaAssetId, _deployMockPriceFeed(spoke1, 1e8), usdaConfig, usdaDynConfig)
-    );
+    {
+      // Set up the multicall
+      bytes[] memory calls = new bytes[](2);
+      calls[0] = abi.encodeCall(
+        ISpoke.addReserve,
+        (address(hub1), usdzAssetId, _deployMockPriceFeed(spoke1, 1e8), usdzConfig, usdzDynConfig)
+      );
+      calls[1] = abi.encodeCall(
+        ISpoke.addReserve,
+        (address(hub1), usdaAssetId, _deployMockPriceFeed(spoke1, 1e8), usdaConfig, usdaDynConfig)
+      );
 
-    vm.expectEmit(address(spoke1));
-    emit ISpoke.AddReserve(usdzReserveId, usdzAssetId, address(hub1));
-    vm.expectEmit(address(spoke1));
-    emit ISpoke.AddReserve(usdaReserveId, usdaAssetId, address(hub1));
+      vm.expectEmit(address(spoke1));
+      emit ISpoke.AddReserve(usdzReserveId, usdzAssetId, address(hub1));
+      vm.expectEmit(address(spoke1));
+      emit ISpoke.AddReserve(usdaReserveId, usdaAssetId, address(hub1));
 
-    // Execute the multicall
-    vm.prank(SPOKE_ADMIN);
-    spoke1.multicall(calls);
+      // Execute the multicall
+      vm.prank(SPOKE_ADMIN);
+      spoke1.multicall(calls);
+    }
 
     // Check the reserves
     assertEq(
@@ -179,8 +181,8 @@ contract SpokeMulticall is SpokeBase {
     );
     assertEq(spoke1.getReserveConfig(usdzReserveId), usdzConfig);
     assertEq(spoke1.getReserveConfig(usdaReserveId), usdaConfig);
-    assertEq(spoke1.getDynamicReserveConfig(usdzReserveId), usdzDynConfig);
-    assertEq(spoke1.getDynamicReserveConfig(usdaReserveId), usdaDynConfig);
+    assertEq(_getLatestDynamicReserveConfig(spoke1, usdzReserveId), usdzDynConfig);
+    assertEq(_getLatestDynamicReserveConfig(spoke1, usdaReserveId), usdaDynConfig);
   }
 
   /// Update multiple reserve configs using multicall

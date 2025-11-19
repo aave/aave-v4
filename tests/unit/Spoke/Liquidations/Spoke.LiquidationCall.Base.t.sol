@@ -59,6 +59,20 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
     bool isCollateralAffectingUserHf;
     bool hasDeficit;
   }
+  struct ExpectEventsAndCallsParams {
+    uint256 userDrawnDebt;
+    uint256 userPremiumDebt;
+    uint256 premiumDebtToRestore;
+    uint256 baseAmountToRestore;
+    int256 realizedDelta;
+    IHubBase.PremiumDelta premiumDelta;
+    ISpoke.UserPosition userReservePosition;
+    ISpoke.UserPosition userDebtPosition;
+    IHub collateralHub;
+    IHub debtHub;
+    uint256 debtAssetId;
+    uint256 collateralAssetId;
+  }
 
   /// @notice Bound liquidation config to full range of possible values
   function _bound(
@@ -313,7 +327,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
 
     uint256 index = 0;
     for (uint256 reserveId = 0; reserveId < params.spoke.getReserveCount(); reserveId++) {
-      if (!params.spoke.isUsingAsCollateral(reserveId, params.user)) {
+      if (!_isUsingAsCollateral(params.spoke, reserveId, params.user)) {
         continue;
       }
 
@@ -388,15 +402,26 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
     AccountsInfo memory /*accountsInfoBefore*/,
     LiquidationMetadata memory liquidationMetadata
   ) internal virtual {
-    uint256 debtAssetId = _spokeAssetId(params.spoke, params.debtReserveId);
+    ExpectEventsAndCallsParams memory vars;
 
-    (uint256 baseAmountToRestore, ) = _calculateRestoreAmounts(
+    vars.userDebtPosition = params.spoke.getUserPosition(params.debtReserveId, params.user);
+    vars.collateralHub = _hub(params.spoke, params.collateralReserveId);
+    vars.debtHub = _hub(params.spoke, params.debtReserveId);
+    vars.debtAssetId = _spokeAssetId(params.spoke, params.debtReserveId);
+    vars.collateralAssetId = _spokeAssetId(params.spoke, params.collateralReserveId);
+
+    (vars.userDrawnDebt, vars.userPremiumDebt) = params.spoke.getUserDebt(
+      params.debtReserveId,
+      params.user
+    );
+
+    (vars.baseAmountToRestore, vars.premiumDebtToRestore) = _calculateRestoreAmounts(
       params.spoke,
       params.debtReserveId,
       params.user,
       liquidationMetadata.debtToLiquidate
     );
-    IHubBase.PremiumDelta memory premiumDelta = _getExpectedPremiumDelta(
+    vars.premiumDelta = _getExpectedPremiumDelta(
       params.spoke,
       params.user,
       params.debtReserveId,
@@ -411,10 +436,11 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
       liquidator: params.liquidator,
       receiveShares: params.receiveShares,
       debtToLiquidate: liquidationMetadata.debtToLiquidate,
-      drawnSharesToLiquidate: _hub(params.spoke, params.debtReserveId)
-        .previewRestoreByAssets(debtAssetId, baseAmountToRestore)
+      drawnSharesToLiquidate: vars
+        .debtHub
+        .previewRestoreByAssets(vars.debtAssetId, vars.baseAmountToRestore)
         .toUint120(),
-      premiumDelta: premiumDelta,
+      premiumDelta: vars.premiumDelta,
       collateralToLiquidate: liquidationMetadata.collateralToLiquidate,
       collateralSharesToLiquidate: liquidationMetadata.collateralSharesToLiquidate,
       collateralSharesToLiquidator: liquidationMetadata.collateralSharesToLiquidator
@@ -422,22 +448,21 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
 
     if (!params.receiveShares && liquidationMetadata.collateralToLiquidator > 0) {
       vm.expectCall(
-        address(_hub(params.spoke, params.collateralReserveId)),
+        address(vars.collateralHub),
         abi.encodeCall(
           IHubBase.remove,
-          (
-            _spokeAssetId(params.spoke, params.collateralReserveId),
-            liquidationMetadata.collateralToLiquidator,
-            params.liquidator
-          )
+          (vars.collateralAssetId, liquidationMetadata.collateralToLiquidator, params.liquidator)
         ),
         1
       );
     }
 
     vm.expectCall(
-      address(_hub(params.spoke, params.debtReserveId)),
-      abi.encodeCall(IHubBase.restore, (debtAssetId, baseAmountToRestore, premiumDelta)),
+      address(vars.debtHub),
+      abi.encodeCall(
+        IHubBase.restore,
+        (vars.debtAssetId, vars.baseAmountToRestore, vars.premiumDelta)
+      ),
       1
     );
 
@@ -449,57 +474,78 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
       );
     }
 
-    if (liquidationMetadata.hasDeficit) {
-      for (uint256 reserveId = 0; reserveId < params.spoke.getReserveCount(); reserveId++) {
-        if (params.spoke.isBorrowing(reserveId, params.user)) {
-          ISpoke.UserPosition memory userReservePosition = params.spoke.getUserPosition(
-            reserveId,
-            params.user
-          );
+    {
+      for (uint256 i = params.spoke.getReserveCount(); i != 0; ) {
+        i--;
+        uint256 reserveId = i;
+        if (_isBorrowing(params.spoke, reserveId, params.user)) {
+          vars.userReservePosition = params.spoke.getUserPosition(reserveId, params.user);
           uint256 assetId = _spokeAssetId(params.spoke, reserveId);
 
           if (reserveId == params.debtReserveId) {
-            userReservePosition.drawnShares -= _hub(params.spoke, reserveId)
-              .previewRestoreByAssets(assetId, baseAmountToRestore)
+            vars.userReservePosition.drawnShares -= _hub(params.spoke, reserveId)
+              .previewRestoreByAssets(assetId, vars.baseAmountToRestore)
               .toUint120();
-            userReservePosition.premiumShares = 0;
-            userReservePosition.premiumOffsetRay = 0;
-            userReservePosition.realizedPremiumRay = (userReservePosition.realizedPremiumRay +
-              premiumDelta.accruedPremiumRay -
-              premiumDelta.restoredPremiumRay).toUint200();
+            vars.userReservePosition.premiumShares = 0;
+            vars.userReservePosition.premiumOffsetRay = 0;
+            vars.userReservePosition.realizedPremiumRay = (vars
+              .userReservePosition
+              .realizedPremiumRay +
+              vars.premiumDelta.accruedPremiumRay -
+              vars.premiumDelta.restoredPremiumRay).toUint200();
 
-            if (userReservePosition.drawnShares == 0) {
+            if (vars.userReservePosition.drawnShares == 0) {
               continue;
             }
           }
 
-          uint256 accruedPremiumRay = _calculateAccruedPremiumRay(
-            params.spoke,
-            reserveId,
-            userReservePosition.premiumShares,
-            userReservePosition.premiumOffsetRay
+          IHub targetHub = _hub(params.spoke, reserveId);
+          uint256 userReserveDrawnDebt = targetHub.previewRestoreByShares(
+            assetId,
+            vars.userReservePosition.drawnShares
           );
 
-          vm.expectCall(
-            address(_hub(params.spoke, reserveId)),
-            abi.encodeCall(
-              IHubBase.reportDeficit,
-              (
-                assetId,
-                _hub(params.spoke, reserveId).previewRestoreByShares(
+          if (liquidationMetadata.hasDeficit) {
+            uint256 accruedPremiumRay = _calculateAccruedPremiumRay(
+              params.spoke,
+              reserveId,
+              vars.userReservePosition.premiumShares,
+              vars.userReservePosition.premiumOffsetRay
+            );
+
+            vm.expectCall(
+              address(targetHub),
+              abi.encodeCall(
+                IHubBase.reportDeficit,
+                (
                   assetId,
-                  userReservePosition.drawnShares
-                ),
-                IHubBase.PremiumDelta({
-                  sharesDelta: -userReservePosition.premiumShares.toInt256(),
-                  offsetDeltaRay: -userReservePosition.premiumOffsetRay.toInt256(),
-                  accruedPremiumRay: accruedPremiumRay,
-                  restoredPremiumRay: userReservePosition.realizedPremiumRay + accruedPremiumRay
-                })
-              )
-            ),
-            1
-          );
+                  userReserveDrawnDebt,
+                  IHubBase.PremiumDelta({
+                    sharesDelta: -vars.userReservePosition.premiumShares.toInt256(),
+                    offsetDeltaRay: -vars.userReservePosition.premiumOffsetRay.toInt256(),
+                    accruedPremiumRay: accruedPremiumRay,
+                    restoredPremiumRay: vars.userReservePosition.realizedPremiumRay +
+                      accruedPremiumRay
+                  })
+                )
+              ),
+              1
+            );
+            vm.expectEmit(address(params.spoke));
+            emit ISpoke.ReportDeficit({
+              reserveId: reserveId,
+              user: params.user,
+              drawnShares: targetHub
+                .previewRestoreByAssets(assetId, userReserveDrawnDebt)
+                .toUint120(),
+              premiumDelta: IHubBase.PremiumDelta({
+                sharesDelta: -vars.userReservePosition.premiumShares.toInt256(),
+                offsetDeltaRay: -vars.userReservePosition.premiumOffsetRay.toInt256(),
+                accruedPremiumRay: accruedPremiumRay,
+                restoredPremiumRay: vars.userReservePosition.realizedPremiumRay + accruedPremiumRay
+              })
+            });
+          }
         }
       }
     }
@@ -691,12 +737,13 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
     LiquidationMetadata memory liquidationMetadata
   ) internal virtual {
     assertEq(
-      params.spoke.isUsingAsCollateral(params.collateralReserveId, params.user),
+      _isUsingAsCollateral(params.spoke, params.collateralReserveId, params.user),
       true,
       'user position status: using as collateral'
     );
     assertEq(
-      params.spoke.isBorrowing(params.debtReserveId, params.user) || liquidationMetadata.hasDeficit,
+      _isBorrowing(params.spoke, params.debtReserveId, params.user) ||
+        liquidationMetadata.hasDeficit,
       liquidationMetadata.debtToLiquidate < accountsInfoBefore.userBalanceInfo.borrowedFromSpoke,
       'user position status: borrowing'
     );
@@ -1247,11 +1294,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
     }
 
     uint256 riskPremiumEventExpectedCount = 1;
-    if (
-      !accountsInfoBefore.hasPositiveRiskPremium &&
-      !accountsInfoAfter.hasPositiveRiskPremium &&
-      !liquidationMetadata.hasDeficit
-    ) {
+    if (!accountsInfoBefore.hasPositiveRiskPremium && !accountsInfoAfter.hasPositiveRiskPremium) {
       riskPremiumEventExpectedCount = 0;
     }
     assertEq(riskPremiumEventCount, riskPremiumEventExpectedCount, 'riskPremiumEventExpectedCount');
@@ -1269,7 +1312,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
     );
 
     for (uint256 reserveId = 0; reserveId < params.spoke.getReserveCount(); reserveId++) {
-      if (params.spoke.isBorrowing(reserveId, params.user)) {
+      if (_isBorrowing(params.spoke, reserveId, params.user)) {
         ISpoke.UserPosition memory userPosition = params.spoke.getUserPosition(
           reserveId,
           params.user

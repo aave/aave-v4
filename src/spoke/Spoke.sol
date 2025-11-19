@@ -397,13 +397,13 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
       params
     );
 
+    uint256 newRiskPremium = 0;
     if (isUserInDeficit) {
       _reportDeficit(user);
     } else {
-      // new risk premium only needs to be propagated if no deficit exists
-      uint256 newRiskPremium = _calculateUserAccountData(user).riskPremium;
-      _notifyRiskPremiumUpdate(user, newRiskPremium);
+      newRiskPremium = _calculateUserAccountData(user).riskPremium;
     }
+    _notifyRiskPremiumUpdate(user, newRiskPremium);
   }
 
   /// @inheritdoc ISpoke
@@ -568,14 +568,6 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
 
   /// @inheritdoc ISpoke
   function getDynamicReserveConfig(
-    uint256 reserveId
-  ) external view returns (DynamicReserveConfig memory) {
-    Reserve storage reserve = _getReserve(reserveId);
-    return _dynamicConfig[reserveId][reserve.dynamicConfigKey];
-  }
-
-  /// @inheritdoc ISpoke
-  function getDynamicReserveConfig(
     uint256 reserveId,
     uint24 dynamicConfigKey
   ) external view returns (DynamicReserveConfig memory) {
@@ -584,15 +576,13 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
   }
 
   /// @inheritdoc ISpoke
-  function isUsingAsCollateral(uint256 reserveId, address user) external view returns (bool) {
+  function getUserReserveStatus(
+    uint256 reserveId,
+    address user
+  ) external view returns (bool, bool) {
     _getReserve(reserveId);
-    return _positionStatus[user].isUsingAsCollateral(reserveId);
-  }
-
-  /// @inheritdoc ISpoke
-  function isBorrowing(uint256 reserveId, address user) external view returns (bool) {
-    _getReserve(reserveId);
-    return _positionStatus[user].isBorrowing(reserveId);
+    PositionStatus storage positionStatus = _positionStatus[user];
+    return (positionStatus.isUsingAsCollateral(reserveId), positionStatus.isBorrowing(reserveId));
   }
 
   /// @inheritdoc ISpokeBase
@@ -847,7 +837,6 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
   /// @dev Skips the refresh if the user risk premium remains zero.
   function _notifyRiskPremiumUpdate(address user, uint256 newRiskPremium) internal {
     PositionStatus storage positionStatus = _positionStatus[user];
-
     if (newRiskPremium == 0 && !positionStatus.hasPositiveRiskPremium) {
       return;
     }
@@ -895,7 +884,6 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
   /// @dev It clears the user position, setting drawn debt, premium debt, and risk premium to zero.
   function _reportDeficit(address user) internal {
     PositionStatus storage positionStatus = _positionStatus[user];
-    positionStatus.hasPositiveRiskPremium = false;
 
     uint256 reserveId = _reserveCount;
     while ((reserveId = positionStatus.nextBorrowing(reserveId)) != PositionStatusMap.NOT_FOUND) {
@@ -920,9 +908,9 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
       userPosition.applyPremiumDelta(premiumDelta);
       userPosition.drawnShares -= deficitShares.toUint120();
       positionStatus.setBorrowing(reserveId, false);
-    }
 
-    emit UpdateUserRiskPremium(user, 0);
+      emit ReportDeficit(reserveId, user, deficitShares, premiumDelta);
+    }
   }
 
   function _getReserve(uint256 reserveId) internal view returns (Reserve storage) {

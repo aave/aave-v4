@@ -209,6 +209,18 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
     IHubBase.PremiumDelta premiumDelta
   );
 
+  /// @notice Emitted on liquidations that report deficit to the Hub.
+  /// @param reserveId The identifier of the reserve.
+  /// @param user The address of the user.
+  /// @param drawnShares The amount of drawn shares reported as deficit.
+  /// @param premiumDelta The premium delta data struct reported as deficit.
+  event ReportDeficit(
+    uint256 indexed reserveId,
+    address indexed user,
+    uint256 drawnShares,
+    IHubBase.PremiumDelta premiumDelta
+  );
+
   /// @notice Thrown when an asset is not listed on the Hub when adding a reserve.
   error AssetNotListed();
 
@@ -438,13 +450,6 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
   /// @param reserveId The identifier of the reserve.
   function getReserveConfig(uint256 reserveId) external view returns (ReserveConfig memory);
 
-  /// @notice Returns the dynamic reserve configuration struct data in storage.
-  /// @dev It reverts if the reserve associated with the given reserve identifier is not listed.
-  /// @param reserveId The identifier of the reserve.
-  function getDynamicReserveConfig(
-    uint256 reserveId
-  ) external view returns (DynamicReserveConfig memory);
-
   /// @notice Returns the dynamic reserve configuration struct at the specified key.
   /// @dev It reverts if the reserve associated with the given reserve identifier is not listed.
   /// @dev Does not revert if `dynamicConfigKey` is unset.
@@ -455,18 +460,14 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
     uint24 dynamicConfigKey
   ) external view returns (DynamicReserveConfig memory);
 
-  /// @notice Returns true if the reserve is set as collateral for the user.
+  /// @notice Returns two flags indicating whether the reserve is used as collateral and whether it is borrowed by the user.
   /// @dev It reverts if the reserve associated with the given reserve identifier is not listed.
   /// @dev Even if enabled as collateral, it will only count towards user position if the collateral factor is greater than 0.
   /// @param reserveId The identifier of the reserve.
   /// @param user The address of the user.
-  function isUsingAsCollateral(uint256 reserveId, address user) external view returns (bool);
-
-  /// @notice Returns true if the user is borrowing the reserve.
-  /// @dev It reverts if the reserve associated with the given reserve identifier is not listed.
-  /// @param reserveId The identifier of the reserve.
-  /// @param user The address of the user.
-  function isBorrowing(uint256 reserveId, address user) external view returns (bool);
+  /// @return True if the reserve is enabled as collateral by the user.
+  /// @return True if the reserve is borrowed by the user.
+  function getUserReserveStatus(uint256 reserveId, address user) external view returns (bool, bool);
 
   /// @notice Returns the user position struct in storage.
   /// @dev It reverts if the reserve associated with the given reserve identifier is not listed.

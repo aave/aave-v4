@@ -1084,13 +1084,13 @@ abstract contract Base is Test {
     uint256 reserveId,
     uint32 newMaxLiquidationBonus
   ) internal pausePrank returns (uint24) {
-    ISpoke.DynamicReserveConfig memory config = spoke.getDynamicReserveConfig(reserveId);
+    ISpoke.DynamicReserveConfig memory config = _getLatestDynamicReserveConfig(spoke, reserveId);
     config.maxLiquidationBonus = newMaxLiquidationBonus;
 
     vm.prank(SPOKE_ADMIN);
     uint24 dynamicConfigKey = spoke.addDynamicReserveConfig(reserveId, config);
 
-    assertEq(spoke.getDynamicReserveConfig(reserveId), config);
+    assertEq(_getLatestDynamicReserveConfig(spoke, reserveId), config);
     return dynamicConfigKey;
   }
 
@@ -1099,13 +1099,13 @@ abstract contract Base is Test {
     uint256 reserveId,
     uint16 newLiquidationFee
   ) internal pausePrank returns (uint24) {
-    ISpoke.DynamicReserveConfig memory config = spoke.getDynamicReserveConfig(reserveId);
+    ISpoke.DynamicReserveConfig memory config = _getLatestDynamicReserveConfig(spoke, reserveId);
     config.liquidationFee = newLiquidationFee;
 
     vm.prank(SPOKE_ADMIN);
     uint24 dynamicConfigKey = spoke.addDynamicReserveConfig(reserveId, config);
 
-    assertEq(spoke.getDynamicReserveConfig(reserveId), config);
+    assertEq(_getLatestDynamicReserveConfig(spoke, reserveId), config);
     return dynamicConfigKey;
   }
 
@@ -1115,14 +1115,14 @@ abstract contract Base is Test {
     uint256 newCollateralFactor,
     uint256 newLiquidationBonus
   ) internal pausePrank returns (uint24) {
-    ISpoke.DynamicReserveConfig memory config = spoke.getDynamicReserveConfig(reserveId);
+    ISpoke.DynamicReserveConfig memory config = _getLatestDynamicReserveConfig(spoke, reserveId);
     config.collateralFactor = newCollateralFactor.toUint16();
     config.maxLiquidationBonus = newLiquidationBonus.toUint32();
 
     vm.prank(SPOKE_ADMIN);
     uint24 dynamicConfigKey = spoke.addDynamicReserveConfig(reserveId, config);
 
-    assertEq(spoke.getDynamicReserveConfig(reserveId), config);
+    assertEq(_getLatestDynamicReserveConfig(spoke, reserveId), config);
     return dynamicConfigKey;
   }
 
@@ -1131,12 +1131,12 @@ abstract contract Base is Test {
     uint256 reserveId,
     uint256 newCollateralFactor
   ) internal pausePrank returns (uint24) {
-    ISpoke.DynamicReserveConfig memory config = spoke.getDynamicReserveConfig(reserveId);
+    ISpoke.DynamicReserveConfig memory config = _getLatestDynamicReserveConfig(spoke, reserveId);
     config.collateralFactor = newCollateralFactor.toUint16();
     vm.prank(SPOKE_ADMIN);
     uint24 dynamicConfigKey = spoke.addDynamicReserveConfig(reserveId, config);
 
-    assertEq(spoke.getDynamicReserveConfig(reserveId), config);
+    assertEq(_getLatestDynamicReserveConfig(spoke, reserveId), config);
     return dynamicConfigKey;
   }
 
@@ -1154,7 +1154,7 @@ abstract contract Base is Test {
     vm.prank(SPOKE_ADMIN);
     spoke.updateDynamicReserveConfig(reserveId, dynamicConfigKey, config);
 
-    assertEq(spoke.getDynamicReserveConfig(reserveId), config);
+    assertEq(_getLatestDynamicReserveConfig(spoke, reserveId), config);
   }
 
   function updateReserveBorrowableFlag(
@@ -1325,11 +1325,44 @@ abstract contract Base is Test {
     data.totalDebt = data.drawnDebt + data.premiumDebt;
   }
 
+  function _isUsingAsCollateral(
+    ISpoke spoke,
+    uint256 reserveId,
+    address user
+  ) internal view returns (bool) {
+    (bool res, ) = spoke.getUserReserveStatus(reserveId, user);
+    return res;
+  }
+
+  function _isBorrowing(
+    ISpoke spoke,
+    uint256 reserveId,
+    address user
+  ) internal view returns (bool) {
+    (, bool res) = spoke.getUserReserveStatus(reserveId, user);
+    return res;
+  }
+
   function getReserveInfo(
     ISpoke spoke,
     uint256 reserveId
   ) internal view returns (ISpoke.Reserve memory) {
     return spoke.getReserve(reserveId);
+  }
+
+  function _getReserveLastDynamicConfigKey(
+    ISpoke spoke,
+    uint256 reserveId
+  ) internal view returns (uint24) {
+    return spoke.getReserve(reserveId).dynamicConfigKey;
+  }
+
+  function _getLatestDynamicReserveConfig(
+    ISpoke spoke,
+    uint256 reserveId
+  ) internal view returns (ISpoke.DynamicReserveConfig memory) {
+    return
+      spoke.getDynamicReserveConfig(reserveId, _getReserveLastDynamicConfigKey(spoke, reserveId));
   }
 
   function getSpokeInfo(
@@ -1918,7 +1951,10 @@ abstract contract Base is Test {
     if (debtAmount == 0) return 1;
     IPriceOracle oracle = IPriceOracle(spoke.ORACLE());
     ISpoke.Reserve memory collData = spoke.getReserve(collReserveId);
-    ISpoke.DynamicReserveConfig memory colDynConf = spoke.getDynamicReserveConfig(collReserveId);
+    ISpoke.DynamicReserveConfig memory collDynConf = _getLatestDynamicReserveConfig(
+      spoke,
+      collReserveId
+    );
 
     uint256 collPrice = oracle.getReservePrice(collReserveId);
     uint256 collAssetUnits = 10 ** hub1.getAsset(collData.assetId).decimals;
@@ -1932,7 +1968,7 @@ abstract contract Base is Test {
 
     return
       normalizedDebtAmount.wadDivUp(
-        normalizedCollPrice.toWad().percentMulDown(colDynConf.collateralFactor)
+        normalizedCollPrice.toWad().percentMulDown(collDynConf.collateralFactor)
       );
   }
 
@@ -2109,7 +2145,7 @@ abstract contract Base is Test {
   }
 
   function _getCollateralFactor(ISpoke spoke, uint256 reserveId) internal view returns (uint16) {
-    return spoke.getDynamicReserveConfig(reserveId).collateralFactor;
+    return _getLatestDynamicReserveConfig(spoke, reserveId).collateralFactor;
   }
 
   function _getCollateralFactor(
@@ -2125,7 +2161,7 @@ abstract contract Base is Test {
     ISpoke spoke,
     function(ISpoke) internal view returns (uint256) reserveId
   ) internal view returns (uint16) {
-    return spoke.getDynamicReserveConfig(reserveId(spoke)).collateralFactor;
+    return _getLatestDynamicReserveConfig(spoke, reserveId(spoke)).collateralFactor;
   }
 
   function _hasRole(

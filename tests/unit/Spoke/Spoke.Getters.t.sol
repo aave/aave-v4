@@ -160,7 +160,7 @@ contract SpokeGettersTest is SpokeBase {
         healthFactorForMaxBonus: 0,
         liquidationBonusFactor: 0,
         healthFactor: healthFactor,
-        maxLiquidationBonus: spoke.getDynamicReserveConfig(reserveId).maxLiquidationBonus
+        maxLiquidationBonus: _getLatestDynamicReserveConfig(spoke, reserveId).maxLiquidationBonus
       }),
       'calc should match'
     );
@@ -197,15 +197,13 @@ contract SpokeGettersTest is SpokeBase {
     spoke.updateLiquidationConfig(config);
     _config = spoke.getLiquidationConfig();
 
-    uint256 liqBonus = spoke.getLiquidationBonus(reserveId, bob, healthFactor);
-
     assertEq(
-      liqBonus,
+      spoke.getLiquidationBonus(reserveId, bob, healthFactor),
       LiquidationLogic.calculateLiquidationBonus({
         healthFactorForMaxBonus: healthFactorForMaxBonus,
         liquidationBonusFactor: liquidationBonusFactor,
         healthFactor: healthFactor,
-        maxLiquidationBonus: spoke.getDynamicReserveConfig(reserveId).maxLiquidationBonus
+        maxLiquidationBonus: _getLatestDynamicReserveConfig(spoke, reserveId).maxLiquidationBonus
       }),
       'calc should match'
     );

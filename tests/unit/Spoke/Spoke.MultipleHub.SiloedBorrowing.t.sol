@@ -157,7 +157,7 @@ contract SpokeMultipleHubSiloedBorrowingTest is SpokeMultipleHubBase {
       'bob supplied amount of asset A on new spoke'
     );
     assertTrue(
-      newSpoke.isUsingAsCollateral(siloedVars.reserveAIdNewSpoke, bob),
+      _isUsingAsCollateral(newSpoke, siloedVars.reserveAIdNewSpoke, bob),
       'bob using asset A as collateral on new spoke'
     );
     assertEq(
