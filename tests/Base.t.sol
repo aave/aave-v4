@@ -1498,7 +1498,7 @@ abstract contract Base is Test {
     uint256 restoreAmount,
     uint256 drawn,
     uint256 premium
-  ) internal view returns (uint256 baseAmount, uint256 premiumAmount) {
+  ) internal pure returns (uint256 baseAmount, uint256 premiumAmount) {
     if (restoreAmount <= premium) {
       return (0, restoreAmount);
     }

@@ -138,7 +138,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
         debtToCover
       );
     try liquidationLogicWrapper.calculateLiquidationAmounts(params) returns (
-      LiquidationLogic.LiquidationAmounts memory liquidationAmounts
+      LiquidationLogic.LiquidationAmounts memory
     ) {} catch {
       ISpoke.UserAccountData memory userAccountData = spoke.getUserAccountData(user);
       uint256 liquidationBonus = spoke.getLiquidationBonus(

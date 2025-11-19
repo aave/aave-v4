@@ -237,7 +237,7 @@ contract HubOperations_Gas_Tests is Base {
     skip(100);
 
     ISpoke.UserPosition memory userPosition = spoke1.getUserPosition(_daiReserveId(spoke1), alice);
-    (uint256 drawnDebt, uint256 premiumDebt) = spoke1.getUserDebt(_daiReserveId(spoke1), alice);
+    (uint256 drawnDebt, ) = spoke1.getUserDebt(_daiReserveId(spoke1), alice);
 
     IHubBase.PremiumDelta memory premiumDelta = IHubBase.PremiumDelta({
       sharesDelta: -userPosition.premiumShares.toInt256(),

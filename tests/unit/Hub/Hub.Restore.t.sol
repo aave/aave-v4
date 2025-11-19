@@ -183,8 +183,6 @@ contract HubRestoreTest is HubBase {
       premiumRestored: premium
     });
 
-    uint256 expectedLiquidity = hub1.getAssetLiquidity(daiAssetId) + restoreDrawnAmount + premium;
-
     vm.startPrank(address(spoke1));
     tokenList.dai.transferFrom(alice, address(hub1), restoreDrawnAmount / 2);
 
