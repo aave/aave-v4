@@ -466,7 +466,7 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
   /// @param user The address of the user.
   /// @return True if the reserve is enabled as collateral for the user.
   /// @return True if the reserve is borrowed by the user.
-  function isCollateralOrBorrowed(
+  function getUserReserveStatus(
     uint256 reserveId,
     address user
   ) external view returns (bool, bool);

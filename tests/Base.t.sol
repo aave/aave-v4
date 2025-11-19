@@ -1346,7 +1346,7 @@ abstract contract Base is Test {
     uint256 reserveId,
     address user
   ) internal view returns (bool) {
-    (bool res, ) = spoke.isCollateralOrBorrowed(reserveId, user);
+    (bool res, ) = spoke.getUserReserveStatus(reserveId, user);
     return res;
   }
 
@@ -1355,7 +1355,7 @@ abstract contract Base is Test {
     uint256 reserveId,
     address user
   ) internal view returns (bool) {
-    (, bool res) = spoke.isCollateralOrBorrowed(reserveId, user);
+    (, bool res) = spoke.getUserReserveStatus(reserveId, user);
     return res;
   }
 

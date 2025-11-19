@@ -580,7 +580,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
   }
 
   /// @inheritdoc ISpoke
-  function isCollateralOrBorrowed(
+  function getUserReserveStatus(
     uint256 reserveId,
     address user
   ) external view returns (bool, bool) {
