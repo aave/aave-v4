@@ -160,7 +160,7 @@ contract HubRescueTest is HubBase {
   }
 
   /// @dev Another spoke cannot improperly rescue liquidity fee without transferring underlying tokens
-  function test_cannot_rescue_liquidity_fee_reverts_with_InvalidAmountReceived() public {
+  function test_cannot_rescue_liquidity_fee_reverts_with_InsufficientTransferred() public {
     // spoke1, alice add dai
     Utils.add({
       hub: hub1,
@@ -187,15 +187,12 @@ contract HubRescueTest is HubBase {
     assertGt(liquidityFee, 0);
 
     // Cannot add liquidity fee amount without transferring underlying tokens
-    vm.expectRevert(
-      abi.encodeWithSelector(
-        IHub.InsufficientLiquidity.selector,
-        hub1.getAssetLiquidity(daiAssetId) + liquidityFee
-      )
-    );
+    vm.expectRevert(abi.encodeWithSelector(IHub.InsufficientTransferred.selector, liquidityFee));
 
     vm.prank(address(_rescueSpoke));
     hub1.add(daiAssetId, liquidityFee);
+
+    assertEq(hub1.getAssetAccruedFees(daiAssetId), liquidityFee, 'accrued liquidity fee');
   }
 
   function _rescue(

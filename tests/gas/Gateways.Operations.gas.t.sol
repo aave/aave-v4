@@ -102,6 +102,7 @@ contract NativeTokenGateway_Gas_Tests is Base {
 /// forge-config: default.isolate = true
 contract SignatureGateway_Gas_Tests is SignatureGatewayBaseTest {
   string internal NAMESPACE = 'SignatureGateway.Operations';
+  uint192 internal nonceKey = 0;
 
   function setUp() public virtual override {
     super.setUp();
@@ -110,7 +111,7 @@ contract SignatureGateway_Gas_Tests is SignatureGatewayBaseTest {
     vm.prank(alice);
     spoke1.setUserPositionManager(address(gateway), true);
     vm.prank(alice);
-    gateway.useNonce();
+    gateway.useNonce(nonceKey);
   }
 
   function test_supplyWithSig() public {
@@ -119,7 +120,7 @@ contract SignatureGateway_Gas_Tests is SignatureGatewayBaseTest {
       reserveId: _wethReserveId(spoke1),
       amount: 100e18,
       onBehalfOf: alice,
-      nonce: gateway.nonces(alice),
+      nonce: gateway.nonces(alice, nonceKey),
       deadline: _warpBeforeRandomDeadline()
     });
     bytes memory signature = _sign(alicePk, _getTypedDataHash(gateway, p));
@@ -136,7 +137,7 @@ contract SignatureGateway_Gas_Tests is SignatureGatewayBaseTest {
       reserveId: _wethReserveId(spoke1),
       amount: 100e18,
       onBehalfOf: alice,
-      nonce: gateway.nonces(alice),
+      nonce: gateway.nonces(alice, nonceKey),
       deadline: _warpBeforeRandomDeadline()
     });
     bytes memory signature = _sign(alicePk, _getTypedDataHash(gateway, p));
@@ -154,7 +155,7 @@ contract SignatureGateway_Gas_Tests is SignatureGatewayBaseTest {
       reserveId: _wethReserveId(spoke1),
       amount: 100e18,
       onBehalfOf: alice,
-      nonce: gateway.nonces(alice),
+      nonce: gateway.nonces(alice, nonceKey),
       deadline: _warpBeforeRandomDeadline()
     });
     Utils.supplyCollateral(spoke1, p.reserveId, alice, p.amount * 4, alice);
@@ -171,7 +172,7 @@ contract SignatureGateway_Gas_Tests is SignatureGatewayBaseTest {
       reserveId: _wethReserveId(spoke1),
       amount: 100e18,
       onBehalfOf: alice,
-      nonce: gateway.nonces(alice),
+      nonce: gateway.nonces(alice, nonceKey),
       deadline: _warpBeforeRandomDeadline()
     });
     Utils.supplyCollateral(spoke1, p.reserveId, alice, p.amount * 10, alice);
@@ -190,7 +191,7 @@ contract SignatureGateway_Gas_Tests is SignatureGatewayBaseTest {
       reserveId: _wethReserveId(spoke1),
       useAsCollateral: true,
       onBehalfOf: alice,
-      nonce: gateway.nonces(alice),
+      nonce: gateway.nonces(alice, nonceKey),
       deadline: _warpBeforeRandomDeadline()
     });
     Utils.supply(spoke1, p.reserveId, alice, 1e18, alice);
@@ -204,7 +205,7 @@ contract SignatureGateway_Gas_Tests is SignatureGatewayBaseTest {
     EIP712Types.UpdateUserRiskPremium memory p = EIP712Types.UpdateUserRiskPremium({
       spoke: address(spoke1),
       user: alice,
-      nonce: gateway.nonces(alice),
+      nonce: gateway.nonces(alice, nonceKey),
       deadline: _warpBeforeRandomDeadline()
     });
     bytes memory signature = _sign(alicePk, _getTypedDataHash(gateway, p));
@@ -220,7 +221,7 @@ contract SignatureGateway_Gas_Tests is SignatureGatewayBaseTest {
     EIP712Types.UpdateUserDynamicConfig memory p = EIP712Types.UpdateUserDynamicConfig({
       spoke: address(spoke1),
       user: alice,
-      nonce: gateway.nonces(alice),
+      nonce: gateway.nonces(alice, nonceKey),
       deadline: _warpBeforeRandomDeadline()
     });
     bytes memory signature = _sign(alicePk, _getTypedDataHash(gateway, p));
@@ -234,12 +235,12 @@ contract SignatureGateway_Gas_Tests is SignatureGatewayBaseTest {
 
   function test_setSelfAsUserPositionManagerWithSig() public {
     vm.prank(alice);
-    spoke1.useNonce();
+    spoke1.useNonce(nonceKey);
     EIP712Types.SetUserPositionManager memory p = EIP712Types.SetUserPositionManager({
       positionManager: address(gateway),
       user: alice,
       approve: true,
-      nonce: spoke1.nonces(alice), // note: this typed sig is forwarded to spoke
+      nonce: spoke1.nonces(alice, nonceKey), // note: this typed sig is forwarded to spoke
       deadline: _warpBeforeRandomDeadline()
     });
     bytes memory signature = _sign(alicePk, _getTypedDataHash(spoke1, p));

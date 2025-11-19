@@ -13,18 +13,18 @@ contract AssetInterestRateStrategy is IAssetInterestRateStrategy {
   using WadRayMath for *;
 
   /// @inheritdoc IAssetInterestRateStrategy
-  uint256 public constant MAX_BORROW_RATE = 1000_00; // 1000.00% in BPS
+  uint256 public constant MAX_BORROW_RATE = 1000_00;
 
   /// @inheritdoc IAssetInterestRateStrategy
-  uint256 public constant MIN_OPTIMAL_RATIO = 1_00; // 1.00% in BPS
+  uint256 public constant MIN_OPTIMAL_RATIO = 1_00;
 
   /// @inheritdoc IAssetInterestRateStrategy
-  uint256 public constant MAX_OPTIMAL_RATIO = 99_00; // 99.00% in BPS
+  uint256 public constant MAX_OPTIMAL_RATIO = 99_00;
 
   /// @inheritdoc IAssetInterestRateStrategy
   address public immutable HUB;
 
-  /// @dev Map of assetId and their interest rate data (assetId => interestRateData)
+  /// @dev Map of asset identifiers to their interest rate data.
   mapping(uint256 assetId => InterestRateData) internal _interestRateData;
 
   /// @dev Constructor.

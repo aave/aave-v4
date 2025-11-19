@@ -201,7 +201,7 @@ contract SignatureGatewayTest is SignatureGatewayBaseTest {
     Utils.borrow(spoke1, _daiReserveId(spoke1), alice, 7e18, alice);
 
     vm.expectEmit(address(spoke1));
-    emit ISpoke.UpdateUserRiskPremium(alice, _calculateExpectedUserRP(alice, spoke1));
+    emit ISpoke.UpdateUserRiskPremium(alice, _calculateExpectedUserRP(spoke1, alice));
 
     vm.prank(vm.randomAddress());
     gateway.updateUserRiskPremiumWithSig(p, signature);

@@ -50,6 +50,8 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
     uint256 debtToTarget;
     uint256 collateralToLiquidate;
     uint256 collateralToLiquidator;
+    uint256 collateralSharesToLiquidate;
+    uint256 collateralSharesToLiquidator;
     uint256 debtToLiquidate;
     uint256 liquidationBonus;
     uint256 expectedUserRiskPremium;
@@ -136,9 +138,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
         debtToCover
       );
     try liquidationLogicWrapper.calculateLiquidationAmounts(params) returns (
-      uint256,
-      uint256,
-      uint256
+      LiquidationLogic.LiquidationAmounts memory liquidationAmounts
     ) {} catch {
       ISpoke.UserAccountData memory userAccountData = spoke.getUserAccountData(user);
       uint256 liquidationBonus = spoke.getLiquidationBonus(
@@ -273,9 +273,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
           .collateralFactor,
         debtAssetPrice: IPriceOracle(spoke.ORACLE()).getReservePrice(debtReserveId),
         debtAssetDecimals: spoke.getReserve(debtReserveId).decimals,
-        // debtAssetUnit: 10 ** spoke.getReserve(debtReserveId).decimals,
         collateralAssetPrice: IPriceOracle(spoke.ORACLE()).getReservePrice(collateralReserveId),
-        // collateralAssetUnit: 10 ** spoke.getReserve(collateralReserveId).decimals,
         collateralAssetDecimals: spoke.getReserve(collateralReserveId).decimals,
         liquidationFee: spoke
           .getDynamicReserveConfig(
@@ -366,47 +364,81 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
     return (newRiskPremium, newAvgCollateralFactor);
   }
 
+  function _calculateExactRestoreAmount(
+    IHub hub,
+    uint256 drawn,
+    uint256 premium,
+    uint256 restoreAmount,
+    uint256 assetId
+  ) internal view returns (uint256, uint256) {
+    if (restoreAmount <= premium) {
+      return (0, restoreAmount);
+    }
+    uint256 drawnRestored = _min(drawn, restoreAmount - premium);
+    // round drawn debt to nearest whole share
+    drawnRestored = hub.previewRestoreByShares(
+      assetId,
+      hub.previewRestoreByAssets(assetId, drawnRestored)
+    );
+    return (drawnRestored, premium);
+  }
+
   function _expectEventsAndCalls(
     CheckedLiquidationCallParams memory params,
     AccountsInfo memory /*accountsInfoBefore*/,
     LiquidationMetadata memory liquidationMetadata
   ) internal virtual {
-    ISpoke.UserPosition memory userDebtPosition = params.spoke.getUserPosition(
+    uint256 debtAssetId = _spokeAssetId(params.spoke, params.debtReserveId);
+
+    (uint256 baseAmountToRestore, ) = _calculateRestoreAmounts(
+      params.spoke,
       params.debtReserveId,
-      params.user
+      params.user,
+      liquidationMetadata.debtToLiquidate
     );
-    (, uint256 userPremiumDebt) = params.spoke.getUserDebt(params.debtReserveId, params.user);
-    uint256 premiumDebtRestored = _min(liquidationMetadata.debtToLiquidate, userPremiumDebt);
-    int256 realizedDelta = (userPremiumDebt - userDebtPosition.realizedPremium).toInt256() -
-      premiumDebtRestored.toInt256();
-    vm.expectCall(
-      address(_hub(params.spoke, params.debtReserveId)),
-      abi.encodeCall(
-        IHubBase.restore,
-        (
-          _spokeAssetId(params.spoke, params.debtReserveId),
-          liquidationMetadata.debtToLiquidate - premiumDebtRestored,
-          premiumDebtRestored,
-          IHubBase.PremiumDelta({
-            sharesDelta: -userDebtPosition.premiumShares.toInt256(),
-            offsetDelta: -userDebtPosition.premiumOffset.toInt256(),
-            realizedDelta: realizedDelta
-          })
-        )
-      )
+    IHubBase.PremiumDelta memory premiumDelta = _getExpectedPremiumDelta(
+      params.spoke,
+      params.user,
+      params.debtReserveId,
+      liquidationMetadata.debtToLiquidate
     );
 
+    vm.expectEmit(address(params.spoke));
+    emit ISpokeBase.LiquidationCall({
+      collateralReserveId: params.collateralReserveId,
+      debtReserveId: params.debtReserveId,
+      user: params.user,
+      liquidator: params.liquidator,
+      receiveShares: params.receiveShares,
+      debtToLiquidate: liquidationMetadata.debtToLiquidate,
+      drawnSharesToLiquidate: _hub(params.spoke, params.debtReserveId)
+        .previewRestoreByAssets(debtAssetId, baseAmountToRestore)
+        .toUint120(),
+      premiumDelta: premiumDelta,
+      collateralToLiquidate: liquidationMetadata.collateralToLiquidate,
+      collateralSharesToLiquidate: liquidationMetadata.collateralSharesToLiquidate,
+      collateralSharesToLiquidator: liquidationMetadata.collateralSharesToLiquidator
+    });
+
+    if (!params.receiveShares && liquidationMetadata.collateralToLiquidator > 0) {
+      vm.expectCall(
+        address(_hub(params.spoke, params.collateralReserveId)),
+        abi.encodeCall(
+          IHubBase.remove,
+          (
+            _spokeAssetId(params.spoke, params.collateralReserveId),
+            liquidationMetadata.collateralToLiquidator,
+            params.liquidator
+          )
+        ),
+        1
+      );
+    }
+
     vm.expectCall(
-      address(_hub(params.spoke, params.collateralReserveId)),
-      abi.encodeCall(
-        IHubBase.remove,
-        (
-          _spokeAssetId(params.spoke, params.collateralReserveId),
-          liquidationMetadata.collateralToLiquidator,
-          params.liquidator
-        )
-      ),
-      params.receiveShares || liquidationMetadata.collateralToLiquidate == 0 ? 0 : 1
+      address(_hub(params.spoke, params.debtReserveId)),
+      abi.encodeCall(IHubBase.restore, (debtAssetId, baseAmountToRestore, premiumDelta)),
+      1
     );
 
     // PayFee call is partially checked, as conversion from assets to shares might differ due to restore donation
@@ -417,63 +449,58 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
       );
     }
 
-    vm.expectEmit(address(params.spoke));
-    emit ISpokeBase.LiquidationCall(
-      params.collateralReserveId,
-      params.debtReserveId,
-      params.user,
-      liquidationMetadata.debtToLiquidate,
-      liquidationMetadata.collateralToLiquidate,
-      params.liquidator,
-      params.receiveShares
-    );
+    if (liquidationMetadata.hasDeficit) {
+      for (uint256 reserveId = 0; reserveId < params.spoke.getReserveCount(); reserveId++) {
+        if (params.spoke.isBorrowing(reserveId, params.user)) {
+          ISpoke.UserPosition memory userReservePosition = params.spoke.getUserPosition(
+            reserveId,
+            params.user
+          );
+          uint256 assetId = _spokeAssetId(params.spoke, reserveId);
 
-    for (uint256 reserveId = 0; reserveId < params.spoke.getReserveCount(); reserveId++) {
-      if (params.spoke.isBorrowing(reserveId, params.user)) {
-        ISpoke.UserPosition memory userReservePosition = params.spoke.getUserPosition(
-          reserveId,
-          params.user
-        );
-        uint256 assetId = _spokeAssetId(params.spoke, reserveId);
-        if (reserveId == params.debtReserveId) {
-          userReservePosition.drawnShares -= _hub(params.spoke, reserveId)
-            .previewRestoreByAssets(
-              assetId,
-              liquidationMetadata.debtToLiquidate - premiumDebtRestored
-            )
-            .toUint120();
-          userReservePosition.premiumShares = 0;
-          userReservePosition.premiumOffset = 0;
-          userReservePosition.realizedPremium = (userReservePosition.realizedPremium.toInt256() +
-            realizedDelta).toUint256().toUint120();
+          if (reserveId == params.debtReserveId) {
+            userReservePosition.drawnShares -= _hub(params.spoke, reserveId)
+              .previewRestoreByAssets(assetId, baseAmountToRestore)
+              .toUint120();
+            userReservePosition.premiumShares = 0;
+            userReservePosition.premiumOffsetRay = 0;
+            userReservePosition.realizedPremiumRay = (userReservePosition.realizedPremiumRay +
+              premiumDelta.accruedPremiumRay -
+              premiumDelta.restoredPremiumRay).toUint200();
+
+            if (userReservePosition.drawnShares == 0) {
+              continue;
+            }
+          }
+
+          uint256 accruedPremiumRay = _calculateAccruedPremiumRay(
+            params.spoke,
+            reserveId,
+            userReservePosition.premiumShares,
+            userReservePosition.premiumOffsetRay
+          );
+
+          vm.expectCall(
+            address(_hub(params.spoke, reserveId)),
+            abi.encodeCall(
+              IHubBase.reportDeficit,
+              (
+                assetId,
+                _hub(params.spoke, reserveId).previewRestoreByShares(
+                  assetId,
+                  userReservePosition.drawnShares
+                ),
+                IHubBase.PremiumDelta({
+                  sharesDelta: -userReservePosition.premiumShares.toInt256(),
+                  offsetDeltaRay: -userReservePosition.premiumOffsetRay.toInt256(),
+                  accruedPremiumRay: accruedPremiumRay,
+                  restoredPremiumRay: userReservePosition.realizedPremiumRay + accruedPremiumRay
+                })
+              )
+            ),
+            1
+          );
         }
-        uint256 userReserveDrawnDebt = _hub(params.spoke, reserveId).previewRestoreByShares(
-          assetId,
-          userReservePosition.drawnShares
-        );
-        uint256 userReservePremiumDebt = _hub(params.spoke, reserveId).previewRestoreByShares(
-          assetId,
-          userReservePosition.premiumShares
-        ) -
-          userReservePosition.premiumOffset +
-          userReservePosition.realizedPremium;
-        vm.expectCall(
-          address(_hub(params.spoke, reserveId)),
-          abi.encodeCall(
-            IHubBase.reportDeficit,
-            (
-              assetId,
-              userReserveDrawnDebt,
-              userReservePremiumDebt,
-              IHubBase.PremiumDelta({
-                sharesDelta: -userReservePosition.premiumShares.toInt256(),
-                offsetDelta: -userReservePosition.premiumOffset.toInt256(),
-                realizedDelta: -userReservePosition.realizedPremium.toInt256()
-              })
-            )
-          ),
-          liquidationMetadata.hasDeficit ? 1 : 0
-        );
       }
     }
   }
@@ -567,11 +594,8 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
         params.user
       )
     );
-    (
-      uint256 collateralToLiquidate,
-      uint256 collateralToLiquidator,
-      uint256 debtToLiquidate
-    ) = liquidationLogicWrapper.calculateLiquidationAmounts(
+    LiquidationLogic.LiquidationAmounts memory liquidationAmounts = liquidationLogicWrapper
+      .calculateLiquidationAmounts(
         _getCalculateLiquidationAmountsParams(
           params.spoke,
           params.collateralReserveId,
@@ -580,6 +604,27 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
           params.debtToCover
         )
       );
+
+    uint256 collateralSharesToLiquidate = _hub(params.spoke, params.collateralReserveId)
+      .previewRemoveByAssets(
+        _spokeAssetId(params.spoke, params.collateralReserveId),
+        liquidationAmounts.collateralToLiquidate
+      );
+
+    uint256 collateralSharesToLiquidator;
+    if (params.receiveShares && liquidationAmounts.collateralToLiquidator > 0) {
+      collateralSharesToLiquidator = _hub(params.spoke, params.collateralReserveId)
+        .previewAddByAssets(
+          _spokeAssetId(params.spoke, params.collateralReserveId),
+          liquidationAmounts.collateralToLiquidator
+        );
+    } else {
+      collateralSharesToLiquidator = _hub(params.spoke, params.collateralReserveId)
+        .previewRemoveByAssets(
+          _spokeAssetId(params.spoke, params.collateralReserveId),
+          liquidationAmounts.collateralToLiquidator
+        );
+    }
 
     uint256 liquidationBonus = params.spoke.getLiquidationBonus(
       params.collateralReserveId,
@@ -593,14 +638,14 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
     ) = _calculateExpectedUserRiskPremiumAndAvgCollateralFactor(
         params,
         userAccountDataBefore,
-        collateralToLiquidate,
-        debtToLiquidate
+        liquidationAmounts.collateralToLiquidate,
+        liquidationAmounts.debtToLiquidate
       );
 
     uint256 debtToLiquidateValue = _convertAmountToValue(
       params.spoke,
       params.debtReserveId,
-      debtToLiquidate
+      liquidationAmounts.debtToLiquidate
     );
 
     // health factor is decreasing due to liquidation bonus / collateral factor if:
@@ -621,15 +666,17 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
 
     bool hasDeficit = (userAccountDataBefore.activeCollateralCount == 1) &&
       (!params.isSolvent || isCollateralAffectingUserHf) &&
-      (collateralToLiquidate ==
+      (liquidationAmounts.collateralToLiquidate ==
         params.spoke.getUserSuppliedAssets(params.collateralReserveId, params.user));
 
     return
       LiquidationMetadata({
         debtToTarget: debtToTarget,
-        collateralToLiquidate: collateralToLiquidate,
-        collateralToLiquidator: collateralToLiquidator,
-        debtToLiquidate: debtToLiquidate,
+        collateralToLiquidate: liquidationAmounts.collateralToLiquidate,
+        collateralToLiquidator: liquidationAmounts.collateralToLiquidator,
+        collateralSharesToLiquidate: collateralSharesToLiquidate,
+        collateralSharesToLiquidator: collateralSharesToLiquidator,
+        debtToLiquidate: liquidationAmounts.debtToLiquidate,
         liquidationBonus: liquidationBonus,
         expectedUserRiskPremium: expectedUserRiskPremium,
         expectedUserAvgCollateralFactor: expectedUserAvgCollateralFactor,
@@ -1183,12 +1230,6 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
     Vm.Log[] memory logs
   ) internal view {
     uint256 precision = 0.1e18;
-
-    if (!_isHealthy(params.spoke, accountsInfoAfter.userAccountData.healthFactor)) {
-      liquidationMetadata.expectedUserRiskPremium = 0;
-      precision = 0;
-    }
-
     uint256 riskPremiumEventCount;
     for (uint256 i = 0; i < logs.length; i++) {
       if (logs[i].topics[0] == ISpoke.UpdateUserRiskPremium.selector) {

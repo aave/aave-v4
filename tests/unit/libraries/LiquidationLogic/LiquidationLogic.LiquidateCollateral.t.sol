@@ -83,8 +83,9 @@ contract LiquidationLogicLiquidateCollateralTest is LiquidationLogicBaseTest {
 
     uint256 initialHubBalance = asset.balanceOf(address(hub));
 
-    uint256 sharesToLiquidate = expectCalls(params);
-    bool isPositionEmpty = liquidationLogicWrapper.liquidateCollateral(params);
+    uint256 sharesToLiquidate = _expectEventsAndCalls(params);
+    (, uint256 sharesToLiquidator, bool isPositionEmpty) = liquidationLogicWrapper
+      .liquidateCollateral(params);
 
     assertEq(liquidationLogicWrapper.getCollateralReserve(), initialReserve);
     assertPosition(
@@ -129,7 +130,7 @@ contract LiquidationLogicLiquidateCollateralTest is LiquidationLogicBaseTest {
     assertEq(sharesToLiquidator, 0);
     assertEq(feeShares, 1);
 
-    vm.expectCall(address(hub), abi.encodeCall(IHubBase.payFeeShares, (assetId, feeShares)), 1);
+    _expectEventsAndCalls(params);
     liquidationLogicWrapper.liquidateCollateral(params);
 
     // sharesToLiquidator should round to 0 and remain unchanged
@@ -176,7 +177,7 @@ contract LiquidationLogicLiquidateCollateralTest is LiquidationLogicBaseTest {
     uint256 sharesToLiquidator = hub.previewAddByAssets(assetId, params.collateralToLiquidator);
     uint256 feeShares = sharesToLiquidate - sharesToLiquidator;
 
-    vm.expectCall(address(hub), abi.encodeCall(IHubBase.payFeeShares, (assetId, feeShares)), 1);
+    _expectEventsAndCalls(params);
     liquidationLogicWrapper.liquidateCollateral(params);
 
     // sharesToLiquidator should round to 0 and remain unchanged
@@ -247,21 +248,32 @@ contract LiquidationLogicLiquidateCollateralTest is LiquidationLogicBaseTest {
     assertEq(newSpokeData, initSpokeData);
   }
 
-  function expectCalls(
+  function _expectEventsAndCalls(
     LiquidationLogic.LiquidateCollateralParams memory p
   ) internal returns (uint256) {
     uint256 sharesToLiquidate = hub.previewRemoveByAssets(assetId, p.collateralToLiquidate);
-    uint256 sharesToLiquidator = hub.previewRemoveByAssets(assetId, p.collateralToLiquidator);
+    uint256 sharesToLiquidator = p.receiveShares
+      ? hub.previewAddByAssets(assetId, p.collateralToLiquidator)
+      : hub.previewRemoveByAssets(assetId, p.collateralToLiquidator);
     uint256 sharesToPayFee = sharesToLiquidate - sharesToLiquidator;
 
+    if (p.collateralToLiquidator > 0 && p.receiveShares) {
+      vm.expectCall(
+        address(hub),
+        abi.encodeCall(IHubBase.previewAddByAssets, (assetId, p.collateralToLiquidator)),
+        1
+      );
+    }
+    if (p.collateralToLiquidator > 0 && !p.receiveShares) {
+      vm.expectCall(
+        address(hub),
+        abi.encodeCall(IHubBase.remove, (assetId, p.collateralToLiquidator, p.liquidator)),
+        1
+      );
+    }
     vm.expectCall(
       address(hub),
       abi.encodeCall(IHubBase.previewRemoveByAssets, (assetId, p.collateralToLiquidate)),
-      1
-    );
-    vm.expectCall(
-      address(hub),
-      abi.encodeCall(IHubBase.remove, (assetId, p.collateralToLiquidator, p.liquidator)),
       1
     );
     if (sharesToPayFee > 0) {
