@@ -460,12 +460,12 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
     uint24 dynamicConfigKey
   ) external view returns (DynamicReserveConfig memory);
 
-  /// @notice Returns a pair of flags signifying if the reserve is set as collateral and if it is borrowed by the user.
+  /// @notice Returns two flags indicating whether the reserve is used as collateral and whether it is borrowed by the user.
   /// @dev It reverts if the reserve associated with the given reserve identifier is not listed.
   /// @dev Even if enabled as collateral, it will only count towards user position if the collateral factor is greater than 0.
   /// @param reserveId The identifier of the reserve.
   /// @param user The address of the user.
-  /// @return True if the reserve is enabled as collateral for the user.
+  /// @return True if the reserve is enabled as collateral by the user.
   /// @return True if the reserve is borrowed by the user.
   function getUserReserveStatus(uint256 reserveId, address user) external view returns (bool, bool);
 
