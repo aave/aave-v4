@@ -80,11 +80,10 @@ contract LiquidationLogicValidateLiquidationCallTest is LiquidationLogicBaseTest
     params.collateralReserveFrozen = false;
     liquidationLogicWrapper.validateLiquidationCall(params);
 
-    // receiveShares = true; liquidatorUsingAsCollateral = true; frozen = false; => revert
+    // receiveShares = true; liquidatorUsingAsCollateral = true; frozen = false; => allowed
     params.receiveShares = true;
     liquidationLogicWrapper.setLiquidatorCollateralStatus(collateralReserveId, true);
     params.collateralReserveFrozen = false;
-    vm.expectRevert(ISpoke.CannotReceiveShares.selector);
     liquidationLogicWrapper.validateLiquidationCall(params);
 
     // receiveShares = true; liquidatorUsingAsCollateral = false; frozen = true; => revert

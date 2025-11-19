@@ -33,7 +33,7 @@ contract SpokeUserAccountDataTest is SpokeBase {
     // Debt: 0.025 + 0.005 + 0.0075 = 0.0375 WETH = 0.0375 * $2000 = $75
     // Health Factor: $100 * 0.72 / $75 = 0.96
     // Avg Collateral Factor: 72%
-    // Risk Premium: 0% (since HF < 1)
+    // Risk Premium: 10%
     // Supplied Collaterals Count: 1
     // Borrowed Reserves Count: 1
     accountDataInfo.collateralReserveIds.push(_usdxReserveId(spoke));
@@ -43,7 +43,7 @@ contract SpokeUserAccountDataTest is SpokeBase {
     );
     accountDataInfo.debtReserveIds.push(_wethReserveId(spoke));
     accountDataInfo.drawnDebtAmounts.push(0.025e18);
-    accountDataInfo.realizedPremiumAmounts.push(0.005e18);
+    accountDataInfo.realizedPremiumAmountsRay.push(0.005e18 * WadRayMath.RAY);
     accountDataInfo.accruedPremiumAmounts.push(0.0075e18);
 
     _checkedUserAccountData(
@@ -53,7 +53,7 @@ contract SpokeUserAccountDataTest is SpokeBase {
         totalDebtValue: 75e26,
         avgCollateralFactor: 0.72e18,
         healthFactor: 0.96e18,
-        riskPremium: 0,
+        riskPremium: 10_00,
         activeCollateralCount: 1,
         borrowedCount: 1
       })
@@ -69,7 +69,7 @@ contract SpokeUserAccountDataTest is SpokeBase {
     // Debt: 0.025 + 0.005 + 0.0075 = 0.0375 WETH = 0.0375 * $2000 = $75
     // Health Factor: $100 * 0.72 / $75 = 0.96
     // Avg Collateral Factor: 72%
-    // Risk Premium: 0% (since HF < 1)
+    // Risk Premium: 10%
     // Supplied Collaterals Count: 1
     // Borrowed Reserves Count: 1
     accountDataInfo.collateralReserveIds.push(_usdxReserveId(spoke));
@@ -77,7 +77,7 @@ contract SpokeUserAccountDataTest is SpokeBase {
     accountDataInfo.collateralDynamicConfigKeys.push(configKeyBefore);
     accountDataInfo.debtReserveIds.push(_wethReserveId(spoke));
     accountDataInfo.drawnDebtAmounts.push(0.025e18);
-    accountDataInfo.realizedPremiumAmounts.push(0.005e18);
+    accountDataInfo.realizedPremiumAmountsRay.push(0.005e18 * WadRayMath.RAY);
     accountDataInfo.accruedPremiumAmounts.push(0.0075e18);
 
     _checkedUserAccountData(
@@ -87,7 +87,7 @@ contract SpokeUserAccountDataTest is SpokeBase {
         totalDebtValue: 75e26,
         avgCollateralFactor: 0.72e18,
         healthFactor: 0.96e18,
-        riskPremium: 0,
+        riskPremium: 10_00,
         activeCollateralCount: 1,
         borrowedCount: 1
       })
@@ -111,7 +111,7 @@ contract SpokeUserAccountDataTest is SpokeBase {
     accountDataInfo.collateralDynamicConfigKeys.push(configKeyBefore);
     accountDataInfo.debtReserveIds.push(_wethReserveId(spoke));
     accountDataInfo.drawnDebtAmounts.push(0.025e18);
-    accountDataInfo.realizedPremiumAmounts.push(0.005e18);
+    accountDataInfo.realizedPremiumAmountsRay.push(0.005e18 * WadRayMath.RAY);
     accountDataInfo.accruedPremiumAmounts.push(0.0075e18);
 
     _checkedUserAccountData(
@@ -153,7 +153,7 @@ contract SpokeUserAccountDataTest is SpokeBase {
     accountDataInfo.suppliedAssetsAmounts.push(1e18);
     accountDataInfo.debtReserveIds.push(_wethReserveId(spoke));
     accountDataInfo.drawnDebtAmounts.push(0.3e18);
-    accountDataInfo.realizedPremiumAmounts.push(0.15e18);
+    accountDataInfo.realizedPremiumAmountsRay.push(0.15e18 * WadRayMath.RAY);
     accountDataInfo.accruedPremiumAmounts.push(0.05e18);
 
     _checkedUserAccountData(
@@ -176,7 +176,7 @@ contract SpokeUserAccountDataTest is SpokeBase {
     // Debt: 0.0375 WETH = 0.0375 * $2000 = $75, 0.001 WBTC = 0.001 * $50000 = $50
     // Health Factor: $100 * 0.72 / $125 = 0.576
     // Avg Collateral Factor: 72%
-    // Risk Premium: 0% (since HF < 1)
+    // Risk Premium: 10%
     // Supplied Collaterals Count: 1
     // Borrowed Reserves Count: 2
     accountDataInfo.collateralReserveIds.push(_usdxReserveId(spoke));
@@ -191,11 +191,11 @@ contract SpokeUserAccountDataTest is SpokeBase {
     );
     accountDataInfo.debtReserveIds.push(_wethReserveId(spoke));
     accountDataInfo.drawnDebtAmounts.push(0.025e18);
-    accountDataInfo.realizedPremiumAmounts.push(0.005e18);
+    accountDataInfo.realizedPremiumAmountsRay.push(0.005e18 * WadRayMath.RAY);
     accountDataInfo.accruedPremiumAmounts.push(0.0075e18);
     accountDataInfo.debtReserveIds.push(_wbtcReserveId(spoke));
     accountDataInfo.drawnDebtAmounts.push(0.001e8);
-    accountDataInfo.realizedPremiumAmounts.push(0);
+    accountDataInfo.realizedPremiumAmountsRay.push(0 * WadRayMath.RAY);
     accountDataInfo.accruedPremiumAmounts.push(0);
 
     _checkedUserAccountData(
@@ -205,7 +205,7 @@ contract SpokeUserAccountDataTest is SpokeBase {
         totalDebtValue: 125e26,
         avgCollateralFactor: 0.72e18,
         healthFactor: 0.576e18,
-        riskPremium: 0,
+        riskPremium: 10_00,
         activeCollateralCount: 1,
         borrowedCount: 2
       })
@@ -220,7 +220,7 @@ contract SpokeUserAccountDataTest is SpokeBase {
     // Debt: 0.0375 WETH = 0.0375 * $2000 = $75
     // Health Factor: $100 * 0.72 / $75 = 0.96
     // Avg Collateral Factor: 72%
-    // Risk Premium: 0% (since HF < 1)
+    // Risk Premium: 10%
     // Supplied Collaterals Count: 1
     // Borrowed Reserves Count: 1
     accountDataInfo.collateralReserveIds.push(_usdxReserveId(spoke));
@@ -235,7 +235,7 @@ contract SpokeUserAccountDataTest is SpokeBase {
     );
     accountDataInfo.debtReserveIds.push(_wethReserveId(spoke));
     accountDataInfo.drawnDebtAmounts.push(0.025e18);
-    accountDataInfo.realizedPremiumAmounts.push(0.005e18);
+    accountDataInfo.realizedPremiumAmountsRay.push(0.005e18 * WadRayMath.RAY);
     accountDataInfo.accruedPremiumAmounts.push(0.0075e18);
 
     _checkedUserAccountData(
@@ -245,7 +245,7 @@ contract SpokeUserAccountDataTest is SpokeBase {
         totalDebtValue: 75e26,
         avgCollateralFactor: 0.72e18,
         healthFactor: 0.96e18,
-        riskPremium: 0,
+        riskPremium: 10_00,
         activeCollateralCount: 1,
         borrowedCount: 1
       })

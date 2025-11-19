@@ -7,6 +7,7 @@ import {MathUtils} from 'src/libraries/math/MathUtils.sol';
 import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
 import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
 import {SharesMath} from 'src/hub/libraries/SharesMath.sol';
+import {Premium} from 'src/hub/libraries/Premium.sol';
 import {IBasicInterestRateStrategy} from 'src/hub/interfaces/IBasicInterestRateStrategy.sol';
 import {IHub} from 'src/hub/interfaces/IHub.sol';
 
@@ -60,8 +61,15 @@ library AssetLogic {
 
   /// @notice Returns the total premium amount for the specified asset.
   function premium(IHub.Asset storage asset, uint256 drawnIndex) internal view returns (uint256) {
-    uint256 accruedPremium = asset.premiumShares.rayMulUp(drawnIndex) - asset.premiumOffset;
-    return asset.realizedPremium + accruedPremium;
+    return
+      Premium
+        .calculatePremiumRay({
+          premiumShares: asset.premiumShares,
+          drawnIndex: drawnIndex,
+          premiumOffsetRay: asset.premiumOffsetRay,
+          realizedPremiumRay: asset.realizedPremiumRay
+        })
+        .fromRayUp();
   }
 
   /// @notice Returns the total amount owed for the specified asset, including drawn and premium.
@@ -75,7 +83,7 @@ library AssetLogic {
     return
       asset.liquidity +
       asset.swept +
-      asset.deficit +
+      asset.deficitRay.fromRayUp() +
       asset.totalOwed(drawnIndex) -
       asset.realizedFees -
       asset.getUnrealizedFees(drawnIndex);
@@ -116,13 +124,14 @@ library AssetLogic {
   /// @notice Updates the drawn rate of a specified asset.
   /// @dev Premium debt is not used in the interest rate calculation.
   /// @dev Uses last stored index; asset accrual should have already occurred.
+  /// @dev Imprecision from downscaling `deficitRay` does not accumulate.
   function updateDrawnRate(IHub.Asset storage asset, uint256 assetId) internal {
     uint256 drawnIndex = asset.drawnIndex;
     uint256 newDrawnRate = IBasicInterestRateStrategy(asset.irStrategy).calculateInterestRate({
       assetId: assetId,
       liquidity: asset.liquidity,
       drawn: asset.drawn(drawnIndex),
-      deficit: asset.deficit,
+      deficit: asset.deficitRay.fromRayUp(),
       swept: asset.swept
     });
     asset.drawnRate = newDrawnRate.toUint96();
@@ -174,12 +183,26 @@ library AssetLogic {
     }
 
     uint120 drawnShares = asset.drawnShares;
-    uint120 premiumShares = asset.premiumShares;
+    uint256 liquidityGrowthDrawn = drawnShares.rayMulUp(drawnIndex) -
+      drawnShares.rayMulUp(previousIndex);
 
-    uint256 liquidityGrowth = drawnShares.rayMulUp(drawnIndex) -
-      drawnShares.rayMulUp(previousIndex) +
-      premiumShares.rayMulUp(drawnIndex) -
-      premiumShares.rayMulUp(previousIndex);
-    return liquidityGrowth.percentMulDown(liquidityFee);
+    uint256 realizedPremiumRay = asset.realizedPremiumRay;
+    uint120 premiumShares = asset.premiumShares;
+    uint256 premiumOffsetRay = asset.premiumOffsetRay;
+    uint256 premiumRayAfter = Premium.calculatePremiumRay({
+      premiumShares: premiumShares,
+      drawnIndex: drawnIndex,
+      premiumOffsetRay: premiumOffsetRay,
+      realizedPremiumRay: realizedPremiumRay
+    });
+    uint256 premiumRayBefore = Premium.calculatePremiumRay({
+      premiumShares: premiumShares,
+      drawnIndex: previousIndex,
+      premiumOffsetRay: premiumOffsetRay,
+      realizedPremiumRay: realizedPremiumRay
+    });
+    uint256 liquidityGrowthPremium = premiumRayAfter.fromRayUp() - premiumRayBefore.fromRayUp();
+
+    return (liquidityGrowthDrawn + liquidityGrowthPremium).percentMulDown(liquidityFee);
   }
 }

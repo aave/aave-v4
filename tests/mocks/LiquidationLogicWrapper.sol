@@ -100,12 +100,12 @@ contract LiquidationLogicWrapper {
     _userPositions[_borrower][_debtReserveId].premiumShares = premiumShares.toUint120();
   }
 
-  function setDebtPositionPremiumOffset(uint256 premiumOffset) public {
-    _userPositions[_borrower][_debtReserveId].premiumOffset = premiumOffset.toUint120();
+  function setDebtPositionPremiumOffsetRay(uint256 premiumOffsetRay) public {
+    _userPositions[_borrower][_debtReserveId].premiumOffsetRay = premiumOffsetRay.toUint200();
   }
 
-  function setDebtPositionRealizedPremium(uint256 realizedPremium) public {
-    _userPositions[_borrower][_debtReserveId].realizedPremium = realizedPremium.toUint120();
+  function setDebtPositionRealizedPremiumRay(uint256 realizedPremiumRay) public {
+    _userPositions[_borrower][_debtReserveId].realizedPremiumRay = realizedPremiumRay.toUint200();
   }
 
   function setBorrowerCollateralStatus(uint256 reserveId, bool status) public {
@@ -176,7 +176,10 @@ contract LiquidationLogicWrapper {
   function validateLiquidationCall(
     LiquidationLogic.ValidateLiquidationCallParams memory params
   ) public view {
-    LiquidationLogic._validateLiquidationCall(_positionStatuses, params);
+    LiquidationLogic._validateLiquidationCall(
+      _positionStatuses[_borrower].isUsingAsCollateral(params.collateralReserveId),
+      params
+    );
   }
 
   function calculateDebtToTargetHealthFactor(
@@ -193,7 +196,7 @@ contract LiquidationLogicWrapper {
 
   function calculateLiquidationAmounts(
     LiquidationLogic.CalculateLiquidationAmountsParams memory params
-  ) public pure returns (uint256, uint256, uint256) {
+  ) public pure returns (LiquidationLogic.LiquidationAmounts memory) {
     return LiquidationLogic._calculateLiquidationAmounts(params);
   }
 

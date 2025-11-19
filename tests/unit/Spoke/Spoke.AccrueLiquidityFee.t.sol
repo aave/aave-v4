@@ -81,10 +81,13 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
     {
       uint256 drawnDebt = _calculateExpectedDrawnDebt(borrowAmount, drawnRate, startTime);
       uint256 expectedPremiumShares = bobPosition.drawnShares.percentMulUp(userRp);
-      uint256 expectedPremiumDebt = hub1.previewRestoreByShares(assetId, expectedPremiumShares) -
-        bobPosition.premiumOffset +
-        bobPosition.realizedPremium;
-
+      uint256 expectedPremiumDebt = _calculatePremiumDebt(
+        hub1,
+        assetId,
+        bobPosition.realizedPremiumRay,
+        expectedPremiumShares,
+        bobPosition.premiumOffsetRay
+      );
       _assertSingleUserProtocolDebt(
         spoke1,
         reserveId,

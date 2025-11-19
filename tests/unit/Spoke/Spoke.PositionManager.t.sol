@@ -279,7 +279,7 @@ contract SpokePositionManagerTest is SpokeBase {
     _approvePositionManager(alice);
 
     vm.expectEmit(address(spoke1));
-    emit ISpoke.UpdateUserRiskPremium(alice, _calculateExpectedUserRP(alice, spoke1));
+    emit ISpoke.UpdateUserRiskPremium(alice, _calculateExpectedUserRP(spoke1, alice));
     vm.prank(POSITION_MANAGER);
     spoke1.updateUserRiskPremium(alice);
 

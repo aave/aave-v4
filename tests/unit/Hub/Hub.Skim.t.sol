@@ -282,8 +282,9 @@ contract HubSkimTest is HubBase {
 
     IHubBase.PremiumDelta memory premiumDelta = IHubBase.PremiumDelta({
       sharesDelta: 0,
-      offsetDelta: 0,
-      realizedDelta: 0
+      offsetDeltaRay: 0,
+      accruedPremiumRay: 0,
+      restoredPremiumRay: 0
     });
 
     // send donation to hub

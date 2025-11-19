@@ -336,7 +336,7 @@ contract SpokeAccrueInterestTest is SpokeBase {
 
     // Check Bob's risk premium
     uint256 bobRp = _getUserRiskPremium(spoke1, bob);
-    assertEq(bobRp, _calculateExpectedUserRP(bob, spoke1), 'user risk premium Before');
+    assertEq(bobRp, _calculateExpectedUserRP(spoke1, bob), 'user risk premium Before');
 
     // Store base borrow rates
     Rates memory rates;
@@ -745,7 +745,7 @@ contract SpokeAccrueInterestTest is SpokeBase {
 
     // Check Bob's risk premium
     uint256 bobRp = _getUserRiskPremium(spoke1, bob);
-    assertEq(bobRp, _calculateExpectedUserRP(bob, spoke1), 'user risk premium Before');
+    assertEq(bobRp, _calculateExpectedUserRP(spoke1, bob), 'user risk premium Before');
 
     // Check bob's drawn debt, premium debt, and supplied amounts for all assets at user, reserve, spoke, and asset level
     uint256 drawnDebt = _calculateExpectedDrawnDebt(
@@ -855,9 +855,13 @@ contract SpokeAccrueInterestTest is SpokeBase {
       startTime
     );
     uint256 expectedpremiumShares = bobPosition.drawnShares.percentMulUp(bobRp);
-    uint256 expectedPremiumDebt = hub1.previewRestoreByShares(daiAssetId, expectedpremiumShares) -
-      bobPosition.premiumOffset +
-      bobPosition.realizedPremium;
+    uint256 expectedPremiumDebt = _calculatePremiumDebt(
+      hub1,
+      daiAssetId,
+      bobPosition.realizedPremiumRay,
+      expectedpremiumShares,
+      bobPosition.premiumOffsetRay
+    );
     uint256 interest = (drawnDebt + expectedPremiumDebt) -
       amounts.daiBorrowAmount -
       _calculateBurntInterest(hub1, daiAssetId);
@@ -902,10 +906,13 @@ contract SpokeAccrueInterestTest is SpokeBase {
       startTime
     );
     expectedpremiumShares = bobPosition.drawnShares.percentMulUp(bobRp);
-    expectedPremiumDebt =
-      hub1.previewRestoreByShares(wethAssetId, expectedpremiumShares) -
-      bobPosition.premiumOffset +
-      bobPosition.realizedPremium;
+    expectedPremiumDebt = _calculatePremiumDebt(
+      hub1,
+      wethAssetId,
+      bobPosition.realizedPremiumRay,
+      expectedpremiumShares,
+      bobPosition.premiumOffsetRay
+    );
     interest =
       (drawnDebt + expectedPremiumDebt) -
       amounts.wethBorrowAmount -
@@ -951,10 +958,13 @@ contract SpokeAccrueInterestTest is SpokeBase {
       startTime
     );
     expectedpremiumShares = bobPosition.drawnShares.percentMulUp(bobRp);
-    expectedPremiumDebt =
-      hub1.previewRestoreByShares(usdxAssetId, expectedpremiumShares) -
-      bobPosition.premiumOffset +
-      bobPosition.realizedPremium;
+    expectedPremiumDebt = _calculatePremiumDebt(
+      hub1,
+      usdxAssetId,
+      bobPosition.realizedPremiumRay,
+      expectedpremiumShares,
+      bobPosition.premiumOffsetRay
+    );
     interest =
       (drawnDebt + expectedPremiumDebt) -
       amounts.usdxBorrowAmount -
@@ -1000,10 +1010,13 @@ contract SpokeAccrueInterestTest is SpokeBase {
       startTime
     );
     expectedpremiumShares = bobPosition.drawnShares.percentMulUp(bobRp);
-    expectedPremiumDebt =
-      hub1.previewRestoreByShares(wbtcAssetId, expectedpremiumShares) -
-      bobPosition.premiumOffset +
-      bobPosition.realizedPremium;
+    expectedPremiumDebt = _calculatePremiumDebt(
+      hub1,
+      wbtcAssetId,
+      bobPosition.realizedPremiumRay,
+      expectedpremiumShares,
+      bobPosition.premiumOffsetRay
+    );
     interest =
       (drawnDebt + expectedPremiumDebt) -
       amounts.wbtcBorrowAmount -
