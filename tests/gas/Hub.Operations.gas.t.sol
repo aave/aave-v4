@@ -88,19 +88,7 @@ contract HubOperations_Gas_Tests is Base {
     IHubBase.PremiumDelta memory premiumDelta = IHubBase.PremiumDelta(
       -premiumShares,
       -premiumOffsetRay,
-      _calculateAccruedPremiumRay(
-        hub1,
-        daiAssetId,
-        uint256(premiumShares),
-        premiumOffsetRay.toUint256()
-      ),
-      _calculatePremiumRay(
-        hub1,
-        daiAssetId,
-        spokeData.realizedPremiumRay,
-        uint256(premiumShares),
-        premiumOffsetRay.toUint256()
-      )
+      _calculatePremiumRay(hub1, daiAssetId, uint256(premiumShares), premiumOffsetRay)
     );
     hub1.restore(daiAssetId, drawnRemaining, premiumDelta);
     vm.snapshotGasLastCall('Hub.Operations', 'restore: full');
@@ -145,13 +133,7 @@ contract HubOperations_Gas_Tests is Base {
         uint256(premiumShares),
         premiumOffsetRay.toUint256()
       ),
-      _calculatePremiumRay(
-        hub1,
-        daiAssetId,
-        spokeData.realizedPremiumRay,
-        uint256(premiumShares),
-        premiumOffsetRay.toUint256()
-      )
+      _calculatePremiumRay(hub1, daiAssetId, uint256(premiumShares), premiumOffsetRay)
     );
     vm.startSnapshotGas('Hub.Operations', 'restore: full - with transfer');
     tokenList.dai.transferFrom(alice, address(hub1), drawnRemaining + premiumRemaining);
@@ -239,22 +221,16 @@ contract HubOperations_Gas_Tests is Base {
     ISpoke.UserPosition memory userPosition = spoke1.getUserPosition(_daiReserveId(spoke1), alice);
     (uint256 drawnDebt, uint256 premiumDebt) = spoke1.getUserDebt(_daiReserveId(spoke1), alice);
 
+    uint256 premiumRay = _calculatePremiumRay(
+      hub1,
+      daiAssetId,
+      userPosition.premiumShares,
+      userPosition.premiumOffsetRay
+    );
     IHubBase.PremiumDelta memory premiumDelta = IHubBase.PremiumDelta({
       sharesDelta: -userPosition.premiumShares.toInt256(),
-      offsetDeltaRay: -userPosition.premiumOffsetRay.toInt256(),
-      accruedPremiumRay: _calculateAccruedPremiumRay(
-        hub1,
-        daiAssetId,
-        userPosition.premiumShares,
-        userPosition.premiumOffsetRay
-      ),
-      restoredPremiumRay: _calculatePremiumRay(
-        hub1,
-        daiAssetId,
-        userPosition.realizedPremiumRay,
-        userPosition.premiumShares,
-        userPosition.premiumOffsetRay
-      )
+      offsetDeltaRay: -premiumRay - userPosition.premiumOffsetRay,
+      restoredPremiumRay: premiumRay
     });
 
     vm.prank(address(spoke1));

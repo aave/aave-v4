@@ -293,8 +293,8 @@ contract HubRefreshPremiumTest is HubBase {
     sharesDeltaPos = bound(sharesDeltaPos, 0, asset.premiumShares.toInt256());
     int256 offsetDeltaPosRay = _calculatePremiumAssetsRay(hub1, assetId, sharesDeltaPos.toUint256())
       .toInt256();
-    if (offsetDeltaPosRay > asset.premiumOffsetRay.toInt256()) {
-      offsetDeltaPosRay = asset.premiumOffsetRay.toInt256();
+    if (offsetDeltaPosRay > asset.premiumOffsetRay) {
+      offsetDeltaPosRay = asset.premiumOffsetRay;
     }
 
     IHubBase.PremiumDelta memory premiumDelta = IHubBase.PremiumDelta({

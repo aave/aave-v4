@@ -82,9 +82,6 @@ contract MockSpoke is Spoke, Test {
         .hub
         .previewDrawByAssets(reserve.assetId, info.drawnDebtAmounts[i])
         .toUint120();
-      _userPositions[user][info.debtReserveIds[i]].realizedPremiumRay = info
-        .realizedPremiumAmountsRay[i]
-        .toUint200();
       _userPositions[user][info.debtReserveIds[i]].premiumShares = vm
         .randomUint(
           reserve.hub.previewRemoveByAssets(reserve.assetId, info.accruedPremiumAmounts[i]),
@@ -93,10 +90,11 @@ contract MockSpoke is Spoke, Test {
         .toUint120();
       _userPositions[user][info.debtReserveIds[i]].premiumOffsetRay = (_userPositions[user][
         info.debtReserveIds[i]
-      ].premiumShares *
+      ].premiumShares.toInt256() *
         reserve.hub.getAssetDrawnIndex(reserve.assetId) -
-        info.accruedPremiumAmounts[i] *
-        WadRayMath.RAY).toUint200();
+        info.accruedPremiumAmounts[i].toInt256() *
+        WadRayMath.RAY -
+        info.realizedPremiumAmountsRay[i].toInt256()).toInt200();
     }
   }
 

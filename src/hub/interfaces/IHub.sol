@@ -36,9 +36,7 @@ interface IHub is IHubBase, IAccessManaged {
     uint120 addedShares;
     uint120 swept;
     //
-    uint200 realizedPremiumRay;
-    //
-    uint200 premiumOffsetRay;
+    int200 premiumOffsetRay;
     //
     uint120 drawnShares;
     uint120 premiumShares;
@@ -83,9 +81,7 @@ interface IHub is IHubBase, IAccessManaged {
     uint120 drawnShares;
     uint120 premiumShares;
     //
-    uint200 premiumOffsetRay;
-    //
-    uint200 realizedPremiumRay;
+    int200 premiumOffsetRay;
     //
     uint120 addedShares;
     uint40 addCap;

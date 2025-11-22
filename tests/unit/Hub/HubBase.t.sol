@@ -146,11 +146,11 @@ contract HubBase is Base {
     if (withPremium) {
       assertGt(premium, 0); // non-zero premium debt
       // restore premium data
-      uint256 accruedPremiumRay = _calculateAccruedPremiumRay(hub1, assetId);
+      // uint256 accruedPremiumRay = _calculateAccruedPremiumRay(hub1, assetId);
       vm.prank(spoke);
       hub1.refreshPremium(
         assetId,
-        IHubBase.PremiumDelta(-sharesDelta, -premiumOffsetDeltaRay, accruedPremiumRay, 0)
+        IHubBase.PremiumDelta(-sharesDelta, -premiumOffsetDeltaRay, 0, 0)
       );
     }
   }
@@ -218,18 +218,16 @@ contract HubBase is Base {
     ISpoke.UserPosition memory userPosition = spoke.getUserPosition(reserveId, user);
     uint256 assetId = spoke.getReserve(reserveId).assetId;
 
-    uint256 accruedPremiumRay = _calculateAccruedPremiumRay(
-      hub1,
-      assetId,
-      userPosition.premiumShares,
-      userPosition.premiumOffsetRay
-    );
     IHubBase.PremiumDelta memory expectedPremiumDelta = IHubBase.PremiumDelta({
       sharesDelta: -int256(uint256(userPosition.premiumShares)),
       offsetDeltaRay: -int256(uint256(userPosition.premiumOffsetRay)),
-      accruedPremiumRay: accruedPremiumRay,
       restoredPremiumRay: (premiumRestored * WadRayMath.RAY).min(
-        userPosition.realizedPremiumRay + accruedPremiumRay
+        _calculatePremiumRay(
+          hub1,
+          assetId,
+          userPosition.premiumShares,
+          userPosition.premiumOffsetRay
+        )
       )
     });
 

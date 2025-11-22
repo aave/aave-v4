@@ -66,8 +66,7 @@ library AssetLogic {
         .calculatePremiumRay({
           premiumShares: asset.premiumShares,
           drawnIndex: drawnIndex,
-          premiumOffsetRay: asset.premiumOffsetRay,
-          realizedPremiumRay: asset.realizedPremiumRay
+          premiumOffsetRay: asset.premiumOffsetRay
         })
         .fromRayUp();
   }
@@ -186,20 +185,17 @@ library AssetLogic {
     uint256 liquidityGrowthDrawn = drawnShares.rayMulUp(drawnIndex) -
       drawnShares.rayMulUp(previousIndex);
 
-    uint256 realizedPremiumRay = asset.realizedPremiumRay;
     uint120 premiumShares = asset.premiumShares;
-    uint256 premiumOffsetRay = asset.premiumOffsetRay;
+    int256 premiumOffsetRay = asset.premiumOffsetRay;
     uint256 premiumRayAfter = Premium.calculatePremiumRay({
       premiumShares: premiumShares,
       drawnIndex: drawnIndex,
-      premiumOffsetRay: premiumOffsetRay,
-      realizedPremiumRay: realizedPremiumRay
+      premiumOffsetRay: premiumOffsetRay
     });
     uint256 premiumRayBefore = Premium.calculatePremiumRay({
       premiumShares: premiumShares,
       drawnIndex: previousIndex,
-      premiumOffsetRay: premiumOffsetRay,
-      realizedPremiumRay: realizedPremiumRay
+      premiumOffsetRay: premiumOffsetRay
     });
     uint256 liquidityGrowthPremium = premiumRayAfter.fromRayUp() - premiumRayBefore.fromRayUp();
 

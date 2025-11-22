@@ -32,8 +32,7 @@ library LiquidationLogic {
     uint256 debtToCover;
     uint256 healthFactor;
     uint256 drawnDebt;
-    uint256 premiumDebt;
-    uint256 accruedPremiumRay;
+    uint256 premiumRay;
     uint256 totalDebtValue;
     address liquidator;
     uint256 activeCollateralCount;
@@ -101,7 +100,7 @@ library LiquidationLogic {
   struct LiquidateDebtParams {
     uint256 debtReserveId;
     uint256 debtToLiquidate;
-    uint256 accruedPremiumRay;
+    uint256 premiumRay;
     address liquidator;
     address user;
   }
@@ -164,7 +163,7 @@ library LiquidationLogic {
         collateralReserveId: params.collateralReserveId,
         collateralFactor: collateralDynConfig.collateralFactor,
         collateralReserveBalance: collateralReserveBalance,
-        debtReserveBalance: params.drawnDebt + params.premiumDebt,
+        debtReserveBalance: params.drawnDebt + params.premiumRay.fromRayUp(),
         receiveShares: params.receiveShares
       })
     );
@@ -174,7 +173,7 @@ library LiquidationLogic {
         healthFactorForMaxBonus: liquidationConfig.healthFactorForMaxBonus,
         liquidationBonusFactor: liquidationConfig.liquidationBonusFactor,
         targetHealthFactor: liquidationConfig.targetHealthFactor,
-        debtReserveBalance: params.drawnDebt + params.premiumDebt,
+        debtReserveBalance: params.drawnDebt + params.premiumRay.fromRayUp(),
         collateralReserveBalance: collateralReserveBalance,
         debtToCover: params.debtToCover,
         totalDebtValue: params.totalDebtValue,
@@ -219,7 +218,7 @@ library LiquidationLogic {
         LiquidateDebtParams({
           debtReserveId: params.debtReserveId,
           debtToLiquidate: liquidationAmounts.debtToLiquidate,
-          accruedPremiumRay: params.accruedPremiumRay,
+          premiumRay: params.premiumRay,
           liquidator: params.liquidator,
           user: params.user
         })
@@ -287,13 +286,8 @@ library LiquidationLogic {
       .premiumShares
       .add(premiumDelta.sharesDelta)
       .toUint120();
-    userPosition.premiumOffsetRay = userPosition
-      .premiumOffsetRay
-      .add(premiumDelta.offsetDeltaRay)
-      .toUint200();
-    userPosition.realizedPremiumRay = (userPosition.realizedPremiumRay +
-      premiumDelta.accruedPremiumRay -
-      premiumDelta.restoredPremiumRay).toUint200();
+    userPosition.premiumOffsetRay = (userPosition.premiumOffsetRay + premiumDelta.offsetDeltaRay)
+      .toInt200();
   }
 
   /// @dev Invoked by `liquidateUser` method.
@@ -346,16 +340,14 @@ library LiquidationLogic {
     ISpoke.PositionStatus storage positionStatus,
     LiquidateDebtParams memory params
   ) internal returns (uint256, IHubBase.PremiumDelta memory, bool) {
-    uint256 premiumDebtToLiquidateRay = params.debtToLiquidate.toRay().min(
-      debtPosition.realizedPremiumRay + params.accruedPremiumRay
-    );
+    uint256 premiumDebtToLiquidateRay = params.debtToLiquidate.toRay().min(params.premiumRay);
     uint256 premiumDebtToLiquidate = premiumDebtToLiquidateRay.fromRayUp();
     uint256 drawnDebtToLiquidate = params.debtToLiquidate - premiumDebtToLiquidate;
 
     IHubBase.PremiumDelta memory premiumDelta = IHubBase.PremiumDelta({
       sharesDelta: -debtPosition.premiumShares.toInt256(),
-      offsetDeltaRay: -debtPosition.premiumOffsetRay.toInt256(),
-      accruedPremiumRay: params.accruedPremiumRay,
+      offsetDeltaRay: (params.premiumRay - premiumDebtToLiquidateRay).toInt256() -
+        debtPosition.premiumOffsetRay,
       restoredPremiumRay: premiumDebtToLiquidateRay
     });
 
