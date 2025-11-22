@@ -307,54 +307,76 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     UserPosition storage userPosition = _userPositions[onBehalfOf][reserveId];
     _validateRepay(reserve);
 
-    IHubBase.PremiumDelta memory premiumDelta = IHubBase.PremiumDelta({
-      sharesDelta: -userPosition.premiumShares.toInt256(),
-      offsetDeltaRay: -userPosition.premiumOffsetRay.toInt256(),
-      accruedPremiumRay: 0, // populated below
-      restoredPremiumRay: 0 // populated below
-    });
+    amount = amount.min(userTotalDebt);
 
-    uint256 drawnDebtRestored;
-    uint256 realizedPremiumRay;
-    (drawnDebtRestored, , realizedPremiumRay, premiumDelta.accruedPremiumRay) = _getUserDebt(
-      reserve.hub,
-      reserve.assetId,
-      userPosition
-    );
+    uint256 basePremiumShares = userPosition.drawnShares * positionStatus.riskPremium;
+    uint256 compoundingPremium = userPosition.premiumShares - basePremiumShares;
+    uint256 compoundingPremiumRay = compoundingPremium * drawnIndex;
+    
+    uint256 restoredCompoundingPremiumRay = compoundingPremiumRay.min(amount.toRay());
+    uint256 restoredBaseShares;
+    if (compoundingPremiumRay == restoredCompoundingPremiumRay)
+    {
+      // full compound repayment
+      uint256 nonCompoundPremiumShares = userPosition.premiumShares - compoundingPremium;
+      uint256 nonCompoundPremiumRay = nonCompoundPremiumShares * drawnIndex - userPosition.premiumOffsetRay;
+      //uint256 newOffsetRay = userPosition.premiumShares * drawnIndex.max((userPosition.premiumOffsetRay +amount.toRay() - restoredCompoundingPremiumRay));
+      uint256 restoredNonCompoundingPremiumRay = (amount.toRay() - restoredCompoundingPremiumRay).min(nonCompoundPremiumRay);
+      uint256 leftOverNonCompoundingPremiumRay = nonCompoundPremiumRay - restoredNonCompoundingPremiumRay;
+      if (leftOverNonCompoundingPremiumRay > 0) {
+        IHubBase.PremiumDelta memory premiumDelta = IHubBase.PremiumDelta({
+          sharesDelta: -compoundingPremium.toInt256(), // don't compound remaining premium after repayment
+          offsetDeltaRay: restoredNonCompoundingPremiumRay.toInt256(),
+          restoredPremiumRay: restoredNonCompoundingPremiumRay + restoredCompoundingPremiumRay
+        });
+      } else {
+        uint256 restoredDrawnAmount = amount - (restoredCompoundingPremiumRay + restoredNonCompoundingPremiumRay).fromRayUp();
+        restoredBaseShares = restoredDrawnAmount.divDown(drawnIndex);
 
-    (drawnDebtRestored, premiumDelta.restoredPremiumRay) = _calculateRestoreAmount(
-      drawnDebtRestored,
-      realizedPremiumRay + premiumDelta.accruedPremiumRay,
-      amount
-    );
+        userPosition.drawnShares -= restoredBaseShares.toUint120();
+        newPremiumShares = userPosition.drawnShares.percentMulUp(positionStatus.riskPremium);
+        newPremiumOffsetRay = newPremiumShares * drawnIndex;
 
-    uint256 premiumDebtRestored = premiumDelta.restoredPremiumRay.fromRayUp();
+        IHubBase.PremiumDelta({
+          sharesDelta: newPremiumShares - userPosition.premiumShares,
+          offsetDeltaRay: newPremiumOffsetRay - userPosition.premiumOffsetRay,
+          restoredPremiumRay: restoredNonCompoundingPremiumRay + restoredCompoundingPremiumRay
+        });
+      }
+    }
+    else{
+        // partial  
+      IHubBase.PremiumDelta premiumDelta = IHubBase.PremiumDelta({
+        sharesDelta: -restoredCompoundingPremiumRay.divDown(drawnIndex).toInt256(),
+        offsetDeltaRay: 0, 
+        restoredPremiumRay: restoredCompoundingPremiumRay.divDown(drawnIndex).toInt256() * drawnIndex
+      })
+    }
+
     reserve.underlying.safeTransferFrom(
       msg.sender,
       address(reserve.hub),
-      drawnDebtRestored + premiumDebtRestored
+      amount
     );
     uint256 restoredShares = reserve.hub.restore(reserve.assetId, drawnDebtRestored, premiumDelta);
+    assertEq(restoredShares, restoredBaseShares);
 
     userPosition.applyPremiumDelta(premiumDelta);
-    userPosition.drawnShares -= restoredShares.toUint120();
+    userPosition.drawnShares -= restoredBaseShares.toUint120();
     if (userPosition.drawnShares == 0) {
       _positionStatus[onBehalfOf].setBorrowing(reserveId, false);
     }
-
-    uint256 newRiskPremium = _calculateUserAccountData(onBehalfOf).riskPremium;
-    _notifyRiskPremiumUpdate(onBehalfOf, newRiskPremium);
-
+  
     emit Repay(
       reserveId,
       msg.sender,
       onBehalfOf,
       restoredShares,
-      drawnDebtRestored + premiumDebtRestored,
+      amount,
       premiumDelta
     );
 
-    return (restoredShares, drawnDebtRestored + premiumDebtRestored);
+    return (restoredShares, amount);
   }
 
   /// @inheritdoc ISpokeBase
@@ -864,46 +886,48 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
   function _notifyRiskPremiumUpdate(address user, uint256 newRiskPremium) internal {
     PositionStatus storage positionStatus = _positionStatus[user];
 
-    if (newRiskPremium == 0 && !positionStatus.hasPositiveRiskPremium) {
+    if (newRiskPremium == 0 && positionStatus.riskPremium == 0) {
       return;
     }
-    positionStatus.hasPositiveRiskPremium = newRiskPremium > 0;
+    positionStatus.riskPremium = newRiskPremium;
 
     uint256 reserveId = _reserveCount;
     while ((reserveId = positionStatus.nextBorrowing(reserveId)) != PositionStatusMap.NOT_FOUND) {
       UserPosition storage userPosition = _userPositions[user][reserveId];
       Reserve storage reserve = _reserves[reserveId];
-      uint256 assetId = reserve.assetId;
+
       IHubBase hub = reserve.hub;
+      uint256 assetId = reserve.assetId;
       uint256 drawnIndex = hub.getAssetDrawnIndex(assetId);
 
+      IHubBase.PremiumDelta premiumDelta = _refreshReservePremium(userPosition, drawnIndex, newRiskPremium);
+      hub.refreshPremium(assetId, premiumDelta);
+      emit RefreshPremiumDebt(reserveId, user, premiumDelta);
+    }
+
+    emit UpdateUserRiskPremium(user, newRiskPremium);
+  }
+  
+  function _refreshReservePremium(UserPosition storage userPosition, uint256 drawnIndex, uint256 riskPremium) internal returns (IHubBase.PremiumDelta memory) {
       uint256 oldPremiumShares = userPosition.premiumShares;
       uint256 oldPremiumOffsetRay = userPosition.premiumOffsetRay;
-      uint256 accruedPremiumRay = Premium.calculateAccruedPremiumRay({
+      uint256 premiumRayBefore = Premium.calculatePremiumRay({
         premiumShares: oldPremiumShares,
         drawnIndex: drawnIndex,
         premiumOffsetRay: oldPremiumOffsetRay
       });
 
-      uint256 newPremiumShares = userPosition.drawnShares.percentMulUp(newRiskPremium);
-      uint256 newPremiumOffsetRay = newPremiumShares * drawnIndex;
+      uint256 newPremiumShares = userPosition.drawnShares.percentMulUp(riskPremium) + premiumRayBefore.divUp(drawnIndex);
+      uint256 newPremiumOffsetRay = newPremiumShares * drawnIndex - premiumRayBefore;
 
       userPosition.premiumShares = newPremiumShares.toUint120();
       userPosition.premiumOffsetRay = newPremiumOffsetRay.toUint200();
-      userPosition.realizedPremiumRay = (userPosition.realizedPremiumRay + accruedPremiumRay)
-        .toUint200();
 
-      IHubBase.PremiumDelta memory premiumDelta = IHubBase.PremiumDelta({
+      return IHubBase.PremiumDelta({
         sharesDelta: newPremiumShares.signedSub(oldPremiumShares),
         offsetDeltaRay: newPremiumOffsetRay.signedSub(oldPremiumOffsetRay),
-        accruedPremiumRay: accruedPremiumRay,
         restoredPremiumRay: 0
       });
-
-      hub.refreshPremium(assetId, premiumDelta);
-      emit RefreshPremiumDebt(reserveId, user, premiumDelta);
-    }
-    emit UpdateUserRiskPremium(user, newRiskPremium);
   }
 
   /// @notice Reports deficits for all debt reserves of the user, including the reserve being repaid during liquidation.

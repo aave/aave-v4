@@ -95,7 +95,7 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
   /// @dev hasPositiveRiskPremium True if the user position has a risk premium strictly greater than 0.
   struct PositionStatus {
     mapping(uint256 bucket => uint256) map;
-    bool hasPositiveRiskPremium;
+    uint256 riskPremium;
   }
 
   /// @notice User account data describing a user position and its health.
