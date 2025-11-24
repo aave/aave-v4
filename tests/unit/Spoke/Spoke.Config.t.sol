@@ -75,6 +75,7 @@ contract SpokeConfigTest is SpokeBase {
       paused: !config.paused,
       frozen: !config.frozen,
       borrowable: !config.borrowable,
+      canReceiveShares: !config.canReceiveShares,
       collateralRisk: config.collateralRisk + 1
     });
     vm.expectEmit(address(spoke1));
@@ -129,6 +130,7 @@ contract SpokeConfigTest is SpokeBase {
       paused: true,
       frozen: true,
       borrowable: true,
+      canReceiveShares: true,
       collateralRisk: 10_00
     });
     ISpoke.DynamicReserveConfig memory newDynReserveConfig = ISpoke.DynamicReserveConfig({
@@ -170,6 +172,7 @@ contract SpokeConfigTest is SpokeBase {
       paused: true,
       frozen: true,
       borrowable: true,
+      canReceiveShares: true,
       collateralRisk: 10_00
     });
     ISpoke.DynamicReserveConfig memory newDynReserveConfig = ISpoke.DynamicReserveConfig({
@@ -208,6 +211,7 @@ contract SpokeConfigTest is SpokeBase {
       paused: true,
       frozen: true,
       borrowable: true,
+      canReceiveShares: true,
       collateralRisk: 10_00
     });
     ISpoke.DynamicReserveConfig memory newDynReserveConfig = ISpoke.DynamicReserveConfig({
@@ -232,6 +236,7 @@ contract SpokeConfigTest is SpokeBase {
       paused: true,
       frozen: true,
       borrowable: true,
+      canReceiveShares: true,
       collateralRisk: 10_00
     });
     ISpoke.DynamicReserveConfig memory newDynReserveConfig = ISpoke.DynamicReserveConfig({
@@ -267,6 +272,7 @@ contract SpokeConfigTest is SpokeBase {
       paused: true,
       frozen: true,
       borrowable: true,
+      canReceiveShares: true,
       collateralRisk: 10_00
     });
     ISpoke.DynamicReserveConfig memory newDynReserveConfig = ISpoke.DynamicReserveConfig({

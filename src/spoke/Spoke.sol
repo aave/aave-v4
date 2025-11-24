@@ -149,6 +149,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
       paused: config.paused,
       frozen: config.frozen,
       borrowable: config.borrowable,
+      canReceiveShares: config.canReceiveShares,
       collateralRisk: config.collateralRisk
     });
     _dynamicConfig[reserveId][dynamicConfigKey] = dynamicConfig;
@@ -171,6 +172,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     reserve.paused = config.paused;
     reserve.frozen = config.frozen;
     reserve.borrowable = config.borrowable;
+    reserve.canReceiveShares = config.canReceiveShares;
     reserve.collateralRisk = config.collateralRisk;
     emit UpdateReserveConfig(reserveId, config);
   }
@@ -562,6 +564,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
         paused: reserve.paused,
         frozen: reserve.frozen,
         borrowable: reserve.borrowable,
+        canReceiveShares: reserve.canReceiveShares,
         collateralRisk: reserve.collateralRisk
       });
   }

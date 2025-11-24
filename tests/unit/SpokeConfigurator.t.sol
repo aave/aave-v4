@@ -186,6 +186,7 @@ contract SpokeConfiguratorTest is SpokeBase {
         paused: false,
         frozen: false,
         borrowable: true,
+        canReceiveShares: true,
         collateralRisk: 15_00
       }),
       dynamicConfig: ISpoke.DynamicReserveConfig({
@@ -219,6 +220,7 @@ contract SpokeConfiguratorTest is SpokeBase {
         paused: false,
         frozen: false,
         borrowable: true,
+        canReceiveShares: true,
         collateralRisk: 15_00
       }),
       dynamicConfig: ISpoke.DynamicReserveConfig({
@@ -240,6 +242,7 @@ contract SpokeConfiguratorTest is SpokeBase {
       paused: false,
       frozen: false,
       borrowable: true,
+      canReceiveShares: true,
       collateralRisk: 15_00
     });
     ISpoke.DynamicReserveConfig memory dynamicConfig = ISpoke.DynamicReserveConfig({

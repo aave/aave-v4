@@ -22,6 +22,7 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
   /// @dev frozen True if new activity is prevented for the reserve.
   /// @dev borrowable True if the reserve is borrowable.
   /// @dev collateralRisk The risk associated with a collateral asset, expressed in BPS.
+  /// @dev canReceiveShares True if the liquidator can receive collateral shares during liquidation.
   struct Reserve {
     address underlying;
     //
@@ -33,6 +34,8 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
     bool frozen;
     bool borrowable;
     uint24 collateralRisk;
+    //
+    bool canReceiveShares;
   }
 
   /// @notice Reserve configuration. Subset of the `Reserve` struct.
@@ -40,6 +43,7 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
     bool paused;
     bool frozen;
     bool borrowable;
+    bool canReceiveShares;
     uint24 collateralRisk;
   }
 
@@ -300,7 +304,7 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
   /// @notice Thrown when a debt to cover input is zero.
   error InvalidDebtToCover();
 
-  /// @notice Thrown when the liquidator tries to receive shares for a collateral reserve that is frozen.
+  /// @notice Thrown when the liquidator tries to receive shares for a collateral reserve that is not allowing it or is frozen.
   error CannotReceiveShares();
 
   /// @notice Thrown when the maximum number of dynamic config keys is reached.

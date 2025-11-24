@@ -117,6 +117,18 @@ contract SpokeConfigurator is Ownable2Step, ISpokeConfigurator {
   }
 
   /// @inheritdoc ISpokeConfigurator
+  function updateCanReceiveShares(
+    address spoke,
+    uint256 reserveId,
+    bool canReceiveShares
+  ) external onlyOwner {
+    ISpoke targetSpoke = ISpoke(spoke);
+    ISpoke.ReserveConfig memory reserveConfig = targetSpoke.getReserveConfig(reserveId);
+    reserveConfig.canReceiveShares = canReceiveShares;
+    targetSpoke.updateReserveConfig(reserveId, reserveConfig);
+  }
+
+  /// @inheritdoc ISpokeConfigurator
   function updateCollateralRisk(
     address spoke,
     uint256 reserveId,

@@ -91,6 +91,12 @@ interface ISpokeConfigurator {
   /// @param borrowable The new borrowable flag.
   function updateBorrowable(address spoke, uint256 reserveId, bool borrowable) external;
 
+  /// @notice Updates the canReceiveShares flag of a reserve.
+  /// @param spoke The address of the spoke.
+  /// @param reserveId The identifier of the reserve.
+  /// @param canReceiveShares The new canReceiveShares flag.
+  function updateCanReceiveShares(address spoke, uint256 reserveId, bool canReceiveShares) external;
+
   /// @notice Updates the collateral risk of a reserve.
   /// @param spoke The address of the spoke.
   /// @param reserveId The identifier of the reserve.
