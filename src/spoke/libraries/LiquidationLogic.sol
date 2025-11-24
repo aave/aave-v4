@@ -45,18 +45,12 @@ library LiquidationLogic {
     address user;
     address liquidator;
     uint256 debtToCover;
-    address collateralReserveHub;
-    address debtReserveHub;
-    bool collateralReservePaused;
-    bool debtReservePaused;
-    bool collateralReserveFrozen;
     uint256 healthFactor;
     uint256 collateralReserveId;
     uint256 collateralFactor;
     uint256 collateralReserveBalance;
     uint256 debtReserveBalance;
     bool receiveShares;
-    bool canReceiveShares;
   }
 
   struct CalculateDebtToTargetHealthFactorParams {
@@ -152,22 +146,18 @@ library LiquidationLogic {
     );
     _validateLiquidationCall(
       positionStatus[params.user].isUsingAsCollateral(params.collateralReserveId),
+      collateralReserve,
+      debtReserve,
       ValidateLiquidationCallParams({
         user: params.user,
         liquidator: params.liquidator,
         debtToCover: params.debtToCover,
-        collateralReserveHub: address(collateralReserve.hub),
-        debtReserveHub: address(debtReserve.hub),
-        collateralReservePaused: collateralReserve.paused,
-        collateralReserveFrozen: collateralReserve.frozen,
-        debtReservePaused: debtReserve.paused,
         healthFactor: params.healthFactor,
         collateralReserveId: params.collateralReserveId,
         collateralFactor: collateralDynConfig.collateralFactor,
         collateralReserveBalance: collateralReserveBalance,
         debtReserveBalance: params.drawnDebt + params.premiumDebt,
-        receiveShares: params.receiveShares,
-        canReceiveShares: collateralReserve.canReceiveShares
+        receiveShares: params.receiveShares
       })
     );
 
@@ -387,11 +377,13 @@ library LiquidationLogic {
   /// @param params The validate liquidation call params.
   function _validateLiquidationCall(
     bool isBorrowerUsingAsCollateral,
+    ISpoke.Reserve storage collateralReserve,
+    ISpoke.Reserve storage debtReserve,
     ValidateLiquidationCallParams memory params
-  ) internal pure {
+  ) internal view {
     require(params.user != params.liquidator, ISpoke.SelfLiquidation());
     require(params.debtToCover > 0, ISpoke.InvalidDebtToCover());
-    require(!params.collateralReservePaused && !params.debtReservePaused, ISpoke.ReservePaused());
+    require(!collateralReserve.paused && !debtReserve.paused, ISpoke.ReservePaused());
     require(params.collateralReserveBalance > 0, ISpoke.ReserveNotSupplied());
     require(params.debtReserveBalance > 0, ISpoke.ReserveNotBorrowed());
     require(
@@ -404,7 +396,7 @@ library LiquidationLogic {
     );
     if (params.receiveShares) {
       require(
-        !params.collateralReserveFrozen && params.canReceiveShares,
+        !collateralReserve.frozen && collateralReserve.canReceiveShares,
         ISpoke.CannotReceiveShares()
       );
     }

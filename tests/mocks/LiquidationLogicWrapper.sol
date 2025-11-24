@@ -158,6 +158,22 @@ contract LiquidationLogicWrapper {
     dynamicCollateralConfig = newDynamicCollateralConfig;
   }
 
+  function setCollateralReserveConfig(
+    ISpoke.ReserveConfig memory newCollateralReserveConfig
+  ) public {
+    _reserves[_collateralReserveId].paused = newCollateralReserveConfig.paused;
+    _reserves[_collateralReserveId].frozen = newCollateralReserveConfig.frozen;
+    _reserves[_collateralReserveId].borrowable = newCollateralReserveConfig.borrowable;
+    _reserves[_collateralReserveId].canReceiveShares = newCollateralReserveConfig.canReceiveShares;
+  }
+
+  function setDebtReserveConfig(ISpoke.ReserveConfig memory newDebtReserveConfig) public {
+    _reserves[_debtReserveId].paused = newDebtReserveConfig.paused;
+    _reserves[_debtReserveId].frozen = newDebtReserveConfig.frozen;
+    _reserves[_debtReserveId].borrowable = newDebtReserveConfig.borrowable;
+    _reserves[_debtReserveId].canReceiveShares = newDebtReserveConfig.canReceiveShares;
+  }
+
   function calculateLiquidationBonus(
     uint256 healthFactorForMaxBonus,
     uint256 liquidationBonusFactor,
@@ -178,6 +194,8 @@ contract LiquidationLogicWrapper {
   ) public view {
     LiquidationLogic._validateLiquidationCall(
       _positionStatuses[_borrower].isUsingAsCollateral(params.collateralReserveId),
+      _reserves[params.collateralReserveId],
+      _reserves[_debtReserveId],
       params
     );
   }
