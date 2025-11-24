@@ -306,15 +306,16 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
 
     IHubBase.PremiumDelta memory premiumDelta;
     uint256 drawnDebtRestored;
-    // uint256 premiumRayRestored;
+    uint256 drawnIndex = reserve.hub.getAssetDrawnIndex(reserve.assetId);
     {
       uint256 realizedPremiumRay;
       uint256 accruedPremiumRay;
       (drawnDebtRestored, , realizedPremiumRay, accruedPremiumRay) = _getUserDebt(
         reserve.hub,
         reserve.assetId,
-        userPosition
-      ); // TODO: pass drawnIndex
+        userPosition,
+        drawnIndex
+      );
 
       (drawnDebtRestored, premiumDelta.restoredPremiumRay) = _calculateRestoreAmount(
         drawnDebtRestored,
@@ -324,26 +325,26 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     }
 
     uint256 restoredShares = reserve.hub.previewRestoreByAssets(reserve.assetId, drawnDebtRestored);
-    uint256 newDrawnShares = userPosition.drawnShares - restoredShares.toUint120();
-    premiumDelta = _getPremiumDelta({
-      userPosition: userPosition,
-      // drawnSharesDelta: -restoredShares.toInt256(), // TODO: check if uint256 is enough
-      newDrawnShares: newDrawnShares,
-      drawnIndex: reserve.hub.getAssetDrawnIndex(reserve.assetId),
-      riskPremium: positionStatus.riskPremium,
-      restoredPremiumRay: premiumDelta.restoredPremiumRay
-    });
-    // premiumDelta.restoredPremiumRay = premiumRayRestored;
+    uint256 totalDebtRestored;
+    {
+      uint256 newDrawnShares = userPosition.drawnShares - restoredShares.toUint120();
+      premiumDelta = _getPremiumDelta({
+        userPosition: userPosition,
+        newDrawnShares: newDrawnShares,
+        drawnIndex: drawnIndex,
+        riskPremium: positionStatus.riskPremium,
+        restoredPremiumRay: premiumDelta.restoredPremiumRay
+      });
+      totalDebtRestored = drawnDebtRestored + premiumDelta.restoredPremiumRay.fromRayUp();
 
-    // uint256 premiumDebtRestored = premiumDelta.restoredPremiumRay.fromRayUp();
-    uint256 totalDebtRestored = drawnDebtRestored + premiumDelta.restoredPremiumRay.fromRayUp();
-    reserve.underlying.safeTransferFrom(msg.sender, address(reserve.hub), totalDebtRestored);
-    reserve.hub.restore(reserve.assetId, drawnDebtRestored, premiumDelta);
+      reserve.underlying.safeTransferFrom(msg.sender, address(reserve.hub), totalDebtRestored);
+      reserve.hub.restore(reserve.assetId, drawnDebtRestored, premiumDelta);
 
-    userPosition.applyPremiumDelta(premiumDelta);
-    userPosition.drawnShares = newDrawnShares.toUint120();
-    if (userPosition.drawnShares == 0) {
-      positionStatus.setBorrowing(reserveId, false);
+      userPosition.applyPremiumDelta(premiumDelta);
+      userPosition.drawnShares = newDrawnShares.toUint120();
+      if (newDrawnShares == 0) {
+        positionStatus.setBorrowing(reserveId, false);
+      }
     }
 
     emit Repay(reserveId, msg.sender, onBehalfOf, restoredShares, totalDebtRestored, premiumDelta);
@@ -393,6 +394,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
       _userPositions[user][collateralReserveId].dynamicConfigKey
     ];
     UserAccountData memory userAccountData = _calculateUserAccountData(user);
+    uint256 debtAssetId = debtReserve.assetId;
 
     LiquidationLogic.LiquidateUserParams memory params = LiquidationLogic.LiquidateUserParams({
       collateralReserveId: collateralReserveId,
@@ -412,8 +414,9 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     });
     (params.drawnDebt, params.premiumDebt, , params.accruedPremiumRay) = _getUserDebt(
       debtReserve.hub,
-      debtReserve.assetId,
-      _userPositions[user][debtReserveId]
+      debtAssetId,
+      _userPositions[user][debtReserveId],
+      debtReserve.hub.getAssetDrawnIndex(debtAssetId)
     );
 
     bool isUserInDeficit = LiquidationLogic.liquidateUser(
@@ -634,10 +637,12 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
   function getUserDebt(uint256 reserveId, address user) external view returns (uint256, uint256) {
     Reserve storage reserve = _getReserve(reserveId);
     UserPosition storage userPosition = _userPositions[user][reserveId];
+    uint256 assetId = reserve.assetId;
     (uint256 drawnDebt, uint256 premiumDebt, , ) = _getUserDebt(
       reserve.hub,
-      reserve.assetId,
-      userPosition
+      assetId,
+      userPosition,
+      reserve.hub.getAssetDrawnIndex(assetId)
     );
     return (drawnDebt, premiumDebt);
   }
@@ -646,10 +651,12 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
   function getUserTotalDebt(uint256 reserveId, address user) external view returns (uint256) {
     Reserve storage reserve = _getReserve(reserveId);
     UserPosition storage userPosition = _userPositions[user][reserveId];
+    uint256 assetId = reserve.assetId;
     (uint256 drawnDebt, uint256 premiumDebt, , ) = _getUserDebt(
       reserve.hub,
-      reserve.assetId,
-      userPosition
+      assetId,
+      userPosition,
+      reserve.hub.getAssetDrawnIndex(assetId)
     );
     return drawnDebt + premiumDebt;
   }
@@ -658,10 +665,12 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
   function getUserPremiumDebtRay(uint256 reserveId, address user) external view returns (uint256) {
     Reserve storage reserve = _getReserve(reserveId);
     UserPosition storage userPosition = _userPositions[user][reserveId];
+    uint256 assetId = reserve.assetId;
     (, , uint256 realizedPremiumRay, uint256 accruedPremiumRay) = _getUserDebt(
       reserve.hub,
-      reserve.assetId,
-      userPosition
+      assetId,
+      userPosition,
+      reserve.hub.getAssetDrawnIndex(assetId)
     );
     return realizedPremiumRay + accruedPremiumRay;
   }
@@ -775,6 +784,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
 
       uint256 assetPrice = IAaveOracle(ORACLE).getReservePrice(reserveId);
       uint256 assetUnit = MathUtils.uncheckedExp(10, reserve.decimals);
+      uint256 assetId = reserve.assetId;
 
       if (collateral) {
         uint256 collateralFactor = _dynamicConfig[reserveId][
@@ -787,7 +797,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
           if (suppliedShares > 0) {
             // cannot round down to zero
             uint256 userCollateralValue = (reserve.hub.previewRemoveByShares(
-              reserve.assetId,
+              assetId,
               suppliedShares
             ) * assetPrice).wadDivDown(assetUnit);
             accountData.totalCollateralValue += userCollateralValue;
@@ -805,8 +815,9 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
       if (borrowing) {
         (uint256 drawnDebt, uint256 premiumDebt, , ) = _getUserDebt(
           reserve.hub,
-          reserve.assetId,
-          userPosition
+          assetId,
+          userPosition,
+          reserve.hub.getAssetDrawnIndex(assetId)
         );
         // we can simplify since there is no precision loss due to the division here
         accountData.totalDebtValue += ((drawnDebt + premiumDebt) * assetPrice).wadDivUp(assetUnit);
@@ -911,7 +922,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
         ,
         uint256 realizedPremiumRay,
         uint256 accruedPremiumRay
-      ) = _getUserDebt(hub, assetId, userPosition);
+      ) = _getUserDebt(hub, assetId, userPosition, hub.getAssetDrawnIndex(assetId));
 
       IHubBase.PremiumDelta memory premiumDelta = IHubBase.PremiumDelta({
         sharesDelta: -userPosition.premiumShares.toInt256(),
@@ -988,9 +999,9 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
   function _getUserDebt(
     IHubBase hub,
     uint256 assetId,
-    UserPosition storage userPosition
+    UserPosition storage userPosition,
+    uint256 drawnIndex
   ) internal view returns (uint256, uint256, uint256, uint256) {
-    uint256 drawnIndex = hub.getAssetDrawnIndex(assetId);
     uint256 realizedPremiumRay = userPosition.realizedPremiumRay;
     uint256 accruedPremiumRay = Premium.calculateAccruedPremiumRay({
       premiumShares: userPosition.premiumShares,
