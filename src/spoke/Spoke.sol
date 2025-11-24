@@ -302,6 +302,8 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     UserPosition storage userPosition = _userPositions[onBehalfOf][reserveId];
     _validateRepay(reserve);
 
+    PositionStatus storage positionStatus = _positionStatus[onBehalfOf];
+
     uint256 drawnDebtRestored;
     uint256 premiumRayRestored;
     {
@@ -325,7 +327,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
       userPosition: userPosition,
       drawnSharesDelta: -restoredShares.toInt256(), // TODO: check if uint256 is enough
       drawnIndex: reserve.hub.getAssetDrawnIndex(reserve.assetId),
-      riskPremium: userPosition.premiumShares.percentDivDown(userPosition.drawnShares)
+      riskPremium: positionStatus.riskPremium
     });
     premiumDelta.restoredPremiumRay = premiumRayRestored;
 
@@ -340,7 +342,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     userPosition.applyPremiumDelta(premiumDelta);
     userPosition.drawnShares -= restoredShares.toUint120();
     if (userPosition.drawnShares == 0) {
-      _positionStatus[onBehalfOf].setBorrowing(reserveId, false);
+      positionStatus.setBorrowing(reserveId, false);
     }
 
     emit Repay(
@@ -871,10 +873,10 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
   /// @dev Skips the refresh if the user risk premium remains zero.
   function _notifyRiskPremiumUpdate(address user, uint256 newRiskPremium) internal {
     PositionStatus storage positionStatus = _positionStatus[user];
-    if (newRiskPremium == 0 && !positionStatus.hasPositiveRiskPremium) {
+    if (newRiskPremium == 0 && positionStatus.riskPremium == 0) {
       return;
     }
-    positionStatus.hasPositiveRiskPremium = newRiskPremium > 0;
+    positionStatus.riskPremium = newRiskPremium.toUint24();
 
     uint256 reserveId = _reserveCount;
     while ((reserveId = positionStatus.nextBorrowing(reserveId)) != PositionStatusMap.NOT_FOUND) {
