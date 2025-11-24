@@ -369,7 +369,7 @@ library LiquidationLogic {
       drawnDebtToLiquidate,
       premiumDelta
     );
-    debtPosition.applyPremiumDelta(premiumDelta);
+    debtPosition.applyPremiumDelta(premiumDelta); // TODO
     debtPosition.drawnShares -= drawnSharesLiquidated.toUint120();
 
     bool isDebtPositionEmpty = false;
