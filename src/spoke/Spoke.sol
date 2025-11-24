@@ -327,7 +327,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     uint256 restoredShares = reserve.hub.previewRestoreByAssets(reserve.assetId, drawnDebtRestored);
     uint256 totalDebtRestored;
     {
-      uint256 newDrawnShares = userPosition.drawnShares - restoredShares.toUint120();
+      uint256 newDrawnShares = userPosition.drawnShares.uncheckedSub(restoredShares).toUint120();
       premiumDelta = _getPremiumDelta({
         userPosition: userPosition,
         newDrawnShares: newDrawnShares,
