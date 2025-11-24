@@ -2,22 +2,22 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.20;
 
-type ReserveFlags is uint24;
+type ReserveFlags is uint8;
 
 using ReserveFlagsLib for ReserveFlags global;
 
 /// @title ReserveFlags Library
 /// @author Aave Labs
-/// @notice Packs all boolean flags of a Reserve as a single uint24.
+/// @notice Packs all boolean flags of a Reserve as a single uint8.
 library ReserveFlagsLib {
   /// @dev Mask for the `paused` flag.
-  uint24 internal constant PAUSED_MASK = 0x000001;
+  uint8 internal constant PAUSED_MASK = 0x000001;
   /// @dev Mask for the `frozen` flag.
-  uint24 internal constant FROZEN_MASK = 0x000002;
+  uint8 internal constant FROZEN_MASK = 0x000002;
   /// @dev Mask for the `borrowable` flag.
-  uint24 internal constant BORROWABLE_MASK = 0x000004;
+  uint8 internal constant BORROWABLE_MASK = 0x000004;
   /// @dev Mask for the `canReceiveShares` flag.
-  uint24 internal constant CAN_RECEIVE_SHARES_MASK = 0x000008;
+  uint8 internal constant CAN_RECEIVE_SHARES_MASK = 0x000008;
 
   /// @notice Initializes the ReserveFlags with the given values.
   /// @param _paused The `pause` flag status.
@@ -31,7 +31,7 @@ library ReserveFlagsLib {
     bool _borrowable,
     bool _canReceiveShares
   ) internal pure returns (ReserveFlags) {
-    uint24 flags = 0;
+    uint8 flags = 0;
     flags = _setFlag(flags, PAUSED_MASK, _paused);
     flags = _setFlag(flags, FROZEN_MASK, _frozen);
     flags = _setFlag(flags, BORROWABLE_MASK, _borrowable);
@@ -103,7 +103,7 @@ library ReserveFlagsLib {
   }
 
   /// @notice Sets the new status for the given flag.
-  function _setFlag(uint24 flags, uint24 mask, bool status) internal pure returns (uint24) {
+  function _setFlag(uint8 flags, uint8 mask, bool status) internal pure returns (uint8) {
     return status ? flags | mask : flags & ~mask;
   }
 }
