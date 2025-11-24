@@ -8,6 +8,7 @@ import {MathUtils} from 'src/libraries/math/MathUtils.sol';
 import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
 import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
 import {PositionStatusMap} from 'src/spoke/libraries/PositionStatusMap.sol';
+import {ReserveFlags, ReserveFlagsLib} from 'src/spoke/libraries/ReserveFlags.sol';
 import {IHubBase} from 'src/hub/interfaces/IHubBase.sol';
 import {IAaveOracle} from 'src/spoke/interfaces/IAaveOracle.sol';
 import {ISpoke, ISpokeBase} from 'src/spoke/interfaces/ISpoke.sol';
@@ -158,16 +159,16 @@ library LiquidationLogic {
         debtToCover: params.debtToCover,
         collateralReserveHub: address(collateralReserve.hub),
         debtReserveHub: address(debtReserve.hub),
-        collateralReservePaused: collateralReserve.paused,
-        collateralReserveFrozen: collateralReserve.frozen,
-        debtReservePaused: debtReserve.paused,
+        collateralReservePaused: collateralReserve.flags.paused(),
+        collateralReserveFrozen: collateralReserve.flags.frozen(),
+        debtReservePaused: debtReserve.flags.paused(),
         healthFactor: params.healthFactor,
         collateralReserveId: params.collateralReserveId,
         collateralFactor: collateralDynConfig.collateralFactor,
         collateralReserveBalance: collateralReserveBalance,
         debtReserveBalance: params.drawnDebt + params.premiumDebt,
         receiveShares: params.receiveShares,
-        canReceiveShares: collateralReserve.canReceiveShares
+        canReceiveShares: collateralReserve.flags.canReceiveShares()
       })
     );
 

@@ -14,6 +14,7 @@ import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
 import {KeyValueList} from 'src/spoke/libraries/KeyValueList.sol';
 import {LiquidationLogic} from 'src/spoke/libraries/LiquidationLogic.sol';
 import {PositionStatusMap} from 'src/spoke/libraries/PositionStatusMap.sol';
+import {ReserveFlags, ReserveFlagsLib} from 'src/spoke/libraries/ReserveFlags.sol';
 import {Premium} from 'src/hub/libraries/Premium.sol';
 import {NoncesKeyed} from 'src/utils/NoncesKeyed.sol';
 import {Multicall} from 'src/utils/Multicall.sol';
@@ -146,10 +147,12 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
       assetId: assetId.toUint16(),
       decimals: decimals,
       dynamicConfigKey: dynamicConfigKey,
-      paused: config.paused,
-      frozen: config.frozen,
-      borrowable: config.borrowable,
-      canReceiveShares: config.canReceiveShares,
+      flags: ReserveFlagsLib.initFlags(
+        config.paused,
+        config.frozen,
+        config.borrowable,
+        config.canReceiveShares
+      ),
       collateralRisk: config.collateralRisk
     });
     _dynamicConfig[reserveId][dynamicConfigKey] = dynamicConfig;
@@ -169,10 +172,10 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
   ) external restricted {
     Reserve storage reserve = _getReserve(reserveId);
     _validateReserveConfig(config);
-    reserve.paused = config.paused;
-    reserve.frozen = config.frozen;
-    reserve.borrowable = config.borrowable;
-    reserve.canReceiveShares = config.canReceiveShares;
+    reserve.flags = ReserveFlagsLib.setPaused(reserve.flags, config.paused);
+    reserve.flags = ReserveFlagsLib.setFrozen(reserve.flags, config.frozen);
+    reserve.flags = ReserveFlagsLib.setBorrowable(reserve.flags, config.borrowable);
+    reserve.flags = ReserveFlagsLib.setCanReceiveShares(reserve.flags, config.canReceiveShares);
     reserve.collateralRisk = config.collateralRisk;
     emit UpdateReserveConfig(reserveId, config);
   }
@@ -561,10 +564,10 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     Reserve storage reserve = _getReserve(reserveId);
     return
       ReserveConfig({
-        paused: reserve.paused,
-        frozen: reserve.frozen,
-        borrowable: reserve.borrowable,
-        canReceiveShares: reserve.canReceiveShares,
+        paused: reserve.flags.paused(),
+        frozen: reserve.flags.frozen(),
+        borrowable: reserve.flags.borrowable(),
+        canReceiveShares: reserve.flags.canReceiveShares(),
         collateralRisk: reserve.collateralRisk
       });
   }
@@ -934,32 +937,32 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
   }
 
   function _validateSupply(Reserve storage reserve) internal view {
-    require(!reserve.paused, ReservePaused());
-    require(!reserve.frozen, ReserveFrozen());
+    require(!reserve.flags.paused(), ReservePaused());
+    require(!reserve.flags.frozen(), ReserveFrozen());
   }
 
   function _validateWithdraw(Reserve storage reserve) internal view {
-    require(!reserve.paused, ReservePaused());
+    require(!reserve.flags.paused(), ReservePaused());
   }
 
   function _validateBorrow(Reserve storage reserve) internal view {
-    require(!reserve.paused, ReservePaused());
-    require(!reserve.frozen, ReserveFrozen());
-    require(reserve.borrowable, ReserveNotBorrowable());
+    require(!reserve.flags.paused(), ReservePaused());
+    require(!reserve.flags.frozen(), ReserveFrozen());
+    require(reserve.flags.borrowable(), ReserveNotBorrowable());
     // health factor is checked at the end of borrow action
   }
 
   function _validateRepay(Reserve storage reserve) internal view {
-    require(!reserve.paused, ReservePaused());
+    require(!reserve.flags.paused(), ReservePaused());
   }
 
   function _validateSetUsingAsCollateral(
     Reserve storage reserve,
     bool usingAsCollateral
   ) internal view {
-    require(!reserve.paused, ReservePaused());
+    require(!reserve.flags.paused(), ReservePaused());
     // can disable as collateral if the reserve is frozen
-    require(!usingAsCollateral || !reserve.frozen, ReserveFrozen());
+    require(!usingAsCollateral || !reserve.flags.frozen(), ReserveFrozen());
   }
 
   /// @notice Returns whether `manager` is active & approved positionManager for `user`.

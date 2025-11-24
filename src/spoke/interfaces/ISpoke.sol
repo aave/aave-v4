@@ -2,6 +2,7 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
+import {ReserveFlags} from 'src/spoke/libraries/ReserveFlags.sol';
 import {IAccessManaged} from 'src/dependencies/openzeppelin/IAccessManaged.sol';
 import {INoncesKeyed} from 'src/interfaces/INoncesKeyed.sol';
 import {IMulticall} from 'src/interfaces/IMulticall.sol';
@@ -18,11 +19,12 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
   /// @dev assetId The identifier of the asset in the Hub.
   /// @dev decimals The number of decimals of the underlying asset.
   /// @dev dynamicConfigKey The key of the last reserve dynamic config.
-  /// @dev paused True if all actions are prevented for the reserve.
-  /// @dev frozen True if new activity is prevented for the reserve.
-  /// @dev borrowable True if the reserve is borrowable.
+  /// @dev flags The packed boolean flags of the reserve.
+  /// @dev flags.paused True if all actions are prevented for the reserve.
+  /// @dev flags.frozen True if new activity is prevented for the reserve.
+  /// @dev flags.borrowable True if the reserve is borrowable.
+  /// @dev flags.canReceiveShares True if the liquidator can receive collateral shares during liquidation.
   /// @dev collateralRisk The risk associated with a collateral asset, expressed in BPS.
-  /// @dev canReceiveShares True if the liquidator can receive collateral shares during liquidation.
   struct Reserve {
     address underlying;
     //
@@ -30,12 +32,8 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
     uint16 assetId;
     uint8 decimals;
     uint24 dynamicConfigKey;
-    bool paused;
-    bool frozen;
-    bool borrowable;
+    ReserveFlags flags;
     uint24 collateralRisk;
-    //
-    bool canReceiveShares;
   }
 
   /// @notice Reserve configuration. Subset of the `Reserve` struct.
