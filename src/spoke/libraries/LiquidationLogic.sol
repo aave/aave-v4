@@ -281,17 +281,16 @@ library LiquidationLogic {
   /// @notice Applies the premium delta to the user position.
   function applyPremiumDelta(
     ISpoke.UserPosition storage userPosition,
+    uint256 oldPremiumShares,
+    uint256 oldPremiumOffsetRay,
+    uint256 oldRealizedPremiumRay,
     IHubBase.PremiumDelta memory premiumDelta
   ) internal {
-    userPosition.premiumShares = userPosition
-      .premiumShares
-      .add(premiumDelta.sharesDelta)
-      .toUint120();
-    userPosition.premiumOffsetRay = userPosition
-      .premiumOffsetRay
+    userPosition.premiumShares = oldPremiumShares.add(premiumDelta.sharesDelta).toUint120();
+    userPosition.premiumOffsetRay = oldPremiumOffsetRay
       .add(premiumDelta.offsetDeltaRay)
       .toUint200();
-    userPosition.realizedPremiumRay = (userPosition.realizedPremiumRay +
+    userPosition.realizedPremiumRay = (oldRealizedPremiumRay +
       premiumDelta.accruedPremiumRay -
       premiumDelta.restoredPremiumRay).toUint200();
   }
@@ -346,15 +345,18 @@ library LiquidationLogic {
     ISpoke.PositionStatus storage positionStatus,
     LiquidateDebtParams memory params
   ) internal returns (uint256, IHubBase.PremiumDelta memory, bool) {
+    uint256 oldPremiumShares = debtPosition.premiumShares;
+    uint256 oldPremiumOffsetRay = debtPosition.premiumOffsetRay;
+    uint256 realizedPremiumRay = debtPosition.realizedPremiumRay;
+
     uint256 premiumDebtToLiquidateRay = params.debtToLiquidate.toRay().min(
-      debtPosition.realizedPremiumRay + params.accruedPremiumRay
+      realizedPremiumRay + params.accruedPremiumRay
     );
-    uint256 premiumDebtToLiquidate = premiumDebtToLiquidateRay.fromRayUp();
-    uint256 drawnDebtToLiquidate = params.debtToLiquidate - premiumDebtToLiquidate;
+    uint256 drawnDebtToLiquidate = params.debtToLiquidate - premiumDebtToLiquidateRay.fromRayUp();
 
     IHubBase.PremiumDelta memory premiumDelta = IHubBase.PremiumDelta({
-      sharesDelta: -debtPosition.premiumShares.toInt256(),
-      offsetDeltaRay: -debtPosition.premiumOffsetRay.toInt256(),
+      sharesDelta: -oldPremiumShares.toInt256(),
+      offsetDeltaRay: -oldPremiumOffsetRay.toInt256(),
       accruedPremiumRay: params.accruedPremiumRay,
       restoredPremiumRay: premiumDebtToLiquidateRay
     });
@@ -362,14 +364,19 @@ library LiquidationLogic {
     debtReserve.underlying.safeTransferFrom(
       params.liquidator,
       address(debtReserve.hub),
-      drawnDebtToLiquidate + premiumDebtToLiquidate
+      drawnDebtToLiquidate + premiumDebtToLiquidateRay.fromRayUp()
     );
     uint256 drawnSharesLiquidated = debtReserve.hub.restore(
       debtReserve.assetId,
       drawnDebtToLiquidate,
       premiumDelta
     );
-    debtPosition.applyPremiumDelta(premiumDelta); // TODO
+    debtPosition.applyPremiumDelta(
+      oldPremiumShares,
+      oldPremiumOffsetRay,
+      realizedPremiumRay,
+      premiumDelta
+    );
     debtPosition.drawnShares -= drawnSharesLiquidated.toUint120();
 
     bool isDebtPositionEmpty = false;
