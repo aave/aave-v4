@@ -293,16 +293,18 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
   }
 
   struct RepayVars {
+    IHubBase hub;
+    uint256 assetId;
     uint256 drawnIndex;
     uint256 drawnDebtRestored;
     uint256 premiumRayRestored;
-    uint256 premiumDebtRestored;
+    uint256 totalDebtRestored;
     uint256 accruedPremiumRay;
-    uint256 drawnShares;
     uint256 premiumShares;
     uint256 premiumOffsetRay;
     uint256 realizedPremiumRay;
     uint256 restoredShares;
+    uint256 newDrawnShares;
   }
 
   /// @inheritdoc ISpokeBase
@@ -315,15 +317,16 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
 
     Reserve storage reserve = _getReserve(reserveId);
     UserPosition storage userPosition = _userPositions[onBehalfOf][reserveId];
+    PositionStatus storage positionStatus = _positionStatus[onBehalfOf];
     _validateRepay(reserve);
 
+    vars.hub = reserve.hub;
+    vars.assetId = reserve.assetId;
     vars.premiumShares = userPosition.premiumShares;
     vars.premiumOffsetRay = userPosition.premiumOffsetRay;
-    vars.drawnIndex = reserve.hub.getAssetDrawnIndex(reserve.assetId);
+    vars.drawnIndex = vars.hub.getAssetDrawnIndex(vars.assetId);
 
     (vars.drawnDebtRestored, , vars.realizedPremiumRay, vars.accruedPremiumRay) = _getUserDebt(
-      reserve.hub,
-      reserve.assetId,
       userPosition,
       vars.drawnIndex
     );
@@ -334,27 +337,20 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
       amount
     );
 
-    vars.drawnShares = userPosition.drawnShares;
-    vars.restoredShares = reserve.hub.previewRestoreByAssets(
-      reserve.assetId,
-      vars.drawnDebtRestored
-    );
+    vars.restoredShares = vars.hub.previewRestoreByAssets(vars.assetId, vars.drawnDebtRestored);
+    vars.newDrawnShares = userPosition.drawnShares.uncheckedSub(vars.restoredShares);
     IHubBase.PremiumDelta memory premiumDelta = _getPremiumDelta({
       oldPremiumShares: vars.premiumShares,
       oldPremiumOffsetRay: vars.premiumOffsetRay,
-      newDrawnShares: vars.drawnShares.uncheckedSub(vars.restoredShares),
+      newDrawnShares: vars.newDrawnShares,
       drawnIndex: vars.drawnIndex,
-      riskPremium: vars.premiumShares.percentDivDown(vars.drawnShares)
+      riskPremium: positionStatus.riskPremium
     });
     premiumDelta.restoredPremiumRay = vars.premiumRayRestored;
 
-    vars.premiumDebtRestored = premiumDelta.restoredPremiumRay.fromRayUp();
-    reserve.underlying.safeTransferFrom(
-      msg.sender,
-      address(reserve.hub),
-      vars.drawnDebtRestored + vars.premiumDebtRestored
-    );
-    reserve.hub.restore(reserve.assetId, vars.drawnDebtRestored, premiumDelta);
+    vars.totalDebtRestored = vars.drawnDebtRestored + premiumDelta.restoredPremiumRay.fromRayUp();
+    reserve.underlying.safeTransferFrom(msg.sender, address(vars.hub), vars.totalDebtRestored);
+    vars.hub.restore(vars.assetId, vars.drawnDebtRestored, premiumDelta);
 
     userPosition.applyPremiumDelta(
       vars.premiumShares,
@@ -362,9 +358,9 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
       vars.realizedPremiumRay,
       premiumDelta
     );
-    userPosition.drawnShares = vars.drawnShares.uncheckedSub(vars.restoredShares).toUint120();
-    if (userPosition.drawnShares == 0) {
-      _positionStatus[onBehalfOf].setBorrowing(reserveId, false);
+    userPosition.drawnShares = vars.newDrawnShares.toUint120();
+    if (vars.newDrawnShares == 0) {
+      positionStatus.setBorrowing(reserveId, false);
     }
 
     emit Repay(
@@ -372,11 +368,11 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
       msg.sender,
       onBehalfOf,
       vars.restoredShares,
-      vars.drawnDebtRestored + vars.premiumDebtRestored,
+      vars.totalDebtRestored,
       premiumDelta
     );
 
-    return (vars.restoredShares, vars.drawnDebtRestored + vars.premiumDebtRestored);
+    return (vars.restoredShares, vars.totalDebtRestored);
   }
 
   function _getPremiumDelta(
@@ -891,10 +887,10 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
   /// @dev Skips the refresh if the user risk premium remains zero.
   function _notifyRiskPremiumUpdate(address user, uint256 newRiskPremium) internal {
     PositionStatus storage positionStatus = _positionStatus[user];
-    if (newRiskPremium == 0 && !positionStatus.hasPositiveRiskPremium) {
+    if (newRiskPremium == 0 && positionStatus.riskPremium == 0) {
       return;
     }
-    positionStatus.hasPositiveRiskPremium = newRiskPremium > 0;
+    positionStatus.riskPremium = newRiskPremium.toUint24();
 
     uint256 reserveId = _reserveCount;
     while ((reserveId = positionStatus.nextBorrowing(reserveId)) != PositionStatusMap.NOT_FOUND) {
@@ -1032,12 +1028,10 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     UserPosition storage userPosition
   ) internal view returns (uint256, uint256, uint256, uint256) {
     uint256 drawnIndex = hub.getAssetDrawnIndex(assetId);
-    return _getUserDebt(hub, assetId, userPosition, drawnIndex);
+    return _getUserDebt(userPosition, drawnIndex);
   }
 
   function _getUserDebt(
-    IHubBase hub,
-    uint256 assetId,
     UserPosition storage userPosition,
     uint256 drawnIndex
   ) internal view returns (uint256, uint256, uint256, uint256) {
