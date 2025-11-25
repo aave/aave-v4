@@ -24,6 +24,6 @@ contract MockSkimSpoke {
   }
 
   function skimRestore(uint256 assetId, uint256 drawnAmount) external returns (uint256) {
-    return HUB.restore(assetId, drawnAmount, IHubBase.PremiumDelta(0, 0, 0, 0));
+    return HUB.restore(assetId, drawnAmount, IHubBase.PremiumDelta(0, 0, 0));
   }
 }

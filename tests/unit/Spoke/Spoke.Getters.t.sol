@@ -252,11 +252,12 @@ contract SpokeGettersTest is SpokeBase {
     assertEq(hub1.getSpokeTotalOwed(assetId, address(spoke)), 0);
     assertEq(hub1.getSpokeDrawnShares(assetId, address(spoke)), 0);
 
-    (uint256 premiumShares, uint256 premiumOffset, uint256 realizedPremium) = hub1
-      .getSpokePremiumData(assetId, address(spoke));
+    (uint256 premiumShares, int256 premiumOffset) = hub1.getSpokePremiumData(
+      assetId,
+      address(spoke)
+    );
     assertEq(premiumShares, 0);
     assertEq(premiumOffset, 0);
-    assertEq(realizedPremium, 0);
 
     // Asset debts
     (drawn, premium) = hub1.getAssetOwed(assetId);
@@ -265,10 +266,9 @@ contract SpokeGettersTest is SpokeBase {
     assertEq(hub1.getAssetTotalOwed(assetId), 0);
     assertEq(hub1.getAssetDrawnShares(assetId), 0);
 
-    (premiumShares, premiumOffset, realizedPremium) = hub1.getAssetPremiumData(assetId);
+    (premiumShares, premiumOffset) = hub1.getAssetPremiumData(assetId);
     assertEq(premiumShares, 0);
     assertEq(premiumOffset, 0);
-    assertEq(realizedPremium, 0);
 
     // Spoke supply
     assertEq(hub1.getSpokeAddedAssets(assetId, address(spoke)), supplyAmount);
@@ -308,8 +308,6 @@ contract SpokeGettersTest is SpokeBase {
     assertEq(assetPremiumDebtRay, spokePremiumDebtRay);
 
     // realize premium
-    assertEq(spoke.getUserPosition(_wethReserveId(spoke), alice).realizedPremiumRay, 0);
-    assertEq(spoke.getUserPosition(_wethReserveId(spoke), bob).realizedPremiumRay, 0);
     vm.prank(alice);
     spoke.updateUserRiskPremium(alice);
     vm.prank(bob);

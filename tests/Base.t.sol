@@ -220,8 +220,7 @@ abstract contract Base is Test {
     uint256 drawnShares;
     uint256 drawn;
     uint256 premiumShares;
-    uint256 premiumOffsetRay;
-    uint256 realizedPremiumRay;
+    int256 premiumOffsetRay;
     uint256 premium;
     uint40 lastUpdateTimestamp;
     uint256 liquidity;
@@ -237,8 +236,7 @@ abstract contract Base is Test {
     uint256 drawnShares;
     uint256 drawn;
     uint256 premiumShares;
-    uint256 premiumOffsetRay;
-    uint256 realizedPremiumRay;
+    int256 premiumOffsetRay;
     uint256 premium;
   }
 
@@ -1561,13 +1559,7 @@ abstract contract Base is Test {
 
     IHubBase.PremiumDelta memory expectedPremiumDelta = IHubBase.PremiumDelta({
       sharesDelta: -userPosition.premiumShares.toInt256(),
-      offsetDeltaRay: -userPosition.premiumOffsetRay.toInt256(),
-      accruedPremiumRay: _calculateAccruedPremiumRay(
-        hub1,
-        assetId,
-        userPosition.premiumShares,
-        userPosition.premiumOffsetRay
-      ),
+      offsetDeltaRay: -userPosition.premiumOffsetRay,
       restoredPremiumRay: 0 // populated below
     });
 
@@ -1577,7 +1569,12 @@ abstract contract Base is Test {
       userDebt.premiumDebt
     );
     expectedPremiumDelta.restoredPremiumRay = (premiumAmountToRestore * WadRayMath.RAY).min(
-      userPosition.realizedPremiumRay + expectedPremiumDelta.accruedPremiumRay
+      _calculatePremiumDebtRay(
+        hub1,
+        assetId,
+        userPosition.premiumShares,
+        userPosition.premiumOffsetRay
+      )
     );
 
     return expectedPremiumDelta;
@@ -2022,74 +2019,49 @@ abstract contract Base is Test {
       hub.getAddedAssets(assetId) - hub.previewRemoveByShares(assetId, hub.getAddedShares(assetId));
   }
 
-  function _calculateAccruedPremiumRay(
-    IHub hub,
-    uint256 assetId,
-    uint256 premiumShares,
-    uint256 premiumOffsetRay
-  ) internal view returns (uint256) {
-    return premiumShares * hub.getAssetDrawnIndex(assetId) - premiumOffsetRay;
-  }
-
-  function _calculateAccruedPremiumRay(
-    ISpoke spoke,
-    uint256 reserveId,
-    uint256 premiumShares,
-    uint256 premiumOffsetRay
-  ) internal view returns (uint256) {
-    IHub hub = _hub(spoke, reserveId);
-    uint256 assetId = spoke.getReserve(reserveId).assetId;
-    return _calculateAccruedPremiumRay(hub, assetId, premiumShares, premiumOffsetRay);
-  }
-
-  function _calculateAccruedPremiumRay(IHub hub, uint256 assetId) internal view returns (uint256) {
-    return
-      _calculateAccruedPremiumRay(
-        hub,
-        assetId,
-        hub.getAsset(assetId).premiumShares,
-        hub.getAsset(assetId).premiumOffsetRay
-      );
-  }
-
   function _calculatePremiumDebt(
     IHub hub,
     uint256 assetId,
-    uint256 realizedPremiumRay,
     uint256 premiumShares,
-    uint256 premiumOffsetRay
+    int256 premiumOffsetRay
   ) internal view returns (uint256) {
-    return
-      _calculatePremiumRay(hub, assetId, realizedPremiumRay, premiumShares, premiumOffsetRay)
-        .fromRayUp();
+    return _calculatePremiumDebtRay(hub, assetId, premiumShares, premiumOffsetRay).fromRayUp();
   }
 
-  function _calculatePremiumRay(
+  function _calculatePremiumDebtRay(
     IHub hub,
     uint256 assetId,
-    uint256 realizedPremiumRay,
     uint256 premiumShares,
-    uint256 premiumOffsetRay
+    int256 premiumOffsetRay
   ) internal view returns (uint256) {
-    uint256 accruedPremiumRay = _calculateAccruedPremiumRay(
-      hub,
-      assetId,
-      premiumShares,
-      premiumOffsetRay
-    );
-    return realizedPremiumRay + accruedPremiumRay;
+    uint256 drawnIndex = hub.getAssetDrawnIndex(assetId);
+    return ((premiumShares * drawnIndex).toInt256() - premiumOffsetRay).toUint256();
   }
 
-  function _calculatePremiumRay(
+  function _calculatePremiumDebtRay(
     ISpoke spoke,
     uint256 reserveId,
-    uint256 realizedPremiumRay,
     uint256 premiumShares,
-    uint256 premiumOffsetRay
+    int256 premiumOffsetRay
   ) internal view returns (uint256) {
     IHub hub = _hub(spoke, reserveId);
     uint256 assetId = spoke.getReserve(reserveId).assetId;
-    return _calculatePremiumRay(hub, assetId, realizedPremiumRay, premiumShares, premiumOffsetRay);
+    return _calculatePremiumDebtRay(hub, assetId, premiumShares, premiumOffsetRay);
+  }
+
+  function _calculatePremiumDebtRay(
+    ISpoke spoke,
+    uint256 reserveId,
+    address user
+  ) internal view returns (uint256) {
+    ISpoke.UserPosition memory userPosition = spoke.getUserPosition(reserveId, user);
+    return
+      _calculatePremiumDebtRay(
+        spoke,
+        reserveId,
+        userPosition.premiumShares,
+        userPosition.premiumOffsetRay
+      );
   }
 
   function _calculatePremiumAssetsRay(
@@ -2569,7 +2541,6 @@ abstract contract Base is Test {
         drawn: drawn,
         premiumShares: assetData.premiumShares,
         premiumOffsetRay: assetData.premiumOffsetRay,
-        realizedPremiumRay: assetData.realizedPremiumRay,
         premium: premium,
         lastUpdateTimestamp: assetData.lastUpdateTimestamp.toUint40(),
         drawnIndex: assetData.drawnIndex,
@@ -2601,7 +2572,6 @@ abstract contract Base is Test {
         drawn: drawn,
         premiumShares: spokeData.premiumShares,
         premiumOffsetRay: spokeData.premiumOffsetRay,
-        realizedPremiumRay: spokeData.realizedPremiumRay,
         premium: premium
       });
   }
@@ -2630,7 +2600,6 @@ abstract contract Base is Test {
     assertEq(a.drawn, b.drawn, 'drawnDebt');
     assertEq(a.premiumShares, b.premiumShares, 'premiumShares');
     assertEq(a.premiumOffsetRay, b.premiumOffsetRay, 'premiumOffsetRay');
-    assertEq(a.realizedPremiumRay, b.realizedPremiumRay, 'realizedPremiumRay');
     assertEq(a.premium, b.premium, 'premium');
   }
 
@@ -2643,7 +2612,6 @@ abstract contract Base is Test {
     assertEq(a.drawn, b.drawn, 'drawn');
     assertEq(a.premiumShares, b.premiumShares, 'premiumShares');
     assertEq(a.premiumOffsetRay, b.premiumOffsetRay, 'premiumOffsetRay');
-    assertEq(a.realizedPremiumRay, b.realizedPremiumRay, 'realizedPremiumRay');
     assertEq(a.premium, b.premium, 'premium');
     assertEq(abi.encode(a), abi.encode(b)); // sanity check
   }
@@ -2799,9 +2767,11 @@ abstract contract Base is Test {
     );
     uint256 liquidityGrowth = asset.drawnShares.rayMulUp(drawnIndex) -
       asset.drawnShares.rayMulUp(lastDrawnIndex) +
-      (asset.premiumShares * drawnIndex - asset.premiumOffsetRay + asset.realizedPremiumRay)
+      ((asset.premiumShares * drawnIndex).toInt256() - asset.premiumOffsetRay)
+        .toUint256()
         .fromRayUp() -
-      (asset.premiumShares * lastDrawnIndex - asset.premiumOffsetRay + asset.realizedPremiumRay)
+      ((asset.premiumShares * lastDrawnIndex).toInt256() - asset.premiumOffsetRay)
+        .toUint256()
         .fromRayUp();
 
     return liquidityGrowth.percentMulDown(asset.liquidityFee);

@@ -85,26 +85,19 @@ contract HubRestoreTest is HubBase {
     assertGt(premium, 0);
 
     IHub.SpokeData memory spokeData = hub1.getSpoke(daiAssetId, address(spoke1));
-    uint256 spokePremiumRay = _calculatePremiumRay(
+    uint256 spokePremiumRay = _calculatePremiumDebtRay(
       hub1,
       daiAssetId,
-      spokeData.realizedPremiumRay,
       spokeData.premiumShares,
       spokeData.premiumOffsetRay
-    );
+    ).fromRayUp();
 
     uint256 drawnRestored = vm.randomUint(0, drawn);
     uint256 premiumRestoredRay = vm.randomUint(spokePremiumRay + 1, UINT256_MAX);
 
     IHubBase.PremiumDelta memory premiumDelta = IHubBase.PremiumDelta({
       sharesDelta: -spokeData.premiumShares.toInt256(),
-      offsetDeltaRay: -spokeData.premiumOffsetRay.toInt256(),
-      accruedPremiumRay: _calculateAccruedPremiumRay(
-        hub1,
-        daiAssetId,
-        spokeData.premiumShares,
-        spokeData.premiumOffsetRay
-      ),
+      offsetDeltaRay: -spokePremiumRay.toInt256() - spokeData.premiumOffsetRay,
       restoredPremiumRay: premiumRestoredRay
     });
 
@@ -552,7 +545,7 @@ contract HubRestoreTest is HubBase {
       reserveId: _daiReserveId(spoke1),
       premiumRestored: premium
     });
-    premiumDelta.accruedPremiumRay += 1;
+    premiumDelta.offsetDeltaRay -= 1;
 
     vm.startPrank(address(spoke1));
     tokenList.dai.transferFrom(alice, address(hub1), drawnRestored + premium);

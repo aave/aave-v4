@@ -487,12 +487,11 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
               .previewRestoreByAssets(assetId, vars.baseAmountToRestore)
               .toUint120();
             vars.userReservePosition.premiumShares = 0;
-            vars.userReservePosition.premiumOffsetRay = 0;
-            vars.userReservePosition.realizedPremiumRay = (vars
-              .userReservePosition
-              .realizedPremiumRay +
-              vars.premiumDelta.accruedPremiumRay -
-              vars.premiumDelta.restoredPremiumRay).toUint200();
+            vars.userReservePosition.premiumOffsetRay = -_calculatePremiumDebtRay(
+              params.spoke,
+              reserveId,
+              params.user
+            ).toInt256().toInt200();
 
             if (vars.userReservePosition.drawnShares == 0) {
               continue;
@@ -506,29 +505,23 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
           );
 
           if (liquidationMetadata.hasDeficit) {
-            uint256 accruedPremiumRay = _calculateAccruedPremiumRay(
-              params.spoke,
-              reserveId,
+            uint256 premiumDebtRay = _calculatePremiumDebtRay(
+              targetHub,
+              assetId,
               vars.userReservePosition.premiumShares,
               vars.userReservePosition.premiumOffsetRay
             );
 
+            IHubBase.PremiumDelta memory premiumDelta = IHubBase.PremiumDelta({
+              sharesDelta: -vars.userReservePosition.premiumShares.toInt256(),
+              offsetDeltaRay: -premiumDebtRay.toInt256() -
+                vars.userReservePosition.premiumOffsetRay,
+              restoredPremiumRay: premiumDebtRay
+            });
+
             vm.expectCall(
               address(targetHub),
-              abi.encodeCall(
-                IHubBase.reportDeficit,
-                (
-                  assetId,
-                  userReserveDrawnDebt,
-                  IHubBase.PremiumDelta({
-                    sharesDelta: -vars.userReservePosition.premiumShares.toInt256(),
-                    offsetDeltaRay: -vars.userReservePosition.premiumOffsetRay.toInt256(),
-                    accruedPremiumRay: accruedPremiumRay,
-                    restoredPremiumRay: vars.userReservePosition.realizedPremiumRay +
-                      accruedPremiumRay
-                  })
-                )
-              ),
+              abi.encodeCall(IHubBase.reportDeficit, (assetId, userReserveDrawnDebt, premiumDelta)),
               1
             );
             vm.expectEmit(address(params.spoke));
@@ -538,12 +531,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
               drawnShares: targetHub
                 .previewRestoreByAssets(assetId, userReserveDrawnDebt)
                 .toUint120(),
-              premiumDelta: IHubBase.PremiumDelta({
-                sharesDelta: -vars.userReservePosition.premiumShares.toInt256(),
-                offsetDeltaRay: -vars.userReservePosition.premiumOffsetRay.toInt256(),
-                accruedPremiumRay: accruedPremiumRay,
-                restoredPremiumRay: vars.userReservePosition.realizedPremiumRay + accruedPremiumRay
-              })
+              premiumDelta: premiumDelta
             });
           }
         }

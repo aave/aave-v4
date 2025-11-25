@@ -125,6 +125,6 @@ contract HubEliminateDeficitTest is HubBase {
     _drawLiquidity(assetId, amount, true, true, spoke);
 
     vm.prank(spoke);
-    hub1.reportDeficit(assetId, 0, IHubBase.PremiumDelta(0, 0, 0, amountRay));
+    hub1.reportDeficit(assetId, 0, IHubBase.PremiumDelta(0, 0, amountRay));
   }
 }

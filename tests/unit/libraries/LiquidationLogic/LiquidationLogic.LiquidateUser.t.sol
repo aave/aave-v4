@@ -17,6 +17,7 @@ contract LiquidationLogicLiquidateUserTest is LiquidationLogicBaseTest {
   ISpoke.DynamicReserveConfig dynamicCollateralConfig;
   LiquidationLogic.LiquidateUserParams params;
 
+  // drawn index is 1.05
   // variable liquidation bonus is max: 120%
   // liquidation penalty: 1.2 * 0.5 = 0.6
   // debtToTarget = $10000 * (1 - 0.8) / (1 - 0.6) / $2000 = 2.5
@@ -29,6 +30,8 @@ contract LiquidationLogicLiquidateUserTest is LiquidationLogicBaseTest {
     super.setUp();
     (hub2, ) = hub2Fixture();
 
+    _mockInterestRateBps(105_00);
+
     // Mock params
     usdxReserveId = _usdxReserveId(spoke1);
     wethReserveId = _wethReserveId(spoke1);
@@ -40,8 +43,8 @@ contract LiquidationLogicLiquidateUserTest is LiquidationLogicBaseTest {
       debtToCover: 3e18,
       healthFactor: 0.8e18,
       drawnDebt: 4.5e18,
-      premiumDebt: 0.5e18,
-      accruedPremiumRay: 0.2e18 * WadRayMath.RAY,
+      premiumDebtRay: 0.5e18 * WadRayMath.RAY,
+      drawnIndex: 105_00,
       totalDebtValue: 10_000e26,
       liquidator: makeAddr('liquidator'),
       activeCollateralCount: 1,
@@ -112,7 +115,7 @@ contract LiquidationLogicLiquidateUserTest is LiquidationLogicBaseTest {
     vm.startPrank(address(liquidationLogicWrapper));
     hub2.refreshPremium(
       wethAssetId,
-      IHubBase.PremiumDelta(1e6 * 1e18, 1e6 * 1e18 * WadRayMath.RAY.toInt256(), 0, 0)
+      IHubBase.PremiumDelta(1e6 * 1e18, 1e6 * 1e18 * WadRayMath.RAY.toInt256(), 0)
     );
     vm.stopPrank();
     skip(365 days);
@@ -124,11 +127,11 @@ contract LiquidationLogicLiquidateUserTest is LiquidationLogicBaseTest {
     assertGt(spokePremiumOwed, 10000e18);
 
     // Refresh premium to realise some premium debt
-    uint256 realizedPremiumRay = _calculateAccruedPremiumRay(
+    uint256 realizedPremiumRay = _calculatePremiumDebtRay(
       hub2,
       wethAssetId,
       1e3 * 1e18,
-      1e3 * 1e18 * WadRayMath.RAY
+      int256(1e3 * 1e18 * WadRayMath.RAY)
     );
     assertGt(realizedPremiumRay, 10e18 * WadRayMath.RAY);
     vm.prank(address(liquidationLogicWrapper));
@@ -136,8 +139,7 @@ contract LiquidationLogicLiquidateUserTest is LiquidationLogicBaseTest {
       wethAssetId,
       IHubBase.PremiumDelta(
         -1e3 * 1e18,
-        -1e3 * 1e18 * WadRayMath.RAY.toInt256(),
-        realizedPremiumRay,
+        -realizedPremiumRay.toInt256() - 1e3 * 1e18 * WadRayMath.RAY.toInt256(),
         0
       )
     );
@@ -146,13 +148,14 @@ contract LiquidationLogicLiquidateUserTest is LiquidationLogicBaseTest {
     liquidationLogicWrapper.setDebtPositionDrawnShares(
       hub2.previewRestoreByAssets(wethAssetId, params.drawnDebt)
     );
-    uint256 premiumDebtShares = hub2.previewDrawByAssets(wethAssetId, params.premiumDebt);
+    uint256 premiumDebtShares = hub2.previewDrawByAssets(
+      wethAssetId,
+      params.premiumDebtRay.fromRayUp()
+    );
     liquidationLogicWrapper.setDebtPositionPremiumShares(premiumDebtShares);
     liquidationLogicWrapper.setDebtPositionPremiumOffsetRay(
-      _calculatePremiumAssetsRay(hub2, wethAssetId, premiumDebtShares) - params.accruedPremiumRay
-    );
-    liquidationLogicWrapper.setDebtPositionRealizedPremiumRay(
-      params.premiumDebt.toRay() - params.accruedPremiumRay
+      _calculatePremiumAssetsRay(hub2, wethAssetId, premiumDebtShares).toInt256() -
+        params.premiumDebtRay.toInt256()
     );
 
     // Mint tokens to liquidator and approve spoke
@@ -202,8 +205,7 @@ contract LiquidationLogicLiquidateUserTest is LiquidationLogicBaseTest {
           2e18,
           IHubBase.PremiumDelta(
             -debtPosition.premiumShares.toInt256(),
-            -debtPosition.premiumOffsetRay.toInt256(),
-            0.2e18 * WadRayMath.RAY,
+            -0.2e18 * WadRayMath.RAY.toInt256() - debtPosition.premiumOffsetRay,
             0.5e18 * WadRayMath.RAY
           )
         )

@@ -39,14 +39,14 @@ contract HubReportDeficitTest is HubBase {
     vm.expectRevert(IHub.SpokeNotActive.selector);
 
     vm.prank(caller);
-    hub1.reportDeficit(usdxAssetId, 0, IHubBase.PremiumDelta(0, 0, 0, 0));
+    hub1.reportDeficit(usdxAssetId, 0, IHubBase.PremiumDelta(0, 0, 0));
   }
 
   function test_reportDeficit_revertsWith_InvalidAmount() public {
     vm.expectRevert(IHub.InvalidAmount.selector);
 
     vm.prank(address(spoke1));
-    hub1.reportDeficit(usdxAssetId, 0, IHubBase.PremiumDelta(0, 0, 0, 0));
+    hub1.reportDeficit(usdxAssetId, 0, IHubBase.PremiumDelta(0, 0, 0));
   }
 
   function test_reportDeficit_fuzz_revertsWith_SurplusDrawnDeficitReported(
@@ -66,11 +66,7 @@ contract HubReportDeficitTest is HubBase {
 
     vm.expectRevert(abi.encodeWithSelector(IHub.SurplusDrawnDeficitReported.selector, drawn));
     vm.prank(address(spoke1));
-    hub1.reportDeficit(
-      usdxAssetId,
-      drawnDeficit,
-      IHubBase.PremiumDelta(0, 0, 0, premiumDeficitRay)
-    );
+    hub1.reportDeficit(usdxAssetId, drawnDeficit, IHubBase.PremiumDelta(0, 0, premiumDeficitRay));
   }
 
   function test_reportDeficit_fuzz_revertsWith_SurplusPremiumRayDeficitReported(
@@ -86,10 +82,9 @@ contract HubReportDeficitTest is HubBase {
     assertGt(premium, 0);
 
     IHub.SpokeData memory spokeData = hub1.getSpoke(usdxAssetId, address(spoke1));
-    uint256 spokePremiumRay = _calculatePremiumRay(
+    uint256 spokePremiumRay = _calculatePremiumDebtRay(
       hub1,
       usdxAssetId,
-      spokeData.realizedPremiumRay,
       spokeData.premiumShares,
       spokeData.premiumOffsetRay
     );
@@ -104,7 +99,7 @@ contract HubReportDeficitTest is HubBase {
     hub1.reportDeficit(
       usdxAssetId,
       drawnDeficit,
-      IHubBase.PremiumDelta(0, 0, 0, premiumDeficitRay)
+      IHubBase.PremiumDelta(0, -premiumDeficitRay.toInt256().toInt200(), premiumDeficitRay)
     );
   }
 
