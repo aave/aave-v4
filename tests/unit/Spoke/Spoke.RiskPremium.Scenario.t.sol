@@ -200,7 +200,7 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
   }
 
   /// Bob and Alice each supply and borrow varying amounts of usdx and dai, we check interest accrues and values percolate to hub1.
-  /// After 1 year, Alice does a repay, and we ensure the same values are updated accordingly.
+  /// After 1 year, Alice does a repay, and we ensure that the RP has not changed.
   function test_getUserRiskPremium_applyInterest_two_users_two_reserves_borrowed() public {
     // Set dai collateral risk to 10% and usdx to 20%
     _updateCollateralRisk(spoke1, _daiReserveId(spoke1), 10_00);
@@ -463,16 +463,17 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
       'bob usdx premium drawn shares after repay'
     );
 
-    // Alice's user risk premium does change
+    // Alice's premium shares change due to repay
     assertNotEq(
       spoke1.getUserPosition(daiInfo.reserveId, alice).premiumShares,
       aliceDaiInfo.premiumShares,
-      'alice dai premium drawn shares after repay should not match'
+      'alice dai premium drawn shares after repay should match'
     );
-    assertNotEq(
+    // Alice's premium shares do not change on usdx as there is no notify
+    assertEq(
       spoke1.getUserPosition(usdxInfo.reserveId, alice).premiumShares,
       aliceUsdxInfo.premiumShares,
-      'alice usdx premium drawn shares after repay should not match'
+      'alice usdx premium drawn shares after repay should match'
     );
 
     expectedUserRp.aliceRiskPremium = _calculateExpectedUserRP(spoke1, alice);
