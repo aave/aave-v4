@@ -11,13 +11,13 @@ using ReserveFlagsLib for ReserveFlags global;
 /// @notice Packs all boolean flags of a Reserve as a single uint8.
 library ReserveFlagsLib {
   /// @dev Mask for the `paused` flag.
-  uint8 internal constant PAUSED_MASK = 0x000001;
+  uint8 internal constant PAUSED_MASK = 0x001;
   /// @dev Mask for the `frozen` flag.
-  uint8 internal constant FROZEN_MASK = 0x000002;
+  uint8 internal constant FROZEN_MASK = 0x002;
   /// @dev Mask for the `borrowable` flag.
-  uint8 internal constant BORROWABLE_MASK = 0x000004;
+  uint8 internal constant BORROWABLE_MASK = 0x004;
   /// @dev Mask for the `canReceiveShares` flag.
-  uint8 internal constant CAN_RECEIVE_SHARES_MASK = 0x000008;
+  uint8 internal constant CAN_RECEIVE_SHARES_MASK = 0x008;
 
   /// @notice Initializes the ReserveFlags with the given values.
   /// @param _paused The `pause` flag status.
