@@ -31,7 +31,7 @@ contract SpokeGettersTest is SpokeBase {
       paused: false,
       frozen: false,
       borrowable: true,
-      canReceiveShares: true,
+      receiveSharesEnabled: true,
       collateralRisk: 15_00
     });
     spokeInfo[spoke].weth.dynReserveConfig = ISpoke.DynamicReserveConfig({
@@ -43,7 +43,7 @@ contract SpokeGettersTest is SpokeBase {
       paused: false,
       frozen: false,
       borrowable: true,
-      canReceiveShares: true,
+      receiveSharesEnabled: true,
       collateralRisk: 15_00
     });
     spokeInfo[spoke].wbtc.dynReserveConfig = ISpoke.DynamicReserveConfig({
@@ -55,7 +55,7 @@ contract SpokeGettersTest is SpokeBase {
       paused: false,
       frozen: false,
       borrowable: true,
-      canReceiveShares: true,
+      receiveSharesEnabled: true,
       collateralRisk: 20_00
     });
     spokeInfo[spoke].dai.dynReserveConfig = ISpoke.DynamicReserveConfig({
@@ -67,7 +67,7 @@ contract SpokeGettersTest is SpokeBase {
       paused: false,
       frozen: false,
       borrowable: true,
-      canReceiveShares: true,
+      receiveSharesEnabled: true,
       collateralRisk: 50_00
     });
     spokeInfo[spoke].usdx.dynReserveConfig = ISpoke.DynamicReserveConfig({
@@ -79,7 +79,7 @@ contract SpokeGettersTest is SpokeBase {
       paused: false,
       frozen: false,
       borrowable: true,
-      canReceiveShares: true,
+      receiveSharesEnabled: true,
       collateralRisk: 50_00
     });
     spokeInfo[spoke].usdy.dynReserveConfig = ISpoke.DynamicReserveConfig({

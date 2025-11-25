@@ -745,7 +745,11 @@ contract SpokeBase is Base {
     assertEq(a.flags.paused(), b.flags.paused(), 'paused');
     assertEq(a.flags.frozen(), b.flags.frozen(), 'frozen');
     assertEq(a.flags.borrowable(), b.flags.borrowable(), 'borrowable');
-    assertEq(a.flags.canReceiveShares(), b.flags.canReceiveShares(), 'canReceiveShares');
+    assertEq(
+      a.flags.receiveSharesEnabled(),
+      b.flags.receiveSharesEnabled(),
+      'receiveSharesEnabled'
+    );
     assertEq(a.collateralRisk, b.collateralRisk, 'collateralRisk');
     assertEq(abi.encode(a), abi.encode(b)); // sanity check
   }

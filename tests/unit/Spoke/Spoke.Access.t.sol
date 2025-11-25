@@ -91,7 +91,7 @@ contract SpokeAccessTest is SpokeBase {
         paused: false,
         frozen: false,
         borrowable: true,
-        canReceiveShares: true,
+        receiveSharesEnabled: true,
         collateralRisk: 0
       }),
       ISpoke.DynamicReserveConfig({
@@ -111,7 +111,7 @@ contract SpokeAccessTest is SpokeBase {
         paused: false,
         frozen: false,
         borrowable: true,
-        canReceiveShares: true,
+        receiveSharesEnabled: true,
         collateralRisk: 0
       }),
       ISpoke.DynamicReserveConfig({
@@ -131,7 +131,7 @@ contract SpokeAccessTest is SpokeBase {
         paused: false,
         frozen: false,
         borrowable: true,
-        canReceiveShares: true,
+        receiveSharesEnabled: true,
         collateralRisk: 0
       })
     );
@@ -144,7 +144,7 @@ contract SpokeAccessTest is SpokeBase {
         paused: false,
         frozen: false,
         borrowable: true,
-        canReceiveShares: true,
+        receiveSharesEnabled: true,
         collateralRisk: 0
       })
     );
@@ -230,7 +230,7 @@ contract SpokeAccessTest is SpokeBase {
         paused: false,
         frozen: false,
         borrowable: true,
-        canReceiveShares: true,
+        receiveSharesEnabled: true,
         collateralRisk: 0
       }),
       ISpoke.DynamicReserveConfig({
@@ -255,7 +255,7 @@ contract SpokeAccessTest is SpokeBase {
         paused: false,
         frozen: false,
         borrowable: true,
-        canReceiveShares: true,
+        receiveSharesEnabled: true,
         collateralRisk: 0
       }),
       ISpoke.DynamicReserveConfig({

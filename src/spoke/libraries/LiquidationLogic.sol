@@ -57,7 +57,7 @@ library LiquidationLogic {
     uint256 collateralReserveBalance;
     uint256 debtReserveBalance;
     bool receiveShares;
-    bool canReceiveShares;
+    bool receiveSharesEnabled;
   }
 
   struct CalculateDebtToTargetHealthFactorParams {
@@ -168,7 +168,7 @@ library LiquidationLogic {
         collateralReserveBalance: collateralReserveBalance,
         debtReserveBalance: params.drawnDebt + params.premiumDebt,
         receiveShares: params.receiveShares,
-        canReceiveShares: collateralReserve.flags.canReceiveShares()
+        receiveSharesEnabled: collateralReserve.flags.receiveSharesEnabled()
       })
     );
 
@@ -405,7 +405,7 @@ library LiquidationLogic {
     );
     if (params.receiveShares) {
       require(
-        !params.collateralReserveFrozen && params.canReceiveShares,
+        !params.collateralReserveFrozen && params.receiveSharesEnabled,
         ISpoke.CannotReceiveShares()
       );
     }

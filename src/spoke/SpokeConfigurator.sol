@@ -117,14 +117,14 @@ contract SpokeConfigurator is Ownable2Step, ISpokeConfigurator {
   }
 
   /// @inheritdoc ISpokeConfigurator
-  function updateCanReceiveShares(
+  function updateReceiveSharesEnabled(
     address spoke,
     uint256 reserveId,
-    bool canReceiveShares
+    bool receiveSharesEnabled
   ) external onlyOwner {
     ISpoke targetSpoke = ISpoke(spoke);
     ISpoke.ReserveConfig memory reserveConfig = targetSpoke.getReserveConfig(reserveId);
-    reserveConfig.canReceiveShares = canReceiveShares;
+    reserveConfig.receiveSharesEnabled = receiveSharesEnabled;
     targetSpoke.updateReserveConfig(reserveId, reserveConfig);
   }
 

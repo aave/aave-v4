@@ -186,7 +186,7 @@ contract SpokeConfiguratorTest is SpokeBase {
         paused: false,
         frozen: false,
         borrowable: true,
-        canReceiveShares: true,
+        receiveSharesEnabled: true,
         collateralRisk: 15_00
       }),
       dynamicConfig: ISpoke.DynamicReserveConfig({
@@ -220,7 +220,7 @@ contract SpokeConfiguratorTest is SpokeBase {
         paused: false,
         frozen: false,
         borrowable: true,
-        canReceiveShares: true,
+        receiveSharesEnabled: true,
         collateralRisk: 15_00
       }),
       dynamicConfig: ISpoke.DynamicReserveConfig({
@@ -242,7 +242,7 @@ contract SpokeConfiguratorTest is SpokeBase {
       paused: false,
       frozen: false,
       borrowable: true,
-      canReceiveShares: true,
+      receiveSharesEnabled: true,
       collateralRisk: 15_00
     });
     ISpoke.DynamicReserveConfig memory dynamicConfig = ISpoke.DynamicReserveConfig({
@@ -352,17 +352,17 @@ contract SpokeConfiguratorTest is SpokeBase {
     }
   }
 
-  function test_updateCanReceiveShares_revertsWith_OwnableUnauthorizedAccount() public {
+  function test_updateReceiveSharesEnabled_revertsWith_OwnableUnauthorizedAccount() public {
     vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, alice));
     vm.prank(alice);
-    spokeConfigurator.updateCanReceiveShares(spokeAddr, _reserveId, false);
+    spokeConfigurator.updateReceiveSharesEnabled(spokeAddr, _reserveId, false);
   }
 
-  function test_updateCanReceiveShares() public {
+  function test_updateReceiveSharesEnabled() public {
     ISpoke.ReserveConfig memory expectedReserveConfig = spoke.getReserveConfig(_reserveId);
 
     for (uint256 i = 0; i < 2; i += 1) {
-      expectedReserveConfig.canReceiveShares = (i == 0) ? false : true;
+      expectedReserveConfig.receiveSharesEnabled = (i == 0) ? false : true;
 
       vm.expectCall(
         spokeAddr,
@@ -371,10 +371,10 @@ contract SpokeConfiguratorTest is SpokeBase {
       vm.expectEmit(address(spoke));
       emit ISpoke.UpdateReserveConfig(_reserveId, expectedReserveConfig);
       vm.prank(SPOKE_CONFIGURATOR_ADMIN);
-      spokeConfigurator.updateCanReceiveShares(
+      spokeConfigurator.updateReceiveSharesEnabled(
         spokeAddr,
         _reserveId,
-        expectedReserveConfig.canReceiveShares
+        expectedReserveConfig.receiveSharesEnabled
       );
 
       assertEq(spoke.getReserveConfig(_reserveId), expectedReserveConfig);

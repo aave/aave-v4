@@ -58,7 +58,7 @@ contract HubAddTest is HubBase {
         paused: false,
         frozen: false,
         borrowable: true,
-        canReceiveShares: true,
+        receiveSharesEnabled: true,
         collateralRisk: 20_00
       }),
       ISpoke.DynamicReserveConfig({

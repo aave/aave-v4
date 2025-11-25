@@ -14,7 +14,7 @@ import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
 import {KeyValueList} from 'src/spoke/libraries/KeyValueList.sol';
 import {LiquidationLogic} from 'src/spoke/libraries/LiquidationLogic.sol';
 import {PositionStatusMap} from 'src/spoke/libraries/PositionStatusMap.sol';
-import {ReserveFlags, ReserveFlagsLib} from 'src/spoke/libraries/ReserveFlags.sol';
+import {ReserveFlagsLib} from 'src/spoke/libraries/ReserveFlags.sol';
 import {Premium} from 'src/hub/libraries/Premium.sol';
 import {NoncesKeyed} from 'src/utils/NoncesKeyed.sol';
 import {Multicall} from 'src/utils/Multicall.sol';
@@ -151,7 +151,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
         config.paused,
         config.frozen,
         config.borrowable,
-        config.canReceiveShares
+        config.receiveSharesEnabled
       ),
       collateralRisk: config.collateralRisk
     });
@@ -175,7 +175,10 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     reserve.flags = ReserveFlagsLib.setPaused(reserve.flags, config.paused);
     reserve.flags = ReserveFlagsLib.setFrozen(reserve.flags, config.frozen);
     reserve.flags = ReserveFlagsLib.setBorrowable(reserve.flags, config.borrowable);
-    reserve.flags = ReserveFlagsLib.setCanReceiveShares(reserve.flags, config.canReceiveShares);
+    reserve.flags = ReserveFlagsLib.setReceiveSharesEnabled(
+      reserve.flags,
+      config.receiveSharesEnabled
+    );
     reserve.collateralRisk = config.collateralRisk;
     emit UpdateReserveConfig(reserveId, config);
   }
@@ -567,7 +570,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
         paused: reserve.flags.paused(),
         frozen: reserve.flags.frozen(),
         borrowable: reserve.flags.borrowable(),
-        canReceiveShares: reserve.flags.canReceiveShares(),
+        receiveSharesEnabled: reserve.flags.receiveSharesEnabled(),
         collateralRisk: reserve.collateralRisk
       });
   }

@@ -8,34 +8,34 @@ using ReserveFlagsLib for ReserveFlags global;
 
 /// @title ReserveFlags Library
 /// @author Aave Labs
-/// @notice Packs all boolean flags of a Reserve as a single uint8.
+/// @notice Implements the bitmap logic to handle the Reserve flags configuration.
 library ReserveFlagsLib {
   /// @dev Mask for the `paused` flag.
-  uint8 internal constant PAUSED_MASK = 0x001;
+  uint8 internal constant PAUSED_MASK = 0x01;
   /// @dev Mask for the `frozen` flag.
-  uint8 internal constant FROZEN_MASK = 0x002;
+  uint8 internal constant FROZEN_MASK = 0x02;
   /// @dev Mask for the `borrowable` flag.
-  uint8 internal constant BORROWABLE_MASK = 0x004;
-  /// @dev Mask for the `canReceiveShares` flag.
-  uint8 internal constant CAN_RECEIVE_SHARES_MASK = 0x008;
+  uint8 internal constant BORROWABLE_MASK = 0x04;
+  /// @dev Mask for the `receiveSharesEnabled` flag.
+  uint8 internal constant RECEIVE_SHARES_ENABLED_MASK = 0x08;
 
   /// @notice Initializes the ReserveFlags with the given values.
   /// @param _paused The `pause` flag status.
   /// @param _frozen The `frozen` flag status.
   /// @param _borrowable The `borrowable` flag status.
-  /// @param _canReceiveShares The `canReceiveShares` flag status.
+  /// @param _receiveSharesEnabled The `receiveSharesEnabled` flag status.
   /// @return The initialized ReserveFlags.
   function initFlags(
     bool _paused,
     bool _frozen,
     bool _borrowable,
-    bool _canReceiveShares
+    bool _receiveSharesEnabled
   ) internal pure returns (ReserveFlags) {
     uint8 flags = 0;
     flags = _setFlag(flags, PAUSED_MASK, _paused);
     flags = _setFlag(flags, FROZEN_MASK, _frozen);
     flags = _setFlag(flags, BORROWABLE_MASK, _borrowable);
-    flags = _setFlag(flags, CAN_RECEIVE_SHARES_MASK, _canReceiveShares);
+    flags = _setFlag(flags, RECEIVE_SHARES_ENABLED_MASK, _receiveSharesEnabled);
     return ReserveFlags.wrap(flags);
   }
 
@@ -63,15 +63,16 @@ library ReserveFlagsLib {
     return ReserveFlags.wrap(_setFlag(ReserveFlags.unwrap(flags), BORROWABLE_MASK, status));
   }
 
-  /// @notice Sets the new status for the 'canReceiveShares' flag.
+  /// @notice Sets the new status for the 'receiveSharesEnabled' flag.
   /// @param flags The current ReserveFlags.
-  /// @param status The new status for the 'canReceiveShares' flag.
+  /// @param status The new status for the 'receiveSharesEnabled' flag.
   /// @return The updated ReserveFlags.
-  function setCanReceiveShares(
+  function setReceiveSharesEnabled(
     ReserveFlags flags,
     bool status
   ) internal pure returns (ReserveFlags) {
-    return ReserveFlags.wrap(_setFlag(ReserveFlags.unwrap(flags), CAN_RECEIVE_SHARES_MASK, status));
+    return
+      ReserveFlags.wrap(_setFlag(ReserveFlags.unwrap(flags), RECEIVE_SHARES_ENABLED_MASK, status));
   }
 
   /// @notice Returns the 'paused' flag status.
@@ -95,11 +96,11 @@ library ReserveFlagsLib {
     return (ReserveFlags.unwrap(flags) & BORROWABLE_MASK) != 0;
   }
 
-  /// @notice Returns the 'canReceiveShares' flag status.
+  /// @notice Returns the 'receiveSharesEnabled' flag status.
   /// @param flags The current ReserveFlags.
   /// @return True if the flag is set.
-  function canReceiveShares(ReserveFlags flags) internal pure returns (bool) {
-    return (ReserveFlags.unwrap(flags) & CAN_RECEIVE_SHARES_MASK) != 0;
+  function receiveSharesEnabled(ReserveFlags flags) internal pure returns (bool) {
+    return (ReserveFlags.unwrap(flags) & RECEIVE_SHARES_ENABLED_MASK) != 0;
   }
 
   /// @notice Sets the new status for the given flag.

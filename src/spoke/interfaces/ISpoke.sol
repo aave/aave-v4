@@ -2,8 +2,8 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import {ReserveFlags} from 'src/spoke/libraries/ReserveFlags.sol';
 import {IAccessManaged} from 'src/dependencies/openzeppelin/IAccessManaged.sol';
+import {ReserveFlags} from 'src/spoke/libraries/ReserveFlags.sol';
 import {INoncesKeyed} from 'src/interfaces/INoncesKeyed.sol';
 import {IMulticall} from 'src/interfaces/IMulticall.sol';
 import {IHubBase} from 'src/hub/interfaces/IHubBase.sol';
@@ -19,11 +19,7 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
   /// @dev assetId The identifier of the asset in the Hub.
   /// @dev decimals The number of decimals of the underlying asset.
   /// @dev dynamicConfigKey The key of the last reserve dynamic config.
-  /// @dev flags The packed boolean flags of the reserve.
-  /// @dev flags.paused True if all actions are prevented for the reserve.
-  /// @dev flags.frozen True if new activity is prevented for the reserve.
-  /// @dev flags.borrowable True if the reserve is borrowable.
-  /// @dev flags.canReceiveShares True if the liquidator can receive collateral shares during liquidation.
+  /// @dev flags The packed boolean flags of the reserve (a wrapped uint8).
   /// @dev collateralRisk The risk associated with a collateral asset, expressed in BPS.
   struct Reserve {
     address underlying;
@@ -37,11 +33,16 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
   }
 
   /// @notice Reserve configuration. Subset of the `Reserve` struct.
+  /// @dev paused True if all actions are prevented for the reserve.
+  /// @dev frozen True if new activity is prevented for the reserve.
+  /// @dev borrowable True if the reserve is borrowable.
+  /// @dev receiveSharesEnabled True if the liquidator can receive collateral shares during liquidation.
+  /// @dev collateralRisk The risk associated with a collateral asset, expressed in BPS.
   struct ReserveConfig {
     bool paused;
     bool frozen;
     bool borrowable;
-    bool canReceiveShares;
+    bool receiveSharesEnabled;
     uint24 collateralRisk;
   }
 
@@ -302,7 +303,7 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
   /// @notice Thrown when a debt to cover input is zero.
   error InvalidDebtToCover();
 
-  /// @notice Thrown when the liquidator tries to receive shares for a collateral reserve that is not allowing it or is frozen.
+  /// @notice Thrown when the liquidator tries to receive shares for a collateral reserve that is frozen or not configured to allow share receival.
   error CannotReceiveShares();
 
   /// @notice Thrown when the maximum number of dynamic config keys is reached.

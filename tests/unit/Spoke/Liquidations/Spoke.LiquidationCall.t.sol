@@ -432,7 +432,7 @@ abstract contract SpokeLiquidationCallHelperTest is SpokeLiquidationCallBaseTest
       user,
       liquidator
     );
-    _updateReserveCanReceiveSharesFlag(spoke, collateralReserveId, false);
+    _updateReserveReceiveSharesEnabledFlag(spoke, collateralReserveId, false);
 
     _increaseCollateralSupply(
       spoke,
