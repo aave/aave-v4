@@ -8,7 +8,6 @@ import {MathUtils} from 'src/libraries/math/MathUtils.sol';
 import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
 import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
 import {PositionStatusMap} from 'src/spoke/libraries/PositionStatusMap.sol';
-import {ReserveFlags, ReserveFlagsLib} from 'src/spoke/libraries/ReserveFlags.sol';
 import {IHubBase} from 'src/hub/interfaces/IHubBase.sol';
 import {IAaveOracle} from 'src/spoke/interfaces/IAaveOracle.sol';
 import {ISpoke, ISpokeBase} from 'src/spoke/interfaces/ISpoke.sol';

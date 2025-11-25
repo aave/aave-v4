@@ -14,7 +14,7 @@ import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
 import {KeyValueList} from 'src/spoke/libraries/KeyValueList.sol';
 import {LiquidationLogic} from 'src/spoke/libraries/LiquidationLogic.sol';
 import {PositionStatusMap} from 'src/spoke/libraries/PositionStatusMap.sol';
-import {ReserveFlagsLib} from 'src/spoke/libraries/ReserveFlags.sol';
+import {ReserveFlagsMap} from 'src/spoke/libraries/ReserveFlagsMap.sol';
 import {Premium} from 'src/hub/libraries/Premium.sol';
 import {NoncesKeyed} from 'src/utils/NoncesKeyed.sol';
 import {Multicall} from 'src/utils/Multicall.sol';
@@ -147,7 +147,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
       assetId: assetId.toUint16(),
       decimals: decimals,
       dynamicConfigKey: dynamicConfigKey,
-      flags: ReserveFlagsLib.initFlags(
+      flags: ReserveFlagsMap.initFlags(
         config.paused,
         config.frozen,
         config.borrowable,
@@ -172,10 +172,10 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
   ) external restricted {
     Reserve storage reserve = _getReserve(reserveId);
     _validateReserveConfig(config);
-    reserve.flags = ReserveFlagsLib.setPaused(reserve.flags, config.paused);
-    reserve.flags = ReserveFlagsLib.setFrozen(reserve.flags, config.frozen);
-    reserve.flags = ReserveFlagsLib.setBorrowable(reserve.flags, config.borrowable);
-    reserve.flags = ReserveFlagsLib.setReceiveSharesEnabled(
+    reserve.flags = ReserveFlagsMap.setPaused(reserve.flags, config.paused);
+    reserve.flags = ReserveFlagsMap.setFrozen(reserve.flags, config.frozen);
+    reserve.flags = ReserveFlagsMap.setBorrowable(reserve.flags, config.borrowable);
+    reserve.flags = ReserveFlagsMap.setReceiveSharesEnabled(
       reserve.flags,
       config.receiveSharesEnabled
     );

@@ -3,7 +3,7 @@
 pragma solidity ^0.8.0;
 
 import {IAccessManaged} from 'src/dependencies/openzeppelin/IAccessManaged.sol';
-import {ReserveFlags} from 'src/spoke/libraries/ReserveFlags.sol';
+import {ReserveFlags} from 'src/spoke/libraries/ReserveFlagsMap.sol';
 import {INoncesKeyed} from 'src/interfaces/INoncesKeyed.sol';
 import {IMulticall} from 'src/interfaces/IMulticall.sol';
 import {IHubBase} from 'src/hub/interfaces/IHubBase.sol';
@@ -303,7 +303,7 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
   /// @notice Thrown when a debt to cover input is zero.
   error InvalidDebtToCover();
 
-  /// @notice Thrown when the liquidator tries to receive shares for a collateral reserve that is frozen or not configured to allow share receival.
+  /// @notice Thrown when the liquidator tries to receive shares for a collateral reserve that is frozen or configured to not allow share receival.
   error CannotReceiveShares();
 
   /// @notice Thrown when the maximum number of dynamic config keys is reached.

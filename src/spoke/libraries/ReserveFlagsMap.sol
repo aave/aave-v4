@@ -4,12 +4,12 @@ pragma solidity ^0.8.20;
 
 type ReserveFlags is uint8;
 
-using ReserveFlagsLib for ReserveFlags global;
+using ReserveFlagsMap for ReserveFlags global;
 
 /// @title ReserveFlags Library
 /// @author Aave Labs
 /// @notice Implements the bitmap logic to handle the Reserve flags configuration.
-library ReserveFlagsLib {
+library ReserveFlagsMap {
   /// @dev Mask for the `paused` flag.
   uint8 internal constant PAUSED_MASK = 0x01;
   /// @dev Mask for the `frozen` flag.

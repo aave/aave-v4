@@ -3,7 +3,7 @@
 pragma solidity ^0.8.0;
 
 import {Test} from 'forge-std/Test.sol';
-import {ReserveFlags, ReserveFlagsLib} from 'src/spoke/libraries/ReserveFlags.sol';
+import {ReserveFlags, ReserveFlagsMap} from 'src/spoke/libraries/ReserveFlagsMap.sol';
 
 contract ReserveFlagsTests is Test {
   uint8 internal constant PAUSED_MASK = 0x001;
@@ -17,73 +17,73 @@ contract ReserveFlagsTests is Test {
     bool borrowable,
     bool receiveSharesEnabled
   ) public pure {
-    ReserveFlags flags = ReserveFlagsLib.initFlags(
+    ReserveFlags flags = ReserveFlagsMap.initFlags(
       paused,
       frozen,
       borrowable,
       receiveSharesEnabled
     );
 
-    assertEq(ReserveFlagsLib.paused(flags), paused);
-    assertEq(ReserveFlagsLib.frozen(flags), frozen);
-    assertEq(ReserveFlagsLib.borrowable(flags), borrowable);
-    assertEq(ReserveFlagsLib.receiveSharesEnabled(flags), receiveSharesEnabled);
+    assertEq(ReserveFlagsMap.paused(flags), paused);
+    assertEq(ReserveFlagsMap.frozen(flags), frozen);
+    assertEq(ReserveFlagsMap.borrowable(flags), borrowable);
+    assertEq(ReserveFlagsMap.receiveSharesEnabled(flags), receiveSharesEnabled);
   }
 
   function test_set_flags() public pure {
     ReserveFlags flags;
-    assertEq(ReserveFlagsLib.paused(flags), false);
-    assertEq(ReserveFlagsLib.frozen(flags), false);
-    assertEq(ReserveFlagsLib.borrowable(flags), false);
-    assertEq(ReserveFlagsLib.receiveSharesEnabled(flags), false);
+    assertEq(ReserveFlagsMap.paused(flags), false);
+    assertEq(ReserveFlagsMap.frozen(flags), false);
+    assertEq(ReserveFlagsMap.borrowable(flags), false);
+    assertEq(ReserveFlagsMap.receiveSharesEnabled(flags), false);
 
-    flags = ReserveFlagsLib.setPaused(flags, true);
-    assertEq(ReserveFlagsLib.paused(flags), true);
-    assertEq(ReserveFlagsLib.frozen(flags), false);
-    assertEq(ReserveFlagsLib.borrowable(flags), false);
-    assertEq(ReserveFlagsLib.receiveSharesEnabled(flags), false);
+    flags = ReserveFlagsMap.setPaused(flags, true);
+    assertEq(ReserveFlagsMap.paused(flags), true);
+    assertEq(ReserveFlagsMap.frozen(flags), false);
+    assertEq(ReserveFlagsMap.borrowable(flags), false);
+    assertEq(ReserveFlagsMap.receiveSharesEnabled(flags), false);
 
-    flags = ReserveFlagsLib.setFrozen(flags, true);
-    assertEq(ReserveFlagsLib.paused(flags), true);
-    assertEq(ReserveFlagsLib.frozen(flags), true);
-    assertEq(ReserveFlagsLib.borrowable(flags), false);
-    assertEq(ReserveFlagsLib.receiveSharesEnabled(flags), false);
+    flags = ReserveFlagsMap.setFrozen(flags, true);
+    assertEq(ReserveFlagsMap.paused(flags), true);
+    assertEq(ReserveFlagsMap.frozen(flags), true);
+    assertEq(ReserveFlagsMap.borrowable(flags), false);
+    assertEq(ReserveFlagsMap.receiveSharesEnabled(flags), false);
 
-    flags = ReserveFlagsLib.setBorrowable(flags, true);
-    assertEq(ReserveFlagsLib.paused(flags), true);
-    assertEq(ReserveFlagsLib.frozen(flags), true);
-    assertEq(ReserveFlagsLib.borrowable(flags), true);
-    assertEq(ReserveFlagsLib.receiveSharesEnabled(flags), false);
+    flags = ReserveFlagsMap.setBorrowable(flags, true);
+    assertEq(ReserveFlagsMap.paused(flags), true);
+    assertEq(ReserveFlagsMap.frozen(flags), true);
+    assertEq(ReserveFlagsMap.borrowable(flags), true);
+    assertEq(ReserveFlagsMap.receiveSharesEnabled(flags), false);
 
-    flags = ReserveFlagsLib.setReceiveSharesEnabled(flags, true);
-    assertEq(ReserveFlagsLib.paused(flags), true);
-    assertEq(ReserveFlagsLib.frozen(flags), true);
-    assertEq(ReserveFlagsLib.borrowable(flags), true);
-    assertEq(ReserveFlagsLib.receiveSharesEnabled(flags), true);
+    flags = ReserveFlagsMap.setReceiveSharesEnabled(flags, true);
+    assertEq(ReserveFlagsMap.paused(flags), true);
+    assertEq(ReserveFlagsMap.frozen(flags), true);
+    assertEq(ReserveFlagsMap.borrowable(flags), true);
+    assertEq(ReserveFlagsMap.receiveSharesEnabled(flags), true);
 
-    flags = ReserveFlagsLib.setFrozen(flags, false);
-    assertEq(ReserveFlagsLib.paused(flags), true);
-    assertEq(ReserveFlagsLib.frozen(flags), false);
-    assertEq(ReserveFlagsLib.borrowable(flags), true);
-    assertEq(ReserveFlagsLib.receiveSharesEnabled(flags), true);
+    flags = ReserveFlagsMap.setFrozen(flags, false);
+    assertEq(ReserveFlagsMap.paused(flags), true);
+    assertEq(ReserveFlagsMap.frozen(flags), false);
+    assertEq(ReserveFlagsMap.borrowable(flags), true);
+    assertEq(ReserveFlagsMap.receiveSharesEnabled(flags), true);
 
-    flags = ReserveFlagsLib.setBorrowable(flags, false);
-    assertEq(ReserveFlagsLib.paused(flags), true);
-    assertEq(ReserveFlagsLib.frozen(flags), false);
-    assertEq(ReserveFlagsLib.borrowable(flags), false);
-    assertEq(ReserveFlagsLib.receiveSharesEnabled(flags), true);
+    flags = ReserveFlagsMap.setBorrowable(flags, false);
+    assertEq(ReserveFlagsMap.paused(flags), true);
+    assertEq(ReserveFlagsMap.frozen(flags), false);
+    assertEq(ReserveFlagsMap.borrowable(flags), false);
+    assertEq(ReserveFlagsMap.receiveSharesEnabled(flags), true);
 
-    flags = ReserveFlagsLib.setReceiveSharesEnabled(flags, false);
-    assertEq(ReserveFlagsLib.paused(flags), true);
-    assertEq(ReserveFlagsLib.frozen(flags), false);
-    assertEq(ReserveFlagsLib.borrowable(flags), false);
-    assertEq(ReserveFlagsLib.receiveSharesEnabled(flags), false);
+    flags = ReserveFlagsMap.setReceiveSharesEnabled(flags, false);
+    assertEq(ReserveFlagsMap.paused(flags), true);
+    assertEq(ReserveFlagsMap.frozen(flags), false);
+    assertEq(ReserveFlagsMap.borrowable(flags), false);
+    assertEq(ReserveFlagsMap.receiveSharesEnabled(flags), false);
 
-    flags = ReserveFlagsLib.setPaused(flags, false);
-    assertEq(ReserveFlagsLib.paused(flags), false);
-    assertEq(ReserveFlagsLib.frozen(flags), false);
-    assertEq(ReserveFlagsLib.borrowable(flags), false);
-    assertEq(ReserveFlagsLib.receiveSharesEnabled(flags), false);
+    flags = ReserveFlagsMap.setPaused(flags, false);
+    assertEq(ReserveFlagsMap.paused(flags), false);
+    assertEq(ReserveFlagsMap.frozen(flags), false);
+    assertEq(ReserveFlagsMap.borrowable(flags), false);
+    assertEq(ReserveFlagsMap.receiveSharesEnabled(flags), false);
   }
 
   function test_setPaused_fuzz(uint8 rawFlags) public pure {
@@ -92,16 +92,16 @@ contract ReserveFlagsTests is Test {
 
     expectedRawFlags = expectedRawFlags | PAUSED_MASK;
 
-    flags = ReserveFlagsLib.setPaused(flags, true);
+    flags = ReserveFlagsMap.setPaused(flags, true);
 
-    assertEq(ReserveFlagsLib.paused(flags), true);
+    assertEq(ReserveFlagsMap.paused(flags), true);
     assertEq(ReserveFlags.unwrap(flags), expectedRawFlags);
 
     expectedRawFlags = expectedRawFlags & ~PAUSED_MASK;
 
-    flags = ReserveFlagsLib.setPaused(flags, false);
+    flags = ReserveFlagsMap.setPaused(flags, false);
 
-    assertEq(ReserveFlagsLib.paused(flags), false);
+    assertEq(ReserveFlagsMap.paused(flags), false);
     assertEq(ReserveFlags.unwrap(flags), expectedRawFlags);
   }
 
@@ -111,16 +111,16 @@ contract ReserveFlagsTests is Test {
 
     expectedRawFlags = expectedRawFlags | FROZEN_MASK;
 
-    flags = ReserveFlagsLib.setFrozen(flags, true);
+    flags = ReserveFlagsMap.setFrozen(flags, true);
 
-    assertEq(ReserveFlagsLib.frozen(flags), true);
+    assertEq(ReserveFlagsMap.frozen(flags), true);
     assertEq(ReserveFlags.unwrap(flags), expectedRawFlags);
 
     expectedRawFlags = expectedRawFlags & ~FROZEN_MASK;
 
-    flags = ReserveFlagsLib.setFrozen(flags, false);
+    flags = ReserveFlagsMap.setFrozen(flags, false);
 
-    assertEq(ReserveFlagsLib.frozen(flags), false);
+    assertEq(ReserveFlagsMap.frozen(flags), false);
     assertEq(ReserveFlags.unwrap(flags), expectedRawFlags);
   }
 
@@ -130,16 +130,16 @@ contract ReserveFlagsTests is Test {
 
     expectedRawFlags = expectedRawFlags | BORROWABLE_MASK;
 
-    flags = ReserveFlagsLib.setBorrowable(flags, true);
+    flags = ReserveFlagsMap.setBorrowable(flags, true);
 
-    assertEq(ReserveFlagsLib.borrowable(flags), true);
+    assertEq(ReserveFlagsMap.borrowable(flags), true);
     assertEq(ReserveFlags.unwrap(flags), expectedRawFlags);
 
     expectedRawFlags = expectedRawFlags & ~BORROWABLE_MASK;
 
-    flags = ReserveFlagsLib.setBorrowable(flags, false);
+    flags = ReserveFlagsMap.setBorrowable(flags, false);
 
-    assertEq(ReserveFlagsLib.borrowable(flags), false);
+    assertEq(ReserveFlagsMap.borrowable(flags), false);
     assertEq(ReserveFlags.unwrap(flags), expectedRawFlags);
   }
 
@@ -149,16 +149,16 @@ contract ReserveFlagsTests is Test {
 
     expectedRawFlags = expectedRawFlags | RECEIVE_SHARES_ENABLED_MASK;
 
-    flags = ReserveFlagsLib.setReceiveSharesEnabled(flags, true);
+    flags = ReserveFlagsMap.setReceiveSharesEnabled(flags, true);
 
-    assertEq(ReserveFlagsLib.receiveSharesEnabled(flags), true);
+    assertEq(ReserveFlagsMap.receiveSharesEnabled(flags), true);
     assertEq(ReserveFlags.unwrap(flags), expectedRawFlags);
 
     expectedRawFlags = expectedRawFlags & ~RECEIVE_SHARES_ENABLED_MASK;
 
-    flags = ReserveFlagsLib.setReceiveSharesEnabled(flags, false);
+    flags = ReserveFlagsMap.setReceiveSharesEnabled(flags, false);
 
-    assertEq(ReserveFlagsLib.receiveSharesEnabled(flags), false);
+    assertEq(ReserveFlagsMap.receiveSharesEnabled(flags), false);
     assertEq(ReserveFlags.unwrap(flags), expectedRawFlags);
   }
 

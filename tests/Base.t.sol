@@ -56,7 +56,7 @@ import {IAaveOracle} from 'src/spoke/interfaces/IAaveOracle.sol';
 import {SpokeConfigurator, ISpokeConfigurator} from 'src/spoke/SpokeConfigurator.sol';
 import {SpokeInstance} from 'src/spoke/instances/SpokeInstance.sol';
 import {PositionStatusMap} from 'src/spoke/libraries/PositionStatusMap.sol';
-import {ReserveFlags, ReserveFlagsLib} from 'src/spoke/libraries/ReserveFlags.sol';
+import {ReserveFlags, ReserveFlagsMap} from 'src/spoke/libraries/ReserveFlagsMap.sol';
 import {LiquidationLogic} from 'src/spoke/libraries/LiquidationLogic.sol';
 import {KeyValueList} from 'src/spoke/libraries/KeyValueList.sol';
 
