@@ -336,15 +336,22 @@ library LiquidationLogic {
   }
 
   /// @dev Invoked by `liquidateUser` method.
-  /// @return The amount of drawn shares to be liquidated.
-  /// @return A struct representing the changes to premium debt after liquidation.
-  /// @return True if the debt position becomes zero after restoring.
+  /// @return drawnSharesLiquidated The amount of drawn shares to be liquidated.
+  /// @return premiumDelta A struct representing the changes to premium debt after liquidation.
+  /// @return isDebtPositionEmpty True if the debt position becomes zero after restoring.
   function _liquidateDebt(
     ISpoke.Reserve storage debtReserve,
     ISpoke.UserPosition storage debtPosition,
     ISpoke.PositionStatus storage positionStatus,
     LiquidateDebtParams memory params
-  ) internal returns (uint256, IHubBase.PremiumDelta memory, bool) {
+  )
+    internal
+    returns (
+      uint256 drawnSharesLiquidated,
+      IHubBase.PremiumDelta memory premiumDelta,
+      bool isDebtPositionEmpty
+    )
+  {
     uint256 oldPremiumShares = debtPosition.premiumShares;
     uint256 oldPremiumOffsetRay = debtPosition.premiumOffsetRay;
     uint256 realizedPremiumRay = debtPosition.realizedPremiumRay;
@@ -352,9 +359,8 @@ library LiquidationLogic {
     uint256 premiumDebtToLiquidateRay = params.debtToLiquidate.toRay().min(
       realizedPremiumRay + params.accruedPremiumRay
     );
-    uint256 drawnDebtToLiquidate = params.debtToLiquidate - premiumDebtToLiquidateRay.fromRayUp();
 
-    IHubBase.PremiumDelta memory premiumDelta = IHubBase.PremiumDelta({
+    premiumDelta = IHubBase.PremiumDelta({
       sharesDelta: -oldPremiumShares.toInt256(),
       offsetDeltaRay: -oldPremiumOffsetRay.toInt256(),
       accruedPremiumRay: params.accruedPremiumRay,
@@ -364,11 +370,11 @@ library LiquidationLogic {
     debtReserve.underlying.safeTransferFrom(
       params.liquidator,
       address(debtReserve.hub),
-      drawnDebtToLiquidate + premiumDebtToLiquidateRay.fromRayUp()
+      params.debtToLiquidate
     );
-    uint256 drawnSharesLiquidated = debtReserve.hub.restore(
+    drawnSharesLiquidated = debtReserve.hub.restore(
       debtReserve.assetId,
-      drawnDebtToLiquidate,
+      params.debtToLiquidate - premiumDebtToLiquidateRay.fromRayUp(),
       premiumDelta
     );
     debtPosition.applyPremiumDelta(
@@ -378,8 +384,6 @@ library LiquidationLogic {
       premiumDelta
     );
     debtPosition.drawnShares -= drawnSharesLiquidated.toUint120();
-
-    bool isDebtPositionEmpty = false;
     if (debtPosition.drawnShares == 0) {
       positionStatus.setBorrowing(params.debtReserveId, false);
       isDebtPositionEmpty = true;
