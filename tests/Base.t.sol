@@ -11,7 +11,10 @@ import {console2 as console} from 'forge-std/console2.sol';
 
 // dependencies
 import {AggregatorV3Interface} from 'src/dependencies/chainlink/AggregatorV3Interface.sol';
-import {TransparentUpgradeableProxy, ITransparentUpgradeableProxy} from 'src/dependencies/openzeppelin/TransparentUpgradeableProxy.sol';
+import {
+  TransparentUpgradeableProxy,
+  ITransparentUpgradeableProxy
+} from 'src/dependencies/openzeppelin/TransparentUpgradeableProxy.sol';
 import {IERC20Metadata} from 'src/dependencies/openzeppelin/IERC20Metadata.sol';
 import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
 import {IERC20Errors} from 'src/dependencies/openzeppelin/IERC20Errors.sol';
@@ -45,7 +48,11 @@ import {AccessManagerEnumerable} from 'src/access/AccessManagerEnumerable.sol';
 import {HubConfigurator, IHubConfigurator} from 'src/hub/HubConfigurator.sol';
 import {Hub, IHub, IHubBase} from 'src/hub/Hub.sol';
 import {SharesMath} from 'src/hub/libraries/SharesMath.sol';
-import {AssetInterestRateStrategy, IAssetInterestRateStrategy, IBasicInterestRateStrategy} from 'src/hub/AssetInterestRateStrategy.sol';
+import {
+  AssetInterestRateStrategy,
+  IAssetInterestRateStrategy,
+  IBasicInterestRateStrategy
+} from 'src/hub/AssetInterestRateStrategy.sol';
 
 // spoke
 import {Spoke, ISpoke, ISpokeBase} from 'src/spoke/Spoke.sol';
@@ -1557,13 +1564,15 @@ abstract contract Base is Test {
   ) internal view virtual returns (IHubBase.PremiumDelta memory) {
     ISpoke.UserPosition memory userPosition = spoke.getUserPosition(reserveId, user);
     Debts memory userDebt = getUserDebt(spoke, user, reserveId);
-    uint256 assetId = spoke.getReserve(reserveId).assetId;
+    ISpoke.Reserve memory reserve = spoke.getReserve(reserveId);
+    uint256 assetId = reserve.assetId;
+    IHub hub = IHub(address(reserve.hub));
 
     IHubBase.PremiumDelta memory expectedPremiumDelta = IHubBase.PremiumDelta({
       sharesDelta: -userPosition.premiumShares.toInt256(),
       offsetDeltaRay: -userPosition.premiumOffsetRay.toInt256(),
       accruedPremiumRay: _calculateAccruedPremiumRay(
-        hub1,
+        hub,
         assetId,
         userPosition.premiumShares,
         userPosition.premiumOffsetRay
@@ -1576,6 +1585,49 @@ abstract contract Base is Test {
       userDebt.drawnDebt,
       userDebt.premiumDebt
     );
+    expectedPremiumDelta.restoredPremiumRay = (premiumAmountToRestore * WadRayMath.RAY).min(
+      userPosition.realizedPremiumRay + expectedPremiumDelta.accruedPremiumRay
+    );
+
+    return expectedPremiumDelta;
+  }
+
+  /// premiumDelta for repay action, which resets premium values so that riskPremium remains the same as prior to repay
+  function _getExpectedPremiumDeltaForRepay(
+    ISpoke spoke,
+    address user,
+    uint256 reserveId,
+    uint256 repayAmount
+  ) internal view virtual returns (IHubBase.PremiumDelta memory) {
+    ISpoke.UserPosition memory userPosition = spoke.getUserPosition(reserveId, user);
+    Debts memory userDebt = getUserDebt(spoke, user, reserveId);
+    uint256 assetId = spoke.getReserve(reserveId).assetId;
+    IHub hub = IHub(address(spoke.getReserve(reserveId).hub));
+
+    IHubBase.PremiumDelta memory expectedPremiumDelta;
+    expectedPremiumDelta.accruedPremiumRay = _calculateAccruedPremiumRay(
+      hub,
+      assetId,
+      userPosition.premiumShares,
+      userPosition.premiumOffsetRay
+    );
+
+    (uint256 drawnDebtRestored, uint256 premiumAmountToRestore) = _calculateRestoreAmounts(
+      repayAmount,
+      userDebt.drawnDebt,
+      userDebt.premiumDebt
+    );
+    uint256 restoredShares = hub.previewRestoreByAssets(assetId, drawnDebtRestored);
+    uint256 newDrawnShares = userPosition.drawnShares - restoredShares;
+    uint256 riskPremium = _getUserRiskPremium(spoke, user);
+    uint256 newPremiumShares = newDrawnShares.percentMulUp(riskPremium);
+
+    expectedPremiumDelta.sharesDelta =
+      newPremiumShares.toInt256() -
+      userPosition.premiumShares.toInt256();
+    expectedPremiumDelta.offsetDeltaRay =
+      (newPremiumShares * hub.getAssetDrawnIndex(assetId)).toInt256() -
+      userPosition.premiumOffsetRay.toInt256();
     expectedPremiumDelta.restoredPremiumRay = (premiumAmountToRestore * WadRayMath.RAY).min(
       userPosition.realizedPremiumRay + expectedPremiumDelta.accruedPremiumRay
     );
