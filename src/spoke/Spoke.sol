@@ -939,27 +939,27 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     _validateDynamicReserveConfig(newConfig);
   }
 
-  function _validateSupply(ReserveFlags flags) internal view {
+  function _validateSupply(ReserveFlags flags) internal pure {
     require(!flags.paused(), ReservePaused());
     require(!flags.frozen(), ReserveFrozen());
   }
 
-  function _validateWithdraw(ReserveFlags flags) internal view {
+  function _validateWithdraw(ReserveFlags flags) internal pure {
     require(!flags.paused(), ReservePaused());
   }
 
-  function _validateBorrow(ReserveFlags flags) internal view {
+  function _validateBorrow(ReserveFlags flags) internal pure {
     require(!flags.paused(), ReservePaused());
     require(!flags.frozen(), ReserveFrozen());
     require(flags.borrowable(), ReserveNotBorrowable());
     // health factor is checked at the end of borrow action
   }
 
-  function _validateRepay(ReserveFlags flags) internal view {
+  function _validateRepay(ReserveFlags flags) internal pure {
     require(!flags.paused(), ReservePaused());
   }
 
-  function _validateSetUsingAsCollateral(ReserveFlags flags, bool usingAsCollateral) internal view {
+  function _validateSetUsingAsCollateral(ReserveFlags flags, bool usingAsCollateral) internal pure {
     require(!flags.paused(), ReservePaused());
     // can disable as collateral if the reserve is frozen
     require(!usingAsCollateral || !flags.frozen(), ReserveFrozen());
