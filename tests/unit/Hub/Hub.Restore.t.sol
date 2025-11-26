@@ -59,12 +59,12 @@ contract HubRestoreTest is HubBase {
 
     (uint256 drawn, uint256 premium) = hub1.getSpokeOwed(daiAssetId, address(spoke1));
 
-    IHubBase.PremiumDelta memory premiumDelta = _getExpectedPremiumDelta({
-      spoke: spoke1,
-      user: alice,
-      reserveId: _daiReserveId(spoke1),
-      premiumRestored: premium
-    });
+    IHubBase.PremiumDelta memory premiumDelta = _getExpectedPremiumDelta(
+      spoke1,
+      alice,
+      _daiReserveId(spoke1),
+      premium
+    );
 
     vm.startPrank(address(spoke1));
     tokenList.dai.transferFrom(alice, address(hub1), drawn + premium + 1);
@@ -90,14 +90,15 @@ contract HubRestoreTest is HubBase {
       daiAssetId,
       spokeData.premiumShares,
       spokeData.premiumOffsetRay
-    ).fromRayUp();
+    );
 
     uint256 drawnRestored = vm.randomUint(0, drawn);
-    uint256 premiumRestoredRay = vm.randomUint(spokePremiumRay + 1, UINT256_MAX);
+    uint256 premiumRestoredRay = vm.randomUint(spokePremiumRay + 1, UINT256_MAX / 2);
 
+    // `_getExpectedPremiumDelta` underflows in this case
     IHubBase.PremiumDelta memory premiumDelta = IHubBase.PremiumDelta({
-      sharesDelta: -spokeData.premiumShares.toInt256(),
-      offsetDeltaRay: -spokePremiumRay.toInt256() - spokeData.premiumOffsetRay,
+      sharesDelta: 0,
+      offsetDeltaRay: premiumRestoredRay.toInt256(),
       restoredPremiumRay: premiumRestoredRay
     });
 
@@ -109,12 +110,12 @@ contract HubRestoreTest is HubBase {
   }
 
   function test_restore_revertsWith_InvalidAmount_zero() public {
-    IHubBase.PremiumDelta memory premiumDelta = _getExpectedPremiumDelta({
-      spoke: spoke1,
-      user: alice,
-      reserveId: _daiReserveId(spoke1),
-      premiumRestored: 0
-    });
+    IHubBase.PremiumDelta memory premiumDelta = _getExpectedPremiumDelta(
+      spoke1,
+      alice,
+      _daiReserveId(spoke1),
+      0
+    );
 
     vm.expectRevert(IHub.InvalidAmount.selector);
     vm.prank(address(spoke1));
@@ -125,12 +126,12 @@ contract HubRestoreTest is HubBase {
     vm.prank(HUB_CONFIGURATOR_ADMIN);
     hubConfigurator.deactivateAsset(address(hub1), daiAssetId);
 
-    IHubBase.PremiumDelta memory premiumDelta = _getExpectedPremiumDelta({
-      spoke: spoke1,
-      user: alice,
-      reserveId: _daiReserveId(spoke1),
-      premiumRestored: 0
-    });
+    IHubBase.PremiumDelta memory premiumDelta = _getExpectedPremiumDelta(
+      spoke1,
+      alice,
+      _daiReserveId(spoke1),
+      0
+    );
 
     vm.expectRevert(IHub.SpokeNotActive.selector);
     vm.prank(address(spoke1));
@@ -140,12 +141,12 @@ contract HubRestoreTest is HubBase {
   function test_restore_revertsWith_SpokePaused() public {
     _updateSpokePaused(hub1, daiAssetId, address(spoke1), true);
 
-    IHubBase.PremiumDelta memory premiumDelta = _getExpectedPremiumDelta({
-      spoke: spoke1,
-      user: alice,
-      reserveId: daiAssetId,
-      premiumRestored: 0
-    });
+    IHubBase.PremiumDelta memory premiumDelta = _getExpectedPremiumDelta(
+      spoke1,
+      alice,
+      daiAssetId,
+      0
+    );
 
     vm.expectRevert(IHub.SpokePaused.selector);
     vm.prank(address(spoke1));
@@ -169,12 +170,12 @@ contract HubRestoreTest is HubBase {
     (uint256 drawn, uint256 premium) = hub1.getSpokeOwed(daiAssetId, address(spoke1));
     uint256 restoreDrawnAmount = drawn / 2;
 
-    IHubBase.PremiumDelta memory premiumDelta = _getExpectedPremiumDelta({
-      spoke: spoke1,
-      user: alice,
-      reserveId: daiAssetId,
-      premiumRestored: premium
-    });
+    IHubBase.PremiumDelta memory premiumDelta = _getExpectedPremiumDelta(
+      spoke1,
+      alice,
+      daiAssetId,
+      premium
+    );
 
     vm.startPrank(address(spoke1));
     tokenList.dai.transferFrom(alice, address(hub1), restoreDrawnAmount / 2);
@@ -221,12 +222,12 @@ contract HubRestoreTest is HubBase {
     assertEq(premium, 0);
     uint256 drawnShares = hub1.previewRestoreByAssets(daiAssetId, drawnRestored);
 
-    IHubBase.PremiumDelta memory premiumDelta = _getExpectedPremiumDelta({
-      spoke: spoke1,
-      user: alice,
-      reserveId: _daiReserveId(spoke1),
-      premiumRestored: premium
-    });
+    IHubBase.PremiumDelta memory premiumDelta = _getExpectedPremiumDelta(
+      spoke1,
+      alice,
+      _daiReserveId(spoke1),
+      premium
+    );
 
     vm.startPrank(address(spoke1));
     tokenList.dai.transferFrom(alice, address(hub1), drawnRestored + premium);
@@ -339,12 +340,12 @@ contract HubRestoreTest is HubBase {
     (uint256 drawn, uint256 premium) = hub1.getSpokeOwed(daiAssetId, address(spoke1));
     assertEq(premium, 0);
 
-    IHubBase.PremiumDelta memory premiumDelta = _getExpectedPremiumDelta({
-      spoke: spoke1,
-      user: alice,
-      reserveId: _daiReserveId(spoke1),
-      premiumRestored: premium
-    });
+    IHubBase.PremiumDelta memory premiumDelta = _getExpectedPremiumDelta(
+      spoke1,
+      alice,
+      _daiReserveId(spoke1),
+      premium
+    );
 
     // alice restore invalid amount > drawn
     vm.expectRevert(abi.encodeWithSelector(IHub.SurplusDrawnRestored.selector, drawn));
@@ -413,12 +414,12 @@ contract HubRestoreTest is HubBase {
 
     premiumRestored = bound(premiumRestored, 1, premium);
 
-    IHubBase.PremiumDelta memory premiumDelta = _getExpectedPremiumDelta({
-      spoke: spoke1,
-      user: alice,
-      reserveId: _daiReserveId(spoke1),
-      premiumRestored: premiumRestored
-    });
+    IHubBase.PremiumDelta memory premiumDelta = _getExpectedPremiumDelta(
+      spoke1,
+      alice,
+      _daiReserveId(spoke1),
+      premiumRestored
+    );
 
     // alice restore invalid drawn
     vm.startPrank(address(spoke1));
@@ -490,12 +491,12 @@ contract HubRestoreTest is HubBase {
     (uint256 drawn, uint256 premium) = hub1.getSpokeOwed(daiAssetId, address(spoke1));
     uint256 drawnRestored = drawn;
 
-    IHubBase.PremiumDelta memory premiumDelta = _getExpectedPremiumDelta({
-      spoke: spoke1,
-      user: alice,
-      reserveId: _daiReserveId(spoke1),
-      premiumRestored: premium
-    });
+    IHubBase.PremiumDelta memory premiumDelta = _getExpectedPremiumDelta(
+      spoke1,
+      alice,
+      _daiReserveId(spoke1),
+      premium
+    );
 
     vm.startPrank(address(spoke1));
     tokenList.dai.transferFrom(alice, address(hub1), drawnRestored + premium);
@@ -539,12 +540,12 @@ contract HubRestoreTest is HubBase {
     (uint256 drawn, uint256 premium) = hub1.getSpokeOwed(daiAssetId, address(spoke1));
     uint256 drawnRestored = drawn;
 
-    IHubBase.PremiumDelta memory premiumDelta = _getExpectedPremiumDelta({
-      spoke: spoke1,
-      user: alice,
-      reserveId: _daiReserveId(spoke1),
-      premiumRestored: premium
-    });
+    IHubBase.PremiumDelta memory premiumDelta = _getExpectedPremiumDelta(
+      spoke1,
+      alice,
+      _daiReserveId(spoke1),
+      premium
+    );
     premiumDelta.offsetDeltaRay -= 1;
 
     vm.startPrank(address(spoke1));
@@ -577,21 +578,23 @@ contract HubRestoreTest is HubBase {
       amount: drawAmount
     });
 
+    skip(365 days);
+
     (uint256 drawn, uint256 premium) = hub1.getSpokeOwed(daiAssetId, address(spoke1));
     uint256 drawnRestored = drawn;
 
-    IHubBase.PremiumDelta memory premiumDelta = _getExpectedPremiumDelta({
-      spoke: spoke1,
-      user: alice,
-      reserveId: _daiReserveId(spoke1),
-      premiumRestored: premium
-    });
+    IHubBase.PremiumDelta memory premiumDelta = _getExpectedPremiumDelta(
+      spoke1,
+      alice,
+      _daiReserveId(spoke1),
+      premium
+    );
     premiumDelta.offsetDeltaRay += 1;
 
     vm.startPrank(address(spoke1));
     tokenList.dai.transferFrom(alice, address(hub1), drawnRestored + premium);
 
-    vm.expectRevert(stdError.arithmeticError);
+    vm.expectRevert(abi.encodeWithSelector(SafeCast.SafeCastOverflowedIntToUint.selector, -1));
     hub1.restore(daiAssetId, drawnRestored, premiumDelta);
     vm.stopPrank();
   }
@@ -621,12 +624,12 @@ contract HubRestoreTest is HubBase {
     (uint256 drawn, uint256 premium) = hub1.getSpokeOwed(daiAssetId, address(spoke1));
     uint256 drawnRestored = drawn;
 
-    IHubBase.PremiumDelta memory premiumDelta = _getExpectedPremiumDelta({
-      spoke: spoke1,
-      user: alice,
-      reserveId: _daiReserveId(spoke1),
-      premiumRestored: premium
-    });
+    IHubBase.PremiumDelta memory premiumDelta = _getExpectedPremiumDelta(
+      spoke1,
+      alice,
+      _daiReserveId(spoke1),
+      premium
+    );
     premiumDelta.sharesDelta += 1.toInt256();
 
     vm.expectRevert(IHub.InvalidPremiumChange.selector);
@@ -659,12 +662,12 @@ contract HubRestoreTest is HubBase {
     (uint256 drawn, uint256 premium) = hub1.getSpokeOwed(daiAssetId, address(spoke1));
     uint256 drawnRestored = drawn;
 
-    IHubBase.PremiumDelta memory premiumDelta = _getExpectedPremiumDelta({
-      spoke: spoke1,
-      user: alice,
-      reserveId: _daiReserveId(spoke1),
-      premiumRestored: premium
-    });
+    IHubBase.PremiumDelta memory premiumDelta = _getExpectedPremiumDelta(
+      spoke1,
+      alice,
+      _daiReserveId(spoke1),
+      premium
+    );
     premiumDelta.sharesDelta += 3;
 
     vm.startPrank(address(spoke1));
@@ -696,12 +699,12 @@ contract HubRestoreTest is HubBase {
     // no premium accrued
     assertEq(premium, 0);
 
-    IHubBase.PremiumDelta memory premiumDelta = _getExpectedPremiumDelta({
-      spoke: spoke1,
-      user: alice,
-      reserveId: _daiReserveId(spoke1),
-      premiumRestored: premium
-    });
+    IHubBase.PremiumDelta memory premiumDelta = _getExpectedPremiumDelta(
+      spoke1,
+      alice,
+      _daiReserveId(spoke1),
+      premium
+    );
 
     vm.startPrank(address(spoke1));
     tokenList.dai.transferFrom(alice, address(hub1), restoreDrawnAmount + premium);
@@ -764,12 +767,12 @@ contract HubRestoreTest is HubBase {
     // no premium accrued in the same block
     assertEq(premium, 0);
 
-    IHubBase.PremiumDelta memory premiumDelta = _getExpectedPremiumDelta({
-      spoke: spoke1,
-      user: alice,
-      reserveId: _daiReserveId(spoke1),
-      premiumRestored: premium
-    });
+    IHubBase.PremiumDelta memory premiumDelta = _getExpectedPremiumDelta(
+      spoke1,
+      alice,
+      _daiReserveId(spoke1),
+      premium
+    );
 
     vm.startPrank(address(spoke1));
     tokenList.dai.transferFrom(alice, address(hub1), drawnRestored + premium);
@@ -877,12 +880,12 @@ contract HubRestoreTest is HubBase {
     // no premium accrued
     assertEq(premium, 0);
 
-    IHubBase.PremiumDelta memory premiumDelta = _getExpectedPremiumDelta({
-      spoke: spoke1,
-      user: alice,
-      reserveId: _daiReserveId(spoke1),
-      premiumRestored: premium
-    });
+    IHubBase.PremiumDelta memory premiumDelta = _getExpectedPremiumDelta(
+      spoke1,
+      alice,
+      _daiReserveId(spoke1),
+      premium
+    );
 
     // spoke1 restore full drawn
     vm.startPrank(address(spoke1));
@@ -979,12 +982,12 @@ contract HubRestoreTest is HubBase {
 
     premiumRestored = bound(premiumRestored, 1, premium);
 
-    IHubBase.PremiumDelta memory premiumDelta = _getExpectedPremiumDelta({
-      spoke: spoke1,
-      user: alice,
-      reserveId: _daiReserveId(spoke1),
-      premiumRestored: premiumRestored
-    });
+    IHubBase.PremiumDelta memory premiumDelta = _getExpectedPremiumDelta(
+      spoke1,
+      alice,
+      _daiReserveId(spoke1),
+      premiumRestored
+    );
 
     // spoke1 restore full drawn
     vm.startPrank(address(spoke1));

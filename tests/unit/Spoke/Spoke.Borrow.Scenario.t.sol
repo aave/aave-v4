@@ -476,6 +476,7 @@ contract SpokeBorrowScenarioTest is SpokeBase {
     state.wethReserveId = _wethReserveId(spoke1);
     state.daiReserveId = _daiReserveId(spoke1);
     state.wethBob.supplyAmount = MAX_SUPPLY_AMOUNT;
+    state.daiBob.premiumDebtRayBefore = _calculatePremiumDebtRay(spoke1, state.daiReserveId, bob);
 
     address[] memory users = new address[](1);
     users[0] = bob;
@@ -521,6 +522,8 @@ contract SpokeBorrowScenarioTest is SpokeBase {
       lastTimestamp
     );
     uint256 expectedDrawnDebt = cumulatedInterest.rayMulUp(borrowAmount1) + borrowAmount2;
+
+    state.daiBob.premiumDebtRayBefore = _calculatePremiumDebtRay(spoke1, state.daiReserveId, bob);
 
     uint256 expectedShares2 = hub1.previewRestoreByAssets(daiAssetId, borrowAmount2);
 

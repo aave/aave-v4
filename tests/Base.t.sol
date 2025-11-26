@@ -124,6 +124,7 @@ abstract contract Base is Test {
   uint256 internal constant MAX_ASSET_PRICE = 1e8 * 1e8; // $100M per token
   uint256 internal constant MAX_LIQUIDATION_PROTOCOL_FEE_PERCENTAGE =
     PercentageMath.PERCENTAGE_FACTOR;
+  IHubBase.PremiumDelta internal ZERO_PREMIUM_DELTA = ZERO_PREMIUM_DELTA;
 
   IAaveOracle internal oracle1;
   IAaveOracle internal oracle2;
@@ -1548,36 +1549,67 @@ abstract contract Base is Test {
   }
 
   function _getExpectedPremiumDelta(
+    IHub hub,
+    uint256 assetId,
+    uint256 oldPremiumShares,
+    int256 oldPremiumOffsetRay,
+    uint256 drawnShares,
+    uint256 riskPremium,
+    uint256 restoredPremiumRay
+  ) internal view returns (IHubBase.PremiumDelta memory) {
+    uint256 premiumDebtRay = _calculatePremiumDebtRay(
+      hub,
+      assetId,
+      oldPremiumShares,
+      oldPremiumOffsetRay
+    );
+
+    uint256 newPremiumShares = drawnShares.percentMulUp(riskPremium);
+    int256 newPremiumOffsetRay = _calculatePremiumAssetsRay(hub, assetId, newPremiumShares)
+      .signedSub(premiumDebtRay - restoredPremiumRay);
+
+    return
+      IHubBase.PremiumDelta({
+        sharesDelta: newPremiumShares.toInt256() - oldPremiumShares.toInt256(),
+        offsetDeltaRay: newPremiumOffsetRay - oldPremiumOffsetRay,
+        restoredPremiumRay: restoredPremiumRay
+      });
+  }
+
+  function _getExpectedPremiumDelta(
     ISpoke spoke,
     address user,
     uint256 reserveId,
     uint256 repayAmount
   ) internal view virtual returns (IHubBase.PremiumDelta memory) {
-    ISpoke.UserPosition memory userPosition = spoke.getUserPosition(reserveId, user);
     Debts memory userDebt = getUserDebt(spoke, user, reserveId);
-    uint256 assetId = spoke.getReserve(reserveId).assetId;
-
-    IHubBase.PremiumDelta memory expectedPremiumDelta = IHubBase.PremiumDelta({
-      sharesDelta: -userPosition.premiumShares.toInt256(),
-      offsetDeltaRay: -userPosition.premiumOffsetRay,
-      restoredPremiumRay: 0 // populated below
-    });
-
     (, uint256 premiumAmountToRestore) = _calculateRestoreAmounts(
       repayAmount,
       userDebt.drawnDebt,
       userDebt.premiumDebt
     );
-    expectedPremiumDelta.restoredPremiumRay = (premiumAmountToRestore * WadRayMath.RAY).min(
-      _calculatePremiumDebtRay(
-        hub1,
-        assetId,
-        userPosition.premiumShares,
-        userPosition.premiumOffsetRay
-      )
+
+    ISpoke.UserPosition memory userPosition = spoke.getUserPosition(reserveId, user);
+    uint256 assetId = spoke.getReserve(reserveId).assetId;
+    uint256 premiumDebtRay = _calculatePremiumDebtRay(
+      hub1,
+      assetId,
+      userPosition.premiumShares,
+      userPosition.premiumOffsetRay
     );
 
-    return expectedPremiumDelta;
+    uint256 restoredPremiumRay = (premiumAmountToRestore * WadRayMath.RAY).min(premiumDebtRay);
+
+    return
+      _getExpectedPremiumDelta({
+        hub: hub1,
+        assetId: assetId,
+        oldPremiumShares: userPosition.premiumShares,
+        oldPremiumOffsetRay: userPosition.premiumOffsetRay,
+        drawnShares: 0, // risk premium is 0, so drawn shares do not matter here (otherwise they need to be updated with restored drawn shares amount)
+        riskPremium: 0,
+        restoredPremiumRay: restoredPremiumRay
+      });
   }
 
   /// @dev Helper function to check consistent supplied amounts within accounting
