@@ -6,10 +6,10 @@ import {Test} from 'forge-std/Test.sol';
 import {ReserveFlags, ReserveFlagsMap} from 'src/spoke/libraries/ReserveFlagsMap.sol';
 
 contract ReserveFlagsTests is Test {
-  uint8 internal constant PAUSED_MASK = 0x001;
-  uint8 internal constant FROZEN_MASK = 0x002;
-  uint8 internal constant BORROWABLE_MASK = 0x004;
-  uint8 internal constant RECEIVE_SHARES_ENABLED_MASK = 0x008;
+  uint8 internal constant PAUSED_MASK = 0x01;
+  uint8 internal constant FROZEN_MASK = 0x02;
+  uint8 internal constant BORROWABLE_MASK = 0x04;
+  uint8 internal constant RECEIVE_SHARES_ENABLED_MASK = 0x08;
 
   function test_initFlags_fuzz(
     bool paused,
@@ -162,6 +162,7 @@ contract ReserveFlagsTests is Test {
     assertEq(ReserveFlags.unwrap(flags), expectedRawFlags);
   }
 
+  /// @dev Sanitizes the raw flags by masking out any irrelevant bits.
   function _sanitizeFlags(uint8 rawFlags) internal pure returns (ReserveFlags) {
     uint8 sanitizedFlags = rawFlags &
       (PAUSED_MASK | FROZEN_MASK | BORROWABLE_MASK | RECEIVE_SHARES_ENABLED_MASK);

@@ -303,7 +303,7 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
   /// @notice Thrown when a debt to cover input is zero.
   error InvalidDebtToCover();
 
-  /// @notice Thrown when the liquidator tries to receive shares for a collateral reserve that is frozen or configured to not allow share receival.
+  /// @notice Thrown when the liquidator tries to receive shares for a collateral reserve that is frozen or is not enabled to receive shares.
   error CannotReceiveShares();
 
   /// @notice Thrown when the maximum number of dynamic config keys is reached.

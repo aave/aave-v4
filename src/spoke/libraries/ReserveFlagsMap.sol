@@ -10,32 +10,32 @@ using ReserveFlagsMap for ReserveFlags global;
 /// @author Aave Labs
 /// @notice Implements the bitmap logic to handle the Reserve flags configuration.
 library ReserveFlagsMap {
-  /// @dev Mask for the `paused` flag.
+  /// @dev Mask for the 'paused' flag.
   uint8 internal constant PAUSED_MASK = 0x01;
-  /// @dev Mask for the `frozen` flag.
+  /// @dev Mask for the 'frozen' flag.
   uint8 internal constant FROZEN_MASK = 0x02;
-  /// @dev Mask for the `borrowable` flag.
+  /// @dev Mask for the 'borrowable' flag.
   uint8 internal constant BORROWABLE_MASK = 0x04;
-  /// @dev Mask for the `receiveSharesEnabled` flag.
+  /// @dev Mask for the 'receiveSharesEnabled' flag.
   uint8 internal constant RECEIVE_SHARES_ENABLED_MASK = 0x08;
 
   /// @notice Initializes the ReserveFlags with the given values.
-  /// @param _paused The `pause` flag status.
-  /// @param _frozen The `frozen` flag status.
-  /// @param _borrowable The `borrowable` flag status.
-  /// @param _receiveSharesEnabled The `receiveSharesEnabled` flag status.
+  /// @param initPaused The initial 'paused' flag status.
+  /// @param initFrozen The initial 'frozen' flag status.
+  /// @param initBorrowable The initial 'borrowable' flag status.
+  /// @param initReceiveSharesEnabled The initial 'receiveSharesEnabled' flag status.
   /// @return The initialized ReserveFlags.
   function initFlags(
-    bool _paused,
-    bool _frozen,
-    bool _borrowable,
-    bool _receiveSharesEnabled
+    bool initPaused,
+    bool initFrozen,
+    bool initBorrowable,
+    bool initReceiveSharesEnabled
   ) internal pure returns (ReserveFlags) {
     uint8 flags = 0;
-    flags = _setFlag(flags, PAUSED_MASK, _paused);
-    flags = _setFlag(flags, FROZEN_MASK, _frozen);
-    flags = _setFlag(flags, BORROWABLE_MASK, _borrowable);
-    flags = _setFlag(flags, RECEIVE_SHARES_ENABLED_MASK, _receiveSharesEnabled);
+    flags = _setFlag(flags, PAUSED_MASK, initPaused);
+    flags = _setFlag(flags, FROZEN_MASK, initFrozen);
+    flags = _setFlag(flags, BORROWABLE_MASK, initBorrowable);
+    flags = _setFlag(flags, RECEIVE_SHARES_ENABLED_MASK, initReceiveSharesEnabled);
     return ReserveFlags.wrap(flags);
   }
 
