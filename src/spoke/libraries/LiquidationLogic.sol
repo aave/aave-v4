@@ -333,7 +333,7 @@ library LiquidationLogic {
     LiquidateDebtParams memory params
   ) internal returns (uint256, IHubBase.PremiumDelta memory, bool) {
     uint256 premiumDebtToLiquidateRay = params.debtToLiquidate.toRay().min(params.premiumDebtRay);
-    IHubBase.PremiumDelta memory premiumDelta = debtPosition.getPremiumDelta({
+    IHubBase.PremiumDelta memory premiumDelta = debtPosition.getPremiumDeltaData({
       drawnIndex: params.drawnIndex,
       riskPremium: 0,
       restoredPremiumRay: premiumDebtToLiquidateRay

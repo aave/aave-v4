@@ -13,7 +13,7 @@ import {Premium} from 'src/hub/libraries/Premium.sol';
 /// @author Aave Labs
 /// @notice Implements premium calculations for user positions.
 library UserPositionPremium {
-  using PercentageMath for uint120;
+  using PercentageMath for *;
   using MathUtils for *;
   using SafeCast for *;
 
@@ -39,7 +39,7 @@ library UserPositionPremium {
   /// @param riskPremium The new risk premium, expressed in BPS.
   /// @param restoredPremiumRay The amount of premium to be restored, expressed in asset units and scaled by RAY.
   /// @return The computed premium delta.
-  function getPremiumDelta(
+  function getPremiumDeltaData(
     ISpoke.UserPosition storage userPosition,
     uint256 drawnIndex,
     uint256 riskPremium,
@@ -53,17 +53,37 @@ library UserPositionPremium {
       drawnIndex: drawnIndex
     });
 
-    uint256 newPremiumShares = userPosition.drawnShares.percentMulUp(riskPremium);
-    int256 newPremiumOffsetRay = (newPremiumShares * drawnIndex).signedSub(
+    (int256 sharesDelta, int256 offsetRayDelta) = getPremiumDelta(
+      oldPremiumShares,
+      oldPremiumOffsetRay,
+      userPosition.drawnShares,
+      drawnIndex,
+      riskPremium,
       premiumDebtRay - restoredPremiumRay
     );
 
     return
       IHubBase.PremiumDelta({
-        sharesDelta: newPremiumShares.signedSub(oldPremiumShares),
-        offsetRayDelta: newPremiumOffsetRay - oldPremiumOffsetRay,
+        sharesDelta: sharesDelta,
+        offsetRayDelta: offsetRayDelta,
         restoredPremiumRay: restoredPremiumRay
       });
+  }
+
+  function getPremiumDelta(
+    uint256 oldPremiumShares,
+    int256 oldPremiumOffsetRay,
+    uint256 newDrawnShares,
+    uint256 drawnIndex,
+    uint256 riskPremium,
+    uint256 premiumDebtDeltaRay
+  ) internal pure returns (int256, int256) {
+    uint256 newPremiumShares = newDrawnShares.percentMulUp(riskPremium);
+    int256 newPremiumOffsetRay = (newPremiumShares * drawnIndex).signedSub(premiumDebtDeltaRay);
+    return (
+      newPremiumShares.signedSub(oldPremiumShares),
+      newPremiumOffsetRay - oldPremiumOffsetRay
+    );
   }
 
   /// @notice Applies the premium delta to the user position.
