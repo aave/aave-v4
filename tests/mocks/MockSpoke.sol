@@ -105,7 +105,11 @@ contract MockSpoke is Spoke, Test {
   }
 
   function hasPositiveRiskPremium(address user) external view returns (bool) {
-    return _positionStatus[user].hasPositiveRiskPremium;
+    return _positionStatus[user].riskPremium > 0;
+  }
+
+  function getRiskPremium(address user) external view returns (uint24) {
+    return _positionStatus[user].riskPremium;
   }
 
   function setReserveDynamicConfigKey(uint256 reserveId, uint24 configKey) external {
