@@ -14,7 +14,7 @@ import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
 import {KeyValueList} from 'src/spoke/libraries/KeyValueList.sol';
 import {LiquidationLogic} from 'src/spoke/libraries/LiquidationLogic.sol';
 import {PositionStatusMap} from 'src/spoke/libraries/PositionStatusMap.sol';
-import {ReserveFlagsMap} from 'src/spoke/libraries/ReserveFlagsMap.sol';
+import {ReserveFlags, ReserveFlagsMap} from 'src/spoke/libraries/ReserveFlagsMap.sol';
 import {Premium} from 'src/hub/libraries/Premium.sol';
 import {NoncesKeyed} from 'src/utils/NoncesKeyed.sol';
 import {Multicall} from 'src/utils/Multicall.sol';
@@ -231,7 +231,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
   ) external onlyPositionManager(onBehalfOf) returns (uint256, uint256) {
     Reserve storage reserve = _getReserve(reserveId);
     UserPosition storage userPosition = _userPositions[onBehalfOf][reserveId];
-    _validateSupply(reserve);
+    _validateSupply(reserve.flags);
 
     reserve.underlying.safeTransferFrom(msg.sender, address(reserve.hub), amount);
     uint256 suppliedShares = reserve.hub.add(reserve.assetId, amount);
@@ -250,7 +250,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
   ) external onlyPositionManager(onBehalfOf) returns (uint256, uint256) {
     Reserve storage reserve = _getReserve(reserveId);
     UserPosition storage userPosition = _userPositions[onBehalfOf][reserveId];
-    _validateWithdraw(reserve);
+    _validateWithdraw(reserve.flags);
     IHubBase hub = reserve.hub;
     uint256 assetId = reserve.assetId;
 
@@ -281,7 +281,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     Reserve storage reserve = _getReserve(reserveId);
     UserPosition storage userPosition = _userPositions[onBehalfOf][reserveId];
     PositionStatus storage positionStatus = _positionStatus[onBehalfOf];
-    _validateBorrow(reserve);
+    _validateBorrow(reserve.flags);
     IHubBase hub = reserve.hub;
 
     uint256 drawnShares = hub.draw(reserve.assetId, amount, msg.sender);
@@ -306,7 +306,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
   ) external onlyPositionManager(onBehalfOf) returns (uint256, uint256) {
     Reserve storage reserve = _getReserve(reserveId);
     UserPosition storage userPosition = _userPositions[onBehalfOf][reserveId];
-    _validateRepay(reserve);
+    _validateRepay(reserve.flags);
 
     IHubBase.PremiumDelta memory premiumDelta = IHubBase.PremiumDelta({
       sharesDelta: -userPosition.premiumShares.toInt256(),
@@ -420,7 +420,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     bool usingAsCollateral,
     address onBehalfOf
   ) external onlyPositionManager(onBehalfOf) {
-    _validateSetUsingAsCollateral(_getReserve(reserveId), usingAsCollateral);
+    _validateSetUsingAsCollateral(_getReserve(reserveId).flags, usingAsCollateral);
     PositionStatus storage positionStatus = _positionStatus[onBehalfOf];
 
     if (positionStatus.isUsingAsCollateral(reserveId) == usingAsCollateral) {
@@ -939,33 +939,30 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     _validateDynamicReserveConfig(newConfig);
   }
 
-  function _validateSupply(Reserve storage reserve) internal view {
-    require(!reserve.flags.paused(), ReservePaused());
-    require(!reserve.flags.frozen(), ReserveFrozen());
+  function _validateSupply(ReserveFlags flags) internal view {
+    require(!flags.paused(), ReservePaused());
+    require(!flags.frozen(), ReserveFrozen());
   }
 
-  function _validateWithdraw(Reserve storage reserve) internal view {
-    require(!reserve.flags.paused(), ReservePaused());
+  function _validateWithdraw(ReserveFlags flags) internal view {
+    require(!flags.paused(), ReservePaused());
   }
 
-  function _validateBorrow(Reserve storage reserve) internal view {
-    require(!reserve.flags.paused(), ReservePaused());
-    require(!reserve.flags.frozen(), ReserveFrozen());
-    require(reserve.flags.borrowable(), ReserveNotBorrowable());
+  function _validateBorrow(ReserveFlags flags) internal view {
+    require(!flags.paused(), ReservePaused());
+    require(!flags.frozen(), ReserveFrozen());
+    require(flags.borrowable(), ReserveNotBorrowable());
     // health factor is checked at the end of borrow action
   }
 
-  function _validateRepay(Reserve storage reserve) internal view {
-    require(!reserve.flags.paused(), ReservePaused());
+  function _validateRepay(ReserveFlags flags) internal view {
+    require(!flags.paused(), ReservePaused());
   }
 
-  function _validateSetUsingAsCollateral(
-    Reserve storage reserve,
-    bool usingAsCollateral
-  ) internal view {
-    require(!reserve.flags.paused(), ReservePaused());
+  function _validateSetUsingAsCollateral(ReserveFlags flags, bool usingAsCollateral) internal view {
+    require(!flags.paused(), ReservePaused());
     // can disable as collateral if the reserve is frozen
-    require(!usingAsCollateral || !reserve.flags.frozen(), ReserveFrozen());
+    require(!usingAsCollateral || !flags.frozen(), ReserveFrozen());
   }
 
   /// @notice Returns whether `manager` is active & approved positionManager for `user`.
