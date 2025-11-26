@@ -8,11 +8,11 @@ pragma solidity ^0.8.0;
 interface IHubBase {
   /// @notice Changes to premium owed accounting.
   /// @dev sharesDelta The change in premium shares.
-  /// @dev offsetDeltaRay The change in premium offset, expressed in asset units and scaled by RAY.
+  /// @dev offsetRayDelta The change in premium offset, expressed in asset units and scaled by RAY.
   /// @dev restoredPremiumRay The restored premium, expressed in asset units and scaled by RAY.
   struct PremiumDelta {
     int256 sharesDelta;
-    int256 offsetDeltaRay;
+    int256 offsetRayDelta;
     uint256 restoredPremiumRay;
   }
 

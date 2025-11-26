@@ -98,7 +98,7 @@ contract HubRestoreTest is HubBase {
     // `_getExpectedPremiumDelta` underflows in this case
     IHubBase.PremiumDelta memory premiumDelta = IHubBase.PremiumDelta({
       sharesDelta: 0,
-      offsetDeltaRay: premiumRestoredRay.toInt256(),
+      offsetRayDelta: premiumRestoredRay.toInt256(),
       restoredPremiumRay: premiumRestoredRay
     });
 
@@ -546,7 +546,7 @@ contract HubRestoreTest is HubBase {
       _daiReserveId(spoke1),
       premium
     );
-    premiumDelta.offsetDeltaRay -= 1;
+    premiumDelta.offsetRayDelta -= 1;
 
     vm.startPrank(address(spoke1));
     tokenList.dai.transferFrom(alice, address(hub1), drawnRestored + premium);
@@ -589,7 +589,7 @@ contract HubRestoreTest is HubBase {
       _daiReserveId(spoke1),
       premium
     );
-    premiumDelta.offsetDeltaRay += 1;
+    premiumDelta.offsetRayDelta += 1;
 
     vm.startPrank(address(spoke1));
     tokenList.dai.transferFrom(alice, address(hub1), drawnRestored + premium);

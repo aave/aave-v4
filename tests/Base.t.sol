@@ -1571,7 +1571,7 @@ abstract contract Base is Test {
     return
       IHubBase.PremiumDelta({
         sharesDelta: newPremiumShares.toInt256() - oldPremiumShares.toInt256(),
-        offsetDeltaRay: newPremiumOffsetRay - oldPremiumOffsetRay,
+        offsetRayDelta: newPremiumOffsetRay - oldPremiumOffsetRay,
         restoredPremiumRay: restoredPremiumRay
       });
   }

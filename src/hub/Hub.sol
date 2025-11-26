@@ -547,8 +547,8 @@ contract Hub is IHub, AccessManaged {
     return
       Premium.calculatePremiumRay({
         premiumShares: asset.premiumShares,
-        drawnIndex: asset.getDrawnIndex(),
-        premiumOffsetRay: asset.premiumOffsetRay
+        premiumOffsetRay: asset.premiumOffsetRay,
+        drawnIndex: asset.getDrawnIndex()
       });
   }
 
@@ -813,8 +813,8 @@ contract Hub is IHub, AccessManaged {
     return
       Premium.calculatePremiumRay({
         premiumShares: spoke.premiumShares,
-        drawnIndex: asset.getDrawnIndex(),
-        premiumOffsetRay: spoke.premiumOffsetRay
+        premiumOffsetRay: spoke.premiumOffsetRay,
+        drawnIndex: asset.getDrawnIndex()
       });
   }
 
@@ -944,17 +944,17 @@ contract Hub is IHub, AccessManaged {
   ) internal pure returns (uint120, int200) {
     uint256 premiumRayBefore = Premium.calculatePremiumRay({
       premiumShares: premiumShares,
-      drawnIndex: drawnIndex,
-      premiumOffsetRay: premiumOffsetRay
+      premiumOffsetRay: premiumOffsetRay,
+      drawnIndex: drawnIndex
     });
 
     uint256 newPremiumShares = premiumShares.add(premiumDelta.sharesDelta);
-    int256 newPremiumOffsetRay = premiumOffsetRay + premiumDelta.offsetDeltaRay;
+    int256 newPremiumOffsetRay = premiumOffsetRay + premiumDelta.offsetRayDelta;
 
     uint256 premiumRayAfter = Premium.calculatePremiumRay({
       premiumShares: newPremiumShares,
-      drawnIndex: drawnIndex,
-      premiumOffsetRay: newPremiumOffsetRay
+      premiumOffsetRay: newPremiumOffsetRay,
+      drawnIndex: drawnIndex
     });
 
     require(

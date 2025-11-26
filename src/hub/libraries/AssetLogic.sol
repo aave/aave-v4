@@ -189,13 +189,13 @@ library AssetLogic {
     int256 premiumOffsetRay = asset.premiumOffsetRay;
     uint256 premiumRayAfter = Premium.calculatePremiumRay({
       premiumShares: premiumShares,
-      drawnIndex: drawnIndex,
-      premiumOffsetRay: premiumOffsetRay
+      premiumOffsetRay: premiumOffsetRay,
+      drawnIndex: drawnIndex
     });
     uint256 premiumRayBefore = Premium.calculatePremiumRay({
       premiumShares: premiumShares,
-      drawnIndex: previousIndex,
-      premiumOffsetRay: premiumOffsetRay
+      premiumOffsetRay: premiumOffsetRay,
+      drawnIndex: previousIndex
     });
     uint256 liquidityGrowthPremium = premiumRayAfter.fromRayUp() - premiumRayBefore.fromRayUp();
 

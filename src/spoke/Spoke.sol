@@ -319,12 +319,8 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
       restoredPremiumRay: premiumDebtRayRestored
     });
 
-    uint256 premiumDebtRestored = premiumDelta.restoredPremiumRay.fromRayUp();
-    reserve.underlying.safeTransferFrom(
-      msg.sender,
-      address(reserve.hub),
-      drawnDebtRestored + premiumDebtRestored
-    );
+    uint256 totalDebtRestored = drawnDebtRestored + premiumDelta.restoredPremiumRay.fromRayUp();
+    reserve.underlying.safeTransferFrom(msg.sender, address(reserve.hub), totalDebtRestored);
     uint256 restoredShares = reserve.hub.restore(reserve.assetId, drawnDebtRestored, premiumDelta);
 
     userPosition.applyPremiumDelta(premiumDelta);
@@ -336,16 +332,9 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
 
     _notifyRiskPremiumUpdate(onBehalfOf, _calculateUserAccountData(onBehalfOf).riskPremium);
 
-    emit Repay(
-      reserveId,
-      msg.sender,
-      onBehalfOf,
-      restoredShares,
-      drawnDebtRestored + premiumDebtRestored,
-      premiumDelta
-    );
+    emit Repay(reserveId, msg.sender, onBehalfOf, restoredShares, totalDebtRestored, premiumDelta);
 
-    return (restoredShares, drawnDebtRestored + premiumDebtRestored);
+    return (restoredShares, totalDebtRestored);
   }
 
   /// @inheritdoc ISpokeBase
@@ -870,14 +859,14 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
       Reserve storage reserve = _reserves[reserveId];
       IHubBase hub = reserve.hub;
       uint256 assetId = reserve.assetId;
+      uint256 drawnIndex = hub.getAssetDrawnIndex(assetId);
       (uint256 drawnDebtReported, , uint256 premiumDebtRay) = _getUserDebt(
         userPosition,
-        hub,
-        assetId
+        drawnIndex
       );
 
       IHubBase.PremiumDelta memory premiumDelta = userPosition.getPremiumDelta({
-        drawnIndex: hub.getAssetDrawnIndex(assetId),
+        drawnIndex: drawnIndex,
         riskPremium: 0,
         restoredPremiumRay: premiumDebtRay
       });

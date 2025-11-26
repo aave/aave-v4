@@ -124,7 +124,7 @@ contract HubReportDeficitTest is HubBase {
       // `_getExpectedPremiumDelta` underflows in this case
       IHubBase.PremiumDelta({
         sharesDelta: 0,
-        offsetDeltaRay: premiumDeficitRay.toInt256(),
+        offsetRayDelta: premiumDeficitRay.toInt256(),
         restoredPremiumRay: premiumDeficitRay
       })
     );

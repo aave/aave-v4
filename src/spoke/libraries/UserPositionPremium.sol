@@ -26,11 +26,11 @@ library UserPositionPremium {
     uint256 drawnIndex
   ) internal view returns (uint256) {
     return
-      Premium.calculatePremiumRay(
-        userPosition.premiumShares,
-        drawnIndex,
-        userPosition.premiumOffsetRay
-      );
+      Premium.calculatePremiumRay({
+        premiumShares: userPosition.premiumShares,
+        premiumOffsetRay: userPosition.premiumOffsetRay,
+        drawnIndex: drawnIndex
+      });
   }
 
   /// @notice Computes the premium delta for a user position given a new risk premium.
@@ -49,8 +49,8 @@ library UserPositionPremium {
     int256 oldPremiumOffsetRay = userPosition.premiumOffsetRay;
     uint256 premiumDebtRay = Premium.calculatePremiumRay({
       premiumShares: oldPremiumShares,
-      drawnIndex: drawnIndex,
-      premiumOffsetRay: oldPremiumOffsetRay
+      premiumOffsetRay: oldPremiumOffsetRay,
+      drawnIndex: drawnIndex
     });
 
     uint256 newPremiumShares = userPosition.drawnShares.percentMulUp(riskPremium);
@@ -61,7 +61,7 @@ library UserPositionPremium {
     return
       IHubBase.PremiumDelta({
         sharesDelta: newPremiumShares.signedSub(oldPremiumShares),
-        offsetDeltaRay: newPremiumOffsetRay - oldPremiumOffsetRay,
+        offsetRayDelta: newPremiumOffsetRay - oldPremiumOffsetRay,
         restoredPremiumRay: restoredPremiumRay
       });
   }
@@ -77,7 +77,7 @@ library UserPositionPremium {
       .premiumShares
       .add(premiumDelta.sharesDelta)
       .toUint120();
-    userPosition.premiumOffsetRay = (userPosition.premiumOffsetRay + premiumDelta.offsetDeltaRay)
+    userPosition.premiumOffsetRay = (userPosition.premiumOffsetRay + premiumDelta.offsetRayDelta)
       .toInt200();
   }
 }

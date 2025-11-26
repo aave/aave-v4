@@ -494,7 +494,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
               .premiumShares
               .toInt256() + vars.premiumDelta.sharesDelta).toUint256().toUint120();
             vars.userReservePosition.premiumOffsetRay = (vars.userReservePosition.premiumOffsetRay +
-              vars.premiumDelta.offsetDeltaRay).toInt200();
+              vars.premiumDelta.offsetRayDelta).toInt200();
           }
 
           IHub targetHub = _hub(params.spoke, reserveId);
