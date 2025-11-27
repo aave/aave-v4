@@ -70,15 +70,15 @@ library UserPositionPremium {
       });
   }
 
-  /// @notice Computes the premium delta for a user position given a new risk premium and new drawn shares.
+  /// @notice Calculates the premium delta for a user position given a new risk premium and new drawn shares.
   /// @param oldPremiumShares The current value of premium shares.
   /// @param oldPremiumOffsetRay The current value of premium offset, expressed in asset units and scaled by RAY.
   /// @param newDrawnShares The new drawn shares, including the restored shares.
   /// @param drawnIndex The current drawn index.
   /// @param riskPremium The new risk premium, expressed in BPS.
   /// @param premiumDebtRayDelta The change in premium debt due to repay, expressed in asset units and scaled by RAY.
-  /// @return The computed change in premium shares.
-  /// @return The computed change in offset, expressed in asset units and scaled by RAY.
+  /// @return The calculated change in premium shares.
+  /// @return The calculated change in offset, expressed in asset units and scaled by RAY.
   function getPremiumDelta(
     uint256 oldPremiumShares,
     int256 oldPremiumOffsetRay,
