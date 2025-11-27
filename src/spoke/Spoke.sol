@@ -308,28 +308,25 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     uint256 previewRestoredShares;
     {
       uint256 drawnIndex = reserve.hub.getAssetDrawnIndex(reserve.assetId);
-      uint256 premiumDebtRayDelta;
-      (
-        drawnDebtRestored,
-        premiumDelta.restoredPremiumRay,
-        premiumDebtRayDelta
-      ) = _calculateRestoreAmount(userPosition, drawnIndex, drawnDebtRestored);
-
-      previewRestoredShares = reserve.hub.previewRestoreByAssets(
-        reserve.assetId,
+      (drawnDebtRestored, premiumDelta.restoredPremiumRay) = _calculateRestoreAmount(
+        userPosition,
+        drawnIndex,
         drawnDebtRestored
       );
+
+      // replicate hub.previewRestoreByAssets() instead of calling here
+      // verified later against actual restored shares returned from hub.restore()
+      previewRestoredShares = drawnDebtRestored.rayDivDown(drawnIndex);
       newDrawnShares = userPosition.drawnShares.uncheckedSub(previewRestoredShares);
 
-      (premiumDelta.sharesDelta, premiumDelta.offsetRayDelta) = UserPositionPremium
-        .getPremiumDelta({
-          oldPremiumShares: userPosition.premiumShares,
-          oldPremiumOffsetRay: userPosition.premiumOffsetRay,
-          newDrawnShares: newDrawnShares,
-          drawnIndex: drawnIndex,
-          riskPremium: positionStatus.riskPremium,
-          premiumDebtRayDelta: premiumDebtRayDelta
-        });
+      premiumDelta = UserPositionPremium.getPremiumDelta({
+        oldPremiumShares: userPosition.premiumShares,
+        oldPremiumOffsetRay: userPosition.premiumOffsetRay,
+        newDrawnShares: newDrawnShares,
+        drawnIndex: drawnIndex,
+        riskPremium: positionStatus.riskPremium,
+        restoredPremiumRay: premiumDelta.restoredPremiumRay
+      });
     }
 
     uint256 totalDebtRestored;
@@ -894,17 +891,14 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
         drawnIndex
       );
 
-      IHubBase.PremiumDelta memory premiumDelta;
-      (premiumDelta.sharesDelta, premiumDelta.offsetRayDelta) = UserPositionPremium
-        .getPremiumDelta({
-          oldPremiumShares: userPosition.premiumShares,
-          oldPremiumOffsetRay: userPosition.premiumOffsetRay,
-          newDrawnShares: userPosition.drawnShares,
-          drawnIndex: drawnIndex,
-          riskPremium: 0,
-          premiumDebtRayDelta: 0
-        });
-      premiumDelta.restoredPremiumRay = premiumDebtRay;
+      IHubBase.PremiumDelta memory premiumDelta = UserPositionPremium.getPremiumDelta({
+        oldPremiumShares: userPosition.premiumShares,
+        oldPremiumOffsetRay: userPosition.premiumOffsetRay,
+        newDrawnShares: userPosition.drawnShares,
+        drawnIndex: drawnIndex,
+        riskPremium: 0,
+        restoredPremiumRay: premiumDebtRay
+      });
 
       uint256 deficitShares = hub.reportDeficit(assetId, drawnDebtReported, premiumDelta);
       userPosition.applyPremiumDelta(premiumDelta);
@@ -1021,7 +1015,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     UserPosition storage userPosition,
     uint256 drawnIndex,
     uint256 amount
-  ) internal view returns (uint256, uint256, uint256) {
+  ) internal view returns (uint256, uint256) {
     (uint256 drawnDebtRestored, , uint256 premiumDebtRayRestored) = _getUserDebt(
       userPosition,
       drawnIndex
@@ -1039,19 +1033,19 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     uint256 drawnDebt,
     uint256 premiumDebtRay,
     uint256 amount
-  ) internal pure returns (uint256, uint256, uint256) {
+  ) internal pure returns (uint256, uint256) {
     uint256 premiumDebt = premiumDebtRay.fromRayUp();
     if (amount >= drawnDebt + premiumDebt) {
-      return (drawnDebt, premiumDebtRay, 0);
+      return (drawnDebt, premiumDebtRay);
     }
 
     if (amount < premiumDebt) {
       // amount.toRay() cannot overflow here
       uint256 amountRay = amount.toRay();
-      return (0, amountRay, premiumDebtRay - amountRay);
+      return (0, amountRay);
     }
 
-    return (amount - premiumDebt, premiumDebtRay, 0);
+    return (amount - premiumDebt, premiumDebtRay);
   }
 
   function _domainNameAndVersion() internal pure override returns (string memory, string memory) {
