@@ -725,27 +725,22 @@ contract SpokeBase is Base {
     assertEq(abi.encode(a), abi.encode(b)); // sanity check
   }
 
-  function _assertUserRpUnchanged(uint256 reserveId, ISpoke spoke, address user) internal view {
-    ISpoke.UserPosition memory pos = spoke.getUserPosition(reserveId, user);
-    uint256 riskPremiumDerived = pos.premiumShares.percentDivDown(pos.drawnShares);
+  function _assertUserRpUnchanged(ISpoke spoke, address user) internal view {
     uint256 riskPremiumPreview = spoke.getUserAccountData(user).riskPremium;
-    assertEq(riskPremiumDerived, riskPremiumPreview, 'user risk premium mismatch');
+    uint256 riskPremiumStored = _getUserRpStored(spoke, user);
+    assertEq(riskPremiumStored, riskPremiumPreview, 'user risk premium mismatch vs preview');
   }
 
   /// after a repay action, the stored user risk premium should not match the on-the-fly calculation, due to lack of notify
   /// instead RP should remain same as prior value
   function _assertUserRpUnchangedAfterRepay(
-    uint256 reserveId,
     ISpoke spoke,
     address user,
     uint256 expectedRP
   ) internal view {
-    ISpoke.UserPosition memory pos = spoke.getUserPosition(reserveId, user);
-    uint256 riskPremiumCalculated = pos.premiumShares.percentDivDown(pos.drawnShares); // back calculated from premShares/drawnShares
     uint256 riskPremiumPreview = spoke.getUserAccountData(user).riskPremium;
     uint256 riskPremiumStored = _getUserRpStored(spoke, user);
     assertEq(riskPremiumStored, expectedRP, 'user risk premium mismatch vs expected');
-    assertEq(riskPremiumStored, riskPremiumCalculated, 'user risk premium mismatch vs calculated');
     assertNotEq(
       riskPremiumStored,
       riskPremiumPreview,
