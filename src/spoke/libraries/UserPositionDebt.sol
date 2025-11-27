@@ -2,20 +2,23 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.20;
 
-import {IHubBase} from 'src/hub/interfaces/IHubBase.sol';
-import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
 import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
+import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
 import {MathUtils} from 'src/libraries/math/MathUtils.sol';
+import {IHubBase} from 'src/hub/interfaces/IHubBase.sol';
+import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 import {Premium} from 'src/hub/libraries/Premium.sol';
 
-/// @title User Position Premium library
+/// @title User Debt library
 /// @author Aave Labs
-/// @notice Implements premium calculations for user positions.
-library UserPositionPremium {
+/// @notice Implements debt calculations for user positions.
+library UserPositionDebt {
   using PercentageMath for uint120;
-  using MathUtils for *;
   using SafeCast for *;
+  using MathUtils for *;
+  using WadRayMath for *;
+  using UserPositionDebt for ISpoke.UserPosition;
 
   /// @notice Calculates the premium debt of a user position with full precision.
   /// @param userPosition The user position.
@@ -33,12 +36,12 @@ library UserPositionPremium {
       });
   }
 
-  /// @notice Computes the premium delta for a user position given a new risk premium.
+  /// @notice Calculates the premium delta for a user position given a new risk premium.
   /// @param userPosition The user position.
   /// @param drawnIndex The current drawn index.
   /// @param riskPremium The new risk premium, expressed in BPS.
   /// @param restoredPremiumRay The amount of premium to be restored, expressed in asset units and scaled by RAY.
-  /// @return The computed premium delta.
+  /// @return The calculated premium delta.
   function getPremiumDelta(
     ISpoke.UserPosition storage userPosition,
     uint256 drawnIndex,
@@ -79,5 +82,31 @@ library UserPositionPremium {
       .toUint120();
     userPosition.premiumOffsetRay = (userPosition.premiumOffsetRay + premiumDelta.offsetRayDelta)
       .toInt200();
+  }
+
+  /// @return The user's drawn debt.
+  /// @return The user's premium debt.
+  /// @return The user's premium debt, expressed in asset units and scaled by RAY.
+  function getDebt(
+    ISpoke.UserPosition storage userPosition,
+    IHubBase hub,
+    uint256 assetId
+  ) internal view returns (uint256, uint256, uint256) {
+    return userPosition.getDebt(hub.getAssetDrawnIndex(assetId));
+  }
+
+  /// @return The user's drawn debt.
+  /// @return The user's premium debt.
+  /// @return The user's premium debt, expressed in asset units and scaled by RAY.
+  function getDebt(
+    ISpoke.UserPosition storage userPosition,
+    uint256 drawnIndex
+  ) internal view returns (uint256, uint256, uint256) {
+    uint256 premiumDebtRay = userPosition.calculatePremiumRay(drawnIndex);
+    return (
+      userPosition.drawnShares.rayMulUp(drawnIndex),
+      premiumDebtRay.fromRayUp(),
+      premiumDebtRay
+    );
   }
 }

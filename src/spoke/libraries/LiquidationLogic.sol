@@ -7,7 +7,7 @@ import {SafeTransferLib} from 'src/dependencies/solady/SafeTransferLib.sol';
 import {MathUtils} from 'src/libraries/math/MathUtils.sol';
 import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
 import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
-import {UserPositionPremium} from 'src/spoke/libraries/UserPositionPremium.sol';
+import {UserPositionDebt} from 'src/spoke/libraries/UserPositionDebt.sol';
 import {PositionStatusMap} from 'src/spoke/libraries/PositionStatusMap.sol';
 import {IHubBase} from 'src/hub/interfaces/IHubBase.sol';
 import {IAaveOracle} from 'src/spoke/interfaces/IAaveOracle.sol';
@@ -24,7 +24,7 @@ library LiquidationLogic {
   using WadRayMath for uint256;
   using MathUtils for *;
   using LiquidationLogic for *;
-  using UserPositionPremium for ISpoke.UserPosition;
+  using UserPositionDebt for ISpoke.UserPosition;
 
   struct LiquidateUserParams {
     uint256 collateralReserveId;

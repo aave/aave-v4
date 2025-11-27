@@ -15,7 +15,7 @@ interface IHub is IHubBase, IAccessManaged {
   /// @dev decimals The number of decimals of the underlying asset.
   /// @dev addedShares The total shares added across all spokes.
   /// @dev swept The outstanding liquidity which has been invested by the reinvestment controller, expressed in asset units.
-  /// @dev premiumOffsetRay The total premium offset (signed integer) across all spokes, used to calculate the premium, expressed in asset units and scaled by RAY.
+  /// @dev premiumOffsetRay The total premium offset across all spokes, used to calculate the premium, expressed in signed asset units and scaled by RAY.
   /// @dev drawnShares The total drawn shares across all spokes.
   /// @dev premiumShares The total premium shares across all spokes.
   /// @dev liquidityFee The protocol fee charged on drawn and premium liquidity growth, expressed in BPS.
@@ -67,7 +67,7 @@ interface IHub is IHubBase, IAccessManaged {
   /// @notice Spoke position and configuration data.
   /// @dev drawnShares The drawn shares of a spoke for a given asset.
   /// @dev premiumShares The premium shares of a spoke for a given asset.
-  /// @dev premiumOffsetRay The premium offset (signed integer) of a spoke for a given asset, used to calculate the premium, expressed in asset units and scaled by RAY.
+  /// @dev premiumOffsetRay The premium offset of a spoke for a given asset, used to calculate the premium, expressed in signed asset units and scaled by RAY.
   /// @dev addedShares The added shares of a spoke for a given asset.
   /// @dev addCap The maximum amount that can be added by a spoke, expressed in whole assets (not scaled by decimals). A value of `MAX_ALLOWED_SPOKE_CAP` indicates no cap.
   /// @dev drawCap The maximum amount that can be drawn by a spoke, expressed in whole assets (not scaled by decimals). A value of `MAX_ALLOWED_SPOKE_CAP` indicates no cap.
