@@ -647,6 +647,11 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
   }
 
   /// @inheritdoc ISpoke
+  function getUserRiskPremium(address user) external view returns (uint256) {
+    return _positionStatus[user].riskPremium;
+  }
+
+  /// @inheritdoc ISpoke
   function getLiquidationBonus(
     uint256 reserveId,
     address user,

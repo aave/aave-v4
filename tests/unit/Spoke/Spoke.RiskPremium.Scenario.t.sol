@@ -36,6 +36,7 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
     uint256 drawnDebt;
     uint256 premiumDebt;
     uint256 premiumShares;
+    uint256 drawnShares;
     uint256 totalDebt;
     uint256 riskPremium;
   }
@@ -448,6 +449,9 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
     bobUsdxInfo.premiumShares = spoke1.getUserPosition(usdxInfo.reserveId, bob).premiumShares;
     aliceUsdxInfo.premiumShares = spoke1.getUserPosition(usdxInfo.reserveId, alice).premiumShares;
 
+    aliceDaiInfo.drawnShares = spoke1.getUserPosition(daiInfo.reserveId, alice).drawnShares;
+    aliceUsdxInfo.drawnShares = spoke1.getUserPosition(usdxInfo.reserveId, alice).drawnShares;
+
     // Now, if Alice repays some debt, her user risk premium should change and percolate through protocol
     Utils.repay(spoke1, daiInfo.reserveId, alice, aliceDaiInfo.borrowAmount / 2, alice);
 
@@ -469,18 +473,28 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
       aliceDaiInfo.premiumShares,
       'alice dai premium drawn shares after repay should not match'
     );
+    assertEq(
+      _getUserRpStored(spoke1, alice),
+      aliceDaiInfo.premiumShares.percentDivDown(aliceDaiInfo.drawnShares),
+      'alice risk premium after repay (dai)'
+    );
     // Alice's premium shares do not change on usdx as there is no notify for the asset not being repaid
     assertEq(
       spoke1.getUserPosition(usdxInfo.reserveId, alice).premiumShares,
       aliceUsdxInfo.premiumShares,
       'alice usdx premium drawn shares after repay should not match'
     );
+    assertEq(
+      _getUserRpStored(spoke1, alice),
+      aliceUsdxInfo.premiumShares.percentDivDown(aliceUsdxInfo.drawnShares),
+      'alice risk premium after repay'
+    );
 
     expectedUserRp.aliceRiskPremium = _calculateExpectedUserRP(spoke1, alice);
     assertEq(
       _getUserRiskPremium(spoke1, alice),
       expectedUserRp.aliceRiskPremium,
-      'alice risk premium after repay'
+      'alice risk premium after repay (usdx)'
     );
 
     (debtChecks.actualDrawnDebt, debtChecks.actualPremium) = spoke1.getUserDebt(

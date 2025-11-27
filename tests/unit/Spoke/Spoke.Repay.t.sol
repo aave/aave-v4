@@ -108,6 +108,7 @@ contract SpokeRepayTest is SpokeBase {
       daiRepayAmount,
       expectedPremiumDelta
     );
+    _assertRefreshPremiumNotCalled();
     vm.prank(bob);
     (returnValues.shares, returnValues.amount) = spoke1.repay(
       _daiReserveId(spoke1),
@@ -152,6 +153,7 @@ contract SpokeRepayTest is SpokeBase {
     skip(365 days);
     spoke1.getUserDebt(_daiReserveId(spoke1), bob);
 
+    _assertRefreshPremiumNotCalled();
     Utils.repay(spoke1, _daiReserveId(spoke1), bob, borrowAmount, bob);
 
     skip(365 days);
@@ -235,6 +237,7 @@ contract SpokeRepayTest is SpokeBase {
       daiRepayAmount,
       expectedPremiumDelta
     );
+    _assertRefreshPremiumNotCalled();
     vm.prank(bob);
     (returnValues.shares, returnValues.amount) = spoke1.repay(
       _daiReserveId(spoke1),
@@ -342,6 +345,7 @@ contract SpokeRepayTest is SpokeBase {
       daiRepayAmount,
       expectedPremiumDelta
     );
+    _assertRefreshPremiumNotCalled();
     vm.prank(bob);
     (returnValues.shares, returnValues.amount) = spoke1.repay(
       _daiReserveId(spoke1),
@@ -448,6 +452,7 @@ contract SpokeRepayTest is SpokeBase {
     TestReturnValues memory returnValues;
     vm.expectEmit(address(spoke1));
     emit ISpokeBase.Repay(_daiReserveId(spoke1), bob, bob, 0, daiRepayAmount, expectedPremiumDelta);
+    _assertRefreshPremiumNotCalled();
     vm.prank(bob);
     (returnValues.shares, returnValues.amount) = spoke1.repay(
       _daiReserveId(spoke1),
@@ -553,6 +558,7 @@ contract SpokeRepayTest is SpokeBase {
       fullDebt,
       expectedPremiumDelta
     );
+    _assertRefreshPremiumNotCalled();
     vm.prank(bob);
     (returnValues.shares, returnValues.amount) = spoke1.repay(
       _daiReserveId(spoke1),
@@ -672,6 +678,7 @@ contract SpokeRepayTest is SpokeBase {
         expectedPremiumDelta
       );
     }
+    _assertRefreshPremiumNotCalled();
     vm.prank(bob);
     (returnValues.shares, returnValues.amount) = spoke1.repay(
       _daiReserveId(spoke1),
@@ -797,6 +804,7 @@ contract SpokeRepayTest is SpokeBase {
     }
     // Bob repays
     TestReturnValues memory returnValues;
+    _assertRefreshPremiumNotCalled();
     vm.prank(bob);
     (returnValues.shares, returnValues.amount) = spoke1.repay(
       _daiReserveId(spoke1),
@@ -931,6 +939,7 @@ contract SpokeRepayTest is SpokeBase {
         );
       }
     }
+    _assertRefreshPremiumNotCalled();
     vm.prank(bob);
     (returnValues.shares, returnValues.amount) = spoke1.repay(
       _daiReserveId(spoke1),
@@ -1051,6 +1060,7 @@ contract SpokeRepayTest is SpokeBase {
         expectedPremiumDelta
       );
     }
+    _assertRefreshPremiumNotCalled();
     vm.prank(bob);
     (returnValues.shares, returnValues.amount) = spoke1.repay(
       _daiReserveId(spoke1),
@@ -1181,6 +1191,7 @@ contract SpokeRepayTest is SpokeBase {
         expectedPremiumDelta
       );
     }
+    _assertRefreshPremiumNotCalled();
     vm.prank(bob);
     (returnValues.shares, returnValues.amount) = spoke1.repay(
       _daiReserveId(spoke1),
@@ -1308,6 +1319,7 @@ contract SpokeRepayTest is SpokeBase {
     }
 
     TestReturnValues memory returnValues;
+    _assertRefreshPremiumNotCalled();
     vm.prank(bob);
     (returnValues.shares, returnValues.amount) = spoke1.repay(
       _daiReserveId(spoke1),
@@ -1446,6 +1458,7 @@ contract SpokeRepayTest is SpokeBase {
 
     // Time passes
     skip(skipTime);
+    _assertRefreshPremiumNotCalled();
 
     // Repayments
     daiInfo.posBefore = getUserInfo(spoke1, bob, _daiReserveId(spoke1));
@@ -1679,6 +1692,8 @@ contract SpokeRepayTest is SpokeBase {
       baseRestored + premiumRestored,
       expectedPremiumDelta
     );
+
+    _assertRefreshPremiumNotCalled();
     vm.prank(bob);
     (returnValues.shares, returnValues.amount) = spoke1.repay(
       _daiReserveId(spoke1),
@@ -1707,5 +1722,10 @@ contract SpokeRepayTest is SpokeBase {
       'bob balance vs debt change'
     );
     _assertHubLiquidity(hub1, daiAssetId, 'spoke1.repay');
+  }
+
+  /// @dev notify is not called after repay, thus refreshPremium should not be called
+  function _assertRefreshPremiumNotCalled() internal {
+    vm.expectCall(address(hub1), abi.encodeWithSelector(IHubBase.refreshPremium.selector), 0);
   }
 }

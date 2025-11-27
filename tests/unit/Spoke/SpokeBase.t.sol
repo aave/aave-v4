@@ -739,32 +739,22 @@ contract SpokeBase is Base {
     ISpoke spoke,
     address user,
     uint256 expectedRP
-  ) internal {
+  ) internal view {
     ISpoke.UserPosition memory pos = spoke.getUserPosition(reserveId, user);
     uint256 riskPremiumCalculated = pos.premiumShares.percentDivDown(pos.drawnShares); // back calculated from premShares/drawnShares
     uint256 riskPremiumPreview = spoke.getUserAccountData(user).riskPremium;
-    uint256 riskPremiumStored = _getUserRpStored(spoke, reserveId, user);
-    assertEq(riskPremiumStored, expectedRP, 'user risk premium mismatch');
-    assertNotEq(riskPremiumPreview, riskPremiumStored, 'user risk premium expected mismatch');
+    uint256 riskPremiumStored = _getUserRpStored(spoke, user);
+    assertEq(riskPremiumStored, expectedRP, 'user risk premium mismatch vs expected');
+    assertEq(riskPremiumStored, riskPremiumCalculated, 'user risk premium mismatch vs calculated');
+    assertNotEq(
+      riskPremiumStored,
+      riskPremiumPreview,
+      'user risk premium expected mismatch without notify'
+    );
   }
 
-  function _getUserRpStored(
-    ISpoke spoke,
-    uint256 reserveId,
-    address user
-  ) internal returns (uint256) {
-    address mockSpoke = address(new MockSpoke(spoke.ORACLE()));
-    address implementation = _getImplementationAddress(address(spoke));
-    vm.prank(_getProxyAdminAddress(address(spoke)));
-    ITransparentUpgradeableProxy(address(spoke)).upgradeToAndCall(address(mockSpoke), '');
-
-    uint24 riskPremium = MockSpoke(address(spoke)).getRiskPremium(user);
-
-    // revert to original spoke
-    vm.prank(_getProxyAdminAddress(address(spoke)));
-    ITransparentUpgradeableProxy(address(spoke)).upgradeToAndCall(implementation, '');
-
-    return riskPremium;
+  function _getUserRpStored(ISpoke spoke, address user) internal view returns (uint256) {
+    return spoke.getUserRiskPremium(user);
   }
 
   function _boundUserAction(UserAction memory action) internal pure returns (UserAction memory) {

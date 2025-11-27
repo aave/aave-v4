@@ -475,6 +475,14 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
     address user
   ) external view returns (UserPosition memory);
 
+  /// @notice Returns the most up-to-date user account data information.
+  /// @dev Utilizes user's current dynamic configuration of user position.
+  /// @dev Risk premium is calculated from up-to-date user position data, and will likely differ from the stored user risk premium.
+  function getUserAccountData(address user) external view returns (UserAccountData memory);
+
+  /// @notice Returns the stored user risk premium.
+  function getUserRiskPremium(address user) external view returns (uint256);
+
   /// @notice Returns the liquidation bonus for a given health factor, based on the user's current dynamic configuration.
   /// @dev It reverts if the reserve associated with the given reserve identifier is not listed.
   /// @param reserveId The identifier of the reserve.
@@ -485,10 +493,6 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
     address user,
     uint256 healthFactor
   ) external view returns (uint256);
-
-  /// @notice Returns the most up-to-date user account data information.
-  /// @dev Utilizes user's current dynamic configuration of user position.
-  function getUserAccountData(address user) external view returns (UserAccountData memory);
 
   /// @notice Returns whether positionManager is currently activated by governance.
   /// @param positionManager The address of the position manager.

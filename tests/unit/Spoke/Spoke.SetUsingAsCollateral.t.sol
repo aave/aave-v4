@@ -69,14 +69,14 @@ contract SpokeConfigTest is SpokeBase {
 
     // No action taken, because collateral status is already false
     DynamicConfig[] memory bobDynConfig = _getUserDynConfigKeys(spoke1, bob);
-    uint256 bobRp = _getUserRpStored(spoke1, daiReserveId, bob);
+    uint256 bobRp = _getUserRpStored(spoke1, bob);
 
     vm.recordLogs();
     Utils.setUsingAsCollateral(spoke1, daiReserveId, bob, false, bob);
     _assertEventNotEmitted(ISpoke.SetUsingAsCollateral.selector);
 
     assertFalse(_isUsingAsCollateral(spoke1, daiReserveId, bob));
-    assertEq(_getUserRpStored(spoke1, daiReserveId, bob), bobRp);
+    assertEq(_getUserRpStored(spoke1, bob), bobRp);
     assertEq(_getUserDynConfigKeys(spoke1, bob), bobDynConfig);
 
     // Bob can change dai collateral status to true
@@ -94,7 +94,7 @@ contract SpokeConfigTest is SpokeBase {
 
     // No action taken, because collateral status is already true
     bobDynConfig = _getUserDynConfigKeys(spoke1, bob);
-    bobRp = _getUserRpStored(spoke1, daiReserveId, bob);
+    bobRp = _getUserRpStored(spoke1, bob);
 
     vm.recordLogs();
     Utils.setUsingAsCollateral(spoke1, daiReserveId, bob, true, bob);
@@ -105,7 +105,7 @@ contract SpokeConfigTest is SpokeBase {
     );
 
     assertTrue(_isUsingAsCollateral(spoke1, daiReserveId, bob));
-    assertEq(_getUserRpStored(spoke1, daiReserveId, bob), bobRp);
+    assertEq(_getUserRpStored(spoke1, bob), bobRp);
     assertEq(_getUserDynConfigKeys(spoke1, bob), bobDynConfig);
   }
 
