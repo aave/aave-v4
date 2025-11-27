@@ -21,7 +21,7 @@ def rayMulDown(a, b):
 def totalAddedAssets(drawnShares, premiumDebtRay, deficitRay, drawnIndex):
   # return rayMulUp(drawnShares, drawnIndex) + fromRayUp(premiumDebtRay) + fromRayUp(deficitRay)          # this is wrong
   # return rayMulDown(drawnShares, drawnIndex) + fromRayDown(premiumDebtRay) + fromRayDown(deficitRay)    # this is wrong
-  return fromRayDown(drawnShares * drawnIndex + premiumDebtRay + deficitRay)
+  return fromRayUp(drawnShares * drawnIndex + premiumDebtRay + deficitRay)
 
 def check(propertyDescription):
     print(f"\n-- {propertyDescription} --")
