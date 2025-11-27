@@ -333,11 +333,16 @@ library LiquidationLogic {
     LiquidateDebtParams memory params
   ) internal returns (uint256, IHubBase.PremiumDelta memory, bool) {
     uint256 premiumDebtToLiquidateRay = params.debtToLiquidate.toRay().min(params.premiumDebtRay);
-    IHubBase.PremiumDelta memory premiumDelta = debtPosition.getPremiumDeltaData({
+    IHubBase.PremiumDelta memory premiumDelta;
+    (premiumDelta.sharesDelta, premiumDelta.offsetRayDelta) = UserPositionPremium.getPremiumDelta({
+      oldPremiumShares: debtPosition.premiumShares,
+      oldPremiumOffsetRay: debtPosition.premiumOffsetRay,
+      newDrawnShares: debtPosition.drawnShares,
       drawnIndex: params.drawnIndex,
       riskPremium: 0,
-      restoredPremiumRay: premiumDebtToLiquidateRay
+      premiumDebtRayDelta: params.premiumDebtRay - premiumDebtToLiquidateRay
     });
+    premiumDelta.restoredPremiumRay = premiumDebtToLiquidateRay;
 
     uint256 premiumDebtToLiquidate = premiumDebtToLiquidateRay.fromRayUp();
     uint256 drawnDebtToLiquidate = params.debtToLiquidate - premiumDebtToLiquidate;

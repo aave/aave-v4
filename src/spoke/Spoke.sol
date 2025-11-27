@@ -892,11 +892,17 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
         drawnIndex
       );
 
-      IHubBase.PremiumDelta memory premiumDelta = userPosition.getPremiumDeltaData({
-        drawnIndex: drawnIndex,
-        riskPremium: 0,
-        restoredPremiumRay: premiumDebtRay
-      });
+      IHubBase.PremiumDelta memory premiumDelta;
+      (premiumDelta.sharesDelta, premiumDelta.offsetRayDelta) = UserPositionPremium
+        .getPremiumDelta({
+          oldPremiumShares: userPosition.premiumShares,
+          oldPremiumOffsetRay: userPosition.premiumOffsetRay,
+          newDrawnShares: userPosition.drawnShares,
+          drawnIndex: drawnIndex,
+          riskPremium: 0,
+          premiumDebtRayDelta: 0
+        });
+      premiumDelta.restoredPremiumRay = premiumDebtRay;
 
       uint256 deficitShares = hub.reportDeficit(assetId, drawnDebtReported, premiumDelta);
       userPosition.applyPremiumDelta(premiumDelta);
