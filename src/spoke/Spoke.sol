@@ -658,6 +658,12 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
   }
 
   /// @inheritdoc ISpoke
+  function getUserAccountData(address user) external view returns (UserAccountData memory) {
+    // SAFETY: function does not modify state when `refreshConfig` is false.
+    return _castToView(_processUserAccountData)(user, false);
+  }
+
+  /// @inheritdoc ISpoke
   function getLiquidationBonus(
     uint256 reserveId,
     address user,
@@ -673,12 +679,6 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
           _userPositions[user][reserveId].dynamicConfigKey
         ].maxLiquidationBonus
       });
-  }
-
-  /// @inheritdoc ISpoke
-  function getUserAccountData(address user) external view returns (UserAccountData memory) {
-    // SAFETY: function does not modify state when `refreshConfig` is false.
-    return _castToView(_processUserAccountData)(user, false);
   }
 
   /// @inheritdoc ISpoke
