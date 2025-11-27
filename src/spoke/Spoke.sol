@@ -860,10 +860,9 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
       Reserve storage reserve = _reserves[reserveId];
       uint256 assetId = reserve.assetId;
       IHubBase hub = reserve.hub;
-      uint256 drawnIndex = hub.getAssetDrawnIndex(assetId);
 
       IHubBase.PremiumDelta memory premiumDelta = userPosition.getPremiumDeltaData({
-        drawnIndex: drawnIndex,
+        drawnIndex: hub.getAssetDrawnIndex(assetId),
         riskPremium: newRiskPremium,
         restoredPremiumRay: 0
       });
