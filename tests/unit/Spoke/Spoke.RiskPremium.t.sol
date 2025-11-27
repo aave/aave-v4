@@ -209,11 +209,14 @@ contract SpokeRiskPremiumTest is SpokeBase {
     _assertUserRpUnchanged(_daiReserveId(spoke1), spoke1, bob);
     _assertUserRpUnchanged(_usdxReserveId(spoke1), spoke1, bob);
 
+    // derived calc, prior to accrual of debt
+    uint256 expectedRP = _getUserRiskPremium(spoke1, bob);
+
     skip(232 days);
 
     Utils.repay(spoke1, _daiReserveId(spoke1), bob, 25e18, bob);
-    _assertUserRpUnchanged(_daiReserveId(spoke1), spoke1, bob);
-    _assertUserRpUnchanged(_usdxReserveId(spoke1), spoke1, bob);
+    _assertUserRpUnchangedAfterRepay(_daiReserveId(spoke1), spoke1, bob, expectedRP);
+    _assertUserRpUnchangedAfterRepay(_usdxReserveId(spoke1), spoke1, bob, expectedRP);
   }
 
   /// Supply 3 reserves, borrow 2, such that 1 reserve fully covers the debt, then check user risk premium calc.

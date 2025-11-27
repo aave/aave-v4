@@ -319,7 +319,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     (vars.drawnDebtRestored, , vars.premiumDebtRay) = _getUserDebt(userPosition, vars.drawnIndex);
     (
       vars.drawnDebtRestored,
-      vars.premiumDebtRayRestored,
+      premiumDelta.restoredPremiumRay,
       vars.premiumDebtDeltaRay
     ) = _calculateRestoreAmount(vars.drawnDebtRestored, vars.premiumDebtRay, amount);
 

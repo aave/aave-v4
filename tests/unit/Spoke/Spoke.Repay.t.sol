@@ -88,7 +88,7 @@ contract SpokeRepayTest is SpokeBase {
       daiAssetId
     );
 
-    IHubBase.PremiumDelta memory expectedPremiumDelta = _getExpectedPremiumDelta(
+    IHubBase.PremiumDelta memory expectedPremiumDelta = _getExpectedPremiumDeltaForRepay(
       spoke1,
       bob,
       _daiReserveId(spoke1),
@@ -199,7 +199,7 @@ contract SpokeRepayTest is SpokeBase {
       bob
     );
 
-    IHubBase.PremiumDelta memory expectedPremiumDelta = _getExpectedPremiumDelta(
+    IHubBase.PremiumDelta memory expectedPremiumDelta = _getExpectedPremiumDeltaForRepay(
       spoke1,
       bob,
       _daiReserveId(spoke1),
@@ -325,7 +325,7 @@ contract SpokeRepayTest is SpokeBase {
       expectedShares = hub1.previewRestoreByAssets(daiAssetId, baseRestored);
     }
 
-    IHubBase.PremiumDelta memory expectedPremiumDelta = _getExpectedPremiumDelta(
+    IHubBase.PremiumDelta memory expectedPremiumDelta = _getExpectedPremiumDeltaForRepay(
       spoke1,
       bob,
       _daiReserveId(spoke1),
@@ -438,7 +438,7 @@ contract SpokeRepayTest is SpokeBase {
     uint256 daiRepayAmount;
     daiRepayAmount = bound(daiRepayAmount, 1, bobDaiPremiumDebtBefore);
 
-    IHubBase.PremiumDelta memory expectedPremiumDelta = _getExpectedPremiumDelta(
+    IHubBase.PremiumDelta memory expectedPremiumDelta = _getExpectedPremiumDeltaForRepay(
       spoke1,
       bob,
       _daiReserveId(spoke1),
@@ -532,7 +532,7 @@ contract SpokeRepayTest is SpokeBase {
     // Calculate full debt before repayment
     uint256 fullDebt = bobDaiBefore.drawnDebt + bobDaiBefore.premiumDebt;
 
-    IHubBase.PremiumDelta memory expectedPremiumDelta = _getExpectedPremiumDelta(
+    IHubBase.PremiumDelta memory expectedPremiumDelta = _getExpectedPremiumDeltaForRepay(
       spoke1,
       bob,
       _daiReserveId(spoke1),
@@ -654,7 +654,7 @@ contract SpokeRepayTest is SpokeBase {
     }
 
     {
-      IHubBase.PremiumDelta memory expectedPremiumDelta = _getExpectedPremiumDelta(
+      IHubBase.PremiumDelta memory expectedPremiumDelta = _getExpectedPremiumDeltaForRepay(
         spoke1,
         bob,
         _daiReserveId(spoke1),
@@ -779,7 +779,7 @@ contract SpokeRepayTest is SpokeBase {
     );
 
     {
-      IHubBase.PremiumDelta memory expectedPremiumDelta = _getExpectedPremiumDelta(
+      IHubBase.PremiumDelta memory expectedPremiumDelta = _getExpectedPremiumDeltaForRepay(
         spoke1,
         bob,
         _daiReserveId(spoke1),
@@ -910,7 +910,7 @@ contract SpokeRepayTest is SpokeBase {
 
     TestReturnValues memory returnValues;
     {
-      IHubBase.PremiumDelta memory expectedPremiumDelta = _getExpectedPremiumDelta(
+      IHubBase.PremiumDelta memory expectedPremiumDelta = _getExpectedPremiumDeltaForRepay(
         spoke1,
         bob,
         _daiReserveId(spoke1),
@@ -1034,7 +1034,7 @@ contract SpokeRepayTest is SpokeBase {
         daiRepayAmount,
         daiAssetId
       );
-      IHubBase.PremiumDelta memory expectedPremiumDelta = _getExpectedPremiumDelta(
+      IHubBase.PremiumDelta memory expectedPremiumDelta = _getExpectedPremiumDeltaForRepay(
         spoke1,
         bob,
         _daiReserveId(spoke1),
@@ -1164,7 +1164,7 @@ contract SpokeRepayTest is SpokeBase {
     if (daiRepayAmount == 0) {
       vm.expectRevert(IHub.InvalidAmount.selector);
     } else {
-      IHubBase.PremiumDelta memory expectedPremiumDelta = _getExpectedPremiumDelta(
+      IHubBase.PremiumDelta memory expectedPremiumDelta = _getExpectedPremiumDeltaForRepay(
         spoke1,
         bob,
         _daiReserveId(spoke1),
@@ -1285,7 +1285,7 @@ contract SpokeRepayTest is SpokeBase {
       );
       deal(address(tokenList.dai), bob, daiRepayAmount);
 
-      IHubBase.PremiumDelta memory expectedPremiumDelta = _getExpectedPremiumDelta(
+      IHubBase.PremiumDelta memory expectedPremiumDelta = _getExpectedPremiumDeltaForRepay(
         spoke1,
         bob,
         _daiReserveId(spoke1),
@@ -1662,7 +1662,7 @@ contract SpokeRepayTest is SpokeBase {
     bobDaiBalanceBefore = tokenList.dai.balanceOf(bob);
     uint256 bobTotalDebtBefore = spoke1.getUserTotalDebt(_daiReserveId(spoke1), bob);
 
-    IHubBase.PremiumDelta memory expectedPremiumDelta = _getExpectedPremiumDelta(
+    IHubBase.PremiumDelta memory expectedPremiumDelta = _getExpectedPremiumDeltaForRepay(
       spoke1,
       bob,
       _daiReserveId(spoke1),
