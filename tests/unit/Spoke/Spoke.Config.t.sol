@@ -72,6 +72,7 @@ contract SpokeConfigTest is SpokeBase {
     ISpoke.ReserveConfig memory config = spoke1.getReserveConfig(daiReserveId);
 
     ISpoke.ReserveConfig memory newReserveConfig = ISpoke.ReserveConfig({
+      liquidationGracePeriodUntil: 0,
       paused: !config.paused,
       frozen: !config.frozen,
       borrowable: !config.borrowable,
@@ -126,6 +127,7 @@ contract SpokeConfigTest is SpokeBase {
   function test_addReserve() public {
     uint256 reserveId = spoke1.getReserveCount();
     ISpoke.ReserveConfig memory newReserveConfig = ISpoke.ReserveConfig({
+      liquidationGracePeriodUntil: 0,
       paused: true,
       frozen: true,
       borrowable: true,
@@ -167,6 +169,7 @@ contract SpokeConfigTest is SpokeBase {
     uint256 assetId = vm.randomUint(hub1.getAssetCount(), Constants.MAX_ALLOWED_ASSET_ID); // non-existing asset id
 
     ISpoke.ReserveConfig memory newReserveConfig = ISpoke.ReserveConfig({
+      liquidationGracePeriodUntil: 0,
       paused: true,
       frozen: true,
       borrowable: true,
@@ -205,6 +208,7 @@ contract SpokeConfigTest is SpokeBase {
     (ISpoke newSpoke, ) = _deploySpokeWithOracle(ADMIN, address(accessManager), 'New Spoke (USD)');
 
     ISpoke.ReserveConfig memory newReserveConfig = ISpoke.ReserveConfig({
+      liquidationGracePeriodUntil: 0,
       paused: true,
       frozen: true,
       borrowable: true,
@@ -229,6 +233,7 @@ contract SpokeConfigTest is SpokeBase {
 
   function test_addReserve_revertsWith_ReserveExists() public {
     ISpoke.ReserveConfig memory newReserveConfig = ISpoke.ReserveConfig({
+      liquidationGracePeriodUntil: 0,
       paused: true,
       frozen: true,
       borrowable: true,
@@ -264,6 +269,7 @@ contract SpokeConfigTest is SpokeBase {
 
   function test_addReserve_revertsWith_InvalidAssetId() public {
     ISpoke.ReserveConfig memory newReserveConfig = ISpoke.ReserveConfig({
+      liquidationGracePeriodUntil: 0,
       paused: true,
       frozen: true,
       borrowable: true,

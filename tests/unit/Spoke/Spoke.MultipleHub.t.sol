@@ -29,6 +29,7 @@ contract SpokeMultipleHubTest is SpokeBase {
     vm.startPrank(ADMIN);
     // Relist hub 2's dai on spoke1
     ISpoke.ReserveConfig memory daiHub2Config = ISpoke.ReserveConfig({
+      liquidationGracePeriodUntil: 0,
       paused: false,
       frozen: false,
       borrowable: true,
@@ -49,6 +50,7 @@ contract SpokeMultipleHubTest is SpokeBase {
 
     // Relist hub 3's dai on spoke 1
     ISpoke.ReserveConfig memory daiHub3Config = ISpoke.ReserveConfig({
+      liquidationGracePeriodUntil: 0,
       paused: false,
       frozen: false,
       borrowable: true,

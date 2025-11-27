@@ -117,6 +117,18 @@ contract SpokeConfigurator is Ownable2Step, ISpokeConfigurator {
   }
 
   /// @inheritdoc ISpokeConfigurator
+  function updateLiquidationGracePeriod(
+    address spoke,
+    uint256 reserveId,
+    uint40 liquidationGracePeriodUntil
+  ) external onlyOwner {
+    ISpoke targetSpoke = ISpoke(spoke);
+    ISpoke.ReserveConfig memory reserveConfig = targetSpoke.getReserveConfig(reserveId);
+    reserveConfig.liquidationGracePeriodUntil = liquidationGracePeriodUntil;
+    targetSpoke.updateReserveConfig(reserveId, reserveConfig);
+  }
+
+  /// @inheritdoc ISpokeConfigurator
   function updateCollateralRisk(
     address spoke,
     uint256 reserveId,

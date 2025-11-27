@@ -11,7 +11,10 @@ import {console2 as console} from 'forge-std/console2.sol';
 
 // dependencies
 import {AggregatorV3Interface} from 'src/dependencies/chainlink/AggregatorV3Interface.sol';
-import {TransparentUpgradeableProxy, ITransparentUpgradeableProxy} from 'src/dependencies/openzeppelin/TransparentUpgradeableProxy.sol';
+import {
+  TransparentUpgradeableProxy,
+  ITransparentUpgradeableProxy
+} from 'src/dependencies/openzeppelin/TransparentUpgradeableProxy.sol';
 import {IERC20Metadata} from 'src/dependencies/openzeppelin/IERC20Metadata.sol';
 import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
 import {IERC20Errors} from 'src/dependencies/openzeppelin/IERC20Errors.sol';
@@ -45,7 +48,11 @@ import {AccessManagerEnumerable} from 'src/access/AccessManagerEnumerable.sol';
 import {HubConfigurator, IHubConfigurator} from 'src/hub/HubConfigurator.sol';
 import {Hub, IHub, IHubBase} from 'src/hub/Hub.sol';
 import {SharesMath} from 'src/hub/libraries/SharesMath.sol';
-import {AssetInterestRateStrategy, IAssetInterestRateStrategy, IBasicInterestRateStrategy} from 'src/hub/AssetInterestRateStrategy.sol';
+import {
+  AssetInterestRateStrategy,
+  IAssetInterestRateStrategy,
+  IBasicInterestRateStrategy
+} from 'src/hub/AssetInterestRateStrategy.sol';
 
 // spoke
 import {Spoke, ISpoke, ISpokeBase} from 'src/spoke/Spoke.sol';
@@ -583,6 +590,7 @@ abstract contract Base is Test {
 
     // Spoke 1 reserve configs
     spokeInfo[spoke1].weth.reserveConfig = ISpoke.ReserveConfig({
+      liquidationGracePeriodUntil: 0,
       paused: false,
       frozen: false,
       borrowable: true,
@@ -594,6 +602,7 @@ abstract contract Base is Test {
       liquidationFee: 10_00
     });
     spokeInfo[spoke1].wbtc.reserveConfig = ISpoke.ReserveConfig({
+      liquidationGracePeriodUntil: 0,
       paused: false,
       frozen: false,
       borrowable: true,
@@ -605,6 +614,7 @@ abstract contract Base is Test {
       liquidationFee: 15_00
     });
     spokeInfo[spoke1].dai.reserveConfig = ISpoke.ReserveConfig({
+      liquidationGracePeriodUntil: 0,
       paused: false,
       frozen: false,
       borrowable: true,
@@ -616,6 +626,7 @@ abstract contract Base is Test {
       liquidationFee: 10_00
     });
     spokeInfo[spoke1].usdx.reserveConfig = ISpoke.ReserveConfig({
+      liquidationGracePeriodUntil: 0,
       paused: false,
       frozen: false,
       borrowable: true,
@@ -627,6 +638,7 @@ abstract contract Base is Test {
       liquidationFee: 12_00
     });
     spokeInfo[spoke1].usdy.reserveConfig = ISpoke.ReserveConfig({
+      liquidationGracePeriodUntil: 0,
       paused: false,
       frozen: false,
       borrowable: true,
@@ -682,6 +694,7 @@ abstract contract Base is Test {
 
     // Spoke 2 reserve configs
     spokeInfo[spoke2].wbtc.reserveConfig = ISpoke.ReserveConfig({
+      liquidationGracePeriodUntil: 0,
       paused: false,
       frozen: false,
       borrowable: true,
@@ -693,6 +706,7 @@ abstract contract Base is Test {
       liquidationFee: 10_00
     });
     spokeInfo[spoke2].weth.reserveConfig = ISpoke.ReserveConfig({
+      liquidationGracePeriodUntil: 0,
       paused: false,
       frozen: false,
       borrowable: true,
@@ -704,6 +718,7 @@ abstract contract Base is Test {
       liquidationFee: 15_00
     });
     spokeInfo[spoke2].dai.reserveConfig = ISpoke.ReserveConfig({
+      liquidationGracePeriodUntil: 0,
       paused: false,
       frozen: false,
       borrowable: true,
@@ -715,6 +730,7 @@ abstract contract Base is Test {
       liquidationFee: 10_00
     });
     spokeInfo[spoke2].usdx.reserveConfig = ISpoke.ReserveConfig({
+      liquidationGracePeriodUntil: 0,
       paused: false,
       frozen: false,
       borrowable: true,
@@ -726,6 +742,7 @@ abstract contract Base is Test {
       liquidationFee: 12_00
     });
     spokeInfo[spoke2].usdy.reserveConfig = ISpoke.ReserveConfig({
+      liquidationGracePeriodUntil: 0,
       paused: false,
       frozen: false,
       borrowable: true,
@@ -737,6 +754,7 @@ abstract contract Base is Test {
       liquidationFee: 15_00
     });
     spokeInfo[spoke2].usdz.reserveConfig = ISpoke.ReserveConfig({
+      liquidationGracePeriodUntil: 0,
       paused: false,
       frozen: false,
       borrowable: true,
@@ -800,6 +818,7 @@ abstract contract Base is Test {
 
     // Spoke 3 reserve configs
     spokeInfo[spoke3].dai.reserveConfig = ISpoke.ReserveConfig({
+      liquidationGracePeriodUntil: 0,
       paused: false,
       frozen: false,
       borrowable: true,
@@ -811,6 +830,7 @@ abstract contract Base is Test {
       liquidationFee: 11_00
     });
     spokeInfo[spoke3].usdx.reserveConfig = ISpoke.ReserveConfig({
+      liquidationGracePeriodUntil: 0,
       paused: false,
       frozen: false,
       borrowable: true,
@@ -822,6 +842,7 @@ abstract contract Base is Test {
       liquidationFee: 15_00
     });
     spokeInfo[spoke3].weth.reserveConfig = ISpoke.ReserveConfig({
+      liquidationGracePeriodUntil: 0,
       paused: false,
       frozen: false,
       borrowable: true,
@@ -833,6 +854,7 @@ abstract contract Base is Test {
       liquidationFee: 10_00
     });
     spokeInfo[spoke3].wbtc.reserveConfig = ISpoke.ReserveConfig({
+      liquidationGracePeriodUntil: 0,
       paused: false,
       frozen: false,
       borrowable: true,

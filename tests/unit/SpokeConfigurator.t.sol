@@ -183,6 +183,7 @@ contract SpokeConfiguratorTest is SpokeBase {
       assetId: 0,
       priceSource: address(0),
       config: ISpoke.ReserveConfig({
+        liquidationGracePeriodUntil: 0,
         paused: false,
         frozen: false,
         borrowable: true,
@@ -216,6 +217,7 @@ contract SpokeConfiguratorTest is SpokeBase {
       assetId: usdzAssetId,
       priceSource: newPriceSource,
       config: ISpoke.ReserveConfig({
+        liquidationGracePeriodUntil: 0,
         paused: false,
         frozen: false,
         borrowable: true,
@@ -237,6 +239,7 @@ contract SpokeConfiguratorTest is SpokeBase {
 
     address newPriceSource = _deployMockPriceFeed(spoke, 1000e8);
     ISpoke.ReserveConfig memory config = ISpoke.ReserveConfig({
+      liquidationGracePeriodUntil: 0,
       paused: false,
       frozen: false,
       borrowable: true,

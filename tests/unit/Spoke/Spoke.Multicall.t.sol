@@ -101,6 +101,7 @@ contract SpokeMulticall is SpokeBase {
     uint256 usdzReserveId = reserveCountBefore;
     uint256 usdaReserveId = usdzReserveId + 1;
     ISpoke.ReserveConfig memory usdzConfig = ISpoke.ReserveConfig({
+      liquidationGracePeriodUntil: 0,
       paused: false,
       frozen: false,
       borrowable: true,
@@ -112,6 +113,7 @@ contract SpokeMulticall is SpokeBase {
       liquidationFee: 0
     });
     ISpoke.ReserveConfig memory usdaConfig = ISpoke.ReserveConfig({
+      liquidationGracePeriodUntil: 0,
       paused: false,
       frozen: false,
       borrowable: true,

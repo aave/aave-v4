@@ -50,6 +50,7 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
       isolationVars.assetAId,
       _deployMockPriceFeed(newSpoke, 2000e8),
       ISpoke.ReserveConfig({
+        liquidationGracePeriodUntil: 0,
         paused: false,
         frozen: false,
         borrowable: false,
@@ -61,7 +62,13 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
       address(newHub),
       isolationVars.assetBId,
       _deployMockPriceFeed(newSpoke, 50_000e8),
-      ISpoke.ReserveConfig({paused: false, frozen: false, borrowable: true, collateralRisk: 15_00}),
+      ISpoke.ReserveConfig({
+        liquidationGracePeriodUntil: 0,
+        paused: false,
+        frozen: false,
+        borrowable: true,
+        collateralRisk: 15_00
+      }),
       dynReserveConfig
     );
 
@@ -106,7 +113,13 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
       address(hub1),
       isolationVars.assetBIdMainHub,
       _deployMockPriceFeed(newSpoke, 50_000e8),
-      ISpoke.ReserveConfig({paused: false, frozen: false, borrowable: true, collateralRisk: 15_00}),
+      ISpoke.ReserveConfig({
+        liquidationGracePeriodUntil: 0,
+        paused: false,
+        frozen: false,
+        borrowable: true,
+        collateralRisk: 15_00
+      }),
       dynReserveConfig
     );
 
@@ -182,7 +195,13 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
       address(hub1),
       isolationVars.assetBIdMainHub,
       _deployMockPriceFeed(newSpoke, 50_000e8),
-      ISpoke.ReserveConfig({paused: false, frozen: false, borrowable: true, collateralRisk: 15_00}),
+      ISpoke.ReserveConfig({
+        liquidationGracePeriodUntil: 0,
+        paused: false,
+        frozen: false,
+        borrowable: true,
+        collateralRisk: 15_00
+      }),
       dynReserveConfig
     );
 

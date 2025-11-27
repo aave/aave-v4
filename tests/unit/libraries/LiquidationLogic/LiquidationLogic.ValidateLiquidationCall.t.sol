@@ -24,7 +24,9 @@ contract LiquidationLogicValidateLiquidationCallTest is LiquidationLogicBaseTest
       collateralReserveId: collateralReserveId,
       collateralFactor: 75_00,
       collateralReserveBalance: 120e6,
-      debtReserveBalance: 100e18
+      debtReserveBalance: 100e18,
+      collateralReserveLiquidationGracePeriodUntil: 0,
+      debtReserveLiquidationGracePeriodUntil: 0
     });
     liquidationLogicWrapper.setBorrower(params.user);
     liquidationLogicWrapper.setLiquidator(params.liquidator);

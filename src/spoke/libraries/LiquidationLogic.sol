@@ -56,6 +56,8 @@ library LiquidationLogic {
     uint256 collateralReserveBalance;
     uint256 debtReserveBalance;
     bool receiveShares;
+    uint256 collateralReserveLiquidationGracePeriodUntil;
+    uint256 debtReserveLiquidationGracePeriodUntil;
   }
 
   struct CalculateDebtToTargetHealthFactorParams {
@@ -165,7 +167,9 @@ library LiquidationLogic {
         collateralFactor: collateralDynConfig.collateralFactor,
         collateralReserveBalance: collateralReserveBalance,
         debtReserveBalance: params.drawnDebt + params.premiumDebt,
-        receiveShares: params.receiveShares
+        receiveShares: params.receiveShares,
+        collateralReserveLiquidationGracePeriodUntil: collateralReserve.liquidationGracePeriodUntil,
+        debtReserveLiquidationGracePeriodUntil: debtReserve.liquidationGracePeriodUntil
       })
     );
 
@@ -386,12 +390,17 @@ library LiquidationLogic {
   function _validateLiquidationCall(
     bool isBorrowerUsingAsCollateral,
     ValidateLiquidationCallParams memory params
-  ) internal pure {
+  ) internal view {
     require(params.user != params.liquidator, ISpoke.SelfLiquidation());
     require(params.debtToCover > 0, ISpoke.InvalidDebtToCover());
     require(!params.collateralReservePaused && !params.debtReservePaused, ISpoke.ReservePaused());
     require(params.collateralReserveBalance > 0, ISpoke.ReserveNotSupplied());
     require(params.debtReserveBalance > 0, ISpoke.ReserveNotBorrowed());
+    require(
+      params.collateralReserveLiquidationGracePeriodUntil <= block.timestamp &&
+        params.debtReserveLiquidationGracePeriodUntil <= block.timestamp,
+      ISpoke.ReserveInLiquidationGracePeriod()
+    );
     require(
       params.healthFactor < HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
       ISpoke.HealthFactorNotBelowThreshold()

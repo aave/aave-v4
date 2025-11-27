@@ -28,6 +28,7 @@ contract SpokeGettersTest is SpokeBase {
     });
 
     spokeInfo[spoke].weth.reserveConfig = ISpoke.ReserveConfig({
+      liquidationGracePeriodUntil: 0,
       paused: false,
       frozen: false,
       borrowable: true,
@@ -39,6 +40,7 @@ contract SpokeGettersTest is SpokeBase {
       liquidationFee: 10_00
     });
     spokeInfo[spoke].wbtc.reserveConfig = ISpoke.ReserveConfig({
+      liquidationGracePeriodUntil: 0,
       paused: false,
       frozen: false,
       borrowable: true,
@@ -50,6 +52,7 @@ contract SpokeGettersTest is SpokeBase {
       liquidationFee: 15_00
     });
     spokeInfo[spoke].dai.reserveConfig = ISpoke.ReserveConfig({
+      liquidationGracePeriodUntil: 0,
       paused: false,
       frozen: false,
       borrowable: true,
@@ -61,6 +64,7 @@ contract SpokeGettersTest is SpokeBase {
       liquidationFee: 10_00
     });
     spokeInfo[spoke].usdx.reserveConfig = ISpoke.ReserveConfig({
+      liquidationGracePeriodUntil: 0,
       paused: false,
       frozen: false,
       borrowable: true,
@@ -72,6 +76,7 @@ contract SpokeGettersTest is SpokeBase {
       liquidationFee: 12_00
     });
     spokeInfo[spoke].usdy.reserveConfig = ISpoke.ReserveConfig({
+      liquidationGracePeriodUntil: 0,
       paused: false,
       frozen: false,
       borrowable: true,

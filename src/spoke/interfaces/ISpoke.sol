@@ -14,6 +14,7 @@ import {ISpokeBase} from 'src/spoke/interfaces/ISpokeBase.sol';
 interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
   /// @notice Reserve level data.
   /// @dev underlying The address of the underlying asset.
+  /// @dev liquidationGracePeriodUntil The timestamp until which the liquidation grace period is active.
   /// @dev hub The address of the associated Hub.
   /// @dev assetId The identifier of the asset in the Hub.
   /// @dev decimals The number of decimals of the underlying asset.
@@ -24,6 +25,7 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
   /// @dev collateralRisk The risk associated with a collateral asset, expressed in BPS.
   struct Reserve {
     address underlying;
+    uint40 liquidationGracePeriodUntil;
     //
     IHubBase hub;
     uint16 assetId;
@@ -37,6 +39,7 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
 
   /// @notice Reserve configuration. Subset of the `Reserve` struct.
   struct ReserveConfig {
+    uint40 liquidationGracePeriodUntil;
     bool paused;
     bool frozen;
     bool borrowable;
@@ -290,6 +293,9 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
 
   /// @notice Thrown when a self-liquidation is attempted.
   error SelfLiquidation();
+
+  /// @notice Thrown when a reserve is in liquidation grace period during an attempted liquidation.
+  error ReserveInLiquidationGracePeriod();
 
   /// @notice Thrown during liquidation when a user's health factor is not below the liquidation threshold.
   error HealthFactorNotBelowThreshold();
