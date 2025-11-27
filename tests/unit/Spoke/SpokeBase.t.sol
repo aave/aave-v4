@@ -748,6 +748,7 @@ contract SpokeBase is Base {
     );
   }
 
+  /// @dev get stored user risk premium from storage
   function _getUserRpStored(ISpoke spoke, address user) internal view returns (uint256) {
     return spoke.getUserRiskPremium(user);
   }

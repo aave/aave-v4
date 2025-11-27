@@ -300,6 +300,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     uint256 drawnIndex;
     uint256 premiumDebtRay;
     uint256 premiumDebtRayRestored;
+    uint256 previewRestoredShares;
   }
 
   /// @inheritdoc ISpokeBase
@@ -324,12 +325,12 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
       vars.premiumDebtRayDelta
     ) = _calculateRestoreAmount(vars.drawnDebtRestored, vars.premiumDebtRay, amount);
 
-    uint256 restoredShares = reserve.hub.previewRestoreByAssets(
+    vars.previewRestoredShares = reserve.hub.previewRestoreByAssets(
       reserve.assetId,
       vars.drawnDebtRestored
     );
 
-    uint256 newDrawnShares = userPosition.drawnShares.uncheckedSub(restoredShares);
+    uint256 newDrawnShares = userPosition.drawnShares.uncheckedSub(vars.previewRestoredShares);
     (premiumDelta.sharesDelta, premiumDelta.offsetRayDelta) = UserPositionPremium.getPremiumDelta({
       oldPremiumShares: userPosition.premiumShares,
       oldPremiumOffsetRay: userPosition.premiumOffsetRay,
@@ -341,7 +342,12 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     uint256 totalDebtRestored = vars.drawnDebtRestored +
       premiumDelta.restoredPremiumRay.fromRayUp();
     reserve.underlying.safeTransferFrom(msg.sender, address(reserve.hub), totalDebtRestored);
-    reserve.hub.restore(reserve.assetId, vars.drawnDebtRestored, premiumDelta);
+    uint256 restoredShares = reserve.hub.restore(
+      reserve.assetId,
+      vars.drawnDebtRestored,
+      premiumDelta
+    );
+    require(restoredShares == vars.previewRestoredShares);
 
     userPosition.applyPremiumDelta(premiumDelta);
     userPosition.drawnShares = newDrawnShares.toUint120();
