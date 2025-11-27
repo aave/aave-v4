@@ -22,19 +22,18 @@ library ReserveFlagsMap {
   /// @param initFrozen The initial `frozen` flag status.
   /// @param initBorrowable The initial `borrowable` flag status.
   /// @param initReceiveSharesEnabled The initial `receiveSharesEnabled` flag status.
-  /// @return The initialized ReserveFlags.
+  /// @return flags The initialized ReserveFlags.
   function create(
     bool initPaused,
     bool initFrozen,
     bool initBorrowable,
     bool initReceiveSharesEnabled
-  ) internal pure returns (ReserveFlags) {
-    uint8 flags = 0;
+  ) internal pure returns (ReserveFlags flags) {
     flags = _setStatus(flags, PAUSED_MASK, initPaused);
     flags = _setStatus(flags, FROZEN_MASK, initFrozen);
     flags = _setStatus(flags, BORROWABLE_MASK, initBorrowable);
     flags = _setStatus(flags, RECEIVE_SHARES_ENABLED_MASK, initReceiveSharesEnabled);
-    return ReserveFlags.wrap(flags);
+    return flags;
   }
 
   /// @notice Sets the new status for the `paused` flag.
@@ -42,7 +41,7 @@ library ReserveFlagsMap {
   /// @param status The new status for the `paused` flag.
   /// @return The updated ReserveFlags.
   function setPaused(ReserveFlags flags, bool status) internal pure returns (ReserveFlags) {
-    return ReserveFlags.wrap(_setStatus(ReserveFlags.unwrap(flags), PAUSED_MASK, status));
+    return _setStatus(flags, PAUSED_MASK, status);
   }
 
   /// @notice Sets the new status for the `frozen` flag.
@@ -50,7 +49,7 @@ library ReserveFlagsMap {
   /// @param status The new status for the `frozen` flag.
   /// @return The updated ReserveFlags.
   function setFrozen(ReserveFlags flags, bool status) internal pure returns (ReserveFlags) {
-    return ReserveFlags.wrap(_setStatus(ReserveFlags.unwrap(flags), FROZEN_MASK, status));
+    return _setStatus(flags, FROZEN_MASK, status);
   }
 
   /// @notice Sets the new status for the `borrowable` flag.
@@ -58,7 +57,7 @@ library ReserveFlagsMap {
   /// @param status The new status for the `borrowable` flag.
   /// @return The updated ReserveFlags.
   function setBorrowable(ReserveFlags flags, bool status) internal pure returns (ReserveFlags) {
-    return ReserveFlags.wrap(_setStatus(ReserveFlags.unwrap(flags), BORROWABLE_MASK, status));
+    return _setStatus(flags, BORROWABLE_MASK, status);
   }
 
   /// @notice Sets the new status for the `receiveSharesEnabled` flag.
@@ -69,46 +68,51 @@ library ReserveFlagsMap {
     ReserveFlags flags,
     bool status
   ) internal pure returns (ReserveFlags) {
-    return
-      ReserveFlags.wrap(
-        _setStatus(ReserveFlags.unwrap(flags), RECEIVE_SHARES_ENABLED_MASK, status)
-      );
+    return _setStatus(flags, RECEIVE_SHARES_ENABLED_MASK, status);
   }
 
   /// @notice Returns the `paused` flag status.
   /// @param flags The current ReserveFlags.
   /// @return True if the flag is set.
   function paused(ReserveFlags flags) internal pure returns (bool) {
-    return (ReserveFlags.unwrap(flags) & PAUSED_MASK) != 0;
+    return _getStatus(flags, PAUSED_MASK);
   }
 
   /// @notice Returns the `frozen` flag status.
   /// @param flags The current ReserveFlags.
   /// @return True if the flag is set.
   function frozen(ReserveFlags flags) internal pure returns (bool) {
-    return (ReserveFlags.unwrap(flags) & FROZEN_MASK) != 0;
+    return _getStatus(flags, FROZEN_MASK);
   }
 
   /// @notice Returns the `borrowable` flag status.
   /// @param flags The current ReserveFlags.
   /// @return True if the flag is set.
   function borrowable(ReserveFlags flags) internal pure returns (bool) {
-    return (ReserveFlags.unwrap(flags) & BORROWABLE_MASK) != 0;
+    return _getStatus(flags, BORROWABLE_MASK);
   }
 
   /// @notice Returns the `receiveSharesEnabled` flag status.
   /// @param flags The current ReserveFlags.
   /// @return True if the flag is set.
   function receiveSharesEnabled(ReserveFlags flags) internal pure returns (bool) {
-    return (ReserveFlags.unwrap(flags) & RECEIVE_SHARES_ENABLED_MASK) != 0;
+    return _getStatus(flags, RECEIVE_SHARES_ENABLED_MASK);
   }
 
   /// @notice Sets the new status for the given flag.
-  function _setStatus(uint8 flags, uint8 mask, bool status) internal pure returns (uint8) {
-    return _getStatus(flags, mask) != status ? flags ^ mask : flags;
+  function _setStatus(
+    ReserveFlags flags,
+    uint8 mask,
+    bool status
+  ) private pure returns (ReserveFlags) {
+    return _getStatus(flags, mask) != status ? _xor(flags, mask) : flags;
   }
 
-  function _getStatus(uint8 flags, uint8 mask) internal pure returns (bool) {
-    return (flags & mask) != 0;
+  function _getStatus(ReserveFlags flags, uint8 mask) private pure returns (bool) {
+    return (ReserveFlags.unwrap(flags) & mask) != 0;
+  }
+
+  function _xor(ReserveFlags flags, uint8 mask) private pure returns (ReserveFlags) {
+    return ReserveFlags.wrap(ReserveFlags.unwrap(flags) ^ mask);
   }
 }
