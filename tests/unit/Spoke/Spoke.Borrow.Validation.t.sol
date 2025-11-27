@@ -6,6 +6,7 @@ import 'tests/unit/Spoke/SpokeBase.t.sol';
 
 contract SpokeBorrowValidationTest is SpokeBase {
   using SafeCast for uint256;
+  using ReserveFlagsMap for ReserveFlags;
 
   function test_borrow_revertsWith_ReserveNotBorrowable() public {
     uint256 daiReserveId = _daiReserveId(spoke1);

@@ -33,6 +33,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
   using PercentageMath for *;
   using KeyValueList for KeyValueList.List;
   using PositionStatusMap for *;
+  using ReserveFlagsMap for ReserveFlags;
   using MathUtils for *;
   using LiquidationLogic for *;
 
@@ -147,13 +148,13 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
       assetId: assetId.toUint16(),
       decimals: decimals,
       dynamicConfigKey: dynamicConfigKey,
-      flags: ReserveFlagsMap.initFlags(
+      collateralRisk: config.collateralRisk,
+      flags: ReserveFlagsMap.create(
         config.paused,
         config.frozen,
         config.borrowable,
         config.receiveSharesEnabled
-      ),
-      collateralRisk: config.collateralRisk
+      )
     });
     _dynamicConfig[reserveId][dynamicConfigKey] = dynamicConfig;
     _reserveExists[hub][assetId] = true;
@@ -172,11 +173,10 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
   ) external restricted {
     Reserve storage reserve = _getReserve(reserveId);
     _validateReserveConfig(config);
-    reserve.flags = ReserveFlagsMap.setPaused(reserve.flags, config.paused);
-    reserve.flags = ReserveFlagsMap.setFrozen(reserve.flags, config.frozen);
-    reserve.flags = ReserveFlagsMap.setBorrowable(reserve.flags, config.borrowable);
-    reserve.flags = ReserveFlagsMap.setReceiveSharesEnabled(
-      reserve.flags,
+    reserve.flags = ReserveFlagsMap.create(
+      config.paused,
+      config.frozen,
+      config.borrowable,
       config.receiveSharesEnabled
     );
     reserve.collateralRisk = config.collateralRisk;

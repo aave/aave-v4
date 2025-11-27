@@ -5,6 +5,8 @@ pragma solidity ^0.8.0;
 import {ReserveFlags, ReserveFlagsMap} from 'src/spoke/libraries/ReserveFlagsMap.sol';
 
 contract ReserveFlagsMapWrapper {
+  using ReserveFlagsMap for ReserveFlags;
+
   function PAUSED_MASK() external pure returns (uint8) {
     return ReserveFlagsMap.PAUSED_MASK;
   }
@@ -21,14 +23,13 @@ contract ReserveFlagsMapWrapper {
     return ReserveFlagsMap.RECEIVE_SHARES_ENABLED_MASK;
   }
 
-  function initFlags(
+  function create(
     bool initPaused,
     bool initFrozen,
     bool initBorrowable,
     bool initReceiveSharesEnabled
   ) external pure returns (ReserveFlags) {
-    return
-      ReserveFlagsMap.initFlags(initPaused, initFrozen, initBorrowable, initReceiveSharesEnabled);
+    return ReserveFlagsMap.create(initPaused, initFrozen, initBorrowable, initReceiveSharesEnabled);
   }
 
   function setPaused(ReserveFlags flags, bool status) external pure returns (ReserveFlags) {

@@ -19,8 +19,8 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
   /// @dev assetId The identifier of the asset in the Hub.
   /// @dev decimals The number of decimals of the underlying asset.
   /// @dev dynamicConfigKey The key of the last reserve dynamic config.
-  /// @dev flags The packed boolean flags of the reserve (a wrapped uint8).
   /// @dev collateralRisk The risk associated with a collateral asset, expressed in BPS.
+  /// @dev flags The packed boolean flags of the reserve (a wrapped uint8).
   struct Reserve {
     address underlying;
     //
@@ -28,8 +28,8 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
     uint16 assetId;
     uint8 decimals;
     uint24 dynamicConfigKey;
-    ReserveFlags flags;
     uint24 collateralRisk;
+    ReserveFlags flags;
   }
 
   /// @notice Reserve configuration. Subset of the `Reserve` struct.

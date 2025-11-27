@@ -6,6 +6,7 @@ import 'tests/unit/Spoke/SpokeBase.t.sol';
 
 contract SpokeConfigTest is SpokeBase {
   using SafeCast for uint256;
+  using ReserveFlagsMap for ReserveFlags;
 
   function test_setUsingAsCollateral_revertsWith_ReserveNotListed() public {
     uint256 reserveCount = spoke1.getReserveCount();

@@ -8,6 +8,7 @@ import {MathUtils} from 'src/libraries/math/MathUtils.sol';
 import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
 import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
 import {PositionStatusMap} from 'src/spoke/libraries/PositionStatusMap.sol';
+import {ReserveFlags, ReserveFlagsMap} from 'src/spoke/libraries/ReserveFlagsMap.sol';
 import {IHubBase} from 'src/hub/interfaces/IHubBase.sol';
 import {IAaveOracle} from 'src/spoke/interfaces/IAaveOracle.sol';
 import {ISpoke, ISpokeBase} from 'src/spoke/interfaces/ISpoke.sol';
@@ -19,6 +20,7 @@ library LiquidationLogic {
   using SafeCast for *;
   using SafeTransferLib for address;
   using PositionStatusMap for ISpoke.PositionStatus;
+  using ReserveFlagsMap for ReserveFlags;
   using PercentageMath for uint256;
   using WadRayMath for uint256;
   using MathUtils for *;
@@ -47,16 +49,14 @@ library LiquidationLogic {
     uint256 debtToCover;
     address collateralReserveHub;
     address debtReserveHub;
-    bool collateralReservePaused;
-    bool debtReservePaused;
-    bool collateralReserveFrozen;
+    ReserveFlags collateralReserveFlags;
+    ReserveFlags debtReserveFlags;
     uint256 healthFactor;
     uint256 collateralReserveId;
     uint256 collateralFactor;
     uint256 collateralReserveBalance;
     uint256 debtReserveBalance;
     bool receiveShares;
-    bool receiveSharesEnabled;
   }
 
   struct CalculateDebtToTargetHealthFactorParams {
@@ -158,16 +158,14 @@ library LiquidationLogic {
         debtToCover: params.debtToCover,
         collateralReserveHub: address(collateralReserve.hub),
         debtReserveHub: address(debtReserve.hub),
-        collateralReservePaused: collateralReserve.flags.paused(),
-        collateralReserveFrozen: collateralReserve.flags.frozen(),
-        debtReservePaused: debtReserve.flags.paused(),
+        collateralReserveFlags: collateralReserve.flags,
+        debtReserveFlags: debtReserve.flags,
         healthFactor: params.healthFactor,
         collateralReserveId: params.collateralReserveId,
         collateralFactor: collateralDynConfig.collateralFactor,
         collateralReserveBalance: collateralReserveBalance,
         debtReserveBalance: params.drawnDebt + params.premiumDebt,
-        receiveShares: params.receiveShares,
-        receiveSharesEnabled: collateralReserve.flags.receiveSharesEnabled()
+        receiveShares: params.receiveShares
       })
     );
 
@@ -391,7 +389,10 @@ library LiquidationLogic {
   ) internal pure {
     require(params.user != params.liquidator, ISpoke.SelfLiquidation());
     require(params.debtToCover > 0, ISpoke.InvalidDebtToCover());
-    require(!params.collateralReservePaused && !params.debtReservePaused, ISpoke.ReservePaused());
+    require(
+      !params.collateralReserveFlags.paused() && !params.debtReserveFlags.paused(),
+      ISpoke.ReservePaused()
+    );
     require(params.collateralReserveBalance > 0, ISpoke.ReserveNotSupplied());
     require(params.debtReserveBalance > 0, ISpoke.ReserveNotBorrowed());
     require(
@@ -404,7 +405,8 @@ library LiquidationLogic {
     );
     if (params.receiveShares) {
       require(
-        !params.collateralReserveFrozen && params.receiveSharesEnabled,
+        !params.collateralReserveFlags.frozen() &&
+          params.collateralReserveFlags.receiveSharesEnabled(),
         ISpoke.CannotReceiveShares()
       );
     }

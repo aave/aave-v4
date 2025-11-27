@@ -6,6 +6,7 @@ import 'tests/unit/Spoke/SpokeBase.t.sol';
 
 contract SpokeSupplyTest is SpokeBase {
   using PercentageMath for *;
+  using ReserveFlagsMap for ReserveFlags;
 
   function test_supply_revertsWith_ReserveNotListed() public {
     uint256 reserveId = spoke1.getReserveCount() + 1; // invalid reserveId

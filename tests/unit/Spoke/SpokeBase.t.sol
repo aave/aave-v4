@@ -9,6 +9,7 @@ contract SpokeBase is Base {
   using PercentageMath for *;
   using WadRayMath for *;
   using KeyValueList for KeyValueList.List;
+  using ReserveFlagsMap for ReserveFlags;
 
   struct TestData {
     SpokePosition data;

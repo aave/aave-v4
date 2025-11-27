@@ -25,13 +25,13 @@ contract ReserveFlagsTests is Test {
     assertEq(w.RECEIVE_SHARES_ENABLED_MASK(), RECEIVE_SHARES_ENABLED_MASK);
   }
 
-  function test_initFlags_fuzz(
+  function test_create_fuzz(
     bool paused,
     bool frozen,
     bool borrowable,
     bool receiveSharesEnabled
   ) public view {
-    ReserveFlags flags = w.initFlags(paused, frozen, borrowable, receiveSharesEnabled);
+    ReserveFlags flags = w.create(paused, frozen, borrowable, receiveSharesEnabled);
 
     assertEq(w.paused(flags), paused);
     assertEq(w.frozen(flags), frozen);
