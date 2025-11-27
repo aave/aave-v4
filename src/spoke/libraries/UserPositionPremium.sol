@@ -76,10 +76,10 @@ library UserPositionPremium {
     uint256 newDrawnShares,
     uint256 drawnIndex,
     uint256 riskPremium,
-    uint256 premiumDebtDeltaRay
+    uint256 premiumDebtRayDelta
   ) internal pure returns (int256, int256) {
     uint256 newPremiumShares = newDrawnShares.percentMulUp(riskPremium);
-    int256 newPremiumOffsetRay = (newPremiumShares * drawnIndex).signedSub(premiumDebtDeltaRay);
+    int256 newPremiumOffsetRay = (newPremiumShares * drawnIndex).signedSub(premiumDebtRayDelta);
     return (
       newPremiumShares.signedSub(oldPremiumShares),
       newPremiumOffsetRay - oldPremiumOffsetRay

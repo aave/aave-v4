@@ -293,9 +293,10 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     return (drawnShares, amount);
   }
 
+  /// @notice Local variables for repay action.
   struct RepayVars {
     uint256 drawnDebtRestored;
-    uint256 premiumDebtDeltaRay;
+    uint256 premiumDebtRayDelta;
     uint256 drawnIndex;
     uint256 premiumDebtRay;
     uint256 premiumDebtRayRestored;
@@ -320,7 +321,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     (
       vars.drawnDebtRestored,
       premiumDelta.restoredPremiumRay,
-      vars.premiumDebtDeltaRay
+      vars.premiumDebtRayDelta
     ) = _calculateRestoreAmount(vars.drawnDebtRestored, vars.premiumDebtRay, amount);
 
     uint256 restoredShares = reserve.hub.previewRestoreByAssets(
@@ -335,7 +336,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
       newDrawnShares: newDrawnShares,
       drawnIndex: vars.drawnIndex,
       riskPremium: positionStatus.riskPremium,
-      premiumDebtDeltaRay: vars.premiumDebtDeltaRay
+      premiumDebtRayDelta: vars.premiumDebtRayDelta
     });
     uint256 totalDebtRestored = vars.drawnDebtRestored +
       premiumDelta.restoredPremiumRay.fromRayUp();
