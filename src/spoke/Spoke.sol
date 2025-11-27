@@ -617,8 +617,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     UserPosition storage userPosition = _userPositions[user][reserveId];
     (uint256 drawnDebt, uint256 premiumDebt, ) = _getUserDebt(
       userPosition,
-      reserve.hub,
-      reserve.assetId
+      reserve.hub.getAssetDrawnIndex(reserve.assetId)
     );
     return (drawnDebt, premiumDebt);
   }
@@ -629,8 +628,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     UserPosition storage userPosition = _userPositions[user][reserveId];
     (uint256 drawnDebt, uint256 premiumDebt, ) = _getUserDebt(
       userPosition,
-      reserve.hub,
-      reserve.assetId
+      reserve.hub.getAssetDrawnIndex(reserve.assetId)
     );
     return drawnDebt + premiumDebt;
   }
@@ -639,7 +637,10 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
   function getUserPremiumDebtRay(uint256 reserveId, address user) external view returns (uint256) {
     Reserve storage reserve = _getReserve(reserveId);
     UserPosition storage userPosition = _userPositions[user][reserveId];
-    (, , uint256 premiumDebtRay) = _getUserDebt(userPosition, reserve.hub, reserve.assetId);
+    (, , uint256 premiumDebtRay) = _getUserDebt(
+      userPosition,
+      reserve.hub.getAssetDrawnIndex(reserve.assetId)
+    );
     return premiumDebtRay;
   }
 
@@ -787,8 +788,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
       if (borrowing) {
         (uint256 drawnDebt, uint256 premiumDebt, ) = _getUserDebt(
           userPosition,
-          reserve.hub,
-          reserve.assetId
+          reserve.hub.getAssetDrawnIndex(reserve.assetId)
         );
         // we can simplify since there is no precision loss due to the division here
         accountData.totalDebtValue += ((drawnDebt + premiumDebt) * assetPrice).wadDivUp(assetUnit);
@@ -963,17 +963,6 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     if (user == manager) return true;
     PositionManagerConfig storage config = _positionManager[manager];
     return config.active && config.approval[user];
-  }
-
-  /// @return The user's drawn debt.
-  /// @return The user's premium debt.
-  /// @return The user's premium debt, expressed in asset units and scaled by RAY.
-  function _getUserDebt(
-    UserPosition storage userPosition,
-    IHubBase hub,
-    uint256 assetId
-  ) internal view returns (uint256, uint256, uint256) {
-    return _getUserDebt(userPosition, hub.getAssetDrawnIndex(assetId));
   }
 
   /// @return The user's drawn debt.
