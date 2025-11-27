@@ -29,8 +29,11 @@ contract MockSpoke is Spoke, Test {
   function initialize(address) external override {}
 
   // same as spoke's borrow, but without health factor check
-  function borrowWithoutHfCheck(uint256 reserveId, uint256 amount, address onBehalfOf) external {
-    _onlyPositionManager(onBehalfOf);
+  function borrowWithoutHfCheck(
+    uint256 reserveId,
+    uint256 amount,
+    address onBehalfOf
+  ) external onlyPositionManager(onBehalfOf) {
     Reserve storage reserve = _reserves[reserveId];
     UserPosition storage userPosition = _userPositions[onBehalfOf][reserveId];
     PositionStatus storage positionStatus = _positionStatus[onBehalfOf];
