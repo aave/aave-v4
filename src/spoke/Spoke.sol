@@ -304,46 +304,32 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
 
     IHubBase.PremiumDelta memory premiumDelta;
     uint256 drawnDebtRestored = amount;
-    uint256 newDrawnShares;
-    uint256 previewRestoredShares;
-    {
-      uint256 drawnIndex = reserve.hub.getAssetDrawnIndex(reserve.assetId);
-      (drawnDebtRestored, premiumDelta.restoredPremiumRay) = _calculateRestoreAmount(
-        userPosition,
-        drawnIndex,
-        drawnDebtRestored
-      );
+    uint256 drawnIndex = reserve.hub.getAssetDrawnIndex(reserve.assetId);
+    (drawnDebtRestored, premiumDelta.restoredPremiumRay) = _calculateRestoreAmount(
+      userPosition,
+      drawnIndex,
+      drawnDebtRestored
+    );
 
-      // replicate hub.previewRestoreByAssets() instead of calling here
-      // verified later against actual restored shares returned from hub.restore()
-      previewRestoredShares = drawnDebtRestored.rayDivDown(drawnIndex);
-      newDrawnShares = userPosition.drawnShares.uncheckedSub(previewRestoredShares);
+    // replicate hub.previewRestoreByAssets() instead of calling here
+    // verified later against actual restored shares returned from hub.restore()
+    uint256 previewRestoredShares = drawnDebtRestored.rayDivDown(drawnIndex);
+    userPosition.drawnShares -= previewRestoredShares.toUint120();
 
-      premiumDelta = UserPositionPremium.getPremiumDelta({
-        oldPremiumShares: userPosition.premiumShares,
-        oldPremiumOffsetRay: userPosition.premiumOffsetRay,
-        newDrawnShares: newDrawnShares,
-        drawnIndex: drawnIndex,
-        riskPremium: positionStatus.riskPremium,
-        restoredPremiumRay: premiumDelta.restoredPremiumRay
-      });
-    }
+    premiumDelta = userPosition.getPremiumDelta({
+      drawnIndex: drawnIndex,
+      riskPremium: positionStatus.riskPremium,
+      restoredPremiumRay: premiumDelta.restoredPremiumRay
+    });
 
-    uint256 totalDebtRestored;
-    {
-      totalDebtRestored = drawnDebtRestored + premiumDelta.restoredPremiumRay.fromRayUp();
-      reserve.underlying.safeTransferFrom(msg.sender, address(reserve.hub), totalDebtRestored);
-      uint256 restoredShares = reserve.hub.restore(
-        reserve.assetId,
-        drawnDebtRestored,
-        premiumDelta
-      );
-      require(previewRestoredShares == restoredShares);
-    }
+    uint256 totalDebtRestored = drawnDebtRestored + premiumDelta.restoredPremiumRay.fromRayUp();
+    reserve.underlying.safeTransferFrom(msg.sender, address(reserve.hub), totalDebtRestored);
+    require(
+      previewRestoredShares == reserve.hub.restore(reserve.assetId, drawnDebtRestored, premiumDelta)
+    );
 
     userPosition.applyPremiumDelta(premiumDelta);
-    userPosition.drawnShares = newDrawnShares.toUint120();
-    if (newDrawnShares == 0) {
+    if (userPosition.drawnShares == 0) {
       positionStatus.setBorrowing(reserveId, false);
     }
 
@@ -891,10 +877,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
         drawnIndex
       );
 
-      IHubBase.PremiumDelta memory premiumDelta = UserPositionPremium.getPremiumDelta({
-        oldPremiumShares: userPosition.premiumShares,
-        oldPremiumOffsetRay: userPosition.premiumOffsetRay,
-        newDrawnShares: userPosition.drawnShares,
+      IHubBase.PremiumDelta memory premiumDelta = userPosition.getPremiumDelta({
         drawnIndex: drawnIndex,
         riskPremium: 0,
         restoredPremiumRay: premiumDebtRay

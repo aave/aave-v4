@@ -47,40 +47,12 @@ library UserPositionPremium {
   ) internal view returns (IHubBase.PremiumDelta memory) {
     uint256 oldPremiumShares = userPosition.premiumShares;
     int256 oldPremiumOffsetRay = userPosition.premiumOffsetRay;
-
-    return
-      getPremiumDelta(
-        oldPremiumShares,
-        oldPremiumOffsetRay,
-        userPosition.drawnShares,
-        drawnIndex,
-        riskPremium,
-        restoredPremiumRay
-      );
-  }
-
-  /// @notice Calculates the premium delta for a user position given a new risk premium and new drawn shares.
-  /// @param oldPremiumShares The current value of premium shares.
-  /// @param oldPremiumOffsetRay The current value of premium offset, expressed in asset units and scaled by RAY.
-  /// @param newDrawnShares The new drawn shares, including the restored shares.
-  /// @param drawnIndex The current drawn index.
-  /// @param riskPremium The new risk premium, expressed in BPS.
-  /// @param restoredPremiumRay The amount of premium to be restored, expressed in asset units and scaled by RAY.
-  /// @return The computed premium delta.
-  function getPremiumDelta(
-    uint256 oldPremiumShares,
-    int256 oldPremiumOffsetRay,
-    uint256 newDrawnShares,
-    uint256 drawnIndex,
-    uint256 riskPremium,
-    uint256 restoredPremiumRay
-  ) internal pure returns (IHubBase.PremiumDelta memory) {
     uint256 premiumDebtRay = Premium.calculatePremiumRay({
       premiumShares: oldPremiumShares,
       premiumOffsetRay: oldPremiumOffsetRay,
       drawnIndex: drawnIndex
     });
-    uint256 newPremiumShares = newDrawnShares.percentMulUp(riskPremium);
+    uint256 newPremiumShares = userPosition.drawnShares.percentMulUp(riskPremium);
     int256 newPremiumOffsetRay = (newPremiumShares * drawnIndex).signedSub(
       premiumDebtRay - restoredPremiumRay
     );

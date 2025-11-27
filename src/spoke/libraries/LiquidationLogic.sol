@@ -333,36 +333,34 @@ library LiquidationLogic {
     LiquidateDebtParams memory params
   ) internal returns (uint256, IHubBase.PremiumDelta memory, bool) {
     uint256 premiumDebtToLiquidateRay = params.debtToLiquidate.toRay().min(params.premiumDebtRay);
-    IHubBase.PremiumDelta memory premiumDelta = UserPositionPremium.getPremiumDelta({
-      oldPremiumShares: debtPosition.premiumShares,
-      oldPremiumOffsetRay: debtPosition.premiumOffsetRay,
-      newDrawnShares: debtPosition.drawnShares,
+    uint256 premiumDebtToLiquidate = premiumDebtToLiquidateRay.fromRayUp();
+    uint256 drawnDebtToLiquidate = params.debtToLiquidate - premiumDebtToLiquidate;
+
+    uint256 previewDrawnSharesLiquidated = drawnDebtToLiquidate.rayDivDown(params.drawnIndex);
+    debtPosition.drawnShares -= previewDrawnSharesLiquidated.toUint120();
+    IHubBase.PremiumDelta memory premiumDelta = debtPosition.getPremiumDelta({
       drawnIndex: params.drawnIndex,
       riskPremium: 0,
       restoredPremiumRay: premiumDebtToLiquidateRay
     });
 
-    uint256 premiumDebtToLiquidate = premiumDebtToLiquidateRay.fromRayUp();
-    uint256 drawnDebtToLiquidate = params.debtToLiquidate - premiumDebtToLiquidate;
     debtReserve.underlying.safeTransferFrom(
       params.liquidator,
       address(debtReserve.hub),
       drawnDebtToLiquidate + premiumDebtToLiquidate
     );
-    uint256 drawnSharesLiquidated = debtReserve.hub.restore(
-      debtReserve.assetId,
-      drawnDebtToLiquidate,
-      premiumDelta
+    require(
+      previewDrawnSharesLiquidated ==
+        debtReserve.hub.restore(debtReserve.assetId, drawnDebtToLiquidate, premiumDelta)
     );
-    debtPosition.applyPremiumDelta(premiumDelta);
-    debtPosition.drawnShares -= drawnSharesLiquidated.toUint120();
 
+    debtPosition.applyPremiumDelta(premiumDelta);
     if (debtPosition.drawnShares == 0) {
       positionStatus.setBorrowing(params.debtReserveId, false);
-      return (drawnSharesLiquidated, premiumDelta, true);
+      return (previewDrawnSharesLiquidated, premiumDelta, true);
     }
 
-    return (drawnSharesLiquidated, premiumDelta, false);
+    return (previewDrawnSharesLiquidated, premiumDelta, false);
   }
 
   /// @notice Validates the liquidation call.
