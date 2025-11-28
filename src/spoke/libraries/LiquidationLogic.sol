@@ -55,6 +55,7 @@ library LiquidationLogic {
     uint256 collateralReserveBalance;
     uint256 debtReserveBalance;
     bool receiveShares;
+    bool isBorrowerUsingAsCollateral;
   }
 
   struct CalculateDebtToTargetHealthFactorParams {
@@ -148,7 +149,6 @@ library LiquidationLogic {
       positions[params.user][params.collateralReserveId].suppliedShares
     );
     _validateLiquidationCall(
-      positionStatus[params.user].isUsingAsCollateral(params.collateralReserveId),
       ValidateLiquidationCallParams({
         user: params.user,
         liquidator: params.liquidator,
@@ -160,7 +160,10 @@ library LiquidationLogic {
         collateralFactor: collateralDynConfig.collateralFactor,
         collateralReserveBalance: collateralReserveBalance,
         debtReserveBalance: params.drawnDebt + params.premiumDebtRay.fromRayUp(),
-        receiveShares: params.receiveShares
+        receiveShares: params.receiveShares,
+        isBorrowerUsingAsCollateral: positionStatus[params.user].isUsingAsCollateral(
+          params.collateralReserveId
+        )
       })
     );
 
@@ -354,10 +357,7 @@ library LiquidationLogic {
 
   /// @notice Validates the liquidation call.
   /// @param params The validate liquidation call params.
-  function _validateLiquidationCall(
-    bool isBorrowerUsingAsCollateral,
-    ValidateLiquidationCallParams memory params
-  ) internal pure {
+  function _validateLiquidationCall(ValidateLiquidationCallParams memory params) internal pure {
     require(params.user != params.liquidator, ISpoke.SelfLiquidation());
     require(params.debtToCover > 0, ISpoke.InvalidDebtToCover());
     require(!params.collateralReservePaused && !params.debtReservePaused, ISpoke.ReservePaused());
@@ -368,7 +368,7 @@ library LiquidationLogic {
       ISpoke.HealthFactorNotBelowThreshold()
     );
     require(
-      params.collateralFactor > 0 && isBorrowerUsingAsCollateral,
+      params.collateralFactor > 0 && params.isBorrowerUsingAsCollateral,
       ISpoke.CollateralCannotBeLiquidated()
     );
     if (params.receiveShares) {

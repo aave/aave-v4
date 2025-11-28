@@ -170,13 +170,9 @@ contract LiquidationLogicWrapper {
   }
 
   function validateLiquidationCall(
-    LiquidationLogic.ValidateLiquidationCallParams memory params,
-    uint256 collateralReserveId
+    LiquidationLogic.ValidateLiquidationCallParams memory params
   ) public view {
-    LiquidationLogic._validateLiquidationCall(
-      _positionStatuses[_borrower].isUsingAsCollateral(collateralReserveId),
-      params
-    );
+    LiquidationLogic._validateLiquidationCall(params);
   }
 
   function calculateDebtToTargetHealthFactor(
