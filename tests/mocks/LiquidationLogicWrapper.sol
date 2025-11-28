@@ -171,7 +171,7 @@ contract LiquidationLogicWrapper {
 
   function validateLiquidationCall(
     LiquidationLogic.ValidateLiquidationCallParams memory params
-  ) public view {
+  ) public pure {
     LiquidationLogic._validateLiquidationCall(params);
   }
 
