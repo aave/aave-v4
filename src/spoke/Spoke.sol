@@ -3,10 +3,11 @@
 pragma solidity 0.8.28;
 
 import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
+import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
+import {SafeERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
 import {IERC20Permit} from 'src/dependencies/openzeppelin/IERC20Permit.sol';
 import {SignatureChecker} from 'src/dependencies/openzeppelin/SignatureChecker.sol';
 import {AccessManagedUpgradeable} from 'src/dependencies/openzeppelin-upgradeable/AccessManagedUpgradeable.sol';
-import {SafeTransferLib} from 'src/dependencies/solady/SafeTransferLib.sol';
 import {EIP712} from 'src/dependencies/solady/EIP712.sol';
 import {MathUtils} from 'src/libraries/math/MathUtils.sol';
 import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
@@ -27,7 +28,7 @@ import {ISpokeBase, ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 /// @dev Each reserve can be associated with a separate Hub.
 abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradeable, EIP712 {
   using SafeCast for *;
-  using SafeTransferLib for address;
+  using SafeERC20 for IERC20;
   using WadRayMath for *;
   using PercentageMath for *;
   using KeyValueList for KeyValueList.List;
@@ -226,7 +227,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     UserPosition storage userPosition = _userPositions[onBehalfOf][reserveId];
     _validateSupply(reserve);
 
-    reserve.underlying.safeTransferFrom(msg.sender, address(reserve.hub), amount);
+    IERC20(reserve.underlying).safeTransferFrom(msg.sender, address(reserve.hub), amount);
     uint256 suppliedShares = reserve.hub.add(reserve.assetId, amount);
     userPosition.suppliedShares += suppliedShares.toUint120();
 
@@ -317,7 +318,11 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     });
 
     uint256 totalDebtRestored = drawnDebtRestored + premiumDelta.restoredPremiumRay.fromRayUp();
-    reserve.underlying.safeTransferFrom(msg.sender, address(reserve.hub), totalDebtRestored);
+    IERC20(reserve.underlying).safeTransferFrom(
+      msg.sender,
+      address(reserve.hub),
+      totalDebtRestored
+    );
     uint256 restoredShares = reserve.hub.restore(reserve.assetId, drawnDebtRestored, premiumDelta);
 
     userPosition.applyPremiumDelta(premiumDelta);

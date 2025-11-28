@@ -25,7 +25,6 @@ import {Ownable2Step, Ownable} from 'src/dependencies/openzeppelin/Ownable2Step.
 import {Math} from 'src/dependencies/openzeppelin/Math.sol';
 import {WETH9} from 'src/dependencies/weth/WETH9.sol';
 import {LibBit} from 'src/dependencies/solady/LibBit.sol';
-import {SafeTransferLib} from 'src/dependencies/solady/SafeTransferLib.sol';
 
 import {Initializable} from 'src/dependencies/openzeppelin-upgradeable/Initializable.sol';
 import {IERC1967} from 'src/dependencies/openzeppelin/IERC1967.sol';

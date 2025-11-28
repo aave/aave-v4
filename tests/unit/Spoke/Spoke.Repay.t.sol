@@ -8,7 +8,7 @@ contract SpokeRepayTest is SpokeBase {
   using PercentageMath for uint256;
   using SafeCast for uint256;
 
-  function test_repay_revertsWith_TransferFromFailed() public {
+  function test_repay_revertsWith_ERC20InsufficientAllowance() public {
     uint256 daiSupplyAmount = 100e18;
     uint256 wethSupplyAmount = 10e18;
     uint256 daiBorrowAmount = daiSupplyAmount / 2;
@@ -21,16 +21,23 @@ contract SpokeRepayTest is SpokeBase {
 
     vm.startPrank(bob);
     tokenList.dai.approve(address(spoke1), approvalAmount);
-    vm.expectRevert(SafeTransferLib.TransferFromFailed.selector);
+    vm.expectRevert(
+      abi.encodeWithSelector(
+        IERC20Errors.ERC20InsufficientAllowance.selector,
+        address(spoke1),
+        approvalAmount,
+        daiRepayAmount
+      )
+    );
     spoke1.repay(_daiReserveId(spoke1), daiRepayAmount, bob);
     vm.stopPrank();
   }
 
-  function test_repay_fuzz_revertsWith_TransferFromFailed(uint256 daiRepayAmount) public {
-    vm.assume(daiRepayAmount > 0);
+  function test_repay_fuzz_revertsWith_ERC20InsufficientBalance(uint256 daiRepayAmount) public {
     uint256 daiSupplyAmount = 100e18;
     uint256 wethSupplyAmount = 10e18;
     uint256 daiBorrowAmount = daiSupplyAmount / 2;
+    daiRepayAmount = bound(daiRepayAmount, 1, daiBorrowAmount);
 
     Utils.supplyCollateral(spoke1, _wethReserveId(spoke1), bob, wethSupplyAmount, bob);
     Utils.supply(spoke1, _daiReserveId(spoke1), alice, daiSupplyAmount, alice);
@@ -39,7 +46,14 @@ contract SpokeRepayTest is SpokeBase {
     vm.startPrank(bob);
     tokenList.dai.transfer(alice, tokenList.dai.balanceOf(bob)); // make bob have insufficient balance
 
-    vm.expectRevert(SafeTransferLib.TransferFromFailed.selector);
+    vm.expectRevert(
+      abi.encodeWithSelector(
+        IERC20Errors.ERC20InsufficientBalance.selector,
+        address(bob),
+        0,
+        daiRepayAmount
+      )
+    );
     spoke1.repay(_daiReserveId(spoke1), daiRepayAmount, bob);
     vm.stopPrank();
   }
