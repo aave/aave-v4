@@ -480,7 +480,7 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
   /// @dev Risk premium is calculated from up-to-date user position data, and will likely differ from the stored user risk premium.
   function getUserAccountData(address user) external view returns (UserAccountData memory);
 
-  /// @notice Returns the stored user risk premium.
+  /// @notice Returns the risk premium from the user's last position update.
   function getUserLastRiskPremium(address user) external view returns (uint256);
 
   /// @notice Returns the liquidation bonus for a given health factor, based on the user's current dynamic configuration.
