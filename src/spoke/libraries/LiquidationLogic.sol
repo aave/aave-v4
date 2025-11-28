@@ -337,8 +337,8 @@ library LiquidationLogic {
     uint256 drawnDebtToLiquidate = params.debtToLiquidate - premiumDebtToLiquidate;
 
     uint256 previewDrawnSharesLiquidated = drawnDebtToLiquidate.rayDivDown(params.drawnIndex);
-    debtPosition.drawnShares -= previewDrawnSharesLiquidated.toUint120();
     IHubBase.PremiumDelta memory premiumDelta = debtPosition.getPremiumDelta({
+      drawnSharesTaken: previewDrawnSharesLiquidated,
       drawnIndex: params.drawnIndex,
       riskPremium: 0,
       restoredPremiumRay: premiumDebtToLiquidateRay
@@ -355,6 +355,7 @@ library LiquidationLogic {
     );
 
     debtPosition.applyPremiumDelta(premiumDelta);
+    debtPosition.drawnShares -= previewDrawnSharesLiquidated.toUint120();
     if (debtPosition.drawnShares == 0) {
       positionStatus.setBorrowing(params.debtReserveId, false);
       return (previewDrawnSharesLiquidated, premiumDelta, true);

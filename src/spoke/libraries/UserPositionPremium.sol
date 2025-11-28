@@ -35,12 +35,14 @@ library UserPositionPremium {
 
   /// @notice Computes the premium delta for a user position given a new risk premium.
   /// @param userPosition The user position.
+  /// @param drawnSharesTaken The amount of drawn shares taken from the user position.
   /// @param drawnIndex The current drawn index.
   /// @param riskPremium The new risk premium, expressed in BPS.
   /// @param restoredPremiumRay The amount of premium to be restored, expressed in asset units and scaled by RAY.
   /// @return The computed premium delta.
   function getPremiumDelta(
     ISpoke.UserPosition storage userPosition,
+    uint256 drawnSharesTaken,
     uint256 drawnIndex,
     uint256 riskPremium,
     uint256 restoredPremiumRay
@@ -52,7 +54,9 @@ library UserPositionPremium {
       premiumOffsetRay: oldPremiumOffsetRay,
       drawnIndex: drawnIndex
     });
-    uint256 newPremiumShares = userPosition.drawnShares.percentMulUp(riskPremium);
+    uint256 newPremiumShares = (userPosition.drawnShares - drawnSharesTaken).percentMulUp(
+      riskPremium
+    );
     int256 newPremiumOffsetRay = (newPremiumShares * drawnIndex).signedSub(
       premiumDebtRay - restoredPremiumRay
     );

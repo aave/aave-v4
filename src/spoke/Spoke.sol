@@ -5,7 +5,9 @@ pragma solidity 0.8.28;
 import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
 import {IERC20Permit} from 'src/dependencies/openzeppelin/IERC20Permit.sol';
 import {SignatureChecker} from 'src/dependencies/openzeppelin/SignatureChecker.sol';
-import {AccessManagedUpgradeable} from 'src/dependencies/openzeppelin-upgradeable/AccessManagedUpgradeable.sol';
+import {
+  AccessManagedUpgradeable
+} from 'src/dependencies/openzeppelin-upgradeable/AccessManagedUpgradeable.sol';
 import {SafeTransferLib} from 'src/dependencies/solady/SafeTransferLib.sol';
 import {EIP712} from 'src/dependencies/solady/EIP712.sol';
 import {MathUtils} from 'src/libraries/math/MathUtils.sol';
@@ -303,6 +305,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     _validateRepay(reserve);
 
     IHubBase.PremiumDelta memory premiumDelta;
+
     uint256 drawnDebtRestored = amount;
     uint256 drawnIndex = reserve.hub.getAssetDrawnIndex(reserve.assetId);
     (drawnDebtRestored, premiumDelta.restoredPremiumRay) = _calculateRestoreAmount(
@@ -314,9 +317,9 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     // replicate hub.previewRestoreByAssets() instead of calling here
     // verified later against actual restored shares returned from hub.restore()
     uint256 previewRestoredShares = drawnDebtRestored.rayDivDown(drawnIndex);
-    userPosition.drawnShares -= previewRestoredShares.toUint120();
 
     premiumDelta = userPosition.getPremiumDelta({
+      drawnSharesTaken: previewRestoredShares,
       drawnIndex: drawnIndex,
       riskPremium: positionStatus.riskPremium,
       restoredPremiumRay: premiumDelta.restoredPremiumRay
@@ -329,6 +332,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     );
 
     userPosition.applyPremiumDelta(premiumDelta);
+    userPosition.drawnShares -= previewRestoredShares.toUint120();
     if (userPosition.drawnShares == 0) {
       positionStatus.setBorrowing(reserveId, false);
     }
@@ -847,13 +851,14 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
       IHubBase hub = reserve.hub;
 
       IHubBase.PremiumDelta memory premiumDelta = userPosition.getPremiumDelta({
+        drawnSharesTaken: 0,
         drawnIndex: hub.getAssetDrawnIndex(assetId),
         riskPremium: newRiskPremium,
         restoredPremiumRay: 0
       });
 
-      userPosition.applyPremiumDelta(premiumDelta);
       hub.refreshPremium(assetId, premiumDelta);
+      userPosition.applyPremiumDelta(premiumDelta);
       emit RefreshPremiumDebt(reserveId, user, premiumDelta);
     }
     emit UpdateUserRiskPremium(user, newRiskPremium);
@@ -878,6 +883,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
       );
 
       IHubBase.PremiumDelta memory premiumDelta = userPosition.getPremiumDelta({
+        drawnSharesTaken: 0,
         drawnIndex: drawnIndex,
         riskPremium: 0,
         restoredPremiumRay: premiumDebtRay
