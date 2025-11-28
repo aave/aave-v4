@@ -163,7 +163,6 @@ contract LiquidationLogicLiquidateDebtTest is LiquidationLogicBaseTest {
   function test_liquidateDebt_revertsWith_InsufficientAllowance() public {
     uint256 drawnDebt = 100e18;
     uint256 premiumDebtRay = 10e18 * WadRayMath.RAY;
-    uint256 accruedPremiumRay = 5e18 * WadRayMath.RAY;
     _updateStorage(drawnDebt, premiumDebtRay);
 
     uint256 debtToLiquidateRay = drawnDebt * WadRayMath.RAY + premiumDebtRay;

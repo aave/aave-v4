@@ -406,11 +406,6 @@ contract HubRefreshPremiumTest is HubBase {
       0,
       hub1.previewRestoreByAssets(assetId, MAX_SUPPLY_AMOUNT / 2)
     );
-    uint256 userPremiumOffsetNewRay = _calculatePremiumAssetsRay(
-      hub1,
-      assetId,
-      userPremiumSharesNew
-    );
 
     IHubBase.PremiumDelta memory premiumDelta = _getExpectedPremiumDelta({
       hub: hub1,

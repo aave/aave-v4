@@ -1555,7 +1555,7 @@ abstract contract Base is Test {
     uint256 drawnShares,
     uint256 riskPremium,
     uint256 restoredPremiumRay
-  ) internal view returns (IHubBase.PremiumDelta memory) {
+  ) internal pure returns (IHubBase.PremiumDelta memory) {
     uint256 premiumDebtRay = _calculatePremiumDebtRay(
       oldPremiumShares,
       oldPremiumOffsetRay,

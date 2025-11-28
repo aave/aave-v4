@@ -98,7 +98,6 @@ contract HubOperations_Gas_Tests is Base {
 
     (drawnRemaining, premiumRemaining) = hub1.getSpokeOwed(daiAssetId, address(spoke1));
     tokenList.dai.transferFrom(alice, address(hub1), drawnRemaining + premiumRemaining);
-    IHub.SpokeData memory spokeData = hub1.getSpoke(daiAssetId, address(spoke1));
     premiumDelta = _getExpectedPremiumDelta({
       hub: hub1,
       assetId: daiAssetId,
@@ -160,7 +159,6 @@ contract HubOperations_Gas_Tests is Base {
     skip(100);
 
     (drawnRemaining, premiumRemaining) = hub1.getSpokeOwed(daiAssetId, address(spoke1));
-    IHub.SpokeData memory spokeData = hub1.getSpoke(daiAssetId, address(spoke1));
     premiumDelta = _getExpectedPremiumDelta({
       hub: hub1,
       assetId: daiAssetId,
@@ -272,7 +270,6 @@ contract HubOperations_Gas_Tests is Base {
 
     skip(100);
 
-    ISpoke.UserPosition memory userPosition = spoke1.getUserPosition(_daiReserveId(spoke1), alice);
     (uint256 drawnDebt, ) = spoke1.getUserDebt(_daiReserveId(spoke1), alice);
 
     IHubBase.PremiumDelta memory premiumDelta = _getExpectedPremiumDelta(

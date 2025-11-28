@@ -92,7 +92,7 @@ contract UserPositionDebtTest is Base {
     );
   }
 
-  function test_getPremiumDelta() public {
+  function test_getPremiumDelta() public view {
     assertEq(
       u.getPremiumDelta(DRAWN_INDEX, 20_00, 48.5e18 * 1e27),
       IHubBase.PremiumDelta({
@@ -200,16 +200,13 @@ contract UserPositionDebtTest is Base {
     assertEq(premiumDebtRay, 124.44444444444444444444444439e45);
   }
 
-  function _mockUserDrawnShares(uint256 drawnShares) internal returns (ISpoke.UserPosition memory) {
+  function _mockUserDrawnShares(uint256 drawnShares) internal {
     ISpoke.UserPosition memory userPosition = u.getUserPosition();
     userPosition.drawnShares = drawnShares.toUint120();
     u.setUserPosition(userPosition);
   }
 
-  function _mockUserPremiumData(
-    uint256 premiumShares,
-    int256 premiumOffsetRay
-  ) internal returns (ISpoke.UserPosition memory) {
+  function _mockUserPremiumData(uint256 premiumShares, int256 premiumOffsetRay) internal {
     ISpoke.UserPosition memory userPosition = u.getUserPosition();
     userPosition.premiumShares = premiumShares.toUint120();
     userPosition.premiumOffsetRay = premiumOffsetRay.toInt200();
