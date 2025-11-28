@@ -14,6 +14,7 @@ contract LiquidationLogicLiquidateDebtTest is LiquidationLogicBaseTest {
   ISpoke internal spoke;
   IERC20 internal asset;
   uint256 internal assetId;
+  uint256 internal assetDecimals;
   uint256 internal reserveId;
   address internal liquidator;
   address internal user;
@@ -24,6 +25,7 @@ contract LiquidationLogicLiquidateDebtTest is LiquidationLogicBaseTest {
     hub = hub1;
     spoke = ISpoke(address(liquidationLogicWrapper));
     assetId = wethAssetId;
+    assetDecimals = hub.getAsset(assetId).decimals;
     asset = IERC20(hub.getAsset(assetId).underlying);
     reserveId = 1;
     liquidator = makeAddr('liquidator');
@@ -62,7 +64,7 @@ contract LiquidationLogicLiquidateDebtTest is LiquidationLogicBaseTest {
         assetId: assetId,
         oldPremiumShares: 0,
         oldPremiumOffsetRay: 0,
-        drawnShares: 1e6 * 1e18,
+        drawnShares: 1e6 * (10 ** assetDecimals),
         riskPremium: 100_00,
         restoredPremiumRay: 0
       })

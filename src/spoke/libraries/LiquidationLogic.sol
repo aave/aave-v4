@@ -7,7 +7,7 @@ import {SafeTransferLib} from 'src/dependencies/solady/SafeTransferLib.sol';
 import {MathUtils} from 'src/libraries/math/MathUtils.sol';
 import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
 import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
-import {UserPositionPremium} from 'src/spoke/libraries/UserPositionPremium.sol';
+import {UserPositionDebt} from 'src/spoke/libraries/UserPositionDebt.sol';
 import {PositionStatusMap} from 'src/spoke/libraries/PositionStatusMap.sol';
 import {IHubBase} from 'src/hub/interfaces/IHubBase.sol';
 import {IAaveOracle} from 'src/spoke/interfaces/IAaveOracle.sol';
@@ -24,7 +24,7 @@ library LiquidationLogic {
   using WadRayMath for uint256;
   using MathUtils for *;
   using LiquidationLogic for *;
-  using UserPositionPremium for ISpoke.UserPosition;
+  using UserPositionDebt for ISpoke.UserPosition;
 
   struct LiquidateUserParams {
     uint256 collateralReserveId;
@@ -333,8 +333,6 @@ library LiquidationLogic {
     LiquidateDebtParams memory params
   ) internal returns (uint256, IHubBase.PremiumDelta memory, bool) {
     uint256 premiumDebtToLiquidateRay = params.debtToLiquidate.toRay().min(params.premiumDebtRay);
-    uint256 premiumDebtToLiquidate = premiumDebtToLiquidateRay.fromRayUp();
-    uint256 drawnDebtToLiquidate = params.debtToLiquidate - premiumDebtToLiquidate;
 
     // reset premium data for later adjustment in notify
     IHubBase.PremiumDelta memory premiumDelta = debtPosition.getPremiumDelta({
@@ -347,11 +345,11 @@ library LiquidationLogic {
     debtReserve.underlying.safeTransferFrom(
       params.liquidator,
       address(debtReserve.hub),
-      drawnDebtToLiquidate + premiumDebtToLiquidate
+      params.debtToLiquidate
     );
     uint256 drawnSharesLiquidated = debtReserve.hub.restore(
       debtReserve.assetId,
-      drawnDebtToLiquidate,
+      params.debtToLiquidate - premiumDebtToLiquidateRay.fromRayUp(),
       premiumDelta
     );
 

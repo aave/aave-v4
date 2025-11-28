@@ -1549,6 +1549,33 @@ abstract contract Base is Test {
   }
 
   function _getExpectedPremiumDelta(
+    uint256 drawnIndex,
+    uint256 oldPremiumShares,
+    int256 oldPremiumOffsetRay,
+    uint256 drawnShares,
+    uint256 riskPremium,
+    uint256 restoredPremiumRay
+  ) internal pure returns (IHubBase.PremiumDelta memory) {
+    uint256 premiumDebtRay = _calculatePremiumDebtRay(
+      oldPremiumShares,
+      oldPremiumOffsetRay,
+      drawnIndex
+    );
+
+    uint256 newPremiumShares = drawnShares.percentMulUp(riskPremium);
+    int256 newPremiumOffsetRay = _calculatePremiumAssetsRay(newPremiumShares, drawnIndex).signedSub(
+      premiumDebtRay - restoredPremiumRay
+    );
+
+    return
+      IHubBase.PremiumDelta({
+        sharesDelta: newPremiumShares.toInt256() - oldPremiumShares.toInt256(),
+        offsetRayDelta: newPremiumOffsetRay - oldPremiumOffsetRay,
+        restoredPremiumRay: restoredPremiumRay
+      });
+  }
+
+  function _getExpectedPremiumDelta(
     IHub hub,
     uint256 assetId,
     uint256 oldPremiumShares,
@@ -1557,21 +1584,13 @@ abstract contract Base is Test {
     uint256 riskPremium,
     uint256 restoredPremiumRay
   ) internal view returns (IHubBase.PremiumDelta memory) {
-    uint256 premiumDebtRay = _calculatePremiumDebtRay(
-      hub,
-      assetId,
-      oldPremiumShares,
-      oldPremiumOffsetRay
-    );
-
-    uint256 newPremiumShares = drawnShares.percentMulUp(riskPremium);
-    int256 newPremiumOffsetRay = _calculatePremiumAssetsRay(hub, assetId, newPremiumShares)
-      .signedSub(premiumDebtRay - restoredPremiumRay);
-
     return
-      IHubBase.PremiumDelta({
-        sharesDelta: newPremiumShares.toInt256() - oldPremiumShares.toInt256(),
-        offsetRayDelta: newPremiumOffsetRay - oldPremiumOffsetRay,
+      _getExpectedPremiumDelta({
+        drawnIndex: hub.getAssetDrawnIndex(assetId),
+        oldPremiumShares: oldPremiumShares,
+        oldPremiumOffsetRay: oldPremiumOffsetRay,
+        drawnShares: drawnShares,
+        riskPremium: riskPremium,
         restoredPremiumRay: restoredPremiumRay
       });
   }
@@ -2109,6 +2128,14 @@ abstract contract Base is Test {
     int256 premiumOffsetRay
   ) internal view returns (uint256) {
     uint256 drawnIndex = hub.getAssetDrawnIndex(assetId);
+    return _calculatePremiumDebtRay(premiumShares, premiumOffsetRay, drawnIndex);
+  }
+
+  function _calculatePremiumDebtRay(
+    uint256 premiumShares,
+    int256 premiumOffsetRay,
+    uint256 drawnIndex
+  ) internal pure returns (uint256) {
     return ((premiumShares * drawnIndex).toInt256() - premiumOffsetRay).toUint256();
   }
 
@@ -2139,11 +2166,18 @@ abstract contract Base is Test {
   }
 
   function _calculatePremiumAssetsRay(
+    uint256 premiumShares,
+    uint256 drawnIndex
+  ) internal pure returns (uint256) {
+    return premiumShares * drawnIndex;
+  }
+
+  function _calculatePremiumAssetsRay(
     IHub hub,
     uint256 assetId,
     uint256 premiumShares
   ) internal view returns (uint256) {
-    return premiumShares * hub.getAssetDrawnIndex(assetId);
+    return _calculatePremiumAssetsRay(premiumShares, hub.getAssetDrawnIndex(assetId));
   }
 
   /// @dev Helper function to withdraw fees from the treasury spoke
@@ -2279,6 +2313,13 @@ abstract contract Base is Test {
       initData
     );
     return address(proxy);
+  }
+
+  function assertEq(IHubBase.PremiumDelta memory a, IHubBase.PremiumDelta memory b) internal pure {
+    assertEq(a.sharesDelta, b.sharesDelta, 'sharesDelta');
+    assertEq(a.offsetRayDelta, b.offsetRayDelta, 'offsetRayDelta');
+    assertEq(a.restoredPremiumRay, b.restoredPremiumRay, 'restoredPremiumRay');
+    assertEq(abi.encode(a), abi.encode(b));
   }
 
   function assertEq(IHub.AssetConfig memory a, IHub.AssetConfig memory b) internal pure {

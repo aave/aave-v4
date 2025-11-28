@@ -14,7 +14,7 @@ import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
 import {KeyValueList} from 'src/spoke/libraries/KeyValueList.sol';
 import {LiquidationLogic} from 'src/spoke/libraries/LiquidationLogic.sol';
 import {PositionStatusMap} from 'src/spoke/libraries/PositionStatusMap.sol';
-import {UserPositionPremium} from 'src/spoke/libraries/UserPositionPremium.sol';
+import {UserPositionDebt} from 'src/spoke/libraries/UserPositionDebt.sol';
 import {NoncesKeyed} from 'src/utils/NoncesKeyed.sol';
 import {Multicall} from 'src/utils/Multicall.sol';
 import {IAaveOracle} from 'src/spoke/interfaces/IAaveOracle.sol';
@@ -34,7 +34,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
   using PositionStatusMap for *;
   using MathUtils for *;
   using LiquidationLogic for *;
-  using UserPositionPremium for ISpoke.UserPosition;
+  using UserPositionDebt for ISpoke.UserPosition;
 
   /// @inheritdoc ISpoke
   bytes32 public constant SET_USER_POSITION_MANAGER_TYPEHASH =
@@ -312,6 +312,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
       drawnDebtRestored
     );
 
+    // we preview the drawn shares to be restored, should always be the same value returned by hub.restore()
     uint256 previewRestoredShares = reserve.hub.previewRestoreByAssets(
       reserve.assetId,
       drawnDebtRestored
@@ -362,8 +363,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     UserAccountData memory userAccountData = _calculateUserAccountData(user);
 
     uint256 drawnIndex = debtReserve.hub.getAssetDrawnIndex(debtReserve.assetId);
-    (uint256 drawnDebt, , uint256 premiumDebtRay) = _getUserDebt(
-      _userPositions[user][debtReserveId],
+    (uint256 drawnDebt, uint256 premiumDebtRay) = _userPositions[user][debtReserveId].getDebt(
       drawnIndex
     );
 
@@ -602,31 +602,29 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
   function getUserDebt(uint256 reserveId, address user) external view returns (uint256, uint256) {
     Reserve storage reserve = _getReserve(reserveId);
     UserPosition storage userPosition = _userPositions[user][reserveId];
-    (uint256 drawnDebt, uint256 premiumDebt, ) = _getUserDebt(
-      userPosition,
+    (uint256 drawnDebt, uint256 premiumDebtRay) = userPosition.getDebt(
       reserve.hub,
       reserve.assetId
     );
-    return (drawnDebt, premiumDebt);
+    return (drawnDebt, premiumDebtRay.fromRayUp());
   }
 
   /// @inheritdoc ISpokeBase
   function getUserTotalDebt(uint256 reserveId, address user) external view returns (uint256) {
     Reserve storage reserve = _getReserve(reserveId);
     UserPosition storage userPosition = _userPositions[user][reserveId];
-    (uint256 drawnDebt, uint256 premiumDebt, ) = _getUserDebt(
-      userPosition,
+    (uint256 drawnDebt, uint256 premiumDebtRay) = userPosition.getDebt(
       reserve.hub,
       reserve.assetId
     );
-    return drawnDebt + premiumDebt;
+    return (drawnDebt + premiumDebtRay.fromRayUp());
   }
 
   /// @inheritdoc ISpokeBase
   function getUserPremiumDebtRay(uint256 reserveId, address user) external view returns (uint256) {
     Reserve storage reserve = _getReserve(reserveId);
     UserPosition storage userPosition = _userPositions[user][reserveId];
-    (, , uint256 premiumDebtRay) = _getUserDebt(userPosition, reserve.hub, reserve.assetId);
+    (, uint256 premiumDebtRay) = userPosition.getDebt(reserve.hub, reserve.assetId);
     return premiumDebtRay;
   }
 
@@ -772,13 +770,13 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
       }
 
       if (borrowing) {
-        (uint256 drawnDebt, uint256 premiumDebt, ) = _getUserDebt(
-          userPosition,
+        (uint256 drawnDebt, uint256 premiumDebtRay) = userPosition.getDebt(
           reserve.hub,
           reserve.assetId
         );
         // we can simplify since there is no precision loss due to the division here
-        accountData.totalDebtValue += ((drawnDebt + premiumDebt) * assetPrice).wadDivUp(assetUnit);
+        accountData.totalDebtValue += ((drawnDebt + premiumDebtRay.fromRayUp()) * assetPrice)
+          .wadDivUp(assetUnit);
         accountData.borrowedCount = accountData.borrowedCount.uncheckedAdd(1);
       }
     }
@@ -874,10 +872,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
       IHubBase hub = reserve.hub;
       uint256 assetId = reserve.assetId;
       uint256 drawnIndex = hub.getAssetDrawnIndex(assetId);
-      (uint256 drawnDebtReported, , uint256 premiumDebtRay) = _getUserDebt(
-        userPosition,
-        drawnIndex
-      );
+      (uint256 drawnDebtReported, uint256 premiumDebtRay) = userPosition.getDebt(drawnIndex);
 
       IHubBase.PremiumDelta memory premiumDelta = userPosition.getPremiumDelta({
         drawnSharesTaken: 0,
@@ -948,32 +943,6 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     return config.active && config.approval[user];
   }
 
-  /// @return The user's drawn debt.
-  /// @return The user's premium debt.
-  /// @return The user's premium debt, expressed in asset units and scaled by RAY.
-  function _getUserDebt(
-    UserPosition storage userPosition,
-    IHubBase hub,
-    uint256 assetId
-  ) internal view returns (uint256, uint256, uint256) {
-    return _getUserDebt(userPosition, hub.getAssetDrawnIndex(assetId));
-  }
-
-  /// @return The user's drawn debt.
-  /// @return The user's premium debt.
-  /// @return The user's premium debt, expressed in asset units and scaled by RAY.
-  function _getUserDebt(
-    UserPosition storage userPosition,
-    uint256 drawnIndex
-  ) internal view returns (uint256, uint256, uint256) {
-    uint256 premiumDebtRay = userPosition.calculatePremiumRay(drawnIndex);
-    return (
-      userPosition.drawnShares.rayMulUp(drawnIndex),
-      premiumDebtRay.fromRayUp(),
-      premiumDebtRay
-    );
-  }
-
   function _validateReserveConfig(ReserveConfig calldata config) internal pure {
     require(config.collateralRisk <= MAX_ALLOWED_COLLATERAL_RISK, InvalidCollateralRisk());
   }
@@ -1002,10 +971,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     uint256 drawnIndex,
     uint256 amount
   ) internal view returns (uint256, uint256) {
-    (uint256 drawnDebtRestored, , uint256 premiumDebtRayRestored) = _getUserDebt(
-      userPosition,
-      drawnIndex
-    );
+    (uint256 drawnDebtRestored, uint256 premiumDebtRayRestored) = userPosition.getDebt(drawnIndex);
     return _calculateRestoreAmount(drawnDebtRestored, premiumDebtRayRestored, amount);
   }
 
