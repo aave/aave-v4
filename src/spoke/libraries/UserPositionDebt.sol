@@ -14,11 +14,11 @@ import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 /// @author Aave Labs
 /// @notice Implements debt calculations for user positions.
 library UserPositionDebt {
-  using PercentageMath for uint256;
-  using SafeCast for *;
-  using MathUtils for *;
-  using WadRayMath for *;
   using UserPositionDebt for ISpoke.UserPosition;
+  using SafeCast for *;
+  using PercentageMath for uint256;
+  using WadRayMath for *;
+  using MathUtils for *;
 
   /// @notice Applies the premium delta to the user position.
   /// @param userPosition The user position.

@@ -440,11 +440,13 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
   /// @notice Returns the reserve struct data in storage.
   /// @dev It reverts if the reserve associated with the given reserve identifier is not listed.
   /// @param reserveId The identifier of the reserve.
+  /// @return The reserve struct.
   function getReserve(uint256 reserveId) external view returns (Reserve memory);
 
   /// @notice Returns the reserve configuration struct data in storage.
   /// @dev It reverts if the reserve associated with the given reserve identifier is not listed.
   /// @param reserveId The identifier of the reserve.
+  /// @return The reserve configuration struct.
   function getReserveConfig(uint256 reserveId) external view returns (ReserveConfig memory);
 
   /// @notice Returns the dynamic reserve configuration struct at the specified key.
@@ -452,6 +454,7 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
   /// @dev Does not revert if `dynamicConfigKey` is unset.
   /// @param reserveId The identifier of the reserve.
   /// @param dynamicConfigKey The key of the dynamic config.
+  /// @return The dynamic reserve configuration struct.
   function getDynamicReserveConfig(
     uint256 reserveId,
     uint24 dynamicConfigKey
@@ -470,6 +473,7 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
   /// @dev It reverts if the reserve associated with the given reserve identifier is not listed.
   /// @param reserveId The identifier of the reserve.
   /// @param user The address of the user.
+  /// @return The user position struct.
   function getUserPosition(
     uint256 reserveId,
     address user
@@ -477,9 +481,13 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
 
   /// @notice Returns the most up-to-date user account data information.
   /// @dev Utilizes user's current dynamic configuration of user position.
+  /// @param user The address of the user.
+  /// @return The user account data struct.
   function getUserAccountData(address user) external view returns (UserAccountData memory);
 
   /// @notice Returns the risk premium from the user's last position update.
+  /// @param user The address of the user.
+  /// @return The risk premium of the user from the last position update, expressed in BPS.
   function getUserLastRiskPremium(address user) external view returns (uint256);
 
   /// @notice Returns the liquidation bonus for a given health factor, based on the user's current dynamic configuration.

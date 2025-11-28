@@ -17,14 +17,14 @@ import {ISpoke, ISpokeBase} from 'src/spoke/interfaces/ISpoke.sol';
 /// @author Aave Labs
 /// @notice Implements the logic for liquidations.
 library LiquidationLogic {
+  using LiquidationLogic for *;
   using SafeCast for *;
   using SafeTransferLib for address;
-  using PositionStatusMap for ISpoke.PositionStatus;
+  using MathUtils for *;
   using PercentageMath for uint256;
   using WadRayMath for uint256;
-  using MathUtils for *;
-  using LiquidationLogic for *;
   using UserPositionDebt for ISpoke.UserPosition;
+  using PositionStatusMap for ISpoke.PositionStatus;
 
   struct LiquidateUserParams {
     uint256 collateralReserveId;

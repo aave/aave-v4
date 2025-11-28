@@ -20,13 +20,13 @@ import {IHubBase, IHub} from 'src/hub/interfaces/IHub.sol';
 /// @notice A liquidity hub that manages assets and spokes.
 contract Hub is IHub, AccessManaged {
   using EnumerableSet for EnumerableSet.AddressSet;
-  using SafeTransferLib for address;
   using SafeCast for *;
-  using WadRayMath for uint256;
-  using SharesMath for uint256;
-  using PercentageMath for *;
-  using AssetLogic for Asset;
+  using SafeTransferLib for address;
   using MathUtils for *;
+  using PercentageMath for *;
+  using WadRayMath for uint256;
+  using AssetLogic for Asset;
+  using SharesMath for uint256;
 
   /// @inheritdoc IHub
   uint8 public constant MAX_ALLOWED_UNDERLYING_DECIMALS = 18;
