@@ -5,7 +5,9 @@ pragma solidity 0.8.28;
 import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
 import {IERC20Permit} from 'src/dependencies/openzeppelin/IERC20Permit.sol';
 import {SignatureChecker} from 'src/dependencies/openzeppelin/SignatureChecker.sol';
-import {AccessManagedUpgradeable} from 'src/dependencies/openzeppelin-upgradeable/AccessManagedUpgradeable.sol';
+import {
+  AccessManagedUpgradeable
+} from 'src/dependencies/openzeppelin-upgradeable/AccessManagedUpgradeable.sol';
 import {SafeTransferLib} from 'src/dependencies/solady/SafeTransferLib.sol';
 import {EIP712} from 'src/dependencies/solady/EIP712.sol';
 import {MathUtils} from 'src/libraries/math/MathUtils.sol';
@@ -304,8 +306,6 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     uint256 drawnIndex = reserve.hub.getAssetDrawnIndex(reserve.assetId);
     (uint256 drawnDebtRestored, uint256 premiumDebtRayRestored) = userPosition
       .calculateRestoreAmount(drawnIndex, amount);
-
-    // we calculate the drawn shares to be restored, should always be the same value returned by hub.restore()
     uint256 restoredShares = drawnDebtRestored.rayDivDown(drawnIndex);
 
     IHubBase.PremiumDelta memory premiumDelta = userPosition.getPremiumDelta({
@@ -855,17 +855,19 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
       Reserve storage reserve = _reserves[reserveId];
       IHubBase hub = reserve.hub;
       uint256 assetId = reserve.assetId;
+
       uint256 drawnIndex = hub.getAssetDrawnIndex(assetId);
       (uint256 drawnDebtReported, uint256 premiumDebtRay) = userPosition.getDebt(drawnIndex);
+      uint256 deficitShares = drawnDebtReported.rayDivDown(drawnIndex);
 
       IHubBase.PremiumDelta memory premiumDelta = userPosition.getPremiumDelta({
-        drawnSharesTaken: 0,
+        drawnSharesTaken: deficitShares,
         drawnIndex: drawnIndex,
         riskPremium: 0,
         restoredPremiumRay: premiumDebtRay
       });
 
-      uint256 deficitShares = hub.reportDeficit(assetId, drawnDebtReported, premiumDelta);
+      hub.reportDeficit(assetId, drawnDebtReported, premiumDelta);
       userPosition.applyPremiumDelta(premiumDelta);
       userPosition.drawnShares -= deficitShares.toUint120();
       positionStatus.setBorrowing(reserveId, false);

@@ -324,12 +324,13 @@ library LiquidationLogic {
     LiquidateDebtParams memory params
   ) internal returns (uint256, IHubBase.PremiumDelta memory, bool) {
     uint256 premiumDebtToLiquidateRay = params.debtToLiquidate.toRay().min(params.premiumDebtRay);
+    uint256 drawnDebtLiquidated = params.debtToLiquidate - premiumDebtToLiquidateRay.fromRayUp();
+    uint256 drawnSharesLiquidated = drawnDebtLiquidated.rayDivDown(params.drawnIndex);
 
-    // reset premium data for later adjustment in notify
     IHubBase.PremiumDelta memory premiumDelta = debtPosition.getPremiumDelta({
-      drawnSharesTaken: 0,
+      drawnSharesTaken: drawnSharesLiquidated,
       drawnIndex: params.drawnIndex,
-      riskPremium: 0,
+      riskPremium: positionStatus.riskPremium,
       restoredPremiumRay: premiumDebtToLiquidateRay
     });
 
@@ -338,15 +339,10 @@ library LiquidationLogic {
       address(debtReserve.hub),
       params.debtToLiquidate
     );
-    uint256 drawnSharesLiquidated = debtReserve.hub.restore(
-      debtReserve.assetId,
-      params.debtToLiquidate - premiumDebtToLiquidateRay.fromRayUp(),
-      premiumDelta
-    );
+    debtReserve.hub.restore(debtReserve.assetId, drawnDebtLiquidated, premiumDelta);
 
     debtPosition.applyPremiumDelta(premiumDelta);
     debtPosition.drawnShares -= drawnSharesLiquidated.toUint120();
-
     if (debtPosition.drawnShares == 0) {
       positionStatus.setBorrowing(params.debtReserveId, false);
       return (drawnSharesLiquidated, premiumDelta, true);

@@ -477,7 +477,6 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
 
   /// @notice Returns the most up-to-date user account data information.
   /// @dev Utilizes user's current dynamic configuration of user position.
-  /// @dev Risk premium is calculated from up-to-date user position data, and will likely differ from the stored user risk premium.
   function getUserAccountData(address user) external view returns (UserAccountData memory);
 
   /// @notice Returns the risk premium from the user's last position update.
