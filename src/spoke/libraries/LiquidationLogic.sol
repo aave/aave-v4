@@ -339,16 +339,14 @@ library LiquidationLogic {
       restoredPremiumRay: premiumDebtToLiquidateRay
     });
 
-    uint256 premiumDebtToLiquidate = premiumDebtToLiquidateRay.fromRayUp();
-    uint256 drawnDebtToLiquidate = params.debtToLiquidate - premiumDebtToLiquidate;
     debtReserve.underlying.safeTransferFrom(
       params.liquidator,
       address(debtReserve.hub),
-      drawnDebtToLiquidate + premiumDebtToLiquidate
+      params.debtToLiquidate
     );
     uint256 drawnSharesLiquidated = debtReserve.hub.restore(
       debtReserve.assetId,
-      drawnDebtToLiquidate,
+      params.debtToLiquidate - premiumDebtToLiquidateRay.fromRayUp(),
       premiumDelta
     );
     debtPosition.applyPremiumDelta(premiumDelta);

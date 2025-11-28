@@ -302,9 +302,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     _validateRepay(reserve);
 
     uint256 drawnIndex = reserve.hub.getAssetDrawnIndex(reserve.assetId);
-    (uint256 drawnDebtRestored, , uint256 premiumDebtRayRestored) = userPosition.getDebt(
-      drawnIndex
-    );
+    (uint256 drawnDebtRestored, uint256 premiumDebtRayRestored) = userPosition.getDebt(drawnIndex);
 
     (drawnDebtRestored, premiumDebtRayRestored) = _calculateRestoreAmount(
       drawnDebtRestored,
@@ -352,7 +350,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     UserAccountData memory userAccountData = _calculateUserAccountData(user);
 
     uint256 drawnIndex = debtReserve.hub.getAssetDrawnIndex(debtReserve.assetId);
-    (uint256 drawnDebt, , uint256 premiumDebtRay) = _userPositions[user][debtReserveId].getDebt(
+    (uint256 drawnDebt, uint256 premiumDebtRay) = _userPositions[user][debtReserveId].getDebt(
       drawnIndex
     );
 
@@ -591,23 +589,29 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
   function getUserDebt(uint256 reserveId, address user) external view returns (uint256, uint256) {
     Reserve storage reserve = _getReserve(reserveId);
     UserPosition storage userPosition = _userPositions[user][reserveId];
-    (uint256 drawnDebt, uint256 premiumDebt, ) = userPosition.getDebt(reserve.hub, reserve.assetId);
-    return (drawnDebt, premiumDebt);
+    (uint256 drawnDebt, uint256 premiumDebtRay) = userPosition.getDebt(
+      reserve.hub,
+      reserve.assetId
+    );
+    return (drawnDebt, premiumDebtRay.fromRayUp());
   }
 
   /// @inheritdoc ISpokeBase
   function getUserTotalDebt(uint256 reserveId, address user) external view returns (uint256) {
     Reserve storage reserve = _getReserve(reserveId);
     UserPosition storage userPosition = _userPositions[user][reserveId];
-    (uint256 drawnDebt, uint256 premiumDebt, ) = userPosition.getDebt(reserve.hub, reserve.assetId);
-    return (drawnDebt + premiumDebt);
+    (uint256 drawnDebt, uint256 premiumDebtRay) = userPosition.getDebt(
+      reserve.hub,
+      reserve.assetId
+    );
+    return (drawnDebt + premiumDebtRay.fromRayUp());
   }
 
   /// @inheritdoc ISpokeBase
   function getUserPremiumDebtRay(uint256 reserveId, address user) external view returns (uint256) {
     Reserve storage reserve = _getReserve(reserveId);
     UserPosition storage userPosition = _userPositions[user][reserveId];
-    (, , uint256 premiumDebtRay) = userPosition.getDebt(reserve.hub, reserve.assetId);
+    (, uint256 premiumDebtRay) = userPosition.getDebt(reserve.hub, reserve.assetId);
     return premiumDebtRay;
   }
 
@@ -748,12 +752,13 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
       }
 
       if (borrowing) {
-        (uint256 drawnDebt, uint256 premiumDebt, ) = userPosition.getDebt(
+        (uint256 drawnDebt, uint256 premiumDebtRay) = userPosition.getDebt(
           reserve.hub,
           reserve.assetId
         );
         // we can simplify since there is no precision loss due to the division here
-        accountData.totalDebtValue += ((drawnDebt + premiumDebt) * assetPrice).wadDivUp(assetUnit);
+        accountData.totalDebtValue += ((drawnDebt + premiumDebtRay.fromRayUp()) * assetPrice)
+          .wadDivUp(assetUnit);
         accountData.borrowedCount = accountData.borrowedCount.uncheckedAdd(1);
       }
     }
@@ -849,7 +854,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
       IHubBase hub = reserve.hub;
       uint256 assetId = reserve.assetId;
       uint256 drawnIndex = hub.getAssetDrawnIndex(assetId);
-      (uint256 drawnDebtReported, , uint256 premiumDebtRay) = userPosition.getDebt(drawnIndex);
+      (uint256 drawnDebtReported, uint256 premiumDebtRay) = userPosition.getDebt(drawnIndex);
 
       IHubBase.PremiumDelta memory premiumDelta = userPosition.getPremiumDelta({
         drawnIndex: drawnIndex,

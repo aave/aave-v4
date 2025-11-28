@@ -9,6 +9,7 @@ import {UserPositionDebtWrapper} from 'tests/mocks/UserPositionDebtWrapper.sol';
 contract UserPositionDebtTest is Base {
   using SafeCast for *;
   using WadRayMath for *;
+  using MathUtils for uint256;
 
   UserPositionDebtWrapper internal u;
 
@@ -30,26 +31,27 @@ contract UserPositionDebtTest is Base {
     _mockHubDrawnIndex(DRAWN_INDEX);
   }
 
-  function test_fuzz_calculatePremiumRay(
-    uint256 premiumShares,
-    int256 premiumOffsetRay,
-    uint256 drawnIndex
-  ) public {
-    (premiumShares, premiumOffsetRay, drawnIndex) = _bound({
-      premiumShares: premiumShares,
-      premiumOffsetRay: premiumOffsetRay,
-      drawnIndex: drawnIndex
-    });
-    _mockUserPremiumData(premiumShares, premiumOffsetRay);
+  function test_fuzz_applyPremiumDelta(IHubBase.PremiumDelta memory premiumDelta) public {
+    premiumDelta = _bound(premiumDelta);
+
+    u.applyPremiumDelta(premiumDelta);
+    assertEq(u.getUserPosition().premiumShares, PREMIUM_SHARES.add(premiumDelta.sharesDelta));
     assertEq(
-      u.calculatePremiumRay(drawnIndex),
-      _calculatePremiumDebtRay(premiumShares, premiumOffsetRay, drawnIndex)
+      u.getUserPosition().premiumOffsetRay,
+      PREMIUM_OFFSET_RAY + premiumDelta.offsetRayDelta
     );
   }
 
-  function test_calculatePremiumRay() public {
-    _mockUserPremiumData(PREMIUM_SHARES, PREMIUM_OFFSET_RAY);
-    assertEq(u.calculatePremiumRay(DRAWN_INDEX), 248.5e18 * 1e27);
+  function test_applyPremiumDelta() public {
+    u.applyPremiumDelta(
+      IHubBase.PremiumDelta({
+        sharesDelta: -10e18,
+        offsetRayDelta: 10e18 * 1e27,
+        restoredPremiumRay: vm.randomUint()
+      })
+    );
+    assertEq(u.getUserPosition().premiumShares, 89e18);
+    assertEq(u.getUserPosition().premiumOffsetRay, -90e18 * 1e27);
   }
 
   function test_fuzz_getPremiumDelta(
@@ -101,6 +103,28 @@ contract UserPositionDebtTest is Base {
     );
   }
 
+  function test_fuzz_calculatePremiumRay(
+    uint256 premiumShares,
+    int256 premiumOffsetRay,
+    uint256 drawnIndex
+  ) public {
+    (premiumShares, premiumOffsetRay, drawnIndex) = _bound({
+      premiumShares: premiumShares,
+      premiumOffsetRay: premiumOffsetRay,
+      drawnIndex: drawnIndex
+    });
+    _mockUserPremiumData(premiumShares, premiumOffsetRay);
+    assertEq(
+      u.calculatePremiumRay(drawnIndex),
+      _calculatePremiumDebtRay(premiumShares, premiumOffsetRay, drawnIndex)
+    );
+  }
+
+  function test_calculatePremiumRay() public {
+    _mockUserPremiumData(PREMIUM_SHARES, PREMIUM_OFFSET_RAY);
+    assertEq(u.calculatePremiumRay(DRAWN_INDEX), 248.5e18 * 1e27);
+  }
+
   function test_fuzz_getUserDebt_HubAndAssetId(
     uint256 drawnShares,
     uint256 premiumShares,
@@ -118,30 +142,25 @@ contract UserPositionDebtTest is Base {
     _mockUserPremiumData(premiumShares, premiumOffsetRay);
     _mockHubDrawnIndex(drawnIndex);
 
-    (uint256 drawnDebt, uint256 premiumDebt, uint256 premiumDebtRay) = u.getDebt(hub, assetId);
+    (uint256 drawnDebt, uint256 premiumDebtRay) = u.getDebt(hub, assetId);
     assertEq(drawnDebt, drawnShares.rayMulUp(drawnIndex));
     uint256 expectedPremiumDebtRay = _calculatePremiumDebtRay(
       premiumShares,
       premiumOffsetRay,
       drawnIndex
     );
-    assertEq(premiumDebt, expectedPremiumDebtRay.fromRayUp());
     assertEq(premiumDebtRay, expectedPremiumDebtRay);
   }
 
   function test_getUserDebt_HubAndAssetId() public {
-    (uint256 drawnDebt, uint256 premiumDebt, uint256 premiumDebtRay) = u.getDebt(hub, assetId);
+    (uint256 drawnDebt, uint256 premiumDebtRay) = u.getDebt(hub, assetId);
     assertEq(drawnDebt, 300e18);
-    assertEq(premiumDebt, 248.5e18);
     assertEq(premiumDebtRay, 248.5e18 * 1e27);
-  }
 
-  function test_getUserDebt_HubAndAssetId_RoundUp() public {
     _mockUserPremiumData(70e18, 0);
     _mockHubDrawnIndex(1.777777777777777777777777777e27);
-    (uint256 drawnDebt, uint256 premiumDebt, uint256 premiumDebtRay) = u.getDebt(hub, assetId);
+    (drawnDebt, premiumDebtRay) = u.getDebt(hub, assetId);
     assertEq(drawnDebt, 355.555555555555555556e18);
-    assertEq(premiumDebt, 124.444444444444444445e18);
     assertEq(premiumDebtRay, 124.44444444444444444444444439e45);
   }
 
@@ -160,31 +179,24 @@ contract UserPositionDebtTest is Base {
     _mockUserDrawnShares(drawnShares);
     _mockUserPremiumData(premiumShares, premiumOffsetRay);
 
-    (uint256 drawnDebt, uint256 premiumDebt, uint256 premiumDebtRay) = u.getDebt(drawnIndex);
+    (uint256 drawnDebt, uint256 premiumDebtRay) = u.getDebt(drawnIndex);
     assertEq(drawnDebt, drawnShares.rayMulUp(drawnIndex));
     uint256 expectedPremiumDebtRay = _calculatePremiumDebtRay(
       premiumShares,
       premiumOffsetRay,
       drawnIndex
     );
-    assertEq(premiumDebt, expectedPremiumDebtRay.fromRayUp());
     assertEq(premiumDebtRay, expectedPremiumDebtRay);
   }
 
   function test_getUserDebt_DrawnIndex() public {
-    (uint256 drawnDebt, uint256 premiumDebt, uint256 premiumDebtRay) = u.getDebt(DRAWN_INDEX);
+    (uint256 drawnDebt, uint256 premiumDebtRay) = u.getDebt(DRAWN_INDEX);
     assertEq(drawnDebt, 300e18);
-    assertEq(premiumDebt, 248.5e18);
     assertEq(premiumDebtRay, 248.5e18 * 1e27);
-  }
 
-  function test_getUserDebt_DrawnIndex_RoundUp() public {
     _mockUserPremiumData(70e18, 0);
-    (uint256 drawnDebt, uint256 premiumDebt, uint256 premiumDebtRay) = u.getDebt(
-      1.777777777777777777777777777e27
-    );
+    (drawnDebt, premiumDebtRay) = u.getDebt(1.777777777777777777777777777e27);
     assertEq(drawnDebt, 355.555555555555555556e18);
-    assertEq(premiumDebt, 124.444444444444444445e18);
     assertEq(premiumDebtRay, 124.44444444444444444444444439e45);
   }
 
@@ -210,6 +222,14 @@ contract UserPositionDebtTest is Base {
       abi.encodeCall(IHubBase.getAssetDrawnIndex, (assetId)),
       abi.encode(drawnIndex)
     );
+  }
+
+  function _bound(
+    IHubBase.PremiumDelta memory premiumDelta
+  ) internal pure returns (IHubBase.PremiumDelta memory) {
+    premiumDelta.sharesDelta = bound(premiumDelta.sharesDelta, -PREMIUM_SHARES.toInt256(), 1e30);
+    premiumDelta.offsetRayDelta = bound(premiumDelta.offsetRayDelta, -1e30, 1e30);
+    return premiumDelta;
   }
 
   function _bound(
