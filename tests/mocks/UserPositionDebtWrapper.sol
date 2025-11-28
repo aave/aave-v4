@@ -37,15 +37,30 @@ contract UserPositionDebtWrapper {
       );
   }
 
-  function calculatePremiumRay(uint256 drawnIndex) external view returns (uint256) {
-    return UserPositionDebt.calculatePremiumRay(_userPosition, drawnIndex);
-  }
-
   function getDebt(IHubBase hub, uint256 assetId) external view returns (uint256, uint256) {
     return UserPositionDebt.getDebt(_userPosition, hub, assetId);
   }
 
   function getDebt(uint256 drawnIndex) external view returns (uint256, uint256) {
     return UserPositionDebt.getDebt(_userPosition, drawnIndex);
+  }
+
+  function calculateRestoreAmount(
+    uint256 drawnIndex,
+    uint256 amount
+  ) external view returns (uint256, uint256) {
+    return UserPositionDebt.calculateRestoreAmount(_userPosition, drawnIndex, amount);
+  }
+
+  function calculateRestoreAmount(
+    uint256 drawnDebt,
+    uint256 premiumDebtRay,
+    uint256 amount
+  ) external pure returns (uint256, uint256) {
+    return UserPositionDebt.calculateRestoreAmount(drawnDebt, premiumDebtRay, amount);
+  }
+
+  function calculatePremiumRay(uint256 drawnIndex) external view returns (uint256) {
+    return UserPositionDebt._calculatePremiumRay(_userPosition, drawnIndex);
   }
 }

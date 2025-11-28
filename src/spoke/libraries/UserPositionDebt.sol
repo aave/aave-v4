@@ -14,7 +14,7 @@ import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 /// @author Aave Labs
 /// @notice Implements debt calculations for user positions.
 library UserPositionDebt {
-  using PercentageMath for *;
+  using PercentageMath for uint256;
   using SafeCast for *;
   using MathUtils for *;
   using WadRayMath for *;
@@ -71,23 +71,47 @@ library UserPositionDebt {
       });
   }
 
-  /// @notice Calculates the premium debt of a user position with full precision.
+  /// @dev Calculates the drawn debt and premium debt to restore for the given user position and amount.
   /// @param userPosition The user position.
-  /// @param drawnIndex The current drawn index.
-  /// @return The premium debt, expressed in asset units and scaled by RAY.
-  function calculatePremiumRay(
+  /// @param drawnIndex The drawn index of the reserve.
+  /// @param amount The amount to restore.
+  /// @return The amount of drawn debt to restore, expressed in asset units.
+  /// @return The amount of premium debt to restore, expressed in asset units and scaled by RAY.
+  function calculateRestoreAmount(
     ISpoke.UserPosition storage userPosition,
-    uint256 drawnIndex
-  ) internal view returns (uint256) {
-    return
-      Premium.calculatePremiumRay({
-        premiumShares: userPosition.premiumShares,
-        premiumOffsetRay: userPosition.premiumOffsetRay,
-        drawnIndex: drawnIndex
-      });
+    uint256 drawnIndex,
+    uint256 amount
+  ) internal view returns (uint256, uint256) {
+    (uint256 drawnDebt, uint256 premiumDebtRay) = userPosition.getDebt(drawnIndex);
+    return calculateRestoreAmount(drawnDebt, premiumDebtRay, amount);
   }
 
-  /// @return The user's drawn debt.
+  /// @dev Calculates the drawn debt and premium debt to restore for the given amount.
+  /// @param drawnDebt The maximum amount of drawn debt that can be restored.
+  /// @param premiumDebtRay The maximum amount of premium debt that can be restored, expressed in asset units and scaled by RAY.
+  /// @param amount The amount to restore.
+  /// @return The amount of drawn debt to restore, expressed in asset units.
+  /// @return The amount of premium debt to restore, expressed in asset units and scaled by RAY.
+  function calculateRestoreAmount(
+    uint256 drawnDebt,
+    uint256 premiumDebtRay,
+    uint256 amount
+  ) internal pure returns (uint256, uint256) {
+    uint256 premiumDebt = premiumDebtRay.fromRayUp();
+    if (amount >= drawnDebt + premiumDebt) {
+      return (drawnDebt, premiumDebtRay);
+    }
+
+    if (amount < premiumDebt) {
+      // amount.toRay() cannot overflow here
+      uint256 amountRay = amount.toRay();
+      return (0, amountRay);
+    }
+
+    return (amount - premiumDebt, premiumDebtRay);
+  }
+
+  /// @return The user's drawn debt, expressed in asset units.
   /// @return The user's premium debt, expressed in asset units and scaled by RAY.
   function getDebt(
     ISpoke.UserPosition storage userPosition,
@@ -97,13 +121,29 @@ library UserPositionDebt {
     return userPosition.getDebt(hub.getAssetDrawnIndex(assetId));
   }
 
-  /// @return The user's drawn debt.
+  /// @return The user's drawn debt, expressed in asset units.
   /// @return The user's premium debt, expressed in asset units and scaled by RAY.
   function getDebt(
     ISpoke.UserPosition storage userPosition,
     uint256 drawnIndex
   ) internal view returns (uint256, uint256) {
-    uint256 premiumDebtRay = userPosition.calculatePremiumRay(drawnIndex);
+    uint256 premiumDebtRay = userPosition._calculatePremiumRay(drawnIndex);
     return (userPosition.drawnShares.rayMulUp(drawnIndex), premiumDebtRay);
+  }
+
+  /// @dev Calculates the premium debt of a user position with full precision.
+  /// @param userPosition The user position.
+  /// @param drawnIndex The current drawn index.
+  /// @return The premium debt, expressed in asset units and scaled by RAY.
+  function _calculatePremiumRay(
+    ISpoke.UserPosition storage userPosition,
+    uint256 drawnIndex
+  ) internal view returns (uint256) {
+    return
+      Premium.calculatePremiumRay({
+        premiumShares: userPosition.premiumShares,
+        premiumOffsetRay: userPosition.premiumOffsetRay,
+        drawnIndex: drawnIndex
+      });
   }
 }

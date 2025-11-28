@@ -336,7 +336,7 @@ library LiquidationLogic {
 
     // reset premium data for later adjustment in notify
     IHubBase.PremiumDelta memory premiumDelta = debtPosition.getPremiumDelta({
-      drawnSharesTaken: debtPosition.drawnShares,
+      drawnSharesTaken: 0,
       drawnIndex: params.drawnIndex,
       riskPremium: 0,
       restoredPremiumRay: premiumDebtToLiquidateRay

@@ -302,20 +302,14 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     _validateRepay(reserve);
 
     uint256 drawnIndex = reserve.hub.getAssetDrawnIndex(reserve.assetId);
-    (uint256 drawnDebtRestored, uint256 premiumDebtRayRestored) = _calculateRestoreAmount(
-      userPosition,
-      drawnIndex,
-      amount
-    );
+    (uint256 drawnDebtRestored, uint256 premiumDebtRayRestored) = userPosition
+      .calculateRestoreAmount(drawnIndex, amount);
 
     // we preview the drawn shares to be restored, should always be the same value returned by hub.restore()
-    uint256 previewRestoredShares = reserve.hub.previewRestoreByAssets(
-      reserve.assetId,
-      drawnDebtRestored
-    );
+    uint256 restoredShares = reserve.hub.previewRestoreByAssets(reserve.assetId, drawnDebtRestored);
 
     IHubBase.PremiumDelta memory premiumDelta = userPosition.getPremiumDelta({
-      drawnSharesTaken: previewRestoredShares,
+      drawnSharesTaken: restoredShares,
       drawnIndex: drawnIndex,
       riskPremium: _positionStatus[onBehalfOf].riskPremium,
       restoredPremiumRay: premiumDebtRayRestored
@@ -326,22 +320,15 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     reserve.hub.restore(reserve.assetId, drawnDebtRestored, premiumDelta);
 
     userPosition.applyPremiumDelta(premiumDelta);
-    userPosition.drawnShares -= previewRestoredShares.toUint120();
+    userPosition.drawnShares -= restoredShares.toUint120();
     if (userPosition.drawnShares == 0) {
       PositionStatus storage positionStatus = _positionStatus[onBehalfOf];
       positionStatus.setBorrowing(reserveId, false);
     }
 
-    emit Repay(
-      reserveId,
-      msg.sender,
-      onBehalfOf,
-      previewRestoredShares,
-      totalDebtRestored,
-      premiumDelta
-    );
+    emit Repay(reserveId, msg.sender, onBehalfOf, restoredShares, totalDebtRestored, premiumDelta);
 
-    return (previewRestoredShares, totalDebtRestored);
+    return (restoredShares, totalDebtRestored);
   }
 
   /// @inheritdoc ISpokeBase
@@ -955,46 +942,6 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
       InvalidCollateralFactorAndMaxLiquidationBonus()
     );
     require(config.liquidationFee <= PercentageMath.PERCENTAGE_FACTOR, InvalidLiquidationFee());
-  }
-
-  /// @dev Calculates the drawn debt and premium debt to restore for the given user position and amount.
-  /// @param userPosition The user position.
-  /// @param drawnIndex The drawn index of the reserve.
-  /// @param amount The amount to restore.
-  /// @return The amount of drawn debt to restore, expressed in asset units.
-  /// @return The amount of premium debt to restore, expressed in asset units and scaled by RAY.
-  function _calculateRestoreAmount(
-    UserPosition storage userPosition,
-    uint256 drawnIndex,
-    uint256 amount
-  ) internal view returns (uint256, uint256) {
-    (uint256 drawnDebtRestored, uint256 premiumDebtRayRestored) = userPosition.getDebt(drawnIndex);
-    return _calculateRestoreAmount(drawnDebtRestored, premiumDebtRayRestored, amount);
-  }
-
-  /// @dev Calculates the drawn debt and premium debt to restore for the given amount.
-  /// @param drawnDebt The maximum amount of drawn debt that can be restored.
-  /// @param premiumDebtRay The maximum amount of premium debt that can be restored, expressed in asset units and scaled by RAY.
-  /// @param amount The amount to restore.
-  /// @return The amount of drawn debt to restore, expressed in asset units.
-  /// @return The amount of premium debt to restore, expressed in asset units and scaled by RAY.
-  function _calculateRestoreAmount(
-    uint256 drawnDebt,
-    uint256 premiumDebtRay,
-    uint256 amount
-  ) internal pure returns (uint256, uint256) {
-    uint256 premiumDebt = premiumDebtRay.fromRayUp();
-    if (amount >= drawnDebt + premiumDebt) {
-      return (drawnDebt, premiumDebtRay);
-    }
-
-    if (amount < premiumDebt) {
-      // amount.toRay() cannot overflow here
-      uint256 amountRay = amount.toRay();
-      return (0, amountRay);
-    }
-
-    return (amount - premiumDebt, premiumDebtRay);
   }
 
   function _domainNameAndVersion() internal pure override returns (string memory, string memory) {

@@ -215,6 +215,83 @@ contract UserPositionDebtTest is Base {
     assertEq(premiumDebtRay, 124.44444444444444444444444439e45);
   }
 
+  function test_fuzz_calculateRestoreAmount(
+    uint256 drawnDebt,
+    uint256 premiumDebtRay,
+    uint256 amount
+  ) public view {
+    drawnDebt = bound(drawnDebt, 0, 1e30);
+    premiumDebtRay = bound(premiumDebtRay, 0, 1e25.toRay());
+    amount = bound(amount, 0, 1e30);
+
+    (uint256 restoredDrawnDebt, uint256 restoredPremiumDebtRay) = u.calculateRestoreAmount(
+      drawnDebt,
+      premiumDebtRay,
+      amount
+    );
+
+    if (amount >= drawnDebt + premiumDebtRay.fromRayUp()) {
+      assertEq(restoredDrawnDebt, drawnDebt);
+      assertEq(restoredPremiumDebtRay, premiumDebtRay);
+    } else if (amount < premiumDebtRay.fromRayUp()) {
+      assertEq(restoredDrawnDebt, 0);
+      assertEq(restoredPremiumDebtRay, amount.toRay());
+    } else {
+      assertEq(restoredDrawnDebt, amount - premiumDebtRay.fromRayUp());
+      assertEq(restoredPremiumDebtRay, premiumDebtRay);
+    }
+  }
+
+  function test_calculateRestoreAmount_DrawnIndex() public {
+    (uint256 restoredDrawnDebt, uint256 restoredPremiumDebtRay) = u.calculateRestoreAmount(
+      DRAWN_INDEX,
+      400e18
+    );
+    assertEq(restoredDrawnDebt, 151.5e18);
+    assertEq(restoredPremiumDebtRay, 2.485e47);
+
+    _mockUserPremiumData(70e18, 0);
+    (restoredDrawnDebt, restoredPremiumDebtRay) = u.calculateRestoreAmount(1.75e27, 372.5e18);
+    assertEq(restoredDrawnDebt, 250e18);
+    assertEq(restoredPremiumDebtRay, 1.225e47);
+  }
+
+  function test_fuzz_calculateRestoreAmount_DrawnIndex(
+    uint256 drawnShares,
+    uint256 premiumShares,
+    int256 premiumOffsetRay,
+    uint256 drawnIndex,
+    uint256 amount
+  ) public {
+    (drawnShares, premiumShares, premiumOffsetRay, drawnIndex) = _bound({
+      drawnShares: drawnShares,
+      premiumShares: premiumShares,
+      premiumOffsetRay: premiumOffsetRay,
+      drawnIndex: drawnIndex
+    });
+    amount = bound(amount, 0, 1e40);
+    _mockUserDrawnShares(drawnShares);
+    _mockUserPremiumData(premiumShares, premiumOffsetRay);
+
+    (uint256 drawnDebt, uint256 premiumDebtRay) = u.getDebt(drawnIndex);
+
+    (uint256 restoredDrawnDebt, uint256 restoredPremiumDebtRay) = u.calculateRestoreAmount(
+      drawnIndex,
+      amount
+    );
+
+    if (amount >= drawnDebt + premiumDebtRay.fromRayUp()) {
+      assertEq(restoredDrawnDebt, drawnDebt);
+      assertEq(restoredPremiumDebtRay, premiumDebtRay);
+    } else if (amount < premiumDebtRay.fromRayUp()) {
+      assertEq(restoredDrawnDebt, 0);
+      assertEq(restoredPremiumDebtRay, amount.toRay());
+    } else {
+      assertEq(restoredDrawnDebt, amount - premiumDebtRay.fromRayUp());
+      assertEq(restoredPremiumDebtRay, premiumDebtRay);
+    }
+  }
+
   function _mockUserDrawnShares(uint256 drawnShares) internal {
     ISpoke.UserPosition memory userPosition = u.getUserPosition();
     userPosition.drawnShares = drawnShares.toUint120();
