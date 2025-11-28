@@ -280,13 +280,6 @@ contract HubSkimTest is HubBase {
     // no premium accrued
     assertEq(premium, 0);
 
-    IHubBase.PremiumDelta memory premiumDelta = IHubBase.PremiumDelta({
-      sharesDelta: 0,
-      offsetDeltaRay: 0,
-      accruedPremiumRay: 0,
-      restoredPremiumRay: 0
-    });
-
     // send donation to hub
     vm.prank(alice);
     underlying.transfer(address(hub1), donationAmount);
@@ -294,7 +287,14 @@ contract HubSkimTest is HubBase {
     uint256 skimShares = hub1.previewRestoreByAssets(assetId, donationAmount);
 
     vm.expectEmit(address(hub1));
-    emit IHubBase.Restore(assetId, address(skimSpoke), skimShares, premiumDelta, donationAmount, 0);
+    emit IHubBase.Restore(
+      assetId,
+      address(skimSpoke),
+      skimShares,
+      ZERO_PREMIUM_DELTA,
+      donationAmount,
+      0
+    );
     uint256 skimmedShares = skimSpoke.skimRestore(assetId, donationAmount);
 
     (uint256 newDrawn, ) = hub1.getSpokeOwed(assetId, address(skimSpoke));

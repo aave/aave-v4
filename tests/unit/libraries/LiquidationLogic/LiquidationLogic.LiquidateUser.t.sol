@@ -17,6 +17,7 @@ contract LiquidationLogicLiquidateUserTest is LiquidationLogicBaseTest {
   ISpoke.DynamicReserveConfig dynamicCollateralConfig;
   LiquidationLogic.LiquidateUserParams params;
 
+  // drawn index is 1.05
   // variable liquidation bonus is max: 120%
   // liquidation penalty: 1.2 * 0.5 = 0.6
   // debtToTarget = $10000 * (1 - 0.8) / (1 - 0.6) / $2000 = 2.5
@@ -29,6 +30,8 @@ contract LiquidationLogicLiquidateUserTest is LiquidationLogicBaseTest {
     super.setUp();
     (hub2, ) = hub2Fixture();
 
+    _mockInterestRateBps(hub2.getAsset(wethAssetId).irStrategy, 5_00);
+
     // Mock params
     usdxReserveId = _usdxReserveId(spoke1);
     wethReserveId = _wethReserveId(spoke1);
@@ -40,8 +43,8 @@ contract LiquidationLogicLiquidateUserTest is LiquidationLogicBaseTest {
       debtToCover: 3e18,
       healthFactor: 0.8e18,
       drawnDebt: 4.5e18,
-      premiumDebt: 0.5e18,
-      accruedPremiumRay: 0.2e18 * WadRayMath.RAY,
+      premiumDebtRay: 0.5e18 * WadRayMath.RAY,
+      drawnIndex: 1.05e27,
       totalDebtValue: 10_000e26,
       liquidator: makeAddr('liquidator'),
       activeCollateralCount: 1,
@@ -112,7 +115,15 @@ contract LiquidationLogicLiquidateUserTest is LiquidationLogicBaseTest {
     vm.startPrank(address(liquidationLogicWrapper));
     hub2.refreshPremium(
       wethAssetId,
-      IHubBase.PremiumDelta(1e6 * 1e18, 1e6 * 1e18 * WadRayMath.RAY.toInt256(), 0, 0)
+      _getExpectedPremiumDelta({
+        hub: hub2,
+        assetId: wethAssetId,
+        oldPremiumShares: 0,
+        oldPremiumOffsetRay: 0,
+        drawnShares: 1e6 * 1e18, // risk premium is 100%
+        riskPremium: 100_00,
+        restoredPremiumRay: 0
+      })
     );
     vm.stopPrank();
     skip(365 days);
@@ -123,36 +134,14 @@ contract LiquidationLogicLiquidateUserTest is LiquidationLogicBaseTest {
     assertGt(spokeDrawnOwed, 10000e18);
     assertGt(spokePremiumOwed, 10000e18);
 
-    // Refresh premium to realise some premium debt
-    uint256 realizedPremiumRay = _calculateAccruedPremiumRay(
-      hub2,
-      wethAssetId,
-      1e3 * 1e18,
-      1e3 * 1e18 * WadRayMath.RAY
-    );
-    assertGt(realizedPremiumRay, 10e18 * WadRayMath.RAY);
-    vm.prank(address(liquidationLogicWrapper));
-    hub2.refreshPremium(
-      wethAssetId,
-      IHubBase.PremiumDelta(
-        -1e3 * 1e18,
-        -1e3 * 1e18 * WadRayMath.RAY.toInt256(),
-        realizedPremiumRay,
-        0
-      )
-    );
-
     // Mock user debt position
     liquidationLogicWrapper.setDebtPositionDrawnShares(
       hub2.previewRestoreByAssets(wethAssetId, params.drawnDebt)
     );
-    uint256 premiumDebtShares = hub2.previewDrawByAssets(wethAssetId, params.premiumDebt);
-    liquidationLogicWrapper.setDebtPositionPremiumShares(premiumDebtShares);
+    liquidationLogicWrapper.setDebtPositionPremiumShares(params.premiumDebtRay.fromRayUp());
     liquidationLogicWrapper.setDebtPositionPremiumOffsetRay(
-      _calculatePremiumAssetsRay(hub2, wethAssetId, premiumDebtShares) - params.accruedPremiumRay
-    );
-    liquidationLogicWrapper.setDebtPositionRealizedPremiumRay(
-      params.premiumDebt.toRay() - params.accruedPremiumRay
+      _calculatePremiumAssetsRay(hub2, wethAssetId, params.premiumDebtRay.fromRayUp()).toInt256() -
+        params.premiumDebtRay.toInt256()
     );
 
     // Mint tokens to liquidator and approve spoke
@@ -200,12 +189,15 @@ contract LiquidationLogicLiquidateUserTest is LiquidationLogicBaseTest {
         (
           wethAssetId,
           2e18,
-          IHubBase.PremiumDelta(
-            -debtPosition.premiumShares.toInt256(),
-            -debtPosition.premiumOffsetRay.toInt256(),
-            0.2e18 * WadRayMath.RAY,
-            0.5e18 * WadRayMath.RAY
-          )
+          _getExpectedPremiumDelta({
+            hub: hub2,
+            assetId: wethAssetId,
+            oldPremiumShares: debtPosition.premiumShares,
+            oldPremiumOffsetRay: debtPosition.premiumOffsetRay,
+            drawnShares: 0,
+            riskPremium: 0,
+            restoredPremiumRay: 0.5e18 * WadRayMath.RAY
+          })
         )
       ),
       1

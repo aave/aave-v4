@@ -11,7 +11,7 @@ import {PositionStatusMap} from 'src/spoke/libraries/PositionStatusMap.sol';
 import {LiquidationLogic} from 'src/spoke/libraries/LiquidationLogic.sol';
 
 contract LiquidationLogicWrapper {
-  using SafeCast for uint256;
+  using SafeCast for *;
   using SafeERC20 for IERC20;
   using PositionStatusMap for ISpoke.PositionStatus;
 
@@ -100,12 +100,8 @@ contract LiquidationLogicWrapper {
     _userPositions[_borrower][_debtReserveId].premiumShares = premiumShares.toUint120();
   }
 
-  function setDebtPositionPremiumOffsetRay(uint256 premiumOffsetRay) public {
-    _userPositions[_borrower][_debtReserveId].premiumOffsetRay = premiumOffsetRay.toUint200();
-  }
-
-  function setDebtPositionRealizedPremiumRay(uint256 realizedPremiumRay) public {
-    _userPositions[_borrower][_debtReserveId].realizedPremiumRay = realizedPremiumRay.toUint200();
+  function setDebtPositionPremiumOffsetRay(int256 premiumOffsetRay) public {
+    _userPositions[_borrower][_debtReserveId].premiumOffsetRay = premiumOffsetRay.toInt200();
   }
 
   function setBorrowerCollateralStatus(uint256 reserveId, bool status) public {

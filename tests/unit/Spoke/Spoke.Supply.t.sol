@@ -86,13 +86,11 @@ contract SpokeSupplyTest is SpokeBase {
     assertEq(daiData[stage].data.drawnShares, 0);
     assertEq(daiData[stage].data.premiumShares, 0);
     assertEq(daiData[stage].data.premiumOffsetRay, 0);
-    assertEq(daiData[stage].data.realizedPremiumRay, 0);
     assertEq(daiData[stage].data.addedShares, 0);
     // user
     assertEq(bobData[stage].data.drawnShares, 0);
     assertEq(bobData[stage].data.premiumShares, 0);
     assertEq(bobData[stage].data.premiumOffsetRay, 0);
-    assertEq(bobData[stage].data.realizedPremiumRay, 0);
     assertEq(bobData[stage].data.suppliedShares, 0);
     TestReturnValues memory returnValues;
     vm.expectEmit(address(spoke1));
@@ -122,7 +120,6 @@ contract SpokeSupplyTest is SpokeBase {
     assertEq(daiData[stage].data.drawnShares, 0, 'reserve drawnShares after-supply');
     assertEq(daiData[stage].data.premiumShares, 0, 'reserve premiumShares after-supply');
     assertEq(daiData[stage].data.premiumOffsetRay, 0, 'reserve premiumOffsetRay after-supply');
-    assertEq(daiData[stage].data.realizedPremiumRay, 0, 'reserve realizedPremiumRay after-supply');
     assertEq(
       daiData[stage].data.addedShares,
       hub1.previewAddByAssets(daiAssetId, amount),
@@ -140,7 +137,6 @@ contract SpokeSupplyTest is SpokeBase {
     assertEq(bobData[stage].data.drawnShares, 0, 'bob drawnShares after-supply');
     assertEq(bobData[stage].data.premiumShares, 0, 'bob premiumShares after-supply');
     assertEq(bobData[stage].data.premiumOffsetRay, 0, 'bob premiumOffsetRay after-supply');
-    assertEq(bobData[stage].data.realizedPremiumRay, 0, 'bob realizedPremiumRay after-supply');
     assertEq(
       bobData[stage].data.suppliedShares,
       hub1.previewAddByAssets(daiAssetId, amount),
@@ -173,13 +169,11 @@ contract SpokeSupplyTest is SpokeBase {
     assertEq(daiData[stage].data.drawnShares, 0);
     assertEq(daiData[stage].data.premiumShares, 0);
     assertEq(daiData[stage].data.premiumOffsetRay, 0);
-    assertEq(daiData[stage].data.realizedPremiumRay, 0);
     assertEq(daiData[stage].data.addedShares, 0);
     // user
     assertEq(bobData[stage].data.drawnShares, 0);
     assertEq(bobData[stage].data.premiumShares, 0);
     assertEq(bobData[stage].data.premiumOffsetRay, 0);
-    assertEq(bobData[stage].data.realizedPremiumRay, 0);
     assertEq(bobData[stage].data.suppliedShares, 0);
 
     TestReturnValues memory returnValues;
@@ -208,7 +202,6 @@ contract SpokeSupplyTest is SpokeBase {
     assertEq(daiData[stage].data.drawnShares, 0, 'reserve drawnShares after-supply');
     assertEq(daiData[stage].data.premiumShares, 0, 'reserve premiumShares after-supply');
     assertEq(daiData[stage].data.premiumOffsetRay, 0, 'reserve premiumOffsetRay after-supply');
-    assertEq(daiData[stage].data.realizedPremiumRay, 0, 'reserve realizedPremiumRay after-supply');
     assertEq(
       daiData[stage].data.addedShares,
       hub1.previewAddByAssets(daiAssetId, amount),
@@ -226,7 +219,6 @@ contract SpokeSupplyTest is SpokeBase {
     assertEq(bobData[stage].data.drawnShares, 0, 'user drawnShares after-supply');
     assertEq(bobData[stage].data.premiumShares, 0, 'user premiumShares after-supply');
     assertEq(bobData[stage].data.premiumOffsetRay, 0, 'user premiumOffsetRay after-supply');
-    assertEq(bobData[stage].data.realizedPremiumRay, 0, 'user realizedPremiumRay after-supply');
     assertEq(
       bobData[stage].data.suppliedShares,
       hub1.previewAddByAssets(daiAssetId, amount),
@@ -295,7 +287,6 @@ contract SpokeSupplyTest is SpokeBase {
     );
     assertEq(daiData[stage].data.premiumShares, 0, 'reserve premiumShares after-supply');
     assertEq(daiData[stage].data.premiumOffsetRay, 0, 'reserve premiumOffsetRay after-supply');
-    assertEq(daiData[stage].data.realizedPremiumRay, 0, 'reserve realizedPremiumRay after-supply');
     assertEq(
       daiData[stage].data.addedShares,
       daiData[stage - 1].data.addedShares + expectedShares,
@@ -307,7 +298,6 @@ contract SpokeSupplyTest is SpokeBase {
     assertEq(carolData[stage].data.drawnShares, 0, 'user drawnShares after-supply');
     assertEq(carolData[stage].data.premiumShares, 0, 'user premiumShares after-supply');
     assertEq(carolData[stage].data.premiumOffsetRay, 0, 'user premiumOffsetRay after-supply');
-    assertEq(carolData[stage].data.realizedPremiumRay, 0, 'user realizedPremiumRay after-supply');
     assertEq(
       carolData[stage].data.suppliedShares,
       expectedShares,
@@ -417,11 +407,6 @@ contract SpokeSupplyTest is SpokeBase {
     assertEq(reserveData[stage].data.premiumShares, 0, 'reserve premiumShares after-supply');
     assertEq(reserveData[stage].data.premiumOffsetRay, 0, 'reserve premiumOffsetRay after-supply');
     assertEq(
-      reserveData[stage].data.realizedPremiumRay,
-      0,
-      'reserve realizedPremiumRay after-supply'
-    );
-    assertEq(
       reserveData[stage].data.addedShares,
       reserveData[stage - 1].data.addedShares + state.expectedShares,
       'reserve addedShares after-supply'
@@ -432,7 +417,6 @@ contract SpokeSupplyTest is SpokeBase {
     assertEq(carolData[stage].data.drawnShares, 0, 'user drawnShares after-supply');
     assertEq(carolData[stage].data.premiumShares, 0, 'user premiumShares after-supply');
     assertEq(carolData[stage].data.premiumOffsetRay, 0, 'user premiumOffsetRay after-supply');
-    assertEq(carolData[stage].data.realizedPremiumRay, 0, 'user realizedPremiumRay after-supply');
     assertEq(
       carolData[stage].data.suppliedShares,
       state.expectedShares,
@@ -503,7 +487,6 @@ contract SpokeSupplyTest is SpokeBase {
     assertEq(carolData[stage].data.drawnShares, 0, 'user drawnShares after-supply');
     assertEq(carolData[stage].data.premiumShares, 0, 'user premiumShares after-supply');
     assertEq(carolData[stage].data.premiumOffsetRay, 0, 'user premiumOffsetRay after-supply');
-    assertEq(carolData[stage].data.realizedPremiumRay, 0, 'user realizedPremiumRay after-supply');
     assertEq(
       carolData[stage].data.suppliedShares,
       expectedShares,
@@ -603,7 +586,6 @@ contract SpokeSupplyTest is SpokeBase {
     assertEq(carolData[stage].data.drawnShares, 0, 'user drawnShares after-supply');
     assertEq(carolData[stage].data.premiumShares, 0, 'user premiumShares after-supply');
     assertEq(carolData[stage].data.premiumOffsetRay, 0, 'user premiumOffsetRay after-supply');
-    assertEq(carolData[stage].data.realizedPremiumRay, 0, 'user realizedPremiumRay after-supply');
     assertEq(
       carolData[stage].data.suppliedShares,
       expectedShares,

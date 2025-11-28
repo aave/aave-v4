@@ -8,13 +8,11 @@ pragma solidity ^0.8.0;
 interface IHubBase {
   /// @notice Changes to premium owed accounting.
   /// @dev sharesDelta The change in premium shares.
-  /// @dev offsetDeltaRay The change in premium offset, expressed in asset units and scaled by RAY.
-  /// @dev accruedPremiumRay The accrued premium, expressed in asset units and scaled by RAY.
+  /// @dev offsetRayDelta The change in premium offset, expressed in asset units and scaled by RAY.
   /// @dev restoredPremiumRay The restored premium, expressed in asset units and scaled by RAY.
   struct PremiumDelta {
     int256 sharesDelta;
-    int256 offsetDeltaRay;
-    uint256 accruedPremiumRay;
+    int256 offsetRayDelta;
     uint256 restoredPremiumRay;
   }
 
@@ -259,8 +257,7 @@ interface IHubBase {
   /// @param assetId The identifier of the asset.
   /// @return The amount of premium shares owed to the asset.
   /// @return The premium offset of the asset, expressed in asset units and scaled by RAY.
-  /// @return The realized premium of the asset, expressed in asset units and scaled by RAY.
-  function getAssetPremiumData(uint256 assetId) external view returns (uint256, uint256, uint256);
+  function getAssetPremiumData(uint256 assetId) external view returns (uint256, int256);
 
   /// @notice Returns the amount of available liquidity for the specified asset.
   /// @param assetId The identifier of the asset.
@@ -316,11 +313,10 @@ interface IHubBase {
   /// @param spoke The address of the spoke.
   /// @return The amount of premium shares.
   /// @return The premium offset, expressed in asset units and scaled by RAY.
-  /// @return The realized premium, expressed in asset units and scaled by RAY.
   function getSpokePremiumData(
     uint256 assetId,
     address spoke
-  ) external view returns (uint256, uint256, uint256);
+  ) external view returns (uint256, int256);
 
   /// @notice Returns the amount of a given spoke's deficit with full precision for the specified asset.
   /// @param assetId The identifier of the asset.

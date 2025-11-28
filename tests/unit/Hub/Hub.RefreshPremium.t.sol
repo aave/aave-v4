@@ -12,8 +12,7 @@ contract HubRefreshPremiumTest is HubBase {
 
   struct PremiumDataLocal {
     uint256 premiumShares;
-    uint256 premiumOffsetRay;
-    uint256 realizedPremiumRay;
+    int256 premiumOffsetRay;
   }
 
   function test_refreshPremium_revertsWith_SpokeNotActive() public {
@@ -46,10 +45,13 @@ contract HubRefreshPremiumTest is HubBase {
     uint24 riskPremiumThreshold = 0.toUint24();
     _updateSpokeRiskPremiumThreshold(hub1, daiAssetId, address(spoke1), riskPremiumThreshold);
 
-    IHubBase.PremiumDelta memory premiumDelta = IHubBase.PremiumDelta({
-      sharesDelta: 1,
-      offsetDeltaRay: _calculatePremiumAssetsRay(hub1, daiAssetId, 1).toInt256(),
-      accruedPremiumRay: 0,
+    IHubBase.PremiumDelta memory premiumDelta = _getExpectedPremiumDelta({
+      hub: hub1,
+      assetId: daiAssetId,
+      oldPremiumShares: 0,
+      oldPremiumOffsetRay: 0,
+      drawnShares: 1,
+      riskPremium: 100_00,
       restoredPremiumRay: 0
     });
 
@@ -85,10 +87,13 @@ contract HubRefreshPremiumTest is HubBase {
     uint24 riskPremiumThreshold = 1_00; // 1%
     _updateSpokeRiskPremiumThreshold(hub1, daiAssetId, address(spoke1), riskPremiumThreshold);
 
-    IHubBase.PremiumDelta memory premiumDelta = IHubBase.PremiumDelta({
-      sharesDelta: -1,
-      offsetDeltaRay: -_calculatePremiumAssetsRay(hub1, daiAssetId, 1).toInt256(),
-      accruedPremiumRay: 0,
+    IHubBase.PremiumDelta memory premiumDelta = _getExpectedPremiumDelta({
+      hub: hub1,
+      assetId: daiAssetId,
+      oldPremiumShares: 1,
+      oldPremiumOffsetRay: -_calculatePremiumAssetsRay(hub1, daiAssetId, 1).toInt256(),
+      drawnShares: 0,
+      riskPremium: 100_00,
       restoredPremiumRay: 0
     });
 
@@ -100,12 +105,16 @@ contract HubRefreshPremiumTest is HubBase {
   function test_refreshPremium_revertsWith_InvalidPremiumChange_NonZeroRestoredPremiumRay() public {
     _createDrawnSharesAndPremiumData();
 
-    IHubBase.PremiumDelta memory premiumDelta = IHubBase.PremiumDelta({
-      sharesDelta: 1,
-      offsetDeltaRay: _calculatePremiumAssetsRay(hub1, daiAssetId, 1).toInt256(),
-      accruedPremiumRay: 0,
-      restoredPremiumRay: 1
+    IHubBase.PremiumDelta memory premiumDelta = _getExpectedPremiumDelta({
+      hub: hub1,
+      assetId: daiAssetId,
+      oldPremiumShares: 0,
+      oldPremiumOffsetRay: 0,
+      drawnShares: 1,
+      riskPremium: 100_00,
+      restoredPremiumRay: 0
     });
+    premiumDelta.restoredPremiumRay = 1;
 
     vm.expectRevert(IHub.InvalidPremiumChange.selector);
     vm.prank(address(spoke1));
@@ -135,20 +144,15 @@ contract HubRefreshPremiumTest is HubBase {
 
     IHub.SpokeData memory spokeData = hub1.getSpoke(daiAssetId, address(spoke1));
     PremiumDataLocal memory premiumData = _loadAssetPremiumData(hub1, daiAssetId);
-    IHubBase.PremiumDelta memory premiumDelta = IHubBase.PremiumDelta({
-      sharesDelta: spokeData
-        .drawnShares
-        .percentMulUp(Constants.MAX_ALLOWED_COLLATERAL_RISK + 1)
-        .toInt256(), // no shares delta allowed
-      offsetDeltaRay: 0,
-      accruedPremiumRay: 0,
+    IHubBase.PremiumDelta memory premiumDelta = _getExpectedPremiumDelta({
+      hub: hub1,
+      assetId: daiAssetId,
+      oldPremiumShares: 0,
+      oldPremiumOffsetRay: 0,
+      drawnShares: spokeData.drawnShares,
+      riskPremium: Constants.MAX_ALLOWED_COLLATERAL_RISK + 1,
       restoredPremiumRay: 0
     });
-    premiumDelta.offsetDeltaRay = _calculatePremiumAssetsRay(
-      hub1,
-      daiAssetId,
-      premiumDelta.sharesDelta.toUint256()
-    ).toInt256();
 
     // condition not met on max coll risk, but still allowed with MAX_RISK_PREMIUM_THRESHOLD
     assertFalse(
@@ -162,15 +166,14 @@ contract HubRefreshPremiumTest is HubBase {
 
   /// @dev paused but active spokes are allowed to refresh premium
   function test_refreshPremium_pausedSpokesAllowed() public {
-    IHubBase.PremiumDelta memory premiumDelta;
     updateSpokeActive(hub1, daiAssetId, address(spoke1), true);
     _updateSpokePaused(hub1, daiAssetId, address(spoke1), true);
 
     vm.expectEmit(address(hub1));
-    emit IHubBase.RefreshPremium(daiAssetId, address(spoke1), premiumDelta);
+    emit IHubBase.RefreshPremium(daiAssetId, address(spoke1), ZERO_PREMIUM_DELTA);
 
     vm.prank(address(spoke1));
-    hub1.refreshPremium(daiAssetId, premiumDelta);
+    hub1.refreshPremium(daiAssetId, ZERO_PREMIUM_DELTA);
   }
 
   function test_refreshPremium_emitsEvent() public {
@@ -182,12 +185,16 @@ contract HubRefreshPremiumTest is HubBase {
     PremiumDataLocal memory premiumDataBefore = _loadAssetPremiumData(hub1, daiAssetId);
     (, uint256 premiumBefore) = hub1.getAssetOwed(daiAssetId);
 
-    IHubBase.PremiumDelta memory premiumDelta = IHubBase.PremiumDelta({
-      sharesDelta: 1,
-      offsetDeltaRay: WadRayMath.RAY.toInt256(),
-      accruedPremiumRay: 0,
+    IHubBase.PremiumDelta memory premiumDelta = _getExpectedPremiumDelta({
+      hub: hub1,
+      assetId: daiAssetId,
+      oldPremiumShares: 0,
+      oldPremiumOffsetRay: 0,
+      drawnShares: 1,
+      riskPremium: 100_00,
       restoredPremiumRay: 0
     });
+
     vm.expectEmit(address(hub1));
     emit IHubBase.RefreshPremium(daiAssetId, address(spoke1), premiumDelta);
 
@@ -204,30 +211,26 @@ contract HubRefreshPremiumTest is HubBase {
     vm.stopPrank();
   }
 
-  /// @dev offsetDeltaRay can't be more than sharesDelta * 1e27 or else underflow
+  /// @dev offsetRayDelta can't be more than sharesDelta * 1e27 or else underflow
   /// @dev sharesDelta + realizedDelta can't be more than 2 more than offsetDelta
   function test_refreshPremium_fuzz_positiveDeltas(
     uint256 borrowAmount,
     int256 sharesDelta,
-    int256 offsetDeltaRay,
-    uint256 accruedPremiumRay,
-    bool isRiskPremiumThresholdMaxAllowed
+    int256 offsetRayDelta
   ) public {
     sharesDelta = bound(sharesDelta, 0, MAX_SUPPLY_AMOUNT.toInt256());
-    offsetDeltaRay = bound(offsetDeltaRay, 0, MAX_SUPPLY_AMOUNT.toInt256());
-    accruedPremiumRay = bound(accruedPremiumRay, 0, MAX_SUPPLY_AMOUNT);
+    offsetRayDelta = bound(offsetRayDelta, 0, MAX_SUPPLY_AMOUNT.toInt256());
     borrowAmount = bound(borrowAmount, 0, MAX_SUPPLY_AMOUNT / 2);
     IHubBase.PremiumDelta memory premiumDelta = IHubBase.PremiumDelta({
       sharesDelta: sharesDelta,
-      offsetDeltaRay: offsetDeltaRay,
-      accruedPremiumRay: accruedPremiumRay,
+      offsetRayDelta: offsetRayDelta,
       restoredPremiumRay: 0
     });
 
     uint24 riskPremiumThreshold = vm
       .randomUint(0, Constants.MAX_RISK_PREMIUM_THRESHOLD - 1)
       .toUint24();
-    if (isRiskPremiumThresholdMaxAllowed) {
+    if (vm.randomBool()) {
       // sentinel value to preclude check
       riskPremiumThreshold = Constants.MAX_RISK_PREMIUM_THRESHOLD;
     }
@@ -245,14 +248,20 @@ contract HubRefreshPremiumTest is HubBase {
     uint256 expectedPremiumShares = sharesDelta > 0
       ? asset.premiumShares + sharesDelta.toUint256()
       : asset.premiumShares - (-sharesDelta).toUint256();
-    uint256 expectedOffsetRay = offsetDeltaRay > 0
-      ? asset.premiumOffsetRay + offsetDeltaRay.toUint256()
-      : asset.premiumOffsetRay - (-offsetDeltaRay).toUint256();
+    int256 expectedOffsetRay = asset.premiumOffsetRay + offsetRayDelta;
 
-    // Only 1 spoke drawing so checks on asset are equivalent to spoke
-    if (expectedOffsetRay > _calculatePremiumAssetsRay(hub1, daiAssetId, expectedPremiumShares)) {
+    if (
+      expectedOffsetRay >
+      _calculatePremiumAssetsRay(hub1, daiAssetId, expectedPremiumShares).toInt256()
+    ) {
       reverting = true;
-      vm.expectRevert(stdError.arithmeticError);
+      vm.expectRevert(
+        abi.encodeWithSelector(
+          SafeCast.SafeCastOverflowedIntToUint.selector,
+          _calculatePremiumAssetsRay(hub1, daiAssetId, expectedPremiumShares).toInt256() -
+            expectedOffsetRay
+        )
+      );
     } else if (
       riskPremiumThreshold != Constants.MAX_RISK_PREMIUM_THRESHOLD &&
       asset.drawnShares.percentMulUp(riskPremiumThreshold) <
@@ -261,7 +270,8 @@ contract HubRefreshPremiumTest is HubBase {
       reverting = true;
       vm.expectRevert(IHub.InvalidPremiumChange.selector);
     } else if (
-      sharesDelta.toUint256() * WadRayMath.RAY + accruedPremiumRay != offsetDeltaRay.toUint256()
+      _calculatePremiumAssetsRay(hub1, daiAssetId, sharesDelta.toUint256()).toInt256() !=
+      offsetRayDelta
     ) {
       reverting = true;
       vm.expectRevert(IHub.InvalidPremiumChange.selector);
@@ -281,7 +291,7 @@ contract HubRefreshPremiumTest is HubBase {
     }
   }
 
-  function test_refreshPremium_negativeDeltas(int256 sharesDeltaPos) public {
+  function test_refreshPremium_negativeDeltas(uint256 sharesDeltaPos) public {
     uint256 assetId = daiAssetId;
     Utils.supplyCollateral(spoke1, _daiReserveId(spoke1), bob, 10000e18, bob);
     Utils.borrow(spoke1, _daiReserveId(spoke1), bob, 5000e18, bob);
@@ -290,17 +300,16 @@ contract HubRefreshPremiumTest is HubBase {
     PremiumDataLocal memory premiumDataBefore = _loadAssetPremiumData(hub1, assetId);
     (, uint256 premiumBefore) = hub1.getAssetOwed(daiAssetId);
 
-    sharesDeltaPos = bound(sharesDeltaPos, 0, asset.premiumShares.toInt256());
-    int256 offsetDeltaPosRay = _calculatePremiumAssetsRay(hub1, assetId, sharesDeltaPos.toUint256())
-      .toInt256();
-    if (offsetDeltaPosRay > asset.premiumOffsetRay.toInt256()) {
-      offsetDeltaPosRay = asset.premiumOffsetRay.toInt256();
-    }
+    sharesDeltaPos = bound(sharesDeltaPos, 0, asset.premiumShares);
+    int256 offsetDeltaPosRay = _calculatePremiumAssetsRay(hub1, assetId, sharesDeltaPos).toInt256();
 
-    IHubBase.PremiumDelta memory premiumDelta = IHubBase.PremiumDelta({
-      sharesDelta: -sharesDeltaPos,
-      offsetDeltaRay: -offsetDeltaPosRay,
-      accruedPremiumRay: 0,
+    IHubBase.PremiumDelta memory premiumDelta = _getExpectedPremiumDelta({
+      hub: hub1,
+      assetId: assetId,
+      oldPremiumShares: sharesDeltaPos,
+      oldPremiumOffsetRay: offsetDeltaPosRay,
+      drawnShares: 0,
+      riskPremium: 0,
       restoredPremiumRay: 0
     });
 
@@ -317,10 +326,7 @@ contract HubRefreshPremiumTest is HubBase {
     _assertBorrowRateSynced(hub1, daiAssetId, 'after refreshPremium');
   }
 
-  function test_refreshPremium_negativeDeltas_withAccrual(
-    uint256 sharesDeltaPos,
-    uint256 offsetDeltaPosRay
-  ) public {
+  function test_refreshPremium_negativeDeltas_withAccrual(uint256 sharesDeltaPos) public {
     uint256 assetId = daiAssetId;
     Utils.supplyCollateral(spoke1, _daiReserveId(spoke1), bob, 10000e18, bob);
     Utils.borrow(spoke1, _daiReserveId(spoke1), bob, 5000e18, bob);
@@ -334,28 +340,17 @@ contract HubRefreshPremiumTest is HubBase {
     bool reverting;
 
     sharesDeltaPos = bound(sharesDeltaPos, 0, asset.premiumShares);
-    offsetDeltaPosRay = bound(offsetDeltaPosRay, 0, asset.premiumOffsetRay);
+    int256 offsetDeltaPosRay = _calculatePremiumAssetsRay(hub1, assetId, sharesDeltaPos).toInt256();
 
-    // not allowed to restore debt during refreshPremium
-    uint256 premiumAssetsPosRay = _calculatePremiumAssetsRay(hub1, assetId, sharesDeltaPos);
-    if (offsetDeltaPosRay > premiumAssetsPosRay) {
-      offsetDeltaPosRay = premiumAssetsPosRay;
-    }
-
-    IHubBase.PremiumDelta memory premiumDelta = IHubBase.PremiumDelta({
-      sharesDelta: -sharesDeltaPos.toInt256(),
-      offsetDeltaRay: -offsetDeltaPosRay.toInt256(),
-      accruedPremiumRay: premiumAssetsPosRay - offsetDeltaPosRay,
+    IHubBase.PremiumDelta memory premiumDelta = _getExpectedPremiumDelta({
+      hub: hub1,
+      assetId: assetId,
+      oldPremiumShares: sharesDeltaPos,
+      oldPremiumOffsetRay: offsetDeltaPosRay,
+      drawnShares: 0,
+      riskPremium: 0,
       restoredPremiumRay: 0
     });
-
-    if (
-      _calculatePremiumAssetsRay(hub1, assetId, asset.premiumShares - sharesDeltaPos) <
-      asset.premiumOffsetRay - offsetDeltaPosRay
-    ) {
-      reverting = true;
-      vm.expectRevert(stdError.arithmeticError);
-    }
 
     vm.prank(address(spoke1));
     hub1.refreshPremium(assetId, premiumDelta);
@@ -398,10 +393,9 @@ contract HubRefreshPremiumTest is HubBase {
     userAccruedPremiumRay = bound(
       userAccruedPremiumRay,
       0,
-      _calculateAccruedPremiumRay(hub1, assetId, asset.premiumShares, asset.premiumOffsetRay)
-    );
-    vm.assume(
-      _calculatePremiumAssetsRay(hub1, assetId, userPremiumShares) >= userAccruedPremiumRay
+      _calculatePremiumDebtRay(hub1, assetId, asset.premiumShares, asset.premiumOffsetRay).min(
+        _calculatePremiumAssetsRay(hub1, assetId, userPremiumShares)
+      )
     );
     uint256 userPremiumOffsetRay = _calculatePremiumAssetsRay(hub1, assetId, userPremiumShares) -
       userAccruedPremiumRay;
@@ -412,16 +406,14 @@ contract HubRefreshPremiumTest is HubBase {
       0,
       hub1.previewRestoreByAssets(assetId, MAX_SUPPLY_AMOUNT / 2)
     );
-    uint256 userPremiumOffsetNewRay = _calculatePremiumAssetsRay(
-      hub1,
-      assetId,
-      userPremiumSharesNew
-    );
 
-    IHubBase.PremiumDelta memory premiumDelta = IHubBase.PremiumDelta({
-      sharesDelta: userPremiumSharesNew.toInt256() - userPremiumShares.toInt256(),
-      offsetDeltaRay: userPremiumOffsetNewRay.toInt256() - userPremiumOffsetRay.toInt256(),
-      accruedPremiumRay: userAccruedPremiumRay,
+    IHubBase.PremiumDelta memory premiumDelta = _getExpectedPremiumDelta({
+      hub: hub1,
+      assetId: assetId,
+      oldPremiumShares: userPremiumShares,
+      oldPremiumOffsetRay: userPremiumOffsetRay.toInt256(),
+      drawnShares: userPremiumSharesNew,
+      riskPremium: 100_00,
       restoredPremiumRay: 0
     });
 
@@ -434,12 +426,6 @@ contract HubRefreshPremiumTest is HubBase {
       vm.expectRevert(IHub.InvalidPremiumChange.selector);
     } else if (
       premiumDelta.sharesDelta < 0 && -premiumDelta.sharesDelta > asset.premiumShares.toInt256()
-    ) {
-      reverting = true;
-      vm.expectRevert(stdError.arithmeticError);
-    } else if (
-      premiumDelta.offsetDeltaRay < 0 &&
-      -premiumDelta.offsetDeltaRay > asset.premiumOffsetRay.toInt256()
     ) {
       reverting = true;
       vm.expectRevert(stdError.arithmeticError);
@@ -469,38 +455,43 @@ contract HubRefreshPremiumTest is HubBase {
 
     skip(322 days);
 
-    uint256 spoke1AccruedPremiumRay = _getSpokeAccruedPremiumRay(hub1, assetId, address(spoke1));
-    uint256 spoke2AccruedPremiumRay = _getSpokeAccruedPremiumRay(hub1, assetId, address(spoke2));
-    assertGt(spoke1AccruedPremiumRay, 0);
-    assertGt(spoke2AccruedPremiumRay, 0);
+    (uint256 spoke1PremiumShares, int256 spoke1PremiumOffsetRay) = hub1.getSpokePremiumData(
+      assetId,
+      address(spoke1)
+    );
+    (uint256 spoke2PremiumShares, int256 spoke2PremiumOffsetRay) = hub1.getSpokePremiumData(
+      assetId,
+      address(spoke2)
+    );
+    uint256 spoke1PremiumDebtRay = _calculatePremiumDebtRay(
+      hub1,
+      assetId,
+      spoke1PremiumShares,
+      spoke1PremiumOffsetRay
+    );
+    uint256 spoke2PremiumDebtRay = _calculatePremiumDebtRay(
+      hub1,
+      assetId,
+      spoke2PremiumShares,
+      spoke2PremiumOffsetRay
+    );
+    assertGt(spoke1PremiumDebtRay, 0);
+    assertGt(spoke2PremiumDebtRay, 0);
 
-    vm.expectRevert(stdError.arithmeticError);
-    // realize premium by manipulating offset
+    uint256 spoke1PremiumAssetsRay = _calculatePremiumAssetsRay(hub1, assetId, spoke1PremiumShares);
+
+    vm.expectRevert(abi.encodeWithSelector(IHub.InvalidPremiumChange.selector));
     vm.prank(address(spoke1));
     hub1.refreshPremium(
       assetId,
       IHubBase.PremiumDelta({
         sharesDelta: 0,
-        offsetDeltaRay: (spoke1AccruedPremiumRay + spoke2AccruedPremiumRay).toInt256(),
-        accruedPremiumRay: spoke1AccruedPremiumRay + spoke2AccruedPremiumRay,
+        offsetRayDelta: spoke1PremiumAssetsRay.toInt256() -
+          (spoke1PremiumDebtRay + spoke2PremiumDebtRay).toInt256() -
+          spoke1PremiumOffsetRay,
         restoredPremiumRay: 0
       })
     );
-  }
-
-  function _getSpokeAccruedPremiumRay(
-    IHub hub,
-    uint256 assetId,
-    address spoke
-  ) internal view returns (uint256) {
-    IHub.SpokeData memory spokeData = hub.getSpoke(assetId, spoke);
-    return
-      _calculateAccruedPremiumRay(
-        hub,
-        assetId,
-        spokeData.premiumShares,
-        spokeData.premiumOffsetRay
-      );
   }
 
   function _loadAssetPremiumData(
@@ -508,7 +499,7 @@ contract HubRefreshPremiumTest is HubBase {
     uint256 assetId
   ) internal view returns (PremiumDataLocal memory) {
     IHub.Asset memory asset = hub.getAsset(assetId);
-    return PremiumDataLocal(asset.premiumShares, asset.premiumOffsetRay, asset.realizedPremiumRay);
+    return PremiumDataLocal(asset.premiumShares, asset.premiumOffsetRay);
   }
 
   function _applyPremiumDelta(
@@ -516,18 +507,13 @@ contract HubRefreshPremiumTest is HubBase {
     IHubBase.PremiumDelta memory premiumDelta
   ) internal pure returns (PremiumDataLocal memory) {
     premiumData.premiumShares = premiumData.premiumShares.add(premiumDelta.sharesDelta).toUint120();
-    premiumData.premiumOffsetRay = premiumData.premiumOffsetRay.add(premiumDelta.offsetDeltaRay);
-    premiumData.realizedPremiumRay =
-      premiumData.realizedPremiumRay +
-      premiumDelta.accruedPremiumRay -
-      premiumDelta.restoredPremiumRay;
+    premiumData.premiumOffsetRay = premiumData.premiumOffsetRay + premiumDelta.offsetRayDelta;
     return premiumData;
   }
 
   function assertEq(PremiumDataLocal memory a, PremiumDataLocal memory b) internal pure {
     assertEq(a.premiumShares, b.premiumShares, 'premium shares');
     assertEq(a.premiumOffsetRay, b.premiumOffsetRay, 'premium offset ray');
-    assertEq(a.realizedPremiumRay, b.realizedPremiumRay, 'realized premium ray');
     assertEq(abi.encode(a), abi.encode(b));
   }
 }

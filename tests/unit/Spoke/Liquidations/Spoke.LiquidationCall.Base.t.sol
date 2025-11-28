@@ -62,7 +62,6 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
   struct ExpectEventsAndCallsParams {
     uint256 userDrawnDebt;
     uint256 userPremiumDebt;
-    uint256 premiumDebtToRestore;
     uint256 baseAmountToRestore;
     int256 realizedDelta;
     IHubBase.PremiumDelta premiumDelta;
@@ -415,7 +414,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
       params.user
     );
 
-    (vars.baseAmountToRestore, vars.premiumDebtToRestore) = _calculateRestoreAmounts(
+    (vars.baseAmountToRestore, ) = _calculateRestoreAmounts(
       params.spoke,
       params.debtReserveId,
       params.user,
@@ -486,17 +485,16 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
             vars.userReservePosition.drawnShares -= _hub(params.spoke, reserveId)
               .previewRestoreByAssets(assetId, vars.baseAmountToRestore)
               .toUint120();
-            vars.userReservePosition.premiumShares = 0;
-            vars.userReservePosition.premiumOffsetRay = 0;
-            vars.userReservePosition.realizedPremiumRay = (vars
-              .userReservePosition
-              .realizedPremiumRay +
-              vars.premiumDelta.accruedPremiumRay -
-              vars.premiumDelta.restoredPremiumRay).toUint200();
-
             if (vars.userReservePosition.drawnShares == 0) {
               continue;
             }
+
+            vars.userReservePosition.premiumShares = (vars
+              .userReservePosition
+              .premiumShares
+              .toInt256() + vars.premiumDelta.sharesDelta).toUint256().toUint120();
+            vars.userReservePosition.premiumOffsetRay = (vars.userReservePosition.premiumOffsetRay +
+              vars.premiumDelta.offsetRayDelta).toInt200();
           }
 
           IHub targetHub = _hub(params.spoke, reserveId);
@@ -506,29 +504,26 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
           );
 
           if (liquidationMetadata.hasDeficit) {
-            uint256 accruedPremiumRay = _calculateAccruedPremiumRay(
-              params.spoke,
-              reserveId,
+            uint256 premiumDebtRay = _calculatePremiumDebtRay(
+              targetHub,
+              assetId,
               vars.userReservePosition.premiumShares,
               vars.userReservePosition.premiumOffsetRay
             );
 
+            IHubBase.PremiumDelta memory premiumDelta = _getExpectedPremiumDelta({
+              hub: targetHub,
+              assetId: assetId,
+              oldPremiumShares: vars.userReservePosition.premiumShares,
+              oldPremiumOffsetRay: vars.userReservePosition.premiumOffsetRay,
+              drawnShares: 0, // risk premium is 0
+              riskPremium: 0,
+              restoredPremiumRay: premiumDebtRay
+            });
+
             vm.expectCall(
               address(targetHub),
-              abi.encodeCall(
-                IHubBase.reportDeficit,
-                (
-                  assetId,
-                  userReserveDrawnDebt,
-                  IHubBase.PremiumDelta({
-                    sharesDelta: -vars.userReservePosition.premiumShares.toInt256(),
-                    offsetDeltaRay: -vars.userReservePosition.premiumOffsetRay.toInt256(),
-                    accruedPremiumRay: accruedPremiumRay,
-                    restoredPremiumRay: vars.userReservePosition.realizedPremiumRay +
-                      accruedPremiumRay
-                  })
-                )
-              ),
+              abi.encodeCall(IHubBase.reportDeficit, (assetId, userReserveDrawnDebt, premiumDelta)),
               1
             );
             vm.expectEmit(address(params.spoke));
@@ -538,12 +533,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
               drawnShares: targetHub
                 .previewRestoreByAssets(assetId, userReserveDrawnDebt)
                 .toUint120(),
-              premiumDelta: IHubBase.PremiumDelta({
-                sharesDelta: -vars.userReservePosition.premiumShares.toInt256(),
-                offsetDeltaRay: -vars.userReservePosition.premiumOffsetRay.toInt256(),
-                accruedPremiumRay: accruedPremiumRay,
-                restoredPremiumRay: vars.userReservePosition.realizedPremiumRay + accruedPremiumRay
-              })
+              premiumDelta: premiumDelta
             });
           }
         }

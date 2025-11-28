@@ -21,10 +21,10 @@ contract SpokeAccessTest is SpokeBase {
     hub1.draw(daiAssetId, 1000e18, bob);
 
     vm.expectRevert(abi.encodeWithSelector(IHub.SpokeNotActive.selector));
-    hub1.restore(daiAssetId, 1000e18, IHubBase.PremiumDelta(0, 0, 0, 0));
+    hub1.restore(daiAssetId, 1000e18, ZERO_PREMIUM_DELTA);
 
     vm.expectRevert(abi.encodeWithSelector(IHub.SpokeNotActive.selector));
-    hub1.refreshPremium(daiAssetId, IHubBase.PremiumDelta(0, 0, 0, 0));
+    hub1.refreshPremium(daiAssetId, ZERO_PREMIUM_DELTA);
 
     vm.expectRevert(abi.encodeWithSelector(IHub.SpokeNotActive.selector));
     hub1.payFeeShares(daiAssetId, 1000e18);
@@ -40,9 +40,9 @@ contract SpokeAccessTest is SpokeBase {
     hub1.add(daiAssetId, 1000e18);
     hub1.draw(daiAssetId, 500e18, address(spoke1));
     tokenList.dai.transfer(address(hub1), 500e18);
-    hub1.restore(daiAssetId, 500e18, IHubBase.PremiumDelta(0, 0, 0, 0));
+    hub1.restore(daiAssetId, 500e18, ZERO_PREMIUM_DELTA);
     hub1.remove(daiAssetId, 1000e18, address(spoke1));
-    hub1.refreshPremium(daiAssetId, IHubBase.PremiumDelta(0, 0, 0, 0));
+    hub1.refreshPremium(daiAssetId, ZERO_PREMIUM_DELTA);
     tokenList.dai.transfer(address(hub1), 1000e18);
     hub1.add(daiAssetId, 1000e18);
     hub1.payFeeShares(daiAssetId, 1e18);

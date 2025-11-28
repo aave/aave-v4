@@ -7,6 +7,7 @@ import 'tests/unit/Hub/HubBase.t.sol';
 contract HubEliminateDeficitTest is HubBase {
   using WadRayMath for uint256;
   using MathUtils for uint256;
+  using SafeCast for uint256;
 
   uint256 internal _assetId;
   uint256 internal _deficitAmountRay;
@@ -124,7 +125,21 @@ contract HubEliminateDeficitTest is HubBase {
     Utils.add(hub1, assetId, spoke, amount, alice);
     _drawLiquidity(assetId, amount, true, true, spoke);
 
+    (uint256 spokePremiumShares, int256 spokePremiumOffsetRay) = hub1.getSpokePremiumData(
+      assetId,
+      spoke
+    );
+    IHubBase.PremiumDelta memory premiumDelta = _getExpectedPremiumDelta({
+      hub: hub1,
+      assetId: assetId,
+      oldPremiumShares: spokePremiumShares,
+      oldPremiumOffsetRay: spokePremiumOffsetRay,
+      drawnShares: 0,
+      riskPremium: 0,
+      restoredPremiumRay: amountRay
+    });
+
     vm.prank(spoke);
-    hub1.reportDeficit(assetId, 0, IHubBase.PremiumDelta(0, 0, 0, amountRay));
+    hub1.reportDeficit(assetId, 0, premiumDelta);
   }
 }

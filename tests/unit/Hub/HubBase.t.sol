@@ -7,7 +7,7 @@ import 'tests/Base.t.sol';
 contract HubBase is Base {
   using SharesMath for uint256;
   using MathUtils for uint256;
-  using SafeCast for uint256;
+  using SafeCast for *;
 
   struct TestAddParams {
     uint256 drawnAmount;
@@ -126,16 +126,22 @@ contract HubBase is Base {
     bool skipTime,
     address spoke
   ) internal {
-    int256 sharesDelta = int256(amount);
-    int256 premiumOffsetDeltaRay = _calculatePremiumAssetsRay(hub1, assetId, uint256(amount))
-      .toInt256();
-
     Utils.draw(hub1, assetId, spoke, vm.randomAddress(), amount);
+    int256 oldPremiumOffsetRay = _calculatePremiumAssetsRay(hub1, assetId, amount).toInt256();
 
     if (withPremium) {
       // inflate premium data to create premium debt
+      IHubBase.PremiumDelta memory premiumDelta = _getExpectedPremiumDelta({
+        hub: hub1,
+        assetId: assetId,
+        oldPremiumShares: 0,
+        oldPremiumOffsetRay: 0,
+        drawnShares: amount,
+        riskPremium: 100_00,
+        restoredPremiumRay: 0
+      });
       vm.prank(spoke);
-      hub1.refreshPremium(assetId, IHubBase.PremiumDelta(sharesDelta, premiumOffsetDeltaRay, 0, 0));
+      hub1.refreshPremium(assetId, premiumDelta);
     }
 
     if (skipTime) skip(365 days);
@@ -146,12 +152,17 @@ contract HubBase is Base {
     if (withPremium) {
       assertGt(premium, 0); // non-zero premium debt
       // restore premium data
-      uint256 accruedPremiumRay = _calculateAccruedPremiumRay(hub1, assetId);
+      IHubBase.PremiumDelta memory premiumDelta = _getExpectedPremiumDelta({
+        hub: hub1,
+        assetId: assetId,
+        oldPremiumShares: amount,
+        oldPremiumOffsetRay: oldPremiumOffsetRay,
+        drawnShares: 0, // risk premium is 0
+        riskPremium: 0,
+        restoredPremiumRay: 0
+      });
       vm.prank(spoke);
-      hub1.refreshPremium(
-        assetId,
-        IHubBase.PremiumDelta(-sharesDelta, -premiumOffsetDeltaRay, accruedPremiumRay, 0)
-      );
+      hub1.refreshPremium(assetId, premiumDelta);
     }
   }
 
@@ -207,33 +218,6 @@ contract HubBase is Base {
     Utils.add({hub: hub1, assetId: assetId, caller: tempSpoke, amount: amount, user: tempUser});
 
     assertEq(hub1.getAssetLiquidity(assetId), initialLiq + amount);
-  }
-
-  function _getExpectedPremiumDelta(
-    ISpoke spoke,
-    address user,
-    uint256 reserveId,
-    uint256 premiumRestored
-  ) internal view override returns (IHubBase.PremiumDelta memory) {
-    ISpoke.UserPosition memory userPosition = spoke.getUserPosition(reserveId, user);
-    uint256 assetId = spoke.getReserve(reserveId).assetId;
-
-    uint256 accruedPremiumRay = _calculateAccruedPremiumRay(
-      hub1,
-      assetId,
-      userPosition.premiumShares,
-      userPosition.premiumOffsetRay
-    );
-    IHubBase.PremiumDelta memory expectedPremiumDelta = IHubBase.PremiumDelta({
-      sharesDelta: -int256(uint256(userPosition.premiumShares)),
-      offsetDeltaRay: -int256(uint256(userPosition.premiumOffsetRay)),
-      accruedPremiumRay: accruedPremiumRay,
-      restoredPremiumRay: (premiumRestored * WadRayMath.RAY).min(
-        userPosition.realizedPremiumRay + accruedPremiumRay
-      )
-    });
-
-    return expectedPremiumDelta;
   }
 
   function _randomAssetId(IHub hub) internal returns (uint256) {

@@ -39,14 +39,14 @@ contract HubReportDeficitTest is HubBase {
     vm.expectRevert(IHub.SpokeNotActive.selector);
 
     vm.prank(caller);
-    hub1.reportDeficit(usdxAssetId, 0, IHubBase.PremiumDelta(0, 0, 0, 0));
+    hub1.reportDeficit(usdxAssetId, 0, ZERO_PREMIUM_DELTA);
   }
 
   function test_reportDeficit_revertsWith_InvalidAmount() public {
     vm.expectRevert(IHub.InvalidAmount.selector);
 
     vm.prank(address(spoke1));
-    hub1.reportDeficit(usdxAssetId, 0, IHubBase.PremiumDelta(0, 0, 0, 0));
+    hub1.reportDeficit(usdxAssetId, 0, ZERO_PREMIUM_DELTA);
   }
 
   function test_reportDeficit_fuzz_revertsWith_SurplusDrawnDeficitReported(
@@ -62,15 +62,33 @@ contract HubReportDeficitTest is HubBase {
     assertGt(premium, 0);
 
     uint256 drawnDeficit = vm.randomUint(drawn + 1, UINT256_MAX);
-    uint256 premiumDeficitRay = vm.randomUint(0, UINT256_MAX);
+
+    (uint256 spokePremiumShares, int256 spokePremiumOffsetRay) = hub1.getSpokePremiumData(
+      usdxAssetId,
+      address(spoke1)
+    );
+    uint256 spokePremiumRay = _calculatePremiumDebtRay(
+      hub1,
+      usdxAssetId,
+      spokePremiumShares,
+      spokePremiumOffsetRay
+    );
+
+    uint256 premiumDeficitRay = vm.randomUint(0, spokePremiumRay);
+
+    IHubBase.PremiumDelta memory premiumDelta = _getExpectedPremiumDelta({
+      hub: hub1,
+      assetId: usdxAssetId,
+      oldPremiumShares: spokePremiumShares,
+      oldPremiumOffsetRay: spokePremiumOffsetRay,
+      drawnShares: 0,
+      riskPremium: 0,
+      restoredPremiumRay: premiumDeficitRay
+    });
 
     vm.expectRevert(abi.encodeWithSelector(IHub.SurplusDrawnDeficitReported.selector, drawn));
     vm.prank(address(spoke1));
-    hub1.reportDeficit(
-      usdxAssetId,
-      drawnDeficit,
-      IHubBase.PremiumDelta(0, 0, 0, premiumDeficitRay)
-    );
+    hub1.reportDeficit(usdxAssetId, drawnDeficit, premiumDelta);
   }
 
   function test_reportDeficit_fuzz_revertsWith_SurplusPremiumRayDeficitReported(
@@ -86,10 +104,9 @@ contract HubReportDeficitTest is HubBase {
     assertGt(premium, 0);
 
     IHub.SpokeData memory spokeData = hub1.getSpoke(usdxAssetId, address(spoke1));
-    uint256 spokePremiumRay = _calculatePremiumRay(
+    uint256 spokePremiumRay = _calculatePremiumDebtRay(
       hub1,
       usdxAssetId,
-      spokeData.realizedPremiumRay,
       spokeData.premiumShares,
       spokeData.premiumOffsetRay
     );
@@ -104,7 +121,12 @@ contract HubReportDeficitTest is HubBase {
     hub1.reportDeficit(
       usdxAssetId,
       drawnDeficit,
-      IHubBase.PremiumDelta(0, 0, 0, premiumDeficitRay)
+      // `_getExpectedPremiumDelta` underflows in this case
+      IHubBase.PremiumDelta({
+        sharesDelta: 0,
+        offsetRayDelta: premiumDeficitRay.toInt256(),
+        restoredPremiumRay: premiumDeficitRay
+      })
     );
   }
 
@@ -152,13 +174,16 @@ contract HubReportDeficitTest is HubBase {
     params.balanceBefore = IERC20(hub1.getAsset(usdxAssetId).underlying).balanceOf(address(spoke1));
     uint256 drawnSharesBefore = hub1.getAsset(usdxAssetId).drawnShares;
 
-    IHubBase.PremiumDelta memory premiumDelta = _getExpectedPremiumDelta(
-      spoke1,
-      alice,
-      _usdxReserveId(spoke1),
-      premiumAmountRay.fromRayUp()
-    );
-    premiumDelta.restoredPremiumRay = premiumAmountRay; // premiumAmountRay is capped to premiumRay already
+    ISpoke.UserPosition memory userPosition = spoke1.getUserPosition(_usdxReserveId(spoke1), alice);
+    IHubBase.PremiumDelta memory premiumDelta = _getExpectedPremiumDelta({
+      hub: hub1,
+      assetId: usdxAssetId,
+      oldPremiumShares: userPosition.premiumShares,
+      oldPremiumOffsetRay: userPosition.premiumOffsetRay,
+      drawnShares: 0,
+      riskPremium: 0,
+      restoredPremiumRay: premiumAmountRay
+    });
 
     uint256 expectedNewPremiumShares = premiumDelta.sharesDelta < 0
       ? asset.premiumShares - uint256(-premiumDelta.sharesDelta)

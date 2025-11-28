@@ -126,6 +126,7 @@ abstract contract Base is Test {
   uint256 internal constant MAX_ASSET_PRICE = 1e8 * 1e8; // $100M per token
   uint256 internal constant MAX_LIQUIDATION_PROTOCOL_FEE_PERCENTAGE =
     PercentageMath.PERCENTAGE_FACTOR;
+  IHubBase.PremiumDelta internal ZERO_PREMIUM_DELTA = ZERO_PREMIUM_DELTA;
 
   IAaveOracle internal oracle1;
   IAaveOracle internal oracle2;
@@ -222,8 +223,7 @@ abstract contract Base is Test {
     uint256 drawnShares;
     uint256 drawn;
     uint256 premiumShares;
-    uint256 premiumOffsetRay;
-    uint256 realizedPremiumRay;
+    int256 premiumOffsetRay;
     uint256 premium;
     uint40 lastUpdateTimestamp;
     uint256 liquidity;
@@ -239,8 +239,7 @@ abstract contract Base is Test {
     uint256 drawnShares;
     uint256 drawn;
     uint256 premiumShares;
-    uint256 premiumOffsetRay;
-    uint256 realizedPremiumRay;
+    int256 premiumOffsetRay;
     uint256 premium;
   }
 
@@ -1582,37 +1581,86 @@ abstract contract Base is Test {
   }
 
   function _getExpectedPremiumDelta(
+    uint256 drawnIndex,
+    uint256 oldPremiumShares,
+    int256 oldPremiumOffsetRay,
+    uint256 drawnShares,
+    uint256 riskPremium,
+    uint256 restoredPremiumRay
+  ) internal pure returns (IHubBase.PremiumDelta memory) {
+    uint256 premiumDebtRay = _calculatePremiumDebtRay(
+      oldPremiumShares,
+      oldPremiumOffsetRay,
+      drawnIndex
+    );
+
+    uint256 newPremiumShares = drawnShares.percentMulUp(riskPremium);
+    int256 newPremiumOffsetRay = _calculatePremiumAssetsRay(newPremiumShares, drawnIndex).signedSub(
+      premiumDebtRay - restoredPremiumRay
+    );
+
+    return
+      IHubBase.PremiumDelta({
+        sharesDelta: newPremiumShares.toInt256() - oldPremiumShares.toInt256(),
+        offsetRayDelta: newPremiumOffsetRay - oldPremiumOffsetRay,
+        restoredPremiumRay: restoredPremiumRay
+      });
+  }
+
+  function _getExpectedPremiumDelta(
+    IHub hub,
+    uint256 assetId,
+    uint256 oldPremiumShares,
+    int256 oldPremiumOffsetRay,
+    uint256 drawnShares,
+    uint256 riskPremium,
+    uint256 restoredPremiumRay
+  ) internal view returns (IHubBase.PremiumDelta memory) {
+    return
+      _getExpectedPremiumDelta({
+        drawnIndex: hub.getAssetDrawnIndex(assetId),
+        oldPremiumShares: oldPremiumShares,
+        oldPremiumOffsetRay: oldPremiumOffsetRay,
+        drawnShares: drawnShares,
+        riskPremium: riskPremium,
+        restoredPremiumRay: restoredPremiumRay
+      });
+  }
+
+  function _getExpectedPremiumDelta(
     ISpoke spoke,
     address user,
     uint256 reserveId,
     uint256 repayAmount
   ) internal view virtual returns (IHubBase.PremiumDelta memory) {
-    ISpoke.UserPosition memory userPosition = spoke.getUserPosition(reserveId, user);
     Debts memory userDebt = getUserDebt(spoke, user, reserveId);
-    uint256 assetId = spoke.getReserve(reserveId).assetId;
-
-    IHubBase.PremiumDelta memory expectedPremiumDelta = IHubBase.PremiumDelta({
-      sharesDelta: -userPosition.premiumShares.toInt256(),
-      offsetDeltaRay: -userPosition.premiumOffsetRay.toInt256(),
-      accruedPremiumRay: _calculateAccruedPremiumRay(
-        hub1,
-        assetId,
-        userPosition.premiumShares,
-        userPosition.premiumOffsetRay
-      ),
-      restoredPremiumRay: 0 // populated below
-    });
-
     (, uint256 premiumAmountToRestore) = _calculateRestoreAmounts(
       repayAmount,
       userDebt.drawnDebt,
       userDebt.premiumDebt
     );
-    expectedPremiumDelta.restoredPremiumRay = (premiumAmountToRestore * WadRayMath.RAY).min(
-      userPosition.realizedPremiumRay + expectedPremiumDelta.accruedPremiumRay
+
+    ISpoke.UserPosition memory userPosition = spoke.getUserPosition(reserveId, user);
+    uint256 assetId = spoke.getReserve(reserveId).assetId;
+    uint256 premiumDebtRay = _calculatePremiumDebtRay(
+      hub1,
+      assetId,
+      userPosition.premiumShares,
+      userPosition.premiumOffsetRay
     );
 
-    return expectedPremiumDelta;
+    uint256 restoredPremiumRay = (premiumAmountToRestore * WadRayMath.RAY).min(premiumDebtRay);
+
+    return
+      _getExpectedPremiumDelta({
+        hub: hub1,
+        assetId: assetId,
+        oldPremiumShares: userPosition.premiumShares,
+        oldPremiumOffsetRay: userPosition.premiumOffsetRay,
+        drawnShares: 0, // risk premium is 0, so drawn shares do not matter here (otherwise they need to be updated with restored drawn shares amount)
+        riskPremium: 0,
+        restoredPremiumRay: restoredPremiumRay
+      });
   }
 
   /// @dev Helper function to check consistent supplied amounts within accounting
@@ -2054,74 +2102,64 @@ abstract contract Base is Test {
       hub.getAddedAssets(assetId) - hub.previewRemoveByShares(assetId, hub.getAddedShares(assetId));
   }
 
-  function _calculateAccruedPremiumRay(
-    IHub hub,
-    uint256 assetId,
-    uint256 premiumShares,
-    uint256 premiumOffsetRay
-  ) internal view returns (uint256) {
-    return premiumShares * hub.getAssetDrawnIndex(assetId) - premiumOffsetRay;
-  }
-
-  function _calculateAccruedPremiumRay(
-    ISpoke spoke,
-    uint256 reserveId,
-    uint256 premiumShares,
-    uint256 premiumOffsetRay
-  ) internal view returns (uint256) {
-    IHub hub = _hub(spoke, reserveId);
-    uint256 assetId = spoke.getReserve(reserveId).assetId;
-    return _calculateAccruedPremiumRay(hub, assetId, premiumShares, premiumOffsetRay);
-  }
-
-  function _calculateAccruedPremiumRay(IHub hub, uint256 assetId) internal view returns (uint256) {
-    return
-      _calculateAccruedPremiumRay(
-        hub,
-        assetId,
-        hub.getAsset(assetId).premiumShares,
-        hub.getAsset(assetId).premiumOffsetRay
-      );
-  }
-
   function _calculatePremiumDebt(
     IHub hub,
     uint256 assetId,
-    uint256 realizedPremiumRay,
     uint256 premiumShares,
-    uint256 premiumOffsetRay
+    int256 premiumOffsetRay
   ) internal view returns (uint256) {
-    return
-      _calculatePremiumRay(hub, assetId, realizedPremiumRay, premiumShares, premiumOffsetRay)
-        .fromRayUp();
+    return _calculatePremiumDebtRay(hub, assetId, premiumShares, premiumOffsetRay).fromRayUp();
   }
 
-  function _calculatePremiumRay(
+  function _calculatePremiumDebtRay(
     IHub hub,
     uint256 assetId,
-    uint256 realizedPremiumRay,
     uint256 premiumShares,
-    uint256 premiumOffsetRay
+    int256 premiumOffsetRay
   ) internal view returns (uint256) {
-    uint256 accruedPremiumRay = _calculateAccruedPremiumRay(
-      hub,
-      assetId,
-      premiumShares,
-      premiumOffsetRay
-    );
-    return realizedPremiumRay + accruedPremiumRay;
+    uint256 drawnIndex = hub.getAssetDrawnIndex(assetId);
+    return _calculatePremiumDebtRay(premiumShares, premiumOffsetRay, drawnIndex);
   }
 
-  function _calculatePremiumRay(
+  function _calculatePremiumDebtRay(
+    uint256 premiumShares,
+    int256 premiumOffsetRay,
+    uint256 drawnIndex
+  ) internal pure returns (uint256) {
+    return ((premiumShares * drawnIndex).toInt256() - premiumOffsetRay).toUint256();
+  }
+
+  function _calculatePremiumDebtRay(
     ISpoke spoke,
     uint256 reserveId,
-    uint256 realizedPremiumRay,
     uint256 premiumShares,
-    uint256 premiumOffsetRay
+    int256 premiumOffsetRay
   ) internal view returns (uint256) {
     IHub hub = _hub(spoke, reserveId);
     uint256 assetId = spoke.getReserve(reserveId).assetId;
-    return _calculatePremiumRay(hub, assetId, realizedPremiumRay, premiumShares, premiumOffsetRay);
+    return _calculatePremiumDebtRay(hub, assetId, premiumShares, premiumOffsetRay);
+  }
+
+  function _calculatePremiumDebtRay(
+    ISpoke spoke,
+    uint256 reserveId,
+    address user
+  ) internal view returns (uint256) {
+    ISpoke.UserPosition memory userPosition = spoke.getUserPosition(reserveId, user);
+    return
+      _calculatePremiumDebtRay(
+        spoke,
+        reserveId,
+        userPosition.premiumShares,
+        userPosition.premiumOffsetRay
+      );
+  }
+
+  function _calculatePremiumAssetsRay(
+    uint256 premiumShares,
+    uint256 drawnIndex
+  ) internal pure returns (uint256) {
+    return premiumShares * drawnIndex;
   }
 
   function _calculatePremiumAssetsRay(
@@ -2129,7 +2167,7 @@ abstract contract Base is Test {
     uint256 assetId,
     uint256 premiumShares
   ) internal view returns (uint256) {
-    return premiumShares * hub.getAssetDrawnIndex(assetId);
+    return _calculatePremiumAssetsRay(premiumShares, hub.getAssetDrawnIndex(assetId));
   }
 
   /// @dev Helper function to withdraw fees from the treasury spoke
@@ -2265,6 +2303,13 @@ abstract contract Base is Test {
       initData
     );
     return address(proxy);
+  }
+
+  function assertEq(IHubBase.PremiumDelta memory a, IHubBase.PremiumDelta memory b) internal pure {
+    assertEq(a.sharesDelta, b.sharesDelta, 'sharesDelta');
+    assertEq(a.offsetRayDelta, b.offsetRayDelta, 'offsetRayDelta');
+    assertEq(a.restoredPremiumRay, b.restoredPremiumRay, 'restoredPremiumRay');
+    assertEq(abi.encode(a), abi.encode(b));
   }
 
   function assertEq(IHub.AssetConfig memory a, IHub.AssetConfig memory b) internal pure {
@@ -2602,7 +2647,6 @@ abstract contract Base is Test {
         drawn: drawn,
         premiumShares: assetData.premiumShares,
         premiumOffsetRay: assetData.premiumOffsetRay,
-        realizedPremiumRay: assetData.realizedPremiumRay,
         premium: premium,
         lastUpdateTimestamp: assetData.lastUpdateTimestamp.toUint40(),
         drawnIndex: assetData.drawnIndex,
@@ -2634,7 +2678,6 @@ abstract contract Base is Test {
         drawn: drawn,
         premiumShares: spokeData.premiumShares,
         premiumOffsetRay: spokeData.premiumOffsetRay,
-        realizedPremiumRay: spokeData.realizedPremiumRay,
         premium: premium
       });
   }
@@ -2664,7 +2707,6 @@ abstract contract Base is Test {
     assertEq(a.drawn, b.drawn, 'drawnDebt');
     assertEq(a.premiumShares, b.premiumShares, 'premiumShares');
     assertEq(a.premiumOffsetRay, b.premiumOffsetRay, 'premiumOffsetRay');
-    assertEq(a.realizedPremiumRay, b.realizedPremiumRay, 'realizedPremiumRay');
     assertEq(a.premium, b.premium, 'premium');
   }
 
@@ -2677,7 +2719,6 @@ abstract contract Base is Test {
     assertEq(a.drawn, b.drawn, 'drawn');
     assertEq(a.premiumShares, b.premiumShares, 'premiumShares');
     assertEq(a.premiumOffsetRay, b.premiumOffsetRay, 'premiumOffsetRay');
-    assertEq(a.realizedPremiumRay, b.realizedPremiumRay, 'realizedPremiumRay');
     assertEq(a.premium, b.premium, 'premium');
     assertEq(abi.encode(a), abi.encode(b)); // sanity check
   }
@@ -2827,18 +2868,20 @@ abstract contract Base is Test {
   /// @dev Calculate expected fees based on previous drawn index
   function _calcUnrealizedFees(IHub hub, uint256 assetId) internal view returns (uint256) {
     IHub.Asset memory asset = hub.getAsset(assetId);
-    uint256 lastDrawnIndex = asset.drawnIndex;
+    uint256 previousIndex = asset.drawnIndex;
     uint256 drawnIndex = asset.drawnIndex.rayMulUp(
       MathUtils.calculateLinearInterest(asset.drawnRate, uint40(asset.lastUpdateTimestamp))
     );
-    uint256 liquidityGrowth = asset.drawnShares.rayMulUp(drawnIndex) -
-      asset.drawnShares.rayMulUp(lastDrawnIndex) +
-      (asset.premiumShares * drawnIndex - asset.premiumOffsetRay + asset.realizedPremiumRay)
-        .fromRayUp() -
-      (asset.premiumShares * lastDrawnIndex - asset.premiumOffsetRay + asset.realizedPremiumRay)
-        .fromRayUp();
 
-    return liquidityGrowth.percentMulDown(asset.liquidityFee);
+    uint256 aggregatedOwedRayAfter = (((uint256(asset.drawnShares) + asset.premiumShares) *
+      drawnIndex).toInt256() - asset.premiumOffsetRay).toUint256() + asset.deficitRay;
+    uint256 aggregatedOwedRayBefore = (((uint256(asset.drawnShares) + asset.premiumShares) *
+      previousIndex).toInt256() - asset.premiumOffsetRay).toUint256() + asset.deficitRay;
+
+    return
+      (aggregatedOwedRayAfter.fromRayUp() - aggregatedOwedRayBefore.fromRayUp()).percentMulDown(
+        asset.liquidityFee
+      );
   }
 
   function _getExpectedFeeReceiverAddedAssets(

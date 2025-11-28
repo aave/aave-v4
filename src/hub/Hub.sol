@@ -21,7 +21,7 @@ import {IHubBase, IHub} from 'src/hub/interfaces/IHub.sol';
 contract Hub is IHub, AccessManaged {
   using EnumerableSet for EnumerableSet.AddressSet;
   using SafeTransferLib for address;
-  using SafeCast for uint256;
+  using SafeCast for *;
   using WadRayMath for uint256;
   using SharesMath for uint256;
   using PercentageMath for *;
@@ -101,7 +101,6 @@ contract Hub is IHub, AccessManaged {
       premiumShares: 0,
       premiumOffsetRay: 0,
       drawnIndex: drawnIndex.toUint120(),
-      realizedPremiumRay: 0,
       underlying: underlying,
       lastUpdateTimestamp: lastUpdateTimestamp.toUint40(),
       decimals: decimals,
@@ -548,9 +547,8 @@ contract Hub is IHub, AccessManaged {
     return
       Premium.calculatePremiumRay({
         premiumShares: asset.premiumShares,
-        drawnIndex: asset.getDrawnIndex(),
         premiumOffsetRay: asset.premiumOffsetRay,
-        realizedPremiumRay: asset.realizedPremiumRay
+        drawnIndex: asset.getDrawnIndex()
       });
   }
 
@@ -560,9 +558,9 @@ contract Hub is IHub, AccessManaged {
   }
 
   /// @inheritdoc IHubBase
-  function getAssetPremiumData(uint256 assetId) external view returns (uint256, uint256, uint256) {
+  function getAssetPremiumData(uint256 assetId) external view returns (uint256, int256) {
     Asset storage asset = _assets[assetId];
-    return (asset.premiumShares, asset.premiumOffsetRay, asset.realizedPremiumRay);
+    return (asset.premiumShares, asset.premiumOffsetRay);
   }
 
   /// @inheritdoc IHubBase
@@ -653,9 +651,9 @@ contract Hub is IHub, AccessManaged {
   function getSpokePremiumData(
     uint256 assetId,
     address spoke
-  ) external view returns (uint256, uint256, uint256) {
+  ) external view returns (uint256, int256) {
     SpokeData storage spokeData = _spokes[assetId][spoke];
-    return (spokeData.premiumShares, spokeData.premiumOffsetRay, spokeData.realizedPremiumRay);
+    return (spokeData.premiumShares, spokeData.premiumOffsetRay);
   }
 
   /// @inheritdoc IHubBase
@@ -749,28 +747,18 @@ contract Hub is IHub, AccessManaged {
     uint256 drawnIndex = asset.drawnIndex;
 
     // asset premium change
-    (
-      asset.premiumShares,
-      asset.premiumOffsetRay,
-      asset.realizedPremiumRay
-    ) = _validateApplyPremiumDelta(
+    (asset.premiumShares, asset.premiumOffsetRay) = _validateApplyPremiumDelta(
       drawnIndex,
       asset.premiumShares,
       asset.premiumOffsetRay,
-      asset.realizedPremiumRay,
       premiumDelta
     );
 
     // spoke premium change
-    (
-      spoke.premiumShares,
-      spoke.premiumOffsetRay,
-      spoke.realizedPremiumRay
-    ) = _validateApplyPremiumDelta(
+    (spoke.premiumShares, spoke.premiumOffsetRay) = _validateApplyPremiumDelta(
       drawnIndex,
       spoke.premiumShares,
       spoke.premiumOffsetRay,
-      spoke.realizedPremiumRay,
       premiumDelta
     );
 
@@ -825,9 +813,8 @@ contract Hub is IHub, AccessManaged {
     return
       Premium.calculatePremiumRay({
         premiumShares: spoke.premiumShares,
-        drawnIndex: asset.getDrawnIndex(),
         premiumOffsetRay: spoke.premiumOffsetRay,
-        realizedPremiumRay: spoke.realizedPremiumRay
+        drawnIndex: asset.getDrawnIndex()
       });
   }
 
@@ -952,38 +939,28 @@ contract Hub is IHub, AccessManaged {
   function _validateApplyPremiumDelta(
     uint256 drawnIndex,
     uint256 premiumShares,
-    uint256 premiumOffsetRay,
-    uint256 realizedPremiumRay,
+    int256 premiumOffsetRay,
     PremiumDelta calldata premiumDelta
-  ) internal pure returns (uint120, uint200, uint200) {
+  ) internal pure returns (uint120, int200) {
     uint256 premiumRayBefore = Premium.calculatePremiumRay({
       premiumShares: premiumShares,
-      drawnIndex: drawnIndex,
       premiumOffsetRay: premiumOffsetRay,
-      realizedPremiumRay: realizedPremiumRay
+      drawnIndex: drawnIndex
     });
 
     uint256 newPremiumShares = premiumShares.add(premiumDelta.sharesDelta);
-    uint256 newPremiumOffsetRay = premiumOffsetRay.add(premiumDelta.offsetDeltaRay);
-    uint256 newRealizedPremiumRay = realizedPremiumRay +
-      premiumDelta.accruedPremiumRay -
-      premiumDelta.restoredPremiumRay;
+    int256 newPremiumOffsetRay = premiumOffsetRay + premiumDelta.offsetRayDelta;
 
     uint256 premiumRayAfter = Premium.calculatePremiumRay({
       premiumShares: newPremiumShares,
-      drawnIndex: drawnIndex,
       premiumOffsetRay: newPremiumOffsetRay,
-      realizedPremiumRay: newRealizedPremiumRay
+      drawnIndex: drawnIndex
     });
 
     require(
       premiumRayAfter + premiumDelta.restoredPremiumRay == premiumRayBefore,
       InvalidPremiumChange()
     );
-    return (
-      newPremiumShares.toUint120(),
-      newPremiumOffsetRay.toUint200(),
-      newRealizedPremiumRay.toUint200()
-    );
+    return (newPremiumShares.toUint120(), newPremiumOffsetRay.toInt200());
   }
 }
