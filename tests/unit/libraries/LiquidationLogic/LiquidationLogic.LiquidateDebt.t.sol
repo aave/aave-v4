@@ -118,8 +118,7 @@ contract LiquidationLogicLiquidateDebtTest is LiquidationLogicBaseTest {
         debtToLiquidate: debtToLiquidate,
         premiumDebtRay: premiumDebtRay,
         drawnIndex: hub.getAssetDrawnIndex(assetId),
-        liquidator: liquidator,
-        user: user
+        liquidator: liquidator
       })
     );
 
@@ -153,8 +152,7 @@ contract LiquidationLogicLiquidateDebtTest is LiquidationLogicBaseTest {
         debtToLiquidate: debtToLiquidate,
         premiumDebtRay: premiumDebtRay,
         drawnIndex: drawnIndex,
-        liquidator: liquidator,
-        user: user
+        liquidator: liquidator
       })
     );
   }
@@ -178,8 +176,7 @@ contract LiquidationLogicLiquidateDebtTest is LiquidationLogicBaseTest {
         debtToLiquidate: debtToLiquidate,
         premiumDebtRay: premiumDebtRay,
         drawnIndex: drawnIndex,
-        liquidator: liquidator,
-        user: user
+        liquidator: liquidator
       })
     );
   }
@@ -203,8 +200,7 @@ contract LiquidationLogicLiquidateDebtTest is LiquidationLogicBaseTest {
         debtToLiquidate: debtToLiquidate,
         premiumDebtRay: premiumDebtRay,
         drawnIndex: drawnIndex,
-        liquidator: liquidator,
-        user: user
+        liquidator: liquidator
       })
     );
   }

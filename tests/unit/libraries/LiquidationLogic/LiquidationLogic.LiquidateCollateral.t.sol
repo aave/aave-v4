@@ -75,7 +75,6 @@ contract LiquidationLogicLiquidateCollateralTest is LiquidationLogicBaseTest {
       ),
       collateralToLiquidator: 0, // populated below
       collateralReserveId: reserveId,
-      user: borrower,
       liquidator: liquidator,
       receiveShares: false
     });
@@ -88,7 +87,7 @@ contract LiquidationLogicLiquidateCollateralTest is LiquidationLogicBaseTest {
 
     assertEq(liquidationLogicWrapper.getCollateralReserve(), initialReserve);
     assertPosition(
-      liquidationLogicWrapper.getCollateralPosition(params.user),
+      liquidationLogicWrapper.getCollateralPosition(borrower),
       initialUserPosition,
       userSuppliedShares - sharesToLiquidate
     );
@@ -116,7 +115,6 @@ contract LiquidationLogicLiquidateCollateralTest is LiquidationLogicBaseTest {
       collateralToLiquidate: 1,
       collateralToLiquidator: 1,
       collateralReserveId: reserveId,
-      user: borrower,
       liquidator: liquidator,
       receiveShares: true
     });
@@ -139,7 +137,7 @@ contract LiquidationLogicLiquidateCollateralTest is LiquidationLogicBaseTest {
       sharesToLiquidator
     );
     assertPosition(
-      liquidationLogicWrapper.getCollateralPosition(params.user),
+      liquidationLogicWrapper.getCollateralPosition(borrower),
       initialUserPosition,
       userSuppliedShares - sharesToLiquidate
     );
@@ -163,7 +161,6 @@ contract LiquidationLogicLiquidateCollateralTest is LiquidationLogicBaseTest {
       ),
       collateralToLiquidator: 0, // populated below
       collateralReserveId: reserveId,
-      user: borrower,
       liquidator: liquidator,
       receiveShares: true
     });
@@ -185,7 +182,7 @@ contract LiquidationLogicLiquidateCollateralTest is LiquidationLogicBaseTest {
       sharesToLiquidator
     );
     assertPosition(
-      liquidationLogicWrapper.getCollateralPosition(params.user),
+      liquidationLogicWrapper.getCollateralPosition(borrower),
       initialUserPosition,
       userSuppliedShares - sharesToLiquidate
     );
@@ -206,7 +203,6 @@ contract LiquidationLogicLiquidateCollateralTest is LiquidationLogicBaseTest {
       hub.previewRemoveByShares(assetId, userSuppliedShares)
     );
     params.collateralToLiquidator = 0;
-    params.user = borrower;
 
     vm.expectCall(address(hub), abi.encodeWithSelector(IHubBase.remove.selector), 0);
     liquidationLogicWrapper.liquidateCollateral(params);

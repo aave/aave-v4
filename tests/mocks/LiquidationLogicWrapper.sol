@@ -170,10 +170,11 @@ contract LiquidationLogicWrapper {
   }
 
   function validateLiquidationCall(
-    LiquidationLogic.ValidateLiquidationCallParams memory params
+    LiquidationLogic.ValidateLiquidationCallParams memory params,
+    uint256 collateralReserveId
   ) public view {
     LiquidationLogic._validateLiquidationCall(
-      _positionStatuses[_borrower].isUsingAsCollateral(params.collateralReserveId),
+      _positionStatuses[_borrower].isUsingAsCollateral(collateralReserveId),
       params
     );
   }
@@ -217,7 +218,8 @@ contract LiquidationLogicWrapper {
     return
       LiquidationLogic._liquidateCollateral(
         _reserves[_collateralReserveId],
-        _userPositions,
+        _userPositions[_borrower][_collateralReserveId],
+        _userPositions[_liquidator][_collateralReserveId],
         params
       );
   }
