@@ -55,7 +55,7 @@ library LiquidationLogic {
     uint256 collateralReserveBalance;
     uint256 debtReserveBalance;
     bool receiveShares;
-    bool isBorrowerUsingAsCollateral;
+    bool isUsingAsCollateral;
   }
 
   struct CalculateDebtToTargetHealthFactorParams {
@@ -161,7 +161,7 @@ library LiquidationLogic {
         collateralReserveBalance: collateralReserveBalance,
         debtReserveBalance: params.drawnDebt + params.premiumDebtRay.fromRayUp(),
         receiveShares: params.receiveShares,
-        isBorrowerUsingAsCollateral: positionStatus[params.user].isUsingAsCollateral(
+        isUsingAsCollateral: positionStatus[params.user].isUsingAsCollateral(
           params.collateralReserveId
         )
       })
@@ -364,7 +364,7 @@ library LiquidationLogic {
       ISpoke.HealthFactorNotBelowThreshold()
     );
     require(
-      params.collateralFactor > 0 && params.isBorrowerUsingAsCollateral,
+      params.collateralFactor > 0 && params.isUsingAsCollateral,
       ISpoke.CollateralCannotBeLiquidated()
     );
     if (params.receiveShares) {

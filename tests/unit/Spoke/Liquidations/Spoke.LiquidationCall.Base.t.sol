@@ -420,7 +420,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
       params.user,
       liquidationMetadata.debtToLiquidate
     );
-    vars.premiumDelta = _getExpectedPremiumDeltaForRepay(
+    vars.premiumDelta = _getExpectedPremiumDeltaForRestore(
       params.spoke,
       params.user,
       params.debtReserveId,

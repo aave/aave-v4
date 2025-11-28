@@ -941,6 +941,11 @@ contract SpokeBase is Base {
     }
   }
 
+  /// @dev notify is not called after borrow or repay, thus refreshPremium should not be called
+  function _assertRefreshPremiumNotCalled() internal {
+    vm.expectCall(address(hub1), abi.encodeWithSelector(IHubBase.refreshPremium.selector), 0);
+  }
+
   function _randomReserveId(ISpoke spoke) internal returns (uint256) {
     return vm.randomUint(0, spoke.getReserveCount() - 1);
   }

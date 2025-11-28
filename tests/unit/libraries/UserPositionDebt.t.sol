@@ -64,45 +64,24 @@ contract UserPositionDebtTest is Base {
     assertEq(u.getUserPosition().premiumOffsetRay, -90e18 * 1e27);
   }
 
-  function test_fuzz_getPremiumDelta(
-    uint256 drawnShares,
-    uint256 premiumShares,
-    int256 premiumOffsetRay,
-    uint256 drawnSharesTaken,
-    uint256 drawnIndex,
-    uint256 riskPremium,
-    uint256 restoredPremiumRay
-  ) public {
-    (
-      drawnShares,
-      premiumShares,
-      premiumOffsetRay,
-      drawnSharesTaken,
-      drawnIndex,
-      riskPremium,
-      restoredPremiumRay
-    ) = _bound(
-      BoundParams({
-        drawnShares: drawnShares,
-        premiumShares: premiumShares,
-        premiumOffsetRay: premiumOffsetRay,
-        drawnSharesTaken: drawnSharesTaken,
-        drawnIndex: drawnIndex,
-        riskPremium: riskPremium,
-        restoredPremiumRay: restoredPremiumRay
-      })
-    );
-    _mockUserDrawnShares(drawnShares);
-    _mockUserPremiumData(premiumShares, premiumOffsetRay);
+  function test_fuzz_getPremiumDelta(BoundParams memory params) public {
+    params = _bound(params);
+    _mockUserDrawnShares(params.drawnShares);
+    _mockUserPremiumData(params.premiumShares, params.premiumOffsetRay);
     assertEq(
-      u.getPremiumDelta(drawnSharesTaken, drawnIndex, riskPremium, restoredPremiumRay),
+      u.getPremiumDelta(
+        params.drawnSharesTaken,
+        params.drawnIndex,
+        params.riskPremium,
+        params.restoredPremiumRay
+      ),
       _getExpectedPremiumDelta({
-        drawnIndex: drawnIndex,
-        oldPremiumShares: premiumShares,
-        oldPremiumOffsetRay: premiumOffsetRay,
-        drawnShares: drawnShares - drawnSharesTaken,
-        riskPremium: riskPremium,
-        restoredPremiumRay: restoredPremiumRay
+        drawnIndex: params.drawnIndex,
+        oldPremiumShares: params.premiumShares,
+        oldPremiumOffsetRay: params.premiumOffsetRay,
+        drawnShares: params.drawnShares - params.drawnSharesTaken,
+        riskPremium: params.riskPremium,
+        restoredPremiumRay: params.restoredPremiumRay
       })
     );
   }
@@ -215,20 +194,6 @@ contract UserPositionDebtTest is Base {
     assertEq(premiumDebtRay, 124.44444444444444444444444439e45);
   }
 
-  function test_calculateRestoreAmount() public {
-    (uint256 restoredDrawnDebt, uint256 restoredPremiumDebtRay) = u.calculateRestoreAmount(
-      DRAWN_INDEX,
-      400e18
-    );
-    assertEq(restoredDrawnDebt, 151.5e18);
-    assertEq(restoredPremiumDebtRay, 2.485e47);
-
-    _mockUserPremiumData(70e18, 0);
-    (restoredDrawnDebt, restoredPremiumDebtRay) = u.calculateRestoreAmount(1.75e27, 372.5e18);
-    assertEq(restoredDrawnDebt, 250e18);
-    assertEq(restoredPremiumDebtRay, 1.225e47);
-  }
-
   function test_fuzz_calculateRestoreAmount(
     uint256 drawnShares,
     uint256 premiumShares,
@@ -263,6 +228,20 @@ contract UserPositionDebtTest is Base {
       assertEq(restoredDrawnDebt, amount - premiumDebtRay.fromRayUp());
       assertEq(restoredPremiumDebtRay, premiumDebtRay);
     }
+  }
+
+  function test_calculateRestoreAmount() public {
+    (uint256 restoredDrawnDebt, uint256 restoredPremiumDebtRay) = u.calculateRestoreAmount(
+      DRAWN_INDEX,
+      400e18
+    );
+    assertEq(restoredDrawnDebt, 151.5e18);
+    assertEq(restoredPremiumDebtRay, 2.485e47);
+
+    _mockUserPremiumData(70e18, 0);
+    (restoredDrawnDebt, restoredPremiumDebtRay) = u.calculateRestoreAmount(1.75e27, 372.5e18);
+    assertEq(restoredDrawnDebt, 250e18);
+    assertEq(restoredPremiumDebtRay, 1.225e47);
   }
 
   function _mockUserDrawnShares(uint256 drawnShares) internal {
@@ -320,9 +299,7 @@ contract UserPositionDebtTest is Base {
     return (drawnShares, premiumShares, premiumOffsetRay, drawnIndex);
   }
 
-  function _bound(
-    BoundParams memory params
-  ) internal pure returns (uint256, uint256, int256, uint256, uint256, uint256, uint256) {
+  function _bound(BoundParams memory params) internal pure returns (BoundParams memory) {
     (params.drawnShares, params.premiumShares, params.premiumOffsetRay, params.drawnIndex) = _bound(
       params.drawnShares,
       params.premiumShares,
@@ -336,14 +313,6 @@ contract UserPositionDebtTest is Base {
       0,
       _calculatePremiumDebtRay(params.premiumShares, params.premiumOffsetRay, params.drawnIndex)
     );
-    return (
-      params.drawnShares,
-      params.premiumShares,
-      params.premiumOffsetRay,
-      params.drawnSharesTaken,
-      params.drawnIndex,
-      params.riskPremium,
-      params.restoredPremiumRay
-    );
+    return params;
   }
 }

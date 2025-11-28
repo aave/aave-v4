@@ -22,7 +22,7 @@ contract LiquidationLogicValidateLiquidationCallTest is LiquidationLogicBaseTest
       collateralFactor: 75_00,
       collateralReserveBalance: 120e6,
       debtReserveBalance: 100e18,
-      isBorrowerUsingAsCollateral: true
+      isUsingAsCollateral: true
     });
     liquidationLogicWrapper.setBorrower(params.user);
     liquidationLogicWrapper.setLiquidator(params.liquidator);
@@ -114,7 +114,7 @@ contract LiquidationLogicValidateLiquidationCallTest is LiquidationLogicBaseTest
   function test_validateLiquidationCall_revertsWith_CollateralCannotBeLiquidated_NotUsingAsCollateral()
     public
   {
-    params.isBorrowerUsingAsCollateral = false;
+    params.isUsingAsCollateral = false;
     vm.expectRevert(ISpoke.CollateralCannotBeLiquidated.selector);
     liquidationLogicWrapper.validateLiquidationCall(params);
   }

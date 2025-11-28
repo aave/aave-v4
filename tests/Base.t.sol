@@ -1632,7 +1632,7 @@ abstract contract Base is Test {
   }
 
   // in repay, riskPremium is not set to 0 prior to notify
-  function _getExpectedPremiumDeltaForRepay(
+  function _getExpectedPremiumDeltaForRestore(
     ISpoke spoke,
     address user,
     uint256 reserveId,
@@ -1657,8 +1657,8 @@ abstract contract Base is Test {
       );
 
       uint256 restoredPremiumRay = (premiumAmountToRestore * WadRayMath.RAY).min(premiumDebtRay);
-      uint256 restoredShares = hub.previewRestoreByAssets(assetId, drawnDebtToRestore);
-      uint256 riskPremium = _getUserRiskPremium(spoke, user);
+      uint256 restoredShares = drawnDebtToRestore.rayDivDown(hub.getAssetDrawnIndex(reserveId));
+      uint256 riskPremium = _getUserLastRiskPremium(spoke, user);
 
       return
         _getExpectedPremiumDelta({
@@ -2010,6 +2010,10 @@ abstract contract Base is Test {
 
   function _getUserHealthFactor(ISpoke spoke, address user) internal view returns (uint256) {
     return spoke.getUserAccountData(user).healthFactor;
+  }
+
+  function _getUserLastRiskPremium(ISpoke spoke, address user) internal view returns (uint256) {
+    return spoke.getUserLastRiskPremium(user);
   }
 
   function _getUserRiskPremium(ISpoke spoke, address user) internal view returns (uint256) {
