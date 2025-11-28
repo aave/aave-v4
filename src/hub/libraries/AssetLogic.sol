@@ -216,6 +216,7 @@ library AssetLogic {
       );
   }
 
+  /// @notice Calculates the aggregated owed amount for a specified asset, expressed in asset units and scaled by RAY.
   function _calculateAggregatedOwedRay(
     uint256 drawnShares,
     uint256 premiumShares,
