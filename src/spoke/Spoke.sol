@@ -299,17 +299,13 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
   ) external onlyPositionManager(onBehalfOf) returns (uint256, uint256) {
     Reserve storage reserve = _getReserve(reserveId);
     UserPosition storage userPosition = _userPositions[onBehalfOf][reserveId];
-    PositionStatus storage positionStatus = _positionStatus[onBehalfOf];
     _validateRepay(reserve);
 
-    IHubBase.PremiumDelta memory premiumDelta;
-
-    uint256 drawnDebtRestored = amount;
     uint256 drawnIndex = reserve.hub.getAssetDrawnIndex(reserve.assetId);
-    (drawnDebtRestored, premiumDelta.restoredPremiumRay) = _calculateRestoreAmount(
+    (uint256 drawnDebtRestored, uint256 premiumDebtRayRestored) = _calculateRestoreAmount(
       userPosition,
       drawnIndex,
-      drawnDebtRestored
+      amount
     );
 
     // we preview the drawn shares to be restored, should always be the same value returned by hub.restore()
@@ -318,20 +314,21 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
       drawnDebtRestored
     );
 
-    premiumDelta = userPosition.getPremiumDelta({
+    IHubBase.PremiumDelta memory premiumDelta = userPosition.getPremiumDelta({
       drawnSharesTaken: previewRestoredShares,
       drawnIndex: drawnIndex,
-      riskPremium: positionStatus.riskPremium,
-      restoredPremiumRay: premiumDelta.restoredPremiumRay
+      riskPremium: _positionStatus[onBehalfOf].riskPremium,
+      restoredPremiumRay: premiumDebtRayRestored
     });
 
-    uint256 totalDebtRestored = drawnDebtRestored + premiumDelta.restoredPremiumRay.fromRayUp();
+    uint256 totalDebtRestored = drawnDebtRestored + premiumDebtRayRestored.fromRayUp();
     reserve.underlying.safeTransferFrom(msg.sender, address(reserve.hub), totalDebtRestored);
     reserve.hub.restore(reserve.assetId, drawnDebtRestored, premiumDelta);
 
     userPosition.applyPremiumDelta(premiumDelta);
     userPosition.drawnShares -= previewRestoredShares.toUint120();
     if (userPosition.drawnShares == 0) {
+      PositionStatus storage positionStatus = _positionStatus[onBehalfOf];
       positionStatus.setBorrowing(reserveId, false);
     }
 
