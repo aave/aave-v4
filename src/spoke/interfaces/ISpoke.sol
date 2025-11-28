@@ -481,7 +481,7 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
   function getUserAccountData(address user) external view returns (UserAccountData memory);
 
   /// @notice Returns the stored user risk premium.
-  function getUserRiskPremium(address user) external view returns (uint256);
+  function getUserLastRiskPremium(address user) external view returns (uint256);
 
   /// @notice Returns the liquidation bonus for a given health factor, based on the user's current dynamic configuration.
   /// @dev It reverts if the reserve associated with the given reserve identifier is not listed.

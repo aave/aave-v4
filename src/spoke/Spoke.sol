@@ -305,8 +305,8 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     (uint256 drawnDebtRestored, uint256 premiumDebtRayRestored) = userPosition
       .calculateRestoreAmount(drawnIndex, amount);
 
-    // we preview the drawn shares to be restored, should always be the same value returned by hub.restore()
-    uint256 restoredShares = reserve.hub.previewRestoreByAssets(reserve.assetId, drawnDebtRestored);
+    // we calculate the drawn shares to be restored, should always be the same value returned by hub.restore()
+    uint256 restoredShares = drawnDebtRestored.rayDivDown(drawnIndex);
 
     IHubBase.PremiumDelta memory premiumDelta = userPosition.getPremiumDelta({
       drawnSharesTaken: restoredShares,
@@ -622,7 +622,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
   }
 
   /// @inheritdoc ISpoke
-  function getUserRiskPremium(address user) external view returns (uint256) {
+  function getUserLastRiskPremium(address user) external view returns (uint256) {
     return _positionStatus[user].riskPremium;
   }
 
