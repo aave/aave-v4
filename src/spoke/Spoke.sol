@@ -5,9 +5,7 @@ pragma solidity 0.8.28;
 import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
 import {IERC20Permit} from 'src/dependencies/openzeppelin/IERC20Permit.sol';
 import {SignatureChecker} from 'src/dependencies/openzeppelin/SignatureChecker.sol';
-import {
-  AccessManagedUpgradeable
-} from 'src/dependencies/openzeppelin-upgradeable/AccessManagedUpgradeable.sol';
+import {AccessManagedUpgradeable} from 'src/dependencies/openzeppelin-upgradeable/AccessManagedUpgradeable.sol';
 import {SafeTransferLib} from 'src/dependencies/solady/SafeTransferLib.sol';
 import {EIP712} from 'src/dependencies/solady/EIP712.sol';
 import {MathUtils} from 'src/libraries/math/MathUtils.sol';
@@ -314,9 +312,10 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
       drawnDebtRestored
     );
 
-    // replicate hub.previewRestoreByAssets() instead of calling here
-    // verified later against actual restored shares returned from hub.restore()
-    uint256 previewRestoredShares = drawnDebtRestored.rayDivDown(drawnIndex);
+    uint256 previewRestoredShares = reserve.hub.previewRestoreByAssets(
+      reserve.assetId,
+      drawnDebtRestored
+    );
 
     premiumDelta = userPosition.getPremiumDelta({
       drawnSharesTaken: previewRestoredShares,
@@ -327,9 +326,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
 
     uint256 totalDebtRestored = drawnDebtRestored + premiumDelta.restoredPremiumRay.fromRayUp();
     reserve.underlying.safeTransferFrom(msg.sender, address(reserve.hub), totalDebtRestored);
-    require(
-      previewRestoredShares == reserve.hub.restore(reserve.assetId, drawnDebtRestored, premiumDelta)
-    );
+    reserve.hub.restore(reserve.assetId, drawnDebtRestored, premiumDelta);
 
     userPosition.applyPremiumDelta(premiumDelta);
     userPosition.drawnShares -= previewRestoredShares.toUint120();
