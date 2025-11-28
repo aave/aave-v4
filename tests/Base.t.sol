@@ -2876,20 +2876,20 @@ abstract contract Base is Test {
   /// @dev Calculate expected fees based on previous drawn index
   function _calcUnrealizedFees(IHub hub, uint256 assetId) internal view returns (uint256) {
     IHub.Asset memory asset = hub.getAsset(assetId);
-    uint256 lastDrawnIndex = asset.drawnIndex;
+    uint256 previousIndex = asset.drawnIndex;
     uint256 drawnIndex = asset.drawnIndex.rayMulUp(
       MathUtils.calculateLinearInterest(asset.drawnRate, uint40(asset.lastUpdateTimestamp))
     );
-    uint256 liquidityGrowth = asset.drawnShares.rayMulUp(drawnIndex) -
-      asset.drawnShares.rayMulUp(lastDrawnIndex) +
-      ((asset.premiumShares * drawnIndex).toInt256() - asset.premiumOffsetRay)
-        .toUint256()
-        .fromRayUp() -
-      ((asset.premiumShares * lastDrawnIndex).toInt256() - asset.premiumOffsetRay)
-        .toUint256()
-        .fromRayUp();
 
-    return liquidityGrowth.percentMulDown(asset.liquidityFee);
+    uint256 aggregatedOwedRayAfter = (((uint256(asset.drawnShares) + asset.premiumShares) *
+      drawnIndex).toInt256() - asset.premiumOffsetRay).toUint256() + asset.deficitRay;
+    uint256 aggregatedOwedRayBefore = (((uint256(asset.drawnShares) + asset.premiumShares) *
+      previousIndex).toInt256() - asset.premiumOffsetRay).toUint256() + asset.deficitRay;
+
+    return
+      (aggregatedOwedRayAfter.fromRayUp() - aggregatedOwedRayBefore.fromRayUp()).percentMulDown(
+        asset.liquidityFee
+      );
   }
 
   function _getExpectedFeeReceiverAddedAssets(

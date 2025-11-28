@@ -79,11 +79,18 @@ library AssetLogic {
   /// @notice Returns the total added assets for the specified asset.
   function totalAddedAssets(IHub.Asset storage asset) internal view returns (uint256) {
     uint256 drawnIndex = asset.getDrawnIndex();
+
+    uint256 premiumRay = Premium.calculatePremiumRay({
+      premiumShares: asset.premiumShares,
+      premiumOffsetRay: asset.premiumOffsetRay,
+      drawnIndex: drawnIndex
+    });
+    uint256 aggregatedOwedRay = (asset.drawnShares * drawnIndex) + premiumRay + asset.deficitRay;
+
     return
       asset.liquidity +
       asset.swept +
-      asset.deficitRay.fromRayUp() +
-      asset.totalOwed(drawnIndex) -
+      aggregatedOwedRay.fromRayUp() -
       asset.realizedFees -
       asset.getUnrealizedFees(drawnIndex);
   }
@@ -182,23 +189,29 @@ library AssetLogic {
     }
 
     uint120 drawnShares = asset.drawnShares;
-    uint256 liquidityGrowthDrawn = drawnShares.rayMulUp(drawnIndex) -
-      drawnShares.rayMulUp(previousIndex);
 
     uint120 premiumShares = asset.premiumShares;
     int256 premiumOffsetRay = asset.premiumOffsetRay;
-    uint256 premiumRayAfter = Premium.calculatePremiumRay({
-      premiumShares: premiumShares,
-      premiumOffsetRay: premiumOffsetRay,
-      drawnIndex: drawnIndex
-    });
-    uint256 premiumRayBefore = Premium.calculatePremiumRay({
-      premiumShares: premiumShares,
-      premiumOffsetRay: premiumOffsetRay,
-      drawnIndex: previousIndex
-    });
-    uint256 liquidityGrowthPremium = premiumRayAfter.fromRayUp() - premiumRayBefore.fromRayUp();
+    uint256 deficitRay = asset.deficitRay;
 
-    return (liquidityGrowthDrawn + liquidityGrowthPremium).percentMulDown(liquidityFee);
+    uint256 aggregatedOwedRayAfter = (drawnShares * drawnIndex) +
+      Premium.calculatePremiumRay({
+        premiumShares: premiumShares,
+        premiumOffsetRay: premiumOffsetRay,
+        drawnIndex: drawnIndex
+      }) +
+      deficitRay;
+    uint256 aggregatedOwedRayBefore = (drawnShares * previousIndex) +
+      Premium.calculatePremiumRay({
+        premiumShares: premiumShares,
+        premiumOffsetRay: premiumOffsetRay,
+        drawnIndex: previousIndex
+      }) +
+      deficitRay;
+
+    return
+      (aggregatedOwedRayAfter.fromRayUp() - aggregatedOwedRayBefore.fromRayUp()).percentMulDown(
+        liquidityFee
+      );
   }
 }
