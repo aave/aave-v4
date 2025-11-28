@@ -80,12 +80,13 @@ library AssetLogic {
   function totalAddedAssets(IHub.Asset storage asset) internal view returns (uint256) {
     uint256 drawnIndex = asset.getDrawnIndex();
 
-    uint256 premiumRay = Premium.calculatePremiumRay({
+    uint256 aggregatedOwedRay = _calculateAggregatedOwedRay({
+      drawnShares: asset.drawnShares,
       premiumShares: asset.premiumShares,
       premiumOffsetRay: asset.premiumOffsetRay,
+      deficitRay: asset.deficitRay,
       drawnIndex: drawnIndex
     });
-    uint256 aggregatedOwedRay = (asset.drawnShares * drawnIndex) + premiumRay + asset.deficitRay;
 
     return
       asset.liquidity +
@@ -189,29 +190,44 @@ library AssetLogic {
     }
 
     uint120 drawnShares = asset.drawnShares;
-
     uint120 premiumShares = asset.premiumShares;
     int256 premiumOffsetRay = asset.premiumOffsetRay;
     uint256 deficitRay = asset.deficitRay;
 
-    uint256 aggregatedOwedRayAfter = (drawnShares * drawnIndex) +
-      Premium.calculatePremiumRay({
-        premiumShares: premiumShares,
-        premiumOffsetRay: premiumOffsetRay,
-        drawnIndex: drawnIndex
-      }) +
-      deficitRay;
-    uint256 aggregatedOwedRayBefore = (drawnShares * previousIndex) +
-      Premium.calculatePremiumRay({
-        premiumShares: premiumShares,
-        premiumOffsetRay: premiumOffsetRay,
-        drawnIndex: previousIndex
-      }) +
-      deficitRay;
+    uint256 aggregatedOwedRayAfter = _calculateAggregatedOwedRay({
+      drawnShares: drawnShares,
+      premiumShares: premiumShares,
+      premiumOffsetRay: premiumOffsetRay,
+      deficitRay: deficitRay,
+      drawnIndex: drawnIndex
+    });
+
+    uint256 aggregatedOwedRayBefore = _calculateAggregatedOwedRay({
+      drawnShares: drawnShares,
+      premiumShares: premiumShares,
+      premiumOffsetRay: premiumOffsetRay,
+      deficitRay: deficitRay,
+      drawnIndex: previousIndex
+    });
 
     return
       (aggregatedOwedRayAfter.fromRayUp() - aggregatedOwedRayBefore.fromRayUp()).percentMulDown(
         liquidityFee
       );
+  }
+
+  function _calculateAggregatedOwedRay(
+    uint256 drawnShares,
+    uint256 premiumShares,
+    int256 premiumOffsetRay,
+    uint256 deficitRay,
+    uint256 drawnIndex
+  ) internal pure returns (uint256) {
+    uint256 premiumRay = Premium.calculatePremiumRay({
+      premiumShares: premiumShares,
+      premiumOffsetRay: premiumOffsetRay,
+      drawnIndex: drawnIndex
+    });
+    return (drawnShares * drawnIndex) + premiumRay + deficitRay;
   }
 }
