@@ -11,7 +11,10 @@ import {console2 as console} from 'forge-std/console2.sol';
 
 // dependencies
 import {AggregatorV3Interface} from 'src/dependencies/chainlink/AggregatorV3Interface.sol';
-import {TransparentUpgradeableProxy, ITransparentUpgradeableProxy} from 'src/dependencies/openzeppelin/TransparentUpgradeableProxy.sol';
+import {
+  TransparentUpgradeableProxy,
+  ITransparentUpgradeableProxy
+} from 'src/dependencies/openzeppelin/TransparentUpgradeableProxy.sol';
 import {IERC20Metadata} from 'src/dependencies/openzeppelin/IERC20Metadata.sol';
 import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
 import {IERC20Errors} from 'src/dependencies/openzeppelin/IERC20Errors.sol';
@@ -45,7 +48,11 @@ import {AccessManagerEnumerable} from 'src/access/AccessManagerEnumerable.sol';
 import {HubConfigurator, IHubConfigurator} from 'src/hub/HubConfigurator.sol';
 import {Hub, IHub, IHubBase} from 'src/hub/Hub.sol';
 import {SharesMath} from 'src/hub/libraries/SharesMath.sol';
-import {AssetInterestRateStrategy, IAssetInterestRateStrategy, IBasicInterestRateStrategy} from 'src/hub/AssetInterestRateStrategy.sol';
+import {
+  AssetInterestRateStrategy,
+  IAssetInterestRateStrategy,
+  IBasicInterestRateStrategy
+} from 'src/hub/AssetInterestRateStrategy.sol';
 
 // spoke
 import {Spoke, ISpoke, ISpokeBase} from 'src/spoke/Spoke.sol';
@@ -2834,20 +2841,24 @@ abstract contract Base is Test {
   /// @dev Calculate expected fees based on previous drawn index
   function _calcUnrealizedFees(IHub hub, uint256 assetId) internal view returns (uint256) {
     IHub.Asset memory asset = hub.getAsset(assetId);
-    uint256 lastDrawnIndex = asset.drawnIndex;
+    uint256 previousIndex = asset.drawnIndex;
     uint256 drawnIndex = asset.drawnIndex.rayMulUp(
       MathUtils.calculateLinearInterest(asset.drawnRate, uint40(asset.lastUpdateTimestamp))
     );
-    uint256 liquidityGrowth = asset.drawnShares.rayMulUp(drawnIndex) -
-      asset.drawnShares.rayMulUp(lastDrawnIndex) +
-      ((asset.premiumShares * drawnIndex).toInt256() - asset.premiumOffsetRay)
-        .toUint256()
-        .fromRayUp() -
-      ((asset.premiumShares * lastDrawnIndex).toInt256() - asset.premiumOffsetRay)
-        .toUint256()
-        .fromRayUp();
 
-    return liquidityGrowth.percentMulDown(asset.liquidityFee);
+    uint256 aggregatedOwedRayAfter = (((uint256(asset.drawnShares) + asset.premiumShares) *
+      drawnIndex).toInt256() -
+      asset.premiumOffsetRay).toUint256() +
+      asset.deficitRay;
+    uint256 aggregatedOwedRayBefore = (((uint256(asset.drawnShares) + asset.premiumShares) *
+      previousIndex).toInt256() -
+      asset.premiumOffsetRay).toUint256() +
+      asset.deficitRay;
+
+    return
+      (aggregatedOwedRayAfter.fromRayUp() - aggregatedOwedRayBefore.fromRayUp()).percentMulDown(
+        asset.liquidityFee
+      );
   }
 
   function _getExpectedFeeReceiverAddedAssets(

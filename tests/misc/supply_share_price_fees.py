@@ -4,14 +4,6 @@ from z3 import *
 
 RAY = IntVal(10**27)
 PERCENTAGE_FACTOR = IntVal(10**4)
-VIRTUAL_SHARES = IntVal(10**6)
-VIRTUAL_ASSETS = IntVal(10**6)
-
-def rayMulDown(a, b):
-    return (a * b) / RAY
-
-def rayMulUp(a, b):
-    return (a * b + RAY - 1) / RAY
 
 def percentMulDown(a, b):
     return (a * b) / PERCENTAGE_FACTOR
@@ -19,17 +11,19 @@ def percentMulDown(a, b):
 def divUp(a, b):
     return (a + b - 1) / b
 
+def fromRayUp(a):
+    return divUp(a, RAY)
+
 def premiumDebtRay(realizedPremiumRay, premiumShares, drawnIndex, premiumOffsetRay):
     return realizedPremiumRay + premiumShares * drawnIndex - premiumOffsetRay
 
-def premiumDebt(realizedPremiumRay, premiumShares, drawnIndex, premiumOffsetRay):
-    return divUp(premiumDebtRay(realizedPremiumRay, premiumShares, drawnIndex, premiumOffsetRay), RAY)
+def totalDebt(drawnShares, drawnIndex, realizedPremiumRay, premiumShares, premiumOffsetRay, deficitRay):
+    return fromRayUp(drawnShares * drawnIndex + premiumDebtRay(realizedPremiumRay, premiumShares, drawnIndex, premiumOffsetRay) + deficitRay)
 
-def unrealizedFeeAmount(drawnShares, previousIndex, drawnIndex, realizedPremiumRay, premiumShares, premiumOffsetRay, liquidityFee):
-    liquidityGrowthDrawn = rayMulUp(drawnShares, drawnIndex) - rayMulUp(drawnShares, previousIndex)
-    liquidityGrowthPremium = premiumDebt(realizedPremiumRay, premiumShares, drawnIndex, premiumOffsetRay) - premiumDebt(realizedPremiumRay, premiumShares, previousIndex, premiumOffsetRay)
-    # wrongLiquidityGrowthPremium = divUp(premiumDebtRay(realizedPremiumRay, premiumShares, drawnIndex, premiumOffsetRay) - premiumDebtRay(realizedPremiumRay, premiumShares, previousIndex, premiumOffsetRay), RAY)
-    return percentMulDown(liquidityGrowthDrawn + liquidityGrowthPremium, liquidityFee)
+def unrealizedFeeAmount(drawnShares, previousIndex, drawnIndex, realizedPremiumRay, premiumShares, premiumOffsetRay, deficitRay, liquidityFee):
+    totalDebtAfter = totalDebt(drawnShares, drawnIndex, realizedPremiumRay, premiumShares, premiumOffsetRay, deficitRay)
+    totalDebtBefore = totalDebt(drawnShares, previousIndex, realizedPremiumRay, premiumShares, premiumOffsetRay, deficitRay)
+    return percentMulDown(totalDebtAfter - totalDebtBefore, liquidityFee)
 
 def check(propertyDescription):
     print(f"\n-- {propertyDescription} --")
@@ -61,22 +55,24 @@ s.add(0 <= premiumShares, premiumShares <= 10**30)
 premiumOffsetRay = premiumShares * RAY
 realizedPremiumRay = Int('realizedPremiumRay')
 s.add(0 <= realizedPremiumRay, realizedPremiumRay <= 10**30)
-liquiditySweptDeficit= Int('liquiditySweptDeficit')
-s.add(0 <= liquiditySweptDeficit, liquiditySweptDeficit <= 10**30)
+liquiditySwept = Int('liquiditySwept')
+s.add(0 <= liquiditySwept, liquiditySwept <= 10**30)
+deficitRay = Int('deficitRay')
+s.add(0 <= deficitRay, deficitRay <= 10**30)
 
 # T1: accrue
-feeAmount1 = unrealizedFeeAmount(drawnShares, RAY, drawnIndex1, realizedPremiumRay, premiumShares, premiumOffsetRay, liquidityFee)
-totalAddedAssets1 = liquiditySweptDeficit + rayMulUp(drawnShares, drawnIndex1) + premiumDebt(realizedPremiumRay, premiumShares, drawnIndex1, premiumOffsetRay) - feeAmount1
+feeAmount1 = unrealizedFeeAmount(drawnShares, RAY, drawnIndex1, realizedPremiumRay, premiumShares, premiumOffsetRay, deficitRay, liquidityFee)
+totalAddedAssets1 = liquiditySwept + totalDebt(drawnShares, drawnIndex1, realizedPremiumRay, premiumShares, premiumOffsetRay, deficitRay) - feeAmount1
 newRealizedPremiumRay = realizedPremiumRay + premiumShares * drawnIndex1 - premiumOffsetRay
 newPremiumOffsetRay = premiumShares * drawnIndex1
 
 # T2: preview
-feeAmount2 = feeAmount1 + unrealizedFeeAmount(drawnShares, drawnIndex1, drawnIndex2, newRealizedPremiumRay, premiumShares, newPremiumOffsetRay, liquidityFee)
-totalAddedAssets2 = liquiditySweptDeficit + rayMulUp(drawnShares, drawnIndex2) + premiumDebt(newRealizedPremiumRay, premiumShares, drawnIndex2, newPremiumOffsetRay) - feeAmount2
+feeAmount2 = feeAmount1 + unrealizedFeeAmount(drawnShares, drawnIndex1, drawnIndex2, newRealizedPremiumRay, premiumShares, newPremiumOffsetRay, deficitRay, liquidityFee)
+totalAddedAssets2 = liquiditySwept + totalDebt(drawnShares, drawnIndex2, newRealizedPremiumRay, premiumShares, newPremiumOffsetRay, deficitRay) - feeAmount2
 
 # T3: preview
-feeAmount3 = feeAmount1 + unrealizedFeeAmount(drawnShares, drawnIndex1, drawnIndex3, newRealizedPremiumRay, premiumShares, newPremiumOffsetRay, liquidityFee)
-totalAddedAssets3 = liquiditySweptDeficit + rayMulUp(drawnShares, drawnIndex3) + premiumDebt(newRealizedPremiumRay, premiumShares, drawnIndex3, newPremiumOffsetRay) - feeAmount3
+feeAmount3 = feeAmount1 + unrealizedFeeAmount(drawnShares, drawnIndex1, drawnIndex3, newRealizedPremiumRay, premiumShares, newPremiumOffsetRay, deficitRay, liquidityFee)
+totalAddedAssets3 = liquiditySwept + totalDebt(drawnShares, drawnIndex3, newRealizedPremiumRay, premiumShares, newPremiumOffsetRay, deficitRay) - feeAmount3
 
 s.push()
 # Shares remain constant
