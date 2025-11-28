@@ -180,6 +180,10 @@ contract WadRayMathDifferentialTests is Test {
     assertEq(w.fromWadDown(a), a / w.WAD());
   }
 
+  function test_fromRayDown_fuzz(uint256 a) public view {
+    assertEq(w.fromRayDown(a), a / w.RAY());
+  }
+
   function test_fromRayUp_fuzz(uint256 a) public view {
     assertEq(
       w.fromRayUp(a),

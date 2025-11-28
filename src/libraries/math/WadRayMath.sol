@@ -162,6 +162,14 @@ library WadRayMath {
     }
   }
 
+  /// @notice Removes RAY precision from a given value, rounding down.
+  /// @return b = floor(a / RAY).
+  function fromRayDown(uint256 a) internal pure returns (uint256 b) {
+    assembly ('memory-safe') {
+      b := div(a, RAY)
+    }
+  }
+
   /// @notice Removes RAY precision from a given value, rounding up.
   /// @return b = ceil(a / RAY).
   function fromRayUp(uint256 a) internal pure returns (uint256 b) {

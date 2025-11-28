@@ -92,7 +92,7 @@ library AssetLogic {
     return
       asset.liquidity +
       asset.swept +
-      aggregatedOwedRay.fromRayUp() -
+      aggregatedOwedRay.fromRayDown() -
       asset.realizedFees -
       asset.getUnrealizedFees(drawnIndex);
   }
@@ -215,7 +215,7 @@ library AssetLogic {
       deficitRay;
 
     return
-      (aggregatedOwedRayAfter.fromRayUp() - aggregatedOwedRayBefore.fromRayUp()).percentMulDown(
+      (aggregatedOwedRayAfter.fromRayDown() - aggregatedOwedRayBefore.fromRayDown()).percentMulDown(
         liquidityFee
       );
   }
