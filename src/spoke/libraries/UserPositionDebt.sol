@@ -83,20 +83,6 @@ library UserPositionDebt {
     uint256 amount
   ) internal view returns (uint256, uint256) {
     (uint256 drawnDebt, uint256 premiumDebtRay) = userPosition.getDebt(drawnIndex);
-    return calculateRestoreAmount(drawnDebt, premiumDebtRay, amount);
-  }
-
-  /// @dev Calculates the drawn debt and premium debt to restore for the given amount.
-  /// @param drawnDebt The maximum amount of drawn debt that can be restored.
-  /// @param premiumDebtRay The maximum amount of premium debt that can be restored, expressed in asset units and scaled by RAY.
-  /// @param amount The amount to restore.
-  /// @return The amount of drawn debt to restore, expressed in asset units.
-  /// @return The amount of premium debt to restore, expressed in asset units and scaled by RAY.
-  function calculateRestoreAmount(
-    uint256 drawnDebt,
-    uint256 premiumDebtRay,
-    uint256 amount
-  ) internal pure returns (uint256, uint256) {
     uint256 premiumDebt = premiumDebtRay.fromRayUp();
     if (amount >= drawnDebt + premiumDebt) {
       return (drawnDebt, premiumDebtRay);
@@ -107,7 +93,6 @@ library UserPositionDebt {
       uint256 amountRay = amount.toRay();
       return (0, amountRay);
     }
-
     return (amount - premiumDebt, premiumDebtRay);
   }
 

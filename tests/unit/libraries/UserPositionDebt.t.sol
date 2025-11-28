@@ -215,34 +215,7 @@ contract UserPositionDebtTest is Base {
     assertEq(premiumDebtRay, 124.44444444444444444444444439e45);
   }
 
-  function test_fuzz_calculateRestoreAmount(
-    uint256 drawnDebt,
-    uint256 premiumDebtRay,
-    uint256 amount
-  ) public view {
-    drawnDebt = bound(drawnDebt, 0, 1e30);
-    premiumDebtRay = bound(premiumDebtRay, 0, 1e25.toRay());
-    amount = bound(amount, 0, 1e30);
-
-    (uint256 restoredDrawnDebt, uint256 restoredPremiumDebtRay) = u.calculateRestoreAmount(
-      drawnDebt,
-      premiumDebtRay,
-      amount
-    );
-
-    if (amount >= drawnDebt + premiumDebtRay.fromRayUp()) {
-      assertEq(restoredDrawnDebt, drawnDebt);
-      assertEq(restoredPremiumDebtRay, premiumDebtRay);
-    } else if (amount < premiumDebtRay.fromRayUp()) {
-      assertEq(restoredDrawnDebt, 0);
-      assertEq(restoredPremiumDebtRay, amount.toRay());
-    } else {
-      assertEq(restoredDrawnDebt, amount - premiumDebtRay.fromRayUp());
-      assertEq(restoredPremiumDebtRay, premiumDebtRay);
-    }
-  }
-
-  function test_calculateRestoreAmount_DrawnIndex() public {
+  function test_calculateRestoreAmount() public {
     (uint256 restoredDrawnDebt, uint256 restoredPremiumDebtRay) = u.calculateRestoreAmount(
       DRAWN_INDEX,
       400e18
@@ -256,7 +229,7 @@ contract UserPositionDebtTest is Base {
     assertEq(restoredPremiumDebtRay, 1.225e47);
   }
 
-  function test_fuzz_calculateRestoreAmount_DrawnIndex(
+  function test_fuzz_calculateRestoreAmount(
     uint256 drawnShares,
     uint256 premiumShares,
     int256 premiumOffsetRay,

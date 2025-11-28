@@ -52,14 +52,6 @@ contract UserPositionDebtWrapper {
     return UserPositionDebt.calculateRestoreAmount(_userPosition, drawnIndex, amount);
   }
 
-  function calculateRestoreAmount(
-    uint256 drawnDebt,
-    uint256 premiumDebtRay,
-    uint256 amount
-  ) external pure returns (uint256, uint256) {
-    return UserPositionDebt.calculateRestoreAmount(drawnDebt, premiumDebtRay, amount);
-  }
-
   function calculatePremiumRay(uint256 drawnIndex) external view returns (uint256) {
     return UserPositionDebt._calculatePremiumRay(_userPosition, drawnIndex);
   }
