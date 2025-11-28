@@ -17,7 +17,6 @@ import {ISpoke, ISpokeBase} from 'src/spoke/interfaces/ISpoke.sol';
 /// @author Aave Labs
 /// @notice Implements the logic for liquidations.
 library LiquidationLogic {
-  using LiquidationLogic for *;
   using SafeCast for *;
   using SafeTransferLib for address;
   using MathUtils for *;

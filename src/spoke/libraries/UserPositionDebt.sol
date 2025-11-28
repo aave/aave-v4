@@ -112,7 +112,7 @@ library UserPositionDebt {
     ISpoke.UserPosition storage userPosition,
     uint256 drawnIndex
   ) internal view returns (uint256, uint256) {
-    uint256 premiumDebtRay = userPosition._calculatePremiumRay(drawnIndex);
+    uint256 premiumDebtRay = _calculatePremiumRay(userPosition, drawnIndex);
     return (userPosition.drawnShares.rayMulUp(drawnIndex), premiumDebtRay);
   }
 
