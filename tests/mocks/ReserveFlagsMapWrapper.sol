@@ -7,22 +7,6 @@ import {ReserveFlags, ReserveFlagsMap} from 'src/spoke/libraries/ReserveFlagsMap
 contract ReserveFlagsMapWrapper {
   using ReserveFlagsMap for ReserveFlags;
 
-  function PAUSED_MASK() external pure returns (uint8) {
-    return ReserveFlagsMap.PAUSED_MASK;
-  }
-
-  function FROZEN_MASK() external pure returns (uint8) {
-    return ReserveFlagsMap.FROZEN_MASK;
-  }
-
-  function BORROWABLE_MASK() external pure returns (uint8) {
-    return ReserveFlagsMap.BORROWABLE_MASK;
-  }
-
-  function RECEIVE_SHARES_ENABLED_MASK() external pure returns (uint8) {
-    return ReserveFlagsMap.RECEIVE_SHARES_ENABLED_MASK;
-  }
-
   function create(
     bool initPaused,
     bool initFrozen,
@@ -65,5 +49,21 @@ contract ReserveFlagsMapWrapper {
 
   function receiveSharesEnabled(ReserveFlags flags) external pure returns (bool) {
     return ReserveFlagsMap.receiveSharesEnabled(flags);
+  }
+
+  function PAUSED_MASK() external pure returns (uint8) {
+    return ReserveFlagsMap.PAUSED_MASK;
+  }
+
+  function FROZEN_MASK() external pure returns (uint8) {
+    return ReserveFlagsMap.FROZEN_MASK;
+  }
+
+  function BORROWABLE_MASK() external pure returns (uint8) {
+    return ReserveFlagsMap.BORROWABLE_MASK;
+  }
+
+  function RECEIVE_SHARES_ENABLED_MASK() external pure returns (uint8) {
+    return ReserveFlagsMap.RECEIVE_SHARES_ENABLED_MASK;
   }
 }

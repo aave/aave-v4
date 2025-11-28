@@ -105,10 +105,6 @@ library ReserveFlagsMap {
 
   /// @notice Sets the new status for the given flag.
   function _setStatus(uint8 flags, uint8 mask, bool status) private pure returns (uint8) {
-    return _getStatus(flags, mask) != status ? flags ^ mask : flags;
-  }
-
-  function _getStatus(uint8 flags, uint8 mask) private pure returns (bool) {
-    return (flags & mask) != 0;
+    return status ? flags | mask : flags & ~mask;
   }
 }
