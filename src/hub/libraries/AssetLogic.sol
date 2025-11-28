@@ -87,9 +87,7 @@ library AssetLogic {
       premiumOffsetRay: asset.premiumOffsetRay,
       realizedPremiumRay: asset.realizedPremiumRay
     });
-    uint256 aggregatedOwedRay = (uint256(asset.drawnShares) * drawnIndex) +
-      premiumRay +
-      asset.deficitRay;
+    uint256 aggregatedOwedRay = (asset.drawnShares * drawnIndex) + premiumRay + asset.deficitRay;
 
     return
       asset.liquidity +
@@ -199,18 +197,18 @@ library AssetLogic {
     uint256 realizedPremiumRay = asset.realizedPremiumRay;
     uint256 deficitRay = asset.deficitRay;
 
-    uint256 aggregatedOwedRayBefore = (uint256(drawnShares) * previousIndex) +
+    uint256 aggregatedOwedRayAfter = (drawnShares * drawnIndex) +
       Premium.calculatePremiumRay({
         premiumShares: premiumShares,
-        drawnIndex: previousIndex,
+        drawnIndex: drawnIndex,
         premiumOffsetRay: premiumOffsetRay,
         realizedPremiumRay: realizedPremiumRay
       }) +
       deficitRay;
-    uint256 aggregatedOwedRayAfter = (uint256(drawnShares) * drawnIndex) +
+    uint256 aggregatedOwedRayBefore = (drawnShares * previousIndex) +
       Premium.calculatePremiumRay({
         premiumShares: premiumShares,
-        drawnIndex: drawnIndex,
+        drawnIndex: previousIndex,
         premiumOffsetRay: premiumOffsetRay,
         realizedPremiumRay: realizedPremiumRay
       }) +

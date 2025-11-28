@@ -2805,14 +2805,13 @@ abstract contract Base is Test {
       MathUtils.calculateLinearInterest(asset.drawnRate, uint40(asset.lastUpdateTimestamp))
     );
 
-    uint256 liquidityGrowthBefore = (uint256(asset.drawnShares) + asset.premiumShares) *
-      previousIndex -
+    uint256 liquidityGrowthAfter = (uint256(asset.drawnShares) + asset.premiumShares) *
+      drawnIndex -
       asset.premiumOffsetRay +
       asset.realizedPremiumRay +
       asset.deficitRay;
-
-    uint256 liquidityGrowthAfter = (uint256(asset.drawnShares) + asset.premiumShares) *
-      drawnIndex -
+    uint256 liquidityGrowthBefore = (uint256(asset.drawnShares) + asset.premiumShares) *
+      previousIndex -
       asset.premiumOffsetRay +
       asset.realizedPremiumRay +
       asset.deficitRay;
