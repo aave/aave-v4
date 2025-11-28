@@ -43,7 +43,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
     BalanceInfo collateralFeeReceiverBalanceInfo;
     BalanceInfo debtFeeReceiverBalanceInfo;
     BalanceInfo spokeBalanceInfo;
-    uint256 UserLastRiskPremium;
+    uint256 userLastRiskPremium;
   }
 
   struct LiquidationMetadata {
@@ -614,7 +614,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
           params.collateralReserveId,
           params.debtReserveId
         ),
-        UserLastRiskPremium: params.spoke.getUserLastRiskPremium(params.user)
+        userLastRiskPremium: params.spoke.getUserLastRiskPremium(params.user)
       });
   }
 
@@ -1284,12 +1284,12 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
     }
 
     uint256 riskPremiumEventExpectedCount = 1;
-    if (accountsInfoBefore.UserLastRiskPremium == 0 && accountsInfoAfter.UserLastRiskPremium == 0) {
+    if (accountsInfoBefore.userLastRiskPremium == 0 && accountsInfoAfter.userLastRiskPremium == 0) {
       riskPremiumEventExpectedCount = 0;
     }
     assertEq(riskPremiumEventCount, riskPremiumEventExpectedCount, 'riskPremiumEventExpectedCount');
     assertEq(
-      accountsInfoAfter.UserLastRiskPremium,
+      accountsInfoAfter.userLastRiskPremium,
       accountsInfoAfter.userAccountData.riskPremium,
       'user latest risk premium'
     );
@@ -1302,7 +1302,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
     );
 
     if (liquidationMetadata.hasDeficit) {
-      assertEq(accountsInfoAfter.UserLastRiskPremium, 0, 'user risk premium: 0 in deficit');
+      assertEq(accountsInfoAfter.userLastRiskPremium, 0, 'user risk premium: 0 in deficit');
     }
 
     for (uint256 reserveId = 0; reserveId < params.spoke.getReserveCount(); reserveId++) {
@@ -1314,7 +1314,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
         assertNotEq(userPosition.drawnShares, 0, 'borrowed reserve should have non zero base debt');
         assertEq(
           userPosition.premiumShares,
-          userPosition.drawnShares.percentMulUp(accountsInfoAfter.UserLastRiskPremium),
+          userPosition.drawnShares.percentMulUp(accountsInfoAfter.userLastRiskPremium),
           string.concat('last user risk premium in reserve ', vm.toString(reserveId))
         );
       }
