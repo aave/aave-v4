@@ -1580,6 +1580,48 @@ abstract contract Base is Test {
       });
   }
 
+  // in restore actions, premiumDelta is first reset to last user RP
+  function _getExpectedPremiumDeltaForRestore(
+    ISpoke spoke,
+    address user,
+    uint256 reserveId,
+    uint256 repayAmount
+  ) internal view virtual returns (IHubBase.PremiumDelta memory) {
+    Debts memory userDebt = getUserDebt(spoke, user, reserveId);
+    (uint256 drawnDebtToRestore, uint256 premiumAmountToRestore) = _calculateRestoreAmounts(
+      repayAmount,
+      userDebt.drawnDebt,
+      userDebt.premiumDebt
+    );
+
+    {
+      ISpoke.UserPosition memory userPosition = spoke.getUserPosition(reserveId, user);
+      uint256 assetId = spoke.getReserve(reserveId).assetId;
+      IHub hub = IHub(address(spoke.getReserve(reserveId).hub));
+      uint256 premiumDebtRay = _calculatePremiumDebtRay(
+        hub,
+        assetId,
+        userPosition.premiumShares,
+        userPosition.premiumOffsetRay
+      );
+
+      uint256 restoredPremiumRay = (premiumAmountToRestore * WadRayMath.RAY).min(premiumDebtRay);
+      uint256 restoredShares = drawnDebtToRestore.rayDivDown(hub.getAssetDrawnIndex(reserveId));
+      uint256 riskPremium = _getUserLastRiskPremium(spoke, user);
+
+      return
+        _getExpectedPremiumDelta({
+          hub: hub,
+          assetId: assetId,
+          oldPremiumShares: userPosition.premiumShares,
+          oldPremiumOffsetRay: userPosition.premiumOffsetRay,
+          drawnShares: userPosition.drawnShares - restoredShares,
+          riskPremium: riskPremium,
+          restoredPremiumRay: restoredPremiumRay
+        });
+    }
+  }
+
   /// @dev Helper function to check consistent supplied amounts within accounting
   function _checkSuppliedAmounts(
     uint256 assetId,
@@ -1917,6 +1959,10 @@ abstract contract Base is Test {
 
   function _getUserHealthFactor(ISpoke spoke, address user) internal view returns (uint256) {
     return spoke.getUserAccountData(user).healthFactor;
+  }
+
+  function _getUserLastRiskPremium(ISpoke spoke, address user) internal view returns (uint256) {
+    return spoke.getUserLastRiskPremium(user);
   }
 
   function _getUserRiskPremium(ISpoke spoke, address user) internal view returns (uint256) {

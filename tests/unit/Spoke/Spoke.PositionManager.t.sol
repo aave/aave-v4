@@ -199,7 +199,7 @@ contract SpokePositionManagerTest is SpokeBase {
     ISpoke.UserPosition memory posBefore = spoke1.getUserPosition(reserveId, POSITION_MANAGER);
     uint256 repayAmount = amount / 3;
 
-    IHubBase.PremiumDelta memory expectedPremiumDelta = _getExpectedPremiumDelta(
+    IHubBase.PremiumDelta memory expectedPremiumDelta = _getExpectedPremiumDeltaForRestore(
       spoke1,
       alice,
       reserveId,

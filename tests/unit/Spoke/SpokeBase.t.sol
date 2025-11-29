@@ -731,26 +731,32 @@ contract SpokeBase is Base {
     assertEq(abi.encode(a), abi.encode(b)); // sanity check
   }
 
-  function _assertUserRpUnchanged(uint256 reserveId, ISpoke spoke, address user) internal view {
-    ISpoke.UserPosition memory pos = spoke.getUserPosition(reserveId, user);
-    uint256 riskPremiumStored = pos.premiumShares.percentDivDown(pos.drawnShares);
-    ISpoke.UserAccountData memory userAccountData = spoke.getUserAccountData(user);
-    assertEq(userAccountData.riskPremium, riskPremiumStored, 'user risk premium mismatch');
+  function _assertUserRpUnchanged(ISpoke spoke, address user) internal view {
+    uint256 riskPremiumPreview = spoke.getUserAccountData(user).riskPremium;
+    uint256 riskPremiumStored = _getUserRpStored(spoke, user);
+    assertEq(riskPremiumStored, riskPremiumPreview, 'user risk premium mismatch vs preview');
   }
 
-  function _getUserRpStored(
+  /// after a repay action, the stored user risk premium should not match the on-the-fly calculation, due to lack of notify
+  /// instead RP should remain same as prior value
+  function _assertUserRpUnchangedAfterRepay(
     ISpoke spoke,
-    uint256 reserveId,
-    address user
-  ) internal view returns (uint256) {
-    ISpoke.UserPosition memory pos = spoke.getUserPosition(reserveId, user);
-    // sanity check
-    assertTrue(
-      pos.drawnShares > 0 || pos.premiumShares == 0,
-      'if base is zero, premium must be zero'
+    address user,
+    uint256 expectedRP
+  ) internal view {
+    uint256 riskPremiumPreview = spoke.getUserAccountData(user).riskPremium;
+    uint256 riskPremiumStored = _getUserRpStored(spoke, user);
+    assertEq(riskPremiumStored, expectedRP, 'user risk premium mismatch vs expected');
+    assertNotEq(
+      riskPremiumStored,
+      riskPremiumPreview,
+      'user risk premium expected mismatch without notify'
     );
-    if (pos.drawnShares == 0) return 0;
-    return pos.premiumShares.percentDivDown(pos.drawnShares);
+  }
+
+  /// @dev get stored user risk premium from storage
+  function _getUserRpStored(ISpoke spoke, address user) internal view returns (uint256) {
+    return spoke.getUserLastRiskPremium(user);
   }
 
   function _boundUserAction(UserAction memory action) internal pure returns (UserAction memory) {
@@ -939,6 +945,11 @@ contract SpokeBase is Base {
         assertNotEq(a[i].key, b[i].key, string.concat('reserve ', vm.toString(i)));
       }
     }
+  }
+
+  /// @dev notify is not called after supply or repay, thus refreshPremium should not be called
+  function _assertRefreshPremiumNotCalled() internal {
+    vm.expectCall(address(hub1), abi.encodeWithSelector(IHubBase.refreshPremium.selector), 0);
   }
 
   function _randomReserveId(ISpoke spoke) internal returns (uint256) {

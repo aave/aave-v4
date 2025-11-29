@@ -16,11 +16,11 @@ import {IHub} from 'src/hub/interfaces/IHub.sol';
 /// @notice Implements the base logic and share price conversions for asset data.
 library AssetLogic {
   using AssetLogic for IHub.Asset;
-  using PercentageMath for uint256;
-  using SharesMath for uint256;
-  using WadRayMath for *;
-  using MathUtils for uint256;
   using SafeCast for uint256;
+  using MathUtils for uint256;
+  using PercentageMath for uint256;
+  using WadRayMath for *;
+  using SharesMath for uint256;
 
   /// @notice Converts an amount of shares to the equivalent amount of drawn assets, rounding up.
   function toDrawnAssetsUp(

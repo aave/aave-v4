@@ -256,6 +256,7 @@ contract SpokeSupplyTest is SpokeBase {
     TestReturnValues memory returnValues;
     vm.expectEmit(address(spoke1));
     emit ISpokeBase.Supply(_daiReserveId(spoke1), carol, carol, expectedShares, amount);
+    _assertRefreshPremiumNotCalled();
     vm.prank(carol);
     (returnValues.shares, returnValues.amount) = spoke1.supply(
       _daiReserveId(spoke1),
@@ -375,6 +376,7 @@ contract SpokeSupplyTest is SpokeBase {
     TestReturnValues memory returnValues;
     vm.expectEmit(address(spoke1));
     emit ISpokeBase.Supply(reserveId, carol, carol, expectedSuppliedShares, amount);
+    _assertRefreshPremiumNotCalled();
     vm.prank(carol);
     (returnValues.shares, returnValues.amount) = spoke1.supply(reserveId, amount, carol);
     stage = 1;
@@ -448,6 +450,7 @@ contract SpokeSupplyTest is SpokeBase {
     vm.prank(carol);
     vm.expectEmit(address(spoke1));
     emit ISpokeBase.Supply(_daiReserveId(spoke1), carol, carol, expectedShares, amount);
+    _assertRefreshPremiumNotCalled();
     (returnValues.shares, returnValues.amount) = spoke1.supply(
       _daiReserveId(spoke1),
       amount,
@@ -549,6 +552,7 @@ contract SpokeSupplyTest is SpokeBase {
     TestReturnValues memory returnValues;
     vm.expectEmit(address(spoke1));
     emit ISpokeBase.Supply(reserveId, carol, carol, expectedShares, amount);
+    _assertRefreshPremiumNotCalled();
     vm.prank(carol);
     (returnValues.shares, returnValues.amount) = spoke1.supply(reserveId, amount, carol);
 

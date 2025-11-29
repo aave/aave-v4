@@ -460,7 +460,7 @@ contract NativeTokenGatewayTest is SpokeBase {
       repayAmount,
       wethAssetId
     );
-    IHubBase.PremiumDelta memory expectedPremiumDelta = _getExpectedPremiumDelta(
+    IHubBase.PremiumDelta memory expectedPremiumDelta = _getExpectedPremiumDeltaForRestore(
       spoke1,
       bob,
       _wethReserveId(spoke1),
@@ -523,7 +523,7 @@ contract NativeTokenGatewayTest is SpokeBase {
     );
 
     {
-      IHubBase.PremiumDelta memory expectedPremiumDelta = _getExpectedPremiumDelta(
+      IHubBase.PremiumDelta memory expectedPremiumDelta = _getExpectedPremiumDeltaForRestore(
         spoke1,
         bob,
         _wethReserveId(spoke1),
@@ -596,7 +596,7 @@ contract NativeTokenGatewayTest is SpokeBase {
       wethAssetId
     );
     uint256 totalRepaid = baseRestored + premiumRestored;
-    IHubBase.PremiumDelta memory expectedPremiumDelta = _getExpectedPremiumDelta(
+    IHubBase.PremiumDelta memory expectedPremiumDelta = _getExpectedPremiumDeltaForRestore(
       spoke1,
       bob,
       _wethReserveId(spoke1),

@@ -22,16 +22,19 @@ contract UserPositionDebtWrapper {
   }
 
   function getPremiumDelta(
+    uint256 drawnSharesTaken,
     uint256 drawnIndex,
     uint256 riskPremium,
     uint256 restoredPremiumRay
   ) external view returns (IHubBase.PremiumDelta memory) {
     return
-      UserPositionDebt.getPremiumDelta(_userPosition, drawnIndex, riskPremium, restoredPremiumRay);
-  }
-
-  function calculatePremiumRay(uint256 drawnIndex) external view returns (uint256) {
-    return UserPositionDebt.calculatePremiumRay(_userPosition, drawnIndex);
+      UserPositionDebt.getPremiumDelta(
+        _userPosition,
+        drawnSharesTaken,
+        drawnIndex,
+        riskPremium,
+        restoredPremiumRay
+      );
   }
 
   function getDebt(IHubBase hub, uint256 assetId) external view returns (uint256, uint256) {
@@ -40,5 +43,16 @@ contract UserPositionDebtWrapper {
 
   function getDebt(uint256 drawnIndex) external view returns (uint256, uint256) {
     return UserPositionDebt.getDebt(_userPosition, drawnIndex);
+  }
+
+  function calculateRestoreAmount(
+    uint256 drawnIndex,
+    uint256 amount
+  ) external view returns (uint256, uint256) {
+    return UserPositionDebt.calculateRestoreAmount(_userPosition, drawnIndex, amount);
+  }
+
+  function calculatePremiumRay(uint256 drawnIndex) external view returns (uint256) {
+    return UserPositionDebt._calculatePremiumRay(_userPosition, drawnIndex);
   }
 }
