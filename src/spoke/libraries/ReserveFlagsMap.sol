@@ -2,7 +2,7 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.20;
 
-type ReserveFlags is uint8;
+import {ReserveFlags} from 'src/spoke/interfaces/ISpoke.sol';
 
 /// @title ReserveFlags Library
 /// @author Aave Labs

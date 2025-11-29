@@ -3,7 +3,7 @@
 pragma solidity ^0.8.0;
 
 import {Test} from 'forge-std/Test.sol';
-import {ReserveFlags} from 'src/spoke/libraries/ReserveFlagsMap.sol';
+import {ReserveFlags} from 'src/spoke/interfaces/ISpoke.sol';
 import {ReserveFlagsMapWrapper} from 'tests/mocks/ReserveFlagsMapWrapper.sol';
 
 contract ReserveFlagsTests is Test {
