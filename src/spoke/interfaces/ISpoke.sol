@@ -3,11 +3,12 @@
 pragma solidity ^0.8.0;
 
 import {IAccessManaged} from 'src/dependencies/openzeppelin/IAccessManaged.sol';
-import {ReserveFlags} from 'src/spoke/libraries/ReserveFlagsMap.sol';
 import {INoncesKeyed} from 'src/interfaces/INoncesKeyed.sol';
 import {IMulticall} from 'src/interfaces/IMulticall.sol';
 import {IHubBase} from 'src/hub/interfaces/IHubBase.sol';
 import {ISpokeBase} from 'src/spoke/interfaces/ISpokeBase.sol';
+
+type ReserveFlags is uint8;
 
 /// @title ISpoke
 /// @author Aave Labs

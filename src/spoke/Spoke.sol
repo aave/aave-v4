@@ -5,9 +5,7 @@ pragma solidity 0.8.28;
 import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
 import {IERC20Permit} from 'src/dependencies/openzeppelin/IERC20Permit.sol';
 import {SignatureChecker} from 'src/dependencies/openzeppelin/SignatureChecker.sol';
-import {
-  AccessManagedUpgradeable
-} from 'src/dependencies/openzeppelin-upgradeable/AccessManagedUpgradeable.sol';
+import {AccessManagedUpgradeable} from 'src/dependencies/openzeppelin-upgradeable/AccessManagedUpgradeable.sol';
 import {SafeTransferLib} from 'src/dependencies/solady/SafeTransferLib.sol';
 import {EIP712} from 'src/dependencies/solady/EIP712.sol';
 import {MathUtils} from 'src/libraries/math/MathUtils.sol';
@@ -152,13 +150,13 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
       decimals: decimals,
       dynamicConfigKey: dynamicConfigKey,
       collateralRisk: config.collateralRisk,
-      flags: ReserveFlagsMap.create(
-        config.paused,
-        config.frozen,
-        config.borrowable,
-        config.liquidatable,
-        config.receiveSharesEnabled
-      )
+      flags: ReserveFlagsMap.create({
+        initPaused: config.paused,
+        initFrozen: config.frozen,
+        initBorrowable: config.borrowable,
+        initLiquidatable: config.liquidatable,
+        initReceiveSharesEnabled: config.receiveSharesEnabled
+      })
     });
     _dynamicConfig[reserveId][dynamicConfigKey] = dynamicConfig;
     _reserveExists[hub][assetId] = true;
@@ -178,13 +176,13 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     Reserve storage reserve = _getReserve(reserveId);
     _validateReserveConfig(config);
     reserve.collateralRisk = config.collateralRisk;
-    reserve.flags = ReserveFlagsMap.create(
-      config.paused,
-      config.frozen,
-      config.borrowable,
-      config.liquidatable,
-      config.receiveSharesEnabled
-    );
+    reserve.flags = ReserveFlagsMap.create({
+      initPaused: config.paused,
+      initFrozen: config.frozen,
+      initBorrowable: config.borrowable,
+      initLiquidatable: config.liquidatable,
+      initReceiveSharesEnabled: config.receiveSharesEnabled
+    });
     emit UpdateReserveConfig(reserveId, config);
   }
 

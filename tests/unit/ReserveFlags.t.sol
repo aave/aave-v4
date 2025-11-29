@@ -3,7 +3,7 @@
 pragma solidity ^0.8.0;
 
 import {Test} from 'forge-std/Test.sol';
-import {ReserveFlags} from 'src/spoke/libraries/ReserveFlagsMap.sol';
+import {ReserveFlags} from 'src/spoke/interfaces/ISpoke.sol';
 import {ReserveFlagsMapWrapper} from 'tests/mocks/ReserveFlagsMapWrapper.sol';
 
 contract ReserveFlagsTests is Test {
@@ -34,7 +34,13 @@ contract ReserveFlagsTests is Test {
     bool liquidatable,
     bool receiveSharesEnabled
   ) public view {
-    ReserveFlags flags = w.create(paused, frozen, borrowable, liquidatable, receiveSharesEnabled);
+    ReserveFlags flags = w.create({
+      initPaused: paused,
+      initFrozen: frozen,
+      initBorrowable: borrowable,
+      initLiquidatable: liquidatable,
+      initReceiveSharesEnabled: receiveSharesEnabled
+    });
 
     assertEq(w.paused(flags), paused);
     assertEq(w.frozen(flags), frozen);
