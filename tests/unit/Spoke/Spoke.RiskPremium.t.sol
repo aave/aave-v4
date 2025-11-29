@@ -195,25 +195,26 @@ contract SpokeRiskPremiumTest is SpokeBase {
     Utils.supplyCollateral(spoke1, _usdxReserveId(spoke1), bob, 1000e6, bob);
 
     Utils.borrow(spoke1, _daiReserveId(spoke1), bob, 500e18, bob);
-    _assertUserRpUnchanged(_daiReserveId(spoke1), spoke1, bob);
+    _assertUserRpUnchanged(spoke1, bob);
     Utils.borrow(spoke1, _usdxReserveId(spoke1), bob, 750e6, bob);
-    _assertUserRpUnchanged(_usdxReserveId(spoke1), spoke1, bob);
+    _assertUserRpUnchanged(spoke1, bob);
 
     skip(123 days);
 
     Utils.withdraw(spoke1, _daiReserveId(spoke1), bob, 0.01e18, bob);
-    _assertUserRpUnchanged(_daiReserveId(spoke1), spoke1, bob);
-    _assertUserRpUnchanged(_usdxReserveId(spoke1), spoke1, bob);
+    _assertUserRpUnchanged(spoke1, bob);
 
     Utils.withdraw(spoke1, _usdxReserveId(spoke1), bob, 0.01e6, bob);
-    _assertUserRpUnchanged(_daiReserveId(spoke1), spoke1, bob);
-    _assertUserRpUnchanged(_usdxReserveId(spoke1), spoke1, bob);
+    _assertUserRpUnchanged(spoke1, bob);
+
+    // derived calc, prior to accrual of debt
+    uint256 expectedRP = _getUserRiskPremium(spoke1, bob);
 
     skip(232 days);
 
     Utils.repay(spoke1, _daiReserveId(spoke1), bob, 25e18, bob);
-    _assertUserRpUnchanged(_daiReserveId(spoke1), spoke1, bob);
-    _assertUserRpUnchanged(_usdxReserveId(spoke1), spoke1, bob);
+    _assertUserRpUnchangedAfterRepay(spoke1, bob, expectedRP);
+    _assertUserRpUnchangedAfterRepay(spoke1, bob, expectedRP);
   }
 
   /// Supply 3 reserves, borrow 2, such that 1 reserve fully covers the debt, then check user risk premium calc.

@@ -8,6 +8,8 @@ import {IMulticall} from 'src/interfaces/IMulticall.sol';
 import {IHubBase} from 'src/hub/interfaces/IHubBase.sol';
 import {ISpokeBase} from 'src/spoke/interfaces/ISpokeBase.sol';
 
+type ReserveFlags is uint8;
+
 /// @title ISpoke
 /// @author Aave Labs
 /// @notice Full interface for Spoke.
@@ -18,10 +20,8 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
   /// @dev assetId The identifier of the asset in the Hub.
   /// @dev decimals The number of decimals of the underlying asset.
   /// @dev dynamicConfigKey The key of the last reserve dynamic config.
-  /// @dev paused True if all actions are prevented for the reserve.
-  /// @dev frozen True if new activity is prevented for the reserve.
-  /// @dev borrowable True if the reserve is borrowable.
   /// @dev collateralRisk The risk associated with a collateral asset, expressed in BPS.
+  /// @dev flags The packed boolean flags of the reserve (a wrapped uint8).
   struct Reserve {
     address underlying;
     //
@@ -29,18 +29,22 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
     uint16 assetId;
     uint8 decimals;
     uint24 dynamicConfigKey;
-    bool paused;
-    bool frozen;
-    bool borrowable;
     uint24 collateralRisk;
+    ReserveFlags flags;
   }
 
   /// @notice Reserve configuration. Subset of the `Reserve` struct.
+  /// @dev collateralRisk The risk associated with a collateral asset, expressed in BPS.
+  /// @dev paused True if all actions are prevented for the reserve.
+  /// @dev frozen True if new activity is prevented for the reserve.
+  /// @dev borrowable True if the reserve is borrowable.
+  /// @dev receiveSharesEnabled True if the liquidator can receive collateral shares during liquidation.
   struct ReserveConfig {
+    uint24 collateralRisk;
     bool paused;
     bool frozen;
     bool borrowable;
-    uint24 collateralRisk;
+    bool receiveSharesEnabled;
   }
 
   /// @notice Dynamic reserve configuration data.
@@ -89,10 +93,10 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
 
   /// @notice User position status data.
   /// @dev map The map of bitmap buckets for the position status.
-  /// @dev hasPositiveRiskPremium True if the user position has a risk premium strictly greater than 0.
+  /// @dev riskPremium The risk premium of the user position, expressed in BPS.
   struct PositionStatus {
     mapping(uint256 bucket => uint256) map;
-    bool hasPositiveRiskPremium;
+    uint24 riskPremium;
   }
 
   /// @notice User account data describing a user position and its health.
@@ -297,7 +301,7 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
   /// @notice Thrown when a debt to cover input is zero.
   error InvalidDebtToCover();
 
-  /// @notice Thrown when the liquidator tries to receive shares for a collateral reserve that is frozen.
+  /// @notice Thrown when the liquidator tries to receive shares for a collateral reserve that is frozen or is not enabled to receive shares.
   error CannotReceiveShares();
 
   /// @notice Thrown when the maximum number of dynamic config keys is reached.
@@ -440,11 +444,13 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
   /// @notice Returns the reserve struct data in storage.
   /// @dev It reverts if the reserve associated with the given reserve identifier is not listed.
   /// @param reserveId The identifier of the reserve.
+  /// @return The reserve struct.
   function getReserve(uint256 reserveId) external view returns (Reserve memory);
 
   /// @notice Returns the reserve configuration struct data in storage.
   /// @dev It reverts if the reserve associated with the given reserve identifier is not listed.
   /// @param reserveId The identifier of the reserve.
+  /// @return The reserve configuration struct.
   function getReserveConfig(uint256 reserveId) external view returns (ReserveConfig memory);
 
   /// @notice Returns the dynamic reserve configuration struct at the specified key.
@@ -452,6 +458,7 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
   /// @dev Does not revert if `dynamicConfigKey` is unset.
   /// @param reserveId The identifier of the reserve.
   /// @param dynamicConfigKey The key of the dynamic config.
+  /// @return The dynamic reserve configuration struct.
   function getDynamicReserveConfig(
     uint256 reserveId,
     uint24 dynamicConfigKey
@@ -470,10 +477,22 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
   /// @dev It reverts if the reserve associated with the given reserve identifier is not listed.
   /// @param reserveId The identifier of the reserve.
   /// @param user The address of the user.
+  /// @return The user position struct.
   function getUserPosition(
     uint256 reserveId,
     address user
   ) external view returns (UserPosition memory);
+
+  /// @notice Returns the most up-to-date user account data information.
+  /// @dev Utilizes user's current dynamic configuration of user position.
+  /// @param user The address of the user.
+  /// @return The user account data struct.
+  function getUserAccountData(address user) external view returns (UserAccountData memory);
+
+  /// @notice Returns the risk premium from the user's last position update.
+  /// @param user The address of the user.
+  /// @return The risk premium of the user from the last position update, expressed in BPS.
+  function getUserLastRiskPremium(address user) external view returns (uint256);
 
   /// @notice Returns the liquidation bonus for a given health factor, based on the user's current dynamic configuration.
   /// @dev It reverts if the reserve associated with the given reserve identifier is not listed.
@@ -485,10 +504,6 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
     address user,
     uint256 healthFactor
   ) external view returns (uint256);
-
-  /// @notice Returns the most up-to-date user account data information.
-  /// @dev Utilizes user's current dynamic configuration of user position.
-  function getUserAccountData(address user) external view returns (UserAccountData memory);
 
   /// @notice Returns whether positionManager is currently activated by governance.
   /// @param positionManager The address of the position manager.

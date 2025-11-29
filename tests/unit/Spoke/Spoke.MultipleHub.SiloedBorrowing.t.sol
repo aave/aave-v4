@@ -49,7 +49,13 @@ contract SpokeMultipleHubSiloedBorrowingTest is SpokeMultipleHubBase {
       address(newHub),
       siloedVars.assetBId,
       _deployMockPriceFeed(newSpoke, 2000e8),
-      ISpoke.ReserveConfig({paused: false, frozen: false, borrowable: true, collateralRisk: 15_00}),
+      ISpoke.ReserveConfig({
+        paused: false,
+        frozen: false,
+        borrowable: true,
+        receiveSharesEnabled: true,
+        collateralRisk: 15_00
+      }),
       dynReserveConfig
     );
 
@@ -81,7 +87,13 @@ contract SpokeMultipleHubSiloedBorrowingTest is SpokeMultipleHubBase {
       address(hub1),
       siloedVars.assetAId,
       _deployMockPriceFeed(spoke1, 50_000e8),
-      ISpoke.ReserveConfig({paused: false, frozen: false, borrowable: true, collateralRisk: 15_00}),
+      ISpoke.ReserveConfig({
+        paused: false,
+        frozen: false,
+        borrowable: true,
+        receiveSharesEnabled: true,
+        collateralRisk: 15_00
+      }),
       dynReserveConfig
     );
 
@@ -103,7 +115,13 @@ contract SpokeMultipleHubSiloedBorrowingTest is SpokeMultipleHubBase {
       address(hub1),
       siloedVars.assetAId,
       _deployMockPriceFeed(newSpoke, 2000e8),
-      ISpoke.ReserveConfig({paused: false, frozen: false, borrowable: true, collateralRisk: 15_00}),
+      ISpoke.ReserveConfig({
+        paused: false,
+        frozen: false,
+        borrowable: true,
+        receiveSharesEnabled: true,
+        collateralRisk: 15_00
+      }),
       dynReserveConfig
     );
 

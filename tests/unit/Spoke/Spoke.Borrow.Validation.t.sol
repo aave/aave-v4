@@ -6,6 +6,7 @@ import 'tests/unit/Spoke/SpokeBase.t.sol';
 
 contract SpokeBorrowValidationTest is SpokeBase {
   using SafeCast for uint256;
+  using ReserveFlagsMap for ReserveFlags;
 
   function test_borrow_revertsWith_ReserveNotBorrowable() public {
     uint256 daiReserveId = _daiReserveId(spoke1);
@@ -22,7 +23,7 @@ contract SpokeBorrowValidationTest is SpokeBase {
 
     // set reserve not borrowable
     updateReserveBorrowableFlag(spoke1, reserveId, false);
-    assertFalse(spoke1.getReserve(reserveId).borrowable);
+    assertFalse(spoke1.getReserve(reserveId).flags.borrowable());
 
     // Bob tries to draw
     vm.expectRevert(ISpoke.ReserveNotBorrowable.selector);
@@ -57,7 +58,7 @@ contract SpokeBorrowValidationTest is SpokeBase {
     amount = bound(amount, 1, MAX_SUPPLY_AMOUNT);
 
     _updateReservePausedFlag(spoke1, reserveId, true);
-    assertTrue(spoke1.getReserve(reserveId).paused);
+    assertTrue(spoke1.getReserve(reserveId).flags.paused());
 
     // Bob try to draw
     vm.expectRevert(ISpoke.ReservePaused.selector);
@@ -76,7 +77,7 @@ contract SpokeBorrowValidationTest is SpokeBase {
     amount = bound(amount, 1, MAX_SUPPLY_AMOUNT);
 
     updateReserveFrozenFlag(spoke1, reserveId, true);
-    assertTrue(spoke1.getReserve(reserveId).frozen);
+    assertTrue(spoke1.getReserve(reserveId).flags.frozen());
 
     // Bob try to draw
     vm.expectRevert(ISpoke.ReserveFrozen.selector);

@@ -32,6 +32,7 @@ contract SpokeMultipleHubTest is SpokeBase {
       paused: false,
       frozen: false,
       borrowable: true,
+      receiveSharesEnabled: true,
       collateralRisk: 20_00
     });
     ISpoke.DynamicReserveConfig memory dynDaiHub2Config = ISpoke.DynamicReserveConfig({
@@ -52,6 +53,7 @@ contract SpokeMultipleHubTest is SpokeBase {
       paused: false,
       frozen: false,
       borrowable: true,
+      receiveSharesEnabled: true,
       collateralRisk: 20_00
     });
     ISpoke.DynamicReserveConfig memory dynDaiHub3Config = ISpoke.DynamicReserveConfig({

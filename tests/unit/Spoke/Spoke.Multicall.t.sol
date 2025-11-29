@@ -104,6 +104,7 @@ contract SpokeMulticall is SpokeBase {
       paused: false,
       frozen: false,
       borrowable: true,
+      receiveSharesEnabled: true,
       collateralRisk: 10_00
     });
     ISpoke.DynamicReserveConfig memory usdzDynConfig = ISpoke.DynamicReserveConfig({
@@ -115,6 +116,7 @@ contract SpokeMulticall is SpokeBase {
       paused: false,
       frozen: false,
       borrowable: true,
+      receiveSharesEnabled: true,
       collateralRisk: 5_00
     });
     ISpoke.DynamicReserveConfig memory usdaDynConfig = ISpoke.DynamicReserveConfig({

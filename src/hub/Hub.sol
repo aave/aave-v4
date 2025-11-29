@@ -5,8 +5,7 @@ pragma solidity 0.8.28;
 import {EnumerableSet} from 'src/dependencies/openzeppelin/EnumerableSet.sol';
 import {AccessManaged} from 'src/dependencies/openzeppelin/AccessManaged.sol';
 import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
-import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
-import {SafeERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
+import {SafeERC20, IERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
 import {MathUtils} from 'src/libraries/math/MathUtils.sol';
 import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
 import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
@@ -21,13 +20,13 @@ import {IHubBase, IHub} from 'src/hub/interfaces/IHub.sol';
 /// @notice A liquidity hub that manages assets and spokes.
 contract Hub is IHub, AccessManaged {
   using EnumerableSet for EnumerableSet.AddressSet;
-  using SafeERC20 for IERC20;
   using SafeCast for *;
-  using WadRayMath for uint256;
-  using SharesMath for uint256;
-  using PercentageMath for *;
-  using AssetLogic for Asset;
+  using SafeERC20 for IERC20;
   using MathUtils for *;
+  using PercentageMath for *;
+  using WadRayMath for uint256;
+  using AssetLogic for Asset;
+  using SharesMath for uint256;
 
   /// @inheritdoc IHub
   uint8 public constant MAX_ALLOWED_UNDERLYING_DECIMALS = 18;

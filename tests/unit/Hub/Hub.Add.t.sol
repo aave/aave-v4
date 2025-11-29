@@ -54,7 +54,13 @@ contract HubAddTest is HubBase {
       address(hub1),
       minDecimalAssetId,
       _deployMockPriceFeed(spoke1, 1e8),
-      ISpoke.ReserveConfig({paused: false, frozen: false, borrowable: true, collateralRisk: 20_00}),
+      ISpoke.ReserveConfig({
+        paused: false,
+        frozen: false,
+        borrowable: true,
+        receiveSharesEnabled: true,
+        collateralRisk: 20_00
+      }),
       ISpoke.DynamicReserveConfig({
         collateralFactor: 78_00,
         maxLiquidationBonus: 100_00,

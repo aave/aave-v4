@@ -4,8 +4,7 @@ pragma solidity 0.8.28;
 
 import {ReentrancyGuardTransient} from 'src/dependencies/openzeppelin/ReentrancyGuardTransient.sol';
 import {Address} from 'src/dependencies/openzeppelin/Address.sol';
-import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
-import {SafeERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
+import {SafeERC20, IERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
 import {GatewayBase} from 'src/position-manager/GatewayBase.sol';
 import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 import {INativeWrapper} from 'src/position-manager/interfaces/INativeWrapper.sol';

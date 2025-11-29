@@ -3,8 +3,7 @@
 pragma solidity 0.8.28;
 
 import {Ownable2Step, Ownable} from 'src/dependencies/openzeppelin/Ownable2Step.sol';
-import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
-import {SafeERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
+import {SafeERC20, IERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
 import {MathUtils} from 'src/libraries/math/MathUtils.sol';
 import {IHubBase} from 'src/hub/interfaces/IHubBase.sol';
 import {ITreasurySpoke, ISpokeBase} from 'src/spoke/interfaces/ITreasurySpoke.sol';

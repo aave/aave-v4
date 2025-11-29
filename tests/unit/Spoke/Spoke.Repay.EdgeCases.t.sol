@@ -48,7 +48,7 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
       daiAssetId
     );
 
-    IHubBase.PremiumDelta memory expectedPremiumDelta = _getExpectedPremiumDelta(
+    IHubBase.PremiumDelta memory expectedPremiumDelta = _getExpectedPremiumDeltaForRestore(
       spoke1,
       bob,
       _daiReserveId(spoke1),
@@ -355,7 +355,7 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
       daiAssetId
     );
 
-    IHubBase.PremiumDelta memory expectedPremiumDelta = _getExpectedPremiumDelta(
+    IHubBase.PremiumDelta memory expectedPremiumDelta = _getExpectedPremiumDeltaForRestore(
       spoke1,
       bob,
       _daiReserveId(spoke1),
@@ -484,7 +484,7 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
 
     TestReturnValues memory returnValues;
     {
-      IHubBase.PremiumDelta memory expectedPremiumDelta = _getExpectedPremiumDelta(
+      IHubBase.PremiumDelta memory expectedPremiumDelta = _getExpectedPremiumDeltaForRestore(
         spoke1,
         bob,
         _daiReserveId(spoke1),
@@ -595,7 +595,7 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
     uint256 daiRepayAmount = bobDaiBefore.drawnDebt - daiBorrowAmount;
     assertGt(daiRepayAmount, 0); // interest is not zero
 
-    IHubBase.PremiumDelta memory expectedPremiumDelta = _getExpectedPremiumDelta(
+    IHubBase.PremiumDelta memory expectedPremiumDelta = _getExpectedPremiumDeltaForRestore(
       spoke1,
       bob,
       _daiReserveId(spoke1),

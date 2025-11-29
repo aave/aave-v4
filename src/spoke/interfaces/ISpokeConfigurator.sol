@@ -91,6 +91,16 @@ interface ISpokeConfigurator {
   /// @param borrowable The new borrowable flag.
   function updateBorrowable(address spoke, uint256 reserveId, bool borrowable) external;
 
+  /// @notice Updates whether receiving shares on liquidation is enabled.
+  /// @param spoke The address of the spoke.
+  /// @param reserveId The identifier of the reserve.
+  /// @param receiveSharesEnabled The new receiveSharesEnabled flag.
+  function updateReceiveSharesEnabled(
+    address spoke,
+    uint256 reserveId,
+    bool receiveSharesEnabled
+  ) external;
+
   /// @notice Updates the collateral risk of a reserve.
   /// @param spoke The address of the spoke.
   /// @param reserveId The identifier of the reserve.
