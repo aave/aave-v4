@@ -182,13 +182,7 @@ contract SpokeConfiguratorTest is SpokeBase {
       hub: address(hub1),
       assetId: 0,
       priceSource: address(0),
-      config: ISpoke.ReserveConfig({
-        paused: false,
-        frozen: false,
-        borrowable: true,
-        receiveSharesEnabled: true,
-        collateralRisk: 15_00
-      }),
+      config: _getDefaultReserveConfig(15_00),
       dynamicConfig: ISpoke.DynamicReserveConfig({
         collateralFactor: 80_00,
         maxLiquidationBonus: 100_00,
@@ -216,13 +210,7 @@ contract SpokeConfiguratorTest is SpokeBase {
       hub: address(hub1),
       assetId: usdzAssetId,
       priceSource: newPriceSource,
-      config: ISpoke.ReserveConfig({
-        paused: false,
-        frozen: false,
-        borrowable: true,
-        receiveSharesEnabled: true,
-        collateralRisk: 15_00
-      }),
+      config: _getDefaultReserveConfig(15_00),
       dynamicConfig: ISpoke.DynamicReserveConfig({
         collateralFactor: 80_00,
         maxLiquidationBonus: 100_00,
@@ -238,13 +226,7 @@ contract SpokeConfiguratorTest is SpokeBase {
     spokeConfigurator.updateMaxReserves(spokeAddr, expectedReserveId + 1);
 
     address newPriceSource = _deployMockPriceFeed(spoke, 1000e8);
-    ISpoke.ReserveConfig memory config = ISpoke.ReserveConfig({
-      paused: false,
-      frozen: false,
-      borrowable: true,
-      receiveSharesEnabled: true,
-      collateralRisk: 15_00
-    });
+    ISpoke.ReserveConfig memory config = _getDefaultReserveConfig(15_00);
     ISpoke.DynamicReserveConfig memory dynamicConfig = ISpoke.DynamicReserveConfig({
       collateralFactor: 80_00,
       maxLiquidationBonus: 100_00,
@@ -347,6 +329,35 @@ contract SpokeConfiguratorTest is SpokeBase {
       emit ISpoke.UpdateReserveConfig(_reserveId, expectedReserveConfig);
       vm.prank(SPOKE_CONFIGURATOR_ADMIN);
       spokeConfigurator.updateBorrowable(spokeAddr, _reserveId, expectedReserveConfig.borrowable);
+
+      assertEq(spoke.getReserveConfig(_reserveId), expectedReserveConfig);
+    }
+  }
+
+  function test_updateLiquidatable_revertsWith_OwnableUnauthorizedAccount() public {
+    vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, alice));
+    vm.prank(alice);
+    spokeConfigurator.updateLiquidatable(spokeAddr, _reserveId, true);
+  }
+
+  function test_updateLiquidatable() public {
+    ISpoke.ReserveConfig memory expectedReserveConfig = spoke.getReserveConfig(_reserveId);
+
+    for (uint256 i = 0; i < 2; i += 1) {
+      expectedReserveConfig.liquidatable = (i == 0) ? false : true;
+
+      vm.expectCall(
+        spokeAddr,
+        abi.encodeCall(ISpoke.updateReserveConfig, (_reserveId, expectedReserveConfig))
+      );
+      vm.expectEmit(address(spoke));
+      emit ISpoke.UpdateReserveConfig(_reserveId, expectedReserveConfig);
+      vm.prank(SPOKE_CONFIGURATOR_ADMIN);
+      spokeConfigurator.updateLiquidatable(
+        spokeAddr,
+        _reserveId,
+        expectedReserveConfig.liquidatable
+      );
 
       assertEq(spoke.getReserveConfig(_reserveId), expectedReserveConfig);
     }

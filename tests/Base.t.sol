@@ -11,7 +11,10 @@ import {console2 as console} from 'forge-std/console2.sol';
 
 // dependencies
 import {AggregatorV3Interface} from 'src/dependencies/chainlink/AggregatorV3Interface.sol';
-import {TransparentUpgradeableProxy, ITransparentUpgradeableProxy} from 'src/dependencies/openzeppelin/TransparentUpgradeableProxy.sol';
+import {
+  TransparentUpgradeableProxy,
+  ITransparentUpgradeableProxy
+} from 'src/dependencies/openzeppelin/TransparentUpgradeableProxy.sol';
 import {IERC20Metadata} from 'src/dependencies/openzeppelin/IERC20Metadata.sol';
 import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
 import {IERC20Errors} from 'src/dependencies/openzeppelin/IERC20Errors.sol';
@@ -45,7 +48,11 @@ import {AccessManagerEnumerable} from 'src/access/AccessManagerEnumerable.sol';
 import {HubConfigurator, IHubConfigurator} from 'src/hub/HubConfigurator.sol';
 import {Hub, IHub, IHubBase} from 'src/hub/Hub.sol';
 import {SharesMath} from 'src/hub/libraries/SharesMath.sol';
-import {AssetInterestRateStrategy, IAssetInterestRateStrategy, IBasicInterestRateStrategy} from 'src/hub/AssetInterestRateStrategy.sol';
+import {
+  AssetInterestRateStrategy,
+  IAssetInterestRateStrategy,
+  IBasicInterestRateStrategy
+} from 'src/hub/AssetInterestRateStrategy.sol';
 
 // spoke
 import {Spoke, ISpoke, ISpokeBase} from 'src/spoke/Spoke.sol';
@@ -584,61 +591,31 @@ abstract contract Base is Test {
     );
 
     // Spoke 1 reserve configs
-    spokeInfo[spoke1].weth.reserveConfig = ISpoke.ReserveConfig({
-      paused: false,
-      frozen: false,
-      borrowable: true,
-      receiveSharesEnabled: true,
-      collateralRisk: 15_00
-    });
+    spokeInfo[spoke1].weth.reserveConfig = _getDefaultReserveConfig(15_00);
     spokeInfo[spoke1].weth.dynReserveConfig = ISpoke.DynamicReserveConfig({
       collateralFactor: 80_00,
       maxLiquidationBonus: 105_00,
       liquidationFee: 10_00
     });
-    spokeInfo[spoke1].wbtc.reserveConfig = ISpoke.ReserveConfig({
-      paused: false,
-      frozen: false,
-      borrowable: true,
-      receiveSharesEnabled: true,
-      collateralRisk: 15_00
-    });
+    spokeInfo[spoke1].wbtc.reserveConfig = _getDefaultReserveConfig(15_00);
     spokeInfo[spoke1].wbtc.dynReserveConfig = ISpoke.DynamicReserveConfig({
       collateralFactor: 75_00,
       maxLiquidationBonus: 103_00,
       liquidationFee: 15_00
     });
-    spokeInfo[spoke1].dai.reserveConfig = ISpoke.ReserveConfig({
-      paused: false,
-      frozen: false,
-      borrowable: true,
-      receiveSharesEnabled: true,
-      collateralRisk: 20_00
-    });
+    spokeInfo[spoke1].dai.reserveConfig = _getDefaultReserveConfig(20_00);
     spokeInfo[spoke1].dai.dynReserveConfig = ISpoke.DynamicReserveConfig({
       collateralFactor: 78_00,
       maxLiquidationBonus: 102_00,
       liquidationFee: 10_00
     });
-    spokeInfo[spoke1].usdx.reserveConfig = ISpoke.ReserveConfig({
-      paused: false,
-      frozen: false,
-      borrowable: true,
-      receiveSharesEnabled: true,
-      collateralRisk: 50_00
-    });
+    spokeInfo[spoke1].usdx.reserveConfig = _getDefaultReserveConfig(50_00);
     spokeInfo[spoke1].usdx.dynReserveConfig = ISpoke.DynamicReserveConfig({
       collateralFactor: 78_00,
       maxLiquidationBonus: 101_00,
       liquidationFee: 12_00
     });
-    spokeInfo[spoke1].usdy.reserveConfig = ISpoke.ReserveConfig({
-      paused: false,
-      frozen: false,
-      borrowable: true,
-      receiveSharesEnabled: true,
-      collateralRisk: 50_00
-    });
+    spokeInfo[spoke1].usdy.reserveConfig = _getDefaultReserveConfig(50_00);
     spokeInfo[spoke1].usdy.dynReserveConfig = ISpoke.DynamicReserveConfig({
       collateralFactor: 78_00,
       maxLiquidationBonus: 101_50,
@@ -688,73 +665,37 @@ abstract contract Base is Test {
     hub1.addSpoke(usdyAssetId, address(spoke1), spokeConfig);
 
     // Spoke 2 reserve configs
-    spokeInfo[spoke2].wbtc.reserveConfig = ISpoke.ReserveConfig({
-      paused: false,
-      frozen: false,
-      borrowable: true,
-      receiveSharesEnabled: true,
-      collateralRisk: 0
-    });
+    spokeInfo[spoke2].wbtc.reserveConfig = _getDefaultReserveConfig(0);
     spokeInfo[spoke2].wbtc.dynReserveConfig = ISpoke.DynamicReserveConfig({
       collateralFactor: 80_00,
       maxLiquidationBonus: 105_00,
       liquidationFee: 10_00
     });
-    spokeInfo[spoke2].weth.reserveConfig = ISpoke.ReserveConfig({
-      paused: false,
-      frozen: false,
-      borrowable: true,
-      receiveSharesEnabled: true,
-      collateralRisk: 10_00
-    });
+    spokeInfo[spoke2].weth.reserveConfig = _getDefaultReserveConfig(10_00);
     spokeInfo[spoke2].weth.dynReserveConfig = ISpoke.DynamicReserveConfig({
       collateralFactor: 76_00,
       maxLiquidationBonus: 103_00,
       liquidationFee: 15_00
     });
-    spokeInfo[spoke2].dai.reserveConfig = ISpoke.ReserveConfig({
-      paused: false,
-      frozen: false,
-      borrowable: true,
-      receiveSharesEnabled: true,
-      collateralRisk: 20_00
-    });
+    spokeInfo[spoke2].dai.reserveConfig = _getDefaultReserveConfig(20_00);
     spokeInfo[spoke2].dai.dynReserveConfig = ISpoke.DynamicReserveConfig({
       collateralFactor: 72_00,
       maxLiquidationBonus: 102_00,
       liquidationFee: 10_00
     });
-    spokeInfo[spoke2].usdx.reserveConfig = ISpoke.ReserveConfig({
-      paused: false,
-      frozen: false,
-      borrowable: true,
-      receiveSharesEnabled: true,
-      collateralRisk: 50_00
-    });
+    spokeInfo[spoke2].usdx.reserveConfig = _getDefaultReserveConfig(50_00);
     spokeInfo[spoke2].usdx.dynReserveConfig = ISpoke.DynamicReserveConfig({
       collateralFactor: 72_00,
       maxLiquidationBonus: 101_00,
       liquidationFee: 12_00
     });
-    spokeInfo[spoke2].usdy.reserveConfig = ISpoke.ReserveConfig({
-      paused: false,
-      frozen: false,
-      borrowable: true,
-      receiveSharesEnabled: true,
-      collateralRisk: 50_00
-    });
+    spokeInfo[spoke2].usdy.reserveConfig = _getDefaultReserveConfig(50_00);
     spokeInfo[spoke2].usdy.dynReserveConfig = ISpoke.DynamicReserveConfig({
       collateralFactor: 72_00,
       maxLiquidationBonus: 101_50,
       liquidationFee: 15_00
     });
-    spokeInfo[spoke2].usdz.reserveConfig = ISpoke.ReserveConfig({
-      paused: false,
-      frozen: false,
-      borrowable: true,
-      receiveSharesEnabled: true,
-      collateralRisk: 100_00
-    });
+    spokeInfo[spoke2].usdz.reserveConfig = _getDefaultReserveConfig(100_00);
     spokeInfo[spoke2].usdz.dynReserveConfig = ISpoke.DynamicReserveConfig({
       collateralFactor: 70_00,
       maxLiquidationBonus: 106_00,
@@ -812,49 +753,25 @@ abstract contract Base is Test {
     hub1.addSpoke(usdzAssetId, address(spoke2), spokeConfig);
 
     // Spoke 3 reserve configs
-    spokeInfo[spoke3].dai.reserveConfig = ISpoke.ReserveConfig({
-      paused: false,
-      frozen: false,
-      borrowable: true,
-      receiveSharesEnabled: true,
-      collateralRisk: 0
-    });
+    spokeInfo[spoke3].dai.reserveConfig = _getDefaultReserveConfig(0);
     spokeInfo[spoke3].dai.dynReserveConfig = ISpoke.DynamicReserveConfig({
       collateralFactor: 75_00,
       maxLiquidationBonus: 104_00,
       liquidationFee: 11_00
     });
-    spokeInfo[spoke3].usdx.reserveConfig = ISpoke.ReserveConfig({
-      paused: false,
-      frozen: false,
-      borrowable: true,
-      receiveSharesEnabled: true,
-      collateralRisk: 10_00
-    });
+    spokeInfo[spoke3].usdx.reserveConfig = _getDefaultReserveConfig(10_00);
     spokeInfo[spoke3].usdx.dynReserveConfig = ISpoke.DynamicReserveConfig({
       collateralFactor: 75_00,
       maxLiquidationBonus: 103_00,
       liquidationFee: 15_00
     });
-    spokeInfo[spoke3].weth.reserveConfig = ISpoke.ReserveConfig({
-      paused: false,
-      frozen: false,
-      borrowable: true,
-      receiveSharesEnabled: true,
-      collateralRisk: 20_00
-    });
+    spokeInfo[spoke3].weth.reserveConfig = _getDefaultReserveConfig(20_00);
     spokeInfo[spoke3].weth.dynReserveConfig = ISpoke.DynamicReserveConfig({
       collateralFactor: 79_00,
       maxLiquidationBonus: 102_00,
       liquidationFee: 10_00
     });
-    spokeInfo[spoke3].wbtc.reserveConfig = ISpoke.ReserveConfig({
-      paused: false,
-      frozen: false,
-      borrowable: true,
-      receiveSharesEnabled: true,
-      collateralRisk: 50_00
-    });
+    spokeInfo[spoke3].wbtc.reserveConfig = _getDefaultReserveConfig(50_00);
     spokeInfo[spoke3].wbtc.dynReserveConfig = ISpoke.DynamicReserveConfig({
       collateralFactor: 77_00,
       maxLiquidationBonus: 101_00,
@@ -2288,6 +2205,20 @@ abstract contract Base is Test {
     assertEq(spoke.ORACLE(), address(oracle));
     assertEq(oracle.SPOKE(), address(spoke));
     return (spoke, oracle);
+  }
+
+  function _getDefaultReserveConfig(
+    uint24 collateralRisk
+  ) internal pure returns (ISpoke.ReserveConfig memory) {
+    return
+      ISpoke.ReserveConfig({
+        paused: false,
+        frozen: false,
+        borrowable: true,
+        liquidatable: true,
+        receiveSharesEnabled: true,
+        collateralRisk: collateralRisk
+      });
   }
 
   function _proxify(

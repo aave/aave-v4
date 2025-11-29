@@ -374,13 +374,14 @@ library LiquidationLogic {
     );
     require(params.collateralReserveBalance > 0, ISpoke.ReserveNotSupplied());
     require(params.debtReserveBalance > 0, ISpoke.ReserveNotBorrowed());
+    require(params.collateralReserveFlags.liquidatable(), ISpoke.CollateralCannotBeLiquidated());
     require(
       params.healthFactor < HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
       ISpoke.HealthFactorNotBelowThreshold()
     );
     require(
       params.collateralFactor > 0 && isBorrowerUsingAsCollateral,
-      ISpoke.CollateralCannotBeLiquidated()
+      ISpoke.ReserveNotEnabledAsCollateral()
     );
     if (params.receiveShares) {
       require(

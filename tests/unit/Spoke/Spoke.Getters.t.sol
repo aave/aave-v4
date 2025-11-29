@@ -27,61 +27,31 @@ contract SpokeGettersTest is SpokeBase {
       riskPremiumThreshold: Constants.MAX_ALLOWED_COLLATERAL_RISK
     });
 
-    spokeInfo[spoke].weth.reserveConfig = ISpoke.ReserveConfig({
-      paused: false,
-      frozen: false,
-      borrowable: true,
-      receiveSharesEnabled: true,
-      collateralRisk: 15_00
-    });
+    spokeInfo[spoke].weth.reserveConfig = _getDefaultReserveConfig(15_00);
     spokeInfo[spoke].weth.dynReserveConfig = ISpoke.DynamicReserveConfig({
       collateralFactor: 80_00,
       maxLiquidationBonus: 105_00,
       liquidationFee: 10_00
     });
-    spokeInfo[spoke].wbtc.reserveConfig = ISpoke.ReserveConfig({
-      paused: false,
-      frozen: false,
-      borrowable: true,
-      receiveSharesEnabled: true,
-      collateralRisk: 15_00
-    });
+    spokeInfo[spoke].wbtc.reserveConfig = _getDefaultReserveConfig(15_00);
     spokeInfo[spoke].wbtc.dynReserveConfig = ISpoke.DynamicReserveConfig({
       collateralFactor: 75_00,
       maxLiquidationBonus: 103_00,
       liquidationFee: 15_00
     });
-    spokeInfo[spoke].dai.reserveConfig = ISpoke.ReserveConfig({
-      paused: false,
-      frozen: false,
-      borrowable: true,
-      receiveSharesEnabled: true,
-      collateralRisk: 20_00
-    });
+    spokeInfo[spoke].dai.reserveConfig = _getDefaultReserveConfig(20_00);
     spokeInfo[spoke].dai.dynReserveConfig = ISpoke.DynamicReserveConfig({
       collateralFactor: 78_00,
       maxLiquidationBonus: 102_00,
       liquidationFee: 10_00
     });
-    spokeInfo[spoke].usdx.reserveConfig = ISpoke.ReserveConfig({
-      paused: false,
-      frozen: false,
-      borrowable: true,
-      receiveSharesEnabled: true,
-      collateralRisk: 50_00
-    });
+    spokeInfo[spoke].usdx.reserveConfig = _getDefaultReserveConfig(50_00);
     spokeInfo[spoke].usdx.dynReserveConfig = ISpoke.DynamicReserveConfig({
       collateralFactor: 78_00,
       maxLiquidationBonus: 101_00,
       liquidationFee: 12_00
     });
-    spokeInfo[spoke].usdy.reserveConfig = ISpoke.ReserveConfig({
-      paused: false,
-      frozen: false,
-      borrowable: true,
-      receiveSharesEnabled: true,
-      collateralRisk: 50_00
-    });
+    spokeInfo[spoke].usdy.reserveConfig = _getDefaultReserveConfig(20_00);
     spokeInfo[spoke].usdy.dynReserveConfig = ISpoke.DynamicReserveConfig({
       collateralFactor: 78_00,
       maxLiquidationBonus: 101_50,
