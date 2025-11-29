@@ -7,8 +7,8 @@ import {SafeTransferLib} from 'src/dependencies/solady/SafeTransferLib.sol';
 import {MathUtils} from 'src/libraries/math/MathUtils.sol';
 import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
 import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
-import {UserPositionDebt} from 'src/spoke/libraries/UserPositionDebt.sol';
 import {PositionStatusMap} from 'src/spoke/libraries/PositionStatusMap.sol';
+import {UserPositionDebt} from 'src/spoke/libraries/UserPositionDebt.sol';
 import {ReserveFlags, ReserveFlagsMap} from 'src/spoke/libraries/ReserveFlagsMap.sol';
 import {IHubBase} from 'src/hub/interfaces/IHubBase.sol';
 import {IAaveOracle} from 'src/spoke/interfaces/IAaveOracle.sol';
@@ -21,10 +21,10 @@ library LiquidationLogic {
   using SafeCast for *;
   using SafeTransferLib for address;
   using MathUtils for *;
-  using ReserveFlagsMap for ReserveFlags;
   using PercentageMath for uint256;
   using WadRayMath for uint256;
   using UserPositionDebt for ISpoke.UserPosition;
+  using ReserveFlagsMap for ReserveFlags;
   using PositionStatusMap for ISpoke.PositionStatus;
 
   struct LiquidateUserParams {
@@ -47,15 +47,15 @@ library LiquidationLogic {
   struct ValidateLiquidationCallParams {
     address user;
     address liquidator;
-    uint256 debtToCover;
     ReserveFlags collateralReserveFlags;
     ReserveFlags debtReserveFlags;
-    uint256 healthFactor;
-    uint256 collateralFactor;
     uint256 collateralReserveBalance;
     uint256 debtReserveBalance;
-    bool receiveShares;
+    uint256 debtToCover;
+    uint256 collateralFactor;
     bool isUsingAsCollateral;
+    uint256 healthFactor;
+    bool receiveShares;
   }
 
   struct CalculateDebtToTargetHealthFactorParams {
@@ -98,20 +98,19 @@ library LiquidationLogic {
     uint256 collateralAssetUnit;
   }
 
+  struct LiquidateCollateralParams {
+    uint256 collateralToLiquidate;
+    uint256 collateralToLiquidator;
+    address liquidator;
+    bool receiveShares;
+  }
+
   struct LiquidateDebtParams {
     uint256 debtReserveId;
     uint256 debtToLiquidate;
     uint256 premiumDebtRay;
     uint256 drawnIndex;
     address liquidator;
-  }
-
-  struct LiquidateCollateralParams {
-    uint256 collateralReserveId;
-    uint256 collateralToLiquidate;
-    uint256 collateralToLiquidator;
-    address liquidator;
-    bool receiveShares;
   }
 
   struct LiquidationAmounts {
@@ -152,17 +151,17 @@ library LiquidationLogic {
       ValidateLiquidationCallParams({
         user: params.user,
         liquidator: params.liquidator,
-        debtToCover: params.debtToCover,
         collateralReserveFlags: collateralReserve.flags,
         debtReserveFlags: debtReserve.flags,
-        healthFactor: params.healthFactor,
-        collateralFactor: collateralDynConfig.collateralFactor,
         collateralReserveBalance: collateralReserveBalance,
         debtReserveBalance: params.drawnDebt + params.premiumDebtRay.fromRayUp(),
-        receiveShares: params.receiveShares,
+        debtToCover: params.debtToCover,
+        collateralFactor: collateralDynConfig.collateralFactor,
         isUsingAsCollateral: positionStatus[params.user].isUsingAsCollateral(
           params.collateralReserveId
-        )
+        ),
+        healthFactor: params.healthFactor,
+        receiveShares: params.receiveShares
       })
     );
 
@@ -197,7 +196,6 @@ library LiquidationLogic {
         positions[params.user][params.collateralReserveId],
         positions[params.liquidator][params.collateralReserveId],
         LiquidateCollateralParams({
-          collateralReserveId: params.collateralReserveId,
           collateralToLiquidate: liquidationAmounts.collateralToLiquidate,
           collateralToLiquidator: liquidationAmounts.collateralToLiquidator,
           liquidator: params.liquidator,

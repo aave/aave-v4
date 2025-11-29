@@ -17,15 +17,15 @@ contract LiquidationLogicValidateLiquidationCallTest is LiquidationLogicBaseTest
     params = LiquidationLogic.ValidateLiquidationCallParams({
       user: alice,
       liquidator: bob,
-      debtToCover: 5e18,
       collateralReserveFlags: collateralReserveFlags,
       debtReserveFlags: debtReserveFlags,
-      receiveShares: false,
-      healthFactor: 0.8e18,
-      collateralFactor: 75_00,
       collateralReserveBalance: 120e6,
       debtReserveBalance: 100e18,
-      isUsingAsCollateral: true
+      debtToCover: 5e18,
+      collateralFactor: 75_00,
+      isUsingAsCollateral: true,
+      healthFactor: 0.8e18,
+      receiveShares: false
     });
     liquidationLogicWrapper.setBorrower(params.user);
     liquidationLogicWrapper.setLiquidator(params.liquidator);

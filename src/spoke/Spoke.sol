@@ -35,9 +35,9 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
   using PercentageMath for *;
   using WadRayMath for *;
   using KeyValueList for KeyValueList.List;
-  using ReserveFlagsMap for ReserveFlags;
   using LiquidationLogic for *;
   using PositionStatusMap for *;
+  using ReserveFlagsMap for ReserveFlags;
   using UserPositionDebt for ISpoke.UserPosition;
 
   /// @inheritdoc ISpoke
@@ -176,13 +176,13 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
   ) external restricted {
     Reserve storage reserve = _getReserve(reserveId);
     _validateReserveConfig(config);
+    reserve.collateralRisk = config.collateralRisk;
     reserve.flags = ReserveFlagsMap.create(
       config.paused,
       config.frozen,
       config.borrowable,
       config.receiveSharesEnabled
     );
-    reserve.collateralRisk = config.collateralRisk;
     emit UpdateReserveConfig(reserveId, config);
   }
 
@@ -548,11 +548,11 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     Reserve storage reserve = _getReserve(reserveId);
     return
       ReserveConfig({
+        collateralRisk: reserve.collateralRisk,
         paused: reserve.flags.paused(),
         frozen: reserve.flags.frozen(),
         borrowable: reserve.flags.borrowable(),
-        receiveSharesEnabled: reserve.flags.receiveSharesEnabled(),
-        collateralRisk: reserve.collateralRisk
+        receiveSharesEnabled: reserve.flags.receiveSharesEnabled()
       });
   }
 

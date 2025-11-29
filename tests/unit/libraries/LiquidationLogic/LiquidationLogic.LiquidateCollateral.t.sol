@@ -74,7 +74,6 @@ contract LiquidationLogicLiquidateCollateralTest is LiquidationLogicBaseTest {
         hub.previewRemoveByShares(assetId, userSuppliedShares)
       ),
       collateralToLiquidator: 0, // populated below
-      collateralReserveId: reserveId,
       liquidator: liquidator,
       receiveShares: false
     });
@@ -114,7 +113,6 @@ contract LiquidationLogicLiquidateCollateralTest is LiquidationLogicBaseTest {
     params = LiquidationLogic.LiquidateCollateralParams({
       collateralToLiquidate: 1,
       collateralToLiquidator: 1,
-      collateralReserveId: reserveId,
       liquidator: liquidator,
       receiveShares: true
     });
@@ -160,7 +158,6 @@ contract LiquidationLogicLiquidateCollateralTest is LiquidationLogicBaseTest {
         hub.previewRemoveByShares(assetId, 1e6)
       ),
       collateralToLiquidator: 0, // populated below
-      collateralReserveId: reserveId,
       liquidator: liquidator,
       receiveShares: true
     });
