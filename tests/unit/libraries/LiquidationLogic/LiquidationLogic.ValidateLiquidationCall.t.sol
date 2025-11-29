@@ -215,12 +215,12 @@ contract LiquidationLogicValidateLiquidationCallTest is LiquidationLogicBaseTest
     vm.expectRevert(ISpoke.CollateralCannotBeLiquidated.selector);
     liquidationLogicWrapper.validateLiquidationCall(params);
 
-    // collateral.liquidatable = true; debt.liquidatable = true; => revert
+    // collateral.liquidatable = true; debt.liquidatable = true; => allowed
     params.collateralReserveFlags = params.collateralReserveFlags.setLiquidatable(true);
     params.debtReserveFlags = params.debtReserveFlags.setLiquidatable(true);
     liquidationLogicWrapper.validateLiquidationCall(params);
 
-    // collateral.liquidatable = true; debt.liquidatable = false; => revert
+    // collateral.liquidatable = true; debt.liquidatable = false; => allowed
     params.collateralReserveFlags = params.collateralReserveFlags.setLiquidatable(true);
     params.debtReserveFlags = params.debtReserveFlags.setLiquidatable(false);
     liquidationLogicWrapper.validateLiquidationCall(params);
