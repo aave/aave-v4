@@ -150,12 +150,12 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
       decimals: decimals,
       dynamicConfigKey: dynamicConfigKey,
       collateralRisk: config.collateralRisk,
-      flags: ReserveFlagsMap.create(
-        config.paused,
-        config.frozen,
-        config.borrowable,
-        config.receiveSharesEnabled
-      )
+      flags: ReserveFlagsMap.create({
+        initPaused: config.paused,
+        initFrozen: config.frozen,
+        initBorrowable: config.borrowable,
+        initReceiveSharesEnabled: config.receiveSharesEnabled
+      })
     });
     _dynamicConfig[reserveId][dynamicConfigKey] = dynamicConfig;
     _reserveExists[hub][assetId] = true;
@@ -175,12 +175,12 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     Reserve storage reserve = _getReserve(reserveId);
     _validateReserveConfig(config);
     reserve.collateralRisk = config.collateralRisk;
-    reserve.flags = ReserveFlagsMap.create(
-      config.paused,
-      config.frozen,
-      config.borrowable,
-      config.receiveSharesEnabled
-    );
+    reserve.flags = ReserveFlagsMap.create({
+      initPaused: config.paused,
+      initFrozen: config.frozen,
+      initBorrowable: config.borrowable,
+      initReceiveSharesEnabled: config.receiveSharesEnabled
+    });
     emit UpdateReserveConfig(reserveId, config);
   }
 

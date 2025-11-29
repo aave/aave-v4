@@ -31,7 +31,12 @@ contract ReserveFlagsTests is Test {
     bool borrowable,
     bool receiveSharesEnabled
   ) public view {
-    ReserveFlags flags = w.create(paused, frozen, borrowable, receiveSharesEnabled);
+    ReserveFlags flags = w.create({
+      initPaused: paused,
+      initFrozen: frozen,
+      initBorrowable: borrowable,
+      initReceiveSharesEnabled: receiveSharesEnabled
+    });
 
     assertEq(w.paused(flags), paused);
     assertEq(w.frozen(flags), frozen);

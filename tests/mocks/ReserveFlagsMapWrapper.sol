@@ -13,7 +13,13 @@ contract ReserveFlagsMapWrapper {
     bool initBorrowable,
     bool initReceiveSharesEnabled
   ) external pure returns (ReserveFlags) {
-    return ReserveFlagsMap.create(initPaused, initFrozen, initBorrowable, initReceiveSharesEnabled);
+    return
+      ReserveFlagsMap.create({
+        initPaused: initPaused,
+        initFrozen: initFrozen,
+        initBorrowable: initBorrowable,
+        initReceiveSharesEnabled: initReceiveSharesEnabled
+      });
   }
 
   function setPaused(ReserveFlags flags, bool status) external pure returns (ReserveFlags) {
