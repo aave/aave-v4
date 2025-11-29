@@ -992,7 +992,7 @@ contract SpokeRepayScenarioTest is SpokeBase {
       daiAssetId
     );
 
-    IHubBase.PremiumDelta memory expectedPremiumDelta = _getExpectedPremiumDelta(
+    IHubBase.PremiumDelta memory expectedPremiumDelta = _getExpectedPremiumDeltaForRestore(
       spoke1,
       bob,
       _daiReserveId(spoke1),
@@ -1100,7 +1100,7 @@ contract SpokeRepayScenarioTest is SpokeBase {
       daiAssetId
     );
 
-    expectedPremiumDelta = _getExpectedPremiumDelta(
+    expectedPremiumDelta = _getExpectedPremiumDeltaForRestore(
       spoke1,
       bob,
       _daiReserveId(spoke1),
@@ -1201,7 +1201,7 @@ contract SpokeRepayScenarioTest is SpokeBase {
       daiAssetId
     );
 
-    IHubBase.PremiumDelta memory expectedPremiumDelta = _getExpectedPremiumDelta(
+    IHubBase.PremiumDelta memory expectedPremiumDelta = _getExpectedPremiumDeltaForRestore(
       spoke1,
       bob,
       _daiReserveId(spoke1),
@@ -1265,7 +1265,7 @@ contract SpokeRepayScenarioTest is SpokeBase {
       daiAssetId
     );
 
-    expectedPremiumDelta = _getExpectedPremiumDelta(
+    expectedPremiumDelta = _getExpectedPremiumDeltaForRestore(
       spoke1,
       bob,
       _daiReserveId(spoke1),

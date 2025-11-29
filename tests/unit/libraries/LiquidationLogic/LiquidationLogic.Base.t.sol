@@ -145,10 +145,10 @@ contract LiquidationLogicBaseTest is SpokeBase {
       params.maxLiquidationBonus
     );
 
-    params.debtAssetDecimals = bound(
-      params.debtAssetDecimals,
-      MIN_TOKEN_DECIMALS_SUPPORTED,
-      MAX_TOKEN_DECIMALS_SUPPORTED
+    params.debtAssetUnit = bound(
+      params.debtAssetUnit,
+      10 ** MIN_TOKEN_DECIMALS_SUPPORTED,
+      10 ** MAX_TOKEN_DECIMALS_SUPPORTED
     );
 
     LiquidationLogic.CalculateDebtToLiquidateParams
@@ -164,10 +164,10 @@ contract LiquidationLogicBaseTest is SpokeBase {
     params.debtAssetPrice = debtToLiquidateParams.debtAssetPrice;
 
     params.collateralAssetPrice = bound(params.collateralAssetPrice, 1, MAX_ASSET_PRICE);
-    params.collateralAssetDecimals = bound(
-      params.collateralAssetDecimals,
-      MIN_TOKEN_DECIMALS_SUPPORTED,
-      MAX_TOKEN_DECIMALS_SUPPORTED
+    params.collateralAssetUnit = bound(
+      params.collateralAssetUnit,
+      10 ** MIN_TOKEN_DECIMALS_SUPPORTED,
+      10 ** MAX_TOKEN_DECIMALS_SUPPORTED
     );
     params.liquidationFee = bound(params.liquidationFee, 0, PercentageMath.PERCENTAGE_FACTOR);
     params.collateralReserveBalance = bound(params.collateralReserveBalance, 0, MAX_SUPPLY_AMOUNT);
@@ -190,7 +190,7 @@ contract LiquidationLogicBaseTest is SpokeBase {
     params.targetHealthFactor = debtToLiquidateParams.targetHealthFactor;
     params.collateralFactor = debtToLiquidateParams.collateralFactor;
     params.debtAssetPrice = debtToLiquidateParams.debtAssetPrice;
-    params.debtAssetDecimals = _getExponent(debtToLiquidateParams.debtAssetUnit);
+    params.debtAssetUnit = debtToLiquidateParams.debtAssetUnit;
 
     return params;
   }
@@ -229,7 +229,7 @@ contract LiquidationLogicBaseTest is SpokeBase {
         liquidationBonus: liquidationBonus,
         collateralFactor: params.collateralFactor,
         debtAssetPrice: params.debtAssetPrice,
-        debtAssetUnit: 10 ** params.debtAssetDecimals
+        debtAssetUnit: params.debtAssetUnit
       });
   }
 

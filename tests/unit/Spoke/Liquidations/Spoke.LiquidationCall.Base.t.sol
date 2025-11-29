@@ -43,7 +43,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
     BalanceInfo collateralFeeReceiverBalanceInfo;
     BalanceInfo debtFeeReceiverBalanceInfo;
     BalanceInfo spokeBalanceInfo;
-    bool hasPositiveRiskPremium;
+    uint256 userLastRiskPremium;
   }
 
   struct LiquidationMetadata {
@@ -285,9 +285,9 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
           )
           .collateralFactor,
         debtAssetPrice: IPriceOracle(spoke.ORACLE()).getReservePrice(debtReserveId),
-        debtAssetDecimals: spoke.getReserve(debtReserveId).decimals,
+        debtAssetUnit: 10 ** spoke.getReserve(debtReserveId).decimals,
         collateralAssetPrice: IPriceOracle(spoke.ORACLE()).getReservePrice(collateralReserveId),
-        collateralAssetDecimals: spoke.getReserve(collateralReserveId).decimals,
+        collateralAssetUnit: 10 ** spoke.getReserve(collateralReserveId).decimals,
         liquidationFee: spoke
           .getDynamicReserveConfig(
             collateralReserveId,
@@ -420,7 +420,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
       params.user,
       liquidationMetadata.debtToLiquidate
     );
-    vars.premiumDelta = _getExpectedPremiumDelta(
+    vars.premiumDelta = _getExpectedPremiumDeltaForRestore(
       params.spoke,
       params.user,
       params.debtReserveId,
@@ -614,7 +614,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
           params.collateralReserveId,
           params.debtReserveId
         ),
-        hasPositiveRiskPremium: _hasPositiveRiskPremium(params.spoke, params.user)
+        userLastRiskPremium: params.spoke.getUserLastRiskPremium(params.user)
       });
   }
 
@@ -1284,14 +1284,14 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
     }
 
     uint256 riskPremiumEventExpectedCount = 1;
-    if (!accountsInfoBefore.hasPositiveRiskPremium && !accountsInfoAfter.hasPositiveRiskPremium) {
+    if (accountsInfoBefore.userLastRiskPremium == 0 && accountsInfoAfter.userLastRiskPremium == 0) {
       riskPremiumEventExpectedCount = 0;
     }
     assertEq(riskPremiumEventCount, riskPremiumEventExpectedCount, 'riskPremiumEventExpectedCount');
-
     assertEq(
-      accountsInfoAfter.hasPositiveRiskPremium,
-      accountsInfoAfter.userAccountData.riskPremium > 0
+      accountsInfoAfter.userLastRiskPremium,
+      accountsInfoAfter.userAccountData.riskPremium,
+      'user latest risk premium'
     );
 
     assertApproxEqRel(
@@ -1301,6 +1301,10 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
       'user risk premium: user account data'
     );
 
+    if (liquidationMetadata.hasDeficit) {
+      assertEq(accountsInfoAfter.userLastRiskPremium, 0, 'user risk premium: 0 in deficit');
+    }
+
     for (uint256 reserveId = 0; reserveId < params.spoke.getReserveCount(); reserveId++) {
       if (_isBorrowing(params.spoke, reserveId, params.user)) {
         ISpoke.UserPosition memory userPosition = params.spoke.getUserPosition(
@@ -1308,17 +1312,10 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
           params.user
         );
         assertNotEq(userPosition.drawnShares, 0, 'borrowed reserve should have non zero base debt');
-        uint256 storedUserRiskPremium = userPosition.premiumShares.percentDivDown(
-          userPosition.drawnShares
-        );
-        assertApproxEqRel(
-          storedUserRiskPremium,
-          accountsInfoAfter.userAccountData.riskPremium,
-          precision,
-          string.concat(
-            'user risk premium: stored risk premium in reserve ',
-            vm.toString(reserveId)
-          )
+        assertEq(
+          userPosition.premiumShares,
+          userPosition.drawnShares.percentMulUp(accountsInfoAfter.userLastRiskPremium),
+          string.concat('last user risk premium in reserve ', vm.toString(reserveId))
         );
       }
     }
@@ -1391,20 +1388,5 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
       params.debtReserveId,
       'spoke1.liquidationCall'
     );
-  }
-
-  // @dev reads `positionStatus.hasPositiveRiskPremium` by temporarily upgrading to mock spoke
-  function _hasPositiveRiskPremium(ISpoke spoke, address user) internal returns (bool) {
-    address mockSpoke = address(new MockSpoke(spoke.ORACLE()));
-    address implementation = _getImplementationAddress(address(spoke));
-    vm.prank(_getProxyAdminAddress(address(spoke)));
-    ITransparentUpgradeableProxy(address(spoke)).upgradeToAndCall(address(mockSpoke), '');
-
-    bool hasPositiveRiskPremium = MockSpoke(address(spoke)).hasPositiveRiskPremium(user);
-
-    vm.prank(_getProxyAdminAddress(address(spoke)));
-    ITransparentUpgradeableProxy(address(spoke)).upgradeToAndCall(implementation, '');
-
-    return hasPositiveRiskPremium;
   }
 }

@@ -5,7 +5,9 @@ pragma solidity 0.8.28;
 import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
 import {IERC20Permit} from 'src/dependencies/openzeppelin/IERC20Permit.sol';
 import {SignatureChecker} from 'src/dependencies/openzeppelin/SignatureChecker.sol';
-import {AccessManagedUpgradeable} from 'src/dependencies/openzeppelin-upgradeable/AccessManagedUpgradeable.sol';
+import {
+  AccessManagedUpgradeable
+} from 'src/dependencies/openzeppelin-upgradeable/AccessManagedUpgradeable.sol';
 import {SafeTransferLib} from 'src/dependencies/solady/SafeTransferLib.sol';
 import {EIP712} from 'src/dependencies/solady/EIP712.sol';
 import {MathUtils} from 'src/libraries/math/MathUtils.sol';
@@ -29,13 +31,13 @@ import {ISpokeBase, ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradeable, EIP712 {
   using SafeCast for *;
   using SafeTransferLib for address;
-  using WadRayMath for *;
-  using PercentageMath for *;
-  using KeyValueList for KeyValueList.List;
-  using PositionStatusMap for *;
-  using ReserveFlagsMap for ReserveFlags;
   using MathUtils for *;
+  using PercentageMath for *;
+  using WadRayMath for *;
+  using KeyValueList for KeyValueList.List;
+  using ReserveFlagsMap for ReserveFlags;
   using LiquidationLogic for *;
+  using PositionStatusMap for *;
   using UserPositionDebt for ISpoke.UserPosition;
 
   /// @inheritdoc ISpoke
@@ -310,23 +312,20 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     _validateRepay(reserve.flags);
 
     uint256 drawnIndex = reserve.hub.getAssetDrawnIndex(reserve.assetId);
-    (uint256 drawnDebtRestored, uint256 premiumDebtRayRestored) = userPosition.getDebt(drawnIndex);
-
-    (drawnDebtRestored, premiumDebtRayRestored) = _calculateRestoreAmount(
-      drawnDebtRestored,
-      premiumDebtRayRestored,
-      amount
-    );
+    (uint256 drawnDebtRestored, uint256 premiumDebtRayRestored) = userPosition
+      .calculateRestoreAmount(drawnIndex, amount);
+    uint256 restoredShares = drawnDebtRestored.rayDivDown(drawnIndex);
 
     IHubBase.PremiumDelta memory premiumDelta = userPosition.getPremiumDelta({
+      drawnSharesTaken: restoredShares,
       drawnIndex: drawnIndex,
-      riskPremium: 0,
+      riskPremium: _positionStatus[onBehalfOf].riskPremium,
       restoredPremiumRay: premiumDebtRayRestored
     });
 
-    uint256 totalDebtRestored = drawnDebtRestored + premiumDelta.restoredPremiumRay.fromRayUp();
+    uint256 totalDebtRestored = drawnDebtRestored + premiumDebtRayRestored.fromRayUp();
     reserve.underlying.safeTransferFrom(msg.sender, address(reserve.hub), totalDebtRestored);
-    uint256 restoredShares = reserve.hub.restore(reserve.assetId, drawnDebtRestored, premiumDelta);
+    reserve.hub.restore(reserve.assetId, drawnDebtRestored, premiumDelta);
 
     userPosition.applyPremiumDelta(premiumDelta);
     userPosition.drawnShares -= restoredShares.toUint120();
@@ -334,8 +333,6 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
       PositionStatus storage positionStatus = _positionStatus[onBehalfOf];
       positionStatus.setBorrowing(reserveId, false);
     }
-
-    _notifyRiskPremiumUpdate(onBehalfOf, _calculateUserAccountData(onBehalfOf).riskPremium);
 
     emit Repay(reserveId, msg.sender, onBehalfOf, restoredShares, totalDebtRestored, premiumDelta);
 
@@ -634,6 +631,17 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
   }
 
   /// @inheritdoc ISpoke
+  function getUserLastRiskPremium(address user) external view returns (uint256) {
+    return _positionStatus[user].riskPremium;
+  }
+
+  /// @inheritdoc ISpoke
+  function getUserAccountData(address user) external view returns (UserAccountData memory) {
+    // SAFETY: function does not modify state when `refreshConfig` is false.
+    return _castToView(_processUserAccountData)(user, false);
+  }
+
+  /// @inheritdoc ISpoke
   function getLiquidationBonus(
     uint256 reserveId,
     address user,
@@ -649,12 +657,6 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
           _userPositions[user][reserveId].dynamicConfigKey
         ].maxLiquidationBonus
       });
-  }
-
-  /// @inheritdoc ISpoke
-  function getUserAccountData(address user) external view returns (UserAccountData memory) {
-    // SAFETY: function does not modify state when `refreshConfig` is false.
-    return _castToView(_processUserAccountData)(user, false);
   }
 
   /// @inheritdoc ISpoke
@@ -824,10 +826,10 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
   /// @dev Skips the refresh if the user risk premium remains zero.
   function _notifyRiskPremiumUpdate(address user, uint256 newRiskPremium) internal {
     PositionStatus storage positionStatus = _positionStatus[user];
-    if (newRiskPremium == 0 && !positionStatus.hasPositiveRiskPremium) {
+    if (newRiskPremium == 0 && positionStatus.riskPremium == 0) {
       return;
     }
-    positionStatus.hasPositiveRiskPremium = newRiskPremium > 0;
+    positionStatus.riskPremium = newRiskPremium.toUint24();
 
     uint256 reserveId = _reserveCount;
     while ((reserveId = positionStatus.nextBorrowing(reserveId)) != PositionStatusMap.NOT_FOUND) {
@@ -835,10 +837,10 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
       Reserve storage reserve = _reserves[reserveId];
       uint256 assetId = reserve.assetId;
       IHubBase hub = reserve.hub;
-      uint256 drawnIndex = hub.getAssetDrawnIndex(assetId);
 
       IHubBase.PremiumDelta memory premiumDelta = userPosition.getPremiumDelta({
-        drawnIndex: drawnIndex,
+        drawnSharesTaken: 0,
+        drawnIndex: hub.getAssetDrawnIndex(assetId),
         riskPremium: newRiskPremium,
         restoredPremiumRay: 0
       });
@@ -862,16 +864,19 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
       Reserve storage reserve = _reserves[reserveId];
       IHubBase hub = reserve.hub;
       uint256 assetId = reserve.assetId;
+
       uint256 drawnIndex = hub.getAssetDrawnIndex(assetId);
       (uint256 drawnDebtReported, uint256 premiumDebtRay) = userPosition.getDebt(drawnIndex);
+      uint256 deficitShares = drawnDebtReported.rayDivDown(drawnIndex);
 
       IHubBase.PremiumDelta memory premiumDelta = userPosition.getPremiumDelta({
+        drawnSharesTaken: deficitShares,
         drawnIndex: drawnIndex,
         riskPremium: 0,
         restoredPremiumRay: premiumDebtRay
       });
 
-      uint256 deficitShares = hub.reportDeficit(assetId, drawnDebtReported, premiumDelta);
+      hub.reportDeficit(assetId, drawnDebtReported, premiumDelta);
       userPosition.applyPremiumDelta(premiumDelta);
       userPosition.drawnShares -= deficitShares.toUint120();
       positionStatus.setBorrowing(reserveId, false);
@@ -945,30 +950,6 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
       InvalidCollateralFactorAndMaxLiquidationBonus()
     );
     require(config.liquidationFee <= PercentageMath.PERCENTAGE_FACTOR, InvalidLiquidationFee());
-  }
-
-  /// @dev Calculates the drawn debt and premium debt to restore for the given amount.
-  /// @param drawnDebt The maximum amount of drawn debt that can be restored.
-  /// @param premiumDebtRay The maximum amount of premium debt that can be restored, expressed in asset units and scaled by RAY.
-  /// @param amount The amount to restore.
-  /// @return The amount of drawn debt to restore, expressed in asset units.
-  /// @return The amount of premium debt to restore, expressed in asset units and scaled by RAY.
-  function _calculateRestoreAmount(
-    uint256 drawnDebt,
-    uint256 premiumDebtRay,
-    uint256 amount
-  ) internal pure returns (uint256, uint256) {
-    uint256 premiumDebt = premiumDebtRay.fromRayUp();
-    if (amount >= drawnDebt + premiumDebt) {
-      return (drawnDebt, premiumDebtRay);
-    }
-
-    if (amount < premiumDebt) {
-      // amount.toRay() cannot overflow here
-      return (0, amount.toRay());
-    }
-
-    return (amount - premiumDebt, premiumDebtRay);
   }
 
   function _domainNameAndVersion() internal pure override returns (string memory, string memory) {

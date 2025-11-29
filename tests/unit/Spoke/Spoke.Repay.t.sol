@@ -88,7 +88,7 @@ contract SpokeRepayTest is SpokeBase {
       daiAssetId
     );
 
-    IHubBase.PremiumDelta memory expectedPremiumDelta = _getExpectedPremiumDelta(
+    IHubBase.PremiumDelta memory expectedPremiumDelta = _getExpectedPremiumDeltaForRestore(
       spoke1,
       bob,
       _daiReserveId(spoke1),
@@ -108,6 +108,7 @@ contract SpokeRepayTest is SpokeBase {
       daiRepayAmount,
       expectedPremiumDelta
     );
+    _assertRefreshPremiumNotCalled();
     vm.prank(bob);
     (returnValues.shares, returnValues.amount) = spoke1.repay(
       _daiReserveId(spoke1),
@@ -152,6 +153,7 @@ contract SpokeRepayTest is SpokeBase {
     skip(365 days);
     spoke1.getUserDebt(_daiReserveId(spoke1), bob);
 
+    _assertRefreshPremiumNotCalled();
     Utils.repay(spoke1, _daiReserveId(spoke1), bob, borrowAmount, bob);
 
     skip(365 days);
@@ -199,7 +201,7 @@ contract SpokeRepayTest is SpokeBase {
       bob
     );
 
-    IHubBase.PremiumDelta memory expectedPremiumDelta = _getExpectedPremiumDelta(
+    IHubBase.PremiumDelta memory expectedPremiumDelta = _getExpectedPremiumDeltaForRestore(
       spoke1,
       bob,
       _daiReserveId(spoke1),
@@ -235,6 +237,7 @@ contract SpokeRepayTest is SpokeBase {
       daiRepayAmount,
       expectedPremiumDelta
     );
+    _assertRefreshPremiumNotCalled();
     vm.prank(bob);
     (returnValues.shares, returnValues.amount) = spoke1.repay(
       _daiReserveId(spoke1),
@@ -325,7 +328,7 @@ contract SpokeRepayTest is SpokeBase {
       expectedShares = hub1.previewRestoreByAssets(daiAssetId, baseRestored);
     }
 
-    IHubBase.PremiumDelta memory expectedPremiumDelta = _getExpectedPremiumDelta(
+    IHubBase.PremiumDelta memory expectedPremiumDelta = _getExpectedPremiumDeltaForRestore(
       spoke1,
       bob,
       _daiReserveId(spoke1),
@@ -342,6 +345,7 @@ contract SpokeRepayTest is SpokeBase {
       daiRepayAmount,
       expectedPremiumDelta
     );
+    _assertRefreshPremiumNotCalled();
     vm.prank(bob);
     (returnValues.shares, returnValues.amount) = spoke1.repay(
       _daiReserveId(spoke1),
@@ -438,7 +442,7 @@ contract SpokeRepayTest is SpokeBase {
     uint256 daiRepayAmount;
     daiRepayAmount = bound(daiRepayAmount, 1, bobDaiPremiumDebtBefore);
 
-    IHubBase.PremiumDelta memory expectedPremiumDelta = _getExpectedPremiumDelta(
+    IHubBase.PremiumDelta memory expectedPremiumDelta = _getExpectedPremiumDeltaForRestore(
       spoke1,
       bob,
       _daiReserveId(spoke1),
@@ -448,6 +452,7 @@ contract SpokeRepayTest is SpokeBase {
     TestReturnValues memory returnValues;
     vm.expectEmit(address(spoke1));
     emit ISpokeBase.Repay(_daiReserveId(spoke1), bob, bob, 0, daiRepayAmount, expectedPremiumDelta);
+    _assertRefreshPremiumNotCalled();
     vm.prank(bob);
     (returnValues.shares, returnValues.amount) = spoke1.repay(
       _daiReserveId(spoke1),
@@ -532,7 +537,7 @@ contract SpokeRepayTest is SpokeBase {
     // Calculate full debt before repayment
     uint256 fullDebt = bobDaiBefore.drawnDebt + bobDaiBefore.premiumDebt;
 
-    IHubBase.PremiumDelta memory expectedPremiumDelta = _getExpectedPremiumDelta(
+    IHubBase.PremiumDelta memory expectedPremiumDelta = _getExpectedPremiumDeltaForRestore(
       spoke1,
       bob,
       _daiReserveId(spoke1),
@@ -553,6 +558,7 @@ contract SpokeRepayTest is SpokeBase {
       fullDebt,
       expectedPremiumDelta
     );
+    _assertRefreshPremiumNotCalled();
     vm.prank(bob);
     (returnValues.shares, returnValues.amount) = spoke1.repay(
       _daiReserveId(spoke1),
@@ -654,7 +660,7 @@ contract SpokeRepayTest is SpokeBase {
     }
 
     {
-      IHubBase.PremiumDelta memory expectedPremiumDelta = _getExpectedPremiumDelta(
+      IHubBase.PremiumDelta memory expectedPremiumDelta = _getExpectedPremiumDeltaForRestore(
         spoke1,
         bob,
         _daiReserveId(spoke1),
@@ -672,6 +678,7 @@ contract SpokeRepayTest is SpokeBase {
         expectedPremiumDelta
       );
     }
+    _assertRefreshPremiumNotCalled();
     vm.prank(bob);
     (returnValues.shares, returnValues.amount) = spoke1.repay(
       _daiReserveId(spoke1),
@@ -779,7 +786,7 @@ contract SpokeRepayTest is SpokeBase {
     );
 
     {
-      IHubBase.PremiumDelta memory expectedPremiumDelta = _getExpectedPremiumDelta(
+      IHubBase.PremiumDelta memory expectedPremiumDelta = _getExpectedPremiumDeltaForRestore(
         spoke1,
         bob,
         _daiReserveId(spoke1),
@@ -797,6 +804,7 @@ contract SpokeRepayTest is SpokeBase {
     }
     // Bob repays
     TestReturnValues memory returnValues;
+    _assertRefreshPremiumNotCalled();
     vm.prank(bob);
     (returnValues.shares, returnValues.amount) = spoke1.repay(
       _daiReserveId(spoke1),
@@ -910,7 +918,7 @@ contract SpokeRepayTest is SpokeBase {
 
     TestReturnValues memory returnValues;
     {
-      IHubBase.PremiumDelta memory expectedPremiumDelta = _getExpectedPremiumDelta(
+      IHubBase.PremiumDelta memory expectedPremiumDelta = _getExpectedPremiumDeltaForRestore(
         spoke1,
         bob,
         _daiReserveId(spoke1),
@@ -931,6 +939,7 @@ contract SpokeRepayTest is SpokeBase {
         );
       }
     }
+    _assertRefreshPremiumNotCalled();
     vm.prank(bob);
     (returnValues.shares, returnValues.amount) = spoke1.repay(
       _daiReserveId(spoke1),
@@ -1034,7 +1043,7 @@ contract SpokeRepayTest is SpokeBase {
         daiRepayAmount,
         daiAssetId
       );
-      IHubBase.PremiumDelta memory expectedPremiumDelta = _getExpectedPremiumDelta(
+      IHubBase.PremiumDelta memory expectedPremiumDelta = _getExpectedPremiumDeltaForRestore(
         spoke1,
         bob,
         _daiReserveId(spoke1),
@@ -1051,6 +1060,7 @@ contract SpokeRepayTest is SpokeBase {
         expectedPremiumDelta
       );
     }
+    _assertRefreshPremiumNotCalled();
     vm.prank(bob);
     (returnValues.shares, returnValues.amount) = spoke1.repay(
       _daiReserveId(spoke1),
@@ -1164,7 +1174,7 @@ contract SpokeRepayTest is SpokeBase {
     if (daiRepayAmount == 0) {
       vm.expectRevert(IHub.InvalidAmount.selector);
     } else {
-      IHubBase.PremiumDelta memory expectedPremiumDelta = _getExpectedPremiumDelta(
+      IHubBase.PremiumDelta memory expectedPremiumDelta = _getExpectedPremiumDeltaForRestore(
         spoke1,
         bob,
         _daiReserveId(spoke1),
@@ -1181,6 +1191,7 @@ contract SpokeRepayTest is SpokeBase {
         expectedPremiumDelta
       );
     }
+    _assertRefreshPremiumNotCalled();
     vm.prank(bob);
     (returnValues.shares, returnValues.amount) = spoke1.repay(
       _daiReserveId(spoke1),
@@ -1285,7 +1296,7 @@ contract SpokeRepayTest is SpokeBase {
       );
       deal(address(tokenList.dai), bob, daiRepayAmount);
 
-      IHubBase.PremiumDelta memory expectedPremiumDelta = _getExpectedPremiumDelta(
+      IHubBase.PremiumDelta memory expectedPremiumDelta = _getExpectedPremiumDeltaForRestore(
         spoke1,
         bob,
         _daiReserveId(spoke1),
@@ -1308,6 +1319,7 @@ contract SpokeRepayTest is SpokeBase {
     }
 
     TestReturnValues memory returnValues;
+    _assertRefreshPremiumNotCalled();
     vm.prank(bob);
     (returnValues.shares, returnValues.amount) = spoke1.repay(
       _daiReserveId(spoke1),
@@ -1446,6 +1458,7 @@ contract SpokeRepayTest is SpokeBase {
 
     // Time passes
     skip(skipTime);
+    _assertRefreshPremiumNotCalled();
 
     // Repayments
     daiInfo.posBefore = getUserInfo(spoke1, bob, _daiReserveId(spoke1));
@@ -1662,7 +1675,7 @@ contract SpokeRepayTest is SpokeBase {
     bobDaiBalanceBefore = tokenList.dai.balanceOf(bob);
     uint256 bobTotalDebtBefore = spoke1.getUserTotalDebt(_daiReserveId(spoke1), bob);
 
-    IHubBase.PremiumDelta memory expectedPremiumDelta = _getExpectedPremiumDelta(
+    IHubBase.PremiumDelta memory expectedPremiumDelta = _getExpectedPremiumDeltaForRestore(
       spoke1,
       bob,
       _daiReserveId(spoke1),
@@ -1679,6 +1692,8 @@ contract SpokeRepayTest is SpokeBase {
       baseRestored + premiumRestored,
       expectedPremiumDelta
     );
+
+    _assertRefreshPremiumNotCalled();
     vm.prank(bob);
     (returnValues.shares, returnValues.amount) = spoke1.repay(
       _daiReserveId(spoke1),

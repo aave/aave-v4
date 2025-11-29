@@ -95,6 +95,7 @@ contract SpokeBorrowTest is SpokeBase {
       state.daiBob.borrowAmount,
       bob
     );
+    _assertUserRpUnchanged(spoke1, bob);
 
     state.daiBob.userBalanceAfter = tokenList.dai.balanceOf(bob);
     state.wethBob.userBalanceAfter = tokenList.weth.balanceOf(bob);
@@ -249,6 +250,7 @@ contract SpokeBorrowTest is SpokeBase {
       state.daiBob.borrowAmount,
       bob
     );
+    _assertUserRpUnchanged(spoke1, bob);
 
     state.daiBob.userBalanceAfter = tokenList.dai.balanceOf(bob);
     state.wethBob.userBalanceAfter = tokenList.weth.balanceOf(bob);

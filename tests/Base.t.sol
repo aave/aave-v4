@@ -11,7 +11,10 @@ import {console2 as console} from 'forge-std/console2.sol';
 
 // dependencies
 import {AggregatorV3Interface} from 'src/dependencies/chainlink/AggregatorV3Interface.sol';
-import {TransparentUpgradeableProxy, ITransparentUpgradeableProxy} from 'src/dependencies/openzeppelin/TransparentUpgradeableProxy.sol';
+import {
+  TransparentUpgradeableProxy,
+  ITransparentUpgradeableProxy
+} from 'src/dependencies/openzeppelin/TransparentUpgradeableProxy.sol';
 import {IERC20Metadata} from 'src/dependencies/openzeppelin/IERC20Metadata.sol';
 import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
 import {IERC20Errors} from 'src/dependencies/openzeppelin/IERC20Errors.sol';
@@ -45,7 +48,11 @@ import {AccessManagerEnumerable} from 'src/access/AccessManagerEnumerable.sol';
 import {HubConfigurator, IHubConfigurator} from 'src/hub/HubConfigurator.sol';
 import {Hub, IHub, IHubBase} from 'src/hub/Hub.sol';
 import {SharesMath} from 'src/hub/libraries/SharesMath.sol';
-import {AssetInterestRateStrategy, IAssetInterestRateStrategy, IBasicInterestRateStrategy} from 'src/hub/AssetInterestRateStrategy.sol';
+import {
+  AssetInterestRateStrategy,
+  IAssetInterestRateStrategy,
+  IBasicInterestRateStrategy
+} from 'src/hub/AssetInterestRateStrategy.sol';
 
 // spoke
 import {Spoke, ISpoke, ISpokeBase} from 'src/spoke/Spoke.sol';
@@ -1663,6 +1670,48 @@ abstract contract Base is Test {
       });
   }
 
+  // in restore actions, premiumDelta is first reset to last user RP
+  function _getExpectedPremiumDeltaForRestore(
+    ISpoke spoke,
+    address user,
+    uint256 reserveId,
+    uint256 repayAmount
+  ) internal view virtual returns (IHubBase.PremiumDelta memory) {
+    Debts memory userDebt = getUserDebt(spoke, user, reserveId);
+    (uint256 drawnDebtToRestore, uint256 premiumAmountToRestore) = _calculateRestoreAmounts(
+      repayAmount,
+      userDebt.drawnDebt,
+      userDebt.premiumDebt
+    );
+
+    {
+      ISpoke.UserPosition memory userPosition = spoke.getUserPosition(reserveId, user);
+      uint256 assetId = spoke.getReserve(reserveId).assetId;
+      IHub hub = IHub(address(spoke.getReserve(reserveId).hub));
+      uint256 premiumDebtRay = _calculatePremiumDebtRay(
+        hub,
+        assetId,
+        userPosition.premiumShares,
+        userPosition.premiumOffsetRay
+      );
+
+      uint256 restoredPremiumRay = (premiumAmountToRestore * WadRayMath.RAY).min(premiumDebtRay);
+      uint256 restoredShares = drawnDebtToRestore.rayDivDown(hub.getAssetDrawnIndex(reserveId));
+      uint256 riskPremium = _getUserLastRiskPremium(spoke, user);
+
+      return
+        _getExpectedPremiumDelta({
+          hub: hub,
+          assetId: assetId,
+          oldPremiumShares: userPosition.premiumShares,
+          oldPremiumOffsetRay: userPosition.premiumOffsetRay,
+          drawnShares: userPosition.drawnShares - restoredShares,
+          riskPremium: riskPremium,
+          restoredPremiumRay: restoredPremiumRay
+        });
+    }
+  }
+
   /// @dev Helper function to check consistent supplied amounts within accounting
   function _checkSuppliedAmounts(
     uint256 assetId,
@@ -2000,6 +2049,10 @@ abstract contract Base is Test {
 
   function _getUserHealthFactor(ISpoke spoke, address user) internal view returns (uint256) {
     return spoke.getUserAccountData(user).healthFactor;
+  }
+
+  function _getUserLastRiskPremium(ISpoke spoke, address user) internal view returns (uint256) {
+    return spoke.getUserLastRiskPremium(user);
   }
 
   function _getUserRiskPremium(ISpoke spoke, address user) internal view returns (uint256) {

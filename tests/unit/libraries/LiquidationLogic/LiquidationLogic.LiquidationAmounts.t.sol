@@ -21,14 +21,14 @@ contract LiquidationLogicLiquidationAmountsTest is LiquidationLogicBaseTest {
         _convertValueToAmount(
           LiquidationLogic.DUST_LIQUIDATION_THRESHOLD,
           params.collateralAssetPrice,
-          10 ** params.collateralAssetDecimals
+          params.collateralAssetUnit
         ) +
         1,
       expectedLiquidationAmounts.collateralToLiquidate +
         _convertValueToAmount(
           LiquidationLogic.DUST_LIQUIDATION_THRESHOLD,
           params.collateralAssetPrice,
-          10 ** params.collateralAssetDecimals
+          params.collateralAssetUnit
         ) +
         MAX_SUPPLY_AMOUNT
     );
@@ -108,7 +108,7 @@ contract LiquidationLogicLiquidationAmountsTest is LiquidationLogicBaseTest {
         _convertValueToAmount(
           LiquidationLogic.DUST_LIQUIDATION_THRESHOLD - 1,
           params.collateralAssetPrice,
-          10 ** params.collateralAssetDecimals
+          params.collateralAssetUnit
         )
     );
 
@@ -217,7 +217,7 @@ contract LiquidationLogicLiquidationAmountsTest is LiquidationLogicBaseTest {
         _convertValueToAmount(
           LiquidationLogic.DUST_LIQUIDATION_THRESHOLD - 1,
           params.collateralAssetPrice,
-          10 ** params.collateralAssetDecimals
+          params.collateralAssetUnit
         )
     );
 
@@ -255,9 +255,9 @@ contract LiquidationLogicLiquidationAmountsTest is LiquidationLogicBaseTest {
           maxLiquidationBonus: 120_00,
           collateralFactor: 50_00,
           debtAssetPrice: 2000e8,
-          debtAssetDecimals: 18,
+          debtAssetUnit: 10 ** 18,
           collateralAssetPrice: 1e8,
-          collateralAssetDecimals: 6,
+          collateralAssetUnit: 10 ** 6,
           liquidationFee: 10_00
         })
       );
@@ -292,9 +292,9 @@ contract LiquidationLogicLiquidationAmountsTest is LiquidationLogicBaseTest {
           maxLiquidationBonus: 120_00,
           collateralFactor: 50_00,
           debtAssetPrice: 2000e8,
-          debtAssetDecimals: 18,
+          debtAssetUnit: 10 ** 18,
           collateralAssetPrice: 1e8,
-          collateralAssetDecimals: 6,
+          collateralAssetUnit: 10 ** 6,
           liquidationFee: 10_00
         })
       );
@@ -318,10 +318,8 @@ contract LiquidationLogicLiquidationAmountsTest is LiquidationLogicBaseTest {
       _getCalculateDebtToLiquidateParams(params)
     );
     uint256 collateralToLiquidate = debtToLiquidate.mulDivDown(
-      params.debtAssetPrice * 10 ** params.collateralAssetDecimals * liquidationBonus,
-      10 ** params.debtAssetDecimals *
-        params.collateralAssetPrice *
-        PercentageMath.PERCENTAGE_FACTOR
+      params.debtAssetPrice * params.collateralAssetUnit * liquidationBonus,
+      params.debtAssetUnit * params.collateralAssetPrice * PercentageMath.PERCENTAGE_FACTOR
     );
     uint256 collateralToLiquidator = _calculateCollateralToLiquidator(
       collateralToLiquidate,
@@ -355,10 +353,8 @@ contract LiquidationLogicLiquidationAmountsTest is LiquidationLogicBaseTest {
     );
     uint256 debtToLiquidate = collateralToLiquidate
       .mulDivUp(
-        params.collateralAssetPrice *
-          10 ** params.debtAssetDecimals *
-          PercentageMath.PERCENTAGE_FACTOR,
-        10 ** params.collateralAssetDecimals * params.debtAssetPrice * liquidationBonus
+        params.collateralAssetPrice * params.debtAssetUnit * PercentageMath.PERCENTAGE_FACTOR,
+        params.collateralAssetUnit * params.debtAssetPrice * liquidationBonus
       )
       .min(params.debtReserveBalance);
 
