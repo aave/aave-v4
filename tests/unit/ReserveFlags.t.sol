@@ -124,7 +124,7 @@ contract ReserveFlagsTests is Test {
     assertEq(w.paused(flags), false);
     assertEq(w.frozen(flags), false);
     assertEq(w.borrowable(flags), false);
-    assertEq(w.liquidatable(flags), true);
+    assertEq(w.liquidatable(flags), false);
     assertEq(w.receiveSharesEnabled(flags), false);
   }
 
