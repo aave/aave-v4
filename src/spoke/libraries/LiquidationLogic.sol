@@ -44,6 +44,21 @@ library LiquidationLogic {
     bool receiveShares;
   }
 
+  struct LiquidateCollateralParams {
+    uint256 collateralToLiquidate;
+    uint256 collateralToLiquidator;
+    address liquidator;
+    bool receiveShares;
+  }
+
+  struct LiquidateDebtParams {
+    uint256 debtReserveId;
+    uint256 debtToLiquidate;
+    uint256 premiumDebtRay;
+    uint256 drawnIndex;
+    address liquidator;
+  }
+
   struct ValidateLiquidationCallParams {
     address user;
     address liquidator;
@@ -60,57 +75,42 @@ library LiquidationLogic {
 
   struct CalculateDebtToTargetHealthFactorParams {
     uint256 totalDebtValue;
+    uint256 debtAssetUnit;
+    uint256 debtAssetPrice;
+    uint256 collateralFactor;
+    uint256 liquidationBonus;
     uint256 healthFactor;
     uint256 targetHealthFactor;
-    uint256 liquidationBonus;
-    uint256 collateralFactor;
-    uint256 debtAssetPrice;
-    uint256 debtAssetUnit;
   }
 
   struct CalculateDebtToLiquidateParams {
     uint256 debtReserveBalance;
-    uint256 debtToCover;
     uint256 totalDebtValue;
+    uint256 debtAssetUnit;
+    uint256 debtAssetPrice;
+    uint256 debtToCover;
+    uint256 collateralFactor;
+    uint256 liquidationBonus;
     uint256 healthFactor;
     uint256 targetHealthFactor;
-    uint256 liquidationBonus;
-    uint256 collateralFactor;
-    uint256 debtAssetPrice;
-    uint256 debtAssetUnit;
   }
 
   struct CalculateLiquidationAmountsParams {
+    uint256 collateralReserveBalance;
+    uint256 collateralAssetUnit;
+    uint256 collateralAssetPrice;
+    uint256 debtReserveBalance;
+    uint256 totalDebtValue;
+    uint256 debtAssetUnit;
+    uint256 debtAssetPrice;
+    uint256 debtToCover;
+    uint256 collateralFactor;
     uint256 healthFactorForMaxBonus;
     uint256 liquidationBonusFactor;
-    uint256 targetHealthFactor;
-    uint256 debtReserveBalance;
-    uint256 collateralReserveBalance;
-    uint256 debtToCover;
-    uint256 totalDebtValue;
-    uint256 healthFactor;
     uint256 maxLiquidationBonus;
-    uint256 collateralFactor;
+    uint256 targetHealthFactor;
+    uint256 healthFactor;
     uint256 liquidationFee;
-    uint256 debtAssetPrice;
-    uint256 debtAssetUnit;
-    uint256 collateralAssetPrice;
-    uint256 collateralAssetUnit;
-  }
-
-  struct LiquidateCollateralParams {
-    uint256 collateralToLiquidate;
-    uint256 collateralToLiquidator;
-    address liquidator;
-    bool receiveShares;
-  }
-
-  struct LiquidateDebtParams {
-    uint256 debtReserveId;
-    uint256 debtToLiquidate;
-    uint256 premiumDebtRay;
-    uint256 drawnIndex;
-    address liquidator;
   }
 
   struct LiquidationAmounts {
@@ -167,23 +167,23 @@ library LiquidationLogic {
 
     LiquidationAmounts memory liquidationAmounts = _calculateLiquidationAmounts(
       CalculateLiquidationAmountsParams({
-        healthFactorForMaxBonus: liquidationConfig.healthFactorForMaxBonus,
-        liquidationBonusFactor: liquidationConfig.liquidationBonusFactor,
-        targetHealthFactor: liquidationConfig.targetHealthFactor,
-        debtReserveBalance: params.drawnDebt + params.premiumDebtRay.fromRayUp(),
         collateralReserveBalance: collateralReserveBalance,
-        debtToCover: params.debtToCover,
-        totalDebtValue: params.totalDebtValue,
-        healthFactor: params.healthFactor,
-        maxLiquidationBonus: collateralDynConfig.maxLiquidationBonus,
-        collateralFactor: collateralDynConfig.collateralFactor,
-        liquidationFee: collateralDynConfig.liquidationFee,
-        debtAssetPrice: IAaveOracle(params.oracle).getReservePrice(params.debtReserveId),
-        debtAssetUnit: MathUtils.uncheckedExp(10, debtReserve.decimals),
+        collateralAssetUnit: MathUtils.uncheckedExp(10, collateralReserve.decimals),
         collateralAssetPrice: IAaveOracle(params.oracle).getReservePrice(
           params.collateralReserveId
         ),
-        collateralAssetUnit: MathUtils.uncheckedExp(10, collateralReserve.decimals)
+        debtReserveBalance: params.drawnDebt + params.premiumDebtRay.fromRayUp(),
+        totalDebtValue: params.totalDebtValue,
+        debtAssetUnit: MathUtils.uncheckedExp(10, debtReserve.decimals),
+        debtAssetPrice: IAaveOracle(params.oracle).getReservePrice(params.debtReserveId),
+        debtToCover: params.debtToCover,
+        collateralFactor: collateralDynConfig.collateralFactor,
+        healthFactorForMaxBonus: liquidationConfig.healthFactorForMaxBonus,
+        liquidationBonusFactor: liquidationConfig.liquidationBonusFactor,
+        maxLiquidationBonus: collateralDynConfig.maxLiquidationBonus,
+        targetHealthFactor: liquidationConfig.targetHealthFactor,
+        healthFactor: params.healthFactor,
+        liquidationFee: collateralDynConfig.liquidationFee
       })
     );
 
@@ -395,14 +395,14 @@ library LiquidationLogic {
     uint256 debtToLiquidate = _calculateDebtToLiquidate(
       CalculateDebtToLiquidateParams({
         debtReserveBalance: params.debtReserveBalance,
-        debtToCover: params.debtToCover,
         totalDebtValue: params.totalDebtValue,
-        healthFactor: params.healthFactor,
-        targetHealthFactor: params.targetHealthFactor,
-        liquidationBonus: liquidationBonus,
-        collateralFactor: params.collateralFactor,
+        debtAssetUnit: params.debtAssetUnit,
         debtAssetPrice: params.debtAssetPrice,
-        debtAssetUnit: params.debtAssetUnit
+        debtToCover: params.debtToCover,
+        collateralFactor: params.collateralFactor,
+        liquidationBonus: liquidationBonus,
+        healthFactor: params.healthFactor,
+        targetHealthFactor: params.targetHealthFactor
       })
     );
 
@@ -465,12 +465,12 @@ library LiquidationLogic {
     uint256 debtToTarget = _calculateDebtToTargetHealthFactor(
       CalculateDebtToTargetHealthFactorParams({
         totalDebtValue: params.totalDebtValue,
-        healthFactor: params.healthFactor,
-        targetHealthFactor: params.targetHealthFactor,
-        liquidationBonus: params.liquidationBonus,
-        collateralFactor: params.collateralFactor,
+        debtAssetUnit: params.debtAssetUnit,
         debtAssetPrice: params.debtAssetPrice,
-        debtAssetUnit: params.debtAssetUnit
+        collateralFactor: params.collateralFactor,
+        liquidationBonus: params.liquidationBonus,
+        healthFactor: params.healthFactor,
+        targetHealthFactor: params.targetHealthFactor
       })
     );
     if (debtToTarget < debtToLiquidate) {

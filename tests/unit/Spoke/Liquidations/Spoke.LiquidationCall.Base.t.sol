@@ -206,10 +206,10 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
     return
       LiquidationLogic.CalculateDebtToLiquidateParams({
         debtReserveBalance: spoke.getUserTotalDebt(debtReserveId, user),
-        debtToCover: debtToCover,
         totalDebtValue: userAccountData.totalDebtValue,
-        healthFactor: userAccountData.healthFactor,
-        targetHealthFactor: spoke.getLiquidationConfig().targetHealthFactor,
+        debtAssetPrice: IPriceOracle(spoke.ORACLE()).getReservePrice(debtReserveId),
+        debtAssetUnit: 10 ** spoke.getReserve(debtReserveId).decimals,
+        debtToCover: debtToCover,
         liquidationBonus: spoke.getLiquidationBonus(
           collateralReserveId,
           user,
@@ -221,8 +221,8 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
             spoke.getUserPosition(collateralReserveId, user).dynamicConfigKey
           )
           .collateralFactor,
-        debtAssetPrice: IPriceOracle(spoke.ORACLE()).getReservePrice(debtReserveId),
-        debtAssetUnit: 10 ** spoke.getReserve(debtReserveId).decimals
+        healthFactor: userAccountData.healthFactor,
+        targetHealthFactor: spoke.getLiquidationConfig().targetHealthFactor
       });
   }
 
@@ -236,21 +236,21 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
     return
       LiquidationLogic.CalculateDebtToTargetHealthFactorParams({
         totalDebtValue: userAccountData.totalDebtValue,
-        healthFactor: userAccountData.healthFactor,
-        targetHealthFactor: spoke.getLiquidationConfig().targetHealthFactor,
-        liquidationBonus: spoke.getLiquidationBonus(
-          collateralReserveId,
-          user,
-          userAccountData.healthFactor
-        ),
+        debtAssetUnit: 10 ** spoke.getReserve(debtReserveId).decimals,
+        debtAssetPrice: IPriceOracle(spoke.ORACLE()).getReservePrice(debtReserveId),
         collateralFactor: spoke
           .getDynamicReserveConfig(
             collateralReserveId,
             spoke.getUserPosition(collateralReserveId, user).dynamicConfigKey
           )
           .collateralFactor,
-        debtAssetPrice: IPriceOracle(spoke.ORACLE()).getReservePrice(debtReserveId),
-        debtAssetUnit: 10 ** spoke.getReserve(debtReserveId).decimals
+        liquidationBonus: spoke.getLiquidationBonus(
+          collateralReserveId,
+          user,
+          userAccountData.healthFactor
+        ),
+        healthFactor: userAccountData.healthFactor,
+        targetHealthFactor: spoke.getLiquidationConfig().targetHealthFactor
       });
   }
 
@@ -264,30 +264,30 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
     ISpoke.UserAccountData memory userAccountData = spoke.getUserAccountData(user);
     return
       LiquidationLogic.CalculateLiquidationAmountsParams({
-        healthFactorForMaxBonus: spoke.getLiquidationConfig().healthFactorForMaxBonus,
-        liquidationBonusFactor: spoke.getLiquidationConfig().liquidationBonusFactor,
-        debtReserveBalance: spoke.getUserTotalDebt(debtReserveId, user),
         collateralReserveBalance: spoke.getUserSuppliedAssets(collateralReserveId, user),
-        debtToCover: debtToCover,
+        collateralAssetUnit: 10 ** spoke.getReserve(collateralReserveId).decimals,
+        collateralAssetPrice: IPriceOracle(spoke.ORACLE()).getReservePrice(collateralReserveId),
+        debtReserveBalance: spoke.getUserTotalDebt(debtReserveId, user),
         totalDebtValue: userAccountData.totalDebtValue,
-        healthFactor: userAccountData.healthFactor,
-        targetHealthFactor: spoke.getLiquidationConfig().targetHealthFactor,
-        maxLiquidationBonus: spoke
-          .getDynamicReserveConfig(
-            collateralReserveId,
-            spoke.getUserPosition(collateralReserveId, user).dynamicConfigKey
-          )
-          .maxLiquidationBonus,
+        debtAssetUnit: 10 ** spoke.getReserve(debtReserveId).decimals,
+        debtAssetPrice: IPriceOracle(spoke.ORACLE()).getReservePrice(debtReserveId),
+        debtToCover: debtToCover,
         collateralFactor: spoke
           .getDynamicReserveConfig(
             collateralReserveId,
             spoke.getUserPosition(collateralReserveId, user).dynamicConfigKey
           )
           .collateralFactor,
-        debtAssetPrice: IPriceOracle(spoke.ORACLE()).getReservePrice(debtReserveId),
-        debtAssetUnit: 10 ** spoke.getReserve(debtReserveId).decimals,
-        collateralAssetPrice: IPriceOracle(spoke.ORACLE()).getReservePrice(collateralReserveId),
-        collateralAssetUnit: 10 ** spoke.getReserve(collateralReserveId).decimals,
+        healthFactorForMaxBonus: spoke.getLiquidationConfig().healthFactorForMaxBonus,
+        liquidationBonusFactor: spoke.getLiquidationConfig().liquidationBonusFactor,
+        maxLiquidationBonus: spoke
+          .getDynamicReserveConfig(
+            collateralReserveId,
+            spoke.getUserPosition(collateralReserveId, user).dynamicConfigKey
+          )
+          .maxLiquidationBonus,
+        targetHealthFactor: spoke.getLiquidationConfig().targetHealthFactor,
+        healthFactor: userAccountData.healthFactor,
         liquidationFee: spoke
           .getDynamicReserveConfig(
             collateralReserveId,

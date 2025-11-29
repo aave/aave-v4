@@ -244,20 +244,20 @@ contract LiquidationLogicLiquidationAmountsTest is LiquidationLogicBaseTest {
     LiquidationLogic.LiquidationAmounts memory liquidationAmounts = liquidationLogicWrapper
       .calculateLiquidationAmounts(
         LiquidationLogic.CalculateLiquidationAmountsParams({
+          collateralReserveBalance: 11_000e6,
+          collateralAssetUnit: 10 ** 6,
+          collateralAssetPrice: 1e8,
+          debtReserveBalance: 5e18,
+          totalDebtValue: 10_000e26,
+          debtAssetUnit: 10 ** 18,
+          debtAssetPrice: 2000e8,
+          debtToCover: 3e18,
+          collateralFactor: 50_00,
           healthFactorForMaxBonus: 0.8e18,
           liquidationBonusFactor: 50_00,
-          collateralReserveBalance: 11_000e6,
-          debtReserveBalance: 5e18,
-          debtToCover: 3e18,
-          totalDebtValue: 10_000e26,
-          healthFactor: 0.8e18,
-          targetHealthFactor: 1e18,
           maxLiquidationBonus: 120_00,
-          collateralFactor: 50_00,
-          debtAssetPrice: 2000e8,
-          debtAssetUnit: 10 ** 18,
-          collateralAssetPrice: 1e8,
-          collateralAssetUnit: 10 ** 6,
+          targetHealthFactor: 1e18,
+          healthFactor: 0.8e18,
           liquidationFee: 10_00
         })
       );
@@ -281,20 +281,20 @@ contract LiquidationLogicLiquidationAmountsTest is LiquidationLogicBaseTest {
     LiquidationLogic.LiquidationAmounts memory liquidationAmounts = liquidationLogicWrapper
       .calculateLiquidationAmounts(
         LiquidationLogic.CalculateLiquidationAmountsParams({
+          collateralReserveBalance: 3000e6,
+          collateralAssetUnit: 10 ** 6,
+          collateralAssetPrice: 1e8,
+          debtReserveBalance: 5e18,
+          totalDebtValue: 10_000e26,
+          debtAssetUnit: 10 ** 18,
+          debtAssetPrice: 2000e8,
+          debtToCover: 3e18,
+          collateralFactor: 50_00,
           healthFactorForMaxBonus: 0.8e18,
           liquidationBonusFactor: 50_00,
-          collateralReserveBalance: 3000e6,
-          debtReserveBalance: 5e18,
-          debtToCover: 3e18,
-          totalDebtValue: 10_000e26,
-          healthFactor: 0.8e18,
-          targetHealthFactor: 1e18,
           maxLiquidationBonus: 120_00,
-          collateralFactor: 50_00,
-          debtAssetPrice: 2000e8,
-          debtAssetUnit: 10 ** 18,
-          collateralAssetPrice: 1e8,
-          collateralAssetUnit: 10 ** 6,
+          targetHealthFactor: 1e18,
+          healthFactor: 0.8e18,
           liquidationFee: 10_00
         })
       );
