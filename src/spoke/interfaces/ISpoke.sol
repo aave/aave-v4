@@ -33,17 +33,17 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
   }
 
   /// @notice Reserve configuration. Subset of the `Reserve` struct.
+  /// @dev receiveSharesEnabled True if the liquidator can receive collateral shares during liquidation.
   /// @dev paused True if all actions are prevented for the reserve.
   /// @dev frozen True if new activity is prevented for the reserve.
   /// @dev borrowable True if the reserve is borrowable.
-  /// @dev receiveSharesEnabled True if the liquidator can receive collateral shares during liquidation.
   /// @dev collateralRisk The risk associated with a collateral asset, expressed in BPS.
   struct ReserveConfig {
+    uint24 collateralRisk;
     bool paused;
     bool frozen;
     bool borrowable;
     bool receiveSharesEnabled;
-    uint24 collateralRisk;
   }
 
   /// @notice Dynamic reserve configuration data.
