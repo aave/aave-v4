@@ -366,7 +366,7 @@ library LiquidationLogic {
     );
     require(
       params.collateralFactor > 0 && params.isUsingAsCollateral,
-      ISpoke.CollateralCannotBeLiquidated()
+      ISpoke.ReserveNotEnabledAsCollateral()
     );
     if (params.receiveShares) {
       require(

@@ -178,7 +178,7 @@ contract LiquidationLogicValidateLiquidationCallTest is LiquidationLogicBaseTest
     public
   {
     params.isUsingAsCollateral = false;
-    vm.expectRevert(ISpoke.CollateralCannotBeLiquidated.selector);
+    vm.expectRevert(ISpoke.ReserveNotEnabledAsCollateral.selector);
     liquidationLogicWrapper.validateLiquidationCall(params);
   }
 
