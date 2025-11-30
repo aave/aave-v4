@@ -75,6 +75,7 @@ contract SpokeConfigTest is SpokeBase {
       paused: !config.paused,
       frozen: !config.frozen,
       borrowable: !config.borrowable,
+      liquidatable: !config.liquidatable,
       receiveSharesEnabled: !config.receiveSharesEnabled,
       collateralRisk: config.collateralRisk + 1
     });
@@ -126,13 +127,7 @@ contract SpokeConfigTest is SpokeBase {
 
   function test_addReserve() public {
     uint256 reserveId = spoke1.getReserveCount();
-    ISpoke.ReserveConfig memory newReserveConfig = ISpoke.ReserveConfig({
-      paused: true,
-      frozen: true,
-      borrowable: true,
-      receiveSharesEnabled: true,
-      collateralRisk: 10_00
-    });
+    ISpoke.ReserveConfig memory newReserveConfig = _getDefaultReserveConfig(10_00);
     ISpoke.DynamicReserveConfig memory newDynReserveConfig = ISpoke.DynamicReserveConfig({
       collateralFactor: 10_00,
       maxLiquidationBonus: 110_00,
@@ -168,13 +163,7 @@ contract SpokeConfigTest is SpokeBase {
   function test_addReserve_fuzz_revertsWith_AssetNotListed() public {
     uint256 assetId = vm.randomUint(hub1.getAssetCount(), Constants.MAX_ALLOWED_ASSET_ID); // non-existing asset id
 
-    ISpoke.ReserveConfig memory newReserveConfig = ISpoke.ReserveConfig({
-      paused: true,
-      frozen: true,
-      borrowable: true,
-      receiveSharesEnabled: true,
-      collateralRisk: 10_00
-    });
+    ISpoke.ReserveConfig memory newReserveConfig = _getDefaultReserveConfig(10_00);
     ISpoke.DynamicReserveConfig memory newDynReserveConfig = ISpoke.DynamicReserveConfig({
       collateralFactor: 10_00,
       maxLiquidationBonus: 110_00,
@@ -207,13 +196,7 @@ contract SpokeConfigTest is SpokeBase {
   function test_addReserve_revertsWith_InvalidAddress_oracle() public {
     (ISpoke newSpoke, ) = _deploySpokeWithOracle(ADMIN, address(accessManager), 'New Spoke (USD)');
 
-    ISpoke.ReserveConfig memory newReserveConfig = ISpoke.ReserveConfig({
-      paused: true,
-      frozen: true,
-      borrowable: true,
-      receiveSharesEnabled: true,
-      collateralRisk: 10_00
-    });
+    ISpoke.ReserveConfig memory newReserveConfig = _getDefaultReserveConfig(10_00);
     ISpoke.DynamicReserveConfig memory newDynReserveConfig = ISpoke.DynamicReserveConfig({
       collateralFactor: 10_00,
       maxLiquidationBonus: 110_00,
@@ -232,13 +215,7 @@ contract SpokeConfigTest is SpokeBase {
   }
 
   function test_addReserve_revertsWith_ReserveExists() public {
-    ISpoke.ReserveConfig memory newReserveConfig = ISpoke.ReserveConfig({
-      paused: true,
-      frozen: true,
-      borrowable: true,
-      receiveSharesEnabled: true,
-      collateralRisk: 10_00
-    });
+    ISpoke.ReserveConfig memory newReserveConfig = _getDefaultReserveConfig(10_00);
     ISpoke.DynamicReserveConfig memory newDynReserveConfig = ISpoke.DynamicReserveConfig({
       collateralFactor: 10_00,
       maxLiquidationBonus: 110_00,
@@ -268,13 +245,7 @@ contract SpokeConfigTest is SpokeBase {
   }
 
   function test_addReserve_revertsWith_InvalidAssetId() public {
-    ISpoke.ReserveConfig memory newReserveConfig = ISpoke.ReserveConfig({
-      paused: true,
-      frozen: true,
-      borrowable: true,
-      receiveSharesEnabled: true,
-      collateralRisk: 10_00
-    });
+    ISpoke.ReserveConfig memory newReserveConfig = _getDefaultReserveConfig(10_00);
     ISpoke.DynamicReserveConfig memory newDynReserveConfig = ISpoke.DynamicReserveConfig({
       collateralFactor: 10_00,
       maxLiquidationBonus: 110_00,

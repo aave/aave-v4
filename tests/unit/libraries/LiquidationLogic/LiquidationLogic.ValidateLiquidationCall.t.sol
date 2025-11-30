@@ -12,8 +12,8 @@ contract LiquidationLogicValidateLiquidationCallTest is LiquidationLogicBaseTest
 
   function setUp() public override {
     super.setUp();
-    ReserveFlags collateralReserveFlags = ReserveFlagsMap.create(false, false, true, true);
-    ReserveFlags debtReserveFlags = ReserveFlagsMap.create(false, false, true, true);
+    ReserveFlags collateralReserveFlags = ReserveFlagsMap.create(false, false, true, true, true);
+    ReserveFlags debtReserveFlags = ReserveFlagsMap.create(false, false, true, true, true);
     params = LiquidationLogic.ValidateLiquidationCallParams({
       user: alice,
       liquidator: bob,
@@ -46,6 +46,12 @@ contract LiquidationLogicValidateLiquidationCallTest is LiquidationLogicBaseTest
 
   function test_validateLiquidationCall_revertsWith_ReservePaused_CollateralPaused() public {
     params.collateralReserveFlags = params.collateralReserveFlags.setPaused(true);
+    vm.expectRevert(ISpoke.ReservePaused.selector);
+    liquidationLogicWrapper.validateLiquidationCall(params);
+  }
+
+  function test_validateLiquidationCall_revertsWith_ReservePaused_DebtPaused() public {
+    params.debtReserveFlags = params.debtReserveFlags.setPaused(true);
     vm.expectRevert(ISpoke.ReservePaused.selector);
     liquidationLogicWrapper.validateLiquidationCall(params);
   }
@@ -162,31 +168,25 @@ contract LiquidationLogicValidateLiquidationCallTest is LiquidationLogicBaseTest
     liquidationLogicWrapper.validateLiquidationCall(params);
   }
 
-  function test_validateLiquidationCall_revertsWith_ReservePaused_DebtPaused() public {
-    params.debtReserveFlags = params.debtReserveFlags.setPaused(true);
-    vm.expectRevert(ISpoke.ReservePaused.selector);
-    liquidationLogicWrapper.validateLiquidationCall(params);
-  }
-
   function test_validateLiquidationCall_revertsWith_HealthFactorNotBelowThreshold() public {
     params.healthFactor = 1.1e18;
     vm.expectRevert(ISpoke.HealthFactorNotBelowThreshold.selector);
     liquidationLogicWrapper.validateLiquidationCall(params);
   }
 
-  function test_validateLiquidationCall_revertsWith_CollateralCannotBeLiquidated_NotUsingAsCollateral()
+  function test_validateLiquidationCall_revertsWith_ReserveNotEnabledAsCollateral_NotUsingAsCollateral()
     public
   {
     params.isUsingAsCollateral = false;
-    vm.expectRevert(ISpoke.CollateralCannotBeLiquidated.selector);
+    vm.expectRevert(ISpoke.ReserveNotEnabledAsCollateral.selector);
     liquidationLogicWrapper.validateLiquidationCall(params);
   }
 
-  function test_validateLiquidationCall_revertsWith_CollateralCannotBeLiquidated_ZeroCollateralFactor()
+  function test_validateLiquidationCall_revertsWith_ReserveNotEnabledAsCollateral_ZeroCollateralFactor()
     public
   {
     params.collateralFactor = 0;
-    vm.expectRevert(ISpoke.CollateralCannotBeLiquidated.selector);
+    vm.expectRevert(ISpoke.ReserveNotEnabledAsCollateral.selector);
     liquidationLogicWrapper.validateLiquidationCall(params);
   }
 
@@ -199,6 +199,30 @@ contract LiquidationLogicValidateLiquidationCallTest is LiquidationLogicBaseTest
   function test_validateLiquidationCall_revertsWith_ReserveNotBorrowed() public {
     params.debtReserveBalance = 0;
     vm.expectRevert(ISpoke.ReserveNotBorrowed.selector);
+    liquidationLogicWrapper.validateLiquidationCall(params);
+  }
+
+  function test_validateLiquidationCall_revertsWith_CollateralCannotBeLiquidated() public {
+    // collateral.liquidatable = false; debt.liquidatable = false; => revert
+    params.collateralReserveFlags = params.collateralReserveFlags.setLiquidatable(false);
+    params.debtReserveFlags = params.debtReserveFlags.setLiquidatable(false);
+    vm.expectRevert(ISpoke.CollateralCannotBeLiquidated.selector);
+    liquidationLogicWrapper.validateLiquidationCall(params);
+
+    // collateral.liquidatable = false; debt.liquidatable = true; => revert
+    params.collateralReserveFlags = params.collateralReserveFlags.setLiquidatable(false);
+    params.debtReserveFlags = params.debtReserveFlags.setLiquidatable(true);
+    vm.expectRevert(ISpoke.CollateralCannotBeLiquidated.selector);
+    liquidationLogicWrapper.validateLiquidationCall(params);
+
+    // collateral.liquidatable = true; debt.liquidatable = true; => allowed
+    params.collateralReserveFlags = params.collateralReserveFlags.setLiquidatable(true);
+    params.debtReserveFlags = params.debtReserveFlags.setLiquidatable(true);
+    liquidationLogicWrapper.validateLiquidationCall(params);
+
+    // collateral.liquidatable = true; debt.liquidatable = false; => allowed
+    params.collateralReserveFlags = params.collateralReserveFlags.setLiquidatable(true);
+    params.debtReserveFlags = params.debtReserveFlags.setLiquidatable(false);
     liquidationLogicWrapper.validateLiquidationCall(params);
   }
 

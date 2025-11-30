@@ -72,6 +72,7 @@ contract LiquidationLogicLiquidateUserTest is LiquidationLogicBaseTest {
     // Mock storage for collateral side
     require(hub1.getAsset(usdxAssetId).underlying == address(tokenList.usdx));
     liquidationLogicWrapper.setCollateralReserveId(usdxReserveId);
+    liquidationLogicWrapper.setCollateralLiquidatable(true);
     liquidationLogicWrapper.setCollateralReserveHub(hub1);
     liquidationLogicWrapper.setCollateralReserveAssetId(usdxAssetId);
     liquidationLogicWrapper.setCollateralReserveDecimals(6);
