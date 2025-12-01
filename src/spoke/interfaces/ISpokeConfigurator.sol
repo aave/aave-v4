@@ -11,7 +11,7 @@ interface ISpokeConfigurator {
   /// @notice Emitted when the maximum allowed number of reserves for a spoke is updated.
   /// @param spoke The address of the spoke.
   /// @param maxReserves The new maximum number of reserves.
-  event UpdateMaxReserves(address spoke, uint256 maxReserves);
+  event UpdateMaxReserves(address indexed spoke, uint256 maxReserves);
 
   /// @dev Thrown upon adding a reserve when the maximum allowed number of reserves is already reached.
   /// @param spoke The address of the spoke.
@@ -90,6 +90,22 @@ interface ISpokeConfigurator {
   /// @param reserveId The identifier of the reserve.
   /// @param borrowable The new borrowable flag.
   function updateBorrowable(address spoke, uint256 reserveId, bool borrowable) external;
+
+  /// @notice Updates the liquidatable flag of a reserve.
+  /// @param spoke The address of the spoke.
+  /// @param reserveId The identifier of the reserve.
+  /// @param liquidatable The new liquidatable flag.
+  function updateLiquidatable(address spoke, uint256 reserveId, bool liquidatable) external;
+
+  /// @notice Updates whether receiving shares on liquidation is enabled.
+  /// @param spoke The address of the spoke.
+  /// @param reserveId The identifier of the reserve.
+  /// @param receiveSharesEnabled The new receiveSharesEnabled flag.
+  function updateReceiveSharesEnabled(
+    address spoke,
+    uint256 reserveId,
+    bool receiveSharesEnabled
+  ) external;
 
   /// @notice Updates the collateral risk of a reserve.
   /// @param spoke The address of the spoke.

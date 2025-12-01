@@ -152,8 +152,8 @@ contract SpokeLiquidationCallScenariosTest is SpokeLiquidationCallBaseTest {
       0.0001e18,
       'post liquidation: health factor'
     );
-    // Risk Premium after liquidation should be zero since position is unhealthy
-    assertEq(userAccountData.riskPremium, 0, 'post liquidation: risk premium');
+    // Risk Premium after liquidation: ($100 * 10% + 387.5 * 15%) / 487.6 = 13.97%
+    assertApproxEqAbs(userAccountData.riskPremium, 13_97, 1, 'post liquidation: risk premium');
   }
 
   // User is solvent, but health factor decreases after liquidation due to high collateral factor.
@@ -250,8 +250,8 @@ contract SpokeLiquidationCallScenariosTest is SpokeLiquidationCallBaseTest {
       0.0001e18,
       'post liquidation: health factor'
     );
-    // Risk Premium after liquidation should be zero since position is unhealthy
-    assertEq(userAccountData.riskPremium, 0, 'post liquidation: risk premium');
+    // Risk Premium after liquidation: ($100 * 10% + $353.1891 * 15%) / $453.1891 = 13.89%
+    assertApproxEqAbs(userAccountData.riskPremium, 13_89, 1, 'post liquidation: risk premium');
   }
 
   // Liquidated collateral is between 0 and 1 wei. It is rounded up to prevent reverting.
@@ -297,9 +297,38 @@ contract SpokeLiquidationCallScenariosTest is SpokeLiquidationCallBaseTest {
     assertEq(spoke.getUserSuppliedAssets(_wethReserveId(spoke), user), 1, 'Collateral should be 1');
     assertEq(spoke.getUserTotalDebt(_daiReserveId(spoke), user), 0, 'Debt should be 0');
     assertEq(
-      _hub(spoke, _daiReserveId(spoke)).getAssetDeficit(_assetId(spoke, _daiReserveId(spoke))),
+      _hub(spoke, _daiReserveId(spoke)).getAssetDeficitRay(
+        _spokeAssetId(spoke, _daiReserveId(spoke))
+      ),
       0,
       'Deficit should be 0'
+    );
+  }
+
+  /// @dev when receiving shares, liquidator can already have setUsingAsCollateral
+  function test_scenario_liquidator_usingAsCollateral() public {
+    uint256 collateralReserveId = _wethReserveId(spoke);
+    uint256 debtReserveId = _daiReserveId(spoke);
+    // liquidator can receive shares even if they have already set as collateral
+    bool receiveShares = true;
+
+    // liquidator sets as collateral
+    vm.prank(liquidator);
+    spoke.setUsingAsCollateral(collateralReserveId, true, liquidator);
+
+    _increaseCollateralSupply(spoke, collateralReserveId, 10e18, user);
+    _makeUserLiquidatable(spoke, user, debtReserveId, 0.95e18);
+    _checkedLiquidationCall(
+      CheckedLiquidationCallParams({
+        spoke: spoke,
+        collateralReserveId: collateralReserveId,
+        debtReserveId: debtReserveId,
+        user: user,
+        debtToCover: type(uint256).max,
+        liquidator: liquidator,
+        isSolvent: true,
+        receiveShares: receiveShares
+      })
     );
   }
 }

@@ -36,7 +36,7 @@ contract SpokeAccrueInterestTest is SpokeBase {
     updateLiquidityFee(hub1, wbtcAssetId, 0);
   }
 
-  function test_accrueInterest_NoActionTaken() public {
+  function test_accrueInterest_NoActionTaken() public view {
     _assertSingleUserProtocolDebt(
       spoke1,
       _daiReserveId(spoke1),
@@ -336,7 +336,7 @@ contract SpokeAccrueInterestTest is SpokeBase {
 
     // Check Bob's risk premium
     uint256 bobRp = _getUserRiskPremium(spoke1, bob);
-    assertEq(bobRp, _calculateExpectedUserRP(bob, spoke1), 'user risk premium Before');
+    assertEq(bobRp, _calculateExpectedUserRP(spoke1, bob), 'user risk premium Before');
 
     // Store base borrow rates
     Rates memory rates;
@@ -745,7 +745,7 @@ contract SpokeAccrueInterestTest is SpokeBase {
 
     // Check Bob's risk premium
     uint256 bobRp = _getUserRiskPremium(spoke1, bob);
-    assertEq(bobRp, _calculateExpectedUserRP(bob, spoke1), 'user risk premium Before');
+    assertEq(bobRp, _calculateExpectedUserRP(spoke1, bob), 'user risk premium Before');
 
     // Check bob's drawn debt, premium debt, and supplied amounts for all assets at user, reserve, spoke, and asset level
     uint256 drawnDebt = _calculateExpectedDrawnDebt(
@@ -858,7 +858,6 @@ contract SpokeAccrueInterestTest is SpokeBase {
     uint256 expectedPremiumDebt = _calculatePremiumDebt(
       hub1,
       daiAssetId,
-      bobPosition.realizedPremiumRay,
       expectedpremiumShares,
       bobPosition.premiumOffsetRay
     );
@@ -909,7 +908,6 @@ contract SpokeAccrueInterestTest is SpokeBase {
     expectedPremiumDebt = _calculatePremiumDebt(
       hub1,
       wethAssetId,
-      bobPosition.realizedPremiumRay,
       expectedpremiumShares,
       bobPosition.premiumOffsetRay
     );
@@ -961,7 +959,6 @@ contract SpokeAccrueInterestTest is SpokeBase {
     expectedPremiumDebt = _calculatePremiumDebt(
       hub1,
       usdxAssetId,
-      bobPosition.realizedPremiumRay,
       expectedpremiumShares,
       bobPosition.premiumOffsetRay
     );
@@ -1013,7 +1010,6 @@ contract SpokeAccrueInterestTest is SpokeBase {
     expectedPremiumDebt = _calculatePremiumDebt(
       hub1,
       wbtcAssetId,
-      bobPosition.realizedPremiumRay,
       expectedpremiumShares,
       bobPosition.premiumOffsetRay
     );

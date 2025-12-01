@@ -12,7 +12,9 @@ import {ITreasurySpoke} from 'src/spoke/interfaces/ITreasurySpoke.sol';
 import {IAssetInterestRateStrategy} from 'src/hub/interfaces/IAssetInterestRateStrategy.sol';
 import {IAaveOracle} from 'src/spoke/interfaces/IAaveOracle.sol';
 import {IPriceOracle} from 'src/spoke/interfaces/IPriceOracle.sol';
-import {ITransparentUpgradeableProxy} from 'src/dependencies/openzeppelin/TransparentUpgradeableProxy.sol';
+import {
+  ITransparentUpgradeableProxy
+} from 'src/dependencies/openzeppelin/TransparentUpgradeableProxy.sol';
 import {IBasicInterestRateStrategy} from 'src/hub/interfaces/IBasicInterestRateStrategy.sol';
 import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
 import {IERC165} from 'src/dependencies/openzeppelin/IERC165.sol';
@@ -35,7 +37,6 @@ import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
 import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
 import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
 import {SharesMath} from 'src/hub/libraries/SharesMath.sol';
-import {SafeTransferLib} from 'src/dependencies/solady/SafeTransferLib.sol';
 import {MathUtils} from 'src/libraries/math/MathUtils.sol';
 import {LibBit} from 'src/dependencies/solady/LibBit.sol';
 import {Panic} from 'src/dependencies/openzeppelin/Panic.sol';
@@ -55,7 +56,9 @@ import {KeyValueList} from 'src/spoke/libraries/KeyValueList.sol';
 // Contract imports
 import {Proxy} from 'src/dependencies/openzeppelin/Proxy.sol';
 import {ERC1967Proxy} from 'src/dependencies/openzeppelin/ERC1967Proxy.sol';
-import {TransparentUpgradeableProxy} from 'src/dependencies/openzeppelin/TransparentUpgradeableProxy.sol';
+import {
+  TransparentUpgradeableProxy
+} from 'src/dependencies/openzeppelin/TransparentUpgradeableProxy.sol';
 import {Spoke} from 'src/spoke/Spoke.sol';
 import {AccessManager} from 'src/dependencies/openzeppelin/AccessManager.sol';
 import {AccessManaged} from 'src/dependencies/openzeppelin/AccessManaged.sol';
@@ -593,32 +596,25 @@ contract FuzzingBase is PropertiesConstants, PropertiesAsserts {
   ISpoke internal spoke3;
   IERC20 internal dai;
   IERC20 internal wbtc;
-  IERC20 internal usdc;
-  uint256 internal daiAssetId = 0;
-  uint256 internal wbtcAssetId = 1;
-  uint256 internal usdcAssetId = 2;
-  uint256 internal dai2AssetId = 3;
+  IERC20 internal usdx;
 
-  Decimals decimals = Decimals({usdx: 6, usdc: 6, usdy: 18, dai: 18, wbtc: 8, weth: 18, usdz: 18});
+  uint256 internal usdxAssetId = 0;
+  uint256 internal daiAssetId = 1;
+  uint256 internal wbtcAssetId = 2;
+  uint256 internal usdyAssetId = 3;
 
   struct Decimals {
     uint8 usdx;
-    uint8 usdc;
     uint8 dai;
     uint8 wbtc;
     uint8 usdy;
-    uint8 weth;
-    uint8 usdz;
   }
 
   struct SpokeInfo {
-    ReserveInfo weth;
     ReserveInfo wbtc;
     ReserveInfo dai;
     ReserveInfo usdx;
-    ReserveInfo usdc;
     ReserveInfo usdy;
-    ReserveInfo usdz;
     uint256 MAX_ALLOWED_ASSET_ID;
     uint256[] reserveIds;
   }
@@ -628,6 +624,13 @@ contract FuzzingBase is PropertiesConstants, PropertiesAsserts {
     ISpoke.ReserveConfig reserveConfig;
     ISpoke.DynamicReserveConfig dynReserveConfig;
   }
+
+  struct OldBalances {
+    uint256 hubUnderlying;
+    uint256 userUnderlying;
+  }
+
+  Decimals decimals = Decimals({usdx: 6, dai: 18, wbtc: 8, usdy: 18});
 
   mapping(ISpoke => SpokeInfo) internal spokeInfo;
   ISpoke[] internal spokes;
@@ -646,10 +649,10 @@ contract FuzzingBase is PropertiesConstants, PropertiesAsserts {
     spokes_with_feeReceiver.push(address(treasurySpoke));
     dai = new TestnetERC20('DAI', 'DAI', decimals.dai);
     wbtc = new TestnetERC20('WBTC', 'WBTC', decimals.wbtc);
-    usdc = new TestnetERC20('USDC', 'USDC', decimals.usdc);
+    usdx = new TestnetERC20('USDX', 'USDX', decimals.usdx);
     tokens.push(dai);
     tokens.push(wbtc);
-    tokens.push(usdc);
+    tokens.push(usdx);
     configureTokenList();
   }
 
@@ -679,6 +682,7 @@ contract FuzzingBase is PropertiesConstants, PropertiesAsserts {
     address proxyAdminOwner,
     bytes memory initData
   ) internal returns (address) {
+    vm.prank(deployer);
     TransparentUpgradeableProxy proxy = new TransparentUpgradeableProxy(
       impl,
       proxyAdminOwner,
@@ -713,30 +717,20 @@ contract FuzzingBase is PropertiesConstants, PropertiesAsserts {
   }
 
   struct TokenList {
-    WETH9 weth;
     TestnetERC20 usdx;
     TestnetERC20 dai;
     TestnetERC20 wbtc;
     TestnetERC20 usdy;
-    TestnetERC20 usdz;
   }
 
   function configureTokenList() internal {
     TokenList memory tokenList;
     tokenList = TokenList(
-      new WETH9(),
       new TestnetERC20('USDX', 'USDX', 6),
       new TestnetERC20('DAI', 'DAI', decimals.dai),
       new TestnetERC20('WBTC', 'WBTC', decimals.wbtc),
-      new TestnetERC20('USDY', 'USDY', decimals.usdy),
-      new TestnetERC20('USDZ', 'USDZ', decimals.usdz)
+      new TestnetERC20('USDY', 'USDY', decimals.usdy)
     );
-    uint256 wethAssetId = 0;
-    uint256 usdxAssetId = 1;
-    uint256 daiAssetId = 2;
-    uint256 wbtcAssetId = 3;
-    uint256 usdyAssetId = 4;
-    uint256 usdzAssetId = 5;
 
     IHub.SpokeConfig memory spokeConfig = IHub.SpokeConfig({
       active: true,
@@ -757,24 +751,6 @@ contract FuzzingBase is PropertiesConstants, PropertiesAsserts {
 
     // Add all assets to the Hub
     vm.startPrank(ADMIN);
-    // add WETH
-    hub1.addAsset(
-      address(tokenList.weth),
-      tokenList.weth.decimals(),
-      address(treasurySpoke),
-      address(irStrategy),
-      encodedIrData
-    );
-    hub1.updateAssetConfig(
-      wethAssetId,
-      IHub.AssetConfig({
-        liquidityFee: 10_00,
-        feeReceiver: address(treasurySpoke),
-        irStrategy: address(irStrategy),
-        reinvestmentController: address(0)
-      }),
-      new bytes(0)
-    );
     // add USDX
     hub1.addAsset(
       address(tokenList.usdx),
@@ -847,24 +823,6 @@ contract FuzzingBase is PropertiesConstants, PropertiesAsserts {
       }),
       new bytes(0)
     );
-    // add USDZ
-    hub1.addAsset(
-      address(tokenList.usdz),
-      tokenList.usdz.decimals(),
-      address(treasurySpoke),
-      address(irStrategy),
-      encodedIrData
-    );
-    hub1.updateAssetConfig(
-      hub1.getAssetCount() - 1,
-      IHub.AssetConfig({
-        liquidityFee: 5_00,
-        feeReceiver: address(treasurySpoke),
-        irStrategy: address(irStrategy),
-        reinvestmentController: address(0)
-      }),
-      new bytes(0)
-    );
 
     // Liquidation configs
     spoke1.updateLiquidationConfig(
@@ -890,22 +848,13 @@ contract FuzzingBase is PropertiesConstants, PropertiesAsserts {
     );
 
     // Spoke 1 reserve configs
-    spokeInfo[spoke1].weth.reserveConfig = ISpoke.ReserveConfig({
-      paused: false,
-      frozen: false,
-      borrowable: true,
-      collateralRisk: 15_00
-    });
-    spokeInfo[spoke1].weth.dynReserveConfig = ISpoke.DynamicReserveConfig({
-      collateralFactor: 80_00,
-      maxLiquidationBonus: 105_00,
-      liquidationFee: 10_00
-    });
     spokeInfo[spoke1].wbtc.reserveConfig = ISpoke.ReserveConfig({
       paused: false,
       frozen: false,
       borrowable: true,
-      collateralRisk: 15_00
+      collateralRisk: 15_00,
+      liquidatable: true,
+      receiveSharesEnabled: true
     });
     spokeInfo[spoke1].wbtc.dynReserveConfig = ISpoke.DynamicReserveConfig({
       collateralFactor: 75_00,
@@ -916,7 +865,9 @@ contract FuzzingBase is PropertiesConstants, PropertiesAsserts {
       paused: false,
       frozen: false,
       borrowable: true,
-      collateralRisk: 20_00
+      collateralRisk: 20_00,
+      liquidatable: true,
+      receiveSharesEnabled: true
     });
     spokeInfo[spoke1].dai.dynReserveConfig = ISpoke.DynamicReserveConfig({
       collateralFactor: 78_00,
@@ -927,7 +878,9 @@ contract FuzzingBase is PropertiesConstants, PropertiesAsserts {
       paused: false,
       frozen: false,
       borrowable: true,
-      collateralRisk: 50_00
+      collateralRisk: 50_00,
+      liquidatable: true,
+      receiveSharesEnabled: true
     });
     spokeInfo[spoke1].usdx.dynReserveConfig = ISpoke.DynamicReserveConfig({
       collateralFactor: 78_00,
@@ -938,7 +891,9 @@ contract FuzzingBase is PropertiesConstants, PropertiesAsserts {
       paused: false,
       frozen: false,
       borrowable: true,
-      collateralRisk: 50_00
+      collateralRisk: 50_00,
+      liquidatable: true,
+      receiveSharesEnabled: true
     });
     spokeInfo[spoke1].usdy.dynReserveConfig = ISpoke.DynamicReserveConfig({
       collateralFactor: 78_00,
@@ -946,13 +901,6 @@ contract FuzzingBase is PropertiesConstants, PropertiesAsserts {
       liquidationFee: 15_00
     });
 
-    spokeInfo[spoke1].weth.reserveId = spoke1.addReserve(
-      address(hub1),
-      wethAssetId,
-      _deployMockPriceFeed(spoke1, 2000e8),
-      spokeInfo[spoke1].weth.reserveConfig,
-      spokeInfo[spoke1].weth.dynReserveConfig
-    );
     spokeInfo[spoke1].wbtc.reserveId = spoke1.addReserve(
       address(hub1),
       wbtcAssetId,
@@ -982,7 +930,6 @@ contract FuzzingBase is PropertiesConstants, PropertiesAsserts {
       spokeInfo[spoke1].usdy.dynReserveConfig
     );
 
-    hub1.addSpoke(wethAssetId, address(spoke1), spokeConfig);
     hub1.addSpoke(wbtcAssetId, address(spoke1), spokeConfig);
     hub1.addSpoke(daiAssetId, address(spoke1), spokeConfig);
     hub1.addSpoke(usdxAssetId, address(spoke1), spokeConfig);
@@ -993,29 +940,22 @@ contract FuzzingBase is PropertiesConstants, PropertiesAsserts {
       paused: false,
       frozen: false,
       borrowable: true,
-      collateralRisk: 0
+      collateralRisk: 0,
+      liquidatable: true,
+      receiveSharesEnabled: true
     });
     spokeInfo[spoke2].wbtc.dynReserveConfig = ISpoke.DynamicReserveConfig({
       collateralFactor: 80_00,
       maxLiquidationBonus: 105_00,
       liquidationFee: 10_00
     });
-    spokeInfo[spoke2].weth.reserveConfig = ISpoke.ReserveConfig({
-      paused: false,
-      frozen: false,
-      borrowable: true,
-      collateralRisk: 10_00
-    });
-    spokeInfo[spoke2].weth.dynReserveConfig = ISpoke.DynamicReserveConfig({
-      collateralFactor: 76_00,
-      maxLiquidationBonus: 103_00,
-      liquidationFee: 15_00
-    });
     spokeInfo[spoke2].dai.reserveConfig = ISpoke.ReserveConfig({
       paused: false,
       frozen: false,
       borrowable: true,
-      collateralRisk: 20_00
+      collateralRisk: 20_00,
+      liquidatable: true,
+      receiveSharesEnabled: true
     });
     spokeInfo[spoke2].dai.dynReserveConfig = ISpoke.DynamicReserveConfig({
       collateralFactor: 72_00,
@@ -1026,7 +966,9 @@ contract FuzzingBase is PropertiesConstants, PropertiesAsserts {
       paused: false,
       frozen: false,
       borrowable: true,
-      collateralRisk: 50_00
+      collateralRisk: 50_00,
+      liquidatable: true,
+      receiveSharesEnabled: true
     });
     spokeInfo[spoke2].usdx.dynReserveConfig = ISpoke.DynamicReserveConfig({
       collateralFactor: 72_00,
@@ -1037,23 +979,14 @@ contract FuzzingBase is PropertiesConstants, PropertiesAsserts {
       paused: false,
       frozen: false,
       borrowable: true,
-      collateralRisk: 50_00
+      collateralRisk: 50_00,
+      liquidatable: true,
+      receiveSharesEnabled: true
     });
     spokeInfo[spoke2].usdy.dynReserveConfig = ISpoke.DynamicReserveConfig({
       collateralFactor: 72_00,
       maxLiquidationBonus: 101_50,
       liquidationFee: 15_00
-    });
-    spokeInfo[spoke2].usdz.reserveConfig = ISpoke.ReserveConfig({
-      paused: false,
-      frozen: false,
-      borrowable: true,
-      collateralRisk: 100_00
-    });
-    spokeInfo[spoke2].usdz.dynReserveConfig = ISpoke.DynamicReserveConfig({
-      collateralFactor: 70_00,
-      maxLiquidationBonus: 106_00,
-      liquidationFee: 10_00
     });
 
     spokeInfo[spoke2].wbtc.reserveId = spoke2.addReserve(
@@ -1062,13 +995,6 @@ contract FuzzingBase is PropertiesConstants, PropertiesAsserts {
       _deployMockPriceFeed(spoke2, 50_000e8),
       spokeInfo[spoke2].wbtc.reserveConfig,
       spokeInfo[spoke2].wbtc.dynReserveConfig
-    );
-    spokeInfo[spoke2].weth.reserveId = spoke2.addReserve(
-      address(hub1),
-      wethAssetId,
-      _deployMockPriceFeed(spoke2, 2000e8),
-      spokeInfo[spoke2].weth.reserveConfig,
-      spokeInfo[spoke2].weth.dynReserveConfig
     );
     spokeInfo[spoke2].dai.reserveId = spoke2.addReserve(
       address(hub1),
@@ -1091,27 +1017,20 @@ contract FuzzingBase is PropertiesConstants, PropertiesAsserts {
       spokeInfo[spoke2].usdy.reserveConfig,
       spokeInfo[spoke2].usdy.dynReserveConfig
     );
-    spokeInfo[spoke2].usdz.reserveId = spoke2.addReserve(
-      address(hub1),
-      usdzAssetId,
-      _deployMockPriceFeed(spoke2, 1e8),
-      spokeInfo[spoke2].usdz.reserveConfig,
-      spokeInfo[spoke2].usdz.dynReserveConfig
-    );
 
     hub1.addSpoke(wbtcAssetId, address(spoke2), spokeConfig);
-    hub1.addSpoke(wethAssetId, address(spoke2), spokeConfig);
     hub1.addSpoke(daiAssetId, address(spoke2), spokeConfig);
     hub1.addSpoke(usdxAssetId, address(spoke2), spokeConfig);
     hub1.addSpoke(usdyAssetId, address(spoke2), spokeConfig);
-    hub1.addSpoke(usdzAssetId, address(spoke2), spokeConfig);
 
     // Spoke 3 reserve configs
     spokeInfo[spoke3].dai.reserveConfig = ISpoke.ReserveConfig({
       paused: false,
       frozen: false,
       borrowable: true,
-      collateralRisk: 0
+      collateralRisk: 0,
+      liquidatable: true,
+      receiveSharesEnabled: true
     });
     spokeInfo[spoke3].dai.dynReserveConfig = ISpoke.DynamicReserveConfig({
       collateralFactor: 75_00,
@@ -1122,29 +1041,22 @@ contract FuzzingBase is PropertiesConstants, PropertiesAsserts {
       paused: false,
       frozen: false,
       borrowable: true,
-      collateralRisk: 10_00
+      collateralRisk: 10_00,
+      liquidatable: true,
+      receiveSharesEnabled: true
     });
     spokeInfo[spoke3].usdx.dynReserveConfig = ISpoke.DynamicReserveConfig({
       collateralFactor: 75_00,
       maxLiquidationBonus: 103_00,
       liquidationFee: 15_00
     });
-    spokeInfo[spoke3].weth.reserveConfig = ISpoke.ReserveConfig({
-      paused: false,
-      frozen: false,
-      borrowable: true,
-      collateralRisk: 20_00
-    });
-    spokeInfo[spoke3].weth.dynReserveConfig = ISpoke.DynamicReserveConfig({
-      collateralFactor: 79_00,
-      maxLiquidationBonus: 102_00,
-      liquidationFee: 10_00
-    });
     spokeInfo[spoke3].wbtc.reserveConfig = ISpoke.ReserveConfig({
       paused: false,
       frozen: false,
       borrowable: true,
-      collateralRisk: 50_00
+      collateralRisk: 50_00,
+      liquidatable: true,
+      receiveSharesEnabled: true
     });
     spokeInfo[spoke3].wbtc.dynReserveConfig = ISpoke.DynamicReserveConfig({
       collateralFactor: 77_00,
@@ -1166,13 +1078,6 @@ contract FuzzingBase is PropertiesConstants, PropertiesAsserts {
       spokeInfo[spoke3].usdx.reserveConfig,
       spokeInfo[spoke3].usdx.dynReserveConfig
     );
-    spokeInfo[spoke3].weth.reserveId = spoke3.addReserve(
-      address(hub1),
-      wethAssetId,
-      _deployMockPriceFeed(spoke3, 2000e8),
-      spokeInfo[spoke3].weth.reserveConfig,
-      spokeInfo[spoke3].weth.dynReserveConfig
-    );
     spokeInfo[spoke3].wbtc.reserveId = spoke3.addReserve(
       address(hub1),
       wbtcAssetId,
@@ -1183,7 +1088,6 @@ contract FuzzingBase is PropertiesConstants, PropertiesAsserts {
 
     hub1.addSpoke(daiAssetId, address(spoke3), spokeConfig);
     hub1.addSpoke(usdxAssetId, address(spoke3), spokeConfig);
-    hub1.addSpoke(wethAssetId, address(spoke3), spokeConfig);
     hub1.addSpoke(wbtcAssetId, address(spoke3), spokeConfig);
 
     vm.stopPrank();
@@ -1254,6 +1158,7 @@ contract FuzzingBase is PropertiesConstants, PropertiesAsserts {
 contract FuzzingTob is FuzzingBase {
   using WadRayMath for uint256;
   using PercentageMath for uint256;
+  using SafeCast for *;
 
   // This won't work if the fuzzer will be able to add new assets
   uint256 constant assetCount = 4;
@@ -1325,7 +1230,7 @@ contract FuzzingTob is FuzzingBase {
         //total_added_assets_sum_spoke[j] += hub1.getSpokeAddedAssets(j, spoke);
         uint256 spoke_added_shares = hub1.getSpokeAddedShares(j, spoke);
         total_added_shares_sum_spoke[j] += spoke_added_shares;
-        total_deficit_sum_spoke[j] += hub1.getSpokeDeficit(j, spoke);
+        total_deficit_sum_spoke[j] += hub1.getSpokeDeficitRay(j, spoke);
         if (hub1.getSpokeAddedAssets(j, spoke) > 0) {
           assertNeq(
             hub1.getSpokeDrawnShares(j, spoke) + spoke_added_shares,
@@ -1358,12 +1263,12 @@ contract FuzzingTob is FuzzingBase {
       // Asset.premiumShares.toDrawnAssetsUp() >= Asset.premiumOffset
       assertGte(
         hub1.previewRestoreByShares(i, asset.premiumShares).toRay(),
-        asset.premiumOffsetRay,
+        asset.premiumOffsetRay.toUint256(),
         'AAVE-GINV-5 asset premium shares should be greater than or equal to asset premium offset'
       );
       assertEq(
         total_deficit_sum_spoke[i],
-        asset.deficit,
+        asset.deficitRay,
         'AAVE-GINV-6 total deficit should be equal to asset deficit'
       );
       // Note consider virtual assets and shares
@@ -1485,8 +1390,9 @@ contract FuzzingTob is FuzzingBase {
     );
     amount = clampBetween(amount, 1, maxAmount);
 
-    uint256 oldHubUnderlyingBalance = TestnetERC20(reserve.underlying).balanceOf(address(hub));
-    uint256 oldUserUnderlyingBalance = TestnetERC20(reserve.underlying).balanceOf(msg.sender);
+    OldBalances memory oldBalances;
+    oldBalances.hubUnderlying = TestnetERC20(reserve.underlying).balanceOf(address(hub));
+    oldBalances.userUnderlying = TestnetERC20(reserve.underlying).balanceOf(msg.sender);
     IHub.Asset memory oldAsset = hub.getAsset(reserve.assetId);
     require(oldAsset.liquidity >= amount);
     IHub.SpokeData memory oldSpokeData = hub.getSpoke(reserve.assetId, address(spoke));
@@ -1504,12 +1410,12 @@ contract FuzzingTob is FuzzingBase {
       );
       assertEq(
         TestnetERC20(reserve.underlying).balanceOf(address(hub)),
-        oldHubUnderlyingBalance - amount,
+        oldBalances.hubUnderlying - amount,
         'AAVE-INV-13 hub underlying balance should be equal to old hub underlying balance minus amount withdrew'
       );
       assertEq(
         TestnetERC20(reserve.underlying).balanceOf(msg.sender),
-        oldUserUnderlyingBalance + amount,
+        oldBalances.userUnderlying + amount,
         'AAVE-INV-14 user underlying balance should be equal to old user underlying balance plus amount withdrew'
       );
       IHub.Asset memory newAsset = hub.getAsset(reserve.assetId);
@@ -1590,8 +1496,9 @@ contract FuzzingTob is FuzzingBase {
     IHub hub = IHub(address(reserve.hub));
 
     //vm.startPrank(msg.sender);
-    uint256 oldHubUnderlyingBalance = TestnetERC20(reserve.underlying).balanceOf(address(hub));
-    uint256 oldUserUnderlyingBalance = TestnetERC20(reserve.underlying).balanceOf(msg.sender);
+    OldBalances memory oldBalances;
+    oldBalances.hubUnderlying = TestnetERC20(reserve.underlying).balanceOf(address(hub));
+    oldBalances.userUnderlying = TestnetERC20(reserve.underlying).balanceOf(msg.sender);
     IHub.Asset memory oldAsset = hub.getAsset(reserve.assetId);
     require(oldAsset.liquidity >= amount);
     IHub.SpokeData memory oldSpokeData = hub.getSpoke(reserve.assetId, address(spoke));
@@ -1600,7 +1507,7 @@ contract FuzzingTob is FuzzingBase {
     try spoke.borrow(reserveId, amount, msg.sender) returns (uint256 shares, uint256 amount) {
       assertGt(shares, 0, 'AAVE-INV-21 shares borrowed should be greater than 0');
       assertGt(amount, 0, 'AAVE-INV-22 amount borrowed should be greater than 0');
-      ISpoke.UserPosition memory newUserPosition = spoke.getUserPosition(reserveId, msg.sender);
+      //ISpoke.UserPosition memory newUserPosition = spoke.getUserPosition(reserveId, msg.sender);
       assertEq(
         spoke.getUserPosition(reserveId, msg.sender).drawnShares,
         oldUserPosition.drawnShares + shares,
@@ -1608,12 +1515,12 @@ contract FuzzingTob is FuzzingBase {
       );
       assertEq(
         TestnetERC20(reserve.underlying).balanceOf(address(hub)),
-        oldHubUnderlyingBalance - amount,
+        oldBalances.hubUnderlying - amount,
         'AAVE-INV-24 hub underlying balance should be equal to old hub underlying balance minus amount borrowed'
       );
       assertEq(
         TestnetERC20(reserve.underlying).balanceOf(msg.sender),
-        oldUserUnderlyingBalance + amount,
+        oldBalances.userUnderlying + amount,
         'AAVE-INV-25 user underlying balance should be equal to old user underlying balance plus amount borrowed'
       );
       IHub.Asset memory newAsset = hub.getAsset(reserve.assetId);
@@ -1667,16 +1574,18 @@ contract FuzzingTob is FuzzingBase {
     uint256 amount
   ) external check_global_invariants {
     ISpoke spoke = spokes[clampBetween(spokeId, 0, spokes.length - 1)];
-    ISpoke.UserAccountData memory oldAccountData = spoke.getUserAccountData(msg.sender);
+    //ISpoke.UserAccountData memory oldAccountData = spoke.getUserAccountData(msg.sender);
     reserveId = spokeInfo[spoke].reserveIds[
       clampBetween(reserveId, 0, spokeInfo[spoke].reserveIds.length - 1)
     ];
     ISpoke.Reserve memory reserve = spoke.getReserve(reserveId);
-    (
-      uint256 baseRestored,
-      uint256 premiumRestored,
-      uint256 restoreAmount
-    ) = _calculateExactRestoreAmount(spoke, reserveId, msg.sender, amount, reserve.assetId);
+    (, , uint256 restoreAmount) = _calculateExactRestoreAmount(
+      spoke,
+      reserveId,
+      msg.sender,
+      amount,
+      reserve.assetId
+    );
     IHub hub = IHub(address(reserve.hub));
 
     //vm.startPrank(msg.sender);
@@ -1696,7 +1605,7 @@ contract FuzzingTob is FuzzingBase {
     ) {
       //assertGt(restoredShares, 0, "AAVE-INV-32 shares restored should be greater than 0");
       assertGt(restoredAmount, 0, 'AAVE-INV-33 amount restored should be greater than 0');
-      ISpoke.UserPosition memory newUserPosition = spoke.getUserPosition(reserveId, msg.sender);
+      //ISpoke.UserPosition memory newUserPosition = spoke.getUserPosition(reserveId, msg.sender);
       assertEq(
         spoke.getUserPosition(reserveId, msg.sender).drawnShares,
         oldUserPosition.drawnShares - restoredShares,

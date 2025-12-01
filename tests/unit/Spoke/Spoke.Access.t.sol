@@ -21,10 +21,10 @@ contract SpokeAccessTest is SpokeBase {
     hub1.draw(daiAssetId, 1000e18, bob);
 
     vm.expectRevert(abi.encodeWithSelector(IHub.SpokeNotActive.selector));
-    hub1.restore(daiAssetId, 1000e18, IHubBase.PremiumDelta(0, 0, 0, 0));
+    hub1.restore(daiAssetId, 1000e18, ZERO_PREMIUM_DELTA);
 
     vm.expectRevert(abi.encodeWithSelector(IHub.SpokeNotActive.selector));
-    hub1.refreshPremium(daiAssetId, IHubBase.PremiumDelta(0, 0, 0, 0));
+    hub1.refreshPremium(daiAssetId, ZERO_PREMIUM_DELTA);
 
     vm.expectRevert(abi.encodeWithSelector(IHub.SpokeNotActive.selector));
     hub1.payFeeShares(daiAssetId, 1000e18);
@@ -40,9 +40,9 @@ contract SpokeAccessTest is SpokeBase {
     hub1.add(daiAssetId, 1000e18);
     hub1.draw(daiAssetId, 500e18, address(spoke1));
     tokenList.dai.transfer(address(hub1), 500e18);
-    hub1.restore(daiAssetId, 500e18, IHubBase.PremiumDelta(0, 0, 0, 0));
+    hub1.restore(daiAssetId, 500e18, ZERO_PREMIUM_DELTA);
     hub1.remove(daiAssetId, 1000e18, address(spoke1));
-    hub1.refreshPremium(daiAssetId, IHubBase.PremiumDelta(0, 0, 0, 0));
+    hub1.refreshPremium(daiAssetId, ZERO_PREMIUM_DELTA);
     tokenList.dai.transfer(address(hub1), 1000e18);
     hub1.add(daiAssetId, 1000e18);
     hub1.payFeeShares(daiAssetId, 1e18);
@@ -87,7 +87,7 @@ contract SpokeAccessTest is SpokeBase {
       address(hub1),
       usdzAssetId,
       reserveSource,
-      ISpoke.ReserveConfig({paused: false, frozen: false, borrowable: true, collateralRisk: 0}),
+      _getDefaultReserveConfig(0),
       ISpoke.DynamicReserveConfig({
         collateralFactor: 75_00,
         maxLiquidationBonus: 100_00,
@@ -101,7 +101,7 @@ contract SpokeAccessTest is SpokeBase {
       address(hub1),
       usdzAssetId,
       reserveSource,
-      ISpoke.ReserveConfig({paused: false, frozen: false, borrowable: true, collateralRisk: 0}),
+      _getDefaultReserveConfig(0),
       ISpoke.DynamicReserveConfig({
         collateralFactor: 75_00,
         maxLiquidationBonus: 100_00,
@@ -113,17 +113,11 @@ contract SpokeAccessTest is SpokeBase {
     vm.expectRevert(
       abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, address(this))
     );
-    spoke1.updateReserveConfig(
-      _daiReserveId(spoke1),
-      ISpoke.ReserveConfig({paused: false, frozen: false, borrowable: true, collateralRisk: 0})
-    );
+    spoke1.updateReserveConfig(_daiReserveId(spoke1), _getDefaultReserveConfig(0));
 
     // Spoke admin can call updateReserveConfig
     vm.prank(SPOKE_ADMIN);
-    spoke1.updateReserveConfig(
-      _daiReserveId(spoke1),
-      ISpoke.ReserveConfig({paused: false, frozen: false, borrowable: true, collateralRisk: 0})
-    );
+    spoke1.updateReserveConfig(_daiReserveId(spoke1), _getDefaultReserveConfig(0));
 
     // addDynamicReserveConfig only callable by spoke admin
     vm.expectRevert(
@@ -202,7 +196,7 @@ contract SpokeAccessTest is SpokeBase {
       address(hub1),
       assetId,
       reserveSource,
-      ISpoke.ReserveConfig({paused: false, frozen: false, borrowable: true, collateralRisk: 0}),
+      _getDefaultReserveConfig(0),
       ISpoke.DynamicReserveConfig({
         collateralFactor: 75_00,
         maxLiquidationBonus: 100_00,
@@ -221,7 +215,7 @@ contract SpokeAccessTest is SpokeBase {
       address(hub1),
       assetId,
       reserveSource,
-      ISpoke.ReserveConfig({paused: false, frozen: false, borrowable: true, collateralRisk: 0}),
+      _getDefaultReserveConfig(0),
       ISpoke.DynamicReserveConfig({
         collateralFactor: 75_00,
         maxLiquidationBonus: 100_00,

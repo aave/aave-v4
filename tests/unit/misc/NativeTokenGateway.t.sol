@@ -81,7 +81,7 @@ contract NativeTokenGatewayTest is SpokeBase {
     assertEq(tokenList.weth.balanceOf(address(hub1)), prevHubBalance + amount);
     _checkFinalBalances();
 
-    assertFalse(spoke1.isUsingAsCollateral(_wethReserveId(spoke1), bob));
+    assertFalse(_isUsingAsCollateral(spoke1, _wethReserveId(spoke1), bob));
   }
 
   function test_supplyNative_revertsWith_SpokeNotRegistered() public {
@@ -96,7 +96,6 @@ contract NativeTokenGatewayTest is SpokeBase {
   }
 
   function test_supplyNative_revertsWith_InvalidAmount() public {
-    uint256 amount = 100e18;
     vm.expectRevert(IGatewayBase.InvalidAmount.selector);
     vm.prank(bob);
     nativeTokenGateway.supplyNative{value: 0}(address(spoke1), _wethReserveId(spoke1), 0);
@@ -163,7 +162,7 @@ contract NativeTokenGatewayTest is SpokeBase {
     assertEq(tokenList.weth.balanceOf(address(hub1)), prevHubBalance + amount);
     _checkFinalBalances();
 
-    assertTrue(spoke1.isUsingAsCollateral(_wethReserveId(spoke1), bob));
+    assertTrue(_isUsingAsCollateral(spoke1, _wethReserveId(spoke1), bob));
   }
 
   function test_withdrawNative() public {
@@ -346,8 +345,6 @@ contract NativeTokenGatewayTest is SpokeBase {
   }
 
   function test_withdrawNative_revertsWith_InvalidAmount() public {
-    uint256 amount = 100e18;
-
     vm.expectRevert(IGatewayBase.InvalidAmount.selector);
     vm.prank(bob);
     nativeTokenGateway.withdrawNative(address(spoke1), _wethReserveId(spoke1), 0);
@@ -420,8 +417,6 @@ contract NativeTokenGatewayTest is SpokeBase {
   }
 
   function test_borrowNative_revertsWith_InvalidAmount() public {
-    uint256 borrowAmount = 5e18;
-
     vm.expectRevert(IGatewayBase.InvalidAmount.selector);
     vm.prank(bob);
     nativeTokenGateway.borrowNative(address(spoke1), _wethReserveId(spoke1), 0);
@@ -465,7 +460,7 @@ contract NativeTokenGatewayTest is SpokeBase {
       repayAmount,
       wethAssetId
     );
-    IHubBase.PremiumDelta memory expectedPremiumDelta = _getExpectedPremiumDelta(
+    IHubBase.PremiumDelta memory expectedPremiumDelta = _getExpectedPremiumDeltaForRestore(
       spoke1,
       bob,
       _wethReserveId(spoke1),
@@ -528,7 +523,7 @@ contract NativeTokenGatewayTest is SpokeBase {
     );
 
     {
-      IHubBase.PremiumDelta memory expectedPremiumDelta = _getExpectedPremiumDelta(
+      IHubBase.PremiumDelta memory expectedPremiumDelta = _getExpectedPremiumDeltaForRestore(
         spoke1,
         bob,
         _wethReserveId(spoke1),
@@ -601,7 +596,7 @@ contract NativeTokenGatewayTest is SpokeBase {
       wethAssetId
     );
     uint256 totalRepaid = baseRestored + premiumRestored;
-    IHubBase.PremiumDelta memory expectedPremiumDelta = _getExpectedPremiumDelta(
+    IHubBase.PremiumDelta memory expectedPremiumDelta = _getExpectedPremiumDeltaForRestore(
       spoke1,
       bob,
       _wethReserveId(spoke1),
@@ -656,8 +651,6 @@ contract NativeTokenGatewayTest is SpokeBase {
   }
 
   function test_repayNative_revertsWith_InvalidAmount() public {
-    uint256 repayAmount = 5e18;
-
     vm.expectRevert(IGatewayBase.InvalidAmount.selector);
     vm.prank(bob);
     nativeTokenGateway.repayNative{value: 0}(address(spoke1), _wethReserveId(spoke1), 0);
@@ -695,7 +688,8 @@ contract NativeTokenGatewayTest is SpokeBase {
     deal(address(this), 1 ether);
 
     vm.expectRevert(INativeTokenGateway.UnsupportedAction.selector);
-    address(nativeTokenGateway).call{value: 1 ether}(new bytes(0));
+    (bool success, ) = address(nativeTokenGateway).call{value: 1 ether}(new bytes(0));
+    assertTrue(success);
   }
 
   function test_fallback_revertsWith_UnsupportedAction() public {
@@ -704,7 +698,8 @@ contract NativeTokenGatewayTest is SpokeBase {
     bytes memory invalidCall = abi.encode('invalidFunction()');
 
     vm.expectRevert(INativeTokenGateway.UnsupportedAction.selector);
-    address(nativeTokenGateway).call{value: 1 ether}(invalidCall);
+    (bool success, ) = address(nativeTokenGateway).call{value: 1 ether}(invalidCall);
+    assertTrue(success);
   }
 
   function _getUserData(address user) internal view returns (ISpoke.UserPosition memory) {

@@ -56,7 +56,7 @@ contract SignatureGatewayTest is SignatureGatewayBaseTest {
     Utils.approve(spoke1, p.reserveId, alice, address(gateway), p.amount);
 
     uint256 shares = _hub(spoke1, p.reserveId).previewAddByAssets(
-      _assetId(spoke1, p.reserveId),
+      _spokeAssetId(spoke1, p.reserveId),
       p.amount
     );
 
@@ -83,7 +83,7 @@ contract SignatureGatewayTest is SignatureGatewayBaseTest {
     Utils.supply(spoke1, p.reserveId, alice, p.amount + 1, alice);
 
     uint256 shares = _hub(spoke1, p.reserveId).previewRemoveByAssets(
-      _assetId(spoke1, p.reserveId),
+      _spokeAssetId(spoke1, p.reserveId),
       p.amount
     );
     TestReturnValues memory returnValues;
@@ -110,7 +110,7 @@ contract SignatureGatewayTest is SignatureGatewayBaseTest {
     bytes memory signature = _sign(alicePk, _getTypedDataHash(gateway, p));
 
     uint256 shares = _hub(spoke1, p.reserveId).previewDrawByAssets(
-      _assetId(spoke1, p.reserveId),
+      _spokeAssetId(spoke1, p.reserveId),
       p.amount
     );
     TestReturnValues memory returnValues;
@@ -145,7 +145,7 @@ contract SignatureGatewayTest is SignatureGatewayBaseTest {
       p.amount
     );
     uint256 shares = _hub(spoke1, p.reserveId).previewRestoreByAssets(
-      _assetId(spoke1, p.reserveId),
+      _spokeAssetId(spoke1, p.reserveId),
       baseRestored
     );
     TestReturnValues memory returnValues;
@@ -178,7 +178,7 @@ contract SignatureGatewayTest is SignatureGatewayBaseTest {
     Utils.supplyCollateral(spoke1, p.reserveId, alice, 1e18, alice);
     bytes memory signature = _sign(alicePk, _getTypedDataHash(gateway, p));
 
-    if (spoke1.isUsingAsCollateral(p.reserveId, alice) != p.useAsCollateral) {
+    if (_isUsingAsCollateral(spoke1, p.reserveId, alice) != p.useAsCollateral) {
       vm.expectEmit(address(spoke1));
       emit ISpoke.SetUsingAsCollateral(p.reserveId, address(gateway), alice, p.useAsCollateral);
     }
@@ -201,7 +201,7 @@ contract SignatureGatewayTest is SignatureGatewayBaseTest {
     Utils.borrow(spoke1, _daiReserveId(spoke1), alice, 7e18, alice);
 
     vm.expectEmit(address(spoke1));
-    emit ISpoke.UpdateUserRiskPremium(alice, _calculateExpectedUserRP(alice, spoke1));
+    emit ISpoke.UpdateUserRiskPremium(alice, _calculateExpectedUserRP(spoke1, alice));
 
     vm.prank(vm.randomAddress());
     gateway.updateUserRiskPremiumWithSig(p, signature);

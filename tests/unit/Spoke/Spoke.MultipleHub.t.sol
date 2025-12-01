@@ -28,12 +28,7 @@ contract SpokeMultipleHubTest is SpokeBase {
 
     vm.startPrank(ADMIN);
     // Relist hub 2's dai on spoke1
-    ISpoke.ReserveConfig memory daiHub2Config = ISpoke.ReserveConfig({
-      paused: false,
-      frozen: false,
-      borrowable: true,
-      collateralRisk: 20_00
-    });
+    ISpoke.ReserveConfig memory daiHub2Config = _getDefaultReserveConfig(20_00);
     ISpoke.DynamicReserveConfig memory dynDaiHub2Config = ISpoke.DynamicReserveConfig({
       collateralFactor: 78_00,
       maxLiquidationBonus: 100_00,
@@ -48,12 +43,7 @@ contract SpokeMultipleHubTest is SpokeBase {
     );
 
     // Relist hub 3's dai on spoke 1
-    ISpoke.ReserveConfig memory daiHub3Config = ISpoke.ReserveConfig({
-      paused: false,
-      frozen: false,
-      borrowable: true,
-      collateralRisk: 20_00
-    });
+    ISpoke.ReserveConfig memory daiHub3Config = _getDefaultReserveConfig(20_00);
     ISpoke.DynamicReserveConfig memory dynDaiHub3Config = ISpoke.DynamicReserveConfig({
       collateralFactor: 78_00,
       maxLiquidationBonus: 100_00,
@@ -149,7 +139,6 @@ contract SpokeMultipleHubTest is SpokeBase {
   /// @dev Test showcasing collateral on hub 3 can suffice for debt position on hub 1
   function test_borrow_thirdHub() public {
     uint256 hub1BorrowAmount = 50_000e18;
-    uint256 hub3DaiBorrowAmount = 1e18;
     uint256 daiSupplyAmount = 100_000e18;
 
     // Bob supply to spoke 1 on hub 1

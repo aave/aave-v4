@@ -7,8 +7,8 @@ import {IHubBase} from 'src/hub/interfaces/IHubBase.sol';
 contract MockSkimSpoke {
   IHubBase public immutable HUB;
 
-  constructor(address hubAddress) {
-    HUB = IHubBase(hubAddress);
+  constructor(address hub_) {
+    HUB = IHubBase(hub_);
   }
 
   function skimAdd(uint256 assetId, uint256 amount) external returns (uint256) {
@@ -24,6 +24,6 @@ contract MockSkimSpoke {
   }
 
   function skimRestore(uint256 assetId, uint256 drawnAmount) external returns (uint256) {
-    return HUB.restore(assetId, drawnAmount, IHubBase.PremiumDelta(0, 0, 0, 0));
+    return HUB.restore(assetId, drawnAmount, IHubBase.PremiumDelta(0, 0, 0));
   }
 }

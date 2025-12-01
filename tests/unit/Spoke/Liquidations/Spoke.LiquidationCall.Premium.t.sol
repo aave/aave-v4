@@ -45,14 +45,10 @@ contract SpokeLiquidationCallPremiumTest is SpokeLiquidationCallHelperTest {
 
   function _assertBeforeLiquidation(
     CheckedLiquidationCallParams memory params,
-    AccountsInfo memory accountsInfoBefore,
+    AccountsInfo memory /*accountsInfoBefore*/,
     LiquidationMetadata memory /*liquidationMetadata*/
   ) internal virtual override {
     (, uint256 premiumDebt) = params.spoke.getUserDebt(params.debtReserveId, params.user);
-    if (_isHealthy(params.spoke, accountsInfoBefore.userAccountData.healthFactor)) {
-      assertGt(premiumDebt, 0, 'premiumDebt: before liquidation, healthy');
-    } else {
-      assertEq(premiumDebt, 0, 'premiumDebt: before liquidation, unhealthy');
-    }
+    assertGt(premiumDebt, 0, 'premiumDebt: before liquidation, healthy');
   }
 }

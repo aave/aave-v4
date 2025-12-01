@@ -13,9 +13,8 @@ interface IHub is IHubBase, IAccessManaged {
   /// @dev liquidity The liquidity available to be accessed, expressed in asset units.
   /// @dev realizedFees The amount of fees realized but not yet minted, expressed in asset units.
   /// @dev decimals The number of decimals of the underlying asset.
-  /// @dev deficit The amount of outstanding bad debt across all spokes, expressed in asset units.
+  /// @dev addedShares The total shares added across all spokes.
   /// @dev swept The outstanding liquidity which has been invested by the reinvestment controller, expressed in asset units.
-  /// @dev realizedPremiumRay The interest-free premium already accrued across all spokes, expressed in asset units and scaled by RAY.
   /// @dev premiumOffsetRay The total premium offset across all spokes, used to calculate the premium, expressed in asset units and scaled by RAY.
   /// @dev drawnShares The total drawn shares across all spokes.
   /// @dev premiumShares The total premium shares across all spokes.
@@ -27,18 +26,16 @@ interface IHub is IHubBase, IAccessManaged {
   /// @dev irStrategy The address of the interest rate strategy.
   /// @dev reinvestmentController The address of the reinvestment controller.
   /// @dev feeReceiver The address of the fee receiver spoke.
-  /// @dev addedShares The total shares added across all spokes.
+  /// @dev deficitRay The amount of outstanding bad debt across all spokes, expressed in asset units and scaled by RAY.
   struct Asset {
     uint120 liquidity;
     uint120 realizedFees;
     uint8 decimals;
     //
-    uint120 deficit;
+    uint120 addedShares;
     uint120 swept;
     //
-    uint200 realizedPremiumRay;
-    //
-    uint200 premiumOffsetRay;
+    int200 premiumOffsetRay;
     //
     uint120 drawnShares;
     uint120 premiumShares;
@@ -56,7 +53,7 @@ interface IHub is IHubBase, IAccessManaged {
     //
     address feeReceiver;
     //
-    uint120 addedShares;
+    uint200 deficitRay;
   }
 
   /// @notice Asset configuration. Subset of the `Asset` struct.
@@ -71,21 +68,18 @@ interface IHub is IHubBase, IAccessManaged {
   /// @dev drawnShares The drawn shares of a spoke for a given asset.
   /// @dev premiumShares The premium shares of a spoke for a given asset.
   /// @dev premiumOffsetRay The premium offset of a spoke for a given asset, used to calculate the premium, expressed in asset units and scaled by RAY.
-  /// @dev realizedPremiumRay The interest-free premium already accrued for a spoke for a given asset, expressed in asset units and scaled by RAY.
   /// @dev addedShares The added shares of a spoke for a given asset.
   /// @dev addCap The maximum amount that can be added by a spoke, expressed in whole assets (not scaled by decimals). A value of `MAX_ALLOWED_SPOKE_CAP` indicates no cap.
   /// @dev drawCap The maximum amount that can be drawn by a spoke, expressed in whole assets (not scaled by decimals). A value of `MAX_ALLOWED_SPOKE_CAP` indicates no cap.
   /// @dev riskPremiumThreshold The maximum ratio of premium to drawn shares a spoke can have, expressed in BPS. A value of `MAX_RISK_PREMIUM_THRESHOLD` indicates no threshold.
   /// @dev active True if the spoke is prevented from performing any actions.
   /// @dev paused True if the spoke is prevented from performing actions that instantly update the liquidity.
-  /// @dev deficit The deficit reported by a spoke for a given asset, expressed in asset units.
+  /// @dev deficitRay The deficit reported by a spoke for a given asset, expressed in asset units and scaled by RAY.
   struct SpokeData {
     uint120 drawnShares;
     uint120 premiumShares;
     //
-    uint200 premiumOffsetRay;
-    //
-    uint200 realizedPremiumRay;
+    int200 premiumOffsetRay;
     //
     uint120 addedShares;
     uint40 addCap;
@@ -94,7 +88,7 @@ interface IHub is IHubBase, IAccessManaged {
     bool active;
     bool paused;
     //
-    uint120 deficit;
+    uint200 deficitRay;
   }
 
   /// @notice Spoke configuration data. Subset of the `SpokeData` struct.
@@ -169,13 +163,13 @@ interface IHub is IHubBase, IAccessManaged {
   /// @param callerSpoke The spoke that eliminated the deficit using its supplied shares.
   /// @param coveredSpoke The spoke for which the deficit was eliminated.
   /// @param shares The amount of shares removed.
-  /// @param amount The amount of deficit eliminated.
+  /// @param deficitAmountRay The amount of deficit eliminated, expressed in asset units and scaled by RAY.
   event EliminateDeficit(
     uint256 indexed assetId,
     address indexed callerSpoke,
     address indexed coveredSpoke,
     uint256 shares,
-    uint256 amount
+    uint256 deficitAmountRay
   );
 
   /// @notice Thrown when an underlying asset is already listed.
@@ -188,9 +182,13 @@ interface IHub is IHubBase, IAccessManaged {
   /// @param addCap The current `addCap` of the asset, expressed in whole assets (not scaled by decimals).
   error AddCapExceeded(uint256 addCap);
 
-  /// @notice Thrown when the liquidity is insufficient.
+  /// @notice Thrown when the available liquidity is insufficient.
   /// @param liquidity The current available liquidity.
   error InsufficientLiquidity(uint256 liquidity);
+
+  /// @notice Thrown when the transferred liquidity is insufficient.
+  /// @param liquidityNeeded The amount of additional liquidity needed.
+  error InsufficientTransferred(uint256 liquidityNeeded);
 
   /// @notice Thrown when the draw cap is exceeded.
   /// @param drawCap The current `drawCap` of the asset, expressed in whole assets (not scaled by decimals).

@@ -2,8 +2,12 @@ pragma solidity 0.8.28;
 pragma experimental ABIEncoderV2;
 
 import {Context} from 'src/dependencies/openzeppelin/Context.sol';
-import {ITransparentUpgradeableProxy} from 'src/dependencies/openzeppelin/TransparentUpgradeableProxy.sol';
-import {TransparentUpgradeableProxy} from 'src/dependencies/openzeppelin/TransparentUpgradeableProxy.sol';
+import {
+  ITransparentUpgradeableProxy
+} from 'src/dependencies/openzeppelin/TransparentUpgradeableProxy.sol';
+import {
+  TransparentUpgradeableProxy
+} from 'src/dependencies/openzeppelin/TransparentUpgradeableProxy.sol';
 import {Initializable} from 'src/dependencies/openzeppelin-upgradeable/Initializable.sol';
 import {IAccessManaged} from 'src/dependencies/openzeppelin/IAccessManaged.sol';
 import {IHub} from 'src/hub/interfaces/IHub.sol';
@@ -26,7 +30,6 @@ import {Math} from 'src/dependencies/openzeppelin/Math.sol';
 import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
 import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
 import {SharesMath} from 'src/hub/libraries/SharesMath.sol';
-import {SafeTransferLib} from 'src/dependencies/solady/SafeTransferLib.sol';
 import {MathUtils} from 'src/libraries/math/MathUtils.sol';
 import {Panic} from 'src/dependencies/openzeppelin/Panic.sol';
 import {ContextUpgradeable} from 'src/dependencies/openzeppelin-upgradeable/ContextUpgradeable.sol';
@@ -45,7 +48,12 @@ import {StdAssertions} from 'lib/forge-std/src/StdAssertions.sol';
 import {StdUtils} from 'lib/forge-std/src/StdUtils.sol';
 import {IPriceOracle} from 'src/spoke/interfaces/IPriceOracle.sol';
 import {IERC1271} from 'src/dependencies/openzeppelin/IERC1271.sol';
-import {FuzzingTob, FuzzingBase, PropertiesConstants, PropertiesAsserts} from 'tests/FuzzingTob/FuzzingTob.sol';
+import {
+  FuzzingTob,
+  FuzzingBase,
+  PropertiesConstants,
+  PropertiesAsserts
+} from 'tests/FuzzingTob/FuzzingTob.sol';
 import {StdInvariant} from 'lib/forge-std/src/StdInvariant.sol';
 import {StdStorage, FindData, stdStorageSafe, stdStorage} from 'lib/forge-std/src/StdStorage.sol';
 import {PropertiesLibString} from 'tests/FuzzingTob/PropertiesLibString.sol';

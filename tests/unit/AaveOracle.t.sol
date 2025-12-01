@@ -9,7 +9,7 @@ contract AaveOracleTest is Base {
 
   AaveOracle public oracle;
 
-  uint8 private constant _decimals = 8;
+  uint8 private constant _oracleDecimals = 8;
   string private constant _description = 'Spoke 1 (USD)';
 
   address private _source1 = makeAddr('SOURCE1');
@@ -22,7 +22,7 @@ contract AaveOracleTest is Base {
 
   function setUp() public override {
     deployFixtures();
-    oracle = new AaveOracle(address(spoke1), _decimals, _description);
+    oracle = new AaveOracle(address(spoke1), _oracleDecimals, _description);
   }
 
   function test_deploy_revertsWith_InvalidAddress() public {
@@ -31,10 +31,10 @@ contract AaveOracleTest is Base {
   }
 
   function test_constructor() public {
-    oracle = new AaveOracle(address(spoke1), _decimals, _description);
+    oracle = new AaveOracle(address(spoke1), _oracleDecimals, _description);
 
     test_spoke();
-    test_decimals();
+    testDECIMALS();
     test_description();
   }
 
@@ -51,8 +51,8 @@ contract AaveOracleTest is Base {
     assertEq(oracle.SPOKE(), address(spoke1));
   }
 
-  function test_decimals() public view {
-    assertEq(oracle.DECIMALS(), _decimals);
+  function testDECIMALS() public view {
+    assertEq(oracle.DECIMALS(), _oracleDecimals);
   }
 
   function test_description() public view {
@@ -67,7 +67,7 @@ contract AaveOracleTest is Base {
   }
 
   function test_setReserveSource_revertsWith_InvalidSourceDecimals() public {
-    _mockSourceDecimals(_source1, _decimals + 1);
+    _mockSourceDecimals(_source1, _oracleDecimals + 1);
 
     vm.expectRevert(abi.encodeWithSelector(IAaveOracle.InvalidSourceDecimals.selector, reserveId1));
 
@@ -76,7 +76,7 @@ contract AaveOracleTest is Base {
   }
 
   function test_setReserveSource_revertsWith_InvalidSource() public {
-    _mockSourceDecimals(address(0), _decimals);
+    _mockSourceDecimals(address(0), _oracleDecimals);
 
     vm.expectRevert(abi.encodeWithSelector(IAaveOracle.InvalidSource.selector, reserveId1));
 
@@ -85,7 +85,7 @@ contract AaveOracleTest is Base {
   }
 
   function test_setReserveSource_revertsWith_InvalidPrice() public {
-    _mockSourceDecimals(_source1, _decimals);
+    _mockSourceDecimals(_source1, _oracleDecimals);
     _mockSourceLatestRoundData(_source1, -1e8);
     vm.expectRevert(abi.encodeWithSelector(IAaveOracle.InvalidPrice.selector, reserveId1));
     vm.prank(address(spoke1));
@@ -103,7 +103,7 @@ contract AaveOracleTest is Base {
   }
 
   function test_setReserveSource() public {
-    _mockSourceDecimals(_source1, _decimals);
+    _mockSourceDecimals(_source1, _oracleDecimals);
     _mockSourceLatestRoundData(_source1, 1e8);
 
     vm.expectEmit();
@@ -126,7 +126,7 @@ contract AaveOracleTest is Base {
   }
 
   function test_getReservePrice_revertsWith_InvalidPrice() public {
-    _mockSourceDecimals(_source1, _decimals);
+    _mockSourceDecimals(_source1, _oracleDecimals);
     _mockSourceLatestRoundData(_source1, 1e8);
 
     vm.prank(address(spoke1));
@@ -146,7 +146,7 @@ contract AaveOracleTest is Base {
   }
 
   function test_getReservePrices_revertsWith_InvalidSource() public {
-    _mockSourceDecimals(_source1, _decimals);
+    _mockSourceDecimals(_source1, _oracleDecimals);
     _mockSourceLatestRoundData(_source1, 1e8);
 
     vm.prank(address(spoke1));
@@ -161,9 +161,9 @@ contract AaveOracleTest is Base {
   }
 
   function test_getReservePrices() public {
-    _mockSourceDecimals(_source1, _decimals);
+    _mockSourceDecimals(_source1, _oracleDecimals);
     _mockSourceLatestRoundData(_source1, 1e8);
-    _mockSourceDecimals(_source2, _decimals);
+    _mockSourceDecimals(_source2, _oracleDecimals);
     _mockSourceLatestRoundData(_source2, 2e8);
 
     vm.prank(address(spoke1));

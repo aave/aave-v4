@@ -357,8 +357,6 @@ contract SpokeWithdrawTest is SpokeBase {
     // Ensure interest has accrued
     vm.assume(hub1.getAddedAssets(daiAssetId) > supplyAmount);
 
-    uint256 expectedFeeAmount = _calcUnrealizedFees(hub1, daiAssetId);
-
     // Give Bob enough dai to repay
     uint256 repayAmount = spoke1.getReserveTotalDebt(_daiReserveId(spoke1));
     deal(address(tokenList.dai), bob, repayAmount);

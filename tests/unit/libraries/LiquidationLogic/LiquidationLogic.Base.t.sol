@@ -69,12 +69,12 @@ contract LiquidationLogicBaseTest is SpokeBase {
     return
       LiquidationLogic.CalculateDebtToTargetHealthFactorParams({
         totalDebtValue: totalDebtValue,
-        healthFactor: healthFactor,
-        targetHealthFactor: targetHealthFactor,
-        liquidationBonus: liquidationBonus,
-        collateralFactor: collateralFactor,
+        debtAssetUnit: debtAssetUnit,
         debtAssetPrice: debtAssetPrice,
-        debtAssetUnit: debtAssetUnit
+        collateralFactor: collateralFactor,
+        liquidationBonus: liquidationBonus,
+        healthFactor: healthFactor,
+        targetHealthFactor: targetHealthFactor
       });
   }
 
@@ -99,14 +99,14 @@ contract LiquidationLogicBaseTest is SpokeBase {
     return
       LiquidationLogic.CalculateDebtToLiquidateParams({
         debtReserveBalance: debtReserveBalance,
-        debtToCover: debtToCover,
         totalDebtValue: debtToTargetParams.totalDebtValue,
-        healthFactor: debtToTargetParams.healthFactor,
-        targetHealthFactor: debtToTargetParams.targetHealthFactor,
-        liquidationBonus: debtToTargetParams.liquidationBonus,
-        collateralFactor: debtToTargetParams.collateralFactor,
+        debtAssetUnit: debtToTargetParams.debtAssetUnit,
         debtAssetPrice: debtToTargetParams.debtAssetPrice,
-        debtAssetUnit: debtToTargetParams.debtAssetUnit
+        debtToCover: debtToCover,
+        collateralFactor: debtToTargetParams.collateralFactor,
+        liquidationBonus: debtToTargetParams.liquidationBonus,
+        healthFactor: debtToTargetParams.healthFactor,
+        targetHealthFactor: debtToTargetParams.targetHealthFactor
       });
   }
 
@@ -145,10 +145,10 @@ contract LiquidationLogicBaseTest is SpokeBase {
       params.maxLiquidationBonus
     );
 
-    params.debtAssetDecimals = bound(
-      params.debtAssetDecimals,
-      MIN_TOKEN_DECIMALS_SUPPORTED,
-      MAX_TOKEN_DECIMALS_SUPPORTED
+    params.debtAssetUnit = bound(
+      params.debtAssetUnit,
+      10 ** MIN_TOKEN_DECIMALS_SUPPORTED,
+      10 ** MAX_TOKEN_DECIMALS_SUPPORTED
     );
 
     LiquidationLogic.CalculateDebtToLiquidateParams
@@ -156,18 +156,18 @@ contract LiquidationLogicBaseTest is SpokeBase {
     debtToLiquidateParams = _bound(debtToLiquidateParams);
 
     params.debtReserveBalance = debtToLiquidateParams.debtReserveBalance;
-    params.debtToCover = debtToLiquidateParams.debtToCover;
     params.totalDebtValue = debtToLiquidateParams.totalDebtValue;
+    params.debtAssetPrice = debtToLiquidateParams.debtAssetPrice;
+    params.debtToCover = debtToLiquidateParams.debtToCover;
     params.healthFactor = debtToLiquidateParams.healthFactor;
     params.targetHealthFactor = debtToLiquidateParams.targetHealthFactor;
     params.collateralFactor = debtToLiquidateParams.collateralFactor;
-    params.debtAssetPrice = debtToLiquidateParams.debtAssetPrice;
 
     params.collateralAssetPrice = bound(params.collateralAssetPrice, 1, MAX_ASSET_PRICE);
-    params.collateralAssetDecimals = bound(
-      params.collateralAssetDecimals,
-      MIN_TOKEN_DECIMALS_SUPPORTED,
-      MAX_TOKEN_DECIMALS_SUPPORTED
+    params.collateralAssetUnit = bound(
+      params.collateralAssetUnit,
+      10 ** MIN_TOKEN_DECIMALS_SUPPORTED,
+      10 ** MAX_TOKEN_DECIMALS_SUPPORTED
     );
     params.liquidationFee = bound(params.liquidationFee, 0, PercentageMath.PERCENTAGE_FACTOR);
     params.collateralReserveBalance = bound(params.collateralReserveBalance, 0, MAX_SUPPLY_AMOUNT);
@@ -184,13 +184,13 @@ contract LiquidationLogicBaseTest is SpokeBase {
     debtToLiquidateParams = _boundWithDustAdjustment(debtToLiquidateParams);
 
     params.debtReserveBalance = debtToLiquidateParams.debtReserveBalance;
-    params.debtToCover = debtToLiquidateParams.debtToCover;
     params.totalDebtValue = debtToLiquidateParams.totalDebtValue;
+    params.debtAssetUnit = debtToLiquidateParams.debtAssetUnit;
+    params.debtAssetPrice = debtToLiquidateParams.debtAssetPrice;
+    params.debtToCover = debtToLiquidateParams.debtToCover;
+    params.collateralFactor = debtToLiquidateParams.collateralFactor;
     params.healthFactor = debtToLiquidateParams.healthFactor;
     params.targetHealthFactor = debtToLiquidateParams.targetHealthFactor;
-    params.collateralFactor = debtToLiquidateParams.collateralFactor;
-    params.debtAssetPrice = debtToLiquidateParams.debtAssetPrice;
-    params.debtAssetDecimals = _getExponent(debtToLiquidateParams.debtAssetUnit);
 
     return params;
   }
@@ -201,12 +201,12 @@ contract LiquidationLogicBaseTest is SpokeBase {
     return
       LiquidationLogic.CalculateDebtToTargetHealthFactorParams({
         totalDebtValue: params.totalDebtValue,
-        healthFactor: params.healthFactor,
-        targetHealthFactor: params.targetHealthFactor,
-        liquidationBonus: params.liquidationBonus,
-        collateralFactor: params.collateralFactor,
+        debtAssetUnit: params.debtAssetUnit,
         debtAssetPrice: params.debtAssetPrice,
-        debtAssetUnit: params.debtAssetUnit
+        collateralFactor: params.collateralFactor,
+        liquidationBonus: params.liquidationBonus,
+        healthFactor: params.healthFactor,
+        targetHealthFactor: params.targetHealthFactor
       });
   }
 
@@ -222,14 +222,14 @@ contract LiquidationLogicBaseTest is SpokeBase {
     return
       LiquidationLogic.CalculateDebtToLiquidateParams({
         debtReserveBalance: params.debtReserveBalance,
-        debtToCover: params.debtToCover,
         totalDebtValue: params.totalDebtValue,
-        healthFactor: params.healthFactor,
-        targetHealthFactor: params.targetHealthFactor,
-        liquidationBonus: liquidationBonus,
-        collateralFactor: params.collateralFactor,
+        debtAssetUnit: params.debtAssetUnit,
         debtAssetPrice: params.debtAssetPrice,
-        debtAssetUnit: 10 ** params.debtAssetDecimals
+        debtToCover: params.debtToCover,
+        collateralFactor: params.collateralFactor,
+        liquidationBonus: liquidationBonus,
+        healthFactor: params.healthFactor,
+        targetHealthFactor: params.targetHealthFactor
       });
   }
 
