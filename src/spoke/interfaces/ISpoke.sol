@@ -312,10 +312,6 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
   /// @notice Thrown when the maximum number of dynamic config keys is reached.
   error MaximumDynamicConfigKeyReached();
 
-  /// @notice Sets the oracle for the spoke.
-  /// @param oracle_ The address of the oracle.
-  function setOracle(address oracle_) external;
-
   /// @notice Updates the liquidation config.
   /// @param config The liquidation config.
   function updateLiquidationConfig(LiquidationConfig calldata config) external;

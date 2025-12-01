@@ -1053,7 +1053,7 @@ contract FuzzingBase is PropertiesConstants, PropertiesAsserts {
     uint256 premium,
     uint256 restoreAmount,
     uint256 assetId
-  ) internal returns (uint256, uint256, uint256) {
+  ) internal view returns (uint256, uint256, uint256) {
     if (restoreAmount <= premium) {
       return (0, restoreAmount, restoreAmount);
     }
@@ -1140,7 +1140,7 @@ contract FuzzingTob is FuzzingBase {
 
   function _after_check_global_invariants() internal {
     // the array position corresponds to the asset id
-    //uint256[assetCount] memory total_added_assets_sum_spoke;
+    uint256[assetCount] memory total_added_assets_sum_spoke;
     uint256[assetCount] memory total_added_shares_sum_spoke;
     uint256[assetCount] memory total_deficit_sum_spoke;
 
@@ -1173,7 +1173,7 @@ contract FuzzingTob is FuzzingBase {
       }
 
       for (uint256 j = 0; j < assetCount; j++) {
-        //total_added_assets_sum_spoke[j] += hub1.getSpokeAddedAssets(j, spoke);
+        total_added_assets_sum_spoke[j] += hub1.getSpokeAddedAssets(j, spoke);
         uint256 spoke_added_shares = hub1.getSpokeAddedShares(j, spoke);
         total_added_shares_sum_spoke[j] += spoke_added_shares;
         total_deficit_sum_spoke[j] += hub1.getSpokeDeficitRay(j, spoke);
@@ -1190,7 +1190,11 @@ contract FuzzingTob is FuzzingBase {
     for (uint256 i = 0; i < assetCount; i++) {
       IHub.Asset memory asset = hub1.getAsset(i);
       uint256 asset_added_shares = hub1.getAddedShares(i);
-      //assertEq(total_added_assets_sum_spoke[i], hub1.getAddedAssets(i), "AAVE-GINV-1 total added assets should be equal to spokes added assets");
+      assertEq(
+        total_added_assets_sum_spoke[i],
+        hub1.getAddedAssets(i),
+        'AAVE-GINV-1 total added assets should be equal to spokes added assets'
+      );
       assertEq(
         total_added_shares_sum_spoke[i],
         asset_added_shares,
@@ -1249,7 +1253,6 @@ contract FuzzingTob is FuzzingBase {
     // Assume addCap is unlimited
     amount = clampBetween(amount, hub.previewAddByShares(reserve.assetId, 1), 10 ** 30);
 
-    //vm.startPrank(msg.sender);
     // For now we set every asset supplied as collateral
     vm.prank(msg.sender);
     spoke.setUsingAsCollateral(reserveId, true, msg.sender);
@@ -1266,9 +1269,9 @@ contract FuzzingTob is FuzzingBase {
       hub.getSpoke(reserve.assetId, oldAsset.feeReceiver).addedShares;
     vm.prank(msg.sender);
 
-    try spoke.supply(reserveId, amount, msg.sender) returns (uint256 shares, uint256 amount) {
+    try spoke.supply(reserveId, amount, msg.sender) returns (uint256 shares, uint256 amount_) {
       assertGt(shares, 0, 'AAVE-INV-1 shares supplied should be greater than 0');
-      assertGt(amount, 0, 'AAVE-INV-2 amount supplied should be greater than 0');
+      assertGt(amount_, 0, 'AAVE-INV-2 amount supplied should be greater than 0');
       assertEq(
         spoke.getUserSuppliedShares(reserveId, msg.sender),
         oldUserShares + shares,
@@ -1276,25 +1279,25 @@ contract FuzzingTob is FuzzingBase {
       );
       assertEq(
         TestnetERC20(reserve.underlying).balanceOf(address(hub)),
-        oldHubUnderlyingBalance + amount,
+        oldHubUnderlyingBalance + amount_,
         'AAVE-INV-5 hub underlying balance should be equal to old hub underlying balance plus amount supplied'
       );
       assertEq(
         TestnetERC20(reserve.underlying).balanceOf(msg.sender),
-        oldUserUnderlyingBalance - amount,
+        oldUserUnderlyingBalance - amount_,
         'AAVE-INV-6 user underlying balance should be equal to old user underlying balance minus amount supplied'
       );
       IHub.Asset memory newAsset = hub.getAsset(reserve.assetId);
       assertEq(
         newAsset.liquidity,
-        oldAsset.liquidity + amount,
+        oldAsset.liquidity + amount_,
         'AAVE-INV-7 asset liquidity should be equal to old asset liquidity plus amount supplied'
       );
-      /*assertEq(
+      assertEq(
         newAsset.addedShares - unrealizedFeeShares,
         oldAsset.addedShares + shares,
         'AAVE-INV-8 asset added shares should be equal to old asset added shares plus shares supplied'
-      );*/
+      );
       IHub.SpokeData memory newSpokeData = hub.getSpoke(reserve.assetId, address(spoke));
       assertEq(
         newSpokeData.addedShares,
@@ -1348,9 +1351,9 @@ contract FuzzingTob is FuzzingBase {
       hub.getSpoke(reserve.assetId, oldAsset.feeReceiver).addedShares;
     vm.prank(msg.sender);
 
-    try spoke.withdraw(reserveId, amount, msg.sender) returns (uint256 shares, uint256 amount) {
+    try spoke.withdraw(reserveId, amount, msg.sender) returns (uint256 shares, uint256 amount_) {
       assertGt(shares, 0, 'AAVE-INV-10 shares withdrawn should be greater than 0');
-      assertGt(amount, 0, 'AAVE-INV-11 amount withdrawn should be greater than 0');
+      assertGt(amount_, 0, 'AAVE-INV-11 amount withdrawn should be greater than 0');
       assertEq(
         spoke.getUserSuppliedShares(reserveId, msg.sender),
         oldUserShares - shares,
@@ -1358,18 +1361,18 @@ contract FuzzingTob is FuzzingBase {
       );
       assertEq(
         TestnetERC20(reserve.underlying).balanceOf(address(hub)),
-        oldBalances.hubUnderlying - amount,
+        oldBalances.hubUnderlying - amount_,
         'AAVE-INV-13 hub underlying balance should be equal to old hub underlying balance minus amount withdrew'
       );
       assertEq(
         TestnetERC20(reserve.underlying).balanceOf(msg.sender),
-        oldBalances.userUnderlying + amount,
+        oldBalances.userUnderlying + amount_,
         'AAVE-INV-14 user underlying balance should be equal to old user underlying balance plus amount withdrew'
       );
       IHub.Asset memory newAsset = hub.getAsset(reserve.assetId);
       assertEq(
         newAsset.liquidity,
-        oldAsset.liquidity - amount,
+        oldAsset.liquidity - amount_,
         'AAVE-INV-15 asset liquidity should be equal to old asset liquidity minus amount withdrew'
       );
       // @note we remove the unrealizedFeeShares to account for the accrued interest
@@ -1406,7 +1409,6 @@ contract FuzzingTob is FuzzingBase {
       // Note we assume addCap is unlimited and all the reserves are active
       emit LogString('AAVE-INV-20: withdraw must succeed if the preconditions are met');
       emit LogBytes(data);
-      //assert(false);
     }
   }
   event HFF(
@@ -1443,7 +1445,6 @@ contract FuzzingTob is FuzzingBase {
 
     IHub hub = IHub(address(reserve.hub));
 
-    //vm.startPrank(msg.sender);
     OldBalances memory oldBalances;
     oldBalances.hubUnderlying = TestnetERC20(reserve.underlying).balanceOf(address(hub));
     oldBalances.userUnderlying = TestnetERC20(reserve.underlying).balanceOf(msg.sender);
@@ -1452,10 +1453,10 @@ contract FuzzingTob is FuzzingBase {
     IHub.SpokeData memory oldSpokeData = hub.getSpoke(reserve.assetId, address(spoke));
     ISpoke.UserPosition memory oldUserPosition = spoke.getUserPosition(reserveId, msg.sender);
     vm.prank(msg.sender);
-    try spoke.borrow(reserveId, amount, msg.sender) returns (uint256 shares, uint256 amount) {
+
+    try spoke.borrow(reserveId, amount, msg.sender) returns (uint256 shares, uint256 amount_) {
       assertGt(shares, 0, 'AAVE-INV-21 shares borrowed should be greater than 0');
-      assertGt(amount, 0, 'AAVE-INV-22 amount borrowed should be greater than 0');
-      //ISpoke.UserPosition memory newUserPosition = spoke.getUserPosition(reserveId, msg.sender);
+      assertGt(amount_, 0, 'AAVE-INV-22 amount borrowed should be greater than 0');
       assertEq(
         spoke.getUserPosition(reserveId, msg.sender).drawnShares,
         oldUserPosition.drawnShares + shares,
@@ -1463,18 +1464,18 @@ contract FuzzingTob is FuzzingBase {
       );
       assertEq(
         TestnetERC20(reserve.underlying).balanceOf(address(hub)),
-        oldBalances.hubUnderlying - amount,
+        oldBalances.hubUnderlying - amount_,
         'AAVE-INV-24 hub underlying balance should be equal to old hub underlying balance minus amount borrowed'
       );
       assertEq(
         TestnetERC20(reserve.underlying).balanceOf(msg.sender),
-        oldBalances.userUnderlying + amount,
+        oldBalances.userUnderlying + amount_,
         'AAVE-INV-25 user underlying balance should be equal to old user underlying balance plus amount borrowed'
       );
       IHub.Asset memory newAsset = hub.getAsset(reserve.assetId);
       assertEq(
         newAsset.liquidity,
-        oldAsset.liquidity - amount,
+        oldAsset.liquidity - amount_,
         'AAVE-INV-26 asset liquidity should be equal to old asset liquidity minus amount borrowed'
       );
       assertEq(
@@ -1510,9 +1511,6 @@ contract FuzzingTob is FuzzingBase {
       // Note we assume drawCap is unlimited and all the reserves are active
       emit LogString('AAVE-INV-31: borrow must succeed if the preconditions are met');
       emit LogBytes(data);
-      // I don't know why it fails with the HF error, could be because the maxAmount computation is wrong or smth else.
-      // TODO check why
-      //assert(false);
     }
   }
 
@@ -1522,7 +1520,7 @@ contract FuzzingTob is FuzzingBase {
     uint256 amount
   ) external check_global_invariants {
     ISpoke spoke = spokes[clampBetween(spokeId, 0, spokes.length - 1)];
-    //ISpoke.UserAccountData memory oldAccountData = spoke.getUserAccountData(msg.sender);
+    ISpoke.UserAccountData memory oldAccountData = spoke.getUserAccountData(msg.sender);
     reserveId = spokeInfo[spoke].reserveIds[
       clampBetween(reserveId, 0, spokeInfo[spoke].reserveIds.length - 1)
     ];
@@ -1536,13 +1534,13 @@ contract FuzzingTob is FuzzingBase {
     );
     IHub hub = IHub(address(reserve.hub));
 
-    //vm.startPrank(msg.sender);
     TestnetERC20(reserve.underlying).mint(msg.sender, restoreAmount);
     vm.prank(msg.sender);
     TestnetERC20(reserve.underlying).approve(address(hub), restoreAmount);
 
-    uint256 oldHubUnderlyingBalance = TestnetERC20(reserve.underlying).balanceOf(address(hub));
-    uint256 oldUserUnderlyingBalance = TestnetERC20(reserve.underlying).balanceOf(msg.sender);
+    OldBalances memory oldBalances;
+    oldBalances.hubUnderlying = TestnetERC20(reserve.underlying).balanceOf(address(hub));
+    oldBalances.userUnderlying = TestnetERC20(reserve.underlying).balanceOf(msg.sender);
     IHub.Asset memory oldAsset = hub.getAsset(reserve.assetId);
     IHub.SpokeData memory oldSpokeData = hub.getSpoke(reserve.assetId, address(spoke));
     ISpoke.UserPosition memory oldUserPosition = spoke.getUserPosition(reserveId, msg.sender);
@@ -1551,9 +1549,8 @@ contract FuzzingTob is FuzzingBase {
       uint256 restoredShares,
       uint256 restoredAmount
     ) {
-      //assertGt(restoredShares, 0, "AAVE-INV-32 shares restored should be greater than 0");
+      assertGt(restoredShares, 0, 'AAVE-INV-32 shares restored should be greater than 0');
       assertGt(restoredAmount, 0, 'AAVE-INV-33 amount restored should be greater than 0');
-      //ISpoke.UserPosition memory newUserPosition = spoke.getUserPosition(reserveId, msg.sender);
       assertEq(
         spoke.getUserPosition(reserveId, msg.sender).drawnShares,
         oldUserPosition.drawnShares - restoredShares,
@@ -1561,12 +1558,12 @@ contract FuzzingTob is FuzzingBase {
       );
       assertEq(
         TestnetERC20(reserve.underlying).balanceOf(address(hub)),
-        oldHubUnderlyingBalance + restoredAmount,
+        oldBalances.hubUnderlying + restoredAmount,
         'AAVE-INV-35 hub underlying balance should be equal to old hub underlying balance plus amount restored'
       );
       assertEq(
         TestnetERC20(reserve.underlying).balanceOf(msg.sender),
-        oldUserUnderlyingBalance - restoredAmount,
+        oldBalances.userUnderlying - restoredAmount,
         'AAVE-INV-36 user underlying balance should be equal to old user underlying balance minus amount restored'
       );
       IHub.Asset memory newAsset = hub.getAsset(reserve.assetId);
@@ -1587,8 +1584,16 @@ contract FuzzingTob is FuzzingBase {
         'AAVE-INV-39 spoke drawn shares should be equal to old spoke drawn shares minus restored shares'
       );
       ISpoke.UserAccountData memory newAccountData = spoke.getUserAccountData(msg.sender);
-      //assertLte(oldAccountData.healthFactor, newAccountData.healthFactor, "AAVE-INV-40 user health factor does not decrease when repaying");
-      //assertGte(newAccountData.healthFactor, uint256(spoke.HEALTH_FACTOR_LIQUIDATION_THRESHOLD()), "AAVE-INV-30 user health factor does not go below HEALTH_FACTOR_LIQUIDATION_THRESHOLD when borrowing");
+      assertLte(
+        oldAccountData.healthFactor,
+        newAccountData.healthFactor,
+        'AAVE-INV-40 user health factor does not decrease when repaying'
+      );
+      assertGte(
+        newAccountData.healthFactor,
+        1e18,
+        'AAVE-INV-30 user health factor does not go below HEALTH_FACTOR_LIQUIDATION_THRESHOLD when borrowing'
+      );
     } catch (bytes memory data) {
       // Note we assume drawCap is unlimited and all the reserves are active
       emit LogString('AAVE-INV-41: repay must succeed if the preconditions are met');

@@ -30,8 +30,4 @@ contract MockSpokeInstance is Spoke {
       emit UpdateLiquidationConfig(_liquidationConfig);
     }
   }
-
-  function setOracle(address oracle_) external {
-    return;
-  }
 }

@@ -18,10 +18,6 @@ contract SpokeInstance is Spoke {
     _disableInitializers();
   }
 
-  function setOracle(address oracle_) external {
-    return;
-  }
-
   /// @notice Initializer.
   /// @dev The authority contract must implement the `AccessManaged` interface for access control.
   /// @param authority The address of the authority contract which manages permissions.
@@ -30,7 +26,7 @@ contract SpokeInstance is Spoke {
     require(authority != address(0), InvalidAddress());
     __AccessManaged_init(authority);
     if (_liquidationConfig.targetHealthFactor == 0) {
-      _liquidationConfig.targetHealthFactor = LiquidationLogic.HEALTH_FACTOR_LIQUIDATION_THRESHOLD;
+      _liquidationConfig.targetHealthFactor = HEALTH_FACTOR_LIQUIDATION_THRESHOLD;
       emit UpdateLiquidationConfig(_liquidationConfig);
     }
   }
