@@ -49,19 +49,14 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
       address(newHub),
       isolationVars.assetAId,
       _deployMockPriceFeed(newSpoke, 2000e8),
-      ISpoke.ReserveConfig({
-        paused: false,
-        frozen: false,
-        borrowable: false,
-        collateralRisk: 15_00
-      }),
+      _getDefaultReserveConfig(15_00),
       dynReserveConfig
     );
     isolationVars.reserveBId = newSpoke.addReserve(
       address(newHub),
       isolationVars.assetBId,
       _deployMockPriceFeed(newSpoke, 50_000e8),
-      ISpoke.ReserveConfig({paused: false, frozen: false, borrowable: true, collateralRisk: 15_00}),
+      _getDefaultReserveConfig(15_00),
       dynReserveConfig
     );
 
@@ -106,7 +101,7 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
       address(hub1),
       isolationVars.assetBIdMainHub,
       _deployMockPriceFeed(newSpoke, 50_000e8),
-      ISpoke.ReserveConfig({paused: false, frozen: false, borrowable: true, collateralRisk: 15_00}),
+      _getDefaultReserveConfig(15_00),
       dynReserveConfig
     );
 
@@ -182,7 +177,7 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
       address(hub1),
       isolationVars.assetBIdMainHub,
       _deployMockPriceFeed(newSpoke, 50_000e8),
-      ISpoke.ReserveConfig({paused: false, frozen: false, borrowable: true, collateralRisk: 15_00}),
+      _getDefaultReserveConfig(15_00),
       dynReserveConfig
     );
 

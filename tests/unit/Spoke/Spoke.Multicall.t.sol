@@ -100,23 +100,13 @@ contract SpokeMulticall is SpokeBase {
     uint256 reserveCountBefore = spoke1.getReserveCount();
     uint256 usdzReserveId = reserveCountBefore;
     uint256 usdaReserveId = usdzReserveId + 1;
-    ISpoke.ReserveConfig memory usdzConfig = ISpoke.ReserveConfig({
-      paused: false,
-      frozen: false,
-      borrowable: true,
-      collateralRisk: 10_00
-    });
+    ISpoke.ReserveConfig memory usdzConfig = _getDefaultReserveConfig(10_00);
     ISpoke.DynamicReserveConfig memory usdzDynConfig = ISpoke.DynamicReserveConfig({
       collateralFactor: 88_00,
       maxLiquidationBonus: 100_00,
       liquidationFee: 0
     });
-    ISpoke.ReserveConfig memory usdaConfig = ISpoke.ReserveConfig({
-      paused: false,
-      frozen: false,
-      borrowable: true,
-      collateralRisk: 5_00
-    });
+    ISpoke.ReserveConfig memory usdaConfig = _getDefaultReserveConfig(5_00);
     ISpoke.DynamicReserveConfig memory usdaDynConfig = ISpoke.DynamicReserveConfig({
       collateralFactor: 70_00,
       maxLiquidationBonus: 100_00,

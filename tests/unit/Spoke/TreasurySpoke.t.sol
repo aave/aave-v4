@@ -147,12 +147,19 @@ contract TreasurySpokeTest is SpokeBase {
     treasurySpoke.transfer(vm.randomAddress(), vm.randomAddress(), 1);
   }
 
-  function test_transfer_revertsWith_TransferFailed(uint256 amount) public {
+  function test_transfer_revertsWith_ERC20InsufficientBalance(uint256 amount) public {
     vm.assume(amount > 0);
     address token = address(new MockERC20());
 
     vm.prank(TREASURY_ADMIN);
-    vm.expectRevert(SafeTransferLib.TransferFailed.selector);
+    vm.expectRevert(
+      abi.encodeWithSelector(
+        IERC20Errors.ERC20InsufficientBalance.selector,
+        address(treasurySpoke),
+        0,
+        amount
+      )
+    );
     treasurySpoke.transfer(token, vm.randomAddress(), amount);
   }
 

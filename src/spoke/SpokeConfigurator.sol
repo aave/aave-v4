@@ -117,6 +117,30 @@ contract SpokeConfigurator is Ownable2Step, ISpokeConfigurator {
   }
 
   /// @inheritdoc ISpokeConfigurator
+  function updateLiquidatable(
+    address spoke,
+    uint256 reserveId,
+    bool liquidatable
+  ) external onlyOwner {
+    ISpoke targetSpoke = ISpoke(spoke);
+    ISpoke.ReserveConfig memory reserveConfig = targetSpoke.getReserveConfig(reserveId);
+    reserveConfig.liquidatable = liquidatable;
+    targetSpoke.updateReserveConfig(reserveId, reserveConfig);
+  }
+
+  /// @inheritdoc ISpokeConfigurator
+  function updateReceiveSharesEnabled(
+    address spoke,
+    uint256 reserveId,
+    bool receiveSharesEnabled
+  ) external onlyOwner {
+    ISpoke targetSpoke = ISpoke(spoke);
+    ISpoke.ReserveConfig memory reserveConfig = targetSpoke.getReserveConfig(reserveId);
+    reserveConfig.receiveSharesEnabled = receiveSharesEnabled;
+    targetSpoke.updateReserveConfig(reserveId, reserveConfig);
+  }
+
+  /// @inheritdoc ISpokeConfigurator
   function updateCollateralRisk(
     address spoke,
     uint256 reserveId,

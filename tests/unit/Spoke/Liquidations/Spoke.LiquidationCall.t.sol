@@ -418,6 +418,47 @@ abstract contract SpokeLiquidationCallHelperTest is SpokeLiquidationCallBaseTest
       vm.randomBool()
     );
   }
+
+  function test_validateLiquidationCall_revertsWith_CannotReceiveShares(
+    uint256 collateralReserveId,
+    uint256 debtReserveId,
+    address user,
+    uint256 debtToCover
+  ) public {
+    (collateralReserveId, debtReserveId, user) = _boundAssume(
+      spoke,
+      collateralReserveId,
+      debtReserveId,
+      user,
+      liquidator
+    );
+    _updateReserveReceiveSharesEnabledFlag(spoke, collateralReserveId, false);
+
+    _increaseCollateralSupply(
+      spoke,
+      collateralReserveId,
+      _convertValueToAmount(spoke, collateralReserveId, _baseAmountValue()),
+      user
+    );
+
+    ISpoke.UserAccountData memory userAccountData = spoke.getUserAccountData(user);
+    uint256 newHealthFactor = vm.randomUint(
+      userAccountData.avgCollateralFactor + 0.01e18,
+      PercentageMath.PERCENTAGE_FACTOR.bpsToWad()
+    );
+    _makeUserLiquidatable(spoke, user, debtReserveId, newHealthFactor);
+    debtToCover = _boundDebtToCoverNoDustRevert(
+      spoke,
+      collateralReserveId,
+      debtReserveId,
+      user,
+      debtToCover,
+      liquidator
+    );
+
+    vm.expectRevert(ISpoke.CannotReceiveShares.selector);
+    spoke.liquidationCall(collateralReserveId, debtReserveId, user, debtToCover, true);
+  }
 }
 
 /// forge-config: pr.fuzz.runs = 1000

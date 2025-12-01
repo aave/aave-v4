@@ -6,6 +6,7 @@ import 'tests/unit/Spoke/SpokeBase.t.sol';
 
 contract SpokeSupplyTest is SpokeBase {
   using PercentageMath for *;
+  using ReserveFlagsMap for ReserveFlags;
 
   function test_supply_revertsWith_ReserveNotListed() public {
     uint256 reserveId = spoke1.getReserveCount() + 1; // invalid reserveId
@@ -21,7 +22,7 @@ contract SpokeSupplyTest is SpokeBase {
     uint256 amount = 100e18;
 
     _updateReservePausedFlag(spoke1, daiReserveId, true);
-    assertTrue(spoke1.getReserve(daiReserveId).paused);
+    assertTrue(spoke1.getReserve(daiReserveId).flags.paused());
 
     vm.expectRevert(ISpoke.ReservePaused.selector);
     vm.prank(bob);
@@ -33,31 +34,45 @@ contract SpokeSupplyTest is SpokeBase {
     uint256 amount = 100e18;
 
     updateReserveFrozenFlag(spoke1, daiReserveId, true);
-    assertTrue(spoke1.getReserve(daiReserveId).frozen);
+    assertTrue(spoke1.getReserve(daiReserveId).flags.frozen());
 
     vm.expectRevert(ISpoke.ReserveFrozen.selector);
     vm.prank(bob);
     spoke1.supply(daiReserveId, amount, bob);
   }
 
-  function test_supply_revertsWith_TransferFromFailed() public {
+  function test_supply_revertsWith_ERC20InsufficientAllowance() public {
     uint256 amount = 100e18;
     uint256 approvalAmount = amount - 1;
 
     vm.startPrank(bob);
     tokenList.dai.approve(address(spoke1), approvalAmount);
-    vm.expectRevert(SafeTransferLib.TransferFromFailed.selector);
+    vm.expectRevert(
+      abi.encodeWithSelector(
+        IERC20Errors.ERC20InsufficientAllowance.selector,
+        address(spoke1),
+        approvalAmount,
+        amount
+      )
+    );
     spoke1.supply(_daiReserveId(spoke1), amount, bob);
     vm.stopPrank();
   }
 
-  function test_supply_fuzz_revertsWith_TransferFromFailed(uint256 amount) public {
+  function test_supply_fuzz_revertsWith_ERC20InsufficientBalance(uint256 amount) public {
     amount = bound(amount, 1, MAX_SUPPLY_AMOUNT);
     address randomUser = makeAddr('randomUser');
 
     vm.startPrank(randomUser);
     tokenList.dai.approve(address(spoke1), amount);
-    vm.expectRevert(SafeTransferLib.TransferFromFailed.selector);
+    vm.expectRevert(
+      abi.encodeWithSelector(
+        IERC20Errors.ERC20InsufficientBalance.selector,
+        address(randomUser),
+        0,
+        amount
+      )
+    );
     spoke1.supply(_daiReserveId(spoke1), amount, randomUser);
     vm.stopPrank();
   }
@@ -85,13 +100,11 @@ contract SpokeSupplyTest is SpokeBase {
     assertEq(daiData[stage].data.drawnShares, 0);
     assertEq(daiData[stage].data.premiumShares, 0);
     assertEq(daiData[stage].data.premiumOffsetRay, 0);
-    assertEq(daiData[stage].data.realizedPremiumRay, 0);
     assertEq(daiData[stage].data.addedShares, 0);
     // user
     assertEq(bobData[stage].data.drawnShares, 0);
     assertEq(bobData[stage].data.premiumShares, 0);
     assertEq(bobData[stage].data.premiumOffsetRay, 0);
-    assertEq(bobData[stage].data.realizedPremiumRay, 0);
     assertEq(bobData[stage].data.suppliedShares, 0);
     TestReturnValues memory returnValues;
     vm.expectEmit(address(spoke1));
@@ -121,7 +134,6 @@ contract SpokeSupplyTest is SpokeBase {
     assertEq(daiData[stage].data.drawnShares, 0, 'reserve drawnShares after-supply');
     assertEq(daiData[stage].data.premiumShares, 0, 'reserve premiumShares after-supply');
     assertEq(daiData[stage].data.premiumOffsetRay, 0, 'reserve premiumOffsetRay after-supply');
-    assertEq(daiData[stage].data.realizedPremiumRay, 0, 'reserve realizedPremiumRay after-supply');
     assertEq(
       daiData[stage].data.addedShares,
       hub1.previewAddByAssets(daiAssetId, amount),
@@ -139,7 +151,6 @@ contract SpokeSupplyTest is SpokeBase {
     assertEq(bobData[stage].data.drawnShares, 0, 'bob drawnShares after-supply');
     assertEq(bobData[stage].data.premiumShares, 0, 'bob premiumShares after-supply');
     assertEq(bobData[stage].data.premiumOffsetRay, 0, 'bob premiumOffsetRay after-supply');
-    assertEq(bobData[stage].data.realizedPremiumRay, 0, 'bob realizedPremiumRay after-supply');
     assertEq(
       bobData[stage].data.suppliedShares,
       hub1.previewAddByAssets(daiAssetId, amount),
@@ -172,13 +183,11 @@ contract SpokeSupplyTest is SpokeBase {
     assertEq(daiData[stage].data.drawnShares, 0);
     assertEq(daiData[stage].data.premiumShares, 0);
     assertEq(daiData[stage].data.premiumOffsetRay, 0);
-    assertEq(daiData[stage].data.realizedPremiumRay, 0);
     assertEq(daiData[stage].data.addedShares, 0);
     // user
     assertEq(bobData[stage].data.drawnShares, 0);
     assertEq(bobData[stage].data.premiumShares, 0);
     assertEq(bobData[stage].data.premiumOffsetRay, 0);
-    assertEq(bobData[stage].data.realizedPremiumRay, 0);
     assertEq(bobData[stage].data.suppliedShares, 0);
 
     TestReturnValues memory returnValues;
@@ -207,7 +216,6 @@ contract SpokeSupplyTest is SpokeBase {
     assertEq(daiData[stage].data.drawnShares, 0, 'reserve drawnShares after-supply');
     assertEq(daiData[stage].data.premiumShares, 0, 'reserve premiumShares after-supply');
     assertEq(daiData[stage].data.premiumOffsetRay, 0, 'reserve premiumOffsetRay after-supply');
-    assertEq(daiData[stage].data.realizedPremiumRay, 0, 'reserve realizedPremiumRay after-supply');
     assertEq(
       daiData[stage].data.addedShares,
       hub1.previewAddByAssets(daiAssetId, amount),
@@ -225,7 +233,6 @@ contract SpokeSupplyTest is SpokeBase {
     assertEq(bobData[stage].data.drawnShares, 0, 'user drawnShares after-supply');
     assertEq(bobData[stage].data.premiumShares, 0, 'user premiumShares after-supply');
     assertEq(bobData[stage].data.premiumOffsetRay, 0, 'user premiumOffsetRay after-supply');
-    assertEq(bobData[stage].data.realizedPremiumRay, 0, 'user realizedPremiumRay after-supply');
     assertEq(
       bobData[stage].data.suppliedShares,
       hub1.previewAddByAssets(daiAssetId, amount),
@@ -263,6 +270,7 @@ contract SpokeSupplyTest is SpokeBase {
     TestReturnValues memory returnValues;
     vm.expectEmit(address(spoke1));
     emit ISpokeBase.Supply(_daiReserveId(spoke1), carol, carol, expectedShares, amount);
+    _assertRefreshPremiumNotCalled();
     vm.prank(carol);
     (returnValues.shares, returnValues.amount) = spoke1.supply(
       _daiReserveId(spoke1),
@@ -294,7 +302,6 @@ contract SpokeSupplyTest is SpokeBase {
     );
     assertEq(daiData[stage].data.premiumShares, 0, 'reserve premiumShares after-supply');
     assertEq(daiData[stage].data.premiumOffsetRay, 0, 'reserve premiumOffsetRay after-supply');
-    assertEq(daiData[stage].data.realizedPremiumRay, 0, 'reserve realizedPremiumRay after-supply');
     assertEq(
       daiData[stage].data.addedShares,
       daiData[stage - 1].data.addedShares + expectedShares,
@@ -306,7 +313,6 @@ contract SpokeSupplyTest is SpokeBase {
     assertEq(carolData[stage].data.drawnShares, 0, 'user drawnShares after-supply');
     assertEq(carolData[stage].data.premiumShares, 0, 'user premiumShares after-supply');
     assertEq(carolData[stage].data.premiumOffsetRay, 0, 'user premiumOffsetRay after-supply');
-    assertEq(carolData[stage].data.realizedPremiumRay, 0, 'user realizedPremiumRay after-supply');
     assertEq(
       carolData[stage].data.suppliedShares,
       expectedShares,
@@ -384,6 +390,7 @@ contract SpokeSupplyTest is SpokeBase {
     TestReturnValues memory returnValues;
     vm.expectEmit(address(spoke1));
     emit ISpokeBase.Supply(reserveId, carol, carol, expectedSuppliedShares, amount);
+    _assertRefreshPremiumNotCalled();
     vm.prank(carol);
     (returnValues.shares, returnValues.amount) = spoke1.supply(reserveId, amount, carol);
     stage = 1;
@@ -416,11 +423,6 @@ contract SpokeSupplyTest is SpokeBase {
     assertEq(reserveData[stage].data.premiumShares, 0, 'reserve premiumShares after-supply');
     assertEq(reserveData[stage].data.premiumOffsetRay, 0, 'reserve premiumOffsetRay after-supply');
     assertEq(
-      reserveData[stage].data.realizedPremiumRay,
-      0,
-      'reserve realizedPremiumRay after-supply'
-    );
-    assertEq(
       reserveData[stage].data.addedShares,
       reserveData[stage - 1].data.addedShares + state.expectedShares,
       'reserve addedShares after-supply'
@@ -431,7 +433,6 @@ contract SpokeSupplyTest is SpokeBase {
     assertEq(carolData[stage].data.drawnShares, 0, 'user drawnShares after-supply');
     assertEq(carolData[stage].data.premiumShares, 0, 'user premiumShares after-supply');
     assertEq(carolData[stage].data.premiumOffsetRay, 0, 'user premiumOffsetRay after-supply');
-    assertEq(carolData[stage].data.realizedPremiumRay, 0, 'user realizedPremiumRay after-supply');
     assertEq(
       carolData[stage].data.suppliedShares,
       state.expectedShares,
@@ -463,6 +464,7 @@ contract SpokeSupplyTest is SpokeBase {
     vm.prank(carol);
     vm.expectEmit(address(spoke1));
     emit ISpokeBase.Supply(_daiReserveId(spoke1), carol, carol, expectedShares, amount);
+    _assertRefreshPremiumNotCalled();
     (returnValues.shares, returnValues.amount) = spoke1.supply(
       _daiReserveId(spoke1),
       amount,
@@ -502,7 +504,6 @@ contract SpokeSupplyTest is SpokeBase {
     assertEq(carolData[stage].data.drawnShares, 0, 'user drawnShares after-supply');
     assertEq(carolData[stage].data.premiumShares, 0, 'user premiumShares after-supply');
     assertEq(carolData[stage].data.premiumOffsetRay, 0, 'user premiumOffsetRay after-supply');
-    assertEq(carolData[stage].data.realizedPremiumRay, 0, 'user realizedPremiumRay after-supply');
     assertEq(
       carolData[stage].data.suppliedShares,
       expectedShares,
@@ -565,6 +566,7 @@ contract SpokeSupplyTest is SpokeBase {
     TestReturnValues memory returnValues;
     vm.expectEmit(address(spoke1));
     emit ISpokeBase.Supply(reserveId, carol, carol, expectedShares, amount);
+    _assertRefreshPremiumNotCalled();
     vm.prank(carol);
     (returnValues.shares, returnValues.amount) = spoke1.supply(reserveId, amount, carol);
 
@@ -602,7 +604,6 @@ contract SpokeSupplyTest is SpokeBase {
     assertEq(carolData[stage].data.drawnShares, 0, 'user drawnShares after-supply');
     assertEq(carolData[stage].data.premiumShares, 0, 'user premiumShares after-supply');
     assertEq(carolData[stage].data.premiumOffsetRay, 0, 'user premiumOffsetRay after-supply');
-    assertEq(carolData[stage].data.realizedPremiumRay, 0, 'user realizedPremiumRay after-supply');
     assertEq(
       carolData[stage].data.suppliedShares,
       expectedShares,

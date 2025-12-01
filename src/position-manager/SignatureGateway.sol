@@ -3,8 +3,8 @@
 pragma solidity 0.8.28;
 
 import {SignatureChecker} from 'src/dependencies/openzeppelin/SignatureChecker.sol';
+import {SafeERC20, IERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
 import {IERC20Permit} from 'src/dependencies/openzeppelin/IERC20Permit.sol';
-import {SafeTransferLib} from 'src/dependencies/solady/SafeTransferLib.sol';
 import {EIP712} from 'src/dependencies/solady/EIP712.sol';
 import {MathUtils} from 'src/libraries/math/MathUtils.sol';
 import {NoncesKeyed} from 'src/utils/NoncesKeyed.sol';
@@ -21,7 +21,7 @@ import {ISignatureGateway} from 'src/position-manager/interfaces/ISignatureGatew
 /// @dev Uses keyed-nonces where each key's namespace nonce is consumed sequentially. Intents bundled through
 /// multicall can be executed independently in order of signed nonce & deadline; does not guarantee batch atomicity.
 contract SignatureGateway is ISignatureGateway, GatewayBase, NoncesKeyed, Multicall, EIP712 {
-  using SafeTransferLib for address;
+  using SafeERC20 for IERC20;
   using EIP712Hash for *;
 
   /// @dev Constructor.
@@ -41,9 +41,9 @@ contract SignatureGateway is ISignatureGateway, GatewayBase, NoncesKeyed, Multic
     require(SignatureChecker.isValidSignatureNow(user, digest, signature), InvalidSignature());
     _useCheckedNonce(user, params.nonce);
 
-    address underlying = _getReserveUnderlying(spoke, reserveId);
+    IERC20 underlying = IERC20(_getReserveUnderlying(spoke, reserveId));
     underlying.safeTransferFrom(user, address(this), params.amount);
-    underlying.safeApproveWithRetry(spoke, params.amount);
+    underlying.forceApprove(spoke, params.amount);
 
     return ISpoke(spoke).supply(reserveId, params.amount, user);
   }
@@ -61,7 +61,7 @@ contract SignatureGateway is ISignatureGateway, GatewayBase, NoncesKeyed, Multic
     require(SignatureChecker.isValidSignatureNow(user, digest, signature), InvalidSignature());
     _useCheckedNonce(user, params.nonce);
 
-    address underlying = _getReserveUnderlying(spoke, reserveId);
+    IERC20 underlying = IERC20(_getReserveUnderlying(spoke, reserveId));
     (uint256 withdrawnShares, uint256 withdrawnAmount) = ISpoke(spoke).withdraw(
       reserveId,
       params.amount,
@@ -85,7 +85,7 @@ contract SignatureGateway is ISignatureGateway, GatewayBase, NoncesKeyed, Multic
     require(SignatureChecker.isValidSignatureNow(user, digest, signature), InvalidSignature());
     _useCheckedNonce(user, params.nonce);
 
-    address underlying = _getReserveUnderlying(spoke, reserveId);
+    IERC20 underlying = IERC20(_getReserveUnderlying(spoke, reserveId));
     (uint256 borrowedShares, uint256 borrowedAmount) = ISpoke(spoke).borrow(
       reserveId,
       params.amount,
@@ -109,14 +109,14 @@ contract SignatureGateway is ISignatureGateway, GatewayBase, NoncesKeyed, Multic
     require(SignatureChecker.isValidSignatureNow(user, digest, signature), InvalidSignature());
     _useCheckedNonce(user, params.nonce);
 
-    address underlying = _getReserveUnderlying(spoke, reserveId);
+    IERC20 underlying = IERC20(_getReserveUnderlying(spoke, reserveId));
     uint256 repayAmount = MathUtils.min(
       params.amount,
       ISpoke(spoke).getUserTotalDebt(reserveId, user)
     );
 
     underlying.safeTransferFrom(user, address(this), repayAmount);
-    underlying.safeApproveWithRetry(spoke, repayAmount);
+    underlying.forceApprove(spoke, repayAmount);
 
     return ISpoke(spoke).repay(reserveId, repayAmount, user);
   }

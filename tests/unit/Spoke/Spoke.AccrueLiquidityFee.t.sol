@@ -84,7 +84,6 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
       uint256 expectedPremiumDebt = _calculatePremiumDebt(
         hub1,
         assetId,
-        bobPosition.realizedPremiumRay,
         expectedPremiumShares,
         bobPosition.premiumOffsetRay
       );
@@ -325,7 +324,7 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
     Utils.supplyCollateral(spoke1, reserveId, alice, supplyAmount, alice);
     Utils.borrow(spoke1, reserveId, alice, borrowAmount, alice);
 
-    assertEq(_getUserRpStored(spoke1, reserveId, alice), expectedRp);
+    assertEq(_getUserRpStored(spoke1, alice), expectedRp);
 
     skip(365 days);
     Utils.mintFeeShares(hub1, assetId, ADMIN);
@@ -349,7 +348,7 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
 
     vm.prank(alice);
     spoke1.updateUserRiskPremium(alice);
-    assertEq(_getUserRpStored(spoke1, reserveId, alice), expectedRp);
+    assertEq(_getUserRpStored(spoke1, alice), expectedRp);
 
     vm.recordLogs();
     // withdraw any treasury fees to reset counter
@@ -448,7 +447,7 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
     Utils.supplyCollateral(spoke1, reserveId2, alice, supplyAmount2, alice);
     Utils.borrow(spoke1, reserveId, alice, borrowAmount, alice);
 
-    assertEq(_getUserRpStored(spoke1, reserveId, alice), expectedRp);
+    assertEq(_getUserRpStored(spoke1, alice), expectedRp);
 
     skip(365 days);
     Utils.mintFeeShares(hub1, assetId, ADMIN);
@@ -469,7 +468,7 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
     // disable second asset as collateral, which increases risk premium
     vm.prank(alice);
     spoke1.setUsingAsCollateral(reserveId, false, alice);
-    assertEq(_getUserRpStored(spoke1, reserveId, alice), 50_00);
+    assertEq(_getUserRpStored(spoke1, alice), 50_00);
 
     Utils.mintFeeShares(hub1, assetId, ADMIN);
 

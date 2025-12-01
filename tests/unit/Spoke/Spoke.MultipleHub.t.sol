@@ -28,12 +28,7 @@ contract SpokeMultipleHubTest is SpokeBase {
 
     vm.startPrank(ADMIN);
     // Relist hub 2's dai on spoke1
-    ISpoke.ReserveConfig memory daiHub2Config = ISpoke.ReserveConfig({
-      paused: false,
-      frozen: false,
-      borrowable: true,
-      collateralRisk: 20_00
-    });
+    ISpoke.ReserveConfig memory daiHub2Config = _getDefaultReserveConfig(20_00);
     ISpoke.DynamicReserveConfig memory dynDaiHub2Config = ISpoke.DynamicReserveConfig({
       collateralFactor: 78_00,
       maxLiquidationBonus: 100_00,
@@ -48,12 +43,7 @@ contract SpokeMultipleHubTest is SpokeBase {
     );
 
     // Relist hub 3's dai on spoke 1
-    ISpoke.ReserveConfig memory daiHub3Config = ISpoke.ReserveConfig({
-      paused: false,
-      frozen: false,
-      borrowable: true,
-      collateralRisk: 20_00
-    });
+    ISpoke.ReserveConfig memory daiHub3Config = _getDefaultReserveConfig(20_00);
     ISpoke.DynamicReserveConfig memory dynDaiHub3Config = ISpoke.DynamicReserveConfig({
       collateralFactor: 78_00,
       maxLiquidationBonus: 100_00,

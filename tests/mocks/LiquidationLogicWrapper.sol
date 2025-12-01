@@ -9,11 +9,13 @@ import {IHub, IHubBase} from 'src/hub/interfaces/IHub.sol';
 import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 import {PositionStatusMap} from 'src/spoke/libraries/PositionStatusMap.sol';
 import {LiquidationLogic} from 'src/spoke/libraries/LiquidationLogic.sol';
+import {ReserveFlags, ReserveFlagsMap} from 'src/spoke/libraries/ReserveFlagsMap.sol';
 
 contract LiquidationLogicWrapper {
-  using SafeCast for uint256;
+  using SafeCast for *;
   using SafeERC20 for IERC20;
   using PositionStatusMap for ISpoke.PositionStatus;
+  using ReserveFlagsMap for ReserveFlags;
 
   mapping(address user => mapping(uint256 reserveId => ISpoke.UserPosition))
     internal _userPositions;
@@ -54,6 +56,12 @@ contract LiquidationLogicWrapper {
 
   function setCollateralReserveId(uint256 reserveId) public {
     _collateralReserveId = reserveId;
+  }
+
+  function setCollateralLiquidatable(bool status) public {
+    _reserves[_collateralReserveId].flags = _reserves[_collateralReserveId].flags.setLiquidatable(
+      status
+    );
   }
 
   function setCollateralPositionSuppliedShares(uint256 suppliedShares) public {
@@ -100,12 +108,8 @@ contract LiquidationLogicWrapper {
     _userPositions[_borrower][_debtReserveId].premiumShares = premiumShares.toUint120();
   }
 
-  function setDebtPositionPremiumOffsetRay(uint256 premiumOffsetRay) public {
-    _userPositions[_borrower][_debtReserveId].premiumOffsetRay = premiumOffsetRay.toUint200();
-  }
-
-  function setDebtPositionRealizedPremiumRay(uint256 realizedPremiumRay) public {
-    _userPositions[_borrower][_debtReserveId].realizedPremiumRay = realizedPremiumRay.toUint200();
+  function setDebtPositionPremiumOffsetRay(int256 premiumOffsetRay) public {
+    _userPositions[_borrower][_debtReserveId].premiumOffsetRay = premiumOffsetRay.toInt200();
   }
 
   function setBorrowerCollateralStatus(uint256 reserveId, bool status) public {
@@ -175,11 +179,8 @@ contract LiquidationLogicWrapper {
 
   function validateLiquidationCall(
     LiquidationLogic.ValidateLiquidationCallParams memory params
-  ) public view {
-    LiquidationLogic._validateLiquidationCall(
-      _positionStatuses[_borrower].isUsingAsCollateral(params.collateralReserveId),
-      params
-    );
+  ) public pure {
+    LiquidationLogic._validateLiquidationCall(params);
   }
 
   function calculateDebtToTargetHealthFactor(
@@ -221,7 +222,8 @@ contract LiquidationLogicWrapper {
     return
       LiquidationLogic._liquidateCollateral(
         _reserves[_collateralReserveId],
-        _userPositions,
+        _userPositions[_borrower][_collateralReserveId],
+        _userPositions[_liquidator][_collateralReserveId],
         params
       );
   }

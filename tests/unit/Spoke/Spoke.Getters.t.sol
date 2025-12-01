@@ -27,56 +27,31 @@ contract SpokeGettersTest is SpokeBase {
       riskPremiumThreshold: Constants.MAX_ALLOWED_COLLATERAL_RISK
     });
 
-    spokeInfo[spoke].weth.reserveConfig = ISpoke.ReserveConfig({
-      paused: false,
-      frozen: false,
-      borrowable: true,
-      collateralRisk: 15_00
-    });
+    spokeInfo[spoke].weth.reserveConfig = _getDefaultReserveConfig(15_00);
     spokeInfo[spoke].weth.dynReserveConfig = ISpoke.DynamicReserveConfig({
       collateralFactor: 80_00,
       maxLiquidationBonus: 105_00,
       liquidationFee: 10_00
     });
-    spokeInfo[spoke].wbtc.reserveConfig = ISpoke.ReserveConfig({
-      paused: false,
-      frozen: false,
-      borrowable: true,
-      collateralRisk: 15_00
-    });
+    spokeInfo[spoke].wbtc.reserveConfig = _getDefaultReserveConfig(15_00);
     spokeInfo[spoke].wbtc.dynReserveConfig = ISpoke.DynamicReserveConfig({
       collateralFactor: 75_00,
       maxLiquidationBonus: 103_00,
       liquidationFee: 15_00
     });
-    spokeInfo[spoke].dai.reserveConfig = ISpoke.ReserveConfig({
-      paused: false,
-      frozen: false,
-      borrowable: true,
-      collateralRisk: 20_00
-    });
+    spokeInfo[spoke].dai.reserveConfig = _getDefaultReserveConfig(20_00);
     spokeInfo[spoke].dai.dynReserveConfig = ISpoke.DynamicReserveConfig({
       collateralFactor: 78_00,
       maxLiquidationBonus: 102_00,
       liquidationFee: 10_00
     });
-    spokeInfo[spoke].usdx.reserveConfig = ISpoke.ReserveConfig({
-      paused: false,
-      frozen: false,
-      borrowable: true,
-      collateralRisk: 50_00
-    });
+    spokeInfo[spoke].usdx.reserveConfig = _getDefaultReserveConfig(50_00);
     spokeInfo[spoke].usdx.dynReserveConfig = ISpoke.DynamicReserveConfig({
       collateralFactor: 78_00,
       maxLiquidationBonus: 101_00,
       liquidationFee: 12_00
     });
-    spokeInfo[spoke].usdy.reserveConfig = ISpoke.ReserveConfig({
-      paused: false,
-      frozen: false,
-      borrowable: true,
-      collateralRisk: 50_00
-    });
+    spokeInfo[spoke].usdy.reserveConfig = _getDefaultReserveConfig(20_00);
     spokeInfo[spoke].usdy.dynReserveConfig = ISpoke.DynamicReserveConfig({
       collateralFactor: 78_00,
       maxLiquidationBonus: 101_50,
@@ -252,11 +227,12 @@ contract SpokeGettersTest is SpokeBase {
     assertEq(hub1.getSpokeTotalOwed(assetId, address(spoke)), 0);
     assertEq(hub1.getSpokeDrawnShares(assetId, address(spoke)), 0);
 
-    (uint256 premiumShares, uint256 premiumOffset, uint256 realizedPremium) = hub1
-      .getSpokePremiumData(assetId, address(spoke));
+    (uint256 premiumShares, int256 premiumOffset) = hub1.getSpokePremiumData(
+      assetId,
+      address(spoke)
+    );
     assertEq(premiumShares, 0);
     assertEq(premiumOffset, 0);
-    assertEq(realizedPremium, 0);
 
     // Asset debts
     (drawn, premium) = hub1.getAssetOwed(assetId);
@@ -265,10 +241,9 @@ contract SpokeGettersTest is SpokeBase {
     assertEq(hub1.getAssetTotalOwed(assetId), 0);
     assertEq(hub1.getAssetDrawnShares(assetId), 0);
 
-    (premiumShares, premiumOffset, realizedPremium) = hub1.getAssetPremiumData(assetId);
+    (premiumShares, premiumOffset) = hub1.getAssetPremiumData(assetId);
     assertEq(premiumShares, 0);
     assertEq(premiumOffset, 0);
-    assertEq(realizedPremium, 0);
 
     // Spoke supply
     assertEq(hub1.getSpokeAddedAssets(assetId, address(spoke)), supplyAmount);
@@ -308,8 +283,6 @@ contract SpokeGettersTest is SpokeBase {
     assertEq(assetPremiumDebtRay, spokePremiumDebtRay);
 
     // realize premium
-    assertEq(spoke.getUserPosition(_wethReserveId(spoke), alice).realizedPremiumRay, 0);
-    assertEq(spoke.getUserPosition(_wethReserveId(spoke), bob).realizedPremiumRay, 0);
     vm.prank(alice);
     spoke.updateUserRiskPremium(alice);
     vm.prank(bob);
