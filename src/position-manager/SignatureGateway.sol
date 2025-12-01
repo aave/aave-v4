@@ -9,7 +9,7 @@ import {EIP712} from 'src/dependencies/solady/EIP712.sol';
 import {MathUtils} from 'src/libraries/math/MathUtils.sol';
 import {NoncesKeyed} from 'src/utils/NoncesKeyed.sol';
 import {Multicall} from 'src/utils/Multicall.sol';
-import {EIP712Hash, EIP712Types} from 'src/position-manager/libraries/EIP712Hash.sol';
+import {EIP712Hash, EIP712Types} from 'src/libraries/EIP712Hash.sol';
 import {GatewayBase} from 'src/position-manager/GatewayBase.sol';
 import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 import {ISignatureGateway} from 'src/position-manager/interfaces/ISignatureGateway.sol';

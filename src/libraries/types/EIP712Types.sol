@@ -80,4 +80,36 @@ library EIP712Types {
     uint256 nonce;
     uint256 deadline;
   }
+
+  struct VaultDeposit {
+    address depositor;
+    uint256 assets;
+    address receiver;
+    uint256 nonce;
+    uint256 deadline;
+  }
+
+  struct VaultMint {
+    address depositor;
+    uint256 shares;
+    address receiver;
+    uint256 nonce;
+    uint256 deadline;
+  }
+
+  struct VaultWithdraw {
+    address owner;
+    uint256 assets;
+    address receiver;
+    uint256 nonce;
+    uint256 deadline;
+  }
+
+  struct VaultRedeem {
+    address owner;
+    uint256 shares;
+    address receiver;
+    uint256 nonce;
+    uint256 deadline;
+  }
 }
