@@ -7,7 +7,7 @@ import {IERC20Permit} from 'src/dependencies/openzeppelin/IERC20Permit.sol';
 import {IERC4626, IERC20Metadata} from 'src/dependencies/openzeppelin/IERC4626.sol';
 import {IHub} from 'src/hub/interfaces/IHub.sol';
 import {IVaultSpoke} from 'src/spoke/interfaces/IVaultSpoke.sol';
-import {SafeTransferLib} from 'src/dependencies/solady/SafeTransferLib.sol';
+import {SafeERC20, IERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
 import {MathUtils} from 'src/libraries/math/MathUtils.sol';
 import {EIP712Hash, EIP712Types} from 'src/libraries/EIP712Hash.sol';
 import {SignatureChecker, ECDSA} from 'src/dependencies/openzeppelin/SignatureChecker.sol';
@@ -20,7 +20,7 @@ import {NoncesKeyed} from 'src/utils/NoncesKeyed.sol';
 /// @dev Connects to one listed asset, only responsible for tokenizing positions.
 /// @dev Share price accounting is maintained solely on the Hub.
 abstract contract VaultSpoke is IVaultSpoke, ERC20Upgradeable, NoncesKeyed, EIP712 {
-  using SafeTransferLib for address;
+  using SafeERC20 for IERC20;
   using MathUtils for uint256;
   using EIP712Hash for *;
 
@@ -354,7 +354,7 @@ abstract contract VaultSpoke is IVaultSpoke, ERC20Upgradeable, NoncesKeyed, EIP7
   }
 
   function _deposit(address caller, address receiver, uint256 assets, uint256 shares) internal {
-    asset().safeTransferFrom(caller, address(hub()), assets);
+    IERC20(asset()).safeTransferFrom(caller, address(hub()), assets);
     hub().add(assetId(), assets);
     _mint(receiver, shares);
     emit Deposit(caller, receiver, assets, shares);
