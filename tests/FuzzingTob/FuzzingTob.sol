@@ -533,6 +533,8 @@ abstract contract PropertiesAsserts {
 contract FuzzingBase is PropertiesConstants, PropertiesAsserts {
   using WadRayMath for uint256;
 
+  bool public constant IS_TEST = true;
+
   StdCheats constant vm = StdCheats(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D);
   AccessManager internal accessManager;
   // Note: we start with a single hub, it can be extended to multiple hubs in the future
