@@ -1,83 +1,34 @@
 pragma solidity 0.8.28;
 pragma experimental ABIEncoderV2;
 
-import {PropertiesLibString} from './PropertiesLibString.sol';
-
-// Interface imports
-import {WETH9} from 'src/dependencies/weth/WETH9.sol';
-import {IHub} from 'src/hub/interfaces/IHub.sol';
-import {IHubBase} from 'src/hub/interfaces/IHubBase.sol';
-import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
-import {ITreasurySpoke} from 'src/spoke/interfaces/ITreasurySpoke.sol';
-import {IAssetInterestRateStrategy} from 'src/hub/interfaces/IAssetInterestRateStrategy.sol';
-import {IAaveOracle} from 'src/spoke/interfaces/IAaveOracle.sol';
-import {IPriceOracle} from 'src/spoke/interfaces/IPriceOracle.sol';
-import {
-  ITransparentUpgradeableProxy
-} from 'src/dependencies/openzeppelin/TransparentUpgradeableProxy.sol';
-import {IBasicInterestRateStrategy} from 'src/hub/interfaces/IBasicInterestRateStrategy.sol';
-import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
-import {IERC165} from 'src/dependencies/openzeppelin/IERC165.sol';
-import {IAccessManaged} from 'src/dependencies/openzeppelin/IAccessManaged.sol';
-import {IAccessManager} from 'src/dependencies/openzeppelin/IAccessManager.sol';
-import {IAuthority} from 'src/dependencies/openzeppelin/IAuthority.sol';
-import {IERC1271} from 'src/dependencies/openzeppelin/IERC1271.sol';
-import {IERC7913SignatureVerifier} from 'src/dependencies/openzeppelin/IERC7913.sol';
-import {IERC1363} from 'src/dependencies/openzeppelin/IERC1363.sol';
-import {AggregatorV3Interface} from 'src/dependencies/chainlink/AggregatorV3Interface.sol';
-import {SpokeInstance} from 'src/spoke/instances/SpokeInstance.sol';
-
-// Utility imports
-import {ERC1967Utils} from 'src/dependencies/openzeppelin/ERC1967Utils.sol';
-import {ProxyAdmin} from 'src/dependencies/openzeppelin/ProxyAdmin.sol';
-import {StorageSlot} from 'src/dependencies/openzeppelin/StorageSlot.sol';
-import {SlotDerivation} from 'src/dependencies/openzeppelin/SlotDerivation.sol';
-import {Math} from 'src/dependencies/openzeppelin/Math.sol';
-import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
-import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
-import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
-import {SharesMath} from 'src/hub/libraries/SharesMath.sol';
-import {MathUtils} from 'src/libraries/math/MathUtils.sol';
-import {LibBit} from 'src/dependencies/solady/LibBit.sol';
-import {Panic} from 'src/dependencies/openzeppelin/Panic.sol';
-import {AuthorityUtils} from 'src/dependencies/openzeppelin/AuthorityUtils.sol';
-import {SafeERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
-import {Address} from 'src/dependencies/openzeppelin/Address.sol';
-import {ECDSA} from 'src/dependencies/openzeppelin/ECDSA.sol';
-import {EnumerableSet} from 'src/dependencies/openzeppelin/EnumerableSet.sol';
-import {Arrays} from 'src/dependencies/openzeppelin/Arrays.sol';
-import {Bytes} from 'src/dependencies/openzeppelin/Bytes.sol';
-import {Context} from 'src/dependencies/openzeppelin/Context.sol';
-import {Multicall} from 'src/utils/Multicall.sol';
-import {Time} from 'src/dependencies/openzeppelin/Time.sol';
-import {SignatureChecker} from 'src/dependencies/openzeppelin/SignatureChecker.sol';
-import {KeyValueList} from 'src/spoke/libraries/KeyValueList.sol';
-
-// Contract imports
-import {Proxy} from 'src/dependencies/openzeppelin/Proxy.sol';
-import {ERC1967Proxy} from 'src/dependencies/openzeppelin/ERC1967Proxy.sol';
 import {
   TransparentUpgradeableProxy
 } from 'src/dependencies/openzeppelin/TransparentUpgradeableProxy.sol';
-import {Spoke} from 'src/spoke/Spoke.sol';
+import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
 import {AccessManager} from 'src/dependencies/openzeppelin/AccessManager.sol';
-import {AccessManaged} from 'src/dependencies/openzeppelin/AccessManaged.sol';
-import {AaveOracle} from 'src/spoke/AaveOracle.sol';
-import {Hub} from 'src/hub/Hub.sol';
-import {TreasurySpoke} from 'src/spoke/TreasurySpoke.sol';
+import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
+
+import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
+import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
+
+import {IHub} from 'src/hub/interfaces/IHub.sol';
+import {IAssetInterestRateStrategy} from 'src/hub/interfaces/IAssetInterestRateStrategy.sol';
 import {AssetInterestRateStrategy} from 'src/hub/AssetInterestRateStrategy.sol';
+import {Hub} from 'src/hub/Hub.sol';
 
-// Library imports
-import {AssetLogic} from 'src/hub/libraries/AssetLogic.sol';
-import {PositionStatusMap} from 'src/spoke/libraries/PositionStatusMap.sol';
+import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
+import {ITreasurySpoke} from 'src/spoke/interfaces/ITreasurySpoke.sol';
+import {IAaveOracle} from 'src/spoke/interfaces/IAaveOracle.sol';
+import {IPriceOracle} from 'src/spoke/interfaces/IPriceOracle.sol';
+import {SpokeInstance} from 'src/spoke/instances/SpokeInstance.sol';
+import {AaveOracle} from 'src/spoke/AaveOracle.sol';
+import {TreasurySpoke} from 'src/spoke/TreasurySpoke.sol';
+import {Spoke} from 'src/spoke/Spoke.sol';
 
-// Test contract imports
 import {TestnetERC20} from 'tests/mocks/TestnetERC20.sol';
 import {MockPriceFeed} from 'tests/mocks/MockPriceFeed.sol';
+import {PropertiesLibString} from 'tests/FuzzingTob/PropertiesLibString.sol';
 import {Constants} from 'tests/Constants.sol';
-
-// Forge imports
-import {Vm, VmSafe} from 'lib/forge-std/src/Vm.sol';
 
 interface StdCheats {
   function computeCreateAddress(address deployer, uint256 nonce) external pure returns (address);
@@ -1107,7 +1058,7 @@ contract FuzzingTob is FuzzingBase {
   using SafeCast for *;
 
   // This won't work if the fuzzer will be able to add new assets
-  uint256 constant assetCount = 4;
+  uint256 constant assetCount = 3;
   mapping(uint256 => uint256) asset_previous_exchange_rate;
   mapping(uint256 => uint256) asset_previous_drawn_index;
 
