@@ -601,20 +601,17 @@ contract FuzzingBase is PropertiesConstants, PropertiesAsserts {
   uint256 internal usdxAssetId = 0;
   uint256 internal daiAssetId = 1;
   uint256 internal wbtcAssetId = 2;
-  uint256 internal usdyAssetId = 3;
 
   struct Decimals {
     uint8 usdx;
     uint8 dai;
     uint8 wbtc;
-    uint8 usdy;
   }
 
   struct SpokeInfo {
     ReserveInfo wbtc;
     ReserveInfo dai;
     ReserveInfo usdx;
-    ReserveInfo usdy;
     uint256 MAX_ALLOWED_ASSET_ID;
     uint256[] reserveIds;
   }
@@ -630,7 +627,7 @@ contract FuzzingBase is PropertiesConstants, PropertiesAsserts {
     uint256 userUnderlying;
   }
 
-  Decimals decimals = Decimals({usdx: 6, dai: 18, wbtc: 8, usdy: 18});
+  Decimals decimals = Decimals({usdx: 6, dai: 18, wbtc: 8});
 
   mapping(ISpoke => SpokeInfo) internal spokeInfo;
   ISpoke[] internal spokes;
@@ -720,7 +717,6 @@ contract FuzzingBase is PropertiesConstants, PropertiesAsserts {
     TestnetERC20 usdx;
     TestnetERC20 dai;
     TestnetERC20 wbtc;
-    TestnetERC20 usdy;
   }
 
   function configureTokenList() internal {
@@ -728,8 +724,7 @@ contract FuzzingBase is PropertiesConstants, PropertiesAsserts {
     tokenList = TokenList(
       new TestnetERC20('USDX', 'USDX', 6),
       new TestnetERC20('DAI', 'DAI', decimals.dai),
-      new TestnetERC20('WBTC', 'WBTC', decimals.wbtc),
-      new TestnetERC20('USDY', 'USDY', decimals.usdy)
+      new TestnetERC20('WBTC', 'WBTC', decimals.wbtc)
     );
 
     IHub.SpokeConfig memory spokeConfig = IHub.SpokeConfig({
@@ -805,24 +800,6 @@ contract FuzzingBase is PropertiesConstants, PropertiesAsserts {
       }),
       new bytes(0)
     );
-    // add USDY
-    hub1.addAsset(
-      address(tokenList.usdy),
-      tokenList.usdy.decimals(),
-      address(treasurySpoke),
-      address(irStrategy),
-      encodedIrData
-    );
-    hub1.updateAssetConfig(
-      usdyAssetId,
-      IHub.AssetConfig({
-        liquidityFee: 10_00,
-        feeReceiver: address(treasurySpoke),
-        irStrategy: address(irStrategy),
-        reinvestmentController: address(0)
-      }),
-      new bytes(0)
-    );
 
     // Liquidation configs
     spoke1.updateLiquidationConfig(
@@ -887,19 +864,6 @@ contract FuzzingBase is PropertiesConstants, PropertiesAsserts {
       maxLiquidationBonus: 101_00,
       liquidationFee: 12_00
     });
-    spokeInfo[spoke1].usdy.reserveConfig = ISpoke.ReserveConfig({
-      paused: false,
-      frozen: false,
-      borrowable: true,
-      collateralRisk: 50_00,
-      liquidatable: true,
-      receiveSharesEnabled: true
-    });
-    spokeInfo[spoke1].usdy.dynReserveConfig = ISpoke.DynamicReserveConfig({
-      collateralFactor: 78_00,
-      maxLiquidationBonus: 101_50,
-      liquidationFee: 15_00
-    });
 
     spokeInfo[spoke1].wbtc.reserveId = spoke1.addReserve(
       address(hub1),
@@ -922,18 +886,10 @@ contract FuzzingBase is PropertiesConstants, PropertiesAsserts {
       spokeInfo[spoke1].usdx.reserveConfig,
       spokeInfo[spoke1].usdx.dynReserveConfig
     );
-    spokeInfo[spoke1].usdy.reserveId = spoke1.addReserve(
-      address(hub1),
-      usdyAssetId,
-      _deployMockPriceFeed(spoke1, 1e8),
-      spokeInfo[spoke1].usdy.reserveConfig,
-      spokeInfo[spoke1].usdy.dynReserveConfig
-    );
 
     hub1.addSpoke(wbtcAssetId, address(spoke1), spokeConfig);
     hub1.addSpoke(daiAssetId, address(spoke1), spokeConfig);
     hub1.addSpoke(usdxAssetId, address(spoke1), spokeConfig);
-    hub1.addSpoke(usdyAssetId, address(spoke1), spokeConfig);
 
     // Spoke 2 reserve configs
     spokeInfo[spoke2].wbtc.reserveConfig = ISpoke.ReserveConfig({
@@ -975,19 +931,6 @@ contract FuzzingBase is PropertiesConstants, PropertiesAsserts {
       maxLiquidationBonus: 101_00,
       liquidationFee: 12_00
     });
-    spokeInfo[spoke2].usdy.reserveConfig = ISpoke.ReserveConfig({
-      paused: false,
-      frozen: false,
-      borrowable: true,
-      collateralRisk: 50_00,
-      liquidatable: true,
-      receiveSharesEnabled: true
-    });
-    spokeInfo[spoke2].usdy.dynReserveConfig = ISpoke.DynamicReserveConfig({
-      collateralFactor: 72_00,
-      maxLiquidationBonus: 101_50,
-      liquidationFee: 15_00
-    });
 
     spokeInfo[spoke2].wbtc.reserveId = spoke2.addReserve(
       address(hub1),
@@ -1010,18 +953,10 @@ contract FuzzingBase is PropertiesConstants, PropertiesAsserts {
       spokeInfo[spoke2].usdx.reserveConfig,
       spokeInfo[spoke2].usdx.dynReserveConfig
     );
-    spokeInfo[spoke2].usdy.reserveId = spoke2.addReserve(
-      address(hub1),
-      usdyAssetId,
-      _deployMockPriceFeed(spoke2, 1e8),
-      spokeInfo[spoke2].usdy.reserveConfig,
-      spokeInfo[spoke2].usdy.dynReserveConfig
-    );
 
     hub1.addSpoke(wbtcAssetId, address(spoke2), spokeConfig);
     hub1.addSpoke(daiAssetId, address(spoke2), spokeConfig);
     hub1.addSpoke(usdxAssetId, address(spoke2), spokeConfig);
-    hub1.addSpoke(usdyAssetId, address(spoke2), spokeConfig);
 
     // Spoke 3 reserve configs
     spokeInfo[spoke3].dai.reserveConfig = ISpoke.ReserveConfig({
@@ -1378,17 +1313,19 @@ contract FuzzingTob is FuzzingBase {
     IHub hub = IHub(address(reserve.hub));
 
     ISpoke.UserAccountData memory oldAccountData = spoke.getUserAccountData(msg.sender);
-    uint256 maxAmount = oldAccountData
-      .totalCollateralValue
-      .percentMulDown(oldAccountData.avgCollateralFactor / 1e14)
-      .percentMulDown(99_00) - oldAccountData.totalDebtValue;
-    maxAmount = _convertValueToAmount(
-      spoke,
-      reserveId,
-      maxAmount,
-      TestnetERC20(reserve.underlying).decimals()
-    );
-    amount = clampBetween(amount, 1, maxAmount);
+    {
+      uint256 maxAmount = oldAccountData
+        .totalCollateralValue
+        .percentMulDown(oldAccountData.avgCollateralFactor / 1e14)
+        .percentMulDown(99_00) - oldAccountData.totalDebtValue;
+      maxAmount = _convertValueToAmount(
+        spoke,
+        reserveId,
+        maxAmount,
+        TestnetERC20(reserve.underlying).decimals()
+      );
+      amount = clampBetween(amount, 1, maxAmount);
+    }
 
     OldBalances memory oldBalances;
     oldBalances.hubUnderlying = TestnetERC20(reserve.underlying).balanceOf(address(hub));
