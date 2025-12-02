@@ -354,7 +354,13 @@ abstract contract VaultSpoke is IVaultSpoke, ERC20Upgradeable, NoncesKeyed, EIP7
     return assets;
   }
 
-  function _deposit(address caller, address receiver, uint256 assets, uint256 shares) internal {
+  /// @dev Does not check `hub.add(assets)` returns exactly `shares`; it must be the exact return value of `previewAddByShares` or vice versa for `assets`.
+  function _deposit(
+    address caller,
+    address receiver,
+    uint256 assets,
+    uint256 shares
+  ) internal virtual {
     IERC20(asset()).safeTransferFrom(caller, address(hub()), assets);
     hub().add(assetId(), assets);
     _mint(receiver, shares);
