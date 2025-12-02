@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 
 import {Test} from 'forge-std/Test.sol';
 
-import {EIP712Hash, EIP712Types} from 'src/position-manager/libraries/EIP712Hash.sol';
+import {EIP712Hash, EIP712Types} from 'src/libraries/EIP712Hash.sol';
 
 contract EIP712HashTest is Test {
   using EIP712Hash for *;
