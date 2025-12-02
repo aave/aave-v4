@@ -45,7 +45,7 @@ abstract contract VaultSpoke is IVaultSpoke, ERC20Upgradeable, NoncesKeyed, EIP7
   function __VaultSpoke_init(string memory prefix) internal onlyInitializing {
     __ERC20_init(
       string.concat(prefix, IERC20Metadata(_ASSET).name()),
-      string.concat('s', IERC20Metadata(_ASSET).symbol())
+      string.concat('h', IERC20Metadata(_ASSET).symbol())
     );
   }
 
