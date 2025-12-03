@@ -49,13 +49,37 @@ contract HubReportDeficitTest is HubBase {
     hub1.reportDeficit(usdxAssetId, 0, ZERO_PREMIUM_DELTA);
   }
 
+  /// @dev paused spoke can still report deficit
+  function test_reportDeficit_paused() public {
+    // draw usdx liquidity to be restored
+    _drawLiquidity({
+      assetId: usdxAssetId,
+      amount: 1,
+      withPremium: true,
+      skipTime: true,
+      spoke: address(spoke1)
+    });
+
+    _updateSpokePaused(hub1, usdxAssetId, address(spoke1), true);
+
+    // even if spoke is paused, it can report deficit
+    vm.prank(address(spoke1));
+    hub1.reportDeficit(usdxAssetId, 1, ZERO_PREMIUM_DELTA);
+  }
+
   function test_reportDeficit_fuzz_revertsWith_SurplusDrawnDeficitReported(
     uint256 drawnAmount
   ) public {
     drawnAmount = bound(drawnAmount, 1, MAX_SUPPLY_AMOUNT);
 
     // draw usdx liquidity to be restored
-    _drawLiquidity(usdxAssetId, drawnAmount, true, true, address(spoke1));
+    _drawLiquidity({
+      assetId: usdxAssetId,
+      amount: drawnAmount,
+      withPremium: true,
+      skipTime: true,
+      spoke: address(spoke1)
+    });
 
     (uint256 drawn, uint256 premium) = hub1.getSpokeOwed(usdxAssetId, address(spoke1));
     assertGt(drawn, 0);
