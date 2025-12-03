@@ -54,6 +54,8 @@ contract VaultSpokeTest is SpokeBase {
 
     vm.startPrank(alice);
     tokenList.dai.approve(address(vault), depositAmount);
+    vm.expectEmit(true, true, false, true, address(vault));
+    emit IERC4626.Deposit(alice, alice, depositAmount, depositAmount);
     uint256 shares = vault.deposit(depositAmount, alice);
     vm.stopPrank();
 
@@ -62,6 +64,79 @@ contract VaultSpokeTest is SpokeBase {
     assertEq(vault.totalAssets(), depositAmount);
     assertEq(vault.balanceOf(alice), depositAmount);
     assertEq(tokenList.dai.balanceOf(address(hub1)), depositAmount);
+
+    assertEq(hub1.getSpokeAddedShares(daiAssetId, address(vault)), shares);
+  }
+
+  function test_mint() public {
+    uint256 mintAmount = 1000e18;
+    deal(address(tokenList.dai), alice, mintAmount);
+
+    assertEq(tokenList.dai.balanceOf(alice), mintAmount);
+    assertEq(tokenList.dai.balanceOf(address(vault)), 0);
+    assertEq(tokenList.dai.balanceOf(address(hub1)), 0);
+    assertEq(vault.balanceOf(alice), 0);
+
+    vm.startPrank(alice);
+    tokenList.dai.approve(address(vault), mintAmount);
+    vm.expectEmit(true, true, false, true, address(vault));
+    emit IERC4626.Deposit(alice, alice, mintAmount, mintAmount);
+    uint256 shares = vault.mint(mintAmount, alice);
+    vm.stopPrank();
+
+    assertEq(tokenList.dai.balanceOf(alice), 0);
+    assertEq(tokenList.dai.balanceOf(address(vault)), 0);
+    assertEq(vault.totalAssets(), mintAmount);
+    assertEq(vault.balanceOf(alice), mintAmount);
+    assertEq(tokenList.dai.balanceOf(address(hub1)), mintAmount);
+
+    assertEq(hub1.getSpokeAddedShares(daiAssetId, address(vault)), shares);
+  }
+
+  function test_withdraw() public {
+    uint256 depositAmount = 1000e18;
+    _depositFromUser(alice, depositAmount);
+
+    assertEq(vault.balanceOf(alice), depositAmount);
+    assertEq(vault.totalAssets(), depositAmount);
+    assertEq(tokenList.dai.balanceOf(address(hub1)), depositAmount);
+    assertEq(tokenList.dai.balanceOf(alice), 0);
+
+    vm.startPrank(alice);
+    vm.expectEmit(true, true, true, true, address(vault));
+    emit IERC4626.Withdraw(alice, alice, alice, depositAmount, depositAmount);
+    vault.withdraw(depositAmount, alice, alice);
+    vm.stopPrank();
+
+    assertEq(vault.balanceOf(alice), 0);
+    assertEq(vault.totalAssets(), 0);
+    assertEq(tokenList.dai.balanceOf(address(hub1)), 0);
+    assertEq(tokenList.dai.balanceOf(alice), depositAmount);
+
+    assertEq(hub1.getSpokeAddedShares(daiAssetId, address(vault)), 0);
+  }
+
+  function test_redeem() public {
+    uint256 depositAmount = 1000e18;
+    _depositFromUser(alice, depositAmount);
+
+    assertEq(vault.balanceOf(alice), depositAmount);
+    assertEq(vault.totalAssets(), depositAmount);
+    assertEq(tokenList.dai.balanceOf(address(hub1)), depositAmount);
+    assertEq(tokenList.dai.balanceOf(alice), 0);
+
+    vm.startPrank(alice);
+    vm.expectEmit(true, true, true, true, address(vault));
+    emit IERC4626.Withdraw(alice, alice, alice, depositAmount, depositAmount);
+    vault.redeem(depositAmount, alice, alice);
+    vm.stopPrank();
+
+    assertEq(vault.balanceOf(alice), 0);
+    assertEq(vault.totalAssets(), 0);
+    assertEq(tokenList.dai.balanceOf(address(hub1)), 0);
+    assertEq(tokenList.dai.balanceOf(alice), depositAmount);
+
+    assertEq(hub1.getSpokeAddedShares(daiAssetId, address(vault)), 0);
   }
 
   function _depositFromUser(address user, uint256 amount) public {
