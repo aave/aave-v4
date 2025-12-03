@@ -56,7 +56,6 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
     TestAmounts memory amounts,
     uint40 skipTime
   ) public {
-    vm.skip(true, 'pending rft');
     amounts = _bound(amounts);
     skipTime = bound(skipTime, 0, MAX_SKIP_TIME / 2).toUint40();
 
@@ -589,18 +588,26 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
         'dai after second accrual'
       );
 
+      rates.wethBaseBorrowRate = hub1.getAssetDrawnRate(wethAssetId).toUint96();
       indices.wethIndex = _calculateExpectedDrawnIndex(
         indices.wethIndex,
         rates.wethBaseBorrowRate,
         startTime
       );
+      /*
+      assertEq(
+        indices.wethIndex,
+        hub1.getAssetDrawnIndex(wethAssetId),
+        'weth drawn index after second accrual'
+      );*/
       bobPosition = spoke2.getUserPosition(_wethReserveId(spoke2), bob);
       assertEq(
         bobPosition.drawnShares,
         baseShares.weth,
         'weth base drawn shares after second accrual'
       );
-      drawnDebt = baseShares.weth.rayMulUp(indices.wethIndex);
+      //drawnDebt = baseShares.weth.rayMulUp(indices.wethIndex);
+      drawnDebt = baseShares.weth.rayMulUp(hub1.getAssetDrawnIndex(wethAssetId));
       expectedPremiumDebt = _calculateExpectedPremiumDebt(
         amounts.wethBorrowAmount,
         drawnDebt,
