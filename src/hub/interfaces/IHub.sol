@@ -366,9 +366,10 @@ interface IHub is IHubBase, IAccessManaged {
   /// @return The amount of liquidity swept.
   function getAssetSwept(uint256 assetId) external view returns (uint256);
 
-  /// @notice Returns the current drawn rate for the specified asset.
+  /// @notice Returns the last updated drawn rate for the specified asset.
+  /// @dev Drawn rate can be outdated due to passage of time.
   /// @param assetId The identifier of the asset.
-  /// @return The current drawn rate of the asset.
+  /// @return The last updated drawn rate of the asset.
   function getAssetDrawnRate(uint256 assetId) external view returns (uint256);
 
   /// @notice Returns the number of spokes listed for the specified asset.

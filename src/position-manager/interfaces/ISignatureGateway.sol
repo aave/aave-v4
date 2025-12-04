@@ -112,6 +112,9 @@ interface ISignatureGateway is IMulticall, INoncesKeyed, IGatewayBase {
   /// @param onBehalfOf The address of the user on whose behalf the permit is being used.
   /// @param value The amount of the underlying asset to permit.
   /// @param deadline The deadline for the permit.
+  /// @param permitV The V component of the permit signature.
+  /// @param permitR The R component of the permit signature.
+  /// @param permitS The S component of the permit signature.
   function permitReserve(
     address spoke,
     uint256 reserveId,
