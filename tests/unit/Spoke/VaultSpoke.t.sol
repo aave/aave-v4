@@ -13,7 +13,6 @@ contract VaultSpokeTest is SpokeBase {
   function setUp() public override {
     super.setUp();
     address deployer = makeAddr('deployer');
-    address predictedVault = vm.computeCreateAddress(deployer, vm.getNonce(deployer));
     address vaultImpl = address(new VaultSpokeInstance(address(hub1), daiAssetId));
     vault = IVaultSpoke(
       _proxify(
@@ -36,7 +35,7 @@ contract VaultSpokeTest is SpokeBase {
     hub1.addSpoke(daiAssetId, address(vault), config);
   }
 
-  function test_deploy() public {
+  function test_deploy() public view {
     assertEq(address(vault.hub()), address(hub1));
     assertEq(vault.assetId(), daiAssetId);
     assertEq(vault.asset(), address(tokenList.dai));
@@ -157,7 +156,7 @@ contract VaultSpokeTest is SpokeBase {
       assets: depositAmount,
       receiver: user,
       nonce: vault.nonces(user),
-      deadline: block.timestamp + 1
+      deadline: vm.getBlockTimestamp() + 1
     });
     bytes32 functionTypehash = keccak256(
       'VaultDeposit(address depositor,uint256 assets,address receiver,uint256 nonce,uint256 deadline)'
@@ -205,7 +204,7 @@ contract VaultSpokeTest is SpokeBase {
       shares: mintAmount,
       receiver: user,
       nonce: vault.nonces(user),
-      deadline: block.timestamp + 1
+      deadline: vm.getBlockTimestamp() + 1
     });
     bytes32 functionTypehash = keccak256(
       'VaultMint(address depositor,uint256 shares,address receiver,uint256 nonce,uint256 deadline)'
@@ -250,7 +249,7 @@ contract VaultSpokeTest is SpokeBase {
       assets: depositAmount,
       receiver: user,
       nonce: vault.nonces(user),
-      deadline: vm.getBlockTimestamp() + 1 hours
+      deadline: vm.getBlockTimestamp() + 1
     });
     bytes32 functionTypehash = keccak256(
       'VaultWithdraw(address owner,uint256 assets,address receiver,uint256 nonce,uint256 deadline)'
@@ -284,7 +283,122 @@ contract VaultSpokeTest is SpokeBase {
   }
 
   function test_redeemWithSig() public {
+    uint256 depositAmount = 1000e18;
     (address user, uint256 userPk) = makeAddrAndKey('user');
+    _depositFromUser(user, depositAmount);
+
+    assertEq(vault.balanceOf(user), depositAmount);
+    assertEq(vault.totalAssets(), depositAmount);
+    assertEq(tokenList.dai.balanceOf(address(hub1)), depositAmount);
+    assertEq(tokenList.dai.balanceOf(user), 0);
+
+    EIP712Types.VaultRedeem memory params = EIP712Types.VaultRedeem({
+      owner: user,
+      shares: depositAmount,
+      receiver: user,
+      nonce: vault.nonces(user),
+      deadline: vm.getBlockTimestamp() + 1
+    });
+    bytes32 functionTypehash = keccak256(
+      'VaultRedeem(address owner,uint256 shares,address receiver,uint256 nonce,uint256 deadline)'
+    );
+    bytes32 structHash = keccak256(
+      abi.encode(
+        functionTypehash,
+        params.owner,
+        params.shares,
+        params.receiver,
+        params.nonce,
+        params.deadline
+      )
+    );
+    bytes memory signature = _getVaultSignature(userPk, structHash);
+
+    vm.prank(user);
+    IERC20(address(vault)).approve(bob, depositAmount);
+
+    vm.prank(bob);
+    vm.expectEmit(true, true, true, true, address(vault));
+    emit IERC4626.Withdraw(bob, user, user, depositAmount, depositAmount);
+    vault.redeemWithSig(params, signature);
+
+    assertEq(vault.balanceOf(user), 0);
+    assertEq(vault.totalAssets(), 0);
+    assertEq(tokenList.dai.balanceOf(address(hub1)), 0);
+    assertEq(tokenList.dai.balanceOf(user), depositAmount);
+
+    assertEq(hub1.getSpokeAddedShares(daiAssetId, address(vault)), 0);
+  }
+
+  function test_depositWithPermit() public {
+    uint256 depositAmount = 1000e18;
+    (address user, uint256 userPk) = makeAddrAndKey('user');
+
+    deal(address(tokenList.dai), user, depositAmount);
+
+    assertEq(tokenList.dai.balanceOf(user), depositAmount);
+    assertEq(tokenList.dai.balanceOf(address(vault)), 0);
+    assertEq(tokenList.dai.balanceOf(address(hub1)), 0);
+    assertEq(vault.balanceOf(user), 0);
+
+    EIP712Types.Permit memory params = EIP712Types.Permit({
+      owner: user,
+      spender: address(vault),
+      value: depositAmount,
+      deadline: vm.getBlockTimestamp() + 1,
+      nonce: tokenList.dai.nonces(user)
+    });
+    (uint8 v, bytes32 r, bytes32 s) = vm.sign(userPk, _getTypedDataHash(tokenList.dai, params));
+
+    vm.prank(user);
+    vm.expectEmit(true, true, false, true, address(vault));
+    emit IERC4626.Deposit(user, user, depositAmount, depositAmount);
+    uint256 shares = vault.depositWithPermit(depositAmount, user, params.deadline, v, r, s);
+
+    assertEq(tokenList.dai.balanceOf(user), 0);
+    assertEq(tokenList.dai.balanceOf(address(vault)), 0);
+    assertEq(vault.totalAssets(), depositAmount);
+    assertEq(vault.balanceOf(user), depositAmount);
+    assertEq(tokenList.dai.balanceOf(address(hub1)), depositAmount);
+
+    assertEq(hub1.getSpokeAddedShares(daiAssetId, address(vault)), shares);
+  }
+
+  function test_permit() public {
+    uint256 depositAmount = 1000e18;
+    (address user, uint256 userPk) = makeAddrAndKey('user');
+
+    assertEq(IERC20(address(vault)).allowance(user, address(vault)), 0);
+
+    EIP712Types.Permit memory params = EIP712Types.Permit({
+      owner: user,
+      spender: address(vault),
+      value: depositAmount,
+      nonce: vault.nonces(user),
+      deadline: vm.getBlockTimestamp() + 1
+    });
+    bytes32 functionTypehash = keccak256(
+      'Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)'
+    );
+    bytes32 structHash = keccak256(
+      abi.encode(
+        functionTypehash,
+        params.owner,
+        params.spender,
+        params.value,
+        params.nonce,
+        params.deadline
+      )
+    );
+    bytes32 digest = keccak256(abi.encodePacked('\x19\x01', vault.DOMAIN_SEPARATOR(), structHash));
+    (uint8 v, bytes32 r, bytes32 s) = vm.sign(userPk, digest);
+
+    vm.expectEmit(address(vault));
+    emit IERC20.Approval(user, address(vault), params.value);
+    vm.prank(user);
+    vault.permit(user, address(vault), params.value, params.deadline, v, r, s);
+
+    assertEq(IERC20(address(vault)).allowance(user, address(vault)), params.value);
   }
 
   function _depositFromUser(address user, uint256 amount) public {
