@@ -141,32 +141,30 @@ contract VaultSpokeTest is SpokeBase {
 
   function test_depositWithSig() public {
     uint256 depositAmount = 1000e18;
-    (address depositor, uint256 userPk) = makeAddrAndKey('user');
+    (address user, uint256 userPk) = makeAddrAndKey('user');
 
-    deal(address(tokenList.dai), depositor, depositAmount);
-    vm.prank(depositor);
+    deal(address(tokenList.dai), user, depositAmount);
+    vm.prank(user);
     tokenList.dai.approve(address(vault), depositAmount);
 
-    assertEq(tokenList.dai.balanceOf(depositor), depositAmount);
+    assertEq(tokenList.dai.balanceOf(user), depositAmount);
     assertEq(tokenList.dai.balanceOf(address(vault)), 0);
     assertEq(tokenList.dai.balanceOf(address(hub1)), 0);
-    assertEq(vault.balanceOf(depositor), 0);
+    assertEq(vault.balanceOf(user), 0);
 
     EIP712Types.VaultDeposit memory params = EIP712Types.VaultDeposit({
-      depositor: depositor,
+      depositor: user,
       assets: depositAmount,
-      receiver: depositor,
-      nonce: vault.nonces(depositor),
+      receiver: user,
+      nonce: vault.nonces(user),
       deadline: block.timestamp + 1
     });
-
-    bytes32 VAULT_DEPOSIT_TYPEHASH = keccak256(
+    bytes32 functionTypehash = keccak256(
       'VaultDeposit(address depositor,uint256 assets,address receiver,uint256 nonce,uint256 deadline)'
     );
-
     bytes32 structHash = keccak256(
       abi.encode(
-        VAULT_DEPOSIT_TYPEHASH,
+        functionTypehash,
         params.depositor,
         params.assets,
         params.receiver,
@@ -174,22 +172,116 @@ contract VaultSpokeTest is SpokeBase {
         params.deadline
       )
     );
-
-    bytes32 digest = keccak256(abi.encodePacked('\x19\x01', vault.DOMAIN_SEPARATOR(), structHash));
-    (uint8 v, bytes32 r, bytes32 s) = vm.sign(userPk, digest);
-    bytes memory signature = abi.encodePacked(r, s, v);
+    bytes memory signature = _getVaultSignature(userPk, structHash);
 
     vm.expectEmit(true, true, false, true, address(vault));
-    emit IERC4626.Deposit(depositor, depositor, depositAmount, depositAmount);
+    emit IERC4626.Deposit(user, user, depositAmount, depositAmount);
     uint256 shares = vault.depositWithSig(params, signature);
 
-    assertEq(tokenList.dai.balanceOf(depositor), 0);
+    assertEq(tokenList.dai.balanceOf(user), 0);
     assertEq(tokenList.dai.balanceOf(address(vault)), 0);
     assertEq(vault.totalAssets(), depositAmount);
-    assertEq(vault.balanceOf(depositor), depositAmount);
+    assertEq(vault.balanceOf(user), depositAmount);
     assertEq(tokenList.dai.balanceOf(address(hub1)), depositAmount);
 
     assertEq(hub1.getSpokeAddedShares(daiAssetId, address(vault)), shares);
+  }
+
+  function test_mintWithSig() public {
+    uint256 mintAmount = 1000e18;
+    (address user, uint256 userPk) = makeAddrAndKey('user');
+
+    deal(address(tokenList.dai), user, mintAmount);
+    vm.prank(user);
+    tokenList.dai.approve(address(vault), mintAmount);
+
+    assertEq(tokenList.dai.balanceOf(user), mintAmount);
+    assertEq(tokenList.dai.balanceOf(address(vault)), 0);
+    assertEq(tokenList.dai.balanceOf(address(hub1)), 0);
+    assertEq(vault.balanceOf(user), 0);
+
+    EIP712Types.VaultMint memory params = EIP712Types.VaultMint({
+      depositor: user,
+      shares: mintAmount,
+      receiver: user,
+      nonce: vault.nonces(user),
+      deadline: block.timestamp + 1
+    });
+    bytes32 functionTypehash = keccak256(
+      'VaultMint(address depositor,uint256 shares,address receiver,uint256 nonce,uint256 deadline)'
+    );
+    bytes32 structHash = keccak256(
+      abi.encode(
+        functionTypehash,
+        params.depositor,
+        params.shares,
+        params.receiver,
+        params.nonce,
+        params.deadline
+      )
+    );
+    bytes memory signature = _getVaultSignature(userPk, structHash);
+
+    vm.expectEmit(true, true, false, true, address(vault));
+    emit IERC4626.Deposit(user, user, mintAmount, mintAmount);
+    uint256 shares = vault.mintWithSig(params, signature);
+
+    assertEq(tokenList.dai.balanceOf(user), 0);
+    assertEq(tokenList.dai.balanceOf(address(vault)), 0);
+    assertEq(vault.totalAssets(), mintAmount);
+    assertEq(vault.balanceOf(user), mintAmount);
+    assertEq(tokenList.dai.balanceOf(address(hub1)), mintAmount);
+
+    assertEq(hub1.getSpokeAddedShares(daiAssetId, address(vault)), shares);
+  }
+
+  function test_withdrawWithSig() public {
+    (address user, uint256 userPk) = makeAddrAndKey('user');
+    uint256 depositAmount = 1000e18;
+    _depositFromUser(user, depositAmount);
+
+    assertEq(vault.balanceOf(user), depositAmount);
+    assertEq(vault.totalAssets(), depositAmount);
+    assertEq(tokenList.dai.balanceOf(address(hub1)), depositAmount);
+    assertEq(tokenList.dai.balanceOf(user), 0);
+
+    EIP712Types.VaultWithdraw memory params = EIP712Types.VaultWithdraw({
+      owner: user,
+      assets: depositAmount,
+      receiver: user,
+      nonce: vault.nonces(user),
+      deadline: vm.getBlockTimestamp() + 1 hours
+    });
+    bytes32 functionTypehash = keccak256(
+      'VaultWithdraw(address owner,uint256 assets,address receiver,uint256 nonce,uint256 deadline)'
+    );
+    bytes32 structHash = keccak256(
+      abi.encode(
+        functionTypehash,
+        params.owner,
+        params.assets,
+        params.receiver,
+        params.nonce,
+        params.deadline
+      )
+    );
+    bytes memory signature = _getVaultSignature(userPk, structHash);
+
+    vm.prank(user);
+    vm.expectEmit(true, true, true, true, address(vault));
+    emit IERC4626.Withdraw(user, user, user, depositAmount, depositAmount);
+    vault.withdrawWithSig(params, signature);
+
+    assertEq(vault.balanceOf(user), 0);
+    assertEq(vault.totalAssets(), 0);
+    assertEq(tokenList.dai.balanceOf(address(hub1)), 0);
+    assertEq(tokenList.dai.balanceOf(user), depositAmount);
+
+    assertEq(hub1.getSpokeAddedShares(daiAssetId, address(vault)), 0);
+  }
+
+  function test_redeemWithSig() public {
+    (address user, uint256 userPk) = makeAddrAndKey('user');
   }
 
   function _depositFromUser(address user, uint256 amount) public {
@@ -199,5 +291,14 @@ contract VaultSpokeTest is SpokeBase {
     tokenList.dai.approve(address(vault), amount);
     vault.deposit(amount, user);
     vm.stopPrank();
+  }
+
+  function _getVaultSignature(
+    uint256 userPk,
+    bytes32 structHash
+  ) internal view returns (bytes memory) {
+    bytes32 digest = keccak256(abi.encodePacked('\x19\x01', vault.DOMAIN_SEPARATOR(), structHash));
+    (uint8 v, bytes32 r, bytes32 s) = vm.sign(userPk, digest);
+    return abi.encodePacked(r, s, v);
   }
 }
