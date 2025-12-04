@@ -139,6 +139,59 @@ contract VaultSpokeTest is SpokeBase {
     assertEq(hub1.getSpokeAddedShares(daiAssetId, address(vault)), 0);
   }
 
+  function test_depositWithSig() public {
+    uint256 depositAmount = 1000e18;
+    (address depositor, uint256 userPk) = makeAddrAndKey('user');
+
+    deal(address(tokenList.dai), depositor, depositAmount);
+    vm.prank(depositor);
+    tokenList.dai.approve(address(vault), depositAmount);
+
+    assertEq(tokenList.dai.balanceOf(depositor), depositAmount);
+    assertEq(tokenList.dai.balanceOf(address(vault)), 0);
+    assertEq(tokenList.dai.balanceOf(address(hub1)), 0);
+    assertEq(vault.balanceOf(depositor), 0);
+
+    EIP712Types.VaultDeposit memory params = EIP712Types.VaultDeposit({
+      depositor: depositor,
+      assets: depositAmount,
+      receiver: depositor,
+      nonce: vault.nonces(depositor),
+      deadline: block.timestamp + 1
+    });
+
+    bytes32 VAULT_DEPOSIT_TYPEHASH = keccak256(
+      'VaultDeposit(address depositor,uint256 assets,address receiver,uint256 nonce,uint256 deadline)'
+    );
+
+    bytes32 structHash = keccak256(
+      abi.encode(
+        VAULT_DEPOSIT_TYPEHASH,
+        params.depositor,
+        params.assets,
+        params.receiver,
+        params.nonce,
+        params.deadline
+      )
+    );
+
+    bytes32 digest = keccak256(abi.encodePacked('\x19\x01', vault.DOMAIN_SEPARATOR(), structHash));
+    (uint8 v, bytes32 r, bytes32 s) = vm.sign(userPk, digest);
+    bytes memory signature = abi.encodePacked(r, s, v);
+
+    vm.expectEmit(true, true, false, true, address(vault));
+    emit IERC4626.Deposit(depositor, depositor, depositAmount, depositAmount);
+    uint256 shares = vault.depositWithSig(params, signature);
+
+    assertEq(tokenList.dai.balanceOf(depositor), 0);
+    assertEq(tokenList.dai.balanceOf(address(vault)), 0);
+    assertEq(vault.totalAssets(), depositAmount);
+    assertEq(vault.balanceOf(depositor), depositAmount);
+    assertEq(tokenList.dai.balanceOf(address(hub1)), depositAmount);
+
+    assertEq(hub1.getSpokeAddedShares(daiAssetId, address(vault)), shares);
+  }
+
   function _depositFromUser(address user, uint256 amount) public {
     deal(address(tokenList.dai), user, amount);
 
