@@ -36,17 +36,15 @@ contract VaultSpokeTest is SpokeBase {
   }
 
   function test_deploy_reverts_InvalidAssetId() public {
-    address deployer = makeAddr('deployer');
     uint256 invalidAssetId = hub1.getAssetCount() + 1;
     vm.expectRevert();
-    address vaultImpl = address(new VaultSpokeInstance(address(hub1), invalidAssetId));
+    new VaultSpokeInstance(address(hub1), invalidAssetId);
   }
 
   function test_deploy_reverts_InvalidHub() public {
-    address deployer = makeAddr('deployer');
     address invalidHub = address(0);
     vm.expectRevert();
-    address vaultImpl = address(new VaultSpokeInstance(invalidHub, daiAssetId));
+    new VaultSpokeInstance(invalidHub, daiAssetId);
   }
 
   function test_deploy() public view {
@@ -98,9 +96,13 @@ contract VaultSpokeTest is SpokeBase {
     vault.deposit(0, alice);
   }
 
-  function test_deposit_revertsWith_MaxDepositExceeded() public {
-    uint256 newMaxCap = 1; // new max cap is 1e18 (1 DAI)
-    uint256 depositAmount = newMaxCap + 1e18;
+  function test_deposit_revertsWith_MaxDepositExceeded(uint256 newMaxCap) public {
+    uint256 daiDecimalMultiplier = MathUtils.uncheckedExp(10, tokenList.dai.decimals());
+    // Max cap is not scaled by asset decimals
+    newMaxCap = bound(newMaxCap, 1, MAX_SUPPLY_AMOUNT / daiDecimalMultiplier);
+    uint256 depositAmount = newMaxCap *
+      daiDecimalMultiplier +
+      vm.randomUint(1, UINT256_MAX - newMaxCap * daiDecimalMultiplier);
     vm.prank(ADMIN);
     hub1.updateSpokeConfig(
       daiAssetId,
@@ -162,9 +164,13 @@ contract VaultSpokeTest is SpokeBase {
     vault.mint(0, alice);
   }
 
-  function test_mint_revertsWith_MaxMintExceeded() public {
-    uint256 newMaxCap = 1; // new max cap is 1e18 (1 DAI)
-    uint256 mintAmount = newMaxCap + 1e18;
+  function test_mint_revertsWith_MaxMintExceeded(uint256 newMaxCap) public {
+    uint256 daiDecimalMultiplier = MathUtils.uncheckedExp(10, tokenList.dai.decimals());
+    // Max cap is not scaled by asset decimals
+    newMaxCap = bound(newMaxCap, 1, MAX_SUPPLY_AMOUNT / daiDecimalMultiplier);
+    uint256 mintAmount = newMaxCap *
+      daiDecimalMultiplier +
+      vm.randomUint(1, UINT256_MAX - newMaxCap * daiDecimalMultiplier);
     vm.prank(ADMIN);
     hub1.updateSpokeConfig(
       daiAssetId,
@@ -224,9 +230,9 @@ contract VaultSpokeTest is SpokeBase {
     vault.withdraw(0, alice, alice);
   }
 
-  function test_withdraw_revertsWith_MaxWithdrawExceeded() public {
-    uint256 depositAmount = 100e18;
-    uint256 withdrawAmount = depositAmount + 1;
+  function test_withdraw_revertsWith_MaxWithdrawExceeded(uint256 depositAmount) public {
+    depositAmount = bound(depositAmount, 1, MAX_SUPPLY_AMOUNT);
+    uint256 withdrawAmount = depositAmount + vm.randomUint(1, UINT256_MAX - depositAmount);
     vm.prank(alice);
     _depositFromUser(alice, depositAmount);
 
@@ -270,9 +276,9 @@ contract VaultSpokeTest is SpokeBase {
     vault.redeem(0, alice, alice);
   }
 
-  function test_redeem_revertsWith_MaxRedeemExceeded() public {
-    uint256 depositAmount = 100e18;
-    uint256 redeemAmount = depositAmount + 1;
+  function test_redeem_revertsWith_MaxRedeemExceeded(uint256 depositAmount) public {
+    depositAmount = bound(depositAmount, 1, MAX_SUPPLY_AMOUNT);
+    uint256 redeemAmount = depositAmount + vm.randomUint(1, UINT256_MAX - depositAmount);
     vm.prank(alice);
     _depositFromUser(alice, depositAmount);
 
