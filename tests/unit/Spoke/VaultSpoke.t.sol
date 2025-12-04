@@ -35,11 +35,36 @@ contract VaultSpokeTest is SpokeBase {
     hub1.addSpoke(daiAssetId, address(vault), config);
   }
 
+  function test_deploy_reverts_InvalidAssetId() public {
+    address deployer = makeAddr('deployer');
+    uint256 invalidAssetId = hub1.getAssetCount() + 1;
+    vm.expectRevert();
+    address vaultImpl = address(new VaultSpokeInstance(address(hub1), invalidAssetId));
+  }
+
+  function test_deploy_reverts_InvalidHub() public {
+    address deployer = makeAddr('deployer');
+    address invalidHub = address(0);
+    vm.expectRevert();
+    address vaultImpl = address(new VaultSpokeInstance(invalidHub, daiAssetId));
+  }
+
   function test_deploy() public view {
     assertEq(address(vault.hub()), address(hub1));
     assertEq(vault.assetId(), daiAssetId);
     assertEq(vault.asset(), address(tokenList.dai));
     assertEq(vault.decimals(), IERC20Metadata(address(tokenList.dai)).decimals());
+  }
+
+  function test_reinitialize_revertsWith_InvalidInitialization() public {
+    vm.expectRevert(Initializable.InvalidInitialization.selector);
+    VaultSpoke(address(vault)).initialize('new name');
+  }
+
+  function test_cannot_init_impl() public {
+    VaultSpokeInstance vaultImpl = new VaultSpokeInstance(address(hub1), daiAssetId);
+    vm.expectRevert(Initializable.InvalidInitialization.selector);
+    vaultImpl.initialize('impl name');
   }
 
   function test_deposit(uint256 depositAmount) public {
@@ -65,6 +90,45 @@ contract VaultSpokeTest is SpokeBase {
     assertEq(tokenList.dai.balanceOf(address(hub1)), depositAmount);
 
     assertEq(hub1.getSpokeAddedShares(daiAssetId, address(vault)), shares);
+  }
+
+  function test_deposit_zero_revertsWith_InvalidAmount() public {
+    vm.expectRevert(IHub.InvalidAmount.selector);
+    vm.prank(alice);
+    vault.deposit(0, alice);
+  }
+
+  function test_deposit_exceedsMaxDeposit_revertsWith_MaxDepositExceeded() public {
+    uint256 newMaxCap = 1; // new max cap is 1e18 (1 DAI)
+    uint256 depositAmount = newMaxCap + 1e18;
+    vm.prank(ADMIN);
+    hub1.updateSpokeConfig(
+      daiAssetId,
+      address(vault),
+      IHub.SpokeConfig({
+        addCap: uint40(newMaxCap),
+        drawCap: Constants.MAX_ALLOWED_SPOKE_CAP,
+        riskPremiumThreshold: Constants.MAX_ALLOWED_COLLATERAL_RISK,
+        active: true,
+        paused: false
+      })
+    );
+
+    IHub.SpokeConfig memory config = hub1.getSpokeConfig(daiAssetId, address(vault));
+    assertEq(config.addCap, uint40(newMaxCap));
+
+    vm.prank(alice);
+    tokenList.dai.approve(address(vault), depositAmount);
+
+    vm.expectRevert(
+      abi.encodeWithSelector(
+        IVaultSpoke.MaxDepositExceeded.selector,
+        newMaxCap * MathUtils.uncheckedExp(10, tokenList.dai.decimals()),
+        depositAmount
+      )
+    );
+    vm.prank(alice);
+    vault.deposit(depositAmount, alice);
   }
 
   function test_mint(uint256 mintAmount) public {
