@@ -42,8 +42,8 @@ contract VaultSpokeTest is SpokeBase {
     assertEq(vault.decimals(), IERC20Metadata(address(tokenList.dai)).decimals());
   }
 
-  function test_deposit() public {
-    uint256 depositAmount = 1000e18;
+  function test_deposit(uint256 depositAmount) public {
+    depositAmount = bound(depositAmount, 1, MAX_SUPPLY_AMOUNT);
     deal(address(tokenList.dai), alice, depositAmount);
 
     assertEq(tokenList.dai.balanceOf(alice), depositAmount);
@@ -67,8 +67,8 @@ contract VaultSpokeTest is SpokeBase {
     assertEq(hub1.getSpokeAddedShares(daiAssetId, address(vault)), shares);
   }
 
-  function test_mint() public {
-    uint256 mintAmount = 1000e18;
+  function test_mint(uint256 mintAmount) public {
+    mintAmount = bound(mintAmount, 1, MAX_SUPPLY_AMOUNT);
     deal(address(tokenList.dai), alice, mintAmount);
 
     assertEq(tokenList.dai.balanceOf(alice), mintAmount);
@@ -92,8 +92,8 @@ contract VaultSpokeTest is SpokeBase {
     assertEq(hub1.getSpokeAddedShares(daiAssetId, address(vault)), shares);
   }
 
-  function test_withdraw() public {
-    uint256 depositAmount = 1000e18;
+  function test_withdraw(uint256 depositAmount) public {
+    depositAmount = bound(depositAmount, 1, MAX_SUPPLY_AMOUNT);
     _depositFromUser(alice, depositAmount);
 
     assertEq(vault.balanceOf(alice), depositAmount);
@@ -115,8 +115,8 @@ contract VaultSpokeTest is SpokeBase {
     assertEq(hub1.getSpokeAddedShares(daiAssetId, address(vault)), 0);
   }
 
-  function test_redeem() public {
-    uint256 depositAmount = 1000e18;
+  function test_redeem(uint256 depositAmount) public {
+    depositAmount = bound(depositAmount, 1, MAX_SUPPLY_AMOUNT);
     _depositFromUser(alice, depositAmount);
 
     assertEq(vault.balanceOf(alice), depositAmount);
@@ -138,8 +138,8 @@ contract VaultSpokeTest is SpokeBase {
     assertEq(hub1.getSpokeAddedShares(daiAssetId, address(vault)), 0);
   }
 
-  function test_depositWithSig() public {
-    uint256 depositAmount = 1000e18;
+  function test_depositWithSig(uint256 depositAmount) public {
+    depositAmount = bound(depositAmount, 1, MAX_SUPPLY_AMOUNT);
     (address user, uint256 userPk) = makeAddrAndKey('user');
 
     deal(address(tokenList.dai), user, depositAmount);
@@ -186,8 +186,8 @@ contract VaultSpokeTest is SpokeBase {
     assertEq(hub1.getSpokeAddedShares(daiAssetId, address(vault)), shares);
   }
 
-  function test_mintWithSig() public {
-    uint256 mintAmount = 1000e18;
+  function test_mintWithSig(uint256 mintAmount) public {
+    mintAmount = bound(mintAmount, 1, MAX_SUPPLY_AMOUNT);
     (address user, uint256 userPk) = makeAddrAndKey('user');
 
     deal(address(tokenList.dai), user, mintAmount);
@@ -234,9 +234,9 @@ contract VaultSpokeTest is SpokeBase {
     assertEq(hub1.getSpokeAddedShares(daiAssetId, address(vault)), shares);
   }
 
-  function test_withdrawWithSig() public {
+  function test_withdrawWithSig(uint256 depositAmount) public {
     (address user, uint256 userPk) = makeAddrAndKey('user');
-    uint256 depositAmount = 1000e18;
+    depositAmount = bound(depositAmount, 1, MAX_SUPPLY_AMOUNT);
     _depositFromUser(user, depositAmount);
 
     assertEq(vault.balanceOf(user), depositAmount);
@@ -282,8 +282,8 @@ contract VaultSpokeTest is SpokeBase {
     assertEq(hub1.getSpokeAddedShares(daiAssetId, address(vault)), 0);
   }
 
-  function test_redeemWithSig() public {
-    uint256 depositAmount = 1000e18;
+  function test_redeemWithSig(uint256 depositAmount) public {
+    depositAmount = bound(depositAmount, 1, MAX_SUPPLY_AMOUNT);
     (address user, uint256 userPk) = makeAddrAndKey('user');
     _depositFromUser(user, depositAmount);
 
@@ -330,8 +330,8 @@ contract VaultSpokeTest is SpokeBase {
     assertEq(hub1.getSpokeAddedShares(daiAssetId, address(vault)), 0);
   }
 
-  function test_depositWithPermit() public {
-    uint256 depositAmount = 1000e18;
+  function test_depositWithPermit(uint256 depositAmount) public {
+    depositAmount = bound(depositAmount, 1, MAX_SUPPLY_AMOUNT);
     (address user, uint256 userPk) = makeAddrAndKey('user');
 
     deal(address(tokenList.dai), user, depositAmount);
@@ -364,8 +364,8 @@ contract VaultSpokeTest is SpokeBase {
     assertEq(hub1.getSpokeAddedShares(daiAssetId, address(vault)), shares);
   }
 
-  function test_permit() public {
-    uint256 depositAmount = 1000e18;
+  function test_permit(uint256 approveAmount) public {
+    approveAmount = bound(approveAmount, 1, MAX_SUPPLY_AMOUNT);
     (address user, uint256 userPk) = makeAddrAndKey('user');
 
     assertEq(IERC20(address(vault)).allowance(user, address(vault)), 0);
@@ -373,7 +373,7 @@ contract VaultSpokeTest is SpokeBase {
     EIP712Types.Permit memory params = EIP712Types.Permit({
       owner: user,
       spender: address(vault),
-      value: depositAmount,
+      value: approveAmount,
       nonce: vault.nonces(user),
       deadline: vm.getBlockTimestamp() + 1
     });
