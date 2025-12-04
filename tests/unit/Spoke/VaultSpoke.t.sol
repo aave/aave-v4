@@ -268,8 +268,11 @@ contract VaultSpokeTest is SpokeBase {
     bytes memory signature = _getVaultSignature(userPk, structHash);
 
     vm.prank(user);
+    IERC20(address(vault)).approve(bob, depositAmount);
+
+    vm.prank(bob);
     vm.expectEmit(true, true, true, true, address(vault));
-    emit IERC4626.Withdraw(user, user, user, depositAmount, depositAmount);
+    emit IERC4626.Withdraw(bob, user, user, depositAmount, depositAmount);
     vault.withdrawWithSig(params, signature);
 
     assertEq(vault.balanceOf(user), 0);
