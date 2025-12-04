@@ -98,7 +98,7 @@ contract VaultSpokeTest is SpokeBase {
     vault.deposit(0, alice);
   }
 
-  function test_deposit_exceedsMaxDeposit_revertsWith_MaxDepositExceeded() public {
+  function test_deposit_revertsWith_MaxDepositExceeded() public {
     uint256 newMaxCap = 1; // new max cap is 1e18 (1 DAI)
     uint256 depositAmount = newMaxCap + 1e18;
     vm.prank(ADMIN);
@@ -156,6 +156,45 @@ contract VaultSpokeTest is SpokeBase {
     assertEq(hub1.getSpokeAddedShares(daiAssetId, address(vault)), shares);
   }
 
+  function test_mint_zero_revertsWith_InvalidAmount() public {
+    vm.expectRevert(IHub.InvalidAmount.selector);
+    vm.prank(alice);
+    vault.mint(0, alice);
+  }
+
+  function test_mint_revertsWith_MaxMintExceeded() public {
+    uint256 newMaxCap = 1; // new max cap is 1e18 (1 DAI)
+    uint256 mintAmount = newMaxCap + 1e18;
+    vm.prank(ADMIN);
+    hub1.updateSpokeConfig(
+      daiAssetId,
+      address(vault),
+      IHub.SpokeConfig({
+        addCap: uint40(newMaxCap),
+        drawCap: Constants.MAX_ALLOWED_SPOKE_CAP,
+        riskPremiumThreshold: Constants.MAX_ALLOWED_COLLATERAL_RISK,
+        active: true,
+        paused: false
+      })
+    );
+
+    IHub.SpokeConfig memory config = hub1.getSpokeConfig(daiAssetId, address(vault));
+    assertEq(config.addCap, uint40(newMaxCap));
+
+    vm.prank(alice);
+    tokenList.dai.approve(address(vault), mintAmount);
+
+    vm.expectRevert(
+      abi.encodeWithSelector(
+        IVaultSpoke.MaxMintExceeded.selector,
+        newMaxCap * MathUtils.uncheckedExp(10, tokenList.dai.decimals()),
+        mintAmount
+      )
+    );
+    vm.prank(alice);
+    vault.mint(mintAmount, alice);
+  }
+
   function test_withdraw(uint256 depositAmount) public {
     depositAmount = bound(depositAmount, 1, MAX_SUPPLY_AMOUNT);
     _depositFromUser(alice, depositAmount);
@@ -179,6 +218,29 @@ contract VaultSpokeTest is SpokeBase {
     assertEq(hub1.getSpokeAddedShares(daiAssetId, address(vault)), 0);
   }
 
+  function test_withdraw_revertsWith_InvalidAmount() public {
+    vm.expectRevert(IHub.InvalidAmount.selector);
+    vm.prank(alice);
+    vault.withdraw(0, alice, alice);
+  }
+
+  function test_withdraw_revertsWith_MaxWithdrawExceeded() public {
+    uint256 depositAmount = 100e18;
+    uint256 withdrawAmount = depositAmount + 1;
+    vm.prank(alice);
+    _depositFromUser(alice, depositAmount);
+
+    vm.expectRevert(
+      abi.encodeWithSelector(
+        IVaultSpoke.MaxWithdrawExceeded.selector,
+        depositAmount,
+        withdrawAmount
+      )
+    );
+    vm.prank(alice);
+    vault.withdraw(withdrawAmount, alice, alice);
+  }
+
   function test_redeem(uint256 depositAmount) public {
     depositAmount = bound(depositAmount, 1, MAX_SUPPLY_AMOUNT);
     _depositFromUser(alice, depositAmount);
@@ -200,6 +262,25 @@ contract VaultSpokeTest is SpokeBase {
     assertEq(tokenList.dai.balanceOf(alice), depositAmount);
 
     assertEq(hub1.getSpokeAddedShares(daiAssetId, address(vault)), 0);
+  }
+
+  function test_redeem_revertsWith_InvalidAmount() public {
+    vm.expectRevert(IHub.InvalidAmount.selector);
+    vm.prank(alice);
+    vault.redeem(0, alice, alice);
+  }
+
+  function test_redeem_revertsWith_MaxRedeemExceeded() public {
+    uint256 depositAmount = 100e18;
+    uint256 redeemAmount = depositAmount + 1;
+    vm.prank(alice);
+    _depositFromUser(alice, depositAmount);
+
+    vm.expectRevert(
+      abi.encodeWithSelector(IVaultSpoke.MaxRedeemExceeded.selector, depositAmount, redeemAmount)
+    );
+    vm.prank(alice);
+    vault.redeem(redeemAmount, alice, alice);
   }
 
   function test_depositWithSig(uint256 depositAmount) public {
