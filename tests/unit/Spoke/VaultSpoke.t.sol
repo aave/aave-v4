@@ -295,6 +295,68 @@ contract VaultSpokeTest is VaultSpokeBaseTest {
     assertEq(hub1.getSpokeAddedShares(daiAssetId, address(vault)), shares);
   }
 
+  function test_depositWithSig_revertsWith_InvalidSignature_dueTo_ExpiredDeadline() public {
+    (address user, uint256 userPk) = makeAddrAndKey('user');
+    EIP712Types.VaultDeposit memory params = _depositData(
+      vault,
+      user,
+      vm.randomUint(1, MAX_SUPPLY_AMOUNT),
+      _warpAfterRandomDeadline()
+    );
+    bytes memory signature = _sign(userPk, _getTypedDataHash(vault, params));
+
+    vm.expectRevert(IVaultSpoke.InvalidSignature.selector);
+    vault.depositWithSig(params, signature);
+  }
+
+  function test_depositWithSig_revertsWith_InvalidSignature_dueTo_InvalidSigner() public {
+    (address randomUser, uint256 randomUserPk) = makeAddrAndKey(string(vm.randomBytes(32)));
+    address user = vm.randomAddress();
+    while (user == randomUser) user = vm.randomAddress();
+
+    EIP712Types.VaultDeposit memory params = _depositData(
+      vault,
+      user,
+      vm.randomUint(1, MAX_SUPPLY_AMOUNT),
+      vm.getBlockTimestamp() + 1
+    );
+    bytes memory signature = _sign(randomUserPk, _getTypedDataHash(vault, params));
+
+    vm.expectRevert(IVaultSpoke.InvalidSignature.selector);
+    vault.depositWithSig(params, signature);
+  }
+
+  function test_depositWithSig_revertsWith_InvalidAccountNonce() public {
+    (address user, uint256 userPk) = makeAddrAndKey('user');
+    EIP712Types.VaultDeposit memory params = _depositData(
+      vault,
+      user,
+      vm.randomUint(1, MAX_SUPPLY_AMOUNT),
+      vm.getBlockTimestamp() + 1
+    );
+    uint192 nonceKey = _randomNonceKey();
+    uint256 currentNonce = _burnRandomNoncesAtKey(
+      INoncesKeyed(address(vault)),
+      params.depositor,
+      nonceKey
+    );
+    params.nonce = _getRandomInvalidNonceAtKey(
+      INoncesKeyed(address(vault)),
+      params.depositor,
+      nonceKey
+    );
+    bytes memory signature = _sign(userPk, _getTypedDataHash(vault, params));
+
+    vm.expectRevert(
+      abi.encodeWithSelector(
+        INoncesKeyed.InvalidAccountNonce.selector,
+        params.depositor,
+        currentNonce
+      )
+    );
+    vault.depositWithSig(params, signature);
+  }
+
   function test_mintWithSig(uint256 mintAmount) public {
     mintAmount = bound(mintAmount, 1, MAX_SUPPLY_AMOUNT);
     (address user, uint256 userPk) = makeAddrAndKey('user');
@@ -327,6 +389,68 @@ contract VaultSpokeTest is VaultSpokeBaseTest {
     assertEq(tokenList.dai.balanceOf(address(hub1)), mintAmount);
 
     assertEq(hub1.getSpokeAddedShares(daiAssetId, address(vault)), shares);
+  }
+
+  function test_mintWithSig_revertsWith_InvalidSignature_dueTo_ExpiredDeadline() public {
+    (address user, uint256 userPk) = makeAddrAndKey('user');
+    EIP712Types.VaultMint memory params = _mintData(
+      vault,
+      user,
+      vm.randomUint(1, MAX_SUPPLY_AMOUNT),
+      _warpAfterRandomDeadline()
+    );
+    bytes memory signature = _sign(userPk, _getTypedDataHash(vault, params));
+
+    vm.expectRevert(IVaultSpoke.InvalidSignature.selector);
+    vault.mintWithSig(params, signature);
+  }
+
+  function test_mintWithSig_revertsWith_InvalidSignature_dueTo_InvalidSigner() public {
+    (address randomUser, uint256 randomUserPk) = makeAddrAndKey(string(vm.randomBytes(32)));
+    address user = vm.randomAddress();
+    while (user == randomUser) user = vm.randomAddress();
+
+    EIP712Types.VaultMint memory params = _mintData(
+      vault,
+      user,
+      vm.randomUint(1, MAX_SUPPLY_AMOUNT),
+      vm.getBlockTimestamp() + 1
+    );
+    bytes memory signature = _sign(randomUserPk, _getTypedDataHash(vault, params));
+
+    vm.expectRevert(IVaultSpoke.InvalidSignature.selector);
+    vault.mintWithSig(params, signature);
+  }
+
+  function test_mintWithSig_revertsWith_InvalidAccountNonce() public {
+    (address user, uint256 userPk) = makeAddrAndKey('user');
+    EIP712Types.VaultMint memory params = _mintData(
+      vault,
+      user,
+      vm.randomUint(1, MAX_SUPPLY_AMOUNT),
+      vm.getBlockTimestamp() + 1
+    );
+    uint192 nonceKey = _randomNonceKey();
+    uint256 currentNonce = _burnRandomNoncesAtKey(
+      INoncesKeyed(address(vault)),
+      params.depositor,
+      nonceKey
+    );
+    params.nonce = _getRandomInvalidNonceAtKey(
+      INoncesKeyed(address(vault)),
+      params.depositor,
+      nonceKey
+    );
+    bytes memory signature = _sign(userPk, _getTypedDataHash(vault, params));
+
+    vm.expectRevert(
+      abi.encodeWithSelector(
+        INoncesKeyed.InvalidAccountNonce.selector,
+        params.depositor,
+        currentNonce
+      )
+    );
+    vault.mintWithSig(params, signature);
   }
 
   function test_withdrawWithSig(uint256 depositAmount) public {
@@ -363,6 +487,64 @@ contract VaultSpokeTest is VaultSpokeBaseTest {
     assertEq(hub1.getSpokeAddedShares(daiAssetId, address(vault)), 0);
   }
 
+  function test_withdrawWithSig_revertsWith_InvalidSignature_dueTo_ExpiredDeadline() public {
+    (address user, uint256 userPk) = makeAddrAndKey('user');
+    EIP712Types.VaultWithdraw memory params = _withdrawData(
+      vault,
+      user,
+      vm.randomUint(1, MAX_SUPPLY_AMOUNT),
+      _warpAfterRandomDeadline()
+    );
+    bytes memory signature = _sign(userPk, _getTypedDataHash(vault, params));
+
+    vm.expectRevert(IVaultSpoke.InvalidSignature.selector);
+    vault.withdrawWithSig(params, signature);
+  }
+
+  function test_withdrawWithSig_revertsWith_InvalidSignature_dueTo_InvalidSigner() public {
+    (address randomUser, uint256 randomUserPk) = makeAddrAndKey(string(vm.randomBytes(32)));
+    address user = vm.randomAddress();
+    while (user == randomUser) user = vm.randomAddress();
+
+    EIP712Types.VaultWithdraw memory params = _withdrawData(
+      vault,
+      user,
+      vm.randomUint(1, MAX_SUPPLY_AMOUNT),
+      vm.getBlockTimestamp() + 1
+    );
+    bytes memory signature = _sign(randomUserPk, _getTypedDataHash(vault, params));
+
+    vm.expectRevert(IVaultSpoke.InvalidSignature.selector);
+    vault.withdrawWithSig(params, signature);
+  }
+
+  function test_withdrawWithSig_revertsWith_InvalidAccountNonce() public {
+    (address user, uint256 userPk) = makeAddrAndKey('user');
+    EIP712Types.VaultWithdraw memory params = _withdrawData(
+      vault,
+      user,
+      vm.randomUint(1, MAX_SUPPLY_AMOUNT),
+      vm.getBlockTimestamp() + 1
+    );
+    uint192 nonceKey = _randomNonceKey();
+    uint256 currentNonce = _burnRandomNoncesAtKey(
+      INoncesKeyed(address(vault)),
+      params.owner,
+      nonceKey
+    );
+    params.nonce = _getRandomInvalidNonceAtKey(
+      INoncesKeyed(address(vault)),
+      params.owner,
+      nonceKey
+    );
+    bytes memory signature = _sign(userPk, _getTypedDataHash(vault, params));
+
+    vm.expectRevert(
+      abi.encodeWithSelector(INoncesKeyed.InvalidAccountNonce.selector, params.owner, currentNonce)
+    );
+    vault.withdrawWithSig(params, signature);
+  }
+
   function test_redeemWithSig(uint256 depositAmount) public {
     depositAmount = bound(depositAmount, 1, MAX_SUPPLY_AMOUNT);
     (address user, uint256 userPk) = makeAddrAndKey('user');
@@ -395,6 +577,64 @@ contract VaultSpokeTest is VaultSpokeBaseTest {
     assertEq(tokenList.dai.balanceOf(user), depositAmount);
 
     assertEq(hub1.getSpokeAddedShares(daiAssetId, address(vault)), 0);
+  }
+
+  function test_redeemWithSig_revertsWith_InvalidSignature_dueTo_ExpiredDeadline() public {
+    (address user, uint256 userPk) = makeAddrAndKey('user');
+    EIP712Types.VaultRedeem memory params = _redeemData(
+      vault,
+      user,
+      vm.randomUint(1, MAX_SUPPLY_AMOUNT),
+      _warpAfterRandomDeadline()
+    );
+    bytes memory signature = _sign(userPk, _getTypedDataHash(vault, params));
+
+    vm.expectRevert(IVaultSpoke.InvalidSignature.selector);
+    vault.redeemWithSig(params, signature);
+  }
+
+  function test_redeemWithSig_revertsWith_InvalidSignature_dueTo_InvalidSigner() public {
+    (address randomUser, uint256 randomUserPk) = makeAddrAndKey(string(vm.randomBytes(32)));
+    address user = vm.randomAddress();
+    while (user == randomUser) user = vm.randomAddress();
+
+    EIP712Types.VaultRedeem memory params = _redeemData(
+      vault,
+      user,
+      vm.randomUint(1, MAX_SUPPLY_AMOUNT),
+      vm.getBlockTimestamp() + 1
+    );
+    bytes memory signature = _sign(randomUserPk, _getTypedDataHash(vault, params));
+
+    vm.expectRevert(IVaultSpoke.InvalidSignature.selector);
+    vault.redeemWithSig(params, signature);
+  }
+
+  function test_redeemWithSig_revertsWith_InvalidAccountNonce() public {
+    (address user, uint256 userPk) = makeAddrAndKey('user');
+    EIP712Types.VaultRedeem memory params = _redeemData(
+      vault,
+      user,
+      vm.randomUint(1, MAX_SUPPLY_AMOUNT),
+      vm.getBlockTimestamp() + 1
+    );
+    uint192 nonceKey = _randomNonceKey();
+    uint256 currentNonce = _burnRandomNoncesAtKey(
+      INoncesKeyed(address(vault)),
+      params.owner,
+      nonceKey
+    );
+    params.nonce = _getRandomInvalidNonceAtKey(
+      INoncesKeyed(address(vault)),
+      params.owner,
+      nonceKey
+    );
+    bytes memory signature = _sign(userPk, _getTypedDataHash(vault, params));
+
+    vm.expectRevert(
+      abi.encodeWithSelector(INoncesKeyed.InvalidAccountNonce.selector, params.owner, currentNonce)
+    );
+    vault.redeemWithSig(params, signature);
   }
 
   function test_depositWithPermit(uint256 depositAmount) public {
