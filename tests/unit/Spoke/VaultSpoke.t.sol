@@ -7,8 +7,8 @@ import 'src/Spoke/Instances/VaultSpokeInstance.sol';
 import 'src/Spoke/Interfaces/IVaultSpoke.sol';
 
 contract VaultSpokeTest is SpokeBase {
-  IVaultSpoke vault;
-  address proxyAdminOwner = makeAddr('proxyAdminOwner');
+  IVaultSpoke internal vault;
+  address internal proxyAdminOwner = makeAddr('proxyAdminOwner');
 
   function setUp() public override {
     super.setUp();
@@ -54,11 +54,13 @@ contract VaultSpokeTest is SpokeBase {
     assertEq(vault.decimals(), IERC20Metadata(address(tokenList.dai)).decimals());
   }
 
+  /// @dev Cannot re-initialize the contract
   function test_reinitialize_revertsWith_InvalidInitialization() public {
     vm.expectRevert(Initializable.InvalidInitialization.selector);
     VaultSpoke(address(vault)).initialize('new name');
   }
 
+  /// @dev Cannot directly initialize the implementation contract
   function test_cannot_init_impl() public {
     VaultSpokeInstance vaultImpl = new VaultSpokeInstance(address(hub1), daiAssetId);
     vm.expectRevert(Initializable.InvalidInitialization.selector);
@@ -76,7 +78,7 @@ contract VaultSpokeTest is SpokeBase {
 
     vm.startPrank(alice);
     tokenList.dai.approve(address(vault), depositAmount);
-    vm.expectEmit(true, true, false, true, address(vault));
+    vm.expectEmit(address(vault));
     emit IERC4626.Deposit(alice, alice, depositAmount, depositAmount);
     uint256 shares = vault.deposit(depositAmount, alice);
     vm.stopPrank();
@@ -144,7 +146,7 @@ contract VaultSpokeTest is SpokeBase {
 
     vm.startPrank(alice);
     tokenList.dai.approve(address(vault), mintAmount);
-    vm.expectEmit(true, true, false, true, address(vault));
+    vm.expectEmit(address(vault));
     emit IERC4626.Deposit(alice, alice, mintAmount, mintAmount);
     uint256 shares = vault.mint(mintAmount, alice);
     vm.stopPrank();
@@ -211,7 +213,7 @@ contract VaultSpokeTest is SpokeBase {
     assertEq(tokenList.dai.balanceOf(alice), 0);
 
     vm.startPrank(alice);
-    vm.expectEmit(true, true, true, true, address(vault));
+    vm.expectEmit(address(vault));
     emit IERC4626.Withdraw(alice, alice, alice, depositAmount, depositAmount);
     vault.withdraw(depositAmount, alice, alice);
     vm.stopPrank();
@@ -257,7 +259,7 @@ contract VaultSpokeTest is SpokeBase {
     assertEq(tokenList.dai.balanceOf(alice), 0);
 
     vm.startPrank(alice);
-    vm.expectEmit(true, true, true, true, address(vault));
+    vm.expectEmit(address(vault));
     emit IERC4626.Withdraw(alice, alice, alice, depositAmount, depositAmount);
     vault.redeem(depositAmount, alice, alice);
     vm.stopPrank();
@@ -324,7 +326,7 @@ contract VaultSpokeTest is SpokeBase {
     );
     bytes memory signature = _getVaultSignature(userPk, structHash);
 
-    vm.expectEmit(true, true, false, true, address(vault));
+    vm.expectEmit(address(vault));
     emit IERC4626.Deposit(user, user, depositAmount, depositAmount);
     uint256 shares = vault.depositWithSig(params, signature);
 
@@ -372,7 +374,7 @@ contract VaultSpokeTest is SpokeBase {
     );
     bytes memory signature = _getVaultSignature(userPk, structHash);
 
-    vm.expectEmit(true, true, false, true, address(vault));
+    vm.expectEmit(address(vault));
     emit IERC4626.Deposit(user, user, mintAmount, mintAmount);
     uint256 shares = vault.mintWithSig(params, signature);
 
@@ -421,7 +423,7 @@ contract VaultSpokeTest is SpokeBase {
     IERC20(address(vault)).approve(bob, depositAmount);
 
     vm.prank(bob);
-    vm.expectEmit(true, true, true, true, address(vault));
+    vm.expectEmit(address(vault));
     emit IERC4626.Withdraw(bob, user, user, depositAmount, depositAmount);
     vault.withdrawWithSig(params, signature);
 
@@ -469,7 +471,7 @@ contract VaultSpokeTest is SpokeBase {
     IERC20(address(vault)).approve(bob, depositAmount);
 
     vm.prank(bob);
-    vm.expectEmit(true, true, true, true, address(vault));
+    vm.expectEmit(address(vault));
     emit IERC4626.Withdraw(bob, user, user, depositAmount, depositAmount);
     vault.redeemWithSig(params, signature);
 
@@ -502,7 +504,7 @@ contract VaultSpokeTest is SpokeBase {
     (uint8 v, bytes32 r, bytes32 s) = vm.sign(userPk, _getTypedDataHash(tokenList.dai, params));
 
     vm.prank(user);
-    vm.expectEmit(true, true, false, true, address(vault));
+    vm.expectEmit(address(vault));
     emit IERC4626.Deposit(user, user, depositAmount, depositAmount);
     uint256 shares = vault.depositWithPermit(depositAmount, user, params.deadline, v, r, s);
 
@@ -552,7 +554,7 @@ contract VaultSpokeTest is SpokeBase {
     assertEq(IERC20(address(vault)).allowance(user, address(vault)), params.value);
   }
 
-  function _depositFromUser(address user, uint256 amount) public {
+  function _depositFromUser(address user, uint256 amount) internal {
     deal(address(tokenList.dai), user, amount);
 
     vm.startPrank(user);
