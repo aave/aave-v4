@@ -2,39 +2,9 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import 'tests/unit/Spoke/SpokeBase.t.sol';
-import 'src/Spoke/Instances/VaultSpokeInstance.sol';
-import 'src/Spoke/Interfaces/IVaultSpoke.sol';
+import 'tests/unit/Spoke/VaultSpoke.Base.t.sol';
 
-contract VaultSpokeTest is SpokeBase {
-  IVaultSpoke internal vault;
-  address internal proxyAdminOwner = makeAddr('proxyAdminOwner');
-
-  function setUp() public override {
-    super.setUp();
-    address deployer = makeAddr('deployer');
-    address vaultImpl = address(new VaultSpokeInstance(address(hub1), daiAssetId));
-    vault = IVaultSpoke(
-      _proxify(
-        deployer,
-        vaultImpl,
-        proxyAdminOwner,
-        abi.encodeCall(VaultSpoke.initialize, ('hub1-DAI'))
-      )
-    );
-
-    // Add VaultSpoke to Hub
-    IHub.SpokeConfig memory config = IHub.SpokeConfig({
-      addCap: Constants.MAX_ALLOWED_SPOKE_CAP,
-      drawCap: Constants.MAX_ALLOWED_SPOKE_CAP,
-      riskPremiumThreshold: Constants.MAX_ALLOWED_COLLATERAL_RISK,
-      active: true,
-      paused: false
-    });
-    vm.prank(ADMIN);
-    hub1.addSpoke(daiAssetId, address(vault), config);
-  }
-
+contract VaultSpokeTest is VaultSpokeBaseTest {
   function test_deploy_reverts_InvalidAssetId() public {
     uint256 invalidAssetId = hub1.getAssetCount() + 1;
     vm.expectRevert();
@@ -304,27 +274,13 @@ contract VaultSpokeTest is SpokeBase {
     assertEq(tokenList.dai.balanceOf(address(hub1)), 0);
     assertEq(vault.balanceOf(user), 0);
 
-    EIP712Types.VaultDeposit memory params = EIP712Types.VaultDeposit({
-      depositor: user,
-      assets: depositAmount,
-      receiver: user,
-      nonce: vault.nonces(user),
-      deadline: vm.getBlockTimestamp() + 1
-    });
-    bytes32 functionTypehash = keccak256(
-      'VaultDeposit(address depositor,uint256 assets,address receiver,uint256 nonce,uint256 deadline)'
+    EIP712Types.VaultDeposit memory params = _depositData(
+      vault,
+      user,
+      depositAmount,
+      vm.getBlockTimestamp() + 1
     );
-    bytes32 structHash = keccak256(
-      abi.encode(
-        functionTypehash,
-        params.depositor,
-        params.assets,
-        params.receiver,
-        params.nonce,
-        params.deadline
-      )
-    );
-    bytes memory signature = _getVaultSignature(userPk, structHash);
+    bytes memory signature = _sign(userPk, _getTypedDataHash(vault, params));
 
     vm.expectEmit(address(vault));
     emit IERC4626.Deposit(user, user, depositAmount, depositAmount);
@@ -352,27 +308,13 @@ contract VaultSpokeTest is SpokeBase {
     assertEq(tokenList.dai.balanceOf(address(hub1)), 0);
     assertEq(vault.balanceOf(user), 0);
 
-    EIP712Types.VaultMint memory params = EIP712Types.VaultMint({
-      depositor: user,
-      shares: mintAmount,
-      receiver: user,
-      nonce: vault.nonces(user),
-      deadline: vm.getBlockTimestamp() + 1
-    });
-    bytes32 functionTypehash = keccak256(
-      'VaultMint(address depositor,uint256 shares,address receiver,uint256 nonce,uint256 deadline)'
+    EIP712Types.VaultMint memory params = _mintData(
+      vault,
+      user,
+      mintAmount,
+      vm.getBlockTimestamp() + 1
     );
-    bytes32 structHash = keccak256(
-      abi.encode(
-        functionTypehash,
-        params.depositor,
-        params.shares,
-        params.receiver,
-        params.nonce,
-        params.deadline
-      )
-    );
-    bytes memory signature = _getVaultSignature(userPk, structHash);
+    bytes memory signature = _sign(userPk, _getTypedDataHash(vault, params));
 
     vm.expectEmit(address(vault));
     emit IERC4626.Deposit(user, user, mintAmount, mintAmount);
@@ -397,27 +339,13 @@ contract VaultSpokeTest is SpokeBase {
     assertEq(tokenList.dai.balanceOf(address(hub1)), depositAmount);
     assertEq(tokenList.dai.balanceOf(user), 0);
 
-    EIP712Types.VaultWithdraw memory params = EIP712Types.VaultWithdraw({
-      owner: user,
-      assets: depositAmount,
-      receiver: user,
-      nonce: vault.nonces(user),
-      deadline: vm.getBlockTimestamp() + 1
-    });
-    bytes32 functionTypehash = keccak256(
-      'VaultWithdraw(address owner,uint256 assets,address receiver,uint256 nonce,uint256 deadline)'
+    EIP712Types.VaultWithdraw memory params = _withdrawData(
+      vault,
+      user,
+      depositAmount,
+      vm.getBlockTimestamp() + 1
     );
-    bytes32 structHash = keccak256(
-      abi.encode(
-        functionTypehash,
-        params.owner,
-        params.assets,
-        params.receiver,
-        params.nonce,
-        params.deadline
-      )
-    );
-    bytes memory signature = _getVaultSignature(userPk, structHash);
+    bytes memory signature = _sign(userPk, _getTypedDataHash(vault, params));
 
     vm.prank(user);
     IERC20(address(vault)).approve(bob, depositAmount);
@@ -445,27 +373,13 @@ contract VaultSpokeTest is SpokeBase {
     assertEq(tokenList.dai.balanceOf(address(hub1)), depositAmount);
     assertEq(tokenList.dai.balanceOf(user), 0);
 
-    EIP712Types.VaultRedeem memory params = EIP712Types.VaultRedeem({
-      owner: user,
-      shares: depositAmount,
-      receiver: user,
-      nonce: vault.nonces(user),
-      deadline: vm.getBlockTimestamp() + 1
-    });
-    bytes32 functionTypehash = keccak256(
-      'VaultRedeem(address owner,uint256 shares,address receiver,uint256 nonce,uint256 deadline)'
+    EIP712Types.VaultRedeem memory params = _redeemData(
+      vault,
+      user,
+      depositAmount,
+      vm.getBlockTimestamp() + 1
     );
-    bytes32 structHash = keccak256(
-      abi.encode(
-        functionTypehash,
-        params.owner,
-        params.shares,
-        params.receiver,
-        params.nonce,
-        params.deadline
-      )
-    );
-    bytes memory signature = _getVaultSignature(userPk, structHash);
+    bytes memory signature = _sign(userPk, _getTypedDataHash(vault, params));
 
     vm.prank(user);
     IERC20(address(vault)).approve(bob, depositAmount);
@@ -520,55 +434,24 @@ contract VaultSpokeTest is SpokeBase {
   function test_permit(uint256 approveAmount) public {
     approveAmount = bound(approveAmount, 1, MAX_SUPPLY_AMOUNT);
     (address user, uint256 userPk) = makeAddrAndKey('user');
+    TestnetERC20 vaultToken = TestnetERC20(address(vault));
 
-    assertEq(IERC20(address(vault)).allowance(user, address(vault)), 0);
+    assertEq(vaultToken.allowance(user, address(vault)), 0);
 
     EIP712Types.Permit memory params = EIP712Types.Permit({
       owner: user,
       spender: address(vault),
       value: approveAmount,
-      nonce: vault.nonces(user),
+      nonce: vaultToken.nonces(user),
       deadline: vm.getBlockTimestamp() + 1
     });
-    bytes32 functionTypehash = keccak256(
-      'Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)'
-    );
-    bytes32 structHash = keccak256(
-      abi.encode(
-        functionTypehash,
-        params.owner,
-        params.spender,
-        params.value,
-        params.nonce,
-        params.deadline
-      )
-    );
-    bytes32 digest = keccak256(abi.encodePacked('\x19\x01', vault.DOMAIN_SEPARATOR(), structHash));
-    (uint8 v, bytes32 r, bytes32 s) = vm.sign(userPk, digest);
+    (uint8 v, bytes32 r, bytes32 s) = vm.sign(userPk, _getTypedDataHash(vaultToken, params));
 
     vm.expectEmit(address(vault));
     emit IERC20.Approval(user, address(vault), params.value);
     vm.prank(user);
     vault.permit(user, address(vault), params.value, params.deadline, v, r, s);
 
-    assertEq(IERC20(address(vault)).allowance(user, address(vault)), params.value);
-  }
-
-  function _depositFromUser(address user, uint256 amount) internal {
-    deal(address(tokenList.dai), user, amount);
-
-    vm.startPrank(user);
-    tokenList.dai.approve(address(vault), amount);
-    vault.deposit(amount, user);
-    vm.stopPrank();
-  }
-
-  function _getVaultSignature(
-    uint256 userPk,
-    bytes32 structHash
-  ) internal view returns (bytes memory) {
-    bytes32 digest = keccak256(abi.encodePacked('\x19\x01', vault.DOMAIN_SEPARATOR(), structHash));
-    (uint8 v, bytes32 r, bytes32 s) = vm.sign(userPk, digest);
-    return abi.encodePacked(r, s, v);
+    assertEq(vaultToken.allowance(user, address(vault)), params.value);
   }
 }
