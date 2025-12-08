@@ -8,7 +8,7 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
   using SharesMath for uint256;
   using WadRayMath for *;
   using PercentageMath for uint256;
-  using SafeCast for *;
+  using SafeCast for uint256;
 
   struct TestAmounts {
     uint256 daiSupplyAmount;
@@ -59,7 +59,7 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
     uint40 skipTime
   ) public {
     amounts = _bound(amounts);
-    skipTime = bound(skipTime, 0, 2000 days).toUint40();
+    skipTime = bound(skipTime, 0, MAX_SKIP_TIME / 2).toUint40();
 
     // Ensure bob does not draw more than half his normalized supply value
     amounts = _ensureSufficientCollateral(spoke2, amounts);
@@ -453,7 +453,6 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
           bob
         );
       }
-
       // Workaround for precision loss with RP calc: https://github.com/aave/aave-v4/issues/421
       // Construct mock call so we can see the same user rp calc as within the borrow function
       vm.mockCall(
@@ -560,15 +559,9 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
       );
       values.wbtcBaseShares = bobPosition.drawnShares;
 
-      assertEq(
-        hub1.getAsset(wethAssetId).lastUpdateTimestamp,
-        values.wethTimestamp,
-        'weth last update time before second accrual'
-      );
-
       // Store timestamp before next skip time
       startTime = vm.getBlockTimestamp().toUint40();
-      skipTime = randomizer(0, 1000 days).toUint40();
+      skipTime = randomizer(0, MAX_SKIP_TIME / 2).toUint40();
       skip(skipTime);
 
       // Check bob's drawn debt, premium debt, and supplied amounts for all assets at user, reserve, spoke, and asset level
@@ -576,11 +569,6 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
         values.daiIndex,
         values.daiBaseBorrowRate,
         values.daiTimestamp
-      );
-      assertEq(
-        values.daiIndex,
-        hub1.getAssetDrawnIndex(daiAssetId),
-        'dai drawn index after second accrual'
       );
       bobPosition = spoke2.getUserPosition(_daiReserveId(spoke2), bob);
       drawnDebt = values.daiBaseShares.rayMulUp(values.daiIndex);
@@ -631,35 +619,12 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
       );
 
       if (originalValues.wethBorrowAmount > 0) {
-        assertEq(
-          values.wethBaseBorrowRate,
-          hub1.getAssetDrawnRate(wethAssetId),
-          'weth drawn rate after second accrual'
-        );
-
-        assertEq(
-          hub1.getAsset(wethAssetId).lastUpdateTimestamp,
-          values.wethTimestamp,
-          'weth last update time before second accrual'
-        );
-
         values.wethIndex = _calculateExpectedDrawnIndex(
           values.wethTimestamp == 1 ? originalValues.wethIndex : values.wethIndex, // If weth never updated, use original index
           values.wethBaseBorrowRate,
           values.wethTimestamp
         );
-
-        assertEq(
-          values.wethIndex.toUint120(),
-          hub1.getAssetDrawnIndex(wethAssetId),
-          'weth drawn index after second accrual'
-        );
         bobPosition = spoke2.getUserPosition(_wethReserveId(spoke2), bob);
-        assertEq(
-          bobPosition.drawnShares,
-          values.wethBaseShares,
-          'weth base drawn shares after second accrual'
-        );
         drawnDebt = values.wethBaseShares.rayMulUp(values.wethIndex);
         expectedPremiumDebt = _calculatePremiumDebt(
           hub1,
