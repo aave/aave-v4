@@ -8,7 +8,7 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
   using SharesMath for uint256;
   using WadRayMath for *;
   using PercentageMath for uint256;
-  using SafeCast for uint256;
+  using SafeCast for *;
 
   struct TestAmounts {
     uint256 daiSupplyAmount;
@@ -49,6 +49,13 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
     uint256 wbtcIndex;
   }
 
+  struct UpdatedTimestamps {
+    uint40 dai;
+    uint40 weth;
+    uint40 usdx;
+    uint40 wbtc;
+  }
+
   function setUp() public override {
     super.setUp();
     updateLiquidityFee(hub1, daiAssetId, 0);
@@ -64,7 +71,7 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
     uint40 skipTime
   ) public {
     amounts = _bound(amounts);
-    skipTime = bound(skipTime, 0, MAX_SKIP_TIME / 2).toUint40();
+    skipTime = bound(skipTime, 0, 2000 days).toUint40();
 
     // Ensure bob does not draw more than half his normalized supply value
     amounts = _ensureSufficientCollateral(spoke2, amounts);
@@ -486,10 +493,17 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
 
       // Refresh indexes
       Indices memory indices;
-      indices.daiIndex = hub1.getAssetDrawnIndex(daiAssetId);
-      indices.wethIndex = hub1.getAssetDrawnIndex(wethAssetId);
-      indices.usdxIndex = hub1.getAssetDrawnIndex(usdxAssetId);
-      indices.wbtcIndex = hub1.getAssetDrawnIndex(wbtcAssetId);
+      indices.daiIndex = hub1.getAssetDrawnIndex(daiAssetId).toUint120();
+      indices.wethIndex = hub1.getAssetDrawnIndex(wethAssetId).toUint120();
+      indices.usdxIndex = hub1.getAssetDrawnIndex(usdxAssetId).toUint120();
+      indices.wbtcIndex = hub1.getAssetDrawnIndex(wbtcAssetId).toUint120();
+
+      // Refresh timestamps - DAI may or may not have been borrowed above, potentially triggering accruals
+      UpdatedTimestamps memory timestamps;
+      timestamps.dai = hub1.getAsset(daiAssetId).lastUpdateTimestamp;
+      timestamps.weth = hub1.getAsset(wethAssetId).lastUpdateTimestamp;
+      timestamps.usdx = hub1.getAsset(usdxAssetId).lastUpdateTimestamp;
+      timestamps.wbtc = hub1.getAsset(wbtcAssetId).lastUpdateTimestamp;
 
       BaseShares memory baseShares;
 
@@ -562,16 +576,22 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
       );
       baseShares.wbtc = bobPosition.drawnShares;
 
+      assertEq(
+        hub1.getAsset(wethAssetId).lastUpdateTimestamp,
+        timestamps.weth,
+        'weth last update time before second accrual'
+      );
+
       // Store timestamp before next skip time
       startTime = vm.getBlockTimestamp().toUint40();
-      skipTime = randomizer(0, MAX_SKIP_TIME / 2).toUint40();
+      skipTime = randomizer(0, 1000 days).toUint40();
       skip(skipTime);
 
       // Check bob's drawn debt, premium debt, and supplied amounts for all assets at user, reserve, spoke, and asset level
       indices.daiIndex = _calculateExpectedDrawnIndex(
         indices.daiIndex,
         rates.daiBaseBorrowRate,
-        startTime
+        timestamps.dai
       );
       assertEq(
         indices.daiIndex,
@@ -626,14 +646,26 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
         'dai after second accrual'
       );
 
-      indices.wethIndex = _calculateExpectedDrawnIndex(
-        originalValues.wethIndex,
+      assertEq(
         rates.wethBaseBorrowRate,
-        originalValues.startTime
+        hub1.getAssetDrawnRate(wethAssetId),
+        'weth drawn rate after second accrual'
       );
 
       assertEq(
+        hub1.getAsset(wethAssetId).lastUpdateTimestamp,
+        timestamps.weth,
+        'weth last update time before second accrual'
+      );
+
+      indices.wethIndex = _calculateExpectedDrawnIndex(
         indices.wethIndex,
+        rates.wethBaseBorrowRate,
+        timestamps.weth
+      );
+
+      assertEq(
+        indices.wethIndex.toUint120(),
         hub1.getAssetDrawnIndex(wethAssetId),
         'weth drawn index after second accrual'
       );
@@ -691,9 +723,9 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
       );
 
       indices.usdxIndex = _calculateExpectedDrawnIndex(
-        originalValues.usdxIndex,
+        indices.usdxIndex,
         rates.usdxBaseBorrowRate,
-        originalValues.startTime
+        timestamps.usdx
       );
       bobPosition = spoke2.getUserPosition(_usdxReserveId(spoke2), bob);
       drawnDebt = baseShares.usdx.rayMulUp(indices.usdxIndex);
@@ -744,9 +776,9 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
       );
 
       indices.wbtcIndex = _calculateExpectedDrawnIndex(
-        originalValues.wbtcIndex,
+        indices.wbtcIndex,
         rates.wbtcBaseBorrowRate,
-        originalValues.startTime
+        timestamps.wbtc
       );
       bobPosition = spoke2.getUserPosition(_wbtcReserveId(spoke2), bob);
       drawnDebt = baseShares.wbtc.rayMulUp(indices.wbtcIndex);
