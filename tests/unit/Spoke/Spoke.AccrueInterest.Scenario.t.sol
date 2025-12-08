@@ -64,7 +64,6 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
     // Ensure bob does not draw more than half his normalized supply value
     amounts = _ensureSufficientCollateral(spoke2, amounts);
     TestAmounts memory originalValues = _copyAmounts(amounts); // deep copy original amounts
-    LocalInfo memory values;
 
     uint40 startTime = vm.getBlockTimestamp().toUint40();
     originalValues.startTime = startTime;
@@ -147,6 +146,7 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
     assertEq(bobRp, _calculateExpectedUserRP(spoke2, bob), 'user risk premium Before');
 
     // Store base borrow rates
+    LocalInfo memory values;
     values.daiBaseBorrowRate = hub1.getAssetDrawnRate(daiAssetId).toUint96();
     values.wethBaseBorrowRate = hub1.getAssetDrawnRate(wethAssetId).toUint96();
     values.usdxBaseBorrowRate = hub1.getAssetDrawnRate(usdxAssetId).toUint96();
