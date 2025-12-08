@@ -357,6 +357,32 @@ contract VaultSpokeTest is VaultSpokeBaseTest {
     vault.depositWithSig(params, signature);
   }
 
+  function test_depositWithSig_revertsWith_ERC20InsufficientAllowance() public {
+    (address user, uint256 userPk) = makeAddrAndKey('user');
+    uint256 depositAmount = vm.randomUint(1, MAX_SUPPLY_AMOUNT);
+
+    deal(address(tokenList.dai), user, depositAmount);
+
+    EIP712Types.VaultDeposit memory params = _depositData(
+      vault,
+      user,
+      depositAmount,
+      vm.getBlockTimestamp() + 1
+    );
+    bytes memory signature = _sign(userPk, _getTypedDataHash(vault, params));
+
+    vm.expectRevert(
+      abi.encodeWithSelector(
+        IERC20Errors.ERC20InsufficientAllowance.selector,
+        address(vault),
+        0,
+        params.assets,
+        address(tokenList.dai)
+      )
+    );
+    vault.depositWithSig(params, signature);
+  }
+
   function test_mintWithSig(uint256 mintAmount) public {
     mintAmount = bound(mintAmount, 1, MAX_SUPPLY_AMOUNT);
     (address user, uint256 userPk) = makeAddrAndKey('user');
@@ -448,6 +474,32 @@ contract VaultSpokeTest is VaultSpokeBaseTest {
         INoncesKeyed.InvalidAccountNonce.selector,
         params.depositor,
         currentNonce
+      )
+    );
+    vault.mintWithSig(params, signature);
+  }
+
+  function test_mintWithSig_revertsWith_ERC20InsufficientAllowance() public {
+    (address user, uint256 userPk) = makeAddrAndKey('user');
+    uint256 mintAmount = vm.randomUint(1, MAX_SUPPLY_AMOUNT);
+
+    deal(address(tokenList.dai), user, mintAmount);
+
+    EIP712Types.VaultMint memory params = _mintData(
+      vault,
+      user,
+      mintAmount,
+      vm.getBlockTimestamp() + 1
+    );
+    bytes memory signature = _sign(userPk, _getTypedDataHash(vault, params));
+
+    vm.expectRevert(
+      abi.encodeWithSelector(
+        IERC20Errors.ERC20InsufficientAllowance.selector,
+        address(vault),
+        0,
+        params.shares,
+        address(tokenList.dai)
       )
     );
     vault.mintWithSig(params, signature);
