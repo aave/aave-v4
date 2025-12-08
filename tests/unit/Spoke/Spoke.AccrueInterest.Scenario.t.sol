@@ -453,18 +453,11 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
           bob
         );
       }
-      // Workaround for precision loss with RP calc: https://github.com/aave/aave-v4/issues/421
-      // Construct mock call so we can see the same user rp calc as within the borrow function
-      vm.mockCall(
-        address(spoke2),
-        abi.encodeCall(Spoke.getUserTotalDebt, (_daiReserveId(spoke2), bob)),
-        abi.encode(spoke2.getUserTotalDebt(_daiReserveId(spoke2), bob) + 1e18) // Debt amount seen in the borrow function when calculating user rp
-      );
-      bobRp = _calculateExpectedUserRP(spoke2, bob);
-      vm.clearMockedCalls();
 
       // Bob borrows more dai to trigger accrual
       Utils.borrow(spoke2, _daiReserveId(spoke2), bob, 1e18, bob);
+
+      bobRp = _calculateExpectedUserRP(spoke2, bob);
 
       // Refresh debt values
       (amounts.daiBorrowAmount, ) = spoke2.getUserDebt(_daiReserveId(spoke2), bob);
