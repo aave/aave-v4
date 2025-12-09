@@ -1,0 +1,16 @@
+testMode: assertion # run to detect failed assertions
+coverage: true # turns coverage saving "on"
+corpusDir: "tests/tob/echidna-corpus"
+deployContracts: [["0x1f", "LiquidationLogic"]]
+cryticArgs: ["--compile-libraries=(LiquidationLogic,0x1f)"]
+testMaxGas: 1250000000 # increases test max gas for future complex operations
+codeSize: 0xfffffffffff # increase the code size
+testLimit: 600000 # this is the # of iterations Echidna will attempt before it shuts down
+workers: 5 # increases the # of workers/threads to run
+format: text # this defaults to text mode as opposed to using Echidna UI 
+maxTimeDelay: 2689117 # this increases the time delay that Echidna can test in the system 
+maxBlockDelay: 2689117 #this increases the block delay that Echidna can test
+seqLen: 100 # this increases the # of sequences Echidna can use to determine exploitability
+deployer: "0x30000"
+sender: ["0x10000", "0x20000", "0x30000"]
+symExec: false

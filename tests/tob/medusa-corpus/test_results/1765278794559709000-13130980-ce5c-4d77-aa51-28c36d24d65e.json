@@ -1,0 +1,80 @@
+[
+ {
+  "call": {
+   "from": "0x0000000000000000000000000000000000010000",
+   "to": "0x3fc81418067d39bd9008f32d06f0aac3874c22a5",
+   "nonce": 0,
+   "value": "0x0",
+   "gasLimit": 12500000,
+   "gasPrice": "0x1",
+   "gasFeeCap": "0x0",
+   "gasTipCap": "0x0",
+   "data": "0x3bec696f0001e75038ef7e41f7e1d5eee47a0fc038dc78db8827183b8ad33a18ea6b52d5156e14e5916d99f793be774c48767b8f5df398ed3eace2e76e61c2097d284b4908000334e2ff1417c0eaa5289974d683c45c6f4067d3689d5d0566034362efcf",
+   "dataAbiValues": {
+    "methodSignature": "supply_must_succeed(uint256,uint256,uint256)",
+    "inputValues": [
+     "3363313262630495638051386425734121747302125056350142399265126078116221653",
+     "9693067221444308727581599496146541655687199849304626981807528180076878777161",
+     "3618524919727909290998901923080372135126371401286403326915120584533660069839"
+    ]
+   },
+   "AccessList": null,
+   "SkipNonceChecks": true,
+   "SkipFromEOACheck": true
+  },
+  "blockNumberDelay": 0,
+  "blockTimestampDelay": 0
+ },
+ {
+  "call": {
+   "from": "0x0000000000000000000000000000000000010000",
+   "to": "0x3fc81418067d39bd9008f32d06f0aac3874c22a5",
+   "nonce": 1,
+   "value": "0x0",
+   "gasLimit": 12500000,
+   "gasPrice": "0x1",
+   "gasFeeCap": "0x0",
+   "gasTipCap": "0x0",
+   "data": "0x66f249130f858aaa49fa18e685e2738871d0bd82942f7c5188128b5b80227145c0ec14530f535be0f439ca77c4a7030ee9f76f96aa1975a467629444e8429ec3b5068b15006c22a5e906bedea5e72b2d562bdc1e6e45293342086c1bfac3a96ed3a720d5",
+   "dataAbiValues": {
+    "methodSignature": "borrow_must_succeed(uint256,uint256,uint256)",
+    "inputValues": [
+     "7020640420341992795012423657938603460627498043930317367256463203857494447187",
+     "6931975158791186068354976813645901899708444929027748348337564096059352189717",
+     "191058615303595398042065592237404013546533164383658582094484527515599053013"
+    ]
+   },
+   "AccessList": null,
+   "SkipNonceChecks": true,
+   "SkipFromEOACheck": true
+  },
+  "blockNumberDelay": 8181,
+  "blockTimestampDelay": 420969
+ },
+ {
+  "call": {
+   "from": "0x0000000000000000000000000000000000010000",
+   "to": "0x3fc81418067d39bd9008f32d06f0aac3874c22a5",
+   "nonce": 2,
+   "value": "0x0",
+   "gasLimit": 12500000,
+   "gasPrice": "0x1",
+   "gasFeeCap": "0x0",
+   "gasTipCap": "0x0",
+   "data": "0x4030d1d900005079e4491f9b0d32c2cfdc93f55cca2d8b467e017bfbdaa4f4a01d38a9bf00003c69391d44177cf03acda728d73c154942bdaa77b16042b93da035bf358e000000000000000000000000000000000000000000000000000000001e8b2849",
+   "dataAbiValues": {
+    "methodSignature": "repay_must_succeed(uint256,uint256,uint256)",
+    "inputValues": [
+     "555425902573717286322535079250054132801007805594271504870857881337506239",
+     "416941590047437016593023337037092838756540381197150925304181003191793038",
+     "512436297"
+    ]
+   },
+   "AccessList": null,
+   "SkipNonceChecks": true,
+   "SkipFromEOACheck": true
+  },
+  "blockNumberDelay": 72,
+  "blockTimestampDelay": 128
+ }
+]

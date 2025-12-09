@@ -29,3 +29,6 @@ coverage :
 	make coverage-clean
 	make coverage-report
 	make coverage-badge
+
+medusa-fuzz, mf :; medusa fuzz --config medusa.json
+echidna-fuzz, ef :; echidna tests/tob/Fuzzing.sol --contract FuzzingTob --config echidna.yaml
