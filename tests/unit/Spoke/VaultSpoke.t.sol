@@ -175,7 +175,7 @@ contract VaultSpokeTest is VaultSpokeBaseTest {
 
   function test_withdraw(uint256 depositAmount) public {
     depositAmount = bound(depositAmount, 1, MAX_SUPPLY_AMOUNT);
-    _depositFromUser(alice, depositAmount);
+    _deposit(vault, alice, depositAmount);
 
     assertEq(vault.balanceOf(alice), depositAmount);
     assertEq(vault.totalAssets(), depositAmount);
@@ -206,7 +206,7 @@ contract VaultSpokeTest is VaultSpokeBaseTest {
     depositAmount = bound(depositAmount, 1, MAX_SUPPLY_AMOUNT);
     uint256 withdrawAmount = depositAmount + vm.randomUint(1, UINT256_MAX - depositAmount);
     vm.prank(alice);
-    _depositFromUser(alice, depositAmount);
+    _deposit(vault, alice, depositAmount);
 
     vm.expectRevert(
       abi.encodeWithSelector(
@@ -221,7 +221,7 @@ contract VaultSpokeTest is VaultSpokeBaseTest {
 
   function test_redeem(uint256 depositAmount) public {
     depositAmount = bound(depositAmount, 1, MAX_SUPPLY_AMOUNT);
-    _depositFromUser(alice, depositAmount);
+    _deposit(vault, alice, depositAmount);
 
     assertEq(vault.balanceOf(alice), depositAmount);
     assertEq(vault.totalAssets(), depositAmount);
@@ -252,7 +252,7 @@ contract VaultSpokeTest is VaultSpokeBaseTest {
     depositAmount = bound(depositAmount, 1, MAX_SUPPLY_AMOUNT);
     uint256 redeemAmount = depositAmount + vm.randomUint(1, UINT256_MAX - depositAmount);
     vm.prank(alice);
-    _depositFromUser(alice, depositAmount);
+    _deposit(vault, alice, depositAmount);
 
     vm.expectRevert(
       abi.encodeWithSelector(IVaultSpoke.MaxRedeemExceeded.selector, depositAmount, redeemAmount)
@@ -508,7 +508,7 @@ contract VaultSpokeTest is VaultSpokeBaseTest {
   function test_withdrawWithSig(uint256 depositAmount) public {
     (address user, uint256 userPk) = makeAddrAndKey('user');
     depositAmount = bound(depositAmount, 1, MAX_SUPPLY_AMOUNT);
-    _depositFromUser(user, depositAmount);
+    _deposit(vault, user, depositAmount);
 
     assertEq(vault.balanceOf(user), depositAmount);
     assertEq(vault.totalAssets(), depositAmount);
@@ -600,7 +600,7 @@ contract VaultSpokeTest is VaultSpokeBaseTest {
   function test_redeemWithSig(uint256 depositAmount) public {
     depositAmount = bound(depositAmount, 1, MAX_SUPPLY_AMOUNT);
     (address user, uint256 userPk) = makeAddrAndKey('user');
-    _depositFromUser(user, depositAmount);
+    _deposit(vault, user, depositAmount);
 
     assertEq(vault.balanceOf(user), depositAmount);
     assertEq(vault.totalAssets(), depositAmount);

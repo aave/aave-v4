@@ -25,8 +25,8 @@ contract VaultSpokeBaseTest is SpokeBase {
     // Add VaultSpoke to Hub
     IHub.SpokeConfig memory config = IHub.SpokeConfig({
       addCap: Constants.MAX_ALLOWED_SPOKE_CAP,
-      drawCap: Constants.MAX_ALLOWED_SPOKE_CAP,
-      riskPremiumThreshold: Constants.MAX_ALLOWED_COLLATERAL_RISK,
+      drawCap: 0,
+      riskPremiumThreshold: 0,
       active: true,
       paused: false
     });
@@ -34,12 +34,12 @@ contract VaultSpokeBaseTest is SpokeBase {
     hub1.addSpoke(daiAssetId, address(vault), config);
   }
 
-  function _depositFromUser(address user, uint256 amount) internal {
+  function _deposit(IVaultSpoke vault_, address user, uint256 amount) internal {
     deal(address(tokenList.dai), user, amount);
 
     vm.startPrank(user);
-    tokenList.dai.approve(address(vault), amount);
-    vault.deposit(amount, user);
+    tokenList.dai.approve(address(vault_), amount);
+    vault_.deposit(amount, user);
     vm.stopPrank();
   }
 
