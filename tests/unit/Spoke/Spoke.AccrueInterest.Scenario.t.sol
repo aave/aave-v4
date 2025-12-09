@@ -63,13 +63,13 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
 
     // Ensure bob does not draw more than half his normalized supply value
     amounts = _ensureSufficientCollateral(spoke2, amounts);
-    TestAmounts memory originalValues = _copyAmounts(amounts); // deep copy original amounts
+    TestAmounts memory originalAmounts = _copyAmounts(amounts); // deep copy original amounts
 
     uint40 startTime = vm.getBlockTimestamp().toUint40();
-    originalValues.startTime = startTime;
-    originalValues.wethIndex = hub1.getAssetDrawnIndex(wethAssetId);
-    originalValues.usdxIndex = hub1.getAssetDrawnIndex(usdxAssetId);
-    originalValues.wbtcIndex = hub1.getAssetDrawnIndex(wbtcAssetId);
+    originalAmounts.startTime = startTime;
+    originalAmounts.wethIndex = hub1.getAssetDrawnIndex(wethAssetId);
+    originalAmounts.usdxIndex = hub1.getAssetDrawnIndex(usdxAssetId);
+    originalAmounts.wbtcIndex = hub1.getAssetDrawnIndex(wbtcAssetId);
 
     // Bob supply dai on spoke 2
     if (amounts.daiSupplyAmount > 0) {
@@ -573,7 +573,7 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
       );
       interest =
         (drawnDebt + expectedPremiumDebt) -
-        (originalValues.daiBorrowAmount + 1e18) -
+        (originalAmounts.daiBorrowAmount + 1e18) -
         _calculateBurntInterest(hub1, daiAssetId); // subtract out the extra amount we borrowed
       _assertSingleUserProtocolDebt(
         spoke2,
@@ -587,8 +587,8 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
         spoke2,
         _daiReserveId(spoke2),
         bob,
-        originalValues.daiSupplyAmount +
-          (interest * originalValues.daiSupplyAmount) /
+        originalAmounts.daiSupplyAmount +
+          (interest * originalAmounts.daiSupplyAmount) /
           MAX_SUPPLY_AMOUNT,
         'dai after second accrual'
       );
@@ -611,9 +611,9 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
         'dai after second accrual'
       );
 
-      if (originalValues.wethBorrowAmount > 0) {
+      if (originalAmounts.wethBorrowAmount > 0) {
         values.wethIndex = _calculateExpectedDrawnIndex(
-          values.wethTimestamp == 1 ? originalValues.wethIndex : values.wethIndex, // If weth never updated, use original index
+          values.wethTimestamp == 1 ? originalAmounts.wethIndex : values.wethIndex, // If weth never updated, use original index
           values.wethBaseBorrowRate,
           values.wethTimestamp
         );
@@ -627,7 +627,7 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
         );
         interest =
           (drawnDebt + expectedPremiumDebt) -
-          originalValues.wethBorrowAmount -
+          originalAmounts.wethBorrowAmount -
           _calculateBurntInterest(hub1, wethAssetId);
         _assertSingleUserProtocolDebt(
           spoke2,
@@ -641,8 +641,8 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
           spoke2,
           _wethReserveId(spoke2),
           bob,
-          originalValues.wethSupplyAmount +
-            (interest * originalValues.wethSupplyAmount) /
+          originalAmounts.wethSupplyAmount +
+            (interest * originalAmounts.wethSupplyAmount) /
             MAX_SUPPLY_AMOUNT,
           'weth after second accrual'
         );
@@ -666,9 +666,9 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
         );
       }
 
-      if (originalValues.usdxBorrowAmount > 0) {
+      if (originalAmounts.usdxBorrowAmount > 0) {
         values.usdxIndex = _calculateExpectedDrawnIndex(
-          values.usdxTimestamp == 1 ? originalValues.usdxIndex : values.usdxIndex, // If usdx never updated, use original index
+          values.usdxTimestamp == 1 ? originalAmounts.usdxIndex : values.usdxIndex, // If usdx never updated, use original index
           values.usdxBaseBorrowRate,
           values.usdxTimestamp
         );
@@ -682,7 +682,7 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
         );
         interest =
           (drawnDebt + expectedPremiumDebt) -
-          originalValues.usdxBorrowAmount -
+          originalAmounts.usdxBorrowAmount -
           _calculateBurntInterest(hub1, usdxAssetId);
         _assertSingleUserProtocolDebt(
           spoke2,
@@ -696,8 +696,8 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
           spoke2,
           _usdxReserveId(spoke2),
           bob,
-          originalValues.usdxSupplyAmount +
-            (interest * originalValues.usdxSupplyAmount) /
+          originalAmounts.usdxSupplyAmount +
+            (interest * originalAmounts.usdxSupplyAmount) /
             MAX_SUPPLY_AMOUNT,
           'usdx after second accrual'
         );
@@ -721,9 +721,9 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
         );
       }
 
-      if (originalValues.wbtcBorrowAmount > 0) {
+      if (originalAmounts.wbtcBorrowAmount > 0) {
         values.wbtcIndex = _calculateExpectedDrawnIndex(
-          values.wbtcTimestamp == 1 ? originalValues.wbtcIndex : values.wbtcIndex, // If wbtc never updated, use original index
+          values.wbtcTimestamp == 1 ? originalAmounts.wbtcIndex : values.wbtcIndex, // If wbtc never updated, use original index
           values.wbtcBaseBorrowRate,
           values.wbtcTimestamp
         );
@@ -737,7 +737,7 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
         );
         interest =
           (drawnDebt + expectedPremiumDebt) -
-          originalValues.wbtcBorrowAmount -
+          originalAmounts.wbtcBorrowAmount -
           _calculateBurntInterest(hub1, wbtcAssetId);
         _assertSingleUserProtocolDebt(
           spoke2,
@@ -751,8 +751,8 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
           spoke2,
           _wbtcReserveId(spoke2),
           bob,
-          originalValues.wbtcSupplyAmount +
-            (interest * originalValues.wbtcSupplyAmount) /
+          originalAmounts.wbtcSupplyAmount +
+            (interest * originalAmounts.wbtcSupplyAmount) /
             MAX_SUPPLY_AMOUNT,
           'wbtc after second accrual'
         );
