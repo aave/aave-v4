@@ -31,7 +31,6 @@ interface IHubConfigurator {
   ) external returns (uint256);
 
   /// @notice Adds a new asset to the Hub.
-  /// @dev Retrieves the decimals of the underlying asset from its ERC20 contract.
   /// @dev The fee receiver is automatically added as a spoke with maximum caps.
   /// @param hub The address of the Hub contract.
   /// @param underlying The address of the underlying asset.
@@ -116,8 +115,8 @@ interface IHubConfigurator {
 
   /// @notice Register the spoke for the specified asset in the Hub.
   /// @param hub The address of the Hub contract.
-  /// @param assetId The identifier of the asset to register the spoke for.
   /// @param spoke The address of the Spoke contract.
+  /// @param assetId The identifier of the asset to register the spoke for.
   /// @param config The Spoke configuration to register.
   function addSpoke(
     address hub,
