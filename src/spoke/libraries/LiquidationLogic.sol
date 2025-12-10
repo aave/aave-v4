@@ -311,7 +311,7 @@ library LiquidationLogic {
     uint256 liquidationBonusFactor,
     uint256 healthFactor,
     uint256 maxLiquidationBonus
-  ) internal pure returns (uint256) {
+  ) public pure returns (uint256) {
     if (healthFactor <= healthFactorForMaxBonus) {
       return maxLiquidationBonus;
     }
