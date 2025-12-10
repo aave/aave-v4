@@ -7,8 +7,6 @@ import {StdUtils} from 'lib/forge-std/src/StdUtils.sol';
 import {StdCheats} from 'lib/forge-std/src/StdCheats.sol';
 import {CommonBase} from 'lib/forge-std/src/Base.sol';
 import {StdChains} from 'lib/forge-std/src/StdChains.sol';
-import {Multicall} from 'src/dependencies/openzeppelin/Multicall.sol';
-import {IMulticall} from 'src/interfaces/IMulticall.sol';
 import {FuzzingTob} from 'tests/tob/Fuzzing.sol';
 
 interface StdCheatsMedusa {
