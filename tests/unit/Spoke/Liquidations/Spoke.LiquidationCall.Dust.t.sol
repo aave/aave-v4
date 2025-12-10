@@ -104,6 +104,7 @@ contract SpokeLiquidationCallDustTest is SpokeLiquidationCallBaseTest {
       _usdxReserveId(_spoke),
       alice,
       debtToTarget,
+      100_00,
       false
     );
 
@@ -113,6 +114,7 @@ contract SpokeLiquidationCallDustTest is SpokeLiquidationCallBaseTest {
       _usdxReserveId(_spoke),
       alice,
       UINT256_MAX,
+      100_00,
       false
     );
     vm.stopPrank();
@@ -177,13 +179,21 @@ contract SpokeLiquidationCallDustTest is SpokeLiquidationCallBaseTest {
     vm.startPrank(liquidator);
     // if debtToCover results in collateral dust, it should revert; $500 in collateral would remain
     vm.expectRevert(ISpoke.MustNotLeaveDust.selector);
-    _spoke.liquidationCall(_daiReserveId(_spoke), _usdxReserveId(_spoke), alice, 600e6, false);
+    _spoke.liquidationCall(
+      _daiReserveId(_spoke),
+      _usdxReserveId(_spoke),
+      alice,
+      600e6,
+      100_00,
+      false
+    );
 
     _spoke.liquidationCall(
       _daiReserveId(_spoke),
       _usdxReserveId(_spoke),
       alice,
       debtToCover,
+      100_00,
       false
     );
     vm.stopPrank();
@@ -242,13 +252,21 @@ contract SpokeLiquidationCallDustTest is SpokeLiquidationCallBaseTest {
     vm.startPrank(liquidator);
     // if debtToCover results in collateral and dust, it will revert; $500 in collateral would remain
     vm.expectRevert(ISpoke.MustNotLeaveDust.selector);
-    _spoke.liquidationCall(_daiReserveId(_spoke), _usdxReserveId(_spoke), alice, 600e6, false);
+    _spoke.liquidationCall(
+      _daiReserveId(_spoke),
+      _usdxReserveId(_spoke),
+      alice,
+      600e6,
+      100_00,
+      false
+    );
 
     _spoke.liquidationCall(
       _daiReserveId(_spoke),
       _usdxReserveId(_spoke),
       alice,
       debtToCover,
+      100_00,
       false
     );
     vm.stopPrank();
@@ -314,13 +332,21 @@ contract SpokeLiquidationCallDustTest is SpokeLiquidationCallBaseTest {
     vm.startPrank(liquidator);
     // if debtToCover results in collateral and dust, it will revert; $500 in collateral would remain
     vm.expectRevert(ISpoke.MustNotLeaveDust.selector);
-    _spoke.liquidationCall(_daiReserveId(_spoke), _usdxReserveId(_spoke), alice, 600e6, false);
+    _spoke.liquidationCall(
+      _daiReserveId(_spoke),
+      _usdxReserveId(_spoke),
+      alice,
+      600e6,
+      100_00,
+      false
+    );
 
     _spoke.liquidationCall(
       _daiReserveId(_spoke),
       _usdxReserveId(_spoke),
       alice,
       debtToCover,
+      100_00,
       false
     );
     vm.stopPrank();

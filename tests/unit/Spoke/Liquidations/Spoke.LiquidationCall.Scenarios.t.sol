@@ -127,6 +127,7 @@ contract SpokeLiquidationCallScenariosTest is SpokeLiquidationCallBaseTest {
         debtToCover: 4000e18,
         liquidator: liquidator,
         isSolvent: true,
+        minLiquidationBonus: 100_00,
         receiveShares: false
       })
     );
@@ -225,6 +226,7 @@ contract SpokeLiquidationCallScenariosTest is SpokeLiquidationCallBaseTest {
         debtToCover: 4000e18,
         liquidator: liquidator,
         isSolvent: true,
+        minLiquidationBonus: 100_00,
         receiveShares: false
       })
     );
@@ -290,6 +292,7 @@ contract SpokeLiquidationCallScenariosTest is SpokeLiquidationCallBaseTest {
         debtToCover: type(uint256).max,
         liquidator: liquidator,
         isSolvent: true,
+        minLiquidationBonus: 100_00,
         receiveShares: false
       })
     );
@@ -327,6 +330,7 @@ contract SpokeLiquidationCallScenariosTest is SpokeLiquidationCallBaseTest {
         debtToCover: type(uint256).max,
         liquidator: liquidator,
         isSolvent: true,
+        minLiquidationBonus: 100_00,
         receiveShares: receiveShares
       })
     );

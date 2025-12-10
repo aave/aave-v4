@@ -20,26 +20,20 @@ contract LiquidationLogicWrapper {
   mapping(address user => mapping(uint256 reserveId => ISpoke.UserPosition))
     internal _userPositions;
   mapping(uint256 reserveId => ISpoke.Reserve) internal _reserves;
-  mapping(address user => ISpoke.PositionStatus) internal _positionStatuses;
+  ISpoke.PositionStatus internal _positionStatus;
   address internal _borrower;
-  address internal _liquidator;
   uint256 internal _collateralReserveId;
   uint256 internal _debtReserveId;
 
   ISpoke.LiquidationConfig internal liquidationConfig;
   ISpoke.DynamicReserveConfig internal dynamicCollateralConfig;
 
-  constructor(address borrower_, address liquidator_) {
+  constructor(address borrower_) {
     _borrower = borrower_;
-    _liquidator = liquidator_;
   }
 
   function setBorrower(address borrower) public {
     _borrower = borrower;
-  }
-
-  function setLiquidator(address liquidator) public {
-    _liquidator = liquidator;
   }
 
   function setCollateralReserveHub(IHub hub) public {
@@ -66,10 +60,6 @@ contract LiquidationLogicWrapper {
 
   function setCollateralPositionSuppliedShares(uint256 suppliedShares) public {
     _userPositions[_borrower][_collateralReserveId].suppliedShares = suppliedShares.toUint120();
-  }
-
-  function setLiquidatorPositionSuppliedShares(address liquidator, uint256 suppliedShares) public {
-    _userPositions[liquidator][_collateralReserveId].suppliedShares = suppliedShares.toUint120();
   }
 
   function getCollateralReserve() public view returns (ISpoke.Reserve memory) {
@@ -113,19 +103,11 @@ contract LiquidationLogicWrapper {
   }
 
   function setBorrowerCollateralStatus(uint256 reserveId, bool status) public {
-    _positionStatuses[_borrower].setUsingAsCollateral(reserveId, status);
+    _positionStatus.setUsingAsCollateral(reserveId, status);
   }
 
   function setBorrowerBorrowingStatus(uint256 reserveId, bool status) public {
-    _positionStatuses[_borrower].setBorrowing(reserveId, status);
-  }
-
-  function setLiquidatorCollateralStatus(uint256 reserveId, bool status) public {
-    _positionStatuses[_liquidator].setUsingAsCollateral(reserveId, status);
-  }
-
-  function setLiquidatorBorrowingStatus(uint256 reserveId, bool status) public {
-    _positionStatuses[_liquidator].setBorrowing(reserveId, status);
+    _positionStatus.setBorrowing(reserveId, status);
   }
 
   function getDebtReserve() public view returns (ISpoke.Reserve memory) {
@@ -137,19 +119,11 @@ contract LiquidationLogicWrapper {
   }
 
   function getBorrowerCollateralStatus(uint256 reserveId) public view returns (bool) {
-    return _positionStatuses[_borrower].isUsingAsCollateral(reserveId);
+    return _positionStatus.isUsingAsCollateral(reserveId);
   }
 
   function getBorrowerBorrowingStatus(uint256 reserveId) public view returns (bool) {
-    return _positionStatuses[_borrower].isBorrowing(reserveId);
-  }
-
-  function getLiquidatorCollateralStatus(uint256 reserveId) public view returns (bool) {
-    return _positionStatuses[_liquidator].isUsingAsCollateral(reserveId);
-  }
-
-  function getLiquidatorBorrowingStatus(uint256 reserveId) public view returns (bool) {
-    return _positionStatuses[_liquidator].isBorrowing(reserveId);
+    return _positionStatus.isBorrowing(reserveId);
   }
 
   function setLiquidationConfig(ISpoke.LiquidationConfig memory newLiquidationConfig) public {
@@ -223,7 +197,7 @@ contract LiquidationLogicWrapper {
       LiquidationLogic._liquidateCollateral(
         _reserves[_collateralReserveId],
         _userPositions[_borrower][_collateralReserveId],
-        _userPositions[_liquidator][_collateralReserveId],
+        _userPositions[params.liquidator][_collateralReserveId],
         params
       );
   }
@@ -235,7 +209,22 @@ contract LiquidationLogicWrapper {
       LiquidationLogic._liquidateDebt(
         _reserves[_debtReserveId],
         _userPositions[_borrower][_debtReserveId],
-        _positionStatuses[_borrower],
+        _positionStatus,
+        params
+      );
+  }
+
+  function validateCalculateLiquidationAmounts(
+    LiquidationLogic.ValidateCalculateLiquidationAmountsParams memory params
+  ) public view returns (LiquidationLogic.LiquidationAmounts memory) {
+    return
+      LiquidationLogic._validateCalculateLiquidationAmounts(
+        _reserves[_collateralReserveId],
+        _reserves[_debtReserveId],
+        _userPositions[_borrower][_collateralReserveId],
+        _positionStatus,
+        liquidationConfig,
+        dynamicCollateralConfig,
         params
       );
   }
@@ -246,7 +235,7 @@ contract LiquidationLogicWrapper {
         _reserves[_collateralReserveId],
         _reserves[_debtReserveId],
         _userPositions,
-        _positionStatuses,
+        _positionStatus,
         liquidationConfig,
         dynamicCollateralConfig,
         params

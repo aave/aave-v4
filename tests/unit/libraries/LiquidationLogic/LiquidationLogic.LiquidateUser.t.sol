@@ -49,6 +49,7 @@ contract LiquidationLogicLiquidateUserTest is LiquidationLogicBaseTest {
       liquidator: makeAddr('liquidator'),
       activeCollateralCount: 1,
       borrowedCount: 1,
+      minLiquidationBonus: 120_00,
       receiveShares: false
     });
 
@@ -67,7 +68,6 @@ contract LiquidationLogicLiquidateUserTest is LiquidationLogicBaseTest {
 
     // set borrower
     liquidationLogicWrapper.setBorrower(params.user);
-    liquidationLogicWrapper.setLiquidator(params.liquidator);
 
     // Mock storage for collateral side
     require(hub1.getAsset(usdxAssetId).underlying == address(tokenList.usdx));

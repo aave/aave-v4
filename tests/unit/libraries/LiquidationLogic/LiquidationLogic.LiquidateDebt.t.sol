@@ -33,7 +33,6 @@ contract LiquidationLogicLiquidateDebtTest is LiquidationLogicBaseTest {
 
     // Set initial storage values
     liquidationLogicWrapper.setBorrower(user);
-    liquidationLogicWrapper.setLiquidator(liquidator);
     liquidationLogicWrapper.setDebtReserveId(reserveId);
     liquidationLogicWrapper.setDebtReserveHub(hub);
     liquidationLogicWrapper.setDebtReserveAssetId(assetId);

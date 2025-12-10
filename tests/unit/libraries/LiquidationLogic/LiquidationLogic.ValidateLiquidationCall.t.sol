@@ -25,10 +25,11 @@ contract LiquidationLogicValidateLiquidationCallTest is LiquidationLogicBaseTest
       collateralFactor: 75_00,
       isUsingAsCollateral: true,
       healthFactor: 0.8e18,
+      liquidationBonus: 105_00,
+      minLiquidationBonus: 103_00,
       receiveShares: false
     });
     liquidationLogicWrapper.setBorrower(params.user);
-    liquidationLogicWrapper.setLiquidator(params.liquidator);
     liquidationLogicWrapper.setBorrowerCollateralStatus(collateralReserveId, true);
   }
 
@@ -56,114 +57,65 @@ contract LiquidationLogicValidateLiquidationCallTest is LiquidationLogicBaseTest
     liquidationLogicWrapper.validateLiquidationCall(params);
   }
 
+  function test_validateLiquidationCall_revertsWith_InvalidLiquidationBonus() public {
+    params.minLiquidationBonus = params.liquidationBonus + 1;
+    vm.expectRevert(ISpoke.InvalidLiquidationBonus.selector);
+    liquidationLogicWrapper.validateLiquidationCall(params);
+
+    params.minLiquidationBonus = PercentageMath.PERCENTAGE_FACTOR - 1;
+    vm.expectRevert(ISpoke.InvalidLiquidationBonus.selector);
+    liquidationLogicWrapper.validateLiquidationCall(params);
+  }
+
   function test_validateLiquidationCall_revertsWith_CannotReceiveShares() public {
-    // receiveShares = false; liquidatorUsingAsCollateral = false; frozen = false; receiveSharesEnabled = true; => allowed
+    // receiveShares = false; frozen = false; receiveSharesEnabled = false; => allowed
     params.receiveShares = false;
-    liquidationLogicWrapper.setLiquidatorCollateralStatus(collateralReserveId, false);
-    params.collateralReserveFlags = params.collateralReserveFlags.setFrozen(false);
-    liquidationLogicWrapper.validateLiquidationCall(params);
-
-    // receiveShares = false; liquidatorUsingAsCollateral = true; frozen = false; receiveSharesEnabled = true; => allowed
-    params.receiveShares = false;
-    liquidationLogicWrapper.setLiquidatorCollateralStatus(collateralReserveId, true);
-    params.collateralReserveFlags = params.collateralReserveFlags.setFrozen(false);
-    liquidationLogicWrapper.validateLiquidationCall(params);
-
-    // receiveShares = false; liquidatorUsingAsCollateral = false; frozen = true; receiveSharesEnabled = true; => allowed
-    params.receiveShares = false;
-    liquidationLogicWrapper.setLiquidatorCollateralStatus(collateralReserveId, false);
-    params.collateralReserveFlags = params.collateralReserveFlags.setFrozen(true);
-    liquidationLogicWrapper.validateLiquidationCall(params);
-
-    // receiveShares = false; liquidatorUsingAsCollateral = true; frozen = true; receiveSharesEnabled = true; => allowed
-    params.receiveShares = false;
-    liquidationLogicWrapper.setLiquidatorCollateralStatus(collateralReserveId, true);
-    params.collateralReserveFlags = params.collateralReserveFlags.setFrozen(true);
-    liquidationLogicWrapper.validateLiquidationCall(params);
-
-    // receiveShares = true; liquidatorUsingAsCollateral = false; frozen = false; receiveSharesEnabled = true; => allowed
-    params.receiveShares = true;
-    liquidationLogicWrapper.setLiquidatorCollateralStatus(collateralReserveId, false);
-    params.collateralReserveFlags = params.collateralReserveFlags.setFrozen(false);
-    liquidationLogicWrapper.validateLiquidationCall(params);
-
-    // receiveShares = true; liquidatorUsingAsCollateral = true; frozen = false; receiveSharesEnabled = true; => allowed
-    params.receiveShares = true;
-    liquidationLogicWrapper.setLiquidatorCollateralStatus(collateralReserveId, true);
-    params.collateralReserveFlags = params.collateralReserveFlags.setFrozen(false);
-    liquidationLogicWrapper.validateLiquidationCall(params);
-
-    // receiveShares = true; liquidatorUsingAsCollateral = false; frozen = true; receiveSharesEnabled = true; => revert
-    params.receiveShares = true;
-    liquidationLogicWrapper.setLiquidatorCollateralStatus(collateralReserveId, false);
-    params.collateralReserveFlags = params.collateralReserveFlags.setFrozen(true);
-    vm.expectRevert(ISpoke.CannotReceiveShares.selector);
-    liquidationLogicWrapper.validateLiquidationCall(params);
-
-    // receiveShares = true; liquidatorUsingAsCollateral = true; frozen = true; receiveSharesEnabled = true; => revert
-    params.receiveShares = true;
-    liquidationLogicWrapper.setLiquidatorCollateralStatus(collateralReserveId, true);
-    params.collateralReserveFlags = params.collateralReserveFlags.setFrozen(true);
-    vm.expectRevert(ISpoke.CannotReceiveShares.selector);
-    liquidationLogicWrapper.validateLiquidationCall(params);
-
-    // receiveShares = false; liquidatorUsingAsCollateral = false; frozen = false; receiveSharesEnabled = false; => allowed
-    params.receiveShares = false;
-    liquidationLogicWrapper.setLiquidatorCollateralStatus(collateralReserveId, false);
     params.collateralReserveFlags = params.collateralReserveFlags.setFrozen(false);
     params.collateralReserveFlags = params.collateralReserveFlags.setReceiveSharesEnabled(false);
     liquidationLogicWrapper.validateLiquidationCall(params);
 
-    // receiveShares = false; liquidatorUsingAsCollateral = true; frozen = false; receiveSharesEnabled = false; => allowed
+    // receiveShares = false; frozen = false; receiveSharesEnabled = true; => allowed
     params.receiveShares = false;
-    liquidationLogicWrapper.setLiquidatorCollateralStatus(collateralReserveId, true);
     params.collateralReserveFlags = params.collateralReserveFlags.setFrozen(false);
-    params.collateralReserveFlags = params.collateralReserveFlags.setReceiveSharesEnabled(false);
+    params.collateralReserveFlags = params.collateralReserveFlags.setReceiveSharesEnabled(true);
     liquidationLogicWrapper.validateLiquidationCall(params);
 
-    // receiveShares = false; liquidatorUsingAsCollateral = false; frozen = true; receiveSharesEnabled = false; => allowed
+    // receiveShares = false; frozen = true; receiveSharesEnabled = false; => allowed
     params.receiveShares = false;
-    liquidationLogicWrapper.setLiquidatorCollateralStatus(collateralReserveId, false);
     params.collateralReserveFlags = params.collateralReserveFlags.setFrozen(true);
     params.collateralReserveFlags = params.collateralReserveFlags.setReceiveSharesEnabled(false);
     liquidationLogicWrapper.validateLiquidationCall(params);
 
-    // receiveShares = false; liquidatorUsingAsCollateral = true; frozen = true; receiveSharesEnabled = false; => allowed
+    // receiveShares = false; frozen = true; receiveSharesEnabled = true; => allowed
     params.receiveShares = false;
-    liquidationLogicWrapper.setLiquidatorCollateralStatus(collateralReserveId, true);
     params.collateralReserveFlags = params.collateralReserveFlags.setFrozen(true);
-    params.collateralReserveFlags = params.collateralReserveFlags.setReceiveSharesEnabled(false);
+    params.collateralReserveFlags = params.collateralReserveFlags.setReceiveSharesEnabled(true);
     liquidationLogicWrapper.validateLiquidationCall(params);
 
-    // receiveShares = true; liquidatorUsingAsCollateral = false; frozen = false; receiveSharesEnabled = false; => revert
+    // receiveShares = true; frozen = false; receiveSharesEnabled = false; => revert
     params.receiveShares = true;
-    liquidationLogicWrapper.setLiquidatorCollateralStatus(collateralReserveId, false);
     params.collateralReserveFlags = params.collateralReserveFlags.setFrozen(false);
     params.collateralReserveFlags = params.collateralReserveFlags.setReceiveSharesEnabled(false);
     vm.expectRevert(ISpoke.CannotReceiveShares.selector);
     liquidationLogicWrapper.validateLiquidationCall(params);
 
-    // receiveShares = true; liquidatorUsingAsCollateral = true; frozen = false; receiveSharesEnabled = false; => revert
+    // receiveShares = true; frozen = false; receiveSharesEnabled = true; => allowed
     params.receiveShares = true;
-    liquidationLogicWrapper.setLiquidatorCollateralStatus(collateralReserveId, true);
     params.collateralReserveFlags = params.collateralReserveFlags.setFrozen(false);
-    params.collateralReserveFlags = params.collateralReserveFlags.setReceiveSharesEnabled(false);
-    vm.expectRevert(ISpoke.CannotReceiveShares.selector);
+    params.collateralReserveFlags = params.collateralReserveFlags.setReceiveSharesEnabled(true);
     liquidationLogicWrapper.validateLiquidationCall(params);
 
-    // receiveShares = true; liquidatorUsingAsCollateral = false; frozen = true; receiveSharesEnabled = false; => revert
+    // receiveShares = true; frozen = true; receiveSharesEnabled = false; => revert
     params.receiveShares = true;
-    liquidationLogicWrapper.setLiquidatorCollateralStatus(collateralReserveId, false);
     params.collateralReserveFlags = params.collateralReserveFlags.setFrozen(true);
     params.collateralReserveFlags = params.collateralReserveFlags.setReceiveSharesEnabled(false);
     vm.expectRevert(ISpoke.CannotReceiveShares.selector);
     liquidationLogicWrapper.validateLiquidationCall(params);
 
-    // receiveShares = true; liquidatorUsingAsCollateral = true; frozen = true; receiveSharesEnabled = false; => revert
+    // receiveShares = true; frozen = true; receiveSharesEnabled = true; => revert
     params.receiveShares = true;
-    liquidationLogicWrapper.setLiquidatorCollateralStatus(collateralReserveId, true);
     params.collateralReserveFlags = params.collateralReserveFlags.setFrozen(true);
-    params.collateralReserveFlags = params.collateralReserveFlags.setReceiveSharesEnabled(false);
+    params.collateralReserveFlags = params.collateralReserveFlags.setReceiveSharesEnabled(true);
     vm.expectRevert(ISpoke.CannotReceiveShares.selector);
     liquidationLogicWrapper.validateLiquidationCall(params);
   }

@@ -349,6 +349,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     uint256 debtReserveId,
     address user,
     uint256 debtToCover,
+    uint256 minLiquidationBonus,
     bool receiveShares
   ) external {
     Reserve storage collateralReserve = _getReserve(collateralReserveId);
@@ -377,14 +378,16 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
       activeCollateralCount: userAccountData.activeCollateralCount,
       borrowedCount: userAccountData.borrowedCount,
       liquidator: msg.sender,
+      minLiquidationBonus: minLiquidationBonus,
       receiveShares: receiveShares
     });
 
+    PositionStatus storage positionStatus = _positionStatus[user];
     bool isUserInDeficit = LiquidationLogic.liquidateUser(
       collateralReserve,
       debtReserve,
       _userPositions,
-      _positionStatus,
+      positionStatus,
       _liquidationConfig,
       collateralDynConfig,
       params

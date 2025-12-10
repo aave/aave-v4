@@ -14,10 +14,7 @@ contract LiquidationLogicBaseTest is SpokeBase {
 
   function setUp() public virtual override {
     super.setUp();
-    liquidationLogicWrapper = new LiquidationLogicWrapper(
-      makeAddr('borrower'),
-      makeAddr('liquidator')
-    );
+    liquidationLogicWrapper = new LiquidationLogicWrapper(makeAddr('borrower'));
   }
 
   // generic bounds for liquidation logic params
@@ -133,16 +130,15 @@ contract LiquidationLogicBaseTest is SpokeBase {
   function _bound(
     LiquidationLogic.CalculateLiquidationAmountsParams memory params
   ) internal virtual returns (LiquidationLogic.CalculateLiquidationAmountsParams memory) {
-    (
-      params.healthFactorForMaxBonus,
-      params.liquidationBonusFactor,
+    params.healthFactor = bound(
       params.healthFactor,
-      params.maxLiquidationBonus
-    ) = _bound(
-      params.healthFactorForMaxBonus,
-      params.liquidationBonusFactor,
-      params.healthFactor,
-      params.maxLiquidationBonus
+      0,
+      Constants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD - 1
+    );
+    params.liquidationBonus = bound(
+      params.liquidationBonus,
+      MIN_LIQUIDATION_BONUS,
+      MAX_LIQUIDATION_BONUS
     );
 
     params.debtAssetUnit = bound(
@@ -213,12 +209,6 @@ contract LiquidationLogicBaseTest is SpokeBase {
   function _getCalculateDebtToLiquidateParams(
     LiquidationLogic.CalculateLiquidationAmountsParams memory params
   ) internal pure returns (LiquidationLogic.CalculateDebtToLiquidateParams memory) {
-    uint256 liquidationBonus = LiquidationLogic.calculateLiquidationBonus({
-      healthFactorForMaxBonus: params.healthFactorForMaxBonus,
-      liquidationBonusFactor: params.liquidationBonusFactor,
-      healthFactor: params.healthFactor,
-      maxLiquidationBonus: params.maxLiquidationBonus
-    });
     return
       LiquidationLogic.CalculateDebtToLiquidateParams({
         debtReserveBalance: params.debtReserveBalance,
@@ -227,7 +217,7 @@ contract LiquidationLogicBaseTest is SpokeBase {
         debtAssetPrice: params.debtAssetPrice,
         debtToCover: params.debtToCover,
         collateralFactor: params.collateralFactor,
-        liquidationBonus: liquidationBonus,
+        liquidationBonus: params.liquidationBonus,
         healthFactor: params.healthFactor,
         targetHealthFactor: params.targetHealthFactor
       });

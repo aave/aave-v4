@@ -22,6 +22,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
     uint256 debtToCover;
     address liquidator;
     bool isSolvent;
+    uint256 minLiquidationBonus;
     bool receiveShares;
   }
 
@@ -262,6 +263,11 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
     uint256 debtToCover
   ) internal virtual returns (LiquidationLogic.CalculateLiquidationAmountsParams memory) {
     ISpoke.UserAccountData memory userAccountData = spoke.getUserAccountData(user);
+    uint256 liquidationBonus = spoke.getLiquidationBonus(
+      collateralReserveId,
+      user,
+      userAccountData.healthFactor
+    );
     return
       LiquidationLogic.CalculateLiquidationAmountsParams({
         collateralReserveBalance: spoke.getUserSuppliedAssets(collateralReserveId, user),
@@ -278,14 +284,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
             spoke.getUserPosition(collateralReserveId, user).dynamicConfigKey
           )
           .collateralFactor,
-        healthFactorForMaxBonus: spoke.getLiquidationConfig().healthFactorForMaxBonus,
-        liquidationBonusFactor: spoke.getLiquidationConfig().liquidationBonusFactor,
-        maxLiquidationBonus: spoke
-          .getDynamicReserveConfig(
-            collateralReserveId,
-            spoke.getUserPosition(collateralReserveId, user).dynamicConfigKey
-          )
-          .maxLiquidationBonus,
+        liquidationBonus: liquidationBonus,
         targetHealthFactor: spoke.getLiquidationConfig().targetHealthFactor,
         healthFactor: userAccountData.healthFactor,
         liquidationFee: spoke
@@ -1363,6 +1362,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
       params.debtReserveId,
       params.user,
       params.debtToCover,
+      params.minLiquidationBonus,
       params.receiveShares
     );
     Vm.Log[] memory logs = vm.getRecordedLogs();

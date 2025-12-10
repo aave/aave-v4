@@ -40,7 +40,6 @@ contract LiquidationLogicLiquidateCollateralTest is LiquidationLogicBaseTest {
     liquidationLogicWrapper.setCollateralReserveId(reserveId);
     liquidationLogicWrapper.setBorrower(borrower);
     liquidationLogicWrapper.setCollateralPositionSuppliedShares(userSuppliedShares);
-    liquidationLogicWrapper.setLiquidator(liquidator);
 
     initialReserve = liquidationLogicWrapper.getCollateralReserve();
     initialUserPosition = liquidationLogicWrapper.getCollateralPosition(borrower);

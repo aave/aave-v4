@@ -306,6 +306,9 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
   /// @notice Thrown when a debt to cover input is zero.
   error InvalidDebtToCover();
 
+  /// @notice Thrown when the liquidation bonus is less than the minimum liquidation bonus.
+  error InvalidLiquidationBonus();
+
   /// @notice Thrown when the liquidator tries to receive shares for a collateral reserve that is frozen or is not enabled to receive shares.
   error CannotReceiveShares();
 

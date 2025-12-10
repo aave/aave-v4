@@ -41,6 +41,23 @@ library LiquidationLogic {
     address liquidator;
     uint256 activeCollateralCount;
     uint256 borrowedCount;
+    uint256 minLiquidationBonus;
+    bool receiveShares;
+  }
+
+  struct ValidateCalculateLiquidationAmountsParams {
+    uint256 collateralReserveId;
+    uint256 debtReserveId;
+    address oracle;
+    address user;
+    uint256 debtToCover;
+    uint256 healthFactor;
+    uint256 drawnDebt;
+    uint256 premiumDebtRay;
+    uint256 drawnIndex;
+    uint256 totalDebtValue;
+    address liquidator;
+    uint256 minLiquidationBonus;
     bool receiveShares;
   }
 
@@ -70,6 +87,8 @@ library LiquidationLogic {
     uint256 collateralFactor;
     bool isUsingAsCollateral;
     uint256 healthFactor;
+    uint256 liquidationBonus;
+    uint256 minLiquidationBonus;
     bool receiveShares;
   }
 
@@ -105,9 +124,7 @@ library LiquidationLogic {
     uint256 debtAssetPrice;
     uint256 debtToCover;
     uint256 collateralFactor;
-    uint256 healthFactorForMaxBonus;
-    uint256 liquidationBonusFactor;
-    uint256 maxLiquidationBonus;
+    uint256 liquidationBonus;
     uint256 targetHealthFactor;
     uint256 healthFactor;
     uint256 liquidationFee;
@@ -129,7 +146,7 @@ library LiquidationLogic {
   /// @param collateralReserve The collateral reserve to seize during liquidation.
   /// @param debtReserve The debt reserve to repay during liquidation.
   /// @param positions The mapping of positions per reserve per user.
-  /// @param positionStatus The mapping of position status per user.
+  /// @param positionStatus The position status of the user.
   /// @param liquidationConfig The liquidation config.
   /// @param collateralDynConfig The collateral dynamic config.
   /// @param params The liquidate user params.
@@ -138,54 +155,34 @@ library LiquidationLogic {
     ISpoke.Reserve storage collateralReserve,
     ISpoke.Reserve storage debtReserve,
     mapping(address user => mapping(uint256 reserveId => ISpoke.UserPosition)) storage positions,
-    mapping(address user => ISpoke.PositionStatus) storage positionStatus,
+    ISpoke.PositionStatus storage positionStatus,
     ISpoke.LiquidationConfig storage liquidationConfig,
     ISpoke.DynamicReserveConfig storage collateralDynConfig,
     LiquidateUserParams memory params
   ) external returns (bool) {
-    uint256 collateralReserveBalance = collateralReserve.hub.previewRemoveByShares(
-      collateralReserve.assetId,
-      positions[params.user][params.collateralReserveId].suppliedShares
-    );
-    _validateLiquidationCall(
-      ValidateLiquidationCallParams({
+    LiquidationAmounts memory liquidationAmounts = _validateCalculateLiquidationAmounts({
+      collateralReserve: collateralReserve,
+      debtReserve: debtReserve,
+      collateralPosition: positions[params.user][params.collateralReserveId],
+      positionStatus: positionStatus,
+      liquidationConfig: liquidationConfig,
+      collateralDynConfig: collateralDynConfig,
+      params: ValidateCalculateLiquidationAmountsParams({
+        collateralReserveId: params.collateralReserveId,
+        debtReserveId: params.debtReserveId,
+        oracle: params.oracle,
         user: params.user,
-        liquidator: params.liquidator,
-        collateralReserveFlags: collateralReserve.flags,
-        debtReserveFlags: debtReserve.flags,
-        collateralReserveBalance: collateralReserveBalance,
-        debtReserveBalance: params.drawnDebt + params.premiumDebtRay.fromRayUp(),
         debtToCover: params.debtToCover,
-        collateralFactor: collateralDynConfig.collateralFactor,
-        isUsingAsCollateral: positionStatus[params.user].isUsingAsCollateral(
-          params.collateralReserveId
-        ),
         healthFactor: params.healthFactor,
+        drawnDebt: params.drawnDebt,
+        premiumDebtRay: params.premiumDebtRay,
+        drawnIndex: params.drawnIndex,
+        totalDebtValue: params.totalDebtValue,
+        liquidator: params.liquidator,
+        minLiquidationBonus: params.minLiquidationBonus,
         receiveShares: params.receiveShares
       })
-    );
-
-    LiquidationAmounts memory liquidationAmounts = _calculateLiquidationAmounts(
-      CalculateLiquidationAmountsParams({
-        collateralReserveBalance: collateralReserveBalance,
-        collateralAssetUnit: MathUtils.uncheckedExp(10, collateralReserve.decimals),
-        collateralAssetPrice: IAaveOracle(params.oracle).getReservePrice(
-          params.collateralReserveId
-        ),
-        debtReserveBalance: params.drawnDebt + params.premiumDebtRay.fromRayUp(),
-        totalDebtValue: params.totalDebtValue,
-        debtAssetUnit: MathUtils.uncheckedExp(10, debtReserve.decimals),
-        debtAssetPrice: IAaveOracle(params.oracle).getReservePrice(params.debtReserveId),
-        debtToCover: params.debtToCover,
-        collateralFactor: collateralDynConfig.collateralFactor,
-        healthFactorForMaxBonus: liquidationConfig.healthFactorForMaxBonus,
-        liquidationBonusFactor: liquidationConfig.liquidationBonusFactor,
-        maxLiquidationBonus: collateralDynConfig.maxLiquidationBonus,
-        targetHealthFactor: liquidationConfig.targetHealthFactor,
-        healthFactor: params.healthFactor,
-        liquidationFee: collateralDynConfig.liquidationFee
-      })
-    );
+    });
 
     (
       uint256 collateralSharesToLiquidate,
@@ -210,7 +207,7 @@ library LiquidationLogic {
     ) = _liquidateDebt(
         debtReserve,
         positions[params.user][params.debtReserveId],
-        positionStatus[params.user],
+        positionStatus,
         LiquidateDebtParams({
           debtReserveId: params.debtReserveId,
           debtToLiquidate: liquidationAmounts.debtToLiquidate,
@@ -241,6 +238,65 @@ library LiquidationLogic {
         activeCollateralCount: params.activeCollateralCount,
         borrowedCount: params.borrowedCount
       });
+  }
+
+  function _validateCalculateLiquidationAmounts(
+    ISpoke.Reserve storage collateralReserve,
+    ISpoke.Reserve storage debtReserve,
+    ISpoke.UserPosition storage collateralPosition,
+    ISpoke.PositionStatus storage positionStatus,
+    ISpoke.LiquidationConfig storage liquidationConfig,
+    ISpoke.DynamicReserveConfig storage collateralDynConfig,
+    ValidateCalculateLiquidationAmountsParams memory params
+  ) internal view returns (LiquidationAmounts memory) {
+    uint256 collateralReserveBalance = collateralReserve.hub.previewRemoveByShares(
+      collateralReserve.assetId,
+      collateralPosition.suppliedShares
+    );
+    uint256 liquidationBonus = calculateLiquidationBonus({
+      healthFactorForMaxBonus: liquidationConfig.healthFactorForMaxBonus,
+      liquidationBonusFactor: liquidationConfig.liquidationBonusFactor,
+      healthFactor: params.healthFactor,
+      maxLiquidationBonus: collateralDynConfig.maxLiquidationBonus
+    });
+    _validateLiquidationCall(
+      ValidateLiquidationCallParams({
+        user: params.user,
+        liquidator: params.liquidator,
+        collateralReserveFlags: collateralReserve.flags,
+        debtReserveFlags: debtReserve.flags,
+        collateralReserveBalance: collateralReserveBalance,
+        debtReserveBalance: params.drawnDebt + params.premiumDebtRay.fromRayUp(),
+        debtToCover: params.debtToCover,
+        collateralFactor: collateralDynConfig.collateralFactor,
+        isUsingAsCollateral: positionStatus.isUsingAsCollateral(params.collateralReserveId),
+        healthFactor: params.healthFactor,
+        liquidationBonus: liquidationBonus,
+        minLiquidationBonus: params.minLiquidationBonus,
+        receiveShares: params.receiveShares
+      })
+    );
+
+    return
+      _calculateLiquidationAmounts(
+        CalculateLiquidationAmountsParams({
+          collateralReserveBalance: collateralReserveBalance,
+          collateralAssetUnit: MathUtils.uncheckedExp(10, collateralReserve.decimals),
+          collateralAssetPrice: IAaveOracle(params.oracle).getReservePrice(
+            params.collateralReserveId
+          ),
+          debtReserveBalance: params.drawnDebt + params.premiumDebtRay.fromRayUp(),
+          totalDebtValue: params.totalDebtValue,
+          debtAssetUnit: MathUtils.uncheckedExp(10, debtReserve.decimals),
+          debtAssetPrice: IAaveOracle(params.oracle).getReservePrice(params.debtReserveId),
+          debtToCover: params.debtToCover,
+          collateralFactor: collateralDynConfig.collateralFactor,
+          liquidationBonus: liquidationBonus,
+          targetHealthFactor: liquidationConfig.targetHealthFactor,
+          healthFactor: params.healthFactor,
+          liquidationFee: collateralDynConfig.liquidationFee
+        })
+      );
   }
 
   /// @notice Calculates the liquidation bonus at a given health factor.
@@ -368,6 +424,11 @@ library LiquidationLogic {
       params.collateralFactor > 0 && params.isUsingAsCollateral,
       ISpoke.ReserveNotEnabledAsCollateral()
     );
+    require(
+      PercentageMath.PERCENTAGE_FACTOR <= params.minLiquidationBonus &&
+        params.minLiquidationBonus <= params.liquidationBonus,
+      ISpoke.InvalidLiquidationBonus()
+    );
     if (params.receiveShares) {
       require(
         !params.collateralReserveFlags.frozen() &&
@@ -382,13 +443,6 @@ library LiquidationLogic {
   function _calculateLiquidationAmounts(
     CalculateLiquidationAmountsParams memory params
   ) internal pure returns (LiquidationAmounts memory) {
-    uint256 liquidationBonus = calculateLiquidationBonus({
-      healthFactorForMaxBonus: params.healthFactorForMaxBonus,
-      liquidationBonusFactor: params.liquidationBonusFactor,
-      healthFactor: params.healthFactor,
-      maxLiquidationBonus: params.maxLiquidationBonus
-    });
-
     // To prevent accumulation of dust, one of the following conditions is enforced:
     // 1. liquidate all debt
     // 2. liquidate all collateral
@@ -401,14 +455,14 @@ library LiquidationLogic {
         debtAssetPrice: params.debtAssetPrice,
         debtToCover: params.debtToCover,
         collateralFactor: params.collateralFactor,
-        liquidationBonus: liquidationBonus,
+        liquidationBonus: params.liquidationBonus,
         healthFactor: params.healthFactor,
         targetHealthFactor: params.targetHealthFactor
       })
     );
 
     uint256 collateralToLiquidate = debtToLiquidate.mulDivDown(
-      params.debtAssetPrice * params.collateralAssetUnit * liquidationBonus,
+      params.debtAssetPrice * params.collateralAssetUnit * params.liquidationBonus,
       params.debtAssetUnit * params.collateralAssetPrice * PercentageMath.PERCENTAGE_FACTOR
     );
 
@@ -431,7 +485,7 @@ library LiquidationLogic {
       //   value terms). Since debt dust condition was enforced, it is guaranteed that `debtToLiquidate` will never exceed `params.debtReserveBalance`.
       debtToLiquidate = collateralToLiquidate.mulDivUp(
         params.collateralAssetPrice * params.debtAssetUnit * PercentageMath.PERCENTAGE_FACTOR,
-        params.debtAssetPrice * params.collateralAssetUnit * liquidationBonus
+        params.debtAssetPrice * params.collateralAssetUnit * params.liquidationBonus
       );
     }
 
@@ -440,8 +494,8 @@ library LiquidationLogic {
 
     uint256 collateralToLiquidator = collateralToLiquidate -
       collateralToLiquidate.mulDivDown(
-        params.liquidationFee * (liquidationBonus - PercentageMath.PERCENTAGE_FACTOR),
-        liquidationBonus * PercentageMath.PERCENTAGE_FACTOR
+        params.liquidationFee * (params.liquidationBonus - PercentageMath.PERCENTAGE_FACTOR),
+        params.liquidationBonus * PercentageMath.PERCENTAGE_FACTOR
       );
 
     return

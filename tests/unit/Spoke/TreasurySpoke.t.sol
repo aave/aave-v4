@@ -258,6 +258,7 @@ contract TreasurySpokeTest is SpokeBase {
       vm.randomUint(),
       vm.randomAddress(),
       vm.randomUint(),
+      vm.randomUint(MIN_LIQUIDATION_BONUS, MAX_LIQUIDATION_BONUS),
       vm.randomBool()
     );
   }

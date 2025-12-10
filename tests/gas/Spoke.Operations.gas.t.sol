@@ -139,7 +139,7 @@ contract SpokeOperations_Gas_Tests is SpokeBase {
     _liquidationSetup();
 
     vm.startPrank(bob);
-    spoke.liquidationCall(reserveId.usdx, reserveId.dai, alice, 100_000e18, false);
+    spoke.liquidationCall(reserveId.usdx, reserveId.dai, alice, 100_000e18, 101_00, false);
     vm.snapshotGasLastCall(NAMESPACE, 'liquidationCall: partial');
     vm.stopPrank();
   }
@@ -148,7 +148,7 @@ contract SpokeOperations_Gas_Tests is SpokeBase {
     _liquidationSetup();
 
     vm.startPrank(bob);
-    spoke.liquidationCall(reserveId.usdx, reserveId.dai, alice, UINT256_MAX, false);
+    spoke.liquidationCall(reserveId.usdx, reserveId.dai, alice, UINT256_MAX, 101_00, false);
     vm.snapshotGasLastCall(NAMESPACE, 'liquidationCall: full');
 
     vm.stopPrank();
@@ -158,7 +158,7 @@ contract SpokeOperations_Gas_Tests is SpokeBase {
     _liquidationSetup();
 
     vm.startPrank(bob);
-    spoke.liquidationCall(reserveId.usdx, reserveId.dai, alice, 100_000e18, true);
+    spoke.liquidationCall(reserveId.usdx, reserveId.dai, alice, 100_000e18, 101_00, true);
     vm.snapshotGasLastCall(NAMESPACE, 'liquidationCall (receiveShares): partial');
 
     vm.stopPrank();
@@ -168,7 +168,7 @@ contract SpokeOperations_Gas_Tests is SpokeBase {
     _liquidationSetup();
 
     vm.startPrank(bob);
-    spoke.liquidationCall(reserveId.usdx, reserveId.dai, alice, UINT256_MAX, true);
+    spoke.liquidationCall(reserveId.usdx, reserveId.dai, alice, UINT256_MAX, 101_00, true);
     vm.snapshotGasLastCall(NAMESPACE, 'liquidationCall (receiveShares): full');
 
     vm.stopPrank();

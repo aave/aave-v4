@@ -253,9 +253,7 @@ contract LiquidationLogicLiquidationAmountsTest is LiquidationLogicBaseTest {
           debtAssetPrice: 2000e8,
           debtToCover: 3e18,
           collateralFactor: 50_00,
-          healthFactorForMaxBonus: 0.8e18,
-          liquidationBonusFactor: 50_00,
-          maxLiquidationBonus: 120_00,
+          liquidationBonus: 120_00,
           targetHealthFactor: 1e18,
           healthFactor: 0.8e18,
           liquidationFee: 10_00
@@ -290,9 +288,7 @@ contract LiquidationLogicLiquidationAmountsTest is LiquidationLogicBaseTest {
           debtAssetPrice: 2000e8,
           debtToCover: 3e18,
           collateralFactor: 50_00,
-          healthFactorForMaxBonus: 0.8e18,
-          liquidationBonusFactor: 50_00,
-          maxLiquidationBonus: 120_00,
+          liquidationBonus: 120_00,
           targetHealthFactor: 1e18,
           healthFactor: 0.8e18,
           liquidationFee: 10_00
@@ -307,23 +303,16 @@ contract LiquidationLogicLiquidationAmountsTest is LiquidationLogicBaseTest {
   function _calculateRawLiquidationAmounts(
     LiquidationLogic.CalculateLiquidationAmountsParams memory params
   ) internal view returns (LiquidationLogic.LiquidationAmounts memory) {
-    uint256 liquidationBonus = liquidationLogicWrapper.calculateLiquidationBonus({
-      healthFactorForMaxBonus: params.healthFactorForMaxBonus,
-      liquidationBonusFactor: params.liquidationBonusFactor,
-      healthFactor: params.healthFactor,
-      maxLiquidationBonus: params.maxLiquidationBonus
-    });
-
     uint256 debtToLiquidate = liquidationLogicWrapper.calculateDebtToLiquidate(
       _getCalculateDebtToLiquidateParams(params)
     );
     uint256 collateralToLiquidate = debtToLiquidate.mulDivDown(
-      params.debtAssetPrice * params.collateralAssetUnit * liquidationBonus,
+      params.debtAssetPrice * params.collateralAssetUnit * params.liquidationBonus,
       params.debtAssetUnit * params.collateralAssetPrice * PercentageMath.PERCENTAGE_FACTOR
     );
     uint256 collateralToLiquidator = _calculateCollateralToLiquidator(
       collateralToLiquidate,
-      liquidationBonus,
+      params.liquidationBonus,
       params.liquidationFee
     );
 
@@ -337,24 +326,17 @@ contract LiquidationLogicLiquidationAmountsTest is LiquidationLogicBaseTest {
 
   function _calculateAdjustedLiquidationAmounts(
     LiquidationLogic.CalculateLiquidationAmountsParams memory params
-  ) internal view returns (LiquidationLogic.LiquidationAmounts memory) {
-    uint256 liquidationBonus = liquidationLogicWrapper.calculateLiquidationBonus({
-      healthFactorForMaxBonus: params.healthFactorForMaxBonus,
-      liquidationBonusFactor: params.liquidationBonusFactor,
-      healthFactor: params.healthFactor,
-      maxLiquidationBonus: params.maxLiquidationBonus
-    });
-
+  ) internal pure returns (LiquidationLogic.LiquidationAmounts memory) {
     uint256 collateralToLiquidate = params.collateralReserveBalance;
     uint256 collateralToLiquidator = _calculateCollateralToLiquidator(
       collateralToLiquidate,
-      liquidationBonus,
+      params.liquidationBonus,
       params.liquidationFee
     );
     uint256 debtToLiquidate = collateralToLiquidate
       .mulDivUp(
         params.collateralAssetPrice * params.debtAssetUnit * PercentageMath.PERCENTAGE_FACTOR,
-        params.collateralAssetUnit * params.debtAssetPrice * liquidationBonus
+        params.collateralAssetUnit * params.debtAssetPrice * params.liquidationBonus
       )
       .min(params.debtReserveBalance);
 
