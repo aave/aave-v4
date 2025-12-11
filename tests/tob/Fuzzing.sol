@@ -1,17 +1,15 @@
+// SPDX-License-Identifier: UNLICENSED
+// Copyright (c) 2025 Aave Labs
 pragma solidity 0.8.28;
 pragma experimental ABIEncoderV2;
 
 import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
 import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
-
 import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
 import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
-
 import {IHub} from 'src/hub/interfaces/IHub.sol';
-
 import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 import {Spoke} from 'src/spoke/Spoke.sol';
-
 import {TestnetERC20} from 'tests/mocks/TestnetERC20.sol';
 import {FuzzingBase} from 'tests/tob/FuzzingBase.sol';
 
@@ -30,7 +28,6 @@ contract FuzzingTob is FuzzingBase {
 
   constructor() FuzzingBase() {}
 
-  //modifier check_global_invariants(uint256 spokeId, uint256 reserveId, uint256 amount) {
   modifier check_global_invariants() {
     _before_check_global_invariants();
     _;
@@ -294,13 +291,6 @@ contract FuzzingTob is FuzzingBase {
         'AAVE-INV-17 spoke added shares should be equal to old spoke added shares minus shares withdrew'
       );
       ISpoke.UserAccountData memory newAccountData = spoke.getUserAccountData(msg.sender);
-      emit HFF(
-        newAccountData.healthFactor,
-        newAccountData.totalCollateralValue,
-        newAccountData.totalDebtValue,
-        newAccountData.avgCollateralFactor,
-        newAccountData.riskPremium
-      );
       assertGte(
         oldAccountData.healthFactor,
         newAccountData.healthFactor,
@@ -317,13 +307,6 @@ contract FuzzingTob is FuzzingBase {
       emit LogBytes(data);
     }
   }
-  event HFF(
-    uint256 healthFactor,
-    uint256 totalCollateralValue,
-    uint256 totalDebtValue,
-    uint256 avgCollateralFactor,
-    uint256 riskPremium
-  );
 
   function borrow_must_succeed(
     uint256 spokeId,
@@ -396,13 +379,6 @@ contract FuzzingTob is FuzzingBase {
         'AAVE-INV-28 spoke drawn shares should be equal to old spoke drawn shares plus shares borrowed'
       );
       ISpoke.UserAccountData memory newAccountData = spoke.getUserAccountData(msg.sender);
-      emit HFF(
-        newAccountData.healthFactor,
-        newAccountData.totalCollateralValue,
-        newAccountData.totalDebtValue,
-        newAccountData.avgCollateralFactor,
-        newAccountData.riskPremium
-      );
       assertGte(
         oldAccountData.healthFactor,
         newAccountData.healthFactor,

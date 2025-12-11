@@ -27,3 +27,4 @@ report/
 tests/tob/medusa-corpus/
 tests/tob/echidna-corpus/
 crytic-export/
+slither_results.json
