@@ -833,7 +833,6 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
   /// @dev Skips the refresh if the user risk premium remains zero.
   function _notifyRiskPremiumUpdate(address user, uint256 newRiskPremium) internal {
     PositionStatus storage positionStatus = _positionStatus[user];
-
     if (newRiskPremium == 0 && positionStatus.riskPremium == 0) {
       return;
     }
@@ -857,7 +856,6 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
       userPosition.applyPremiumDelta(premiumDelta);
       emit RefreshPremiumDebt(reserveId, user, premiumDelta);
     }
-
     emit UpdateUserRiskPremium(user, newRiskPremium);
   }
 
