@@ -23,3 +23,6 @@ report/
 
 .DS_Store
 .venv/
+
+tests/tob/medusa-corpus/
+tests/tob/echidna-corpus/

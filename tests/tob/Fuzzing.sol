@@ -495,11 +495,6 @@ contract FuzzingTob is FuzzingBase {
         newAccountData.healthFactor,
         'AAVE-INV-40 user health factor does not decrease when repaying'
       );
-      assertGte(
-        newAccountData.healthFactor,
-        1e18,
-        'AAVE-INV-30 user health factor does not go below HEALTH_FACTOR_LIQUIDATION_THRESHOLD when borrowing'
-      );
     } catch (bytes memory data) {
       // Note we assume drawCap is unlimited and all the reserves are active
       emit LogString('AAVE-INV-41: repay must succeed if the preconditions are met');

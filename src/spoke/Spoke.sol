@@ -300,13 +300,6 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
 
     emit Borrow(reserveId, msg.sender, onBehalfOf, drawnShares, amount);
 
-    if (
-      _calculateUserAccountData(onBehalfOf).healthFactor < HEALTH_FACTOR_LIQUIDATION_THRESHOLD ||
-      _calculateUserAccountData(msg.sender).healthFactor < HEALTH_FACTOR_LIQUIDATION_THRESHOLD
-    ) {
-      revert('health factor below threshold after borrow');
-    }
-
     return (drawnShares, amount);
   }
 
@@ -841,9 +834,9 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
   function _notifyRiskPremiumUpdate(address user, uint256 newRiskPremium) internal {
     PositionStatus storage positionStatus = _positionStatus[user];
 
-    /*if (newRiskPremium == 0 && positionStatus.riskPremium == 0) {
+    if (newRiskPremium == 0 && positionStatus.riskPremium == 0) {
       return;
-    }*/
+    }
     positionStatus.riskPremium = newRiskPremium.toUint24();
 
     uint256 reserveId = _reserveCount;
@@ -865,9 +858,6 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
       emit RefreshPremiumDebt(reserveId, user, premiumDelta);
     }
 
-    if (_calculateUserAccountData(user).healthFactor < HEALTH_FACTOR_LIQUIDATION_THRESHOLD) {
-      revert('health factor below threshold after notify');
-    }
     emit UpdateUserRiskPremium(user, newRiskPremium);
   }
 
