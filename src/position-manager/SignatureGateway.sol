@@ -173,7 +173,7 @@ contract SignatureGateway is ISignatureGateway, GatewayBase, NoncesKeyed, Multic
     EIP712Types.SetUserPositionManager calldata params,
     bytes calldata signature
   ) external onlyRegisteredSpoke(spoke) {
-    require(params.positionManager == address(this), InvalidAddress());
+    require(params.positionManager == address(this), InvalidSignature());
     try
       ISpoke(spoke).setUserPositionManagerWithSig(
         address(this),

@@ -251,4 +251,22 @@ contract SignatureGatewayTest is SignatureGatewayBaseTest {
     _assertGatewayHasNoBalanceOrAllowance(spoke1, gateway, alice);
     _assertGatewayHasNoActivePosition(spoke1, gateway);
   }
+
+  function test_setSelfAsUserPositionManagerWithSig_revertsWith_InvalidSignature() public {
+    address randomPositionManager = vm.randomAddress();
+    assumeUnusedAddress(randomPositionManager);
+
+    EIP712Types.SetUserPositionManager memory p = EIP712Types.SetUserPositionManager({
+      positionManager: randomPositionManager,
+      user: alice,
+      approve: true,
+      nonce: spoke1.nonces(address(alice), _randomNonceKey()), // note: this typed sig is forwarded to spoke
+      deadline: _warpBeforeRandomDeadline()
+    });
+    bytes memory signature = _sign(alicePk, _getTypedDataHash(spoke1, p));
+
+    vm.expectRevert(ISignatureGateway.InvalidSignature.selector);
+    vm.prank(vm.randomAddress());
+    gateway.setSelfAsUserPositionManagerWithSig(address(spoke1), p, signature);
+  }
 }
