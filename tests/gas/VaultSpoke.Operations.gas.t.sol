@@ -128,30 +128,17 @@ contract VaultSpokeOperations_Gas_Tests is VaultSpokeBaseTest {
     vm.snapshotGasLastCall(NAMESPACE, 'redeemWithSig');
   }
 
-  //   function test_permit() public {
-  //     (address owner, uint256 ownerPk) = makeAddrAndKey('owner');
-  //     vm.label(owner, 'owner');
-  //     address spender = makeAddr('spender');
+  function test_permit() public {
+    EIP712Types.Permit memory p = _permitData(vault, alice, _warpBeforeRandomDeadline());
+    p.nonce = _burnRandomNoncesAtKey(vault, p.owner, vault.PERMIT_NONCE_KEY());
+    (uint8 v, bytes32 r, bytes32 s) = vm.sign(alicePk, _getTypedDataHash(vault, p));
 
-  //     EIP712Types.Permit memory permit = EIP712Types.Permit({
-  //       owner: owner,
-  //       spender: spender,
-  //       value: 1000e18,
-  //       nonce: vaultDai.nonces(owner),
-  //       deadline: vm.getBlockTimestamp() + 1 days
-  //     });
-  //     bytes32 digest = _getTypedDataHash(vaultDai, permit);
-  //     (uint8 v, bytes32 r, bytes32 s) = vm.sign(ownerPk, digest);
+    vm.expectEmit(address(vault));
+    emit IERC20.Approval(p.owner, p.spender, p.value);
+    vm.prank(vm.randomAddress());
+    vault.permit(p.owner, p.spender, p.value, p.deadline, v, r, s);
+    vm.snapshotGasLastCall(NAMESPACE, 'permit');
 
-  //     vaultDai.permit(owner, spender, permit.value, permit.deadline, v, r, s);
-  //     vm.snapshotGasLastCall(NAMESPACE, 'permit: first');
-
-  //     permit.nonce = vaultDai.nonces(owner);
-  //     permit.value = 2000e18;
-  //     digest = _getTypedDataHash(vaultDai, permit);
-  //     (v, r, s) = vm.sign(ownerPk, digest);
-
-  //     vaultDai.permit(owner, spender, permit.value, permit.deadline, v, r, s);
-  //     vm.snapshotGasLastCall(NAMESPACE, 'permit: second action');
-  //   }
+    assertEq(vault.allowance(p.owner, p.spender), p.value);
+  }
 }
