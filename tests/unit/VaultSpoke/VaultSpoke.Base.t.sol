@@ -6,12 +6,13 @@ import 'tests/Base.t.sol';
 
 contract VaultSpokeBaseTest is Base {
   IVaultSpoke public daiVault;
-  string public constant PREFIX = 'Core Hub';
+  string public constant SHARE_NAME = 'Core Hub DAI';
+  string public constant SHARE_SYMBOL = 'chDAI';
 
   function setUp() public virtual override {
     deployFixtures();
     initEnvironment();
-    daiVault = _deployVaultSpoke(hub1, daiAssetId, PREFIX, ADMIN);
+    daiVault = _deployVaultSpoke(hub1, daiAssetId, SHARE_NAME, SHARE_SYMBOL, ADMIN);
     _configureVaultSpoke(daiVault, hub1, daiAssetId);
   }
 
@@ -156,8 +157,8 @@ contract VaultSpokeInitTest is VaultSpokeBaseTest {
   }
 
   function test_setUp() public {
-    assertEq(daiVault.name(), string.concat(PREFIX, ' DAI'));
-    assertEq(daiVault.symbol(), string.concat('h', 'DAI'));
+    assertEq(daiVault.name(), SHARE_NAME);
+    assertEq(daiVault.symbol(), SHARE_SYMBOL);
     assertEq(daiVault.decimals(), tokenList.dai.decimals());
 
     assertEq(daiVault.asset(), address(tokenList.dai));

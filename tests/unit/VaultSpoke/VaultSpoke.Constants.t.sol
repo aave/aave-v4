@@ -6,7 +6,7 @@ import 'tests/unit/VaultSpoke/VaultSpoke.Base.t.sol';
 
 contract VaultSpokeConstantsTest is VaultSpokeBaseTest {
   function test_eip712Domain() public {
-    IVaultSpoke instance = _deployVaultSpoke(hub1, daiAssetId, PREFIX, ADMIN);
+    IVaultSpoke instance = _deployVaultSpoke(hub1, daiAssetId, 'Core Hub DAI', 'chDAI', ADMIN);
     (
       bytes1 fields,
       string memory name,
@@ -27,7 +27,7 @@ contract VaultSpokeConstantsTest is VaultSpokeBaseTest {
   }
 
   function test_DOMAIN_SEPARATOR() public {
-    IVaultSpoke instance = _deployVaultSpoke(hub1, daiAssetId, PREFIX, ADMIN);
+    IVaultSpoke instance = _deployVaultSpoke(hub1, daiAssetId, 'Core Hub DAI', 'chDAI', ADMIN);
     bytes32 expectedDomainSeparator = keccak256(
       abi.encode(
         keccak256(

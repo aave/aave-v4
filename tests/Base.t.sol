@@ -2282,7 +2282,8 @@ abstract contract Base is Test {
   function _deployVaultSpoke(
     IHub hub,
     uint256 assetId,
-    string memory prefix,
+    string memory shareName,
+    string memory shareSymbol,
     address proxyAdminOwner
   ) internal pausePrank returns (IVaultSpoke) {
     address vaultSpokeImpl = address(new VaultSpokeInstance(address(hub), assetId));
@@ -2291,7 +2292,7 @@ abstract contract Base is Test {
         makeAddr('deployer'),
         vaultSpokeImpl,
         proxyAdminOwner,
-        abi.encodeCall(VaultSpokeInstance.initialize, (prefix))
+        abi.encodeCall(VaultSpokeInstance.initialize, (shareName, shareSymbol))
       )
     );
     return vaultSpoke;

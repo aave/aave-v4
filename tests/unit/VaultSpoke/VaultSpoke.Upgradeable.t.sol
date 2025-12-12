@@ -20,7 +20,7 @@ contract VaultSpokeUpgradeableTest is VaultSpokeBaseTest {
     assertEq(_getProxyInitializedVersion(vaultImplAddress), type(uint64).max);
 
     vm.expectRevert(Initializable.InvalidInitialization.selector);
-    vaultImpl.initialize(PREFIX);
+    vaultImpl.initialize(SHARE_NAME, SHARE_SYMBOL);
   }
 
   function test_proxy_constructor_fuzz(uint64 revision) public {
@@ -43,7 +43,7 @@ contract VaultSpokeUpgradeableTest is VaultSpokeBaseTest {
         new TransparentUpgradeableProxy(
           address(vaultImpl),
           proxyAdminOwner,
-          abi.encodeCall(VaultSpokeInstance.initialize, (PREFIX))
+          abi.encodeCall(VaultSpokeInstance.initialize, (SHARE_NAME, SHARE_SYMBOL))
         )
       )
     );
@@ -53,8 +53,8 @@ contract VaultSpokeUpgradeableTest is VaultSpokeBaseTest {
     assertEq(_getImplementationAddress(address(vaultProxy)), address(vaultImpl));
 
     assertEq(_getProxyInitializedVersion(address(vaultProxy)), revision);
-    assertEq(vaultProxy.name(), string.concat(PREFIX, ' ', tokenList.dai.name()));
-    assertEq(vaultProxy.symbol(), string.concat('h', tokenList.dai.symbol()));
+    assertEq(vaultProxy.name(), SHARE_NAME);
+    assertEq(vaultProxy.symbol(), SHARE_SYMBOL);
   }
 
   function test_proxy_reinitialization_fuzz(uint64 initialRevision) public {
@@ -65,7 +65,7 @@ contract VaultSpokeUpgradeableTest is VaultSpokeBaseTest {
         new TransparentUpgradeableProxy(
           address(vaultImpl),
           proxyAdminOwner,
-          abi.encodeCall(VaultSpokeInstance.initialize, (PREFIX))
+          abi.encodeCall(VaultSpokeInstance.initialize, (SHARE_NAME, SHARE_SYMBOL))
         )
       )
     );
@@ -75,20 +75,20 @@ contract VaultSpokeUpgradeableTest is VaultSpokeBaseTest {
     uint64 secondRevision = uint64(vm.randomUint(initialRevision + 1, type(uint64).max));
     VaultSpokeInstance vaultImpl2 = _deployMockVaultSpokeInstance(secondRevision);
 
-    string memory newPrefix = 'New Prefix';
+    string memory newShareName = 'New Share Name';
+    string memory newShareSymbol = 'New Share Symbol';
     vm.expectEmit(address(vaultProxy));
     emit Initializable.Initialized(secondRevision);
     vm.recordLogs();
     vm.prank(_getProxyAdminAddress(address(vaultProxy)));
-    vaultProxy.upgradeToAndCall(address(vaultImpl2), _getInitializeCalldata(newPrefix));
-
-    assertEq(
-      IVaultSpoke(address(vaultProxy)).name(),
-      string.concat(newPrefix, ' ', tokenList.dai.name())
+    vaultProxy.upgradeToAndCall(
+      address(vaultImpl2),
+      _getInitializeCalldata(newShareName, newShareSymbol)
     );
-    assertEq(IVaultSpoke(address(vaultProxy)).symbol(), string.concat('h', tokenList.dai.symbol()));
+
+    assertEq(IVaultSpoke(address(vaultProxy)).name(), newShareName);
+    assertEq(IVaultSpoke(address(vaultProxy)).symbol(), newShareSymbol);
     assertNotEq(IVaultSpoke(address(vaultProxy)).name(), originalName);
-    // Symbol doesn't change with prefix - it's always 'h' + asset.symbol()
   }
 
   function test_proxy_constructor_revertsWith_InvalidInitialization_ZeroRevision() public {
@@ -98,7 +98,7 @@ contract VaultSpokeUpgradeableTest is VaultSpokeBaseTest {
     new TransparentUpgradeableProxy(
       address(vaultImpl),
       proxyAdminOwner,
-      abi.encodeCall(VaultSpokeInstance.initialize, (PREFIX))
+      abi.encodeCall(VaultSpokeInstance.initialize, (SHARE_NAME, SHARE_SYMBOL))
     );
   }
 
@@ -113,20 +113,26 @@ contract VaultSpokeUpgradeableTest is VaultSpokeBaseTest {
         new TransparentUpgradeableProxy(
           address(vaultImpl),
           proxyAdminOwner,
-          _getInitializeCalldata(PREFIX)
+          _getInitializeCalldata(SHARE_NAME, SHARE_SYMBOL)
         )
       )
     );
 
     vm.expectRevert(Initializable.InvalidInitialization.selector);
     vm.prank(_getProxyAdminAddress(address(vaultProxy)));
-    vaultProxy.upgradeToAndCall(address(vaultImpl), _getInitializeCalldata(PREFIX));
+    vaultProxy.upgradeToAndCall(
+      address(vaultImpl),
+      _getInitializeCalldata(SHARE_NAME, SHARE_SYMBOL)
+    );
 
     uint64 secondRevision = uint64(vm.randomUint(0, initialRevision - 1));
     VaultSpokeInstance vaultImpl2 = _deployMockVaultSpokeInstance(secondRevision);
     vm.expectRevert(Initializable.InvalidInitialization.selector);
     vm.prank(_getProxyAdminAddress(address(vaultProxy)));
-    vaultProxy.upgradeToAndCall(address(vaultImpl2), _getInitializeCalldata(PREFIX));
+    vaultProxy.upgradeToAndCall(
+      address(vaultImpl2),
+      _getInitializeCalldata(SHARE_NAME, SHARE_SYMBOL)
+    );
   }
 
   function test_proxy_reinitialization_revertsWith_CallerNotProxyAdmin() public {
@@ -136,7 +142,7 @@ contract VaultSpokeUpgradeableTest is VaultSpokeBaseTest {
         new TransparentUpgradeableProxy(
           address(vaultImpl),
           proxyAdminOwner,
-          _getInitializeCalldata(PREFIX)
+          _getInitializeCalldata(SHARE_NAME, SHARE_SYMBOL)
         )
       )
     );
@@ -144,11 +150,17 @@ contract VaultSpokeUpgradeableTest is VaultSpokeBaseTest {
     VaultSpokeInstance vaultImpl2 = _deployMockVaultSpokeInstance(2);
     vm.expectRevert();
     vm.prank(makeUser());
-    vaultProxy.upgradeToAndCall(address(vaultImpl2), _getInitializeCalldata(PREFIX));
+    vaultProxy.upgradeToAndCall(
+      address(vaultImpl2),
+      _getInitializeCalldata(SHARE_NAME, SHARE_SYMBOL)
+    );
   }
 
-  function _getInitializeCalldata(string memory prefix) internal pure returns (bytes memory) {
-    return abi.encodeCall(VaultSpokeInstance.initialize, prefix);
+  function _getInitializeCalldata(
+    string memory shareName,
+    string memory shareSymbol
+  ) internal pure returns (bytes memory) {
+    return abi.encodeCall(VaultSpokeInstance.initialize, (shareName, shareSymbol));
   }
 
   function _deployMockVaultSpokeInstance(uint64 revision) internal returns (VaultSpokeInstance) {

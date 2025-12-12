@@ -40,13 +40,13 @@ abstract contract VaultSpoke is IVaultSpoke, ERC20Upgradeable, NoncesKeyed, EIP7
     (_ASSET, _DECIMALS) = _HUB.getAssetUnderlyingAndDecimals(_ASSET_ID);
   }
 
-  function initialize(string memory prefix) external virtual;
+  function initialize(string memory shareName, string memory shareSymbol) external virtual;
 
-  function __VaultSpoke_init(string memory prefix) internal onlyInitializing {
-    __ERC20_init(
-      string.concat(prefix, ' ', IERC20Metadata(_ASSET).name()),
-      string.concat('h', IERC20Metadata(_ASSET).symbol())
-    );
+  function __VaultSpoke_init(
+    string memory shareName,
+    string memory shareSymbol
+  ) internal onlyInitializing {
+    __ERC20_init(shareName, shareSymbol);
   }
 
   /// @inheritdoc IERC4626

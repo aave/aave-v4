@@ -22,7 +22,10 @@ contract MockVaultSpokeInstance is VaultSpoke {
   }
 
   /// @inheritdoc VaultSpoke
-  function initialize(string memory prefix) external override reinitializer(SPOKE_REVISION) {
-    __VaultSpoke_init(prefix);
+  function initialize(
+    string memory shareName,
+    string memory shareSymbol
+  ) external override reinitializer(SPOKE_REVISION) {
+    __VaultSpoke_init(shareName, shareSymbol);
   }
 }
