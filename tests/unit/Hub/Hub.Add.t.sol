@@ -66,7 +66,7 @@ contract HubAddTest is HubBase {
   }
 
   function test_add_revertsWith_SpokePaused() public {
-    _updateSpokePaused(hub1, daiAssetId, address(spoke1), true);
+    updateSpokePaused(hub1, daiAssetId, address(spoke1), true);
     vm.startPrank(address(spoke1));
     tokenList.dai.transferFrom(alice, address(hub1), 100e18);
 
