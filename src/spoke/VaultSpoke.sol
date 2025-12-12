@@ -44,7 +44,7 @@ abstract contract VaultSpoke is IVaultSpoke, ERC20Upgradeable, NoncesKeyed, EIP7
 
   function __VaultSpoke_init(string memory prefix) internal onlyInitializing {
     __ERC20_init(
-      string.concat(prefix, IERC20Metadata(_ASSET).name()),
+      string.concat(prefix, ' ', IERC20Metadata(_ASSET).name()),
       string.concat('h', IERC20Metadata(_ASSET).symbol())
     );
   }
@@ -81,7 +81,7 @@ abstract contract VaultSpoke is IVaultSpoke, ERC20Upgradeable, NoncesKeyed, EIP7
   function depositWithSig(
     EIP712Types.VaultDeposit calldata params,
     bytes calldata signature
-  ) public returns (uint256) {
+  ) external returns (uint256) {
     require(block.timestamp <= params.deadline, InvalidSignature());
     bytes32 digest = _hashTypedData(params.hash());
     require(
@@ -101,7 +101,7 @@ abstract contract VaultSpoke is IVaultSpoke, ERC20Upgradeable, NoncesKeyed, EIP7
   function mintWithSig(
     EIP712Types.VaultMint calldata params,
     bytes calldata signature
-  ) public returns (uint256) {
+  ) external returns (uint256) {
     require(block.timestamp <= params.deadline, InvalidSignature());
     bytes32 digest = _hashTypedData(params.hash());
     require(
@@ -117,7 +117,7 @@ abstract contract VaultSpoke is IVaultSpoke, ERC20Upgradeable, NoncesKeyed, EIP7
   function withdrawWithSig(
     EIP712Types.VaultWithdraw calldata params,
     bytes calldata signature
-  ) public returns (uint256) {
+  ) external returns (uint256) {
     require(block.timestamp <= params.deadline, InvalidSignature());
     bytes32 digest = _hashTypedData(params.hash());
     require(
@@ -127,7 +127,7 @@ abstract contract VaultSpoke is IVaultSpoke, ERC20Upgradeable, NoncesKeyed, EIP7
     _useCheckedNonce(params.owner, params.nonce);
     return
       _executeWithdraw({
-        caller: msg.sender,
+        caller: params.owner,
         receiver: params.receiver,
         owner: params.owner,
         assets: params.assets
@@ -137,8 +137,8 @@ abstract contract VaultSpoke is IVaultSpoke, ERC20Upgradeable, NoncesKeyed, EIP7
   /// @inheritdoc IVaultSpoke
   function redeemWithSig(
     EIP712Types.VaultRedeem calldata params,
-    bytes memory signature
-  ) public returns (uint256) {
+    bytes calldata signature
+  ) external returns (uint256) {
     require(block.timestamp <= params.deadline, InvalidSignature());
     bytes32 digest = _hashTypedData(params.hash());
     require(
@@ -148,7 +148,7 @@ abstract contract VaultSpoke is IVaultSpoke, ERC20Upgradeable, NoncesKeyed, EIP7
     _useCheckedNonce(params.owner, params.nonce);
     return
       _executeRedeem({
-        caller: msg.sender,
+        caller: params.owner,
         receiver: params.receiver,
         owner: params.owner,
         shares: params.shares
@@ -165,7 +165,7 @@ abstract contract VaultSpoke is IVaultSpoke, ERC20Upgradeable, NoncesKeyed, EIP7
     bytes32 s
   ) external returns (uint256) {
     try
-      IERC20Permit(asset()).permit({
+      IERC20Permit(_ASSET).permit({
         owner: msg.sender, // deposit only mints for caller
         spender: address(this),
         value: assets,
@@ -205,39 +205,47 @@ abstract contract VaultSpoke is IVaultSpoke, ERC20Upgradeable, NoncesKeyed, EIP7
     _approve({owner: owner, spender: spender, value: value});
   }
 
+  /// @inheritdoc IVaultSpoke
+  function renounceAllowance(address owner) external override {
+    if (allowance({owner: owner, spender: msg.sender}) == 0) {
+      return;
+    }
+    _approve({owner: owner, spender: msg.sender, value: 0});
+  }
+
   /// @inheritdoc IERC4626
   function previewDeposit(uint256 assets) public view virtual returns (uint256) {
-    return hub().previewAddByAssets(assetId(), assets);
+    return _HUB.previewAddByAssets(_ASSET_ID, assets);
   }
 
   /// @inheritdoc IERC4626
   function previewMint(uint256 shares) public view virtual returns (uint256) {
-    return hub().previewAddByShares(assetId(), shares);
+    return _HUB.previewAddByShares(_ASSET_ID, shares);
   }
 
   /// @inheritdoc IERC4626
   function previewWithdraw(uint256 assets) public view virtual returns (uint256) {
-    return hub().previewRemoveByAssets(assetId(), assets);
+    return _HUB.previewRemoveByAssets(_ASSET_ID, assets);
   }
 
   /// @inheritdoc IERC4626
   function previewRedeem(uint256 shares) public view virtual returns (uint256) {
-    return hub().previewRemoveByShares(assetId(), shares);
+    return _HUB.previewRemoveByShares(_ASSET_ID, shares);
   }
 
   /// @inheritdoc IERC4626
-  function convertToShares(uint256 assets) public view returns (uint256) {
+  function convertToShares(uint256 assets) external view returns (uint256) {
     return previewDeposit(assets);
   }
 
   /// @inheritdoc IERC4626
-  function convertToAssets(uint256 shares) public view returns (uint256) {
+  function convertToAssets(uint256 shares) external view returns (uint256) {
     return previewMint(shares);
   }
 
   /// @inheritdoc IERC4626
   function maxDeposit(address) public view returns (uint256) {
-    IHub.SpokeConfig memory config = hub().getSpokeConfig(assetId(), address(this));
+    IHub.SpokeConfig memory config = _HUB.getSpokeConfig(_ASSET_ID, address(this));
     if (!config.active || config.paused) {
       return 0;
     }
@@ -257,16 +265,16 @@ abstract contract VaultSpoke is IVaultSpoke, ERC20Upgradeable, NoncesKeyed, EIP7
 
   /// @inheritdoc IERC4626
   function maxWithdraw(address owner) public view returns (uint256) {
-    return previewRedeem(maxRedeem(owner));
+    uint256 maxRemovableAssets = _maxRemovableAssets();
+    uint256 balance = previewRedeem(balanceOf(owner));
+    return balance.min(maxRemovableAssets);
   }
 
   /// @inheritdoc IERC4626
   function maxRedeem(address owner) public view returns (uint256) {
-    IHub.SpokeConfig memory config = hub().getSpokeConfig(assetId(), address(this));
-    if (!config.active || config.paused) {
-      return 0;
-    }
-    return balanceOf(owner);
+    uint256 maxRemovableShares = previewWithdraw(_maxRemovableAssets());
+    uint256 balance = balanceOf(owner);
+    return balance.min(maxRemovableShares);
   }
 
   /// @inheritdoc IERC4626
@@ -275,8 +283,8 @@ abstract contract VaultSpoke is IVaultSpoke, ERC20Upgradeable, NoncesKeyed, EIP7
   }
 
   /// @inheritdoc IVaultSpoke
-  function hub() public view returns (IHub) {
-    return _HUB;
+  function hub() public view returns (address) {
+    return address(_HUB);
   }
 
   /// @inheritdoc IVaultSpoke
@@ -295,13 +303,48 @@ abstract contract VaultSpoke is IVaultSpoke, ERC20Upgradeable, NoncesKeyed, EIP7
   }
 
   /// @inheritdoc IERC20Permit
+  function nonces(address owner) public view returns (uint256) {
+    return nonces({owner: owner, key: _PERMIT_NONCE_KEY});
+  }
+
+  /// @inheritdoc IERC20Permit
   function DOMAIN_SEPARATOR() public view returns (bytes32) {
     return _domainSeparator();
   }
 
-  /// @inheritdoc IERC20Permit
-  function nonces(address owner) public view returns (uint256) {
-    return nonces({owner: owner, key: _PERMIT_NONCE_KEY});
+  /// @inheritdoc IVaultSpoke
+  function MAX_ALLOWED_SPOKE_CAP() external view returns (uint40) {
+    return _MAX_ALLOWED_SPOKE_CAP;
+  }
+
+  /// @inheritdoc IVaultSpoke
+  function PERMIT_NONCE_KEY() external pure returns (uint192) {
+    return _PERMIT_NONCE_KEY;
+  }
+
+  /// @inheritdoc IVaultSpoke
+  function DEPOSIT_TYPEHASH() external pure returns (bytes32) {
+    return EIP712Hash.VAULT_DEPOSIT_TYPEHASH;
+  }
+
+  /// @inheritdoc IVaultSpoke
+  function MINT_TYPEHASH() external pure returns (bytes32) {
+    return EIP712Hash.VAULT_MINT_TYPEHASH;
+  }
+
+  /// @inheritdoc IVaultSpoke
+  function WITHDRAW_TYPEHASH() external pure returns (bytes32) {
+    return EIP712Hash.VAULT_WITHDRAW_TYPEHASH;
+  }
+
+  /// @inheritdoc IVaultSpoke
+  function REDEEM_TYPEHASH() external pure returns (bytes32) {
+    return EIP712Hash.VAULT_REDEEM_TYPEHASH;
+  }
+
+  /// @inheritdoc IVaultSpoke
+  function PERMIT_TYPEHASH() external pure returns (bytes32) {
+    return EIP712Hash.PERMIT_TYPEHASH;
   }
 
   function _executeDeposit(
@@ -361,8 +404,8 @@ abstract contract VaultSpoke is IVaultSpoke, ERC20Upgradeable, NoncesKeyed, EIP7
     uint256 assets,
     uint256 shares
   ) internal virtual {
-    IERC20(asset()).safeTransferFrom(caller, address(hub()), assets);
-    hub().add(assetId(), assets);
+    IERC20(_ASSET).safeTransferFrom(caller, address(_HUB), assets);
+    _HUB.add(_ASSET_ID, assets);
     _mint(receiver, shares);
     emit Deposit(caller, receiver, assets, shares);
   }
@@ -377,9 +420,17 @@ abstract contract VaultSpoke is IVaultSpoke, ERC20Upgradeable, NoncesKeyed, EIP7
     if (caller != owner) {
       _spendAllowance({owner: owner, spender: caller, value: shares});
     }
-    hub().remove(assetId(), assets, receiver);
+    _HUB.remove(_ASSET_ID, assets, receiver);
     _burn(owner, shares);
     emit Withdraw(caller, receiver, owner, assets, shares);
+  }
+
+  function _maxRemovableAssets() internal view returns (uint256) {
+    IHub.SpokeConfig memory config = _HUB.getSpokeConfig(_ASSET_ID, address(this));
+    if (!config.active || config.paused) {
+      return 0;
+    }
+    return _HUB.getAssetLiquidity(_ASSET_ID);
   }
 
   function _domainNameAndVersion() internal pure override returns (string memory, string memory) {
