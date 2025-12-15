@@ -34,7 +34,13 @@ contract SignatureGateway is ISignatureGateway, GatewayBase, Multicall, IntentCo
     address spoke = params.spoke;
     uint256 reserveId = params.reserveId;
     address user = params.onBehalfOf;
-    _verifyAndConsumeIntent(user, params.hash(), params.nonce, params.deadline, signature);
+    _verifyAndConsumeIntent({
+      signer: user,
+      intentHash: params.hash(),
+      nonce: params.nonce,
+      deadline: params.deadline,
+      signature: signature
+    });
 
     IERC20 underlying = IERC20(_getReserveUnderlying(spoke, reserveId));
     underlying.safeTransferFrom(user, address(this), params.amount);
@@ -52,7 +58,13 @@ contract SignatureGateway is ISignatureGateway, GatewayBase, Multicall, IntentCo
     address spoke = params.spoke;
     uint256 reserveId = params.reserveId;
     address user = params.onBehalfOf;
-    _verifyAndConsumeIntent(user, params.hash(), params.nonce, params.deadline, signature);
+    _verifyAndConsumeIntent({
+      signer: user,
+      intentHash: params.hash(),
+      nonce: params.nonce,
+      deadline: params.deadline,
+      signature: signature
+    });
 
     IERC20 underlying = IERC20(_getReserveUnderlying(spoke, reserveId));
     (uint256 withdrawnShares, uint256 withdrawnAmount) = ISpoke(spoke).withdraw(
@@ -74,7 +86,13 @@ contract SignatureGateway is ISignatureGateway, GatewayBase, Multicall, IntentCo
     address spoke = params.spoke;
     uint256 reserveId = params.reserveId;
     address user = params.onBehalfOf;
-    _verifyAndConsumeIntent(user, params.hash(), params.nonce, params.deadline, signature);
+    _verifyAndConsumeIntent({
+      signer: user,
+      intentHash: params.hash(),
+      nonce: params.nonce,
+      deadline: params.deadline,
+      signature: signature
+    });
 
     IERC20 underlying = IERC20(_getReserveUnderlying(spoke, reserveId));
     (uint256 borrowedShares, uint256 borrowedAmount) = ISpoke(spoke).borrow(
@@ -96,7 +114,13 @@ contract SignatureGateway is ISignatureGateway, GatewayBase, Multicall, IntentCo
     address spoke = params.spoke;
     uint256 reserveId = params.reserveId;
     address user = params.onBehalfOf;
-    _verifyAndConsumeIntent(user, params.hash(), params.nonce, params.deadline, signature);
+    _verifyAndConsumeIntent({
+      signer: user,
+      intentHash: params.hash(),
+      nonce: params.nonce,
+      deadline: params.deadline,
+      signature: signature
+    });
 
     IERC20 underlying = IERC20(_getReserveUnderlying(spoke, reserveId));
     uint256 repayAmount = MathUtils.min(
@@ -116,7 +140,13 @@ contract SignatureGateway is ISignatureGateway, GatewayBase, Multicall, IntentCo
     bytes calldata signature
   ) external onlyRegisteredSpoke(params.spoke) {
     address user = params.onBehalfOf;
-    _verifyAndConsumeIntent(user, params.hash(), params.nonce, params.deadline, signature);
+    _verifyAndConsumeIntent({
+      signer: user,
+      intentHash: params.hash(),
+      nonce: params.nonce,
+      deadline: params.deadline,
+      signature: signature
+    });
 
     ISpoke(params.spoke).setUsingAsCollateral(params.reserveId, params.useAsCollateral, user);
   }
@@ -126,7 +156,13 @@ contract SignatureGateway is ISignatureGateway, GatewayBase, Multicall, IntentCo
     EIP712Types.UpdateUserRiskPremium calldata params,
     bytes calldata signature
   ) external onlyRegisteredSpoke(params.spoke) {
-    _verifyAndConsumeIntent(params.user, params.hash(), params.nonce, params.deadline, signature);
+    _verifyAndConsumeIntent({
+      signer: params.user,
+      intentHash: params.hash(),
+      nonce: params.nonce,
+      deadline: params.deadline,
+      signature: signature
+    });
 
     ISpoke(params.spoke).updateUserRiskPremium(params.user);
   }
@@ -136,7 +172,13 @@ contract SignatureGateway is ISignatureGateway, GatewayBase, Multicall, IntentCo
     EIP712Types.UpdateUserDynamicConfig calldata params,
     bytes calldata signature
   ) external onlyRegisteredSpoke(params.spoke) {
-    _verifyAndConsumeIntent(params.user, params.hash(), params.nonce, params.deadline, signature);
+    _verifyAndConsumeIntent({
+      signer: params.user,
+      intentHash: params.hash(),
+      nonce: params.nonce,
+      deadline: params.deadline,
+      signature: signature
+    });
 
     ISpoke(params.spoke).updateUserDynamicConfig(params.user);
   }

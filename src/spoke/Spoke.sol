@@ -448,7 +448,13 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, IntentCo
     EIP712Types.SetUserPositionManager calldata params,
     bytes calldata signature
   ) external {
-    _verifyAndConsumeIntent(params.user, params.hash(), params.nonce, params.deadline, signature);
+    _verifyAndConsumeIntent({
+      signer: params.user,
+      intentHash: params.hash(),
+      nonce: params.nonce,
+      deadline: params.deadline,
+      signature: signature
+    });
     _setUserPositionManager({
       positionManager: params.positionManager,
       user: params.user,
