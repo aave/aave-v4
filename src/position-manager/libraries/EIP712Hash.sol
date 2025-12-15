@@ -8,6 +8,8 @@ import {EIP712Types} from 'src/libraries/types/EIP712Types.sol';
 /// @author Aave Labs
 /// @notice Helper methods to hash EIP712 typed data structs.
 library EIP712Hash {
+  using EIP712Hash for *;
+
   bytes32 public constant SUPPLY_TYPEHASH =
     // keccak256('Supply(address spoke,uint256 reserveId,uint256 amount,address onBehalfOf,uint256 nonce,uint256 deadline)')
     0xe85497eb293c001e8483fe105efadd1d50aa0dadfc0570b27058031dfceab2e6;
@@ -149,16 +151,10 @@ library EIP712Hash {
 
   function hash(
     EIP712Types.SetUserPositionManager calldata params
-  ) external pure returns (bytes32) {
+  ) internal pure returns (bytes32) {
     bytes32[] memory updatesHashes = new bytes32[](params.updates.length);
     for (uint256 i = 0; i < updatesHashes.length; ++i) {
-      updatesHashes[i] = keccak256(
-        abi.encode(
-          POSITION_MANAGER_UPDATE,
-          params.updates[i].positionManager,
-          params.updates[i].approve
-        )
-      );
+      updatesHashes[i] = params.updates[i].hash();
     }
     return
       keccak256(
@@ -170,5 +166,9 @@ library EIP712Hash {
           params.deadline
         )
       );
+  }
+
+  function hash(EIP712Types.PositionManagerUpdate calldata params) internal pure returns (bytes32) {
+    return keccak256(abi.encode(POSITION_MANAGER_UPDATE, params.positionManager, params.approve));
   }
 }
