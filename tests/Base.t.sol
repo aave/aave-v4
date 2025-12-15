@@ -12,6 +12,7 @@ import {console2 as console} from 'forge-std/console2.sol';
 // dependencies
 import {AggregatorV3Interface} from 'src/dependencies/chainlink/AggregatorV3Interface.sol';
 import {TransparentUpgradeableProxy, ITransparentUpgradeableProxy} from 'src/dependencies/openzeppelin/TransparentUpgradeableProxy.sol';
+import {ProxyAdmin} from 'src/dependencies/openzeppelin/ProxyAdmin.sol';
 import {IERC20Metadata} from 'src/dependencies/openzeppelin/IERC20Metadata.sol';
 import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
 import {IERC20Errors} from 'src/dependencies/openzeppelin/IERC20Errors.sol';
@@ -59,6 +60,9 @@ import {ReserveFlags, ReserveFlagsMap} from 'src/spoke/libraries/ReserveFlagsMap
 import {LiquidationLogic} from 'src/spoke/libraries/LiquidationLogic.sol';
 import {KeyValueList} from 'src/spoke/libraries/KeyValueList.sol';
 
+import {VaultSpoke, IVaultSpoke} from 'src/spoke/VaultSpoke.sol';
+import {VaultSpokeInstance} from 'src/spoke/instances/VaultSpokeInstance.sol';
+
 // position manager
 import {GatewayBase, IGatewayBase} from 'src/position-manager/GatewayBase.sol';
 import {NativeTokenGateway, INativeTokenGateway} from 'src/position-manager/NativeTokenGateway.sol';
@@ -94,6 +98,8 @@ abstract contract Base is Test {
     0xb53127684a568b3173ae13b9f8a6016e243e63b6e8ee1178d6a717850b5d6103;
   bytes32 internal constant IMPLEMENTATION_SLOT =
     0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc;
+  bytes32 internal constant INITIALIZABLE_SLOT =
+    0xf0c57e16840df040f15088dc2f81fe391c3923bec73e23a9662efc9c229c6a00;
 
   uint256 internal constant MAX_SUPPLY_AMOUNT = 1e30;
   uint256 internal constant MIN_TOKEN_DECIMALS_SUPPORTED = 6;
@@ -138,10 +144,19 @@ abstract contract Base is Test {
   AssetInterestRateStrategy internal irStrategy;
   IAccessManager internal accessManager;
 
-  address internal alice = makeAddr('alice');
-  address internal bob = makeAddr('bob');
-  address internal carol = makeAddr('carol');
-  address internal derl = makeAddr('derl');
+  string internal constant ALICE = 'alice';
+  string internal constant BOB = 'bob';
+  string internal constant CAROL = 'carol';
+  string internal constant DERL = 'derl';
+
+  address internal alice = makeAddr(ALICE);
+  uint256 internal alicePk = makeKey(ALICE);
+  address internal bob = makeAddr(BOB);
+  uint256 internal bobPk = makeKey(BOB);
+  address internal carol = makeAddr(CAROL);
+  uint256 internal carolPk = makeKey(CAROL);
+  address internal derl = makeAddr(DERL);
+  uint256 internal derlPk = makeKey(DERL);
 
   address internal ADMIN = makeAddr('ADMIN');
   address internal HUB_ADMIN = makeAddr('HUB_ADMIN');
@@ -269,6 +284,11 @@ abstract contract Base is Test {
   function _getImplementationAddress(address proxy) internal view returns (address) {
     bytes32 slotData = vm.load(proxy, IMPLEMENTATION_SLOT);
     return address(uint160(uint256(slotData)));
+  }
+
+  function _getProxyInitializedVersion(address proxy) internal view returns (uint64) {
+    bytes32 slotData = vm.load(proxy, INITIALIZABLE_SLOT);
+    return uint64(uint256(slotData) & ((1 << 64) - 1));
   }
 
   function deployFixtures() internal virtual {
@@ -1192,7 +1212,7 @@ abstract contract Base is Test {
     return spokeInfo[spoke].usdz.reserveId;
   }
 
-  function _updateSpokePaused(
+  function updateSpokePaused(
     IHub hub,
     uint256 assetId,
     address spoke,
@@ -1214,6 +1234,20 @@ abstract contract Base is Test {
   ) internal pausePrank {
     IHub.SpokeConfig memory spokeConfig = hub.getSpokeConfig(assetId, spoke);
     spokeConfig.active = newActive;
+    vm.prank(HUB_ADMIN);
+    hub.updateSpokeConfig(assetId, spoke, spokeConfig);
+
+    assertEq(hub.getSpokeConfig(assetId, spoke), spokeConfig);
+  }
+
+  function updateAddCap(
+    IHub hub,
+    uint256 assetId,
+    address spoke,
+    uint40 newAddCap
+  ) internal pausePrank {
+    IHub.SpokeConfig memory spokeConfig = hub.getSpokeConfig(assetId, spoke);
+    spokeConfig.addCap = newAddCap;
     vm.prank(HUB_ADMIN);
     hub.updateSpokeConfig(assetId, spoke, spokeConfig);
 
@@ -2245,6 +2279,51 @@ abstract contract Base is Test {
     return (spoke, oracle);
   }
 
+  function _deployVaultSpoke(
+    IHub hub,
+    uint256 assetId,
+    string memory shareName,
+    string memory shareSymbol,
+    address proxyAdminOwner
+  ) internal pausePrank returns (IVaultSpoke) {
+    address vaultSpokeImpl = address(new VaultSpokeInstance(address(hub), assetId));
+    IVaultSpoke vaultSpoke = IVaultSpoke(
+      _proxify(
+        makeAddr('deployer'),
+        vaultSpokeImpl,
+        proxyAdminOwner,
+        abi.encodeCall(VaultSpokeInstance.initialize, (shareName, shareSymbol))
+      )
+    );
+    return vaultSpoke;
+  }
+
+  function _configureVaultSpoke(IVaultSpoke vaultSpoke, IHub hub, uint256 assetId) internal {
+    return
+      _configureVaultSpoke(
+        vaultSpoke,
+        hub,
+        assetId,
+        IHub.SpokeConfig({
+          addCap: type(uint40).max,
+          drawCap: 0,
+          riskPremiumThreshold: 0,
+          active: true,
+          paused: false
+        })
+      );
+  }
+
+  function _configureVaultSpoke(
+    IVaultSpoke vaultSpoke,
+    IHub hub,
+    uint256 assetId,
+    IHub.SpokeConfig memory config
+  ) internal pausePrank {
+    vm.prank(ADMIN);
+    hub.addSpoke(assetId, address(vaultSpoke), config);
+  }
+
   function _getDefaultReserveConfig(
     uint24 collateralRisk
   ) internal pure returns (ISpoke.ReserveConfig memory) {
@@ -2809,6 +2888,11 @@ abstract contract Base is Test {
     return _packNonce(key, nonce);
   }
 
+  function _getRandomNonceAtKey(uint192 key) internal returns (uint256) {
+    uint64 nonce = _randomNonce();
+    return _packNonce(key, nonce);
+  }
+
   function _assertNonceIncrement(
     INoncesKeyed verifier,
     address who,
@@ -2818,6 +2902,16 @@ abstract contract Base is Test {
     // prettier-ignore
     unchecked { ++nonce; }
     assertEq(verifier.nonces(who, nonceKey), _packNonce(nonceKey, nonce));
+  }
+
+  function _assertEntityHasNoBalanceOrAllowance(
+    IERC20 underlying,
+    address entity,
+    address user
+  ) internal {
+    assertEq(underlying.balanceOf(entity), 0);
+    assertEq(underlying.allowance({owner: user, spender: entity}), 0);
+    assertEq(underlying.allowance({owner: entity, spender: vm.randomAddress()}), 0);
   }
 
   /// @dev Pack key and nonce into a keyNonce
@@ -2867,5 +2961,15 @@ abstract contract Base is Test {
       hub.getAddedAssets(assetId) +
       hub.getAsset(assetId).realizedFees +
       _calcUnrealizedFees(hub, assetId);
+  }
+
+  function _sign(uint256 pk, bytes32 digest) internal pure returns (bytes memory) {
+    (uint8 v, bytes32 r, bytes32 s) = vm.sign(pk, digest);
+    return abi.encodePacked(r, s, v);
+  }
+
+  function makeKey(string memory name) internal returns (uint256) {
+    (, uint256 key) = makeAddrAndKey(name);
+    return key;
   }
 }

@@ -158,7 +158,7 @@ contract HubDrawTest is HubBase {
   }
 
   function test_draw_revertsWith_SpokePaused() public {
-    _updateSpokePaused(hub1, daiAssetId, address(spoke1), true);
+    updateSpokePaused(hub1, daiAssetId, address(spoke1), true);
     vm.expectRevert(IHub.SpokePaused.selector);
     vm.prank(address(spoke1));
     hub1.draw(daiAssetId, 100e18, alice);

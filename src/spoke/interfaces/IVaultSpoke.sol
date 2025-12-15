@@ -2,19 +2,16 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import {IHub} from 'src/hub/interfaces/IHub.sol';
 import {IERC4626} from 'src/dependencies/openzeppelin/IERC4626.sol';
 import {IERC2612} from 'src/dependencies/openzeppelin/IERC2612.sol';
 import {EIP712Types} from 'src/libraries/types/EIP712Types.sol';
+import {INoncesKeyed} from 'src/interfaces/INoncesKeyed.sol';
 
 /// @title IVaultSpoke
 /// @author Aave Labs
-interface IVaultSpoke is IERC4626, IERC2612 {
+interface IVaultSpoke is IERC4626, IERC2612, INoncesKeyed {
   /// @notice Thrown when the given signature is invalid.
   error InvalidSignature();
-
-  /// @notice Thrown when the given address is invalid.
-  error InvalidAddress();
 
   /// @notice Thrown when the maximum deposit limit is exceeded.
   error MaxDepositExceeded(uint256 maxDeposit, uint256 requestedAssets);
@@ -28,26 +25,50 @@ interface IVaultSpoke is IERC4626, IERC2612 {
   /// @notice Thrown when the maximum redeem limit is exceeded.
   error MaxRedeemExceeded(uint256 maxRedeem, uint256 requestedShares);
 
+  /// @notice Deposits assets into the vault with a signature.
+  /// @param params The parameters for the deposit.
+  /// @param signature The signature of the deposit.
+  /// @return The amount of shares minted.
   function depositWithSig(
     EIP712Types.VaultDeposit calldata params,
     bytes calldata signature
-  ) external returns (uint256 shares);
+  ) external returns (uint256);
 
+  /// @notice Mints shares into the vault with a signature.
+  /// @param params The parameters for the mint.
+  /// @param signature The signature of the mint.
+  /// @return The amount of assets deposited.
   function mintWithSig(
     EIP712Types.VaultMint calldata params,
     bytes calldata signature
-  ) external returns (uint256 assets);
+  ) external returns (uint256);
 
+  /// @notice Withdraws assets from the vault with a signature.
+  /// @param params The parameters for the withdraw.
+  /// @param signature The signature of the withdraw.
+  /// @return The amount of shares withdrawn.
   function withdrawWithSig(
     EIP712Types.VaultWithdraw calldata params,
     bytes calldata signature
-  ) external returns (uint256 shares);
+  ) external returns (uint256);
 
+  /// @notice Redeems shares from the vault with a signature.
+  /// @param params The parameters for the redeem.
+  /// @param signature The signature of the redeem.
+  /// @return The amount of assets withdrawn.
   function redeemWithSig(
     EIP712Types.VaultRedeem calldata params,
     bytes calldata signature
-  ) external returns (uint256 assets);
+  ) external returns (uint256);
 
+  /// @notice Deposits assets into the vault with an underlying asset permit.
+  /// @param assets The amount of assets to deposit.
+  /// @param receiver The receiver of the shares.
+  /// @param deadline The deadline of the permit.
+  /// @param v The v value of the permit.
+  /// @param r The r value of the permit.
+  /// @param s The s value of the permit.
+  /// @return The amount of shares minted.
   function depositWithPermit(
     uint256 assets,
     address receiver,
@@ -55,11 +76,37 @@ interface IVaultSpoke is IERC4626, IERC2612 {
     uint8 v,
     bytes32 r,
     bytes32 s
-  ) external returns (uint256 shares);
+  ) external returns (uint256);
+
+  /// @notice Resets the allowance of an owner for the caller.
+  /// @param owner The owner of the allowance to renounce.
+  function renounceAllowance(address owner) external;
 
   /// @notice Returns the address of the associated Hub.
-  function hub() external view returns (IHub);
+  function hub() external view returns (address);
 
   /// @notice Returns the identifier of the associated asset.
   function assetId() external view returns (uint256);
+
+  /// @notice Returns the maximum allowed spoke cap.
+  function MAX_ALLOWED_SPOKE_CAP() external view returns (uint40);
+
+  /// @notice Returns the nonce key for the share token permit signatures.
+  /// @dev Share token permits nonces are always set at this specific key namespace.
+  function PERMIT_NONCE_KEY() external pure returns (uint192);
+
+  /// @notice Returns the type hash for the deposit intent.
+  function DEPOSIT_TYPEHASH() external pure returns (bytes32);
+
+  /// @notice Returns the type hash for the mint intent.
+  function MINT_TYPEHASH() external pure returns (bytes32);
+
+  /// @notice Returns the type hash for the withdraw intent.
+  function WITHDRAW_TYPEHASH() external pure returns (bytes32);
+
+  /// @notice Returns the type hash for the redeem intent.
+  function REDEEM_TYPEHASH() external pure returns (bytes32);
+
+  /// @notice Returns the type hash for the share token permit intent.
+  function PERMIT_TYPEHASH() external pure returns (bytes32);
 }

@@ -139,7 +139,7 @@ contract HubRestoreTest is HubBase {
   }
 
   function test_restore_revertsWith_SpokePaused() public {
-    _updateSpokePaused(hub1, daiAssetId, address(spoke1), true);
+    updateSpokePaused(hub1, daiAssetId, address(spoke1), true);
 
     IHubBase.PremiumDelta memory premiumDelta = _getExpectedPremiumDelta(
       spoke1,

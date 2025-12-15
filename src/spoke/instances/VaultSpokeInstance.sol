@@ -3,7 +3,6 @@
 pragma solidity 0.8.28;
 
 import {VaultSpoke} from 'src/spoke/VaultSpoke.sol';
-import {IERC20Metadata, IERC20} from 'src/dependencies/openzeppelin/IERC20Metadata.sol';
 
 /// @title VaultSpokeInstance
 /// @author Aave Labs
@@ -13,14 +12,16 @@ contract VaultSpokeInstance is VaultSpoke {
 
   /// @dev Constructor.
   /// @param hub_ The address of the hub.
-  /// @param assetId_ The ID of the asset.
+  /// @param assetId_ The identifier of the asset.
   constructor(address hub_, uint256 assetId_) VaultSpoke(hub_, assetId_) {
     _disableInitializers();
   }
 
   /// @notice Initializer.
-  function initialize(string memory prefix) external override reinitializer(SPOKE_REVISION) {
-    // todo: upgrade validation that hub/assetId remains unchanged?
-    __VaultSpoke_init(prefix);
+  function initialize(
+    string memory shareName,
+    string memory shareSymbol
+  ) external override reinitializer(SPOKE_REVISION) {
+    __VaultSpoke_init(shareName, shareSymbol);
   }
 }
