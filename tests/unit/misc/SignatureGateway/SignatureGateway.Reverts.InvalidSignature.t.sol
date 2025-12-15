@@ -9,7 +9,7 @@ contract SignatureGatewayInvalidSignatureTest is SignatureGatewayBaseTest {
     EIP712Types.Supply memory p = _supplyData(spoke1, alice, _warpAfterRandomDeadline());
     bytes memory signature = _sign(alicePk, _getTypedDataHash(gateway, p));
 
-    vm.expectRevert(ISpoke.InvalidSignature.selector);
+    vm.expectRevert(IntentConsumer.InvalidSignature.selector);
     vm.prank(vm.randomAddress());
     gateway.supplyWithSig(p, signature);
   }
@@ -18,7 +18,7 @@ contract SignatureGatewayInvalidSignatureTest is SignatureGatewayBaseTest {
     EIP712Types.Withdraw memory p = _withdrawData(spoke1, alice, _warpAfterRandomDeadline());
     bytes memory signature = _sign(alicePk, _getTypedDataHash(gateway, p));
 
-    vm.expectRevert(ISpoke.InvalidSignature.selector);
+    vm.expectRevert(IntentConsumer.InvalidSignature.selector);
     vm.prank(vm.randomAddress());
     gateway.withdrawWithSig(p, signature);
   }
@@ -27,7 +27,7 @@ contract SignatureGatewayInvalidSignatureTest is SignatureGatewayBaseTest {
     EIP712Types.Borrow memory p = _borrowData(spoke1, alice, _warpAfterRandomDeadline());
     bytes memory signature = _sign(alicePk, _getTypedDataHash(gateway, p));
 
-    vm.expectRevert(ISpoke.InvalidSignature.selector);
+    vm.expectRevert(IntentConsumer.InvalidSignature.selector);
     vm.prank(vm.randomAddress());
     gateway.borrowWithSig(p, signature);
   }
@@ -36,7 +36,7 @@ contract SignatureGatewayInvalidSignatureTest is SignatureGatewayBaseTest {
     EIP712Types.Repay memory p = _repayData(spoke1, alice, _warpAfterRandomDeadline());
     bytes memory signature = _sign(alicePk, _getTypedDataHash(gateway, p));
 
-    vm.expectRevert(ISpoke.InvalidSignature.selector);
+    vm.expectRevert(IntentConsumer.InvalidSignature.selector);
     vm.prank(vm.randomAddress());
     gateway.repayWithSig(p, signature);
   }
@@ -48,7 +48,7 @@ contract SignatureGatewayInvalidSignatureTest is SignatureGatewayBaseTest {
     EIP712Types.SetUsingAsCollateral memory p = _setAsCollateralData(spoke1, alice, deadline);
     bytes memory signature = _sign(alicePk, _getTypedDataHash(gateway, p));
 
-    vm.expectRevert(ISpoke.InvalidSignature.selector);
+    vm.expectRevert(IntentConsumer.InvalidSignature.selector);
     vm.prank(vm.randomAddress());
     gateway.setUsingAsCollateralWithSig(p, signature);
   }
@@ -60,7 +60,7 @@ contract SignatureGatewayInvalidSignatureTest is SignatureGatewayBaseTest {
     EIP712Types.UpdateUserRiskPremium memory p = _updateRiskPremiumData(spoke1, alice, deadline);
     bytes memory signature = _sign(alicePk, _getTypedDataHash(gateway, p));
 
-    vm.expectRevert(ISpoke.InvalidSignature.selector);
+    vm.expectRevert(IntentConsumer.InvalidSignature.selector);
     vm.prank(vm.randomAddress());
     gateway.updateUserRiskPremiumWithSig(p, signature);
   }
@@ -75,7 +75,7 @@ contract SignatureGatewayInvalidSignatureTest is SignatureGatewayBaseTest {
     );
     bytes memory signature = _sign(alicePk, _getTypedDataHash(gateway, p));
 
-    vm.expectRevert(ISpoke.InvalidSignature.selector);
+    vm.expectRevert(IntentConsumer.InvalidSignature.selector);
     vm.prank(vm.randomAddress());
     gateway.updateUserDynamicConfigWithSig(p, signature);
   }
@@ -88,7 +88,7 @@ contract SignatureGatewayInvalidSignatureTest is SignatureGatewayBaseTest {
     EIP712Types.Supply memory p = _supplyData(spoke1, onBehalfOf, _warpAfterRandomDeadline());
     bytes memory signature = _sign(randomUserPk, _getTypedDataHash(gateway, p));
 
-    vm.expectRevert(ISpoke.InvalidSignature.selector);
+    vm.expectRevert(IntentConsumer.InvalidSignature.selector);
     vm.prank(vm.randomAddress());
     gateway.supplyWithSig(p, signature);
   }
@@ -101,7 +101,7 @@ contract SignatureGatewayInvalidSignatureTest is SignatureGatewayBaseTest {
     EIP712Types.Withdraw memory p = _withdrawData(spoke1, onBehalfOf, _warpAfterRandomDeadline());
     bytes memory signature = _sign(randomUserPk, _getTypedDataHash(gateway, p));
 
-    vm.expectRevert(ISpoke.InvalidSignature.selector);
+    vm.expectRevert(IntentConsumer.InvalidSignature.selector);
     vm.prank(vm.randomAddress());
     gateway.withdrawWithSig(p, signature);
   }
@@ -114,7 +114,7 @@ contract SignatureGatewayInvalidSignatureTest is SignatureGatewayBaseTest {
     EIP712Types.Borrow memory p = _borrowData(spoke1, onBehalfOf, _warpAfterRandomDeadline());
     bytes memory signature = _sign(randomUserPk, _getTypedDataHash(gateway, p));
 
-    vm.expectRevert(ISpoke.InvalidSignature.selector);
+    vm.expectRevert(IntentConsumer.InvalidSignature.selector);
     vm.prank(vm.randomAddress());
     gateway.borrowWithSig(p, signature);
   }
@@ -127,7 +127,7 @@ contract SignatureGatewayInvalidSignatureTest is SignatureGatewayBaseTest {
     EIP712Types.Repay memory p = _repayData(spoke1, onBehalfOf, _warpAfterRandomDeadline());
     bytes memory signature = _sign(randomUserPk, _getTypedDataHash(gateway, p));
 
-    vm.expectRevert(ISpoke.InvalidSignature.selector);
+    vm.expectRevert(IntentConsumer.InvalidSignature.selector);
     vm.prank(vm.randomAddress());
     gateway.repayWithSig(p, signature);
   }
@@ -143,7 +143,7 @@ contract SignatureGatewayInvalidSignatureTest is SignatureGatewayBaseTest {
     EIP712Types.SetUsingAsCollateral memory p = _setAsCollateralData(spoke1, onBehalfOf, deadline);
     bytes memory signature = _sign(randomUserPk, _getTypedDataHash(gateway, p));
 
-    vm.expectRevert(ISpoke.InvalidSignature.selector);
+    vm.expectRevert(IntentConsumer.InvalidSignature.selector);
     vm.prank(vm.randomAddress());
     gateway.setUsingAsCollateralWithSig(p, signature);
   }
@@ -159,7 +159,7 @@ contract SignatureGatewayInvalidSignatureTest is SignatureGatewayBaseTest {
     EIP712Types.UpdateUserRiskPremium memory p = _updateRiskPremiumData(spoke1, user, deadline);
     bytes memory signature = _sign(randomUserPk, _getTypedDataHash(gateway, p));
 
-    vm.expectRevert(ISpoke.InvalidSignature.selector);
+    vm.expectRevert(IntentConsumer.InvalidSignature.selector);
     vm.prank(vm.randomAddress());
     gateway.updateUserRiskPremiumWithSig(p, signature);
   }
@@ -175,7 +175,7 @@ contract SignatureGatewayInvalidSignatureTest is SignatureGatewayBaseTest {
     EIP712Types.UpdateUserDynamicConfig memory p = _updateDynamicConfigData(spoke1, user, deadline);
     bytes memory signature = _sign(randomUserPk, _getTypedDataHash(gateway, p));
 
-    vm.expectRevert(ISpoke.InvalidSignature.selector);
+    vm.expectRevert(IntentConsumer.InvalidSignature.selector);
     vm.prank(vm.randomAddress());
     gateway.updateUserDynamicConfigWithSig(p, signature);
   }
