@@ -38,10 +38,6 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, IntentCo
   using UserPositionDebt for ISpoke.UserPosition;
   using EIP712Hash for EIP712Types.SetUserPositionManager;
 
-  /// @inheritdoc ISpoke
-  bytes32 public constant SET_USER_POSITION_MANAGER_TYPEHASH =
-    EIP712Hash.SET_USER_POSITION_MANAGER_TYPEHASH;
-
   address public immutable ORACLE;
 
   /// @dev The maximum allowed value for an asset identifier (inclusive).

@@ -518,10 +518,6 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
   /// @return The address of the library.
   function getLiquidationLogic() external pure returns (address);
 
-  /// @notice Returns the type hash for the SetUserPositionManager intent.
-  /// @return The bytes-encoded EIP-712 struct hash representing the intent.
-  function SET_USER_POSITION_MANAGER_TYPEHASH() external view returns (bytes32);
-
   /// @notice Returns the address of the AaveOracle contract.
   function ORACLE() external view returns (address);
 }
