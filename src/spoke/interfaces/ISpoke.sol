@@ -402,15 +402,10 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
   /// @param approve True to approve the position manager, false to revoke approval.
   function setUserPositionManager(address positionManager, bool approve) external;
 
-  // / @dev Uses keyed-nonces where for each key's namespace nonce is consumed sequentially.
-  // / @param positionManagers The array of of addresses of the position managers to approve.
-  // / @param user The address of the user on whose behalf position manager can act.
-  // / @param approves The array of booleans to approve or renounce approval for `positionManagers`.
-  // / @param nonce The key-prefixed nonce for the signature.
-  // / @param deadline The deadline for the signature.
-  // / @param signature The EIP712-compliant signature bytes.
-
   /// @notice Enables a user to grant or revoke approval for a position manager using an EIP712-typed intent.
+  /// @dev Uses keyed-nonces where for each key's namespace nonce is consumed sequentially.
+  /// @param params The structured setUserPositionManager parameters.
+  /// @param signature The EIP712-compliant signature bytes.
   function setUserPositionManagerWithSig(
     EIP712Types.SetUserPositionManager calldata params,
     bytes calldata signature

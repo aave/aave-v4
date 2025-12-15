@@ -173,7 +173,7 @@ contract SignatureGateway is ISignatureGateway, GatewayBase, NoncesKeyed, Multic
     EIP712Types.SetUserPositionManager memory params,
     bytes calldata signature
   ) external onlyRegisteredSpoke(spoke) {
-    // todo require one? - will be fixed with explicit args
+    // todo require one? regardless, will be removed with explicit args
     for (uint256 i = 0; i < params.updates.length; ++i) {
       params.updates[i].positionManager = address(this);
     }
