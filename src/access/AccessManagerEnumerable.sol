@@ -136,7 +136,7 @@ contract AccessManagerEnumerable is AccessManager, IAccessManagerEnumerable {
     if (oldRole != ADMIN_ROLE && _roleTargetFunctions[uint64(oldRole)][target].length() == 0) {
       _roleTargets[uint64(oldRole)].remove(target);
     }
-    if (roleId != ADMIN_ROLE && !_roleTargets[roleId].contains(target)) {
+    if (roleId != ADMIN_ROLE) {
       _roleTargets[roleId].add(target);
     }
     _targetRoles[target] = roleId;
