@@ -124,9 +124,7 @@ contract AccessManagerEnumerable is AccessManager, IAccessManagerEnumerable {
 
   /// @dev Tracks all role identifiers when a new role is created.
   function _trackRole(uint64 roleId) internal {
-    if (!_rolesSet.contains(uint256(roleId))) {
-      _rolesSet.add(uint256(roleId));
-    }
+    _rolesSet.add(uint256(roleId));
   }
 
   /// @dev Tracks all targets where a selector was assigned to a role.
