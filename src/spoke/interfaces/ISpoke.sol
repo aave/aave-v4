@@ -7,6 +7,7 @@ import {INoncesKeyed} from 'src/interfaces/INoncesKeyed.sol';
 import {IMulticall} from 'src/interfaces/IMulticall.sol';
 import {IHubBase} from 'src/hub/interfaces/IHubBase.sol';
 import {ISpokeBase} from 'src/spoke/interfaces/ISpokeBase.sol';
+import {EIP712Types} from 'src/libraries/types/EIP712Types.sol';
 
 type ReserveFlags is uint8;
 
@@ -401,20 +402,17 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
   /// @param approve True to approve the position manager, false to revoke approval.
   function setUserPositionManager(address positionManager, bool approve) external;
 
+  // / @dev Uses keyed-nonces where for each key's namespace nonce is consumed sequentially.
+  // / @param positionManagers The array of of addresses of the position managers to approve.
+  // / @param user The address of the user on whose behalf position manager can act.
+  // / @param approves The array of booleans to approve or renounce approval for `positionManagers`.
+  // / @param nonce The key-prefixed nonce for the signature.
+  // / @param deadline The deadline for the signature.
+  // / @param signature The EIP712-compliant signature bytes.
+
   /// @notice Enables a user to grant or revoke approval for a position manager using an EIP712-typed intent.
-  /// @dev Uses keyed-nonces where for each key's namespace nonce is consumed sequentially.
-  /// @param positionManager The address of the position manager.
-  /// @param user The address of the user on whose behalf position manager can act.
-  /// @param approve True to approve the position manager, false to revoke approval.
-  /// @param nonce The key-prefixed nonce for the signature.
-  /// @param deadline The deadline for the signature.
-  /// @param signature The EIP712-compliant signature bytes.
   function setUserPositionManagerWithSig(
-    address positionManager,
-    address user,
-    bool approve,
-    uint256 nonce,
-    uint256 deadline,
+    EIP712Types.SetUserPositionManager calldata params,
     bytes calldata signature
   ) external;
 
@@ -530,7 +528,7 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
 
   /// @notice Returns the type hash for the SetUserPositionManager intent.
   /// @return The bytes-encoded EIP-712 struct hash representing the intent.
-  function SET_USER_POSITION_MANAGER_TYPEHASH() external view returns (bytes32);
+  function SET_USER_POSITION_MANAGER_TYPEHASH() external pure returns (bytes32);
 
   /// @notice Returns the address of the AaveOracle contract.
   function ORACLE() external view returns (address);

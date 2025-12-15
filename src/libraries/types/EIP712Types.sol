@@ -7,11 +7,15 @@ pragma solidity ^0.8.20;
 /// @notice Defines type structs used in EIP712-typed signatures.
 library EIP712Types {
   struct SetUserPositionManager {
-    address positionManager;
     address user;
-    bool approve;
+    PositionManagerUpdate[] updates;
     uint256 nonce;
     uint256 deadline;
+  }
+
+  struct PositionManagerUpdate {
+    address positionManager;
+    bool approve;
   }
 
   struct Permit {

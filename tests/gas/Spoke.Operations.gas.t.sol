@@ -299,39 +299,27 @@ contract SpokeOperations_Gas_Tests is SpokeBase {
     vm.prank(user);
     spoke.useNonce(nonceKey);
 
-    EIP712Types.SetUserPositionManager memory params = EIP712Types.SetUserPositionManager({
-      positionManager: positionManager,
+    EIP712Types.PositionManagerUpdate[] memory updates = new EIP712Types.PositionManagerUpdate[](1);
+    updates[0] = EIP712Types.PositionManagerUpdate(positionManager, true);
+
+    EIP712Types.SetUserPositionManager memory p = EIP712Types.SetUserPositionManager({
       user: user,
-      approve: true,
+      updates: updates,
       nonce: spoke.nonces(user, nonceKey),
       deadline: vm.randomUint(vm.getBlockTimestamp(), MAX_SKIP_TIME)
     });
-    (uint8 v, bytes32 r, bytes32 s) = vm.sign(userPk, _getTypedDataHash(spoke, params));
+    (uint8 v, bytes32 r, bytes32 s) = vm.sign(userPk, _getTypedDataHash(spoke, p));
     bytes memory signature = abi.encodePacked(r, s, v);
 
-    spoke.setUserPositionManagerWithSig(
-      params.positionManager,
-      params.user,
-      params.approve,
-      params.nonce,
-      params.deadline,
-      signature
-    );
+    spoke.setUserPositionManagerWithSig(p, signature);
     vm.snapshotGasLastCall(NAMESPACE, 'setUserPositionManagerWithSig: enable');
 
-    params.approve = false;
-    params.nonce = spoke.nonces(user, nonceKey);
-    (v, r, s) = vm.sign(userPk, _getTypedDataHash(spoke, params));
+    p.updates[0].approve = false;
+    p.nonce = spoke.nonces(user, nonceKey);
+    (v, r, s) = vm.sign(userPk, _getTypedDataHash(spoke, p));
     signature = abi.encodePacked(r, s, v);
 
-    spoke.setUserPositionManagerWithSig(
-      params.positionManager,
-      params.user,
-      params.approve,
-      params.nonce,
-      params.deadline,
-      signature
-    );
+    spoke.setUserPositionManagerWithSig(p, signature);
     vm.snapshotGasLastCall(NAMESPACE, 'setUserPositionManagerWithSig: disable');
   }
 

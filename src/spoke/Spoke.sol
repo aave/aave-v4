@@ -8,6 +8,7 @@ import {IERC20Permit} from 'src/dependencies/openzeppelin/IERC20Permit.sol';
 import {SignatureChecker} from 'src/dependencies/openzeppelin/SignatureChecker.sol';
 import {AccessManagedUpgradeable} from 'src/dependencies/openzeppelin-upgradeable/AccessManagedUpgradeable.sol';
 import {EIP712} from 'src/dependencies/solady/EIP712.sol';
+import {EIP712Hash, EIP712Types} from 'src/position-manager/libraries/EIP712Hash.sol';
 import {MathUtils} from 'src/libraries/math/MathUtils.sol';
 import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
 import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
@@ -37,11 +38,12 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
   using PositionStatusMap for *;
   using ReserveFlagsMap for ReserveFlags;
   using UserPositionDebt for ISpoke.UserPosition;
+  using EIP712Hash for EIP712Types.SetUserPositionManager;
 
   /// @inheritdoc ISpoke
   bytes32 public constant SET_USER_POSITION_MANAGER_TYPEHASH =
-    // keccak256('SetUserPositionManager(address positionManager,address user,bool approve,uint256 nonce,uint256 deadline)')
-    0x758d23a3c07218b7ea0b4f7f63903c4e9d5cbde72d3bcfe3e9896639025a0214;
+    // keccak256('SetUserPositionManager(address user,PositionManagerUpdate[] updates,uint256 nonce,uint256 deadline)PositionManagerUpdate(address positionManager,bool approve)')
+    0x585e1e37b666d270ee2f5249e16d075b3790ba51e019b5c949396d40af4cb092;
 
   /// @inheritdoc ISpoke
   address public immutable ORACLE;
@@ -448,29 +450,23 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
 
   /// @inheritdoc ISpoke
   function setUserPositionManagerWithSig(
-    address positionManager,
-    address user,
-    bool approve,
-    uint256 nonce,
-    uint256 deadline,
+    EIP712Types.SetUserPositionManager calldata params,
     bytes calldata signature
   ) external {
-    require(block.timestamp <= deadline, InvalidSignature());
-    bytes32 digest = _hashTypedData(
-      keccak256(
-        abi.encode(
-          SET_USER_POSITION_MANAGER_TYPEHASH,
-          positionManager,
-          user,
-          approve,
-          nonce,
-          deadline
-        )
-      )
+    bytes32 digest = _hashTypedData(params.hash());
+    require(
+      block.timestamp <= params.deadline &&
+        SignatureChecker.isValidSignatureNow(params.user, digest, signature),
+      InvalidSignature()
     );
-    require(SignatureChecker.isValidSignatureNow(user, digest, signature), InvalidSignature());
-    _useCheckedNonce(user, nonce);
-    _setUserPositionManager({positionManager: positionManager, user: user, approve: approve});
+    _useCheckedNonce(params.user, params.nonce);
+    for (uint256 i = 0; i < params.updates.length; ++i) {
+      _setUserPositionManager({
+        positionManager: params.updates[i].positionManager,
+        user: params.user,
+        approve: params.updates[i].approve
+      });
+    }
   }
 
   /// @inheritdoc ISpoke
@@ -693,7 +689,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
   function _setUserPositionManager(address positionManager, address user, bool approve) internal {
     PositionManagerConfig storage config = _positionManager[positionManager];
     // only allow approval when position manager is active for improved UX
-    require(!approve || config.active, InactivePositionManager());
+    require(!approve || config.active, InactivePositionManager()); // todo rm this ux check given sig batching?
     config.approval[user] = approve;
     emit SetUserPositionManager(user, positionManager, approve);
   }

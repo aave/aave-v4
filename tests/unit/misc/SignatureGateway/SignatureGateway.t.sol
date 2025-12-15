@@ -232,17 +232,19 @@ contract SignatureGatewayTest is SignatureGatewayBaseTest {
   }
 
   function test_setSelfAsUserPositionManagerWithSig() public {
+    EIP712Types.PositionManagerUpdate[] memory updates = new EIP712Types.PositionManagerUpdate[](1);
+    updates[0] = EIP712Types.PositionManagerUpdate(address(gateway), true);
+
     EIP712Types.SetUserPositionManager memory p = EIP712Types.SetUserPositionManager({
-      positionManager: address(gateway),
+      updates: updates,
       user: alice,
-      approve: true,
       nonce: spoke1.nonces(address(alice), _randomNonceKey()), // note: this typed sig is forwarded to spoke
       deadline: _warpBeforeRandomDeadline()
     });
     bytes memory signature = _sign(alicePk, _getTypedDataHash(spoke1, p));
 
     vm.expectEmit(address(spoke1));
-    emit ISpoke.SetUserPositionManager(alice, address(gateway), p.approve);
+    emit ISpoke.SetUserPositionManager(alice, address(gateway), p.updates[0].approve);
 
     vm.prank(vm.randomAddress());
     gateway.setSelfAsUserPositionManagerWithSig(address(spoke1), p, signature);

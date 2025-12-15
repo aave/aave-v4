@@ -39,7 +39,9 @@ library JsonBindings {
   Vm constant vm = Vm(address(uint160(uint256(keccak256('hevm cheat code')))));
 
   // prettier-ignore
-  string constant schema_SetUserPositionManager = "SetUserPositionManager(address positionManager,address user,bool approve,uint256 nonce,uint256 deadline)";
+  string constant schema_SetUserPositionManager = "SetUserPositionManager(address user,PositionManagerUpdate[] updates,uint256 nonce,uint256 deadline)PositionManagerUpdate(address positionManager,bool approve)";
+  // prettier-ignore
+  string constant schema_PositionManagerUpdate = "PositionManagerUpdate(address positionManager,bool approve)";
   // prettier-ignore
   string constant schema_Permit = "Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)";
   // prettier-ignore
