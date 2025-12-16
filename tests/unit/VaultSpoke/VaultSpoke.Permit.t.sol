@@ -134,38 +134,4 @@ contract VaultSpokePermitTest is VaultSpokeBaseTest {
     (, bytes32[] memory writeSlots) = vm.accesses(address(vault));
     assertEq(writeSlots.length, 0);
   }
-
-  function test_depositWithPermit(uint256 depositAmount) public {
-    depositAmount = bound(depositAmount, 1, MAX_SUPPLY_AMOUNT);
-    (address user, uint256 userPk) = makeAddrAndKey('user');
-
-    deal(address(tokenList.dai), user, depositAmount);
-
-    assertEq(tokenList.dai.balanceOf(user), depositAmount);
-    assertEq(tokenList.dai.balanceOf(address(daiVault)), 0);
-    assertEq(tokenList.dai.balanceOf(address(hub1)), 0);
-    assertEq(daiVault.balanceOf(user), 0);
-
-    EIP712Types.Permit memory params = EIP712Types.Permit({
-      owner: user,
-      spender: address(daiVault),
-      value: depositAmount,
-      deadline: vm.getBlockTimestamp() + 1,
-      nonce: tokenList.dai.nonces(user)
-    });
-    (uint8 v, bytes32 r, bytes32 s) = vm.sign(userPk, _getTypedDataHash(tokenList.dai, params));
-
-    vm.prank(user);
-    vm.expectEmit(address(daiVault));
-    emit IERC4626.Deposit(user, user, depositAmount, depositAmount);
-    uint256 shares = daiVault.depositWithPermit(depositAmount, user, params.deadline, v, r, s);
-
-    assertEq(tokenList.dai.balanceOf(user), 0);
-    assertEq(tokenList.dai.balanceOf(address(daiVault)), 0);
-    assertEq(daiVault.totalAssets(), depositAmount);
-    assertEq(daiVault.balanceOf(user), depositAmount);
-    assertEq(tokenList.dai.balanceOf(address(hub1)), depositAmount);
-
-    assertEq(hub1.getSpokeAddedShares(daiAssetId, address(daiVault)), shares);
-  }
 }

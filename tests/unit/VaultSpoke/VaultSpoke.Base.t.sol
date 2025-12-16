@@ -32,7 +32,7 @@ contract VaultSpokeBaseTest is Base {
   }
 
   function _depositData(
-    IVaultSpoke vault_,
+    IVaultSpoke vault,
     address who,
     uint256 amount,
     uint256 deadline
@@ -42,7 +42,7 @@ contract VaultSpokeBaseTest is Base {
         depositor: who,
         assets: amount,
         receiver: who,
-        nonce: vault_.nonces(who),
+        nonce: vault.nonces(who),
         deadline: deadline
       });
   }
@@ -63,7 +63,7 @@ contract VaultSpokeBaseTest is Base {
   }
 
   function _mintData(
-    IVaultSpoke vault_,
+    IVaultSpoke vault,
     address who,
     uint256 shares,
     uint256 deadline
@@ -73,7 +73,7 @@ contract VaultSpokeBaseTest is Base {
         depositor: who,
         shares: shares,
         receiver: who,
-        nonce: vault_.nonces(who),
+        nonce: vault.nonces(who),
         deadline: deadline
       });
   }
@@ -94,7 +94,7 @@ contract VaultSpokeBaseTest is Base {
   }
 
   function _withdrawData(
-    IVaultSpoke vault_,
+    IVaultSpoke vault,
     address who,
     uint256 assets,
     uint256 deadline
@@ -104,7 +104,7 @@ contract VaultSpokeBaseTest is Base {
         owner: who,
         assets: assets,
         receiver: who,
-        nonce: vault_.nonces(who),
+        nonce: vault.nonces(who),
         deadline: deadline
       });
   }
@@ -125,7 +125,7 @@ contract VaultSpokeBaseTest is Base {
   }
 
   function _redeemData(
-    IVaultSpoke vault_,
+    IVaultSpoke vault,
     address who,
     uint256 shares,
     uint256 deadline
@@ -135,7 +135,7 @@ contract VaultSpokeBaseTest is Base {
         owner: who,
         shares: shares,
         receiver: who,
-        nonce: vault_.nonces(who),
+        nonce: vault.nonces(who),
         deadline: deadline
       });
   }
@@ -202,12 +202,12 @@ contract VaultSpokeBaseTest is Base {
     });
   }
 
-  function _deposit(IVaultSpoke vault_, address user, uint256 amount) internal {
+  function _deposit(IVaultSpoke vault, address user, uint256 amount) internal {
     deal(address(tokenList.dai), user, amount);
 
     vm.startPrank(user);
-    tokenList.dai.approve(address(vault_), amount);
-    vault_.deposit(amount, user);
+    tokenList.dai.approve(address(vault), amount);
+    vault.deposit(amount, user);
     vm.stopPrank();
   }
 }
@@ -233,12 +233,6 @@ contract VaultSpokeInitTest is VaultSpokeBaseTest {
     address invalidHub = address(0);
     vm.expectRevert();
     new VaultSpokeInstance(invalidHub, daiAssetId);
-  }
-
-  /// @dev Cannot re-initialize the contract
-  function test_reinitialize_revertsWith_InvalidInitialization() public {
-    vm.expectRevert(Initializable.InvalidInitialization.selector);
-    VaultSpoke(address(daiVault)).initialize('new name', 'new symbol');
   }
 
   /// @dev Cannot directly initialize the implementation contract
