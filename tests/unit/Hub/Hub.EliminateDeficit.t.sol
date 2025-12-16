@@ -22,6 +22,9 @@ contract HubEliminateDeficitTest is HubBase {
     _callerSpoke = address(spoke2);
     _coveredSpoke = address(spoke1);
     _otherSpoke = address(spoke3);
+
+    vm.prank(ADMIN);
+    accessManager.grantRole(Roles.HUB_UMBRELLA_ROLE, address(_callerSpoke), 0);
   }
 
   function test_eliminateDeficit_revertsWith_InvalidAmount_ZeroAmountNoDeficit() public {
@@ -48,7 +51,24 @@ contract HubEliminateDeficitTest is HubBase {
     hub1.eliminateDeficit(_assetId, vm.randomUint(_deficitAmountRay, UINT256_MAX), _coveredSpoke);
   }
 
+  function test_eliminateDeficit_fuzz_revertsWith_AccessManagedUnauthorized(address caller) public {
+    (bool immediate, uint32 delay) = IAccessManager(hub1.authority()).canCall(
+      caller,
+      address(hub1),
+      IHub.eliminateDeficit.selector
+    );
+    vm.assume(!immediate || delay > 0);
+    vm.expectRevert(
+      abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, caller)
+    );
+    vm.prank(caller);
+    hub1.eliminateDeficit(_assetId, vm.randomUint(), _coveredSpoke);
+  }
+
   function test_eliminateDeficit_fuzz_revertsWith_callerSpokeNotActive(address caller) public {
+    vm.prank(ADMIN);
+    accessManager.grantRole(Roles.HUB_UMBRELLA_ROLE, caller, 0);
+
     vm.assume(!hub1.getSpoke(_assetId, caller).active);
     vm.expectRevert(IHub.SpokeNotActive.selector);
     vm.prank(caller);

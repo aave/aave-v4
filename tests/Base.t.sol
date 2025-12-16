@@ -147,6 +147,7 @@ abstract contract Base is Test {
   address internal HUB_ADMIN = makeAddr('HUB_ADMIN');
   address internal SPOKE_ADMIN = makeAddr('SPOKE_ADMIN');
   address internal USER_POSITION_UPDATER = makeAddr('USER_POSITION_UPDATER');
+  address internal HUB_UMBRELLA = makeAddr('HUB_UMBRELLA');
   address internal TREASURY_ADMIN = makeAddr('TREASURY_ADMIN');
   address internal LIQUIDATOR = makeAddr('LIQUIDATOR');
   address internal POSITION_MANAGER = makeAddr('POSITION_MANAGER');
@@ -303,6 +304,9 @@ abstract contract Base is Test {
     manager.grantRole(Roles.USER_POSITION_UPDATER_ROLE, SPOKE_ADMIN, 0);
     manager.grantRole(Roles.USER_POSITION_UPDATER_ROLE, USER_POSITION_UPDATER, 0);
 
+    manager.grantRole(Roles.HUB_UMBRELLA_ROLE, HUB_ADMIN, 0);
+    manager.grantRole(Roles.HUB_UMBRELLA_ROLE, HUB_UMBRELLA, 0);
+
     // Grant responsibilities to roles
     {
       bytes4[] memory selectors = new bytes4[](7);
@@ -332,6 +336,12 @@ abstract contract Base is Test {
       selectors[4] = IHub.setInterestRateData.selector;
       selectors[5] = IHub.mintFeeShares.selector;
       manager.setTargetFunctionRole(address(targetHub), selectors, Roles.HUB_ADMIN_ROLE);
+    }
+
+    {
+      bytes4[] memory selectors = new bytes4[](1);
+      selectors[0] = IHub.eliminateDeficit.selector;
+      manager.setTargetFunctionRole(address(targetHub), selectors, Roles.HUB_UMBRELLA_ROLE);
     }
     vm.stopPrank();
   }

@@ -1,9 +1,9 @@
 {
   "add": "88006",
-  "add: with transfer": "109613",
+  "add: with transfer": "109616",
   "draw": "105931",
-  "eliminateDeficit: full": "59781",
-  "eliminateDeficit: partial": "69429",
+  "eliminateDeficit: full": "73573",
+  "eliminateDeficit: partial": "83221",
   "mintFeeShares": "84007",
   "payFee": "72302",
   "refreshPremium": "71999",
