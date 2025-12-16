@@ -26,17 +26,19 @@ interface IVaultSpoke is IERC4626, IERC2612, INoncesKeyed {
   error MaxRedeemExceeded(uint256 maxRedeem, uint256 requestedShares);
 
   /// @notice Deposits assets into the vault with a signature.
+  /// @dev Uses keyed-nonces where for each key's namespace nonce is consumed sequentially.
   /// @param params The parameters for the deposit.
-  /// @param signature The signature of the deposit.
+  /// @param signature The EIP712-typed signed bytes for the deposit.
   /// @return The amount of shares minted.
   function depositWithSig(
     EIP712Types.VaultDeposit calldata params,
     bytes calldata signature
   ) external returns (uint256);
 
-  /// @notice Mints shares into the vault with a signature.
+  /// @notice Mints shares of the vault with a signature.
+  /// @dev Uses keyed-nonces where for each key's namespace nonce is consumed sequentially.
   /// @param params The parameters for the mint.
-  /// @param signature The signature of the mint.
+  /// @param signature The EIP712-typed signed bytes for the mint.
   /// @return The amount of assets deposited.
   function mintWithSig(
     EIP712Types.VaultMint calldata params,
@@ -44,8 +46,9 @@ interface IVaultSpoke is IERC4626, IERC2612, INoncesKeyed {
   ) external returns (uint256);
 
   /// @notice Withdraws assets from the vault with a signature.
+  /// @dev Uses keyed-nonces where for each key's namespace nonce is consumed sequentially.
   /// @param params The parameters for the withdraw.
-  /// @param signature The signature of the withdraw.
+  /// @param signature The EIP712-typed signed bytes for the withdraw.
   /// @return The amount of shares withdrawn.
   function withdrawWithSig(
     EIP712Types.VaultWithdraw calldata params,
@@ -53,15 +56,16 @@ interface IVaultSpoke is IERC4626, IERC2612, INoncesKeyed {
   ) external returns (uint256);
 
   /// @notice Redeems shares from the vault with a signature.
+  /// @dev Uses keyed-nonces where for each key's namespace nonce is consumed sequentially.
   /// @param params The parameters for the redeem.
-  /// @param signature The signature of the redeem.
+  /// @param signature The EIP712-typed signed bytes for the redeem.
   /// @return The amount of assets withdrawn.
   function redeemWithSig(
     EIP712Types.VaultRedeem calldata params,
     bytes calldata signature
   ) external returns (uint256);
 
-  /// @notice Deposits assets into the vault with an underlying asset permit.
+  /// @notice Deposits assets into the vault with an underlying asset ERC2612 typed permit.
   /// @param assets The amount of assets to deposit.
   /// @param receiver The receiver of the shares.
   /// @param deadline The deadline of the permit.

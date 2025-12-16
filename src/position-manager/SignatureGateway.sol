@@ -5,12 +5,12 @@ pragma solidity 0.8.28;
 import {SignatureChecker} from 'src/dependencies/openzeppelin/SignatureChecker.sol';
 import {SafeERC20, IERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
 import {IERC20Permit} from 'src/dependencies/openzeppelin/IERC20Permit.sol';
-import {EIP712} from 'src/dependencies/solady/EIP712.sol';
+import {EIP712Hash, EIP712Types} from 'src/libraries/EIP712Hash.sol';
 import {MathUtils} from 'src/libraries/math/MathUtils.sol';
+import {GatewayBase} from 'src/position-manager/GatewayBase.sol';
+import {EIP712} from 'src/dependencies/solady/EIP712.sol';
 import {NoncesKeyed} from 'src/utils/NoncesKeyed.sol';
 import {Multicall} from 'src/utils/Multicall.sol';
-import {EIP712Hash, EIP712Types} from 'src/libraries/EIP712Hash.sol';
-import {GatewayBase} from 'src/position-manager/GatewayBase.sol';
 import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 import {ISignatureGateway} from 'src/position-manager/interfaces/ISignatureGateway.sol';
 

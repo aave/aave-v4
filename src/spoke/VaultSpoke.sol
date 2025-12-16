@@ -4,16 +4,15 @@ pragma solidity 0.8.28;
 
 import {ERC20Upgradeable} from 'src/dependencies/openzeppelin-upgradeable/ERC20Upgradeable.sol';
 import {SafeERC20, IERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
+import {IERC20Permit} from 'src/dependencies/openzeppelin/IERC20Permit.sol';
+import {IERC4626, IERC20Metadata} from 'src/dependencies/openzeppelin/IERC4626.sol';
 import {SignatureChecker, ECDSA} from 'src/dependencies/openzeppelin/SignatureChecker.sol';
 import {EIP712} from 'src/dependencies/solady/EIP712.sol';
 import {MathUtils} from 'src/libraries/math/MathUtils.sol';
 import {EIP712Hash, EIP712Types} from 'src/libraries/EIP712Hash.sol';
 import {NoncesKeyed} from 'src/utils/NoncesKeyed.sol';
-
-import {IERC4626, IERC20Metadata} from 'src/dependencies/openzeppelin/IERC4626.sol';
-import {IERC20Permit} from 'src/dependencies/openzeppelin/IERC20Permit.sol';
-import {IVaultSpoke} from 'src/spoke/interfaces/IVaultSpoke.sol';
 import {IHub} from 'src/hub/interfaces/IHub.sol';
+import {IVaultSpoke} from 'src/spoke/interfaces/IVaultSpoke.sol';
 
 /// @title VaultSpoke
 /// @author Aave Labs
@@ -37,15 +36,17 @@ abstract contract VaultSpoke is IVaultSpoke, ERC20Upgradeable, NoncesKeyed, EIP7
   uint192 public constant PERMIT_NONCE_KEY = 0;
 
   constructor(address hub_, uint256 assetId_) {
+    require(assetId_ < IHub(hub_).getAssetCount());
     HUB = IHub(hub_);
     ASSET_ID = assetId_;
-    require(ASSET_ID < HUB.getAssetCount());
-    MAX_ALLOWED_SPOKE_CAP = HUB.MAX_ALLOWED_SPOKE_CAP();
     (ASSET, DECIMALS) = HUB.getAssetUnderlyingAndDecimals(ASSET_ID);
+    MAX_ALLOWED_SPOKE_CAP = HUB.MAX_ALLOWED_SPOKE_CAP();
   }
 
+  /// @dev To be overridden by the inheriting VaultSpokeInstance contract.
   function initialize(string memory shareName, string memory shareSymbol) external virtual;
 
+  /// @dev Sets the vault share token's ERC20 name and symbol. Must be called at first initialization.
   function __VaultSpoke_init(
     string memory shareName,
     string memory shareSymbol

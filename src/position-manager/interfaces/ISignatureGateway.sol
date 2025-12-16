@@ -18,7 +18,7 @@ interface ISignatureGateway is IMulticall, INoncesKeyed, IGatewayBase {
   /// @dev Supplied assets are pulled from `onBehalfOf`, prior approval to this gateway is required.
   /// @dev Uses keyed-nonces where for each key's namespace nonce is consumed sequentially.
   /// @param params The structured supply parameters.
-  /// @param signature The signed bytes for the intent.
+  /// @param signature The EIP712-typed signed bytes for the intent.
   /// @return The amount of shares supplied.
   /// @return The amount of assets supplied.
   function supplyWithSig(
@@ -31,7 +31,7 @@ interface ISignatureGateway is IMulticall, INoncesKeyed, IGatewayBase {
   /// @dev Withdrawn assets are pushed to `onBehalfOf`.
   /// @dev Uses keyed-nonces where for each key's namespace nonce is consumed sequentially.
   /// @param params The structured withdraw parameters.
-  /// @param signature The signed bytes for the intent.
+  /// @param signature The EIP712-typed signed bytes for the intent.
   /// @return The amount of shares withdrawn.
   /// @return The amount of assets withdrawn.
   function withdrawWithSig(
@@ -43,7 +43,7 @@ interface ISignatureGateway is IMulticall, INoncesKeyed, IGatewayBase {
   /// @dev Borrowed assets are pushed to `onBehalfOf`.
   /// @dev Uses keyed-nonces where for each key's namespace nonce is consumed sequentially.
   /// @param params The structured borrow parameters.
-  /// @param signature The signed bytes for the intent.
+  /// @param signature The EIP712-typed signed bytes for the intent.
   /// @return The amount of shares borrowed.
   /// @return The amount of assets borrowed.
   function borrowWithSig(
@@ -56,7 +56,7 @@ interface ISignatureGateway is IMulticall, INoncesKeyed, IGatewayBase {
   /// @dev Providing an amount greater than the user's current debt indicates a request to repay the maximum possible amount.
   /// @dev Uses keyed-nonces where for each key's namespace nonce is consumed sequentially.
   /// @param params The structured repay parameters.
-  /// @param signature The signed bytes for the intent.
+  /// @param signature The EIP712-typed signed bytes for the intent.
   /// @return The amount of shares repaid.
   /// @return The amount of assets repaid.
   function repayWithSig(
@@ -67,7 +67,7 @@ interface ISignatureGateway is IMulticall, INoncesKeyed, IGatewayBase {
   /// @notice Facilitates `setUsingAsCollateral` action on the specified registered `spoke` with a typed signature from `onBehalfOf`.
   /// @dev Uses keyed-nonces where for each key's namespace nonce is consumed sequentially.
   /// @param params The structured setUsingAsCollateral parameters.
-  /// @param signature The signed bytes for the intent.
+  /// @param signature The EIP712-typed signed bytes for the intent.
   function setUsingAsCollateralWithSig(
     EIP712Types.SetUsingAsCollateral calldata params,
     bytes calldata signature
@@ -76,7 +76,7 @@ interface ISignatureGateway is IMulticall, INoncesKeyed, IGatewayBase {
   /// @notice Facilitates `updateUserRiskPremium` action on the specified registered `spoke` with a typed signature from `user`.
   /// @dev Uses keyed-nonces where for each key's namespace nonce is consumed sequentially.
   /// @param params The structured updateUserRiskPremium parameters.
-  /// @param signature The signed bytes for the intent.
+  /// @param signature The EIP712-typed signed bytes for the intent.
   function updateUserRiskPremiumWithSig(
     EIP712Types.UpdateUserRiskPremium calldata params,
     bytes calldata signature
@@ -85,7 +85,7 @@ interface ISignatureGateway is IMulticall, INoncesKeyed, IGatewayBase {
   /// @notice Facilitates `updateUserDynamicConfig` action on the specified registered `spoke` with a typed signature from `user`.
   /// @dev Uses keyed-nonces where for each key's namespace nonce is consumed sequentially.
   /// @param params The structured updateUserDynamicConfig parameters.
-  /// @param signature The signed bytes for the intent.
+  /// @param signature The EIP712-typed signed bytes for the intent.
   function updateUserDynamicConfigWithSig(
     EIP712Types.UpdateUserDynamicConfig calldata params,
     bytes calldata signature
@@ -97,7 +97,7 @@ interface ISignatureGateway is IMulticall, INoncesKeyed, IGatewayBase {
   /// @dev The given data is passed to the `spoke` for the signature to be verified.
   /// @param spoke The address of the spoke.
   /// @param params The structured setSelfAsUserPositionManager parameters.
-  /// @param signature The signed bytes for the intent.
+  /// @param signature The EIP712-typed signed bytes for the intent.
   function setSelfAsUserPositionManagerWithSig(
     address spoke,
     EIP712Types.SetUserPositionManager calldata params,
