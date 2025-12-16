@@ -66,10 +66,10 @@ contract SpokeSetUserPositionManagerWithSigTest is SpokeBase {
     assertEq(spoke.DOMAIN_SEPARATOR(), expectedDomainSeparator);
   }
 
-  function test_setUserPositionManager_typeHash() public view {
+  function test_setUserPositionManager_typeHash() public pure {
     assertEq(
       Constants.SET_USER_POSITION_MANAGER_TYPEHASH,
-      spoke1.SET_USER_POSITION_MANAGER_TYPEHASH()
+      EIP712Hash.SET_USER_POSITION_MANAGER_TYPEHASH
     );
     assertEq(
       Constants.SET_USER_POSITION_MANAGER_TYPEHASH,
@@ -80,6 +80,18 @@ contract SpokeSetUserPositionManagerWithSigTest is SpokeBase {
       keccak256(
         'SetUserPositionManager(address user,PositionManagerUpdate[] updates,uint256 nonce,uint256 deadline)PositionManagerUpdate(address positionManager,bool approve)'
       )
+    );
+  }
+
+  function test_positionManagerUpdate_typeHash() public pure {
+    assertEq(
+      EIP712Hash.POSITION_MANAGER_UPDATE,
+      keccak256('PositionManagerUpdate(address positionManager,bool approve)')
+    );
+    assertEq(EIP712Hash.POSITION_MANAGER_UPDATE, vm.eip712HashType('PositionManagerUpdate'));
+    assertEq(
+      EIP712Hash.POSITION_MANAGER_UPDATE,
+      keccak256('PositionManagerUpdate(address positionManager,bool approve)')
     );
   }
 

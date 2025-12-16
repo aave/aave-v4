@@ -5,7 +5,7 @@ pragma solidity 0.8.28;
 import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
 import {SafeERC20, IERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
 import {IERC20Permit} from 'src/dependencies/openzeppelin/IERC20Permit.sol';
-import {SignatureChecker} from 'src/dependencies/openzeppelin/SignatureChecker.sol';
+import {SignatureChecker} from 'src/libraries/misc/SignatureChecker.sol';
 import {AccessManagedUpgradeable} from 'src/dependencies/openzeppelin-upgradeable/AccessManagedUpgradeable.sol';
 import {EIP712} from 'src/dependencies/solady/EIP712.sol';
 import {EIP712Hash, EIP712Types} from 'src/position-manager/libraries/EIP712Hash.sol';
@@ -39,11 +39,6 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
   using ReserveFlagsMap for ReserveFlags;
   using UserPositionDebt for ISpoke.UserPosition;
   using EIP712Hash for EIP712Types.SetUserPositionManager;
-
-  /// @inheritdoc ISpoke
-  bytes32 public constant SET_USER_POSITION_MANAGER_TYPEHASH =
-    // keccak256('SetUserPositionManager(address user,PositionManagerUpdate[] updates,uint256 nonce,uint256 deadline)PositionManagerUpdate(address positionManager,bool approve)')
-    0x585e1e37b666d270ee2f5249e16d075b3790ba51e019b5c949396d40af4cb092;
 
   /// @inheritdoc ISpoke
   address public immutable ORACLE;
