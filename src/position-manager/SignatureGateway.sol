@@ -219,11 +219,6 @@ contract SignatureGateway is ISignatureGateway, GatewayBase, Multicall, IntentCo
   }
 
   /// @inheritdoc ISignatureGateway
-  function DOMAIN_SEPARATOR() external view returns (bytes32) {
-    return _domainSeparator();
-  }
-
-  /// @inheritdoc ISignatureGateway
   function SUPPLY_TYPEHASH() external pure returns (bytes32) {
     return EIP712Hash.SUPPLY_TYPEHASH;
   }

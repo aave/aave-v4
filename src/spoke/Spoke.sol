@@ -661,11 +661,6 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, IntentCo
   }
 
   /// @inheritdoc ISpoke
-  function DOMAIN_SEPARATOR() external view returns (bytes32) {
-    return _domainSeparator();
-  }
-
-  /// @inheritdoc ISpoke
   function getLiquidationLogic() external pure returns (address) {
     return address(LiquidationLogic);
   }

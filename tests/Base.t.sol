@@ -38,7 +38,7 @@ import {Roles} from 'src/libraries/types/Roles.sol';
 import {Rescuable, IRescuable} from 'src/utils/Rescuable.sol';
 import {NoncesKeyed, INoncesKeyed} from 'src/utils/NoncesKeyed.sol';
 import {UnitPriceFeed} from 'src/misc/UnitPriceFeed.sol';
-import {IntentConsumer} from 'src/misc/IntentConsumer.sol';
+import {IntentConsumer, IIntentConsumer} from 'src/misc/IntentConsumer.sol';
 import {AccessManagerEnumerable} from 'src/access/AccessManagerEnumerable.sol';
 
 // hub

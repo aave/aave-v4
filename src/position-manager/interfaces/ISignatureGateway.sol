@@ -3,14 +3,14 @@
 pragma solidity ^0.8.0;
 
 import {IMulticall} from 'src/interfaces/IMulticall.sol';
-import {INoncesKeyed} from 'src/interfaces/INoncesKeyed.sol';
+import {IIntentConsumer} from 'src/interfaces/IIntentConsumer.sol';
 import {EIP712Types} from 'src/libraries/types/EIP712Types.sol';
 import {IGatewayBase} from 'src/position-manager/interfaces/IGatewayBase.sol';
 
 /// @title ISignatureGateway
 /// @author Aave Labs
 /// @notice Minimal interface for protocol actions involving signed intents.
-interface ISignatureGateway is IMulticall, INoncesKeyed, IGatewayBase {
+interface ISignatureGateway is IMulticall, IIntentConsumer, IGatewayBase {
   /// @notice Facilitates `supply` action on the specified registered `spoke` with a typed signature from `onBehalfOf`.
   /// @dev Supplied assets are pulled from `onBehalfOf`, prior approval to this gateway is required.
   /// @dev Uses keyed-nonces where for each key's namespace nonce is consumed sequentially.
@@ -119,9 +119,6 @@ interface ISignatureGateway is IMulticall, INoncesKeyed, IGatewayBase {
     bytes32 permitR,
     bytes32 permitS
   ) external;
-
-  /// @notice Returns the EIP712 domain separator.
-  function DOMAIN_SEPARATOR() external view returns (bytes32);
 
   /// @notice Returns the type hash for the Supply intent.
   function SUPPLY_TYPEHASH() external view returns (bytes32);

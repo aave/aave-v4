@@ -2,14 +2,12 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity 0.8.28;
 
-import {SignatureChecker} from 'src/dependencies/openzeppelin/SignatureChecker.sol';
 import {EIP712} from 'src/dependencies/solady/EIP712.sol';
 import {NoncesKeyed} from 'src/utils/NoncesKeyed.sol';
+import {SignatureChecker} from 'src/dependencies/openzeppelin/SignatureChecker.sol';
+import {IIntentConsumer} from 'src/interfaces/IIntentConsumer.sol';
 
-abstract contract IntentConsumer is NoncesKeyed, EIP712 {
-  /// @notice Thrown when signature deadline has passed or signer is not `onBehalfOf`.
-  error InvalidSignature();
-
+abstract contract IntentConsumer is IIntentConsumer, NoncesKeyed, EIP712 {
   /// @dev Verifies the signature for given signer & intent hash, and consumes the keyed-nonce.
   /// @param signer The address of the user.
   /// @param intentHash The hash of the intent struct.
@@ -27,5 +25,10 @@ abstract contract IntentConsumer is NoncesKeyed, EIP712 {
     bytes32 digest = _hashTypedData(intentHash);
     require(SignatureChecker.isValidSignatureNow(signer, digest, signature), InvalidSignature());
     _useCheckedNonce(signer, nonce);
+  }
+
+  /// @inheritdoc IIntentConsumer
+  function DOMAIN_SEPARATOR() external view returns (bytes32) {
+    return _domainSeparator();
   }
 }

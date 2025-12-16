@@ -91,7 +91,7 @@ contract SpokeSetUserPositionManagerWithSigTest is SpokeBase {
     (uint8 v, bytes32 r, bytes32 s) = vm.sign(alicePk, digest);
     bytes memory signature = abi.encodePacked(r, s, v);
 
-    vm.expectRevert(IntentConsumer.InvalidSignature.selector);
+    vm.expectRevert(IIntentConsumer.InvalidSignature.selector);
     vm.prank(vm.randomAddress());
     spoke1.setUserPositionManagerWithSig(params, signature);
   }
@@ -108,7 +108,7 @@ contract SpokeSetUserPositionManagerWithSigTest is SpokeBase {
     (uint8 v, bytes32 r, bytes32 s) = vm.sign(randomUserPk, digest);
     bytes memory signature = abi.encodePacked(r, s, v);
 
-    vm.expectRevert(IntentConsumer.InvalidSignature.selector);
+    vm.expectRevert(IIntentConsumer.InvalidSignature.selector);
     vm.prank(vm.randomAddress());
     spoke1.setUserPositionManagerWithSig(params, signature);
   }
@@ -175,7 +175,7 @@ contract SpokeSetUserPositionManagerWithSigTest is SpokeBase {
     (uint8 v, bytes32 r, bytes32 s) = vm.sign(alicePk, digest);
     bytes memory signature = abi.encodePacked(r, s, v);
 
-    vm.expectRevert(IntentConsumer.InvalidSignature.selector);
+    vm.expectRevert(IIntentConsumer.InvalidSignature.selector);
     vm.prank(vm.randomAddress());
     spoke1.setUserPositionManagerWithSig(params, signature);
   }
@@ -210,7 +210,7 @@ contract SpokeSetUserPositionManagerWithSigTest is SpokeBase {
 
     invalidParams.nonce = params.nonce;
 
-    vm.expectRevert(IntentConsumer.InvalidSignature.selector);
+    vm.expectRevert(IIntentConsumer.InvalidSignature.selector);
     vm.prank(vm.randomAddress());
     spoke1.setUserPositionManagerWithSig(invalidParams, signature);
   }
