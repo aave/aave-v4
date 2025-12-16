@@ -31,6 +31,22 @@ contract VaultSpokeBaseTest is Base {
       });
   }
 
+  function _depositData(
+    IVaultSpoke vault_,
+    address who,
+    uint256 amount,
+    uint256 deadline
+  ) internal view returns (EIP712Types.VaultDeposit memory) {
+    return
+      EIP712Types.VaultDeposit({
+        depositor: who,
+        assets: amount,
+        receiver: who,
+        nonce: vault_.nonces(who),
+        deadline: deadline
+      });
+  }
+
   function _mintData(
     IVaultSpoke vault,
     address who,
@@ -42,6 +58,22 @@ contract VaultSpokeBaseTest is Base {
         shares: vm.randomUint(1, MAX_SUPPLY_AMOUNT),
         receiver: vm.randomAddress(),
         nonce: vault.nonces(who, _randomNonceKey()),
+        deadline: deadline
+      });
+  }
+
+  function _mintData(
+    IVaultSpoke vault_,
+    address who,
+    uint256 shares,
+    uint256 deadline
+  ) internal view returns (EIP712Types.VaultMint memory) {
+    return
+      EIP712Types.VaultMint({
+        depositor: who,
+        shares: shares,
+        receiver: who,
+        nonce: vault_.nonces(who),
         deadline: deadline
       });
   }
@@ -61,6 +93,22 @@ contract VaultSpokeBaseTest is Base {
       });
   }
 
+  function _withdrawData(
+    IVaultSpoke vault_,
+    address who,
+    uint256 assets,
+    uint256 deadline
+  ) internal view returns (EIP712Types.VaultWithdraw memory) {
+    return
+      EIP712Types.VaultWithdraw({
+        owner: who,
+        assets: assets,
+        receiver: who,
+        nonce: vault_.nonces(who),
+        deadline: deadline
+      });
+  }
+
   function _redeemData(
     IVaultSpoke vault,
     address who,
@@ -72,6 +120,22 @@ contract VaultSpokeBaseTest is Base {
         shares: vm.randomUint(1, MAX_SUPPLY_AMOUNT),
         receiver: vm.randomAddress(),
         nonce: vault.nonces(who, _randomNonceKey()),
+        deadline: deadline
+      });
+  }
+
+  function _redeemData(
+    IVaultSpoke vault_,
+    address who,
+    uint256 shares,
+    uint256 deadline
+  ) internal view returns (EIP712Types.VaultRedeem memory) {
+    return
+      EIP712Types.VaultRedeem({
+        owner: who,
+        shares: shares,
+        receiver: who,
+        nonce: vault_.nonces(who),
         deadline: deadline
       });
   }
@@ -137,6 +201,15 @@ contract VaultSpokeBaseTest is Base {
       user: who
     });
   }
+
+  function _deposit(IVaultSpoke vault_, address user, uint256 amount) internal {
+    deal(address(tokenList.dai), user, amount);
+
+    vm.startPrank(user);
+    tokenList.dai.approve(address(vault_), amount);
+    vault_.deposit(amount, user);
+    vm.stopPrank();
+  }
 }
 
 contract VaultSpokeInitTest is VaultSpokeBaseTest {
@@ -154,6 +227,25 @@ contract VaultSpokeInitTest is VaultSpokeBaseTest {
     VaultSpokeInstance instance = new VaultSpokeInstance(address(hub1), assetId);
     assertEq(instance.asset(), hub1.getAsset(assetId).underlying);
     assertEq(instance.decimals(), hub1.getAsset(assetId).decimals);
+  }
+
+  function test_deploy_reverts_InvalidHub() public {
+    address invalidHub = address(0);
+    vm.expectRevert();
+    new VaultSpokeInstance(invalidHub, daiAssetId);
+  }
+
+  /// @dev Cannot re-initialize the contract
+  function test_reinitialize_revertsWith_InvalidInitialization() public {
+    vm.expectRevert(Initializable.InvalidInitialization.selector);
+    VaultSpoke(address(daiVault)).initialize('new name', 'new symbol');
+  }
+
+    /// @dev Cannot directly initialize the implementation contract
+  function test_cannot_init_impl() public {
+    VaultSpokeInstance vaultImpl = new VaultSpokeInstance(address(hub1), daiAssetId);
+    vm.expectRevert(Initializable.InvalidInitialization.selector);
+    vaultImpl.initialize('impl name', 'impl symbol');
   }
 
   function test_setUp() public {
