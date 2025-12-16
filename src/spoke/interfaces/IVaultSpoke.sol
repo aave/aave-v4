@@ -91,8 +91,9 @@ interface IVaultSpoke is IERC4626, IERC2612, INoncesKeyed {
   /// @notice Returns the maximum allowed spoke cap.
   function MAX_ALLOWED_SPOKE_CAP() external view returns (uint40);
 
-  /// @notice Returns the nonce key for the share token permit signatures.
+  /// @notice Returns the nonce key for the share token permit EIP-712 typed signatures.
   /// @dev Share token permits nonces are always set at this specific key namespace.
+  /// Once the 2 ^ 64 - 1 nonces are used, the nonce at this namespace will overflow and reset to 0; unexpired permits can be replayed then.
   function PERMIT_NONCE_KEY() external pure returns (uint192);
 
   /// @notice Returns the type hash for the deposit intent.
