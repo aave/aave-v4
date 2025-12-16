@@ -2,7 +2,6 @@
 pragma solidity ^0.8.0;
 
 import 'tests/unit/VaultSpoke/VaultSpoke.Base.t.sol';
-import {IERC4626} from 'src/dependencies/openzeppelin/IERC4626.sol';
 
 contract VaultSpokePermitTest is VaultSpokeBaseTest {
   IVaultSpoke public vault;

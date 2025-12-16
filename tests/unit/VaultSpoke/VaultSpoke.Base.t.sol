@@ -31,22 +31,6 @@ contract VaultSpokeBaseTest is Base {
       });
   }
 
-  function _depositData(
-    IVaultSpoke vault,
-    address who,
-    uint256 amount,
-    uint256 deadline
-  ) internal view returns (EIP712Types.VaultDeposit memory) {
-    return
-      EIP712Types.VaultDeposit({
-        depositor: who,
-        assets: amount,
-        receiver: who,
-        nonce: vault.nonces(who),
-        deadline: deadline
-      });
-  }
-
   function _mintData(
     IVaultSpoke vault,
     address who,
@@ -58,22 +42,6 @@ contract VaultSpokeBaseTest is Base {
         shares: vm.randomUint(1, MAX_SUPPLY_AMOUNT),
         receiver: vm.randomAddress(),
         nonce: vault.nonces(who, _randomNonceKey()),
-        deadline: deadline
-      });
-  }
-
-  function _mintData(
-    IVaultSpoke vault,
-    address who,
-    uint256 shares,
-    uint256 deadline
-  ) internal view returns (EIP712Types.VaultMint memory) {
-    return
-      EIP712Types.VaultMint({
-        depositor: who,
-        shares: shares,
-        receiver: who,
-        nonce: vault.nonces(who),
         deadline: deadline
       });
   }
@@ -93,22 +61,6 @@ contract VaultSpokeBaseTest is Base {
       });
   }
 
-  function _withdrawData(
-    IVaultSpoke vault,
-    address who,
-    uint256 assets,
-    uint256 deadline
-  ) internal view returns (EIP712Types.VaultWithdraw memory) {
-    return
-      EIP712Types.VaultWithdraw({
-        owner: who,
-        assets: assets,
-        receiver: who,
-        nonce: vault.nonces(who),
-        deadline: deadline
-      });
-  }
-
   function _redeemData(
     IVaultSpoke vault,
     address who,
@@ -120,22 +72,6 @@ contract VaultSpokeBaseTest is Base {
         shares: vm.randomUint(1, MAX_SUPPLY_AMOUNT),
         receiver: vm.randomAddress(),
         nonce: vault.nonces(who, _randomNonceKey()),
-        deadline: deadline
-      });
-  }
-
-  function _redeemData(
-    IVaultSpoke vault,
-    address who,
-    uint256 shares,
-    uint256 deadline
-  ) internal view returns (EIP712Types.VaultRedeem memory) {
-    return
-      EIP712Types.VaultRedeem({
-        owner: who,
-        shares: shares,
-        receiver: who,
-        nonce: vault.nonces(who),
         deadline: deadline
       });
   }
