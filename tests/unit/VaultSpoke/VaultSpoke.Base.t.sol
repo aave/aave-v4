@@ -10,7 +10,7 @@ contract VaultSpokeBaseTest is Base {
   string public constant SHARE_SYMBOL = 'chDAI';
 
   function setUp() public virtual override {
-    deployFixtures();
+  deployFixtures();
     initEnvironment();
     daiVault = _deployVaultSpoke(hub1, daiAssetId, SHARE_NAME, SHARE_SYMBOL, ADMIN);
     _configureVaultSpoke(daiVault, hub1, daiAssetId);
