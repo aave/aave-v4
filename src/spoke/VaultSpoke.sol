@@ -28,6 +28,7 @@ abstract contract VaultSpoke is IVaultSpoke, ERC20Upgradeable, NoncesKeyed, EIP7
   uint256 internal immutable ASSET_ID;
   address internal immutable ASSET;
   uint8 internal immutable DECIMALS;
+  uint256 internal immutable ASSET_UNITS;
 
   /// @inheritdoc IVaultSpoke
   uint40 public immutable MAX_ALLOWED_SPOKE_CAP;
@@ -40,6 +41,7 @@ abstract contract VaultSpoke is IVaultSpoke, ERC20Upgradeable, NoncesKeyed, EIP7
     HUB = IHub(hub_);
     ASSET_ID = assetId_;
     (ASSET, DECIMALS) = HUB.getAssetUnderlyingAndDecimals(ASSET_ID);
+    ASSET_UNITS = MathUtils.uncheckedExp(10, DECIMALS);
     MAX_ALLOWED_SPOKE_CAP = HUB.MAX_ALLOWED_SPOKE_CAP();
   }
 
@@ -171,7 +173,7 @@ abstract contract VaultSpoke is IVaultSpoke, ERC20Upgradeable, NoncesKeyed, EIP7
   ) external returns (uint256) {
     try
       IERC20Permit(ASSET).permit({
-        owner: msg.sender, // deposit only mints for caller
+        owner: msg.sender,
         spender: address(this),
         value: assets,
         deadline: deadline,
@@ -180,7 +182,7 @@ abstract contract VaultSpoke is IVaultSpoke, ERC20Upgradeable, NoncesKeyed, EIP7
         s: s
       })
     {} catch {}
-    return deposit(assets, receiver);
+    return _executeDeposit({depositor: msg.sender, receiver: receiver, assets: assets});
   }
 
   /// @inheritdoc IERC20Permit
@@ -245,7 +247,7 @@ abstract contract VaultSpoke is IVaultSpoke, ERC20Upgradeable, NoncesKeyed, EIP7
 
   /// @inheritdoc IERC4626
   function convertToAssets(uint256 shares) external view returns (uint256) {
-    return previewMint(shares);
+    return previewRedeem(shares);
   }
 
   /// @inheritdoc IERC4626
@@ -257,14 +259,14 @@ abstract contract VaultSpoke is IVaultSpoke, ERC20Upgradeable, NoncesKeyed, EIP7
     if (config.addCap == MAX_ALLOWED_SPOKE_CAP) {
       return type(uint256).max;
     }
-    uint256 allowed = config.addCap * MathUtils.uncheckedExp(10, decimals());
+    uint256 allowed = config.addCap * ASSET_UNITS;
     uint256 balance = totalAssets();
     return allowed.zeroFloorSub(balance);
   }
 
   /// @inheritdoc IERC4626
-  function maxMint(address owner) public view returns (uint256) {
-    uint256 maxAssets = maxDeposit(owner);
+  function maxMint(address receiver) public view returns (uint256) {
+    uint256 maxAssets = maxDeposit(receiver);
     return maxAssets == type(uint256).max ? type(uint256).max : previewDeposit(maxAssets);
   }
 
@@ -350,7 +352,7 @@ abstract contract VaultSpoke is IVaultSpoke, ERC20Upgradeable, NoncesKeyed, EIP7
     uint256 maxAssets = maxDeposit(receiver);
     require(assets <= maxAssets, MaxDepositExceeded(maxAssets, assets));
     uint256 shares = previewDeposit(assets);
-    _deposit(depositor, receiver, assets, shares);
+    _deposit({caller: depositor, receiver: receiver, assets: assets, shares: shares});
     return shares;
   }
 
@@ -362,7 +364,7 @@ abstract contract VaultSpoke is IVaultSpoke, ERC20Upgradeable, NoncesKeyed, EIP7
     uint256 maxShares = maxMint(receiver);
     require(shares <= maxShares, MaxMintExceeded(maxShares, shares));
     uint256 assets = previewMint(shares);
-    _deposit(depositor, receiver, assets, shares);
+    _deposit({caller: depositor, receiver: receiver, assets: assets, shares: shares});
     return assets;
   }
 
@@ -375,7 +377,7 @@ abstract contract VaultSpoke is IVaultSpoke, ERC20Upgradeable, NoncesKeyed, EIP7
     uint256 maxAssets = maxWithdraw(owner);
     require(assets <= maxAssets, MaxWithdrawExceeded(maxAssets, assets));
     uint256 shares = previewWithdraw(assets);
-    _withdraw(caller, receiver, owner, assets, shares);
+    _withdraw({caller: caller, receiver: receiver, owner: owner, assets: assets, shares: shares});
     return shares;
   }
 
@@ -388,7 +390,7 @@ abstract contract VaultSpoke is IVaultSpoke, ERC20Upgradeable, NoncesKeyed, EIP7
     uint256 maxShares = maxRedeem(owner);
     require(shares <= maxShares, MaxRedeemExceeded(maxShares, shares));
     uint256 assets = previewRedeem(shares);
-    _withdraw(caller, receiver, owner, assets, shares);
+    _withdraw({caller: caller, receiver: receiver, owner: owner, assets: assets, shares: shares});
     return assets;
   }
 
@@ -402,7 +404,7 @@ abstract contract VaultSpoke is IVaultSpoke, ERC20Upgradeable, NoncesKeyed, EIP7
     IERC20(ASSET).safeTransferFrom(caller, address(HUB), assets);
     HUB.add(ASSET_ID, assets);
     _mint(receiver, shares);
-    emit Deposit(caller, receiver, assets, shares);
+    emit Deposit({sender: caller, owner: receiver, assets: assets, shares: shares});
   }
 
   function _withdraw(
@@ -417,7 +419,13 @@ abstract contract VaultSpoke is IVaultSpoke, ERC20Upgradeable, NoncesKeyed, EIP7
     }
     HUB.remove(ASSET_ID, assets, receiver);
     _burn(owner, shares);
-    emit Withdraw(caller, receiver, owner, assets, shares);
+    emit Withdraw({
+      sender: caller,
+      receiver: receiver,
+      owner: owner,
+      assets: assets,
+      shares: shares
+    });
   }
 
   function _maxRemovableAssets() internal view returns (uint256) {

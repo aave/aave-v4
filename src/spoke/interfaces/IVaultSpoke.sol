@@ -49,7 +49,7 @@ interface IVaultSpoke is IERC4626, IERC2612, INoncesKeyed {
   /// @dev Uses keyed-nonces where for each key's namespace nonce is consumed sequentially.
   /// @param params The parameters for the withdraw.
   /// @param signature The EIP712-typed signed bytes for the withdraw.
-  /// @return The amount of shares withdrawn.
+  /// @return The amount of shares burnt.
   function withdrawWithSig(
     EIP712Types.VaultWithdraw calldata params,
     bytes calldata signature
@@ -59,7 +59,7 @@ interface IVaultSpoke is IERC4626, IERC2612, INoncesKeyed {
   /// @dev Uses keyed-nonces where for each key's namespace nonce is consumed sequentially.
   /// @param params The parameters for the redeem.
   /// @param signature The EIP712-typed signed bytes for the redeem.
-  /// @return The amount of assets withdrawn.
+  /// @return The amount of assets burnt.
   function redeemWithSig(
     EIP712Types.VaultRedeem calldata params,
     bytes calldata signature

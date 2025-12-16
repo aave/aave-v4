@@ -82,7 +82,6 @@ contract SpokeSetUserPositionManagerWithSigTest is SpokeBase {
   function test_setUserPositionManagerWithSig_revertsWith_InvalidSignature_dueTo_ExpiredDeadline()
     public
   {
-    (, uint256 alicePk) = makeAddrAndKey('alice');
     uint256 deadline = _warpAfterRandomDeadline();
 
     EIP712Types.SetUserPositionManager memory params = _setUserPositionManagerData(alice, deadline);
@@ -189,7 +188,6 @@ contract SpokeSetUserPositionManagerWithSigTest is SpokeBase {
   function test_setUserPositionManagerWithSig_ERC1271_revertsWith_InvalidSignature_dueTo_ExpiredDeadline()
     public
   {
-    (, uint256 alicePk) = makeAddrAndKey('alice');
     MockERC1271Wallet smartWallet = new MockERC1271Wallet(alice);
     EIP712Types.SetUserPositionManager memory params = _setUserPositionManagerData(
       address(smartWallet),
@@ -218,7 +216,6 @@ contract SpokeSetUserPositionManagerWithSigTest is SpokeBase {
   function test_setUserPositionManagerWithSig_ERC1271_revertsWith_InvalidSignature_dueTo_InvalidHash()
     public
   {
-    (, uint256 alicePk) = makeAddrAndKey('alice');
     address maliciousManager = makeAddr('maliciousManager');
     MockERC1271Wallet smartWallet = new MockERC1271Wallet(alice);
     vm.prank(SPOKE_ADMIN);
@@ -258,7 +255,6 @@ contract SpokeSetUserPositionManagerWithSigTest is SpokeBase {
   function test_setUserPositionManagerWithSig_ERC1271_revertsWith_InvalidAccountNonce(
     bytes32
   ) public {
-    (, uint256 alicePk) = makeAddrAndKey('alice');
     MockERC1271Wallet smartWallet = new MockERC1271Wallet(alice);
     uint256 deadline = _warpBeforeRandomDeadline();
 

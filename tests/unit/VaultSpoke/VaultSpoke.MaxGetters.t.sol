@@ -12,7 +12,7 @@ abstract contract VaultSpokeMaxGettersReturnZeroTest is VaultSpokeBaseTest {
     updateAddCap(IHub(vault.hub()), vault.assetId(), address(vault), 0);
   }
 
-  function isVaultActiveOrNotPaused() public view returns (bool) {
+  function _isVaultActiveOrNotPaused() internal view returns (bool) {
     IHub.SpokeConfig memory config = IHub(vault.hub()).getSpokeConfig(
       vault.assetId(),
       address(vault)
@@ -21,7 +21,7 @@ abstract contract VaultSpokeMaxGettersReturnZeroTest is VaultSpokeBaseTest {
   }
 
   modifier setUpPreconditions() {
-    if (isVaultActiveOrNotPaused()) {
+    if (_isVaultActiveOrNotPaused()) {
       vm.expectCall(
         vault.hub(),
         abi.encodeCall(IHub.getSpokeConfig, (vault.assetId(), address(vault))),
@@ -145,7 +145,6 @@ contract VaultSpokeDepositMintGettersNonEmptyLiquidityVariableCapTest is
     super.setUp();
     uint256 amount = vm.randomUint(1, maxSuppliableAssets().min(MAX_SUPPLY_AMOUNT));
     deal(vault.asset(), address(this), amount);
-    // Utils.add(IHubBase(vault.hub()), vault.assetId(), address(vault), amount, address(this));
     Utils.approve(vault, address(this), amount);
     vault.deposit(amount, address(this));
   }

@@ -3,7 +3,6 @@
 pragma solidity ^0.8.0;
 
 import 'tests/unit/VaultSpoke/VaultSpoke.Base.t.sol';
-import {IERC4626} from 'src/dependencies/openzeppelin/IERC4626.sol';
 
 contract VaultSpokeDepositWithPermitTest is VaultSpokeBaseTest {
   IVaultSpoke public vault;
@@ -103,38 +102,6 @@ contract VaultSpokeDepositWithPermitTest is VaultSpokeBaseTest {
     assertEq(vault.balanceOf(receiver), expectedShares);
   }
 
-  function test_depositWithPermit_deposit_executes_after_permit() public {
-    (address user, uint256 userPk) = makeAddrAndKey('user');
-    address receiver = vm.randomAddress();
-    uint256 maxAssets = vault.maxDeposit(receiver);
-    uint256 assets = maxAssets == type(uint256).max
-      ? vm.randomUint(1, MAX_SUPPLY_AMOUNT)
-      : vm.randomUint(1, maxAssets);
-
-    asset.mint(user, assets);
-    assertEq(asset.allowance(user, address(vault)), 0);
-
-    EIP712Types.Permit memory params = EIP712Types.Permit({
-      owner: user,
-      spender: address(vault),
-      value: assets,
-      deadline: _warpBeforeRandomDeadline(),
-      nonce: asset.nonces(user)
-    });
-
-    (uint8 v, bytes32 r, bytes32 s) = vm.sign(userPk, _getTypedDataHash(asset, params));
-
-    uint256 balanceBefore = vault.balanceOf(receiver);
-    uint256 assetBalanceBefore = asset.balanceOf(user);
-
-    vm.prank(user);
-    vault.depositWithPermit(assets, receiver, params.deadline, v, r, s);
-
-    assertGt(vault.balanceOf(receiver), balanceBefore);
-    assertEq(asset.balanceOf(user), assetBalanceBefore - assets);
-    assertEq(asset.allowance(user, address(vault)), 0);
-  }
-
   function test_depositWithPermit_works_with_existing_allowance() public {
     address user = vm.randomAddress();
     address receiver = vm.randomAddress();
@@ -161,5 +128,6 @@ contract VaultSpokeDepositWithPermitTest is VaultSpokeBaseTest {
     uint256 expectedShares = IHub(vault.hub()).previewAddByAssets(vault.assetId(), assets);
     assertEq(shares, expectedShares);
     assertEq(vault.balanceOf(receiver), expectedShares);
+    assertEq(asset.allowance(user, address(vault)), 0);
   }
 }

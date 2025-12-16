@@ -18,6 +18,7 @@ import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
 import {IERC20Errors} from 'src/dependencies/openzeppelin/IERC20Errors.sol';
 import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
 import {IERC5267} from 'src/dependencies/openzeppelin/IERC5267.sol';
+import {IERC4626} from 'src/dependencies/openzeppelin/IERC4626.sol';
 import {AccessManager} from 'src/dependencies/openzeppelin/AccessManager.sol';
 import {IAccessManager} from 'src/dependencies/openzeppelin/IAccessManager.sol';
 import {IAccessManaged} from 'src/dependencies/openzeppelin/IAccessManaged.sol';
@@ -2298,12 +2299,12 @@ abstract contract Base is Test {
     return vaultSpoke;
   }
 
-  function _configureVaultSpoke(IVaultSpoke vaultSpoke, IHub hub, uint256 assetId) internal {
+  function _registerVaultSpoke(IHub hub, uint256 assetId, IVaultSpoke vaultSpoke) internal {
     return
-      _configureVaultSpoke(
-        vaultSpoke,
+      _registerVaultSpoke(
         hub,
         assetId,
+        vaultSpoke,
         IHub.SpokeConfig({
           addCap: type(uint40).max,
           drawCap: 0,
@@ -2314,10 +2315,10 @@ abstract contract Base is Test {
       );
   }
 
-  function _configureVaultSpoke(
-    IVaultSpoke vaultSpoke,
+  function _registerVaultSpoke(
     IHub hub,
     uint256 assetId,
+    IVaultSpoke vaultSpoke,
     IHub.SpokeConfig memory config
   ) internal pausePrank {
     vm.prank(ADMIN);

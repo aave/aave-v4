@@ -13,9 +13,9 @@ contract VaultSpokeERC4626ComplianceTest is VaultSpokeBaseTest, ERC4626Test {
     _underlying_ = daiVault.asset();
     _vault_ = address(daiVault);
 
-    _delta_ = 0;
-    _vaultMayBeEmpty = true; // inflation protection through virtual shares on hub
-    _unlimitedAmount = false;
+    _delta_ = 0; // maximum approximation error size to be passed to assertApproxEqAbs, 0 implies the vault follows the preferred rounding directions as per spec security considerations
+    _vaultMayBeEmpty = true; // fuzz inputs that empties the vault are considered; inflation protection is through virtual shares on hub
+    _unlimitedAmount = false; // fuzz inputs are restricted to the currently available amount from the caller
   }
 
   function setUpYield(Init memory init) public override {
