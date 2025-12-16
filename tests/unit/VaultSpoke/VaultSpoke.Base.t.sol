@@ -10,7 +10,7 @@ contract VaultSpokeBaseTest is Base {
   string public constant SHARE_SYMBOL = 'chDAI';
 
   function setUp() public virtual override {
-  deployFixtures();
+    deployFixtures();
     initEnvironment();
     daiVault = _deployVaultSpoke(hub1, daiAssetId, SHARE_NAME, SHARE_SYMBOL, ADMIN);
     _configureVaultSpoke(daiVault, hub1, daiAssetId);
@@ -241,7 +241,7 @@ contract VaultSpokeInitTest is VaultSpokeBaseTest {
     VaultSpoke(address(daiVault)).initialize('new name', 'new symbol');
   }
 
-    /// @dev Cannot directly initialize the implementation contract
+  /// @dev Cannot directly initialize the implementation contract
   function test_cannot_init_impl() public {
     VaultSpokeInstance vaultImpl = new VaultSpokeInstance(address(hub1), daiAssetId);
     vm.expectRevert(Initializable.InvalidInitialization.selector);
