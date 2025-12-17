@@ -128,7 +128,7 @@ contract MathUtilsTest is Base {
   }
 
   function test_signedSub_revertsWith_SafeCastOverflowedUintToInt(uint256 a) public {
-    vm.assume(a > uint256(INT256_MAX));
+    a = bound(a, uint256(INT256_MAX) + 1, UINT256_MAX);
     vm.expectRevert(abi.encodeWithSelector(SafeCast.SafeCastOverflowedUintToInt.selector, a));
     MathUtils.signedSub(a, 0);
 
