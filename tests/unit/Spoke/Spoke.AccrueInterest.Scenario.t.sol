@@ -176,6 +176,8 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
 
       // Bob borrows more dai to trigger accrual
       Utils.borrow(spoke2, _daiReserveId(spoke2), bob, 1e18, bob);
+      // Account for the dai we just borrowed
+      testAmounts[0].originalBorrowAmount += 1e18;
 
       bobRp = _calculateExpectedUserRP(spoke2, bob);
 
@@ -188,22 +190,31 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
         values[i].baseShares = spoke2.getUserPosition(testAmounts[i].reserveId, bob).drawnShares;
       }
 
-      // Check debt values before accrual
+      // Check bob's drawn debt, premium debt, and supplied amounts for all assets at user, reserve, spoke, and asset level
       for (uint256 i = 0; i < 4; ++i) {
         bobPosition = spoke2.getUserPosition(testAmounts[i].reserveId, bob);
+        uint256 drawnDebt = testAmounts[i].borrowAmount;
         uint256 expectedPremiumDebt = _calculatePremiumDebt(
           hub1,
           testAmounts[i].assetId,
           bobPosition.premiumShares,
           bobPosition.premiumOffsetRay
         );
-        _assertSingleUserProtocolDebt(
-          spoke2,
+        uint256 interest = (drawnDebt + expectedPremiumDebt) -
+          testAmounts[i].originalBorrowAmount -
+          _calculateBurntInterest(hub1, testAmounts[i].assetId);
+        uint256 expectedUserSupply = testAmounts[i].originalSupplyAmount +
+          (interest * testAmounts[i].originalSupplyAmount) /
+          MAX_SUPPLY_AMOUNT;
+
+        _assertProtocolSupplyAndDebt(
           testAmounts[i].reserveId,
-          bob,
-          testAmounts[i].borrowAmount,
+          testAmounts[i].name,
+          drawnDebt,
           expectedPremiumDebt,
-          string.concat(testAmounts[i].name, ' before second accrual')
+          expectedUserSupply,
+          MAX_SUPPLY_AMOUNT + interest,
+          ' before second accrual'
         );
       }
 
@@ -211,9 +222,6 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
       startTime = vm.getBlockTimestamp().toUint40();
       skipTime = randomizer(0, MAX_SKIP_TIME / 2).toUint40();
       skip(skipTime);
-
-      // Account for the dai we just borrowed
-      testAmounts[0].originalBorrowAmount += 1e18;
 
       // Check bob's drawn debt, premium debt, and supplied amounts for all assets at user, reserve, spoke, and asset level
       for (uint256 i = 0; i < 4; ++i) {
