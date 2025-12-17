@@ -53,74 +53,21 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
     updateLiquidityFee(hub1, usdzAssetId, 0);
   }
 
-  /// Second accrual after an action - which should update the user rp
+  /// @dev Check protocol supply and debt values after two separate interest accruals with multiple assets supplied and borrowed
+  /// @dev Ensures interest accrues correctly after each accrual, in accordance with the user's expected risk premium
   function test_accrueInterest_fuzz_RPBorrowAndSkipTime_twoActions(
     TestAmounts memory amounts,
     uint40 skipTime
   ) public {
     amounts = _bound(amounts);
     skipTime = bound(skipTime, 0, MAX_SKIP_TIME / 2).toUint40();
+    uint40 startTime = vm.getBlockTimestamp().toUint40();
 
     // Ensure bob does not draw more than half his normalized supply value
     amounts = _ensureSufficientCollateral(spoke2, amounts);
+    TestAmount[] memory testAmounts = _parseTestInputs(amounts);
 
-    // 1 -> DAI, 2 -> WETH, 3 -> USDx, 4 -> WBTC
-    TestAmount[] memory testAmounts = new TestAmount[](4);
-    for (uint256 i = 0; i < 4; ++i) {
-      if (i == 0) {
-        testAmounts[i] = TestAmount({
-          supplyAmount: amounts.daiSupplyAmount,
-          borrowAmount: amounts.daiBorrowAmount,
-          originalSupplyAmount: amounts.daiSupplyAmount,
-          originalBorrowAmount: amounts.daiBorrowAmount,
-          index: hub1.getAssetDrawnIndex(daiAssetId),
-          originalIndex: hub1.getAssetDrawnIndex(daiAssetId),
-          reserveId: _daiReserveId(spoke2),
-          assetId: daiAssetId,
-          name: 'DAI'
-        });
-      } else if (i == 1) {
-        testAmounts[i] = TestAmount({
-          supplyAmount: amounts.wethSupplyAmount,
-          borrowAmount: amounts.wethBorrowAmount,
-          originalSupplyAmount: amounts.wethSupplyAmount,
-          originalBorrowAmount: amounts.wethBorrowAmount,
-          index: hub1.getAssetDrawnIndex(wethAssetId),
-          originalIndex: hub1.getAssetDrawnIndex(wethAssetId),
-          reserveId: _wethReserveId(spoke2),
-          assetId: wethAssetId,
-          name: 'WETH'
-        });
-      } else if (i == 2) {
-        testAmounts[i] = TestAmount({
-          supplyAmount: amounts.usdxSupplyAmount,
-          borrowAmount: amounts.usdxBorrowAmount,
-          originalSupplyAmount: amounts.usdxSupplyAmount,
-          originalBorrowAmount: amounts.usdxBorrowAmount,
-          index: hub1.getAssetDrawnIndex(usdxAssetId),
-          originalIndex: hub1.getAssetDrawnIndex(usdxAssetId),
-          reserveId: _usdxReserveId(spoke2),
-          assetId: usdxAssetId,
-          name: 'USDX'
-        });
-      } else {
-        testAmounts[i] = TestAmount({
-          supplyAmount: amounts.wbtcSupplyAmount,
-          borrowAmount: amounts.wbtcBorrowAmount,
-          originalSupplyAmount: amounts.wbtcSupplyAmount,
-          originalBorrowAmount: amounts.wbtcBorrowAmount,
-          index: hub1.getAssetDrawnIndex(wbtcAssetId),
-          originalIndex: hub1.getAssetDrawnIndex(wbtcAssetId),
-          reserveId: _wbtcReserveId(spoke2),
-          assetId: wbtcAssetId,
-          name: 'WBTC'
-        });
-      }
-    }
-
-    uint40 startTime = vm.getBlockTimestamp().toUint40();
-
-    // Bob supplies amounts on spoke 2, then we deploy remainder of liquidity
+    // Bob supplies amounts on spoke 2, then we deploy remainder of liquidity up to respective supply caps
     for (uint256 i = 0; i < 4; ++i) {
       if (testAmounts[i].supplyAmount > 0) {
         Utils.supplyCollateral(
@@ -390,6 +337,62 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
     amounts.wbtcBorrowAmount = bound(amounts.wbtcBorrowAmount, 0, MAX_SUPPLY_AMOUNT / 2);
 
     return amounts;
+  }
+
+  function _parseTestInputs(
+    TestAmounts memory amounts
+  ) internal view returns (TestAmount[] memory) {
+    TestAmount[] memory testAmounts = new TestAmount[](4);
+
+    testAmounts[0] = TestAmount({
+      supplyAmount: amounts.daiSupplyAmount,
+      borrowAmount: amounts.daiBorrowAmount,
+      originalSupplyAmount: amounts.daiSupplyAmount,
+      originalBorrowAmount: amounts.daiBorrowAmount,
+      index: hub1.getAssetDrawnIndex(daiAssetId),
+      originalIndex: hub1.getAssetDrawnIndex(daiAssetId),
+      reserveId: _daiReserveId(spoke2),
+      assetId: daiAssetId,
+      name: 'DAI'
+    });
+
+    testAmounts[1] = TestAmount({
+      supplyAmount: amounts.wethSupplyAmount,
+      borrowAmount: amounts.wethBorrowAmount,
+      originalSupplyAmount: amounts.wethSupplyAmount,
+      originalBorrowAmount: amounts.wethBorrowAmount,
+      index: hub1.getAssetDrawnIndex(wethAssetId),
+      originalIndex: hub1.getAssetDrawnIndex(wethAssetId),
+      reserveId: _wethReserveId(spoke2),
+      assetId: wethAssetId,
+      name: 'WETH'
+    });
+
+    testAmounts[2] = TestAmount({
+      supplyAmount: amounts.usdxSupplyAmount,
+      borrowAmount: amounts.usdxBorrowAmount,
+      originalSupplyAmount: amounts.usdxSupplyAmount,
+      originalBorrowAmount: amounts.usdxBorrowAmount,
+      index: hub1.getAssetDrawnIndex(usdxAssetId),
+      originalIndex: hub1.getAssetDrawnIndex(usdxAssetId),
+      reserveId: _usdxReserveId(spoke2),
+      assetId: usdxAssetId,
+      name: 'USDX'
+    });
+
+    testAmounts[3] = TestAmount({
+      supplyAmount: amounts.wbtcSupplyAmount,
+      borrowAmount: amounts.wbtcBorrowAmount,
+      originalSupplyAmount: amounts.wbtcSupplyAmount,
+      originalBorrowAmount: amounts.wbtcBorrowAmount,
+      index: hub1.getAssetDrawnIndex(wbtcAssetId),
+      originalIndex: hub1.getAssetDrawnIndex(wbtcAssetId),
+      reserveId: _wbtcReserveId(spoke2),
+      assetId: wbtcAssetId,
+      name: 'WBTC'
+    });
+
+    return testAmounts;
   }
 
   function _ensureSufficientCollateral(
