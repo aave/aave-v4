@@ -10,7 +10,7 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
   using PercentageMath for uint256;
   using SafeCast for uint256;
 
-  struct TestAmounts {
+  struct TestInputs {
     uint256 daiSupplyAmount;
     uint256 wethSupplyAmount;
     uint256 usdxSupplyAmount;
@@ -37,7 +37,7 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
     string name;
   }
 
-  struct TestInfo {
+  struct TestValues {
     uint96 baseBorrowRate;
     uint256 index;
     uint256 baseShares;
@@ -56,7 +56,7 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
   /// @dev Check protocol supply and debt values after two separate interest accruals with multiple assets supplied and borrowed
   /// @dev Ensures interest accrues correctly after each accrual, in accordance with the user's expected risk premium
   function test_accrueInterest_fuzz_RPBorrowAndSkipTime_twoActions(
-    TestAmounts memory amounts,
+    TestInputs memory amounts,
     uint40 skipTime
   ) public {
     amounts = _bound(amounts);
@@ -100,7 +100,7 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
     assertEq(bobRp, _calculateExpectedUserRP(spoke2, bob), 'user risk premium Before');
 
     // Store base borrow rates
-    TestInfo[] memory values = new TestInfo[](4);
+    TestValues[] memory values = new TestValues[](4);
     for (uint256 i = 0; i < 4; ++i) {
       values[i].baseBorrowRate = hub1.getAssetDrawnRate(testAmounts[i].assetId).toUint96();
     }
@@ -326,7 +326,7 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
     }
   }
 
-  function _bound(TestAmounts memory amounts) internal pure returns (TestAmounts memory) {
+  function _bound(TestInputs memory amounts) internal pure returns (TestInputs memory) {
     amounts.daiSupplyAmount = bound(amounts.daiSupplyAmount, 0, MAX_SUPPLY_AMOUNT);
     amounts.wethSupplyAmount = bound(amounts.wethSupplyAmount, 0, MAX_SUPPLY_AMOUNT);
     amounts.usdxSupplyAmount = bound(amounts.usdxSupplyAmount, 0, MAX_SUPPLY_AMOUNT);
@@ -339,9 +339,7 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
     return amounts;
   }
 
-  function _parseTestInputs(
-    TestAmounts memory amounts
-  ) internal view returns (TestAmount[] memory) {
+  function _parseTestInputs(TestInputs memory amounts) internal view returns (TestAmount[] memory) {
     TestAmount[] memory testAmounts = new TestAmount[](4);
 
     testAmounts[0] = TestAmount({
@@ -397,8 +395,8 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
 
   function _ensureSufficientCollateral(
     ISpoke spoke,
-    TestAmounts memory amounts
-  ) internal view returns (TestAmounts memory) {
+    TestInputs memory amounts
+  ) internal view returns (TestInputs memory) {
     uint256 remainingCollateralValue = _getValue(
       spoke,
       _daiReserveId(spoke),
