@@ -226,6 +226,15 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
       // Check bob's drawn debt, premium debt, and supplied amounts for all assets at user, reserve, spoke, and asset level
       for (uint256 i = 0; i < 4; ++i) {
         if (testAmounts[i].originalBorrowAmount == 0) {
+          _assertProtocolSupplyAndDebt(
+            testAmounts[i].reserveId,
+            testAmounts[i].name,
+            0,
+            0,
+            testAmounts[i].originalSupplyAmount,
+            MAX_SUPPLY_AMOUNT,
+            ' after second accrual'
+          );
           continue;
         }
         values[i].index = _calculateExpectedDrawnIndex(
