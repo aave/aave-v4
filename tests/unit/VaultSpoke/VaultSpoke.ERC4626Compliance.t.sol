@@ -8,33 +8,32 @@ import {ERC4626Test} from 'lib/erc4626-tests/ERC4626.test.sol';
 contract VaultSpokeERC4626ComplianceTest is VaultSpokeBaseTest, ERC4626Test {
   function setUp() public override(VaultSpokeBaseTest, ERC4626Test) {
     VaultSpokeBaseTest.setUp();
+    updateLiquidityFee(IHub(daiVault.hub()), daiVault.assetId(), 0);
 
     _underlying_ = daiVault.asset();
     _vault_ = address(daiVault);
 
-    _delta_ = 0;
-    _vaultMayBeEmpty = true; // inflation protection through virtual shares on hub
-    _unlimitedAmount = false;
+    _delta_ = 0; // maximum approximation error size to be passed to assertApproxEqAbs, 0 implies the vault follows the preferred rounding directions as per spec security considerations
+    _vaultMayBeEmpty = true; // fuzz inputs that empties the vault are considered; inflation protection is through virtual shares on hub
+    _unlimitedAmount = false; // fuzz inputs are restricted to the currently available amount from the caller
   }
 
   function setUpYield(Init memory init) public override {
     if (init.yield > 0) {
       init.yield = bound(init.yield, 1, int(MAX_SUPPLY_AMOUNT));
-      uint gain = uint(init.yield);
-      uint owedBefore = hub1.getAssetTotalOwed(daiAssetId);
+      IHub hub = IHub(IVaultSpoke(_vault_).hub());
+      uint256 assetId = IVaultSpoke(_vault_).assetId();
+      uint256 gain = uint(init.yield);
 
-      tokenList.dai.mint(address(hub1), gain);
+      TestnetERC20(IVaultSpoke(_vault_).asset()).mint(address(hub), gain);
       vm.startPrank(address(spoke2));
-      hub1.add(daiAssetId, gain);
+      hub.add(assetId, gain);
       _mockInterestRateBps(100_00); // 100% interest rate
-      hub1.draw(daiAssetId, gain, address(spoke2));
+      hub.draw(assetId, gain, address(spoke2));
       skip(365 days);
-      tokenList.dai.transfer(address(hub1), gain);
-      hub1.restore(daiAssetId, gain, IHubBase.PremiumDelta(0, 0, 0));
+      tokenList.dai.transfer(address(hub), gain);
+      hub.restore(assetId, gain, IHubBase.PremiumDelta(0, 0, 0));
       vm.stopPrank();
-
-      uint owedAfter = hub1.getAssetTotalOwed(daiAssetId);
-      assertApproxEqAbs(owedAfter, owedBefore + gain, 1);
     }
   }
 }

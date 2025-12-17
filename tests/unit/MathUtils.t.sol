@@ -111,6 +111,10 @@ contract MathUtilsTest is Base {
     MathUtils.add(UINT256_MAX, 1);
   }
 
+  function test_zeroFloorSub(uint256 a, uint256 b) public pure {
+    assertEq(MathUtils.zeroFloorSub(a, b), a < b ? 0 : a - b);
+  }
+
   function test_uncheckedAdd(uint256 a, uint256 b) public pure {
     uint256 result = MathUtils.uncheckedAdd(a, b);
     assertEq(result, b <= UINT256_MAX - a ? a + b : a - (UINT256_MAX - b) - 1);

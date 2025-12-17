@@ -5,7 +5,7 @@ pragma solidity ^0.8.20;
 import {INoncesKeyed} from 'src/interfaces/INoncesKeyed.sol';
 
 /// @notice Provides tracking nonces for addresses. Supports key-ed nonces, where nonces will only increment for each key.
-/// @author Modified from OpenZeppelin https://github.com/OpenZeppelin/openzeppelin-contracts/blob/v5.2.0/contracts/utils/NoncesKeyed.sol
+/// @author Modified from OpenZeppelin https://github.com/OpenZeppelin/openzeppelin-contracts/blob/v5.4.0/contracts/utils/NoncesKeyed.sol
 /// @dev Follows the https://eips.ethereum.org/EIPS/eip-4337#semi-abstracted-nonce-support[ERC-4337's semi-abstracted nonce system].
 contract NoncesKeyed is INoncesKeyed {
   mapping(address owner => mapping(uint192 key => uint64 nonce)) private _nonces;

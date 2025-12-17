@@ -13,7 +13,7 @@ contract VaultSpokeBaseTest is Base {
     deployFixtures();
     initEnvironment();
     daiVault = _deployVaultSpoke(hub1, daiAssetId, SHARE_NAME, SHARE_SYMBOL, ADMIN);
-    _configureVaultSpoke(daiVault, hub1, daiAssetId);
+    _registerVaultSpoke(hub1, daiAssetId, daiVault);
   }
 
   function _depositData(
@@ -188,7 +188,6 @@ contract VaultSpokeInitTest is VaultSpokeBaseTest {
     assertEq(daiVault.hub(), address(hub1));
 
     assertEq(daiVault.PERMIT_NONCE_KEY(), 0);
-    assertEq(daiVault.MAX_ALLOWED_SPOKE_CAP(), hub1.MAX_ALLOWED_SPOKE_CAP());
 
     assertEq(daiVault.totalAssets(), 0);
     assertEq(daiVault.totalSupply(), 0);

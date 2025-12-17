@@ -4,16 +4,15 @@ pragma solidity 0.8.28;
 
 import {ERC20Upgradeable} from 'src/dependencies/openzeppelin-upgradeable/ERC20Upgradeable.sol';
 import {SafeERC20, IERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
+import {IERC20Permit} from 'src/dependencies/openzeppelin/IERC20Permit.sol';
+import {IERC4626, IERC20Metadata} from 'src/dependencies/openzeppelin/IERC4626.sol';
 import {SignatureChecker, ECDSA} from 'src/dependencies/openzeppelin/SignatureChecker.sol';
 import {EIP712} from 'src/dependencies/solady/EIP712.sol';
 import {MathUtils} from 'src/libraries/math/MathUtils.sol';
 import {EIP712Hash, EIP712Types} from 'src/libraries/EIP712Hash.sol';
 import {NoncesKeyed} from 'src/utils/NoncesKeyed.sol';
-
-import {IERC4626, IERC20Metadata} from 'src/dependencies/openzeppelin/IERC4626.sol';
-import {IERC20Permit} from 'src/dependencies/openzeppelin/IERC20Permit.sol';
-import {IVaultSpoke} from 'src/spoke/interfaces/IVaultSpoke.sol';
 import {IHub} from 'src/hub/interfaces/IHub.sol';
+import {IVaultSpoke} from 'src/spoke/interfaces/IVaultSpoke.sol';
 
 /// @title VaultSpoke
 /// @author Aave Labs
@@ -25,23 +24,31 @@ abstract contract VaultSpoke is IVaultSpoke, ERC20Upgradeable, NoncesKeyed, EIP7
   using MathUtils for uint256;
   using EIP712Hash for *;
 
-  IHub internal immutable _HUB;
-  uint256 internal immutable _ASSET_ID;
-  address internal immutable _ASSET;
-  uint8 internal immutable _DECIMALS;
-  uint40 internal immutable _MAX_ALLOWED_SPOKE_CAP;
-  uint192 internal constant _PERMIT_NONCE_KEY = 0;
+  IHub internal immutable HUB;
+  uint256 internal immutable ASSET_ID;
+  address internal immutable ASSET;
+  uint8 internal immutable DECIMALS;
+  uint256 internal immutable ASSET_UNITS;
+
+  /// @inheritdoc IVaultSpoke
+  uint40 public immutable MAX_ALLOWED_SPOKE_CAP;
+
+  /// @inheritdoc IVaultSpoke
+  uint192 public constant PERMIT_NONCE_KEY = 0;
 
   constructor(address hub_, uint256 assetId_) {
-    _HUB = IHub(hub_);
-    _ASSET_ID = assetId_;
-    require(_ASSET_ID < _HUB.getAssetCount());
-    _MAX_ALLOWED_SPOKE_CAP = _HUB.MAX_ALLOWED_SPOKE_CAP();
-    (_ASSET, _DECIMALS) = _HUB.getAssetUnderlyingAndDecimals(_ASSET_ID);
+    require(assetId_ < IHub(hub_).getAssetCount());
+    HUB = IHub(hub_);
+    ASSET_ID = assetId_;
+    (ASSET, DECIMALS) = HUB.getAssetUnderlyingAndDecimals(ASSET_ID);
+    ASSET_UNITS = MathUtils.uncheckedExp(10, DECIMALS);
+    MAX_ALLOWED_SPOKE_CAP = HUB.MAX_ALLOWED_SPOKE_CAP();
   }
 
+  /// @dev To be overridden by the inheriting VaultSpokeInstance contract.
   function initialize(string memory shareName, string memory shareSymbol) external virtual;
 
+  /// @dev Sets the vault share token's ERC20 name and symbol. Must be called at first initialization.
   function __VaultSpoke_init(
     string memory shareName,
     string memory shareSymbol
@@ -165,8 +172,8 @@ abstract contract VaultSpoke is IVaultSpoke, ERC20Upgradeable, NoncesKeyed, EIP7
     bytes32 s
   ) external returns (uint256) {
     try
-      IERC20Permit(_ASSET).permit({
-        owner: msg.sender, // deposit only mints for caller
+      IERC20Permit(ASSET).permit({
+        owner: msg.sender,
         spender: address(this),
         value: assets,
         deadline: deadline,
@@ -175,7 +182,7 @@ abstract contract VaultSpoke is IVaultSpoke, ERC20Upgradeable, NoncesKeyed, EIP7
         s: s
       })
     {} catch {}
-    return deposit(assets, receiver);
+    return _executeDeposit({depositor: msg.sender, receiver: receiver, assets: assets});
   }
 
   /// @inheritdoc IERC20Permit
@@ -196,7 +203,7 @@ abstract contract VaultSpoke is IVaultSpoke, ERC20Upgradeable, NoncesKeyed, EIP7
           owner,
           spender,
           value,
-          _useNonce({owner: owner, key: _PERMIT_NONCE_KEY}),
+          _useNonce({owner: owner, key: PERMIT_NONCE_KEY}),
           deadline
         )
       )
@@ -215,22 +222,22 @@ abstract contract VaultSpoke is IVaultSpoke, ERC20Upgradeable, NoncesKeyed, EIP7
 
   /// @inheritdoc IERC4626
   function previewDeposit(uint256 assets) public view virtual returns (uint256) {
-    return _HUB.previewAddByAssets(_ASSET_ID, assets);
+    return HUB.previewAddByAssets(ASSET_ID, assets);
   }
 
   /// @inheritdoc IERC4626
   function previewMint(uint256 shares) public view virtual returns (uint256) {
-    return _HUB.previewAddByShares(_ASSET_ID, shares);
+    return HUB.previewAddByShares(ASSET_ID, shares);
   }
 
   /// @inheritdoc IERC4626
   function previewWithdraw(uint256 assets) public view virtual returns (uint256) {
-    return _HUB.previewRemoveByAssets(_ASSET_ID, assets);
+    return HUB.previewRemoveByAssets(ASSET_ID, assets);
   }
 
   /// @inheritdoc IERC4626
   function previewRedeem(uint256 shares) public view virtual returns (uint256) {
-    return _HUB.previewRemoveByShares(_ASSET_ID, shares);
+    return HUB.previewRemoveByShares(ASSET_ID, shares);
   }
 
   /// @inheritdoc IERC4626
@@ -240,26 +247,26 @@ abstract contract VaultSpoke is IVaultSpoke, ERC20Upgradeable, NoncesKeyed, EIP7
 
   /// @inheritdoc IERC4626
   function convertToAssets(uint256 shares) external view returns (uint256) {
-    return previewMint(shares);
+    return previewRedeem(shares);
   }
 
   /// @inheritdoc IERC4626
   function maxDeposit(address) public view returns (uint256) {
-    IHub.SpokeConfig memory config = _HUB.getSpokeConfig(_ASSET_ID, address(this));
+    IHub.SpokeConfig memory config = HUB.getSpokeConfig(ASSET_ID, address(this));
     if (!config.active || config.paused) {
       return 0;
     }
-    if (config.addCap == _MAX_ALLOWED_SPOKE_CAP) {
+    if (config.addCap == MAX_ALLOWED_SPOKE_CAP) {
       return type(uint256).max;
     }
-    uint256 allowed = config.addCap * MathUtils.uncheckedExp(10, decimals());
+    uint256 allowed = config.addCap * ASSET_UNITS;
     uint256 balance = totalAssets();
     return allowed.zeroFloorSub(balance);
   }
 
   /// @inheritdoc IERC4626
-  function maxMint(address owner) public view returns (uint256) {
-    uint256 maxAssets = maxDeposit(owner);
+  function maxMint(address receiver) public view returns (uint256) {
+    uint256 maxAssets = maxDeposit(receiver);
     return maxAssets == type(uint256).max ? type(uint256).max : previewDeposit(maxAssets);
   }
 
@@ -284,42 +291,32 @@ abstract contract VaultSpoke is IVaultSpoke, ERC20Upgradeable, NoncesKeyed, EIP7
 
   /// @inheritdoc IVaultSpoke
   function hub() public view returns (address) {
-    return address(_HUB);
+    return address(HUB);
   }
 
   /// @inheritdoc IVaultSpoke
   function assetId() public view returns (uint256) {
-    return _ASSET_ID;
+    return ASSET_ID;
   }
 
   /// @inheritdoc IERC4626
   function asset() public view returns (address) {
-    return _ASSET;
+    return ASSET;
   }
 
   /// @inheritdoc IERC20Metadata
   function decimals() public view override(ERC20Upgradeable, IERC20Metadata) returns (uint8) {
-    return _DECIMALS;
+    return DECIMALS;
   }
 
   /// @inheritdoc IERC20Permit
   function nonces(address owner) public view returns (uint256) {
-    return nonces({owner: owner, key: _PERMIT_NONCE_KEY});
+    return nonces({owner: owner, key: PERMIT_NONCE_KEY});
   }
 
   /// @inheritdoc IERC20Permit
   function DOMAIN_SEPARATOR() public view returns (bytes32) {
     return _domainSeparator();
-  }
-
-  /// @inheritdoc IVaultSpoke
-  function MAX_ALLOWED_SPOKE_CAP() external view returns (uint40) {
-    return _MAX_ALLOWED_SPOKE_CAP;
-  }
-
-  /// @inheritdoc IVaultSpoke
-  function PERMIT_NONCE_KEY() external pure returns (uint192) {
-    return _PERMIT_NONCE_KEY;
   }
 
   /// @inheritdoc IVaultSpoke
@@ -355,7 +352,7 @@ abstract contract VaultSpoke is IVaultSpoke, ERC20Upgradeable, NoncesKeyed, EIP7
     uint256 maxAssets = maxDeposit(receiver);
     require(assets <= maxAssets, MaxDepositExceeded(maxAssets, assets));
     uint256 shares = previewDeposit(assets);
-    _deposit(depositor, receiver, assets, shares);
+    _deposit({caller: depositor, receiver: receiver, assets: assets, shares: shares});
     return shares;
   }
 
@@ -367,7 +364,7 @@ abstract contract VaultSpoke is IVaultSpoke, ERC20Upgradeable, NoncesKeyed, EIP7
     uint256 maxShares = maxMint(receiver);
     require(shares <= maxShares, MaxMintExceeded(maxShares, shares));
     uint256 assets = previewMint(shares);
-    _deposit(depositor, receiver, assets, shares);
+    _deposit({caller: depositor, receiver: receiver, assets: assets, shares: shares});
     return assets;
   }
 
@@ -380,7 +377,7 @@ abstract contract VaultSpoke is IVaultSpoke, ERC20Upgradeable, NoncesKeyed, EIP7
     uint256 maxAssets = maxWithdraw(owner);
     require(assets <= maxAssets, MaxWithdrawExceeded(maxAssets, assets));
     uint256 shares = previewWithdraw(assets);
-    _withdraw(caller, receiver, owner, assets, shares);
+    _withdraw({caller: caller, receiver: receiver, owner: owner, assets: assets, shares: shares});
     return shares;
   }
 
@@ -393,7 +390,7 @@ abstract contract VaultSpoke is IVaultSpoke, ERC20Upgradeable, NoncesKeyed, EIP7
     uint256 maxShares = maxRedeem(owner);
     require(shares <= maxShares, MaxRedeemExceeded(maxShares, shares));
     uint256 assets = previewRedeem(shares);
-    _withdraw(caller, receiver, owner, assets, shares);
+    _withdraw({caller: caller, receiver: receiver, owner: owner, assets: assets, shares: shares});
     return assets;
   }
 
@@ -404,10 +401,10 @@ abstract contract VaultSpoke is IVaultSpoke, ERC20Upgradeable, NoncesKeyed, EIP7
     uint256 assets,
     uint256 shares
   ) internal virtual {
-    IERC20(_ASSET).safeTransferFrom(caller, address(_HUB), assets);
-    _HUB.add(_ASSET_ID, assets);
+    IERC20(ASSET).safeTransferFrom(caller, address(HUB), assets);
+    HUB.add(ASSET_ID, assets);
     _mint(receiver, shares);
-    emit Deposit(caller, receiver, assets, shares);
+    emit Deposit({sender: caller, owner: receiver, assets: assets, shares: shares});
   }
 
   function _withdraw(
@@ -420,17 +417,23 @@ abstract contract VaultSpoke is IVaultSpoke, ERC20Upgradeable, NoncesKeyed, EIP7
     if (caller != owner) {
       _spendAllowance({owner: owner, spender: caller, value: shares});
     }
-    _HUB.remove(_ASSET_ID, assets, receiver);
+    HUB.remove(ASSET_ID, assets, receiver);
     _burn(owner, shares);
-    emit Withdraw(caller, receiver, owner, assets, shares);
+    emit Withdraw({
+      sender: caller,
+      receiver: receiver,
+      owner: owner,
+      assets: assets,
+      shares: shares
+    });
   }
 
   function _maxRemovableAssets() internal view returns (uint256) {
-    IHub.SpokeConfig memory config = _HUB.getSpokeConfig(_ASSET_ID, address(this));
+    IHub.SpokeConfig memory config = HUB.getSpokeConfig(ASSET_ID, address(this));
     if (!config.active || config.paused) {
       return 0;
     }
-    return _HUB.getAssetLiquidity(_ASSET_ID);
+    return HUB.getAssetLiquidity(ASSET_ID);
   }
 
   function _domainNameAndVersion() internal pure override returns (string memory, string memory) {
