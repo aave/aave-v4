@@ -9,11 +9,12 @@ import {IAccessManager} from 'src/dependencies/openzeppelin/IAccessManager.sol';
 /// @notice Interface for AccessManagerEnumerable extension.
 interface IAccessManagerEnumerable is IAccessManager {
   /// @notice Returns the indentifier of the role at a specified index.
-  /// @param index The index in the role member list.
+  /// @param index The index in the role list.
   /// @return The identifier of the role.
   function getRole(uint256 index) external view returns (uint64);
 
-  /// @notice Returns the number of roles tracked by the AccessManager.
+  /// @notice Returns the total number of existing roles.
+  /// @dev Does not account for the built-in `ADMIN_ROLE` & `PUBLIC_ROLE` roles.
   /// @return The number of roles.
   function getRoleCount() external view returns (uint256);
 
@@ -34,7 +35,7 @@ interface IAccessManagerEnumerable is IAccessManager {
   /// @return The number of members for the role.
   function getRoleMemberCount(uint64 roleId) external view returns (uint256);
 
-  /// @notice Returns the list of members for a specified role.
+  /// @notice Returns the list of members for a specified role between the specified indexes.
   /// @param roleId The identifier of the role.
   /// @param start The starting index for the member list.
   /// @param end The ending index for the member list.
@@ -45,9 +46,9 @@ interface IAccessManagerEnumerable is IAccessManager {
     uint256 end
   ) external view returns (address[] memory);
 
-  /// @notice Returns the address of the target contract at a specified index.
+  /// @notice Returns the address of the target contract for a specified role and index.
   /// @param roleId The identifier of the role.
-  /// @param index The index in the role member list.
+  /// @param index The index in the role target list.
   /// @return The address of the target contract.
   function getRoleTarget(uint64 roleId, uint256 index) external view returns (address);
 
@@ -56,10 +57,10 @@ interface IAccessManagerEnumerable is IAccessManager {
   /// @return The number of targets for the role.
   function getRoleTargetCount(uint64 roleId) external view returns (uint256);
 
-  /// @notice Returns the list of targets for a specified role.
+  /// @notice Returns the list of targets for a specified role between the specified indexes.
   /// @param roleId The identifier of the role.
-  /// @param start The starting index for the target list.
-  /// @param end The ending index for the target list.
+  /// @param start The starting index for the role target list.
+  /// @param end The ending index for the role target list.
   /// @return The list of targets for the role.
   function getRoleTargets(
     uint64 roleId,

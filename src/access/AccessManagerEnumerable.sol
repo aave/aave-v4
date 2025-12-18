@@ -30,6 +30,8 @@ contract AccessManagerEnumerable is AccessManager, IAccessManagerEnumerable {
   mapping(uint64 roleId => mapping(address target => EnumerableSet.Bytes32Set))
     private _roleTargetFunctions;
 
+  /// @dev Constructor.
+  /// @param initialAdmin_ The address of the initial admin.
   constructor(address initialAdmin_) AccessManager(initialAdmin_) {}
 
   /// @inheritdoc IAccessManagerEnumerable
