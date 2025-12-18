@@ -54,7 +54,6 @@ library MathUtils {
   }
 
   /// @notice Returns the difference of two unsigned integers as a signed integer.
-  /// @dev Does not ensure the `a` and `b` values are within the range of a signed integer.
   function signedSub(uint256 a, uint256 b) internal pure returns (int256) {
     return a.toInt256() - b.toInt256();
   }
