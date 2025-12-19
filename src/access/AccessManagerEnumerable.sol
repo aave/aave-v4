@@ -131,12 +131,12 @@ contract AccessManagerEnumerable is AccessManager, IAccessManagerEnumerable {
 
   /// @dev Tracks all targets where a selector was assigned to a role.
   function _trackRoleTarget(uint64 roleId, address target) internal {
-    uint256 oldRole = _targetRoles[target];
+    uint64 oldRole = _targetRoles[target];
     if (oldRole == roleId) {
       return;
     }
-    if (oldRole != ADMIN_ROLE && _roleTargetFunctions[uint64(oldRole)][target].length() == 0) {
-      _roleTargets[uint64(oldRole)].remove(target);
+    if (oldRole != ADMIN_ROLE && _roleTargetFunctions[oldRole][target].length() == 0) {
+      _roleTargets[oldRole].remove(target);
     }
     if (roleId != ADMIN_ROLE) {
       _roleTargets[roleId].add(target);
@@ -156,22 +156,22 @@ contract AccessManagerEnumerable is AccessManager, IAccessManagerEnumerable {
     super._setRoleGuardian(roleId, guardian);
   }
 
-  /// @dev Override AccessManager `_grantRole` function to track role members.
+  /// @dev Override AccessManager `_grantRole` function to track roles' membership.
   function _grantRole(
     uint64 roleId,
     address account,
     uint32 grantDelay,
     uint32 executionDelay
   ) internal override returns (bool) {
-    _trackRole(roleId);
     bool granted = super._grantRole(roleId, account, grantDelay, executionDelay);
     if (granted) {
+      _trackRole(roleId);
       _roleMembers[roleId].add(account);
     }
     return granted;
   }
 
-  /// @dev Override AccessManager `_revokeRole` function to remove from tracked role members.
+  /// @dev Override AccessManager `_revokeRole` function to remove from tracked roles' membership.
   function _revokeRole(uint64 roleId, address account) internal override returns (bool) {
     bool revoked = super._revokeRole(roleId, account);
     if (revoked) {

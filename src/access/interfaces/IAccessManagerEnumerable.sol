@@ -14,7 +14,7 @@ interface IAccessManagerEnumerable is IAccessManager {
   function getRole(uint256 index) external view returns (uint64);
 
   /// @notice Returns the total number of existing roles.
-  /// @dev Does not account for the built-in `ADMIN_ROLE` & `PUBLIC_ROLE` roles.
+  /// @dev Does not account for the built-in `PUBLIC_ROLE` role.
   /// @return The number of roles.
   function getRoleCount() external view returns (uint256);
 
