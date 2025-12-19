@@ -38,6 +38,12 @@ contract HubEliminateDeficitTest is HubBase {
     hub1.eliminateDeficit(_assetId, 0, _coveredSpoke);
   }
 
+  function test_eliminateDeficit_revertsWith_InsufficientDeficit() public {
+    vm.expectRevert(IHub.InsufficientDeficit.selector);
+    vm.prank(_callerSpoke);
+    hub1.eliminateDeficit(_assetId, 1, _coveredSpoke);
+  }
+
   // Caller spoke does not have funds
   function test_eliminateDeficit_fuzz_revertsWith_ArithmeticUnderflow_CallerSpokeNoFunds(
     uint256
