@@ -35,6 +35,63 @@ contract SpokeWithdrawTest is SpokeBase {
     uint256 skipTime;
   }
 
+  function test_withdraw_revertsWith_ReentrancyGuardReentrantCall() public {
+    uint256 amount = 100e18;
+
+    Utils.supplyCollateral({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      caller: bob,
+      amount: amount * 10,
+      onBehalfOf: bob
+    });
+
+    MockReentrantHub reentrantHub = new MockReentrantHub(
+      address(spoke1),
+      ISpokeBase.withdraw.selector
+    );
+
+    // reentrant hub.remove call
+    vm.mockFunction(
+      address(_hub(spoke1, _daiReserveId(spoke1))),
+      address(reentrantHub),
+      abi.encodeWithSelector(IHubBase.remove.selector)
+    );
+    vm.expectRevert(ReentrancyGuardTransient.ReentrancyGuardReentrantCall.selector);
+    vm.prank(bob);
+    spoke1.withdraw(_daiReserveId(spoke1), amount, bob);
+    // clear mockFunction
+    vm.mockFunction(
+      address(_hub(spoke1, _daiReserveId(spoke1))),
+      address(_hub(spoke1, _daiReserveId(spoke1))),
+      abi.encodeWithSelector(IHubBase.remove.selector)
+    );
+
+    Utils.borrow({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      caller: bob,
+      amount: amount,
+      onBehalfOf: bob
+    });
+
+    // reentrant hub.refreshPremium call
+    vm.mockFunction(
+      address(_hub(spoke1, _daiReserveId(spoke1))),
+      address(reentrantHub),
+      abi.encodeWithSelector(IHubBase.refreshPremium.selector)
+    );
+    vm.expectRevert(ReentrancyGuardTransient.ReentrancyGuardReentrantCall.selector);
+    vm.prank(bob);
+    spoke1.withdraw(_daiReserveId(spoke1), amount, bob);
+    // clear mockFunction
+    vm.mockFunction(
+      address(_hub(spoke1, _daiReserveId(spoke1))),
+      address(_hub(spoke1, _daiReserveId(spoke1))),
+      abi.encodeWithSelector(IHubBase.refreshPremium.selector)
+    );
+  }
+
   function test_withdraw_same_block() public {
     uint256 amount = 100e18;
 
