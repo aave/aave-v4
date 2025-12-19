@@ -142,6 +142,38 @@ contract AllowancePositionManager_Gas_Tests is SpokeBase {
     vm.snapshotGasLastCall(NAMESPACE, 'withdrawOnBehalfOf: full');
   }
 
+  /// forge-config: default.isolate = false
+  function test_withdrawOnBehalfOf_WithTemporaryWithdrawAllowance() public {
+    uint256 amount = 100e18;
+
+    vm.prank(alice);
+    positionManager.temporaryApproveWithdraw(
+      address(spoke1),
+      _daiReserveId(spoke1),
+      bob,
+      UINT256_MAX
+    );
+
+    Utils.supply(spoke1, _daiReserveId(spoke1), alice, mintAmount_DAI, alice);
+    Utils.withdraw(spoke1, _daiReserveId(spoke1), alice, amount, alice);
+
+    vm.prank(bob);
+    positionManager.withdrawOnBehalfOf(address(spoke1), _daiReserveId(spoke1), amount, alice);
+    vm.snapshotGasLastCall(NAMESPACE, 'withdrawOnBehalfOf: partial (with temporary allowance)');
+
+    vm.prank(alice);
+    positionManager.temporaryApproveWithdraw(
+      address(spoke1),
+      _daiReserveId(spoke1),
+      bob,
+      UINT256_MAX
+    );
+
+    vm.prank(bob);
+    positionManager.withdrawOnBehalfOf(address(spoke1), _daiReserveId(spoke1), UINT256_MAX, alice);
+    vm.snapshotGasLastCall(NAMESPACE, 'withdrawOnBehalfOf: full (with temporary allowance)');
+  }
+
   function test_borrowOnBehalfOf() public {
     uint256 aliceSupplyAmount = 5000e18;
     uint256 bobSupplyAmount = 1000e18;
@@ -156,6 +188,28 @@ contract AllowancePositionManager_Gas_Tests is SpokeBase {
     vm.prank(bob);
     positionManager.borrowOnBehalfOf(address(spoke1), _daiReserveId(spoke1), borrowAmount, alice);
     vm.snapshotGasLastCall(NAMESPACE, 'borrowOnBehalfOf');
+  }
+
+  /// forge-config: default.isolate = false
+  function test_borrowOnBehalfOf_WithTemporaryDelegateCredit() public {
+    uint256 aliceSupplyAmount = 5000e18;
+    uint256 bobSupplyAmount = 1000e18;
+    uint256 borrowAmount = 750e18;
+
+    vm.prank(alice);
+    positionManager.temporaryDelegateCredit(
+      address(spoke1),
+      _daiReserveId(spoke1),
+      bob,
+      borrowAmount
+    );
+
+    Utils.supplyCollateral(spoke1, _daiReserveId(spoke1), alice, aliceSupplyAmount, alice);
+    Utils.supplyCollateral(spoke1, _daiReserveId(spoke1), bob, bobSupplyAmount, bob);
+
+    vm.prank(bob);
+    positionManager.borrowOnBehalfOf(address(spoke1), _daiReserveId(spoke1), borrowAmount, alice);
+    vm.snapshotGasLastCall(NAMESPACE, 'borrowOnBehalfOf (with temporary allowance)');
   }
 
   function test_approveWithdraw() public {
@@ -188,6 +242,14 @@ contract AllowancePositionManager_Gas_Tests is SpokeBase {
     vm.prank(vm.randomAddress());
     positionManager.approveWithdrawWithSig(p, signature);
     vm.snapshotGasLastCall(NAMESPACE, 'approveWithdrawWithSig');
+  }
+
+  function test_temporaryApproveWithdraw() public {
+    uint256 amount = 100e18;
+
+    vm.prank(alice);
+    positionManager.temporaryApproveWithdraw(address(spoke1), _daiReserveId(spoke1), bob, amount);
+    vm.snapshotGasLastCall(NAMESPACE, 'temporaryApproveWithdraw');
   }
 
   function test_renounceWithdrawAllowance() public {
@@ -231,6 +293,14 @@ contract AllowancePositionManager_Gas_Tests is SpokeBase {
     vm.prank(vm.randomAddress());
     positionManager.delegateCreditWithSig(p, signature);
     vm.snapshotGasLastCall(NAMESPACE, 'delegateCreditWithSig');
+  }
+
+  function test_temporaryDelegateCredit() public {
+    uint256 amount = 100e18;
+
+    vm.prank(alice);
+    positionManager.temporaryDelegateCredit(address(spoke1), _daiReserveId(spoke1), bob, amount);
+    vm.snapshotGasLastCall(NAMESPACE, 'temporaryDelegateCredit');
   }
 
   function test_renounceCreditDelegation() public {
