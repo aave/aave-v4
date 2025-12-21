@@ -619,7 +619,6 @@ contract FuzzingBase is PropertiesConstants, PropertiesAsserts {
     address spokeImpl = address(new SpokeInstance(address(oracle)));
     ISpoke spoke = ISpoke(
       _proxify(
-        address(this),
         spokeImpl,
         proxyAdminOwner,
         abi.encodeCall(Spoke.initialize, (_accessManager))
@@ -631,7 +630,6 @@ contract FuzzingBase is PropertiesConstants, PropertiesAsserts {
   }
 
   function _proxify(
-    address deployer,
     address impl,
     address proxyAdminOwner,
     bytes memory initData
