@@ -324,7 +324,7 @@ library LiquidationLogic {
     uint256 drawnDebtLiquidated = params.debtToLiquidate - premiumDebtToLiquidateRay.fromRayUp();
     uint256 drawnSharesLiquidated = drawnDebtLiquidated.rayDivDown(params.drawnIndex);
 
-    IHubBase.PremiumDelta memory premiumDelta = debtPosition.getPremiumDelta({
+    IHubBase.PremiumDelta memory premiumDelta = debtPosition.calculatePremiumDelta({
       drawnSharesTaken: drawnSharesLiquidated,
       drawnIndex: params.drawnIndex,
       riskPremium: positionStatus.riskPremium,
