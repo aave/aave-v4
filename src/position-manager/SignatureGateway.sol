@@ -186,11 +186,24 @@ contract SignatureGateway is ISignatureGateway, GatewayBase, Multicall, IntentCo
   /// @inheritdoc ISignatureGateway
   function setSelfAsUserPositionManagerWithSig(
     address spoke,
-    EIP712Types.SetUserPositionManager memory params,
+    address user,
+    bool approve,
+    uint256 nonce,
+    uint256 deadline,
     bytes calldata signature
   ) external onlyRegisteredSpoke(spoke) {
-    params.positionManager = address(this); // todo will be removed with explicit args
-    try ISpoke(spoke).setUserPositionManagerWithSig(params, signature) {} catch {}
+    try
+      ISpoke(spoke).setUserPositionManagerWithSig(
+        EIP712Types.SetUserPositionManager({
+          positionManager: address(this),
+          user: user,
+          approve: approve,
+          nonce: nonce,
+          deadline: deadline
+        }),
+        signature
+      )
+    {} catch {}
   }
 
   /// @inheritdoc ISignatureGateway
