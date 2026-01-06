@@ -8,7 +8,7 @@ import {IAccessManager} from 'src/dependencies/openzeppelin/IAccessManager.sol';
 /// @author Aave Labs
 /// @notice Interface for AccessManagerEnumerable extension.
 interface IAccessManagerEnumerable is IAccessManager {
-  /// @notice Returns the indentifier of the role at a specified index.
+  /// @notice Returns the identifier of the role at a specified index.
   /// @param index The index in the role list.
   /// @return The identifier of the role.
   function getRole(uint256 index) external view returns (uint64);
@@ -52,16 +52,16 @@ interface IAccessManagerEnumerable is IAccessManager {
   /// @return The address of the target contract.
   function getRoleTarget(uint64 roleId, uint256 index) external view returns (address);
 
-  /// @notice Returns the number of targets for a specified role.
+  /// @notice Returns the number of target contracts for a specified role.
   /// @param roleId The identifier of the role.
-  /// @return The number of targets for the role.
+  /// @return The number of target contracts for the role.
   function getRoleTargetCount(uint64 roleId) external view returns (uint256);
 
-  /// @notice Returns the list of targets for a specified role between the specified indexes.
+  /// @notice Returns the list of target contracts for a specified role between the specified indexes.
   /// @param roleId The identifier of the role.
   /// @param start The starting index for the role target list.
   /// @param end The ending index for the role target list.
-  /// @return The list of targets for the role.
+  /// @return The list of target contracts for the role.
   function getRoleTargets(
     uint64 roleId,
     uint256 start,

@@ -387,6 +387,61 @@ contract AccessManagerEnumerableTest is Test {
     assertEq(roleTargets[2], target3);
   }
 
+  function test_setTargetFunctionRole_removeTarget() public {
+    uint64 roleId = 1;
+    uint64 otherRoleId = 2;
+    address target1 = makeAddr('target1');
+    address target2 = makeAddr('target2');
+    address target3 = makeAddr('target3');
+    bytes4 selector1 = bytes4(keccak256('functionOne()'));
+    bytes4 selector2 = bytes4(keccak256('functionTwo()'));
+
+    address[] memory targets = new address[](3);
+    targets[0] = target1;
+    targets[1] = target2;
+    targets[2] = target3;
+
+    bytes4[] memory selectors = new bytes4[](2);
+    selectors[0] = selector1;
+    selectors[1] = selector2;
+
+    vm.startPrank(ADMIN);
+    accessManagerEnumerable.setTargetFunctionRole(target1, selectors, roleId);
+    accessManagerEnumerable.setTargetFunctionRole(target2, selectors, roleId);
+    accessManagerEnumerable.setTargetFunctionRole(target3, selectors, roleId);
+    vm.stopPrank();
+
+    assertEq(accessManagerEnumerable.getRoleTargetCount(roleId), 3);
+    assertEq(accessManagerEnumerable.getRoleTarget(roleId, 0), target1);
+    assertEq(accessManagerEnumerable.getRoleTarget(roleId, 1), target2);
+    assertEq(accessManagerEnumerable.getRoleTarget(roleId, 2), target3);
+    address[] memory roleTargets = accessManagerEnumerable.getRoleTargets(
+      roleId,
+      0,
+      accessManagerEnumerable.getRoleTargetCount(roleId)
+    );
+    assertEq(roleTargets.length, 3);
+    assertEq(roleTargets[0], target1);
+    assertEq(roleTargets[1], target2);
+    assertEq(roleTargets[2], target3);
+
+    vm.startPrank(ADMIN);
+    accessManagerEnumerable.setTargetFunctionRole(target2, selectors, otherRoleId);
+    vm.stopPrank();
+
+    assertEq(accessManagerEnumerable.getRoleTargetCount(roleId), 2);
+    assertEq(accessManagerEnumerable.getRoleTarget(roleId, 0), target1);
+    assertEq(accessManagerEnumerable.getRoleTarget(roleId, 1), target3);
+    roleTargets = accessManagerEnumerable.getRoleTargets(
+      roleId,
+      0,
+      accessManagerEnumerable.getRoleTargetCount(roleId)
+    );
+    assertEq(roleTargets.length, 2);
+    assertEq(roleTargets[0], target1);
+    assertEq(roleTargets[1], target3);
+  }
+
   function test_setTargetFunctionRole_skipAddToAdminRole() public {
     uint64 roleId = accessManagerEnumerable.ADMIN_ROLE();
     address target = makeAddr('target');

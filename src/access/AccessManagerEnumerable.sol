@@ -23,8 +23,8 @@ contract AccessManagerEnumerable is AccessManager, IAccessManagerEnumerable {
   /// @dev Map of role identifiers to their respective target contract addresses.
   mapping(uint64 roleId => EnumerableSet.AddressSet) private _roleTargets;
 
-  /// @dev Map of target contract addresses to their current role identifiers.
-  mapping(address target => uint64 roleId) private _targetRoles;
+  /// @dev Map of target contract addresses and selectors to their current role identifiers.
+  mapping(address target => mapping(bytes4 selector => uint64 roleId)) private _targetSelectorRoles;
 
   /// @dev Map of role identifiers and target contract addresses to their respective set of function selectors.
   mapping(uint64 roleId => mapping(address target => EnumerableSet.Bytes32Set))
@@ -130,8 +130,8 @@ contract AccessManagerEnumerable is AccessManager, IAccessManagerEnumerable {
   }
 
   /// @dev Tracks all targets where a selector was assigned to a role.
-  function _trackRoleTarget(uint64 roleId, address target) internal {
-    uint64 oldRole = _targetRoles[target];
+  function _trackRoleTarget(uint64 roleId, address target, bytes4 selector) internal {
+    uint64 oldRole = _targetSelectorRoles[target][selector];
     if (oldRole == roleId) {
       return;
     }
@@ -141,7 +141,7 @@ contract AccessManagerEnumerable is AccessManager, IAccessManagerEnumerable {
     if (roleId != ADMIN_ROLE) {
       _roleTargets[roleId].add(target);
     }
-    _targetRoles[target] = roleId;
+    _targetSelectorRoles[target][selector] = roleId;
   }
 
   /// @dev Override AccessManager `_setRoleAdmin` function to track created roles.
@@ -195,6 +195,6 @@ contract AccessManagerEnumerable is AccessManager, IAccessManagerEnumerable {
       _roleTargetFunctions[roleId][target].add(bytes32(selector));
     }
     // also track the target under the role (will be added if not already present)
-    _trackRoleTarget(roleId, target);
+    _trackRoleTarget(roleId, target, selector);
   }
 }
