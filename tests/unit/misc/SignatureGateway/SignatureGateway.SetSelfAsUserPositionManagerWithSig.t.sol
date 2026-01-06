@@ -1,0 +1,98 @@
+// SPDX-License-Identifier: UNLICENSED
+// Copyright (c) 2025 Aave Labs
+pragma solidity ^0.8.0;
+
+import 'tests/unit/misc/SignatureGateway/SignatureGateway.Base.t.sol';
+
+contract SignatureGatewaySetSelfAsUserPositionManagerTest is SignatureGatewayBaseTest {
+  function test_setSelfAsUserPositionManagerWithSig_revertsWith_SpokeNotRegistered() public {
+    vm.expectRevert(IGatewayBase.SpokeNotRegistered.selector);
+    vm.prank(vm.randomAddress());
+    gateway.setSelfAsUserPositionManagerWithSig({
+      spoke: address(spoke2),
+      user: vm.randomAddress(),
+      approve: vm.randomBool(),
+      nonce: vm.randomUint(),
+      deadline: vm.randomUint(),
+      signature: vm.randomBytes(72)
+    });
+  }
+
+  function test_setSelfAsUserPositionManagerWithSig_forwards_correct_call() public {
+    EIP712Types.PositionManagerUpdate[] memory updates = new EIP712Types.PositionManagerUpdate[](1);
+    updates[0] = EIP712Types.PositionManagerUpdate(address(gateway), vm.randomBool());
+    EIP712Types.SetUserPositionManager memory p = EIP712Types.SetUserPositionManager({
+      user: vm.randomAddress(),
+      updates: updates,
+      nonce: vm.randomUint(),
+      deadline: vm.randomUint()
+    });
+    bytes memory signature = vm.randomBytes(72);
+
+    vm.expectCall(
+      address(spoke1),
+      abi.encodeCall(ISpoke.setUserPositionManagerWithSig, (p, signature)),
+      1
+    );
+    vm.prank(vm.randomAddress());
+    gateway.setSelfAsUserPositionManagerWithSig({
+      spoke: address(spoke1),
+      user: p.user,
+      approve: p.updates[0].approve,
+      nonce: p.nonce,
+      deadline: p.deadline,
+      signature: signature
+    });
+  }
+
+  function test_setSelfAsUserPositionManagerWithSig_ignores_underlying_spoke_reverts() public {
+    vm.mockCallRevert(
+      address(spoke1),
+      ISpoke.setUserPositionManagerWithSig.selector,
+      vm.randomBytes(64)
+    );
+
+    vm.prank(vm.randomAddress());
+    gateway.setSelfAsUserPositionManagerWithSig({
+      spoke: address(spoke1),
+      user: vm.randomAddress(),
+      approve: vm.randomBool(),
+      nonce: vm.randomUint(),
+      deadline: vm.randomUint(),
+      signature: vm.randomBytes(72)
+    });
+
+    assertFalse(spoke1.isPositionManager(alice, address(gateway)));
+  }
+
+  function test_setSelfAsUserPositionManagerWithSig_single_update() public {
+    uint192 nonceKey = _randomNonceKey();
+    vm.prank(alice);
+    spoke1.useNonce(nonceKey);
+    EIP712Types.PositionManagerUpdate[] memory updates = new EIP712Types.PositionManagerUpdate[](1);
+    updates[0] = EIP712Types.PositionManagerUpdate(address(gateway), true);
+    EIP712Types.SetUserPositionManager memory p = EIP712Types.SetUserPositionManager({
+      user: alice,
+      updates: updates,
+      nonce: spoke1.nonces(alice, nonceKey), // note: this typed sig is forwarded to spoke
+      deadline: _warpBeforeRandomDeadline()
+    });
+    bytes memory signature = _sign(alicePk, _getTypedDataHash(spoke1, p));
+
+    vm.prank(SPOKE_ADMIN);
+    spoke1.updatePositionManager(address(gateway), true);
+    vm.prank(alice);
+    spoke1.setUserPositionManager(address(gateway), false);
+
+    gateway.setSelfAsUserPositionManagerWithSig({
+      spoke: address(spoke1),
+      user: p.user,
+      approve: p.updates[0].approve,
+      nonce: p.nonce,
+      deadline: p.deadline,
+      signature: signature
+    });
+
+    assertTrue(spoke1.isPositionManager(alice, address(gateway)));
+  }
+}

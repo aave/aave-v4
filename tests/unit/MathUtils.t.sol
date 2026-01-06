@@ -127,6 +127,15 @@ contract MathUtilsTest is Base {
     assertTrue(result <= INT256_MAX);
   }
 
+  function test_signedSub_revertsWith_SafeCastOverflowedUintToInt(uint256 a) public {
+    a = bound(a, uint256(INT256_MAX) + 1, UINT256_MAX);
+    vm.expectRevert(abi.encodeWithSelector(SafeCast.SafeCastOverflowedUintToInt.selector, a));
+    MathUtils.signedSub(a, 0);
+
+    vm.expectRevert(abi.encodeWithSelector(SafeCast.SafeCastOverflowedUintToInt.selector, a));
+    MathUtils.signedSub(0, a);
+  }
+
   function test_uncheckedSub(uint256 a, uint256 b) public pure {
     uint256 result = a >= b ? a - b : UINT256_MAX - b + a + 1;
     assertEq(MathUtils.uncheckedSub(a, b), result);

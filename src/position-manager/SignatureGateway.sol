@@ -170,14 +170,28 @@ contract SignatureGateway is ISignatureGateway, GatewayBase, NoncesKeyed, Multic
   /// @inheritdoc ISignatureGateway
   function setSelfAsUserPositionManagerWithSig(
     address spoke,
-    EIP712Types.SetUserPositionManager memory params,
+    address user,
+    bool approve,
+    uint256 nonce,
+    uint256 deadline,
     bytes calldata signature
   ) external onlyRegisteredSpoke(spoke) {
-    // todo require one? regardless, will be removed with explicit args
-    for (uint256 i = 0; i < params.updates.length; ++i) {
-      params.updates[i].positionManager = address(this);
-    }
-    try ISpoke(spoke).setUserPositionManagerWithSig(params, signature) {} catch {}
+    EIP712Types.PositionManagerUpdate[] memory updates = new EIP712Types.PositionManagerUpdate[](1);
+    updates[0] = EIP712Types.PositionManagerUpdate({
+      positionManager: address(this),
+      approve: approve
+    });
+    try
+      ISpoke(spoke).setUserPositionManagerWithSig(
+        EIP712Types.SetUserPositionManager({
+          updates: updates,
+          user: user,
+          nonce: nonce,
+          deadline: deadline
+        }),
+        signature
+      )
+    {} catch {}
   }
 
   /// @inheritdoc ISignatureGateway
