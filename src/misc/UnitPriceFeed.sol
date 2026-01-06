@@ -3,12 +3,15 @@
 pragma solidity 0.8.28;
 
 import {AggregatorV3Interface} from 'src/dependencies/chainlink/AggregatorV3Interface.sol';
+import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
 
 /// @title UnitPriceFeed contract
 /// @author Aave Labs
 /// @notice Price feed that returns the unit price (1), with decimals precision.
 /// @dev This price feed can be set for reserves that use the base currency as collateral.
 contract UnitPriceFeed is AggregatorV3Interface {
+  using SafeCast for uint256;
+
   /// @inheritdoc AggregatorV3Interface
   uint8 public immutable decimals;
 
@@ -23,7 +26,7 @@ contract UnitPriceFeed is AggregatorV3Interface {
   constructor(uint8 decimals_, string memory description_) {
     decimals = decimals_;
     description = description_;
-    _units = int256(10 ** decimals_);
+    _units = (10 ** decimals_).toInt256();
   }
 
   /// @inheritdoc AggregatorV3Interface
