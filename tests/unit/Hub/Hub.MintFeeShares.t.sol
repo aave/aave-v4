@@ -31,6 +31,12 @@ contract HubMintFeeSharesTest is HubBase {
     Utils.mintFeeShares(hub1, daiAssetId, ADMIN);
   }
 
+  function test_mintFeeShares_revertsWith_AssetNotListed() public {
+    uint256 invalidAssetId = hub1.getAssetCount();
+    vm.expectRevert(IHub.AssetNotListed.selector);
+    Utils.mintFeeShares(hub1, invalidAssetId, ADMIN);
+  }
+
   function test_mintFeeShares() public {
     // Create debt to build up fees on the existing treasury spoke
     _addAndDrawLiquidity({
