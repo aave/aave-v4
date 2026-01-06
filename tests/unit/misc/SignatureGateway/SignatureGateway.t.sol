@@ -250,7 +250,7 @@ contract SignatureGatewayTest is SignatureGatewayBaseTest {
     gateway.setSelfAsUserPositionManagerWithSig({
       spoke: address(spoke1),
       user: p.user,
-      approve: p.approve,
+      approve: p.updates[0].approve,
       nonce: p.nonce,
       deadline: p.deadline,
       signature: signature

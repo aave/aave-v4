@@ -65,7 +65,7 @@ contract SignatureGatewaySetSelfAsUserPositionManagerTest is SignatureGatewayBas
     assertFalse(spoke1.isPositionManager(alice, address(gateway)));
   }
 
-  function test_setSelfAsUserPositionManagerWithSig_single_update() public {
+  function test_setSelfAsUserPositionManagerWithSig() public {
     uint192 nonceKey = _randomNonceKey();
     vm.prank(alice);
     spoke1.useNonce(nonceKey);
