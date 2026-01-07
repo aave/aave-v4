@@ -974,7 +974,7 @@ abstract contract Base is Test {
     assertEq(hub.getAssetConfig(assetId), config);
   }
 
-  function updateReserveFrozenFlag(
+  function _updateReserveFrozenFlag(
     ISpoke spoke,
     uint256 reserveId,
     bool newFrozenFlag
@@ -1104,7 +1104,7 @@ abstract contract Base is Test {
     assertEq(_getLatestDynamicReserveConfig(spoke, reserveId), config);
   }
 
-  function updateReserveBorrowableFlag(
+  function _updateReserveBorrowableFlag(
     ISpoke spoke,
     uint256 reserveId,
     bool newBorrowable

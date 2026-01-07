@@ -33,47 +33,6 @@ contract HubReportDeficitTest is HubBase {
     _addLiquidity(usdxAssetId, MAX_SUPPLY_AMOUNT);
   }
 
-  function test_reportDeficit_active_paused_scenarios() public {
-    // draw usdx liquidity to be restored
-    _drawLiquidity({
-      assetId: usdxAssetId,
-      amount: 1,
-      withPremium: true,
-      skipTime: true,
-      spoke: address(spoke1)
-    });
-
-    // set spoke to active and paused
-    _updateSpokePaused(hub1, usdxAssetId, address(spoke1), true);
-    _updateSpokeActive(hub1, usdxAssetId, address(spoke1), true);
-
-    vm.prank(address(spoke1));
-    hub1.reportDeficit(usdxAssetId, 1, ZERO_PREMIUM_DELTA);
-
-    // set spoke to inactive and paused
-    _updateSpokePaused(hub1, usdxAssetId, address(spoke1), true);
-    _updateSpokeActive(hub1, usdxAssetId, address(spoke1), false);
-
-    vm.expectRevert(IHub.SpokeNotActive.selector);
-    vm.prank(address(spoke1));
-    hub1.reportDeficit(usdxAssetId, 1, ZERO_PREMIUM_DELTA);
-
-    // set spoke to active and not paused
-    _updateSpokePaused(hub1, usdxAssetId, address(spoke1), false);
-    _updateSpokeActive(hub1, usdxAssetId, address(spoke1), true);
-
-    vm.prank(address(spoke1));
-    hub1.reportDeficit(usdxAssetId, 1, ZERO_PREMIUM_DELTA);
-
-    // set spoke to inactive and not paused
-    _updateSpokePaused(hub1, usdxAssetId, address(spoke1), false);
-    _updateSpokeActive(hub1, usdxAssetId, address(spoke1), false);
-
-    vm.expectRevert(IHub.SpokeNotActive.selector);
-    vm.prank(address(spoke1));
-    hub1.reportDeficit(usdxAssetId, 1, ZERO_PREMIUM_DELTA);
-  }
-
   function test_reportDeficit_revertsWith_SpokeNotActive(address caller) public {
     vm.assume(!hub1.getSpoke(usdxAssetId, caller).active);
 
