@@ -206,6 +206,7 @@ contract Hub is IHub, AccessManaged {
 
   /// @inheritdoc IHub
   function mintFeeShares(uint256 assetId) external restricted returns (uint256) {
+    require(assetId < _assetCount, AssetNotListed());
     Asset storage asset = _assets[assetId];
     asset.accrue();
     uint256 feeShares = _mintFeeShares(asset, assetId);
