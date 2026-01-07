@@ -145,12 +145,8 @@ contract Hub is IHub, AccessManaged {
       InvalidReinvestmentController()
     );
 
-    if (config.irStrategy != asset.irStrategy) {
-      asset.irStrategy = config.irStrategy;
-      IBasicInterestRateStrategy(config.irStrategy).setInterestRateData(assetId, irData);
-    } else {
-      require(irData.length == 0, InvalidInterestRateStrategy());
-    }
+    asset.liquidityFee = config.liquidityFee;
+    asset.reinvestmentController = config.reinvestmentController;
 
     address oldFeeReceiver = asset.feeReceiver;
     if (oldFeeReceiver != config.feeReceiver) {
@@ -163,8 +159,12 @@ contract Hub is IHub, AccessManaged {
       _addFeeReceiver(assetId, config.feeReceiver);
     }
 
-    asset.liquidityFee = config.liquidityFee;
-    asset.reinvestmentController = config.reinvestmentController;
+    if (config.irStrategy != asset.irStrategy) {
+      asset.irStrategy = config.irStrategy;
+      IBasicInterestRateStrategy(config.irStrategy).setInterestRateData(assetId, irData);
+    } else {
+      require(irData.length == 0, InvalidInterestRateStrategy());
+    }
 
     asset.updateDrawnRate(assetId);
 
