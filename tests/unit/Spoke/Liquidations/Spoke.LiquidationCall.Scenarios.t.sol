@@ -331,4 +331,57 @@ contract SpokeLiquidationCallScenariosTest is SpokeLiquidationCallBaseTest {
       })
     );
   }
+
+  /// @dev a paused peripheral asset won't block a liquidation
+  function test_scenario_paused_asset() public {
+    uint256 collateralReserveId = _wethReserveId(spoke);
+    uint256 debtReserveId = _daiReserveId(spoke);
+
+    _increaseCollateralSupply(spoke, collateralReserveId, 10e18, user);
+    // borrow usdx as peripheral debt asset not directly involved in liquidation
+    _openSupplyPosition(spoke, _usdxReserveId(spoke), 100e6);
+    Utils.borrow(spoke, _usdxReserveId(spoke), user, 100e6, user);
+    _makeUserLiquidatable(spoke, user, debtReserveId, 0.95e18);
+
+    // set spoke paused
+    IHub hub = _hub(spoke, _usdxReserveId(spoke));
+    _updateSpokePaused(hub, usdxAssetId, address(spoke), true);
+
+    _openSupplyPosition(spoke, collateralReserveId, MAX_SUPPLY_AMOUNT);
+
+    vm.expectCall(
+      address(hub),
+      abi.encodeWithSelector(IHubBase.refreshPremium.selector, usdxAssetId)
+    );
+
+    vm.prank(liquidator);
+    spoke.liquidationCall(collateralReserveId, debtReserveId, user, type(uint256).max, false);
+  }
+
+  /// @dev a paused peripheral asset won't block a liquidation with deficit
+  function test_scenario_paused_asset_with_deficit() public {
+    uint256 collateralReserveId = _wethReserveId(spoke);
+    uint256 debtReserveId = _daiReserveId(spoke);
+
+    _increaseCollateralSupply(spoke, collateralReserveId, 10e18, user);
+    // borrow usdx as peripheral debt asset not directly involved in liquidation
+    _openSupplyPosition(spoke, _usdxReserveId(spoke), 100e6);
+    Utils.borrow(spoke, _usdxReserveId(spoke), user, 100e6, user);
+    // make user unhealthy to result in deficit
+    _makeUserLiquidatable(spoke, user, debtReserveId, 0.5e18);
+
+    // set spoke paused
+    IHub hub = _hub(spoke, _usdxReserveId(spoke));
+    _updateSpokePaused(hub, usdxAssetId, address(spoke), true);
+
+    _openSupplyPosition(spoke, collateralReserveId, MAX_SUPPLY_AMOUNT);
+
+    vm.expectCall(
+      address(hub),
+      abi.encodeWithSelector(IHubBase.reportDeficit.selector, usdxAssetId)
+    );
+
+    vm.prank(liquidator);
+    spoke.liquidationCall(collateralReserveId, debtReserveId, user, type(uint256).max, false);
+  }
 }
