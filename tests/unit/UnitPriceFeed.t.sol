@@ -17,6 +17,12 @@ contract UnitPriceFeedTest is Base {
     unitPriceFeed = new UnitPriceFeed(DECIMALS, _description);
   }
 
+  function test_constructor_revertsWith_InvalidDecimals() public {
+    uint8 invalidDecimals = 9;
+    vm.expectRevert(UnitPriceFeed.InvalidDecimals.selector);
+    new UnitPriceFeed(invalidDecimals, _description);
+  }
+
   function testDECIMALS() public view {
     assertEq(unitPriceFeed.decimals(), DECIMALS);
   }

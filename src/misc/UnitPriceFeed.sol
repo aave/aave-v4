@@ -9,6 +9,8 @@ import {AggregatorV3Interface} from 'src/dependencies/chainlink/AggregatorV3Inte
 /// @notice Price feed that returns the unit price (1), with decimals precision.
 /// @dev This price feed can be set for reserves that use the base currency as collateral.
 contract UnitPriceFeed is AggregatorV3Interface {
+  uint8 private constant MAX_ALLOWED_DECIMALS = 8;
+
   /// @inheritdoc AggregatorV3Interface
   uint8 public immutable decimals;
 
@@ -17,10 +19,13 @@ contract UnitPriceFeed is AggregatorV3Interface {
 
   int256 private immutable _units;
 
+  error InvalidDecimals();
+
   /// @dev Constructor.
   /// @param decimals_ The number of decimals used to represent the unit price.
   /// @param description_ The description of the unit price feed.
   constructor(uint8 decimals_, string memory description_) {
+    require(decimals_ <= MAX_ALLOWED_DECIMALS, InvalidDecimals());
     decimals = decimals_;
     description = description_;
     _units = int256(10 ** decimals_);
