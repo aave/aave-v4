@@ -88,7 +88,7 @@ contract UnitPriceFeedTest is Base {
   }
 
   function test_fuzz_latestRoundData_DifferentDecimals(uint8 decimals) public {
-    decimals = bound(decimals, 0, 18).toUint8();
+    decimals = bound(decimals, 0, Constants.MAX_ALLOWED_UNIT_PRICE_FEED_DECIMALS).toUint8();
     unitPriceFeed = new UnitPriceFeed(decimals, _description);
     (, int256 answer, , , ) = unitPriceFeed.latestRoundData();
     assertEq(answer, int256(10 ** decimals));
