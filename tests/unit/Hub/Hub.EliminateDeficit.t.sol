@@ -38,12 +38,6 @@ contract HubEliminateDeficitTest is HubBase {
     hub1.eliminateDeficit(_assetId, 0, _coveredSpoke);
   }
 
-  function test_eliminateDeficit_revertsWith_InsufficientDeficit() public {
-    vm.expectRevert(IHub.InsufficientDeficit.selector);
-    vm.prank(_callerSpoke);
-    hub1.eliminateDeficit(_assetId, 1, _coveredSpoke);
-  }
-
   // Caller spoke does not have funds
   function test_eliminateDeficit_fuzz_revertsWith_ArithmeticUnderflow_CallerSpokeNoFunds(
     uint256
@@ -54,23 +48,22 @@ contract HubEliminateDeficitTest is HubBase {
     hub1.eliminateDeficit(_assetId, vm.randomUint(_deficitAmountRay, UINT256_MAX), _coveredSpoke);
   }
 
-  function test_eliminateDeficit_fuzz_revertsWith_callerSpokeNotActive(address caller) public {
-    vm.assume(!hub1.getSpoke(_assetId, caller).active);
+  function test_eliminateDeficit_revertsWith_callerSpokeNotActive() public {
+    address caller = address(spoke1);
+    _updateSpokeActive(hub1, _assetId, caller, false);
+
     vm.expectRevert(IHub.SpokeNotActive.selector);
     vm.prank(caller);
     hub1.eliminateDeficit(_assetId, vm.randomUint(), _coveredSpoke);
   }
 
-  /// @dev paused but active spokes are allowed to eliminate deficit
-  function test_eliminateDeficit_allowSpokePaused() public {
-    _createDeficit(_assetId, _coveredSpoke, _deficitAmountRay);
-    Utils.add(hub1, _assetId, _callerSpoke, _deficitAmountRay.fromRayUp() + 1, alice);
+  function test_eliminateDeficit_revertsWith_callerSpokePaused() public {
+    address caller = address(spoke1);
+    _updateSpokePaused(hub1, _assetId, caller, true);
 
-    _updateSpokeActive(hub1, _assetId, _callerSpoke, true);
-    _updateSpokePaused(hub1, _assetId, _callerSpoke, true);
-
-    vm.prank(_callerSpoke);
-    hub1.eliminateDeficit(_assetId, _deficitAmountRay.fromRayUp(), _coveredSpoke);
+    vm.expectRevert(IHub.SpokePaused.selector);
+    vm.prank(caller);
+    hub1.eliminateDeficit(_assetId, vm.randomUint(), _coveredSpoke);
   }
 
   function test_eliminateDeficit(uint256) public {

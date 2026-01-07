@@ -235,14 +235,15 @@ contract HubSpokeConfigTest is HubBase {
     _updateSpokePaused(hub1, usdxAssetId, coveredSpoke, true);
     _updateSpokeActive(hub1, usdxAssetId, coveredSpoke, false);
 
-    // set caller spoke to active / not paused; succeeds
+    // set caller spoke to active / paused; reverts
     _updateSpokePaused(hub1, usdxAssetId, callerSpoke, true);
     _updateSpokeActive(hub1, usdxAssetId, callerSpoke, true);
 
+    vm.expectRevert(IHub.SpokePaused.selector);
     vm.prank(callerSpoke);
     hub1.eliminateDeficit(usdxAssetId, 1, coveredSpoke);
 
-    // set spoke to inactive / paused; succeeds
+    // set spoke to inactive / paused; reverts
     _updateSpokePaused(hub1, usdxAssetId, callerSpoke, true);
     _updateSpokeActive(hub1, usdxAssetId, callerSpoke, false);
 
