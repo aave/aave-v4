@@ -17,8 +17,14 @@ contract AccessManagerEnumerable is AccessManager, IAccessManagerEnumerable {
   /// @dev Set of all role identifiers.
   EnumerableSet.UintSet private _rolesSet;
 
+  /// @dev Set of all admin role identifiers.
+  EnumerableSet.UintSet private _adminRolesSet;
+
   /// @dev Map of role identifiers to their respective member sets.
   mapping(uint64 roleId => EnumerableSet.AddressSet) private _roleMembers;
+
+  /// @dev Map of admin role identifiers to their respective role identifier sets.
+  mapping(uint64 roleId => EnumerableSet.UintSet) private _adminOfRoles;
 
   /// @dev Map of role identifiers to their respective target contract addresses.
   mapping(uint64 roleId => EnumerableSet.AddressSet) private _roleTargets;
@@ -32,7 +38,11 @@ contract AccessManagerEnumerable is AccessManager, IAccessManagerEnumerable {
 
   /// @dev Constructor.
   /// @param initialAdmin_ The address of the initial admin.
-  constructor(address initialAdmin_) AccessManager(initialAdmin_) {}
+  constructor(address initialAdmin_) AccessManager(initialAdmin_) {
+    // Track the ADMIN_ROLE by default.
+    // (already tracked as a default role via AccessManager constructor)
+    _adminRolesSet.add(ADMIN_ROLE);
+  }
 
   /// @inheritdoc IAccessManagerEnumerable
   function getRole(uint256 index) external view returns (uint64) {
@@ -55,6 +65,26 @@ contract AccessManagerEnumerable is AccessManager, IAccessManagerEnumerable {
   }
 
   /// @inheritdoc IAccessManagerEnumerable
+  function getAdminRole(uint256 index) external view returns (uint64) {
+    return uint64(_adminRolesSet.at(index));
+  }
+
+  /// @inheritdoc IAccessManagerEnumerable
+  function getAdminRoleCount() external view returns (uint256) {
+    return _adminRolesSet.length();
+  }
+
+  /// @inheritdoc IAccessManagerEnumerable
+  function getAdminRoles(uint256 start, uint256 end) external view returns (uint64[] memory) {
+    uint256[] memory listedAdminRoles = _adminRolesSet.values(start, end);
+    uint64[] memory adminRoles;
+    assembly ('memory-safe') {
+      adminRoles := listedAdminRoles
+    }
+    return adminRoles;
+  }
+
+  /// @inheritdoc IAccessManagerEnumerable
   function getRoleMember(uint64 roleId, uint256 index) external view returns (address) {
     return _roleMembers[roleId].at(index);
   }
@@ -71,6 +101,30 @@ contract AccessManagerEnumerable is AccessManager, IAccessManagerEnumerable {
     uint256 end
   ) external view returns (address[] memory) {
     return _roleMembers[roleId].values(start, end);
+  }
+
+  /// @inheritdoc IAccessManagerEnumerable
+  function getAdminOfRole(uint64 adminRoleId, uint256 index) external view returns (uint64) {
+    return uint64(_adminOfRoles[adminRoleId].at(index));
+  }
+
+  /// @inheritdoc IAccessManagerEnumerable
+  function getAdminOfRoleCount(uint64 adminRoleId) external view returns (uint256) {
+    return _adminOfRoles[adminRoleId].length();
+  }
+
+  /// @inheritdoc IAccessManagerEnumerable
+  function getAdminOfRoles(
+    uint64 adminRoleId,
+    uint256 start,
+    uint256 end
+  ) external view returns (uint64[] memory) {
+    uint256[] memory listedRoles = _adminOfRoles[adminRoleId].values(start, end);
+    uint64[] memory roles;
+    assembly ('memory-safe') {
+      roles := listedRoles
+    }
+    return roles;
   }
 
   /// @inheritdoc IAccessManagerEnumerable
@@ -129,6 +183,14 @@ contract AccessManagerEnumerable is AccessManager, IAccessManagerEnumerable {
     _rolesSet.add(uint256(roleId));
   }
 
+  /// @dev Tracks all admin role identifiers when a new admin role is set.
+  function _trackAdminRole(uint64 roleId, uint64 admin) internal {
+    _adminRolesSet.add(uint256(admin));
+    uint64 oldAdmin = getRoleAdmin(roleId);
+    _adminOfRoles[oldAdmin].remove(uint256(roleId));
+    _adminOfRoles[admin].add(uint256(roleId));
+  }
+
   /// @dev Tracks all targets where a selector was assigned to a role.
   function _trackRoleTarget(uint64 roleId, address target, bytes4 selector) internal {
     uint64 oldRole = _targetSelectorRoles[target][selector];
@@ -147,6 +209,7 @@ contract AccessManagerEnumerable is AccessManager, IAccessManagerEnumerable {
   /// @dev Override AccessManager `_setRoleAdmin` function to track created roles.
   function _setRoleAdmin(uint64 roleId, uint64 admin) internal override {
     _trackRole(roleId);
+    _trackAdminRole(roleId, admin);
     super._setRoleAdmin(roleId, admin);
   }
 

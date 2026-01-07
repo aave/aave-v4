@@ -24,6 +24,21 @@ interface IAccessManagerEnumerable is IAccessManager {
   /// @return The list of role identifiers.
   function getRoles(uint256 start, uint256 end) external view returns (uint64[] memory);
 
+  /// @notice Returns the identifier of the admin role at a specified index.
+  /// @param index The index in the admin role list.
+  /// @return The identifier of the admin role.
+  function getAdminRole(uint256 index) external view returns (uint64);
+
+  /// @notice Returns the total number of existing admin roles.
+  /// @return The number of admin roles.
+  function getAdminRoleCount() external view returns (uint256);
+
+  /// @notice Returns the list of admin role identifiers between the specified indexes.
+  /// @param start The starting index for the admin role list.
+  /// @param end The ending index for the admin role list.
+  /// @return The list of admin role identifiers.
+  function getAdminRoles(uint256 start, uint256 end) external view returns (uint64[] memory);
+
   /// @notice Returns the address of the role member at a specified index.
   /// @param roleId The identifier of the role.
   /// @param index The index in the role member list.
@@ -45,6 +60,28 @@ interface IAccessManagerEnumerable is IAccessManager {
     uint256 start,
     uint256 end
   ) external view returns (address[] memory);
+
+  /// @notice Returns the role identifier of the listed roles for a specified admin role at a specified index.
+  /// @param adminRoleId The identifier of the admin role.
+  /// @param index The index in the admin controlled role list.
+  /// @return The indentifier of the role.
+  function getAdminOfRole(uint64 adminRoleId, uint256 index) external view returns (uint64);
+
+  /// @notice Returns the number of members for a specified role.
+  /// @param adminRoleId The identifier of the admin role.
+  /// @return The number of members for the role.
+  function getAdminOfRoleCount(uint64 adminRoleId) external view returns (uint256);
+
+  /// @notice Returns the list of role identifiers controlled by a specified admin role between the specified indexes.
+  /// @param adminRoleId The identifier of the admin role.
+  /// @param start The starting index for the admin controlled role list.
+  /// @param end The ending index for the admin controlled role list.
+  /// @return The list of admin controlled role indentifiers for the admin role.
+  function getAdminOfRoles(
+    uint64 adminRoleId,
+    uint256 start,
+    uint256 end
+  ) external view returns (uint64[] memory);
 
   /// @notice Returns the address of the target contract for a specified role and index.
   /// @param roleId The identifier of the role.
