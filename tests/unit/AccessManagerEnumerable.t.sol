@@ -236,15 +236,15 @@ contract AccessManagerEnumerableTest is Test {
     accessManagerEnumerable.setTargetFunctionRole(target, selectors, roleId);
     vm.stopPrank();
 
-    assertEq(accessManagerEnumerable.getRoleTargetFunctionCount(roleId, target), 3);
-    assertEq(accessManagerEnumerable.getRoleTargetFunction(roleId, target, 0), selector1);
-    assertEq(accessManagerEnumerable.getRoleTargetFunction(roleId, target, 1), selector2);
-    assertEq(accessManagerEnumerable.getRoleTargetFunction(roleId, target, 2), selector3);
-    bytes4[] memory roleSelectors = accessManagerEnumerable.getRoleTargetFunctions(
+    assertEq(accessManagerEnumerable.getRoleTargetSelectorCount(roleId, target), 3);
+    assertEq(accessManagerEnumerable.getRoleTargetSelector(roleId, target, 0), selector1);
+    assertEq(accessManagerEnumerable.getRoleTargetSelector(roleId, target, 1), selector2);
+    assertEq(accessManagerEnumerable.getRoleTargetSelector(roleId, target, 2), selector3);
+    bytes4[] memory roleSelectors = accessManagerEnumerable.getRoleTargetSelectors(
       roleId,
       target,
       0,
-      accessManagerEnumerable.getRoleTargetFunctionCount(roleId, target)
+      accessManagerEnumerable.getRoleTargetSelectorCount(roleId, target)
     );
     assertEq(roleSelectors.length, 3);
     assertEq(roleSelectors[0], selector1);
@@ -283,11 +283,11 @@ contract AccessManagerEnumerableTest is Test {
 
     accessManagerEnumerable.setTargetFunctionRole(target, selectors, roleId);
 
-    assertEq(accessManagerEnumerable.getRoleTargetFunctionCount(roleId, target), 3);
-    assertEq(accessManagerEnumerable.getRoleTargetFunction(roleId, target, 0), selector1);
-    assertEq(accessManagerEnumerable.getRoleTargetFunction(roleId, target, 1), selector2);
-    assertEq(accessManagerEnumerable.getRoleTargetFunction(roleId, target, 2), selector3);
-    bytes4[] memory roleSelectors = accessManagerEnumerable.getRoleTargetFunctions(
+    assertEq(accessManagerEnumerable.getRoleTargetSelectorCount(roleId, target), 3);
+    assertEq(accessManagerEnumerable.getRoleTargetSelector(roleId, target, 0), selector1);
+    assertEq(accessManagerEnumerable.getRoleTargetSelector(roleId, target, 1), selector2);
+    assertEq(accessManagerEnumerable.getRoleTargetSelector(roleId, target, 2), selector3);
+    bytes4[] memory roleSelectors = accessManagerEnumerable.getRoleTargetSelectors(
       roleId,
       target,
       0,
@@ -311,19 +311,19 @@ contract AccessManagerEnumerableTest is Test {
     accessManagerEnumerable.setTargetFunctionRole(target, updatedSelectors, roleId2);
     vm.stopPrank();
 
-    assertEq(accessManagerEnumerable.getRoleTargetFunctionCount(roleId, target), 2);
-    assertEq(accessManagerEnumerable.getRoleTargetFunctionCount(roleId2, target), 1);
-    assertEq(accessManagerEnumerable.getRoleTargetFunction(roleId, target, 0), selector1);
-    assertEq(accessManagerEnumerable.getRoleTargetFunction(roleId, target, 1), selector3);
-    assertEq(accessManagerEnumerable.getRoleTargetFunction(roleId2, target, 0), selector2);
+    assertEq(accessManagerEnumerable.getRoleTargetSelectorCount(roleId, target), 2);
+    assertEq(accessManagerEnumerable.getRoleTargetSelectorCount(roleId2, target), 1);
+    assertEq(accessManagerEnumerable.getRoleTargetSelector(roleId, target, 0), selector1);
+    assertEq(accessManagerEnumerable.getRoleTargetSelector(roleId, target, 1), selector3);
+    assertEq(accessManagerEnumerable.getRoleTargetSelector(roleId2, target, 0), selector2);
     {
-      bytes4[] memory roleSelectors1 = accessManagerEnumerable.getRoleTargetFunctions(
+      bytes4[] memory roleSelectors1 = accessManagerEnumerable.getRoleTargetSelectors(
         roleId,
         target,
         0,
         3
       );
-      bytes4[] memory roleSelectors2 = accessManagerEnumerable.getRoleTargetFunctions(
+      bytes4[] memory roleSelectors2 = accessManagerEnumerable.getRoleTargetSelectors(
         roleId2,
         target,
         0,
@@ -454,7 +454,7 @@ contract AccessManagerEnumerableTest is Test {
     accessManagerEnumerable.setTargetFunctionRole(target, selectors, roleId);
 
     // should not track selectors for ADMIN_ROLE
-    assertEq(accessManagerEnumerable.getRoleTargetFunctionCount(roleId, target), 0);
+    assertEq(accessManagerEnumerable.getRoleTargetSelectorCount(roleId, target), 0);
   }
 
   function test_getRoleMembers_fuzz(uint256 startIndex, uint256 endIndex) public {
@@ -487,7 +487,7 @@ contract AccessManagerEnumerableTest is Test {
     }
   }
 
-  function test_getRoleTargetFunctions_fuzz(uint256 startIndex, uint256 endIndex) public {
+  function test_getRoleTargetSelectors_fuzz(uint256 startIndex, uint256 endIndex) public {
     startIndex = bound(startIndex, 0, 14);
     endIndex = bound(endIndex, startIndex + 1, 15);
     uint64 roleId = 1;
@@ -504,7 +504,7 @@ contract AccessManagerEnumerableTest is Test {
     accessManagerEnumerable.setTargetFunctionRole(target, selectors, roleId);
     vm.stopPrank();
 
-    bytes4[] memory roleSelectors = accessManagerEnumerable.getRoleTargetFunctions(
+    bytes4[] memory roleSelectors = accessManagerEnumerable.getRoleTargetSelectors(
       roleId,
       target,
       startIndex,

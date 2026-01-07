@@ -23,12 +23,12 @@ contract AccessManagerEnumerable is AccessManager, IAccessManagerEnumerable {
   /// @dev Map of role identifiers to their respective target contract addresses.
   mapping(uint64 roleId => EnumerableSet.AddressSet) private _roleTargets;
 
-  /// @dev Map of target contract addresses and selectors to their current role identifiers.
+  /// @dev Map of target contract addresses and function selectors to their assigned role identifier.
   mapping(address target => mapping(bytes4 selector => uint64 roleId)) private _targetSelectorRoles;
 
   /// @dev Map of role identifiers and target contract addresses to their respective set of function selectors.
   mapping(uint64 roleId => mapping(address target => EnumerableSet.Bytes32Set))
-    private _roleTargetFunctions;
+    private _roleTargetSelectors;
 
   /// @dev Constructor.
   /// @param initialAdmin_ The address of the initial admin.
@@ -93,30 +93,30 @@ contract AccessManagerEnumerable is AccessManager, IAccessManagerEnumerable {
   }
 
   /// @inheritdoc IAccessManagerEnumerable
-  function getRoleTargetFunction(
+  function getRoleTargetSelector(
     uint64 roleId,
     address target,
     uint256 index
   ) external view returns (bytes4) {
-    return bytes4(_roleTargetFunctions[roleId][target].at(index));
+    return bytes4(_roleTargetSelectors[roleId][target].at(index));
   }
 
   /// @inheritdoc IAccessManagerEnumerable
-  function getRoleTargetFunctionCount(
+  function getRoleTargetSelectorCount(
     uint64 roleId,
     address target
   ) external view returns (uint256) {
-    return _roleTargetFunctions[roleId][target].length();
+    return _roleTargetSelectors[roleId][target].length();
   }
 
   /// @inheritdoc IAccessManagerEnumerable
-  function getRoleTargetFunctions(
+  function getRoleTargetSelectors(
     uint64 roleId,
     address target,
     uint256 start,
     uint256 end
   ) external view returns (bytes4[] memory) {
-    bytes32[] memory targetFunctions = _roleTargetFunctions[roleId][target].values(start, end);
+    bytes32[] memory targetFunctions = _roleTargetSelectors[roleId][target].values(start, end);
     bytes4[] memory targetFunctionSelectors;
     assembly ('memory-safe') {
       targetFunctionSelectors := targetFunctions
@@ -135,7 +135,7 @@ contract AccessManagerEnumerable is AccessManager, IAccessManagerEnumerable {
     if (oldRole == roleId) {
       return;
     }
-    if (oldRole != ADMIN_ROLE && _roleTargetFunctions[oldRole][target].length() == 0) {
+    if (oldRole != ADMIN_ROLE && _roleTargetSelectors[oldRole][target].length() == 0) {
       _roleTargets[oldRole].remove(target);
     }
     if (roleId != ADMIN_ROLE) {
@@ -189,10 +189,10 @@ contract AccessManagerEnumerable is AccessManager, IAccessManagerEnumerable {
     uint64 oldRoleId = getTargetFunctionRole(target, selector);
     super._setTargetFunctionRole(target, selector, roleId);
     if (oldRoleId != ADMIN_ROLE) {
-      _roleTargetFunctions[oldRoleId][target].remove(bytes32(selector));
+      _roleTargetSelectors[oldRoleId][target].remove(bytes32(selector));
     }
     if (roleId != ADMIN_ROLE) {
-      _roleTargetFunctions[roleId][target].add(bytes32(selector));
+      _roleTargetSelectors[roleId][target].add(bytes32(selector));
     }
     // also track the target under the role (will be added if not already present)
     _trackRoleTarget(roleId, target, selector);

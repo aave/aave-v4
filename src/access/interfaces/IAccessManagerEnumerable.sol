@@ -73,7 +73,7 @@ interface IAccessManagerEnumerable is IAccessManager {
   /// @param target The address of the target contract.
   /// @param index The index in the role member list.
   /// @return The selector at the index.
-  function getRoleTargetFunction(
+  function getRoleTargetSelector(
     uint64 roleId,
     address target,
     uint256 index
@@ -83,7 +83,7 @@ interface IAccessManagerEnumerable is IAccessManager {
   /// @param roleId The identifier of the role.
   /// @param target The address of the target contract.
   /// @return The number of selectors assigned to the role.
-  function getRoleTargetFunctionCount(
+  function getRoleTargetSelectorCount(
     uint64 roleId,
     address target
   ) external view returns (uint256);
@@ -94,7 +94,7 @@ interface IAccessManagerEnumerable is IAccessManager {
   /// @param start The starting index for the selector list.
   /// @param end The ending index for the selector list.
   /// @return The list of selectors assigned to the role.
-  function getRoleTargetFunctions(
+  function getRoleTargetSelectors(
     uint64 roleId,
     address target,
     uint256 start,
