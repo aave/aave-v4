@@ -21,15 +21,19 @@ jobs:
         with:
           FOUNDRY_VERSION: nightly
 
-      - name: Print forge version
-        run: forge --version
+      - name: Run Forge size
+        uses: bgd-labs/github-workflows/.github/actions/foundry-size@main
 
-      - name: Run targeted Forge test
-        env:
+      - name: Run Gas report
+        uses: bgd-labs/github-workflows/.github/actions/foundry-gas-report@main
+
+      - name: Run Forge tests
+        uses: bgd-labs/github-workflows/.github/actions/foundry-test@main
+        with:
           FOUNDRY_PROFILE: pr
-          FORGE_SNAPSHOT_CHECK: "false"
-        run: |
-          forge clean && forge test \
-            --match-path tests/unit/Spoke/Liquidations/Spoke.LiquidationCall.Premium.t.sol \
-            --match-test test_liquidationCall_fuzz_ManyCollaterals_ManyDebts_UserInsolvent \
-            -vvvvv --decode-internal
+          FORGE_SNAPSHOT_CHECK: true
+
+      - name: Upload & Trigger Comment artifact
+        uses: bgd-labs/github-workflows/.github/actions/comment-artifact@main
+        with:
+          nameSuffix: "default"
