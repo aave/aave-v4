@@ -225,13 +225,12 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
   /// @inheritdoc ISpoke
   function updatePositionManager(
     address positionManager,
-    bool active,
-    bool global
+    PositionManagerConfig calldata config
   ) external restricted {
-    PositionManager storage config = _positionManager[positionManager];
-    config.active = active;
-    config.global = global;
-    emit UpdatePositionManager(positionManager, active, global);
+    PositionManager storage positionManagerConfig = _positionManager[positionManager];
+    positionManagerConfig.active = config.active;
+    positionManagerConfig.global = config.global;
+    emit UpdatePositionManager(positionManager, config);
   }
 
   /// @inheritdoc ISpokeBase
@@ -675,6 +674,11 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
   /// @inheritdoc ISpoke
   function isPositionManagerActive(address positionManager) external view returns (bool) {
     return _positionManager[positionManager].active;
+  }
+
+  /// @inheritdoc ISpoke
+  function isPositionManagerGlobal(address positionManager) external view returns (bool) {
+    return _positionManager[positionManager].global;
   }
 
   /// @inheritdoc ISpoke

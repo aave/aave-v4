@@ -14,7 +14,10 @@ contract GatewayBaseTest is Base {
     gateway = new GatewayBaseWrapper(address(ADMIN));
 
     vm.prank(SPOKE_ADMIN);
-    spoke1.updatePositionManager(address(gateway), true);
+    spoke1.updatePositionManager(
+      address(gateway),
+      ISpoke.PositionManagerConfig({active: true, global: false})
+    );
   }
 
   function test_constructor() public view {

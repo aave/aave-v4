@@ -241,7 +241,10 @@ contract SpokeDynamicConfigTriggersTest is SpokeBase {
     spoke1.updateUserDynamicConfig(alice);
 
     vm.prank(ADMIN);
-    spoke1.updatePositionManager(POSITION_MANAGER, true);
+    spoke1.updatePositionManager(
+      POSITION_MANAGER,
+      ISpoke.PositionManagerConfig({active: true, global: false})
+    );
 
     vm.prank(alice);
     spoke1.setUserPositionManager(POSITION_MANAGER, true);

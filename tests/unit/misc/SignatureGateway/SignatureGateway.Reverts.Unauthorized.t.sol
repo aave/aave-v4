@@ -96,7 +96,10 @@ contract SignatureGateway_Unauthorized_PositionManagerActive_Test is
   function setUp() public override {
     super.setUp();
     vm.prank(SPOKE_ADMIN);
-    spoke1.updatePositionManager(address(gateway), true);
+    spoke1.updatePositionManager(
+      address(gateway),
+      ISpoke.PositionManagerConfig({active: true, global: false})
+    );
     vm.prank(address(ADMIN));
     gateway.registerSpoke(address(spoke1), true);
     assertTrue(spoke1.isPositionManagerActive(address(gateway)));

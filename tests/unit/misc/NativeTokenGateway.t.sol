@@ -14,7 +14,10 @@ contract NativeTokenGatewayTest is SpokeBase {
     nativeTokenGateway = new NativeTokenGateway(address(tokenList.weth), address(ADMIN));
 
     vm.prank(SPOKE_ADMIN);
-    spoke1.updatePositionManager(address(nativeTokenGateway), true);
+    spoke1.updatePositionManager(
+      address(nativeTokenGateway),
+      ISpoke.PositionManagerConfig({active: true, global: false})
+    );
 
     vm.prank(address(ADMIN));
     nativeTokenGateway.registerSpoke(address(spoke1), true);

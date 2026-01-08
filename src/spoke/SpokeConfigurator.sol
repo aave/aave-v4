@@ -287,12 +287,33 @@ contract SpokeConfigurator is Ownable2Step, ISpokeConfigurator {
   }
 
   /// @inheritdoc ISpokeConfigurator
-  function updatePositionManager(
+  function updatePositionManagerActive(
     address spoke,
     address positionManager,
     bool active
   ) external onlyOwner {
-    ISpoke(spoke).updatePositionManager(positionManager, active);
+    ISpoke(spoke).updatePositionManager(
+      positionManager,
+      ISpoke.PositionManagerConfig({
+        active: active,
+        global: ISpoke(spoke).isPositionManagerGlobal(positionManager)
+      })
+    );
+  }
+
+  /// @inheritdoc ISpokeConfigurator
+  function updatePositionManagerGlobal(
+    address spoke,
+    address positionManager,
+    bool global
+  ) external onlyOwner {
+    ISpoke(spoke).updatePositionManager(
+      positionManager,
+      ISpoke.PositionManagerConfig({
+        active: ISpoke(spoke).isPositionManagerActive(positionManager),
+        global: global
+      })
+    );
   }
 
   /// @inheritdoc ISpokeConfigurator

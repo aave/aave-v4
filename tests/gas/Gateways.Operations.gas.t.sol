@@ -18,7 +18,10 @@ contract NativeTokenGateway_Gas_Tests is Base {
     nativeTokenGateway = new NativeTokenGateway(address(tokenList.weth), address(ADMIN));
 
     vm.prank(SPOKE_ADMIN);
-    spoke1.updatePositionManager(address(nativeTokenGateway), true);
+    spoke1.updatePositionManager(
+      address(nativeTokenGateway),
+      ISpoke.PositionManagerConfig({active: true, global: false})
+    );
     vm.prank(address(ADMIN));
     nativeTokenGateway.registerSpoke(address(spoke1), true);
     vm.prank(bob);
@@ -107,7 +110,10 @@ contract SignatureGateway_Gas_Tests is SignatureGatewayBaseTest {
   function setUp() public virtual override {
     super.setUp();
     vm.prank(SPOKE_ADMIN);
-    spoke1.updatePositionManager(address(gateway), true);
+    spoke1.updatePositionManager(
+      address(gateway),
+      ISpoke.PositionManagerConfig({active: true, global: false})
+    );
     vm.prank(alice);
     spoke1.setUserPositionManager(address(gateway), true);
     vm.prank(alice);

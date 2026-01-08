@@ -10,7 +10,10 @@ contract SignatureGatewayTest is SignatureGatewayBaseTest {
   function setUp() public virtual override {
     super.setUp();
     vm.prank(SPOKE_ADMIN);
-    spoke1.updatePositionManager(address(gateway), true);
+    spoke1.updatePositionManager(
+      address(gateway),
+      ISpoke.PositionManagerConfig({active: true, global: false})
+    );
     vm.prank(alice);
     spoke1.setUserPositionManager(address(gateway), true);
 

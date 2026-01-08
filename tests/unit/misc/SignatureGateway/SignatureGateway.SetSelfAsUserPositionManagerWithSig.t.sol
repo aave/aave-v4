@@ -78,7 +78,10 @@ contract SignatureGatewaySetSelfAsUserPositionManagerTest is SignatureGatewayBas
     bytes memory signature = _sign(alicePk, _getTypedDataHash(spoke1, p));
 
     vm.prank(SPOKE_ADMIN);
-    spoke1.updatePositionManager(address(gateway), true);
+    spoke1.updatePositionManager(
+      address(gateway),
+      ISpoke.PositionManagerConfig({active: true, global: false})
+    );
     vm.prank(alice);
     spoke1.setUserPositionManager(address(gateway), false);
 

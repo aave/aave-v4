@@ -799,21 +799,25 @@ contract SpokeConfiguratorTest is SpokeBase {
   function test_updatePositionManager_revertsWith_OwnableUnauthorizedAccount() public {
     vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, alice));
     vm.prank(alice);
-    spokeConfigurator.updatePositionManager(spokeAddr, address(0), true);
+    spokeConfigurator.updatePositionManagerActive(spokeAddr, address(0), true);
   }
 
   function test_updatePositionManager() public {
     address newPositionManager = makeAddr('NEW_POSITION_MANAGER');
     for (uint256 i = 0; i < 2; i += 1) {
       bool active = (i == 0) ? true : false;
+      ISpoke.PositionManagerConfig memory config = ISpoke.PositionManagerConfig({
+        active: active,
+        global: false
+      });
       vm.expectCall(
         spokeAddr,
-        abi.encodeCall(ISpoke.updatePositionManager, (newPositionManager, active))
+        abi.encodeCall(ISpoke.updatePositionManager, (newPositionManager, config))
       );
       vm.expectEmit(address(spoke));
-      emit ISpoke.UpdatePositionManager(newPositionManager, active);
+      emit ISpoke.UpdatePositionManager(newPositionManager, config);
       vm.prank(SPOKE_CONFIGURATOR_ADMIN);
-      spokeConfigurator.updatePositionManager(spokeAddr, newPositionManager, active);
+      spokeConfigurator.updatePositionManagerActive(spokeAddr, newPositionManager, active);
       assertEq(spoke.isPositionManagerActive(newPositionManager), active);
     }
   }

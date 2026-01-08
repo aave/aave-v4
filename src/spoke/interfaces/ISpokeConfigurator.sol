@@ -217,7 +217,21 @@ interface ISpokeConfigurator {
   /// @param spoke The address of the spoke.
   /// @param positionManager The address of the position manager.
   /// @param active The new active flag.
-  function updatePositionManager(address spoke, address positionManager, bool active) external;
+  function updatePositionManagerActive(
+    address spoke,
+    address positionManager,
+    bool active
+  ) external;
+
+  /// @notice Updates the global flag of a spoke's position manager.
+  /// @param spoke The address of the spoke.
+  /// @param positionManager The address of the position manager.
+  /// @param global The new global flag.
+  function updatePositionManagerGlobal(
+    address spoke,
+    address positionManager,
+    bool global
+  ) external;
 
   /// @notice Returns the maximum number of reserves allowed to exist on a spoke.
   /// @param spoke The address of the spoke.

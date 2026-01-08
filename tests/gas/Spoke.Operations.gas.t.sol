@@ -293,7 +293,10 @@ contract SpokeOperations_Gas_Tests is SpokeBase {
     vm.label(user, 'user');
     address positionManager = vm.randomAddress();
     vm.prank(SPOKE_ADMIN);
-    spoke.updatePositionManager(positionManager, true);
+    spoke.updatePositionManager(
+      positionManager,
+      ISpoke.PositionManagerConfig({active: true, global: false})
+    );
 
     uint192 nonceKey = _randomNonceKey();
     vm.prank(user);

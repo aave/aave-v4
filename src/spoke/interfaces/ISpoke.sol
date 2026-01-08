@@ -177,9 +177,8 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
 
   /// @notice Emitted on updatePositionManager action.
   /// @param positionManager The address of the position manager.
-  /// @param active True if position manager has become active.
-  /// @param global True if position manager is global.
-  event UpdatePositionManager(address indexed positionManager, bool active, bool global);
+  /// @param config The position manager configuration.
+  event UpdatePositionManager(address indexed positionManager, PositionManagerConfig config);
 
   /// @notice Emitted on setUsingAsCollateral action.
   /// @param reserveId The reserve identifier of the underlying asset.
@@ -380,10 +379,13 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
     DynamicReserveConfig calldata dynamicConfig
   ) external;
 
-  /// @notice Allows an approved caller (admin) to toggle the active status of position manager.
+  /// @notice Allows an approved caller (admin) to update the position manager configuration.
   /// @param positionManager The address of the position manager.
-  /// @param active True if positionManager is to be set as active.
-  function updatePositionManager(address positionManager, bool active) external;
+  /// @param config The position manager configuration.
+  function updatePositionManager(
+    address positionManager,
+    PositionManagerConfig calldata config
+  ) external;
 
   /// @notice Allows suppliers to enable/disable a specific supplied reserve as collateral.
   /// @dev It reverts if the reserve associated with the given reserve identifier is not listed.
@@ -525,6 +527,11 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
   /// @param positionManager The address of the position manager.
   /// @return True if positionManager is currently active.
   function isPositionManagerActive(address positionManager) external view returns (bool);
+
+  /// @notice Returns whether positionManager is currently global.
+  /// @param positionManager The address of the position manager.
+  /// @return True if positionManager is currently global.
+  function isPositionManagerGlobal(address positionManager) external view returns (bool);
 
   /// @notice Returns whether positionManager is active and approved by user.
   /// @param user The address of the user.
