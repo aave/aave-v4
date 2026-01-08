@@ -29,7 +29,7 @@ jobs:
           FOUNDRY_PROFILE: pr
           FORGE_SNAPSHOT_CHECK: "false"
         run: |
-          forge test \
+          forge clean && forge test \
             --match-path tests/unit/Spoke/Liquidations/Spoke.LiquidationCall.Premium.t.sol \
             --match-test test_liquidationCall_fuzz_ManyCollaterals_ManyDebts_UserInsolvent \
             -vvvvv --decode-internal
