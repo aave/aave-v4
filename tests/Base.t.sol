@@ -11,7 +11,10 @@ import {console2 as console} from 'forge-std/console2.sol';
 
 // dependencies
 import {AggregatorV3Interface} from 'src/dependencies/chainlink/AggregatorV3Interface.sol';
-import {TransparentUpgradeableProxy, ITransparentUpgradeableProxy} from 'src/dependencies/openzeppelin/TransparentUpgradeableProxy.sol';
+import {
+  TransparentUpgradeableProxy,
+  ITransparentUpgradeableProxy
+} from 'src/dependencies/openzeppelin/TransparentUpgradeableProxy.sol';
 import {IERC20Metadata} from 'src/dependencies/openzeppelin/IERC20Metadata.sol';
 import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
 import {IERC20Errors} from 'src/dependencies/openzeppelin/IERC20Errors.sol';
@@ -44,7 +47,11 @@ import {AccessManagerEnumerable} from 'src/access/AccessManagerEnumerable.sol';
 import {HubConfigurator, IHubConfigurator} from 'src/hub/HubConfigurator.sol';
 import {Hub, IHub, IHubBase} from 'src/hub/Hub.sol';
 import {SharesMath} from 'src/hub/libraries/SharesMath.sol';
-import {AssetInterestRateStrategy, IAssetInterestRateStrategy, IBasicInterestRateStrategy} from 'src/hub/AssetInterestRateStrategy.sol';
+import {
+  AssetInterestRateStrategy,
+  IAssetInterestRateStrategy,
+  IBasicInterestRateStrategy
+} from 'src/hub/AssetInterestRateStrategy.sol';
 
 // spoke
 import {Spoke, ISpoke, ISpokeBase} from 'src/spoke/Spoke.sol';
@@ -967,7 +974,7 @@ abstract contract Base is Test {
     assertEq(hub.getAssetConfig(assetId), config);
   }
 
-  function updateReserveFrozenFlag(
+  function _updateReserveFrozenFlag(
     ISpoke spoke,
     uint256 reserveId,
     bool newFrozenFlag
@@ -1097,7 +1104,7 @@ abstract contract Base is Test {
     assertEq(_getLatestDynamicReserveConfig(spoke, reserveId), config);
   }
 
-  function updateReserveBorrowableFlag(
+  function _updateReserveBorrowableFlag(
     ISpoke spoke,
     uint256 reserveId,
     bool newBorrowable
@@ -1206,7 +1213,7 @@ abstract contract Base is Test {
     assertEq(hub.getSpokeConfig(assetId, spoke), spokeConfig);
   }
 
-  function updateSpokeActive(
+  function _updateSpokeActive(
     IHub hub,
     uint256 assetId,
     address spoke,
