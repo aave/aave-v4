@@ -16,7 +16,7 @@ contract GatewayBaseTest is Base {
     vm.prank(SPOKE_ADMIN);
     spoke1.updatePositionManager(
       address(gateway),
-      ISpoke.PositionManagerConfig({active: true, global: false})
+      ISpoke.PositionManagerConfig({active: true, isGlobal: false})
     );
   }
 

@@ -229,7 +229,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
   ) external restricted {
     PositionManager storage positionManagerConfig = _positionManager[positionManager];
     positionManagerConfig.active = config.active;
-    positionManagerConfig.global = config.global;
+    positionManagerConfig.isGlobal = config.isGlobal;
     emit UpdatePositionManager(positionManager, config);
   }
 
@@ -678,7 +678,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
 
   /// @inheritdoc ISpoke
   function isPositionManagerGlobal(address positionManager) external view returns (bool) {
-    return _positionManager[positionManager].global;
+    return _positionManager[positionManager].isGlobal;
   }
 
   /// @inheritdoc ISpoke
@@ -949,7 +949,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
   function _isPositionManager(address user, address manager) internal view returns (bool) {
     if (user == manager) return true;
     PositionManager storage config = _positionManager[manager];
-    return (config.active && config.approval[user]) || config.global;
+    return (config.active && config.approval[user]) || config.isGlobal;
   }
 
   function _validateReserveConfig(ReserveConfig calldata config) internal pure {

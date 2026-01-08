@@ -808,7 +808,7 @@ contract SpokeConfiguratorTest is SpokeBase {
       bool active = (i == 0) ? true : false;
       ISpoke.PositionManagerConfig memory config = ISpoke.PositionManagerConfig({
         active: active,
-        global: false
+        isGlobal: false
       });
       vm.expectCall(
         spokeAddr,

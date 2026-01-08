@@ -98,7 +98,7 @@ contract SignatureGateway_Unauthorized_PositionManagerActive_Test is
     vm.prank(SPOKE_ADMIN);
     spoke1.updatePositionManager(
       address(gateway),
-      ISpoke.PositionManagerConfig({active: true, global: false})
+      ISpoke.PositionManagerConfig({active: true, isGlobal: false})
     );
     vm.prank(address(ADMIN));
     gateway.registerSpoke(address(spoke1), true);

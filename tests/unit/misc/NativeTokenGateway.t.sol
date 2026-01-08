@@ -16,7 +16,7 @@ contract NativeTokenGatewayTest is SpokeBase {
     vm.prank(SPOKE_ADMIN);
     spoke1.updatePositionManager(
       address(nativeTokenGateway),
-      ISpoke.PositionManagerConfig({active: true, global: false})
+      ISpoke.PositionManagerConfig({active: true, isGlobal: false})
     );
 
     vm.prank(address(ADMIN));

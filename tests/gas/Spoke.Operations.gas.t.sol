@@ -295,7 +295,7 @@ contract SpokeOperations_Gas_Tests is SpokeBase {
     vm.prank(SPOKE_ADMIN);
     spoke.updatePositionManager(
       positionManager,
-      ISpoke.PositionManagerConfig({active: true, global: false})
+      ISpoke.PositionManagerConfig({active: true, isGlobal: false})
     );
 
     uint192 nonceKey = _randomNonceKey();

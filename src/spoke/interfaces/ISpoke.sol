@@ -92,7 +92,7 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
   struct PositionManager {
     mapping(address user => bool) approval;
     bool active;
-    bool global;
+    bool isGlobal;
   }
 
   /// @notice Position manager configuration data. Subset of the `PositionManager` struct.
@@ -100,7 +100,7 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
   /// @dev global True if the position manager is global.
   struct PositionManagerConfig {
     bool active;
-    bool global;
+    bool isGlobal;
   }
 
   /// @notice User position status data.

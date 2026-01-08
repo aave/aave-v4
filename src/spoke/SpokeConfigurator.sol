@@ -296,7 +296,7 @@ contract SpokeConfigurator is Ownable2Step, ISpokeConfigurator {
       positionManager,
       ISpoke.PositionManagerConfig({
         active: active,
-        global: ISpoke(spoke).isPositionManagerGlobal(positionManager)
+        isGlobal: ISpoke(spoke).isPositionManagerGlobal(positionManager)
       })
     );
   }
@@ -311,7 +311,7 @@ contract SpokeConfigurator is Ownable2Step, ISpokeConfigurator {
       positionManager,
       ISpoke.PositionManagerConfig({
         active: ISpoke(spoke).isPositionManagerActive(positionManager),
-        global: global
+        isGlobal: global
       })
     );
   }

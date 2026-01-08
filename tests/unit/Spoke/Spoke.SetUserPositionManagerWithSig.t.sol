@@ -12,7 +12,7 @@ contract SpokeSetUserPositionManagerWithSigTest is SpokeBase {
     vm.prank(SPOKE_ADMIN);
     spoke1.updatePositionManager(
       POSITION_MANAGER,
-      ISpoke.PositionManagerConfig({active: true, global: false})
+      ISpoke.PositionManagerConfig({active: true, isGlobal: false})
     );
   }
 
@@ -137,7 +137,7 @@ contract SpokeSetUserPositionManagerWithSigTest is SpokeBase {
     vm.prank(SPOKE_ADMIN);
     spoke1.updatePositionManager(
       positionManager,
-      ISpoke.PositionManagerConfig({active: true, global: false})
+      ISpoke.PositionManagerConfig({active: true, isGlobal: false})
     );
     uint256 deadline = _warpBeforeRandomDeadline();
 
@@ -230,7 +230,7 @@ contract SpokeSetUserPositionManagerWithSigTest is SpokeBase {
     vm.prank(SPOKE_ADMIN);
     spoke1.updatePositionManager(
       maliciousManager,
-      ISpoke.PositionManagerConfig({active: true, global: false})
+      ISpoke.PositionManagerConfig({active: true, isGlobal: false})
     );
     uint256 deadline = _warpAfterRandomDeadline();
 
@@ -314,7 +314,7 @@ contract SpokeSetUserPositionManagerWithSigTest is SpokeBase {
     vm.prank(SPOKE_ADMIN);
     spoke1.updatePositionManager(
       positionManager,
-      ISpoke.PositionManagerConfig({active: true, global: false})
+      ISpoke.PositionManagerConfig({active: true, isGlobal: false})
     );
     uint256 deadline = _warpBeforeRandomDeadline();
 

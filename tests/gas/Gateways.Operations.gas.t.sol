@@ -20,7 +20,7 @@ contract NativeTokenGateway_Gas_Tests is Base {
     vm.prank(SPOKE_ADMIN);
     spoke1.updatePositionManager(
       address(nativeTokenGateway),
-      ISpoke.PositionManagerConfig({active: true, global: false})
+      ISpoke.PositionManagerConfig({active: true, isGlobal: false})
     );
     vm.prank(address(ADMIN));
     nativeTokenGateway.registerSpoke(address(spoke1), true);
@@ -112,7 +112,7 @@ contract SignatureGateway_Gas_Tests is SignatureGatewayBaseTest {
     vm.prank(SPOKE_ADMIN);
     spoke1.updatePositionManager(
       address(gateway),
-      ISpoke.PositionManagerConfig({active: true, global: false})
+      ISpoke.PositionManagerConfig({active: true, isGlobal: false})
     );
     vm.prank(alice);
     spoke1.setUserPositionManager(address(gateway), true);

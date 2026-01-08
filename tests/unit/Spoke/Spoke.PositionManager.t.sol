@@ -335,12 +335,12 @@ contract SpokePositionManagerTest is SpokeBase {
     vm.expectEmit(address(spoke1));
     emit ISpoke.UpdatePositionManager(
       POSITION_MANAGER,
-      ISpoke.PositionManagerConfig({active: true, global: false})
+      ISpoke.PositionManagerConfig({active: true, isGlobal: false})
     );
     vm.prank(SPOKE_ADMIN);
     spoke1.updatePositionManager(
       POSITION_MANAGER,
-      ISpoke.PositionManagerConfig({active: true, global: false})
+      ISpoke.PositionManagerConfig({active: true, isGlobal: false})
     );
 
     vm.expectEmit(address(spoke1));
@@ -356,12 +356,12 @@ contract SpokePositionManagerTest is SpokeBase {
     vm.expectEmit(address(spoke1));
     emit ISpoke.UpdatePositionManager(
       POSITION_MANAGER,
-      ISpoke.PositionManagerConfig({active: false, global: false})
+      ISpoke.PositionManagerConfig({active: false, isGlobal: false})
     );
     vm.prank(SPOKE_ADMIN);
     spoke1.updatePositionManager(
       POSITION_MANAGER,
-      ISpoke.PositionManagerConfig({active: false, global: false})
+      ISpoke.PositionManagerConfig({active: false, isGlobal: false})
     );
 
     assertFalse(spoke1.isPositionManagerActive(POSITION_MANAGER));

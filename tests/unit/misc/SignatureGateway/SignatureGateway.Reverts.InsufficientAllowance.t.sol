@@ -11,7 +11,7 @@ contract SignatureGateway_InsufficientAllowance_Test is SignatureGatewayBaseTest
     vm.prank(SPOKE_ADMIN);
     spoke1.updatePositionManager(
       address(gateway),
-      ISpoke.PositionManagerConfig({active: true, global: false})
+      ISpoke.PositionManagerConfig({active: true, isGlobal: false})
     );
     vm.prank(alice);
     spoke1.setUserPositionManager(address(gateway), true);
