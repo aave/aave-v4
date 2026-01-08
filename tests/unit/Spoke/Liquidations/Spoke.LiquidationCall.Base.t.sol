@@ -488,11 +488,9 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
             if (vars.userReservePosition.drawnShares == 0) {
               continue;
             }
-
-            vars.userReservePosition.premiumShares = (vars
-              .userReservePosition
-              .premiumShares
-              .toInt256() + vars.premiumDelta.sharesDelta).toUint256().toUint120();
+            vars.userReservePosition.premiumShares = uint256(vars.userReservePosition.premiumShares)
+              .add(vars.premiumDelta.sharesDelta)
+              .toUint120();
             vars.userReservePosition.premiumOffsetRay = (vars.userReservePosition.premiumOffsetRay +
               vars.premiumDelta.offsetRayDelta).toInt200();
           }
