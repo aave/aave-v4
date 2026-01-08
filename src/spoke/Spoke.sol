@@ -6,7 +6,9 @@ import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
 import {SafeERC20, IERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
 import {IERC20Permit} from 'src/dependencies/openzeppelin/IERC20Permit.sol';
 import {SignatureChecker} from 'src/dependencies/openzeppelin/SignatureChecker.sol';
-import {AccessManagedUpgradeable} from 'src/dependencies/openzeppelin-upgradeable/AccessManagedUpgradeable.sol';
+import {
+  AccessManagedUpgradeable
+} from 'src/dependencies/openzeppelin-upgradeable/AccessManagedUpgradeable.sol';
 import {EIP712} from 'src/dependencies/solady/EIP712.sol';
 import {MathUtils} from 'src/libraries/math/MathUtils.sol';
 import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
@@ -81,7 +83,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
   mapping(uint256 reserveId => Reserve) internal _reserves;
 
   /// @dev Map of position manager addresses to their configuration data.
-  mapping(address positionManager => PositionManagerConfig) internal _positionManager;
+  mapping(address positionManager => PositionManager) internal _positionManager;
 
   /// @dev Map of reserve identifiers and dynamic configuration keys to the dynamic configuration data.
   mapping(uint256 reserveId => mapping(uint24 dynamicConfigKey => DynamicReserveConfig))
@@ -221,9 +223,15 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
   }
 
   /// @inheritdoc ISpoke
-  function updatePositionManager(address positionManager, bool active) external restricted {
-    _positionManager[positionManager].active = active;
-    emit UpdatePositionManager(positionManager, active);
+  function updatePositionManager(
+    address positionManager,
+    bool active,
+    bool global
+  ) external restricted {
+    PositionManager storage config = _positionManager[positionManager];
+    config.active = active;
+    config.global = global;
+    emit UpdatePositionManager(positionManager, active, global);
   }
 
   /// @inheritdoc ISpokeBase
@@ -691,7 +699,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
   }
 
   function _setUserPositionManager(address positionManager, address user, bool approve) internal {
-    PositionManagerConfig storage config = _positionManager[positionManager];
+    PositionManager storage config = _positionManager[positionManager];
     // only allow approval when position manager is active for improved UX
     require(!approve || config.active, InactivePositionManager());
     config.approval[user] = approve;
@@ -936,8 +944,8 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
   /// @notice Returns whether `manager` is active & approved positionManager for `user`.
   function _isPositionManager(address user, address manager) internal view returns (bool) {
     if (user == manager) return true;
-    PositionManagerConfig storage config = _positionManager[manager];
-    return config.active && config.approval[user];
+    PositionManager storage config = _positionManager[manager];
+    return (config.active && config.approval[user]) || config.global;
   }
 
   function _validateReserveConfig(ReserveConfig calldata config) internal pure {

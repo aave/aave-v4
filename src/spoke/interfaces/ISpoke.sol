@@ -85,12 +85,22 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
     uint24 dynamicConfigKey;
   }
 
-  /// @notice Position manager configuration data.
+  /// @notice Position manager data.
   /// @dev approval The mapping of position manager user approvals.
   /// @dev active True if the position manager is active.
-  struct PositionManagerConfig {
+  /// @dev global True if the position manager is global.
+  struct PositionManager {
     mapping(address user => bool) approval;
     bool active;
+    bool global;
+  }
+
+  /// @notice Position manager configuration data. Subset of the `PositionManager` struct.
+  /// @dev active True if the position manager is active.
+  /// @dev global True if the position manager is global.
+  struct PositionManagerConfig {
+    bool active;
+    bool global;
   }
 
   /// @notice User position status data.
@@ -168,7 +178,8 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
   /// @notice Emitted on updatePositionManager action.
   /// @param positionManager The address of the position manager.
   /// @param active True if position manager has become active.
-  event UpdatePositionManager(address indexed positionManager, bool active);
+  /// @param global True if position manager is global.
+  event UpdatePositionManager(address indexed positionManager, bool active, bool global);
 
   /// @notice Emitted on setUsingAsCollateral action.
   /// @param reserveId The reserve identifier of the underlying asset.
