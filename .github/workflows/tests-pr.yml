@@ -32,4 +32,4 @@ jobs:
           forge test \
             --match-path tests/unit/Spoke/Liquidations/Spoke.LiquidationCall.Premium.t.sol \
             --match-test test_liquidationCall_fuzz_ManyCollaterals_ManyDebts_UserInsolvent \
-            -vvvv
+            -vvvvv --decode-internal
