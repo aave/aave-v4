@@ -104,7 +104,12 @@ contract HubConfiguratorTest is HubBase {
   }
 
   function test_addAsset_revertsWith_InvalidAddress_underlying() public {
-    uint8 decimals = uint8(vm.randomUint(0, Constants.MAX_ALLOWED_UNDERLYING_DECIMALS));
+    uint8 decimals = uint8(
+      vm.randomUint(
+        Constants.MIN_ALLOWED_UNDERLYING_DECIMALS,
+        Constants.MAX_ALLOWED_UNDERLYING_DECIMALS
+      )
+    );
     address feeReceiver = makeAddr('newFeeReceiver');
     address interestRateStrategy = makeAddr('newIrStrategy');
     uint256 liquidityFee = vm.randomUint(0, PercentageMath.PERCENTAGE_FACTOR);
@@ -124,7 +129,12 @@ contract HubConfiguratorTest is HubBase {
 
   function test_addAsset_revertsWith_InvalidAddress_irStrategy() public {
     address underlying = makeAddr('newUnderlying');
-    uint8 decimals = uint8(vm.randomUint(0, Constants.MAX_ALLOWED_UNDERLYING_DECIMALS));
+    uint8 decimals = uint8(
+      vm.randomUint(
+        Constants.MIN_ALLOWED_UNDERLYING_DECIMALS,
+        Constants.MAX_ALLOWED_UNDERLYING_DECIMALS
+      )
+    );
     address feeReceiver = makeAddr('newFeeReceiver');
     uint256 liquidityFee = vm.randomUint(0, PercentageMath.PERCENTAGE_FACTOR);
 
@@ -135,7 +145,12 @@ contract HubConfiguratorTest is HubBase {
 
   function test_addAsset_revertsWith_InvalidLiquidityFee() public {
     address underlying = makeAddr('newUnderlying');
-    uint8 decimals = uint8(vm.randomUint(0, Constants.MAX_ALLOWED_UNDERLYING_DECIMALS));
+    uint8 decimals = uint8(
+      vm.randomUint(
+        Constants.MIN_ALLOWED_UNDERLYING_DECIMALS,
+        Constants.MAX_ALLOWED_UNDERLYING_DECIMALS
+      )
+    );
     address feeReceiver = makeAddr('newFeeReceiver');
     address interestRateStrategy = address(new AssetInterestRateStrategy(address(hub1)));
     uint256 liquidityFee = vm.randomUint(PercentageMath.PERCENTAGE_FACTOR + 1, type(uint16).max);
