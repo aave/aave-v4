@@ -184,23 +184,35 @@ contract AccessManagerEnumerable is AccessManager, IAccessManagerEnumerable {
   }
 
   /// @dev Tracks all admin role identifiers when a new admin role is set.
-  function _trackAdminRole(uint64 roleId, uint64 admin) internal {
+  function _trackAdminRole(uint64 roleId, uint64 oldAdmin, uint64 admin) internal {
     _adminRolesSet.add(uint256(admin));
-    uint64 oldAdmin = getRoleAdmin(roleId);
     _adminOfRoles[oldAdmin].remove(uint256(roleId));
     _adminOfRoles[admin].add(uint256(roleId));
   }
 
-  /// @dev Tracks all targets where a selector was assigned to a role.
-  function _trackRoleTarget(uint64 roleId, address target, bytes4 selector) internal {
-    uint64 oldRole = _targetSelectorRoles[target][selector];
-    if (oldRole == roleId) {
+  /// @dev Tracks all members of a role when granted or revoked.
+  function _trackRoleMember(uint64 roleId, address account, bool granted) internal {
+    if (granted) {
+      _roleMembers[roleId].add(account);
+    } else {
+      _roleMembers[roleId].remove(account);
+    }
+  }
+
+  /// @dev Tracks all targets where a selector was assigned to a role and selectors.
+  function _trackRoleTargetSelector(uint64 roleId, address target, bytes4 selector) internal {
+    uint64 oldRoleId = _targetSelectorRoles[target][selector];
+    if (oldRoleId == roleId) {
       return;
     }
-    if (oldRole != ADMIN_ROLE && _roleTargetSelectors[oldRole][target].length() == 0) {
-      _roleTargets[oldRole].remove(target);
+    if (oldRoleId != ADMIN_ROLE) {
+      _roleTargetSelectors[oldRoleId][target].remove(bytes32(selector));
+      if (_roleTargetSelectors[oldRoleId][target].length() == 0) {
+        _roleTargets[oldRoleId].remove(target);
+      }
     }
     if (roleId != ADMIN_ROLE) {
+      _roleTargetSelectors[roleId][target].add(bytes32(selector));
       _roleTargets[roleId].add(target);
     }
     _targetSelectorRoles[target][selector] = roleId;
@@ -208,15 +220,19 @@ contract AccessManagerEnumerable is AccessManager, IAccessManagerEnumerable {
 
   /// @dev Override AccessManager `_setRoleAdmin` function to track created roles.
   function _setRoleAdmin(uint64 roleId, uint64 admin) internal override {
-    _trackRole(roleId);
-    _trackAdminRole(roleId, admin);
+    uint64 oldAdmin = getRoleAdmin(roleId);
+
     super._setRoleAdmin(roleId, admin);
+
+    _trackRole(roleId);
+    _trackAdminRole(roleId, oldAdmin, admin);
   }
 
   /// @dev Override AccessManager `_setRoleGuardian` function to track created roles.
   function _setRoleGuardian(uint64 roleId, uint64 guardian) internal override {
-    _trackRole(roleId);
     super._setRoleGuardian(roleId, guardian);
+
+    _trackRole(roleId);
   }
 
   /// @dev Override AccessManager `_grantRole` function to track roles' membership.
@@ -227,19 +243,21 @@ contract AccessManagerEnumerable is AccessManager, IAccessManagerEnumerable {
     uint32 executionDelay
   ) internal override returns (bool) {
     bool granted = super._grantRole(roleId, account, grantDelay, executionDelay);
+
     if (granted) {
       _trackRole(roleId);
-      _roleMembers[roleId].add(account);
+      _trackRoleMember(roleId, account, granted);
     }
+
     return granted;
   }
 
   /// @dev Override AccessManager `_revokeRole` function to remove from tracked roles' membership.
   function _revokeRole(uint64 roleId, address account) internal override returns (bool) {
     bool revoked = super._revokeRole(roleId, account);
-    if (revoked) {
-      _roleMembers[roleId].remove(account);
-    }
+
+    _trackRoleMember(roleId, account, !revoked);
+
     return revoked;
   }
 
@@ -249,15 +267,9 @@ contract AccessManagerEnumerable is AccessManager, IAccessManagerEnumerable {
     bytes4 selector,
     uint64 roleId
   ) internal override {
-    uint64 oldRoleId = getTargetFunctionRole(target, selector);
     super._setTargetFunctionRole(target, selector, roleId);
-    if (oldRoleId != ADMIN_ROLE) {
-      _roleTargetSelectors[oldRoleId][target].remove(bytes32(selector));
-    }
-    if (roleId != ADMIN_ROLE) {
-      _roleTargetSelectors[roleId][target].add(bytes32(selector));
-    }
+
     // also track the target under the role (will be added if not already present)
-    _trackRoleTarget(roleId, target, selector);
+    _trackRoleTargetSelector(roleId, target, selector);
   }
 }
