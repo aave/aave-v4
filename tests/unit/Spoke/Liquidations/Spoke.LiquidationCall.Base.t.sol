@@ -1250,6 +1250,20 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
       }
     }
 
+    uint256 expectedTransferSharesEventCount = 0;
+    if (
+      !params.receiveShares &&
+      liquidationMetadata.collateralToLiquidate > liquidationMetadata.collateralToLiquidator
+    ) {
+      expectedTransferSharesEventCount = 1;
+    } else if (
+      params.receiveShares &&
+      liquidationMetadata.collateralSharesToLiquidate >
+      liquidationMetadata.collateralSharesToLiquidator
+    ) {
+      expectedTransferSharesEventCount = 1;
+    }
+
     assertEq(
       transferSharesEventCount,
       (liquidationMetadata.collateralToLiquidate > liquidationMetadata.collateralToLiquidator)

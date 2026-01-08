@@ -1040,7 +1040,7 @@ contract SpokeBase is Base {
       );
   }
 
-  function _collateralFactorUpperBound(uint256 maxLiquidationBonus) internal view returns (uint16) {
+  function _collateralFactorUpperBound(uint256 maxLiquidationBonus) internal pure returns (uint16) {
     return (PercentageMath.PERCENTAGE_FACTOR - 1).percentDivDown(maxLiquidationBonus).toUint16();
   }
 
