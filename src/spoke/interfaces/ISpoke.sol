@@ -268,9 +268,6 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
   /// @notice Thrown if a config key is uninitialized when updating a dynamic reserve config.
   error ConfigKeyUninitialized();
 
-  /// @notice Thrown if an inactive position manager is set as a user's position manager.
-  error InactivePositionManager();
-
   /// @notice Thrown when a signature is invalid.
   error InvalidSignature();
 
@@ -397,13 +394,15 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
   /// @param onBehalfOf The owner of the position being modified.
   function updateUserDynamicConfig(address onBehalfOf) external;
 
-  /// @notice Enables a user to grant or revoke approval for a position manager
+  /// @notice Enables a user to grant or revoke approval for a position manager.
+  /// @dev Allows approving inactive position managers.
   /// @param positionManager The address of the position manager.
   /// @param approve True to approve the position manager, false to revoke approval.
   function setUserPositionManager(address positionManager, bool approve) external;
 
-  /// @notice Enables a user to grant or revoke approval for a position manager using an EIP712-typed intent.
+  /// @notice Enables a user to grant or revoke approval for an array of position managers using an EIP712-typed intent.
   /// @dev Uses keyed-nonces where for each key's namespace nonce is consumed sequentially.
+  /// @dev Allows duplicated updates and the last one is persisted. Allows approving inactive position managers.
   /// @param params The structured setUserPositionManager parameters.
   /// @param signature The EIP712-compliant signature bytes.
   function setUserPositionManagerWithSig(

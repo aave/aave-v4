@@ -7,6 +7,8 @@ import 'tests/unit/Spoke/SpokeBase.t.sol';
 contract SpokeSetUserPositionManagerWithSigTest is SpokeBase {
   using SafeCast for *;
 
+  mapping(address positionManager => bool approve) internal _lookup;
+
   function setUp() public override {
     super.setUp();
     vm.prank(SPOKE_ADMIN);
@@ -179,6 +181,64 @@ contract SpokeSetUserPositionManagerWithSigTest is SpokeBase {
       spoke1.isPositionManager(params.user, params.updates[0].positionManager),
       params.updates[0].approve
     );
+  }
+
+  function test_setUserPositionManagerWithSig_zero_updates() public {
+    (address user, uint256 userPk) = makeAddrAndKey(string(vm.randomBytes(32)));
+    vm.label(user, 'user');
+    uint256 deadline = _warpBeforeRandomDeadline();
+    EIP712Types.SetUserPositionManager memory params = _setUserPositionManagerData(user, deadline);
+    params.updates = new EIP712Types.PositionManagerUpdate[](0);
+    params.nonce = _burnRandomNoncesAtKey(spoke1, params.user);
+
+    bytes32 digest = _getTypedDataHash(spoke1, params);
+    (uint8 v, bytes32 r, bytes32 s) = vm.sign(userPk, digest);
+    bytes memory signature = abi.encodePacked(r, s, v);
+
+    vm.recordLogs();
+
+    vm.prank(vm.randomAddress());
+    spoke1.setUserPositionManagerWithSig(params, signature);
+
+    assertEq(vm.getRecordedLogs().length, 0);
+    _assertNonceIncrement(spoke1, params.user, params.nonce);
+  }
+
+  function test_setUserPositionManagerWithSig_multiple_updates(
+    EIP712Types.PositionManagerUpdate[] memory updates
+  ) public {
+    vm.assume(updates.length < 1024); // for performance
+    vm.setArbitraryStorage(address(spoke1)); // arbitrary nonce, position manager active state
+    (address user, uint256 userPk) = makeAddrAndKey(string(vm.randomBytes(32)));
+    vm.label(user, 'user');
+    uint256 deadline = _warpBeforeRandomDeadline();
+    EIP712Types.SetUserPositionManager memory params = _setUserPositionManagerData(user, deadline);
+    params.updates = updates;
+
+    bytes32 digest = _getTypedDataHash(spoke1, params);
+    (uint8 v, bytes32 r, bytes32 s) = vm.sign(userPk, digest);
+    bytes memory signature = abi.encodePacked(r, s, v);
+
+    for (uint256 i; i < updates.length; ++i) {
+      address positionManager = params.updates[i].positionManager;
+      bool approve = params.updates[i].approve;
+      vm.expectEmit(address(spoke1));
+      emit ISpoke.SetUserPositionManager(params.user, positionManager, approve);
+      // overwrite cached lookup such that latest state is checked for duplicated entries
+      _lookup[positionManager] = approve && spoke1.isPositionManagerActive(positionManager);
+    }
+
+    vm.prank(vm.randomAddress());
+    spoke1.setUserPositionManagerWithSig(params, signature);
+
+    _assertNonceIncrement(spoke1, params.user, params.nonce);
+    for (uint256 i; i < updates.length; ++i) {
+      address positionManager = params.updates[i].positionManager;
+      assertEq(
+        spoke1.isPositionManager(params.user, positionManager),
+        (positionManager == user) || _lookup[positionManager]
+      );
+    }
   }
 
   function test_setUserPositionManagerWithSig_ERC1271_revertsWith_InvalidSignature_dueTo_ExpiredDeadline()

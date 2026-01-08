@@ -683,8 +683,6 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
 
   function _setUserPositionManager(address positionManager, address user, bool approve) internal {
     PositionManagerConfig storage config = _positionManager[positionManager];
-    // only allow approval when position manager is active for improved UX
-    require(!approve || config.active, InactivePositionManager()); // todo rm this ux check given sig batching?
     config.approval[user] = approve;
     emit SetUserPositionManager(user, positionManager, approve);
   }
