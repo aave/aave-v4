@@ -1605,7 +1605,7 @@ abstract contract Base is Test {
       );
 
       uint256 restoredPremiumRay = (premiumAmountToRestore * WadRayMath.RAY).min(premiumDebtRay);
-      uint256 restoredShares = drawnDebtToRestore.rayDivDown(hub.getAssetDrawnIndex(reserveId));
+      uint256 restoredShares = drawnDebtToRestore.rayDivDown(hub.getAssetDrawnIndex(assetId));
       uint256 riskPremium = _getUserLastRiskPremium(spoke, user);
 
       return
