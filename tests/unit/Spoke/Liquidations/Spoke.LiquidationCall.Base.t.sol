@@ -691,7 +691,6 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
       debtToLiquidateValue,
       expectedUserAvgCollateralFactor
     );
-    // bool isCollateralAffectingUserHf;
 
     bool hasDeficit = (userAccountDataBefore.activeCollateralCount == 1) &&
       (!params.isSolvent || isCollateralAffectingUserHf) &&

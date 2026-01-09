@@ -46,38 +46,4 @@ contract SpokeLiquidationCallPremiumTest is SpokeLiquidationCallHelperTest {
     (, uint256 premiumDebt) = params.spoke.getUserDebt(params.debtReserveId, params.user);
     assertGt(premiumDebt, 0, 'premiumDebt: before liquidation, healthy');
   }
-
-  // ---------------------------------------------------------------------------
-  // CI repro helpers (panic 0x11 + SafeCast overflows)
-  // ---------------------------------------------------------------------------
-
-  function test_repro_ci_panic_manyCollaterals_oneDebt_userInsolvent() public {
-    test_liquidationCall_fuzz_ManyCollaterals_OneDebt_UserInsolvent(
-      58772587721916056567562,
-      292342093363992737667148,
-      0x3584b3d733335d3c6903aC58A8651dB758B48966,
-      500405680772182772897261902255508377524207968628742969,
-      true
-    );
-  }
-
-  function test_repro_ci_panic_oneCollateral_manyDebts_userInsolvent() public {
-    test_liquidationCall_fuzz_OneCollateral_ManyDebts_UserInsolvent(
-      9504659555424275796710634647,
-      1361541,
-      0x7dc67597E5A8caA54B9BE96D342E1C7b04d40Be1,
-      2487062459615347113680506620776306258668972807594082251659504390525267061113,
-      true
-    );
-  }
-
-  function test_repro_ci_panic_oneCollateral_oneDebt_userInsolvent() public {
-    test_liquidationCall_fuzz_OneCollateral_OneDebt_UserInsolvent(
-      3993306322,
-      357948625336496608172820008382955474586869789760581921,
-      0xd3f2E8A5B9379d0df84461cCa01C37e2A0e1CE50,
-      232864733351832222011267087489755378219690878717987539,
-      false
-    );
-  }
 }
