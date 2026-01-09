@@ -14,7 +14,7 @@ contract AaveOracle is IAaveOracle {
   uint8 public immutable DECIMALS;
 
   /// @dev The address of the deployer.
-  address private immutable _DEPLOYER;
+  address private immutable DEPLOYER;
 
   /// @inheritdoc IAaveOracle
   string public DESCRIPTION;
@@ -29,14 +29,14 @@ contract AaveOracle is IAaveOracle {
   /// @param decimals_ The number of decimals for the oracle.
   /// @param description_ The description of the oracle.
   constructor(uint8 decimals_, string memory description_) {
-    _DEPLOYER = msg.sender;
+    DEPLOYER = msg.sender;
     DECIMALS = decimals_;
     DESCRIPTION = description_;
   }
 
   /// @inheritdoc IAaveOracle
   function setSpoke(address spoke) external {
-    require(msg.sender == _DEPLOYER, OnlyDeployer());
+    require(msg.sender == DEPLOYER, OnlyDeployer());
     require(spoke != address(0), InvalidAddress());
     require(SPOKE == address(0), SpokeAlreadySet());
     SPOKE = spoke;
