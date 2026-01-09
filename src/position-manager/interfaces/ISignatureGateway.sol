@@ -95,12 +95,18 @@ interface ISignatureGateway is IMulticall, INoncesKeyed, IGatewayBase {
   /// with a typed signature from `user`.
   /// @dev The signature is consumed on the the specified registered `spoke`.
   /// @dev The given data is passed to the `spoke` for the signature to be verified.
-  /// @param spoke The address of the spoke.
-  /// @param params The structured setSelfAsUserPositionManager parameters.
+  /// @param spoke The address of the registered spoke.
+  /// @param user The address of the user on whose behalf this gateway can act.
+  /// @param approve True to approve the gateway, false to revoke approval.
+  /// @param nonce The key-prefixed nonce for the signature.
+  /// @param deadline The deadline for the signature.
   /// @param signature The signed bytes for the intent.
   function setSelfAsUserPositionManagerWithSig(
     address spoke,
-    EIP712Types.SetUserPositionManager calldata params,
+    address user,
+    bool approve,
+    uint256 nonce,
+    uint256 deadline,
     bytes calldata signature
   ) external;
 
