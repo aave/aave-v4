@@ -2,7 +2,7 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import './Spoke.Operations.base.gas.t.sol';
+import 'tests/gas/Spoke.Operations.base.gas.t.sol';
 
 /// forge-config: default.isolate = true
 contract SpokeOperations_Gas_Tests is SpokeOperationsGasBase {
