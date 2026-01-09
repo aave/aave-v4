@@ -334,35 +334,6 @@ contract SpokeConfiguratorTest is SpokeBase {
     }
   }
 
-  function test_updateLiquidatable_revertsWith_OwnableUnauthorizedAccount() public {
-    vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, alice));
-    vm.prank(alice);
-    spokeConfigurator.updateLiquidatable(spokeAddr, _reserveId, true);
-  }
-
-  function test_updateLiquidatable() public {
-    ISpoke.ReserveConfig memory expectedReserveConfig = spoke.getReserveConfig(_reserveId);
-
-    for (uint256 i = 0; i < 2; i += 1) {
-      expectedReserveConfig.liquidatable = (i == 0) ? false : true;
-
-      vm.expectCall(
-        spokeAddr,
-        abi.encodeCall(ISpoke.updateReserveConfig, (_reserveId, expectedReserveConfig))
-      );
-      vm.expectEmit(address(spoke));
-      emit ISpoke.UpdateReserveConfig(_reserveId, expectedReserveConfig);
-      vm.prank(SPOKE_CONFIGURATOR_ADMIN);
-      spokeConfigurator.updateLiquidatable(
-        spokeAddr,
-        _reserveId,
-        expectedReserveConfig.liquidatable
-      );
-
-      assertEq(spoke.getReserveConfig(_reserveId), expectedReserveConfig);
-    }
-  }
-
   function test_updateReceiveSharesEnabled_revertsWith_OwnableUnauthorizedAccount() public {
     vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, alice));
     vm.prank(alice);

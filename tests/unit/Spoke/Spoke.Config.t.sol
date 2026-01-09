@@ -75,7 +75,6 @@ contract SpokeConfigTest is SpokeBase {
       paused: !config.paused,
       frozen: !config.frozen,
       borrowable: !config.borrowable,
-      liquidatable: !config.liquidatable,
       receiveSharesEnabled: !config.receiveSharesEnabled,
       collateralRisk: config.collateralRisk + 1
     });
