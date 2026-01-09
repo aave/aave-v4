@@ -85,6 +85,6 @@ interface INativeTokenGateway is IGatewayBase {
     uint256 amount
   ) external payable returns (uint256, uint256);
 
-  /// @notice Returns the address of Native Wrapper.
+  /// @notice Returns the Native Wrapper.
   function NATIVE_WRAPPER() external view returns (INativeWrapper);
 }
