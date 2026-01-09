@@ -12,10 +12,10 @@ contract UnitPriceFeed is AggregatorV3Interface {
   /// @inheritdoc AggregatorV3Interface
   uint8 public immutable decimals;
 
+  int256 private immutable UNITS;
+
   /// @inheritdoc AggregatorV3Interface
   string public description;
-
-  int256 private immutable _units;
 
   /// @dev Constructor.
   /// @param decimals_ The number of decimals used to represent the unit price.
@@ -23,7 +23,7 @@ contract UnitPriceFeed is AggregatorV3Interface {
   constructor(uint8 decimals_, string memory description_) {
     decimals = decimals_;
     description = description_;
-    _units = int256(10 ** decimals_);
+    UNITS = int256(10 ** decimals_);
   }
 
   /// @inheritdoc AggregatorV3Interface
@@ -47,7 +47,7 @@ contract UnitPriceFeed is AggregatorV3Interface {
   {
     if (_roundId <= uint80(block.timestamp)) {
       roundId = _roundId;
-      answer = _units;
+      answer = UNITS;
       startedAt = _roundId;
       updatedAt = _roundId;
       answeredInRound = _roundId;
@@ -67,7 +67,7 @@ contract UnitPriceFeed is AggregatorV3Interface {
     )
   {
     roundId = uint80(block.timestamp);
-    answer = _units;
+    answer = UNITS;
     startedAt = block.timestamp;
     updatedAt = block.timestamp;
     answeredInRound = roundId;
