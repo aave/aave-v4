@@ -47,11 +47,11 @@ contract AccessManagerEnumerableTest is Test {
     assertEq(roleMembers.length, 1);
     assertEq(roleMembers[0], user1);
 
-    assertEq(accessManagerEnumerable.getRole(1), roleId);
-    assertEq(accessManagerEnumerable.getRoleCount(), 2);
+    assertEq(accessManagerEnumerable.getRole(0), roleId);
+    assertEq(accessManagerEnumerable.getRoleCount(), 1);
     uint64[] memory roles = accessManagerEnumerable.getRoles(0, 2);
-    assertEq(roles.length, 2);
-    assertEq(roles[1], roleId);
+    assertEq(roles.length, 1);
+    assertEq(roles[0], roleId);
 
     accessManagerEnumerable.grantRole(roleId, user2, 0);
     assertEq(accessManagerEnumerable.getRoleMember(roleId, 1), user2);
@@ -65,11 +65,11 @@ contract AccessManagerEnumerableTest is Test {
     assertEq(roleMembers[0], user1);
     assertEq(roleMembers[1], user2);
 
-    assertEq(accessManagerEnumerable.getRole(1), roleId);
-    assertEq(accessManagerEnumerable.getRoleCount(), 2);
-    roles = accessManagerEnumerable.getRoles(0, 2);
-    assertEq(roles.length, 2);
-    assertEq(roles[1], roleId);
+    assertEq(accessManagerEnumerable.getRole(0), roleId);
+    assertEq(accessManagerEnumerable.getRoleCount(), 1);
+    roles = accessManagerEnumerable.getRoles(0, 1);
+    assertEq(roles.length, 1);
+    assertEq(roles[0], roleId);
   }
 
   function test_grantRole_fuzz(uint64 roleId, uint256 membersCount) public {
@@ -106,33 +106,29 @@ contract AccessManagerEnumerableTest is Test {
       assertEq(accessManagerEnumerable.getRoleMember(roleId, i), members.at(i));
     }
 
-    assertEq(accessManagerEnumerable.getRole(1), roleId);
-    assertEq(accessManagerEnumerable.getRoleCount(), 2);
-    uint64[] memory roles = accessManagerEnumerable.getRoles(0, 2);
-    assertEq(roles.length, 2);
-    assertEq(roles[1], roleId);
+    assertEq(accessManagerEnumerable.getRole(0), roleId);
+    assertEq(accessManagerEnumerable.getRoleCount(), 1);
+    uint64[] memory roles = accessManagerEnumerable.getRoles(0, 1);
+    assertEq(roles.length, 1);
+    assertEq(roles[0], roleId);
   }
 
   function test_setRoleAdmin_trackRolesAndTrackAdminRoles() public {
-    assertEq(accessManagerEnumerable.getRoleCount(), 1);
-    assertEq(accessManagerEnumerable.getRole(0), ADMIN_ROLE);
-    assertEq(accessManagerEnumerable.getAdminRoleCount(), 1);
-    assertEq(accessManagerEnumerable.getAdminRole(0), ADMIN_ROLE);
+    assertEq(accessManagerEnumerable.getRoleCount(), 0);
+    assertEq(accessManagerEnumerable.getAdminRoleCount(), 0);
 
     vm.startPrank(ADMIN);
     accessManagerEnumerable.setRoleAdmin(GUARDIAN_ROLE_1, ADMIN_ROLE);
     accessManagerEnumerable.setRoleAdmin(GUARDIAN_ROLE_2, ADMIN_ROLE);
     vm.stopPrank();
 
-    uint64[] memory roleList = accessManagerEnumerable.getRoles(0, 3);
-    assertEq(accessManagerEnumerable.getRoleCount(), 3);
-    assertEq(roleList.length, 3);
-    assertEq(roleList[0], ADMIN_ROLE);
-    assertEq(roleList[1], GUARDIAN_ROLE_1);
-    assertEq(roleList[2], GUARDIAN_ROLE_2);
-    assertEq(accessManagerEnumerable.getRole(0), ADMIN_ROLE);
-    assertEq(accessManagerEnumerable.getRole(1), GUARDIAN_ROLE_1);
-    assertEq(accessManagerEnumerable.getRole(2), GUARDIAN_ROLE_2);
+    uint64[] memory roleList = accessManagerEnumerable.getRoles(0, 2);
+    assertEq(accessManagerEnumerable.getRoleCount(), 2);
+    assertEq(roleList.length, 2);
+    assertEq(roleList[0], GUARDIAN_ROLE_1);
+    assertEq(roleList[1], GUARDIAN_ROLE_2);
+    assertEq(accessManagerEnumerable.getRole(0), GUARDIAN_ROLE_1);
+    assertEq(accessManagerEnumerable.getRole(1), GUARDIAN_ROLE_2);
 
     uint64[] memory adminRoleList = accessManagerEnumerable.getAdminRoles(0, 1);
     assertEq(accessManagerEnumerable.getAdminRoleCount(), 1);
@@ -148,8 +144,7 @@ contract AccessManagerEnumerableTest is Test {
     uint64 newRole1 = 111;
     uint64 newRole2 = 222;
 
-    assertEq(accessManagerEnumerable.getAdminRoleCount(), 1);
-    assertEq(accessManagerEnumerable.getAdminRole(0), ADMIN_ROLE);
+    assertEq(accessManagerEnumerable.getAdminRoleCount(), 0);
 
     vm.startPrank(ADMIN);
     accessManagerEnumerable.setRoleAdmin(GUARDIAN_ROLE_1, adminRole1);
@@ -161,11 +156,11 @@ contract AccessManagerEnumerableTest is Test {
     uint64[] memory adminRoleList = accessManagerEnumerable.getAdminRoles(0, 3);
     assertEq(accessManagerEnumerable.getAdminRoleCount(), 3);
     assertEq(adminRoleList.length, 3);
-    assertEq(adminRoleList[0], ADMIN_ROLE);
-    assertEq(adminRoleList[1], adminRole1);
+    assertEq(adminRoleList[0], adminRole1);
+    assertEq(adminRoleList[1], ADMIN_ROLE);
     assertEq(adminRoleList[2], adminRole2);
-    assertEq(accessManagerEnumerable.getAdminRole(0), ADMIN_ROLE);
-    assertEq(accessManagerEnumerable.getAdminRole(1), adminRole1);
+    assertEq(accessManagerEnumerable.getAdminRole(0), adminRole1);
+    assertEq(accessManagerEnumerable.getAdminRole(1), ADMIN_ROLE);
     assertEq(accessManagerEnumerable.getAdminRole(2), adminRole2);
   }
 
@@ -176,8 +171,7 @@ contract AccessManagerEnumerableTest is Test {
     uint64 newRole2 = 222;
     uint64 newRole3 = 333;
 
-    assertEq(accessManagerEnumerable.getAdminRoleCount(), 1);
-    assertEq(accessManagerEnumerable.getAdminRole(0), ADMIN_ROLE);
+    assertEq(accessManagerEnumerable.getAdminRoleCount(), 0);
 
     vm.startPrank(ADMIN);
     accessManagerEnumerable.setRoleAdmin(GUARDIAN_ROLE_1, ADMIN_ROLE);
@@ -229,8 +223,7 @@ contract AccessManagerEnumerableTest is Test {
     uint64 newRole2 = 222;
     uint64 newRole3 = 333;
 
-    assertEq(accessManagerEnumerable.getAdminRoleCount(), 1);
-    assertEq(accessManagerEnumerable.getAdminRole(0), ADMIN_ROLE);
+    assertEq(accessManagerEnumerable.getAdminRoleCount(), 0);
 
     vm.startPrank(ADMIN);
     accessManagerEnumerable.setRoleAdmin(GUARDIAN_ROLE_1, ADMIN_ROLE);
@@ -317,8 +310,7 @@ contract AccessManagerEnumerableTest is Test {
     uint64 newRole1 = 111;
     uint64 newRole2 = 222;
     uint64 newRole3 = 333;
-    assertLe(accessManagerEnumerable.getRoleCount(), 1);
-    assertEq(accessManagerEnumerable.getRole(0), ADMIN_ROLE);
+    assertEq(accessManagerEnumerable.getAdminRoleCount(), 0);
 
     vm.startPrank(ADMIN);
     accessManagerEnumerable.setRoleGuardian(newRole1, GUARDIAN_ROLE_1);
@@ -326,24 +318,21 @@ contract AccessManagerEnumerableTest is Test {
     accessManagerEnumerable.setRoleGuardian(newRole3, GUARDIAN_ROLE_1);
     vm.stopPrank();
 
-    uint64[] memory roleList = accessManagerEnumerable.getRoles(0, 4);
-    assertLe(accessManagerEnumerable.getRoleCount(), 4);
-    assertEq(roleList.length, 4);
-    assertEq(roleList[0], ADMIN_ROLE);
-    assertEq(roleList[1], newRole1);
-    assertEq(roleList[2], newRole2);
-    assertEq(roleList[3], newRole3);
-    assertEq(accessManagerEnumerable.getRole(0), ADMIN_ROLE);
-    assertEq(accessManagerEnumerable.getRole(1), newRole1);
-    assertEq(accessManagerEnumerable.getRole(2), newRole2);
-    assertEq(accessManagerEnumerable.getRole(3), newRole3);
+    uint64[] memory roleList = accessManagerEnumerable.getRoles(0, 3);
+    assertLe(accessManagerEnumerable.getRoleCount(), 3);
+    assertEq(roleList.length, 3);
+    assertEq(roleList[0], newRole1);
+    assertEq(roleList[1], newRole2);
+    assertEq(roleList[2], newRole3);
+    assertEq(accessManagerEnumerable.getRole(0), newRole1);
+    assertEq(accessManagerEnumerable.getRole(1), newRole2);
+    assertEq(accessManagerEnumerable.getRole(2), newRole3);
   }
 
   function test_setRoleAdmin_fuzz_trackRolesAndTrackAdminRoles_multipleRoles(
     uint256 rolesCount
   ) public {
     rolesCount = bound(rolesCount, 1, 15);
-    uint256 expectedTotalRoleCount = rolesCount + 1; // +1 for ADMIN_ROLE
 
     vm.startPrank(ADMIN);
 
@@ -359,14 +348,12 @@ contract AccessManagerEnumerableTest is Test {
       0,
       accessManagerEnumerable.getRoleCount()
     );
-    assertLe(accessManagerEnumerable.getRoleCount(), expectedTotalRoleCount);
-    assertEq(roleList.length, expectedTotalRoleCount);
+    assertLe(accessManagerEnumerable.getRoleCount(), rolesCount);
+    assertEq(roleList.length, rolesCount);
 
-    assertEq(roleList[0], ADMIN_ROLE);
-    assertEq(accessManagerEnumerable.getRole(0), ADMIN_ROLE);
-    for (uint256 i = 1; i < rolesCount; i++) {
-      assertEq(roleList[i], internalRoles.at(i - 1));
-      assertEq(accessManagerEnumerable.getRole(i), internalRoles.at(i - 1));
+    for (uint256 i = 0; i < rolesCount; i++) {
+      assertEq(roleList[i], internalRoles.at(i));
+      assertEq(accessManagerEnumerable.getRole(i), internalRoles.at(i));
     }
 
     uint64[] memory adminOfRolesList = accessManagerEnumerable.getAdminOfRoles(
@@ -392,8 +379,6 @@ contract AccessManagerEnumerableTest is Test {
     uint256 rolesCount
   ) public {
     rolesCount = bound(rolesCount, 1, 15);
-    uint256 expectedTotalRoleCount = rolesCount + 1; // +1 for ADMIN_ROLE
-    internalAdminRoles.add(ADMIN_ROLE);
 
     vm.startPrank(ADMIN);
 
@@ -411,14 +396,12 @@ contract AccessManagerEnumerableTest is Test {
       0,
       accessManagerEnumerable.getRoleCount()
     );
-    assertLe(accessManagerEnumerable.getRoleCount(), expectedTotalRoleCount);
-    assertEq(roleList.length, expectedTotalRoleCount);
+    assertLe(accessManagerEnumerable.getRoleCount(), rolesCount);
+    assertEq(roleList.length, rolesCount);
 
-    assertEq(roleList[0], ADMIN_ROLE);
-    assertEq(accessManagerEnumerable.getRole(0), ADMIN_ROLE);
-    for (uint256 i = 1; i < rolesCount; i++) {
-      assertEq(roleList[i], internalRoles.at(i - 1));
-      assertEq(accessManagerEnumerable.getRole(i), internalRoles.at(i - 1));
+    for (uint256 i = 0; i < rolesCount; i++) {
+      assertEq(roleList[i], internalRoles.at(i));
+      assertEq(accessManagerEnumerable.getRole(i), internalRoles.at(i));
     }
 
     uint64[] memory adminRoleList = accessManagerEnumerable.getAdminRoles(
