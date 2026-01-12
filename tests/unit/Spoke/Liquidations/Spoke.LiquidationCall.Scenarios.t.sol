@@ -56,7 +56,6 @@ contract SpokeLiquidationCallScenariosTest is SpokeLiquidationCallBaseTest {
     uint256 collateralReserveId = _daiReserveId(spoke);
     uint256 debtReserveId = _wethReserveId(spoke);
 
-    // _updateTargetHealthFactor(spoke, 1.001e18);
     _increaseCollateralSupply(spoke, collateralReserveId, 100000e18, user);
     _makeUserLiquidatable(spoke, user, debtReserveId, 0.999e18);
 
