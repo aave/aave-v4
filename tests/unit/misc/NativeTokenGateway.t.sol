@@ -26,11 +26,9 @@ contract NativeTokenGatewayTest is SpokeBase {
   function test_constructor() public {
     NativeTokenGateway gateway = new NativeTokenGateway(address(tokenList.weth), address(ADMIN));
 
-    assertEq(address(gateway.NATIVE_WRAPPER()), address(tokenList.weth));
-
+    assertEq(gateway.NATIVE_WRAPPER(), address(tokenList.weth));
     assertEq(gateway.owner(), address(ADMIN));
     assertEq(gateway.pendingOwner(), address(0));
-
     assertEq(gateway.rescueGuardian(), address(ADMIN));
   }
 
