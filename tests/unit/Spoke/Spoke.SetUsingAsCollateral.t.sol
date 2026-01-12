@@ -24,7 +24,7 @@ contract SpokeConfigTest is SpokeBase {
     assertTrue(_isUsingAsCollateral(spoke1, daiReserveId, alice), 'alice using as collateral');
     assertFalse(_isUsingAsCollateral(spoke1, daiReserveId, bob), 'bob not using as collateral');
 
-    updateReserveFrozenFlag(spoke1, daiReserveId, true);
+    _updateReserveFrozenFlag(spoke1, daiReserveId, true);
     assertTrue(spoke1.getReserve(daiReserveId).flags.frozen(), 'reserve status frozen');
 
     // disallow when activating

@@ -422,6 +422,9 @@ contract HubConfigTest is HubBase {
     assetId = bound(assetId, 0, hub1.getAssetCount() - 1);
     _assumeValidAssetConfig(newConfig);
     assumeUnusedAddress(newConfig.irStrategy);
+    IHub.AssetConfig memory currentConfig = hub1.getAssetConfig(assetId);
+    // set feeReceiver to remain the same so that test proceeds until setInterestRateData
+    newConfig.feeReceiver = currentConfig.feeReceiver;
 
     vm.mockCallRevert(
       newConfig.irStrategy,
@@ -429,7 +432,7 @@ contract HubConfigTest is HubBase {
       'custom revert'
     );
 
-    vm.expectRevert(address(newConfig.irStrategy));
+    vm.expectRevert(abi.encode('custom revert'), newConfig.irStrategy);
     vm.prank(HUB_ADMIN);
     hub1.updateAssetConfig(assetId, newConfig, encodedIrData);
   }
@@ -631,7 +634,7 @@ contract HubConfigTest is HubBase {
     _drawLiquidity(assetId, amount, true);
     skip(365 days);
 
-    updateSpokeActive(hub1, assetId, _getFeeReceiver(hub1, assetId), false);
+    _updateSpokeActive(hub1, assetId, _getFeeReceiver(hub1, assetId), false);
     IHub.AssetConfig memory config = hub1.getAssetConfig(assetId);
     config.feeReceiver = makeAddr('newFeeReceiver');
 
@@ -650,7 +653,7 @@ contract HubConfigTest is HubBase {
 
     Utils.mintFeeShares(hub1, assetId, ADMIN);
 
-    updateSpokeActive(hub1, assetId, _getFeeReceiver(hub1, assetId), false);
+    _updateSpokeActive(hub1, assetId, _getFeeReceiver(hub1, assetId), false);
     IHub.AssetConfig memory config = hub1.getAssetConfig(assetId);
     config.feeReceiver = makeAddr('newFeeReceiver');
 

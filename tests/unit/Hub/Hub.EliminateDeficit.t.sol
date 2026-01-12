@@ -60,7 +60,7 @@ contract HubEliminateDeficitTest is HubBase {
     _createDeficit(_assetId, _coveredSpoke, _deficitAmountRay);
     Utils.add(hub1, _assetId, _callerSpoke, _deficitAmountRay.fromRayUp() + 1, alice);
 
-    updateSpokeActive(hub1, _assetId, _callerSpoke, true);
+    _updateSpokeActive(hub1, _assetId, _callerSpoke, true);
     _updateSpokePaused(hub1, _assetId, _callerSpoke, true);
 
     vm.prank(_callerSpoke);

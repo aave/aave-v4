@@ -33,7 +33,7 @@ contract SpokeSupplyTest is SpokeBase {
     uint256 daiReserveId = _daiReserveId(spoke1);
     uint256 amount = 100e18;
 
-    updateReserveFrozenFlag(spoke1, daiReserveId, true);
+    _updateReserveFrozenFlag(spoke1, daiReserveId, true);
     assertTrue(spoke1.getReserve(daiReserveId).flags.frozen());
 
     vm.expectRevert(ISpoke.ReserveFrozen.selector);
