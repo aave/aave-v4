@@ -78,7 +78,7 @@ contract Hub is IHub, AccessManaged {
       MIN_ALLOWED_UNDERLYING_DECIMALS <= decimals && decimals <= MAX_ALLOWED_UNDERLYING_DECIMALS,
       InvalidAssetDecimals()
     );
-    require(!_underlyingAssets.contains(underlying), UnderlyingAlreadyListed());
+    require(_underlyingAssets.add(underlying), UnderlyingAlreadyListed());
 
     uint256 assetId = _assetCount++;
     IBasicInterestRateStrategy(irStrategy).setInterestRateData(assetId, irData);
@@ -111,7 +111,6 @@ contract Hub is IHub, AccessManaged {
       feeReceiver: feeReceiver,
       liquidityFee: 0
     });
-    _underlyingAssets.add(underlying);
     _addFeeReceiver(assetId, feeReceiver);
 
     emit AddAsset(assetId, underlying, decimals);
@@ -146,12 +145,8 @@ contract Hub is IHub, AccessManaged {
       InvalidReinvestmentController()
     );
 
-    if (config.irStrategy != asset.irStrategy) {
-      asset.irStrategy = config.irStrategy;
-      IBasicInterestRateStrategy(config.irStrategy).setInterestRateData(assetId, irData);
-    } else {
-      require(irData.length == 0, InvalidInterestRateStrategy());
-    }
+    asset.liquidityFee = config.liquidityFee;
+    asset.reinvestmentController = config.reinvestmentController;
 
     address oldFeeReceiver = asset.feeReceiver;
     if (oldFeeReceiver != config.feeReceiver) {
@@ -164,8 +159,12 @@ contract Hub is IHub, AccessManaged {
       _addFeeReceiver(assetId, config.feeReceiver);
     }
 
-    asset.liquidityFee = config.liquidityFee;
-    asset.reinvestmentController = config.reinvestmentController;
+    if (config.irStrategy != asset.irStrategy) {
+      asset.irStrategy = config.irStrategy;
+      IBasicInterestRateStrategy(config.irStrategy).setInterestRateData(assetId, irData);
+    } else {
+      require(irData.length == 0, InvalidInterestRateStrategy());
+    }
 
     asset.updateDrawnRate(assetId);
 
