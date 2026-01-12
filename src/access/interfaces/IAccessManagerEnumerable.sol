@@ -27,18 +27,18 @@ interface IAccessManagerEnumerable is IAccessManager {
   function getRoles(uint256 start, uint256 end) external view returns (uint64[] memory);
 
   /// @notice Returns the identifier of the admin role at a specified index.
-  /// @dev `ADMIN_ROLE` is only accessible after being set as an admin of a role.
+  /// @dev `ADMIN_ROLE` is not accessible via any index.
   /// @param index The index in the admin role list.
   /// @return The identifier of the admin role.
   function getAdminRole(uint256 index) external view returns (uint64);
 
   /// @notice Returns the total number of existing admin roles.
-  /// @dev `ADMIN_ROLE` is only counted after being set as an admin of a role.
+  /// @dev `ADMIN_ROLE` is not included in the admin role count.
   /// @return The number of admin roles.
   function getAdminRoleCount() external view returns (uint256);
 
   /// @notice Returns the list of admin role identifiers between the specified indexes.
-  /// @dev `ADMIN_ROLE` is only accessible after being set as an admin of a role.
+  /// @dev `ADMIN_ROLE` is not accessible via any index.
   /// @param start The starting index for the admin role list.
   /// @param end The ending index for the admin role list.
   /// @return The list of admin role identifiers.
@@ -67,22 +67,25 @@ interface IAccessManagerEnumerable is IAccessManager {
   ) external view returns (address[] memory);
 
   /// @notice Returns the identifier of the role managed by the given admin role at a specified index.
+  /// @dev All roles are by default assigned to the `ADMIN_ROLE`, but the `ADMIN_ROLE` is not tracked here.
   /// @param adminRoleId The identifier of the admin role.
   /// @param index The index in the admin role role list.
   /// @return The identifier of the role.
-  function getAdminOfRole(uint64 adminRoleId, uint256 index) external view returns (uint64);
+  function getRoleOfAdminRole(uint64 adminRoleId, uint256 index) external view returns (uint64);
 
   /// @notice Returns the number of roles managed by a specified admin role.
+  /// @dev All roles are by default assigned to the `ADMIN_ROLE`, but the `ADMIN_ROLE` is not tracked here.
   /// @param adminRoleId The identifier of the admin role.
   /// @return The number of roles managed by the admin role.
-  function getAdminOfRoleCount(uint64 adminRoleId) external view returns (uint256);
+  function getRoleOfAdminRoleCount(uint64 adminRoleId) external view returns (uint256);
 
   /// @notice Returns the list of role identifiers managed by the given admin role between the specified indexes.
+  /// @dev All roles are by default assigned to the `ADMIN_ROLE`, but the `ADMIN_ROLE` is not tracked here.
   /// @param adminRoleId The identifier of the admin role.
   /// @param start The starting index for the admin role role list.
   /// @param end The ending index for the admin role role list.
   /// @return The list of role identifiers managed by the given admin role.
-  function getAdminOfRoles(
+  function getRolesOfAdminRole(
     uint64 adminRoleId,
     uint256 start,
     uint256 end
