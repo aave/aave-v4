@@ -126,6 +126,7 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, IntentCo
     require(hub != address(0), InvalidAddress());
     require(assetId <= MAX_ALLOWED_ASSET_ID, InvalidAssetId());
     require(!_reserveExists[hub][assetId], ReserveExists());
+    _reserveExists[hub][assetId] = true;
 
     _validateReserveConfig(config);
     _validateDynamicReserveConfig(dynamicConfig);
@@ -153,7 +154,6 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, IntentCo
       })
     });
     _dynamicConfig[reserveId][dynamicConfigKey] = dynamicConfig;
-    _reserveExists[hub][assetId] = true;
 
     emit AddReserve(reserveId, assetId, hub);
     emit UpdateReserveConfig(reserveId, config);
@@ -310,7 +310,7 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, IntentCo
       .calculateRestoreAmount(drawnIndex, amount);
     uint256 restoredShares = drawnDebtRestored.rayDivDown(drawnIndex);
 
-    IHubBase.PremiumDelta memory premiumDelta = userPosition.getPremiumDelta({
+    IHubBase.PremiumDelta memory premiumDelta = userPosition.calculatePremiumDelta({
       drawnSharesTaken: restoredShares,
       drawnIndex: drawnIndex,
       riskPremium: _positionStatus[onBehalfOf].riskPremium,
@@ -824,7 +824,7 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, IntentCo
       uint256 assetId = reserve.assetId;
       IHubBase hub = reserve.hub;
 
-      IHubBase.PremiumDelta memory premiumDelta = userPosition.getPremiumDelta({
+      IHubBase.PremiumDelta memory premiumDelta = userPosition.calculatePremiumDelta({
         drawnSharesTaken: 0,
         drawnIndex: hub.getAssetDrawnIndex(assetId),
         riskPremium: newRiskPremium,
@@ -855,7 +855,7 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, IntentCo
       (uint256 drawnDebtReported, uint256 premiumDebtRay) = userPosition.getDebt(drawnIndex);
       uint256 deficitShares = drawnDebtReported.rayDivDown(drawnIndex);
 
-      IHubBase.PremiumDelta memory premiumDelta = userPosition.getPremiumDelta({
+      IHubBase.PremiumDelta memory premiumDelta = userPosition.calculatePremiumDelta({
         drawnSharesTaken: deficitShares,
         drawnIndex: drawnIndex,
         riskPremium: 0,

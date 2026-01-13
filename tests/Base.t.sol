@@ -33,7 +33,6 @@ import {IERC1967} from 'src/dependencies/openzeppelin/IERC1967.sol';
 import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
 import {MathUtils} from 'src/libraries/math/MathUtils.sol';
 import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
-import {EIP712Types} from 'src/libraries/types/EIP712Types.sol';
 import {Roles} from 'src/libraries/types/Roles.sol';
 import {Rescuable, IRescuable} from 'src/utils/Rescuable.sol';
 import {NoncesKeyed, INoncesKeyed} from 'src/utils/NoncesKeyed.sol';
@@ -70,6 +69,7 @@ import {Constants} from 'tests/Constants.sol';
 import {Utils} from 'tests/Utils.sol';
 
 // mocks
+import {EIP712Types} from 'tests/mocks/EIP712Types.sol';
 import {TestnetERC20} from 'tests/mocks/TestnetERC20.sol';
 import {MockERC20} from 'tests/mocks/MockERC20.sol';
 import {MockPriceFeed} from 'tests/mocks/MockPriceFeed.sol';
@@ -968,7 +968,7 @@ abstract contract Base is Test {
     assertEq(hub.getAssetConfig(assetId), config);
   }
 
-  function updateReserveFrozenFlag(
+  function _updateReserveFrozenFlag(
     ISpoke spoke,
     uint256 reserveId,
     bool newFrozenFlag
@@ -1098,7 +1098,7 @@ abstract contract Base is Test {
     assertEq(_getLatestDynamicReserveConfig(spoke, reserveId), config);
   }
 
-  function updateReserveBorrowableFlag(
+  function _updateReserveBorrowableFlag(
     ISpoke spoke,
     uint256 reserveId,
     bool newBorrowable
@@ -1207,7 +1207,7 @@ abstract contract Base is Test {
     assertEq(hub.getSpokeConfig(assetId, spoke), spokeConfig);
   }
 
-  function updateSpokeActive(
+  function _updateSpokeActive(
     IHub hub,
     uint256 assetId,
     address spoke,

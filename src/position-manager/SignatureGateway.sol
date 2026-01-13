@@ -7,7 +7,7 @@ import {SafeERC20, IERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
 import {IERC20Permit} from 'src/dependencies/openzeppelin/IERC20Permit.sol';
 import {MathUtils} from 'src/libraries/math/MathUtils.sol';
 import {Multicall} from 'src/utils/Multicall.sol';
-import {EIP712Hash, EIP712Types} from 'src/position-manager/libraries/EIP712Hash.sol';
+import {EIP712Hash} from 'src/position-manager/libraries/EIP712Hash.sol';
 import {GatewayBase} from 'src/position-manager/GatewayBase.sol';
 import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 import {ISignatureGateway} from 'src/position-manager/interfaces/ISignatureGateway.sol';
@@ -28,7 +28,7 @@ contract SignatureGateway is ISignatureGateway, GatewayBase, Multicall, IntentCo
 
   /// @inheritdoc ISignatureGateway
   function supplyWithSig(
-    EIP712Types.Supply calldata params,
+    Supply calldata params,
     bytes calldata signature
   ) external onlyRegisteredSpoke(params.spoke) returns (uint256, uint256) {
     address spoke = params.spoke;
@@ -51,7 +51,7 @@ contract SignatureGateway is ISignatureGateway, GatewayBase, Multicall, IntentCo
 
   /// @inheritdoc ISignatureGateway
   function withdrawWithSig(
-    EIP712Types.Withdraw calldata params,
+    Withdraw calldata params,
     bytes calldata signature
   ) external onlyRegisteredSpoke(params.spoke) returns (uint256, uint256) {
     require(block.timestamp <= params.deadline, InvalidSignature());
@@ -79,7 +79,7 @@ contract SignatureGateway is ISignatureGateway, GatewayBase, Multicall, IntentCo
 
   /// @inheritdoc ISignatureGateway
   function borrowWithSig(
-    EIP712Types.Borrow calldata params,
+    Borrow calldata params,
     bytes calldata signature
   ) external onlyRegisteredSpoke(params.spoke) returns (uint256, uint256) {
     require(block.timestamp <= params.deadline, InvalidSignature());
@@ -107,7 +107,7 @@ contract SignatureGateway is ISignatureGateway, GatewayBase, Multicall, IntentCo
 
   /// @inheritdoc ISignatureGateway
   function repayWithSig(
-    EIP712Types.Repay calldata params,
+    Repay calldata params,
     bytes calldata signature
   ) external onlyRegisteredSpoke(params.spoke) returns (uint256, uint256) {
     require(block.timestamp <= params.deadline, InvalidSignature());
@@ -136,7 +136,7 @@ contract SignatureGateway is ISignatureGateway, GatewayBase, Multicall, IntentCo
 
   /// @inheritdoc ISignatureGateway
   function setUsingAsCollateralWithSig(
-    EIP712Types.SetUsingAsCollateral calldata params,
+    SetUsingAsCollateral calldata params,
     bytes calldata signature
   ) external onlyRegisteredSpoke(params.spoke) {
     address user = params.onBehalfOf;
@@ -153,7 +153,7 @@ contract SignatureGateway is ISignatureGateway, GatewayBase, Multicall, IntentCo
 
   /// @inheritdoc ISignatureGateway
   function updateUserRiskPremiumWithSig(
-    EIP712Types.UpdateUserRiskPremium calldata params,
+    UpdateUserRiskPremium calldata params,
     bytes calldata signature
   ) external onlyRegisteredSpoke(params.spoke) {
     _verifyAndConsumeIntent({
@@ -169,7 +169,7 @@ contract SignatureGateway is ISignatureGateway, GatewayBase, Multicall, IntentCo
 
   /// @inheritdoc ISignatureGateway
   function updateUserDynamicConfigWithSig(
-    EIP712Types.UpdateUserDynamicConfig calldata params,
+    UpdateUserDynamicConfig calldata params,
     bytes calldata signature
   ) external onlyRegisteredSpoke(params.spoke) {
     _verifyAndConsumeIntent({
