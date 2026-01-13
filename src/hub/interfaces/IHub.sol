@@ -45,6 +45,8 @@ interface IHub is IHubBase, IAccessManaged {
     uint96 drawnRate;
     uint40 lastUpdateTimestamp;
     //
+    uint120 supplyIndex; // todo: pack
+    //
     address underlying;
     //
     address irStrategy;

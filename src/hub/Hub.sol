@@ -101,6 +101,7 @@ contract Hub is IHub, AccessManaged {
       premiumShares: 0,
       premiumOffsetRay: 0,
       drawnIndex: drawnIndex.toUint120(),
+      supplyIndex: drawnIndex.toUint120(),
       underlying: underlying,
       lastUpdateTimestamp: lastUpdateTimestamp.toUint40(),
       decimals: decimals,
@@ -593,7 +594,8 @@ contract Hub is IHub, AccessManaged {
   /// @inheritdoc IHub
   function getAssetAccruedFees(uint256 assetId) external view returns (uint256) {
     Asset storage asset = _assets[assetId];
-    return asset.realizedFees + asset.getUnrealizedFees(asset.getDrawnIndex());
+    (, , uint256 accruedFees) = asset.getIndexesAndFees();
+    return asset.realizedFees + accruedFees;
   }
 
   /// @inheritdoc IHub
