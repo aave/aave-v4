@@ -10,18 +10,16 @@ import {AggregatorV3Interface} from 'src/dependencies/chainlink/AggregatorV3Inte
 /// @dev This price feed can be set for reserves that use the base currency as collateral.
 contract UnitPriceFeed is AggregatorV3Interface {
   /// @inheritdoc AggregatorV3Interface
-  uint8 public immutable decimals;
-
-  int256 private immutable UNITS;
-
-  /// @inheritdoc AggregatorV3Interface
   string public description;
+
+  uint8 private immutable DECIMALS;
+  int256 private immutable UNITS;
 
   /// @dev Constructor.
   /// @param decimals_ The number of decimals used to represent the unit price.
   /// @param description_ The description of the unit price feed.
   constructor(uint8 decimals_, string memory description_) {
-    decimals = decimals_;
+    DECIMALS = decimals_;
     description = description_;
     UNITS = int256(10 ** decimals_);
   }
@@ -71,5 +69,10 @@ contract UnitPriceFeed is AggregatorV3Interface {
     startedAt = block.timestamp;
     updatedAt = block.timestamp;
     answeredInRound = roundId;
+  }
+
+  /// @inheritdoc AggregatorV3Interface
+  function decimals() external view returns (uint8) {
+    return DECIMALS;
   }
 }
