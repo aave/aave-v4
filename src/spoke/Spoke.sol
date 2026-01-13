@@ -468,7 +468,10 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
         )
       )
     );
-    require(SignatureChecker.isValidSignatureNow(user, digest, signature), InvalidSignature());
+    require(
+      SignatureChecker.isValidSignatureNowCalldata(user, digest, signature),
+      InvalidSignature()
+    );
     _useCheckedNonce(user, nonce);
     _setUserPositionManager({positionManager: positionManager, user: user, approve: approve});
   }
