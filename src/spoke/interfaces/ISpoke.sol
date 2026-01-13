@@ -14,20 +14,6 @@ type ReserveFlags is uint8;
 /// @author Aave Labs
 /// @notice Full interface for Spoke.
 interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
-  /// @notice Intent data to set user position manager.
-  /// @param positionManager The address of the position manager.
-  /// @param user The address of the user on whose behalf position manager can act.
-  /// @param approve True to approve the position manager, false to revoke approval.
-  /// @param nonce The key-prefixed nonce for the signature.
-  /// @param deadline The deadline for the signature.
-  struct SpokeSetUserPositionManager {
-    address positionManager;
-    address user;
-    bool approve;
-    uint256 nonce;
-    uint256 deadline;
-  }
-
   /// @notice Reserve level data.
   /// @dev underlying The address of the underlying asset.
   /// @dev hub The address of the associated Hub.
