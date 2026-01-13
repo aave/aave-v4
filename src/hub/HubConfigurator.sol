@@ -3,7 +3,7 @@
 pragma solidity 0.8.28;
 
 import {IERC20Metadata} from 'src/dependencies/openzeppelin/IERC20Metadata.sol';
-import {Ownable2Step, Ownable} from 'src/dependencies/openzeppelin/Ownable2Step.sol';
+import {AccessManaged} from 'src/dependencies/openzeppelin/AccessManaged.sol';
 import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
 import {IHub} from 'src/hub/interfaces/IHub.sol';
 import {IHubConfigurator} from 'src/hub/interfaces/IHubConfigurator.sol';
@@ -12,12 +12,12 @@ import {IHubConfigurator} from 'src/hub/interfaces/IHubConfigurator.sol';
 /// @author Aave Labs
 /// @notice Handles administrative functions on the Hub.
 /// @dev Must be granted permission by the Hub.
-contract HubConfigurator is Ownable2Step, IHubConfigurator {
+contract HubConfigurator is AccessManaged, IHubConfigurator {
   using SafeCast for uint256;
 
   /// @dev Constructor.
-  /// @param owner_ The address of the owner.
-  constructor(address owner_) Ownable(owner_) {}
+  /// @param authority_ The address of the authority contract which manages permissions.
+  constructor(address authority_) AccessManaged(authority_) {}
 
   /// @inheritdoc IHubConfigurator
   function addAsset(
@@ -27,7 +27,7 @@ contract HubConfigurator is Ownable2Step, IHubConfigurator {
     uint256 liquidityFee,
     address irStrategy,
     bytes calldata irData
-  ) external onlyOwner returns (uint256) {
+  ) external restricted returns (uint256) {
     IHub targetHub = IHub(hub);
     uint256 assetId = targetHub.addAsset(
       underlying,
@@ -49,7 +49,7 @@ contract HubConfigurator is Ownable2Step, IHubConfigurator {
     uint256 liquidityFee,
     address irStrategy,
     bytes calldata irData
-  ) external onlyOwner returns (uint256) {
+  ) external restricted returns (uint256) {
     IHub targetHub = IHub(hub);
     uint256 assetId = targetHub.addAsset(underlying, decimals, feeReceiver, irStrategy, irData);
     _updateLiquidityFee(targetHub, assetId, liquidityFee);
@@ -61,12 +61,12 @@ contract HubConfigurator is Ownable2Step, IHubConfigurator {
     address hub,
     uint256 assetId,
     uint256 liquidityFee
-  ) external onlyOwner {
+  ) external restricted {
     _updateLiquidityFee(IHub(hub), assetId, liquidityFee);
   }
 
   /// @inheritdoc IHubConfigurator
-  function updateFeeReceiver(address hub, uint256 assetId, address feeReceiver) external onlyOwner {
+  function updateFeeReceiver(address hub, uint256 assetId, address feeReceiver) external restricted {
     IHub targetHub = IHub(hub);
     IHub.AssetConfig memory config = targetHub.getAssetConfig(assetId);
     config.feeReceiver = feeReceiver;
@@ -79,7 +79,7 @@ contract HubConfigurator is Ownable2Step, IHubConfigurator {
     uint256 assetId,
     uint256 liquidityFee,
     address feeReceiver
-  ) external onlyOwner {
+  ) external restricted {
     IHub targetHub = IHub(hub);
     IHub.AssetConfig memory config = targetHub.getAssetConfig(assetId);
     config.liquidityFee = liquidityFee.toUint16();
@@ -93,7 +93,7 @@ contract HubConfigurator is Ownable2Step, IHubConfigurator {
     uint256 assetId,
     address irStrategy,
     bytes calldata irData
-  ) external onlyOwner {
+  ) external restricted {
     IHub targetHub = IHub(hub);
     IHub.AssetConfig memory config = targetHub.getAssetConfig(assetId);
     config.irStrategy = irStrategy;
@@ -105,7 +105,7 @@ contract HubConfigurator is Ownable2Step, IHubConfigurator {
     address hub,
     uint256 assetId,
     address reinvestmentController
-  ) external onlyOwner {
+  ) external restricted {
     IHub targetHub = IHub(hub);
     IHub.AssetConfig memory config = targetHub.getAssetConfig(assetId);
     config.reinvestmentController = reinvestmentController;
@@ -113,7 +113,7 @@ contract HubConfigurator is Ownable2Step, IHubConfigurator {
   }
 
   /// @inheritdoc IHubConfigurator
-  function freezeAsset(address hub, uint256 assetId) external onlyOwner {
+  function freezeAsset(address hub, uint256 assetId) external restricted {
     IHub targetHub = IHub(hub);
     uint256 spokesCount = targetHub.getSpokeCount(assetId);
 
@@ -127,7 +127,7 @@ contract HubConfigurator is Ownable2Step, IHubConfigurator {
   }
 
   /// @inheritdoc IHubConfigurator
-  function deactivateAsset(address hub, uint256 assetId) external onlyOwner {
+  function deactivateAsset(address hub, uint256 assetId) external restricted {
     IHub targetHub = IHub(hub);
     uint256 spokesCount = targetHub.getSpokeCount(assetId);
     for (uint256 i = 0; i < spokesCount; ++i) {
@@ -139,7 +139,7 @@ contract HubConfigurator is Ownable2Step, IHubConfigurator {
   }
 
   /// @inheritdoc IHubConfigurator
-  function pauseAsset(address hub, uint256 assetId) external onlyOwner {
+  function pauseAsset(address hub, uint256 assetId) external restricted {
     IHub targetHub = IHub(hub);
     uint256 spokesCount = targetHub.getSpokeCount(assetId);
     for (uint256 i = 0; i < spokesCount; ++i) {
@@ -156,7 +156,7 @@ contract HubConfigurator is Ownable2Step, IHubConfigurator {
     address spoke,
     uint256 assetId,
     IHub.SpokeConfig calldata config
-  ) external onlyOwner {
+  ) external restricted {
     IHub(hub).addSpoke(assetId, spoke, config);
   }
 
@@ -166,7 +166,7 @@ contract HubConfigurator is Ownable2Step, IHubConfigurator {
     address spoke,
     uint256[] calldata assetIds,
     IHub.SpokeConfig[] calldata configs
-  ) external onlyOwner {
+  ) external restricted {
     uint256 assetCount = assetIds.length;
     require(assetCount == configs.length, MismatchedConfigs());
     for (uint256 i = 0; i < assetCount; ++i) {
@@ -180,7 +180,7 @@ contract HubConfigurator is Ownable2Step, IHubConfigurator {
     uint256 assetId,
     address spoke,
     bool active
-  ) external onlyOwner {
+  ) external restricted {
     IHub targetHub = IHub(hub);
     IHub.SpokeConfig memory config = targetHub.getSpokeConfig(assetId, spoke);
     config.active = active;
@@ -193,7 +193,7 @@ contract HubConfigurator is Ownable2Step, IHubConfigurator {
     uint256 assetId,
     address spoke,
     bool paused
-  ) external onlyOwner {
+  ) external restricted {
     IHub targetHub = IHub(hub);
     IHub.SpokeConfig memory config = targetHub.getSpokeConfig(assetId, spoke);
     config.paused = paused;
@@ -206,7 +206,7 @@ contract HubConfigurator is Ownable2Step, IHubConfigurator {
     uint256 assetId,
     address spoke,
     uint256 addCap
-  ) external onlyOwner {
+  ) external restricted {
     IHub targetHub = IHub(hub);
     IHub.SpokeConfig memory config = targetHub.getSpokeConfig(assetId, spoke);
     config.addCap = addCap.toUint40();
@@ -219,7 +219,7 @@ contract HubConfigurator is Ownable2Step, IHubConfigurator {
     uint256 assetId,
     address spoke,
     uint256 drawCap
-  ) external onlyOwner {
+  ) external restricted {
     IHub targetHub = IHub(hub);
     IHub.SpokeConfig memory config = targetHub.getSpokeConfig(assetId, spoke);
     config.drawCap = drawCap.toUint40();
@@ -232,7 +232,7 @@ contract HubConfigurator is Ownable2Step, IHubConfigurator {
     uint256 assetId,
     address spoke,
     uint256 riskPremiumThreshold
-  ) external onlyOwner {
+  ) external restricted {
     IHub targetHub = IHub(hub);
     IHub.SpokeConfig memory config = targetHub.getSpokeConfig(assetId, spoke);
     config.riskPremiumThreshold = riskPremiumThreshold.toUint24();
@@ -246,12 +246,12 @@ contract HubConfigurator is Ownable2Step, IHubConfigurator {
     address spoke,
     uint256 addCap,
     uint256 drawCap
-  ) external onlyOwner {
+  ) external restricted {
     _updateSpokeCaps(IHub(hub), assetId, spoke, addCap, drawCap);
   }
 
   /// @inheritdoc IHubConfigurator
-  function deactivateSpoke(address hub, address spoke) external onlyOwner {
+  function deactivateSpoke(address hub, address spoke) external restricted {
     IHub targetHub = IHub(hub);
     uint256 assetCount = targetHub.getAssetCount();
     for (uint256 assetId = 0; assetId < assetCount; ++assetId) {
@@ -264,7 +264,7 @@ contract HubConfigurator is Ownable2Step, IHubConfigurator {
   }
 
   /// @inheritdoc IHubConfigurator
-  function pauseSpoke(address hub, address spoke) external onlyOwner {
+  function pauseSpoke(address hub, address spoke) external restricted {
     IHub targetHub = IHub(hub);
     uint256 assetCount = targetHub.getAssetCount();
     for (uint256 assetId = 0; assetId < assetCount; ++assetId) {
@@ -277,7 +277,7 @@ contract HubConfigurator is Ownable2Step, IHubConfigurator {
   }
 
   /// @inheritdoc IHubConfigurator
-  function freezeSpoke(address hub, address spoke) external onlyOwner {
+  function freezeSpoke(address hub, address spoke) external restricted {
     IHub targetHub = IHub(hub);
     uint256 assetCount = targetHub.getAssetCount();
     for (uint256 assetId = 0; assetId < assetCount; ++assetId) {
@@ -295,7 +295,7 @@ contract HubConfigurator is Ownable2Step, IHubConfigurator {
     address hub,
     uint256 assetId,
     bytes calldata irData
-  ) external onlyOwner {
+  ) external restricted {
     IHub(hub).setInterestRateData(assetId, irData);
   }
 

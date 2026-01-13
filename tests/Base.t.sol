@@ -157,6 +157,8 @@ abstract contract Base is Test {
   address internal TREASURY_ADMIN = makeAddr('TREASURY_ADMIN');
   address internal LIQUIDATOR = makeAddr('LIQUIDATOR');
   address internal POSITION_MANAGER = makeAddr('POSITION_MANAGER');
+  address internal HUB_CONFIGURATOR = makeAddr('HUB_CONFIGURATOR');
+  address internal SPOKE_CONFIGURATOR = makeAddr('SPOKE_CONFIGURATOR');
 
   TokenList internal tokenList;
   uint256 internal wethAssetId = 0;
@@ -310,6 +312,10 @@ abstract contract Base is Test {
     manager.grantRole(Roles.USER_POSITION_UPDATER_ROLE, SPOKE_ADMIN, 0);
     manager.grantRole(Roles.USER_POSITION_UPDATER_ROLE, USER_POSITION_UPDATER, 0);
 
+    // Grant configurator roles to the role holders
+    manager.grantRole(Roles.HUB_CONFIGURATOR_ROLE, HUB_CONFIGURATOR, 0);
+    manager.grantRole(Roles.SPOKE_CONFIGURATOR_ROLE, SPOKE_CONFIGURATOR, 0);
+
     // Grant responsibilities to roles
     {
       bytes4[] memory selectors = new bytes4[](7);
@@ -340,6 +346,85 @@ abstract contract Base is Test {
       selectors[5] = IHub.mintFeeShares.selector;
       manager.setTargetFunctionRole(address(targetHub), selectors, Roles.HUB_ADMIN_ROLE);
     }
+
+    vm.stopPrank();
+  }
+
+  function setUpConfiguratorRoles(
+    address hubConfigurator,
+    address spokeConfigurator,
+    IAccessManager manager
+  ) internal {
+    vm.startPrank(ADMIN);
+
+    // Grant configurators admin roles so they can call hub/spoke functions
+    manager.grantRole(Roles.HUB_ADMIN_ROLE, hubConfigurator, 0);
+    manager.grantRole(Roles.SPOKE_ADMIN_ROLE, spokeConfigurator, 0);
+
+    // Set up HubConfigurator function permissions - all functions callable by HUB_CONFIGURATOR_ROLE
+    {
+      bytes4[] memory selectors = new bytes4[](22);
+      selectors[0] = IHubConfigurator.updateLiquidityFee.selector;
+      selectors[1] = IHubConfigurator.updateFeeReceiver.selector;
+      selectors[2] = IHubConfigurator.updateFeeConfig.selector;
+      selectors[3] = IHubConfigurator.updateInterestRateStrategy.selector;
+      selectors[4] = IHubConfigurator.updateReinvestmentController.selector;
+      selectors[5] = IHubConfigurator.freezeAsset.selector;
+      selectors[6] = IHubConfigurator.deactivateAsset.selector;
+      selectors[7] = IHubConfigurator.pauseAsset.selector;
+      selectors[8] = IHubConfigurator.addSpoke.selector;
+      selectors[9] = IHubConfigurator.addSpokeToAssets.selector;
+      selectors[10] = IHubConfigurator.updateSpokeActive.selector;
+      selectors[11] = IHubConfigurator.updateSpokePaused.selector;
+      selectors[12] = IHubConfigurator.updateSpokeSupplyCap.selector;
+      selectors[13] = IHubConfigurator.updateSpokeDrawCap.selector;
+      selectors[14] = IHubConfigurator.updateSpokeRiskPremiumThreshold.selector;
+      selectors[15] = IHubConfigurator.updateSpokeCaps.selector;
+      selectors[16] = IHubConfigurator.deactivateSpoke.selector;
+      selectors[17] = IHubConfigurator.pauseSpoke.selector;
+      selectors[18] = IHubConfigurator.freezeSpoke.selector;
+      selectors[19] = IHubConfigurator.updateInterestRateData.selector;
+      // Handle overloaded addAsset functions - note: Solidity doesn't support disambiguating overloaded
+      // functions via interface selectors. We use the function signature hash as the only option.
+      selectors[20] = bytes4(
+        keccak256('addAsset(address,address,address,uint256,address,bytes)')
+      );
+      selectors[21] = bytes4(
+        keccak256('addAsset(address,address,uint8,address,uint256,address,bytes)')
+      );
+      manager.setTargetFunctionRole(hubConfigurator, selectors, Roles.HUB_CONFIGURATOR_ROLE);
+    }
+
+    // Set up SpokeConfigurator function permissions - all functions callable by SPOKE_CONFIGURATOR_ROLE
+    {
+      bytes4[] memory selectors = new bytes4[](24);
+      selectors[0] = ISpokeConfigurator.updateReservePriceSource.selector;
+      selectors[1] = ISpokeConfigurator.updateLiquidationTargetHealthFactor.selector;
+      selectors[2] = ISpokeConfigurator.updateHealthFactorForMaxBonus.selector;
+      selectors[3] = ISpokeConfigurator.updateLiquidationBonusFactor.selector;
+      selectors[4] = ISpokeConfigurator.updateLiquidationConfig.selector;
+      selectors[5] = ISpokeConfigurator.updateMaxReserves.selector;
+      selectors[6] = ISpokeConfigurator.addReserve.selector;
+      selectors[7] = ISpokeConfigurator.updatePaused.selector;
+      selectors[8] = ISpokeConfigurator.updateFrozen.selector;
+      selectors[9] = ISpokeConfigurator.updateBorrowable.selector;
+      selectors[10] = ISpokeConfigurator.updateLiquidatable.selector;
+      selectors[11] = ISpokeConfigurator.updateReceiveSharesEnabled.selector;
+      selectors[12] = ISpokeConfigurator.updateCollateralRisk.selector;
+      selectors[13] = ISpokeConfigurator.addCollateralFactor.selector;
+      selectors[14] = ISpokeConfigurator.updateCollateralFactor.selector;
+      selectors[15] = ISpokeConfigurator.addMaxLiquidationBonus.selector;
+      selectors[16] = ISpokeConfigurator.updateMaxLiquidationBonus.selector;
+      selectors[17] = ISpokeConfigurator.addLiquidationFee.selector;
+      selectors[18] = ISpokeConfigurator.updateLiquidationFee.selector;
+      selectors[19] = ISpokeConfigurator.addDynamicReserveConfig.selector;
+      selectors[20] = ISpokeConfigurator.updateDynamicReserveConfig.selector;
+      selectors[21] = ISpokeConfigurator.pauseAllReserves.selector;
+      selectors[22] = ISpokeConfigurator.freezeAllReserves.selector;
+      selectors[23] = ISpokeConfigurator.updatePositionManager.selector;
+      manager.setTargetFunctionRole(spokeConfigurator, selectors, Roles.SPOKE_CONFIGURATOR_ROLE);
+    }
+
     vm.stopPrank();
   }
 

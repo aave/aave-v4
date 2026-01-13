@@ -11,17 +11,15 @@ contract HubRestoreTest is HubBase {
   using SafeCast for *;
 
   HubConfigurator public hubConfigurator;
-  address public HUB_CONFIGURATOR_ADMIN = makeAddr('HUB_CONFIGURATOR_ADMIN');
 
   function setUp() public override {
     super.setUp();
 
     // Set up a hub configurator to test freezing and pausing assets
-    hubConfigurator = new HubConfigurator(HUB_CONFIGURATOR_ADMIN);
     IAccessManager accessManager = IAccessManager(hub1.authority());
-    // Grant hubConfigurator hub admin role with 0 delay
-    vm.prank(ADMIN);
-    accessManager.grantRole(Roles.HUB_ADMIN_ROLE, address(hubConfigurator), 0);
+    hubConfigurator = new HubConfigurator(address(accessManager));
+    SpokeConfigurator spokeConfigurator = new SpokeConfigurator(address(accessManager));
+    setUpConfiguratorRoles(address(hubConfigurator), address(spokeConfigurator), accessManager);
   }
 
   function test_restore_revertsWith_SurplusDrawnRestored() public {
@@ -123,7 +121,7 @@ contract HubRestoreTest is HubBase {
   }
 
   function test_restore_revertsWith_SpokeNotActive_whenPaused() public {
-    vm.prank(HUB_CONFIGURATOR_ADMIN);
+    vm.prank(HUB_CONFIGURATOR);
     hubConfigurator.deactivateAsset(address(hub1), daiAssetId);
 
     IHubBase.PremiumDelta memory premiumDelta = _getExpectedPremiumDelta(
@@ -211,7 +209,7 @@ contract HubRestoreTest is HubBase {
     });
 
     // Freeze asset
-    vm.prank(HUB_CONFIGURATOR_ADMIN);
+    vm.prank(HUB_CONFIGURATOR);
     hubConfigurator.freezeAsset(address(hub1), daiAssetId);
 
     (uint256 drawn, uint256 premium) = hub1.getSpokeOwed(daiAssetId, address(spoke1));
