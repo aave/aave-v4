@@ -29,10 +29,7 @@ contract SignatureGatewaySetSelfAsUserPositionManagerTest is SignatureGatewayBas
       address(spoke1),
       abi.encodeCall(
         ISpoke.setUserPositionManagerWithSig,
-        (
-          EIP712Types.SetUserPositionManager(address(gateway), user, approve, nonce, deadline),
-          signature
-        )
+        (address(gateway), user, approve, nonce, deadline, signature)
       ),
       1
     );

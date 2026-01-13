@@ -114,9 +114,6 @@ interface ISignatureGateway is IMulticall, IIntentConsumer, IGatewayBase {
     uint256 deadline;
   }
 
-  /// @notice Thrown when signature deadline has passed or signer is not `onBehalfOf`.
-  error InvalidSignature();
-
   /// @notice Facilitates `supply` action on the specified registered `spoke` with a typed signature from `onBehalfOf`.
   /// @dev Supplied assets are pulled from `onBehalfOf`, prior approval to this gateway is required.
   /// @dev Uses keyed-nonces where for each key's namespace nonce is consumed sequentially.

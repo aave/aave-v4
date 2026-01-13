@@ -193,16 +193,14 @@ contract SignatureGateway is ISignatureGateway, GatewayBase, Multicall, IntentCo
     bytes calldata signature
   ) external onlyRegisteredSpoke(spoke) {
     try
-      ISpoke(spoke).setUserPositionManagerWithSig(
-        EIP712Types.SetUserPositionManager({
-          positionManager: address(this),
-          user: user,
-          approve: approve,
-          nonce: nonce,
-          deadline: deadline
-        }),
-        signature
-      )
+      ISpoke(spoke).setUserPositionManagerWithSig({
+        positionManager: address(this),
+        user: user,
+        approve: approve,
+        nonce: nonce,
+        deadline: deadline,
+        signature: signature
+      })
     {} catch {}
   }
 

@@ -7,7 +7,6 @@ import {IIntentConsumer} from 'src/interfaces/IIntentConsumer.sol';
 import {IMulticall} from 'src/interfaces/IMulticall.sol';
 import {IHubBase} from 'src/hub/interfaces/IHubBase.sol';
 import {ISpokeBase} from 'src/spoke/interfaces/ISpokeBase.sol';
-import {EIP712Types} from 'src/libraries/types/EIP712Types.sol';
 
 type ReserveFlags is uint8;
 
@@ -401,10 +400,17 @@ interface ISpoke is ISpokeBase, IMulticall, IIntentConsumer, IAccessManaged {
 
   /// @notice Enables a user to grant or revoke approval for a position manager using an EIP712-typed intent.
   /// @dev Uses keyed-nonces where for each key's namespace nonce is consumed sequentially.
-  /// @param params The structured setUserPositionManager parameters.
-  /// @param signature The EIP712-compliant signature bytes.
+  /// @param positionManager The address of the position manager.
+  /// @param user The address of the user on whose behalf position manager can act.
+  /// @param approve True to approve the position manager, false to revoke approval.
+  /// @param nonce The key-prefixed nonce for the signature.
+  /// @param deadline The deadline for the signature.  /// @param signature The EIP712-compliant signature bytes.
   function setUserPositionManagerWithSig(
-    EIP712Types.SetUserPositionManager calldata params,
+    address positionManager,
+    address user,
+    bool approve,
+    uint256 nonce,
+    uint256 deadline,
     bytes calldata signature
   ) external;
 
@@ -514,6 +520,10 @@ interface ISpoke is ISpokeBase, IMulticall, IIntentConsumer, IAccessManaged {
   /// @notice Returns the address of the external `LiquidationLogic` library.
   /// @return The address of the library.
   function getLiquidationLogic() external pure returns (address);
+
+  /// @notice Returns the type hash for the SetUserPositionManager intent.
+  /// @return The bytes-encoded EIP-712 struct hash representing the intent.
+  function SET_USER_POSITION_MANAGER_TYPEHASH() external view returns (bytes32);
 
   /// @notice Returns the address of the AaveOracle contract.
   function ORACLE() external view returns (address);

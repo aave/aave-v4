@@ -8,7 +8,6 @@ import {IERC20Permit} from 'src/dependencies/openzeppelin/IERC20Permit.sol';
 import {IntentConsumer} from 'src/misc/IntentConsumer.sol';
 import {AccessManagedUpgradeable} from 'src/dependencies/openzeppelin-upgradeable/AccessManagedUpgradeable.sol';
 import {MathUtils} from 'src/libraries/math/MathUtils.sol';
-import {EIP712Hash, EIP712Types} from 'src/position-manager/libraries/EIP712Hash.sol';
 import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
 import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
 import {KeyValueList} from 'src/spoke/libraries/KeyValueList.sol';
@@ -36,7 +35,11 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, IntentCo
   using PositionStatusMap for *;
   using ReserveFlagsMap for ReserveFlags;
   using UserPositionDebt for ISpoke.UserPosition;
-  using EIP712Hash for EIP712Types.SetUserPositionManager;
+
+  /// @inheritdoc ISpoke
+  bytes32 public constant SET_USER_POSITION_MANAGER_TYPEHASH =
+    // keccak256('SetUserPositionManager(address positionManager,address user,bool approve,uint256 nonce,uint256 deadline)')
+    0x758d23a3c07218b7ea0b4f7f63903c4e9d5cbde72d3bcfe3e9896639025a0214;
 
   address public immutable ORACLE;
 
@@ -442,21 +445,30 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, IntentCo
 
   /// @inheritdoc ISpoke
   function setUserPositionManagerWithSig(
-    EIP712Types.SetUserPositionManager calldata params,
+    address positionManager,
+    address user,
+    bool approve,
+    uint256 nonce,
+    uint256 deadline,
     bytes calldata signature
   ) external {
     _verifyAndConsumeIntent({
-      signer: params.user,
-      intentHash: params.hash(),
-      nonce: params.nonce,
-      deadline: params.deadline,
+      signer: user,
+      intentHash: keccak256(
+        abi.encode(
+          SET_USER_POSITION_MANAGER_TYPEHASH,
+          positionManager,
+          user,
+          approve,
+          nonce,
+          deadline
+        )
+      ),
+      nonce: nonce,
+      deadline: deadline,
       signature: signature
     });
-    _setUserPositionManager({
-      positionManager: params.positionManager,
-      user: params.user,
-      approve: params.approve
-    });
+    _setUserPositionManager({positionManager: positionManager, user: user, approve: approve});
   }
 
   /// @inheritdoc ISpoke
