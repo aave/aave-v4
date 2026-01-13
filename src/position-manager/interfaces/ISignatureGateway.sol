@@ -10,9 +10,6 @@ import {IGatewayBase} from 'src/position-manager/interfaces/IGatewayBase.sol';
 /// @author Aave Labs
 /// @notice Minimal interface for protocol actions involving signed intents.
 interface ISignatureGateway is IMulticall, INoncesKeyed, IGatewayBase {
-  /// @notice Thrown when signature deadline has passed or signer is not `onBehalfOf`.
-  error InvalidSignature();
-
   /// @notice Intent data to supply assets to a reserve.
   /// @param spoke The address of the registered spoke.
   /// @param reserveId The identifier of the reserve.
@@ -116,6 +113,9 @@ interface ISignatureGateway is IMulticall, INoncesKeyed, IGatewayBase {
     uint256 nonce;
     uint256 deadline;
   }
+
+  /// @notice Thrown when signature deadline has passed or signer is not `onBehalfOf`.
+  error InvalidSignature();
 
   /// @notice Facilitates `supply` action on the specified registered `spoke` with a typed signature from `onBehalfOf`.
   /// @dev Supplied assets are pulled from `onBehalfOf`, prior approval to this gateway is required.
