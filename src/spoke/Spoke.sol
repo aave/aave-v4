@@ -41,6 +41,7 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, IntentCo
     // keccak256('SetUserPositionManager(address positionManager,address user,bool approve,uint256 nonce,uint256 deadline)')
     0x758d23a3c07218b7ea0b4f7f63903c4e9d5cbde72d3bcfe3e9896639025a0214;
 
+  /// @inheritdoc ISpoke
   address public immutable ORACLE;
 
   /// @dev The maximum allowed value for an asset identifier (inclusive).
