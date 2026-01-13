@@ -404,7 +404,8 @@ interface ISpoke is ISpokeBase, IMulticall, IIntentConsumer, IAccessManaged {
   /// @param user The address of the user on whose behalf position manager can act.
   /// @param approve True to approve the position manager, false to revoke approval.
   /// @param nonce The key-prefixed nonce for the signature.
-  /// @param deadline The deadline for the signature.  /// @param signature The EIP712-compliant signature bytes.
+  /// @param deadline The deadline for the signature.
+  /// @param signature The EIP712-compliant signature bytes.
   function setUserPositionManagerWithSig(
     address positionManager,
     address user,
