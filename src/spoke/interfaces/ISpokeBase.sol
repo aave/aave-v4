@@ -169,32 +169,6 @@ interface ISpokeBase {
     bool receiveShares
   ) external;
 
-  /// @notice Returns the total amount of supplied assets of a given reserve.
-  /// @param reserveId The identifier of the reserve.
-  /// @return The amount of supplied assets.
-  function getReserveSuppliedAssets(uint256 reserveId) external view returns (uint256);
-
-  /// @notice Returns the total amount of supplied shares of a given reserve.
-  /// @dev It reverts if the reserve associated with the given reserve identifier is not listed.
-  /// @param reserveId The identifier of the reserve.
-  /// @return The amount of supplied shares.
-  function getReserveSuppliedShares(uint256 reserveId) external view returns (uint256);
-
-  /// @notice Returns the debt of a given reserve.
-  /// @dev It reverts if the reserve associated with the given reserve identifier is not listed.
-  /// @dev The total debt of the reserve is the sum of drawn debt and premium debt.
-  /// @param reserveId The identifier of the reserve.
-  /// @return The amount of drawn debt.
-  /// @return The amount of premium debt.
-  function getReserveDebt(uint256 reserveId) external view returns (uint256, uint256);
-
-  /// @notice Returns the total debt of a given reserve.
-  /// @dev It reverts if the reserve associated with the given reserve identifier is not listed.
-  /// @dev The total debt of the reserve is the sum of drawn debt and premium debt.
-  /// @param reserveId The identifier of the reserve.
-  /// @return The total debt amount.
-  function getReserveTotalDebt(uint256 reserveId) external view returns (uint256);
-
   /// @notice Returns the amount of assets supplied by a specific user for a given reserve.
   /// @dev It reverts if the reserve associated with the given reserve identifier is not listed.
   /// @param reserveId The identifier of the reserve.
