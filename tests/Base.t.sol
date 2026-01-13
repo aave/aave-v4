@@ -1952,8 +1952,7 @@ abstract contract Base is Test {
     requiredDebtValue =
       userAccountData.totalCollateralValue.wadMulUp(userAccountData.avgCollateralFactor).wadDivUp(
         desiredHf
-      ) -
-      userAccountData.totalDebtValue;
+      ) - userAccountData.totalDebtValue;
   }
 
   function _getUserHealthFactor(ISpoke spoke, address user) internal view returns (uint256) {

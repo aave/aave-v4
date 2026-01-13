@@ -3,7 +3,10 @@
 pragma solidity 0.8.28;
 
 import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
-import {IAssetInterestRateStrategy, IBasicInterestRateStrategy} from 'src/hub/interfaces/IAssetInterestRateStrategy.sol';
+import {
+  IAssetInterestRateStrategy,
+  IBasicInterestRateStrategy
+} from 'src/hub/interfaces/IAssetInterestRateStrategy.sol';
 
 /// @title AssetInterestRateStrategy
 /// @author Aave Labs
