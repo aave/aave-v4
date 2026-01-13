@@ -29,10 +29,7 @@ contract SignatureGatewaySetSelfAsUserPositionManagerTest is SignatureGatewayBas
       address(spoke1),
       abi.encodeCall(
         ISpoke.setUserPositionManagerWithSig,
-        (
-          ISpoke.SpokeSetUserPositionManager(address(gateway), user, approve, nonce, deadline),
-          signature
-        )
+        (address(gateway), user, approve, nonce, deadline, signature)
       ),
       1
     );
@@ -71,7 +68,7 @@ contract SignatureGatewaySetSelfAsUserPositionManagerTest is SignatureGatewayBas
     uint192 nonceKey = _randomNonceKey();
     vm.prank(alice);
     spoke1.useNonce(nonceKey);
-    ISpoke.SpokeSetUserPositionManager memory p = ISpoke.SpokeSetUserPositionManager({
+    EIP712Types.SetUserPositionManager memory p = EIP712Types.SetUserPositionManager({
       positionManager: address(gateway),
       user: alice,
       approve: true,

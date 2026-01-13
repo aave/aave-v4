@@ -236,7 +236,7 @@ contract SignatureGatewayTest is SignatureGatewayBaseTest {
   }
 
   function test_setSelfAsUserPositionManagerWithSig() public {
-    ISpoke.SpokeSetUserPositionManager memory p = ISpoke.SpokeSetUserPositionManager({
+    EIP712Types.SetUserPositionManager memory p = EIP712Types.SetUserPositionManager({
       positionManager: address(gateway),
       user: alice,
       approve: true,

@@ -5,14 +5,11 @@ pragma solidity ^0.8.0;
 import {Test} from 'forge-std/Test.sol';
 
 import {ISignatureGateway} from 'src/position-manager/interfaces/ISignatureGateway.sol';
-import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 
 import {EIP712Hash as PositionManagerEIP712Hash} from 'src/position-manager/libraries/EIP712Hash.sol';
-import {EIP712Hash as SpokeEIP712Hash} from 'src/spoke/libraries/EIP712Hash.sol';
 
 contract EIP712HashTest is Test {
   using PositionManagerEIP712Hash for *;
-  using SpokeEIP712Hash for *;
 
   function test_constants() public pure {
     assertEq(
@@ -53,13 +50,6 @@ contract EIP712HashTest is Test {
       PositionManagerEIP712Hash.UPDATE_USER_DYNAMIC_CONFIG_TYPEHASH,
       keccak256(
         'UpdateUserDynamicConfig(address spoke,address user,uint256 nonce,uint256 deadline)'
-      )
-    );
-
-    assertEq(
-      SpokeEIP712Hash.SET_USER_POSITION_MANAGER_TYPEHASH,
-      keccak256(
-        'SetUserPositionManager(address positionManager,address user,bool approve,uint256 nonce,uint256 deadline)'
       )
     );
   }
@@ -170,23 +160,6 @@ contract EIP712HashTest is Test {
         PositionManagerEIP712Hash.UPDATE_USER_DYNAMIC_CONFIG_TYPEHASH,
         params.spoke,
         params.user,
-        params.nonce,
-        params.deadline
-      )
-    );
-
-    assertEq(params.hash(), expectedHash);
-  }
-
-  function test_hash_setUserPositionManager_fuzz(
-    ISpoke.SpokeSetUserPositionManager calldata params
-  ) public pure {
-    bytes32 expectedHash = keccak256(
-      abi.encode(
-        SpokeEIP712Hash.SET_USER_POSITION_MANAGER_TYPEHASH,
-        params.positionManager,
-        params.user,
-        params.approve,
         params.nonce,
         params.deadline
       )

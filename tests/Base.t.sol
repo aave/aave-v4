@@ -2731,7 +2731,7 @@ abstract contract Base is Test {
 
   function _getTypedDataHash(
     ISpoke spoke,
-    ISpoke.SpokeSetUserPositionManager memory setUserPositionManager
+    EIP712Types.SetUserPositionManager memory setUserPositionManager
   ) internal view returns (bytes32) {
     return
       keccak256(
