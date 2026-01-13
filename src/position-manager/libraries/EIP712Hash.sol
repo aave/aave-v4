@@ -144,27 +144,4 @@ library EIP712Hash {
         )
       );
   }
-
-  function hash(
-    EIP712Types.SetUserPositionManager calldata params
-  ) internal pure returns (bytes32) {
-    bytes32[] memory updatesHashes = new bytes32[](params.updates.length);
-    for (uint256 i = 0; i < updatesHashes.length; ++i) {
-      updatesHashes[i] = params.updates[i].hash();
-    }
-    return
-      keccak256(
-        abi.encode(
-          SET_USER_POSITION_MANAGER_TYPEHASH,
-          params.user,
-          keccak256(abi.encodePacked(updatesHashes)),
-          params.nonce,
-          params.deadline
-        )
-      );
-  }
-
-  function hash(EIP712Types.PositionManagerUpdate calldata params) internal pure returns (bytes32) {
-    return keccak256(abi.encode(POSITION_MANAGER_UPDATE, params.positionManager, params.approve));
-  }
 }

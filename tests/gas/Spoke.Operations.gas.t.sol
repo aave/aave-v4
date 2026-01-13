@@ -299,10 +299,10 @@ contract SpokeOperations_Gas_Tests is SpokeBase {
     vm.prank(user);
     spoke.useNonce(nonceKey);
 
-    EIP712Types.PositionManagerUpdate[] memory updates = new EIP712Types.PositionManagerUpdate[](1);
-    updates[0] = EIP712Types.PositionManagerUpdate(positionManager, true);
+    ISpoke.PositionManagerUpdate[] memory updates = new ISpoke.PositionManagerUpdate[](1);
+    updates[0] = ISpoke.PositionManagerUpdate(positionManager, true);
 
-    EIP712Types.SetUserPositionManager memory p = EIP712Types.SetUserPositionManager({
+    ISpoke.SetUserPositionManagers memory p = ISpoke.SetUserPositionManagers({
       user: user,
       updates: updates,
       nonce: spoke.nonces(user, nonceKey),

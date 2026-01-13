@@ -8,7 +8,7 @@ import {IERC20Permit} from 'src/dependencies/openzeppelin/IERC20Permit.sol';
 import {SignatureChecker} from 'src/libraries/misc/SignatureChecker.sol';
 import {AccessManagedUpgradeable} from 'src/dependencies/openzeppelin-upgradeable/AccessManagedUpgradeable.sol';
 import {EIP712} from 'src/dependencies/solady/EIP712.sol';
-import {EIP712Hash, EIP712Types} from 'src/position-manager/libraries/EIP712Hash.sol';
+import {EIP712Hash} from 'src/spoke/libraries/EIP712Hash.sol';
 import {MathUtils} from 'src/libraries/math/MathUtils.sol';
 import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
 import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
@@ -38,7 +38,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
   using PositionStatusMap for *;
   using ReserveFlagsMap for ReserveFlags;
   using UserPositionDebt for ISpoke.UserPosition;
-  using EIP712Hash for EIP712Types.SetUserPositionManager;
+  using EIP712Hash for *;
 
   /// @inheritdoc ISpoke
   address public immutable ORACLE;
@@ -445,7 +445,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
 
   /// @inheritdoc ISpoke
   function setUserPositionManagerWithSig(
-    EIP712Types.SetUserPositionManager calldata params,
+    SetUserPositionManagers calldata params,
     bytes calldata signature
   ) external {
     bytes32 digest = _hashTypedData(params.hash());

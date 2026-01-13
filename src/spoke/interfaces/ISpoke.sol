@@ -7,7 +7,6 @@ import {INoncesKeyed} from 'src/interfaces/INoncesKeyed.sol';
 import {IMulticall} from 'src/interfaces/IMulticall.sol';
 import {IHubBase} from 'src/hub/interfaces/IHubBase.sol';
 import {ISpokeBase} from 'src/spoke/interfaces/ISpokeBase.sol';
-import {EIP712Types} from 'src/libraries/types/EIP712Types.sol';
 
 type ReserveFlags is uint8;
 
@@ -15,6 +14,26 @@ type ReserveFlags is uint8;
 /// @author Aave Labs
 /// @notice Full interface for Spoke.
 interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
+  /// @notice Sub-Intent data to apply position manager update for user.
+  /// @param positionManager The address of the position manager.
+  /// @param approve True to approve the position manager, false to revoke approval.
+  struct PositionManagerUpdate {
+    address positionManager;
+    bool approve;
+  }
+
+  /// @notice Intent data to set user position manager with EIP712-typed signature.
+  /// @param user The address of the user on whose behalf position manager can act.
+  /// @param updates The array of position manager updates.
+  /// @param nonce The nonce for the signature.
+  /// @param deadline The deadline for the signature.
+  struct SetUserPositionManagers {
+    address user;
+    PositionManagerUpdate[] updates;
+    uint256 nonce;
+    uint256 deadline;
+  }
+
   /// @notice Reserve level data.
   /// @dev underlying The address of the underlying asset.
   /// @dev hub The address of the associated Hub.
@@ -406,7 +425,7 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
   /// @param params The structured setUserPositionManager parameters.
   /// @param signature The EIP712-compliant signature bytes.
   function setUserPositionManagerWithSig(
-    EIP712Types.SetUserPositionManager calldata params,
+    SetUserPositionManagers calldata params,
     bytes calldata signature
   ) external;
 

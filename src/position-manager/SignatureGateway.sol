@@ -176,16 +176,13 @@ contract SignatureGateway is ISignatureGateway, GatewayBase, NoncesKeyed, Multic
     uint256 deadline,
     bytes calldata signature
   ) external onlyRegisteredSpoke(spoke) {
-    EIP712Types.PositionManagerUpdate[] memory updates = new EIP712Types.PositionManagerUpdate[](1);
-    updates[0] = EIP712Types.PositionManagerUpdate({
-      positionManager: address(this),
-      approve: approve
-    });
+    ISpoke.PositionManagerUpdate[] memory updates = new ISpoke.PositionManagerUpdate[](1);
+    updates[0] = ISpoke.PositionManagerUpdate({positionManager: address(this), approve: approve});
     try
       ISpoke(spoke).setUserPositionManagerWithSig(
-        EIP712Types.SetUserPositionManager({
-          updates: updates,
+        ISpoke.SetUserPositionManagers({
           user: user,
+          updates: updates,
           nonce: nonce,
           deadline: deadline
         }),

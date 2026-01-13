@@ -15,8 +15,8 @@ library Constants {
   uint256 public constant DUST_LIQUIDATION_THRESHOLD = 1000e26;
   uint24 public constant MAX_ALLOWED_COLLATERAL_RISK = 1000_00; // 1000.00%
   uint256 public constant MAX_ALLOWED_DYNAMIC_CONFIG_KEY = type(uint24).max;
-  bytes32 public constant SET_USER_POSITION_MANAGER_TYPEHASH =
-    // keccak256('SetUserPositionManager(address user,PositionManagerUpdate[] updates,uint256 nonce,uint256 deadline)PositionManagerUpdate(address positionManager,bool approve)')
-    0x585e1e37b666d270ee2f5249e16d075b3790ba51e019b5c949396d40af4cb092;
+  bytes32 public constant SET_USER_POSITION_MANAGERS_TYPEHASH =
+    // keccak256('SetUserPositionManagers(address user,PositionManagerUpdate[] updates,uint256 nonce,uint256 deadline)PositionManagerUpdate(address positionManager,bool approve)')
+    0xa9a500485f4e7c738838a1c065fe46501b5a92142c290f6a51aa56f61810c5b0;
   uint256 public constant MAX_ALLOWED_ASSET_ID = type(uint16).max;
 }
