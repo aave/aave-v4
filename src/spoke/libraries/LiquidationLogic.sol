@@ -220,7 +220,7 @@ library LiquidationLogic {
         })
       );
 
-    emit ISpokeBase.LiquidationCall(
+    emit ISpoke.LiquidationCall(
       params.collateralReserveId,
       params.debtReserveId,
       params.user,

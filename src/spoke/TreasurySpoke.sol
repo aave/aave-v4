@@ -6,7 +6,7 @@ import {Ownable2Step, Ownable} from 'src/dependencies/openzeppelin/Ownable2Step.
 import {SafeERC20, IERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
 import {MathUtils} from 'src/libraries/math/MathUtils.sol';
 import {IHubBase} from 'src/hub/interfaces/IHubBase.sol';
-import {ITreasurySpoke, ISpokeBase} from 'src/spoke/interfaces/ITreasurySpoke.sol';
+import {ITreasurySpoke} from 'src/spoke/interfaces/ITreasurySpoke.sol';
 
 /// @title TreasurySpoke
 /// @author Aave Labs
@@ -73,49 +73,11 @@ contract TreasurySpoke is ITreasurySpoke, Ownable2Step {
     return HUB.getSpokeAddedShares(reserveId, address(this));
   }
 
-  /// @inheritdoc ISpokeBase
-  function borrow(uint256, uint256, address) external pure returns (uint256, uint256) {
-    revert UnsupportedAction();
-  }
-
-  /// @inheritdoc ISpokeBase
-  function repay(uint256, uint256, address) external pure returns (uint256, uint256) {
-    revert UnsupportedAction();
-  }
-
-  /// @inheritdoc ISpokeBase
-  function liquidationCall(uint256, uint256, address, uint256, bool) external pure {
-    revert UnsupportedAction();
-  }
-
-  /// @inheritdoc ISpokeBase
-  function getUserDebt(uint256, address) external pure returns (uint256, uint256) {}
-
-  /// @inheritdoc ISpokeBase
-  function getUserTotalDebt(uint256, address) external pure returns (uint256) {}
-
-  /// @inheritdoc ISpokeBase
-  function getUserPremiumDebtRay(uint256, address) external pure returns (uint256) {}
-
-  /// @inheritdoc ISpokeBase
   function getReserveSuppliedAssets(uint256 reserveId) external view returns (uint256) {
     return HUB.getSpokeAddedAssets(reserveId, address(this));
   }
 
-  /// @inheritdoc ISpokeBase
   function getReserveSuppliedShares(uint256 reserveId) external view returns (uint256) {
     return HUB.getSpokeAddedShares(reserveId, address(this));
   }
-
-  /// @inheritdoc ISpokeBase
-  function getUserSuppliedAssets(uint256, address) external pure returns (uint256) {}
-
-  /// @inheritdoc ISpokeBase
-  function getUserSuppliedShares(uint256, address) external pure returns (uint256) {}
-
-  /// @inheritdoc ISpokeBase
-  function getReserveDebt(uint256) external pure returns (uint256, uint256) {}
-
-  /// @inheritdoc ISpokeBase
-  function getReserveTotalDebt(uint256) external pure returns (uint256) {}
 }

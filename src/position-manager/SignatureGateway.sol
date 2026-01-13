@@ -112,7 +112,8 @@ contract SignatureGateway is ISignatureGateway, GatewayBase, NoncesKeyed, Multic
     IERC20 underlying = IERC20(_getReserveUnderlying(spoke, reserveId));
     uint256 repayAmount = MathUtils.min(
       params.amount,
-      ISpoke(spoke).getUserTotalDebt(reserveId, user)
+      // ISpoke(spoke).getUserTotalDebt(reserveId, user)
+      0 // TODO
     );
 
     underlying.safeTransferFrom(user, address(this), repayAmount);

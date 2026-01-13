@@ -115,7 +115,8 @@ contract NativeTokenGateway is INativeTokenGateway, GatewayBase, ReentrancyGuard
     address underlying = _getReserveUnderlying(spoke, reserveId);
     _validateParams(underlying, amount);
 
-    uint256 userTotalDebt = ISpoke(spoke).getUserTotalDebt(reserveId, msg.sender);
+    // uint256 userTotalDebt = ISpoke(spoke).getUserTotalDebt(reserveId, msg.sender);
+    uint256 userTotalDebt = 0; // TODO
     uint256 repayAmount = amount;
     uint256 leftovers;
     if (amount > userTotalDebt) {

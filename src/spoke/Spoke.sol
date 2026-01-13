@@ -6,7 +6,9 @@ import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
 import {SafeERC20, IERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
 import {IERC20Permit} from 'src/dependencies/openzeppelin/IERC20Permit.sol';
 import {SignatureChecker} from 'src/dependencies/openzeppelin/SignatureChecker.sol';
-import {AccessManagedUpgradeable} from 'src/dependencies/openzeppelin-upgradeable/AccessManagedUpgradeable.sol';
+import {
+  AccessManagedUpgradeable
+} from 'src/dependencies/openzeppelin-upgradeable/AccessManagedUpgradeable.sol';
 import {EIP712} from 'src/dependencies/solady/EIP712.sol';
 import {MathUtils} from 'src/libraries/math/MathUtils.sol';
 import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
@@ -20,7 +22,7 @@ import {NoncesKeyed} from 'src/utils/NoncesKeyed.sol';
 import {Multicall} from 'src/utils/Multicall.sol';
 import {IAaveOracle} from 'src/spoke/interfaces/IAaveOracle.sol';
 import {IHubBase} from 'src/hub/interfaces/IHubBase.sol';
-import {ISpokeBase, ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
+import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 
 /// @title Spoke
 /// @author Aave Labs
@@ -226,7 +228,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     emit UpdatePositionManager(positionManager, active);
   }
 
-  /// @inheritdoc ISpokeBase
+  /// @inheritdoc ISpoke
   function supply(
     uint256 reserveId,
     uint256 amount,
@@ -245,7 +247,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     return (suppliedShares, amount);
   }
 
-  /// @inheritdoc ISpokeBase
+  /// @inheritdoc ISpoke
   function withdraw(
     uint256 reserveId,
     uint256 amount,
@@ -275,7 +277,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     return (withdrawnShares, withdrawnAmount);
   }
 
-  /// @inheritdoc ISpokeBase
+  /// @inheritdoc ISpoke
   function borrow(
     uint256 reserveId,
     uint256 amount,
@@ -301,7 +303,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     return (drawnShares, amount);
   }
 
-  /// @inheritdoc ISpokeBase
+  /// @inheritdoc ISpoke
   function repay(
     uint256 reserveId,
     uint256 amount,
@@ -343,7 +345,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     return (restoredShares, totalDebtRestored);
   }
 
-  /// @inheritdoc ISpokeBase
+  /// @inheritdoc ISpoke
   function liquidationCall(
     uint256 collateralReserveId,
     uint256 debtReserveId,
@@ -518,30 +520,6 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     return _reserveCount;
   }
 
-  /// @inheritdoc ISpokeBase
-  function getReserveSuppliedAssets(uint256 reserveId) external view returns (uint256) {
-    Reserve storage reserve = _getReserve(reserveId);
-    return reserve.hub.getSpokeAddedAssets(reserve.assetId, address(this));
-  }
-
-  /// @inheritdoc ISpokeBase
-  function getReserveSuppliedShares(uint256 reserveId) external view returns (uint256) {
-    Reserve storage reserve = _getReserve(reserveId);
-    return reserve.hub.getSpokeAddedShares(reserve.assetId, address(this));
-  }
-
-  /// @inheritdoc ISpokeBase
-  function getReserveDebt(uint256 reserveId) external view returns (uint256, uint256) {
-    Reserve storage reserve = _getReserve(reserveId);
-    return reserve.hub.getSpokeOwed(reserve.assetId, address(this));
-  }
-
-  /// @inheritdoc ISpokeBase
-  function getReserveTotalDebt(uint256 reserveId) external view returns (uint256) {
-    Reserve storage reserve = _getReserve(reserveId);
-    return reserve.hub.getSpokeTotalOwed(reserve.assetId, address(this));
-  }
-
   /// @inheritdoc ISpoke
   function getReserve(uint256 reserveId) external view returns (Reserve memory) {
     return _getReserve(reserveId);
@@ -578,52 +556,6 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     _getReserve(reserveId);
     PositionStatus storage positionStatus = _positionStatus[user];
     return (positionStatus.isUsingAsCollateral(reserveId), positionStatus.isBorrowing(reserveId));
-  }
-
-  /// @inheritdoc ISpokeBase
-  function getUserSuppliedAssets(uint256 reserveId, address user) external view returns (uint256) {
-    Reserve storage reserve = _getReserve(reserveId);
-    return
-      reserve.hub.previewRemoveByShares(
-        reserve.assetId,
-        _userPositions[user][reserveId].suppliedShares
-      );
-  }
-
-  /// @inheritdoc ISpokeBase
-  function getUserSuppliedShares(uint256 reserveId, address user) external view returns (uint256) {
-    _getReserve(reserveId);
-    return _userPositions[user][reserveId].suppliedShares;
-  }
-
-  /// @inheritdoc ISpokeBase
-  function getUserDebt(uint256 reserveId, address user) external view returns (uint256, uint256) {
-    Reserve storage reserve = _getReserve(reserveId);
-    UserPosition storage userPosition = _userPositions[user][reserveId];
-    (uint256 drawnDebt, uint256 premiumDebtRay) = userPosition.getDebt(
-      reserve.hub,
-      reserve.assetId
-    );
-    return (drawnDebt, premiumDebtRay.fromRayUp());
-  }
-
-  /// @inheritdoc ISpokeBase
-  function getUserTotalDebt(uint256 reserveId, address user) external view returns (uint256) {
-    Reserve storage reserve = _getReserve(reserveId);
-    UserPosition storage userPosition = _userPositions[user][reserveId];
-    (uint256 drawnDebt, uint256 premiumDebtRay) = userPosition.getDebt(
-      reserve.hub,
-      reserve.assetId
-    );
-    return (drawnDebt + premiumDebtRay.fromRayUp());
-  }
-
-  /// @inheritdoc ISpokeBase
-  function getUserPremiumDebtRay(uint256 reserveId, address user) external view returns (uint256) {
-    Reserve storage reserve = _getReserve(reserveId);
-    UserPosition storage userPosition = _userPositions[user][reserveId];
-    (, uint256 premiumDebtRay) = userPosition.getDebt(reserve.hub, reserve.assetId);
-    return premiumDebtRay;
   }
 
   /// @inheritdoc ISpoke
