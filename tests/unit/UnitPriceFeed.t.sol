@@ -17,6 +17,14 @@ contract UnitPriceFeedTest is Base {
     unitPriceFeed = new UnitPriceFeed(DECIMALS, _description);
   }
 
+  function test_constructor_revertsWith_Uint8Overflow() public {
+    uint8 invalidDecimals = 77;
+    vm.expectRevert(
+      abi.encodeWithSelector(SafeCast.SafeCastOverflowedUintToInt.selector, 10 ** invalidDecimals)
+    );
+    new UnitPriceFeed(invalidDecimals, _description);
+  }
+
   function testDECIMALS() public view {
     assertEq(unitPriceFeed.decimals(), DECIMALS);
   }
