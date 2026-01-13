@@ -10,9 +10,7 @@ import {IAccessManagerEnumerable} from 'src/access/interfaces/IAccessManagerEnum
 /// @author Aave Labs
 /// @notice Extension of AccessManager that tracks role members and their function selectors using EnumerableSet.
 contract AccessManagerEnumerable is AccessManager, IAccessManagerEnumerable {
-  using EnumerableSet for EnumerableSet.AddressSet;
-  using EnumerableSet for EnumerableSet.Bytes32Set;
-  using EnumerableSet for EnumerableSet.UintSet;
+  using EnumerableSet for *;
 
   /// @dev Set of all role identifiers.
   EnumerableSet.UintSet private _rolesSet;
