@@ -115,7 +115,7 @@ contract SignatureGateway_Gas_Tests is SignatureGatewayBaseTest {
   }
 
   function test_supplyWithSig() public {
-    EIP712Types.Supply memory p = EIP712Types.Supply({
+    ISignatureGateway.Supply memory p = ISignatureGateway.Supply({
       spoke: address(spoke1),
       reserveId: _wethReserveId(spoke1),
       amount: 100e18,
@@ -132,7 +132,7 @@ contract SignatureGateway_Gas_Tests is SignatureGatewayBaseTest {
   }
 
   function test_withdrawWithSig() public {
-    EIP712Types.Withdraw memory p = EIP712Types.Withdraw({
+    ISignatureGateway.Withdraw memory p = ISignatureGateway.Withdraw({
       spoke: address(spoke1),
       reserveId: _wethReserveId(spoke1),
       amount: 100e18,
@@ -150,7 +150,7 @@ contract SignatureGateway_Gas_Tests is SignatureGatewayBaseTest {
   }
 
   function test_borrowWithSig() public {
-    EIP712Types.Borrow memory p = EIP712Types.Borrow({
+    ISignatureGateway.Borrow memory p = ISignatureGateway.Borrow({
       spoke: address(spoke1),
       reserveId: _wethReserveId(spoke1),
       amount: 100e18,
@@ -167,7 +167,7 @@ contract SignatureGateway_Gas_Tests is SignatureGatewayBaseTest {
   }
 
   function test_repayWithSig() public {
-    EIP712Types.Repay memory p = EIP712Types.Repay({
+    ISignatureGateway.Repay memory p = ISignatureGateway.Repay({
       spoke: address(spoke1),
       reserveId: _wethReserveId(spoke1),
       amount: 100e18,
@@ -186,7 +186,7 @@ contract SignatureGateway_Gas_Tests is SignatureGatewayBaseTest {
   }
 
   function test_setUsingAsCollateralWithSig() public {
-    EIP712Types.SetUsingAsCollateral memory p = EIP712Types.SetUsingAsCollateral({
+    ISignatureGateway.SetUsingAsCollateral memory p = ISignatureGateway.SetUsingAsCollateral({
       spoke: address(spoke1),
       reserveId: _wethReserveId(spoke1),
       useAsCollateral: true,
@@ -202,7 +202,7 @@ contract SignatureGateway_Gas_Tests is SignatureGatewayBaseTest {
   }
 
   function test_updateUserRiskPremiumWithSig() public {
-    EIP712Types.UpdateUserRiskPremium memory p = EIP712Types.UpdateUserRiskPremium({
+    ISignatureGateway.UpdateUserRiskPremium memory p = ISignatureGateway.UpdateUserRiskPremium({
       spoke: address(spoke1),
       user: alice,
       nonce: gateway.nonces(alice, nonceKey),
@@ -218,7 +218,7 @@ contract SignatureGateway_Gas_Tests is SignatureGatewayBaseTest {
   }
 
   function test_updateUserDynamicConfigWithSig() public {
-    EIP712Types.UpdateUserDynamicConfig memory p = EIP712Types.UpdateUserDynamicConfig({
+    ISignatureGateway.UpdateUserDynamicConfig memory p = ISignatureGateway.UpdateUserDynamicConfig({
       spoke: address(spoke1),
       user: alice,
       nonce: gateway.nonces(alice, nonceKey),

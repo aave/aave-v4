@@ -50,7 +50,7 @@ contract SignatureGatewayTest is SignatureGatewayBaseTest {
   }
 
   function test_supplyWithSig() public {
-    EIP712Types.Supply memory p = _supplyData(spoke1, alice, _warpBeforeRandomDeadline());
+    ISignatureGateway.Supply memory p = _supplyData(spoke1, alice, _warpBeforeRandomDeadline());
     p.nonce = _burnRandomNoncesAtKey(gateway, p.onBehalfOf);
     bytes memory signature = _sign(alicePk, _getTypedDataHash(gateway, p));
     Utils.approve(spoke1, p.reserveId, alice, address(gateway), p.amount);
@@ -76,7 +76,7 @@ contract SignatureGatewayTest is SignatureGatewayBaseTest {
   }
 
   function test_withdrawWithSig() public {
-    EIP712Types.Withdraw memory p = _withdrawData(spoke1, alice, _warpBeforeRandomDeadline());
+    ISignatureGateway.Withdraw memory p = _withdrawData(spoke1, alice, _warpBeforeRandomDeadline());
     p.nonce = _burnRandomNoncesAtKey(gateway, p.onBehalfOf);
     bytes memory signature = _sign(alicePk, _getTypedDataHash(gateway, p));
 
@@ -102,7 +102,7 @@ contract SignatureGatewayTest is SignatureGatewayBaseTest {
   }
 
   function test_borrowWithSig() public {
-    EIP712Types.Borrow memory p = _borrowData(spoke1, alice, _warpBeforeRandomDeadline());
+    ISignatureGateway.Borrow memory p = _borrowData(spoke1, alice, _warpBeforeRandomDeadline());
     p.nonce = _burnRandomNoncesAtKey(gateway, p.onBehalfOf);
     p.reserveId = _daiReserveId(spoke1);
     p.amount = 1e18;
@@ -129,7 +129,7 @@ contract SignatureGatewayTest is SignatureGatewayBaseTest {
   }
 
   function test_repayWithSig() public {
-    EIP712Types.Repay memory p = _repayData(spoke1, alice, _warpBeforeRandomDeadline());
+    ISignatureGateway.Repay memory p = _repayData(spoke1, alice, _warpBeforeRandomDeadline());
     p.nonce = _burnRandomNoncesAtKey(gateway, p.onBehalfOf);
     p.reserveId = _daiReserveId(spoke1);
     p.amount = 1e18;
@@ -172,7 +172,7 @@ contract SignatureGatewayTest is SignatureGatewayBaseTest {
 
   function test_setUsingAsCollateralWithSig() public {
     uint256 deadline = _warpBeforeRandomDeadline();
-    EIP712Types.SetUsingAsCollateral memory p = _setAsCollateralData(spoke1, alice, deadline);
+    ISignatureGateway.SetUsingAsCollateral memory p = _setAsCollateralData(spoke1, alice, deadline);
     p.nonce = _burnRandomNoncesAtKey(gateway, p.onBehalfOf);
     p.reserveId = _daiReserveId(spoke1);
     Utils.supplyCollateral(spoke1, p.reserveId, alice, 1e18, alice);
@@ -193,7 +193,11 @@ contract SignatureGatewayTest is SignatureGatewayBaseTest {
 
   function test_updateUserRiskPremiumWithSig() public {
     uint256 deadline = _warpBeforeRandomDeadline();
-    EIP712Types.UpdateUserRiskPremium memory p = _updateRiskPremiumData(spoke1, alice, deadline);
+    ISignatureGateway.UpdateUserRiskPremium memory p = _updateRiskPremiumData(
+      spoke1,
+      alice,
+      deadline
+    );
     p.nonce = _burnRandomNoncesAtKey(gateway, alice);
     bytes memory signature = _sign(alicePk, _getTypedDataHash(gateway, p));
 
@@ -212,7 +216,7 @@ contract SignatureGatewayTest is SignatureGatewayBaseTest {
   }
 
   function test_updateUserDynamicConfigWithSig() public {
-    EIP712Types.UpdateUserDynamicConfig memory p = _updateDynamicConfigData(
+    ISignatureGateway.UpdateUserDynamicConfig memory p = _updateDynamicConfigData(
       spoke1,
       alice,
       _warpBeforeRandomDeadline()

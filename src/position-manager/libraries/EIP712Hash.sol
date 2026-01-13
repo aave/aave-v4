@@ -2,7 +2,7 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.20;
 
-import {EIP712Types} from 'src/libraries/types/EIP712Types.sol';
+import {ISignatureGateway} from 'src/position-manager/interfaces/ISignatureGateway.sol';
 
 /// @title EIP712Hash library
 /// @author Aave Labs
@@ -38,15 +38,7 @@ library EIP712Hash {
     // keccak256('UpdateUserDynamicConfig(address spoke,address user,uint256 nonce,uint256 deadline)')
     0xba177b1f5b5e1e709f62c19f03c97988c57752ba561de58f383ebee4e8d0a71c;
 
-  bytes32 public constant SET_USER_POSITION_MANAGER_TYPEHASH =
-    // keccak256('SetUserPositionManager(address user,PositionManagerUpdate[] updates,uint256 nonce,uint256 deadline)PositionManagerUpdate(address positionManager,bool approve)')
-    0x585e1e37b666d270ee2f5249e16d075b3790ba51e019b5c949396d40af4cb092;
-
-  bytes32 public constant POSITION_MANAGER_UPDATE =
-    // keccak256('PositionManagerUpdate(address positionManager,bool approve)')
-    0x187dbd227227274b90655fb4011fc21dd749e8966fc040bd91e0b92609202565;
-
-  function hash(EIP712Types.Supply calldata params) internal pure returns (bytes32) {
+  function hash(ISignatureGateway.Supply calldata params) internal pure returns (bytes32) {
     return
       keccak256(
         abi.encode(
@@ -61,7 +53,7 @@ library EIP712Hash {
       );
   }
 
-  function hash(EIP712Types.Withdraw calldata params) internal pure returns (bytes32) {
+  function hash(ISignatureGateway.Withdraw calldata params) internal pure returns (bytes32) {
     return
       keccak256(
         abi.encode(
@@ -76,7 +68,7 @@ library EIP712Hash {
       );
   }
 
-  function hash(EIP712Types.Borrow calldata params) internal pure returns (bytes32) {
+  function hash(ISignatureGateway.Borrow calldata params) internal pure returns (bytes32) {
     return
       keccak256(
         abi.encode(
@@ -91,7 +83,7 @@ library EIP712Hash {
       );
   }
 
-  function hash(EIP712Types.Repay calldata params) internal pure returns (bytes32) {
+  function hash(ISignatureGateway.Repay calldata params) internal pure returns (bytes32) {
     return
       keccak256(
         abi.encode(
@@ -106,7 +98,9 @@ library EIP712Hash {
       );
   }
 
-  function hash(EIP712Types.SetUsingAsCollateral calldata params) internal pure returns (bytes32) {
+  function hash(
+    ISignatureGateway.SetUsingAsCollateral calldata params
+  ) internal pure returns (bytes32) {
     return
       keccak256(
         abi.encode(
@@ -121,7 +115,9 @@ library EIP712Hash {
       );
   }
 
-  function hash(EIP712Types.UpdateUserRiskPremium calldata params) internal pure returns (bytes32) {
+  function hash(
+    ISignatureGateway.UpdateUserRiskPremium calldata params
+  ) internal pure returns (bytes32) {
     return
       keccak256(
         abi.encode(
@@ -135,7 +131,7 @@ library EIP712Hash {
   }
 
   function hash(
-    EIP712Types.UpdateUserDynamicConfig calldata params
+    ISignatureGateway.UpdateUserDynamicConfig calldata params
   ) internal pure returns (bytes32) {
     return
       keccak256(
