@@ -20,7 +20,7 @@ contract SignatureGateway_InsufficientAllowance_Test is SignatureGatewayBaseTest
   function test_supplyWithSig_revertsWith_ERC20InsufficientAllowance() public {
     uint256 deadline = _warpBeforeRandomDeadline();
 
-    EIP712Types.Supply memory p = _supplyData(spoke1, alice, deadline);
+    ISignatureGateway.Supply memory p = _supplyData(spoke1, alice, deadline);
     bytes memory signature = _sign(alicePk, _getTypedDataHash(gateway, p));
 
     vm.expectRevert(
@@ -42,7 +42,7 @@ contract SignatureGateway_InsufficientAllowance_Test is SignatureGatewayBaseTest
 
     uint256 deadline = _warpBeforeRandomDeadline();
 
-    EIP712Types.Repay memory p = _repayData(spoke1, alice, deadline);
+    ISignatureGateway.Repay memory p = _repayData(spoke1, alice, deadline);
     p.reserveId = _daiReserveId(spoke1);
     p.amount = 50e18;
     bytes memory signature = _sign(alicePk, _getTypedDataHash(gateway, p));
