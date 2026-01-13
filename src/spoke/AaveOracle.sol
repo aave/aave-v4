@@ -4,6 +4,7 @@ pragma solidity 0.8.28;
 
 import {AggregatorV3Interface} from 'src/dependencies/chainlink/AggregatorV3Interface.sol';
 import {IAaveOracle, IPriceOracle} from 'src/spoke/interfaces/IAaveOracle.sol';
+import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 
 /// @title AaveOracle
 /// @author Aave Labs
@@ -39,6 +40,7 @@ contract AaveOracle is IAaveOracle {
     require(msg.sender == DEPLOYER, OnlyDeployer());
     require(spoke != address(0), InvalidAddress());
     require(SPOKE == address(0), SpokeAlreadySet());
+    require(ISpoke(spoke).ORACLE() == address(this), OracleMismatch());
     SPOKE = spoke;
     emit SetSpoke(spoke);
   }

@@ -38,6 +38,9 @@ interface IAaveOracle is IPriceOracle {
   /// @dev Thrown when the given address is invalid.
   error InvalidAddress();
 
+  /// @dev Thrown when the spoke's oracle does not match the current oracle.
+  error OracleMismatch();
+
   /// @notice Sets the address of the spoke.
   /// @dev Can only be called once by the deployer.
   /// @dev The spoke should be set before any other function is called.
