@@ -85,7 +85,7 @@ contract SpokeSetUserPositionManagerWithSigTest is SpokeBase {
     (, uint256 alicePk) = makeAddrAndKey('alice');
     uint256 deadline = _warpAfterRandomDeadline();
 
-    EIP712Types.SetUserPositionManager memory params = _setUserPositionManagerData(alice, deadline);
+    ISpoke.SpokeSetUserPositionManager memory params = _setUserPositionManagerData(alice, deadline);
     bytes32 digest = _getTypedDataHash(spoke1, params);
 
     (uint8 v, bytes32 r, bytes32 s) = vm.sign(alicePk, digest);
@@ -93,14 +93,7 @@ contract SpokeSetUserPositionManagerWithSigTest is SpokeBase {
 
     vm.expectRevert(ISpoke.InvalidSignature.selector);
     vm.prank(vm.randomAddress());
-    spoke1.setUserPositionManagerWithSig(
-      params.positionManager,
-      params.user,
-      params.approve,
-      params.nonce,
-      params.deadline,
-      signature
-    );
+    spoke1.setUserPositionManagerWithSig(params, signature);
   }
 
   function test_setUserPositionManagerWithSig_revertsWith_InvalidSignature_dueTo_InvalidSigner()
@@ -110,21 +103,14 @@ contract SpokeSetUserPositionManagerWithSigTest is SpokeBase {
     vm.assume(randomUser != alice);
     uint256 deadline = _warpAfterRandomDeadline();
 
-    EIP712Types.SetUserPositionManager memory params = _setUserPositionManagerData(alice, deadline);
+    ISpoke.SpokeSetUserPositionManager memory params = _setUserPositionManagerData(alice, deadline);
     bytes32 digest = _getTypedDataHash(spoke1, params);
     (uint8 v, bytes32 r, bytes32 s) = vm.sign(randomUserPk, digest);
     bytes memory signature = abi.encodePacked(r, s, v);
 
     vm.expectRevert(ISpoke.InvalidSignature.selector);
     vm.prank(vm.randomAddress());
-    spoke1.setUserPositionManagerWithSig(
-      params.positionManager,
-      params.user,
-      params.approve,
-      params.nonce,
-      params.deadline,
-      signature
-    );
+    spoke1.setUserPositionManagerWithSig(params, signature);
   }
 
   function test_setUserPositionManagerWithSig_revertsWith_InvalidAccountNonce(bytes32) public {
@@ -136,7 +122,7 @@ contract SpokeSetUserPositionManagerWithSigTest is SpokeBase {
     uint256 deadline = _warpBeforeRandomDeadline();
 
     uint192 nonceKey = _randomNonceKey();
-    EIP712Types.SetUserPositionManager memory params = _setUserPositionManagerData(user, deadline);
+    ISpoke.SpokeSetUserPositionManager memory params = _setUserPositionManagerData(user, deadline);
     uint256 currentNonce = _burnRandomNoncesAtKey(spoke1, params.user, nonceKey);
     params.nonce = _getRandomInvalidNonceAtKey(spoke1, params.user, nonceKey);
 
@@ -148,21 +134,14 @@ contract SpokeSetUserPositionManagerWithSigTest is SpokeBase {
       abi.encodeWithSelector(INoncesKeyed.InvalidAccountNonce.selector, params.user, currentNonce)
     );
     vm.prank(vm.randomAddress());
-    spoke1.setUserPositionManagerWithSig(
-      params.positionManager,
-      params.user,
-      params.approve,
-      params.nonce,
-      params.deadline,
-      signature
-    );
+    spoke1.setUserPositionManagerWithSig(params, signature);
   }
 
   function test_setUserPositionManagerWithSig() public {
     (address user, uint256 userPk) = makeAddrAndKey(string(vm.randomBytes(32)));
     vm.label(user, 'user');
     uint256 deadline = _warpBeforeRandomDeadline();
-    EIP712Types.SetUserPositionManager memory params = _setUserPositionManagerData(user, deadline);
+    ISpoke.SpokeSetUserPositionManager memory params = _setUserPositionManagerData(user, deadline);
     params.nonce = _burnRandomNoncesAtKey(spoke1, params.user);
 
     bytes32 digest = _getTypedDataHash(spoke1, params);
@@ -173,14 +152,7 @@ contract SpokeSetUserPositionManagerWithSigTest is SpokeBase {
     emit ISpoke.SetUserPositionManager(params.user, params.positionManager, params.approve);
 
     vm.prank(vm.randomAddress());
-    spoke1.setUserPositionManagerWithSig(
-      params.positionManager,
-      params.user,
-      params.approve,
-      params.nonce,
-      params.deadline,
-      signature
-    );
+    spoke1.setUserPositionManagerWithSig(params, signature);
 
     _assertNonceIncrement(spoke1, params.user, params.nonce);
     assertEq(spoke1.isPositionManager(params.user, params.positionManager), params.approve);
@@ -191,7 +163,7 @@ contract SpokeSetUserPositionManagerWithSigTest is SpokeBase {
   {
     (, uint256 alicePk) = makeAddrAndKey('alice');
     MockERC1271Wallet smartWallet = new MockERC1271Wallet(alice);
-    EIP712Types.SetUserPositionManager memory params = _setUserPositionManagerData(
+    ISpoke.SpokeSetUserPositionManager memory params = _setUserPositionManagerData(
       address(smartWallet),
       _warpAfterRandomDeadline()
     );
@@ -205,14 +177,7 @@ contract SpokeSetUserPositionManagerWithSigTest is SpokeBase {
 
     vm.expectRevert(ISpoke.InvalidSignature.selector);
     vm.prank(vm.randomAddress());
-    spoke1.setUserPositionManagerWithSig(
-      params.positionManager,
-      params.user,
-      params.approve,
-      params.nonce,
-      params.deadline,
-      signature
-    );
+    spoke1.setUserPositionManagerWithSig(params, signature);
   }
 
   function test_setUserPositionManagerWithSig_ERC1271_revertsWith_InvalidSignature_dueTo_InvalidHash()
@@ -225,13 +190,13 @@ contract SpokeSetUserPositionManagerWithSigTest is SpokeBase {
     spoke1.updatePositionManager(maliciousManager, true);
     uint256 deadline = _warpAfterRandomDeadline();
 
-    EIP712Types.SetUserPositionManager memory params = _setUserPositionManagerData(
+    ISpoke.SpokeSetUserPositionManager memory params = _setUserPositionManagerData(
       address(smartWallet),
       deadline
     );
     bytes32 digest = _getTypedDataHash(spoke1, params);
 
-    EIP712Types.SetUserPositionManager memory invalidParams = _setUserPositionManagerData(
+    ISpoke.SpokeSetUserPositionManager memory invalidParams = _setUserPositionManagerData(
       address(smartWallet),
       deadline
     );
@@ -246,11 +211,13 @@ contract SpokeSetUserPositionManagerWithSigTest is SpokeBase {
     vm.expectRevert(ISpoke.InvalidSignature.selector);
     vm.prank(vm.randomAddress());
     spoke1.setUserPositionManagerWithSig(
-      invalidParams.positionManager,
-      invalidParams.user,
-      invalidParams.approve,
-      params.nonce,
-      invalidParams.deadline,
+      ISpoke.SpokeSetUserPositionManager({
+        positionManager: invalidParams.positionManager,
+        user: invalidParams.user,
+        approve: invalidParams.approve,
+        nonce: params.nonce,
+        deadline: invalidParams.deadline
+      }),
       signature
     );
   }
@@ -263,7 +230,7 @@ contract SpokeSetUserPositionManagerWithSigTest is SpokeBase {
     uint256 deadline = _warpBeforeRandomDeadline();
 
     uint192 nonceKey = _randomNonceKey();
-    EIP712Types.SetUserPositionManager memory params = _setUserPositionManagerData(
+    ISpoke.SpokeSetUserPositionManager memory params = _setUserPositionManagerData(
       address(smartWallet),
       deadline
     );
@@ -286,14 +253,7 @@ contract SpokeSetUserPositionManagerWithSigTest is SpokeBase {
       )
     );
     vm.prank(vm.randomAddress());
-    spoke1.setUserPositionManagerWithSig(
-      params.positionManager,
-      params.user,
-      params.approve,
-      params.nonce,
-      params.deadline,
-      signature
-    );
+    spoke1.setUserPositionManagerWithSig(params, signature);
   }
 
   function test_setUserPositionManagerWithSig_ERC1271() public {
@@ -306,7 +266,7 @@ contract SpokeSetUserPositionManagerWithSigTest is SpokeBase {
     spoke1.updatePositionManager(positionManager, true);
     uint256 deadline = _warpBeforeRandomDeadline();
 
-    EIP712Types.SetUserPositionManager memory params = _setUserPositionManagerData(
+    ISpoke.SpokeSetUserPositionManager memory params = _setUserPositionManagerData(
       address(smartWallet),
       deadline
     );
@@ -322,14 +282,7 @@ contract SpokeSetUserPositionManagerWithSigTest is SpokeBase {
     emit ISpoke.SetUserPositionManager(params.user, params.positionManager, params.approve);
 
     vm.prank(vm.randomAddress());
-    spoke1.setUserPositionManagerWithSig(
-      params.positionManager,
-      params.user,
-      params.approve,
-      params.nonce,
-      params.deadline,
-      signature
-    );
+    spoke1.setUserPositionManagerWithSig(params, signature);
 
     _assertNonceIncrement(spoke1, params.user, params.nonce);
     assertEq(spoke1.isPositionManager(params.user, params.positionManager), params.approve);
@@ -338,8 +291,8 @@ contract SpokeSetUserPositionManagerWithSigTest is SpokeBase {
   function _setUserPositionManagerData(
     address user,
     uint256 deadline
-  ) internal returns (EIP712Types.SetUserPositionManager memory) {
-    EIP712Types.SetUserPositionManager memory params = EIP712Types.SetUserPositionManager({
+  ) internal returns (ISpoke.SpokeSetUserPositionManager memory) {
+    ISpoke.SpokeSetUserPositionManager memory params = ISpoke.SpokeSetUserPositionManager({
       positionManager: POSITION_MANAGER,
       user: user,
       approve: vm.randomBool(),

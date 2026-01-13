@@ -11,6 +11,7 @@ import {EIP712} from 'src/dependencies/solady/EIP712.sol';
 import {MathUtils} from 'src/libraries/math/MathUtils.sol';
 import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
 import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
+import {EIP712Hash} from 'src/spoke/libraries/EIP712Hash.sol';
 import {KeyValueList} from 'src/spoke/libraries/KeyValueList.sol';
 import {LiquidationLogic} from 'src/spoke/libraries/LiquidationLogic.sol';
 import {PositionStatusMap} from 'src/spoke/libraries/PositionStatusMap.sol';
@@ -35,6 +36,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
   using KeyValueList for KeyValueList.List;
   using LiquidationLogic for *;
   using PositionStatusMap for *;
+  using EIP712Hash for *;
   using ReserveFlagsMap for ReserveFlags;
   using UserPositionDebt for ISpoke.UserPosition;
 
@@ -448,29 +450,32 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
 
   /// @inheritdoc ISpoke
   function setUserPositionManagerWithSig(
-    address positionManager,
-    address user,
-    bool approve,
-    uint256 nonce,
-    uint256 deadline,
+    SpokeSetUserPositionManager calldata params,
     bytes calldata signature
   ) external {
-    require(block.timestamp <= deadline, InvalidSignature());
+    require(block.timestamp <= params.deadline, InvalidSignature());
     bytes32 digest = _hashTypedData(
       keccak256(
         abi.encode(
           SET_USER_POSITION_MANAGER_TYPEHASH,
-          positionManager,
-          user,
-          approve,
-          nonce,
-          deadline
+          params.positionManager,
+          params.user,
+          params.approve,
+          params.nonce,
+          params.deadline
         )
       )
     );
-    require(SignatureChecker.isValidSignatureNow(user, digest, signature), InvalidSignature());
-    _useCheckedNonce(user, nonce);
-    _setUserPositionManager({positionManager: positionManager, user: user, approve: approve});
+    require(
+      SignatureChecker.isValidSignatureNow(params.user, digest, signature),
+      InvalidSignature()
+    );
+    _useCheckedNonce(params.user, params.nonce);
+    _setUserPositionManager({
+      positionManager: params.positionManager,
+      user: params.user,
+      approve: params.approve
+    });
   }
 
   /// @inheritdoc ISpoke

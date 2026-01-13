@@ -299,7 +299,7 @@ contract SpokeOperations_Gas_Tests is SpokeBase {
     vm.prank(user);
     spoke.useNonce(nonceKey);
 
-    EIP712Types.SetUserPositionManager memory params = EIP712Types.SetUserPositionManager({
+    ISpoke.SpokeSetUserPositionManager memory params = ISpoke.SpokeSetUserPositionManager({
       positionManager: positionManager,
       user: user,
       approve: true,
@@ -309,14 +309,7 @@ contract SpokeOperations_Gas_Tests is SpokeBase {
     (uint8 v, bytes32 r, bytes32 s) = vm.sign(userPk, _getTypedDataHash(spoke, params));
     bytes memory signature = abi.encodePacked(r, s, v);
 
-    spoke.setUserPositionManagerWithSig(
-      params.positionManager,
-      params.user,
-      params.approve,
-      params.nonce,
-      params.deadline,
-      signature
-    );
+    spoke.setUserPositionManagerWithSig(params, signature);
     vm.snapshotGasLastCall(NAMESPACE, 'setUserPositionManagerWithSig: enable');
 
     params.approve = false;
@@ -324,14 +317,7 @@ contract SpokeOperations_Gas_Tests is SpokeBase {
     (v, r, s) = vm.sign(userPk, _getTypedDataHash(spoke, params));
     signature = abi.encodePacked(r, s, v);
 
-    spoke.setUserPositionManagerWithSig(
-      params.positionManager,
-      params.user,
-      params.approve,
-      params.nonce,
-      params.deadline,
-      signature
-    );
+    spoke.setUserPositionManagerWithSig(params, signature);
     vm.snapshotGasLastCall(NAMESPACE, 'setUserPositionManagerWithSig: disable');
   }
 
