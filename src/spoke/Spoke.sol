@@ -6,7 +6,9 @@ import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
 import {SafeERC20, IERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
 import {IERC20Permit} from 'src/dependencies/openzeppelin/IERC20Permit.sol';
 import {SignatureChecker} from 'src/dependencies/openzeppelin/SignatureChecker.sol';
-import {AccessManagedUpgradeable} from 'src/dependencies/openzeppelin-upgradeable/AccessManagedUpgradeable.sol';
+import {
+  AccessManagedUpgradeable
+} from 'src/dependencies/openzeppelin-upgradeable/AccessManagedUpgradeable.sol';
 import {EIP712} from 'src/dependencies/solady/EIP712.sol';
 import {MathUtils} from 'src/libraries/math/MathUtils.sol';
 import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
@@ -705,7 +707,6 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     address user
   ) internal returns (UserAccountData memory) {
     UserAccountData memory accountData = _processUserAccountData(user, true);
-    emit RefreshAllUserDynamicConfig(user);
     require(
       accountData.healthFactor >= HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
       HealthFactorBelowThreshold()
@@ -764,6 +765,9 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
             accountData.avgCollateralFactor += collateralFactor * userCollateralValue;
             accountData.activeCollateralCount = accountData.activeCollateralCount.uncheckedAdd(1);
           }
+        }
+        if (refreshConfig) {
+          emit RefreshSingleUserDynamicConfig(user, reserveId);
         }
       }
 
