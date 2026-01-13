@@ -3,8 +3,8 @@
 pragma solidity 0.8.28;
 
 import {AggregatorV3Interface} from 'src/dependencies/chainlink/AggregatorV3Interface.sol';
-import {IAaveOracle, IPriceOracle} from 'src/spoke/interfaces/IAaveOracle.sol';
 import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
+import {IAaveOracle, IPriceOracle} from 'src/spoke/interfaces/IAaveOracle.sol';
 
 /// @title AaveOracle
 /// @author Aave Labs
