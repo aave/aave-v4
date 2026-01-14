@@ -34,7 +34,7 @@ library MathUtils {
     }
   }
 
-  /// @notice Returns the saturating subtraction a - b.
+  /// @notice Returns the saturating subtraction at zero.
   function zeroFloorSub(uint256 a, uint256 b) internal pure returns (uint256 c) {
     assembly ('memory-safe') {
       c := mul(sub(a, b), gt(a, b))
