@@ -2872,4 +2872,81 @@ abstract contract Base is Test {
       hub.getAsset(assetId).realizedFees +
       _calcUnrealizedFees(hub, assetId);
   }
+
+  function _addNewAssetsAndReserves(uint256 count) internal {
+    for (uint256 i = 0; i < count; i++) {
+      MockERC20 newToken = new MockERC20();
+      newToken.mint(alice, MAX_SUPPLY_AMOUNT * 10 ** 18);
+      newToken.mint(bob, MAX_SUPPLY_AMOUNT * 10 ** 18);
+      vm.prank(alice);
+      newToken.approve(address(spoke1), UINT256_MAX);
+      vm.prank(bob);
+      newToken.approve(address(spoke1), UINT256_MAX);
+
+      IHub.SpokeConfig memory spokeConfig = IHub.SpokeConfig({
+        active: true,
+        paused: false,
+        addCap: Constants.MAX_ALLOWED_SPOKE_CAP,
+        drawCap: Constants.MAX_ALLOWED_SPOKE_CAP,
+        riskPremiumThreshold: 1000_00
+      });
+
+      bytes memory encodedIrData = abi.encode(
+        IAssetInterestRateStrategy.InterestRateData({
+          optimalUsageRatio: 90_00, // 90.00%
+          baseVariableBorrowRate: 5_00, // 5.00%
+          variableRateSlope1: 5_00, // 5.00%
+          variableRateSlope2: 5_00 // 5.00%
+        })
+      );
+
+      // Add asset to hub1
+      vm.startPrank(ADMIN);
+      uint256 newTokenAssetId = hub1.addAsset(
+        address(newToken),
+        18,
+        address(treasurySpoke),
+        address(irStrategy),
+        encodedIrData
+      );
+      hub1.updateAssetConfig(
+        newTokenAssetId,
+        IHub.AssetConfig({
+          liquidityFee: 10_00,
+          feeReceiver: address(treasurySpoke),
+          irStrategy: address(irStrategy),
+          reinvestmentController: address(0)
+        }),
+        new bytes(0)
+      );
+
+      // Prepare the reserve configs
+      ISpoke.ReserveConfig memory reserveConfig = ISpoke.ReserveConfig({
+        paused: false,
+        frozen: false,
+        borrowable: true,
+        collateralRisk: _randomBps(),
+        liquidatable: true,
+        receiveSharesEnabled: true
+      });
+      ISpoke.DynamicReserveConfig memory dynamicConfig = ISpoke.DynamicReserveConfig({
+        collateralFactor: 80_00,
+        maxLiquidationBonus: 105_00,
+        liquidationFee: 10_00
+      });
+
+      // Add reserve to spoke1
+      spoke1.addReserve(
+        address(hub1),
+        newTokenAssetId,
+        _deployMockPriceFeed(spoke1, 1e8),
+        reserveConfig,
+        dynamicConfig
+      );
+
+      // Add spoke to hub
+      hub1.addSpoke(newTokenAssetId, address(spoke1), spokeConfig);
+      vm.stopPrank();
+    }
+  }
 }
