@@ -191,6 +191,11 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
   /// @param reserveId The identifier of the reserve.
   event RefreshSingleUserDynamicConfig(address indexed user, uint256 reserveId);
 
+  /// @notice Emitted when a user's dynamic config is refreshed for specific reserves to their latest config keys.
+  /// @param user The address of the user.
+  /// @param reserveIds The identifiers of the reserves whose config was refreshed.
+  event RefreshUserDynamicConfig(address indexed user, uint256[] reserveIds);
+
   /// @notice Emitted on updateUserRiskPremium action.
   /// @param user The owner of the position being modified.
   /// @param riskPremium The new risk premium (BPS) value of user.

@@ -730,6 +730,15 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     KeyValueList.List memory collateralInfo = KeyValueList.init(
       positionStatus.collateralCount(reserveId)
     );
+
+    // Array to collect refreshed reserve IDs when refreshConfig is true
+    uint256[] memory refreshedReserveIds;
+    if (refreshConfig) {
+      uint256 count = positionStatus.collateralCount(reserveId);
+      refreshedReserveIds = new uint256[](count);
+    }
+    uint256 refreshedCount;
+
     bool borrowing;
     bool collateral;
     while (true) {
@@ -739,48 +748,56 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
       UserPosition storage userPosition = _userPositions[user][reserveId];
       Reserve storage reserve = _reserves[reserveId];
 
-      uint256 assetPrice = IAaveOracle(ORACLE).getReservePrice(reserveId);
-      uint256 assetUnit = MathUtils.uncheckedExp(10, reserve.decimals);
+      {
+        uint256 assetPrice = IAaveOracle(ORACLE).getReservePrice(reserveId);
+        uint256 assetUnit = MathUtils.uncheckedExp(10, reserve.decimals);
 
-      if (collateral) {
-        uint256 collateralFactor = _dynamicConfig[reserveId][
-          refreshConfig
-            ? (userPosition.dynamicConfigKey = reserve.dynamicConfigKey)
-            : userPosition.dynamicConfigKey
-        ].collateralFactor;
-        if (collateralFactor > 0) {
-          uint256 suppliedShares = userPosition.suppliedShares;
-          if (suppliedShares > 0) {
-            // cannot round down to zero
-            uint256 userCollateralValue = (reserve.hub.previewRemoveByShares(
-              reserve.assetId,
-              suppliedShares
-            ) * assetPrice).wadDivDown(assetUnit);
-            accountData.totalCollateralValue += userCollateralValue;
-            collateralInfo.add(
-              accountData.activeCollateralCount,
-              reserve.collateralRisk,
-              userCollateralValue
-            );
-            accountData.avgCollateralFactor += collateralFactor * userCollateralValue;
-            accountData.activeCollateralCount = accountData.activeCollateralCount.uncheckedAdd(1);
+        if (collateral) {
+          if (refreshConfig) {
+            refreshedReserveIds[refreshedCount] = reserveId;
+            refreshedCount = refreshedCount.uncheckedAdd(1);
+          }
+          uint256 collateralFactor = _dynamicConfig[reserveId][
+            refreshConfig
+              ? (userPosition.dynamicConfigKey = reserve.dynamicConfigKey)
+              : userPosition.dynamicConfigKey
+          ].collateralFactor;
+          if (collateralFactor > 0) {
+            uint256 suppliedShares = userPosition.suppliedShares;
+            if (suppliedShares > 0) {
+              // cannot round down to zero
+              uint256 userCollateralValue = (reserve.hub.previewRemoveByShares(
+                reserve.assetId,
+                suppliedShares
+              ) * assetPrice).wadDivDown(assetUnit);
+              accountData.totalCollateralValue += userCollateralValue;
+              collateralInfo.add(
+                accountData.activeCollateralCount,
+                reserve.collateralRisk,
+                userCollateralValue
+              );
+              accountData.avgCollateralFactor += collateralFactor * userCollateralValue;
+              accountData.activeCollateralCount = accountData.activeCollateralCount.uncheckedAdd(1);
+            }
           }
         }
-        if (refreshConfig) {
-          emit RefreshSingleUserDynamicConfig(user, reserveId);
+
+        if (borrowing) {
+          (uint256 drawnDebt, uint256 premiumDebtRay) = userPosition.getDebt(
+            reserve.hub,
+            reserve.assetId
+          );
+          // we can simplify since there is no precision loss due to the division here
+          accountData.totalDebtValue += ((drawnDebt + premiumDebtRay.fromRayUp()) * assetPrice)
+            .wadDivUp(assetUnit);
+          accountData.borrowedCount = accountData.borrowedCount.uncheckedAdd(1);
         }
       }
+    }
 
-      if (borrowing) {
-        (uint256 drawnDebt, uint256 premiumDebtRay) = userPosition.getDebt(
-          reserve.hub,
-          reserve.assetId
-        );
-        // we can simplify since there is no precision loss due to the division here
-        accountData.totalDebtValue += ((drawnDebt + premiumDebtRay.fromRayUp()) * assetPrice)
-          .wadDivUp(assetUnit);
-        accountData.borrowedCount = accountData.borrowedCount.uncheckedAdd(1);
-      }
+    // Emit batch event for refreshed reserves
+    if (refreshConfig) {
+      emit RefreshUserDynamicConfig(user, refreshedReserveIds);
     }
 
     if (accountData.totalDebtValue > 0) {
