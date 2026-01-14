@@ -227,7 +227,7 @@ contract SignatureGatewayTest is SignatureGatewayBaseTest {
     bytes memory signature = _sign(alicePk, _getTypedDataHash(gateway, p));
 
     // Expect refresh event for dai collateral reserve
-    vm.expectEmit(true, false, false, true, address(spoke1));
+    vm.expectEmit(address(spoke1));
     emit ISpoke.RefreshSingleUserDynamicConfig(alice, _daiReserveId(spoke1));
 
     vm.prank(vm.randomAddress());
