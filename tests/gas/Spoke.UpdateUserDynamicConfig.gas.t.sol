@@ -20,7 +20,7 @@ contract SpokeUpdateUserDynamicConfig_Gas_Tests is SpokeBase {
 
     vm.prank(alice);
     spoke.updateUserDynamicConfig(alice);
-    vm.snapshotGasLastCall(NAMESPACE, 'updateUserDynamicConfig: 1 collateral');
+    vm.snapshotGasLastCall(NAMESPACE, 'A. updateUserDynamicConfig: 1 collateral');
   }
 
   function test_updateUserDynamicConfig_b_2_collaterals() public {
@@ -28,7 +28,7 @@ contract SpokeUpdateUserDynamicConfig_Gas_Tests is SpokeBase {
 
     vm.prank(alice);
     spoke.updateUserDynamicConfig(alice);
-    vm.snapshotGasLastCall(NAMESPACE, 'updateUserDynamicConfig: 2 collaterals');
+    vm.snapshotGasLastCall(NAMESPACE, 'B. updateUserDynamicConfig: 2 collaterals');
   }
 
   function test_updateUserDynamicConfig_c_5_collaterals() public {
@@ -36,7 +36,7 @@ contract SpokeUpdateUserDynamicConfig_Gas_Tests is SpokeBase {
 
     vm.prank(alice);
     spoke.updateUserDynamicConfig(alice);
-    vm.snapshotGasLastCall(NAMESPACE, 'updateUserDynamicConfig: 5 collaterals');
+    vm.snapshotGasLastCall(NAMESPACE, 'C. updateUserDynamicConfig: 5 collaterals');
   }
 
   function test_updateUserDynamicConfig_d_10_collaterals() public {
@@ -44,7 +44,7 @@ contract SpokeUpdateUserDynamicConfig_Gas_Tests is SpokeBase {
 
     vm.prank(alice);
     spoke.updateUserDynamicConfig(alice);
-    vm.snapshotGasLastCall(NAMESPACE, 'updateUserDynamicConfig: 10 collaterals');
+    vm.snapshotGasLastCall(NAMESPACE, 'D. updateUserDynamicConfig: 10 collaterals');
   }
 
   function test_updateUserDynamicConfig_e_25_collaterals() public {
@@ -52,7 +52,7 @@ contract SpokeUpdateUserDynamicConfig_Gas_Tests is SpokeBase {
 
     vm.prank(alice);
     spoke.updateUserDynamicConfig(alice);
-    vm.snapshotGasLastCall(NAMESPACE, 'updateUserDynamicConfig: 25 collaterals');
+    vm.snapshotGasLastCall(NAMESPACE, 'E. updateUserDynamicConfig: 25 collaterals');
   }
 
   function test_updateUserDynamicConfig_f_50_collaterals() public {
@@ -60,7 +60,7 @@ contract SpokeUpdateUserDynamicConfig_Gas_Tests is SpokeBase {
 
     vm.prank(alice);
     spoke.updateUserDynamicConfig(alice);
-    vm.snapshotGasLastCall(NAMESPACE, 'updateUserDynamicConfig: 50 collaterals');
+    vm.snapshotGasLastCall(NAMESPACE, 'F. updateUserDynamicConfig: 50 collaterals');
   }
 
   function test_updateUserDynamicConfig_g_100_collaterals() public {
@@ -68,7 +68,7 @@ contract SpokeUpdateUserDynamicConfig_Gas_Tests is SpokeBase {
 
     vm.prank(alice);
     spoke.updateUserDynamicConfig(alice);
-    vm.snapshotGasLastCall(NAMESPACE, 'updateUserDynamicConfig: 100 collaterals');
+    vm.snapshotGasLastCall(NAMESPACE, 'G. updateUserDynamicConfig: 100 collaterals');
   }
 
   function test_updateUserDynamicConfig_h_120_collaterals() public {
@@ -76,7 +76,7 @@ contract SpokeUpdateUserDynamicConfig_Gas_Tests is SpokeBase {
 
     vm.prank(alice);
     spoke.updateUserDynamicConfig(alice);
-    vm.snapshotGasLastCall(NAMESPACE, 'updateUserDynamicConfig: 120 collaterals');
+    vm.snapshotGasLastCall(NAMESPACE, 'H. updateUserDynamicConfig: 120 collaterals');
   }
 
   /// @dev Helper function to set up N collateral reserves with updated dynamic config
