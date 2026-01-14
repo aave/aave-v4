@@ -25,15 +25,17 @@ contract AccessManagerEnumerable is AccessManager, IAccessManagerEnumerable {
   mapping(uint64 roleId => EnumerableSet.AddressSet) private _roleMemberSet;
 
   /// @dev Map of admin role identifiers to their respective role identifier sets.
+  /// @dev Roles managed by the `ADMIN_ROLE` are not included.
   mapping(uint64 roleId => EnumerableSet.UintSet) private _roleAdminToRoleSet;
 
   /// @dev Map of role identifiers to their respective target contract addresses.
+  /// @dev Target contracts assigned to `ADMIN_ROLE` are not included.
   /// @dev A target is included in the set only if it has at least one selector assigned.
   mapping(uint64 roleId => EnumerableSet.AddressSet) private _roleToTargetSet;
 
   /// @dev Map of target contract addresses and function selectors to their assigned role identifier.
   mapping(address target => mapping(bytes4 selector => uint64 roleId))
-    private _targetToSelectorToRoleSet;
+    private _targetToSelectorToRole;
 
   /// @dev Map of role identifiers and target contract addresses to their respective set of function selectors.
   mapping(uint64 roleId => mapping(address target => EnumerableSet.Bytes32Set))
@@ -270,7 +272,7 @@ contract AccessManagerEnumerable is AccessManager, IAccessManagerEnumerable {
 
   /// @dev Tracks all targets where a selector was assigned to a role and selectors.
   function _trackRoleTargetSelector(uint64 roleId, address target, bytes4 selector) internal {
-    uint64 oldRoleId = _targetToSelectorToRoleSet[target][selector];
+    uint64 oldRoleId = _targetToSelectorToRole[target][selector];
     if (oldRoleId == roleId) {
       return;
     }
@@ -286,6 +288,6 @@ contract AccessManagerEnumerable is AccessManager, IAccessManagerEnumerable {
       _roleToTargetToSelectorSet[roleId][target].add(bytes32(selector));
       _roleToTargetSet[roleId].add(target);
     }
-    _targetToSelectorToRoleSet[target][selector] = roleId;
+    _targetToSelectorToRole[target][selector] = roleId;
   }
 }
