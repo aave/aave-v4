@@ -18,7 +18,7 @@ import {ISignatureGateway} from 'src/position-manager/interfaces/ISignatureGatew
 /// @dev Contract must be an active & approved user position manager to execute spoke actions on user's behalf.
 /// @dev Uses keyed-nonces where each key's namespace nonce is consumed sequentially. Intents bundled through
 /// multicall can be executed independently in order of signed nonce & deadline; does not guarantee batch atomicity.
-contract SignatureGateway is ISignatureGateway, GatewayBase, Multicall, IntentConsumer {
+contract SignatureGateway is ISignatureGateway, GatewayBase, IntentConsumer, Multicall {
   using SafeERC20 for IERC20;
   using EIP712Hash for *;
 

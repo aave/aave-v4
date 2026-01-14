@@ -24,7 +24,7 @@ import {ISpokeBase, ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 /// @author Aave Labs
 /// @notice Handles risk configuration & borrowing strategy for reserves and user positions.
 /// @dev Each reserve can be associated with a separate Hub.
-abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, IntentConsumer {
+abstract contract Spoke is ISpoke, AccessManagedUpgradeable, IntentConsumer, Multicall {
   using SafeCast for *;
   using SafeERC20 for IERC20;
   using MathUtils for *;
