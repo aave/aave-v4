@@ -312,8 +312,14 @@ contract SpokePositionManagerTest is SpokeBase {
 
     _approvePositionManager(alice);
 
+    // Expect batched refresh event for collateral reserves
+    uint256[] memory expectedIds = new uint256[](2);
+    expectedIds[0] = _daiReserveId(spoke1);
+    expectedIds[1] = _wethReserveId(spoke1);
     vm.expectEmit(address(spoke1));
-    emit ISpoke.RefreshAllUserDynamicConfig(alice);
+    emit ISpoke.RefreshUserDynamicConfig(alice, expectedIds);
+    vm.expectEmit(address(spoke1));
+    emit ISpoke.UpdateUserRiskPremium(alice, _calculateExpectedUserRP(spoke1, alice));
     vm.prank(POSITION_MANAGER);
     spoke1.updateUserDynamicConfig(alice);
 

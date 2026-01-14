@@ -202,15 +202,6 @@ interface ISpoke is ISpokeBase, IAccessManaged, IIntentConsumer, IMulticall {
     bool usingAsCollateral
   );
 
-  /// @notice Emitted when a user's dynamic config is refreshed for all reserves to their latest config key.
-  /// @param user The address of the user.
-  event RefreshAllUserDynamicConfig(address indexed user);
-
-  /// @notice Emitted when a user's dynamic config is refreshed for a single reserve to its latest config key.
-  /// @param user The address of the user.
-  /// @param reserveId The identifier of the reserve.
-  event RefreshSingleUserDynamicConfig(address indexed user, uint256 reserveId);
-
   /// @notice Emitted when a user's dynamic config is refreshed for specific reserves to their latest config keys.
   /// @param user The address of the user.
   /// @param reserveIds The identifiers of the reserves whose config was refreshed.

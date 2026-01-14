@@ -832,7 +832,9 @@ abstract contract Spoke is ISpoke, AccessManagedUpgradeable, IntentConsumer, Mul
 
   function _refreshDynamicConfig(address user, uint256 reserveId) internal {
     _userPositions[user][reserveId].dynamicConfigKey = _reserves[reserveId].dynamicConfigKey;
-    emit RefreshSingleUserDynamicConfig(user, reserveId);
+    uint256[] memory reserveIds = new uint256[](1);
+    reserveIds[0] = reserveId;
+    emit RefreshUserDynamicConfig(user, reserveIds);
   }
 
   /// @notice Refreshes premium for borrowed reserves of `user` with `newRiskPremium`.

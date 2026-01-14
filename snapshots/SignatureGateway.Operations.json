@@ -2,7 +2,7 @@
   "borrowWithSig": "218374",
   "repayWithSig": "189236",
   "setSelfAsUserPositionManagerWithSig": "74932",
-  "setUsingAsCollateralWithSig": "85119",
+  "setUsingAsCollateralWithSig": "86087",
   "supplyWithSig": "153248",
   "updateUserDynamicConfigWithSig": "64217",
   "updateUserRiskPremiumWithSig": "61741",

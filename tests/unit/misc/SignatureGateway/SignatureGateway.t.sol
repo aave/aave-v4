@@ -216,6 +216,8 @@ contract SignatureGatewayTest is SignatureGatewayBaseTest {
   }
 
   function test_updateUserDynamicConfigWithSig() public {
+    Utils.supplyCollateral(spoke1, _daiReserveId(spoke1), alice, 10e18, alice);
+
     ISignatureGateway.UpdateUserDynamicConfig memory p = _updateDynamicConfigData(
       spoke1,
       alice,
@@ -224,8 +226,10 @@ contract SignatureGatewayTest is SignatureGatewayBaseTest {
     p.nonce = _burnRandomNoncesAtKey(gateway, alice);
     bytes memory signature = _sign(alicePk, _getTypedDataHash(gateway, p));
 
+    uint256[] memory expectedIds = new uint256[](1);
+    expectedIds[0] = _daiReserveId(spoke1);
     vm.expectEmit(address(spoke1));
-    emit ISpoke.RefreshAllUserDynamicConfig(alice);
+    emit ISpoke.RefreshUserDynamicConfig(alice, expectedIds);
 
     vm.prank(vm.randomAddress());
     gateway.updateUserDynamicConfigWithSig(p, signature);
