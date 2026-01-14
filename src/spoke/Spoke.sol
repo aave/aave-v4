@@ -803,7 +803,7 @@ abstract contract Spoke is ISpoke, AccessManagedUpgradeable, IntentConsumer, Mul
         break;
       }
 
-      (uint256 collateralRisk, uint256 userCollateralValue) = collateralInfo.get(index);
+      (uint256 collateralRisk, uint256 userCollateralValue) = collateralInfo.uncheckedAt(index);
       userCollateralValue = userCollateralValue.min(debtValueLeftToCover);
       accountData.riskPremium += userCollateralValue * collateralRisk;
       debtValueLeftToCover = debtValueLeftToCover.uncheckedSub(userCollateralValue);

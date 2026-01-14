@@ -248,6 +248,20 @@ contract KeyValueListTest is Test {
     }
     return result;
   }
+
+  function test_fuzz_uncheckedAt(uint256[] memory seed) public pure {
+    vm.assume(seed.length > 0 && seed.length < 1e2);
+    KeyValueList.List memory list = KeyValueList.init(seed.length);
+    for (uint256 i; i < seed.length; ++i) {
+      list.add(i, _truncateKey(seed[i]), _truncateValue(seed[i]));
+    }
+    for (uint256 i; i < seed.length; ++i) {
+      (uint256 keyGet, uint256 valueGet) = list.get(i);
+      (uint256 keyUnsafe, uint256 valueUnsafe) = list.uncheckedAt(i);
+      assertEq(keyGet, keyUnsafe);
+      assertEq(valueGet, valueUnsafe);
+    }
+  }
 }
 
 contract KeyValueListWrapper {
