@@ -12,6 +12,8 @@ contract AaveOracleTest is Base {
   uint8 private constant _oracleDecimals = 8;
   string private constant _description = 'Spoke 1 (USD)';
 
+  address public deployer = makeAddr('DEPLOYER');
+
   address private _source1 = makeAddr('SOURCE1');
   address private _source2 = makeAddr('SOURCE2');
 
@@ -22,41 +24,75 @@ contract AaveOracleTest is Base {
 
   function setUp() public override {
     deployFixtures();
-    oracle = new AaveOracle(address(spoke1), _oracleDecimals, _description);
-  }
 
-  function test_deploy_revertsWith_InvalidAddress() public {
-    vm.expectRevert(IAaveOracle.InvalidAddress.selector);
-    new AaveOracle(address(0), uint8(vm.randomUint()), string(vm.randomBytes(64)));
+    vm.prank(deployer);
+    oracle = new AaveOracle(_oracleDecimals, _description);
+
+    spoke1 = ISpoke(address(new SpokeInstance(address(oracle))));
+    vm.prank(deployer);
+    oracle.setSpoke(address(spoke1));
   }
 
   function test_constructor() public {
-    oracle = new AaveOracle(address(spoke1), _oracleDecimals, _description);
+    vm.prank(deployer);
+    oracle = new AaveOracle(_oracleDecimals, _description);
 
-    test_spoke();
-    testDECIMALS();
+    assertEq(oracle.SPOKE(), address(0));
+    test_DECIMALS();
     test_description();
   }
 
   function test_fuzz_constructor(uint8 decimals) public {
     decimals = bound(decimals, 0, 18).toUint8();
-    oracle = new AaveOracle(address(spoke1), decimals, _description);
+    oracle = new AaveOracle(decimals, _description);
 
-    test_spoke();
+    assertEq(oracle.SPOKE(), address(0));
     assertEq(oracle.DECIMALS(), decimals);
     test_description();
   }
 
-  function test_spoke() public view {
-    assertEq(oracle.SPOKE(), address(spoke1));
-  }
-
-  function testDECIMALS() public view {
+  function test_DECIMALS() public view {
     assertEq(oracle.DECIMALS(), _oracleDecimals);
   }
 
   function test_description() public view {
     assertEq(oracle.DESCRIPTION(), _description);
+  }
+
+  function test_setSpoke_revertsWith_OnlyDeployer(address setter) public {
+    vm.assume(setter != deployer);
+
+    vm.expectRevert(IAaveOracle.OnlyDeployer.selector);
+    vm.prank(setter);
+    oracle.setSpoke(address(spoke1));
+  }
+
+  function test_setSpoke_revertsWith_InvalidAddress() public {
+    vm.expectRevert(IAaveOracle.InvalidAddress.selector);
+
+    vm.prank(deployer);
+    oracle.setSpoke(address(0));
+  }
+
+  function test_setSpoke_revertsWith_SpokeAlreadySet() public {
+    vm.expectRevert(IAaveOracle.SpokeAlreadySet.selector);
+    vm.prank(deployer);
+    oracle.setSpoke(address(spoke1));
+  }
+
+  function test_setSpoke() public {
+    vm.prank(deployer);
+    oracle = new AaveOracle(_oracleDecimals, _description);
+
+    address newSpoke = address(new SpokeInstance(address(oracle)));
+
+    vm.expectEmit(address(oracle));
+    emit IAaveOracle.SetSpoke(address(newSpoke));
+
+    vm.prank(deployer);
+    oracle.setSpoke(address(newSpoke));
+
+    assertEq(oracle.SPOKE(), address(newSpoke));
   }
 
   function test_setReserveSource_revertsWith_OnlySpoke() public {
@@ -100,6 +136,19 @@ contract AaveOracleTest is Base {
     vm.expectRevert(abi.encodeWithSelector(IAaveOracle.InvalidPrice.selector, reserveId1));
     vm.prank(address(spoke1));
     oracle.setReserveSource(reserveId1, _source1);
+  }
+
+  function test_setReserveSource_revertsWith_OracleMismatch() public {
+    vm.prank(deployer);
+    IAaveOracle newOracle = IAaveOracle(new AaveOracle(_oracleDecimals, _description));
+
+    // set new spoke to a separate oracle
+    address mismatchOracle = address(new AaveOracle(_oracleDecimals, _description));
+    address newSpoke = address(new SpokeInstance(mismatchOracle));
+
+    vm.expectRevert(IAaveOracle.OracleMismatch.selector);
+    vm.prank(deployer);
+    newOracle.setSpoke(newSpoke);
   }
 
   function test_setReserveSource() public {
