@@ -2228,8 +2228,10 @@ abstract contract Base is Test {
     string memory _oracleDesc
   ) internal pausePrank returns (ISpoke, IAaveOracle) {
     address deployer = makeAddr('deployer');
-    address predictedSpoke = vm.computeCreateAddress(deployer, vm.getNonce(deployer));
-    IAaveOracle oracle = new AaveOracle(predictedSpoke, 8, _oracleDesc);
+
+    vm.prank(deployer);
+    IAaveOracle oracle = new AaveOracle(8, _oracleDesc);
+
     address spokeImpl = address(new SpokeInstance(address(oracle)));
     ISpoke spoke = ISpoke(
       _proxify(
@@ -2239,7 +2241,10 @@ abstract contract Base is Test {
         abi.encodeCall(Spoke.initialize, (_accessManager))
       )
     );
-    assertEq(address(spoke), predictedSpoke, 'predictedSpoke');
+
+    vm.prank(deployer);
+    oracle.setSpoke(address(spoke));
+
     assertEq(spoke.ORACLE(), address(oracle));
     assertEq(oracle.SPOKE(), address(spoke));
     return (spoke, oracle);
