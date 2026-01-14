@@ -305,7 +305,7 @@ interface IHub is IHubBase, IAccessManaged {
   function mintFeeShares(uint256 assetId) external returns (uint256);
 
   /// @notice Eliminates deficit by removing supplied shares of caller spoke.
-  /// @dev Only callable by active spokes.
+  /// @dev Only callable by active and authorized spokes.
   /// @param assetId The identifier of the asset.
   /// @param amount The amount of deficit to eliminate.
   /// @param spoke The spoke for which the deficit is eliminated.
