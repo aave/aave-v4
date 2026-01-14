@@ -33,7 +33,10 @@ abstract contract IntentConsumer is IIntentConsumer, NoncesKeyed, EIP712 {
   ) internal {
     require(block.timestamp <= deadline, InvalidSignature());
     bytes32 digest = _hashTypedData(intentHash);
-    require(SignatureChecker.isValidSignatureNow(signer, digest, signature), InvalidSignature());
+    require(
+      SignatureChecker.isValidSignatureNowCalldata(signer, digest, signature),
+      InvalidSignature()
+    );
     _useCheckedNonce(signer, nonce);
   }
 }
