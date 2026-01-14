@@ -13,11 +13,11 @@ library SignatureChecker {
   /// @param hash The hash of the data to be signed.
   /// @param signature The signature bytes.
   /// @return True if the signature is valid, false otherwise.
-  function isValidSignatureNow(
+  function isValidSignatureNowCalldata(
     address signer,
     bytes32 hash,
-    bytes memory signature
+    bytes calldata signature
   ) external view returns (bool) {
-    return OpenZeppelinSignatureChecker.isValidSignatureNow(signer, hash, signature);
+    return OpenZeppelinSignatureChecker.isValidSignatureNowCalldata(signer, hash, signature);
   }
 }
