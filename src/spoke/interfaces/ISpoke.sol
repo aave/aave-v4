@@ -202,7 +202,7 @@ interface ISpoke is ISpokeBase, IAccessManaged, IIntentConsumer, IMulticall {
     bool usingAsCollateral
   );
 
-  /// @notice Emitted when a user's dynamic config is refreshed for specific reserves to their latest config keys.
+  /// @notice Emitted when a user's dynamic config is refreshed.
   /// @param user The address of the user.
   /// @param reserveIds The identifiers of the reserves whose config was refreshed.
   event RefreshUserDynamicConfig(address indexed user, uint256[] reserveIds);
