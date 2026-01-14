@@ -105,8 +105,11 @@ contract SpokeDynamicConfigTriggersTest is SpokeBase {
     configs = _getUserDynConfigKeys(spoke1, alice);
     Utils.supplyCollateral(spoke1, _wethReserveId(spoke1), alice, 1e18, alice);
 
-    vm.expectEmit(address(spoke1));
-    emit ISpoke.RefreshAllUserDynamicConfig(alice);
+    // Expect individual refresh events for each collateral reserve
+    vm.expectEmit(true, false, false, true, address(spoke1));
+    emit ISpoke.RefreshSingleUserDynamicConfig(alice, _usdxReserveId(spoke1));
+    vm.expectEmit(true, false, false, true, address(spoke1));
+    emit ISpoke.RefreshSingleUserDynamicConfig(alice, _wethReserveId(spoke1));
     Utils.borrow(spoke1, _daiReserveId(spoke1), alice, 100e18, alice);
 
     assertNotEq(_getUserDynConfigKeys(spoke1, alice), configs);
@@ -135,8 +138,11 @@ contract SpokeDynamicConfigTriggersTest is SpokeBase {
     configs = _getUserDynConfigKeys(spoke1, alice);
     Utils.supplyCollateral(spoke1, _wethReserveId(spoke1), alice, 1e18, alice);
 
-    vm.expectEmit(address(spoke1));
-    emit ISpoke.RefreshAllUserDynamicConfig(alice);
+    // Expect individual refresh events for each collateral reserve
+    vm.expectEmit(true, false, false, true, address(spoke1));
+    emit ISpoke.RefreshSingleUserDynamicConfig(alice, _usdxReserveId(spoke1));
+    vm.expectEmit(true, false, false, true, address(spoke1));
+    emit ISpoke.RefreshSingleUserDynamicConfig(alice, _wethReserveId(spoke1));
     Utils.withdraw(spoke1, _usdxReserveId(spoke1), alice, 500e6, alice);
 
     assertNotEq(_getUserDynConfigKeys(spoke1, alice), configs);
@@ -173,9 +179,10 @@ contract SpokeDynamicConfigTriggersTest is SpokeBase {
     assertEq(userConfig[_wethReserveId(spoke1)], spokeConfig[_wethReserveId(spoke1)]);
     assertNotEq(abi.encode(userConfig), abi.encode(spokeConfig));
 
-    // when disabling all configs are refreshed
-    vm.expectEmit(address(spoke1));
-    emit ISpoke.RefreshAllUserDynamicConfig(alice);
+    // when disabling, the reserve is removed from collateral first, then remaining collateral configs are refreshed
+    // only weth remains as collateral, so only weth gets refreshed
+    vm.expectEmit(true, false, false, true, address(spoke1));
+    emit ISpoke.RefreshSingleUserDynamicConfig(alice, _wethReserveId(spoke1));
     vm.prank(alice);
     spoke1.setUsingAsCollateral(_usdxReserveId(spoke1), false, alice);
 
@@ -195,9 +202,11 @@ contract SpokeDynamicConfigTriggersTest is SpokeBase {
     assertEq(_getUserDynConfigKeys(spoke1, alice), configs);
     assertNotEq(_getSpokeDynConfigKeys(spoke1), configs);
 
-    // manually trigger update
-    vm.expectEmit(address(spoke1));
-    emit ISpoke.RefreshAllUserDynamicConfig(alice);
+    // manually trigger update - expect individual refresh events for each collateral reserve
+    vm.expectEmit(true, false, false, true, address(spoke1));
+    emit ISpoke.RefreshSingleUserDynamicConfig(alice, _usdxReserveId(spoke1));
+    vm.expectEmit(true, false, false, true, address(spoke1));
+    emit ISpoke.RefreshSingleUserDynamicConfig(alice, _wethReserveId(spoke1));
     vm.prank(alice);
     spoke1.updateUserDynamicConfig(alice);
 
@@ -305,8 +314,11 @@ contract SpokeDynamicConfigTriggersTest is SpokeBase {
   ) internal {
     uint256 snapshotId = vm.snapshotState();
 
-    vm.expectEmit(address(spoke1));
-    emit ISpoke.RefreshAllUserDynamicConfig(alice);
+    // Expect individual refresh events for each collateral reserve
+    vm.expectEmit(true, false, false, true, address(spoke1));
+    emit ISpoke.RefreshSingleUserDynamicConfig(alice, _usdxReserveId(spoke1));
+    vm.expectEmit(true, false, false, true, address(spoke1));
+    emit ISpoke.RefreshSingleUserDynamicConfig(alice, _wethReserveId(spoke1));
     vm.prank(caller);
     spoke1.updateUserDynamicConfig(alice);
 
