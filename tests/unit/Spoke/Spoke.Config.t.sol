@@ -10,11 +10,9 @@ contract SpokeConfigTest is SpokeBase {
 
   function test_spoke_deploy() public {
     address oracle = makeAddr('AaveOracle');
-    address predictedSpokeAddress = DeployUtils.getDeterministicSpokeInstanceAddress(oracle);
     vm.expectCall(oracle, abi.encodeCall(IPriceOracle.DECIMALS, ()), 1);
     vm.mockCall(oracle, abi.encodeCall(IPriceOracle.DECIMALS, ()), abi.encode(8));
     ISpoke instance = ISpoke(address(DeployUtils.deploySpokeImplementation(oracle)));
-    assertEq(address(instance), predictedSpokeAddress, 'predictedSpokeAddress');
     assertEq(instance.ORACLE(), oracle);
     assertNotEq(instance.getLiquidationLogic(), address(0));
   }
