@@ -1,0 +1,10 @@
+{
+  "A. updateUserDynamicConfig: 1 collateral": "78830",
+  "B. updateUserDynamicConfig: 2 collaterals": "114442",
+  "C. updateUserDynamicConfig: 5 collaterals": "221876",
+  "D. updateUserDynamicConfig: 10 collaterals": "400271",
+  "E. updateUserDynamicConfig: 25 collaterals": "941034",
+  "F. updateUserDynamicConfig: 50 collaterals": "1849354",
+  "G. updateUserDynamicConfig: 100 collaterals": "3675417",
+  "H. updateUserDynamicConfig: 120 collaterals": "4406076"
+}
