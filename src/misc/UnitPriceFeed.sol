@@ -13,20 +13,18 @@ contract UnitPriceFeed is AggregatorV3Interface {
   using SafeCast for uint256;
 
   /// @inheritdoc AggregatorV3Interface
-  uint8 public immutable decimals;
-
-  /// @inheritdoc AggregatorV3Interface
   string public description;
 
-  int256 private immutable _units;
+  uint8 private immutable DECIMALS;
+  int256 private immutable UNITS;
 
   /// @dev Constructor.
   /// @param decimals_ The number of decimals used to represent the unit price.
   /// @param description_ The description of the unit price feed.
   constructor(uint8 decimals_, string memory description_) {
-    decimals = decimals_;
+    UNITS = (10 ** decimals_).toInt256();
+    DECIMALS = decimals_;
     description = description_;
-    _units = (10 ** decimals_).toInt256();
   }
 
   /// @inheritdoc AggregatorV3Interface
@@ -50,7 +48,7 @@ contract UnitPriceFeed is AggregatorV3Interface {
   {
     if (_roundId <= uint80(block.timestamp)) {
       roundId = _roundId;
-      answer = _units;
+      answer = UNITS;
       startedAt = _roundId;
       updatedAt = _roundId;
       answeredInRound = _roundId;
@@ -70,9 +68,14 @@ contract UnitPriceFeed is AggregatorV3Interface {
     )
   {
     roundId = uint80(block.timestamp);
-    answer = _units;
+    answer = UNITS;
     startedAt = block.timestamp;
     updatedAt = block.timestamp;
     answeredInRound = roundId;
+  }
+
+  /// @inheritdoc AggregatorV3Interface
+  function decimals() external view returns (uint8) {
+    return DECIMALS;
   }
 }

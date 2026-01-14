@@ -8,21 +8,21 @@ import {Arrays} from 'src/dependencies/openzeppelin/Arrays.sol';
 /// @author Aave Labs
 /// @notice Library to pack key-value pairs in a list.
 /// @dev The `sortByKey` helper sorts by ascending order of the `key` & in case of collision by descending order of the `value`.
-/// @dev This is achieved by sorting the packed `key-value` pair in descending order, but storing the invert of the `key` (ie `_MAX_KEY - key`).
+/// @dev This is achieved by sorting the packed `key-value` pair in descending order, but storing the invert of the `key` (ie `MAX_KEY - key`).
 /// @dev Uninitialized keys are returned as (key: 0, value: 0) and are placed at the end of the list after sorting.
 library KeyValueList {
-  /// @notice Thrown when adding a key which can't be stored in `_KEY_BITS` or value in `_VALUE_BITS`.
+  /// @notice Thrown when adding a key which can't be stored in `KEY_BITS` or value in `VALUE_BITS`.
   error MaxDataSizeExceeded();
 
   struct List {
     uint256[] _inner;
   }
 
-  uint256 internal constant _KEY_BITS = 32;
-  uint256 internal constant _VALUE_BITS = 224;
-  uint256 internal constant _MAX_KEY = (1 << _KEY_BITS) - 1;
-  uint256 internal constant _MAX_VALUE = (1 << _VALUE_BITS) - 1;
-  uint256 internal constant _KEY_SHIFT = 256 - _KEY_BITS;
+  uint256 internal constant KEY_BITS = 32;
+  uint256 internal constant VALUE_BITS = 224;
+  uint256 internal constant MAX_KEY = (1 << KEY_BITS) - 1;
+  uint256 internal constant MAX_VALUE = (1 << VALUE_BITS) - 1;
+  uint256 internal constant KEY_SHIFT = 256 - KEY_BITS;
 
   /// @notice Allocates memory for a KeyValue list of `size` elements.
   function init(uint256 size) internal pure returns (List memory) {
@@ -35,9 +35,9 @@ library KeyValueList {
   }
 
   /// @notice Inserts packed `key`, `value` at `idx`. Reverts if data exceeds maximum allowed size.
-  /// @dev Reverts if `key` equals or exceeds the `_MAX_KEY` value and reverts if `value` equals or exceeds the `_MAX_VALUE` value.
+  /// @dev Reverts if `key` equals or exceeds the `MAX_KEY` value and reverts if `value` equals or exceeds the `MAX_VALUE` value.
   function add(List memory self, uint256 idx, uint256 key, uint256 value) internal pure {
-    require(key < _MAX_KEY && value < _MAX_VALUE, MaxDataSizeExceeded());
+    require(key < MAX_KEY && value < MAX_VALUE, MaxDataSizeExceeded());
     self._inner[idx] = pack(key, value);
   }
 
@@ -58,19 +58,19 @@ library KeyValueList {
   /// @notice Packs a given `key`, `value` pair into a single word.
   /// @dev Bound checks are expected to be done before packing.
   function pack(uint256 key, uint256 value) internal pure returns (uint256) {
-    return ((_MAX_KEY - key) << _KEY_SHIFT) | value;
+    return ((MAX_KEY - key) << KEY_SHIFT) | value;
   }
 
   /// @notice Unpacks `key` from a previously packed word containing `key` and `value`.
   /// @dev The key is stored in the most significant bits of the word.
   function unpackKey(uint256 data) internal pure returns (uint256) {
-    return _MAX_KEY - (data >> _KEY_SHIFT);
+    return MAX_KEY - (data >> KEY_SHIFT);
   }
 
   /// @notice Unpacks `value` from a previously packed word containing `key` and `value`.
   /// @dev The value is stored in the least significant bits of the word.
   function unpackValue(uint256 data) internal pure returns (uint256) {
-    return data & ((1 << _KEY_SHIFT) - 1);
+    return data & ((1 << KEY_SHIFT) - 1);
   }
 
   /// @notice Unpacks both `key` and `value` from a previously packed word containing `key` and `value`.
