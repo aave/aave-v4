@@ -9,7 +9,7 @@ import {IGatewayBase} from 'src/position-manager/interfaces/IGatewayBase.sol';
 /// @title ISignatureGateway
 /// @author Aave Labs
 /// @notice Minimal interface for protocol actions involving signed intents.
-interface ISignatureGateway is IMulticall, IIntentConsumer, IGatewayBase {
+interface ISignatureGateway is IGatewayBase, IIntentConsumer, IMulticall {
   /// @notice Intent data to supply assets to a reserve.
   /// @param spoke The address of the registered spoke.
   /// @param reserveId The identifier of the reserve.
