@@ -1109,16 +1109,14 @@ contract SpokeAccrueInterestTest is SpokeBase {
       (remainingCollateralValue / 2) / _getValue(spoke, _wethReserveId(spoke), 1)
     );
     remainingCollateralValue -=
-      _getValue(spoke, _wethReserveId(spoke), amounts.wethBorrowAmount) *
-      2;
+      _getValue(spoke, _wethReserveId(spoke), amounts.wethBorrowAmount) * 2;
     amounts.usdxBorrowAmount = bound(
       amounts.usdxBorrowAmount,
       0,
       (remainingCollateralValue / 2) / _getValue(spoke, _usdxReserveId(spoke), 1)
     );
     remainingCollateralValue -=
-      _getValue(spoke, _usdxReserveId(spoke), amounts.usdxBorrowAmount) *
-      2;
+      _getValue(spoke, _usdxReserveId(spoke), amounts.usdxBorrowAmount) * 2;
     amounts.wbtcBorrowAmount = bound(
       amounts.wbtcBorrowAmount,
       0,
