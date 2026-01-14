@@ -3,17 +3,20 @@
 pragma solidity 0.8.28;
 
 import {EIP712} from 'src/dependencies/solady/EIP712.sol';
-import {NoncesKeyed} from 'src/utils/NoncesKeyed.sol';
 import {SignatureChecker} from 'src/dependencies/openzeppelin/SignatureChecker.sol';
+import {NoncesKeyed} from 'src/utils/NoncesKeyed.sol';
 import {IIntentConsumer} from 'src/interfaces/IIntentConsumer.sol';
 
+/// @title IntentConsumer
+/// @author Aave Labs
+/// @notice Base contract to consume EIP712-signed intents with keyed-nonces.
 abstract contract IntentConsumer is IIntentConsumer, NoncesKeyed, EIP712 {
   /// @inheritdoc IIntentConsumer
   function DOMAIN_SEPARATOR() external view returns (bytes32) {
     return _domainSeparator();
   }
 
-  /// @dev Verifies the signature for given signer & intent hash, and consumes the keyed-nonce.
+  /// @dev Verifies the signature of an EIP712-typed intent and consumes its associated keyed-nonce.
   /// @param signer The address of the user.
   /// @param intentHash The hash of the intent struct.
   /// @param nonce The keyed-nonce for the intent.
