@@ -3,13 +3,13 @@
 pragma solidity ^0.8.0;
 
 import {IMulticall} from 'src/interfaces/IMulticall.sol';
-import {INoncesKeyed} from 'src/interfaces/INoncesKeyed.sol';
+import {IIntentConsumer} from 'src/interfaces/IIntentConsumer.sol';
 import {IGatewayBase} from 'src/position-manager/interfaces/IGatewayBase.sol';
 
 /// @title ISignatureGateway
 /// @author Aave Labs
 /// @notice Minimal interface for protocol actions involving signed intents.
-interface ISignatureGateway is IMulticall, INoncesKeyed, IGatewayBase {
+interface ISignatureGateway is IGatewayBase, IIntentConsumer, IMulticall {
   /// @notice Intent data to supply assets to a reserve.
   /// @param spoke The address of the registered spoke.
   /// @param reserveId The identifier of the reserve.
@@ -113,9 +113,6 @@ interface ISignatureGateway is IMulticall, INoncesKeyed, IGatewayBase {
     uint256 nonce;
     uint256 deadline;
   }
-
-  /// @notice Thrown when signature deadline has passed or signer is not `onBehalfOf`.
-  error InvalidSignature();
 
   /// @notice Facilitates `supply` action on the specified registered `spoke` with a typed signature from `onBehalfOf`.
   /// @dev Supplied assets are pulled from `onBehalfOf`, prior approval to this gateway is required.
@@ -231,9 +228,6 @@ interface ISignatureGateway is IMulticall, INoncesKeyed, IGatewayBase {
     bytes32 permitR,
     bytes32 permitS
   ) external;
-
-  /// @notice Returns the EIP712 domain separator.
-  function DOMAIN_SEPARATOR() external view returns (bytes32);
 
   /// @notice Returns the type hash for the Supply intent.
   function SUPPLY_TYPEHASH() external view returns (bytes32);

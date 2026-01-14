@@ -5,19 +5,17 @@ pragma solidity 0.8.28;
 import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
 import {SafeERC20, IERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
 import {IERC20Permit} from 'src/dependencies/openzeppelin/IERC20Permit.sol';
-import {SignatureChecker} from 'src/libraries/misc/SignatureChecker.sol';
 import {AccessManagedUpgradeable} from 'src/dependencies/openzeppelin-upgradeable/AccessManagedUpgradeable.sol';
-import {EIP712} from 'src/dependencies/solady/EIP712.sol';
-import {EIP712Hash} from 'src/spoke/libraries/EIP712Hash.sol';
 import {MathUtils} from 'src/libraries/math/MathUtils.sol';
 import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
 import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
+import {EIP712Hash} from 'src/spoke/libraries/EIP712Hash.sol';
 import {KeyValueList} from 'src/spoke/libraries/KeyValueList.sol';
 import {LiquidationLogic} from 'src/spoke/libraries/LiquidationLogic.sol';
 import {PositionStatusMap} from 'src/spoke/libraries/PositionStatusMap.sol';
 import {ReserveFlags, ReserveFlagsMap} from 'src/spoke/libraries/ReserveFlagsMap.sol';
 import {UserPositionDebt} from 'src/spoke/libraries/UserPositionDebt.sol';
-import {NoncesKeyed} from 'src/utils/NoncesKeyed.sol';
+import {IntentConsumer} from 'src/utils/IntentConsumer.sol';
 import {Multicall} from 'src/utils/Multicall.sol';
 import {IAaveOracle} from 'src/spoke/interfaces/IAaveOracle.sol';
 import {IHubBase} from 'src/hub/interfaces/IHubBase.sol';
@@ -27,7 +25,7 @@ import {ISpokeBase, ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 /// @author Aave Labs
 /// @notice Handles risk configuration & borrowing strategy for reserves and user positions.
 /// @dev Each reserve can be associated with a separate Hub.
-abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradeable, EIP712 {
+abstract contract Spoke is ISpoke, AccessManagedUpgradeable, IntentConsumer, Multicall {
   using SafeCast for *;
   using SafeERC20 for IERC20;
   using MathUtils for *;
@@ -448,13 +446,14 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     SetUserPositionManagers calldata params,
     bytes calldata signature
   ) external {
-    bytes32 digest = _hashTypedData(params.hash());
-    require(
-      block.timestamp <= params.deadline &&
-        SignatureChecker.isValidSignatureNow(params.user, digest, signature),
-      InvalidSignature()
-    );
-    _useCheckedNonce(params.user, params.nonce);
+    _verifyAndConsumeIntent({
+      signer: params.user,
+      intentHash: params.hash(),
+      nonce: params.nonce,
+      deadline: params.deadline,
+      signature: signature
+    });
+
     for (uint256 i = 0; i < params.updates.length; ++i) {
       _setUserPositionManager({
         positionManager: params.updates[i].positionManager,
@@ -663,11 +662,6 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
   /// @inheritdoc ISpoke
   function isPositionManager(address user, address positionManager) external view returns (bool) {
     return _isPositionManager(user, positionManager);
-  }
-
-  /// @inheritdoc ISpoke
-  function DOMAIN_SEPARATOR() external view returns (bytes32) {
-    return _domainSeparator();
   }
 
   /// @inheritdoc ISpoke

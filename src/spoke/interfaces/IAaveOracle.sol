@@ -13,6 +13,16 @@ interface IAaveOracle is IPriceOracle {
   /// @param source The price feed source of the reserve.
   event UpdateReserveSource(uint256 indexed reserveId, address indexed source);
 
+  /// @dev Emitted when the spoke is set.
+  /// @param spoke The address of the spoke.
+  event SetSpoke(address indexed spoke);
+
+  /// @dev Thrown when the caller is not the deployer.
+  error OnlyDeployer();
+
+  /// @dev Thrown when the spoke is already set.
+  error SpokeAlreadySet();
+
   /// @dev Thrown when the price feed source uses a different number of decimals than the oracle.
   /// @param reserveId The identifier of the reserve.
   error InvalidSourceDecimals(uint256 reserveId);
@@ -27,6 +37,15 @@ interface IAaveOracle is IPriceOracle {
 
   /// @dev Thrown when the given address is invalid.
   error InvalidAddress();
+
+  /// @dev Thrown when the spoke's oracle does not match the current oracle.
+  error OracleMismatch();
+
+  /// @notice Sets the address of the spoke.
+  /// @dev Can only be called once by the deployer.
+  /// @dev The spoke should be set before any other function is called.
+  /// @param spoke The address of the spoke.
+  function setSpoke(address spoke) external;
 
   /// @notice Sets the price feed source of a reserve.
   /// @dev Must be called by the spoke.
