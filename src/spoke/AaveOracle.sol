@@ -3,6 +3,7 @@
 pragma solidity 0.8.28;
 
 import {AggregatorV3Interface} from 'src/dependencies/chainlink/AggregatorV3Interface.sol';
+import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 import {IAaveOracle, IPriceOracle} from 'src/spoke/interfaces/IAaveOracle.sol';
 
 /// @title AaveOracle
@@ -11,26 +12,37 @@ import {IAaveOracle, IPriceOracle} from 'src/spoke/interfaces/IAaveOracle.sol';
 /// @dev Oracles are spoke-specific, due to the usage of reserve id as index of the `_sources` mapping.
 contract AaveOracle is IAaveOracle {
   /// @inheritdoc IPriceOracle
-  address public immutable SPOKE;
-
-  /// @inheritdoc IPriceOracle
   uint8 public immutable DECIMALS;
 
   /// @inheritdoc IAaveOracle
   string public DESCRIPTION;
 
+  /// @inheritdoc IPriceOracle
+  address public SPOKE;
+
+  /// @dev The address of the deployer.
+  address private immutable DEPLOYER;
+
   mapping(uint256 reserveId => AggregatorV3Interface) internal _sources;
 
   /// @dev Constructor.
   /// @dev `decimals` must match the spoke's decimals for compatibility.
-  /// @param spoke_ The address of the spoke contract.
   /// @param decimals_ The number of decimals for the oracle.
   /// @param description_ The description of the oracle.
-  constructor(address spoke_, uint8 decimals_, string memory description_) {
-    require(spoke_ != address(0), InvalidAddress());
-    SPOKE = spoke_;
+  constructor(uint8 decimals_, string memory description_) {
+    DEPLOYER = msg.sender;
     DECIMALS = decimals_;
     DESCRIPTION = description_;
+  }
+
+  /// @inheritdoc IAaveOracle
+  function setSpoke(address spoke) external {
+    require(msg.sender == DEPLOYER, OnlyDeployer());
+    require(spoke != address(0), InvalidAddress());
+    require(SPOKE == address(0), SpokeAlreadySet());
+    require(ISpoke(spoke).ORACLE() == address(this), OracleMismatch());
+    SPOKE = spoke;
+    emit SetSpoke(spoke);
   }
 
   /// @inheritdoc IAaveOracle

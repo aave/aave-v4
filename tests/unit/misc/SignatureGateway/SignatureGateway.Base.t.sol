@@ -27,9 +27,9 @@ contract SignatureGatewayBaseTest is SpokeBase {
     ISpoke spoke,
     address who,
     uint256 deadline
-  ) internal returns (EIP712Types.Supply memory) {
+  ) internal returns (ISignatureGateway.Supply memory) {
     return
-      EIP712Types.Supply({
+      ISignatureGateway.Supply({
         spoke: address(spoke),
         reserveId: _randomReserveId(spoke),
         amount: vm.randomUint(1, MAX_SUPPLY_AMOUNT),
@@ -43,9 +43,9 @@ contract SignatureGatewayBaseTest is SpokeBase {
     ISpoke spoke,
     address who,
     uint256 deadline
-  ) internal returns (EIP712Types.Withdraw memory) {
+  ) internal returns (ISignatureGateway.Withdraw memory) {
     return
-      EIP712Types.Withdraw({
+      ISignatureGateway.Withdraw({
         spoke: address(spoke),
         reserveId: _randomReserveId(spoke),
         amount: vm.randomUint(1, MAX_SUPPLY_AMOUNT),
@@ -59,9 +59,9 @@ contract SignatureGatewayBaseTest is SpokeBase {
     ISpoke spoke,
     address who,
     uint256 deadline
-  ) internal returns (EIP712Types.Borrow memory) {
+  ) internal returns (ISignatureGateway.Borrow memory) {
     return
-      EIP712Types.Borrow({
+      ISignatureGateway.Borrow({
         spoke: address(spoke),
         reserveId: _randomReserveId(spoke),
         amount: vm.randomUint(1, MAX_SUPPLY_AMOUNT),
@@ -75,9 +75,9 @@ contract SignatureGatewayBaseTest is SpokeBase {
     ISpoke spoke,
     address who,
     uint256 deadline
-  ) internal returns (EIP712Types.Repay memory) {
+  ) internal returns (ISignatureGateway.Repay memory) {
     return
-      EIP712Types.Repay({
+      ISignatureGateway.Repay({
         spoke: address(spoke),
         reserveId: _randomReserveId(spoke),
         amount: vm.randomUint(1, MAX_SUPPLY_AMOUNT),
@@ -91,9 +91,9 @@ contract SignatureGatewayBaseTest is SpokeBase {
     ISpoke spoke,
     address who,
     uint256 deadline
-  ) internal returns (EIP712Types.SetUsingAsCollateral memory) {
+  ) internal returns (ISignatureGateway.SetUsingAsCollateral memory) {
     return
-      EIP712Types.SetUsingAsCollateral({
+      ISignatureGateway.SetUsingAsCollateral({
         spoke: address(spoke),
         reserveId: _randomReserveId(spoke),
         useAsCollateral: vm.randomBool(),
@@ -107,9 +107,9 @@ contract SignatureGatewayBaseTest is SpokeBase {
     ISpoke spoke,
     address user,
     uint256 deadline
-  ) internal returns (EIP712Types.UpdateUserRiskPremium memory) {
+  ) internal returns (ISignatureGateway.UpdateUserRiskPremium memory) {
     return
-      EIP712Types.UpdateUserRiskPremium({
+      ISignatureGateway.UpdateUserRiskPremium({
         spoke: address(spoke),
         user: user,
         nonce: gateway.nonces(user, _randomNonceKey()),
@@ -121,9 +121,9 @@ contract SignatureGatewayBaseTest is SpokeBase {
     ISpoke spoke,
     address user,
     uint256 deadline
-  ) internal returns (EIP712Types.UpdateUserDynamicConfig memory) {
+  ) internal returns (ISignatureGateway.UpdateUserDynamicConfig memory) {
     return
-      EIP712Types.UpdateUserDynamicConfig({
+      ISignatureGateway.UpdateUserDynamicConfig({
         spoke: address(spoke),
         user: user,
         nonce: gateway.nonces(user, _randomNonceKey()),
@@ -133,35 +133,35 @@ contract SignatureGatewayBaseTest is SpokeBase {
 
   function _getTypedDataHash(
     ISignatureGateway _gateway,
-    EIP712Types.Supply memory _params
+    ISignatureGateway.Supply memory _params
   ) internal view returns (bytes32) {
     return _typedDataHash(_gateway, vm.eip712HashStruct('Supply', abi.encode(_params)));
   }
 
   function _getTypedDataHash(
     ISignatureGateway _gateway,
-    EIP712Types.Withdraw memory _params
+    ISignatureGateway.Withdraw memory _params
   ) internal view returns (bytes32) {
     return _typedDataHash(_gateway, vm.eip712HashStruct('Withdraw', abi.encode(_params)));
   }
 
   function _getTypedDataHash(
     ISignatureGateway _gateway,
-    EIP712Types.Borrow memory _params
+    ISignatureGateway.Borrow memory _params
   ) internal view returns (bytes32) {
     return _typedDataHash(_gateway, vm.eip712HashStruct('Borrow', abi.encode(_params)));
   }
 
   function _getTypedDataHash(
     ISignatureGateway _gateway,
-    EIP712Types.Repay memory _params
+    ISignatureGateway.Repay memory _params
   ) internal view returns (bytes32) {
     return _typedDataHash(_gateway, vm.eip712HashStruct('Repay', abi.encode(_params)));
   }
 
   function _getTypedDataHash(
     ISignatureGateway _gateway,
-    EIP712Types.SetUsingAsCollateral memory _params
+    ISignatureGateway.SetUsingAsCollateral memory _params
   ) internal view returns (bytes32) {
     return
       _typedDataHash(_gateway, vm.eip712HashStruct('SetUsingAsCollateral', abi.encode(_params)));
@@ -169,7 +169,7 @@ contract SignatureGatewayBaseTest is SpokeBase {
 
   function _getTypedDataHash(
     ISignatureGateway _gateway,
-    EIP712Types.UpdateUserRiskPremium memory _params
+    ISignatureGateway.UpdateUserRiskPremium memory _params
   ) internal view returns (bytes32) {
     return
       _typedDataHash(_gateway, vm.eip712HashStruct('UpdateUserRiskPremium', abi.encode(_params)));
@@ -177,7 +177,7 @@ contract SignatureGatewayBaseTest is SpokeBase {
 
   function _getTypedDataHash(
     ISignatureGateway _gateway,
-    EIP712Types.UpdateUserDynamicConfig memory _params
+    ISignatureGateway.UpdateUserDynamicConfig memory _params
   ) internal view returns (bytes32) {
     return
       _typedDataHash(_gateway, vm.eip712HashStruct('UpdateUserDynamicConfig', abi.encode(_params)));
