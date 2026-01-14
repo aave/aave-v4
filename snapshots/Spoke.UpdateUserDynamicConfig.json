@@ -1,10 +1,12 @@
 {
   "A. updateUserDynamicConfig: 1 collateral": "76461",
   "B. updateUserDynamicConfig: 2 collaterals": "111290",
-  "C. updateUserDynamicConfig: 5 collaterals": "216372",
-  "D. updateUserDynamicConfig: 10 collaterals": "390832",
-  "E. updateUserDynamicConfig: 25 collaterals": "919680",
-  "F. updateUserDynamicConfig: 50 collaterals": "1807777",
-  "G. updateUserDynamicConfig: 100 collaterals": "3592024",
-  "H. updateUserDynamicConfig: 120 collaterals": "4305445"
+  "C. updateUserDynamicConfig: 3 collaterals": "146198",
+  "D. updateUserDynamicConfig: 4 collaterals": "181225",
+  "E. updateUserDynamicConfig: 5 collaterals": "216372",
+  "F. updateUserDynamicConfig: 10 collaterals": "390832",
+  "G. updateUserDynamicConfig: 25 collaterals": "919680",
+  "H. updateUserDynamicConfig: 50 collaterals": "1807777",
+  "I. updateUserDynamicConfig: 100 collaterals": "3592024",
+  "J. updateUserDynamicConfig: 120 collaterals": "4305445"
 }
