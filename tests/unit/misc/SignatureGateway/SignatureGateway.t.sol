@@ -226,7 +226,6 @@ contract SignatureGatewayTest is SignatureGatewayBaseTest {
     p.nonce = _burnRandomNoncesAtKey(gateway, alice);
     bytes memory signature = _sign(alicePk, _getTypedDataHash(gateway, p));
 
-    // Expect refresh event for dai collateral reserve
     vm.expectEmit(address(spoke1));
     emit ISpoke.RefreshSingleUserDynamicConfig(alice, _daiReserveId(spoke1));
 
