@@ -8,7 +8,7 @@ import {INoncesKeyed} from 'src/interfaces/INoncesKeyed.sol';
 /// @author Aave Labs
 /// @notice Minimal interface for IntentConsumer.
 interface IIntentConsumer is INoncesKeyed {
-  /// @notice Thrown when signature deadline has passed or signer is not the expected one.
+  /// @notice Thrown when given signature is invalid.
   error InvalidSignature();
 
   /// @notice Returns the EIP-712 domain separator.

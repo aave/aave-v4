@@ -8,6 +8,11 @@ import {SignatureChecker} from 'src/dependencies/openzeppelin/SignatureChecker.s
 import {IIntentConsumer} from 'src/interfaces/IIntentConsumer.sol';
 
 abstract contract IntentConsumer is IIntentConsumer, NoncesKeyed, EIP712 {
+  /// @inheritdoc IIntentConsumer
+  function DOMAIN_SEPARATOR() external view returns (bytes32) {
+    return _domainSeparator();
+  }
+
   /// @dev Verifies the signature for given signer & intent hash, and consumes the keyed-nonce.
   /// @param signer The address of the user.
   /// @param intentHash The hash of the intent struct.
@@ -25,10 +30,5 @@ abstract contract IntentConsumer is IIntentConsumer, NoncesKeyed, EIP712 {
     bytes32 digest = _hashTypedData(intentHash);
     require(SignatureChecker.isValidSignatureNow(signer, digest, signature), InvalidSignature());
     _useCheckedNonce(signer, nonce);
-  }
-
-  /// @inheritdoc IIntentConsumer
-  function DOMAIN_SEPARATOR() external view returns (bytes32) {
-    return _domainSeparator();
   }
 }
