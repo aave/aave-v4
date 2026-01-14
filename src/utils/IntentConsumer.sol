@@ -3,7 +3,7 @@
 pragma solidity 0.8.28;
 
 import {EIP712} from 'src/dependencies/solady/EIP712.sol';
-import {SignatureChecker} from 'src/libraries/misc/SignatureChecker.sol';
+import {SignatureChecker} from 'src/dependencies/openzeppelin/SignatureChecker.sol';
 import {NoncesKeyed} from 'src/utils/NoncesKeyed.sol';
 import {IIntentConsumer} from 'src/interfaces/IIntentConsumer.sol';
 
