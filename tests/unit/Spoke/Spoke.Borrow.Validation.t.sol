@@ -22,7 +22,7 @@ contract SpokeBorrowValidationTest is SpokeBase {
     amount = bound(amount, 1, MAX_SUPPLY_AMOUNT);
 
     // set reserve not borrowable
-    updateReserveBorrowableFlag(spoke1, reserveId, false);
+    _updateReserveBorrowableFlag(spoke1, reserveId, false);
     assertFalse(spoke1.getReserve(reserveId).flags.borrowable());
 
     // Bob tries to draw
@@ -76,7 +76,7 @@ contract SpokeBorrowValidationTest is SpokeBase {
     reserveId = bound(reserveId, 0, spoke1.getReserveCount() - 1);
     amount = bound(amount, 1, MAX_SUPPLY_AMOUNT);
 
-    updateReserveFrozenFlag(spoke1, reserveId, true);
+    _updateReserveFrozenFlag(spoke1, reserveId, true);
     assertTrue(spoke1.getReserve(reserveId).flags.frozen());
 
     // Bob try to draw
