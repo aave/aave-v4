@@ -11,7 +11,10 @@ import {console2 as console} from 'forge-std/console2.sol';
 
 // dependencies
 import {AggregatorV3Interface} from 'src/dependencies/chainlink/AggregatorV3Interface.sol';
-import {TransparentUpgradeableProxy, ITransparentUpgradeableProxy} from 'src/dependencies/openzeppelin/TransparentUpgradeableProxy.sol';
+import {
+  TransparentUpgradeableProxy,
+  ITransparentUpgradeableProxy
+} from 'src/dependencies/openzeppelin/TransparentUpgradeableProxy.sol';
 import {IERC20Metadata} from 'src/dependencies/openzeppelin/IERC20Metadata.sol';
 import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
 import {IERC20Errors} from 'src/dependencies/openzeppelin/IERC20Errors.sol';
@@ -44,7 +47,11 @@ import {AccessManagerEnumerable} from 'src/access/AccessManagerEnumerable.sol';
 import {HubConfigurator, IHubConfigurator} from 'src/hub/HubConfigurator.sol';
 import {Hub, IHub, IHubBase} from 'src/hub/Hub.sol';
 import {SharesMath} from 'src/hub/libraries/SharesMath.sol';
-import {AssetInterestRateStrategy, IAssetInterestRateStrategy, IBasicInterestRateStrategy} from 'src/hub/AssetInterestRateStrategy.sol';
+import {
+  AssetInterestRateStrategy,
+  IAssetInterestRateStrategy,
+  IBasicInterestRateStrategy
+} from 'src/hub/AssetInterestRateStrategy.sol';
 
 // spoke
 import {Spoke, ISpoke, ISpokeBase} from 'src/spoke/Spoke.sol';
@@ -1946,8 +1953,7 @@ abstract contract Base is Test {
     requiredDebtValue =
       userAccountData.totalCollateralValue.wadMulUp(userAccountData.avgCollateralFactor).wadDivUp(
         desiredHf
-      ) -
-      userAccountData.totalDebtValue;
+      ) - userAccountData.totalDebtValue;
   }
 
   function _getUserHealthFactor(ISpoke spoke, address user) internal view returns (uint256) {
