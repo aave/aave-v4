@@ -38,6 +38,7 @@ contract AccessManagerEnumerable is AccessManager, IAccessManagerEnumerable {
     private _targetToSelectorToRole;
 
   /// @dev Map of role identifiers and target contract addresses to their respective set of function selectors.
+  /// @dev Function selectors assigned to `ADMIN_ROLE` are not included.
   mapping(uint64 roleId => mapping(address target => EnumerableSet.Bytes32Set))
     private _roleToTargetToSelectorSet;
 
