@@ -2242,16 +2242,17 @@ abstract contract Base is Test {
     IAaveOracle oracle = new AaveOracle(8, _oracleDesc);
 
     ISpoke spoke = DeployUtils.deploySpoke({
-      deployer: deployer,
       oracle: address(oracle),
       proxyAdminOwner: proxyAdminOwner,
       initData: abi.encodeCall(ISpokeInstance.initialize, (_accessManager))
     });
+
     vm.prank(deployer);
     oracle.setSpoke(address(spoke));
 
     assertEq(spoke.ORACLE(), address(oracle));
     assertEq(oracle.SPOKE(), address(spoke));
+
     return (spoke, oracle);
   }
 

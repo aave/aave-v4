@@ -15,7 +15,7 @@ library Create2Utils {
 
   Vm internal constant vm = Vm(address(uint160(uint256(keccak256('hevm cheat code')))));
 
-  function setCreate2Factory() internal {
+  function loadCreate2Factory() internal {
     if (_isContractDeployed(CREATE2_FACTORY)) {
       return;
     }

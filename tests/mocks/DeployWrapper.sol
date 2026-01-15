@@ -10,12 +10,11 @@ contract DeployWrapper {
   }
 
   function deploySpoke(
-    address deployer,
     address oracle,
     address proxyAdminOwner,
     bytes calldata initData
   ) external returns (address) {
-    return address(DeployUtils.deploySpoke(deployer, oracle, proxyAdminOwner, initData));
+    return address(DeployUtils.deploySpoke(oracle, proxyAdminOwner, initData));
   }
 
   function deployHub(address authority) external returns (address) {

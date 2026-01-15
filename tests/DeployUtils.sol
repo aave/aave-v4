@@ -20,20 +20,16 @@ library DeployUtils {
     address oracle,
     bytes32 salt
   ) internal returns (ISpokeInstance spoke) {
-    Create2Utils.setCreate2Factory();
+    Create2Utils.loadCreate2Factory();
     return ISpokeInstance(Create2Utils.create2Deploy(salt, _getSpokeInstanceInitCode(oracle)));
   }
 
   function deploySpoke(
-    address deployer,
     address oracle,
     address proxyAdminOwner,
     bytes memory initData
   ) internal returns (ISpoke) {
-    return
-      ISpoke(
-        _proxify(deployer, address(deploySpokeImplementation(oracle)), proxyAdminOwner, initData)
-      );
+    return ISpoke(_proxify(address(deploySpokeImplementation(oracle)), proxyAdminOwner, initData));
   }
 
   function getDeterministicSpokeInstanceAddress(address oracle) internal returns (address) {
@@ -46,7 +42,7 @@ library DeployUtils {
   ) internal returns (address) {
     bytes32 initCodeHash = keccak256(_getSpokeInstanceInitCode(oracle));
 
-    Create2Utils.setCreate2Factory();
+    Create2Utils.loadCreate2Factory();
     return Create2Utils.computeCreate2Address(salt, initCodeHash);
   }
 
@@ -55,7 +51,7 @@ library DeployUtils {
   }
 
   function deployHub(address authority, bytes32 salt) internal returns (IHub hub) {
-    Create2Utils.setCreate2Factory();
+    Create2Utils.loadCreate2Factory();
     return IHub(Create2Utils.create2Deploy(salt, _getHubInitCode(authority)));
   }
 
@@ -66,17 +62,15 @@ library DeployUtils {
   function getDeterministicHubAddress(address authority, bytes32 salt) internal returns (address) {
     bytes32 initCodeHash = keccak256(_getHubInitCode(authority));
 
-    Create2Utils.setCreate2Factory();
+    Create2Utils.loadCreate2Factory();
     return Create2Utils.computeCreate2Address(salt, initCodeHash);
   }
 
   function _proxify(
-    address deployer,
     address impl,
     address proxyAdminOwner,
     bytes memory initData
   ) internal returns (address) {
-    vm.prank(deployer);
     TransparentUpgradeableProxy proxy = new TransparentUpgradeableProxy(
       impl,
       proxyAdminOwner,
