@@ -7,13 +7,14 @@ import {IIntentConsumer} from 'src/interfaces/IIntentConsumer.sol';
 import {IMulticall} from 'src/interfaces/IMulticall.sol';
 import {IHubBase} from 'src/hub/interfaces/IHubBase.sol';
 import {ISpokeBase} from 'src/spoke/interfaces/ISpokeBase.sol';
+import {IExtSload} from 'src/interfaces/IExtSload.sol';
 
 type ReserveFlags is uint8;
 
 /// @title ISpoke
 /// @author Aave Labs
 /// @notice Full interface for Spoke.
-interface ISpoke is ISpokeBase, IAccessManaged, IIntentConsumer, IMulticall {
+interface ISpoke is ISpokeBase, IAccessManaged, IIntentConsumer, IExtSload, IMulticall {
   /// @notice Reserve level data.
   /// @dev underlying The address of the underlying asset.
   /// @dev hub The address of the associated Hub.

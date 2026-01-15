@@ -834,7 +834,7 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
     if (
       aliceUsdxInfo.borrowAmount > 2 &&
       spoke1.getUserSuppliedAssets(_usdxReserveId(spoke1), alice) >
-      spoke1.getUserTotalDebt(_usdxReserveId(spoke1), alice) * 3 &&
+        spoke1.getUserTotalDebt(_usdxReserveId(spoke1), alice) * 3 &&
       _getUserHealthFactor(spoke1, alice) > WadRayMath.WAD
     ) {
       // Store Bob old premium drawn shares before Alice borrow

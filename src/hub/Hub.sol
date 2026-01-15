@@ -335,8 +335,7 @@ contract Hub is IHub, AccessManaged, ExtSload {
     spoke.drawnShares -= drawnShares;
     _applyPremiumDelta(asset, spoke, premiumDelta);
 
-    uint256 deficitAmountRay = uint256(drawnShares) *
-      asset.drawnIndex +
+    uint256 deficitAmountRay = uint256(drawnShares) * asset.drawnIndex +
       premiumDelta.restoredPremiumRay;
     asset.deficitRay += deficitAmountRay.toUint200();
     spoke.deficitRay += deficitAmountRay.toUint200();
@@ -832,7 +831,7 @@ contract Hub is IHub, AccessManaged, ExtSload {
     require(
       addCap == MAX_ALLOWED_SPOKE_CAP ||
         addCap * MathUtils.uncheckedExp(10, asset.decimals) >=
-        asset.toAddedAssetsUp(spoke.addedShares) + amount,
+          asset.toAddedAssetsUp(spoke.addedShares) + amount,
       AddCapExceeded(addCap)
     );
   }
@@ -860,7 +859,7 @@ contract Hub is IHub, AccessManaged, ExtSload {
     require(
       drawCap == MAX_ALLOWED_SPOKE_CAP ||
         drawCap * MathUtils.uncheckedExp(10, asset.decimals) >=
-        owed + amount + uint256(spoke.deficitRay).fromRayUp(),
+          owed + amount + uint256(spoke.deficitRay).fromRayUp(),
       DrawCapExceeded(drawCap)
     );
   }
@@ -918,7 +917,7 @@ contract Hub is IHub, AccessManaged, ExtSload {
     require(
       addCap == MAX_ALLOWED_SPOKE_CAP ||
         addCap * MathUtils.uncheckedExp(10, asset.decimals) >=
-        asset.toAddedAssetsUp(receiver.addedShares + shares),
+          asset.toAddedAssetsUp(receiver.addedShares + shares),
       AddCapExceeded(addCap)
     );
   }
