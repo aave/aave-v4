@@ -36,14 +36,33 @@ contract HubReclaimTest is HubBase {
     hub1.reclaim(daiAssetId, 0);
   }
 
-  function test_reclaim_revertsWith_underflow_exceedsSwept() public {
+  function test_reclaim_revertsWith_InsufficientTransferred() public {
+    uint256 supplyAmount = 1000e18;
+    uint256 sweepAmount = 500e18;
+
+    address reinvestmentController = makeAddr('reinvestmentController');
+    updateAssetReinvestmentController(hub1, daiAssetId, reinvestmentController);
+
+    _addLiquidity(daiAssetId, supplyAmount);
+
+    vm.prank(reinvestmentController);
+    hub1.sweep(daiAssetId, sweepAmount);
+
+    uint256 reclaimAmount = 200e18;
+
+    vm.expectRevert(abi.encodeWithSelector(IHub.InsufficientTransferred.selector, reclaimAmount));
+    vm.prank(reinvestmentController);
+    hub1.reclaim(daiAssetId, reclaimAmount);
+  }
+
+  function test_reclaim_revertsWith_InsufficientTransferred_noSwept() public {
     address reinvestmentController = makeAddr('reinvestmentController');
     updateAssetReinvestmentController(hub1, daiAssetId, reinvestmentController);
 
     assertEq(hub1.getAssetSwept(daiAssetId), 0);
 
+    vm.expectRevert(abi.encodeWithSelector(IHub.InsufficientTransferred.selector, 1));
     vm.prank(reinvestmentController);
-    vm.expectRevert(stdError.arithmeticError);
     hub1.reclaim(daiAssetId, 1);
   }
 
@@ -60,6 +79,10 @@ contract HubReclaimTest is HubBase {
     hub1.sweep(daiAssetId, sweepAmount);
 
     assertEq(hub1.getAssetSwept(daiAssetId), sweepAmount);
+
+    deal(address(tokenList.dai), reinvestmentController, sweepAmount + 1);
+    vm.prank(reinvestmentController);
+    tokenList.dai.transfer(address(hub1), sweepAmount + 1);
 
     vm.prank(reinvestmentController);
     vm.expectRevert(stdError.arithmeticError);
@@ -97,10 +120,7 @@ contract HubReclaimTest is HubBase {
 
     deal(address(tokenList.dai), reinvestmentController, reclaimAmount);
     vm.prank(reinvestmentController);
-    tokenList.dai.approve(address(hub1), reclaimAmount);
-
-    vm.expectEmit(address(tokenList.dai));
-    emit IERC20.Transfer(reinvestmentController, address(hub1), reclaimAmount);
+    tokenList.dai.transfer(address(hub1), reclaimAmount);
 
     vm.expectEmit(address(hub1));
     emit IHub.Reclaim(daiAssetId, reinvestmentController, reclaimAmount);
@@ -130,7 +150,7 @@ contract HubReclaimTest is HubBase {
 
     deal(address(tokenList.dai), reinvestmentController, sweepAmount);
     vm.prank(reinvestmentController);
-    tokenList.dai.approve(address(hub1), sweepAmount);
+    tokenList.dai.transfer(address(hub1), sweepAmount);
 
     vm.prank(reinvestmentController);
     hub1.reclaim(daiAssetId, sweepAmount);
@@ -166,7 +186,7 @@ contract HubReclaimTest is HubBase {
     uint256 firstReclaim = 100e18;
     deal(address(tokenList.dai), reinvestmentController, firstReclaim);
     vm.prank(reinvestmentController);
-    tokenList.dai.approve(address(hub1), firstReclaim);
+    tokenList.dai.transfer(address(hub1), firstReclaim);
 
     vm.prank(reinvestmentController);
     hub1.reclaim(daiAssetId, firstReclaim);
@@ -178,7 +198,7 @@ contract HubReclaimTest is HubBase {
     uint256 secondReclaim = 150e18;
     deal(address(tokenList.dai), reinvestmentController, secondReclaim);
     vm.prank(reinvestmentController);
-    tokenList.dai.approve(address(hub1), secondReclaim);
+    tokenList.dai.transfer(address(hub1), secondReclaim);
 
     vm.prank(reinvestmentController);
     hub1.reclaim(daiAssetId, secondReclaim);
