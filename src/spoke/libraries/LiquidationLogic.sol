@@ -324,7 +324,7 @@ library LiquidationLogic {
     uint256 drawnDebtLiquidated = params.debtToLiquidate - premiumDebtToLiquidateRay.fromRayUp();
     uint256 drawnSharesLiquidated = drawnDebtLiquidated.rayDivDown(params.drawnIndex);
 
-    IHubBase.PremiumDelta memory premiumDelta = debtPosition.getPremiumDelta({
+    IHubBase.PremiumDelta memory premiumDelta = debtPosition.calculatePremiumDelta({
       drawnSharesTaken: drawnSharesLiquidated,
       drawnIndex: params.drawnIndex,
       riskPremium: positionStatus.riskPremium,
@@ -417,7 +417,7 @@ library LiquidationLogic {
         params.collateralAssetPrice.toWad(),
         params.collateralAssetUnit
       ) <
-      DUST_LIQUIDATION_THRESHOLD;
+        DUST_LIQUIDATION_THRESHOLD;
 
     if (
       collateralToLiquidate > params.collateralReserveBalance ||
@@ -483,7 +483,7 @@ library LiquidationLogic {
         params.debtAssetPrice.toWad(),
         params.debtAssetUnit
       ) <
-      DUST_LIQUIDATION_THRESHOLD;
+        DUST_LIQUIDATION_THRESHOLD;
 
     if (leavesDebtDust) {
       // target health factor is bypassed to prevent leaving dust

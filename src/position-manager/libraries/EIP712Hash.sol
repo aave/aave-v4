@@ -2,7 +2,7 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.20;
 
-import {EIP712Types} from 'src/libraries/types/EIP712Types.sol';
+import {ISignatureGateway} from 'src/position-manager/interfaces/ISignatureGateway.sol';
 
 /// @title EIP712Hash library
 /// @author Aave Labs
@@ -36,7 +36,7 @@ library EIP712Hash {
     // keccak256('UpdateUserDynamicConfig(address spoke,address user,uint256 nonce,uint256 deadline)')
     0xba177b1f5b5e1e709f62c19f03c97988c57752ba561de58f383ebee4e8d0a71c;
 
-  function hash(EIP712Types.Supply calldata params) internal pure returns (bytes32) {
+  function hash(ISignatureGateway.Supply calldata params) internal pure returns (bytes32) {
     return
       keccak256(
         abi.encode(
@@ -51,7 +51,7 @@ library EIP712Hash {
       );
   }
 
-  function hash(EIP712Types.Withdraw calldata params) internal pure returns (bytes32) {
+  function hash(ISignatureGateway.Withdraw calldata params) internal pure returns (bytes32) {
     return
       keccak256(
         abi.encode(
@@ -66,7 +66,7 @@ library EIP712Hash {
       );
   }
 
-  function hash(EIP712Types.Borrow calldata params) internal pure returns (bytes32) {
+  function hash(ISignatureGateway.Borrow calldata params) internal pure returns (bytes32) {
     return
       keccak256(
         abi.encode(
@@ -81,7 +81,7 @@ library EIP712Hash {
       );
   }
 
-  function hash(EIP712Types.Repay calldata params) internal pure returns (bytes32) {
+  function hash(ISignatureGateway.Repay calldata params) internal pure returns (bytes32) {
     return
       keccak256(
         abi.encode(
@@ -96,7 +96,9 @@ library EIP712Hash {
       );
   }
 
-  function hash(EIP712Types.SetUsingAsCollateral calldata params) internal pure returns (bytes32) {
+  function hash(
+    ISignatureGateway.SetUsingAsCollateral calldata params
+  ) internal pure returns (bytes32) {
     return
       keccak256(
         abi.encode(
@@ -111,7 +113,9 @@ library EIP712Hash {
       );
   }
 
-  function hash(EIP712Types.UpdateUserRiskPremium calldata params) internal pure returns (bytes32) {
+  function hash(
+    ISignatureGateway.UpdateUserRiskPremium calldata params
+  ) internal pure returns (bytes32) {
     return
       keccak256(
         abi.encode(
@@ -125,7 +129,7 @@ library EIP712Hash {
   }
 
   function hash(
-    EIP712Types.UpdateUserDynamicConfig calldata params
+    ISignatureGateway.UpdateUserDynamicConfig calldata params
   ) internal pure returns (bytes32) {
     return
       keccak256(

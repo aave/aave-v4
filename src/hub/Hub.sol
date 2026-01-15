@@ -78,7 +78,7 @@ contract Hub is IHub, AccessManaged {
       MIN_ALLOWED_UNDERLYING_DECIMALS <= decimals && decimals <= MAX_ALLOWED_UNDERLYING_DECIMALS,
       InvalidAssetDecimals()
     );
-    require(!_underlyingAssets.contains(underlying), UnderlyingAlreadyListed());
+    require(_underlyingAssets.add(underlying), UnderlyingAlreadyListed());
 
     uint256 assetId = _assetCount++;
     IBasicInterestRateStrategy(irStrategy).setInterestRateData(assetId, irData);
@@ -111,7 +111,6 @@ contract Hub is IHub, AccessManaged {
       feeReceiver: feeReceiver,
       liquidityFee: 0
     });
-    _underlyingAssets.add(underlying);
     _addFeeReceiver(assetId, feeReceiver);
 
     emit AddAsset(assetId, underlying, decimals);
@@ -146,12 +145,8 @@ contract Hub is IHub, AccessManaged {
       InvalidReinvestmentController()
     );
 
-    if (config.irStrategy != asset.irStrategy) {
-      asset.irStrategy = config.irStrategy;
-      IBasicInterestRateStrategy(config.irStrategy).setInterestRateData(assetId, irData);
-    } else {
-      require(irData.length == 0, InvalidInterestRateStrategy());
-    }
+    asset.liquidityFee = config.liquidityFee;
+    asset.reinvestmentController = config.reinvestmentController;
 
     address oldFeeReceiver = asset.feeReceiver;
     if (oldFeeReceiver != config.feeReceiver) {
@@ -164,8 +159,12 @@ contract Hub is IHub, AccessManaged {
       _addFeeReceiver(assetId, config.feeReceiver);
     }
 
-    asset.liquidityFee = config.liquidityFee;
-    asset.reinvestmentController = config.reinvestmentController;
+    if (config.irStrategy != asset.irStrategy) {
+      asset.irStrategy = config.irStrategy;
+      IBasicInterestRateStrategy(config.irStrategy).setInterestRateData(assetId, irData);
+    } else {
+      require(irData.length == 0, InvalidInterestRateStrategy());
+    }
 
     asset.updateDrawnRate(assetId);
 
@@ -335,8 +334,7 @@ contract Hub is IHub, AccessManaged {
     spoke.drawnShares -= drawnShares;
     _applyPremiumDelta(asset, spoke, premiumDelta);
 
-    uint256 deficitAmountRay = uint256(drawnShares) *
-      asset.drawnIndex +
+    uint256 deficitAmountRay = uint256(drawnShares) * asset.drawnIndex +
       premiumDelta.restoredPremiumRay;
     asset.deficitRay += deficitAmountRay.toUint200();
     spoke.deficitRay += deficitAmountRay.toUint200();
@@ -832,7 +830,7 @@ contract Hub is IHub, AccessManaged {
     require(
       addCap == MAX_ALLOWED_SPOKE_CAP ||
         addCap * MathUtils.uncheckedExp(10, asset.decimals) >=
-        asset.toAddedAssetsUp(spoke.addedShares) + amount,
+          asset.toAddedAssetsUp(spoke.addedShares) + amount,
       AddCapExceeded(addCap)
     );
   }
@@ -860,7 +858,7 @@ contract Hub is IHub, AccessManaged {
     require(
       drawCap == MAX_ALLOWED_SPOKE_CAP ||
         drawCap * MathUtils.uncheckedExp(10, asset.decimals) >=
-        owed + amount + uint256(spoke.deficitRay).fromRayUp(),
+          owed + amount + uint256(spoke.deficitRay).fromRayUp(),
       DrawCapExceeded(drawCap)
     );
   }
@@ -887,7 +885,6 @@ contract Hub is IHub, AccessManaged {
     uint256 premiumAmountRay
   ) internal view {
     require(spoke.active, SpokeNotActive());
-    require(!spoke.paused, SpokePaused());
     require(drawnAmount > 0 || premiumAmountRay > 0, InvalidAmount());
     uint256 drawn = _getSpokeDrawn(asset, spoke);
     uint256 premiumRay = _getSpokePremiumRay(asset, spoke);
@@ -919,7 +916,7 @@ contract Hub is IHub, AccessManaged {
     require(
       addCap == MAX_ALLOWED_SPOKE_CAP ||
         addCap * MathUtils.uncheckedExp(10, asset.decimals) >=
-        asset.toAddedAssetsUp(receiver.addedShares + shares),
+          asset.toAddedAssetsUp(receiver.addedShares + shares),
       AddCapExceeded(addCap)
     );
   }

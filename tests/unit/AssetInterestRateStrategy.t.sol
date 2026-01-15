@@ -107,8 +107,7 @@ contract AssetInterestRateStrategyTest is Base {
 
   function test_setInterestRateData_revertsWith_InvalidMaxRate() public {
     rateData.baseVariableBorrowRate = rateData.variableRateSlope1 = rateData.variableRateSlope2 =
-      rateStrategy.MAX_BORROW_RATE().toUint32() /
-      3 +
+      rateStrategy.MAX_BORROW_RATE().toUint32() / 3 +
       1;
     encodedRateData = abi.encode(rateData);
     vm.expectRevert(IAssetInterestRateStrategy.InvalidMaxRate.selector);

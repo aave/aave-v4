@@ -142,8 +142,7 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
         testAmounts[i].borrowAmount -
         _calculateBurntInterest(hub1, testAmounts[i].assetId);
       uint256 expectedUserSupply = testAmounts[i].supplyAmount +
-        (interest * testAmounts[i].supplyAmount) /
-        MAX_SUPPLY_AMOUNT;
+        (interest * testAmounts[i].supplyAmount) / MAX_SUPPLY_AMOUNT;
 
       _assertProtocolSupplyAndDebt(
         testAmounts[i].reserveId,
@@ -204,8 +203,7 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
           testAmounts[i].originalBorrowAmount -
           _calculateBurntInterest(hub1, testAmounts[i].assetId);
         uint256 expectedUserSupply = testAmounts[i].originalSupplyAmount +
-          (interest * testAmounts[i].originalSupplyAmount) /
-          MAX_SUPPLY_AMOUNT;
+          (interest * testAmounts[i].originalSupplyAmount) / MAX_SUPPLY_AMOUNT;
 
         _assertProtocolSupplyAndDebt(
           testAmounts[i].reserveId,
@@ -254,8 +252,7 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
           testAmounts[i].originalBorrowAmount -
           _calculateBurntInterest(hub1, testAmounts[i].assetId);
         uint256 expectedUserSupply = testAmounts[i].originalSupplyAmount +
-          (interest * testAmounts[i].originalSupplyAmount) /
-          MAX_SUPPLY_AMOUNT;
+          (interest * testAmounts[i].originalSupplyAmount) / MAX_SUPPLY_AMOUNT;
 
         _assertProtocolSupplyAndDebt(
           testAmounts[i].reserveId,
@@ -364,16 +361,14 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
       (remainingCollateralValue / 2) / _getValue(spoke, _wethReserveId(spoke), 1)
     );
     remainingCollateralValue -=
-      _getValue(spoke, _wethReserveId(spoke), amounts.wethBorrowAmount) *
-      2;
+      _getValue(spoke, _wethReserveId(spoke), amounts.wethBorrowAmount) * 2;
     amounts.usdxBorrowAmount = bound(
       amounts.usdxBorrowAmount,
       0,
       (remainingCollateralValue / 2) / _getValue(spoke, _usdxReserveId(spoke), 1)
     );
     remainingCollateralValue -=
-      _getValue(spoke, _usdxReserveId(spoke), amounts.usdxBorrowAmount) *
-      2;
+      _getValue(spoke, _usdxReserveId(spoke), amounts.usdxBorrowAmount) * 2;
     amounts.wbtcBorrowAmount = bound(
       amounts.wbtcBorrowAmount,
       0,
