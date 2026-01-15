@@ -28,7 +28,7 @@ contract AaveOracleTest is Base {
     vm.prank(deployer);
     oracle = new AaveOracle(_oracleDecimals, _description);
 
-    spoke1 = DeployUtils.deploySpokeImplementation(address(oracle));
+    spoke1 = ISpoke(address(DeployUtils.deploySpokeImplementation(address(oracle))));
     vm.prank(deployer);
     oracle.setSpoke(address(spoke1));
   }

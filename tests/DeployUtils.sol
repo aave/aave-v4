@@ -3,29 +3,25 @@
 pragma solidity ^0.8.0;
 
 import {Vm} from 'forge-std/Vm.sol';
-import {
-  TransparentUpgradeableProxy,
-  ITransparentUpgradeableProxy
-} from 'src/dependencies/openzeppelin/TransparentUpgradeableProxy.sol';
+import {TransparentUpgradeableProxy} from 'src/dependencies/openzeppelin/TransparentUpgradeableProxy.sol';
 import {IHub} from 'src/hub/interfaces/IHub.sol';
 import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
+import {ISpokeInstance} from 'tests/mocks/ISpokeInstance.sol';
 import {Create2Utils} from 'tests/Create2Utils.sol';
 
 library DeployUtils {
   Vm internal constant vm = Vm(address(uint160(uint256(keccak256('hevm cheat code')))));
 
-  function deploySpokeImplementation(address oracle) internal returns (ISpoke) {
+  function deploySpokeImplementation(address oracle) internal returns (ISpokeInstance) {
     return deploySpokeImplementation(oracle, '');
   }
 
-  function deploySpokeImplementation(address oracle, bytes32 salt) internal returns (ISpoke spoke) {
-    bytes memory initCode = abi.encodePacked(
-      vm.getCode('src/spoke/instances/SpokeInstance.sol:SpokeInstance'),
-      abi.encode(oracle)
-    );
-
+  function deploySpokeImplementation(
+    address oracle,
+    bytes32 salt
+  ) internal returns (ISpokeInstance spoke) {
     Create2Utils.setCreate2Factory();
-    return ISpoke(Create2Utils.create2Deploy(salt, initCode));
+    return ISpokeInstance(Create2Utils.create2Deploy(salt, _getSpokeInstanceInitCode(oracle)));
   }
 
   function deploySpoke(
@@ -48,11 +44,7 @@ library DeployUtils {
     address oracle,
     bytes32 salt
   ) internal returns (address) {
-    bytes memory initCode = abi.encodePacked(
-      vm.getCode('src/spoke/instances/SpokeInstance.sol:SpokeInstance'),
-      abi.encode(oracle)
-    );
-    bytes32 initCodeHash = keccak256(initCode);
+    bytes32 initCodeHash = keccak256(_getSpokeInstanceInitCode(oracle));
 
     Create2Utils.setCreate2Factory();
     return Create2Utils.computeCreate2Address(salt, initCodeHash);
@@ -63,13 +55,8 @@ library DeployUtils {
   }
 
   function deployHub(address authority, bytes32 salt) internal returns (IHub hub) {
-    bytes memory initCode = abi.encodePacked(
-      vm.getCode('src/hub/Hub.sol:Hub'),
-      abi.encode(authority)
-    );
-
     Create2Utils.setCreate2Factory();
-    return IHub(Create2Utils.create2Deploy(salt, initCode));
+    return IHub(Create2Utils.create2Deploy(salt, _getHubInitCode(authority)));
   }
 
   function getDeterministicHubAddress(address authority) internal returns (address) {
@@ -77,11 +64,7 @@ library DeployUtils {
   }
 
   function getDeterministicHubAddress(address authority, bytes32 salt) internal returns (address) {
-    bytes memory initCode = abi.encodePacked(
-      vm.getCode('src/hub/Hub.sol:Hub'),
-      abi.encode(authority)
-    );
-    bytes32 initCodeHash = keccak256(initCode);
+    bytes32 initCodeHash = keccak256(_getHubInitCode(authority));
 
     Create2Utils.setCreate2Factory();
     return Create2Utils.computeCreate2Address(salt, initCodeHash);
@@ -100,5 +83,17 @@ library DeployUtils {
       initData
     );
     return address(proxy);
+  }
+
+  function _getSpokeInstanceInitCode(address oracle) internal view returns (bytes memory) {
+    return
+      abi.encodePacked(
+        vm.getCode('src/spoke/instances/SpokeInstance.sol:SpokeInstance'),
+        abi.encode(oracle)
+      );
+  }
+
+  function _getHubInitCode(address authority) internal view returns (bytes memory) {
+    return abi.encodePacked(vm.getCode('src/hub/Hub.sol:Hub'), abi.encode(authority));
   }
 }
