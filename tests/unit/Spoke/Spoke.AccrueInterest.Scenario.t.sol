@@ -19,9 +19,6 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
     uint256 wethBorrowAmount;
     uint256 usdxBorrowAmount;
     uint256 wbtcBorrowAmount;
-    uint256 wethIndex;
-    uint256 usdxIndex;
-    uint256 wbtcIndex;
   }
 
   struct TestAmount {
@@ -111,15 +108,15 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
         values[i].baseBorrowRate,
         startTime
       );
-      _assertProtocolSupplyAndDebt(
-        testAmounts[i].reserveId,
-        testAmounts[i].name,
-        drawnDebt,
-        0,
-        testAmounts[i].supplyAmount,
-        MAX_SUPPLY_AMOUNT,
-        ' before first accrual'
-      );
+      _assertProtocolSupplyAndDebt({
+        reserveId: testAmounts[i].reserveId,
+        reserveName: testAmounts[i].name,
+        expectedUserSupply: testAmounts[i].supplyAmount,
+        expectedReserveSupply: MAX_SUPPLY_AMOUNT,
+        expectedDrawnDebt: drawnDebt,
+        expectedPremiumDebt: 0,
+        label: ' before first accrual'
+      });
     }
 
     // Skip time to accrue interest
@@ -143,15 +140,15 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
       uint256 expectedUserSupply = testAmounts[i].supplyAmount +
         (interest * testAmounts[i].supplyAmount) / MAX_SUPPLY_AMOUNT;
 
-      _assertProtocolSupplyAndDebt(
-        testAmounts[i].reserveId,
-        testAmounts[i].name,
-        drawnDebt,
-        expectedPremiumDebt,
-        expectedUserSupply,
-        MAX_SUPPLY_AMOUNT + interest,
-        ' after first accrual'
-      );
+      _assertProtocolSupplyAndDebt({
+        reserveId: testAmounts[i].reserveId,
+        reserveName: testAmounts[i].name,
+        expectedUserSupply: expectedUserSupply,
+        expectedReserveSupply: MAX_SUPPLY_AMOUNT + interest,
+        expectedDrawnDebt: drawnDebt,
+        expectedPremiumDebt: expectedPremiumDebt,
+        label: ' after first accrual'
+      });
     }
 
     // Only proceed with test if position is healthy
@@ -159,18 +156,6 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
       // Supply more collateral to ensure bob can borrow more dai to trigger accrual
       deal(address(tokenList.dai), bob, MAX_SUPPLY_AMOUNT);
       Utils.supplyCollateral(spoke2, _usdzReserveId(spoke2), bob, MAX_SUPPLY_AMOUNT, bob);
-
-      // Handle case that bob isn't already borrowing dai by borrowing 1 share
-      ISpoke.UserPosition memory bobPosition = spoke2.getUserPosition(_daiReserveId(spoke2), bob);
-      if (bobPosition.drawnShares == 0) {
-        Utils.borrow(
-          spoke2,
-          _daiReserveId(spoke2),
-          bob,
-          hub1.previewRestoreByShares(daiAssetId, 1),
-          bob
-        );
-      }
 
       // Bob borrows more dai to trigger accrual
       Utils.borrow(spoke2, _daiReserveId(spoke2), bob, 1e18, bob);
@@ -190,7 +175,10 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
 
       // Check bob's drawn debt, premium debt, and supplied amounts for all assets at user, reserve, spoke, and asset level
       for (uint256 i = 0; i < 4; ++i) {
-        bobPosition = spoke2.getUserPosition(testAmounts[i].reserveId, bob);
+        ISpoke.UserPosition memory bobPosition = spoke2.getUserPosition(
+          testAmounts[i].reserveId,
+          bob
+        );
         uint256 drawnDebt = testAmounts[i].borrowAmount;
         uint256 expectedPremiumDebt = _calculatePremiumDebt(
           hub1,
@@ -204,15 +192,15 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
         uint256 expectedUserSupply = testAmounts[i].originalSupplyAmount +
           (interest * testAmounts[i].originalSupplyAmount) / MAX_SUPPLY_AMOUNT;
 
-        _assertProtocolSupplyAndDebt(
-          testAmounts[i].reserveId,
-          testAmounts[i].name,
-          drawnDebt,
-          expectedPremiumDebt,
-          expectedUserSupply,
-          MAX_SUPPLY_AMOUNT + interest,
-          ' before second accrual'
-        );
+        _assertProtocolSupplyAndDebt({
+          reserveId: testAmounts[i].reserveId,
+          reserveName: testAmounts[i].name,
+          expectedUserSupply: expectedUserSupply,
+          expectedReserveSupply: MAX_SUPPLY_AMOUNT + interest,
+          expectedDrawnDebt: drawnDebt,
+          expectedPremiumDebt: expectedPremiumDebt,
+          label: ' before second accrual'
+        });
       }
 
       // Store timestamp before next skip time
@@ -223,15 +211,15 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
       // Check bob's drawn debt, premium debt, and supplied amounts for all assets at user, reserve, spoke, and asset level
       for (uint256 i = 0; i < 4; ++i) {
         if (testAmounts[i].originalBorrowAmount == 0) {
-          _assertProtocolSupplyAndDebt(
-            testAmounts[i].reserveId,
-            testAmounts[i].name,
-            0,
-            0,
-            testAmounts[i].originalSupplyAmount,
-            MAX_SUPPLY_AMOUNT,
-            ' after second accrual'
-          );
+          _assertProtocolSupplyAndDebt({
+            reserveId: testAmounts[i].reserveId,
+            reserveName: testAmounts[i].name,
+            expectedUserSupply: testAmounts[i].originalSupplyAmount,
+            expectedReserveSupply: MAX_SUPPLY_AMOUNT,
+            expectedDrawnDebt: 0,
+            expectedPremiumDebt: 0,
+            label: ' after second accrual'
+          });
           continue;
         }
         values[i].index = _calculateExpectedDrawnIndex(
@@ -239,7 +227,10 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
           values[i].baseBorrowRate,
           values[i].timestamp
         );
-        bobPosition = spoke2.getUserPosition(testAmounts[i].reserveId, bob);
+        ISpoke.UserPosition memory bobPosition = spoke2.getUserPosition(
+          testAmounts[i].reserveId,
+          bob
+        );
         uint256 drawnDebt = values[i].baseShares.rayMulUp(values[i].index);
         uint256 expectedPremiumDebt = _calculatePremiumDebt(
           hub1,
@@ -253,15 +244,15 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
         uint256 expectedUserSupply = testAmounts[i].originalSupplyAmount +
           (interest * testAmounts[i].originalSupplyAmount) / MAX_SUPPLY_AMOUNT;
 
-        _assertProtocolSupplyAndDebt(
-          testAmounts[i].reserveId,
-          testAmounts[i].name,
-          drawnDebt,
-          expectedPremiumDebt,
-          expectedUserSupply,
-          MAX_SUPPLY_AMOUNT + interest,
-          ' after second accrual'
-        );
+        _assertProtocolSupplyAndDebt({
+          reserveId: testAmounts[i].reserveId,
+          reserveName: testAmounts[i].name,
+          expectedUserSupply: expectedUserSupply,
+          expectedReserveSupply: MAX_SUPPLY_AMOUNT + interest,
+          expectedDrawnDebt: drawnDebt,
+          expectedPremiumDebt: expectedPremiumDebt,
+          label: ' after second accrual'
+        });
       }
     }
   }
@@ -393,20 +384,12 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
   function _assertProtocolSupplyAndDebt(
     uint256 reserveId,
     string memory reserveName,
-    uint256 expectedDrawnDebt,
-    uint256 expectedPremiumDebt,
     uint256 expectedUserSupply,
     uint256 expectedReserveSupply,
+    uint256 expectedDrawnDebt,
+    uint256 expectedPremiumDebt,
     string memory label
   ) internal view {
-    _assertSingleUserProtocolDebt(
-      spoke2,
-      reserveId,
-      bob,
-      expectedDrawnDebt,
-      expectedPremiumDebt,
-      string.concat(reserveName, label)
-    );
     _assertUserSupply(
       spoke2,
       reserveId,
@@ -422,5 +405,13 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
     );
     _assertSpokeSupply(spoke2, reserveId, expectedReserveSupply, string.concat(reserveName, label));
     _assertAssetSupply(spoke2, reserveId, expectedReserveSupply, string.concat(reserveName, label));
+    _assertSingleUserProtocolDebt(
+      spoke2,
+      reserveId,
+      bob,
+      expectedDrawnDebt,
+      expectedPremiumDebt,
+      string.concat(reserveName, label)
+    );
   }
 }
