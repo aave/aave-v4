@@ -22,7 +22,7 @@ contract SpokeUpdateUserRiskPremiumTest is SpokeBase {
       onBehalfOf: bob
     });
 
-    MockReentrantHub reentrantHub = new MockReentrantHub(
+    MockReentrantCaller reentrantCaller = new MockReentrantCaller(
       address(spoke1),
       ISpoke.updateUserRiskPremium.selector
     );
@@ -30,7 +30,7 @@ contract SpokeUpdateUserRiskPremiumTest is SpokeBase {
     // reentrant hub.refreshPremium call
     vm.mockFunction(
       address(_hub(spoke1, _daiReserveId(spoke1))),
-      address(reentrantHub),
+      address(reentrantCaller),
       abi.encodeWithSelector(IHubBase.refreshPremium.selector)
     );
     vm.expectRevert(ReentrancyGuardTransient.ReentrancyGuardReentrantCall.selector);

@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 
 import {Address} from 'src/dependencies/openzeppelin/Address.sol';
 
-contract MockReentrantHub {
+contract MockReentrantCaller {
   using Address for address;
 
   address public immutable TARGET;

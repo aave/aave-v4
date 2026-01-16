@@ -77,13 +77,13 @@ contract SpokeRepayTest is SpokeBase {
       onBehalfOf: bob
     });
 
-    MockReentrantHub reentrantHub = new MockReentrantHub(
+    MockReentrantCaller reentrantCaller = new MockReentrantCaller(
       address(spoke1),
       ISpokeBase.repay.selector
     );
     vm.mockFunction(
       address(_hub(spoke1, _daiReserveId(spoke1))),
-      address(reentrantHub),
+      address(reentrantCaller),
       abi.encodeCall(
         IHubBase.restore,
         (

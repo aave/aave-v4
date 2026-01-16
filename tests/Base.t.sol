@@ -89,7 +89,7 @@ import {MockSpoke} from 'tests/mocks/MockSpoke.sol';
 import {MockERC1271Wallet} from 'tests/mocks/MockERC1271Wallet.sol';
 import {MockSpokeInstance} from 'tests/mocks/MockSpokeInstance.sol';
 import {MockSkimSpoke} from 'tests/mocks/MockSkimSpoke.sol';
-import {MockReentrantHub} from 'tests/mocks/MockReentrantHub.sol';
+import {MockReentrantCaller} from 'tests/mocks/MockReentrantCaller.sol';
 import {ISpokeInstance} from 'tests/mocks/ISpokeInstance.sol';
 import {DeployWrapper} from 'tests/mocks/DeployWrapper.sol';
 

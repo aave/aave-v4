@@ -88,14 +88,14 @@ contract SpokeSupplyTest is SpokeBase {
   function test_supply_revertsWith_ReentrancyGuardReentrantCall() public {
     uint256 amount = 100e18;
 
-    MockReentrantHub reentrantHub = new MockReentrantHub(
+    MockReentrantCaller reentrantCaller = new MockReentrantCaller(
       address(spoke1),
       ISpokeBase.supply.selector
     );
 
     vm.mockFunction(
       address(_hub(spoke1, _daiReserveId(spoke1))),
-      address(reentrantHub),
+      address(reentrantCaller),
       abi.encodeWithSelector(IHubBase.add.selector)
     );
     vm.expectRevert(ReentrancyGuardTransient.ReentrancyGuardReentrantCall.selector);

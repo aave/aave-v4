@@ -52,83 +52,90 @@ contract SpokeLiquidationCallScenariosTest is SpokeLiquidationCallBaseTest {
     }
   }
 
-  function test_liquidationCall_revertsWith_ReentrancyGuardReentrantCall() public {
+  function test_liquidationCall_revertsWith_ReentrancyGuardReentrantCall_hubRemove() public {
     uint256 collateralReserveId = _daiReserveId(spoke);
     uint256 debtReserveId = _wethReserveId(spoke);
-
     _increaseCollateralSupply(spoke, collateralReserveId, 100000e18, user);
     _makeUserLiquidatable(spoke, user, debtReserveId, 0.999e18);
 
-    MockReentrantHub reentrantHub = new MockReentrantHub(
+    MockReentrantCaller reentrantCaller = new MockReentrantCaller(
       address(spoke),
       ISpokeBase.liquidationCall.selector
     );
 
-    // reentrant hub.remove call
     vm.mockFunction(
       address(_hub(spoke, collateralReserveId)),
-      address(reentrantHub),
+      address(reentrantCaller),
       abi.encodeWithSelector(IHubBase.remove.selector)
     );
     vm.expectRevert(ReentrancyGuardTransient.ReentrancyGuardReentrantCall.selector);
     vm.prank(liquidator);
     spoke.liquidationCall(collateralReserveId, debtReserveId, user, type(uint256).max, false);
-    // clear mockFunction
-    vm.mockFunction(
-      address(_hub(spoke, collateralReserveId)),
-      address(_hub(spoke, collateralReserveId)),
-      abi.encodeWithSelector(IHubBase.remove.selector)
+  }
+
+  function test_liquidationCall_revertsWith_ReentrancyGuardReentrantCall_hubRestore() public {
+    uint256 collateralReserveId = _daiReserveId(spoke);
+    uint256 debtReserveId = _wethReserveId(spoke);
+    _increaseCollateralSupply(spoke, collateralReserveId, 100000e18, user);
+    _makeUserLiquidatable(spoke, user, debtReserveId, 0.999e18);
+
+    MockReentrantCaller reentrantCaller = new MockReentrantCaller(
+      address(spoke),
+      ISpokeBase.liquidationCall.selector
     );
 
-    // reentrant hub.restore call
     vm.mockFunction(
       address(_hub(spoke, debtReserveId)),
-      address(reentrantHub),
+      address(reentrantCaller),
       abi.encodeWithSelector(IHubBase.restore.selector)
     );
     vm.expectRevert(ReentrancyGuardTransient.ReentrancyGuardReentrantCall.selector);
     vm.prank(liquidator);
     spoke.liquidationCall(collateralReserveId, debtReserveId, user, type(uint256).max, false);
-    // clear mockFunction
-    vm.mockFunction(
-      address(_hub(spoke, debtReserveId)),
-      address(_hub(spoke, debtReserveId)),
-      abi.encodeWithSelector(IHubBase.restore.selector)
+  }
+
+  function test_liquidationCall_revertsWith_ReentrancyGuardReentrantCall_hubRefreshPremium()
+    public
+  {
+    uint256 collateralReserveId = _daiReserveId(spoke);
+    uint256 debtReserveId = _wethReserveId(spoke);
+    _increaseCollateralSupply(spoke, collateralReserveId, 100000e18, user);
+    _makeUserLiquidatable(spoke, user, debtReserveId, 0.999e18);
+
+    MockReentrantCaller reentrantCaller = new MockReentrantCaller(
+      address(spoke),
+      ISpokeBase.liquidationCall.selector
     );
 
-    // reentrant hub.refreshPremium
     vm.mockFunction(
       address(_hub(spoke, debtReserveId)),
-      address(reentrantHub),
+      address(reentrantCaller),
       abi.encodeWithSelector(IHubBase.refreshPremium.selector)
     );
     vm.expectRevert(ReentrancyGuardTransient.ReentrancyGuardReentrantCall.selector);
     vm.prank(liquidator);
     spoke.liquidationCall(collateralReserveId, debtReserveId, user, type(uint256).max, false);
-    // clear mockFunction
-    vm.mockFunction(
-      address(_hub(spoke, debtReserveId)),
-      address(_hub(spoke, debtReserveId)),
-      abi.encodeWithSelector(IHubBase.refreshPremium.selector)
-    );
+  }
 
+  function test_liquidationCall_revertsWith_ReentrancyGuardReentrantCall_hubReportDeficit() public {
+    uint256 collateralReserveId = _daiReserveId(spoke);
+    uint256 debtReserveId = _wethReserveId(spoke);
+    _increaseCollateralSupply(spoke, collateralReserveId, 100000e18, user);
     _makeUserLiquidatable(spoke, user, debtReserveId, 0.5e18);
 
-    // reentrant hub.restoreDeficit
+    MockReentrantCaller reentrantCaller = new MockReentrantCaller(
+      address(spoke),
+      ISpokeBase.liquidationCall.selector
+    );
+
     vm.mockFunction(
       address(_hub(spoke, debtReserveId)),
-      address(reentrantHub),
+      address(reentrantCaller),
       abi.encodeWithSelector(IHubBase.reportDeficit.selector)
     );
     vm.expectRevert(ReentrancyGuardTransient.ReentrancyGuardReentrantCall.selector);
     vm.prank(liquidator);
     spoke.liquidationCall(collateralReserveId, debtReserveId, user, type(uint256).max, false);
-    // clear mockFunction
-    vm.mockFunction(
-      address(_hub(spoke, debtReserveId)),
-      address(_hub(spoke, debtReserveId)),
-      abi.encodeWithSelector(IHubBase.reportDeficit.selector)
-    );
   }
 
   // User is solvent, but health factor decreases after liquidation due to high liquidation bonus.
