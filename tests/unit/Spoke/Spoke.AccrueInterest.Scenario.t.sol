@@ -19,7 +19,6 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
     uint256 wethBorrowAmount;
     uint256 usdxBorrowAmount;
     uint256 wbtcBorrowAmount;
-    uint40 startTime;
     uint256 wethIndex;
     uint256 usdxIndex;
     uint256 wbtcIndex;
