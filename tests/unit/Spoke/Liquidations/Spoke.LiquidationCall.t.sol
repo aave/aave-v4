@@ -444,7 +444,7 @@ abstract contract SpokeLiquidationCallHelperTest is SpokeLiquidationCallBaseTest
     ISpoke.UserAccountData memory userAccountData = spoke.getUserAccountData(user);
     uint256 newHealthFactor = vm.randomUint(
       userAccountData.avgCollateralFactor + 0.01e18,
-      PercentageMath.PERCENTAGE_FACTOR.bpsToWad()
+      PercentageMath.PERCENTAGE_FACTOR.bpsToWad() - 0.01e18
     );
     _makeUserLiquidatable(spoke, user, debtReserveId, newHealthFactor);
     debtToCover = _boundDebtToCoverNoDustRevert(
@@ -457,6 +457,7 @@ abstract contract SpokeLiquidationCallHelperTest is SpokeLiquidationCallBaseTest
     );
 
     vm.expectRevert(ISpoke.CannotReceiveShares.selector);
+    vm.prank(liquidator);
     spoke.liquidationCall(collateralReserveId, debtReserveId, user, debtToCover, true);
   }
 }

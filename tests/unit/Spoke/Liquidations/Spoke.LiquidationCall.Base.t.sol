@@ -488,11 +488,9 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
             if (vars.userReservePosition.drawnShares == 0) {
               continue;
             }
-
-            vars.userReservePosition.premiumShares = (vars
-              .userReservePosition
-              .premiumShares
-              .toInt256() + vars.premiumDelta.sharesDelta).toUint256().toUint120();
+            vars.userReservePosition.premiumShares = uint256(vars.userReservePosition.premiumShares)
+              .add(vars.premiumDelta.sharesDelta)
+              .toUint120();
             vars.userReservePosition.premiumOffsetRay = (vars.userReservePosition.premiumOffsetRay +
               vars.premiumDelta.offsetRayDelta).toInt200();
           }
@@ -668,6 +666,11 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
       userAccountDataBefore.healthFactor
     );
 
+    uint256 effectiveLiquidationBonus = _calculateEffectiveLiquidationBonus(
+      params,
+      liquidationAmounts
+    );
+
     (
       uint256 expectedUserRiskPremium,
       uint256 expectedUserAvgCollateralFactor
@@ -678,27 +681,12 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
         liquidationAmounts.debtToLiquidate
       );
 
-    uint256 debtToLiquidateValue = _convertAmountToValue(
-      params.spoke,
-      params.debtReserveId,
-      liquidationAmounts.debtToLiquidate
-    );
-
     // health factor is decreasing due to liquidation bonus / collateral factor if:
-    //   (totalCollateralValue - debtToLiquidateValue * LB) * newCF / (totalDebtValue - debtToLiquidateValue) < totalCollateralValue * oldCF / totalDebtValue
-    //   this is equivalent to: LB * totalDebtValue * debtToLiquidateValue * newCF > totalCollateralValue * (totalDebtValue * (newCF - oldCF) + debtToLiquidateValue * oldCF)
-    bool isCollateralAffectingUserHf = (liquidationBonus *
-      userAccountDataBefore.totalDebtValue.wadMulUp(debtToLiquidateValue) *
-      expectedUserAvgCollateralFactor).toInt256() >
-      PercentageMath.PERCENTAGE_FACTOR.toInt256() *
-        (userAccountDataBefore
-          .totalCollateralValue
-          .wadMulDown(userAccountDataBefore.totalDebtValue)
-          .toInt256() *
-          (expectedUserAvgCollateralFactor.toInt256() -
-            userAccountDataBefore.avgCollateralFactor.toInt256()) +
-          (userAccountDataBefore.totalCollateralValue.wadMulDown(debtToLiquidateValue) *
-            userAccountDataBefore.avgCollateralFactor).toInt256());
+    //   lb * cf > hf_beforeLiq
+    bool isCollateralAffectingUserHf = effectiveLiquidationBonus *
+      _getCollateralFactor(params.spoke, params.collateralReserveId, params.user) *
+      1e10 >
+      userAccountDataBefore.healthFactor;
 
     bool hasDeficit = (userAccountDataBefore.activeCollateralCount == 1) &&
       (!params.isSolvent || isCollateralAffectingUserHf) &&
@@ -719,6 +707,40 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
         isCollateralAffectingUserHf: isCollateralAffectingUserHf,
         hasDeficit: hasDeficit
       });
+  }
+
+  function _calculateEffectiveLiquidationBonus(
+    CheckedLiquidationCallParams memory params,
+    LiquidationLogic.LiquidationAmounts memory liquidationAmounts
+  ) internal view returns (uint256) {
+    uint256 collateralValue = _convertAmountToValue(
+      params.spoke,
+      params.collateralReserveId,
+      _hub(params.spoke, params.collateralReserveId).previewAddByShares(
+        _spokeAssetId(params.spoke, params.collateralReserveId),
+        _hub(params.spoke, params.collateralReserveId).previewRemoveByAssets(
+          _spokeAssetId(params.spoke, params.collateralReserveId),
+          liquidationAmounts.collateralToLiquidate
+        )
+      )
+    );
+    uint256 debtValue = _convertAmountToValue(
+      params.spoke,
+      params.debtReserveId,
+      _hub(params.spoke, params.debtReserveId).previewDrawByShares(
+        _spokeAssetId(params.spoke, params.debtReserveId),
+        _hub(params.spoke, params.debtReserveId).previewRestoreByAssets(
+          _spokeAssetId(params.spoke, params.debtReserveId),
+          liquidationAmounts.debtToLiquidate
+        )
+      )
+    );
+
+    if (collateralValue < debtValue) {
+      return PercentageMath.PERCENTAGE_FACTOR;
+    }
+
+    return collateralValue.percentDivUp(debtValue);
   }
 
   function _checkPositionStatus(
@@ -1250,11 +1272,23 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
       }
     }
 
+    uint256 expectedTransferSharesEventCount = 0;
+    if (
+      !params.receiveShares &&
+      liquidationMetadata.collateralToLiquidate > liquidationMetadata.collateralToLiquidator
+    ) {
+      expectedTransferSharesEventCount = 1;
+    } else if (
+      params.receiveShares &&
+      liquidationMetadata.collateralSharesToLiquidate >
+        liquidationMetadata.collateralSharesToLiquidator
+    ) {
+      expectedTransferSharesEventCount = 1;
+    }
+
     assertEq(
       transferSharesEventCount,
-      (liquidationMetadata.collateralToLiquidate > liquidationMetadata.collateralToLiquidator)
-        ? 1
-        : 0,
+      expectedTransferSharesEventCount,
       'transfer shares: event emitted'
     );
   }

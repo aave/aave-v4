@@ -15,6 +15,7 @@ import {
   TransparentUpgradeableProxy,
   ITransparentUpgradeableProxy
 } from 'src/dependencies/openzeppelin/TransparentUpgradeableProxy.sol';
+import {ReentrancyGuardTransient} from 'src/dependencies/openzeppelin/ReentrancyGuardTransient.sol';
 import {IERC20Metadata} from 'src/dependencies/openzeppelin/IERC20Metadata.sol';
 import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
 import {IERC20Errors} from 'src/dependencies/openzeppelin/IERC20Errors.sol';
@@ -88,6 +89,7 @@ import {MockSpoke} from 'tests/mocks/MockSpoke.sol';
 import {MockERC1271Wallet} from 'tests/mocks/MockERC1271Wallet.sol';
 import {MockSpokeInstance} from 'tests/mocks/MockSpokeInstance.sol';
 import {MockSkimSpoke} from 'tests/mocks/MockSkimSpoke.sol';
+import {MockReentrantCaller} from 'tests/mocks/MockReentrantCaller.sol';
 import {ISpokeInstance} from 'tests/mocks/ISpokeInstance.sol';
 import {DeployWrapper} from 'tests/mocks/DeployWrapper.sol';
 
@@ -1608,7 +1610,7 @@ abstract contract Base is Test {
       );
 
       uint256 restoredPremiumRay = (premiumAmountToRestore * WadRayMath.RAY).min(premiumDebtRay);
-      uint256 restoredShares = drawnDebtToRestore.rayDivDown(hub.getAssetDrawnIndex(reserveId));
+      uint256 restoredShares = drawnDebtToRestore.rayDivDown(hub.getAssetDrawnIndex(assetId));
       uint256 riskPremium = _getUserLastRiskPremium(spoke, user);
 
       return
@@ -2231,6 +2233,10 @@ abstract contract Base is Test {
     }
   }
 
+  function _spokeDrawnIndex(ISpoke spoke, uint256 reserveId) internal view returns (uint256) {
+    return _hub(spoke, reserveId).getAssetDrawnIndex(_spokeAssetId(spoke, reserveId));
+  }
+
   function _deploySpokeWithOracle(
     address proxyAdminOwner,
     address _accessManager,
@@ -2238,7 +2244,7 @@ abstract contract Base is Test {
   ) internal pausePrank returns (ISpoke, IAaveOracle) {
     address deployer = makeAddr('deployer');
 
-    vm.prank(deployer);
+    vm.startPrank(deployer);
     IAaveOracle oracle = new AaveOracle(8, _oracleDesc);
 
     ISpoke spoke = DeployUtils.deploySpoke({
@@ -2247,8 +2253,8 @@ abstract contract Base is Test {
       initData: abi.encodeCall(ISpokeInstance.initialize, (_accessManager))
     });
 
-    vm.prank(deployer);
     oracle.setSpoke(address(spoke));
+    vm.stopPrank();
 
     assertEq(spoke.ORACLE(), address(oracle));
     assertEq(oracle.SPOKE(), address(spoke));
