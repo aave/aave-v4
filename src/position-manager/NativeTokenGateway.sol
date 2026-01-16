@@ -15,21 +15,21 @@ import {INativeTokenGateway} from 'src/position-manager/interfaces/INativeTokenG
 /// @notice Gateway to interact with a spoke using the native coin of a chain.
 /// @dev Contract must be an active & approved user position manager in order to execute spoke actions on a user's behalf.
 contract NativeTokenGateway is INativeTokenGateway, GatewayBase, ReentrancyGuardTransient {
-  using SafeERC20 for *;
+  using SafeERC20 for IERC20;
 
-  INativeWrapper internal immutable _nativeWrapper;
+  address public immutable NATIVE_WRAPPER;
 
   /// @dev Constructor.
   /// @param nativeWrapper_ The address of the native wrapper contract.
   /// @param initialOwner_ The address of the initial owner.
   constructor(address nativeWrapper_, address initialOwner_) GatewayBase(initialOwner_) {
     require(nativeWrapper_ != address(0), InvalidAddress());
-    _nativeWrapper = INativeWrapper(payable(nativeWrapper_));
+    NATIVE_WRAPPER = nativeWrapper_;
   }
 
   /// @dev Checks only 'nativeWrapper' can transfer native tokens.
   receive() external payable {
-    require(msg.sender == address(_nativeWrapper), UnsupportedAction());
+    require(msg.sender == NATIVE_WRAPPER, UnsupportedAction());
   }
 
   /// @dev Unsupported fallback function.
@@ -79,7 +79,7 @@ contract NativeTokenGateway is INativeTokenGateway, GatewayBase, ReentrancyGuard
       amount,
       msg.sender
     );
-    _nativeWrapper.withdraw(withdrawnAmount);
+    INativeWrapper(NATIVE_WRAPPER).withdraw(withdrawnAmount);
     Address.sendValue(payable(msg.sender), withdrawnAmount);
 
     return (withdrawnShares, withdrawnAmount);
@@ -99,7 +99,7 @@ contract NativeTokenGateway is INativeTokenGateway, GatewayBase, ReentrancyGuard
       amount,
       msg.sender
     );
-    _nativeWrapper.withdraw(borrowedAmount);
+    INativeWrapper(NATIVE_WRAPPER).withdraw(borrowedAmount);
     Address.sendValue(payable(msg.sender), borrowedAmount);
 
     return (borrowedShares, borrowedAmount);
@@ -123,8 +123,8 @@ contract NativeTokenGateway is INativeTokenGateway, GatewayBase, ReentrancyGuard
       repayAmount = userTotalDebt;
     }
 
-    _nativeWrapper.deposit{value: repayAmount}();
-    _nativeWrapper.forceApprove(spoke, repayAmount);
+    INativeWrapper(NATIVE_WRAPPER).deposit{value: repayAmount}();
+    IERC20(NATIVE_WRAPPER).forceApprove(spoke, repayAmount);
     (uint256 repaidShares, uint256 repaidAmount) = ISpoke(spoke).repay(
       reserveId,
       repayAmount,
@@ -138,11 +138,6 @@ contract NativeTokenGateway is INativeTokenGateway, GatewayBase, ReentrancyGuard
     return (repaidShares, repaidAmount);
   }
 
-  /// @inheritdoc INativeTokenGateway
-  function NATIVE_WRAPPER() external view returns (address) {
-    return address(_nativeWrapper);
-  }
-
   /// @dev `msg.value` verification must be done before calling this.
   function _supplyNative(
     address spoke,
@@ -153,13 +148,13 @@ contract NativeTokenGateway is INativeTokenGateway, GatewayBase, ReentrancyGuard
     address underlying = _getReserveUnderlying(spoke, reserveId);
     _validateParams(underlying, amount);
 
-    _nativeWrapper.deposit{value: amount}();
-    _nativeWrapper.forceApprove(spoke, amount);
+    INativeWrapper(NATIVE_WRAPPER).deposit{value: amount}();
+    IERC20(NATIVE_WRAPPER).forceApprove(spoke, amount);
     return ISpoke(spoke).supply(reserveId, amount, user);
   }
 
   function _validateParams(address underlying, uint256 amount) internal view {
-    require(address(_nativeWrapper) == underlying, NotNativeWrappedAsset());
+    require(NATIVE_WRAPPER == underlying, NotNativeWrappedAsset());
     require(amount > 0, InvalidAmount());
   }
 }

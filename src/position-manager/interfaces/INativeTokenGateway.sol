@@ -3,6 +3,7 @@
 pragma solidity ^0.8.0;
 
 import {IGatewayBase} from 'src/position-manager/interfaces/IGatewayBase.sol';
+import {INativeWrapper} from 'src/position-manager/interfaces/INativeWrapper.sol';
 
 /// @title INativeTokenGateway
 /// @author Aave Labs
@@ -84,6 +85,6 @@ interface INativeTokenGateway is IGatewayBase {
     uint256 amount
   ) external payable returns (uint256, uint256);
 
-  /// @notice Returns the address of Native Wrapper.
+  /// @notice Returns the address of the Native Wrapper.
   function NATIVE_WRAPPER() external view returns (address);
 }

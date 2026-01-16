@@ -5,10 +5,8 @@ pragma solidity 0.8.28;
 import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
 import {SafeERC20, IERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
 import {IERC20Permit} from 'src/dependencies/openzeppelin/IERC20Permit.sol';
-import {SignatureChecker} from 'src/dependencies/openzeppelin/SignatureChecker.sol';
 import {ReentrancyGuardTransient} from 'src/dependencies/openzeppelin/ReentrancyGuardTransient.sol';
 import {AccessManagedUpgradeable} from 'src/dependencies/openzeppelin-upgradeable/AccessManagedUpgradeable.sol';
-import {EIP712} from 'src/dependencies/solady/EIP712.sol';
 import {MathUtils} from 'src/libraries/math/MathUtils.sol';
 import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
 import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
@@ -17,7 +15,7 @@ import {LiquidationLogic} from 'src/spoke/libraries/LiquidationLogic.sol';
 import {PositionStatusMap} from 'src/spoke/libraries/PositionStatusMap.sol';
 import {ReserveFlags, ReserveFlagsMap} from 'src/spoke/libraries/ReserveFlagsMap.sol';
 import {UserPositionDebt} from 'src/spoke/libraries/UserPositionDebt.sol';
-import {NoncesKeyed} from 'src/utils/NoncesKeyed.sol';
+import {IntentConsumer} from 'src/utils/IntentConsumer.sol';
 import {Multicall} from 'src/utils/Multicall.sol';
 import {IAaveOracle} from 'src/spoke/interfaces/IAaveOracle.sol';
 import {IHubBase} from 'src/hub/interfaces/IHubBase.sol';
@@ -29,11 +27,10 @@ import {ISpokeBase, ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 /// @dev Each reserve can be associated with a separate Hub.
 abstract contract Spoke is
   ISpoke,
-  Multicall,
-  NoncesKeyed,
   AccessManagedUpgradeable,
-  ReentrancyGuardTransient,
-  EIP712
+  IntentConsumer,
+  Multicall,
+  ReentrancyGuardTransient
 {
   using SafeCast for *;
   using SafeERC20 for IERC20;
@@ -463,9 +460,9 @@ abstract contract Spoke is
     uint256 deadline,
     bytes calldata signature
   ) external {
-    require(block.timestamp <= deadline, InvalidSignature());
-    bytes32 digest = _hashTypedData(
-      keccak256(
+    _verifyAndConsumeIntent({
+      signer: user,
+      intentHash: keccak256(
         abi.encode(
           SET_USER_POSITION_MANAGER_TYPEHASH,
           positionManager,
@@ -474,10 +471,11 @@ abstract contract Spoke is
           nonce,
           deadline
         )
-      )
-    );
-    require(SignatureChecker.isValidSignatureNow(user, digest, signature), InvalidSignature());
-    _useCheckedNonce(user, nonce);
+      ),
+      nonce: nonce,
+      deadline: deadline,
+      signature: signature
+    });
     _setUserPositionManager({positionManager: positionManager, user: user, approve: approve});
   }
 
@@ -680,11 +678,6 @@ abstract contract Spoke is
   /// @inheritdoc ISpoke
   function isPositionManager(address user, address positionManager) external view returns (bool) {
     return _isPositionManager(user, positionManager);
-  }
-
-  /// @inheritdoc ISpoke
-  function DOMAIN_SEPARATOR() external view returns (bytes32) {
-    return _domainSeparator();
   }
 
   /// @inheritdoc ISpoke
@@ -959,7 +952,7 @@ abstract contract Spoke is
       config.collateralFactor < PercentageMath.PERCENTAGE_FACTOR &&
         config.maxLiquidationBonus >= PercentageMath.PERCENTAGE_FACTOR &&
         config.maxLiquidationBonus.percentMulUp(config.collateralFactor) <
-        PercentageMath.PERCENTAGE_FACTOR,
+          PercentageMath.PERCENTAGE_FACTOR,
       InvalidCollateralFactorAndMaxLiquidationBonus()
     );
     require(config.liquidationFee <= PercentageMath.PERCENTAGE_FACTOR, InvalidLiquidationFee());

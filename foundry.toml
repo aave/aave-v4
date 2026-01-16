@@ -7,10 +7,22 @@ fs_permissions = [{ access = "read", path = "tests/mocks/JsonBindings.sol" }]
 solc_version = "0.8.28"
 evm_version = "cancun"
 optimizer = true
-optimizer_runs = 200
+optimizer_runs = 444444444444
 bytecode_hash = "none"
 gas_snapshot_check = false
 gas_limit = 1099511627776
+
+additional_compiler_profiles = [
+  { name = "hub", optimizer = true, via_ir = true, optimizer_runs = 22_250 },
+  { name = "spoke", optimizer = true, via_ir = true, optimizer_runs = 833 },
+  { name = "tests", optimizer = true, via_ir = false, optimizer_runs = 444444444444 },
+]
+
+compilation_restrictions = [
+  { paths = "src/hub/Hub.sol", optimizer = true, via_ir = true, optimizer_runs = 22_250 },
+  { paths = "src/spoke/instances/SpokeInstance.sol", optimizer = true, via_ir = true, optimizer_runs = 833 },
+  { paths = "tests/**", optimizer = true, via_ir = false, optimizer_runs = 444444444444 },
+]
 
 [bind_json]
 out = "tests/mocks/JsonBindings.sol"

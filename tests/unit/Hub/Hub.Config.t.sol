@@ -23,9 +23,11 @@ contract HubConfigTest is HubBase {
     );
   }
 
-  function test_hub_deploy_revertsWith_InvalidAddress() public {
-    vm.expectRevert(IHub.InvalidAddress.selector, address(hub1));
-    new Hub(address(0));
+  function test_hub_deploy_reverts_on_InvalidConstructorInput() public {
+    DeployWrapper deployer = new DeployWrapper();
+
+    vm.expectRevert();
+    deployer.deployHub(address(0));
   }
 
   function test_hub_max_riskPremium() public view {
@@ -809,7 +811,7 @@ contract HubConfigTest is HubBase {
   function _assumeValidAssetConfig(IHub.AssetConfig memory newConfig) internal pure {
     newConfig.liquidityFee = bound(newConfig.liquidityFee, 0, PercentageMath.PERCENTAGE_FACTOR)
       .toUint16();
-    vm.assume(address(newConfig.feeReceiver) != address(0) || newConfig.liquidityFee == 0);
+    assumeNotZeroAddress(newConfig.feeReceiver);
     assumeNotPrecompile(newConfig.feeReceiver);
     assumeNotForgeAddress(newConfig.feeReceiver);
     assumeNotZeroAddress(newConfig.irStrategy);
