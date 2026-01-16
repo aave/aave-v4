@@ -31,7 +31,7 @@ contract SignatureGatewaySetSelfAsUserPositionManagerTest is SignatureGatewayBas
 
     vm.expectCall(
       address(spoke1),
-      abi.encodeCall(ISpoke.setUserPositionManagerWithSig, (p, signature)),
+      abi.encodeCall(ISpoke.setUserPositionManagersWithSig, (p, signature)),
       1
     );
     vm.prank(vm.randomAddress());
@@ -48,7 +48,7 @@ contract SignatureGatewaySetSelfAsUserPositionManagerTest is SignatureGatewayBas
   function test_setSelfAsUserPositionManagerWithSig_ignores_underlying_spoke_reverts() public {
     vm.mockCallRevert(
       address(spoke1),
-      ISpoke.setUserPositionManagerWithSig.selector,
+      ISpoke.setUserPositionManagersWithSig.selector,
       vm.randomBytes(64)
     );
 

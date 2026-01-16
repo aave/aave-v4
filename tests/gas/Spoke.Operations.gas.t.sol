@@ -237,7 +237,7 @@ contract SpokeOperations_Gas_Tests is SpokeOperationsGasBase {
     vm.stopPrank();
   }
 
-  function test_setUserPositionManagerWithSig() public {
+  function test_setUserPositionManagersWithSig() public {
     (address user, uint256 userPk) = makeAddrAndKey(string(vm.randomBytes(32)));
     vm.label(user, 'user');
     address positionManager = vm.randomAddress();
@@ -260,16 +260,16 @@ contract SpokeOperations_Gas_Tests is SpokeOperationsGasBase {
     (uint8 v, bytes32 r, bytes32 s) = vm.sign(userPk, _getTypedDataHash(spoke, p));
     bytes memory signature = abi.encodePacked(r, s, v);
 
-    spoke.setUserPositionManagerWithSig(p, signature);
-    vm.snapshotGasLastCall(NAMESPACE, 'setUserPositionManagerWithSig: enable');
+    spoke.setUserPositionManagersWithSig(p, signature);
+    vm.snapshotGasLastCall(NAMESPACE, 'setUserPositionManagersWithSig: enable');
 
     p.updates[0].approve = false;
     p.nonce = spoke.nonces(user, nonceKey);
     (v, r, s) = vm.sign(userPk, _getTypedDataHash(spoke, p));
     signature = abi.encodePacked(r, s, v);
 
-    spoke.setUserPositionManagerWithSig(p, signature);
-    vm.snapshotGasLastCall(NAMESPACE, 'setUserPositionManagerWithSig: disable');
+    spoke.setUserPositionManagersWithSig(p, signature);
+    vm.snapshotGasLastCall(NAMESPACE, 'setUserPositionManagersWithSig: disable');
   }
 }
 

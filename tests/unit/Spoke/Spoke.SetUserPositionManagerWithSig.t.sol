@@ -5,7 +5,7 @@ pragma solidity ^0.8.0;
 import 'tests/unit/Spoke/SpokeBase.t.sol';
 import {EIP712Hash} from 'src/spoke/libraries/EIP712Hash.sol';
 
-contract SpokeSetUserPositionManagerWithSigTest is SpokeBase {
+contract SpokesetUserPositionManagersWithSigTest is SpokeBase {
   using SafeCast for *;
 
   mapping(address positionManager => bool approve) internal _lookup;
@@ -69,7 +69,7 @@ contract SpokeSetUserPositionManagerWithSigTest is SpokeBase {
     assertEq(spoke.DOMAIN_SEPARATOR(), expectedDomainSeparator);
   }
 
-  function test_setUserPositionManager_typeHash() public pure {
+  function test_setUserPositionManager_typeHash() public view {
     assertEq(
       Constants.SET_USER_POSITION_MANAGERS_TYPEHASH,
       EIP712Hash.SET_USER_POSITION_MANAGERS_TYPEHASH
@@ -83,6 +83,10 @@ contract SpokeSetUserPositionManagerWithSigTest is SpokeBase {
       keccak256(
         'SetUserPositionManagers(address user,PositionManagerUpdate[] updates,uint256 nonce,uint256 deadline)PositionManagerUpdate(address positionManager,bool approve)'
       )
+    );
+    assertEq(
+      Constants.SET_USER_POSITION_MANAGERS_TYPEHASH,
+      spoke1.SET_USER_POSITION_MANAGERS_TYPEHASH()
     );
   }
 
@@ -98,7 +102,7 @@ contract SpokeSetUserPositionManagerWithSigTest is SpokeBase {
     );
   }
 
-  function test_setUserPositionManagerWithSig_revertsWith_InvalidSignature_dueTo_ExpiredDeadline()
+  function test_setUserPositionManagersWithSig_revertsWith_InvalidSignature_dueTo_ExpiredDeadline()
     public
   {
     (, uint256 alicePk) = makeAddrAndKey('alice');
@@ -112,10 +116,10 @@ contract SpokeSetUserPositionManagerWithSigTest is SpokeBase {
 
     vm.expectRevert(IIntentConsumer.InvalidSignature.selector);
     vm.prank(vm.randomAddress());
-    spoke1.setUserPositionManagerWithSig(params, signature);
+    spoke1.setUserPositionManagersWithSig(params, signature);
   }
 
-  function test_setUserPositionManagerWithSig_revertsWith_InvalidSignature_dueTo_InvalidSigner()
+  function test_setUserPositionManagersWithSig_revertsWith_InvalidSignature_dueTo_InvalidSigner()
     public
   {
     (address randomUser, uint256 randomUserPk) = makeAddrAndKey(string(vm.randomBytes(32)));
@@ -129,10 +133,10 @@ contract SpokeSetUserPositionManagerWithSigTest is SpokeBase {
 
     vm.expectRevert(IIntentConsumer.InvalidSignature.selector);
     vm.prank(vm.randomAddress());
-    spoke1.setUserPositionManagerWithSig(params, signature);
+    spoke1.setUserPositionManagersWithSig(params, signature);
   }
 
-  function test_setUserPositionManagerWithSig_revertsWith_InvalidAccountNonce(bytes32) public {
+  function test_setUserPositionManagersWithSig_revertsWith_InvalidAccountNonce(bytes32) public {
     (address user, uint256 userPk) = makeAddrAndKey(string(vm.randomBytes(32)));
     vm.label(user, 'user');
     address positionManager = vm.randomAddress();
@@ -153,10 +157,10 @@ contract SpokeSetUserPositionManagerWithSigTest is SpokeBase {
       abi.encodeWithSelector(INoncesKeyed.InvalidAccountNonce.selector, params.user, currentNonce)
     );
     vm.prank(vm.randomAddress());
-    spoke1.setUserPositionManagerWithSig(params, signature);
+    spoke1.setUserPositionManagersWithSig(params, signature);
   }
 
-  function test_setUserPositionManagerWithSig() public {
+  function test_setUserPositionManagersWithSig() public {
     (address user, uint256 userPk) = makeAddrAndKey(string(vm.randomBytes(32)));
     vm.label(user, 'user');
     uint256 deadline = _warpBeforeRandomDeadline();
@@ -175,7 +179,7 @@ contract SpokeSetUserPositionManagerWithSigTest is SpokeBase {
     );
 
     vm.prank(vm.randomAddress());
-    spoke1.setUserPositionManagerWithSig(params, signature);
+    spoke1.setUserPositionManagersWithSig(params, signature);
 
     _assertNonceIncrement(spoke1, params.user, params.nonce);
     assertEq(
@@ -184,7 +188,7 @@ contract SpokeSetUserPositionManagerWithSigTest is SpokeBase {
     );
   }
 
-  function test_setUserPositionManagerWithSig_zero_updates() public {
+  function test_setUserPositionManagersWithSig_zero_updates() public {
     (address user, uint256 userPk) = makeAddrAndKey(string(vm.randomBytes(32)));
     vm.label(user, 'user');
     uint256 deadline = _warpBeforeRandomDeadline();
@@ -199,13 +203,13 @@ contract SpokeSetUserPositionManagerWithSigTest is SpokeBase {
     vm.recordLogs();
 
     vm.prank(vm.randomAddress());
-    spoke1.setUserPositionManagerWithSig(params, signature);
+    spoke1.setUserPositionManagersWithSig(params, signature);
 
     assertEq(vm.getRecordedLogs().length, 0);
     _assertNonceIncrement(spoke1, params.user, params.nonce);
   }
 
-  function test_setUserPositionManagerWithSig_multiple_updates(
+  function test_setUserPositionManagersWithSig_multiple_updates(
     ISpoke.PositionManagerUpdate[] memory updates
   ) public {
     vm.assume(updates.length < 1024); // for performance
@@ -230,7 +234,7 @@ contract SpokeSetUserPositionManagerWithSigTest is SpokeBase {
     }
 
     vm.prank(vm.randomAddress());
-    spoke1.setUserPositionManagerWithSig(params, signature);
+    spoke1.setUserPositionManagersWithSig(params, signature);
 
     _assertNonceIncrement(spoke1, params.user, params.nonce);
     for (uint256 i; i < updates.length; ++i) {
@@ -242,7 +246,7 @@ contract SpokeSetUserPositionManagerWithSigTest is SpokeBase {
     }
   }
 
-  function test_setUserPositionManagerWithSig_ERC1271_revertsWith_InvalidSignature_dueTo_ExpiredDeadline()
+  function test_setUserPositionManagersWithSig_ERC1271_revertsWith_InvalidSignature_dueTo_ExpiredDeadline()
     public
   {
     (, uint256 alicePk) = makeAddrAndKey('alice');
@@ -261,10 +265,10 @@ contract SpokeSetUserPositionManagerWithSigTest is SpokeBase {
 
     vm.expectRevert(IIntentConsumer.InvalidSignature.selector);
     vm.prank(vm.randomAddress());
-    spoke1.setUserPositionManagerWithSig(params, signature);
+    spoke1.setUserPositionManagersWithSig(params, signature);
   }
 
-  function test_setUserPositionManagerWithSig_ERC1271_revertsWith_InvalidSignature_dueTo_InvalidHash()
+  function test_setUserPositionManagersWithSig_ERC1271_revertsWith_InvalidSignature_dueTo_InvalidHash()
     public
   {
     (, uint256 alicePk) = makeAddrAndKey('alice');
@@ -296,10 +300,10 @@ contract SpokeSetUserPositionManagerWithSigTest is SpokeBase {
 
     vm.expectRevert(IIntentConsumer.InvalidSignature.selector);
     vm.prank(vm.randomAddress());
-    spoke1.setUserPositionManagerWithSig(invalidParams, signature);
+    spoke1.setUserPositionManagersWithSig(invalidParams, signature);
   }
 
-  function test_setUserPositionManagerWithSig_ERC1271_revertsWith_InvalidAccountNonce(
+  function test_setUserPositionManagersWithSig_ERC1271_revertsWith_InvalidAccountNonce(
     bytes32
   ) public {
     (, uint256 alicePk) = makeAddrAndKey('alice');
@@ -330,10 +334,10 @@ contract SpokeSetUserPositionManagerWithSigTest is SpokeBase {
       )
     );
     vm.prank(vm.randomAddress());
-    spoke1.setUserPositionManagerWithSig(params, signature);
+    spoke1.setUserPositionManagersWithSig(params, signature);
   }
 
-  function test_setUserPositionManagerWithSig_ERC1271() public {
+  function test_setUserPositionManagersWithSig_ERC1271() public {
     (address user, uint256 userPk) = makeAddrAndKey(string(vm.randomBytes(32)));
     MockERC1271Wallet smartWallet = new MockERC1271Wallet(user);
     vm.label(user, 'user');
@@ -363,7 +367,7 @@ contract SpokeSetUserPositionManagerWithSigTest is SpokeBase {
     );
 
     vm.prank(vm.randomAddress());
-    spoke1.setUserPositionManagerWithSig(params, signature);
+    spoke1.setUserPositionManagersWithSig(params, signature);
 
     _assertNonceIncrement(spoke1, params.user, params.nonce);
     assertEq(

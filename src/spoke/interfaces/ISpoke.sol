@@ -421,7 +421,7 @@ interface ISpoke is ISpokeBase, IAccessManaged, IIntentConsumer, IMulticall {
   /// @dev Allows duplicated updates and the last one is persisted. Allows approving inactive position managers.
   /// @param params The structured setUserPositionManager parameters.
   /// @param signature The EIP712-compliant signature bytes.
-  function setUserPositionManagerWithSig(
+  function setUserPositionManagersWithSig(
     SetUserPositionManagers calldata params,
     bytes calldata signature
   ) external;
@@ -532,6 +532,10 @@ interface ISpoke is ISpokeBase, IAccessManaged, IIntentConsumer, IMulticall {
   /// @notice Returns the address of the external `LiquidationLogic` library.
   /// @return The address of the library.
   function getLiquidationLogic() external pure returns (address);
+
+  /// @notice Returns the type hash for the SetUserPositionManagers intent.
+  /// @return The bytes-encoded EIP-712 struct hash representing the intent.
+  function SET_USER_POSITION_MANAGERS_TYPEHASH() external view returns (bytes32);
 
   /// @notice Returns the address of the AaveOracle contract.
   function ORACLE() external view returns (address);

@@ -39,6 +39,10 @@ abstract contract Spoke is ISpoke, AccessManagedUpgradeable, IntentConsumer, Mul
   using EIP712Hash for *;
 
   /// @inheritdoc ISpoke
+  bytes32 public constant SET_USER_POSITION_MANAGERS_TYPEHASH =
+    EIP712Hash.SET_USER_POSITION_MANAGERS_TYPEHASH;
+
+  /// @inheritdoc ISpoke
   address public immutable ORACLE;
 
   /// @dev The maximum allowed value for an asset identifier (inclusive).
@@ -442,7 +446,7 @@ abstract contract Spoke is ISpoke, AccessManagedUpgradeable, IntentConsumer, Mul
   }
 
   /// @inheritdoc ISpoke
-  function setUserPositionManagerWithSig(
+  function setUserPositionManagersWithSig(
     SetUserPositionManagers calldata params,
     bytes calldata signature
   ) external {

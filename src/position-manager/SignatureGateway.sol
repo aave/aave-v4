@@ -195,7 +195,7 @@ contract SignatureGateway is ISignatureGateway, GatewayBase, IntentConsumer, Mul
     ISpoke.PositionManagerUpdate[] memory updates = new ISpoke.PositionManagerUpdate[](1);
     updates[0] = ISpoke.PositionManagerUpdate({positionManager: address(this), approve: approve});
     try
-      ISpoke(spoke).setUserPositionManagerWithSig(
+      ISpoke(spoke).setUserPositionManagersWithSig(
         ISpoke.SetUserPositionManagers({
           user: user,
           updates: updates,
