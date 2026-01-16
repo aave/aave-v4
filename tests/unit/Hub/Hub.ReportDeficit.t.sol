@@ -118,7 +118,7 @@ contract HubReportDeficitTest is HubBase {
     );
 
     uint256 drawnDeficit = vm.randomUint(0, drawn);
-    uint256 premiumDeficitRay = vm.randomUint(spokePremiumRay + 1, UINT256_MAX);
+    uint256 premiumDeficitRay = vm.randomUint(spokePremiumRay + 1, 2 ** 255 - 1);
 
     vm.expectRevert(
       abi.encodeWithSelector(IHub.SurplusPremiumRayDeficitReported.selector, spokePremiumRay)

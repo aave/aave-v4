@@ -227,6 +227,18 @@ contract HubRefreshPremiumTest is HubBase {
       restoredPremiumRay: 0
     });
 
+    if (borrowAmount > 0) {
+      // set max risk premium threshold to allow borrow to occur
+      _updateSpokeRiskPremiumThreshold(
+        hub1,
+        daiAssetId,
+        address(spoke1),
+        Constants.MAX_RISK_PREMIUM_THRESHOLD
+      );
+      Utils.supplyCollateral(spoke1, _daiReserveId(spoke1), bob, borrowAmount * 2, bob);
+      Utils.borrow(spoke1, _daiReserveId(spoke1), bob, borrowAmount, bob);
+    }
+
     uint24 riskPremiumThreshold = vm
       .randomUint(0, Constants.MAX_RISK_PREMIUM_THRESHOLD - 1)
       .toUint24();
@@ -235,11 +247,6 @@ contract HubRefreshPremiumTest is HubBase {
       riskPremiumThreshold = Constants.MAX_RISK_PREMIUM_THRESHOLD;
     }
     _updateSpokeRiskPremiumThreshold(hub1, daiAssetId, address(spoke1), riskPremiumThreshold);
-
-    if (borrowAmount > 0) {
-      Utils.supplyCollateral(spoke1, _daiReserveId(spoke1), bob, borrowAmount * 2, bob);
-      Utils.borrow(spoke1, _daiReserveId(spoke1), bob, borrowAmount, bob);
-    }
 
     PremiumDataLocal memory premiumDataBefore = _loadAssetPremiumData(hub1, daiAssetId);
     (, uint256 premiumBefore) = hub1.getAssetOwed(daiAssetId);
@@ -381,7 +388,6 @@ contract HubRefreshPremiumTest is HubBase {
     Utils.supplyCollateral(spoke1, _daiReserveId(spoke1), bob, MAX_SUPPLY_AMOUNT, bob);
     Utils.borrow(spoke1, _daiReserveId(spoke1), bob, borrowAmount, bob);
     skip(skipTime);
-    Utils.borrow(spoke1, _daiReserveId(spoke1), bob, 1e18, bob);
 
     IHub.Asset memory asset = hub1.getAsset(assetId);
     PremiumDataLocal memory premiumDataBefore = _loadAssetPremiumData(hub1, assetId);

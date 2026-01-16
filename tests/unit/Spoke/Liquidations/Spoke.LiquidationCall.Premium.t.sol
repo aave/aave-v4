@@ -9,13 +9,8 @@ contract SpokeLiquidationCallPremiumTest is SpokeLiquidationCallHelperTest {
 
   uint256 internal baseAmountValue;
 
-  function setUp() public virtual override {
-    super.setUp();
-    baseAmountValue = vm.randomUint(MIN_AMOUNT_IN_BASE_CURRENCY, MAX_AMOUNT_IN_BASE_CURRENCY);
-  }
-
   function _baseAmountValue() internal virtual override returns (uint256) {
-    return baseAmountValue;
+    return vm.randomUint(MIN_AMOUNT_IN_BASE_CURRENCY, MAX_AMOUNT_IN_BASE_CURRENCY);
   }
 
   function _processAdditionalConfigs(
@@ -40,7 +35,7 @@ contract SpokeLiquidationCallPremiumTest is SpokeLiquidationCallHelperTest {
   }
 
   function _execBeforeLiquidation(CheckedLiquidationCallParams memory) internal virtual override {
-    skip(vm.randomUint(1, MAX_SKIP_TIME));
+    skip(vm.randomUint(1, MAX_SKIP_TIME / 2)); // avoid overflow
   }
 
   function _assertBeforeLiquidation(
