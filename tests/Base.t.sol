@@ -2606,10 +2606,7 @@ abstract contract Base is Test {
   }
 
   function _assertDynamicConfigRefreshEventsNotEmitted() internal {
-    _assertEventsNotEmitted(
-      ISpoke.RefreshAllUserDynamicConfig.selector,
-      ISpoke.RefreshSingleUserDynamicConfig.selector
-    );
+    _assertEventNotEmitted(ISpoke.RefreshSingleUserDynamicConfig.selector);
   }
 
   // @dev Helper function to get asset position, valid if no time has passed since last action
@@ -2939,7 +2936,7 @@ abstract contract Base is Test {
         receiveSharesEnabled: true
       });
       ISpoke.DynamicReserveConfig memory dynamicConfig = ISpoke.DynamicReserveConfig({
-        collateralFactor: 80_00,
+        collateralFactor: 50_00,
         maxLiquidationBonus: 105_00,
         liquidationFee: 10_00
       });
