@@ -78,7 +78,6 @@ contract SignatureGateway is ISignatureGateway, GatewayBase, IntentConsumer, Mul
     Withdraw calldata params,
     bytes calldata signature
   ) external onlyRegisteredSpoke(params.spoke) returns (uint256, uint256) {
-    require(block.timestamp <= params.deadline, InvalidSignature());
     address spoke = params.spoke;
     uint256 reserveId = params.reserveId;
     address user = params.onBehalfOf;
@@ -106,7 +105,6 @@ contract SignatureGateway is ISignatureGateway, GatewayBase, IntentConsumer, Mul
     Borrow calldata params,
     bytes calldata signature
   ) external onlyRegisteredSpoke(params.spoke) returns (uint256, uint256) {
-    require(block.timestamp <= params.deadline, InvalidSignature());
     address spoke = params.spoke;
     uint256 reserveId = params.reserveId;
     address user = params.onBehalfOf;
@@ -134,7 +132,6 @@ contract SignatureGateway is ISignatureGateway, GatewayBase, IntentConsumer, Mul
     Repay calldata params,
     bytes calldata signature
   ) external onlyRegisteredSpoke(params.spoke) returns (uint256, uint256) {
-    require(block.timestamp <= params.deadline, InvalidSignature());
     address spoke = params.spoke;
     uint256 reserveId = params.reserveId;
     address user = params.onBehalfOf;
