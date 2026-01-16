@@ -22,6 +22,30 @@ contract SignatureGateway is ISignatureGateway, GatewayBase, IntentConsumer, Mul
   using SafeERC20 for IERC20;
   using EIP712Hash for *;
 
+  /// @inheritdoc ISignatureGateway
+  bytes32 public constant SUPPLY_TYPEHASH = EIP712Hash.SUPPLY_TYPEHASH;
+
+  /// @inheritdoc ISignatureGateway
+  bytes32 public constant WITHDRAW_TYPEHASH = EIP712Hash.WITHDRAW_TYPEHASH;
+
+  /// @inheritdoc ISignatureGateway
+  bytes32 public constant BORROW_TYPEHASH = EIP712Hash.BORROW_TYPEHASH;
+
+  /// @inheritdoc ISignatureGateway
+  bytes32 public constant REPAY_TYPEHASH = EIP712Hash.REPAY_TYPEHASH;
+
+  /// @inheritdoc ISignatureGateway
+  bytes32 public constant SET_USING_AS_COLLATERAL_TYPEHASH =
+    EIP712Hash.SET_USING_AS_COLLATERAL_TYPEHASH;
+
+  /// @inheritdoc ISignatureGateway
+  bytes32 public constant UPDATE_USER_RISK_PREMIUM_TYPEHASH =
+    EIP712Hash.UPDATE_USER_RISK_PREMIUM_TYPEHASH;
+
+  /// @inheritdoc ISignatureGateway
+  bytes32 public constant UPDATE_USER_DYNAMIC_CONFIG_TYPEHASH =
+    EIP712Hash.UPDATE_USER_DYNAMIC_CONFIG_TYPEHASH;
+
   /// @dev Constructor.
   /// @param initialOwner_ The address of the initial owner.
   constructor(address initialOwner_) GatewayBase(initialOwner_) {}
@@ -230,41 +254,6 @@ contract SignatureGateway is ISignatureGateway, GatewayBase, IntentConsumer, Mul
         s: permitS
       })
     {} catch {}
-  }
-
-  /// @inheritdoc ISignatureGateway
-  function SUPPLY_TYPEHASH() external pure returns (bytes32) {
-    return EIP712Hash.SUPPLY_TYPEHASH;
-  }
-
-  /// @inheritdoc ISignatureGateway
-  function WITHDRAW_TYPEHASH() external pure returns (bytes32) {
-    return EIP712Hash.WITHDRAW_TYPEHASH;
-  }
-
-  /// @inheritdoc ISignatureGateway
-  function BORROW_TYPEHASH() external pure returns (bytes32) {
-    return EIP712Hash.BORROW_TYPEHASH;
-  }
-
-  /// @inheritdoc ISignatureGateway
-  function REPAY_TYPEHASH() external pure returns (bytes32) {
-    return EIP712Hash.REPAY_TYPEHASH;
-  }
-
-  /// @inheritdoc ISignatureGateway
-  function SET_USING_AS_COLLATERAL_TYPEHASH() external pure returns (bytes32) {
-    return EIP712Hash.SET_USING_AS_COLLATERAL_TYPEHASH;
-  }
-
-  /// @inheritdoc ISignatureGateway
-  function UPDATE_USER_RISK_PREMIUM_TYPEHASH() external pure returns (bytes32) {
-    return EIP712Hash.UPDATE_USER_RISK_PREMIUM_TYPEHASH;
-  }
-
-  /// @inheritdoc ISignatureGateway
-  function UPDATE_USER_DYNAMIC_CONFIG_TYPEHASH() external pure returns (bytes32) {
-    return EIP712Hash.UPDATE_USER_DYNAMIC_CONFIG_TYPEHASH;
   }
 
   function _domainNameAndVersion() internal pure override returns (string memory, string memory) {
