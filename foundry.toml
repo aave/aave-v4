@@ -47,6 +47,14 @@ gas_snapshot_check = true
 test = 'tests/gas'
 isolate = true
 
+[profile.coverage]
+optimizer = true
+optimizer_runs = 444444444444
+via_ir = false
+fuzz.runs = 50
+additional_compiler_profiles = []
+compilation_restrictions = []
+
 [rpc_endpoints]
 mainnet = "${RPC_MAINNET}"
 optimism = "${RPC_OPTIMISM}"
