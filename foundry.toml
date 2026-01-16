@@ -11,6 +11,7 @@ optimizer_runs = 444444444444
 bytecode_hash = "none"
 gas_snapshot_check = false
 gas_limit = 1099511627776
+dynamic_test_linking = true
 
 additional_compiler_profiles = [
   { name = "hub", optimizer = true, via_ir = true, optimizer_runs = 22_250 },
@@ -34,7 +35,6 @@ lint_on_build = false
 
 [profile.default.fuzz]
 runs = 1000
-seed = "0x640"
 
 [profile.pr.fuzz]
 runs = 5000

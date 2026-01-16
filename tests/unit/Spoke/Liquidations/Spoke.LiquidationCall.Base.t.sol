@@ -488,11 +488,9 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
             if (vars.userReservePosition.drawnShares == 0) {
               continue;
             }
-
-            vars.userReservePosition.premiumShares = (vars
-              .userReservePosition
-              .premiumShares
-              .toInt256() + vars.premiumDelta.sharesDelta).toUint256().toUint120();
+            vars.userReservePosition.premiumShares = uint256(vars.userReservePosition.premiumShares)
+              .add(vars.premiumDelta.sharesDelta)
+              .toUint120();
             vars.userReservePosition.premiumOffsetRay = (vars.userReservePosition.premiumOffsetRay +
               vars.premiumDelta.offsetRayDelta).toInt200();
           }
@@ -687,18 +685,12 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
     // health factor is decreasing due to liquidation bonus / collateral factor if:
     //   (totalCollateralValue - debtToLiquidateValue * LB) * newCF / (totalDebtValue - debtToLiquidateValue) < totalCollateralValue * oldCF / totalDebtValue
     //   this is equivalent to: LB * totalDebtValue * debtToLiquidateValue * newCF > totalCollateralValue * (totalDebtValue * (newCF - oldCF) + debtToLiquidateValue * oldCF)
-    bool isCollateralAffectingUserHf = (liquidationBonus *
-      userAccountDataBefore.totalDebtValue.wadMulUp(debtToLiquidateValue) *
-      expectedUserAvgCollateralFactor).toInt256() >
-      PercentageMath.PERCENTAGE_FACTOR.toInt256() *
-        (userAccountDataBefore
-          .totalCollateralValue
-          .wadMulDown(userAccountDataBefore.totalDebtValue)
-          .toInt256() *
-          (expectedUserAvgCollateralFactor.toInt256() -
-            userAccountDataBefore.avgCollateralFactor.toInt256()) +
-          (userAccountDataBefore.totalCollateralValue.wadMulDown(debtToLiquidateValue) *
-            userAccountDataBefore.avgCollateralFactor).toInt256());
+    bool isCollateralAffectingUserHf = _isCollateralAffectingUserHf(
+      liquidationBonus,
+      userAccountDataBefore,
+      debtToLiquidateValue,
+      expectedUserAvgCollateralFactor
+    );
 
     bool hasDeficit = (userAccountDataBefore.activeCollateralCount == 1) &&
       (!params.isSolvent || isCollateralAffectingUserHf) &&
@@ -719,6 +711,43 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
         isCollateralAffectingUserHf: isCollateralAffectingUserHf,
         hasDeficit: hasDeficit
       });
+  }
+
+  /// @dev Helper to determine whether liquidation bonus / collateral factor mechanics can make the user's HF decrease.
+  /// Uses uint256 math without casting to handle the sign of (newCF - oldCF) explicitly.
+  function _isCollateralAffectingUserHf(
+    uint256 liquidationBonus,
+    ISpoke.UserAccountData memory userAccountDataBefore,
+    uint256 debtToLiquidateValue,
+    uint256 newAvgCollateralFactor
+  ) internal pure returns (bool) {
+    // LHS: liquidationBonus * totalDebtValue * debtToLiquidateValue * newCF / WAD (via wadMulUp on (totalDebtValue, debtToLiquidateValue))
+    uint256 lhs = liquidationBonus *
+      userAccountDataBefore.totalDebtValue.wadMulUp(debtToLiquidateValue) *
+      newAvgCollateralFactor;
+
+    // RHS terms
+    uint256 rhsConstantTerm = userAccountDataBefore.totalCollateralValue.wadMulDown(
+      debtToLiquidateValue
+    ) * userAccountDataBefore.avgCollateralFactor;
+    uint256 rhsDiffMulTerm = userAccountDataBefore.totalCollateralValue.wadMulDown(
+      userAccountDataBefore.totalDebtValue
+    );
+
+    if (newAvgCollateralFactor >= userAccountDataBefore.avgCollateralFactor) {
+      uint256 diffPos = newAvgCollateralFactor - userAccountDataBefore.avgCollateralFactor;
+      uint256 rhsPos = PercentageMath.PERCENTAGE_FACTOR *
+        (rhsDiffMulTerm * diffPos + rhsConstantTerm);
+      return lhs > rhsPos;
+    }
+
+    uint256 diffNeg = userAccountDataBefore.avgCollateralFactor - newAvgCollateralFactor;
+    uint256 sub = rhsDiffMulTerm * diffNeg;
+
+    // RHS is PERCENTAGE_FACTOR * (rhsConstantTerm - sub). If negative, inequality always holds since lhs >= 0.
+    if (sub >= rhsConstantTerm) return true;
+    uint256 rhsNeg = PercentageMath.PERCENTAGE_FACTOR * (rhsConstantTerm - sub);
+    return lhs > rhsNeg;
   }
 
   function _checkPositionStatus(
@@ -1250,11 +1279,23 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
       }
     }
 
+    uint256 expectedTransferSharesEventCount = 0;
+    if (
+      !params.receiveShares &&
+      liquidationMetadata.collateralToLiquidate > liquidationMetadata.collateralToLiquidator
+    ) {
+      expectedTransferSharesEventCount = 1;
+    } else if (
+      params.receiveShares &&
+      liquidationMetadata.collateralSharesToLiquidate >
+        liquidationMetadata.collateralSharesToLiquidator
+    ) {
+      expectedTransferSharesEventCount = 1;
+    }
+
     assertEq(
       transferSharesEventCount,
-      (liquidationMetadata.collateralToLiquidate > liquidationMetadata.collateralToLiquidator)
-        ? 1
-        : 0,
+      expectedTransferSharesEventCount,
       'transfer shares: event emitted'
     );
   }

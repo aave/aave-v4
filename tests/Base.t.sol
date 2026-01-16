@@ -1608,7 +1608,7 @@ abstract contract Base is Test {
       );
 
       uint256 restoredPremiumRay = (premiumAmountToRestore * WadRayMath.RAY).min(premiumDebtRay);
-      uint256 restoredShares = drawnDebtToRestore.rayDivDown(hub.getAssetDrawnIndex(reserveId));
+      uint256 restoredShares = drawnDebtToRestore.rayDivDown(hub.getAssetDrawnIndex(assetId));
       uint256 riskPremium = _getUserLastRiskPremium(spoke, user);
 
       return
@@ -2238,7 +2238,7 @@ abstract contract Base is Test {
   ) internal pausePrank returns (ISpoke, IAaveOracle) {
     address deployer = makeAddr('deployer');
 
-    vm.prank(deployer);
+    vm.startPrank(deployer);
     IAaveOracle oracle = new AaveOracle(8, _oracleDesc);
 
     ISpoke spoke = DeployUtils.deploySpoke({
@@ -2247,8 +2247,8 @@ abstract contract Base is Test {
       initData: abi.encodeCall(ISpokeInstance.initialize, (_accessManager))
     });
 
-    vm.prank(deployer);
     oracle.setSpoke(address(spoke));
+    vm.stopPrank();
 
     assertEq(spoke.ORACLE(), address(oracle));
     assertEq(oracle.SPOKE(), address(spoke));
