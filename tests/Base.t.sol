@@ -2936,7 +2936,7 @@ abstract contract Base is Test {
         receiveSharesEnabled: true
       });
       ISpoke.DynamicReserveConfig memory dynamicConfig = ISpoke.DynamicReserveConfig({
-        collateralFactor: 80_00,
+        collateralFactor: 50_00,
         maxLiquidationBonus: 105_00,
         liquidationFee: 10_00
       });
