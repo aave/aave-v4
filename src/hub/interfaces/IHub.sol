@@ -4,12 +4,11 @@ pragma solidity ^0.8.0;
 
 import {IAccessManaged} from 'src/dependencies/openzeppelin/IAccessManaged.sol';
 import {IHubBase} from 'src/hub/interfaces/IHubBase.sol';
-import {IExtSload} from 'src/interfaces/IExtSload.sol';
 
 /// @title IHub
 /// @author Aave Labs
 /// @notice Full interface for the Hub.
-interface IHub is IHubBase, IAccessManaged, IExtSload {
+interface IHub is IHubBase, IAccessManaged {
   /// @notice Asset position and configuration data.
   /// @dev liquidity The liquidity available to be accessed, expressed in asset units.
   /// @dev realizedFees The amount of fees realized but not yet minted, expressed in asset units.

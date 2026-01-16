@@ -14,12 +14,11 @@ import {SharesMath} from 'src/hub/libraries/SharesMath.sol';
 import {Premium} from 'src/hub/libraries/Premium.sol';
 import {IBasicInterestRateStrategy} from 'src/hub/interfaces/IBasicInterestRateStrategy.sol';
 import {IHubBase, IHub} from 'src/hub/interfaces/IHub.sol';
-import {ExtSload} from 'src/utils/ExtSload.sol';
 
 /// @title Hub
 /// @author Aave Labs
 /// @notice A liquidity hub that manages assets and spokes.
-contract Hub is IHub, AccessManaged, ExtSload {
+contract Hub is IHub, AccessManaged {
   using EnumerableSet for EnumerableSet.AddressSet;
   using SafeCast for *;
   using SafeERC20 for IERC20;
