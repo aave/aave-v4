@@ -891,13 +891,13 @@ contract Hub is IHub, AccessManaged {
     require(premiumAmountRay <= premiumRay, SurplusPremiumRayDeficitReported(premiumRay));
   }
 
-  function _validateEliminateDeficit(SpokeData storage callerSpoke, uint256 amount) internal view {
-    require(callerSpoke.active, SpokeNotActive());
+  function _validateEliminateDeficit(SpokeData storage spoke, uint256 amount) internal view {
+    require(spoke.active, SpokeNotActive());
     require(amount > 0, InvalidAmount());
   }
 
-  function _validatePayFeeShares(SpokeData storage sender, uint256 feeShares) internal view {
-    require(sender.active, SpokeNotActive());
+  function _validatePayFeeShares(SpokeData storage spoke, uint256 feeShares) internal view {
+    require(spoke.active, SpokeNotActive());
     require(feeShares > 0, InvalidShares());
   }
 
