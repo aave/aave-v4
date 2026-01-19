@@ -71,21 +71,17 @@ contract SpokesetUserPositionManagersWithSigTest is SpokeBase {
 
   function test_setUserPositionManager_typeHash() public view {
     assertEq(
-      Constants.SET_USER_POSITION_MANAGERS_TYPEHASH,
-      EIP712Hash.SET_USER_POSITION_MANAGERS_TYPEHASH
-    );
-    assertEq(
-      Constants.SET_USER_POSITION_MANAGERS_TYPEHASH,
+      EIP712Hash.SET_USER_POSITION_MANAGERS_TYPEHASH,
       vm.eip712HashType('SetUserPositionManagers')
     );
     assertEq(
-      Constants.SET_USER_POSITION_MANAGERS_TYPEHASH,
+      EIP712Hash.SET_USER_POSITION_MANAGERS_TYPEHASH,
       keccak256(
         'SetUserPositionManagers(address user,PositionManagerUpdate[] updates,uint256 nonce,uint256 deadline)PositionManagerUpdate(address positionManager,bool approve)'
       )
     );
     assertEq(
-      Constants.SET_USER_POSITION_MANAGERS_TYPEHASH,
+      EIP712Hash.SET_USER_POSITION_MANAGERS_TYPEHASH,
       spoke1.SET_USER_POSITION_MANAGERS_TYPEHASH()
     );
   }
@@ -96,10 +92,6 @@ contract SpokesetUserPositionManagersWithSigTest is SpokeBase {
       keccak256('PositionManagerUpdate(address positionManager,bool approve)')
     );
     assertEq(EIP712Hash.POSITION_MANAGER_UPDATE, vm.eip712HashType('PositionManagerUpdate'));
-    assertEq(
-      EIP712Hash.POSITION_MANAGER_UPDATE,
-      keccak256('PositionManagerUpdate(address positionManager,bool approve)')
-    );
   }
 
   function test_setUserPositionManagersWithSig_revertsWith_InvalidSignature_dueTo_ExpiredDeadline()
