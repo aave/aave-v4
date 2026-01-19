@@ -3,7 +3,7 @@
 pragma solidity ^0.8.0;
 
 import {IAccessManaged} from 'src/dependencies/openzeppelin/IAccessManaged.sol';
-import {INoncesKeyed} from 'src/interfaces/INoncesKeyed.sol';
+import {IIntentConsumer} from 'src/interfaces/IIntentConsumer.sol';
 import {IMulticall} from 'src/interfaces/IMulticall.sol';
 import {IHubBase} from 'src/hub/interfaces/IHubBase.sol';
 import {ISpokeBase} from 'src/spoke/interfaces/ISpokeBase.sol';
@@ -13,7 +13,7 @@ type ReserveFlags is uint8;
 /// @title ISpoke
 /// @author Aave Labs
 /// @notice Full interface for Spoke.
-interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
+interface ISpoke is ISpokeBase, IAccessManaged, IIntentConsumer, IMulticall {
   /// @notice Reserve level data.
   /// @dev underlying The address of the underlying asset.
   /// @dev hub The address of the associated Hub.
@@ -270,9 +270,6 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
   /// @notice Thrown if an inactive position manager is set as a user's position manager.
   error InactivePositionManager();
 
-  /// @notice Thrown when a signature is invalid.
-  error InvalidSignature();
-
   /// @notice Thrown for an invalid zero address.
   error InvalidAddress();
 
@@ -520,9 +517,6 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
   /// @param positionManager The address of the position manager.
   /// @return True if positionManager is active and approved by user.
   function isPositionManager(address user, address positionManager) external view returns (bool);
-
-  /// @notice Returns the EIP-712 domain separator.
-  function DOMAIN_SEPARATOR() external view returns (bytes32);
 
   /// @notice Returns the address of the external `LiquidationLogic` library.
   /// @return The address of the library.

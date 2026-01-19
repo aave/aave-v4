@@ -943,8 +943,7 @@ contract SpokeRepayScenarioTest is SpokeBase {
         _wethReserveId(spoke1),
         _daiReserveId(spoke1),
         action1.borrowAmount
-      ) +
-      1;
+      ) + 1;
     Utils.supplyCollateral(spoke1, _wethReserveId(spoke1), bob, action1.supplyAmount, bob);
 
     // Alice supply dai

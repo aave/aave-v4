@@ -89,14 +89,14 @@ contract KeyValueListTest is Test {
     KeyValueListWrapper wrapper = new KeyValueListWrapper();
     KeyValueList.List memory list = KeyValueList.init(5);
 
-    if (key >= KeyValueList._MAX_KEY || value >= KeyValueList._MAX_VALUE) {
+    if (key >= KeyValueList.MAX_KEY || value >= KeyValueList.MAX_VALUE) {
       vm.expectRevert(KeyValueList.MaxDataSizeExceeded.selector);
       wrapper.add(list, 0, key, value);
     } else {
       list.add(0, key, value);
     }
 
-    if (key < KeyValueList._MAX_KEY && value < KeyValueList._MAX_VALUE) {
+    if (key < KeyValueList.MAX_KEY && value < KeyValueList.MAX_VALUE) {
       (uint256 storedKey, uint256 storedValue) = list.get(0);
       assertEq(storedKey, key);
       assertEq(storedValue, value);
@@ -226,11 +226,11 @@ contract KeyValueListTest is Test {
   }
 
   function _truncateKey(uint256 key) internal pure returns (uint256) {
-    return key % KeyValueList._MAX_KEY;
+    return key % KeyValueList.MAX_KEY;
   }
 
   function _truncateValue(uint256 value) internal pure returns (uint256) {
-    return value % KeyValueList._MAX_VALUE;
+    return value % KeyValueList.MAX_VALUE;
   }
 
   function _generateRandomUint256Array(
@@ -244,8 +244,7 @@ contract KeyValueListTest is Test {
     uint256[] memory result = new uint256[](size);
     for (uint256 i; i < size; ++i) {
       result[i] =
-        (uint256((keccak256(abi.encode(seed + i)))) % (upperBound - lowerBound + 1)) +
-        lowerBound;
+        (uint256((keccak256(abi.encode(seed + i)))) % (upperBound - lowerBound + 1)) + lowerBound;
     }
     return result;
   }

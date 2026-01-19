@@ -5,9 +5,8 @@ pragma solidity 0.8.28;
 import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
 import {SafeERC20, IERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
 import {IERC20Permit} from 'src/dependencies/openzeppelin/IERC20Permit.sol';
-import {SignatureChecker} from 'src/dependencies/openzeppelin/SignatureChecker.sol';
+import {ReentrancyGuardTransient} from 'src/dependencies/openzeppelin/ReentrancyGuardTransient.sol';
 import {AccessManagedUpgradeable} from 'src/dependencies/openzeppelin-upgradeable/AccessManagedUpgradeable.sol';
-import {EIP712} from 'src/dependencies/solady/EIP712.sol';
 import {MathUtils} from 'src/libraries/math/MathUtils.sol';
 import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
 import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
@@ -16,7 +15,7 @@ import {LiquidationLogic} from 'src/spoke/libraries/LiquidationLogic.sol';
 import {PositionStatusMap} from 'src/spoke/libraries/PositionStatusMap.sol';
 import {ReserveFlags, ReserveFlagsMap} from 'src/spoke/libraries/ReserveFlagsMap.sol';
 import {UserPositionDebt} from 'src/spoke/libraries/UserPositionDebt.sol';
-import {NoncesKeyed} from 'src/utils/NoncesKeyed.sol';
+import {IntentConsumer} from 'src/utils/IntentConsumer.sol';
 import {Multicall} from 'src/utils/Multicall.sol';
 import {IAaveOracle} from 'src/spoke/interfaces/IAaveOracle.sol';
 import {IHubBase} from 'src/hub/interfaces/IHubBase.sol';
@@ -26,7 +25,13 @@ import {ISpokeBase, ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 /// @author Aave Labs
 /// @notice Handles risk configuration & borrowing strategy for reserves and user positions.
 /// @dev Each reserve can be associated with a separate Hub.
-abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradeable, EIP712 {
+abstract contract Spoke is
+  ISpoke,
+  AccessManagedUpgradeable,
+  IntentConsumer,
+  Multicall,
+  ReentrancyGuardTransient
+{
   using SafeCast for *;
   using SafeERC20 for IERC20;
   using MathUtils for *;
@@ -132,6 +137,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     require(hub != address(0), InvalidAddress());
     require(assetId <= MAX_ALLOWED_ASSET_ID, InvalidAssetId());
     require(!_reserveExists[hub][assetId], ReserveExists());
+    _reserveExists[hub][assetId] = true;
 
     _validateReserveConfig(config);
     _validateDynamicReserveConfig(dynamicConfig);
@@ -159,7 +165,6 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
       })
     });
     _dynamicConfig[reserveId][dynamicConfigKey] = dynamicConfig;
-    _reserveExists[hub][assetId] = true;
 
     emit AddReserve(reserveId, assetId, hub);
     emit UpdateReserveConfig(reserveId, config);
@@ -231,7 +236,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     uint256 reserveId,
     uint256 amount,
     address onBehalfOf
-  ) external onlyPositionManager(onBehalfOf) returns (uint256, uint256) {
+  ) external nonReentrant onlyPositionManager(onBehalfOf) returns (uint256, uint256) {
     Reserve storage reserve = _getReserve(reserveId);
     UserPosition storage userPosition = _userPositions[onBehalfOf][reserveId];
     _validateSupply(reserve.flags);
@@ -250,7 +255,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     uint256 reserveId,
     uint256 amount,
     address onBehalfOf
-  ) external onlyPositionManager(onBehalfOf) returns (uint256, uint256) {
+  ) external nonReentrant onlyPositionManager(onBehalfOf) returns (uint256, uint256) {
     Reserve storage reserve = _getReserve(reserveId);
     UserPosition storage userPosition = _userPositions[onBehalfOf][reserveId];
     _validateWithdraw(reserve.flags);
@@ -280,7 +285,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     uint256 reserveId,
     uint256 amount,
     address onBehalfOf
-  ) external onlyPositionManager(onBehalfOf) returns (uint256, uint256) {
+  ) external nonReentrant onlyPositionManager(onBehalfOf) returns (uint256, uint256) {
     Reserve storage reserve = _getReserve(reserveId);
     UserPosition storage userPosition = _userPositions[onBehalfOf][reserveId];
     PositionStatus storage positionStatus = _positionStatus[onBehalfOf];
@@ -306,7 +311,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     uint256 reserveId,
     uint256 amount,
     address onBehalfOf
-  ) external onlyPositionManager(onBehalfOf) returns (uint256, uint256) {
+  ) external nonReentrant onlyPositionManager(onBehalfOf) returns (uint256, uint256) {
     Reserve storage reserve = _getReserve(reserveId);
     UserPosition storage userPosition = _userPositions[onBehalfOf][reserveId];
     _validateRepay(reserve.flags);
@@ -316,7 +321,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
       .calculateRestoreAmount(drawnIndex, amount);
     uint256 restoredShares = drawnDebtRestored.rayDivDown(drawnIndex);
 
-    IHubBase.PremiumDelta memory premiumDelta = userPosition.getPremiumDelta({
+    IHubBase.PremiumDelta memory premiumDelta = userPosition.calculatePremiumDelta({
       drawnSharesTaken: restoredShares,
       drawnIndex: drawnIndex,
       riskPremium: _positionStatus[onBehalfOf].riskPremium,
@@ -350,7 +355,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     address user,
     uint256 debtToCover,
     bool receiveShares
-  ) external {
+  ) external nonReentrant {
     Reserve storage collateralReserve = _getReserve(collateralReserveId);
     Reserve storage debtReserve = _getReserve(debtReserveId);
     DynamicReserveConfig storage collateralDynConfig = _dynamicConfig[collateralReserveId][
@@ -404,7 +409,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     uint256 reserveId,
     bool usingAsCollateral,
     address onBehalfOf
-  ) external onlyPositionManager(onBehalfOf) {
+  ) external nonReentrant onlyPositionManager(onBehalfOf) {
     _validateSetUsingAsCollateral(_getReserve(reserveId).flags, usingAsCollateral);
     PositionStatus storage positionStatus = _positionStatus[onBehalfOf];
 
@@ -424,7 +429,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
   }
 
   /// @inheritdoc ISpoke
-  function updateUserRiskPremium(address onBehalfOf) external {
+  function updateUserRiskPremium(address onBehalfOf) external nonReentrant {
     if (!_isPositionManager({user: onBehalfOf, manager: msg.sender})) {
       _checkCanCall(msg.sender, msg.data);
     }
@@ -433,7 +438,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
   }
 
   /// @inheritdoc ISpoke
-  function updateUserDynamicConfig(address onBehalfOf) external {
+  function updateUserDynamicConfig(address onBehalfOf) external nonReentrant {
     if (!_isPositionManager({user: onBehalfOf, manager: msg.sender})) {
       _checkCanCall(msg.sender, msg.data);
     }
@@ -455,9 +460,9 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     uint256 deadline,
     bytes calldata signature
   ) external {
-    require(block.timestamp <= deadline, InvalidSignature());
-    bytes32 digest = _hashTypedData(
-      keccak256(
+    _verifyAndConsumeIntent({
+      signer: user,
+      intentHash: keccak256(
         abi.encode(
           SET_USER_POSITION_MANAGER_TYPEHASH,
           positionManager,
@@ -466,10 +471,11 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
           nonce,
           deadline
         )
-      )
-    );
-    require(SignatureChecker.isValidSignatureNow(user, digest, signature), InvalidSignature());
-    _useCheckedNonce(user, nonce);
+      ),
+      nonce: nonce,
+      deadline: deadline,
+      signature: signature
+    });
     _setUserPositionManager({positionManager: positionManager, user: user, approve: approve});
   }
 
@@ -675,11 +681,6 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
   }
 
   /// @inheritdoc ISpoke
-  function DOMAIN_SEPARATOR() external view returns (bytes32) {
-    return _domainSeparator();
-  }
-
-  /// @inheritdoc ISpoke
   function getLiquidationLogic() external pure returns (address) {
     return address(LiquidationLogic);
   }
@@ -843,7 +844,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
       uint256 assetId = reserve.assetId;
       IHubBase hub = reserve.hub;
 
-      IHubBase.PremiumDelta memory premiumDelta = userPosition.getPremiumDelta({
+      IHubBase.PremiumDelta memory premiumDelta = userPosition.calculatePremiumDelta({
         drawnSharesTaken: 0,
         drawnIndex: hub.getAssetDrawnIndex(assetId),
         riskPremium: newRiskPremium,
@@ -874,7 +875,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
       (uint256 drawnDebtReported, uint256 premiumDebtRay) = userPosition.getDebt(drawnIndex);
       uint256 deficitShares = drawnDebtReported.rayDivDown(drawnIndex);
 
-      IHubBase.PremiumDelta memory premiumDelta = userPosition.getPremiumDelta({
+      IHubBase.PremiumDelta memory premiumDelta = userPosition.calculatePremiumDelta({
         drawnSharesTaken: deficitShares,
         drawnIndex: drawnIndex,
         riskPremium: 0,
@@ -951,7 +952,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
       config.collateralFactor < PercentageMath.PERCENTAGE_FACTOR &&
         config.maxLiquidationBonus >= PercentageMath.PERCENTAGE_FACTOR &&
         config.maxLiquidationBonus.percentMulUp(config.collateralFactor) <
-        PercentageMath.PERCENTAGE_FACTOR,
+          PercentageMath.PERCENTAGE_FACTOR,
       InvalidCollateralFactorAndMaxLiquidationBonus()
     );
     require(config.liquidationFee <= PercentageMath.PERCENTAGE_FACTOR, InvalidLiquidationFee());
