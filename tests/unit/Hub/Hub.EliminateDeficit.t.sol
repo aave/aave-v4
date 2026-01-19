@@ -57,15 +57,6 @@ contract HubEliminateDeficitTest is HubBase {
     hub1.eliminateDeficit(_assetId, vm.randomUint(), _coveredSpoke);
   }
 
-  function test_eliminateDeficit_revertsWith_callerSpokePaused() public {
-    address caller = address(spoke1);
-    _updateSpokePaused(hub1, _assetId, caller, true);
-
-    vm.expectRevert(IHub.SpokePaused.selector);
-    vm.prank(caller);
-    hub1.eliminateDeficit(_assetId, vm.randomUint(), _coveredSpoke);
-  }
-
   function test_eliminateDeficit(uint256) public {
     uint256 deficitAmountRay2 = _deficitAmountRay / 2;
     _createDeficit(_assetId, _coveredSpoke, _deficitAmountRay);
