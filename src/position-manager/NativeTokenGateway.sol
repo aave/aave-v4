@@ -70,7 +70,7 @@ contract NativeTokenGateway is INativeTokenGateway, GatewayBase, ReentrancyGuard
     address spoke,
     uint256 reserveId,
     uint256 amount
-  ) external onlyRegisteredSpoke(spoke) returns (uint256, uint256) {
+  ) external nonReentrant onlyRegisteredSpoke(spoke) returns (uint256, uint256) {
     address underlying = _getReserveUnderlying(spoke, reserveId);
     _validateParams(underlying, amount);
 
@@ -90,7 +90,7 @@ contract NativeTokenGateway is INativeTokenGateway, GatewayBase, ReentrancyGuard
     address spoke,
     uint256 reserveId,
     uint256 amount
-  ) external onlyRegisteredSpoke(spoke) returns (uint256, uint256) {
+  ) external nonReentrant onlyRegisteredSpoke(spoke) returns (uint256, uint256) {
     address underlying = _getReserveUnderlying(spoke, reserveId);
     _validateParams(underlying, amount);
 

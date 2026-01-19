@@ -52,10 +52,96 @@ contract SpokeLiquidationCallScenariosTest is SpokeLiquidationCallBaseTest {
     }
   }
 
+  function test_liquidationCall_revertsWith_ReentrancyGuardReentrantCall_hubRemove() public {
+    uint256 collateralReserveId = _daiReserveId(spoke);
+    uint256 debtReserveId = _wethReserveId(spoke);
+    _increaseCollateralSupply(spoke, collateralReserveId, 100000e18, user);
+    _makeUserLiquidatable(spoke, user, debtReserveId, 0.999e18);
+
+    MockReentrantCaller reentrantCaller = new MockReentrantCaller(
+      address(spoke),
+      ISpokeBase.liquidationCall.selector
+    );
+
+    vm.mockFunction(
+      address(_hub(spoke, collateralReserveId)),
+      address(reentrantCaller),
+      abi.encodeWithSelector(IHubBase.remove.selector)
+    );
+    vm.expectRevert(ReentrancyGuardTransient.ReentrancyGuardReentrantCall.selector);
+    vm.prank(liquidator);
+    spoke.liquidationCall(collateralReserveId, debtReserveId, user, type(uint256).max, false);
+  }
+
+  function test_liquidationCall_revertsWith_ReentrancyGuardReentrantCall_hubRestore() public {
+    uint256 collateralReserveId = _daiReserveId(spoke);
+    uint256 debtReserveId = _wethReserveId(spoke);
+    _increaseCollateralSupply(spoke, collateralReserveId, 100000e18, user);
+    _makeUserLiquidatable(spoke, user, debtReserveId, 0.999e18);
+
+    MockReentrantCaller reentrantCaller = new MockReentrantCaller(
+      address(spoke),
+      ISpokeBase.liquidationCall.selector
+    );
+
+    vm.mockFunction(
+      address(_hub(spoke, debtReserveId)),
+      address(reentrantCaller),
+      abi.encodeWithSelector(IHubBase.restore.selector)
+    );
+    vm.expectRevert(ReentrancyGuardTransient.ReentrancyGuardReentrantCall.selector);
+    vm.prank(liquidator);
+    spoke.liquidationCall(collateralReserveId, debtReserveId, user, type(uint256).max, false);
+  }
+
+  function test_liquidationCall_revertsWith_ReentrancyGuardReentrantCall_hubRefreshPremium()
+    public
+  {
+    uint256 collateralReserveId = _daiReserveId(spoke);
+    uint256 debtReserveId = _wethReserveId(spoke);
+    _increaseCollateralSupply(spoke, collateralReserveId, 100000e18, user);
+    _makeUserLiquidatable(spoke, user, debtReserveId, 0.999e18);
+
+    MockReentrantCaller reentrantCaller = new MockReentrantCaller(
+      address(spoke),
+      ISpokeBase.liquidationCall.selector
+    );
+
+    vm.mockFunction(
+      address(_hub(spoke, debtReserveId)),
+      address(reentrantCaller),
+      abi.encodeWithSelector(IHubBase.refreshPremium.selector)
+    );
+    vm.expectRevert(ReentrancyGuardTransient.ReentrancyGuardReentrantCall.selector);
+    vm.prank(liquidator);
+    spoke.liquidationCall(collateralReserveId, debtReserveId, user, type(uint256).max, false);
+  }
+
+  function test_liquidationCall_revertsWith_ReentrancyGuardReentrantCall_hubReportDeficit() public {
+    uint256 collateralReserveId = _daiReserveId(spoke);
+    uint256 debtReserveId = _wethReserveId(spoke);
+    _increaseCollateralSupply(spoke, collateralReserveId, 100000e18, user);
+    _makeUserLiquidatable(spoke, user, debtReserveId, 0.5e18);
+
+    MockReentrantCaller reentrantCaller = new MockReentrantCaller(
+      address(spoke),
+      ISpokeBase.liquidationCall.selector
+    );
+
+    vm.mockFunction(
+      address(_hub(spoke, debtReserveId)),
+      address(reentrantCaller),
+      abi.encodeWithSelector(IHubBase.reportDeficit.selector)
+    );
+    vm.expectRevert(ReentrancyGuardTransient.ReentrancyGuardReentrantCall.selector);
+    vm.prank(liquidator);
+    spoke.liquidationCall(collateralReserveId, debtReserveId, user, type(uint256).max, false);
+  }
+
   // User is solvent, but health factor decreases after liquidation due to high liquidation bonus.
   // A new collateral factor is set for WETH, but it does not affect the user since dynamic config
   // key is not refreshed during liquidations.
-  function test_scenario1() public {
+  function test_liquidationCall_scenario1() public {
     // A high liquidation bonus will be applied
     _updateMaxLiquidationBonus(spoke, _wethReserveId(spoke), 124_00);
 
@@ -157,7 +243,7 @@ contract SpokeLiquidationCallScenariosTest is SpokeLiquidationCallBaseTest {
   }
 
   // User is solvent, but health factor decreases after liquidation due to high collateral factor.
-  function test_scenario2() public {
+  function test_liquidationCall_scenario2() public {
     _updateMaxLiquidationBonus(spoke, _wethReserveId(spoke), 103_00);
     _updateCollateralFactor(spoke, _wethReserveId(spoke), 97_00);
 
@@ -254,8 +340,8 @@ contract SpokeLiquidationCallScenariosTest is SpokeLiquidationCallBaseTest {
     assertApproxEqAbs(userAccountData.riskPremium, 13_89, 1, 'post liquidation: risk premium');
   }
 
-  // Liquidated collateral is between 0 and 1 wei. It is rounded up to prevent reverting.
-  function test_scenario3() public {
+  // Liquidated collateral is between 0 and 1 wei. It is rounded down and hub.remove is skipped to avoid reverting.
+  function test_liquidationCall_scenario3() public {
     // Liquidation bonus: 0
     _updateMaxLiquidationBonus(spoke, _wethReserveId(spoke), 100_00);
 
@@ -306,7 +392,7 @@ contract SpokeLiquidationCallScenariosTest is SpokeLiquidationCallBaseTest {
   }
 
   /// @dev when receiving shares, liquidator can already have setUsingAsCollateral
-  function test_scenario_liquidator_usingAsCollateral() public {
+  function test_liquidationCall_scenario4() public {
     uint256 collateralReserveId = _wethReserveId(spoke);
     uint256 debtReserveId = _daiReserveId(spoke);
     // liquidator can receive shares even if they have already set as collateral
