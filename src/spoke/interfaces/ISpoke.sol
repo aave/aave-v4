@@ -14,15 +14,7 @@ type ReserveFlags is uint8;
 /// @author Aave Labs
 /// @notice Full interface for Spoke.
 interface ISpoke is ISpokeBase, IAccessManaged, IIntentConsumer, IMulticall {
-  /// @notice Sub-Intent data to apply position manager update for user.
-  /// @param positionManager The address of the position manager.
-  /// @param approve True to approve the position manager, false to revoke approval.
-  struct PositionManagerUpdate {
-    address positionManager;
-    bool approve;
-  }
-
-  /// @notice Intent data to set user position manager with EIP712-typed signature.
+  /// @notice Intent data to set user position managers with EIP712-typed signature.
   /// @param user The address of the user on whose behalf position manager can act.
   /// @param updates The array of position manager updates.
   /// @param nonce The nonce for the signature.
@@ -32,6 +24,14 @@ interface ISpoke is ISpokeBase, IAccessManaged, IIntentConsumer, IMulticall {
     PositionManagerUpdate[] updates;
     uint256 nonce;
     uint256 deadline;
+  }
+
+  /// @notice Sub-Intent data to apply position manager update for user.
+  /// @param positionManager The address of the position manager.
+  /// @param approve True to approve the position manager, false to revoke approval.
+  struct PositionManagerUpdate {
+    address positionManager;
+    bool approve;
   }
 
   /// @notice Reserve level data.
@@ -419,7 +419,7 @@ interface ISpoke is ISpokeBase, IAccessManaged, IIntentConsumer, IMulticall {
   /// @notice Enables a user to grant or revoke approval for an array of position managers using an EIP712-typed intent.
   /// @dev Uses keyed-nonces where for each key's namespace nonce is consumed sequentially.
   /// @dev Allows duplicated updates and the last one is persisted. Allows approving inactive position managers.
-  /// @param params The structured setUserPositionManager parameters.
+  /// @param params The structured setUserPositionManagers parameter.
   /// @param signature The EIP712-compliant signature bytes.
   function setUserPositionManagersWithSig(
     SetUserPositionManagers calldata params,

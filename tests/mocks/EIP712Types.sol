@@ -6,6 +6,7 @@ pragma solidity ^0.8.20;
 /// @author Aave Labs
 /// @notice Defines type structs used in EIP712-typed signatures.
 library EIP712Types {
+  /// @dev Spoke Intents
   struct SetUserPositionManagers {
     address user;
     PositionManagerUpdate[] updates;
@@ -26,6 +27,7 @@ library EIP712Types {
     uint256 deadline;
   }
 
+  /// @dev SignatureGateway Intents
   struct Supply {
     address spoke;
     uint256 reserveId;

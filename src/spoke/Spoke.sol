@@ -38,12 +38,12 @@ abstract contract Spoke is
   using MathUtils for *;
   using PercentageMath for *;
   using WadRayMath for *;
+  using EIP712Hash for *;
   using KeyValueList for KeyValueList.List;
   using LiquidationLogic for *;
   using PositionStatusMap for *;
   using ReserveFlagsMap for ReserveFlags;
   using UserPositionDebt for ISpoke.UserPosition;
-  using EIP712Hash for *;
 
   /// @inheritdoc ISpoke
   bytes32 public constant SET_USER_POSITION_MANAGERS_TYPEHASH =
