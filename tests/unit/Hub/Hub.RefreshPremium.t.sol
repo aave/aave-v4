@@ -265,7 +265,7 @@ contract HubRefreshPremiumTest is HubBase {
     } else if (
       riskPremiumThreshold != Constants.MAX_RISK_PREMIUM_THRESHOLD &&
       asset.drawnShares.percentMulUp(riskPremiumThreshold) <
-      asset.premiumShares + sharesDelta.toUint256()
+        asset.premiumShares + sharesDelta.toUint256()
     ) {
       reverting = true;
       vm.expectRevert(IHub.InvalidPremiumChange.selector);
