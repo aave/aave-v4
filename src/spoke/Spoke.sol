@@ -5,10 +5,12 @@ pragma solidity 0.8.28;
 import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
 import {SafeERC20, IERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
 import {IERC20Permit} from 'src/dependencies/openzeppelin/IERC20Permit.sol';
+import {ReentrancyGuardTransient} from 'src/dependencies/openzeppelin/ReentrancyGuardTransient.sol';
 import {AccessManagedUpgradeable} from 'src/dependencies/openzeppelin-upgradeable/AccessManagedUpgradeable.sol';
 import {MathUtils} from 'src/libraries/math/MathUtils.sol';
 import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
 import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
+import {EIP712Hash} from 'src/spoke/libraries/EIP712Hash.sol';
 import {KeyValueList} from 'src/spoke/libraries/KeyValueList.sol';
 import {LiquidationLogic} from 'src/spoke/libraries/LiquidationLogic.sol';
 import {PositionStatusMap} from 'src/spoke/libraries/PositionStatusMap.sol';
@@ -24,12 +26,19 @@ import {ISpokeBase, ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 /// @author Aave Labs
 /// @notice Handles risk configuration & borrowing strategy for reserves and user positions.
 /// @dev Each reserve can be associated with a separate Hub.
-abstract contract Spoke is ISpoke, AccessManagedUpgradeable, IntentConsumer, Multicall {
+abstract contract Spoke is
+  ISpoke,
+  AccessManagedUpgradeable,
+  IntentConsumer,
+  Multicall,
+  ReentrancyGuardTransient
+{
   using SafeCast for *;
   using SafeERC20 for IERC20;
   using MathUtils for *;
   using PercentageMath for *;
   using WadRayMath for *;
+  using EIP712Hash for *;
   using KeyValueList for KeyValueList.List;
   using LiquidationLogic for *;
   using PositionStatusMap for *;
@@ -37,9 +46,8 @@ abstract contract Spoke is ISpoke, AccessManagedUpgradeable, IntentConsumer, Mul
   using UserPositionDebt for ISpoke.UserPosition;
 
   /// @inheritdoc ISpoke
-  bytes32 public constant SET_USER_POSITION_MANAGER_TYPEHASH =
-    // keccak256('SetUserPositionManager(address positionManager,address user,bool approve,uint256 nonce,uint256 deadline)')
-    0x758d23a3c07218b7ea0b4f7f63903c4e9d5cbde72d3bcfe3e9896639025a0214;
+  bytes32 public constant SET_USER_POSITION_MANAGERS_TYPEHASH =
+    EIP712Hash.SET_USER_POSITION_MANAGERS_TYPEHASH;
 
   /// @inheritdoc ISpoke
   address public immutable ORACLE;
@@ -229,7 +237,7 @@ abstract contract Spoke is ISpoke, AccessManagedUpgradeable, IntentConsumer, Mul
     uint256 reserveId,
     uint256 amount,
     address onBehalfOf
-  ) external onlyPositionManager(onBehalfOf) returns (uint256, uint256) {
+  ) external nonReentrant onlyPositionManager(onBehalfOf) returns (uint256, uint256) {
     Reserve storage reserve = _getReserve(reserveId);
     UserPosition storage userPosition = _userPositions[onBehalfOf][reserveId];
     _validateSupply(reserve.flags);
@@ -248,7 +256,7 @@ abstract contract Spoke is ISpoke, AccessManagedUpgradeable, IntentConsumer, Mul
     uint256 reserveId,
     uint256 amount,
     address onBehalfOf
-  ) external onlyPositionManager(onBehalfOf) returns (uint256, uint256) {
+  ) external nonReentrant onlyPositionManager(onBehalfOf) returns (uint256, uint256) {
     Reserve storage reserve = _getReserve(reserveId);
     UserPosition storage userPosition = _userPositions[onBehalfOf][reserveId];
     _validateWithdraw(reserve.flags);
@@ -278,7 +286,7 @@ abstract contract Spoke is ISpoke, AccessManagedUpgradeable, IntentConsumer, Mul
     uint256 reserveId,
     uint256 amount,
     address onBehalfOf
-  ) external onlyPositionManager(onBehalfOf) returns (uint256, uint256) {
+  ) external nonReentrant onlyPositionManager(onBehalfOf) returns (uint256, uint256) {
     Reserve storage reserve = _getReserve(reserveId);
     UserPosition storage userPosition = _userPositions[onBehalfOf][reserveId];
     PositionStatus storage positionStatus = _positionStatus[onBehalfOf];
@@ -304,7 +312,7 @@ abstract contract Spoke is ISpoke, AccessManagedUpgradeable, IntentConsumer, Mul
     uint256 reserveId,
     uint256 amount,
     address onBehalfOf
-  ) external onlyPositionManager(onBehalfOf) returns (uint256, uint256) {
+  ) external nonReentrant onlyPositionManager(onBehalfOf) returns (uint256, uint256) {
     Reserve storage reserve = _getReserve(reserveId);
     UserPosition storage userPosition = _userPositions[onBehalfOf][reserveId];
     _validateRepay(reserve.flags);
@@ -348,7 +356,7 @@ abstract contract Spoke is ISpoke, AccessManagedUpgradeable, IntentConsumer, Mul
     address user,
     uint256 debtToCover,
     bool receiveShares
-  ) external {
+  ) external nonReentrant {
     Reserve storage collateralReserve = _getReserve(collateralReserveId);
     Reserve storage debtReserve = _getReserve(debtReserveId);
     DynamicReserveConfig storage collateralDynConfig = _dynamicConfig[collateralReserveId][
@@ -402,7 +410,7 @@ abstract contract Spoke is ISpoke, AccessManagedUpgradeable, IntentConsumer, Mul
     uint256 reserveId,
     bool usingAsCollateral,
     address onBehalfOf
-  ) external onlyPositionManager(onBehalfOf) {
+  ) external nonReentrant onlyPositionManager(onBehalfOf) {
     _validateSetUsingAsCollateral(_getReserve(reserveId).flags, usingAsCollateral);
     PositionStatus storage positionStatus = _positionStatus[onBehalfOf];
 
@@ -422,7 +430,7 @@ abstract contract Spoke is ISpoke, AccessManagedUpgradeable, IntentConsumer, Mul
   }
 
   /// @inheritdoc ISpoke
-  function updateUserRiskPremium(address onBehalfOf) external {
+  function updateUserRiskPremium(address onBehalfOf) external nonReentrant {
     if (!_isPositionManager({user: onBehalfOf, manager: msg.sender})) {
       _checkCanCall(msg.sender, msg.data);
     }
@@ -431,7 +439,7 @@ abstract contract Spoke is ISpoke, AccessManagedUpgradeable, IntentConsumer, Mul
   }
 
   /// @inheritdoc ISpoke
-  function updateUserDynamicConfig(address onBehalfOf) external {
+  function updateUserDynamicConfig(address onBehalfOf) external nonReentrant {
     if (!_isPositionManager({user: onBehalfOf, manager: msg.sender})) {
       _checkCanCall(msg.sender, msg.data);
     }
@@ -445,31 +453,25 @@ abstract contract Spoke is ISpoke, AccessManagedUpgradeable, IntentConsumer, Mul
   }
 
   /// @inheritdoc ISpoke
-  function setUserPositionManagerWithSig(
-    address positionManager,
-    address user,
-    bool approve,
-    uint256 nonce,
-    uint256 deadline,
+  function setUserPositionManagersWithSig(
+    SetUserPositionManagers calldata params,
     bytes calldata signature
   ) external {
     _verifyAndConsumeIntent({
-      signer: user,
-      intentHash: keccak256(
-        abi.encode(
-          SET_USER_POSITION_MANAGER_TYPEHASH,
-          positionManager,
-          user,
-          approve,
-          nonce,
-          deadline
-        )
-      ),
-      nonce: nonce,
-      deadline: deadline,
+      signer: params.user,
+      intentHash: params.hash(),
+      nonce: params.nonce,
+      deadline: params.deadline,
       signature: signature
     });
-    _setUserPositionManager({positionManager: positionManager, user: user, approve: approve});
+
+    for (uint256 i = 0; i < params.updates.length; ++i) {
+      _setUserPositionManager({
+        positionManager: params.updates[i].positionManager,
+        user: params.user,
+        approve: params.updates[i].approve
+      });
+    }
   }
 
   /// @inheritdoc ISpoke
@@ -686,8 +688,6 @@ abstract contract Spoke is ISpoke, AccessManagedUpgradeable, IntentConsumer, Mul
 
   function _setUserPositionManager(address positionManager, address user, bool approve) internal {
     PositionManagerConfig storage config = _positionManager[positionManager];
-    // only allow approval when position manager is active for improved UX
-    require(!approve || config.active, InactivePositionManager());
     config.approval[user] = approve;
     emit SetUserPositionManager(user, positionManager, approve);
   }

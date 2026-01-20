@@ -5,6 +5,56 @@ pragma solidity ^0.8.0;
 import 'tests/unit/Spoke/SpokeBase.t.sol';
 
 contract SpokeBorrowTest is SpokeBase {
+  function test_borrow_revertsWith_ReentrancyGuardReentrantCall_hubDraw() public {
+    uint256 amount = 100e18;
+    Utils.supplyCollateral({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      caller: bob,
+      amount: amount * 10,
+      onBehalfOf: bob
+    });
+
+    MockReentrantCaller reentrantCaller = new MockReentrantCaller(
+      address(spoke1),
+      ISpokeBase.borrow.selector
+    );
+
+    vm.mockFunction(
+      address(_hub(spoke1, _daiReserveId(spoke1))),
+      address(reentrantCaller),
+      abi.encodeWithSelector(IHubBase.draw.selector)
+    );
+    vm.expectRevert(ReentrancyGuardTransient.ReentrancyGuardReentrantCall.selector);
+    vm.prank(bob);
+    spoke1.borrow(_daiReserveId(spoke1), amount, bob);
+  }
+
+  function test_borrow_revertsWith_ReentrancyGuardReentrantCall_hubRefreshPremium() public {
+    uint256 amount = 100e18;
+    Utils.supplyCollateral({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      caller: bob,
+      amount: amount * 10,
+      onBehalfOf: bob
+    });
+
+    MockReentrantCaller reentrantCaller = new MockReentrantCaller(
+      address(spoke1),
+      ISpokeBase.borrow.selector
+    );
+
+    vm.mockFunction(
+      address(_hub(spoke1, _daiReserveId(spoke1))),
+      address(reentrantCaller),
+      abi.encodeWithSelector(IHubBase.refreshPremium.selector)
+    );
+    vm.expectRevert(ReentrancyGuardTransient.ReentrancyGuardReentrantCall.selector);
+    vm.prank(bob);
+    spoke1.borrow(_daiReserveId(spoke1), amount, bob);
+  }
+
   function test_borrow() public {
     BorrowTestData memory state;
 
