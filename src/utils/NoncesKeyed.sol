@@ -8,13 +8,15 @@ import {INoncesKeyed} from 'src/interfaces/INoncesKeyed.sol';
 /// @author Modified from OpenZeppelin https://github.com/OpenZeppelin/openzeppelin-contracts/blob/v5.2.0/contracts/utils/NoncesKeyed.sol
 /// @dev Follows the https://eips.ethereum.org/EIPS/eip-4337#semi-abstracted-nonce-support[ERC-4337's semi-abstracted nonce system].
 contract NoncesKeyed is INoncesKeyed {
+  /// @custom:storage-location erc7201:aaveV4.storage.NoncesKeyed
   struct NoncesKeyedStorage {
     mapping(address owner => mapping(uint192 key => uint64 nonce)) _nonces;
   }
 
-  // keccak256(abi.encode(uint256(keccak256("aavev4.storage.NoncesKeyed")) - 1)) & ~bytes32(uint256(0xff))
-  bytes32 private constant NoncesKeyedStorageLocation =
-    0x03035f5b3b8ea087e3d53953506042c5986389d31bf9343ec3c70421b8aa7800;
+  /// @dev The storage slot for the NoncesKeyed storage struct.
+  bytes32 private constant NAMESPACE_SLOT =
+    // keccak256(abi.encode(uint256(keccak256("aaveV4.storage.NoncesKeyed")) - 1)) & ~bytes32(uint256(0xff))
+    0x2b874476222a0679b83c59cab04594a8acca28c3b5e642121f957978e6a22200;
 
   /// @inheritdoc INoncesKeyed
   function useNonce(uint192 key) external returns (uint256) {
@@ -55,9 +57,10 @@ contract NoncesKeyed is INoncesKeyed {
     return (uint192(keyNonce >> 64), uint64(keyNonce));
   }
 
+  /// @dev Loads the NoncesKeyed storage struct.
   function _getNoncesKeyedStorage() private pure returns (NoncesKeyedStorage storage $) {
-    assembly {
-      $.slot := NoncesKeyedStorageLocation
+    assembly ('memory-safe') {
+      $.slot := NAMESPACE_SLOT
     }
   }
 }
