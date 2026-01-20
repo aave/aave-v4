@@ -5,22 +5,9 @@ pragma solidity ^0.8.0;
 import 'tests/unit/misc/SignatureGateway/SignatureGateway.Base.t.sol';
 import {ISignatureTransfer} from 'lib/permit2/src/interfaces/ISignatureTransfer.sol';
 import {DeployPermit2} from 'lib/permit2/test/utils/DeployPermit2.sol';
-import {EIP712Hash} from 'src/position-manager/libraries/EIP712Hash.sol';
+import {EIP712Types} from 'tests/mocks/EIP712Types.sol';
 
 contract SignatureGatewayPermit2BaseTest is SignatureGatewayBaseTest, DeployPermit2 {
-  bytes32 internal constant _TOKEN_PERMISSIONS_TYPEHASH =
-    keccak256('TokenPermissions(address token,uint256 amount)');
-
-  bytes32 internal constant _FULL_SUPPLY_WITNESS_TYPEHASH =
-    keccak256(
-      'PermitWitnessTransferFrom(TokenPermissions permitted,address spender,uint256 nonce,uint256 deadline,Supply witness)Supply(address spoke,uint256 reserveId,uint256 amount,address onBehalfOf,uint256 nonce,uint256 deadline)TokenPermissions(address token,uint256 amount)'
-    );
-
-  bytes32 internal constant _FULL_REPAY_WITNESS_TYPEHASH =
-    keccak256(
-      'PermitWitnessTransferFrom(TokenPermissions permitted,address spender,uint256 nonce,uint256 deadline,Repay witness)Repay(address spoke,uint256 reserveId,uint256 amount,address onBehalfOf,uint256 nonce,uint256 deadline)TokenPermissions(address token,uint256 amount)'
-    );
-
   bytes32 internal PERMIT2_DOMAIN_SEPARATOR;
 
   function setUp() public virtual override {
@@ -49,7 +36,7 @@ contract SignatureGatewayPermit2BaseTest is SignatureGatewayBaseTest, DeployPerm
     internal
     returns (
       ISignatureTransfer.PermitTransferFrom memory permit,
-      ISignatureGateway.Supply memory params
+      ISignatureGateway.SupplyAction memory params
     )
   {
     uint256 reserveId = _randomReserveId(spoke);
@@ -63,13 +50,15 @@ contract SignatureGatewayPermit2BaseTest is SignatureGatewayBaseTest, DeployPerm
       deadline: deadline
     });
 
-    params = ISignatureGateway.Supply({
-      spoke: address(spoke),
-      reserveId: reserveId,
-      amount: amount,
+    params = ISignatureGateway.SupplyAction({
       onBehalfOf: who,
       nonce: nonce,
-      deadline: deadline
+      deadline: deadline,
+      params: ISignatureGateway.SupplyParams({
+        spoke: address(spoke),
+        reserveId: reserveId,
+        amount: amount
+      })
     });
   }
 
@@ -81,7 +70,7 @@ contract SignatureGatewayPermit2BaseTest is SignatureGatewayBaseTest, DeployPerm
     internal
     returns (
       ISignatureTransfer.PermitTransferFrom memory permit,
-      ISignatureGateway.Repay memory params
+      ISignatureGateway.RepayAction memory params
     )
   {
     uint256 reserveId = _randomReserveId(spoke);
@@ -95,70 +84,102 @@ contract SignatureGatewayPermit2BaseTest is SignatureGatewayBaseTest, DeployPerm
       deadline: deadline
     });
 
-    params = ISignatureGateway.Repay({
-      spoke: address(spoke),
-      reserveId: reserveId,
-      amount: amount,
+    params = ISignatureGateway.RepayAction({
       onBehalfOf: who,
       nonce: nonce,
-      deadline: deadline
+      deadline: deadline,
+      params: ISignatureGateway.RepayParams({
+        spoke: address(spoke),
+        reserveId: reserveId,
+        amount: amount
+      })
     });
   }
 
   function _getPermit2SupplySignature(
     ISignatureTransfer.PermitTransferFrom memory permit,
-    ISignatureGateway.Supply memory params,
+    ISignatureGateway.SupplyAction memory action,
     uint256 privateKey
   ) internal view returns (bytes memory) {
-    bytes32 witness = _getSupplyWitnessHash(params);
-    return _getPermit2WitnessSignature(permit, witness, _FULL_SUPPLY_WITNESS_TYPEHASH, privateKey);
+    return _getPermit2SupplySignatureForSpender(permit, action, privateKey, address(gateway));
+  }
+
+  function _getPermit2SupplySignatureForSpender(
+    ISignatureTransfer.PermitTransferFrom memory permit,
+    ISignatureGateway.SupplyAction memory action,
+    uint256 privateKey,
+    address spender
+  ) internal view returns (bytes memory) {
+    EIP712Types.PermitWitnessTransferFromSupplyAction memory permitWitness = EIP712Types
+      .PermitWitnessTransferFromSupplyAction({
+        permitted: EIP712Types.TokenPermissions({
+          token: permit.permitted.token,
+          amount: permit.permitted.amount
+        }),
+        spender: spender,
+        nonce: permit.nonce,
+        deadline: permit.deadline,
+        witness: EIP712Types.SupplyAction({
+          onBehalfOf: action.onBehalfOf,
+          nonce: action.nonce,
+          deadline: action.deadline,
+          params: EIP712Types.SupplyParams({
+            spoke: action.params.spoke,
+            reserveId: action.params.reserveId,
+            amount: action.params.amount
+          })
+        })
+      });
+
+    bytes32 structHash = vm.eip712HashStruct(
+      'PermitWitnessTransferFromSupplyAction',
+      abi.encode(permitWitness)
+    );
+
+    bytes32 digest = keccak256(abi.encodePacked('\x19\x01', PERMIT2_DOMAIN_SEPARATOR, structHash));
+
+    (uint8 v, bytes32 r, bytes32 s) = vm.sign(privateKey, digest);
+    return abi.encodePacked(r, s, v);
   }
 
   function _getPermit2RepaySignature(
     ISignatureTransfer.PermitTransferFrom memory permit,
-    ISignatureGateway.Repay memory params,
+    ISignatureGateway.RepayAction memory action,
     uint256 privateKey
   ) internal view returns (bytes memory) {
-    bytes32 witness = _getRepayWitnessHash(params);
-    return _getPermit2WitnessSignature(permit, witness, _FULL_REPAY_WITNESS_TYPEHASH, privateKey);
+    return _getPermit2RepaySignatureForSpender(permit, action, privateKey, address(gateway));
   }
 
-  function _getPermit2WitnessSignature(
+  function _getPermit2RepaySignatureForSpender(
     ISignatureTransfer.PermitTransferFrom memory permit,
-    bytes32 witness,
-    bytes32 fullTypehash,
-    uint256 privateKey
-  ) internal view returns (bytes memory) {
-    return
-      _getPermit2WitnessSignatureForSpender(
-        permit,
-        witness,
-        fullTypehash,
-        privateKey,
-        address(gateway)
-      );
-  }
-
-  function _getPermit2WitnessSignatureForSpender(
-    ISignatureTransfer.PermitTransferFrom memory permit,
-    bytes32 witness,
-    bytes32 fullTypehash,
+    ISignatureGateway.RepayAction memory action,
     uint256 privateKey,
     address spender
   ) internal view returns (bytes memory) {
-    bytes32 tokenPermissionsHash = keccak256(
-      abi.encode(_TOKEN_PERMISSIONS_TYPEHASH, permit.permitted.token, permit.permitted.amount)
-    );
+    EIP712Types.PermitWitnessTransferFromRepayAction memory permitWitness = EIP712Types
+      .PermitWitnessTransferFromRepayAction({
+        permitted: EIP712Types.TokenPermissions({
+          token: permit.permitted.token,
+          amount: permit.permitted.amount
+        }),
+        spender: spender,
+        nonce: permit.nonce,
+        deadline: permit.deadline,
+        witness: EIP712Types.RepayAction({
+          onBehalfOf: action.onBehalfOf,
+          nonce: action.nonce,
+          deadline: action.deadline,
+          params: EIP712Types.RepayParams({
+            spoke: action.params.spoke,
+            reserveId: action.params.reserveId,
+            amount: action.params.amount
+          })
+        })
+      });
 
-    bytes32 structHash = keccak256(
-      abi.encode(
-        fullTypehash,
-        tokenPermissionsHash,
-        spender,
-        permit.nonce,
-        permit.deadline,
-        witness
-      )
+    bytes32 structHash = vm.eip712HashStruct(
+      'PermitWitnessTransferFromRepayAction',
+      abi.encode(permitWitness)
     );
 
     bytes32 digest = keccak256(abi.encodePacked('\x19\x01', PERMIT2_DOMAIN_SEPARATOR, structHash));
@@ -168,37 +189,15 @@ contract SignatureGatewayPermit2BaseTest is SignatureGatewayBaseTest, DeployPerm
   }
 
   function _getSupplyWitnessHash(
-    ISignatureGateway.Supply memory params
+    ISignatureGateway.SupplyAction memory action
   ) internal pure returns (bytes32) {
-    return
-      keccak256(
-        abi.encode(
-          EIP712Hash.SUPPLY_TYPEHASH,
-          params.spoke,
-          params.reserveId,
-          params.amount,
-          params.onBehalfOf,
-          params.nonce,
-          params.deadline
-        )
-      );
+    return vm.eip712HashStruct('SupplyAction', abi.encode(action));
   }
 
   function _getRepayWitnessHash(
-    ISignatureGateway.Repay memory params
+    ISignatureGateway.RepayAction memory action
   ) internal pure returns (bytes32) {
-    return
-      keccak256(
-        abi.encode(
-          EIP712Hash.REPAY_TYPEHASH,
-          params.spoke,
-          params.reserveId,
-          params.amount,
-          params.onBehalfOf,
-          params.nonce,
-          params.deadline
-        )
-      );
+    return vm.eip712HashStruct('RepayAction', abi.encode(action));
   }
 
   function _approvePermit2(ISpoke spoke, uint256 reserveId, address who) internal {

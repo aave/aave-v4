@@ -20,6 +20,15 @@ interface IGatewayBase is IRescuable {
   /// @notice Thrown when the specified spoke is not registered.
   error SpokeNotRegistered();
 
+  /// @notice Thrown when array lengths do not match.
+  error LengthMismatch();
+
+  /// @notice Thrown when the batch size is invalid.
+  error InvalidBatchSize();
+
+  /// @notice Thrown when the action type is invalid.
+  error InvalidActionType();
+
   /// @notice Allows contract to renounce its position manager role for `user`.
   /// @dev Only authorized caller to invoke this method.
   /// @param spoke The address of the registered `spoke`.

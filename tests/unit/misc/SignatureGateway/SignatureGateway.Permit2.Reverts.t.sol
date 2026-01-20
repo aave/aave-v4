@@ -15,14 +15,14 @@ contract SignatureGatewayPermit2RevertsTest is SignatureGatewayPermit2BaseTest {
   function test_supplyWithPermit2_revertsWith_InvalidSigner() public {
     (
       ISignatureTransfer.PermitTransferFrom memory permit,
-      ISignatureGateway.Supply memory p
+      ISignatureGateway.SupplyAction memory p
     ) = _permit2SupplyData(spoke1, alice, _warpBeforeRandomDeadline());
 
     (, uint256 bobPk) = makeAddrAndKey('bob');
     bytes memory signature = _getPermit2SupplySignature(permit, p, bobPk);
 
-    _approvePermit2(spoke1, p.reserveId, alice);
-    deal(permit.permitted.token, alice, p.amount);
+    _approvePermit2(spoke1, p.params.reserveId, alice);
+    deal(permit.permitted.token, alice, p.params.amount);
 
     vm.expectRevert(InvalidSigner.selector);
     vm.prank(vm.randomAddress());
@@ -45,19 +45,21 @@ contract SignatureGatewayPermit2RevertsTest is SignatureGatewayPermit2BaseTest {
       deadline: expiredDeadline // Permit2 deadline is expired
     });
 
-    ISignatureGateway.Supply memory p = ISignatureGateway.Supply({
-      spoke: address(spoke1),
-      reserveId: reserveId,
-      amount: amount,
+    ISignatureGateway.SupplyAction memory p = ISignatureGateway.SupplyAction({
       onBehalfOf: alice,
       nonce: nonce,
-      deadline: validDeadline // Gateway deadline is valid
+      deadline: validDeadline, // Gateway deadline is valid
+      params: ISignatureGateway.SupplyParams({
+        spoke: address(spoke1),
+        reserveId: reserveId,
+        amount: amount
+      })
     });
 
     bytes memory signature = _getPermit2SupplySignature(permit, p, alicePk);
 
-    _approvePermit2(spoke1, p.reserveId, alice);
-    deal(permit.permitted.token, alice, p.amount);
+    _approvePermit2(spoke1, p.params.reserveId, alice);
+    deal(permit.permitted.token, alice, p.params.amount);
 
     vm.expectRevert(abi.encodeWithSelector(SignatureExpired.selector, permit.deadline));
     vm.prank(vm.randomAddress());
@@ -66,20 +68,19 @@ contract SignatureGatewayPermit2RevertsTest is SignatureGatewayPermit2BaseTest {
 
   function test_supplyWithPermit2_revertsWith_SpokeNotRegistered() public {
     address unregisteredSpoke = vm.randomAddress();
+    uint256 deadline = _warpBeforeRandomDeadline();
 
     ISignatureTransfer.PermitTransferFrom memory permit = ISignatureTransfer.PermitTransferFrom({
       permitted: ISignatureTransfer.TokenPermissions({token: address(0), amount: 1e18}),
       nonce: _randomUnusedPermit2Nonce(alice),
-      deadline: _warpBeforeRandomDeadline()
+      deadline: deadline
     });
 
-    ISignatureGateway.Supply memory p = ISignatureGateway.Supply({
-      spoke: unregisteredSpoke,
-      reserveId: 0,
-      amount: 1e18,
+    ISignatureGateway.SupplyAction memory p = ISignatureGateway.SupplyAction({
       onBehalfOf: alice,
       nonce: permit.nonce,
-      deadline: permit.deadline
+      deadline: deadline,
+      params: ISignatureGateway.SupplyParams({spoke: unregisteredSpoke, reserveId: 0, amount: 1e18})
     });
 
     bytes memory signature = _getPermit2SupplySignature(permit, p, alicePk);
@@ -110,19 +111,21 @@ contract SignatureGatewayPermit2RevertsTest is SignatureGatewayPermit2BaseTest {
       deadline: deadline
     });
 
-    ISignatureGateway.Repay memory p = ISignatureGateway.Repay({
-      spoke: address(spoke1),
-      reserveId: reserveId,
-      amount: borrowAmount,
+    ISignatureGateway.RepayAction memory p = ISignatureGateway.RepayAction({
       onBehalfOf: alice,
       nonce: nonce,
-      deadline: deadline
+      deadline: deadline,
+      params: ISignatureGateway.RepayParams({
+        spoke: address(spoke1),
+        reserveId: reserveId,
+        amount: borrowAmount
+      })
     });
 
     (, uint256 bobPk) = makeAddrAndKey('bob');
     bytes memory signature = _getPermit2RepaySignature(permit, p, bobPk);
 
-    _approvePermit2(spoke1, p.reserveId, alice);
+    _approvePermit2(spoke1, p.params.reserveId, alice);
 
     vm.expectRevert(InvalidSigner.selector);
     vm.prank(vm.randomAddress());
@@ -150,18 +153,20 @@ contract SignatureGatewayPermit2RevertsTest is SignatureGatewayPermit2BaseTest {
       deadline: expiredDeadline // Permit2 deadline is expired
     });
 
-    ISignatureGateway.Repay memory p = ISignatureGateway.Repay({
-      spoke: address(spoke1),
-      reserveId: reserveId,
-      amount: borrowAmount,
+    ISignatureGateway.RepayAction memory p = ISignatureGateway.RepayAction({
       onBehalfOf: alice,
       nonce: nonce,
-      deadline: validDeadline // Gateway deadline is valid
+      deadline: validDeadline, // Gateway deadline is valid
+      params: ISignatureGateway.RepayParams({
+        spoke: address(spoke1),
+        reserveId: reserveId,
+        amount: borrowAmount
+      })
     });
 
     bytes memory signature = _getPermit2RepaySignature(permit, p, alicePk);
 
-    _approvePermit2(spoke1, p.reserveId, alice);
+    _approvePermit2(spoke1, p.params.reserveId, alice);
 
     vm.expectRevert(abi.encodeWithSelector(SignatureExpired.selector, permit.deadline));
     vm.prank(vm.randomAddress());
@@ -170,20 +175,19 @@ contract SignatureGatewayPermit2RevertsTest is SignatureGatewayPermit2BaseTest {
 
   function test_repayWithPermit2_revertsWith_SpokeNotRegistered() public {
     address unregisteredSpoke = vm.randomAddress();
+    uint256 deadline = _warpBeforeRandomDeadline();
 
     ISignatureTransfer.PermitTransferFrom memory permit = ISignatureTransfer.PermitTransferFrom({
       permitted: ISignatureTransfer.TokenPermissions({token: address(0), amount: 1e18}),
       nonce: _randomUnusedPermit2Nonce(alice),
-      deadline: _warpBeforeRandomDeadline()
+      deadline: deadline
     });
 
-    ISignatureGateway.Repay memory p = ISignatureGateway.Repay({
-      spoke: unregisteredSpoke,
-      reserveId: 0,
-      amount: 1e18,
+    ISignatureGateway.RepayAction memory p = ISignatureGateway.RepayAction({
       onBehalfOf: alice,
       nonce: permit.nonce,
-      deadline: permit.deadline
+      deadline: deadline,
+      params: ISignatureGateway.RepayParams({spoke: unregisteredSpoke, reserveId: 0, amount: 1e18})
     });
 
     bytes memory signature = _getPermit2RepaySignature(permit, p, alicePk);
@@ -204,7 +208,7 @@ contract SignatureGatewayPermit2RevertsTest is SignatureGatewayPermit2BaseTest {
 
     (
       ISignatureTransfer.PermitTransferFrom memory permit,
-      ISignatureGateway.Supply memory p
+      ISignatureGateway.SupplyAction memory p
     ) = _permit2SupplyData(spoke1, alice, deadline);
 
     // Set permit deadline to far future so Permit2 won't reject it
@@ -212,8 +216,8 @@ contract SignatureGatewayPermit2RevertsTest is SignatureGatewayPermit2BaseTest {
 
     bytes memory signature = _getPermit2SupplySignature(permit, p, alicePk);
 
-    _approvePermit2(spoke1, p.reserveId, alice);
-    deal(permit.permitted.token, alice, p.amount);
+    _approvePermit2(spoke1, p.params.reserveId, alice);
+    deal(permit.permitted.token, alice, p.params.amount);
 
     vm.expectRevert(IIntentConsumer.InvalidSignature.selector);
     vm.prank(vm.randomAddress());
@@ -241,18 +245,20 @@ contract SignatureGatewayPermit2RevertsTest is SignatureGatewayPermit2BaseTest {
       deadline: type(uint256).max // Set permit deadline to far future
     });
 
-    ISignatureGateway.Repay memory p = ISignatureGateway.Repay({
-      spoke: address(spoke1),
-      reserveId: reserveId,
-      amount: borrowAmount,
+    ISignatureGateway.RepayAction memory p = ISignatureGateway.RepayAction({
       onBehalfOf: alice,
       nonce: nonce,
-      deadline: deadline // Gateway deadline is expired
+      deadline: deadline, // Gateway deadline is expired
+      params: ISignatureGateway.RepayParams({
+        spoke: address(spoke1),
+        reserveId: reserveId,
+        amount: borrowAmount
+      })
     });
 
     bytes memory signature = _getPermit2RepaySignature(permit, p, alicePk);
 
-    _approvePermit2(spoke1, p.reserveId, alice);
+    _approvePermit2(spoke1, p.params.reserveId, alice);
 
     vm.expectRevert(IIntentConsumer.InvalidSignature.selector);
     vm.prank(vm.randomAddress());
@@ -276,19 +282,21 @@ contract SignatureGatewayPermit2RevertsTest is SignatureGatewayPermit2BaseTest {
       deadline: deadline
     });
 
-    ISignatureGateway.Supply memory p = ISignatureGateway.Supply({
-      spoke: address(spoke1),
-      reserveId: reserveId,
-      amount: amount,
+    ISignatureGateway.SupplyAction memory p = ISignatureGateway.SupplyAction({
       onBehalfOf: alice,
       nonce: _getRandomInvalidNonceAtKey(gateway, alice, nonceKey),
-      deadline: deadline
+      deadline: deadline,
+      params: ISignatureGateway.SupplyParams({
+        spoke: address(spoke1),
+        reserveId: reserveId,
+        amount: amount
+      })
     });
 
     bytes memory signature = _getPermit2SupplySignature(permit, p, alicePk);
 
-    _approvePermit2(spoke1, p.reserveId, alice);
-    deal(permit.permitted.token, alice, p.amount);
+    _approvePermit2(spoke1, p.params.reserveId, alice);
+    deal(permit.permitted.token, alice, p.params.amount);
 
     vm.expectRevert(
       abi.encodeWithSelector(INoncesKeyed.InvalidAccountNonce.selector, alice, currentNonce)
@@ -317,18 +325,20 @@ contract SignatureGatewayPermit2RevertsTest is SignatureGatewayPermit2BaseTest {
       deadline: deadline
     });
 
-    ISignatureGateway.Repay memory p = ISignatureGateway.Repay({
-      spoke: address(spoke1),
-      reserveId: reserveId,
-      amount: borrowAmount,
+    ISignatureGateway.RepayAction memory p = ISignatureGateway.RepayAction({
       onBehalfOf: alice,
       nonce: _getRandomInvalidNonceAtKey(gateway, alice, nonceKey),
-      deadline: deadline
+      deadline: deadline,
+      params: ISignatureGateway.RepayParams({
+        spoke: address(spoke1),
+        reserveId: reserveId,
+        amount: borrowAmount
+      })
     });
 
     bytes memory signature = _getPermit2RepaySignature(permit, p, alicePk);
 
-    _approvePermit2(spoke1, p.reserveId, alice);
+    _approvePermit2(spoke1, p.params.reserveId, alice);
 
     vm.expectRevert(
       abi.encodeWithSelector(INoncesKeyed.InvalidAccountNonce.selector, alice, currentNonce)
@@ -344,14 +354,14 @@ contract SignatureGatewayPermit2RevertsTest is SignatureGatewayPermit2BaseTest {
   function test_supplyWithPermit2_cannotBeFrontrun_signatureBoundToGatewaySpender() public {
     (
       ISignatureTransfer.PermitTransferFrom memory permit,
-      ISignatureGateway.Supply memory p
+      ISignatureGateway.SupplyAction memory p
     ) = _permit2SupplyData(spoke1, alice, _warpBeforeRandomDeadline());
 
     // Alice signs for gateway as spender
     bytes memory signature = _getPermit2SupplySignature(permit, p, alicePk);
 
-    _approvePermit2(spoke1, p.reserveId, alice);
-    deal(permit.permitted.token, alice, p.amount);
+    _approvePermit2(spoke1, p.params.reserveId, alice);
+    deal(permit.permitted.token, alice, p.params.amount);
 
     // Cache PERMIT2 address before prank (prank only applies to next external call)
     ISignatureTransfer permit2 = ISignatureTransfer(gateway.PERMIT2());
@@ -363,7 +373,7 @@ contract SignatureGatewayPermit2RevertsTest is SignatureGatewayPermit2BaseTest {
     vm.prank(attacker);
     permit2.permitWitnessTransferFrom(
       permit,
-      ISignatureTransfer.SignatureTransferDetails({to: attacker, requestedAmount: p.amount}),
+      ISignatureTransfer.SignatureTransferDetails({to: attacker, requestedAmount: p.params.amount}),
       alice,
       _getSupplyWitnessHash(p),
       'Supply witness)Supply(address spoke,uint256 reserveId,uint256 amount,address onBehalfOf,uint256 nonce,uint256 deadline)TokenPermissions(address token,uint256 amount)',
@@ -390,19 +400,21 @@ contract SignatureGatewayPermit2RevertsTest is SignatureGatewayPermit2BaseTest {
       deadline: deadline
     });
 
-    ISignatureGateway.Repay memory p = ISignatureGateway.Repay({
-      spoke: address(spoke1),
-      reserveId: reserveId,
-      amount: borrowAmount,
+    ISignatureGateway.RepayAction memory p = ISignatureGateway.RepayAction({
       onBehalfOf: alice,
       nonce: nonce,
-      deadline: deadline
+      deadline: deadline,
+      params: ISignatureGateway.RepayParams({
+        spoke: address(spoke1),
+        reserveId: reserveId,
+        amount: borrowAmount
+      })
     });
 
     // Alice signs for gateway as spender
     bytes memory signature = _getPermit2RepaySignature(permit, p, alicePk);
 
-    _approvePermit2(spoke1, p.reserveId, alice);
+    _approvePermit2(spoke1, p.params.reserveId, alice);
 
     // Cache PERMIT2 address before prank (prank only applies to next external call)
     ISignatureTransfer permit2 = ISignatureTransfer(gateway.PERMIT2());
@@ -424,21 +436,20 @@ contract SignatureGatewayPermit2RevertsTest is SignatureGatewayPermit2BaseTest {
   function test_supplyWithPermit2_revertsWith_InvalidSigner_whenSignedForDifferentSpender() public {
     (
       ISignatureTransfer.PermitTransferFrom memory permit,
-      ISignatureGateway.Supply memory p
+      ISignatureGateway.SupplyAction memory p
     ) = _permit2SupplyData(spoke1, alice, _warpBeforeRandomDeadline());
 
     // Alice signs for a DIFFERENT spender (not the gateway)
     address differentSpender = vm.randomAddress();
-    bytes memory signature = _getPermit2WitnessSignatureForSpender(
+    bytes memory signature = _getPermit2SupplySignatureForSpender(
       permit,
-      _getSupplyWitnessHash(p),
-      _FULL_SUPPLY_WITNESS_TYPEHASH,
+      p,
       alicePk,
       differentSpender
     );
 
-    _approvePermit2(spoke1, p.reserveId, alice);
-    deal(permit.permitted.token, alice, p.amount);
+    _approvePermit2(spoke1, p.params.reserveId, alice);
+    deal(permit.permitted.token, alice, p.params.amount);
 
     // Gateway call should fail because signature was signed for different spender
     vm.expectRevert(InvalidSigner.selector);
@@ -465,26 +476,27 @@ contract SignatureGatewayPermit2RevertsTest is SignatureGatewayPermit2BaseTest {
       deadline: deadline
     });
 
-    ISignatureGateway.Repay memory p = ISignatureGateway.Repay({
-      spoke: address(spoke1),
-      reserveId: reserveId,
-      amount: borrowAmount,
+    ISignatureGateway.RepayAction memory p = ISignatureGateway.RepayAction({
       onBehalfOf: alice,
       nonce: nonce,
-      deadline: deadline
+      deadline: deadline,
+      params: ISignatureGateway.RepayParams({
+        spoke: address(spoke1),
+        reserveId: reserveId,
+        amount: borrowAmount
+      })
     });
 
     // Alice signs for a DIFFERENT spender (not the gateway)
     address differentSpender = vm.randomAddress();
-    bytes memory signature = _getPermit2WitnessSignatureForSpender(
+    bytes memory signature = _getPermit2RepaySignatureForSpender(
       permit,
-      _getRepayWitnessHash(p),
-      _FULL_REPAY_WITNESS_TYPEHASH,
+      p,
       alicePk,
       differentSpender
     );
 
-    _approvePermit2(spoke1, p.reserveId, alice);
+    _approvePermit2(spoke1, p.params.reserveId, alice);
 
     // Gateway call should fail because signature was signed for different spender
     vm.expectRevert(InvalidSigner.selector);

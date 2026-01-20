@@ -50,25 +50,29 @@ contract SignatureGatewayTest is SignatureGatewayBaseTest {
   }
 
   function test_supplyWithSig() public {
-    ISignatureGateway.Supply memory p = _supplyData(spoke1, alice, _warpBeforeRandomDeadline());
+    ISignatureGateway.SupplyAction memory p = _supplyAction(
+      spoke1,
+      alice,
+      _warpBeforeRandomDeadline()
+    );
     p.nonce = _burnRandomNoncesAtKey(gateway, p.onBehalfOf);
     bytes memory signature = _sign(alicePk, _getTypedDataHash(gateway, p));
-    Utils.approve(spoke1, p.reserveId, alice, address(gateway), p.amount);
+    Utils.approve(spoke1, p.params.reserveId, alice, address(gateway), p.params.amount);
 
-    uint256 shares = _hub(spoke1, p.reserveId).previewAddByAssets(
-      _spokeAssetId(spoke1, p.reserveId),
-      p.amount
+    uint256 shares = _hub(spoke1, p.params.reserveId).previewAddByAssets(
+      _spokeAssetId(spoke1, p.params.reserveId),
+      p.params.amount
     );
 
     TestReturnValues memory returnValues;
     vm.expectEmit(address(spoke1));
-    emit ISpokeBase.Supply(p.reserveId, address(gateway), alice, shares, p.amount);
+    emit ISpokeBase.Supply(p.params.reserveId, address(gateway), alice, shares, p.params.amount);
 
     vm.prank(vm.randomAddress());
     (returnValues.shares, returnValues.amount) = gateway.supplyWithSig(p, signature);
 
     assertEq(returnValues.shares, shares);
-    assertEq(returnValues.amount, p.amount);
+    assertEq(returnValues.amount, p.params.amount);
 
     _assertNonceIncrement(gateway, alice, p.nonce);
     _assertGatewayHasNoBalanceOrAllowance(spoke1, gateway, alice);
@@ -76,25 +80,29 @@ contract SignatureGatewayTest is SignatureGatewayBaseTest {
   }
 
   function test_withdrawWithSig() public {
-    ISignatureGateway.Withdraw memory p = _withdrawData(spoke1, alice, _warpBeforeRandomDeadline());
+    ISignatureGateway.WithdrawAction memory p = _withdrawAction(
+      spoke1,
+      alice,
+      _warpBeforeRandomDeadline()
+    );
     p.nonce = _burnRandomNoncesAtKey(gateway, p.onBehalfOf);
     bytes memory signature = _sign(alicePk, _getTypedDataHash(gateway, p));
 
-    Utils.supply(spoke1, p.reserveId, alice, p.amount + 1, alice);
+    Utils.supply(spoke1, p.params.reserveId, alice, p.params.amount + 1, alice);
 
-    uint256 shares = _hub(spoke1, p.reserveId).previewRemoveByAssets(
-      _spokeAssetId(spoke1, p.reserveId),
-      p.amount
+    uint256 shares = _hub(spoke1, p.params.reserveId).previewRemoveByAssets(
+      _spokeAssetId(spoke1, p.params.reserveId),
+      p.params.amount
     );
     TestReturnValues memory returnValues;
     vm.expectEmit(address(spoke1));
-    emit ISpokeBase.Withdraw(p.reserveId, address(gateway), alice, shares, p.amount);
+    emit ISpokeBase.Withdraw(p.params.reserveId, address(gateway), alice, shares, p.params.amount);
 
     vm.prank(vm.randomAddress());
     (returnValues.shares, returnValues.amount) = gateway.withdrawWithSig(p, signature);
 
     assertEq(returnValues.shares, shares);
-    assertEq(returnValues.amount, p.amount);
+    assertEq(returnValues.amount, p.params.amount);
 
     _assertNonceIncrement(gateway, alice, p.nonce);
     _assertGatewayHasNoBalanceOrAllowance(spoke1, gateway, alice);
@@ -102,26 +110,30 @@ contract SignatureGatewayTest is SignatureGatewayBaseTest {
   }
 
   function test_borrowWithSig() public {
-    ISignatureGateway.Borrow memory p = _borrowData(spoke1, alice, _warpBeforeRandomDeadline());
+    ISignatureGateway.BorrowAction memory p = _borrowAction(
+      spoke1,
+      alice,
+      _warpBeforeRandomDeadline()
+    );
     p.nonce = _burnRandomNoncesAtKey(gateway, p.onBehalfOf);
-    p.reserveId = _daiReserveId(spoke1);
-    p.amount = 1e18;
-    Utils.supplyCollateral(spoke1, p.reserveId, alice, p.amount * 2, alice);
+    p.params.reserveId = _daiReserveId(spoke1);
+    p.params.amount = 1e18;
+    Utils.supplyCollateral(spoke1, p.params.reserveId, alice, p.params.amount * 2, alice);
     bytes memory signature = _sign(alicePk, _getTypedDataHash(gateway, p));
 
-    uint256 shares = _hub(spoke1, p.reserveId).previewDrawByAssets(
-      _spokeAssetId(spoke1, p.reserveId),
-      p.amount
+    uint256 shares = _hub(spoke1, p.params.reserveId).previewDrawByAssets(
+      _spokeAssetId(spoke1, p.params.reserveId),
+      p.params.amount
     );
     TestReturnValues memory returnValues;
     vm.expectEmit(address(spoke1));
-    emit ISpokeBase.Borrow(p.reserveId, address(gateway), alice, shares, p.amount);
+    emit ISpokeBase.Borrow(p.params.reserveId, address(gateway), alice, shares, p.params.amount);
 
     vm.prank(vm.randomAddress());
     (returnValues.shares, returnValues.amount) = gateway.borrowWithSig(p, signature);
 
     assertEq(returnValues.shares, shares);
-    assertEq(returnValues.amount, p.amount);
+    assertEq(returnValues.amount, p.params.amount);
 
     _assertNonceIncrement(gateway, alice, p.nonce);
     _assertGatewayHasNoBalanceOrAllowance(spoke1, gateway, alice);
@@ -129,41 +141,45 @@ contract SignatureGatewayTest is SignatureGatewayBaseTest {
   }
 
   function test_repayWithSig() public {
-    ISignatureGateway.Repay memory p = _repayData(spoke1, alice, _warpBeforeRandomDeadline());
+    ISignatureGateway.RepayAction memory p = _repayAction(
+      spoke1,
+      alice,
+      _warpBeforeRandomDeadline()
+    );
     p.nonce = _burnRandomNoncesAtKey(gateway, p.onBehalfOf);
-    p.reserveId = _daiReserveId(spoke1);
-    p.amount = 1e18;
-    Utils.supplyCollateral(spoke1, p.reserveId, alice, p.amount * 2, alice);
-    Utils.borrow(spoke1, p.reserveId, alice, p.amount, alice);
-    Utils.approve(spoke1, p.reserveId, alice, address(gateway), p.amount);
+    p.params.reserveId = _daiReserveId(spoke1);
+    p.params.amount = 1e18;
+    Utils.supplyCollateral(spoke1, p.params.reserveId, alice, p.params.amount * 2, alice);
+    Utils.borrow(spoke1, p.params.reserveId, alice, p.params.amount, alice);
+    Utils.approve(spoke1, p.params.reserveId, alice, address(gateway), p.params.amount);
     bytes memory signature = _sign(alicePk, _getTypedDataHash(gateway, p));
 
     (uint256 baseRestored, uint256 premiumRestored) = _calculateExactRestoreAmount(
       spoke1,
-      p.reserveId,
+      p.params.reserveId,
       alice,
-      p.amount
+      p.params.amount
     );
-    uint256 shares = _hub(spoke1, p.reserveId).previewRestoreByAssets(
-      _spokeAssetId(spoke1, p.reserveId),
+    uint256 shares = _hub(spoke1, p.params.reserveId).previewRestoreByAssets(
+      _spokeAssetId(spoke1, p.params.reserveId),
       baseRestored
     );
     TestReturnValues memory returnValues;
     vm.expectEmit(address(spoke1));
     emit ISpokeBase.Repay(
-      p.reserveId,
+      p.params.reserveId,
       address(gateway),
       alice,
       shares,
       baseRestored + premiumRestored,
-      _getExpectedPremiumDelta(spoke1, alice, p.reserveId, premiumRestored)
+      _getExpectedPremiumDelta(spoke1, alice, p.params.reserveId, premiumRestored)
     );
 
     vm.prank(vm.randomAddress());
     (returnValues.shares, returnValues.amount) = gateway.repayWithSig(p, signature);
 
     assertEq(returnValues.shares, shares);
-    assertEq(returnValues.amount, p.amount);
+    assertEq(returnValues.amount, p.params.amount);
 
     _assertNonceIncrement(gateway, alice, p.nonce);
     _assertGatewayHasNoBalanceOrAllowance(spoke1, gateway, alice);
@@ -172,15 +188,24 @@ contract SignatureGatewayTest is SignatureGatewayBaseTest {
 
   function test_setUsingAsCollateralWithSig() public {
     uint256 deadline = _warpBeforeRandomDeadline();
-    ISignatureGateway.SetUsingAsCollateral memory p = _setAsCollateralData(spoke1, alice, deadline);
+    ISignatureGateway.SetUsingAsCollateralAction memory p = _setAsCollateralAction(
+      spoke1,
+      alice,
+      deadline
+    );
     p.nonce = _burnRandomNoncesAtKey(gateway, p.onBehalfOf);
-    p.reserveId = _daiReserveId(spoke1);
-    Utils.supplyCollateral(spoke1, p.reserveId, alice, 1e18, alice);
+    p.params.reserveId = _daiReserveId(spoke1);
+    Utils.supplyCollateral(spoke1, p.params.reserveId, alice, 1e18, alice);
     bytes memory signature = _sign(alicePk, _getTypedDataHash(gateway, p));
 
-    if (_isUsingAsCollateral(spoke1, p.reserveId, alice) != p.useAsCollateral) {
+    if (_isUsingAsCollateral(spoke1, p.params.reserveId, alice) != p.params.useAsCollateral) {
       vm.expectEmit(address(spoke1));
-      emit ISpoke.SetUsingAsCollateral(p.reserveId, address(gateway), alice, p.useAsCollateral);
+      emit ISpoke.SetUsingAsCollateral(
+        p.params.reserveId,
+        address(gateway),
+        alice,
+        p.params.useAsCollateral
+      );
     }
 
     vm.prank(vm.randomAddress());
@@ -193,7 +218,7 @@ contract SignatureGatewayTest is SignatureGatewayBaseTest {
 
   function test_updateUserRiskPremiumWithSig() public {
     uint256 deadline = _warpBeforeRandomDeadline();
-    ISignatureGateway.UpdateUserRiskPremium memory p = _updateRiskPremiumData(
+    ISignatureGateway.UpdateUserRiskPremiumAction memory p = _updateRiskPremiumAction(
       spoke1,
       alice,
       deadline
@@ -216,7 +241,7 @@ contract SignatureGatewayTest is SignatureGatewayBaseTest {
   }
 
   function test_updateUserDynamicConfigWithSig() public {
-    ISignatureGateway.UpdateUserDynamicConfig memory p = _updateDynamicConfigData(
+    ISignatureGateway.UpdateUserDynamicConfigAction memory p = _updateDynamicConfigAction(
       spoke1,
       alice,
       _warpBeforeRandomDeadline()

@@ -10,28 +10,28 @@ contract SignatureGatewayPermit2Test is SignatureGatewayPermit2BaseTest {
   function test_supplyWithPermit2(bytes32) public {
     (
       ISignatureTransfer.PermitTransferFrom memory permit,
-      ISignatureGateway.Supply memory p
+      ISignatureGateway.SupplyAction memory p
     ) = _permit2SupplyData(spoke1, alice, _warpBeforeRandomDeadline());
 
     bytes memory signature = _getPermit2SupplySignature(permit, p, alicePk);
 
-    _approvePermit2(spoke1, p.reserveId, alice);
-    deal(permit.permitted.token, alice, p.amount);
+    _approvePermit2(spoke1, p.params.reserveId, alice);
+    deal(permit.permitted.token, alice, p.params.amount);
 
-    uint256 shares = _hub(spoke1, p.reserveId).previewAddByAssets(
-      _spokeAssetId(spoke1, p.reserveId),
-      p.amount
+    uint256 shares = _hub(spoke1, p.params.reserveId).previewAddByAssets(
+      _spokeAssetId(spoke1, p.params.reserveId),
+      p.params.amount
     );
 
     TestReturnValues memory returnValues;
     vm.expectEmit(address(spoke1));
-    emit ISpokeBase.Supply(p.reserveId, address(gateway), alice, shares, p.amount);
+    emit ISpokeBase.Supply(p.params.reserveId, address(gateway), alice, shares, p.params.amount);
 
     vm.prank(vm.randomAddress());
     (returnValues.shares, returnValues.amount) = gateway.supplyWithPermit2(permit, p, signature);
 
     assertEq(returnValues.shares, shares);
-    assertEq(returnValues.amount, p.amount);
+    assertEq(returnValues.amount, p.params.amount);
 
     _assertNonceIncrement(gateway, alice, p.nonce);
     _assertPermit2NonceConsumed(alice, permit.nonce);
@@ -61,18 +61,20 @@ contract SignatureGatewayPermit2Test is SignatureGatewayPermit2BaseTest {
       deadline: deadline
     });
 
-    ISignatureGateway.Repay memory p = ISignatureGateway.Repay({
-      spoke: address(spoke1),
-      reserveId: reserveId,
-      amount: repayAmount,
+    ISignatureGateway.RepayAction memory p = ISignatureGateway.RepayAction({
       onBehalfOf: alice,
       nonce: intentNonce,
-      deadline: deadline
+      deadline: deadline,
+      params: ISignatureGateway.RepayParams({
+        spoke: address(spoke1),
+        reserveId: reserveId,
+        amount: repayAmount
+      })
     });
 
     bytes memory signature = _getPermit2RepaySignature(permit, p, alicePk);
 
-    _approvePermit2(spoke1, p.reserveId, alice);
+    _approvePermit2(spoke1, p.params.reserveId, alice);
 
     uint256 debtBefore = spoke1.getUserTotalDebt(reserveId, alice);
 
@@ -114,18 +116,20 @@ contract SignatureGatewayPermit2Test is SignatureGatewayPermit2BaseTest {
       deadline: deadline
     });
 
-    ISignatureGateway.Repay memory p = ISignatureGateway.Repay({
-      spoke: address(spoke1),
-      reserveId: reserveId,
-      amount: requestedRepayAmount,
+    ISignatureGateway.RepayAction memory p = ISignatureGateway.RepayAction({
       onBehalfOf: alice,
       nonce: intentNonce,
-      deadline: deadline
+      deadline: deadline,
+      params: ISignatureGateway.RepayParams({
+        spoke: address(spoke1),
+        reserveId: reserveId,
+        amount: requestedRepayAmount
+      })
     });
 
     bytes memory signature = _getPermit2RepaySignature(permit, p, alicePk);
 
-    _approvePermit2(spoke1, p.reserveId, alice);
+    _approvePermit2(spoke1, p.params.reserveId, alice);
 
     vm.prank(vm.randomAddress());
     (, uint256 amount) = gateway.repayWithPermit2(permit, p, signature);

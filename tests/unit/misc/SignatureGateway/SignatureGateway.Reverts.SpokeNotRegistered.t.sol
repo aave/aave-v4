@@ -21,7 +21,7 @@ contract SignatureGateway_SpokeNotRegistered_Test is SignatureGatewayBaseTest {
   }
 
   function test_supplyWithSig_revertsWith_SpokeNotRegistered(
-    ISignatureGateway.Supply memory p
+    ISignatureGateway.SupplyAction memory p
   ) public {
     bytes memory signature = vm.randomBytes(32);
 
@@ -31,7 +31,7 @@ contract SignatureGateway_SpokeNotRegistered_Test is SignatureGatewayBaseTest {
   }
 
   function test_withdrawWithSig_revertsWith_SpokeNotRegistered(
-    ISignatureGateway.Withdraw memory p
+    ISignatureGateway.WithdrawAction memory p
   ) public {
     bytes memory signature = vm.randomBytes(32);
 
@@ -41,7 +41,7 @@ contract SignatureGateway_SpokeNotRegistered_Test is SignatureGatewayBaseTest {
   }
 
   function test_borrowWithSig_revertsWith_SpokeNotRegistered(
-    ISignatureGateway.Borrow memory p
+    ISignatureGateway.BorrowAction memory p
   ) public {
     bytes memory signature = vm.randomBytes(32);
 
@@ -51,7 +51,7 @@ contract SignatureGateway_SpokeNotRegistered_Test is SignatureGatewayBaseTest {
   }
 
   function test_repayWithSig_revertsWith_SpokeNotRegistered(
-    ISignatureGateway.Repay memory p
+    ISignatureGateway.RepayAction memory p
   ) public {
     bytes memory signature = vm.randomBytes(32);
 
@@ -61,7 +61,7 @@ contract SignatureGateway_SpokeNotRegistered_Test is SignatureGatewayBaseTest {
   }
 
   function test_setUsingAsCollateralWithSig_revertsWith_SpokeNotRegistered(
-    ISignatureGateway.SetUsingAsCollateral memory p
+    ISignatureGateway.SetUsingAsCollateralAction memory p
   ) public {
     bytes memory signature = vm.randomBytes(32);
 
@@ -71,7 +71,7 @@ contract SignatureGateway_SpokeNotRegistered_Test is SignatureGatewayBaseTest {
   }
 
   function test_updateUserRiskPremiumWithSig_revertsWith_SpokeNotRegistered(
-    ISignatureGateway.UpdateUserRiskPremium memory p
+    ISignatureGateway.UpdateUserRiskPremiumAction memory p
   ) public {
     bytes memory signature = vm.randomBytes(32);
 
@@ -83,7 +83,7 @@ contract SignatureGateway_SpokeNotRegistered_Test is SignatureGatewayBaseTest {
   }
 
   function test_updateUserDynamicConfigWithSig_revertsWith_SpokeNotRegistered(
-    ISignatureGateway.UpdateUserDynamicConfig memory p
+    ISignatureGateway.UpdateUserDynamicConfigAction memory p
   ) public {
     bytes memory signature = vm.randomBytes(32);
 
