@@ -159,7 +159,7 @@ abstract contract Base is Test {
   address internal HUB_ADMIN = makeAddr('HUB_ADMIN');
   address internal SPOKE_ADMIN = makeAddr('SPOKE_ADMIN');
   address internal USER_POSITION_UPDATER = makeAddr('USER_POSITION_UPDATER');
-  address internal HUB_UMBRELLA = makeAddr('HUB_UMBRELLA');
+  address internal DEFICIT_ELIMINATOR = makeAddr('DEFICIT_ELIMINATOR');
   address internal TREASURY_ADMIN = makeAddr('TREASURY_ADMIN');
   address internal LIQUIDATOR = makeAddr('LIQUIDATOR');
   address internal POSITION_MANAGER = makeAddr('POSITION_MANAGER');
@@ -316,8 +316,8 @@ abstract contract Base is Test {
     manager.grantRole(Roles.USER_POSITION_UPDATER_ROLE, SPOKE_ADMIN, 0);
     manager.grantRole(Roles.USER_POSITION_UPDATER_ROLE, USER_POSITION_UPDATER, 0);
 
-    manager.grantRole(Roles.HUB_UMBRELLA_ROLE, HUB_ADMIN, 0);
-    manager.grantRole(Roles.HUB_UMBRELLA_ROLE, HUB_UMBRELLA, 0);
+    manager.grantRole(Roles.DEFICIT_ELIMINATOR_ROLE, HUB_ADMIN, 0);
+    manager.grantRole(Roles.DEFICIT_ELIMINATOR_ROLE, DEFICIT_ELIMINATOR, 0);
 
     // Grant responsibilities to roles
     {
@@ -353,7 +353,7 @@ abstract contract Base is Test {
     {
       bytes4[] memory selectors = new bytes4[](1);
       selectors[0] = IHub.eliminateDeficit.selector;
-      manager.setTargetFunctionRole(address(targetHub), selectors, Roles.HUB_UMBRELLA_ROLE);
+      manager.setTargetFunctionRole(address(targetHub), selectors, Roles.DEFICIT_ELIMINATOR_ROLE);
     }
     vm.stopPrank();
   }
@@ -1270,16 +1270,16 @@ abstract contract Base is Test {
     assertEq(hub.getSpokeConfig(assetId, spoke), spokeConfig);
   }
 
-  function grantUmbrellaRole(IHub hub, address target) internal pausePrank {
+  function grantDeficitEliminatorRole(IHub hub, address target) internal pausePrank {
     IAccessManager manager = IAccessManager(hub.authority());
     vm.prank(ADMIN);
-    manager.grantRole(Roles.HUB_UMBRELLA_ROLE, target, 0);
+    manager.grantRole(Roles.DEFICIT_ELIMINATOR_ROLE, target, 0);
   }
 
-  function revokeUmbrellaRole(IHub hub, address target) internal pausePrank {
+  function revokeDeficitEliminatorRole(IHub hub, address target) internal pausePrank {
     IAccessManager manager = IAccessManager(hub.authority());
     vm.prank(ADMIN);
-    manager.revokeRole(Roles.HUB_UMBRELLA_ROLE, target);
+    manager.revokeRole(Roles.DEFICIT_ELIMINATOR_ROLE, target);
   }
 
   function getUserInfo(

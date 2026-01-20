@@ -72,7 +72,7 @@ contract HubAccessTest is HubBase {
     vm.prank(HUB_ADMIN);
     hub1.updateSpokeConfig(assetAId, address(spoke1), spokeConfig);
 
-    // Only registered spoke with Hub Umbrella or Hub Admin role can eliminate deficit
+    // Only registered spoke with Deficit Eliminator or Hub Admin role can eliminate deficit
     vm.expectRevert(
       abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, address(this))
     );

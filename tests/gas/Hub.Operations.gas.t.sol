@@ -279,7 +279,7 @@ contract HubOperations_Gas_Tests is Base {
       type(uint256).max
     );
 
-    grantUmbrellaRole(hub1, address(spoke1));
+    grantDeficitEliminatorRole(hub1, address(spoke1));
 
     vm.prank(address(spoke1));
     hub1.reportDeficit(daiAssetId, drawnDebt, premiumDelta);
