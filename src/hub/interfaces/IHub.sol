@@ -73,7 +73,7 @@ interface IHub is IHubBase, IAccessManaged {
   /// @dev drawCap The maximum amount that can be drawn by a spoke, expressed in whole assets (not scaled by decimals). A value of `MAX_ALLOWED_SPOKE_CAP` indicates no cap.
   /// @dev riskPremiumThreshold The maximum ratio of premium to drawn shares a spoke can have, expressed in BPS. A value of `MAX_RISK_PREMIUM_THRESHOLD` indicates no threshold.
   /// @dev active True if the spoke is prevented from performing any actions.
-  /// @dev paused True if the spoke is prevented from performing actions that instantly update the liquidity.
+  /// @dev paused True if the spoke is prevented from performing any user-facing actions.
   /// @dev deficitRay The deficit reported by a spoke for a given asset, expressed in asset units and scaled by RAY.
   struct SpokeData {
     uint120 drawnShares;
