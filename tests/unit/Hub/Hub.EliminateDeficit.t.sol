@@ -38,6 +38,24 @@ contract HubEliminateDeficitTest is HubBase {
     hub1.eliminateDeficit(_assetId, 0, _coveredSpoke);
   }
 
+  function test_eliminateDeficit_revertsWith_SpokeNotActive_on_UnregisteredAsset() public {
+    _createDeficit(_assetId, _coveredSpoke, _deficitAmountRay);
+    assertEq(hub1.getSpokeDeficitRay(_assetId, _coveredSpoke), _deficitAmountRay);
+
+    uint256 invalidAssetId = vm.randomUint(hub1.getAssetCount() + 1, UINT256_MAX);
+
+    vm.expectRevert(IHub.SpokeNotActive.selector);
+    vm.prank(_callerSpoke);
+    hub1.eliminateDeficit(invalidAssetId, vm.randomUint(1, UINT256_MAX), vm.randomAddress());
+  }
+
+  function test_eliminateDeficit_revertsWith_InvalidAmount_on_UnregisteredCoveredSpoke() public {
+    // since amount is bounded to covered spoke deficit, deficit to be eliminated bounds to 0
+    vm.expectRevert(IHub.InvalidAmount.selector);
+    vm.prank(_callerSpoke);
+    hub1.eliminateDeficit(_assetId, vm.randomUint(1, UINT256_MAX), alice); // alice is not a spoke
+  }
+
   // Caller spoke does not have funds
   function test_eliminateDeficit_fuzz_revertsWith_ArithmeticUnderflow_CallerSpokeNoFunds(
     uint256

@@ -358,7 +358,7 @@ contract Hub is IHub, AccessManaged {
 
     asset.accrue();
     uint256 deficitRay = coveredSpoke.deficitRay;
-    _validateEliminateDeficit(callerSpoke, amount);
+    _validateEliminateDeficit(callerSpoke, deficitRay);
     uint256 deficitAmountRay = (amount < deficitRay.fromRayUp()) ? amount.toRay() : deficitRay;
 
     uint120 shares = asset.toAddedSharesUp(deficitAmountRay.fromRayUp()).toUint120();
@@ -891,9 +891,12 @@ contract Hub is IHub, AccessManaged {
     require(premiumAmountRay <= premiumRay, SurplusPremiumRayDeficitReported(premiumRay));
   }
 
-  function _validateEliminateDeficit(SpokeData storage spoke, uint256 amount) internal view {
-    require(spoke.active, SpokeNotActive());
-    require(amount > 0, InvalidAmount());
+  function _validateEliminateDeficit(
+    SpokeData storage callerSpoke,
+    uint256 deficitRay
+  ) internal view {
+    require(callerSpoke.active, SpokeNotActive());
+    require(deficitRay > 0, InvalidAmount());
   }
 
   function _validatePayFeeShares(SpokeData storage spoke, uint256 feeShares) internal view {
