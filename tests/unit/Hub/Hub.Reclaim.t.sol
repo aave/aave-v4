@@ -5,6 +5,8 @@ pragma solidity ^0.8.0;
 import 'tests/unit/Hub/HubBase.t.sol';
 
 contract HubReclaimTest is HubBase {
+  using SafeERC20 for *;
+
   function test_reclaim_revertsWith_AssetNotListed() public {
     uint256 assetId = _randomInvalidAssetId(hub1);
     vm.expectRevert(IHub.AssetNotListed.selector);
@@ -82,7 +84,7 @@ contract HubReclaimTest is HubBase {
 
     deal(address(tokenList.dai), reinvestmentController, sweepAmount + 1);
     vm.prank(reinvestmentController);
-    tokenList.dai.transfer(address(hub1), sweepAmount + 1);
+    tokenList.dai.safeTransfer(address(hub1), sweepAmount + 1);
 
     vm.prank(reinvestmentController);
     vm.expectRevert(stdError.arithmeticError);
@@ -120,7 +122,7 @@ contract HubReclaimTest is HubBase {
 
     deal(address(tokenList.dai), reinvestmentController, reclaimAmount);
     vm.prank(reinvestmentController);
-    tokenList.dai.transfer(address(hub1), reclaimAmount);
+    tokenList.dai.safeTransfer(address(hub1), reclaimAmount);
 
     vm.expectEmit(address(hub1));
     emit IHub.Reclaim(daiAssetId, reinvestmentController, reclaimAmount);
@@ -150,7 +152,7 @@ contract HubReclaimTest is HubBase {
 
     deal(address(tokenList.dai), reinvestmentController, sweepAmount);
     vm.prank(reinvestmentController);
-    tokenList.dai.transfer(address(hub1), sweepAmount);
+    tokenList.dai.safeTransfer(address(hub1), sweepAmount);
 
     vm.prank(reinvestmentController);
     hub1.reclaim(daiAssetId, sweepAmount);
@@ -186,7 +188,7 @@ contract HubReclaimTest is HubBase {
     uint256 firstReclaim = 100e18;
     deal(address(tokenList.dai), reinvestmentController, firstReclaim);
     vm.prank(reinvestmentController);
-    tokenList.dai.transfer(address(hub1), firstReclaim);
+    tokenList.dai.safeTransfer(address(hub1), firstReclaim);
 
     vm.prank(reinvestmentController);
     hub1.reclaim(daiAssetId, firstReclaim);
@@ -198,7 +200,7 @@ contract HubReclaimTest is HubBase {
     uint256 secondReclaim = 150e18;
     deal(address(tokenList.dai), reinvestmentController, secondReclaim);
     vm.prank(reinvestmentController);
-    tokenList.dai.transfer(address(hub1), secondReclaim);
+    tokenList.dai.safeTransfer(address(hub1), secondReclaim);
 
     vm.prank(reinvestmentController);
     hub1.reclaim(daiAssetId, secondReclaim);
