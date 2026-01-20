@@ -432,7 +432,7 @@ contract HubConfigTest is HubBase {
       'custom revert'
     );
 
-    vm.expectRevert('custom revert', address(newConfig.irStrategy));
+    vm.expectRevert('custom revert', newConfig.irStrategy);
     vm.prank(HUB_ADMIN);
     hub1.updateAssetConfig(assetId, newConfig, encodedIrData);
   }
