@@ -32,7 +32,6 @@ contract HubEliminateDeficitTest is HubBase {
 
   function test_eliminateDeficit_revertsWith_InvalidAmount_ZeroAmountWithDeficit() public {
     _createDeficit(_assetId, _coveredSpoke, _deficitAmountRay);
-    assertEq(hub1.getSpokeDeficitRay(_assetId, _coveredSpoke), _deficitAmountRay);
     vm.expectRevert(IHub.InvalidAmount.selector);
     vm.prank(_callerSpoke);
     hub1.eliminateDeficit(_assetId, 0, _coveredSpoke);
@@ -147,7 +146,11 @@ contract HubEliminateDeficitTest is HubBase {
       restoredPremiumRay: amountRay
     });
 
+    uint256 deficitBeforeRay = hub1.getSpokeDeficitRay(assetId, spoke);
+
     vm.prank(spoke);
     hub1.reportDeficit(assetId, 0, premiumDelta);
+
+    assertEq(hub1.getSpokeDeficitRay(assetId, spoke), deficitBeforeRay + amountRay);
   }
 }

@@ -893,10 +893,10 @@ contract Hub is IHub, AccessManaged {
 
   function _validateEliminateDeficit(
     SpokeData storage callerSpoke,
-    uint256 deficitCoveredRay
+    uint256 deficitAmountRay
   ) internal view {
     require(callerSpoke.active, SpokeNotActive());
-    require(deficitCoveredRay > 0, InvalidAmount());
+    require(deficitAmountRay > 0, InvalidAmount());
   }
 
   function _validatePayFeeShares(SpokeData storage spoke, uint256 feeShares) internal view {
