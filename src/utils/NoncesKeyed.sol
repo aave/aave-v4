@@ -8,7 +8,13 @@ import {INoncesKeyed} from 'src/interfaces/INoncesKeyed.sol';
 /// @author Modified from OpenZeppelin https://github.com/OpenZeppelin/openzeppelin-contracts/blob/v5.2.0/contracts/utils/NoncesKeyed.sol
 /// @dev Follows the https://eips.ethereum.org/EIPS/eip-4337#semi-abstracted-nonce-support[ERC-4337's semi-abstracted nonce system].
 contract NoncesKeyed is INoncesKeyed {
-  mapping(address owner => mapping(uint192 key => uint64 nonce)) private _nonces;
+  struct NoncesKeyedStorage {
+    mapping(address owner => mapping(uint192 key => uint64 nonce)) _nonces;
+  }
+
+  // keccak256(abi.encode(uint256(keccak256("aavev4.storage.NoncesKeyed")) - 1)) & ~bytes32(uint256(0xff))
+  bytes32 private constant NoncesKeyedStorageLocation =
+    0x03035f5b3b8ea087e3d53953506042c5986389d31bf9343ec3c70421b8aa7800;
 
   /// @inheritdoc INoncesKeyed
   function useNonce(uint192 key) external returns (uint256) {
@@ -17,7 +23,7 @@ contract NoncesKeyed is INoncesKeyed {
 
   /// @inheritdoc INoncesKeyed
   function nonces(address owner, uint192 key) external view returns (uint256) {
-    return _pack(key, _nonces[owner][key]);
+    return _pack(key, _getNoncesKeyedStorage()._nonces[owner][key]);
   }
 
   /// @notice Consumes the next unused nonce for an address and key.
@@ -28,7 +34,7 @@ contract NoncesKeyed is INoncesKeyed {
     // decremented or reset. This guarantees that the nonce never overflows.
     unchecked {
       // It is important to do x++ and not ++x here.
-      return _pack(key, _nonces[owner][key]++);
+      return _pack(key, _getNoncesKeyedStorage()._nonces[owner][key]++);
     }
   }
 
@@ -47,5 +53,11 @@ contract NoncesKeyed is INoncesKeyed {
   /// @dev Unpack a keyNonce into its key and nonce components.
   function _unpack(uint256 keyNonce) private pure returns (uint192 key, uint64 nonce) {
     return (uint192(keyNonce >> 64), uint64(keyNonce));
+  }
+
+  function _getNoncesKeyedStorage() private pure returns (NoncesKeyedStorage storage $) {
+    assembly {
+      $.slot := NoncesKeyedStorageLocation
+    }
   }
 }
