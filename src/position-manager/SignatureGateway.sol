@@ -11,6 +11,7 @@ import {IntentConsumer} from 'src/utils/IntentConsumer.sol';
 import {Multicall} from 'src/utils/Multicall.sol';
 import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 import {ISignatureGateway} from 'src/position-manager/interfaces/ISignatureGateway.sol';
+import {ISignatureTransfer} from 'lib/permit2/src/interfaces/ISignatureTransfer.sol';
 
 /// @title SignatureGateway
 /// @author Aave Labs
@@ -21,6 +22,14 @@ import {ISignatureGateway} from 'src/position-manager/interfaces/ISignatureGatew
 contract SignatureGateway is ISignatureGateway, GatewayBase, IntentConsumer, Multicall {
   using SafeERC20 for IERC20;
   using EIP712Hash for *;
+
+  /// @inheritdoc ISignatureGateway
+  string public constant SUPPLY_PERMIT2_WITNESS_TYPE_STRING =
+    'Supply witness)Supply(address spoke,uint256 reserveId,uint256 amount,address onBehalfOf,uint256 nonce,uint256 deadline)TokenPermissions(address token,uint256 amount)';
+
+  /// @inheritdoc ISignatureGateway
+  string public constant REPAY_PERMIT2_WITNESS_TYPE_STRING =
+    'Repay witness)Repay(address spoke,uint256 reserveId,uint256 amount,address onBehalfOf,uint256 nonce,uint256 deadline)TokenPermissions(address token,uint256 amount)';
 
   /// @inheritdoc ISignatureGateway
   bytes32 public constant SUPPLY_TYPEHASH = EIP712Hash.SUPPLY_TYPEHASH;
@@ -46,9 +55,16 @@ contract SignatureGateway is ISignatureGateway, GatewayBase, IntentConsumer, Mul
   bytes32 public constant UPDATE_USER_DYNAMIC_CONFIG_TYPEHASH =
     EIP712Hash.UPDATE_USER_DYNAMIC_CONFIG_TYPEHASH;
 
+  /// @inheritdoc ISignatureGateway
+  address public immutable PERMIT2;
+
   /// @dev Constructor.
   /// @param initialOwner_ The address of the initial owner.
-  constructor(address initialOwner_) GatewayBase(initialOwner_) {}
+  /// @param permit2_ The address of the Permit2 contract.
+  constructor(address initialOwner_, address permit2_) GatewayBase(initialOwner_) {
+    require(permit2_ != address(0), InvalidAddress());
+    PERMIT2 = permit2_;
+  }
 
   /// @inheritdoc ISignatureGateway
   function supplyWithSig(
@@ -251,6 +267,59 @@ contract SignatureGateway is ISignatureGateway, GatewayBase, IntentConsumer, Mul
         s: permitS
       })
     {} catch {}
+  }
+
+  /// @inheritdoc ISignatureGateway
+  function supplyWithPermit2(
+    ISignatureTransfer.PermitTransferFrom calldata permit,
+    Supply calldata params,
+    bytes calldata signature
+  ) external onlyRegisteredSpoke(params.spoke) returns (uint256, uint256) {
+    require(block.timestamp <= params.deadline, InvalidSignature());
+    _useCheckedNonce(params.onBehalfOf, params.nonce);
+
+    ISignatureTransfer(PERMIT2).permitWitnessTransferFrom(
+      permit,
+      ISignatureTransfer.SignatureTransferDetails(address(this), params.amount),
+      params.onBehalfOf,
+      params.hash(),
+      SUPPLY_PERMIT2_WITNESS_TYPE_STRING,
+      signature
+    );
+
+    address underlying = _getReserveUnderlying(params.spoke, params.reserveId);
+    IERC20(underlying).forceApprove(params.spoke, params.amount);
+
+    return ISpoke(params.spoke).supply(params.reserveId, params.amount, params.onBehalfOf);
+  }
+
+  /// @inheritdoc ISignatureGateway
+  function repayWithPermit2(
+    ISignatureTransfer.PermitTransferFrom calldata permit,
+    Repay calldata params,
+    bytes calldata signature
+  ) external onlyRegisteredSpoke(params.spoke) returns (uint256, uint256) {
+    require(block.timestamp <= params.deadline, InvalidSignature());
+    _useCheckedNonce(params.onBehalfOf, params.nonce);
+
+    uint256 repayAmount = MathUtils.min(
+      params.amount,
+      ISpoke(params.spoke).getUserTotalDebt(params.reserveId, params.onBehalfOf)
+    );
+
+    ISignatureTransfer(PERMIT2).permitWitnessTransferFrom(
+      permit,
+      ISignatureTransfer.SignatureTransferDetails(address(this), repayAmount),
+      params.onBehalfOf,
+      params.hash(),
+      REPAY_PERMIT2_WITNESS_TYPE_STRING,
+      signature
+    );
+
+    address underlying = _getReserveUnderlying(params.spoke, params.reserveId);
+    IERC20(underlying).forceApprove(params.spoke, repayAmount);
+
+    return ISpoke(params.spoke).repay(params.reserveId, repayAmount, params.onBehalfOf);
   }
 
   function _domainNameAndVersion() internal pure override returns (string memory, string memory) {

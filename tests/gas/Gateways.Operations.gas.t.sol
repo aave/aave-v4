@@ -4,6 +4,7 @@ pragma solidity ^0.8.0;
 
 import 'tests/Base.t.sol';
 import 'tests/unit/misc/SignatureGateway/SignatureGateway.Base.t.sol';
+import 'tests/unit/misc/SignatureGateway/SignatureGateway.Permit2.Base.t.sol';
 
 /// forge-config: default.isolate = true
 contract NativeTokenGateway_Gas_Tests is Base {
@@ -258,5 +259,89 @@ contract SignatureGateway_Gas_Tests is SignatureGatewayBaseTest {
       signature: signature
     });
     vm.snapshotGasLastCall(NAMESPACE, 'setSelfAsUserPositionManagerWithSig');
+  }
+}
+
+/// forge-config: default.isolate = true
+contract SignatureGatewayPermit2_Gas_Tests is SignatureGatewayPermit2BaseTest {
+  string internal NAMESPACE = 'SignatureGateway.Operations';
+
+  function setUp() public virtual override {
+    super.setUp();
+    vm.prank(alice);
+    gateway.useNonce(100);
+  }
+
+  function test_supplyWithPermit2() public {
+    uint256 reserveId = _wethReserveId(spoke1);
+    uint256 amount = 100e18;
+    uint256 deadline = vm.getBlockTimestamp() + 1 hours;
+    uint256 gatewayNonce = gateway.nonces(alice, 100);
+
+    ISignatureTransfer.PermitTransferFrom memory permit = ISignatureTransfer.PermitTransferFrom({
+      permitted: ISignatureTransfer.TokenPermissions({
+        token: address(_underlying(spoke1, reserveId)),
+        amount: amount
+      }),
+      nonce: 0,
+      deadline: deadline
+    });
+
+    ISignatureGateway.Supply memory p = ISignatureGateway.Supply({
+      spoke: address(spoke1),
+      reserveId: reserveId,
+      amount: amount,
+      onBehalfOf: alice,
+      nonce: gatewayNonce,
+      deadline: deadline
+    });
+
+    bytes memory signature = _getPermit2SupplySignature(permit, p, alicePk);
+
+    _approvePermit2(spoke1, reserveId, alice);
+    Utils.supply(spoke1, reserveId, alice, amount, alice);
+    deal(permit.permitted.token, alice, amount);
+
+    gateway.supplyWithPermit2(permit, p, signature);
+    vm.snapshotGasLastCall(NAMESPACE, 'supplyWithPermit2');
+  }
+
+  function test_repayWithPermit2() public {
+    uint256 reserveId = _wethReserveId(spoke1);
+    uint256 supplyAmount = 1000e18;
+    uint256 borrowAmount = 300e18;
+    uint256 repayAmount = 100e18;
+    uint256 deadline = vm.getBlockTimestamp() + 1 hours;
+
+    Utils.supplyCollateral(spoke1, reserveId, alice, supplyAmount, alice);
+    Utils.borrow(spoke1, reserveId, alice, borrowAmount, alice);
+    Utils.repay(spoke1, reserveId, alice, repayAmount, alice);
+
+    uint256 gatewayNonce = gateway.nonces(alice, 100);
+
+    ISignatureTransfer.PermitTransferFrom memory permit = ISignatureTransfer.PermitTransferFrom({
+      permitted: ISignatureTransfer.TokenPermissions({
+        token: address(_underlying(spoke1, reserveId)),
+        amount: repayAmount
+      }),
+      nonce: 1,
+      deadline: deadline
+    });
+
+    ISignatureGateway.Repay memory p = ISignatureGateway.Repay({
+      spoke: address(spoke1),
+      reserveId: reserveId,
+      amount: repayAmount,
+      onBehalfOf: alice,
+      nonce: gatewayNonce,
+      deadline: deadline
+    });
+
+    bytes memory signature = _getPermit2RepaySignature(permit, p, alicePk);
+
+    _approvePermit2(spoke1, reserveId, alice);
+
+    gateway.repayWithPermit2(permit, p, signature);
+    vm.snapshotGasLastCall(NAMESPACE, 'repayWithPermit2');
   }
 }

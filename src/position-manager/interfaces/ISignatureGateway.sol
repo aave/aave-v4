@@ -5,6 +5,7 @@ pragma solidity ^0.8.0;
 import {IMulticall} from 'src/interfaces/IMulticall.sol';
 import {IIntentConsumer} from 'src/interfaces/IIntentConsumer.sol';
 import {IGatewayBase} from 'src/position-manager/interfaces/IGatewayBase.sol';
+import {ISignatureTransfer} from 'lib/permit2/src/interfaces/ISignatureTransfer.sol';
 
 /// @title ISignatureGateway
 /// @author Aave Labs
@@ -229,6 +230,35 @@ interface ISignatureGateway is IGatewayBase, IIntentConsumer, IMulticall {
     bytes32 permitS
   ) external;
 
+  /// @notice Facilitates `supply` action using Permit2's permitWitnessTransferFrom.
+  /// @dev User must have approved Permit2 to spend their tokens.
+  /// @dev The Supply struct is used as the witness data in the Permit2 signature.
+  /// @param permit The Permit2 transfer data signed over by the user.
+  /// @param params The structured supply parameters (used as witness).
+  /// @param signature The Permit2 signature.
+  /// @return The amount of shares supplied.
+  /// @return The amount of assets supplied.
+  function supplyWithPermit2(
+    ISignatureTransfer.PermitTransferFrom calldata permit,
+    Supply calldata params,
+    bytes calldata signature
+  ) external returns (uint256, uint256);
+
+  /// @notice Facilitates `repay` action using Permit2's permitWitnessTransferFrom.
+  /// @dev User must have approved Permit2 to spend their tokens.
+  /// @dev The Repay struct is used as the witness data in the Permit2 signature.
+  /// @dev Providing an amount greater than the user's current debt indicates a request to repay the maximum possible amount.
+  /// @param permit The Permit2 transfer data signed over by the user.
+  /// @param params The structured repay parameters (used as witness).
+  /// @param signature The Permit2 signature.
+  /// @return The amount of shares repaid.
+  /// @return The amount of assets repaid.
+  function repayWithPermit2(
+    ISignatureTransfer.PermitTransferFrom calldata permit,
+    Repay calldata params,
+    bytes calldata signature
+  ) external returns (uint256, uint256);
+
   /// @notice Returns the type hash for the Supply intent.
   function SUPPLY_TYPEHASH() external view returns (bytes32);
 
@@ -249,4 +279,13 @@ interface ISignatureGateway is IGatewayBase, IIntentConsumer, IMulticall {
 
   /// @notice Returns the type hash for the UpdateUserDynamicConfig intent.
   function UPDATE_USER_DYNAMIC_CONFIG_TYPEHASH() external view returns (bytes32);
+
+  /// @notice Returns the EIP-712 witness type string for Supply used with Permit2.
+  function SUPPLY_PERMIT2_WITNESS_TYPE_STRING() external view returns (string memory);
+
+  /// @notice Returns the EIP-712 witness type string for Repay used with Permit2.
+  function REPAY_PERMIT2_WITNESS_TYPE_STRING() external view returns (string memory);
+
+  /// @notice Returns the canonical Permit2 contract address.
+  function PERMIT2() external view returns (address);
 }

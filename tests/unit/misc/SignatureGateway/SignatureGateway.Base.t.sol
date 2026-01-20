@@ -5,13 +5,15 @@ pragma solidity ^0.8.0;
 import 'tests/unit/Spoke/SpokeBase.t.sol';
 
 contract SignatureGatewayBaseTest is SpokeBase {
+  address internal constant CANONICAL_PERMIT2 = 0x000000000022D473030F116dDEE9F6B43aC78BA3;
+
   ISignatureGateway public gateway;
   uint256 public alicePk;
 
   function setUp() public virtual override {
     deployFixtures();
     initEnvironment();
-    gateway = ISignatureGateway(new SignatureGateway(ADMIN));
+    gateway = ISignatureGateway(new SignatureGateway(ADMIN, CANONICAL_PERMIT2));
     (alice, alicePk) = makeAddrAndKey('alice');
 
     vm.prank(address(ADMIN));

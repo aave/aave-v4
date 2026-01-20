@@ -7,16 +7,21 @@ import 'tests/unit/misc/SignatureGateway/SignatureGateway.Base.t.sol';
 contract SignatureGatewayConstantsTest is SignatureGatewayBaseTest {
   function test_constructor() public {
     vm.expectRevert();
-    new SignatureGateway(address(0));
+    new SignatureGateway(address(0), vm.randomAddress());
+
+    vm.expectRevert();
+    new SignatureGateway(vm.randomAddress(), address(0));
 
     assertEq(Ownable2Step(address(gateway)).owner(), ADMIN);
     assertEq(Ownable2Step(address(gateway)).pendingOwner(), address(0));
     assertEq(gateway.rescueGuardian(), ADMIN);
+    assertEq(gateway.PERMIT2(), CANONICAL_PERMIT2);
   }
 
   function test_eip712Domain() public {
     SignatureGateway instance = new SignatureGateway{salt: bytes32(vm.randomUint())}(
-      vm.randomAddress()
+      vm.randomAddress(),
+      CANONICAL_PERMIT2
     );
     (
       bytes1 fields,
@@ -39,7 +44,8 @@ contract SignatureGatewayConstantsTest is SignatureGatewayBaseTest {
 
   function test_DOMAIN_SEPARATOR() public {
     SignatureGateway instance = new SignatureGateway{salt: bytes32(vm.randomUint())}(
-      vm.randomAddress()
+      vm.randomAddress(),
+      CANONICAL_PERMIT2
     );
     bytes32 expectedDomainSeparator = keccak256(
       abi.encode(
