@@ -236,10 +236,11 @@ contract SignatureGateway_Gas_Tests is SignatureGatewayBaseTest {
   function test_setSelfAsUserPositionManagerWithSig() public {
     vm.prank(alice);
     spoke1.useNonce(nonceKey);
-    EIP712Types.SetUserPositionManager memory p = EIP712Types.SetUserPositionManager({
-      positionManager: address(gateway),
+    ISpoke.PositionManagerUpdate[] memory updates = new ISpoke.PositionManagerUpdate[](1);
+    updates[0] = ISpoke.PositionManagerUpdate(address(gateway), true);
+    ISpoke.SetUserPositionManagers memory p = ISpoke.SetUserPositionManagers({
       user: alice,
-      approve: true,
+      updates: updates,
       nonce: spoke1.nonces(alice, nonceKey), // note: this typed sig is forwarded to spoke
       deadline: _warpBeforeRandomDeadline()
     });
@@ -251,7 +252,7 @@ contract SignatureGateway_Gas_Tests is SignatureGatewayBaseTest {
     gateway.setSelfAsUserPositionManagerWithSig({
       spoke: address(spoke1),
       user: p.user,
-      approve: p.approve,
+      approve: p.updates[0].approve,
       nonce: p.nonce,
       deadline: p.deadline,
       signature: signature

@@ -39,7 +39,9 @@ library JsonBindings {
   Vm constant vm = Vm(address(uint160(uint256(keccak256('hevm cheat code')))));
 
   // prettier-ignore
-  string constant schema_SetUserPositionManager = "SetUserPositionManager(address positionManager,address user,bool approve,uint256 nonce,uint256 deadline)";
+  string constant schema_SetUserPositionManagers = "SetUserPositionManagers(address user,PositionManagerUpdate[] updates,uint256 nonce,uint256 deadline)PositionManagerUpdate(address positionManager,bool approve)";
+  // prettier-ignore
+  string constant schema_PositionManagerUpdate = "PositionManagerUpdate(address positionManager,bool approve)";
   // prettier-ignore
   string constant schema_Permit = "Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)";
   // prettier-ignore
@@ -58,49 +60,49 @@ library JsonBindings {
   string constant schema_UpdateUserDynamicConfig = "UpdateUserDynamicConfig(address spoke,address user,uint256 nonce,uint256 deadline)";
 
   function serialize(
-    EIP712Types.SetUserPositionManager memory value
+    EIP712Types.SetUserPositionManagers memory value
   ) internal pure returns (string memory) {
-    return vm.serializeJsonType(schema_SetUserPositionManager, abi.encode(value));
+    return vm.serializeJsonType(schema_SetUserPositionManagers, abi.encode(value));
   }
 
   function serialize(
-    EIP712Types.SetUserPositionManager memory value,
+    EIP712Types.SetUserPositionManagers memory value,
     string memory objectKey,
     string memory valueKey
   ) internal returns (string memory) {
     return
-      vm.serializeJsonType(objectKey, valueKey, schema_SetUserPositionManager, abi.encode(value));
+      vm.serializeJsonType(objectKey, valueKey, schema_SetUserPositionManagers, abi.encode(value));
   }
 
   function deserializeSetUserPositionManager(
     string memory json
-  ) public pure returns (EIP712Types.SetUserPositionManager memory) {
+  ) public pure returns (EIP712Types.SetUserPositionManagers memory) {
     return
       abi.decode(
-        vm.parseJsonType(json, schema_SetUserPositionManager),
-        (EIP712Types.SetUserPositionManager)
+        vm.parseJsonType(json, schema_SetUserPositionManagers),
+        (EIP712Types.SetUserPositionManagers)
       );
   }
 
   function deserializeSetUserPositionManager(
     string memory json,
     string memory path
-  ) public pure returns (EIP712Types.SetUserPositionManager memory) {
+  ) public pure returns (EIP712Types.SetUserPositionManagers memory) {
     return
       abi.decode(
-        vm.parseJsonType(json, path, schema_SetUserPositionManager),
-        (EIP712Types.SetUserPositionManager)
+        vm.parseJsonType(json, path, schema_SetUserPositionManagers),
+        (EIP712Types.SetUserPositionManagers)
       );
   }
 
   function deserializeSetUserPositionManagerArray(
     string memory json,
     string memory path
-  ) public pure returns (EIP712Types.SetUserPositionManager[] memory) {
+  ) public pure returns (EIP712Types.SetUserPositionManagers[] memory) {
     return
       abi.decode(
-        vm.parseJsonTypeArray(json, path, schema_SetUserPositionManager),
-        (EIP712Types.SetUserPositionManager[])
+        vm.parseJsonTypeArray(json, path, schema_SetUserPositionManagers),
+        (EIP712Types.SetUserPositionManagers[])
       );
   }
 
