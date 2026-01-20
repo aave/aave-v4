@@ -10,6 +10,7 @@ import {AccessManagedUpgradeable} from 'src/dependencies/openzeppelin-upgradeabl
 import {MathUtils} from 'src/libraries/math/MathUtils.sol';
 import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
 import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
+import {EIP712Hash} from 'src/spoke/libraries/EIP712Hash.sol';
 import {KeyValueList} from 'src/spoke/libraries/KeyValueList.sol';
 import {LiquidationLogic} from 'src/spoke/libraries/LiquidationLogic.sol';
 import {PositionStatusMap} from 'src/spoke/libraries/PositionStatusMap.sol';
@@ -37,6 +38,7 @@ abstract contract Spoke is
   using MathUtils for *;
   using PercentageMath for *;
   using WadRayMath for *;
+  using EIP712Hash for *;
   using KeyValueList for KeyValueList.List;
   using LiquidationLogic for *;
   using PositionStatusMap for *;
@@ -44,9 +46,8 @@ abstract contract Spoke is
   using UserPositionDebt for ISpoke.UserPosition;
 
   /// @inheritdoc ISpoke
-  bytes32 public constant SET_USER_POSITION_MANAGER_TYPEHASH =
-    // keccak256('SetUserPositionManager(address positionManager,address user,bool approve,uint256 nonce,uint256 deadline)')
-    0x758d23a3c07218b7ea0b4f7f63903c4e9d5cbde72d3bcfe3e9896639025a0214;
+  bytes32 public constant SET_USER_POSITION_MANAGERS_TYPEHASH =
+    EIP712Hash.SET_USER_POSITION_MANAGERS_TYPEHASH;
 
   /// @inheritdoc ISpoke
   address public immutable ORACLE;
@@ -452,31 +453,25 @@ abstract contract Spoke is
   }
 
   /// @inheritdoc ISpoke
-  function setUserPositionManagerWithSig(
-    address positionManager,
-    address user,
-    bool approve,
-    uint256 nonce,
-    uint256 deadline,
+  function setUserPositionManagersWithSig(
+    SetUserPositionManagers calldata params,
     bytes calldata signature
   ) external {
     _verifyAndConsumeIntent({
-      signer: user,
-      intentHash: keccak256(
-        abi.encode(
-          SET_USER_POSITION_MANAGER_TYPEHASH,
-          positionManager,
-          user,
-          approve,
-          nonce,
-          deadline
-        )
-      ),
-      nonce: nonce,
-      deadline: deadline,
+      signer: params.user,
+      intentHash: params.hash(),
+      nonce: params.nonce,
+      deadline: params.deadline,
       signature: signature
     });
-    _setUserPositionManager({positionManager: positionManager, user: user, approve: approve});
+
+    for (uint256 i = 0; i < params.updates.length; ++i) {
+      _setUserPositionManager({
+        positionManager: params.updates[i].positionManager,
+        user: params.user,
+        approve: params.updates[i].approve
+      });
+    }
   }
 
   /// @inheritdoc ISpoke
@@ -693,8 +688,6 @@ abstract contract Spoke is
 
   function _setUserPositionManager(address positionManager, address user, bool approve) internal {
     PositionManagerConfig storage config = _positionManager[positionManager];
-    // only allow approval when position manager is active for improved UX
-    require(!approve || config.active, InactivePositionManager());
     config.approval[user] = approve;
     emit SetUserPositionManager(user, positionManager, approve);
   }
