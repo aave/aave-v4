@@ -4,19 +4,20 @@ pragma solidity ^0.8.20;
 
 import {INoncesKeyed} from 'src/interfaces/INoncesKeyed.sol';
 
-/// @notice Provides tracking nonces for addresses. Supports key-ed nonces, where nonces will only increment for each key.
-/// @author Modified from OpenZeppelin https://github.com/OpenZeppelin/openzeppelin-contracts/blob/v5.2.0/contracts/utils/NoncesKeyed.sol
+/// @notice Provides tracking nonces for addresses. Supports keyed nonces, where nonces will only increment for each key.
+/// @author Aave Labs, modified from OpenZeppelin
+/// @dev Modified from OpenZeppelin https://github.com/OpenZeppelin/openzeppelin-contracts/blob/v5.2.0/contracts/utils/NoncesKeyed.sol
 /// @dev Follows the https://eips.ethereum.org/EIPS/eip-4337#semi-abstracted-nonce-support[ERC-4337's semi-abstracted nonce system].
 contract NoncesKeyed is INoncesKeyed {
-  /// @custom:storage-location erc7201:aaveV4.storage.NoncesKeyed
+  /// @custom:storage-location erc7201:aave-v4.storage.NoncesKeyed
   struct NoncesKeyedStorage {
     mapping(address owner => mapping(uint192 key => uint64 nonce)) _nonces;
   }
 
   /// @dev The storage slot for the NoncesKeyed storage struct.
   bytes32 private constant NAMESPACE_SLOT =
-    // keccak256(abi.encode(uint256(keccak256("aaveV4.storage.NoncesKeyed")) - 1)) & ~bytes32(uint256(0xff))
-    0x2b874476222a0679b83c59cab04594a8acca28c3b5e642121f957978e6a22200;
+    // keccak256(abi.encode(uint256(keccak256("aave-v4.storage.NoncesKeyed")) - 1)) & ~bytes32(uint256(0xff))
+    0x474d4a5585c1bae3dbeb574bb96408c7174aadd8ab635de4ab498e2723195f00;
 
   /// @inheritdoc INoncesKeyed
   function useNonce(uint192 key) external returns (uint256) {
