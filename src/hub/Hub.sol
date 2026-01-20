@@ -432,6 +432,7 @@ contract Hub is IHub, AccessManaged {
 
     asset.liquidity = liquidity.uncheckedSub(amount).toUint120();
     asset.swept += amount.toUint120();
+
     asset.updateDrawnRate(assetId);
 
     IERC20(asset.underlying).safeTransfer(msg.sender, amount);
@@ -452,6 +453,7 @@ contract Hub is IHub, AccessManaged {
     require(balance >= liquidity, InsufficientTransferred(liquidity.uncheckedSub(balance)));
     asset.liquidity = liquidity.toUint120();
     asset.swept -= amount.toUint120();
+
     asset.updateDrawnRate(assetId);
 
     emit Reclaim(assetId, msg.sender, amount);
