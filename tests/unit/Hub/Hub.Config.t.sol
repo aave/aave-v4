@@ -424,9 +424,7 @@ contract HubConfigTest is HubBase {
     assetId = bound(assetId, 0, hub1.getAssetCount() - 1);
     _assumeValidAssetConfig(newConfig);
     assumeUnusedAddress(newConfig.irStrategy);
-    IHub.AssetConfig memory currentConfig = hub1.getAssetConfig(assetId);
-    // set feeReceiver to remain the same so that test proceeds until setInterestRateData
-    newConfig.feeReceiver = currentConfig.feeReceiver;
+    newConfig.feeReceiver = hub1.getAssetConfig(assetId).feeReceiver; // retain fee receiver
 
     vm.mockCallRevert(
       newConfig.irStrategy,

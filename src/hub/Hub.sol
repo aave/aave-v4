@@ -351,7 +351,7 @@ contract Hub is IHub, AccessManaged {
     uint256 assetId,
     uint256 amount,
     address spoke
-  ) external returns (uint256) {
+  ) external restricted returns (uint256) {
     Asset storage asset = _assets[assetId];
     SpokeData storage callerSpoke = _spokes[assetId][msg.sender];
     SpokeData storage coveredSpoke = _spokes[assetId][spoke];
