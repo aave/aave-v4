@@ -21,14 +21,14 @@ contract UserPositionDebtWrapper {
     UserPositionDebt.applyPremiumDelta(_userPosition, premiumDelta);
   }
 
-  function getPremiumDelta(
+  function calculatePremiumDelta(
     uint256 drawnSharesTaken,
     uint256 drawnIndex,
     uint256 riskPremium,
     uint256 restoredPremiumRay
   ) external view returns (IHubBase.PremiumDelta memory) {
     return
-      UserPositionDebt.getPremiumDelta(
+      UserPositionDebt.calculatePremiumDelta(
         _userPosition,
         drawnSharesTaken,
         drawnIndex,

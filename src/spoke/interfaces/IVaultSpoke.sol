@@ -4,12 +4,43 @@ pragma solidity ^0.8.0;
 
 import {IERC4626} from 'src/dependencies/openzeppelin/IERC4626.sol';
 import {IERC2612} from 'src/dependencies/openzeppelin/IERC2612.sol';
-import {EIP712Types} from 'src/libraries/types/EIP712Types.sol';
 import {INoncesKeyed} from 'src/interfaces/INoncesKeyed.sol';
 
 /// @title IVaultSpoke
 /// @author Aave Labs
 interface IVaultSpoke is IERC4626, IERC2612, INoncesKeyed {
+  struct VaultDeposit {
+    address depositor;
+    uint256 assets;
+    address receiver;
+    uint256 nonce;
+    uint256 deadline;
+  }
+
+  struct VaultMint {
+    address depositor;
+    uint256 shares;
+    address receiver;
+    uint256 nonce;
+    uint256 deadline;
+  }
+
+  struct VaultWithdraw {
+    address owner;
+    uint256 assets;
+    address receiver;
+    uint256 nonce;
+    uint256 deadline;
+  }
+
+  struct VaultRedeem {
+    address owner;
+    uint256 shares;
+    address receiver;
+    uint256 nonce;
+    uint256 deadline;
+  }
+
   /// @notice Thrown when the given signature is invalid.
   error InvalidSignature();
 
@@ -31,7 +62,7 @@ interface IVaultSpoke is IERC4626, IERC2612, INoncesKeyed {
   /// @param signature The EIP712-typed signed bytes for the deposit.
   /// @return The amount of shares minted.
   function depositWithSig(
-    EIP712Types.VaultDeposit calldata params,
+    VaultDeposit calldata params,
     bytes calldata signature
   ) external returns (uint256);
 
@@ -41,7 +72,7 @@ interface IVaultSpoke is IERC4626, IERC2612, INoncesKeyed {
   /// @param signature The EIP712-typed signed bytes for the mint.
   /// @return The amount of assets deposited.
   function mintWithSig(
-    EIP712Types.VaultMint calldata params,
+    VaultMint calldata params,
     bytes calldata signature
   ) external returns (uint256);
 
@@ -51,7 +82,7 @@ interface IVaultSpoke is IERC4626, IERC2612, INoncesKeyed {
   /// @param signature The EIP712-typed signed bytes for the withdraw.
   /// @return The amount of shares burnt.
   function withdrawWithSig(
-    EIP712Types.VaultWithdraw calldata params,
+    VaultWithdraw calldata params,
     bytes calldata signature
   ) external returns (uint256);
 
@@ -61,7 +92,7 @@ interface IVaultSpoke is IERC4626, IERC2612, INoncesKeyed {
   /// @param signature The EIP712-typed signed bytes for the redeem.
   /// @return The amount of assets burnt.
   function redeemWithSig(
-    EIP712Types.VaultRedeem calldata params,
+    VaultRedeem calldata params,
     bytes calldata signature
   ) external returns (uint256);
 

@@ -33,7 +33,7 @@ contract SpokeSupplyTest is SpokeBase {
     uint256 daiReserveId = _daiReserveId(spoke1);
     uint256 amount = 100e18;
 
-    updateReserveFrozenFlag(spoke1, daiReserveId, true);
+    _updateReserveFrozenFlag(spoke1, daiReserveId, true);
     assertTrue(spoke1.getReserve(daiReserveId).flags.frozen());
 
     vm.expectRevert(ISpoke.ReserveFrozen.selector);
@@ -81,6 +81,24 @@ contract SpokeSupplyTest is SpokeBase {
     uint256 amount = 0;
 
     vm.expectRevert(IHub.InvalidAmount.selector);
+    vm.prank(bob);
+    spoke1.supply(_daiReserveId(spoke1), amount, bob);
+  }
+
+  function test_supply_revertsWith_ReentrancyGuardReentrantCall() public {
+    uint256 amount = 100e18;
+
+    MockReentrantCaller reentrantCaller = new MockReentrantCaller(
+      address(spoke1),
+      ISpokeBase.supply.selector
+    );
+
+    vm.mockFunction(
+      address(_hub(spoke1, _daiReserveId(spoke1))),
+      address(reentrantCaller),
+      abi.encodeWithSelector(IHubBase.add.selector)
+    );
+    vm.expectRevert(ReentrancyGuardTransient.ReentrancyGuardReentrantCall.selector);
     vm.prank(bob);
     spoke1.supply(_daiReserveId(spoke1), amount, bob);
   }

@@ -2,7 +2,7 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.20;
 
-import {EIP712Types} from 'src/libraries/types/EIP712Types.sol';
+import {ISignatureGateway} from 'src/position-manager/interfaces/ISignatureGateway.sol';
 
 /// @title EIP712Hash library
 /// @author Aave Labs
@@ -40,23 +40,7 @@ library EIP712Hash {
     // keccak256('UpdateUserDynamicConfig(address spoke,address user,uint256 nonce,uint256 deadline)')
     0xba177b1f5b5e1e709f62c19f03c97988c57752ba561de58f383ebee4e8d0a71c;
 
-  bytes32 public constant VAULT_DEPOSIT_TYPEHASH =
-    // keccak256('VaultDeposit(address depositor,uint256 assets,address receiver,uint256 nonce,uint256 deadline)')
-    0x8e93b8e8149376c7ae7fb14ab6815d5cab2d1f72a9284c1dd9c9110ef06d1b75;
-
-  bytes32 public constant VAULT_MINT_TYPEHASH =
-    // keccak256('VaultMint(address depositor,uint256 shares,address receiver,uint256 nonce,uint256 deadline)')
-    0xc9777aa8e2687ff2ee6bf1c3cd14300a96bd425d4d1cb69e1155f5b8ecdf05d2;
-
-  bytes32 public constant VAULT_WITHDRAW_TYPEHASH =
-    // keccak256('VaultWithdraw(address owner,uint256 assets,address receiver,uint256 nonce,uint256 deadline)')
-    0x8575f76be3d57d8fc8f537e04c7e5bea275ef41afb95c3dc53b43d4fc2e43545;
-
-  bytes32 public constant VAULT_REDEEM_TYPEHASH =
-    // keccak256('VaultRedeem(address owner,uint256 shares,address receiver,uint256 nonce,uint256 deadline)')
-    0x78b72753239783411f44a6ae16b7cc070aa270bf9328e0afd1ea709e5e6ab4ea;
-
-  function hash(EIP712Types.Supply calldata params) internal pure returns (bytes32) {
+  function hash(ISignatureGateway.Supply calldata params) internal pure returns (bytes32) {
     return
       keccak256(
         abi.encode(
@@ -71,7 +55,7 @@ library EIP712Hash {
       );
   }
 
-  function hash(EIP712Types.Withdraw calldata params) internal pure returns (bytes32) {
+  function hash(ISignatureGateway.Withdraw calldata params) internal pure returns (bytes32) {
     return
       keccak256(
         abi.encode(
@@ -86,7 +70,7 @@ library EIP712Hash {
       );
   }
 
-  function hash(EIP712Types.Borrow calldata params) internal pure returns (bytes32) {
+  function hash(ISignatureGateway.Borrow calldata params) internal pure returns (bytes32) {
     return
       keccak256(
         abi.encode(
@@ -101,7 +85,7 @@ library EIP712Hash {
       );
   }
 
-  function hash(EIP712Types.Repay calldata params) internal pure returns (bytes32) {
+  function hash(ISignatureGateway.Repay calldata params) internal pure returns (bytes32) {
     return
       keccak256(
         abi.encode(
@@ -116,7 +100,9 @@ library EIP712Hash {
       );
   }
 
-  function hash(EIP712Types.SetUsingAsCollateral calldata params) internal pure returns (bytes32) {
+  function hash(
+    ISignatureGateway.SetUsingAsCollateral calldata params
+  ) internal pure returns (bytes32) {
     return
       keccak256(
         abi.encode(
@@ -131,7 +117,9 @@ library EIP712Hash {
       );
   }
 
-  function hash(EIP712Types.UpdateUserRiskPremium calldata params) internal pure returns (bytes32) {
+  function hash(
+    ISignatureGateway.UpdateUserRiskPremium calldata params
+  ) internal pure returns (bytes32) {
     return
       keccak256(
         abi.encode(
@@ -145,7 +133,7 @@ library EIP712Hash {
   }
 
   function hash(
-    EIP712Types.UpdateUserDynamicConfig calldata params
+    ISignatureGateway.UpdateUserDynamicConfig calldata params
   ) internal pure returns (bytes32) {
     return
       keccak256(
@@ -153,62 +141,6 @@ library EIP712Hash {
           UPDATE_USER_DYNAMIC_CONFIG_TYPEHASH,
           params.spoke,
           params.user,
-          params.nonce,
-          params.deadline
-        )
-      );
-  }
-
-  function hash(EIP712Types.VaultDeposit calldata params) internal pure returns (bytes32) {
-    return
-      keccak256(
-        abi.encode(
-          VAULT_DEPOSIT_TYPEHASH,
-          params.depositor,
-          params.assets,
-          params.receiver,
-          params.nonce,
-          params.deadline
-        )
-      );
-  }
-
-  function hash(EIP712Types.VaultMint calldata params) internal pure returns (bytes32) {
-    return
-      keccak256(
-        abi.encode(
-          VAULT_MINT_TYPEHASH,
-          params.depositor,
-          params.shares,
-          params.receiver,
-          params.nonce,
-          params.deadline
-        )
-      );
-  }
-
-  function hash(EIP712Types.VaultWithdraw calldata params) internal pure returns (bytes32) {
-    return
-      keccak256(
-        abi.encode(
-          VAULT_WITHDRAW_TYPEHASH,
-          params.owner,
-          params.assets,
-          params.receiver,
-          params.nonce,
-          params.deadline
-        )
-      );
-  }
-
-  function hash(EIP712Types.VaultRedeem calldata params) internal pure returns (bytes32) {
-    return
-      keccak256(
-        abi.encode(
-          VAULT_REDEEM_TYPEHASH,
-          params.owner,
-          params.shares,
-          params.receiver,
           params.nonce,
           params.deadline
         )
