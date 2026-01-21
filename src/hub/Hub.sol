@@ -56,7 +56,7 @@ contract Hub is IHub, AccessManaged {
   EnumerableSet.AddressSet internal _underlyingAssets;
 
   /// @dev Map of underlying addresses to asset identifiers.
-  mapping(address underlying => uint256) internal _underlyingToAssetId;
+  mapping(address underlying => uint256 assetId) internal _underlyingToAssetId;
 
   /// @dev Constructor.
   /// @dev The authority contract must implement the `AccessManaged` interface for access control.
