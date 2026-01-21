@@ -29,7 +29,7 @@ contract TokenizationSpokeWithSigTest is TokenizationSpokeBaseTest {
     assertEq(vault.nonces(user, nonceKey), _packNonce(nonceKey, nonce));
   }
 
-  function test_depositWithSig() public {
+  function test_depositWithSig(bytes32) public {
     ITokenizationSpoke.VaultDeposit memory p = _depositData(
       vault,
       alice,
@@ -52,7 +52,7 @@ contract TokenizationSpokeWithSigTest is TokenizationSpokeBaseTest {
     _assertVaultHasNoBalanceOrAllowance(vault, alice);
   }
 
-  function test_mintWithSig() public {
+  function test_mintWithSig(bytes32) public {
     ITokenizationSpoke.VaultMint memory p = _mintData(vault, alice, _warpBeforeRandomDeadline());
     p.nonce = _burnRandomNoncesAtKey(vault, p.depositor);
     bytes memory signature = _sign(alicePk, _getTypedDataHash(vault, p));
@@ -71,7 +71,7 @@ contract TokenizationSpokeWithSigTest is TokenizationSpokeBaseTest {
     _assertVaultHasNoBalanceOrAllowance(vault, alice);
   }
 
-  function test_withdrawWithSig() public {
+  function test_withdrawWithSig(bytes32) public {
     ITokenizationSpoke.VaultWithdraw memory p = _withdrawData(
       vault,
       alice,
@@ -96,7 +96,7 @@ contract TokenizationSpokeWithSigTest is TokenizationSpokeBaseTest {
     _assertVaultHasNoBalanceOrAllowance(vault, alice);
   }
 
-  function test_redeemWithSig() public {
+  function test_redeemWithSig(bytes32) public {
     ITokenizationSpoke.VaultRedeem memory p = _redeemData(
       vault,
       alice,
