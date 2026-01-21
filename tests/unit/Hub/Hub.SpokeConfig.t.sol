@@ -17,16 +17,16 @@ contract HubSpokeConfigTest is HubBase {
 
     // set spoke to active / paused; reverts
     _accrueLiquidityFees(hub1, spoke1, usdxAssetId);
-    _updateSpokePaused(hub1, usdxAssetId, feeReceiver, true);
-    _updateSpokeActive(hub1, usdxAssetId, feeReceiver, true);
+    updateSpokePaused(hub1, usdxAssetId, feeReceiver, true);
+    updateSpokeActive(hub1, usdxAssetId, feeReceiver, true);
 
     vm.prank(HUB_ADMIN);
     hub1.mintFeeShares(usdxAssetId);
 
     // set spoke to inactive / paused; reverts
     _accrueLiquidityFees(hub1, spoke1, usdxAssetId);
-    _updateSpokePaused(hub1, usdxAssetId, feeReceiver, true);
-    _updateSpokeActive(hub1, usdxAssetId, feeReceiver, false);
+    updateSpokePaused(hub1, usdxAssetId, feeReceiver, true);
+    updateSpokeActive(hub1, usdxAssetId, feeReceiver, false);
 
     vm.expectRevert(IHub.SpokeNotActive.selector);
     vm.prank(HUB_ADMIN);
@@ -34,16 +34,16 @@ contract HubSpokeConfigTest is HubBase {
 
     // set spoke to active / not paused; succeeds
     _accrueLiquidityFees(hub1, spoke1, usdxAssetId);
-    _updateSpokePaused(hub1, usdxAssetId, feeReceiver, false);
-    _updateSpokeActive(hub1, usdxAssetId, feeReceiver, true);
+    updateSpokePaused(hub1, usdxAssetId, feeReceiver, false);
+    updateSpokeActive(hub1, usdxAssetId, feeReceiver, true);
 
     vm.prank(HUB_ADMIN);
     hub1.mintFeeShares(usdxAssetId);
 
     // set spoke to inactive / not paused; reverts
     _accrueLiquidityFees(hub1, spoke1, usdxAssetId);
-    _updateSpokePaused(hub1, usdxAssetId, feeReceiver, false);
-    _updateSpokeActive(hub1, usdxAssetId, feeReceiver, false);
+    updateSpokePaused(hub1, usdxAssetId, feeReceiver, false);
+    updateSpokeActive(hub1, usdxAssetId, feeReceiver, false);
 
     vm.expectRevert(IHub.SpokeNotActive.selector);
     vm.prank(HUB_ADMIN);
@@ -52,30 +52,30 @@ contract HubSpokeConfigTest is HubBase {
 
   function test_add_active_paused_scenarios() public {
     // set spoke to active / paused; reverts
-    _updateSpokePaused(hub1, usdxAssetId, address(spoke1), true);
-    _updateSpokeActive(hub1, usdxAssetId, address(spoke1), true);
+    updateSpokePaused(hub1, usdxAssetId, address(spoke1), true);
+    updateSpokeActive(hub1, usdxAssetId, address(spoke1), true);
 
     vm.expectRevert(IHub.SpokePaused.selector);
     vm.prank(address(spoke1));
     hub1.add(usdxAssetId, 1);
 
     // set spoke to inactive / paused; reverts
-    _updateSpokePaused(hub1, usdxAssetId, address(spoke1), true);
-    _updateSpokeActive(hub1, usdxAssetId, address(spoke1), false);
+    updateSpokePaused(hub1, usdxAssetId, address(spoke1), true);
+    updateSpokeActive(hub1, usdxAssetId, address(spoke1), false);
 
     vm.expectRevert(IHub.SpokeNotActive.selector);
     vm.prank(address(spoke1));
     hub1.add(usdxAssetId, 1);
 
     // set spoke to active / not paused; succeeds
-    _updateSpokePaused(hub1, usdxAssetId, address(spoke1), false);
-    _updateSpokeActive(hub1, usdxAssetId, address(spoke1), true);
+    updateSpokePaused(hub1, usdxAssetId, address(spoke1), false);
+    updateSpokeActive(hub1, usdxAssetId, address(spoke1), true);
 
     Utils.add(hub1, usdxAssetId, address(spoke1), 1, alice);
 
     // set spoke to inactive / not paused; reverts
-    _updateSpokePaused(hub1, usdxAssetId, address(spoke1), false);
-    _updateSpokeActive(hub1, usdxAssetId, address(spoke1), false);
+    updateSpokePaused(hub1, usdxAssetId, address(spoke1), false);
+    updateSpokeActive(hub1, usdxAssetId, address(spoke1), false);
 
     vm.expectRevert(IHub.SpokeNotActive.selector);
     vm.prank(address(spoke1));
@@ -86,30 +86,30 @@ contract HubSpokeConfigTest is HubBase {
     Utils.add(hub1, usdxAssetId, address(spoke1), 100, alice);
 
     // set spoke to active / paused; reverts
-    _updateSpokePaused(hub1, usdxAssetId, address(spoke1), true);
-    _updateSpokeActive(hub1, usdxAssetId, address(spoke1), true);
+    updateSpokePaused(hub1, usdxAssetId, address(spoke1), true);
+    updateSpokeActive(hub1, usdxAssetId, address(spoke1), true);
 
     vm.expectRevert(IHub.SpokePaused.selector);
     vm.prank(address(spoke1));
     hub1.remove(usdxAssetId, 1, alice);
 
     // set spoke to inactive / paused; reverts
-    _updateSpokePaused(hub1, usdxAssetId, address(spoke1), true);
-    _updateSpokeActive(hub1, usdxAssetId, address(spoke1), false);
+    updateSpokePaused(hub1, usdxAssetId, address(spoke1), true);
+    updateSpokeActive(hub1, usdxAssetId, address(spoke1), false);
 
     vm.expectRevert(IHub.SpokeNotActive.selector);
     vm.prank(address(spoke1));
     hub1.remove(usdxAssetId, 1, alice);
 
     // set spoke to active / not paused; succeeds
-    _updateSpokePaused(hub1, usdxAssetId, address(spoke1), false);
-    _updateSpokeActive(hub1, usdxAssetId, address(spoke1), true);
+    updateSpokePaused(hub1, usdxAssetId, address(spoke1), false);
+    updateSpokeActive(hub1, usdxAssetId, address(spoke1), true);
 
     Utils.remove(hub1, usdxAssetId, address(spoke1), 1, alice);
 
     // set spoke to inactive / not paused; reverts
-    _updateSpokePaused(hub1, usdxAssetId, address(spoke1), false);
-    _updateSpokeActive(hub1, usdxAssetId, address(spoke1), false);
+    updateSpokePaused(hub1, usdxAssetId, address(spoke1), false);
+    updateSpokeActive(hub1, usdxAssetId, address(spoke1), false);
 
     vm.expectRevert(IHub.SpokeNotActive.selector);
     vm.prank(address(spoke1));
@@ -118,30 +118,30 @@ contract HubSpokeConfigTest is HubBase {
 
   function test_draw_active_paused_scenarios() public {
     // set spoke to active / paused; reverts
-    _updateSpokePaused(hub1, usdxAssetId, address(spoke1), true);
-    _updateSpokeActive(hub1, usdxAssetId, address(spoke1), true);
+    updateSpokePaused(hub1, usdxAssetId, address(spoke1), true);
+    updateSpokeActive(hub1, usdxAssetId, address(spoke1), true);
 
     vm.expectRevert(IHub.SpokePaused.selector);
     vm.prank(address(spoke1));
     hub1.draw(usdxAssetId, 1, alice);
 
     // set spoke to inactive / paused; reverts
-    _updateSpokePaused(hub1, usdxAssetId, address(spoke1), true);
-    _updateSpokeActive(hub1, usdxAssetId, address(spoke1), false);
+    updateSpokePaused(hub1, usdxAssetId, address(spoke1), true);
+    updateSpokeActive(hub1, usdxAssetId, address(spoke1), false);
 
     vm.expectRevert(IHub.SpokeNotActive.selector);
     vm.prank(address(spoke1));
     hub1.draw(usdxAssetId, 1, alice);
 
     // set spoke to active / not paused; succeeds
-    _updateSpokePaused(hub1, usdxAssetId, address(spoke1), false);
-    _updateSpokeActive(hub1, usdxAssetId, address(spoke1), true);
+    updateSpokePaused(hub1, usdxAssetId, address(spoke1), false);
+    updateSpokeActive(hub1, usdxAssetId, address(spoke1), true);
 
     Utils.draw(hub1, usdxAssetId, address(spoke1), alice, 1);
 
     // set spoke to inactive / not paused; reverts
-    _updateSpokePaused(hub1, usdxAssetId, address(spoke1), false);
-    _updateSpokeActive(hub1, usdxAssetId, address(spoke1), false);
+    updateSpokePaused(hub1, usdxAssetId, address(spoke1), false);
+    updateSpokeActive(hub1, usdxAssetId, address(spoke1), false);
 
     vm.expectRevert(IHub.SpokeNotActive.selector);
     vm.prank(address(spoke1));
@@ -152,30 +152,30 @@ contract HubSpokeConfigTest is HubBase {
     Utils.draw(hub1, usdxAssetId, address(spoke1), alice, 100);
 
     // set spoke to active / paused; reverts
-    _updateSpokePaused(hub1, usdxAssetId, address(spoke1), true);
-    _updateSpokeActive(hub1, usdxAssetId, address(spoke1), true);
+    updateSpokePaused(hub1, usdxAssetId, address(spoke1), true);
+    updateSpokeActive(hub1, usdxAssetId, address(spoke1), true);
 
     vm.expectRevert(IHub.SpokePaused.selector);
     vm.prank(address(spoke1));
     hub1.restore(usdxAssetId, 1, ZERO_PREMIUM_DELTA);
 
     // set spoke to inactive / paused; reverts
-    _updateSpokePaused(hub1, usdxAssetId, address(spoke1), true);
-    _updateSpokeActive(hub1, usdxAssetId, address(spoke1), false);
+    updateSpokePaused(hub1, usdxAssetId, address(spoke1), true);
+    updateSpokeActive(hub1, usdxAssetId, address(spoke1), false);
 
     vm.expectRevert(IHub.SpokeNotActive.selector);
     vm.prank(address(spoke1));
     hub1.restore(usdxAssetId, 1, ZERO_PREMIUM_DELTA);
 
     // set spoke to active / not paused; succeeds
-    _updateSpokePaused(hub1, usdxAssetId, address(spoke1), false);
-    _updateSpokeActive(hub1, usdxAssetId, address(spoke1), true);
+    updateSpokePaused(hub1, usdxAssetId, address(spoke1), false);
+    updateSpokeActive(hub1, usdxAssetId, address(spoke1), true);
 
     Utils.restoreDrawn(hub1, usdxAssetId, address(spoke1), 1, alice);
 
     // set spoke to inactive / not paused; reverts
-    _updateSpokePaused(hub1, usdxAssetId, address(spoke1), false);
-    _updateSpokeActive(hub1, usdxAssetId, address(spoke1), false);
+    updateSpokePaused(hub1, usdxAssetId, address(spoke1), false);
+    updateSpokeActive(hub1, usdxAssetId, address(spoke1), false);
 
     vm.expectRevert(IHub.SpokeNotActive.selector);
     vm.prank(address(spoke1));
@@ -193,30 +193,30 @@ contract HubSpokeConfigTest is HubBase {
     });
 
     // set spoke to active / paused; succeeds
-    _updateSpokePaused(hub1, usdxAssetId, address(spoke1), true);
-    _updateSpokeActive(hub1, usdxAssetId, address(spoke1), true);
+    updateSpokePaused(hub1, usdxAssetId, address(spoke1), true);
+    updateSpokeActive(hub1, usdxAssetId, address(spoke1), true);
 
     vm.prank(address(spoke1));
     hub1.reportDeficit(usdxAssetId, 1, ZERO_PREMIUM_DELTA);
 
     // set spoke to inactive and paused; reverts
-    _updateSpokePaused(hub1, usdxAssetId, address(spoke1), true);
-    _updateSpokeActive(hub1, usdxAssetId, address(spoke1), false);
+    updateSpokePaused(hub1, usdxAssetId, address(spoke1), true);
+    updateSpokeActive(hub1, usdxAssetId, address(spoke1), false);
 
     vm.expectRevert(IHub.SpokeNotActive.selector);
     vm.prank(address(spoke1));
     hub1.reportDeficit(usdxAssetId, 1, ZERO_PREMIUM_DELTA);
 
     // set spoke to active and not paused; succeeds
-    _updateSpokePaused(hub1, usdxAssetId, address(spoke1), false);
-    _updateSpokeActive(hub1, usdxAssetId, address(spoke1), true);
+    updateSpokePaused(hub1, usdxAssetId, address(spoke1), false);
+    updateSpokeActive(hub1, usdxAssetId, address(spoke1), true);
 
     vm.prank(address(spoke1));
     hub1.reportDeficit(usdxAssetId, 1, ZERO_PREMIUM_DELTA);
 
     // set spoke to inactive and not paused; reverts
-    _updateSpokePaused(hub1, usdxAssetId, address(spoke1), false);
-    _updateSpokeActive(hub1, usdxAssetId, address(spoke1), false);
+    updateSpokePaused(hub1, usdxAssetId, address(spoke1), false);
+    updateSpokeActive(hub1, usdxAssetId, address(spoke1), false);
 
     vm.expectRevert(IHub.SpokeNotActive.selector);
     vm.prank(address(spoke1));
@@ -232,34 +232,34 @@ contract HubSpokeConfigTest is HubBase {
     Utils.add(hub1, usdxAssetId, callerSpoke, 1e18, alice);
 
     // covered spoke status does not matter
-    _updateSpokePaused(hub1, usdxAssetId, coveredSpoke, true);
-    _updateSpokeActive(hub1, usdxAssetId, coveredSpoke, false);
+    updateSpokePaused(hub1, usdxAssetId, coveredSpoke, true);
+    updateSpokeActive(hub1, usdxAssetId, coveredSpoke, false);
 
     // set caller spoke to active / paused; succeeds
-    _updateSpokePaused(hub1, usdxAssetId, callerSpoke, true);
-    _updateSpokeActive(hub1, usdxAssetId, callerSpoke, true);
+    updateSpokePaused(hub1, usdxAssetId, callerSpoke, true);
+    updateSpokeActive(hub1, usdxAssetId, callerSpoke, true);
 
     vm.prank(callerSpoke);
     hub1.eliminateDeficit(usdxAssetId, 1, coveredSpoke);
 
     // set spoke to inactive / paused; reverts
-    _updateSpokePaused(hub1, usdxAssetId, callerSpoke, true);
-    _updateSpokeActive(hub1, usdxAssetId, callerSpoke, false);
+    updateSpokePaused(hub1, usdxAssetId, callerSpoke, true);
+    updateSpokeActive(hub1, usdxAssetId, callerSpoke, false);
 
     vm.expectRevert(IHub.SpokeNotActive.selector);
     vm.prank(callerSpoke);
     hub1.eliminateDeficit(usdxAssetId, 1, coveredSpoke);
 
     // set spoke to active / not paused; succeeds
-    _updateSpokePaused(hub1, usdxAssetId, callerSpoke, false);
-    _updateSpokeActive(hub1, usdxAssetId, callerSpoke, true);
+    updateSpokePaused(hub1, usdxAssetId, callerSpoke, false);
+    updateSpokeActive(hub1, usdxAssetId, callerSpoke, true);
 
     vm.prank(callerSpoke);
     hub1.eliminateDeficit(usdxAssetId, 1, coveredSpoke);
 
     // set spoke to inactive / not paused; reverts
-    _updateSpokePaused(hub1, usdxAssetId, address(spoke1), false);
-    _updateSpokeActive(hub1, usdxAssetId, address(spoke1), false);
+    updateSpokePaused(hub1, usdxAssetId, address(spoke1), false);
+    updateSpokeActive(hub1, usdxAssetId, address(spoke1), false);
 
     vm.expectRevert(IHub.SpokeNotActive.selector);
     vm.prank(address(spoke1));
@@ -268,30 +268,30 @@ contract HubSpokeConfigTest is HubBase {
 
   function test_refreshPremium_active_paused_scenarios() public {
     // set spoke to active / paused; succeeds
-    _updateSpokePaused(hub1, usdxAssetId, address(spoke1), true);
-    _updateSpokeActive(hub1, usdxAssetId, address(spoke1), true);
+    updateSpokePaused(hub1, usdxAssetId, address(spoke1), true);
+    updateSpokeActive(hub1, usdxAssetId, address(spoke1), true);
 
     vm.prank(address(spoke1));
     hub1.refreshPremium(usdxAssetId, ZERO_PREMIUM_DELTA);
 
     // set spoke to inactive / paused; reverts
-    _updateSpokePaused(hub1, usdxAssetId, address(spoke1), true);
-    _updateSpokeActive(hub1, usdxAssetId, address(spoke1), false);
+    updateSpokePaused(hub1, usdxAssetId, address(spoke1), true);
+    updateSpokeActive(hub1, usdxAssetId, address(spoke1), false);
 
     vm.expectRevert(IHub.SpokeNotActive.selector);
     vm.prank(address(spoke1));
     hub1.refreshPremium(usdxAssetId, ZERO_PREMIUM_DELTA);
 
     // set spoke to active / not paused; succeeds
-    _updateSpokePaused(hub1, usdxAssetId, address(spoke1), false);
-    _updateSpokeActive(hub1, usdxAssetId, address(spoke1), true);
+    updateSpokePaused(hub1, usdxAssetId, address(spoke1), false);
+    updateSpokeActive(hub1, usdxAssetId, address(spoke1), true);
 
     vm.prank(address(spoke1));
     hub1.refreshPremium(usdxAssetId, ZERO_PREMIUM_DELTA);
 
     // set spoke to inactive / not paused; reverts
-    _updateSpokePaused(hub1, usdxAssetId, address(spoke1), false);
-    _updateSpokeActive(hub1, usdxAssetId, address(spoke1), false);
+    updateSpokePaused(hub1, usdxAssetId, address(spoke1), false);
+    updateSpokeActive(hub1, usdxAssetId, address(spoke1), false);
 
     vm.expectRevert(IHub.SpokeNotActive.selector);
     vm.prank(address(spoke1));
@@ -303,34 +303,34 @@ contract HubSpokeConfigTest is HubBase {
     Utils.add(hub1, usdxAssetId, address(spoke1), 1e18, alice);
 
     // set fee receiver to inactive / paused; does not matter
-    _updateSpokePaused(hub1, usdxAssetId, feeReceiver, true);
-    _updateSpokeActive(hub1, usdxAssetId, feeReceiver, false);
+    updateSpokePaused(hub1, usdxAssetId, feeReceiver, true);
+    updateSpokeActive(hub1, usdxAssetId, feeReceiver, false);
 
     // set spoke to active / paused; succeeds
-    _updateSpokePaused(hub1, usdxAssetId, address(spoke1), true);
-    _updateSpokeActive(hub1, usdxAssetId, address(spoke1), true);
+    updateSpokePaused(hub1, usdxAssetId, address(spoke1), true);
+    updateSpokeActive(hub1, usdxAssetId, address(spoke1), true);
 
     vm.prank(address(spoke1));
     hub1.payFeeShares(usdxAssetId, 1);
 
     // set spoke to inactive / paused; reverts
-    _updateSpokePaused(hub1, usdxAssetId, address(spoke1), true);
-    _updateSpokeActive(hub1, usdxAssetId, address(spoke1), false);
+    updateSpokePaused(hub1, usdxAssetId, address(spoke1), true);
+    updateSpokeActive(hub1, usdxAssetId, address(spoke1), false);
 
     vm.expectRevert(IHub.SpokeNotActive.selector);
     vm.prank(address(spoke1));
     hub1.payFeeShares(usdxAssetId, 1);
 
     // set spoke to active / not paused; succeeds
-    _updateSpokePaused(hub1, usdxAssetId, address(spoke1), false);
-    _updateSpokeActive(hub1, usdxAssetId, address(spoke1), true);
+    updateSpokePaused(hub1, usdxAssetId, address(spoke1), false);
+    updateSpokeActive(hub1, usdxAssetId, address(spoke1), true);
 
     vm.prank(address(spoke1));
     hub1.payFeeShares(usdxAssetId, 1);
 
     // set spoke to inactive / not paused; reverts
-    _updateSpokePaused(hub1, usdxAssetId, address(spoke1), false);
-    _updateSpokeActive(hub1, usdxAssetId, address(spoke1), false);
+    updateSpokePaused(hub1, usdxAssetId, address(spoke1), false);
+    updateSpokeActive(hub1, usdxAssetId, address(spoke1), false);
 
     vm.expectRevert(IHub.SpokeNotActive.selector);
     vm.prank(address(spoke1));
@@ -348,11 +348,11 @@ contract HubSpokeConfigTest is HubBase {
     Utils.add(hub1, usdxAssetId, sender, 1e18, alice);
 
     // set sender
-    _updateSpokePaused(hub1, usdxAssetId, sender, senderPaused);
-    _updateSpokeActive(hub1, usdxAssetId, sender, senderActive);
+    updateSpokePaused(hub1, usdxAssetId, sender, senderPaused);
+    updateSpokeActive(hub1, usdxAssetId, sender, senderActive);
     // set receiver
-    _updateSpokePaused(hub1, usdxAssetId, receiver, receiverPaused);
-    _updateSpokeActive(hub1, usdxAssetId, receiver, receiverActive);
+    updateSpokePaused(hub1, usdxAssetId, receiver, receiverPaused);
+    updateSpokeActive(hub1, usdxAssetId, receiver, receiverActive);
 
     if (!senderActive || !receiverActive) {
       vm.expectRevert(IHub.SpokeNotActive.selector);

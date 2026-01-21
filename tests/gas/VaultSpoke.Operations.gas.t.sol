@@ -81,7 +81,7 @@ contract VaultSpokeOperations_Gas_Tests is VaultSpokeBaseTest {
   }
 
   function test_depositWithSig() public {
-    EIP712Types.VaultDeposit memory p = _depositData(vault, alice, _warpBeforeRandomDeadline());
+    IVaultSpoke.VaultDeposit memory p = _depositData(vault, alice, _warpBeforeRandomDeadline());
     p.nonce = _burnRandomNoncesAtKey(vault, p.depositor);
     bytes memory signature = _sign(alicePk, _getTypedDataHash(vault, p));
     Utils.approve(vault, alice, p.assets);
@@ -92,7 +92,7 @@ contract VaultSpokeOperations_Gas_Tests is VaultSpokeBaseTest {
   }
 
   function test_mintWithSig() public {
-    EIP712Types.VaultMint memory p = _mintData(vault, alice, _warpBeforeRandomDeadline());
+    IVaultSpoke.VaultMint memory p = _mintData(vault, alice, _warpBeforeRandomDeadline());
     p.nonce = _burnRandomNoncesAtKey(vault, p.depositor);
     bytes memory signature = _sign(alicePk, _getTypedDataHash(vault, p));
     Utils.approve(vault, alice, p.shares);
@@ -103,7 +103,7 @@ contract VaultSpokeOperations_Gas_Tests is VaultSpokeBaseTest {
   }
 
   function test_withdrawWithSig() public {
-    EIP712Types.VaultWithdraw memory p = _withdrawData(vault, alice, _warpBeforeRandomDeadline());
+    IVaultSpoke.VaultWithdraw memory p = _withdrawData(vault, alice, _warpBeforeRandomDeadline());
     p.nonce = _burnRandomNoncesAtKey(vault, p.owner);
     bytes memory signature = _sign(alicePk, _getTypedDataHash(vault, p));
     Utils.approve(vault, alice, p.assets);
@@ -116,7 +116,7 @@ contract VaultSpokeOperations_Gas_Tests is VaultSpokeBaseTest {
   }
 
   function test_redeemWithSig() public {
-    EIP712Types.VaultRedeem memory p = _redeemData(vault, alice, _warpBeforeRandomDeadline());
+    IVaultSpoke.VaultRedeem memory p = _redeemData(vault, alice, _warpBeforeRandomDeadline());
     p.nonce = _burnRandomNoncesAtKey(vault, p.owner);
     bytes memory signature = _sign(alicePk, _getTypedDataHash(vault, p));
     Utils.approve(vault, alice, p.shares);

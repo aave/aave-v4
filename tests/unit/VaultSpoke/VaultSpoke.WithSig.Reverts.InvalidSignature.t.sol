@@ -13,7 +13,7 @@ contract VaultSpokeWithSigInvalidSignatureTest is VaultSpokeBaseTest {
   }
 
   function test_depositWithSig_revertsWith_InvalidSignature_dueTo_ExpiredDeadline() public {
-    EIP712Types.VaultDeposit memory p = _depositData(vault, alice, _warpAfterRandomDeadline());
+    IVaultSpoke.VaultDeposit memory p = _depositData(vault, alice, _warpAfterRandomDeadline());
     bytes memory signature = _sign(alicePk, _getTypedDataHash(vault, p));
 
     vm.expectRevert(IVaultSpoke.InvalidSignature.selector);
@@ -22,7 +22,7 @@ contract VaultSpokeWithSigInvalidSignatureTest is VaultSpokeBaseTest {
   }
 
   function test_mintWithSig_revertsWith_InvalidSignature_dueTo_ExpiredDeadline() public {
-    EIP712Types.VaultMint memory p = _mintData(vault, alice, _warpAfterRandomDeadline());
+    IVaultSpoke.VaultMint memory p = _mintData(vault, alice, _warpAfterRandomDeadline());
     bytes memory signature = _sign(alicePk, _getTypedDataHash(vault, p));
 
     vm.expectRevert(IVaultSpoke.InvalidSignature.selector);
@@ -31,7 +31,7 @@ contract VaultSpokeWithSigInvalidSignatureTest is VaultSpokeBaseTest {
   }
 
   function test_withdrawWithSig_revertsWith_InvalidSignature_dueTo_ExpiredDeadline() public {
-    EIP712Types.VaultWithdraw memory p = _withdrawData(vault, alice, _warpAfterRandomDeadline());
+    IVaultSpoke.VaultWithdraw memory p = _withdrawData(vault, alice, _warpAfterRandomDeadline());
     bytes memory signature = _sign(alicePk, _getTypedDataHash(vault, p));
 
     vm.expectRevert(IVaultSpoke.InvalidSignature.selector);
@@ -40,7 +40,7 @@ contract VaultSpokeWithSigInvalidSignatureTest is VaultSpokeBaseTest {
   }
 
   function test_redeemWithSig_revertsWith_InvalidSignature_dueTo_ExpiredDeadline() public {
-    EIP712Types.VaultRedeem memory p = _redeemData(vault, alice, _warpAfterRandomDeadline());
+    IVaultSpoke.VaultRedeem memory p = _redeemData(vault, alice, _warpAfterRandomDeadline());
     bytes memory signature = _sign(alicePk, _getTypedDataHash(vault, p));
 
     vm.expectRevert(IVaultSpoke.InvalidSignature.selector);
@@ -53,7 +53,7 @@ contract VaultSpokeWithSigInvalidSignatureTest is VaultSpokeBaseTest {
     address depositor = vm.randomAddress();
     while (depositor == randomUser) depositor = vm.randomAddress();
 
-    EIP712Types.VaultDeposit memory p = _depositData(vault, depositor, _warpAfterRandomDeadline());
+    IVaultSpoke.VaultDeposit memory p = _depositData(vault, depositor, _warpAfterRandomDeadline());
     bytes memory signature = _sign(randomUserPk, _getTypedDataHash(vault, p));
 
     vm.expectRevert(IVaultSpoke.InvalidSignature.selector);
@@ -66,7 +66,7 @@ contract VaultSpokeWithSigInvalidSignatureTest is VaultSpokeBaseTest {
     address depositor = vm.randomAddress();
     while (depositor == randomUser) depositor = vm.randomAddress();
 
-    EIP712Types.VaultMint memory p = _mintData(vault, depositor, _warpAfterRandomDeadline());
+    IVaultSpoke.VaultMint memory p = _mintData(vault, depositor, _warpAfterRandomDeadline());
     bytes memory signature = _sign(randomUserPk, _getTypedDataHash(vault, p));
 
     vm.expectRevert(IVaultSpoke.InvalidSignature.selector);
@@ -79,7 +79,7 @@ contract VaultSpokeWithSigInvalidSignatureTest is VaultSpokeBaseTest {
     address owner = vm.randomAddress();
     while (owner == randomUser) owner = vm.randomAddress();
 
-    EIP712Types.VaultWithdraw memory p = _withdrawData(vault, owner, _warpAfterRandomDeadline());
+    IVaultSpoke.VaultWithdraw memory p = _withdrawData(vault, owner, _warpAfterRandomDeadline());
     bytes memory signature = _sign(randomUserPk, _getTypedDataHash(vault, p));
 
     vm.expectRevert(IVaultSpoke.InvalidSignature.selector);
@@ -92,7 +92,7 @@ contract VaultSpokeWithSigInvalidSignatureTest is VaultSpokeBaseTest {
     address owner = vm.randomAddress();
     while (owner == randomUser) owner = vm.randomAddress();
 
-    EIP712Types.VaultRedeem memory p = _redeemData(vault, owner, _warpAfterRandomDeadline());
+    IVaultSpoke.VaultRedeem memory p = _redeemData(vault, owner, _warpAfterRandomDeadline());
     bytes memory signature = _sign(randomUserPk, _getTypedDataHash(vault, p));
 
     vm.expectRevert(IVaultSpoke.InvalidSignature.selector);
@@ -101,7 +101,7 @@ contract VaultSpokeWithSigInvalidSignatureTest is VaultSpokeBaseTest {
   }
 
   function test_depositWithSig_revertsWith_InvalidAccountNonce(bytes32) public {
-    EIP712Types.VaultDeposit memory p = _depositData(vault, alice, _warpBeforeRandomDeadline());
+    IVaultSpoke.VaultDeposit memory p = _depositData(vault, alice, _warpBeforeRandomDeadline());
     uint192 nonceKey = _randomNonceKey();
     uint256 currentNonce = _burnRandomNoncesAtKey(vault, p.depositor, nonceKey);
     p.nonce = _getRandomInvalidNonceAtKey(vault, p.depositor, nonceKey);
@@ -116,7 +116,7 @@ contract VaultSpokeWithSigInvalidSignatureTest is VaultSpokeBaseTest {
   }
 
   function test_mintWithSig_revertsWith_InvalidAccountNonce(bytes32) public {
-    EIP712Types.VaultMint memory p = _mintData(vault, alice, _warpBeforeRandomDeadline());
+    IVaultSpoke.VaultMint memory p = _mintData(vault, alice, _warpBeforeRandomDeadline());
     uint192 nonceKey = _randomNonceKey();
     uint256 currentNonce = _burnRandomNoncesAtKey(vault, p.depositor, nonceKey);
     p.nonce = _getRandomInvalidNonceAtKey(vault, p.depositor, nonceKey);
@@ -131,7 +131,7 @@ contract VaultSpokeWithSigInvalidSignatureTest is VaultSpokeBaseTest {
   }
 
   function test_withdrawWithSig_revertsWith_InvalidAccountNonce(bytes32) public {
-    EIP712Types.VaultWithdraw memory p = _withdrawData(vault, alice, _warpBeforeRandomDeadline());
+    IVaultSpoke.VaultWithdraw memory p = _withdrawData(vault, alice, _warpBeforeRandomDeadline());
     uint192 nonceKey = _randomNonceKey();
     uint256 currentNonce = _burnRandomNoncesAtKey(vault, p.owner, nonceKey);
     p.nonce = _getRandomInvalidNonceAtKey(vault, p.owner, nonceKey);
@@ -146,7 +146,7 @@ contract VaultSpokeWithSigInvalidSignatureTest is VaultSpokeBaseTest {
   }
 
   function test_redeemWithSig_revertsWith_InvalidAccountNonce(bytes32) public {
-    EIP712Types.VaultRedeem memory p = _redeemData(vault, alice, _warpBeforeRandomDeadline());
+    IVaultSpoke.VaultRedeem memory p = _redeemData(vault, alice, _warpBeforeRandomDeadline());
     uint192 nonceKey = _randomNonceKey();
     uint256 currentNonce = _burnRandomNoncesAtKey(vault, p.owner, nonceKey);
     p.nonce = _getRandomInvalidNonceAtKey(vault, p.owner, nonceKey);

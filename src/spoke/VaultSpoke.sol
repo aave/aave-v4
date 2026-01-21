@@ -8,8 +8,8 @@ import {IERC20Permit} from 'src/dependencies/openzeppelin/IERC20Permit.sol';
 import {IERC4626, IERC20Metadata} from 'src/dependencies/openzeppelin/IERC4626.sol';
 import {SignatureChecker, ECDSA} from 'src/dependencies/openzeppelin/SignatureChecker.sol';
 import {EIP712} from 'src/dependencies/solady/EIP712.sol';
+import {EIP712Hash} from 'src/spoke/libraries/EIP712Hash.sol';
 import {MathUtils} from 'src/libraries/math/MathUtils.sol';
-import {EIP712Hash, EIP712Types} from 'src/libraries/EIP712Hash.sol';
 import {NoncesKeyed} from 'src/utils/NoncesKeyed.sol';
 import {IHub} from 'src/hub/interfaces/IHub.sol';
 import {IVaultSpoke} from 'src/spoke/interfaces/IVaultSpoke.sol';
@@ -35,6 +35,16 @@ abstract contract VaultSpoke is IVaultSpoke, ERC20Upgradeable, NoncesKeyed, EIP7
 
   /// @inheritdoc IVaultSpoke
   uint192 public constant PERMIT_NONCE_KEY = 0;
+  /// @inheritdoc IVaultSpoke
+  bytes32 public constant PERMIT_TYPEHASH = EIP712Hash.PERMIT_TYPEHASH;
+  /// @inheritdoc IVaultSpoke
+  bytes32 public constant DEPOSIT_TYPEHASH = EIP712Hash.VAULT_DEPOSIT_TYPEHASH;
+  /// @inheritdoc IVaultSpoke
+  bytes32 public constant MINT_TYPEHASH = EIP712Hash.VAULT_MINT_TYPEHASH;
+  /// @inheritdoc IVaultSpoke
+  bytes32 public constant WITHDRAW_TYPEHASH = EIP712Hash.VAULT_WITHDRAW_TYPEHASH;
+  /// @inheritdoc IVaultSpoke
+  bytes32 public constant REDEEM_TYPEHASH = EIP712Hash.VAULT_REDEEM_TYPEHASH;
 
   constructor(address hub_, uint256 assetId_) {
     require(assetId_ < IHub(hub_).getAssetCount());
@@ -86,7 +96,7 @@ abstract contract VaultSpoke is IVaultSpoke, ERC20Upgradeable, NoncesKeyed, EIP7
 
   /// @inheritdoc IVaultSpoke
   function depositWithSig(
-    EIP712Types.VaultDeposit calldata params,
+    VaultDeposit calldata params,
     bytes calldata signature
   ) external returns (uint256) {
     require(block.timestamp <= params.deadline, InvalidSignature());
@@ -106,7 +116,7 @@ abstract contract VaultSpoke is IVaultSpoke, ERC20Upgradeable, NoncesKeyed, EIP7
 
   /// @inheritdoc IVaultSpoke
   function mintWithSig(
-    EIP712Types.VaultMint calldata params,
+    VaultMint calldata params,
     bytes calldata signature
   ) external returns (uint256) {
     require(block.timestamp <= params.deadline, InvalidSignature());
@@ -122,7 +132,7 @@ abstract contract VaultSpoke is IVaultSpoke, ERC20Upgradeable, NoncesKeyed, EIP7
 
   /// @inheritdoc IVaultSpoke
   function withdrawWithSig(
-    EIP712Types.VaultWithdraw calldata params,
+    VaultWithdraw calldata params,
     bytes calldata signature
   ) external returns (uint256) {
     require(block.timestamp <= params.deadline, InvalidSignature());
@@ -143,7 +153,7 @@ abstract contract VaultSpoke is IVaultSpoke, ERC20Upgradeable, NoncesKeyed, EIP7
 
   /// @inheritdoc IVaultSpoke
   function redeemWithSig(
-    EIP712Types.VaultRedeem calldata params,
+    VaultRedeem calldata params,
     bytes calldata signature
   ) external returns (uint256) {
     require(block.timestamp <= params.deadline, InvalidSignature());
@@ -317,31 +327,6 @@ abstract contract VaultSpoke is IVaultSpoke, ERC20Upgradeable, NoncesKeyed, EIP7
   /// @inheritdoc IERC20Permit
   function DOMAIN_SEPARATOR() public view returns (bytes32) {
     return _domainSeparator();
-  }
-
-  /// @inheritdoc IVaultSpoke
-  function DEPOSIT_TYPEHASH() external pure returns (bytes32) {
-    return EIP712Hash.VAULT_DEPOSIT_TYPEHASH;
-  }
-
-  /// @inheritdoc IVaultSpoke
-  function MINT_TYPEHASH() external pure returns (bytes32) {
-    return EIP712Hash.VAULT_MINT_TYPEHASH;
-  }
-
-  /// @inheritdoc IVaultSpoke
-  function WITHDRAW_TYPEHASH() external pure returns (bytes32) {
-    return EIP712Hash.VAULT_WITHDRAW_TYPEHASH;
-  }
-
-  /// @inheritdoc IVaultSpoke
-  function REDEEM_TYPEHASH() external pure returns (bytes32) {
-    return EIP712Hash.VAULT_REDEEM_TYPEHASH;
-  }
-
-  /// @inheritdoc IVaultSpoke
-  function PERMIT_TYPEHASH() external pure returns (bytes32) {
-    return EIP712Hash.PERMIT_TYPEHASH;
   }
 
   function _executeDeposit(

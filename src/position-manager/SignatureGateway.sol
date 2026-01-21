@@ -5,6 +5,7 @@ pragma solidity 0.8.28;
 import {SafeERC20, IERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
 import {IERC20Permit} from 'src/dependencies/openzeppelin/IERC20Permit.sol';
 import {MathUtils} from 'src/libraries/math/MathUtils.sol';
+import {EIP712Hash} from 'src/position-manager/libraries/EIP712Hash.sol';
 import {GatewayBase} from 'src/position-manager/GatewayBase.sol';
 import {IntentConsumer} from 'src/utils/IntentConsumer.sol';
 import {Multicall} from 'src/utils/Multicall.sol';

@@ -431,7 +431,7 @@ contract SpokeLiquidationCallScenariosTest is SpokeLiquidationCallBaseTest {
 
     // set spoke paused
     IHub hub = _hub(spoke, _usdxReserveId(spoke));
-    _updateSpokePaused(hub, usdxAssetId, address(spoke), true);
+    updateSpokePaused(hub, usdxAssetId, address(spoke), true);
 
     _openSupplyPosition(spoke, collateralReserveId, MAX_SUPPLY_AMOUNT);
 
@@ -458,7 +458,7 @@ contract SpokeLiquidationCallScenariosTest is SpokeLiquidationCallBaseTest {
 
     // set spoke paused
     IHub hub = _hub(spoke, _usdxReserveId(spoke));
-    _updateSpokePaused(hub, usdxAssetId, address(spoke), true);
+    updateSpokePaused(hub, usdxAssetId, address(spoke), true);
 
     _openSupplyPosition(spoke, collateralReserveId, MAX_SUPPLY_AMOUNT);
 

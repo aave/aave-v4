@@ -147,7 +147,7 @@ contract HubReportDeficitTest is HubBase {
       spoke: address(spoke1)
     });
 
-    _updateSpokePaused(hub1, usdxAssetId, address(spoke1), true);
+    updateSpokePaused(hub1, usdxAssetId, address(spoke1), true);
 
     // even if spoke is paused, it can report deficit
     vm.prank(address(spoke1));

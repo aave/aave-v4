@@ -20,9 +20,9 @@ contract VaultSpokeBaseTest is Base {
     IVaultSpoke vault,
     address who,
     uint256 deadline
-  ) internal returns (EIP712Types.VaultDeposit memory) {
+  ) internal returns (IVaultSpoke.VaultDeposit memory) {
     return
-      EIP712Types.VaultDeposit({
+      IVaultSpoke.VaultDeposit({
         depositor: who,
         assets: vm.randomUint(1, MAX_SUPPLY_AMOUNT),
         receiver: vm.randomAddress(),
@@ -35,9 +35,9 @@ contract VaultSpokeBaseTest is Base {
     IVaultSpoke vault,
     address who,
     uint256 deadline
-  ) internal returns (EIP712Types.VaultMint memory) {
+  ) internal returns (IVaultSpoke.VaultMint memory) {
     return
-      EIP712Types.VaultMint({
+      IVaultSpoke.VaultMint({
         depositor: who,
         shares: vm.randomUint(1, MAX_SUPPLY_AMOUNT),
         receiver: vm.randomAddress(),
@@ -50,9 +50,9 @@ contract VaultSpokeBaseTest is Base {
     IVaultSpoke vault,
     address who,
     uint256 deadline
-  ) internal returns (EIP712Types.VaultWithdraw memory) {
+  ) internal returns (IVaultSpoke.VaultWithdraw memory) {
     return
-      EIP712Types.VaultWithdraw({
+      IVaultSpoke.VaultWithdraw({
         owner: who,
         assets: vm.randomUint(1, MAX_SUPPLY_AMOUNT),
         receiver: vm.randomAddress(),
@@ -65,9 +65,9 @@ contract VaultSpokeBaseTest is Base {
     IVaultSpoke vault,
     address who,
     uint256 deadline
-  ) internal returns (EIP712Types.VaultRedeem memory) {
+  ) internal returns (IVaultSpoke.VaultRedeem memory) {
     return
-      EIP712Types.VaultRedeem({
+      IVaultSpoke.VaultRedeem({
         owner: who,
         shares: vm.randomUint(1, MAX_SUPPLY_AMOUNT),
         receiver: vm.randomAddress(),
@@ -93,28 +93,28 @@ contract VaultSpokeBaseTest is Base {
 
   function _getTypedDataHash(
     IVaultSpoke vault,
-    EIP712Types.VaultDeposit memory params
+    IVaultSpoke.VaultDeposit memory params
   ) internal view returns (bytes32) {
     return _typedDataHash(vault, vm.eip712HashStruct('VaultDeposit', abi.encode(params)));
   }
 
   function _getTypedDataHash(
     IVaultSpoke vault,
-    EIP712Types.VaultMint memory params
+    IVaultSpoke.VaultMint memory params
   ) internal view returns (bytes32) {
     return _typedDataHash(vault, vm.eip712HashStruct('VaultMint', abi.encode(params)));
   }
 
   function _getTypedDataHash(
     IVaultSpoke vault,
-    EIP712Types.VaultWithdraw memory params
+    IVaultSpoke.VaultWithdraw memory params
   ) internal view returns (bytes32) {
     return _typedDataHash(vault, vm.eip712HashStruct('VaultWithdraw', abi.encode(params)));
   }
 
   function _getTypedDataHash(
     IVaultSpoke vault,
-    EIP712Types.VaultRedeem memory params
+    IVaultSpoke.VaultRedeem memory params
   ) internal view returns (bytes32) {
     return _typedDataHash(vault, vm.eip712HashStruct('VaultRedeem', abi.encode(params)));
   }

@@ -1239,7 +1239,7 @@ abstract contract Base is Test {
     assertEq(hub.getSpokeConfig(assetId, spoke), spokeConfig);
   }
 
-  function _updateSpokeActive(
+  function updateSpokeActive(
     IHub hub,
     uint256 assetId,
     address spoke,
@@ -1281,7 +1281,7 @@ abstract contract Base is Test {
     assertEq(hub.getSpokeConfig(assetId, spoke), spokeConfig);
   }
 
-  function _updateSpokeRiskPremiumThreshold(
+  function updateSpokeRiskPremiumThreshold(
     IHub hub,
     uint256 assetId,
     address spoke,
@@ -2302,8 +2302,7 @@ abstract contract Base is Test {
   ) internal pausePrank returns (IVaultSpoke) {
     address vaultSpokeImpl = address(new VaultSpokeInstance(address(hub), assetId));
     IVaultSpoke vaultSpoke = IVaultSpoke(
-      _proxify(
-        makeAddr('deployer'),
+      DeployUtils.proxify(
         vaultSpokeImpl,
         proxyAdminOwner,
         abi.encodeCall(VaultSpokeInstance.initialize, (shareName, shareSymbol))

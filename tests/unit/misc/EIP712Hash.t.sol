@@ -4,8 +4,9 @@ pragma solidity ^0.8.0;
 
 import {Test} from 'forge-std/Test.sol';
 
-import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 import {ISignatureGateway} from 'src/position-manager/interfaces/ISignatureGateway.sol';
+import {IVaultSpoke} from 'src/spoke/interfaces/IVaultSpoke.sol';
+import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 
 import {EIP712Hash as PositionManagerEIP712Hash} from 'src/position-manager/libraries/EIP712Hash.sol';
 import {EIP712Hash as SpokeEIP712Hash} from 'src/spoke/libraries/EIP712Hash.sol';
@@ -130,25 +131,27 @@ contract EIP712HashTest is Test {
 
   // @dev all struct params should be hashed & placed in the same order as the typehash
   function test_hash_supply_fuzz(ISignatureGateway.Supply calldata params) public pure {
-    bytes32 expectedHash = keccak256(abi.encode(EIP712Hash.SUPPLY_TYPEHASH, params));
+    bytes32 expectedHash = keccak256(abi.encode(PositionManagerEIP712Hash.SUPPLY_TYPEHASH, params));
     assertEq(params.hash(), expectedHash);
     assertEq(params.hash(), vm.eip712HashStruct('Supply', abi.encode(params)));
   }
 
-  function test_hash_withdraw_fuzz(EIP712Types.Withdraw calldata params) public pure {
-    bytes32 expectedHash = keccak256(abi.encode(EIP712Hash.WITHDRAW_TYPEHASH, params));
+  function test_hash_withdraw_fuzz(ISignatureGateway.Withdraw calldata params) public pure {
+    bytes32 expectedHash = keccak256(
+      abi.encode(PositionManagerEIP712Hash.WITHDRAW_TYPEHASH, params)
+    );
     assertEq(params.hash(), expectedHash);
     assertEq(params.hash(), vm.eip712HashStruct('Withdraw', abi.encode(params)));
   }
 
-  function test_hash_borrow_fuzz(EIP712Types.Borrow calldata params) public pure {
-    bytes32 expectedHash = keccak256(abi.encode(EIP712Hash.BORROW_TYPEHASH, params));
+  function test_hash_borrow_fuzz(ISignatureGateway.Borrow calldata params) public pure {
+    bytes32 expectedHash = keccak256(abi.encode(PositionManagerEIP712Hash.BORROW_TYPEHASH, params));
     assertEq(params.hash(), expectedHash);
     assertEq(params.hash(), vm.eip712HashStruct('Borrow', abi.encode(params)));
   }
 
-  function test_hash_repay_fuzz(EIP712Types.Repay calldata params) public pure {
-    bytes32 expectedHash = keccak256(abi.encode(EIP712Hash.REPAY_TYPEHASH, params));
+  function test_hash_repay_fuzz(ISignatureGateway.Repay calldata params) public pure {
+    bytes32 expectedHash = keccak256(abi.encode(PositionManagerEIP712Hash.REPAY_TYPEHASH, params));
     assertEq(params.hash(), expectedHash);
     assertEq(params.hash(), vm.eip712HashStruct('Repay', abi.encode(params)));
   }
@@ -204,7 +207,7 @@ contract EIP712HashTest is Test {
   function test_hash_vaultRedeem_fuzz(IVaultSpoke.VaultRedeem calldata params) public pure {
     bytes32 expectedHash = keccak256(abi.encode(SpokeEIP712Hash.VAULT_REDEEM_TYPEHASH, params));
     assertEq(params.hash(), expectedHash);
-    assertEq(params.hash(), vm.eip712HashStruct('UpdateUserDynamicConfig', abi.encode(params)));
+    assertEq(params.hash(), vm.eip712HashStruct('VaultRedeem', abi.encode(params)));
   }
 
   function test_hash_setUserPositionManagers_fuzz(

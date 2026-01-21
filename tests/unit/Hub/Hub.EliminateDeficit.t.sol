@@ -67,7 +67,7 @@ contract HubEliminateDeficitTest is HubBase {
 
   function test_eliminateDeficit_revertsWith_callerSpokeNotActive() public {
     address caller = address(spoke1);
-    _updateSpokeActive(hub1, _assetId, caller, false);
+    updateSpokeActive(hub1, _assetId, caller, false);
 
     vm.expectRevert(IHub.SpokeNotActive.selector);
     vm.prank(caller);

@@ -35,6 +35,10 @@ library EIP712Hash {
     // keccak256('VaultRedeem(address owner,uint256 shares,address receiver,uint256 nonce,uint256 deadline)')
     0x78b72753239783411f44a6ae16b7cc070aa270bf9328e0afd1ea709e5e6ab4ea;
 
+  bytes32 public constant PERMIT_TYPEHASH =
+    // keccak256('Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)')
+    0x6e71edae12b1b97f4d1f60370fef10105fa2faae0126114a169c64845d6126c9;
+
   function hash(ISpoke.SetUserPositionManagers calldata params) internal pure returns (bytes32) {
     bytes32[] memory updatesHashes = new bytes32[](params.updates.length);
     for (uint256 i = 0; i < updatesHashes.length; ++i) {
