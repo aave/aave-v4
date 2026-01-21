@@ -17,7 +17,8 @@ abstract contract ExtSload is IExtSload {
 
   /// @inheritdoc IExtSload
   function extSloads(bytes32[] calldata slots) external view returns (bytes32[] memory) {
-    assembly ('memory-safe') {
+    // @dev we disregard solidity memory conventions since we take control of entire execution
+    assembly {
       mstore(0x00, 0x20) // to abi-encode response, the array will be found at the next word
       mstore(0x20, slots.length) // set the length of dynamic array
       let start := 0x40 // start of the array
