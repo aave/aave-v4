@@ -21,7 +21,6 @@ abstract contract ExtSload is IExtSload {
       mstore(0x00, 0x20) // to abi-encode response, the array will be found at the next word
       mstore(0x20, slots.length) // set the length of dynamic array
       let start := 0x40 // start of the array
-      mstore(start, 0) // overwrite and poison fmp; since we end context here
       let end := add(start, shl(5, slots.length))
       for {
         let input := slots.offset
