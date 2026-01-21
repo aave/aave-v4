@@ -342,6 +342,10 @@ interface IHub is IHubBase, IAccessManaged {
   /// @return True if the underlying asset is listed.
   function isUnderlyingListed(address underlying) external view returns (bool);
 
+  /// @notice Returns all listed underlying assets.
+  /// @return An array of underlying asset addresses.
+  function getUnderlyingAssets() external view returns (address[] memory);
+
   /// @notice Returns the assetId for the specified underlying asset.
   /// @param underlying The address of the underlying asset.
   /// @return The assetId of the underlying asset.
