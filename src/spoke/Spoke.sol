@@ -18,6 +18,7 @@ import {ReserveFlags, ReserveFlagsMap} from 'src/spoke/libraries/ReserveFlagsMap
 import {UserPositionDebt} from 'src/spoke/libraries/UserPositionDebt.sol';
 import {IntentConsumer} from 'src/utils/IntentConsumer.sol';
 import {Multicall} from 'src/utils/Multicall.sol';
+import {ExtSload} from 'src/utils/ExtSload.sol';
 import {IAaveOracle} from 'src/spoke/interfaces/IAaveOracle.sol';
 import {IHubBase} from 'src/hub/interfaces/IHubBase.sol';
 import {ISpokeBase, ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
@@ -30,6 +31,7 @@ abstract contract Spoke is
   ISpoke,
   AccessManagedUpgradeable,
   IntentConsumer,
+  ExtSload,
   Multicall,
   ReentrancyGuardTransient
 {
