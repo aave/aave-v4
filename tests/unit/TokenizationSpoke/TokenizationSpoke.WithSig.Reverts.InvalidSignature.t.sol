@@ -20,7 +20,7 @@ contract TokenizationSpokeWithSigInvalidSignatureTest is TokenizationSpokeBaseTe
     );
     bytes memory signature = _sign(alicePk, _getTypedDataHash(vault, p));
 
-    vm.expectRevert(ITokenizationSpoke.InvalidSignature.selector);
+    vm.expectRevert(IIntentConsumer.InvalidSignature.selector);
     vm.prank(vm.randomAddress());
     vault.depositWithSig(p, signature);
   }
@@ -29,7 +29,7 @@ contract TokenizationSpokeWithSigInvalidSignatureTest is TokenizationSpokeBaseTe
     ITokenizationSpoke.VaultMint memory p = _mintData(vault, alice, _warpAfterRandomDeadline());
     bytes memory signature = _sign(alicePk, _getTypedDataHash(vault, p));
 
-    vm.expectRevert(ITokenizationSpoke.InvalidSignature.selector);
+    vm.expectRevert(IIntentConsumer.InvalidSignature.selector);
     vm.prank(vm.randomAddress());
     vault.mintWithSig(p, signature);
   }
@@ -42,7 +42,7 @@ contract TokenizationSpokeWithSigInvalidSignatureTest is TokenizationSpokeBaseTe
     );
     bytes memory signature = _sign(alicePk, _getTypedDataHash(vault, p));
 
-    vm.expectRevert(ITokenizationSpoke.InvalidSignature.selector);
+    vm.expectRevert(IIntentConsumer.InvalidSignature.selector);
     vm.prank(vm.randomAddress());
     vault.withdrawWithSig(p, signature);
   }
@@ -51,7 +51,7 @@ contract TokenizationSpokeWithSigInvalidSignatureTest is TokenizationSpokeBaseTe
     ITokenizationSpoke.VaultRedeem memory p = _redeemData(vault, alice, _warpAfterRandomDeadline());
     bytes memory signature = _sign(alicePk, _getTypedDataHash(vault, p));
 
-    vm.expectRevert(ITokenizationSpoke.InvalidSignature.selector);
+    vm.expectRevert(IIntentConsumer.InvalidSignature.selector);
     vm.prank(vm.randomAddress());
     vault.redeemWithSig(p, signature);
   }
@@ -68,7 +68,7 @@ contract TokenizationSpokeWithSigInvalidSignatureTest is TokenizationSpokeBaseTe
     );
     bytes memory signature = _sign(randomUserPk, _getTypedDataHash(vault, p));
 
-    vm.expectRevert(ITokenizationSpoke.InvalidSignature.selector);
+    vm.expectRevert(IIntentConsumer.InvalidSignature.selector);
     vm.prank(vm.randomAddress());
     vault.depositWithSig(p, signature);
   }
@@ -81,7 +81,7 @@ contract TokenizationSpokeWithSigInvalidSignatureTest is TokenizationSpokeBaseTe
     ITokenizationSpoke.VaultMint memory p = _mintData(vault, depositor, _warpAfterRandomDeadline());
     bytes memory signature = _sign(randomUserPk, _getTypedDataHash(vault, p));
 
-    vm.expectRevert(ITokenizationSpoke.InvalidSignature.selector);
+    vm.expectRevert(IIntentConsumer.InvalidSignature.selector);
     vm.prank(vm.randomAddress());
     vault.mintWithSig(p, signature);
   }
@@ -98,7 +98,7 @@ contract TokenizationSpokeWithSigInvalidSignatureTest is TokenizationSpokeBaseTe
     );
     bytes memory signature = _sign(randomUserPk, _getTypedDataHash(vault, p));
 
-    vm.expectRevert(ITokenizationSpoke.InvalidSignature.selector);
+    vm.expectRevert(IIntentConsumer.InvalidSignature.selector);
     vm.prank(vm.randomAddress());
     vault.withdrawWithSig(p, signature);
   }
@@ -111,7 +111,7 @@ contract TokenizationSpokeWithSigInvalidSignatureTest is TokenizationSpokeBaseTe
     ITokenizationSpoke.VaultRedeem memory p = _redeemData(vault, owner, _warpAfterRandomDeadline());
     bytes memory signature = _sign(randomUserPk, _getTypedDataHash(vault, p));
 
-    vm.expectRevert(ITokenizationSpoke.InvalidSignature.selector);
+    vm.expectRevert(IIntentConsumer.InvalidSignature.selector);
     vm.prank(vm.randomAddress());
     vault.redeemWithSig(p, signature);
   }

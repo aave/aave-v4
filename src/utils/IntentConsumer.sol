@@ -14,7 +14,7 @@ import {IIntentConsumer} from 'src/interfaces/IIntentConsumer.sol';
 /// @dev Implements ERC-5267 with `address(this)` as verifyingContract and no custom extensions or optional EIP-712 salt.
 abstract contract IntentConsumer is IIntentConsumer, NoncesKeyed, EIP712 {
   /// @inheritdoc IIntentConsumer
-  function DOMAIN_SEPARATOR() external view returns (bytes32) {
+  function DOMAIN_SEPARATOR() external view virtual returns (bytes32) {
     return _domainSeparator();
   }
 

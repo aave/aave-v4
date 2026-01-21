@@ -6,11 +6,10 @@ import {ERC20Upgradeable} from 'src/dependencies/openzeppelin-upgradeable/ERC20U
 import {SafeERC20, IERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
 import {IERC20Permit} from 'src/dependencies/openzeppelin/IERC20Permit.sol';
 import {IERC4626, IERC20Metadata} from 'src/dependencies/openzeppelin/IERC4626.sol';
-import {SignatureChecker, ECDSA} from 'src/dependencies/openzeppelin/SignatureChecker.sol';
-import {EIP712} from 'src/dependencies/solady/EIP712.sol';
+import {ECDSA} from 'src/dependencies/openzeppelin/ECDSA.sol';
 import {EIP712Hash} from 'src/spoke/libraries/EIP712Hash.sol';
 import {MathUtils} from 'src/libraries/math/MathUtils.sol';
-import {NoncesKeyed} from 'src/utils/NoncesKeyed.sol';
+import {IntentConsumer, IIntentConsumer} from 'src/utils/IntentConsumer.sol';
 import {IHub} from 'src/hub/interfaces/IHub.sol';
 import {ITokenizationSpoke} from 'src/spoke/interfaces/ITokenizationSpoke.sol';
 
@@ -19,7 +18,7 @@ import {ITokenizationSpoke} from 'src/spoke/interfaces/ITokenizationSpoke.sol';
 /// @notice ERC4626 compliant vault for hub's listed asset position management.
 /// @dev Connects to one listed asset, only responsible for tokenizing positions.
 /// @dev Share price accounting is maintained solely on the Hub.
-abstract contract TokenizationSpoke is ITokenizationSpoke, ERC20Upgradeable, NoncesKeyed, EIP712 {
+abstract contract TokenizationSpoke is ITokenizationSpoke, ERC20Upgradeable, IntentConsumer {
   using SafeERC20 for IERC20;
   using MathUtils for uint256;
   using EIP712Hash for *;
@@ -99,13 +98,13 @@ abstract contract TokenizationSpoke is ITokenizationSpoke, ERC20Upgradeable, Non
     VaultDeposit calldata params,
     bytes calldata signature
   ) external returns (uint256) {
-    require(block.timestamp <= params.deadline, InvalidSignature());
-    bytes32 digest = _hashTypedData(params.hash());
-    require(
-      SignatureChecker.isValidSignatureNow(params.depositor, digest, signature),
-      InvalidSignature()
-    );
-    _useCheckedNonce(params.depositor, params.nonce);
+    _verifyAndConsumeIntent({
+      signer: params.depositor,
+      intentHash: params.hash(),
+      nonce: params.nonce,
+      deadline: params.deadline,
+      signature: signature
+    });
     return
       _executeDeposit({
         depositor: params.depositor,
@@ -119,13 +118,13 @@ abstract contract TokenizationSpoke is ITokenizationSpoke, ERC20Upgradeable, Non
     VaultMint calldata params,
     bytes calldata signature
   ) external returns (uint256) {
-    require(block.timestamp <= params.deadline, InvalidSignature());
-    bytes32 digest = _hashTypedData(params.hash());
-    require(
-      SignatureChecker.isValidSignatureNow(params.depositor, digest, signature),
-      InvalidSignature()
-    );
-    _useCheckedNonce(params.depositor, params.nonce);
+    _verifyAndConsumeIntent({
+      signer: params.depositor,
+      intentHash: params.hash(),
+      nonce: params.nonce,
+      deadline: params.deadline,
+      signature: signature
+    });
     return
       _executeMint({depositor: params.depositor, receiver: params.receiver, shares: params.shares});
   }
@@ -135,13 +134,13 @@ abstract contract TokenizationSpoke is ITokenizationSpoke, ERC20Upgradeable, Non
     VaultWithdraw calldata params,
     bytes calldata signature
   ) external returns (uint256) {
-    require(block.timestamp <= params.deadline, InvalidSignature());
-    bytes32 digest = _hashTypedData(params.hash());
-    require(
-      SignatureChecker.isValidSignatureNow(params.owner, digest, signature),
-      InvalidSignature()
-    );
-    _useCheckedNonce(params.owner, params.nonce);
+    _verifyAndConsumeIntent({
+      signer: params.owner,
+      intentHash: params.hash(),
+      nonce: params.nonce,
+      deadline: params.deadline,
+      signature: signature
+    });
     return
       _executeWithdraw({
         caller: params.owner,
@@ -156,13 +155,13 @@ abstract contract TokenizationSpoke is ITokenizationSpoke, ERC20Upgradeable, Non
     VaultRedeem calldata params,
     bytes calldata signature
   ) external returns (uint256) {
-    require(block.timestamp <= params.deadline, InvalidSignature());
-    bytes32 digest = _hashTypedData(params.hash());
-    require(
-      SignatureChecker.isValidSignatureNow(params.owner, digest, signature),
-      InvalidSignature()
-    );
-    _useCheckedNonce(params.owner, params.nonce);
+    _verifyAndConsumeIntent({
+      signer: params.owner,
+      intentHash: params.hash(),
+      nonce: params.nonce,
+      deadline: params.deadline,
+      signature: signature
+    });
     return
       _executeRedeem({
         caller: params.owner,
@@ -325,7 +324,12 @@ abstract contract TokenizationSpoke is ITokenizationSpoke, ERC20Upgradeable, Non
   }
 
   /// @inheritdoc IERC20Permit
-  function DOMAIN_SEPARATOR() public view returns (bytes32) {
+  function DOMAIN_SEPARATOR()
+    public
+    view
+    override(ITokenizationSpoke, IntentConsumer)
+    returns (bytes32)
+  {
     return _domainSeparator();
   }
 

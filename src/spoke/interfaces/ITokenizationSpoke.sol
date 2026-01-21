@@ -2,13 +2,13 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
+import {IERC2612, IERC20Permit} from 'src/dependencies/openzeppelin/IERC2612.sol';
 import {IERC4626} from 'src/dependencies/openzeppelin/IERC4626.sol';
-import {IERC2612} from 'src/dependencies/openzeppelin/IERC2612.sol';
-import {INoncesKeyed} from 'src/interfaces/INoncesKeyed.sol';
+import {IIntentConsumer} from 'src/interfaces/IIntentConsumer.sol';
 
 /// @title ITokenizationSpoke
 /// @author Aave Labs
-interface ITokenizationSpoke is IERC4626, IERC2612, INoncesKeyed {
+interface ITokenizationSpoke is IERC4626, IERC2612, IIntentConsumer {
   struct VaultDeposit {
     address depositor;
     uint256 assets;
@@ -40,9 +40,6 @@ interface ITokenizationSpoke is IERC4626, IERC2612, INoncesKeyed {
     uint256 nonce;
     uint256 deadline;
   }
-
-  /// @notice Thrown when the given signature is invalid.
-  error InvalidSignature();
 
   /// @notice Thrown when the maximum deposit limit is exceeded.
   error MaxDepositExceeded(uint256 maxDeposit, uint256 requestedAssets);
@@ -145,4 +142,11 @@ interface ITokenizationSpoke is IERC4626, IERC2612, INoncesKeyed {
 
   /// @notice Returns the type hash for the share token permit intent.
   function PERMIT_TYPEHASH() external pure returns (bytes32);
+
+  /// @notice Returns the EIP-712 domain separator.
+  function DOMAIN_SEPARATOR()
+    external
+    view
+    override(IERC20Permit, IIntentConsumer)
+    returns (bytes32);
 }
