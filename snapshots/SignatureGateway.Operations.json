@@ -1,4 +1,5 @@
 {
+<<<<<<< HEAD
   "borrowWithSig": "216312",
   "repayWithSig": "189236",
   "setSelfAsUserPositionManagerWithSig": "74932",
@@ -7,4 +8,14 @@
   "updateUserDynamicConfigWithSig": "61511",
   "updateUserRiskPremiumWithSig": "61472",
   "withdrawWithSig": "131764"
+=======
+  "borrowWithSig": "212853",
+  "repayWithSig": "186429",
+  "setSelfAsUserPositionManagerWithSig": "75397",
+  "setUsingAsCollateralWithSig": "85349",
+  "supplyWithSig": "151931",
+  "updateUserDynamicConfigWithSig": "63086",
+  "updateUserRiskPremiumWithSig": "62068",
+  "withdrawWithSig": "130572"
+>>>>>>> origin/dev
 }

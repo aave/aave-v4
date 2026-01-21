@@ -85,7 +85,7 @@ contract HubSweepTest is HubBase {
       abi.encodeWithSelector(IHub.InsufficientLiquidity.selector, initialLiquidity - swept)
     );
     vm.prank(address(spoke1));
-    hub1.remove(daiAssetId, swept + 1, alice);
+    hub1.remove(daiAssetId, initialLiquidity - swept + 1, alice);
   }
 
   function test_sweep_does_not_impact_utilization(uint256 supplyAmount, uint256 drawAmount) public {

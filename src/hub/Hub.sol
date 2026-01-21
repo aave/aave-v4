@@ -334,8 +334,7 @@ contract Hub is IHub, AccessManaged {
     spoke.drawnShares -= drawnShares;
     _applyPremiumDelta(asset, spoke, premiumDelta);
 
-    uint256 deficitAmountRay = uint256(drawnShares) *
-      asset.drawnIndex +
+    uint256 deficitAmountRay = uint256(drawnShares) * asset.drawnIndex +
       premiumDelta.restoredPremiumRay;
     asset.deficitRay += deficitAmountRay.toUint200();
     spoke.deficitRay += deficitAmountRay.toUint200();
@@ -352,22 +351,21 @@ contract Hub is IHub, AccessManaged {
     uint256 assetId,
     uint256 amount,
     address spoke
-  ) external returns (uint256) {
+  ) external restricted returns (uint256) {
     Asset storage asset = _assets[assetId];
     SpokeData storage callerSpoke = _spokes[assetId][msg.sender];
     SpokeData storage coveredSpoke = _spokes[assetId][spoke];
 
     asset.accrue();
-    _validateEliminateDeficit(callerSpoke, amount);
-
     uint256 deficitRay = coveredSpoke.deficitRay;
     uint256 deficitAmountRay = (amount < deficitRay.fromRayUp()) ? amount.toRay() : deficitRay;
+    _validateEliminateDeficit(callerSpoke, deficitAmountRay);
 
     uint120 shares = asset.toAddedSharesUp(deficitAmountRay.fromRayUp()).toUint120();
     asset.addedShares -= shares;
     callerSpoke.addedShares -= shares;
-    asset.deficitRay = asset.deficitRay.uncheckedSub(deficitAmountRay).toUint200();
-    coveredSpoke.deficitRay = deficitRay.uncheckedSub(deficitAmountRay).toUint200();
+    asset.deficitRay -= deficitAmountRay.toUint200();
+    coveredSpoke.deficitRay -= deficitAmountRay.toUint200();
 
     asset.updateDrawnRate(assetId);
 
@@ -433,6 +431,7 @@ contract Hub is IHub, AccessManaged {
 
     asset.liquidity = liquidity.uncheckedSub(amount).toUint120();
     asset.swept += amount.toUint120();
+
     asset.updateDrawnRate(assetId);
 
     IERC20(asset.underlying).safeTransfer(msg.sender, amount);
@@ -448,11 +447,13 @@ contract Hub is IHub, AccessManaged {
     asset.accrue();
     _validateReclaim(asset, msg.sender, amount);
 
-    asset.liquidity += amount.toUint120();
+    uint256 liquidity = asset.liquidity + amount;
+    uint256 balance = IERC20(asset.underlying).balanceOf(address(this));
+    require(balance >= liquidity, InsufficientTransferred(liquidity.uncheckedSub(balance)));
+    asset.liquidity = liquidity.toUint120();
     asset.swept -= amount.toUint120();
-    asset.updateDrawnRate(assetId);
 
-    IERC20(asset.underlying).safeTransferFrom(msg.sender, address(this), amount);
+    asset.updateDrawnRate(assetId);
 
     emit Reclaim(assetId, msg.sender, amount);
   }
@@ -831,7 +832,7 @@ contract Hub is IHub, AccessManaged {
     require(
       addCap == MAX_ALLOWED_SPOKE_CAP ||
         addCap * MathUtils.uncheckedExp(10, asset.decimals) >=
-        asset.toAddedAssetsUp(spoke.addedShares) + amount,
+          asset.toAddedAssetsUp(spoke.addedShares) + amount,
       AddCapExceeded(addCap)
     );
   }
@@ -859,7 +860,7 @@ contract Hub is IHub, AccessManaged {
     require(
       drawCap == MAX_ALLOWED_SPOKE_CAP ||
         drawCap * MathUtils.uncheckedExp(10, asset.decimals) >=
-        owed + amount + uint256(spoke.deficitRay).fromRayUp(),
+          owed + amount + uint256(spoke.deficitRay).fromRayUp(),
       DrawCapExceeded(drawCap)
     );
   }
@@ -893,14 +894,16 @@ contract Hub is IHub, AccessManaged {
     require(premiumAmountRay <= premiumRay, SurplusPremiumRayDeficitReported(premiumRay));
   }
 
-  function _validateEliminateDeficit(SpokeData storage spoke, uint256 amount) internal view {
-    require(spoke.active, SpokeNotActive());
-    require(amount > 0, InvalidAmount());
+  function _validateEliminateDeficit(
+    SpokeData storage callerSpoke,
+    uint256 deficitAmountRay
+  ) internal view {
+    require(callerSpoke.active, SpokeNotActive());
+    require(deficitAmountRay > 0, InvalidAmount());
   }
 
-  function _validatePayFeeShares(SpokeData storage senderSpoke, uint256 feeShares) internal view {
-    require(senderSpoke.active, SpokeNotActive());
-    require(!senderSpoke.paused, SpokePaused());
+  function _validatePayFeeShares(SpokeData storage spoke, uint256 feeShares) internal view {
+    require(spoke.active, SpokeNotActive());
     require(feeShares > 0, InvalidShares());
   }
 
@@ -917,7 +920,7 @@ contract Hub is IHub, AccessManaged {
     require(
       addCap == MAX_ALLOWED_SPOKE_CAP ||
         addCap * MathUtils.uncheckedExp(10, asset.decimals) >=
-        asset.toAddedAssetsUp(receiver.addedShares + shares),
+          asset.toAddedAssetsUp(receiver.addedShares + shares),
       AddCapExceeded(addCap)
     );
   }

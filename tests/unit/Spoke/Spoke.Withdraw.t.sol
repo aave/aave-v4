@@ -35,6 +35,63 @@ contract SpokeWithdrawTest is SpokeBase {
     uint256 skipTime;
   }
 
+  function test_withdraw_revertsWith_ReentrancyGuardReentrantCall_hubRemove() public {
+    uint256 amount = 100e18;
+    Utils.supplyCollateral({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      caller: bob,
+      amount: amount * 10,
+      onBehalfOf: bob
+    });
+
+    MockReentrantCaller reentrantCaller = new MockReentrantCaller(
+      address(spoke1),
+      ISpokeBase.withdraw.selector
+    );
+
+    vm.mockFunction(
+      address(_hub(spoke1, _daiReserveId(spoke1))),
+      address(reentrantCaller),
+      abi.encodeWithSelector(IHubBase.remove.selector)
+    );
+    vm.expectRevert(ReentrancyGuardTransient.ReentrancyGuardReentrantCall.selector);
+    vm.prank(bob);
+    spoke1.withdraw(_daiReserveId(spoke1), amount, bob);
+  }
+
+  function test_withdraw_revertsWith_ReentrancyGuardReentrantCall_hubRefreshPremium() public {
+    uint256 amount = 100e18;
+    Utils.supplyCollateral({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      caller: bob,
+      amount: amount * 10,
+      onBehalfOf: bob
+    });
+    Utils.borrow({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      caller: bob,
+      amount: amount,
+      onBehalfOf: bob
+    });
+
+    MockReentrantCaller reentrantCaller = new MockReentrantCaller(
+      address(spoke1),
+      ISpokeBase.withdraw.selector
+    );
+
+    vm.mockFunction(
+      address(_hub(spoke1, _daiReserveId(spoke1))),
+      address(reentrantCaller),
+      abi.encodeWithSelector(IHubBase.refreshPremium.selector)
+    );
+    vm.expectRevert(ReentrancyGuardTransient.ReentrancyGuardReentrantCall.selector);
+    vm.prank(bob);
+    spoke1.withdraw(_daiReserveId(spoke1), amount, bob);
+  }
+
   function test_withdraw_same_block() public {
     uint256 amount = 100e18;
 
