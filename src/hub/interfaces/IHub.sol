@@ -305,7 +305,7 @@ interface IHub is IHubBase, IAccessManaged {
   function mintFeeShares(uint256 assetId) external returns (uint256);
 
   /// @notice Eliminates deficit by removing supplied shares of caller spoke.
-  /// @dev Only callable by active spokes.
+  /// @dev Only callable by active and authorized spokes.
   /// @param assetId The identifier of the asset.
   /// @param amount The amount of deficit to eliminate.
   /// @param spoke The spoke for which the deficit is eliminated.
@@ -331,6 +331,8 @@ interface IHub is IHubBase, IAccessManaged {
 
   /// @notice Reclaims an amount of liquidity of the corresponding asset from the configured reinvestment controller.
   /// @dev The controller can only reclaim up to swept amount. All accrued interest is distributed offchain.
+  /// @dev Underlying assets must be transferred to the Hub before invocation.
+  /// @dev Extra underlying liquidity retained in the Hub can be skimmed by the investment controller through this action.
   /// @param assetId The identifier of the asset.
   /// @param amount The amount to reclaim.
   function reclaim(uint256 assetId, uint256 amount) external;
