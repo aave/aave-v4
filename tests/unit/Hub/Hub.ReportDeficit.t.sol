@@ -136,8 +136,8 @@ contract HubReportDeficitTest is HubBase {
     );
   }
 
-  /// @dev paused spoke can still report deficit
-  function test_reportDeficit_paused() public {
+  /// @dev halted spoke can still report deficit
+  function test_reportDeficit_halted() public {
     // draw usdx liquidity to be restored
     _drawLiquidity({
       assetId: usdxAssetId,
@@ -147,9 +147,9 @@ contract HubReportDeficitTest is HubBase {
       spoke: address(spoke1)
     });
 
-    _updateSpokePaused(hub1, usdxAssetId, address(spoke1), true);
+    _updateSpokeHalted(hub1, usdxAssetId, address(spoke1), true);
 
-    // even if spoke is paused, it can report deficit
+    // even if spoke is halted, it can report deficit
     vm.prank(address(spoke1));
     hub1.reportDeficit(usdxAssetId, 1, ZERO_PREMIUM_DELTA);
   }

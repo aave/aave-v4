@@ -19,7 +19,7 @@ contract HubAddTest is HubBase {
     /// @dev add a minimum decimal asset to test add cap rounding
     IHub.SpokeConfig memory spokeConfig = IHub.SpokeConfig({
       active: true,
-      paused: false,
+      halted: false,
       addCap: Constants.MAX_ALLOWED_SPOKE_CAP,
       drawCap: Constants.MAX_ALLOWED_SPOKE_CAP,
       riskPremiumThreshold: Constants.MAX_ALLOWED_COLLATERAL_RISK
@@ -65,12 +65,12 @@ contract HubAddTest is HubBase {
     vm.stopPrank();
   }
 
-  function test_add_revertsWith_SpokePaused() public {
-    _updateSpokePaused(hub1, daiAssetId, address(spoke1), true);
+  function test_add_revertsWith_SpokeHalted() public {
+    _updateSpokeHalted(hub1, daiAssetId, address(spoke1), true);
     vm.startPrank(address(spoke1));
     tokenList.dai.transferFrom(alice, address(hub1), 100e18);
 
-    vm.expectRevert(IHub.SpokePaused.selector);
+    vm.expectRevert(IHub.SpokeHalted.selector);
     hub1.add(daiAssetId, 100e18);
     vm.stopPrank();
   }

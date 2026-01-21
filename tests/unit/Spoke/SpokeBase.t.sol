@@ -726,7 +726,7 @@ contract SpokeBase is Base {
     assertEq(a.drawCap, b.drawCap, 'drawCap');
     assertEq(a.riskPremiumThreshold, b.riskPremiumThreshold, 'riskPremiumThreshold');
     assertEq(a.active, b.active, 'active');
-    assertEq(a.paused, b.paused, 'paused');
+    assertEq(a.halted, b.halted, 'halted');
     assertEq(a.deficitRay, b.deficitRay, 'deficitRay');
     assertEq(abi.encode(a), abi.encode(b)); // sanity check
   }

@@ -164,10 +164,10 @@ contract HubRefreshPremiumTest is HubBase {
     hub1.refreshPremium(daiAssetId, premiumDelta);
   }
 
-  /// @dev paused but active spokes are allowed to refresh premium
-  function test_refreshPremium_pausedSpokesAllowed() public {
+  /// @dev halted but active spokes are allowed to refresh premium
+  function test_refreshPremium_haltedSpokesAllowed() public {
     _updateSpokeActive(hub1, daiAssetId, address(spoke1), true);
-    _updateSpokePaused(hub1, daiAssetId, address(spoke1), true);
+    _updateSpokeHalted(hub1, daiAssetId, address(spoke1), true);
 
     vm.expectEmit(address(hub1));
     emit IHubBase.RefreshPremium(daiAssetId, address(spoke1), ZERO_PREMIUM_DELTA);
@@ -265,7 +265,7 @@ contract HubRefreshPremiumTest is HubBase {
     } else if (
       riskPremiumThreshold != Constants.MAX_RISK_PREMIUM_THRESHOLD &&
       asset.drawnShares.percentMulUp(riskPremiumThreshold) <
-        asset.premiumShares + sharesDelta.toUint256()
+      asset.premiumShares + sharesDelta.toUint256()
     ) {
       reverting = true;
       vm.expectRevert(IHub.InvalidPremiumChange.selector);

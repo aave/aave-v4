@@ -418,8 +418,8 @@ contract SpokeLiquidationCallScenariosTest is SpokeLiquidationCallBaseTest {
     );
   }
 
-  /// @dev a paused peripheral asset won't block a liquidation
-  function test_scenario_paused_asset() public {
+  /// @dev a halted peripheral asset won't block a liquidation
+  function test_scenario_halted_asset() public {
     uint256 collateralReserveId = _wethReserveId(spoke);
     uint256 debtReserveId = _daiReserveId(spoke);
 
@@ -429,9 +429,9 @@ contract SpokeLiquidationCallScenariosTest is SpokeLiquidationCallBaseTest {
     Utils.borrow(spoke, _usdxReserveId(spoke), user, 100e6, user);
     _makeUserLiquidatable(spoke, user, debtReserveId, 0.95e18);
 
-    // set spoke paused
+    // set spoke halted
     IHub hub = _hub(spoke, _usdxReserveId(spoke));
-    _updateSpokePaused(hub, usdxAssetId, address(spoke), true);
+    _updateSpokeHalted(hub, usdxAssetId, address(spoke), true);
 
     _openSupplyPosition(spoke, collateralReserveId, MAX_SUPPLY_AMOUNT);
 
@@ -444,8 +444,8 @@ contract SpokeLiquidationCallScenariosTest is SpokeLiquidationCallBaseTest {
     spoke.liquidationCall(collateralReserveId, debtReserveId, user, type(uint256).max, false);
   }
 
-  /// @dev a paused peripheral asset won't block a liquidation with deficit
-  function test_scenario_paused_asset_with_deficit() public {
+  /// @dev a halted peripheral asset won't block a liquidation with deficit
+  function test_scenario_halted_asset_with_deficit() public {
     uint256 collateralReserveId = _wethReserveId(spoke);
     uint256 debtReserveId = _daiReserveId(spoke);
 
@@ -456,9 +456,9 @@ contract SpokeLiquidationCallScenariosTest is SpokeLiquidationCallBaseTest {
     // make user unhealthy to result in deficit
     _makeUserLiquidatable(spoke, user, debtReserveId, 0.5e18);
 
-    // set spoke paused
+    // set spoke halted
     IHub hub = _hub(spoke, _usdxReserveId(spoke));
-    _updateSpokePaused(hub, usdxAssetId, address(spoke), true);
+    _updateSpokeHalted(hub, usdxAssetId, address(spoke), true);
 
     _openSupplyPosition(spoke, collateralReserveId, MAX_SUPPLY_AMOUNT);
 
