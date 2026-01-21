@@ -12,14 +12,14 @@ import {EIP712Hash} from 'src/spoke/libraries/EIP712Hash.sol';
 import {MathUtils} from 'src/libraries/math/MathUtils.sol';
 import {NoncesKeyed} from 'src/utils/NoncesKeyed.sol';
 import {IHub} from 'src/hub/interfaces/IHub.sol';
-import {IVaultSpoke} from 'src/spoke/interfaces/IVaultSpoke.sol';
+import {ITokenizationSpoke} from 'src/spoke/interfaces/ITokenizationSpoke.sol';
 
-/// @title VaultSpoke
+/// @title TokenizationSpoke
 /// @author Aave Labs
 /// @notice ERC4626 compliant vault for hub's listed asset position management.
 /// @dev Connects to one listed asset, only responsible for tokenizing positions.
 /// @dev Share price accounting is maintained solely on the Hub.
-abstract contract VaultSpoke is IVaultSpoke, ERC20Upgradeable, NoncesKeyed, EIP712 {
+abstract contract TokenizationSpoke is ITokenizationSpoke, ERC20Upgradeable, NoncesKeyed, EIP712 {
   using SafeERC20 for IERC20;
   using MathUtils for uint256;
   using EIP712Hash for *;
@@ -30,20 +30,20 @@ abstract contract VaultSpoke is IVaultSpoke, ERC20Upgradeable, NoncesKeyed, EIP7
   uint8 internal immutable DECIMALS;
   uint256 internal immutable ASSET_UNITS;
 
-  /// @inheritdoc IVaultSpoke
+  /// @inheritdoc ITokenizationSpoke
   uint40 public immutable MAX_ALLOWED_SPOKE_CAP;
 
-  /// @inheritdoc IVaultSpoke
+  /// @inheritdoc ITokenizationSpoke
   uint192 public constant PERMIT_NONCE_KEY = 0;
-  /// @inheritdoc IVaultSpoke
+  /// @inheritdoc ITokenizationSpoke
   bytes32 public constant PERMIT_TYPEHASH = EIP712Hash.PERMIT_TYPEHASH;
-  /// @inheritdoc IVaultSpoke
+  /// @inheritdoc ITokenizationSpoke
   bytes32 public constant DEPOSIT_TYPEHASH = EIP712Hash.VAULT_DEPOSIT_TYPEHASH;
-  /// @inheritdoc IVaultSpoke
+  /// @inheritdoc ITokenizationSpoke
   bytes32 public constant MINT_TYPEHASH = EIP712Hash.VAULT_MINT_TYPEHASH;
-  /// @inheritdoc IVaultSpoke
+  /// @inheritdoc ITokenizationSpoke
   bytes32 public constant WITHDRAW_TYPEHASH = EIP712Hash.VAULT_WITHDRAW_TYPEHASH;
-  /// @inheritdoc IVaultSpoke
+  /// @inheritdoc ITokenizationSpoke
   bytes32 public constant REDEEM_TYPEHASH = EIP712Hash.VAULT_REDEEM_TYPEHASH;
 
   constructor(address hub_, uint256 assetId_) {
@@ -55,11 +55,11 @@ abstract contract VaultSpoke is IVaultSpoke, ERC20Upgradeable, NoncesKeyed, EIP7
     MAX_ALLOWED_SPOKE_CAP = HUB.MAX_ALLOWED_SPOKE_CAP();
   }
 
-  /// @dev To be overridden by the inheriting VaultSpokeInstance contract.
+  /// @dev To be overridden by the inheriting TokenizationSpokeInstance contract.
   function initialize(string memory shareName, string memory shareSymbol) external virtual;
 
   /// @dev Sets the vault share token's ERC20 name and symbol. Must be called at first initialization.
-  function __VaultSpoke_init(
+  function __TokenizationSpoke_init(
     string memory shareName,
     string memory shareSymbol
   ) internal onlyInitializing {
@@ -94,7 +94,7 @@ abstract contract VaultSpoke is IVaultSpoke, ERC20Upgradeable, NoncesKeyed, EIP7
     return _executeRedeem({caller: msg.sender, receiver: receiver, owner: owner, shares: shares});
   }
 
-  /// @inheritdoc IVaultSpoke
+  /// @inheritdoc ITokenizationSpoke
   function depositWithSig(
     VaultDeposit calldata params,
     bytes calldata signature
@@ -114,7 +114,7 @@ abstract contract VaultSpoke is IVaultSpoke, ERC20Upgradeable, NoncesKeyed, EIP7
       });
   }
 
-  /// @inheritdoc IVaultSpoke
+  /// @inheritdoc ITokenizationSpoke
   function mintWithSig(
     VaultMint calldata params,
     bytes calldata signature
@@ -130,7 +130,7 @@ abstract contract VaultSpoke is IVaultSpoke, ERC20Upgradeable, NoncesKeyed, EIP7
       _executeMint({depositor: params.depositor, receiver: params.receiver, shares: params.shares});
   }
 
-  /// @inheritdoc IVaultSpoke
+  /// @inheritdoc ITokenizationSpoke
   function withdrawWithSig(
     VaultWithdraw calldata params,
     bytes calldata signature
@@ -151,7 +151,7 @@ abstract contract VaultSpoke is IVaultSpoke, ERC20Upgradeable, NoncesKeyed, EIP7
       });
   }
 
-  /// @inheritdoc IVaultSpoke
+  /// @inheritdoc ITokenizationSpoke
   function redeemWithSig(
     VaultRedeem calldata params,
     bytes calldata signature
@@ -172,7 +172,7 @@ abstract contract VaultSpoke is IVaultSpoke, ERC20Upgradeable, NoncesKeyed, EIP7
       });
   }
 
-  /// @inheritdoc IVaultSpoke
+  /// @inheritdoc ITokenizationSpoke
   function depositWithPermit(
     uint256 assets,
     address receiver,
@@ -222,7 +222,7 @@ abstract contract VaultSpoke is IVaultSpoke, ERC20Upgradeable, NoncesKeyed, EIP7
     _approve({owner: owner, spender: spender, value: value});
   }
 
-  /// @inheritdoc IVaultSpoke
+  /// @inheritdoc ITokenizationSpoke
   function renounceAllowance(address owner) external override {
     if (allowance({owner: owner, spender: msg.sender}) == 0) {
       return;
@@ -299,12 +299,12 @@ abstract contract VaultSpoke is IVaultSpoke, ERC20Upgradeable, NoncesKeyed, EIP7
     return previewRedeem(totalSupply());
   }
 
-  /// @inheritdoc IVaultSpoke
+  /// @inheritdoc ITokenizationSpoke
   function hub() public view returns (address) {
     return address(HUB);
   }
 
-  /// @inheritdoc IVaultSpoke
+  /// @inheritdoc ITokenizationSpoke
   function assetId() public view returns (uint256) {
     return ASSET_ID;
   }

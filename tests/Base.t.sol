@@ -68,8 +68,8 @@ import {ReserveFlags, ReserveFlagsMap} from 'src/spoke/libraries/ReserveFlagsMap
 import {LiquidationLogic} from 'src/spoke/libraries/LiquidationLogic.sol';
 import {KeyValueList} from 'src/spoke/libraries/KeyValueList.sol';
 
-import {VaultSpoke, IVaultSpoke} from 'src/spoke/VaultSpoke.sol';
-import {VaultSpokeInstance} from 'src/spoke/instances/VaultSpokeInstance.sol';
+import {TokenizationSpoke, ITokenizationSpoke} from 'src/spoke/TokenizationSpoke.sol';
+import {TokenizationSpokeInstance} from 'src/spoke/instances/TokenizationSpokeInstance.sol';
 
 // position manager
 import {GatewayBase, IGatewayBase} from 'src/position-manager/GatewayBase.sol';
@@ -2293,30 +2293,34 @@ abstract contract Base is Test {
     return (spoke, oracle);
   }
 
-  function _deployVaultSpoke(
+  function _deployTokenizationSpoke(
     IHub hub,
     uint256 assetId,
     string memory shareName,
     string memory shareSymbol,
     address proxyAdminOwner
-  ) internal pausePrank returns (IVaultSpoke) {
-    address vaultSpokeImpl = address(new VaultSpokeInstance(address(hub), assetId));
-    IVaultSpoke vaultSpoke = IVaultSpoke(
+  ) internal pausePrank returns (ITokenizationSpoke) {
+    address tokenizationSpokeImpl = address(new TokenizationSpokeInstance(address(hub), assetId));
+    ITokenizationSpoke tokenizationSpoke = ITokenizationSpoke(
       DeployUtils.proxify(
-        vaultSpokeImpl,
+        tokenizationSpokeImpl,
         proxyAdminOwner,
-        abi.encodeCall(VaultSpokeInstance.initialize, (shareName, shareSymbol))
+        abi.encodeCall(TokenizationSpokeInstance.initialize, (shareName, shareSymbol))
       )
     );
-    return vaultSpoke;
+    return tokenizationSpoke;
   }
 
-  function _registerVaultSpoke(IHub hub, uint256 assetId, IVaultSpoke vaultSpoke) internal {
+  function _registerTokenizationSpoke(
+    IHub hub,
+    uint256 assetId,
+    ITokenizationSpoke tokenizationSpoke
+  ) internal {
     return
-      _registerVaultSpoke(
+      _registerTokenizationSpoke(
         hub,
         assetId,
-        vaultSpoke,
+        tokenizationSpoke,
         IHub.SpokeConfig({
           addCap: type(uint40).max,
           drawCap: 0,
@@ -2327,14 +2331,14 @@ abstract contract Base is Test {
       );
   }
 
-  function _registerVaultSpoke(
+  function _registerTokenizationSpoke(
     IHub hub,
     uint256 assetId,
-    IVaultSpoke vaultSpoke,
+    ITokenizationSpoke tokenizationSpoke,
     IHub.SpokeConfig memory config
   ) internal pausePrank {
     vm.prank(ADMIN);
-    hub.addSpoke(assetId, address(vaultSpoke), config);
+    hub.addSpoke(assetId, address(tokenizationSpoke), config);
   }
 
   function _getDefaultReserveConfig(

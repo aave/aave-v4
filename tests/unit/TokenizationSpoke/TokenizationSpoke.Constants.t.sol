@@ -2,11 +2,17 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import 'tests/unit/VaultSpoke/VaultSpoke.Base.t.sol';
+import 'tests/unit/TokenizationSpoke/TokenizationSpoke.Base.t.sol';
 
-contract VaultSpokeConstantsTest is VaultSpokeBaseTest {
+contract TokenizationSpokeConstantsTest is TokenizationSpokeBaseTest {
   function test_eip712Domain() public {
-    IVaultSpoke instance = _deployVaultSpoke(hub1, daiAssetId, 'Core Hub DAI', 'chDAI', ADMIN);
+    ITokenizationSpoke instance = _deployTokenizationSpoke(
+      hub1,
+      daiAssetId,
+      'Core Hub DAI',
+      'chDAI',
+      ADMIN
+    );
     (
       bytes1 fields,
       string memory name,
@@ -27,7 +33,13 @@ contract VaultSpokeConstantsTest is VaultSpokeBaseTest {
   }
 
   function test_DOMAIN_SEPARATOR() public {
-    IVaultSpoke instance = _deployVaultSpoke(hub1, daiAssetId, 'Core Hub DAI', 'chDAI', ADMIN);
+    ITokenizationSpoke instance = _deployTokenizationSpoke(
+      hub1,
+      daiAssetId,
+      'Core Hub DAI',
+      'chDAI',
+      ADMIN
+    );
     bytes32 expectedDomainSeparator = keccak256(
       abi.encode(
         keccak256(

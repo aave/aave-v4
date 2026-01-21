@@ -5,7 +5,7 @@ pragma solidity ^0.8.0;
 import {Test} from 'forge-std/Test.sol';
 
 import {ISignatureGateway} from 'src/position-manager/interfaces/ISignatureGateway.sol';
-import {IVaultSpoke} from 'src/spoke/interfaces/IVaultSpoke.sol';
+import {ITokenizationSpoke} from 'src/spoke/interfaces/ITokenizationSpoke.sol';
 import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 
 import {EIP712Hash as PositionManagerEIP712Hash} from 'src/position-manager/libraries/EIP712Hash.sol';
@@ -186,25 +186,29 @@ contract EIP712HashTest is Test {
     assertEq(params.hash(), vm.eip712HashStruct('UpdateUserDynamicConfig', abi.encode(params)));
   }
 
-  function test_hash_vaultDeposit_fuzz(IVaultSpoke.VaultDeposit calldata params) public pure {
+  function test_hash_vaultDeposit_fuzz(
+    ITokenizationSpoke.VaultDeposit calldata params
+  ) public pure {
     bytes32 expectedHash = keccak256(abi.encode(SpokeEIP712Hash.VAULT_DEPOSIT_TYPEHASH, params));
     assertEq(params.hash(), expectedHash);
     assertEq(params.hash(), vm.eip712HashStruct('VaultDeposit', abi.encode(params)));
   }
 
-  function test_hash_vaultMint_fuzz(IVaultSpoke.VaultMint calldata params) public pure {
+  function test_hash_vaultMint_fuzz(ITokenizationSpoke.VaultMint calldata params) public pure {
     bytes32 expectedHash = keccak256(abi.encode(SpokeEIP712Hash.VAULT_MINT_TYPEHASH, params));
     assertEq(params.hash(), expectedHash);
     assertEq(params.hash(), vm.eip712HashStruct('VaultMint', abi.encode(params)));
   }
 
-  function test_hash_vaultWithdraw_fuzz(IVaultSpoke.VaultWithdraw calldata params) public pure {
+  function test_hash_vaultWithdraw_fuzz(
+    ITokenizationSpoke.VaultWithdraw calldata params
+  ) public pure {
     bytes32 expectedHash = keccak256(abi.encode(SpokeEIP712Hash.VAULT_WITHDRAW_TYPEHASH, params));
     assertEq(params.hash(), expectedHash);
     assertEq(params.hash(), vm.eip712HashStruct('VaultWithdraw', abi.encode(params)));
   }
 
-  function test_hash_vaultRedeem_fuzz(IVaultSpoke.VaultRedeem calldata params) public pure {
+  function test_hash_vaultRedeem_fuzz(ITokenizationSpoke.VaultRedeem calldata params) public pure {
     bytes32 expectedHash = keccak256(abi.encode(SpokeEIP712Hash.VAULT_REDEEM_TYPEHASH, params));
     assertEq(params.hash(), expectedHash);
     assertEq(params.hash(), vm.eip712HashStruct('VaultRedeem', abi.encode(params)));

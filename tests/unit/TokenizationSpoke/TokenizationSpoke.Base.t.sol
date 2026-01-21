@@ -4,25 +4,25 @@ pragma solidity ^0.8.0;
 
 import 'tests/Base.t.sol';
 
-contract VaultSpokeBaseTest is Base {
-  IVaultSpoke public daiVault;
+contract TokenizationSpokeBaseTest is Base {
+  ITokenizationSpoke public daiVault;
   string public constant SHARE_NAME = 'Core Hub DAI';
   string public constant SHARE_SYMBOL = 'chDAI';
 
   function setUp() public virtual override {
     deployFixtures();
     initEnvironment();
-    daiVault = _deployVaultSpoke(hub1, daiAssetId, SHARE_NAME, SHARE_SYMBOL, ADMIN);
-    _registerVaultSpoke(hub1, daiAssetId, daiVault);
+    daiVault = _deployTokenizationSpoke(hub1, daiAssetId, SHARE_NAME, SHARE_SYMBOL, ADMIN);
+    _registerTokenizationSpoke(hub1, daiAssetId, daiVault);
   }
 
   function _depositData(
-    IVaultSpoke vault,
+    ITokenizationSpoke vault,
     address who,
     uint256 deadline
-  ) internal returns (IVaultSpoke.VaultDeposit memory) {
+  ) internal returns (ITokenizationSpoke.VaultDeposit memory) {
     return
-      IVaultSpoke.VaultDeposit({
+      ITokenizationSpoke.VaultDeposit({
         depositor: who,
         assets: vm.randomUint(1, MAX_SUPPLY_AMOUNT),
         receiver: vm.randomAddress(),
@@ -32,12 +32,12 @@ contract VaultSpokeBaseTest is Base {
   }
 
   function _mintData(
-    IVaultSpoke vault,
+    ITokenizationSpoke vault,
     address who,
     uint256 deadline
-  ) internal returns (IVaultSpoke.VaultMint memory) {
+  ) internal returns (ITokenizationSpoke.VaultMint memory) {
     return
-      IVaultSpoke.VaultMint({
+      ITokenizationSpoke.VaultMint({
         depositor: who,
         shares: vm.randomUint(1, MAX_SUPPLY_AMOUNT),
         receiver: vm.randomAddress(),
@@ -47,12 +47,12 @@ contract VaultSpokeBaseTest is Base {
   }
 
   function _withdrawData(
-    IVaultSpoke vault,
+    ITokenizationSpoke vault,
     address who,
     uint256 deadline
-  ) internal returns (IVaultSpoke.VaultWithdraw memory) {
+  ) internal returns (ITokenizationSpoke.VaultWithdraw memory) {
     return
-      IVaultSpoke.VaultWithdraw({
+      ITokenizationSpoke.VaultWithdraw({
         owner: who,
         assets: vm.randomUint(1, MAX_SUPPLY_AMOUNT),
         receiver: vm.randomAddress(),
@@ -62,12 +62,12 @@ contract VaultSpokeBaseTest is Base {
   }
 
   function _redeemData(
-    IVaultSpoke vault,
+    ITokenizationSpoke vault,
     address who,
     uint256 deadline
-  ) internal returns (IVaultSpoke.VaultRedeem memory) {
+  ) internal returns (ITokenizationSpoke.VaultRedeem memory) {
     return
-      IVaultSpoke.VaultRedeem({
+      ITokenizationSpoke.VaultRedeem({
         owner: who,
         shares: vm.randomUint(1, MAX_SUPPLY_AMOUNT),
         receiver: vm.randomAddress(),
@@ -77,7 +77,7 @@ contract VaultSpokeBaseTest is Base {
   }
 
   function _permitData(
-    IVaultSpoke vault,
+    ITokenizationSpoke vault,
     address who,
     uint256 deadline
   ) internal returns (EIP712Types.Permit memory) {
@@ -92,45 +92,48 @@ contract VaultSpokeBaseTest is Base {
   }
 
   function _getTypedDataHash(
-    IVaultSpoke vault,
-    IVaultSpoke.VaultDeposit memory params
+    ITokenizationSpoke vault,
+    ITokenizationSpoke.VaultDeposit memory params
   ) internal view returns (bytes32) {
     return _typedDataHash(vault, vm.eip712HashStruct('VaultDeposit', abi.encode(params)));
   }
 
   function _getTypedDataHash(
-    IVaultSpoke vault,
-    IVaultSpoke.VaultMint memory params
+    ITokenizationSpoke vault,
+    ITokenizationSpoke.VaultMint memory params
   ) internal view returns (bytes32) {
     return _typedDataHash(vault, vm.eip712HashStruct('VaultMint', abi.encode(params)));
   }
 
   function _getTypedDataHash(
-    IVaultSpoke vault,
-    IVaultSpoke.VaultWithdraw memory params
+    ITokenizationSpoke vault,
+    ITokenizationSpoke.VaultWithdraw memory params
   ) internal view returns (bytes32) {
     return _typedDataHash(vault, vm.eip712HashStruct('VaultWithdraw', abi.encode(params)));
   }
 
   function _getTypedDataHash(
-    IVaultSpoke vault,
-    IVaultSpoke.VaultRedeem memory params
+    ITokenizationSpoke vault,
+    ITokenizationSpoke.VaultRedeem memory params
   ) internal view returns (bytes32) {
     return _typedDataHash(vault, vm.eip712HashStruct('VaultRedeem', abi.encode(params)));
   }
 
   function _getTypedDataHash(
-    IVaultSpoke vault,
+    ITokenizationSpoke vault,
     EIP712Types.Permit memory params
   ) internal view returns (bytes32) {
     return _typedDataHash(vault, vm.eip712HashStruct('Permit', abi.encode(params)));
   }
 
-  function _typedDataHash(IVaultSpoke vault, bytes32 typeHash) internal view returns (bytes32) {
+  function _typedDataHash(
+    ITokenizationSpoke vault,
+    bytes32 typeHash
+  ) internal view returns (bytes32) {
     return keccak256(abi.encodePacked('\x19\x01', vault.DOMAIN_SEPARATOR(), typeHash));
   }
 
-  function _assertVaultHasNoBalanceOrAllowance(IVaultSpoke vault, address who) internal {
+  function _assertVaultHasNoBalanceOrAllowance(ITokenizationSpoke vault, address who) internal {
     _assertEntityHasNoBalanceOrAllowance({
       underlying: IERC20(vault.asset()),
       entity: address(vault),
@@ -139,19 +142,19 @@ contract VaultSpokeBaseTest is Base {
   }
 }
 
-contract VaultSpokeInitTest is VaultSpokeBaseTest {
+contract TokenizationSpokeInitTest is TokenizationSpokeBaseTest {
   function test_constructor_reverts_when_invalid_setup() public {
     uint256 invalidAssetId = vm.randomUint(hub1.getAssetCount(), UINT256_MAX);
     vm.expectRevert();
-    new VaultSpokeInstance(address(hub1), invalidAssetId);
+    new TokenizationSpokeInstance(address(hub1), invalidAssetId);
 
     vm.expectRevert();
-    new VaultSpokeInstance(address(0), vm.randomUint());
+    new TokenizationSpokeInstance(address(0), vm.randomUint());
   }
 
   function test_constructor_asset_correctly_set() public {
     uint256 assetId = vm.randomUint(0, hub1.getAssetCount() - 1);
-    VaultSpokeInstance instance = new VaultSpokeInstance(address(hub1), assetId);
+    TokenizationSpokeInstance instance = new TokenizationSpokeInstance(address(hub1), assetId);
     assertEq(instance.asset(), hub1.getAsset(assetId).underlying);
     assertEq(instance.decimals(), hub1.getAsset(assetId).decimals);
   }
@@ -178,7 +181,7 @@ contract VaultSpokeInitTest is VaultSpokeBaseTest {
     assertEq(proxyAdmin.UPGRADE_INTERFACE_VERSION(), '5.0.0');
     assertEq(
       _getProxyInitializedVersion(address(daiVault)),
-      VaultSpokeInstance(address(daiVault)).SPOKE_REVISION()
+      TokenizationSpokeInstance(address(daiVault)).SPOKE_REVISION()
     );
     address implementation = _getImplementationAddress(address(daiVault));
     assertEq(_getProxyInitializedVersion(implementation), type(uint64).max);

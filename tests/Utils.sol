@@ -6,7 +6,7 @@ import {Vm} from 'forge-std/Vm.sol';
 import {SafeERC20, IERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
 import {IHub, IHubBase} from 'src/hub/interfaces/IHub.sol';
 import {ISpokeBase, ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
-import {IVaultSpoke} from 'src/spoke/interfaces/IVaultSpoke.sol';
+import {ITokenizationSpoke} from 'src/spoke/interfaces/ITokenizationSpoke.sol';
 
 library Utils {
   using SafeERC20 for *;
@@ -218,7 +218,7 @@ library Utils {
     _approve(IERC20(hub.getAsset(assetId).underlying), owner, caller, amount);
   }
 
-  function approve(IVaultSpoke vault, address owner, uint256 amount) internal {
+  function approve(ITokenizationSpoke vault, address owner, uint256 amount) internal {
     _approve(IERC20(vault.asset()), owner, address(vault), amount);
   }
 

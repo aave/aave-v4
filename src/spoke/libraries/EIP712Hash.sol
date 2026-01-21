@@ -3,7 +3,7 @@
 pragma solidity ^0.8.20;
 
 import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
-import {IVaultSpoke} from 'src/spoke/interfaces/IVaultSpoke.sol';
+import {ITokenizationSpoke} from 'src/spoke/interfaces/ITokenizationSpoke.sol';
 
 /// @title EIP712Hash library
 /// @author Aave Labs
@@ -60,7 +60,7 @@ library EIP712Hash {
     return keccak256(abi.encode(POSITION_MANAGER_UPDATE, params.positionManager, params.approve));
   }
 
-  function hash(IVaultSpoke.VaultDeposit calldata params) internal pure returns (bytes32) {
+  function hash(ITokenizationSpoke.VaultDeposit calldata params) internal pure returns (bytes32) {
     return
       keccak256(
         abi.encode(
@@ -74,7 +74,7 @@ library EIP712Hash {
       );
   }
 
-  function hash(IVaultSpoke.VaultMint calldata params) internal pure returns (bytes32) {
+  function hash(ITokenizationSpoke.VaultMint calldata params) internal pure returns (bytes32) {
     return
       keccak256(
         abi.encode(
@@ -88,7 +88,7 @@ library EIP712Hash {
       );
   }
 
-  function hash(IVaultSpoke.VaultWithdraw calldata params) internal pure returns (bytes32) {
+  function hash(ITokenizationSpoke.VaultWithdraw calldata params) internal pure returns (bytes32) {
     return
       keccak256(
         abi.encode(
@@ -102,7 +102,7 @@ library EIP712Hash {
       );
   }
 
-  function hash(IVaultSpoke.VaultRedeem calldata params) internal pure returns (bytes32) {
+  function hash(ITokenizationSpoke.VaultRedeem calldata params) internal pure returns (bytes32) {
     return
       keccak256(
         abi.encode(

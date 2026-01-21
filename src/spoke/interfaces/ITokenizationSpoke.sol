@@ -6,9 +6,9 @@ import {IERC4626} from 'src/dependencies/openzeppelin/IERC4626.sol';
 import {IERC2612} from 'src/dependencies/openzeppelin/IERC2612.sol';
 import {INoncesKeyed} from 'src/interfaces/INoncesKeyed.sol';
 
-/// @title IVaultSpoke
+/// @title ITokenizationSpoke
 /// @author Aave Labs
-interface IVaultSpoke is IERC4626, IERC2612, INoncesKeyed {
+interface ITokenizationSpoke is IERC4626, IERC2612, INoncesKeyed {
   struct VaultDeposit {
     address depositor;
     uint256 assets;

@@ -2,18 +2,18 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity 0.8.28;
 
-import {VaultSpoke} from 'src/spoke/VaultSpoke.sol';
+import {TokenizationSpoke} from 'src/spoke/TokenizationSpoke.sol';
 
-/// @title VaultSpokeInstance
+/// @title TokenizationSpokeInstance
 /// @author Aave Labs
-/// @notice Implementation contract for the VaultSpoke.
-contract VaultSpokeInstance is VaultSpoke {
+/// @notice Implementation contract for the TokenizationSpoke.
+contract TokenizationSpokeInstance is TokenizationSpoke {
   uint64 public constant SPOKE_REVISION = 1;
 
   /// @dev Constructor.
   /// @param hub_ The address of the hub.
   /// @param assetId_ The identifier of the asset.
-  constructor(address hub_, uint256 assetId_) VaultSpoke(hub_, assetId_) {
+  constructor(address hub_, uint256 assetId_) TokenizationSpoke(hub_, assetId_) {
     _disableInitializers();
   }
 
@@ -24,6 +24,6 @@ contract VaultSpokeInstance is VaultSpoke {
     string memory shareName,
     string memory shareSymbol
   ) external override reinitializer(SPOKE_REVISION) {
-    __VaultSpoke_init(shareName, shareSymbol);
+    __TokenizationSpoke_init(shareName, shareSymbol);
   }
 }

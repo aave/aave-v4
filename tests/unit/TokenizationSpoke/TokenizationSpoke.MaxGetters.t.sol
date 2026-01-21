@@ -1,10 +1,10 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import 'tests/unit/VaultSpoke/VaultSpoke.Base.t.sol';
+import 'tests/unit/TokenizationSpoke/TokenizationSpoke.Base.t.sol';
 
-abstract contract VaultSpokeMaxGettersReturnZeroTest is VaultSpokeBaseTest {
-  IVaultSpoke public vault;
+abstract contract TokenizationSpokeMaxGettersReturnZeroTest is TokenizationSpokeBaseTest {
+  ITokenizationSpoke public vault;
 
   function setUp() public virtual override {
     super.setUp();
@@ -55,23 +55,31 @@ abstract contract VaultSpokeMaxGettersReturnZeroTest is VaultSpokeBaseTest {
   }
 }
 
-contract VaultSpokeMaxGettersTest_Active_NotPaused is VaultSpokeMaxGettersReturnZeroTest {}
+contract TokenizationSpokeMaxGettersTest_Active_NotPaused is
+  TokenizationSpokeMaxGettersReturnZeroTest
+{}
 
-contract VaultSpokeMaxGettersTest_Active_Paused is VaultSpokeMaxGettersReturnZeroTest {
+contract TokenizationSpokeMaxGettersTest_Active_Paused is
+  TokenizationSpokeMaxGettersReturnZeroTest
+{
   function setUp() public override {
     super.setUp();
     updateSpokePaused(IHub(vault.hub()), vault.assetId(), address(vault), true);
   }
 }
 
-contract VaultSpokeMaxGettersTest_NotActive_NotPaused is VaultSpokeMaxGettersReturnZeroTest {
+contract TokenizationSpokeMaxGettersTest_NotActive_NotPaused is
+  TokenizationSpokeMaxGettersReturnZeroTest
+{
   function setUp() public override {
     super.setUp();
     updateSpokeActive(IHub(vault.hub()), vault.assetId(), address(vault), false);
   }
 }
 
-contract VaultSpokeMaxGettersTest_NotActive_Paused is VaultSpokeMaxGettersReturnZeroTest {
+contract TokenizationSpokeMaxGettersTest_NotActive_Paused is
+  TokenizationSpokeMaxGettersReturnZeroTest
+{
   function setUp() public override {
     super.setUp();
     updateSpokeActive(IHub(vault.hub()), vault.assetId(), address(vault), false);
@@ -81,8 +89,8 @@ contract VaultSpokeMaxGettersTest_NotActive_Paused is VaultSpokeMaxGettersReturn
 
 // @dev vault spoke is active & not paused from here onwards
 
-contract VaultSpokeDepositMintGettersMaxCapTest is VaultSpokeBaseTest {
-  IVaultSpoke public vault;
+contract TokenizationSpokeDepositMintGettersMaxCapTest is TokenizationSpokeBaseTest {
+  ITokenizationSpoke public vault;
 
   function setUp() public virtual override {
     super.setUp();
@@ -120,8 +128,8 @@ contract VaultSpokeDepositMintGettersMaxCapTest is VaultSpokeBaseTest {
   }
 }
 
-contract VaultSpokeDepositMintGettersEmptyLiquidityVariableCapTest is
-  VaultSpokeDepositMintGettersMaxCapTest
+contract TokenizationSpokeDepositMintGettersEmptyLiquidityVariableCapTest is
+  TokenizationSpokeDepositMintGettersMaxCapTest
 {
   using SafeCast for uint256;
 
@@ -136,8 +144,8 @@ contract VaultSpokeDepositMintGettersEmptyLiquidityVariableCapTest is
   }
 }
 
-contract VaultSpokeDepositMintGettersNonEmptyLiquidityVariableCapTest is
-  VaultSpokeDepositMintGettersEmptyLiquidityVariableCapTest
+contract TokenizationSpokeDepositMintGettersNonEmptyLiquidityVariableCapTest is
+  TokenizationSpokeDepositMintGettersEmptyLiquidityVariableCapTest
 {
   using MathUtils for uint256;
 
@@ -150,8 +158,8 @@ contract VaultSpokeDepositMintGettersNonEmptyLiquidityVariableCapTest is
   }
 }
 
-contract VaultSpokeDepositMintGettersNonEmptyLiquidityMaxCapTest is
-  VaultSpokeDepositMintGettersNonEmptyLiquidityVariableCapTest
+contract TokenizationSpokeDepositMintGettersNonEmptyLiquidityMaxCapTest is
+  TokenizationSpokeDepositMintGettersNonEmptyLiquidityVariableCapTest
 {
   function setUp() public virtual override {
     super.setUp();
@@ -159,8 +167,8 @@ contract VaultSpokeDepositMintGettersNonEmptyLiquidityMaxCapTest is
   }
 }
 
-contract VaultSpokeWithdrawRedeemGettersReturnMaxTest is
-  VaultSpokeDepositMintGettersNonEmptyLiquidityMaxCapTest
+contract TokenizationSpokeWithdrawRedeemGettersReturnMaxTest is
+  TokenizationSpokeDepositMintGettersNonEmptyLiquidityMaxCapTest
 {
   using MathUtils for uint256;
 

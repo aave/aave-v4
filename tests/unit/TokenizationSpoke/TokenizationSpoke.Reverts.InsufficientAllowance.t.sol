@@ -2,10 +2,10 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import 'tests/unit/VaultSpoke/VaultSpoke.Base.t.sol';
+import 'tests/unit/TokenizationSpoke/TokenizationSpoke.Base.t.sol';
 
-contract VaultSpokeWithSigInsufficientAllowanceTest is VaultSpokeBaseTest {
-  IVaultSpoke public vault;
+contract TokenizationSpokeWithSigInsufficientAllowanceTest is TokenizationSpokeBaseTest {
+  ITokenizationSpoke public vault;
 
   function setUp() public virtual override {
     super.setUp();
@@ -46,7 +46,7 @@ contract VaultSpokeWithSigInsufficientAllowanceTest is VaultSpokeBaseTest {
     (uint256 amount, uint256 allowance) = _setArbitraryAllowance();
     uint256 deadline = _warpBeforeRandomDeadline();
 
-    IVaultSpoke.VaultDeposit memory p = _depositData(vault, alice, deadline);
+    ITokenizationSpoke.VaultDeposit memory p = _depositData(vault, alice, deadline);
     p.assets = amount;
     p.nonce = _burnRandomNoncesAtKey(vault, p.depositor);
     bytes memory signature = _sign(alicePk, _getTypedDataHash(vault, p));
@@ -67,7 +67,7 @@ contract VaultSpokeWithSigInsufficientAllowanceTest is VaultSpokeBaseTest {
     (uint256 amount, uint256 allowance) = _setArbitraryAllowance();
     uint256 deadline = _warpBeforeRandomDeadline();
 
-    IVaultSpoke.VaultMint memory p = _mintData(vault, alice, deadline);
+    ITokenizationSpoke.VaultMint memory p = _mintData(vault, alice, deadline);
     p.shares = vault.previewMint(amount);
     p.nonce = _burnRandomNoncesAtKey(vault, p.depositor);
     bytes memory signature = _sign(alicePk, _getTypedDataHash(vault, p));

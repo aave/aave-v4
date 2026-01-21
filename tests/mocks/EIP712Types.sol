@@ -88,7 +88,7 @@ library EIP712Types {
     uint256 deadline;
   }
 
-  /// @dev VaultSpoke Intents
+  /// @dev TokenizationSpoke Intents
   struct VaultDeposit {
     address depositor;
     uint256 assets;

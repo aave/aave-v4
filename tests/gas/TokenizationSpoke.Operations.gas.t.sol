@@ -2,12 +2,12 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import 'tests/unit/VaultSpoke/VaultSpoke.Base.t.sol';
+import 'tests/unit/TokenizationSpoke/TokenizationSpoke.Base.t.sol';
 
 /// forge-config: default.isolate = true
-contract VaultSpokeOperations_Gas_Tests is VaultSpokeBaseTest {
-  string internal constant NAMESPACE = 'VaultSpoke.Operations';
-  IVaultSpoke internal vault;
+contract TokenizationSpokeOperations_Gas_Tests is TokenizationSpokeBaseTest {
+  string internal constant NAMESPACE = 'TokenizationSpoke.Operations';
+  ITokenizationSpoke internal vault;
 
   function setUp() public virtual override {
     super.setUp();
@@ -81,7 +81,11 @@ contract VaultSpokeOperations_Gas_Tests is VaultSpokeBaseTest {
   }
 
   function test_depositWithSig() public {
-    IVaultSpoke.VaultDeposit memory p = _depositData(vault, alice, _warpBeforeRandomDeadline());
+    ITokenizationSpoke.VaultDeposit memory p = _depositData(
+      vault,
+      alice,
+      _warpBeforeRandomDeadline()
+    );
     p.nonce = _burnRandomNoncesAtKey(vault, p.depositor);
     bytes memory signature = _sign(alicePk, _getTypedDataHash(vault, p));
     Utils.approve(vault, alice, p.assets);
@@ -92,7 +96,7 @@ contract VaultSpokeOperations_Gas_Tests is VaultSpokeBaseTest {
   }
 
   function test_mintWithSig() public {
-    IVaultSpoke.VaultMint memory p = _mintData(vault, alice, _warpBeforeRandomDeadline());
+    ITokenizationSpoke.VaultMint memory p = _mintData(vault, alice, _warpBeforeRandomDeadline());
     p.nonce = _burnRandomNoncesAtKey(vault, p.depositor);
     bytes memory signature = _sign(alicePk, _getTypedDataHash(vault, p));
     Utils.approve(vault, alice, p.shares);
@@ -103,7 +107,11 @@ contract VaultSpokeOperations_Gas_Tests is VaultSpokeBaseTest {
   }
 
   function test_withdrawWithSig() public {
-    IVaultSpoke.VaultWithdraw memory p = _withdrawData(vault, alice, _warpBeforeRandomDeadline());
+    ITokenizationSpoke.VaultWithdraw memory p = _withdrawData(
+      vault,
+      alice,
+      _warpBeforeRandomDeadline()
+    );
     p.nonce = _burnRandomNoncesAtKey(vault, p.owner);
     bytes memory signature = _sign(alicePk, _getTypedDataHash(vault, p));
     Utils.approve(vault, alice, p.assets);
@@ -116,7 +124,11 @@ contract VaultSpokeOperations_Gas_Tests is VaultSpokeBaseTest {
   }
 
   function test_redeemWithSig() public {
-    IVaultSpoke.VaultRedeem memory p = _redeemData(vault, alice, _warpBeforeRandomDeadline());
+    ITokenizationSpoke.VaultRedeem memory p = _redeemData(
+      vault,
+      alice,
+      _warpBeforeRandomDeadline()
+    );
     p.nonce = _burnRandomNoncesAtKey(vault, p.owner);
     bytes memory signature = _sign(alicePk, _getTypedDataHash(vault, p));
     Utils.approve(vault, alice, p.shares);

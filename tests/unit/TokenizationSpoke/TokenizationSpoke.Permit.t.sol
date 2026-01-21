@@ -1,10 +1,10 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import 'tests/unit/VaultSpoke/VaultSpoke.Base.t.sol';
+import 'tests/unit/TokenizationSpoke/TokenizationSpoke.Base.t.sol';
 
-contract VaultSpokePermitTest is VaultSpokeBaseTest {
-  IVaultSpoke public vault;
+contract TokenizationSpokePermitTest is TokenizationSpokeBaseTest {
+  ITokenizationSpoke public vault;
 
   function setUp() public virtual override {
     super.setUp();
@@ -40,7 +40,7 @@ contract VaultSpokePermitTest is VaultSpokeBaseTest {
     EIP712Types.Permit memory p = _permitData(vault, alice, _warpAfterRandomDeadline());
     (uint8 v, bytes32 r, bytes32 s) = vm.sign(alicePk, _getTypedDataHash(vault, p));
 
-    vm.expectRevert(IVaultSpoke.InvalidSignature.selector);
+    vm.expectRevert(ITokenizationSpoke.InvalidSignature.selector);
     vm.prank(vm.randomAddress());
     vault.permit(p.owner, p.spender, p.value, p.deadline, v, r, s);
   }
@@ -53,7 +53,7 @@ contract VaultSpokePermitTest is VaultSpokeBaseTest {
     EIP712Types.Permit memory p = _permitData(vault, owner, _warpBeforeRandomDeadline());
     (uint8 v, bytes32 r, bytes32 s) = vm.sign(randomUserPk, _getTypedDataHash(vault, p));
 
-    vm.expectRevert(IVaultSpoke.InvalidSignature.selector);
+    vm.expectRevert(ITokenizationSpoke.InvalidSignature.selector);
     vm.prank(vm.randomAddress());
     vault.permit(p.owner, p.spender, p.value, p.deadline, v, r, s);
   }
@@ -62,7 +62,7 @@ contract VaultSpokePermitTest is VaultSpokeBaseTest {
     EIP712Types.Permit memory p = _permitData(vault, address(0), _warpBeforeRandomDeadline());
     (uint8 v, bytes32 r, bytes32 s) = vm.sign(alicePk, _getTypedDataHash(vault, p));
 
-    vm.expectRevert(IVaultSpoke.InvalidSignature.selector);
+    vm.expectRevert(ITokenizationSpoke.InvalidSignature.selector);
     vm.prank(vm.randomAddress());
     vault.permit(p.owner, p.spender, p.value, p.deadline, v, r, s);
   }
@@ -79,7 +79,7 @@ contract VaultSpokePermitTest is VaultSpokeBaseTest {
 
     (uint8 v, bytes32 r, bytes32 s) = vm.sign(alicePk, _getTypedDataHash(vault, p));
 
-    vm.expectRevert(IVaultSpoke.InvalidSignature.selector);
+    vm.expectRevert(ITokenizationSpoke.InvalidSignature.selector);
     vm.prank(vm.randomAddress());
     vault.permit(p.owner, p.spender, p.value, p.deadline, v, r, s);
   }
@@ -94,7 +94,7 @@ contract VaultSpokePermitTest is VaultSpokeBaseTest {
 
     (uint8 v, bytes32 r, bytes32 s) = vm.sign(alicePk, _getTypedDataHash(vault, p));
 
-    vm.expectRevert(IVaultSpoke.InvalidSignature.selector);
+    vm.expectRevert(ITokenizationSpoke.InvalidSignature.selector);
     vm.prank(vm.randomAddress());
     vault.permit(p.owner, p.spender, p.value, p.deadline, v, r, s);
   }

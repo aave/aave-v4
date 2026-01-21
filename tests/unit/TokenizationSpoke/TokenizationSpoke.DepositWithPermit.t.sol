@@ -2,10 +2,10 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import 'tests/unit/VaultSpoke/VaultSpoke.Base.t.sol';
+import 'tests/unit/TokenizationSpoke/TokenizationSpoke.Base.t.sol';
 
-contract VaultSpokeDepositWithPermitTest is VaultSpokeBaseTest {
-  IVaultSpoke public vault;
+contract TokenizationSpokeDepositWithPermitTest is TokenizationSpokeBaseTest {
+  ITokenizationSpoke public vault;
   TestnetERC20 public asset;
 
   function setUp() public virtual override {
