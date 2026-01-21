@@ -55,6 +55,9 @@ contract Hub is IHub, AccessManaged {
   /// @dev Set of underlying addresses listed as assets in the Hub.
   EnumerableSet.AddressSet internal _underlyingAssets;
 
+  /// @dev Map of underlying addresses to asset identifiers.
+  mapping(address underlying => uint256) internal _underlyingToAssetId;
+
   /// @dev Constructor.
   /// @dev The authority contract must implement the `AccessManaged` interface for access control.
   /// @param authority_ The address of the authority contract which manages permissions.
@@ -111,6 +114,7 @@ contract Hub is IHub, AccessManaged {
       feeReceiver: feeReceiver,
       liquidityFee: 0
     });
+    _underlyingToAssetId[underlying] = assetId;
     _addFeeReceiver(assetId, feeReceiver);
 
     emit AddAsset(assetId, underlying, decimals);
@@ -461,6 +465,12 @@ contract Hub is IHub, AccessManaged {
   /// @inheritdoc IHub
   function isUnderlyingListed(address underlying) external view returns (bool) {
     return _underlyingAssets.contains(underlying);
+  }
+
+  /// @inheritdoc IHub
+  function getUnderlyingAssetId(address underlying) external view returns (uint256) {
+    require(_underlyingAssets.contains(underlying), AssetNotListed());
+    return _underlyingToAssetId[underlying];
   }
 
   /// @inheritdoc IHub
