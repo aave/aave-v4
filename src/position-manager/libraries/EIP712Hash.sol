@@ -8,10 +8,6 @@ import {ISignatureGateway} from 'src/position-manager/interfaces/ISignatureGatew
 /// @author Aave Labs
 /// @notice Helper methods to hash EIP712 typed data structs.
 library EIP712Hash {
-  bytes32 public constant PERMIT_TYPEHASH =
-    // keccak256('Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)')
-    0x6e71edae12b1b97f4d1f60370fef10105fa2faae0126114a169c64845d6126c9;
-
   bytes32 public constant SUPPLY_TYPEHASH =
     // keccak256('Supply(address spoke,uint256 reserveId,uint256 amount,address onBehalfOf,uint256 nonce,uint256 deadline)')
     0xe85497eb293c001e8483fe105efadd1d50aa0dadfc0570b27058031dfceab2e6;
