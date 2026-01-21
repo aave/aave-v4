@@ -87,7 +87,7 @@ contract TokenizationSpokeBaseTest is Base {
         spender: address(vault),
         value: vm.randomUint(1, MAX_SUPPLY_AMOUNT),
         deadline: deadline,
-        nonce: vault.nonces(who, vault.PERMIT_NONCE_KEY()) // can only use permit nonce key namespace
+        nonce: vault.nonces(who, vault.PERMIT_NONCE_NAMESPACE()) // can only use permit nonce key namespace
       });
   }
 
@@ -168,7 +168,7 @@ contract TokenizationSpokeInitTest is TokenizationSpokeBaseTest {
     assertEq(daiVault.assetId(), daiAssetId);
     assertEq(daiVault.hub(), address(hub1));
 
-    assertEq(daiVault.PERMIT_NONCE_KEY(), 0);
+    assertEq(daiVault.PERMIT_NONCE_NAMESPACE(), 0);
 
     assertEq(daiVault.totalAssets(), 0);
     assertEq(daiVault.totalSupply(), 0);

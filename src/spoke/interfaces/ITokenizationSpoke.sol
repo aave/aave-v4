@@ -9,6 +9,12 @@ import {IIntentConsumer} from 'src/interfaces/IIntentConsumer.sol';
 /// @title ITokenizationSpoke
 /// @author Aave Labs
 interface ITokenizationSpoke is IERC4626, IERC2612, IIntentConsumer {
+  /// @notice Intent data to deposit assets into the vault.
+  /// @param depositor The address of the user depositing assets.
+  /// @param assets The amount of assets to deposit.
+  /// @param receiver The address that will receive the minted shares.
+  /// @param nonce The key-prefixed nonce for the signature.
+  /// @param deadline The deadline for the intent.
   struct VaultDeposit {
     address depositor;
     uint256 assets;
@@ -17,6 +23,12 @@ interface ITokenizationSpoke is IERC4626, IERC2612, IIntentConsumer {
     uint256 deadline;
   }
 
+  /// @notice Intent data to mint shares from the vault.
+  /// @param depositor The address of the user depositing assets.
+  /// @param shares The amount of shares to mint.
+  /// @param receiver The address that will receive the minted shares.
+  /// @param nonce The key-prefixed nonce for the signature.
+  /// @param deadline The deadline for the intent.
   struct VaultMint {
     address depositor;
     uint256 shares;
@@ -25,6 +37,12 @@ interface ITokenizationSpoke is IERC4626, IERC2612, IIntentConsumer {
     uint256 deadline;
   }
 
+  /// @notice Intent data to withdraw assets from the vault.
+  /// @param owner The address of the user withdrawing assets.
+  /// @param assets The amount of assets to withdraw.
+  /// @param receiver The address that will receive the withdrawn assets.
+  /// @param nonce The key-prefixed nonce for the signature.
+  /// @param deadline The deadline for the intent.
   struct VaultWithdraw {
     address owner;
     uint256 assets;
@@ -33,6 +51,12 @@ interface ITokenizationSpoke is IERC4626, IERC2612, IIntentConsumer {
     uint256 deadline;
   }
 
+  /// @notice Intent data to redeem shares from the vault.
+  /// @param owner The address of the user redeeming shares.
+  /// @param shares The amount of shares to redeem.
+  /// @param receiver The address that will receive the redeemed assets.
+  /// @param nonce The key-prefixed nonce for the signature.
+  /// @param deadline The deadline for the intent.
   struct VaultRedeem {
     address owner;
     uint256 shares;
@@ -110,6 +134,31 @@ interface ITokenizationSpoke is IERC4626, IERC2612, IIntentConsumer {
     bytes32 s
   ) external returns (uint256);
 
+  /// @notice Sets approval for `spender` to spend `owner`'s share tokens via EIP712-typed signature.
+  /// @dev Uses keyed-nonces where the share token permit nonce is consumed sequentially at key=PERMIT_NONCE_NAMESPACE.
+  /// @dev Implements EIP-2612 permit functionality for the vault share token.
+  /// @param owner The address of the token owner granting approval.
+  /// @param spender The address being granted approval to spend tokens.
+  /// @param value The amount of tokens approved for spending.
+  /// @param deadline The timestamp by which the permit must be used.
+  /// @param v The recovery byte of the signature.
+  /// @param r The first 32 bytes of the signature.
+  /// @param s The second 32 bytes of the signature.
+  function permit(
+    address owner,
+    address spender,
+    uint256 value,
+    uint256 deadline,
+    uint8 v,
+    bytes32 r,
+    bytes32 s
+  ) external;
+
+  /// @notice Revokes the current PERMIT_NAMESPACE_NONCE of `owner` & increments the nonce at this key.
+  /// @param owner The owner of the nonce to consume.
+  /// @return The consumed keyed-nonce.
+  function usePermitNonce(address owner) external returns (uint256);
+
   /// @notice Resets the allowance of an owner for the caller.
   /// @param owner The owner of the allowance to renounce.
   function renounceAllowance(address owner) external;
@@ -123,10 +172,10 @@ interface ITokenizationSpoke is IERC4626, IERC2612, IIntentConsumer {
   /// @notice Returns the maximum allowed spoke cap.
   function MAX_ALLOWED_SPOKE_CAP() external view returns (uint40);
 
-  /// @notice Returns the nonce key for the share token permit EIP-712 typed signatures.
-  /// @dev Share token permits nonces are always set at this specific key namespace.
-  /// Once the 2 ^ 64 - 1 nonces are used, the nonce at this namespace will overflow and reset to 0; unexpired permits can be replayed then.
-  function PERMIT_NONCE_KEY() external pure returns (uint192);
+  /// @notice Returns the nonce namespace for share token EIP-2612 permit signatures.
+  /// @dev Share token permits strictly use this dedicated namespace in the keyed-nonce system as the nonce key.
+  /// @dev Other vault intent operations can also use the this namespace as the nonce key.
+  function PERMIT_NONCE_NAMESPACE() external pure returns (uint192);
 
   /// @notice Returns the type hash for the deposit intent.
   function DEPOSIT_TYPEHASH() external pure returns (bytes32);

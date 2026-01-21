@@ -9,7 +9,7 @@ import {IERC4626, IERC20Metadata} from 'src/dependencies/openzeppelin/IERC4626.s
 import {ECDSA} from 'src/dependencies/openzeppelin/ECDSA.sol';
 import {EIP712Hash} from 'src/spoke/libraries/EIP712Hash.sol';
 import {MathUtils} from 'src/libraries/math/MathUtils.sol';
-import {IntentConsumer, IIntentConsumer} from 'src/utils/IntentConsumer.sol';
+import {IntentConsumer} from 'src/utils/IntentConsumer.sol';
 import {IHub} from 'src/hub/interfaces/IHub.sol';
 import {ITokenizationSpoke} from 'src/spoke/interfaces/ITokenizationSpoke.sol';
 
@@ -33,7 +33,7 @@ abstract contract TokenizationSpoke is ITokenizationSpoke, ERC20Upgradeable, Int
   uint40 public immutable MAX_ALLOWED_SPOKE_CAP;
 
   /// @inheritdoc ITokenizationSpoke
-  uint192 public constant PERMIT_NONCE_KEY = 0;
+  uint192 public constant PERMIT_NONCE_NAMESPACE = 0;
   /// @inheritdoc ITokenizationSpoke
   bytes32 public constant PERMIT_TYPEHASH = EIP712Hash.PERMIT_TYPEHASH;
   /// @inheritdoc ITokenizationSpoke
@@ -194,7 +194,7 @@ abstract contract TokenizationSpoke is ITokenizationSpoke, ERC20Upgradeable, Int
     return _executeDeposit({depositor: msg.sender, receiver: receiver, assets: assets});
   }
 
-  /// @inheritdoc IERC20Permit
+  /// @inheritdoc ITokenizationSpoke
   function permit(
     address owner,
     address spender,
@@ -212,13 +212,18 @@ abstract contract TokenizationSpoke is ITokenizationSpoke, ERC20Upgradeable, Int
           owner,
           spender,
           value,
-          _useNonce({owner: owner, key: PERMIT_NONCE_KEY}),
+          _useNonce({owner: owner, key: PERMIT_NONCE_NAMESPACE}),
           deadline
         )
       )
     );
     require(owner == ECDSA.recover({hash: digest, v: v, r: r, s: s}), InvalidSignature());
     _approve({owner: owner, spender: spender, value: value});
+  }
+
+  /// @inheritdoc ITokenizationSpoke
+  function usePermitNonce(address owner) external returns (uint256) {
+    return _useNonce({owner: owner, key: PERMIT_NONCE_NAMESPACE});
   }
 
   /// @inheritdoc ITokenizationSpoke
@@ -320,7 +325,7 @@ abstract contract TokenizationSpoke is ITokenizationSpoke, ERC20Upgradeable, Int
 
   /// @inheritdoc IERC20Permit
   function nonces(address owner) public view returns (uint256) {
-    return nonces({owner: owner, key: PERMIT_NONCE_KEY});
+    return nonces({owner: owner, key: PERMIT_NONCE_NAMESPACE});
   }
 
   /// @inheritdoc IERC20Permit

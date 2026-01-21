@@ -142,7 +142,7 @@ contract TokenizationSpokeOperations_Gas_Tests is TokenizationSpokeBaseTest {
 
   function test_permit() public {
     EIP712Types.Permit memory p = _permitData(vault, alice, _warpBeforeRandomDeadline());
-    p.nonce = _burnRandomNoncesAtKey(vault, p.owner, vault.PERMIT_NONCE_KEY());
+    p.nonce = _burnRandomNoncesAtKey(vault, p.owner, vault.PERMIT_NONCE_NAMESPACE());
     (uint8 v, bytes32 r, bytes32 s) = vm.sign(alicePk, _getTypedDataHash(vault, p));
 
     vm.expectEmit(address(vault));

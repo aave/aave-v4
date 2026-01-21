@@ -4,6 +4,8 @@ pragma solidity ^0.8.0;
 import 'tests/unit/TokenizationSpoke/TokenizationSpoke.Base.t.sol';
 
 contract TokenizationSpokePermitTest is TokenizationSpokeBaseTest {
+  using MathUtils for uint256;
+
   ITokenizationSpoke public vault;
 
   function setUp() public virtual override {
@@ -13,7 +15,7 @@ contract TokenizationSpokePermitTest is TokenizationSpokeBaseTest {
 
   function test_nonces_uses_permit_nonce_key_namespace(bytes32) public {
     vm.setArbitraryStorage(address(vault));
-    uint192 key = vault.PERMIT_NONCE_KEY();
+    uint192 key = vault.PERMIT_NONCE_NAMESPACE();
 
     address user = vm.randomAddress();
     assertEq(vault.nonces(user), vault.nonces(user, key));
@@ -23,9 +25,23 @@ contract TokenizationSpokePermitTest is TokenizationSpokeBaseTest {
     assertEq(unpackedKey, key);
   }
 
+  function test_usePermitNonce(bytes32) public {
+    vm.setArbitraryStorage(address(vault));
+    uint192 key = vault.PERMIT_NONCE_NAMESPACE();
+
+    address user = vm.randomAddress();
+    uint256 initialNonce = vault.nonces(user, key);
+
+    uint256 usedNonce = vault.usePermitNonce(user);
+    assertEq(usedNonce, initialNonce);
+
+    uint256 newNonce = vault.nonces(user, key);
+    assertEq(newNonce, initialNonce.uncheckedAdd(1));
+  }
+
   function test_permit() public {
     EIP712Types.Permit memory p = _permitData(vault, alice, _warpBeforeRandomDeadline());
-    p.nonce = _burnRandomNoncesAtKey(vault, p.owner, vault.PERMIT_NONCE_KEY());
+    p.nonce = _burnRandomNoncesAtKey(vault, p.owner, vault.PERMIT_NONCE_NAMESPACE());
     (uint8 v, bytes32 r, bytes32 s) = vm.sign(alicePk, _getTypedDataHash(vault, p));
 
     vm.expectEmit(address(vault));
@@ -73,7 +89,7 @@ contract TokenizationSpokePermitTest is TokenizationSpokeBaseTest {
   ) public {
     EIP712Types.Permit memory p = _permitData(vault, alice, _warpBeforeRandomDeadline());
     uint192 nonceKey = _randomNonceKey();
-    while (nonceKey == vault.PERMIT_NONCE_KEY()) nonceKey = _randomNonceKey();
+    while (nonceKey == vault.PERMIT_NONCE_NAMESPACE()) nonceKey = _randomNonceKey();
 
     p.nonce = _getRandomNonceAtKey(nonceKey);
 
@@ -88,7 +104,7 @@ contract TokenizationSpokePermitTest is TokenizationSpokeBaseTest {
     bytes32
   ) public {
     EIP712Types.Permit memory p = _permitData(vault, alice, _warpBeforeRandomDeadline());
-    uint192 nonceKey = vault.PERMIT_NONCE_KEY();
+    uint192 nonceKey = vault.PERMIT_NONCE_NAMESPACE();
 
     p.nonce = _getRandomInvalidNonceAtKey(vault, p.owner, nonceKey);
 
