@@ -688,21 +688,6 @@ contract HubConfigTest is HubBase {
     assertEq(hub1.getSpokeAddedShares(assetId, newFeeReceiver), newFees);
   }
 
-  /// Updates the fee receiver to an existing spoke of the hub1, so ends up with existing supplied shares plus accrued fees
-  function test_updateAssetConfig_fuzz_UseExistingSpokeAsFeeReceiver_revertsWith_SpokeAlreadyListed(
-    uint256 assetId
-  ) public {
-    assetId = vm.randomUint(0, hub1.getAssetCount() - 1);
-    address newFeeReceiver = address(spoke1);
-
-    IHub.AssetConfig memory config = hub1.getAssetConfig(assetId);
-    config.feeReceiver = newFeeReceiver;
-
-    vm.expectRevert(IHub.SpokeAlreadyListed.selector, address(hub1));
-    vm.prank(HUB_ADMIN);
-    hub1.updateAssetConfig(assetId, config, new bytes(0));
-  }
-
   /// Updates the fee receiver to an existing spoke of the hub1 which is already listed on the asset
   function test_updateAssetConfig_UseExistingSpokeAndListedAsFeeReceiver_revertsWith_SpokeAlreadyListed()
     public

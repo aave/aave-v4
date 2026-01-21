@@ -1009,9 +1009,18 @@ contract SpokeBase is Base {
     uint256 reserveId
   ) internal view returns (uint32) {
     return
-      (PercentageMath.PERCENTAGE_FACTOR - 1)
-        .percentDivDown(_getLatestDynamicReserveConfig(spoke, reserveId).collateralFactor)
-        .toUint32();
+      _maxLiquidationBonusUpperBound(
+        _getLatestDynamicReserveConfig(spoke, reserveId).collateralFactor
+      ).toUint32();
+  }
+
+  function _maxLiquidationBonusUpperBound(
+    uint256 collateralFactor
+  ) internal pure returns (uint256) {
+    return
+      collateralFactor == 0
+        ? MIN_LIQUIDATION_BONUS
+        : (PercentageMath.PERCENTAGE_FACTOR - 1).percentDivDown(collateralFactor).toUint32();
   }
 
   function _randomMaxLiquidationBonus(ISpoke spoke, uint256 reserveId) internal returns (uint32) {
@@ -1026,9 +1035,13 @@ contract SpokeBase is Base {
     uint256 reserveId
   ) internal view returns (uint16) {
     return
-      (PercentageMath.PERCENTAGE_FACTOR - 1)
-        .percentDivDown(_getLatestDynamicReserveConfig(spoke, reserveId).maxLiquidationBonus)
-        .toUint16();
+      _collateralFactorUpperBound(
+        _getLatestDynamicReserveConfig(spoke, reserveId).maxLiquidationBonus
+      );
+  }
+
+  function _collateralFactorUpperBound(uint256 maxLiquidationBonus) internal pure returns (uint16) {
+    return (PercentageMath.PERCENTAGE_FACTOR - 1).percentDivDown(maxLiquidationBonus).toUint16();
   }
 
   function _randomCollateralFactor(ISpoke spoke, uint256 reserveId) internal returns (uint16) {
