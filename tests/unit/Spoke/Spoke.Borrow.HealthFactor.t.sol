@@ -172,16 +172,14 @@ contract SpokeBorrowHealthFactorTest is SpokeBase {
     uint256 wethCollAmountDai,
     uint256 wethCollAmountUsdx
   ) public {
-    // todo: resolve precision bounds for wethCollAmountDai, wethCollAmountUsdx
-    // at high ratios between them, borrowing additional amounts won't bring HF < 1
-    wethCollAmountDai = bound(wethCollAmountDai, 1e10, MAX_SUPPLY_AMOUNT / 2);
-    wethCollAmountUsdx = bound(wethCollAmountUsdx, 1e10, MAX_SUPPLY_AMOUNT / 2);
-
     // weth collateral
     uint256 wethReserveId = _wethReserveId(spoke1);
     // dai/usdx debt
     uint256 daiReserveId = _daiReserveId(spoke1);
     uint256 usdxReserveId = _usdxReserveId(spoke1);
+
+    wethCollAmountDai = bound(wethCollAmountDai, 1e15, MAX_SUPPLY_AMOUNT / 1e4);
+    wethCollAmountUsdx = bound(wethCollAmountUsdx, 1e15, MAX_SUPPLY_AMOUNT / 1e4);
 
     uint256 daiDebtAmount = _calcMaxDebtAmount({
       spoke: spoke1,
@@ -195,9 +193,6 @@ contract SpokeBorrowHealthFactorTest is SpokeBase {
       debtReserveId: usdxReserveId,
       collAmount: wethCollAmountUsdx
     });
-
-    vm.assume(usdxDebtAmount < MAX_SUPPLY_AMOUNT / 2 && usdxDebtAmount > 0);
-    vm.assume(daiDebtAmount < MAX_SUPPLY_AMOUNT / 2 && daiDebtAmount > 1e12); // dai is 1e18, keep within similar bounds to usdx (at 1e6)
 
     // Bob supply weth
     Utils.supplyCollateral(spoke1, wethReserveId, bob, wethCollAmountDai + wethCollAmountUsdx, bob);

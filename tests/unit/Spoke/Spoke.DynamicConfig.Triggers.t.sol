@@ -5,22 +5,46 @@ pragma solidity ^0.8.0;
 import 'tests/unit/Spoke/SpokeBase.t.sol';
 
 contract SpokeDynamicConfigTriggersTest is SpokeBase {
+  using PercentageMath for uint256;
+  using SafeCast for uint256;
+
   function test_supply_does_not_trigger_dynamicConfigUpdate() public {
     DynamicConfig[] memory configs = _getUserDynConfigKeys(spoke1, alice);
 
-    Utils.supplyCollateral(spoke1, _usdxReserveId(spoke1), alice, 1000e6, alice);
-    _updateCollateralFactor(spoke1, _usdxReserveId(spoke1), _randomBps());
+    uint256 maxLiquidationBonus = _getUserDynConfig(spoke1, alice, _daiReserveId(spoke1))
+      .maxLiquidationBonus;
+    uint256 supplyAmount = 1000e6;
+    uint256 collateralReserveId = _usdxReserveId(spoke1);
+    uint256 debtReserveId = _daiReserveId(spoke1);
+    uint256 collateralFactor = vm
+      .randomUint(0, _collateralFactorUpperBound(maxLiquidationBonus))
+      .toUint16();
+
+    Utils.supplyCollateral(spoke1, collateralReserveId, alice, supplyAmount, alice);
+    _updateCollateralFactor(spoke1, collateralReserveId, collateralFactor);
 
     assertEq(_getUserDynConfigKeys(spoke1, alice), configs);
 
-    _openSupplyPosition(spoke1, _daiReserveId(spoke1), 500e18);
-    Utils.borrow(spoke1, _daiReserveId(spoke1), alice, 500e18, alice);
+    // compute max borrowable amount
+    uint256 borrowAmount = collateralFactor.percentMulDown(
+      _convertValueToAmount(
+        spoke1,
+        debtReserveId,
+        _convertAmountToValue(spoke1, collateralReserveId, supplyAmount)
+      )
+    );
+    _openSupplyPosition(spoke1, debtReserveId, borrowAmount);
+    Utils.borrow(spoke1, debtReserveId, alice, borrowAmount, alice);
     configs = _getUserDynConfigKeys(spoke1, alice);
-    _updateCollateralFactor(spoke1, _usdxReserveId(spoke1), _randomBps());
+    _updateCollateralFactor(
+      spoke1,
+      collateralReserveId,
+      vm.randomUint(0, _collateralFactorUpperBound(maxLiquidationBonus)).toUint16()
+    );
 
     assertEq(_getUserDynConfigKeys(spoke1, alice), configs);
 
-    Utils.supply(spoke1, _usdxReserveId(spoke1), alice, 1000e6, alice);
+    Utils.supply(spoke1, collateralReserveId, alice, supplyAmount, alice);
 
     _assertDynamicConfigRefreshEventsNotEmitted();
     // user config should not change
@@ -101,7 +125,14 @@ contract SpokeDynamicConfigTriggersTest is SpokeBase {
     vm.prank(alice);
     spoke1.borrow(_daiReserveId(spoke1), 100e18, alice);
 
-    _updateCollateralFactor(spoke1, _usdxReserveId(spoke1), _randomBps());
+    uint256 maxLiquidationBonus = _getUserDynConfig(spoke1, alice, _daiReserveId(spoke1))
+      .maxLiquidationBonus;
+
+    _updateCollateralFactor(
+      spoke1,
+      _usdxReserveId(spoke1),
+      vm.randomUint(0, _collateralFactorUpperBound(maxLiquidationBonus)).toUint16()
+    );
     configs = _getUserDynConfigKeys(spoke1, alice);
     Utils.supplyCollateral(spoke1, _wethReserveId(spoke1), alice, 1e18, alice);
 
@@ -157,7 +188,8 @@ contract SpokeDynamicConfigTriggersTest is SpokeBase {
     vm.prank(alice);
     spoke1.setUsingAsCollateral(_usdxReserveId(spoke1), false, alice);
 
-    _updateCollateralFactor(spoke1, _usdxReserveId(spoke1), _randomBps());
+    uint256 reserveId = _usdxReserveId(spoke1);
+    _updateCollateralFactor(spoke1, reserveId, _randomCollateralFactor(spoke1, reserveId));
     configs = _getUserDynConfigKeys(spoke1, alice);
     Utils.supply(spoke1, _wethReserveId(spoke1), alice, 1e18, alice);
 
