@@ -5,8 +5,8 @@ pragma solidity ^0.8.0;
 import 'tests/unit/Hub/HubBase.t.sol';
 
 contract HubEliminateDeficitTest is HubBase {
-  using WadRayMath for uint256;
-  using MathUtils for uint256;
+  using WadRayMath for *;
+  using MathUtils for *;
   using SafeCast for uint256;
 
   uint256 internal _assetId;
@@ -22,6 +22,8 @@ contract HubEliminateDeficitTest is HubBase {
     _callerSpoke = address(spoke2);
     _coveredSpoke = address(spoke1);
     _otherSpoke = address(spoke3);
+
+    grantDeficitEliminatorRole(hub1, address(_callerSpoke));
   }
 
   function test_eliminateDeficit_revertsWith_InvalidAmount_ZeroAmountNoDeficit() public {
@@ -65,9 +67,24 @@ contract HubEliminateDeficitTest is HubBase {
     hub1.eliminateDeficit(_assetId, vm.randomUint(_deficitAmountRay, UINT256_MAX), _coveredSpoke);
   }
 
+  function test_eliminateDeficit_fuzz_revertsWith_AccessManagedUnauthorized(address caller) public {
+    (bool immediate, uint32 delay) = IAccessManager(hub1.authority()).canCall(
+      caller,
+      address(hub1),
+      IHub.eliminateDeficit.selector
+    );
+    vm.assume(!immediate || delay > 0);
+    vm.expectRevert(
+      abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, caller)
+    );
+    vm.prank(caller);
+    hub1.eliminateDeficit(_assetId, vm.randomUint(), _coveredSpoke);
+  }
+
   function test_eliminateDeficit_revertsWith_callerSpokeNotActive() public {
     address caller = address(spoke1);
     _updateSpokeActive(hub1, _assetId, caller, false);
+    grantDeficitEliminatorRole(hub1, caller);
 
     vm.expectRevert(IHub.SpokeNotActive.selector);
     vm.prank(caller);

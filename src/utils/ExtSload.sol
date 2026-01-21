@@ -17,11 +17,11 @@ abstract contract ExtSload is IExtSload {
 
   /// @inheritdoc IExtSload
   function extSloads(bytes32[] calldata slots) external view returns (bytes32[] memory) {
-    assembly ('memory-safe') {
-      let m := mload(0x40) // grab fmp, will not be restored since we exit context here
-      mstore(m, 0x20) // to abi-encode response, the array will be found at the next word
-      mstore(add(m, 0x20), slots.length) // set the length of dynamic array
-      let start := add(m, 0x40)
+    // @dev we disregard solidity memory conventions since we take control of entire execution
+    assembly {
+      mstore(0x00, 0x20) // to abi-encode response, the array will be found at the next word
+      mstore(0x20, slots.length) // set the length of dynamic array
+      let start := 0x40 // start of the array
       let end := add(start, shl(5, slots.length))
       for {
         let input := slots.offset
@@ -31,7 +31,7 @@ abstract contract ExtSload is IExtSload {
         mstore(start, sload(calldataload(input)))
         input := add(input, 0x20)
       }
-      return(m, sub(end, m)) // return abi-encoded dynamic array
+      return(0x00, end) // return abi-encoded dynamic array
     }
   }
 }

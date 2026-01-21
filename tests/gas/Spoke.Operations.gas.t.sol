@@ -289,8 +289,7 @@ contract SpokeOperations_Gas_Tests is SpokeBase {
   }
 
   function test_setUserPositionManagersWithSig() public {
-    (address user, uint256 userPk) = makeAddrAndKey(string(vm.randomBytes(32)));
-    vm.label(user, 'user');
+    (address user, uint256 userPk) = makeAddrAndKey('user');
     address positionManager = makeAddr('positionManager');
     vm.prank(SPOKE_ADMIN);
     spoke.updatePositionManager(positionManager, true);
