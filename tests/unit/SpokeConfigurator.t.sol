@@ -29,7 +29,9 @@ contract SpokeConfiguratorTest is SpokeBase {
   }
 
   function test_updateReservePriceSource_revertsWith_AccessManagedUnauthorized() public {
-    vm.expectRevert(abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, alice));
+    vm.expectRevert(
+      abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, alice)
+    );
     vm.prank(alice);
     spokeConfigurator.updateReservePriceSource(spokeAddr, _reserveId, address(0));
   }
@@ -46,10 +48,10 @@ contract SpokeConfiguratorTest is SpokeBase {
     spokeConfigurator.updateReservePriceSource(spokeAddr, _reserveId, newPriceSource);
   }
 
-  function test_updateLiquidationTargetHealthFactor_revertsWith_AccessManagedUnauthorized()
-    public
-  {
-    vm.expectRevert(abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, alice));
+  function test_updateLiquidationTargetHealthFactor_revertsWith_AccessManagedUnauthorized() public {
+    vm.expectRevert(
+      abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, alice)
+    );
     vm.prank(alice);
     spokeConfigurator.updateLiquidationTargetHealthFactor(spokeAddr, 0);
   }
@@ -73,7 +75,9 @@ contract SpokeConfiguratorTest is SpokeBase {
   }
 
   function test_updateHealthFactorForMaxBonus_revertsWith_AccessManagedUnauthorized() public {
-    vm.expectRevert(abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, alice));
+    vm.expectRevert(
+      abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, alice)
+    );
     vm.prank(alice);
     spokeConfigurator.updateHealthFactorForMaxBonus(spokeAddr, 0);
   }
@@ -97,7 +101,9 @@ contract SpokeConfiguratorTest is SpokeBase {
   }
 
   function test_updateLiquidationBonusFactor_revertsWith_AccessManagedUnauthorized() public {
-    vm.expectRevert(abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, alice));
+    vm.expectRevert(
+      abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, alice)
+    );
     vm.prank(alice);
     spokeConfigurator.updateLiquidationBonusFactor(spokeAddr, 0);
   }
@@ -121,7 +127,9 @@ contract SpokeConfiguratorTest is SpokeBase {
   }
 
   function test_updateLiquidationConfig_revertsWith_AccessManagedUnauthorized() public {
-    vm.expectRevert(abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, alice));
+    vm.expectRevert(
+      abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, alice)
+    );
     vm.prank(alice);
     spokeConfigurator.updateLiquidationConfig(
       spokeAddr,
@@ -153,7 +161,9 @@ contract SpokeConfiguratorTest is SpokeBase {
   }
 
   function test_updateMaxReserves_revertsWith_AccessManagedUnauthorized() public {
-    vm.expectRevert(abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, alice));
+    vm.expectRevert(
+      abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, alice)
+    );
     vm.prank(alice);
     spokeConfigurator.updateMaxReserves(spokeAddr, 0);
   }
@@ -169,7 +179,9 @@ contract SpokeConfiguratorTest is SpokeBase {
   }
 
   function test_addReserve_revertsWith_AccessManagedUnauthorized() public {
-    vm.expectRevert(abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, alice));
+    vm.expectRevert(
+      abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, alice)
+    );
     vm.prank(alice);
     spokeConfigurator.addReserve({
       spoke: spokeAddr,
@@ -254,7 +266,9 @@ contract SpokeConfiguratorTest is SpokeBase {
   }
 
   function test_updatePaused_revertsWith_AccessManagedUnauthorized() public {
-    vm.expectRevert(abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, alice));
+    vm.expectRevert(
+      abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, alice)
+    );
     vm.prank(alice);
     spokeConfigurator.updatePaused(spokeAddr, _reserveId, true);
   }
@@ -279,7 +293,9 @@ contract SpokeConfiguratorTest is SpokeBase {
   }
 
   function test_updateFrozen_revertsWith_AccessManagedUnauthorized() public {
-    vm.expectRevert(abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, alice));
+    vm.expectRevert(
+      abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, alice)
+    );
     vm.prank(alice);
     spokeConfigurator.updateFrozen(spokeAddr, _reserveId, true);
   }
@@ -304,7 +320,9 @@ contract SpokeConfiguratorTest is SpokeBase {
   }
 
   function test_updateBorrowable_revertsWith_AccessManagedUnauthorized() public {
-    vm.expectRevert(abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, alice));
+    vm.expectRevert(
+      abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, alice)
+    );
     vm.prank(alice);
     spokeConfigurator.updateBorrowable(spokeAddr, _reserveId, true);
   }
@@ -329,7 +347,9 @@ contract SpokeConfiguratorTest is SpokeBase {
   }
 
   function test_updateLiquidatable_revertsWith_AccessManagedUnauthorized() public {
-    vm.expectRevert(abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, alice));
+    vm.expectRevert(
+      abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, alice)
+    );
     vm.prank(alice);
     spokeConfigurator.updateLiquidatable(spokeAddr, _reserveId, true);
   }
@@ -358,7 +378,9 @@ contract SpokeConfiguratorTest is SpokeBase {
   }
 
   function test_updateReceiveSharesEnabled_revertsWith_AccessManagedUnauthorized() public {
-    vm.expectRevert(abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, alice));
+    vm.expectRevert(
+      abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, alice)
+    );
     vm.prank(alice);
     spokeConfigurator.updateReceiveSharesEnabled(spokeAddr, _reserveId, false);
   }
@@ -387,7 +409,9 @@ contract SpokeConfiguratorTest is SpokeBase {
   }
 
   function test_updateCollateralRisk_revertsWith_AccessManagedUnauthorized() public {
-    vm.expectRevert(abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, alice));
+    vm.expectRevert(
+      abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, alice)
+    );
     vm.prank(alice);
     spokeConfigurator.updateCollateralRisk(spokeAddr, _reserveId, 0);
   }
@@ -411,7 +435,9 @@ contract SpokeConfiguratorTest is SpokeBase {
   }
 
   function test_addCollateralFactor_revertsWith_AccessManagedUnauthorized() public {
-    vm.expectRevert(abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, alice));
+    vm.expectRevert(
+      abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, alice)
+    );
     vm.prank(alice);
     spokeConfigurator.addCollateralFactor(spokeAddr, _reserveId, 0);
   }
@@ -448,7 +474,9 @@ contract SpokeConfiguratorTest is SpokeBase {
   }
 
   function test_updateCollateralFactor_revertsWith_AccessManagedUnauthorized() public {
-    vm.expectRevert(abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, alice));
+    vm.expectRevert(
+      abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, alice)
+    );
     vm.prank(alice);
     spokeConfigurator.updateCollateralFactor(spokeAddr, _reserveId, 0, 0);
   }
@@ -492,7 +520,9 @@ contract SpokeConfiguratorTest is SpokeBase {
   }
 
   function test_addLiquidationBonus_revertsWith_AccessManagedUnauthorized() public {
-    vm.expectRevert(abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, alice));
+    vm.expectRevert(
+      abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, alice)
+    );
     vm.prank(alice);
     spokeConfigurator.addMaxLiquidationBonus(spokeAddr, _reserveId, 0);
   }
@@ -529,7 +559,9 @@ contract SpokeConfiguratorTest is SpokeBase {
   }
 
   function test_updateMaxLiquidationBonus_revertsWith_AccessManagedUnauthorized() public {
-    vm.expectRevert(abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, alice));
+    vm.expectRevert(
+      abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, alice)
+    );
     vm.prank(alice);
     spokeConfigurator.updateMaxLiquidationBonus(spokeAddr, _reserveId, 0, 0);
   }
@@ -573,7 +605,9 @@ contract SpokeConfiguratorTest is SpokeBase {
   }
 
   function test_addLiquidationFee_revertsWith_AccessManagedUnauthorized() public {
-    vm.expectRevert(abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, alice));
+    vm.expectRevert(
+      abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, alice)
+    );
     vm.prank(alice);
     spokeConfigurator.addLiquidationFee(spokeAddr, _reserveId, 0);
   }
@@ -610,7 +644,9 @@ contract SpokeConfiguratorTest is SpokeBase {
   }
 
   function test_updateLiquidationFee_revertsWith_AccessManagedUnauthorized() public {
-    vm.expectRevert(abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, alice));
+    vm.expectRevert(
+      abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, alice)
+    );
     vm.prank(alice);
     spokeConfigurator.updateLiquidationFee(spokeAddr, _reserveId, 0, 0);
   }
@@ -654,7 +690,9 @@ contract SpokeConfiguratorTest is SpokeBase {
   }
 
   function test_addDynamicReserveConfig_revertsWith_AccessManagedUnauthorized() public {
-    vm.expectRevert(abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, alice));
+    vm.expectRevert(
+      abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, alice)
+    );
     vm.prank(alice);
     spokeConfigurator.addDynamicReserveConfig(
       spokeAddr,
@@ -694,7 +732,9 @@ contract SpokeConfiguratorTest is SpokeBase {
   }
 
   function test_updateDynamicReserveConfig_revertsWith_AccessManagedUnauthorized() public {
-    vm.expectRevert(abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, alice));
+    vm.expectRevert(
+      abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, alice)
+    );
     vm.prank(alice);
     spokeConfigurator.updateDynamicReserveConfig(
       spokeAddr,
@@ -742,7 +782,9 @@ contract SpokeConfiguratorTest is SpokeBase {
   }
 
   function test_pauseAllReserves_revertsWith_AccessManagedUnauthorized() public {
-    vm.expectRevert(abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, alice));
+    vm.expectRevert(
+      abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, alice)
+    );
     vm.prank(alice);
     spokeConfigurator.pauseAllReserves(spokeAddr);
   }
@@ -768,7 +810,9 @@ contract SpokeConfiguratorTest is SpokeBase {
   }
 
   function test_freezeAllReserves_revertsWith_AccessManagedUnauthorized() public {
-    vm.expectRevert(abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, alice));
+    vm.expectRevert(
+      abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, alice)
+    );
     vm.prank(alice);
     spokeConfigurator.freezeAllReserves(spokeAddr);
   }
@@ -791,7 +835,9 @@ contract SpokeConfiguratorTest is SpokeBase {
   }
 
   function test_updatePositionManager_revertsWith_AccessManagedUnauthorized() public {
-    vm.expectRevert(abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, alice));
+    vm.expectRevert(
+      abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, alice)
+    );
     vm.prank(alice);
     spokeConfigurator.updatePositionManager(spokeAddr, address(0), true);
   }
