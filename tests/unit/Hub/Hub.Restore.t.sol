@@ -16,10 +16,8 @@ contract HubRestoreTest is HubBase {
     super.setUp();
 
     // Set up a hub configurator to test freezing and pausing assets
-    IAccessManager accessManager = IAccessManager(hub1.authority());
-    hubConfigurator = new HubConfigurator(address(accessManager));
-    SpokeConfigurator spokeConfigurator = new SpokeConfigurator(address(accessManager));
-    setUpConfiguratorRoles(address(hubConfigurator), address(spokeConfigurator), accessManager);
+    hubConfigurator = new HubConfigurator(hub1.authority());
+    setUpHubConfiguratorRoles(address(hubConfigurator), hub1.authority());
   }
 
   function test_restore_revertsWith_SurplusDrawnRestored() public {

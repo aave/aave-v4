@@ -20,10 +20,8 @@ contract HubConfiguratorTest is HubBase {
 
   function setUp() public virtual override {
     super.setUp();
-    IAccessManager manager = IAccessManager(hub1.authority());
-    hubConfigurator = new HubConfigurator(address(manager));
-    SpokeConfigurator spokeConfigurator = new SpokeConfigurator(address(manager));
-    setUpConfiguratorRoles(address(hubConfigurator), address(spokeConfigurator), manager);
+    hubConfigurator = new HubConfigurator(hub1.authority());
+    setUpHubConfiguratorRoles(address(hubConfigurator), hub1.authority());
 
     _assetId = daiAssetId;
     _encodedIrData = abi.encode(

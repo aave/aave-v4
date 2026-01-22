@@ -17,14 +17,8 @@ contract SpokeConfiguratorTest is SpokeBase {
   function setUp() public virtual override {
     super.setUp();
 
-    address authority = spoke1.authority();
-    spokeConfigurator = new SpokeConfigurator(authority);
-    HubConfigurator hubConfigurator = new HubConfigurator(authority);
-    setUpConfiguratorRoles(
-      address(hubConfigurator),
-      address(spokeConfigurator),
-      IAccessManager(authority)
-    );
+    spokeConfigurator = new SpokeConfigurator(spoke1.authority());
+    setUpSpokeConfiguratorRoles(address(spokeConfigurator), spoke1.authority());
 
     spokeAddr = address(spoke1);
     spoke = ISpoke(spokeAddr);
