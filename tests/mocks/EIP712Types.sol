@@ -83,7 +83,7 @@ library EIP712Types {
 
   struct UpdateUserDynamicConfig {
     address spoke;
-    address user;
+    address onBhela;
     uint256 nonce;
     uint256 deadline;
   }

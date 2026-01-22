@@ -178,14 +178,14 @@ contract SignatureGateway is ISignatureGateway, GatewayBase, IntentConsumer, Mul
     bytes calldata signature
   ) external onlyRegisteredSpoke(params.spoke) {
     _verifyAndConsumeIntent({
-      signer: params.user,
+      signer: params.onBehalfOf,
       intentHash: params.hash(),
       nonce: params.nonce,
       deadline: params.deadline,
       signature: signature
     });
 
-    ISpoke(params.spoke).updateUserRiskPremium(params.user);
+    ISpoke(params.spoke).updateUserRiskPremium(params.onBehalfOf);
   }
 
   /// @inheritdoc ISignatureGateway
@@ -194,14 +194,14 @@ contract SignatureGateway is ISignatureGateway, GatewayBase, IntentConsumer, Mul
     bytes calldata signature
   ) external onlyRegisteredSpoke(params.spoke) {
     _verifyAndConsumeIntent({
-      signer: params.user,
+      signer: params.onBehalfOf,
       intentHash: params.hash(),
       nonce: params.nonce,
       deadline: params.deadline,
       signature: signature
     });
 
-    ISpoke(params.spoke).updateUserDynamicConfig(params.user);
+    ISpoke(params.spoke).updateUserDynamicConfig(params.onBehalfOf);
   }
 
   /// @inheritdoc ISignatureGateway

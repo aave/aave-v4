@@ -92,24 +92,24 @@ interface ISignatureGateway is IGatewayBase, IIntentConsumer, IMulticall {
 
   /// @notice Intent data to update the risk premium of a user position.
   /// @param spoke The address of the registered spoke.
-  /// @param user The address of the user whose risk premium is being updated.
+  /// @param onBehalfOf The address of the user whose risk premium is being updated.
   /// @param nonce The key-prefixed nonce for the signature.
   /// @param deadline The deadline for the intent.
   struct UpdateUserRiskPremium {
     address spoke;
-    address user;
+    address onBehalfOf;
     uint256 nonce;
     uint256 deadline;
   }
 
   /// @notice Intent data to update the dynamic configuration of a user position.
   /// @param spoke The address of the registered spoke.
-  /// @param user The address of the user whose dynamic config is being updated.
+  /// @param onBehalfOf The address of the user whose dynamic config is being updated.
   /// @param nonce The key-prefixed nonce for the signature.
   /// @param deadline The deadline for the intent.
   struct UpdateUserDynamicConfig {
     address spoke;
-    address user;
+    address onBehalfOf;
     uint256 nonce;
     uint256 deadline;
   }

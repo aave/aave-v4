@@ -5,7 +5,7 @@ pragma solidity ^0.8.0;
 import 'tests/unit/Spoke/SpokeBase.t.sol';
 import {EIP712Hash} from 'src/spoke/libraries/EIP712Hash.sol';
 
-contract SpokesetUserPositionManagersWithSigTest is SpokeBase {
+contract SpokeSetUserPositionManagersWithSigTest is SpokeBase {
   using SafeCast for *;
 
   mapping(address positionManager => bool approve) internal _lookup;
