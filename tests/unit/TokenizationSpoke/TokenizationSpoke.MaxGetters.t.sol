@@ -3,213 +3,295 @@ pragma solidity ^0.8.0;
 
 import 'tests/unit/TokenizationSpoke/TokenizationSpoke.Base.t.sol';
 
-abstract contract TokenizationSpokeMaxGettersReturnZeroTest is TokenizationSpokeBaseTest {
+// Coverage Matrix for maxDeposit/maxMint/maxWithdraw/maxRedeem:
+// +---------------------------+----------------+----------------+----------------+----------------+
+// | Scenario                  | maxDeposit     | maxMint        | maxWithdraw    | maxRedeem      |
+// +---------------------------+----------------+----------------+----------------+----------------+
+// | active=false              | 0              | 0              | 0              | 0              |
+// | halted=true               | 0              | 0              | 0              | 0              |
+// | addCap=0                  | 0              | 0              | n/a            | n/a            |
+// | addCap=MAX (empty)        | type(uint).max | type(uint).max | n/a            | n/a            |
+// | addCap=MAX (non-empty)    | type(uint).max | type(uint).max | n/a            | n/a            |
+// | addCap=variable (empty)   | cap * units    | shares(cap)    | n/a            | n/a            |
+// | addCap=variable (partial) | remaining      | shares(rem)    | n/a            | n/a            |
+// | addCap exactly reached    | 0              | 0              | n/a            | n/a            |
+// | liquidity < balance       | n/a            | n/a            | liquidity      | shares(liq)    |
+// | liquidity >= balance      | n/a            | n/a            | balance        | shares(bal)    |
+// +---------------------------+----------------+----------------+----------------+----------------+
+// n/a = scenario does not affect this getter
+
+abstract contract TokenizationSpokeMaxGettersBaseTest is TokenizationSpokeBaseTest {
   ITokenizationSpoke public vault;
+  TestnetERC20 public asset;
 
   function setUp() public virtual override {
     super.setUp();
     vault = daiVault;
+    asset = TestnetERC20(vault.asset());
+  }
+}
+
+contract TokenizationSpokeMaxGettersNotActiveTest is TokenizationSpokeMaxGettersBaseTest {
+  function setUp() public override {
+    super.setUp();
+    _updateSpokeActive(IHub(vault.hub()), vault.assetId(), address(vault), false);
+  }
+
+  function test_maxDeposit_returnsZero() public view {
+    assertEq(vault.maxDeposit(alice), 0);
+  }
+
+  function test_maxMint_returnsZero() public view {
+    assertEq(vault.maxMint(alice), 0);
+  }
+
+  function test_maxWithdraw_returnsZero() public view {
+    assertEq(vault.maxWithdraw(alice), 0);
+  }
+
+  function test_maxRedeem_returnsZero() public view {
+    assertEq(vault.maxRedeem(alice), 0);
+  }
+}
+
+contract TokenizationSpokeMaxGettersHaltedTest is TokenizationSpokeMaxGettersBaseTest {
+  function setUp() public override {
+    super.setUp();
+    _updateSpokeHalted(IHub(vault.hub()), vault.assetId(), address(vault), true);
+  }
+
+  function test_maxDeposit_returnsZero() public view {
+    assertEq(vault.maxDeposit(alice), 0);
+  }
+
+  function test_maxMint_returnsZero() public view {
+    assertEq(vault.maxMint(alice), 0);
+  }
+
+  function test_maxWithdraw_returnsZero() public view {
+    assertEq(vault.maxWithdraw(alice), 0);
+  }
+
+  function test_maxRedeem_returnsZero() public view {
+    assertEq(vault.maxRedeem(alice), 0);
+  }
+}
+
+contract TokenizationSpokeMaxGettersAddCapZeroTest is TokenizationSpokeMaxGettersBaseTest {
+  function setUp() public override {
+    super.setUp();
     _updateAddCap(IHub(vault.hub()), vault.assetId(), address(vault), 0);
   }
 
-  function _isVaultActiveOrNotHalted() internal view returns (bool) {
-    IHub.SpokeConfig memory config = IHub(vault.hub()).getSpokeConfig(
-      vault.assetId(),
-      address(vault)
-    );
-    return config.active && !config.halted;
+  function test_maxDeposit_returnsZero() public view {
+    assertEq(vault.maxDeposit(alice), 0);
   }
 
-  modifier setUpPreconditions() {
-    if (_isVaultActiveOrNotHalted()) {
-      vm.expectCall(
-        vault.hub(),
-        abi.encodeCall(IHub.getSpokeConfig, (vault.assetId(), address(vault))),
-        1
-      );
-    } else {
-      vm.etch(vault.hub(), new bytes(0));
-      vm.expectRevert();
-    }
-    _;
-  }
-
-  function test_maxDeposit_returns_zero() public setUpPreconditions {
-    uint256 maxDeposit = vault.maxDeposit(vm.randomAddress());
-    assertEq(maxDeposit, 0);
-  }
-
-  function test_maxMint_returns_zero() public setUpPreconditions {
-    uint256 maxMint = vault.maxMint(vm.randomAddress());
-    assertEq(maxMint, 0);
-  }
-
-  function test_maxWithdraw_returns_zero() public setUpPreconditions {
-    uint256 maxWithdraw = vault.maxWithdraw(vm.randomAddress());
-    assertEq(maxWithdraw, 0);
-  }
-
-  function test_maxRedeem_returns_zero() public setUpPreconditions {
-    uint256 maxRedeem = vault.maxRedeem(vm.randomAddress());
-    assertEq(maxRedeem, 0);
+  function test_maxMint_returnsZero() public view {
+    assertEq(vault.maxMint(alice), 0);
   }
 }
 
-contract TokenizationSpokeMaxGettersTest_Active_NotHalted is
-  TokenizationSpokeMaxGettersReturnZeroTest
-{}
-
-contract TokenizationSpokeMaxGettersTest_Active_Halted is
-  TokenizationSpokeMaxGettersReturnZeroTest
-{
+contract TokenizationSpokeMaxGettersAddCapMaxEmptyTest is TokenizationSpokeMaxGettersBaseTest {
   function setUp() public override {
     super.setUp();
-    _updateSpokeHalted(IHub(vault.hub()), vault.assetId(), address(vault), true);
-  }
-}
-
-contract TokenizationSpokeMaxGettersTest_NotActive_NotHalted is
-  TokenizationSpokeMaxGettersReturnZeroTest
-{
-  function setUp() public override {
-    super.setUp();
-    _updateSpokeActive(IHub(vault.hub()), vault.assetId(), address(vault), false);
-  }
-}
-
-contract TokenizationSpokeMaxGettersTest_NotActive_Halted is
-  TokenizationSpokeMaxGettersReturnZeroTest
-{
-  function setUp() public override {
-    super.setUp();
-    _updateSpokeActive(IHub(vault.hub()), vault.assetId(), address(vault), false);
-    _updateSpokeHalted(IHub(vault.hub()), vault.assetId(), address(vault), true);
-  }
-}
-
-// @dev vault spoke is active & not halted from here onwards
-
-contract TokenizationSpokeDepositMintGettersMaxCapTest is TokenizationSpokeBaseTest {
-  ITokenizationSpoke public vault;
-
-  function setUp() public virtual override {
-    super.setUp();
-    vault = daiVault;
-
     assertEq(
       IHub(vault.hub()).getSpokeConfig(vault.assetId(), address(vault)).addCap,
       IHub(vault.hub()).MAX_ALLOWED_SPOKE_CAP()
     );
   }
 
-  function maxSuppliableAssets() public view returns (uint256) {
-    IHub hub = IHub(vault.hub());
-    uint256 addCap = hub.getSpokeConfig(vault.assetId(), address(vault)).addCap;
-    if (addCap == hub.MAX_ALLOWED_SPOKE_CAP()) {
-      return type(uint256).max;
-    }
-    uint256 addCapWithDecimals = addCap * MathUtils.uncheckedExp(10, vault.decimals());
-    uint256 balance = hub.getSpokeAddedAssets(vault.assetId(), address(vault));
-    return addCapWithDecimals > balance ? addCapWithDecimals - balance : 0;
+  function test_maxDeposit_returnsMaxUint() public view {
+    assertEq(vault.maxDeposit(alice), type(uint256).max);
   }
 
-  function test_maxDeposit() public {
-    uint256 maxDeposit = vault.maxDeposit(vm.randomAddress());
-    assertEq(maxDeposit, maxSuppliableAssets());
-  }
-
-  function test_maxMint() public {
-    uint256 maxMint = vault.maxMint(vm.randomAddress());
-    uint256 maxAssets = maxSuppliableAssets();
-    uint256 maxSuppliableShares = maxAssets == type(uint256).max
-      ? type(uint256).max
-      : IHub(vault.hub()).previewAddByAssets(vault.assetId(), maxAssets);
-    assertEq(maxMint, maxSuppliableShares);
+  function test_maxMint_returnsMaxUint() public view {
+    assertEq(vault.maxMint(alice), type(uint256).max);
   }
 }
 
-contract TokenizationSpokeDepositMintGettersEmptyLiquidityVariableCapTest is
-  TokenizationSpokeDepositMintGettersMaxCapTest
+contract TokenizationSpokeMaxGettersAddCapMaxNonEmptyTest is TokenizationSpokeMaxGettersBaseTest {
+  function setUp() public override {
+    super.setUp();
+    uint256 depositAmount = 10e18;
+    asset.mint(alice, depositAmount);
+    Utils.approve(vault, alice, depositAmount);
+    vm.prank(alice);
+    vault.deposit(depositAmount, alice);
+  }
+
+  function test_maxDeposit_returnsMaxUint() public view {
+    assertEq(vault.maxDeposit(alice), type(uint256).max);
+  }
+
+  function test_maxMint_returnsMaxUint() public view {
+    assertEq(vault.maxMint(alice), type(uint256).max);
+  }
+}
+
+contract TokenizationSpokeMaxGettersAddCapVariableEmptyTest is TokenizationSpokeMaxGettersBaseTest {
+  using SafeCast for uint256;
+
+  uint40 public addCap;
+
+  function setUp() public override {
+    super.setUp();
+    addCap = vm.randomUint(1, 1000).toUint40();
+    _updateAddCap(IHub(vault.hub()), vault.assetId(), address(vault), addCap);
+  }
+
+  function test_maxDeposit_returnsCapTimesUnits() public view {
+    uint256 expected = uint256(addCap) * MathUtils.uncheckedExp(10, vault.decimals());
+    assertEq(vault.maxDeposit(alice), expected);
+  }
+
+  function test_maxMint_returnsSharesOfCap() public view {
+    uint256 capAssets = uint256(addCap) * MathUtils.uncheckedExp(10, vault.decimals());
+    uint256 expected = IHub(vault.hub()).previewAddByAssets(vault.assetId(), capAssets);
+    assertEq(vault.maxMint(alice), expected);
+  }
+}
+
+contract TokenizationSpokeMaxGettersAddCapVariablePartialTest is
+  TokenizationSpokeMaxGettersBaseTest
 {
   using SafeCast for uint256;
 
-  function setUp() public virtual override {
+  uint40 public addCap;
+  uint256 public depositAmount;
+
+  function setUp() public override {
     super.setUp();
-    _updateAddCap(
-      IHub(vault.hub()),
-      vault.assetId(),
-      address(vault),
-      vm.randomUint(1, vault.MAX_ALLOWED_SPOKE_CAP()).toUint40()
-    );
+    addCap = vm.randomUint(100, 1000).toUint40();
+    _updateAddCap(IHub(vault.hub()), vault.assetId(), address(vault), addCap);
+
+    uint256 capWithDecimals = uint256(addCap) * MathUtils.uncheckedExp(10, vault.decimals());
+    depositAmount = capWithDecimals / 2;
+    asset.mint(alice, depositAmount);
+    Utils.approve(vault, alice, depositAmount);
+    vm.prank(alice);
+    vault.deposit(depositAmount, alice);
+  }
+
+  function test_maxDeposit_returnsRemaining() public view {
+    uint256 capWithDecimals = uint256(addCap) * MathUtils.uncheckedExp(10, vault.decimals());
+    uint256 expected = capWithDecimals - vault.totalAssets();
+    assertEq(vault.maxDeposit(alice), expected);
+  }
+
+  function test_maxMint_returnsSharesOfRemaining() public view {
+    uint256 capWithDecimals = uint256(addCap) * MathUtils.uncheckedExp(10, vault.decimals());
+    uint256 remaining = capWithDecimals - vault.totalAssets();
+    uint256 expected = IHub(vault.hub()).previewAddByAssets(vault.assetId(), remaining);
+    assertEq(vault.maxMint(alice), expected);
   }
 }
 
-contract TokenizationSpokeDepositMintGettersNonEmptyLiquidityVariableCapTest is
-  TokenizationSpokeDepositMintGettersEmptyLiquidityVariableCapTest
+contract TokenizationSpokeMaxGettersAddCapExactlyReachedTest is
+  TokenizationSpokeMaxGettersBaseTest
+{
+  using SafeCast for uint256;
+
+  uint40 public addCap;
+
+  function setUp() public override {
+    super.setUp();
+    addCap = vm.randomUint(1, 1000).toUint40();
+    _updateAddCap(IHub(vault.hub()), vault.assetId(), address(vault), addCap);
+
+    uint256 capWithDecimals = uint256(addCap) * MathUtils.uncheckedExp(10, vault.decimals());
+    asset.mint(alice, capWithDecimals);
+    Utils.approve(vault, alice, capWithDecimals);
+    vm.prank(alice);
+    vault.deposit(capWithDecimals, alice);
+  }
+
+  function test_maxDeposit_returnsZero() public view {
+    assertEq(vault.maxDeposit(alice), 0);
+  }
+
+  function test_maxMint_returnsZero() public view {
+    assertEq(vault.maxMint(alice), 0);
+  }
+}
+
+contract TokenizationSpokeMaxGettersLiquidityLessThanBalanceTest is
+  TokenizationSpokeMaxGettersBaseTest
 {
   using MathUtils for uint256;
 
-  function setUp() public virtual override {
+  uint256 public depositAmount;
+
+  function setUp() public override {
     super.setUp();
-    uint256 amount = vm.randomUint(1, maxSuppliableAssets().min(MAX_SUPPLY_AMOUNT));
-    deal(vault.asset(), address(this), amount);
-    Utils.approve(vault, address(this), amount);
-    vault.deposit(amount, address(this));
+    depositAmount = 10e18;
+    asset.mint(alice, depositAmount);
+    Utils.approve(vault, alice, depositAmount);
+    vm.prank(alice);
+    vault.deposit(depositAmount, alice);
+
+    _simulateYield(vault, depositAmount);
+
+    uint256 drawnAmount = depositAmount / 2;
+    asset.mint(address(IHub(vault.hub())), drawnAmount);
+    vm.startPrank(address(spoke2));
+    IHub(vault.hub()).add(vault.assetId(), drawnAmount);
+    IHub(vault.hub()).draw(vault.assetId(), drawnAmount + depositAmount, address(spoke2));
+    vm.stopPrank();
+  }
+
+  function test_maxWithdraw_returnsLiquidity() public view {
+    uint256 liquidity = IHub(vault.hub()).getAssetLiquidity(vault.assetId());
+    uint256 aliceBalance = vault.convertToAssets(vault.balanceOf(alice));
+    assertLt(liquidity, aliceBalance);
+
+    assertEq(vault.maxWithdraw(alice), liquidity);
+  }
+
+  function test_maxRedeem_returnsSharesOfLiquidity() public view {
+    uint256 liquidity = IHub(vault.hub()).getAssetLiquidity(vault.assetId());
+    uint256 liquidityShares = vault.convertToShares(liquidity);
+    uint256 aliceShares = vault.balanceOf(alice);
+    assertLt(liquidityShares, aliceShares);
+
+    assertEq(vault.maxRedeem(alice), liquidityShares);
   }
 }
 
-contract TokenizationSpokeDepositMintGettersNonEmptyLiquidityMaxCapTest is
-  TokenizationSpokeDepositMintGettersNonEmptyLiquidityVariableCapTest
+contract TokenizationSpokeMaxGettersLiquidityGreaterThanBalanceTest is
+  TokenizationSpokeMaxGettersBaseTest
 {
-  function setUp() public virtual override {
+  uint256 public depositAmount;
+
+  function setUp() public override {
     super.setUp();
-    _updateAddCap(
-      IHub(vault.hub()),
-      vault.assetId(),
-      address(vault),
-      vault.MAX_ALLOWED_SPOKE_CAP()
-    );
-  }
-}
+    depositAmount = 10e18;
+    asset.mint(alice, depositAmount);
+    Utils.approve(vault, alice, depositAmount);
+    vm.prank(alice);
+    vault.deposit(depositAmount, alice);
 
-contract TokenizationSpokeWithdrawRedeemGettersReturnMaxTest is
-  TokenizationSpokeDepositMintGettersNonEmptyLiquidityMaxCapTest
-{
-  using MathUtils for uint256;
-
-  function setUp() public virtual override {
-    super.setUp();
-    deal(vault.asset(), address(this), MAX_SUPPLY_AMOUNT);
-    Utils.approve(vault, address(this), MAX_SUPPLY_AMOUNT);
+    uint256 extraLiquidity = 5e18;
+    asset.mint(bob, extraLiquidity);
+    Utils.approve(vault, bob, extraLiquidity);
+    vm.prank(bob);
+    vault.deposit(extraLiquidity, bob);
   }
 
-  function availableAssets() public view returns (uint256) {
-    return IHub(vault.hub()).getAssetLiquidity(vault.assetId());
+  function test_maxWithdraw_returnsBalance() public view {
+    uint256 liquidity = IHub(vault.hub()).getAssetLiquidity(vault.assetId());
+    uint256 aliceBalance = vault.convertToAssets(vault.balanceOf(alice));
+    assertGt(liquidity, aliceBalance);
+
+    assertEq(vault.maxWithdraw(alice), aliceBalance);
   }
 
-  function availableShares() public view returns (uint256) {
-    return IHub(vault.hub()).previewAddByAssets(vault.assetId(), availableAssets());
-  }
+  function test_maxRedeem_returnsSharesOfBalance() public view {
+    uint256 liquidity = IHub(vault.hub()).getAssetLiquidity(vault.assetId());
+    uint256 aliceShares = vault.balanceOf(alice);
+    uint256 liquidityShares = vault.convertToShares(liquidity);
+    assertGt(liquidityShares, aliceShares);
 
-  function test_maxWithdraw() public {
-    vault.deposit(vm.randomUint(0, MAX_SUPPLY_AMOUNT), address(this));
-    uint256 balanceAmount = IHub(vault.hub()).previewRemoveByShares(
-      vault.assetId(),
-      vault.balanceOf(address(this))
-    );
-
-    uint256 maxWithdraw = vault.maxWithdraw(address(this));
-    assertEq(maxWithdraw, availableAssets().min(balanceAmount));
-  }
-
-  function test_maxRedeem() public {
-    vault.deposit(vm.randomUint(0, MAX_SUPPLY_AMOUNT), address(this));
-    uint256 maxRedeemableShares = IHub(vault.hub()).previewRemoveByAssets(
-      vault.assetId(),
-      availableAssets().min(vault.balanceOf(address(this)))
-    );
-
-    uint256 maxRedeem = vault.maxRedeem(address(this));
-    assertEq(maxRedeem, maxRedeemableShares);
+    assertEq(vault.maxRedeem(alice), aliceShares);
   }
 }
