@@ -9,7 +9,7 @@ pragma solidity ^0.8.20;
 library EIP712Types {
   /// @dev Spoke Intents
   struct SetUserPositionManagers {
-    address user;
+    address onBehalfOf;
     PositionManagerUpdate[] updates;
     uint256 nonce;
     uint256 deadline;

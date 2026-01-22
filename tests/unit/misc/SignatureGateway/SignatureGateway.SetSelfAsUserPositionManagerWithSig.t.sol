@@ -10,7 +10,7 @@ contract SignatureGatewaySetSelfAsUserPositionManagerTest is SignatureGatewayBas
     vm.prank(vm.randomAddress());
     gateway.setSelfAsUserPositionManagerWithSig({
       spoke: address(spoke2),
-      user: vm.randomAddress(),
+      onBehalfOf: vm.randomAddress(),
       approve: vm.randomBool(),
       nonce: vm.randomUint(),
       deadline: vm.randomUint(),
@@ -22,7 +22,7 @@ contract SignatureGatewaySetSelfAsUserPositionManagerTest is SignatureGatewayBas
     ISpoke.PositionManagerUpdate[] memory updates = new ISpoke.PositionManagerUpdate[](1);
     updates[0] = ISpoke.PositionManagerUpdate(address(gateway), vm.randomBool());
     ISpoke.SetUserPositionManagers memory p = ISpoke.SetUserPositionManagers({
-      user: vm.randomAddress(),
+      onBehalfOf: vm.randomAddress(),
       updates: updates,
       nonce: vm.randomUint(),
       deadline: vm.randomUint()
@@ -37,7 +37,7 @@ contract SignatureGatewaySetSelfAsUserPositionManagerTest is SignatureGatewayBas
     vm.prank(vm.randomAddress());
     gateway.setSelfAsUserPositionManagerWithSig({
       spoke: address(spoke1),
-      user: p.user,
+      onBehalfOf: p.onBehalfOf,
       approve: p.updates[0].approve,
       nonce: p.nonce,
       deadline: p.deadline,
@@ -55,7 +55,7 @@ contract SignatureGatewaySetSelfAsUserPositionManagerTest is SignatureGatewayBas
     vm.prank(vm.randomAddress());
     gateway.setSelfAsUserPositionManagerWithSig({
       spoke: address(spoke1),
-      user: vm.randomAddress(),
+      onBehalfOf: vm.randomAddress(),
       approve: vm.randomBool(),
       nonce: vm.randomUint(),
       deadline: vm.randomUint(),
@@ -72,7 +72,7 @@ contract SignatureGatewaySetSelfAsUserPositionManagerTest is SignatureGatewayBas
     ISpoke.PositionManagerUpdate[] memory updates = new ISpoke.PositionManagerUpdate[](1);
     updates[0] = ISpoke.PositionManagerUpdate(address(gateway), true);
     ISpoke.SetUserPositionManagers memory p = ISpoke.SetUserPositionManagers({
-      user: alice,
+      onBehalfOf: alice,
       updates: updates,
       nonce: spoke1.nonces(alice, nonceKey), // note: this typed sig is forwarded to spoke
       deadline: _warpBeforeRandomDeadline()
@@ -86,7 +86,7 @@ contract SignatureGatewaySetSelfAsUserPositionManagerTest is SignatureGatewayBas
 
     gateway.setSelfAsUserPositionManagerWithSig({
       spoke: address(spoke1),
-      user: p.user,
+      onBehalfOf: p.onBehalfOf,
       approve: p.updates[0].approve,
       nonce: p.nonce,
       deadline: p.deadline,

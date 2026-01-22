@@ -207,7 +207,7 @@ contract SignatureGateway is ISignatureGateway, GatewayBase, IntentConsumer, Mul
   /// @inheritdoc ISignatureGateway
   function setSelfAsUserPositionManagerWithSig(
     address spoke,
-    address user,
+    address onBehalfOf,
     bool approve,
     uint256 nonce,
     uint256 deadline,
@@ -218,7 +218,7 @@ contract SignatureGateway is ISignatureGateway, GatewayBase, IntentConsumer, Mul
     try
       ISpoke(spoke).setUserPositionManagersWithSig(
         ISpoke.SetUserPositionManagers({
-          user: user,
+          onBehalfOf: onBehalfOf,
           updates: updates,
           nonce: nonce,
           deadline: deadline
