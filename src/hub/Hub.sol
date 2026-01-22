@@ -81,6 +81,8 @@ contract Hub is IHub, AccessManaged {
     require(!isUnderlyingListed(underlying), UnderlyingAlreadyListed());
 
     uint256 assetId = _assetCount++;
+    _underlyingToAssetId[underlying] = assetId;
+
     IBasicInterestRateStrategy(irStrategy).setInterestRateData(assetId, irData);
     uint256 drawnRate = IBasicInterestRateStrategy(irStrategy).calculateInterestRate({
       assetId: assetId,
@@ -111,7 +113,6 @@ contract Hub is IHub, AccessManaged {
       feeReceiver: feeReceiver,
       liquidityFee: 0
     });
-    _underlyingToAssetId[underlying] = assetId;
     _addFeeReceiver(assetId, feeReceiver);
 
     emit AddAsset(assetId, underlying, decimals);
