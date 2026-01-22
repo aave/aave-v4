@@ -72,8 +72,8 @@ interface IHub is IHubBase, IAccessManaged {
   /// @dev addCap The maximum amount that can be added by a spoke, expressed in whole assets (not scaled by decimals). A value of `MAX_ALLOWED_SPOKE_CAP` indicates no cap.
   /// @dev drawCap The maximum amount that can be drawn by a spoke, expressed in whole assets (not scaled by decimals). A value of `MAX_ALLOWED_SPOKE_CAP` indicates no cap.
   /// @dev riskPremiumThreshold The maximum ratio of premium to drawn shares a spoke can have, expressed in BPS. A value of `MAX_RISK_PREMIUM_THRESHOLD` indicates no threshold.
-  /// @dev active True if the spoke is prevented from performing any actions.
-  /// @dev paused True if the spoke is prevented from performing any user-facing actions.
+  /// @dev active False if the spoke is prevented from performing any actions.
+  /// @dev halted True if the spoke is prevented from performing any user-facing actions.
   /// @dev deficitRay The deficit reported by a spoke for a given asset, expressed in asset units and scaled by RAY.
   struct SpokeData {
     uint120 drawnShares;
@@ -86,7 +86,7 @@ interface IHub is IHubBase, IAccessManaged {
     uint40 drawCap;
     uint24 riskPremiumThreshold;
     bool active;
-    bool paused;
+    bool halted;
     //
     uint200 deficitRay;
   }
@@ -97,7 +97,7 @@ interface IHub is IHubBase, IAccessManaged {
     uint40 drawCap;
     uint24 riskPremiumThreshold;
     bool active;
-    bool paused;
+    bool halted;
   }
 
   /// @notice Emitted when an asset is added.
@@ -216,8 +216,8 @@ interface IHub is IHubBase, IAccessManaged {
   /// @notice Thrown when a spoke is not active.
   error SpokeNotActive();
 
-  /// @notice Thrown when a spoke is paused.
-  error SpokePaused();
+  /// @notice Thrown when a spoke is halted.
+  error SpokeHalted();
 
   /// @notice Thrown when a new reinvestment controller is the zero address and the asset has existing swept liquidity.
   error InvalidReinvestmentController();

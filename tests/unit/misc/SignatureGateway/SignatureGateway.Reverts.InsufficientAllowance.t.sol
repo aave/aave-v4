@@ -23,15 +23,23 @@ contract SignatureGateway_InsufficientAllowance_Test is SignatureGatewayBaseTest
     ISignatureGateway.Supply memory p = _supplyData(spoke1, alice, deadline);
     bytes memory signature = _sign(alicePk, _getTypedDataHash(gateway, p));
 
-    vm.expectRevert(
-      abi.encodeWithSelector(
-        IERC20Errors.ERC20InsufficientAllowance.selector,
-        address(gateway),
-        0,
-        p.amount,
-        address(_underlying(spoke1, p.reserveId))
-      )
-    );
+    address underlying = ISpoke(p.spoke).getReserve(p.reserveId).underlying;
+    assertTrue(IERC20(underlying).allowance(alice, address(gateway)) < p.amount);
+
+    if (underlying == address(tokenList.weth)) {
+      // WETH9 reverts with no data on insufficient allowance
+      vm.expectRevert();
+    } else {
+      vm.expectRevert(
+        abi.encodeWithSelector(
+          IERC20Errors.ERC20InsufficientAllowance.selector,
+          address(gateway),
+          0,
+          p.amount
+        )
+      );
+    }
+
     vm.prank(vm.randomAddress());
     gateway.supplyWithSig(p, signature);
   }
