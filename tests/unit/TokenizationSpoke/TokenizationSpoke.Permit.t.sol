@@ -29,13 +29,14 @@ contract TokenizationSpokePermitTest is TokenizationSpokeBaseTest {
     vm.setArbitraryStorage(address(vault));
     uint192 key = vault.PERMIT_NONCE_NAMESPACE();
 
-    address user = vm.randomAddress();
-    uint256 initialNonce = vault.nonces(user, key);
+    address owner = vm.randomAddress();
+    uint256 initialNonce = vault.nonces(owner, key);
 
-    uint256 usedNonce = vault.usePermitNonce(user);
+    vm.prank(owner);
+    uint256 usedNonce = vault.usePermitNonce();
     assertEq(usedNonce, initialNonce);
 
-    uint256 newNonce = vault.nonces(user, key);
+    uint256 newNonce = vault.nonces(owner, key);
     assertEq(newNonce, initialNonce.uncheckedAdd(1));
   }
 

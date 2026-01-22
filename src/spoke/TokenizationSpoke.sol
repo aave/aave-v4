@@ -224,8 +224,8 @@ abstract contract TokenizationSpoke is ITokenizationSpoke, ERC20Upgradeable, Int
   }
 
   /// @inheritdoc ITokenizationSpoke
-  function usePermitNonce(address owner) external returns (uint256) {
-    return _useNonce({owner: owner, key: PERMIT_NONCE_NAMESPACE});
+  function usePermitNonce() external returns (uint256) {
+    return _useNonce({owner: msg.sender, key: PERMIT_NONCE_NAMESPACE});
   }
 
   /// @inheritdoc ITokenizationSpoke

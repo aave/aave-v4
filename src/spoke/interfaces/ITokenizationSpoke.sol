@@ -154,10 +154,9 @@ interface ITokenizationSpoke is IERC4626, IERC2612, IIntentConsumer {
     bytes32 s
   ) external;
 
-  /// @notice Revokes the current PERMIT_NAMESPACE_NONCE of `owner` & increments the nonce at this key.
-  /// @param owner The owner of the nonce to consume.
+  /// @notice Revokes the current PERMIT_NAMESPACE_NONCE of caller & increments the nonce at this key.
   /// @return The consumed keyed-nonce.
-  function usePermitNonce(address owner) external returns (uint256);
+  function usePermitNonce() external returns (uint256);
 
   /// @notice Resets the allowance of an owner for the caller.
   /// @param owner The owner of the allowance to renounce.
