@@ -76,14 +76,14 @@ library EIP712Types {
 
   struct UpdateUserRiskPremium {
     address spoke;
-    address user;
+    address onBehalfOf;
     uint256 nonce;
     uint256 deadline;
   }
 
   struct UpdateUserDynamicConfig {
     address spoke;
-    address onBhela;
+    address onBehalfOf;
     uint256 nonce;
     uint256 deadline;
   }
