@@ -26,7 +26,7 @@ contract NoncesKeyed is INoncesKeyed {
   }
 
   /// @inheritdoc INoncesKeyed
-  function nonces(address owner, uint192 key) external view returns (uint256) {
+  function nonces(address owner, uint192 key) public view returns (uint256) {
     return _pack(key, _getNoncesKeyedStorage()._nonces[owner][key]);
   }
 
