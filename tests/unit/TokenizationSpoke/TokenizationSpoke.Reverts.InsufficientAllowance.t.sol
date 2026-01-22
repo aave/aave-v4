@@ -46,7 +46,7 @@ contract TokenizationSpokeInsufficientAllowanceTest is TokenizationSpokeBaseTest
     (uint256 amount, uint256 allowance) = _setArbitraryAllowance();
     uint256 deadline = _warpBeforeRandomDeadline();
 
-    ITokenizationSpoke.VaultDeposit memory p = _depositData(vault, alice, deadline);
+    ITokenizationSpoke.TokenizedDeposit memory p = _depositData(vault, alice, deadline);
     p.assets = amount;
     p.nonce = _burnRandomNoncesAtKey(vault, p.depositor);
     bytes memory signature = _sign(alicePk, _getTypedDataHash(vault, p));
@@ -67,7 +67,7 @@ contract TokenizationSpokeInsufficientAllowanceTest is TokenizationSpokeBaseTest
     (uint256 amount, uint256 allowance) = _setArbitraryAllowance();
     uint256 deadline = _warpBeforeRandomDeadline();
 
-    ITokenizationSpoke.VaultMint memory p = _mintData(vault, alice, deadline);
+    ITokenizationSpoke.TokenizedMint memory p = _mintData(vault, alice, deadline);
     p.shares = vault.previewMint(amount);
     p.nonce = _burnRandomNoncesAtKey(vault, p.depositor);
     bytes memory signature = _sign(alicePk, _getTypedDataHash(vault, p));

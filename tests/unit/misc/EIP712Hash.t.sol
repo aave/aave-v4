@@ -97,36 +97,36 @@ contract EIP712HashTest is Test {
     assertEq(SpokeEIP712Hash.POSITION_MANAGER_UPDATE, vm.eip712HashType('PositionManagerUpdate'));
 
     assertEq(
-      SpokeEIP712Hash.VAULT_DEPOSIT_TYPEHASH,
+      SpokeEIP712Hash.TOKENIZED_DEPOSIT_TYPEHASH,
       keccak256(
-        'VaultDeposit(address depositor,uint256 assets,address receiver,uint256 nonce,uint256 deadline)'
+        'TokenizedDeposit(address depositor,uint256 assets,address receiver,uint256 nonce,uint256 deadline)'
       )
     );
-    assertEq(SpokeEIP712Hash.VAULT_DEPOSIT_TYPEHASH, vm.eip712HashType('VaultDeposit'));
+    assertEq(SpokeEIP712Hash.TOKENIZED_DEPOSIT_TYPEHASH, vm.eip712HashType('TokenizedDeposit'));
 
     assertEq(
-      SpokeEIP712Hash.VAULT_MINT_TYPEHASH,
+      SpokeEIP712Hash.TOKENIZED_MINT_TYPEHASH,
       keccak256(
-        'VaultMint(address depositor,uint256 shares,address receiver,uint256 nonce,uint256 deadline)'
+        'TokenizedMint(address depositor,uint256 shares,address receiver,uint256 nonce,uint256 deadline)'
       )
     );
-    assertEq(SpokeEIP712Hash.VAULT_MINT_TYPEHASH, vm.eip712HashType('VaultMint'));
+    assertEq(SpokeEIP712Hash.TOKENIZED_MINT_TYPEHASH, vm.eip712HashType('TokenizedMint'));
 
     assertEq(
-      SpokeEIP712Hash.VAULT_WITHDRAW_TYPEHASH,
+      SpokeEIP712Hash.TOKENIZED_WITHDRAW_TYPEHASH,
       keccak256(
-        'VaultWithdraw(address owner,uint256 assets,address receiver,uint256 nonce,uint256 deadline)'
+        'TokenizedWithdraw(address owner,uint256 assets,address receiver,uint256 nonce,uint256 deadline)'
       )
     );
-    assertEq(SpokeEIP712Hash.VAULT_WITHDRAW_TYPEHASH, vm.eip712HashType('VaultWithdraw'));
+    assertEq(SpokeEIP712Hash.TOKENIZED_WITHDRAW_TYPEHASH, vm.eip712HashType('TokenizedWithdraw'));
 
     assertEq(
-      SpokeEIP712Hash.VAULT_REDEEM_TYPEHASH,
+      SpokeEIP712Hash.TOKENIZED_REDEEM_TYPEHASH,
       keccak256(
-        'VaultRedeem(address owner,uint256 shares,address receiver,uint256 nonce,uint256 deadline)'
+        'TokenizedRedeem(address owner,uint256 shares,address receiver,uint256 nonce,uint256 deadline)'
       )
     );
-    assertEq(SpokeEIP712Hash.VAULT_REDEEM_TYPEHASH, vm.eip712HashType('VaultRedeem'));
+    assertEq(SpokeEIP712Hash.TOKENIZED_REDEEM_TYPEHASH, vm.eip712HashType('TokenizedRedeem'));
   }
 
   // @dev all struct params should be hashed & placed in the same order as the typehash
@@ -186,32 +186,40 @@ contract EIP712HashTest is Test {
     assertEq(params.hash(), vm.eip712HashStruct('UpdateUserDynamicConfig', abi.encode(params)));
   }
 
-  function test_hash_vaultDeposit_fuzz(
-    ITokenizationSpoke.VaultDeposit calldata params
+  function test_hash_tokenizedDeposit_fuzz(
+    ITokenizationSpoke.TokenizedDeposit calldata params
   ) public pure {
-    bytes32 expectedHash = keccak256(abi.encode(SpokeEIP712Hash.VAULT_DEPOSIT_TYPEHASH, params));
+    bytes32 expectedHash = keccak256(
+      abi.encode(SpokeEIP712Hash.TOKENIZED_DEPOSIT_TYPEHASH, params)
+    );
     assertEq(params.hash(), expectedHash);
-    assertEq(params.hash(), vm.eip712HashStruct('VaultDeposit', abi.encode(params)));
+    assertEq(params.hash(), vm.eip712HashStruct('TokenizedDeposit', abi.encode(params)));
   }
 
-  function test_hash_vaultMint_fuzz(ITokenizationSpoke.VaultMint calldata params) public pure {
-    bytes32 expectedHash = keccak256(abi.encode(SpokeEIP712Hash.VAULT_MINT_TYPEHASH, params));
-    assertEq(params.hash(), expectedHash);
-    assertEq(params.hash(), vm.eip712HashStruct('VaultMint', abi.encode(params)));
-  }
-
-  function test_hash_vaultWithdraw_fuzz(
-    ITokenizationSpoke.VaultWithdraw calldata params
+  function test_hash_tokenizedMint_fuzz(
+    ITokenizationSpoke.TokenizedMint calldata params
   ) public pure {
-    bytes32 expectedHash = keccak256(abi.encode(SpokeEIP712Hash.VAULT_WITHDRAW_TYPEHASH, params));
+    bytes32 expectedHash = keccak256(abi.encode(SpokeEIP712Hash.TOKENIZED_MINT_TYPEHASH, params));
     assertEq(params.hash(), expectedHash);
-    assertEq(params.hash(), vm.eip712HashStruct('VaultWithdraw', abi.encode(params)));
+    assertEq(params.hash(), vm.eip712HashStruct('TokenizedMint', abi.encode(params)));
   }
 
-  function test_hash_vaultRedeem_fuzz(ITokenizationSpoke.VaultRedeem calldata params) public pure {
-    bytes32 expectedHash = keccak256(abi.encode(SpokeEIP712Hash.VAULT_REDEEM_TYPEHASH, params));
+  function test_hash_tokenizedWithdraw_fuzz(
+    ITokenizationSpoke.TokenizedWithdraw calldata params
+  ) public pure {
+    bytes32 expectedHash = keccak256(
+      abi.encode(SpokeEIP712Hash.TOKENIZED_WITHDRAW_TYPEHASH, params)
+    );
     assertEq(params.hash(), expectedHash);
-    assertEq(params.hash(), vm.eip712HashStruct('VaultRedeem', abi.encode(params)));
+    assertEq(params.hash(), vm.eip712HashStruct('TokenizedWithdraw', abi.encode(params)));
+  }
+
+  function test_hash_tokenizedRedeem_fuzz(
+    ITokenizationSpoke.TokenizedRedeem calldata params
+  ) public pure {
+    bytes32 expectedHash = keccak256(abi.encode(SpokeEIP712Hash.TOKENIZED_REDEEM_TYPEHASH, params));
+    assertEq(params.hash(), expectedHash);
+    assertEq(params.hash(), vm.eip712HashStruct('TokenizedRedeem', abi.encode(params)));
   }
 
   function test_hash_setUserPositionManagers_fuzz(

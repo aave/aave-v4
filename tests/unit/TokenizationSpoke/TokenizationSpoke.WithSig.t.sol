@@ -30,7 +30,7 @@ contract TokenizationSpokeWithSigTest is TokenizationSpokeBaseTest {
   }
 
   function test_depositWithSig(bytes32) public {
-    ITokenizationSpoke.VaultDeposit memory p = _depositData(
+    ITokenizationSpoke.TokenizedDeposit memory p = _depositData(
       vault,
       alice,
       _warpBeforeRandomDeadline()
@@ -53,7 +53,11 @@ contract TokenizationSpokeWithSigTest is TokenizationSpokeBaseTest {
   }
 
   function test_mintWithSig(bytes32) public {
-    ITokenizationSpoke.VaultMint memory p = _mintData(vault, alice, _warpBeforeRandomDeadline());
+    ITokenizationSpoke.TokenizedMint memory p = _mintData(
+      vault,
+      alice,
+      _warpBeforeRandomDeadline()
+    );
     p.nonce = _burnRandomNoncesAtKey(vault, p.depositor);
     bytes memory signature = _sign(alicePk, _getTypedDataHash(vault, p));
     Utils.approve(vault, alice, p.shares);
@@ -72,7 +76,7 @@ contract TokenizationSpokeWithSigTest is TokenizationSpokeBaseTest {
   }
 
   function test_withdrawWithSig(bytes32) public {
-    ITokenizationSpoke.VaultWithdraw memory p = _withdrawData(
+    ITokenizationSpoke.TokenizedWithdraw memory p = _withdrawData(
       vault,
       alice,
       _warpBeforeRandomDeadline()
@@ -97,7 +101,7 @@ contract TokenizationSpokeWithSigTest is TokenizationSpokeBaseTest {
   }
 
   function test_redeemWithSig(bytes32) public {
-    ITokenizationSpoke.VaultRedeem memory p = _redeemData(
+    ITokenizationSpoke.TokenizedRedeem memory p = _redeemData(
       vault,
       alice,
       _warpBeforeRandomDeadline()

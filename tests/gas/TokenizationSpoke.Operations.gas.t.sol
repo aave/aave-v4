@@ -85,7 +85,7 @@ contract TokenizationSpokeOperations_Gas_Tests is TokenizationSpokeBaseTest {
   }
 
   function test_depositWithSig() public {
-    ITokenizationSpoke.VaultDeposit memory p = ITokenizationSpoke.VaultDeposit({
+    ITokenizationSpoke.TokenizedDeposit memory p = ITokenizationSpoke.TokenizedDeposit({
       depositor: alice,
       assets: 1000e18,
       receiver: alice,
@@ -100,7 +100,7 @@ contract TokenizationSpokeOperations_Gas_Tests is TokenizationSpokeBaseTest {
   }
 
   function test_mintWithSig() public {
-    ITokenizationSpoke.VaultMint memory p = ITokenizationSpoke.VaultMint({
+    ITokenizationSpoke.TokenizedMint memory p = ITokenizationSpoke.TokenizedMint({
       depositor: alice,
       shares: vault.previewMint(1000e18),
       receiver: alice,
@@ -115,7 +115,7 @@ contract TokenizationSpokeOperations_Gas_Tests is TokenizationSpokeBaseTest {
   }
 
   function test_withdrawWithSig() public {
-    ITokenizationSpoke.VaultWithdraw memory p = ITokenizationSpoke.VaultWithdraw({
+    ITokenizationSpoke.TokenizedWithdraw memory p = ITokenizationSpoke.TokenizedWithdraw({
       owner: alice,
       assets: 500e18,
       receiver: alice,
@@ -132,7 +132,7 @@ contract TokenizationSpokeOperations_Gas_Tests is TokenizationSpokeBaseTest {
   }
 
   function test_redeemWithSig() public {
-    ITokenizationSpoke.VaultRedeem memory p = ITokenizationSpoke.VaultRedeem({
+    ITokenizationSpoke.TokenizedRedeem memory p = ITokenizationSpoke.TokenizedRedeem({
       owner: alice,
       shares: 1000e18,
       receiver: alice,

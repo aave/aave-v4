@@ -20,9 +20,9 @@ contract TokenizationSpokeBaseTest is Base {
     ITokenizationSpoke vault,
     address who,
     uint256 deadline
-  ) internal returns (ITokenizationSpoke.VaultDeposit memory) {
+  ) internal returns (ITokenizationSpoke.TokenizedDeposit memory) {
     return
-      ITokenizationSpoke.VaultDeposit({
+      ITokenizationSpoke.TokenizedDeposit({
         depositor: who,
         assets: vm.randomUint(1, MAX_SUPPLY_AMOUNT),
         receiver: vm.randomAddress(),
@@ -35,9 +35,9 @@ contract TokenizationSpokeBaseTest is Base {
     ITokenizationSpoke vault,
     address who,
     uint256 deadline
-  ) internal returns (ITokenizationSpoke.VaultMint memory) {
+  ) internal returns (ITokenizationSpoke.TokenizedMint memory) {
     return
-      ITokenizationSpoke.VaultMint({
+      ITokenizationSpoke.TokenizedMint({
         depositor: who,
         shares: vm.randomUint(1, MAX_SUPPLY_AMOUNT),
         receiver: vm.randomAddress(),
@@ -50,9 +50,9 @@ contract TokenizationSpokeBaseTest is Base {
     ITokenizationSpoke vault,
     address who,
     uint256 deadline
-  ) internal returns (ITokenizationSpoke.VaultWithdraw memory) {
+  ) internal returns (ITokenizationSpoke.TokenizedWithdraw memory) {
     return
-      ITokenizationSpoke.VaultWithdraw({
+      ITokenizationSpoke.TokenizedWithdraw({
         owner: who,
         assets: vm.randomUint(1, MAX_SUPPLY_AMOUNT),
         receiver: vm.randomAddress(),
@@ -65,9 +65,9 @@ contract TokenizationSpokeBaseTest is Base {
     ITokenizationSpoke vault,
     address who,
     uint256 deadline
-  ) internal returns (ITokenizationSpoke.VaultRedeem memory) {
+  ) internal returns (ITokenizationSpoke.TokenizedRedeem memory) {
     return
-      ITokenizationSpoke.VaultRedeem({
+      ITokenizationSpoke.TokenizedRedeem({
         owner: who,
         shares: vm.randomUint(1, MAX_SUPPLY_AMOUNT),
         receiver: vm.randomAddress(),
@@ -93,30 +93,30 @@ contract TokenizationSpokeBaseTest is Base {
 
   function _getTypedDataHash(
     ITokenizationSpoke vault,
-    ITokenizationSpoke.VaultDeposit memory params
+    ITokenizationSpoke.TokenizedDeposit memory params
   ) internal view returns (bytes32) {
-    return _typedDataHash(vault, vm.eip712HashStruct('VaultDeposit', abi.encode(params)));
+    return _typedDataHash(vault, vm.eip712HashStruct('TokenizedDeposit', abi.encode(params)));
   }
 
   function _getTypedDataHash(
     ITokenizationSpoke vault,
-    ITokenizationSpoke.VaultMint memory params
+    ITokenizationSpoke.TokenizedMint memory params
   ) internal view returns (bytes32) {
-    return _typedDataHash(vault, vm.eip712HashStruct('VaultMint', abi.encode(params)));
+    return _typedDataHash(vault, vm.eip712HashStruct('TokenizedMint', abi.encode(params)));
   }
 
   function _getTypedDataHash(
     ITokenizationSpoke vault,
-    ITokenizationSpoke.VaultWithdraw memory params
+    ITokenizationSpoke.TokenizedWithdraw memory params
   ) internal view returns (bytes32) {
-    return _typedDataHash(vault, vm.eip712HashStruct('VaultWithdraw', abi.encode(params)));
+    return _typedDataHash(vault, vm.eip712HashStruct('TokenizedWithdraw', abi.encode(params)));
   }
 
   function _getTypedDataHash(
     ITokenizationSpoke vault,
-    ITokenizationSpoke.VaultRedeem memory params
+    ITokenizationSpoke.TokenizedRedeem memory params
   ) internal view returns (bytes32) {
-    return _typedDataHash(vault, vm.eip712HashStruct('VaultRedeem', abi.encode(params)));
+    return _typedDataHash(vault, vm.eip712HashStruct('TokenizedRedeem', abi.encode(params)));
   }
 
   function _getTypedDataHash(

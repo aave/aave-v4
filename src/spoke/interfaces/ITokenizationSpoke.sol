@@ -9,13 +9,13 @@ import {IIntentConsumer} from 'src/interfaces/IIntentConsumer.sol';
 /// @title ITokenizationSpoke
 /// @author Aave Labs
 interface ITokenizationSpoke is IERC4626, IERC2612, IIntentConsumer {
-  /// @notice Intent data to deposit assets into the vault.
+  /// @notice Intent data to deposit assets into the tokenization spoke.
   /// @param depositor The address of the user depositing assets.
   /// @param assets The amount of assets to deposit.
   /// @param receiver The address that will receive the minted shares.
   /// @param nonce The key-prefixed nonce for the signature.
   /// @param deadline The deadline for the intent.
-  struct VaultDeposit {
+  struct TokenizedDeposit {
     address depositor;
     uint256 assets;
     address receiver;
@@ -23,13 +23,13 @@ interface ITokenizationSpoke is IERC4626, IERC2612, IIntentConsumer {
     uint256 deadline;
   }
 
-  /// @notice Intent data to mint shares from the vault.
+  /// @notice Intent data to mint shares from the tokenization spoke.
   /// @param depositor The address of the user depositing assets.
   /// @param shares The amount of shares to mint.
   /// @param receiver The address that will receive the minted shares.
   /// @param nonce The key-prefixed nonce for the signature.
   /// @param deadline The deadline for the intent.
-  struct VaultMint {
+  struct TokenizedMint {
     address depositor;
     uint256 shares;
     address receiver;
@@ -37,13 +37,13 @@ interface ITokenizationSpoke is IERC4626, IERC2612, IIntentConsumer {
     uint256 deadline;
   }
 
-  /// @notice Intent data to withdraw assets from the vault.
+  /// @notice Intent data to withdraw assets from the tokenization spoke.
   /// @param owner The address of the user withdrawing assets.
   /// @param assets The amount of assets to withdraw.
   /// @param receiver The address that will receive the withdrawn assets.
   /// @param nonce The key-prefixed nonce for the signature.
   /// @param deadline The deadline for the intent.
-  struct VaultWithdraw {
+  struct TokenizedWithdraw {
     address owner;
     uint256 assets;
     address receiver;
@@ -51,13 +51,13 @@ interface ITokenizationSpoke is IERC4626, IERC2612, IIntentConsumer {
     uint256 deadline;
   }
 
-  /// @notice Intent data to redeem shares from the vault.
+  /// @notice Intent data to redeem shares from the tokenization spoke.
   /// @param owner The address of the user redeeming shares.
   /// @param shares The amount of shares to redeem.
   /// @param receiver The address that will receive the redeemed assets.
   /// @param nonce The key-prefixed nonce for the signature.
   /// @param deadline The deadline for the intent.
-  struct VaultRedeem {
+  struct TokenizedRedeem {
     address owner;
     uint256 shares;
     address receiver;
@@ -77,43 +77,43 @@ interface ITokenizationSpoke is IERC4626, IERC2612, IIntentConsumer {
   /// @notice Thrown when the maximum redeem limit is exceeded.
   error MaxRedeemExceeded(uint256 maxRedeem, uint256 requestedShares);
 
-  /// @notice Deposits assets into the vault with a signature.
+  /// @notice Deposits assets into the tokenization spoke with a signature.
   /// @dev Uses keyed-nonces where for each key's namespace nonce is consumed sequentially.
   /// @param params The parameters for the deposit.
   /// @param signature The EIP712-typed signed bytes for the deposit.
   /// @return The amount of shares minted.
   function depositWithSig(
-    VaultDeposit calldata params,
+    TokenizedDeposit calldata params,
     bytes calldata signature
   ) external returns (uint256);
 
-  /// @notice Mints shares of the vault with a signature.
+  /// @notice Mints shares of the tokenization spoke with a signature.
   /// @dev Uses keyed-nonces where for each key's namespace nonce is consumed sequentially.
   /// @param params The parameters for the mint.
   /// @param signature The EIP712-typed signed bytes for the mint.
   /// @return The amount of assets deposited.
   function mintWithSig(
-    VaultMint calldata params,
+    TokenizedMint calldata params,
     bytes calldata signature
   ) external returns (uint256);
 
-  /// @notice Withdraws assets from the vault with a signature.
+  /// @notice Withdraws assets from the tokenization spoke with a signature.
   /// @dev Uses keyed-nonces where for each key's namespace nonce is consumed sequentially.
   /// @param params The parameters for the withdraw.
   /// @param signature The EIP712-typed signed bytes for the withdraw.
   /// @return The amount of shares burnt.
   function withdrawWithSig(
-    VaultWithdraw calldata params,
+    TokenizedWithdraw calldata params,
     bytes calldata signature
   ) external returns (uint256);
 
-  /// @notice Redeems shares from the vault with a signature.
+  /// @notice Redeems shares from the tokenization spoke with a signature.
   /// @dev Uses keyed-nonces where for each key's namespace nonce is consumed sequentially.
   /// @param params The parameters for the redeem.
   /// @param signature The EIP712-typed signed bytes for the redeem.
   /// @return The amount of assets burnt.
   function redeemWithSig(
-    VaultRedeem calldata params,
+    TokenizedRedeem calldata params,
     bytes calldata signature
   ) external returns (uint256);
 

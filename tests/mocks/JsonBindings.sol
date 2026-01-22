@@ -60,13 +60,13 @@ library JsonBindings {
   // prettier-ignore
   string constant schema_UpdateUserDynamicConfig = "UpdateUserDynamicConfig(address spoke,address user,uint256 nonce,uint256 deadline)";
   // prettier-ignore
-  string constant schema_VaultDeposit = "VaultDeposit(address depositor,uint256 assets,address receiver,uint256 nonce,uint256 deadline)";
+  string constant schema_TokenizedDeposit = "TokenizedDeposit(address depositor,uint256 assets,address receiver,uint256 nonce,uint256 deadline)";
   // prettier-ignore
-  string constant schema_VaultMint = "VaultMint(address depositor,uint256 shares,address receiver,uint256 nonce,uint256 deadline)";
+  string constant schema_TokenizedMint = "TokenizedMint(address depositor,uint256 shares,address receiver,uint256 nonce,uint256 deadline)";
   // prettier-ignore
-  string constant schema_VaultWithdraw = "VaultWithdraw(address owner,uint256 assets,address receiver,uint256 nonce,uint256 deadline)";
+  string constant schema_TokenizedWithdraw = "TokenizedWithdraw(address owner,uint256 assets,address receiver,uint256 nonce,uint256 deadline)";
   // prettier-ignore
-  string constant schema_VaultRedeem = "VaultRedeem(address owner,uint256 shares,address receiver,uint256 nonce,uint256 deadline)";
+  string constant schema_TokenizedRedeem = "TokenizedRedeem(address owner,uint256 shares,address receiver,uint256 nonce,uint256 deadline)";
 
   function serialize(
     EIP712Types.SetUserPositionManagers memory value
@@ -408,146 +408,146 @@ library JsonBindings {
       );
   }
 
-  function serialize(EIP712Types.VaultDeposit memory value) internal pure returns (string memory) {
-    return vm.serializeJsonType(schema_VaultDeposit, abi.encode(value));
+  function serialize(EIP712Types.TokenizedDeposit memory value) internal pure returns (string memory) {
+    return vm.serializeJsonType(schema_TokenizedDeposit, abi.encode(value));
   }
 
   function serialize(
-    EIP712Types.VaultDeposit memory value,
+    EIP712Types.TokenizedDeposit memory value,
     string memory objectKey,
     string memory valueKey
   ) internal returns (string memory) {
-    return vm.serializeJsonType(objectKey, valueKey, schema_VaultDeposit, abi.encode(value));
+    return vm.serializeJsonType(objectKey, valueKey, schema_TokenizedDeposit, abi.encode(value));
   }
 
-  function deserializeVaultDeposit(
+  function deserializeTokenizedDeposit(
     string memory json
-  ) public pure returns (EIP712Types.VaultDeposit memory) {
-    return abi.decode(vm.parseJsonType(json, schema_VaultDeposit), (EIP712Types.VaultDeposit));
+  ) public pure returns (EIP712Types.TokenizedDeposit memory) {
+    return abi.decode(vm.parseJsonType(json, schema_TokenizedDeposit), (EIP712Types.TokenizedDeposit));
   }
 
-  function deserializeVaultDeposit(
+  function deserializeTokenizedDeposit(
     string memory json,
     string memory path
-  ) public pure returns (EIP712Types.VaultDeposit memory) {
+  ) public pure returns (EIP712Types.TokenizedDeposit memory) {
     return
-      abi.decode(vm.parseJsonType(json, path, schema_VaultDeposit), (EIP712Types.VaultDeposit));
+      abi.decode(vm.parseJsonType(json, path, schema_TokenizedDeposit), (EIP712Types.TokenizedDeposit));
   }
 
-  function deserializeVaultDepositArray(
+  function deserializeTokenizedDepositArray(
     string memory json,
     string memory path
-  ) public pure returns (EIP712Types.VaultDeposit[] memory) {
+  ) public pure returns (EIP712Types.TokenizedDeposit[] memory) {
     return
       abi.decode(
-        vm.parseJsonTypeArray(json, path, schema_VaultDeposit),
-        (EIP712Types.VaultDeposit[])
+        vm.parseJsonTypeArray(json, path, schema_TokenizedDeposit),
+        (EIP712Types.TokenizedDeposit[])
       );
   }
 
-  function serialize(EIP712Types.VaultMint memory value) internal pure returns (string memory) {
-    return vm.serializeJsonType(schema_VaultMint, abi.encode(value));
+  function serialize(EIP712Types.TokenizedMint memory value) internal pure returns (string memory) {
+    return vm.serializeJsonType(schema_TokenizedMint, abi.encode(value));
   }
 
   function serialize(
-    EIP712Types.VaultMint memory value,
+    EIP712Types.TokenizedMint memory value,
     string memory objectKey,
     string memory valueKey
   ) internal returns (string memory) {
-    return vm.serializeJsonType(objectKey, valueKey, schema_VaultMint, abi.encode(value));
+    return vm.serializeJsonType(objectKey, valueKey, schema_TokenizedMint, abi.encode(value));
   }
 
-  function deserializeVaultMint(
+  function deserializeTokenizedMint(
     string memory json
-  ) public pure returns (EIP712Types.VaultMint memory) {
-    return abi.decode(vm.parseJsonType(json, schema_VaultMint), (EIP712Types.VaultMint));
+  ) public pure returns (EIP712Types.TokenizedMint memory) {
+    return abi.decode(vm.parseJsonType(json, schema_TokenizedMint), (EIP712Types.TokenizedMint));
   }
 
-  function deserializeVaultMint(
+  function deserializeTokenizedMint(
     string memory json,
     string memory path
-  ) public pure returns (EIP712Types.VaultMint memory) {
-    return abi.decode(vm.parseJsonType(json, path, schema_VaultMint), (EIP712Types.VaultMint));
+  ) public pure returns (EIP712Types.TokenizedMint memory) {
+    return abi.decode(vm.parseJsonType(json, path, schema_TokenizedMint), (EIP712Types.TokenizedMint));
   }
 
-  function deserializeVaultMintArray(
+  function deserializeTokenizedMintArray(
     string memory json,
     string memory path
-  ) public pure returns (EIP712Types.VaultMint[] memory) {
+  ) public pure returns (EIP712Types.TokenizedMint[] memory) {
     return
-      abi.decode(vm.parseJsonTypeArray(json, path, schema_VaultMint), (EIP712Types.VaultMint[]));
+      abi.decode(vm.parseJsonTypeArray(json, path, schema_TokenizedMint), (EIP712Types.TokenizedMint[]));
   }
 
-  function serialize(EIP712Types.VaultWithdraw memory value) internal pure returns (string memory) {
-    return vm.serializeJsonType(schema_VaultWithdraw, abi.encode(value));
+  function serialize(EIP712Types.TokenizedWithdraw memory value) internal pure returns (string memory) {
+    return vm.serializeJsonType(schema_TokenizedWithdraw, abi.encode(value));
   }
 
   function serialize(
-    EIP712Types.VaultWithdraw memory value,
+    EIP712Types.TokenizedWithdraw memory value,
     string memory objectKey,
     string memory valueKey
   ) internal returns (string memory) {
-    return vm.serializeJsonType(objectKey, valueKey, schema_VaultWithdraw, abi.encode(value));
+    return vm.serializeJsonType(objectKey, valueKey, schema_TokenizedWithdraw, abi.encode(value));
   }
 
-  function deserializeVaultWithdraw(
+  function deserializeTokenizedWithdraw(
     string memory json
-  ) public pure returns (EIP712Types.VaultWithdraw memory) {
-    return abi.decode(vm.parseJsonType(json, schema_VaultWithdraw), (EIP712Types.VaultWithdraw));
+  ) public pure returns (EIP712Types.TokenizedWithdraw memory) {
+    return abi.decode(vm.parseJsonType(json, schema_TokenizedWithdraw), (EIP712Types.TokenizedWithdraw));
   }
 
-  function deserializeVaultWithdraw(
+  function deserializeTokenizedWithdraw(
     string memory json,
     string memory path
-  ) public pure returns (EIP712Types.VaultWithdraw memory) {
+  ) public pure returns (EIP712Types.TokenizedWithdraw memory) {
     return
-      abi.decode(vm.parseJsonType(json, path, schema_VaultWithdraw), (EIP712Types.VaultWithdraw));
+      abi.decode(vm.parseJsonType(json, path, schema_TokenizedWithdraw), (EIP712Types.TokenizedWithdraw));
   }
 
-  function deserializeVaultWithdrawArray(
+  function deserializeTokenizedWithdrawArray(
     string memory json,
     string memory path
-  ) public pure returns (EIP712Types.VaultWithdraw[] memory) {
+  ) public pure returns (EIP712Types.TokenizedWithdraw[] memory) {
     return
       abi.decode(
-        vm.parseJsonTypeArray(json, path, schema_VaultWithdraw),
-        (EIP712Types.VaultWithdraw[])
+        vm.parseJsonTypeArray(json, path, schema_TokenizedWithdraw),
+        (EIP712Types.TokenizedWithdraw[])
       );
   }
 
-  function serialize(EIP712Types.VaultRedeem memory value) internal pure returns (string memory) {
-    return vm.serializeJsonType(schema_VaultRedeem, abi.encode(value));
+  function serialize(EIP712Types.TokenizedRedeem memory value) internal pure returns (string memory) {
+    return vm.serializeJsonType(schema_TokenizedRedeem, abi.encode(value));
   }
 
   function serialize(
-    EIP712Types.VaultRedeem memory value,
+    EIP712Types.TokenizedRedeem memory value,
     string memory objectKey,
     string memory valueKey
   ) internal returns (string memory) {
-    return vm.serializeJsonType(objectKey, valueKey, schema_VaultRedeem, abi.encode(value));
+    return vm.serializeJsonType(objectKey, valueKey, schema_TokenizedRedeem, abi.encode(value));
   }
 
-  function deserializeVaultRedeem(
+  function deserializeTokenizedRedeem(
     string memory json
-  ) public pure returns (EIP712Types.VaultRedeem memory) {
-    return abi.decode(vm.parseJsonType(json, schema_VaultRedeem), (EIP712Types.VaultRedeem));
+  ) public pure returns (EIP712Types.TokenizedRedeem memory) {
+    return abi.decode(vm.parseJsonType(json, schema_TokenizedRedeem), (EIP712Types.TokenizedRedeem));
   }
 
-  function deserializeVaultRedeem(
+  function deserializeTokenizedRedeem(
     string memory json,
     string memory path
-  ) public pure returns (EIP712Types.VaultRedeem memory) {
-    return abi.decode(vm.parseJsonType(json, path, schema_VaultRedeem), (EIP712Types.VaultRedeem));
+  ) public pure returns (EIP712Types.TokenizedRedeem memory) {
+    return abi.decode(vm.parseJsonType(json, path, schema_TokenizedRedeem), (EIP712Types.TokenizedRedeem));
   }
 
-  function deserializeVaultRedeemArray(
+  function deserializeTokenizedRedeemArray(
     string memory json,
     string memory path
-  ) public pure returns (EIP712Types.VaultRedeem[] memory) {
+  ) public pure returns (EIP712Types.TokenizedRedeem[] memory) {
     return
       abi.decode(
-        vm.parseJsonTypeArray(json, path, schema_VaultRedeem),
-        (EIP712Types.VaultRedeem[])
+        vm.parseJsonTypeArray(json, path, schema_TokenizedRedeem),
+        (EIP712Types.TokenizedRedeem[])
       );
   }
 }

@@ -28,13 +28,13 @@ abstract contract TokenizationSpoke is ITokenizationSpoke, ERC20Upgradeable, Int
   /// @inheritdoc ITokenizationSpoke
   bytes32 public constant PERMIT_TYPEHASH = EIP712Hash.PERMIT_TYPEHASH;
   /// @inheritdoc ITokenizationSpoke
-  bytes32 public constant DEPOSIT_TYPEHASH = EIP712Hash.VAULT_DEPOSIT_TYPEHASH;
+  bytes32 public constant DEPOSIT_TYPEHASH = EIP712Hash.TOKENIZED_DEPOSIT_TYPEHASH;
   /// @inheritdoc ITokenizationSpoke
-  bytes32 public constant MINT_TYPEHASH = EIP712Hash.VAULT_MINT_TYPEHASH;
+  bytes32 public constant MINT_TYPEHASH = EIP712Hash.TOKENIZED_MINT_TYPEHASH;
   /// @inheritdoc ITokenizationSpoke
-  bytes32 public constant WITHDRAW_TYPEHASH = EIP712Hash.VAULT_WITHDRAW_TYPEHASH;
+  bytes32 public constant WITHDRAW_TYPEHASH = EIP712Hash.TOKENIZED_WITHDRAW_TYPEHASH;
   /// @inheritdoc ITokenizationSpoke
-  bytes32 public constant REDEEM_TYPEHASH = EIP712Hash.VAULT_REDEEM_TYPEHASH;
+  bytes32 public constant REDEEM_TYPEHASH = EIP712Hash.TOKENIZED_REDEEM_TYPEHASH;
 
   /// @dev Immutable references to the Hub and tokenized asset details.
   IHub internal immutable HUB;
@@ -96,7 +96,7 @@ abstract contract TokenizationSpoke is ITokenizationSpoke, ERC20Upgradeable, Int
 
   /// @inheritdoc ITokenizationSpoke
   function depositWithSig(
-    VaultDeposit calldata params,
+    TokenizedDeposit calldata params,
     bytes calldata signature
   ) external returns (uint256) {
     _verifyAndConsumeIntent({
@@ -116,7 +116,7 @@ abstract contract TokenizationSpoke is ITokenizationSpoke, ERC20Upgradeable, Int
 
   /// @inheritdoc ITokenizationSpoke
   function mintWithSig(
-    VaultMint calldata params,
+    TokenizedMint calldata params,
     bytes calldata signature
   ) external returns (uint256) {
     _verifyAndConsumeIntent({
@@ -132,7 +132,7 @@ abstract contract TokenizationSpoke is ITokenizationSpoke, ERC20Upgradeable, Int
 
   /// @inheritdoc ITokenizationSpoke
   function withdrawWithSig(
-    VaultWithdraw calldata params,
+    TokenizedWithdraw calldata params,
     bytes calldata signature
   ) external returns (uint256) {
     _verifyAndConsumeIntent({
@@ -153,7 +153,7 @@ abstract contract TokenizationSpoke is ITokenizationSpoke, ERC20Upgradeable, Int
 
   /// @inheritdoc ITokenizationSpoke
   function redeemWithSig(
-    VaultRedeem calldata params,
+    TokenizedRedeem calldata params,
     bytes calldata signature
   ) external returns (uint256) {
     _verifyAndConsumeIntent({

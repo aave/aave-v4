@@ -89,7 +89,7 @@ library EIP712Types {
   }
 
   /// @dev TokenizationSpoke Intents
-  struct VaultDeposit {
+  struct TokenizedDeposit {
     address depositor;
     uint256 assets;
     address receiver;
@@ -97,7 +97,7 @@ library EIP712Types {
     uint256 deadline;
   }
 
-  struct VaultMint {
+  struct TokenizedMint {
     address depositor;
     uint256 shares;
     address receiver;
@@ -105,7 +105,7 @@ library EIP712Types {
     uint256 deadline;
   }
 
-  struct VaultWithdraw {
+  struct TokenizedWithdraw {
     address owner;
     uint256 assets;
     address receiver;
@@ -113,7 +113,7 @@ library EIP712Types {
     uint256 deadline;
   }
 
-  struct VaultRedeem {
+  struct TokenizedRedeem {
     address owner;
     uint256 shares;
     address receiver;
