@@ -2,8 +2,8 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.20;
 
-import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 import {ITokenizationSpoke} from 'src/spoke/interfaces/ITokenizationSpoke.sol';
+import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 
 /// @title EIP712Hash library
 /// @author Aave Labs
