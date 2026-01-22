@@ -352,6 +352,18 @@ contract HubConfigTest is HubBase {
     assertEq(hub1.getAssetId(underlying), expectedAssetId);
   }
 
+  function test_isUnderlyingListed() public {
+    address underlying = address(new TestnetERC20('USDA', 'USDA', 18));
+    address feeReceiver = makeAddr('feeReceiver');
+    address interestRateStrategy = address(new AssetInterestRateStrategy(address(hub1)));
+
+    assertFalse(hub1.isUnderlyingListed(underlying));
+
+    Utils.addAsset(hub1, ADMIN, underlying, 18, feeReceiver, interestRateStrategy, encodedIrData);
+
+    assertTrue(hub1.isUnderlyingListed(underlying));
+  }
+
   function test_updateAssetConfig_fuzz_revertsWith_InvalidLiquidityFee(
     uint256 assetId,
     IHub.AssetConfig memory newConfig
