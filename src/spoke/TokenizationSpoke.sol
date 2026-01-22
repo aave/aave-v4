@@ -255,12 +255,12 @@ abstract contract TokenizationSpoke is ITokenizationSpoke, ERC20Upgradeable, Int
   }
 
   /// @inheritdoc IERC4626
-  function convertToShares(uint256 assets) external view returns (uint256) {
+  function convertToShares(uint256 assets) public view returns (uint256) {
     return previewDeposit(assets);
   }
 
   /// @inheritdoc IERC4626
-  function convertToAssets(uint256 shares) external view returns (uint256) {
+  function convertToAssets(uint256 shares) public view returns (uint256) {
     return previewRedeem(shares);
   }
 
@@ -281,19 +281,22 @@ abstract contract TokenizationSpoke is ITokenizationSpoke, ERC20Upgradeable, Int
   /// @inheritdoc IERC4626
   function maxMint(address receiver) public view returns (uint256) {
     uint256 maxAssets = maxDeposit(receiver);
-    return maxAssets == type(uint256).max ? type(uint256).max : previewDeposit(maxAssets);
+    if (maxAssets == type(uint256).max) {
+      return type(uint256).max;
+    }
+    return convertToShares(maxAssets);
   }
 
   /// @inheritdoc IERC4626
   function maxWithdraw(address owner) public view returns (uint256) {
     uint256 maxRemovableAssets = _maxRemovableAssets();
-    uint256 balance = previewRedeem(balanceOf(owner));
+    uint256 balance = convertToAssets(balanceOf(owner));
     return balance.min(maxRemovableAssets);
   }
 
   /// @inheritdoc IERC4626
   function maxRedeem(address owner) public view returns (uint256) {
-    uint256 maxRemovableShares = previewWithdraw(_maxRemovableAssets());
+    uint256 maxRemovableShares = convertToShares(_maxRemovableAssets());
     uint256 balance = balanceOf(owner);
     return balance.min(maxRemovableShares);
   }
