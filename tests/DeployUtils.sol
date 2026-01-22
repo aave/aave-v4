@@ -29,7 +29,7 @@ library DeployUtils {
     address proxyAdminOwner,
     bytes memory initData
   ) internal returns (ISpoke) {
-    return ISpoke(proxify(address(deploySpokeImplementation(oracle)), proxyAdminOwner, initData));
+    return ISpoke(_proxify(address(deploySpokeImplementation(oracle)), proxyAdminOwner, initData));
   }
 
   function getDeterministicSpokeInstanceAddress(address oracle) internal returns (address) {
@@ -66,7 +66,7 @@ library DeployUtils {
     return Create2Utils.computeCreate2Address(salt, initCodeHash);
   }
 
-  function proxify(
+  function _proxify(
     address impl,
     address proxyAdminOwner,
     bytes memory initData

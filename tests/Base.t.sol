@@ -106,8 +106,6 @@ abstract contract Base is Test {
     0xb53127684a568b3173ae13b9f8a6016e243e63b6e8ee1178d6a717850b5d6103;
   bytes32 internal constant IMPLEMENTATION_SLOT =
     0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc;
-  bytes32 internal constant INITIALIZABLE_SLOT =
-    0xf0c57e16840df040f15088dc2f81fe391c3923bec73e23a9662efc9c229c6a00;
 
   uint256 internal constant MAX_SUPPLY_AMOUNT = 1e30;
   uint256 internal constant MIN_TOKEN_DECIMALS_SUPPORTED = 6;
@@ -152,19 +150,10 @@ abstract contract Base is Test {
   AssetInterestRateStrategy internal irStrategy;
   IAccessManager internal accessManager;
 
-  string internal constant ALICE = 'alice';
-  string internal constant BOB = 'bob';
-  string internal constant CAROL = 'carol';
-  string internal constant DERL = 'derl';
-
-  address internal alice = makeAddr(ALICE);
-  uint256 internal alicePk = makeKey(ALICE);
-  address internal bob = makeAddr(BOB);
-  uint256 internal bobPk = makeKey(BOB);
-  address internal carol = makeAddr(CAROL);
-  uint256 internal carolPk = makeKey(CAROL);
-  address internal derl = makeAddr(DERL);
-  uint256 internal derlPk = makeKey(DERL);
+  address internal alice = makeAddr('alice');
+  address internal bob = makeAddr('bob');
+  address internal carol = makeAddr('carol');
+  address internal derl = makeAddr('derl');
 
   address internal ADMIN = makeAddr('ADMIN');
   address internal HUB_ADMIN = makeAddr('HUB_ADMIN');
@@ -293,11 +282,6 @@ abstract contract Base is Test {
   function _getImplementationAddress(address proxy) internal view returns (address) {
     bytes32 slotData = vm.load(proxy, IMPLEMENTATION_SLOT);
     return address(uint160(uint256(slotData)));
-  }
-
-  function _getProxyInitializedVersion(address proxy) internal view returns (uint64) {
-    bytes32 slotData = vm.load(proxy, INITIALIZABLE_SLOT);
-    return uint64(uint256(slotData) & ((1 << 64) - 1));
   }
 
   function deployFixtures() internal virtual {
@@ -1926,16 +1910,6 @@ abstract contract Base is Test {
     _assertAssetSupply(spoke, reserveId, expectedSuppliedAmount, label);
   }
 
-  function _assertEntityHasNoBalanceOrAllowance(
-    IERC20 underlying,
-    address entity,
-    address user
-  ) internal view {
-    assertEq(underlying.balanceOf(entity), 0);
-    assertEq(underlying.allowance({owner: user, spender: entity}), 0);
-    assertEq(underlying.allowance({owner: entity, spender: user}), 0);
-  }
-
   function _convertAmountToValue(
     ISpoke spoke,
     uint256 reserveId,
@@ -2913,15 +2887,5 @@ abstract contract Base is Test {
       hub.getAddedAssets(assetId) +
       hub.getAsset(assetId).realizedFees +
       _calcUnrealizedFees(hub, assetId);
-  }
-
-  function _sign(uint256 pk, bytes32 digest) internal pure returns (bytes memory) {
-    (uint8 v, bytes32 r, bytes32 s) = vm.sign(pk, digest);
-    return abi.encodePacked(r, s, v);
-  }
-
-  function makeKey(string memory name) internal returns (uint256) {
-    (, uint256 key) = makeAddrAndKey(name);
-    return key;
   }
 }
