@@ -20,20 +20,8 @@ contract TokenizationSpokeERC4626ComplianceTest is TokenizationSpokeBaseTest, ER
 
   function setUpYield(Init memory init) public override {
     if (init.yield > 0) {
-      init.yield = bound(init.yield, 1, int(MAX_SUPPLY_AMOUNT));
-      IHub hub = IHub(ITokenizationSpoke(_vault_).hub());
-      uint256 assetId = ITokenizationSpoke(_vault_).assetId();
-      uint256 gain = uint(init.yield);
-
-      TestnetERC20(ITokenizationSpoke(_vault_).asset()).mint(address(hub), gain);
-      vm.startPrank(address(spoke2));
-      hub.add(assetId, gain);
-      _mockInterestRateBps(100_00); // 100% interest rate
-      hub.draw(assetId, gain, address(spoke2));
-      skip(365 days);
-      tokenList.dai.transfer(address(hub), gain);
-      hub.restore(assetId, gain, IHubBase.PremiumDelta(0, 0, 0));
-      vm.stopPrank();
+      init.yield = bound(init.yield, 1, int256(MAX_SUPPLY_AMOUNT));
+      _simulateYield(ITokenizationSpoke(_vault_), uint256(init.yield));
     }
   }
 

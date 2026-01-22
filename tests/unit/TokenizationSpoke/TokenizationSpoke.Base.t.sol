@@ -140,4 +140,20 @@ contract TokenizationSpokeBaseTest is Base {
       user: who
     });
   }
+
+  function _simulateYield(ITokenizationSpoke vault, uint256 amount) internal {
+    IHub hub = IHub(vault.hub());
+    TestnetERC20 asset = TestnetERC20(vault.asset());
+    uint256 assetId = vault.assetId();
+
+    asset.mint(address(hub), amount);
+    vm.startPrank(address(spoke2));
+    hub.add(assetId, amount);
+    _mockInterestRateBps(100_00);
+    hub.draw(assetId, amount, address(spoke2));
+    skip(365 days);
+    asset.mint(address(hub), amount);
+    hub.restore(assetId, amount, IHubBase.PremiumDelta(0, 0, 0));
+    vm.stopPrank();
+  }
 }
