@@ -12,16 +12,16 @@ abstract contract TokenizationSpokeMaxGettersReturnZeroTest is TokenizationSpoke
     _updateAddCap(IHub(vault.hub()), vault.assetId(), address(vault), 0);
   }
 
-  function _isVaultActiveOrNotPaused() internal view returns (bool) {
+  function _isVaultActiveOrNotHalted() internal view returns (bool) {
     IHub.SpokeConfig memory config = IHub(vault.hub()).getSpokeConfig(
       vault.assetId(),
       address(vault)
     );
-    return config.active && !config.paused;
+    return config.active && !config.halted;
   }
 
   modifier setUpPreconditions() {
-    if (_isVaultActiveOrNotPaused()) {
+    if (_isVaultActiveOrNotHalted()) {
       vm.expectCall(
         vault.hub(),
         abi.encodeCall(IHub.getSpokeConfig, (vault.assetId(), address(vault))),
@@ -55,39 +55,39 @@ abstract contract TokenizationSpokeMaxGettersReturnZeroTest is TokenizationSpoke
   }
 }
 
-contract TokenizationSpokeMaxGettersTest_Active_NotPaused is
+contract TokenizationSpokeMaxGettersTest_Active_NotHalted is
   TokenizationSpokeMaxGettersReturnZeroTest
 {}
 
-contract TokenizationSpokeMaxGettersTest_Active_Paused is
+contract TokenizationSpokeMaxGettersTest_Active_Halted is
   TokenizationSpokeMaxGettersReturnZeroTest
 {
   function setUp() public override {
     super.setUp();
-    _updateSpokePaused(IHub(vault.hub()), vault.assetId(), address(vault), true);
+    _updateSpokeHalted(IHub(vault.hub()), vault.assetId(), address(vault), true);
   }
 }
 
-contract TokenizationSpokeMaxGettersTest_NotActive_NotPaused is
-  TokenizationSpokeMaxGettersReturnZeroTest
-{
-  function setUp() public override {
-    super.setUp();
-    _updateSpokeActive(IHub(vault.hub()), vault.assetId(), address(vault), false);
-  }
-}
-
-contract TokenizationSpokeMaxGettersTest_NotActive_Paused is
+contract TokenizationSpokeMaxGettersTest_NotActive_NotHalted is
   TokenizationSpokeMaxGettersReturnZeroTest
 {
   function setUp() public override {
     super.setUp();
     _updateSpokeActive(IHub(vault.hub()), vault.assetId(), address(vault), false);
-    _updateSpokePaused(IHub(vault.hub()), vault.assetId(), address(vault), true);
   }
 }
 
-// @dev vault spoke is active & not paused from here onwards
+contract TokenizationSpokeMaxGettersTest_NotActive_Halted is
+  TokenizationSpokeMaxGettersReturnZeroTest
+{
+  function setUp() public override {
+    super.setUp();
+    _updateSpokeActive(IHub(vault.hub()), vault.assetId(), address(vault), false);
+    _updateSpokeHalted(IHub(vault.hub()), vault.assetId(), address(vault), true);
+  }
+}
+
+// @dev vault spoke is active & not halted from here onwards
 
 contract TokenizationSpokeDepositMintGettersMaxCapTest is TokenizationSpokeBaseTest {
   ITokenizationSpoke public vault;

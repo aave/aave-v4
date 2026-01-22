@@ -2349,7 +2349,7 @@ abstract contract Base is Test {
           drawCap: 0,
           riskPremiumThreshold: 0,
           active: true,
-          paused: false
+          halted: false
         })
       );
   }

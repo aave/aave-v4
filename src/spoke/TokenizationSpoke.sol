@@ -269,7 +269,7 @@ abstract contract TokenizationSpoke is ITokenizationSpoke, ERC20Upgradeable, Int
   /// @inheritdoc IERC4626
   function maxDeposit(address) public view returns (uint256) {
     IHub.SpokeConfig memory config = HUB.getSpokeConfig(ASSET_ID, address(this));
-    if (!config.active || config.paused) {
+    if (!config.active || config.halted) {
       return 0;
     }
     if (config.addCap == MAX_ALLOWED_SPOKE_CAP) {
@@ -445,7 +445,7 @@ abstract contract TokenizationSpoke is ITokenizationSpoke, ERC20Upgradeable, Int
 
   function _maxRemovableAssets() internal view returns (uint256) {
     IHub.SpokeConfig memory config = HUB.getSpokeConfig(ASSET_ID, address(this));
-    if (!config.active || config.paused) {
+    if (!config.active || config.halted) {
       return 0;
     }
     return HUB.getAssetLiquidity(ASSET_ID);
