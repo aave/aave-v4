@@ -23,7 +23,6 @@ abstract contract TokenizationSpoke is ITokenizationSpoke, ERC20Upgradeable, Int
 
   /// @inheritdoc ITokenizationSpoke
   uint40 public immutable MAX_ALLOWED_SPOKE_CAP;
-
   /// @inheritdoc ITokenizationSpoke
   uint192 public constant PERMIT_NONCE_NAMESPACE = 0;
   /// @inheritdoc ITokenizationSpoke

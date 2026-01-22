@@ -8,13 +8,17 @@ import 'tests/unit/TokenizationSpoke/TokenizationSpoke.Base.t.sol';
 contract TokenizationSpokeOperations_Gas_Tests is TokenizationSpokeBaseTest {
   string internal constant NAMESPACE = 'TokenizationSpoke.Operations';
   ITokenizationSpoke internal vault;
+  uint192 internal nonceKey = 100;
 
   function setUp() public virtual override {
     super.setUp();
     vault = daiVault;
     Utils.approve(vault, alice, 2100e18);
-    vm.prank(alice);
+    vm.startPrank(alice);
     vault.deposit(100e18, alice);
+    vault.useNonce(nonceKey);
+    vault.usePermitNonce();
+    vm.stopPrank();
   }
 
   function test_deposit() public {
@@ -81,73 +85,82 @@ contract TokenizationSpokeOperations_Gas_Tests is TokenizationSpokeBaseTest {
   }
 
   function test_depositWithSig() public {
-    ITokenizationSpoke.VaultDeposit memory p = _depositData(
-      vault,
-      alice,
-      _warpBeforeRandomDeadline()
-    );
-    p.nonce = _burnRandomNoncesAtKey(vault, p.depositor);
+    ITokenizationSpoke.VaultDeposit memory p = ITokenizationSpoke.VaultDeposit({
+      depositor: alice,
+      assets: 1000e18,
+      receiver: alice,
+      nonce: vault.nonces(alice, nonceKey),
+      deadline: vm.getBlockTimestamp()
+    });
     bytes memory signature = _sign(alicePk, _getTypedDataHash(vault, p));
     Utils.approve(vault, alice, p.assets);
 
-    vm.prank(vm.randomAddress());
     vault.depositWithSig(p, signature);
     vm.snapshotGasLastCall(NAMESPACE, 'depositWithSig');
   }
 
   function test_mintWithSig() public {
-    ITokenizationSpoke.VaultMint memory p = _mintData(vault, alice, _warpBeforeRandomDeadline());
-    p.nonce = _burnRandomNoncesAtKey(vault, p.depositor);
+    ITokenizationSpoke.VaultMint memory p = ITokenizationSpoke.VaultMint({
+      depositor: alice,
+      shares: vault.previewMint(1000e18),
+      receiver: alice,
+      nonce: vault.nonces(alice, nonceKey),
+      deadline: vm.getBlockTimestamp()
+    });
     bytes memory signature = _sign(alicePk, _getTypedDataHash(vault, p));
     Utils.approve(vault, alice, p.shares);
 
-    vm.prank(vm.randomAddress());
     vault.mintWithSig(p, signature);
     vm.snapshotGasLastCall(NAMESPACE, 'mintWithSig');
   }
 
   function test_withdrawWithSig() public {
-    ITokenizationSpoke.VaultWithdraw memory p = _withdrawData(
-      vault,
-      alice,
-      _warpBeforeRandomDeadline()
-    );
-    p.nonce = _burnRandomNoncesAtKey(vault, p.owner);
+    ITokenizationSpoke.VaultWithdraw memory p = ITokenizationSpoke.VaultWithdraw({
+      owner: alice,
+      assets: 500e18,
+      receiver: alice,
+      nonce: vault.nonces(alice, nonceKey),
+      deadline: vm.getBlockTimestamp()
+    });
     bytes memory signature = _sign(alicePk, _getTypedDataHash(vault, p));
     Utils.approve(vault, alice, p.assets);
     vm.prank(alice);
     vault.deposit(p.assets, alice);
 
-    vm.prank(vm.randomAddress());
     vault.withdrawWithSig(p, signature);
     vm.snapshotGasLastCall(NAMESPACE, 'withdrawWithSig');
   }
 
   function test_redeemWithSig() public {
-    ITokenizationSpoke.VaultRedeem memory p = _redeemData(
-      vault,
-      alice,
-      _warpBeforeRandomDeadline()
-    );
-    p.nonce = _burnRandomNoncesAtKey(vault, p.owner);
+    ITokenizationSpoke.VaultRedeem memory p = ITokenizationSpoke.VaultRedeem({
+      owner: alice,
+      shares: 1000e18,
+      receiver: alice,
+      nonce: vault.nonces(alice, nonceKey),
+      deadline: vm.getBlockTimestamp()
+    });
     bytes memory signature = _sign(alicePk, _getTypedDataHash(vault, p));
     Utils.approve(vault, alice, p.shares);
     vm.prank(alice);
     vault.mint(p.shares, alice);
 
-    vm.prank(vm.randomAddress());
     vault.redeemWithSig(p, signature);
     vm.snapshotGasLastCall(NAMESPACE, 'redeemWithSig');
   }
 
   function test_permit() public {
-    EIP712Types.Permit memory p = _permitData(vault, alice, _warpBeforeRandomDeadline());
-    p.nonce = _burnRandomNoncesAtKey(vault, p.owner, vault.PERMIT_NONCE_NAMESPACE());
+    EIP712Types.Permit memory p = EIP712Types.Permit({
+      owner: alice,
+      spender: bob,
+      value: 1000e18,
+      nonce: vault.nonces(alice),
+      deadline: vm.getBlockTimestamp()
+    });
     (uint8 v, bytes32 r, bytes32 s) = vm.sign(alicePk, _getTypedDataHash(vault, p));
 
     vm.expectEmit(address(vault));
     emit IERC20.Approval(p.owner, p.spender, p.value);
-    vm.prank(vm.randomAddress());
+
     vault.permit(p.owner, p.spender, p.value, p.deadline, v, r, s);
     vm.snapshotGasLastCall(NAMESPACE, 'permit');
 
