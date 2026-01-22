@@ -24,7 +24,7 @@ contract TokenizationSpokeConstantsTest is TokenizationSpokeBaseTest {
     ) = IERC5267(address(instance)).eip712Domain();
 
     assertEq(fields, bytes1(0x0f));
-    assertEq(name, 'Vault Spoke');
+    assertEq(name, 'Tokenization Spoke');
     assertEq(version, '1');
     assertEq(chainId, block.chainid);
     assertEq(verifyingContract, address(instance));
@@ -45,7 +45,7 @@ contract TokenizationSpokeConstantsTest is TokenizationSpokeBaseTest {
         keccak256(
           'EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)'
         ),
-        keccak256('Vault Spoke'),
+        keccak256('Tokenization Spoke'),
         keccak256('1'),
         block.chainid,
         address(instance)

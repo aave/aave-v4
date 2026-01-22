@@ -15,19 +15,11 @@ import {ITokenizationSpoke} from 'src/spoke/interfaces/ITokenizationSpoke.sol';
 
 /// @title TokenizationSpoke
 /// @author Aave Labs
-/// @notice ERC4626 compliant vault for hub's listed asset position management.
-/// @dev Connects to one listed asset, only responsible for tokenizing positions.
-/// @dev Share price accounting is maintained solely on the Hub.
+/// @notice ERC4626 compliant wrapper to tokenize one listed asset of the connected Hub.
 abstract contract TokenizationSpoke is ITokenizationSpoke, ERC20Upgradeable, IntentConsumer {
   using SafeERC20 for IERC20;
   using MathUtils for uint256;
   using EIP712Hash for *;
-
-  IHub internal immutable HUB;
-  uint256 internal immutable ASSET_ID;
-  address internal immutable ASSET;
-  uint8 internal immutable DECIMALS;
-  uint256 internal immutable ASSET_UNITS;
 
   /// @inheritdoc ITokenizationSpoke
   uint40 public immutable MAX_ALLOWED_SPOKE_CAP;
@@ -45,6 +37,16 @@ abstract contract TokenizationSpoke is ITokenizationSpoke, ERC20Upgradeable, Int
   /// @inheritdoc ITokenizationSpoke
   bytes32 public constant REDEEM_TYPEHASH = EIP712Hash.VAULT_REDEEM_TYPEHASH;
 
+  /// @dev Immutable references to the Hub and tokenized asset details.
+  IHub internal immutable HUB;
+  uint256 internal immutable ASSET_ID;
+  address internal immutable ASSET;
+  uint8 internal immutable DECIMALS;
+  uint256 internal immutable ASSET_UNITS;
+
+  /// @dev Constructor.
+  /// @param hub_ The address of the associated Hub contract.
+  /// @param assetId_ The registered identifier of the asset to be tokenized by this spoke.
   constructor(address hub_, uint256 assetId_) {
     require(assetId_ < IHub(hub_).getAssetCount());
     HUB = IHub(hub_);
@@ -391,19 +393,21 @@ abstract contract TokenizationSpoke is ITokenizationSpoke, ERC20Upgradeable, Int
     return assets;
   }
 
-  /// @dev Does not check `hub.add(assets)` returns exactly `shares`; it must be the exact return value of `previewAddByShares` or vice versa for `assets`.
+  /// @dev Deposit/Mint common workflow. Emits {Deposit} event.
   function _deposit(
     address caller,
     address receiver,
     uint256 assets,
     uint256 shares
   ) internal virtual {
-    IERC20(ASSET).safeTransferFrom(caller, address(HUB), assets);
-    HUB.add(ASSET_ID, assets);
+    _pullAndDepositAssets(caller, assets);
     _mint(receiver, shares);
-    emit Deposit({sender: caller, owner: receiver, assets: assets, shares: shares});
+    _afterDeposit(assets, shares);
+    emit Deposit(caller, receiver, assets, shares);
   }
 
+  /// @dev Withdraw/Redeem common workflow. Emits {Withdraw} event.
+  /// @dev Consumes share token allowance if `caller` is not `owner`.
   function _withdraw(
     address caller,
     address receiver,
@@ -414,16 +418,30 @@ abstract contract TokenizationSpoke is ITokenizationSpoke, ERC20Upgradeable, Int
     if (caller != owner) {
       _spendAllowance({owner: owner, spender: caller, value: shares});
     }
-    HUB.remove(ASSET_ID, assets, receiver);
+    _beforeWithdraw(assets, shares);
     _burn(owner, shares);
-    emit Withdraw({
-      sender: caller,
-      receiver: receiver,
-      owner: owner,
-      assets: assets,
-      shares: shares
-    });
+    _removeAndPushAssets(receiver, assets);
+    emit Withdraw(caller, receiver, owner, assets, shares);
   }
+
+  /// @dev Pulls the underlying asset from `from` and deposits it into the Hub.
+  /// @dev Added shares in the Hub should match the minted shares in `_deposit`.
+  function _pullAndDepositAssets(address from, uint256 amount) internal virtual {
+    IERC20(ASSET).safeTransferFrom(from, address(HUB), amount);
+    HUB.add(ASSET_ID, amount);
+  }
+
+  /// @dev Removes the underlying asset from the Hub and pushes it to `to`.
+  /// @dev Removed shares in the Hub should match the burned shares in `_withdraw`.
+  function _removeAndPushAssets(address to, uint256 amount) internal virtual {
+    HUB.remove(ASSET_ID, amount, to);
+  }
+
+  /// @dev Hook that is called after any deposit or mint.
+  function _afterDeposit(uint256 assets, uint256 shares) internal virtual {}
+
+  /// @dev Hook that is called before any withdrawal or redemption.
+  function _beforeWithdraw(uint256 assets, uint256 shares) internal virtual {}
 
   function _maxRemovableAssets() internal view returns (uint256) {
     IHub.SpokeConfig memory config = HUB.getSpokeConfig(ASSET_ID, address(this));
@@ -434,6 +452,6 @@ abstract contract TokenizationSpoke is ITokenizationSpoke, ERC20Upgradeable, Int
   }
 
   function _domainNameAndVersion() internal pure override returns (string memory, string memory) {
-    return ('Vault Spoke', '1');
+    return ('Tokenization Spoke', '1');
   }
 }

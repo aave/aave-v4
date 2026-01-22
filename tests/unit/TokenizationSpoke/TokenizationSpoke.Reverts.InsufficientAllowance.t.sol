@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 
 import 'tests/unit/TokenizationSpoke/TokenizationSpoke.Base.t.sol';
 
-contract TokenizationSpokeWithSigInsufficientAllowanceTest is TokenizationSpokeBaseTest {
+contract TokenizationSpokeInsufficientAllowanceTest is TokenizationSpokeBaseTest {
   ITokenizationSpoke public vault;
 
   function setUp() public virtual override {
