@@ -7,7 +7,9 @@ import {Test} from 'forge-std/Test.sol';
 import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 import {ISignatureGateway} from 'src/position-manager/interfaces/ISignatureGateway.sol';
 
-import {EIP712Hash as PositionManagerEIP712Hash} from 'src/position-manager/libraries/EIP712Hash.sol';
+import {
+  EIP712Hash as PositionManagerEIP712Hash
+} from 'src/position-manager/libraries/EIP712Hash.sol';
 import {EIP712Hash as SpokeEIP712Hash} from 'src/spoke/libraries/EIP712Hash.sol';
 
 contract EIP712HashTest is Test {
@@ -190,7 +192,7 @@ contract EIP712HashTest is Test {
       abi.encode(
         PositionManagerEIP712Hash.UPDATE_USER_RISK_PREMIUM_TYPEHASH,
         params.spoke,
-        params.user,
+        params.onBehalfOf,
         params.nonce,
         params.deadline
       )
@@ -207,7 +209,7 @@ contract EIP712HashTest is Test {
       abi.encode(
         PositionManagerEIP712Hash.UPDATE_USER_DYNAMIC_CONFIG_TYPEHASH,
         params.spoke,
-        params.user,
+        params.onBehalfOf,
         params.nonce,
         params.deadline
       )
@@ -228,7 +230,7 @@ contract EIP712HashTest is Test {
     bytes32 expectedHash = keccak256(
       abi.encode(
         SpokeEIP712Hash.SET_USER_POSITION_MANAGERS_TYPEHASH,
-        params.user,
+        params.onBehalfOf,
         keccak256(abi.encodePacked(updatesHashes)),
         params.nonce,
         params.deadline
