@@ -8,10 +8,10 @@
   "redeem: on behalf, partial": "122270",
   "redeem: self, full": "97537",
   "redeem: self, partial": "116737",
-  "redeemWithSig": "149582",
+  "redeemWithSig": "149546",
   "withdraw: on behalf, full": "98505",
   "withdraw: on behalf, partial": "122505",
   "withdraw: self, full": "97772",
   "withdraw: self, partial": "116972",
-  "withdrawWithSig": "149812"
+  "withdrawWithSig": "149824"
 }
