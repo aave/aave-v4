@@ -634,7 +634,7 @@ contract HubConfigTest is HubBase {
     _drawLiquidity(assetId, amount, true);
     skip(365 days);
 
-    updateSpokeActive(hub1, assetId, _getFeeReceiver(hub1, assetId), false);
+    _updateSpokeActive(hub1, assetId, _getFeeReceiver(hub1, assetId), false);
     IHub.AssetConfig memory config = hub1.getAssetConfig(assetId);
     config.feeReceiver = makeAddr('newFeeReceiver');
 
@@ -653,7 +653,7 @@ contract HubConfigTest is HubBase {
 
     Utils.mintFeeShares(hub1, assetId, ADMIN);
 
-    updateSpokeActive(hub1, assetId, _getFeeReceiver(hub1, assetId), false);
+    _updateSpokeActive(hub1, assetId, _getFeeReceiver(hub1, assetId), false);
     IHub.AssetConfig memory config = hub1.getAssetConfig(assetId);
     config.feeReceiver = makeAddr('newFeeReceiver');
 

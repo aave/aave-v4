@@ -1236,7 +1236,7 @@ abstract contract Base is Test {
     return spokeInfo[spoke].usdz.reserveId;
   }
 
-  function updateSpokePaused(
+  function _updateSpokePaused(
     IHub hub,
     uint256 assetId,
     address spoke,
@@ -1250,7 +1250,7 @@ abstract contract Base is Test {
     assertEq(hub.getSpokeConfig(assetId, spoke), spokeConfig);
   }
 
-  function updateSpokeActive(
+  function _updateSpokeActive(
     IHub hub,
     uint256 assetId,
     address spoke,
@@ -1264,7 +1264,7 @@ abstract contract Base is Test {
     assertEq(hub.getSpokeConfig(assetId, spoke), spokeConfig);
   }
 
-  function updateAddCap(
+  function _updateAddCap(
     IHub hub,
     uint256 assetId,
     address spoke,
@@ -1292,7 +1292,7 @@ abstract contract Base is Test {
     assertEq(hub.getSpokeConfig(assetId, spoke), spokeConfig);
   }
 
-  function updateSpokeRiskPremiumThreshold(
+  function _updateSpokeRiskPremiumThreshold(
     IHub hub,
     uint256 assetId,
     address spoke,

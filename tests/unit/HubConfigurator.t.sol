@@ -847,7 +847,7 @@ contract HubConfiguratorTest is HubBase {
     hubConfigurator.updateSpokePaused(address(hub1), _assetId, spokeAddresses[0], false);
   }
 
-  function testupdateSpokePaused() public {
+  function test_updateSpokePaused() public {
     IHub.SpokeConfig memory expectedSpokeConfig = hub1.getSpokeConfig(_assetId, spoke);
     for (uint256 i = 0; i < 2; ++i) {
       bool paused = (i == 0) ? false : true;
@@ -868,7 +868,7 @@ contract HubConfiguratorTest is HubBase {
     hubConfigurator.updateSpokeActive(address(hub1), _assetId, spokeAddresses[0], true);
   }
 
-  function testupdateSpokeActive() public {
+  function test_updateSpokeActive() public {
     IHub.SpokeConfig memory expectedSpokeConfig = hub1.getSpokeConfig(_assetId, spoke);
     for (uint256 i = 0; i < 2; ++i) {
       bool active = (i == 0) ? false : true;
@@ -932,7 +932,7 @@ contract HubConfiguratorTest is HubBase {
     );
   }
 
-  function testupdateSpokeRiskPremiumThreshold() public {
+  function test_updateSpokeRiskPremiumThreshold() public {
     uint24 newRiskPremiumThreshold = 100;
     IHub.SpokeConfig memory expectedSpokeConfig = hub1.getSpokeConfig(_assetId, spoke);
     expectedSpokeConfig.riskPremiumThreshold = newRiskPremiumThreshold;

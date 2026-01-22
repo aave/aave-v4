@@ -9,7 +9,7 @@ abstract contract TokenizationSpokeMaxGettersReturnZeroTest is TokenizationSpoke
   function setUp() public virtual override {
     super.setUp();
     vault = daiVault;
-    updateAddCap(IHub(vault.hub()), vault.assetId(), address(vault), 0);
+    _updateAddCap(IHub(vault.hub()), vault.assetId(), address(vault), 0);
   }
 
   function _isVaultActiveOrNotPaused() internal view returns (bool) {
@@ -64,7 +64,7 @@ contract TokenizationSpokeMaxGettersTest_Active_Paused is
 {
   function setUp() public override {
     super.setUp();
-    updateSpokePaused(IHub(vault.hub()), vault.assetId(), address(vault), true);
+    _updateSpokePaused(IHub(vault.hub()), vault.assetId(), address(vault), true);
   }
 }
 
@@ -73,7 +73,7 @@ contract TokenizationSpokeMaxGettersTest_NotActive_NotPaused is
 {
   function setUp() public override {
     super.setUp();
-    updateSpokeActive(IHub(vault.hub()), vault.assetId(), address(vault), false);
+    _updateSpokeActive(IHub(vault.hub()), vault.assetId(), address(vault), false);
   }
 }
 
@@ -82,8 +82,8 @@ contract TokenizationSpokeMaxGettersTest_NotActive_Paused is
 {
   function setUp() public override {
     super.setUp();
-    updateSpokeActive(IHub(vault.hub()), vault.assetId(), address(vault), false);
-    updateSpokePaused(IHub(vault.hub()), vault.assetId(), address(vault), true);
+    _updateSpokeActive(IHub(vault.hub()), vault.assetId(), address(vault), false);
+    _updateSpokePaused(IHub(vault.hub()), vault.assetId(), address(vault), true);
   }
 }
 
@@ -135,7 +135,7 @@ contract TokenizationSpokeDepositMintGettersEmptyLiquidityVariableCapTest is
 
   function setUp() public virtual override {
     super.setUp();
-    updateAddCap(
+    _updateAddCap(
       IHub(vault.hub()),
       vault.assetId(),
       address(vault),
@@ -163,7 +163,12 @@ contract TokenizationSpokeDepositMintGettersNonEmptyLiquidityMaxCapTest is
 {
   function setUp() public virtual override {
     super.setUp();
-    updateAddCap(IHub(vault.hub()), vault.assetId(), address(vault), vault.MAX_ALLOWED_SPOKE_CAP());
+    _updateAddCap(
+      IHub(vault.hub()),
+      vault.assetId(),
+      address(vault),
+      vault.MAX_ALLOWED_SPOKE_CAP()
+    );
   }
 }
 
