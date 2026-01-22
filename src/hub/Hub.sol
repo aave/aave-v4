@@ -52,9 +52,6 @@ contract Hub is IHub, AccessManaged {
   /// @dev Map of asset identifiers to set of spoke addresses.
   mapping(uint256 assetId => EnumerableSet.AddressSet) internal _assetToSpokes;
 
-  /// @dev Set of underlying addresses listed as assets in the Hub.
-  EnumerableSet.AddressSet internal _underlyingAssets;
-
   /// @dev Map of underlying addresses to asset identifiers.
   mapping(address underlying => uint256 assetId) internal _underlyingToAssetId;
 
@@ -81,7 +78,7 @@ contract Hub is IHub, AccessManaged {
       MIN_ALLOWED_UNDERLYING_DECIMALS <= decimals && decimals <= MAX_ALLOWED_UNDERLYING_DECIMALS,
       InvalidAssetDecimals()
     );
-    require(_underlyingAssets.add(underlying), UnderlyingAlreadyListed());
+    require(!isUnderlyingListed(underlying), UnderlyingAlreadyListed());
 
     uint256 assetId = _assetCount++;
     IBasicInterestRateStrategy(irStrategy).setInterestRateData(assetId, irData);
@@ -463,18 +460,13 @@ contract Hub is IHub, AccessManaged {
   }
 
   /// @inheritdoc IHub
-  function isUnderlyingListed(address underlying) external view returns (bool) {
-    return _underlyingAssets.contains(underlying);
-  }
-
-  /// @inheritdoc IHub
-  function getUnderlyingAssets() external view returns (address[] memory) {
-    return _underlyingAssets.values();
+  function isUnderlyingListed(address underlying) public view returns (bool) {
+    return _assets[_underlyingToAssetId[underlying]].underlying == underlying;
   }
 
   /// @inheritdoc IHub
   function getUnderlyingAssetId(address underlying) external view returns (uint256) {
-    require(_underlyingAssets.contains(underlying), AssetNotListed());
+    require(isUnderlyingListed(underlying), AssetNotListed());
     return _underlyingToAssetId[underlying];
   }
 

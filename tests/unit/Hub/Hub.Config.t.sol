@@ -350,50 +350,6 @@ contract HubConfigTest is HubBase {
     assertEq(hub1.getAsset(assetId).reinvestmentController, address(0)); // should init to addr(0)
     assertEq(hub1.getSpokeConfig(assetId, feeReceiver), expectedSpokeConfig);
     assertEq(hub1.getUnderlyingAssetId(underlying), expectedAssetId);
-
-    address[] memory underlyingAssets = hub1.getUnderlyingAssets();
-    assertEq(underlyingAssets.length, assetId + 1);
-    assertEq(underlyingAssets[underlyingAssets.length - 1], underlying);
-  }
-
-  function test_addAsset_fuzz_multipleUnderlyings(uint256 count) public {
-    count = bound(count, 1, 10);
-    address feeReceiver = makeAddr('feeReceiver');
-
-    uint256 assetCountBefore = hub1.getAssetCount();
-    address[] memory newUnderlyings = new address[](count);
-
-    for (uint256 i; i < count; i++) {
-      address underlying = address(new TestnetERC20('TEMP', 'TEMP', 18));
-      newUnderlyings[i] = underlying;
-      address interestRateStrategy = address(new AssetInterestRateStrategy(address(hub1)));
-
-      uint256 expectedAssetId = assetCountBefore + i;
-
-      vm.expectEmit(address(hub1));
-      emit IHub.AddAsset(expectedAssetId, underlying, 18);
-
-      uint256 assetId = Utils.addAsset(
-        hub1,
-        ADMIN,
-        underlying,
-        18,
-        feeReceiver,
-        interestRateStrategy,
-        encodedIrData
-      );
-
-      assertEq(assetId, expectedAssetId, 'asset id');
-      assertEq(hub1.getUnderlyingAssetId(underlying), expectedAssetId);
-    }
-
-    uint256 expectedAssetCount = assetCountBefore + count;
-
-    address[] memory underlyingAssets = hub1.getUnderlyingAssets();
-    assertEq(underlyingAssets.length, expectedAssetCount);
-    for (uint256 i; i < count; i++) {
-      assertEq(underlyingAssets[assetCountBefore + i], newUnderlyings[i]);
-    }
   }
 
   function test_updateAssetConfig_fuzz_revertsWith_InvalidLiquidityFee(
