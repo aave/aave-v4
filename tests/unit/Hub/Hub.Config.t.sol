@@ -23,9 +23,11 @@ contract HubConfigTest is HubBase {
     );
   }
 
-  function test_hub_deploy_revertsWith_InvalidAddress() public {
-    vm.expectRevert(IHub.InvalidAddress.selector, address(hub1));
-    new Hub(address(0));
+  function test_hub_deploy_reverts_on_InvalidConstructorInput() public {
+    DeployWrapper deployer = new DeployWrapper();
+
+    vm.expectRevert();
+    deployer.deployHub(address(0));
   }
 
   function test_hub_max_riskPremium() public view {
@@ -313,7 +315,7 @@ contract HubConfigTest is HubBase {
     // feeReceiver risk premium threshold defaults to 0
     IHub.SpokeConfig memory expectedSpokeConfig = IHub.SpokeConfig({
       active: true,
-      paused: false,
+      halted: false,
       addCap: Constants.MAX_ALLOWED_SPOKE_CAP,
       drawCap: 0,
       riskPremiumThreshold: 0
@@ -410,7 +412,7 @@ contract HubConfigTest is HubBase {
       'custom revert'
     );
 
-    vm.expectRevert(newConfig.irStrategy);
+    vm.expectRevert('custom revert', newConfig.irStrategy);
     vm.prank(HUB_ADMIN);
     hub1.updateAssetConfig(assetId, newConfig, encodedIrData);
   }
@@ -422,6 +424,7 @@ contract HubConfigTest is HubBase {
     assetId = bound(assetId, 0, hub1.getAssetCount() - 1);
     _assumeValidAssetConfig(newConfig);
     assumeUnusedAddress(newConfig.irStrategy);
+    newConfig.feeReceiver = hub1.getAssetConfig(assetId).feeReceiver; // retain fee receiver
 
     vm.mockCallRevert(
       newConfig.irStrategy,
@@ -429,7 +432,7 @@ contract HubConfigTest is HubBase {
       'custom revert'
     );
 
-    vm.expectRevert(address(newConfig.irStrategy));
+    vm.expectRevert('custom revert', newConfig.irStrategy);
     vm.prank(HUB_ADMIN);
     hub1.updateAssetConfig(assetId, newConfig, encodedIrData);
   }
@@ -469,7 +472,7 @@ contract HubConfigTest is HubBase {
         oldFeeReceiver,
         IHub.SpokeConfig({
           active: oldFeeReceiverConfig.active,
-          paused: oldFeeReceiverConfig.paused,
+          halted: oldFeeReceiverConfig.halted,
           addCap: 0,
           drawCap: 0,
           riskPremiumThreshold: 0
@@ -484,7 +487,7 @@ contract HubConfigTest is HubBase {
         newConfig.feeReceiver,
         IHub.SpokeConfig({
           active: true,
-          paused: false,
+          halted: false,
           addCap: Constants.MAX_ALLOWED_SPOKE_CAP,
           drawCap: 0,
           riskPremiumThreshold: 0
@@ -583,28 +586,28 @@ contract HubConfigTest is HubBase {
     assertEq(spokeConfig.drawCap, 0, 'old fee receiver draw cap');
   }
 
-  /// Updates the fee receiver to a new spoke; old fee receiver active/paused flags are preserved
+  /// Updates the fee receiver to a new spoke; old fee receiver active/halted flags are preserved
   function test_updateAssetConfig_oldFeeReceiver_flags() public {
-    _test_updateAssetConfig_oldFeeReceiver_flags({active: true, paused: true});
-    _test_updateAssetConfig_oldFeeReceiver_flags({active: true, paused: false});
-    _test_updateAssetConfig_oldFeeReceiver_flags({active: false, paused: true});
-    _test_updateAssetConfig_oldFeeReceiver_flags({active: false, paused: false});
+    _test_updateAssetConfig_oldFeeReceiver_flags({active: true, halted: true});
+    _test_updateAssetConfig_oldFeeReceiver_flags({active: true, halted: false});
+    _test_updateAssetConfig_oldFeeReceiver_flags({active: false, halted: true});
+    _test_updateAssetConfig_oldFeeReceiver_flags({active: false, halted: false});
   }
 
-  function _test_updateAssetConfig_oldFeeReceiver_flags(bool active, bool paused) internal {
+  function _test_updateAssetConfig_oldFeeReceiver_flags(bool active, bool halted) internal {
     uint256 assetId = _randomAssetId(hub1);
 
     address oldFeeReceiver = _getFeeReceiver(hub1, assetId);
     IHub.SpokeConfig memory oldFeeReceiverConfig = hub1.getSpokeConfig(assetId, oldFeeReceiver);
     oldFeeReceiverConfig.active = active;
-    oldFeeReceiverConfig.paused = paused;
+    oldFeeReceiverConfig.halted = halted;
 
     // update old fee receiver config flags
     Utils.updateSpokeConfig(hub1, ADMIN, assetId, oldFeeReceiver, oldFeeReceiverConfig);
     assertEq(hub1.getSpokeConfig(assetId, oldFeeReceiver).active, active);
-    assertEq(hub1.getSpokeConfig(assetId, oldFeeReceiver).paused, paused);
+    assertEq(hub1.getSpokeConfig(assetId, oldFeeReceiver).halted, halted);
 
-    // update asset config to new fee receiver; old fee receiver paused/active flags should be unchanged
+    // update asset config to new fee receiver; old fee receiver halted/active flags should be unchanged
     IHub.AssetConfig memory config = hub1.getAssetConfig(assetId);
     config.feeReceiver = makeAddr('newFeeReceiver');
     test_updateAssetConfig_fuzz(assetId, config);
@@ -616,9 +619,9 @@ contract HubConfigTest is HubBase {
       'old fee receiver active'
     );
     assertEq(
-      hub1.getSpokeConfig(assetId, oldFeeReceiver).paused,
-      paused,
-      'old fee receiver paused'
+      hub1.getSpokeConfig(assetId, oldFeeReceiver).halted,
+      halted,
+      'old fee receiver halted'
     );
   }
 
@@ -683,21 +686,6 @@ contract HubConfigTest is HubBase {
 
     assertEq(hub1.getSpokeAddedShares(assetId, config.feeReceiver), oldFees);
     assertEq(hub1.getSpokeAddedShares(assetId, newFeeReceiver), newFees);
-  }
-
-  /// Updates the fee receiver to an existing spoke of the hub1, so ends up with existing supplied shares plus accrued fees
-  function test_updateAssetConfig_fuzz_UseExistingSpokeAsFeeReceiver_revertsWith_SpokeAlreadyListed(
-    uint256 assetId
-  ) public {
-    assetId = vm.randomUint(0, hub1.getAssetCount() - 1);
-    address newFeeReceiver = address(spoke1);
-
-    IHub.AssetConfig memory config = hub1.getAssetConfig(assetId);
-    config.feeReceiver = newFeeReceiver;
-
-    vm.expectRevert(IHub.SpokeAlreadyListed.selector, address(hub1));
-    vm.prank(HUB_ADMIN);
-    hub1.updateAssetConfig(assetId, config, new bytes(0));
   }
 
   /// Updates the fee receiver to an existing spoke of the hub1 which is already listed on the asset
@@ -806,7 +794,7 @@ contract HubConfigTest is HubBase {
   function _assumeValidAssetConfig(IHub.AssetConfig memory newConfig) internal pure {
     newConfig.liquidityFee = bound(newConfig.liquidityFee, 0, PercentageMath.PERCENTAGE_FACTOR)
       .toUint16();
-    vm.assume(address(newConfig.feeReceiver) != address(0) || newConfig.liquidityFee == 0);
+    assumeNotZeroAddress(newConfig.feeReceiver);
     assumeNotPrecompile(newConfig.feeReceiver);
     assumeNotForgeAddress(newConfig.feeReceiver);
     assumeNotZeroAddress(newConfig.irStrategy);

@@ -452,7 +452,7 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
       // Construct mock call so we can see the same user rp calc as within the borrow function
       vm.mockCall(
         address(spoke2),
-        abi.encodeCall(Spoke.getUserTotalDebt, (_daiReserveId(spoke2), bob)),
+        abi.encodeCall(ISpokeBase.getUserTotalDebt, (_daiReserveId(spoke2), bob)),
         abi.encode(spoke2.getUserTotalDebt(_daiReserveId(spoke2), bob) + 1e18) // Debt amount seen in the borrow function when calculating user rp
       );
       bobRp = _calculateExpectedUserRP(spoke2, bob);
@@ -566,8 +566,7 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
         _daiReserveId(spoke2),
         bob,
         originalAmounts.daiSupplyAmount +
-          (interest * originalAmounts.daiSupplyAmount) /
-          MAX_SUPPLY_AMOUNT,
+          (interest * originalAmounts.daiSupplyAmount) / MAX_SUPPLY_AMOUNT,
         'dai after second accrual'
       );
       _assertReserveSupply(
@@ -623,8 +622,7 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
         _wethReserveId(spoke2),
         bob,
         originalAmounts.wethSupplyAmount +
-          (interest * originalAmounts.wethSupplyAmount) /
-          MAX_SUPPLY_AMOUNT,
+          (interest * originalAmounts.wethSupplyAmount) / MAX_SUPPLY_AMOUNT,
         'weth after second accrual'
       );
       _assertReserveSupply(
@@ -675,8 +673,7 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
         _usdxReserveId(spoke2),
         bob,
         originalAmounts.usdxSupplyAmount +
-          (interest * originalAmounts.usdxSupplyAmount) /
-          MAX_SUPPLY_AMOUNT,
+          (interest * originalAmounts.usdxSupplyAmount) / MAX_SUPPLY_AMOUNT,
         'usdx after second accrual'
       );
       _assertReserveSupply(
@@ -727,8 +724,7 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
         _wbtcReserveId(spoke2),
         bob,
         originalAmounts.wbtcSupplyAmount +
-          (interest * originalAmounts.wbtcSupplyAmount) /
-          MAX_SUPPLY_AMOUNT,
+          (interest * originalAmounts.wbtcSupplyAmount) / MAX_SUPPLY_AMOUNT,
         'wbtc after second accrual'
       );
       _assertReserveSupply(
@@ -809,16 +805,14 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
       (remainingCollateralValue / 2) / _getValue(spoke, _wethReserveId(spoke), 1)
     );
     remainingCollateralValue -=
-      _getValue(spoke, _wethReserveId(spoke), amounts.wethBorrowAmount) *
-      2;
+      _getValue(spoke, _wethReserveId(spoke), amounts.wethBorrowAmount) * 2;
     amounts.usdxBorrowAmount = bound(
       amounts.usdxBorrowAmount,
       0,
       (remainingCollateralValue / 2) / _getValue(spoke, _usdxReserveId(spoke), 1)
     );
     remainingCollateralValue -=
-      _getValue(spoke, _usdxReserveId(spoke), amounts.usdxBorrowAmount) *
-      2;
+      _getValue(spoke, _usdxReserveId(spoke), amounts.usdxBorrowAmount) * 2;
     amounts.wbtcBorrowAmount = bound(
       amounts.wbtcBorrowAmount,
       0,

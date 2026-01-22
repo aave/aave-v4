@@ -66,7 +66,11 @@ contract HubConfigurator is AccessManaged, IHubConfigurator {
   }
 
   /// @inheritdoc IHubConfigurator
-  function updateFeeReceiver(address hub, uint256 assetId, address feeReceiver) external restricted {
+  function updateFeeReceiver(
+    address hub,
+    uint256 assetId,
+    address feeReceiver
+  ) external restricted {
     IHub targetHub = IHub(hub);
     IHub.AssetConfig memory config = targetHub.getAssetConfig(assetId);
     config.feeReceiver = feeReceiver;
@@ -139,13 +143,13 @@ contract HubConfigurator is AccessManaged, IHubConfigurator {
   }
 
   /// @inheritdoc IHubConfigurator
-  function pauseAsset(address hub, uint256 assetId) external restricted {
+  function haltAsset(address hub, uint256 assetId) external restricted {
     IHub targetHub = IHub(hub);
     uint256 spokesCount = targetHub.getSpokeCount(assetId);
     for (uint256 i = 0; i < spokesCount; ++i) {
       address spoke = targetHub.getSpokeAddress(assetId, i);
       IHub.SpokeConfig memory config = targetHub.getSpokeConfig(assetId, spoke);
-      config.paused = true;
+      config.halted = true;
       targetHub.updateSpokeConfig(assetId, spoke, config);
     }
   }
@@ -188,15 +192,15 @@ contract HubConfigurator is AccessManaged, IHubConfigurator {
   }
 
   /// @inheritdoc IHubConfigurator
-  function updateSpokePaused(
+  function updateSpokeHalted(
     address hub,
     uint256 assetId,
     address spoke,
-    bool paused
+    bool halted
   ) external restricted {
     IHub targetHub = IHub(hub);
     IHub.SpokeConfig memory config = targetHub.getSpokeConfig(assetId, spoke);
-    config.paused = paused;
+    config.halted = halted;
     targetHub.updateSpokeConfig(assetId, spoke, config);
   }
 
@@ -264,13 +268,13 @@ contract HubConfigurator is AccessManaged, IHubConfigurator {
   }
 
   /// @inheritdoc IHubConfigurator
-  function pauseSpoke(address hub, address spoke) external restricted {
+  function haltSpoke(address hub, address spoke) external restricted {
     IHub targetHub = IHub(hub);
     uint256 assetCount = targetHub.getAssetCount();
     for (uint256 assetId = 0; assetId < assetCount; ++assetId) {
       if (targetHub.isSpokeListed(assetId, spoke)) {
         IHub.SpokeConfig memory config = targetHub.getSpokeConfig(assetId, spoke);
-        config.paused = true;
+        config.halted = true;
         targetHub.updateSpokeConfig(assetId, spoke, config);
       }
     }

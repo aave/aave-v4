@@ -27,10 +27,8 @@ contract NativeTokenGatewayTest is SpokeBase {
     NativeTokenGateway gateway = new NativeTokenGateway(address(tokenList.weth), address(ADMIN));
 
     assertEq(gateway.NATIVE_WRAPPER(), address(tokenList.weth));
-
     assertEq(gateway.owner(), address(ADMIN));
     assertEq(gateway.pendingOwner(), address(0));
-
     assertEq(gateway.rescueGuardian(), address(ADMIN));
   }
 
@@ -82,6 +80,47 @@ contract NativeTokenGatewayTest is SpokeBase {
     _checkFinalBalances();
 
     assertFalse(_isUsingAsCollateral(spoke1, _wethReserveId(spoke1), bob));
+  }
+
+  function test_supplyNative_revertsWith_ReentrancyGuardReentrantCall_spokeSupply() public {
+    vm.prank(bob);
+    spoke1.setUserPositionManager(address(nativeTokenGateway), true);
+
+    uint256 amount = 100e18;
+    MockReentrantCaller reentrantCaller = new MockReentrantCaller(
+      address(nativeTokenGateway),
+      INativeTokenGateway.supplyNative.selector
+    );
+
+    vm.mockFunction(
+      address(spoke1),
+      address(reentrantCaller),
+      abi.encodeWithSelector(ISpokeBase.supply.selector)
+    );
+    vm.expectRevert(ReentrancyGuardTransient.ReentrancyGuardReentrantCall.selector);
+    vm.prank(bob);
+    nativeTokenGateway.supplyNative{value: amount}(address(spoke1), _wethReserveId(spoke1), amount);
+  }
+
+  function test_supplyNative_revertsWith_ReentrancyGuardReentrantCall_hubAdd() public {
+    vm.prank(bob);
+    spoke1.setUserPositionManager(address(nativeTokenGateway), true);
+
+    uint256 amount = 100e18;
+    MockReentrantCaller reentrantCaller = new MockReentrantCaller(
+      address(nativeTokenGateway),
+      INativeTokenGateway.supplyNative.selector
+    );
+
+    vm.mockFunction(
+      address(_hub(spoke1, _wethReserveId(spoke1))),
+      address(reentrantCaller),
+      abi.encodeWithSelector(IHubBase.add.selector)
+    );
+
+    vm.expectRevert(ReentrancyGuardTransient.ReentrancyGuardReentrantCall.selector);
+    vm.prank(bob);
+    nativeTokenGateway.supplyNative{value: amount}(address(spoke1), _wethReserveId(spoke1), amount);
   }
 
   function test_supplyNative_revertsWith_SpokeNotRegistered() public {
@@ -333,6 +372,46 @@ contract NativeTokenGatewayTest is SpokeBase {
     _checkFinalBalances();
   }
 
+  function test_withdrawNative_revertsWith_ReentrancyGuardReentrantCall_spokeWithdraw() public {
+    vm.prank(bob);
+    spoke1.setUserPositionManager(address(nativeTokenGateway), true);
+
+    uint256 amount = 100e18;
+    MockReentrantCaller reentrantCaller = new MockReentrantCaller(
+      address(nativeTokenGateway),
+      INativeTokenGateway.withdrawNative.selector
+    );
+
+    vm.mockFunction(
+      address(spoke1),
+      address(reentrantCaller),
+      abi.encodeWithSelector(ISpokeBase.withdraw.selector)
+    );
+    vm.expectRevert(ReentrancyGuardTransient.ReentrancyGuardReentrantCall.selector);
+    vm.prank(bob);
+    nativeTokenGateway.withdrawNative(address(spoke1), _wethReserveId(spoke1), amount);
+  }
+
+  function test_withdrawNative_revertsWith_ReentrancyGuardReentrantCall_hubRemove() public {
+    vm.prank(bob);
+    spoke1.setUserPositionManager(address(nativeTokenGateway), true);
+
+    uint256 amount = 100e18;
+    MockReentrantCaller reentrantCaller = new MockReentrantCaller(
+      address(nativeTokenGateway),
+      INativeTokenGateway.withdrawNative.selector
+    );
+
+    vm.mockFunction(
+      address(_hub(spoke1, _wethReserveId(spoke1))),
+      address(reentrantCaller),
+      abi.encodeWithSelector(IHubBase.remove.selector)
+    );
+    vm.expectRevert(ReentrancyGuardTransient.ReentrancyGuardReentrantCall.selector);
+    vm.prank(bob);
+    nativeTokenGateway.withdrawNative(address(spoke1), _wethReserveId(spoke1), amount);
+  }
+
   function test_withdrawNative_revertsWith_SpokeNotRegistered() public {
     uint256 amount = 100e18;
     vm.expectRevert(IGatewayBase.SpokeNotRegistered.selector);
@@ -403,6 +482,46 @@ contract NativeTokenGatewayTest is SpokeBase {
     assertEq(tokenList.weth.balanceOf(address(hub1)), prevHubBalance - borrowAmount);
     assertEq(bob.balance, prevUserBalance + borrowAmount);
     _checkFinalBalances();
+  }
+
+  function test_borrowNative_revertsWith_ReentrancyGuardReentrantCall_spokeBorrow() public {
+    vm.prank(bob);
+    spoke1.setUserPositionManager(address(nativeTokenGateway), true);
+
+    uint256 amount = 100e18;
+    MockReentrantCaller reentrantCaller = new MockReentrantCaller(
+      address(nativeTokenGateway),
+      INativeTokenGateway.borrowNative.selector
+    );
+
+    vm.mockFunction(
+      address(spoke1),
+      address(reentrantCaller),
+      abi.encodeWithSelector(ISpokeBase.borrow.selector)
+    );
+    vm.expectRevert(ReentrancyGuardTransient.ReentrancyGuardReentrantCall.selector);
+    vm.prank(bob);
+    nativeTokenGateway.borrowNative(address(spoke1), _wethReserveId(spoke1), amount);
+  }
+
+  function test_borrowNative_revertsWith_ReentrancyGuardReentrantCall_hubDraw() public {
+    vm.prank(bob);
+    spoke1.setUserPositionManager(address(nativeTokenGateway), true);
+
+    uint256 amount = 100e18;
+    MockReentrantCaller reentrantCaller = new MockReentrantCaller(
+      address(nativeTokenGateway),
+      INativeTokenGateway.borrowNative.selector
+    );
+
+    vm.mockFunction(
+      address(_hub(spoke1, _wethReserveId(spoke1))),
+      address(reentrantCaller),
+      abi.encodeWithSelector(IHubBase.draw.selector)
+    );
+    vm.expectRevert(ReentrancyGuardTransient.ReentrancyGuardReentrantCall.selector);
+    vm.prank(bob);
+    nativeTokenGateway.borrowNative(address(spoke1), _wethReserveId(spoke1), amount);
   }
 
   function test_borrowNative_revertsWith_SpokeNotRegistered() public {
@@ -628,6 +747,46 @@ contract NativeTokenGatewayTest is SpokeBase {
     assertEq(tokenList.weth.balanceOf(address(hub1)), prevHubBalance + totalRepaid);
     assertEq(bob.balance, prevUserBalance - totalRepaid);
     _checkFinalBalances();
+  }
+
+  function test_repayNative_revertsWith_ReentrancyGuardReentrantCall_spokeRepay() public {
+    vm.prank(bob);
+    spoke1.setUserPositionManager(address(nativeTokenGateway), true);
+
+    uint256 amount = 100e18;
+    MockReentrantCaller reentrantCaller = new MockReentrantCaller(
+      address(nativeTokenGateway),
+      INativeTokenGateway.repayNative.selector
+    );
+
+    vm.mockFunction(
+      address(spoke1),
+      address(reentrantCaller),
+      abi.encodeWithSelector(ISpokeBase.repay.selector)
+    );
+    vm.expectRevert(ReentrancyGuardTransient.ReentrancyGuardReentrantCall.selector);
+    vm.prank(bob);
+    nativeTokenGateway.repayNative{value: amount}(address(spoke1), _wethReserveId(spoke1), amount);
+  }
+
+  function test_repayNative_revertsWith_ReentrancyGuardReentrantCall_hubRestore() public {
+    vm.prank(bob);
+    spoke1.setUserPositionManager(address(nativeTokenGateway), true);
+
+    uint256 amount = 100e18;
+    MockReentrantCaller reentrantCaller = new MockReentrantCaller(
+      address(nativeTokenGateway),
+      INativeTokenGateway.repayNative.selector
+    );
+
+    vm.mockFunction(
+      address(_hub(spoke1, _wethReserveId(spoke1))),
+      address(reentrantCaller),
+      abi.encodeWithSelector(IHubBase.restore.selector)
+    );
+    vm.expectRevert(ReentrancyGuardTransient.ReentrancyGuardReentrantCall.selector);
+    vm.prank(bob);
+    nativeTokenGateway.repayNative{value: amount}(address(spoke1), _wethReserveId(spoke1), amount);
   }
 
   function test_repayNative_revertsWith_SpokeNotRegistered() public {

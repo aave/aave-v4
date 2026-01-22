@@ -3,17 +3,38 @@
 pragma solidity ^0.8.0;
 
 import {IAccessManaged} from 'src/dependencies/openzeppelin/IAccessManaged.sol';
-import {INoncesKeyed} from 'src/interfaces/INoncesKeyed.sol';
+import {IIntentConsumer} from 'src/interfaces/IIntentConsumer.sol';
 import {IMulticall} from 'src/interfaces/IMulticall.sol';
 import {IHubBase} from 'src/hub/interfaces/IHubBase.sol';
 import {ISpokeBase} from 'src/spoke/interfaces/ISpokeBase.sol';
+import {IExtSload} from 'src/interfaces/IExtSload.sol';
 
 type ReserveFlags is uint8;
 
 /// @title ISpoke
 /// @author Aave Labs
 /// @notice Full interface for Spoke.
-interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
+interface ISpoke is ISpokeBase, IAccessManaged, IIntentConsumer, IExtSload, IMulticall {
+  /// @notice Intent data to set user position managers with EIP712-typed signature.
+  /// @param user The address of the user on whose behalf position manager can act.
+  /// @param updates The array of position manager updates.
+  /// @param nonce The nonce for the signature.
+  /// @param deadline The deadline for the signature.
+  struct SetUserPositionManagers {
+    address user;
+    PositionManagerUpdate[] updates;
+    uint256 nonce;
+    uint256 deadline;
+  }
+
+  /// @notice Sub-Intent data to apply position manager update for user.
+  /// @param positionManager The address of the position manager.
+  /// @param approve True to approve the position manager, false to revoke approval.
+  struct PositionManagerUpdate {
+    address positionManager;
+    bool approve;
+  }
+
   /// @notice Reserve level data.
   /// @dev underlying The address of the underlying asset.
   /// @dev hub The address of the associated Hub.
@@ -267,12 +288,6 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
   /// @notice Thrown if a config key is uninitialized when updating a dynamic reserve config.
   error ConfigKeyUninitialized();
 
-  /// @notice Thrown if an inactive position manager is set as a user's position manager.
-  error InactivePositionManager();
-
-  /// @notice Thrown when a signature is invalid.
-  error InvalidSignature();
-
   /// @notice Thrown for an invalid zero address.
   error InvalidAddress();
 
@@ -396,25 +411,19 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
   /// @param onBehalfOf The owner of the position being modified.
   function updateUserDynamicConfig(address onBehalfOf) external;
 
-  /// @notice Enables a user to grant or revoke approval for a position manager
+  /// @notice Enables a user to grant or revoke approval for a position manager.
+  /// @dev Allows approving inactive position managers.
   /// @param positionManager The address of the position manager.
   /// @param approve True to approve the position manager, false to revoke approval.
   function setUserPositionManager(address positionManager, bool approve) external;
 
-  /// @notice Enables a user to grant or revoke approval for a position manager using an EIP712-typed intent.
+  /// @notice Enables a user to grant or revoke approval for an array of position managers using an EIP712-typed intent.
   /// @dev Uses keyed-nonces where for each key's namespace nonce is consumed sequentially.
-  /// @param positionManager The address of the position manager.
-  /// @param user The address of the user on whose behalf position manager can act.
-  /// @param approve True to approve the position manager, false to revoke approval.
-  /// @param nonce The key-prefixed nonce for the signature.
-  /// @param deadline The deadline for the signature.
+  /// @dev Allows duplicated updates and the last one is persisted. Allows approving inactive position managers.
+  /// @param params The structured setUserPositionManagers parameter.
   /// @param signature The EIP712-compliant signature bytes.
-  function setUserPositionManagerWithSig(
-    address positionManager,
-    address user,
-    bool approve,
-    uint256 nonce,
-    uint256 deadline,
+  function setUserPositionManagersWithSig(
+    SetUserPositionManagers calldata params,
     bytes calldata signature
   ) external;
 
@@ -521,16 +530,13 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
   /// @return True if positionManager is active and approved by user.
   function isPositionManager(address user, address positionManager) external view returns (bool);
 
-  /// @notice Returns the EIP-712 domain separator.
-  function DOMAIN_SEPARATOR() external view returns (bytes32);
-
   /// @notice Returns the address of the external `LiquidationLogic` library.
   /// @return The address of the library.
   function getLiquidationLogic() external pure returns (address);
 
-  /// @notice Returns the type hash for the SetUserPositionManager intent.
+  /// @notice Returns the type hash for the SetUserPositionManagers intent.
   /// @return The bytes-encoded EIP-712 struct hash representing the intent.
-  function SET_USER_POSITION_MANAGER_TYPEHASH() external view returns (bytes32);
+  function SET_USER_POSITION_MANAGERS_TYPEHASH() external view returns (bytes32);
 
   /// @notice Returns the address of the AaveOracle contract.
   function ORACLE() external view returns (address);

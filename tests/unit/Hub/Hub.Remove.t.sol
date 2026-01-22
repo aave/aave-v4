@@ -507,9 +507,9 @@ contract HubRemoveTest is HubBase {
     hub1.remove(daiAssetId, 0, alice);
   }
 
-  function test_remove_revertsWith_SpokePaused() public {
-    _updateSpokePaused(hub1, daiAssetId, address(spoke1), true);
-    vm.expectRevert(IHub.SpokePaused.selector);
+  function test_remove_revertsWith_SpokeHalted() public {
+    _updateSpokeHalted(hub1, daiAssetId, address(spoke1), true);
+    vm.expectRevert(IHub.SpokeHalted.selector);
     vm.prank(address(spoke1));
     hub1.remove(daiAssetId, 100e18, alice);
   }
