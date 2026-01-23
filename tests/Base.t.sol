@@ -395,12 +395,8 @@ abstract contract Base is Test {
     selectors[17] = IHubConfigurator.haltSpoke.selector;
     selectors[18] = IHubConfigurator.freezeSpoke.selector;
     selectors[19] = IHubConfigurator.updateInterestRateData.selector;
-    // Handle overloaded addAsset functions - note: Solidity doesn't support disambiguating overloaded
-    // functions via interface selectors. We use the function signature hash as the only option.
-    selectors[20] = bytes4(keccak256('addAsset(address,address,address,uint256,address,bytes)'));
-    selectors[21] = bytes4(
-      keccak256('addAsset(address,address,uint8,address,uint256,address,bytes)')
-    );
+    selectors[20] = IHubConfigurator.addAsset.selector;
+    selectors[21] = IHubConfigurator.addAssetWithDecimals.selector;
     IAccessManager(manager).setTargetFunctionRole(
       hubConfigurator,
       selectors,
