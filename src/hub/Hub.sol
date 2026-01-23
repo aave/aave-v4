@@ -153,7 +153,7 @@ contract Hub is IHub, AccessManaged {
       _mintFeeShares(asset, assetId);
       IHub.SpokeConfig memory spokeConfig;
       spokeConfig.active = _spokes[assetId][oldFeeReceiver].active;
-      spokeConfig.paused = _spokes[assetId][oldFeeReceiver].paused;
+      spokeConfig.halted = _spokes[assetId][oldFeeReceiver].halted;
       _updateSpokeConfig(assetId, oldFeeReceiver, spokeConfig);
       asset.feeReceiver = config.feeReceiver;
       _addFeeReceiver(assetId, config.feeReceiver);
@@ -689,7 +689,7 @@ contract Hub is IHub, AccessManaged {
         drawCap: spokeData.drawCap,
         riskPremiumThreshold: spokeData.riskPremiumThreshold,
         active: spokeData.active,
-        paused: spokeData.paused
+        halted: spokeData.halted
       });
   }
 
@@ -704,7 +704,7 @@ contract Hub is IHub, AccessManaged {
         drawCap: 0,
         riskPremiumThreshold: 0,
         active: true,
-        paused: false
+        halted: false
       })
     );
   }
@@ -722,7 +722,7 @@ contract Hub is IHub, AccessManaged {
     spokeData.drawCap = config.drawCap;
     spokeData.riskPremiumThreshold = config.riskPremiumThreshold;
     spokeData.active = config.active;
-    spokeData.paused = config.paused;
+    spokeData.halted = config.halted;
     emit UpdateSpokeConfig(assetId, spoke, config);
   }
 
@@ -827,7 +827,7 @@ contract Hub is IHub, AccessManaged {
   ) internal view {
     require(amount > 0, InvalidAmount());
     require(spoke.active, SpokeNotActive());
-    require(!spoke.paused, SpokePaused());
+    require(!spoke.halted, SpokeHalted());
     uint256 addCap = spoke.addCap;
     require(
       addCap == MAX_ALLOWED_SPOKE_CAP ||
@@ -841,7 +841,7 @@ contract Hub is IHub, AccessManaged {
     require(to != address(this), InvalidAddress());
     require(amount > 0, InvalidAmount());
     require(spoke.active, SpokeNotActive());
-    require(!spoke.paused, SpokePaused());
+    require(!spoke.halted, SpokeHalted());
   }
 
   /// @dev Spoke with maximum cap have unlimited draw capacity.
@@ -854,7 +854,7 @@ contract Hub is IHub, AccessManaged {
     require(to != address(this), InvalidAddress());
     require(amount > 0, InvalidAmount());
     require(spoke.active, SpokeNotActive());
-    require(!spoke.paused, SpokePaused());
+    require(!spoke.halted, SpokeHalted());
     uint256 drawCap = spoke.drawCap;
     uint256 owed = _getSpokeDrawn(asset, spoke) + _getSpokePremium(asset, spoke);
     require(
@@ -873,7 +873,7 @@ contract Hub is IHub, AccessManaged {
   ) internal view {
     require(drawnAmount > 0 || premiumAmountRay > 0, InvalidAmount());
     require(spoke.active, SpokeNotActive());
-    require(!spoke.paused, SpokePaused());
+    require(!spoke.halted, SpokeHalted());
     uint256 drawn = _getSpokeDrawn(asset, spoke);
     uint256 premiumRay = _getSpokePremiumRay(asset, spoke);
     require(drawnAmount <= drawn, SurplusDrawnRestored(drawn));
@@ -914,7 +914,7 @@ contract Hub is IHub, AccessManaged {
     uint256 shares
   ) internal view {
     require(sender.active && receiver.active, SpokeNotActive());
-    require(!sender.paused && !receiver.paused, SpokePaused());
+    require(!sender.halted && !receiver.halted, SpokeHalted());
     require(shares > 0, InvalidShares());
     uint256 addCap = receiver.addCap;
     require(

@@ -455,7 +455,7 @@ abstract contract Base is Test {
   function configureTokenList() internal {
     IHub.SpokeConfig memory spokeConfig = IHub.SpokeConfig({
       active: true,
-      paused: false,
+      halted: false,
       addCap: Constants.MAX_ALLOWED_SPOKE_CAP,
       drawCap: Constants.MAX_ALLOWED_SPOKE_CAP,
       riskPremiumThreshold: Constants.MAX_ALLOWED_COLLATERAL_RISK
@@ -1214,14 +1214,14 @@ abstract contract Base is Test {
     return spokeInfo[spoke].usdz.reserveId;
   }
 
-  function _updateSpokePaused(
+  function _updateSpokeHalted(
     IHub hub,
     uint256 assetId,
     address spoke,
-    bool paused
+    bool halted
   ) internal pausePrank {
     IHub.SpokeConfig memory spokeConfig = hub.getSpokeConfig(assetId, spoke);
-    spokeConfig.paused = paused;
+    spokeConfig.halted = halted;
     vm.prank(HUB_ADMIN);
     hub.updateSpokeConfig(assetId, spoke, spokeConfig);
 
@@ -2314,7 +2314,7 @@ abstract contract Base is Test {
     assertEq(a.drawCap, b.drawCap, 'drawCap');
     assertEq(a.riskPremiumThreshold, b.riskPremiumThreshold, 'riskPremiumThreshold');
     assertEq(a.active, b.active, 'active');
-    assertEq(a.paused, b.paused, 'paused');
+    assertEq(a.halted, b.halted, 'halted');
     assertEq(abi.encode(a), abi.encode(b));
   }
 
