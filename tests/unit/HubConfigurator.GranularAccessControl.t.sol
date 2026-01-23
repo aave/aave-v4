@@ -42,12 +42,8 @@ contract HubConfiguratorGranularAccessControlTest is HubBase {
 
     // Set up ASSET_MANAGER_ROLE permissions (11 functions)
     bytes4[] memory assetSelectors = new bytes4[](11);
-    assetSelectors[0] = bytes4(
-      keccak256('addAsset(address,address,address,uint256,address,bytes)')
-    );
-    assetSelectors[1] = bytes4(
-      keccak256('addAsset(address,address,uint8,address,uint256,address,bytes)')
-    );
+    assetSelectors[0] = IHubConfigurator.addAsset.selector;
+    assetSelectors[1] = IHubConfigurator.addAssetWithDecimals.selector;
     assetSelectors[2] = IHubConfigurator.updateLiquidityFee.selector;
     assetSelectors[3] = IHubConfigurator.updateFeeReceiver.selector;
     assetSelectors[4] = IHubConfigurator.updateFeeConfig.selector;

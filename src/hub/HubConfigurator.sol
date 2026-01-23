@@ -41,7 +41,7 @@ contract HubConfigurator is AccessManaged, IHubConfigurator {
   }
 
   /// @inheritdoc IHubConfigurator
-  function addAsset(
+  function addAssetWithDecimals(
     address hub,
     address underlying,
     uint8 decimals,

@@ -1178,7 +1178,7 @@ contract HubConfiguratorTest is HubBase {
         );
     } else {
       return
-        hubConfigurator.addAsset(
+        hubConfigurator.addAssetWithDecimals(
           address(hub1),
           underlying,
           decimals,
