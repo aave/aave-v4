@@ -1,21 +1,32 @@
 {
   "name": "aave-v4",
   "version": "0.5.6",
+  "description": "Aave Protocol V4 Smart Contracts",
+  "private": true,
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "scripts": {
-    "lint": "prettier . --check",
-    "lint:fix": "prettier . --write",
+    "lint": "prettier --check .",
+    "lint:fix": "prettier --write .",
     "rs:bind": "forge bind --bindings-path ./out/__BINDINGS__ --alloy --skip '(tests|scripts)/**/*.sol'",
     "rs:abis": "forge build --out ./out/__FOLDER_ABIS__ --skip '(tests|scripts)/**/*.sol' --extra-output-files abi && rm -rf ./out/__ABIS__ && mkdir -p ./out/__ABIS__ && find ./out/__FOLDER_ABIS__ -name '*.abi.json' -exec cp {} ./out/__ABIS__/ \\;",
     "rs:generate": "npm run rs:bind && npm run rs:abis",
     "prepare": "husky"
   },
-  "keywords": [],
+  "keywords": [
+    "ethereum",
+    "defi",
+    "aave",
+    "smart-contracts",
+    "solidity"
+  ],
   "author": "Aave Labs",
   "license": "UNLICENSED",
+  "homepage": "https://github.com/aave/aave-v4#readme",
   "bugs": {
     "url": "https://github.com/aave/aave-v4/issues"
   },
-  "homepage": "https://github.com/aave/aave-v4#readme",
   "devDependencies": {
     "husky": "9.1.7",
     "lint-staged": "16.2.3",
@@ -23,6 +34,6 @@
     "prettier-plugin-solidity": "2.1.0"
   },
   "lint-staged": {
-    "*.{sol,md,py,ts}": "prettier . --write"
+    "*.{sol,md,py,ts}": "prettier --write"
   }
 }
