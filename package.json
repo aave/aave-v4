@@ -1,21 +1,33 @@
 {
   "name": "aave-v4",
   "version": "0.5.6",
-  "scripts": {
-    "lint": "prettier . --check",
-    "lint:fix": "prettier . --write",
-    "rs:bind": "forge bind --bindings-path ./out/__BINDINGS__ --alloy --skip '(tests|scripts)/**/*.sol'",
-    "rs:abis": "forge build --out ./out/__FOLDER_ABIS__ --skip '(tests|scripts)/**/*.sol' --extra-output-files abi && rm -rf ./out/__ABIS__ && mkdir -p ./out/__ABIS__ && find ./out/__FOLDER_ABIS__ -name '*.abi.json' -exec cp {} ./out/__ABIS__/ \\;",
-    "rs:generate": "npm run rs:bind && npm run rs:abis",
-    "prepare": "husky"
-  },
-  "keywords": [],
+  "description": "Core repository for Aave v4 protocol - Optimized development environment.",
   "author": "Aave Labs",
   "license": "UNLICENSED",
-  "bugs": {
-    "url": "https://github.com/aave/aave-v4/issues"
+  "scripts": {
+    /* * Code Quality: Run Prettier checks across the project.
+     */
+    "lint": "prettier . --check",
+    "lint:fix": "prettier . --write",
+    
+    /* * Rust Tooling: Generate Rust types from Solidity contracts using Alloy.
+     * This allows high-performance off-chain interaction in Rust.
+     */
+    "rs:bind": "forge bind --bindings-path ./out/__BINDINGS__ --alloy --skip '(tests|scripts)/**/*.sol'",
+    
+    /* * ABI Management: Extract and organize raw ABI files for integration purposes.
+     * Ensures consistent contract interfaces for front-end and back-end services.
+     */
+    "rs:abis": "forge build --out ./out/__FOLDER_ABIS__ --skip '(tests|scripts)/**/*.sol' --extra-output-files abi && rm -rf ./out/__ABIS__ && mkdir -p ./out/__ABIS__ && find ./out/__FOLDER_ABIS__ -name '*.abi.json' -exec cp {} ./out/__ABIS__/ \\;",
+    
+    /* * Pipeline: Combined script to generate all integration artifacts (Rust bindings + ABIs).
+     */
+    "rs:generate": "npm run rs:bind && npm run rs:abis",
+    
+    /* * Environment Setup: Initialize Husky for git hooks management.
+     */
+    "prepare": "husky"
   },
-  "homepage": "https://github.com/aave/aave-v4#readme",
   "devDependencies": {
     "husky": "9.1.7",
     "lint-staged": "16.2.3",
@@ -23,6 +35,10 @@
     "prettier-plugin-solidity": "2.1.0"
   },
   "lint-staged": {
-    "*.{sol,md,py,ts}": "prettier . --write"
-  }
+    "*.{sol,md,py,ts}": "prettier --write"
+  },
+  "bugs": {
+    "url": "https://github.com/aave/aave-v4/issues"
+  },
+  "homepage": "https://github.com/aave/aave-v4#readme"
 }
