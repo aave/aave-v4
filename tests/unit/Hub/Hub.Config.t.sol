@@ -364,6 +364,21 @@ contract HubConfigTest is HubBase {
     assertTrue(hub1.isUnderlyingListed(underlying));
   }
 
+  function test_getAssetId() public view {
+    assertEq(hub1.getAssetId(address(tokenList.weth)), wethAssetId);
+    assertEq(hub1.getAssetId(address(tokenList.usdx)), usdxAssetId);
+    assertEq(hub1.getAssetId(address(tokenList.dai)), daiAssetId);
+    assertEq(hub1.getAssetId(address(tokenList.wbtc)), wbtcAssetId);
+    assertEq(hub1.getAssetId(address(tokenList.usdy)), usdyAssetId);
+    assertEq(hub1.getAssetId(address(tokenList.usdz)), usdzAssetId);
+  }
+
+  function test_getAssetId_fuzz_revertsWith_AssetNotListed(address underlying) public {
+    assumeUnusedAddress(underlying);
+    vm.expectRevert(IHub.AssetNotListed.selector, address(hub1));
+    hub1.getAssetId(underlying);
+  }
+
   function test_updateAssetConfig_fuzz_revertsWith_InvalidLiquidityFee(
     uint256 assetId,
     IHub.AssetConfig memory newConfig
