@@ -48,6 +48,24 @@ contract HubEliminateDeficitTest is HubBase {
     hub1.eliminateDeficit(_assetId, vm.randomUint(_deficitAmountRay, UINT256_MAX), _coveredSpoke);
   }
 
+  function test_eliminateDeficit_revertsWith_SpokeNotActive_on_UnregisteredAsset() public {
+    _createDeficit(_assetId, _coveredSpoke, _deficitAmountRay);
+    assertEq(hub1.getSpokeDeficitRay(_assetId, _coveredSpoke), _deficitAmountRay);
+
+    uint256 invalidAssetId = vm.randomUint(hub1.getAssetCount() + 1, UINT256_MAX);
+
+    vm.expectRevert(IHub.SpokeNotActive.selector);
+    vm.prank(_callerSpoke);
+    hub1.eliminateDeficit(invalidAssetId, vm.randomUint(1, UINT256_MAX), _coveredSpoke);
+  }
+
+  function test_eliminateDeficit_revertsWith_InvalidAmount_on_UnregisteredCoveredSpoke() public {
+    // since amount is bounded to covered spoke deficit, deficit to be eliminated bounds to 0
+    vm.expectRevert(IHub.InvalidAmount.selector);
+    vm.prank(_callerSpoke);
+    hub1.eliminateDeficit(_assetId, vm.randomUint(1, UINT256_MAX), alice); // alice is not a spoke
+  }
+
   function test_eliminateDeficit_fuzz_revertsWith_callerSpokeNotActive(address caller) public {
     vm.assume(!hub1.getSpoke(_assetId, caller).active);
     vm.expectRevert(IHub.SpokeNotActive.selector);
@@ -139,7 +157,11 @@ contract HubEliminateDeficitTest is HubBase {
       restoredPremiumRay: amountRay
     });
 
+    uint256 deficitBeforeRay = hub1.getSpokeDeficitRay(assetId, spoke);
+
     vm.prank(spoke);
     hub1.reportDeficit(assetId, 0, premiumDelta);
+
+    assertEq(hub1.getSpokeDeficitRay(assetId, spoke), deficitBeforeRay + amountRay);
   }
 }
