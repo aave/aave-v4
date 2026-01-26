@@ -65,18 +65,6 @@ interface ITokenizationSpoke is IERC4626, IERC2612, IIntentConsumer {
     uint256 deadline;
   }
 
-  /// @notice Thrown when the maximum deposit limit is exceeded.
-  error MaxDepositExceeded(uint256 maxDeposit, uint256 requestedAssets);
-
-  /// @notice Thrown when the maximum mint limit is exceeded.
-  error MaxMintExceeded(uint256 maxMint, uint256 requestedShares);
-
-  /// @notice Thrown when the maximum withdraw limit is exceeded.
-  error MaxWithdrawExceeded(uint256 maxWithdraw, uint256 requestedAssets);
-
-  /// @notice Thrown when the maximum redeem limit is exceeded.
-  error MaxRedeemExceeded(uint256 maxRedeem, uint256 requestedShares);
-
   /// @notice Deposits assets into the tokenization spoke with a signature.
   /// @dev Uses keyed-nonces where for each key's namespace nonce is consumed sequentially.
   /// @param params The parameters for the deposit.

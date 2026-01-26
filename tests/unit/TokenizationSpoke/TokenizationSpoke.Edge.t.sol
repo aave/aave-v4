@@ -259,27 +259,28 @@ contract TokenizationSpokeEdgeTest is TokenizationSpokeBaseTest {
     vault.mint(shares, alice);
   }
 
-  function test_withdraw_revertsWith_MaxWithdrawExceeded_noBalance() public {
+  function test_withdraw_revertsWith_ERC20InsufficientBalance_noBalance() public {
     uint256 assets = 1e18;
+    uint256 shares = vault.previewWithdraw(assets);
 
     vm.expectRevert(
-      abi.encodeWithSelector(ITokenizationSpoke.MaxWithdrawExceeded.selector, 0, assets)
+      abi.encodeWithSelector(IERC20Errors.ERC20InsufficientBalance.selector, alice, 0, shares)
     );
     vm.prank(alice);
     vault.withdraw(assets, alice, alice);
   }
 
-  function test_redeem_revertsWith_MaxRedeemExceeded_noShares() public {
+  function test_redeem_revertsWith_ERC20InsufficientBalance_noShares() public {
     uint256 shares = 1e18;
 
     vm.expectRevert(
-      abi.encodeWithSelector(ITokenizationSpoke.MaxRedeemExceeded.selector, 0, shares)
+      abi.encodeWithSelector(IERC20Errors.ERC20InsufficientBalance.selector, alice, 0, shares)
     );
     vm.prank(alice);
     vault.redeem(shares, alice, alice);
   }
 
-  function test_withdraw_revertsWith_MaxWithdrawExceeded_InsufficientBalance() public {
+  function test_withdraw_revertsWith_ERC20InsufficientBalance() public {
     uint256 depositAssets = 1e18;
     asset.mint(alice, depositAssets);
     Utils.approve(vault, alice, depositAssets);
@@ -287,20 +288,22 @@ contract TokenizationSpokeEdgeTest is TokenizationSpokeBaseTest {
     vault.deposit(depositAssets, alice);
 
     uint256 withdrawAssets = depositAssets + 1;
-    uint256 maxWithdraw = vault.maxWithdraw(alice);
+    uint256 aliceShares = vault.balanceOf(alice);
+    uint256 neededShares = vault.previewWithdraw(withdrawAssets);
 
     vm.expectRevert(
       abi.encodeWithSelector(
-        ITokenizationSpoke.MaxWithdrawExceeded.selector,
-        maxWithdraw,
-        withdrawAssets
+        IERC20Errors.ERC20InsufficientBalance.selector,
+        alice,
+        aliceShares,
+        neededShares
       )
     );
     vm.prank(alice);
     vault.withdraw(withdrawAssets, alice, alice);
   }
 
-  function test_redeem_revertsWith_MaxRedeemExceeded_InsufficientShares() public {
+  function test_redeem_revertsWith_ERC20InsufficientBalance_on_InsufficientShares() public {
     uint256 depositAssets = 1e18;
     asset.mint(alice, depositAssets);
     Utils.approve(vault, alice, depositAssets);
@@ -310,7 +313,12 @@ contract TokenizationSpokeEdgeTest is TokenizationSpokeBaseTest {
     uint256 redeemShares = shares + 1;
 
     vm.expectRevert(
-      abi.encodeWithSelector(ITokenizationSpoke.MaxRedeemExceeded.selector, shares, redeemShares)
+      abi.encodeWithSelector(
+        IERC20Errors.ERC20InsufficientBalance.selector,
+        alice,
+        shares,
+        redeemShares
+      )
     );
     vm.prank(alice);
     vault.redeem(redeemShares, alice, alice);
