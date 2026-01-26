@@ -381,7 +381,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
       remainingDebtToCover -= _min(collateralValue, remainingDebtToCover);
     }
 
-    newRiskPremium /= _max(1, _min(totalDebtToCover, totalCollateralValue));
+    newRiskPremium = _divUp(newRiskPremium, _max(1, _min(totalDebtToCover, totalCollateralValue)));
 
     return (newRiskPremium, newAvgCollateralFactor);
   }
