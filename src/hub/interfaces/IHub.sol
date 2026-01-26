@@ -71,6 +71,7 @@ interface IHub is IHubBase, IAccessManaged {
   /// @dev addedShares The added shares of a spoke for a given asset.
   /// @dev addCap The maximum amount that can be added by a spoke, expressed in whole assets (not scaled by decimals). A value of `MAX_ALLOWED_SPOKE_CAP` indicates no cap.
   /// @dev drawCap The maximum amount that can be drawn by a spoke, expressed in whole assets (not scaled by decimals). A value of `MAX_ALLOWED_SPOKE_CAP` indicates no cap.
+  /// @dev The draw cap is enforced against the spoke's total owed, and includes any deficit reported by the spoke.
   /// @dev riskPremiumThreshold The maximum ratio of premium to drawn shares a spoke can have, expressed in BPS. A value of `MAX_RISK_PREMIUM_THRESHOLD` indicates no threshold.
   /// @dev active True if the spoke is prevented from performing any actions.
   /// @dev paused True if the spoke is prevented from performing actions that instantly update the liquidity.
