@@ -2918,6 +2918,12 @@ abstract contract Base is Test {
     return _packNonce(key, nonce);
   }
 
+  function _randomAddressOmit(address omit) internal returns (address) {
+    address addr = vm.randomAddress();
+    while (addr == omit) addr = vm.randomAddress();
+    return addr;
+  }
+
   function _assertNonceIncrement(
     INoncesKeyed verifier,
     address who,

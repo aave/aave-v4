@@ -62,8 +62,7 @@ contract TokenizationSpokeWithSigInvalidSignatureTest is TokenizationSpokeBaseTe
 
   function test_depositWithSig_revertsWith_InvalidSignature_dueTo_InvalidSigner() public {
     (address randomUser, uint256 randomUserPk) = makeAddrAndKey(string(vm.randomBytes(32)));
-    address depositor = vm.randomAddress();
-    while (depositor == randomUser) depositor = vm.randomAddress();
+    address depositor = _randomAddressOmit(randomUser);
 
     ITokenizationSpoke.TokenizedDeposit memory p = _depositData(
       vault,
@@ -79,8 +78,7 @@ contract TokenizationSpokeWithSigInvalidSignatureTest is TokenizationSpokeBaseTe
 
   function test_mintWithSig_revertsWith_InvalidSignature_dueTo_InvalidSigner() public {
     (address randomUser, uint256 randomUserPk) = makeAddrAndKey(string(vm.randomBytes(32)));
-    address depositor = vm.randomAddress();
-    while (depositor == randomUser) depositor = vm.randomAddress();
+    address depositor = _randomAddressOmit(randomUser);
 
     ITokenizationSpoke.TokenizedMint memory p = _mintData(
       vault,
@@ -96,8 +94,7 @@ contract TokenizationSpokeWithSigInvalidSignatureTest is TokenizationSpokeBaseTe
 
   function test_withdrawWithSig_revertsWith_InvalidSignature_dueTo_InvalidSigner() public {
     (address randomUser, uint256 randomUserPk) = makeAddrAndKey(string(vm.randomBytes(32)));
-    address owner = vm.randomAddress();
-    while (owner == randomUser) owner = vm.randomAddress();
+    address owner = _randomAddressOmit(randomUser);
 
     ITokenizationSpoke.TokenizedWithdraw memory p = _withdrawData(
       vault,
@@ -113,8 +110,7 @@ contract TokenizationSpokeWithSigInvalidSignatureTest is TokenizationSpokeBaseTe
 
   function test_redeemWithSig_revertsWith_InvalidSignature_dueTo_InvalidSigner() public {
     (address randomUser, uint256 randomUserPk) = makeAddrAndKey(string(vm.randomBytes(32)));
-    address owner = vm.randomAddress();
-    while (owner == randomUser) owner = vm.randomAddress();
+    address owner = _randomAddressOmit(randomUser);
 
     ITokenizationSpoke.TokenizedRedeem memory p = _redeemData(
       vault,

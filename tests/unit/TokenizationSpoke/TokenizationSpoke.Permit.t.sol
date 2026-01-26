@@ -64,8 +64,7 @@ contract TokenizationSpokePermitTest is TokenizationSpokeBaseTest {
 
   function test_permit_revertsWith_InvalidSignature_dueTo_InvalidSigner() public {
     (address randomUser, uint256 randomUserPk) = makeAddrAndKey(string(vm.randomBytes(32)));
-    address owner = vm.randomAddress();
-    while (owner == randomUser) owner = vm.randomAddress();
+    address owner = _randomAddressOmit(randomUser);
 
     EIP712Types.Permit memory p = _permitData(vault, owner, _warpBeforeRandomDeadline());
     (uint8 v, bytes32 r, bytes32 s) = vm.sign(randomUserPk, _getTypedDataHash(vault, p));
