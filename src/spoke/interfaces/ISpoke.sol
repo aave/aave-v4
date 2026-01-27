@@ -16,12 +16,12 @@ type ReserveFlags is uint8;
 /// @notice Full interface for Spoke.
 interface ISpoke is ISpokeBase, IAccessManaged, IIntentConsumer, IExtSload, IMulticall {
   /// @notice Intent data to set user position managers with EIP712-typed signature.
-  /// @param user The address of the user on whose behalf position manager can act.
+  /// @param onBehalfOf The address of the user on whose behalf position manager can act.
   /// @param updates The array of position manager updates.
   /// @param nonce The nonce for the signature.
   /// @param deadline The deadline for the signature.
   struct SetUserPositionManagers {
-    address user;
+    address onBehalfOf;
     PositionManagerUpdate[] updates;
     uint256 nonce;
     uint256 deadline;

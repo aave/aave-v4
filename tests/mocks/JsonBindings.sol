@@ -40,7 +40,7 @@ library JsonBindings {
   Vm constant vm = Vm(address(uint160(uint256(keccak256('hevm cheat code')))));
 
   // prettier-ignore
-  string constant schema_SetUserPositionManagers = "SetUserPositionManagers(address user,PositionManagerUpdate[] updates,uint256 nonce,uint256 deadline)PositionManagerUpdate(address positionManager,bool approve)";
+  string constant schema_SetUserPositionManagers = "SetUserPositionManagers(address onBehalfOf,PositionManagerUpdate[] updates,uint256 nonce,uint256 deadline)PositionManagerUpdate(address positionManager,bool approve)";
   // prettier-ignore
   string constant schema_PositionManagerUpdate = "PositionManagerUpdate(address positionManager,bool approve)";
   // prettier-ignore
@@ -56,9 +56,9 @@ library JsonBindings {
   // prettier-ignore
   string constant schema_SetUsingAsCollateral = "SetUsingAsCollateral(address spoke,uint256 reserveId,bool useAsCollateral,address onBehalfOf,uint256 nonce,uint256 deadline)";
   // prettier-ignore
-  string constant schema_UpdateUserRiskPremium = "UpdateUserRiskPremium(address spoke,address user,uint256 nonce,uint256 deadline)";
+  string constant schema_UpdateUserRiskPremium = "UpdateUserRiskPremium(address spoke,address onBehalfOf,uint256 nonce,uint256 deadline)";
   // prettier-ignore
-  string constant schema_UpdateUserDynamicConfig = "UpdateUserDynamicConfig(address spoke,address user,uint256 nonce,uint256 deadline)";
+  string constant schema_UpdateUserDynamicConfig = "UpdateUserDynamicConfig(address spoke,address onBehalfOf,uint256 nonce,uint256 deadline)";
   // prettier-ignore
   string constant schema_TokenizedDeposit = "TokenizedDeposit(address depositor,uint256 assets,address receiver,uint256 nonce,uint256 deadline)";
   // prettier-ignore
@@ -408,7 +408,9 @@ library JsonBindings {
       );
   }
 
-  function serialize(EIP712Types.TokenizedDeposit memory value) internal pure returns (string memory) {
+  function serialize(
+    EIP712Types.TokenizedDeposit memory value
+  ) internal pure returns (string memory) {
     return vm.serializeJsonType(schema_TokenizedDeposit, abi.encode(value));
   }
 
@@ -423,7 +425,8 @@ library JsonBindings {
   function deserializeTokenizedDeposit(
     string memory json
   ) public pure returns (EIP712Types.TokenizedDeposit memory) {
-    return abi.decode(vm.parseJsonType(json, schema_TokenizedDeposit), (EIP712Types.TokenizedDeposit));
+    return
+      abi.decode(vm.parseJsonType(json, schema_TokenizedDeposit), (EIP712Types.TokenizedDeposit));
   }
 
   function deserializeTokenizedDeposit(
@@ -431,7 +434,10 @@ library JsonBindings {
     string memory path
   ) public pure returns (EIP712Types.TokenizedDeposit memory) {
     return
-      abi.decode(vm.parseJsonType(json, path, schema_TokenizedDeposit), (EIP712Types.TokenizedDeposit));
+      abi.decode(
+        vm.parseJsonType(json, path, schema_TokenizedDeposit),
+        (EIP712Types.TokenizedDeposit)
+      );
   }
 
   function deserializeTokenizedDepositArray(
@@ -467,7 +473,8 @@ library JsonBindings {
     string memory json,
     string memory path
   ) public pure returns (EIP712Types.TokenizedMint memory) {
-    return abi.decode(vm.parseJsonType(json, path, schema_TokenizedMint), (EIP712Types.TokenizedMint));
+    return
+      abi.decode(vm.parseJsonType(json, path, schema_TokenizedMint), (EIP712Types.TokenizedMint));
   }
 
   function deserializeTokenizedMintArray(
@@ -475,10 +482,15 @@ library JsonBindings {
     string memory path
   ) public pure returns (EIP712Types.TokenizedMint[] memory) {
     return
-      abi.decode(vm.parseJsonTypeArray(json, path, schema_TokenizedMint), (EIP712Types.TokenizedMint[]));
+      abi.decode(
+        vm.parseJsonTypeArray(json, path, schema_TokenizedMint),
+        (EIP712Types.TokenizedMint[])
+      );
   }
 
-  function serialize(EIP712Types.TokenizedWithdraw memory value) internal pure returns (string memory) {
+  function serialize(
+    EIP712Types.TokenizedWithdraw memory value
+  ) internal pure returns (string memory) {
     return vm.serializeJsonType(schema_TokenizedWithdraw, abi.encode(value));
   }
 
@@ -493,7 +505,8 @@ library JsonBindings {
   function deserializeTokenizedWithdraw(
     string memory json
   ) public pure returns (EIP712Types.TokenizedWithdraw memory) {
-    return abi.decode(vm.parseJsonType(json, schema_TokenizedWithdraw), (EIP712Types.TokenizedWithdraw));
+    return
+      abi.decode(vm.parseJsonType(json, schema_TokenizedWithdraw), (EIP712Types.TokenizedWithdraw));
   }
 
   function deserializeTokenizedWithdraw(
@@ -501,7 +514,10 @@ library JsonBindings {
     string memory path
   ) public pure returns (EIP712Types.TokenizedWithdraw memory) {
     return
-      abi.decode(vm.parseJsonType(json, path, schema_TokenizedWithdraw), (EIP712Types.TokenizedWithdraw));
+      abi.decode(
+        vm.parseJsonType(json, path, schema_TokenizedWithdraw),
+        (EIP712Types.TokenizedWithdraw)
+      );
   }
 
   function deserializeTokenizedWithdrawArray(
@@ -515,7 +531,9 @@ library JsonBindings {
       );
   }
 
-  function serialize(EIP712Types.TokenizedRedeem memory value) internal pure returns (string memory) {
+  function serialize(
+    EIP712Types.TokenizedRedeem memory value
+  ) internal pure returns (string memory) {
     return vm.serializeJsonType(schema_TokenizedRedeem, abi.encode(value));
   }
 
@@ -530,14 +548,19 @@ library JsonBindings {
   function deserializeTokenizedRedeem(
     string memory json
   ) public pure returns (EIP712Types.TokenizedRedeem memory) {
-    return abi.decode(vm.parseJsonType(json, schema_TokenizedRedeem), (EIP712Types.TokenizedRedeem));
+    return
+      abi.decode(vm.parseJsonType(json, schema_TokenizedRedeem), (EIP712Types.TokenizedRedeem));
   }
 
   function deserializeTokenizedRedeem(
     string memory json,
     string memory path
   ) public pure returns (EIP712Types.TokenizedRedeem memory) {
-    return abi.decode(vm.parseJsonType(json, path, schema_TokenizedRedeem), (EIP712Types.TokenizedRedeem));
+    return
+      abi.decode(
+        vm.parseJsonType(json, path, schema_TokenizedRedeem),
+        (EIP712Types.TokenizedRedeem)
+      );
   }
 
   function deserializeTokenizedRedeemArray(

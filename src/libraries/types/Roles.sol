@@ -10,5 +10,7 @@ library Roles {
   uint64 public constant HUB_ADMIN_ROLE = 1;
   uint64 public constant SPOKE_ADMIN_ROLE = 2;
   uint64 public constant USER_POSITION_UPDATER_ROLE = 3;
-  uint64 public constant DEFICIT_ELIMINATOR_ROLE = 4;
+  uint64 public constant HUB_CONFIGURATOR_ROLE = 4;
+  uint64 public constant SPOKE_CONFIGURATOR_ROLE = 5;
+  uint64 public constant DEFICIT_ELIMINATOR_ROLE = 6;
 }
