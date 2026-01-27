@@ -9,7 +9,7 @@ pragma solidity ^0.8.20;
 library EIP712Types {
   /// @dev Spoke Intents
   struct SetUserPositionManagers {
-    address user;
+    address onBehalfOf;
     PositionManagerUpdate[] updates;
     uint256 nonce;
     uint256 deadline;
@@ -76,14 +76,14 @@ library EIP712Types {
 
   struct UpdateUserRiskPremium {
     address spoke;
-    address user;
+    address onBehalfOf;
     uint256 nonce;
     uint256 deadline;
   }
 
   struct UpdateUserDynamicConfig {
     address spoke;
-    address user;
+    address onBehalfOf;
     uint256 nonce;
     uint256 deadline;
   }
