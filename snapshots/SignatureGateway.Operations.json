@@ -1,10 +1,10 @@
 {
-  "borrowWithSig": "212853",
-  "repayWithSig": "186429",
+  "borrowWithSig": "212949",
+  "repayWithSig": "186465",
   "setSelfAsUserPositionManagerWithSig": "75385",
   "setUsingAsCollateralWithSig": "85349",
-  "supplyWithSig": "151931",
+  "supplyWithSig": "151960",
   "updateUserDynamicConfigWithSig": "63086",
   "updateUserRiskPremiumWithSig": "62056",
-  "withdrawWithSig": "130572"
+  "withdrawWithSig": "130648"
 }
