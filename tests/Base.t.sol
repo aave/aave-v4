@@ -163,6 +163,8 @@ abstract contract Base is Test {
   address internal TREASURY_ADMIN = makeAddr('TREASURY_ADMIN');
   address internal LIQUIDATOR = makeAddr('LIQUIDATOR');
   address internal POSITION_MANAGER = makeAddr('POSITION_MANAGER');
+  address internal HUB_CONFIGURATOR = makeAddr('HUB_CONFIGURATOR');
+  address internal SPOKE_CONFIGURATOR = makeAddr('SPOKE_CONFIGURATOR');
 
   TokenList internal tokenList;
   uint256 internal wethAssetId = 0;
@@ -316,6 +318,9 @@ abstract contract Base is Test {
     manager.grantRole(Roles.USER_POSITION_UPDATER_ROLE, SPOKE_ADMIN, 0);
     manager.grantRole(Roles.USER_POSITION_UPDATER_ROLE, USER_POSITION_UPDATER, 0);
 
+    manager.grantRole(Roles.HUB_CONFIGURATOR_ROLE, HUB_CONFIGURATOR, 0);
+    manager.grantRole(Roles.SPOKE_CONFIGURATOR_ROLE, SPOKE_CONFIGURATOR, 0);
+
     manager.grantRole(Roles.DEFICIT_ELIMINATOR_ROLE, HUB_ADMIN, 0);
     manager.grantRole(Roles.DEFICIT_ELIMINATOR_ROLE, DEFICIT_ELIMINATOR, 0);
 
@@ -355,6 +360,90 @@ abstract contract Base is Test {
       selectors[0] = IHub.eliminateDeficit.selector;
       manager.setTargetFunctionRole(address(targetHub), selectors, Roles.DEFICIT_ELIMINATOR_ROLE);
     }
+
+    setUpHubConfiguratorRoles(HUB_CONFIGURATOR, address(manager));
+    setUpSpokeConfiguratorRoles(SPOKE_CONFIGURATOR, address(manager));
+
+    vm.stopPrank();
+  }
+
+  function setUpHubConfiguratorRoles(address hubConfigurator, address manager) internal {
+    vm.startPrank(ADMIN);
+
+    // Grant HUB_ADMIN_ROLE so the configurator can call hub functions
+    IAccessManager(manager).grantRole(Roles.HUB_ADMIN_ROLE, hubConfigurator, 0);
+
+    // Set up HubConfigurator function permissions - all functions callable by HUB_CONFIGURATOR_ROLE
+    bytes4[] memory selectors = new bytes4[](22);
+    selectors[0] = IHubConfigurator.updateLiquidityFee.selector;
+    selectors[1] = IHubConfigurator.updateFeeReceiver.selector;
+    selectors[2] = IHubConfigurator.updateFeeConfig.selector;
+    selectors[3] = IHubConfigurator.updateInterestRateStrategy.selector;
+    selectors[4] = IHubConfigurator.updateReinvestmentController.selector;
+    selectors[5] = IHubConfigurator.freezeAsset.selector;
+    selectors[6] = IHubConfigurator.deactivateAsset.selector;
+    selectors[7] = IHubConfigurator.haltAsset.selector;
+    selectors[8] = IHubConfigurator.addSpoke.selector;
+    selectors[9] = IHubConfigurator.addSpokeToAssets.selector;
+    selectors[10] = IHubConfigurator.updateSpokeActive.selector;
+    selectors[11] = IHubConfigurator.updateSpokeHalted.selector;
+    selectors[12] = IHubConfigurator.updateSpokeSupplyCap.selector;
+    selectors[13] = IHubConfigurator.updateSpokeDrawCap.selector;
+    selectors[14] = IHubConfigurator.updateSpokeRiskPremiumThreshold.selector;
+    selectors[15] = IHubConfigurator.updateSpokeCaps.selector;
+    selectors[16] = IHubConfigurator.deactivateSpoke.selector;
+    selectors[17] = IHubConfigurator.haltSpoke.selector;
+    selectors[18] = IHubConfigurator.freezeSpoke.selector;
+    selectors[19] = IHubConfigurator.updateInterestRateData.selector;
+    selectors[20] = IHubConfigurator.addAsset.selector;
+    selectors[21] = IHubConfigurator.addAssetWithDecimals.selector;
+    IAccessManager(manager).setTargetFunctionRole(
+      hubConfigurator,
+      selectors,
+      Roles.HUB_CONFIGURATOR_ROLE
+    );
+
+    vm.stopPrank();
+  }
+
+  function setUpSpokeConfiguratorRoles(address spokeConfigurator, address manager) internal {
+    vm.startPrank(ADMIN);
+
+    // Grant SPOKE_ADMIN_ROLE so the configurator can call spoke functions
+    IAccessManager(manager).grantRole(Roles.SPOKE_ADMIN_ROLE, spokeConfigurator, 0);
+
+    // Set up SpokeConfigurator function permissions - all functions callable by SPOKE_CONFIGURATOR_ROLE
+    bytes4[] memory selectors = new bytes4[](24);
+    selectors[0] = ISpokeConfigurator.updateReservePriceSource.selector;
+    selectors[1] = ISpokeConfigurator.updateLiquidationTargetHealthFactor.selector;
+    selectors[2] = ISpokeConfigurator.updateHealthFactorForMaxBonus.selector;
+    selectors[3] = ISpokeConfigurator.updateLiquidationBonusFactor.selector;
+    selectors[4] = ISpokeConfigurator.updateLiquidationConfig.selector;
+    selectors[5] = ISpokeConfigurator.updateMaxReserves.selector;
+    selectors[6] = ISpokeConfigurator.addReserve.selector;
+    selectors[7] = ISpokeConfigurator.updatePaused.selector;
+    selectors[8] = ISpokeConfigurator.updateFrozen.selector;
+    selectors[9] = ISpokeConfigurator.updateBorrowable.selector;
+    selectors[10] = ISpokeConfigurator.updateLiquidatable.selector;
+    selectors[11] = ISpokeConfigurator.updateReceiveSharesEnabled.selector;
+    selectors[12] = ISpokeConfigurator.updateCollateralRisk.selector;
+    selectors[13] = ISpokeConfigurator.addCollateralFactor.selector;
+    selectors[14] = ISpokeConfigurator.updateCollateralFactor.selector;
+    selectors[15] = ISpokeConfigurator.addMaxLiquidationBonus.selector;
+    selectors[16] = ISpokeConfigurator.updateMaxLiquidationBonus.selector;
+    selectors[17] = ISpokeConfigurator.addLiquidationFee.selector;
+    selectors[18] = ISpokeConfigurator.updateLiquidationFee.selector;
+    selectors[19] = ISpokeConfigurator.addDynamicReserveConfig.selector;
+    selectors[20] = ISpokeConfigurator.updateDynamicReserveConfig.selector;
+    selectors[21] = ISpokeConfigurator.pauseAllReserves.selector;
+    selectors[22] = ISpokeConfigurator.freezeAllReserves.selector;
+    selectors[23] = ISpokeConfigurator.updatePositionManager.selector;
+    IAccessManager(manager).setTargetFunctionRole(
+      spokeConfigurator,
+      selectors,
+      Roles.SPOKE_CONFIGURATOR_ROLE
+    );
+
     vm.stopPrank();
   }
 
@@ -2751,14 +2840,14 @@ abstract contract Base is Test {
 
   function _getTypedDataHash(
     ISpoke spoke,
-    ISpoke.SetUserPositionManagers memory setUserPositionManager
+    ISpoke.SetUserPositionManagers memory setUserPositionManagers
   ) internal view returns (bytes32) {
     return
       keccak256(
         abi.encodePacked(
           '\x19\x01',
           spoke.DOMAIN_SEPARATOR(),
-          vm.eip712HashStruct('SetUserPositionManagers', abi.encode(setUserPositionManager))
+          vm.eip712HashStruct('SetUserPositionManagers', abi.encode(setUserPositionManagers))
         )
       );
   }

@@ -35,6 +35,7 @@ lint_on_build = false
 
 [profile.default.fuzz]
 runs = 1000
+seed = "0x640"
 
 [profile.pr.fuzz]
 runs = 5000
