@@ -4,11 +4,21 @@ pragma solidity ^0.8.20;
 
 import {INoncesKeyed} from 'src/interfaces/INoncesKeyed.sol';
 
-/// @notice Provides tracking nonces for addresses. Supports key-ed nonces, where nonces will only increment for each key.
-/// @author Modified from OpenZeppelin https://github.com/OpenZeppelin/openzeppelin-contracts/blob/v5.2.0/contracts/utils/NoncesKeyed.sol
+/// @title NoncesKeyed
+/// @author Aave Labs
+/// @notice Provides tracking nonces for addresses. Supports keyed nonces, where nonces will only increment for each key.
 /// @dev Follows the https://eips.ethereum.org/EIPS/eip-4337#semi-abstracted-nonce-support[ERC-4337's semi-abstracted nonce system].
+/// @dev Inspired by the OpenZeppelin NoncesKeyed contract.
 contract NoncesKeyed is INoncesKeyed {
-  mapping(address owner => mapping(uint192 key => uint64 nonce)) private _nonces;
+  /// @custom:storage-location erc7201:aave-v4.storage.NoncesKeyed
+  struct NoncesKeyedStorage {
+    mapping(address owner => mapping(uint192 key => uint64 nonce)) _nonces;
+  }
+
+  /// @dev The storage slot for the NoncesKeyed storage struct.
+  bytes32 private constant NAMESPACE_SLOT =
+    // keccak256(abi.encode(uint256(keccak256("aave-v4.storage.NoncesKeyed")) - 1)) & ~bytes32(uint256(0xff))
+    0x474d4a5585c1bae3dbeb574bb96408c7174aadd8ab635de4ab498e2723195f00;
 
   /// @inheritdoc INoncesKeyed
   function useNonce(uint192 key) external returns (uint256) {
@@ -17,7 +27,7 @@ contract NoncesKeyed is INoncesKeyed {
 
   /// @inheritdoc INoncesKeyed
   function nonces(address owner, uint192 key) external view returns (uint256) {
-    return _pack(key, _nonces[owner][key]);
+    return _pack(key, _getNoncesKeyedStorage()._nonces[owner][key]);
   }
 
   /// @notice Consumes the next unused nonce for an address and key.
@@ -28,7 +38,7 @@ contract NoncesKeyed is INoncesKeyed {
     // decremented or reset. This guarantees that the nonce never overflows.
     unchecked {
       // It is important to do x++ and not ++x here.
-      return _pack(key, _nonces[owner][key]++);
+      return _pack(key, _getNoncesKeyedStorage()._nonces[owner][key]++);
     }
   }
 
@@ -47,5 +57,12 @@ contract NoncesKeyed is INoncesKeyed {
   /// @dev Unpack a keyNonce into its key and nonce components.
   function _unpack(uint256 keyNonce) private pure returns (uint192 key, uint64 nonce) {
     return (uint192(keyNonce >> 64), uint64(keyNonce));
+  }
+
+  /// @dev Loads the NoncesKeyed storage struct.
+  function _getNoncesKeyedStorage() private pure returns (NoncesKeyedStorage storage $) {
+    assembly ('memory-safe') {
+      $.slot := NAMESPACE_SLOT
+    }
   }
 }
