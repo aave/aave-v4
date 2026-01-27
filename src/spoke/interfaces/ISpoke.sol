@@ -265,7 +265,7 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
   error Unauthorized();
 
   /// @notice Thrown if a config key is uninitialized when updating a dynamic reserve config.
-  error ConfigKeyUninitialized();
+  error DynamicConfigKeyUninitialized();
 
   /// @notice Thrown if an inactive position manager is set as a user's position manager.
   error InactivePositionManager();
@@ -358,7 +358,7 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
 
   /// @notice Updates the dynamic reserve config for a given reserve at the specified key.
   /// @dev It reverts if the reserve associated with the given reserve identifier is not listed.
-  /// @dev Reverts with `ConfigKeyUninitialized` if the config key has not been initialized yet.
+  /// @dev Reverts with `DynamicConfigKeyUninitialized` if the config key has not been initialized yet.
   /// @dev Reverts with `InvalidCollateralFactor` if the collateral factor is 0.
   /// @param reserveId The identifier of the reserve.
   /// @param dynamicConfigKey The key of the config to update.
