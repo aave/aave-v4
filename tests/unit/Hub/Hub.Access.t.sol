@@ -16,7 +16,7 @@ contract HubAccessTest is HubBase {
     });
     IHub.SpokeConfig memory spokeConfig = IHub.SpokeConfig({
       active: true,
-      paused: false,
+      halted: false,
       addCap: 1000,
       drawCap: 1000,
       riskPremiumThreshold: 1000_00
@@ -145,7 +145,7 @@ contract HubAccessTest is HubBase {
       address(spoke1),
       IHub.SpokeConfig({
         active: true,
-        paused: false,
+        halted: false,
         addCap: 1000,
         drawCap: 1000,
         riskPremiumThreshold: 1000_00
@@ -262,7 +262,7 @@ contract HubAccessTest is HubBase {
     });
     IHub.SpokeConfig memory spokeConfig = IHub.SpokeConfig({
       active: true,
-      paused: false,
+      halted: false,
       addCap: 1000,
       drawCap: 1000,
       riskPremiumThreshold: 1000_00

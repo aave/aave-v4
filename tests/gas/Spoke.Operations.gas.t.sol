@@ -302,7 +302,7 @@ contract SpokeOperations_Gas_Tests is SpokeBase {
     updates[0] = ISpoke.PositionManagerUpdate(positionManager, true);
 
     ISpoke.SetUserPositionManagers memory p = ISpoke.SetUserPositionManagers({
-      user: user,
+      onBehalfOf: user,
       updates: updates,
       nonce: spoke.nonces(user, nonceKey),
       deadline: vm.getBlockTimestamp()
