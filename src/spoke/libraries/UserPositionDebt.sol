@@ -42,7 +42,7 @@ library UserPositionDebt {
   /// @param riskPremium The new risk premium, expressed in BPS.
   /// @param restoredPremiumRay The amount of premium to be restored, expressed in asset units and scaled by RAY.
   /// @return The calculated premium delta.
-  function getPremiumDelta(
+  function calculatePremiumDelta(
     ISpoke.UserPosition storage userPosition,
     uint256 drawnSharesTaken,
     uint256 drawnIndex,

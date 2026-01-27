@@ -5,13 +5,19 @@ pragma solidity ^0.8.20;
 /// @title EIP712Types library
 /// @author Aave Labs
 /// @notice Defines type structs used in EIP712-typed signatures.
+/// @dev Consolidated types to generate JsonBindings.sol using `forge bind-json` for vm.eip712* cheat-codes.
 library EIP712Types {
-  struct SetUserPositionManager {
-    address positionManager;
+  /// @dev Spoke Intents
+  struct SetUserPositionManagers {
     address user;
-    bool approve;
+    PositionManagerUpdate[] updates;
     uint256 nonce;
     uint256 deadline;
+  }
+
+  struct PositionManagerUpdate {
+    address positionManager;
+    bool approve;
   }
 
   struct Permit {
@@ -22,6 +28,7 @@ library EIP712Types {
     uint256 deadline;
   }
 
+  /// @dev SignatureGateway Intents
   struct Supply {
     address spoke;
     uint256 reserveId;

@@ -138,8 +138,8 @@ contract HubRestoreTest is HubBase {
     hub1.restore(daiAssetId, 1, premiumDelta);
   }
 
-  function test_restore_revertsWith_SpokePaused() public {
-    _updateSpokePaused(hub1, daiAssetId, address(spoke1), true);
+  function test_restore_revertsWith_SpokeHalted() public {
+    _updateSpokeHalted(hub1, daiAssetId, address(spoke1), true);
 
     IHubBase.PremiumDelta memory premiumDelta = _getExpectedPremiumDelta(
       spoke1,
@@ -148,7 +148,7 @@ contract HubRestoreTest is HubBase {
       0
     );
 
-    vm.expectRevert(IHub.SpokePaused.selector);
+    vm.expectRevert(IHub.SpokeHalted.selector);
     vm.prank(address(spoke1));
     hub1.restore(daiAssetId, 1, premiumDelta);
   }

@@ -55,7 +55,13 @@ contract HubReportDeficitTest is HubBase {
     drawnAmount = bound(drawnAmount, 1, MAX_SUPPLY_AMOUNT);
 
     // draw usdx liquidity to be restored
-    _drawLiquidity(usdxAssetId, drawnAmount, true, true, address(spoke1));
+    _drawLiquidity({
+      assetId: usdxAssetId,
+      amount: drawnAmount,
+      withPremium: true,
+      skipTime: true,
+      spoke: address(spoke1)
+    });
 
     (uint256 drawn, uint256 premium) = hub1.getSpokeOwed(usdxAssetId, address(spoke1));
     assertGt(drawn, 0);
@@ -112,7 +118,7 @@ contract HubReportDeficitTest is HubBase {
     );
 
     uint256 drawnDeficit = vm.randomUint(0, drawn);
-    uint256 premiumDeficitRay = vm.randomUint(spokePremiumRay + 1, UINT256_MAX);
+    uint256 premiumDeficitRay = vm.randomUint(spokePremiumRay + 1, 2 ** 255 - 1);
 
     vm.expectRevert(
       abi.encodeWithSelector(IHub.SurplusPremiumRayDeficitReported.selector, spokePremiumRay)
@@ -128,6 +134,24 @@ contract HubReportDeficitTest is HubBase {
         restoredPremiumRay: premiumDeficitRay
       })
     );
+  }
+
+  /// @dev halted spoke can still report deficit
+  function test_reportDeficit_halted() public {
+    // draw usdx liquidity to be restored
+    _drawLiquidity({
+      assetId: usdxAssetId,
+      amount: 1,
+      withPremium: true,
+      skipTime: true,
+      spoke: address(spoke1)
+    });
+
+    _updateSpokeHalted(hub1, usdxAssetId, address(spoke1), true);
+
+    // even if spoke is halted, it can report deficit
+    vm.prank(address(spoke1));
+    hub1.reportDeficit(usdxAssetId, 1, ZERO_PREMIUM_DELTA);
   }
 
   function test_reportDeficit_with_premium() public {

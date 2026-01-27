@@ -24,7 +24,7 @@ contract SpokeConfigTest is SpokeBase {
     assertTrue(_isUsingAsCollateral(spoke1, daiReserveId, alice), 'alice using as collateral');
     assertFalse(_isUsingAsCollateral(spoke1, daiReserveId, bob), 'bob not using as collateral');
 
-    updateReserveFrozenFlag(spoke1, daiReserveId, true);
+    _updateReserveFrozenFlag(spoke1, daiReserveId, true);
     assertTrue(spoke1.getReserve(daiReserveId).flags.frozen(), 'reserve status frozen');
 
     // disallow when activating
@@ -50,6 +50,47 @@ contract SpokeConfigTest is SpokeBase {
     vm.expectRevert(ISpoke.ReservePaused.selector);
     vm.prank(alice);
     spoke1.setUsingAsCollateral(daiReserveId, true, alice);
+  }
+
+  function test_setUsingAsCollateral_revertsWith_ReentrancyGuardReentrantCall() public {
+    Utils.supplyCollateral({
+      spoke: spoke1,
+      reserveId: _wethReserveId(spoke1),
+      caller: bob,
+      amount: 1e18,
+      onBehalfOf: bob
+    });
+
+    Utils.supplyCollateral({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      caller: bob,
+      amount: 100e18,
+      onBehalfOf: bob
+    });
+
+    Utils.borrow({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      caller: bob,
+      amount: 100e18,
+      onBehalfOf: bob
+    });
+
+    MockReentrantCaller reentrantCaller = new MockReentrantCaller(
+      address(spoke1),
+      ISpoke.setUsingAsCollateral.selector
+    );
+
+    // reentrant hub.refreshPremium call
+    vm.mockFunction(
+      address(_hub(spoke1, _daiReserveId(spoke1))),
+      address(reentrantCaller),
+      abi.encodeWithSelector(IHubBase.refreshPremium.selector)
+    );
+    vm.expectRevert(ReentrancyGuardTransient.ReentrancyGuardReentrantCall.selector);
+    vm.prank(bob);
+    spoke1.setUsingAsCollateral(_daiReserveId(spoke1), false, bob);
   }
 
   /// no action taken when collateral status is unchanged

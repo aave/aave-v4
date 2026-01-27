@@ -58,7 +58,7 @@ contract SpokeMultipleHubSiloedBorrowingTest is SpokeMultipleHubBase {
       siloedVars.assetBId,
       address(newSpoke),
       IHub.SpokeConfig({
-        paused: false,
+        halted: false,
         active: true,
         addCap: Constants.MAX_ALLOWED_SPOKE_CAP,
         drawCap: siloedVars.assetBDrawCap,
@@ -91,7 +91,7 @@ contract SpokeMultipleHubSiloedBorrowingTest is SpokeMultipleHubBase {
       address(spoke1),
       IHub.SpokeConfig({
         active: true,
-        paused: false,
+        halted: false,
         addCap: Constants.MAX_ALLOWED_SPOKE_CAP,
         drawCap: Constants.MAX_ALLOWED_SPOKE_CAP,
         riskPremiumThreshold: Constants.MAX_ALLOWED_COLLATERAL_RISK
@@ -113,7 +113,7 @@ contract SpokeMultipleHubSiloedBorrowingTest is SpokeMultipleHubBase {
       address(newSpoke),
       IHub.SpokeConfig({
         active: true,
-        paused: false,
+        halted: false,
         addCap: siloedVars.assetAAddCap,
         drawCap: 0,
         riskPremiumThreshold: Constants.MAX_ALLOWED_COLLATERAL_RISK

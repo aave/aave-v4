@@ -272,6 +272,7 @@ contract TreasurySpokeTest is SpokeBase {
     assertEq(drawn, 0);
     assertEq(premium, 0);
     assertEq(treasurySpoke.getUserTotalDebt(reserveId, alice), 0);
+    assertEq(treasurySpoke.getUserPremiumDebtRay(reserveId, alice), 0);
 
     updateLiquidityFee(hub1, spoke1.getReserve(reserveId).assetId, 100_00);
 

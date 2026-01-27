@@ -64,12 +64,12 @@ contract UserPositionDebtTest is Base {
     assertEq(u.getUserPosition().premiumOffsetRay, -90e18 * 1e27);
   }
 
-  function test_fuzz_getPremiumDelta(BoundParams memory params) public {
+  function test_fuzz_calculatePremiumDelta(BoundParams memory params) public {
     params = _bound(params);
     _mockUserDrawnShares(params.drawnShares);
     _mockUserPremiumData(params.premiumShares, params.premiumOffsetRay);
     assertEq(
-      u.getPremiumDelta(
+      u.calculatePremiumDelta(
         params.drawnSharesTaken,
         params.drawnIndex,
         params.riskPremium,
@@ -86,9 +86,9 @@ contract UserPositionDebtTest is Base {
     );
   }
 
-  function test_getPremiumDelta() public view {
+  function test_calculatePremiumDelta() public view {
     assertEq(
-      u.getPremiumDelta(0, DRAWN_INDEX, 20_00, 48.5e18 * 1e27),
+      u.calculatePremiumDelta(0, DRAWN_INDEX, 20_00, 48.5e18 * 1e27),
       IHubBase.PremiumDelta({
         sharesDelta: -59e18, // 40 - 99
         offsetRayDelta: -40e18 * 1e27, // (60 - (248.5 - 48.5)) - (-100)
