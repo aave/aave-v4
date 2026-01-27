@@ -398,7 +398,7 @@ abstract contract Spoke is
 
     uint256 newRiskPremium = 0;
     if (isUserInDeficit) {
-      _reportDeficit(user);
+      _notifyReportDeficit(user);
     } else {
       newRiskPremium = _calculateUserAccountData(user).riskPremium;
     }
@@ -852,8 +852,8 @@ abstract contract Spoke is
 
   /// @notice Reports deficits for all debt reserves of the user, including the reserve being repaid during liquidation.
   /// @dev Deficit validation should already have occurred during liquidation.
-  /// @dev It clears the user position, setting drawn debt, premium debt, and risk premium to zero.
-  function _reportDeficit(address user) internal {
+  /// @dev It clears the user position, setting drawn debt and premium debt to zero.
+  function _notifyReportDeficit(address user) internal {
     PositionStatus storage positionStatus = _positionStatus[user];
 
     uint256 reserveId = _reserveCount;
