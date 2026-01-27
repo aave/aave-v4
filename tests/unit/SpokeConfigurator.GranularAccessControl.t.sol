@@ -52,7 +52,6 @@ contract SpokeConfiguratorGranularAccessControlTest is SpokeBase {
     reserveSelectors[3] = ISpokeConfigurator.updatePaused.selector;
     reserveSelectors[4] = ISpokeConfigurator.updateFrozen.selector;
     reserveSelectors[5] = ISpokeConfigurator.updateBorrowable.selector;
-    reserveSelectors[6] = ISpokeConfigurator.updateLiquidatable.selector;
     reserveSelectors[7] = ISpokeConfigurator.updateReceiveSharesEnabled.selector;
     reserveSelectors[8] = ISpokeConfigurator.updateCollateralRisk.selector;
     reserveSelectors[9] = ISpokeConfigurator.addCollateralFactor.selector;
@@ -135,9 +134,6 @@ contract SpokeConfiguratorGranularAccessControlTest is SpokeBase {
     );
     reserveManagerCalldata.push(
       abi.encodeCall(ISpokeConfigurator.updateBorrowable, (spokeAddr, reserveId, false))
-    );
-    reserveManagerCalldata.push(
-      abi.encodeCall(ISpokeConfigurator.updateLiquidatable, (spokeAddr, reserveId, false))
     );
     reserveManagerCalldata.push(
       abi.encodeCall(ISpokeConfigurator.updateReceiveSharesEnabled, (spokeAddr, reserveId, false))

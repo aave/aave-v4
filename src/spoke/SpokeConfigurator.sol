@@ -117,18 +117,6 @@ contract SpokeConfigurator is AccessManaged, ISpokeConfigurator {
   }
 
   /// @inheritdoc ISpokeConfigurator
-  function updateLiquidatable(
-    address spoke,
-    uint256 reserveId,
-    bool liquidatable
-  ) external restricted {
-    ISpoke targetSpoke = ISpoke(spoke);
-    ISpoke.ReserveConfig memory reserveConfig = targetSpoke.getReserveConfig(reserveId);
-    reserveConfig.liquidatable = liquidatable;
-    targetSpoke.updateReserveConfig(reserveId, reserveConfig);
-  }
-
-  /// @inheritdoc ISpokeConfigurator
   function updateReceiveSharesEnabled(
     address spoke,
     uint256 reserveId,
