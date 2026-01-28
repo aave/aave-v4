@@ -30,8 +30,7 @@ interface IHubConfigurator {
     bytes calldata irData
   ) external returns (uint256);
 
-  /// @notice Adds a new asset to the Hub.
-  /// @dev Retrieves the decimals of the underlying asset from its ERC20 contract.
+  /// @notice Adds a new asset to the Hub with explicit decimals.
   /// @dev The fee receiver is automatically added as a spoke with maximum caps.
   /// @param hub The address of the Hub contract.
   /// @param underlying The address of the underlying asset.
@@ -41,7 +40,7 @@ interface IHubConfigurator {
   /// @param irStrategy The address of the interest rate strategy contract.
   /// @param irData The interest rate data to apply to the given asset, encoded in bytes.
   /// @return The unique identifier of the added asset.
-  function addAsset(
+  function addAssetWithDecimals(
     address hub,
     address underlying,
     uint8 decimals,

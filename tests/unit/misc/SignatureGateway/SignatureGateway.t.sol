@@ -241,7 +241,7 @@ contract SignatureGatewayTest is SignatureGatewayBaseTest {
 
     ISpoke.SetUserPositionManagers memory p = ISpoke.SetUserPositionManagers({
       updates: updates,
-      user: alice,
+      onBehalfOf: alice,
       nonce: spoke1.nonces(address(alice), _randomNonceKey()), // note: this typed sig is forwarded to spoke
       deadline: _warpBeforeRandomDeadline()
     });
@@ -253,7 +253,7 @@ contract SignatureGatewayTest is SignatureGatewayBaseTest {
     vm.prank(vm.randomAddress());
     gateway.setSelfAsUserPositionManagerWithSig({
       spoke: address(spoke1),
-      user: p.user,
+      onBehalfOf: p.onBehalfOf,
       approve: p.updates[0].approve,
       nonce: p.nonce,
       deadline: p.deadline,
