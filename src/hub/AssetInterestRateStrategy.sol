@@ -51,7 +51,6 @@ contract AssetInterestRateStrategy is IAssetInterestRateStrategy {
         rateData.optimalUsageRatio <= MAX_OPTIMAL_RATIO,
       InvalidOptimalUsageRatio()
     );
-    require(rateData.variableRateSlope1 <= rateData.variableRateSlope2, Slope2MustBeGteSlope1());
     require(
       rateData.variableRateSlope2 * rateData.optimalUsageRatio >=
         rateData.variableRateSlope1 * (MAX_USAGE_RATIO - rateData.optimalUsageRatio),
