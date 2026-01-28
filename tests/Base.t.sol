@@ -413,7 +413,7 @@ abstract contract Base is Test {
     IAccessManager(manager).grantRole(Roles.SPOKE_ADMIN_ROLE, spokeConfigurator, 0);
 
     // Set up SpokeConfigurator function permissions - all functions callable by SPOKE_CONFIGURATOR_ROLE
-    bytes4[] memory selectors = new bytes4[](24);
+    bytes4[] memory selectors = new bytes4[](23);
     selectors[0] = ISpokeConfigurator.updateReservePriceSource.selector;
     selectors[1] = ISpokeConfigurator.updateLiquidationTargetHealthFactor.selector;
     selectors[2] = ISpokeConfigurator.updateHealthFactorForMaxBonus.selector;
@@ -424,19 +424,19 @@ abstract contract Base is Test {
     selectors[7] = ISpokeConfigurator.updatePaused.selector;
     selectors[8] = ISpokeConfigurator.updateFrozen.selector;
     selectors[9] = ISpokeConfigurator.updateBorrowable.selector;
-    selectors[11] = ISpokeConfigurator.updateReceiveSharesEnabled.selector;
-    selectors[12] = ISpokeConfigurator.updateCollateralRisk.selector;
-    selectors[13] = ISpokeConfigurator.addCollateralFactor.selector;
-    selectors[14] = ISpokeConfigurator.updateCollateralFactor.selector;
-    selectors[15] = ISpokeConfigurator.addMaxLiquidationBonus.selector;
-    selectors[16] = ISpokeConfigurator.updateMaxLiquidationBonus.selector;
-    selectors[17] = ISpokeConfigurator.addLiquidationFee.selector;
-    selectors[18] = ISpokeConfigurator.updateLiquidationFee.selector;
-    selectors[19] = ISpokeConfigurator.addDynamicReserveConfig.selector;
-    selectors[20] = ISpokeConfigurator.updateDynamicReserveConfig.selector;
-    selectors[21] = ISpokeConfigurator.pauseAllReserves.selector;
-    selectors[22] = ISpokeConfigurator.freezeAllReserves.selector;
-    selectors[23] = ISpokeConfigurator.updatePositionManager.selector;
+    selectors[10] = ISpokeConfigurator.updateReceiveSharesEnabled.selector;
+    selectors[11] = ISpokeConfigurator.updateCollateralRisk.selector;
+    selectors[12] = ISpokeConfigurator.addCollateralFactor.selector;
+    selectors[13] = ISpokeConfigurator.updateCollateralFactor.selector;
+    selectors[14] = ISpokeConfigurator.addMaxLiquidationBonus.selector;
+    selectors[15] = ISpokeConfigurator.updateMaxLiquidationBonus.selector;
+    selectors[16] = ISpokeConfigurator.addLiquidationFee.selector;
+    selectors[17] = ISpokeConfigurator.updateLiquidationFee.selector;
+    selectors[18] = ISpokeConfigurator.addDynamicReserveConfig.selector;
+    selectors[19] = ISpokeConfigurator.updateDynamicReserveConfig.selector;
+    selectors[20] = ISpokeConfigurator.pauseAllReserves.selector;
+    selectors[21] = ISpokeConfigurator.freezeAllReserves.selector;
+    selectors[22] = ISpokeConfigurator.updatePositionManager.selector;
     IAccessManager(manager).setTargetFunctionRole(
       spokeConfigurator,
       selectors,
