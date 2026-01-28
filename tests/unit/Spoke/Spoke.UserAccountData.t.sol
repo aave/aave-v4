@@ -13,7 +13,7 @@ contract SpokeUserAccountDataTest is SpokeBase {
   function setUp() public override {
     super.setUp();
     spoke = MockSpoke(address(spoke1));
-    address mockSpokeImpl = address(new MockSpoke(address(spoke.ORACLE())));
+    address mockSpokeImpl = address(new MockSpoke(address(spoke.ORACLE()), type(uint16).max));
     vm.etch(address(spoke1), mockSpokeImpl.code);
 
     _updateCollateralFactor(spoke, _wethReserveId(spoke), 80_00);

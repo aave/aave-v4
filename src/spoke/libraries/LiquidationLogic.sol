@@ -130,7 +130,7 @@ library LiquidationLogic {
   /// @param debtReserve The debt reserve to repay during liquidation.
   /// @param positions The mapping of positions per reserve per user.
   /// @param positionStatus The mapping of position status per user.
-  /// @param spokeConfig The spoke config.
+  /// @param liquidationConfig The liquidation config.
   /// @param collateralDynConfig The collateral dynamic config.
   /// @param params The liquidate user params.
   /// @return True if the liquidation results in deficit.
@@ -139,7 +139,7 @@ library LiquidationLogic {
     ISpoke.Reserve storage debtReserve,
     mapping(address user => mapping(uint256 reserveId => ISpoke.UserPosition)) storage positions,
     mapping(address user => ISpoke.PositionStatus) storage positionStatus,
-    ISpoke.SpokeConfig storage spokeConfig,
+    ISpoke.LiquidationConfig storage liquidationConfig,
     ISpoke.DynamicReserveConfig storage collateralDynConfig,
     LiquidateUserParams memory params
   ) external returns (bool) {
@@ -178,10 +178,10 @@ library LiquidationLogic {
         debtAssetPrice: IAaveOracle(params.oracle).getReservePrice(params.debtReserveId),
         debtToCover: params.debtToCover,
         collateralFactor: collateralDynConfig.collateralFactor,
-        healthFactorForMaxBonus: spokeConfig.healthFactorForMaxBonus,
-        liquidationBonusFactor: spokeConfig.liquidationBonusFactor,
+        healthFactorForMaxBonus: liquidationConfig.healthFactorForMaxBonus,
+        liquidationBonusFactor: liquidationConfig.liquidationBonusFactor,
         maxLiquidationBonus: collateralDynConfig.maxLiquidationBonus,
-        targetHealthFactor: spokeConfig.targetHealthFactor,
+        targetHealthFactor: liquidationConfig.targetHealthFactor,
         healthFactor: params.healthFactor,
         liquidationFee: collateralDynConfig.liquidationFee
       })
@@ -359,7 +359,6 @@ library LiquidationLogic {
     );
     require(params.collateralReserveBalance > 0, ISpoke.ReserveNotSupplied());
     require(params.debtReserveBalance > 0, ISpoke.ReserveNotBorrowed());
-    require(params.collateralReserveFlags.liquidatable(), ISpoke.CollateralCannotBeLiquidated());
     require(
       params.healthFactor < HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
       ISpoke.HealthFactorNotBelowThreshold()

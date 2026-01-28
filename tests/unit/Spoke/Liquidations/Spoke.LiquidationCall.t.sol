@@ -15,13 +15,11 @@ abstract contract SpokeLiquidationCallHelperTest is SpokeLiquidationCallBaseTest
     spoke = spoke1;
 
     vm.prank(SPOKE_ADMIN);
-    spoke.updateSpokeConfig(
-      ISpoke.SpokeConfig({
+    spoke.updateLiquidationConfig(
+      ISpoke.LiquidationConfig({
         targetHealthFactor: 1.05e18,
         healthFactorForMaxBonus: 0.7e18,
-        liquidationBonusFactor: 20_00,
-        maxUserCollaterals: Constants.MAX_USER_COLLATERALS,
-        maxUserBorrows: Constants.MAX_USER_BORROWS
+        liquidationBonusFactor: 20_00
       })
     );
   }
@@ -608,7 +606,7 @@ contract SpokeLiquidationCallTest_TargetHealthFactor_LiquidationFee is
     uint256,
     address
   ) internal virtual override {
-    uint64 targetHealthFactor = vm.randomUint(MIN_CLOSE_FACTOR, MAX_CLOSE_FACTOR).toUint64();
+    uint128 targetHealthFactor = vm.randomUint(MIN_CLOSE_FACTOR, MAX_CLOSE_FACTOR).toUint128();
     _updateTargetHealthFactor(spoke, targetHealthFactor);
 
     uint32 maxLiquidationBonus = _randomMaxLiquidationBonus(spoke, collateralReserveId);

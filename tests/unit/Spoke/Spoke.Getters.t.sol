@@ -5,10 +5,10 @@ pragma solidity ^0.8.0;
 import 'tests/unit/Spoke/SpokeBase.t.sol';
 
 contract SpokeGettersTest is SpokeBase {
-  using LiquidationLogic for ISpoke.SpokeConfig;
+  using LiquidationLogic for ISpoke.LiquidationConfig;
   using SafeCast for uint256;
 
-  ISpoke.SpokeConfig internal _config;
+  ISpoke.LiquidationConfig internal _config;
 
   ISpoke internal spoke;
 
@@ -119,15 +119,13 @@ contract SpokeGettersTest is SpokeBase {
     healthFactor = bound(healthFactor, 0, HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
     uint256 liqBonus = spoke.getLiquidationBonus(reserveId, bob, healthFactor);
 
-    _config = spoke.getSpokeConfig();
+    _config = spoke.getLiquidationConfig();
     assertEq(
       _config,
-      ISpoke.SpokeConfig({
+      ISpoke.LiquidationConfig({
         targetHealthFactor: WadRayMath.WAD.toUint64(),
         healthFactorForMaxBonus: 0,
-        liquidationBonusFactor: 0,
-        maxUserCollaterals: Constants.MAX_USER_COLLATERALS,
-        maxUserBorrows: Constants.MAX_USER_BORROWS
+        liquidationBonusFactor: 0
       })
     );
 
@@ -165,16 +163,14 @@ contract SpokeGettersTest is SpokeBase {
       HEALTH_FACTOR_LIQUIDATION_THRESHOLD - 1
     ).toUint64();
 
-    ISpoke.SpokeConfig memory config = ISpoke.SpokeConfig({
+    ISpoke.LiquidationConfig memory config = ISpoke.LiquidationConfig({
       targetHealthFactor: WadRayMath.WAD.toUint64(),
       healthFactorForMaxBonus: healthFactorForMaxBonus,
-      liquidationBonusFactor: liquidationBonusFactor,
-      maxUserCollaterals: Constants.MAX_USER_COLLATERALS,
-      maxUserBorrows: Constants.MAX_USER_BORROWS
+      liquidationBonusFactor: liquidationBonusFactor
     });
     vm.prank(SPOKE_ADMIN);
-    spoke.updateSpokeConfig(config);
-    _config = spoke.getSpokeConfig();
+    spoke.updateLiquidationConfig(config);
+    _config = spoke.getLiquidationConfig();
 
     assertEq(
       spoke.getLiquidationBonus(reserveId, bob, healthFactor),

@@ -16,12 +16,12 @@ type ReserveFlags is uint8;
 /// @notice Full interface for Spoke.
 interface ISpoke is ISpokeBase, IAccessManaged, IIntentConsumer, IExtSload, IMulticall {
   /// @notice Intent data to set user position managers with EIP712-typed signature.
-  /// @param user The address of the user on whose behalf position manager can act.
+  /// @param onBehalfOf The address of the user on whose behalf position manager can act.
   /// @param updates The array of position manager updates.
   /// @param nonce The nonce for the signature.
   /// @param deadline The deadline for the signature.
   struct SetUserPositionManagers {
-    address user;
+    address onBehalfOf;
     PositionManagerUpdate[] updates;
     uint256 nonce;
     uint256 deadline;
@@ -59,14 +59,12 @@ interface ISpoke is ISpokeBase, IAccessManaged, IIntentConsumer, IExtSload, IMul
   /// @dev paused True if all actions are prevented for the reserve.
   /// @dev frozen True if new activity is prevented for the reserve.
   /// @dev borrowable True if the reserve is borrowable.
-  /// @dev liquidatable True if the reserve can be liquidated when used as collateral.
   /// @dev receiveSharesEnabled True if the liquidator can receive collateral shares during liquidation.
   struct ReserveConfig {
     uint24 collateralRisk;
     bool paused;
     bool frozen;
     bool borrowable;
-    bool liquidatable;
     bool receiveSharesEnabled;
   }
 
@@ -80,18 +78,14 @@ interface ISpoke is ISpokeBase, IAccessManaged, IIntentConsumer, IExtSload, IMul
     uint16 liquidationFee;
   }
 
-  /// @notice Spoke configuration data.
+  /// @notice Liquidation configuration data.
   /// @dev targetHealthFactor The ideal health factor to restore a user position during liquidation, expressed in WAD.
   /// @dev healthFactorForMaxBonus The health factor under which liquidation bonus is maximum, expressed in WAD.
   /// @dev liquidationBonusFactor The value multiplied by `maxLiquidationBonus` to compute the minimum liquidation bonus, expressed in BPS.
-  /// @dev maxUserCollaterals The maximum number of reserves a user can enable as collateral.
-  /// @dev maxUserBorrows The maximum number of reserves a user can borrow.
-  struct SpokeConfig {
-    uint64 targetHealthFactor;
+  struct LiquidationConfig {
+    uint128 targetHealthFactor;
     uint64 healthFactorForMaxBonus;
     uint16 liquidationBonusFactor;
-    uint16 maxUserCollaterals;
-    uint16 maxUserBorrows;
   }
 
   /// @notice User position data per reserve.
@@ -148,9 +142,9 @@ interface ISpoke is ISpokeBase, IAccessManaged, IIntentConsumer, IExtSload, IMul
   /// @param oracle The new address of the oracle.
   event UpdateOracle(address indexed oracle);
 
-  /// @notice Emitted when spoke config is updated.
-  /// @param config The new spoke config.
-  event UpdateSpokeConfig(SpokeConfig config);
+  /// @notice Emitted when liquidation config is updated.
+  /// @param config The new liquidation config.
+  event UpdateLiquidationConfig(LiquidationConfig config);
 
   /// @notice Emitted when a reserve is added.
   /// @param reserveId The identifier of the reserve.
@@ -271,9 +265,6 @@ interface ISpoke is ISpokeBase, IAccessManaged, IIntentConsumer, IExtSload, IMul
   /// @dev Can only occur during an attempted `supply`, `borrow`, or `setUsingAsCollateral` action.
   error ReserveFrozen();
 
-  /// @notice Thrown when the collateral reserve is not enabled to be liquidated.
-  error CollateralCannotBeLiquidated();
-
   /// @notice Thrown when an action causes a user's health factor to fall below the liquidation threshold.
   error HealthFactorBelowThreshold();
 
@@ -301,8 +292,8 @@ interface ISpoke is ISpokeBase, IAccessManaged, IIntentConsumer, IExtSload, IMul
   /// @notice Thrown when a collateral risk exceeds the maximum allowed.
   error InvalidCollateralRisk();
 
-  /// @notice Thrown if a spoke config is invalid when it is updated.
-  error InvalidSpokeConfig();
+  /// @notice Thrown if a liquidation config is invalid when it is updated.
+  error InvalidLiquidationConfig();
 
   /// @notice Thrown when a liquidation fee is invalid.
   error InvalidLiquidationFee();
@@ -334,9 +325,9 @@ interface ISpoke is ISpokeBase, IAccessManaged, IIntentConsumer, IExtSload, IMul
   /// @notice Thrown when user attempts to exceed either the maximum allowed collateral or borrowed reserves.
   error MaximumUserReservesExceeded();
 
-  /// @notice Updates the spoke configuration.
-  /// @param config The new spoke config.
-  function updateSpokeConfig(SpokeConfig calldata config) external;
+  /// @notice Updates the liquidation configuration.
+  /// @param config The new liquidation config.
+  function updateLiquidationConfig(LiquidationConfig calldata config) external;
 
   /// @notice Adds a new reserve to the spoke.
   /// @dev Allowed even if the spoke has not yet been added to the Hub.
@@ -457,8 +448,8 @@ interface ISpoke is ISpokeBase, IAccessManaged, IIntentConsumer, IExtSload, IMul
     bytes32 permitS
   ) external;
 
-  /// @notice Returns the spoke config struct.
-  function getSpokeConfig() external view returns (SpokeConfig memory);
+  /// @notice Returns the liquidation config struct.
+  function getLiquidationConfig() external view returns (LiquidationConfig memory);
 
   /// @notice Returns the number of listed reserves on the spoke.
   /// @dev Count includes reserves that are not currently active.
@@ -549,4 +540,7 @@ interface ISpoke is ISpokeBase, IAccessManaged, IIntentConsumer, IExtSload, IMul
 
   /// @notice Returns the address of the AaveOracle contract.
   function ORACLE() external view returns (address);
+
+  /// @notice Returns the maximum allowed number of reserves per user (for both collaterals and borrows).
+  function MAX_USER_RESERVES_LIMIT() external view returns (uint16);
 }

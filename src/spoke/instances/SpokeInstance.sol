@@ -14,7 +14,8 @@ contract SpokeInstance is Spoke {
   /// @dev Constructor.
   /// @dev During upgrade, must ensure that the new oracle is supporting existing assets on the spoke and the replaced oracle.
   /// @param oracle_ The address of the oracle.
-  constructor(address oracle_) Spoke(oracle_) {
+  /// @param maxUserReservesLimit_ The maximum number of reserves a user can have (both collaterals and borrows).
+  constructor(address oracle_, uint16 maxUserReservesLimit_) Spoke(oracle_, maxUserReservesLimit_) {
     _disableInitializers();
   }
 
@@ -25,11 +26,9 @@ contract SpokeInstance is Spoke {
     emit UpdateOracle(ORACLE);
     require(authority != address(0), InvalidAddress());
     __AccessManaged_init(authority);
-    if (_spokeConfig.targetHealthFactor == 0) {
-      _spokeConfig.targetHealthFactor = HEALTH_FACTOR_LIQUIDATION_THRESHOLD;
-      _spokeConfig.maxUserCollaterals = MAX_ALLOWED_USER_RESERVES_LIMIT;
-      _spokeConfig.maxUserBorrows = MAX_ALLOWED_USER_RESERVES_LIMIT;
-      emit UpdateSpokeConfig(_spokeConfig);
+    if (_liquidationConfig.targetHealthFactor == 0) {
+      _liquidationConfig.targetHealthFactor = HEALTH_FACTOR_LIQUIDATION_THRESHOLD;
+      emit UpdateLiquidationConfig(_liquidationConfig);
     }
   }
 }

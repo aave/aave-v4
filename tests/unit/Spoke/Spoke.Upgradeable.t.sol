@@ -38,12 +38,10 @@ contract SpokeUpgradeableTest is SpokeBase {
     address spokeProxyAddress = vm.computeCreateAddress(address(this), vm.getNonce(address(this)));
     address proxyAdminAddress = vm.computeCreateAddress(spokeProxyAddress, 1);
 
-    ISpoke.SpokeConfig memory expectedSpokeConfig = ISpoke.SpokeConfig({
+    ISpoke.LiquidationConfig memory expectedLiquidationConfig = ISpoke.LiquidationConfig({
       targetHealthFactor: Constants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
       healthFactorForMaxBonus: 0,
-      liquidationBonusFactor: 0,
-      maxUserCollaterals: Constants.MAX_USER_COLLATERALS,
-      maxUserBorrows: Constants.MAX_USER_COLLATERALS
+      liquidationBonusFactor: 0
     });
 
     vm.expectEmit(spokeProxyAddress);
@@ -53,7 +51,7 @@ contract SpokeUpgradeableTest is SpokeBase {
     vm.expectEmit(spokeProxyAddress);
     emit IAccessManaged.AuthorityUpdated(address(accessManager));
     vm.expectEmit(spokeProxyAddress);
-    emit ISpoke.UpdateSpokeConfig(expectedSpokeConfig);
+    emit ISpoke.UpdateLiquidationConfig(expectedLiquidationConfig);
     vm.expectEmit(spokeProxyAddress);
     emit Initializable.Initialized(revision);
     vm.expectEmit(proxyAdminAddress);
@@ -75,10 +73,8 @@ contract SpokeUpgradeableTest is SpokeBase {
     assertEq(_getImplementationAddress(address(spokeProxy)), address(spokeImpl));
 
     assertEq(_getProxyInitializedVersion(address(spokeProxy)), revision);
-    assertEq(spokeProxy.getSpokeConfig(), expectedSpokeConfig);
-    ISpoke.SpokeConfig memory config = spokeProxy.getSpokeConfig();
-    assertEq(config.maxUserCollaterals, Constants.MAX_USER_COLLATERALS);
-    assertEq(config.maxUserBorrows, Constants.MAX_USER_COLLATERALS);
+    assertEq(spokeProxy.getLiquidationConfig(), expectedLiquidationConfig);
+    assertEq(spokeProxy.MAX_USER_RESERVES_LIMIT(), type(uint16).max);
   }
 
   function test_proxy_reinitialization_fuzz(uint64 initialRevision) public {
@@ -110,7 +106,7 @@ contract SpokeUpgradeableTest is SpokeBase {
       _getInitializeCalldata(address(accessManager))
     );
 
-    _assertEventNotEmitted(ISpoke.UpdateSpokeConfig.selector);
+    _assertEventNotEmitted(ISpoke.UpdateLiquidationConfig.selector);
 
     assertEq(_getTargetHealthFactor(ISpoke(address(spokeProxy))), targetHealthFactor);
   }
@@ -215,6 +211,6 @@ contract SpokeUpgradeableTest is SpokeBase {
   }
 
   function _deployMockSpokeInstance(uint64 revision) internal returns (ISpokeInstance) {
-    return ISpokeInstance(address(new MockSpokeInstance(revision, oracle)));
+    return ISpokeInstance(address(new MockSpokeInstance(revision, oracle, type(uint16).max)));
   }
 }

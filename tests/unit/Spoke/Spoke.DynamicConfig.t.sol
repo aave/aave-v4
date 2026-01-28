@@ -12,7 +12,7 @@ contract SpokeDynamicConfigTest is SpokeBase {
   function setUp() public override {
     super.setUp();
     spoke = MockSpoke(address(spoke1));
-    address mockSpokeImpl = address(new MockSpoke(address(spoke.ORACLE())));
+    address mockSpokeImpl = address(new MockSpoke(address(spoke.ORACLE()), type(uint16).max));
     vm.etch(address(spoke1), mockSpokeImpl.code);
   }
 
@@ -111,7 +111,10 @@ contract SpokeDynamicConfigTest is SpokeBase {
     address caller
   ) public {
     vm.assume(
-      caller != SPOKE_ADMIN && caller != ADMIN && caller != _getProxyAdminAddress(address(spoke1))
+      caller != SPOKE_ADMIN &&
+        caller != ADMIN &&
+        caller != SPOKE_CONFIGURATOR &&
+        caller != _getProxyAdminAddress(address(spoke1))
     );
     uint256 reserveId = _randomReserveId(spoke1);
     uint24 dynamicConfigKey = _randomInitializedConfigKey(spoke1, reserveId);
@@ -219,7 +222,10 @@ contract SpokeDynamicConfigTest is SpokeBase {
     address caller
   ) public {
     vm.assume(
-      caller != SPOKE_ADMIN && caller != ADMIN && caller != _getProxyAdminAddress(address(spoke1))
+      caller != SPOKE_ADMIN &&
+        caller != ADMIN &&
+        caller != SPOKE_CONFIGURATOR &&
+        caller != _getProxyAdminAddress(address(spoke1))
     );
     uint256 reserveId = _randomReserveId(spoke1);
     uint24 dynamicConfigKey = _randomInitializedConfigKey(spoke1, reserveId);

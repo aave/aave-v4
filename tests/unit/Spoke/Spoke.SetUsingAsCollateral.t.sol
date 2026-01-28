@@ -174,38 +174,38 @@ contract SpokeConfigTest is SpokeBase {
   }
 
   function test_setUsingAsCollateral_revertsWith_MaximumUserReservesExceeded() public {
-    uint16 maxCollateralReserves = 10;
-    ISpoke.SpokeConfig memory spokeConfig = spoke1.getSpokeConfig();
-    spokeConfig.maxUserCollaterals = maxCollateralReserves;
-    vm.prank(SPOKE_ADMIN);
-    spoke1.updateSpokeConfig(spokeConfig);
+    // Verify spoke3 has a limit of 10
+    assertEq(spoke3.MAX_USER_RESERVES_LIMIT(), 10);
 
-    _addNewAssetsAndReserves(maxCollateralReserves + 1);
+    // spoke3 has 4 reserves by default, add 7 more (total 11)
+    _addNewAssetsAndReserves(spoke3, 7);
 
-    // Bob supplies and enables maximum allowed collateral reserves
-    for (uint256 i = 0; i < maxCollateralReserves; ++i) {
+    // Bob enables exactly 10 reserves as collateral (the limit)
+    for (uint256 i = 0; i < 10; ++i) {
+      Utils.supplyCollateral(spoke3, i, bob, 1e18, bob);
+    }
+
+    // Bob tries to enable an 11th reserve as collateral - should revert due to limit of 10
+    vm.expectRevert(ISpoke.MaximumUserReservesExceeded.selector, address(spoke3));
+    vm.prank(bob);
+    spoke3.setUsingAsCollateral(10, true, bob);
+  }
+
+  function test_setUsingAsCollateral_unlimited_whenLimitIsMax() public {
+    // Verify that when MAX_USER_RESERVES_LIMIT is type(uint16).max, many collaterals can be enabled
+    assertEq(spoke1.MAX_USER_RESERVES_LIMIT(), type(uint16).max);
+
+    // spoke1 has 4 reserves by default, add 96 more to have 100 total
+    _addNewAssetsAndReserves(spoke1, 96);
+
+    // Bob can enable 100 reserves as collateral without hitting a limit
+    uint256 collateralsToEnable = 100;
+    for (uint256 i = 0; i < collateralsToEnable; ++i) {
       Utils.supplyCollateral(spoke1, i, bob, 1e18, bob);
     }
 
-    // Bob tries to set one more reserve as collateral
-    vm.expectRevert(ISpoke.MaximumUserReservesExceeded.selector, address(spoke1));
-    vm.prank(bob);
-    spoke1.setUsingAsCollateral(maxCollateralReserves, true, bob);
-  }
-
-  function test_setUsingAsCollateral_revertsWith_MaximumUserReservesExceeded_afterLimitUpdate()
-    public
-  {
-    ISpoke.SpokeConfig memory spokeConfig = spoke1.getSpokeConfig();
-    spokeConfig.maxUserCollaterals = 1;
-    vm.prank(SPOKE_ADMIN);
-    spoke1.updateSpokeConfig(spokeConfig);
-
-    vm.startPrank(bob);
-    spoke1.setUsingAsCollateral(_daiReserveId(spoke1), true, bob);
-
-    // Bob tries to set one more reserve as collateral
-    vm.expectRevert(ISpoke.MaximumUserReservesExceeded.selector, address(spoke1));
-    spoke1.setUsingAsCollateral(_wethReserveId(spoke1), true, bob);
+    // Verify bob has all 100 collaterals enabled
+    ISpoke.UserAccountData memory accountData = spoke1.getUserAccountData(bob);
+    assertEq(accountData.activeCollateralCount, collateralsToEnable);
   }
 }

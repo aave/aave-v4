@@ -37,14 +37,12 @@ contract SpokeLiquidationCallScenariosTest is SpokeLiquidationCallBaseTest {
     _updateLiquidationFee(spoke, _usdxReserveId(spoke), 12_00);
     _updateLiquidationFee(spoke, _daiReserveId(spoke), 10_00);
 
-    _updateSpokeConfig(
+    _updateLiquidationConfig(
       spoke,
-      ISpoke.SpokeConfig({
+      ISpoke.LiquidationConfig({
         targetHealthFactor: _getTargetHealthFactor(spoke),
         healthFactorForMaxBonus: 0.99e18,
-        liquidationBonusFactor: 100_00,
-        maxUserCollaterals: Constants.MAX_USER_COLLATERALS,
-        maxUserBorrows: Constants.MAX_USER_BORROWS
+        liquidationBonusFactor: 100_00
       })
     );
 

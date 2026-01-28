@@ -40,10 +40,13 @@ interface ISpokeConfigurator {
   /// @param liquidationBonusFactor The new liquidation bonus factor.
   function updateLiquidationBonusFactor(address spoke, uint256 liquidationBonusFactor) external;
 
-  /// @notice Updates the spoke config of a spoke.
+  /// @notice Updates the liquidation config of a spoke.
   /// @param spoke The address of the spoke.
-  /// @param spokeConfig The new spoke config.
-  function updateSpokeConfig(address spoke, ISpoke.SpokeConfig calldata spokeConfig) external;
+  /// @param liquidationConfig The new liquidation config.
+  function updateLiquidationConfig(
+    address spoke,
+    ISpoke.LiquidationConfig calldata liquidationConfig
+  ) external;
 
   /// @notice Updates the maximum number of reserves allowed to exist on a spoke.
   /// @dev It allows setting the maximum below the amount of reserves that currently exist.
@@ -87,12 +90,6 @@ interface ISpokeConfigurator {
   /// @param reserveId The identifier of the reserve.
   /// @param borrowable The new borrowable flag.
   function updateBorrowable(address spoke, uint256 reserveId, bool borrowable) external;
-
-  /// @notice Updates the liquidatable flag of a reserve.
-  /// @param spoke The address of the spoke.
-  /// @param reserveId The identifier of the reserve.
-  /// @param liquidatable The new liquidatable flag.
-  function updateLiquidatable(address spoke, uint256 reserveId, bool liquidatable) external;
 
   /// @notice Updates whether receiving shares on liquidation is enabled.
   /// @param spoke The address of the spoke.
@@ -215,16 +212,6 @@ interface ISpokeConfigurator {
   /// @param positionManager The address of the position manager.
   /// @param active The new active flag.
   function updatePositionManager(address spoke, address positionManager, bool active) external;
-
-  /// @notice Updates the maximum allowed number of collateral reserves per user.
-  /// @param spoke The address of the spoke.
-  /// @param maxUserCollaterals The new maximum allowed number of collateral reserves per user.
-  function updateMaxUserCollaterals(address spoke, uint16 maxUserCollaterals) external;
-
-  /// @notice Updates the maximum allowed number of borrowed reserves per user.
-  /// @param spoke The address of the spoke.
-  /// @param maxUserBorrows The new maximum allowed number of borrowed reserves per user.
-  function updateMaxUserBorrows(address spoke, uint16 maxUserBorrows) external;
 
   /// @notice Returns the maximum number of reserves allowed to exist on a spoke.
   /// @param spoke The address of the spoke.

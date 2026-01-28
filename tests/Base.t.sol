@@ -163,6 +163,8 @@ abstract contract Base is Test {
   address internal TREASURY_ADMIN = makeAddr('TREASURY_ADMIN');
   address internal LIQUIDATOR = makeAddr('LIQUIDATOR');
   address internal POSITION_MANAGER = makeAddr('POSITION_MANAGER');
+  address internal HUB_CONFIGURATOR = makeAddr('HUB_CONFIGURATOR');
+  address internal SPOKE_CONFIGURATOR = makeAddr('SPOKE_CONFIGURATOR');
 
   TokenList internal tokenList;
   uint256 internal wethAssetId = 0;
@@ -291,7 +293,7 @@ abstract contract Base is Test {
     irStrategy = new AssetInterestRateStrategy(address(hub1));
     (spoke1, oracle1) = _deploySpokeWithOracle(ADMIN, address(accessManager), 'Spoke 1 (USD)');
     (spoke2, oracle2) = _deploySpokeWithOracle(ADMIN, address(accessManager), 'Spoke 2 (USD)');
-    (spoke3, oracle3) = _deploySpokeWithOracle(ADMIN, address(accessManager), 'Spoke 3 (USD)');
+    (spoke3, oracle3) = _deploySpokeWithOracle(ADMIN, address(accessManager), 'Spoke 3 (USD)', 10);
     treasurySpoke = ITreasurySpoke(new TreasurySpoke(TREASURY_ADMIN, address(hub1)));
     vm.stopPrank();
 
@@ -316,13 +318,16 @@ abstract contract Base is Test {
     manager.grantRole(Roles.USER_POSITION_UPDATER_ROLE, SPOKE_ADMIN, 0);
     manager.grantRole(Roles.USER_POSITION_UPDATER_ROLE, USER_POSITION_UPDATER, 0);
 
+    manager.grantRole(Roles.HUB_CONFIGURATOR_ROLE, HUB_CONFIGURATOR, 0);
+    manager.grantRole(Roles.SPOKE_CONFIGURATOR_ROLE, SPOKE_CONFIGURATOR, 0);
+
     manager.grantRole(Roles.DEFICIT_ELIMINATOR_ROLE, HUB_ADMIN, 0);
     manager.grantRole(Roles.DEFICIT_ELIMINATOR_ROLE, DEFICIT_ELIMINATOR, 0);
 
     // Grant responsibilities to roles
     {
       bytes4[] memory selectors = new bytes4[](7);
-      selectors[0] = ISpoke.updateSpokeConfig.selector;
+      selectors[0] = ISpoke.updateLiquidationConfig.selector;
       selectors[1] = ISpoke.addReserve.selector;
       selectors[2] = ISpoke.updateReserveConfig.selector;
       selectors[3] = ISpoke.updateDynamicReserveConfig.selector;
@@ -355,6 +360,89 @@ abstract contract Base is Test {
       selectors[0] = IHub.eliminateDeficit.selector;
       manager.setTargetFunctionRole(address(targetHub), selectors, Roles.DEFICIT_ELIMINATOR_ROLE);
     }
+
+    setUpHubConfiguratorRoles(HUB_CONFIGURATOR, address(manager));
+    setUpSpokeConfiguratorRoles(SPOKE_CONFIGURATOR, address(manager));
+
+    vm.stopPrank();
+  }
+
+  function setUpHubConfiguratorRoles(address hubConfigurator, address manager) internal {
+    vm.startPrank(ADMIN);
+
+    // Grant HUB_ADMIN_ROLE so the configurator can call hub functions
+    IAccessManager(manager).grantRole(Roles.HUB_ADMIN_ROLE, hubConfigurator, 0);
+
+    // Set up HubConfigurator function permissions - all functions callable by HUB_CONFIGURATOR_ROLE
+    bytes4[] memory selectors = new bytes4[](22);
+    selectors[0] = IHubConfigurator.updateLiquidityFee.selector;
+    selectors[1] = IHubConfigurator.updateFeeReceiver.selector;
+    selectors[2] = IHubConfigurator.updateFeeConfig.selector;
+    selectors[3] = IHubConfigurator.updateInterestRateStrategy.selector;
+    selectors[4] = IHubConfigurator.updateReinvestmentController.selector;
+    selectors[5] = IHubConfigurator.freezeAsset.selector;
+    selectors[6] = IHubConfigurator.deactivateAsset.selector;
+    selectors[7] = IHubConfigurator.haltAsset.selector;
+    selectors[8] = IHubConfigurator.addSpoke.selector;
+    selectors[9] = IHubConfigurator.addSpokeToAssets.selector;
+    selectors[10] = IHubConfigurator.updateSpokeActive.selector;
+    selectors[11] = IHubConfigurator.updateSpokeHalted.selector;
+    selectors[12] = IHubConfigurator.updateSpokeSupplyCap.selector;
+    selectors[13] = IHubConfigurator.updateSpokeDrawCap.selector;
+    selectors[14] = IHubConfigurator.updateSpokeRiskPremiumThreshold.selector;
+    selectors[15] = IHubConfigurator.updateSpokeCaps.selector;
+    selectors[16] = IHubConfigurator.deactivateSpoke.selector;
+    selectors[17] = IHubConfigurator.haltSpoke.selector;
+    selectors[18] = IHubConfigurator.freezeSpoke.selector;
+    selectors[19] = IHubConfigurator.updateInterestRateData.selector;
+    selectors[20] = IHubConfigurator.addAsset.selector;
+    selectors[21] = IHubConfigurator.addAssetWithDecimals.selector;
+    IAccessManager(manager).setTargetFunctionRole(
+      hubConfigurator,
+      selectors,
+      Roles.HUB_CONFIGURATOR_ROLE
+    );
+
+    vm.stopPrank();
+  }
+
+  function setUpSpokeConfiguratorRoles(address spokeConfigurator, address manager) internal {
+    vm.startPrank(ADMIN);
+
+    // Grant SPOKE_ADMIN_ROLE so the configurator can call spoke functions
+    IAccessManager(manager).grantRole(Roles.SPOKE_ADMIN_ROLE, spokeConfigurator, 0);
+
+    // Set up SpokeConfigurator function permissions - all functions callable by SPOKE_CONFIGURATOR_ROLE
+    bytes4[] memory selectors = new bytes4[](23);
+    selectors[0] = ISpokeConfigurator.updateReservePriceSource.selector;
+    selectors[1] = ISpokeConfigurator.updateLiquidationTargetHealthFactor.selector;
+    selectors[2] = ISpokeConfigurator.updateHealthFactorForMaxBonus.selector;
+    selectors[3] = ISpokeConfigurator.updateLiquidationBonusFactor.selector;
+    selectors[4] = ISpokeConfigurator.updateLiquidationConfig.selector;
+    selectors[5] = ISpokeConfigurator.updateMaxReserves.selector;
+    selectors[6] = ISpokeConfigurator.addReserve.selector;
+    selectors[7] = ISpokeConfigurator.updatePaused.selector;
+    selectors[8] = ISpokeConfigurator.updateFrozen.selector;
+    selectors[9] = ISpokeConfigurator.updateBorrowable.selector;
+    selectors[10] = ISpokeConfigurator.updateReceiveSharesEnabled.selector;
+    selectors[11] = ISpokeConfigurator.updateCollateralRisk.selector;
+    selectors[12] = ISpokeConfigurator.addCollateralFactor.selector;
+    selectors[13] = ISpokeConfigurator.updateCollateralFactor.selector;
+    selectors[14] = ISpokeConfigurator.addMaxLiquidationBonus.selector;
+    selectors[15] = ISpokeConfigurator.updateMaxLiquidationBonus.selector;
+    selectors[16] = ISpokeConfigurator.addLiquidationFee.selector;
+    selectors[17] = ISpokeConfigurator.updateLiquidationFee.selector;
+    selectors[18] = ISpokeConfigurator.addDynamicReserveConfig.selector;
+    selectors[19] = ISpokeConfigurator.updateDynamicReserveConfig.selector;
+    selectors[20] = ISpokeConfigurator.pauseAllReserves.selector;
+    selectors[21] = ISpokeConfigurator.freezeAllReserves.selector;
+    selectors[22] = ISpokeConfigurator.updatePositionManager.selector;
+    IAccessManager(manager).setTargetFunctionRole(
+      spokeConfigurator,
+      selectors,
+      Roles.SPOKE_CONFIGURATOR_ROLE
+    );
+
     vm.stopPrank();
   }
 
@@ -582,31 +670,25 @@ abstract contract Base is Test {
     );
 
     // Spoke configs
-    spoke1.updateSpokeConfig(
-      ISpoke.SpokeConfig({
+    spoke1.updateLiquidationConfig(
+      ISpoke.LiquidationConfig({
         targetHealthFactor: 1.05e18,
         healthFactorForMaxBonus: 0.7e18,
-        liquidationBonusFactor: 20_00,
-        maxUserCollaterals: Constants.MAX_USER_COLLATERALS,
-        maxUserBorrows: Constants.MAX_USER_BORROWS
+        liquidationBonusFactor: 20_00
       })
     );
-    spoke2.updateSpokeConfig(
-      ISpoke.SpokeConfig({
+    spoke2.updateLiquidationConfig(
+      ISpoke.LiquidationConfig({
         targetHealthFactor: 1.04e18,
         healthFactorForMaxBonus: 0.8e18,
-        liquidationBonusFactor: 15_00,
-        maxUserCollaterals: Constants.MAX_USER_COLLATERALS,
-        maxUserBorrows: Constants.MAX_USER_BORROWS
+        liquidationBonusFactor: 15_00
       })
     );
-    spoke3.updateSpokeConfig(
-      ISpoke.SpokeConfig({
+    spoke3.updateLiquidationConfig(
+      ISpoke.LiquidationConfig({
         targetHealthFactor: 1.03e18,
         healthFactorForMaxBonus: 0.9e18,
-        liquidationBonusFactor: 10_00,
-        maxUserCollaterals: Constants.MAX_USER_COLLATERALS,
-        maxUserBorrows: Constants.MAX_USER_BORROWS
+        liquidationBonusFactor: 10_00
       })
     );
 
@@ -1037,26 +1119,26 @@ abstract contract Base is Test {
     assertEq(spoke.getReserveConfig(reserveId), config);
   }
 
-  function _updateSpokeConfig(ISpoke spoke, ISpoke.SpokeConfig memory config) internal pausePrank {
+  function _updateLiquidationConfig(
+    ISpoke spoke,
+    ISpoke.LiquidationConfig memory config
+  ) internal pausePrank {
     vm.prank(SPOKE_ADMIN);
-    spoke.updateSpokeConfig(config);
+    spoke.updateLiquidationConfig(config);
 
-    assertEq(spoke.getSpokeConfig(), config);
+    assertEq(spoke.getLiquidationConfig(), config);
   }
 
-  function _createSpokeConfig(
+  function _createLiquidationConfig(
     uint64 targetHealthFactor,
     uint64 healthFactorForMaxBonus,
     uint16 liquidationBonusFactor
-  ) internal view returns (ISpoke.SpokeConfig memory) {
-    ISpoke.SpokeConfig memory currentConfig = spoke1.getSpokeConfig();
+  ) internal pure returns (ISpoke.LiquidationConfig memory) {
     return
-      ISpoke.SpokeConfig({
+      ISpoke.LiquidationConfig({
         targetHealthFactor: targetHealthFactor,
         healthFactorForMaxBonus: healthFactorForMaxBonus,
-        liquidationBonusFactor: liquidationBonusFactor,
-        maxUserCollaterals: currentConfig.maxUserCollaterals,
-        maxUserBorrows: currentConfig.maxUserBorrows
+        liquidationBonusFactor: liquidationBonusFactor
       });
   }
 
@@ -1175,19 +1257,19 @@ abstract contract Base is Test {
 
   function _updateTargetHealthFactor(
     ISpoke spoke,
-    uint64 newTargetHealthFactor
+    uint128 newTargetHealthFactor
   ) internal pausePrank {
-    ISpoke.SpokeConfig memory spokeConfig = spoke.getSpokeConfig();
-    spokeConfig.targetHealthFactor = newTargetHealthFactor;
+    ISpoke.LiquidationConfig memory liquidationConfig = spoke.getLiquidationConfig();
+    liquidationConfig.targetHealthFactor = newTargetHealthFactor;
     vm.prank(SPOKE_ADMIN);
-    spoke.updateSpokeConfig(spokeConfig);
+    spoke.updateLiquidationConfig(liquidationConfig);
 
-    assertEq(spoke.getSpokeConfig(), spokeConfig);
+    assertEq(spoke.getLiquidationConfig(), liquidationConfig);
   }
 
   function getTargetHealthFactor(ISpoke spoke) internal view returns (uint256) {
-    ISpoke.SpokeConfig memory spokeConfig = spoke.getSpokeConfig();
-    return spokeConfig.targetHealthFactor;
+    ISpoke.LiquidationConfig memory liquidationConfig = spoke.getLiquidationConfig();
+    return liquidationConfig.targetHealthFactor;
   }
 
   /// @dev pseudo random randomizer
@@ -2025,8 +2107,8 @@ abstract contract Base is Test {
     return a > b ? a : b;
   }
 
-  function _getTargetHealthFactor(ISpoke spoke) internal view returns (uint64) {
-    return spoke.getSpokeConfig().targetHealthFactor;
+  function _getTargetHealthFactor(ISpoke spoke) internal view returns (uint128) {
+    return spoke.getLiquidationConfig().targetHealthFactor;
   }
 
   function _calcMinimumCollAmount(
@@ -2279,16 +2361,26 @@ abstract contract Base is Test {
     address _accessManager,
     string memory _oracleDesc
   ) internal pausePrank returns (ISpoke, IAaveOracle) {
+    return _deploySpokeWithOracle(proxyAdminOwner, _accessManager, _oracleDesc, type(uint16).max);
+  }
+
+  function _deploySpokeWithOracle(
+    address proxyAdminOwner,
+    address _accessManager,
+    string memory _oracleDesc,
+    uint16 maxUserReservesLimit
+  ) internal pausePrank returns (ISpoke, IAaveOracle) {
     address deployer = makeAddr('deployer');
 
     vm.startPrank(deployer);
     IAaveOracle oracle = new AaveOracle(8, _oracleDesc);
 
-    ISpoke spoke = DeployUtils.deploySpoke({
-      oracle: address(oracle),
-      proxyAdminOwner: proxyAdminOwner,
-      initData: abi.encodeCall(ISpokeInstance.initialize, (_accessManager))
-    });
+    ISpoke spoke = DeployUtils.deploySpoke(
+      address(oracle),
+      maxUserReservesLimit,
+      proxyAdminOwner,
+      abi.encodeCall(ISpokeInstance.initialize, (_accessManager))
+    );
 
     oracle.setSpoke(address(spoke));
     vm.stopPrank();
@@ -2307,7 +2399,6 @@ abstract contract Base is Test {
         paused: false,
         frozen: false,
         borrowable: true,
-        liquidatable: true,
         receiveSharesEnabled: true,
         collateralRisk: collateralRisk
       });
@@ -2337,7 +2428,10 @@ abstract contract Base is Test {
     assertEq(abi.encode(a), abi.encode(b));
   }
 
-  function assertEq(ISpoke.SpokeConfig memory a, ISpoke.SpokeConfig memory b) internal pure {
+  function assertEq(
+    ISpoke.LiquidationConfig memory a,
+    ISpoke.LiquidationConfig memory b
+  ) internal pure {
     assertEq(a.targetHealthFactor, b.targetHealthFactor, 'targetHealthFactor');
     assertEq(a.liquidationBonusFactor, b.liquidationBonusFactor, 'liquidationBonusFactor');
     assertEq(a.healthFactorForMaxBonus, b.healthFactorForMaxBonus, 'healthFactorForMaxBonus');
@@ -2767,14 +2861,14 @@ abstract contract Base is Test {
 
   function _getTypedDataHash(
     ISpoke spoke,
-    ISpoke.SetUserPositionManagers memory setUserPositionManager
+    ISpoke.SetUserPositionManagers memory setUserPositionManagers
   ) internal view returns (bytes32) {
     return
       keccak256(
         abi.encodePacked(
           '\x19\x01',
           spoke.DOMAIN_SEPARATOR(),
-          vm.eip712HashStruct('SetUserPositionManagers', abi.encode(setUserPositionManager))
+          vm.eip712HashStruct('SetUserPositionManagers', abi.encode(setUserPositionManagers))
         )
       );
   }
@@ -2905,15 +2999,15 @@ abstract contract Base is Test {
       _calcUnrealizedFees(hub, assetId);
   }
 
-  function _addNewAssetsAndReserves(uint256 count) internal {
+  function _addNewAssetsAndReserves(ISpoke spoke, uint256 count) internal {
     for (uint256 i = 0; i < count; i++) {
       MockERC20 newToken = new MockERC20();
       newToken.mint(alice, MAX_SUPPLY_AMOUNT * 10 ** 18);
       newToken.mint(bob, MAX_SUPPLY_AMOUNT * 10 ** 18);
       vm.prank(alice);
-      newToken.approve(address(spoke1), UINT256_MAX);
+      newToken.approve(address(spoke), UINT256_MAX);
       vm.prank(bob);
-      newToken.approve(address(spoke1), UINT256_MAX);
+      newToken.approve(address(spoke), UINT256_MAX);
 
       IHub.SpokeConfig memory spokeConfig = IHub.SpokeConfig({
         active: true,
@@ -2954,11 +3048,10 @@ abstract contract Base is Test {
 
       // Prepare the reserve configs
       ISpoke.ReserveConfig memory reserveConfig = ISpoke.ReserveConfig({
+        collateralRisk: _randomBps(),
         paused: false,
         frozen: false,
         borrowable: true,
-        collateralRisk: _randomBps(),
-        liquidatable: true,
         receiveSharesEnabled: true
       });
       ISpoke.DynamicReserveConfig memory dynamicConfig = ISpoke.DynamicReserveConfig({
@@ -2967,17 +3060,17 @@ abstract contract Base is Test {
         liquidationFee: 10_00
       });
 
-      // Add reserve to spoke1
-      spoke1.addReserve(
+      // Add reserve to spoke
+      spoke.addReserve(
         address(hub1),
         newTokenAssetId,
-        _deployMockPriceFeed(spoke1, 1e8),
+        _deployMockPriceFeed(spoke, 1e8),
         reserveConfig,
         dynamicConfig
       );
 
       // Add spoke to hub
-      hub1.addSpoke(newTokenAssetId, address(spoke1), spokeConfig);
+      hub1.addSpoke(newTokenAssetId, address(spoke), spokeConfig);
       vm.stopPrank();
     }
   }

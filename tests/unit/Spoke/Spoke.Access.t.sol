@@ -56,31 +56,27 @@ contract SpokeAccessTest is SpokeBase {
 
   /// @dev Test showing that spoke configurations can only be set by spoke admin.
   function testAccess_spoke_admin_config_access() public {
-    // updateSpokeConfig only callable by spoke admin
-    ISpoke.SpokeConfig memory currentConfig = spoke1.getSpokeConfig();
+    // updateLiquidationConfig only callable by spoke admin
+    ISpoke.LiquidationConfig memory currentConfig = spoke1.getLiquidationConfig();
     vm.expectRevert(
       abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, address(this))
     );
-    spoke1.updateSpokeConfig(
-      ISpoke.SpokeConfig({
+    spoke1.updateLiquidationConfig(
+      ISpoke.LiquidationConfig({
         targetHealthFactor: WadRayMath.WAD.toUint64(),
         liquidationBonusFactor: 40_00,
-        healthFactorForMaxBonus: 0.9e18,
-        maxUserCollaterals: currentConfig.maxUserCollaterals,
-        maxUserBorrows: currentConfig.maxUserBorrows
+        healthFactorForMaxBonus: 0.9e18
       })
     );
 
-    // Spoke admin can call updateSpokeConfig
-    currentConfig = spoke1.getSpokeConfig();
+    // Spoke admin can call updateLiquidationConfig
+    currentConfig = spoke1.getLiquidationConfig();
     vm.prank(address(SPOKE_ADMIN));
-    spoke1.updateSpokeConfig(
-      ISpoke.SpokeConfig({
+    spoke1.updateLiquidationConfig(
+      ISpoke.LiquidationConfig({
         targetHealthFactor: WadRayMath.WAD.toUint64(),
         liquidationBonusFactor: 40_00,
-        healthFactorForMaxBonus: 0.9e18,
-        maxUserCollaterals: currentConfig.maxUserCollaterals,
-        maxUserBorrows: currentConfig.maxUserBorrows
+        healthFactorForMaxBonus: 0.9e18
       })
     );
 
@@ -162,7 +158,7 @@ contract SpokeAccessTest is SpokeBase {
     vm.startPrank(NEW_ADMIN);
     newAuthority.grantRole(Roles.SPOKE_ADMIN_ROLE, SPOKE_ADMIN, 0);
     bytes4[] memory selectors = new bytes4[](1);
-    selectors[0] = ISpoke.updateSpokeConfig.selector;
+    selectors[0] = ISpoke.updateLiquidationConfig.selector;
     newAuthority.setTargetFunctionRole(address(spoke1), selectors, Roles.SPOKE_ADMIN_ROLE);
     vm.stopPrank();
 
@@ -183,15 +179,13 @@ contract SpokeAccessTest is SpokeBase {
     assertEq(spoke1.authority(), address(newAuthority), 'Authority not changed');
 
     // Spoke admin can call update liquidation config on the spoke after authority change
-    ISpoke.SpokeConfig memory currentConfig = spoke1.getSpokeConfig();
+    ISpoke.LiquidationConfig memory currentConfig = spoke1.getLiquidationConfig();
     vm.prank(SPOKE_ADMIN);
-    spoke1.updateSpokeConfig(
-      ISpoke.SpokeConfig({
+    spoke1.updateLiquidationConfig(
+      ISpoke.LiquidationConfig({
         targetHealthFactor: WadRayMath.WAD.toUint64(),
         liquidationBonusFactor: 40_00,
-        healthFactorForMaxBonus: 0.9e18,
-        maxUserCollaterals: currentConfig.maxUserCollaterals,
-        maxUserBorrows: currentConfig.maxUserBorrows
+        healthFactorForMaxBonus: 0.9e18
       })
     );
 

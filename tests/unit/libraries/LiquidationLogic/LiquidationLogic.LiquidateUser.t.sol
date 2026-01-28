@@ -13,7 +13,7 @@ contract LiquidationLogicLiquidateUserTest is LiquidationLogicBaseTest {
   uint256 usdxReserveId;
   uint256 wethReserveId;
 
-  ISpoke.SpokeConfig spokeConfig;
+  ISpoke.LiquidationConfig spokeConfig;
   ISpoke.DynamicReserveConfig dynamicCollateralConfig;
   LiquidationLogic.LiquidateUserParams params;
 
@@ -72,7 +72,6 @@ contract LiquidationLogicLiquidateUserTest is LiquidationLogicBaseTest {
     // Mock storage for collateral side
     require(hub1.getAsset(usdxAssetId).underlying == address(tokenList.usdx));
     liquidationLogicWrapper.setCollateralReserveId(usdxReserveId);
-    liquidationLogicWrapper.setCollateralLiquidatable(true);
     liquidationLogicWrapper.setCollateralReserveHub(hub1);
     liquidationLogicWrapper.setCollateralReserveAssetId(usdxAssetId);
     liquidationLogicWrapper.setCollateralReserveDecimals(6);
@@ -89,12 +88,10 @@ contract LiquidationLogicLiquidateUserTest is LiquidationLogicBaseTest {
     liquidationLogicWrapper.setBorrowerBorrowingStatus(wethReserveId, true);
 
     // Mock storage for liquidation config
-    spokeConfig = ISpoke.SpokeConfig({
-      healthFactorForMaxBonus: 0.8e18,
-      liquidationBonusFactor: 50_00,
+    spokeConfig = ISpoke.LiquidationConfig({
       targetHealthFactor: 1e18,
-      maxUserCollaterals: Constants.MAX_USER_COLLATERALS,
-      maxUserBorrows: Constants.MAX_USER_BORROWS
+      healthFactorForMaxBonus: 0.8e18,
+      liquidationBonusFactor: 50_00
     });
     updateStorage(spokeConfig);
 
@@ -243,8 +240,8 @@ contract LiquidationLogicLiquidateUserTest is LiquidationLogicBaseTest {
     liquidationLogicWrapper.liquidateUser(params);
   }
 
-  function updateStorage(ISpoke.SpokeConfig memory config) internal {
-    liquidationLogicWrapper.setSpokeConfig(config);
+  function updateStorage(ISpoke.LiquidationConfig memory config) internal {
+    liquidationLogicWrapper.setLiquidationConfig(config);
   }
 
   function updateStorage(ISpoke.DynamicReserveConfig memory config) internal {

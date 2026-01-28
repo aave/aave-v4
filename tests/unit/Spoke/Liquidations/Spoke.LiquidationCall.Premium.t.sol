@@ -18,7 +18,7 @@ contract SpokeLiquidationCallPremiumTest is SpokeLiquidationCallHelperTest {
     uint256 /*debtReserveId*/,
     address /*user*/
   ) internal virtual override {
-    uint64 targetHealthFactor = vm.randomUint(MIN_CLOSE_FACTOR, MAX_CLOSE_FACTOR).toUint64();
+    uint128 targetHealthFactor = vm.randomUint(MIN_CLOSE_FACTOR, MAX_CLOSE_FACTOR).toUint128();
     _updateTargetHealthFactor(spoke, targetHealthFactor);
 
     uint16 liquidationFee = vm.randomUint(MIN_LIQUIDATION_FEE, MAX_LIQUIDATION_FEE).toUint16();

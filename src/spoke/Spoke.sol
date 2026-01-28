@@ -54,6 +54,9 @@ abstract contract Spoke is
   /// @inheritdoc ISpoke
   address public immutable ORACLE;
 
+  /// @inheritdoc ISpoke
+  uint16 public immutable MAX_USER_RESERVES_LIMIT;
+
   /// @dev The maximum allowed value for an asset identifier (inclusive).
   uint256 internal constant MAX_ALLOWED_ASSET_ID = type(uint16).max;
 
@@ -82,8 +85,8 @@ abstract contract Spoke is
   /// @dev Number of reserves listed in the Spoke.
   uint256 internal _reserveCount;
 
-  /// @dev The spoke configuration, including liquidation params and user reserve limits.
-  SpokeConfig internal _spokeConfig;
+  /// @dev The liquidation configuration
+  LiquidationConfig internal _liquidationConfig;
 
   /// @dev Map of user addresses and reserve identifiers to user positions.
   mapping(address user => mapping(uint256 reserveId => UserPosition)) internal _userPositions;
@@ -112,24 +115,26 @@ abstract contract Spoke is
 
   /// @dev Constructor.
   /// @param oracle_ The address of the AaveOracle contract.
-  constructor(address oracle_) {
+  /// @param maxUserReservesLimit_ The maximum number of reserves a user can have (both collaterals and borrows).
+  constructor(address oracle_, uint16 maxUserReservesLimit_) {
     require(IAaveOracle(oracle_).DECIMALS() == ORACLE_DECIMALS, InvalidOracleDecimals());
     ORACLE = oracle_;
+    MAX_USER_RESERVES_LIMIT = maxUserReservesLimit_;
   }
 
   /// @dev To be overridden by the inheriting Spoke instance contract.
   function initialize(address authority) external virtual;
 
   /// @inheritdoc ISpoke
-  function updateSpokeConfig(SpokeConfig calldata config) external restricted {
+  function updateLiquidationConfig(LiquidationConfig calldata config) external restricted {
     require(
       config.targetHealthFactor >= HEALTH_FACTOR_LIQUIDATION_THRESHOLD &&
         config.liquidationBonusFactor <= PercentageMath.PERCENTAGE_FACTOR &&
         config.healthFactorForMaxBonus < HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
-      InvalidSpokeConfig()
+      InvalidLiquidationConfig()
     );
-    _spokeConfig = config;
-    emit UpdateSpokeConfig(config);
+    _liquidationConfig = config;
+    emit UpdateLiquidationConfig(config);
   }
 
   /// @inheritdoc ISpoke
@@ -166,7 +171,6 @@ abstract contract Spoke is
         initPaused: config.paused,
         initFrozen: config.frozen,
         initBorrowable: config.borrowable,
-        initLiquidatable: config.liquidatable,
         initReceiveSharesEnabled: config.receiveSharesEnabled
       })
     });
@@ -191,7 +195,6 @@ abstract contract Spoke is
       initPaused: config.paused,
       initFrozen: config.frozen,
       initBorrowable: config.borrowable,
-      initLiquidatable: config.liquidatable,
       initReceiveSharesEnabled: config.receiveSharesEnabled
     });
     emit UpdateReserveConfig(reserveId, config);
@@ -301,10 +304,9 @@ abstract contract Spoke is
     uint256 drawnShares = hub.draw(reserve.assetId, amount, msg.sender);
     userPosition.drawnShares += drawnShares.toUint120();
     if (!positionStatus.isBorrowing(reserveId)) {
-      uint16 maxUserBorrows = _spokeConfig.maxUserBorrows;
       require(
-        maxUserBorrows == MAX_ALLOWED_USER_RESERVES_LIMIT ||
-          positionStatus.borrowCount(_reserveCount) < maxUserBorrows,
+        MAX_USER_RESERVES_LIMIT == MAX_ALLOWED_USER_RESERVES_LIMIT ||
+          positionStatus.borrowCount(_reserveCount) < MAX_USER_RESERVES_LIMIT,
         MaximumUserReservesExceeded()
       );
       positionStatus.setBorrowing(reserveId, true);
@@ -402,7 +404,7 @@ abstract contract Spoke is
       debtReserve,
       _userPositions,
       _positionStatus,
-      _spokeConfig,
+      _liquidationConfig,
       collateralDynConfig,
       params
     );
@@ -434,11 +436,10 @@ abstract contract Spoke is
       // disabling as collateral is allowed when reserve is frozen
       require(!flags.frozen(), ReserveFrozen());
       // this must be a new collateral, otherwise would have short-circuited
-      uint16 maxUserCollaterals = _spokeConfig.maxUserCollaterals;
       // We set as collateral above in order to potentially refresh, so check <= here
       require(
-        maxUserCollaterals == MAX_ALLOWED_USER_RESERVES_LIMIT ||
-          positionStatus.collateralCount(_reserveCount) <= maxUserCollaterals,
+        MAX_USER_RESERVES_LIMIT == MAX_ALLOWED_USER_RESERVES_LIMIT ||
+          positionStatus.collateralCount(_reserveCount) <= MAX_USER_RESERVES_LIMIT,
         MaximumUserReservesExceeded()
       );
       _refreshDynamicConfig(onBehalfOf, reserveId);
@@ -479,7 +480,7 @@ abstract contract Spoke is
     bytes calldata signature
   ) external {
     _verifyAndConsumeIntent({
-      signer: params.user,
+      signer: params.onBehalfOf,
       intentHash: params.hash(),
       nonce: params.nonce,
       deadline: params.deadline,
@@ -489,7 +490,7 @@ abstract contract Spoke is
     for (uint256 i = 0; i < params.updates.length; ++i) {
       _setUserPositionManager({
         positionManager: params.updates[i].positionManager,
-        user: params.user,
+        user: params.onBehalfOf,
         approve: params.updates[i].approve
       });
     }
@@ -531,8 +532,8 @@ abstract contract Spoke is
   }
 
   /// @inheritdoc ISpoke
-  function getSpokeConfig() external view returns (SpokeConfig memory) {
-    return _spokeConfig;
+  function getLiquidationConfig() external view returns (LiquidationConfig memory) {
+    return _liquidationConfig;
   }
 
   /// @inheritdoc ISpoke
@@ -578,7 +579,6 @@ abstract contract Spoke is
         paused: reserve.flags.paused(),
         frozen: reserve.flags.frozen(),
         borrowable: reserve.flags.borrowable(),
-        liquidatable: reserve.flags.liquidatable(),
         receiveSharesEnabled: reserve.flags.receiveSharesEnabled()
       });
   }
@@ -677,8 +677,8 @@ abstract contract Spoke is
     _getReserve(reserveId);
     return
       LiquidationLogic.calculateLiquidationBonus({
-        healthFactorForMaxBonus: _spokeConfig.healthFactorForMaxBonus,
-        liquidationBonusFactor: _spokeConfig.liquidationBonusFactor,
+        healthFactorForMaxBonus: _liquidationConfig.healthFactorForMaxBonus,
+        liquidationBonusFactor: _liquidationConfig.liquidationBonusFactor,
         healthFactor: healthFactor,
         maxLiquidationBonus: _dynamicConfig[reserveId][
           _userPositions[user][reserveId].dynamicConfigKey

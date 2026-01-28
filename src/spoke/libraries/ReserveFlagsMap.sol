@@ -14,30 +14,25 @@ library ReserveFlagsMap {
   uint8 internal constant FROZEN_MASK = 0x02;
   /// @dev Mask for the `borrowable` flag.
   uint8 internal constant BORROWABLE_MASK = 0x04;
-  /// @dev Mask for the `liquidatable` flag.
-  uint8 internal constant LIQUIDATABLE_MASK = 0x08;
   /// @dev Mask for the `receiveSharesEnabled` flag.
-  uint8 internal constant RECEIVE_SHARES_ENABLED_MASK = 0x10;
+  uint8 internal constant RECEIVE_SHARES_ENABLED_MASK = 0x08;
 
   /// @notice Initializes the ReserveFlags with the given values.
   /// @param initPaused The initial `paused` flag status.
   /// @param initFrozen The initial `frozen` flag status.
   /// @param initBorrowable The initial `borrowable` flag status.
-  /// @param initLiquidatable The initial `liquidatable` flag status.
   /// @param initReceiveSharesEnabled The initial `receiveSharesEnabled` flag status.
   /// @return The initialized ReserveFlags.
   function create(
     bool initPaused,
     bool initFrozen,
     bool initBorrowable,
-    bool initLiquidatable,
     bool initReceiveSharesEnabled
   ) internal pure returns (ReserveFlags) {
     uint8 flags = 0;
     flags = _setStatus(flags, PAUSED_MASK, initPaused);
     flags = _setStatus(flags, FROZEN_MASK, initFrozen);
     flags = _setStatus(flags, BORROWABLE_MASK, initBorrowable);
-    flags = _setStatus(flags, LIQUIDATABLE_MASK, initLiquidatable);
     flags = _setStatus(flags, RECEIVE_SHARES_ENABLED_MASK, initReceiveSharesEnabled);
     return ReserveFlags.wrap(flags);
   }
@@ -64,14 +59,6 @@ library ReserveFlagsMap {
   /// @return The updated ReserveFlags.
   function setBorrowable(ReserveFlags flags, bool status) internal pure returns (ReserveFlags) {
     return ReserveFlags.wrap(_setStatus(ReserveFlags.unwrap(flags), BORROWABLE_MASK, status));
-  }
-
-  /// @notice Sets the new status for the `liquidatable` flag.
-  /// @param flags The current ReserveFlags.
-  /// @param status The new status for the `liquidatable` flag.
-  /// @return The updated ReserveFlags.
-  function setLiquidatable(ReserveFlags flags, bool status) internal pure returns (ReserveFlags) {
-    return ReserveFlags.wrap(_setStatus(ReserveFlags.unwrap(flags), LIQUIDATABLE_MASK, status));
   }
 
   /// @notice Sets the new status for the `receiveSharesEnabled` flag.
@@ -107,13 +94,6 @@ library ReserveFlagsMap {
   /// @return True if the flag is set.
   function borrowable(ReserveFlags flags) internal pure returns (bool) {
     return (ReserveFlags.unwrap(flags) & BORROWABLE_MASK) != 0;
-  }
-
-  /// @notice Returns the `liquidatable` flag status.
-  /// @param flags The current ReserveFlags.
-  /// @return True if the flag is set.
-  function liquidatable(ReserveFlags flags) internal pure returns (bool) {
-    return (ReserveFlags.unwrap(flags) & LIQUIDATABLE_MASK) != 0;
   }
 
   /// @notice Returns the `receiveSharesEnabled` flag status.

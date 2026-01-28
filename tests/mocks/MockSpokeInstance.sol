@@ -14,8 +14,13 @@ contract MockSpokeInstance is Spoke {
    * @dev It sets the spoke revision and disables the initializers.
    * @param spokeRevision_ The revision of the spoke contract.
    * @param oracle_ The address of the oracle.
+   * @param maxUserReservesLimit_ The maximum number of reserves a user can have (both collaterals and borrows).
    */
-  constructor(uint64 spokeRevision_, address oracle_) Spoke(oracle_) {
+  constructor(
+    uint64 spokeRevision_,
+    address oracle_,
+    uint16 maxUserReservesLimit_
+  ) Spoke(oracle_, maxUserReservesLimit_) {
     SPOKE_REVISION = spokeRevision_;
     _disableInitializers();
   }
@@ -25,11 +30,9 @@ contract MockSpokeInstance is Spoke {
     emit UpdateOracle(ORACLE);
     require(authority != address(0), InvalidAddress());
     __AccessManaged_init(authority);
-    if (_spokeConfig.targetHealthFactor == 0) {
-      _spokeConfig.targetHealthFactor = HEALTH_FACTOR_LIQUIDATION_THRESHOLD;
-      _spokeConfig.maxUserCollaterals = type(uint16).max;
-      _spokeConfig.maxUserBorrows = type(uint16).max;
-      emit UpdateSpokeConfig(_spokeConfig);
+    if (_liquidationConfig.targetHealthFactor == 0) {
+      _liquidationConfig.targetHealthFactor = HEALTH_FACTOR_LIQUIDATION_THRESHOLD;
+      emit UpdateLiquidationConfig(_liquidationConfig);
     }
   }
 }

@@ -70,7 +70,7 @@ contract SpokeMultipleHubBase is SpokeBase {
     // Spoke Admin functionalities
     bytes4[] memory selectors = new bytes4[](6);
     selectors[0] = ISpoke.updateReservePriceSource.selector;
-    selectors[1] = ISpoke.updateSpokeConfig.selector;
+    selectors[1] = ISpoke.updateLiquidationConfig.selector;
     selectors[2] = ISpoke.addReserve.selector;
     selectors[3] = ISpoke.updateReserveConfig.selector;
     selectors[4] = ISpoke.addDynamicReserveConfig.selector;
