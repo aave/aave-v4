@@ -5,9 +5,7 @@ pragma solidity ^0.8.0;
 import 'tests/unit/Spoke/SpokeBase.t.sol';
 
 contract SpokeAccrueInterestScenarioTest is SpokeBase {
-  using SharesMath for uint256;
   using WadRayMath for *;
-  using PercentageMath for uint256;
   using SafeCast for uint256;
 
   struct TestInputs {
@@ -157,10 +155,12 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
       deal(address(tokenList.dai), bob, MAX_SUPPLY_AMOUNT);
       Utils.supplyCollateral(spoke2, _usdzReserveId(spoke2), bob, MAX_SUPPLY_AMOUNT, bob);
 
+      uint256 daiBorrowAmount = 1e18;
+
       // Bob borrows more dai to trigger accrual
-      Utils.borrow(spoke2, _daiReserveId(spoke2), bob, 1e18, bob);
+      Utils.borrow(spoke2, _daiReserveId(spoke2), bob, daiBorrowAmount, bob);
       // Account for the dai we just borrowed
-      testAmounts[0].originalBorrowAmount += 1e18;
+      testAmounts[0].originalBorrowAmount += daiBorrowAmount;
 
       bobRp = _calculateExpectedUserRP(spoke2, bob);
 
