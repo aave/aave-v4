@@ -51,7 +51,7 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
 
   /// @notice Dynamic reserve configuration data.
   /// @dev collateralFactor The proportion of a reserve's value eligible to be used as collateral, expressed in BPS.
-  /// @dev maxLiquidationBonus The maximum extra amount of collateral given to the liquidator as bonus, expressed in BPS. 100_00 represents 0.00% bonus.
+  /// @dev maxLiquidationBonus The maximum extra amount of collateral given to the liquidator as bonus, expressed in BPS. 100_00 represents 100.00% bonus.
   /// @dev liquidationFee The protocol fee charged on liquidations, taken from the collateral bonus given to the liquidator, expressed in BPS.
   struct DynamicReserveConfig {
     uint16 collateralFactor;
@@ -429,6 +429,9 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
   /// @param onBehalfOf The address of the user on whose behalf the permit is being used.
   /// @param value The amount of the underlying asset to permit.
   /// @param deadline The deadline for the permit.
+  /// @param permitV The v parameter of the permit signature.
+  /// @param permitR The r parameter of the permit signature.
+  /// @param permitS The s parameter of the permit signature.
   function permitReserve(
     uint256 reserveId,
     address onBehalfOf,
