@@ -325,6 +325,9 @@ interface ISpoke is ISpokeBase, IAccessManaged, IIntentConsumer, IExtSload, IMul
   /// @notice Thrown when user attempts to exceed either the maximum allowed collateral or borrowed reserves.
   error MaximumUserReservesExceeded();
 
+  /// @notice Thrown upon attempt to set a max user reserves limit of 0.
+  error InvalidMaxUserReservesLimit();
+
   /// @notice Updates the liquidation config.
   /// @param config The new liquidation config.
   function updateLiquidationConfig(LiquidationConfig calldata config) external;
@@ -541,6 +544,6 @@ interface ISpoke is ISpokeBase, IAccessManaged, IIntentConsumer, IExtSload, IMul
   /// @notice Returns the address of the AaveOracle contract.
   function ORACLE() external view returns (address);
 
-  /// @notice Returns the maximum allowed number of reserves per user (for both collaterals and borrows).
+  /// @notice Returns the maximum allowed number of collateral and borrow reserves per user (each counted separately).
   function MAX_USER_RESERVES_LIMIT() external view returns (uint16);
 }

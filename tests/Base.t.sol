@@ -2348,7 +2348,13 @@ abstract contract Base is Test {
     address _accessManager,
     string memory _oracleDesc
   ) internal pausePrank returns (ISpoke, IAaveOracle) {
-    return _deploySpokeWithOracle(proxyAdminOwner, _accessManager, _oracleDesc, type(uint16).max);
+    return
+      _deploySpokeWithOracle(
+        proxyAdminOwner,
+        _accessManager,
+        _oracleDesc,
+        Constants.MAX_ALLOWED_USER_RESERVES_LIMIT
+      );
   }
 
   function _deploySpokeWithOracle(
@@ -2986,7 +2992,7 @@ abstract contract Base is Test {
       _calcUnrealizedFees(hub, assetId);
   }
 
-  function _addNewAssetsAndReserves(ISpoke spoke, uint256 count) internal {
+  function _addNewAssetsAndReserves(IHub hub, ISpoke spoke, uint256 count) internal {
     for (uint256 i = 0; i < count; i++) {
       MockERC20 newToken = new MockERC20();
       newToken.mint(alice, MAX_SUPPLY_AMOUNT * 10 ** 18);
@@ -3013,16 +3019,16 @@ abstract contract Base is Test {
         })
       );
 
-      // Add asset to hub1
+      // Add asset to hub
       vm.startPrank(ADMIN);
-      uint256 newTokenAssetId = hub1.addAsset(
+      uint256 newTokenAssetId = hub.addAsset(
         address(newToken),
         18,
         address(treasurySpoke),
         address(irStrategy),
         encodedIrData
       );
-      hub1.updateAssetConfig(
+      hub.updateAssetConfig(
         newTokenAssetId,
         IHub.AssetConfig({
           liquidityFee: 10_00,
@@ -3049,7 +3055,7 @@ abstract contract Base is Test {
 
       // Add reserve to spoke
       spoke.addReserve(
-        address(hub1),
+        address(hub),
         newTokenAssetId,
         _deployMockPriceFeed(spoke, 1e8),
         reserveConfig,
@@ -3057,7 +3063,7 @@ abstract contract Base is Test {
       );
 
       // Add spoke to hub
-      hub1.addSpoke(newTokenAssetId, address(spoke), spokeConfig);
+      hub.addSpoke(newTokenAssetId, address(spoke), spokeConfig);
       vm.stopPrank();
     }
   }

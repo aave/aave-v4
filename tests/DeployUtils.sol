@@ -8,19 +8,20 @@ import {IHub} from 'src/hub/interfaces/IHub.sol';
 import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 import {ISpokeInstance} from 'tests/mocks/ISpokeInstance.sol';
 import {Create2Utils} from 'tests/Create2Utils.sol';
+import {Constants} from 'tests/Constants.sol';
 
 library DeployUtils {
   Vm internal constant vm = Vm(address(uint160(uint256(keccak256('hevm cheat code')))));
 
   function deploySpokeImplementation(address oracle) internal returns (ISpokeInstance) {
-    return deploySpokeImplementation(oracle, type(uint16).max, '');
+    return deploySpokeImplementation(oracle, Constants.MAX_ALLOWED_USER_RESERVES_LIMIT, '');
   }
 
   function deploySpokeImplementation(
     address oracle,
     bytes32 salt
   ) internal returns (ISpokeInstance spoke) {
-    return deploySpokeImplementation(oracle, type(uint16).max, salt);
+    return deploySpokeImplementation(oracle, Constants.MAX_ALLOWED_USER_RESERVES_LIMIT, salt);
   }
 
   function deploySpokeImplementation(
@@ -40,7 +41,8 @@ library DeployUtils {
     address proxyAdminOwner,
     bytes memory initData
   ) internal returns (ISpoke) {
-    return deploySpoke(oracle, type(uint16).max, proxyAdminOwner, initData);
+    return
+      deploySpoke(oracle, Constants.MAX_ALLOWED_USER_RESERVES_LIMIT, proxyAdminOwner, initData);
   }
 
   function deploySpoke(
@@ -60,7 +62,8 @@ library DeployUtils {
   }
 
   function getDeterministicSpokeInstanceAddress(address oracle) internal returns (address) {
-    return getDeterministicSpokeInstanceAddress(oracle, type(uint16).max, '');
+    return
+      getDeterministicSpokeInstanceAddress(oracle, Constants.MAX_ALLOWED_USER_RESERVES_LIMIT, '');
   }
 
   function getDeterministicSpokeInstanceAddress(

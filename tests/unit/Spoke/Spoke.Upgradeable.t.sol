@@ -74,7 +74,7 @@ contract SpokeUpgradeableTest is SpokeBase {
 
     assertEq(_getProxyInitializedVersion(address(spokeProxy)), revision);
     assertEq(spokeProxy.getLiquidationConfig(), expectedLiquidationConfig);
-    assertEq(spokeProxy.MAX_USER_RESERVES_LIMIT(), type(uint16).max);
+    assertEq(spokeProxy.MAX_USER_RESERVES_LIMIT(), Constants.MAX_ALLOWED_USER_RESERVES_LIMIT);
   }
 
   function test_proxy_reinitialization_fuzz(uint64 initialRevision) public {
@@ -211,6 +211,9 @@ contract SpokeUpgradeableTest is SpokeBase {
   }
 
   function _deployMockSpokeInstance(uint64 revision) internal returns (ISpokeInstance) {
-    return ISpokeInstance(address(new MockSpokeInstance(revision, oracle, type(uint16).max)));
+    return
+      ISpokeInstance(
+        address(new MockSpokeInstance(revision, oracle, Constants.MAX_ALLOWED_USER_RESERVES_LIMIT))
+      );
   }
 }

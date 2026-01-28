@@ -115,9 +115,10 @@ abstract contract Spoke is
 
   /// @dev Constructor.
   /// @param oracle_ The address of the AaveOracle contract.
-  /// @param maxUserReservesLimit_ The maximum number of reserves a user can have (both collaterals and borrows).
+  /// @param maxUserReservesLimit_ The maximum number of collateral and borrow reserves a user can have.
   constructor(address oracle_, uint16 maxUserReservesLimit_) {
     require(IAaveOracle(oracle_).DECIMALS() == ORACLE_DECIMALS, InvalidOracleDecimals());
+    require(maxUserReservesLimit_ > 0, InvalidMaxUserReservesLimit());
     ORACLE = oracle_;
     MAX_USER_RESERVES_LIMIT = maxUserReservesLimit_;
   }
@@ -428,20 +429,10 @@ abstract contract Spoke is
     if (positionStatus.isUsingAsCollateral(reserveId) == usingAsCollateral) {
       return;
     }
-    ReserveFlags flags = _getReserve(reserveId).flags;
-    _validateSetUsingAsCollateral(flags);
+    _validateSetUsingAsCollateral(positionStatus, _getReserve(reserveId).flags, usingAsCollateral);
     positionStatus.setUsingAsCollateral(reserveId, usingAsCollateral);
 
     if (usingAsCollateral) {
-      // disabling as collateral is allowed when reserve is frozen
-      require(!flags.frozen(), ReserveFrozen());
-      // this must be a new collateral, otherwise would have short-circuited
-      // We set as collateral above in order to potentially refresh, so check <= here
-      require(
-        MAX_USER_RESERVES_LIMIT == MAX_ALLOWED_USER_RESERVES_LIMIT ||
-          positionStatus.collateralCount(_reserveCount) <= MAX_USER_RESERVES_LIMIT,
-        MaximumUserReservesExceeded()
-      );
       _refreshDynamicConfig(onBehalfOf, reserveId);
     } else {
       uint256 newRiskPremium = _refreshAndValidateUserAccountData(onBehalfOf).riskPremium;
@@ -942,8 +933,22 @@ abstract contract Spoke is
     require(!flags.paused(), ReservePaused());
   }
 
-  function _validateSetUsingAsCollateral(ReserveFlags flags) internal pure {
+  function _validateSetUsingAsCollateral(
+    PositionStatus storage positionStatus,
+    ReserveFlags flags,
+    bool usingAsCollateral
+  ) internal view {
     require(!flags.paused(), ReservePaused());
+    if (usingAsCollateral) {
+      // disabling as collateral is allowed when reserve is frozen
+      require(!flags.frozen(), ReserveFrozen());
+      // this must be a new collateral, otherwise would have short-circuited
+      require(
+        MAX_USER_RESERVES_LIMIT == MAX_ALLOWED_USER_RESERVES_LIMIT ||
+          positionStatus.collateralCount(_reserveCount) < MAX_USER_RESERVES_LIMIT,
+        MaximumUserReservesExceeded()
+      );
+    }
   }
 
   /// @notice Returns whether `manager` is active & approved positionManager for `user`.
