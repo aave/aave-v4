@@ -60,7 +60,9 @@ contract EIP712HashTest is Test {
 
     assertEq(
       PositionManagerEIP712Hash.UPDATE_USER_RISK_PREMIUM_TYPEHASH,
-      keccak256('UpdateUserRiskPremium(address spoke,address user,uint256 nonce,uint256 deadline)')
+      keccak256(
+        'UpdateUserRiskPremium(address spoke,address onBehalfOf,uint256 nonce,uint256 deadline)'
+      )
     );
     assertEq(
       PositionManagerEIP712Hash.UPDATE_USER_RISK_PREMIUM_TYPEHASH,
@@ -70,7 +72,7 @@ contract EIP712HashTest is Test {
     assertEq(
       PositionManagerEIP712Hash.UPDATE_USER_DYNAMIC_CONFIG_TYPEHASH,
       keccak256(
-        'UpdateUserDynamicConfig(address spoke,address user,uint256 nonce,uint256 deadline)'
+        'UpdateUserDynamicConfig(address spoke,address onBehalfOf,uint256 nonce,uint256 deadline)'
       )
     );
     assertEq(
@@ -81,7 +83,7 @@ contract EIP712HashTest is Test {
     assertEq(
       SpokeEIP712Hash.SET_USER_POSITION_MANAGERS_TYPEHASH,
       keccak256(
-        'SetUserPositionManagers(address user,PositionManagerUpdate[] updates,uint256 nonce,uint256 deadline)PositionManagerUpdate(address positionManager,bool approve)'
+        'SetUserPositionManagers(address onBehalfOf,PositionManagerUpdate[] updates,uint256 nonce,uint256 deadline)PositionManagerUpdate(address positionManager,bool approve)'
       )
     );
     assertEq(
@@ -190,7 +192,7 @@ contract EIP712HashTest is Test {
       abi.encode(
         PositionManagerEIP712Hash.UPDATE_USER_RISK_PREMIUM_TYPEHASH,
         params.spoke,
-        params.user,
+        params.onBehalfOf,
         params.nonce,
         params.deadline
       )
@@ -207,7 +209,7 @@ contract EIP712HashTest is Test {
       abi.encode(
         PositionManagerEIP712Hash.UPDATE_USER_DYNAMIC_CONFIG_TYPEHASH,
         params.spoke,
-        params.user,
+        params.onBehalfOf,
         params.nonce,
         params.deadline
       )
@@ -228,7 +230,7 @@ contract EIP712HashTest is Test {
     bytes32 expectedHash = keccak256(
       abi.encode(
         SpokeEIP712Hash.SET_USER_POSITION_MANAGERS_TYPEHASH,
-        params.user,
+        params.onBehalfOf,
         keccak256(abi.encodePacked(updatesHashes)),
         params.nonce,
         params.deadline

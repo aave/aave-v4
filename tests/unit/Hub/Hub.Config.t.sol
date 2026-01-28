@@ -349,6 +349,34 @@ contract HubConfigTest is HubBase {
     assertEq(hub1.getAssetConfig(assetId), expectedConfig);
     assertEq(hub1.getAsset(assetId).reinvestmentController, address(0)); // should init to addr(0)
     assertEq(hub1.getSpokeConfig(assetId, feeReceiver), expectedSpokeConfig);
+    assertEq(hub1.getAssetId(underlying), expectedAssetId);
+  }
+
+  function test_isUnderlyingListed() public {
+    address underlying = address(new TestnetERC20('USDA', 'USDA', 18));
+    address feeReceiver = makeAddr('feeReceiver');
+    address interestRateStrategy = address(new AssetInterestRateStrategy(address(hub1)));
+
+    assertFalse(hub1.isUnderlyingListed(underlying));
+
+    Utils.addAsset(hub1, ADMIN, underlying, 18, feeReceiver, interestRateStrategy, encodedIrData);
+
+    assertTrue(hub1.isUnderlyingListed(underlying));
+  }
+
+  function test_getAssetId() public view {
+    assertEq(hub1.getAssetId(address(tokenList.weth)), wethAssetId);
+    assertEq(hub1.getAssetId(address(tokenList.usdx)), usdxAssetId);
+    assertEq(hub1.getAssetId(address(tokenList.dai)), daiAssetId);
+    assertEq(hub1.getAssetId(address(tokenList.wbtc)), wbtcAssetId);
+    assertEq(hub1.getAssetId(address(tokenList.usdy)), usdyAssetId);
+    assertEq(hub1.getAssetId(address(tokenList.usdz)), usdzAssetId);
+  }
+
+  function test_getAssetId_fuzz_revertsWith_AssetNotListed(address underlying) public {
+    assumeUnusedAddress(underlying);
+    vm.expectRevert(IHub.AssetNotListed.selector, address(hub1));
+    hub1.getAssetId(underlying);
   }
 
   function test_updateAssetConfig_fuzz_revertsWith_InvalidLiquidityFee(

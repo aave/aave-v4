@@ -16,12 +16,12 @@ type ReserveFlags is uint8;
 /// @notice Full interface for Spoke.
 interface ISpoke is ISpokeBase, IAccessManaged, IIntentConsumer, IExtSload, IMulticall {
   /// @notice Intent data to set user position managers with EIP712-typed signature.
-  /// @param user The address of the user on whose behalf position manager can act.
+  /// @param onBehalfOf The address of the user on whose behalf position manager can act.
   /// @param updates The array of position manager updates.
   /// @param nonce The nonce for the signature.
   /// @param deadline The deadline for the signature.
   struct SetUserPositionManagers {
-    address user;
+    address onBehalfOf;
     PositionManagerUpdate[] updates;
     uint256 nonce;
     uint256 deadline;
@@ -59,14 +59,12 @@ interface ISpoke is ISpokeBase, IAccessManaged, IIntentConsumer, IExtSload, IMul
   /// @dev paused True if all actions are prevented for the reserve.
   /// @dev frozen True if new activity is prevented for the reserve.
   /// @dev borrowable True if the reserve is borrowable.
-  /// @dev liquidatable True if the reserve can be liquidated when used as collateral.
   /// @dev receiveSharesEnabled True if the liquidator can receive collateral shares during liquidation.
   struct ReserveConfig {
     uint24 collateralRisk;
     bool paused;
     bool frozen;
     bool borrowable;
-    bool liquidatable;
     bool receiveSharesEnabled;
   }
 
@@ -266,9 +264,6 @@ interface ISpoke is ISpokeBase, IAccessManaged, IIntentConsumer, IExtSload, IMul
   /// @notice Thrown when a reserve is frozen.
   /// @dev Can only occur during an attempted `supply`, `borrow`, or `setUsingAsCollateral` action.
   error ReserveFrozen();
-
-  /// @notice Thrown when the collateral reserve is not enabled to be liquidated.
-  error CollateralCannotBeLiquidated();
 
   /// @notice Thrown when an action causes a user's health factor to fall below the liquidation threshold.
   error HealthFactorBelowThreshold();

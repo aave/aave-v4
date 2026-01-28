@@ -284,13 +284,13 @@ contract SignatureGatewayInvalidSignatureTest is SignatureGatewayBaseTest {
       deadline
     );
     uint192 nonceKey = _randomNonceKey();
-    uint256 currentNonce = _burnRandomNoncesAtKey(gateway, p.user, nonceKey);
-    p.nonce = _getRandomInvalidNonceAtKey(gateway, p.user, nonceKey);
+    uint256 currentNonce = _burnRandomNoncesAtKey(gateway, p.onBehalfOf, nonceKey);
+    p.nonce = _getRandomInvalidNonceAtKey(gateway, p.onBehalfOf, nonceKey);
 
     bytes memory signature = _sign(alicePk, _getTypedDataHash(gateway, p));
 
     vm.expectRevert(
-      abi.encodeWithSelector(INoncesKeyed.InvalidAccountNonce.selector, p.user, currentNonce)
+      abi.encodeWithSelector(INoncesKeyed.InvalidAccountNonce.selector, p.onBehalfOf, currentNonce)
     );
     vm.prank(vm.randomAddress());
     gateway.updateUserRiskPremiumWithSig(p, signature);
@@ -303,13 +303,13 @@ contract SignatureGatewayInvalidSignatureTest is SignatureGatewayBaseTest {
       _warpBeforeRandomDeadline()
     );
     uint192 nonceKey = _randomNonceKey();
-    uint256 currentNonce = _burnRandomNoncesAtKey(gateway, p.user, nonceKey);
-    p.nonce = _getRandomInvalidNonceAtKey(gateway, p.user, nonceKey);
+    uint256 currentNonce = _burnRandomNoncesAtKey(gateway, p.onBehalfOf, nonceKey);
+    p.nonce = _getRandomInvalidNonceAtKey(gateway, p.onBehalfOf, nonceKey);
 
     bytes memory signature = _sign(alicePk, _getTypedDataHash(gateway, p));
 
     vm.expectRevert(
-      abi.encodeWithSelector(INoncesKeyed.InvalidAccountNonce.selector, p.user, currentNonce)
+      abi.encodeWithSelector(INoncesKeyed.InvalidAccountNonce.selector, p.onBehalfOf, currentNonce)
     );
     vm.prank(vm.randomAddress());
     gateway.updateUserDynamicConfigWithSig(p, signature);
