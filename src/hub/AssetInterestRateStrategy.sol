@@ -24,6 +24,9 @@ contract AssetInterestRateStrategy is IAssetInterestRateStrategy {
   /// @inheritdoc IAssetInterestRateStrategy
   uint256 public constant MAX_OPTIMAL_RATIO = 99_00;
 
+  /// @dev The maximum possible usage ratio, in BPS.
+  uint256 internal constant MAX_USAGE_RATIO = 100_00; // 100.00%
+
   /// @inheritdoc IAssetInterestRateStrategy
   address public immutable HUB;
 
@@ -49,6 +52,11 @@ contract AssetInterestRateStrategy is IAssetInterestRateStrategy {
       InvalidOptimalUsageRatio()
     );
     require(rateData.variableRateSlope1 <= rateData.variableRateSlope2, Slope2MustBeGteSlope1());
+    require(
+      rateData.variableRateSlope2 * rateData.optimalUsageRatio >=
+        rateData.variableRateSlope1 * (MAX_USAGE_RATIO - rateData.optimalUsageRatio),
+      Slope2MustBeGteSlope1()
+    );
     require(
       rateData.baseVariableBorrowRate + rateData.variableRateSlope1 + rateData.variableRateSlope2 <=
         MAX_BORROW_RATE,

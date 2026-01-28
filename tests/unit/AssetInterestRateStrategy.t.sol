@@ -105,6 +105,21 @@ contract AssetInterestRateStrategyTest is Base {
     rateStrategy.setInterestRateData(mockAssetId, encodedRateData);
   }
 
+  function test_setInterestRateData_invalidSlope_revertsWith_Slope2MustBeGteSlope1() public {
+    // true slope1 = 10_00/20_00 = 50%, true slope2 = 20_00/80_00 = 25%
+    // therefore invalid
+    rateData = IAssetInterestRateStrategy.InterestRateData({
+      optimalUsageRatio: 20_00,
+      baseVariableBorrowRate: 10_00,
+      variableRateSlope1: 10_00,
+      variableRateSlope2: 20_00
+    });
+    encodedRateData = abi.encode(rateData);
+    vm.expectRevert(IAssetInterestRateStrategy.Slope2MustBeGteSlope1.selector);
+    vm.prank(address(hub1));
+    rateStrategy.setInterestRateData(mockAssetId, encodedRateData);
+  }
+
   function test_setInterestRateData_revertsWith_InvalidMaxRate() public {
     rateData.baseVariableBorrowRate = rateData.variableRateSlope1 = rateData.variableRateSlope2 =
       rateStrategy.MAX_BORROW_RATE().toUint32() / 3 +
