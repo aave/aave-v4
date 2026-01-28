@@ -89,9 +89,9 @@ contract LiquidationLogicLiquidateUserTest is LiquidationLogicBaseTest {
 
     // Mock storage for liquidation config
     liquidationConfig = ISpoke.LiquidationConfig({
-      targetHealthFactor: 1e18,
       healthFactorForMaxBonus: 0.8e18,
-      liquidationBonusFactor: 50_00
+      liquidationBonusFactor: 50_00,
+      targetHealthFactor: 1e18
     });
     updateStorage(liquidationConfig);
 

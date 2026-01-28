@@ -99,7 +99,7 @@ contract SpokeDynamicConfigTest is SpokeBase {
 
     MockSpoke(address(spoke1)).setReserveDynamicConfigKey(
       reserveId,
-      Constants.MAX_ALLOWED_DYNAMIC_CONFIG_KEY.toUint24()
+      uint24(Constants.MAX_ALLOWED_DYNAMIC_CONFIG_KEY)
     );
 
     vm.expectRevert(ISpoke.MaximumDynamicConfigKeyReached.selector, address(spoke1));

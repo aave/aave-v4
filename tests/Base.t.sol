@@ -1246,17 +1246,17 @@ abstract contract Base is Test {
     ISpoke spoke,
     uint128 newTargetHealthFactor
   ) internal pausePrank {
-    ISpoke.LiquidationConfig memory liquidationConfig = spoke.getLiquidationConfig();
-    liquidationConfig.targetHealthFactor = newTargetHealthFactor;
+    ISpoke.LiquidationConfig memory liqConfig = spoke.getLiquidationConfig();
+    liqConfig.targetHealthFactor = newTargetHealthFactor;
     vm.prank(SPOKE_ADMIN);
-    spoke.updateLiquidationConfig(liquidationConfig);
+    spoke.updateLiquidationConfig(liqConfig);
 
-    assertEq(spoke.getLiquidationConfig(), liquidationConfig);
+    assertEq(spoke.getLiquidationConfig(), liqConfig);
   }
 
   function getTargetHealthFactor(ISpoke spoke) internal view returns (uint256) {
-    ISpoke.LiquidationConfig memory liquidationConfig = spoke.getLiquidationConfig();
-    return liquidationConfig.targetHealthFactor;
+    ISpoke.LiquidationConfig memory liqConfig = spoke.getLiquidationConfig();
+    return liqConfig.targetHealthFactor;
   }
 
   /// @dev pseudo random randomizer

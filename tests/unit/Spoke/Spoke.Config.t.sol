@@ -280,7 +280,7 @@ contract SpokeConfigTest is SpokeBase {
       type(uint128).max
     ).toUint128();
 
-    ISpoke.LiquidationConfig memory liquidationConfig = spoke1.getLiquidationConfig();
+    ISpoke.LiquidationConfig memory liquidationConfig;
     liquidationConfig.targetHealthFactor = newTargetHealthFactor;
 
     vm.expectEmit(address(spoke1));
