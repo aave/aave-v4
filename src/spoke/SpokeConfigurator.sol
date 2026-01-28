@@ -274,6 +274,22 @@ contract SpokeConfigurator is AccessManaged, ISpokeConfigurator {
     }
   }
 
+  // @inheritdoc ISpokeConfigurator
+  function pauseReserve(address spoke, uint256 reserveId) external restricted {
+    ISpoke targetSpoke = ISpoke(spoke);
+    ISpoke.ReserveConfig memory reserveConfig = targetSpoke.getReserveConfig(reserveId);
+    reserveConfig.paused = true;
+    targetSpoke.updateReserveConfig(reserveId, reserveConfig);
+  }
+
+  // @inheritdoc ISpokeConfigurator
+  function freezeReserve(address spoke, uint256 reserveId) external restricted {
+    ISpoke targetSpoke = ISpoke(spoke);
+    ISpoke.ReserveConfig memory reserveConfig = targetSpoke.getReserveConfig(reserveId);
+    reserveConfig.frozen = true;
+    targetSpoke.updateReserveConfig(reserveId, reserveConfig);
+  }
+
   /// @inheritdoc ISpokeConfigurator
   function updatePositionManager(
     address spoke,

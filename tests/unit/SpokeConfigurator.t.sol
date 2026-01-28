@@ -764,6 +764,29 @@ contract SpokeConfiguratorTest is SpokeBase {
     }
   }
 
+  function test_pauseReserve_revertsWith_AccessManagedUnauthorized() public {
+    vm.expectRevert(
+      abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, alice)
+    );
+    vm.prank(alice);
+    spokeConfigurator.pauseReserve(spokeAddr, reserveId);
+  }
+
+  function test_pauseReserve() public {
+    ISpoke.ReserveConfig memory reserveConfig = spoke.getReserveConfig(reserveId);
+    reserveConfig.paused = true;
+    vm.expectCall(
+      spokeAddr,
+      abi.encodeCall(ISpoke.updateReserveConfig, (reserveId, reserveConfig))
+    );
+    vm.expectEmit(address(spoke));
+    emit ISpoke.UpdateReserveConfig(reserveId, reserveConfig);
+    vm.prank(SPOKE_CONFIGURATOR);
+    spokeConfigurator.pauseReserve(spokeAddr, reserveId);
+
+    assertTrue(spoke.getReserveConfig(reserveId).paused);
+  }
+
   function test_freezeAllReserves_revertsWith_AccessManagedUnauthorized() public {
     vm.expectRevert(
       abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, alice)
@@ -787,6 +810,29 @@ contract SpokeConfiguratorTest is SpokeBase {
     for (uint256 id; id < spoke.getReserveCount(); ++id) {
       assertEq(spoke.getReserveConfig(id).frozen, true);
     }
+  }
+
+  function test_freezeReserve_revertsWith_AccessManagedUnauthorized() public {
+    vm.expectRevert(
+      abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, alice)
+    );
+    vm.prank(alice);
+    spokeConfigurator.freezeReserve(spokeAddr, reserveId);
+  }
+
+  function test_freezeReserve() public {
+    ISpoke.ReserveConfig memory reserveConfig = spoke.getReserveConfig(reserveId);
+    reserveConfig.frozen = true;
+    vm.expectCall(
+      spokeAddr,
+      abi.encodeCall(ISpoke.updateReserveConfig, (reserveId, reserveConfig))
+    );
+    vm.expectEmit(address(spoke));
+    emit ISpoke.UpdateReserveConfig(reserveId, reserveConfig);
+    vm.prank(SPOKE_CONFIGURATOR);
+    spokeConfigurator.freezeReserve(spokeAddr, reserveId);
+
+    assertTrue(spoke.getReserveConfig(reserveId).frozen);
   }
 
   function test_updatePositionManager_revertsWith_AccessManagedUnauthorized() public {

@@ -413,7 +413,7 @@ abstract contract Base is Test {
     IAccessManager(manager).grantRole(Roles.SPOKE_ADMIN_ROLE, spokeConfigurator, 0);
 
     // Set up SpokeConfigurator function permissions - all functions callable by SPOKE_CONFIGURATOR_ROLE
-    bytes4[] memory selectors = new bytes4[](24);
+    bytes4[] memory selectors = new bytes4[](26);
     selectors[0] = ISpokeConfigurator.updateReservePriceSource.selector;
     selectors[1] = ISpokeConfigurator.updateLiquidationTargetHealthFactor.selector;
     selectors[2] = ISpokeConfigurator.updateHealthFactorForMaxBonus.selector;
@@ -436,7 +436,9 @@ abstract contract Base is Test {
     selectors[20] = ISpokeConfigurator.updateDynamicReserveConfig.selector;
     selectors[21] = ISpokeConfigurator.pauseAllReserves.selector;
     selectors[22] = ISpokeConfigurator.freezeAllReserves.selector;
-    selectors[23] = ISpokeConfigurator.updatePositionManager.selector;
+    selectors[23] = ISpokeConfigurator.pauseReserve.selector;
+    selectors[24] = ISpokeConfigurator.freezeReserve.selector;
+    selectors[25] = ISpokeConfigurator.updatePositionManager.selector;
     IAccessManager(manager).setTargetFunctionRole(
       spokeConfigurator,
       selectors,
