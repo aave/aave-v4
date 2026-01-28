@@ -6,6 +6,7 @@ import 'tests/unit/Hub/HubBase.t.sol';
 
 contract HubConfiguratorTest is HubBase {
   using SafeCast for uint256;
+  using MathUtils for uint256;
 
   HubConfigurator internal hubConfigurator;
 
@@ -191,10 +192,15 @@ contract HubConfiguratorTest is HubBase {
 
     baseVariableBorrowRate = bound(baseVariableBorrowRate, 0, MAX_BORROW_RATE / 3).toUint32();
     uint32 remainingAfterBase = MAX_BORROW_RATE.toUint32() - baseVariableBorrowRate;
-    variableRateSlope1 = bound(variableRateSlope1, 0, remainingAfterBase / 2).toUint32();
+    variableRateSlope1 = bound(
+      variableRateSlope1,
+      0,
+      (uint256(remainingAfterBase) * optimalUsageRatio) / 100_00
+    ).toUint32();
     variableRateSlope2 = bound(
       variableRateSlope2,
-      variableRateSlope1,
+      ((uint256(variableRateSlope1) * (100_00 - optimalUsageRatio)) / optimalUsageRatio + 1)
+        .toUint32(),
       MAX_BORROW_RATE - baseVariableBorrowRate - variableRateSlope1
     ).toUint32();
 
