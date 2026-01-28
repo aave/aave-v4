@@ -446,7 +446,6 @@ abstract contract Base is Test {
     selectors[7] = ISpokeConfigurator.updatePaused.selector;
     selectors[8] = ISpokeConfigurator.updateFrozen.selector;
     selectors[9] = ISpokeConfigurator.updateBorrowable.selector;
-    selectors[10] = ISpokeConfigurator.updateLiquidatable.selector;
     selectors[11] = ISpokeConfigurator.updateReceiveSharesEnabled.selector;
     selectors[12] = ISpokeConfigurator.updateCollateralRisk.selector;
     selectors[13] = ISpokeConfigurator.addCollateralFactor.selector;
@@ -2461,7 +2460,6 @@ abstract contract Base is Test {
         paused: false,
         frozen: false,
         borrowable: true,
-        liquidatable: true,
         receiveSharesEnabled: true,
         collateralRisk: collateralRisk
       });

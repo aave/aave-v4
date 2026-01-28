@@ -59,14 +59,12 @@ interface ISpoke is ISpokeBase, IAccessManaged, IIntentConsumer, IExtSload, IMul
   /// @dev paused True if all actions are prevented for the reserve.
   /// @dev frozen True if new activity is prevented for the reserve.
   /// @dev borrowable True if the reserve is borrowable.
-  /// @dev liquidatable True if the reserve can be liquidated when used as collateral.
   /// @dev receiveSharesEnabled True if the liquidator can receive collateral shares during liquidation.
   struct ReserveConfig {
     uint24 collateralRisk;
     bool paused;
     bool frozen;
     bool borrowable;
-    bool liquidatable;
     bool receiveSharesEnabled;
   }
 
@@ -266,9 +264,6 @@ interface ISpoke is ISpokeBase, IAccessManaged, IIntentConsumer, IExtSload, IMul
   /// @notice Thrown when a reserve is frozen.
   /// @dev Can only occur during an attempted `supply`, `borrow`, or `setUsingAsCollateral` action.
   error ReserveFrozen();
-
-  /// @notice Thrown when the collateral reserve is not enabled to be liquidated.
-  error CollateralCannotBeLiquidated();
 
   /// @notice Thrown when an action causes a user's health factor to fall below the liquidation threshold.
   error HealthFactorBelowThreshold();
