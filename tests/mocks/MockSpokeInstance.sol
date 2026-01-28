@@ -26,10 +26,10 @@ contract MockSpokeInstance is Spoke {
   }
 
   /// @inheritdoc Spoke
-  function initialize(address authority) external override reinitializer(SPOKE_REVISION) {
+  function initialize(address _authority) external override reinitializer(SPOKE_REVISION) {
     emit UpdateOracle(ORACLE);
-    require(authority != address(0), InvalidAddress());
-    __AccessManaged_init(authority);
+    require(_authority != address(0), InvalidAddress());
+    __AccessManaged_init(_authority);
     if (_liquidationConfig.targetHealthFactor == 0) {
       _liquidationConfig.targetHealthFactor = HEALTH_FACTOR_LIQUIDATION_THRESHOLD;
       emit UpdateLiquidationConfig(_liquidationConfig);

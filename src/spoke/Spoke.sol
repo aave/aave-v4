@@ -85,9 +85,6 @@ abstract contract Spoke is
   /// @dev Number of reserves listed in the Spoke.
   uint256 internal _reserveCount;
 
-  /// @dev The liquidation configuration
-  LiquidationConfig internal _liquidationConfig;
-
   /// @dev Map of user addresses and reserve identifiers to user positions.
   mapping(address user => mapping(uint256 reserveId => UserPosition)) internal _userPositions;
 
@@ -103,6 +100,9 @@ abstract contract Spoke is
   /// @dev Map of reserve identifiers and dynamic configuration keys to the dynamic configuration data.
   mapping(uint256 reserveId => mapping(uint24 dynamicConfigKey => DynamicReserveConfig))
     internal _dynamicConfig;
+
+  /// @dev Liquidation configuration for the Spoke.
+  LiquidationConfig internal _liquidationConfig;
 
   /// @dev Map of hub addresses and asset identifiers to whether the reserve exists.
   mapping(address hub => mapping(uint256 assetId => bool)) internal _reserveExists;
@@ -963,7 +963,7 @@ abstract contract Spoke is
     require(
       config.collateralFactor < PercentageMath.PERCENTAGE_FACTOR &&
         config.maxLiquidationBonus >= PercentageMath.PERCENTAGE_FACTOR &&
-        uint256(config.maxLiquidationBonus).percentMulUp(config.collateralFactor) <
+        config.maxLiquidationBonus.percentMulUp(config.collateralFactor) <
           PercentageMath.PERCENTAGE_FACTOR,
       InvalidCollateralFactorAndMaxLiquidationBonus()
     );

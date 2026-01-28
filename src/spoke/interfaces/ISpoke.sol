@@ -142,7 +142,7 @@ interface ISpoke is ISpokeBase, IAccessManaged, IIntentConsumer, IExtSload, IMul
   /// @param oracle The new address of the oracle.
   event UpdateOracle(address indexed oracle);
 
-  /// @notice Emitted when liquidation config is updated.
+  /// @notice Emitted when a liquidation config is updated.
   /// @param config The new liquidation config.
   event UpdateLiquidationConfig(LiquidationConfig config);
 
@@ -325,7 +325,7 @@ interface ISpoke is ISpokeBase, IAccessManaged, IIntentConsumer, IExtSload, IMul
   /// @notice Thrown when user attempts to exceed either the maximum allowed collateral or borrowed reserves.
   error MaximumUserReservesExceeded();
 
-  /// @notice Updates the liquidation configuration.
+  /// @notice Updates the liquidation config.
   /// @param config The new liquidation config.
   function updateLiquidationConfig(LiquidationConfig calldata config) external;
 
