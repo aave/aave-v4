@@ -56,7 +56,7 @@ contract SpokeLiquidationCallDustTest is SpokeLiquidationCallBaseTest {
     vm.prank(SPOKE_ADMIN);
     _spoke.updateLiquidationConfig(
       ISpoke.LiquidationConfig({
-        targetHealthFactor: targetHealthFactor.toUint64(),
+        targetHealthFactor: targetHealthFactor.toUint128(),
         healthFactorForMaxBonus: 0.99e18,
         liquidationBonusFactor: 0
       })
@@ -129,7 +129,7 @@ contract SpokeLiquidationCallDustTest is SpokeLiquidationCallBaseTest {
     vm.prank(SPOKE_ADMIN);
     _spoke.updateLiquidationConfig(
       ISpoke.LiquidationConfig({
-        targetHealthFactor: targetHealthFactor.toUint64(),
+        targetHealthFactor: targetHealthFactor.toUint128(),
         healthFactorForMaxBonus: 0.99e18,
         liquidationBonusFactor: 0
       })
@@ -202,7 +202,7 @@ contract SpokeLiquidationCallDustTest is SpokeLiquidationCallBaseTest {
     vm.prank(SPOKE_ADMIN);
     _spoke.updateLiquidationConfig(
       ISpoke.LiquidationConfig({
-        targetHealthFactor: targetHealthFactor.toUint64(),
+        targetHealthFactor: targetHealthFactor.toUint128(),
         healthFactorForMaxBonus: 0.99e18,
         liquidationBonusFactor: 0
       })
@@ -274,7 +274,7 @@ contract SpokeLiquidationCallDustTest is SpokeLiquidationCallBaseTest {
     vm.prank(SPOKE_ADMIN);
     _spoke.updateLiquidationConfig(
       ISpoke.LiquidationConfig({
-        targetHealthFactor: targetHealthFactor.toUint64(),
+        targetHealthFactor: targetHealthFactor.toUint128(),
         healthFactorForMaxBonus: 0.99e18,
         liquidationBonusFactor: 0
       })

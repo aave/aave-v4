@@ -91,7 +91,7 @@ contract SpokeUpgradeableTest is SpokeBase {
     );
 
     setUpRoles(hub1, ISpoke(address(spokeProxy)), accessManager);
-    uint64 targetHealthFactor = 1.05e18;
+    uint128 targetHealthFactor = 1.05e18;
     _updateTargetHealthFactor(ISpoke(address(spokeProxy)), targetHealthFactor);
 
     uint64 secondRevision = uint64(vm.randomUint(initialRevision + 1, type(uint64).max));

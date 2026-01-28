@@ -266,19 +266,19 @@ contract SpokeConfigTest is SpokeBase {
   }
 
   function test_updateLiquidationConfig_targetHealthFactor() public {
-    uint64 newTargetHealthFactor = (HEALTH_FACTOR_LIQUIDATION_THRESHOLD + 1).toUint64();
+    uint128 newTargetHealthFactor = HEALTH_FACTOR_LIQUIDATION_THRESHOLD + 1;
 
     test_updateLiquidationConfig_fuzz_targetHealthFactor(newTargetHealthFactor);
   }
 
   function test_updateLiquidationConfig_fuzz_targetHealthFactor(
-    uint64 newTargetHealthFactor
+    uint128 newTargetHealthFactor
   ) public {
     newTargetHealthFactor = bound(
       newTargetHealthFactor,
       HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
-      type(uint64).max
-    ).toUint64();
+      type(uint128).max
+    ).toUint128();
 
     ISpoke.LiquidationConfig memory liquidationConfig = spoke1.getLiquidationConfig();
     liquidationConfig.targetHealthFactor = newTargetHealthFactor;
@@ -320,8 +320,8 @@ contract SpokeConfigTest is SpokeBase {
     liquidationConfig.targetHealthFactor = bound(
       liquidationConfig.targetHealthFactor,
       HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
-      type(uint64).max
-    ).toUint64();
+      type(uint128).max
+    ).toUint128();
 
     vm.expectEmit(address(spoke1));
     emit ISpoke.UpdateLiquidationConfig(liquidationConfig);
@@ -345,7 +345,7 @@ contract SpokeConfigTest is SpokeBase {
   {
     ISpoke.LiquidationConfig memory liquidationConfig = ISpoke.LiquidationConfig({
       targetHealthFactor: HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
-      healthFactorForMaxBonus: HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
+      healthFactorForMaxBonus: HEALTH_FACTOR_LIQUIDATION_THRESHOLD.toUint64(),
       liquidationBonusFactor: 10_00
     });
 
@@ -370,8 +370,8 @@ contract SpokeConfigTest is SpokeBase {
     liquidationConfig.targetHealthFactor = bound(
       liquidationConfig.targetHealthFactor,
       HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
-      type(uint64).max
-    ).toUint64(); // valid values
+      type(uint128).max
+    ).toUint128(); // valid values
 
     vm.expectRevert(ISpoke.InvalidLiquidationConfig.selector, address(spoke1));
     vm.prank(SPOKE_ADMIN);
@@ -408,8 +408,8 @@ contract SpokeConfigTest is SpokeBase {
     liquidationConfig.targetHealthFactor = bound(
       liquidationConfig.targetHealthFactor,
       HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
-      type(uint64).max
-    ).toUint64(); // valid values
+      type(uint128).max
+    ).toUint128(); // valid values
 
     vm.expectRevert(ISpoke.InvalidLiquidationConfig.selector, address(spoke1));
     vm.prank(SPOKE_ADMIN);

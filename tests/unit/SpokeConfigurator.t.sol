@@ -55,8 +55,7 @@ contract SpokeConfiguratorTest is SpokeBase {
   }
 
   function test_updateLiquidationTargetHealthFactor() public {
-    uint64 newTargetHealthFactor = uint256(Constants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD * 2)
-      .toUint64();
+    uint128 newTargetHealthFactor = Constants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD * 2;
 
     ISpoke.LiquidationConfig memory expectedLiquidationConfig = spoke.getLiquidationConfig();
     expectedLiquidationConfig.targetHealthFactor = newTargetHealthFactor;

@@ -130,9 +130,9 @@ abstract contract Base is Test {
   uint16 internal constant MAX_LIQUIDATION_BONUS_FACTOR = uint16(PercentageMath.PERCENTAGE_FACTOR); // 100%
   uint16 internal constant MAX_LIQUIDATION_FEE = 100_00;
   uint16 internal constant MIN_LIQUIDATION_FEE = 0;
-  uint64 internal constant HEALTH_FACTOR_LIQUIDATION_THRESHOLD = 1e18;
-  uint64 internal constant MIN_CLOSE_FACTOR = 1e18;
-  uint64 internal constant MAX_CLOSE_FACTOR = 2e18;
+  uint128 internal constant HEALTH_FACTOR_LIQUIDATION_THRESHOLD = 1e18;
+  uint128 internal constant MIN_CLOSE_FACTOR = 1e18;
+  uint128 internal constant MAX_CLOSE_FACTOR = 2e18;
   uint256 internal constant MAX_COLLATERAL_FACTOR = 100_00;
   uint256 internal constant MAX_ASSET_PRICE = 1e8 * 1e8; // $100M per token
   uint256 internal constant MAX_LIQUIDATION_PROTOCOL_FEE_PERCENTAGE =
@@ -669,7 +669,7 @@ abstract contract Base is Test {
       new bytes(0)
     );
 
-    // Spoke configs
+    // Liquidation configs
     spoke1.updateLiquidationConfig(
       ISpoke.LiquidationConfig({
         targetHealthFactor: 1.05e18,
@@ -1127,19 +1127,6 @@ abstract contract Base is Test {
     spoke.updateLiquidationConfig(config);
 
     assertEq(spoke.getLiquidationConfig(), config);
-  }
-
-  function _createLiquidationConfig(
-    uint64 targetHealthFactor,
-    uint64 healthFactorForMaxBonus,
-    uint16 liquidationBonusFactor
-  ) internal pure returns (ISpoke.LiquidationConfig memory) {
-    return
-      ISpoke.LiquidationConfig({
-        targetHealthFactor: targetHealthFactor,
-        healthFactorForMaxBonus: healthFactorForMaxBonus,
-        liquidationBonusFactor: liquidationBonusFactor
-      });
   }
 
   function _updateMaxLiquidationBonus(
