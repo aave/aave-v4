@@ -71,7 +71,7 @@ contract HubAccruedFeesTest is HubBase {
     uint256 accruedFees = _getExpectedFeeReceiverAddedAssets(hub1, daiAssetId);
     uint256 finalSharePrice = hub1.previewAddByShares(daiAssetId, 1e18);
 
-    assertEq((delta * liquidityFee) / PercentageMath.PERCENTAGE_FACTOR, 0);
+    assertEq(delta.percentMulDown(liquidityFee), 0);
     assertEq(accruedFees, 0);
     assertEq(hub1.getAssetAccruedFees(daiAssetId), 0);
     assertGt(delta, 0);
