@@ -28,8 +28,6 @@ contract HubReportDeficitTest is HubBase {
     super.setUp();
 
     // deploy borrowable liquidity
-    _addLiquidity(daiAssetId, MAX_SUPPLY_AMOUNT);
-    _addLiquidity(wethAssetId, MAX_SUPPLY_AMOUNT);
     _addLiquidity(usdxAssetId, MAX_SUPPLY_AMOUNT);
   }
 
@@ -118,7 +116,7 @@ contract HubReportDeficitTest is HubBase {
     );
 
     uint256 drawnDeficit = vm.randomUint(0, drawn);
-    uint256 premiumDeficitRay = vm.randomUint(spokePremiumRay + 1, UINT256_MAX);
+    uint256 premiumDeficitRay = vm.randomUint(spokePremiumRay + 1, uint256(type(int256).max));
 
     vm.expectRevert(
       abi.encodeWithSelector(IHub.SurplusPremiumRayDeficitReported.selector, spokePremiumRay)
@@ -273,5 +271,57 @@ contract HubReportDeficitTest is HubBase {
       );
       _assertBorrowRateSynced(hub1, usdxAssetId, 'reportDeficit');
     }
+  }
+
+  function test_reportDeficit_monotonicSupplySharePrice() public {
+    // mock asset interest rate to 50%
+    _mockInterestRateBps(50_00);
+
+    // Add liquidity, draw liquidity, refresh premium and skip time to accrue both drawn and premium debt
+    // This will also update the asset drawn rate to 50% (mocked above)
+    uint256 amount = 7;
+    Utils.add(hub1, wethAssetId, address(spoke1), amount, alice);
+    Utils.draw(hub1, wethAssetId, address(spoke1), alice, amount);
+    vm.startPrank(address(spoke1));
+    hub1.refreshPremium(
+      wethAssetId,
+      _getExpectedPremiumDelta({
+        hub: hub1,
+        assetId: wethAssetId,
+        oldPremiumShares: 0,
+        oldPremiumOffsetRay: 0,
+        drawnShares: 1, // risk premium is 100%
+        riskPremium: 100_00,
+        restoredPremiumRay: 0
+      })
+    );
+    vm.stopPrank();
+    skip(365 days);
+
+    // get total added assets before deficit
+    uint256 totalAddedAssetsBefore = hub1.getAddedAssets(wethAssetId);
+
+    // report deficit of 2 drawnAmount, and 0.5 premiumAmountRay
+    vm.prank(address(spoke1));
+    hub1.reportDeficit(
+      wethAssetId,
+      2,
+      IHubBase.PremiumDelta({
+        sharesDelta: 0,
+        offsetRayDelta: 0.5e27.toInt256(),
+        restoredPremiumRay: 0.5e27
+      })
+    );
+
+    // get total added assets after deficit
+    uint256 totalAddedAssetsAfter = hub1.getAddedAssets(wethAssetId);
+
+    // make sure total added assets never decreases
+    // during a report deficit, total added shares stay constant, hence checking total added assets only is sufficient
+    assertGe(
+      totalAddedAssetsAfter,
+      totalAddedAssetsBefore,
+      'total added assets should never decrease'
+    );
   }
 }
