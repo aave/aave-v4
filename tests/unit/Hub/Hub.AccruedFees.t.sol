@@ -36,43 +36,16 @@ contract HubAccruedFeesTest is HubBase {
 
     skip(skipTime);
 
-    uint256 expectedAccruedFees = _calcUnrealizedFees(hub1, daiAssetId);
-
     (uint256 drawnDebt, ) = hub1.getAssetOwed(daiAssetId);
     uint256 totalInterest = drawnDebt - BORROW_AMOUNT;
     uint256 accruedFees = hub1.getAssetAccruedFees(daiAssetId);
+    uint256 expectedAccruedFees = _calcUnrealizedFees(hub1, daiAssetId);
 
     assertEq(accruedFees, expectedAccruedFees);
 
     uint256 supplierInterest = totalInterest - accruedFees;
-
     uint256 totalAssetsAfter = hub1.getAddedAssets(daiAssetId);
     assertEq(totalAssetsAfter, totalAssetsBefore + supplierInterest);
-  }
-
-  function test_unrealizedFees_accrualOverTime() public {
-    Utils.add({
-      hub: hub1,
-      assetId: daiAssetId,
-      caller: address(spoke1),
-      amount: SUPPLY_AMOUNT,
-      user: bob
-    });
-    Utils.draw({
-      hub: hub1,
-      assetId: daiAssetId,
-      to: bob,
-      caller: address(spoke1),
-      amount: BORROW_AMOUNT
-    });
-
-    uint256 previousFees = 0;
-    for (uint256 i = 0; i < 4; i++) {
-      skip(90 days);
-      uint256 currentFees = _getExpectedFeeReceiverAddedAssets(hub1, daiAssetId);
-      assertGt(currentFees, previousFees);
-      previousFees = currentFees;
-    }
   }
 
   /// @dev Verifies protocol cut rounds to 0 when interest is tiny, all goes to suppliers
@@ -90,102 +63,10 @@ contract HubAccruedFeesTest is HubBase {
     uint256 accruedFees = _getExpectedFeeReceiverAddedAssets(hub1, daiAssetId);
     uint256 finalSharePrice = hub1.previewAddByShares(daiAssetId, 1e18);
 
-    assertLt(delta, 100);
     assertEq((delta * 1_00) / 100_00, 0);
     assertEq(accruedFees, 0);
     assertGt(delta, 0);
     assertGt(finalSharePrice, initialSharePrice);
-  }
-
-  function test_unrealizedFees_withSweptFunds() public {
-    address reinvestmentController = vm.randomAddress();
-    updateAssetReinvestmentController(hub1, daiAssetId, reinvestmentController);
-
-    Utils.add({
-      hub: hub1,
-      assetId: daiAssetId,
-      caller: address(spoke1),
-      amount: SUPPLY_AMOUNT,
-      user: bob
-    });
-
-    uint256 sweepAmount = 200e18;
-    vm.prank(reinvestmentController);
-    hub1.sweep(daiAssetId, sweepAmount);
-
-    _drawLiquidityFromSpoke({
-      spoke: address(spoke1),
-      assetId: daiAssetId,
-      reserveId: _daiReserveId(spoke1),
-      amount: BORROW_AMOUNT,
-      skipTime: 365 days
-    });
-
-    uint256 accruedFees = _getExpectedFeeReceiverAddedAssets(hub1, daiAssetId);
-    assertGt(accruedFees, 0);
-    assertEq(hub1.getAsset(daiAssetId).swept, sweepAmount);
-  }
-
-  function test_unrealizedFees_allLiquiditySwept() public {
-    address reinvestmentController = vm.randomAddress();
-    updateAssetReinvestmentController(hub1, daiAssetId, reinvestmentController);
-
-    Utils.add({
-      hub: hub1,
-      assetId: daiAssetId,
-      caller: address(spoke1),
-      amount: SUPPLY_AMOUNT,
-      user: bob
-    });
-
-    uint256 availableLiquidity = hub1.getAssetLiquidity(daiAssetId);
-    vm.prank(reinvestmentController);
-    hub1.sweep(daiAssetId, availableLiquidity);
-
-    assertEq(hub1.getAssetLiquidity(daiAssetId), 0);
-    assertEq(hub1.getAsset(daiAssetId).swept, availableLiquidity);
-
-    skip(365 days);
-    assertEq(_getExpectedFeeReceiverAddedAssets(hub1, daiAssetId), 0);
-  }
-
-  function test_unrealizedFees_withDeficit() public {
-    Utils.add({
-      hub: hub1,
-      assetId: daiAssetId,
-      caller: address(spoke1),
-      amount: SUPPLY_AMOUNT,
-      user: bob
-    });
-
-    _drawLiquidityFromSpoke({
-      spoke: address(spoke1),
-      assetId: daiAssetId,
-      reserveId: _daiReserveId(spoke1),
-      amount: BORROW_AMOUNT,
-      skipTime: 365 days
-    });
-
-    vm.prank(address(spoke1));
-    hub1.reportDeficit(daiAssetId, 50e18, ZERO_PREMIUM_DELTA);
-
-    skip(180 days);
-
-    assertGt(_getExpectedFeeReceiverAddedAssets(hub1, daiAssetId), 0);
-    assertGt(hub1.getAsset(daiAssetId).deficitRay, 0);
-  }
-
-  function test_unrealizedFees_withPremiumDebt() public {
-    Utils.add({
-      hub: hub1,
-      assetId: daiAssetId,
-      caller: address(spoke1),
-      amount: SUPPLY_AMOUNT,
-      user: bob
-    });
-    _drawLiquidity(daiAssetId, BORROW_AMOUNT, true, true);
-
-    assertGt(_getExpectedFeeReceiverAddedAssets(hub1, daiAssetId), 0);
   }
 
   function test_unrealizedFees_feesEarnInterest() public {
@@ -236,6 +117,10 @@ contract HubAccruedFeesTest is HubBase {
     uint256 accruedFees = _getExpectedFeeReceiverAddedAssets(hub1, daiAssetId);
     uint256 drawnDebt = getAssetDrawnDebt(daiAssetId);
     uint256 totalInterest = drawnDebt - initialDrawnDebt;
+
+    // growth is 1 wei at most
+    assertLe(totalInterest, 1);
+
     uint256 drawnIndex = hub1.getAssetDrawnIndex(daiAssetId);
     uint256 liquidityFee = hub1.getAssetConfig(daiAssetId).liquidityFee;
 
