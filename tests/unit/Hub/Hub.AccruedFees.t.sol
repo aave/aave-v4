@@ -11,8 +11,11 @@ contract HubAccruedFeesTest is HubBase {
   uint256 constant SUPPLY_AMOUNT = 1000e18;
   uint256 constant BORROW_AMOUNT = 500e18;
 
-  function test_unrealizedFees_basicAccrual() public {
-    uint256 liquidityFee = hub1.getAssetConfig(daiAssetId).liquidityFee;
+  function test_unrealizedFees_fuzz_basicAccrual(uint256 liquidityFee, uint256 skipTime) public {
+    liquidityFee = bound(liquidityFee, 0, PercentageMath.PERCENTAGE_FACTOR);
+    skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
+
+    updateLiquidityFee(hub1, daiAssetId, liquidityFee);
 
     Utils.add({
       hub: hub1,
@@ -31,53 +34,7 @@ contract HubAccruedFeesTest is HubBase {
 
     uint256 totalAssetsBefore = hub1.getAddedAssets(daiAssetId);
 
-    skip(365 days);
-
-    uint256 expectedAccruedFees = _calcUnrealizedFees(hub1, daiAssetId);
-
-    // Get total interest generated (delta in debt)
-    (uint256 drawnDebt, ) = hub1.getAssetOwed(daiAssetId);
-    uint256 totalInterest = drawnDebt - BORROW_AMOUNT;
-    assertGt(totalInterest, 0);
-
-    uint256 expectedProtocolCut = (totalInterest * liquidityFee) / PercentageMath.PERCENTAGE_FACTOR;
-
-    uint256 accruedFees = hub1.getAssetAccruedFees(daiAssetId);
-    assertGt(accruedFees, 0);
-
-    assertEq(accruedFees, expectedAccruedFees);
-
-    // Accrued fees >= protocol cut (fees also earn interest on themselves)
-    assertGe(accruedFees, expectedProtocolCut);
-
-    uint256 supplierInterest = totalInterest - accruedFees;
-
-    uint256 totalAssetsAfter = hub1.getAddedAssets(daiAssetId);
-
-    assertEq(totalAssetsAfter, totalAssetsBefore + supplierInterest);
-  }
-
-  function test_unrealizedFees_basicAccrual_10pctFee() public {
-    updateLiquidityFee(hub1, daiAssetId, 10_00);
-
-    Utils.add({
-      hub: hub1,
-      assetId: daiAssetId,
-      caller: address(spoke1),
-      amount: SUPPLY_AMOUNT,
-      user: bob
-    });
-    Utils.draw({
-      hub: hub1,
-      assetId: daiAssetId,
-      to: bob,
-      caller: address(spoke1),
-      amount: BORROW_AMOUNT
-    });
-
-    uint256 totalAssetsBefore = hub1.getAddedAssets(daiAssetId);
-
-    skip(365 days);
+    skip(skipTime);
 
     uint256 expectedAccruedFees = _calcUnrealizedFees(hub1, daiAssetId);
 
