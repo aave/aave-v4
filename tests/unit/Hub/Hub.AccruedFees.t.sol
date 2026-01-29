@@ -5,6 +5,9 @@ pragma solidity ^0.8.0;
 import 'tests/unit/Hub/HubBase.t.sol';
 
 contract HubAccruedFeesTest is HubBase {
+  using WadRayMath for uint256;
+  using PercentageMath for uint256;
+
   uint256 constant SUPPLY_AMOUNT = 1000e18;
   uint256 constant BORROW_AMOUNT = 500e18;
 
@@ -258,6 +261,8 @@ contract HubAccruedFeesTest is HubBase {
   }
 
   function test_unrealizedFees_smallAmounts() public {
+    uint256 initialDrawnDebt = 10;
+    uint256 initialDrawnIndex = hub1.getAssetDrawnIndex(daiAssetId);
     _addAndDrawLiquidity({
       hub: hub1,
       assetId: daiAssetId,
@@ -266,17 +271,22 @@ contract HubAccruedFeesTest is HubBase {
       addAmount: 100,
       drawUser: bob,
       drawSpoke: address(spoke1),
-      drawAmount: 10,
+      drawAmount: initialDrawnDebt,
       skipTime: 365 days
     });
 
     uint256 accruedFees = _getExpectedFeeReceiverAddedAssets(hub1, daiAssetId);
     uint256 drawnDebt = getAssetDrawnDebt(daiAssetId);
-    uint256 totalInterest = drawnDebt - 10;
+    uint256 totalInterest = drawnDebt - initialDrawnDebt;
+    uint256 drawnIndex = hub1.getAssetDrawnIndex(daiAssetId);
+    uint256 liquidityFee = hub1.getAssetConfig(daiAssetId).liquidityFee;
 
-    assertGt(drawnDebt, 10);
-    assertLe(accruedFees, totalInterest);
-    assertApproxEqAbs(accruedFees + (totalInterest - accruedFees), totalInterest, 2);
+    uint256 expectedTotalInterest = drawnIndex.rayMulUp(initialDrawnDebt) -
+      initialDrawnIndex.rayMulUp(initialDrawnDebt);
+
+    assertEq(expectedTotalInterest, totalInterest);
+    assertEq(drawnDebt, initialDrawnDebt + expectedTotalInterest);
+    assertEq(accruedFees, totalInterest.percentMulDown(liquidityFee));
   }
 
   /// @dev Tests fee accrual with swept, deficit, and drawn
