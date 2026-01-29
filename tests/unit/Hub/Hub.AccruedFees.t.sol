@@ -50,21 +50,30 @@ contract HubAccruedFeesTest is HubBase {
 
   /// @dev Verifies protocol cut rounds to 0 when interest is tiny, all goes to suppliers
   function test_unrealizedFees_roundsToZero() public {
-    updateLiquidityFee(hub1, daiAssetId, 1_00); // 1%
+    uint256 liquidityFee = 1_00; // 1%
+    uint256 drawnAmount = 100;
+    updateLiquidityFee(hub1, daiAssetId, liquidityFee);
 
     Utils.add({hub: hub1, assetId: daiAssetId, caller: address(spoke1), amount: 1000, user: bob});
     uint256 initialSharePrice = hub1.previewAddByShares(daiAssetId, 1e18);
 
-    Utils.draw({hub: hub1, assetId: daiAssetId, to: bob, caller: address(spoke1), amount: 100});
+    Utils.draw({
+      hub: hub1,
+      assetId: daiAssetId,
+      to: bob,
+      caller: address(spoke1),
+      amount: drawnAmount
+    });
     skip(1 hours);
 
     (uint256 drawnDebt, ) = hub1.getAssetOwed(daiAssetId);
-    uint256 delta = drawnDebt - 100;
+    uint256 delta = drawnDebt - drawnAmount;
     uint256 accruedFees = _getExpectedFeeReceiverAddedAssets(hub1, daiAssetId);
     uint256 finalSharePrice = hub1.previewAddByShares(daiAssetId, 1e18);
 
-    assertEq((delta * 1_00) / 100_00, 0);
+    assertEq((delta * liquidityFee) / PercentageMath.PERCENTAGE_FACTOR, 0);
     assertEq(accruedFees, 0);
+    assertEq(hub1.getAssetAccruedFees(daiAssetId), 0);
     assertGt(delta, 0);
     assertGt(finalSharePrice, initialSharePrice);
   }
