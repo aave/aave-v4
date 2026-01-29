@@ -260,8 +260,9 @@ contract HubAccruedFeesTest is HubBase {
     assertGt(_getExpectedFeeReceiverAddedAssets(hub1, daiAssetId), 0);
   }
 
-  function test_unrealizedFees_smallAmounts() public {
-    uint256 initialDrawnDebt = 10;
+  /// @dev Tests fee accrual with small amounts, where growth is 1 wei
+  function test_unrealizedFees_fuzz_smallAmounts(uint256 initialDrawnDebt) public {
+    initialDrawnDebt = bound(initialDrawnDebt, 1, 10);
     uint256 initialDrawnIndex = hub1.getAssetDrawnIndex(daiAssetId);
     _addAndDrawLiquidity({
       hub: hub1,
