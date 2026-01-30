@@ -48,7 +48,7 @@ contract LiquidationLogicLiquidateUserTest is LiquidationLogicBaseTest {
       totalDebtValue: 10_000e26,
       liquidator: makeAddr('liquidator'),
       activeCollateralCount: 1,
-      borrowedCount: 1,
+      borrowCount: 1,
       receiveShares: false
     });
 
@@ -72,7 +72,6 @@ contract LiquidationLogicLiquidateUserTest is LiquidationLogicBaseTest {
     // Mock storage for collateral side
     require(hub1.getAsset(usdxAssetId).underlying == address(tokenList.usdx));
     liquidationLogicWrapper.setCollateralReserveId(usdxReserveId);
-    liquidationLogicWrapper.setCollateralLiquidatable(true);
     liquidationLogicWrapper.setCollateralReserveHub(hub1);
     liquidationLogicWrapper.setCollateralReserveAssetId(usdxAssetId);
     liquidationLogicWrapper.setCollateralReserveDecimals(6);

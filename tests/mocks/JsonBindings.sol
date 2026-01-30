@@ -39,7 +39,7 @@ library JsonBindings {
   Vm constant vm = Vm(address(uint160(uint256(keccak256('hevm cheat code')))));
 
   // prettier-ignore
-  string constant schema_SetUserPositionManagers = "SetUserPositionManagers(address user,PositionManagerUpdate[] updates,uint256 nonce,uint256 deadline)PositionManagerUpdate(address positionManager,bool approve)";
+  string constant schema_SetUserPositionManagers = "SetUserPositionManagers(address onBehalfOf,PositionManagerUpdate[] updates,uint256 nonce,uint256 deadline)PositionManagerUpdate(address positionManager,bool approve)";
   // prettier-ignore
   string constant schema_PositionManagerUpdate = "PositionManagerUpdate(address positionManager,bool approve)";
   // prettier-ignore
@@ -55,9 +55,9 @@ library JsonBindings {
   // prettier-ignore
   string constant schema_SetUsingAsCollateral = "SetUsingAsCollateral(address spoke,uint256 reserveId,bool useAsCollateral,address onBehalfOf,uint256 nonce,uint256 deadline)";
   // prettier-ignore
-  string constant schema_UpdateUserRiskPremium = "UpdateUserRiskPremium(address spoke,address user,uint256 nonce,uint256 deadline)";
+  string constant schema_UpdateUserRiskPremium = "UpdateUserRiskPremium(address spoke,address onBehalfOf,uint256 nonce,uint256 deadline)";
   // prettier-ignore
-  string constant schema_UpdateUserDynamicConfig = "UpdateUserDynamicConfig(address spoke,address user,uint256 nonce,uint256 deadline)";
+  string constant schema_UpdateUserDynamicConfig = "UpdateUserDynamicConfig(address spoke,address onBehalfOf,uint256 nonce,uint256 deadline)";
 
   function serialize(
     EIP712Types.SetUserPositionManagers memory value

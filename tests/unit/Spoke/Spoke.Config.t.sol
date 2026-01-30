@@ -14,6 +14,7 @@ contract SpokeConfigTest is SpokeBase {
     vm.mockCall(oracle, abi.encodeCall(IPriceOracle.DECIMALS, ()), abi.encode(8));
     ISpoke instance = ISpoke(address(DeployUtils.deploySpokeImplementation(oracle)));
     assertEq(instance.ORACLE(), oracle);
+    assertEq(instance.MAX_USER_RESERVES_LIMIT(), Constants.MAX_ALLOWED_USER_RESERVES_LIMIT);
     assertNotEq(instance.getLiquidationLogic(), address(0));
   }
 
@@ -33,11 +34,23 @@ contract SpokeConfigTest is SpokeBase {
     deployer.deploySpokeImplementation(oracle);
   }
 
+  function test_spoke_deploy_reverts_on_InvalidMaxUserReservesLimit() public {
+    DeployWrapper deployer = new DeployWrapper();
+    address oracle = makeAddr('AaveOracle');
+
+    vm.mockCall(oracle, abi.encodeCall(IPriceOracle.DECIMALS, ()), abi.encode(8));
+    vm.expectRevert();
+    deployer.deploySpokeImplementation(oracle, 0);
+  }
+
   function test_updateReservePriceSource_revertsWith_AccessManagedUnauthorized(
     address caller
   ) public {
     vm.assume(
-      caller != SPOKE_ADMIN && caller != ADMIN && caller != _getProxyAdminAddress(address(spoke1))
+      caller != SPOKE_ADMIN &&
+        caller != ADMIN &&
+        caller != SPOKE_CONFIGURATOR &&
+        caller != _getProxyAdminAddress(address(spoke1))
     );
     vm.expectRevert(
       abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, caller)
@@ -74,7 +87,6 @@ contract SpokeConfigTest is SpokeBase {
       paused: !config.paused,
       frozen: !config.frozen,
       borrowable: !config.borrowable,
-      liquidatable: !config.liquidatable,
       receiveSharesEnabled: !config.receiveSharesEnabled,
       collateralRisk: config.collateralRisk + 1
     });
