@@ -14,6 +14,7 @@ contract SpokeConfigTest is SpokeBase {
     vm.mockCall(oracle, abi.encodeCall(IPriceOracle.DECIMALS, ()), abi.encode(8));
     ISpoke instance = ISpoke(address(DeployUtils.deploySpokeImplementation(oracle)));
     assertEq(instance.ORACLE(), oracle);
+    assertEq(instance.MAX_USER_RESERVES_LIMIT(), Constants.MAX_ALLOWED_USER_RESERVES_LIMIT);
     assertNotEq(instance.getLiquidationLogic(), address(0));
   }
 
@@ -31,6 +32,15 @@ contract SpokeConfigTest is SpokeBase {
     vm.mockCall(oracle, abi.encodeCall(IPriceOracle.DECIMALS, ()), abi.encode(7));
     vm.expectRevert();
     deployer.deploySpokeImplementation(oracle);
+  }
+
+  function test_spoke_deploy_reverts_on_InvalidMaxUserReservesLimit() public {
+    DeployWrapper deployer = new DeployWrapper();
+    address oracle = makeAddr('AaveOracle');
+
+    vm.mockCall(oracle, abi.encodeCall(IPriceOracle.DECIMALS, ()), abi.encode(8));
+    vm.expectRevert();
+    deployer.deploySpokeImplementation(oracle, 0);
   }
 
   function test_updateReservePriceSource_revertsWith_AccessManagedUnauthorized(

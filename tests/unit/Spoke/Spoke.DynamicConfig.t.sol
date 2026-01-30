@@ -12,7 +12,9 @@ contract SpokeDynamicConfigTest is SpokeBase {
   function setUp() public override {
     super.setUp();
     spoke = MockSpoke(address(spoke1));
-    address mockSpokeImpl = address(new MockSpoke(address(spoke.ORACLE())));
+    address mockSpokeImpl = address(
+      new MockSpoke(address(spoke.ORACLE()), Constants.MAX_ALLOWED_USER_RESERVES_LIMIT)
+    );
     vm.etch(address(spoke1), mockSpokeImpl.code);
   }
 

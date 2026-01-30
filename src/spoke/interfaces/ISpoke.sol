@@ -127,7 +127,7 @@ interface ISpoke is ISpokeBase, IAccessManaged, IIntentConsumer, IExtSload, IMul
   /// @dev totalCollateralValue The total collateral value of the user position, expressed in units of base currency. 1e26 represents 1 USD.
   /// @dev totalDebtValue The total debt value of the user position, expressed in units of base currency. 1e26 represents 1 USD.
   /// @dev activeCollateralCount The number of active collaterals, which includes reserves with `collateralFactor` > 0, `enabledAsCollateral` and `suppliedAmount` > 0.
-  /// @dev borrowedCount The number of borrowed reserves of the user position.
+  /// @dev borrowCount The number of borrowed reserves of the user position.
   struct UserAccountData {
     uint256 riskPremium;
     uint256 avgCollateralFactor;
@@ -135,12 +135,16 @@ interface ISpoke is ISpokeBase, IAccessManaged, IIntentConsumer, IExtSload, IMul
     uint256 totalCollateralValue;
     uint256 totalDebtValue;
     uint256 activeCollateralCount;
-    uint256 borrowedCount;
+    uint256 borrowCount;
   }
 
   /// @notice Emitted when the oracle address of the spoke is updated.
   /// @param oracle The new address of the oracle.
   event UpdateOracle(address indexed oracle);
+
+  /// @notice Emitted when the max user reserves limit is updated.
+  /// @param maxUserReservesLimit The new max user reserves limit.
+  event UpdateMaxUserReservesLimit(uint16 maxUserReservesLimit);
 
   /// @notice Emitted when a liquidation config is updated.
   /// @param config The new liquidation config.
@@ -289,6 +293,9 @@ interface ISpoke is ISpokeBase, IAccessManaged, IIntentConsumer, IExtSload, IMul
   /// @notice Thrown when the oracle decimals are not 8 in the constructor.
   error InvalidOracleDecimals();
 
+  /// @notice Thrown when the maximum user reserves limit is zero in the constructor.
+  error InvalidMaxUserReservesLimit();
+
   /// @notice Thrown when a collateral risk exceeds the maximum allowed.
   error InvalidCollateralRisk();
 
@@ -322,8 +329,11 @@ interface ISpoke is ISpokeBase, IAccessManaged, IIntentConsumer, IExtSload, IMul
   /// @notice Thrown when the maximum number of dynamic config keys is reached.
   error MaximumDynamicConfigKeyReached();
 
+  /// @notice Thrown when user attempts to exceed either the maximum allowed collateral or borrowed reserves.
+  error MaximumUserReservesExceeded();
+
   /// @notice Updates the liquidation config.
-  /// @param config The liquidation config.
+  /// @param config The new liquidation config.
   function updateLiquidationConfig(LiquidationConfig calldata config) external;
 
   /// @notice Adds a new reserve to the spoke.
@@ -386,6 +396,8 @@ interface ISpoke is ISpokeBase, IAccessManaged, IIntentConsumer, IExtSload, IMul
 
   /// @notice Allows suppliers to enable/disable a specific supplied reserve as collateral.
   /// @dev It reverts if the reserve associated with the given reserve identifier is not listed.
+  /// @dev It reverts if the user exceeds the maximum allowed collateral reserves when enabling.
+  /// @dev Reserves with zero supplied or zero collateral factor count towards the max allowed collateral reserves.
   /// @dev Caller must be `onBehalfOf` or an authorized position manager for `onBehalfOf`.
   /// @param reserveId The reserve identifier of the underlying asset.
   /// @param usingAsCollateral True if the user wants to use the supply as collateral.
@@ -535,4 +547,7 @@ interface ISpoke is ISpokeBase, IAccessManaged, IIntentConsumer, IExtSload, IMul
 
   /// @notice Returns the address of the AaveOracle contract.
   function ORACLE() external view returns (address);
+
+  /// @notice Returns the maximum allowed number of collateral and borrow reserves per user (each counted separately).
+  function MAX_USER_RESERVES_LIMIT() external view returns (uint16);
 }
