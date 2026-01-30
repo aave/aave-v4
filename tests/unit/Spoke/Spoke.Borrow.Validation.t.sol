@@ -200,7 +200,7 @@ contract SpokeBorrowValidationTest is SpokeBase {
     spoke1.borrow(maxUserReservesLimit, 1e18, bob);
   }
 
-  /// @dev Test that borrows up to the user reserves limit, repays one reserve, and then borrows again
+  /// @dev Test that borrows up to the user reserves limit, repays one reserve, and then borrows again.
   function test_borrow_to_limit_repay_borrow_again() public {
     uint16 maxUserReservesLimit = (spoke1.getReserveCount() - 1).toUint16();
     _etchSpokeMaxUserReservesLimit(spoke1, maxUserReservesLimit);
@@ -230,6 +230,7 @@ contract SpokeBorrowValidationTest is SpokeBase {
     assertEq(accountData.borrowCount, maxUserReservesLimit, 'Bob has reached the borrow limit');
   }
 
+  /// @dev Test showing that when the borrow limit is max, all reserves can be borrowed.
   function test_borrow_unlimited_whenLimitIsMax() public {
     assertEq(spoke1.MAX_USER_RESERVES_LIMIT(), Constants.MAX_ALLOWED_USER_RESERVES_LIMIT);
 

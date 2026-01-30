@@ -235,6 +235,7 @@ contract SpokeSetUsingAsCollateralTest is SpokeBase {
     );
   }
 
+  /// @dev Test showing that when the collateral limit is max, all reserves can be enabled as collateral.
   function test_setUsingAsCollateral_unlimited_whenLimitIsMax() public {
     assertEq(spoke1.MAX_USER_RESERVES_LIMIT(), Constants.MAX_ALLOWED_USER_RESERVES_LIMIT);
 
