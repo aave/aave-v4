@@ -522,22 +522,22 @@ contract HubAccruedFeesTest is HubBase {
     assertGt(treasuryAssetsBefore, 0);
 
     uint256 bobShares = hub1.getSpokeAddedShares(daiAssetId, address(spoke1));
-    Utils.add({
-      hub: hub1,
-      assetId: daiAssetId,
-      caller: address(spoke1),
+    Utils.supply({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      caller: carol,
       amount: treasuryAssetsBefore,
-      user: carol
+      onBehalfOf: carol
     });
 
-    uint256 carolShares = hub1.getSpokeAddedShares(daiAssetId, address(spoke1)) - bobShares;
-    uint256 carolAssetsBefore = hub1.previewRemoveByShares(daiAssetId, carolShares);
-    assertApproxEqAbs(carolAssetsBefore, treasuryAssetsBefore, 2);
+    uint256 carolShares = spoke1.getUserSuppliedShares(_daiReserveId(spoke1), carol);
+    uint256 carolAssetsBefore = spoke1.getUserSuppliedAssets(_daiReserveId(spoke1), carol);
+    assertApproxEqAbs(carolAssetsBefore, treasuryAssetsBefore, 1);
 
     skip(180 days);
 
-    uint256 carolAssetsAfter = hub1.previewRemoveByShares(daiAssetId, carolShares);
-    uint256 treasuryAssetsAfter = hub1.previewRemoveByShares(daiAssetId, treasuryShares);
+    uint256 carolAssetsAfter = spoke1.getUserSuppliedAssets(_daiReserveId(spoke1), carol);
+    uint256 treasuryAssetsAfter = hub1.getSpokeAddedAssets(daiAssetId, address(treasurySpoke));
 
     uint256 carolGrowth = carolAssetsAfter - carolAssetsBefore;
     uint256 treasuryGrowth = treasuryAssetsAfter - treasuryAssetsBefore;
