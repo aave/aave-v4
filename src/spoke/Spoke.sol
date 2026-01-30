@@ -6,6 +6,7 @@ import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
 import {SafeERC20, IERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
 import {IERC20Permit} from 'src/dependencies/openzeppelin/IERC20Permit.sol';
 import {ReentrancyGuardTransient} from 'src/dependencies/openzeppelin/ReentrancyGuardTransient.sol';
+import {Math} from 'src/dependencies/openzeppelin/Math.sol';
 import {AccessManagedUpgradeable} from 'src/dependencies/openzeppelin-upgradeable/AccessManagedUpgradeable.sol';
 import {MathUtils} from 'src/libraries/math/MathUtils.sol';
 import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
@@ -823,7 +824,10 @@ abstract contract Spoke is
     }
 
     if (debtValueLeftToCover < accountData.totalDebtValue) {
-      accountData.riskPremium /= accountData.totalDebtValue.uncheckedSub(debtValueLeftToCover);
+      accountData.riskPremium = Math.ceilDiv(
+        accountData.riskPremium,
+        accountData.totalDebtValue.uncheckedSub(debtValueLeftToCover)
+      );
     }
 
     return accountData;

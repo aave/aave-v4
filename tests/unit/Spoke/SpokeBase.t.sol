@@ -882,7 +882,7 @@ contract SpokeBase is Base {
       ++vars.idx;
     }
 
-    return vars.riskPremium / vars.utilizedSupply;
+    return _divUp(vars.riskPremium, vars.utilizedSupply);
   }
 
   function _getSpokeDynConfigKeys(ISpoke spoke) internal view returns (DynamicConfig[] memory) {

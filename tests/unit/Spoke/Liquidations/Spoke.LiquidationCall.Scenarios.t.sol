@@ -279,8 +279,8 @@ contract SpokeLiquidationCallScenariosTest is SpokeLiquidationCallBaseTest {
       0.0001e18,
       'pre liquidation: health factor'
     );
-    // Risk Premium: ($3300 * 5% + $100 * 10% + $200 * 15%) / $3600 = ~5.694%
-    assertEq(userAccountData.riskPremium, 5_69, 'pre liquidation: risk premium');
+    // Risk Premium: ceil(($3300 * 5% + $100 * 10% + $200 * 15%) / $3600) = ceil(~5.694%) = ~5.70%
+    assertEq(userAccountData.riskPremium, 5_70, 'pre liquidation: risk premium');
 
     skip(365 days / 2);
     userAccountData = spoke.getUserAccountData(user);
