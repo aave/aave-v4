@@ -359,11 +359,14 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
       remainingDebtToCover -= _min(collateralValue, remainingDebtToCover);
     }
 
-    expectedUserAccountData.riskPremium /= _max(
-      1,
-      _min(
-        expectedUserAccountData.totalDebtValueRay.fromRayUp(),
-        expectedUserAccountData.totalCollateralValue
+    expectedUserAccountData.riskPremium = _divUp(
+      expectedUserAccountData.riskPremium,
+      _max(
+        1,
+        _min(
+          expectedUserAccountData.totalDebtValueRay.fromRayUp(),
+          expectedUserAccountData.totalCollateralValue
+        )
       )
     );
 
