@@ -26,6 +26,13 @@ library DeployUtils {
 
   function deploySpokeImplementation(
     address oracle,
+    uint16 maxUserReservesLimit
+  ) internal returns (ISpokeInstance) {
+    return deploySpokeImplementation(oracle, maxUserReservesLimit, '');
+  }
+
+  function deploySpokeImplementation(
+    address oracle,
     uint16 maxUserReservesLimit,
     bytes32 salt
   ) internal returns (ISpokeInstance spoke) {

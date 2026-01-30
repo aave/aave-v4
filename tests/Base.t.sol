@@ -293,7 +293,7 @@ abstract contract Base is Test {
     irStrategy = new AssetInterestRateStrategy(address(hub1));
     (spoke1, oracle1) = _deploySpokeWithOracle(ADMIN, address(accessManager), 'Spoke 1 (USD)');
     (spoke2, oracle2) = _deploySpokeWithOracle(ADMIN, address(accessManager), 'Spoke 2 (USD)');
-    (spoke3, oracle3) = _deploySpokeWithOracle(ADMIN, address(accessManager), 'Spoke 3 (USD)', 10);
+    (spoke3, oracle3) = _deploySpokeWithOracle(ADMIN, address(accessManager), 'Spoke 3 (USD)');
     treasurySpoke = ITreasurySpoke(new TreasurySpoke(TREASURY_ADMIN, address(hub1)));
     vm.stopPrank();
 
@@ -2994,81 +2994,5 @@ abstract contract Base is Test {
       hub.getAddedAssets(assetId) +
       hub.getAsset(assetId).realizedFees +
       _calcUnrealizedFees(hub, assetId);
-  }
-
-  function _addNewAssetsAndReserves(IHub hub, ISpoke spoke, uint256 count) internal {
-    for (uint256 i = 0; i < count; i++) {
-      MockERC20 newToken = new MockERC20();
-      newToken.mint(alice, MAX_SUPPLY_AMOUNT * 10 ** 18);
-      newToken.mint(bob, MAX_SUPPLY_AMOUNT * 10 ** 18);
-      vm.prank(alice);
-      newToken.approve(address(spoke), UINT256_MAX);
-      vm.prank(bob);
-      newToken.approve(address(spoke), UINT256_MAX);
-
-      IHub.SpokeConfig memory spokeConfig = IHub.SpokeConfig({
-        active: true,
-        halted: false,
-        addCap: Constants.MAX_ALLOWED_SPOKE_CAP,
-        drawCap: Constants.MAX_ALLOWED_SPOKE_CAP,
-        riskPremiumThreshold: 1000_00
-      });
-
-      bytes memory encodedIrData = abi.encode(
-        IAssetInterestRateStrategy.InterestRateData({
-          optimalUsageRatio: 90_00, // 90.00%
-          baseVariableBorrowRate: 5_00, // 5.00%
-          variableRateSlope1: 5_00, // 5.00%
-          variableRateSlope2: 5_00 // 5.00%
-        })
-      );
-
-      // Add asset to hub
-      vm.startPrank(ADMIN);
-      uint256 newTokenAssetId = hub.addAsset(
-        address(newToken),
-        18,
-        address(treasurySpoke),
-        address(irStrategy),
-        encodedIrData
-      );
-      hub.updateAssetConfig(
-        newTokenAssetId,
-        IHub.AssetConfig({
-          liquidityFee: 10_00,
-          feeReceiver: address(treasurySpoke),
-          irStrategy: address(irStrategy),
-          reinvestmentController: address(0)
-        }),
-        new bytes(0)
-      );
-
-      // Prepare the reserve configs
-      ISpoke.ReserveConfig memory reserveConfig = ISpoke.ReserveConfig({
-        collateralRisk: _randomBps(),
-        paused: false,
-        frozen: false,
-        borrowable: true,
-        receiveSharesEnabled: true
-      });
-      ISpoke.DynamicReserveConfig memory dynamicConfig = ISpoke.DynamicReserveConfig({
-        collateralFactor: 80_00,
-        maxLiquidationBonus: 105_00,
-        liquidationFee: 10_00
-      });
-
-      // Add reserve to spoke
-      spoke.addReserve(
-        address(hub),
-        newTokenAssetId,
-        _deployMockPriceFeed(spoke, 1e8),
-        reserveConfig,
-        dynamicConfig
-      );
-
-      // Add spoke to hub
-      hub.addSpoke(newTokenAssetId, address(spoke), spokeConfig);
-      vm.stopPrank();
-    }
   }
 }
