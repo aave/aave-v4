@@ -3,7 +3,6 @@
 pragma solidity ^0.8.0;
 
 import {IGatewayBase} from 'src/position-manager/interfaces/IGatewayBase.sol';
-import {INativeWrapper} from 'src/position-manager/interfaces/INativeWrapper.sol';
 
 /// @title INativeTokenGateway
 /// @author Aave Labs
