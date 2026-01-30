@@ -5,7 +5,7 @@ pragma solidity ^0.8.0;
 import 'tests/unit/Spoke/SpokeBase.t.sol';
 import {EIP712Hash} from 'src/spoke/libraries/EIP712Hash.sol';
 
-contract SpokesetUserPositionManagersWithSigTest is SpokeBase {
+contract SpokeSetUserPositionManagersWithSigTest is SpokeBase {
   using SafeCast for *;
 
   mapping(address positionManager => bool approve) internal _lookup;
@@ -77,7 +77,7 @@ contract SpokesetUserPositionManagersWithSigTest is SpokeBase {
     assertEq(
       EIP712Hash.SET_USER_POSITION_MANAGERS_TYPEHASH,
       keccak256(
-        'SetUserPositionManagers(address user,PositionManagerUpdate[] updates,uint256 nonce,uint256 deadline)PositionManagerUpdate(address positionManager,bool approve)'
+        'SetUserPositionManagers(address onBehalfOf,PositionManagerUpdate[] updates,uint256 nonce,uint256 deadline)PositionManagerUpdate(address positionManager,bool approve)'
       )
     );
     assertEq(
@@ -138,15 +138,19 @@ contract SpokesetUserPositionManagersWithSigTest is SpokeBase {
 
     uint192 nonceKey = _randomNonceKey();
     ISpoke.SetUserPositionManagers memory params = _setUserPositionManagerData(user, deadline);
-    uint256 currentNonce = _burnRandomNoncesAtKey(spoke1, params.user, nonceKey);
-    params.nonce = _getRandomInvalidNonceAtKey(spoke1, params.user, nonceKey);
+    uint256 currentNonce = _burnRandomNoncesAtKey(spoke1, params.onBehalfOf, nonceKey);
+    params.nonce = _getRandomInvalidNonceAtKey(spoke1, params.onBehalfOf, nonceKey);
 
     bytes32 digest = _getTypedDataHash(spoke1, params);
     (uint8 v, bytes32 r, bytes32 s) = vm.sign(userPk, digest);
     bytes memory signature = abi.encodePacked(r, s, v);
 
     vm.expectRevert(
-      abi.encodeWithSelector(INoncesKeyed.InvalidAccountNonce.selector, params.user, currentNonce)
+      abi.encodeWithSelector(
+        INoncesKeyed.InvalidAccountNonce.selector,
+        params.onBehalfOf,
+        currentNonce
+      )
     );
     vm.prank(vm.randomAddress());
     spoke1.setUserPositionManagersWithSig(params, signature);
@@ -157,7 +161,7 @@ contract SpokesetUserPositionManagersWithSigTest is SpokeBase {
     vm.label(user, 'user');
     uint256 deadline = _warpBeforeRandomDeadline();
     ISpoke.SetUserPositionManagers memory params = _setUserPositionManagerData(user, deadline);
-    params.nonce = _burnRandomNoncesAtKey(spoke1, params.user);
+    params.nonce = _burnRandomNoncesAtKey(spoke1, params.onBehalfOf);
 
     bytes32 digest = _getTypedDataHash(spoke1, params);
     (uint8 v, bytes32 r, bytes32 s) = vm.sign(userPk, digest);
@@ -165,7 +169,7 @@ contract SpokesetUserPositionManagersWithSigTest is SpokeBase {
 
     vm.expectEmit(address(spoke1));
     emit ISpoke.SetUserPositionManager(
-      params.user,
+      params.onBehalfOf,
       params.updates[0].positionManager,
       params.updates[0].approve
     );
@@ -173,9 +177,9 @@ contract SpokesetUserPositionManagersWithSigTest is SpokeBase {
     vm.prank(vm.randomAddress());
     spoke1.setUserPositionManagersWithSig(params, signature);
 
-    _assertNonceIncrement(spoke1, params.user, params.nonce);
+    _assertNonceIncrement(spoke1, params.onBehalfOf, params.nonce);
     assertEq(
-      spoke1.isPositionManager(params.user, params.updates[0].positionManager),
+      spoke1.isPositionManager(params.onBehalfOf, params.updates[0].positionManager),
       params.updates[0].approve
     );
   }
@@ -186,7 +190,7 @@ contract SpokesetUserPositionManagersWithSigTest is SpokeBase {
     uint256 deadline = _warpBeforeRandomDeadline();
     ISpoke.SetUserPositionManagers memory params = _setUserPositionManagerData(user, deadline);
     params.updates = new ISpoke.PositionManagerUpdate[](0);
-    params.nonce = _burnRandomNoncesAtKey(spoke1, params.user);
+    params.nonce = _burnRandomNoncesAtKey(spoke1, params.onBehalfOf);
 
     bytes32 digest = _getTypedDataHash(spoke1, params);
     (uint8 v, bytes32 r, bytes32 s) = vm.sign(userPk, digest);
@@ -198,7 +202,7 @@ contract SpokesetUserPositionManagersWithSigTest is SpokeBase {
     spoke1.setUserPositionManagersWithSig(params, signature);
 
     assertEq(vm.getRecordedLogs().length, 0);
-    _assertNonceIncrement(spoke1, params.user, params.nonce);
+    _assertNonceIncrement(spoke1, params.onBehalfOf, params.nonce);
   }
 
   function test_setUserPositionManagersWithSig_multiple_updates(
@@ -220,7 +224,7 @@ contract SpokesetUserPositionManagersWithSigTest is SpokeBase {
       address positionManager = params.updates[i].positionManager;
       bool approve = params.updates[i].approve;
       vm.expectEmit(address(spoke1));
-      emit ISpoke.SetUserPositionManager(params.user, positionManager, approve);
+      emit ISpoke.SetUserPositionManager(params.onBehalfOf, positionManager, approve);
       // overwrite cached lookup such that latest state is checked for duplicated entries
       _lookup[positionManager] = approve && spoke1.isPositionManagerActive(positionManager);
     }
@@ -228,11 +232,11 @@ contract SpokesetUserPositionManagersWithSigTest is SpokeBase {
     vm.prank(vm.randomAddress());
     spoke1.setUserPositionManagersWithSig(params, signature);
 
-    _assertNonceIncrement(spoke1, params.user, params.nonce);
+    _assertNonceIncrement(spoke1, params.onBehalfOf, params.nonce);
     for (uint256 i; i < updates.length; ++i) {
       address positionManager = params.updates[i].positionManager;
       assertEq(
-        spoke1.isPositionManager(params.user, positionManager),
+        spoke1.isPositionManager(params.onBehalfOf, positionManager),
         (positionManager == user) || _lookup[positionManager]
       );
     }
@@ -353,7 +357,7 @@ contract SpokesetUserPositionManagersWithSigTest is SpokeBase {
 
     vm.expectEmit(address(spoke1));
     emit ISpoke.SetUserPositionManager(
-      params.user,
+      params.onBehalfOf,
       params.updates[0].positionManager,
       params.updates[0].approve
     );
@@ -361,9 +365,9 @@ contract SpokesetUserPositionManagersWithSigTest is SpokeBase {
     vm.prank(vm.randomAddress());
     spoke1.setUserPositionManagersWithSig(params, signature);
 
-    _assertNonceIncrement(spoke1, params.user, params.nonce);
+    _assertNonceIncrement(spoke1, params.onBehalfOf, params.nonce);
     assertEq(
-      spoke1.isPositionManager(params.user, params.updates[0].positionManager),
+      spoke1.isPositionManager(params.onBehalfOf, params.updates[0].positionManager),
       params.updates[0].approve
     );
   }
@@ -375,7 +379,7 @@ contract SpokesetUserPositionManagersWithSigTest is SpokeBase {
     ISpoke.PositionManagerUpdate[] memory updates = new ISpoke.PositionManagerUpdate[](1);
     updates[0] = ISpoke.PositionManagerUpdate(POSITION_MANAGER, true);
     ISpoke.SetUserPositionManagers memory params = ISpoke.SetUserPositionManagers({
-      user: user,
+      onBehalfOf: user,
       updates: updates,
       nonce: spoke1.nonces(user, _randomNonceKey()),
       deadline: deadline
