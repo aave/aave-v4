@@ -60,7 +60,7 @@ contract HubAccruedFeesTest is HubBase {
       assertEq(totalInterest, expectedTotalInterest);
 
       accruedFees = hub1.getAssetAccruedFees(daiAssetId);
-      uint256 expectedAccruedFees = _calcUnrealizedFees(hub1, daiAssetId);
+      uint256 expectedAccruedFees = _getExpectedFeeReceiverAddedAssets(hub1, daiAssetId);
       assertEq(accruedFees, expectedAccruedFees);
     }
 
