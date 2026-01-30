@@ -50,11 +50,10 @@ abstract contract Spoke is
   using UserPositionDebt for ISpoke.UserPosition;
 
   /// @inheritdoc ISpoke
-  bytes32 public constant SET_USER_POSITION_MANAGERS_TYPEHASH =
-    EIP712Hash.SET_USER_POSITION_MANAGERS_TYPEHASH;
-
-  /// @inheritdoc ISpoke
   address public immutable ORACLE;
+
+  /// @dev The number of decimals used by the oracle.
+  uint8 internal constant ORACLE_DECIMALS = 8;
 
   /// @dev The maximum allowed value for an asset identifier (inclusive).
   uint256 internal constant MAX_ALLOWED_ASSET_ID = type(uint16).max;
@@ -75,8 +74,9 @@ abstract contract Spoke is
   uint256 internal constant DUST_LIQUIDATION_THRESHOLD =
     LiquidationLogic.DUST_LIQUIDATION_THRESHOLD;
 
-  /// @dev The number of decimals used by the oracle.
-  uint8 internal constant ORACLE_DECIMALS = 8;
+  /// @inheritdoc ISpoke
+  bytes32 public constant SET_USER_POSITION_MANAGERS_TYPEHASH =
+    EIP712Hash.SET_USER_POSITION_MANAGERS_TYPEHASH;
 
   /// @notice Modifier that checks if the caller is an approved positionManager for `onBehalfOf`.
   modifier onlyPositionManager(address onBehalfOf) {
