@@ -749,7 +749,7 @@ contract SpokeBase is Base {
     assertEq(a.totalDebtValueRay, b.totalDebtValueRay, 'totalDebtValueRay');
     assertEq(a.healthFactor, b.healthFactor, 'healthFactor');
     assertEq(a.activeCollateralCount, b.activeCollateralCount, 'activeCollateralCount');
-    assertEq(a.borrowedCount, b.borrowedCount, 'borrowedCount');
+    assertEq(a.borrowCount, b.borrowCount, 'borrowCount');
     assertEq(abi.encode(a), abi.encode(b)); // sanity check
   }
 
@@ -1139,7 +1139,9 @@ contract SpokeBase is Base {
     uint256 reserveId,
     uint256 debtAmount
   ) internal {
-    address mockSpoke = address(new MockSpoke(spoke.ORACLE()));
+    address mockSpoke = address(
+      new MockSpoke(spoke.ORACLE(), Constants.MAX_ALLOWED_USER_RESERVES_LIMIT)
+    );
 
     address implementation = _getImplementationAddress(address(spoke));
 

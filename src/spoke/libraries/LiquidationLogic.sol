@@ -40,7 +40,7 @@ library LiquidationLogic {
     uint256 totalDebtValueRay;
     address liquidator;
     uint256 activeCollateralCount;
-    uint256 borrowedCount;
+    uint256 borrowCount;
     bool receiveShares;
   }
 
@@ -65,7 +65,7 @@ library LiquidationLogic {
     uint256 totalDebtValueRay;
     address liquidator;
     uint256 activeCollateralCount;
-    uint256 borrowedCount;
+    uint256 borrowCount;
     bool receiveShares;
   }
 
@@ -230,7 +230,7 @@ library LiquidationLogic {
       totalDebtValueRay: params.totalDebtValueRay,
       liquidator: params.liquidator,
       activeCollateralCount: params.activeCollateralCount,
-      borrowedCount: params.borrowedCount,
+      borrowCount: params.borrowCount,
       receiveShares: params.receiveShares
     });
 
@@ -404,7 +404,7 @@ library LiquidationLogic {
         isCollateralPositionEmpty: liquidateCollateralResult.isCollateralPositionEmpty,
         isDebtPositionEmpty: liquidateDebtResult.isDebtPositionEmpty,
         activeCollateralCount: params.activeCollateralCount,
-        borrowedCount: params.borrowedCount
+        borrowCount: params.borrowCount
       });
   }
 
@@ -784,11 +784,11 @@ library LiquidationLogic {
     bool isCollateralPositionEmpty,
     bool isDebtPositionEmpty,
     uint256 activeCollateralCount,
-    uint256 borrowedCount
+    uint256 borrowCount
   ) internal pure returns (bool) {
     if (!isCollateralPositionEmpty || activeCollateralCount > 1) {
       return false;
     }
-    return !isDebtPositionEmpty || borrowedCount > 1;
+    return !isDebtPositionEmpty || borrowCount > 1;
   }
 }

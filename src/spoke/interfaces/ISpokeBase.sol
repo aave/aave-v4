@@ -125,6 +125,7 @@ interface ISpokeBase {
 
   /// @notice Borrows a specified amount of underlying asset from the given reserve.
   /// @dev It reverts if the reserve associated with the given reserve identifier is not listed.
+  /// @dev It reverts if the user would borrow more than the maximum allowed number of borrowed reserves.
   /// @dev Caller must be `onBehalfOf` or an authorized position manager for `onBehalfOf`.
   /// @dev Caller receives the underlying asset borrowed.
   /// @param reserveId The identifier of the reserve.

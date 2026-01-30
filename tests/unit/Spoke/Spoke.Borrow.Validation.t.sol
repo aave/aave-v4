@@ -177,4 +177,85 @@ contract SpokeBorrowValidationTest is SpokeBase {
     vm.expectRevert(abi.encodeWithSelector(IHub.DrawCapExceeded.selector, drawCap));
     Utils.borrow(spoke1, daiReserveId, bob, 1, bob);
   }
+
+  function test_borrow_revertsWith_MaximumUserReservesExceeded() public {
+    // Fetch the user reserves limit
+    uint16 maxUserReservesLimit = spoke3.MAX_USER_RESERVES_LIMIT();
+    assertGt(maxUserReservesLimit, 0, 'Reserve limit is nonzero');
+
+    // Add reserves such that a user can exceed the limit
+    _addNewAssetsAndReserves(hub1, spoke3, maxUserReservesLimit + 1 - spoke3.getReserveCount());
+
+    // Bob borrows exactly up to the limit
+    for (uint256 i = 0; i < maxUserReservesLimit; ++i) {
+      Utils.supplyCollateral(spoke3, i, bob, MAX_SUPPLY_AMOUNT, bob);
+      Utils.borrow(spoke3, i, bob, 1e18, bob);
+    }
+
+    // Ensure the next reserve has supply
+    Utils.supply(spoke3, maxUserReservesLimit, bob, MAX_SUPPLY_AMOUNT, bob);
+
+    // Bob tries to borrow from the last reserve - should revert due to limit
+    vm.expectRevert(ISpoke.MaximumUserReservesExceeded.selector);
+    vm.prank(bob);
+    spoke3.borrow(maxUserReservesLimit, 1e18, bob);
+  }
+
+  /// @dev Test that borrows up to the user reserves limit, repays one reserve, and then borrows again
+  function test_borrow_to_limit_repay_borrow_again() public {
+    // Fetch the user reserves limit
+    uint16 maxUserReservesLimit = spoke3.MAX_USER_RESERVES_LIMIT();
+    assertGt(maxUserReservesLimit, 0, 'Reserve limit is nonzero');
+
+    // Add reserves such that a user can exceed the limit
+    _addNewAssetsAndReserves(hub1, spoke3, maxUserReservesLimit + 1 - spoke3.getReserveCount());
+
+    // Bob borrows exactly up to the limit
+    uint256 borrowAmount = 1e18;
+    for (uint256 i = 0; i < maxUserReservesLimit; ++i) {
+      Utils.supplyCollateral(spoke3, i, bob, MAX_SUPPLY_AMOUNT, bob);
+      Utils.borrow(spoke3, i, bob, borrowAmount, bob);
+    }
+
+    // Verify bob is at the borrow limit
+    ISpoke.UserAccountData memory accountData = spoke3.getUserAccountData(bob);
+    assertEq(accountData.borrowCount, maxUserReservesLimit);
+
+    // Bob fully repays the first reserve
+    Utils.repay(spoke3, 0, bob, type(uint256).max, bob);
+
+    // Verify bob now has space for one more borrow
+    accountData = spoke3.getUserAccountData(bob);
+    assertEq(accountData.borrowCount, maxUserReservesLimit - 1);
+
+    // Ensure the next reserve has supply
+    Utils.supply(spoke3, maxUserReservesLimit, bob, MAX_SUPPLY_AMOUNT, bob);
+
+    // Bob can now borrow from a new reserve
+    Utils.borrow(spoke3, maxUserReservesLimit, bob, borrowAmount, bob);
+
+    // Verify bob is back at the limit
+    accountData = spoke3.getUserAccountData(bob);
+    assertEq(accountData.borrowCount, maxUserReservesLimit);
+  }
+
+  function test_borrow_unlimited_whenLimitIsMax() public {
+    // Verify that when MAX_USER_RESERVES_LIMIT is maximum, many reserves can be borrowed
+    assertEq(spoke1.MAX_USER_RESERVES_LIMIT(), Constants.MAX_ALLOWED_USER_RESERVES_LIMIT);
+
+    // spoke1 has 4 reserves by default, add 96 more to have 100 total
+    _addNewAssetsAndReserves(hub1, spoke1, 96);
+
+    // Bob can supply as collateral and borrow 100 reserves without hitting a limit
+    uint256 reservesToBorrow = 100;
+    for (uint256 i = 0; i < reservesToBorrow; ++i) {
+      Utils.supplyCollateral(spoke1, i, bob, MAX_SUPPLY_AMOUNT, bob);
+      Utils.borrow(spoke1, i, bob, 1e18, bob);
+    }
+
+    // Verify bob has borrowed and set as collateral all 100 reserves
+    ISpoke.UserAccountData memory accountData = spoke1.getUserAccountData(bob);
+    assertEq(accountData.borrowCount, reservesToBorrow);
+    assertEq(accountData.activeCollateralCount, reservesToBorrow);
+  }
 }

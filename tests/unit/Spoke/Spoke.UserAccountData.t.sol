@@ -13,7 +13,9 @@ contract SpokeUserAccountDataTest is SpokeBase {
   function setUp() public override {
     super.setUp();
     spoke = MockSpoke(address(spoke1));
-    address mockSpokeImpl = address(new MockSpoke(address(spoke.ORACLE())));
+    address mockSpokeImpl = address(
+      new MockSpoke(address(spoke.ORACLE()), Constants.MAX_ALLOWED_USER_RESERVES_LIMIT)
+    );
     vm.etch(address(spoke1), mockSpokeImpl.code);
 
     _updateCollateralFactor(spoke, _wethReserveId(spoke), 80_00);
@@ -55,7 +57,7 @@ contract SpokeUserAccountDataTest is SpokeBase {
         healthFactor: 0.96e18,
         riskPremium: 10_00,
         activeCollateralCount: 1,
-        borrowedCount: 1
+        borrowCount: 1
       })
     );
   }
@@ -89,7 +91,7 @@ contract SpokeUserAccountDataTest is SpokeBase {
         healthFactor: 0.96e18,
         riskPremium: 10_00,
         activeCollateralCount: 1,
-        borrowedCount: 1
+        borrowCount: 1
       })
     );
   }
@@ -123,7 +125,7 @@ contract SpokeUserAccountDataTest is SpokeBase {
         healthFactor: 1.28e18,
         riskPremium: 10_00,
         activeCollateralCount: 1,
-        borrowedCount: 1
+        borrowCount: 1
       })
     );
   }
@@ -166,7 +168,7 @@ contract SpokeUserAccountDataTest is SpokeBase {
         healthFactor: 2.596e18,
         riskPremium: 14_50,
         activeCollateralCount: 2,
-        borrowedCount: 1
+        borrowCount: 1
       })
     );
   }
@@ -208,7 +210,7 @@ contract SpokeUserAccountDataTest is SpokeBase {
         healthFactor: 0.576e18,
         riskPremium: 10_00,
         activeCollateralCount: 1,
-        borrowedCount: 2
+        borrowCount: 2
       })
     );
   }
@@ -248,7 +250,7 @@ contract SpokeUserAccountDataTest is SpokeBase {
         healthFactor: 0.96e18,
         riskPremium: 10_00,
         activeCollateralCount: 1,
-        borrowedCount: 1
+        borrowCount: 1
       })
     );
   }

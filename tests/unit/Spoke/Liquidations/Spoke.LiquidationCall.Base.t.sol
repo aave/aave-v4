@@ -322,7 +322,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
       if (userDrawnShares == 0) {
         continue;
       }
-      expectedUserAccountData.borrowedCount++;
+      expectedUserAccountData.borrowCount++;
       expectedUserAccountData.totalDebtValueRay += _convertAmountToValue(
         params.spoke,
         reserveId,
@@ -696,7 +696,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
     bool hasDeficit = (userAccountDataBefore.activeCollateralCount == 1) &&
       (liquidationAmounts.collateralSharesToLiquidate ==
         params.spoke.getUserPosition(params.collateralReserveId, params.user).suppliedShares) &&
-      (userAccountDataBefore.borrowedCount > 1 || !fullDebtReserveLiquidated);
+      (userAccountDataBefore.borrowCount > 1 || !fullDebtReserveLiquidated);
 
     uint256 effectiveLiquidationBonusWad = _calculateEffectiveLiquidationBonusWad(
       params,
@@ -857,7 +857,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
     if (
       liquidationMetadata.hasDeficit ||
       (liquidationMetadata.fullDebtReserveLiquidated &&
-        accountsInfoBefore.userAccountData.borrowedCount == 1)
+        accountsInfoBefore.userAccountData.borrowCount == 1)
     ) {
       assertEq(
         accountsInfoAfter.userAccountData.healthFactor,
