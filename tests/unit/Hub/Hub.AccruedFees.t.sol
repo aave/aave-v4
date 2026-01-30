@@ -7,6 +7,7 @@ import 'tests/unit/Hub/HubBase.t.sol';
 contract HubAccruedFeesTest is HubBase {
   using WadRayMath for uint256;
   using PercentageMath for uint256;
+  using MathUtils for uint256;
 
   uint256 constant SUPPLY_AMOUNT = 1000e18;
   uint256 constant BORROW_AMOUNT = 500e18;
@@ -427,8 +428,13 @@ contract HubAccruedFeesTest is HubBase {
   }
 
   /// @dev Tests interestForFees calculation when realizedFees > 0 from prior accrual
-  function test_unrealizedFees_withPriorRealizedFees() public {
-    updateLiquidityFee(hub1, daiAssetId, 20_00);
+  function test_unrealizedFees_fuzz_withPriorRealizedFees(
+    uint256 liquidityFee,
+    uint256 skipTime
+  ) public {
+    liquidityFee = bound(liquidityFee, 1, PercentageMath.PERCENTAGE_FACTOR);
+    skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
+    updateLiquidityFee(hub1, daiAssetId, liquidityFee);
 
     Utils.add({
       hub: hub1,
@@ -445,7 +451,7 @@ contract HubAccruedFeesTest is HubBase {
       amount: BORROW_AMOUNT
     });
 
-    skip(180 days);
+    skip(skipTime);
     Utils.add({hub: hub1, assetId: daiAssetId, caller: address(spoke1), amount: 1e18, user: alice});
 
     uint256 realizedFeesAfterFirst = hub1.getAsset(daiAssetId).realizedFees;
@@ -455,22 +461,34 @@ contract HubAccruedFeesTest is HubBase {
     IHub.Asset memory assetBefore = hub1.getAsset(daiAssetId);
     uint256 totalAssetsBefore = _calcTotalAddedAssets(assetBefore);
 
-    skip(180 days);
+    skip(skipTime / 2);
 
     (uint256 drawnDebtAfter, ) = hub1.getAssetOwed(daiAssetId);
     uint256 delta = drawnDebtAfter - drawnDebtBefore;
-    uint256 protocolCut = (delta * 20_00) / 100_00;
+    uint256 protocolCut = delta.percentMulDown(liquidityFee);
     uint256 interest = delta - protocolCut;
-    uint256 expectedInterestForFees = (interest * realizedFeesAfterFirst) /
-      (totalAssetsBefore + SharesMath.VIRTUAL_ASSETS);
+    uint256 expectedInterestForFees = interest.mulDivDown(
+      realizedFeesAfterFirst,
+      totalAssetsBefore + SharesMath.VIRTUAL_ASSETS
+    );
     uint256 expectedNewUnrealizedFees = protocolCut + expectedInterestForFees;
 
     uint256 totalAccruedFees = hub1.getAssetAccruedFees(daiAssetId);
     assertEq(totalAccruedFees - realizedFeesAfterFirst, _calcUnrealizedFees(hub1, daiAssetId));
-
     assertEq(totalAccruedFees, realizedFeesAfterFirst + expectedNewUnrealizedFees);
-    assertGt(expectedInterestForFees, 0);
-
+    uint256 denom = totalAssetsBefore + SharesMath.VIRTUAL_ASSETS;
+    if (interest == 0) {
+      assertEq(expectedInterestForFees, 0);
+    } else {
+      // also 0 if the numerator is < denominator, rounding to 0
+      // smallest realizedFees such that floor(interest * realizedFees / denom) >= 1
+      uint256 minRealizedFeesForNonZero = (denom + interest - 1) / interest;
+      if (realizedFeesAfterFirst < minRealizedFeesForNonZero) {
+        assertEq(expectedInterestForFees, 0);
+      } else {
+        assertGt(expectedInterestForFees, 0);
+      }
+    }
     uint256 interestForSuppliers = interest - expectedInterestForFees;
     assertEq(totalAccruedFees - realizedFeesAfterFirst, expectedNewUnrealizedFees);
     assertEq(protocolCut + expectedInterestForFees + interestForSuppliers, delta);
