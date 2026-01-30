@@ -1465,7 +1465,7 @@ abstract contract Base is Test {
   }
 
   /// @dev Helper function to calculate asset amount corresponding to single added share
-  function minimumAssetsPerAddedShare(IHub hub, uint256 assetId) internal view returns (uint256) {
+  function _minimumAssetsPerAddedShare(IHub hub, uint256 assetId) internal view returns (uint256) {
     return hub.previewAddByShares(assetId, 1);
   }
 
@@ -2067,7 +2067,8 @@ abstract contract Base is Test {
     requiredDebtValue =
       userAccountData.totalCollateralValue.wadMulUp(userAccountData.avgCollateralFactor).wadDivUp(
         desiredHf
-      ) - userAccountData.totalDebtValue;
+      ) -
+      userAccountData.totalDebtValue;
   }
 
   function _getUserHealthFactor(ISpoke spoke, address user) internal view returns (uint256) {

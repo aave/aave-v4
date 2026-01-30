@@ -521,7 +521,6 @@ contract HubAccruedFeesTest is HubBase {
     uint256 treasuryAssetsBefore = hub1.previewRemoveByShares(daiAssetId, treasuryShares);
     assertGt(treasuryAssetsBefore, 0);
 
-    uint256 bobShares = hub1.getSpokeAddedShares(daiAssetId, address(spoke1));
     Utils.supply({
       spoke: spoke1,
       reserveId: _daiReserveId(spoke1),
@@ -530,7 +529,6 @@ contract HubAccruedFeesTest is HubBase {
       onBehalfOf: carol
     });
 
-    uint256 carolShares = spoke1.getUserSuppliedShares(_daiReserveId(spoke1), carol);
     uint256 carolAssetsBefore = spoke1.getUserSuppliedAssets(_daiReserveId(spoke1), carol);
     assertApproxEqAbs(carolAssetsBefore, treasuryAssetsBefore, 1);
 
@@ -786,7 +784,11 @@ contract HubAccruedFeesTest is HubBase {
     Utils.mintFeeShares(hub1, daiAssetId, ADMIN);
     uint256 postMintSharePrice = hub1.previewAddByShares(daiAssetId, 1e18);
 
-    assertApproxEqAbs(postMintSharePrice, preMintSharePrice, 2);
+    assertApproxEqAbs(
+      postMintSharePrice,
+      preMintSharePrice,
+      _minimumAssetsPerAddedShare(hub1, daiAssetId)
+    );
     assertEq(_calcUnrealizedFees(hub1, daiAssetId), 0);
   }
 
