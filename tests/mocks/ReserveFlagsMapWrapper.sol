@@ -11,7 +11,6 @@ contract ReserveFlagsMapWrapper {
     bool initPaused,
     bool initFrozen,
     bool initBorrowable,
-    bool initLiquidatable,
     bool initReceiveSharesEnabled
   ) external pure returns (ReserveFlags) {
     return
@@ -19,7 +18,6 @@ contract ReserveFlagsMapWrapper {
         initPaused: initPaused,
         initFrozen: initFrozen,
         initBorrowable: initBorrowable,
-        initLiquidatable: initLiquidatable,
         initReceiveSharesEnabled: initReceiveSharesEnabled
       });
   }
@@ -34,10 +32,6 @@ contract ReserveFlagsMapWrapper {
 
   function setBorrowable(ReserveFlags flags, bool status) external pure returns (ReserveFlags) {
     return ReserveFlagsMap.setBorrowable(flags, status);
-  }
-
-  function setLiquidatable(ReserveFlags flags, bool status) external pure returns (ReserveFlags) {
-    return ReserveFlagsMap.setLiquidatable(flags, status);
   }
 
   function setReceiveSharesEnabled(
@@ -59,10 +53,6 @@ contract ReserveFlagsMapWrapper {
     return ReserveFlagsMap.borrowable(flags);
   }
 
-  function liquidatable(ReserveFlags flags) external pure returns (bool) {
-    return ReserveFlagsMap.liquidatable(flags);
-  }
-
   function receiveSharesEnabled(ReserveFlags flags) external pure returns (bool) {
     return ReserveFlagsMap.receiveSharesEnabled(flags);
   }
@@ -77,10 +67,6 @@ contract ReserveFlagsMapWrapper {
 
   function BORROWABLE_MASK() external pure returns (uint8) {
     return ReserveFlagsMap.BORROWABLE_MASK;
-  }
-
-  function LIQUIDATABLE_MASK() external pure returns (uint8) {
-    return ReserveFlagsMap.LIQUIDATABLE_MASK;
   }
 
   function RECEIVE_SHARES_ENABLED_MASK() external pure returns (uint8) {
