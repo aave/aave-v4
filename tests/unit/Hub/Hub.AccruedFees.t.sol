@@ -390,7 +390,8 @@ contract HubAccruedFeesTest is HubBase {
 
   /// @dev Verifies exact fee formula: first accrual fees = protocolCut when no prior fees
   function test_unrealizedFees_preciseCalculation() public {
-    updateLiquidityFee(hub1, daiAssetId, 20_00);
+    uint256 liquidityFee = 20_00;
+    updateLiquidityFee(hub1, daiAssetId, liquidityFee);
 
     Utils.add({
       hub: hub1,
@@ -408,23 +409,21 @@ contract HubAccruedFeesTest is HubBase {
     });
 
     assertEq(hub1.getAsset(daiAssetId).realizedFees, 0);
-    skip(365 days);
+    skip(322 days);
 
     (uint256 drawnDebtAfter, ) = hub1.getAssetOwed(daiAssetId);
     uint256 delta = drawnDebtAfter - BORROW_AMOUNT;
-    uint256 expectedProtocolCut = (delta * 20_00) / 100_00;
+    uint256 expectedProtocolCut = delta.percentMulDown(liquidityFee);
     uint256 interest = delta - expectedProtocolCut;
     uint256 accruedFees = _getExpectedFeeReceiverAddedAssets(hub1, daiAssetId);
     assertEq(accruedFees, _calcUnrealizedFees(hub1, daiAssetId));
 
     // First accrual with no prior fees: fees = protocolCut exactly
     assertEq(accruedFees, expectedProtocolCut);
-
     uint256 supplierYield = hub1.getAddedAssets(daiAssetId) - SUPPLY_AMOUNT;
-    assertApproxEqAbs(supplierYield, interest, 1);
-    assertApproxEqAbs(accruedFees + supplierYield, delta, 1);
-    assertEq(accruedFees, (delta * 20) / 100);
-    assertApproxEqAbs(supplierYield, (delta * 80) / 100, 1);
+    assertEq(supplierYield, interest);
+    assertEq(accruedFees + supplierYield, delta);
+    assertEq(supplierYield, delta.percentMulUp(PercentageMath.PERCENTAGE_FACTOR - liquidityFee));
   }
 
   /// @dev Tests interestForFees calculation when realizedFees > 0 from prior accrual
