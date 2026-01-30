@@ -12,7 +12,7 @@ def percentMulUp(value, percentage):
 # we want to minimize RISK_PREMIUM_THRESHOLD such that:
 # Σ ⌈(drawnShares_i × riskPremium_i) / PERCENTAGE_FACTOR⌉ ≤ ⌈((Σ drawnShares_i) × RISK_PREMIUM_THRESHOLD) / PERCENTAGE_FACTOR⌉
 
-# minimize LHS using the property ⌈x⌉ ≤ x + 1, and maximize RHS using the property ⌈x⌉ ≥ x
+# maximize LHS using the property ⌈x⌉ ≤ x + 1, and minimize RHS using the property ⌈x⌉ ≥ x
 # Σ ((drawnShares_i × riskPremium_i) / PERCENTAGE_FACTOR + 1) ≤ ((Σ drawnShares_i) × RISK_PREMIUM_THRESHOLD) / PERCENTAGE_FACTOR
 
 # for N as number of users, the above simplifies to:
