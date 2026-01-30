@@ -22,8 +22,6 @@ abstract contract TokenizationSpoke is ITokenizationSpoke, ERC20Upgradeable, Int
   using EIP712Hash for *;
 
   /// @inheritdoc ITokenizationSpoke
-  uint40 public immutable MAX_ALLOWED_SPOKE_CAP;
-  /// @inheritdoc ITokenizationSpoke
   uint192 public constant PERMIT_NONCE_NAMESPACE = 0;
   /// @inheritdoc ITokenizationSpoke
   bytes32 public constant PERMIT_TYPEHASH = EIP712Hash.PERMIT_TYPEHASH;
@@ -35,6 +33,8 @@ abstract contract TokenizationSpoke is ITokenizationSpoke, ERC20Upgradeable, Int
   bytes32 public constant WITHDRAW_TYPEHASH = EIP712Hash.TOKENIZED_WITHDRAW_TYPEHASH;
   /// @inheritdoc ITokenizationSpoke
   bytes32 public constant REDEEM_TYPEHASH = EIP712Hash.TOKENIZED_REDEEM_TYPEHASH;
+  /// @inheritdoc ITokenizationSpoke
+  uint40 public immutable MAX_ALLOWED_SPOKE_CAP;
 
   /// @dev Immutable references to the Hub and tokenized asset details.
   IHub internal immutable HUB;
