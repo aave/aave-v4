@@ -211,29 +211,21 @@ library AssetLogic {
       drawnIndex: previousIndex
     });
 
-    uint256 totalGrowth = aggregatedOwedRayAfter.fromRayUp() - aggregatedOwedRayBefore.fromRayUp();
-    if (totalGrowth == 0) {
-      return 0;
-    }
+    // Take treasury cut, remainder is interest to distribute
+    uint256 growthDelta = aggregatedOwedRayAfter.fromRayUp() - aggregatedOwedRayBefore.fromRayUp();
+    uint256 unrealizedFees = growthDelta.percentMulDown(liquidityFee);
 
-    // fees = protocol's cut of the total growth
-    uint256 fees = totalGrowth.percentMulDown(liquidityFee);
-
-    // interest = supplier's cut of the total growth
-    uint256 interest = totalGrowth - fees;
-
-    // Distribute interestForFees pro-rata to realizedFees
-    uint256 realizedFees = asset.realizedFees;
-    uint256 totalAddedAssetsBefore = asset.liquidity +
+    // distribute the remaining interest in proportion to the `realizedFees` relative to total amount of assets that belong to
+    // suppliers, effectively as if the `realizedFees` were minted as added shares
+    uint256 suppliersTotalAddedAssets = asset.liquidity +
       asset.swept +
       aggregatedOwedRayBefore.fromRayUp();
-    uint256 interestForFees = interest.mulDivDown(
-      realizedFees,
-      totalAddedAssetsBefore + SharesMath.VIRTUAL_ASSETS
+    uint256 realizedFeesInterest = (growthDelta - unrealizedFees).mulDivDown(
+      asset.realizedFees,
+      suppliersTotalAddedAssets + SharesMath.VIRTUAL_ASSETS
     );
 
-    // Total unrealized fees = protocol fee cut + interest earned by fee portion
-    return fees + interestForFees;
+    return unrealizedFees + realizedFeesInterest;
   }
 
   /// @notice Calculates the aggregated owed amount for a specified asset, expressed in asset units and scaled by RAY.

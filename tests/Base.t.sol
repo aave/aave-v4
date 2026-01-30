@@ -2977,48 +2977,88 @@ abstract contract Base is Test {
     return (bps * WadRayMath.RAY) / PercentageMath.PERCENTAGE_FACTOR;
   }
 
-  /// @dev Calculate expected fees based on previous drawn index
-  /// @dev Splits interest proportionally between suppliers and accumulated fees
+  /// @notice Calculates the amount of fees derived from the index growth due to interest accrual.
+  /// @dev Splits interest proportionally between suppliers and accumulated fees.
   function _calcUnrealizedFees(IHub hub, uint256 assetId) internal view returns (uint256) {
     IHub.Asset memory asset = hub.getAsset(assetId);
     uint256 previousIndex = asset.drawnIndex;
-    uint256 drawnIndex = asset.drawnIndex.rayMulUp(
+    uint256 drawnIndex = previousIndex.rayMulUp(
       MathUtils.calculateLinearInterest(asset.drawnRate, uint40(asset.lastUpdateTimestamp))
     );
+    if (previousIndex == drawnIndex) {
+      return 0;
+    }
+
     uint256 liquidityFee = asset.liquidityFee;
-    if (previousIndex == drawnIndex || liquidityFee == 0) {
+    if (liquidityFee == 0) {
       return 0;
     }
 
-    uint256 aggregatedOwedRayAfter = (((uint256(asset.drawnShares) + asset.premiumShares) *
-      drawnIndex).toInt256() - asset.premiumOffsetRay).toUint256() + asset.deficitRay;
-    uint256 aggregatedOwedRayBefore = (((uint256(asset.drawnShares) + asset.premiumShares) *
-      previousIndex).toInt256() - asset.premiumOffsetRay).toUint256() + asset.deficitRay;
+    uint120 drawnShares = asset.drawnShares;
+    uint120 premiumShares = asset.premiumShares;
+    int256 premiumOffsetRay = asset.premiumOffsetRay;
+    uint256 deficitRay = asset.deficitRay;
 
-    // delta = total growth in aggregated owed
-    uint256 totalGrowth = aggregatedOwedRayAfter.fromRayUp() - aggregatedOwedRayBefore.fromRayUp();
-    if (totalGrowth == 0) {
-      return 0;
-    }
+    uint256 aggregatedOwedRayAfter = _calculateAggregatedOwedRay({
+      drawnShares: drawnShares,
+      premiumShares: premiumShares,
+      premiumOffsetRay: premiumOffsetRay,
+      deficitRay: deficitRay,
+      drawnIndex: drawnIndex
+    });
 
-    // fees = protocol's cut of the delta
-    uint256 fees = totalGrowth.percentMulDown(liquidityFee);
+    uint256 aggregatedOwedRayBefore = _calculateAggregatedOwedRay({
+      drawnShares: drawnShares,
+      premiumShares: premiumShares,
+      premiumOffsetRay: premiumOffsetRay,
+      deficitRay: deficitRay,
+      drawnIndex: previousIndex
+    });
 
-    // interest = supplier's cut of the delta
-    uint256 interest = totalGrowth - fees;
+    // Take treasury cut, remainder is interest to distribute
+    uint256 growthDelta = aggregatedOwedRayAfter.fromRayUp() - aggregatedOwedRayBefore.fromRayUp();
+    uint256 unrealizedFees = growthDelta.percentMulDown(liquidityFee);
 
-    // Distribute interestForFees pro-rata to realizedFees
-    uint256 realizedFees = asset.realizedFees;
-    uint256 totalAddedAssetsBefore = asset.liquidity +
+    // distribute the remaining interest in proportion to the `realizedFees` relative to total amount of assets that belong to
+    // suppliers, effectively as if the `realizedFees` were minted as added shares
+    uint256 suppliersTotalAddedAssets = asset.liquidity +
       asset.swept +
       aggregatedOwedRayBefore.fromRayUp();
-    uint256 interestForFees = interest.mulDivDown(
-      realizedFees,
-      totalAddedAssetsBefore + SharesMath.VIRTUAL_ASSETS
+    uint256 realizedFeesInterest = (growthDelta - unrealizedFees).mulDivDown(
+      asset.realizedFees,
+      suppliersTotalAddedAssets + SharesMath.VIRTUAL_ASSETS
     );
 
-    // Total unrealized fees = protocol fee cut + interest earned by fee portion
-    return fees + interestForFees;
+    return unrealizedFees + realizedFeesInterest;
+  }
+
+  /// @notice Calculates the aggregated owed amount for a specified asset, expressed in asset units and scaled by RAY.
+  function _calculateAggregatedOwedRay(
+    uint256 drawnShares,
+    uint256 premiumShares,
+    int256 premiumOffsetRay,
+    uint256 deficitRay,
+    uint256 drawnIndex
+  ) internal pure returns (uint256) {
+    uint256 premiumRay = _calculatePremiumRay({
+      premiumShares: premiumShares,
+      premiumOffsetRay: premiumOffsetRay,
+      drawnIndex: drawnIndex
+    });
+    return (drawnShares * drawnIndex) + premiumRay + deficitRay;
+  }
+
+  /// @notice Calculates the premium debt with full precision.
+  /// @param premiumShares The number of premium shares.
+  /// @param premiumOffsetRay The premium offset, expressed in asset units and scaled by RAY.
+  /// @param drawnIndex The current drawn index.
+  /// @return The premium debt, expressed in asset units and scaled by RAY.
+  function _calculatePremiumRay(
+    uint256 premiumShares,
+    int256 premiumOffsetRay,
+    uint256 drawnIndex
+  ) internal pure returns (uint256) {
+    return ((premiumShares * drawnIndex).toInt256() - premiumOffsetRay).toUint256();
   }
 
   function _getExpectedFeeReceiverAddedAssets(
