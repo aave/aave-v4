@@ -229,6 +229,7 @@ contract HubBase is Base {
   function _randomInvalidAssetId(IHub hub) internal returns (uint256) {
     return vm.randomUint(hub.getAssetCount(), UINT256_MAX);
   }
+
   function _calcTotalAddedAssets(IHub.Asset memory asset) internal pure returns (uint256) {
     uint256 aggregatedOwedRay = (uint256(asset.drawnShares) + asset.premiumShares) *
       asset.drawnIndex;
