@@ -76,7 +76,7 @@ contract HubAccruedFeesTest is HubBase {
     assertEq(accruedFees, 0);
     assertEq(hub1.getAssetAccruedFees(daiAssetId), 0);
     assertGt(delta, 0);
-    assertGt(finalSharePrice, initialSharePrice);
+    _checkSupplyRateIncreasing(initialSharePrice, finalSharePrice, 'share price');
   }
 
   function test_unrealizedFees_feesEarnInterest() public {
@@ -289,7 +289,11 @@ contract HubAccruedFeesTest is HubBase {
 
     uint256 protocolCut = (totalDelta * 20_00) / 100_00;
     assertGe(accruedFees, protocolCut);
-    assertGt(hub1.previewAddByShares(daiAssetId, 1e18), initialSharePrice);
+    _checkSupplyRateIncreasing(
+      initialSharePrice,
+      hub1.previewAddByShares(daiAssetId, 1e18),
+      'share price'
+    );
   }
 
   /// @dev Tests 90% fee with 100% utilization, verifies 90/10 split between fees and suppliers
@@ -326,7 +330,11 @@ contract HubAccruedFeesTest is HubBase {
     uint256 supplierYield = hub1.getAddedAssets(daiAssetId) - SUPPLY_AMOUNT;
     assertEq(supplierYield, (totalDelta * 10) / 100);
     assertEq(accruedFees + supplierYield, totalDelta);
-    assertGt(hub1.previewAddByShares(daiAssetId, 1e18), sharePriceBefore);
+    _checkSupplyRateIncreasing(
+      sharePriceBefore,
+      hub1.previewAddByShares(daiAssetId, 1e18),
+      'share price'
+    );
 
     uint256 supplierAssetsBefore = hub1.previewRemoveByShares(
       daiAssetId,
@@ -369,7 +377,7 @@ contract HubAccruedFeesTest is HubBase {
       cumulativeProtocolCut += ((debtAfter - debtBefore) * 50_00) / 100_00;
 
       uint256 currentSharePrice = hub1.previewAddByShares(daiAssetId, 1e18);
-      assertGt(currentSharePrice, lastSharePrice);
+      _checkSupplyRateIncreasing(lastSharePrice, currentSharePrice, 'share price');
       lastSharePrice = currentSharePrice;
     }
 
@@ -718,7 +726,7 @@ contract HubAccruedFeesTest is HubBase {
       });
 
       uint256 currentSharePrice = hub1.previewAddByShares(daiAssetId, 1e18);
-      assertGt(currentSharePrice, lastSharePrice);
+      _checkSupplyRateIncreasing(lastSharePrice, currentSharePrice, 'share price');
       lastSharePrice = currentSharePrice;
     }
 
@@ -769,7 +777,7 @@ contract HubAccruedFeesTest is HubBase {
       uint256 currentSharePrice = hub1.previewAddByShares(daiAssetId, 1e18);
       (uint256 currentDebt, ) = hub1.getAssetOwed(daiAssetId);
 
-      assertGe(currentSharePrice, lastSharePrice);
+      _checkSupplyRateIncreasing(lastSharePrice, currentSharePrice, 'share price');
 
       uint256 debtGrowthBps = ((currentDebt - lastDebt) * PercentageMath.PERCENTAGE_FACTOR) /
         lastDebt;
@@ -857,7 +865,7 @@ contract HubAccruedFeesTest is HubBase {
     for (uint256 i = 0; i < 5; i++) {
       skip(30 days);
       uint256 currentSharePrice = hub1.previewAddByShares(daiAssetId, 1e18);
-      assertGe(currentSharePrice, lastSharePrice);
+      _checkSupplyRateIncreasing(lastSharePrice, currentSharePrice, 'share price');
       lastSharePrice = currentSharePrice;
       assertEq(
         _getExpectedFeeReceiverAddedAssets(hub1, daiAssetId),
@@ -1092,7 +1100,7 @@ contract HubAccruedFeesTest is HubBase {
       uint256 currentSharePrice = hub1.previewAddByShares(daiAssetId, 1e18);
 
       assertGe(currentFees, lastFees);
-      assertGe(currentSharePrice, lastSharePrice);
+      _checkSupplyRateIncreasing(lastSharePrice, currentSharePrice, 'share price');
 
       lastFees = currentFees;
       lastSharePrice = currentSharePrice;
