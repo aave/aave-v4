@@ -1,5 +1,6 @@
 {
 <<<<<<< HEAD
+<<<<<<< HEAD
   "getUserAccountData: supplies: 0, borrows: 0": "11937",
   "getUserAccountData: supplies: 1, borrows: 0": "48620",
   "getUserAccountData: supplies: 2, borrows: 0": "80418",
@@ -11,5 +12,12 @@
   "getUserAccountData: supplies: 2, borrows: 0": "80826",
   "getUserAccountData: supplies: 2, borrows: 1": "100237",
   "getUserAccountData: supplies: 2, borrows: 2": "118994"
+>>>>>>> origin/dev
+=======
+  "getUserAccountData: supplies: 0, borrows: 0": "13005",
+  "getUserAccountData: supplies: 1, borrows: 0": "49355",
+  "getUserAccountData: supplies: 2, borrows: 0": "80991",
+  "getUserAccountData: supplies: 2, borrows: 1": "100457",
+  "getUserAccountData: supplies: 2, borrows: 2": "119226"
 >>>>>>> origin/dev
 }

@@ -251,7 +251,7 @@ contract SpokeUpdateUserDynamicConfig_Gas_Tests is SpokeBase {
     // Add new reserves starting from the current reserve count
     uint256 startingReserveId = spoke.getReserveCount();
     // Collateral factors for these new reserves is 50% to set up liquidations later
-    _addNewAssetsAndReserves(collateralCount);
+    _addNewAssetsAndReserves(hub1, spoke, collateralCount);
 
     // Supply all new reserves as collateral for alice
     uint256 supplyAmount = 100_000e18;

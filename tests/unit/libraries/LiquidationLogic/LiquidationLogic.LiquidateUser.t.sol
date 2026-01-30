@@ -48,14 +48,14 @@ contract LiquidationLogicLiquidateUserTest is LiquidationLogicBaseTest {
       totalDebtValue: 10_000e26,
       liquidator: makeAddr('liquidator'),
       activeCollateralCount: 1,
-      borrowedCount: 1,
+      borrowCount: 1,
       receiveShares: false
     });
 
     // Set liquidationLogicWrapper as a spoke
     IHub.SpokeConfig memory spokeConfig = IHub.SpokeConfig({
       active: true,
-      paused: false,
+      halted: false,
       addCap: Constants.MAX_ALLOWED_SPOKE_CAP,
       drawCap: Constants.MAX_ALLOWED_SPOKE_CAP,
       riskPremiumThreshold: Constants.MAX_ALLOWED_COLLATERAL_RISK
@@ -72,7 +72,6 @@ contract LiquidationLogicLiquidateUserTest is LiquidationLogicBaseTest {
     // Mock storage for collateral side
     require(hub1.getAsset(usdxAssetId).underlying == address(tokenList.usdx));
     liquidationLogicWrapper.setCollateralReserveId(usdxReserveId);
-    liquidationLogicWrapper.setCollateralLiquidatable(true);
     liquidationLogicWrapper.setCollateralReserveHub(hub1);
     liquidationLogicWrapper.setCollateralReserveAssetId(usdxAssetId);
     liquidationLogicWrapper.setCollateralReserveDecimals(6);
