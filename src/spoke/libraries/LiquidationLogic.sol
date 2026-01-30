@@ -8,6 +8,7 @@ import {SafeERC20, IERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
 import {MathUtils} from 'src/libraries/math/MathUtils.sol';
 import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
 import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
+import {IOU} from 'src/hub/libraries/IOU.sol';
 import {PositionStatusMap} from 'src/spoke/libraries/PositionStatusMap.sol';
 import {UserPositionDebt} from 'src/spoke/libraries/UserPositionDebt.sol';
 import {ReserveFlags, ReserveFlagsMap} from 'src/spoke/libraries/ReserveFlagsMap.sol';
@@ -465,14 +466,20 @@ library LiquidationLogic {
       restoredPremiumRay: params.premiumDebtRayToLiquidate
     });
 
-    uint256 drawnAmountToRestore = params.drawnSharesToLiquidate.rayMulUp(params.drawnIndex);
-    uint256 amountToRestore = drawnAmountToRestore + params.premiumDebtRayToLiquidate.fromRayUp();
+    uint256 amountToRestore = (IOU.calculateDrawnRay(
+      params.drawnSharesToLiquidate,
+      params.drawnIndex
+    ) + params.premiumDebtRayToLiquidate).fromRayUp();
     IERC20(params.underlying).safeTransferFrom(
       params.liquidator,
       address(params.hub),
       amountToRestore
     );
-    params.hub.restore(params.assetId, drawnAmountToRestore, premiumDelta);
+    params.hub.restore(
+      params.assetId,
+      params.drawnSharesToLiquidate.rayMulUp(params.drawnIndex),
+      premiumDelta
+    );
 
     userPosition.applyPremiumDelta(premiumDelta);
     userPosition.drawnShares -= params.drawnSharesToLiquidate.toUint120();
@@ -672,8 +679,10 @@ library LiquidationLogic {
   function _calculateCollateralToLiquidate(
     CalculateCollateralToLiquidateParams memory params
   ) internal view returns (uint256) {
-    uint256 debtRayToLiquidate = params.drawnSharesToLiquidate * params.drawnIndex +
-      params.premiumDebtRayToLiquidate;
+    uint256 debtRayToLiquidate = IOU.calculateDrawnRay(
+      params.drawnSharesToLiquidate,
+      params.drawnIndex
+    ) + params.premiumDebtRayToLiquidate;
 
     uint256 collateralToLiquidate = Math.mulDiv(
       debtRayToLiquidate,
@@ -712,7 +721,6 @@ library LiquidationLogic {
       })
     );
 
-    // premiumDebtRayToLiquidate may be more than debtRayToTarget in order to utilize all assets
     uint256 premiumDebtRayToLiquidate = debtRayToTarget.fromRayUp().toRay().min(
       params.premiumDebtRay
     );
@@ -728,17 +736,20 @@ library LiquidationLogic {
       uint256 drawnSharesToTarget = (debtRayToTarget - premiumDebtRayToLiquidate).divUp(
         params.drawnIndex
       );
-      uint256 drawnSharesToCover = Math.mulDiv(
-        params.debtToCover - premiumDebtRayToLiquidate.fromRayUp(),
-        WadRayMath.RAY,
-        params.drawnIndex,
-        Math.Rounding.Floor
-      );
+      (uint256 drawnSharesToCover, ) = UserPositionDebt.calculateRestoreAmount({
+        drawnDebtRay: IOU.calculateDrawnRay(params.drawnShares, params.drawnIndex),
+        premiumDebtRay: premiumDebtRayToLiquidate,
+        drawnIndex: params.drawnIndex,
+        amount: params.debtToCover
+      });
 
       drawnSharesToLiquidate = drawnSharesToTarget.min(drawnSharesToCover).min(params.drawnShares);
     }
 
-    uint256 debtRayRemaining = (params.drawnShares - drawnSharesToLiquidate) * params.drawnIndex +
+    uint256 debtRayRemaining = IOU.calculateDrawnRay(
+      params.drawnShares - drawnSharesToLiquidate,
+      params.drawnIndex
+    ) +
       params.premiumDebtRay -
       premiumDebtRayToLiquidate;
 

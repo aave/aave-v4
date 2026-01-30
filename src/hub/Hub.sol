@@ -11,7 +11,7 @@ import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
 import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
 import {AssetLogic} from 'src/hub/libraries/AssetLogic.sol';
 import {SharesMath} from 'src/hub/libraries/SharesMath.sol';
-import {Premium} from 'src/hub/libraries/Premium.sol';
+import {IOU} from 'src/hub/libraries/IOU.sol';
 import {IBasicInterestRateStrategy} from 'src/hub/interfaces/IBasicInterestRateStrategy.sol';
 import {IHubBase, IHub} from 'src/hub/interfaces/IHub.sol';
 
@@ -306,15 +306,23 @@ contract Hub is IHub, AccessManaged {
     spoke.drawnShares -= drawnShares;
     _applyPremiumDelta(asset, spoke, premiumDelta);
 
-    uint256 premiumAmount = premiumDelta.restoredPremiumRay.fromRayUp();
-    uint256 liquidity = asset.liquidity + drawnAmount + premiumAmount;
+    uint256 restoredRay = IOU.calculateDrawnRay(drawnShares, asset.drawnIndex) +
+      premiumDelta.restoredPremiumRay;
+    uint256 liquidity = asset.liquidity + restoredRay.fromRayUp();
     uint256 balance = IERC20(asset.underlying).balanceOf(address(this));
     require(balance >= liquidity, InsufficientTransferred(liquidity.uncheckedSub(balance)));
     asset.liquidity = liquidity.toUint120();
 
     asset.updateDrawnRate(assetId);
 
-    emit Restore(assetId, msg.sender, drawnShares, premiumDelta, drawnAmount, premiumAmount);
+    emit Restore(
+      assetId,
+      msg.sender,
+      drawnShares,
+      premiumDelta,
+      drawnAmount,
+      premiumDelta.restoredPremiumRay.fromRayUp()
+    );
 
     return drawnShares;
   }
@@ -336,7 +344,7 @@ contract Hub is IHub, AccessManaged {
     spoke.drawnShares -= drawnShares;
     _applyPremiumDelta(asset, spoke, premiumDelta);
 
-    uint256 deficitAmountRay = uint256(drawnShares) * asset.drawnIndex +
+    uint256 deficitAmountRay = IOU.calculateDrawnRay(drawnShares, asset.drawnIndex) +
       premiumDelta.restoredPremiumRay;
     asset.deficitRay += deficitAmountRay.toUint200();
     spoke.deficitRay += deficitAmountRay.toUint200();
@@ -541,20 +549,32 @@ contract Hub is IHub, AccessManaged {
   function getAssetOwed(uint256 assetId) external view returns (uint256, uint256) {
     Asset storage asset = _assets[assetId];
     uint256 drawnIndex = asset.getDrawnIndex();
-    return (asset.drawn(drawnIndex), asset.premium(drawnIndex));
+    uint256 premium = IOU
+      .calculatePremiumRay(asset.premiumShares, asset.premiumOffsetRay, drawnIndex)
+      .fromRayUp();
+    return (asset.getAssetDrawn(drawnIndex), premium);
   }
 
   /// @inheritdoc IHubBase
   function getAssetTotalOwed(uint256 assetId) external view returns (uint256) {
     Asset storage asset = _assets[assetId];
-    return asset.totalOwed(asset.getDrawnIndex());
+    return
+      IOU
+        .calculateTotalOwedRay({
+          drawnShares: asset.drawnShares,
+          premiumShares: asset.premiumShares,
+          premiumOffsetRay: asset.premiumOffsetRay,
+          deficitRay: asset.deficitRay,
+          drawnIndex: asset.getDrawnIndex()
+        })
+        .fromRayUp();
   }
 
   /// @inheritdoc IHubBase
   function getAssetPremiumRay(uint256 assetId) external view returns (uint256) {
     Asset storage asset = _assets[assetId];
     return
-      Premium.calculatePremiumRay({
+      IOU.calculatePremiumRay({
         premiumShares: asset.premiumShares,
         premiumOffsetRay: asset.premiumOffsetRay,
         drawnIndex: asset.getDrawnIndex()
@@ -634,14 +654,28 @@ contract Hub is IHub, AccessManaged {
   function getSpokeOwed(uint256 assetId, address spoke) external view returns (uint256, uint256) {
     Asset storage asset = _assets[assetId];
     SpokeData storage spokeData = _spokes[assetId][spoke];
-    return (_getSpokeDrawn(asset, spokeData), _getSpokePremium(asset, spokeData));
+    uint256 drawnIndex = asset.getDrawnIndex();
+    uint256 drawn = IOU.calculateDrawnRay(spokeData.drawnShares, drawnIndex).fromRayUp();
+    uint256 premium = IOU
+      .calculatePremiumRay(spokeData.premiumShares, spokeData.premiumOffsetRay, drawnIndex)
+      .fromRayUp();
+    return (drawn, premium);
   }
 
   /// @inheritdoc IHubBase
   function getSpokeTotalOwed(uint256 assetId, address spoke) external view returns (uint256) {
     Asset storage asset = _assets[assetId];
     SpokeData storage spokeData = _spokes[assetId][spoke];
-    return _getSpokeDrawn(asset, spokeData) + _getSpokePremium(asset, spokeData);
+    return
+      IOU
+        .calculateTotalOwedRay({
+          drawnShares: spokeData.drawnShares,
+          premiumShares: spokeData.premiumShares,
+          premiumOffsetRay: spokeData.premiumOffsetRay,
+          deficitRay: spokeData.deficitRay,
+          drawnIndex: asset.getDrawnIndex()
+        })
+        .fromRayUp();
   }
 
   /// @inheritdoc IHubBase
@@ -798,20 +832,11 @@ contract Hub is IHub, AccessManaged {
     return shares;
   }
 
-  /// @dev Returns the spoke's drawn amount for a specified asset.
   function _getSpokeDrawn(
     Asset storage asset,
     SpokeData storage spoke
   ) internal view returns (uint256) {
-    return asset.toDrawnAssetsUp(spoke.drawnShares);
-  }
-
-  /// @dev Returns the spoke's premium amount for a specified asset.
-  function _getSpokePremium(
-    Asset storage asset,
-    SpokeData storage spoke
-  ) internal view returns (uint256) {
-    return _getSpokePremiumRay(asset, spoke).fromRayUp();
+    return IOU.calculateDrawnRay(spoke.drawnShares, asset.getDrawnIndex()).fromRayUp();
   }
 
   /// @dev Returns the spoke's premium amount with full precision for a specified asset.
@@ -820,7 +845,7 @@ contract Hub is IHub, AccessManaged {
     SpokeData storage spoke
   ) internal view returns (uint256) {
     return
-      Premium.calculatePremiumRay({
+      IOU.calculatePremiumRay({
         premiumShares: spoke.premiumShares,
         premiumOffsetRay: spoke.premiumOffsetRay,
         drawnIndex: asset.getDrawnIndex()
@@ -864,11 +889,18 @@ contract Hub is IHub, AccessManaged {
     require(spoke.active, SpokeNotActive());
     require(!spoke.halted, SpokeHalted());
     uint256 drawCap = spoke.drawCap;
-    uint256 owed = _getSpokeDrawn(asset, spoke) + _getSpokePremium(asset, spoke);
+    uint256 owed = IOU
+      .calculateTotalOwedRay({
+        drawnShares: spoke.drawnShares,
+        premiumShares: spoke.premiumShares,
+        premiumOffsetRay: spoke.premiumOffsetRay,
+        deficitRay: spoke.deficitRay,
+        drawnIndex: asset.getDrawnIndex()
+      })
+      .fromRayUp();
     require(
       drawCap == MAX_ALLOWED_SPOKE_CAP ||
-        drawCap * MathUtils.uncheckedExp(10, asset.decimals) >=
-          owed + amount + uint256(spoke.deficitRay).fromRayUp(),
+        drawCap * MathUtils.uncheckedExp(10, asset.decimals) >= owed + amount,
       DrawCapExceeded(drawCap)
     );
   }
@@ -952,7 +984,7 @@ contract Hub is IHub, AccessManaged {
     int256 premiumOffsetRay,
     PremiumDelta calldata premiumDelta
   ) internal pure returns (uint120, int200) {
-    uint256 premiumRayBefore = Premium.calculatePremiumRay({
+    uint256 premiumRayBefore = IOU.calculatePremiumRay({
       premiumShares: premiumShares,
       premiumOffsetRay: premiumOffsetRay,
       drawnIndex: drawnIndex
@@ -961,7 +993,7 @@ contract Hub is IHub, AccessManaged {
     uint256 newPremiumShares = premiumShares.add(premiumDelta.sharesDelta);
     int256 newPremiumOffsetRay = premiumOffsetRay + premiumDelta.offsetRayDelta;
 
-    uint256 premiumRayAfter = Premium.calculatePremiumRay({
+    uint256 premiumRayAfter = IOU.calculatePremiumRay({
       premiumShares: newPremiumShares,
       premiumOffsetRay: newPremiumOffsetRay,
       drawnIndex: drawnIndex

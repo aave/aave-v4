@@ -12,6 +12,7 @@ import {AccessManagedUpgradeable} from 'src/dependencies/openzeppelin-upgradeabl
 import {MathUtils} from 'src/libraries/math/MathUtils.sol';
 import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
 import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
+import {IOU} from 'src/hub/libraries/IOU.sol';
 import {EIP712Hash} from 'src/spoke/libraries/EIP712Hash.sol';
 import {KeyValueList} from 'src/spoke/libraries/KeyValueList.sol';
 import {LiquidationLogic} from 'src/spoke/libraries/LiquidationLogic.sol';
@@ -311,35 +312,42 @@ abstract contract Spoke is
     _validateRepay(reserve.flags);
 
     uint256 drawnIndex = reserve.hub.getAssetDrawnIndex(reserve.assetId);
-    (uint256 drawnDebtRestored, uint256 premiumDebtRayRestored) = userPosition
+    (uint256 drawnSharesToRestore, uint256 premiumDebtRayToRestore) = userPosition
       .calculateRestoreAmount(drawnIndex, amount);
-    uint256 restoredShares = drawnDebtRestored.rayDivDown(drawnIndex);
 
     IHubBase.PremiumDelta memory premiumDelta = userPosition.calculatePremiumDelta({
-      drawnSharesTaken: restoredShares,
+      drawnSharesTaken: drawnSharesToRestore.toUint120(),
       drawnIndex: drawnIndex,
       riskPremium: _positionStatus[onBehalfOf].riskPremium,
-      restoredPremiumRay: premiumDebtRayRestored
+      restoredPremiumRay: premiumDebtRayToRestore
     });
 
-    uint256 totalDebtRestored = drawnDebtRestored + premiumDebtRayRestored.fromRayUp();
+    uint256 totalDebtRestored = (IOU.calculateDrawnRay(drawnSharesToRestore, drawnIndex) +
+      premiumDebtRayToRestore).fromRayUp();
     IERC20(reserve.underlying).safeTransferFrom(
       msg.sender,
       address(reserve.hub),
       totalDebtRestored
     );
-    reserve.hub.restore(reserve.assetId, drawnDebtRestored, premiumDelta);
+    reserve.hub.restore(reserve.assetId, drawnSharesToRestore.rayMulUp(drawnIndex), premiumDelta);
 
     userPosition.applyPremiumDelta(premiumDelta);
-    userPosition.drawnShares -= restoredShares.toUint120();
+    userPosition.drawnShares -= drawnSharesToRestore.toUint120();
     if (userPosition.drawnShares == 0) {
       PositionStatus storage positionStatus = _positionStatus[onBehalfOf];
       positionStatus.setBorrowing(reserveId, false);
     }
 
-    emit Repay(reserveId, msg.sender, onBehalfOf, restoredShares, totalDebtRestored, premiumDelta);
+    emit Repay(
+      reserveId,
+      msg.sender,
+      onBehalfOf,
+      drawnSharesToRestore,
+      totalDebtRestored,
+      premiumDelta
+    );
 
-    return (restoredShares, totalDebtRestored);
+    return (drawnSharesToRestore, totalDebtRestored);
   }
 
   /// @inheritdoc ISpokeBase
@@ -580,30 +588,36 @@ abstract contract Spoke is
   function getUserDebt(uint256 reserveId, address user) external view returns (uint256, uint256) {
     Reserve storage reserve = _getReserve(reserveId);
     UserPosition storage userPosition = _userPositions[user][reserveId];
-    (uint256 drawnDebt, uint256 premiumDebtRay) = userPosition.getDebt(
+    (uint256 drawnDebtRay, uint256 premiumDebtRay) = userPosition.getDebtRay(
       reserve.hub,
       reserve.assetId
     );
-    return (drawnDebt, premiumDebtRay.fromRayUp());
+    return (drawnDebtRay.fromRayUp(), premiumDebtRay.fromRayUp());
   }
 
   /// @inheritdoc ISpokeBase
   function getUserTotalDebt(uint256 reserveId, address user) external view returns (uint256) {
     Reserve storage reserve = _getReserve(reserveId);
     UserPosition storage userPosition = _userPositions[user][reserveId];
-    (uint256 drawnDebt, uint256 premiumDebtRay) = userPosition.getDebt(
+    (uint256 drawnDebtRay, uint256 premiumDebtRay) = userPosition.getDebtRay(
       reserve.hub,
       reserve.assetId
     );
-    return (drawnDebt + premiumDebtRay.fromRayUp());
+    return (drawnDebtRay + premiumDebtRay).fromRayUp();
   }
 
   /// @inheritdoc ISpokeBase
-  function getUserPremiumDebtRay(uint256 reserveId, address user) external view returns (uint256) {
+  function getUserDebtRay(
+    uint256 reserveId,
+    address user
+  ) external view returns (uint256, uint256) {
     Reserve storage reserve = _getReserve(reserveId);
     UserPosition storage userPosition = _userPositions[user][reserveId];
-    (, uint256 premiumDebtRay) = userPosition.getDebt(reserve.hub, reserve.assetId);
-    return premiumDebtRay;
+    (uint256 drawnDebtRay, uint256 premiumDebtRay) = userPosition.getDebtRay(
+      reserve.hub,
+      reserve.assetId
+    );
+    return (drawnDebtRay, premiumDebtRay);
   }
 
   /// @inheritdoc ISpoke
@@ -741,14 +755,12 @@ abstract contract Spoke is
       }
 
       if (borrowing) {
-        UserPositionDebt.DebtComponents memory debtComponents = userPosition.getDebtComponents(
+        (uint256 drawnDebtRay, uint256 premiumDebtRay) = userPosition.getDebtRay(
           reserve.hub,
           reserve.assetId
         );
-        uint256 debtRay = debtComponents.drawnShares * debtComponents.drawnIndex +
-          debtComponents.premiumDebtRay;
         accountData.totalDebtValueRay += (
-          debtRay.toValue({decimals: assetDecimals, price: assetPrice})
+          (drawnDebtRay + premiumDebtRay).toValue({decimals: assetDecimals, price: assetPrice})
         );
         accountData.borrowCount = accountData.borrowCount.uncheckedAdd(1);
       }
@@ -851,8 +863,8 @@ abstract contract Spoke is
       uint256 assetId = reserve.assetId;
 
       uint256 drawnIndex = hub.getAssetDrawnIndex(assetId);
-      (uint256 drawnDebtReported, uint256 premiumDebtRay) = userPosition.getDebt(drawnIndex);
-      uint256 deficitShares = drawnDebtReported.rayDivDown(drawnIndex);
+      (uint256 drawnDebtRay, uint256 premiumDebtRay) = userPosition.getDebtRay(drawnIndex);
+      uint256 deficitShares = drawnDebtRay / drawnIndex;
 
       IHubBase.PremiumDelta memory premiumDelta = userPosition.calculatePremiumDelta({
         drawnSharesTaken: deficitShares,
@@ -861,7 +873,7 @@ abstract contract Spoke is
         restoredPremiumRay: premiumDebtRay
       });
 
-      hub.reportDeficit(assetId, drawnDebtReported, premiumDelta);
+      hub.reportDeficit(assetId, drawnDebtRay.fromRayUp(), premiumDelta);
       userPosition.applyPremiumDelta(premiumDelta);
       userPosition.drawnShares -= deficitShares.toUint120();
       positionStatus.setBorrowing(reserveId, false);

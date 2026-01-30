@@ -7,7 +7,7 @@ import {MathUtils} from 'src/libraries/math/MathUtils.sol';
 import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
 import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
 import {SharesMath} from 'src/hub/libraries/SharesMath.sol';
-import {Premium} from 'src/hub/libraries/Premium.sol';
+import {IOU} from 'src/hub/libraries/IOU.sol';
 import {IBasicInterestRateStrategy} from 'src/hub/interfaces/IBasicInterestRateStrategy.sol';
 import {IHub} from 'src/hub/interfaces/IHub.sol';
 
@@ -54,33 +54,18 @@ library AssetLogic {
     return assets.rayDivDown(asset.getDrawnIndex());
   }
 
-  /// @notice Returns the total drawn assets amount for the specified asset.
-  function drawn(IHub.Asset storage asset, uint256 drawnIndex) internal view returns (uint256) {
-    return asset.drawnShares.rayMulUp(drawnIndex);
-  }
-
-  /// @notice Returns the total premium amount for the specified asset.
-  function premium(IHub.Asset storage asset, uint256 drawnIndex) internal view returns (uint256) {
-    return
-      Premium
-        .calculatePremiumRay({
-          premiumShares: asset.premiumShares,
-          drawnIndex: drawnIndex,
-          premiumOffsetRay: asset.premiumOffsetRay
-        })
-        .fromRayUp();
-  }
-
-  /// @notice Returns the total amount owed for the specified asset, including drawn and premium.
-  function totalOwed(IHub.Asset storage asset, uint256 drawnIndex) internal view returns (uint256) {
-    return asset.drawn(drawnIndex) + asset.premium(drawnIndex);
+  function getAssetDrawn(
+    IHub.Asset storage asset,
+    uint256 drawnIndex
+  ) internal view returns (uint256) {
+    return IOU.calculateDrawnRay(asset.drawnShares, drawnIndex).fromRayUp();
   }
 
   /// @notice Returns the total added assets for the specified asset.
   function totalAddedAssets(IHub.Asset storage asset) internal view returns (uint256) {
     uint256 drawnIndex = asset.getDrawnIndex();
 
-    uint256 aggregatedOwedRay = _calculateAggregatedOwedRay({
+    uint256 totalOwedRay = IOU.calculateTotalOwedRay({
       drawnShares: asset.drawnShares,
       premiumShares: asset.premiumShares,
       premiumOffsetRay: asset.premiumOffsetRay,
@@ -91,7 +76,7 @@ library AssetLogic {
     return
       asset.liquidity +
       asset.swept +
-      aggregatedOwedRay.fromRayUp() -
+      totalOwedRay.fromRayUp() -
       asset.realizedFees -
       asset.getUnrealizedFees(drawnIndex);
   }
@@ -129,7 +114,7 @@ library AssetLogic {
   }
 
   /// @notice Updates the drawn rate of a specified asset.
-  /// @dev Premium debt is not used in the interest rate calculation.
+  /// @dev Premium owed is not used in the interest rate calculation.
   /// @dev Uses last stored index; asset accrual should have already occurred.
   /// @dev Imprecision from downscaling `deficitRay` does not accumulate.
   function updateDrawnRate(IHub.Asset storage asset, uint256 assetId) internal {
@@ -137,7 +122,7 @@ library AssetLogic {
     uint256 newDrawnRate = IBasicInterestRateStrategy(asset.irStrategy).calculateInterestRate({
       assetId: assetId,
       liquidity: asset.liquidity,
-      drawn: asset.drawn(drawnIndex),
+      drawn: asset.getAssetDrawn(drawnIndex),
       deficit: asset.deficitRay.fromRayUp(),
       swept: asset.swept
     });
@@ -194,7 +179,7 @@ library AssetLogic {
     int256 premiumOffsetRay = asset.premiumOffsetRay;
     uint256 deficitRay = asset.deficitRay;
 
-    uint256 aggregatedOwedRayAfter = _calculateAggregatedOwedRay({
+    uint256 totalOwedRayAfter = IOU.calculateTotalOwedRay({
       drawnShares: drawnShares,
       premiumShares: premiumShares,
       premiumOffsetRay: premiumOffsetRay,
@@ -202,7 +187,7 @@ library AssetLogic {
       drawnIndex: drawnIndex
     });
 
-    uint256 aggregatedOwedRayBefore = _calculateAggregatedOwedRay({
+    uint256 totalOwedRayBefore = IOU.calculateTotalOwedRay({
       drawnShares: drawnShares,
       premiumShares: premiumShares,
       premiumOffsetRay: premiumOffsetRay,
@@ -211,24 +196,6 @@ library AssetLogic {
     });
 
     return
-      (aggregatedOwedRayAfter.fromRayUp() - aggregatedOwedRayBefore.fromRayUp()).percentMulDown(
-        liquidityFee
-      );
-  }
-
-  /// @notice Calculates the aggregated owed amount for a specified asset, expressed in asset units and scaled by RAY.
-  function _calculateAggregatedOwedRay(
-    uint256 drawnShares,
-    uint256 premiumShares,
-    int256 premiumOffsetRay,
-    uint256 deficitRay,
-    uint256 drawnIndex
-  ) internal pure returns (uint256) {
-    uint256 premiumRay = Premium.calculatePremiumRay({
-      premiumShares: premiumShares,
-      premiumOffsetRay: premiumOffsetRay,
-      drawnIndex: drawnIndex
-    });
-    return (drawnShares * drawnIndex) + premiumRay + deficitRay;
+      (totalOwedRayAfter.fromRayUp() - totalOwedRayBefore.fromRayUp()).percentMulDown(liquidityFee);
   }
 }

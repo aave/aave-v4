@@ -95,7 +95,7 @@ contract TreasurySpoke is ITreasurySpoke, Ownable2Step {
   function getUserTotalDebt(uint256, address) external pure returns (uint256) {}
 
   /// @inheritdoc ISpokeBase
-  function getUserPremiumDebtRay(uint256, address) external pure returns (uint256) {}
+  function getUserDebtRay(uint256, address) external pure returns (uint256, uint256) {}
 
   /// @inheritdoc ISpokeBase
   function getReserveSuppliedAssets(uint256 reserveId) external view returns (uint256) {

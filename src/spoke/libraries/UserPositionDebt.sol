@@ -6,7 +6,7 @@ import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
 import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
 import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
 import {MathUtils} from 'src/libraries/math/MathUtils.sol';
-import {Premium} from 'src/hub/libraries/Premium.sol';
+import {IOU} from 'src/hub/libraries/IOU.sol';
 import {IHubBase} from 'src/hub/interfaces/IHubBase.sol';
 import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 
@@ -61,7 +61,7 @@ library UserPositionDebt {
   ) internal view returns (IHubBase.PremiumDelta memory) {
     uint256 oldPremiumShares = userPosition.premiumShares;
     int256 oldPremiumOffsetRay = userPosition.premiumOffsetRay;
-    uint256 premiumDebtRay = Premium.calculatePremiumRay({
+    uint256 premiumDebtRay = IOU.calculatePremiumRay({
       premiumShares: oldPremiumShares,
       premiumOffsetRay: oldPremiumOffsetRay,
       drawnIndex: drawnIndex
@@ -85,45 +85,73 @@ library UserPositionDebt {
   /// @param userPosition The user position.
   /// @param drawnIndex The drawn index of the reserve.
   /// @param amount The amount to restore.
-  /// @return The amount of drawn debt to restore, expressed in asset units.
+  /// @return The amount of drawn shares to restore.
   /// @return The amount of premium debt to restore, expressed in asset units and scaled by RAY.
   function calculateRestoreAmount(
     ISpoke.UserPosition storage userPosition,
     uint256 drawnIndex,
     uint256 amount
   ) internal view returns (uint256, uint256) {
-    (uint256 drawnDebt, uint256 premiumDebtRay) = userPosition.getDebt(drawnIndex);
-    uint256 premiumDebt = premiumDebtRay.fromRayUp();
-    if (amount >= drawnDebt + premiumDebt) {
-      return (drawnDebt, premiumDebtRay);
-    }
-
-    if (amount < premiumDebt) {
-      // amount.toRay() cannot overflow here
-      uint256 amountRay = amount.toRay();
-      return (0, amountRay);
-    }
-    return (amount - premiumDebt, premiumDebtRay);
+    (uint256 drawnDebtRay, uint256 premiumDebtRay) = userPosition.getDebtRay(drawnIndex);
+    return calculateRestoreAmount(drawnDebtRay, premiumDebtRay, drawnIndex, amount);
   }
 
-  /// @return The user's drawn debt, expressed in asset units.
+  /// @dev Calculates the amount of drawn shares and premium debt to restore for the given drawn debt and premium debt.
+  /// @param drawnDebtRay The drawn debt, expressed in asset units and scaled by RAY.
+  /// @param premiumDebtRay The premium debt, expressed in asset units and scaled by RAY.
+  /// @param drawnIndex The drawn index of the reserve.
+  /// @param amount The amount to restore.
+  /// @return The amount of drawn shares to restore.
+  /// @return The amount of premium debt to restore, expressed in asset units and scaled by RAY.
+  function calculateRestoreAmount(
+    uint256 drawnDebtRay,
+    uint256 premiumDebtRay,
+    uint256 drawnIndex,
+    uint256 amount
+  ) internal pure returns (uint256, uint256) {
+    if (amount >= (drawnDebtRay + premiumDebtRay).fromRayUp()) {
+      return (drawnDebtRay.fromRayUp(), premiumDebtRay);
+    }
+
+    uint256 premiumDebtRayToRestore = amount.toRay().min(premiumDebtRay);
+    uint256 drawnSharesToRestore = (amount.toRay() - premiumDebtRayToRestore) / drawnIndex;
+    return (drawnSharesToRestore, premiumDebtRayToRestore);
+  }
+
+  /// @return The user's drawn debt, expressed in asset units and scaled by RAY.
   /// @return The user's premium debt, expressed in asset units and scaled by RAY.
-  function getDebt(
+  function getDebtRay(
     ISpoke.UserPosition storage userPosition,
     IHubBase hub,
     uint256 assetId
   ) internal view returns (uint256, uint256) {
-    return userPosition.getDebt(hub.getAssetDrawnIndex(assetId));
+    return userPosition.getDebtRay(hub.getAssetDrawnIndex(assetId));
   }
 
-  /// @return The user's drawn debt, expressed in asset units.
+  /// @return The user's drawn debt, expressed in asset units and scaled by RAY.
   /// @return The user's premium debt, expressed in asset units and scaled by RAY.
-  function getDebt(
+  function getDebtRay(
     ISpoke.UserPosition storage userPosition,
     uint256 drawnIndex
   ) internal view returns (uint256, uint256) {
     uint256 premiumDebtRay = _calculatePremiumRay(userPosition, drawnIndex);
-    return (userPosition.drawnShares.rayMulUp(drawnIndex), premiumDebtRay);
+    return (IOU.calculateDrawnRay(userPosition.drawnShares, drawnIndex), premiumDebtRay);
+  }
+
+  /// @dev Calculates the premium debt of a user position with full precision.
+  /// @param userPosition The user position.
+  /// @param drawnIndex The current drawn index.
+  /// @return The premium debt, expressed in asset units and scaled by RAY.
+  function _calculatePremiumRay(
+    ISpoke.UserPosition storage userPosition,
+    uint256 drawnIndex
+  ) internal view returns (uint256) {
+    return
+      IOU.calculatePremiumRay({
+        premiumShares: userPosition.premiumShares,
+        premiumOffsetRay: userPosition.premiumOffsetRay,
+        drawnIndex: drawnIndex
+      });
   }
 
   /// @return The debt components of the user position.
@@ -137,22 +165,6 @@ library UserPositionDebt {
       DebtComponents({
         drawnShares: userPosition.drawnShares,
         premiumDebtRay: _calculatePremiumRay(userPosition, drawnIndex),
-        drawnIndex: drawnIndex
-      });
-  }
-
-  /// @dev Calculates the premium debt of a user position with full precision.
-  /// @param userPosition The user position.
-  /// @param drawnIndex The current drawn index.
-  /// @return The premium debt, expressed in asset units and scaled by RAY.
-  function _calculatePremiumRay(
-    ISpoke.UserPosition storage userPosition,
-    uint256 drawnIndex
-  ) internal view returns (uint256) {
-    return
-      Premium.calculatePremiumRay({
-        premiumShares: userPosition.premiumShares,
-        premiumOffsetRay: userPosition.premiumOffsetRay,
         drawnIndex: drawnIndex
       });
   }
