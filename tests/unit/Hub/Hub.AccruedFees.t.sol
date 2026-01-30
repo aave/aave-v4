@@ -12,7 +12,14 @@ contract HubAccruedFeesTest is HubBase {
   uint256 constant SUPPLY_AMOUNT = 1000e18;
   uint256 constant BORROW_AMOUNT = 500e18;
 
-  function test_unrealizedFees_fuzz_basicAccrual(uint256 liquidityFee, uint256 skipTime) public {
+  function test_unrealizedFees_fuzz_basicAccrual(
+    uint256 supplyAmount,
+    uint256 borrowAmount,
+    uint256 liquidityFee,
+    uint256 skipTime
+  ) public {
+    supplyAmount = bound(supplyAmount, 2, MAX_SUPPLY_AMOUNT);
+    borrowAmount = bound(borrowAmount, 1, supplyAmount / 2);
     liquidityFee = bound(liquidityFee, 0, PercentageMath.PERCENTAGE_FACTOR);
     skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
 
@@ -22,7 +29,7 @@ contract HubAccruedFeesTest is HubBase {
       hub: hub1,
       assetId: daiAssetId,
       caller: address(spoke1),
-      amount: SUPPLY_AMOUNT,
+      amount: supplyAmount,
       user: bob
     });
     Utils.draw({
@@ -30,12 +37,12 @@ contract HubAccruedFeesTest is HubBase {
       assetId: daiAssetId,
       to: bob,
       caller: address(spoke1),
-      amount: BORROW_AMOUNT
+      amount: borrowAmount
     });
 
     uint256 totalAssetsBefore = hub1.getAddedAssets(daiAssetId);
     uint256 bobAssetsBefore = hub1.previewRemoveByShares(daiAssetId, bobShares);
-    assertEq(bobAssetsBefore, SUPPLY_AMOUNT);
+    assertEq(bobAssetsBefore, supplyAmount);
     uint256 treasuryAssetsBefore = hub1.getAssetAccruedFees(daiAssetId);
     assertEq(treasuryAssetsBefore, 0);
 
@@ -48,15 +55,15 @@ contract HubAccruedFeesTest is HubBase {
     uint256 accruedFees;
     {
       uint256 expectedTotalDebt = _calculateExpectedTotalDebt(
-        BORROW_AMOUNT,
+        borrowAmount,
         drawnRate,
         startTime,
         0
       );
-      uint256 expectedTotalInterest = expectedTotalDebt - BORROW_AMOUNT;
+      uint256 expectedTotalInterest = expectedTotalDebt - borrowAmount;
 
       uint256 totalDebt = hub1.getAssetTotalOwed(daiAssetId);
-      totalInterest = totalDebt - BORROW_AMOUNT;
+      totalInterest = totalDebt - borrowAmount;
       assertEq(totalInterest, expectedTotalInterest);
 
       accruedFees = hub1.getAssetAccruedFees(daiAssetId);
@@ -76,6 +83,16 @@ contract HubAccruedFeesTest is HubBase {
 
     uint256 treasuryAssetsAfter = hub1.getAssetAccruedFees(daiAssetId);
     assertEq(treasuryAssetsAfter, treasuryAssetsBefore + totalInterest - supplierInterest);
+  }
+
+  /// @dev 50% fee, 1 year skip
+  function test_unrealizedFees_exact_50pctFee_1year() public {
+    test_unrealizedFees_fuzz_basicAccrual(1000e18, 500e18, 50_00, 365 days);
+  }
+
+  /// @dev 10% fee, 30 days skip
+  function test_unrealizedFees_exact_10pctFee_30days() public {
+    test_unrealizedFees_fuzz_basicAccrual(2000e18, 800e18, 10_00, 30 days);
   }
 
   /// @dev Verifies protocol cut rounds to 0 when interest is tiny, all goes to suppliers
