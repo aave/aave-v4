@@ -293,7 +293,7 @@ abstract contract Base is Test {
     irStrategy = new AssetInterestRateStrategy(address(hub1));
     (spoke1, oracle1) = _deploySpokeWithOracle(ADMIN, address(accessManager), 'Spoke 1 (USD)');
     (spoke2, oracle2) = _deploySpokeWithOracle(ADMIN, address(accessManager), 'Spoke 2 (USD)');
-    (spoke3, oracle3) = _deploySpokeWithOracle(ADMIN, address(accessManager), 'Spoke 3 (USD)');
+    (spoke3, oracle3) = _deploySpokeWithOracle(ADMIN, address(accessManager), 'Spoke 3 (USD)', 10);
     treasurySpoke = ITreasurySpoke(new TreasurySpoke(TREASURY_ADMIN, address(hub1)));
     vm.stopPrank();
 
@@ -413,7 +413,7 @@ abstract contract Base is Test {
     IAccessManager(manager).grantRole(Roles.SPOKE_ADMIN_ROLE, spokeConfigurator, 0);
 
     // Set up SpokeConfigurator function permissions - all functions callable by SPOKE_CONFIGURATOR_ROLE
-    bytes4[] memory selectors = new bytes4[](24);
+    bytes4[] memory selectors = new bytes4[](23);
     selectors[0] = ISpokeConfigurator.updateReservePriceSource.selector;
     selectors[1] = ISpokeConfigurator.updateLiquidationTargetHealthFactor.selector;
     selectors[2] = ISpokeConfigurator.updateHealthFactorForMaxBonus.selector;
@@ -424,19 +424,19 @@ abstract contract Base is Test {
     selectors[7] = ISpokeConfigurator.updatePaused.selector;
     selectors[8] = ISpokeConfigurator.updateFrozen.selector;
     selectors[9] = ISpokeConfigurator.updateBorrowable.selector;
-    selectors[11] = ISpokeConfigurator.updateReceiveSharesEnabled.selector;
-    selectors[12] = ISpokeConfigurator.updateCollateralRisk.selector;
-    selectors[13] = ISpokeConfigurator.addCollateralFactor.selector;
-    selectors[14] = ISpokeConfigurator.updateCollateralFactor.selector;
-    selectors[15] = ISpokeConfigurator.addMaxLiquidationBonus.selector;
-    selectors[16] = ISpokeConfigurator.updateMaxLiquidationBonus.selector;
-    selectors[17] = ISpokeConfigurator.addLiquidationFee.selector;
-    selectors[18] = ISpokeConfigurator.updateLiquidationFee.selector;
-    selectors[19] = ISpokeConfigurator.addDynamicReserveConfig.selector;
-    selectors[20] = ISpokeConfigurator.updateDynamicReserveConfig.selector;
-    selectors[21] = ISpokeConfigurator.pauseAllReserves.selector;
-    selectors[22] = ISpokeConfigurator.freezeAllReserves.selector;
-    selectors[23] = ISpokeConfigurator.updatePositionManager.selector;
+    selectors[10] = ISpokeConfigurator.updateReceiveSharesEnabled.selector;
+    selectors[11] = ISpokeConfigurator.updateCollateralRisk.selector;
+    selectors[12] = ISpokeConfigurator.addCollateralFactor.selector;
+    selectors[13] = ISpokeConfigurator.updateCollateralFactor.selector;
+    selectors[14] = ISpokeConfigurator.addMaxLiquidationBonus.selector;
+    selectors[15] = ISpokeConfigurator.updateMaxLiquidationBonus.selector;
+    selectors[16] = ISpokeConfigurator.addLiquidationFee.selector;
+    selectors[17] = ISpokeConfigurator.updateLiquidationFee.selector;
+    selectors[18] = ISpokeConfigurator.addDynamicReserveConfig.selector;
+    selectors[19] = ISpokeConfigurator.updateDynamicReserveConfig.selector;
+    selectors[20] = ISpokeConfigurator.pauseAllReserves.selector;
+    selectors[21] = ISpokeConfigurator.freezeAllReserves.selector;
+    selectors[22] = ISpokeConfigurator.updatePositionManager.selector;
     IAccessManager(manager).setTargetFunctionRole(
       spokeConfigurator,
       selectors,
@@ -2348,16 +2348,32 @@ abstract contract Base is Test {
     address _accessManager,
     string memory _oracleDesc
   ) internal pausePrank returns (ISpoke, IAaveOracle) {
+    return
+      _deploySpokeWithOracle(
+        proxyAdminOwner,
+        _accessManager,
+        _oracleDesc,
+        Constants.MAX_ALLOWED_USER_RESERVES_LIMIT
+      );
+  }
+
+  function _deploySpokeWithOracle(
+    address proxyAdminOwner,
+    address _accessManager,
+    string memory _oracleDesc,
+    uint16 maxUserReservesLimit
+  ) internal pausePrank returns (ISpoke, IAaveOracle) {
     address deployer = makeAddr('deployer');
 
     vm.startPrank(deployer);
     IAaveOracle oracle = new AaveOracle(8, _oracleDesc);
 
-    ISpoke spoke = DeployUtils.deploySpoke({
-      oracle: address(oracle),
-      proxyAdminOwner: proxyAdminOwner,
-      initData: abi.encodeCall(ISpokeInstance.initialize, (_accessManager))
-    });
+    ISpoke spoke = DeployUtils.deploySpoke(
+      address(oracle),
+      maxUserReservesLimit,
+      proxyAdminOwner,
+      abi.encodeCall(ISpokeInstance.initialize, (_accessManager))
+    );
 
     oracle.setSpoke(address(spoke));
     vm.stopPrank();
@@ -2974,5 +2990,81 @@ abstract contract Base is Test {
       hub.getAddedAssets(assetId) +
       hub.getAsset(assetId).realizedFees +
       _calcUnrealizedFees(hub, assetId);
+  }
+
+  function _addNewAssetsAndReserves(IHub hub, ISpoke spoke, uint256 count) internal {
+    for (uint256 i = 0; i < count; i++) {
+      MockERC20 newToken = new MockERC20();
+      newToken.mint(alice, MAX_SUPPLY_AMOUNT * 10 ** 18);
+      newToken.mint(bob, MAX_SUPPLY_AMOUNT * 10 ** 18);
+      vm.prank(alice);
+      newToken.approve(address(spoke), UINT256_MAX);
+      vm.prank(bob);
+      newToken.approve(address(spoke), UINT256_MAX);
+
+      IHub.SpokeConfig memory spokeConfig = IHub.SpokeConfig({
+        active: true,
+        halted: false,
+        addCap: Constants.MAX_ALLOWED_SPOKE_CAP,
+        drawCap: Constants.MAX_ALLOWED_SPOKE_CAP,
+        riskPremiumThreshold: 1000_00
+      });
+
+      bytes memory encodedIrData = abi.encode(
+        IAssetInterestRateStrategy.InterestRateData({
+          optimalUsageRatio: 90_00, // 90.00%
+          baseVariableBorrowRate: 5_00, // 5.00%
+          variableRateSlope1: 5_00, // 5.00%
+          variableRateSlope2: 5_00 // 5.00%
+        })
+      );
+
+      // Add asset to hub
+      vm.startPrank(ADMIN);
+      uint256 newTokenAssetId = hub.addAsset(
+        address(newToken),
+        18,
+        address(treasurySpoke),
+        address(irStrategy),
+        encodedIrData
+      );
+      hub.updateAssetConfig(
+        newTokenAssetId,
+        IHub.AssetConfig({
+          liquidityFee: 10_00,
+          feeReceiver: address(treasurySpoke),
+          irStrategy: address(irStrategy),
+          reinvestmentController: address(0)
+        }),
+        new bytes(0)
+      );
+
+      // Prepare the reserve configs
+      ISpoke.ReserveConfig memory reserveConfig = ISpoke.ReserveConfig({
+        collateralRisk: _randomBps(),
+        paused: false,
+        frozen: false,
+        borrowable: true,
+        receiveSharesEnabled: true
+      });
+      ISpoke.DynamicReserveConfig memory dynamicConfig = ISpoke.DynamicReserveConfig({
+        collateralFactor: 80_00,
+        maxLiquidationBonus: 105_00,
+        liquidationFee: 10_00
+      });
+
+      // Add reserve to spoke
+      spoke.addReserve(
+        address(hub),
+        newTokenAssetId,
+        _deployMockPriceFeed(spoke, 1e8),
+        reserveConfig,
+        dynamicConfig
+      );
+
+      // Add spoke to hub
+      hub.addSpoke(newTokenAssetId, address(spoke), spokeConfig);
+      vm.stopPrank();
+    }
   }
 }

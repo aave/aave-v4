@@ -54,6 +54,9 @@ abstract contract Spoke is
   /// @inheritdoc ISpoke
   address public immutable ORACLE;
 
+  /// @inheritdoc ISpoke
+  uint16 public immutable MAX_USER_RESERVES_LIMIT;
+
   /// @dev The maximum allowed value for an asset identifier (inclusive).
   uint256 internal constant MAX_ALLOWED_ASSET_ID = type(uint16).max;
 
@@ -62,6 +65,9 @@ abstract contract Spoke is
 
   /// @dev The maximum allowed value for a dynamic configuration key (inclusive).
   uint256 internal constant MAX_ALLOWED_DYNAMIC_CONFIG_KEY = type(uint24).max;
+
+  /// @dev The maximum allowed value for the maximum number of reserves a user can have (collateral or borrowed) (inclusive).
+  uint16 internal constant MAX_ALLOWED_USER_RESERVES_LIMIT = type(uint16).max;
 
   /// @dev The minimum health factor below which a position is considered unhealthy and subject to liquidation.
   /// @dev Expressed in WAD (18 decimals) (e.g. 1e18 is 1.00).
@@ -109,9 +115,12 @@ abstract contract Spoke is
 
   /// @dev Constructor.
   /// @param oracle_ The address of the AaveOracle contract.
-  constructor(address oracle_) {
+  /// @param maxUserReservesLimit_ The maximum number of collateral and borrow reserves a user can have.
+  constructor(address oracle_, uint16 maxUserReservesLimit_) {
     require(IAaveOracle(oracle_).DECIMALS() == ORACLE_DECIMALS, InvalidOracleDecimals());
+    require(maxUserReservesLimit_ > 0, InvalidMaxUserReservesLimit());
     ORACLE = oracle_;
+    MAX_USER_RESERVES_LIMIT = maxUserReservesLimit_;
   }
 
   /// @dev To be overridden by the inheriting Spoke instance contract.
@@ -296,6 +305,11 @@ abstract contract Spoke is
     uint256 drawnShares = hub.draw(reserve.assetId, amount, msg.sender);
     userPosition.drawnShares += drawnShares.toUint120();
     if (!positionStatus.isBorrowing(reserveId)) {
+      require(
+        MAX_USER_RESERVES_LIMIT == MAX_ALLOWED_USER_RESERVES_LIMIT ||
+          positionStatus.borrowCount(_reserveCount) < MAX_USER_RESERVES_LIMIT,
+        MaximumUserReservesExceeded()
+      );
       positionStatus.setBorrowing(reserveId, true);
     }
 
@@ -381,7 +395,7 @@ abstract contract Spoke is
       drawnIndex: drawnIndex,
       totalDebtValue: userAccountData.totalDebtValue,
       activeCollateralCount: userAccountData.activeCollateralCount,
-      borrowedCount: userAccountData.borrowedCount,
+      borrowCount: userAccountData.borrowCount,
       liquidator: msg.sender,
       receiveShares: receiveShares
     });
@@ -411,12 +425,12 @@ abstract contract Spoke is
     bool usingAsCollateral,
     address onBehalfOf
   ) external nonReentrant onlyPositionManager(onBehalfOf) {
-    _validateSetUsingAsCollateral(_getReserve(reserveId).flags, usingAsCollateral);
+    Reserve storage reserve = _getReserve(reserveId);
     PositionStatus storage positionStatus = _positionStatus[onBehalfOf];
-
     if (positionStatus.isUsingAsCollateral(reserveId) == usingAsCollateral) {
       return;
     }
+    _validateSetUsingAsCollateral(positionStatus, reserve.flags, usingAsCollateral);
     positionStatus.setUsingAsCollateral(reserveId, usingAsCollateral);
 
     if (usingAsCollateral) {
@@ -768,7 +782,7 @@ abstract contract Spoke is
         // we can simplify since there is no precision loss due to the division here
         accountData.totalDebtValue += ((drawnDebt + premiumDebtRay.fromRayUp()) * assetPrice)
           .wadDivUp(assetUnit);
-        accountData.borrowedCount = accountData.borrowedCount.uncheckedAdd(1);
+        accountData.borrowCount = accountData.borrowCount.uncheckedAdd(1);
       }
     }
 
@@ -920,10 +934,22 @@ abstract contract Spoke is
     require(!flags.paused(), ReservePaused());
   }
 
-  function _validateSetUsingAsCollateral(ReserveFlags flags, bool usingAsCollateral) internal pure {
+  function _validateSetUsingAsCollateral(
+    PositionStatus storage positionStatus,
+    ReserveFlags flags,
+    bool usingAsCollateral
+  ) internal view {
     require(!flags.paused(), ReservePaused());
-    // can disable as collateral if the reserve is frozen
-    require(!usingAsCollateral || !flags.frozen(), ReserveFrozen());
+    if (usingAsCollateral) {
+      // disabling as collateral is allowed when reserve is frozen
+      require(!flags.frozen(), ReserveFrozen());
+      // this must be a new collateral, otherwise would have short-circuited
+      require(
+        MAX_USER_RESERVES_LIMIT == MAX_ALLOWED_USER_RESERVES_LIMIT ||
+          positionStatus.collateralCount(_reserveCount) < MAX_USER_RESERVES_LIMIT,
+        MaximumUserReservesExceeded()
+      );
+    }
   }
 
   /// @notice Returns whether `manager` is active & approved positionManager for `user`.

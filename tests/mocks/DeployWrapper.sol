@@ -9,6 +9,13 @@ contract DeployWrapper {
     return address(DeployUtils.deploySpokeImplementation(oracle));
   }
 
+  function deploySpokeImplementation(
+    address oracle,
+    uint16 maxUserReservesLimit
+  ) external returns (address) {
+    return address(DeployUtils.deploySpokeImplementation(oracle, maxUserReservesLimit, ''));
+  }
+
   function deploySpoke(
     address oracle,
     address proxyAdminOwner,
