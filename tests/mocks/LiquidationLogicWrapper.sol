@@ -58,12 +58,6 @@ contract LiquidationLogicWrapper {
     _collateralReserveId = reserveId;
   }
 
-  function setCollateralLiquidatable(bool status) public {
-    _reserves[_collateralReserveId].flags = _reserves[_collateralReserveId].flags.setLiquidatable(
-      status
-    );
-  }
-
   function setCollateralPositionSuppliedShares(uint256 suppliedShares) public {
     _userPositions[_borrower][_collateralReserveId].suppliedShares = suppliedShares.toUint120();
   }
@@ -205,14 +199,14 @@ contract LiquidationLogicWrapper {
     bool isCollateralPositionEmpty,
     bool isDebtPositionEmpty,
     uint256 activeCollateralCount,
-    uint256 borrowedCount
+    uint256 borrowCount
   ) public pure returns (bool) {
     return
       LiquidationLogic._evaluateDeficit(
         isCollateralPositionEmpty,
         isDebtPositionEmpty,
         activeCollateralCount,
-        borrowedCount
+        borrowCount
       );
   }
 

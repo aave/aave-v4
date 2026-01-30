@@ -22,7 +22,7 @@ jobs:
       - name: Run Foundry setup
         uses: bgd-labs/github-workflows/.github/actions/foundry-setup@main
         with:
-          FOUNDRY_VERSION: stable
+          FOUNDRY_VERSION: nightly
 
       - name: Run Forge size
         uses: bgd-labs/github-workflows/.github/actions/foundry-size@main
