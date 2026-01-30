@@ -142,6 +142,10 @@ interface ISpoke is ISpokeBase, IAccessManaged, IIntentConsumer, IExtSload, IMul
   /// @param oracle The new address of the oracle.
   event UpdateOracle(address indexed oracle);
 
+  /// @notice Emitted when the max user reserves limit is updated.
+  /// @param maxUserReservesLimit The new max user reserves limit.
+  event UpdateMaxUserReservesLimit(uint16 maxUserReservesLimit);
+
   /// @notice Emitted when a liquidation config is updated.
   /// @param config The new liquidation config.
   event UpdateLiquidationConfig(LiquidationConfig config);
@@ -289,6 +293,9 @@ interface ISpoke is ISpokeBase, IAccessManaged, IIntentConsumer, IExtSload, IMul
   /// @notice Thrown when the oracle decimals are not 8 in the constructor.
   error InvalidOracleDecimals();
 
+  /// @notice Thrown when the maximum user reserves limit is zero in the constructor.
+  error InvalidMaxUserReservesLimit();
+
   /// @notice Thrown when a collateral risk exceeds the maximum allowed.
   error InvalidCollateralRisk();
 
@@ -324,9 +331,6 @@ interface ISpoke is ISpokeBase, IAccessManaged, IIntentConsumer, IExtSload, IMul
 
   /// @notice Thrown when user attempts to exceed either the maximum allowed collateral or borrowed reserves.
   error MaximumUserReservesExceeded();
-
-  /// @notice Thrown upon attempt to set a max user reserves limit of 0.
-  error InvalidMaxUserReservesLimit();
 
   /// @notice Updates the liquidation config.
   /// @param config The new liquidation config.

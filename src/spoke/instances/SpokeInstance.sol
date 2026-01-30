@@ -23,6 +23,7 @@ contract SpokeInstance is Spoke {
   /// @param authority The address of the authority contract which manages permissions.
   function initialize(address authority) external override reinitializer(SPOKE_REVISION) {
     emit UpdateOracle(ORACLE);
+    emit UpdateMaxUserReservesLimit(MAX_USER_RESERVES_LIMIT);
     require(authority != address(0), InvalidAddress());
     __AccessManaged_init(authority);
     if (_liquidationConfig.targetHealthFactor == 0) {
