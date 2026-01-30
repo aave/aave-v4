@@ -708,9 +708,9 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
 
     // health factor is decreasing due to liquidation bonus / collateral factor if:
     //   lb * cf > hf_beforeLiq
-    bool isCollateralAffectingUserHf = effectiveLiquidationBonusWad.percentMulUp(
-      _getCollateralFactor(params.spoke, params.collateralReserveId, params.user)
-    ) > userAccountDataBefore.healthFactor;
+    bool isCollateralAffectingUserHf = effectiveLiquidationBonusWad *
+      _getCollateralFactor(params.spoke, params.collateralReserveId, params.user) >
+      userAccountDataBefore.healthFactor * PercentageMath.PERCENTAGE_FACTOR;
 
     uint256 drawnIndex = _hub(params.spoke, params.debtReserveId).getAssetDrawnIndex(
       _reserveAssetId(params.spoke, params.debtReserveId)

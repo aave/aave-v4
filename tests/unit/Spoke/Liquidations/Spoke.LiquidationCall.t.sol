@@ -523,6 +523,11 @@ contract SpokeLiquidationCallTest_Premium is SpokeLiquidationCallHelperTest {
       collateralReserveId,
       vm.randomUint(1, MAX_COLLATERAL_RISK_BPS).toUint24()
     );
+    _setConstantInterestRateBps(
+      _hub(spoke, debtReserveId),
+      _reserveAssetId(spoke, debtReserveId),
+      vm.randomUint(1, MAX_BORROW_RATE).toUint32()
+    );
     _increaseCollateralSupply(
       spoke,
       collateralReserveId,
@@ -535,6 +540,7 @@ contract SpokeLiquidationCallTest_Premium is SpokeLiquidationCallHelperTest {
       _convertValueToAmount(spoke, debtReserveId, _calculateMaxHealthyBorrowValue(user)),
       user
     );
+    skip(1 seconds);
   }
 
   function _assertBeforeLiquidation(
