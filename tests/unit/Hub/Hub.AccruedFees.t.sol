@@ -18,7 +18,7 @@ contract HubAccruedFeesTest is HubBase {
 
     updateLiquidityFee(hub1, daiAssetId, liquidityFee);
 
-    Utils.add({
+    uint256 bobShares = Utils.add({
       hub: hub1,
       assetId: daiAssetId,
       caller: address(spoke1),
@@ -34,6 +34,10 @@ contract HubAccruedFeesTest is HubBase {
     });
 
     uint256 totalAssetsBefore = hub1.getAddedAssets(daiAssetId);
+    uint256 bobAssetsBefore = hub1.previewRemoveByShares(daiAssetId, bobShares);
+    assertEq(bobAssetsBefore, SUPPLY_AMOUNT);
+    uint256 treasuryAssetsBefore = hub1.getAssetAccruedFees(daiAssetId);
+    assertEq(treasuryAssetsBefore, 0);
 
     skip(skipTime);
 
@@ -46,6 +50,15 @@ contract HubAccruedFeesTest is HubBase {
     uint256 supplierInterest = totalInterest - accruedFees;
     uint256 totalAssetsAfter = hub1.getAddedAssets(daiAssetId);
     assertEq(totalAssetsAfter, totalAssetsBefore + supplierInterest);
+
+    uint256 bobAssetsAfter = hub1.previewRemoveByShares(daiAssetId, bobShares);
+    assertEq(
+      bobAssetsAfter,
+      bobAssetsBefore + supplierInterest - _calculateBurntInterest(hub1, daiAssetId)
+    );
+
+    uint256 treasuryAssetsAfter = hub1.getAssetAccruedFees(daiAssetId);
+    assertEq(treasuryAssetsAfter, treasuryAssetsBefore + totalInterest - supplierInterest);
   }
 
   /// @dev Verifies protocol cut rounds to 0 when interest is tiny, all goes to suppliers
