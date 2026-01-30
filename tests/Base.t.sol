@@ -2166,6 +2166,22 @@ abstract contract Base is Test {
     return (currentDrawnDebt - initialDrawnDebt).percentMulUp(userRiskPremium);
   }
 
+  /// @dev Calculate expected total debt (drawn + premium) based on specified borrow rate and risk premium
+  function _calculateExpectedTotalDebt(
+    uint256 initialDrawnDebt,
+    uint96 borrowRate,
+    uint40 startTime,
+    uint256 userRiskPremium
+  ) internal view returns (uint256) {
+    uint256 drawnDebt = _calculateExpectedDrawnDebt(initialDrawnDebt, borrowRate, startTime);
+    uint256 premiumDebt = _calculateExpectedPremiumDebt(
+      initialDrawnDebt,
+      drawnDebt,
+      userRiskPremium
+    );
+    return drawnDebt + premiumDebt;
+  }
+
   /// @dev Helper function to get asset drawn debt
   function getAssetDrawnDebt(uint256 assetId) internal view returns (uint256) {
     (uint256 drawn, ) = hub1.getAssetOwed(assetId);

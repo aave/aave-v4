@@ -39,13 +39,30 @@ contract HubAccruedFeesTest is HubBase {
     uint256 treasuryAssetsBefore = hub1.getAssetAccruedFees(daiAssetId);
     assertEq(treasuryAssetsBefore, 0);
 
+    uint96 drawnRate = hub1.getAsset(daiAssetId).drawnRate;
+    uint40 startTime = uint40(block.timestamp);
+
     skip(skipTime);
 
-    (uint256 drawnDebt, ) = hub1.getAssetOwed(daiAssetId);
-    uint256 totalInterest = drawnDebt - BORROW_AMOUNT;
-    uint256 accruedFees = hub1.getAssetAccruedFees(daiAssetId);
-    uint256 expectedAccruedFees = _calcUnrealizedFees(hub1, daiAssetId);
-    assertEq(accruedFees, expectedAccruedFees);
+    uint256 totalInterest;
+    uint256 accruedFees;
+    {
+      uint256 expectedTotalDebt = _calculateExpectedTotalDebt(
+        BORROW_AMOUNT,
+        drawnRate,
+        startTime,
+        0
+      );
+      uint256 expectedTotalInterest = expectedTotalDebt - BORROW_AMOUNT;
+
+      uint256 totalDebt = hub1.getAssetTotalOwed(daiAssetId);
+      totalInterest = totalDebt - BORROW_AMOUNT;
+      assertEq(totalInterest, expectedTotalInterest);
+
+      accruedFees = hub1.getAssetAccruedFees(daiAssetId);
+      uint256 expectedAccruedFees = _calcUnrealizedFees(hub1, daiAssetId);
+      assertEq(accruedFees, expectedAccruedFees);
+    }
 
     uint256 supplierInterest = totalInterest - accruedFees;
     uint256 totalAssetsAfter = hub1.getAddedAssets(daiAssetId);
