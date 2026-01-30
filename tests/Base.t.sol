@@ -2061,10 +2061,10 @@ abstract contract Base is Test {
     );
     uint256 targetTotalDebtValue = totalAdjustedCollateralValue.wadDivUp(desiredHf);
     require(
-      userAccountData.totalDebtValueRay.fromRayUp() < targetTotalDebtValue,
+      userAccountData.totalDebtValueRay.fromRayDown() < targetTotalDebtValue,
       'User has enough debt'
     );
-    return targetTotalDebtValue - userAccountData.totalDebtValueRay.fromRayUp();
+    return targetTotalDebtValue - userAccountData.totalDebtValueRay.fromRayDown();
   }
 
   // Helper function to get user account data with potential dynamic config refresh

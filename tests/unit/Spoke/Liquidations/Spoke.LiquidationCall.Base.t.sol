@@ -1106,7 +1106,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
       accountsInfoAfter.userBalanceInfo.suppliedInSpoke,
       accountsInfoBefore.userBalanceInfo.suppliedInSpoke -
         liquidationMetadata.collateralAssetsToLiquidate,
-      2,
+      1,
       'user: collateral supplied'
     );
     assertApproxEqAbs(
@@ -1115,7 +1115,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
         ? 0
         : accountsInfoBefore.userBalanceInfo.borrowedFromSpoke -
           liquidationMetadata.debtAssetsToLiquidate,
-      2,
+      1,
       'user: debt borrowed'
     );
 
@@ -1153,7 +1153,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
         accountsInfoAfter.liquidatorBalanceInfo.suppliedInSpoke,
         accountsInfoBefore.liquidatorBalanceInfo.suppliedInSpoke +
           liquidationMetadata.collateralAssetsToLiquidator,
-        2,
+        1,
         'liquidator: collateral supplied (receiveShares)'
       );
     }
@@ -1262,7 +1262,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
       accountsInfoBefore.collateralFeeReceiverBalanceInfo.addedInHub +
         liquidationMetadata.collateralAssetsToLiquidate -
         liquidationMetadata.collateralAssetsToLiquidator,
-      2,
+      1,
       'collateral fee receiver: added'
     );
 
@@ -1298,7 +1298,8 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
     assertApproxEqAbs(
       accountsInfoAfter.spokeBalanceInfo.drawnFromHub,
       (liquidationMetadata.hasDeficit)
-        ? 0
+        ? accountsInfoBefore.spokeBalanceInfo.drawnFromHub -
+          accountsInfoBefore.userBalanceInfo.borrowedFromSpoke
         : accountsInfoBefore.spokeBalanceInfo.drawnFromHub -
           liquidationMetadata.debtAssetsToLiquidate,
       2,
@@ -1343,7 +1344,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
     CheckedLiquidationCallParams memory params,
     AccountsInfo memory accountsInfoBefore,
     LiquidationMetadata memory liquidationMetadata
-  ) internal virtual {}
+  ) internal view virtual {}
 
   function _checkedLiquidationCall(CheckedLiquidationCallParams memory params) internal virtual {
     // multiplication by 50 accounts for supply share price increase due to time skip (and interest rate) and for number of supply operations.

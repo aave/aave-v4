@@ -10,6 +10,8 @@ abstract contract SpokeLiquidationCallHelperTest is SpokeLiquidationCallBaseTest
   using PercentageMath for uint256;
 
   ISpoke spoke;
+  address user = makeAddr('user');
+  address liquidator = makeAddr('liquidator');
 
   function setUp() public virtual override {
     super.setUp();
@@ -44,14 +46,6 @@ abstract contract SpokeLiquidationCallHelperTest is SpokeLiquidationCallBaseTest
     }
   }
 
-  function _user() internal virtual returns (address) {
-    return makeAddr('user');
-  }
-
-  function _liquidator() internal virtual returns (address) {
-    return makeAddr('liquidator');
-  }
-
   function _baseAmountValue() internal virtual returns (uint256) {
     return vm.randomUint(MIN_AMOUNT_IN_BASE_CURRENCY, MAX_AMOUNT_IN_BASE_CURRENCY);
   }
@@ -67,7 +61,7 @@ abstract contract SpokeLiquidationCallHelperTest is SpokeLiquidationCallBaseTest
     // user enables more collaterals, but still has deficit given that only one collateral is supplied
     for (uint256 reserveId = 0; reserveId < spoke.getReserveCount(); reserveId++) {
       if (vm.randomBool()) {
-        Utils.setUsingAsCollateral(spoke, reserveId, _user(), true, _user());
+        Utils.setUsingAsCollateral(spoke, reserveId, user, true, user);
       }
     }
   }
@@ -91,7 +85,7 @@ abstract contract SpokeLiquidationCallHelperTest is SpokeLiquidationCallBaseTest
       }
       uint256 amount = vm.randomUint(1, maxAmount);
       suppliableValue -= _convertAmountToValue(spoke, reserveId, amount);
-      _increaseCollateralSupply(spoke, reserveId, amount, _user());
+      _increaseCollateralSupply(spoke, reserveId, amount, user);
     }
   }
 
@@ -101,7 +95,7 @@ abstract contract SpokeLiquidationCallHelperTest is SpokeLiquidationCallBaseTest
     // ensures user is healthy enough to borrow
     uint256 borrowableValue = _getRequiredDebtValueForHf(
       spoke,
-      _user(),
+      user,
       Constants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD * (2 + _skipTime() / 365 days)
     ).percentDivDown(2 * PercentageMath.PERCENTAGE_FACTOR + _spokeMaxCollateralRisk(spoke));
     for (uint256 i = 0; i < count; i++) {
@@ -113,7 +107,7 @@ abstract contract SpokeLiquidationCallHelperTest is SpokeLiquidationCallBaseTest
       }
       uint256 amount = vm.randomUint(1, maxBorrowAmount);
       borrowableValue -= _convertAmountToValue(spoke, reserveId, amount);
-      _increaseReserveDebt(spoke, reserveId, amount, _user());
+      _increaseReserveDebt(spoke, reserveId, amount, user);
     }
   }
 
@@ -126,7 +120,7 @@ abstract contract SpokeLiquidationCallHelperTest is SpokeLiquidationCallBaseTest
   ) internal virtual {
     skip(_skipTime());
 
-    ISpoke.UserAccountData memory userAccountData = spoke.getUserAccountData(_user());
+    ISpoke.UserAccountData memory userAccountData = spoke.getUserAccountData(user);
 
     uint256 newHealthFactor; // new health factor of user, just before liquidation
     if (isSolvent) {
@@ -138,15 +132,15 @@ abstract contract SpokeLiquidationCallHelperTest is SpokeLiquidationCallBaseTest
     } else {
       newHealthFactor = vm.randomUint(0.01e18, userAccountData.avgCollateralFactor - 0.0000001e18);
     }
-    _makeUserLiquidatable(spoke, _user(), debtReserveId, newHealthFactor);
+    _makeUserLiquidatable(spoke, user, debtReserveId, newHealthFactor);
 
     debtToCover = _boundDebtToCoverNoDustRevert(
       spoke,
       collateralReserveId,
       debtReserveId,
-      _user(),
+      user,
       debtToCover,
-      _liquidator()
+      liquidator
     );
 
     _checkedLiquidationCall(
@@ -154,9 +148,9 @@ abstract contract SpokeLiquidationCallHelperTest is SpokeLiquidationCallBaseTest
         spoke: spoke,
         collateralReserveId: collateralReserveId,
         debtReserveId: debtReserveId,
-        user: _user(),
+        user: user,
         debtToCover: debtToCover,
-        liquidator: _liquidator(),
+        liquidator: liquidator,
         isSolvent: isSolvent,
         receiveShares: receiveShares
       })
@@ -176,7 +170,7 @@ abstract contract SpokeLiquidationCallHelperTest is SpokeLiquidationCallBaseTest
       spoke,
       collateralReserveId,
       _convertValueToAmount(spoke, collateralReserveId, _baseAmountValue()),
-      _user()
+      user
     );
 
     _testLiquidationCall(collateralReserveId, debtReserveId, debtToCover, true, receiveShares);
@@ -195,7 +189,7 @@ abstract contract SpokeLiquidationCallHelperTest is SpokeLiquidationCallBaseTest
       spoke,
       collateralReserveId,
       _convertValueToAmount(spoke, collateralReserveId, _baseAmountValue()),
-      _user()
+      user
     );
 
     _testLiquidationCall(collateralReserveId, debtReserveId, debtToCover, false, receiveShares);
@@ -214,7 +208,7 @@ abstract contract SpokeLiquidationCallHelperTest is SpokeLiquidationCallBaseTest
       spoke,
       collateralReserveId,
       _convertValueToAmount(spoke, collateralReserveId, _baseAmountValue()),
-      _user()
+      user
     );
 
     _processAdditionalCollateralReserves(debtReserveId);
@@ -235,7 +229,7 @@ abstract contract SpokeLiquidationCallHelperTest is SpokeLiquidationCallBaseTest
       spoke,
       collateralReserveId,
       _convertValueToAmount(spoke, collateralReserveId, _baseAmountValue()),
-      _user()
+      user
     );
 
     _processAdditionalCollateralReserves(debtReserveId);
@@ -256,7 +250,7 @@ abstract contract SpokeLiquidationCallHelperTest is SpokeLiquidationCallBaseTest
       spoke,
       collateralReserveId,
       _convertValueToAmount(spoke, collateralReserveId, _baseAmountValue()),
-      _user()
+      user
     );
 
     _processAdditionalDebtReserves();
@@ -277,7 +271,7 @@ abstract contract SpokeLiquidationCallHelperTest is SpokeLiquidationCallBaseTest
       spoke,
       collateralReserveId,
       _convertValueToAmount(spoke, collateralReserveId, _baseAmountValue()),
-      _user()
+      user
     );
 
     _processAdditionalDebtReserves();
@@ -298,7 +292,7 @@ abstract contract SpokeLiquidationCallHelperTest is SpokeLiquidationCallBaseTest
       spoke,
       collateralReserveId,
       _convertValueToAmount(spoke, collateralReserveId, _baseAmountValue()),
-      _user()
+      user
     );
 
     _processAdditionalCollateralReserves(debtReserveId);
@@ -320,7 +314,7 @@ abstract contract SpokeLiquidationCallHelperTest is SpokeLiquidationCallBaseTest
       spoke,
       collateralReserveId,
       _convertValueToAmount(spoke, collateralReserveId, _baseAmountValue()),
-      _user()
+      user
     );
 
     _processAdditionalCollateralReserves(debtReserveId);
@@ -355,7 +349,7 @@ contract SpokeLiquidationCallTest_NoLiquidationBonus is SpokeLiquidationCallHelp
     CheckedLiquidationCallParams memory /* params */,
     AccountsInfo memory /* accountsInfoBefore */,
     LiquidationMetadata memory liquidationMetadata
-  ) internal virtual override {
+  ) internal view virtual override {
     assertEq(liquidationMetadata.liquidationBonus, 100_00, 'Liquidation bonus');
   }
 }
@@ -387,7 +381,7 @@ contract SpokeLiquidationCallTest_SmallLiquidationBonus is SpokeLiquidationCallH
     CheckedLiquidationCallParams memory /* params */,
     AccountsInfo memory /* accountsInfoBefore */,
     LiquidationMetadata memory liquidationMetadata
-  ) internal virtual override {
+  ) internal view virtual override {
     assertLe(
       liquidationMetadata.liquidationBonus,
       MAX_LIQUIDATION_BONUS.percentMulUp(102_00),
@@ -423,7 +417,7 @@ contract SpokeLiquidationCallTest_LargeLiquidationBonus is SpokeLiquidationCallH
     CheckedLiquidationCallParams memory /* params */,
     AccountsInfo memory /* accountsInfoBefore */,
     LiquidationMetadata memory liquidationMetadata
-  ) internal virtual override {
+  ) internal view virtual override {
     assertGe(
       liquidationMetadata.liquidationBonus,
       MAX_LIQUIDATION_BONUS.percentMulDown(97_00),
@@ -445,7 +439,7 @@ contract SpokeLiquidationCallTest_LiquidationFeeZero is SpokeLiquidationCallHelp
     CheckedLiquidationCallParams memory params,
     AccountsInfo memory /* accountsInfoBefore */,
     LiquidationMetadata memory /* liquidationMetadata */
-  ) internal virtual override {
+  ) internal view virtual override {
     assertEq(
       _getLiquidationFee(params.spoke, params.collateralReserveId, params.user),
       0,
@@ -466,7 +460,7 @@ contract SpokeLiquidationCallTest_NoPremium is SpokeLiquidationCallHelperTest {
     CheckedLiquidationCallParams memory params,
     AccountsInfo memory /* accountsInfoBefore */,
     LiquidationMetadata memory /* liquidationMetadata */
-  ) internal virtual override {
+  ) internal view virtual override {
     (, uint256 premiumDebt) = params.spoke.getUserDebt(params.debtReserveId, params.user);
     assertEq(premiumDebt, 0, 'No premium');
   }
@@ -494,7 +488,7 @@ contract SpokeLiquidationCallTest_Premium is SpokeLiquidationCallHelperTest {
       spoke,
       collateralReserveId,
       _convertValueToAmount(spoke, collateralReserveId, _baseAmountValue()),
-      _user()
+      user
     );
     _increaseReserveDebt(
       spoke,
@@ -504,11 +498,11 @@ contract SpokeLiquidationCallTest_Premium is SpokeLiquidationCallHelperTest {
         debtReserveId,
         _getRequiredDebtValueForHf(
           spoke,
-          _user(),
-          Constants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD * (2 + _skipTime() / 365 days)
+          user,
+          Constants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD * (2 + (2 * _skipTime()) / 365 days)
         )
       ).percentDivDown(2 * PercentageMath.PERCENTAGE_FACTOR + _spokeMaxCollateralRisk(spoke)),
-      _user()
+      user
     );
   }
 
@@ -516,7 +510,7 @@ contract SpokeLiquidationCallTest_Premium is SpokeLiquidationCallHelperTest {
     CheckedLiquidationCallParams memory params,
     AccountsInfo memory /* accountsInfoBefore */,
     LiquidationMetadata memory /* liquidationMetadata */
-  ) internal virtual override {
+  ) internal view virtual override {
     (, uint256 premiumDebt) = params.spoke.getUserDebt(params.debtReserveId, params.user);
     assertGt(premiumDebt, 0, 'User should have premium debt');
   }
@@ -531,7 +525,7 @@ contract SpokeLiquidationCallTest_NoTimeSkip is SpokeLiquidationCallHelperTest {
     CheckedLiquidationCallParams memory params,
     AccountsInfo memory /* accountsInfoBefore */,
     LiquidationMetadata memory /* liquidationMetadata */
-  ) internal virtual override {
+  ) internal view virtual override {
     uint256 reserveCount = params.spoke.getReserveCount();
     for (uint256 i = 0; i < reserveCount; i++) {
       assertEq(_reserveDrawnIndex(params.spoke, i), 1e27, 'drawn index');
@@ -552,7 +546,51 @@ contract SpokeLiquidationCallTest_TargetHealthFactorOne is SpokeLiquidationCallH
     CheckedLiquidationCallParams memory params,
     AccountsInfo memory /* accountsInfoBefore */,
     LiquidationMetadata memory /* liquidationMetadata */
-  ) internal virtual override {
+  ) internal view virtual override {
     assertEq(params.spoke.getLiquidationConfig().targetHealthFactor, 1e18, 'Target health factor');
+  }
+}
+
+contract SpokeLiquidationCallTest_LiquidatorHistory is SpokeLiquidationCallHelperTest {
+  function setUp() public virtual override {
+    super.setUp();
+
+    ISpoke.UserAccountData memory liquidatorAccountData;
+    uint256 count = vm.randomUint(1, spoke.getReserveCount() * 2);
+    for (uint256 i = 0; i < count; i++) {
+      uint256 reserveId = vm.randomUint(0, spoke.getReserveCount() - 1);
+      _increaseCollateralSupply(
+        spoke,
+        reserveId,
+        _convertValueToAmount(spoke, reserveId, _baseAmountValue()),
+        liquidator
+      );
+      liquidatorAccountData = spoke.getUserAccountData(liquidator);
+      if (liquidatorAccountData.healthFactor < Constants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD) {
+        break;
+      }
+      uint256 maxBorrowAmount = _convertValueToAmount(
+        spoke,
+        reserveId,
+        _getRequiredDebtValueForHf(spoke, liquidator, Constants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD)
+      );
+      if (maxBorrowAmount == 0) {
+        break;
+      }
+      uint256 amount = vm.randomUint(1, maxBorrowAmount);
+      _increaseReserveDebt(spoke, reserveId, amount, liquidator);
+      skip(365 days);
+    }
+
+    // make liquidator unhealthy now, but might get healthy when liquidation happens
+    liquidatorAccountData = spoke.getUserAccountData(liquidator);
+    if (liquidatorAccountData.healthFactor > Constants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD) {
+      _makeUserLiquidatable(
+        spoke,
+        liquidator,
+        vm.randomUint(0, spoke.getReserveCount() - 1),
+        vm.randomUint(0.01e18, Constants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD - 0.0000001e18)
+      );
+    }
   }
 }
