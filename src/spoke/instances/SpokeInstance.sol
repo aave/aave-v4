@@ -2,7 +2,6 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity 0.8.28;
 
-import {LiquidationLogic} from 'src/spoke/libraries/LiquidationLogic.sol';
 import {Spoke} from 'src/spoke/Spoke.sol';
 
 /// @title SpokeInstance
