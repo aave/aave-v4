@@ -2094,6 +2094,10 @@ abstract contract Base is Test {
     return a > b ? a : b;
   }
 
+  function _divUp(uint256 a, uint256 b) internal pure returns (uint256) {
+    return (a + b - 1) / b;
+  }
+
   function _getTargetHealthFactor(ISpoke spoke) internal view returns (uint128) {
     return spoke.getLiquidationConfig().targetHealthFactor;
   }
