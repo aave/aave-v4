@@ -125,6 +125,7 @@ abstract contract Base is Test {
   uint256 internal constant MAX_SUPPLY_PRICE = 100;
   uint256 internal constant MIN_DRAWN_INDEX = WadRayMath.RAY;
   uint256 internal constant MAX_DRAWN_INDEX = 100 * WadRayMath.RAY;
+  uint24 internal constant MIN_BORROW_RATE = 0;
   uint256 internal constant MAX_BORROW_RATE = 1000_00; // matches AssetInterestRateStrategy
   uint256 internal constant MIN_OPTIMAL_RATIO = 1_00; // 1.00% in BPS, matches AssetInterestRateStrategy
   uint256 internal constant MAX_OPTIMAL_RATIO = 99_00; // 99.00% in BPS, matches AssetInterestRateStrategy
@@ -2075,11 +2076,21 @@ abstract contract Base is Test {
   ) internal returns (ISpoke.UserAccountData memory) {
     uint256 snapshot = vm.snapshotState();
 
-    if (refreshConfig) {
-      vm.prank(user);
-      spoke.updateUserDynamicConfig(user);
-    }
-    ISpoke.UserAccountData memory userAccountData = spoke.getUserAccountData(user);
+    address mockSpoke = address(
+      new MockSpoke(spoke.ORACLE(), Constants.MAX_ALLOWED_USER_RESERVES_LIMIT)
+    );
+
+    address implementation = _getImplementationAddress(address(spoke));
+
+    vm.prank(_getProxyAdminAddress(address(spoke)));
+    ITransparentUpgradeableProxy(address(spoke)).upgradeToAndCall(address(mockSpoke), '');
+
+    vm.prank(user);
+    ISpoke.UserAccountData memory userAccountData = MockSpoke(address(spoke))
+      .calculateUserAccountData(user, refreshConfig);
+
+    vm.prank(_getProxyAdminAddress(address(spoke)));
+    ITransparentUpgradeableProxy(address(spoke)).upgradeToAndCall(implementation, '');
 
     vm.revertToState(snapshot);
 
@@ -2375,6 +2386,22 @@ abstract contract Base is Test {
     return maxCollateralRisk;
   }
 
+  function _spokeMaxBorrowRate(ISpoke spoke) internal view returns (uint32) {
+    uint32 maxBorrowRate;
+    for (uint256 reserveId; reserveId < spoke.getReserveCount(); ++reserveId) {
+      uint32 borrowRate = (
+        _hub(spoke, reserveId).getAssetDrawnRate(_reserveAssetId(spoke, reserveId)).mulDivUp(
+          PercentageMath.PERCENTAGE_FACTOR,
+          WadRayMath.RAY
+        )
+      ).toUint32();
+      if (borrowRate > maxBorrowRate) {
+        maxBorrowRate = borrowRate;
+      }
+    }
+    return maxBorrowRate;
+  }
+
   function _underlying(ISpoke spoke, uint256 reserveId) internal view returns (TestnetERC20) {
     return TestnetERC20(spoke.getReserve(reserveId).underlying);
   }
@@ -2638,6 +2665,21 @@ abstract contract Base is Test {
       bytes32(addedShares)
     );
     assertEq(hub.getAddedShares(assetId), addedShares, '_mockSupplySharePrice: addedShares');
+  }
+
+  function _setConstantInterestRateBps(IHub hub, uint256 assetId, uint32 interestRateBps) internal {
+    vm.prank(HUB_ADMIN);
+    hub.setInterestRateData(
+      assetId,
+      abi.encode(
+        IAssetInterestRateStrategy.InterestRateData({
+          optimalUsageRatio: 90_00,
+          baseVariableBorrowRate: interestRateBps,
+          variableRateSlope1: 0,
+          variableRateSlope2: 0
+        })
+      )
+    );
   }
 
   function _mockInterestRateBps(uint256 interestRateBps) internal {

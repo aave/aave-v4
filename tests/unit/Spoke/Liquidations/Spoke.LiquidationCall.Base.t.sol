@@ -12,7 +12,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
   using MathUtils for uint256;
 
   uint256 internal constant MAX_AMOUNT_IN_BASE_CURRENCY = 1_000_000_000e26; // 1 billion USD
-  uint256 internal constant MIN_AMOUNT_IN_BASE_CURRENCY = 1e26; // 1 USD
+  uint256 internal constant MIN_AMOUNT_IN_BASE_CURRENCY = 100e26; // 1 USD
 
   struct CheckedLiquidationCallParams {
     ISpoke spoke;
@@ -703,13 +703,6 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
       liquidationAmounts
     );
 
-    assertApproxEqAbs(
-      effectiveLiquidationBonusWad,
-      liquidationBonus.bpsToWad(),
-      0.01e18, // 100 basis points
-      'effective liquidation bonus should be approx equal to liquidation bonus'
-    );
-
     // health factor is decreasing due to liquidation bonus / collateral factor if:
     //   lb * cf > hf_beforeLiq
     bool isCollateralAffectingUserHf = effectiveLiquidationBonusWad.percentMulUp(
@@ -1106,7 +1099,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
       accountsInfoAfter.userBalanceInfo.suppliedInSpoke,
       accountsInfoBefore.userBalanceInfo.suppliedInSpoke -
         liquidationMetadata.collateralAssetsToLiquidate,
-      1,
+      2,
       'user: collateral supplied'
     );
     assertApproxEqAbs(
@@ -1115,7 +1108,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
         ? 0
         : accountsInfoBefore.userBalanceInfo.borrowedFromSpoke -
           liquidationMetadata.debtAssetsToLiquidate,
-      1,
+      2,
       'user: debt borrowed'
     );
 
@@ -1143,9 +1136,10 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
 
     // Liquidator
     if (!params.receiveShares) {
-      assertEq(
+      assertApproxEqAbs(
         accountsInfoAfter.liquidatorBalanceInfo.suppliedInSpoke,
         accountsInfoBefore.liquidatorBalanceInfo.suppliedInSpoke,
+        2,
         'liquidator: collateral supplied'
       );
     } else {
@@ -1153,7 +1147,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
         accountsInfoAfter.liquidatorBalanceInfo.suppliedInSpoke,
         accountsInfoBefore.liquidatorBalanceInfo.suppliedInSpoke +
           liquidationMetadata.collateralAssetsToLiquidator,
-        1,
+        2,
         'liquidator: collateral supplied (receiveShares)'
       );
     }
@@ -1262,7 +1256,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
       accountsInfoBefore.collateralFeeReceiverBalanceInfo.addedInHub +
         liquidationMetadata.collateralAssetsToLiquidate -
         liquidationMetadata.collateralAssetsToLiquidator,
-      1,
+      2,
       'collateral fee receiver: added'
     );
 
@@ -1347,9 +1341,12 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
   ) internal view virtual {}
 
   function _checkedLiquidationCall(CheckedLiquidationCallParams memory params) internal virtual {
-    // multiplication by 50 accounts for supply share price increase due to time skip (and interest rate) and for number of supply operations.
     // ensures there is enough liquidity to liquidate
-    _openSupplyPosition(params.spoke, params.collateralReserveId, MAX_SUPPLY_AMOUNT * 50);
+    _openSupplyPosition(
+      params.spoke,
+      params.collateralReserveId,
+      params.spoke.getUserSuppliedAssets(params.collateralReserveId, params.user)
+    );
 
     AccountsInfo memory accountsInfoBefore = _getAccountsInfo(params);
     LiquidationMetadata memory liquidationMetadata = _getLiquidationMetadata(

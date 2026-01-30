@@ -196,7 +196,11 @@ contract SpokeBase is Base {
     uint256 amount,
     address user
   ) internal {
-    _openSupplyPosition(spoke, reserveId, amount);
+    _openSupplyPosition(
+      spoke,
+      reserveId,
+      _max(_hub(spoke, reserveId).previewAddByShares(_reserveAssetId(spoke, reserveId), 1), amount)
+    );
     Utils.borrow(spoke, reserveId, user, amount, user);
   }
 
