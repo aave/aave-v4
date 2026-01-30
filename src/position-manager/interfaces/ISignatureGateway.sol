@@ -200,7 +200,7 @@ interface ISignatureGateway is IGatewayBase, IIntentConsumer, IMulticall {
   /// @param approve True to approve the gateway, false to revoke approval.
   /// @param nonce The key-prefixed nonce for the signature.
   /// @param deadline The deadline for the intent.
-  /// @param signature The signed bytes for the intent.
+  /// @param signature The EIP712-typed signed bytes for the intent.
   function setSelfAsUserPositionManagerWithSig(
     address spoke,
     address onBehalfOf,
