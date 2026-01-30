@@ -480,7 +480,7 @@ contract HubAccruedFeesTest is HubBase {
     if (interest == 0) {
       assertEq(expectedInterestForFees, 0);
     } else {
-      // also 0 the numerator is < denominator, rounding to 0
+      // also 0 if the numerator is < denominator, rounding to 0
       // smallest realizedFees such that floor(interest * realizedFees / denom) >= 1
       uint256 minRealizedFeesForNonZero = (denom + interest - 1) / interest;
       if (realizedFeesAfterFirst < minRealizedFeesForNonZero) {
