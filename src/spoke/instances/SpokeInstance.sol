@@ -24,6 +24,7 @@ contract SpokeInstance is Spoke {
   function initialize(address authority) external override reinitializer(SPOKE_REVISION) {
     emit UpdateOracle(ORACLE);
     emit UpdateMaxUserReservesLimit(MAX_USER_RESERVES_LIMIT);
+
     require(authority != address(0), InvalidAddress());
     __AccessManaged_init(authority);
     if (_liquidationConfig.targetHealthFactor == 0) {

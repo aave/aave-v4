@@ -4,15 +4,19 @@ pragma solidity ^0.8.0;
 
 import 'tests/unit/Spoke/SpokeBase.t.sol';
 
-contract SpokeConfigTest is SpokeBase {
+contract SpokeSetUsingAsCollateralTest is SpokeBase {
   using SafeCast for uint256;
   using ReserveFlagsMap for ReserveFlags;
 
   function test_setUsingAsCollateral_revertsWith_ReserveNotListed() public {
     uint256 reserveCount = spoke1.getReserveCount();
-    vm.prank(alice);
     vm.expectRevert(ISpoke.ReserveNotListed.selector);
+    vm.prank(alice);
     spoke1.setUsingAsCollateral(reserveCount, true, alice);
+
+    vm.expectRevert(ISpoke.ReserveNotListed.selector);
+    vm.prank(alice);
+    spoke1.setUsingAsCollateral(reserveCount, false, alice);
   }
 
   function test_setUsingAsCollateral_revertsWith_ReserveFrozen() public {

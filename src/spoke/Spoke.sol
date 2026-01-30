@@ -425,11 +425,12 @@ abstract contract Spoke is
     bool usingAsCollateral,
     address onBehalfOf
   ) external nonReentrant onlyPositionManager(onBehalfOf) {
+    Reserve storage reserve = _getReserve(reserveId);
     PositionStatus storage positionStatus = _positionStatus[onBehalfOf];
     if (positionStatus.isUsingAsCollateral(reserveId) == usingAsCollateral) {
       return;
     }
-    _validateSetUsingAsCollateral(positionStatus, _getReserve(reserveId).flags, usingAsCollateral);
+    _validateSetUsingAsCollateral(positionStatus, reserve.flags, usingAsCollateral);
     positionStatus.setUsingAsCollateral(reserveId, usingAsCollateral);
 
     if (usingAsCollateral) {
