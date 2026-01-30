@@ -21,8 +21,8 @@ import {Multicall} from 'src/utils/Multicall.sol';
 import {ExtSload} from 'src/utils/ExtSload.sol';
 import {IAaveOracle} from 'src/spoke/interfaces/IAaveOracle.sol';
 import {IHubBase} from 'src/hub/interfaces/IHubBase.sol';
-import {SpokeStorage} from 'src/spoke/SpokeStorage.sol';
 import {ISpokeBase, ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
+import {SpokeStorage} from 'src/spoke/SpokeStorage.sol';
 
 /// @title Spoke
 /// @author Aave Labs
