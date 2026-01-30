@@ -199,14 +199,14 @@ contract LiquidationLogicWrapper {
     bool isCollateralPositionEmpty,
     bool isDebtPositionEmpty,
     uint256 activeCollateralCount,
-    uint256 borrowedCount
+    uint256 borrowCount
   ) public pure returns (bool) {
     return
       LiquidationLogic._evaluateDeficit(
         isCollateralPositionEmpty,
         isDebtPositionEmpty,
         activeCollateralCount,
-        borrowedCount
+        borrowCount
       );
   }
 

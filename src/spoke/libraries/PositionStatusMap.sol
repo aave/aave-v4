@@ -98,6 +98,23 @@ library PositionStatusMap {
     }
   }
 
+  /// @notice Counts the number of reserves borrowed.
+  /// @dev Disregards potential dirty bits set after `reserveCount`.
+  /// @param reserveCount The current `reserveCount`, to avoid reading uninitialized buckets.
+  function borrowCount(
+    ISpoke.PositionStatus storage self,
+    uint256 reserveCount
+  ) internal view returns (uint256) {
+    unchecked {
+      uint256 bucket = reserveCount.bucketId();
+      uint256 count = self.map[bucket].isolateBorrowingUntil(reserveCount).popCount();
+      while (bucket != 0) {
+        count += self.map[--bucket].isolateBorrowing().popCount();
+      }
+      return count;
+    }
+  }
+
   /// @notice Finds the previous borrowing or collateralized reserve strictly before `fromReserveId`.
   /// @dev The search starts at `fromReserveId` (exclusive) and scans backward across buckets.
   /// @dev Returns `NOT_FOUND` if no borrowing or collateralized reserve exists before the bound.

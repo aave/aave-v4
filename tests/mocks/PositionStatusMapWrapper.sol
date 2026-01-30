@@ -42,6 +42,10 @@ contract PositionStatusMapWrapper {
     return _p.collateralCount(reserveCount);
   }
 
+  function borrowCount(uint256 reserveCount) external view returns (uint256) {
+    return _p.borrowCount(reserveCount);
+  }
+
   function getBucketWord(uint256 reserveId) external view returns (uint256) {
     return _p.getBucketWord(reserveId);
   }

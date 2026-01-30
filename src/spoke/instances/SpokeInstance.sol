@@ -13,7 +13,8 @@ contract SpokeInstance is Spoke {
   /// @dev Constructor.
   /// @dev During upgrade, must ensure that the new oracle is supporting existing assets on the spoke and the replaced oracle.
   /// @param oracle_ The address of the oracle.
-  constructor(address oracle_) Spoke(oracle_) {
+  /// @param maxUserReservesLimit_ The maximum number of collateral and borrow reserves a user can have.
+  constructor(address oracle_, uint16 maxUserReservesLimit_) Spoke(oracle_, maxUserReservesLimit_) {
     _disableInitializers();
   }
 
@@ -22,6 +23,8 @@ contract SpokeInstance is Spoke {
   /// @param authority The address of the authority contract which manages permissions.
   function initialize(address authority) external override reinitializer(SPOKE_REVISION) {
     emit UpdateOracle(ORACLE);
+    emit UpdateMaxUserReservesLimit(MAX_USER_RESERVES_LIMIT);
+
     require(authority != address(0), InvalidAddress());
     __AccessManaged_init(authority);
     if (_liquidationConfig.targetHealthFactor == 0) {

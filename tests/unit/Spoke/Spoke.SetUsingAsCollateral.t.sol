@@ -4,15 +4,19 @@ pragma solidity ^0.8.0;
 
 import 'tests/unit/Spoke/SpokeBase.t.sol';
 
-contract SpokeConfigTest is SpokeBase {
+contract SpokeSetUsingAsCollateralTest is SpokeBase {
   using SafeCast for uint256;
   using ReserveFlagsMap for ReserveFlags;
 
   function test_setUsingAsCollateral_revertsWith_ReserveNotListed() public {
     uint256 reserveCount = spoke1.getReserveCount();
-    vm.prank(alice);
     vm.expectRevert(ISpoke.ReserveNotListed.selector);
+    vm.prank(alice);
     spoke1.setUsingAsCollateral(reserveCount, true, alice);
+
+    vm.expectRevert(ISpoke.ReserveNotListed.selector);
+    vm.prank(alice);
+    spoke1.setUsingAsCollateral(reserveCount, false, alice);
   }
 
   function test_setUsingAsCollateral_revertsWith_ReserveFrozen() public {
@@ -171,5 +175,75 @@ contract SpokeConfigTest is SpokeBase {
       usingAsCollateral,
       'wrong usingAsCollateral'
     );
+  }
+
+  function test_setUsingAsCollateral_revertsWith_MaximumUserReservesExceeded() public {
+    // Fetch the user reserves limit
+    uint16 maxUserReservesLimit = spoke3.MAX_USER_RESERVES_LIMIT();
+    assertGt(maxUserReservesLimit, 0, 'Reserve limit is nonzero');
+
+    // Add reserves such that a user can exceed the limit
+    _addNewAssetsAndReserves(hub1, spoke3, maxUserReservesLimit + 1 - spoke3.getReserveCount());
+
+    // Bob enables exactly up to the limit reserves as collateral
+    for (uint256 i = 0; i < maxUserReservesLimit; ++i) {
+      Utils.supplyCollateral(spoke3, i, bob, 1e18, bob);
+    }
+
+    // Bob tries to enable one more reserve as collateral - should revert due to limit
+    vm.expectRevert(ISpoke.MaximumUserReservesExceeded.selector);
+    vm.prank(bob);
+    spoke3.setUsingAsCollateral(maxUserReservesLimit, true, bob);
+  }
+
+  /// @dev Test that enables collaterals up to the user reserves limit, disables one reserve, and then enables again
+  function test_setUsingAsCollateral_to_limit_disable_enable_again() public {
+    // Fetch the user reserves limit
+    uint16 maxUserReservesLimit = spoke3.MAX_USER_RESERVES_LIMIT();
+    assertGt(maxUserReservesLimit, 0, 'Reserve limit is nonzero');
+
+    // Add reserves such that a user can exceed the limit
+    _addNewAssetsAndReserves(hub1, spoke3, maxUserReservesLimit + 1 - spoke3.getReserveCount());
+
+    // Bob enables exactly up to the limit reserves as collateral
+    for (uint256 i = 0; i < maxUserReservesLimit; ++i) {
+      Utils.supplyCollateral(spoke3, i, bob, 1e18, bob);
+    }
+
+    // Verify bob is at the collateral limit
+    ISpoke.UserAccountData memory accountData = spoke3.getUserAccountData(bob);
+    assertEq(accountData.activeCollateralCount, maxUserReservesLimit);
+
+    // Bob disables the first reserve as collateral
+    Utils.setUsingAsCollateral(spoke3, 0, bob, false, bob);
+
+    // Verify bob now has space for one more collateral
+    accountData = spoke3.getUserAccountData(bob);
+    assertEq(accountData.activeCollateralCount, maxUserReservesLimit - 1);
+
+    // Bob can now enable the new reserve as collateral
+    Utils.supplyCollateral(spoke3, maxUserReservesLimit, bob, 1e18, bob);
+
+    // Verify bob is back at the limit
+    accountData = spoke3.getUserAccountData(bob);
+    assertEq(accountData.activeCollateralCount, maxUserReservesLimit);
+  }
+
+  function test_setUsingAsCollateral_unlimited_whenLimitIsMax() public {
+    // Verify that when MAX_USER_RESERVES_LIMIT is max allowed, many collaterals can be enabled
+    assertEq(spoke1.MAX_USER_RESERVES_LIMIT(), Constants.MAX_ALLOWED_USER_RESERVES_LIMIT);
+
+    // spoke1 has 4 reserves by default, add 96 more to have 100 total
+    _addNewAssetsAndReserves(hub1, spoke1, 96);
+
+    // Bob can enable 100 reserves as collateral without hitting a limit
+    uint256 collateralsToEnable = 100;
+    for (uint256 i = 0; i < collateralsToEnable; ++i) {
+      Utils.supplyCollateral(spoke1, i, bob, 1e18, bob);
+    }
+
+    // Verify bob has all 100 collaterals enabled
+    ISpoke.UserAccountData memory accountData = spoke1.getUserAccountData(bob);
+    assertEq(accountData.activeCollateralCount, collateralsToEnable);
   }
 }
