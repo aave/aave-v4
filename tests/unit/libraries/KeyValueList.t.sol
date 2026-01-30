@@ -244,7 +244,8 @@ contract KeyValueListTest is Test {
     uint256[] memory result = new uint256[](size);
     for (uint256 i; i < size; ++i) {
       result[i] =
-        (uint256((keccak256(abi.encode(seed + i)))) % (upperBound - lowerBound + 1)) + lowerBound;
+        (uint256((keccak256(abi.encode(seed + i)))) % (upperBound - lowerBound + 1)) +
+        lowerBound;
     }
     return result;
   }
