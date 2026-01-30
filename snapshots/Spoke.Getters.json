@@ -1,7 +1,7 @@
 {
-  "getUserAccountData: supplies: 0, borrows: 0": "12974",
-  "getUserAccountData: supplies: 1, borrows: 0": "49275",
-  "getUserAccountData: supplies: 2, borrows: 0": "80862",
-  "getUserAccountData: supplies: 2, borrows: 1": "100285",
-  "getUserAccountData: supplies: 2, borrows: 2": "119054"
+  "getUserAccountData: supplies: 0, borrows: 0": "13008",
+  "getUserAccountData: supplies: 1, borrows: 0": "49309",
+  "getUserAccountData: supplies: 2, borrows: 0": "80896",
+  "getUserAccountData: supplies: 2, borrows: 1": "100319",
+  "getUserAccountData: supplies: 2, borrows: 2": "119088"
 }

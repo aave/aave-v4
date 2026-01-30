@@ -16,4 +16,5 @@ library Constants {
   uint24 public constant MAX_ALLOWED_COLLATERAL_RISK = 1000_00; // 1000.00%
   uint256 public constant MAX_ALLOWED_DYNAMIC_CONFIG_KEY = type(uint24).max;
   uint256 public constant MAX_ALLOWED_ASSET_ID = type(uint16).max;
+  uint16 public constant MAX_ALLOWED_USER_RESERVES_LIMIT = type(uint16).max;
 }

@@ -3,9 +3,9 @@
 
 pragma solidity ^0.8.20;
 
-import {AuthorityUtils} from 'src/dependencies/openzeppelin/AuthorityUtils.sol';
-import {IAccessManager} from 'src/dependencies/openzeppelin/IAccessManager.sol';
-import {IAccessManaged} from 'src/dependencies/openzeppelin/IAccessManaged.sol';
+import {AuthorityUtils} from '../openzeppelin/AuthorityUtils.sol';
+import {IAccessManager} from '../openzeppelin/IAccessManager.sol';
+import {IAccessManaged} from '../openzeppelin/IAccessManaged.sol';
 import {ContextUpgradeable} from './ContextUpgradeable.sol';
 import {Initializable} from './Initializable.sol';
 
