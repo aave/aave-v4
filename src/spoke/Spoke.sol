@@ -726,11 +726,14 @@ abstract contract Spoke is
       vars.assetUnit = MathUtils.uncheckedExp(10, reserve.decimals);
 
       if (vars.collateral) {
-        vars.collateralFactor = _dynamicConfig[reserveId][
-          refreshConfig
-            ? (userPosition.dynamicConfigKey = reserve.dynamicConfigKey)
-            : userPosition.dynamicConfigKey
-        ].collateralFactor;
+        if (refreshConfig) {
+          vars.collateralFactor = _dynamicConfig[reserveId][reserve.dynamicConfigKey]
+            .collateralFactor;
+          userPosition.dynamicConfigKey = reserve.dynamicConfigKey;
+        } else {
+          vars.collateralFactor = _dynamicConfig[reserveId][userPosition.dynamicConfigKey]
+            .collateralFactor;
+        }
         if (vars.collateralFactor > 0) {
           vars.suppliedShares = userPosition.suppliedShares;
           if (vars.suppliedShares > 0) {
