@@ -12,6 +12,7 @@ contract HubAccruedFeesTest is HubBase {
   uint256 constant SUPPLY_AMOUNT = 1000e18;
   uint256 constant BORROW_AMOUNT = 500e18;
 
+  /// @dev Fuzz test for basic fee accrual with varying supply, borrow, fee, and time
   function test_unrealizedFees_fuzz_basicAccrual(
     uint256 supplyAmount,
     uint256 borrowAmount,
@@ -125,6 +126,7 @@ contract HubAccruedFeesTest is HubBase {
     _checkSupplyRateIncreasing(initialSharePrice, finalSharePrice, 'share price');
   }
 
+  /// @dev Verifies that accrued fees themselves earn interest over time
   function test_unrealizedFees_feesEarnInterest() public {
     updateLiquidityFee(hub1, daiAssetId, 50_00);
 
@@ -850,6 +852,7 @@ contract HubAccruedFeesTest is HubBase {
     assertEq(_calcUnrealizedFees(hub1, daiAssetId), 0);
   }
 
+  /// @dev Fuzz test ensuring fees never exceed total interest accrued
   function testFuzz_unrealizedFees_feesNeverExceedInterest(
     uint256 supplyAmount,
     uint256 borrowAmount,
@@ -886,6 +889,7 @@ contract HubAccruedFeesTest is HubBase {
       assertEq(accruedFees, totalInterest);
   }
 
+  /// @dev Fuzz test verifying share price monotonically increases over time
   function testFuzz_unrealizedFees_sharePriceNeverDecreases(
     uint256 supplyAmount,
     uint256 borrowAmount,
@@ -926,6 +930,7 @@ contract HubAccruedFeesTest is HubBase {
     }
   }
 
+  /// @dev Fuzz test verifying minting fee shares preserves supplier position value
   function testFuzz_unrealizedFees_mintPreservesSupplierValue(
     uint256 supplyAmount,
     uint256 borrowAmount,
@@ -965,6 +970,7 @@ contract HubAccruedFeesTest is HubBase {
     assertEq(_calcUnrealizedFees(hub1, daiAssetId), 0);
   }
 
+  /// @dev Fuzz test verifying total interest equals fees plus supplier yield
   function testFuzz_unrealizedFees_conservationOfValue(
     uint256 supplyAmount,
     uint256 borrowAmount,
@@ -1002,6 +1008,7 @@ contract HubAccruedFeesTest is HubBase {
     assertEq(accruedFees + supplierYield, totalInterest);
   }
 
+  /// @dev Fuzz test verifying zero fee rate directs all interest to suppliers
   function testFuzz_unrealizedFees_zeroFeeAllToSuppliers(
     uint256 supplyAmount,
     uint256 borrowAmount
@@ -1039,6 +1046,7 @@ contract HubAccruedFeesTest is HubBase {
     assertEq(finalTotalAssets - initialTotalAssets, totalInterest);
   }
 
+  /// @dev Fuzz test verifying 100% fee rate directs all interest to treasury
   function testFuzz_unrealizedFees_maxFeeAllToTreasury(
     uint256 supplyAmount,
     uint256 borrowAmount
@@ -1076,6 +1084,7 @@ contract HubAccruedFeesTest is HubBase {
     assertEq(finalSharePrice, initialSharePrice);
   }
 
+  /// @dev Fuzz test verifying fee split matches configured liquidity fee percentage
   function testFuzz_unrealizedFees_feeSplitProportional(
     uint256 supplyAmount,
     uint256 borrowAmount,

@@ -211,12 +211,11 @@ library AssetLogic {
       drawnIndex: previousIndex
     });
 
-    // Take treasury cut, remainder is interest to distribute
     uint256 growthDelta = aggregatedOwedRayAfter.fromRayUp() - aggregatedOwedRayBefore.fromRayUp();
     uint256 unrealizedFees = growthDelta.percentMulDown(liquidityFee);
 
-    // distribute the remaining interest in proportion to the `realizedFees` relative to total amount of assets that belong to
-    // suppliers, effectively as if the `realizedFees` were minted as added shares
+    // distribute the remaining interest in proportion to the `realizedFees` relative to total amount of assets
+    // that belong to suppliers, effectively as if the `realizedFees` were minted as added shares
     uint256 suppliersTotalAddedAssets = asset.liquidity +
       asset.swept +
       aggregatedOwedRayBefore.fromRayUp();
