@@ -138,10 +138,10 @@ interface ISpoke is ISpokeBase, IAccessManaged, IIntentConsumer, IExtSload, IMul
     uint256 borrowCount;
   }
 
-  /// @notice Emitted when the spoke is initialized.
+  /// @notice Emitted upon setting the immutable variables on the spoke.
   /// @param oracle The address of the oracle.
   /// @param maxUserReservesLimit The max user reserves limit.
-  event InitializeSpoke(address indexed oracle, uint16 maxUserReservesLimit);
+  event SetSpokeImmutables(address indexed oracle, uint16 maxUserReservesLimit);
 
   /// @notice Emitted when a liquidation config is updated.
   /// @param config The new liquidation config.

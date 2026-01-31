@@ -180,7 +180,7 @@ contract SpokeBorrowValidationTest is SpokeBase {
 
   function test_borrow_revertsWith_MaximumUserReservesExceeded() public {
     uint16 maxUserReservesLimit = (spoke1.getReserveCount() - 1).toUint16();
-    _etchSpokeMaxUserReservesLimit(spoke1, maxUserReservesLimit);
+    _updateMaxUserReservesLimit(spoke1, maxUserReservesLimit);
     assertEq(spoke1.MAX_USER_RESERVES_LIMIT(), maxUserReservesLimit, 'Reserve limit adjusted');
     assertGt(spoke1.getReserveCount(), maxUserReservesLimit, 'More reserves than limit');
 
@@ -203,7 +203,7 @@ contract SpokeBorrowValidationTest is SpokeBase {
   /// @dev Test that borrows up to the user reserves limit, repays one reserve, and then borrows again.
   function test_borrow_to_limit_repay_borrow_again() public {
     uint16 maxUserReservesLimit = (spoke1.getReserveCount() - 1).toUint16();
-    _etchSpokeMaxUserReservesLimit(spoke1, maxUserReservesLimit);
+    _updateMaxUserReservesLimit(spoke1, maxUserReservesLimit);
     assertEq(spoke1.MAX_USER_RESERVES_LIMIT(), maxUserReservesLimit, 'Reserve limit adjusted');
     assertGt(spoke1.getReserveCount(), maxUserReservesLimit, 'More reserves than limit');
 

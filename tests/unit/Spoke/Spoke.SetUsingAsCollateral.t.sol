@@ -179,7 +179,7 @@ contract SpokeSetUsingAsCollateralTest is SpokeBase {
 
   function test_setUsingAsCollateral_revertsWith_MaximumUserReservesExceeded() public {
     uint16 maxUserReservesLimit = (spoke1.getReserveCount() - 1).toUint16();
-    _etchSpokeMaxUserReservesLimit(spoke1, maxUserReservesLimit);
+    _updateMaxUserReservesLimit(spoke1, maxUserReservesLimit);
     assertEq(spoke1.MAX_USER_RESERVES_LIMIT(), maxUserReservesLimit, 'Reserve limit adjusted');
     assertGt(spoke1.getReserveCount(), maxUserReservesLimit, 'More reserves than limit');
 
@@ -201,7 +201,7 @@ contract SpokeSetUsingAsCollateralTest is SpokeBase {
   /// @dev Test that enables collaterals up to the user reserves limit, disables one reserve, and then enables again
   function test_setUsingAsCollateral_to_limit_disable_enable_again() public {
     uint16 maxUserReservesLimit = (spoke1.getReserveCount() - 1).toUint16();
-    _etchSpokeMaxUserReservesLimit(spoke1, maxUserReservesLimit);
+    _updateMaxUserReservesLimit(spoke1, maxUserReservesLimit);
     assertEq(spoke1.MAX_USER_RESERVES_LIMIT(), maxUserReservesLimit, 'Reserve limit adjusted');
     assertGt(spoke1.getReserveCount(), maxUserReservesLimit, 'More reserves than limit');
 

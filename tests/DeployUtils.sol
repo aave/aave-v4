@@ -19,16 +19,16 @@ library DeployUtils {
 
   function deploySpokeImplementation(
     address oracle,
-    bytes32 salt
-  ) internal returns (ISpokeInstance spoke) {
-    return deploySpokeImplementation(oracle, Constants.MAX_ALLOWED_USER_RESERVES_LIMIT, salt);
+    uint16 maxUserReservesLimit
+  ) internal returns (ISpokeInstance) {
+    return deploySpokeImplementation(oracle, maxUserReservesLimit, '');
   }
 
   function deploySpokeImplementation(
     address oracle,
-    uint16 maxUserReservesLimit
-  ) internal returns (ISpokeInstance) {
-    return deploySpokeImplementation(oracle, maxUserReservesLimit, '');
+    bytes32 salt
+  ) internal returns (ISpokeInstance spoke) {
+    return deploySpokeImplementation(oracle, Constants.MAX_ALLOWED_USER_RESERVES_LIMIT, salt);
   }
 
   function deploySpokeImplementation(
