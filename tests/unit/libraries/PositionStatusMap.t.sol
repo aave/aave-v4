@@ -551,4 +551,107 @@ contract PositionStatusMapTest is Base {
     }
     assertEq(LibBit.fls(0), 256);
   }
+
+  function test_getCollateralBitmap_emptyWhenNoReserves() public view {
+    bytes memory bitmap = p.getCollateralBitmap(0);
+    assertEq(bitmap.length, 0);
+  }
+
+  function test_getCollateralBitmap_singleBucket() public {
+    // Set collateral for reserves 0, 3, and 5
+    p.setUsingAsCollateral(0, true);
+    p.setUsingAsCollateral(3, true);
+    p.setUsingAsCollateral(5, true);
+
+    bytes memory bitmap = p.getCollateralBitmap(10);
+    assertEq(bitmap.length, 32);
+
+    // Verify the bitmap contains the expected collateral bits
+    uint256 word;
+    assembly {
+      word := mload(add(bitmap, 32))
+    }
+
+    // Collateral bits are at positions: (reserveId * 2 + 1)
+    // Reserve 0: bit 1, Reserve 3: bit 7, Reserve 5: bit 11
+    uint256 expected = (1 << 1) | (1 << 7) | (1 << 11);
+    // Apply collateral mask to verify only collateral bits are set
+    assertEq(word, expected);
+  }
+
+  function test_getCollateralBitmap_multipleBuckets() public {
+    // Set collateral across multiple buckets
+    p.setUsingAsCollateral(0, true); // bucket 0
+    p.setUsingAsCollateral(127, true); // bucket 0
+    p.setUsingAsCollateral(128, true); // bucket 1
+    p.setUsingAsCollateral(255, true); // bucket 1
+
+    bytes memory bitmap = p.getCollateralBitmap(256);
+    assertEq(bitmap.length, 64); // 2 buckets * 32 bytes
+
+    uint256 word0;
+    uint256 word1;
+    assembly {
+      word0 := mload(add(bitmap, 32))
+      word1 := mload(add(bitmap, 64))
+    }
+
+    // Verify bucket 0 has collateral bits for reserves 0 and 127
+    uint256 expected0 = (1 << 1) | (1 << 255); // bits 1 and 255
+    assertEq(word0, expected0);
+
+    // Verify bucket 1 has collateral bits for reserves 128 and 255
+    uint256 expected1 = (1 << 1) | (1 << 255); // bits 1 and 255 (relative to bucket 1)
+    assertEq(word1, expected1);
+  }
+
+  function test_getCollateralBitmap_excludesBorrowingBits() public {
+    // Set both collateral and borrowing for same reserve
+    p.setUsingAsCollateral(5, true);
+    p.setBorrowing(5, true);
+
+    // Also set borrowing-only for another reserve
+    p.setBorrowing(10, true);
+
+    bytes memory bitmap = p.getCollateralBitmap(20);
+    assertEq(bitmap.length, 32);
+
+    uint256 word;
+    assembly {
+      word := mload(add(bitmap, 32))
+    }
+
+    // Only reserve 5 collateral bit should be set (bit 11)
+    // Borrowing bits should not be present
+    uint256 expected = (1 << 11);
+    assertEq(word, expected);
+  }
+
+  function test_getCollateralBitmap_fuzz(uint256 reserveCount) public {
+    reserveCount = bound(reserveCount, 1, 512); // up to 4 buckets
+
+    // Randomly set collateral for some reserves
+    for (uint256 i = 0; i < reserveCount; ++i) {
+      p.setUsingAsCollateral(i, vm.randomBool());
+      p.setBorrowing(i, vm.randomBool()); // should not affect bitmap
+    }
+
+    bytes memory bitmap = p.getCollateralBitmap(reserveCount);
+    uint256 expectedBuckets = (reserveCount + 127) / 128;
+    assertEq(bitmap.length, expectedBuckets * 32);
+
+    // Verify each collateral bit matches
+    for (uint256 i = 0; i < reserveCount; ++i) {
+      uint256 bucketIndex = i / 128;
+      uint256 bitPosition = (i % 128) * 2 + 1;
+
+      uint256 word;
+      assembly {
+        word := mload(add(add(bitmap, 32), mul(bucketIndex, 32)))
+      }
+
+      bool bitSet = (word >> bitPosition) & 1 == 1;
+      assertEq(bitSet, p.isUsingAsCollateral(i));
+    }
+  }
 }

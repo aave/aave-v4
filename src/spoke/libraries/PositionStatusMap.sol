@@ -250,4 +250,23 @@ library PositionStatusMap {
       ret := and(word, shr(sub(256, shl(1, mod(reserveCount, 128))), COLLATERAL_MASK))
     }
   }
+
+  /// @notice Returns the collateral bitmap as bytes, containing only collateral bits.
+  /// @param reserveCount The current reserveCount to determine bucket boundaries.
+  /// @return The collateral bitmap as bytes (32 bytes per bucket, up to the bucket containing reserveCount-1).
+  function getCollateralBitmap(
+    ISpoke.PositionStatus storage self,
+    uint256 reserveCount
+  ) internal view returns (bytes memory) {
+    uint256 bucketCount = reserveCount == 0 ? 0 : (reserveCount - 1).bucketId() + 1;
+    bytes memory result = new bytes(bucketCount * 32);
+
+    for (uint256 i = 0; i < bucketCount; ++i) {
+      uint256 word = self.map[i].isolateCollateral();
+      assembly ('memory-safe') {
+        mstore(add(add(result, 32), mul(i, 32)), word)
+      }
+    }
+    return result;
+  }
 }

@@ -224,11 +224,10 @@ contract SignatureGatewayTest is SignatureGatewayBaseTest {
     p.nonce = _burnRandomNoncesAtKey(gateway, alice);
     bytes memory signature = _sign(alicePk, _getTypedDataHash(gateway, p));
 
-    vm.expectEmit(address(spoke1));
-    emit ISpoke.RefreshAllUserDynamicConfig(alice);
-
+    vm.recordLogs();
     vm.prank(vm.randomAddress());
     gateway.updateUserDynamicConfigWithSig(p, signature);
+    _assertRefreshAllUserDynamicConfigEmitted(spoke1, alice);
 
     _assertNonceIncrement(gateway, alice, p.nonce);
     _assertGatewayHasNoBalanceOrAllowance(spoke1, gateway, alice);
@@ -263,5 +262,22 @@ contract SignatureGatewayTest is SignatureGatewayBaseTest {
     _assertNonceIncrement(ISignatureGateway(address(spoke1)), alice, p.nonce); // note: nonce consumed on spoke
     _assertGatewayHasNoBalanceOrAllowance(spoke1, gateway, alice);
     _assertGatewayHasNoActivePosition(spoke1, gateway);
+  }
+
+  function _assertRefreshAllUserDynamicConfigEmitted(ISpoke spoke, address user) internal {
+    Vm.Log[] memory logs = vm.getRecordedLogs();
+    bool foundEvent = false;
+    for (uint256 i = 0; i < logs.length; ++i) {
+      if (
+        logs[i].emitter == address(spoke) &&
+        logs[i].topics[0] == ISpoke.RefreshAllUserDynamicConfig.selector
+      ) {
+        assertEq(logs[i].topics[1], bytes32(uint256(uint160(user))));
+        assertTrue(logs[i].data.length > 0, 'Event data should contain collateral bitmap');
+        foundEvent = true;
+        break;
+      }
+    }
+    assertTrue(foundEvent, 'RefreshAllUserDynamicConfig event not found');
   }
 }

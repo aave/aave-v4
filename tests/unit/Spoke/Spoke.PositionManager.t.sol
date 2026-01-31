@@ -283,10 +283,10 @@ contract SpokePositionManagerTest is SpokeBase {
 
     _approvePositionManager(alice);
 
-    vm.expectEmit(address(spoke1));
-    emit ISpoke.RefreshAllUserDynamicConfig(alice);
+    vm.recordLogs();
     vm.prank(POSITION_MANAGER);
     spoke1.updateUserDynamicConfig(alice);
+    _assertRefreshAllUserDynamicConfigEmitted(alice);
 
     assertNotEq(_getUserDynConfigKeys(spoke1, alice), configs);
     assertEq(_getSpokeDynConfigKeys(spoke1), _getUserDynConfigKeys(spoke1, alice));
@@ -329,5 +329,19 @@ contract SpokePositionManagerTest is SpokeBase {
   function _resetTokenAllowance(address who) internal {
     vm.prank(who);
     tokenList.usdx.approve(address(hub1), 0);
+  }
+
+  function _assertRefreshAllUserDynamicConfigEmitted(address user) internal {
+    Vm.Log[] memory logs = vm.getRecordedLogs();
+    bool foundEvent = false;
+    for (uint256 i = 0; i < logs.length; ++i) {
+      if (logs[i].topics[0] == ISpoke.RefreshAllUserDynamicConfig.selector) {
+        assertEq(logs[i].topics[1], bytes32(uint256(uint160(user))));
+        assertTrue(logs[i].data.length > 0, 'Event data should contain collateral bitmap');
+        foundEvent = true;
+        break;
+      }
+    }
+    assertTrue(foundEvent, 'RefreshAllUserDynamicConfig event not found');
   }
 }

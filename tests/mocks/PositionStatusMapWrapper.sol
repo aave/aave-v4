@@ -96,6 +96,10 @@ contract PositionStatusMapWrapper {
     return _p.nextCollateral(startReserveId);
   }
 
+  function getCollateralBitmap(uint256 reserveCount) external view returns (bytes memory) {
+    return _p.getCollateralBitmap(reserveCount);
+  }
+
   function slot() external pure returns (bytes32 s) {
     assembly ('memory-safe') {
       s := _p.slot

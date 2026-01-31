@@ -690,7 +690,10 @@ abstract contract Spoke is
     address user
   ) internal returns (UserAccountData memory) {
     UserAccountData memory accountData = _processUserAccountData(user, true);
-    emit RefreshAllUserDynamicConfig(user);
+    emit RefreshAllUserDynamicConfig(
+      user,
+      _positionStatus[user].getCollateralBitmap(_reserveCount)
+    );
     require(
       accountData.healthFactor >= HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
       HealthFactorBelowThreshold()

@@ -136,9 +136,9 @@ contract SpokeDynamicConfigTriggersTest is SpokeBase {
     configs = _getUserDynConfigKeys(spoke1, alice);
     Utils.supplyCollateral(spoke1, _wethReserveId(spoke1), alice, 1e18, alice);
 
-    vm.expectEmit(address(spoke1));
-    emit ISpoke.RefreshAllUserDynamicConfig(alice);
+    vm.recordLogs();
     Utils.borrow(spoke1, _daiReserveId(spoke1), alice, 100e18, alice);
+    _assertRefreshAllUserDynamicConfigEmitted(alice);
 
     assertNotEq(_getUserDynConfigKeys(spoke1, alice), configs);
     assertEq(_getSpokeDynConfigKeys(spoke1), _getUserDynConfigKeys(spoke1, alice));
@@ -166,9 +166,9 @@ contract SpokeDynamicConfigTriggersTest is SpokeBase {
     configs = _getUserDynConfigKeys(spoke1, alice);
     Utils.supplyCollateral(spoke1, _wethReserveId(spoke1), alice, 1e18, alice);
 
-    vm.expectEmit(address(spoke1));
-    emit ISpoke.RefreshAllUserDynamicConfig(alice);
+    vm.recordLogs();
     Utils.withdraw(spoke1, _usdxReserveId(spoke1), alice, 500e6, alice);
+    _assertRefreshAllUserDynamicConfigEmitted(alice);
 
     assertNotEq(_getUserDynConfigKeys(spoke1, alice), configs);
     assertEq(_getSpokeDynConfigKeys(spoke1), _getUserDynConfigKeys(spoke1, alice));
@@ -206,10 +206,10 @@ contract SpokeDynamicConfigTriggersTest is SpokeBase {
     assertNotEq(abi.encode(userConfig), abi.encode(spokeConfig));
 
     // when disabling all configs are refreshed
-    vm.expectEmit(address(spoke1));
-    emit ISpoke.RefreshAllUserDynamicConfig(alice);
+    vm.recordLogs();
     vm.prank(alice);
     spoke1.setUsingAsCollateral(_usdxReserveId(spoke1), false, alice);
+    _assertRefreshAllUserDynamicConfigEmitted(alice);
 
     assertNotEq(_getUserDynConfigKeys(spoke1, alice), configs);
     assertEq(_getSpokeDynConfigKeys(spoke1), _getUserDynConfigKeys(spoke1, alice));
@@ -228,10 +228,10 @@ contract SpokeDynamicConfigTriggersTest is SpokeBase {
     assertNotEq(_getSpokeDynConfigKeys(spoke1), configs);
 
     // manually trigger update
-    vm.expectEmit(address(spoke1));
-    emit ISpoke.RefreshAllUserDynamicConfig(alice);
+    vm.recordLogs();
     vm.prank(alice);
     spoke1.updateUserDynamicConfig(alice);
+    _assertRefreshAllUserDynamicConfigEmitted(alice);
 
     // user config should change
     assertNotEq(_getUserDynConfigKeys(spoke1, alice), configs);
@@ -337,15 +337,30 @@ contract SpokeDynamicConfigTriggersTest is SpokeBase {
   ) internal {
     uint256 snapshotId = vm.snapshotState();
 
-    vm.expectEmit(address(spoke1));
-    emit ISpoke.RefreshAllUserDynamicConfig(alice);
+    vm.recordLogs();
     vm.prank(caller);
     spoke1.updateUserDynamicConfig(alice);
+    _assertRefreshAllUserDynamicConfigEmitted(alice);
 
     // user config should change
     assertNotEq(_getUserDynConfigKeys(spoke1, alice), existingConfigs);
     assertEq(_getSpokeDynConfigKeys(spoke1), _getUserDynConfigKeys(spoke1, alice));
 
     vm.revertToState(snapshotId);
+  }
+
+  function _assertRefreshAllUserDynamicConfigEmitted(address user) internal {
+    Vm.Log[] memory logs = vm.getRecordedLogs();
+    bool foundEvent = false;
+    for (uint256 i = 0; i < logs.length; ++i) {
+      if (logs[i].topics[0] == ISpoke.RefreshAllUserDynamicConfig.selector) {
+        assertEq(logs[i].topics[1], bytes32(uint256(uint160(user))));
+        // Verify data is non-empty bytes (collateral bitmap)
+        assertTrue(logs[i].data.length > 0, 'Event data should contain collateral bitmap');
+        foundEvent = true;
+        break;
+      }
+    }
+    assertTrue(foundEvent, 'RefreshAllUserDynamicConfig event not found');
   }
 }
