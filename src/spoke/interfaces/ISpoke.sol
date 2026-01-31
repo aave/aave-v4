@@ -138,6 +138,26 @@ interface ISpoke is ISpokeBase, IAccessManaged, IIntentConsumer, IExtSload, IMul
     uint256 borrowCount;
   }
 
+  /// @notice Local variables used in the _processUserAccountData function.
+  /// @dev assetPrice The price of the asset in USD.
+  /// @dev assetUnit The unit of the asset.
+  /// @dev collateralFactor The collateral factor of the reserve.
+  /// @dev suppliedShares The supplied shares of the user position.
+  /// @dev userCollateralValue The value of the user's collateral, expressed in USD.
+  /// @dev drawnDebt The drawn debt of the user position.
+  /// @dev premiumDebtRay The premium debt of the user position, expressed in ray.
+  struct ProcessUserAccountDataVars {
+    bool borrowing;
+    bool collateral;
+    uint256 assetPrice;
+    uint256 assetUnit;
+    uint256 collateralFactor;
+    uint256 suppliedShares;
+    uint256 userCollateralValue;
+    uint256 drawnDebt;
+    uint256 premiumDebtRay;
+  }
+
   /// @notice Emitted when the oracle address of the spoke is updated.
   /// @param oracle The new address of the oracle.
   event UpdateOracle(address indexed oracle);

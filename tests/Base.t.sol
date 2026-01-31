@@ -2993,15 +2993,15 @@ abstract contract Base is Test {
       _calcUnrealizedFees(hub, assetId);
   }
 
-  function _addNewAssetsAndReserves(IHub hub, ISpoke spoke, uint256 count) internal {
+  function _addNewAssetsAndReserves(uint256 count) internal {
     for (uint256 i = 0; i < count; i++) {
       MockERC20 newToken = new MockERC20();
       newToken.mint(alice, MAX_SUPPLY_AMOUNT * 10 ** 18);
       newToken.mint(bob, MAX_SUPPLY_AMOUNT * 10 ** 18);
       vm.prank(alice);
-      newToken.approve(address(spoke), UINT256_MAX);
+      newToken.approve(address(spoke1), UINT256_MAX);
       vm.prank(bob);
-      newToken.approve(address(spoke), UINT256_MAX);
+      newToken.approve(address(spoke1), UINT256_MAX);
 
       IHub.SpokeConfig memory spokeConfig = IHub.SpokeConfig({
         active: true,
@@ -3020,16 +3020,16 @@ abstract contract Base is Test {
         })
       );
 
-      // Add asset to hub
+      // Add asset to hub1
       vm.startPrank(ADMIN);
-      uint256 newTokenAssetId = hub.addAsset(
+      uint256 newTokenAssetId = hub1.addAsset(
         address(newToken),
         18,
         address(treasurySpoke),
         address(irStrategy),
         encodedIrData
       );
-      hub.updateAssetConfig(
+      hub1.updateAssetConfig(
         newTokenAssetId,
         IHub.AssetConfig({
           liquidityFee: 10_00,
@@ -3042,29 +3042,29 @@ abstract contract Base is Test {
 
       // Prepare the reserve configs
       ISpoke.ReserveConfig memory reserveConfig = ISpoke.ReserveConfig({
-        collateralRisk: _randomBps(),
         paused: false,
         frozen: false,
         borrowable: true,
+        collateralRisk: _randomBps(),
         receiveSharesEnabled: true
       });
       ISpoke.DynamicReserveConfig memory dynamicConfig = ISpoke.DynamicReserveConfig({
-        collateralFactor: 80_00,
+        collateralFactor: 50_00,
         maxLiquidationBonus: 105_00,
         liquidationFee: 10_00
       });
 
-      // Add reserve to spoke
-      spoke.addReserve(
-        address(hub),
+      // Add reserve to spoke1
+      spoke1.addReserve(
+        address(hub1),
         newTokenAssetId,
-        _deployMockPriceFeed(spoke, 1e8),
+        _deployMockPriceFeed(spoke1, 1e8),
         reserveConfig,
         dynamicConfig
       );
 
       // Add spoke to hub
-      hub.addSpoke(newTokenAssetId, address(spoke), spokeConfig);
+      hub1.addSpoke(newTokenAssetId, address(spoke1), spokeConfig);
       vm.stopPrank();
     }
   }
