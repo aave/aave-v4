@@ -80,4 +80,8 @@ contract WadRayMathWrapper {
   function bpsToRay(uint256 a) public pure returns (uint256) {
     return WadRayMath.bpsToRay(a);
   }
+
+  function roundRayUp(uint256 a) public pure returns (uint256) {
+    return WadRayMath.roundRayUp(a);
+  }
 }

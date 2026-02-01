@@ -370,7 +370,7 @@ abstract contract Spoke is
     bool isUserInDeficit = LiquidationLogic.liquidateUser({
       collateralReserve: _getReserve(collateralReserveId),
       debtReserve: _getReserve(debtReserveId),
-      positions: _userPositions,
+      userPositions: _userPositions,
       positionStatus: _positionStatus,
       dynamicConfig: _dynamicConfig,
       params: params
@@ -692,6 +692,8 @@ abstract contract Spoke is
   }
 
   /// @notice Process the user account data and updates dynamic config of the user if `refreshConfig` is true.
+  /// @dev Collateral is rounded against the user, while debt is calculated with full precision.
+  /// @dev If user has no debt, it returns health factor of `type(uint256).max` and risk premium of 0.
   function _processUserAccountData(
     address user,
     bool refreshConfig
@@ -747,19 +749,20 @@ abstract contract Spoke is
         );
         uint256 debtRay = debtComponents.drawnShares * debtComponents.drawnIndex +
           debtComponents.premiumDebtRay;
-        accountData.totalDebtValueRay += (
-          debtRay.toValue({decimals: assetDecimals, price: assetPrice})
-        );
+        accountData.totalDebtValueRay += debtRay.toValue({
+          decimals: assetDecimals,
+          price: assetPrice
+        });
         accountData.borrowCount = accountData.borrowCount.uncheckedAdd(1);
       }
     }
 
     if (accountData.totalDebtValueRay > 0) {
       // at this point, `avgCollateralFactor` is the total collateral value weighted by collateral factors,
-      // expressed in units of base currency and scaled by BPS. 1e30 represents 1 USD.
+      // expressed in units of base currency and scaled by BPS.
       accountData.healthFactor = Math.mulDiv(
-        accountData.avgCollateralFactor,
-        WadRayMath.WAD * (WadRayMath.RAY / PercentageMath.PERCENTAGE_FACTOR),
+        accountData.avgCollateralFactor.bpsToWad(), // expressed in units of base currency and scaled by WAD
+        WadRayMath.RAY,
         accountData.totalDebtValueRay,
         Math.Rounding.Floor
       );

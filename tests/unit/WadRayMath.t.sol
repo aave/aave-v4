@@ -255,4 +255,15 @@ contract WadRayMathDifferentialTests is Test {
       assertEq(w.bpsToRay(a), b);
     }
   }
+
+  function test_roundRayUp(uint256 a) public {
+    if (a % w.RAY() == 0) {
+      assertEq(w.roundRayUp(a), a);
+    } else if (a <= (type(uint256).max / w.RAY()) * w.RAY()) {
+      assertEq(w.roundRayUp(a), ((a - 1) / w.RAY() + 1) * w.RAY()); // a == 0 enters the first if block
+    } else {
+      vm.expectRevert();
+      w.roundRayUp(a);
+    }
+  }
 }

@@ -207,4 +207,16 @@ library WadRayMath {
       }
     }
   }
+
+  /// @notice Rounds up a RAY value to the nearest RAY.
+  /// @dev Reverts if result overflows.
+  /// @return b = ceil(a / RAY) * RAY.
+  function roundRayUp(uint256 a) internal pure returns (uint256 b) {
+    assembly ('memory-safe') {
+      b := mul(div(add(a, sub(RAY, 1)), RAY), RAY)
+      if iszero(iszero(lt(b, a))) {
+        revert(0, 0)
+      }
+    }
+  }
 }

@@ -190,7 +190,7 @@ library LiquidationLogic {
   /// @notice Liquidates a user position.
   /// @param collateralReserve The collateral reserve to seize during liquidation.
   /// @param debtReserve The debt reserve to repay during liquidation.
-  /// @param positions The mapping of positions per reserve per user.
+  /// @param userPositions The mapping of user positions per user per reserve.
   /// @param positionStatus The mapping of position status per user.
   /// @param dynamicConfig The mapping of dynamic config per reserve per user.
   /// @param params The liquidate user params.
@@ -198,17 +198,18 @@ library LiquidationLogic {
   function liquidateUser(
     ISpoke.Reserve storage collateralReserve,
     ISpoke.Reserve storage debtReserve,
-    mapping(address user => mapping(uint256 reserveId => ISpoke.UserPosition)) storage positions,
+    mapping(address user => mapping(uint256 reserveId => ISpoke.UserPosition)) storage userPositions,
     mapping(address user => ISpoke.PositionStatus) storage positionStatus,
     mapping(uint256 reserveId => mapping(uint24 dynamicConfigKey => ISpoke.DynamicReserveConfig)) storage dynamicConfig,
     LiquidateUserParams memory params
   ) external returns (bool) {
-    ISpoke.UserPosition storage collateralUserPosition = positions[params.user][
+    ISpoke.UserPosition storage collateralUserPosition = userPositions[params.user][
       params.collateralReserveId
     ];
     ISpoke.DynamicReserveConfig storage collateralDynConfig = dynamicConfig[
       params.collateralReserveId
     ][collateralUserPosition.dynamicConfigKey];
+
     ExecuteLiquidationParams memory executeLiquidationParams = ExecuteLiquidationParams({
       collateralHub: collateralReserve.hub,
       collateralAssetId: collateralReserve.assetId,
@@ -234,8 +235,8 @@ library LiquidationLogic {
       receiveShares: params.receiveShares
     });
 
-    ISpoke.UserPosition storage debtUserPosition = positions[params.user][params.debtReserveId];
-    ISpoke.UserPosition storage collateralLiquidatorPosition = positions[params.liquidator][
+    ISpoke.UserPosition storage debtUserPosition = userPositions[params.user][params.debtReserveId];
+    ISpoke.UserPosition storage collateralLiquidatorPosition = userPositions[params.liquidator][
       params.collateralReserveId
     ];
     ISpoke.PositionStatus storage userPositionStatus = positionStatus[params.user];
@@ -278,21 +279,6 @@ library LiquidationLogic {
         HEALTH_FACTOR_LIQUIDATION_THRESHOLD - healthFactor,
         HEALTH_FACTOR_LIQUIDATION_THRESHOLD - healthFactorForMaxBonus
       );
-  }
-
-  /// @notice Converts an asset amount to base currency value. 1e26 represents 1 USD.
-  /// @dev Assumes asset uses at most 18 decimals. Reverts if multiplication overflows.
-  /// @param amount The asset amount.
-  /// @param decimals The decimals of the asset.
-  /// @param price The price of the asset.
-  /// @return The base currency value.
-  function toValue(
-    uint256 amount,
-    uint256 decimals,
-    uint256 price
-  ) internal pure returns (uint256) {
-    return
-      amount * MathUtils.uncheckedExp(10, WadRayMath.WAD_DECIMALS.uncheckedSub(decimals)) * price;
   }
 
   /// @dev Executes the liquidation.
@@ -574,12 +560,12 @@ library LiquidationLogic {
 
     bool leavesCollateralDust;
     if (collateralSharesToLiquidate < params.suppliedShares) {
-      uint256 remainingCollateralBalance = params.collateralReserveHub.previewRemoveByShares(
+      uint256 collateralRemaining = params.collateralReserveHub.previewRemoveByShares(
         params.collateralReserveAssetId,
         params.suppliedShares.uncheckedSub(collateralSharesToLiquidate)
       );
       leavesCollateralDust =
-        remainingCollateralBalance.toValue({
+        collateralRemaining.toValue({
           decimals: params.collateralAssetDecimals,
           price: params.collateralAssetPrice
         }) < DUST_LIQUIDATION_THRESHOLD;
@@ -609,7 +595,7 @@ library LiquidationLogic {
       );
 
       if (debtRayToLiquidate <= params.premiumDebtRay) {
-        // premiumDebtRayToLiquidate may be more than debtRayToLiquidate in order to utilize all assets
+        // `premiumDebtRayToLiquidate` may exceed `debtRayToLiquidate` as a result of rounding up to asset units, ensuring full utilization of assets
         premiumDebtRayToLiquidate = debtRayToLiquidate.fromRayUp().toRay().min(
           params.premiumDebtRay
         );
@@ -624,7 +610,7 @@ library LiquidationLogic {
         if (drawnSharesToLiquidate > params.drawnShares) {
           drawnSharesToLiquidate = params.drawnShares;
 
-          // `collateralSharesToLiquidate` may exceed `params.suppliedShares` due to roundings.
+          // `collateralSharesToLiquidate` may exceed `params.suppliedShares` due to rounding.
           // If this happens, simply cap `collateralSharesToLiquidate` to `params.suppliedShares` since
           // debt to liquidate would be the same (it is already calculated based on `params.suppliedShares`).
           collateralSharesToLiquidate = _calculateCollateralToLiquidate(
@@ -693,10 +679,9 @@ library LiquidationLogic {
   }
 
   /// @notice Calculates the amount of drawn shares and premium debt that should be liquidated.
-  /// @dev Returned values do not exceed `params.drawnShares` and `params.premiumDebtRay`.
-  /// @dev Total assets required to liquidate the returned amount of drawn and premium debt does not exceed `params.debtToCover`,
-  /// but they may exceed `debtToTarget` to ensure debt after liquidation decreased by at least `debtToTarget`.
-  /// @dev If debt dust would be left behind, the full amounts of `params.drawnShares` and `params.premiumDebtRay` are returned.
+  /// @dev Returned values ensure that total assets required to liquidate will not exceed `params.debtToCover`.
+  /// @return The amount of drawn shares to liquidate. Does not exceed `params.drawnShares`.
+  /// @return The amount of premium debt to liquidate. Does not exceed `params.premiumDebtRay`.
   function _calculateDebtToLiquidate(
     CalculateDebtToLiquidateParams memory params
   ) internal pure returns (uint256, uint256) {
@@ -712,7 +697,7 @@ library LiquidationLogic {
       })
     );
 
-    // premiumDebtRayToLiquidate may be more than debtRayToTarget in order to utilize all assets
+    // `premiumDebtRayToLiquidate` may exceed `debtRayToTarget` as a result of rounding up to asset units, ensuring full utilization of assets
     uint256 premiumDebtRayToLiquidate = debtRayToTarget.fromRayUp().toRay().min(
       params.premiumDebtRay
     );
@@ -790,5 +775,20 @@ library LiquidationLogic {
       return false;
     }
     return !isDebtPositionEmpty || borrowCount > 1;
+  }
+
+  /// @notice Converts an asset amount to base currency value. 1e26 represents 1 USD.
+  /// @dev Assumes asset uses at most 18 decimals. Reverts if multiplication overflows.
+  /// @param amount The asset amount.
+  /// @param decimals The decimals of the asset.
+  /// @param price The price of the asset.
+  /// @return The base currency value.
+  function toValue(
+    uint256 amount,
+    uint256 decimals,
+    uint256 price
+  ) internal pure returns (uint256) {
+    return
+      amount * MathUtils.uncheckedExp(10, WadRayMath.WAD_DECIMALS.uncheckedSub(decimals)) * price;
   }
 }
