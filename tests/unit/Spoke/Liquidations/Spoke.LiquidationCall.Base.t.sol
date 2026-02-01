@@ -802,10 +802,6 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
       );
     }
 
-    if (collateralValueRemoved < debtValueRepaid) {
-      return WadRayMath.WAD;
-    }
-
     return collateralValueRemoved.wadDivUp(debtValueRepaid);
   }
 
