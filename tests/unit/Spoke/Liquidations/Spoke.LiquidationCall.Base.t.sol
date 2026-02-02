@@ -701,16 +701,23 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
         params.spoke.getUserPosition(params.collateralReserveId, params.user).suppliedShares) &&
       (userAccountDataBefore.borrowCount > 1 || !fullDebtReserveLiquidated);
 
-    uint256 effectiveLiquidationBonusWad = _calculateEffectiveLiquidationBonusWad(
-      params,
-      liquidationAmounts
-    );
+    bool isCollateralAffectingUserHf;
+    {
+      (
+        uint256 effectiveCollateralValueRemoved,
+        uint256 effectiveDebtValueRepaid
+      ) = _calculateEffectiveLiquidationBonusWad(params, liquidationAmounts);
 
-    // health factor is decreasing due to liquidation bonus / collateral factor if:
-    //   lb * cf > hf_beforeLiq
-    bool isCollateralAffectingUserHf = effectiveLiquidationBonusWad *
-      _getCollateralFactor(params.spoke, params.collateralReserveId, params.user) >
-      userAccountDataBefore.healthFactor * PercentageMath.PERCENTAGE_FACTOR;
+      // health factor is decreasing due to liquidation bonus / collateral factor if:
+      //   lb * cf > hf_beforeLiq
+      isCollateralAffectingUserHf =
+        effectiveCollateralValueRemoved *
+          _getCollateralFactor(params.spoke, params.collateralReserveId, params.user) *
+          WadRayMath.WAD >
+        userAccountDataBefore.healthFactor *
+          PercentageMath.PERCENTAGE_FACTOR *
+          effectiveDebtValueRepaid;
+    }
 
     uint256 drawnIndex = _hub(params.spoke, params.debtReserveId).getAssetDrawnIndex(
       _reserveAssetId(params.spoke, params.debtReserveId)
@@ -756,10 +763,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
   function _calculateEffectiveLiquidationBonusWad(
     CheckedLiquidationCallParams memory params,
     LiquidationLogic.LiquidationAmounts memory liquidationAmounts
-  ) internal view returns (uint256) {
-    uint256 collateralValueRemoved;
-    uint256 debtValueRepaid;
-
+  ) internal view returns (uint256 collateralValueRemoved, uint256 debtValueRepaid) {
     // collateral reserve
     {
       uint256 collateralBefore = params.spoke.getUserSuppliedAssets(
@@ -801,8 +805,6 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
         debtBefore - debtAfter
       );
     }
-
-    return collateralValueRemoved.wadDivUp(debtValueRepaid);
   }
 
   function _checkPositionStatus(

@@ -612,13 +612,12 @@ contract SpokeLiquidationCallTest_LiquidatorHistory is SpokeLiquidationCallHelpe
         liquidator
       );
       liquidatorAccountData = spoke.getUserAccountData(liquidator);
-      if (liquidatorAccountData.healthFactor < Constants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD) {
-        break;
-      }
       uint256 maxBorrowAmount = _convertValueToAmount(
         spoke,
         reserveId,
-        _getRequiredDebtValueForHf(spoke, liquidator, Constants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD)
+        liquidatorAccountData.healthFactor <= 1.5e18
+          ? 0
+          : _getRequiredDebtValueForHf(spoke, liquidator, 1.5e18)
       );
       if (maxBorrowAmount == 0) {
         break;
