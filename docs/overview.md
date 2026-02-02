@@ -71,6 +71,7 @@ Users interact with the Spokes, which then interact directly with the Hubs. The 
 - Maintaining a Spoke-level `reserveId` tracking to allow for Spoke-specific configurations, different from the `assetId` of the underlying asset in the Hub.
 - Managing oracle interactions. Oracle is spoke-specific and may be bound once post-deployment of the Spoke.
 - Employing transient reentrancy guards for extra protection against reentrancy attacks. Even though Hub, IR Strategy, and Price Feeds are trusted and V4 does not support ERC20s with callbacks.
+- Enforcing position constraints through a configurable `MAX_USER_RESERVES_LIMIT` which limits the number of collateral reserves and the number of borrow reserves a user can have (each counted separately). 
 
 # Risk Premium
 
