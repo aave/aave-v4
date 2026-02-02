@@ -15,13 +15,13 @@ dynamic_test_linking = true
 
 additional_compiler_profiles = [
   { name = "hub", optimizer = true, via_ir = true, optimizer_runs = 22_300 },
-  { name = "spoke", optimizer = true, via_ir = true, optimizer_runs = 833 },
+  { name = "spoke", optimizer = true, via_ir = true, optimizer_runs = 700 },
   { name = "tests", optimizer = true, via_ir = false, optimizer_runs = 444444444444 },
 ]
 
 compilation_restrictions = [
   { paths = "src/hub/Hub.sol", optimizer = true, via_ir = true, optimizer_runs = 22_300 },
-  { paths = "src/spoke/instances/SpokeInstance.sol", optimizer = true, via_ir = true, optimizer_runs = 833 },
+  { paths = "src/spoke/instances/SpokeInstance.sol", optimizer = true, via_ir = true, optimizer_runs = 700 },
   { paths = "tests/**", optimizer = true, via_ir = false, optimizer_runs = 444444444444 },
 ]
 
