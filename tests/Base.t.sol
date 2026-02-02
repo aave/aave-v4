@@ -1746,12 +1746,12 @@ abstract contract Base is Test {
       string(abi.encodePacked('spoke supplied amount ', label))
     );
     assertEq(
-      spoke.getReserveSuppliedShares(reserveId),
+      _getReserveSuppliedShares(spoke, reserveId),
       expectedSuppliedShares,
       string(abi.encodePacked('reserve supplied shares ', label))
     );
     assertEq(
-      spoke.getReserveSuppliedAssets(reserveId),
+      _getReserveSuppliedAssets(spoke, reserveId),
       expectedSuppliedAmount,
       string(abi.encodePacked('reserve supplied amount ', label))
     );
@@ -1803,7 +1803,7 @@ abstract contract Base is Test {
     uint256 expectedPremiumDebt,
     string memory label
   ) internal view {
-    (uint256 actualDrawnDebt, uint256 actualPremiumDebt) = spoke.getReserveDebt(reserveId);
+    (uint256 actualDrawnDebt, uint256 actualPremiumDebt) = _getReserveDebt(spoke, reserveId);
     assertApproxEqAbs(
       actualDrawnDebt,
       expectedDrawnDebt,
@@ -1817,7 +1817,7 @@ abstract contract Base is Test {
       string.concat('reserve premium debt ', label)
     );
     assertApproxEqAbs(
-      spoke.getReserveTotalDebt(reserveId),
+      _getReserveTotalDebt(spoke, reserveId),
       expectedDrawnDebt + expectedPremiumDebt,
       3,
       string.concat('reserve total debt ', label)
@@ -1924,7 +1924,7 @@ abstract contract Base is Test {
     string memory label
   ) internal view {
     assertApproxEqAbs(
-      spoke.getReserveSuppliedAssets(reserveId),
+      _getReserveSuppliedAssets(spoke, reserveId),
       expectedSuppliedAmount,
       3,
       string.concat('reserve supplied amount ', label)
@@ -2937,6 +2937,48 @@ abstract contract Base is Test {
         receiveSharesEnabled: reserve.flags.receiveSharesEnabled(),
         collateralRisk: reserve.collateralRisk
       });
+  }
+
+  function _getReserveSuppliedAssets(
+    ISpoke spoke,
+    uint256 reserveId
+  ) internal view returns (uint256) {
+    return
+      _hub(spoke, reserveId).getSpokeAddedAssets(_reserveAssetId(spoke, reserveId), address(spoke));
+  }
+
+  function _getReserveSuppliedAssets(
+    ITreasurySpoke spoke,
+    uint256 reserveId
+  ) internal view returns (uint256) {
+    return spoke.HUB().getSpokeAddedAssets(reserveId, address(spoke));
+  }
+
+  function _getReserveSuppliedShares(
+    ISpoke spoke,
+    uint256 reserveId
+  ) internal view returns (uint256) {
+    return
+      _hub(spoke, reserveId).getSpokeAddedShares(_reserveAssetId(spoke, reserveId), address(spoke));
+  }
+
+  function _getReserveSuppliedShares(
+    ITreasurySpoke spoke,
+    uint256 reserveId
+  ) internal view returns (uint256) {
+    return spoke.HUB().getSpokeAddedShares(reserveId, address(spoke));
+  }
+
+  function _getReserveDebt(
+    ISpoke spoke,
+    uint256 reserveId
+  ) internal view returns (uint256, uint256) {
+    return _hub(spoke, reserveId).getSpokeOwed(_reserveAssetId(spoke, reserveId), address(spoke));
+  }
+
+  function _getReserveTotalDebt(ISpoke spoke, uint256 reserveId) internal view returns (uint256) {
+    return
+      _hub(spoke, reserveId).getSpokeTotalOwed(_reserveAssetId(spoke, reserveId), address(spoke));
   }
 
   function assertEq(SpokePosition memory a, AssetPosition memory b) internal pure {
