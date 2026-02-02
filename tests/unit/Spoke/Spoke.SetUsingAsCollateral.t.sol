@@ -178,71 +178,73 @@ contract SpokeSetUsingAsCollateralTest is SpokeBase {
   }
 
   function test_setUsingAsCollateral_revertsWith_MaximumUserReservesExceeded() public {
-    // Fetch the user reserves limit
-    uint16 maxUserReservesLimit = spoke3.MAX_USER_RESERVES_LIMIT();
-    assertGt(maxUserReservesLimit, 0, 'Reserve limit is nonzero');
+    uint16 maxUserReservesLimit = (spoke1.getReserveCount() - 1).toUint16();
+    _updateMaxUserReservesLimit(spoke1, maxUserReservesLimit);
+    assertEq(spoke1.MAX_USER_RESERVES_LIMIT(), maxUserReservesLimit, 'Reserve limit adjusted');
+    assertGt(spoke1.getReserveCount(), maxUserReservesLimit, 'More reserves than limit');
 
-    // Add reserves such that a user can exceed the limit
-    _addNewAssetsAndReserves(hub1, spoke3, maxUserReservesLimit + 1 - spoke3.getReserveCount());
-
-    // Bob enables exactly up to the limit reserves as collateral
     for (uint256 i = 0; i < maxUserReservesLimit; ++i) {
-      Utils.supplyCollateral(spoke3, i, bob, 1e18, bob);
+      Utils.supplyCollateral(spoke1, i, bob, 1e18, bob);
     }
+    ISpoke.UserAccountData memory accountData = spoke1.getUserAccountData(bob);
+    assertEq(
+      accountData.activeCollateralCount,
+      maxUserReservesLimit,
+      'Bob has reached the collateral limit'
+    );
 
-    // Bob tries to enable one more reserve as collateral - should revert due to limit
     vm.expectRevert(ISpoke.MaximumUserReservesExceeded.selector);
     vm.prank(bob);
-    spoke3.setUsingAsCollateral(maxUserReservesLimit, true, bob);
+    spoke1.setUsingAsCollateral(maxUserReservesLimit, true, bob);
   }
 
   /// @dev Test that enables collaterals up to the user reserves limit, disables one reserve, and then enables again
   function test_setUsingAsCollateral_to_limit_disable_enable_again() public {
-    // Fetch the user reserves limit
-    uint16 maxUserReservesLimit = spoke3.MAX_USER_RESERVES_LIMIT();
-    assertGt(maxUserReservesLimit, 0, 'Reserve limit is nonzero');
+    uint16 maxUserReservesLimit = (spoke1.getReserveCount() - 1).toUint16();
+    _updateMaxUserReservesLimit(spoke1, maxUserReservesLimit);
+    assertEq(spoke1.MAX_USER_RESERVES_LIMIT(), maxUserReservesLimit, 'Reserve limit adjusted');
+    assertGt(spoke1.getReserveCount(), maxUserReservesLimit, 'More reserves than limit');
 
-    // Add reserves such that a user can exceed the limit
-    _addNewAssetsAndReserves(hub1, spoke3, maxUserReservesLimit + 1 - spoke3.getReserveCount());
-
-    // Bob enables exactly up to the limit reserves as collateral
     for (uint256 i = 0; i < maxUserReservesLimit; ++i) {
-      Utils.supplyCollateral(spoke3, i, bob, 1e18, bob);
+      Utils.supplyCollateral(spoke1, i, bob, 1e18, bob);
     }
 
-    // Verify bob is at the collateral limit
-    ISpoke.UserAccountData memory accountData = spoke3.getUserAccountData(bob);
-    assertEq(accountData.activeCollateralCount, maxUserReservesLimit);
+    ISpoke.UserAccountData memory accountData = spoke1.getUserAccountData(bob);
+    assertEq(
+      accountData.activeCollateralCount,
+      maxUserReservesLimit,
+      'Bob has reached the collateral limit'
+    );
 
-    // Bob disables the first reserve as collateral
-    Utils.setUsingAsCollateral(spoke3, 0, bob, false, bob);
+    Utils.setUsingAsCollateral(spoke1, 0, bob, false, bob);
 
-    // Verify bob now has space for one more collateral
-    accountData = spoke3.getUserAccountData(bob);
-    assertEq(accountData.activeCollateralCount, maxUserReservesLimit - 1);
+    accountData = spoke1.getUserAccountData(bob);
+    assertEq(
+      accountData.activeCollateralCount,
+      maxUserReservesLimit - 1,
+      'Bob has disabled one collateral'
+    );
 
-    // Bob can now enable the new reserve as collateral
-    Utils.supplyCollateral(spoke3, maxUserReservesLimit, bob, 1e18, bob);
+    Utils.supplyCollateral(spoke1, maxUserReservesLimit, bob, 1e18, bob);
 
-    // Verify bob is back at the limit
-    accountData = spoke3.getUserAccountData(bob);
-    assertEq(accountData.activeCollateralCount, maxUserReservesLimit);
+    accountData = spoke1.getUserAccountData(bob);
+    assertEq(
+      accountData.activeCollateralCount,
+      maxUserReservesLimit,
+      'Bob has reached the collateral limit'
+    );
   }
 
+  /// @dev Test showing that when the collateral limit is max, all reserves can be enabled as collateral.
   function test_setUsingAsCollateral_unlimited_whenLimitIsMax() public {
-    // Verify that when MAX_USER_RESERVES_LIMIT is max allowed, many collaterals can be enabled
     assertEq(spoke1.MAX_USER_RESERVES_LIMIT(), Constants.MAX_ALLOWED_USER_RESERVES_LIMIT);
 
-    // spoke1 has 4 reserves by default, add 96 more to have 100 total
-    _addNewAssetsAndReserves(hub1, spoke1, 96);
+    uint256 collateralsToEnable = spoke1.getReserveCount();
 
-    // Bob can enable 100 reserves as collateral without hitting a limit
-    uint256 collateralsToEnable = 100;
     for (uint256 i = 0; i < collateralsToEnable; ++i) {
       Utils.supplyCollateral(spoke1, i, bob, 1e18, bob);
     }
 
-    // Verify bob has all 100 collaterals enabled
     ISpoke.UserAccountData memory accountData = spoke1.getUserAccountData(bob);
     assertEq(accountData.activeCollateralCount, collateralsToEnable);
   }
