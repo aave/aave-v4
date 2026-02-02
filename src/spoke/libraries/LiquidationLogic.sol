@@ -11,7 +11,6 @@ import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
 import {PositionStatusMap} from 'src/spoke/libraries/PositionStatusMap.sol';
 import {UserPositionDebt} from 'src/spoke/libraries/UserPositionDebt.sol';
 import {ReserveFlags, ReserveFlagsMap} from 'src/spoke/libraries/ReserveFlagsMap.sol';
-import {SpokeStorage} from 'src/spoke/SpokeStorage.sol';
 import {IHubBase} from 'src/hub/interfaces/IHubBase.sol';
 import {IAaveOracle} from 'src/spoke/interfaces/IAaveOracle.sol';
 import {ISpoke, ISpokeBase} from 'src/spoke/interfaces/ISpoke.sol';
@@ -186,23 +185,26 @@ library LiquidationLogic {
   uint256 public constant DUST_LIQUIDATION_THRESHOLD = 1000e26;
 
   /// @notice Liquidates a user position.
-  /// @param spokeStorage The storage of the spoke.
+  /// @param reserves The mapping of reserves per reserve id.
+  /// @param userPositions The mapping of user positions per user per reserve.
+  /// @param positionStatus The mapping of position status per user.
+  /// @param dynamicConfig The mapping of dynamic config per reserve per dynamic config key.
   /// @param params The liquidate user params.
   /// @return True if the liquidation results in deficit.
   function liquidateUser(
-    SpokeStorage.Data storage spokeStorage,
+    mapping(uint256 reserveId => ISpoke.Reserve) storage reserves,
+    mapping(address user => mapping(uint256 reserveId => ISpoke.UserPosition)) storage userPositions,
+    mapping(address user => ISpoke.PositionStatus) storage positionStatus,
+    mapping(uint256 reserveId => mapping(uint24 dynamicConfigKey => ISpoke.DynamicReserveConfig)) storage dynamicConfig,
     LiquidateUserParams memory params
   ) external returns (bool) {
-    ISpoke.Reserve storage collateralReserve = getReserve(
-      spokeStorage.reserves,
-      params.collateralReserveId
-    );
-    ISpoke.Reserve storage debtReserve = getReserve(spokeStorage.reserves, params.debtReserveId);
+    ISpoke.Reserve storage collateralReserve = getReserve(reserves, params.collateralReserveId);
+    ISpoke.Reserve storage debtReserve = getReserve(reserves, params.debtReserveId);
 
-    ISpoke.UserPosition storage collateralUserPosition = spokeStorage.userPositions[params.user][
+    ISpoke.UserPosition storage collateralUserPosition = userPositions[params.user][
       params.collateralReserveId
     ];
-    ISpoke.DynamicReserveConfig storage collateralDynConfig = spokeStorage.dynamicConfig[
+    ISpoke.DynamicReserveConfig storage collateralDynConfig = dynamicConfig[
       params.collateralReserveId
     ][collateralUserPosition.dynamicConfigKey];
 
@@ -231,13 +233,11 @@ library LiquidationLogic {
       receiveShares: params.receiveShares
     });
 
-    ISpoke.UserPosition storage debtUserPosition = spokeStorage.userPositions[params.user][
-      params.debtReserveId
+    ISpoke.UserPosition storage debtUserPosition = userPositions[params.user][params.debtReserveId];
+    ISpoke.UserPosition storage collateralLiquidatorPosition = userPositions[params.liquidator][
+      params.collateralReserveId
     ];
-    ISpoke.UserPosition storage collateralLiquidatorPosition = spokeStorage.userPositions[
-      params.liquidator
-    ][params.collateralReserveId];
-    ISpoke.PositionStatus storage userPositionStatus = spokeStorage.positionStatus[params.user];
+    ISpoke.PositionStatus storage userPositionStatus = positionStatus[params.user];
 
     return
       _executeLiquidation({
