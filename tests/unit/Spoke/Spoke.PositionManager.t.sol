@@ -283,10 +283,13 @@ contract SpokePositionManagerTest is SpokeBase {
 
     _approvePositionManager(alice);
 
-    vm.recordLogs();
+    uint256[] memory collateralReserves = new uint256[](2);
+    collateralReserves[0] = _wethReserveId(spoke1);
+    collateralReserves[1] = _daiReserveId(spoke1);
+    vm.expectEmit(address(spoke1));
+    emit ISpoke.RefreshAllUserDynamicConfig(alice, _buildCollateralBitmap(collateralReserves));
     vm.prank(POSITION_MANAGER);
     spoke1.updateUserDynamicConfig(alice);
-    _assertRefreshAllUserDynamicConfigEmitted(alice);
 
     assertNotEq(_getUserDynConfigKeys(spoke1, alice), configs);
     assertEq(_getSpokeDynConfigKeys(spoke1), _getUserDynConfigKeys(spoke1, alice));
@@ -331,17 +334,39 @@ contract SpokePositionManagerTest is SpokeBase {
     tokenList.usdx.approve(address(hub1), 0);
   }
 
-  function _assertRefreshAllUserDynamicConfigEmitted(address user) internal {
-    Vm.Log[] memory logs = vm.getRecordedLogs();
-    bool foundEvent = false;
-    for (uint256 i = 0; i < logs.length; ++i) {
-      if (logs[i].topics[0] == ISpoke.RefreshAllUserDynamicConfig.selector) {
-        assertEq(logs[i].topics[1], bytes32(uint256(uint160(user))));
-        assertTrue(logs[i].data.length > 0, 'Event data should contain collateral bitmap');
-        foundEvent = true;
-        break;
+  function _buildCollateralBitmap(
+    uint256[] memory reserveIds
+  ) internal pure returns (bytes memory) {
+    if (reserveIds.length == 0) return '';
+
+    // Find the max bucket needed
+    uint256 maxBucket = 0;
+    for (uint256 i = 0; i < reserveIds.length; ++i) {
+      uint256 bucket = reserveIds[i] / 128;
+      if (bucket > maxBucket) maxBucket = bucket;
+    }
+
+    // Allocate bytes for all buckets
+    bytes memory result = new bytes((maxBucket + 1) * 32);
+
+    // Set the collateral bits for each reserve
+    for (uint256 i = 0; i < reserveIds.length; ++i) {
+      uint256 reserveId = reserveIds[i];
+      uint256 bucket = reserveId / 128;
+      uint256 bitPosition = (reserveId % 128) * 2 + 1; // collateral bit position
+
+      // Read current word, set bit, write back
+      uint256 word;
+      uint256 offset = 32 + bucket * 32;
+      assembly {
+        word := mload(add(result, offset))
+      }
+      word |= (1 << bitPosition);
+      assembly {
+        mstore(add(result, offset), word)
       }
     }
-    assertTrue(foundEvent, 'RefreshAllUserDynamicConfig event not found');
+
+    return result;
   }
 }
