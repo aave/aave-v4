@@ -284,13 +284,13 @@ contract TreasurySpokeTest is SpokeBase {
     uint256 fees = treasurySpoke.getSuppliedAmount(assetId);
 
     assertApproxEqAbs(
-      _getReserveSuppliedAssets(treasurySpoke, reserveId),
+      treasurySpoke.getReserveSuppliedAssets(reserveId),
       fees,
       1,
       'reserve supplied assets'
     );
     assertApproxEqAbs(
-      _getReserveSuppliedShares(treasurySpoke, reserveId),
+      treasurySpoke.getReserveSuppliedShares(reserveId),
       hub1.previewAddByAssets(assetId, fees),
       1,
       'reserve supplied shares'
@@ -298,6 +298,10 @@ contract TreasurySpokeTest is SpokeBase {
 
     assertEq(treasurySpoke.getUserSuppliedAssets(reserveId, alice), 0);
     assertEq(treasurySpoke.getUserSuppliedShares(reserveId, alice), 0);
+    (drawn, premium) = treasurySpoke.getReserveDebt(reserveId);
+    assertEq(drawn, 0);
+    assertEq(premium, 0);
+    assertEq(treasurySpoke.getReserveTotalDebt(reserveId), 0);
   }
 
   function _treasurySpoke() internal view returns (ISpoke) {

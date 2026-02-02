@@ -1244,7 +1244,7 @@ contract SpokeRepayScenarioTest is SpokeBase {
     );
     // Verify reserve debt was decreased by partial repayment
     assertApproxEqAbs(
-      _getReserveTotalDebt(spoke1, _daiReserveId(spoke1)),
+      spoke1.getReserveTotalDebt(_daiReserveId(spoke1)),
       fullDebt - baseRestored - premiumRestored,
       2
     );
@@ -1305,7 +1305,7 @@ contract SpokeRepayScenarioTest is SpokeBase {
     );
 
     // Verify reserve debt is 0
-    (uint256 baseDaiDebt, uint256 premiumDaiDebt) = _getReserveDebt(spoke1, _daiReserveId(spoke1));
+    (uint256 baseDaiDebt, uint256 premiumDaiDebt) = spoke1.getReserveDebt(_daiReserveId(spoke1));
     assertEq(baseDaiDebt, 0);
     assertEq(premiumDaiDebt, 0);
 

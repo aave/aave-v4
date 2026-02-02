@@ -248,7 +248,7 @@ contract SpokeBase is Base {
     });
     skip(365 days);
 
-    (uint256 drawnDebt, uint256 premiumDebt) = _getReserveDebt(spoke, reserveId);
+    (uint256 drawnDebt, uint256 premiumDebt) = spoke.getReserveDebt(reserveId);
     assertGt(drawnDebt, 0); // non-zero premium debt
 
     if (withPremium) {
@@ -363,7 +363,7 @@ contract SpokeBase is Base {
       state.borrowReserveAssetId,
       borrow.supplyAmount
     );
-    state.reserveSharesBefore = _getReserveSuppliedShares(spoke, collateral.reserveId);
+    state.reserveSharesBefore = spoke.getReserveSuppliedShares(collateral.reserveId);
     state.userSharesBefore = spoke.getUserSuppliedShares(collateral.reserveId, collateral.supplier);
     // supply collateral asset
     Utils.supplyCollateral({
@@ -375,13 +375,13 @@ contract SpokeBase is Base {
     });
     assertEq(
       state.reserveSharesBefore + state.collateralSupplyShares,
-      _getReserveSuppliedShares(spoke, collateral.reserveId)
+      spoke.getReserveSuppliedShares(collateral.reserveId)
     );
     assertEq(
       state.userSharesBefore + state.collateralSupplyShares,
       spoke.getUserSuppliedShares(collateral.reserveId, collateral.supplier)
     );
-    state.reserveSharesBefore = _getReserveSuppliedShares(spoke, borrow.reserveId);
+    state.reserveSharesBefore = spoke.getReserveSuppliedShares(borrow.reserveId);
     state.userSharesBefore = spoke.getUserSuppliedShares(borrow.reserveId, borrow.supplier);
     // other user supplies enough asset to be drawn
     Utils.supply({
@@ -393,14 +393,14 @@ contract SpokeBase is Base {
     });
     assertEq(
       state.reserveSharesBefore + state.borrowSupplyShares,
-      _getReserveSuppliedShares(spoke, borrow.reserveId)
+      spoke.getReserveSuppliedShares(borrow.reserveId)
     );
     assertEq(
       state.userSharesBefore + state.borrowSupplyShares,
       spoke.getUserSuppliedShares(borrow.reserveId, borrow.supplier)
     );
     (state.borrowerDrawnDebtBefore, ) = spoke.getUserDebt(borrow.reserveId, borrow.borrower);
-    (state.reserveDrawnDebtBefore, ) = _getReserveDebt(spoke, borrow.reserveId);
+    (state.reserveDrawnDebtBefore, ) = spoke.getReserveDebt(borrow.reserveId);
     // borrower borrows asset
     Utils.borrow({
       spoke: spoke,
@@ -410,7 +410,7 @@ contract SpokeBase is Base {
       onBehalfOf: borrow.borrower
     });
     (state.borrowerDrawnDebtAfter, ) = spoke.getUserDebt(borrow.reserveId, borrow.borrower);
-    (state.reserveDrawnDebtAfter, ) = _getReserveDebt(spoke, borrow.reserveId);
+    (state.reserveDrawnDebtAfter, ) = spoke.getReserveDebt(borrow.reserveId);
     assertEq(state.borrowerDrawnDebtBefore + borrow.borrowAmount, state.borrowerDrawnDebtAfter);
     assertEq(state.reserveDrawnDebtBefore + borrow.borrowAmount, state.reserveDrawnDebtAfter);
     // skip time to increase index
@@ -444,7 +444,7 @@ contract SpokeBase is Base {
       }
     }
 
-    assertEq(_getReserveTotalDebt(spoke, reserveId), 0, 'reserve total debt not zero');
+    assertEq(spoke.getReserveTotalDebt(reserveId), 0, 'reserve total debt not zero');
     assertEq(hub1.getSpokeTotalOwed(assetId, address(spoke)), 0, 'hub spoke total debt not zero');
     assertEq(
       hub1.getAssetTotalOwed(assetId),
@@ -460,7 +460,7 @@ contract SpokeBase is Base {
     return
       TestData({
         data: getSpokePosition(spoke, reserveId),
-        addedAmount: _getReserveSuppliedAssets(spoke, reserveId)
+        addedAmount: spoke.getReserveSuppliedAssets(reserveId)
       });
   }
 
@@ -663,8 +663,8 @@ contract SpokeBase is Base {
     DebtData memory usersDebt;
     uint256 assetId = spoke.getReserve(reserveId).assetId;
 
-    reserveDebt.totalDebt = _getReserveTotalDebt(spoke, reserveId);
-    (reserveDebt.drawnDebt, reserveDebt.premiumDebt) = _getReserveDebt(spoke, reserveId);
+    reserveDebt.totalDebt = spoke.getReserveTotalDebt(reserveId);
+    (reserveDebt.drawnDebt, reserveDebt.premiumDebt) = spoke.getReserveDebt(reserveId);
 
     for (uint256 i = 0; i < users.length; ++i) {
       ISpoke.UserPosition memory userData = getUserInfo(spoke, users[i], reserveId);

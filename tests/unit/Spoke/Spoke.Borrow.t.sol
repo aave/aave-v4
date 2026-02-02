@@ -193,12 +193,12 @@ contract SpokeBorrowTest is SpokeBase {
 
     // spoke
     assertEq(
-      _getReserveSuppliedShares(spoke1, state.daiReserveId),
+      spoke1.getReserveSuppliedShares(state.daiReserveId),
       spoke1.getUserSuppliedShares(state.daiReserveId, alice),
       'spoke dai suppliedShares'
     );
     assertEq(
-      _getReserveSuppliedShares(spoke1, state.wethReserveId),
+      spoke1.getReserveSuppliedShares(state.wethReserveId),
       spoke1.getUserSuppliedShares(state.wethReserveId, bob),
       'spoke weth suppliedShares'
     );
