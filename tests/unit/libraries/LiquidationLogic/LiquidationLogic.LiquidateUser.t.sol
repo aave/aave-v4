@@ -48,10 +48,15 @@ contract LiquidationLogicLiquidateUserTest is LiquidationLogicBaseTest {
         liquidationBonusFactor: 50_00
       }),
       debtToCover: 3e18,
-      healthFactor: 0.8e18,
-      totalDebtValueRay: 10_000e26 * WadRayMath.RAY,
-      activeCollateralCount: 1,
-      borrowCount: 1,
+      userAccountData: ISpoke.UserAccountData({
+        healthFactor: 0.8e18,
+        totalDebtValueRay: 10_000e26 * WadRayMath.RAY,
+        activeCollateralCount: 1,
+        borrowCount: 1,
+        totalCollateralValue: 0, // not used
+        riskPremium: 0, // not used
+        avgCollateralFactor: 0 // not used
+      }),
       liquidator: makeAddr('liquidator'),
       receiveShares: false
     });
@@ -234,7 +239,7 @@ contract LiquidationLogicLiquidateUserTest is LiquidationLogicBaseTest {
   }
 
   function test_liquidateUser_revertsWith_MustNotLeaveDust_Debt() public {
-    params.totalDebtValueRay *= 2;
+    params.userAccountData.totalDebtValueRay *= 2;
     params.debtToCover = 4.9e18;
     liquidationLogicWrapper.setCollateralPositionSuppliedShares(
       liquidationLogicWrapper.getCollateralPosition(params.user).suppliedShares * 2

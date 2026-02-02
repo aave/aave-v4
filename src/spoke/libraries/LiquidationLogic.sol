@@ -36,10 +36,7 @@ library LiquidationLogic {
     address user;
     ISpoke.LiquidationConfig liquidationConfig;
     uint256 debtToCover;
-    uint256 healthFactor;
-    uint256 totalDebtValueRay;
-    uint256 activeCollateralCount;
-    uint256 borrowCount;
+    ISpoke.UserAccountData userAccountData;
     address liquidator;
     bool receiveShares;
   }
@@ -188,21 +185,22 @@ library LiquidationLogic {
   uint256 public constant DUST_LIQUIDATION_THRESHOLD = 1000e26;
 
   /// @notice Liquidates a user position.
-  /// @param collateralReserve The collateral reserve to seize during liquidation.
-  /// @param debtReserve The debt reserve to repay during liquidation.
+  /// @param reserves The mapping of reserves per reserve id.
   /// @param userPositions The mapping of user positions per user per reserve.
   /// @param positionStatus The mapping of position status per user.
-  /// @param dynamicConfig The mapping of dynamic config per reserve per user.
+  /// @param dynamicConfig The mapping of dynamic config per reserve per dynamic config key.
   /// @param params The liquidate user params.
   /// @return True if the liquidation results in deficit.
   function liquidateUser(
-    ISpoke.Reserve storage collateralReserve,
-    ISpoke.Reserve storage debtReserve,
+    mapping(uint256 reserveId => ISpoke.Reserve) storage reserves,
     mapping(address user => mapping(uint256 reserveId => ISpoke.UserPosition)) storage userPositions,
     mapping(address user => ISpoke.PositionStatus) storage positionStatus,
     mapping(uint256 reserveId => mapping(uint24 dynamicConfigKey => ISpoke.DynamicReserveConfig)) storage dynamicConfig,
     LiquidateUserParams memory params
   ) external returns (bool) {
+    ISpoke.Reserve storage collateralReserve = getReserve(reserves, params.collateralReserveId);
+    ISpoke.Reserve storage debtReserve = getReserve(reserves, params.debtReserveId);
+
     ISpoke.UserPosition storage collateralUserPosition = userPositions[params.user][
       params.collateralReserveId
     ];
@@ -227,10 +225,10 @@ library LiquidationLogic {
       oracle: params.oracle,
       user: params.user,
       debtToCover: params.debtToCover,
-      healthFactor: params.healthFactor,
-      totalDebtValueRay: params.totalDebtValueRay,
-      activeCollateralCount: params.activeCollateralCount,
-      borrowCount: params.borrowCount,
+      healthFactor: params.userAccountData.healthFactor,
+      totalDebtValueRay: params.userAccountData.totalDebtValueRay,
+      activeCollateralCount: params.userAccountData.activeCollateralCount,
+      borrowCount: params.userAccountData.borrowCount,
       liquidator: params.liquidator,
       receiveShares: params.receiveShares
     });
@@ -775,6 +773,15 @@ library LiquidationLogic {
       return false;
     }
     return !isDebtPositionEmpty || borrowCount > 1;
+  }
+
+  function getReserve(
+    mapping(uint256 reserveId => ISpoke.Reserve) storage reserves,
+    uint256 reserveId
+  ) internal view returns (ISpoke.Reserve storage) {
+    ISpoke.Reserve storage reserve = reserves[reserveId];
+    require(address(reserve.hub) != address(0), ISpoke.ReserveNotListed());
+    return reserve;
   }
 
   /// @notice Converts an asset amount to base currency value. 1e26 represents 1 USD.

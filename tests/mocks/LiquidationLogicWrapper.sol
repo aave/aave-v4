@@ -170,8 +170,7 @@ contract LiquidationLogicWrapper {
   function liquidateUser(LiquidationLogic.LiquidateUserParams memory params) public returns (bool) {
     return
       LiquidationLogic.liquidateUser(
-        _reserves[_collateralReserveId],
-        _reserves[_debtReserveId],
+        _reserves,
         _userPositions,
         _positionStatuses,
         _dynamicConfig,

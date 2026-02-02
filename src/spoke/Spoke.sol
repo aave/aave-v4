@@ -350,8 +350,6 @@ abstract contract Spoke is
     uint256 debtToCover,
     bool receiveShares
   ) external nonReentrant {
-    UserAccountData memory userAccountData = _calculateUserAccountData(user);
-
     LiquidationLogic.LiquidateUserParams memory params = LiquidationLogic.LiquidateUserParams({
       collateralReserveId: collateralReserveId,
       debtReserveId: debtReserveId,
@@ -359,17 +357,13 @@ abstract contract Spoke is
       oracle: ORACLE,
       user: user,
       debtToCover: debtToCover,
-      healthFactor: userAccountData.healthFactor,
-      totalDebtValueRay: userAccountData.totalDebtValueRay,
-      activeCollateralCount: userAccountData.activeCollateralCount,
-      borrowCount: userAccountData.borrowCount,
+      userAccountData: _calculateUserAccountData(user),
       liquidator: msg.sender,
       receiveShares: receiveShares
     });
 
     bool isUserInDeficit = LiquidationLogic.liquidateUser({
-      collateralReserve: _getReserve(collateralReserveId),
-      debtReserve: _getReserve(debtReserveId),
+      reserves: _reserves,
       userPositions: _userPositions,
       positionStatus: _positionStatus,
       dynamicConfig: _dynamicConfig,
@@ -874,9 +868,7 @@ abstract contract Spoke is
   }
 
   function _getReserve(uint256 reserveId) internal view returns (Reserve storage) {
-    Reserve storage reserve = _reserves[reserveId];
-    require(address(reserve.hub) != address(0), ReserveNotListed());
-    return reserve;
+    return LiquidationLogic.getReserve(_reserves, reserveId);
   }
 
   /// @dev CollateralFactor of historical config keys cannot be 0, which allows liquidations to proceed.
