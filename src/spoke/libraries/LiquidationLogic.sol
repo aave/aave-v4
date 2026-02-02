@@ -38,9 +38,9 @@ library LiquidationLogic {
     uint256 debtToCover;
     uint256 healthFactor;
     uint256 totalDebtValueRay;
-    address liquidator;
     uint256 activeCollateralCount;
     uint256 borrowCount;
+    address liquidator;
     bool receiveShares;
   }
 
@@ -63,9 +63,9 @@ library LiquidationLogic {
     uint256 debtToCover;
     uint256 healthFactor;
     uint256 totalDebtValueRay;
-    address liquidator;
     uint256 activeCollateralCount;
     uint256 borrowCount;
+    address liquidator;
     bool receiveShares;
   }
 
@@ -229,9 +229,9 @@ library LiquidationLogic {
       debtToCover: params.debtToCover,
       healthFactor: params.healthFactor,
       totalDebtValueRay: params.totalDebtValueRay,
-      liquidator: params.liquidator,
       activeCollateralCount: params.activeCollateralCount,
       borrowCount: params.borrowCount,
+      liquidator: params.liquidator,
       receiveShares: params.receiveShares
     });
 
@@ -263,7 +263,7 @@ library LiquidationLogic {
     uint256 liquidationBonusFactor,
     uint256 healthFactor,
     uint256 maxLiquidationBonus
-  ) internal pure returns (uint256) {
+  ) public pure returns (uint256) {
     if (healthFactor <= healthFactorForMaxBonus) {
       return maxLiquidationBonus;
     }

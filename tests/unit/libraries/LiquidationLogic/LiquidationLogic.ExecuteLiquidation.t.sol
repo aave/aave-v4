@@ -63,9 +63,9 @@ contract LiquidationLogicExecuteLiquidationTest is LiquidationLogicBaseTest {
       debtToCover: 3e18,
       healthFactor: 0.8e18,
       totalDebtValueRay: 10_000e26 * WadRayMath.RAY,
-      liquidator: makeAddr('liquidator'),
       activeCollateralCount: 1,
       borrowCount: 1,
+      liquidator: makeAddr('liquidator'),
       receiveShares: false
     });
 
