@@ -3,7 +3,6 @@
 pragma solidity ^0.8.0;
 
 import 'tests/Base.t.sol';
-import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
 
 contract HubBase is Base {
   using SharesMath for uint256;
@@ -230,7 +229,8 @@ contract HubBase is Base {
     return vm.randomUint(hub.getAssetCount(), UINT256_MAX);
   }
 
-  function _calcTotalAddedAssets(IHub.Asset memory asset) internal pure returns (uint256) {
+  /// @dev Includes realized and unrealized fees, unlike totalAddedAssets.
+  function _calcSuppliersTotalAddedAssets(IHub.Asset memory asset) internal pure returns (uint256) {
     uint256 aggregatedOwedRay = (uint256(asset.drawnShares) + asset.premiumShares) *
       asset.drawnIndex;
 
