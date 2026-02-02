@@ -3024,7 +3024,7 @@ abstract contract Base is Test {
     uint256 suppliersTotalAddedAssets = asset.liquidity +
       asset.swept +
       aggregatedOwedRayBefore.fromRayUp();
-    uint256 realizedFeesInterest = (growthDelta - unrealizedFees).mulDivDown(
+    uint256 realizedFeesInterest = (growthDelta - unrealizedFees).mulDivUp(
       asset.realizedFees,
       suppliersTotalAddedAssets + SharesMath.VIRTUAL_ASSETS
     );

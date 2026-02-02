@@ -121,7 +121,7 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
     assertApproxEqAbs(
       hub1.getSpokeAddedShares(assetId, address(treasurySpoke)),
       expectedFeeShares,
-      1,
+      2,
       'treasury shares'
     );
 
@@ -159,7 +159,7 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
     assertApproxEqAbs(
       hub1.getSpokeAddedShares(assetId, address(treasurySpoke)),
       expectedFeeShares,
-      1,
+      2,
       'treasury shares'
     );
 

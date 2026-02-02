@@ -436,7 +436,7 @@ contract HubAccruedFeesTest is HubBase {
     uint256 delta = drawnDebtAfter - drawnDebtBefore;
     uint256 protocolCut = delta.percentMulDown(liquidityFee);
     uint256 interest = delta - protocolCut;
-    uint256 expectedInterestForFees = interest.mulDivDown(
+    uint256 expectedInterestForFees = interest.mulDivUp(
       realizedFeesAfterFirst,
       totalAssetsBefore + SharesMath.VIRTUAL_ASSETS
     );
@@ -445,19 +445,13 @@ contract HubAccruedFeesTest is HubBase {
     uint256 totalAccruedFees = hub1.getAssetAccruedFees(daiAssetId);
     assertEq(totalAccruedFees - realizedFeesAfterFirst, _calcUnrealizedFees(hub1, daiAssetId));
     assertEq(totalAccruedFees, realizedFeesAfterFirst + expectedNewUnrealizedFees);
-    uint256 denom = totalAssetsBefore + SharesMath.VIRTUAL_ASSETS;
-    if (interest == 0) {
+
+    if (interest == 0 || realizedFeesAfterFirst == 0) {
       assertEq(expectedInterestForFees, 0);
     } else {
-      // also 0 if the numerator is < denominator, rounding to 0
-      // smallest realizedFees such that floor(interest * realizedFees / denom) >= 1
-      uint256 minRealizedFeesForNonZero = (denom + interest - 1) / interest;
-      if (realizedFeesAfterFirst < minRealizedFeesForNonZero) {
-        assertEq(expectedInterestForFees, 0);
-      } else {
-        assertGt(expectedInterestForFees, 0);
-      }
+      assertGe(expectedInterestForFees, 1);
     }
+
     uint256 interestForSuppliers = interest - expectedInterestForFees;
     assertEq(totalAccruedFees - realizedFeesAfterFirst, expectedNewUnrealizedFees);
     assertEq(protocolCut + expectedInterestForFees + interestForSuppliers, delta);
