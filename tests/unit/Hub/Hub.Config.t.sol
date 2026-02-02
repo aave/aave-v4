@@ -330,7 +330,7 @@ contract HubConfigTest is HubBase {
     vm.expectEmit(address(hub1));
     emit IHub.UpdateAssetConfig(expectedAssetId, expectedConfig);
     vm.expectEmit(address(hub1));
-    emit IHub.UpdateAsset(expectedAssetId, WadRayMath.RAY, baseVariableBorrowRate.bpsToRay(), 0);
+    emit IHub.UpdateAsset(expectedAssetId, WadRayMath.RAY, baseVariableBorrowRate.bpsToRay());
 
     uint256 assetId = Utils.addAsset(
       hub1,
@@ -534,8 +534,7 @@ contract HubConfigTest is HubBase {
         drawn: drawn,
         deficit: 0,
         swept: 0
-      }),
-      isNewFeeReceiver ? 0 : hub1.getAssetAccruedFees(assetId)
+      })
     );
     vm.expectEmit(address(hub1));
     emit IHub.UpdateAssetConfig(assetId, newConfig);
@@ -679,7 +678,7 @@ contract HubConfigTest is HubBase {
     _drawLiquidity(assetId, amount, true);
     skip(365 days);
 
-    Utils.mintFeeShares(hub1, assetId, ADMIN);
+    // Utils.mintFeeShares(hub1, assetId, ADMIN);
 
     _updateSpokeActive(hub1, assetId, _getFeeReceiver(hub1, assetId), false);
     IHub.AssetConfig memory config = hub1.getAssetConfig(assetId);
@@ -699,7 +698,7 @@ contract HubConfigTest is HubBase {
     uint256 oldFees = hub1.getSpokeAddedShares(assetId, oldFeeReceiver);
 
     skip(365 days);
-    Utils.mintFeeShares(hub1, assetId, ADMIN);
+    // Utils.mintFeeShares(hub1, assetId, ADMIN);
 
     IHub.AssetConfig memory config = hub1.getAssetConfig(assetId);
     address newFeeReceiver = config.feeReceiver;

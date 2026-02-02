@@ -45,8 +45,7 @@ contract HubDrawTest is HubBase {
         drawn: hub1.previewRestoreByShares(assetId, assetBefore.drawnShares + shares),
         deficit: assetBefore.deficitRay,
         swept: assetBefore.swept
-      }),
-      hub1.getAssetAccruedFees(assetId)
+      })
     );
     vm.expectEmit(address(hub1.getAsset(assetId).underlying));
     emit IERC20.Transfer(address(hub1), alice, amount);
@@ -131,8 +130,7 @@ contract HubDrawTest is HubBase {
         drawn: hub1.previewRestoreByShares(assetId, assetBefore.drawnShares + shares),
         deficit: assetBefore.deficitRay,
         swept: assetBefore.swept
-      }),
-      hub1.getAssetAccruedFees(assetId)
+      })
     );
     vm.expectEmit(address(hub1.getAsset(assetId).underlying));
     emit IERC20.Transfer(address(hub1), alice, amount);
