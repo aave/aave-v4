@@ -47,9 +47,7 @@ contract SpokeUpgradeableTest is SpokeBase {
     vm.expectEmit(spokeProxyAddress);
     emit IERC1967.Upgraded(address(spokeImpl));
     vm.expectEmit(spokeProxyAddress);
-    emit ISpoke.UpdateOracle(oracle);
-    vm.expectEmit(spokeProxyAddress);
-    emit ISpoke.UpdateMaxUserReservesLimit(Constants.MAX_ALLOWED_USER_RESERVES_LIMIT);
+    emit ISpoke.SetSpokeImmutables(oracle, Constants.MAX_ALLOWED_USER_RESERVES_LIMIT);
     vm.expectEmit(spokeProxyAddress);
     emit IAccessManaged.AuthorityUpdated(address(accessManager));
     vm.expectEmit(spokeProxyAddress);
@@ -155,7 +153,10 @@ contract SpokeUpgradeableTest is SpokeBase {
   }
 
   function test_proxy_constructor_revertsWith_InvalidAddress() public {
-    ISpokeInstance spokeImpl = DeployUtils.deploySpokeImplementation(oracle);
+    ISpokeInstance spokeImpl = DeployUtils.deploySpokeImplementation(
+      oracle,
+      Constants.MAX_ALLOWED_USER_RESERVES_LIMIT
+    );
     vm.expectRevert(ISpoke.InvalidAddress.selector);
     new TransparentUpgradeableProxy(
       address(spokeImpl),
@@ -165,7 +166,10 @@ contract SpokeUpgradeableTest is SpokeBase {
   }
 
   function test_proxy_reinitialization_revertsWith_InvalidAddress() public {
-    ISpokeInstance spokeImpl = DeployUtils.deploySpokeImplementation(oracle);
+    ISpokeInstance spokeImpl = DeployUtils.deploySpokeImplementation(
+      oracle,
+      Constants.MAX_ALLOWED_USER_RESERVES_LIMIT
+    );
     ITransparentUpgradeableProxy spokeProxy = ITransparentUpgradeableProxy(
       address(
         new TransparentUpgradeableProxy(
@@ -183,7 +187,10 @@ contract SpokeUpgradeableTest is SpokeBase {
   }
 
   function test_proxy_reinitialization_revertsWith_CallerNotProxyAdmin() public {
-    ISpokeInstance spokeImpl = DeployUtils.deploySpokeImplementation(oracle);
+    ISpokeInstance spokeImpl = DeployUtils.deploySpokeImplementation(
+      oracle,
+      Constants.MAX_ALLOWED_USER_RESERVES_LIMIT
+    );
     ITransparentUpgradeableProxy spokeProxy = ITransparentUpgradeableProxy(
       address(
         new TransparentUpgradeableProxy(
