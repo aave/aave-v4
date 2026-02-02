@@ -208,7 +208,7 @@ contract HubAccruedFeesTest is HubBase {
   }
 
   /// @dev Fuzz test with swept, deficit, and drawn
-  function testFuzz_unrealizedFees_combinedScenario(
+  function test_fuzz_unrealizedFees_combinedScenario(
     uint256 supplyAmount,
     uint256 sweepAmount,
     uint256 borrowAmount,
@@ -349,7 +349,7 @@ contract HubAccruedFeesTest is HubBase {
   }
 
   /// @dev Verifies exact fee formula: first accrual fees = protocolCut when no prior fees
-  function testFuzz_unrealizedFees_firstAccrual_matches_protocolCut(
+  function test_fuzz_unrealizedFees_firstAccrual_matches_protocolCut(
     uint256 supplyAmount,
     uint256 borrowAmount,
     uint256 liquidityFee,
@@ -566,7 +566,7 @@ contract HubAccruedFeesTest is HubBase {
   }
 
   /// @dev Fuzz: Share price growth bounded by debt growth, minting doesn't cause sharp jump
-  function testFuzz_unrealizedFees_gradualSharePriceGrowth(
+  function test_fuzz_unrealizedFees_gradualSharePriceGrowth(
     uint256 supplyAmount,
     uint256 borrowAmount,
     uint256 liquidityFee,
@@ -645,7 +645,7 @@ contract HubAccruedFeesTest is HubBase {
   }
 
   /// @dev Fuzz test ensuring fees never exceed total interest accrued
-  function testFuzz_unrealizedFees_feesNeverExceedInterest(
+  function test_fuzz_unrealizedFees_feesNeverExceedInterest(
     uint256 supplyAmount,
     uint256 borrowAmount,
     uint256 liquidityFee,
@@ -683,7 +683,7 @@ contract HubAccruedFeesTest is HubBase {
   }
 
   /// @dev Fuzz test verifying zero fee rate directs all interest to suppliers
-  function testFuzz_unrealizedFees_zeroFeeAllToSuppliers(
+  function test_fuzz_unrealizedFees_zeroFeeAllToSuppliers(
     uint256 supplyAmount,
     uint256 borrowAmount
   ) public {
@@ -721,7 +721,7 @@ contract HubAccruedFeesTest is HubBase {
   }
 
   /// @dev Fuzz test verifying 100% fee rate directs all interest to treasury
-  function testFuzz_unrealizedFees_maxFeeAllToTreasury(
+  function test_fuzz_unrealizedFees_maxFeeAllToTreasury(
     uint256 supplyAmount,
     uint256 borrowAmount
   ) public {
@@ -766,7 +766,7 @@ contract HubAccruedFeesTest is HubBase {
   }
 
   /// @dev Fuzz: Users earn same interest per share regardless of realizedFees size
-  function testFuzz_unrealizedFees_interestIndependentOfFeeSize(
+  function test_fuzz_unrealizedFees_interestIndependentOfFeeSize(
     uint256 supplyAmount,
     uint256 borrowAmount,
     uint256 liquidityFee,
