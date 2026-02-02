@@ -77,9 +77,7 @@ Users interact with the Spokes, which then interact directly with the Hubs. The 
 
 The debt interest of each user is directly impacted by the quality of the assets used as collateral. The risk level (quality) of the collateral assets of the user determines the additional charge for borrowing, on top of the asset's base rate (i.e., the asset's drawn rate).
 
-## Premium
-
-### Collateral Risk
+## Collateral Risk
 
 The Collateral Risk $CR_i$ is specified by the quality of the asset $i$, which is a BPS value, ranging from 0 to 1000_00. A value of 0 means highest quality and risk-free, while a value of 1000_00 signifies the lowest quality and maximum risk possible for a collateral.
 
@@ -87,7 +85,7 @@ This parameter is configurable and part of the Spoke's risk parameters. This mea
 
 $CR_i$ is the Collateral Risk of the asset $i$
 
-### User Risk Premium
+## User Risk Premium
 
 The User Risk Premium $RP_u$ represents the quality of assets used as collateral by the user $u$ to borrow against. It depends on multiple dynamic parameters:
 
@@ -101,7 +99,7 @@ An update can also be permissionlessly triggered (`updateUserRiskPremium()`) by 
 
 $RP_u$ is the Risk Premium of the user $u$
 
-### Risk Premium Algorithm
+## Risk Premium Algorithm
 
 The algorithm used to calculate risk premium for a given user position follows these steps, with the purpose of finding the corresponding amounts of collateral assets which are sufficient to cover the position's debts, in base currency. The weighted average of the Collateral Risk of these collateral assets is then calculated to yield the User Risk Premium:
 
@@ -133,11 +131,23 @@ $RP_u = f(CR_0, C_{u,0}, P_0) = CR_0$
 
 $RP_u = f(CR_i, C_{u, i}, P_i) = \frac{CR_0C_{u,0}P_0 + CR_1C_{u,1}P_1}{C_{u,0}P_0+C_{u,1}P_1}$
 
-### Premium Offset
+## Premium Offset
 
 Operationally, the premium is implemented via additional virtual debt shares (“premium shares”) that increase interest accrual but are never repayable principal. We separate this component from principal interest by tracking a premium offset in asset units. At borrow time, the offset is set so that, in asset terms, it exactly equals the value of the premium shares. As time elapses, interest accrues on the premium shares causing their asset value to exceed the offset; the excess is the premium. Premium shares are recorded in share units. The premium offset is recorded in asset units.
 
-A user’s accrued premium debt at any time equals the assets value of their premium drawn shares minus the premium offset. On user actions, this accrued amount is moved to a realized‑premium variable and both the premium drawn shares and premium offset are reset, since the Risk Premium of a user may change and the accounting must be recalibrated.
+A user’s accrued premium debt at any time equals the assets value of their premium drawn shares minus the premium offset. When a user’s Risk Premium changes, the system refreshes premium accounting (via the Hub’s `refreshPremium` mechanism) to recalibrate premium shares and the offset without changing the user’s total accrued premium amount.
+
+## Refresh Premium Mechanism
+
+When a user's Risk Premium changes due to specific actions (such as disabling collateral, withdrawing collateral, or explicitly updating the risk premium), the system must recalibrate the premium accounting without altering the user's total accrued premium debt. This is achieved through the Hub's `refreshPremium` function.
+
+The refresh mechanism preserves the total premium debt while updating the premium shares and offset to reflect the new Risk Premium. This ensures that:
+
+- The user's previously accrued premium debt remains unchanged
+- Future premium accrual reflects the updated Risk Premium
+- The accounting system maintains consistency across premium recalculations
+
+Actions that trigger a premium refresh include risk‑increasing events that can change $RP_u$, such as `disableUsingAsCollateral()`, `withdraw()` when withdrawing collateral, and explicit `updateUserRiskPremium()` updates (user-initiated or permissioned by the Governor). In these flows, `refreshPremium` updates premium shares and the offset so the total premium debt stays constant, while future accrual reflects the new Risk Premium.
 
 # Interest Accrual
 
@@ -177,6 +187,20 @@ Unlike base debt, premium debt does not originate from an actual asset withdrawa
 $D_{u,premium}= D_{u,premium} + R_{sbase,i}RP_uD_{u,ibase}$
 
 $R_{sbase,i}RP_uD_{u,ibase} = ΔD_{u,premium}$
+
+# Reinvestment
+
+Aave V4 includes a Reinvestment Module that provides the infrastructure to allocate idle liquidity from the Hub to external strategies. The module is intentionally strategy‑agnostic: it establishes the framework and mechanisms without prescribing specific strategy implementations. Whether and how the module is utilized is entirely a governance decision.
+
+The Reinvestment Module offers an optional tool to support capital efficiency when deemed appropriate by the Governor. Key characteristics include:
+
+- **Governance‑Controlled**: The Governor manages all funds allocated to reinvestment strategies. Decisions on strategy selection, risk parameters, and operational guidelines are exclusively governance responsibilities.
+- **Opt‑In for Users**: Participation in reinvestment is not compulsory. Users can choose whether to allocate their supplied liquidity to reinvestment strategies or maintain their position in the standard Hub pool.
+- **Enhanced Yields**: Reinvestment provides the potential for higher yields to liquidity providers who opt in, as idle capital can be deployed to generate additional returns beyond the base interest from borrowers.
+- **Risk Allocation**: Any losses incurred from reinvestment strategies are absorbed by the Governor treasury, protecting individual liquidity providers from direct exposure to strategy‑specific risks.
+- **Optional by Design**: The module can remain disabled, leaving the core lending and borrowing system unchanged. When disabled, all liquidity remains in the Hub without external deployment.
+
+The reinvestment infrastructure enables the protocol to optimize capital efficiency while maintaining user choice and clear risk allocation. Implementation details, strategy selection, and risk management frameworks are governance decisions that can evolve based on protocol needs and market conditions.
 
 # Dynamic Risk Configuration
 
