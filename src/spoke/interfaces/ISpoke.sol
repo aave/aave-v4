@@ -139,6 +139,8 @@ interface ISpoke is ISpokeBase, IAccessManaged, IIntentConsumer, IExtSload, IMul
   }
 
   /// @notice Local variables used in the _processUserAccountData function.
+  /// @dev borrowing True if the user is borrowing the reserve.
+  /// @dev collateral True if the user has enabled the reserve as collateral.
   /// @dev assetPrice The price of the asset in USD.
   /// @dev assetUnit The unit of the asset.
   /// @dev collateralFactor The collateral factor of the reserve.
@@ -158,13 +160,10 @@ interface ISpoke is ISpokeBase, IAccessManaged, IIntentConsumer, IExtSload, IMul
     uint256 premiumDebtRay;
   }
 
-  /// @notice Emitted when the oracle address of the spoke is updated.
-  /// @param oracle The new address of the oracle.
-  event UpdateOracle(address indexed oracle);
-
-  /// @notice Emitted when the max user reserves limit is updated.
-  /// @param maxUserReservesLimit The new max user reserves limit.
-  event UpdateMaxUserReservesLimit(uint16 maxUserReservesLimit);
+  /// @notice Emitted upon setting the immutable variables on the spoke.
+  /// @param oracle The address of the oracle.
+  /// @param maxUserReservesLimit The max user reserves limit.
+  event SetSpokeImmutables(address indexed oracle, uint16 maxUserReservesLimit);
 
   /// @notice Emitted when a liquidation config is updated.
   /// @param config The new liquidation config.

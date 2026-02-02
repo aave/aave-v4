@@ -12,7 +12,11 @@ contract SpokeConfigTest is SpokeBase {
     address oracle = makeAddr('AaveOracle');
     vm.expectCall(oracle, abi.encodeCall(IPriceOracle.DECIMALS, ()), 1);
     vm.mockCall(oracle, abi.encodeCall(IPriceOracle.DECIMALS, ()), abi.encode(8));
-    ISpoke instance = ISpoke(address(DeployUtils.deploySpokeImplementation(oracle)));
+    ISpoke instance = ISpoke(
+      address(
+        DeployUtils.deploySpokeImplementation(oracle, Constants.MAX_ALLOWED_USER_RESERVES_LIMIT)
+      )
+    );
     assertEq(instance.ORACLE(), oracle);
     assertEq(instance.MAX_USER_RESERVES_LIMIT(), Constants.MAX_ALLOWED_USER_RESERVES_LIMIT);
     assertNotEq(instance.getLiquidationLogic(), address(0));
@@ -22,7 +26,7 @@ contract SpokeConfigTest is SpokeBase {
     DeployWrapper deployer = new DeployWrapper();
 
     vm.expectRevert();
-    deployer.deploySpokeImplementation(address(0));
+    deployer.deploySpokeImplementation(address(0), Constants.MAX_ALLOWED_USER_RESERVES_LIMIT);
   }
 
   function test_spoke_deploy_reverts_on_InvalidOracleDecimals() public {
@@ -31,7 +35,7 @@ contract SpokeConfigTest is SpokeBase {
 
     vm.mockCall(oracle, abi.encodeCall(IPriceOracle.DECIMALS, ()), abi.encode(7));
     vm.expectRevert();
-    deployer.deploySpokeImplementation(oracle);
+    deployer.deploySpokeImplementation(oracle, Constants.MAX_ALLOWED_USER_RESERVES_LIMIT);
   }
 
   function test_spoke_deploy_reverts_on_InvalidMaxUserReservesLimit() public {
