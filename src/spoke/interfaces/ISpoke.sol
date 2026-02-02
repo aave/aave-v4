@@ -287,6 +287,9 @@ interface ISpoke is ISpokeBase, IAccessManaged, IIntentConsumer, IExtSload, IMul
   /// @notice Thrown for an invalid zero address.
   error InvalidAddress();
 
+  /// @notice Thrown when the underlying's decimals are greater than the maximum allowed decimals.
+  error InvalidUnderlyingDecimals();
+
   /// @notice Thrown when the oracle decimals are not 8 in the constructor.
   error InvalidOracleDecimals();
 

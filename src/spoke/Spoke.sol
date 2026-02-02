@@ -137,6 +137,7 @@ abstract contract Spoke is
 
     (address underlying, uint8 decimals) = IHubBase(hub).getAssetUnderlyingAndDecimals(assetId);
     require(underlying != address(0), AssetNotListed());
+    require(decimals <= WadRayMath.WAD_DECIMALS, InvalidUnderlyingDecimals());
 
     _updateReservePriceSource(reserveId, priceSource);
 
@@ -350,6 +351,7 @@ abstract contract Spoke is
     uint256 debtToCover,
     bool receiveShares
   ) external nonReentrant {
+    UserAccountData memory userAccountData = _calculateUserAccountData(user);
     LiquidationLogic.LiquidateUserParams memory params = LiquidationLogic.LiquidateUserParams({
       collateralReserveId: collateralReserveId,
       debtReserveId: debtReserveId,
@@ -357,7 +359,7 @@ abstract contract Spoke is
       oracle: ORACLE,
       user: user,
       debtToCover: debtToCover,
-      userAccountData: _calculateUserAccountData(user),
+      userAccountData: userAccountData,
       liquidator: msg.sender,
       receiveShares: receiveShares
     });

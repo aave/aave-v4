@@ -795,7 +795,6 @@ library LiquidationLogic {
     uint256 decimals,
     uint256 price
   ) internal pure returns (uint256) {
-    return
-      amount * MathUtils.uncheckedExp(10, WadRayMath.WAD_DECIMALS.uncheckedSub(decimals)) * price;
+    return amount * price * MathUtils.uncheckedExp(10, WadRayMath.WAD_DECIMALS - decimals);
   }
 }
