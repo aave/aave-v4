@@ -29,21 +29,18 @@ interface IHub is IHubBase, IAccessManaged {
   /// @dev deficitRay The amount of outstanding bad debt across all spokes, expressed in asset units and scaled by RAY.
   struct Asset {
     uint120 liquidity;
-    uint120 realizedFees;
+    uint120 addedShares;
     uint8 decimals;
     //
-    uint120 addedShares;
-    uint120 swept;
-    //
-    int200 premiumOffsetRay;
-    //
+    uint120 drawnIndex;
     uint120 drawnShares;
-    uint120 premiumShares;
     uint16 liquidityFee;
     //
-    uint120 drawnIndex;
+    uint120 premiumShares;
     uint96 drawnRate;
     uint40 lastUpdateTimestamp;
+    //
+    uint120 swept;
     //
     address underlying;
     //
@@ -53,6 +50,7 @@ interface IHub is IHubBase, IAccessManaged {
     //
     address feeReceiver;
     //
+    int200 premiumOffsetRay;
     uint200 deficitRay;
   }
 
@@ -110,13 +108,7 @@ interface IHub is IHubBase, IAccessManaged {
   /// @param assetId The identifier of the asset.
   /// @param drawnIndex The new drawn index of the asset.
   /// @param drawnRate The new drawn rate of the asset.
-  /// @param accruedFees The accrued fees of the asset since the last mint.
-  event UpdateAsset(
-    uint256 indexed assetId,
-    uint256 drawnIndex,
-    uint256 drawnRate,
-    uint256 accruedFees
-  );
+  event UpdateAsset(uint256 indexed assetId, uint256 drawnIndex, uint256 drawnRate);
 
   /// @notice Emitted when an asset configuration is updated.
   /// @param assetId The identifier of the asset.
@@ -297,12 +289,6 @@ interface IHub is IHubBase, IAccessManaged {
   /// @param assetId The identifier of the asset.
   /// @param irData The interest rate data to apply to the given asset, encoded in bytes.
   function setInterestRateData(uint256 assetId, bytes calldata irData) external;
-
-  /// @notice Mints shares to the fee receiver from accrued fees.
-  /// @dev No op when fees are worth less than one share.
-  /// @param assetId The identifier of the asset.
-  /// @return The amount of shares minted.
-  function mintFeeShares(uint256 assetId) external returns (uint256);
 
   /// @notice Eliminates deficit by removing supplied shares of caller spoke.
   /// @dev Only callable by active and authorized spokes.

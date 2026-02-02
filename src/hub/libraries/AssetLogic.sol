@@ -3,6 +3,7 @@
 pragma solidity ^0.8.20;
 
 import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
+import {TransientSlot} from 'src/dependencies/openzeppelin/TransientSlot.sol';
 import {MathUtils} from 'src/libraries/math/MathUtils.sol';
 import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
 import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
@@ -21,6 +22,19 @@ library AssetLogic {
   using PercentageMath for uint256;
   using WadRayMath for *;
   using SharesMath for uint256;
+  using TransientSlot for *;
+
+  /// bytes32(uint256(keccak256("FEE_AMOUNT")) - 1)
+  TransientSlot.Uint256Slot internal constant FEE_AMOUNT_SLOT =
+    TransientSlot.Uint256Slot.wrap(
+      0x91879d3c2c3ce12810fbfcd08f5ed8e2c386a19457ed8bebc2151a0f05b4836c
+    );
+
+  /// bytes32(uint256(keccak256("FEE_SHARES")) - 1)
+  TransientSlot.Uint256Slot internal constant FEE_SHARES_SLOT =
+    TransientSlot.Uint256Slot.wrap(
+      0x0f70ea74dd445701867e94c5b4520c3ee79405fb0cb270d985de5a2c5e26004a
+    );
 
   /// @notice Converts an amount of shares to the equivalent amount of drawn assets, rounding up.
   function toDrawnAssetsUp(
@@ -79,21 +93,21 @@ library AssetLogic {
   /// @notice Returns the total added assets for the specified asset.
   function totalAddedAssets(IHub.Asset storage asset) internal view returns (uint256) {
     uint256 drawnIndex = asset.getDrawnIndex();
-
-    uint256 aggregatedOwedRay = _calculateAggregatedOwedRay({
-      drawnShares: asset.drawnShares,
-      premiumShares: asset.premiumShares,
-      premiumOffsetRay: asset.premiumOffsetRay,
-      deficitRay: asset.deficitRay,
-      drawnIndex: drawnIndex
-    });
-
-    return
-      asset.liquidity +
+    uint256 totalAddedSupplierAssets = asset.liquidity +
       asset.swept +
-      aggregatedOwedRay.fromRayUp() -
-      asset.realizedFees -
-      asset.getUnrealizedFees(drawnIndex);
+      _calculateAggregatedOwedRay({
+        drawnShares: asset.drawnShares,
+        premiumShares: asset.premiumShares,
+        premiumOffsetRay: asset.premiumOffsetRay,
+        deficitRay: asset.deficitRay,
+        drawnIndex: drawnIndex
+      }).fromRayUp();
+
+    uint256 feeAmount = FEE_AMOUNT_SLOT.tload();
+    if (feeAmount > 0) {
+      return totalAddedSupplierAssets - feeAmount;
+    }
+    return totalAddedSupplierAssets - asset.getUnrealizedFees(drawnIndex);
   }
 
   /// @notice Converts an amount of shares to the equivalent amount of added assets, rounding up.
@@ -128,11 +142,15 @@ library AssetLogic {
     return assets.toSharesDown(asset.totalAddedAssets(), asset.addedShares);
   }
 
-  /// @notice Updates the drawn rate of a specified asset.
+  /// @notice Updates the drawn rate of a specified asset and mints fee shares.
   /// @dev Premium debt is not used in the interest rate calculation.
   /// @dev Uses last stored index; asset accrual should have already occurred.
   /// @dev Imprecision from downscaling `deficitRay` does not accumulate.
-  function updateDrawnRate(IHub.Asset storage asset, uint256 assetId) internal {
+  function updateDrawnRateAndMintFeeShares(
+    IHub.Asset storage asset,
+    mapping(uint256 assetId => mapping(address spoke => IHub.SpokeData)) storage spokes,
+    uint256 assetId
+  ) internal {
     uint256 drawnIndex = asset.drawnIndex;
     uint256 newDrawnRate = IBasicInterestRateStrategy(asset.irStrategy).calculateInterestRate({
       assetId: assetId,
@@ -143,7 +161,18 @@ library AssetLogic {
     });
     asset.drawnRate = newDrawnRate.toUint96();
 
-    emit IHub.UpdateAsset(assetId, drawnIndex, newDrawnRate, asset.realizedFees);
+    uint256 feeAmount = FEE_AMOUNT_SLOT.tload();
+    uint120 feeShares = FEE_SHARES_SLOT.tload().toUint120();
+    if (feeShares > 0) {
+      address feeReceiver = asset.feeReceiver;
+      asset.addedShares += feeShares;
+      spokes[assetId][feeReceiver].addedShares += feeShares;
+      FEE_SHARES_SLOT.tstore(0);
+      emit IHub.MintFeeShares(assetId, feeReceiver, feeShares, feeAmount);
+    }
+    FEE_AMOUNT_SLOT.tstore(0);
+
+    emit IHub.UpdateAsset(assetId, drawnIndex, newDrawnRate);
   }
 
   /// @notice Accrues interest and fees for the specified asset.
@@ -153,7 +182,10 @@ library AssetLogic {
     }
 
     uint256 drawnIndex = asset.getDrawnIndex();
-    asset.realizedFees += asset.getUnrealizedFees(drawnIndex).toUint120();
+    uint256 feeAmount = asset.getUnrealizedFees(drawnIndex);
+    uint256 feeShares = asset.toAddedSharesDown(feeAmount);
+    FEE_AMOUNT_SLOT.tstore(feeAmount);
+    FEE_SHARES_SLOT.tstore(feeShares);
     asset.drawnIndex = drawnIndex.toUint120();
     asset.lastUpdateTimestamp = block.timestamp.toUint40();
   }
