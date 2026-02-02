@@ -10,16 +10,16 @@ import {IERC20Permit} from 'src/dependencies/openzeppelin/IERC20Permit.sol';
 import {EIP712Hash} from 'src/spoke/libraries/EIP712Hash.sol';
 import {MathUtils} from 'src/libraries/math/MathUtils.sol';
 import {IntentConsumer} from 'src/utils/IntentConsumer.sol';
-import {ITokenizationSpoke} from 'src/spoke/interfaces/ITokenizationSpoke.sol';
 import {IHub} from 'src/hub/interfaces/IHub.sol';
+import {ITokenizationSpoke} from 'src/spoke/interfaces/ITokenizationSpoke.sol';
 
 /// @title TokenizationSpoke
 /// @author Aave Labs
 /// @notice ERC4626 compliant wrapper to tokenize one listed asset of the connected Hub.
 abstract contract TokenizationSpoke is ITokenizationSpoke, ERC20Upgradeable, IntentConsumer {
   using SafeERC20 for IERC20;
-  using MathUtils for uint256;
   using EIP712Hash for *;
+  using MathUtils for uint256;
 
   /// @inheritdoc ITokenizationSpoke
   uint192 public constant PERMIT_NONCE_NAMESPACE = 0;

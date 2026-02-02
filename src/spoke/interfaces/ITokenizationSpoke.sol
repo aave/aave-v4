@@ -105,7 +105,7 @@ interface ITokenizationSpoke is IERC4626, IERC2612, IIntentConsumer {
     bytes calldata signature
   ) external returns (uint256);
 
-  /// @notice Deposits assets into the vault with an underlying asset ERC2612 typed permit.
+  /// @notice Deposits assets into the vault with an underlying asset ERC2612-typed permit.
   /// @param assets The amount of assets to deposit.
   /// @param receiver The receiver of the shares.
   /// @param deadline The deadline of the permit.
@@ -123,7 +123,7 @@ interface ITokenizationSpoke is IERC4626, IERC2612, IIntentConsumer {
   ) external returns (uint256);
 
   /// @notice Sets approval for `spender` to spend `owner`'s share tokens via EIP712-typed signature.
-  /// @dev Uses keyed-nonces where the share token permit nonce is consumed sequentially at key=PERMIT_NONCE_NAMESPACE.
+  /// @dev Uses keyed-nonces where the share token permit nonce is consumed sequentially and key namespace is always set to `PERMIT_NONCE_NAMESPACE`.
   /// @dev Implements EIP-2612 permit functionality for the vault share token.
   /// @param owner The address of the token owner granting approval.
   /// @param spender The address being granted approval to spend tokens.
