@@ -633,7 +633,7 @@ contract HubAccruedFeesTest is HubBase {
     assertApproxEqAbs(
       postMintSharePrice,
       preMintSharePrice,
-      _minimumAssetsPerAddedShare(hub1, daiAssetId)
+      minimumAssetsPerAddedShare(hub1, daiAssetId)
     );
     assertEq(_calcUnrealizedFees(hub1, daiAssetId), 0);
   }

@@ -622,7 +622,7 @@ contract Hub is IHub, AccessManaged {
 
   /// @inheritdoc IHubBase
   function getSpokeAddedAssets(uint256 assetId, address spoke) external view returns (uint256) {
-    DataTypes.Asset storage asset = _assets[assetId];
+    IHub.Asset storage asset = _assets[assetId];
     if (spoke == asset.feeReceiver) {
       return
         asset.toAddedAssetsDown(_spokes[assetId][spoke].addedShares + asset.unrealizedFeeShares());
@@ -632,7 +632,7 @@ contract Hub is IHub, AccessManaged {
 
   /// @inheritdoc IHubBase
   function getSpokeAddedShares(uint256 assetId, address spoke) external view returns (uint256) {
-    DataTypes.Asset storage asset = _assets[assetId];
+    IHub.Asset storage asset = _assets[assetId];
     if (spoke == asset.feeReceiver) {
       return _spokes[assetId][spoke].addedShares + asset.unrealizedFeeShares();
     }
