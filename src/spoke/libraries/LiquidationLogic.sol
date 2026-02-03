@@ -8,6 +8,7 @@ import {SafeERC20, IERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
 import {MathUtils} from 'src/libraries/math/MathUtils.sol';
 import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
 import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
+import {SpokeUtils} from 'src/spoke/libraries/SpokeUtils.sol';
 import {PositionStatusMap} from 'src/spoke/libraries/PositionStatusMap.sol';
 import {UserPositionDebt} from 'src/spoke/libraries/UserPositionDebt.sol';
 import {ReserveFlags, ReserveFlagsMap} from 'src/spoke/libraries/ReserveFlagsMap.sol';
@@ -27,7 +28,7 @@ library LiquidationLogic {
   using UserPositionDebt for ISpoke.UserPosition;
   using ReserveFlagsMap for ReserveFlags;
   using PositionStatusMap for ISpoke.PositionStatus;
-  using LiquidationLogic for uint256;
+  using SpokeUtils for uint256;
 
   struct LiquidateUserParams {
     uint256 collateralReserveId;
@@ -178,21 +179,14 @@ library LiquidationLogic {
     uint256 premiumDebtRayToLiquidate;
   }
 
-  // see ISpoke.HEALTH_FACTOR_LIQUIDATION_THRESHOLD docs
+  /// @dev The minimum health factor below which a position is considered unhealthy and subject to liquidation.
+  /// @dev Expressed in WAD (18 decimals) (e.g. 1e18 is 1.00).
   uint64 public constant HEALTH_FACTOR_LIQUIDATION_THRESHOLD = 1e18;
 
-  // see ISpoke.ORACLE_DECIMALS docs
-  uint8 public constant ORACLE_DECIMALS = 8;
-
-  // see ISpoke.MAX_ALLOWED_ASSET_DECIMALS docs
-  uint256 public constant MAX_ALLOWED_ASSET_DECIMALS = 18;
-
-  // see ISpoke.DUST_LIQUIDATION_THRESHOLD docs
+  /// @dev The maximum amount considered as dust for a user's collateral and debt balances after a liquidation.
+  /// @dev Expressed in USD with `ORACLE_DECIMALS + MAX_ALLOWED_ASSET_DECIMALS` decimals.
   uint256 public constant DUST_LIQUIDATION_THRESHOLD =
-    1000 * 10 ** (ORACLE_DECIMALS + MAX_ALLOWED_ASSET_DECIMALS);
-
-  // The maximum allowed asset unit (10 ** MAX_ALLOWED_ASSET_DECIMALS).
-  uint256 public constant MAX_ALLOWED_ASSET_UNIT = 10 ** MAX_ALLOWED_ASSET_DECIMALS;
+    1000 * 10 ** (SpokeUtils.ORACLE_DECIMALS + SpokeUtils.MAX_ALLOWED_ASSET_DECIMALS);
 
   /// @notice Liquidates a user position.
   /// @param reserves The mapping of reserves per reserve id.
@@ -208,8 +202,11 @@ library LiquidationLogic {
     mapping(uint256 reserveId => mapping(uint24 dynamicConfigKey => ISpoke.DynamicReserveConfig)) storage dynamicConfig,
     LiquidateUserParams memory params
   ) external returns (bool) {
-    ISpoke.Reserve storage collateralReserve = getReserve(reserves, params.collateralReserveId);
-    ISpoke.Reserve storage debtReserve = getReserve(reserves, params.debtReserveId);
+    ISpoke.Reserve storage collateralReserve = SpokeUtils.getReserve(
+      reserves,
+      params.collateralReserveId
+    );
+    ISpoke.Reserve storage debtReserve = SpokeUtils.getReserve(reserves, params.debtReserveId);
 
     ISpoke.UserPosition storage collateralUserPosition = userPositions[params.user][
       params.collateralReserveId
@@ -770,7 +767,7 @@ library LiquidationLogic {
         params.debtAssetUnit * (params.targetHealthFactor - params.healthFactor),
         (params.targetHealthFactor - liquidationPenalty) *
           params.debtAssetPrice *
-          MAX_ALLOWED_ASSET_UNIT,
+          SpokeUtils.MAX_ALLOWED_ASSET_UNIT,
         Math.Rounding.Ceil
       );
   }
@@ -786,28 +783,5 @@ library LiquidationLogic {
       return false;
     }
     return !isDebtPositionEmpty || borrowCount > 1;
-  }
-
-  function getReserve(
-    mapping(uint256 reserveId => ISpoke.Reserve) storage reserves,
-    uint256 reserveId
-  ) internal view returns (ISpoke.Reserve storage) {
-    ISpoke.Reserve storage reserve = reserves[reserveId];
-    require(address(reserve.hub) != address(0), ISpoke.ReserveNotListed());
-    return reserve;
-  }
-
-  /// @notice Converts an asset amount to base currency value.
-  /// @dev Assumes asset uses at most 18 decimals. Reverts if multiplication overflows.
-  /// @param amount The asset amount.
-  /// @param decimals The decimals of the asset.
-  /// @param price The price of the asset.
-  /// @return The base currency value.
-  function toValue(
-    uint256 amount,
-    uint256 decimals,
-    uint256 price
-  ) internal pure returns (uint256) {
-    return amount * price * MathUtils.uncheckedExp(10, MAX_ALLOWED_ASSET_DECIMALS - decimals);
   }
 }

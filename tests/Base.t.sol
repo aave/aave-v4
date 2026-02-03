@@ -62,6 +62,7 @@ import {IPriceOracle} from 'src/spoke/interfaces/IPriceOracle.sol';
 import {AaveOracle} from 'src/spoke/AaveOracle.sol';
 import {IAaveOracle} from 'src/spoke/interfaces/IAaveOracle.sol';
 import {SpokeConfigurator, ISpokeConfigurator} from 'src/spoke/SpokeConfigurator.sol';
+import {SpokeUtils} from 'src/spoke/libraries/SpokeUtils.sol';
 import {PositionStatusMap} from 'src/spoke/libraries/PositionStatusMap.sol';
 import {ReserveFlags, ReserveFlagsMap} from 'src/spoke/libraries/ReserveFlagsMap.sol';
 import {LiquidationLogic} from 'src/spoke/libraries/LiquidationLogic.sol';
@@ -93,6 +94,7 @@ import {MockSkimSpoke} from 'tests/mocks/MockSkimSpoke.sol';
 import {MockReentrantCaller} from 'tests/mocks/MockReentrantCaller.sol';
 import {ISpokeInstance} from 'tests/mocks/ISpokeInstance.sol';
 import {DeployWrapper} from 'tests/mocks/DeployWrapper.sol';
+import {SpokeUtilsWrapper} from 'tests/mocks/SpokeUtilsWrapper.sol';
 
 abstract contract Base is Test {
   using stdStorage for StdStorage;

@@ -12,6 +12,7 @@ import {AccessManagedUpgradeable} from 'src/dependencies/openzeppelin-upgradeabl
 import {MathUtils} from 'src/libraries/math/MathUtils.sol';
 import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
 import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
+import {SpokeUtils} from 'src/spoke/libraries/SpokeUtils.sol';
 import {EIP712Hash} from 'src/spoke/libraries/EIP712Hash.sol';
 import {KeyValueList} from 'src/spoke/libraries/KeyValueList.sol';
 import {LiquidationLogic} from 'src/spoke/libraries/LiquidationLogic.sol';
@@ -46,7 +47,7 @@ abstract contract Spoke is
   using WadRayMath for *;
   using EIP712Hash for *;
   using KeyValueList for KeyValueList.List;
-  using LiquidationLogic for *;
+  using SpokeUtils for uint256;
   using PositionStatusMap for *;
   using ReserveFlagsMap for ReserveFlags;
   using UserPositionDebt for ISpoke.UserPosition;
@@ -61,15 +62,14 @@ abstract contract Spoke is
   /// @inheritdoc ISpoke
   address public immutable ORACLE;
 
-  /// @dev The number of decimals used by the oracle.
-  uint8 internal constant ORACLE_DECIMALS = LiquidationLogic.ORACLE_DECIMALS;
+  /// @dev See SpokeUtils.ORACLE_DECIMALS docs
+  uint8 internal constant ORACLE_DECIMALS = SpokeUtils.ORACLE_DECIMALS;
 
   /// @dev The maximum allowed value for an asset identifier (inclusive).
   uint256 internal constant MAX_ALLOWED_ASSET_ID = type(uint16).max;
 
-  /// @dev The maximum allowed decimals for an asset (inclusive).
-  uint256 internal constant MAX_ALLOWED_ASSET_DECIMALS =
-    LiquidationLogic.MAX_ALLOWED_ASSET_DECIMALS;
+  /// @dev See SpokeUtils.MAX_ALLOWED_ASSET_DECIMALS docs
+  uint256 internal constant MAX_ALLOWED_ASSET_DECIMALS = SpokeUtils.MAX_ALLOWED_ASSET_DECIMALS;
 
   /// @dev The maximum allowed collateral risk value for a reserve, expressed in BPS (e.g. 100_00 is 100.00%).
   uint24 internal constant MAX_ALLOWED_COLLATERAL_RISK = 1000_00;
@@ -80,13 +80,11 @@ abstract contract Spoke is
   /// @dev The maximum allowed value for the maximum number of reserves a user can have (collateral or borrowed) (inclusive).
   uint16 internal constant MAX_ALLOWED_USER_RESERVES_LIMIT = type(uint16).max;
 
-  /// @dev The minimum health factor below which a position is considered unhealthy and subject to liquidation.
-  /// @dev Expressed in WAD (18 decimals) (e.g. 1e18 is 1.00).
+  /// @dev See LiquidationLogic.HEALTH_FACTOR_LIQUIDATION_THRESHOLD docs
   uint64 internal constant HEALTH_FACTOR_LIQUIDATION_THRESHOLD =
     LiquidationLogic.HEALTH_FACTOR_LIQUIDATION_THRESHOLD;
 
-  /// @dev The maximum amount considered as dust for a user's collateral and debt balances after a liquidation.
-  /// @dev Expressed in USD with `ORACLE_DECIMALS + MAX_ALLOWED_ASSET_DECIMALS` decimals.
+  /// @dev See LiquidationLogic.DUST_LIQUIDATION_THRESHOLD docs
   uint256 internal constant DUST_LIQUIDATION_THRESHOLD =
     LiquidationLogic.DUST_LIQUIDATION_THRESHOLD;
 
@@ -872,7 +870,7 @@ abstract contract Spoke is
   }
 
   function _getReserve(uint256 reserveId) internal view returns (Reserve storage) {
-    return LiquidationLogic.getReserve(_reserves, reserveId);
+    return SpokeUtils.getReserve(_reserves, reserveId);
   }
 
   /// @dev CollateralFactor of historical config keys cannot be 0, which allows liquidations to proceed.
