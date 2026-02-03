@@ -89,13 +89,19 @@ contract TreasurySpoke is ITreasurySpoke, Ownable2Step {
   }
 
   /// @inheritdoc ISpokeBase
-  function getUserDebt(uint256, address) external pure returns (uint256, uint256) {}
+  function getUserDebt(uint256, address) external pure returns (uint256, uint256) {
+    revert UnsupportedAction();
+  }
 
   /// @inheritdoc ISpokeBase
-  function getUserTotalDebt(uint256, address) external pure returns (uint256) {}
+  function getUserTotalDebt(uint256, address) external pure returns (uint256) {
+    revert UnsupportedAction();
+  }
 
   /// @inheritdoc ISpokeBase
-  function getUserPremiumDebtRay(uint256, address) external pure returns (uint256) {}
+  function getUserPremiumDebtRay(uint256, address) external pure returns (uint256) {
+    revert UnsupportedAction();
+  }
 
   /// @inheritdoc ISpokeBase
   function getReserveSuppliedAssets(uint256 reserveId) external view returns (uint256) {
@@ -108,14 +114,22 @@ contract TreasurySpoke is ITreasurySpoke, Ownable2Step {
   }
 
   /// @inheritdoc ISpokeBase
-  function getUserSuppliedAssets(uint256, address) external pure returns (uint256) {}
+  function getUserSuppliedAssets(uint256, address) external pure returns (uint256) {
+    revert UnsupportedAction();
+  }
 
   /// @inheritdoc ISpokeBase
-  function getUserSuppliedShares(uint256, address) external pure returns (uint256) {}
+  function getUserSuppliedShares(uint256, address) external pure returns (uint256) {
+    revert UnsupportedAction();
+  }
 
   /// @inheritdoc ISpokeBase
-  function getReserveDebt(uint256) external pure returns (uint256, uint256) {}
+  function getReserveDebt(uint256) external pure returns (uint256, uint256) {
+    revert UnsupportedAction();
+  }
 
   /// @inheritdoc ISpokeBase
-  function getReserveTotalDebt(uint256) external pure returns (uint256) {}
+  function getReserveTotalDebt(uint256) external pure returns (uint256) {
+    revert UnsupportedAction();
+  }
 }
