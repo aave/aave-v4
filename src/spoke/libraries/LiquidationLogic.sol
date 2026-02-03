@@ -245,7 +245,7 @@ library LiquidationLogic {
 
   /// @notice Reports deficits for all debt reserves of the user.
   /// @dev Deficit validation should already have occurred during liquidation.
-  /// @dev It clears the user position, setting drawn debt, premium debt, and risk premium to zero.
+  /// @dev It clears the user position, setting drawn debt and premium debt to zero.
   /// @param reserves The mapping of reserves per reserve identifier.
   /// @param userPositions The mapping of user positions per reserve per user.
   /// @param positionStatus The mapping of position status per user.
