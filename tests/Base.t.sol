@@ -2198,6 +2198,19 @@ abstract contract Base is Test {
       hub.getAddedAssets(assetId) - hub.previewRemoveByShares(assetId, hub.getAddedShares(assetId));
   }
 
+  /// @dev Helper function to withdraw fees from the treasury spoke
+  function withdrawLiquidityFees(uint256 assetId, uint256 amount) internal {
+    uint256 fees = hub1.getSpokeAddedAssets(assetId, address(treasurySpoke));
+    if (amount > fees) {
+      amount = fees;
+    }
+    if (amount == 0) {
+      return; // nothing to withdraw
+    }
+    vm.prank(TREASURY_ADMIN);
+    treasurySpoke.withdraw(assetId, amount, address(treasurySpoke));
+  }
+
   function _calculatePremiumDebt(
     IHub hub,
     uint256 assetId,
@@ -3001,16 +3014,23 @@ abstract contract Base is Test {
     uint256 assetId
   ) internal view returns (uint256) {
     address feeReceiver = hub.getAsset(assetId).feeReceiver;
-    uint256 expectedFees = _calcUnrealizedFees(hub, assetId);
-    uint256 actualAccrueFees = hub.previewRemoveByShares(
-      assetId,
-      hub.getSpokeAddedShares(assetId, feeReceiver) - hub.getSpoke(assetId, feeReceiver).addedShares
-    );
-    assertEq(expectedFees, actualAccrueFees, 'asset accrued fees');
-    return hub.getSpokeAddedAssets(assetId, hub.getAsset(assetId).feeReceiver) + expectedFees;
+    return hub.getSpokeAddedAssets(assetId, feeReceiver);
   }
 
   function _getAddedAssetsWithFees(IHub hub, uint256 assetId) internal view returns (uint256) {
     return hub.getAddedAssets(assetId) + _calcUnrealizedFees(hub, assetId);
+  }
+
+  function _getAccruedFees(IHub hub, uint256 assetId) internal view returns (uint256) {
+    return hub.previewRemoveByShares(assetId, _getAccruedFeeShares(hub, assetId));
+  }
+
+  /// @dev Helper to get unrealized/accrued fee shares
+  function _getAccruedFeeShares(IHub hub, uint256 assetId) internal view returns (uint256) {
+    address feeReceiver = hub.getAsset(assetId).feeReceiver;
+    // subtract added shares already added by fee receiver
+    return
+      hub.getSpokeAddedAssets(assetId, feeReceiver) -
+      hub.getSpoke(assetId, feeReceiver).addedShares;
   }
 }

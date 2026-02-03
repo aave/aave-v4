@@ -372,7 +372,7 @@ contract HubSpokeConfigTest is HubBase {
     skip(365 days);
     Utils.add(hub, assetId, address(spoke), 1e18, alice);
 
-    assertGt(hub.getAsset(assetId).realizedFees, 0);
+    assertGt(hub.getSpokeAddedAssets(assetId, hub.getAsset(assetId).feeReceiver), 0);
   }
 
   function _createReportedDeficit(IHub hub, address spoke, uint256 assetId) internal {

@@ -54,13 +54,12 @@ contract HubMintFeeSharesTest is HubBase {
     address feeReceiver = _getFeeReceiver(hub1, daiAssetId);
 
     // before mintFeeShares, the fee shares should be 0
-    uint256 realizedFees = hub1.getAsset(daiAssetId).realizedFees;
+    uint256 realizedFees = _getAccruedFees(hub1, daiAssetId);
     assertEq(realizedFees, 0);
     uint256 feeShares = hub1.getSpokeAddedShares(daiAssetId, feeReceiver);
     assertEq(feeShares, 0);
 
-    uint256 expectedMintedAssets = _getExpectedFeeReceiverAddedAssets(hub1, daiAssetId);
-    uint256 expectedMintedShares = hub1.previewAddByAssets(daiAssetId, expectedMintedAssets);
+    uint256 expectedMintedShares = _getAccruedFeeShares(hub1, daiAssetId);
 
     IHub.Asset memory asset = hub1.getAsset(daiAssetId);
     bytes memory irCalldata = abi.encodeCall(
@@ -78,9 +77,9 @@ contract HubMintFeeSharesTest is HubBase {
 
     // after mintFeeShares, the fee shares should be the amount of the fees
     vm.expectEmit(address(hub1));
-    emit IHub.MintFeeShares(daiAssetId, feeReceiver, expectedMintedShares, expectedMintedAssets);
+    emit IHub.MintFeeShares(daiAssetId, feeReceiver, expectedMintedShares);
     vm.expectEmit(address(hub1));
-    emit IHub.UpdateAsset(daiAssetId, hub1.getAssetDrawnIndex(daiAssetId), mockRate, 0);
+    emit IHub.UpdateAsset(daiAssetId, hub1.getAssetDrawnIndex(daiAssetId), mockRate);
 
     uint256 addedSharesBefore = hub1.getAddedShares(daiAssetId);
     uint256 sharePriceBefore = hub1.previewAddByShares(daiAssetId, 1e18);
@@ -89,7 +88,7 @@ contract HubMintFeeSharesTest is HubBase {
     uint256 mintedShares = Utils.mintFeeShares(hub1, daiAssetId, ADMIN);
 
     assertEq(mintedShares, expectedMintedShares, 'minted shares');
-    assertEq(hub1.getAsset(daiAssetId).realizedFees, 0, 'realized fees after');
+    assertEq(_getAccruedFeeShares(hub1, daiAssetId), 0, 'accrued fee shares after');
     assertEq(
       hub1.getSpokeAddedShares(daiAssetId, feeReceiver),
       expectedMintedShares,
@@ -108,7 +107,7 @@ contract HubMintFeeSharesTest is HubBase {
     _updateSpokeActive(hub1, daiAssetId, _getFeeReceiver(hub1, daiAssetId), false);
 
     vm.expectEmit(address(hub1));
-    emit IHub.UpdateAsset(daiAssetId, asset.drawnIndex, asset.drawnRate, 0);
+    emit IHub.UpdateAsset(daiAssetId, asset.drawnIndex, asset.drawnRate);
 
     vm.recordLogs();
     Utils.mintFeeShares(hub1, daiAssetId, ADMIN);
@@ -151,6 +150,6 @@ contract HubMintFeeSharesTest is HubBase {
     vm.getRecordedLogs();
     _assertEventNotEmitted(IHub.MintFeeShares.selector);
 
-    assertEq(hub1.getAsset(daiAssetId).realizedFees, 1, 'realized fees after');
+    assertEq(_getAccruedFeeShares(hub1, daiAssetId), 0, 'accrued fee shares after');
   }
 }
