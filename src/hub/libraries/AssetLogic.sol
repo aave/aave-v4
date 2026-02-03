@@ -161,9 +161,9 @@ library AssetLogic {
     });
     asset.drawnRate = newDrawnRate.toUint96();
 
-    uint256 feeAmount = FEE_AMOUNT_SLOT.tload();
     uint120 feeShares = FEE_SHARES_SLOT.tload().toUint120();
     if (feeShares > 0) {
+      uint256 feeAmount = FEE_AMOUNT_SLOT.tload();
       address feeReceiver = asset.feeReceiver;
       asset.addedShares += feeShares;
       spokes[assetId][feeReceiver].addedShares += feeShares;
@@ -183,8 +183,8 @@ library AssetLogic {
 
     uint256 drawnIndex = asset.getDrawnIndex();
     uint256 feeAmount = asset.getUnrealizedFees(drawnIndex);
-    uint256 feeShares = asset.toAddedSharesDown(feeAmount);
     FEE_AMOUNT_SLOT.tstore(feeAmount);
+    uint256 feeShares = asset.toAddedSharesDown(feeAmount);
     FEE_SHARES_SLOT.tstore(feeShares);
     asset.drawnIndex = drawnIndex.toUint120();
     asset.lastUpdateTimestamp = block.timestamp.toUint40();
