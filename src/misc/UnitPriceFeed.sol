@@ -9,6 +9,8 @@ import {AggregatorV3Interface} from 'src/dependencies/chainlink/AggregatorV3Inte
 /// @notice Price feed that returns the unit price (1), with decimals precision.
 /// @dev This price feed can be set for reserves that use the base currency as collateral.
 contract UnitPriceFeed is AggregatorV3Interface {
+  error InvalidRound(uint80 roundId);
+
   /// @inheritdoc AggregatorV3Interface
   uint8 public immutable decimals;
 
@@ -45,13 +47,14 @@ contract UnitPriceFeed is AggregatorV3Interface {
       uint80 answeredInRound
     )
   {
-    if (_roundId <= uint80(block.timestamp)) {
-      roundId = _roundId;
-      answer = _units;
-      startedAt = _roundId;
-      updatedAt = _roundId;
-      answeredInRound = _roundId;
+    if (_roundId > uint80(block.timestamp)) {
+      revert InvalidRound(_roundId);
     }
+    roundId = _roundId;
+    answer = _units;
+    startedAt = _roundId;
+    updatedAt = _roundId;
+    answeredInRound = _roundId;
   }
 
   /// @inheritdoc AggregatorV3Interface
