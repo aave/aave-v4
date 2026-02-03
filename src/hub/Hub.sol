@@ -602,7 +602,7 @@ contract Hub is IHub, AccessManaged {
   /// @inheritdoc IHub
   function getAssetAccruedFees(uint256 assetId) external view returns (uint256) {
     Asset storage asset = _assets[assetId];
-    return asset.realizedFees + asset.unrealizedFeeShares();
+    return asset.realizedFees + asset.toAddedAssetsDown(asset.unrealizedFeeShares());
   }
 
   /// @inheritdoc IHub
