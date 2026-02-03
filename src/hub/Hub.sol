@@ -96,6 +96,7 @@ contract Hub is IHub, AccessManaged {
     uint256 lastUpdateTimestamp = block.timestamp;
     _assets[assetId] = Asset({
       liquidity: 0,
+      realizedFeesRay: 0,
       deficitRay: 0,
       swept: 0,
       addedShares: 0,

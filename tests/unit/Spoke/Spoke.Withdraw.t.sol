@@ -349,7 +349,7 @@ contract SpokeWithdrawTest is SpokeBase {
       onBehalfOf: bob
     });
 
-    assertEq(hub1.getAsset(daiAssetId).realizedFees, expectedFeeAmount, 'realized fees');
+    assertEq(hub1.getAsset(daiAssetId).realizedFeesRay, expectedFeeAmount, 'realized fees');
 
     uint256 addExRate = getAddExRate(daiAssetId);
 
@@ -510,7 +510,7 @@ contract SpokeWithdrawTest is SpokeBase {
       onBehalfOf: bob
     });
 
-    assertEq(hub1.getAsset(daiAssetId).realizedFees, state.expectedFeeAmount, 'realized fees');
+    assertEq(hub1.getAsset(daiAssetId).realizedFeesRay, state.expectedFeeAmount, 'realized fees');
 
     stage = 2;
     reserveData[stage] = loadReserveInfo(spoke1, state.reserveId);
@@ -544,7 +544,7 @@ contract SpokeWithdrawTest is SpokeBase {
     assertEq(tokenData[stage].spokeBalance, 0, 'tokenData spoke balance');
     assertEq(
       tokenData[stage].hubBalance,
-      _calculateBurntInterest(hub1, daiAssetId) + hub1.getAsset(daiAssetId).realizedFees,
+      _calculateBurntInterest(hub1, daiAssetId) + hub1.getAsset(daiAssetId).realizedFeesRay,
       'tokenData hub balance'
     );
     assertEq(
@@ -632,7 +632,7 @@ contract SpokeWithdrawTest is SpokeBase {
     // alice repays all with interest
     Utils.repay(spoke1, state.reserveId, alice, repayAmount, alice);
 
-    assertEq(hub1.getAsset(wbtcAssetId).realizedFees, state.expectedFeeAmount, 'realized fees');
+    assertEq(hub1.getAsset(wbtcAssetId).realizedFeesRay, state.expectedFeeAmount, 'realized fees');
 
     // number of test stages
     TestData[3] memory reserveData;
@@ -712,7 +712,7 @@ contract SpokeWithdrawTest is SpokeBase {
     assertEq(tokenData[stage].spokeBalance, 0, 'tokenData spoke balance');
     assertEq(
       tokenData[stage].hubBalance,
-      _calculateBurntInterest(hub1, assetId) + hub1.getAsset(assetId).realizedFees,
+      _calculateBurntInterest(hub1, assetId) + hub1.getAsset(assetId).realizedFeesRay,
       'tokenData hub balance'
     );
     assertEq(underlying.balanceOf(alice), 0, 'alice balance');
@@ -757,7 +757,7 @@ contract SpokeWithdrawTest is SpokeBase {
     uint256 repayAmount = spoke1.getUserTotalDebt(state.reserveId, alice);
     Utils.repay(spoke1, state.reserveId, alice, repayAmount, alice);
 
-    assertEq(hub1.getAsset(daiAssetId).realizedFees, state.expectedFeeAmount, 'realized fees');
+    assertEq(hub1.getAsset(daiAssetId).realizedFeesRay, state.expectedFeeAmount, 'realized fees');
 
     uint256 stage = 0;
     reserveData[stage] = loadReserveInfo(spoke1, state.reserveId);
@@ -825,7 +825,7 @@ contract SpokeWithdrawTest is SpokeBase {
     assertEq(tokenData[stage].spokeBalance, 0, 'tokenData spoke balance');
     assertEq(
       tokenData[stage].hubBalance,
-      _calculateBurntInterest(hub1, daiAssetId) + hub1.getAsset(daiAssetId).realizedFees,
+      _calculateBurntInterest(hub1, daiAssetId) + hub1.getAsset(daiAssetId).realizedFeesRay,
       'tokenData hub balance'
     );
     assertEq(
@@ -905,7 +905,7 @@ contract SpokeWithdrawTest is SpokeBase {
 
     Utils.repay(spoke1, state.reserveId, alice, repayAmount, alice);
 
-    assertEq(hub1.getAsset(assetId).realizedFees, state.expectedFeeAmount, 'realized fees');
+    assertEq(hub1.getAsset(assetId).realizedFeesRay, state.expectedFeeAmount, 'realized fees');
 
     // number of test stages
     TestData[3] memory reserveData;
@@ -987,7 +987,7 @@ contract SpokeWithdrawTest is SpokeBase {
     assertEq(tokenData[stage].spokeBalance, 0, 'tokenData spoke balance');
     assertEq(
       tokenData[stage].hubBalance,
-      _calculateBurntInterest(hub1, assetId) + hub1.getAsset(assetId).realizedFees,
+      _calculateBurntInterest(hub1, assetId) + hub1.getAsset(assetId).realizedFeesRay,
       'tokenData hub balance'
     );
     assertEq(underlying.balanceOf(alice), 0, 'alice balance');

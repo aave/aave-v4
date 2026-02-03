@@ -150,7 +150,7 @@ contract HubRemoveTest is HubBase {
     // only remaining added amount are fees
     assertEq(
       assetData.liquidity,
-      hub1.getAsset(assetId).realizedFees + _calculateBurntInterest(hub1, assetId),
+      hub1.getAsset(assetId).realizedFeesRay + _calculateBurntInterest(hub1, assetId),
       'asset liquidity after'
     );
     assertEq(
@@ -177,7 +177,8 @@ contract HubRemoveTest is HubBase {
 
   function test_remove_all_with_interest() public {
     uint256 addAmount = 100e18;
-    uint256 initialLiquidity = hub1.getAsset(daiAssetId).liquidity;
+    uint256 initialLiquidity = hub1.getAsset(daiAssetId).liquidity +
+      hub1.getAsset(daiAssetId).realizedFeesRay;
 
     // add and draw dai liquidity to accrue interest
     // add from spoke2, draw from spoke1
@@ -321,7 +322,7 @@ contract HubRemoveTest is HubBase {
     assertEq(asset.addedShares, 0, 'hub addedShares');
     assertApproxEqAbs(
       asset.liquidity,
-      _calculateBurntInterest(hub1, daiAssetId) + hub1.getAsset(daiAssetId).realizedFees,
+      _calculateBurntInterest(hub1, daiAssetId) + hub1.getAsset(daiAssetId).realizedFeesRay,
       1,
       'dai liquidity'
     );

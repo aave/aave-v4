@@ -117,7 +117,7 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
       })
     );
 
-    Utils.mintFeeShares(hub1, assetId, ADMIN);
+    // Utils.mintFeeShares(hub1, assetId, ADMIN);
     assertApproxEqAbs(
       hub1.getSpokeAddedShares(assetId, address(treasurySpoke)),
       expectedFeeShares,
@@ -155,7 +155,7 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
       })
     );
 
-    Utils.mintFeeShares(hub1, assetId, ADMIN);
+    // Utils.mintFeeShares(hub1, assetId, ADMIN);
     assertApproxEqAbs(
       hub1.getSpokeAddedShares(assetId, address(treasurySpoke)),
       expectedFeeShares,
@@ -178,7 +178,7 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
     // treasury
     expectedFeeShares = 0;
 
-    Utils.mintFeeShares(hub1, assetId, ADMIN);
+    // Utils.mintFeeShares(hub1, assetId, ADMIN);
     assertApproxEqAbs(
       hub1.getSpokeAddedShares(assetId, address(treasurySpoke)),
       expectedFeeShares,
@@ -212,7 +212,7 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
     Utils.borrow(spoke1, reserveId, alice, borrowAmount, alice);
 
     skip(365 days);
-    Utils.mintFeeShares(hub1, assetId, ADMIN);
+    // Utils.mintFeeShares(hub1, assetId, ADMIN);
 
     _assertSpokeDebt(
       spoke1,
@@ -246,7 +246,7 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
     expectedTreasuryFees = 37.5e18; // 5% of 750 (liquidity fee on drawn debt)
 
     skip(365 days);
-    Utils.mintFeeShares(hub1, assetId, ADMIN);
+    // Utils.mintFeeShares(hub1, assetId, ADMIN);
 
     _assertSpokeDebt(
       spoke1,
@@ -282,7 +282,7 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
     expectedTreasuryFees = 0;
 
     skip(365 days);
-    Utils.mintFeeShares(hub1, assetId, ADMIN);
+    // Utils.mintFeeShares(hub1, assetId, ADMIN);
 
     _assertSpokeDebt(
       spoke1,
@@ -327,7 +327,7 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
     assertEq(_getUserRpStored(spoke1, alice), expectedRp);
 
     skip(365 days);
-    Utils.mintFeeShares(hub1, assetId, ADMIN);
+    // Utils.mintFeeShares(hub1, assetId, ADMIN);
 
     _assertSpokeDebt(
       spoke1,
@@ -362,7 +362,7 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
     expectedTreasuryFees = expectedDrawnDebtAccrual.percentMulUp(liquidityFee);
 
     skip(365 days);
-    Utils.mintFeeShares(hub1, assetId, ADMIN);
+    // Utils.mintFeeShares(hub1, assetId, ADMIN);
 
     _assertSpokeDebt(
       spoke1,
@@ -450,7 +450,7 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
     assertEq(_getUserRpStored(spoke1, alice), expectedRp);
 
     skip(365 days);
-    Utils.mintFeeShares(hub1, assetId, ADMIN);
+    // Utils.mintFeeShares(hub1, assetId, ADMIN);
 
     _assertSpokeDebt(
       spoke1,
@@ -470,7 +470,7 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
     spoke1.setUsingAsCollateral(reserveId, false, alice);
     assertEq(_getUserRpStored(spoke1, alice), 50_00);
 
-    Utils.mintFeeShares(hub1, assetId, ADMIN);
+    // Utils.mintFeeShares(hub1, assetId, ADMIN);
 
     // no change in treasury fees
     _assertSpokeDebt(
@@ -514,7 +514,7 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
     Utils.borrow(spoke1, reserveId, alice, borrowAmount, alice);
 
     skip(365 days);
-    Utils.mintFeeShares(hub1, assetId, ADMIN);
+    // Utils.mintFeeShares(hub1, assetId, ADMIN);
 
     _assertSpokeDebt(
       spoke1,

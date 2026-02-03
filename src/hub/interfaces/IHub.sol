@@ -52,6 +52,8 @@ interface IHub is IHubBase, IAccessManaged {
     //
     int200 premiumOffsetRay;
     uint200 deficitRay;
+    //
+    uint200 realizedFeesRay;
   }
 
   /// @notice Asset configuration. Subset of the `Asset` struct.

@@ -25,7 +25,7 @@ library AssetLogic {
   using TransientSlot for *;
 
   /// bytes32(uint256(keccak256("FEE_AMOUNT")) - 1)
-  TransientSlot.Uint256Slot internal constant FEE_AMOUNT_SLOT =
+  TransientSlot.Uint256Slot internal constant FEE_AMOUNT_RAY_SLOT =
     TransientSlot.Uint256Slot.wrap(
       0x91879d3c2c3ce12810fbfcd08f5ed8e2c386a19457ed8bebc2151a0f05b4836c
     );
@@ -103,11 +103,14 @@ library AssetLogic {
         drawnIndex: drawnIndex
       }).fromRayUp();
 
-    uint256 feeAmount = FEE_AMOUNT_SLOT.tload();
-    if (feeAmount > 0) {
-      return totalAddedSupplierAssets - feeAmount;
+    uint256 feeAmountRay = FEE_AMOUNT_RAY_SLOT.tload();
+    if (feeAmountRay > 0) {
+      return totalAddedSupplierAssets - feeAmountRay.fromRayDown();
     }
-    return totalAddedSupplierAssets - asset.getUnrealizedFees(drawnIndex);
+    return
+      totalAddedSupplierAssets -
+      asset.realizedFeesRay.fromRayDown() -
+      asset.getUnrealizedFees(drawnIndex);
   }
 
   /// @notice Converts an amount of shares to the equivalent amount of added assets, rounding up.
@@ -161,16 +164,17 @@ library AssetLogic {
     });
     asset.drawnRate = newDrawnRate.toUint96();
 
-    uint256 feeAmount = FEE_AMOUNT_SLOT.tload();
+    uint256 feeAmountRay = FEE_AMOUNT_RAY_SLOT.tload();
     uint120 feeShares = FEE_SHARES_SLOT.tload().toUint120();
     if (feeShares > 0) {
       address feeReceiver = asset.feeReceiver;
       asset.addedShares += feeShares;
       spokes[assetId][feeReceiver].addedShares += feeShares;
       FEE_SHARES_SLOT.tstore(0);
-      emit IHub.MintFeeShares(assetId, feeReceiver, feeShares, feeAmount);
+      emit IHub.MintFeeShares(assetId, feeReceiver, feeShares, feeAmountRay.fromRayDown());
     }
-    FEE_AMOUNT_SLOT.tstore(0);
+    asset.realizedFeesRay = feeAmountRay.toUint200();
+    FEE_AMOUNT_RAY_SLOT.tstore(0);
 
     emit IHub.UpdateAsset(assetId, drawnIndex, newDrawnRate);
   }
@@ -182,9 +186,10 @@ library AssetLogic {
     }
 
     uint256 drawnIndex = asset.getDrawnIndex();
-    uint256 feeAmount = asset.getUnrealizedFees(drawnIndex);
-    uint256 feeShares = asset.toAddedSharesDown(feeAmount);
-    FEE_AMOUNT_SLOT.tstore(feeAmount);
+    uint256 feeAmountRay = asset.realizedFeesRay + asset.getUnrealizedFees(drawnIndex).toRay();
+    uint256 feeShares = asset.toAddedSharesDown(feeAmountRay.fromRayDown());
+    uint256 perfectFeeAmountRay = feeShares == 0 ? 0 : asset.toAddedAssetsDown(feeShares.toRay());
+    FEE_AMOUNT_RAY_SLOT.tstore(feeAmountRay - perfectFeeAmountRay);
     FEE_SHARES_SLOT.tstore(feeShares);
     asset.drawnIndex = drawnIndex.toUint120();
     asset.lastUpdateTimestamp = block.timestamp.toUint40();
