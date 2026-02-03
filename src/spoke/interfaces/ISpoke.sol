@@ -424,7 +424,7 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
 
   /// @notice Allows consuming a permit signature for the given reserve's underlying asset.
   /// @dev It reverts if the reserve associated with the given reserve identifier is not listed.
-  /// @dev Spender is the corresponding Hub of the given reserve.
+  /// @dev Spender is the Spoke, which pulls underlying to the Hub during actions.
   /// @param reserveId The identifier of the reserve.
   /// @param onBehalfOf The address of the user on whose behalf the permit is being used.
   /// @param value The amount of the underlying asset to permit.
