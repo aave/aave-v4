@@ -171,7 +171,7 @@ library AssetLogic {
       asset.addedShares += feeShares;
       spokes[assetId][feeReceiver].addedShares += feeShares;
       FEE_SHARES_SLOT.tstore(0);
-      emit IHub.MintFeeShares(assetId, feeReceiver, feeShares, feeAmountRay.fromRayDown());
+      emit IHub.MintFeeShares(assetId, feeReceiver, feeShares, asset.toAddedAssetsDown(feeShares));
     }
     asset.realizedFeesRay = feeAmountRay.toUint200();
     FEE_AMOUNT_RAY_SLOT.tstore(0);
@@ -188,8 +188,10 @@ library AssetLogic {
     uint256 drawnIndex = asset.getDrawnIndex();
     uint256 feeAmountRay = asset.realizedFeesRay + asset.getUnrealizedFees(drawnIndex).toRay();
     uint256 feeShares = asset.toAddedSharesDown(feeAmountRay.fromRayDown());
-    uint256 perfectFeeAmountRay = feeShares == 0 ? 0 : asset.toAddedAssetsDown(feeShares.toRay());
-    FEE_AMOUNT_RAY_SLOT.tstore(feeAmountRay - perfectFeeAmountRay);
+    uint256 perfectFeeAmountRay = feeShares == 0 ? 0 : asset.toAddedAssetsUp(feeShares.toRay());
+    FEE_AMOUNT_RAY_SLOT.tstore(
+      feeAmountRay > perfectFeeAmountRay ? feeAmountRay - perfectFeeAmountRay : 0
+    );
     FEE_SHARES_SLOT.tstore(feeShares);
     asset.drawnIndex = drawnIndex.toUint120();
     asset.lastUpdateTimestamp = block.timestamp.toUint40();
