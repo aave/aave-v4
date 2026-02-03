@@ -63,16 +63,6 @@ contract TreasurySpoke is ITreasurySpoke, Ownable2Step {
     IERC20(token).safeTransfer(to, amount);
   }
 
-  /// @inheritdoc ITreasurySpoke
-  function getSuppliedAmount(uint256 reserveId) external view returns (uint256) {
-    return HUB.getSpokeAddedAssets(reserveId, address(this));
-  }
-
-  /// @inheritdoc ITreasurySpoke
-  function getSuppliedShares(uint256 reserveId) external view returns (uint256) {
-    return HUB.getSpokeAddedShares(reserveId, address(this));
-  }
-
   /// @inheritdoc ISpokeBase
   function borrow(uint256, uint256, address) external pure returns (uint256, uint256) {
     revert UnsupportedAction();
@@ -98,24 +88,8 @@ contract TreasurySpoke is ITreasurySpoke, Ownable2Step {
   function getUserPremiumDebtRay(uint256, address) external pure returns (uint256) {}
 
   /// @inheritdoc ISpokeBase
-  function getReserveSuppliedAssets(uint256 reserveId) external view returns (uint256) {
-    return HUB.getSpokeAddedAssets(reserveId, address(this));
-  }
-
-  /// @inheritdoc ISpokeBase
-  function getReserveSuppliedShares(uint256 reserveId) external view returns (uint256) {
-    return HUB.getSpokeAddedShares(reserveId, address(this));
-  }
-
-  /// @inheritdoc ISpokeBase
   function getUserSuppliedAssets(uint256, address) external pure returns (uint256) {}
 
   /// @inheritdoc ISpokeBase
   function getUserSuppliedShares(uint256, address) external pure returns (uint256) {}
-
-  /// @inheritdoc ISpokeBase
-  function getReserveDebt(uint256) external pure returns (uint256, uint256) {}
-
-  /// @inheritdoc ISpokeBase
-  function getReserveTotalDebt(uint256) external pure returns (uint256) {}
 }

@@ -166,7 +166,7 @@ contract SpokeBorrowValidationTest is SpokeBase {
     Utils.borrow(spoke1, daiReserveId, bob, drawAmount, bob);
 
     skip(skipTime);
-    vm.assume(spoke1.getReserveTotalDebt(daiReserveId) > drawCap);
+    vm.assume(hub1.getSpokeTotalOwed(daiAssetId, address(spoke1)) > drawCap);
 
     // Additional supply to accrue interest
     Utils.supply(spoke1, daiReserveId, bob, 1e18, bob);

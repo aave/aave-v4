@@ -1767,12 +1767,12 @@ abstract contract Base is Test {
       string(abi.encodePacked('spoke supplied amount ', label))
     );
     assertEq(
-      spoke.getReserveSuppliedShares(reserveId),
+      hub1.getSpokeAddedShares(assetId, address(spoke)),
       expectedSuppliedShares,
       string(abi.encodePacked('reserve supplied shares ', label))
     );
     assertEq(
-      spoke.getReserveSuppliedAssets(reserveId),
+      hub1.getSpokeAddedAssets(assetId, address(spoke)),
       expectedSuppliedAmount,
       string(abi.encodePacked('reserve supplied amount ', label))
     );
@@ -1824,7 +1824,11 @@ abstract contract Base is Test {
     uint256 expectedPremiumDebt,
     string memory label
   ) internal view {
-    (uint256 actualDrawnDebt, uint256 actualPremiumDebt) = spoke.getReserveDebt(reserveId);
+    ISpoke.Reserve memory reserve = spoke.getReserve(reserveId);
+    (uint256 actualDrawnDebt, uint256 actualPremiumDebt) = reserve.hub.getSpokeOwed(
+      reserve.assetId,
+      address(spoke)
+    );
     assertApproxEqAbs(
       actualDrawnDebt,
       expectedDrawnDebt,
@@ -1838,7 +1842,7 @@ abstract contract Base is Test {
       string.concat('reserve premium debt ', label)
     );
     assertApproxEqAbs(
-      spoke.getReserveTotalDebt(reserveId),
+      reserve.hub.getSpokeTotalOwed(reserve.assetId, address(spoke)),
       expectedDrawnDebt + expectedPremiumDebt,
       3,
       string.concat('reserve total debt ', label)
@@ -1944,8 +1948,9 @@ abstract contract Base is Test {
     uint256 expectedSuppliedAmount,
     string memory label
   ) internal view {
+    ISpoke.Reserve memory reserve = spoke.getReserve(reserveId);
     assertApproxEqAbs(
-      spoke.getReserveSuppliedAssets(reserveId),
+      reserve.hub.getSpokeAddedAssets(reserve.assetId, address(spoke)),
       expectedSuppliedAmount,
       3,
       string.concat('reserve supplied amount ', label)

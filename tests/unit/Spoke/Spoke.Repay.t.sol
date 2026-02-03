@@ -644,7 +644,7 @@ contract SpokeRepayTest is SpokeBase {
     );
 
     // Verify reserve debt is 0
-    (uint256 baseDaiDebt, uint256 premiumDaiDebt) = spoke1.getReserveDebt(_daiReserveId(spoke1));
+    (uint256 baseDaiDebt, uint256 premiumDaiDebt) = hub1.getSpokeOwed(daiAssetId, address(spoke1));
     assertEq(baseDaiDebt, 0);
     assertEq(premiumDaiDebt, 0);
 

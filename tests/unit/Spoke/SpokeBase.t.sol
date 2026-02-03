@@ -244,7 +244,11 @@ contract SpokeBase is Base {
     });
     skip(365 days);
 
-    (uint256 drawnDebt, uint256 premiumDebt) = spoke.getReserveDebt(reserveId);
+    ISpoke.Reserve memory reserve = spoke.getReserve(reserveId);
+    (uint256 drawnDebt, uint256 premiumDebt) = reserve.hub.getSpokeOwed(
+      reserve.assetId,
+      address(spoke)
+    );
     assertGt(drawnDebt, 0); // non-zero premium debt
 
     if (withPremium) {
@@ -359,7 +363,10 @@ contract SpokeBase is Base {
       state.borrowReserveAssetId,
       borrow.supplyAmount
     );
-    state.reserveSharesBefore = spoke.getReserveSuppliedShares(collateral.reserveId);
+    state.reserveSharesBefore = hub1.getSpokeAddedShares(
+      state.collateralReserveAssetId,
+      address(spoke)
+    );
     state.userSharesBefore = spoke.getUserSuppliedShares(collateral.reserveId, collateral.supplier);
     // supply collateral asset
     Utils.supplyCollateral({
@@ -371,13 +378,16 @@ contract SpokeBase is Base {
     });
     assertEq(
       state.reserveSharesBefore + state.collateralSupplyShares,
-      spoke.getReserveSuppliedShares(collateral.reserveId)
+      hub1.getSpokeAddedShares(state.collateralReserveAssetId, address(spoke))
     );
     assertEq(
       state.userSharesBefore + state.collateralSupplyShares,
       spoke.getUserSuppliedShares(collateral.reserveId, collateral.supplier)
     );
-    state.reserveSharesBefore = spoke.getReserveSuppliedShares(borrow.reserveId);
+    state.reserveSharesBefore = hub1.getSpokeAddedShares(
+      state.borrowReserveAssetId,
+      address(spoke)
+    );
     state.userSharesBefore = spoke.getUserSuppliedShares(borrow.reserveId, borrow.supplier);
     // other user supplies enough asset to be drawn
     Utils.supply({
@@ -389,14 +399,17 @@ contract SpokeBase is Base {
     });
     assertEq(
       state.reserveSharesBefore + state.borrowSupplyShares,
-      spoke.getReserveSuppliedShares(borrow.reserveId)
+      hub1.getSpokeAddedShares(state.borrowReserveAssetId, address(spoke))
     );
     assertEq(
       state.userSharesBefore + state.borrowSupplyShares,
       spoke.getUserSuppliedShares(borrow.reserveId, borrow.supplier)
     );
     (state.borrowerDrawnDebtBefore, ) = spoke.getUserDebt(borrow.reserveId, borrow.borrower);
-    (state.reserveDrawnDebtBefore, ) = spoke.getReserveDebt(borrow.reserveId);
+    (state.reserveDrawnDebtBefore, ) = hub1.getSpokeOwed(
+      state.borrowReserveAssetId,
+      address(spoke)
+    );
     // borrower borrows asset
     Utils.borrow({
       spoke: spoke,
@@ -406,7 +419,7 @@ contract SpokeBase is Base {
       onBehalfOf: borrow.borrower
     });
     (state.borrowerDrawnDebtAfter, ) = spoke.getUserDebt(borrow.reserveId, borrow.borrower);
-    (state.reserveDrawnDebtAfter, ) = spoke.getReserveDebt(borrow.reserveId);
+    (state.reserveDrawnDebtAfter, ) = hub1.getSpokeOwed(state.borrowReserveAssetId, address(spoke));
     assertEq(state.borrowerDrawnDebtBefore + borrow.borrowAmount, state.borrowerDrawnDebtAfter);
     assertEq(state.reserveDrawnDebtBefore + borrow.borrowAmount, state.reserveDrawnDebtAfter);
     // skip time to increase index
@@ -440,7 +453,6 @@ contract SpokeBase is Base {
       }
     }
 
-    assertEq(spoke.getReserveTotalDebt(reserveId), 0, 'reserve total debt not zero');
     assertEq(hub1.getSpokeTotalOwed(assetId, address(spoke)), 0, 'hub spoke total debt not zero');
     assertEq(
       hub1.getAssetTotalOwed(assetId),
@@ -453,10 +465,11 @@ contract SpokeBase is Base {
     ISpoke spoke,
     uint256 reserveId
   ) internal view returns (TestData memory) {
+    ISpoke.Reserve memory reserve = spoke.getReserve(reserveId);
     return
       TestData({
         data: getSpokePosition(spoke, reserveId),
-        addedAmount: spoke.getReserveSuppliedAssets(reserveId)
+        addedAmount: reserve.hub.getSpokeAddedAssets(reserve.assetId, address(spoke))
       });
   }
 
@@ -651,8 +664,8 @@ contract SpokeBase is Base {
     DebtData memory usersDebt;
     uint256 assetId = spoke.getReserve(reserveId).assetId;
 
-    reserveDebt.totalDebt = spoke.getReserveTotalDebt(reserveId);
-    (reserveDebt.drawnDebt, reserveDebt.premiumDebt) = spoke.getReserveDebt(reserveId);
+    reserveDebt.totalDebt = hub1.getSpokeTotalOwed(assetId, address(spoke));
+    (reserveDebt.drawnDebt, reserveDebt.premiumDebt) = hub1.getSpokeOwed(assetId, address(spoke));
 
     for (uint256 i = 0; i < users.length; ++i) {
       ISpoke.UserPosition memory userData = getUserInfo(spoke, users[i], reserveId);

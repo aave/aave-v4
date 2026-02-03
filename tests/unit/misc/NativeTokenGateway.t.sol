@@ -330,7 +330,7 @@ contract NativeTokenGatewayTest is SpokeBase {
 
     skip(322 days);
     vm.assume(hub1.getAddedAssets(wethAssetId) > supplyAmount);
-    uint256 repayAmount = spoke1.getReserveTotalDebt(_wethReserveId(spoke1));
+    uint256 repayAmount = hub1.getSpokeTotalOwed(wethAssetId, address(spoke1));
     deal(address(tokenList.weth), bob, repayAmount);
 
     Utils.repay({

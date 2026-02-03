@@ -70,7 +70,7 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
     vm.assume(hub1.getAddedAssets(daiAssetId) > supplyAmount);
 
     // Give Bob enough dai to repay
-    uint256 repayAmount = spoke1.getReserveTotalDebt(_daiReserveId(spoke1));
+    uint256 repayAmount = hub1.getSpokeTotalOwed(daiAssetId, address(spoke1));
     deal(address(tokenList.dai), bob, repayAmount);
 
     Utils.repay({
@@ -265,8 +265,9 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
     assertEq(returnValues[1].shares, bobData[1].data.suppliedShares);
 
     // reserve
-    (uint256 reserveDrawnDebt, uint256 reservePremiumDebt) = spoke1.getReserveDebt(
-      params.reserveId
+    (uint256 reserveDrawnDebt, uint256 reservePremiumDebt) = hub1.getSpokeOwed(
+      state.assetId,
+      address(spoke1)
     );
     assertEq(reserveDrawnDebt, 0, 'reserveData drawn debt');
     assertEq(reservePremiumDebt, 0, 'reserveData premium debt');

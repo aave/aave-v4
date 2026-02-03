@@ -989,8 +989,9 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
   ) internal view {
     DebtChecks memory debtChecks;
     // Check reserve debt for dai
-    (debtChecks.reserveDebt, debtChecks.reservePremium) = spoke1.getReserveDebt(
-      _daiReserveId(spoke1)
+    (debtChecks.reserveDebt, debtChecks.reservePremium) = hub1.getSpokeOwed(
+      daiAssetId,
+      address(spoke1)
     );
 
     // Reserve debt should be the sum of both user debts
@@ -1010,8 +1011,9 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
     );
 
     // Check reserve debt for usdx
-    (debtChecks.reserveDebt, debtChecks.reservePremium) = spoke1.getReserveDebt(
-      _usdxReserveId(spoke1)
+    (debtChecks.reserveDebt, debtChecks.reservePremium) = hub1.getSpokeOwed(
+      usdxAssetId,
+      address(spoke1)
     );
 
     // Reserve debt should be the sum of both user debts

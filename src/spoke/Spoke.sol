@@ -511,30 +511,6 @@ abstract contract Spoke is
     return _reserveCount;
   }
 
-  /// @inheritdoc ISpokeBase
-  function getReserveSuppliedAssets(uint256 reserveId) external view returns (uint256) {
-    Reserve storage reserve = _getReserve(reserveId);
-    return reserve.hub.getSpokeAddedAssets(reserve.assetId, address(this));
-  }
-
-  /// @inheritdoc ISpokeBase
-  function getReserveSuppliedShares(uint256 reserveId) external view returns (uint256) {
-    Reserve storage reserve = _getReserve(reserveId);
-    return reserve.hub.getSpokeAddedShares(reserve.assetId, address(this));
-  }
-
-  /// @inheritdoc ISpokeBase
-  function getReserveDebt(uint256 reserveId) external view returns (uint256, uint256) {
-    Reserve storage reserve = _getReserve(reserveId);
-    return reserve.hub.getSpokeOwed(reserve.assetId, address(this));
-  }
-
-  /// @inheritdoc ISpokeBase
-  function getReserveTotalDebt(uint256 reserveId) external view returns (uint256) {
-    Reserve storage reserve = _getReserve(reserveId);
-    return reserve.hub.getSpokeTotalOwed(reserve.assetId, address(this));
-  }
-
   /// @inheritdoc ISpoke
   function getReserve(uint256 reserveId) external view returns (Reserve memory) {
     return _getReserve(reserveId);

@@ -338,7 +338,7 @@ contract SpokeWithdrawTest is SpokeBase {
     vm.assume(hub1.getAddedAssets(daiAssetId) > supplyAmount);
 
     // Give Bob enough dai to repay
-    uint256 repayAmount = spoke1.getReserveTotalDebt(_daiReserveId(spoke1));
+    uint256 repayAmount = hub1.getSpokeTotalOwed(daiAssetId, address(spoke1));
     deal(address(tokenList.dai), bob, repayAmount);
 
     Utils.repay({
@@ -415,7 +415,7 @@ contract SpokeWithdrawTest is SpokeBase {
     vm.assume(hub1.getAddedAssets(daiAssetId) > supplyAmount);
 
     // Give Bob enough dai to repay
-    uint256 repayAmount = spoke1.getReserveTotalDebt(_daiReserveId(spoke1));
+    uint256 repayAmount = hub1.getSpokeTotalOwed(daiAssetId, address(spoke1));
     deal(address(tokenList.dai), bob, repayAmount);
 
     Utils.repay({
@@ -522,7 +522,10 @@ contract SpokeWithdrawTest is SpokeBase {
     assertEq(returnValues.shares, state.withdrawnShares);
 
     // reserve
-    (uint256 reserveDrawnDebt, uint256 reservePremiumDebt) = spoke1.getReserveDebt(state.reserveId);
+    (uint256 reserveDrawnDebt, uint256 reservePremiumDebt) = hub1.getSpokeOwed(
+      daiAssetId,
+      address(spoke1)
+    );
     assertEq(reserveDrawnDebt, 0, 'reserveData drawn debt');
     assertEq(reservePremiumDebt, 0, 'reserveData premium debt');
     assertEq(reserveData[stage].data.addedShares, 0, 'reserveData added shares');
@@ -682,8 +685,9 @@ contract SpokeWithdrawTest is SpokeBase {
 
     // reserve
     {
-      (uint256 reserveDrawnDebt, uint256 reservePremiumDebt) = spoke1.getReserveDebt(
-        state.reserveId
+      (uint256 reserveDrawnDebt, uint256 reservePremiumDebt) = hub1.getSpokeOwed(
+        state.reserveId,
+        address(spoke1)
       );
       assertEq(reserveDrawnDebt, 0, 'reserveData drawn debt');
       assertEq(reservePremiumDebt, 0, 'reserveData premium debt');
@@ -800,7 +804,10 @@ contract SpokeWithdrawTest is SpokeBase {
     assertEq(returnValues.amount, state.withdrawAmount);
 
     // reserve
-    (uint256 reserveDrawnDebt, uint256 reservePremiumDebt) = spoke1.getReserveDebt(state.reserveId);
+    (uint256 reserveDrawnDebt, uint256 reservePremiumDebt) = hub1.getSpokeOwed(
+      daiAssetId,
+      address(spoke1)
+    );
     assertEq(reserveDrawnDebt, 0, 'reserveData drawn debt');
     assertEq(reservePremiumDebt, 0, 'reserveData premium debt');
     assertEq(
@@ -957,8 +964,9 @@ contract SpokeWithdrawTest is SpokeBase {
 
     // reserve
     {
-      (uint256 reserveDrawnDebt, uint256 reservePremiumDebt) = spoke1.getReserveDebt(
-        state.reserveId
+      (uint256 reserveDrawnDebt, uint256 reservePremiumDebt) = hub1.getSpokeOwed(
+        assetId,
+        address(spoke1)
       );
       assertEq(reserveDrawnDebt, 0, 'reserveData drawn debt');
       assertEq(reservePremiumDebt, 0, 'reserveData premium debt');
