@@ -601,9 +601,7 @@ library LiquidationLogic {
 
       if (debtRayToLiquidate <= params.premiumDebtRay) {
         // `premiumDebtRayToLiquidate` may exceed `debtRayToLiquidate` as a result of rounding up to asset units, ensuring full utilization of assets
-        premiumDebtRayToLiquidate = debtRayToLiquidate.fromRayUp().toRay().min(
-          params.premiumDebtRay
-        );
+        premiumDebtRayToLiquidate = debtRayToLiquidate.roundRayUp().min(params.premiumDebtRay);
         drawnSharesToLiquidate = 0;
       } else {
         premiumDebtRayToLiquidate = params.premiumDebtRay;
@@ -703,9 +701,7 @@ library LiquidationLogic {
     );
 
     // `premiumDebtRayToLiquidate` may exceed `debtRayToTarget` as a result of rounding up to asset units, ensuring full utilization of assets
-    uint256 premiumDebtRayToLiquidate = debtRayToTarget.fromRayUp().toRay().min(
-      params.premiumDebtRay
-    );
+    uint256 premiumDebtRayToLiquidate = debtRayToTarget.roundRayUp().min(params.premiumDebtRay);
     if (params.debtToCover <= premiumDebtRayToLiquidate.fromRayDown()) {
       premiumDebtRayToLiquidate = params.debtToCover.toRay();
     }
