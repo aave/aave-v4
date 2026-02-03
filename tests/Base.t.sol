@@ -3000,15 +3000,17 @@ abstract contract Base is Test {
     IHub hub,
     uint256 assetId
   ) internal view returns (uint256) {
-    uint256 expectedFees = hub.getAsset(assetId).realizedFees + _calcUnrealizedFees(hub, assetId);
-    assertEq(expectedFees, hub.getAssetAccruedFees(assetId), 'asset accrued fees');
+    address feeReceiver = hub.getAsset(assetId).feeReceiver;
+    uint256 expectedFees = _calcUnrealizedFees(hub, assetId);
+    uint256 actualAccrueFees = hub.previewRemoveByShares(
+      assetId,
+      hub.getSpokeAddedShares(assetId, feeReceiver) - hub.getSpoke(assetId, feeReceiver).addedShares
+    );
+    assertEq(expectedFees, actualAccrueFees, 'asset accrued fees');
     return hub.getSpokeAddedAssets(assetId, hub.getAsset(assetId).feeReceiver) + expectedFees;
   }
 
   function _getAddedAssetsWithFees(IHub hub, uint256 assetId) internal view returns (uint256) {
-    return
-      hub.getAddedAssets(assetId) +
-      hub.getAsset(assetId).realizedFees +
-      _calcUnrealizedFees(hub, assetId);
+    return hub.getAddedAssets(assetId) + _calcUnrealizedFees(hub, assetId);
   }
 }
