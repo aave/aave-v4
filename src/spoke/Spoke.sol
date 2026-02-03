@@ -62,10 +62,14 @@ abstract contract Spoke is
   address public immutable ORACLE;
 
   /// @dev The number of decimals used by the oracle.
-  uint8 internal constant ORACLE_DECIMALS = 8;
+  uint8 internal constant ORACLE_DECIMALS = LiquidationLogic.ORACLE_DECIMALS;
 
   /// @dev The maximum allowed value for an asset identifier (inclusive).
   uint256 internal constant MAX_ALLOWED_ASSET_ID = type(uint16).max;
+
+  /// @dev The maximum allowed decimals for an asset (inclusive).
+  uint256 internal constant MAX_ALLOWED_ASSET_DECIMALS =
+    LiquidationLogic.MAX_ALLOWED_ASSET_DECIMALS;
 
   /// @dev The maximum allowed collateral risk value for a reserve, expressed in BPS (e.g. 100_00 is 100.00%).
   uint24 internal constant MAX_ALLOWED_COLLATERAL_RISK = 1000_00;
@@ -82,7 +86,7 @@ abstract contract Spoke is
     LiquidationLogic.HEALTH_FACTOR_LIQUIDATION_THRESHOLD;
 
   /// @dev The maximum amount considered as dust for a user's collateral and debt balances after a liquidation.
-  /// @dev Expressed in USD with 26 decimals.
+  /// @dev Expressed in USD with `ORACLE_DECIMALS + MAX_ALLOWED_ASSET_DECIMALS` decimals.
   uint256 internal constant DUST_LIQUIDATION_THRESHOLD =
     LiquidationLogic.DUST_LIQUIDATION_THRESHOLD;
 
@@ -137,7 +141,7 @@ abstract contract Spoke is
 
     (address underlying, uint8 decimals) = IHubBase(hub).getAssetUnderlyingAndDecimals(assetId);
     require(underlying != address(0), AssetNotListed());
-    require(decimals <= WadRayMath.WAD_DECIMALS, InvalidUnderlyingDecimals());
+    require(decimals <= MAX_ALLOWED_ASSET_DECIMALS, InvalidAssetDecimals());
 
     _updateReservePriceSource(reserveId, priceSource);
 
@@ -767,10 +771,8 @@ abstract contract Spoke is
     }
 
     if (accountData.totalCollateralValue > 0) {
-      accountData.avgCollateralFactor = accountData.avgCollateralFactor.mulDivDown(
-        WadRayMath.WAD / PercentageMath.PERCENTAGE_FACTOR,
-        accountData.totalCollateralValue
-      );
+      accountData.avgCollateralFactor =
+        accountData.avgCollateralFactor.bpsToWad() / accountData.totalCollateralValue;
     }
 
     // sort by collateral risk in ASC, collateral value in DESC

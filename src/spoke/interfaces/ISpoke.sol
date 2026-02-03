@@ -124,8 +124,8 @@ interface ISpoke is ISpokeBase, IAccessManaged, IIntentConsumer, IExtSload, IMul
   /// @dev riskPremium The risk premium of the user position, expressed in BPS.
   /// @dev avgCollateralFactor The weighted average collateral factor of the user position, expressed in WAD.
   /// @dev healthFactor The health factor of the user position, expressed in WAD. 1e18 represents a health factor of 1.00.
-  /// @dev totalCollateralValue The total collateral value of the user position, expressed in units of base currency. 1e26 represents 1 USD.
-  /// @dev totalDebtValueRay The total debt value of the user position, expressed in units of base currency and scaled by RAY. 1e53 represents 1 USD.
+  /// @dev totalCollateralValue The total collateral value of the user position, expressed in units of base currency.
+  /// @dev totalDebtValueRay The total debt value of the user position, expressed in units of base currency and scaled by RAY.
   /// @dev activeCollateralCount The number of active collaterals, which includes reserves with `collateralFactor` > 0, `enabledAsCollateral` and `suppliedAmount` > 0.
   /// @dev borrowCount The number of borrowed reserves of the user position.
   struct UserAccountData {
@@ -253,6 +253,9 @@ interface ISpoke is ISpokeBase, IAccessManaged, IIntentConsumer, IExtSload, IMul
   /// @notice Thrown when adding a new reserve if an asset id is invalid.
   error InvalidAssetId();
 
+  /// @notice Thrown when adding a new reserve if the asset decimals are invalid.
+  error InvalidAssetDecimals();
+
   /// @notice Thrown when updating a reserve if it is not listed.
   error ReserveNotListed();
 
@@ -286,9 +289,6 @@ interface ISpoke is ISpokeBase, IAccessManaged, IIntentConsumer, IExtSload, IMul
 
   /// @notice Thrown for an invalid zero address.
   error InvalidAddress();
-
-  /// @notice Thrown when the underlying's decimals are greater than the maximum allowed decimals.
-  error InvalidUnderlyingDecimals();
 
   /// @notice Thrown when the oracle decimals are not 8 in the constructor.
   error InvalidOracleDecimals();

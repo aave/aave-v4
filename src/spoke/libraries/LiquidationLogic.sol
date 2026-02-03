@@ -181,8 +181,18 @@ library LiquidationLogic {
   // see ISpoke.HEALTH_FACTOR_LIQUIDATION_THRESHOLD docs
   uint64 public constant HEALTH_FACTOR_LIQUIDATION_THRESHOLD = 1e18;
 
+  // see ISpoke.ORACLE_DECIMALS docs
+  uint8 public constant ORACLE_DECIMALS = 8;
+
+  // see ISpoke.MAX_ALLOWED_ASSET_DECIMALS docs
+  uint256 public constant MAX_ALLOWED_ASSET_DECIMALS = 18;
+
   // see ISpoke.DUST_LIQUIDATION_THRESHOLD docs
-  uint256 public constant DUST_LIQUIDATION_THRESHOLD = 1000e26;
+  uint256 public constant DUST_LIQUIDATION_THRESHOLD =
+    1000 * 10 ** (ORACLE_DECIMALS + MAX_ALLOWED_ASSET_DECIMALS);
+
+  // The maximum allowed asset unit (10 ** MAX_ALLOWED_ASSET_DECIMALS).
+  uint256 public constant MAX_ALLOWED_ASSET_UNIT = 10 ** MAX_ALLOWED_ASSET_DECIMALS;
 
   /// @notice Liquidates a user position.
   /// @param reserves The mapping of reserves per reserve id.
@@ -743,6 +753,7 @@ library LiquidationLogic {
   }
 
   /// @notice Calculates the amount of debt needed to be liquidated to restore a position to the target health factor.
+  /// @return The amount of debt needed to be liquidated to restore user to the target health factor, expressed in units of debt asset and scaled by RAY.
   function _calculateDebtToTargetHealthFactor(
     CalculateDebtToTargetHealthFactorParams memory params
   ) internal pure returns (uint256) {
@@ -757,7 +768,9 @@ library LiquidationLogic {
       Math.mulDiv(
         params.totalDebtValueRay,
         params.debtAssetUnit * (params.targetHealthFactor - params.healthFactor),
-        (params.targetHealthFactor - liquidationPenalty) * params.debtAssetPrice * WadRayMath.WAD,
+        (params.targetHealthFactor - liquidationPenalty) *
+          params.debtAssetPrice *
+          MAX_ALLOWED_ASSET_UNIT,
         Math.Rounding.Ceil
       );
   }
@@ -784,7 +797,7 @@ library LiquidationLogic {
     return reserve;
   }
 
-  /// @notice Converts an asset amount to base currency value. 1e26 represents 1 USD.
+  /// @notice Converts an asset amount to base currency value.
   /// @dev Assumes asset uses at most 18 decimals. Reverts if multiplication overflows.
   /// @param amount The asset amount.
   /// @param decimals The decimals of the asset.
@@ -795,6 +808,6 @@ library LiquidationLogic {
     uint256 decimals,
     uint256 price
   ) internal pure returns (uint256) {
-    return amount * price * MathUtils.uncheckedExp(10, WadRayMath.WAD_DECIMALS - decimals);
+    return amount * price * MathUtils.uncheckedExp(10, MAX_ALLOWED_ASSET_DECIMALS - decimals);
   }
 }

@@ -208,7 +208,7 @@ contract SpokeConfigTest is SpokeBase {
       abi.encode(address(tokenList.dai), 19)
     );
 
-    vm.expectRevert(ISpoke.InvalidUnderlyingDecimals.selector, address(spoke1));
+    vm.expectRevert(ISpoke.InvalidAssetDecimals.selector, address(spoke1));
     vm.prank(SPOKE_ADMIN);
     spoke1.addReserve(address(hub1), assetId, reserveSource, newReserveConfig, newDynReserveConfig);
   }
