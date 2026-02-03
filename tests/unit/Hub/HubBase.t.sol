@@ -227,4 +227,19 @@ contract HubBase is Base {
   function _randomInvalidAssetId(IHub hub) internal returns (uint256) {
     return vm.randomUint(hub.getAssetCount(), UINT256_MAX);
   }
+
+  /// @dev Includes realized and unrealized fees, unlike totalAddedAssets.
+  function _calcSuppliersTotalAddedAssets(IHub.Asset memory asset) internal pure returns (uint256) {
+    uint256 aggregatedOwedRay = (uint256(asset.drawnShares) + asset.premiumShares) *
+      asset.drawnIndex;
+
+    if (asset.premiumOffsetRay >= 0) {
+      aggregatedOwedRay += int256(asset.premiumOffsetRay).toUint256();
+    } else {
+      aggregatedOwedRay -= int256(-asset.premiumOffsetRay).toUint256();
+    }
+    aggregatedOwedRay += asset.deficitRay;
+
+    return asset.liquidity + asset.swept + aggregatedOwedRay.fromRayUp();
+  }
 }
