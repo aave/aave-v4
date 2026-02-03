@@ -522,4 +522,45 @@ library LiquidationLogic {
     }
     return !isDebtPositionEmpty || borrowCount > 1;
   }
+
+  /// @notice Reports deficits for all debt reserves of the user, including the reserve being repaid during liquidation.
+  /// @dev Deficit validation should already have occurred during liquidation.
+  /// @dev It clears the user position, setting drawn debt, premium debt, and risk premium to zero.
+  function _reportDeficit(
+    mapping(uint256 reserveId => ISpoke.Reserve) storage reserves,
+    mapping(address user => mapping(uint256 reserveId => ISpoke.UserPosition)) storage positions,
+    mapping(address user => ISpoke.PositionStatus) storage positionStatus,
+    address user,
+    uint256 reserveCount
+  ) internal {
+    ISpoke.PositionStatus storage userPositionStatus = positionStatus[user];
+
+    uint256 reserveId = reserveCount;
+    while (
+      (reserveId = userPositionStatus.nextBorrowing(reserveId)) != PositionStatusMap.NOT_FOUND
+    ) {
+      ISpoke.UserPosition storage userPosition = positions[user][reserveId];
+      ISpoke.Reserve storage reserve = reserves[reserveId];
+      IHubBase hub = reserve.hub;
+      uint256 assetId = reserve.assetId;
+
+      uint256 drawnIndex = hub.getAssetDrawnIndex(assetId);
+      (uint256 drawnDebtReported, uint256 premiumDebtRay) = userPosition.getDebt(drawnIndex);
+      uint256 deficitShares = drawnDebtReported.rayDivDown(drawnIndex);
+
+      IHubBase.PremiumDelta memory premiumDelta = userPosition.calculatePremiumDelta({
+        drawnSharesTaken: deficitShares,
+        drawnIndex: drawnIndex,
+        riskPremium: 0,
+        restoredPremiumRay: premiumDebtRay
+      });
+
+      hub.reportDeficit(assetId, drawnDebtReported, premiumDelta);
+      userPosition.applyPremiumDelta(premiumDelta);
+      userPosition.drawnShares -= deficitShares.toUint120();
+      userPositionStatus.setBorrowing(reserveId, false);
+
+      emit ISpoke.ReportDeficit(reserveId, user, deficitShares, premiumDelta);
+    }
+  }
 }
