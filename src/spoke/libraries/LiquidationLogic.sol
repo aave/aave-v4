@@ -282,23 +282,27 @@ library LiquidationLogic {
       IHubBase hub = reserve.hub;
       uint256 assetId = reserve.assetId;
 
-      uint256 drawnIndex = hub.getAssetDrawnIndex(assetId);
-      (uint256 drawnDebtReported, uint256 premiumDebtRay) = userPosition.getDebt(drawnIndex);
-      uint256 deficitShares = drawnDebtReported.rayDivDown(drawnIndex);
-
+      UserPositionDebt.DebtComponents memory debtComponents = userPosition.getDebtComponents(
+        hub,
+        assetId
+      );
       IHubBase.PremiumDelta memory premiumDelta = userPosition.calculatePremiumDelta({
-        drawnSharesTaken: deficitShares,
-        drawnIndex: drawnIndex,
+        drawnSharesTaken: debtComponents.drawnShares,
+        drawnIndex: debtComponents.drawnIndex,
         riskPremium: 0,
-        restoredPremiumRay: premiumDebtRay
+        restoredPremiumRay: debtComponents.premiumDebtRay
       });
 
-      hub.reportDeficit(assetId, drawnDebtReported, premiumDelta);
+      hub.reportDeficit(
+        assetId,
+        debtComponents.drawnShares.rayMulUp(debtComponents.drawnIndex),
+        premiumDelta
+      );
       userPosition.applyPremiumDelta(premiumDelta);
-      userPosition.drawnShares -= deficitShares.toUint120();
+      userPosition.drawnShares -= debtComponents.drawnShares.toUint120();
       userPositionStatus.setBorrowing(reserveId, false);
 
-      emit ISpoke.ReportDeficit(reserveId, user, deficitShares, premiumDelta);
+      emit ISpoke.ReportDeficit(reserveId, user, debtComponents.drawnShares, premiumDelta);
     }
   }
 
