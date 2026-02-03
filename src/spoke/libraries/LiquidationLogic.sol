@@ -462,7 +462,7 @@ library LiquidationLogic {
         params.collateralAssetPrice.toWad(),
         params.collateralAssetUnit
       ) <
-      DUST_LIQUIDATION_THRESHOLD;
+        DUST_LIQUIDATION_THRESHOLD;
 
     if (
       collateralToLiquidate > params.collateralReserveBalance ||
@@ -528,7 +528,7 @@ library LiquidationLogic {
         params.debtAssetPrice.toWad(),
         params.debtAssetUnit
       ) <
-      DUST_LIQUIDATION_THRESHOLD;
+        DUST_LIQUIDATION_THRESHOLD;
 
     if (leavesDebtDust) {
       // target health factor is bypassed to prevent leaving dust

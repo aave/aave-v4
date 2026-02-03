@@ -7,9 +7,7 @@ import {SafeERC20, IERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
 import {IERC20Permit} from 'src/dependencies/openzeppelin/IERC20Permit.sol';
 import {ReentrancyGuardTransient} from 'src/dependencies/openzeppelin/ReentrancyGuardTransient.sol';
 import {Math} from 'src/dependencies/openzeppelin/Math.sol';
-import {
-  AccessManagedUpgradeable
-} from 'src/dependencies/openzeppelin-upgradeable/AccessManagedUpgradeable.sol';
+import {AccessManagedUpgradeable} from 'src/dependencies/openzeppelin-upgradeable/AccessManagedUpgradeable.sol';
 import {MathUtils} from 'src/libraries/math/MathUtils.sol';
 import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
 import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
@@ -926,7 +924,7 @@ abstract contract Spoke is
       config.collateralFactor < PercentageMath.PERCENTAGE_FACTOR &&
         config.maxLiquidationBonus >= PercentageMath.PERCENTAGE_FACTOR &&
         config.maxLiquidationBonus.percentMulUp(config.collateralFactor) <
-        PercentageMath.PERCENTAGE_FACTOR,
+          PercentageMath.PERCENTAGE_FACTOR,
       InvalidCollateralFactorAndMaxLiquidationBonus()
     );
     require(config.liquidationFee <= PercentageMath.PERCENTAGE_FACTOR, InvalidLiquidationFee());
