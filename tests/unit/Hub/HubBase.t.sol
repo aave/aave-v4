@@ -8,6 +8,7 @@ contract HubBase is Base {
   using SharesMath for uint256;
   using MathUtils for uint256;
   using SafeCast for *;
+  using WadRayMath for uint256;
 
   struct TestAddParams {
     uint256 drawnAmount;
