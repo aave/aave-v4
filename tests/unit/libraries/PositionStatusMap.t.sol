@@ -530,15 +530,6 @@ contract PositionStatusMapTest is Base {
     }
   }
 
-  function test_compressCollateral(uint256 word) public view {
-    uint128 packed = p.compressCollateral(word);
-    for (uint256 i; i < 128; ++i) {
-      bool originalBit = (word >> (i * 2 + 1)) & 1 != 0;
-      bool packedBit = (packed >> i) & 1 != 0;
-      assertEq(packedBit, originalBit);
-    }
-  }
-
   function test_popCount(bytes32) public {
     uint256 bits = vm.randomUint();
     assertEq(LibBit.popCount(bits), _popCountNaive(bits));
@@ -561,6 +552,15 @@ contract PositionStatusMapTest is Base {
     assertEq(LibBit.fls(0), 256);
   }
 
+  function test_compressCollateral(uint256 word) public view {
+    uint128 packed = p.compressCollateral(word);
+    for (uint256 i; i < 128; ++i) {
+      bool originalBit = (word >> (i * 2 + 1)) & 1 != 0;
+      bool packedBit = (packed >> i) & 1 != 0;
+      assertEq(packedBit, originalBit);
+    }
+  }
+
   function test_getCollateralBitmap_emptyWhenNoReserves() public view {
     bytes memory bitmap = p.getCollateralBitmap(0);
     assertEq(bitmap.length, 0);
@@ -581,9 +581,9 @@ contract PositionStatusMapTest is Base {
       word := mload(add(bitmap, 32))
     }
 
-    // Collateral bits are at positions: (reserveId * 2 + 1)
-    // Reserve 0: bit 1, Reserve 3: bit 7, Reserve 5: bit 11
-    uint256 expected = (1 << 1) | (1 << 7) | (1 << 11);
+    // Collateral bits are at the position represented by their reserveId
+    // Reserve 0: bit 0, Reserve 3: bit 3, Reserve 5: bit 5
+    uint256 expected = (1 << 0) | (1 << 3) | (1 << 5);
     // Apply collateral mask to verify only collateral bits are set
     assertEq(word, expected);
   }
@@ -596,22 +596,21 @@ contract PositionStatusMapTest is Base {
     p.setUsingAsCollateral(255, true); // bucket 1
 
     bytes memory bitmap = p.getCollateralBitmap(256);
-    assertEq(bitmap.length, 64); // 2 buckets * 32 bytes
+    assertEq(bitmap.length, 32);
 
-    uint256 word0;
-    uint256 word1;
+    uint256 word;
     assembly {
-      word0 := mload(add(bitmap, 32))
-      word1 := mload(add(bitmap, 64))
+      word := mload(add(bitmap, 32))
     }
 
     // Verify bucket 0 has collateral bits for reserves 0 and 127
-    uint256 expected0 = (1 << 1) | (1 << 255); // bits 1 and 255
-    assertEq(word0, expected0);
-
+    uint256 expected0 = (1 << 0) | (1 << 127); // bits 0 and 127
     // Verify bucket 1 has collateral bits for reserves 128 and 255
-    uint256 expected1 = (1 << 1) | (1 << 255); // bits 1 and 255 (relative to bucket 1)
-    assertEq(word1, expected1);
+    uint256 expected1 = (1 << 0) | (1 << 127); // bits 0 and 127 (relative to bucket 1)
+
+    uint256 expectedCompressed = expected0 | (expected1 << 128);
+
+    assertEq(word, expectedCompressed);
   }
 
   function test_getCollateralBitmap_excludesBorrowingBits() public {
@@ -630,9 +629,9 @@ contract PositionStatusMapTest is Base {
       word := mload(add(bitmap, 32))
     }
 
-    // Only reserve 5 collateral bit should be set (bit 11)
+    // Only reserve 5 collateral bit should be set (bit 5)
     // Borrowing bits should not be present
-    uint256 expected = (1 << 11);
+    uint256 expected = (1 << 5);
     assertEq(word, expected);
   }
 
@@ -646,13 +645,13 @@ contract PositionStatusMapTest is Base {
     }
 
     bytes memory bitmap = p.getCollateralBitmap(reserveCount);
-    uint256 expectedBuckets = (reserveCount + 127) / 128;
+    uint256 expectedBuckets = (reserveCount + 255) / 256;
     assertEq(bitmap.length, expectedBuckets * 32);
 
     // Verify each collateral bit matches
     for (uint256 i = 0; i < reserveCount; ++i) {
-      uint256 bucketIndex = i / 128;
-      uint256 bitPosition = (i % 128) * 2 + 1;
+      uint256 bucketIndex = i / 256;
+      uint256 bitPosition = i % 256;
 
       uint256 word;
       assembly {

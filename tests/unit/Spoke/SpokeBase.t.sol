@@ -1149,22 +1149,23 @@ contract SpokeBase is Base {
     // Find the max bucket needed
     uint256 maxBucket = 0;
     for (uint256 i = 0; i < reserveIds.length; ++i) {
-      uint256 bucket = reserveIds[i] / 128;
+      uint256 bucket = reserveIds[i] / 256;
       if (bucket > maxBucket) maxBucket = bucket;
     }
 
-    // Allocate bytes for all buckets
+    // Allocate bytes for all buckets (compressed format)
     bytes memory result = new bytes((maxBucket + 1) * 32);
 
-    // Set the collateral bits for each reserve
+    // Set the collateral bits for each reserve in compressed format
     for (uint256 i = 0; i < reserveIds.length; ++i) {
       uint256 reserveId = reserveIds[i];
-      uint256 bucket = reserveId / 128;
-      uint256 bitPosition = (reserveId % 128) * 2 + 1; // collateral bit position
+      uint256 bucket = reserveId / 256;
+      uint256 bitPosition = reserveId % 256;
+
+      uint256 offset = 32 + bucket * 32;
 
       // Read current word, set bit, write back
       uint256 word;
-      uint256 offset = 32 + bucket * 32;
       assembly {
         word := mload(add(result, offset))
       }

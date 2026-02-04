@@ -251,23 +251,35 @@ library PositionStatusMap {
     }
   }
 
-  /// @notice Returns the collateral bitmap as bytes, containing only collateral bits.
+  /// @notice Returns the collateral bitmap as bytes.
+  /// @dev Each bucket (128 reserves) is compressed to 16 bytes (uint128), with two buckets packed per 32-byte word.
   /// @param reserveCount The current reserveCount to determine bucket boundaries.
-  /// @return The collateral bitmap as bytes (32 bytes per bucket, up to the bucket containing reserveCount-1).
+  /// @return The compressed collateral bitmap (16 bytes per bucket).
   function getCollateralBitmap(
     ISpoke.PositionStatus storage self,
     uint256 reserveCount
   ) internal view returns (bytes memory) {
-    uint256 bucketCount = reserveCount == 0 ? 0 : (reserveCount - 1).bucketId() + 1;
-    bytes memory result = new bytes(bucketCount * 32);
+    unchecked {
+      uint256 bucketCount = reserveCount == 0 ? 0 : (reserveCount - 1).bucketId() + 1;
+      bytes memory result = new bytes(((bucketCount + 1) / 2) * 32);
 
-    for (uint256 i = 0; i < bucketCount; ++i) {
-      uint256 word = self.map[i].isolateCollateral();
-      assembly ('memory-safe') {
-        mstore(add(add(result, 32), mul(i, 32)), word)
+      for (uint256 i; i < bucketCount; ) {
+        uint128 compressed0 = self.map[i].compressCollateral();
+        // Compress next bucket if it exists, otherwise 0
+        uint128 compressed1 = (i + 1 < bucketCount) ? self.map[i + 1].compressCollateral() : 0;
+
+        assembly ('memory-safe') {
+          // Pack with compressed0 in lower 128 bits, compressed1 in upper 128 bits
+          // This ensures reserve N is at bit N in the continuous bitmap
+          let packed := or(compressed0, shl(128, compressed1))
+          mstore(add(add(result, 32), shl(5, shr(1, i))), packed)
+        }
+
+        i += 2;
       }
+
+      return result;
     }
-    return result;
   }
 
   /// @notice Compresses collateral bits from a word into a densely packed uint128.
