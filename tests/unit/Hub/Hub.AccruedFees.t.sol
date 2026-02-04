@@ -799,24 +799,20 @@ contract HubAccruedFeesTest is HubBase {
     uint256 totalInterest = drawnDebt - borrowAmount;
     uint256 finalSharePrice = hub1.previewAddByShares(daiAssetId, 1e18);
 
-    // With 100% fee, all interest goes to protocol
-    assertApproxEqAbs(accruedFees, totalInterest, 3);
+    assertEq(accruedFees, totalInterest);
+    assertEq(accruedFees, _calcUnrealizedFees(hub1, daiAssetId));
+    assertEq(finalSharePrice, initialSharePrice);
 
-    // Share price should remain essentially unchanged when all interest goes to protocol
-    assertApproxEqAbs(finalSharePrice, initialSharePrice, 3);
-
-    // All fees go to protocol and none to suppliers
+    // All fees go to protocol and none to suppliers, no interest on realizedFees to distribute
     uint256 protocolCut = totalInterest.percentMulDown(PercentageMath.PERCENTAGE_FACTOR);
-    assertApproxEqAbs(accruedFees, protocolCut, 3);
+    assertEq(accruedFees, protocolCut);
 
-    // Supplier yield should be ~0 (getAddedAssets - supply - fees)
-    uint256 totalAddedAssets = hub1.getAddedAssets(daiAssetId);
-    uint256 supplierYield = totalAddedAssets - supplyAmount - accruedFees;
-    assertLe(supplierYield, 3); // May have small rounding
+    uint256 supplierYield = hub1.getAddedAssets(daiAssetId) - supplyAmount;
+    assertEq(supplierYield, accruedFees); // all supplier yield goes to treasury spoke
   }
 
-  /// @dev Fuzz: Users earn same interest per share regardless of fee shares size
-  function test_fuzz_unrealizedFees_interestIndependentOfFeeSize(
+  /// @dev Fuzz: Users earn same interest per share regardless of realizedFees size
+  function test_fuzz_interestIndependentOfLiquidityFee(
     uint256 supplyAmount,
     uint256 borrowAmount,
     uint256 liquidityFee,
@@ -851,7 +847,7 @@ contract HubAccruedFeesTest is HubBase {
     skip(timeSkipFirst);
     uint256 accruedFeeShares = _calcUnrealizedFeeShares(hub1, daiAssetId);
 
-    // Alice joins when fee shares may be large
+    // Alice joins when realizedFees may be large
     uint256 bobSharesBefore = hub1.getSpokeAddedShares(daiAssetId, address(spoke1));
     Utils.add({
       hub: hub1,
@@ -863,11 +859,14 @@ contract HubAccruedFeesTest is HubBase {
     uint256 aliceShares = hub1.getSpokeAddedShares(daiAssetId, address(spoke1)) - bobSharesBefore;
     uint256 feeReceiverAddedShares = _getFeeReceiverAddedShares(hub1, daiAssetId);
 
-    // Mint fee shares to reset unrealized fees
-    Utils.mintFeeShares(hub1, daiAssetId, ADMIN);
+    assertEq(feeReceiverAddedShares, accruedFeeShares, 'fee receiver added shares');
+    assertEq(_calcUnrealizedFeeShares(hub1, daiAssetId), 0);
     assertEq(_calcUnrealizedFees(hub1, daiAssetId), 0);
 
-    // Carol joins when unrealized fees are zero
+    // double the liquidity fee
+    updateLiquidityFee(hub1, daiAssetId, liquidityFee * 2);
+
+    // Carol joins when liquidity fee is doubled
     uint256 sharesBeforeCarol = hub1.getSpokeAddedShares(daiAssetId, address(spoke1));
     Utils.add({
       hub: hub1,
