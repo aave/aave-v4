@@ -363,40 +363,4 @@ contract SpokeDynamicConfigTriggersTest is SpokeBase {
 
     vm.revertToState(snapshotId);
   }
-
-  function _buildCollateralBitmap(
-    uint256[] memory reserveIds
-  ) internal pure returns (bytes memory) {
-    if (reserveIds.length == 0) return '';
-
-    // Find the max bucket needed
-    uint256 maxBucket = 0;
-    for (uint256 i = 0; i < reserveIds.length; ++i) {
-      uint256 bucket = reserveIds[i] / 128;
-      if (bucket > maxBucket) maxBucket = bucket;
-    }
-
-    // Allocate bytes for all buckets
-    bytes memory result = new bytes((maxBucket + 1) * 32);
-
-    // Set the collateral bits for each reserve
-    for (uint256 i = 0; i < reserveIds.length; ++i) {
-      uint256 reserveId = reserveIds[i];
-      uint256 bucket = reserveId / 128;
-      uint256 bitPosition = (reserveId % 128) * 2 + 1; // collateral bit position
-
-      // Read current word, set bit, write back
-      uint256 word;
-      uint256 offset = 32 + bucket * 32;
-      assembly {
-        word := mload(add(result, offset))
-      }
-      word |= (1 << bitPosition);
-      assembly {
-        mstore(add(result, offset), word)
-      }
-    }
-
-    return result;
-  }
 }

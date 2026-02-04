@@ -100,6 +100,10 @@ contract PositionStatusMapWrapper {
     return _p.getCollateralBitmap(reserveCount);
   }
 
+  function compressCollateral(uint256 bucket) external pure returns (uint128) {
+    return PositionStatusMap.compressCollateral(bucket);
+  }
+
   function slot() external pure returns (bytes32 s) {
     assembly ('memory-safe') {
       s := _p.slot

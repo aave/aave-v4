@@ -269,4 +269,40 @@ library PositionStatusMap {
     }
     return result;
   }
+
+  /// @notice Compresses collateral bits from a word into a densely packed uint128.
+  /// @dev Extracts odd bits (1,3,5,...,255) representing collateral flags for 128 reserves,
+  ///      and packs them into consecutive bits (0,1,2,...,127) in a uint128.
+  /// @param word The word to compress.
+  /// @return packed The compressed uint128 containing only collateral bits.
+  function compressCollateral(uint256 word) internal pure returns (uint128 packed) {
+    assembly ('memory-safe') {
+      // (word & COLLATERAL_MASK) >> 1 moves bits from positions 1,3,5,... to 0,2,4,...
+      let x := shr(1, and(word, COLLATERAL_MASK))
+
+      // Progressively merge bits from sparse even positions into dense consecutive positions
+
+      // Merge (0,2)→(0,1), (4,6)→(4,5), (8,10)→(8,9), ...
+      x := and(or(x, shr(1, x)), 0x3333333333333333333333333333333333333333333333333333333333333333)
+      // Merge (0-3)→(0-3), (8-11)→(8-11), ...
+      x := and(or(x, shr(2, x)), 0x0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F)
+      // Merge (0-7)→(0-7), (16-23)→(16-23), ...
+      x := and(or(x, shr(4, x)), 0x00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF)
+      // Merge (0-15)→(0-15), (32-47)→(32-47), ...
+      x := and(or(x, shr(8, x)), 0x0000FFFF0000FFFF0000FFFF0000FFFF0000FFFF0000FFFF0000FFFF0000FFFF)
+      // Merge (0-31)→(0-31), (64-95)→(64-95)
+      x := and(
+        or(x, shr(16, x)),
+        0x00000000FFFFFFFF00000000FFFFFFFF00000000FFFFFFFF00000000FFFFFFFF
+      )
+      // Merge (0-63)→(0-63), (128-191)→(128-191)
+      x := and(
+        or(x, shr(32, x)),
+        0x0000000000000000FFFFFFFFFFFFFFFF0000000000000000FFFFFFFFFFFFFFFF
+      )
+
+      // Move all 128 bits now in lower half
+      packed := and(or(x, shr(64, x)), 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF)
+    }
+  }
 }

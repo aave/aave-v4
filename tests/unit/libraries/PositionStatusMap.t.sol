@@ -530,6 +530,15 @@ contract PositionStatusMapTest is Base {
     }
   }
 
+  function test_compressCollateral(uint256 word) public view {
+    uint128 packed = p.compressCollateral(word);
+    for (uint256 i; i < 128; ++i) {
+      bool originalBit = (word >> (i * 2 + 1)) & 1 != 0;
+      bool packedBit = (packed >> i) & 1 != 0;
+      assertEq(packedBit, originalBit);
+    }
+  }
+
   function test_popCount(bytes32) public {
     uint256 bits = vm.randomUint();
     assertEq(LibBit.popCount(bits), _popCountNaive(bits));
