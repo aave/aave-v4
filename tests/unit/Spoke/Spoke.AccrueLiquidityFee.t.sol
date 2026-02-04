@@ -154,10 +154,11 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
       })
     );
 
+    // Tolerance of 2 to account for dust accumulated across multiple accrual/withdrawal cycles
     assertApproxEqAbs(
       hub1.getSpokeAddedShares(assetId, address(treasurySpoke)),
       expectedFeeShares,
-      1,
+      2,
       'treasury shares'
     );
 

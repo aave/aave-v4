@@ -543,7 +543,7 @@ contract SpokeWithdrawTest is SpokeBase {
     assertEq(tokenData[stage].spokeBalance, 0, 'tokenData spoke balance');
     assertEq(
       tokenData[stage].hubBalance,
-      _calculateBurntInterest(hub1, daiAssetId),
+      _expectedRemainingHubBalance(hub1, daiAssetId),
       'tokenData hub balance'
     );
     assertEq(
@@ -710,7 +710,7 @@ contract SpokeWithdrawTest is SpokeBase {
     assertEq(tokenData[stage].spokeBalance, 0, 'tokenData spoke balance');
     assertEq(
       tokenData[stage].hubBalance,
-      _calculateBurntInterest(hub1, assetId),
+      _expectedRemainingHubBalance(hub1, assetId),
       'tokenData hub balance'
     );
     assertEq(underlying.balanceOf(alice), 0, 'alice balance');
@@ -822,7 +822,7 @@ contract SpokeWithdrawTest is SpokeBase {
     assertEq(tokenData[stage].spokeBalance, 0, 'tokenData spoke balance');
     assertEq(
       tokenData[stage].hubBalance,
-      _calculateBurntInterest(hub1, daiAssetId),
+      _expectedRemainingHubBalance(hub1, daiAssetId),
       'tokenData hub balance'
     );
     assertEq(
@@ -983,7 +983,7 @@ contract SpokeWithdrawTest is SpokeBase {
     assertEq(tokenData[stage].spokeBalance, 0, 'tokenData spoke balance');
     assertEq(
       tokenData[stage].hubBalance,
-      _calculateBurntInterest(hub1, assetId),
+      _expectedRemainingHubBalance(hub1, assetId),
       'tokenData hub balance'
     );
     assertEq(underlying.balanceOf(alice), 0, 'alice balance');

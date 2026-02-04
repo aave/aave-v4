@@ -2181,6 +2181,11 @@ abstract contract Base is Test {
       hub.getAddedAssets(assetId) - hub.previewRemoveByShares(assetId, hub.getAddedShares(assetId));
   }
 
+  /// @dev Returns the expected hub balance after all liquidity is withdrawn (burnt interest + fee dust)
+  function _expectedRemainingHubBalance(IHub hub, uint256 assetId) internal view returns (uint256) {
+    return _calculateBurntInterest(hub, assetId) + hub.getAsset(assetId).realizedFees;
+  }
+
   function _calculatePremiumDebt(
     IHub hub,
     uint256 assetId,
