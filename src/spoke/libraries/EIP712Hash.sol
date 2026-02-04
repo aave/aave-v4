@@ -38,6 +38,7 @@ library EIP712Hash {
   function hash(
     ISpoke.PositionManagerUpdate calldata params
   ) internal pure returns (bytes32 digest) {
+    // equivalent to: keccak256(abi.encode(POSITION_MANAGER_UPDATE, params.positionManager, params.approve))
     assembly ('memory-safe') {
       let fmp := mload(0x40)
       mstore(0, POSITION_MANAGER_UPDATE)
