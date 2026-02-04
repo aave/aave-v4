@@ -253,7 +253,8 @@ library LiquidationLogic {
   /// @param user The address of the user.
   function reportDeficit(
     mapping(uint256 reserveId => ISpoke.Reserve) storage reserves,
-    mapping(address user => mapping(uint256 reserveId => ISpoke.UserPosition)) storage userPositions,
+    mapping(address user => mapping(uint256 reserveId => ISpoke.UserPosition))
+      storage userPositions,
     mapping(address user => ISpoke.PositionStatus) storage positionStatus,
     uint256 reserveCount,
     address user
@@ -462,7 +463,7 @@ library LiquidationLogic {
         params.collateralAssetPrice.toWad(),
         params.collateralAssetUnit
       ) <
-        DUST_LIQUIDATION_THRESHOLD;
+      DUST_LIQUIDATION_THRESHOLD;
 
     if (
       collateralToLiquidate > params.collateralReserveBalance ||
@@ -528,7 +529,7 @@ library LiquidationLogic {
         params.debtAssetPrice.toWad(),
         params.debtAssetUnit
       ) <
-        DUST_LIQUIDATION_THRESHOLD;
+      DUST_LIQUIDATION_THRESHOLD;
 
     if (leavesDebtDust) {
       // target health factor is bypassed to prevent leaving dust
