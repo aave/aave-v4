@@ -13,7 +13,7 @@ contract HubAccruedFeesTest is HubBase {
   uint256 constant BORROW_AMOUNT = 500e18;
 
   /// @dev Fuzz test for basic fee accrual with varying supply, borrow, fee, and time
-  function test_fuzz_basicAccrual(
+  function test_unrealizedFees_fuzz_basicAccrual(
     uint256 supplyAmount,
     uint256 borrowAmount,
     uint256 liquidityFee,
