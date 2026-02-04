@@ -4,6 +4,7 @@ pragma solidity ^0.8.0;
 
 import 'tests/Base.t.sol';
 
+/// forge-config: default.allow_internal_expect_revert = true
 contract AaveOracleTest is Base {
   using SafeCast for uint256;
 
@@ -25,12 +26,18 @@ contract AaveOracleTest is Base {
   function setUp() public override {
     deployFixtures();
 
-    vm.prank(deployer);
+    vm.startPrank(deployer);
     oracle = new AaveOracle(_oracleDecimals, _description);
-
-    spoke1 = ISpoke(address(new SpokeInstance(address(oracle))));
-    vm.prank(deployer);
+    spoke1 = ISpoke(
+      address(
+        DeployUtils.deploySpokeImplementation(
+          address(oracle),
+          Constants.MAX_ALLOWED_USER_RESERVES_LIMIT
+        )
+      )
+    );
     oracle.setSpoke(address(spoke1));
+    vm.stopPrank();
   }
 
   function test_constructor() public {
@@ -81,16 +88,21 @@ contract AaveOracleTest is Base {
   }
 
   function test_setSpoke() public {
-    vm.prank(deployer);
+    vm.startPrank(deployer);
     oracle = new AaveOracle(_oracleDecimals, _description);
 
-    address newSpoke = address(new SpokeInstance(address(oracle)));
+    address newSpoke = address(
+      DeployUtils.deploySpokeImplementation(
+        address(oracle),
+        Constants.MAX_ALLOWED_USER_RESERVES_LIMIT
+      )
+    );
 
     vm.expectEmit(address(oracle));
     emit IAaveOracle.SetSpoke(address(newSpoke));
 
-    vm.prank(deployer);
     oracle.setSpoke(address(newSpoke));
+    vm.stopPrank();
 
     assertEq(oracle.SPOKE(), address(newSpoke));
   }
@@ -139,15 +151,19 @@ contract AaveOracleTest is Base {
   }
 
   function test_setReserveSource_revertsWith_OracleMismatch() public {
-    vm.prank(deployer);
+    vm.startPrank(deployer);
     IAaveOracle newOracle = IAaveOracle(new AaveOracle(_oracleDecimals, _description));
 
     // set new spoke to a separate oracle
     address mismatchOracle = address(new AaveOracle(_oracleDecimals, _description));
-    address newSpoke = address(new SpokeInstance(mismatchOracle));
+    address newSpoke = address(
+      DeployUtils.deploySpokeImplementation(
+        mismatchOracle,
+        Constants.MAX_ALLOWED_USER_RESERVES_LIMIT
+      )
+    );
 
     vm.expectRevert(IAaveOracle.OracleMismatch.selector);
-    vm.prank(deployer);
     newOracle.setSpoke(newSpoke);
   }
 

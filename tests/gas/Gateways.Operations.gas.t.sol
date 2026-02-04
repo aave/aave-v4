@@ -121,7 +121,7 @@ contract SignatureGateway_Gas_Tests is SignatureGatewayBaseTest {
       amount: 100e18,
       onBehalfOf: alice,
       nonce: gateway.nonces(alice, nonceKey),
-      deadline: _warpBeforeRandomDeadline()
+      deadline: vm.getBlockTimestamp()
     });
     bytes memory signature = _sign(alicePk, _getTypedDataHash(gateway, p));
     Utils.approve(spoke1, p.reserveId, alice, address(gateway), p.amount);
@@ -138,7 +138,7 @@ contract SignatureGateway_Gas_Tests is SignatureGatewayBaseTest {
       amount: 100e18,
       onBehalfOf: alice,
       nonce: gateway.nonces(alice, nonceKey),
-      deadline: _warpBeforeRandomDeadline()
+      deadline: vm.getBlockTimestamp()
     });
     bytes memory signature = _sign(alicePk, _getTypedDataHash(gateway, p));
 
@@ -156,7 +156,7 @@ contract SignatureGateway_Gas_Tests is SignatureGatewayBaseTest {
       amount: 100e18,
       onBehalfOf: alice,
       nonce: gateway.nonces(alice, nonceKey),
-      deadline: _warpBeforeRandomDeadline()
+      deadline: vm.getBlockTimestamp()
     });
     Utils.supplyCollateral(spoke1, p.reserveId, alice, p.amount * 4, alice);
     Utils.borrow(spoke1, p.reserveId, alice, p.amount, alice);
@@ -173,7 +173,7 @@ contract SignatureGateway_Gas_Tests is SignatureGatewayBaseTest {
       amount: 100e18,
       onBehalfOf: alice,
       nonce: gateway.nonces(alice, nonceKey),
-      deadline: _warpBeforeRandomDeadline()
+      deadline: vm.getBlockTimestamp()
     });
     Utils.supplyCollateral(spoke1, p.reserveId, alice, p.amount * 10, alice);
     Utils.borrow(spoke1, p.reserveId, alice, p.amount * 3, alice);
@@ -192,7 +192,7 @@ contract SignatureGateway_Gas_Tests is SignatureGatewayBaseTest {
       useAsCollateral: true,
       onBehalfOf: alice,
       nonce: gateway.nonces(alice, nonceKey),
-      deadline: _warpBeforeRandomDeadline()
+      deadline: vm.getBlockTimestamp()
     });
     Utils.supply(spoke1, p.reserveId, alice, 1e18, alice);
     bytes memory signature = _sign(alicePk, _getTypedDataHash(gateway, p));
@@ -204,9 +204,9 @@ contract SignatureGateway_Gas_Tests is SignatureGatewayBaseTest {
   function test_updateUserRiskPremiumWithSig() public {
     ISignatureGateway.UpdateUserRiskPremium memory p = ISignatureGateway.UpdateUserRiskPremium({
       spoke: address(spoke1),
-      user: alice,
+      onBehalfOf: alice,
       nonce: gateway.nonces(alice, nonceKey),
-      deadline: _warpBeforeRandomDeadline()
+      deadline: vm.getBlockTimestamp()
     });
     bytes memory signature = _sign(alicePk, _getTypedDataHash(gateway, p));
 
@@ -220,9 +220,9 @@ contract SignatureGateway_Gas_Tests is SignatureGatewayBaseTest {
   function test_updateUserDynamicConfigWithSig() public {
     ISignatureGateway.UpdateUserDynamicConfig memory p = ISignatureGateway.UpdateUserDynamicConfig({
       spoke: address(spoke1),
-      user: alice,
+      onBehalfOf: alice,
       nonce: gateway.nonces(alice, nonceKey),
-      deadline: _warpBeforeRandomDeadline()
+      deadline: vm.getBlockTimestamp()
     });
     bytes memory signature = _sign(alicePk, _getTypedDataHash(gateway, p));
 
@@ -236,12 +236,13 @@ contract SignatureGateway_Gas_Tests is SignatureGatewayBaseTest {
   function test_setSelfAsUserPositionManagerWithSig() public {
     vm.prank(alice);
     spoke1.useNonce(nonceKey);
-    EIP712Types.SetUserPositionManager memory p = EIP712Types.SetUserPositionManager({
-      positionManager: address(gateway),
-      user: alice,
-      approve: true,
+    ISpoke.PositionManagerUpdate[] memory updates = new ISpoke.PositionManagerUpdate[](1);
+    updates[0] = ISpoke.PositionManagerUpdate(address(gateway), true);
+    ISpoke.SetUserPositionManagers memory p = ISpoke.SetUserPositionManagers({
+      onBehalfOf: alice,
+      updates: updates,
       nonce: spoke1.nonces(alice, nonceKey), // note: this typed sig is forwarded to spoke
-      deadline: _warpBeforeRandomDeadline()
+      deadline: vm.getBlockTimestamp()
     });
     bytes memory signature = _sign(alicePk, _getTypedDataHash(spoke1, p));
 
@@ -250,8 +251,8 @@ contract SignatureGateway_Gas_Tests is SignatureGatewayBaseTest {
 
     gateway.setSelfAsUserPositionManagerWithSig({
       spoke: address(spoke1),
-      user: p.user,
-      approve: p.approve,
+      onBehalfOf: p.onBehalfOf,
+      approve: p.updates[0].approve,
       nonce: p.nonce,
       deadline: p.deadline,
       signature: signature

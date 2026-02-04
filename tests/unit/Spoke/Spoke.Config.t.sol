@@ -9,36 +9,52 @@ contract SpokeConfigTest is SpokeBase {
   using PercentageMath for uint256;
 
   function test_spoke_deploy() public {
-    address predictedSpokeAddress = vm.computeCreateAddress(
-      address(this),
-      vm.getNonce(address(this))
-    );
     address oracle = makeAddr('AaveOracle');
     vm.expectCall(oracle, abi.encodeCall(IPriceOracle.DECIMALS, ()), 1);
     vm.mockCall(oracle, abi.encodeCall(IPriceOracle.DECIMALS, ()), abi.encode(8));
-    SpokeInstance instance = new SpokeInstance(oracle);
-    assertEq(address(instance), predictedSpokeAddress, 'predictedSpokeAddress');
+    ISpoke instance = ISpoke(
+      address(
+        DeployUtils.deploySpokeImplementation(oracle, Constants.MAX_ALLOWED_USER_RESERVES_LIMIT)
+      )
+    );
     assertEq(instance.ORACLE(), oracle);
+    assertEq(instance.MAX_USER_RESERVES_LIMIT(), Constants.MAX_ALLOWED_USER_RESERVES_LIMIT);
     assertNotEq(instance.getLiquidationLogic(), address(0));
   }
 
   function test_spoke_deploy_reverts_on_InvalidConstructorInput() public {
+    DeployWrapper deployer = new DeployWrapper();
+
     vm.expectRevert();
-    new SpokeInstance(address(0));
+    deployer.deploySpokeImplementation(address(0), Constants.MAX_ALLOWED_USER_RESERVES_LIMIT);
   }
 
-  function test_spoke_deploy_revertsWith_InvalidOracleDecimals() public {
+  function test_spoke_deploy_reverts_on_InvalidOracleDecimals() public {
+    DeployWrapper deployer = new DeployWrapper();
     address oracle = makeAddr('AaveOracle');
+
     vm.mockCall(oracle, abi.encodeCall(IPriceOracle.DECIMALS, ()), abi.encode(7));
-    vm.expectRevert(ISpoke.InvalidOracleDecimals.selector);
-    new SpokeInstance(oracle);
+    vm.expectRevert();
+    deployer.deploySpokeImplementation(oracle, Constants.MAX_ALLOWED_USER_RESERVES_LIMIT);
+  }
+
+  function test_spoke_deploy_reverts_on_InvalidMaxUserReservesLimit() public {
+    DeployWrapper deployer = new DeployWrapper();
+    address oracle = makeAddr('AaveOracle');
+
+    vm.mockCall(oracle, abi.encodeCall(IPriceOracle.DECIMALS, ()), abi.encode(8));
+    vm.expectRevert();
+    deployer.deploySpokeImplementation(oracle, 0);
   }
 
   function test_updateReservePriceSource_revertsWith_AccessManagedUnauthorized(
     address caller
   ) public {
     vm.assume(
-      caller != SPOKE_ADMIN && caller != ADMIN && caller != _getProxyAdminAddress(address(spoke1))
+      caller != SPOKE_ADMIN &&
+        caller != ADMIN &&
+        caller != SPOKE_CONFIGURATOR &&
+        caller != _getProxyAdminAddress(address(spoke1))
     );
     vm.expectRevert(
       abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, caller)
@@ -75,7 +91,6 @@ contract SpokeConfigTest is SpokeBase {
       paused: !config.paused,
       frozen: !config.frozen,
       borrowable: !config.borrowable,
-      liquidatable: !config.liquidatable,
       receiveSharesEnabled: !config.receiveSharesEnabled,
       collateralRisk: config.collateralRisk + 1
     });

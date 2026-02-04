@@ -58,6 +58,47 @@ contract SpokeRepayTest is SpokeBase {
     vm.stopPrank();
   }
 
+  function test_repay_revertsWith_ReentrancyGuardReentrantCall() public {
+    uint256 amount = 100e18;
+
+    Utils.supplyCollateral({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      caller: bob,
+      amount: amount * 2,
+      onBehalfOf: bob
+    });
+
+    Utils.borrow({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      caller: bob,
+      amount: amount,
+      onBehalfOf: bob
+    });
+
+    MockReentrantCaller reentrantCaller = new MockReentrantCaller(
+      address(spoke1),
+      ISpokeBase.repay.selector
+    );
+    vm.mockFunction(
+      address(_hub(spoke1, _daiReserveId(spoke1))),
+      address(reentrantCaller),
+      abi.encodeCall(
+        IHubBase.restore,
+        (
+          daiAssetId,
+          amount,
+          _getExpectedPremiumDeltaForRestore(spoke1, bob, _daiReserveId(spoke1), amount)
+        )
+      )
+    );
+
+    vm.expectRevert(ReentrancyGuardTransient.ReentrancyGuardReentrantCall.selector);
+    vm.prank(bob);
+    spoke1.repay(_daiReserveId(spoke1), amount, bob);
+  }
+
   function test_repay() public {
     uint256 daiSupplyAmount = 100e18;
     uint256 wethSupplyAmount = 10e18;

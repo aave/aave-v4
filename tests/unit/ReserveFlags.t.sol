@@ -10,8 +10,7 @@ contract ReserveFlagsTests is Test {
   uint8 internal constant PAUSED_MASK = 0x01;
   uint8 internal constant FROZEN_MASK = 0x02;
   uint8 internal constant BORROWABLE_MASK = 0x04;
-  uint8 internal constant LIQUIDATABLE_MASK = 0x08;
-  uint8 internal constant RECEIVE_SHARES_ENABLED_MASK = 0x10;
+  uint8 internal constant RECEIVE_SHARES_ENABLED_MASK = 0x08;
 
   ReserveFlagsMapWrapper internal w;
 
@@ -23,7 +22,6 @@ contract ReserveFlagsTests is Test {
     assertEq(w.PAUSED_MASK(), PAUSED_MASK);
     assertEq(w.FROZEN_MASK(), FROZEN_MASK);
     assertEq(w.BORROWABLE_MASK(), BORROWABLE_MASK);
-    assertEq(w.LIQUIDATABLE_MASK(), LIQUIDATABLE_MASK);
     assertEq(w.RECEIVE_SHARES_ENABLED_MASK(), RECEIVE_SHARES_ENABLED_MASK);
   }
 
@@ -31,21 +29,18 @@ contract ReserveFlagsTests is Test {
     bool paused,
     bool frozen,
     bool borrowable,
-    bool liquidatable,
     bool receiveSharesEnabled
   ) public view {
     ReserveFlags flags = w.create({
       initPaused: paused,
       initFrozen: frozen,
       initBorrowable: borrowable,
-      initLiquidatable: liquidatable,
       initReceiveSharesEnabled: receiveSharesEnabled
     });
 
     assertEq(w.paused(flags), paused);
     assertEq(w.frozen(flags), frozen);
     assertEq(w.borrowable(flags), borrowable);
-    assertEq(w.liquidatable(flags), liquidatable);
     assertEq(w.receiveSharesEnabled(flags), receiveSharesEnabled);
   }
 
@@ -54,77 +49,54 @@ contract ReserveFlagsTests is Test {
     assertEq(w.paused(flags), false);
     assertEq(w.frozen(flags), false);
     assertEq(w.borrowable(flags), false);
-    assertEq(w.liquidatable(flags), false);
     assertEq(w.receiveSharesEnabled(flags), false);
 
     flags = w.setPaused(flags, true);
     assertEq(w.paused(flags), true);
     assertEq(w.frozen(flags), false);
     assertEq(w.borrowable(flags), false);
-    assertEq(w.liquidatable(flags), false);
     assertEq(w.receiveSharesEnabled(flags), false);
 
     flags = w.setFrozen(flags, true);
     assertEq(w.paused(flags), true);
     assertEq(w.frozen(flags), true);
     assertEq(w.borrowable(flags), false);
-    assertEq(w.liquidatable(flags), false);
     assertEq(w.receiveSharesEnabled(flags), false);
 
     flags = w.setBorrowable(flags, true);
     assertEq(w.paused(flags), true);
     assertEq(w.frozen(flags), true);
     assertEq(w.borrowable(flags), true);
-    assertEq(w.liquidatable(flags), false);
-    assertEq(w.receiveSharesEnabled(flags), false);
-
-    flags = w.setLiquidatable(flags, true);
-    assertEq(w.paused(flags), true);
-    assertEq(w.frozen(flags), true);
-    assertEq(w.borrowable(flags), true);
-    assertEq(w.liquidatable(flags), true);
     assertEq(w.receiveSharesEnabled(flags), false);
 
     flags = w.setReceiveSharesEnabled(flags, true);
     assertEq(w.paused(flags), true);
     assertEq(w.frozen(flags), true);
     assertEq(w.borrowable(flags), true);
-    assertEq(w.liquidatable(flags), true);
     assertEq(w.receiveSharesEnabled(flags), true);
 
     flags = w.setFrozen(flags, false);
     assertEq(w.paused(flags), true);
     assertEq(w.frozen(flags), false);
     assertEq(w.borrowable(flags), true);
-    assertEq(w.liquidatable(flags), true);
     assertEq(w.receiveSharesEnabled(flags), true);
 
     flags = w.setBorrowable(flags, false);
     assertEq(w.paused(flags), true);
     assertEq(w.frozen(flags), false);
     assertEq(w.borrowable(flags), false);
-    assertEq(w.liquidatable(flags), true);
-    assertEq(w.receiveSharesEnabled(flags), true);
-
-    flags = w.setLiquidatable(flags, false);
-    assertEq(w.paused(flags), true);
-    assertEq(w.frozen(flags), false);
-    assertEq(w.borrowable(flags), false);
-    assertEq(w.liquidatable(flags), false);
     assertEq(w.receiveSharesEnabled(flags), true);
 
     flags = w.setReceiveSharesEnabled(flags, false);
     assertEq(w.paused(flags), true);
     assertEq(w.frozen(flags), false);
     assertEq(w.borrowable(flags), false);
-    assertEq(w.liquidatable(flags), false);
     assertEq(w.receiveSharesEnabled(flags), false);
 
     flags = w.setPaused(flags, false);
     assertEq(w.paused(flags), false);
     assertEq(w.frozen(flags), false);
     assertEq(w.borrowable(flags), false);
-    assertEq(w.liquidatable(flags), false);
     assertEq(w.receiveSharesEnabled(flags), false);
   }
 
@@ -185,25 +157,6 @@ contract ReserveFlagsTests is Test {
     assertEq(ReserveFlags.unwrap(flags), expectedRawFlags);
   }
 
-  function test_setLiquidatable_fuzz(uint8 rawFlags) public view {
-    ReserveFlags flags = _sanitizeFlags(rawFlags);
-    uint8 expectedRawFlags = ReserveFlags.unwrap(flags);
-
-    expectedRawFlags = expectedRawFlags | LIQUIDATABLE_MASK;
-
-    flags = w.setLiquidatable(flags, true);
-
-    assertEq(w.liquidatable(flags), true);
-    assertEq(ReserveFlags.unwrap(flags), expectedRawFlags);
-
-    expectedRawFlags = expectedRawFlags & ~LIQUIDATABLE_MASK;
-
-    flags = w.setLiquidatable(flags, false);
-
-    assertEq(w.liquidatable(flags), false);
-    assertEq(ReserveFlags.unwrap(flags), expectedRawFlags);
-  }
-
   function test_setReceiveSharesEnabled_fuzz(uint8 rawFlags) public view {
     ReserveFlags flags = _sanitizeFlags(rawFlags);
     uint8 expectedRawFlags = ReserveFlags.unwrap(flags);
@@ -226,11 +179,7 @@ contract ReserveFlagsTests is Test {
   /// @dev Sanitizes the raw flags by masking out any irrelevant bits.
   function _sanitizeFlags(uint8 rawFlags) internal pure returns (ReserveFlags) {
     uint8 sanitizedFlags = rawFlags &
-      (PAUSED_MASK |
-        FROZEN_MASK |
-        BORROWABLE_MASK |
-        LIQUIDATABLE_MASK |
-        RECEIVE_SHARES_ENABLED_MASK);
+      (PAUSED_MASK | FROZEN_MASK | BORROWABLE_MASK | RECEIVE_SHARES_ENABLED_MASK);
     return ReserveFlags.wrap(sanitizedFlags);
   }
 }

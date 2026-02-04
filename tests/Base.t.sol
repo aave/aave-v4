@@ -15,10 +15,11 @@ import {
   TransparentUpgradeableProxy,
   ITransparentUpgradeableProxy
 } from 'src/dependencies/openzeppelin/TransparentUpgradeableProxy.sol';
+import {ReentrancyGuardTransient} from 'src/dependencies/openzeppelin/ReentrancyGuardTransient.sol';
 import {IERC20Metadata} from 'src/dependencies/openzeppelin/IERC20Metadata.sol';
 import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
 import {IERC20Errors} from 'src/dependencies/openzeppelin/IERC20Errors.sol';
-import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
+import {SafeERC20, IERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
 import {IERC5267} from 'src/dependencies/openzeppelin/IERC5267.sol';
 import {AccessManager} from 'src/dependencies/openzeppelin/AccessManager.sol';
 import {IAccessManager} from 'src/dependencies/openzeppelin/IAccessManager.sol';
@@ -45,7 +46,7 @@ import {AccessManagerEnumerable} from 'src/access/AccessManagerEnumerable.sol';
 
 // hub
 import {HubConfigurator, IHubConfigurator} from 'src/hub/HubConfigurator.sol';
-import {Hub, IHub, IHubBase} from 'src/hub/Hub.sol';
+import {IHub, IHubBase} from 'src/hub/interfaces/IHub.sol';
 import {SharesMath} from 'src/hub/libraries/SharesMath.sol';
 import {
   AssetInterestRateStrategy,
@@ -54,13 +55,12 @@ import {
 } from 'src/hub/AssetInterestRateStrategy.sol';
 
 // spoke
-import {Spoke, ISpoke, ISpokeBase} from 'src/spoke/Spoke.sol';
+import {ISpoke, ISpokeBase} from 'src/spoke/interfaces/ISpoke.sol';
 import {TreasurySpoke, ITreasurySpoke} from 'src/spoke/TreasurySpoke.sol';
 import {IPriceOracle} from 'src/spoke/interfaces/IPriceOracle.sol';
 import {AaveOracle} from 'src/spoke/AaveOracle.sol';
 import {IAaveOracle} from 'src/spoke/interfaces/IAaveOracle.sol';
 import {SpokeConfigurator, ISpokeConfigurator} from 'src/spoke/SpokeConfigurator.sol';
-import {SpokeInstance} from 'src/spoke/instances/SpokeInstance.sol';
 import {PositionStatusMap} from 'src/spoke/libraries/PositionStatusMap.sol';
 import {ReserveFlags, ReserveFlagsMap} from 'src/spoke/libraries/ReserveFlagsMap.sol';
 import {LiquidationLogic} from 'src/spoke/libraries/LiquidationLogic.sol';
@@ -73,6 +73,7 @@ import {SignatureGateway, ISignatureGateway} from 'src/position-manager/Signatur
 
 // test
 import {Constants} from 'tests/Constants.sol';
+import {DeployUtils} from 'tests/DeployUtils.sol';
 import {Utils} from 'tests/Utils.sol';
 
 // mocks
@@ -88,6 +89,9 @@ import {MockSpoke} from 'tests/mocks/MockSpoke.sol';
 import {MockERC1271Wallet} from 'tests/mocks/MockERC1271Wallet.sol';
 import {MockSpokeInstance} from 'tests/mocks/MockSpokeInstance.sol';
 import {MockSkimSpoke} from 'tests/mocks/MockSkimSpoke.sol';
+import {MockReentrantCaller} from 'tests/mocks/MockReentrantCaller.sol';
+import {ISpokeInstance} from 'tests/mocks/ISpokeInstance.sol';
+import {DeployWrapper} from 'tests/mocks/DeployWrapper.sol';
 
 abstract contract Base is Test {
   using stdStorage for StdStorage;
@@ -155,9 +159,12 @@ abstract contract Base is Test {
   address internal HUB_ADMIN = makeAddr('HUB_ADMIN');
   address internal SPOKE_ADMIN = makeAddr('SPOKE_ADMIN');
   address internal USER_POSITION_UPDATER = makeAddr('USER_POSITION_UPDATER');
+  address internal DEFICIT_ELIMINATOR = makeAddr('DEFICIT_ELIMINATOR');
   address internal TREASURY_ADMIN = makeAddr('TREASURY_ADMIN');
   address internal LIQUIDATOR = makeAddr('LIQUIDATOR');
   address internal POSITION_MANAGER = makeAddr('POSITION_MANAGER');
+  address internal HUB_CONFIGURATOR = makeAddr('HUB_CONFIGURATOR');
+  address internal SPOKE_CONFIGURATOR = makeAddr('SPOKE_CONFIGURATOR');
 
   TokenList internal tokenList;
   uint256 internal wethAssetId = 0;
@@ -282,7 +289,7 @@ abstract contract Base is Test {
   function deployFixtures() internal virtual {
     vm.startPrank(ADMIN);
     accessManager = IAccessManager(address(new AccessManagerEnumerable(ADMIN)));
-    hub1 = new Hub(address(accessManager));
+    hub1 = DeployUtils.deployHub(address(accessManager));
     irStrategy = new AssetInterestRateStrategy(address(hub1));
     (spoke1, oracle1) = _deploySpokeWithOracle(ADMIN, address(accessManager), 'Spoke 1 (USD)');
     (spoke2, oracle2) = _deploySpokeWithOracle(ADMIN, address(accessManager), 'Spoke 2 (USD)');
@@ -310,6 +317,12 @@ abstract contract Base is Test {
 
     manager.grantRole(Roles.USER_POSITION_UPDATER_ROLE, SPOKE_ADMIN, 0);
     manager.grantRole(Roles.USER_POSITION_UPDATER_ROLE, USER_POSITION_UPDATER, 0);
+
+    manager.grantRole(Roles.HUB_CONFIGURATOR_ROLE, HUB_CONFIGURATOR, 0);
+    manager.grantRole(Roles.SPOKE_CONFIGURATOR_ROLE, SPOKE_CONFIGURATOR, 0);
+
+    manager.grantRole(Roles.DEFICIT_ELIMINATOR_ROLE, HUB_ADMIN, 0);
+    manager.grantRole(Roles.DEFICIT_ELIMINATOR_ROLE, DEFICIT_ELIMINATOR, 0);
 
     // Grant responsibilities to roles
     {
@@ -341,6 +354,95 @@ abstract contract Base is Test {
       selectors[5] = IHub.mintFeeShares.selector;
       manager.setTargetFunctionRole(address(targetHub), selectors, Roles.HUB_ADMIN_ROLE);
     }
+
+    {
+      bytes4[] memory selectors = new bytes4[](1);
+      selectors[0] = IHub.eliminateDeficit.selector;
+      manager.setTargetFunctionRole(address(targetHub), selectors, Roles.DEFICIT_ELIMINATOR_ROLE);
+    }
+
+    setUpHubConfiguratorRoles(HUB_CONFIGURATOR, address(manager));
+    setUpSpokeConfiguratorRoles(SPOKE_CONFIGURATOR, address(manager));
+
+    vm.stopPrank();
+  }
+
+  function setUpHubConfiguratorRoles(address hubConfigurator, address manager) internal {
+    vm.startPrank(ADMIN);
+
+    // Grant HUB_ADMIN_ROLE so the configurator can call hub functions
+    IAccessManager(manager).grantRole(Roles.HUB_ADMIN_ROLE, hubConfigurator, 0);
+
+    // Set up HubConfigurator function permissions - all functions callable by HUB_CONFIGURATOR_ROLE
+    bytes4[] memory selectors = new bytes4[](22);
+    selectors[0] = IHubConfigurator.updateLiquidityFee.selector;
+    selectors[1] = IHubConfigurator.updateFeeReceiver.selector;
+    selectors[2] = IHubConfigurator.updateFeeConfig.selector;
+    selectors[3] = IHubConfigurator.updateInterestRateStrategy.selector;
+    selectors[4] = IHubConfigurator.updateReinvestmentController.selector;
+    selectors[5] = IHubConfigurator.freezeAsset.selector;
+    selectors[6] = IHubConfigurator.deactivateAsset.selector;
+    selectors[7] = IHubConfigurator.haltAsset.selector;
+    selectors[8] = IHubConfigurator.addSpoke.selector;
+    selectors[9] = IHubConfigurator.addSpokeToAssets.selector;
+    selectors[10] = IHubConfigurator.updateSpokeActive.selector;
+    selectors[11] = IHubConfigurator.updateSpokeHalted.selector;
+    selectors[12] = IHubConfigurator.updateSpokeSupplyCap.selector;
+    selectors[13] = IHubConfigurator.updateSpokeDrawCap.selector;
+    selectors[14] = IHubConfigurator.updateSpokeRiskPremiumThreshold.selector;
+    selectors[15] = IHubConfigurator.updateSpokeCaps.selector;
+    selectors[16] = IHubConfigurator.deactivateSpoke.selector;
+    selectors[17] = IHubConfigurator.haltSpoke.selector;
+    selectors[18] = IHubConfigurator.freezeSpoke.selector;
+    selectors[19] = IHubConfigurator.updateInterestRateData.selector;
+    selectors[20] = IHubConfigurator.addAsset.selector;
+    selectors[21] = IHubConfigurator.addAssetWithDecimals.selector;
+    IAccessManager(manager).setTargetFunctionRole(
+      hubConfigurator,
+      selectors,
+      Roles.HUB_CONFIGURATOR_ROLE
+    );
+
+    vm.stopPrank();
+  }
+
+  function setUpSpokeConfiguratorRoles(address spokeConfigurator, address manager) internal {
+    vm.startPrank(ADMIN);
+
+    // Grant SPOKE_ADMIN_ROLE so the configurator can call spoke functions
+    IAccessManager(manager).grantRole(Roles.SPOKE_ADMIN_ROLE, spokeConfigurator, 0);
+
+    // Set up SpokeConfigurator function permissions - all functions callable by SPOKE_CONFIGURATOR_ROLE
+    bytes4[] memory selectors = new bytes4[](23);
+    selectors[0] = ISpokeConfigurator.updateReservePriceSource.selector;
+    selectors[1] = ISpokeConfigurator.updateLiquidationTargetHealthFactor.selector;
+    selectors[2] = ISpokeConfigurator.updateHealthFactorForMaxBonus.selector;
+    selectors[3] = ISpokeConfigurator.updateLiquidationBonusFactor.selector;
+    selectors[4] = ISpokeConfigurator.updateLiquidationConfig.selector;
+    selectors[5] = ISpokeConfigurator.updateMaxReserves.selector;
+    selectors[6] = ISpokeConfigurator.addReserve.selector;
+    selectors[7] = ISpokeConfigurator.updatePaused.selector;
+    selectors[8] = ISpokeConfigurator.updateFrozen.selector;
+    selectors[9] = ISpokeConfigurator.updateBorrowable.selector;
+    selectors[10] = ISpokeConfigurator.updateReceiveSharesEnabled.selector;
+    selectors[11] = ISpokeConfigurator.updateCollateralRisk.selector;
+    selectors[12] = ISpokeConfigurator.addCollateralFactor.selector;
+    selectors[13] = ISpokeConfigurator.updateCollateralFactor.selector;
+    selectors[14] = ISpokeConfigurator.addMaxLiquidationBonus.selector;
+    selectors[15] = ISpokeConfigurator.updateMaxLiquidationBonus.selector;
+    selectors[16] = ISpokeConfigurator.addLiquidationFee.selector;
+    selectors[17] = ISpokeConfigurator.updateLiquidationFee.selector;
+    selectors[18] = ISpokeConfigurator.addDynamicReserveConfig.selector;
+    selectors[19] = ISpokeConfigurator.updateDynamicReserveConfig.selector;
+    selectors[20] = ISpokeConfigurator.pauseAllReserves.selector;
+    selectors[21] = ISpokeConfigurator.freezeAllReserves.selector;
+    selectors[22] = ISpokeConfigurator.updatePositionManager.selector;
+    IAccessManager(manager).setTargetFunctionRole(
+      spokeConfigurator,
+      selectors,
+      Roles.SPOKE_CONFIGURATOR_ROLE
+    );
+
     vm.stopPrank();
   }
 
@@ -441,7 +543,7 @@ abstract contract Base is Test {
   function configureTokenList() internal {
     IHub.SpokeConfig memory spokeConfig = IHub.SpokeConfig({
       active: true,
-      paused: false,
+      halted: false,
       addCap: Constants.MAX_ALLOWED_SPOKE_CAP,
       drawCap: Constants.MAX_ALLOWED_SPOKE_CAP,
       riskPremiumThreshold: Constants.MAX_ALLOWED_COLLATERAL_RISK
@@ -823,7 +925,7 @@ abstract contract Base is Test {
    */
   function hub2Fixture() internal returns (IHub, AssetInterestRateStrategy) {
     IAccessManager accessManager2 = IAccessManager(address(new AccessManagerEnumerable(ADMIN)));
-    IHub hub2 = new Hub(address(accessManager2));
+    IHub hub2 = DeployUtils.deployHub(address(accessManager2));
     vm.label(address(hub2), 'Hub2');
     AssetInterestRateStrategy hub2IrStrategy = new AssetInterestRateStrategy(address(hub2));
 
@@ -890,7 +992,7 @@ abstract contract Base is Test {
    */
   function hub3Fixture() internal returns (IHub, AssetInterestRateStrategy) {
     IAccessManager accessManager3 = IAccessManager(address(new AccessManagerEnumerable(ADMIN)));
-    IHub hub3 = new Hub(address(accessManager3));
+    IHub hub3 = DeployUtils.deployHub(address(accessManager3));
     AssetInterestRateStrategy hub3IrStrategy = new AssetInterestRateStrategy(address(hub3));
 
     // Configure IR Strategy for hub 3
@@ -1200,14 +1302,14 @@ abstract contract Base is Test {
     return spokeInfo[spoke].usdz.reserveId;
   }
 
-  function _updateSpokePaused(
+  function _updateSpokeHalted(
     IHub hub,
     uint256 assetId,
     address spoke,
-    bool paused
+    bool halted
   ) internal pausePrank {
     IHub.SpokeConfig memory spokeConfig = hub.getSpokeConfig(assetId, spoke);
-    spokeConfig.paused = paused;
+    spokeConfig.halted = halted;
     vm.prank(HUB_ADMIN);
     hub.updateSpokeConfig(assetId, spoke, spokeConfig);
 
@@ -1254,6 +1356,18 @@ abstract contract Base is Test {
     hub.updateSpokeConfig(assetId, spoke, spokeConfig);
 
     assertEq(hub.getSpokeConfig(assetId, spoke), spokeConfig);
+  }
+
+  function grantDeficitEliminatorRole(IHub hub, address target) internal pausePrank {
+    IAccessManager manager = IAccessManager(hub.authority());
+    vm.prank(ADMIN);
+    manager.grantRole(Roles.DEFICIT_ELIMINATOR_ROLE, target, 0);
+  }
+
+  function revokeDeficitEliminatorRole(IHub hub, address target) internal pausePrank {
+    IAccessManager manager = IAccessManager(hub.authority());
+    vm.prank(ADMIN);
+    manager.revokeRole(Roles.DEFICIT_ELIMINATOR_ROLE, target);
   }
 
   function getUserInfo(
@@ -1471,7 +1585,7 @@ abstract contract Base is Test {
         userDrawnDebt,
         userPremiumDebt,
         repayAmount,
-        _spokeAssetId(spoke, reserveId)
+        _reserveAssetId(spoke, reserveId)
       );
   }
 
@@ -1606,7 +1720,7 @@ abstract contract Base is Test {
       );
 
       uint256 restoredPremiumRay = (premiumAmountToRestore * WadRayMath.RAY).min(premiumDebtRay);
-      uint256 restoredShares = drawnDebtToRestore.rayDivDown(hub.getAssetDrawnIndex(reserveId));
+      uint256 restoredShares = drawnDebtToRestore.rayDivDown(hub.getAssetDrawnIndex(assetId));
       uint256 riskPremium = _getUserLastRiskPremium(spoke, user);
 
       return
@@ -1980,6 +2094,10 @@ abstract contract Base is Test {
     return a > b ? a : b;
   }
 
+  function _divUp(uint256 a, uint256 b) internal pure returns (uint256) {
+    return (a + b - 1) / b;
+  }
+
   function _getTargetHealthFactor(ISpoke spoke) internal view returns (uint128) {
     return spoke.getLiquidationConfig().targetHealthFactor;
   }
@@ -2213,7 +2331,7 @@ abstract contract Base is Test {
     return IHub(address(spoke.getReserve(reserveId).hub));
   }
 
-  function _spokeAssetId(ISpoke spoke, uint256 reserveId) internal view returns (uint256) {
+  function _reserveAssetId(ISpoke spoke, uint256 reserveId) internal view returns (uint256) {
     return spoke.getReserve(reserveId).assetId;
   }
 
@@ -2234,26 +2352,39 @@ abstract contract Base is Test {
     address _accessManager,
     string memory _oracleDesc
   ) internal pausePrank returns (ISpoke, IAaveOracle) {
+    return
+      _deploySpokeWithOracle(
+        proxyAdminOwner,
+        _accessManager,
+        _oracleDesc,
+        Constants.MAX_ALLOWED_USER_RESERVES_LIMIT
+      );
+  }
+
+  function _deploySpokeWithOracle(
+    address proxyAdminOwner,
+    address _accessManager,
+    string memory _oracleDesc,
+    uint16 maxUserReservesLimit
+  ) internal pausePrank returns (ISpoke, IAaveOracle) {
     address deployer = makeAddr('deployer');
 
-    vm.prank(deployer);
+    vm.startPrank(deployer);
     IAaveOracle oracle = new AaveOracle(8, _oracleDesc);
 
-    address spokeImpl = address(new SpokeInstance(address(oracle)));
-    ISpoke spoke = ISpoke(
-      _proxify(
-        deployer,
-        spokeImpl,
-        proxyAdminOwner,
-        abi.encodeCall(Spoke.initialize, (_accessManager))
-      )
+    ISpoke spoke = DeployUtils.deploySpoke(
+      address(oracle),
+      maxUserReservesLimit,
+      proxyAdminOwner,
+      abi.encodeCall(ISpokeInstance.initialize, (_accessManager))
     );
 
-    vm.prank(deployer);
     oracle.setSpoke(address(spoke));
+    vm.stopPrank();
 
     assertEq(spoke.ORACLE(), address(oracle));
     assertEq(oracle.SPOKE(), address(spoke));
+
     return (spoke, oracle);
   }
 
@@ -2265,25 +2396,9 @@ abstract contract Base is Test {
         paused: false,
         frozen: false,
         borrowable: true,
-        liquidatable: true,
         receiveSharesEnabled: true,
         collateralRisk: collateralRisk
       });
-  }
-
-  function _proxify(
-    address deployer,
-    address impl,
-    address proxyAdminOwner,
-    bytes memory initData
-  ) internal returns (address) {
-    vm.prank(deployer);
-    TransparentUpgradeableProxy proxy = new TransparentUpgradeableProxy(
-      impl,
-      proxyAdminOwner,
-      initData
-    );
-    return address(proxy);
   }
 
   function assertEq(IHubBase.PremiumDelta memory a, IHubBase.PremiumDelta memory b) internal pure {
@@ -2306,7 +2421,7 @@ abstract contract Base is Test {
     assertEq(a.drawCap, b.drawCap, 'drawCap');
     assertEq(a.riskPremiumThreshold, b.riskPremiumThreshold, 'riskPremiumThreshold');
     assertEq(a.active, b.active, 'active');
-    assertEq(a.paused, b.paused, 'paused');
+    assertEq(a.halted, b.halted, 'halted');
     assertEq(abi.encode(a), abi.encode(b));
   }
 
@@ -2743,14 +2858,14 @@ abstract contract Base is Test {
 
   function _getTypedDataHash(
     ISpoke spoke,
-    EIP712Types.SetUserPositionManager memory setUserPositionManager
+    ISpoke.SetUserPositionManagers memory setUserPositionManagers
   ) internal view returns (bytes32) {
     return
       keccak256(
         abi.encodePacked(
           '\x19\x01',
           spoke.DOMAIN_SEPARATOR(),
-          vm.eip712HashStruct('SetUserPositionManager', abi.encode(setUserPositionManager))
+          vm.eip712HashStruct('SetUserPositionManagers', abi.encode(setUserPositionManagers))
         )
       );
   }

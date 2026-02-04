@@ -5,10 +5,13 @@ pragma solidity 0.8.28;
 import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
 import {SafeERC20, IERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
 import {IERC20Permit} from 'src/dependencies/openzeppelin/IERC20Permit.sol';
+import {ReentrancyGuardTransient} from 'src/dependencies/openzeppelin/ReentrancyGuardTransient.sol';
+import {Math} from 'src/dependencies/openzeppelin/Math.sol';
 import {AccessManagedUpgradeable} from 'src/dependencies/openzeppelin-upgradeable/AccessManagedUpgradeable.sol';
 import {MathUtils} from 'src/libraries/math/MathUtils.sol';
 import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
 import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
+import {EIP712Hash} from 'src/spoke/libraries/EIP712Hash.sol';
 import {KeyValueList} from 'src/spoke/libraries/KeyValueList.sol';
 import {LiquidationLogic} from 'src/spoke/libraries/LiquidationLogic.sol';
 import {PositionStatusMap} from 'src/spoke/libraries/PositionStatusMap.sol';
@@ -16,20 +19,31 @@ import {ReserveFlags, ReserveFlagsMap} from 'src/spoke/libraries/ReserveFlagsMap
 import {UserPositionDebt} from 'src/spoke/libraries/UserPositionDebt.sol';
 import {IntentConsumer} from 'src/utils/IntentConsumer.sol';
 import {Multicall} from 'src/utils/Multicall.sol';
+import {ExtSload} from 'src/utils/ExtSload.sol';
 import {IAaveOracle} from 'src/spoke/interfaces/IAaveOracle.sol';
 import {IHubBase} from 'src/hub/interfaces/IHubBase.sol';
 import {ISpokeBase, ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
+import {SpokeStorage} from 'src/spoke/SpokeStorage.sol';
 
 /// @title Spoke
 /// @author Aave Labs
 /// @notice Handles risk configuration & borrowing strategy for reserves and user positions.
 /// @dev Each reserve can be associated with a separate Hub.
-abstract contract Spoke is ISpoke, AccessManagedUpgradeable, IntentConsumer, Multicall {
+abstract contract Spoke is
+  ISpoke,
+  SpokeStorage,
+  AccessManagedUpgradeable,
+  IntentConsumer,
+  ExtSload,
+  Multicall,
+  ReentrancyGuardTransient
+{
   using SafeCast for *;
   using SafeERC20 for IERC20;
   using MathUtils for *;
   using PercentageMath for *;
   using WadRayMath for *;
+  using EIP712Hash for *;
   using KeyValueList for KeyValueList.List;
   using LiquidationLogic for *;
   using PositionStatusMap for *;
@@ -37,12 +51,17 @@ abstract contract Spoke is ISpoke, AccessManagedUpgradeable, IntentConsumer, Mul
   using UserPositionDebt for ISpoke.UserPosition;
 
   /// @inheritdoc ISpoke
-  bytes32 public constant SET_USER_POSITION_MANAGER_TYPEHASH =
-    // keccak256('SetUserPositionManager(address positionManager,address user,bool approve,uint256 nonce,uint256 deadline)')
-    0x758d23a3c07218b7ea0b4f7f63903c4e9d5cbde72d3bcfe3e9896639025a0214;
+  bytes32 public constant SET_USER_POSITION_MANAGERS_TYPEHASH =
+    EIP712Hash.SET_USER_POSITION_MANAGERS_TYPEHASH;
+
+  /// @inheritdoc ISpoke
+  uint16 public immutable MAX_USER_RESERVES_LIMIT;
 
   /// @inheritdoc ISpoke
   address public immutable ORACLE;
+
+  /// @dev The number of decimals used by the oracle.
+  uint8 internal constant ORACLE_DECIMALS = 8;
 
   /// @dev The maximum allowed value for an asset identifier (inclusive).
   uint256 internal constant MAX_ALLOWED_ASSET_ID = type(uint16).max;
@@ -52,6 +71,9 @@ abstract contract Spoke is ISpoke, AccessManagedUpgradeable, IntentConsumer, Mul
 
   /// @dev The maximum allowed value for a dynamic configuration key (inclusive).
   uint256 internal constant MAX_ALLOWED_DYNAMIC_CONFIG_KEY = type(uint24).max;
+
+  /// @dev The maximum allowed value for the maximum number of reserves a user can have (collateral or borrowed) (inclusive).
+  uint16 internal constant MAX_ALLOWED_USER_RESERVES_LIMIT = type(uint16).max;
 
   /// @dev The minimum health factor below which a position is considered unhealthy and subject to liquidation.
   /// @dev Expressed in WAD (18 decimals) (e.g. 1e18 is 1.00).
@@ -63,34 +85,6 @@ abstract contract Spoke is ISpoke, AccessManagedUpgradeable, IntentConsumer, Mul
   uint256 internal constant DUST_LIQUIDATION_THRESHOLD =
     LiquidationLogic.DUST_LIQUIDATION_THRESHOLD;
 
-  /// @dev The number of decimals used by the oracle.
-  uint8 internal constant ORACLE_DECIMALS = 8;
-
-  /// @dev Number of reserves listed in the Spoke.
-  uint256 internal _reserveCount;
-
-  /// @dev Map of user addresses and reserve identifiers to user positions.
-  mapping(address user => mapping(uint256 reserveId => UserPosition)) internal _userPositions;
-
-  /// @dev Map of user addresses to their position status.
-  mapping(address user => PositionStatus) internal _positionStatus;
-
-  /// @dev Map of reserve identifiers to their Reserve data.
-  mapping(uint256 reserveId => Reserve) internal _reserves;
-
-  /// @dev Map of position manager addresses to their configuration data.
-  mapping(address positionManager => PositionManagerConfig) internal _positionManager;
-
-  /// @dev Map of reserve identifiers and dynamic configuration keys to the dynamic configuration data.
-  mapping(uint256 reserveId => mapping(uint24 dynamicConfigKey => DynamicReserveConfig))
-    internal _dynamicConfig;
-
-  /// @dev Liquidation configuration for the Spoke.
-  LiquidationConfig internal _liquidationConfig;
-
-  /// @dev Map of hub addresses and asset identifiers to whether the reserve exists.
-  mapping(address hub => mapping(uint256 assetId => bool)) internal _reserveExists;
-
   /// @notice Modifier that checks if the caller is an approved positionManager for `onBehalfOf`.
   modifier onlyPositionManager(address onBehalfOf) {
     require(_isPositionManager({user: onBehalfOf, manager: msg.sender}), Unauthorized());
@@ -99,9 +93,12 @@ abstract contract Spoke is ISpoke, AccessManagedUpgradeable, IntentConsumer, Mul
 
   /// @dev Constructor.
   /// @param oracle_ The address of the AaveOracle contract.
-  constructor(address oracle_) {
+  /// @param maxUserReservesLimit_ The maximum number of collateral and borrow reserves a user can have.
+  constructor(address oracle_, uint16 maxUserReservesLimit_) {
     require(IAaveOracle(oracle_).DECIMALS() == ORACLE_DECIMALS, InvalidOracleDecimals());
+    require(maxUserReservesLimit_ > 0, InvalidMaxUserReservesLimit());
     ORACLE = oracle_;
+    MAX_USER_RESERVES_LIMIT = maxUserReservesLimit_;
   }
 
   /// @dev To be overridden by the inheriting Spoke instance contract.
@@ -153,7 +150,6 @@ abstract contract Spoke is ISpoke, AccessManagedUpgradeable, IntentConsumer, Mul
         initPaused: config.paused,
         initFrozen: config.frozen,
         initBorrowable: config.borrowable,
-        initLiquidatable: config.liquidatable,
         initReceiveSharesEnabled: config.receiveSharesEnabled
       })
     });
@@ -178,7 +174,6 @@ abstract contract Spoke is ISpoke, AccessManagedUpgradeable, IntentConsumer, Mul
       initPaused: config.paused,
       initFrozen: config.frozen,
       initBorrowable: config.borrowable,
-      initLiquidatable: config.liquidatable,
       initReceiveSharesEnabled: config.receiveSharesEnabled
     });
     emit UpdateReserveConfig(reserveId, config);
@@ -229,7 +224,7 @@ abstract contract Spoke is ISpoke, AccessManagedUpgradeable, IntentConsumer, Mul
     uint256 reserveId,
     uint256 amount,
     address onBehalfOf
-  ) external onlyPositionManager(onBehalfOf) returns (uint256, uint256) {
+  ) external nonReentrant onlyPositionManager(onBehalfOf) returns (uint256, uint256) {
     Reserve storage reserve = _getReserve(reserveId);
     UserPosition storage userPosition = _userPositions[onBehalfOf][reserveId];
     _validateSupply(reserve.flags);
@@ -248,7 +243,7 @@ abstract contract Spoke is ISpoke, AccessManagedUpgradeable, IntentConsumer, Mul
     uint256 reserveId,
     uint256 amount,
     address onBehalfOf
-  ) external onlyPositionManager(onBehalfOf) returns (uint256, uint256) {
+  ) external nonReentrant onlyPositionManager(onBehalfOf) returns (uint256, uint256) {
     Reserve storage reserve = _getReserve(reserveId);
     UserPosition storage userPosition = _userPositions[onBehalfOf][reserveId];
     _validateWithdraw(reserve.flags);
@@ -278,7 +273,7 @@ abstract contract Spoke is ISpoke, AccessManagedUpgradeable, IntentConsumer, Mul
     uint256 reserveId,
     uint256 amount,
     address onBehalfOf
-  ) external onlyPositionManager(onBehalfOf) returns (uint256, uint256) {
+  ) external nonReentrant onlyPositionManager(onBehalfOf) returns (uint256, uint256) {
     Reserve storage reserve = _getReserve(reserveId);
     UserPosition storage userPosition = _userPositions[onBehalfOf][reserveId];
     PositionStatus storage positionStatus = _positionStatus[onBehalfOf];
@@ -288,6 +283,11 @@ abstract contract Spoke is ISpoke, AccessManagedUpgradeable, IntentConsumer, Mul
     uint256 drawnShares = hub.draw(reserve.assetId, amount, msg.sender);
     userPosition.drawnShares += drawnShares.toUint120();
     if (!positionStatus.isBorrowing(reserveId)) {
+      require(
+        MAX_USER_RESERVES_LIMIT == MAX_ALLOWED_USER_RESERVES_LIMIT ||
+          positionStatus.borrowCount(_reserveCount) < MAX_USER_RESERVES_LIMIT,
+        MaximumUserReservesExceeded()
+      );
       positionStatus.setBorrowing(reserveId, true);
     }
 
@@ -304,7 +304,7 @@ abstract contract Spoke is ISpoke, AccessManagedUpgradeable, IntentConsumer, Mul
     uint256 reserveId,
     uint256 amount,
     address onBehalfOf
-  ) external onlyPositionManager(onBehalfOf) returns (uint256, uint256) {
+  ) external nonReentrant onlyPositionManager(onBehalfOf) returns (uint256, uint256) {
     Reserve storage reserve = _getReserve(reserveId);
     UserPosition storage userPosition = _userPositions[onBehalfOf][reserveId];
     _validateRepay(reserve.flags);
@@ -348,7 +348,7 @@ abstract contract Spoke is ISpoke, AccessManagedUpgradeable, IntentConsumer, Mul
     address user,
     uint256 debtToCover,
     bool receiveShares
-  ) external {
+  ) external nonReentrant {
     Reserve storage collateralReserve = _getReserve(collateralReserveId);
     Reserve storage debtReserve = _getReserve(debtReserveId);
     DynamicReserveConfig storage collateralDynConfig = _dynamicConfig[collateralReserveId][
@@ -373,7 +373,7 @@ abstract contract Spoke is ISpoke, AccessManagedUpgradeable, IntentConsumer, Mul
       drawnIndex: drawnIndex,
       totalDebtValue: userAccountData.totalDebtValue,
       activeCollateralCount: userAccountData.activeCollateralCount,
-      borrowedCount: userAccountData.borrowedCount,
+      borrowCount: userAccountData.borrowCount,
       liquidator: msg.sender,
       receiveShares: receiveShares
     });
@@ -390,6 +390,7 @@ abstract contract Spoke is ISpoke, AccessManagedUpgradeable, IntentConsumer, Mul
 
     uint256 newRiskPremium = 0;
     if (isUserInDeficit) {
+      // report deficit for all debt reserves, including the reserve being repaid
       _reportDeficit(user);
     } else {
       newRiskPremium = _calculateUserAccountData(user).riskPremium;
@@ -402,13 +403,13 @@ abstract contract Spoke is ISpoke, AccessManagedUpgradeable, IntentConsumer, Mul
     uint256 reserveId,
     bool usingAsCollateral,
     address onBehalfOf
-  ) external onlyPositionManager(onBehalfOf) {
-    _validateSetUsingAsCollateral(_getReserve(reserveId).flags, usingAsCollateral);
+  ) external nonReentrant onlyPositionManager(onBehalfOf) {
+    Reserve storage reserve = _getReserve(reserveId);
     PositionStatus storage positionStatus = _positionStatus[onBehalfOf];
-
     if (positionStatus.isUsingAsCollateral(reserveId) == usingAsCollateral) {
       return;
     }
+    _validateSetUsingAsCollateral(positionStatus, reserve.flags, usingAsCollateral);
     positionStatus.setUsingAsCollateral(reserveId, usingAsCollateral);
 
     if (usingAsCollateral) {
@@ -422,7 +423,7 @@ abstract contract Spoke is ISpoke, AccessManagedUpgradeable, IntentConsumer, Mul
   }
 
   /// @inheritdoc ISpoke
-  function updateUserRiskPremium(address onBehalfOf) external {
+  function updateUserRiskPremium(address onBehalfOf) external nonReentrant {
     if (!_isPositionManager({user: onBehalfOf, manager: msg.sender})) {
       _checkCanCall(msg.sender, msg.data);
     }
@@ -431,7 +432,7 @@ abstract contract Spoke is ISpoke, AccessManagedUpgradeable, IntentConsumer, Mul
   }
 
   /// @inheritdoc ISpoke
-  function updateUserDynamicConfig(address onBehalfOf) external {
+  function updateUserDynamicConfig(address onBehalfOf) external nonReentrant {
     if (!_isPositionManager({user: onBehalfOf, manager: msg.sender})) {
       _checkCanCall(msg.sender, msg.data);
     }
@@ -445,31 +446,25 @@ abstract contract Spoke is ISpoke, AccessManagedUpgradeable, IntentConsumer, Mul
   }
 
   /// @inheritdoc ISpoke
-  function setUserPositionManagerWithSig(
-    address positionManager,
-    address user,
-    bool approve,
-    uint256 nonce,
-    uint256 deadline,
+  function setUserPositionManagersWithSig(
+    SetUserPositionManagers calldata params,
     bytes calldata signature
   ) external {
     _verifyAndConsumeIntent({
-      signer: user,
-      intentHash: keccak256(
-        abi.encode(
-          SET_USER_POSITION_MANAGER_TYPEHASH,
-          positionManager,
-          user,
-          approve,
-          nonce,
-          deadline
-        )
-      ),
-      nonce: nonce,
-      deadline: deadline,
+      signer: params.onBehalfOf,
+      intentHash: params.hash(),
+      nonce: params.nonce,
+      deadline: params.deadline,
       signature: signature
     });
-    _setUserPositionManager({positionManager: positionManager, user: user, approve: approve});
+
+    for (uint256 i = 0; i < params.updates.length; ++i) {
+      _setUserPositionManager({
+        positionManager: params.updates[i].positionManager,
+        user: params.onBehalfOf,
+        approve: params.updates[i].approve
+      });
+    }
   }
 
   /// @inheritdoc ISpoke
@@ -555,7 +550,6 @@ abstract contract Spoke is ISpoke, AccessManagedUpgradeable, IntentConsumer, Mul
         paused: reserve.flags.paused(),
         frozen: reserve.flags.frozen(),
         borrowable: reserve.flags.borrowable(),
-        liquidatable: reserve.flags.liquidatable(),
         receiveSharesEnabled: reserve.flags.receiveSharesEnabled()
       });
   }
@@ -686,8 +680,6 @@ abstract contract Spoke is ISpoke, AccessManagedUpgradeable, IntentConsumer, Mul
 
   function _setUserPositionManager(address positionManager, address user, bool approve) internal {
     PositionManagerConfig storage config = _positionManager[positionManager];
-    // only allow approval when position manager is active for improved UX
-    require(!approve || config.active, InactivePositionManager());
     config.approval[user] = approve;
     emit SetUserPositionManager(user, positionManager, approve);
   }
@@ -769,7 +761,7 @@ abstract contract Spoke is ISpoke, AccessManagedUpgradeable, IntentConsumer, Mul
         // we can simplify since there is no precision loss due to the division here
         accountData.totalDebtValue += ((drawnDebt + premiumDebtRay.fromRayUp()) * assetPrice)
           .wadDivUp(assetUnit);
-        accountData.borrowedCount = accountData.borrowedCount.uncheckedAdd(1);
+        accountData.borrowCount = accountData.borrowCount.uncheckedAdd(1);
       }
     }
 
@@ -810,7 +802,10 @@ abstract contract Spoke is ISpoke, AccessManagedUpgradeable, IntentConsumer, Mul
     }
 
     if (debtValueLeftToCover < accountData.totalDebtValue) {
-      accountData.riskPremium /= accountData.totalDebtValue.uncheckedSub(debtValueLeftToCover);
+      accountData.riskPremium = Math.ceilDiv(
+        accountData.riskPremium,
+        accountData.totalDebtValue.uncheckedSub(debtValueLeftToCover)
+      );
     }
 
     return accountData;
@@ -851,37 +846,8 @@ abstract contract Spoke is ISpoke, AccessManagedUpgradeable, IntentConsumer, Mul
     emit UpdateUserRiskPremium(user, newRiskPremium);
   }
 
-  /// @notice Reports deficits for all debt reserves of the user, including the reserve being repaid during liquidation.
-  /// @dev Deficit validation should already have occurred during liquidation.
-  /// @dev It clears the user position, setting drawn debt, premium debt, and risk premium to zero.
   function _reportDeficit(address user) internal {
-    PositionStatus storage positionStatus = _positionStatus[user];
-
-    uint256 reserveId = _reserveCount;
-    while ((reserveId = positionStatus.nextBorrowing(reserveId)) != PositionStatusMap.NOT_FOUND) {
-      UserPosition storage userPosition = _userPositions[user][reserveId];
-      Reserve storage reserve = _reserves[reserveId];
-      IHubBase hub = reserve.hub;
-      uint256 assetId = reserve.assetId;
-
-      uint256 drawnIndex = hub.getAssetDrawnIndex(assetId);
-      (uint256 drawnDebtReported, uint256 premiumDebtRay) = userPosition.getDebt(drawnIndex);
-      uint256 deficitShares = drawnDebtReported.rayDivDown(drawnIndex);
-
-      IHubBase.PremiumDelta memory premiumDelta = userPosition.calculatePremiumDelta({
-        drawnSharesTaken: deficitShares,
-        drawnIndex: drawnIndex,
-        riskPremium: 0,
-        restoredPremiumRay: premiumDebtRay
-      });
-
-      hub.reportDeficit(assetId, drawnDebtReported, premiumDelta);
-      userPosition.applyPremiumDelta(premiumDelta);
-      userPosition.drawnShares -= deficitShares.toUint120();
-      positionStatus.setBorrowing(reserveId, false);
-
-      emit ReportDeficit(reserveId, user, deficitShares, premiumDelta);
-    }
+    LiquidationLogic.reportDeficit(_reserves, _userPositions, _positionStatus, _reserveCount, user);
   }
 
   function _getReserve(uint256 reserveId) internal view returns (Reserve storage) {
@@ -921,10 +887,22 @@ abstract contract Spoke is ISpoke, AccessManagedUpgradeable, IntentConsumer, Mul
     require(!flags.paused(), ReservePaused());
   }
 
-  function _validateSetUsingAsCollateral(ReserveFlags flags, bool usingAsCollateral) internal pure {
+  function _validateSetUsingAsCollateral(
+    PositionStatus storage positionStatus,
+    ReserveFlags flags,
+    bool usingAsCollateral
+  ) internal view {
     require(!flags.paused(), ReservePaused());
-    // can disable as collateral if the reserve is frozen
-    require(!usingAsCollateral || !flags.frozen(), ReserveFrozen());
+    if (usingAsCollateral) {
+      // disabling as collateral is allowed when reserve is frozen
+      require(!flags.frozen(), ReserveFrozen());
+      // this must be a new collateral, otherwise would have short-circuited
+      require(
+        MAX_USER_RESERVES_LIMIT == MAX_ALLOWED_USER_RESERVES_LIMIT ||
+          positionStatus.collateralCount(_reserveCount) < MAX_USER_RESERVES_LIMIT,
+        MaximumUserReservesExceeded()
+      );
+    }
   }
 
   /// @notice Returns whether `manager` is active & approved positionManager for `user`.

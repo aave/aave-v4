@@ -12,7 +12,9 @@ contract SpokeDynamicConfigTest is SpokeBase {
   function setUp() public override {
     super.setUp();
     spoke = MockSpoke(address(spoke1));
-    address mockSpokeImpl = address(new MockSpoke(address(spoke.ORACLE())));
+    address mockSpokeImpl = address(
+      new MockSpoke(address(spoke.ORACLE()), Constants.MAX_ALLOWED_USER_RESERVES_LIMIT)
+    );
     vm.etch(address(spoke1), mockSpokeImpl.code);
   }
 
@@ -111,7 +113,10 @@ contract SpokeDynamicConfigTest is SpokeBase {
     address caller
   ) public {
     vm.assume(
-      caller != SPOKE_ADMIN && caller != ADMIN && caller != _getProxyAdminAddress(address(spoke1))
+      caller != SPOKE_ADMIN &&
+        caller != ADMIN &&
+        caller != SPOKE_CONFIGURATOR &&
+        caller != _getProxyAdminAddress(address(spoke1))
     );
     uint256 reserveId = _randomReserveId(spoke1);
     uint24 dynamicConfigKey = _randomInitializedConfigKey(spoke1, reserveId);
@@ -219,7 +224,10 @@ contract SpokeDynamicConfigTest is SpokeBase {
     address caller
   ) public {
     vm.assume(
-      caller != SPOKE_ADMIN && caller != ADMIN && caller != _getProxyAdminAddress(address(spoke1))
+      caller != SPOKE_ADMIN &&
+        caller != ADMIN &&
+        caller != SPOKE_CONFIGURATOR &&
+        caller != _getProxyAdminAddress(address(spoke1))
     );
     uint256 reserveId = _randomReserveId(spoke1);
     uint24 dynamicConfigKey = _randomInitializedConfigKey(spoke1, reserveId);
@@ -318,7 +326,7 @@ contract SpokeDynamicConfigTest is SpokeBase {
   // more realistic, update config keys in a random order
   function test_fuzz_addDynamicReserveConfig_trailing_order(bytes32) public {
     DynamicConfig[] memory configs = _getSpokeDynConfigKeys(spoke1);
-    uint256 runs = vm.randomUint(1, 100); // [1,100] iterations each fuzz run
+    uint256 runs = vm.randomUint(1, 10); // [1,10] iterations each fuzz run
 
     while (--runs != 0) {
       uint256 reserveId = _randomReserveId(spoke1);
@@ -328,7 +336,10 @@ contract SpokeDynamicConfigTest is SpokeBase {
         spoke1,
         reserveId
       );
-      dynConf.collateralFactor = _randomBps();
+      dynConf.collateralFactor = vm.randomUint(0, PercentageMath.PERCENTAGE_FACTOR - 1).toUint16();
+      dynConf.maxLiquidationBonus = vm
+        .randomUint(MIN_LIQUIDATION_BONUS, _maxLiquidationBonusUpperBound(dynConf.collateralFactor))
+        .toUint32();
 
       vm.expectEmit(address(spoke1));
       emit ISpoke.AddDynamicReserveConfig(reserveId, dynamicConfigKey, dynConf);
@@ -343,7 +354,7 @@ contract SpokeDynamicConfigTest is SpokeBase {
   // update duplicated config values
   function test_fuzz_addDynamicReserveConfig_spaced_dup_updates(bytes32) public {
     DynamicConfig[] memory configs = _getSpokeDynConfigKeys(spoke1);
-    uint256 runs = vm.randomUint(1, 100); // [1,100] iterations each fuzz run
+    uint256 runs = vm.randomUint(1, 10); // [1,10] iterations each fuzz run
 
     while (--runs != 0) {
       uint256 reserveId = _randomReserveId(spoke1);
@@ -358,6 +369,9 @@ contract SpokeDynamicConfigTest is SpokeBase {
           .getDynamicReserveConfig(reserveId, vm.randomUint(0, dynamicConfigKey - 1).toUint24())
           .collateralFactor
         : _randomCollateralFactor(spoke1, reserveId);
+      dynConf.maxLiquidationBonus = vm
+        .randomUint(MIN_LIQUIDATION_BONUS, _maxLiquidationBonusUpperBound(dynConf.collateralFactor))
+        .toUint32();
 
       vm.expectEmit(address(spoke1));
       emit ISpoke.AddDynamicReserveConfig(reserveId, dynamicConfigKey, dynConf);

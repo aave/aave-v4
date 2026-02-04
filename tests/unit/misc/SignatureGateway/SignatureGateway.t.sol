@@ -56,7 +56,7 @@ contract SignatureGatewayTest is SignatureGatewayBaseTest {
     Utils.approve(spoke1, p.reserveId, alice, address(gateway), p.amount);
 
     uint256 shares = _hub(spoke1, p.reserveId).previewAddByAssets(
-      _spokeAssetId(spoke1, p.reserveId),
+      _reserveAssetId(spoke1, p.reserveId),
       p.amount
     );
 
@@ -83,7 +83,7 @@ contract SignatureGatewayTest is SignatureGatewayBaseTest {
     Utils.supply(spoke1, p.reserveId, alice, p.amount + 1, alice);
 
     uint256 shares = _hub(spoke1, p.reserveId).previewRemoveByAssets(
-      _spokeAssetId(spoke1, p.reserveId),
+      _reserveAssetId(spoke1, p.reserveId),
       p.amount
     );
     TestReturnValues memory returnValues;
@@ -110,7 +110,7 @@ contract SignatureGatewayTest is SignatureGatewayBaseTest {
     bytes memory signature = _sign(alicePk, _getTypedDataHash(gateway, p));
 
     uint256 shares = _hub(spoke1, p.reserveId).previewDrawByAssets(
-      _spokeAssetId(spoke1, p.reserveId),
+      _reserveAssetId(spoke1, p.reserveId),
       p.amount
     );
     TestReturnValues memory returnValues;
@@ -145,7 +145,7 @@ contract SignatureGatewayTest is SignatureGatewayBaseTest {
       p.amount
     );
     uint256 shares = _hub(spoke1, p.reserveId).previewRestoreByAssets(
-      _spokeAssetId(spoke1, p.reserveId),
+      _reserveAssetId(spoke1, p.reserveId),
       baseRestored
     );
     TestReturnValues memory returnValues;
@@ -236,23 +236,25 @@ contract SignatureGatewayTest is SignatureGatewayBaseTest {
   }
 
   function test_setSelfAsUserPositionManagerWithSig() public {
-    EIP712Types.SetUserPositionManager memory p = EIP712Types.SetUserPositionManager({
-      positionManager: address(gateway),
-      user: alice,
-      approve: true,
+    ISpoke.PositionManagerUpdate[] memory updates = new ISpoke.PositionManagerUpdate[](1);
+    updates[0] = ISpoke.PositionManagerUpdate(address(gateway), true);
+
+    ISpoke.SetUserPositionManagers memory p = ISpoke.SetUserPositionManagers({
+      updates: updates,
+      onBehalfOf: alice,
       nonce: spoke1.nonces(address(alice), _randomNonceKey()), // note: this typed sig is forwarded to spoke
       deadline: _warpBeforeRandomDeadline()
     });
     bytes memory signature = _sign(alicePk, _getTypedDataHash(spoke1, p));
 
     vm.expectEmit(address(spoke1));
-    emit ISpoke.SetUserPositionManager(alice, address(gateway), p.approve);
+    emit ISpoke.SetUserPositionManager(alice, address(gateway), p.updates[0].approve);
 
     vm.prank(vm.randomAddress());
     gateway.setSelfAsUserPositionManagerWithSig({
       spoke: address(spoke1),
-      user: p.user,
-      approve: p.approve,
+      onBehalfOf: p.onBehalfOf,
+      approve: p.updates[0].approve,
       nonce: p.nonce,
       deadline: p.deadline,
       signature: signature

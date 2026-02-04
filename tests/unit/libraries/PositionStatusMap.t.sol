@@ -202,10 +202,77 @@ contract PositionStatusMapTest is Base {
     for (uint256 reserveId; reserveId < reserveCount; ++reserveId) {
       if (p.isUsingAsCollateral(reserveId)) ++collateralCount;
       // reserveId is 0-base indexed, assert running collateralCount is maintained correctly
-      assertEq(p.collateralCount({reserveCount: reserveId + 1}), collateralCount);
+      assertEq(p.collateralCount(reserveId + 1), collateralCount);
     }
 
     assertEq(p.collateralCount(reserveCount), collateralCount);
+  }
+
+  function test_borrowCount() public {
+    p.setBorrowing(127, true);
+    assertEq(p.borrowCount(128), 1);
+
+    p.setBorrowing(128, true);
+    assertEq(p.borrowCount(128), 1);
+    assertEq(p.borrowCount(129), 2);
+
+    // ignore invalid bits
+    assertEq(p.borrowCount(100), 0);
+
+    p.setBorrowing(2, true);
+    assertEq(p.borrowCount(128), 2);
+
+    p.setBorrowing(32, true);
+    assertEq(p.borrowCount(128), 3);
+    p.setBorrowing(342, true);
+    assertEq(p.borrowCount(343), 5);
+
+    p.setBorrowing(32, false);
+    assertEq(p.borrowCount(343), 4);
+
+    // disregards collateral reserves
+    p.setUsingAsCollateral(32, true);
+    assertEq(p.borrowCount(343), 4);
+
+    p.setUsingAsCollateral(79, true);
+    assertEq(p.borrowCount(343), 4);
+
+    p.setUsingAsCollateral(255, true);
+    assertEq(p.borrowCount(343), 4);
+  }
+
+  function test_borrowCount_ignoresInvalidBits() public {
+    p.setBorrowing(127, true);
+    assertEq(p.borrowCount(100), 0);
+    assertEq(p.borrowCount(200), 1);
+
+    p.setBorrowing(255, true);
+    assertEq(p.borrowCount(200), 1);
+    p.setBorrowing(133, true);
+    assertEq(p.borrowCount(200), 2);
+
+    p.setBorrowing(383, true);
+    assertEq(p.borrowCount(300), 3);
+    p.setBorrowing(283, true);
+    assertEq(p.borrowCount(300), 4);
+
+    p.setBorrowing(511, true);
+    assertEq(p.borrowCount(500), 5);
+    assertEq(p.borrowCount(600), 6);
+  }
+
+  function test_borrowCount(uint256 reserveCount) public {
+    reserveCount = bound(reserveCount, 0, 1 << 10); // gas limit
+    vm.setArbitraryStorage(address(p));
+
+    uint256 borrowCount;
+    for (uint256 reserveId; reserveId < reserveCount; ++reserveId) {
+      if (p.isBorrowing(reserveId)) ++borrowCount;
+      // reserveId is 0-base indexed, assert running borrowCount is maintained correctly
+      assertEq(p.borrowCount(reserveId + 1), borrowCount);
+    }
+
+    assertEq(p.borrowCount(reserveCount), borrowCount);
   }
 
   function test_setters_use_correct_slot(uint256 a) public {
@@ -249,19 +316,18 @@ contract PositionStatusMapTest is Base {
 
     uint256 startReserveId = vm.randomUint(1, reserveCount);
     uint256 expectedReserveId = PositionStatusMap.NOT_FOUND;
-    for (uint256 i = startReserveId - 1; i >= 0; --i) {
-      if (p.isUsingAsCollateral(i) || p.isBorrowing(i)) {
-        expectedReserveId = i;
+    for (uint256 i = startReserveId; i > 0; --i) {
+      if (p.isUsingAsCollateral(i - 1) || p.isBorrowing(i - 1)) {
+        expectedReserveId = i - 1;
         break;
       }
     }
     (uint256 reserveId, bool borrowing, bool collateral) = p.next(startReserveId);
     assertEq(reserveId, expectedReserveId);
-    assertEq(borrowing, reserveId != PositionStatusMap.NOT_FOUND && p.isBorrowing(reserveId));
-    assertEq(
-      collateral,
-      reserveId != PositionStatusMap.NOT_FOUND && p.isUsingAsCollateral(reserveId)
-    );
+    if (reserveId != PositionStatusMap.NOT_FOUND) {
+      assertEq(borrowing, p.isBorrowing(reserveId));
+      assertEq(collateral, p.isUsingAsCollateral(reserveId));
+    }
   }
 
   function test_nextBorrowing(uint256 reserveCount) public {
@@ -270,15 +336,17 @@ contract PositionStatusMapTest is Base {
 
     uint256 startReserveId = vm.randomUint(1, reserveCount);
     uint256 expectedReserveId = PositionStatusMap.NOT_FOUND;
-    for (uint256 i = startReserveId - 1; i >= 0; --i) {
-      if (p.isBorrowing(i)) {
-        expectedReserveId = i;
+    for (uint256 i = startReserveId; i > 0; --i) {
+      if (p.isBorrowing(i - 1)) {
+        expectedReserveId = i - 1;
         break;
       }
     }
     uint256 reserveId = p.nextBorrowing(startReserveId);
     assertEq(reserveId, expectedReserveId);
-    assertEq(p.isBorrowing(reserveId), reserveId != PositionStatusMap.NOT_FOUND);
+    if (reserveId != PositionStatusMap.NOT_FOUND) {
+      assertTrue(p.isBorrowing(reserveId));
+    }
   }
 
   function test_nextCollateral(uint256 reserveCount) public {
@@ -287,15 +355,17 @@ contract PositionStatusMapTest is Base {
 
     uint256 startReserveId = vm.randomUint(1, reserveCount);
     uint256 expectedReserveId = PositionStatusMap.NOT_FOUND;
-    for (uint256 i = startReserveId - 1; i >= 0; --i) {
-      if (p.isUsingAsCollateral(i)) {
-        expectedReserveId = i;
+    for (uint256 i = startReserveId; i > 0; --i) {
+      if (p.isUsingAsCollateral(i - 1)) {
+        expectedReserveId = i - 1;
         break;
       }
     }
     uint256 reserveId = p.nextCollateral(startReserveId);
     assertEq(reserveId, expectedReserveId);
-    assertEq(p.isUsingAsCollateral(reserveId), reserveId != PositionStatusMap.NOT_FOUND);
+    if (reserveId != PositionStatusMap.NOT_FOUND) {
+      assertTrue(p.isUsingAsCollateral(reserveId));
+    }
   }
 
   function test_next_continuous() public {

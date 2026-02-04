@@ -10,7 +10,7 @@ contract SignatureGatewaySetSelfAsUserPositionManagerTest is SignatureGatewayBas
     vm.prank(vm.randomAddress());
     gateway.setSelfAsUserPositionManagerWithSig({
       spoke: address(spoke2),
-      user: vm.randomAddress(),
+      onBehalfOf: vm.randomAddress(),
       approve: vm.randomBool(),
       nonce: vm.randomUint(),
       deadline: vm.randomUint(),
@@ -19,27 +19,28 @@ contract SignatureGatewaySetSelfAsUserPositionManagerTest is SignatureGatewayBas
   }
 
   function test_setSelfAsUserPositionManagerWithSig_forwards_correct_call() public {
-    address user = vm.randomAddress();
-    bool approve = vm.randomBool();
-    uint256 nonce = vm.randomUint();
-    uint256 deadline = vm.randomUint();
+    ISpoke.PositionManagerUpdate[] memory updates = new ISpoke.PositionManagerUpdate[](1);
+    updates[0] = ISpoke.PositionManagerUpdate(address(gateway), vm.randomBool());
+    ISpoke.SetUserPositionManagers memory p = ISpoke.SetUserPositionManagers({
+      onBehalfOf: vm.randomAddress(),
+      updates: updates,
+      nonce: vm.randomUint(),
+      deadline: vm.randomUint()
+    });
     bytes memory signature = vm.randomBytes(72);
 
     vm.expectCall(
       address(spoke1),
-      abi.encodeCall(
-        ISpoke.setUserPositionManagerWithSig,
-        (address(gateway), user, approve, nonce, deadline, signature)
-      ),
+      abi.encodeCall(ISpoke.setUserPositionManagersWithSig, (p, signature)),
       1
     );
     vm.prank(vm.randomAddress());
     gateway.setSelfAsUserPositionManagerWithSig({
       spoke: address(spoke1),
-      user: user,
-      approve: approve,
-      nonce: nonce,
-      deadline: deadline,
+      onBehalfOf: p.onBehalfOf,
+      approve: p.updates[0].approve,
+      nonce: p.nonce,
+      deadline: p.deadline,
       signature: signature
     });
   }
@@ -47,14 +48,14 @@ contract SignatureGatewaySetSelfAsUserPositionManagerTest is SignatureGatewayBas
   function test_setSelfAsUserPositionManagerWithSig_ignores_underlying_spoke_reverts() public {
     vm.mockCallRevert(
       address(spoke1),
-      ISpoke.setUserPositionManagerWithSig.selector,
+      ISpoke.setUserPositionManagersWithSig.selector,
       vm.randomBytes(64)
     );
 
     vm.prank(vm.randomAddress());
     gateway.setSelfAsUserPositionManagerWithSig({
       spoke: address(spoke1),
-      user: vm.randomAddress(),
+      onBehalfOf: vm.randomAddress(),
       approve: vm.randomBool(),
       nonce: vm.randomUint(),
       deadline: vm.randomUint(),
@@ -68,10 +69,11 @@ contract SignatureGatewaySetSelfAsUserPositionManagerTest is SignatureGatewayBas
     uint192 nonceKey = _randomNonceKey();
     vm.prank(alice);
     spoke1.useNonce(nonceKey);
-    EIP712Types.SetUserPositionManager memory p = EIP712Types.SetUserPositionManager({
-      positionManager: address(gateway),
-      user: alice,
-      approve: true,
+    ISpoke.PositionManagerUpdate[] memory updates = new ISpoke.PositionManagerUpdate[](1);
+    updates[0] = ISpoke.PositionManagerUpdate(address(gateway), true);
+    ISpoke.SetUserPositionManagers memory p = ISpoke.SetUserPositionManagers({
+      onBehalfOf: alice,
+      updates: updates,
       nonce: spoke1.nonces(alice, nonceKey), // note: this typed sig is forwarded to spoke
       deadline: _warpBeforeRandomDeadline()
     });
@@ -84,8 +86,8 @@ contract SignatureGatewaySetSelfAsUserPositionManagerTest is SignatureGatewayBas
 
     gateway.setSelfAsUserPositionManagerWithSig({
       spoke: address(spoke1),
-      user: p.user,
-      approve: p.approve,
+      onBehalfOf: p.onBehalfOf,
+      approve: p.updates[0].approve,
       nonce: p.nonce,
       deadline: p.deadline,
       signature: signature
