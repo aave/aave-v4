@@ -345,13 +345,12 @@ abstract contract Base is Test {
     }
 
     {
-      bytes4[] memory selectors = new bytes4[](6);
+      bytes4[] memory selectors = new bytes4[](5);
       selectors[0] = IHub.addAsset.selector;
       selectors[1] = IHub.updateAssetConfig.selector;
       selectors[2] = IHub.addSpoke.selector;
       selectors[3] = IHub.updateSpokeConfig.selector;
       selectors[4] = IHub.setInterestRateData.selector;
-      selectors[5] = IHub.mintFeeShares.selector;
       manager.setTargetFunctionRole(address(targetHub), selectors, Roles.HUB_ADMIN_ROLE);
     }
 
@@ -2252,7 +2251,6 @@ abstract contract Base is Test {
 
   /// @dev Helper function to withdraw fees from the treasury spoke
   function _withdrawLiquidityFees(IHub hub, uint256 assetId, uint256 amount) internal {
-    Utils.mintFeeShares(hub, assetId, ADMIN);
     uint256 fees = hub.getSpokeAddedAssets(assetId, address(treasurySpoke));
 
     if (amount > fees) {
@@ -2984,15 +2982,13 @@ abstract contract Base is Test {
     IHub hub,
     uint256 assetId
   ) internal view returns (uint256) {
-    uint256 expectedFees = hub.getAsset(assetId).realizedFees + _calcUnrealizedFees(hub, assetId);
-    assertEq(expectedFees, hub.getAssetAccruedFees(assetId), 'asset accrued fees');
-    return hub.getSpokeAddedAssets(assetId, hub.getAsset(assetId).feeReceiver) + expectedFees;
+    address feeReceiver = _getFeeReceiver(hub, assetId);
+    return hub.getSpokeAddedAssets(assetId, feeReceiver);
   }
 
-  function _getAddedAssetsWithFees(IHub hub, uint256 assetId) internal view returns (uint256) {
-    return
-      hub.getAddedAssets(assetId) +
-      hub.getAsset(assetId).realizedFees +
-      _calcUnrealizedFees(hub, assetId);
+  function _extrapolateFeeShares(IHub hub, uint256 assetId) internal view returns (uint256) {
+    uint256 extrapolatedBalance = hub.getAddedShares(assetId);
+    uint256 cachedBalance = hub.getAsset(assetId).addedShares;
+    return extrapolatedBalance - cachedBalance;
   }
 }

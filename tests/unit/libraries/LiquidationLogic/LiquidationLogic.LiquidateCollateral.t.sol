@@ -125,6 +125,8 @@ contract LiquidationLogicLiquidateCollateralTest is LiquidationLogicBaseTest {
     assertEq(sharesToLiquidator, 0);
     assertEq(feeShares, 1);
 
+    uint256 treasurySharesBefore = hub.getSpokeAddedShares(assetId, address(treasurySpoke));
+
     _expectEventsAndCalls(params);
     liquidationLogicWrapper.liquidateCollateral(params);
 
@@ -139,10 +141,10 @@ contract LiquidationLogicLiquidateCollateralTest is LiquidationLogicBaseTest {
       initialUserPosition,
       userSuppliedShares - sharesToLiquidate
     );
-    assertSpokePosition(
-      hub.getSpoke(assetId, address(treasurySpoke)),
-      initialTreasurySpokeData,
-      initialTreasurySpokeData.addedShares + (sharesToLiquidate - sharesToLiquidator).toUint120()
+    assertEq(
+      hub.getSpokeAddedShares(assetId, address(treasurySpoke)) - treasurySharesBefore,
+      sharesToLiquidate - sharesToLiquidator,
+      'treasury shares delta'
     );
   }
 
@@ -168,6 +170,7 @@ contract LiquidationLogicLiquidateCollateralTest is LiquidationLogicBaseTest {
 
     uint256 sharesToLiquidate = hub.previewRemoveByAssets(assetId, params.collateralToLiquidate);
     uint256 sharesToLiquidator = hub.previewAddByAssets(assetId, params.collateralToLiquidator);
+    uint256 treasurySharesBefore = hub.getSpokeAddedShares(assetId, address(treasurySpoke));
 
     _expectEventsAndCalls(params);
     liquidationLogicWrapper.liquidateCollateral(params);
@@ -183,10 +186,10 @@ contract LiquidationLogicLiquidateCollateralTest is LiquidationLogicBaseTest {
       initialUserPosition,
       userSuppliedShares - sharesToLiquidate
     );
-    assertSpokePosition(
-      hub.getSpoke(assetId, address(treasurySpoke)),
-      initialTreasurySpokeData,
-      initialTreasurySpokeData.addedShares + (sharesToLiquidate - sharesToLiquidator).toUint120()
+    assertEq(
+      hub.getSpokeAddedShares(assetId, address(treasurySpoke)) - treasurySharesBefore,
+      sharesToLiquidate - sharesToLiquidator,
+      'treasury shares delta'
     );
   }
 

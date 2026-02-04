@@ -183,7 +183,8 @@ contract HubRescueTest is HubBase {
       restorer: alice
     });
 
-    uint256 liquidityFee = hub1.getAssetAccruedFees(daiAssetId);
+    address feeReceiver = _getFeeReceiver(hub1, daiAssetId);
+    uint256 liquidityFee = hub1.getSpokeAddedAssets(daiAssetId, feeReceiver);
     assertGt(liquidityFee, 0);
 
     // Cannot add liquidity fee amount without transferring underlying tokens
@@ -192,7 +193,11 @@ contract HubRescueTest is HubBase {
     vm.prank(address(_rescueSpoke));
     hub1.add(daiAssetId, liquidityFee);
 
-    assertEq(hub1.getAssetAccruedFees(daiAssetId), liquidityFee, 'accrued liquidity fee');
+    assertEq(
+      hub1.getSpokeAddedAssets(daiAssetId, feeReceiver),
+      liquidityFee,
+      'accrued liquidity fee'
+    );
   }
 
   function _rescue(

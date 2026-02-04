@@ -230,24 +230,6 @@ contract HubOperations_Gas_Tests is Base {
     vm.snapshotGasLastCall('Hub.Operations', 'refreshPremium');
   }
 
-  function test_mintFeeShares() public {
-    vm.startPrank(address(spoke2));
-    tokenList.dai.transferFrom(alice, address(hub1), 1000e18);
-    hub1.add(daiAssetId, 1000e18);
-    vm.stopPrank();
-
-    vm.startPrank(address(spoke1));
-    tokenList.usdx.transferFrom(alice, address(hub1), 1000e6);
-    hub1.add(usdxAssetId, 1000e6);
-    hub1.draw(daiAssetId, 500e18, alice);
-    vm.stopPrank();
-
-    skip(100);
-
-    Utils.mintFeeShares(hub1, daiAssetId, ADMIN);
-    vm.snapshotGasLastCall('Hub.Operations', 'mintFeeShares');
-  }
-
   function test_payFee_transferShares() public {
     Utils.add({
       hub: hub1,

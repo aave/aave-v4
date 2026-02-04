@@ -12,44 +12,6 @@ contract HubSpokeConfigTest is HubBase {
     _addLiquidity(usdxAssetId, MAX_SUPPLY_AMOUNT);
   }
 
-  function test_mintFeeShares_active_halted_scenarios() public {
-    address feeReceiver = _getFeeReceiver(hub1, usdxAssetId);
-
-    // set spoke to active / halted; reverts
-    _accrueLiquidityFees(hub1, spoke1, usdxAssetId);
-    _updateSpokeHalted(hub1, usdxAssetId, feeReceiver, true);
-    _updateSpokeActive(hub1, usdxAssetId, feeReceiver, true);
-
-    vm.prank(HUB_ADMIN);
-    hub1.mintFeeShares(usdxAssetId);
-
-    // set spoke to inactive / halted; reverts
-    _accrueLiquidityFees(hub1, spoke1, usdxAssetId);
-    _updateSpokeHalted(hub1, usdxAssetId, feeReceiver, true);
-    _updateSpokeActive(hub1, usdxAssetId, feeReceiver, false);
-
-    vm.expectRevert(IHub.SpokeNotActive.selector);
-    vm.prank(HUB_ADMIN);
-    hub1.mintFeeShares(usdxAssetId);
-
-    // set spoke to active / not halted; succeeds
-    _accrueLiquidityFees(hub1, spoke1, usdxAssetId);
-    _updateSpokeHalted(hub1, usdxAssetId, feeReceiver, false);
-    _updateSpokeActive(hub1, usdxAssetId, feeReceiver, true);
-
-    vm.prank(HUB_ADMIN);
-    hub1.mintFeeShares(usdxAssetId);
-
-    // set spoke to inactive / not halted; reverts
-    _accrueLiquidityFees(hub1, spoke1, usdxAssetId);
-    _updateSpokeHalted(hub1, usdxAssetId, feeReceiver, false);
-    _updateSpokeActive(hub1, usdxAssetId, feeReceiver, false);
-
-    vm.expectRevert(IHub.SpokeNotActive.selector);
-    vm.prank(HUB_ADMIN);
-    hub1.mintFeeShares(usdxAssetId);
-  }
-
   function test_add_active_halted_scenarios() public {
     // set spoke to active / halted; reverts
     _updateSpokeHalted(hub1, usdxAssetId, address(spoke1), true);
@@ -372,7 +334,7 @@ contract HubSpokeConfigTest is HubBase {
     skip(365 days);
     Utils.add(hub, assetId, address(spoke), 1e18, alice);
 
-    assertGt(hub.getAsset(assetId).realizedFees, 0);
+    assertGt(hub.getSpokeAddedAssets(assetId, _getFeeReceiver(hub, assetId)), 0);
   }
 
   function _createReportedDeficit(IHub hub, address spoke, uint256 assetId) internal {

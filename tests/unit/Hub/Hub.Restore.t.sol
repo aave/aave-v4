@@ -708,11 +708,13 @@ contract HubRestoreTest is HubBase {
     vm.stopPrank();
 
     AssetPosition memory daiData = getAssetPosition(hub1, daiAssetId);
+    address feeReceiver = _getFeeReceiver(hub1, daiAssetId);
 
     // hub
     assertApproxEqAbs(
       hub1.getAddedAssets(daiAssetId),
       hub1.getSpokeAddedAssets(daiAssetId, address(spoke2)) +
+        hub1.getSpokeAddedAssets(daiAssetId, feeReceiver) +
         _calculateBurntInterest(hub1, daiAssetId),
       1,
       'hub dai total addedAmount'
@@ -890,6 +892,7 @@ contract HubRestoreTest is HubBase {
     vm.stopPrank();
 
     AssetPosition memory daiData = getAssetPosition(hub1, daiAssetId);
+    address feeReceiver = _getFeeReceiver(hub1, daiAssetId);
 
     // asset
     assertEq(daiData.drawn, 0, 'asset drawn');
@@ -899,13 +902,15 @@ contract HubRestoreTest is HubBase {
     // spoke
     assertApproxEqAbs(
       daiData.addedAmount,
-      hub1.getSpokeAddedAssets(daiAssetId, address(spoke2)),
+      hub1.getSpokeAddedAssets(daiAssetId, feeReceiver) +
+        hub1.getSpokeAddedAssets(daiAssetId, address(spoke2)),
       1,
       'spoke addedAmount'
     );
     assertApproxEqAbs(
       daiData.addedShares,
-      hub1.getSpokeAddedShares(daiAssetId, address(spoke2)),
+      hub1.getSpokeAddedShares(daiAssetId, feeReceiver) +
+        hub1.getSpokeAddedShares(daiAssetId, address(spoke2)),
       1,
       'spoke addedShares'
     );
@@ -992,6 +997,7 @@ contract HubRestoreTest is HubBase {
     vm.stopPrank();
 
     AssetPosition memory daiData = getAssetPosition(hub1, daiAssetId);
+    address feeReceiver = _getFeeReceiver(hub1, daiAssetId);
 
     // asset
     assertEq(daiData.drawn, 0, 'asset drawn');
@@ -1001,13 +1007,15 @@ contract HubRestoreTest is HubBase {
     // spoke
     assertApproxEqAbs(
       daiData.addedAmount,
-      hub1.getSpokeAddedAssets(daiAssetId, address(spoke2)),
+      hub1.getSpokeAddedAssets(daiAssetId, feeReceiver) +
+        hub1.getSpokeAddedAssets(daiAssetId, address(spoke2)),
       1,
       'spoke addedAmount'
     );
     assertApproxEqAbs(
       daiData.addedShares,
-      hub1.getSpokeAddedShares(daiAssetId, address(spoke2)),
+      hub1.getSpokeAddedShares(daiAssetId, feeReceiver) +
+        hub1.getSpokeAddedShares(daiAssetId, address(spoke2)),
       1,
       'spoke addedShares'
     );
