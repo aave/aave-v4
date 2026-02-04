@@ -811,7 +811,7 @@ contract HubAccruedFeesTest is HubBase {
     assertEq(supplierYield, accruedFees); // all supplier yield goes to treasury spoke
   }
 
-  /// @dev Fuzz: Users earn same interest per share regardless of realizedFees size
+  /// @dev Fuzz: Users earn same interest per share regardless of liquidityFee
   function test_fuzz_interestIndependentOfLiquidityFee(
     uint256 supplyAmount,
     uint256 borrowAmount,
