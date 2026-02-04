@@ -19,16 +19,26 @@ contract SpokeOperations_Gas_Tests is SpokeBase {
   }
 
   function test_supply() public {
+    vm.startPrank(bob);
+    spoke.supply(reserveId.usdx, 10000e6, bob);
+    spoke.setUsingAsCollateral(reserveId.usdx, true, bob);
+    spoke.borrow(reserveId.dai, 100e18, bob);
+    vm.stopPrank();
+
+    skip(100);
+
     vm.startPrank(alice);
     spoke.supply(reserveId.usdx, 1000e6, alice);
     vm.snapshotGasLastCall(NAMESPACE, 'supply: 0 borrows, collateral disabled');
 
+    skip(100);
     spoke.supply(reserveId.usdx, 1000e6, alice);
     vm.snapshotGasLastCall(NAMESPACE, 'supply: second action, same reserve');
 
     spoke.supply(reserveId.weth, 1000e18, alice);
-
     spoke.setUsingAsCollateral(reserveId.weth, true, alice);
+
+    skip(100);
     spoke.supply(reserveId.weth, 1e18, alice);
     vm.snapshotGasLastCall(NAMESPACE, 'supply: 0 borrows, collateral enabled');
     vm.stopPrank();
@@ -127,8 +137,12 @@ contract SpokeOperations_Gas_Tests is SpokeBase {
     spoke.setUsingAsCollateral(reserveId.usdx, true, alice);
     spoke.borrow(reserveId.dai, 500e18, alice);
 
+    skip(100);
+
     spoke.repay(reserveId.dai, 200e18, alice);
     vm.snapshotGasLastCall(NAMESPACE, 'repay: partial');
+
+    skip(100);
 
     spoke.repay(reserveId.dai, type(uint256).max, alice);
     vm.snapshotGasLastCall(NAMESPACE, 'repay: full');
