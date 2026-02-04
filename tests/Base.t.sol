@@ -3018,10 +3018,7 @@ abstract contract Base is Test {
       );
   }
 
-  function _getExpectedFeeReceiverAddedAssets(
-    IHub hub,
-    uint256 assetId
-  ) internal view returns (uint256) {
+  function _getFeeReceiverAddedAssets(IHub hub, uint256 assetId) internal view returns (uint256) {
     address feeReceiver = hub.getAsset(assetId).feeReceiver;
     return hub.getSpokeAddedAssets(assetId, feeReceiver);
   }
