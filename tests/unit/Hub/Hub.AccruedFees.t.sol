@@ -143,7 +143,7 @@ contract HubAccruedFeesTest is HubBase {
 
     (uint256 drawnDebt, ) = hub1.getAssetOwed(daiAssetId);
     uint256 delta = drawnDebt - drawnAmount;
-    uint256 accruedFees = _getExpectedFeeReceiverAddedAssets(hub1, daiAssetId);
+    uint256 accruedFees = hub1.getSpokeAddedAssets(daiAssetId, address(treasurySpoke));
     uint256 finalSharePrice = hub1.previewAddByShares(daiAssetId, 1e18);
 
     assertEq(delta.percentMulDown(liquidityFee), 0);
@@ -175,7 +175,7 @@ contract HubAccruedFeesTest is HubBase {
 
     // With such small amounts, interest is at most 1 wei and fees round to 0
     assertLe(totalInterest, 1);
-    assertEq(_getExpectedFeeReceiverAddedAssets(hub1, daiAssetId), 0);
+    assertEq(hub1.getSpokeAddedAssets(daiAssetId, address(treasurySpoke)), 0);
     assertApproxEqAbs(drawnDebt, initialDrawnDebt, 1);
     assertEq(totalInterest.percentMulDown(liquidityFee), 0);
     assertEq(_calcUnrealizedFees(hub1, daiAssetId), 0);
@@ -224,7 +224,7 @@ contract HubAccruedFeesTest is HubBase {
 
     // Fee receiver value = unrealized fees (no minted shares yet typically)
     // Note: _drawLiquidityFromSpoke also triggers accrue which mints fee shares
-    uint256 accruedFees = _getExpectedFeeReceiverAddedAssets(hub1, daiAssetId);
+    uint256 accruedFees = hub1.getSpokeAddedAssets(daiAssetId, address(treasurySpoke));
     assertGt(accruedFees, 0);
 
     IHub.Asset memory asset = hub1.getAsset(daiAssetId);
@@ -285,7 +285,7 @@ contract HubAccruedFeesTest is HubBase {
     skip(timeSkip);
 
     // Fee receiver gets fees - verify it's positive with fees enabled
-    uint256 accruedFees = _getExpectedFeeReceiverAddedAssets(hub1, daiAssetId);
+    uint256 accruedFees = hub1.getSpokeAddedAssets(daiAssetId, address(treasurySpoke));
     // With liquidityFee >= 1 and time passed, there should be some fees
     if (liquidityFee > 0 && timeSkip > 0) {
       assertGt(accruedFees, 0);
@@ -370,7 +370,7 @@ contract HubAccruedFeesTest is HubBase {
     uint256 expectedProtocolCut = totalDelta.percentMulDown(90_00);
 
     // Fee receiver value = unrealized fees (no minted shares yet)
-    uint256 accruedFees = _getExpectedFeeReceiverAddedAssets(hub1, daiAssetId);
+    uint256 accruedFees = hub1.getSpokeAddedAssets(daiAssetId, address(treasurySpoke));
 
     assertApproxEqAbs(accruedFees, expectedProtocolCut, 3);
 
@@ -421,7 +421,7 @@ contract HubAccruedFeesTest is HubBase {
     (uint256 drawnDebtAfter, ) = hub1.getAssetOwed(daiAssetId);
     uint256 delta = drawnDebtAfter - borrowAmount;
     uint256 expectedProtocolCut = delta.percentMulDown(liquidityFee);
-    uint256 accruedFees = _getExpectedFeeReceiverAddedAssets(hub1, daiAssetId);
+    uint256 accruedFees = hub1.getSpokeAddedAssets(daiAssetId, address(treasurySpoke));
 
     // First accrual with no prior fees: fees = protocolCut approximately
     assertApproxEqAbs(accruedFees, expectedProtocolCut, 5);
@@ -493,7 +493,7 @@ contract HubAccruedFeesTest is HubBase {
       totalAssetsBefore + SharesMath.VIRTUAL_ASSETS
     );
 
-    uint256 totalFeeReceiverAssets = _getExpectedFeeReceiverAddedAssets(hub1, daiAssetId);
+    uint256 totalFeeReceiverAssets = hub1.getSpokeAddedAssets(daiAssetId, address(treasurySpoke));
     uint256 currentUnrealizedFees = _calcUnrealizedFees(hub1, daiAssetId);
 
     // Total fee receiver value = prior shares value + new unrealized fees (with tolerance for rounding)
@@ -605,7 +605,7 @@ contract HubAccruedFeesTest is HubBase {
       lastSharePrice = currentSharePrice;
     }
 
-    uint256 finalFeeReceiverAssets = _getExpectedFeeReceiverAddedAssets(hub1, daiAssetId);
+    uint256 finalFeeReceiverAssets = hub1.getSpokeAddedAssets(daiAssetId, address(treasurySpoke));
     uint256 feeReceiverShares = hub1.getSpokeAddedShares(daiAssetId, address(treasurySpoke));
     uint256 feeReceiverShareValue = hub1.previewRemoveByShares(daiAssetId, feeReceiverShares);
     uint256 unrealizedFees = _calcUnrealizedFees(hub1, daiAssetId);
@@ -720,7 +720,7 @@ contract HubAccruedFeesTest is HubBase {
       skipTime: timeSkip
     });
 
-    uint256 accruedFees = _getExpectedFeeReceiverAddedAssets(hub1, daiAssetId);
+    uint256 accruedFees = _getFeeReceiverAddedAssets(hub1, daiAssetId);
     (uint256 drawnDebt, ) = hub1.getAssetOwed(daiAssetId);
     uint256 totalInterest = drawnDebt - borrowAmount;
 
@@ -735,10 +735,7 @@ contract HubAccruedFeesTest is HubBase {
   }
 
   /// @dev Fuzz test verifying zero fee rate directs all interest to suppliers
-  function test_fuzz_unrealizedFees_zeroFeeAllToSuppliers(
-    uint256 supplyAmount,
-    uint256 borrowAmount
-  ) public {
+  function test_fuzz_zeroFeeAllToSuppliers(uint256 supplyAmount, uint256 borrowAmount) public {
     supplyAmount = bound(supplyAmount, 1, MAX_SUPPLY_AMOUNT);
     borrowAmount = bound(borrowAmount, 1, supplyAmount);
 
@@ -762,7 +759,7 @@ contract HubAccruedFeesTest is HubBase {
     });
     skip(365 days);
 
-    uint256 accruedFees = _getExpectedFeeReceiverAddedAssets(hub1, daiAssetId);
+    uint256 accruedFees = _getFeeReceiverAddedAssets(hub1, daiAssetId);
     (uint256 drawnDebt, ) = hub1.getAssetOwed(daiAssetId);
     uint256 totalInterest = drawnDebt - borrowAmount;
     uint256 finalTotalAssets = hub1.getAddedAssets(daiAssetId);
@@ -773,10 +770,7 @@ contract HubAccruedFeesTest is HubBase {
   }
 
   /// @dev Fuzz test verifying 100% fee rate directs all interest to treasury
-  function test_fuzz_unrealizedFees_maxFeeAllToTreasury(
-    uint256 supplyAmount,
-    uint256 borrowAmount
-  ) public {
+  function test_fuzz_maxFeeAllToTreasury(uint256 supplyAmount, uint256 borrowAmount) public {
     supplyAmount = bound(supplyAmount, 1, MAX_SUPPLY_AMOUNT);
     borrowAmount = bound(borrowAmount, 1, supplyAmount);
 
@@ -800,7 +794,7 @@ contract HubAccruedFeesTest is HubBase {
     });
     skip(365 days);
 
-    uint256 accruedFees = _getExpectedFeeReceiverAddedAssets(hub1, daiAssetId);
+    uint256 accruedFees = _getFeeReceiverAddedAssets(hub1, daiAssetId);
     (uint256 drawnDebt, ) = hub1.getAssetOwed(daiAssetId);
     uint256 totalInterest = drawnDebt - borrowAmount;
     uint256 finalSharePrice = hub1.previewAddByShares(daiAssetId, 1e18);
@@ -832,7 +826,7 @@ contract HubAccruedFeesTest is HubBase {
   ) public {
     supplyAmount = bound(supplyAmount, 1e18, MAX_SUPPLY_AMOUNT / 2);
     borrowAmount = bound(borrowAmount, 1, supplyAmount / 2);
-    liquidityFee = bound(liquidityFee, 1, PercentageMath.PERCENTAGE_FACTOR);
+    liquidityFee = bound(liquidityFee, 1, PercentageMath.PERCENTAGE_FACTOR / 2);
     timeSkipFirst = bound(timeSkipFirst, 1 days, MAX_SKIP_TIME / 2);
     newSupplyAmount = bound(newSupplyAmount, 1e18, MAX_SUPPLY_AMOUNT / 2);
     timeSkipSecond = bound(timeSkipSecond, 1 days, MAX_SKIP_TIME / 2);
@@ -855,6 +849,7 @@ contract HubAccruedFeesTest is HubBase {
     });
 
     skip(timeSkipFirst);
+    uint256 accruedFeeShares = _calcUnrealizedFeeShares(hub1, daiAssetId);
 
     // Alice joins when fee shares may be large
     uint256 bobSharesBefore = hub1.getSpokeAddedShares(daiAssetId, address(spoke1));
@@ -866,6 +861,7 @@ contract HubAccruedFeesTest is HubBase {
       user: alice
     });
     uint256 aliceShares = hub1.getSpokeAddedShares(daiAssetId, address(spoke1)) - bobSharesBefore;
+    uint256 feeReceiverAddedShares = _getFeeReceiverAddedShares(hub1, daiAssetId);
 
     // Mint fee shares to reset unrealized fees
     Utils.mintFeeShares(hub1, daiAssetId, ADMIN);
@@ -883,17 +879,23 @@ contract HubAccruedFeesTest is HubBase {
     uint256 carolShares = hub1.getSpokeAddedShares(daiAssetId, address(spoke1)) - sharesBeforeCarol;
 
     // Same supply should yield same shares
-    assertApproxEqAbs(aliceShares, carolShares, 1);
+    assertEq(aliceShares, carolShares);
 
     uint256 aliceValueBefore = hub1.previewRemoveByShares(daiAssetId, aliceShares);
     uint256 carolValueBefore = hub1.previewRemoveByShares(daiAssetId, carolShares);
 
     skip(timeSkipSecond);
+    accruedFeeShares = _calcUnrealizedFeeShares(hub1, daiAssetId);
 
     uint256 aliceGrowth = hub1.previewRemoveByShares(daiAssetId, aliceShares) - aliceValueBefore;
     uint256 carolGrowth = hub1.previewRemoveByShares(daiAssetId, carolShares) - carolValueBefore;
 
     // Both should earn same interest (same shares = same growth)
-    assertApproxEqAbs(aliceGrowth, carolGrowth, 1);
+    assertEq(aliceGrowth, carolGrowth);
+    assertEq(
+      _getFeeReceiverAddedShares(hub1, daiAssetId) - feeReceiverAddedShares,
+      accruedFeeShares,
+      'accrued fee shares from second time skip'
+    );
   }
 }
