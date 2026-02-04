@@ -267,7 +267,7 @@ contract SpokeUserAccountDataTest is SpokeBase {
     assertApproxEq(userAccountData, expectedUserAccountData);
   }
 
-  function _getLastReserveConfigKey(uint256 reserveId) internal view returns (uint24) {
+  function _getLastReserveConfigKey(uint256 reserveId) internal view returns (uint40) {
     return spoke.getReserve(reserveId).dynamicConfigKey;
   }
 

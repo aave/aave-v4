@@ -49,7 +49,7 @@ interface ISpoke is ISpokeBase, IAccessManaged, IIntentConsumer, IExtSload, IMul
     IHubBase hub;
     uint16 assetId;
     uint8 decimals;
-    uint24 dynamicConfigKey;
+    uint40 dynamicConfigKey;
     uint24 collateralRisk;
     ReserveFlags flags;
   }
@@ -101,7 +101,7 @@ interface ISpoke is ISpokeBase, IAccessManaged, IIntentConsumer, IExtSload, IMul
     int200 premiumOffsetRay;
     //
     uint120 suppliedShares;
-    uint24 dynamicConfigKey;
+    uint40 dynamicConfigKey;
   }
 
   /// @notice Position manager configuration data.
@@ -171,7 +171,7 @@ interface ISpoke is ISpokeBase, IAccessManaged, IIntentConsumer, IExtSload, IMul
   /// @param config The dynamic reserve config.
   event AddDynamicReserveConfig(
     uint256 indexed reserveId,
-    uint24 indexed dynamicConfigKey,
+    uint40 indexed dynamicConfigKey,
     DynamicReserveConfig config
   );
 
@@ -181,7 +181,7 @@ interface ISpoke is ISpokeBase, IAccessManaged, IIntentConsumer, IExtSload, IMul
   /// @param config The dynamic reserve config.
   event UpdateDynamicReserveConfig(
     uint256 indexed reserveId,
-    uint24 indexed dynamicConfigKey,
+    uint40 indexed dynamicConfigKey,
     DynamicReserveConfig config
   );
 
@@ -371,7 +371,7 @@ interface ISpoke is ISpokeBase, IAccessManaged, IIntentConsumer, IExtSload, IMul
   function addDynamicReserveConfig(
     uint256 reserveId,
     DynamicReserveConfig calldata dynamicConfig
-  ) external returns (uint24 dynamicConfigKey);
+  ) external returns (uint40 dynamicConfigKey);
 
   /// @notice Updates the dynamic reserve config for a given reserve at the specified key.
   /// @dev It reverts if the reserve associated with the given reserve identifier is not listed.
@@ -382,7 +382,7 @@ interface ISpoke is ISpokeBase, IAccessManaged, IIntentConsumer, IExtSload, IMul
   /// @param dynamicConfig The new dynamic reserve config.
   function updateDynamicReserveConfig(
     uint256 reserveId,
-    uint24 dynamicConfigKey,
+    uint40 dynamicConfigKey,
     DynamicReserveConfig calldata dynamicConfig
   ) external;
 
@@ -479,7 +479,7 @@ interface ISpoke is ISpokeBase, IAccessManaged, IIntentConsumer, IExtSload, IMul
   /// @return The dynamic reserve configuration struct.
   function getDynamicReserveConfig(
     uint256 reserveId,
-    uint24 dynamicConfigKey
+    uint40 dynamicConfigKey
   ) external view returns (DynamicReserveConfig memory);
 
   /// @notice Returns two flags indicating whether the reserve is used as collateral and whether it is borrowed by the user.

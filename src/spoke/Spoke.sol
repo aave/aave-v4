@@ -7,7 +7,9 @@ import {SafeERC20, IERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
 import {IERC20Permit} from 'src/dependencies/openzeppelin/IERC20Permit.sol';
 import {ReentrancyGuardTransient} from 'src/dependencies/openzeppelin/ReentrancyGuardTransient.sol';
 import {Math} from 'src/dependencies/openzeppelin/Math.sol';
-import {AccessManagedUpgradeable} from 'src/dependencies/openzeppelin-upgradeable/AccessManagedUpgradeable.sol';
+import {
+  AccessManagedUpgradeable
+} from 'src/dependencies/openzeppelin-upgradeable/AccessManagedUpgradeable.sol';
 import {MathUtils} from 'src/libraries/math/MathUtils.sol';
 import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
 import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
@@ -70,7 +72,7 @@ abstract contract Spoke is
   uint24 internal constant MAX_ALLOWED_COLLATERAL_RISK = 1000_00;
 
   /// @dev The maximum allowed value for a dynamic configuration key (inclusive).
-  uint256 internal constant MAX_ALLOWED_DYNAMIC_CONFIG_KEY = type(uint24).max;
+  uint256 internal constant MAX_ALLOWED_DYNAMIC_CONFIG_KEY = type(uint40).max;
 
   /// @dev The maximum allowed value for the maximum number of reserves a user can have (collateral or borrowed) (inclusive).
   uint16 internal constant MAX_ALLOWED_USER_RESERVES_LIMIT = type(uint16).max;
@@ -132,7 +134,7 @@ abstract contract Spoke is
     _validateReserveConfig(config);
     _validateDynamicReserveConfig(dynamicConfig);
     uint256 reserveId = _reserveCount++;
-    uint24 dynamicConfigKey; // 0 as first key to use
+    uint40 dynamicConfigKey; // 0 as first key to use
 
     (address underlying, uint8 decimals) = IHubBase(hub).getAssetUnderlyingAndDecimals(assetId);
     require(underlying != address(0), AssetNotListed());
@@ -189,12 +191,12 @@ abstract contract Spoke is
   function addDynamicReserveConfig(
     uint256 reserveId,
     DynamicReserveConfig calldata dynamicConfig
-  ) external restricted returns (uint24) {
+  ) external restricted returns (uint40) {
     require(reserveId < _reserveCount, ReserveNotListed());
-    uint24 dynamicConfigKey = _reserves[reserveId].dynamicConfigKey;
+    uint40 dynamicConfigKey = _reserves[reserveId].dynamicConfigKey;
     require(dynamicConfigKey < MAX_ALLOWED_DYNAMIC_CONFIG_KEY, MaximumDynamicConfigKeyReached());
     _validateDynamicReserveConfig(dynamicConfig);
-    dynamicConfigKey = dynamicConfigKey.uncheckedAdd(1).toUint24();
+    dynamicConfigKey = dynamicConfigKey.uncheckedAdd(1).toUint40();
     _reserves[reserveId].dynamicConfigKey = dynamicConfigKey;
     _dynamicConfig[reserveId][dynamicConfigKey] = dynamicConfig;
     emit AddDynamicReserveConfig(reserveId, dynamicConfigKey, dynamicConfig);
@@ -204,7 +206,7 @@ abstract contract Spoke is
   /// @inheritdoc ISpoke
   function updateDynamicReserveConfig(
     uint256 reserveId,
-    uint24 dynamicConfigKey,
+    uint40 dynamicConfigKey,
     DynamicReserveConfig calldata dynamicConfig
   ) external restricted {
     require(reserveId < _reserveCount, ReserveNotListed());
@@ -557,7 +559,7 @@ abstract contract Spoke is
   /// @inheritdoc ISpoke
   function getDynamicReserveConfig(
     uint256 reserveId,
-    uint24 dynamicConfigKey
+    uint40 dynamicConfigKey
   ) external view returns (DynamicReserveConfig memory) {
     _getReserve(reserveId);
     return _dynamicConfig[reserveId][dynamicConfigKey];
@@ -923,7 +925,7 @@ abstract contract Spoke is
       config.collateralFactor < PercentageMath.PERCENTAGE_FACTOR &&
         config.maxLiquidationBonus >= PercentageMath.PERCENTAGE_FACTOR &&
         config.maxLiquidationBonus.percentMulUp(config.collateralFactor) <
-          PercentageMath.PERCENTAGE_FACTOR,
+        PercentageMath.PERCENTAGE_FACTOR,
       InvalidCollateralFactorAndMaxLiquidationBonus()
     );
     require(config.liquidationFee <= PercentageMath.PERCENTAGE_FACTOR, InvalidLiquidationFee());
