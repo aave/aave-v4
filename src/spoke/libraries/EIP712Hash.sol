@@ -35,7 +35,16 @@ library EIP712Hash {
       );
   }
 
-  function hash(ISpoke.PositionManagerUpdate calldata params) internal pure returns (bytes32) {
-    return keccak256(abi.encode(POSITION_MANAGER_UPDATE, params.positionManager, params.approve));
+  function hash(
+    ISpoke.PositionManagerUpdate calldata params
+  ) internal pure returns (bytes32 digest) {
+    assembly ('memory-safe') {
+      let fmp := mload(0x40)
+      mstore(0, POSITION_MANAGER_UPDATE)
+      mstore(0x20, shr(96, shl(96, calldataload(params)))) // params.positionManager
+      mstore(0x40, iszero(iszero(calldataload(add(params, 0x20))))) // params.update
+      digest := keccak256(0, 0x60)
+      mstore(0x40, fmp)
+    }
   }
 }
