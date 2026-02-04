@@ -18,7 +18,7 @@ import {KeyValueList} from 'src/spoke/libraries/KeyValueList.sol';
 import {LiquidationLogic} from 'src/spoke/libraries/LiquidationLogic.sol';
 import {PositionStatusMap} from 'src/spoke/libraries/PositionStatusMap.sol';
 import {ReserveFlags, ReserveFlagsMap} from 'src/spoke/libraries/ReserveFlagsMap.sol';
-import {UserPositionDebt} from 'src/spoke/libraries/UserPositionDebt.sol';
+import {UserPositionUtils} from 'src/spoke/libraries/UserPositionUtils.sol';
 import {IntentConsumer} from 'src/utils/IntentConsumer.sol';
 import {Multicall} from 'src/utils/Multicall.sol';
 import {ExtSload} from 'src/utils/ExtSload.sol';
@@ -50,7 +50,7 @@ abstract contract Spoke is
   using KeyValueList for KeyValueList.List;
   using PositionStatusMap for *;
   using ReserveFlagsMap for ReserveFlags;
-  using UserPositionDebt for ISpoke.UserPosition;
+  using UserPositionUtils for ISpoke.UserPosition;
 
   /// @inheritdoc ISpoke
   bytes32 public constant SET_USER_POSITION_MANAGERS_TYPEHASH =
@@ -748,7 +748,7 @@ abstract contract Spoke is
       }
 
       if (borrowing) {
-        UserPositionDebt.DebtComponents memory debtComponents = userPosition.getDebtComponents(
+        UserPositionUtils.DebtComponents memory debtComponents = userPosition.getDebtComponents(
           reserve.hub,
           reserve.assetId
         );
@@ -764,9 +764,10 @@ abstract contract Spoke is
 
     if (accountData.totalDebtValueRay > 0) {
       // at this point, `avgCollateralFactor` is the total collateral value weighted by collateral factors,
-      // expressed in units of Value and scaled by BPS.
+      // expressed in units of Value and scaled by BPS. We convert it from BPS to WAD, since this will
+      // ultimately define the scaling factor of the health factor.
       accountData.healthFactor = Math.mulDiv(
-        accountData.avgCollateralFactor.bpsToWad(), // expressed in units of Value and scaled by WAD
+        accountData.avgCollateralFactor.bpsToWad(),
         WadRayMath.RAY,
         accountData.totalDebtValueRay,
         Math.Rounding.Floor

@@ -56,17 +56,21 @@ debtRayRemaining = (
 leavesDebtDust = And(
     rawDrawnSharesToLiquidate < drawnShares,
     toValue(
-        fromRayDown(debtRayRemaining),
+        debtRayRemaining,
         debtAssetDecimals,
         debtAssetPrice,
     )
-    < DUST_LIQUIDATION_THRESHOLD,
+    < DUST_LIQUIDATION_THRESHOLD * RAY,
 )
 drawnSharesToLiquidate = Int("drawnSharesToLiquidate")
 s.add(
     Or(
         And(Not(leavesDebtDust), drawnSharesToLiquidate == rawDrawnSharesToLiquidate),
-        And(leavesDebtDust, drawnSharesToLiquidate == drawnShares, premiumDebtRayToLiquidate == premiumDebtRay),
+        And(
+            leavesDebtDust,
+            drawnSharesToLiquidate == drawnShares,
+            premiumDebtRayToLiquidate == premiumDebtRay,
+        ),
     )
 )
 

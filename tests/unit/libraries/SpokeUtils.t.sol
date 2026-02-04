@@ -79,11 +79,11 @@ contract SpokeUtilsTest is SpokeBase {
     w.toValue(1e50, 6, 1e16);
   }
 
-  function test_toValue() public {
+  function test_toValue() public view {
     assertEq(w.toValue(4.2e6, 6, 200e8), 840e26);
   }
 
-  function test_fuzz_toValue(uint256 amount, uint256 decimals, uint256 price) public {
+  function test_fuzz_toValue(uint256 amount, uint256 decimals, uint256 price) public view {
     amount = bound(amount, 0, MAX_SUPPLY_AMOUNT);
     decimals = bound(decimals, MIN_TOKEN_DECIMALS_SUPPORTED, MAX_TOKEN_DECIMALS_SUPPORTED);
     price = bound(price, 0, MAX_ASSET_PRICE);

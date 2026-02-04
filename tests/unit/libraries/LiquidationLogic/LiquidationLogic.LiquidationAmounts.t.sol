@@ -372,7 +372,7 @@ contract LiquidationLogicLiquidationAmountsTest is LiquidationLogicBaseTest {
     LiquidationLogic.CalculateLiquidationAmountsParams memory params
   ) internal virtual returns (LiquidationLogic.CalculateLiquidationAmountsParams memory) {
     params = _bound(params);
-    params.drawnShares = MAX_SUPPLY_AMOUNT;
+    params.drawnShares = MAX_SUPPLY_ASSET_UNITS * 10 ** params.debtAssetDecimals;
     params.debtToCover = UINT256_MAX;
 
     // bound price such that 1 supply share is worth less than DUST_LIQUIDATION_THRESHOLD

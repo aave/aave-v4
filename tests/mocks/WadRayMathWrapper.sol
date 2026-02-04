@@ -61,10 +61,6 @@ contract WadRayMathWrapper {
     return WadRayMath.fromWadDown(a);
   }
 
-  function fromRayDown(uint256 a) public pure returns (uint256) {
-    return WadRayMath.fromRayDown(a);
-  }
-
   function fromRayUp(uint256 a) public pure returns (uint256) {
     return WadRayMath.fromRayUp(a);
   }

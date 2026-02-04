@@ -1600,7 +1600,7 @@ abstract contract Base is Test {
     uint256 drawn,
     uint256 premiumRay
   ) internal pure returns (uint256 drawnAmountToRestore, uint256 premiumRayToRestore) {
-    if (restoreAmount <= premiumRay.fromRayDown()) {
+    if (restoreAmount <= premiumRay / WadRayMath.RAY) {
       return (0, restoreAmount.toRay());
     }
 
@@ -2064,10 +2064,10 @@ abstract contract Base is Test {
     );
     uint256 targetTotalDebtValue = totalAdjustedCollateralValue.wadDivUp(desiredHf);
     require(
-      userAccountData.totalDebtValueRay.fromRayDown() < targetTotalDebtValue,
+      userAccountData.totalDebtValueRay / WadRayMath.RAY < targetTotalDebtValue,
       'User has enough debt'
     );
-    return targetTotalDebtValue - userAccountData.totalDebtValueRay.fromRayDown();
+    return targetTotalDebtValue - userAccountData.totalDebtValueRay / WadRayMath.RAY;
   }
 
   // Helper function to get user account data with potential dynamic config refresh

@@ -21,7 +21,7 @@ contract LiquidationLogicDebtToLiquidateTest is LiquidationLogicBaseTest {
     uint256 rawPremiumDebtRayToLiquidate = debtRayToTarget.fromRayUp().toRay().min(
       params.premiumDebtRay
     );
-    if (params.debtToCover <= rawPremiumDebtRayToLiquidate.fromRayDown()) {
+    if (params.debtToCover <= rawPremiumDebtRayToLiquidate / WadRayMath.RAY) {
       rawPremiumDebtRayToLiquidate = params.debtToCover.toRay();
     }
 
@@ -52,10 +52,10 @@ contract LiquidationLogicDebtToLiquidateTest is LiquidationLogicBaseTest {
       rawPremiumDebtRayToLiquidate;
 
     bool leavesDebtDust = _convertAmountToValue(
-      debtRayRemaining.fromRayDown(),
+      debtRayRemaining,
       params.debtAssetPrice,
       params.debtAssetUnit
-    ) < LiquidationLogic.DUST_LIQUIDATION_THRESHOLD;
+    ) < LiquidationLogic.DUST_LIQUIDATION_THRESHOLD.toRay();
 
     (uint256 drawnSharesToLiquidate, uint256 premiumDebtRayToLiquidate) = liquidationLogicWrapper
       .calculateDebtToLiquidate(params);
@@ -87,7 +87,7 @@ contract LiquidationLogicDebtToLiquidateTest is LiquidationLogicBaseTest {
     uint256 rawPremiumDebtRayToLiquidate = debtRayToTarget.fromRayUp().toRay().min(
       params.premiumDebtRay
     );
-    if (params.debtToCover <= rawPremiumDebtRayToLiquidate.fromRayDown()) {
+    if (params.debtToCover <= rawPremiumDebtRayToLiquidate / WadRayMath.RAY) {
       rawPremiumDebtRayToLiquidate = params.debtToCover.toRay();
     }
 
@@ -104,7 +104,7 @@ contract LiquidationLogicDebtToLiquidateTest is LiquidationLogicBaseTest {
     params.drawnShares = bound(
       params.drawnShares,
       drawnSharesToTarget.min(drawnSharesToCover),
-      MAX_SUPPLY_AMOUNT
+      MAX_SUPPLY_ASSET_UNITS * params.debtAssetUnit
     );
 
     (uint256 drawnSharesToLiquidate, uint256 premiumDebtRayToLiquidate) = liquidationLogicWrapper

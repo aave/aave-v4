@@ -10,7 +10,7 @@ import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
 import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
 import {SpokeUtils} from 'src/spoke/libraries/SpokeUtils.sol';
 import {PositionStatusMap} from 'src/spoke/libraries/PositionStatusMap.sol';
-import {UserPositionDebt} from 'src/spoke/libraries/UserPositionDebt.sol';
+import {UserPositionUtils} from 'src/spoke/libraries/UserPositionUtils.sol';
 import {ReserveFlags, ReserveFlagsMap} from 'src/spoke/libraries/ReserveFlagsMap.sol';
 import {IHubBase} from 'src/hub/interfaces/IHubBase.sol';
 import {IAaveOracle} from 'src/spoke/interfaces/IAaveOracle.sol';
@@ -26,7 +26,7 @@ library LiquidationLogic {
   using PercentageMath for uint256;
   using WadRayMath for uint256;
   using SpokeUtils for *;
-  using UserPositionDebt for ISpoke.UserPosition;
+  using UserPositionUtils for ISpoke.UserPosition;
   using ReserveFlagsMap for ReserveFlags;
   using PositionStatusMap for ISpoke.PositionStatus;
 
@@ -279,7 +279,7 @@ library LiquidationLogic {
       IHubBase hub = reserve.hub;
       uint256 assetId = reserve.assetId;
 
-      UserPositionDebt.DebtComponents memory debtComponents = userPosition.getDebtComponents(
+      UserPositionUtils.DebtComponents memory debtComponents = userPosition.getDebtComponents(
         hub,
         assetId
       );
@@ -348,7 +348,7 @@ library LiquidationLogic {
     ExecuteLiquidationParams memory params
   ) internal returns (bool) {
     uint256 suppliedShares = collateralUserPosition.suppliedShares;
-    UserPositionDebt.DebtComponents memory debtComponents = debtUserPosition.getDebtComponents(
+    UserPositionUtils.DebtComponents memory debtComponents = debtUserPosition.getDebtComponents(
       params.debtHub,
       params.debtAssetId
     );
@@ -749,7 +749,8 @@ library LiquidationLogic {
 
     // `premiumDebtRayToLiquidate` may exceed `debtRayToTarget` as a result of rounding up to asset units, ensuring full utilization of assets
     uint256 premiumDebtRayToLiquidate = debtRayToTarget.roundRayUp().min(params.premiumDebtRay);
-    if (params.debtToCover <= premiumDebtRayToLiquidate.fromRayDown()) {
+    // strict inequality is mandatory given rounding
+    if (params.debtToCover < premiumDebtRayToLiquidate.fromRayUp()) {
       premiumDebtRayToLiquidate = params.debtToCover.toRay();
     }
 
@@ -777,11 +778,8 @@ library LiquidationLogic {
 
     // debt is fully liquidated if and only if all drawn shares are liquidated (premium debt is always liquidated first)
     bool leavesDebtDust = (drawnSharesToLiquidate < params.drawnShares) &&
-      debtRayRemaining.fromRayDown().toValue({
-        decimals: params.debtAssetDecimals,
-        price: params.debtAssetPrice
-      }) <
-        DUST_LIQUIDATION_THRESHOLD;
+      debtRayRemaining.toValue({decimals: params.debtAssetDecimals, price: params.debtAssetPrice}) <
+        DUST_LIQUIDATION_THRESHOLD.toRay();
 
     if (leavesDebtDust) {
       // target health factor is bypassed to prevent leaving dust

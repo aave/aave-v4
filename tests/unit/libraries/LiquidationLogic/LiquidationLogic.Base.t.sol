@@ -148,8 +148,10 @@ contract LiquidationLogicBaseTest is SpokeBase {
     );
 
     uint256 debtRayToLiquidate = debtRayToTarget.min(
-      _max(_min(type(uint256).max.fromRayDown(), params.debtToCover.toRay()), params.drawnIndex) -
-        params.drawnIndex // debtToCover acts as an upperbound
+      _max(
+        _min(type(uint256).max / WadRayMath.RAY, params.debtToCover.toRay()),
+        params.drawnIndex
+      ) - params.drawnIndex // debtToCover acts as an upperbound
     );
     uint256 debtRay = vm.randomUint(
       debtRayToLiquidate + 1,
