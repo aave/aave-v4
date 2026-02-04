@@ -243,6 +243,52 @@ library LiquidationLogic {
       });
   }
 
+  /// @notice Reports deficits for all debt reserves of the user.
+  /// @dev Deficit validation should already have occurred during liquidation.
+  /// @dev It clears the user position, setting drawn debt and premium debt to zero.
+  /// @param reserves The mapping of reserves per reserve identifier.
+  /// @param userPositions The mapping of user positions per reserve per user.
+  /// @param positionStatus The mapping of position status per user.
+  /// @param reserveCount The number of reserves.
+  /// @param user The address of the user.
+  function reportDeficit(
+    mapping(uint256 reserveId => ISpoke.Reserve) storage reserves,
+    mapping(address user => mapping(uint256 reserveId => ISpoke.UserPosition)) storage userPositions,
+    mapping(address user => ISpoke.PositionStatus) storage positionStatus,
+    uint256 reserveCount,
+    address user
+  ) external {
+    ISpoke.PositionStatus storage userPositionStatus = positionStatus[user];
+
+    uint256 reserveId = reserveCount;
+    while (
+      (reserveId = userPositionStatus.nextBorrowing(reserveId)) != PositionStatusMap.NOT_FOUND
+    ) {
+      ISpoke.UserPosition storage userPosition = userPositions[user][reserveId];
+      ISpoke.Reserve storage reserve = reserves[reserveId];
+      IHubBase hub = reserve.hub;
+      uint256 assetId = reserve.assetId;
+
+      uint256 drawnIndex = hub.getAssetDrawnIndex(assetId);
+      (uint256 drawnDebtReported, uint256 premiumDebtRay) = userPosition.getDebt(drawnIndex);
+      uint256 deficitShares = drawnDebtReported.rayDivDown(drawnIndex);
+
+      IHubBase.PremiumDelta memory premiumDelta = userPosition.calculatePremiumDelta({
+        drawnSharesTaken: deficitShares,
+        drawnIndex: drawnIndex,
+        riskPremium: 0,
+        restoredPremiumRay: premiumDebtRay
+      });
+
+      hub.reportDeficit(assetId, drawnDebtReported, premiumDelta);
+      userPosition.applyPremiumDelta(premiumDelta);
+      userPosition.drawnShares -= deficitShares.toUint120();
+      userPositionStatus.setBorrowing(reserveId, false);
+
+      emit ISpoke.ReportDeficit(reserveId, user, deficitShares, premiumDelta);
+    }
+  }
+
   /// @notice Calculates the liquidation bonus at a given health factor.
   /// @dev Liquidation Bonus is expressed as a BPS value greater than `PercentageMath.PERCENTAGE_FACTOR`.
   /// @param healthFactorForMaxBonus The health factor for max bonus.

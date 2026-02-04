@@ -1177,4 +1177,11 @@ contract SpokeBase is Base {
 
     return result;
   }
+
+  /// @dev Helper to etch spoke's implementation with a new maxUserReservesLimit
+  function _updateMaxUserReservesLimit(ISpoke spoke, uint16 newLimit) internal {
+    address currentImpl = _getImplementationAddress(address(spoke));
+    ISpokeInstance newImpl = DeployUtils.deploySpokeImplementation(spoke.ORACLE(), newLimit);
+    vm.etch(currentImpl, address(newImpl).code);
+  }
 }

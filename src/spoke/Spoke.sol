@@ -390,6 +390,7 @@ abstract contract Spoke is
 
     uint256 newRiskPremium = 0;
     if (isUserInDeficit) {
+      // report deficit for all debt reserves, including the reserve being repaid
       _reportDeficit(user);
     } else {
       newRiskPremium = _calculateUserAccountData(user).riskPremium;
@@ -848,37 +849,8 @@ abstract contract Spoke is
     emit UpdateUserRiskPremium(user, newRiskPremium);
   }
 
-  /// @notice Reports deficits for all debt reserves of the user, including the reserve being repaid during liquidation.
-  /// @dev Deficit validation should already have occurred during liquidation.
-  /// @dev It clears the user position, setting drawn debt, premium debt, and risk premium to zero.
   function _reportDeficit(address user) internal {
-    PositionStatus storage positionStatus = _positionStatus[user];
-
-    uint256 reserveId = _reserveCount;
-    while ((reserveId = positionStatus.nextBorrowing(reserveId)) != PositionStatusMap.NOT_FOUND) {
-      UserPosition storage userPosition = _userPositions[user][reserveId];
-      Reserve storage reserve = _reserves[reserveId];
-      IHubBase hub = reserve.hub;
-      uint256 assetId = reserve.assetId;
-
-      uint256 drawnIndex = hub.getAssetDrawnIndex(assetId);
-      (uint256 drawnDebtReported, uint256 premiumDebtRay) = userPosition.getDebt(drawnIndex);
-      uint256 deficitShares = drawnDebtReported.rayDivDown(drawnIndex);
-
-      IHubBase.PremiumDelta memory premiumDelta = userPosition.calculatePremiumDelta({
-        drawnSharesTaken: deficitShares,
-        drawnIndex: drawnIndex,
-        riskPremium: 0,
-        restoredPremiumRay: premiumDebtRay
-      });
-
-      hub.reportDeficit(assetId, drawnDebtReported, premiumDelta);
-      userPosition.applyPremiumDelta(premiumDelta);
-      userPosition.drawnShares -= deficitShares.toUint120();
-      positionStatus.setBorrowing(reserveId, false);
-
-      emit ReportDeficit(reserveId, user, deficitShares, premiumDelta);
-    }
+    LiquidationLogic.reportDeficit(_reserves, _userPositions, _positionStatus, _reserveCount, user);
   }
 
   function _getReserve(uint256 reserveId) internal view returns (Reserve storage) {
