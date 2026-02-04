@@ -25,10 +25,10 @@ library LiquidationLogic {
   using MathUtils for *;
   using PercentageMath for uint256;
   using WadRayMath for uint256;
+  using SpokeUtils for *;
   using UserPositionDebt for ISpoke.UserPosition;
   using ReserveFlagsMap for ReserveFlags;
   using PositionStatusMap for ISpoke.PositionStatus;
-  using SpokeUtils for uint256;
 
   struct LiquidateUserParams {
     uint256 collateralReserveId;
@@ -184,7 +184,7 @@ library LiquidationLogic {
   uint64 public constant HEALTH_FACTOR_LIQUIDATION_THRESHOLD = 1e18;
 
   /// @dev The maximum amount considered as dust for a user's collateral and debt balances after a liquidation.
-  /// @dev Expressed in USD with `ORACLE_DECIMALS + MAX_ALLOWED_ASSET_DECIMALS` decimals.
+  /// @dev Worth 1000 USD. Expressed in USD with `ORACLE_DECIMALS + MAX_ALLOWED_ASSET_DECIMALS` decimals.
   uint256 public constant DUST_LIQUIDATION_THRESHOLD =
     1000 * 10 ** (SpokeUtils.ORACLE_DECIMALS + SpokeUtils.MAX_ALLOWED_ASSET_DECIMALS);
 
@@ -202,11 +202,8 @@ library LiquidationLogic {
     mapping(uint256 reserveId => mapping(uint24 dynamicConfigKey => ISpoke.DynamicReserveConfig)) storage dynamicConfig,
     LiquidateUserParams memory params
   ) external returns (bool) {
-    ISpoke.Reserve storage collateralReserve = SpokeUtils.getReserve(
-      reserves,
-      params.collateralReserveId
-    );
-    ISpoke.Reserve storage debtReserve = SpokeUtils.getReserve(reserves, params.debtReserveId);
+    ISpoke.Reserve storage collateralReserve = reserves.get(params.collateralReserveId);
+    ISpoke.Reserve storage debtReserve = reserves.get(params.debtReserveId);
 
     ISpoke.UserPosition storage collateralUserPosition = userPositions[params.user][
       params.collateralReserveId

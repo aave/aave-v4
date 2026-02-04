@@ -45,9 +45,9 @@ abstract contract Spoke is
   using MathUtils for *;
   using PercentageMath for *;
   using WadRayMath for *;
+  using SpokeUtils for *;
   using EIP712Hash for *;
   using KeyValueList for KeyValueList.List;
-  using SpokeUtils for uint256;
   using PositionStatusMap for *;
   using ReserveFlagsMap for ReserveFlags;
   using UserPositionDebt for ISpoke.UserPosition;
@@ -171,7 +171,7 @@ abstract contract Spoke is
     uint256 reserveId,
     ReserveConfig calldata config
   ) external restricted {
-    Reserve storage reserve = _getReserve(reserveId);
+    Reserve storage reserve = _reserves.get(reserveId);
     _validateReserveConfig(config);
     reserve.collateralRisk = config.collateralRisk;
     reserve.flags = ReserveFlagsMap.create({
@@ -229,7 +229,7 @@ abstract contract Spoke is
     uint256 amount,
     address onBehalfOf
   ) external nonReentrant onlyPositionManager(onBehalfOf) returns (uint256, uint256) {
-    Reserve storage reserve = _getReserve(reserveId);
+    Reserve storage reserve = _reserves.get(reserveId);
     UserPosition storage userPosition = _userPositions[onBehalfOf][reserveId];
     _validateSupply(reserve.flags);
 
@@ -248,7 +248,7 @@ abstract contract Spoke is
     uint256 amount,
     address onBehalfOf
   ) external nonReentrant onlyPositionManager(onBehalfOf) returns (uint256, uint256) {
-    Reserve storage reserve = _getReserve(reserveId);
+    Reserve storage reserve = _reserves.get(reserveId);
     UserPosition storage userPosition = _userPositions[onBehalfOf][reserveId];
     _validateWithdraw(reserve.flags);
     IHubBase hub = reserve.hub;
@@ -278,7 +278,7 @@ abstract contract Spoke is
     uint256 amount,
     address onBehalfOf
   ) external nonReentrant onlyPositionManager(onBehalfOf) returns (uint256, uint256) {
-    Reserve storage reserve = _getReserve(reserveId);
+    Reserve storage reserve = _reserves.get(reserveId);
     UserPosition storage userPosition = _userPositions[onBehalfOf][reserveId];
     PositionStatus storage positionStatus = _positionStatus[onBehalfOf];
     _validateBorrow(reserve.flags);
@@ -309,7 +309,7 @@ abstract contract Spoke is
     uint256 amount,
     address onBehalfOf
   ) external nonReentrant onlyPositionManager(onBehalfOf) returns (uint256, uint256) {
-    Reserve storage reserve = _getReserve(reserveId);
+    Reserve storage reserve = _reserves.get(reserveId);
     UserPosition storage userPosition = _userPositions[onBehalfOf][reserveId];
     _validateRepay(reserve.flags);
 
@@ -396,7 +396,7 @@ abstract contract Spoke is
     bool usingAsCollateral,
     address onBehalfOf
   ) external nonReentrant onlyPositionManager(onBehalfOf) {
-    Reserve storage reserve = _getReserve(reserveId);
+    Reserve storage reserve = _reserves.get(reserveId);
     PositionStatus storage positionStatus = _positionStatus[onBehalfOf];
     if (positionStatus.isUsingAsCollateral(reserveId) == usingAsCollateral) {
       return;
@@ -506,36 +506,36 @@ abstract contract Spoke is
 
   /// @inheritdoc ISpokeBase
   function getReserveSuppliedAssets(uint256 reserveId) external view returns (uint256) {
-    Reserve storage reserve = _getReserve(reserveId);
+    Reserve storage reserve = _reserves.get(reserveId);
     return reserve.hub.getSpokeAddedAssets(reserve.assetId, address(this));
   }
 
   /// @inheritdoc ISpokeBase
   function getReserveSuppliedShares(uint256 reserveId) external view returns (uint256) {
-    Reserve storage reserve = _getReserve(reserveId);
+    Reserve storage reserve = _reserves.get(reserveId);
     return reserve.hub.getSpokeAddedShares(reserve.assetId, address(this));
   }
 
   /// @inheritdoc ISpokeBase
   function getReserveDebt(uint256 reserveId) external view returns (uint256, uint256) {
-    Reserve storage reserve = _getReserve(reserveId);
+    Reserve storage reserve = _reserves.get(reserveId);
     return reserve.hub.getSpokeOwed(reserve.assetId, address(this));
   }
 
   /// @inheritdoc ISpokeBase
   function getReserveTotalDebt(uint256 reserveId) external view returns (uint256) {
-    Reserve storage reserve = _getReserve(reserveId);
+    Reserve storage reserve = _reserves.get(reserveId);
     return reserve.hub.getSpokeTotalOwed(reserve.assetId, address(this));
   }
 
   /// @inheritdoc ISpoke
   function getReserve(uint256 reserveId) external view returns (Reserve memory) {
-    return _getReserve(reserveId);
+    return _reserves.get(reserveId);
   }
 
   /// @inheritdoc ISpoke
   function getReserveConfig(uint256 reserveId) external view returns (ReserveConfig memory) {
-    Reserve storage reserve = _getReserve(reserveId);
+    Reserve storage reserve = _reserves.get(reserveId);
     return
       ReserveConfig({
         collateralRisk: reserve.collateralRisk,
@@ -551,7 +551,7 @@ abstract contract Spoke is
     uint256 reserveId,
     uint24 dynamicConfigKey
   ) external view returns (DynamicReserveConfig memory) {
-    _getReserve(reserveId);
+    _reserves.get(reserveId);
     return _dynamicConfig[reserveId][dynamicConfigKey];
   }
 
@@ -560,14 +560,14 @@ abstract contract Spoke is
     uint256 reserveId,
     address user
   ) external view returns (bool, bool) {
-    _getReserve(reserveId);
+    _reserves.get(reserveId);
     PositionStatus storage positionStatus = _positionStatus[user];
     return (positionStatus.isUsingAsCollateral(reserveId), positionStatus.isBorrowing(reserveId));
   }
 
   /// @inheritdoc ISpokeBase
   function getUserSuppliedAssets(uint256 reserveId, address user) external view returns (uint256) {
-    Reserve storage reserve = _getReserve(reserveId);
+    Reserve storage reserve = _reserves.get(reserveId);
     return
       reserve.hub.previewRemoveByShares(
         reserve.assetId,
@@ -577,13 +577,13 @@ abstract contract Spoke is
 
   /// @inheritdoc ISpokeBase
   function getUserSuppliedShares(uint256 reserveId, address user) external view returns (uint256) {
-    _getReserve(reserveId);
+    _reserves.get(reserveId);
     return _userPositions[user][reserveId].suppliedShares;
   }
 
   /// @inheritdoc ISpokeBase
   function getUserDebt(uint256 reserveId, address user) external view returns (uint256, uint256) {
-    Reserve storage reserve = _getReserve(reserveId);
+    Reserve storage reserve = _reserves.get(reserveId);
     UserPosition storage userPosition = _userPositions[user][reserveId];
     (uint256 drawnDebt, uint256 premiumDebtRay) = userPosition.getDebt(
       reserve.hub,
@@ -594,7 +594,7 @@ abstract contract Spoke is
 
   /// @inheritdoc ISpokeBase
   function getUserTotalDebt(uint256 reserveId, address user) external view returns (uint256) {
-    Reserve storage reserve = _getReserve(reserveId);
+    Reserve storage reserve = _reserves.get(reserveId);
     UserPosition storage userPosition = _userPositions[user][reserveId];
     (uint256 drawnDebt, uint256 premiumDebtRay) = userPosition.getDebt(
       reserve.hub,
@@ -605,7 +605,7 @@ abstract contract Spoke is
 
   /// @inheritdoc ISpokeBase
   function getUserPremiumDebtRay(uint256 reserveId, address user) external view returns (uint256) {
-    Reserve storage reserve = _getReserve(reserveId);
+    Reserve storage reserve = _reserves.get(reserveId);
     UserPosition storage userPosition = _userPositions[user][reserveId];
     (, uint256 premiumDebtRay) = userPosition.getDebt(reserve.hub, reserve.assetId);
     return premiumDebtRay;
@@ -616,7 +616,7 @@ abstract contract Spoke is
     uint256 reserveId,
     address user
   ) external view returns (UserPosition memory) {
-    _getReserve(reserveId);
+    _reserves.get(reserveId);
     return _userPositions[user][reserveId];
   }
 
@@ -637,7 +637,7 @@ abstract contract Spoke is
     address user,
     uint256 healthFactor
   ) external view returns (uint256) {
-    _getReserve(reserveId);
+    _reserves.get(reserveId);
     return
       LiquidationLogic.calculateLiquidationBonus({
         healthFactorForMaxBonus: _liquidationConfig.healthFactorForMaxBonus,
@@ -764,9 +764,9 @@ abstract contract Spoke is
 
     if (accountData.totalDebtValueRay > 0) {
       // at this point, `avgCollateralFactor` is the total collateral value weighted by collateral factors,
-      // expressed in units of base currency and scaled by BPS.
+      // expressed in units of Value and scaled by BPS.
       accountData.healthFactor = Math.mulDiv(
-        accountData.avgCollateralFactor.bpsToWad(), // expressed in units of base currency and scaled by WAD
+        accountData.avgCollateralFactor.bpsToWad(), // expressed in units of Value and scaled by WAD
         WadRayMath.RAY,
         accountData.totalDebtValueRay,
         Math.Rounding.Floor
@@ -799,8 +799,7 @@ abstract contract Spoke is
     }
 
     if (debtValueLeftToCover < totalDebtValue) {
-      accountData.riskPremium = Math.ceilDiv(
-        accountData.riskPremium,
+      accountData.riskPremium = accountData.riskPremium.divUp(
         totalDebtValue.uncheckedSub(debtValueLeftToCover)
       );
     }
@@ -841,10 +840,6 @@ abstract contract Spoke is
       emit RefreshPremiumDebt(reserveId, user, premiumDelta);
     }
     emit UpdateUserRiskPremium(user, newRiskPremium);
-  }
-
-  function _getReserve(uint256 reserveId) internal view returns (Reserve storage) {
-    return SpokeUtils.getReserve(_reserves, reserveId);
   }
 
   /// @dev CollateralFactor of historical config keys cannot be 0, which allows liquidations to proceed.

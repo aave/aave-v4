@@ -212,8 +212,11 @@ library WadRayMath {
   /// @return b = ceil(a / RAY) * RAY.
   function roundRayUp(uint256 a) internal pure returns (uint256 b) {
     assembly ('memory-safe') {
-      b := mul(div(add(a, sub(RAY, 1)), RAY), RAY)
-      if iszero(iszero(lt(b, a))) {
+      // add 1 if (a % RAY) > 0 to round up the division of a by RAY
+      let c := add(div(a, RAY), gt(mod(a, RAY), 0))
+      b := mul(c, RAY)
+      // to avoid overflow, b/RAY == c
+      if iszero(eq(div(b, RAY), c)) {
         revert(0, 0)
       }
     }

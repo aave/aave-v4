@@ -22,7 +22,7 @@ library SpokeUtils {
   /// @param reserves The mapping of reserves per reserve id.
   /// @param reserveId The identifier of the reserve.
   /// @return The reserve.
-  function getReserve(
+  function get(
     mapping(uint256 reserveId => ISpoke.Reserve) storage reserves,
     uint256 reserveId
   ) internal view returns (ISpoke.Reserve storage) {
@@ -31,12 +31,12 @@ library SpokeUtils {
     return reserve;
   }
 
-  /// @notice Converts an asset amount to base currency value.
+  /// @notice Converts an asset amount to Value.
   /// @dev Reverts if asset uses more than `MAX_ALLOWED_ASSET_DECIMALS` decimals. Reverts if multiplication overflows.
   /// @param amount The asset amount.
   /// @param decimals The decimals of the asset.
   /// @param price The price of the asset.
-  /// @return The base currency value.
+  /// @return The amount in units of Value.
   function toValue(
     uint256 amount,
     uint256 decimals,

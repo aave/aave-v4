@@ -4,10 +4,12 @@ pragma solidity ^0.8.0;
 
 import {Spoke, ISpoke, IHubBase, SafeCast, PositionStatusMap} from 'src/spoke/Spoke.sol';
 import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
+import {SpokeUtils} from 'src/spoke/libraries/SpokeUtils.sol';
 import {Test} from 'forge-std/Test.sol';
 
 /// @dev inherit from Test to exclude contract from forge size check
 contract MockSpoke is Spoke, Test {
+  using SpokeUtils for *;
   using SafeCast for *;
   using PositionStatusMap for *;
 
@@ -37,7 +39,7 @@ contract MockSpoke is Spoke, Test {
     uint256 amount,
     address onBehalfOf
   ) external nonReentrant onlyPositionManager(onBehalfOf) returns (uint256, uint256) {
-    Reserve storage reserve = _getReserve(reserveId);
+    Reserve storage reserve = _reserves.get(reserveId);
     UserPosition storage userPosition = _userPositions[onBehalfOf][reserveId];
     PositionStatus storage positionStatus = _positionStatus[onBehalfOf];
     _validateBorrow(reserve.flags);

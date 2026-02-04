@@ -15,8 +15,8 @@ contract SpokeUtilsWrapper {
     _reserves[reserveId] = reserve;
   }
 
-  function getReserve(uint256 reserveId) external view returns (ISpoke.Reserve memory) {
-    return SpokeUtils.getReserve(_reserves, reserveId);
+  function get(uint256 reserveId) external view returns (ISpoke.Reserve memory) {
+    return SpokeUtils.get(_reserves, reserveId);
   }
 
   function toValue(

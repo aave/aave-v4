@@ -255,7 +255,7 @@ contract WadRayMathDifferentialTests is Test {
     }
   }
 
-  function test_roundRayUp(uint256 a) public {
+  function test_roundRayUp_fuzz(uint256 a) public {
     if (a % w.RAY() == 0) {
       assertEq(w.roundRayUp(a), a);
     } else if (a <= (type(uint256).max / w.RAY()) * w.RAY()) {
@@ -264,5 +264,11 @@ contract WadRayMathDifferentialTests is Test {
       vm.expectRevert();
       w.roundRayUp(a);
     }
+  }
+
+  function test_roundRayUp_overflow() public {
+    uint256 maxA = (type(uint256).max / w.RAY()) * w.RAY();
+    test_roundRayUp_fuzz(maxA);
+    test_roundRayUp_fuzz(maxA + 1);
   }
 }

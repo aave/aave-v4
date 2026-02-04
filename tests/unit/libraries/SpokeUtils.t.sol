@@ -53,18 +53,18 @@ contract SpokeUtilsTest is SpokeBase {
     w.setReserve(2, reserve2);
   }
 
-  function test_getReserve_revertsWith_ReserveNotListed() public {
+  function test_get_revertsWith_ReserveNotListed() public {
     vm.expectRevert(ISpoke.ReserveNotListed.selector);
-    w.getReserve(0);
+    w.get(0);
     _populateReserves();
     vm.expectRevert(ISpoke.ReserveNotListed.selector);
-    w.getReserve(2);
+    w.get(2);
   }
 
-  function test_getReserve() public {
+  function test_get() public {
     _populateReserves();
-    assertEq(w.getReserve(0), reserve0);
-    assertEq(w.getReserve(1), reserve1);
+    assertEq(w.get(0), reserve0);
+    assertEq(w.get(1), reserve1);
   }
 
   // Reverts if asset uses more than `MAX_ALLOWED_ASSET_DECIMALS` decimals.

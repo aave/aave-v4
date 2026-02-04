@@ -759,8 +759,15 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
         liquidationAmounts.premiumDebtRayToLiquidate
     );
 
-    uint256 effectiveLiquidationBonusWad = collateralValueRemoved.toRay().wadDivUp(
-      debtValueRayRepaid
+    if (debtValueRayRepaid == 0) {
+      return false;
+    }
+
+    uint256 effectiveLiquidationBonusWad = Math.mulDiv(
+      collateralValueRemoved,
+      WadRayMath.RAY * WadRayMath.WAD,
+      debtValueRayRepaid,
+      Math.Rounding.Ceil
     );
 
     // health factor is decreasing due to liquidation bonus / collateral factor if:

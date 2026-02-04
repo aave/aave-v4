@@ -124,8 +124,8 @@ interface ISpoke is ISpokeBase, IAccessManaged, IIntentConsumer, IExtSload, IMul
   /// @dev riskPremium The risk premium of the user position, expressed in BPS.
   /// @dev avgCollateralFactor The weighted average collateral factor of the user position, expressed in WAD.
   /// @dev healthFactor The health factor of the user position, expressed in WAD. 1e18 represents a health factor of 1.00.
-  /// @dev totalCollateralValue The total collateral value of the user position, expressed in units of base currency.
-  /// @dev totalDebtValueRay The total debt value of the user position, expressed in units of base currency and scaled by RAY.
+  /// @dev totalCollateralValue The total collateral value of the user position, expressed in units of Value.
+  /// @dev totalDebtValueRay The total debt value of the user position, expressed in units of Value and scaled by RAY.
   /// @dev activeCollateralCount The number of active collaterals, which includes reserves with `collateralFactor` > 0, `enabledAsCollateral` and `suppliedAmount` > 0.
   /// @dev borrowCount The number of borrowed reserves of the user position.
   struct UserAccountData {
