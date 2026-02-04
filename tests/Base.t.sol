@@ -3009,12 +3009,26 @@ abstract contract Base is Test {
       );
   }
 
+  function _calcUnrealizedFeeShares(IHub hub, uint256 assetId) internal view returns (uint256) {
+    uint256 unrealizedFees = _calcUnrealizedFees(hub, assetId);
+    return
+      unrealizedFees.toSharesDown(
+        hub.getAddedAssets(assetId) - unrealizedFees,
+        hub.getAddedShares(assetId)
+      );
+  }
+
   function _getExpectedFeeReceiverAddedAssets(
     IHub hub,
     uint256 assetId
   ) internal view returns (uint256) {
     address feeReceiver = hub.getAsset(assetId).feeReceiver;
     return hub.getSpokeAddedAssets(assetId, feeReceiver);
+  }
+
+  function _getFeeReceiverAddedShares(IHub hub, uint256 assetId) internal view returns (uint256) {
+    address feeReceiver = hub.getAsset(assetId).feeReceiver;
+    return hub.getSpokeAddedShares(assetId, feeReceiver);
   }
 
   function _getAddedAssetsWithFees(IHub hub, uint256 assetId) internal view returns (uint256) {
@@ -3030,7 +3044,6 @@ abstract contract Base is Test {
     address feeReceiver = hub.getAsset(assetId).feeReceiver;
     // subtract added shares already added by fee receiver
     return
-      hub.getSpokeAddedAssets(assetId, feeReceiver) -
-      hub.getSpoke(assetId, feeReceiver).addedShares;
+      _getFeeReceiverAddedShares(hub, assetId) - hub.getSpoke(assetId, feeReceiver).addedShares;
   }
 }

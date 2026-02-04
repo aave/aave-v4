@@ -687,7 +687,7 @@ contract HubAccruedFeesTest is HubBase {
   }
 
   /// @dev Fuzz: Users earn same interest per share regardless of realizedFees size
-  function test_fuzz_unrealizedFees_interestIndependentOfFeeSize(
+  function test_fuzz_unrealizedFees_interestIndependentOfLiquidityFee(
     uint256 supplyAmount,
     uint256 borrowAmount,
     uint256 liquidityFee,
@@ -697,7 +697,7 @@ contract HubAccruedFeesTest is HubBase {
   ) public {
     supplyAmount = bound(supplyAmount, 1e18, MAX_SUPPLY_AMOUNT / 2);
     borrowAmount = bound(borrowAmount, 1, supplyAmount / 2);
-    liquidityFee = bound(liquidityFee, 1, PercentageMath.PERCENTAGE_FACTOR);
+    liquidityFee = bound(liquidityFee, 1, PercentageMath.PERCENTAGE_FACTOR / 2);
     timeSkipFirst = bound(timeSkipFirst, 1 days, MAX_SKIP_TIME / 2);
     newSupplyAmount = bound(newSupplyAmount, 1e18, MAX_SUPPLY_AMOUNT / 2);
     timeSkipSecond = bound(timeSkipSecond, 1 days, MAX_SKIP_TIME / 2);
@@ -720,6 +720,7 @@ contract HubAccruedFeesTest is HubBase {
     });
 
     skip(timeSkipFirst);
+    uint256 accruedFeeShares = _calcUnrealizedFeeShares(hub1, daiAssetId);
 
     // Alice joins when realizedFees may be large
     uint256 bobSharesBefore = hub1.getSpokeAddedShares(daiAssetId, address(spoke1));
@@ -731,12 +732,16 @@ contract HubAccruedFeesTest is HubBase {
       user: alice
     });
     uint256 aliceShares = hub1.getSpokeAddedShares(daiAssetId, address(spoke1)) - bobSharesBefore;
+    uint256 feeReceiverAddedShares = _getFeeReceiverAddedShares(hub1, daiAssetId);
 
-    // Mint fee shares to reset realizedFees
-    Utils.mintFeeShares(hub1, daiAssetId, ADMIN);
+    assertEq(feeReceiverAddedShares, accruedFeeShares, 'fee receiver added shares');
+    assertEq(_calcUnrealizedFeeShares(hub1, daiAssetId), 0);
     assertEq(_calcUnrealizedFees(hub1, daiAssetId), 0);
 
-    // Carol joins when realizedFees are zero
+    // double the liquidity fee
+    updateLiquidityFee(hub1, daiAssetId, liquidityFee * 2);
+
+    // Carol joins when liquidity fee is doubled
     uint256 sharesBeforeCarol = hub1.getSpokeAddedShares(daiAssetId, address(spoke1));
     Utils.add({
       hub: hub1,
@@ -748,17 +753,23 @@ contract HubAccruedFeesTest is HubBase {
     uint256 carolShares = hub1.getSpokeAddedShares(daiAssetId, address(spoke1)) - sharesBeforeCarol;
 
     // Same supply should yield same shares
-    assertApproxEqAbs(aliceShares, carolShares, 1);
+    assertEq(aliceShares, carolShares);
 
     uint256 aliceValueBefore = hub1.previewRemoveByShares(daiAssetId, aliceShares);
     uint256 carolValueBefore = hub1.previewRemoveByShares(daiAssetId, carolShares);
 
     skip(timeSkipSecond);
+    accruedFeeShares = _calcUnrealizedFeeShares(hub1, daiAssetId);
 
     uint256 aliceGrowth = hub1.previewRemoveByShares(daiAssetId, aliceShares) - aliceValueBefore;
     uint256 carolGrowth = hub1.previewRemoveByShares(daiAssetId, carolShares) - carolValueBefore;
 
     // Both should earn same interest (same shares = same growth)
-    assertApproxEqAbs(aliceGrowth, carolGrowth, 1);
+    assertEq(aliceGrowth, carolGrowth);
+    assertEq(
+      _getFeeReceiverAddedShares(hub1, daiAssetId) - feeReceiverAddedShares,
+      accruedFeeShares,
+      'accrued fee shares from second time skip'
+    );
   }
 }
