@@ -12,10 +12,12 @@ import {Arrays} from 'src/dependencies/openzeppelin/Arrays.sol';
 /// @dev Uninitialized keys are returned as (key: 0, value: 0) and are placed at the end of the list after sorting.
 library KeyValueList {
   using Arrays for uint256[];
+  using KeyValueList for *;
 
   /// @notice Thrown when adding a key which can't be stored in `KEY_BITS` or value in `VALUE_BITS`.
   error MaxDataSizeExceeded();
 
+  /// @notice Container for packed key value dynamic list.
   struct List {
     uint256[] _inner;
   }
@@ -46,13 +48,13 @@ library KeyValueList {
   /// @notice Returns the key-value pair at the given index.
   /// @dev Uninitialized keys are returned as (key: 0, value: 0).
   function get(List memory self, uint256 idx) internal pure returns (uint256, uint256) {
-    return unpack(self._inner[idx]);
+    return self._inner[idx].unpack();
   }
 
   /// @notice Returns the key-value pair at the given index without bounds checking.
   /// @dev Uninitialized keys are returned as (key: 0, value: 0).
   function uncheckedAt(List memory self, uint256 idx) internal pure returns (uint256, uint256) {
-    return unpack(self._inner.unsafeMemoryAccess(idx));
+    return self._inner.unsafeMemoryAccess(idx).unpack();
   }
 
   /// @notice Sorts the list in-place by ascending order of `key`, and descending order of `value` on collision.
@@ -72,7 +74,9 @@ library KeyValueList {
   /// @notice Unpacks `key` from a previously packed word containing `key` and `value`.
   /// @dev The key is stored in the most significant bits of the word.
   function unpackKey(uint256 data) internal pure returns (uint256) {
-    return MAX_KEY - (data >> KEY_SHIFT);
+    unchecked {
+      return MAX_KEY - (data >> KEY_SHIFT);
+    }
   }
 
   /// @notice Unpacks `value` from a previously packed word containing `key` and `value`.
@@ -86,7 +90,7 @@ library KeyValueList {
   /// @param data The packed word containing `key` and `value`.
   function unpack(uint256 data) internal pure returns (uint256, uint256) {
     if (data == 0) return (0, 0);
-    return (unpackKey(data), unpackValue(data));
+    return (data.unpackKey(), data.unpackValue());
   }
 
   /// @notice Comparator function performing greater-than comparison.
