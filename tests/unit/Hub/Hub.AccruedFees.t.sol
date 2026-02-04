@@ -642,10 +642,7 @@ contract HubAccruedFeesTest is HubBase {
   }
 
   /// @dev Fuzz test verifying 100% fee rate directs all interest to treasury
-  function test_fuzz_unrealizedFees_maxFeeAllToTreasury(
-    uint256 supplyAmount,
-    uint256 borrowAmount
-  ) public {
+  function test_fuzz_maxFeeAllToTreasury(uint256 supplyAmount, uint256 borrowAmount) public {
     supplyAmount = bound(supplyAmount, 1, MAX_SUPPLY_AMOUNT);
     borrowAmount = bound(borrowAmount, 1, supplyAmount);
 
@@ -683,7 +680,7 @@ contract HubAccruedFeesTest is HubBase {
     assertEq(accruedFees, protocolCut);
 
     uint256 supplierYield = hub1.getAddedAssets(daiAssetId) - supplyAmount;
-    assertEq(supplierYield, 0);
+    assertEq(supplierYield, accruedFees); // all supplier yield goes to treasury spoke
   }
 
   /// @dev Fuzz: Users earn same interest per share regardless of realizedFees size
