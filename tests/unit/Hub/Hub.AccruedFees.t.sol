@@ -13,7 +13,7 @@ contract HubAccruedFeesTest is HubBase {
   uint256 constant BORROW_AMOUNT = 500e18;
 
   /// @dev Fuzz test for basic fee accrual with varying supply, borrow, fee, and time
-  function test_unrealizedFees_fuzz_basicAccrual(
+  function test_fuzz_basicAccrual(
     uint256 supplyAmount,
     uint256 borrowAmount,
     uint256 liquidityFee,
@@ -45,7 +45,7 @@ contract HubAccruedFeesTest is HubBase {
     uint256 bobAssetsBefore = hub1.previewRemoveByShares(daiAssetId, bobShares);
     assertEq(bobAssetsBefore, supplyAmount);
 
-    uint256 treasuryAssetsBefore = hub1.getSpokeAddedAssets(daiAssetId, address(treasurySpoke));
+    uint256 treasuryAssetsBefore = _getFeeReceiverAddedAssets(hub1, daiAssetId);
     assertEq(treasuryAssetsBefore, 0);
 
     uint96 drawnRate = hub1.getAsset(daiAssetId).drawnRate;
@@ -68,7 +68,7 @@ contract HubAccruedFeesTest is HubBase {
       totalInterest = totalDebt - borrowAmount;
       assertEq(totalInterest, expectedTotalInterest);
 
-      accruedFees = hub1.getSpokeAddedAssets(daiAssetId, address(treasurySpoke));
+      accruedFees = _getFeeReceiverAddedAssets(hub1, daiAssetId);
     }
 
     uint256 totalAssetsAfter = hub1.getAddedAssets(daiAssetId);
@@ -90,7 +90,7 @@ contract HubAccruedFeesTest is HubBase {
       );
 
       assertApproxEqAbs(
-        hub1.getSpokeAddedAssets(daiAssetId, address(treasurySpoke)),
+        _getFeeReceiverAddedAssets(hub1, daiAssetId),
         expectedTotalInterest.percentMulDown(liquidityFee),
         2,
         'treasury spoke assets match expected fee split'
