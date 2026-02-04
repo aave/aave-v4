@@ -7,6 +7,7 @@ import 'tests/Base.t.sol';
 contract HubBase is Base {
   using SharesMath for uint256;
   using MathUtils for uint256;
+  using PercentageMath for uint256;
   using SafeCast for *;
 
   struct TestAddParams {
@@ -226,5 +227,72 @@ contract HubBase is Base {
 
   function _randomInvalidAssetId(IHub hub) internal returns (uint256) {
     return vm.randomUint(hub.getAssetCount(), UINT256_MAX);
+  }
+
+  /// @dev Calculate the expected dust from fee conversion
+  /// @param feeAmount The total fee amount to convert to shares
+  /// @param totalAssets Total assets before fee subtraction
+  /// @param totalShares Total shares at time of conversion
+  /// @return dust The dust amount (feeAmount - feeShares converted back)
+  function _calculateDust(
+    uint256 feeAmount,
+    uint256 totalAssets,
+    uint256 totalShares
+  ) internal pure returns (uint256 dust) {
+    if (feeAmount == 0) return 0;
+    // totalAssets for share conversion is after fee subtraction
+    uint256 assetsForConversion = totalAssets - feeAmount;
+    uint256 feeShares = feeAmount.toSharesDown(assetsForConversion, totalShares);
+    if (feeShares == 0) {
+      return feeAmount; // All goes to dust
+    }
+    uint256 feesAsAssets = feeShares.toAssetsDown(assetsForConversion, totalShares);
+    return feeAmount - feesAsAssets;
+  }
+
+  /// @dev Calculate expected dust after accrual given the interest and asset state
+  /// @param interest The interest amount accrued in this period
+  /// @param addedAssetsBeforeFee Total added assets before fee subtraction (liquidity + aggregatedOwed)
+  /// @param addedSharesAtAccrual The addedShares at time of accrual (before fee shares minted)
+  /// @return dust The expected dust amount
+  function _calculateExpectedDust(
+    IHub hub,
+    uint256 assetId,
+    uint256 interest,
+    uint256 addedAssetsBeforeFee,
+    uint256 addedSharesAtAccrual
+  ) internal view returns (uint256 dust) {
+    IHub.Asset memory asset = hub.getAsset(assetId);
+    uint256 liquidityFee = asset.liquidityFee;
+    if (liquidityFee == 0) return 0;
+
+    // feeAmount = interest * liquidityFee% (for first accrual where realizedFees = 0)
+    uint256 feeAmount = interest.percentMulDown(liquidityFee);
+
+    return _calculateDust(feeAmount, addedAssetsBeforeFee, addedSharesAtAccrual);
+  }
+
+  /// @dev Calculate expected cumulative dust after multiple accruals
+  /// @param interest The new interest amount accrued
+  /// @param previousDust The dust from previous accruals
+  /// @param addedAssetsBeforeFee Total added assets before fee subtraction
+  /// @param addedSharesAtAccrual The addedShares at time of accrual (before fee shares minted)
+  /// @return dust The expected cumulative dust amount
+  function _calculateCumulativeDust(
+    uint256 interest,
+    uint256 previousDust,
+    uint256 addedAssetsBeforeFee,
+    uint256 addedSharesAtAccrual,
+    uint256 liquidityFee
+  ) internal pure returns (uint256 dust) {
+    // When no new interest accrues, drawnIndex == previousIndex, so getFee short-circuits
+    // and returns the existing dust unchanged
+    if (interest == 0) return previousDust;
+    if (liquidityFee == 0) return previousDust;
+
+    // feeAmount includes previous dust + new interest fees
+    uint256 feeAmount = previousDust + interest.percentMulDown(liquidityFee);
+
+    return _calculateDust(feeAmount, addedAssetsBeforeFee, addedSharesAtAccrual);
   }
 }

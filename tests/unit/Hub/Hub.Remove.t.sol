@@ -160,11 +160,13 @@ contract HubRemoveTest is HubBase {
       hub1.getSpokeAddedShares(assetId, feeReceiver),
       'asset addedShares after'
     );
-    assertEq(
-      assetData.liquidity,
-      hub1.getSpokeAddedAssets(assetId, feeReceiver) + _calculateBurntInterest(hub1, assetId),
-      'asset liquidity after'
-    );
+    {
+      // With dust tracking: liquidity = getAddedAssets + realizedFees
+      uint256 expectedLiquidity = hub1.getSpokeAddedAssets(assetId, feeReceiver) +
+        _calculateBurntInterest(hub1, assetId) +
+        hub1.getAsset(assetId).realizedFees;
+      assertEq(assetData.liquidity, expectedLiquidity, 'asset liquidity after');
+    }
     assertEq(
       assetData.lastUpdateTimestamp,
       vm.getBlockTimestamp(),
@@ -347,9 +349,11 @@ contract HubRemoveTest is HubBase {
     // hub
     assertApproxEqAbs(asset.addedAmount, feeAmount, 1, 'hub addedAmount');
     assertEq(asset.addedShares, feeShares, 'hub addedShares');
+    // With realizedFees dust, liquidity = feeAmount + burntInterest + realizedFees
+    uint256 dust = hub1.getAsset(daiAssetId).realizedFees;
     assertApproxEqAbs(
       asset.liquidity,
-      feeAmount + _calculateBurntInterest(hub1, daiAssetId),
+      feeAmount + _calculateBurntInterest(hub1, daiAssetId) + dust,
       1,
       'dai liquidity'
     );
