@@ -67,7 +67,7 @@ contract SpokeUtilsTest is SpokeBase {
     assertEq(w.get(1), reserve1);
   }
 
-  // Reverts if asset uses more than `MAX_ALLOWED_ASSET_DECIMALS` decimals.
+  // Reverts if asset uses more than 18 decimals.
   function test_toValue_revertsWith_ArithmeticUnderflow() public {
     vm.expectRevert(stdError.arithmeticError);
     w.toValue(1, 19, 1e8);

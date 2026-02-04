@@ -62,14 +62,11 @@ abstract contract Spoke is
   /// @inheritdoc ISpoke
   address public immutable ORACLE;
 
-  /// @dev See SpokeUtils.ORACLE_DECIMALS docs
+  /// @dev The number of decimals used by the oracle.
   uint8 internal constant ORACLE_DECIMALS = SpokeUtils.ORACLE_DECIMALS;
 
   /// @dev The maximum allowed value for an asset identifier (inclusive).
   uint256 internal constant MAX_ALLOWED_ASSET_ID = type(uint16).max;
-
-  /// @dev See SpokeUtils.MAX_ALLOWED_ASSET_DECIMALS docs
-  uint256 internal constant MAX_ALLOWED_ASSET_DECIMALS = SpokeUtils.MAX_ALLOWED_ASSET_DECIMALS;
 
   /// @dev The maximum allowed collateral risk value for a reserve, expressed in BPS (e.g. 100_00 is 100.00%).
   uint24 internal constant MAX_ALLOWED_COLLATERAL_RISK = 1000_00;
@@ -80,11 +77,13 @@ abstract contract Spoke is
   /// @dev The maximum allowed value for the maximum number of reserves a user can have (collateral or borrowed) (inclusive).
   uint16 internal constant MAX_ALLOWED_USER_RESERVES_LIMIT = type(uint16).max;
 
-  /// @dev See LiquidationLogic.HEALTH_FACTOR_LIQUIDATION_THRESHOLD docs
+  /// @dev The minimum health factor below which a position is considered unhealthy and subject to liquidation.
+  /// @dev Expressed in WAD (18 decimals) (e.g. 1e18 is 1.00).
   uint64 internal constant HEALTH_FACTOR_LIQUIDATION_THRESHOLD =
     LiquidationLogic.HEALTH_FACTOR_LIQUIDATION_THRESHOLD;
 
-  /// @dev See LiquidationLogic.DUST_LIQUIDATION_THRESHOLD docs
+  /// @dev The maximum amount considered as dust for a user's collateral and debt balances after a liquidation.
+  /// @dev Worth 1000 USD, expressed in units of Value. 1e26 represents 1 USD.
   uint256 internal constant DUST_LIQUIDATION_THRESHOLD =
     LiquidationLogic.DUST_LIQUIDATION_THRESHOLD;
 
@@ -139,7 +138,7 @@ abstract contract Spoke is
 
     (address underlying, uint8 decimals) = IHubBase(hub).getAssetUnderlyingAndDecimals(assetId);
     require(underlying != address(0), AssetNotListed());
-    require(decimals <= MAX_ALLOWED_ASSET_DECIMALS, InvalidAssetDecimals());
+    require(decimals <= WadRayMath.WAD_DECIMALS, InvalidAssetDecimals());
 
     _updateReservePriceSource(reserveId, priceSource);
 

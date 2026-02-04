@@ -5,6 +5,10 @@ pragma solidity ^0.8.0;
 import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
 
 contract WadRayMathWrapper {
+  function WAD_DECIMALS() public pure returns (uint256) {
+    return WadRayMath.WAD_DECIMALS;
+  }
+
   function WAD() public pure returns (uint256) {
     return WadRayMath.WAD;
   }

@@ -6,6 +6,7 @@ pragma solidity ^0.8.20;
 /// @author Aave Labs
 /// @notice Provides utility functions to work with WAD and RAY units with explicit rounding.
 library WadRayMath {
+  uint256 internal constant WAD_DECIMALS = 18;
   uint256 internal constant WAD = 1e18;
   uint256 internal constant RAY = 1e27;
   uint256 internal constant PERCENTAGE_FACTOR = 1e4;

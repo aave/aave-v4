@@ -13,6 +13,7 @@ contract WadRayMathDifferentialTests is Test {
   }
 
   function test_constants() public view {
+    assertEq(w.WAD_DECIMALS(), 18, 'wad decimals');
     assertEq(w.WAD(), 1e18, 'wad');
     assertEq(w.RAY(), 1e27, 'ray');
     assertEq(w.PERCENTAGE_FACTOR(), 1e4, 'percentage factor');

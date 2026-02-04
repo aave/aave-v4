@@ -179,14 +179,11 @@ library LiquidationLogic {
     uint256 premiumDebtRayToLiquidate;
   }
 
-  /// @dev The minimum health factor below which a position is considered unhealthy and subject to liquidation.
-  /// @dev Expressed in WAD (18 decimals) (e.g. 1e18 is 1.00).
+  /// @dev See Spoke.HEALTH_FACTOR_LIQUIDATION_THRESHOLD docs
   uint64 public constant HEALTH_FACTOR_LIQUIDATION_THRESHOLD = 1e18;
 
-  /// @dev The maximum amount considered as dust for a user's collateral and debt balances after a liquidation.
-  /// @dev Worth 1000 USD. Expressed in USD with `ORACLE_DECIMALS + MAX_ALLOWED_ASSET_DECIMALS` decimals.
-  uint256 public constant DUST_LIQUIDATION_THRESHOLD =
-    1000 * 10 ** (SpokeUtils.ORACLE_DECIMALS + SpokeUtils.MAX_ALLOWED_ASSET_DECIMALS);
+  /// @dev See Spoke.DUST_LIQUIDATION_THRESHOLD docs
+  uint256 public constant DUST_LIQUIDATION_THRESHOLD = 1000e26;
 
   /// @notice Liquidates a user position.
   /// @param reserves The mapping of reserves per reserve id.
@@ -806,9 +803,7 @@ library LiquidationLogic {
       Math.mulDiv(
         params.totalDebtValueRay,
         params.debtAssetUnit * (params.targetHealthFactor - params.healthFactor),
-        (params.targetHealthFactor - liquidationPenalty) *
-          params.debtAssetPrice *
-          SpokeUtils.MAX_ALLOWED_ASSET_UNIT,
+        (params.targetHealthFactor - liquidationPenalty) * params.debtAssetPrice.toWad(),
         Math.Rounding.Ceil
       );
   }
