@@ -150,7 +150,7 @@ contract SpokeAccrueLiquidityFeeEdgeCasesTest is SpokeBase {
       feesAccrued += totalOwedAfter - totalOwedBefore;
       totalOwedBefore = hub1.getAssetTotalOwed(assetId);
 
-      uint256 actualFeesAccrued = _getExpectedFeeReceiverAddedAssets(hub1, assetId);
+      uint256 actualFeesAccrued = _getFeeReceiverAddedAssets(hub1, assetId);
       assertApproxEqRel(actualFeesAccrued, feesAccrued, 0.0000001e18); // 0.00001%
       assertLe(actualFeesAccrued, feesAccrued, 'actual fees <= expected fees');
 
@@ -195,7 +195,7 @@ contract SpokeAccrueLiquidityFeeEdgeCasesTest is SpokeBase {
       feesAccrued += totalOwedAfter - totalOwedBefore;
       totalOwedBefore = hub1.getAssetTotalOwed(assetId);
 
-      uint256 actualFeesAccrued = _getExpectedFeeReceiverAddedAssets(hub1, assetId);
+      uint256 actualFeesAccrued = _getFeeReceiverAddedAssets(hub1, assetId);
       assertApproxEqRel(actualFeesAccrued, feesAccrued, 0.0000001e18); // 0.00001%
       assertLe(actualFeesAccrued, feesAccrued, 'actual fees <= expected fees');
 
