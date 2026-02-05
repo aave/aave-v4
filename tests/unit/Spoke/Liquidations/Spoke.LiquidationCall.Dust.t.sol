@@ -80,7 +80,7 @@ contract SpokeLiquidationCallDustTest is SpokeLiquidationCallBaseTest {
     });
     _borrowToBeAtHf(_spoke, alice, _usdxReserveId(_spoke), 0.9999e18);
 
-    uint256 debtToTarget = liquidationLogicWrapper.calculateDebtToTargetHealthFactor(
+    uint256 debtRayToTarget = liquidationLogicWrapper.calculateDebtToTargetHealthFactor(
       _getCalculateDebtToTargetHealthFactorParams(
         _spoke,
         _daiReserveId(_spoke),
@@ -89,10 +89,10 @@ contract SpokeLiquidationCallDustTest is SpokeLiquidationCallBaseTest {
       )
     );
 
-    // debtToTarget (~$11) as limiting factor would result in dust collateral
+    // debtRayToTarget (~$11) as limiting factor would result in dust collateral
     assertLt(
       _getCollateralValue(_spoke, _daiReserveId(_spoke), alice) -
-        _convertAmountToValue(_spoke, _usdxReserveId(_spoke), debtToTarget),
+        _convertAmountToValue(_spoke, _usdxReserveId(_spoke), debtRayToTarget.fromRayUp()),
       LiquidationLogic.DUST_LIQUIDATION_THRESHOLD
     );
 
@@ -103,7 +103,7 @@ contract SpokeLiquidationCallDustTest is SpokeLiquidationCallBaseTest {
       _daiReserveId(_spoke),
       _usdxReserveId(_spoke),
       alice,
-      debtToTarget,
+      debtRayToTarget.fromRayUp(),
       false
     );
 

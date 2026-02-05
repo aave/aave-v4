@@ -4,16 +4,15 @@ pragma solidity ^0.8.0;
 
 import 'tests/unit/libraries/LiquidationLogic/LiquidationLogic.Base.t.sol';
 
-contract LiquidationLogicLiquidateUserTest is LiquidationLogicBaseTest {
+contract LiquidationLogicExecuteLiquidationTest is LiquidationLogicBaseTest {
   using SafeCast for *;
   using WadRayMath for uint256;
   using ReserveFlagsMap for ReserveFlags;
 
   uint256 usdxReserveId;
   uint256 wethReserveId;
-  IHub collateralReserveHub;
-  IHub debtReserveHub;
-  LiquidationLogic.LiquidateUserParams params;
+
+  LiquidationLogic.ExecuteLiquidationParams params;
 
   // drawn index is 1.05, supply share price is 1.25
   // variable liquidation bonus is max: 120%
@@ -29,34 +28,43 @@ contract LiquidationLogicLiquidateUserTest is LiquidationLogicBaseTest {
   // collateral shares to liquidator = 4800 - 80 = 4720
   function setUp() public override {
     super.setUp();
-    collateralReserveHub = hub1;
+    IHub collateralReserveHub = hub1;
     _mockSupplySharePrice(collateralReserveHub, usdxAssetId, 12_500.25e6, 10_000e6);
-    (debtReserveHub, ) = hub2Fixture();
+    (IHub debtReserveHub, ) = hub2Fixture();
     _mockInterestRateBps(debtReserveHub.getAsset(wethAssetId).irStrategy, 5_00);
 
     // Mock params
     usdxReserveId = _usdxReserveId(spoke1);
     wethReserveId = _wethReserveId(spoke1);
-    params = LiquidationLogic.LiquidateUserParams({
+    params = LiquidationLogic.ExecuteLiquidationParams({
+      collateralHub: collateralReserveHub,
+      collateralAssetId: usdxAssetId,
+      collateralAssetDecimals: 6,
       collateralReserveId: usdxReserveId,
+      collateralReserveFlags: ReserveFlagsMap.create(false, false, false, true),
+      collateralDynConfig: ISpoke.DynamicReserveConfig({
+        maxLiquidationBonus: 120_00,
+        collateralFactor: 50_00,
+        liquidationFee: 10_00
+      }),
+      debtHub: debtReserveHub,
+      debtAssetId: wethAssetId,
+      debtAssetDecimals: 18,
+      debtUnderlying: address(tokenList.weth),
       debtReserveId: wethReserveId,
-      oracle: address(oracle1),
-      user: makeAddr('user'),
+      debtReserveFlags: ReserveFlagsMap.create(false, false, false, false),
       liquidationConfig: ISpoke.LiquidationConfig({
         targetHealthFactor: 1e18,
         healthFactorForMaxBonus: 0.8e18,
         liquidationBonusFactor: 50_00
       }),
+      oracle: address(oracle1),
+      user: makeAddr('user'),
       debtToCover: 3e18,
-      userAccountData: ISpoke.UserAccountData({
-        healthFactor: 0.8e18,
-        totalDebtValueRay: 10_000e26 * WadRayMath.RAY,
-        activeCollateralCount: 1,
-        borrowCount: 1,
-        totalCollateralValue: 0, // not used
-        riskPremium: 0, // not used
-        avgCollateralFactor: 0 // not used
-      }),
+      healthFactor: 0.8e18,
+      totalDebtValueRay: 10_000e26 * WadRayMath.RAY,
+      activeCollateralCount: 1,
+      borrowCount: 1,
       liquidator: makeAddr('liquidator'),
       receiveShares: false
     });
@@ -64,27 +72,7 @@ contract LiquidationLogicLiquidateUserTest is LiquidationLogicBaseTest {
     // Mock storage
     liquidationLogicWrapper.setBorrower(params.user);
     liquidationLogicWrapper.setLiquidator(params.liquidator);
-    liquidationLogicWrapper.setCollateralReserveId(usdxReserveId);
-    liquidationLogicWrapper.setCollateralReserveHub(collateralReserveHub);
-    liquidationLogicWrapper.setCollateralReserveDecimals(6);
-    liquidationLogicWrapper.setCollateralReserveAssetId(usdxAssetId);
-    liquidationLogicWrapper.setCollateralReserveFlags(
-      ReserveFlagsMap.create(false, false, false, true)
-    );
-    liquidationLogicWrapper.setDynamicCollateralConfig(
-      ISpoke.DynamicReserveConfig({
-        maxLiquidationBonus: 120_00,
-        collateralFactor: 50_00,
-        liquidationFee: 10_00
-      })
-    );
     liquidationLogicWrapper.setCollateralPositionSuppliedShares(10_000e6);
-    liquidationLogicWrapper.setDebtReserveId(wethReserveId);
-    liquidationLogicWrapper.setDebtReserveHub(debtReserveHub);
-    liquidationLogicWrapper.setDebtReserveDecimals(18);
-    liquidationLogicWrapper.setDebtReserveAssetId(wethAssetId);
-    liquidationLogicWrapper.setDebtReserveUnderlying(address(tokenList.weth));
-    liquidationLogicWrapper.setDebtReserveFlags(ReserveFlagsMap.create(false, false, false, false));
     liquidationLogicWrapper.setDebtPositionDrawnShares(4.4e18);
     liquidationLogicWrapper.setDebtPositionPremiumShares(1e18);
     liquidationLogicWrapper.setDebtPositionPremiumOffsetRay((0.65e18 * WadRayMath.RAY).toInt256());
@@ -157,48 +145,48 @@ contract LiquidationLogicLiquidateUserTest is LiquidationLogicBaseTest {
     );
   }
 
-  function test_liquidateUser() public {
+  function test_executeLiquidation() public {
     uint256 initialCollateralReserveBalance = tokenList.usdx.balanceOf(
-      address(collateralReserveHub)
+      address(params.collateralHub)
     );
-    uint256 initialDebtReserveBalance = tokenList.weth.balanceOf(address(debtReserveHub));
+    uint256 initialDebtReserveBalance = tokenList.weth.balanceOf(address(params.debtHub));
     uint256 initialLiquidatorWethBalance = tokenList.weth.balanceOf(address(params.liquidator));
 
     ISpoke.UserPosition memory debtPosition = liquidationLogicWrapper.getDebtPosition(params.user);
 
     vm.expectCall(
-      address(collateralReserveHub),
+      address(params.collateralHub),
       abi.encodeCall(IHubBase.previewRemoveByShares, (usdxAssetId, 4800e6)),
       1
     );
 
     vm.expectCall(
-      address(collateralReserveHub),
+      address(params.collateralHub),
       abi.encodeCall(IHubBase.previewRemoveByShares, (usdxAssetId, 4720e6)),
       1
     );
 
     vm.expectCall(
-      address(collateralReserveHub),
+      address(params.collateralHub),
       abi.encodeCall(IHubBase.remove, (usdxAssetId, 5900e6, params.liquidator)),
       1
     );
 
     vm.expectCall(
-      address(collateralReserveHub),
+      address(params.collateralHub),
       abi.encodeCall(IHubBase.payFeeShares, (usdxAssetId, 80e6)),
       1
     );
 
     vm.expectCall(
-      address(debtReserveHub),
+      address(params.debtHub),
       abi.encodeCall(
         IHubBase.restore,
         (
           wethAssetId,
           2.1e18,
           _getExpectedPremiumDelta({
-            hub: IHub(address(debtReserveHub)),
+            hub: IHub(address(params.debtHub)),
             assetId: wethAssetId,
             oldPremiumShares: debtPosition.premiumShares,
             oldPremiumOffsetRay: debtPosition.premiumOffsetRay,
@@ -211,47 +199,52 @@ contract LiquidationLogicLiquidateUserTest is LiquidationLogicBaseTest {
       1
     );
 
-    bool hasDeficit = liquidationLogicWrapper.liquidateUser(params);
+    bool hasDeficit = liquidationLogicWrapper.executeLiquidation(params);
     assertEq(hasDeficit, false);
 
     assertEq(
-      tokenList.usdx.balanceOf(address(collateralReserveHub)),
+      tokenList.usdx.balanceOf(address(params.collateralHub)),
       initialCollateralReserveBalance - 5900e6
     );
     assertEq(tokenList.usdx.balanceOf(address(params.liquidator)), 5900e6);
     assertApproxEqAbs(
-      collateralReserveHub.getSpokeAddedShares(usdxAssetId, address(treasurySpoke)),
+      params.collateralHub.getSpokeAddedShares(usdxAssetId, address(treasurySpoke)),
       80e6,
       1
     );
 
-    assertEq(tokenList.weth.balanceOf(address(debtReserveHub)), initialDebtReserveBalance + 2.5e18);
+    assertEq(tokenList.weth.balanceOf(address(params.debtHub)), initialDebtReserveBalance + 2.5e18);
     assertEq(
       tokenList.weth.balanceOf(address(params.liquidator)),
       initialLiquidatorWethBalance - 2.5e18
     );
   }
 
-  function test_liquidateUser_revertsWith_InvalidDebtToCover() public {
+  function test_executeLiquidation_revertsWith_InvalidDebtToCover() public {
     params.debtToCover = 0;
     vm.expectRevert(ISpoke.InvalidDebtToCover.selector);
-    liquidationLogicWrapper.liquidateUser(params);
+    liquidationLogicWrapper.executeLiquidation(params);
   }
 
-  function test_liquidateUser_revertsWith_MustNotLeaveDust_Debt() public {
-    params.userAccountData.totalDebtValueRay *= 2;
+  function test_executeLiquidation_revertsWith_MustNotLeaveDust_Debt() public {
+    // debtToTarget doubles (from 2.5 to 5)
+    // debtToCover is 4.9, so 5.02 - 4.9 = 0.12 debt is left
+    params.totalDebtValueRay *= 2;
     params.debtToCover = 4.9e18;
     liquidationLogicWrapper.setCollateralPositionSuppliedShares(
       liquidationLogicWrapper.getCollateralPosition(params.user).suppliedShares * 2
     );
     vm.expectRevert(ISpoke.MustNotLeaveDust.selector);
-    liquidationLogicWrapper.liquidateUser(params);
+    liquidationLogicWrapper.executeLiquidation(params);
   }
 
-  function test_liquidateUser_revertsWith_MustNotLeaveDust_Collateral() public {
+  function test_executeLiquidation_revertsWith_MustNotLeaveDust_Collateral() public {
+    // collateral shares remaining is 5200 - 4800 = 400
+    // this would leave collateral dust, hence collateral are increased
+    // new debt that needs to be liquidated is > 2.7, which is more than debtToCover (2.6)
     liquidationLogicWrapper.setCollateralPositionSuppliedShares(5200e6);
     params.debtToCover = 2.6e18;
     vm.expectRevert(ISpoke.MustNotLeaveDust.selector);
-    liquidationLogicWrapper.liquidateUser(params);
+    liquidationLogicWrapper.executeLiquidation(params);
   }
 }
