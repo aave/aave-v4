@@ -380,7 +380,7 @@ abstract contract Base is Test {
     selectors[2] = IHubConfigurator.updateFeeConfig.selector;
     selectors[3] = IHubConfigurator.updateInterestRateStrategy.selector;
     selectors[4] = IHubConfigurator.updateReinvestmentController.selector;
-    selectors[5] = IHubConfigurator.freezeAsset.selector;
+    selectors[5] = IHubConfigurator.resetAssetCaps.selector;
     selectors[6] = IHubConfigurator.deactivateAsset.selector;
     selectors[7] = IHubConfigurator.haltAsset.selector;
     selectors[8] = IHubConfigurator.addSpoke.selector;
@@ -393,7 +393,7 @@ abstract contract Base is Test {
     selectors[15] = IHubConfigurator.updateSpokeCaps.selector;
     selectors[16] = IHubConfigurator.deactivateSpoke.selector;
     selectors[17] = IHubConfigurator.haltSpoke.selector;
-    selectors[18] = IHubConfigurator.freezeSpoke.selector;
+    selectors[18] = IHubConfigurator.resetSpokeCaps.selector;
     selectors[19] = IHubConfigurator.updateInterestRateData.selector;
     selectors[20] = IHubConfigurator.addAsset.selector;
     selectors[21] = IHubConfigurator.addAssetWithDecimals.selector;

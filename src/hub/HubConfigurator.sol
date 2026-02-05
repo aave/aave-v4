@@ -117,7 +117,7 @@ contract HubConfigurator is AccessManaged, IHubConfigurator {
   }
 
   /// @inheritdoc IHubConfigurator
-  function freezeAsset(address hub, uint256 assetId) external restricted {
+  function resetAssetCaps(address hub, uint256 assetId) external restricted {
     IHub targetHub = IHub(hub);
     uint256 spokesCount = targetHub.getSpokeCount(assetId);
 
@@ -281,7 +281,7 @@ contract HubConfigurator is AccessManaged, IHubConfigurator {
   }
 
   /// @inheritdoc IHubConfigurator
-  function freezeSpoke(address hub, address spoke) external restricted {
+  function resetSpokeCaps(address hub, address spoke) external restricted {
     IHub targetHub = IHub(hub);
     uint256 assetCount = targetHub.getAssetCount();
     for (uint256 assetId = 0; assetId < assetCount; ++assetId) {
