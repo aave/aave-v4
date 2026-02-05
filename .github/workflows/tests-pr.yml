@@ -21,8 +21,8 @@ jobs:
         with:
           FOUNDRY_VERSION: nightly
 
-      - name: Run Forge size
-        uses: bgd-labs/github-workflows/.github/actions/foundry-size@main
+      # - name: Run Forge size
+      #   uses: bgd-labs/github-workflows/.github/actions/foundry-size@main
 
       - name: Run Gas report
         uses: bgd-labs/github-workflows/.github/actions/foundry-gas-report@main
