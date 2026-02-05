@@ -1,5 +1,5 @@
 {
-  "borrow: first": "270413",
+  "borrow: first": "270603",
   "borrow: second action, same reserve": "213279",
   "liquidationCall (receiveShares): full": "320719",
   "liquidationCall (receiveShares): partial": "320437",
@@ -27,7 +27,7 @@
   "usingAsCollateral: 2 borrows, disable": "246782",
   "usingAsCollateral: 2 borrows, enable": "42538",
   "withdraw: 0 borrows, full": "126568",
-  "withdraw: 0 borrows, partial": "131608",
+  "withdraw: 0 borrows, partial": "135745",
   "withdraw: 1 borrow, partial": "217873",
   "withdraw: 2 borrows, partial": "297026",
   "withdraw: non collateral": "120795"

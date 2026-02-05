@@ -157,7 +157,7 @@ contract SignatureGateway_Gas_Tests is SignatureGatewayBaseTest {
   function test_withdrawWithSig() public {
     uint256 reserveId = _wethReserveId(spoke1);
     uint256 amount = 100e18;
-    Utils.supply(spoke1, reserveId, alice, 200e18, alice);
+    Utils.supply(spoke1, reserveId, alice, amount * 2, alice);
     Utils.withdraw(spoke1, reserveId, alice, amount, alice);
 
     skip(100);
