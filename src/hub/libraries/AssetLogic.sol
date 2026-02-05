@@ -296,7 +296,7 @@ library AssetLogic {
 
     return (
       feeShares,
-      feeShares > 0 ? feeAmount - feeShares.toAssetsDown(totalAssets, totalShares) : feeAmount,
+      feeShares > 0 ? feeAmount - feeShares.toAssetsUp(totalAssets, totalShares) : feeAmount,
       aggregatedOwedAfter
     );
   }

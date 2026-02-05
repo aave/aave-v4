@@ -246,7 +246,7 @@ contract HubBase is Base {
     if (feeShares == 0) {
       return feeAmount; // All goes to dust
     }
-    uint256 feesAsAssets = feeShares.toAssetsDown(assetsForConversion, totalShares);
+    uint256 feesAsAssets = feeShares.toAssetsUp(assetsForConversion, totalShares);
     return feeAmount - feesAsAssets;
   }
 
