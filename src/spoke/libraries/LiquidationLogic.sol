@@ -718,11 +718,12 @@ library LiquidationLogic {
       Math.Rounding.Floor
     );
 
-    return
-      params.collateralReserveHub.previewAddByAssets(
-        params.collateralReserveAssetId,
-        collateralToLiquidate
-      );
+    uint256 collateralSharesToLiquidate = params.collateralReserveHub.previewAddByAssets(
+      params.collateralReserveAssetId,
+      collateralToLiquidate
+    );
+
+    return collateralSharesToLiquidate;
   }
 
   /// @notice Calculates the amount of drawn shares and premium debt that should be liquidated.
