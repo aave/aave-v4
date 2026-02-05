@@ -8,6 +8,8 @@ contract NoncesKeyedTest is Base {
   using SafeCast for *;
   MockNoncesKeyed public mock;
 
+  uint64 internal constant MAX_NONCE = type(uint64).max;
+
   function setUp() public override {
     mock = new MockNoncesKeyed();
   }
@@ -53,5 +55,30 @@ contract NoncesKeyedTest is Base {
       abi.encodeWithSelector(INoncesKeyed.InvalidAccountNonce.selector, owner, currentNonce)
     );
     mock.useCheckedNonce(owner, invalidNonce);
+  }
+
+  function test_useNonce_revertsOnOverflow() public {
+    address owner = vm.randomAddress();
+    uint192 key = _randomNonceKey();
+
+    mock.setNonce(owner, key, MAX_NONCE);
+    assertEq(mock.nonces(owner, key), _packNonce(key, MAX_NONCE));
+
+    vm.prank(owner);
+    vm.expectRevert();
+    mock.useNonce(key);
+  }
+
+  function test_useCheckedNonce_revertsOnOverflow() public {
+    address owner = vm.randomAddress();
+    uint192 key = _randomNonceKey();
+
+    mock.setNonce(owner, key, MAX_NONCE);
+    assertEq(mock.nonces(owner, key), _packNonce(key, MAX_NONCE));
+
+    uint256 keyNonce = mock.nonces(owner, key);
+
+    vm.expectRevert();
+    mock.useCheckedNonce(owner, keyNonce);
   }
 }

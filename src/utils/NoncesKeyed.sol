@@ -34,12 +34,8 @@ contract NoncesKeyed is INoncesKeyed {
   /// @dev Returns the current packed `keyNonce`. Consumed nonce is increased, so calling this function twice
   /// with the same arguments will return different (sequential) results.
   function _useNonce(address owner, uint192 key) internal returns (uint256) {
-    // For each account, the nonce has an initial value of 0, can only be incremented by one, and cannot be
-    // decremented or reset. This guarantees that the nonce never overflows.
-    unchecked {
-      // It is important to do x++ and not ++x here.
-      return _pack(key, _getNoncesKeyedStorage()._nonces[owner][key]++);
-    }
+    // It is important to do x++ and not ++x here.
+    return _pack(key, _getNoncesKeyedStorage()._nonces[owner][key]++);
   }
 
   /// @dev Same as `_useNonce` but checking that `nonce` is the next valid for `owner` for specified packed `keyNonce`.
