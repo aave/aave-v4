@@ -8,8 +8,6 @@ contract LiquidationLogicLiquidateDebtTest is LiquidationLogicBaseTest {
   using SafeCast for *;
   using WadRayMath for uint256;
 
-  LiquidationLogic.LiquidateDebtParams params;
-
   IHub internal hub;
   ISpoke internal spoke;
   IERC20 internal asset;
@@ -34,10 +32,6 @@ contract LiquidationLogicLiquidateDebtTest is LiquidationLogicBaseTest {
     // Set initial storage values
     liquidationLogicWrapper.setBorrower(user);
     liquidationLogicWrapper.setLiquidator(liquidator);
-    liquidationLogicWrapper.setDebtReserveId(reserveId);
-    liquidationLogicWrapper.setDebtReserveHub(hub);
-    liquidationLogicWrapper.setDebtReserveAssetId(assetId);
-    liquidationLogicWrapper.setDebtReserveUnderlying(address(asset));
     liquidationLogicWrapper.setBorrowerBorrowingStatus(reserveId, true);
 
     // Add liquidation logic wrapper as a spoke
@@ -81,8 +75,9 @@ contract LiquidationLogicLiquidateDebtTest is LiquidationLogicBaseTest {
   }
 
   function test_liquidateDebt_fuzz(uint256) public {
-    (uint256 spokeDrawnOwed, ) = hub.getSpokeOwed(assetId, address(spoke));
     IHub.SpokeData memory spokeData = hub.getSpoke(assetId, address(spoke));
+    uint256 drawnIndex = hub.getAssetDrawnIndex(assetId);
+
     uint256 spokePremiumOwedRay = _calculatePremiumDebtRay(
       hub,
       assetId,
@@ -90,67 +85,94 @@ contract LiquidationLogicLiquidateDebtTest is LiquidationLogicBaseTest {
       spokeData.premiumOffsetRay
     );
 
-    uint256 drawnDebt = vm.randomUint(0, spokeDrawnOwed);
+    uint256 drawnShares = vm.randomUint(1, spokeData.drawnShares);
     uint256 premiumDebtRay = vm.randomUint(0, spokePremiumOwedRay);
-    vm.assume(drawnDebt * WadRayMath.RAY + premiumDebtRay > 0);
+    ISpoke.UserPosition memory initialPosition = _updateStorage(drawnShares, premiumDebtRay);
 
-    uint256 debtToLiquidate = vm.randomUint(1, drawnDebt + premiumDebtRay.fromRayUp());
-    (uint256 drawnToLiquidate, uint256 premiumToLiquidateRay) = _calculateLiquidationAmounts(
-      premiumDebtRay,
-      debtToLiquidate
-    );
-
-    ISpoke.UserPosition memory initialPosition = _updateStorage(drawnDebt, premiumDebtRay);
+    uint256 drawnSharesToLiquidate;
+    uint256 premiumDebtRayToLiquidate;
+    bool liquidatePremiumOnly = vm.randomBool();
+    if (liquidatePremiumOnly) {
+      premiumDebtRayToLiquidate = vm.randomUint(1, premiumDebtRay);
+    } else {
+      premiumDebtRayToLiquidate = premiumDebtRay;
+      drawnSharesToLiquidate = vm.randomUint(1, drawnShares);
+    }
 
     uint256 initialHubBalance = asset.balanceOf(address(hub));
     uint256 initialLiquidatorBalance = asset.balanceOf(liquidator);
 
-    expectCall(
-      initialPosition.premiumShares,
-      initialPosition.premiumOffsetRay,
-      drawnToLiquidate,
-      premiumToLiquidateRay
-    );
+    expectCall({
+      drawnIndex: drawnIndex,
+      premiumShares: initialPosition.premiumShares,
+      premiumOffsetRay: initialPosition.premiumOffsetRay,
+      drawnSharesToLiquidate: drawnSharesToLiquidate,
+      premiumDebtRayToLiquidate: premiumDebtRayToLiquidate
+    });
 
-    (uint256 drawnSharesLiquidated, , bool isPositionEmpty) = liquidationLogicWrapper.liquidateDebt(
-      LiquidationLogic.LiquidateDebtParams({
-        debtReserveId: reserveId,
-        debtToLiquidate: debtToLiquidate,
-        premiumDebtRay: premiumDebtRay,
-        drawnIndex: hub.getAssetDrawnIndex(assetId),
-        liquidator: liquidator
-      })
-    );
+    LiquidationLogic.LiquidateDebtResult memory liquidateDebtResult = liquidationLogicWrapper
+      .liquidateDebt(
+        LiquidationLogic.LiquidateDebtParams({
+          hub: hub,
+          assetId: assetId,
+          underlying: address(asset),
+          reserveId: reserveId,
+          drawnSharesToLiquidate: drawnSharesToLiquidate,
+          premiumDebtRayToLiquidate: premiumDebtRayToLiquidate,
+          drawnIndex: drawnIndex,
+          liquidator: liquidator
+        })
+      );
 
-    assertEq(drawnSharesLiquidated, hub.previewRestoreByAssets(assetId, drawnToLiquidate));
-    assertEq(isPositionEmpty, debtToLiquidate == drawnDebt + premiumDebtRay.fromRayUp());
-    assertEq(liquidationLogicWrapper.getBorrowerBorrowingStatus(reserveId), !isPositionEmpty);
+    uint256 amountRestored = drawnSharesToLiquidate.rayMulUp(drawnIndex) +
+      premiumDebtRayToLiquidate.fromRayUp();
+    assertEq(liquidateDebtResult.amountRestored, amountRestored);
+    assertEq(liquidateDebtResult.isDebtPositionEmpty, drawnShares == drawnSharesToLiquidate);
+    assertEq(
+      liquidationLogicWrapper.getBorrowerBorrowingStatus(reserveId),
+      !liquidateDebtResult.isDebtPositionEmpty
+    );
     assertPosition(
       liquidationLogicWrapper.getDebtPosition(user),
       initialPosition,
-      drawnSharesLiquidated,
-      premiumToLiquidateRay
+      drawnSharesToLiquidate,
+      premiumDebtRayToLiquidate
     );
-    assertEq(asset.balanceOf(address(hub)), initialHubBalance + debtToLiquidate);
-    assertEq(asset.balanceOf(liquidator), initialLiquidatorBalance - debtToLiquidate);
+    assertEq(asset.balanceOf(address(hub)), initialHubBalance + amountRestored);
+    assertEq(asset.balanceOf(liquidator), initialLiquidatorBalance - amountRestored);
   }
 
   // reverts with arithmetic underflow if more debt is liquidated than the position has
   function test_liquidateDebt_revertsWith_ArithmeticUnderflow() public {
-    uint256 drawnDebt = 100e18;
+    uint256 drawnShares = 100e18;
     uint256 premiumDebtRay = 10e18 * WadRayMath.RAY;
-    _updateStorage(drawnDebt, premiumDebtRay);
-
-    uint256 debtToLiquidate = drawnDebt + premiumDebtRay.fromRayUp() + 1;
+    _updateStorage(drawnShares, premiumDebtRay);
 
     uint256 drawnIndex = hub.getAssetDrawnIndex(assetId);
 
     vm.expectRevert(stdError.arithmeticError);
     liquidationLogicWrapper.liquidateDebt(
       LiquidationLogic.LiquidateDebtParams({
-        debtReserveId: reserveId,
-        debtToLiquidate: debtToLiquidate,
-        premiumDebtRay: premiumDebtRay,
+        hub: hub,
+        assetId: assetId,
+        underlying: address(asset),
+        reserveId: reserveId,
+        drawnSharesToLiquidate: 0,
+        premiumDebtRayToLiquidate: premiumDebtRay + 1,
+        drawnIndex: drawnIndex,
+        liquidator: liquidator
+      })
+    );
+
+    vm.expectRevert(stdError.arithmeticError);
+    liquidationLogicWrapper.liquidateDebt(
+      LiquidationLogic.LiquidateDebtParams({
+        hub: hub,
+        assetId: assetId,
+        underlying: address(asset),
+        reserveId: reserveId,
+        drawnSharesToLiquidate: drawnShares + 1,
+        premiumDebtRayToLiquidate: premiumDebtRay,
         drawnIndex: drawnIndex,
         liquidator: liquidator
       })
@@ -159,22 +181,24 @@ contract LiquidationLogicLiquidateDebtTest is LiquidationLogicBaseTest {
 
   // reverts when spoke does not have enough allowance from liquidator
   function test_liquidateDebt_revertsWith_InsufficientAllowance() public {
-    uint256 drawnDebt = 100e18;
+    uint256 drawnShares = 100e18;
     uint256 premiumDebtRay = 10e18 * WadRayMath.RAY;
-    _updateStorage(drawnDebt, premiumDebtRay);
-
-    uint256 debtToLiquidateRay = drawnDebt * WadRayMath.RAY + premiumDebtRay;
-    uint256 debtToLiquidate = debtToLiquidateRay.fromRayUp();
-    Utils.approve(spoke, address(asset), liquidator, debtToLiquidate - 1);
+    _updateStorage(drawnShares, premiumDebtRay);
 
     uint256 drawnIndex = hub.getAssetDrawnIndex(assetId);
+
+    uint256 amountToRestore = drawnShares.rayMulUp(drawnIndex) + premiumDebtRay.fromRayUp();
+    Utils.approve(spoke, address(asset), liquidator, amountToRestore - 1);
 
     vm.expectRevert();
     liquidationLogicWrapper.liquidateDebt(
       LiquidationLogic.LiquidateDebtParams({
-        debtReserveId: reserveId,
-        debtToLiquidate: debtToLiquidate,
-        premiumDebtRay: premiumDebtRay,
+        hub: hub,
+        assetId: assetId,
+        underlying: address(asset),
+        reserveId: reserveId,
+        drawnSharesToLiquidate: drawnShares,
+        premiumDebtRayToLiquidate: premiumDebtRay,
         drawnIndex: drawnIndex,
         liquidator: liquidator
       })
@@ -183,22 +207,24 @@ contract LiquidationLogicLiquidateDebtTest is LiquidationLogicBaseTest {
 
   // reverts when liquidator does not have enough balance
   function test_liquidateDebt_revertsWith_InsufficientBalance() public {
-    uint256 drawnDebt = 100e18;
+    uint256 drawnShares = 100e18;
     uint256 premiumDebtRay = 10e18 * WadRayMath.RAY;
-    _updateStorage(drawnDebt, premiumDebtRay);
-
-    uint256 debtToLiquidateRay = drawnDebt * WadRayMath.RAY + premiumDebtRay;
-    uint256 debtToLiquidate = debtToLiquidateRay.fromRayUp();
-    deal(address(asset), liquidator, debtToLiquidate - 1);
+    _updateStorage(drawnShares, premiumDebtRay);
 
     uint256 drawnIndex = hub.getAssetDrawnIndex(assetId);
+
+    uint256 amountToRestore = drawnShares.rayMulUp(drawnIndex) + premiumDebtRay.fromRayUp();
+    deal(address(asset), liquidator, amountToRestore - 1);
 
     vm.expectRevert();
     liquidationLogicWrapper.liquidateDebt(
       LiquidationLogic.LiquidateDebtParams({
-        debtReserveId: reserveId,
-        debtToLiquidate: debtToLiquidate,
-        premiumDebtRay: premiumDebtRay,
+        hub: hub,
+        assetId: assetId,
+        underlying: address(asset),
+        reserveId: reserveId,
+        drawnSharesToLiquidate: drawnShares,
+        premiumDebtRayToLiquidate: premiumDebtRay,
         drawnIndex: drawnIndex,
         liquidator: liquidator
       })
@@ -206,10 +232,11 @@ contract LiquidationLogicLiquidateDebtTest is LiquidationLogicBaseTest {
   }
 
   function expectCall(
+    uint256 drawnIndex,
     uint256 premiumShares,
     int256 premiumOffsetRay,
-    uint256 drawnToLiquidate,
-    uint256 premiumToLiquidateRay
+    uint256 drawnSharesToLiquidate,
+    uint256 premiumDebtRayToLiquidate
   ) internal {
     IHubBase.PremiumDelta memory premiumDelta = _getExpectedPremiumDelta({
       hub: hub,
@@ -218,26 +245,27 @@ contract LiquidationLogicLiquidateDebtTest is LiquidationLogicBaseTest {
       oldPremiumOffsetRay: premiumOffsetRay,
       drawnShares: 0,
       riskPremium: 0,
-      restoredPremiumRay: premiumToLiquidateRay
+      restoredPremiumRay: premiumDebtRayToLiquidate
     });
+
     vm.expectCall(
       address(hub),
-      abi.encodeCall(IHubBase.restore, (assetId, drawnToLiquidate, premiumDelta))
+      abi.encodeCall(
+        IHubBase.restore,
+        (assetId, drawnSharesToLiquidate.rayMulUp(drawnIndex), premiumDelta)
+      )
     );
   }
 
   function _updateStorage(
-    uint256 drawnDebt,
+    uint256 drawnShares,
     uint256 premiumDebtRay
   ) internal returns (ISpoke.UserPosition memory) {
-    liquidationLogicWrapper.setDebtPositionDrawnShares(
-      hub.previewRestoreByAssets(assetId, drawnDebt)
-    );
-    uint256 premiumDebtShares = hub.previewDrawByAssets(assetId, premiumDebtRay.fromRayUp());
-    liquidationLogicWrapper.setDebtPositionPremiumShares(premiumDebtShares);
+    liquidationLogicWrapper.setDebtPositionDrawnShares(drawnShares);
+    uint256 premiumShares = hub.previewDrawByAssets(assetId, premiumDebtRay.fromRayUp());
+    liquidationLogicWrapper.setDebtPositionPremiumShares(premiumShares);
     liquidationLogicWrapper.setDebtPositionPremiumOffsetRay(
-      _calculatePremiumAssetsRay(hub, assetId, premiumDebtShares).toInt256() -
-        premiumDebtRay.toInt256()
+      _calculatePremiumAssetsRay(hub, assetId, premiumShares).toInt256() - premiumDebtRay.toInt256()
     );
 
     return liquidationLogicWrapper.getDebtPosition(user);
@@ -247,7 +275,7 @@ contract LiquidationLogicLiquidateDebtTest is LiquidationLogicBaseTest {
     ISpoke.UserPosition memory newPosition,
     ISpoke.UserPosition memory initialPosition,
     uint256 drawnSharesLiquidated,
-    uint256 premiumToLiquidateRay
+    uint256 premiumDebtRayLiquidated
   ) internal view {
     uint256 premiumDebtRay = _calculatePremiumDebtRay(
       hub,
@@ -257,19 +285,9 @@ contract LiquidationLogicLiquidateDebtTest is LiquidationLogicBaseTest {
     );
     initialPosition.drawnShares -= drawnSharesLiquidated.toUint120();
     initialPosition.premiumShares = 0;
-    initialPosition.premiumOffsetRay = -(premiumDebtRay - premiumToLiquidateRay)
+    initialPosition.premiumOffsetRay = -(premiumDebtRay - premiumDebtRayLiquidated)
       .toInt256()
       .toInt200();
     assertEq(newPosition, initialPosition);
-  }
-
-  function _calculateLiquidationAmounts(
-    uint256 premiumDebtRay,
-    uint256 debtToLiquidate
-  ) internal pure returns (uint256, uint256) {
-    uint256 debtToLiquidateRay = debtToLiquidate.toRay();
-    uint256 premiumToLiquidateRay = _min(premiumDebtRay, debtToLiquidateRay);
-    uint256 drawnToLiquidate = debtToLiquidate - premiumToLiquidateRay.fromRayUp();
-    return (drawnToLiquidate, premiumToLiquidateRay);
   }
 }
