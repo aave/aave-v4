@@ -8,6 +8,8 @@ library Constants {
   uint8 public constant MIN_ALLOWED_UNDERLYING_DECIMALS = 6;
   uint40 public constant MAX_ALLOWED_SPOKE_CAP = type(uint40).max;
   uint24 public constant MAX_RISK_PREMIUM_THRESHOLD = type(uint24).max; // 167772.15%
+  uint256 public constant VIRTUAL_ASSETS = 1e6;
+  uint256 public constant VIRTUAL_SHARES = 1e6;
 
   /// @dev Spoke Constants
   uint8 public constant ORACLE_DECIMALS = 8;
