@@ -19,8 +19,8 @@ contract LiquidationLogicValidateLiquidationCallTest is LiquidationLogicBaseTest
       liquidator: bob,
       collateralReserveFlags: collateralReserveFlags,
       debtReserveFlags: debtReserveFlags,
-      collateralReserveBalance: 120e6,
-      debtReserveBalance: 100e18,
+      suppliedShares: 120e6,
+      drawnShares: 100e18,
       debtToCover: 5e18,
       collateralFactor: 75_00,
       isUsingAsCollateral: true,
@@ -191,13 +191,13 @@ contract LiquidationLogicValidateLiquidationCallTest is LiquidationLogicBaseTest
   }
 
   function test_validateLiquidationCall_revertsWith_ReserveNotSupplied() public {
-    params.collateralReserveBalance = 0;
+    params.suppliedShares = 0;
     vm.expectRevert(ISpoke.ReserveNotSupplied.selector);
     liquidationLogicWrapper.validateLiquidationCall(params);
   }
 
   function test_validateLiquidationCall_revertsWith_ReserveNotBorrowed() public {
-    params.debtReserveBalance = 0;
+    params.drawnShares = 0;
     vm.expectRevert(ISpoke.ReserveNotBorrowed.selector);
     liquidationLogicWrapper.validateLiquidationCall(params);
   }

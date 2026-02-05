@@ -86,7 +86,7 @@ contract SpokeRiskPremiumTest is SpokeBase {
   function test_getUserRiskPremium_fuzz_single_reserve_collateral_borrowed_amount(
     uint256 borrowAmount
   ) public {
-    borrowAmount = bound(borrowAmount, 1, MAX_SUPPLY_AMOUNT / 2);
+    borrowAmount = bound(borrowAmount, 1, MAX_SUPPLY_AMOUNT_DAI / 2);
 
     ReserveInfoLocal memory daiInfo;
     daiInfo.reserveId = _daiReserveId(spoke1);
@@ -111,8 +111,8 @@ contract SpokeRiskPremiumTest is SpokeBase {
     uint256 borrowAmount,
     uint256 additionalSupplyAmount
   ) public {
-    borrowAmount = bound(borrowAmount, 1, MAX_SUPPLY_AMOUNT / 2);
-    additionalSupplyAmount = bound(additionalSupplyAmount, 1, MAX_SUPPLY_AMOUNT);
+    borrowAmount = bound(borrowAmount, 1, MAX_SUPPLY_AMOUNT_DAI / 2);
+    additionalSupplyAmount = bound(additionalSupplyAmount, 1, MAX_SUPPLY_AMOUNT_USDX);
 
     ReserveInfoLocal memory daiInfo;
     ReserveInfoLocal memory usdxInfo;
@@ -172,11 +172,15 @@ contract SpokeRiskPremiumTest is SpokeBase {
     _mockReservePrice(spoke2, _usdzReserveId(spoke2), 100000e8);
 
     // Check that debt has outgrown collateral
-    uint256 collateralValue = _getValue(spoke2, _wbtcReserveId(spoke2), wbtcSupplyAmount) +
-      _getValue(spoke2, _daiReserveId(spoke2), daiSupplyAmount) +
-      _getValue(spoke2, _usdxReserveId(spoke2), usdxSupplyAmount) +
-      _getValue(spoke2, _wethReserveId(spoke2), wethSupplyAmount);
-    uint256 debtValue = _getValue(spoke2, _usdzReserveId(spoke2), borrowAmount);
+    uint256 collateralValue = _convertAmountToValue(
+      spoke2,
+      _wbtcReserveId(spoke2),
+      wbtcSupplyAmount
+    ) +
+      _convertAmountToValue(spoke2, _daiReserveId(spoke2), daiSupplyAmount) +
+      _convertAmountToValue(spoke2, _usdxReserveId(spoke2), usdxSupplyAmount) +
+      _convertAmountToValue(spoke2, _wethReserveId(spoke2), wethSupplyAmount);
+    uint256 debtValue = _convertAmountToValue(spoke2, _usdzReserveId(spoke2), borrowAmount);
     assertGt(debtValue, collateralValue, 'debt outgrows collateral');
 
     assertFalse(_isHealthy(spoke2, bob));
@@ -252,9 +256,9 @@ contract SpokeRiskPremiumTest is SpokeBase {
 
     // Weth is enough to cover the total debt
     assertGe(
-      _getValue(spoke1, wethInfo.reserveId, wethInfo.supplyAmount),
-      _getValue(spoke1, daiInfo.reserveId, daiInfo.borrowAmount) +
-        _getValue(spoke1, usdxInfo.reserveId, usdxInfo.borrowAmount),
+      _convertAmountToValue(spoke1, wethInfo.reserveId, wethInfo.supplyAmount),
+      _convertAmountToValue(spoke1, daiInfo.reserveId, daiInfo.borrowAmount) +
+        _convertAmountToValue(spoke1, usdxInfo.reserveId, usdxInfo.borrowAmount),
       'weth supply covers debt'
     );
     uint256 expectedUserRiskPremium = wethInfo.collateralRisk;
@@ -300,8 +304,8 @@ contract SpokeRiskPremiumTest is SpokeBase {
 
     // usdz is enough to cover the total debt
     assertGe(
-      _getValue(spoke2, usdzInfo.reserveId, usdzInfo.supplyAmount),
-      _getValue(spoke2, daiInfo.reserveId, daiInfo.borrowAmount),
+      _convertAmountToValue(spoke2, usdzInfo.reserveId, usdzInfo.supplyAmount),
+      _convertAmountToValue(spoke2, daiInfo.reserveId, daiInfo.borrowAmount),
       'usdz supply covers debt'
     );
 
@@ -402,9 +406,9 @@ contract SpokeRiskPremiumTest is SpokeBase {
     uint256 usdxSupplyAmount,
     uint256 wethBorrowAmount
   ) public {
-    uint256 totalBorrowAmount = MAX_SUPPLY_AMOUNT / 2;
-    daiSupplyAmount = bound(daiSupplyAmount, 0, MAX_SUPPLY_AMOUNT);
-    usdxSupplyAmount = bound(usdxSupplyAmount, 0, MAX_SUPPLY_AMOUNT);
+    uint256 totalBorrowAmount = MAX_SUPPLY_AMOUNT_WETH / 2;
+    daiSupplyAmount = bound(daiSupplyAmount, 0, MAX_SUPPLY_AMOUNT_DAI);
+    usdxSupplyAmount = bound(usdxSupplyAmount, 0, MAX_SUPPLY_AMOUNT_USDX);
 
     wethBorrowAmount = bound(wethBorrowAmount, 0, totalBorrowAmount);
 
@@ -418,7 +422,7 @@ contract SpokeRiskPremiumTest is SpokeBase {
 
     daiInfo.supplyAmount = daiSupplyAmount;
     usdxInfo.supplyAmount = usdxSupplyAmount;
-    wethInfo.supplyAmount = MAX_SUPPLY_AMOUNT;
+    wethInfo.supplyAmount = MAX_SUPPLY_AMOUNT_WETH;
 
     // Borrow all value in weth
     wethInfo.borrowAmount = wethBorrowAmount;
@@ -460,11 +464,10 @@ contract SpokeRiskPremiumTest is SpokeBase {
     uint256 wethSupplyAmount,
     uint256 wbtcBorrowAmount
   ) public {
-    uint256 totalBorrowAmount = MAX_SUPPLY_AMOUNT / 2;
-    daiSupplyAmount = bound(daiSupplyAmount, 0, MAX_SUPPLY_AMOUNT);
-    wethSupplyAmount = bound(wethSupplyAmount, 0, MAX_SUPPLY_AMOUNT);
-    usdxSupplyAmount = bound(usdxSupplyAmount, 0, MAX_SUPPLY_AMOUNT);
-    wbtcBorrowAmount = bound(wbtcBorrowAmount, 0, totalBorrowAmount);
+    daiSupplyAmount = bound(daiSupplyAmount, 0, MAX_SUPPLY_AMOUNT_DAI / 2);
+    wethSupplyAmount = bound(wethSupplyAmount, 0, MAX_SUPPLY_AMOUNT_WETH / 2);
+    usdxSupplyAmount = bound(usdxSupplyAmount, 0, MAX_SUPPLY_AMOUNT_USDX / 2);
+    wbtcBorrowAmount = bound(wbtcBorrowAmount, 0, MAX_SUPPLY_AMOUNT_WBTC / 2);
 
     ReserveInfoLocal memory daiInfo;
     ReserveInfoLocal memory wethInfo;
@@ -479,7 +482,7 @@ contract SpokeRiskPremiumTest is SpokeBase {
     daiInfo.supplyAmount = daiSupplyAmount;
     wethInfo.supplyAmount = wethSupplyAmount;
     usdxInfo.supplyAmount = usdxSupplyAmount;
-    wbtcInfo.supplyAmount = MAX_SUPPLY_AMOUNT;
+    wbtcInfo.supplyAmount = MAX_SUPPLY_AMOUNT_WBTC;
 
     wbtcInfo.borrowAmount = wbtcBorrowAmount;
 
@@ -526,14 +529,10 @@ contract SpokeRiskPremiumTest is SpokeBase {
     uint256 wbtcSupplyAmount,
     uint256 borrowAmount
   ) public {
-    uint256 totalBorrowAmount = MAX_SUPPLY_AMOUNT / 2;
-
-    daiSupplyAmount = bound(daiSupplyAmount, 0, MAX_SUPPLY_AMOUNT);
-    wethSupplyAmount = bound(wethSupplyAmount, 0, MAX_SUPPLY_AMOUNT);
-    usdxSupplyAmount = bound(usdxSupplyAmount, 0, MAX_SUPPLY_AMOUNT);
-    wbtcSupplyAmount = bound(wbtcSupplyAmount, 0, MAX_SUPPLY_AMOUNT);
-
-    borrowAmount = bound(borrowAmount, 0, totalBorrowAmount);
+    daiSupplyAmount = bound(daiSupplyAmount, 0, MAX_SUPPLY_AMOUNT_DAI / 2);
+    wethSupplyAmount = bound(wethSupplyAmount, 0, MAX_SUPPLY_AMOUNT_WETH / 2);
+    usdxSupplyAmount = bound(usdxSupplyAmount, 0, MAX_SUPPLY_AMOUNT_USDX / 2);
+    wbtcSupplyAmount = bound(wbtcSupplyAmount, 0, MAX_SUPPLY_AMOUNT_WBTC / 2);
 
     ReserveInfoLocal memory daiInfo;
     ReserveInfoLocal memory usdxInfo;
@@ -553,7 +552,7 @@ contract SpokeRiskPremiumTest is SpokeBase {
     wbtcInfo.supplyAmount = wbtcSupplyAmount;
 
     // Borrow all value in usdz
-    usdzInfo.borrowAmount = borrowAmount;
+    usdzInfo.borrowAmount = bound(borrowAmount, 0, MAX_SUPPLY_AMOUNT_WBTC / 2);
 
     daiInfo.collateralRisk = _getCollateralRisk(spoke2, daiInfo.reserveId);
     wethInfo.collateralRisk = _getCollateralRisk(spoke2, wethInfo.reserveId);
@@ -561,7 +560,7 @@ contract SpokeRiskPremiumTest is SpokeBase {
     wbtcInfo.collateralRisk = _getCollateralRisk(spoke2, wbtcInfo.reserveId);
 
     // Handle supplying max of both dai and usdz
-    deal(address(tokenList.dai), bob, MAX_SUPPLY_AMOUNT * 2);
+    deal(address(tokenList.dai), bob, MAX_SUPPLY_AMOUNT_DAI * 2);
 
     // Bob supply wbtc into spoke2
     if (wbtcInfo.supplyAmount > 0) {
@@ -584,7 +583,7 @@ contract SpokeRiskPremiumTest is SpokeBase {
     }
 
     // Bob supply usdz into spoke2
-    Utils.supplyCollateral(spoke2, usdzInfo.reserveId, bob, MAX_SUPPLY_AMOUNT, bob);
+    Utils.supplyCollateral(spoke2, usdzInfo.reserveId, bob, MAX_SUPPLY_AMOUNT_USDZ, bob);
 
     // Bob draw usdz
     if (usdzInfo.borrowAmount > 0) {
@@ -608,7 +607,7 @@ contract SpokeRiskPremiumTest is SpokeBase {
     uint256 borrowAmount,
     uint256 newUsdxPrice
   ) public {
-    uint256 totalBorrowAmount = MAX_SUPPLY_AMOUNT / 2;
+    uint256 totalBorrowAmount = MAX_SUPPLY_AMOUNT_USDZ / 2;
 
     newUsdxPrice = bound(newUsdxPrice, 1, 1e16);
 
@@ -635,7 +634,7 @@ contract SpokeRiskPremiumTest is SpokeBase {
     wethInfo.supplyAmount = wethSupplyAmount;
     usdxInfo.supplyAmount = usdxSupplyAmount;
     wbtcInfo.supplyAmount = wbtcSupplyAmount;
-    usdzInfo.supplyAmount = MAX_SUPPLY_AMOUNT;
+    usdzInfo.supplyAmount = MAX_SUPPLY_AMOUNT_USDZ;
 
     // Borrow all value in usdz
     usdzInfo.borrowAmount = borrowAmount;
@@ -647,7 +646,7 @@ contract SpokeRiskPremiumTest is SpokeBase {
     usdzInfo.collateralRisk = _getCollateralRisk(spoke2, usdzInfo.reserveId);
 
     // Handle supplying max of both dai and usdz
-    deal(address(tokenList.dai), bob, MAX_SUPPLY_AMOUNT * 2);
+    deal(address(tokenList.dai), bob, MAX_SUPPLY_AMOUNT_DAI * 2);
 
     // Bob supply wbtc into spoke2
     if (wbtcInfo.supplyAmount > 0) {
@@ -703,15 +702,15 @@ contract SpokeRiskPremiumTest is SpokeBase {
     uint256 borrowAmount,
     uint24 newCrValue
   ) public {
-    uint256 totalBorrowAmount = MAX_SUPPLY_AMOUNT / 2;
+    uint256 totalBorrowAmount = MAX_SUPPLY_AMOUNT_USDZ / 2;
 
     // Bound collateral risk to below usdz so reserve is still used in rp calc
     newCrValue = bound(newCrValue, 0, 99_99).toUint24();
 
-    daiSupplyAmount = bound(daiSupplyAmount, 0, MAX_SUPPLY_AMOUNT);
-    wethSupplyAmount = bound(wethSupplyAmount, 0, MAX_SUPPLY_AMOUNT);
-    usdxSupplyAmount = bound(usdxSupplyAmount, 0, MAX_SUPPLY_AMOUNT);
-    wbtcSupplyAmount = bound(wbtcSupplyAmount, 0, MAX_SUPPLY_AMOUNT);
+    daiSupplyAmount = bound(daiSupplyAmount, 0, MAX_SUPPLY_AMOUNT_DAI);
+    wethSupplyAmount = bound(wethSupplyAmount, 0, MAX_SUPPLY_AMOUNT_WETH);
+    usdxSupplyAmount = bound(usdxSupplyAmount, 0, MAX_SUPPLY_AMOUNT_USDX);
+    wbtcSupplyAmount = bound(wbtcSupplyAmount, 0, MAX_SUPPLY_AMOUNT_WBTC);
 
     borrowAmount = bound(borrowAmount, 0, totalBorrowAmount);
 
@@ -731,7 +730,7 @@ contract SpokeRiskPremiumTest is SpokeBase {
     wethInfo.supplyAmount = wethSupplyAmount;
     usdxInfo.supplyAmount = usdxSupplyAmount;
     wbtcInfo.supplyAmount = wbtcSupplyAmount;
-    usdzInfo.supplyAmount = MAX_SUPPLY_AMOUNT;
+    usdzInfo.supplyAmount = MAX_SUPPLY_AMOUNT_USDZ;
 
     // Borrow all value in usdz
     usdzInfo.borrowAmount = borrowAmount;
@@ -743,7 +742,7 @@ contract SpokeRiskPremiumTest is SpokeBase {
     usdzInfo.collateralRisk = _getCollateralRisk(spoke2, usdzInfo.reserveId);
 
     // Handle supplying max of both dai and usdz
-    deal(address(tokenList.dai), bob, MAX_SUPPLY_AMOUNT * 2);
+    deal(address(tokenList.dai), bob, MAX_SUPPLY_AMOUNT_DAI * 2);
 
     // Bob supply wbtc into spoke2
     if (wbtcInfo.supplyAmount > 0) {
@@ -894,12 +893,9 @@ contract SpokeRiskPremiumTest is SpokeBase {
     uint256 usdxSupplyAmount,
     uint256 borrowAmount
   ) public {
-    uint256 totalBorrowAmount = MAX_SUPPLY_AMOUNT / 2;
-    daiSupplyAmount = bound(daiSupplyAmount, 0, MAX_SUPPLY_AMOUNT);
-    wethSupplyAmount = bound(wethSupplyAmount, 0, MAX_SUPPLY_AMOUNT);
-    usdxSupplyAmount = bound(usdxSupplyAmount, 0, MAX_SUPPLY_AMOUNT);
-
-    borrowAmount = bound(borrowAmount, 0, totalBorrowAmount);
+    daiSupplyAmount = bound(daiSupplyAmount, 0, MAX_SUPPLY_AMOUNT_DAI / 2);
+    wethSupplyAmount = bound(wethSupplyAmount, 0, MAX_SUPPLY_AMOUNT_WETH / 2);
+    usdxSupplyAmount = bound(usdxSupplyAmount, 0, MAX_SUPPLY_AMOUNT_USDX / 2);
 
     ReserveInfoLocal memory daiInfo;
     ReserveInfoLocal memory wethInfo;
@@ -914,9 +910,9 @@ contract SpokeRiskPremiumTest is SpokeBase {
     daiInfo.supplyAmount = daiSupplyAmount;
     wethInfo.supplyAmount = wethSupplyAmount;
     usdxInfo.supplyAmount = usdxSupplyAmount;
-    wbtcInfo.supplyAmount = MAX_SUPPLY_AMOUNT;
+    wbtcInfo.supplyAmount = MAX_SUPPLY_AMOUNT_WBTC;
 
-    wbtcInfo.borrowAmount = borrowAmount;
+    wbtcInfo.borrowAmount = bound(borrowAmount, 0, MAX_SUPPLY_AMOUNT_WBTC / 2);
 
     daiInfo.collateralRisk = _getCollateralRisk(spoke3, daiInfo.reserveId);
     wethInfo.collateralRisk = _getCollateralRisk(spoke3, wethInfo.reserveId);
@@ -1002,13 +998,12 @@ contract SpokeRiskPremiumTest is SpokeBase {
     uint256 wbtcBorrowamount,
     uint256 wethBorrowAmount
   ) public {
-    uint256 totalBorrowAmount = MAX_SUPPLY_AMOUNT / 2;
-    daiSupplyAmount = bound(daiSupplyAmount, 0, MAX_SUPPLY_AMOUNT);
-    wethSupplyAmount = bound(wethSupplyAmount, 0, MAX_SUPPLY_AMOUNT);
-    usdxSupplyAmount = bound(usdxSupplyAmount, 0, MAX_SUPPLY_AMOUNT);
+    daiSupplyAmount = bound(daiSupplyAmount, 0, MAX_SUPPLY_AMOUNT_DAI / 2);
+    wethSupplyAmount = bound(wethSupplyAmount, 0, MAX_SUPPLY_AMOUNT_WETH / 2);
+    usdxSupplyAmount = bound(usdxSupplyAmount, 0, MAX_SUPPLY_AMOUNT_USDX / 2);
 
-    wbtcBorrowamount = bound(wbtcBorrowamount, 0, totalBorrowAmount);
-    wethBorrowAmount = bound(wethBorrowAmount, 0, totalBorrowAmount);
+    wbtcBorrowamount = bound(wbtcBorrowamount, 0, MAX_SUPPLY_AMOUNT_WBTC / 2);
+    wethBorrowAmount = bound(wethBorrowAmount, 0, MAX_SUPPLY_AMOUNT_WETH / 2);
 
     ReserveInfoLocal memory daiInfo;
     ReserveInfoLocal memory wethInfo;
@@ -1023,7 +1018,7 @@ contract SpokeRiskPremiumTest is SpokeBase {
     daiInfo.supplyAmount = daiSupplyAmount;
     wethInfo.supplyAmount = wethSupplyAmount;
     usdxInfo.supplyAmount = usdxSupplyAmount;
-    wbtcInfo.supplyAmount = MAX_SUPPLY_AMOUNT;
+    wbtcInfo.supplyAmount = MAX_SUPPLY_AMOUNT_WBTC;
 
     wbtcInfo.borrowAmount = wbtcBorrowamount;
     wethInfo.borrowAmount = wethBorrowAmount;
@@ -1051,8 +1046,12 @@ contract SpokeRiskPremiumTest is SpokeBase {
     Utils.supplyCollateral(spoke3, wbtcInfo.reserveId, bob, wbtcInfo.supplyAmount, bob);
 
     // Alice supply remaining weth into spoke3
-    if (MAX_SUPPLY_AMOUNT - wethInfo.supplyAmount > 0) {
-      _openSupplyPosition(spoke3, wethInfo.reserveId, MAX_SUPPLY_AMOUNT - wethInfo.supplyAmount);
+    if (MAX_SUPPLY_AMOUNT_WETH - wethInfo.supplyAmount > 0) {
+      _openSupplyPosition(
+        spoke3,
+        wethInfo.reserveId,
+        MAX_SUPPLY_AMOUNT_WETH - wethInfo.supplyAmount
+      );
     }
 
     // Bob draw wbtc

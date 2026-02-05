@@ -27,6 +27,7 @@ import {IAccessManaged} from 'src/dependencies/openzeppelin/IAccessManaged.sol';
 import {AuthorityUtils} from 'src/dependencies/openzeppelin/AuthorityUtils.sol';
 import {Ownable2Step, Ownable} from 'src/dependencies/openzeppelin/Ownable2Step.sol';
 import {Math} from 'src/dependencies/openzeppelin/Math.sol';
+import {SlotDerivation} from 'src/dependencies/openzeppelin/SlotDerivation.sol';
 import {WETH9} from 'src/dependencies/weth/WETH9.sol';
 import {LibBit} from 'src/dependencies/solady/LibBit.sol';
 
@@ -61,6 +62,7 @@ import {IPriceOracle} from 'src/spoke/interfaces/IPriceOracle.sol';
 import {AaveOracle} from 'src/spoke/AaveOracle.sol';
 import {IAaveOracle} from 'src/spoke/interfaces/IAaveOracle.sol';
 import {SpokeConfigurator, ISpokeConfigurator} from 'src/spoke/SpokeConfigurator.sol';
+import {SpokeUtils} from 'src/spoke/libraries/SpokeUtils.sol';
 import {PositionStatusMap} from 'src/spoke/libraries/PositionStatusMap.sol';
 import {ReserveFlags, ReserveFlagsMap} from 'src/spoke/libraries/ReserveFlagsMap.sol';
 import {LiquidationLogic} from 'src/spoke/libraries/LiquidationLogic.sol';
@@ -92,6 +94,7 @@ import {MockSkimSpoke} from 'tests/mocks/MockSkimSpoke.sol';
 import {MockReentrantCaller} from 'tests/mocks/MockReentrantCaller.sol';
 import {ISpokeInstance} from 'tests/mocks/ISpokeInstance.sol';
 import {DeployWrapper} from 'tests/mocks/DeployWrapper.sol';
+import {SpokeUtilsWrapper} from 'tests/mocks/SpokeUtilsWrapper.sol';
 
 abstract contract Base is Test {
   using stdStorage for StdStorage;
@@ -119,8 +122,12 @@ abstract contract Base is Test {
   uint256 internal MAX_SUPPLY_AMOUNT_USDY;
   uint256 internal MAX_SUPPLY_AMOUNT_USDZ;
   uint256 internal constant MAX_SUPPLY_IN_BASE_CURRENCY = 1e39;
-  uint24 internal constant MIN_COLLATERAL_RISK_BPS = 1;
+  uint24 internal constant MIN_COLLATERAL_RISK_BPS = 0;
   uint24 internal constant MAX_COLLATERAL_RISK_BPS = 1000_00;
+  uint256 internal constant MAX_SUPPLY_PRICE = 100;
+  uint256 internal constant MIN_DRAWN_INDEX = WadRayMath.RAY;
+  uint256 internal constant MAX_DRAWN_INDEX = 100 * WadRayMath.RAY;
+  uint24 internal constant MIN_BORROW_RATE = 0;
   uint256 internal constant MAX_BORROW_RATE = 1000_00; // matches AssetInterestRateStrategy
   uint256 internal constant MIN_OPTIMAL_RATIO = 1_00; // 1.00% in BPS, matches AssetInterestRateStrategy
   uint256 internal constant MAX_OPTIMAL_RATIO = 99_00; // 99.00% in BPS, matches AssetInterestRateStrategy
@@ -227,6 +234,7 @@ abstract contract Base is Test {
   struct Debts {
     uint256 drawnDebt;
     uint256 premiumDebt;
+    uint256 premiumDebtRay;
     uint256 totalDebt;
   }
 
@@ -1207,6 +1215,15 @@ abstract contract Base is Test {
     assertEq(_getLatestDynamicReserveConfig(spoke, reserveId), config);
   }
 
+  function _addDynamicReserveConfig(
+    ISpoke spoke,
+    uint256 reserveId,
+    ISpoke.DynamicReserveConfig memory config
+  ) internal pausePrank returns (uint24) {
+    vm.prank(SPOKE_ADMIN);
+    return spoke.addDynamicReserveConfig(reserveId, config);
+  }
+
   function _updateReserveBorrowableFlag(
     ISpoke spoke,
     uint256 reserveId,
@@ -1248,6 +1265,18 @@ abstract contract Base is Test {
   ) internal pausePrank {
     ISpoke.LiquidationConfig memory liqConfig = spoke.getLiquidationConfig();
     liqConfig.targetHealthFactor = newTargetHealthFactor;
+    vm.prank(SPOKE_ADMIN);
+    spoke.updateLiquidationConfig(liqConfig);
+
+    assertEq(spoke.getLiquidationConfig(), liqConfig);
+  }
+
+  function _updateLiquidationBonusFactor(
+    ISpoke spoke,
+    uint16 newLiquidationBonusFactor
+  ) internal pausePrank {
+    ISpoke.LiquidationConfig memory liqConfig = spoke.getLiquidationConfig();
+    liqConfig.liquidationBonusFactor = newLiquidationBonusFactor;
     vm.prank(SPOKE_ADMIN);
     spoke.updateLiquidationConfig(liqConfig);
 
@@ -1384,6 +1413,7 @@ abstract contract Base is Test {
     uint256 reserveId
   ) internal view returns (Debts memory data) {
     (data.drawnDebt, data.premiumDebt) = spoke.getUserDebt(reserveId, user);
+    data.premiumDebtRay = spoke.getUserPremiumDebtRay(reserveId, user);
     data.totalDebt = data.drawnDebt + data.premiumDebt;
   }
 
@@ -1515,30 +1545,6 @@ abstract contract Base is Test {
     assertEq(newRate, oldRate, string.concat('debt rate should be constant ', label));
   }
 
-  /// returns the USD value of the reserve normalized by it's decimals, in terms of WAD
-  function _getValue(
-    ISpoke spoke,
-    uint256 reserveId,
-    uint256 amount
-  ) internal view returns (uint256) {
-    return
-      (amount * IPriceOracle(spoke.ORACLE()).getReservePrice(reserveId)).wadDivDown(
-        10 ** _underlying(spoke, reserveId).decimals()
-      );
-  }
-
-  /// returns the USD value of the reserve normalized by it's decimals, in terms of WAD
-  function _getDebtValue(
-    ISpoke spoke,
-    uint256 reserveId,
-    uint256 amount
-  ) internal view returns (uint256) {
-    return
-      (amount * IPriceOracle(spoke.ORACLE()).getReservePrice(reserveId)).wadDivUp(
-        10 ** _underlying(spoke, reserveId).decimals()
-      );
-  }
-
   /// @notice Convert 1 asset amount to equivalent amount in another asset.
   /// @notice Will contain precision loss due to conversion split into two steps.
   /// @return Converted amount of toAsset.
@@ -1592,23 +1598,13 @@ abstract contract Base is Test {
   function _calculateRestoreAmounts(
     uint256 restoreAmount,
     uint256 drawn,
-    uint256 premium
-  ) internal pure returns (uint256 baseAmount, uint256 premiumAmount) {
-    if (restoreAmount <= premium) {
-      return (0, restoreAmount);
+    uint256 premiumRay
+  ) internal pure returns (uint256 drawnAmountToRestore, uint256 premiumRayToRestore) {
+    if (restoreAmount <= premiumRay / WadRayMath.RAY) {
+      return (0, restoreAmount.toRay());
     }
 
-    return (drawn.min(restoreAmount - premium), premium);
-  }
-
-  function _calculateRestoreAmounts(
-    ISpoke spoke,
-    uint256 reserveId,
-    address user,
-    uint256 repayAmount
-  ) internal view returns (uint256 baseAmount, uint256 premiumAmount) {
-    (uint256 userDrawnDebt, uint256 userPremiumDebt) = spoke.getUserDebt(reserveId, user);
-    return _calculateRestoreAmounts(repayAmount, userDrawnDebt, userPremiumDebt);
+    return (drawn.min(restoreAmount - premiumRay.fromRayUp()), premiumRay);
   }
 
   function _getExpectedPremiumDelta(
@@ -1665,22 +1661,14 @@ abstract contract Base is Test {
     uint256 repayAmount
   ) internal view virtual returns (IHubBase.PremiumDelta memory) {
     Debts memory userDebt = getUserDebt(spoke, user, reserveId);
-    (, uint256 premiumAmountToRestore) = _calculateRestoreAmounts(
+    (, uint256 premiumRayToRestore) = _calculateRestoreAmounts(
       repayAmount,
       userDebt.drawnDebt,
-      userDebt.premiumDebt
+      userDebt.premiumDebtRay
     );
 
     ISpoke.UserPosition memory userPosition = spoke.getUserPosition(reserveId, user);
     uint256 assetId = spoke.getReserve(reserveId).assetId;
-    uint256 premiumDebtRay = _calculatePremiumDebtRay(
-      hub1,
-      assetId,
-      userPosition.premiumShares,
-      userPosition.premiumOffsetRay
-    );
-
-    uint256 restoredPremiumRay = (premiumAmountToRestore * WadRayMath.RAY).min(premiumDebtRay);
 
     return
       _getExpectedPremiumDelta({
@@ -1690,7 +1678,7 @@ abstract contract Base is Test {
         oldPremiumOffsetRay: userPosition.premiumOffsetRay,
         drawnShares: 0, // risk premium is 0, so drawn shares do not matter here (otherwise they need to be updated with restored drawn shares amount)
         riskPremium: 0,
-        restoredPremiumRay: restoredPremiumRay
+        restoredPremiumRay: premiumRayToRestore
       });
   }
 
@@ -1702,24 +1690,17 @@ abstract contract Base is Test {
     uint256 repayAmount
   ) internal view virtual returns (IHubBase.PremiumDelta memory) {
     Debts memory userDebt = getUserDebt(spoke, user, reserveId);
-    (uint256 drawnDebtToRestore, uint256 premiumAmountToRestore) = _calculateRestoreAmounts(
+    (uint256 drawnDebtToRestore, uint256 premiumRayToRestore) = _calculateRestoreAmounts(
       repayAmount,
       userDebt.drawnDebt,
-      userDebt.premiumDebt
+      userDebt.premiumDebtRay
     );
 
     {
       ISpoke.UserPosition memory userPosition = spoke.getUserPosition(reserveId, user);
       uint256 assetId = spoke.getReserve(reserveId).assetId;
       IHub hub = IHub(address(spoke.getReserve(reserveId).hub));
-      uint256 premiumDebtRay = _calculatePremiumDebtRay(
-        hub,
-        assetId,
-        userPosition.premiumShares,
-        userPosition.premiumOffsetRay
-      );
 
-      uint256 restoredPremiumRay = (premiumAmountToRestore * WadRayMath.RAY).min(premiumDebtRay);
       uint256 restoredShares = drawnDebtToRestore.rayDivDown(hub.getAssetDrawnIndex(assetId));
       uint256 riskPremium = _getUserLastRiskPremium(spoke, user);
 
@@ -1731,7 +1712,7 @@ abstract contract Base is Test {
           oldPremiumOffsetRay: userPosition.premiumOffsetRay,
           drawnShares: userPosition.drawnShares - restoredShares,
           riskPremium: riskPremium,
-          restoredPremiumRay: restoredPremiumRay
+          restoredPremiumRay: premiumRayToRestore
         });
     }
   }
@@ -2016,7 +1997,7 @@ abstract contract Base is Test {
     uint256 assetPrice,
     uint256 assetUnit
   ) internal pure returns (uint256) {
-    return (amount * assetPrice).wadDivUp(assetUnit);
+    return (amount * assetPrice) * (WadRayMath.WAD / assetUnit);
   }
 
   function _convertValueToAmount(
@@ -2040,6 +2021,21 @@ abstract contract Base is Test {
     return ((valueAmount * assetUnit) / assetPrice).fromWadDown();
   }
 
+  function _convertDecimals(
+    uint256 amount,
+    uint256 fromDecimals,
+    uint256 toDecimals,
+    bool roundUp
+  ) internal pure returns (uint256) {
+    return
+      Math.mulDiv(
+        amount,
+        10 ** toDecimals,
+        10 ** fromDecimals,
+        (roundUp) ? Math.Rounding.Ceil : Math.Rounding.Floor
+      );
+  }
+
   /**
    * @notice Returns the required debt amount to ensure user position is ~ a certain health factor.
    * @param desiredHf The desired health factor to be at.
@@ -2049,7 +2045,7 @@ abstract contract Base is Test {
     address user,
     uint256 reserveId,
     uint256 desiredHf
-  ) internal view returns (uint256 requiredDebtAmount) {
+  ) internal returns (uint256 requiredDebtAmount) {
     uint256 requiredDebtAmountValue = _getRequiredDebtValueForHf(spoke, user, desiredHf);
     return _convertValueToAmount(spoke, reserveId, requiredDebtAmountValue);
   }
@@ -2061,13 +2057,46 @@ abstract contract Base is Test {
     ISpoke spoke,
     address user,
     uint256 desiredHf
-  ) internal view returns (uint256 requiredDebtValue) {
-    ISpoke.UserAccountData memory userAccountData = spoke.getUserAccountData(user);
+  ) internal returns (uint256 requiredDebtValue) {
+    ISpoke.UserAccountData memory userAccountData = _getUserAccountData(spoke, user, true);
+    uint256 totalAdjustedCollateralValue = userAccountData.totalCollateralValue.wadMulDown(
+      userAccountData.avgCollateralFactor
+    );
+    uint256 targetTotalDebtValue = totalAdjustedCollateralValue.wadDivUp(desiredHf);
+    require(
+      userAccountData.totalDebtValueRay / WadRayMath.RAY < targetTotalDebtValue,
+      'User has enough debt'
+    );
+    return targetTotalDebtValue - userAccountData.totalDebtValueRay / WadRayMath.RAY;
+  }
 
-    requiredDebtValue =
-      userAccountData.totalCollateralValue.wadMulUp(userAccountData.avgCollateralFactor).wadDivUp(
-        desiredHf
-      ) - userAccountData.totalDebtValue;
+  // Helper function to get user account data with potential dynamic config refresh
+  function _getUserAccountData(
+    ISpoke spoke,
+    address user,
+    bool refreshConfig
+  ) internal returns (ISpoke.UserAccountData memory) {
+    uint256 snapshot = vm.snapshotState();
+
+    address mockSpoke = address(
+      new MockSpoke(spoke.ORACLE(), Constants.MAX_ALLOWED_USER_RESERVES_LIMIT)
+    );
+
+    address implementation = _getImplementationAddress(address(spoke));
+
+    vm.prank(_getProxyAdminAddress(address(spoke)));
+    ITransparentUpgradeableProxy(address(spoke)).upgradeToAndCall(address(mockSpoke), '');
+
+    vm.prank(user);
+    ISpoke.UserAccountData memory userAccountData = MockSpoke(address(spoke))
+      .calculateUserAccountData(user, refreshConfig);
+
+    vm.prank(_getProxyAdminAddress(address(spoke)));
+    ITransparentUpgradeableProxy(address(spoke)).upgradeToAndCall(implementation, '');
+
+    vm.revertToState(snapshot);
+
+    return userAccountData;
   }
 
   function _getUserHealthFactor(ISpoke spoke, address user) internal view returns (uint256) {
@@ -2242,6 +2271,14 @@ abstract contract Base is Test {
     return premiumShares * drawnIndex;
   }
 
+  function _calculateDebtAssetsToRestore(
+    uint256 drawnSharesToLiquidate,
+    uint256 premiumDebtRayToLiquidate,
+    uint256 drawnIndex
+  ) internal pure returns (uint256) {
+    return drawnSharesToLiquidate.rayMulUp(drawnIndex) + premiumDebtRayToLiquidate.fromRayUp();
+  }
+
   function _calculatePremiumAssetsRay(
     IHub hub,
     uint256 assetId,
@@ -2314,6 +2351,15 @@ abstract contract Base is Test {
     return _getLatestDynamicReserveConfig(spoke, reserveId(spoke)).collateralFactor;
   }
 
+  function _getLiquidationFee(
+    ISpoke spoke,
+    uint256 reserveId,
+    address user
+  ) internal view returns (uint16) {
+    uint24 dynamicConfigKey = spoke.getUserPosition(reserveId, user).dynamicConfigKey;
+    return spoke.getDynamicReserveConfig(reserveId, dynamicConfigKey).liquidationFee;
+  }
+
   function _hasRole(
     IAccessManager authority,
     uint64 role,
@@ -2335,6 +2381,33 @@ abstract contract Base is Test {
     return spoke.getReserve(reserveId).assetId;
   }
 
+  function _spokeMaxCollateralRisk(ISpoke spoke) internal view returns (uint24) {
+    uint24 maxCollateralRisk;
+    for (uint256 reserveId; reserveId < spoke.getReserveCount(); ++reserveId) {
+      uint24 collateralRisk = _getCollateralRisk(spoke, reserveId);
+      if (collateralRisk > maxCollateralRisk) {
+        maxCollateralRisk = collateralRisk;
+      }
+    }
+    return maxCollateralRisk;
+  }
+
+  function _spokeMaxBorrowRate(ISpoke spoke) internal view returns (uint32) {
+    uint32 maxBorrowRate;
+    for (uint256 reserveId; reserveId < spoke.getReserveCount(); ++reserveId) {
+      uint32 borrowRate = (
+        _hub(spoke, reserveId).getAssetDrawnRate(_reserveAssetId(spoke, reserveId)).mulDivUp(
+          PercentageMath.PERCENTAGE_FACTOR,
+          WadRayMath.RAY
+        )
+      ).toUint32();
+      if (borrowRate > maxBorrowRate) {
+        maxBorrowRate = borrowRate;
+      }
+    }
+    return maxBorrowRate;
+  }
+
   function _underlying(ISpoke spoke, uint256 reserveId) internal view returns (TestnetERC20) {
     return TestnetERC20(spoke.getReserve(reserveId).underlying);
   }
@@ -2345,6 +2418,10 @@ abstract contract Base is Test {
       vm.prank(owner);
       underlying.approve(spender, UINT256_MAX);
     }
+  }
+
+  function _reserveDrawnIndex(ISpoke spoke, uint256 reserveId) internal view returns (uint256) {
+    return _hub(spoke, reserveId).getAssetDrawnIndex(_reserveAssetId(spoke, reserveId));
   }
 
   function _deploySpokeWithOracle(
@@ -2483,6 +2560,13 @@ abstract contract Base is Test {
       indexDelta.rayMulUp(initialDrawnShares + initialPremiumShares).percentMulDown(liquidityFee);
   }
 
+  function _calculateMaxSupplyAmount(
+    ISpoke spoke,
+    uint256 reserveId
+  ) internal view returns (uint256) {
+    return MAX_SUPPLY_ASSET_UNITS * 10 ** spoke.getReserve(reserveId).decimals;
+  }
+
   /// @dev Get the liquidation bonus for a given reserve at a user HF
   function _getLiquidationBonus(
     ISpoke spoke,
@@ -2509,7 +2593,7 @@ abstract contract Base is Test {
         .totalCollateralValue
         .percentMulDown(userAccountData.avgCollateralFactor.fromWadDown())
         .percentMulDown(99_00)
-        .wadDivDown(desiredHf) - userAccountData.totalDebtValue;
+        .wadDivDown(desiredHf) - userAccountData.totalDebtValueRay.fromRayUp();
     // buffer to force debt lower (ie making sure resultant debt creates HF that is gt desired)
   }
 
@@ -2539,6 +2623,68 @@ abstract contract Base is Test {
       underlying,
       abi.encodeWithSelector(IERC20Metadata.decimals.selector),
       abi.encode(decimals)
+    );
+  }
+
+  // @dev Requires no previously added assets
+  // @dev Update _assetsSlot below if it changes
+  //   Run: forge inspect Hub storage-layout
+  // @dev Update _addedSharesOffset below if it changes
+  //   Have a look at IHub.Asset struct
+  function _mockSupplySharePrice(
+    IHub hub,
+    uint256 assetId,
+    uint256 totalAddedAssets,
+    uint256 addedShares
+  ) internal {
+    if (!hub.isSpokeListed(assetId, address(spoke1))) {
+      vm.prank(ADMIN);
+      hub.addSpoke(
+        assetId,
+        address(spoke1),
+        IHub.SpokeConfig({
+          active: true,
+          halted: false,
+          addCap: Constants.MAX_ALLOWED_SPOKE_CAP,
+          drawCap: Constants.MAX_ALLOWED_SPOKE_CAP,
+          riskPremiumThreshold: Constants.MAX_ALLOWED_COLLATERAL_RISK
+        })
+      );
+    }
+    Utils.add({
+      hub: hub,
+      assetId: assetId,
+      caller: address(spoke1),
+      amount: totalAddedAssets,
+      user: alice
+    });
+    assertEq(hub.getAddedAssets(assetId), totalAddedAssets, '_mockSupplySharePrice: addedAssets');
+
+    uint256 _assetsSlot = 2;
+    uint256 _addedSharesOffset = 1;
+    vm.store(
+      address(hub),
+      bytes32(
+        uint256(SlotDerivation.deriveMapping({slot: bytes32(_assetsSlot), key: assetId})) +
+          _addedSharesOffset
+      ),
+      bytes32(addedShares)
+    );
+    assertEq(hub.getAddedShares(assetId), addedShares, '_mockSupplySharePrice: addedShares');
+  }
+
+  function _setConstantInterestRateBps(IHub hub, uint256 assetId, uint32 interestRateBps) internal {
+    vm.prank(HUB_ADMIN);
+    hub.setInterestRateData(
+      assetId,
+      abi.encode(
+        IAssetInterestRateStrategy.InterestRateData({
+          optimalUsageRatio: 90_00,
+          baseVariableBorrowRate: interestRateBps,
+          variableRateSlope1: 0,
+          variableRateSlope2: 0
+        })
+      )
     );
   }
 
