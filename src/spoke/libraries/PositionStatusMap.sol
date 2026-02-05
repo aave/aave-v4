@@ -282,6 +282,31 @@ library PositionStatusMap {
     }
   }
 
+  /// @notice Returns the collateral bitmap with a signle reserve as bytes.
+  /// @param reserveId The reserveId to set in the bitmap.
+  /// @param reserveCount The current reserveCount to determine bucket boundaries.
+  /// @return The compressed collateral bitmap (16 bytes per bucket).
+  function getSingleCollateralBitmap(
+    uint256 reserveId,
+    uint256 reserveCount
+  ) internal pure returns (bytes memory) {
+    unchecked {
+      bytes memory result = new bytes(((reserveCount / 256) + 1) * 32);
+
+      uint256 bucket = reserveId / 256;
+      uint256 positionInBucket = reserveId % 256;
+
+      assembly ('memory-safe') {
+        let wordPtr := add(add(result, 32), shl(5, bucket))
+        let currentWord := mload(wordPtr)
+        let updatedWord := or(currentWord, shl(positionInBucket, 1))
+        mstore(wordPtr, updatedWord)
+      }
+
+      return result;
+    }
+  }
+
   /// @notice Compresses collateral bits from a word into a densely packed uint128.
   /// @dev Extracts odd bits (1,3,5,...,255) representing collateral flags for 128 reserves,
   ///      and packs them into consecutive bits (0,1,2,...,127) in a uint128.

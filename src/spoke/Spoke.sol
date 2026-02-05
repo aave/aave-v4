@@ -691,10 +691,7 @@ abstract contract Spoke is
     address user
   ) internal returns (UserAccountData memory) {
     UserAccountData memory accountData = _processUserAccountData(user, true);
-    emit RefreshAllUserDynamicConfig(
-      user,
-      _positionStatus[user].getCollateralBitmap(_reserveCount)
-    );
+    emit RefreshUserDynamicConfig(user, _positionStatus[user].getCollateralBitmap(_reserveCount));
     require(
       accountData.healthFactor >= HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
       HealthFactorBelowThreshold()
@@ -816,7 +813,10 @@ abstract contract Spoke is
 
   function _refreshDynamicConfig(address user, uint256 reserveId) internal {
     _userPositions[user][reserveId].dynamicConfigKey = _reserves[reserveId].dynamicConfigKey;
-    emit RefreshSingleUserDynamicConfig(user, reserveId);
+    emit RefreshUserDynamicConfig(
+      user,
+      PositionStatusMap.getSingleCollateralBitmap(reserveId, _reserveCount)
+    );
   }
 
   /// @notice Refreshes premium for borrowed reserves of `user` with `newRiskPremium`.

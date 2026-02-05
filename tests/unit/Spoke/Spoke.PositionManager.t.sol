@@ -287,7 +287,7 @@ contract SpokePositionManagerTest is SpokeBase {
     collateralReserves[0] = _wethReserveId(spoke1);
     collateralReserves[1] = _daiReserveId(spoke1);
     vm.expectEmit(address(spoke1));
-    emit ISpoke.RefreshAllUserDynamicConfig(alice, _buildCollateralBitmap(collateralReserves));
+    emit ISpoke.RefreshUserDynamicConfig(alice, _buildCollateralBitmap(collateralReserves));
     vm.prank(POSITION_MANAGER);
     spoke1.updateUserDynamicConfig(alice);
 

@@ -1178,6 +1178,34 @@ contract SpokeBase is Base {
     return result;
   }
 
+  function _buildCollateralBitmap(
+    uint256 reserveId,
+    uint256 reserveCount
+  ) internal pure returns (bytes memory) {
+    if (reserveCount == 0) return '';
+
+    uint256 expectedBuckets = (reserveCount + 255) / 256;
+    // Allocate bytes for all buckets (compressed format)
+    bytes memory result = new bytes(expectedBuckets * 32);
+
+    uint256 bucketIndex = reserveId / 256;
+    uint256 bitPosition = reserveId % 256;
+
+    uint256 offset = 32 + bucketIndex * 32;
+
+    // Read current word, set bit, write back
+    uint256 word;
+    assembly {
+      word := mload(add(result, offset))
+    }
+    word |= (1 << bitPosition);
+    assembly {
+      mstore(add(result, offset), word)
+    }
+
+    return result;
+  }
+
   /// @dev Helper to etch spoke's implementation with a new maxUserReservesLimit
   function _updateMaxUserReservesLimit(ISpoke spoke, uint16 newLimit) internal {
     address currentImpl = _getImplementationAddress(address(spoke));

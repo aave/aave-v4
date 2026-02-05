@@ -2720,10 +2720,7 @@ abstract contract Base is Test {
   }
 
   function _assertDynamicConfigRefreshEventsNotEmitted() internal {
-    _assertEventsNotEmitted(
-      ISpoke.RefreshAllUserDynamicConfig.selector,
-      ISpoke.RefreshSingleUserDynamicConfig.selector
-    );
+    _assertEventNotEmitted(ISpoke.RefreshUserDynamicConfig.selector);
   }
 
   // @dev Helper function to get asset position, valid if no time has passed since last action

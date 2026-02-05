@@ -205,12 +205,7 @@ interface ISpoke is ISpokeBase, IAccessManaged, IIntentConsumer, IExtSload, IMul
   /// @notice Emitted when a user's dynamic config is refreshed for all reserves to their latest config key.
   /// @param user The address of the user.
   /// @param collateralBitmap The collateral bitmap containing only the collateral bits for the user.
-  event RefreshAllUserDynamicConfig(address indexed user, bytes collateralBitmap);
-
-  /// @notice Emitted when a user's dynamic config is refreshed for a single reserve to its latest config key.
-  /// @param user The address of the user.
-  /// @param reserveId The identifier of the reserve.
-  event RefreshSingleUserDynamicConfig(address indexed user, uint256 reserveId);
+  event RefreshUserDynamicConfig(address indexed user, bytes collateralBitmap);
 
   /// @notice Emitted on updateUserRiskPremium action.
   /// @param user The owner of the position being modified.

@@ -140,7 +140,7 @@ contract SpokeDynamicConfigTriggersTest is SpokeBase {
     collateralReserves[0] = _usdxReserveId(spoke1);
     collateralReserves[1] = _wethReserveId(spoke1);
     vm.expectEmit(address(spoke1));
-    emit ISpoke.RefreshAllUserDynamicConfig(alice, _buildCollateralBitmap(collateralReserves));
+    emit ISpoke.RefreshUserDynamicConfig(alice, _buildCollateralBitmap(collateralReserves));
     Utils.borrow(spoke1, _daiReserveId(spoke1), alice, 100e18, alice);
 
     assertNotEq(_getUserDynConfigKeys(spoke1, alice), configs);
@@ -173,7 +173,7 @@ contract SpokeDynamicConfigTriggersTest is SpokeBase {
     collateralReserves[0] = _usdxReserveId(spoke1);
     collateralReserves[1] = _wethReserveId(spoke1);
     vm.expectEmit(address(spoke1));
-    emit ISpoke.RefreshAllUserDynamicConfig(alice, _buildCollateralBitmap(collateralReserves));
+    emit ISpoke.RefreshUserDynamicConfig(alice, _buildCollateralBitmap(collateralReserves));
     Utils.withdraw(spoke1, _usdxReserveId(spoke1), alice, 500e6, alice);
 
     assertNotEq(_getUserDynConfigKeys(spoke1, alice), configs);
@@ -201,7 +201,10 @@ contract SpokeDynamicConfigTriggersTest is SpokeBase {
 
     // when enabling, only the relevant asset is refreshed
     vm.expectEmit(address(spoke1));
-    emit ISpoke.RefreshSingleUserDynamicConfig(alice, _wethReserveId(spoke1));
+    emit ISpoke.RefreshUserDynamicConfig(
+      alice,
+      _buildCollateralBitmap(_wethReserveId(spoke1), spoke1.getReserveCount())
+    );
     vm.prank(alice);
     spoke1.setUsingAsCollateral(_wethReserveId(spoke1), true, alice);
 
@@ -216,7 +219,7 @@ contract SpokeDynamicConfigTriggersTest is SpokeBase {
     uint256[] memory remainingCollateral = new uint256[](1);
     remainingCollateral[0] = _wethReserveId(spoke1);
     vm.expectEmit(address(spoke1));
-    emit ISpoke.RefreshAllUserDynamicConfig(alice, _buildCollateralBitmap(remainingCollateral));
+    emit ISpoke.RefreshUserDynamicConfig(alice, _buildCollateralBitmap(remainingCollateral));
     vm.prank(alice);
     spoke1.setUsingAsCollateral(_usdxReserveId(spoke1), false, alice);
 
@@ -241,7 +244,7 @@ contract SpokeDynamicConfigTriggersTest is SpokeBase {
     collateralReserves[0] = _usdxReserveId(spoke1);
     collateralReserves[1] = _wethReserveId(spoke1);
     vm.expectEmit(address(spoke1));
-    emit ISpoke.RefreshAllUserDynamicConfig(alice, _buildCollateralBitmap(collateralReserves));
+    emit ISpoke.RefreshUserDynamicConfig(alice, _buildCollateralBitmap(collateralReserves));
     vm.prank(alice);
     spoke1.updateUserDynamicConfig(alice);
 
@@ -353,7 +356,7 @@ contract SpokeDynamicConfigTriggersTest is SpokeBase {
     collateralReserves[0] = _usdxReserveId(spoke1);
     collateralReserves[1] = _wethReserveId(spoke1);
     vm.expectEmit(address(spoke1));
-    emit ISpoke.RefreshAllUserDynamicConfig(alice, _buildCollateralBitmap(collateralReserves));
+    emit ISpoke.RefreshUserDynamicConfig(alice, _buildCollateralBitmap(collateralReserves));
     vm.prank(caller);
     spoke1.updateUserDynamicConfig(alice);
 

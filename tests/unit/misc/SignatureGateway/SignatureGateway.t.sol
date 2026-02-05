@@ -226,7 +226,7 @@ contract SignatureGatewayTest is SignatureGatewayBaseTest {
 
     // alice has no collateral set up, so bitmap has all zeros (but sized for reserve count)
     vm.expectEmit(address(spoke1));
-    emit ISpoke.RefreshAllUserDynamicConfig(alice, new bytes(32));
+    emit ISpoke.RefreshUserDynamicConfig(alice, new bytes(32));
     vm.prank(vm.randomAddress());
     gateway.updateUserDynamicConfigWithSig(p, signature);
 

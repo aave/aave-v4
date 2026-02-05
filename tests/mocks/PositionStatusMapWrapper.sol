@@ -100,6 +100,13 @@ contract PositionStatusMapWrapper {
     return _p.getCollateralBitmap(reserveCount);
   }
 
+  function getSingleCollateralBitmap(
+    uint256 reserveId,
+    uint256 reserveCount
+  ) external pure returns (bytes memory) {
+    return PositionStatusMap.getSingleCollateralBitmap(reserveId, reserveCount);
+  }
+
   function compressCollateral(uint256 bucket) external pure returns (uint128) {
     return PositionStatusMap.compressCollateral(bucket);
   }

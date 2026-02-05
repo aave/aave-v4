@@ -662,4 +662,73 @@ contract PositionStatusMapTest is Base {
       assertEq(bitSet, p.isUsingAsCollateral(i));
     }
   }
+
+  function test_getSingleCollateralBitmap() public view {
+    bytes memory bitmap = p.getSingleCollateralBitmap(0, 50);
+    assertEq(bitmap.length, 32);
+    uint256 word;
+    assembly {
+      word := mload(add(bitmap, 32))
+    }
+    uint256 expected = (1 << 0);
+    assertEq(word, expected);
+
+    bitmap = p.getSingleCollateralBitmap(7, 50);
+    assertEq(bitmap.length, 32);
+    assembly {
+      word := mload(add(bitmap, 32))
+    }
+    expected = (1 << 7);
+    assertEq(word, expected);
+
+    bitmap = p.getSingleCollateralBitmap(25, 50);
+    assertEq(bitmap.length, 32);
+    assembly {
+      word := mload(add(bitmap, 32))
+    }
+    expected = (1 << 25);
+    assertEq(word, expected);
+
+    bitmap = p.getSingleCollateralBitmap(49, 50);
+    assertEq(bitmap.length, 32);
+    assembly {
+      word := mload(add(bitmap, 32))
+    }
+    expected = (1 << 49);
+    assertEq(word, expected);
+  }
+
+  function test_getSingleCollateralBitmap_fuzz(
+    uint256 reserveId,
+    uint256 reserveCount
+  ) public view {
+    reserveCount = bound(reserveCount, 1, 1024);
+    reserveId = bound(reserveId, 0, reserveCount - 1);
+
+    bytes memory bitmap = p.getSingleCollateralBitmap(reserveId, reserveCount);
+
+    uint256 expectedBuckets = (reserveCount / 256) + 1;
+    assertEq(bitmap.length, expectedBuckets * 32);
+
+    uint256 bucketIndex = reserveId / 256;
+    uint256 bitPosition = reserveId % 256;
+
+    uint256 word;
+    assembly {
+      word := mload(add(add(bitmap, 32), mul(bucketIndex, 32)))
+    }
+    uint256 expected = (1 << bitPosition);
+    assertEq(word, expected);
+
+    // verify other words are empty
+    for (uint256 i; i < expectedBuckets; ++i) {
+      if (i != bucketIndex) {
+        uint256 otherWord;
+        assembly {
+          otherWord := mload(add(add(bitmap, 32), mul(i, 32)))
+        }
+        assertEq(otherWord, 0);
+      }
+    }
+  }
 }
