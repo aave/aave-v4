@@ -262,7 +262,7 @@ abstract contract Base is Test {
     IHub hub;
     uint16 assetId;
     uint8 decimals;
-    uint40 dynamicConfigKey; // key of the last reserve config
+    uint32 dynamicConfigKey; // key of the last reserve config
     bool paused;
     bool frozen;
     bool borrowable;
@@ -1133,12 +1133,12 @@ abstract contract Base is Test {
     ISpoke spoke,
     uint256 reserveId,
     uint32 newMaxLiquidationBonus
-  ) internal pausePrank returns (uint40) {
+  ) internal pausePrank returns (uint32) {
     ISpoke.DynamicReserveConfig memory config = _getLatestDynamicReserveConfig(spoke, reserveId);
     config.maxLiquidationBonus = newMaxLiquidationBonus;
 
     vm.prank(SPOKE_ADMIN);
-    uint40 dynamicConfigKey = spoke.addDynamicReserveConfig(reserveId, config);
+    uint32 dynamicConfigKey = spoke.addDynamicReserveConfig(reserveId, config);
 
     assertEq(_getLatestDynamicReserveConfig(spoke, reserveId), config);
     return dynamicConfigKey;
@@ -1148,12 +1148,12 @@ abstract contract Base is Test {
     ISpoke spoke,
     uint256 reserveId,
     uint16 newLiquidationFee
-  ) internal pausePrank returns (uint40) {
+  ) internal pausePrank returns (uint32) {
     ISpoke.DynamicReserveConfig memory config = _getLatestDynamicReserveConfig(spoke, reserveId);
     config.liquidationFee = newLiquidationFee;
 
     vm.prank(SPOKE_ADMIN);
-    uint40 dynamicConfigKey = spoke.addDynamicReserveConfig(reserveId, config);
+    uint32 dynamicConfigKey = spoke.addDynamicReserveConfig(reserveId, config);
 
     assertEq(_getLatestDynamicReserveConfig(spoke, reserveId), config);
     return dynamicConfigKey;
@@ -1164,13 +1164,13 @@ abstract contract Base is Test {
     uint256 reserveId,
     uint256 newCollateralFactor,
     uint256 newLiquidationBonus
-  ) internal pausePrank returns (uint40) {
+  ) internal pausePrank returns (uint32) {
     ISpoke.DynamicReserveConfig memory config = _getLatestDynamicReserveConfig(spoke, reserveId);
     config.collateralFactor = newCollateralFactor.toUint16();
     config.maxLiquidationBonus = newLiquidationBonus.toUint32();
 
     vm.prank(SPOKE_ADMIN);
-    uint40 dynamicConfigKey = spoke.addDynamicReserveConfig(reserveId, config);
+    uint32 dynamicConfigKey = spoke.addDynamicReserveConfig(reserveId, config);
 
     assertEq(_getLatestDynamicReserveConfig(spoke, reserveId), config);
     return dynamicConfigKey;
@@ -1180,11 +1180,11 @@ abstract contract Base is Test {
     ISpoke spoke,
     uint256 reserveId,
     uint256 newCollateralFactor
-  ) internal pausePrank returns (uint40) {
+  ) internal pausePrank returns (uint32) {
     ISpoke.DynamicReserveConfig memory config = _getLatestDynamicReserveConfig(spoke, reserveId);
     config.collateralFactor = newCollateralFactor.toUint16();
     vm.prank(SPOKE_ADMIN);
-    uint40 dynamicConfigKey = spoke.addDynamicReserveConfig(reserveId, config);
+    uint32 dynamicConfigKey = spoke.addDynamicReserveConfig(reserveId, config);
 
     assertEq(_getLatestDynamicReserveConfig(spoke, reserveId), config);
     return dynamicConfigKey;
@@ -1193,7 +1193,7 @@ abstract contract Base is Test {
   function _updateCollateralFactorAtKey(
     ISpoke spoke,
     uint256 reserveId,
-    uint40 dynamicConfigKey,
+    uint32 dynamicConfigKey,
     uint256 newCollateralFactor
   ) internal pausePrank {
     ISpoke.DynamicReserveConfig memory config = spoke.getDynamicReserveConfig(
@@ -1415,7 +1415,7 @@ abstract contract Base is Test {
   function _getReserveLastDynamicConfigKey(
     ISpoke spoke,
     uint256 reserveId
-  ) internal view returns (uint40) {
+  ) internal view returns (uint32) {
     return spoke.getReserve(reserveId).dynamicConfigKey;
   }
 
@@ -2303,7 +2303,7 @@ abstract contract Base is Test {
     uint256 reserveId,
     address user
   ) internal view returns (uint16) {
-    uint40 dynamicConfigKey = spoke.getUserPosition(reserveId, user).dynamicConfigKey;
+    uint32 dynamicConfigKey = spoke.getUserPosition(reserveId, user).dynamicConfigKey;
     return spoke.getDynamicReserveConfig(reserveId, dynamicConfigKey).collateralFactor;
   }
 
