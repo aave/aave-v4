@@ -7,7 +7,7 @@ pragma solidity ^0.8.20;
 /// @notice Provides functions to perform percentage calculations with explicit rounding.
 /// @dev Percentages are defined by default with 2 decimals of precision (100.00). The precision is indicated by `PERCENTAGE_FACTOR`.
 library PercentageMath {
-  // Maximum percentage factor in BPS (100.00%)
+  // Percentage factor in BPS (100.00%)
   uint256 internal constant PERCENTAGE_FACTOR = 1e4;
 
   /// @notice Executes a percentage multiplication, rounded down.

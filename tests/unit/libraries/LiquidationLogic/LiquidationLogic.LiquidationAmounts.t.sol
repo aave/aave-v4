@@ -7,6 +7,8 @@ import 'tests/unit/libraries/LiquidationLogic/LiquidationLogic.Base.t.sol';
 contract LiquidationLogicLiquidationAmountsTest is LiquidationLogicBaseTest {
   using MathUtils for uint256;
   using PercentageMath for uint256;
+  using WadRayMath for uint256;
+  using LiquidationLogic for uint256;
 
   function test_calculateLiquidationAmounts_fuzz_EnoughCollateral_NoCollateralDust(
     LiquidationLogic.CalculateLiquidationAmountsParams memory params
@@ -15,49 +17,38 @@ contract LiquidationLogicLiquidationAmountsTest is LiquidationLogicBaseTest {
     LiquidationLogic.LiquidationAmounts
       memory expectedLiquidationAmounts = _calculateRawLiquidationAmounts(params);
 
-    params.collateralReserveBalance = bound(
-      params.collateralReserveBalance,
-      expectedLiquidationAmounts.collateralToLiquidate +
-        _convertValueToAmount(
-          LiquidationLogic.DUST_LIQUIDATION_THRESHOLD,
-          params.collateralAssetPrice,
-          params.collateralAssetUnit
-        ) +
-        1,
-      expectedLiquidationAmounts.collateralToLiquidate +
-        _convertValueToAmount(
-          LiquidationLogic.DUST_LIQUIDATION_THRESHOLD,
-          params.collateralAssetPrice,
-          params.collateralAssetUnit
-        ) +
+    uint256 dustSharesBufferLowerBound = params.collateralReserveHub.previewRemoveByAssets(
+      params.collateralReserveAssetId,
+      _convertValueToAmount(
+        LiquidationLogic.DUST_LIQUIDATION_THRESHOLD,
+        params.collateralAssetPrice,
+        10 ** params.collateralAssetDecimals
+      ) + 1
+    );
+
+    params.suppliedShares = bound(
+      params.suppliedShares,
+      expectedLiquidationAmounts.collateralSharesToLiquidate + dustSharesBufferLowerBound + 1,
+      expectedLiquidationAmounts.collateralSharesToLiquidate +
+        dustSharesBufferLowerBound +
+        1 +
         MAX_SUPPLY_AMOUNT
     );
 
     params.debtToCover = bound(
       params.debtToCover,
-      expectedLiquidationAmounts.debtToLiquidate,
-      MAX_SUPPLY_AMOUNT
+      _calculateDebtAssetsToRestore(
+        expectedLiquidationAmounts.drawnSharesToLiquidate,
+        expectedLiquidationAmounts.premiumDebtRayToLiquidate,
+        params.drawnIndex
+      ),
+      UINT256_MAX
     );
 
     LiquidationLogic.LiquidationAmounts memory liquidationAmounts = liquidationLogicWrapper
       .calculateLiquidationAmounts(params);
 
-    assertEq(
-      liquidationAmounts.collateralToLiquidate,
-      expectedLiquidationAmounts.collateralToLiquidate,
-      'collateralToLiquidate'
-    );
-    assertApproxEqAbs(
-      liquidationAmounts.collateralToLiquidator,
-      expectedLiquidationAmounts.collateralToLiquidator,
-      1,
-      'collateralToLiquidator'
-    );
-    assertEq(
-      liquidationAmounts.debtToLiquidate,
-      expectedLiquidationAmounts.debtToLiquidate,
-      'debtToLiquidate'
-    );
+    assertApproxEqAbs(liquidationAmounts, expectedLiquidationAmounts);
   }
 
   function test_calculateLiquidationAmounts_fuzz_EnoughCollateral_NoDebtLeft(
@@ -68,79 +59,42 @@ contract LiquidationLogicLiquidationAmountsTest is LiquidationLogicBaseTest {
     LiquidationLogic.LiquidationAmounts
       memory expectedLiquidationAmounts = _calculateRawLiquidationAmounts(params);
 
-    params.collateralReserveBalance = bound(
-      params.collateralReserveBalance,
-      expectedLiquidationAmounts.collateralToLiquidate,
-      expectedLiquidationAmounts.collateralToLiquidate + MAX_SUPPLY_AMOUNT
+    params.suppliedShares = bound(
+      params.suppliedShares,
+      expectedLiquidationAmounts.collateralSharesToLiquidate,
+      expectedLiquidationAmounts.collateralSharesToLiquidate + MAX_SUPPLY_AMOUNT
     );
 
-    params.debtToCover = bound(params.debtToCover, params.debtReserveBalance, UINT256_MAX);
+    params.debtToCover = bound(
+      params.debtToCover,
+      _calculateDebtAssetsToRestore(
+        expectedLiquidationAmounts.drawnSharesToLiquidate,
+        expectedLiquidationAmounts.premiumDebtRayToLiquidate,
+        params.drawnIndex
+      ),
+      UINT256_MAX
+    );
 
     LiquidationLogic.LiquidationAmounts memory liquidationAmounts = liquidationLogicWrapper
       .calculateLiquidationAmounts(params);
 
-    assertEq(
-      liquidationAmounts.collateralToLiquidate,
-      expectedLiquidationAmounts.collateralToLiquidate,
-      'collateralToLiquidate'
-    );
-    assertApproxEqAbs(
-      liquidationAmounts.collateralToLiquidator,
-      expectedLiquidationAmounts.collateralToLiquidator,
-      1,
-      'collateralToLiquidator'
-    );
-    assertEq(liquidationAmounts.debtToLiquidate, params.debtReserveBalance, 'debtToLiquidate');
+    assertApproxEqAbs(liquidationAmounts, expectedLiquidationAmounts);
   }
 
   function test_calculateLiquidationAmounts_fuzz_EnoughCollateral_CollateralDust(
     LiquidationLogic.CalculateLiquidationAmountsParams memory params
   ) public {
-    params = _bound(params);
-    params.debtToCover = bound(params.debtToCover, params.debtReserveBalance, UINT256_MAX);
+    params = _boundWithCollateralDustAdjustment(params);
     LiquidationLogic.LiquidationAmounts
       memory expectedLiquidationAmounts = _calculateRawLiquidationAmounts(params);
-
-    params.collateralReserveBalance = bound(
-      params.collateralReserveBalance,
-      expectedLiquidationAmounts.collateralToLiquidate + 1,
-      expectedLiquidationAmounts.collateralToLiquidate +
-        _convertValueToAmount(
-          LiquidationLogic.DUST_LIQUIDATION_THRESHOLD - 1,
-          params.collateralAssetPrice,
-          params.collateralAssetUnit
-        )
-    );
-
-    if (expectedLiquidationAmounts.debtToLiquidate < params.debtReserveBalance) {
+    if (expectedLiquidationAmounts.drawnSharesToLiquidate < params.drawnShares) {
       expectedLiquidationAmounts = _calculateAdjustedLiquidationAmounts(params);
     }
-
-    params.debtToCover = bound(
-      params.debtToCover,
-      expectedLiquidationAmounts.debtToLiquidate,
-      MAX_SUPPLY_AMOUNT
-    );
 
     LiquidationLogic.LiquidationAmounts memory liquidationAmounts = liquidationLogicWrapper
       .calculateLiquidationAmounts(params);
 
-    assertEq(
-      liquidationAmounts.collateralToLiquidate,
-      expectedLiquidationAmounts.collateralToLiquidate,
-      'collateralToLiquidate'
-    );
-    assertApproxEqAbs(
-      liquidationAmounts.collateralToLiquidator,
-      expectedLiquidationAmounts.collateralToLiquidator,
-      1,
-      'collateralToLiquidator'
-    );
-    assertEq(
-      liquidationAmounts.debtToLiquidate,
-      expectedLiquidationAmounts.debtToLiquidate,
-      'debtToLiquidate'
-    );
+    assertApproxEqAbs(liquidationAmounts, expectedLiquidationAmounts);
   }
 
   function test_calculateLiquidationAmounts_fuzz_InsufficientCollateral(
@@ -149,11 +103,11 @@ contract LiquidationLogicLiquidationAmountsTest is LiquidationLogicBaseTest {
     params = _bound(params);
     LiquidationLogic.LiquidationAmounts
       memory rawLiquidationAmounts = _calculateRawLiquidationAmounts(params);
-    vm.assume(rawLiquidationAmounts.collateralToLiquidate > 0);
-    params.collateralReserveBalance = bound(
-      params.collateralReserveBalance,
+    vm.assume(rawLiquidationAmounts.collateralSharesToLiquidate > 0);
+    params.suppliedShares = bound(
+      params.suppliedShares,
       0,
-      rawLiquidationAmounts.collateralToLiquidate - 1
+      rawLiquidationAmounts.collateralSharesToLiquidate - 1
     );
 
     LiquidationLogic.LiquidationAmounts
@@ -161,41 +115,35 @@ contract LiquidationLogicLiquidationAmountsTest is LiquidationLogicBaseTest {
 
     params.debtToCover = bound(
       params.debtToCover,
-      expectedLiquidationAmounts.debtToLiquidate,
+      _calculateDebtAssetsToRestore(
+        expectedLiquidationAmounts.drawnSharesToLiquidate,
+        expectedLiquidationAmounts.premiumDebtRayToLiquidate,
+        params.drawnIndex
+      ),
       MAX_SUPPLY_AMOUNT
     );
 
     LiquidationLogic.LiquidationAmounts memory liquidationAmounts = liquidationLogicWrapper
       .calculateLiquidationAmounts(params);
 
-    assertEq(
-      liquidationAmounts.collateralToLiquidate,
-      expectedLiquidationAmounts.collateralToLiquidate,
-      'collateralToLiquidate'
-    );
-    assertApproxEqAbs(
-      liquidationAmounts.collateralToLiquidator,
-      expectedLiquidationAmounts.collateralToLiquidator,
-      1,
-      'collateralToLiquidator'
-    );
-    assertEq(
-      liquidationAmounts.debtToLiquidate,
-      expectedLiquidationAmounts.debtToLiquidate,
-      'debtToLiquidate'
-    );
+    assertApproxEqAbs(liquidationAmounts, expectedLiquidationAmounts);
   }
 
   function test_calculateLiquidationAmounts_fuzz_revertsWith_MustNotLeaveDust_Debt(
     LiquidationLogic.CalculateLiquidationAmountsParams memory params
   ) public {
     params = _boundWithDebtDustAdjustment(params);
-    if (params.debtToCover >= params.debtReserveBalance) {
-      params.debtToCover = params.debtReserveBalance - 1;
+    uint256 debtAssetsToRestore = _calculateDebtAssetsToRestore(
+      params.drawnShares,
+      params.premiumDebtRay,
+      params.drawnIndex
+    );
+    if (params.debtToCover >= debtAssetsToRestore) {
+      params.debtToCover = debtAssetsToRestore - 1;
     }
     LiquidationLogic.LiquidationAmounts
       memory rawLiquidationAmounts = _calculateRawLiquidationAmounts(params);
-    params.collateralReserveBalance = rawLiquidationAmounts.collateralToLiquidate;
+    params.suppliedShares = rawLiquidationAmounts.collateralSharesToLiquidate;
 
     vm.expectRevert(ISpoke.MustNotLeaveDust.selector);
     liquidationLogicWrapper.calculateLiquidationAmounts(params);
@@ -204,52 +152,50 @@ contract LiquidationLogicLiquidationAmountsTest is LiquidationLogicBaseTest {
   function test_calculateLiquidationAmounts_fuzz_revertsWith_MustNotLeaveDust_Collateral(
     LiquidationLogic.CalculateLiquidationAmountsParams memory params
   ) public {
-    params = _bound(params);
-    params.debtToCover = bound(params.debtToCover, params.debtReserveBalance, UINT256_MAX);
-
+    params = _boundWithCollateralDustAdjustment(params);
     LiquidationLogic.LiquidationAmounts
-      memory expectedLiquidationAmounts = _calculateRawLiquidationAmounts(params);
-
-    params.collateralReserveBalance = bound(
-      params.collateralReserveBalance,
-      expectedLiquidationAmounts.collateralToLiquidate + 1,
-      expectedLiquidationAmounts.collateralToLiquidate +
-        _convertValueToAmount(
-          LiquidationLogic.DUST_LIQUIDATION_THRESHOLD - 1,
-          params.collateralAssetPrice,
-          params.collateralAssetUnit
-        )
-    );
-
-    if (expectedLiquidationAmounts.debtToLiquidate < params.debtReserveBalance) {
-      expectedLiquidationAmounts = _calculateAdjustedLiquidationAmounts(params);
-    }
-
-    vm.assume(expectedLiquidationAmounts.debtToLiquidate > 0);
-    params.debtToCover = expectedLiquidationAmounts.debtToLiquidate - 1;
+      memory expectedLiquidationAmounts = _calculateAdjustedLiquidationAmounts(params);
+    vm.assume(expectedLiquidationAmounts.premiumDebtRayToLiquidate > 0);
+    params.debtToCover =
+      _calculateDebtAssetsToRestore(
+        expectedLiquidationAmounts.drawnSharesToLiquidate,
+        expectedLiquidationAmounts.premiumDebtRayToLiquidate,
+        params.drawnIndex
+      ) - 1;
 
     vm.expectRevert(ISpoke.MustNotLeaveDust.selector);
     liquidationLogicWrapper.calculateLiquidationAmounts(params);
   }
 
-  function test_calculateLiquidationAmounts_EnoughCollateral() public view {
+  function test_calculateLiquidationAmounts_EnoughCollateral() public {
     // variable liquidation bonus is max: 120%
     // liquidation penalty: 1.2 * 0.5 = 0.6
     // debtToTarget = $10000 * (1 - 0.8) / (1 - 0.6) / $2000 = 2.5
-    // max debt to liquidate = min(2.5, 5, 3) = 2.5
+    // max debt to liquidate = min(2.5, 3 * 1.6 + 0.5, 3) = 2.5
+    // premiumDebtRayToLiquidate = 0.5
+    // drawnSharesToLiquidate = (2.5 - 0.5) / 1.6 = 1.25
     // collateral to liquidate = 2.5 * 120% * $2000 / $1 = 6000
-    // bonus collateral = 6000 - 6000 / 120% = 1000
-    // collateral fee = 1000 * 10% = 100
-    // collateral to liquidator = 6000 - 100 = 5900
+    // collateral shares to liquidate = 6000 / 1.25 = 4800
+    // bonus collateral shares = 4800 - 4800 / 120% = 800
+    // collateral fee shares = 800 * 10% = 80
+    // collateral shares to liquidator = 4800 - 80 = 4720
+    IHub collateralReserveHub = hub1;
+    uint256 collateralAssetId = vm.randomUint(0, collateralReserveHub.getAssetCount() - 1);
+    _mockSupplySharePrice(collateralReserveHub, collateralAssetId, 12_500.25e6, 10_000e6);
+
     LiquidationLogic.LiquidationAmounts memory liquidationAmounts = liquidationLogicWrapper
       .calculateLiquidationAmounts(
         LiquidationLogic.CalculateLiquidationAmountsParams({
-          collateralReserveBalance: 11_000e6,
-          collateralAssetUnit: 10 ** 6,
+          collateralReserveHub: collateralReserveHub,
+          collateralReserveAssetId: collateralAssetId,
+          suppliedShares: 10_000e6,
+          collateralAssetDecimals: 6,
           collateralAssetPrice: 1e8,
-          debtReserveBalance: 5e18,
-          totalDebtValue: 10_000e26,
-          debtAssetUnit: 10 ** 18,
+          drawnShares: 3e18,
+          premiumDebtRay: 0.5e18 * 1e27,
+          drawnIndex: 1.6e27,
+          totalDebtValueRay: 10_000e26 * WadRayMath.RAY,
+          debtAssetDecimals: 18,
           debtAssetPrice: 2000e8,
           debtToCover: 3e18,
           collateralFactor: 50_00,
@@ -262,31 +208,48 @@ contract LiquidationLogicLiquidationAmountsTest is LiquidationLogicBaseTest {
         })
       );
 
-    assertEq(liquidationAmounts.collateralToLiquidate, 6000e6, 'collateralToLiquidate');
-    assertEq(liquidationAmounts.collateralToLiquidator, 5900e6, 'collateralToLiquidator');
-    assertEq(liquidationAmounts.debtToLiquidate, 2.5e18, 'debtToLiquidate');
+    assertApproxEqAbs(
+      liquidationAmounts,
+      LiquidationLogic.LiquidationAmounts({
+        collateralSharesToLiquidate: 4800e6,
+        collateralSharesToLiquidator: 4720e6,
+        drawnSharesToLiquidate: 1.25e18,
+        premiumDebtRayToLiquidate: 0.5e18 * 1e27
+      })
+    );
   }
 
-  function test_calculateLiquidationAmounts_InsufficientCollateral() public view {
+  function test_calculateLiquidationAmounts_InsufficientCollateral() public {
     // variable liquidation bonus is max: 120%
     // liquidation penalty: 1.2 * 0.5 = 0.6
     // debtToTarget = $10000 * (1 - 0.8) / (1 - 0.6) / $2000 = 2.5
-    // max debt to liquidate = min(2.5, 5, 3) = 2.5
+    // max debt to liquidate = min(2.5, 3 * 1.6 + 0.5, 3) = 2.5
     // collateral to liquidate = 2.5 * 120% * $2000 / $1 = 6000
-    // total reserve collateral = 3000
-    // adjusted debt to liquidate = 3000 / 120% * $1 / $2000 = 1.25
-    // bonus collateral = 3000 - 3000 / 120% = 500
-    // collateral fee = 500 * 10% = 50
-    // collateral to liquidator = 3000 - 50 = 2950
+    // collateral shares to liquidate = 6000 / 1.25 = 4800
+    // supplied shares: 4500
+    // adjusted debt to liquidate = 4500 * 1.25 / 120% * $1 / $2000 = 2.34375
+    // premiumDebtRayToLiquidate = 0.5
+    // drawnSharesToLiquidate = (2.34375 - 0.5) / 1.6 = 1.15234375
+    // bonus collateral shares = 4500 - 4500 / 120% = 750
+    // collateral fee shares = 750 * 10% = 75
+    // collateral shares to liquidator = 4500 - 75 = 4425
+    IHub collateralReserveHub = hub1;
+    uint256 collateralAssetId = vm.randomUint(0, collateralReserveHub.getAssetCount() - 1);
+    _mockSupplySharePrice(collateralReserveHub, collateralAssetId, 12500.25e6, 10_000e6);
+
     LiquidationLogic.LiquidationAmounts memory liquidationAmounts = liquidationLogicWrapper
       .calculateLiquidationAmounts(
         LiquidationLogic.CalculateLiquidationAmountsParams({
-          collateralReserveBalance: 3000e6,
-          collateralAssetUnit: 10 ** 6,
+          collateralReserveHub: collateralReserveHub,
+          collateralReserveAssetId: collateralAssetId,
+          suppliedShares: 4500e6,
+          collateralAssetDecimals: 6,
           collateralAssetPrice: 1e8,
-          debtReserveBalance: 5e18,
-          totalDebtValue: 10_000e26,
-          debtAssetUnit: 10 ** 18,
+          drawnShares: 3e18,
+          premiumDebtRay: 0.5e18 * 1e27,
+          drawnIndex: 1.6e27,
+          totalDebtValueRay: 10_000e26 * WadRayMath.RAY,
+          debtAssetDecimals: 18,
           debtAssetPrice: 2000e8,
           debtToCover: 3e18,
           collateralFactor: 50_00,
@@ -299,9 +262,15 @@ contract LiquidationLogicLiquidationAmountsTest is LiquidationLogicBaseTest {
         })
       );
 
-    assertEq(liquidationAmounts.collateralToLiquidate, 3000e6, 'collateralToLiquidate');
-    assertEq(liquidationAmounts.collateralToLiquidator, 2950e6, 'collateralToLiquidator');
-    assertEq(liquidationAmounts.debtToLiquidate, 1.25e18, 'debtToLiquidate');
+    assertApproxEqAbs(
+      liquidationAmounts,
+      LiquidationLogic.LiquidationAmounts({
+        collateralSharesToLiquidate: 4500e6,
+        collateralSharesToLiquidator: 4425e6,
+        drawnSharesToLiquidate: 1.15234375e18,
+        premiumDebtRayToLiquidate: 0.5e18 * 1e27
+      })
+    );
   }
 
   function _calculateRawLiquidationAmounts(
@@ -314,24 +283,35 @@ contract LiquidationLogicLiquidationAmountsTest is LiquidationLogicBaseTest {
       maxLiquidationBonus: params.maxLiquidationBonus
     });
 
-    uint256 debtToLiquidate = liquidationLogicWrapper.calculateDebtToLiquidate(
-      _getCalculateDebtToLiquidateParams(params)
+    (uint256 drawnSharesToLiquidate, uint256 premiumDebtRayToLiquidate) = liquidationLogicWrapper
+      .calculateDebtToLiquidate(_getCalculateDebtToLiquidateParams(params));
+    uint256 debtRayToLiquidate = drawnSharesToLiquidate * params.drawnIndex +
+      premiumDebtRayToLiquidate;
+    uint256 collateralToLiquidate = Math.mulDiv(
+      debtRayToLiquidate,
+      params.debtAssetPrice * (10 ** params.collateralAssetDecimals) * liquidationBonus,
+      (10 ** params.debtAssetDecimals) *
+        params.collateralAssetPrice *
+        PercentageMath.PERCENTAGE_FACTOR *
+        WadRayMath.RAY,
+      Math.Rounding.Floor
     );
-    uint256 collateralToLiquidate = debtToLiquidate.mulDivDown(
-      params.debtAssetPrice * params.collateralAssetUnit * liquidationBonus,
-      params.debtAssetUnit * params.collateralAssetPrice * PercentageMath.PERCENTAGE_FACTOR
+    uint256 collateralSharesToLiquidate = params.collateralReserveHub.previewAddByAssets(
+      params.collateralReserveAssetId,
+      collateralToLiquidate
     );
-    uint256 collateralToLiquidator = _calculateCollateralToLiquidator(
-      collateralToLiquidate,
+    uint256 collateralSharesToLiquidator = _calculateCollateralSharesToLiquidator(
+      collateralSharesToLiquidate,
       liquidationBonus,
       params.liquidationFee
     );
 
     return
       LiquidationLogic.LiquidationAmounts({
-        collateralToLiquidate: collateralToLiquidate,
-        collateralToLiquidator: collateralToLiquidator,
-        debtToLiquidate: debtToLiquidate
+        collateralSharesToLiquidate: collateralSharesToLiquidate,
+        collateralSharesToLiquidator: collateralSharesToLiquidator,
+        drawnSharesToLiquidate: drawnSharesToLiquidate,
+        premiumDebtRayToLiquidate: premiumDebtRayToLiquidate
       });
   }
 
@@ -345,34 +325,130 @@ contract LiquidationLogicLiquidationAmountsTest is LiquidationLogicBaseTest {
       maxLiquidationBonus: params.maxLiquidationBonus
     });
 
-    uint256 collateralToLiquidate = params.collateralReserveBalance;
-    uint256 collateralToLiquidator = _calculateCollateralToLiquidator(
-      collateralToLiquidate,
+    uint256 collateralSharesToLiquidate = params.suppliedShares;
+    uint256 collateralSharesToLiquidator = _calculateCollateralSharesToLiquidator(
+      collateralSharesToLiquidate,
       liquidationBonus,
       params.liquidationFee
     );
-    uint256 debtToLiquidate = collateralToLiquidate
-      .mulDivUp(
-        params.collateralAssetPrice * params.debtAssetUnit * PercentageMath.PERCENTAGE_FACTOR,
-        params.collateralAssetUnit * params.debtAssetPrice * liquidationBonus
-      )
-      .min(params.debtReserveBalance);
+
+    uint256 debtRayToLiquidate = Math.mulDiv(
+      params.collateralReserveHub.previewAddByShares(
+        params.collateralReserveAssetId,
+        collateralSharesToLiquidate
+      ),
+      params.collateralAssetPrice *
+        (10 ** params.debtAssetDecimals) *
+        PercentageMath.PERCENTAGE_FACTOR *
+        WadRayMath.RAY,
+      (10 ** params.collateralAssetDecimals) * params.debtAssetPrice * liquidationBonus,
+      Math.Rounding.Ceil
+    );
+
+    uint256 premiumDebtRayToLiquidate = debtRayToLiquidate.fromRayUp().toRay().min(
+      params.premiumDebtRay
+    );
+    uint256 drawnSharesToLiquidate;
+    if (premiumDebtRayToLiquidate < debtRayToLiquidate) {
+      drawnSharesToLiquidate = (debtRayToLiquidate - premiumDebtRayToLiquidate).divUp(
+        params.drawnIndex
+      );
+    }
+
+    if (drawnSharesToLiquidate > params.drawnShares) {
+      drawnSharesToLiquidate = params.drawnShares;
+    }
 
     return
       LiquidationLogic.LiquidationAmounts({
-        collateralToLiquidate: collateralToLiquidate,
-        collateralToLiquidator: collateralToLiquidator,
-        debtToLiquidate: debtToLiquidate
+        collateralSharesToLiquidate: collateralSharesToLiquidate,
+        collateralSharesToLiquidator: collateralSharesToLiquidator,
+        drawnSharesToLiquidate: drawnSharesToLiquidate,
+        premiumDebtRayToLiquidate: premiumDebtRayToLiquidate
       });
   }
 
-  function _calculateCollateralToLiquidator(
-    uint256 collateralToLiquidate,
+  function _boundWithCollateralDustAdjustment(
+    LiquidationLogic.CalculateLiquidationAmountsParams memory params
+  ) internal virtual returns (LiquidationLogic.CalculateLiquidationAmountsParams memory) {
+    params = _bound(params);
+    params.drawnShares = MAX_SUPPLY_ASSET_UNITS * 10 ** params.debtAssetDecimals;
+    params.debtToCover = UINT256_MAX;
+
+    // bound price such that 1 supply share is worth less than DUST_LIQUIDATION_THRESHOLD
+    params.collateralAssetPrice = bound(
+      params.collateralAssetPrice,
+      1,
+      params.collateralReserveHub.previewAddByAssets(
+        params.collateralReserveAssetId,
+        _convertDecimals(
+          LiquidationLogic.DUST_LIQUIDATION_THRESHOLD,
+          18,
+          params.collateralAssetDecimals,
+          false
+        )
+      )
+    );
+
+    LiquidationLogic.LiquidationAmounts
+      memory expectedLiquidationAmounts = _calculateRawLiquidationAmounts(params);
+
+    uint256 dustSharesBufferUpperBound = params.collateralReserveHub.previewAddByAssets(
+      params.collateralReserveAssetId,
+      _convertValueToAmount(
+        LiquidationLogic.DUST_LIQUIDATION_THRESHOLD - 1,
+        params.collateralAssetPrice,
+        10 ** params.collateralAssetDecimals
+      )
+    );
+
+    params.suppliedShares = bound(
+      params.suppliedShares,
+      expectedLiquidationAmounts.collateralSharesToLiquidate + 1,
+      expectedLiquidationAmounts.collateralSharesToLiquidate + _max(1, dustSharesBufferUpperBound)
+    );
+
+    expectedLiquidationAmounts = _calculateAdjustedLiquidationAmounts(params);
+
+    params.debtToCover = bound(
+      params.debtToCover,
+      _calculateDebtAssetsToRestore(
+        expectedLiquidationAmounts.drawnSharesToLiquidate,
+        expectedLiquidationAmounts.premiumDebtRayToLiquidate,
+        params.drawnIndex
+      ),
+      UINT256_MAX
+    );
+
+    return params;
+  }
+
+  function _calculateCollateralSharesToLiquidator(
+    uint256 collateralSharesToLiquidate,
     uint256 liquidationBonus,
     uint256 liquidationFee
   ) internal pure returns (uint256) {
-    uint256 bonusCollateral = collateralToLiquidate -
-      collateralToLiquidate.percentDivUp(liquidationBonus);
-    return collateralToLiquidate - bonusCollateral.percentMulDown(liquidationFee);
+    uint256 bonusCollateralShares = collateralSharesToLiquidate -
+      collateralSharesToLiquidate.percentDivUp(liquidationBonus);
+    return collateralSharesToLiquidate - bonusCollateralShares.percentMulDown(liquidationFee);
+  }
+
+  function assertApproxEqAbs(
+    LiquidationLogic.LiquidationAmounts memory a,
+    LiquidationLogic.LiquidationAmounts memory b
+  ) internal pure {
+    assertEq(
+      a.collateralSharesToLiquidate,
+      b.collateralSharesToLiquidate,
+      'collateralSharesToLiquidate'
+    );
+    assertApproxEqAbs(
+      a.collateralSharesToLiquidator,
+      b.collateralSharesToLiquidator,
+      1,
+      'collateralSharesToLiquidator'
+    );
+    assertEq(a.drawnSharesToLiquidate, b.drawnSharesToLiquidate, 'drawnSharesToLiquidate');
+    assertEq(a.premiumDebtRayToLiquidate, b.premiumDebtRayToLiquidate, 'premiumDebtRayToLiquidate');
   }
 }
