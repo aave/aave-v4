@@ -124,8 +124,8 @@ interface ISpoke is ISpokeBase, IAccessManaged, IIntentConsumer, IExtSload, IMul
   /// @dev riskPremium The risk premium of the user position, expressed in BPS.
   /// @dev avgCollateralFactor The weighted average collateral factor of the user position, expressed in WAD.
   /// @dev healthFactor The health factor of the user position, expressed in WAD. 1e18 represents a health factor of 1.00.
-  /// @dev totalCollateralValue The total collateral value of the user position, expressed in units of base currency. 1e26 represents 1 USD.
-  /// @dev totalDebtValue The total debt value of the user position, expressed in units of base currency. 1e26 represents 1 USD.
+  /// @dev totalCollateralValue The total collateral value of the user position, expressed in units of Value.
+  /// @dev totalDebtValueRay The total debt value of the user position, expressed in units of Value and scaled by RAY.
   /// @dev activeCollateralCount The number of active collaterals, which includes reserves with `collateralFactor` > 0, `enabledAsCollateral` and `suppliedAmount` > 0.
   /// @dev borrowCount The number of borrowed reserves of the user position.
   struct UserAccountData {
@@ -133,7 +133,7 @@ interface ISpoke is ISpokeBase, IAccessManaged, IIntentConsumer, IExtSload, IMul
     uint256 avgCollateralFactor;
     uint256 healthFactor;
     uint256 totalCollateralValue;
-    uint256 totalDebtValue;
+    uint256 totalDebtValueRay;
     uint256 activeCollateralCount;
     uint256 borrowCount;
   }
@@ -252,6 +252,9 @@ interface ISpoke is ISpokeBase, IAccessManaged, IIntentConsumer, IExtSload, IMul
 
   /// @notice Thrown when adding a new reserve if an asset id is invalid.
   error InvalidAssetId();
+
+  /// @notice Thrown when adding a new reserve if the asset decimals are invalid.
+  error InvalidAssetDecimals();
 
   /// @notice Thrown when updating a reserve if it is not listed.
   error ReserveNotListed();

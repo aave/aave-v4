@@ -160,8 +160,16 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
 
     // Now since debt has grown, weth supply is not enough to cover debt, hence rp changes
     // usdx is enough to cover remaining debt
-    uint256 daiDebtValue = _getDebtValue(spoke1, reservesIds.dai, accruedDaiDebt + daiPremiumDebt);
-    uint256 usdxSupplyValue = _getValue(spoke1, reservesIds.usdx, vars.usdxSupplyAmount);
+    uint256 daiDebtValue = _convertAmountToValue(
+      spoke1,
+      reservesIds.dai,
+      accruedDaiDebt + daiPremiumDebt
+    );
+    uint256 usdxSupplyValue = _convertAmountToValue(
+      spoke1,
+      reservesIds.usdx,
+      vars.usdxSupplyAmount
+    );
     assertLt(daiDebtValue, usdxSupplyValue);
 
     vars.expectedUserRiskPremium = _calculateExpectedUserRP(spoke1, alice);
@@ -571,10 +579,10 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
     uint16 usdxCollateralRisk,
     uint40[3] memory timeSkip
   ) public {
-    bobDaiAction = _boundUserBorrowAction(bobDaiAction);
-    bobUsdxAction = _boundUserBorrowAction(bobUsdxAction);
-    aliceDaiAction = _boundUserBorrowAction(aliceDaiAction);
-    aliceUsdxAction = _boundUserBorrowAction(aliceUsdxAction);
+    bobDaiAction = _boundUserBorrowAction(bobDaiAction, MAX_SUPPLY_AMOUNT_DAI);
+    bobUsdxAction = _boundUserBorrowAction(bobUsdxAction, MAX_SUPPLY_AMOUNT_USDX);
+    aliceDaiAction = _boundUserBorrowAction(aliceDaiAction, MAX_SUPPLY_AMOUNT_DAI);
+    aliceUsdxAction = _boundUserBorrowAction(aliceUsdxAction, MAX_SUPPLY_AMOUNT_USDX);
 
     daiCollateralRisk = bound(daiCollateralRisk, 0, MAX_COLLATERAL_RISK_BPS).toUint16();
     usdxCollateralRisk = bound(usdxCollateralRisk, 0, MAX_COLLATERAL_RISK_BPS).toUint16();
@@ -904,10 +912,10 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
   ) public {
     skipTime = bound(skipTime, 1, MAX_SKIP_TIME).toUint40();
 
-    daiAmounts.supplyAmount = bound(daiAmounts.supplyAmount, 0, MAX_SUPPLY_AMOUNT);
-    wethAmounts.supplyAmount = bound(wethAmounts.supplyAmount, 0, MAX_SUPPLY_AMOUNT);
-    usdxAmounts.supplyAmount = bound(usdxAmounts.supplyAmount, 0, MAX_SUPPLY_AMOUNT);
-    wbtcAmounts.supplyAmount = bound(wbtcAmounts.supplyAmount, 0, MAX_SUPPLY_AMOUNT);
+    daiAmounts.supplyAmount = bound(daiAmounts.supplyAmount, 0, MAX_SUPPLY_AMOUNT_DAI);
+    wethAmounts.supplyAmount = bound(wethAmounts.supplyAmount, 0, MAX_SUPPLY_AMOUNT_WETH);
+    usdxAmounts.supplyAmount = bound(usdxAmounts.supplyAmount, 0, MAX_SUPPLY_AMOUNT_USDX);
+    wbtcAmounts.supplyAmount = bound(wbtcAmounts.supplyAmount, 0, MAX_SUPPLY_AMOUNT_WBTC);
 
     daiAmounts.borrowAmount = bound(daiAmounts.borrowAmount, 0, daiAmounts.supplyAmount / 2);
     wethAmounts.borrowAmount = bound(wethAmounts.borrowAmount, 0, wethAmounts.supplyAmount / 2);
@@ -916,15 +924,15 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
 
     // Ensure supplied value is at least double borrowed value to pass hf checks
     vm.assume(
-      _getValue(spoke1, _daiReserveId(spoke1), daiAmounts.supplyAmount) +
-        _getValue(spoke1, _wethReserveId(spoke1), wethAmounts.supplyAmount) +
-        _getValue(spoke1, _usdxReserveId(spoke1), usdxAmounts.supplyAmount) +
-        _getValue(spoke1, _wbtcReserveId(spoke1), wbtcAmounts.supplyAmount) >=
+      _convertAmountToValue(spoke1, _daiReserveId(spoke1), daiAmounts.supplyAmount) +
+        _convertAmountToValue(spoke1, _wethReserveId(spoke1), wethAmounts.supplyAmount) +
+        _convertAmountToValue(spoke1, _usdxReserveId(spoke1), usdxAmounts.supplyAmount) +
+        _convertAmountToValue(spoke1, _wbtcReserveId(spoke1), wbtcAmounts.supplyAmount) >=
         2 *
-          (_getValue(spoke1, _daiReserveId(spoke1), daiAmounts.borrowAmount) +
-            _getValue(spoke1, _wethReserveId(spoke1), wethAmounts.borrowAmount) +
-            _getValue(spoke1, _usdxReserveId(spoke1), usdxAmounts.borrowAmount) +
-            _getValue(spoke1, _wbtcReserveId(spoke1), wbtcAmounts.borrowAmount))
+          (_convertAmountToValue(spoke1, _daiReserveId(spoke1), daiAmounts.borrowAmount) +
+            _convertAmountToValue(spoke1, _wethReserveId(spoke1), wethAmounts.borrowAmount) +
+            _convertAmountToValue(spoke1, _usdxReserveId(spoke1), usdxAmounts.borrowAmount) +
+            _convertAmountToValue(spoke1, _wbtcReserveId(spoke1), wbtcAmounts.borrowAmount))
     );
 
     // Bob supplies and draws all assets on spoke1
@@ -973,9 +981,10 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
   }
 
   function _boundUserBorrowAction(
-    UserBorrowAction memory action
+    UserBorrowAction memory action,
+    uint256 maxSupplyAmount
   ) internal pure returns (UserBorrowAction memory) {
-    action.supplyAmount = bound(action.supplyAmount, 2, MAX_SUPPLY_AMOUNT / 2);
+    action.supplyAmount = bound(action.supplyAmount, 2, maxSupplyAmount / 2);
     action.borrowAmount = bound(action.borrowAmount, 1, action.supplyAmount / 2);
     return action;
   }

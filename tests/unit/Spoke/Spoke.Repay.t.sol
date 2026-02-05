@@ -1435,10 +1435,10 @@ contract SpokeRepayTest is SpokeBase {
     RepayMultipleLocal memory usdxInfo;
     RepayMultipleLocal memory wbtcInfo;
 
-    daiInfo.borrowAmount = bound(daiBorrowAmount, 1, MAX_SUPPLY_AMOUNT / 2);
-    wethInfo.borrowAmount = bound(wethBorrowAmount, 1, MAX_SUPPLY_AMOUNT / 2);
-    usdxInfo.borrowAmount = bound(usdxBorrowAmount, 1, MAX_SUPPLY_AMOUNT / 2);
-    wbtcInfo.borrowAmount = bound(wbtcBorrowAmount, 1, MAX_SUPPLY_AMOUNT / 2);
+    daiInfo.borrowAmount = bound(daiBorrowAmount, 1, MAX_SUPPLY_AMOUNT_DAI / 2);
+    wethInfo.borrowAmount = bound(wethBorrowAmount, 1, MAX_SUPPLY_AMOUNT_WETH / 2);
+    usdxInfo.borrowAmount = bound(usdxBorrowAmount, 1, MAX_SUPPLY_AMOUNT_USDX / 2);
+    wbtcInfo.borrowAmount = bound(wbtcBorrowAmount, 1, MAX_SUPPLY_AMOUNT_WBTC / 2);
     repayPortion = bound(repayPortion, 0, PercentageMath.PERCENTAGE_FACTOR);
     skipTime = bound(skipTime, 1, MAX_SKIP_TIME).toUint40();
 

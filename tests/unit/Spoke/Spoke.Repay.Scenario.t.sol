@@ -1325,9 +1325,9 @@ contract SpokeRepayScenarioTest is SpokeBase {
     _assumeValidSupplier(caller);
     vm.assume(caller != derl);
     reserveId = bound(reserveId, 0, spoke1.getReserveCount() - 1);
-    userBorrowing = bound(userBorrowing, 0, MAX_SUPPLY_AMOUNT / 2 - 1); // Allow some buffer from borrow cap
+    userBorrowing = bound(userBorrowing, 0, _calculateMaxSupplyAmount(spoke1, reserveId) / 2 - 1); // Allow some buffer from borrow cap
     skipTime = bound(skipTime, 0, MAX_SKIP_TIME).toUint40();
-    assets = bound(assets, 1, MAX_SUPPLY_AMOUNT / 2 - userBorrowing);
+    assets = bound(assets, 1, _calculateMaxSupplyAmount(spoke1, reserveId) / 2 - userBorrowing);
 
     // Set up initial state of the vault by having derl borrow
     uint256 supplyAmount = _calcMinimumCollAmount(spoke1, reserveId, reserveId, userBorrowing);
@@ -1343,7 +1343,7 @@ contract SpokeRepayScenarioTest is SpokeBase {
     IERC20 underlying = getAssetUnderlyingByReserveId(spoke1, reserveId);
 
     // Deal caller max collateral amount, approve spoke, supply
-    supplyAmount = MAX_SUPPLY_AMOUNT - supplyAmount;
+    supplyAmount = _calculateMaxSupplyAmount(spoke1, reserveId) - supplyAmount;
     deal(address(underlying), caller, supplyAmount);
     vm.prank(caller);
     underlying.approve(address(spoke1), supplyAmount);
@@ -1375,10 +1375,10 @@ contract SpokeRepayScenarioTest is SpokeBase {
     address caller,
     uint256 assets
   ) public {
-    uint256 MAX_BORROW_AMOUNT = MAX_SUPPLY_AMOUNT / 2;
     _assumeValidSupplier(caller);
     vm.assume(caller != derl);
     reserveId = bound(reserveId, 0, spoke1.getReserveCount() - 1);
+    uint256 MAX_BORROW_AMOUNT = _calculateMaxSupplyAmount(spoke1, reserveId) / 2;
     userBorrowing = bound(userBorrowing, 0, MAX_BORROW_AMOUNT - 2); // Allow some buffer from borrow cap
     skipTime = bound(skipTime, 0, MAX_SKIP_TIME).toUint40();
     assets = bound(assets, 1, MAX_BORROW_AMOUNT - userBorrowing - 1); // Allow some buffer from borrow cap
@@ -1398,7 +1398,7 @@ contract SpokeRepayScenarioTest is SpokeBase {
     IERC20 underlying = getAssetUnderlyingByReserveId(spoke1, reserveId);
 
     // Set up caller initial debt position
-    supplyAmount = MAX_SUPPLY_AMOUNT - supplyAmount;
+    supplyAmount = _calculateMaxSupplyAmount(spoke1, reserveId) - supplyAmount;
     deal(address(underlying), caller, supplyAmount);
     vm.prank(caller);
     underlying.approve(address(spoke1), supplyAmount);

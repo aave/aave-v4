@@ -191,6 +191,28 @@ contract SpokeConfigTest is SpokeBase {
     spoke1.addReserve(address(hub1), assetId, reserveSource, newReserveConfig, newDynReserveConfig);
   }
 
+  function test_addReserve_revertsWith_InvalidUnderlyingDecimals() public {
+    uint256 assetId = usdzAssetId;
+    ISpoke.ReserveConfig memory newReserveConfig = _getDefaultReserveConfig(10_00);
+    ISpoke.DynamicReserveConfig memory newDynReserveConfig = ISpoke.DynamicReserveConfig({
+      collateralFactor: 10_00,
+      maxLiquidationBonus: 110_00,
+      liquidationFee: 10_00
+    });
+
+    address reserveSource = _deployMockPriceFeed(spoke1, 1e8);
+
+    vm.mockCall(
+      address(hub1),
+      abi.encodeCall(IHubBase.getAssetUnderlyingAndDecimals, (assetId)),
+      abi.encode(address(tokenList.dai), 19)
+    );
+
+    vm.expectRevert(ISpoke.InvalidAssetDecimals.selector, address(spoke1));
+    vm.prank(SPOKE_ADMIN);
+    spoke1.addReserve(address(hub1), assetId, reserveSource, newReserveConfig, newDynReserveConfig);
+  }
+
   function test_addReserve_revertsWith_InvalidAddress_hub() public {
     (ISpoke newSpoke, ) = _deploySpokeWithOracle(ADMIN, address(accessManager), 'New Spoke (USD)');
 

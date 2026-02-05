@@ -6,6 +6,7 @@ pragma solidity ^0.8.20;
 /// @author Aave Labs
 /// @notice Provides utility functions to work with WAD and RAY units with explicit rounding.
 library WadRayMath {
+  uint256 internal constant WAD_DECIMALS = 18;
   uint256 internal constant WAD = 1e18;
   uint256 internal constant RAY = 1e27;
   uint256 internal constant PERCENTAGE_FACTOR = 1e4;
@@ -171,35 +172,46 @@ library WadRayMath {
     }
   }
 
-  /// @notice Converts value from basis points to WAD, rounding down.
-  /// @dev Reverts if intermediate multiplication overflows.
-  /// @return b = floor(a * WAD / PERCENTAGE_FACTOR) in WAD units.
+  /// @notice Converts value from basis points to WAD.
+  /// @dev Reverts if result overflows.
+  /// @return b = a * (WAD / PERCENTAGE_FACTOR), expressed in WAD units.
   function bpsToWad(uint256 a) internal pure returns (uint256 b) {
     assembly ('memory-safe') {
-      b := mul(a, WAD)
-
-      // to avoid overflow, b/WAD == a
-      if iszero(eq(div(b, WAD), a)) {
+      let factor := div(WAD, PERCENTAGE_FACTOR)
+      b := mul(a, factor)
+      // to avoid overflow, b/factor == a
+      if iszero(eq(div(b, factor), a)) {
         revert(0, 0)
       }
-
-      b := div(b, PERCENTAGE_FACTOR)
     }
   }
 
-  /// @notice Converts value from basis points to RAY, rounding down.
-  /// @dev Reverts if intermediate multiplication overflows.
-  /// @return b = a * RAY / PERCENTAGE_FACTOR in RAY units.
+  /// @notice Converts value from basis points to RAY.
+  /// @dev Reverts if result overflows.
+  /// @return b = a * (RAY / PERCENTAGE_FACTOR), expressed in RAY units.
   function bpsToRay(uint256 a) internal pure returns (uint256 b) {
     assembly ('memory-safe') {
-      b := mul(a, RAY)
-
-      // to avoid overflow, b/RAY == a
-      if iszero(eq(div(b, RAY), a)) {
+      let factor := div(RAY, PERCENTAGE_FACTOR)
+      b := mul(a, factor)
+      // to avoid overflow, b/factor == a
+      if iszero(eq(div(b, factor), a)) {
         revert(0, 0)
       }
+    }
+  }
 
-      b := div(b, PERCENTAGE_FACTOR)
+  /// @notice Rounds up a RAY value to the nearest RAY.
+  /// @dev Reverts if result overflows.
+  /// @return b = ceil(a / RAY) * RAY.
+  function roundRayUp(uint256 a) internal pure returns (uint256 b) {
+    assembly ('memory-safe') {
+      // add 1 if (a % RAY) > 0 to round up the division of a by RAY
+      let c := add(div(a, RAY), gt(mod(a, RAY), 0))
+      b := mul(c, RAY)
+      // to avoid overflow, b/RAY == c
+      if iszero(eq(div(b, RAY), c)) {
+        revert(0, 0)
+      }
     }
   }
 }
