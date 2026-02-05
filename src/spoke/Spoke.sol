@@ -147,14 +147,14 @@ abstract contract Spoke is
       hub: IHubBase(hub),
       assetId: assetId.toUint16(),
       decimals: decimals,
-      dynamicConfigKey: dynamicConfigKey,
       collateralRisk: config.collateralRisk,
       flags: ReserveFlagsMap.create({
         initPaused: config.paused,
         initFrozen: config.frozen,
         initBorrowable: config.borrowable,
         initReceiveSharesEnabled: config.receiveSharesEnabled
-      })
+      }),
+      dynamicConfigKey: dynamicConfigKey
     });
     _dynamicConfig[reserveId][dynamicConfigKey] = dynamicConfig;
 

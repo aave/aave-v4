@@ -152,7 +152,7 @@ contract SpokeBase is Base {
   }
 
   struct DynamicConfig {
-    uint40 key;
+    uint32 key;
     bool enabled;
   }
 

@@ -270,12 +270,12 @@ abstract contract Base is Test {
     IHub hub;
     uint16 assetId;
     uint8 decimals;
-    uint32 dynamicConfigKey; // key of the last reserve config
+    uint24 collateralRisk;
     bool paused;
     bool frozen;
     bool borrowable;
     bool receiveSharesEnabled;
-    uint24 collateralRisk;
+    uint32 dynamicConfigKey; // key of the last reserve config
   }
 
   mapping(ISpoke => SpokeInfo) internal spokeInfo;
@@ -1201,8 +1201,8 @@ abstract contract Base is Test {
   function _updateCollateralFactorAtKey(
     ISpoke spoke,
     uint256 reserveId,
-    uint32 dynamicConfigKey,
-    uint256 newCollateralFactor
+    uint256 newCollateralFactor,
+    uint32 dynamicConfigKey
   ) internal pausePrank {
     ISpoke.DynamicReserveConfig memory config = spoke.getDynamicReserveConfig(
       reserveId,
@@ -2932,12 +2932,12 @@ abstract contract Base is Test {
         hub: _hub(spoke, reserveId),
         assetId: reserve.assetId,
         decimals: reserve.decimals,
-        dynamicConfigKey: reserve.dynamicConfigKey,
+        collateralRisk: reserve.collateralRisk,
         paused: reserve.flags.paused(),
         frozen: reserve.flags.frozen(),
         borrowable: reserve.flags.borrowable(),
         receiveSharesEnabled: reserve.flags.receiveSharesEnabled(),
-        collateralRisk: reserve.collateralRisk
+        dynamicConfigKey: reserve.dynamicConfigKey
       });
   }
 
