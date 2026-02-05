@@ -57,7 +57,7 @@ contract LiquidationLogicDebtToTargetHealthFactorTest is LiquidationLogicBaseTes
       uint256 assetUnit = assetUnitList[i];
       uint256 debtToTarget = liquidationLogicWrapper.calculateDebtToTargetHealthFactor(
         LiquidationLogic.CalculateDebtToTargetHealthFactorParams({
-          totalDebtValue: 10_000e26,
+          totalDebtValueRay: 10_000e26 * WadRayMath.RAY,
           debtAssetPrice: 1e8,
           debtAssetUnit: assetUnit,
           collateralFactor: 50_00,
@@ -69,7 +69,7 @@ contract LiquidationLogicDebtToTargetHealthFactorTest is LiquidationLogicBaseTes
 
       // liquidationPenalty = 1.5 * 0.5 = 0.75
       // debtToTarget = $10000 * (1.25 - 0.8) / (1.25 - 0.75) / $1 = 9000
-      assertEq(debtToTarget, 9000 * assetUnit);
+      assertEq(debtToTarget, 9000 * assetUnit * WadRayMath.RAY);
     }
   }
 
@@ -78,7 +78,7 @@ contract LiquidationLogicDebtToTargetHealthFactorTest is LiquidationLogicBaseTes
       uint256 assetUnit = assetUnitList[i];
       uint256 debtToTarget = liquidationLogicWrapper.calculateDebtToTargetHealthFactor(
         LiquidationLogic.CalculateDebtToTargetHealthFactorParams({
-          totalDebtValue: 10_000e26,
+          totalDebtValueRay: 10_000e26 * WadRayMath.RAY,
           debtAssetUnit: assetUnit,
           debtAssetPrice: 2000e8,
           collateralFactor: 50_00,
@@ -90,14 +90,14 @@ contract LiquidationLogicDebtToTargetHealthFactorTest is LiquidationLogicBaseTes
 
       // liquidationPenalty = 1.5 * 0.5 = 0.75
       // debtToTarget = $10000 * (1 - 0.8) / (1 - 0.75) / $2000 = 4
-      assertEq(debtToTarget, 4 * assetUnit);
+      assertEq(debtToTarget, 4 * assetUnit * WadRayMath.RAY);
     }
   }
 
   function test_calculateDebtToTargetHealthFactor_PrecisionLoss() public view {
     LiquidationLogic.CalculateDebtToTargetHealthFactorParams memory params = LiquidationLogic
       .CalculateDebtToTargetHealthFactorParams({
-        totalDebtValue: 10_000e26,
+        totalDebtValueRay: 10_000e26 * WadRayMath.RAY,
         debtAssetUnit: 1,
         debtAssetPrice: 333e8,
         collateralFactor: 50_00,
@@ -106,14 +106,14 @@ contract LiquidationLogicDebtToTargetHealthFactorTest is LiquidationLogicBaseTes
         targetHealthFactor: 1e18
       });
     uint256 debtToTarget = liquidationLogicWrapper.calculateDebtToTargetHealthFactor(params);
-    assertEq(debtToTarget, 25);
+    assertEq(debtToTarget, 24.024024024024024024024024025e27);
 
     params.debtAssetUnit = 1e6;
     debtToTarget = liquidationLogicWrapper.calculateDebtToTargetHealthFactor(params);
-    assertEq(debtToTarget, 24.024025e6);
+    assertEq(debtToTarget, 24.024024024024024024024024024024025e33);
 
     params.debtAssetUnit = 1e18;
     debtToTarget = liquidationLogicWrapper.calculateDebtToTargetHealthFactor(params);
-    assertEq(debtToTarget, 24.024024024024024025e18);
+    assertEq(debtToTarget, 24.024024024024024024024024024024024024024024025e45);
   }
 }
