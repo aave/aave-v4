@@ -24,13 +24,13 @@ contract HubRefreshPremiumTest is HubBase {
   }
 
   function _createDrawnSharesAndPremiumData() internal {
-    Utils.supplyCollateral(spoke1, _wbtcReserveId(spoke1), bob, MAX_SUPPLY_AMOUNT, bob);
+    Utils.supplyCollateral(spoke1, _wbtcReserveId(spoke1), bob, MAX_SUPPLY_AMOUNT_WBTC, bob);
 
-    uint256 amount1 = vm.randomUint(1, MAX_SUPPLY_AMOUNT / 2);
-    uint256 amount2 = vm.randomUint(1, MAX_SUPPLY_AMOUNT - amount1);
+    uint256 amount1 = vm.randomUint(1, MAX_SUPPLY_AMOUNT_DAI / 2);
+    uint256 amount2 = vm.randomUint(1, MAX_SUPPLY_AMOUNT_DAI - amount1);
 
     // create drawn shares and premium data
-    _addLiquidity(daiAssetId, MAX_SUPPLY_AMOUNT);
+    _addLiquidity(daiAssetId, MAX_SUPPLY_AMOUNT_DAI);
     Utils.borrow(spoke1, _daiReserveId(spoke1), bob, amount1, bob);
     skip(322 days);
     Utils.borrow(spoke1, _daiReserveId(spoke1), bob, amount2, bob);

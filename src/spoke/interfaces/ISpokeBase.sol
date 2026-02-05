@@ -72,11 +72,11 @@ interface ISpokeBase {
   /// @param user The address of the borrower getting liquidated.
   /// @param liquidator The address of the liquidator.
   /// @param receiveShares True if the liquidator received collateral in supplied shares rather than underlying assets.
-  /// @param debtToLiquidate The debt amount of borrowed reserve to be liquidated.
-  /// @param drawnSharesToLiquidate The amount of drawn shares to be liquidated.
+  /// @param debtAmountRestored The amount of debt restored, expressed in asset units.
+  /// @param drawnSharesLiquidated The amount of drawn shares liquidated.
   /// @param premiumDelta A struct representing the changes to premium debt after liquidation.
-  /// @param collateralToLiquidate The total amount of collateral asset to be liquidated, inclusive of liquidation fee.
-  /// @param collateralSharesToLiquidate The total amount of collateral shares to liquidate.
+  /// @param collateralAmountRemoved The amount of collateral removed, expressed in asset units.
+  /// @param collateralSharesLiquidated The total amount of collateral shares liquidated.
   /// @param collateralSharesToLiquidator The amount of collateral shares that the liquidator received.
   event LiquidationCall(
     uint256 indexed collateralReserveId,
@@ -84,11 +84,11 @@ interface ISpokeBase {
     address indexed user,
     address liquidator,
     bool receiveShares,
-    uint256 debtToLiquidate,
-    uint256 drawnSharesToLiquidate,
+    uint256 debtAmountRestored,
+    uint256 drawnSharesLiquidated,
     IHubBase.PremiumDelta premiumDelta,
-    uint256 collateralToLiquidate,
-    uint256 collateralSharesToLiquidate,
+    uint256 collateralAmountRemoved,
+    uint256 collateralSharesLiquidated,
     uint256 collateralSharesToLiquidator
   );
 
@@ -125,6 +125,7 @@ interface ISpokeBase {
 
   /// @notice Borrows a specified amount of underlying asset from the given reserve.
   /// @dev It reverts if the reserve associated with the given reserve identifier is not listed.
+  /// @dev It reverts if the user would borrow more than the maximum allowed number of borrowed reserves.
   /// @dev Caller must be `onBehalfOf` or an authorized position manager for `onBehalfOf`.
   /// @dev Caller receives the underlying asset borrowed.
   /// @param reserveId The identifier of the reserve.

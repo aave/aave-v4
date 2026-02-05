@@ -4,24 +4,28 @@ pragma solidity 0.8.28;
 
 import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
 import {SafeERC20, IERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
+import {Math} from 'src/dependencies/openzeppelin/Math.sol';
 import {IERC20Permit} from 'src/dependencies/openzeppelin/IERC20Permit.sol';
 import {ReentrancyGuardTransient} from 'src/dependencies/openzeppelin/ReentrancyGuardTransient.sol';
+import {Math} from 'src/dependencies/openzeppelin/Math.sol';
 import {AccessManagedUpgradeable} from 'src/dependencies/openzeppelin-upgradeable/AccessManagedUpgradeable.sol';
 import {MathUtils} from 'src/libraries/math/MathUtils.sol';
 import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
 import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
+import {SpokeUtils} from 'src/spoke/libraries/SpokeUtils.sol';
 import {EIP712Hash} from 'src/spoke/libraries/EIP712Hash.sol';
 import {KeyValueList} from 'src/spoke/libraries/KeyValueList.sol';
 import {LiquidationLogic} from 'src/spoke/libraries/LiquidationLogic.sol';
 import {PositionStatusMap} from 'src/spoke/libraries/PositionStatusMap.sol';
 import {ReserveFlags, ReserveFlagsMap} from 'src/spoke/libraries/ReserveFlagsMap.sol';
-import {UserPositionDebt} from 'src/spoke/libraries/UserPositionDebt.sol';
+import {UserPositionUtils} from 'src/spoke/libraries/UserPositionUtils.sol';
 import {IntentConsumer} from 'src/utils/IntentConsumer.sol';
 import {Multicall} from 'src/utils/Multicall.sol';
 import {ExtSload} from 'src/utils/ExtSload.sol';
 import {IAaveOracle} from 'src/spoke/interfaces/IAaveOracle.sol';
 import {IHubBase} from 'src/hub/interfaces/IHubBase.sol';
 import {ISpokeBase, ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
+import {SpokeStorage} from 'src/spoke/SpokeStorage.sol';
 
 /// @title Spoke
 /// @author Aave Labs
@@ -29,6 +33,7 @@ import {ISpokeBase, ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 /// @dev Each reserve can be associated with a separate Hub.
 abstract contract Spoke is
   ISpoke,
+  SpokeStorage,
   AccessManagedUpgradeable,
   IntentConsumer,
   ExtSload,
@@ -40,19 +45,25 @@ abstract contract Spoke is
   using MathUtils for *;
   using PercentageMath for *;
   using WadRayMath for *;
+  using SpokeUtils for *;
   using EIP712Hash for *;
   using KeyValueList for KeyValueList.List;
-  using LiquidationLogic for *;
   using PositionStatusMap for *;
   using ReserveFlagsMap for ReserveFlags;
-  using UserPositionDebt for ISpoke.UserPosition;
+  using UserPositionUtils for ISpoke.UserPosition;
 
   /// @inheritdoc ISpoke
   bytes32 public constant SET_USER_POSITION_MANAGERS_TYPEHASH =
     EIP712Hash.SET_USER_POSITION_MANAGERS_TYPEHASH;
 
   /// @inheritdoc ISpoke
+  uint16 public immutable MAX_USER_RESERVES_LIMIT;
+
+  /// @inheritdoc ISpoke
   address public immutable ORACLE;
+
+  /// @dev The number of decimals used by the oracle.
+  uint8 internal constant ORACLE_DECIMALS = SpokeUtils.ORACLE_DECIMALS;
 
   /// @dev The maximum allowed value for an asset identifier (inclusive).
   uint256 internal constant MAX_ALLOWED_ASSET_ID = type(uint16).max;
@@ -63,43 +74,18 @@ abstract contract Spoke is
   /// @dev The maximum allowed value for a dynamic configuration key (inclusive).
   uint256 internal constant MAX_ALLOWED_DYNAMIC_CONFIG_KEY = type(uint24).max;
 
+  /// @dev The maximum allowed value for the maximum number of reserves a user can have (collateral or borrowed) (inclusive).
+  uint16 internal constant MAX_ALLOWED_USER_RESERVES_LIMIT = type(uint16).max;
+
   /// @dev The minimum health factor below which a position is considered unhealthy and subject to liquidation.
   /// @dev Expressed in WAD (18 decimals) (e.g. 1e18 is 1.00).
   uint64 internal constant HEALTH_FACTOR_LIQUIDATION_THRESHOLD =
     LiquidationLogic.HEALTH_FACTOR_LIQUIDATION_THRESHOLD;
 
   /// @dev The maximum amount considered as dust for a user's collateral and debt balances after a liquidation.
-  /// @dev Expressed in USD with 26 decimals.
+  /// @dev Worth 1000 USD, expressed in units of Value. 1e26 represents 1 USD.
   uint256 internal constant DUST_LIQUIDATION_THRESHOLD =
     LiquidationLogic.DUST_LIQUIDATION_THRESHOLD;
-
-  /// @dev The number of decimals used by the oracle.
-  uint8 internal constant ORACLE_DECIMALS = 8;
-
-  /// @dev Number of reserves listed in the Spoke.
-  uint256 internal _reserveCount;
-
-  /// @dev Map of user addresses and reserve identifiers to user positions.
-  mapping(address user => mapping(uint256 reserveId => UserPosition)) internal _userPositions;
-
-  /// @dev Map of user addresses to their position status.
-  mapping(address user => PositionStatus) internal _positionStatus;
-
-  /// @dev Map of reserve identifiers to their Reserve data.
-  mapping(uint256 reserveId => Reserve) internal _reserves;
-
-  /// @dev Map of position manager addresses to their configuration data.
-  mapping(address positionManager => PositionManagerConfig) internal _positionManager;
-
-  /// @dev Map of reserve identifiers and dynamic configuration keys to the dynamic configuration data.
-  mapping(uint256 reserveId => mapping(uint24 dynamicConfigKey => DynamicReserveConfig))
-    internal _dynamicConfig;
-
-  /// @dev Liquidation configuration for the Spoke.
-  LiquidationConfig internal _liquidationConfig;
-
-  /// @dev Map of hub addresses and asset identifiers to whether the reserve exists.
-  mapping(address hub => mapping(uint256 assetId => bool)) internal _reserveExists;
 
   /// @notice Modifier that checks if the caller is an approved positionManager for `onBehalfOf`.
   modifier onlyPositionManager(address onBehalfOf) {
@@ -109,9 +95,12 @@ abstract contract Spoke is
 
   /// @dev Constructor.
   /// @param oracle_ The address of the AaveOracle contract.
-  constructor(address oracle_) {
+  /// @param maxUserReservesLimit_ The maximum number of collateral and borrow reserves a user can have.
+  constructor(address oracle_, uint16 maxUserReservesLimit_) {
     require(IAaveOracle(oracle_).DECIMALS() == ORACLE_DECIMALS, InvalidOracleDecimals());
+    require(maxUserReservesLimit_ > 0, InvalidMaxUserReservesLimit());
     ORACLE = oracle_;
+    MAX_USER_RESERVES_LIMIT = maxUserReservesLimit_;
   }
 
   /// @dev To be overridden by the inheriting Spoke instance contract.
@@ -149,6 +138,7 @@ abstract contract Spoke is
 
     (address underlying, uint8 decimals) = IHubBase(hub).getAssetUnderlyingAndDecimals(assetId);
     require(underlying != address(0), AssetNotListed());
+    require(decimals <= WadRayMath.WAD_DECIMALS, InvalidAssetDecimals());
 
     _updateReservePriceSource(reserveId, priceSource);
 
@@ -180,7 +170,7 @@ abstract contract Spoke is
     uint256 reserveId,
     ReserveConfig calldata config
   ) external restricted {
-    Reserve storage reserve = _getReserve(reserveId);
+    Reserve storage reserve = _reserves.get(reserveId);
     _validateReserveConfig(config);
     reserve.collateralRisk = config.collateralRisk;
     reserve.flags = ReserveFlagsMap.create({
@@ -238,7 +228,7 @@ abstract contract Spoke is
     uint256 amount,
     address onBehalfOf
   ) external nonReentrant onlyPositionManager(onBehalfOf) returns (uint256, uint256) {
-    Reserve storage reserve = _getReserve(reserveId);
+    Reserve storage reserve = _reserves.get(reserveId);
     UserPosition storage userPosition = _userPositions[onBehalfOf][reserveId];
     _validateSupply(reserve.flags);
 
@@ -257,7 +247,7 @@ abstract contract Spoke is
     uint256 amount,
     address onBehalfOf
   ) external nonReentrant onlyPositionManager(onBehalfOf) returns (uint256, uint256) {
-    Reserve storage reserve = _getReserve(reserveId);
+    Reserve storage reserve = _reserves.get(reserveId);
     UserPosition storage userPosition = _userPositions[onBehalfOf][reserveId];
     _validateWithdraw(reserve.flags);
     IHubBase hub = reserve.hub;
@@ -287,7 +277,7 @@ abstract contract Spoke is
     uint256 amount,
     address onBehalfOf
   ) external nonReentrant onlyPositionManager(onBehalfOf) returns (uint256, uint256) {
-    Reserve storage reserve = _getReserve(reserveId);
+    Reserve storage reserve = _reserves.get(reserveId);
     UserPosition storage userPosition = _userPositions[onBehalfOf][reserveId];
     PositionStatus storage positionStatus = _positionStatus[onBehalfOf];
     _validateBorrow(reserve.flags);
@@ -296,6 +286,11 @@ abstract contract Spoke is
     uint256 drawnShares = hub.draw(reserve.assetId, amount, msg.sender);
     userPosition.drawnShares += drawnShares.toUint120();
     if (!positionStatus.isBorrowing(reserveId)) {
+      require(
+        MAX_USER_RESERVES_LIMIT == MAX_ALLOWED_USER_RESERVES_LIMIT ||
+          positionStatus.borrowCount(_reserveCount) < MAX_USER_RESERVES_LIMIT,
+        MaximumUserReservesExceeded()
+      );
       positionStatus.setBorrowing(reserveId, true);
     }
 
@@ -313,7 +308,7 @@ abstract contract Spoke is
     uint256 amount,
     address onBehalfOf
   ) external nonReentrant onlyPositionManager(onBehalfOf) returns (uint256, uint256) {
-    Reserve storage reserve = _getReserve(reserveId);
+    Reserve storage reserve = _reserves.get(reserveId);
     UserPosition storage userPosition = _userPositions[onBehalfOf][reserveId];
     _validateRepay(reserve.flags);
 
@@ -357,48 +352,37 @@ abstract contract Spoke is
     uint256 debtToCover,
     bool receiveShares
   ) external nonReentrant {
-    Reserve storage collateralReserve = _getReserve(collateralReserveId);
-    Reserve storage debtReserve = _getReserve(debtReserveId);
-    DynamicReserveConfig storage collateralDynConfig = _dynamicConfig[collateralReserveId][
-      _userPositions[user][collateralReserveId].dynamicConfigKey
-    ];
     UserAccountData memory userAccountData = _calculateUserAccountData(user);
-
-    uint256 drawnIndex = debtReserve.hub.getAssetDrawnIndex(debtReserve.assetId);
-    (uint256 drawnDebt, uint256 premiumDebtRay) = _userPositions[user][debtReserveId].getDebt(
-      drawnIndex
-    );
-
     LiquidationLogic.LiquidateUserParams memory params = LiquidationLogic.LiquidateUserParams({
       collateralReserveId: collateralReserveId,
       debtReserveId: debtReserveId,
+      liquidationConfig: _liquidationConfig,
       oracle: ORACLE,
       user: user,
       debtToCover: debtToCover,
-      healthFactor: userAccountData.healthFactor,
-      drawnDebt: drawnDebt,
-      premiumDebtRay: premiumDebtRay,
-      drawnIndex: drawnIndex,
-      totalDebtValue: userAccountData.totalDebtValue,
-      activeCollateralCount: userAccountData.activeCollateralCount,
-      borrowedCount: userAccountData.borrowedCount,
+      userAccountData: userAccountData,
       liquidator: msg.sender,
       receiveShares: receiveShares
     });
 
-    bool isUserInDeficit = LiquidationLogic.liquidateUser(
-      collateralReserve,
-      debtReserve,
-      _userPositions,
-      _positionStatus,
-      _liquidationConfig,
-      collateralDynConfig,
-      params
-    );
+    bool isUserInDeficit = LiquidationLogic.liquidateUser({
+      reserves: _reserves,
+      userPositions: _userPositions,
+      positionStatus: _positionStatus,
+      dynamicConfig: _dynamicConfig,
+      params: params
+    });
 
     uint256 newRiskPremium = 0;
     if (isUserInDeficit) {
-      _reportDeficit(user);
+      // report deficit for all debt reserves, including the reserve being repaid
+      LiquidationLogic.reportDeficit(
+        _reserves,
+        _userPositions,
+        _positionStatus,
+        _reserveCount,
+        user
+      );
     } else {
       newRiskPremium = _calculateUserAccountData(user).riskPremium;
     }
@@ -411,12 +395,12 @@ abstract contract Spoke is
     bool usingAsCollateral,
     address onBehalfOf
   ) external nonReentrant onlyPositionManager(onBehalfOf) {
-    _validateSetUsingAsCollateral(_getReserve(reserveId).flags, usingAsCollateral);
+    Reserve storage reserve = _reserves.get(reserveId);
     PositionStatus storage positionStatus = _positionStatus[onBehalfOf];
-
     if (positionStatus.isUsingAsCollateral(reserveId) == usingAsCollateral) {
       return;
     }
+    _validateSetUsingAsCollateral(positionStatus, reserve.flags, usingAsCollateral);
     positionStatus.setUsingAsCollateral(reserveId, usingAsCollateral);
 
     if (usingAsCollateral) {
@@ -521,36 +505,36 @@ abstract contract Spoke is
 
   /// @inheritdoc ISpokeBase
   function getReserveSuppliedAssets(uint256 reserveId) external view returns (uint256) {
-    Reserve storage reserve = _getReserve(reserveId);
+    Reserve storage reserve = _reserves.get(reserveId);
     return reserve.hub.getSpokeAddedAssets(reserve.assetId, address(this));
   }
 
   /// @inheritdoc ISpokeBase
   function getReserveSuppliedShares(uint256 reserveId) external view returns (uint256) {
-    Reserve storage reserve = _getReserve(reserveId);
+    Reserve storage reserve = _reserves.get(reserveId);
     return reserve.hub.getSpokeAddedShares(reserve.assetId, address(this));
   }
 
   /// @inheritdoc ISpokeBase
   function getReserveDebt(uint256 reserveId) external view returns (uint256, uint256) {
-    Reserve storage reserve = _getReserve(reserveId);
+    Reserve storage reserve = _reserves.get(reserveId);
     return reserve.hub.getSpokeOwed(reserve.assetId, address(this));
   }
 
   /// @inheritdoc ISpokeBase
   function getReserveTotalDebt(uint256 reserveId) external view returns (uint256) {
-    Reserve storage reserve = _getReserve(reserveId);
+    Reserve storage reserve = _reserves.get(reserveId);
     return reserve.hub.getSpokeTotalOwed(reserve.assetId, address(this));
   }
 
   /// @inheritdoc ISpoke
   function getReserve(uint256 reserveId) external view returns (Reserve memory) {
-    return _getReserve(reserveId);
+    return _reserves.get(reserveId);
   }
 
   /// @inheritdoc ISpoke
   function getReserveConfig(uint256 reserveId) external view returns (ReserveConfig memory) {
-    Reserve storage reserve = _getReserve(reserveId);
+    Reserve storage reserve = _reserves.get(reserveId);
     return
       ReserveConfig({
         collateralRisk: reserve.collateralRisk,
@@ -566,7 +550,7 @@ abstract contract Spoke is
     uint256 reserveId,
     uint24 dynamicConfigKey
   ) external view returns (DynamicReserveConfig memory) {
-    _getReserve(reserveId);
+    _reserves.get(reserveId);
     return _dynamicConfig[reserveId][dynamicConfigKey];
   }
 
@@ -575,14 +559,14 @@ abstract contract Spoke is
     uint256 reserveId,
     address user
   ) external view returns (bool, bool) {
-    _getReserve(reserveId);
+    _reserves.get(reserveId);
     PositionStatus storage positionStatus = _positionStatus[user];
     return (positionStatus.isUsingAsCollateral(reserveId), positionStatus.isBorrowing(reserveId));
   }
 
   /// @inheritdoc ISpokeBase
   function getUserSuppliedAssets(uint256 reserveId, address user) external view returns (uint256) {
-    Reserve storage reserve = _getReserve(reserveId);
+    Reserve storage reserve = _reserves.get(reserveId);
     return
       reserve.hub.previewRemoveByShares(
         reserve.assetId,
@@ -592,13 +576,13 @@ abstract contract Spoke is
 
   /// @inheritdoc ISpokeBase
   function getUserSuppliedShares(uint256 reserveId, address user) external view returns (uint256) {
-    _getReserve(reserveId);
+    _reserves.get(reserveId);
     return _userPositions[user][reserveId].suppliedShares;
   }
 
   /// @inheritdoc ISpokeBase
   function getUserDebt(uint256 reserveId, address user) external view returns (uint256, uint256) {
-    Reserve storage reserve = _getReserve(reserveId);
+    Reserve storage reserve = _reserves.get(reserveId);
     UserPosition storage userPosition = _userPositions[user][reserveId];
     (uint256 drawnDebt, uint256 premiumDebtRay) = userPosition.getDebt(
       reserve.hub,
@@ -609,7 +593,7 @@ abstract contract Spoke is
 
   /// @inheritdoc ISpokeBase
   function getUserTotalDebt(uint256 reserveId, address user) external view returns (uint256) {
-    Reserve storage reserve = _getReserve(reserveId);
+    Reserve storage reserve = _reserves.get(reserveId);
     UserPosition storage userPosition = _userPositions[user][reserveId];
     (uint256 drawnDebt, uint256 premiumDebtRay) = userPosition.getDebt(
       reserve.hub,
@@ -620,7 +604,7 @@ abstract contract Spoke is
 
   /// @inheritdoc ISpokeBase
   function getUserPremiumDebtRay(uint256 reserveId, address user) external view returns (uint256) {
-    Reserve storage reserve = _getReserve(reserveId);
+    Reserve storage reserve = _reserves.get(reserveId);
     UserPosition storage userPosition = _userPositions[user][reserveId];
     (, uint256 premiumDebtRay) = userPosition.getDebt(reserve.hub, reserve.assetId);
     return premiumDebtRay;
@@ -631,7 +615,7 @@ abstract contract Spoke is
     uint256 reserveId,
     address user
   ) external view returns (UserPosition memory) {
-    _getReserve(reserveId);
+    _reserves.get(reserveId);
     return _userPositions[user][reserveId];
   }
 
@@ -652,7 +636,7 @@ abstract contract Spoke is
     address user,
     uint256 healthFactor
   ) external view returns (uint256) {
-    _getReserve(reserveId);
+    _reserves.get(reserveId);
     return
       LiquidationLogic.calculateLiquidationBonus({
         healthFactorForMaxBonus: _liquidationConfig.healthFactorForMaxBonus,
@@ -712,6 +696,8 @@ abstract contract Spoke is
   }
 
   /// @notice Process the user account data and updates dynamic config of the user if `refreshConfig` is true.
+  /// @dev Collateral is rounded against the user, while debt is calculated with full precision.
+  /// @dev If user has no debt, it returns health factor of `type(uint256).max` and risk premium of 0.
   function _processUserAccountData(
     address user,
     bool refreshConfig
@@ -732,7 +718,7 @@ abstract contract Spoke is
       Reserve storage reserve = _reserves[reserveId];
 
       uint256 assetPrice = IAaveOracle(ORACLE).getReservePrice(reserveId);
-      uint256 assetUnit = MathUtils.uncheckedExp(10, reserve.decimals);
+      uint256 assetDecimals = reserve.decimals;
 
       if (collateral) {
         uint256 collateralFactor = _dynamicConfig[reserveId][
@@ -744,10 +730,10 @@ abstract contract Spoke is
           uint256 suppliedShares = userPosition.suppliedShares;
           if (suppliedShares > 0) {
             // cannot round down to zero
-            uint256 userCollateralValue = (reserve.hub.previewRemoveByShares(
-              reserve.assetId,
-              suppliedShares
-            ) * assetPrice).wadDivDown(assetUnit);
+            uint256 userCollateralValue = reserve
+              .hub
+              .previewRemoveByShares(reserve.assetId, suppliedShares)
+              .toValue({decimals: assetDecimals, price: assetPrice});
             accountData.totalCollateralValue += userCollateralValue;
             collateralInfo.add(
               accountData.activeCollateralCount,
@@ -761,41 +747,45 @@ abstract contract Spoke is
       }
 
       if (borrowing) {
-        (uint256 drawnDebt, uint256 premiumDebtRay) = userPosition.getDebt(
+        UserPositionUtils.DebtComponents memory debtComponents = userPosition.getDebtComponents(
           reserve.hub,
           reserve.assetId
         );
-        // we can simplify since there is no precision loss due to the division here
-        accountData.totalDebtValue += ((drawnDebt + premiumDebtRay.fromRayUp()) * assetPrice)
-          .wadDivUp(assetUnit);
-        accountData.borrowedCount = accountData.borrowedCount.uncheckedAdd(1);
+        uint256 debtRay = debtComponents.drawnShares * debtComponents.drawnIndex +
+          debtComponents.premiumDebtRay;
+        accountData.totalDebtValueRay += debtRay.toValue({
+          decimals: assetDecimals,
+          price: assetPrice
+        });
+        accountData.borrowCount = accountData.borrowCount.uncheckedAdd(1);
       }
     }
 
-    if (accountData.totalDebtValue > 0) {
-      // at this point, `avgCollateralFactor` is the collateral-weighted sum (scaled by `collateralFactor` in BPS)
-      // health factor uses this directly for simplicity
-      // the division by `totalCollateralValue` to compute the weighted average is done later
-      accountData.healthFactor = accountData
-        .avgCollateralFactor
-        .wadDivDown(accountData.totalDebtValue)
-        .fromBpsDown();
+    if (accountData.totalDebtValueRay > 0) {
+      // at this point, `avgCollateralFactor` is the total collateral value weighted by collateral factors,
+      // expressed in units of Value and scaled by BPS. We convert it from BPS to WAD, since this will
+      // ultimately define the scaling factor of the health factor.
+      accountData.healthFactor = Math.mulDiv(
+        accountData.avgCollateralFactor.bpsToWad(),
+        WadRayMath.RAY,
+        accountData.totalDebtValueRay,
+        Math.Rounding.Floor
+      );
     } else {
       accountData.healthFactor = type(uint256).max;
     }
 
     if (accountData.totalCollateralValue > 0) {
-      accountData.avgCollateralFactor = accountData
-        .avgCollateralFactor
-        .wadDivDown(accountData.totalCollateralValue)
-        .fromBpsDown();
+      accountData.avgCollateralFactor =
+        accountData.avgCollateralFactor.bpsToWad() / accountData.totalCollateralValue;
     }
 
     // sort by collateral risk in ASC, collateral value in DESC
     collateralInfo.sortByKey();
 
     // runs until either the collateral or debt is exhausted
-    uint256 debtValueLeftToCover = accountData.totalDebtValue;
+    uint256 totalDebtValue = accountData.totalDebtValueRay.fromRayUp();
+    uint256 debtValueLeftToCover = totalDebtValue;
 
     for (uint256 index = 0; index < collateralInfo.length(); ++index) {
       if (debtValueLeftToCover == 0) {
@@ -808,8 +798,10 @@ abstract contract Spoke is
       debtValueLeftToCover = debtValueLeftToCover.uncheckedSub(userCollateralValue);
     }
 
-    if (debtValueLeftToCover < accountData.totalDebtValue) {
-      accountData.riskPremium /= accountData.totalDebtValue.uncheckedSub(debtValueLeftToCover);
+    if (debtValueLeftToCover < totalDebtValue) {
+      accountData.riskPremium = accountData.riskPremium.divUp(
+        totalDebtValue.uncheckedSub(debtValueLeftToCover)
+      );
     }
 
     return accountData;
@@ -850,45 +842,6 @@ abstract contract Spoke is
     emit UpdateUserRiskPremium(user, newRiskPremium);
   }
 
-  /// @notice Reports deficits for all debt reserves of the user, including the reserve being repaid during liquidation.
-  /// @dev Deficit validation should already have occurred during liquidation.
-  /// @dev It clears the user position, setting drawn debt, premium debt, and risk premium to zero.
-  function _reportDeficit(address user) internal {
-    PositionStatus storage positionStatus = _positionStatus[user];
-
-    uint256 reserveId = _reserveCount;
-    while ((reserveId = positionStatus.nextBorrowing(reserveId)) != PositionStatusMap.NOT_FOUND) {
-      UserPosition storage userPosition = _userPositions[user][reserveId];
-      Reserve storage reserve = _reserves[reserveId];
-      IHubBase hub = reserve.hub;
-      uint256 assetId = reserve.assetId;
-
-      uint256 drawnIndex = hub.getAssetDrawnIndex(assetId);
-      (uint256 drawnDebtReported, uint256 premiumDebtRay) = userPosition.getDebt(drawnIndex);
-      uint256 deficitShares = drawnDebtReported.rayDivDown(drawnIndex);
-
-      IHubBase.PremiumDelta memory premiumDelta = userPosition.calculatePremiumDelta({
-        drawnSharesTaken: deficitShares,
-        drawnIndex: drawnIndex,
-        riskPremium: 0,
-        restoredPremiumRay: premiumDebtRay
-      });
-
-      hub.reportDeficit(assetId, drawnDebtReported, premiumDelta);
-      userPosition.applyPremiumDelta(premiumDelta);
-      userPosition.drawnShares -= deficitShares.toUint120();
-      positionStatus.setBorrowing(reserveId, false);
-
-      emit ReportDeficit(reserveId, user, deficitShares, premiumDelta);
-    }
-  }
-
-  function _getReserve(uint256 reserveId) internal view returns (Reserve storage) {
-    Reserve storage reserve = _reserves[reserveId];
-    require(address(reserve.hub) != address(0), ReserveNotListed());
-    return reserve;
-  }
-
   /// @dev CollateralFactor of historical config keys cannot be 0, which allows liquidations to proceed.
   function _validateUpdateDynamicReserveConfig(
     DynamicReserveConfig storage currentConfig,
@@ -920,10 +873,22 @@ abstract contract Spoke is
     require(!flags.paused(), ReservePaused());
   }
 
-  function _validateSetUsingAsCollateral(ReserveFlags flags, bool usingAsCollateral) internal pure {
+  function _validateSetUsingAsCollateral(
+    PositionStatus storage positionStatus,
+    ReserveFlags flags,
+    bool usingAsCollateral
+  ) internal view {
     require(!flags.paused(), ReservePaused());
-    // can disable as collateral if the reserve is frozen
-    require(!usingAsCollateral || !flags.frozen(), ReserveFrozen());
+    if (usingAsCollateral) {
+      // disabling as collateral is allowed when reserve is frozen
+      require(!flags.frozen(), ReserveFrozen());
+      // this must be a new collateral, otherwise would have short-circuited
+      require(
+        MAX_USER_RESERVES_LIMIT == MAX_ALLOWED_USER_RESERVES_LIMIT ||
+          positionStatus.collateralCount(_reserveCount) < MAX_USER_RESERVES_LIMIT,
+        MaximumUserReservesExceeded()
+      );
+    }
   }
 
   /// @notice Returns whether `manager` is active & approved positionManager for `user`.
