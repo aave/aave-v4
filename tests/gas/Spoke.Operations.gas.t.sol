@@ -16,6 +16,16 @@ contract SpokeOperations_Gas_Tests is SpokeBase {
     spoke = spoke1;
     reserveId = _getReserveIds(spoke);
     _seed();
+
+    // create initial borrow to generate interest
+    vm.startPrank(bob);
+    spoke.supply(reserveId.usdx, 100_000e6, bob);
+    spoke.setUsingAsCollateral(reserveId.usdx, true, bob);
+    spoke.borrow(reserveId.dai, 100e18, bob);
+    spoke.borrow(reserveId.weth, 1e18, bob);
+    spoke.borrow(reserveId.wbtc, 1e5, bob);
+    vm.stopPrank();
+    skip(100);
   }
 
   function test_supply() public {
@@ -23,12 +33,14 @@ contract SpokeOperations_Gas_Tests is SpokeBase {
     spoke.supply(reserveId.usdx, 1000e6, alice);
     vm.snapshotGasLastCall(NAMESPACE, 'supply: 0 borrows, collateral disabled');
 
+    skip(100);
     spoke.supply(reserveId.usdx, 1000e6, alice);
     vm.snapshotGasLastCall(NAMESPACE, 'supply: second action, same reserve');
 
     spoke.supply(reserveId.weth, 1000e18, alice);
-
     spoke.setUsingAsCollateral(reserveId.weth, true, alice);
+
+    skip(100);
     spoke.supply(reserveId.weth, 1e18, alice);
     vm.snapshotGasLastCall(NAMESPACE, 'supply: 0 borrows, collateral enabled');
     vm.stopPrank();
@@ -37,6 +49,8 @@ contract SpokeOperations_Gas_Tests is SpokeBase {
   function test_usingAsCollateral() public {
     vm.prank(bob);
     spoke.supply(reserveId.dai, 1000e18, bob);
+
+    skip(100);
 
     vm.startPrank(alice);
     spoke.setUsingAsCollateral(reserveId.usdx, true, alice);
@@ -49,6 +63,8 @@ contract SpokeOperations_Gas_Tests is SpokeBase {
     spoke.setUsingAsCollateral(reserveId.weth, true, alice);
     vm.snapshotGasLastCall(NAMESPACE, 'usingAsCollateral: 1 borrow, enable');
 
+    skip(100);
+
     spoke.setUsingAsCollateral(reserveId.weth, false, alice);
     vm.snapshotGasLastCall(NAMESPACE, 'usingAsCollateral: 1 borrow, disable');
 
@@ -57,6 +73,8 @@ contract SpokeOperations_Gas_Tests is SpokeBase {
 
     spoke.setUsingAsCollateral(reserveId.wbtc, true, alice);
     vm.snapshotGasLastCall(NAMESPACE, 'usingAsCollateral: 2 borrows, enable');
+
+    skip(100);
 
     spoke.setUsingAsCollateral(reserveId.wbtc, false, alice);
     vm.snapshotGasLastCall(NAMESPACE, 'usingAsCollateral: 2 borrows, disable');
@@ -67,6 +85,8 @@ contract SpokeOperations_Gas_Tests is SpokeBase {
     vm.startPrank(alice);
     spoke.supply(reserveId.usdx, 100e6, alice);
     spoke.setUsingAsCollateral(reserveId.usdx, true, alice);
+
+    skip(100);
 
     spoke.withdraw(reserveId.usdx, 1e6, alice);
     vm.snapshotGasLastCall(NAMESPACE, 'withdraw: 0 borrows, partial');
@@ -84,9 +104,13 @@ contract SpokeOperations_Gas_Tests is SpokeBase {
     vm.snapshotGasLastCall(NAMESPACE, 'withdraw: 1 borrow, partial');
     spoke.borrow(reserveId.weth, 1e18, alice);
 
+    skip(100);
+
     spoke.withdraw(reserveId.usdx, 1e6, alice);
     vm.snapshotGasLastCall(NAMESPACE, 'withdraw: 2 borrows, partial');
     spoke.supply(reserveId.weth, 1000e18, alice);
+
+    skip(100);
 
     spoke.withdraw(reserveId.weth, UINT256_MAX, alice);
     vm.snapshotGasLastCall(NAMESPACE, 'withdraw: non collateral');
@@ -98,15 +122,14 @@ contract SpokeOperations_Gas_Tests is SpokeBase {
     spoke.supply(reserveId.dai, 1000e18, bob);
     spoke.setUsingAsCollateral(reserveId.dai, true, bob);
     spoke.borrow(reserveId.dai, 500e18, bob);
-    skip(100);
     spoke.borrow(reserveId.dai, 1e18, bob);
     vm.stopPrank();
-
-    skip(100);
 
     vm.startPrank(alice);
     spoke.supply(reserveId.usdx, 1000e6, alice);
     spoke.setUsingAsCollateral(reserveId.usdx, true, alice);
+
+    skip(100);
 
     spoke.borrow(reserveId.dai, 500e18, alice);
     vm.snapshotGasLastCall(NAMESPACE, 'borrow: first');
@@ -127,8 +150,12 @@ contract SpokeOperations_Gas_Tests is SpokeBase {
     spoke.setUsingAsCollateral(reserveId.usdx, true, alice);
     spoke.borrow(reserveId.dai, 500e18, alice);
 
+    skip(100);
+
     spoke.repay(reserveId.dai, 200e18, alice);
     vm.snapshotGasLastCall(NAMESPACE, 'repay: partial');
+
+    skip(100);
 
     spoke.repay(reserveId.dai, type(uint256).max, alice);
     vm.snapshotGasLastCall(NAMESPACE, 'repay: full');
@@ -138,50 +165,51 @@ contract SpokeOperations_Gas_Tests is SpokeBase {
   function test_liquidation_partial() public {
     _liquidationSetup(85_00);
 
-    vm.startPrank(bob);
+    skip(100);
+
+    vm.prank(bob);
     spoke.liquidationCall(reserveId.usdx, reserveId.dai, alice, 100_000e18, false);
     vm.snapshotGasLastCall(NAMESPACE, 'liquidationCall: partial');
-    vm.stopPrank();
   }
 
   function test_liquidation_full() public {
     _liquidationSetup(85_00);
 
-    vm.startPrank(bob);
+    skip(100);
+
+    vm.prank(bob);
     spoke.liquidationCall(reserveId.usdx, reserveId.dai, alice, UINT256_MAX, false);
     vm.snapshotGasLastCall(NAMESPACE, 'liquidationCall: full');
-
-    vm.stopPrank();
   }
 
   function test_liquidation_receiveShares_partial() public {
     _liquidationSetup(85_00);
 
-    vm.startPrank(bob);
+    skip(100);
+
+    vm.prank(bob);
     spoke.liquidationCall(reserveId.usdx, reserveId.dai, alice, 100_000e18, true);
     vm.snapshotGasLastCall(NAMESPACE, 'liquidationCall (receiveShares): partial');
-
-    vm.stopPrank();
   }
 
   function test_liquidation_receiveShares_full() public {
     _liquidationSetup(85_00);
 
-    vm.startPrank(bob);
+    skip(100);
+
+    vm.prank(bob);
     spoke.liquidationCall(reserveId.usdx, reserveId.dai, alice, UINT256_MAX, true);
     vm.snapshotGasLastCall(NAMESPACE, 'liquidationCall (receiveShares): full');
-
-    vm.stopPrank();
   }
 
   function test_liquidation_reportDeficit_full() public {
     _liquidationSetup(45_00);
 
-    vm.startPrank(bob);
+    skip(100);
+
+    vm.prank(bob);
     spoke.liquidationCall(reserveId.usdx, reserveId.dai, alice, UINT256_MAX, false);
     vm.snapshotGasLastCall(NAMESPACE, 'liquidationCall (reportDeficit): full');
-
-    vm.stopPrank();
   }
 
   function test_updateRiskPremium() public {
@@ -211,11 +239,15 @@ contract SpokeOperations_Gas_Tests is SpokeBase {
     spoke.setUsingAsCollateral(reserveId.usdx, true, alice);
     _updateLiquidationFee(spoke, reserveId.usdx, 10_00);
 
+    skip(100);
+
     spoke.updateUserDynamicConfig(alice);
     vm.snapshotGasLastCall(NAMESPACE, 'updateUserDynamicConfig: 1 collateral');
 
     spoke.setUsingAsCollateral(reserveId.dai, true, alice);
     _updateLiquidationFee(spoke, reserveId.dai, 15_00);
+
+    skip(100);
 
     spoke.updateUserDynamicConfig(alice);
     vm.snapshotGasLastCall(NAMESPACE, 'updateUserDynamicConfig: 2 collaterals');
@@ -228,6 +260,8 @@ contract SpokeOperations_Gas_Tests is SpokeBase {
     spoke.supply(reserveId.usdx, 1000e6, bob);
     spoke.supply(reserveId.wbtc, 1e18, bob);
 
+    skip(100);
+
     bytes[] memory calls = new bytes[](2);
     calls[0] = abi.encodeCall(ISpokeBase.supply, (reserveId.dai, 1000e18, bob));
     calls[1] = abi.encodeCall(ISpoke.setUsingAsCollateral, (reserveId.dai, true, bob));
@@ -236,6 +270,8 @@ contract SpokeOperations_Gas_Tests is SpokeBase {
     vm.snapshotGasLastCall(NAMESPACE, 'supply + enable collateral (multicall)');
 
     // supplyWithPermit (dai)
+    skip(100);
+
     tokenList.dai.approve(address(spoke), 0);
     (, uint256 bobPk) = makeAddrAndKey('bob');
     EIP712Types.Permit memory permit = EIP712Types.Permit({
@@ -257,6 +293,8 @@ contract SpokeOperations_Gas_Tests is SpokeBase {
     spoke.borrow(reserveId.usdx, 500e6, bob);
 
     // repayWithPermit (usdx)
+    skip(100);
+
     tokenList.usdx.approve(address(spoke), 0);
     permit = EIP712Types.Permit({
       owner: bob,
@@ -275,6 +313,8 @@ contract SpokeOperations_Gas_Tests is SpokeBase {
     vm.snapshotGasLastCall(NAMESPACE, 'permitReserve + repay (multicall)');
 
     // supplyWithPermitAndEnableCollateral (wbtc)
+    skip(100);
+
     calls = new bytes[](3);
     tokenList.wbtc.approve(address(spoke), 0);
     (, bobPk) = makeAddrAndKey('bob');
@@ -286,6 +326,7 @@ contract SpokeOperations_Gas_Tests is SpokeBase {
       deadline: vm.getBlockTimestamp()
     });
     (v, r, s) = vm.sign(bobPk, _getTypedDataHash(tokenList.wbtc, permit));
+
     calls[0] = abi.encodeCall(
       ISpoke.permitReserve,
       (reserveId.wbtc, permit.owner, permit.value, permit.deadline, v, r, s)
@@ -311,6 +352,8 @@ contract SpokeOperations_Gas_Tests is SpokeBase {
     ISpoke.PositionManagerUpdate[] memory updates = new ISpoke.PositionManagerUpdate[](1);
     updates[0] = ISpoke.PositionManagerUpdate(positionManager, true);
 
+    skip(100);
+
     ISpoke.SetUserPositionManagers memory p = ISpoke.SetUserPositionManagers({
       onBehalfOf: user,
       updates: updates,
@@ -323,8 +366,11 @@ contract SpokeOperations_Gas_Tests is SpokeBase {
     spoke.setUserPositionManagersWithSig(p, signature);
     vm.snapshotGasLastCall(NAMESPACE, 'setUserPositionManagersWithSig: enable');
 
+    skip(100);
+
     p.updates[0].approve = false;
     p.nonce = spoke.nonces(user, nonceKey);
+    p.deadline = vm.getBlockTimestamp();
     (v, r, s) = vm.sign(userPk, _getTypedDataHash(spoke, p));
     signature = abi.encodePacked(r, s, v);
 

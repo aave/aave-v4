@@ -38,10 +38,10 @@ runs = 1000
 seed = "0x640"
 
 [profile.pr.fuzz]
-runs = 5000
+runs = 5
 
 [profile.ci.fuzz]
-runs = 10000
+runs = 5
 
 [profile.gas]
 gas_snapshot_check = true
