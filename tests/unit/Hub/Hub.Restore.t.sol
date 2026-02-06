@@ -15,7 +15,7 @@ contract HubRestoreTest is HubBase {
   function setUp() public override {
     super.setUp();
 
-    // Set up a hub configurator to test freezing and pausing assets
+    // Set up a hub configurator to test resetting asset caps and pausing assets
     hubConfigurator = new HubConfigurator(hub1.authority());
     setUpHubConfiguratorRoles(address(hubConfigurator), hub1.authority());
   }
@@ -183,8 +183,8 @@ contract HubRestoreTest is HubBase {
     vm.stopPrank();
   }
 
-  /// @dev It's possible to restore even when asset is frozen
-  function test_restore_when_asset_frozen() public {
+  /// @dev It's possible to restore even when asset caps are reset
+  function test_restore_when_asset_caps_reset() public {
     uint256 daiAmount = 100e18;
     uint256 drawAmount = daiAmount / 2;
 
@@ -206,9 +206,9 @@ contract HubRestoreTest is HubBase {
       amount: drawAmount
     });
 
-    // Freeze asset
+    // Reset asset caps
     vm.prank(HUB_CONFIGURATOR);
-    hubConfigurator.freezeAsset(address(hub1), daiAssetId);
+    hubConfigurator.resetAssetCaps(address(hub1), daiAssetId);
 
     (uint256 drawn, uint256 premium) = hub1.getSpokeOwed(daiAssetId, address(spoke1));
     uint256 drawnRestored = drawn / 2;

@@ -72,7 +72,7 @@ abstract contract Spoke is
   uint24 internal constant MAX_ALLOWED_COLLATERAL_RISK = 1000_00;
 
   /// @dev The maximum allowed value for a dynamic configuration key (inclusive).
-  uint256 internal constant MAX_ALLOWED_DYNAMIC_CONFIG_KEY = type(uint24).max;
+  uint256 internal constant MAX_ALLOWED_DYNAMIC_CONFIG_KEY = type(uint32).max;
 
   /// @dev The maximum allowed value for the maximum number of reserves a user can have (collateral or borrowed) (inclusive).
   uint16 internal constant MAX_ALLOWED_USER_RESERVES_LIMIT = type(uint16).max;
@@ -134,7 +134,7 @@ abstract contract Spoke is
     _validateReserveConfig(config);
     _validateDynamicReserveConfig(dynamicConfig);
     uint256 reserveId = _reserveCount++;
-    uint24 dynamicConfigKey; // 0 as first key to use
+    uint32 dynamicConfigKey; // 0 as first key to use
 
     (address underlying, uint8 decimals) = IHubBase(hub).getAssetUnderlyingAndDecimals(assetId);
     require(underlying != address(0), AssetNotListed());
@@ -147,14 +147,14 @@ abstract contract Spoke is
       hub: IHubBase(hub),
       assetId: assetId.toUint16(),
       decimals: decimals,
-      dynamicConfigKey: dynamicConfigKey,
       collateralRisk: config.collateralRisk,
       flags: ReserveFlagsMap.create({
         initPaused: config.paused,
         initFrozen: config.frozen,
         initBorrowable: config.borrowable,
         initReceiveSharesEnabled: config.receiveSharesEnabled
-      })
+      }),
+      dynamicConfigKey: dynamicConfigKey
     });
     _dynamicConfig[reserveId][dynamicConfigKey] = dynamicConfig;
 
@@ -192,12 +192,12 @@ abstract contract Spoke is
   function addDynamicReserveConfig(
     uint256 reserveId,
     DynamicReserveConfig calldata dynamicConfig
-  ) external restricted returns (uint24) {
+  ) external restricted returns (uint32) {
     require(reserveId < _reserveCount, ReserveNotListed());
-    uint24 dynamicConfigKey = _reserves[reserveId].dynamicConfigKey;
+    uint32 dynamicConfigKey = _reserves[reserveId].dynamicConfigKey;
     require(dynamicConfigKey < MAX_ALLOWED_DYNAMIC_CONFIG_KEY, MaximumDynamicConfigKeyReached());
     _validateDynamicReserveConfig(dynamicConfig);
-    dynamicConfigKey = dynamicConfigKey.uncheckedAdd(1).toUint24();
+    dynamicConfigKey = dynamicConfigKey.uncheckedAdd(1).toUint32();
     _reserves[reserveId].dynamicConfigKey = dynamicConfigKey;
     _dynamicConfig[reserveId][dynamicConfigKey] = dynamicConfig;
     emit AddDynamicReserveConfig(reserveId, dynamicConfigKey, dynamicConfig);
@@ -207,7 +207,7 @@ abstract contract Spoke is
   /// @inheritdoc ISpoke
   function updateDynamicReserveConfig(
     uint256 reserveId,
-    uint24 dynamicConfigKey,
+    uint32 dynamicConfigKey,
     DynamicReserveConfig calldata dynamicConfig
   ) external restricted {
     require(reserveId < _reserveCount, ReserveNotListed());
@@ -548,7 +548,7 @@ abstract contract Spoke is
   /// @inheritdoc ISpoke
   function getDynamicReserveConfig(
     uint256 reserveId,
-    uint24 dynamicConfigKey
+    uint32 dynamicConfigKey
   ) external view returns (DynamicReserveConfig memory) {
     _reserves.get(reserveId);
     return _dynamicConfig[reserveId][dynamicConfigKey];

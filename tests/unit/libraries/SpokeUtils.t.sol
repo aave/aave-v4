@@ -21,9 +21,9 @@ contract SpokeUtilsTest is SpokeBase {
       hub: IHubBase(address(1)),
       assetId: 1,
       decimals: 6,
-      dynamicConfigKey: 0,
       collateralRisk: 10_00,
-      flags: ReserveFlagsMap.create(false, false, true, true)
+      flags: ReserveFlagsMap.create(false, false, true, true),
+      dynamicConfigKey: 0
     });
 
     reserve1 = ISpoke.Reserve({
@@ -31,9 +31,9 @@ contract SpokeUtilsTest is SpokeBase {
       hub: IHubBase(address(2)),
       assetId: 2,
       decimals: 18,
-      dynamicConfigKey: 3,
       collateralRisk: 15_00,
-      flags: ReserveFlagsMap.create(false, false, true, true)
+      flags: ReserveFlagsMap.create(false, false, true, true),
+      dynamicConfigKey: 3
     });
 
     reserve2 = ISpoke.Reserve({
@@ -41,9 +41,9 @@ contract SpokeUtilsTest is SpokeBase {
       hub: IHubBase(address(0)),
       assetId: 3,
       decimals: 18,
-      dynamicConfigKey: 1,
       collateralRisk: 20_00,
-      flags: ReserveFlagsMap.create(false, false, true, true)
+      flags: ReserveFlagsMap.create(false, false, true, true),
+      dynamicConfigKey: 1
     });
   }
 
