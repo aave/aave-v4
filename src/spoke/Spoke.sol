@@ -128,13 +128,12 @@ abstract contract Spoke is
   ) external restricted returns (uint256) {
     require(hub != address(0), InvalidAddress());
     require(assetId <= MAX_ALLOWED_ASSET_ID, InvalidAssetId());
-    require(!_reserveExists[hub][assetId], ReserveExists());
-    _reserveExists[hub][assetId] = true;
+    require(!_isAssetIdListed(hub, assetId, _hubAssetIdToReserveId[hub][assetId]), ReserveExists());
 
     _validateReserveConfig(config);
     _validateDynamicReserveConfig(dynamicConfig);
     uint256 reserveId = _reserveCount++;
-    uint32 dynamicConfigKey; // 0 as first key to use
+    _hubAssetIdToReserveId[hub][assetId] = reserveId;
 
     (address underlying, uint8 decimals) = IHubBase(hub).getAssetUnderlyingAndDecimals(assetId);
     require(underlying != address(0), AssetNotListed());
@@ -142,6 +141,7 @@ abstract contract Spoke is
 
     _updateReservePriceSource(reserveId, priceSource);
 
+    uint32 dynamicConfigKey; // 0 as first key to use
     _reserves[reserveId] = Reserve({
       underlying: underlying,
       hub: IHubBase(hub),
@@ -528,6 +528,13 @@ abstract contract Spoke is
   }
 
   /// @inheritdoc ISpoke
+  function getReserveId(address hub, uint256 assetId) external view returns (uint256) {
+    uint256 reserveId = _hubAssetIdToReserveId[hub][assetId];
+    require(_isAssetIdListed(hub, assetId, reserveId), ReserveNotListed());
+    return reserveId;
+  }
+
+  /// @inheritdoc ISpoke
   function getReserve(uint256 reserveId) external view returns (Reserve memory) {
     return _reserves.get(reserveId);
   }
@@ -889,6 +896,14 @@ abstract contract Spoke is
         MaximumUserReservesExceeded()
       );
     }
+  }
+
+  function _isAssetIdListed(
+    address hub,
+    uint256 assetId,
+    uint256 reserveId
+  ) internal view returns (bool) {
+    return _reserves[reserveId].assetId == assetId && address(_reserves[reserveId].hub) == hub;
   }
 
   /// @notice Returns whether `manager` is active & approved positionManager for `user`.
