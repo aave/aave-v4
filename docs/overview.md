@@ -71,7 +71,7 @@ Users interact with the Spokes, which then interact directly with the Hubs. The 
 - Maintaining a Spoke-level `reserveId` tracking to allow for Spoke-specific configurations, different from the `assetId` of the underlying asset in the Hub.
 - Managing oracle interactions. Oracle is spoke-specific and may be bound once post-deployment of the Spoke.
 - Employing transient reentrancy guards for extra protection against reentrancy attacks. Even though Hub, IR Strategy, and Price Feeds are trusted and V4 does not support ERC20s with callbacks.
-- Enforcing position constraints through a configurable `MAX_USER_RESERVES_LIMIT` which limits the number of collateral reserves and the number of borrow reserves a user can have (each counted separately). 
+- Enforcing position constraints through a configurable `MAX_USER_RESERVES_LIMIT` which limits the number of collateral reserves and the number of borrow reserves a user can have (each counted separately).
 
 # Risk Premium
 
@@ -93,7 +93,7 @@ The User Risk Premium $RP_u$ represents the quality of assets used as collateral
 - Asset price ($P_i$) of asset $i$: Prices are continuously fluctuating, with some assets being less volatile than others.
 - Collateral Risk ($CR_i$) of asset $i$: Risk parameter configured and updated on a regular basis by the Governor.
 
-Ideally, the User Risk Premium would be updated continuously to reflect its dynamic nature, ensuring it is always up-to-date and aligned with the last state of the user’s position. However, this is technically infeasible because of the limitations of EVM blockchains, requiring constant updates by means of onchain transactions. Instead, the User Risk Premium is refreshed only on actions that can change the position’s effective collateralization (e.g., `borrow()`, `withdraw()` when withdrawing collateral, `disableUsingAsCollateral()` and `liquidateUser()`). Actions that only reduce risk exposure (e.g., `repay()` and `supply()`) do not refresh the User Risk Premium.
+Ideally, the User Risk Premium would be updated continuously to reflect its dynamic nature, ensuring it is always up-to-date and aligned with the last state of the user’s position. However, this is technically infeasible because of the limitations of EVM blockchains, requiring constant updates by means of onchain transactions. Instead, the User Risk Premium is refreshed only on actions that can change the position’s effective collateralization (e.g., `borrow()`, `withdraw()` when withdrawing collateral, `setUsingAsCollateral()` when disabling collateral and `liquidateUser()`). Actions that only reduce risk exposure (e.g., `repay()` and `supply()`) do not refresh the User Risk Premium.
 
 An update can also be permissionlessly triggered (`updateUserRiskPremium()`) by a user on their own position or permissionedly triggered by a position manager or the Governor (in particular cases). If the user remains inactive, their User Risk Premium remains constant. Exceptionally, the Governor retains the ability to forcibly update the User Risk Premium of a given user to match the most recent risk parameters of its collateral assets, even in the absence of user interaction. This is particularly relevant in scenarios where a specific user position has accumulated additional risk between interactions.
 
@@ -147,7 +147,7 @@ The refresh mechanism preserves the total premium debt while updating the premiu
 - Future premium accrual reflects the updated Risk Premium
 - The accounting system maintains consistency across premium recalculations
 
-Actions that trigger a premium refresh include risk‑increasing events that can change $RP_u$, such as `disableUsingAsCollateral()`, `withdraw()` when withdrawing collateral, and explicit `updateUserRiskPremium()` updates (user-initiated or permissioned by the Governor). In these flows, `refreshPremium` updates premium shares and the offset so the total premium debt stays constant, while future accrual reflects the new Risk Premium.
+Actions that trigger a premium refresh include risk‑increasing events that can change $RP_u$, such as `setUsingAsCollateral()` when disabling collateral, `withdraw()` when withdrawing collateral, and explicit `updateUserRiskPremium()` updates (user-initiated or permissioned by the Governor). In these flows, `refreshPremium` updates premium shares and the offset so the total premium debt stays constant, while future accrual reflects the new Risk Premium.
 
 # Interest Accrual
 
@@ -208,7 +208,7 @@ One of the major risk‑side limitations of V3 lies in its single, global risk c
 
 V4 makes it possible for multiple risk configurations to exist side‑by‑side. Whenever the Governor adjusts collateralization parameters (currently the Collateral Factor (CF), Liquidation Bonus (LB) or Protocol Fee (PF)), the protocol adds a new configuration instead of replacing the old one. Earlier configurations continue to govern positions opened under them while updated parameters apply to new positions. In particular cases where there could be a negative impact to the protocol, the Governor may decide to permissioned trigger an update of existing positions to the latest parameters.
 
-Every time the Governor adjusts the collateralization parameters, it corresponds to a new configuration. These configurations are stored in a bounded dictionary of up to 16M entries (2^24) identified by incremental keys, with each reserve holding the key that points to the current active configuration.
+Every time the Governor adjusts the collateralization parameters, it corresponds to a new configuration. These configurations are stored in a bounded dictionary of up to ~4.29B entries (2^32) identified by incremental keys, with each reserve holding the key that points to the current active configuration.
 
 Each user position also stores the key corresponding to the active configuration when that position became risk-bearing. This key is refreshed whenever the user performs specific actions, but may continue to reference a prior configuration even if there are changes on the dynamic risk configuration between user interactions.
 
@@ -230,17 +230,16 @@ When a user attempts a health‑decreasing action, the engine checks the latest 
 
 The architecture of dynamic configuration comes with several practical constraints and behaviors that integrators and the Governor should note. The points that follow detail some of those mechanics.
 
-1. The `configKey` is currently defined as a `uint24` (16M max active configurations).
+1. The `configKey` is currently defined as a `uint32` (~4.29B max active configurations).
 2. For a given user position, the snapshot updates to the latest key on:
-   1. `disableUsingAsCollateral()`
-   2. `enableUsingAsCollateral()` refreshes only the `configKey` snapshot for the asset in play.
-   3. `borrow()`
-   4. `withdraw()`
+   1. `setUsingAsCollateral()` refreshes only the `configKey` snapshot for the asset in play.
+   2. `borrow()`
+   3. `withdraw()`
 3. The snapshot does **not** update on actions that reduce risk exposure of the system:
    1. `supply()`
    2. `repay()`
    3. `liquidationCall()` as liquidations will always improve the health of a user position
-   4. `updateRiskPremium()`
+   4. `updateUserRiskPremium()`
 4. Dynamic Risk Configurations can be adjusted by the Governor utilizing the following methods:
    1. `addDynamicReserveConfig()` creates a new risk configuration and increments the latest `configKey`. User positions created or subsequently updated bind to this latest `configKey`.
    2. `updateDynamicReserveConfig()` updates a prior configuration, affecting existing positions bound to that `configKey`.
