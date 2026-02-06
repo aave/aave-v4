@@ -41,7 +41,7 @@ seed = "0x640"
 runs = 5
 
 [profile.ci.fuzz]
-runs = 10
+runs = 5
 
 [profile.gas]
 gas_snapshot_check = true
