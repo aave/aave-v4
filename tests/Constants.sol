@@ -16,7 +16,7 @@ library Constants {
   uint64 public constant HEALTH_FACTOR_LIQUIDATION_THRESHOLD = 1e18;
   uint256 public constant DUST_LIQUIDATION_THRESHOLD = 1000e26;
   uint24 public constant MAX_ALLOWED_COLLATERAL_RISK = 1000_00; // 1000.00%
-  uint256 public constant MAX_ALLOWED_DYNAMIC_CONFIG_KEY = type(uint24).max;
+  uint256 public constant MAX_ALLOWED_DYNAMIC_CONFIG_KEY = type(uint32).max;
   uint256 public constant MAX_ALLOWED_ASSET_ID = type(uint16).max;
   uint16 public constant MAX_ALLOWED_USER_RESERVES_LIMIT = type(uint16).max;
 }

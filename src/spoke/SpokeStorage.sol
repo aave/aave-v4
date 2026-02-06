@@ -23,7 +23,7 @@ abstract contract SpokeStorage {
     internal _assetIdToReserveId;
 
   /// @dev Map of reserve identifiers and dynamic configuration keys to the dynamic configuration data.
-  mapping(uint256 reserveId => mapping(uint24 dynamicConfigKey => ISpoke.DynamicReserveConfig))
+  mapping(uint256 reserveId => mapping(uint32 dynamicConfigKey => ISpoke.DynamicReserveConfig))
     internal _dynamicConfig;
 
   /// @dev Map of user addresses to their position status.

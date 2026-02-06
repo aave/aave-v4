@@ -50,7 +50,7 @@ contract HubConfiguratorGranularAccessControlTest is HubBase {
     assetSelectors[5] = IHubConfigurator.updateInterestRateStrategy.selector;
     assetSelectors[6] = IHubConfigurator.updateReinvestmentController.selector;
     assetSelectors[7] = IHubConfigurator.updateInterestRateData.selector;
-    assetSelectors[8] = IHubConfigurator.freezeAsset.selector;
+    assetSelectors[8] = IHubConfigurator.resetAssetCaps.selector;
     assetSelectors[9] = IHubConfigurator.deactivateAsset.selector;
     assetSelectors[10] = IHubConfigurator.haltAsset.selector;
     manager.setTargetFunctionRole(address(hubConfigurator), assetSelectors, ASSET_MANAGER_ROLE);
@@ -67,7 +67,7 @@ contract HubConfiguratorGranularAccessControlTest is HubBase {
     spokeSelectors[7] = IHubConfigurator.updateSpokeCaps.selector;
     spokeSelectors[8] = IHubConfigurator.deactivateSpoke.selector;
     spokeSelectors[9] = IHubConfigurator.haltSpoke.selector;
-    spokeSelectors[10] = IHubConfigurator.freezeSpoke.selector;
+    spokeSelectors[10] = IHubConfigurator.resetSpokeCaps.selector;
     manager.setTargetFunctionRole(address(hubConfigurator), spokeSelectors, SPOKE_MANAGER_ROLE);
 
     vm.stopPrank();
@@ -126,7 +126,7 @@ contract HubConfiguratorGranularAccessControlTest is HubBase {
       )
     );
     assetManagerCalldata.push(
-      abi.encodeCall(IHubConfigurator.freezeAsset, (address(hub1), assetId))
+      abi.encodeCall(IHubConfigurator.resetAssetCaps, (address(hub1), assetId))
     );
     assetManagerCalldata.push(
       abi.encodeCall(IHubConfigurator.deactivateAsset, (address(hub1), assetId))
@@ -189,7 +189,7 @@ contract HubConfiguratorGranularAccessControlTest is HubBase {
       abi.encodeCall(IHubConfigurator.haltSpoke, (address(hub1), spokeAddr))
     );
     spokeManagerCalldata.push(
-      abi.encodeCall(IHubConfigurator.freezeSpoke, (address(hub1), spokeAddr))
+      abi.encodeCall(IHubConfigurator.resetSpokeCaps, (address(hub1), spokeAddr))
     );
   }
 
@@ -254,9 +254,9 @@ contract HubConfiguratorGranularAccessControlTest is HubBase {
     assertEq(hub1.getAssetConfig(assetId).liquidityFee, 10_00);
   }
 
-  function test_assetManager_canCall_freezeAsset() public {
+  function test_assetManager_canCall_resetAssetCaps() public {
     vm.prank(ASSET_MANAGER);
-    hubConfigurator.freezeAsset(address(hub1), assetId);
+    hubConfigurator.resetAssetCaps(address(hub1), assetId);
 
     IHub.SpokeConfig memory config = hub1.getSpokeConfig(assetId, spokeAddr);
     assertEq(config.addCap, 0);
@@ -318,9 +318,9 @@ contract HubConfiguratorGranularAccessControlTest is HubBase {
     assertEq(config.drawCap, 50);
   }
 
-  function test_spokeManager_canCall_freezeSpoke() public {
+  function test_spokeManager_canCall_resetSpokeCaps() public {
     vm.prank(SPOKE_MANAGER);
-    hubConfigurator.freezeSpoke(address(hub1), spokeAddr);
+    hubConfigurator.resetSpokeCaps(address(hub1), spokeAddr);
 
     for (uint256 i = 0; i < hub1.getAssetCount(); ++i) {
       if (hub1.isSpokeListed(i, spokeAddr)) {
