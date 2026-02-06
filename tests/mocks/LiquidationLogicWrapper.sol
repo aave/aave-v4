@@ -21,7 +21,7 @@ contract LiquidationLogicWrapper {
   mapping(address user => mapping(uint256 reserveId => ISpoke.UserPosition))
     internal _userPositions;
   mapping(address user => ISpoke.PositionStatus) internal _positionStatuses;
-  mapping(uint256 reserveId => mapping(uint24 dynamicConfigKey => ISpoke.DynamicReserveConfig))
+  mapping(uint256 reserveId => mapping(uint32 dynamicConfigKey => ISpoke.DynamicReserveConfig))
     internal _dynamicConfig;
   address internal _borrower;
   address internal _liquidator;
@@ -64,7 +64,7 @@ contract LiquidationLogicWrapper {
   function setDynamicCollateralConfig(
     ISpoke.DynamicReserveConfig memory newDynamicCollateralConfig
   ) public {
-    uint24 dynamicConfigKey = _userPositions[_borrower][_collateralReserveId].dynamicConfigKey;
+    uint32 dynamicConfigKey = _userPositions[_borrower][_collateralReserveId].dynamicConfigKey;
     _dynamicConfig[_collateralReserveId][dynamicConfigKey] = newDynamicCollateralConfig;
   }
 

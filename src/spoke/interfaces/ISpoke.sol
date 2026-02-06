@@ -40,18 +40,18 @@ interface ISpoke is ISpokeBase, IAccessManaged, IIntentConsumer, IExtSload, IMul
   /// @dev hub The address of the associated Hub.
   /// @dev assetId The identifier of the asset in the Hub.
   /// @dev decimals The number of decimals of the underlying asset.
-  /// @dev dynamicConfigKey The key of the last reserve dynamic config.
   /// @dev collateralRisk The risk associated with a collateral asset, expressed in BPS.
   /// @dev flags The packed boolean flags of the reserve (a wrapped uint8).
+  /// @dev dynamicConfigKey The key of the last reserve dynamic config.
   struct Reserve {
     address underlying;
     //
     IHubBase hub;
     uint16 assetId;
     uint8 decimals;
-    uint24 dynamicConfigKey;
     uint24 collateralRisk;
     ReserveFlags flags;
+    uint32 dynamicConfigKey;
   }
 
   /// @notice Reserve configuration. Subset of the `Reserve` struct.
@@ -101,7 +101,7 @@ interface ISpoke is ISpokeBase, IAccessManaged, IIntentConsumer, IExtSload, IMul
     int200 premiumOffsetRay;
     //
     uint120 suppliedShares;
-    uint24 dynamicConfigKey;
+    uint32 dynamicConfigKey;
   }
 
   /// @notice Position manager configuration data.
@@ -171,7 +171,7 @@ interface ISpoke is ISpokeBase, IAccessManaged, IIntentConsumer, IExtSload, IMul
   /// @param config The dynamic reserve config.
   event AddDynamicReserveConfig(
     uint256 indexed reserveId,
-    uint24 indexed dynamicConfigKey,
+    uint32 indexed dynamicConfigKey,
     DynamicReserveConfig config
   );
 
@@ -181,7 +181,7 @@ interface ISpoke is ISpokeBase, IAccessManaged, IIntentConsumer, IExtSload, IMul
   /// @param config The dynamic reserve config.
   event UpdateDynamicReserveConfig(
     uint256 indexed reserveId,
-    uint24 indexed dynamicConfigKey,
+    uint32 indexed dynamicConfigKey,
     DynamicReserveConfig config
   );
 
@@ -374,7 +374,7 @@ interface ISpoke is ISpokeBase, IAccessManaged, IIntentConsumer, IExtSload, IMul
   function addDynamicReserveConfig(
     uint256 reserveId,
     DynamicReserveConfig calldata dynamicConfig
-  ) external returns (uint24 dynamicConfigKey);
+  ) external returns (uint32 dynamicConfigKey);
 
   /// @notice Updates the dynamic reserve config for a given reserve at the specified key.
   /// @dev It reverts if the reserve associated with the given reserve identifier is not listed.
@@ -385,7 +385,7 @@ interface ISpoke is ISpokeBase, IAccessManaged, IIntentConsumer, IExtSload, IMul
   /// @param dynamicConfig The new dynamic reserve config.
   function updateDynamicReserveConfig(
     uint256 reserveId,
-    uint24 dynamicConfigKey,
+    uint32 dynamicConfigKey,
     DynamicReserveConfig calldata dynamicConfig
   ) external;
 
@@ -482,7 +482,7 @@ interface ISpoke is ISpokeBase, IAccessManaged, IIntentConsumer, IExtSload, IMul
   /// @return The dynamic reserve configuration struct.
   function getDynamicReserveConfig(
     uint256 reserveId,
-    uint24 dynamicConfigKey
+    uint32 dynamicConfigKey
   ) external view returns (DynamicReserveConfig memory);
 
   /// @notice Returns two flags indicating whether the reserve is used as collateral and whether it is borrowed by the user.
