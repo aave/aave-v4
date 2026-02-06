@@ -462,6 +462,13 @@ interface ISpoke is ISpokeBase, IAccessManaged, IIntentConsumer, IExtSload, IMul
   /// @dev Count includes reserves that are not currently active.
   function getReserveCount() external view returns (uint256);
 
+  /// @notice Returns the reserve identifier for a given assetId in a Hub.
+  /// @dev It reverts if no reserve is associated with the given assetId.
+  /// @param hub The address of the Hub.
+  /// @param assetId The identifier of the asset on the Hub.
+  /// @return The identifier of the reserve.
+  function getReserveId(address hub, uint256 assetId) external view returns (uint256);
+
   /// @notice Returns the reserve struct data in storage.
   /// @dev It reverts if the reserve associated with the given reserve identifier is not listed.
   /// @param reserveId The identifier of the reserve.
