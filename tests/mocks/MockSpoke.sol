@@ -73,7 +73,7 @@ contract MockSpoke is Spoke, Test {
 
       _userPositions[user][info.collateralReserveIds[i]].dynamicConfigKey = info
         .collateralDynamicConfigKeys[i]
-        .toUint16();
+        .toUint32();
     }
 
     for (uint256 i = 0; i < info.suppliedAssetsReserveIds.length; i++) {
@@ -117,7 +117,7 @@ contract MockSpoke is Spoke, Test {
     return _positionStatus[user].riskPremium;
   }
 
-  function setReserveDynamicConfigKey(uint256 reserveId, uint24 configKey) external {
+  function setReserveDynamicConfigKey(uint256 reserveId, uint32 configKey) external {
     _reserves[reserveId].dynamicConfigKey = configKey;
   }
 }
