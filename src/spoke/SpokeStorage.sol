@@ -18,7 +18,7 @@ abstract contract SpokeStorage {
   /// @dev Map of reserve identifiers to their Reserve data.
   mapping(uint256 reserveId => ISpoke.Reserve) internal _reserves;
 
-  /// @dev Map of hub addresses and asset identifiers to the reserveId.
+  /// @dev Map of hub addresses and asset identifiers to the reserve identifier.
   mapping(address hub => mapping(uint256 assetId => uint256 reserveId))
     internal _hubAssetIdToReserveId;
 
