@@ -128,12 +128,12 @@ abstract contract Spoke is
   ) external restricted returns (uint256) {
     require(hub != address(0), InvalidAddress());
     require(assetId <= MAX_ALLOWED_ASSET_ID, InvalidAssetId());
-    require(!_isAssetIdListed(hub, assetId, _assetIdToReserveId[hub][assetId]), ReserveExists());
+    require(!_isAssetIdListed(hub, assetId, _hubAssetIdToReserveId[hub][assetId]), ReserveExists());
 
     _validateReserveConfig(config);
     _validateDynamicReserveConfig(dynamicConfig);
     uint256 reserveId = _reserveCount++;
-    _assetIdToReserveId[hub][assetId] = reserveId;
+    _hubAssetIdToReserveId[hub][assetId] = reserveId;
 
     (address underlying, uint8 decimals) = IHubBase(hub).getAssetUnderlyingAndDecimals(assetId);
     require(underlying != address(0), AssetNotListed());
@@ -529,7 +529,7 @@ abstract contract Spoke is
 
   /// @inheritdoc ISpoke
   function getReserveId(address hub, uint256 assetId) external view returns (uint256) {
-    uint256 reserveId = _assetIdToReserveId[hub][assetId];
+    uint256 reserveId = _hubAssetIdToReserveId[hub][assetId];
     require(_isAssetIdListed(hub, assetId, reserveId), ReserveNotListed());
     return reserveId;
   }

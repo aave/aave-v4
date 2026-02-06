@@ -20,7 +20,7 @@ abstract contract SpokeStorage {
 
   /// @dev Map of hub addresses and asset identifiers to the reserveId.
   mapping(address hub => mapping(uint256 assetId => uint256 reserveId))
-    internal _assetIdToReserveId;
+    internal _hubAssetIdToReserveId;
 
   /// @dev Map of reserve identifiers and dynamic configuration keys to the dynamic configuration data.
   mapping(uint256 reserveId => mapping(uint32 dynamicConfigKey => ISpoke.DynamicReserveConfig))
