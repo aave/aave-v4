@@ -173,6 +173,7 @@ contract SpokeConfigTest is SpokeBase {
 
     assertEq(spoke1.getReserveConfig(reserveId), newReserveConfig);
     assertEq(_getLatestDynamicReserveConfig(spoke1, reserveId), newDynReserveConfig);
+    assertEq(spoke1.getReserveId(address(hub1), usdzAssetId), reserveId);
   }
 
   function test_addReserve_fuzz_revertsWith_AssetNotListed() public {
@@ -298,6 +299,110 @@ contract SpokeConfigTest is SpokeBase {
       newReserveConfig,
       newDynReserveConfig
     );
+  }
+
+  function test_getReserveId_fuzz(uint256 reserveId) public view {
+    reserveId = bound(reserveId, 0, spoke1.getReserveCount() - 1);
+    uint256 assetId = spoke1.getReserve(reserveId).assetId;
+
+    uint256 returnedId = spoke1.getReserveId(address(hub1), assetId);
+    assertEq(returnedId, getReserveIdByAssetId(spoke1, hub1, assetId));
+  }
+
+  function test_getReserveId_fuzz_multipleHubs(uint256 reserveId) public {
+    (IHub hub2, ) = hub2Fixture();
+    (IHub hub3, ) = hub3Fixture();
+
+    vm.startPrank(ADMIN);
+    spoke1.addReserve(
+      address(hub2),
+      0,
+      _deployMockPriceFeed(spoke1, 2000e8),
+      spokeInfo[spoke1].weth.reserveConfig,
+      spokeInfo[spoke1].weth.dynReserveConfig
+    );
+    spoke1.addReserve(
+      address(hub2),
+      1,
+      _deployMockPriceFeed(spoke1, 2000e8),
+      spokeInfo[spoke1].usdx.reserveConfig,
+      spokeInfo[spoke1].usdx.dynReserveConfig
+    );
+    spoke1.addReserve(
+      address(hub2),
+      2,
+      _deployMockPriceFeed(spoke1, 2000e8),
+      spokeInfo[spoke1].dai.reserveConfig,
+      spokeInfo[spoke1].dai.dynReserveConfig
+    );
+    spoke1.addReserve(
+      address(hub2),
+      3,
+      _deployMockPriceFeed(spoke1, 2000e8),
+      spokeInfo[spoke1].wbtc.reserveConfig,
+      spokeInfo[spoke1].wbtc.dynReserveConfig
+    );
+
+    spoke1.addReserve(
+      address(hub3),
+      0,
+      _deployMockPriceFeed(spoke1, 2000e8),
+      spokeInfo[spoke1].dai.reserveConfig,
+      spokeInfo[spoke1].dai.dynReserveConfig
+    );
+    spoke1.addReserve(
+      address(hub3),
+      1,
+      _deployMockPriceFeed(spoke1, 2000e8),
+      spokeInfo[spoke1].usdx.reserveConfig,
+      spokeInfo[spoke1].usdx.dynReserveConfig
+    );
+    spoke1.addReserve(
+      address(hub3),
+      2,
+      _deployMockPriceFeed(spoke1, 2000e8),
+      spokeInfo[spoke1].wbtc.reserveConfig,
+      spokeInfo[spoke1].wbtc.dynReserveConfig
+    );
+    spoke1.addReserve(
+      address(hub3),
+      3,
+      _deployMockPriceFeed(spoke1, 2000e8),
+      spokeInfo[spoke1].weth.reserveConfig,
+      spokeInfo[spoke1].weth.dynReserveConfig
+    );
+
+    IHub.SpokeConfig memory spokeConfig = IHub.SpokeConfig({
+      active: true,
+      halted: false,
+      addCap: Constants.MAX_ALLOWED_SPOKE_CAP,
+      drawCap: Constants.MAX_ALLOWED_SPOKE_CAP,
+      riskPremiumThreshold: Constants.MAX_ALLOWED_COLLATERAL_RISK
+    });
+
+    hub2.addSpoke(0, address(spoke1), spokeConfig);
+    hub2.addSpoke(1, address(spoke1), spokeConfig);
+    hub2.addSpoke(2, address(spoke1), spokeConfig);
+    hub2.addSpoke(3, address(spoke1), spokeConfig);
+
+    hub3.addSpoke(0, address(spoke1), spokeConfig);
+    hub3.addSpoke(1, address(spoke1), spokeConfig);
+    hub3.addSpoke(2, address(spoke1), spokeConfig);
+    hub3.addSpoke(3, address(spoke1), spokeConfig);
+    vm.stopPrank();
+
+    reserveId = bound(reserveId, 0, spoke1.getReserveCount() - 1);
+    uint256 assetId = spoke1.getReserve(reserveId).assetId;
+    address hub = address(spoke1.getReserve(reserveId).hub);
+
+    uint256 returnedId = spoke1.getReserveId(hub, assetId);
+    assertEq(returnedId, getReserveIdByAssetId(spoke1, IHub(hub), assetId));
+  }
+
+  function test_getReserveId_fuzz_revertsWith_ReserveNotListed(uint256 assetId) public {
+    assetId = bound(assetId, hub1.getAssetCount(), UINT256_MAX);
+    vm.expectRevert(ISpoke.ReserveNotListed.selector, address(spoke1));
+    spoke1.getReserveId(address(hub1), assetId);
   }
 
   function test_updateLiquidationConfig_targetHealthFactor() public {
