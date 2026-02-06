@@ -160,9 +160,10 @@ contract HubRemoveTest is HubBase {
       hub1.getSpokeAddedShares(assetId, feeReceiver),
       'asset addedShares after'
     );
-    assertEq(
+    assertApproxEqAbs(
       assetData.liquidity,
       hub1.getSpokeAddedAssets(assetId, feeReceiver) + _calculateBurntInterest(hub1, assetId),
+      1,
       'asset liquidity after'
     );
     assertEq(

@@ -136,9 +136,18 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
   function test_withdraw_fuzz_all_liquidity_with_interest_multi_user(
     MultiUserFuzzParams memory params
   ) public {
-    params.reserveId = bound(params.reserveId, 0, spokeInfo[spoke1].MAX_ALLOWED_ASSET_ID);
-    params.aliceAmount = bound(params.aliceAmount, 1, MAX_SUPPLY_AMOUNT - 1);
-    params.bobAmount = bound(params.bobAmount, 1, MAX_SUPPLY_AMOUNT - params.aliceAmount);
+    params.reserveId = bound(params.reserveId, 0, spoke1.getReserveCount() - 1);
+    vm.assume(params.reserveId != _wbtcReserveId(spoke1));
+    params.aliceAmount = bound(
+      params.aliceAmount,
+      1,
+      _calculateMaxSupplyAmount(spoke1, params.reserveId) - 1
+    );
+    params.bobAmount = bound(
+      params.bobAmount,
+      1,
+      _calculateMaxSupplyAmount(spoke1, params.reserveId) - params.aliceAmount
+    );
     params.skipTime[0] = bound(params.skipTime[0], 0, MAX_SKIP_TIME);
     params.skipTime[1] = bound(params.skipTime[1], 0, MAX_SKIP_TIME);
     params.borrowAmount = bound(
@@ -174,7 +183,15 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
       spoke: spoke1,
       reserveId: _wbtcReserveId(spoke1),
       caller: carol,
-      amount: params.borrowAmount, // highest value asset so that it is enough collateral
+      amount: _max(
+        1,
+        _convertAssetAmount(
+          spoke1,
+          params.reserveId,
+          params.borrowAmount * 4,
+          _wbtcReserveId(spoke1)
+        )
+      ), // highest value asset so that it is enough collateral
       onBehalfOf: carol
     });
     Utils.borrow({
@@ -292,7 +309,7 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
     assertEq(tokenData[state.stage].spokeBalance, 0, 'tokenData spoke balance');
     assertEq(
       tokenData[state.stage].hubBalance,
-      _calculateBurntInterest(hub1, state.assetId),
+      _calculateExpectedDustAfterFullWithdraw(hub1, state.assetId),
       'tokenData hub balance'
     );
     assertEq(

@@ -98,6 +98,7 @@ contract Hub is IHub, AccessManaged {
       liquidity: 0,
       deficitRay: 0,
       swept: 0,
+      realizedFees: 0,
       addedShares: 0,
       drawnShares: 0,
       premiumShares: 0,

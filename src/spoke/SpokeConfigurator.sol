@@ -145,7 +145,7 @@ contract SpokeConfigurator is AccessManaged, ISpokeConfigurator {
     address spoke,
     uint256 reserveId,
     uint16 collateralFactor
-  ) external restricted returns (uint24) {
+  ) external restricted returns (uint32) {
     ISpoke targetSpoke = ISpoke(spoke);
     ISpoke.DynamicReserveConfig memory dynamicReserveConfig = targetSpoke.getDynamicReserveConfig(
       reserveId,
@@ -159,7 +159,7 @@ contract SpokeConfigurator is AccessManaged, ISpokeConfigurator {
   function updateCollateralFactor(
     address spoke,
     uint256 reserveId,
-    uint24 dynamicConfigKey,
+    uint32 dynamicConfigKey,
     uint16 collateralFactor
   ) external restricted {
     ISpoke targetSpoke = ISpoke(spoke);
@@ -176,7 +176,7 @@ contract SpokeConfigurator is AccessManaged, ISpokeConfigurator {
     address spoke,
     uint256 reserveId,
     uint256 maxLiquidationBonus
-  ) external restricted returns (uint24) {
+  ) external restricted returns (uint32) {
     ISpoke targetSpoke = ISpoke(spoke);
     ISpoke.DynamicReserveConfig memory dynamicReserveConfig = targetSpoke.getDynamicReserveConfig(
       reserveId,
@@ -190,7 +190,7 @@ contract SpokeConfigurator is AccessManaged, ISpokeConfigurator {
   function updateMaxLiquidationBonus(
     address spoke,
     uint256 reserveId,
-    uint24 dynamicConfigKey,
+    uint32 dynamicConfigKey,
     uint256 maxLiquidationBonus
   ) external restricted {
     ISpoke targetSpoke = ISpoke(spoke);
@@ -207,7 +207,7 @@ contract SpokeConfigurator is AccessManaged, ISpokeConfigurator {
     address spoke,
     uint256 reserveId,
     uint256 liquidationFee
-  ) external restricted returns (uint24) {
+  ) external restricted returns (uint32) {
     ISpoke targetSpoke = ISpoke(spoke);
     ISpoke.DynamicReserveConfig memory dynamicReserveConfig = targetSpoke.getDynamicReserveConfig(
       reserveId,
@@ -221,7 +221,7 @@ contract SpokeConfigurator is AccessManaged, ISpokeConfigurator {
   function updateLiquidationFee(
     address spoke,
     uint256 reserveId,
-    uint24 dynamicConfigKey,
+    uint32 dynamicConfigKey,
     uint256 liquidationFee
   ) external restricted {
     ISpoke targetSpoke = ISpoke(spoke);
@@ -238,7 +238,7 @@ contract SpokeConfigurator is AccessManaged, ISpokeConfigurator {
     address spoke,
     uint256 reserveId,
     ISpoke.DynamicReserveConfig calldata dynamicConfig
-  ) external restricted returns (uint24) {
+  ) external restricted returns (uint32) {
     return ISpoke(spoke).addDynamicReserveConfig(reserveId, dynamicConfig);
   }
 
@@ -246,7 +246,7 @@ contract SpokeConfigurator is AccessManaged, ISpokeConfigurator {
   function updateDynamicReserveConfig(
     address spoke,
     uint256 reserveId,
-    uint24 dynamicConfigKey,
+    uint32 dynamicConfigKey,
     ISpoke.DynamicReserveConfig calldata dynamicConfig
   ) external restricted {
     ISpoke(spoke).updateDynamicReserveConfig(reserveId, dynamicConfigKey, dynamicConfig);
@@ -292,7 +292,7 @@ contract SpokeConfigurator is AccessManaged, ISpokeConfigurator {
   function _getReserveLastDynamicConfigKey(
     address spoke,
     uint256 reserveId
-  ) internal view returns (uint24) {
+  ) internal view returns (uint32) {
     return ISpoke(spoke).getReserve(reserveId).dynamicConfigKey;
   }
 }

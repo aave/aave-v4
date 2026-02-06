@@ -219,7 +219,7 @@ contract SpokeWithdrawTest is SpokeBase {
   }
 
   function test_withdraw_fuzz_suppliedAmount(uint256 supplyAmount) public {
-    supplyAmount = bound(supplyAmount, 1, MAX_SUPPLY_AMOUNT);
+    supplyAmount = bound(supplyAmount, 1, MAX_SUPPLY_AMOUNT_DAI);
     Utils.supply({
       spoke: spoke1,
       reserveId: _daiReserveId(spoke1),
@@ -299,7 +299,7 @@ contract SpokeWithdrawTest is SpokeBase {
   }
 
   function test_withdraw_fuzz_all_with_interest(uint256 supplyAmount, uint256 borrowAmount) public {
-    supplyAmount = bound(supplyAmount, 2, MAX_SUPPLY_AMOUNT);
+    supplyAmount = bound(supplyAmount, 2, MAX_SUPPLY_AMOUNT_DAI);
     borrowAmount = bound(borrowAmount, 1, supplyAmount / 2);
 
     Utils.supplyCollateral({
@@ -543,7 +543,7 @@ contract SpokeWithdrawTest is SpokeBase {
     assertEq(tokenData[stage].spokeBalance, 0, 'tokenData spoke balance');
     assertEq(
       tokenData[stage].hubBalance,
-      _calculateBurntInterest(hub1, daiAssetId),
+      _calculateExpectedDustAfterFullWithdraw(hub1, daiAssetId),
       'tokenData hub balance'
     );
     assertEq(
@@ -568,7 +568,7 @@ contract SpokeWithdrawTest is SpokeBase {
     params.borrowReserveSupplyAmount = bound(
       params.borrowReserveSupplyAmount,
       2,
-      MAX_SUPPLY_AMOUNT
+      _calculateMaxSupplyAmount(spoke1, params.reserveId)
     );
     params.borrowAmount = bound(params.borrowAmount, 1, params.borrowReserveSupplyAmount / 2);
     params.rate = bound(params.rate, 1, MAX_BORROW_RATE);
@@ -591,7 +591,7 @@ contract SpokeWithdrawTest is SpokeBase {
     TestState memory state;
     state.reserveId = params.reserveId;
     state.collateralReserveId = _wbtcReserveId(spoke1);
-    state.suppliedCollateralAmount = MAX_SUPPLY_AMOUNT; // ensure enough collateral
+    state.suppliedCollateralAmount = _calculateMaxSupplyAmount(spoke1, state.collateralReserveId); // ensure enough collateral
     state.borrowReserveSupplyAmount = params.borrowReserveSupplyAmount;
     state.borrowAmount = params.borrowAmount;
     state.rate = params.rate;
@@ -710,7 +710,7 @@ contract SpokeWithdrawTest is SpokeBase {
     assertEq(tokenData[stage].spokeBalance, 0, 'tokenData spoke balance');
     assertEq(
       tokenData[stage].hubBalance,
-      _calculateBurntInterest(hub1, assetId),
+      _calculateExpectedDustAfterFullWithdraw(hub1, assetId),
       'tokenData hub balance'
     );
     assertEq(underlying.balanceOf(alice), 0, 'alice balance');
@@ -822,7 +822,7 @@ contract SpokeWithdrawTest is SpokeBase {
     assertEq(tokenData[stage].spokeBalance, 0, 'tokenData spoke balance');
     assertEq(
       tokenData[stage].hubBalance,
-      _calculateBurntInterest(hub1, daiAssetId),
+      _calculateExpectedDustAfterFullWithdraw(hub1, daiAssetId),
       'tokenData hub balance'
     );
     assertEq(
@@ -849,7 +849,7 @@ contract SpokeWithdrawTest is SpokeBase {
     params.borrowReserveSupplyAmount = bound(
       params.borrowReserveSupplyAmount,
       2,
-      MAX_SUPPLY_AMOUNT
+      _calculateMaxSupplyAmount(spoke1, params.reserveId)
     );
     params.borrowAmount = bound(params.borrowAmount, 1, params.borrowReserveSupplyAmount / 2);
     params.rate = bound(params.rate, 1, MAX_BORROW_RATE);
@@ -864,7 +864,7 @@ contract SpokeWithdrawTest is SpokeBase {
     TestState memory state;
     state.reserveId = params.reserveId;
     state.collateralReserveId = _wbtcReserveId(spoke1);
-    state.suppliedCollateralAmount = MAX_SUPPLY_AMOUNT; // ensure enough collateral
+    state.suppliedCollateralAmount = _calculateMaxSupplyAmount(spoke1, state.collateralReserveId); // ensure enough collateral
     state.borrowReserveSupplyAmount = params.borrowReserveSupplyAmount;
     state.borrowAmount = params.borrowAmount;
     state.rate = params.rate;
@@ -983,7 +983,7 @@ contract SpokeWithdrawTest is SpokeBase {
     assertEq(tokenData[stage].spokeBalance, 0, 'tokenData spoke balance');
     assertEq(
       tokenData[stage].hubBalance,
-      _calculateBurntInterest(hub1, assetId),
+      _calculateExpectedDustAfterFullWithdraw(hub1, assetId),
       'tokenData hub balance'
     );
     assertEq(underlying.balanceOf(alice), 0, 'alice balance');
@@ -1004,7 +1004,7 @@ contract SpokeWithdrawTest is SpokeBase {
   /// can increase due to rounding, with interest accrual should strictly increase
   function test_fuzz_withdraw_effect_on_ex_rates(uint256 amount, uint256 delay) public {
     delay = bound(delay, 1, MAX_SKIP_TIME);
-    amount = bound(amount, 2, MAX_SUPPLY_AMOUNT / 2);
+    amount = bound(amount, 2, MAX_SUPPLY_AMOUNT_DAI / 2);
     uint256 wethSupplyAmount = _calcMinimumCollAmount(
       spoke1,
       _wethReserveId(spoke1),

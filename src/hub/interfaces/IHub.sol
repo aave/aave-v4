@@ -14,6 +14,7 @@ interface IHub is IHubBase, IAccessManaged {
   /// @dev swept The outstanding liquidity which has been invested by the reinvestment controller, expressed in asset units.
   /// @dev decimals The number of decimals of the underlying asset.
   /// @dev addedShares The total shares added across all spokes.
+  /// @dev realizedFees The total shares added across all spokes.
   /// @dev premiumOffsetRay The total premium offset across all spokes, used to calculate the premium, expressed in asset units and scaled by RAY.
   /// @dev deficitRay The amount of outstanding bad debt across all spokes, expressed in asset units and scaled by RAY.
   /// @dev drawnShares The total drawn shares across all spokes.
@@ -31,7 +32,8 @@ interface IHub is IHubBase, IAccessManaged {
     uint120 swept;
     uint8 decimals;
     //
-    uint120 addedShares; // note: we have space here to cache feeReceiver added shares here
+    uint120 addedShares;
+    uint120 realizedFees;
     //
     int200 premiumOffsetRay;
     //
