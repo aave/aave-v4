@@ -196,7 +196,7 @@ library LiquidationLogic {
     mapping(uint256 reserveId => ISpoke.Reserve) storage reserves,
     mapping(address user => mapping(uint256 reserveId => ISpoke.UserPosition)) storage userPositions,
     mapping(address user => ISpoke.PositionStatus) storage positionStatus,
-    mapping(uint256 reserveId => mapping(uint24 dynamicConfigKey => ISpoke.DynamicReserveConfig)) storage dynamicConfig,
+    mapping(uint256 reserveId => mapping(uint32 dynamicConfigKey => ISpoke.DynamicReserveConfig)) storage dynamicConfig,
     LiquidateUserParams memory params
   ) external returns (bool) {
     ISpoke.Reserve storage collateralReserve = reserves.get(params.collateralReserveId);
