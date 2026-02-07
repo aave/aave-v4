@@ -212,7 +212,7 @@ interface ISignatureGateway is IGatewayBase, IIntentConsumer, IMulticall {
 
   /// @notice Facilitates consuming a permit for the given reserve's underlying asset on the specified registered `spoke`.
   /// @dev The given data is passed to the underlying asset for the signature to be verified.
-  /// @dev Spender is this gateway contract.
+  /// @dev The SignatureGateway must be configured as the spender.
   /// @param spoke The address of the spoke.
   /// @param reserveId The identifier of the reserve.
   /// @param onBehalfOf The address of the user on whose behalf the permit is being used.
