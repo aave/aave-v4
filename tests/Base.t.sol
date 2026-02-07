@@ -2549,7 +2549,7 @@ abstract contract Base is Test {
     uint256 premiumIncrease,
     uint256 liquidityFee
   ) internal pure returns (uint256) {
-    return (drawnIncrease + premiumIncrease).percentMulDown(liquidityFee);
+    return (drawnIncrease + premiumIncrease).percentMulUp(liquidityFee);
   }
 
   function _calculateExpectedFeesAmount(
@@ -2559,7 +2559,7 @@ abstract contract Base is Test {
     uint256 indexDelta
   ) internal pure returns (uint256 feesAmount) {
     return
-      indexDelta.rayMulUp(initialDrawnShares + initialPremiumShares).percentMulDown(liquidityFee);
+      indexDelta.rayMulUp(initialDrawnShares + initialPremiumShares).percentMulUp(liquidityFee);
   }
 
   function _calculateMaxSupplyAmount(
@@ -3123,7 +3123,7 @@ abstract contract Base is Test {
       previousIndex).toInt256() - asset.premiumOffsetRay).toUint256() + asset.deficitRay;
 
     return
-      (aggregatedOwedRayAfter.fromRayUp() - aggregatedOwedRayBefore.fromRayUp()).percentMulDown(
+      (aggregatedOwedRayAfter.fromRayUp() - aggregatedOwedRayBefore.fromRayUp()).percentMulUp(
         asset.liquidityFee
       );
   }

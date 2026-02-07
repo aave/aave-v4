@@ -652,10 +652,11 @@ contract SpokeSupplyTest is SpokeBase {
     assertGe(hub1.previewRemoveByShares(daiAssetId, MAX_SUPPLY_AMOUNT), supplyExchangeRatio);
     assertGe(hub1.previewRestoreByShares(daiAssetId, MAX_SUPPLY_AMOUNT), debtExchangeRatio);
 
-    skip(delay); // with interest accrual, both ex rates should strictly
+    skip(delay); // with interest accrual, both ex rates should increase (or stay same for dust amounts)
 
-    assertGt(hub1.previewRemoveByShares(daiAssetId, MAX_SUPPLY_AMOUNT), supplyExchangeRatio);
-    assertGt(hub1.previewRestoreByShares(daiAssetId, MAX_SUPPLY_AMOUNT), debtExchangeRatio);
+    // with percentMulUp on fees, dust interest may go entirely to treasury, leaving supply rate unchanged
+    assertGe(hub1.previewRemoveByShares(daiAssetId, MAX_SUPPLY_AMOUNT), supplyExchangeRatio);
+    assertGe(hub1.previewRestoreByShares(daiAssetId, MAX_SUPPLY_AMOUNT), debtExchangeRatio);
 
     if (hub1.previewAddByAssets(daiAssetId, amount) > 0) {
       supplyExchangeRatio = hub1.previewRemoveByShares(daiAssetId, MAX_SUPPLY_AMOUNT);

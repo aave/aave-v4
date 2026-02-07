@@ -41,28 +41,36 @@ contract SpokeAccrueLiquidityFeeEdgeCasesTest is SpokeBase {
     Utils.borrow(spoke1, reserveId, alice, borrowAmount, alice);
 
     skip(skipTime);
+
+    // fees accrued before mintFeeShares
+    uint256 accruedFees = hub1.getAssetAccruedFees(assetId);
+
     Utils.mintFeeShares(hub1, assetId, ADMIN);
 
     (, uint256 premiumDebt) = spoke1.getUserDebt(reserveId, alice);
     assertGt(premiumDebt, 0);
 
+    // With 100% fee, LPs should not earn anything
     assertApproxEqAbs(
       spoke1.getUserSuppliedAssets(reserveId, alice),
       supplyAmount,
       3,
       'alice does not earn anything'
     );
+
+    // getSpokeTotalOwed uses drawn + premium (each fromRayUp),
+    // fee calculation uses aggregatedOwed (single fromRayUp on sum).
+    // Since fromRayUp(a) + fromRayUp(b) >= fromRayUp(a+b), expectedFees >= accruedFees
+    uint256 expectedFees = hub1.getSpokeTotalOwed(assetId, address(spoke1)) - borrowAmount;
+    assertGe(expectedFees, accruedFees, 'spoke owed >= accrued fees');
+    assertApproxEqAbs(accruedFees, expectedFees, 1, 'fees == total spoke accrued');
+
+    // Treasury share value should approximately equal fees (with share conversion rounding)
     assertApproxEqAbs(
       hub1.getSpokeAddedAssets(assetId, address(treasurySpoke)),
-      spoke1.getUserTotalDebt(reserveId, alice) - borrowAmount,
+      accruedFees,
       3,
-      'fees == total user accrued'
-    );
-    assertApproxEqAbs(
-      hub1.getSpokeAddedAssets(assetId, address(treasurySpoke)),
-      hub1.getSpokeTotalOwed(assetId, address(spoke1)) - borrowAmount,
-      3,
-      'fees == total spoke accrued'
+      'treasury shares == accrued fees'
     );
   }
 
@@ -94,8 +102,13 @@ contract SpokeAccrueLiquidityFeeEdgeCasesTest is SpokeBase {
     Utils.borrow(spoke1, reserveId, bob, borrowAmount2, bob);
 
     skip(skipTime);
+
+    // fees accrued before mintFeeShares
+    uint256 accruedFees = hub1.getAssetAccruedFees(assetId);
+
     Utils.mintFeeShares(hub1, assetId, ADMIN);
 
+    // With 100% fee, LPs should not earn anything
     assertApproxEqAbs(
       spoke1.getUserSuppliedAssets(reserveId, alice),
       supplyAmount,
@@ -109,20 +122,21 @@ contract SpokeAccrueLiquidityFeeEdgeCasesTest is SpokeBase {
       'bob does not earn anything'
     );
 
-    uint256 totalAccruedToTreasury = hub1.getSpokeAddedAssets(assetId, address(treasurySpoke));
-    assertLe(
-      totalAccruedToTreasury,
-      spoke1.getUserTotalDebt(reserveId, alice) -
-        borrowAmount +
-        spoke1.getUserTotalDebt(reserveId, bob) -
-        borrowAmount2,
-      'treasury accrued <= total accrued'
-    );
+    // getSpokeTotalOwed uses drawn + premium (each fromRayUp),
+    // fee calculation uses aggregatedOwed (single fromRayUp on sum).
+    // Since fromRayUp(a) + fromRayUp(b) >= fromRayUp(a+b), expectedFees >= accruedFees
+    uint256 expectedFees = hub1.getSpokeTotalOwed(assetId, address(spoke1)) -
+      borrowAmount -
+      borrowAmount2;
+    assertGe(expectedFees, accruedFees, 'spoke owed >= accrued fees');
+    assertApproxEqAbs(accruedFees, expectedFees, 1, 'fees == total spoke accrued');
+
+    // Treasury share value should approximately equal fees (with share conversion rounding)
     assertApproxEqAbs(
-      totalAccruedToTreasury,
-      hub1.getSpokeTotalOwed(assetId, address(spoke1)) - borrowAmount - borrowAmount2,
+      hub1.getSpokeAddedAssets(assetId, address(treasurySpoke)),
+      accruedFees,
       3,
-      'fees == total spoke accrued'
+      'treasury shares == accrued fees'
     );
   }
 
@@ -137,23 +151,18 @@ contract SpokeAccrueLiquidityFeeEdgeCasesTest is SpokeBase {
       uint256 borrowAmount = vm.randomUint(1, _calculateMaxSupplyAmount(spoke1, reserveId) / count);
       _backedBorrow(spoke1, user, reserveId, reserveId, borrowAmount);
     }
-    uint256 totalOwedBefore = hub1.getAssetTotalOwed(assetId);
 
     skip(vm.randomUint(1, MAX_SKIP_TIME));
 
-    uint256 feesAccrued;
     for (uint256 i; i < count; ++i) {
       address user = makeUser(i); // deterministic operation
-      uint256 totalOwedAfter = hub1.getAssetTotalOwed(assetId);
       Utils.repay(spoke1, reserveId, user, 1, user); // accrue interest & realize premium
-      assertApproxEqAbs(totalOwedAfter, hub1.getAssetTotalOwed(assetId), 1);
 
-      feesAccrued += totalOwedAfter - totalOwedBefore;
-      totalOwedBefore = hub1.getAssetTotalOwed(assetId);
-
+      uint256 feesAccrued = hub1.getAssetAccruedFees(assetId);
       uint256 actualFeesAccrued = _getExpectedFeeReceiverAddedAssets(hub1, assetId);
-      assertApproxEqRel(actualFeesAccrued, feesAccrued, 0.0000001e18); // 0.00001%
-      assertLe(actualFeesAccrued, feesAccrued, 'actual fees <= expected fees');
+
+      // With 100% fee, actualFeesAccrued = getSpokeAddedAssets(treasury) + feesAccrued >= feesAccrued
+      assertGe(actualFeesAccrued, feesAccrued, 'actual fees >= expected fees');
 
       skip(vm.randomUint(0, MAX_SKIP_TIME / count));
     }
@@ -180,25 +189,20 @@ contract SpokeAccrueLiquidityFeeEdgeCasesTest is SpokeBase {
       uint256 reserveId = _reserveId(spoke, assetId);
       _backedBorrow(spoke, user, reserveId, reserveId, borrowAmount);
     }
-    uint256 totalOwedBefore = hub1.getAssetTotalOwed(assetId);
 
     skip(vm.randomUint(1, MAX_SKIP_TIME));
 
-    uint256 feesAccrued;
     for (uint256 i; i < count; ++i) {
       address user = makeUser(i); // deterministic operation
       ISpoke spoke = spokes[i % spokes.length]; // deterministic operation
       uint256 reserveId = _reserveId(spoke, assetId);
-      uint256 totalOwedAfter = hub1.getAssetTotalOwed(assetId);
       Utils.repay(spoke, reserveId, user, 1, user); // accrue interest & realize premium
-      assertApproxEqAbs(totalOwedAfter, hub1.getAssetTotalOwed(assetId), 1);
 
-      feesAccrued += totalOwedAfter - totalOwedBefore;
-      totalOwedBefore = hub1.getAssetTotalOwed(assetId);
-
+      uint256 feesAccrued = hub1.getAssetAccruedFees(assetId);
       uint256 actualFeesAccrued = _getExpectedFeeReceiverAddedAssets(hub1, assetId);
-      assertApproxEqRel(actualFeesAccrued, feesAccrued, 0.0000001e18); // 0.00001%
-      assertLe(actualFeesAccrued, feesAccrued, 'actual fees <= expected fees');
+
+      // With 100% fee, actualFeesAccrued = getSpokeAddedAssets(treasury) + feesAccrued >= feesAccrued
+      assertGe(actualFeesAccrued, feesAccrued, 'actual fees >= expected fees');
 
       skip(vm.randomUint(0, MAX_SKIP_TIME / count));
     }

@@ -114,31 +114,15 @@ contract HubAddTest is HubBase {
   }
 
   function test_add_revertsWith_AmountDowncastOverflow() public {
-    _addAndDrawLiquidity({
-      hub: hub1,
-      assetId: daiAssetId,
-      addUser: bob,
-      addSpoke: address(spoke2),
-      addAmount: 1,
-      drawUser: alice,
-      drawSpoke: address(spoke1),
-      drawAmount: 1,
-      skipTime: 365 days
-    });
+    // Test that adding an amount > uint120.max reverts with SafeCast overflow
+    uint256 overflowAmount = uint256(type(uint120).max) + 1;
+    deal(address(tokenList.dai), address(hub1), overflowAmount);
 
-    uint256 shares = type(uint120).max - 2;
-    uint256 amount = hub1.previewAddByShares(daiAssetId, shares);
-    assertGt(amount, type(uint120).max);
-
-    deal(address(tokenList.dai), alice, amount);
-
-    vm.startPrank(address(spoke1));
-    tokenList.dai.transferFrom(alice, address(hub1), amount);
+    vm.prank(address(spoke1));
     vm.expectRevert(
-      abi.encodeWithSelector(SafeCast.SafeCastOverflowedUintDowncast.selector, 120, amount)
+      abi.encodeWithSelector(SafeCast.SafeCastOverflowedUintDowncast.selector, 120, overflowAmount)
     );
-    hub1.add(daiAssetId, amount);
-    vm.stopPrank();
+    hub1.add(daiAssetId, overflowAmount);
   }
 
   function test_add_fuzz_revertsWith_AddCapExceeded(uint40 newAddCap) public {

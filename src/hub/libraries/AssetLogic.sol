@@ -211,7 +211,7 @@ library AssetLogic {
     });
 
     return
-      (aggregatedOwedRayAfter.fromRayUp() - aggregatedOwedRayBefore.fromRayUp()).percentMulDown(
+      (aggregatedOwedRayAfter.fromRayUp() - aggregatedOwedRayBefore.fromRayUp()).percentMulUp(
         liquidityFee
       );
   }

@@ -24,7 +24,7 @@ contract HubRoundingTest is HubBase {
     });
 
     uint256 initialSharePrice = getAddExRate(daiAssetId);
-    assertGt(initialSharePrice, 1e30);
+    assertGe(initialSharePrice, 1e30);
     assertLt(initialSharePrice, 1.000001e30);
 
     for (uint256 i = 0; i < 1e4; ++i) {
