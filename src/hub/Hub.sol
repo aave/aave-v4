@@ -828,6 +828,7 @@ contract Hub is IHub, AccessManaged {
   }
 
   /// @dev Spoke with maximum cap have unlimited add capacity.
+  /// @dev The cap may be exceeded due to interest accumulation.
   function _validateAdd(
     Asset storage asset,
     SpokeData storage spoke,
@@ -852,8 +853,9 @@ contract Hub is IHub, AccessManaged {
     require(!spoke.halted, SpokeHalted());
   }
 
+  /// @dev The draw cap is enforced against the spoke's total owed, including any reported deficit.
   /// @dev Spoke with maximum cap have unlimited draw capacity.
-  /// @dev The draw cap is enforced against the spoke's total owed, and includes any deficit reported by the spoke.
+  /// @dev The cap may be exceeded due to interest accumulation.
   function _validateDraw(
     Asset storage asset,
     SpokeData storage spoke,
