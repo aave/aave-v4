@@ -16,12 +16,12 @@ type ReserveFlags is uint8;
 /// @notice Full interface for Spoke.
 interface ISpoke is ISpokeBase, IAccessManaged, IIntentConsumer, IExtSload, IMulticall {
   /// @notice Intent data to set user position managers with EIP712-typed signature.
-  /// @param user The address of the user on whose behalf position manager can act.
+  /// @param onBehalfOf The address of the user on whose behalf position manager can act.
   /// @param updates The array of position manager updates.
   /// @param nonce The nonce for the signature.
   /// @param deadline The deadline for the signature.
   struct SetUserPositionManagers {
-    address user;
+    address onBehalfOf;
     PositionManagerUpdate[] updates;
     uint256 nonce;
     uint256 deadline;
@@ -40,18 +40,18 @@ interface ISpoke is ISpokeBase, IAccessManaged, IIntentConsumer, IExtSload, IMul
   /// @dev hub The address of the associated Hub.
   /// @dev assetId The identifier of the asset in the Hub.
   /// @dev decimals The number of decimals of the underlying asset.
-  /// @dev dynamicConfigKey The key of the last reserve dynamic config.
   /// @dev collateralRisk The risk associated with a collateral asset, expressed in BPS.
   /// @dev flags The packed boolean flags of the reserve (a wrapped uint8).
+  /// @dev dynamicConfigKey The key of the last reserve dynamic config.
   struct Reserve {
     address underlying;
     //
     IHubBase hub;
     uint16 assetId;
     uint8 decimals;
-    uint24 dynamicConfigKey;
     uint24 collateralRisk;
     ReserveFlags flags;
+    uint32 dynamicConfigKey;
   }
 
   /// @notice Reserve configuration. Subset of the `Reserve` struct.
@@ -59,14 +59,12 @@ interface ISpoke is ISpokeBase, IAccessManaged, IIntentConsumer, IExtSload, IMul
   /// @dev paused True if all actions are prevented for the reserve.
   /// @dev frozen True if new activity is prevented for the reserve.
   /// @dev borrowable True if the reserve is borrowable.
-  /// @dev liquidatable True if the reserve can be liquidated when used as collateral.
   /// @dev receiveSharesEnabled True if the liquidator can receive collateral shares during liquidation.
   struct ReserveConfig {
     uint24 collateralRisk;
     bool paused;
     bool frozen;
     bool borrowable;
-    bool liquidatable;
     bool receiveSharesEnabled;
   }
 
@@ -103,7 +101,7 @@ interface ISpoke is ISpokeBase, IAccessManaged, IIntentConsumer, IExtSload, IMul
     int200 premiumOffsetRay;
     //
     uint120 suppliedShares;
-    uint24 dynamicConfigKey;
+    uint32 dynamicConfigKey;
   }
 
   /// @notice Position manager configuration data.
@@ -126,23 +124,24 @@ interface ISpoke is ISpokeBase, IAccessManaged, IIntentConsumer, IExtSload, IMul
   /// @dev riskPremium The risk premium of the user position, expressed in BPS.
   /// @dev avgCollateralFactor The weighted average collateral factor of the user position, expressed in WAD.
   /// @dev healthFactor The health factor of the user position, expressed in WAD. 1e18 represents a health factor of 1.00.
-  /// @dev totalCollateralValue The total collateral value of the user position, expressed in units of base currency. 1e26 represents 1 USD.
-  /// @dev totalDebtValue The total debt value of the user position, expressed in units of base currency. 1e26 represents 1 USD.
+  /// @dev totalCollateralValue The total collateral value of the user position, expressed in units of Value.
+  /// @dev totalDebtValueRay The total debt value of the user position, expressed in units of Value and scaled by RAY.
   /// @dev activeCollateralCount The number of active collaterals, which includes reserves with `collateralFactor` > 0, `enabledAsCollateral` and `suppliedAmount` > 0.
-  /// @dev borrowedCount The number of borrowed reserves of the user position.
+  /// @dev borrowCount The number of borrowed reserves of the user position.
   struct UserAccountData {
     uint256 riskPremium;
     uint256 avgCollateralFactor;
     uint256 healthFactor;
     uint256 totalCollateralValue;
-    uint256 totalDebtValue;
+    uint256 totalDebtValueRay;
     uint256 activeCollateralCount;
-    uint256 borrowedCount;
+    uint256 borrowCount;
   }
 
-  /// @notice Emitted when the oracle address of the spoke is updated.
-  /// @param oracle The new address of the oracle.
-  event UpdateOracle(address indexed oracle);
+  /// @notice Emitted upon setting the immutable variables on the spoke.
+  /// @param oracle The address of the oracle.
+  /// @param maxUserReservesLimit The max user reserves limit.
+  event SetSpokeImmutables(address indexed oracle, uint16 maxUserReservesLimit);
 
   /// @notice Emitted when a liquidation config is updated.
   /// @param config The new liquidation config.
@@ -172,7 +171,7 @@ interface ISpoke is ISpokeBase, IAccessManaged, IIntentConsumer, IExtSload, IMul
   /// @param config The dynamic reserve config.
   event AddDynamicReserveConfig(
     uint256 indexed reserveId,
-    uint24 indexed dynamicConfigKey,
+    uint32 indexed dynamicConfigKey,
     DynamicReserveConfig config
   );
 
@@ -182,7 +181,7 @@ interface ISpoke is ISpokeBase, IAccessManaged, IIntentConsumer, IExtSload, IMul
   /// @param config The dynamic reserve config.
   event UpdateDynamicReserveConfig(
     uint256 indexed reserveId,
-    uint24 indexed dynamicConfigKey,
+    uint32 indexed dynamicConfigKey,
     DynamicReserveConfig config
   );
 
@@ -254,6 +253,9 @@ interface ISpoke is ISpokeBase, IAccessManaged, IIntentConsumer, IExtSload, IMul
   /// @notice Thrown when adding a new reserve if an asset id is invalid.
   error InvalidAssetId();
 
+  /// @notice Thrown when adding a new reserve if the asset decimals are invalid.
+  error InvalidAssetDecimals();
+
   /// @notice Thrown when updating a reserve if it is not listed.
   error ReserveNotListed();
 
@@ -266,9 +268,6 @@ interface ISpoke is ISpokeBase, IAccessManaged, IIntentConsumer, IExtSload, IMul
   /// @notice Thrown when a reserve is frozen.
   /// @dev Can only occur during an attempted `supply`, `borrow`, or `setUsingAsCollateral` action.
   error ReserveFrozen();
-
-  /// @notice Thrown when the collateral reserve is not enabled to be liquidated.
-  error CollateralCannotBeLiquidated();
 
   /// @notice Thrown when an action causes a user's health factor to fall below the liquidation threshold.
   error HealthFactorBelowThreshold();
@@ -293,6 +292,9 @@ interface ISpoke is ISpokeBase, IAccessManaged, IIntentConsumer, IExtSload, IMul
 
   /// @notice Thrown when the oracle decimals are not 8 in the constructor.
   error InvalidOracleDecimals();
+
+  /// @notice Thrown when the maximum user reserves limit is zero in the constructor.
+  error InvalidMaxUserReservesLimit();
 
   /// @notice Thrown when a collateral risk exceeds the maximum allowed.
   error InvalidCollateralRisk();
@@ -327,8 +329,11 @@ interface ISpoke is ISpokeBase, IAccessManaged, IIntentConsumer, IExtSload, IMul
   /// @notice Thrown when the maximum number of dynamic config keys is reached.
   error MaximumDynamicConfigKeyReached();
 
+  /// @notice Thrown when user attempts to exceed either the maximum allowed collateral or borrowed reserves.
+  error MaximumUserReservesExceeded();
+
   /// @notice Updates the liquidation config.
-  /// @param config The liquidation config.
+  /// @param config The new liquidation config.
   function updateLiquidationConfig(LiquidationConfig calldata config) external;
 
   /// @notice Adds a new reserve to the spoke.
@@ -369,7 +374,7 @@ interface ISpoke is ISpokeBase, IAccessManaged, IIntentConsumer, IExtSload, IMul
   function addDynamicReserveConfig(
     uint256 reserveId,
     DynamicReserveConfig calldata dynamicConfig
-  ) external returns (uint24 dynamicConfigKey);
+  ) external returns (uint32 dynamicConfigKey);
 
   /// @notice Updates the dynamic reserve config for a given reserve at the specified key.
   /// @dev It reverts if the reserve associated with the given reserve identifier is not listed.
@@ -380,7 +385,7 @@ interface ISpoke is ISpokeBase, IAccessManaged, IIntentConsumer, IExtSload, IMul
   /// @param dynamicConfig The new dynamic reserve config.
   function updateDynamicReserveConfig(
     uint256 reserveId,
-    uint24 dynamicConfigKey,
+    uint32 dynamicConfigKey,
     DynamicReserveConfig calldata dynamicConfig
   ) external;
 
@@ -391,6 +396,8 @@ interface ISpoke is ISpokeBase, IAccessManaged, IIntentConsumer, IExtSload, IMul
 
   /// @notice Allows suppliers to enable/disable a specific supplied reserve as collateral.
   /// @dev It reverts if the reserve associated with the given reserve identifier is not listed.
+  /// @dev It reverts if the user exceeds the maximum allowed collateral reserves when enabling.
+  /// @dev Reserves with zero supplied or zero collateral factor count towards the max allowed collateral reserves.
   /// @dev Caller must be `onBehalfOf` or an authorized position manager for `onBehalfOf`.
   /// @param reserveId The reserve identifier of the underlying asset.
   /// @param usingAsCollateral True if the user wants to use the supply as collateral.
@@ -455,6 +462,13 @@ interface ISpoke is ISpokeBase, IAccessManaged, IIntentConsumer, IExtSload, IMul
   /// @dev Count includes reserves that are not currently active.
   function getReserveCount() external view returns (uint256);
 
+  /// @notice Returns the reserve identifier for a given assetId in a Hub.
+  /// @dev It reverts if no reserve is associated with the given assetId.
+  /// @param hub The address of the Hub.
+  /// @param assetId The identifier of the asset on the Hub.
+  /// @return The identifier of the reserve.
+  function getReserveId(address hub, uint256 assetId) external view returns (uint256);
+
   /// @notice Returns the reserve struct data in storage.
   /// @dev It reverts if the reserve associated with the given reserve identifier is not listed.
   /// @param reserveId The identifier of the reserve.
@@ -475,7 +489,7 @@ interface ISpoke is ISpokeBase, IAccessManaged, IIntentConsumer, IExtSload, IMul
   /// @return The dynamic reserve configuration struct.
   function getDynamicReserveConfig(
     uint256 reserveId,
-    uint24 dynamicConfigKey
+    uint32 dynamicConfigKey
   ) external view returns (DynamicReserveConfig memory);
 
   /// @notice Returns two flags indicating whether the reserve is used as collateral and whether it is borrowed by the user.
@@ -540,4 +554,7 @@ interface ISpoke is ISpokeBase, IAccessManaged, IIntentConsumer, IExtSload, IMul
 
   /// @notice Returns the address of the AaveOracle contract.
   function ORACLE() external view returns (address);
+
+  /// @notice Returns the maximum allowed number of collateral and borrow reserves per user (each counted separately).
+  function MAX_USER_RESERVES_LIMIT() external view returns (uint16);
 }

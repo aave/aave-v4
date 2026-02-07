@@ -161,6 +161,16 @@ contract MathUtilsTest is Base {
     assertEq(result, expectedRes);
   }
 
+  function test_fuzz_divUp(uint256 a, uint256 b) external {
+    if (b == 0) {
+      vm.expectRevert();
+      MathUtils.divUp(a, b);
+    } else {
+      uint256 result = MathUtils.divUp(a, b);
+      assertEq(result, a / b + (a % b > 0 ? 1 : 0));
+    }
+  }
+
   function test_mulDivDown_WithRemainder() external pure {
     assertEq(MathUtils.mulDivDown(2, 13, 3), 8); // 26 / 3 = 8.666 -> floor -> 8
   }

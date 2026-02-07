@@ -204,7 +204,7 @@ contract SignatureGateway_Gas_Tests is SignatureGatewayBaseTest {
   function test_updateUserRiskPremiumWithSig() public {
     ISignatureGateway.UpdateUserRiskPremium memory p = ISignatureGateway.UpdateUserRiskPremium({
       spoke: address(spoke1),
-      user: alice,
+      onBehalfOf: alice,
       nonce: gateway.nonces(alice, nonceKey),
       deadline: vm.getBlockTimestamp()
     });
@@ -220,7 +220,7 @@ contract SignatureGateway_Gas_Tests is SignatureGatewayBaseTest {
   function test_updateUserDynamicConfigWithSig() public {
     ISignatureGateway.UpdateUserDynamicConfig memory p = ISignatureGateway.UpdateUserDynamicConfig({
       spoke: address(spoke1),
-      user: alice,
+      onBehalfOf: alice,
       nonce: gateway.nonces(alice, nonceKey),
       deadline: vm.getBlockTimestamp()
     });
@@ -239,7 +239,7 @@ contract SignatureGateway_Gas_Tests is SignatureGatewayBaseTest {
     ISpoke.PositionManagerUpdate[] memory updates = new ISpoke.PositionManagerUpdate[](1);
     updates[0] = ISpoke.PositionManagerUpdate(address(gateway), true);
     ISpoke.SetUserPositionManagers memory p = ISpoke.SetUserPositionManagers({
-      user: alice,
+      onBehalfOf: alice,
       updates: updates,
       nonce: spoke1.nonces(alice, nonceKey), // note: this typed sig is forwarded to spoke
       deadline: vm.getBlockTimestamp()
@@ -251,7 +251,7 @@ contract SignatureGateway_Gas_Tests is SignatureGatewayBaseTest {
 
     gateway.setSelfAsUserPositionManagerWithSig({
       spoke: address(spoke1),
-      user: p.user,
+      onBehalfOf: p.onBehalfOf,
       approve: p.updates[0].approve,
       nonce: p.nonce,
       deadline: p.deadline,

@@ -202,10 +202,77 @@ contract PositionStatusMapTest is Base {
     for (uint256 reserveId; reserveId < reserveCount; ++reserveId) {
       if (p.isUsingAsCollateral(reserveId)) ++collateralCount;
       // reserveId is 0-base indexed, assert running collateralCount is maintained correctly
-      assertEq(p.collateralCount({reserveCount: reserveId + 1}), collateralCount);
+      assertEq(p.collateralCount(reserveId + 1), collateralCount);
     }
 
     assertEq(p.collateralCount(reserveCount), collateralCount);
+  }
+
+  function test_borrowCount() public {
+    p.setBorrowing(127, true);
+    assertEq(p.borrowCount(128), 1);
+
+    p.setBorrowing(128, true);
+    assertEq(p.borrowCount(128), 1);
+    assertEq(p.borrowCount(129), 2);
+
+    // ignore invalid bits
+    assertEq(p.borrowCount(100), 0);
+
+    p.setBorrowing(2, true);
+    assertEq(p.borrowCount(128), 2);
+
+    p.setBorrowing(32, true);
+    assertEq(p.borrowCount(128), 3);
+    p.setBorrowing(342, true);
+    assertEq(p.borrowCount(343), 5);
+
+    p.setBorrowing(32, false);
+    assertEq(p.borrowCount(343), 4);
+
+    // disregards collateral reserves
+    p.setUsingAsCollateral(32, true);
+    assertEq(p.borrowCount(343), 4);
+
+    p.setUsingAsCollateral(79, true);
+    assertEq(p.borrowCount(343), 4);
+
+    p.setUsingAsCollateral(255, true);
+    assertEq(p.borrowCount(343), 4);
+  }
+
+  function test_borrowCount_ignoresInvalidBits() public {
+    p.setBorrowing(127, true);
+    assertEq(p.borrowCount(100), 0);
+    assertEq(p.borrowCount(200), 1);
+
+    p.setBorrowing(255, true);
+    assertEq(p.borrowCount(200), 1);
+    p.setBorrowing(133, true);
+    assertEq(p.borrowCount(200), 2);
+
+    p.setBorrowing(383, true);
+    assertEq(p.borrowCount(300), 3);
+    p.setBorrowing(283, true);
+    assertEq(p.borrowCount(300), 4);
+
+    p.setBorrowing(511, true);
+    assertEq(p.borrowCount(500), 5);
+    assertEq(p.borrowCount(600), 6);
+  }
+
+  function test_borrowCount(uint256 reserveCount) public {
+    reserveCount = bound(reserveCount, 0, 1 << 10); // gas limit
+    vm.setArbitraryStorage(address(p));
+
+    uint256 borrowCount;
+    for (uint256 reserveId; reserveId < reserveCount; ++reserveId) {
+      if (p.isBorrowing(reserveId)) ++borrowCount;
+      // reserveId is 0-base indexed, assert running borrowCount is maintained correctly
+      assertEq(p.borrowCount(reserveId + 1), borrowCount);
+    }
+
+    assertEq(p.borrowCount(reserveCount), borrowCount);
   }
 
   function test_setters_use_correct_slot(uint256 a) public {

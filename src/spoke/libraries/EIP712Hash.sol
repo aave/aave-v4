@@ -11,8 +11,8 @@ library EIP712Hash {
   using EIP712Hash for *;
 
   bytes32 public constant SET_USER_POSITION_MANAGERS_TYPEHASH =
-    // keccak256('SetUserPositionManagers(address user,PositionManagerUpdate[] updates,uint256 nonce,uint256 deadline)PositionManagerUpdate(address positionManager,bool approve)')
-    0xa9a500485f4e7c738838a1c065fe46501b5a92142c290f6a51aa56f61810c5b0;
+    // keccak256('SetUserPositionManagers(address onBehalfOf,PositionManagerUpdate[] updates,uint256 nonce,uint256 deadline)PositionManagerUpdate(address positionManager,bool approve)')
+    0xba01f7bf3d3674c63670ec4a78b0d56aac1ad6e8c84468920b9e61bfe0b9851a;
 
   bytes32 public constant POSITION_MANAGER_UPDATE =
     // keccak256('PositionManagerUpdate(address positionManager,bool approve)')
@@ -27,7 +27,7 @@ library EIP712Hash {
       keccak256(
         abi.encode(
           SET_USER_POSITION_MANAGERS_TYPEHASH,
-          params.user,
+          params.onBehalfOf,
           keccak256(abi.encodePacked(updatesHashes)),
           params.nonce,
           params.deadline

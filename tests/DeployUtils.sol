@@ -12,35 +12,54 @@ import {Create2Utils} from 'tests/Create2Utils.sol';
 library DeployUtils {
   Vm internal constant vm = Vm(address(uint160(uint256(keccak256('hevm cheat code')))));
 
-  function deploySpokeImplementation(address oracle) internal returns (ISpokeInstance) {
-    return deploySpokeImplementation(oracle, '');
+  function deploySpokeImplementation(
+    address oracle,
+    uint16 maxUserReservesLimit
+  ) internal returns (ISpokeInstance) {
+    return deploySpokeImplementation(oracle, maxUserReservesLimit, '');
   }
 
   function deploySpokeImplementation(
     address oracle,
+    uint16 maxUserReservesLimit,
     bytes32 salt
   ) internal returns (ISpokeInstance spoke) {
     Create2Utils.loadCreate2Factory();
-    return ISpokeInstance(Create2Utils.create2Deploy(salt, _getSpokeInstanceInitCode(oracle)));
+    return
+      ISpokeInstance(
+        Create2Utils.create2Deploy(salt, _getSpokeInstanceInitCode(oracle, maxUserReservesLimit))
+      );
   }
 
   function deploySpoke(
     address oracle,
+    uint16 maxUserReservesLimit,
     address proxyAdminOwner,
     bytes memory initData
   ) internal returns (ISpoke) {
-    return ISpoke(_proxify(address(deploySpokeImplementation(oracle)), proxyAdminOwner, initData));
-  }
-
-  function getDeterministicSpokeInstanceAddress(address oracle) internal returns (address) {
-    return getDeterministicSpokeInstanceAddress(oracle, '');
+    return
+      ISpoke(
+        _proxify(
+          address(deploySpokeImplementation(oracle, maxUserReservesLimit, '')),
+          proxyAdminOwner,
+          initData
+        )
+      );
   }
 
   function getDeterministicSpokeInstanceAddress(
     address oracle,
+    uint16 maxUserReservesLimit
+  ) internal returns (address) {
+    return getDeterministicSpokeInstanceAddress(oracle, maxUserReservesLimit, '');
+  }
+
+  function getDeterministicSpokeInstanceAddress(
+    address oracle,
+    uint16 maxUserReservesLimit,
     bytes32 salt
   ) internal returns (address) {
-    bytes32 initCodeHash = keccak256(_getSpokeInstanceInitCode(oracle));
+    bytes32 initCodeHash = keccak256(_getSpokeInstanceInitCode(oracle, maxUserReservesLimit));
 
     Create2Utils.loadCreate2Factory();
     return Create2Utils.computeCreate2Address(salt, initCodeHash);
@@ -79,11 +98,14 @@ library DeployUtils {
     return address(proxy);
   }
 
-  function _getSpokeInstanceInitCode(address oracle) internal view returns (bytes memory) {
+  function _getSpokeInstanceInitCode(
+    address oracle,
+    uint16 maxUserReservesLimit
+  ) internal view returns (bytes memory) {
     return
       abi.encodePacked(
         vm.getCode('src/spoke/instances/SpokeInstance.sol:SpokeInstance'),
-        abi.encode(oracle)
+        abi.encode(oracle, maxUserReservesLimit)
       );
   }
 

@@ -2,14 +2,14 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.20;
 
-import {MathUtils} from 'src/libraries/math/MathUtils.sol';
+import {Math} from 'src/dependencies/openzeppelin/Math.sol';
 
 /// @title SharesMath library
 /// @author Aave Labs
 /// @notice Implements the logic to convert between assets and shares.
 /// @dev Utilizes virtual assets and shares to mitigate share manipulation attacks.
 library SharesMath {
-  using MathUtils for uint256;
+  using Math for uint256;
 
   uint256 internal constant VIRTUAL_ASSETS = 1e6;
   uint256 internal constant VIRTUAL_SHARES = 1e6;
@@ -20,7 +20,12 @@ library SharesMath {
     uint256 totalAssets,
     uint256 totalShares
   ) internal pure returns (uint256) {
-    return assets.mulDivDown(totalShares + VIRTUAL_SHARES, totalAssets + VIRTUAL_ASSETS);
+    return
+      assets.mulDiv(
+        totalShares + VIRTUAL_SHARES,
+        totalAssets + VIRTUAL_ASSETS,
+        Math.Rounding.Floor
+      );
   }
 
   /// @notice Converts an amount of shares to the equivalent amount of assets, rounding down.
@@ -29,7 +34,12 @@ library SharesMath {
     uint256 totalAssets,
     uint256 totalShares
   ) internal pure returns (uint256) {
-    return shares.mulDivDown(totalAssets + VIRTUAL_ASSETS, totalShares + VIRTUAL_SHARES);
+    return
+      shares.mulDiv(
+        totalAssets + VIRTUAL_ASSETS,
+        totalShares + VIRTUAL_SHARES,
+        Math.Rounding.Floor
+      );
   }
 
   /// @notice Converts an amount of assets to the equivalent amount of shares, rounding up.
@@ -38,7 +48,8 @@ library SharesMath {
     uint256 totalAssets,
     uint256 totalShares
   ) internal pure returns (uint256) {
-    return assets.mulDivUp(totalShares + VIRTUAL_SHARES, totalAssets + VIRTUAL_ASSETS);
+    return
+      assets.mulDiv(totalShares + VIRTUAL_SHARES, totalAssets + VIRTUAL_ASSETS, Math.Rounding.Ceil);
   }
 
   /// @notice Converts an amount of shares to the equivalent amount of assets, rounding up.
@@ -47,6 +58,7 @@ library SharesMath {
     uint256 totalAssets,
     uint256 totalShares
   ) internal pure returns (uint256) {
-    return shares.mulDivUp(totalAssets + VIRTUAL_ASSETS, totalShares + VIRTUAL_SHARES);
+    return
+      shares.mulDiv(totalAssets + VIRTUAL_ASSETS, totalShares + VIRTUAL_SHARES, Math.Rounding.Ceil);
   }
 }

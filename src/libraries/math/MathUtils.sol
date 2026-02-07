@@ -74,6 +74,18 @@ library MathUtils {
     }
   }
 
+  /// @notice Divides `a` by `b`, rounding up.
+  /// @dev Reverts if division by zero.
+  /// @return c = ceil(a / b).
+  function divUp(uint256 a, uint256 b) internal pure returns (uint256 c) {
+    assembly ('memory-safe') {
+      if iszero(b) {
+        revert(0, 0)
+      }
+      c := add(div(a, b), gt(mod(a, b), 0))
+    }
+  }
+
   /// @notice Multiplies `a` and `b` in 256 bits and divides the result by `c`, rounding down.
   /// @dev Reverts if division by zero or overflow occurs on intermediate multiplication.
   /// @return d = floor(a * b / c).
