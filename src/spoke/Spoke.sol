@@ -373,10 +373,9 @@ abstract contract Spoke is
       params: params
     });
 
-    uint256 newRiskPremium = 0;
     if (isUserInDeficit) {
       // report deficit for all debt reserves, including the reserve being repaid
-      LiquidationLogic.reportDeficit(
+      LiquidationLogic.notifyReportDeficit(
         _reserves,
         _userPositions,
         _positionStatus,
@@ -384,9 +383,9 @@ abstract contract Spoke is
         user
       );
     } else {
-      newRiskPremium = _calculateUserAccountData(user).riskPremium;
+      uint256 newRiskPremium = _calculateUserAccountData(user).riskPremium;
+      _notifyRiskPremiumUpdate(user, newRiskPremium);
     }
-    _notifyRiskPremiumUpdate(user, newRiskPremium);
   }
 
   /// @inheritdoc ISpoke
@@ -846,6 +845,7 @@ abstract contract Spoke is
       userPosition.applyPremiumDelta(premiumDelta);
       emit RefreshPremiumDebt(reserveId, user, premiumDelta);
     }
+
     emit UpdateUserRiskPremium(user, newRiskPremium);
   }
 

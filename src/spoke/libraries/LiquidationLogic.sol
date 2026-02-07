@@ -252,13 +252,13 @@ library LiquidationLogic {
 
   /// @notice Reports deficits for all debt reserves of the user.
   /// @dev Deficit validation should already have occurred during liquidation.
-  /// @dev It clears the user position, setting drawn debt and premium debt to zero.
+  /// @dev It clears the user position, setting drawn debt, premium debt and user risk premium to zero.
   /// @param reserves The mapping of reserves per reserve identifier.
   /// @param userPositions The mapping of user positions per reserve per user.
   /// @param positionStatus The mapping of position status per user.
   /// @param reserveCount The number of reserves.
   /// @param user The address of the user.
-  function reportDeficit(
+  function notifyReportDeficit(
     mapping(uint256 reserveId => ISpoke.Reserve) storage reserves,
     mapping(address user => mapping(uint256 reserveId => ISpoke.UserPosition)) storage userPositions,
     mapping(address user => ISpoke.PositionStatus) storage positionStatus,
@@ -266,6 +266,7 @@ library LiquidationLogic {
     address user
   ) external {
     ISpoke.PositionStatus storage userPositionStatus = positionStatus[user];
+    userPositionStatus.riskPremium = 0;
 
     uint256 reserveId = reserveCount;
     while (
@@ -298,6 +299,8 @@ library LiquidationLogic {
 
       emit ISpoke.ReportDeficit(reserveId, user, debtComponents.drawnShares, premiumDelta);
     }
+
+    emit ISpoke.UpdateUserRiskPremium(user, 0);
   }
 
   /// @notice Calculates the liquidation bonus at a given health factor.
