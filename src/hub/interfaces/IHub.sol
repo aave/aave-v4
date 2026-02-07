@@ -353,7 +353,7 @@ interface IHub is IHubBase, IAccessManaged {
   function getAssetCount() external view returns (uint256);
 
   /// @notice Returns information regarding the specified asset.
-/// @dev `drawnIndex`, `drawnRate` and `lastUpdateTimestamp` can be outdated due to passage of time.
+  /// @dev `drawnIndex`, `drawnRate` and `lastUpdateTimestamp` can be outdated due to passage of time.
   /// @param assetId The identifier of the asset.
   /// @return The asset struct.
   function getAsset(uint256 assetId) external view returns (Asset memory);
