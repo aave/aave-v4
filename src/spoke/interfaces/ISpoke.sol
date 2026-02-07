@@ -433,7 +433,7 @@ interface ISpoke is ISpokeBase, IAccessManaged, IIntentConsumer, IExtSload, IMul
 
   /// @notice Allows consuming a permit signature for the given reserve's underlying asset.
   /// @dev It reverts if the reserve associated with the given reserve identifier is not listed.
-  /// @dev Spender is the corresponding Hub of the given reserve.
+  /// @dev The Spoke must be configured as the spender, pulling liquidity from the user and forwarding it to the Hub.
   /// @param reserveId The identifier of the reserve.
   /// @param onBehalfOf The address of the user on whose behalf the permit is being used.
   /// @param value The amount of the underlying asset to permit.
