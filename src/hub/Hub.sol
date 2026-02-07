@@ -853,6 +853,7 @@ contract Hub is IHub, AccessManaged {
   }
 
   /// @dev Spoke with maximum cap have unlimited draw capacity.
+  /// @dev The draw cap is enforced against the spoke's total owed, and includes any deficit reported by the spoke.
   function _validateDraw(
     Asset storage asset,
     SpokeData storage spoke,

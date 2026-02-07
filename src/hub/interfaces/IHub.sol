@@ -71,7 +71,6 @@ interface IHub is IHubBase, IAccessManaged {
   /// @dev addedShares The added shares of a spoke for a given asset.
   /// @dev addCap The maximum amount that can be added by a spoke, expressed in whole assets (not scaled by decimals). A value of `MAX_ALLOWED_SPOKE_CAP` indicates no cap.
   /// @dev drawCap The maximum amount that can be drawn by a spoke, expressed in whole assets (not scaled by decimals). A value of `MAX_ALLOWED_SPOKE_CAP` indicates no cap.
-  /// @dev The draw cap is enforced against the spoke's total owed, and includes any deficit reported by the spoke.
   /// @dev riskPremiumThreshold The maximum ratio of premium to drawn shares a spoke can have, expressed in BPS. A value of `MAX_RISK_PREMIUM_THRESHOLD` indicates no threshold.
   /// @dev active False if the spoke is prevented from performing any actions.
   /// @dev halted True if the spoke is prevented from performing any user-facing actions.
@@ -355,6 +354,7 @@ interface IHub is IHubBase, IAccessManaged {
 
   /// @notice Returns information regarding the specified asset.
   /// @dev `drawnIndex`, `drawnRate` and `lastUpdateTimestamp` can be outdated due to passage of time.
+  /// @dev The draw cap is enforced against the spoke's total owed, and includes any deficit reported by the spoke.
   /// @param assetId The identifier of the asset.
   /// @return The asset struct.
   function getAsset(uint256 assetId) external view returns (Asset memory);
