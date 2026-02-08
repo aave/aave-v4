@@ -27,7 +27,7 @@ library AssetLogic {
     IHub.Asset storage asset,
     uint256 shares
   ) internal view returns (uint256) {
-    return shares.rayMulUp(asset.getAssetDrawnIndex());
+    return shares.rayMulUp(asset.getDrawnIndex());
   }
 
   /// @notice Converts an amount of shares to the equivalent amount of drawn assets, rounding down.
@@ -35,7 +35,7 @@ library AssetLogic {
     IHub.Asset storage asset,
     uint256 shares
   ) internal view returns (uint256) {
-    return shares.rayMulDown(asset.getAssetDrawnIndex());
+    return shares.rayMulDown(asset.getDrawnIndex());
   }
 
   /// @notice Converts an amount of drawn assets to the equivalent amount of shares, rounding up.
@@ -43,7 +43,7 @@ library AssetLogic {
     IHub.Asset storage asset,
     uint256 assets
   ) internal view returns (uint256) {
-    return assets.rayDivUp(asset.getAssetDrawnIndex());
+    return assets.rayDivUp(asset.getDrawnIndex());
   }
 
   /// @notice Converts an amount of drawn assets to the equivalent amount of shares, rounding down.
@@ -51,7 +51,7 @@ library AssetLogic {
     IHub.Asset storage asset,
     uint256 assets
   ) internal view returns (uint256) {
-    return assets.rayDivDown(asset.getAssetDrawnIndex());
+    return assets.rayDivDown(asset.getDrawnIndex());
   }
 
   /// @notice Returns the total drawn assets amount for the specified asset.
@@ -78,7 +78,7 @@ library AssetLogic {
 
   /// @notice Returns the total added assets for the specified asset.
   function totalAddedAssets(IHub.Asset storage asset) internal view returns (uint256) {
-    uint256 drawnIndex = asset.getAssetDrawnIndex();
+    uint256 drawnIndex = asset.getDrawnIndex();
 
     uint256 aggregatedOwedRay = _calculateAggregatedOwedRay({
       drawnShares: asset.drawnShares,
@@ -144,14 +144,14 @@ library AssetLogic {
       return;
     }
 
-    uint256 drawnIndex = asset.getAssetDrawnIndex();
+    uint256 drawnIndex = asset.getDrawnIndex();
     asset.realizedFees += asset.getUnrealizedFees(drawnIndex).toUint120();
     asset.drawnIndex = drawnIndex.toUint120();
     asset.lastUpdateTimestamp = block.timestamp.toUint40();
   }
 
   /// @notice Calculates the drawn index of a specified asset based on the existing drawn rate and index.
-  function getAssetDrawnIndex(IHub.Asset storage asset) internal view returns (uint256) {
+  function getDrawnIndex(IHub.Asset storage asset) internal view returns (uint256) {
     uint256 previousIndex = asset.drawnIndex;
     uint40 lastUpdateTimestamp = asset.lastUpdateTimestamp;
     if (

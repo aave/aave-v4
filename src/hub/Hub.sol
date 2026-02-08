@@ -534,26 +534,26 @@ contract Hub is IHub, AccessManaged {
 
   /// @inheritdoc IHubBase
   function getAssetDrawnIndex(uint256 assetId) external view returns (uint256) {
-    return _assets[assetId].getAssetDrawnIndex();
+    return _assets[assetId].getDrawnIndex();
   }
 
   /// @inheritdoc IHubBase
   function getAssetDrawnRate(uint256 assetId) external view returns (uint256) {
     Asset storage asset = _assets[assetId];
-    return asset.getDrawnRate(assetId, asset.getAssetDrawnIndex());
+    return asset.getDrawnRate(assetId, asset.getDrawnIndex());
   }
 
   /// @inheritdoc IHubBase
   function getAssetOwed(uint256 assetId) external view returns (uint256, uint256) {
     Asset storage asset = _assets[assetId];
-    uint256 drawnIndex = asset.getAssetDrawnIndex();
+    uint256 drawnIndex = asset.getDrawnIndex();
     return (asset.drawn(drawnIndex), asset.premium(drawnIndex));
   }
 
   /// @inheritdoc IHubBase
   function getAssetTotalOwed(uint256 assetId) external view returns (uint256) {
     Asset storage asset = _assets[assetId];
-    return asset.totalOwed(asset.getAssetDrawnIndex());
+    return asset.totalOwed(asset.getDrawnIndex());
   }
 
   /// @inheritdoc IHubBase
@@ -563,7 +563,7 @@ contract Hub is IHub, AccessManaged {
       Premium.calculatePremiumRay({
         premiumShares: asset.premiumShares,
         premiumOffsetRay: asset.premiumOffsetRay,
-        drawnIndex: asset.getAssetDrawnIndex()
+        drawnIndex: asset.getDrawnIndex()
       });
   }
 
@@ -608,7 +608,7 @@ contract Hub is IHub, AccessManaged {
   /// @inheritdoc IHub
   function getAssetAccruedFees(uint256 assetId) external view returns (uint256) {
     Asset storage asset = _assets[assetId];
-    return asset.realizedFees + asset.getUnrealizedFees(asset.getAssetDrawnIndex());
+    return asset.realizedFees + asset.getUnrealizedFees(asset.getDrawnIndex());
   }
 
   /// @inheritdoc IHub
@@ -824,7 +824,7 @@ contract Hub is IHub, AccessManaged {
       Premium.calculatePremiumRay({
         premiumShares: spoke.premiumShares,
         premiumOffsetRay: spoke.premiumOffsetRay,
-        drawnIndex: asset.getAssetDrawnIndex()
+        drawnIndex: asset.getDrawnIndex()
       });
   }
 
