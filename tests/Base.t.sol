@@ -1647,7 +1647,7 @@ abstract contract Base is Test {
   ) internal view returns (IHubBase.PremiumDelta memory) {
     return
       _getExpectedPremiumDelta({
-        drawnIndex: hub.getAssetDrawnIndex(assetId),
+        drawnIndex: hub.computeAssetDrawnIndex(assetId),
         oldPremiumShares: oldPremiumShares,
         oldPremiumOffsetRay: oldPremiumOffsetRay,
         drawnShares: drawnShares,
@@ -1703,7 +1703,7 @@ abstract contract Base is Test {
       uint256 assetId = spoke.getReserve(reserveId).assetId;
       IHub hub = IHub(address(spoke.getReserve(reserveId).hub));
 
-      uint256 restoredShares = drawnDebtToRestore.rayDivDown(hub.getAssetDrawnIndex(assetId));
+      uint256 restoredShares = drawnDebtToRestore.rayDivDown(hub.computeAssetDrawnIndex(assetId));
       uint256 riskPremium = _getUserLastRiskPremium(spoke, user);
 
       return
@@ -2228,7 +2228,7 @@ abstract contract Base is Test {
     uint256 premiumShares,
     int256 premiumOffsetRay
   ) internal view returns (uint256) {
-    uint256 drawnIndex = hub.getAssetDrawnIndex(assetId);
+    uint256 drawnIndex = hub.computeAssetDrawnIndex(assetId);
     return _calculatePremiumDebtRay(premiumShares, premiumOffsetRay, drawnIndex);
   }
 
@@ -2286,7 +2286,7 @@ abstract contract Base is Test {
     uint256 assetId,
     uint256 premiumShares
   ) internal view returns (uint256) {
-    return _calculatePremiumAssetsRay(premiumShares, hub.getAssetDrawnIndex(assetId));
+    return _calculatePremiumAssetsRay(premiumShares, hub.computeAssetDrawnIndex(assetId));
   }
 
   /// @dev Helper function to withdraw fees from the treasury spoke
@@ -2423,7 +2423,7 @@ abstract contract Base is Test {
   }
 
   function _reserveDrawnIndex(ISpoke spoke, uint256 reserveId) internal view returns (uint256) {
-    return _hub(spoke, reserveId).getAssetDrawnIndex(_reserveAssetId(spoke, reserveId));
+    return _hub(spoke, reserveId).computeAssetDrawnIndex(_reserveAssetId(spoke, reserveId));
   }
 
   function _deploySpokeWithOracle(

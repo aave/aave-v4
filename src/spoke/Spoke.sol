@@ -312,7 +312,7 @@ abstract contract Spoke is
     UserPosition storage userPosition = _userPositions[onBehalfOf][reserveId];
     _validateRepay(reserve.flags);
 
-    uint256 drawnIndex = reserve.hub.getAssetDrawnIndex(reserve.assetId);
+    uint256 drawnIndex = reserve.hub.computeAssetDrawnIndex(reserve.assetId);
     (uint256 drawnDebtRestored, uint256 premiumDebtRayRestored) = userPosition
       .calculateRestoreAmount(drawnIndex, amount);
     uint256 restoredShares = drawnDebtRestored.rayDivDown(drawnIndex);
@@ -836,7 +836,7 @@ abstract contract Spoke is
 
       IHubBase.PremiumDelta memory premiumDelta = userPosition.calculatePremiumDelta({
         drawnSharesTaken: 0,
-        drawnIndex: hub.getAssetDrawnIndex(assetId),
+        drawnIndex: hub.computeAssetDrawnIndex(assetId),
         riskPremium: newRiskPremium,
         restoredPremiumRay: 0
       });

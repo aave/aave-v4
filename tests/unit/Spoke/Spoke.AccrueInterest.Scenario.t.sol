@@ -168,7 +168,7 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
       for (uint256 i = 0; i < 4; ++i) {
         (testAmounts[i].borrowAmount, ) = spoke2.getUserDebt(testAmounts[i].reserveId, bob);
         values[i].baseBorrowRate = hub1.getAssetDrawnRate(testAmounts[i].assetId).toUint96();
-        values[i].index = hub1.getAssetDrawnIndex(testAmounts[i].assetId).toUint120();
+        values[i].index = hub1.computeAssetDrawnIndex(testAmounts[i].assetId).toUint120();
         values[i].timestamp = hub1.getAsset(testAmounts[i].assetId).lastUpdateTimestamp;
         values[i].baseShares = spoke2.getUserPosition(testAmounts[i].reserveId, bob).drawnShares;
       }
@@ -278,8 +278,8 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
       borrowAmount: amounts.daiBorrowAmount,
       originalSupplyAmount: amounts.daiSupplyAmount,
       originalBorrowAmount: amounts.daiBorrowAmount,
-      index: hub1.getAssetDrawnIndex(daiAssetId),
-      originalIndex: hub1.getAssetDrawnIndex(daiAssetId),
+      index: hub1.computeAssetDrawnIndex(daiAssetId),
+      originalIndex: hub1.computeAssetDrawnIndex(daiAssetId),
       reserveId: _daiReserveId(spoke2),
       assetId: daiAssetId,
       name: 'DAI'
@@ -290,8 +290,8 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
       borrowAmount: amounts.wethBorrowAmount,
       originalSupplyAmount: amounts.wethSupplyAmount,
       originalBorrowAmount: amounts.wethBorrowAmount,
-      index: hub1.getAssetDrawnIndex(wethAssetId),
-      originalIndex: hub1.getAssetDrawnIndex(wethAssetId),
+      index: hub1.computeAssetDrawnIndex(wethAssetId),
+      originalIndex: hub1.computeAssetDrawnIndex(wethAssetId),
       reserveId: _wethReserveId(spoke2),
       assetId: wethAssetId,
       name: 'WETH'
@@ -302,8 +302,8 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
       borrowAmount: amounts.usdxBorrowAmount,
       originalSupplyAmount: amounts.usdxSupplyAmount,
       originalBorrowAmount: amounts.usdxBorrowAmount,
-      index: hub1.getAssetDrawnIndex(usdxAssetId),
-      originalIndex: hub1.getAssetDrawnIndex(usdxAssetId),
+      index: hub1.computeAssetDrawnIndex(usdxAssetId),
+      originalIndex: hub1.computeAssetDrawnIndex(usdxAssetId),
       reserveId: _usdxReserveId(spoke2),
       assetId: usdxAssetId,
       name: 'USDX'
@@ -314,8 +314,8 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
       borrowAmount: amounts.wbtcBorrowAmount,
       originalSupplyAmount: amounts.wbtcSupplyAmount,
       originalBorrowAmount: amounts.wbtcBorrowAmount,
-      index: hub1.getAssetDrawnIndex(wbtcAssetId),
-      originalIndex: hub1.getAssetDrawnIndex(wbtcAssetId),
+      index: hub1.computeAssetDrawnIndex(wbtcAssetId),
+      originalIndex: hub1.computeAssetDrawnIndex(wbtcAssetId),
       reserveId: _wbtcReserveId(spoke2),
       assetId: wbtcAssetId,
       name: 'WBTC'

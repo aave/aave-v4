@@ -447,7 +447,7 @@ contract SpokeLiquidationCallScenariosTest is SpokeLiquidationCallBaseTest {
 
     // Skip 1 year to increase drawn index
     skip(365 days);
-    assertEq(hub1.getAssetDrawnIndex(daiAssetId), 1.1e27);
+    assertEq(hub1.computeAssetDrawnIndex(daiAssetId), 1.1e27);
 
     // Increase DAI price by 101%
     _mockReservePriceByPercent(spoke, _daiReserveId(spoke), 201_00);
@@ -569,7 +569,7 @@ contract SpokeLiquidationCallScenariosTest is SpokeLiquidationCallBaseTest {
 
     // Skip 1 year to increase drawn index
     skip(365 days);
-    assertEq(hub1.getAssetDrawnIndex(usdyAssetId), 1.5e27);
+    assertEq(hub1.computeAssetDrawnIndex(usdyAssetId), 1.5e27);
 
     // User is liquidatable
     ISpoke.UserAccountData memory userAccountData = spoke.getUserAccountData(user);
@@ -638,7 +638,7 @@ contract SpokeLiquidationCallScenariosTest is SpokeLiquidationCallBaseTest {
     _increaseCollateralSupply(spoke, _usdyReserveId(spoke), 2, randomUser);
     _increaseReserveDebt(spoke, _usdyReserveId(spoke), 1, randomUser);
     skip(365 days);
-    assertEq(hub1.getAssetDrawnIndex(usdyAssetId), 1.6e27);
+    assertEq(hub1.computeAssetDrawnIndex(usdyAssetId), 1.6e27);
 
     // set interest rate
     _mockInterestRateBps(56_25);
@@ -670,7 +670,7 @@ contract SpokeLiquidationCallScenariosTest is SpokeLiquidationCallBaseTest {
 
     // Skip 1 year to increase drawn index to 2.5
     skip(365 days);
-    assertEq(hub1.getAssetDrawnIndex(usdyAssetId), 2.5e27);
+    assertEq(hub1.computeAssetDrawnIndex(usdyAssetId), 2.5e27);
 
     // User is liquidatable
     ISpoke.UserAccountData memory userAccountData = spoke.getUserAccountData(user);

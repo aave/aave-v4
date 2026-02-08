@@ -189,7 +189,8 @@ contract HubReportDeficitTest is HubBase {
     baseAmount = bound(baseAmount, 0, params.drawn);
     uint256 drawnShares = hub1.previewRestoreByAssets(usdxAssetId, baseAmount);
     premiumAmountRay = bound(premiumAmountRay, 0, params.premiumRay);
-    uint256 totalDeficitRay = drawnShares * hub1.getAssetDrawnIndex(usdxAssetId) + premiumAmountRay;
+    uint256 totalDeficitRay = drawnShares * hub1.computeAssetDrawnIndex(usdxAssetId) +
+      premiumAmountRay;
     vm.assume(totalDeficitRay > 0);
 
     params.deficitRayBefore = hub1.getAssetDeficitRay(usdxAssetId);

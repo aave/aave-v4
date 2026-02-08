@@ -38,7 +38,7 @@ contract HubDrawTest is HubBase {
     vm.expectEmit(address(hub1));
     emit IHub.UpdateAsset(
       assetId,
-      hub1.getAssetDrawnIndex(assetId),
+      hub1.computeAssetDrawnIndex(assetId),
       IBasicInterestRateStrategy(irStrategy).calculateInterestRate({
         assetId: assetId,
         liquidity: assetBefore.liquidity - assetBefore.swept - amount,
@@ -124,7 +124,7 @@ contract HubDrawTest is HubBase {
     vm.expectEmit(address(hub1));
     emit IHub.UpdateAsset(
       assetId,
-      hub1.getAssetDrawnIndex(assetId),
+      hub1.computeAssetDrawnIndex(assetId),
       IBasicInterestRateStrategy(irStrategy).calculateInterestRate({
         assetId: assetId,
         liquidity: assetBefore.liquidity - assetBefore.swept - amount,

@@ -99,7 +99,7 @@ contract MockSpoke is Spoke, Test {
         .toUint120();
       _userPositions[user][info.debtReserveIds[i]].premiumOffsetRay =
         (_userPositions[user][info.debtReserveIds[i]].premiumShares *
-          reserve.hub.getAssetDrawnIndex(reserve.assetId)).toInt256().toInt200() -
+          reserve.hub.computeAssetDrawnIndex(reserve.assetId)).toInt256().toInt200() -
         (info.accruedPremiumAmounts[i] * WadRayMath.RAY).toInt256().toInt200() -
         (info.realizedPremiumAmountsRay[i]).toInt256().toInt200();
     }
