@@ -222,11 +222,6 @@ interface IHubBase {
   /// @return The current drawn index of the asset.
   function getAssetDrawnIndex(uint256 assetId) external view returns (uint256);
 
-  /// @notice Calculates the current drawn rate for the specified asset.
-  /// @param assetId The identifier of the asset.
-  /// @return The current drawn rate of the asset.
-  function getAssetDrawnRate(uint256 assetId) external view returns (uint256);
-
   /// @notice Returns the total amount of the specified asset added to the Hub.
   /// @param assetId The identifier of the asset.
   /// @return The amount of the asset added.
