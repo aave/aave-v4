@@ -115,8 +115,8 @@ interface IHubConfigurator {
 
   /// @notice Register the spoke for the specified asset on a hub.
   /// @param hub The address of the Hub.
-  /// @param assetId The identifier of the asset to register the spoke for.
   /// @param spoke The address of the Spoke.
+  /// @param assetId The identifier of the asset to register the spoke for.
   /// @param config The Spoke configuration to register.
   function addSpoke(
     address hub,

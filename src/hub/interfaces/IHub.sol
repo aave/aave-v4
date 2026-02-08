@@ -20,7 +20,7 @@ interface IHub is IHubBase, IAccessManaged {
   /// @dev premiumShares The total premium shares across all spokes.
   /// @dev liquidityFee The protocol fee charged on drawn and premium liquidity growth, expressed in BPS.
   /// @dev drawnIndex The drawn index which monotonically increases according to the drawn rate, expressed in RAY.
-  /// @dev drawnRate The rate at which drawn assets grows, expressed in RAY.
+  /// @dev drawnRate The rate at which drawn assets grow, expressed in RAY.
   /// @dev lastUpdateTimestamp The timestamp of the last accrual.
   /// @dev underlying The address of the underlying asset.
   /// @dev irStrategy The address of the interest rate strategy.
@@ -146,19 +146,19 @@ interface IHub is IHubBase, IAccessManaged {
     uint256 assets
   );
 
-  /// @notice Emitted when an amount of liquidity is invested by the reinvestment controller.
+  /// @notice Emitted when liquidity is invested by the reinvestment controller.
   /// @param assetId The identifier of the asset.
   /// @param reinvestmentController The active asset controller.
   /// @param amount The amount invested.
   event Sweep(uint256 indexed assetId, address indexed reinvestmentController, uint256 amount);
 
-  /// @notice Emitted when an amount of liquidity is reclaimed (from swept liquidity) by the reinvestment controller.
+  /// @notice Emitted when liquidity is reclaimed (from swept liquidity) by the reinvestment controller.
   /// @param assetId The identifier of the asset.
   /// @param reinvestmentController The active asset controller.
   /// @param amount The amount reclaimed.
   event Reclaim(uint256 indexed assetId, address indexed reinvestmentController, uint256 amount);
 
-  /// @notice Emitted when deficit is eliminated.
+  /// @notice Emitted when a deficit is eliminated.
   /// @param assetId The identifier of the asset.
   /// @param callerSpoke The spoke that eliminated the deficit using its supplied shares.
   /// @param coveredSpoke The spoke for which the deficit was eliminated.
@@ -374,9 +374,10 @@ interface IHub is IHubBase, IAccessManaged {
   /// @return The amount of liquidity swept.
   function getAssetSwept(uint256 assetId) external view returns (uint256);
 
-  /// @notice Returns the current drawn rate for the specified asset.
+  /// @notice Returns the last updated drawn rate for the specified asset.
+  /// @dev Drawn rate can be outdated due to passage of time.
   /// @param assetId The identifier of the asset.
-  /// @return The current drawn rate of the asset.
+  /// @return The last updated drawn rate of the asset.
   function getAssetDrawnRate(uint256 assetId) external view returns (uint256);
 
   /// @notice Returns the number of spokes listed for the specified asset.
