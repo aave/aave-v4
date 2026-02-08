@@ -80,7 +80,7 @@ contract HubMintFeeSharesTest is HubBase {
     vm.expectEmit(address(hub1));
     emit IHub.MintFeeShares(daiAssetId, feeReceiver, expectedMintedShares, expectedMintedAssets);
     vm.expectEmit(address(hub1));
-    emit IHub.UpdateAsset(daiAssetId, hub1.computeAssetDrawnIndex(daiAssetId), mockRate, 0);
+    emit IHub.UpdateAsset(daiAssetId, hub1.getAssetDrawnIndex(daiAssetId), mockRate, 0);
 
     uint256 addedSharesBefore = hub1.getAddedShares(daiAssetId);
     uint256 sharePriceBefore = hub1.previewAddByShares(daiAssetId, 1e18);
@@ -134,7 +134,7 @@ contract HubMintFeeSharesTest is HubBase {
     });
 
     // drawn index is 1.0000...002
-    assertEq(hub1.computeAssetDrawnIndex(daiAssetId), 1e27 + 2);
+    assertEq(hub1.getAssetDrawnIndex(daiAssetId), 1e27 + 2);
 
     _mockInterestRateRay(1e27 - 3);
     updateLiquidityFee(hub1, daiAssetId, PercentageMath.PERCENTAGE_FACTOR);
@@ -144,7 +144,7 @@ contract HubMintFeeSharesTest is HubBase {
     skip(365 days);
 
     // drawn index is 2.000...001
-    assertEq(hub1.computeAssetDrawnIndex(daiAssetId), 2e27 + 1);
+    assertEq(hub1.getAssetDrawnIndex(daiAssetId), 2e27 + 1);
 
     vm.recordLogs();
     Utils.mintFeeShares(hub1, daiAssetId, ADMIN);

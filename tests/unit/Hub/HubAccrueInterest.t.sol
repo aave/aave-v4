@@ -335,7 +335,7 @@ contract HubAccrueInterestTest is Base {
     assertEq(getAssetDrawnDebt(daiAssetId), expectedDrawnDebt2, 'drawn t2');
   }
 
-  function test_computeAssetDrawnRate_MatchesStoredAfterAction() public {
+  function test_getAssetDrawnRate_MatchesStoredAfterAction() public {
     uint256 addAmount = 1000e18;
     uint256 borrowAmount = 100e18;
 
@@ -343,13 +343,13 @@ contract HubAccrueInterestTest is Base {
     Utils.draw(hub1, daiAssetId, address(spoke1), address(spoke1), borrowAmount);
 
     assertEq(
-      hub1.computeAssetDrawnRate(daiAssetId),
+      hub1.getAssetDrawnRate(daiAssetId),
       hub1.getAssetDrawnRate(daiAssetId),
       'rate mismatch after action'
     );
   }
 
-  function test_computeAssetDrawnRate_fuzz_DiffersAfterTimePasses(uint40 elapsed) public {
+  function test_getAssetDrawnRate_fuzz_DiffersAfterTimePasses(uint40 elapsed) public {
     elapsed = bound(elapsed, 1, type(uint40).max / 3).toUint40();
 
     uint256 addAmount = 1000e18;
@@ -358,16 +358,16 @@ contract HubAccrueInterestTest is Base {
     Utils.add(hub1, daiAssetId, address(spoke1), addAmount, address(spoke1));
     Utils.draw(hub1, daiAssetId, address(spoke1), address(spoke1), borrowAmount);
 
-    uint256 storedRateBefore = hub1.getAssetDrawnRate(daiAssetId);
+    uint256 storedRateBefore = hub1.getAsset(daiAssetId).drawnRate;
 
     skip(elapsed);
 
     // Stored rate remains unchanged
-    assertEq(hub1.getAssetDrawnRate(daiAssetId), storedRateBefore, 'stored rate should not change');
+    assertEq(hub1.getAsset(daiAssetId).drawnRate, storedRateBefore);
 
-    uint256 computedRate = hub1.computeAssetDrawnRate(daiAssetId);
+    uint256 computedRate = hub1.getAssetDrawnRate(daiAssetId);
     IHub.Asset memory asset = hub1.getAsset(daiAssetId);
-    uint256 currentDrawnIndex = hub1.computeAssetDrawnIndex(daiAssetId);
+    uint256 currentDrawnIndex = hub1.getAssetDrawnIndex(daiAssetId);
     uint256 currentDrawn = uint256(asset.drawnShares).rayMulUp(currentDrawnIndex);
     uint256 expectedRate = IBasicInterestRateStrategy(asset.irStrategy).calculateInterestRate({
       assetId: daiAssetId,
@@ -376,6 +376,6 @@ contract HubAccrueInterestTest is Base {
       deficit: uint256(asset.deficitRay).fromRayUp(),
       swept: asset.swept
     });
-    assertEq(computedRate, expectedRate, 'computed rate should match IR strategy calculation');
+    assertEq(computedRate, expectedRate);
   }
 }

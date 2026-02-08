@@ -76,7 +76,7 @@ contract LiquidationLogicLiquidateDebtTest is LiquidationLogicBaseTest {
 
   function test_liquidateDebt_fuzz(uint256) public {
     IHub.SpokeData memory spokeData = hub.getSpoke(assetId, address(spoke));
-    uint256 drawnIndex = hub.computeAssetDrawnIndex(assetId);
+    uint256 drawnIndex = hub.getAssetDrawnIndex(assetId);
 
     uint256 spokePremiumOwedRay = _calculatePremiumDebtRay(
       hub,
@@ -148,7 +148,7 @@ contract LiquidationLogicLiquidateDebtTest is LiquidationLogicBaseTest {
     uint256 premiumDebtRay = 10e18 * WadRayMath.RAY;
     _updateStorage(drawnShares, premiumDebtRay);
 
-    uint256 drawnIndex = hub.computeAssetDrawnIndex(assetId);
+    uint256 drawnIndex = hub.getAssetDrawnIndex(assetId);
 
     vm.expectRevert(stdError.arithmeticError);
     liquidationLogicWrapper.liquidateDebt(
@@ -185,7 +185,7 @@ contract LiquidationLogicLiquidateDebtTest is LiquidationLogicBaseTest {
     uint256 premiumDebtRay = 10e18 * WadRayMath.RAY;
     _updateStorage(drawnShares, premiumDebtRay);
 
-    uint256 drawnIndex = hub.computeAssetDrawnIndex(assetId);
+    uint256 drawnIndex = hub.getAssetDrawnIndex(assetId);
 
     uint256 amountToRestore = drawnShares.rayMulUp(drawnIndex) + premiumDebtRay.fromRayUp();
     Utils.approve(spoke, address(asset), liquidator, amountToRestore - 1);
@@ -211,7 +211,7 @@ contract LiquidationLogicLiquidateDebtTest is LiquidationLogicBaseTest {
     uint256 premiumDebtRay = 10e18 * WadRayMath.RAY;
     _updateStorage(drawnShares, premiumDebtRay);
 
-    uint256 drawnIndex = hub.computeAssetDrawnIndex(assetId);
+    uint256 drawnIndex = hub.getAssetDrawnIndex(assetId);
 
     uint256 amountToRestore = drawnShares.rayMulUp(drawnIndex) + premiumDebtRay.fromRayUp();
     deal(address(asset), liquidator, amountToRestore - 1);

@@ -523,17 +523,6 @@ contract Hub is IHub, AccessManaged {
   }
 
   /// @inheritdoc IHubBase
-  function computeAssetDrawnIndex(uint256 assetId) external view returns (uint256) {
-    return _assets[assetId].getDrawnIndex();
-  }
-
-  /// @inheritdoc IHubBase
-  function computeAssetDrawnRate(uint256 assetId) external view returns (uint256) {
-    Asset storage asset = _assets[assetId];
-    return asset.getDrawnRate(assetId, asset.getDrawnIndex());
-  }
-
-  /// @inheritdoc IHubBase
   function getAddedAssets(uint256 assetId) external view returns (uint256) {
     return _assets[assetId].totalAddedAssets();
   }
@@ -544,16 +533,27 @@ contract Hub is IHub, AccessManaged {
   }
 
   /// @inheritdoc IHubBase
+  function getAssetDrawnIndex(uint256 assetId) external view returns (uint256) {
+    return _assets[assetId].getAssetDrawnIndex();
+  }
+
+  /// @inheritdoc IHubBase
+  function getAssetDrawnRate(uint256 assetId) external view returns (uint256) {
+    Asset storage asset = _assets[assetId];
+    return asset.getDrawnRate(assetId, asset.getAssetDrawnIndex());
+  }
+
+  /// @inheritdoc IHubBase
   function getAssetOwed(uint256 assetId) external view returns (uint256, uint256) {
     Asset storage asset = _assets[assetId];
-    uint256 drawnIndex = asset.getDrawnIndex();
+    uint256 drawnIndex = asset.getAssetDrawnIndex();
     return (asset.drawn(drawnIndex), asset.premium(drawnIndex));
   }
 
   /// @inheritdoc IHubBase
   function getAssetTotalOwed(uint256 assetId) external view returns (uint256) {
     Asset storage asset = _assets[assetId];
-    return asset.totalOwed(asset.getDrawnIndex());
+    return asset.totalOwed(asset.getAssetDrawnIndex());
   }
 
   /// @inheritdoc IHubBase
@@ -563,7 +563,7 @@ contract Hub is IHub, AccessManaged {
       Premium.calculatePremiumRay({
         premiumShares: asset.premiumShares,
         premiumOffsetRay: asset.premiumOffsetRay,
-        drawnIndex: asset.getDrawnIndex()
+        drawnIndex: asset.getAssetDrawnIndex()
       });
   }
 
@@ -608,17 +608,12 @@ contract Hub is IHub, AccessManaged {
   /// @inheritdoc IHub
   function getAssetAccruedFees(uint256 assetId) external view returns (uint256) {
     Asset storage asset = _assets[assetId];
-    return asset.realizedFees + asset.getUnrealizedFees(asset.getDrawnIndex());
+    return asset.realizedFees + asset.getUnrealizedFees(asset.getAssetDrawnIndex());
   }
 
   /// @inheritdoc IHub
   function getAssetSwept(uint256 assetId) external view returns (uint256) {
     return _assets[assetId].swept;
-  }
-
-  /// @inheritdoc IHub
-  function getAssetDrawnRate(uint256 assetId) external view returns (uint256) {
-    return _assets[assetId].drawnRate;
   }
 
   /// @inheritdoc IHub
@@ -829,7 +824,7 @@ contract Hub is IHub, AccessManaged {
       Premium.calculatePremiumRay({
         premiumShares: spoke.premiumShares,
         premiumOffsetRay: spoke.premiumOffsetRay,
-        drawnIndex: asset.getDrawnIndex()
+        drawnIndex: asset.getAssetDrawnIndex()
       });
   }
 

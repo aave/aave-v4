@@ -113,7 +113,7 @@ library UserPositionUtils {
     IHubBase hub,
     uint256 assetId
   ) internal view returns (uint256, uint256) {
-    return userPosition.getDebt(hub.computeAssetDrawnIndex(assetId));
+    return userPosition.getDebt(hub.getAssetDrawnIndex(assetId));
   }
 
   /// @return The user's drawn debt, expressed in asset units.
@@ -132,7 +132,7 @@ library UserPositionUtils {
     IHubBase hub,
     uint256 assetId
   ) internal view returns (DebtComponents memory) {
-    uint256 drawnIndex = hub.computeAssetDrawnIndex(assetId);
+    uint256 drawnIndex = hub.getAssetDrawnIndex(assetId);
     return
       DebtComponents({
         drawnShares: userPosition.drawnShares,

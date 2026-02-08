@@ -700,7 +700,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
         params.spoke.getUserPosition(params.collateralReserveId, params.user).suppliedShares) &&
       (userAccountDataBefore.borrowCount > 1 || !fullDebtReserveLiquidated);
 
-    uint256 drawnIndex = _hub(params.spoke, params.debtReserveId).computeAssetDrawnIndex(
+    uint256 drawnIndex = _hub(params.spoke, params.debtReserveId).getAssetDrawnIndex(
       _reserveAssetId(params.spoke, params.debtReserveId)
     );
     uint256 debtAssetsToLiquidate = _calculateDebtAssetsToRestore({

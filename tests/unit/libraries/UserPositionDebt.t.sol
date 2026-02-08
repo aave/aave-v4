@@ -260,7 +260,7 @@ contract UserPositionUtilsTest is Base {
   function _mockHubDrawnIndex(uint256 drawnIndex) internal {
     vm.mockCall(
       address(hub),
-      abi.encodeCall(IHubBase.computeAssetDrawnIndex, (assetId)),
+      abi.encodeCall(IHubBase.getAssetDrawnIndex, (assetId)),
       abi.encode(drawnIndex)
     );
   }

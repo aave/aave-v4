@@ -270,7 +270,7 @@ contract SpokeGettersTest is SpokeBase {
     skip(365 days);
 
     // check premium in ray across spoke and hub
-    uint256 assetDrawnIndex = hub1.computeAssetDrawnIndex(wethAssetId);
+    uint256 assetDrawnIndex = hub1.getAssetDrawnIndex(wethAssetId);
     uint256 alicePremiumDebtRay = spoke.getUserPremiumDebtRay(_wethReserveId(spoke), alice);
     assertEq(alicePremiumDebtRay, 0.2e18 * (assetDrawnIndex - 1e27));
     uint256 bobPremiumDebtRay = spoke.getUserPremiumDebtRay(_wethReserveId(spoke), bob);

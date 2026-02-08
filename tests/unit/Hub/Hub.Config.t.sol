@@ -527,7 +527,7 @@ contract HubConfigTest is HubBase {
     vm.expectEmit(address(hub1));
     emit IHub.UpdateAsset(
       assetId,
-      hub1.computeAssetDrawnIndex(assetId),
+      hub1.getAssetDrawnIndex(assetId),
       IBasicInterestRateStrategy(irStrategy).calculateInterestRate({
         assetId: assetId,
         liquidity: liquidity,
