@@ -157,9 +157,9 @@ This represents the principal liquidity provided by the Hub to the Spoke on the 
 
 Over time, the base debt accrues interest at the Hub’s base borrow rate strategy $R_{sbase,i}$. This means that as time progresses, the accrued base interest is added to the user’s base debt, increasing the amount the user owes to the protocol’s liquidity providers for that particular asset.
 
-$D_{u,i} = D_{u,ibase} + R_{sbase,i}D_{u,ibase}$
+$D_{u,ibase}(t) = D_{u,ibase} (t-1) + R_{sbase,i}D_{u,ibase}(t-1)$
 
-$R_{sbase,i}D_{u,ibase} = ΔD_{u,ibase}$
+$ΔD_{u,ibase} = R_{sbase,i}D_{u,ibase}$
 
 ## Premium Debt
 
@@ -169,15 +169,15 @@ $D_{u,premium}$ is a running total of the extra interest accrued on user u
 
 Unlike base debt, premium debt does not originate from an actual asset withdrawal from the Hub; instead, it is a bookkeeping entry that tracks how much extra the user owes because of the User Risk Premium.
 
-$D_{u,premium}= D_{u,premium} + R_{sbase,i}RP_uD_{u,ibase}$
+$D_{u,premium}(t)= D_{u,premium}(t-1) + R_{sbase,i}RP_uD_{u,ibase}(t-1)$
 
-$R_{sbase,i}RP_uD_{u,ibase} = ΔD_{u,premium}$
+$ΔD_{u,premium} = R_{sbase,i}RP_uD_{u,ibase}$
 
 # Dynamic Risk Configuration
 
 One of the major risk‑side limitations of V3 lies in its single, global risk configuration per asset. This design creates significant governance overhead and potential user harm through unexpected liquidations, as any parameter change, in particular lowering the liquidation threshold, immediately affects every open position.
 
-V4 makes it possible for multiple risk configurations to exist side‑by‑side. Whenever the Governor adjusts collateralization parameters (currently the Collateral Factor (CF), Liquidation Bonus (LB) or Protocol Fee (PF)), the protocol adds a new configuration instead of replacing the old one. Earlier configurations continue to govern positions opened under them while updated parameters apply to new positions. In particular cases where there could be a negative impact to the protocol, the Governor may decide to permissioned trigger an update of existing positions to the latest parameters.
+V4 makes it possible for multiple risk configurations to exist side‑by‑side. Whenever the Governor adjusts collateralization parameters (currently the Collateral Factor (CF), Liquidation Bonus (LB) or Protocol Fee (PF)), the protocol adds a new configuration instead of replacing the old one. Earlier configurations continue to govern positions opened under them while updated parameters apply to new positions. In particular cases where there could be a negative impact to the protocol, the Governor may decide to trigger an authorized update of existing positions to the latest parameters.
 
 Every time the Governor adjusts the collateralization parameters, it corresponds to a new configuration. These configurations are stored in a bounded dictionary of up to 16M entries (2^24) identified by incremental keys, with each reserve holding the key that points to the current active configuration.
 
@@ -235,9 +235,9 @@ Aave V4 exposes several configurable parameters that influence liquidation:
 | **Parameter** **Description** **Constraints** |                                                                                                                                                                                                                                                                                               |                                                                    |
 | --------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------ |
 | `TargetHealthFactor`                          | A spoke‑wide value set by the Governor representing the HF to which a borrower should be restored after liquidation. Liquidators repay only enough debt to reach this HF under normal circumstances that do not result in dust collateral or debt remaining.                                  | Must be ≥ the `HEALTH_FACTOR_LIQUIDATION_THRESHOLD` constant.      |
-| `DUST_LIQUIDATION_THRESHOLD`                  | Hard‑coded threshold used to prevent extremely small leftover debt. The maximum debt that can be liquidated is increased to ensure that debt or collateral dust less than this threshold does not remain unless the corresponding respective collateral or debt reserve is fully liquidated.  | Hard‑coded constant set to 1_000 USD in base units.                |
+| `DUST_LIQUIDATION_THRESHOLD`                  | Hard‑coded threshold used to prevent extremely small leftover debt. The maximum debt that can be liquidated is increased to ensure that debt or collateral dust less than this threshold does not remain unless the respective collateral or debt reserve is fully liquidated.                | Hard‑coded constant set to 1_000 USD in base units.                |
 | `maxLiquidationBonus`                         | Per reserve defined maximum liquidation bonus for a collateral, expressed in basis points (BPS). A value of 105_00 means there is 5_00 extra seized collateral over the amount of debt repaid in base currency.                                                                               | Must be ≥ 100_00                                                   |
-| `healthFactorForMaxBonus`                     | Spoke‑wide value expressed in WAD units defining the HF below which the max bonus applies. It must be less than or equal to `HEALTH_FACTOR_LIQUIDATION_THRESHOLD` to avoid division‑by‑zero.                                                                                                  | `healthFactorForMaxBonus` < `HEALTH_FACTOR_LIQUIDATION_THRESHOLD`. |
+| `healthFactorForMaxBonus`                     | Spoke‑wide value expressed in WAD units defining the HF below which the max bonus applies. It must be less than `HEALTH_FACTOR_LIQUIDATION_THRESHOLD` to avoid division‑by‑zero.                                                                                                              | `healthFactorForMaxBonus` < `HEALTH_FACTOR_LIQUIDATION_THRESHOLD`. |
 | `liquidationBonusFactor`                      | Spoke‑wide percentage (expressed in BPS) specifying the fraction of the max bonus earned at the threshold `HEALTH_FACTOR_LIQUIDATION_THRESHOLD`. It defines the minimum bonus; e.g., a factor of 80_00 yields a bonus equal to 80% of the max bonus when HF equals the liquidation threshold. | liquidationBonusFactor must be ≤ 100_00                            |
 
 ## Liquidation Process in V4
@@ -257,7 +257,7 @@ V4 introduces a dynamic dust prevention mechanism. If the debt remaining after a
 
 Due to rounding effects and the creation of negligible interest premiums during liquidations, the borrower’s final health factor after liquidation may not exactly match the `TargetHealthFactor`. In rare cases the final HF may be slightly above or below the target.
 
-A deficit is only reported if, after liquidation, the borrower has no more collateral left across any of his reserves and debt still remains.
+A deficit is only reported if, after liquidation, the borrower has no more collateral left across any of their reserves and debt still remains.
 
 ## Dutch‑Auction Style Liquidation Bonus
 

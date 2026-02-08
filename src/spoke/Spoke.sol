@@ -798,7 +798,7 @@ abstract contract Spoke is
         break;
       }
 
-      (uint256 collateralRisk, uint256 userCollateralValue) = collateralInfo.get(index);
+      (uint256 collateralRisk, uint256 userCollateralValue) = collateralInfo.uncheckedAt(index);
       userCollateralValue = userCollateralValue.min(debtValueLeftToCover);
       accountData.riskPremium += userCollateralValue * collateralRisk;
       debtValueLeftToCover = debtValueLeftToCover.uncheckedSub(userCollateralValue);
@@ -855,7 +855,7 @@ abstract contract Spoke is
     DynamicReserveConfig calldata newConfig
   ) internal view {
     // sufficient check since maxLiquidationBonus is always >= 100_00
-    require(currentConfig.maxLiquidationBonus > 0, ConfigKeyUninitialized());
+    require(currentConfig.maxLiquidationBonus > 0, DynamicConfigKeyUninitialized());
     require(newConfig.collateralFactor > 0, InvalidCollateralFactor());
     _validateDynamicReserveConfig(newConfig);
   }

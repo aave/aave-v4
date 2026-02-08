@@ -211,6 +211,31 @@ contract KeyValueListTest is Test {
     }
   }
 
+  function test_fuzz_uncheckedAt(uint256[] memory seed) public pure {
+    vm.assume(seed.length > 0 && seed.length < 1e2);
+    KeyValueList.List memory list = KeyValueList.init(seed.length);
+    for (uint256 i; i < seed.length; ++i) {
+      list.add(i, _truncateKey(seed[i]), _truncateValue(seed[i]));
+    }
+    for (uint256 i; i < seed.length; ++i) {
+      (uint256 keyGet, uint256 valueGet) = list.get(i);
+      (uint256 keyUnsafe, uint256 valueUnsafe) = list.uncheckedAt(i);
+      assertEq(keyGet, keyUnsafe);
+      assertEq(valueGet, valueUnsafe);
+    }
+  }
+
+  function test_fuzz_pack_unpack_roundtrip(uint256 key, uint256 value) public pure {
+    key = bound(key, 0, KeyValueList.MAX_KEY - 1);
+    value = bound(value, 0, KeyValueList.MAX_VALUE - 1);
+
+    uint256 packed = KeyValueList.pack(key, value);
+    (uint256 unpackedKey, uint256 unpackedValue) = KeyValueList.unpack(packed);
+
+    assertEq(key, unpackedKey);
+    assertEq(value, unpackedValue);
+  }
+
   function _assertSortedOrder(KeyValueList.List memory list) internal pure {
     // validate sorted order
     (uint256 prevKey, uint256 prevValue) = list.get(0);
