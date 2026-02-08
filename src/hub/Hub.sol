@@ -537,12 +537,6 @@ contract Hub is IHub, AccessManaged {
     return _assets[assetId].addedShares;
   }
 
-  /// @inheritdoc IHub
-  function getAssetDrawnRate(uint256 assetId) external view returns (uint256) {
-    Asset storage asset = _assets[assetId];
-    return asset.getDrawnRate(assetId, asset.getDrawnIndex());
-  }
-
   /// @inheritdoc IHubBase
   function getAssetOwed(uint256 assetId) external view returns (uint256, uint256) {
     Asset storage asset = _assets[assetId];
@@ -614,6 +608,12 @@ contract Hub is IHub, AccessManaged {
   /// @inheritdoc IHub
   function getAssetSwept(uint256 assetId) external view returns (uint256) {
     return _assets[assetId].swept;
+  }
+
+  /// @inheritdoc IHub
+  function getAssetDrawnRate(uint256 assetId) external view returns (uint256) {
+    Asset storage asset = _assets[assetId];
+    return asset.getDrawnRate(assetId, asset.getDrawnIndex());
   }
 
   /// @inheritdoc IHub
