@@ -342,11 +342,9 @@ contract HubAccrueInterestTest is Base {
     Utils.add(hub1, daiAssetId, address(spoke1), addAmount, address(spoke1));
     Utils.draw(hub1, daiAssetId, address(spoke1), address(spoke1), borrowAmount);
 
-    assertEq(
-      hub1.getAssetDrawnRate(daiAssetId),
-      hub1.getAssetDrawnRate(daiAssetId),
-      'rate mismatch after action'
-    );
+    uint256 storedRate = hub1.getAsset(daiAssetId).drawnRate;
+    uint256 computedRate = hub1.getAssetDrawnRate(daiAssetId);
+    assertEq(storedRate, computedRate);
   }
 
   function test_getAssetDrawnRate_fuzz_DiffersAfterTimePasses(uint40 elapsed) public {
