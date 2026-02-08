@@ -244,12 +244,12 @@ contract SpokeDynamicConfigTest is SpokeBase {
     spoke1.updateDynamicReserveConfig(reserveId, dynamicConfigKey, dynConf);
   }
 
-  function test_updateDynamicReserveConfig_revertsWith_ConfigKeyUninitialized() public {
+  function test_updateDynamicReserveConfig_revertsWith_DynamicConfigKeyUninitialized() public {
     uint256 reserveId = _randomReserveId(spoke1);
     uint32 dynamicConfigKey = _randomUninitializedConfigKey(spoke1, reserveId);
     ISpoke.DynamicReserveConfig memory dynConf = _getLatestDynamicReserveConfig(spoke1, reserveId);
 
-    vm.expectRevert(ISpoke.ConfigKeyUninitialized.selector);
+    vm.expectRevert(ISpoke.DynamicConfigKeyUninitialized.selector);
     vm.prank(SPOKE_ADMIN);
     spoke1.updateDynamicReserveConfig(reserveId, dynamicConfigKey, dynConf);
   }
