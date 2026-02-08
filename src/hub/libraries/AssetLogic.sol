@@ -165,7 +165,7 @@ library AssetLogic {
       );
   }
 
-  /// @notice Calculates the latest drawn rate of a specified asset using the specified drawnIndex.
+  /// @notice Calculates the drawn rate of a specified asset using the specified drawn index.
   /// @dev Premium debt is not used in the interest rate calculation.
   /// @dev Imprecision from downscaling `deficitRay` does not accumulate.
   function getDrawnRate(
