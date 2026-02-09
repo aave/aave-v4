@@ -51,6 +51,14 @@ abstract contract GatewayBase is IGatewayBase, Rescuable, Ownable2Step {
     return ISpoke(spoke).getReserve(reserveId).underlying;
   }
 
+  function _getReserveInfo(
+    address spoke,
+    uint256 reserveId
+  ) internal view returns (address hub, address underlying) {
+    ISpoke.Reserve memory reserve = ISpoke(spoke).getReserve(reserveId);
+    return (address(reserve.hub), address(reserve.underlying));
+  }
+
   /// @dev The `owner()` is the allowed caller for Rescuable methods.
   function _rescueGuardian() internal view override returns (address) {
     return owner();

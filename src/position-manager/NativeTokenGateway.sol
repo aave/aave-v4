@@ -112,7 +112,7 @@ contract NativeTokenGateway is INativeTokenGateway, GatewayBase, ReentrancyGuard
     uint256 amount
   ) external payable nonReentrant onlyRegisteredSpoke(spoke) returns (uint256, uint256) {
     require(msg.value == amount, NativeAmountMismatch());
-    address underlying = _getReserveUnderlying(spoke, reserveId);
+    (address hub, address underlying) = _getReserveInfo(spoke, reserveId);
     _validateParams(underlying, amount);
 
     uint256 userTotalDebt = ISpoke(spoke).getUserTotalDebt(reserveId, msg.sender);
@@ -124,8 +124,8 @@ contract NativeTokenGateway is INativeTokenGateway, GatewayBase, ReentrancyGuard
     }
 
     INativeWrapper(NATIVE_WRAPPER).deposit{value: repayAmount}();
-    IERC20(NATIVE_WRAPPER).forceApprove(spoke, repayAmount);
-    (uint256 repaidShares, uint256 repaidAmount) = ISpoke(spoke).repay(
+    IERC20(NATIVE_WRAPPER).safeTransfer(hub, repayAmount);
+    (uint256 repaidShares, uint256 repaidAmount) = ISpoke(spoke).repaySkimmed(
       reserveId,
       repayAmount,
       msg.sender
@@ -145,12 +145,12 @@ contract NativeTokenGateway is INativeTokenGateway, GatewayBase, ReentrancyGuard
     address user,
     uint256 amount
   ) internal returns (uint256, uint256) {
-    address underlying = _getReserveUnderlying(spoke, reserveId);
+    (address hub, address underlying) = _getReserveInfo(spoke, reserveId);
     _validateParams(underlying, amount);
 
     INativeWrapper(NATIVE_WRAPPER).deposit{value: amount}();
-    IERC20(NATIVE_WRAPPER).forceApprove(spoke, amount);
-    return ISpoke(spoke).supply(reserveId, amount, user);
+    IERC20(NATIVE_WRAPPER).safeTransfer(hub, amount);
+    return ISpoke(spoke).supplySkimmed(reserveId, amount, user);
   }
 
   function _validateParams(address underlying, uint256 amount) internal view {

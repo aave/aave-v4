@@ -95,7 +95,7 @@ contract NativeTokenGatewayTest is SpokeBase {
     vm.mockFunction(
       address(spoke1),
       address(reentrantCaller),
-      abi.encodeWithSelector(ISpokeBase.supply.selector)
+      abi.encodeWithSelector(ISpokeBase.supplySkimmed.selector)
     );
     vm.expectRevert(ReentrancyGuardTransient.ReentrancyGuardReentrantCall.selector);
     vm.prank(bob);
@@ -762,7 +762,7 @@ contract NativeTokenGatewayTest is SpokeBase {
     vm.mockFunction(
       address(spoke1),
       address(reentrantCaller),
-      abi.encodeWithSelector(ISpokeBase.repay.selector)
+      abi.encodeWithSelector(ISpokeBase.repaySkimmed.selector)
     );
     vm.expectRevert(ReentrancyGuardTransient.ReentrancyGuardReentrantCall.selector);
     vm.prank(bob);

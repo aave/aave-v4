@@ -18,8 +18,8 @@ import {
 import {ReentrancyGuardTransient} from 'src/dependencies/openzeppelin/ReentrancyGuardTransient.sol';
 import {IERC20Metadata} from 'src/dependencies/openzeppelin/IERC20Metadata.sol';
 import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
-import {IERC20Errors} from 'src/dependencies/openzeppelin/IERC20Errors.sol';
 import {SafeERC20, IERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
+import {IERC20Errors} from 'src/dependencies/openzeppelin/IERC20Errors.sol';
 import {IERC5267} from 'src/dependencies/openzeppelin/IERC5267.sol';
 import {AccessManager} from 'src/dependencies/openzeppelin/AccessManager.sol';
 import {IAccessManager} from 'src/dependencies/openzeppelin/IAccessManager.sol';

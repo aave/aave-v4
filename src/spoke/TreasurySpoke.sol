@@ -78,6 +78,14 @@ contract TreasurySpoke is ITreasurySpoke, Ownable2Step {
     revert UnsupportedAction();
   }
 
+  function supplySkimmed(uint256, uint256, address) external pure returns (uint256, uint256) {
+    revert UnsupportedAction();
+  }
+
+  function repaySkimmed(uint256, uint256, address) external pure returns (uint256, uint256) {
+    revert UnsupportedAction();
+  }
+
   /// @inheritdoc ISpokeBase
   function repay(uint256, uint256, address) external pure returns (uint256, uint256) {
     revert UnsupportedAction();

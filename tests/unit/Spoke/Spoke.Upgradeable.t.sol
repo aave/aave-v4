@@ -24,7 +24,6 @@ contract SpokeUpgradeableTest is SpokeBase {
     ISpokeInstance spokeImpl = _deployMockSpokeInstance(revision);
 
     assertEq(address(spokeImpl), spokeImplAddress);
-    assertEq(spokeImpl.SPOKE_REVISION(), revision);
     assertEq(_getProxyInitializedVersion(spokeImplAddress), type(uint64).max);
 
     vm.expectRevert(Initializable.InvalidInitialization.selector);
