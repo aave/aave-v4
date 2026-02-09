@@ -172,9 +172,9 @@ This represents the principal liquidity provided by the Hub to the Spoke on the 
 
 Over time, the base debt accrues interest at the Hub’s base borrow rate strategy $R_{sbase,i}$. This means that as time progresses, the accrued base interest is added to the user’s base debt, increasing the amount the user owes to the protocol’s liquidity providers for that particular asset.
 
-$D_{u,i} = D_{u,ibase} + R_{sbase,i}D_{u,ibase}$
+$D_{u,ibase}(t) = D_{u,ibase} (t-1) + R_{sbase,i}D_{u,ibase}(t-1)$
 
-$R_{sbase,i}D_{u,ibase} = ΔD_{u,ibase}$
+$ΔD_{u,ibase} = R_{sbase,i}D_{u,ibase}$
 
 ## Premium Debt
 
@@ -184,9 +184,9 @@ $D_{u,premium}$ is a running total of the extra interest accrued on user u
 
 Unlike base debt, premium debt does not originate from an actual asset withdrawal from the Hub; instead, it is a bookkeeping entry that tracks how much extra the user owes because of the User Risk Premium.
 
-$D_{u,premium}= D_{u,premium} + R_{sbase,i}RP_uD_{u,ibase}$
+$D_{u,premium}(t)= D_{u,premium}(t-1) + R_{sbase,i}RP_uD_{u,ibase}(t-1)$
 
-$R_{sbase,i}RP_uD_{u,ibase} = ΔD_{u,premium}$
+$ΔD_{u,premium} = R_{sbase,i}RP_uD_{u,ibase}$
 
 # Reinvestment
 
@@ -206,7 +206,7 @@ The reinvestment infrastructure enables the protocol to optimize capital efficie
 
 One of the major risk‑side limitations of V3 lies in its single, global risk configuration per asset. This design creates significant governance overhead and potential user harm through unexpected liquidations, as any parameter change, in particular lowering the liquidation threshold, immediately affects every open position.
 
-V4 makes it possible for multiple risk configurations to exist side‑by‑side. Whenever the Governor adjusts collateralization parameters (currently the Collateral Factor (CF), Liquidation Bonus (LB) or Protocol Fee (PF)), the protocol adds a new configuration instead of replacing the old one. Earlier configurations continue to govern positions opened under them while updated parameters apply to new positions. In particular cases where there could be a negative impact to the protocol, the Governor may decide to permissioned trigger an update of existing positions to the latest parameters.
+V4 makes it possible for multiple risk configurations to exist side‑by‑side. Whenever the Governor adjusts collateralization parameters (currently the Collateral Factor (CF), Liquidation Bonus (LB) or Protocol Fee (PF)), the protocol adds a new configuration instead of replacing the old one. Earlier configurations continue to govern positions opened under them while updated parameters apply to new positions. In particular cases where there could be a negative impact to the protocol, the Governor may decide to trigger an authorized update of existing positions to the latest parameters.
 
 Every time the Governor adjusts the collateralization parameters, it corresponds to a new configuration. These configurations are stored in a bounded dictionary of up to ~4.29B entries (2^32) identified by incremental keys, with each reserve holding the key that points to the current active configuration.
 
@@ -232,7 +232,7 @@ The architecture of dynamic configuration comes with several practical constrain
 
 1. The `configKey` is currently defined as a `uint32` (~4.29B max active configurations).
 2. For a given user position, the snapshot updates to the latest key on:
-   1. `setUsingAsCollateral()` refreshes only the `configKey` snapshot for the asset in play.
+   1. `setUsingAsCollateral()`
    2. `borrow()`
    3. `withdraw()`
 3. The snapshot does **not** update on actions that reduce risk exposure of the system:
@@ -290,7 +290,7 @@ A deficit is only reported if, after liquidation, the borrower has no more colla
 
 ## Deficit Elimination
 
-When a deficit is reported (typically after a liquidation where a borrower has no remaining collateral but still has outstanding debt), any authorized spoke, that is active, can eliminate the deficit by calling the Hub's `eliminateDeficit()` function. This function allows a spoke to use its supplied shares to cover another spoke's deficit, effectively transferring liquidity to restore the Hub's accounting balance. The calling spoke must have sufficient supplied shares to cover the deficit amount being eliminated. This mechanism enables the protocol to recover from bad debt situations without requiring external capital injection.
+When a deficit is reported (typically after a liquidation where a borrower has no remaining collateral but still has outstanding debt), any authorized spoke, that is active, can eliminate the deficit by calling the Hub's `eliminateDeficit()` function. In the deficit-reporting path, the protocol clears the user’s debt components and resets their tracked risk premium to 0 (emitting an `UpdateUserRiskPremium` event). This function allows a spoke to use its supplied shares to cover another spoke's deficit, effectively transferring liquidity to restore the Hub's accounting balance. The calling spoke must have sufficient supplied shares to cover the deficit amount being eliminated. This mechanism enables the protocol to recover from bad debt situations without requiring external capital injection.
 
 Deficit elimination can be performed even when the spoke covering the deficit is halted (as long as it remains active), providing flexibility in emergency situations.
 
