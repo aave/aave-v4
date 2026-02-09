@@ -612,7 +612,8 @@ contract Hub is IHub, AccessManaged {
 
   /// @inheritdoc IHub
   function getAssetDrawnRate(uint256 assetId) external view returns (uint256) {
-    return _assets[assetId].drawnRate;
+    Asset storage asset = _assets[assetId];
+    return asset.getDrawnRate(assetId, asset.getDrawnIndex());
   }
 
   /// @inheritdoc IHub
