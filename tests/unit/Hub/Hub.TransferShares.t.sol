@@ -82,23 +82,19 @@ contract HubTransferSharesTest is HubBase {
     hub1.transferShares(daiAssetId, suppliedShares, address(spoke2));
   }
 
-  function test_transferShares_revertsWith_SpokePaused() public {
+  function test_transferShares_revertsWith_SpokeHalted() public {
     uint256 supplyAmount = 1000e18;
     Utils.add(hub1, daiAssetId, address(spoke1), supplyAmount, bob);
 
-    // pause spoke1
-    IHub.SpokeConfig memory spokeConfig = hub1.getSpokeConfig(daiAssetId, address(spoke1));
-    spokeConfig.paused = true;
-    vm.prank(HUB_ADMIN);
-    hub1.updateSpokeConfig(daiAssetId, address(spoke1), spokeConfig);
-    assertTrue(hub1.getSpokeConfig(daiAssetId, address(spoke1)).paused);
+    // halt spoke1
+    _updateSpokeHalted(hub1, daiAssetId, address(spoke1), true);
 
     uint256 suppliedShares = hub1.getSpokeAddedShares(daiAssetId, address(spoke1));
     assertEq(suppliedShares, hub1.previewRemoveByShares(daiAssetId, supplyAmount));
 
-    // try to transfer supplied shares from paused spoke1
+    // try to transfer supplied shares from halted spoke1
     vm.prank(address(spoke1));
-    vm.expectRevert(IHub.SpokePaused.selector);
+    vm.expectRevert(IHub.SpokeHalted.selector);
     hub1.transferShares(daiAssetId, suppliedShares, address(spoke2));
   }
 

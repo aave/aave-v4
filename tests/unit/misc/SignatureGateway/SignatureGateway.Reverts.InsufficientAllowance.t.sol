@@ -20,18 +20,26 @@ contract SignatureGateway_InsufficientAllowance_Test is SignatureGatewayBaseTest
   function test_supplyWithSig_revertsWith_ERC20InsufficientAllowance() public {
     uint256 deadline = _warpBeforeRandomDeadline();
 
-    EIP712Types.Supply memory p = _supplyData(spoke1, alice, deadline);
+    ISignatureGateway.Supply memory p = _supplyData(spoke1, alice, deadline);
     bytes memory signature = _sign(alicePk, _getTypedDataHash(gateway, p));
 
-    vm.expectRevert(
-      abi.encodeWithSelector(
-        IERC20Errors.ERC20InsufficientAllowance.selector,
-        address(gateway),
-        0,
-        p.amount,
-        address(_underlying(spoke1, p.reserveId))
-      )
-    );
+    address underlying = ISpoke(p.spoke).getReserve(p.reserveId).underlying;
+    assertTrue(IERC20(underlying).allowance(alice, address(gateway)) < p.amount);
+
+    if (underlying == address(tokenList.weth)) {
+      // WETH9 reverts with no data on insufficient allowance
+      vm.expectRevert();
+    } else {
+      vm.expectRevert(
+        abi.encodeWithSelector(
+          IERC20Errors.ERC20InsufficientAllowance.selector,
+          address(gateway),
+          0,
+          p.amount
+        )
+      );
+    }
+
     vm.prank(vm.randomAddress());
     gateway.supplyWithSig(p, signature);
   }
@@ -42,7 +50,7 @@ contract SignatureGateway_InsufficientAllowance_Test is SignatureGatewayBaseTest
 
     uint256 deadline = _warpBeforeRandomDeadline();
 
-    EIP712Types.Repay memory p = _repayData(spoke1, alice, deadline);
+    ISignatureGateway.Repay memory p = _repayData(spoke1, alice, deadline);
     p.reserveId = _daiReserveId(spoke1);
     p.amount = 50e18;
     bytes memory signature = _sign(alicePk, _getTypedDataHash(gateway, p));

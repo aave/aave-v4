@@ -85,7 +85,7 @@ contract HubSweepTest is HubBase {
       abi.encodeWithSelector(IHub.InsufficientLiquidity.selector, initialLiquidity - swept)
     );
     vm.prank(address(spoke1));
-    hub1.remove(daiAssetId, swept + 1, alice);
+    hub1.remove(daiAssetId, initialLiquidity - swept + 1, alice);
   }
 
   function test_sweep_does_not_impact_utilization(uint256 supplyAmount, uint256 drawAmount) public {
@@ -103,6 +103,7 @@ contract HubSweepTest is HubBase {
     hub1.sweep(daiAssetId, swept);
 
     assertEq(hub1.getAssetDrawnRate(daiAssetId), drawnRate, 'drawnRate');
+    assertEq(hub1.getAsset(daiAssetId).drawnRate, drawnRate, 'drawnRate');
     _assertBorrowRateSynced(hub1, daiAssetId, 'swept');
     _assertHubLiquidity(hub1, daiAssetId, 'sweep');
     (uint256 drawn, ) = hub1.getAssetOwed(daiAssetId);

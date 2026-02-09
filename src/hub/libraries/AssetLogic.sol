@@ -129,18 +129,10 @@ library AssetLogic {
   }
 
   /// @notice Updates the drawn rate of a specified asset.
-  /// @dev Premium debt is not used in the interest rate calculation.
   /// @dev Uses last stored index; asset accrual should have already occurred.
-  /// @dev Imprecision from downscaling `deficitRay` does not accumulate.
   function updateDrawnRate(IHub.Asset storage asset, uint256 assetId) internal {
     uint256 drawnIndex = asset.drawnIndex;
-    uint256 newDrawnRate = IBasicInterestRateStrategy(asset.irStrategy).calculateInterestRate({
-      assetId: assetId,
-      liquidity: asset.liquidity,
-      drawn: asset.drawn(drawnIndex),
-      deficit: asset.deficitRay.fromRayUp(),
-      swept: asset.swept
-    });
+    uint256 newDrawnRate = asset.getDrawnRate(assetId, drawnIndex);
     asset.drawnRate = newDrawnRate.toUint96();
 
     emit IHub.UpdateAsset(assetId, drawnIndex, newDrawnRate, asset.realizedFees);
@@ -171,6 +163,24 @@ library AssetLogic {
       previousIndex.rayMulUp(
         MathUtils.calculateLinearInterest(asset.drawnRate, lastUpdateTimestamp)
       );
+  }
+
+  /// @notice Calculates the drawn rate of a specified asset using the specified drawn index.
+  /// @dev Premium debt is not used in the interest rate calculation.
+  /// @dev Imprecision from downscaling `deficitRay` does not accumulate.
+  function getDrawnRate(
+    IHub.Asset storage asset,
+    uint256 assetId,
+    uint256 drawnIndex
+  ) internal view returns (uint256) {
+    return
+      IBasicInterestRateStrategy(asset.irStrategy).calculateInterestRate({
+        assetId: assetId,
+        liquidity: asset.liquidity,
+        drawn: asset.drawn(drawnIndex),
+        deficit: asset.deficitRay.fromRayUp(),
+        swept: asset.swept
+      });
   }
 
   /// @notice Calculates the amount of fees derived from the index growth due to interest accrual.

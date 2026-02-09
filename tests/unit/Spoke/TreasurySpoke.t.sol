@@ -189,9 +189,9 @@ contract TreasurySpokeTest is SpokeBase {
     uint256 amount,
     uint256 skipTime
   ) public {
-    amount = bound(amount, 1, MAX_SUPPLY_AMOUNT);
-    skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
     reserveId = bound(reserveId, 0, spoke1.getReserveCount() - 1);
+    amount = bound(amount, 1, _calculateMaxSupplyAmount(spoke1, reserveId));
+    skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
 
     uint256 assetId = spoke1.getReserve(reserveId).assetId;
     updateLiquidityFee(hub1, spoke1.getReserve(reserveId).assetId, 100_00);
@@ -272,6 +272,7 @@ contract TreasurySpokeTest is SpokeBase {
     assertEq(drawn, 0);
     assertEq(premium, 0);
     assertEq(treasurySpoke.getUserTotalDebt(reserveId, alice), 0);
+    assertEq(treasurySpoke.getUserPremiumDebtRay(reserveId, alice), 0);
 
     updateLiquidityFee(hub1, spoke1.getReserve(reserveId).assetId, 100_00);
 

@@ -6,6 +6,7 @@ import 'tests/Base.t.sol';
 
 contract HubAccrueInterestTest is Base {
   using SafeCast for uint256;
+  using WadRayMath for uint256;
 
   struct Timestamps {
     uint40 t0;
@@ -332,5 +333,47 @@ contract HubAccrueInterestTest is Base {
       'addAmount t2'
     );
     assertEq(getAssetDrawnDebt(daiAssetId), expectedDrawnDebt2, 'drawn t2');
+  }
+
+  function test_getAssetDrawnRate_MatchesStoredAfterAction() public {
+    uint256 addAmount = 1000e18;
+    uint256 borrowAmount = 100e18;
+
+    Utils.add(hub1, daiAssetId, address(spoke1), addAmount, address(spoke1));
+    Utils.draw(hub1, daiAssetId, address(spoke1), address(spoke1), borrowAmount);
+
+    uint256 storedRate = hub1.getAsset(daiAssetId).drawnRate;
+    uint256 computedRate = hub1.getAssetDrawnRate(daiAssetId);
+    assertEq(storedRate, computedRate);
+  }
+
+  function test_getAssetDrawnRate_fuzz_DiffersAfterTimePasses(uint40 elapsed) public {
+    elapsed = bound(elapsed, 1, type(uint40).max / 3).toUint40();
+
+    uint256 addAmount = 1000e18;
+    uint256 borrowAmount = 100e18;
+
+    Utils.add(hub1, daiAssetId, address(spoke1), addAmount, address(spoke1));
+    Utils.draw(hub1, daiAssetId, address(spoke1), address(spoke1), borrowAmount);
+
+    uint256 storedRateBefore = hub1.getAsset(daiAssetId).drawnRate;
+
+    skip(elapsed);
+
+    // Stored rate remains unchanged
+    assertEq(hub1.getAsset(daiAssetId).drawnRate, storedRateBefore);
+
+    uint256 computedRate = hub1.getAssetDrawnRate(daiAssetId);
+    IHub.Asset memory asset = hub1.getAsset(daiAssetId);
+    uint256 currentDrawnIndex = hub1.getAssetDrawnIndex(daiAssetId);
+    uint256 currentDrawn = uint256(asset.drawnShares).rayMulUp(currentDrawnIndex);
+    uint256 expectedRate = IBasicInterestRateStrategy(asset.irStrategy).calculateInterestRate({
+      assetId: daiAssetId,
+      liquidity: asset.liquidity,
+      drawn: currentDrawn,
+      deficit: uint256(asset.deficitRay).fromRayUp(),
+      swept: asset.swept
+    });
+    assertEq(computedRate, expectedRate);
   }
 }

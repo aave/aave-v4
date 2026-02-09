@@ -136,7 +136,7 @@ contract SpokeOperations_Gas_Tests is SpokeBase {
   }
 
   function test_liquidation_partial() public {
-    _liquidationSetup();
+    _liquidationSetup(85_00);
 
     vm.startPrank(bob);
     spoke.liquidationCall(reserveId.usdx, reserveId.dai, alice, 100_000e18, false);
@@ -145,7 +145,7 @@ contract SpokeOperations_Gas_Tests is SpokeBase {
   }
 
   function test_liquidation_full() public {
-    _liquidationSetup();
+    _liquidationSetup(85_00);
 
     vm.startPrank(bob);
     spoke.liquidationCall(reserveId.usdx, reserveId.dai, alice, UINT256_MAX, false);
@@ -155,7 +155,7 @@ contract SpokeOperations_Gas_Tests is SpokeBase {
   }
 
   function test_liquidation_receiveShares_partial() public {
-    _liquidationSetup();
+    _liquidationSetup(85_00);
 
     vm.startPrank(bob);
     spoke.liquidationCall(reserveId.usdx, reserveId.dai, alice, 100_000e18, true);
@@ -165,11 +165,21 @@ contract SpokeOperations_Gas_Tests is SpokeBase {
   }
 
   function test_liquidation_receiveShares_full() public {
-    _liquidationSetup();
+    _liquidationSetup(85_00);
 
     vm.startPrank(bob);
     spoke.liquidationCall(reserveId.usdx, reserveId.dai, alice, UINT256_MAX, true);
     vm.snapshotGasLastCall(NAMESPACE, 'liquidationCall (receiveShares): full');
+
+    vm.stopPrank();
+  }
+
+  function test_liquidation_reportDeficit_full() public {
+    _liquidationSetup(45_00);
+
+    vm.startPrank(bob);
+    spoke.liquidationCall(reserveId.usdx, reserveId.dai, alice, UINT256_MAX, false);
+    vm.snapshotGasLastCall(NAMESPACE, 'liquidationCall (reportDeficit): full');
 
     vm.stopPrank();
   }
@@ -288,51 +298,38 @@ contract SpokeOperations_Gas_Tests is SpokeBase {
     vm.stopPrank();
   }
 
-  function test_setUserPositionManagerWithSig() public {
-    (address user, uint256 userPk) = makeAddrAndKey(string(vm.randomBytes(32)));
-    vm.label(user, 'user');
-    address positionManager = vm.randomAddress();
+  function test_setUserPositionManagersWithSig() public {
+    (address user, uint256 userPk) = makeAddrAndKey('user');
+    address positionManager = makeAddr('positionManager');
     vm.prank(SPOKE_ADMIN);
     spoke.updatePositionManager(positionManager, true);
 
-    uint192 nonceKey = _randomNonceKey();
+    uint192 nonceKey = 100;
     vm.prank(user);
     spoke.useNonce(nonceKey);
 
-    EIP712Types.SetUserPositionManager memory params = EIP712Types.SetUserPositionManager({
-      positionManager: positionManager,
-      user: user,
-      approve: true,
+    ISpoke.PositionManagerUpdate[] memory updates = new ISpoke.PositionManagerUpdate[](1);
+    updates[0] = ISpoke.PositionManagerUpdate(positionManager, true);
+
+    ISpoke.SetUserPositionManagers memory p = ISpoke.SetUserPositionManagers({
+      onBehalfOf: user,
+      updates: updates,
       nonce: spoke.nonces(user, nonceKey),
-      deadline: vm.randomUint(vm.getBlockTimestamp(), MAX_SKIP_TIME)
+      deadline: vm.getBlockTimestamp()
     });
-    (uint8 v, bytes32 r, bytes32 s) = vm.sign(userPk, _getTypedDataHash(spoke, params));
+    (uint8 v, bytes32 r, bytes32 s) = vm.sign(userPk, _getTypedDataHash(spoke, p));
     bytes memory signature = abi.encodePacked(r, s, v);
 
-    spoke.setUserPositionManagerWithSig(
-      params.positionManager,
-      params.user,
-      params.approve,
-      params.nonce,
-      params.deadline,
-      signature
-    );
-    vm.snapshotGasLastCall(NAMESPACE, 'setUserPositionManagerWithSig: enable');
+    spoke.setUserPositionManagersWithSig(p, signature);
+    vm.snapshotGasLastCall(NAMESPACE, 'setUserPositionManagersWithSig: enable');
 
-    params.approve = false;
-    params.nonce = spoke.nonces(user, nonceKey);
-    (v, r, s) = vm.sign(userPk, _getTypedDataHash(spoke, params));
+    p.updates[0].approve = false;
+    p.nonce = spoke.nonces(user, nonceKey);
+    (v, r, s) = vm.sign(userPk, _getTypedDataHash(spoke, p));
     signature = abi.encodePacked(r, s, v);
 
-    spoke.setUserPositionManagerWithSig(
-      params.positionManager,
-      params.user,
-      params.approve,
-      params.nonce,
-      params.deadline,
-      signature
-    );
-    vm.snapshotGasLastCall(NAMESPACE, 'setUserPositionManagerWithSig: disable');
+    spoke.setUserPositionManagersWithSig(p, signature);
+    vm.snapshotGasLastCall(NAMESPACE, 'setUserPositionManagersWithSig: disable');
   }
 
   function _seed() internal {
@@ -348,7 +345,7 @@ contract SpokeOperations_Gas_Tests is SpokeBase {
     vm.stopPrank();
   }
 
-  function _liquidationSetup() internal {
+  function _liquidationSetup(uint256 pricePercentage) internal {
     _updateMaxLiquidationBonus(spoke, _usdxReserveId(spoke), 105_00);
     _updateLiquidationFee(spoke, _usdxReserveId(spoke), 10_00);
 
@@ -366,7 +363,7 @@ contract SpokeOperations_Gas_Tests is SpokeBase {
       reserveId.dai,
       reserveId.usdx,
       1.05e18,
-      85_00
+      pricePercentage
     );
 
     skip(100);
@@ -376,11 +373,6 @@ contract SpokeOperations_Gas_Tests is SpokeBase {
     } else {
       assertGt(userAccountData.riskPremium, 0); // rp after borrow should be non zero
     }
-    vm.mockCallRevert(
-      address(hub1),
-      abi.encodeWithSelector(IHubBase.reportDeficit.selector),
-      'deficit'
-    );
   }
 }
 

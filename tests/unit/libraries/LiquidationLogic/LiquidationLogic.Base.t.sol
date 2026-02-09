@@ -41,7 +41,11 @@ contract LiquidationLogicBaseTest is SpokeBase {
   function _bound(
     LiquidationLogic.CalculateDebtToTargetHealthFactorParams memory params
   ) internal virtual returns (LiquidationLogic.CalculateDebtToTargetHealthFactorParams memory) {
-    uint256 totalDebtValue = bound(params.totalDebtValue, 1, MAX_SUPPLY_IN_BASE_CURRENCY);
+    uint256 totalDebtValueRay = bound(
+      params.totalDebtValueRay,
+      1,
+      MAX_SUPPLY_IN_BASE_CURRENCY * WadRayMath.RAY
+    );
 
     uint256 liquidationBonus = bound(
       params.liquidationBonus,
@@ -68,7 +72,7 @@ contract LiquidationLogicBaseTest is SpokeBase {
 
     return
       LiquidationLogic.CalculateDebtToTargetHealthFactorParams({
-        totalDebtValue: totalDebtValue,
+        totalDebtValueRay: totalDebtValueRay,
         debtAssetUnit: debtAssetUnit,
         debtAssetPrice: debtAssetPrice,
         collateralFactor: collateralFactor,
@@ -86,20 +90,33 @@ contract LiquidationLogicBaseTest is SpokeBase {
     );
 
     uint256 debtToCover = bound(params.debtToCover, 0, MAX_SUPPLY_AMOUNT);
-    uint256 debtReserveBalance = bound(
-      params.debtReserveBalance,
-      0,
+    uint256 drawnIndex = bound(params.drawnIndex, MIN_DRAWN_INDEX, MAX_DRAWN_INDEX);
+    uint256 drawnShares = bound(
+      params.drawnShares,
+      1,
       _convertValueToAmount(
-        debtToTargetParams.totalDebtValue,
+        MAX_SUPPLY_AMOUNT,
         debtToTargetParams.debtAssetPrice,
         debtToTargetParams.debtAssetUnit
-      ).min(MAX_SUPPLY_AMOUNT)
+      )
+    );
+    uint256 premiumDebtRay = bound(
+      params.premiumDebtRay,
+      0,
+      _convertValueToAmount(
+        MAX_SUPPLY_AMOUNT,
+        debtToTargetParams.debtAssetPrice,
+        debtToTargetParams.debtAssetUnit
+      )
     );
 
     return
       LiquidationLogic.CalculateDebtToLiquidateParams({
-        debtReserveBalance: debtReserveBalance,
-        totalDebtValue: debtToTargetParams.totalDebtValue,
+        drawnShares: drawnShares,
+        premiumDebtRay: premiumDebtRay,
+        drawnIndex: drawnIndex,
+        totalDebtValueRay: debtToTargetParams.totalDebtValueRay,
+        debtAssetDecimals: Math.log10(debtToTargetParams.debtAssetUnit),
         debtAssetUnit: debtToTargetParams.debtAssetUnit,
         debtAssetPrice: debtToTargetParams.debtAssetPrice,
         debtToCover: debtToCover,
@@ -114,19 +131,99 @@ contract LiquidationLogicBaseTest is SpokeBase {
     LiquidationLogic.CalculateDebtToLiquidateParams memory params
   ) internal virtual returns (LiquidationLogic.CalculateDebtToLiquidateParams memory) {
     params = _bound(params);
-    uint256 debtToTarget = liquidationLogicWrapper.calculateDebtToTargetHealthFactor(
+    // bound price such that 1 drawn share is worth less than DUST_LIQUIDATION_THRESHOLD
+    params.debtAssetPrice = bound(
+      params.debtAssetPrice,
+      1,
+      _convertDecimals(
+        LiquidationLogic.DUST_LIQUIDATION_THRESHOLD,
+        18,
+        params.debtAssetDecimals,
+        false
+      ).rayDivDown(params.drawnIndex)
+    );
+
+    uint256 debtRayToTarget = liquidationLogicWrapper.calculateDebtToTargetHealthFactor(
       _getDebtToTargetHealthFactorParams(params)
     );
-    params.debtReserveBalance = bound(
-      params.debtReserveBalance,
-      debtToTarget.min(params.debtToCover) + 1,
-      debtToTarget.min(params.debtToCover) +
+
+    uint256 debtRayToLiquidate = debtRayToTarget.min(
+      _max(
+        _min(type(uint256).max / WadRayMath.RAY, params.debtToCover.toRay()),
+        params.drawnIndex
+      ) - params.drawnIndex // debtToCover acts as an upperbound
+    );
+    uint256 debtRay = vm.randomUint(
+      debtRayToLiquidate + 1,
+      debtRayToLiquidate +
         _convertValueToAmount(
           LiquidationLogic.DUST_LIQUIDATION_THRESHOLD - 1,
           params.debtAssetPrice,
           params.debtAssetUnit
-        )
+        ).toRay()
     );
+
+    params.drawnShares = bound(params.drawnShares, 0, debtRay / params.drawnIndex);
+    vm.assume(params.drawnShares > 0);
+    params.premiumDebtRay = debtRay - params.drawnShares * params.drawnIndex;
+
+    return params;
+  }
+
+  function _bound(
+    LiquidationLogic.CalculateCollateralToLiquidateParams memory params
+  ) internal virtual returns (LiquidationLogic.CalculateCollateralToLiquidateParams memory) {
+    params.collateralReserveHub = hub1;
+    params.collateralReserveAssetId = bound(
+      params.collateralReserveAssetId,
+      0,
+      IHub(address(params.collateralReserveHub)).getAssetCount() - 1
+    );
+    params.collateralAssetUnit =
+      10 **
+      bound(params.collateralAssetUnit, MIN_TOKEN_DECIMALS_SUPPORTED, MAX_TOKEN_DECIMALS_SUPPORTED);
+    params.collateralAssetPrice = bound(params.collateralAssetPrice, 1, MAX_ASSET_PRICE);
+    params.drawnIndex = bound(params.drawnIndex, MIN_DRAWN_INDEX, MAX_DRAWN_INDEX);
+    params.drawnSharesToLiquidate = bound(
+      params.drawnSharesToLiquidate,
+      0,
+      MAX_SUPPLY_AMOUNT / params.drawnIndex
+    );
+    params.premiumDebtRayToLiquidate = bound(
+      params.premiumDebtRayToLiquidate,
+      0,
+      MAX_SUPPLY_AMOUNT - params.drawnSharesToLiquidate * params.drawnIndex
+    );
+    params.debtAssetUnit =
+      10 ** bound(params.debtAssetUnit, MIN_TOKEN_DECIMALS_SUPPORTED, MAX_TOKEN_DECIMALS_SUPPORTED);
+    uint256 debtRayToLiquidate = params.drawnSharesToLiquidate * params.drawnIndex +
+      params.premiumDebtRayToLiquidate;
+    params.debtAssetPrice = bound(
+      params.debtAssetPrice,
+      1,
+      MAX_SUPPLY_AMOUNT /
+        _max(1, _convertAmountToValue(debtRayToLiquidate.fromRayUp(), 1, params.debtAssetUnit))
+    );
+    params.liquidationBonus = bound(
+      params.liquidationBonus,
+      MIN_LIQUIDATION_BONUS,
+      MAX_LIQUIDATION_BONUS
+    );
+
+    uint256 hubAddedShares = vm.randomUint(1, MAX_SUPPLY_AMOUNT);
+    uint256 hubAddedAssets = vm.randomUint(
+      hubAddedShares,
+      MAX_SUPPLY_AMOUNT.min(
+        MAX_SUPPLY_PRICE * (hubAddedShares + SharesMath.VIRTUAL_SHARES) - SharesMath.VIRTUAL_ASSETS
+      )
+    );
+    _mockSupplySharePrice(
+      IHub(address(params.collateralReserveHub)),
+      params.collateralReserveAssetId,
+      hubAddedAssets,
+      hubAddedShares
+    );
+
     return params;
   }
 
@@ -145,18 +242,20 @@ contract LiquidationLogicBaseTest is SpokeBase {
       params.maxLiquidationBonus
     );
 
-    params.debtAssetUnit = bound(
-      params.debtAssetUnit,
-      10 ** MIN_TOKEN_DECIMALS_SUPPORTED,
-      10 ** MAX_TOKEN_DECIMALS_SUPPORTED
+    params.debtAssetDecimals = bound(
+      params.debtAssetDecimals,
+      MIN_TOKEN_DECIMALS_SUPPORTED,
+      MAX_TOKEN_DECIMALS_SUPPORTED
     );
 
     LiquidationLogic.CalculateDebtToLiquidateParams
       memory debtToLiquidateParams = _getCalculateDebtToLiquidateParams(params);
     debtToLiquidateParams = _bound(debtToLiquidateParams);
 
-    params.debtReserveBalance = debtToLiquidateParams.debtReserveBalance;
-    params.totalDebtValue = debtToLiquidateParams.totalDebtValue;
+    params.drawnShares = debtToLiquidateParams.drawnShares;
+    params.premiumDebtRay = debtToLiquidateParams.premiumDebtRay;
+    params.drawnIndex = debtToLiquidateParams.drawnIndex;
+    params.totalDebtValueRay = debtToLiquidateParams.totalDebtValueRay;
     params.debtAssetPrice = debtToLiquidateParams.debtAssetPrice;
     params.debtToCover = debtToLiquidateParams.debtToCover;
     params.healthFactor = debtToLiquidateParams.healthFactor;
@@ -164,13 +263,33 @@ contract LiquidationLogicBaseTest is SpokeBase {
     params.collateralFactor = debtToLiquidateParams.collateralFactor;
 
     params.collateralAssetPrice = bound(params.collateralAssetPrice, 1, MAX_ASSET_PRICE);
-    params.collateralAssetUnit = bound(
-      params.collateralAssetUnit,
-      10 ** MIN_TOKEN_DECIMALS_SUPPORTED,
-      10 ** MAX_TOKEN_DECIMALS_SUPPORTED
+    params.collateralAssetDecimals = bound(
+      params.collateralAssetDecimals,
+      MIN_TOKEN_DECIMALS_SUPPORTED,
+      MAX_TOKEN_DECIMALS_SUPPORTED
     );
     params.liquidationFee = bound(params.liquidationFee, 0, PercentageMath.PERCENTAGE_FACTOR);
-    params.collateralReserveBalance = bound(params.collateralReserveBalance, 0, MAX_SUPPLY_AMOUNT);
+
+    params.suppliedShares = bound(params.suppliedShares, 0, MAX_SUPPLY_AMOUNT);
+    uint256 hubAddedShares = vm.randomUint(params.suppliedShares, MAX_SUPPLY_AMOUNT);
+    uint256 hubAddedAssets = vm.randomUint(
+      hubAddedShares,
+      MAX_SUPPLY_AMOUNT.min(
+        MAX_SUPPLY_PRICE * (hubAddedShares + SharesMath.VIRTUAL_SHARES) - SharesMath.VIRTUAL_ASSETS
+      )
+    );
+    params.collateralReserveHub = hub1;
+    params.collateralReserveAssetId = bound(
+      params.collateralReserveAssetId,
+      0,
+      IHub(address(params.collateralReserveHub)).getAssetCount() - 1
+    );
+    _mockSupplySharePrice(
+      IHub(address(params.collateralReserveHub)),
+      params.collateralReserveAssetId,
+      hubAddedAssets,
+      hubAddedShares
+    );
 
     return params;
   }
@@ -183,9 +302,11 @@ contract LiquidationLogicBaseTest is SpokeBase {
       memory debtToLiquidateParams = _getCalculateDebtToLiquidateParams(params);
     debtToLiquidateParams = _boundWithDustAdjustment(debtToLiquidateParams);
 
-    params.debtReserveBalance = debtToLiquidateParams.debtReserveBalance;
-    params.totalDebtValue = debtToLiquidateParams.totalDebtValue;
-    params.debtAssetUnit = debtToLiquidateParams.debtAssetUnit;
+    params.drawnShares = debtToLiquidateParams.drawnShares;
+    params.premiumDebtRay = debtToLiquidateParams.premiumDebtRay;
+    params.drawnIndex = debtToLiquidateParams.drawnIndex;
+    params.totalDebtValueRay = debtToLiquidateParams.totalDebtValueRay;
+    params.debtAssetDecimals = debtToLiquidateParams.debtAssetDecimals;
     params.debtAssetPrice = debtToLiquidateParams.debtAssetPrice;
     params.debtToCover = debtToLiquidateParams.debtToCover;
     params.collateralFactor = debtToLiquidateParams.collateralFactor;
@@ -200,7 +321,7 @@ contract LiquidationLogicBaseTest is SpokeBase {
   ) internal pure returns (LiquidationLogic.CalculateDebtToTargetHealthFactorParams memory) {
     return
       LiquidationLogic.CalculateDebtToTargetHealthFactorParams({
-        totalDebtValue: params.totalDebtValue,
+        totalDebtValueRay: params.totalDebtValueRay,
         debtAssetUnit: params.debtAssetUnit,
         debtAssetPrice: params.debtAssetPrice,
         collateralFactor: params.collateralFactor,
@@ -221,9 +342,12 @@ contract LiquidationLogicBaseTest is SpokeBase {
     });
     return
       LiquidationLogic.CalculateDebtToLiquidateParams({
-        debtReserveBalance: params.debtReserveBalance,
-        totalDebtValue: params.totalDebtValue,
-        debtAssetUnit: params.debtAssetUnit,
+        drawnShares: params.drawnShares,
+        premiumDebtRay: params.premiumDebtRay,
+        drawnIndex: params.drawnIndex,
+        totalDebtValueRay: params.totalDebtValueRay,
+        debtAssetDecimals: params.debtAssetDecimals,
+        debtAssetUnit: 10 ** params.debtAssetDecimals,
         debtAssetPrice: params.debtAssetPrice,
         debtToCover: params.debtToCover,
         collateralFactor: params.collateralFactor,

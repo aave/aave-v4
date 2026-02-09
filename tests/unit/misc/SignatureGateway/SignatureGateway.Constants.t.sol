@@ -112,7 +112,9 @@ contract SignatureGatewayConstantsTest is SignatureGatewayBaseTest {
     );
     assertEq(
       gateway.UPDATE_USER_RISK_PREMIUM_TYPEHASH(),
-      keccak256('UpdateUserRiskPremium(address spoke,address user,uint256 nonce,uint256 deadline)')
+      keccak256(
+        'UpdateUserRiskPremium(address spoke,address onBehalfOf,uint256 nonce,uint256 deadline)'
+      )
     );
   }
 
@@ -124,7 +126,7 @@ contract SignatureGatewayConstantsTest is SignatureGatewayBaseTest {
     assertEq(
       gateway.UPDATE_USER_DYNAMIC_CONFIG_TYPEHASH(),
       keccak256(
-        'UpdateUserDynamicConfig(address spoke,address user,uint256 nonce,uint256 deadline)'
+        'UpdateUserDynamicConfig(address spoke,address onBehalfOf,uint256 nonce,uint256 deadline)'
       )
     );
   }
