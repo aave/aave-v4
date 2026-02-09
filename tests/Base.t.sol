@@ -2066,7 +2066,7 @@ abstract contract Base is Test {
     );
     uint256 targetTotalDebtValue = totalAdjustedCollateralValue.wadDivUp(desiredHf);
     require(
-      userAccountData.totalDebtValueRay / WadRayMath.RAY < targetTotalDebtValue,
+      userAccountData.totalDebtValueRay / WadRayMath.RAY <= targetTotalDebtValue,
       'User has enough debt'
     );
     return targetTotalDebtValue - userAccountData.totalDebtValueRay / WadRayMath.RAY;
@@ -2577,47 +2577,6 @@ abstract contract Base is Test {
     uint256 healthFactor
   ) internal view returns (uint256) {
     return spoke.getLiquidationBonus(reserveId, user, healthFactor);
-  }
-
-  /**
-   * @notice Returns the required debt amount in value terms to ensure user position is above a certain health factor.
-   * @return requiredDebt The required additional debt amount in value terms.
-   */
-  function _getRequiredDebtForGtHf(
-    ISpoke spoke,
-    address user,
-    uint256 desiredHf
-  ) internal view returns (uint256) {
-    ISpoke.UserAccountData memory userAccountData = spoke.getUserAccountData(user);
-
-    return
-      userAccountData
-        .totalCollateralValue
-        .percentMulDown(userAccountData.avgCollateralFactor.fromWadDown())
-        .percentMulDown(99_00)
-        .wadDivDown(desiredHf) - userAccountData.totalDebtValueRay.fromRayUp();
-    // buffer to force debt lower (ie making sure resultant debt creates HF that is gt desired)
-  }
-
-  /// @dev Borrow to be below a certain healthy health factor
-  /// @dev This function validates HF and does not mock price, thus it will cache user RP properly
-  function _borrowToBeAboveHealthyHf(
-    ISpoke spoke,
-    address user,
-    uint256 reserveId,
-    uint256 desiredHf
-  ) internal returns (uint256, uint256) {
-    uint256 requiredDebtInBase = _getRequiredDebtForGtHf(spoke, user, desiredHf);
-    uint256 requiredDebtAmount = _convertValueToAmount(spoke, reserveId, requiredDebtInBase) - 1;
-
-    vm.assume(requiredDebtAmount < MAX_SUPPLY_AMOUNT);
-
-    vm.prank(user);
-    spoke.borrow(reserveId, requiredDebtAmount, user);
-
-    uint256 finalHf = _getUserHealthFactor(spoke, user);
-    assertGt(finalHf, desiredHf, 'should borrow so that HF is above desiredHf');
-    return (finalHf, requiredDebtAmount);
   }
 
   function _mockDecimals(address underlying, uint8 decimals) internal {

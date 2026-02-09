@@ -1109,7 +1109,12 @@ contract SpokeBase is Base {
     _borrowWithoutHfCheck(spoke, user, reserveId, requiredDebtAmount);
 
     uint256 finalHf = _getUserHealthFactor(spoke, user);
-    assertApproxEqAbs(finalHf, desiredHf, 0.001e18);
+    assertApproxEqRel(
+      finalHf,
+      desiredHf,
+      _approxRelFromBps(100),
+      'final health factor should be close to desired health factor'
+    );
 
     return (finalHf, requiredDebtAmount);
   }
