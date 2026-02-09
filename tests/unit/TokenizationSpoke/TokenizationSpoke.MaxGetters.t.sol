@@ -156,13 +156,13 @@ contract TokenizationSpokeMaxGettersAddCapVariablePartialTest is
 
   function test_maxDeposit_returnsRemaining() public view {
     uint256 capWithDecimals = uint256(addCap) * MathUtils.uncheckedExp(10, vault.decimals());
-    uint256 expected = capWithDecimals - vault.totalAssets();
+    uint256 expected = capWithDecimals - vault.previewMint(vault.totalSupply());
     assertEq(vault.maxDeposit(alice), expected);
   }
 
   function test_maxMint_returnsSharesOfRemaining() public view {
     uint256 capWithDecimals = uint256(addCap) * MathUtils.uncheckedExp(10, vault.decimals());
-    uint256 remaining = capWithDecimals - vault.totalAssets();
+    uint256 remaining = capWithDecimals - vault.previewMint(vault.totalSupply());
     uint256 expected = IHub(vault.hub()).previewAddByAssets(vault.assetId(), remaining);
     assertEq(vault.maxMint(alice), expected);
   }
@@ -356,5 +356,92 @@ contract TokenizationSpokeMaxGettersOwnerZeroSharesTest is TokenizationSpokeMaxG
 
   function test_maxRedeem_returnsZero() public view {
     assertEq(vault.maxRedeem(alice), 0);
+  }
+}
+
+contract TokenizationSpokeMaxGettersExactBoundaryAfterYieldTest is
+  TokenizationSpokeMaxGettersBaseTest
+{
+  uint40 public addCap;
+
+  function setUp() public override {
+    super.setUp();
+    addCap = 100;
+    _updateAddCap(IHub(vault.hub()), vault.assetId(), address(vault), addCap);
+
+    uint256 capWithDecimals = uint256(addCap) * MathUtils.uncheckedExp(10, vault.decimals());
+    uint256 depositAmount = capWithDecimals / 2;
+    asset.mint(alice, depositAmount);
+    Utils.approve(vault, alice, depositAmount);
+    vm.prank(alice);
+    vault.deposit(depositAmount, alice);
+
+    _simulateYield(vault, depositAmount);
+    assertGt(vault.totalAssets(), depositAmount);
+  }
+
+  function test_maxDeposit_exactBoundary_succeeds() public {
+    uint256 max = vault.maxDeposit(bob);
+    assertGt(max, 0);
+
+    asset.mint(bob, max);
+    Utils.approve(vault, bob, max);
+    vm.prank(bob);
+    vault.deposit(max, bob);
+  }
+
+  function test_maxMint_exactBoundary_succeeds() public {
+    uint256 max = vault.maxMint(bob);
+    assertGt(max, 0);
+
+    uint256 assets = vault.previewMint(max);
+    asset.mint(bob, assets);
+    Utils.approve(vault, bob, assets);
+    vm.prank(bob);
+    vault.mint(max, bob);
+  }
+}
+
+contract TokenizationSpokeMaxGettersExactBoundaryLimitedLiquidityTest is
+  TokenizationSpokeMaxGettersBaseTest
+{
+  uint256 public depositAmount;
+
+  function setUp() public override {
+    super.setUp();
+    depositAmount = 10e18;
+    asset.mint(alice, depositAmount);
+    Utils.approve(vault, alice, depositAmount);
+    vm.prank(alice);
+    vault.deposit(depositAmount, alice);
+
+    _simulateYield(vault, depositAmount);
+
+    uint256 drawnAmount = depositAmount / 2;
+    asset.mint(address(IHub(vault.hub())), drawnAmount);
+    vm.startPrank(address(spoke2));
+    IHub(vault.hub()).add(vault.assetId(), drawnAmount);
+    IHub(vault.hub()).draw(vault.assetId(), drawnAmount + depositAmount, address(spoke2));
+    vm.stopPrank();
+
+    uint256 liquidity = IHub(vault.hub()).getAssetLiquidity(vault.assetId());
+    uint256 aliceBalance = vault.convertToAssets(vault.balanceOf(alice));
+    assertLt(liquidity, aliceBalance);
+  }
+
+  function test_maxWithdraw_exactBoundary_limitedLiquidity_succeeds() public {
+    uint256 max = vault.maxWithdraw(alice);
+    assertGt(max, 0);
+
+    vm.prank(alice);
+    vault.withdraw(max, alice, alice);
+  }
+
+  function test_maxRedeem_exactBoundary_limitedLiquidity_succeeds() public {
+    uint256 max = vault.maxRedeem(alice);
+    assertGt(max, 0);
+
+    vm.prank(alice);
+    vault.redeem(max, alice, alice);
   }
 }

@@ -1,6 +1,9 @@
 # Proves that in maxRedeem, we never have balance.toAssets > _maxRemovableAssets()
 # where balance is the result from maxRedeem (balance.min(maxRemovableShares))
 # Specifically: previewRedeem(result) <= _maxRemovableAssets()
+#
+# Also proves redeem(maxRedeem()) is OK:
+# toAddedSharesUp(previewRedeem(result)) <= balance — Hub.remove share deduction doesn't exceed spoke shares
 from z3 import *
 
 VIRTUAL_SHARES = IntVal(10**6)
@@ -25,8 +28,15 @@ def previewRedeem(shares, totalAddedAssets, totalAddedShares):
 
 
 def convertToShares(assets, totalAddedAssets, totalAddedShares):
-    """Converts assets to shares, rounding up (previewAddByAssets)"""
+    """Converts assets to shares, rounding down (previewAddByAssets)"""
     return mulDivDown(
+        assets, totalAddedShares + VIRTUAL_SHARES, totalAddedAssets + VIRTUAL_ASSETS
+    )
+
+
+def toAddedSharesUp(assets, totalAddedAssets, totalAddedShares):
+    """Hub.remove's share calculation — rounds up (previewRemoveByAssets)"""
+    return mulDivUp(
         assets, totalAddedShares + VIRTUAL_SHARES, totalAddedAssets + VIRTUAL_ASSETS
     )
 
@@ -41,12 +51,11 @@ def check(propertyDescription):
     elif result == unknown:
         print("Timed out or unknown.")
 
-
 s = Solver()
 
 totalAddedAssets = Int("totalAddedAssets")
 totalAddedShares = Int("totalAddedShares")
-maxRemovableAssets = Int("maxRemovableAssets")  
+maxRemovableAssets = Int("maxRemovableAssets")
 balance = Int("balance")  # balanceOf(owner) in shares
 
 s.add(0 <= totalAddedAssets, totalAddedAssets <= 10**30)
@@ -62,6 +71,16 @@ maxRemovableShares = convertToShares(
 
 result = min(balance, maxRemovableShares)
 resultAssets = previewRedeem(result, totalAddedAssets, totalAddedShares)
+hubRemoveShares = toAddedSharesUp(resultAssets, totalAddedAssets, totalAddedShares)
 
+# Property 1: redeemed assets don't exceed liquidity
+s.push()
 s.add(Not(resultAssets <= maxRemovableAssets))
 check("previewRedeem(balance.min(maxRemovableShares)) <= _maxRemovableAssets()")
+s.pop()
+
+# Property 2: redeem(maxRedeem()) — Hub.remove share deduction doesn't exceed spoke shares
+s.push()
+s.add(Not(hubRemoveShares <= balance))
+check("toAddedSharesUp(previewRedeem(maxRedeem())) <= balance")
+s.pop()
