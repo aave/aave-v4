@@ -219,11 +219,10 @@ contract AccessManagerEnumerable is AccessManager, IAccessManagerEnumerable {
 
   /// @dev Overrides AccessManager `_revokeRole` function to track removed role members.
   function _revokeRole(uint64 roleId, address account) internal override returns (bool) {
-    (bool hadRole, ) = hasRole(roleId, account);
     bool revoked = super._revokeRole(roleId, account);
 
-    if (hadRole) {
-      _trackRoleMember(roleId, account, !revoked);
+    if (revoked) {
+      _trackRoleMember(roleId, account, false);
     }
 
     return revoked;
