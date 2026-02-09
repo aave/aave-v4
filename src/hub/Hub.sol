@@ -221,13 +221,12 @@ contract Hub is IHub, AccessManaged {
     SpokeData storage spoke = _spokes[assetId][msg.sender];
 
     asset.accrue();
-    _validateAdd(asset, spoke, amount);
+    uint120 shares = asset.toAddedSharesDown(amount).toUint120();
+    _validateAdd(asset, spoke, shares);
 
     uint256 liquidity = asset.liquidity + amount;
     uint256 balance = IERC20(asset.underlying).balanceOf(address(this));
     require(balance >= liquidity, InsufficientTransferred(liquidity.uncheckedSub(balance)));
-    uint120 shares = asset.toAddedSharesDown(amount).toUint120();
-    require(shares > 0, InvalidShares());
     asset.addedShares += shares;
     spoke.addedShares += shares;
     asset.liquidity = liquidity.toUint120();
@@ -832,16 +831,16 @@ contract Hub is IHub, AccessManaged {
   function _validateAdd(
     Asset storage asset,
     SpokeData storage spoke,
-    uint256 amount
+    uint256 shares
   ) internal view {
-    require(amount > 0, InvalidAmount());
+    require(shares > 0, InvalidShares());
     require(spoke.active, SpokeNotActive());
     require(!spoke.halted, SpokeHalted());
     uint256 addCap = spoke.addCap;
     require(
       addCap == MAX_ALLOWED_SPOKE_CAP ||
         addCap * MathUtils.uncheckedExp(10, asset.decimals) >=
-          asset.toAddedAssetsUp(spoke.addedShares) + amount,
+          asset.toAddedAssetsUp(spoke.addedShares + shares),
       AddCapExceeded(addCap)
     );
   }

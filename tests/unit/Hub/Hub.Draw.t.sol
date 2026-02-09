@@ -458,4 +458,47 @@ contract HubDrawTest is HubBase {
     vm.prank(address(spoke1));
     hub1.draw({assetId: daiAssetId, amount: daiAmount, to: address(hub1)});
   }
+
+  // draw cap boundary holds with inflated drawnIndex
+  function test_draw_drawCapBoundary_withInflatedIndex() public {
+    _addAndDrawLiquidity({
+      hub: hub1,
+      assetId: daiAssetId,
+      addUser: bob,
+      addSpoke: address(spoke2),
+      addAmount: 100e18,
+      drawUser: alice,
+      drawSpoke: address(spoke1),
+      drawAmount: 100e18,
+      skipTime: 365 days * 10
+    });
+
+    // Restore all drawn to free up liquidity
+    (uint256 existingDrawn, ) = hub1.getSpokeOwed(daiAssetId, address(spoke1));
+    deal(address(tokenList.dai), alice, existingDrawn);
+    vm.prank(alice);
+    tokenList.dai.approve(address(spoke1), existingDrawn);
+    vm.startPrank(address(spoke1));
+    tokenList.dai.transferFrom(alice, address(hub1), existingDrawn);
+    hub1.restore({
+      assetId: daiAssetId,
+      drawnAmount: existingDrawn,
+      premiumDelta: ZERO_PREMIUM_DELTA
+    });
+    vm.stopPrank();
+
+    Utils.add({hub: hub1, assetId: daiAssetId, caller: address(spoke2), amount: 10e18, user: bob});
+
+    uint40 drawCap = 5;
+    updateDrawCap(hub1, daiAssetId, address(spoke1), drawCap);
+
+    uint256 drawAmount = drawCap * 1e18 - 1;
+
+    vm.prank(address(spoke1));
+    hub1.draw({assetId: daiAssetId, amount: drawAmount, to: alice});
+
+    vm.expectRevert(abi.encodeWithSelector(IHub.DrawCapExceeded.selector, drawCap));
+    vm.prank(address(spoke1));
+    hub1.draw({assetId: daiAssetId, amount: 2, to: alice});
+  }
 }
