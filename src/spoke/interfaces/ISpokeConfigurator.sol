@@ -50,6 +50,7 @@ interface ISpokeConfigurator {
 
   /// @notice Updates the maximum number of reserves allowed to exist on a spoke.
   /// @dev It allows setting the maximum below the amount of reserves that currently exist.
+  /// @dev It can also be set for an arbitrary spoke address.
   /// @param spoke The address of the Spoke.
   /// @param maxReserves The new maximum number of reserves.
   function updateMaxReserves(address spoke, uint256 maxReserves) external;
