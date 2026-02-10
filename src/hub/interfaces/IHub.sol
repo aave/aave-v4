@@ -376,7 +376,7 @@ interface IHub is IHubBase, IAccessManaged {
 
   /// @notice Calculates the current drawn rate for the specified asset.
   /// @param assetId The identifier of the asset.
-  /// @return The extrapolated drawn rate of the asset.
+  /// @return The current drawn rate of the asset.
   function getAssetDrawnRate(uint256 assetId) external view returns (uint256);
 
   /// @notice Returns the number of spokes listed for the specified asset.
