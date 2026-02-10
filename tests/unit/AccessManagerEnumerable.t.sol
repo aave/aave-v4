@@ -486,6 +486,24 @@ contract AccessManagerEnumerableTest is Test {
     assertEq(roleMembers[1], user3);
   }
 
+  function test_revokeRole_shouldNotTrack() public {
+    uint64 roleId = 1;
+    address user1 = makeAddr('user1');
+
+    (bool isMember, ) = accessManagerEnumerable.hasRole(roleId, user1);
+    assertFalse(isMember);
+    assertEq(accessManagerEnumerable.getRoleMemberCount(roleId), 0);
+
+    vm.prank(ADMIN);
+    accessManagerEnumerable.revokeRole(roleId, user1);
+
+    assertEq(accessManagerEnumerable.getRoleMemberCount(roleId), 0);
+    assertEq(accessManagerEnumerable.getRoleMembers(roleId, 0, 1).length, 0);
+
+    (isMember, ) = accessManagerEnumerable.hasRole(roleId, user1);
+    assertFalse(isMember);
+  }
+
   function test_renounceRole_shouldNotTrack() public {
     uint64 roleId = 1;
     address user1 = makeAddr('user1');
