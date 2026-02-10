@@ -146,7 +146,6 @@ The refresh mechanism preserves the total premium debt while updating the premiu
 
 - The user's previously accrued premium debt remains unchanged
 - Future premium accrual reflects the updated Risk Premium
-- The accounting system maintains consistency across premium recalculations
 
 Actions that trigger a premium refresh include risk‑increasing events that can change $RP_u$, such as `setUsingAsCollateral` when disabling collateral, `withdraw` when withdrawing collateral, and explicit `updateUserRiskPremium` updates (user-initiated or permissioned by the Governor). In these flows, `refreshPremium` updates premium shares and the offset so the total premium debt stays constant, while future accrual reflects the new Risk Premium.
 
