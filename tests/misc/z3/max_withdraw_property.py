@@ -4,41 +4,15 @@
 #
 # Also proves withdraw(maxWithdraw()) is OK:
 # previewWithdraw(result) <= balanceShares — shares burned don't exceed owner's balance
-from z3 import *
-
-VIRTUAL_SHARES = IntVal(10**6)
-VIRTUAL_ASSETS = IntVal(10**6)
-
-def mulDivDown(a, num, den):
-    return (a * num) / den
-
-def mulDivUp(a, num, den):
-    return (a * num + den - 1) / den
-
-def min(a, b):
-    return If(a <= b, a, b)
+from commons import *
 
 def previewRedeem(shares, totalAddedAssets, totalAddedShares):
     """Converts shares to assets, rounding down (previewRemoveByShares)"""
-    return mulDivDown(
-        shares, totalAddedAssets + VIRTUAL_ASSETS, totalAddedShares + VIRTUAL_SHARES
-    )
+    return previewRemoveByShares(shares, totalAddedAssets, totalAddedShares)
 
 def previewWithdraw(assets, totalAddedAssets, totalAddedShares):
     """Converts assets to shares, rounding up (previewRemoveByAssets)"""
-    return mulDivUp(
-        assets, totalAddedShares + VIRTUAL_SHARES, totalAddedAssets + VIRTUAL_ASSETS
-    )
-
-def check(propertyDescription):
-    print(f"\n-- {propertyDescription} --")
-    result = s.check()
-    if result == sat:
-        print("Counterexample found:", s.model())
-    elif result == unsat:
-        print("Property holds.")
-    elif result == unknown:
-        print("Timed out or unknown.")
+    return previewRemoveByAssets(assets, totalAddedAssets, totalAddedShares)
 
 s = Solver()
 
@@ -58,14 +32,8 @@ s.add(0 <= balanceShares, balanceShares <= 10**30)
 # maxRemovableAssets is just liquidity, which is part of totalAddedAssets
 s.add(maxRemovableAssets <= totalAddedAssets)
 
-# Property 1: maxWithdraw result does not exceed liquidity
-s.push()
-s.add(Not(result <= maxRemovableAssets))
-check("min(previewRedeem(balanceShares), maxRemovableAssets) <= _maxRemovableAssets()")
-s.pop()
+# maxWithdraw result does not exceed liquidity
+proveValid(s, "min(previewRedeem(balanceShares), maxRemovableAssets) <= _maxRemovableAssets()", result <= maxRemovableAssets)
 
-# Property 2: withdraw(maxWithdraw()) — shares burned don't exceed owner's balance
-s.push()
-s.add(Not(sharesBurned <= balanceShares))
-check("previewWithdraw(maxWithdraw()) <= balanceShares")
-s.pop()
+# withdraw(maxWithdraw()) — shares burned don't exceed owner's balance
+proveValid(s, "previewWithdraw(maxWithdraw()) <= balanceShares", sharesBurned <= balanceShares)

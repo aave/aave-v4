@@ -6,7 +6,7 @@ import 'tests/unit/Spoke/SpokeBase.t.sol';
 
 contract SpokeAccrueInterestScenarioTest is SpokeBase {
   using WadRayMath for *;
-  using SafeCast for uint256;
+  using SafeCast for *;
 
   struct TestInputs {
     uint256 daiSupplyAmount;
@@ -96,7 +96,7 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
     // Store base borrow rates
     TestValues[] memory values = new TestValues[](4);
     for (uint256 i = 0; i < 4; ++i) {
-      values[i].baseBorrowRate = hub1.getAssetDrawnRate(testAmounts[i].assetId).toUint96();
+      values[i].baseBorrowRate = hub1.getAsset(testAmounts[i].assetId).drawnRate.toUint96();
     }
 
     // Check bob's drawn debt, premium debt, and supplied amounts for all assets at user, reserve, spoke, and asset level
@@ -167,7 +167,7 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
       // Update amounts for second accrual checks
       for (uint256 i = 0; i < 4; ++i) {
         (testAmounts[i].borrowAmount, ) = spoke2.getUserDebt(testAmounts[i].reserveId, bob);
-        values[i].baseBorrowRate = hub1.getAssetDrawnRate(testAmounts[i].assetId).toUint96();
+        values[i].baseBorrowRate = hub1.getAsset(testAmounts[i].assetId).drawnRate.toUint96();
         values[i].index = hub1.getAssetDrawnIndex(testAmounts[i].assetId).toUint120();
         values[i].timestamp = hub1.getAsset(testAmounts[i].assetId).lastUpdateTimestamp;
         values[i].baseShares = spoke2.getUserPosition(testAmounts[i].reserveId, bob).drawnShares;
@@ -257,15 +257,15 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
     }
   }
 
-  function _bound(TestInputs memory amounts) internal pure returns (TestInputs memory) {
-    amounts.daiSupplyAmount = bound(amounts.daiSupplyAmount, 0, MAX_SUPPLY_AMOUNT);
-    amounts.wethSupplyAmount = bound(amounts.wethSupplyAmount, 0, MAX_SUPPLY_AMOUNT);
-    amounts.usdxSupplyAmount = bound(amounts.usdxSupplyAmount, 0, MAX_SUPPLY_AMOUNT);
-    amounts.wbtcSupplyAmount = bound(amounts.wbtcSupplyAmount, 0, MAX_SUPPLY_AMOUNT);
-    amounts.daiBorrowAmount = bound(amounts.daiBorrowAmount, 0, MAX_SUPPLY_AMOUNT / 2);
-    amounts.wethBorrowAmount = bound(amounts.wethBorrowAmount, 0, MAX_SUPPLY_AMOUNT / 2);
-    amounts.usdxBorrowAmount = bound(amounts.usdxBorrowAmount, 0, MAX_SUPPLY_AMOUNT / 2);
-    amounts.wbtcBorrowAmount = bound(amounts.wbtcBorrowAmount, 0, MAX_SUPPLY_AMOUNT / 2);
+  function _bound(TestInputs memory amounts) internal view returns (TestInputs memory) {
+    amounts.daiSupplyAmount = bound(amounts.daiSupplyAmount, 0, MAX_SUPPLY_AMOUNT_DAI);
+    amounts.wethSupplyAmount = bound(amounts.wethSupplyAmount, 0, MAX_SUPPLY_AMOUNT_WETH);
+    amounts.usdxSupplyAmount = bound(amounts.usdxSupplyAmount, 0, MAX_SUPPLY_AMOUNT_USDX);
+    amounts.wbtcSupplyAmount = bound(amounts.wbtcSupplyAmount, 0, MAX_SUPPLY_AMOUNT_WBTC);
+    amounts.daiBorrowAmount = bound(amounts.daiBorrowAmount, 0, MAX_SUPPLY_AMOUNT_DAI / 2);
+    amounts.wethBorrowAmount = bound(amounts.wethBorrowAmount, 0, MAX_SUPPLY_AMOUNT_WETH / 2);
+    amounts.usdxBorrowAmount = bound(amounts.usdxBorrowAmount, 0, MAX_SUPPLY_AMOUNT_USDX / 2);
+    amounts.wbtcBorrowAmount = bound(amounts.wbtcBorrowAmount, 0, MAX_SUPPLY_AMOUNT_WBTC / 2);
 
     return amounts;
   }
@@ -328,53 +328,54 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
     ISpoke spoke,
     TestInputs memory amounts
   ) internal view returns (TestInputs memory) {
-    uint256 remainingCollateralValue = _getValue(
+    uint256 remainingCollateralValue = _convertAmountToValue(
       spoke,
       _daiReserveId(spoke),
       amounts.daiSupplyAmount
     ) +
-      _getValue(spoke, _wethReserveId(spoke), amounts.wethSupplyAmount) +
-      _getValue(spoke, _usdxReserveId(spoke), amounts.usdxSupplyAmount) +
-      _getValue(spoke, _wbtcReserveId(spoke), amounts.wbtcSupplyAmount);
+      _convertAmountToValue(spoke, _wethReserveId(spoke), amounts.wethSupplyAmount) +
+      _convertAmountToValue(spoke, _usdxReserveId(spoke), amounts.usdxSupplyAmount) +
+      _convertAmountToValue(spoke, _wbtcReserveId(spoke), amounts.wbtcSupplyAmount);
 
     // Bound each debt amount to be no more than half the remaining collateral value
     amounts.daiBorrowAmount = bound(
       amounts.daiBorrowAmount,
       0,
-      (remainingCollateralValue / 2) / _getValue(spoke, _daiReserveId(spoke), 1)
+      (remainingCollateralValue / 2) / _convertAmountToValue(spoke, _daiReserveId(spoke), 1)
     );
     // Subtract out the set debt value from the remaining collateral value
-    remainingCollateralValue -= _getValue(spoke, _daiReserveId(spoke), amounts.daiBorrowAmount) * 2;
+    remainingCollateralValue -=
+      _convertAmountToValue(spoke, _daiReserveId(spoke), amounts.daiBorrowAmount) * 2;
     amounts.wethBorrowAmount = bound(
       amounts.wethBorrowAmount,
       0,
-      (remainingCollateralValue / 2) / _getValue(spoke, _wethReserveId(spoke), 1)
+      (remainingCollateralValue / 2) / _convertAmountToValue(spoke, _wethReserveId(spoke), 1)
     );
     remainingCollateralValue -=
-      _getValue(spoke, _wethReserveId(spoke), amounts.wethBorrowAmount) * 2;
+      _convertAmountToValue(spoke, _wethReserveId(spoke), amounts.wethBorrowAmount) * 2;
     amounts.usdxBorrowAmount = bound(
       amounts.usdxBorrowAmount,
       0,
-      (remainingCollateralValue / 2) / _getValue(spoke, _usdxReserveId(spoke), 1)
+      (remainingCollateralValue / 2) / _convertAmountToValue(spoke, _usdxReserveId(spoke), 1)
     );
     remainingCollateralValue -=
-      _getValue(spoke, _usdxReserveId(spoke), amounts.usdxBorrowAmount) * 2;
+      _convertAmountToValue(spoke, _usdxReserveId(spoke), amounts.usdxBorrowAmount) * 2;
     amounts.wbtcBorrowAmount = bound(
       amounts.wbtcBorrowAmount,
       0,
-      (remainingCollateralValue / 2) / _getValue(spoke, _wbtcReserveId(spoke), 1)
+      (remainingCollateralValue / 2) / _convertAmountToValue(spoke, _wbtcReserveId(spoke), 1)
     );
 
     assertGt(
-      _getValue(spoke, _daiReserveId(spoke), amounts.daiSupplyAmount) +
-        _getValue(spoke, _wethReserveId(spoke), amounts.wethSupplyAmount) +
-        _getValue(spoke, _usdxReserveId(spoke), amounts.usdxSupplyAmount) +
-        _getValue(spoke, _wbtcReserveId(spoke), amounts.wbtcSupplyAmount),
+      _convertAmountToValue(spoke, _daiReserveId(spoke), amounts.daiSupplyAmount) +
+        _convertAmountToValue(spoke, _wethReserveId(spoke), amounts.wethSupplyAmount) +
+        _convertAmountToValue(spoke, _usdxReserveId(spoke), amounts.usdxSupplyAmount) +
+        _convertAmountToValue(spoke, _wbtcReserveId(spoke), amounts.wbtcSupplyAmount),
       2 *
-        (_getValue(spoke, _daiReserveId(spoke), amounts.daiBorrowAmount) +
-          _getValue(spoke, _wethReserveId(spoke), amounts.wethBorrowAmount) +
-          _getValue(spoke, _usdxReserveId(spoke), amounts.usdxBorrowAmount) +
-          _getValue(spoke, _wbtcReserveId(spoke), amounts.wbtcBorrowAmount)),
+        (_convertAmountToValue(spoke, _daiReserveId(spoke), amounts.daiBorrowAmount) +
+          _convertAmountToValue(spoke, _wethReserveId(spoke), amounts.wethBorrowAmount) +
+          _convertAmountToValue(spoke, _usdxReserveId(spoke), amounts.usdxBorrowAmount) +
+          _convertAmountToValue(spoke, _wbtcReserveId(spoke), amounts.wbtcBorrowAmount)),
       'collateral sufficiently covers debt'
     );
 

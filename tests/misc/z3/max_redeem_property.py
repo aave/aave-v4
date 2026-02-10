@@ -4,52 +4,15 @@
 #
 # Also proves redeem(maxRedeem()) is OK:
 # toAddedSharesUp(previewRedeem(result)) <= balance — Hub.remove share deduction doesn't exceed spoke shares
-from z3 import *
-
-VIRTUAL_SHARES = IntVal(10**6)
-VIRTUAL_ASSETS = IntVal(10**6)
-
-def mulDivDown(a, num, den):
-    return (a * num) / den
-
-
-def mulDivUp(a, num, den):
-    return (a * num + den - 1) / den
-
-def min(a, b):
-    return If(a <= b, a, b)
-
+from commons import *
 
 def previewRedeem(shares, totalAddedAssets, totalAddedShares):
     """Converts shares to assets, rounding down (previewRemoveByShares)"""
-    return mulDivDown(
-        shares, totalAddedAssets + VIRTUAL_ASSETS, totalAddedShares + VIRTUAL_SHARES
-    )
-
+    return previewRemoveByShares(shares, totalAddedAssets, totalAddedShares)
 
 def convertToShares(assets, totalAddedAssets, totalAddedShares):
     """Converts assets to shares, rounding down (previewAddByAssets)"""
-    return mulDivDown(
-        assets, totalAddedShares + VIRTUAL_SHARES, totalAddedAssets + VIRTUAL_ASSETS
-    )
-
-
-def toAddedSharesUp(assets, totalAddedAssets, totalAddedShares):
-    """Hub.remove's share calculation — rounds up (previewRemoveByAssets)"""
-    return mulDivUp(
-        assets, totalAddedShares + VIRTUAL_SHARES, totalAddedAssets + VIRTUAL_ASSETS
-    )
-
-
-def check(propertyDescription):
-    print(f"\n-- {propertyDescription} --")
-    result = s.check()
-    if result == sat:
-        print("Counterexample found:", s.model())
-    elif result == unsat:
-        print("Property holds.")
-    elif result == unknown:
-        print("Timed out or unknown.")
+    return previewAddByAssets(assets, totalAddedAssets, totalAddedShares)
 
 s = Solver()
 
@@ -73,14 +36,8 @@ result = min(balance, maxRemovableShares)
 resultAssets = previewRedeem(result, totalAddedAssets, totalAddedShares)
 hubRemoveShares = toAddedSharesUp(resultAssets, totalAddedAssets, totalAddedShares)
 
-# Property 1: redeemed assets don't exceed liquidity
-s.push()
-s.add(Not(resultAssets <= maxRemovableAssets))
-check("previewRedeem(balance.min(maxRemovableShares)) <= _maxRemovableAssets()")
-s.pop()
+# redeemed assets don't exceed liquidity
+proveValid(s, "previewRedeem(balance.min(maxRemovableShares)) <= _maxRemovableAssets()", resultAssets <= maxRemovableAssets)
 
-# Property 2: redeem(maxRedeem()) — Hub.remove share deduction doesn't exceed spoke shares
-s.push()
-s.add(Not(hubRemoveShares <= balance))
-check("toAddedSharesUp(previewRedeem(maxRedeem())) <= balance")
-s.pop()
+# redeem(maxRedeem()) — Hub.remove share deduction doesn't exceed spoke shares
+proveValid(s, "toAddedSharesUp(previewRedeem(maxRedeem())) <= balance", hubRemoveShares <= balance)

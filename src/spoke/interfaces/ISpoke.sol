@@ -40,18 +40,18 @@ interface ISpoke is ISpokeBase, IAccessManaged, IIntentConsumer, IExtSload, IMul
   /// @dev hub The address of the associated Hub.
   /// @dev assetId The identifier of the asset in the Hub.
   /// @dev decimals The number of decimals of the underlying asset.
-  /// @dev dynamicConfigKey The key of the last reserve dynamic config.
   /// @dev collateralRisk The risk associated with a collateral asset, expressed in BPS.
   /// @dev flags The packed boolean flags of the reserve (a wrapped uint8).
+  /// @dev dynamicConfigKey The key of the last reserve dynamic config.
   struct Reserve {
     address underlying;
     //
     IHubBase hub;
     uint16 assetId;
     uint8 decimals;
-    uint24 dynamicConfigKey;
     uint24 collateralRisk;
     ReserveFlags flags;
+    uint32 dynamicConfigKey;
   }
 
   /// @notice Reserve configuration. Subset of the `Reserve` struct.
@@ -101,7 +101,7 @@ interface ISpoke is ISpokeBase, IAccessManaged, IIntentConsumer, IExtSload, IMul
     int200 premiumOffsetRay;
     //
     uint120 suppliedShares;
-    uint24 dynamicConfigKey;
+    uint32 dynamicConfigKey;
   }
 
   /// @notice Position manager configuration data.
@@ -124,8 +124,8 @@ interface ISpoke is ISpokeBase, IAccessManaged, IIntentConsumer, IExtSload, IMul
   /// @dev riskPremium The risk premium of the user position, expressed in BPS.
   /// @dev avgCollateralFactor The weighted average collateral factor of the user position, expressed in WAD.
   /// @dev healthFactor The health factor of the user position, expressed in WAD. 1e18 represents a health factor of 1.00.
-  /// @dev totalCollateralValue The total collateral value of the user position, expressed in units of base currency. 1e26 represents 1 USD.
-  /// @dev totalDebtValue The total debt value of the user position, expressed in units of base currency. 1e26 represents 1 USD.
+  /// @dev totalCollateralValue The total collateral value of the user position, expressed in units of Value.
+  /// @dev totalDebtValueRay The total debt value of the user position, expressed in units of Value and scaled by RAY.
   /// @dev activeCollateralCount The number of active collaterals, which includes reserves with `collateralFactor` > 0, `enabledAsCollateral` and `suppliedAmount` > 0.
   /// @dev borrowCount The number of borrowed reserves of the user position.
   struct UserAccountData {
@@ -133,7 +133,7 @@ interface ISpoke is ISpokeBase, IAccessManaged, IIntentConsumer, IExtSload, IMul
     uint256 avgCollateralFactor;
     uint256 healthFactor;
     uint256 totalCollateralValue;
-    uint256 totalDebtValue;
+    uint256 totalDebtValueRay;
     uint256 activeCollateralCount;
     uint256 borrowCount;
   }
@@ -171,7 +171,7 @@ interface ISpoke is ISpokeBase, IAccessManaged, IIntentConsumer, IExtSload, IMul
   /// @param config The dynamic reserve config.
   event AddDynamicReserveConfig(
     uint256 indexed reserveId,
-    uint24 indexed dynamicConfigKey,
+    uint32 indexed dynamicConfigKey,
     DynamicReserveConfig config
   );
 
@@ -181,7 +181,7 @@ interface ISpoke is ISpokeBase, IAccessManaged, IIntentConsumer, IExtSload, IMul
   /// @param config The dynamic reserve config.
   event UpdateDynamicReserveConfig(
     uint256 indexed reserveId,
-    uint24 indexed dynamicConfigKey,
+    uint32 indexed dynamicConfigKey,
     DynamicReserveConfig config
   );
 
@@ -253,6 +253,9 @@ interface ISpoke is ISpokeBase, IAccessManaged, IIntentConsumer, IExtSload, IMul
   /// @notice Thrown when adding a new reserve if an asset id is invalid.
   error InvalidAssetId();
 
+  /// @notice Thrown when adding a new reserve if the asset decimals are invalid.
+  error InvalidAssetDecimals();
+
   /// @notice Thrown when updating a reserve if it is not listed.
   error ReserveNotListed();
 
@@ -282,7 +285,7 @@ interface ISpoke is ISpokeBase, IAccessManaged, IIntentConsumer, IExtSload, IMul
   error Unauthorized();
 
   /// @notice Thrown if a config key is uninitialized when updating a dynamic reserve config.
-  error ConfigKeyUninitialized();
+  error DynamicConfigKeyUninitialized();
 
   /// @notice Thrown for an invalid zero address.
   error InvalidAddress();
@@ -371,18 +374,18 @@ interface ISpoke is ISpokeBase, IAccessManaged, IIntentConsumer, IExtSload, IMul
   function addDynamicReserveConfig(
     uint256 reserveId,
     DynamicReserveConfig calldata dynamicConfig
-  ) external returns (uint24 dynamicConfigKey);
+  ) external returns (uint32 dynamicConfigKey);
 
   /// @notice Updates the dynamic reserve config for a given reserve at the specified key.
   /// @dev It reverts if the reserve associated with the given reserve identifier is not listed.
-  /// @dev Reverts with `ConfigKeyUninitialized` if the config key has not been initialized yet.
+  /// @dev Reverts with `DynamicConfigKeyUninitialized` if the config key has not been initialized yet.
   /// @dev Reverts with `InvalidCollateralFactor` if the collateral factor is 0.
   /// @param reserveId The identifier of the reserve.
   /// @param dynamicConfigKey The key of the config to update.
   /// @param dynamicConfig The new dynamic reserve config.
   function updateDynamicReserveConfig(
     uint256 reserveId,
-    uint24 dynamicConfigKey,
+    uint32 dynamicConfigKey,
     DynamicReserveConfig calldata dynamicConfig
   ) external;
 
@@ -437,7 +440,7 @@ interface ISpoke is ISpokeBase, IAccessManaged, IIntentConsumer, IExtSload, IMul
 
   /// @notice Allows consuming a permit signature for the given reserve's underlying asset.
   /// @dev It reverts if the reserve associated with the given reserve identifier is not listed.
-  /// @dev Spender is the corresponding Hub of the given reserve.
+  /// @dev The Spoke must be configured as the spender.
   /// @param reserveId The identifier of the reserve.
   /// @param onBehalfOf The address of the user on whose behalf the permit is being used.
   /// @param value The amount of the underlying asset to permit.
@@ -459,6 +462,13 @@ interface ISpoke is ISpokeBase, IAccessManaged, IIntentConsumer, IExtSload, IMul
   /// @dev Count includes reserves that are not currently active.
   function getReserveCount() external view returns (uint256);
 
+  /// @notice Returns the reserve identifier for a given assetId in a Hub.
+  /// @dev It reverts if no reserve is associated with the given assetId.
+  /// @param hub The address of the Hub.
+  /// @param assetId The identifier of the asset on the Hub.
+  /// @return The identifier of the reserve.
+  function getReserveId(address hub, uint256 assetId) external view returns (uint256);
+
   /// @notice Returns the reserve struct data in storage.
   /// @dev It reverts if the reserve associated with the given reserve identifier is not listed.
   /// @param reserveId The identifier of the reserve.
@@ -479,7 +489,7 @@ interface ISpoke is ISpokeBase, IAccessManaged, IIntentConsumer, IExtSload, IMul
   /// @return The dynamic reserve configuration struct.
   function getDynamicReserveConfig(
     uint256 reserveId,
-    uint24 dynamicConfigKey
+    uint32 dynamicConfigKey
   ) external view returns (DynamicReserveConfig memory);
 
   /// @notice Returns two flags indicating whether the reserve is used as collateral and whether it is borrowed by the user.
