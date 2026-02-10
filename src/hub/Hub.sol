@@ -612,7 +612,8 @@ contract Hub is IHub, AccessManaged {
 
   /// @inheritdoc IHub
   function getAssetDrawnRate(uint256 assetId) external view returns (uint256) {
-    return _assets[assetId].drawnRate;
+    Asset storage asset = _assets[assetId];
+    return asset.getDrawnRate(assetId, asset.getDrawnIndex());
   }
 
   /// @inheritdoc IHub
@@ -852,6 +853,7 @@ contract Hub is IHub, AccessManaged {
     require(!spoke.halted, SpokeHalted());
   }
 
+  /// @dev The draw cap is enforced against the spoke's total owed, including any reported deficit.
   /// @dev Spoke with maximum cap have unlimited draw capacity.
   function _validateDraw(
     Asset storage asset,

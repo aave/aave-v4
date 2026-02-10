@@ -103,6 +103,7 @@ contract HubSweepTest is HubBase {
     hub1.sweep(daiAssetId, swept);
 
     assertEq(hub1.getAssetDrawnRate(daiAssetId), drawnRate, 'drawnRate');
+    assertEq(hub1.getAsset(daiAssetId).drawnRate, drawnRate, 'drawnRate');
     _assertBorrowRateSynced(hub1, daiAssetId, 'swept');
     _assertHubLiquidity(hub1, daiAssetId, 'sweep');
     (uint256 drawn, ) = hub1.getAssetOwed(daiAssetId);
