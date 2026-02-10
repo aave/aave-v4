@@ -1,32 +1,11 @@
 # Proves that in maxWithdraw, we never have result > _maxRemovableAssets()
 # where result = balance.min(maxRemovableAssets) and balance = previewRedeem(balanceOf(owner))
 # Specifically: result <= _maxRemovableAssets()
-from z3 import *
-
-VIRTUAL_SHARES = IntVal(10**6)
-VIRTUAL_ASSETS = IntVal(10**6)
-
-def mulDivDown(a, num, den):
-    return (a * num) / den
-
-def min(a, b):
-    return If(a <= b, a, b)
+from commons import *
 
 def previewRedeem(shares, totalAddedAssets, totalAddedShares):
     """Converts shares to assets, rounding down (previewRemoveByShares)"""
-    return mulDivDown(
-        shares, totalAddedAssets + VIRTUAL_ASSETS, totalAddedShares + VIRTUAL_SHARES
-    )
-
-def check(propertyDescription):
-    print(f"\n-- {propertyDescription} --")
-    result = s.check()
-    if result == sat:
-        print("Counterexample found:", s.model())
-    elif result == unsat:
-        print("Property holds.")
-    elif result == unknown:
-        print("Timed out or unknown.")
+    return previewRemoveByShares(shares, totalAddedAssets, totalAddedShares)
 
 s = Solver()
 
@@ -45,6 +24,4 @@ s.add(maxRemovableAssets <= totalAddedAssets)
 balanceAssets = previewRedeem(balanceShares, totalAddedAssets, totalAddedShares)
 result = min(balanceAssets, maxRemovableAssets)
 
-s.add(Not(result <= maxRemovableAssets))
-
-check("min(previewRedeem(balanceShares), maxRemovableAssets) <= _maxRemovableAssets()")
+proveValid(s, "min(previewRedeem(balanceShares), maxRemovableAssets) <= _maxRemovableAssets()", result <= maxRemovableAssets)

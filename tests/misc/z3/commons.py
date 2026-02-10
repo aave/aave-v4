@@ -53,6 +53,8 @@ def fromRayUp(a):
 def toRay(a):
     return a * RAY
 
+def min(a, b):
+    return If(a <= b, a, b)
 
 def toAddedSharesDown(assets, totalAddedAssets, addedShares):
     return mulDivDown(

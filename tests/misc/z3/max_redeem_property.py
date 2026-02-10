@@ -1,46 +1,15 @@
 # Proves that in maxRedeem, we never have balance.toAssets > _maxRemovableAssets()
 # where balance is the result from maxRedeem (balance.min(maxRemovableShares))
 # Specifically: previewRedeem(result) <= _maxRemovableAssets()
-from z3 import *
-
-VIRTUAL_SHARES = IntVal(10**6)
-VIRTUAL_ASSETS = IntVal(10**6)
-
-def mulDivDown(a, num, den):
-    return (a * num) / den
-
-
-def mulDivUp(a, num, den):
-    return (a * num + den - 1) / den
-
-def min(a, b):
-    return If(a <= b, a, b)
-
+from commons import *
 
 def previewRedeem(shares, totalAddedAssets, totalAddedShares):
     """Converts shares to assets, rounding down (previewRemoveByShares)"""
-    return mulDivDown(
-        shares, totalAddedAssets + VIRTUAL_ASSETS, totalAddedShares + VIRTUAL_SHARES
-    )
-
+    return previewRemoveByShares(shares, totalAddedAssets, totalAddedShares)
 
 def convertToShares(assets, totalAddedAssets, totalAddedShares):
-    """Converts assets to shares, rounding up (previewAddByAssets)"""
-    return mulDivDown(
-        assets, totalAddedShares + VIRTUAL_SHARES, totalAddedAssets + VIRTUAL_ASSETS
-    )
-
-
-def check(propertyDescription):
-    print(f"\n-- {propertyDescription} --")
-    result = s.check()
-    if result == sat:
-        print("Counterexample found:", s.model())
-    elif result == unsat:
-        print("Property holds.")
-    elif result == unknown:
-        print("Timed out or unknown.")
-
+    """Converts assets to shares, rounding down (previewAddByAssets)"""
+    return previewAddByAssets(assets, totalAddedAssets, totalAddedShares)
 
 s = Solver()
 
@@ -63,5 +32,4 @@ maxRemovableShares = convertToShares(
 result = min(balance, maxRemovableShares)
 resultAssets = previewRedeem(result, totalAddedAssets, totalAddedShares)
 
-s.add(Not(resultAssets <= maxRemovableAssets))
-check("previewRedeem(balance.min(maxRemovableShares)) <= _maxRemovableAssets()")
+proveValid(s, "previewRedeem(balance.min(maxRemovableShares)) <= _maxRemovableAssets()", resultAssets <= maxRemovableAssets)
