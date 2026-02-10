@@ -66,7 +66,7 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
       address(newSpoke),
       IHub.SpokeConfig({
         active: true,
-        paused: false,
+        halted: false,
         addCap: Constants.MAX_ALLOWED_SPOKE_CAP,
         drawCap: Constants.MAX_ALLOWED_SPOKE_CAP,
         riskPremiumThreshold: Constants.MAX_ALLOWED_COLLATERAL_RISK
@@ -77,7 +77,7 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
       address(newSpoke),
       IHub.SpokeConfig({
         active: true,
-        paused: false,
+        halted: false,
         addCap: Constants.MAX_ALLOWED_SPOKE_CAP,
         drawCap: Constants.MAX_ALLOWED_SPOKE_CAP,
         riskPremiumThreshold: Constants.MAX_ALLOWED_COLLATERAL_RISK
@@ -111,7 +111,7 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
       address(spoke1),
       IHub.SpokeConfig({
         active: true,
-        paused: false,
+        halted: false,
         addCap: Constants.MAX_ALLOWED_SPOKE_CAP,
         drawCap: Constants.MAX_ALLOWED_SPOKE_CAP,
         riskPremiumThreshold: Constants.MAX_ALLOWED_COLLATERAL_RISK
@@ -188,7 +188,7 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
       address(newSpoke),
       IHub.SpokeConfig({
         active: true,
-        paused: false,
+        halted: false,
         addCap: 0,
         drawCap: 100_000,
         riskPremiumThreshold: 1000_00
@@ -262,7 +262,7 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
       address(newSpoke),
       IHub.SpokeConfig({
         active: true,
-        paused: false,
+        halted: false,
         addCap: 0,
         drawCap: 0,
         riskPremiumThreshold: 1000_00

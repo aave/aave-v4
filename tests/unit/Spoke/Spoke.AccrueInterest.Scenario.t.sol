@@ -5,12 +5,10 @@ pragma solidity ^0.8.0;
 import 'tests/unit/Spoke/SpokeBase.t.sol';
 
 contract SpokeAccrueInterestScenarioTest is SpokeBase {
-  using SharesMath for uint256;
   using WadRayMath for *;
-  using PercentageMath for uint256;
-  using SafeCast for uint256;
+  using SafeCast for *;
 
-  struct TestAmounts {
+  struct TestInputs {
     uint256 daiSupplyAmount;
     uint256 wethSupplyAmount;
     uint256 usdxSupplyAmount;
@@ -21,25 +19,23 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
     uint256 wbtcBorrowAmount;
   }
 
-  struct Rates {
-    uint96 daiBaseBorrowRate;
-    uint96 wethBaseBorrowRate;
-    uint96 usdxBaseBorrowRate;
-    uint96 wbtcBaseBorrowRate;
+  struct TestAmount {
+    uint256 supplyAmount;
+    uint256 borrowAmount;
+    uint256 originalSupplyAmount;
+    uint256 originalBorrowAmount;
+    uint256 index;
+    uint256 originalIndex;
+    uint256 reserveId;
+    uint256 assetId;
+    string name;
   }
 
-  struct Indices {
-    uint256 daiIndex;
-    uint256 wethIndex;
-    uint256 usdxIndex;
-    uint256 wbtcIndex;
-  }
-
-  struct BaseShares {
-    uint256 dai;
-    uint256 weth;
-    uint256 usdx;
-    uint256 wbtc;
+  struct TestValues {
+    uint96 baseBorrowRate;
+    uint256 index;
+    uint256 baseShares;
+    uint40 timestamp;
   }
 
   function setUp() public override {
@@ -51,89 +47,46 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
     updateLiquidityFee(hub1, usdzAssetId, 0);
   }
 
-  /// Second accrual after an action - which should update the user rp
+  /// @dev Check protocol supply and debt values after two separate interest accruals with multiple assets supplied and borrowed
+  /// @dev Ensures interest accrues correctly after each accrual, in accordance with the user's expected risk premium
   function test_accrueInterest_fuzz_RPBorrowAndSkipTime_twoActions(
-    TestAmounts memory amounts,
+    TestInputs memory amounts,
     uint40 skipTime
   ) public {
-    vm.skip(true, 'pending rft');
     amounts = _bound(amounts);
     skipTime = bound(skipTime, 0, MAX_SKIP_TIME / 2).toUint40();
+    uint40 startTime = vm.getBlockTimestamp().toUint40();
 
     // Ensure bob does not draw more than half his normalized supply value
     amounts = _ensureSufficientCollateral(spoke2, amounts);
-    TestAmounts memory originalAmounts = _copyAmounts(amounts); // deep copy original amounts
+    TestAmount[] memory testAmounts = _parseTestInputs(amounts);
 
-    uint40 startTime = vm.getBlockTimestamp().toUint40();
-
-    // Bob supply dai on spoke 2
-    if (amounts.daiSupplyAmount > 0) {
-      Utils.supplyCollateral(spoke2, _daiReserveId(spoke2), bob, amounts.daiSupplyAmount, bob);
-    }
-
-    // Bob supply weth on spoke 2
-    if (amounts.wethSupplyAmount > 0) {
-      Utils.supplyCollateral(spoke2, _wethReserveId(spoke2), bob, amounts.wethSupplyAmount, bob);
-    }
-
-    // Bob supply usdx on spoke 2
-    if (amounts.usdxSupplyAmount > 0) {
-      Utils.supplyCollateral(spoke2, _usdxReserveId(spoke2), bob, amounts.usdxSupplyAmount, bob);
-    }
-
-    // Bob supply wbtc on spoke 2
-    if (amounts.wbtcSupplyAmount > 0) {
-      Utils.supplyCollateral(spoke2, _wbtcReserveId(spoke2), bob, amounts.wbtcSupplyAmount, bob);
-    }
-
-    // Deploy remainder of liquidity
-    if (amounts.daiSupplyAmount < MAX_SUPPLY_AMOUNT) {
-      _openSupplyPosition(
-        spoke2,
-        _daiReserveId(spoke2),
-        MAX_SUPPLY_AMOUNT - amounts.daiSupplyAmount
-      );
-    }
-    if (amounts.wethSupplyAmount < MAX_SUPPLY_AMOUNT) {
-      _openSupplyPosition(
-        spoke2,
-        _wethReserveId(spoke2),
-        MAX_SUPPLY_AMOUNT - amounts.wethSupplyAmount
-      );
-    }
-    if (amounts.usdxSupplyAmount < MAX_SUPPLY_AMOUNT) {
-      _openSupplyPosition(
-        spoke2,
-        _usdxReserveId(spoke2),
-        MAX_SUPPLY_AMOUNT - amounts.usdxSupplyAmount
-      );
-    }
-    if (amounts.wbtcSupplyAmount < MAX_SUPPLY_AMOUNT) {
-      _openSupplyPosition(
-        spoke2,
-        _wbtcReserveId(spoke2),
-        MAX_SUPPLY_AMOUNT - amounts.wbtcSupplyAmount
-      );
+    // Bob supplies amounts on spoke 2, then we deploy remainder of liquidity up to respective supply caps
+    for (uint256 i = 0; i < 4; ++i) {
+      if (testAmounts[i].supplyAmount > 0) {
+        Utils.supplyCollateral(
+          spoke2,
+          testAmounts[i].reserveId,
+          bob,
+          testAmounts[i].supplyAmount,
+          bob
+        );
+      }
+      // Deploy remainder of liquidity for each asset
+      if (testAmounts[i].supplyAmount < MAX_SUPPLY_AMOUNT) {
+        _openSupplyPosition(
+          spoke2,
+          testAmounts[i].reserveId,
+          MAX_SUPPLY_AMOUNT - testAmounts[i].supplyAmount
+        );
+      }
     }
 
-    // Bob borrows dai from spoke 2
-    if (amounts.daiBorrowAmount > 0) {
-      Utils.borrow(spoke2, _daiReserveId(spoke2), bob, amounts.daiBorrowAmount, bob);
-    }
-
-    // Bob borrows weth from spoke 2
-    if (amounts.wethBorrowAmount > 0) {
-      Utils.borrow(spoke2, _wethReserveId(spoke2), bob, amounts.wethBorrowAmount, bob);
-    }
-
-    // Bob borrows usdx from spoke 2
-    if (amounts.usdxBorrowAmount > 0) {
-      Utils.borrow(spoke2, _usdxReserveId(spoke2), bob, amounts.usdxBorrowAmount, bob);
-    }
-
-    // Bob borrows wbtc from spoke 2
-    if (amounts.wbtcBorrowAmount > 0) {
-      Utils.borrow(spoke2, _wbtcReserveId(spoke2), bob, amounts.wbtcBorrowAmount, bob);
+    // Bob borrows amounts from spoke 2
+    for (uint256 i = 0; i < 4; ++i) {
+      if (testAmounts[i].borrowAmount > 0) {
+        Utils.borrow(spoke2, testAmounts[i].reserveId, bob, testAmounts[i].borrowAmount, bob);
+      }
     }
 
     // Check Bob's risk premium
@@ -141,295 +94,60 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
     assertEq(bobRp, _calculateExpectedUserRP(spoke2, bob), 'user risk premium Before');
 
     // Store base borrow rates
-    Rates memory rates;
-    rates.daiBaseBorrowRate = hub1.getAssetDrawnRate(daiAssetId).toUint96();
-    rates.wethBaseBorrowRate = hub1.getAssetDrawnRate(wethAssetId).toUint96();
-    rates.usdxBaseBorrowRate = hub1.getAssetDrawnRate(usdxAssetId).toUint96();
-    rates.wbtcBaseBorrowRate = hub1.getAssetDrawnRate(wbtcAssetId).toUint96();
+    TestValues[] memory values = new TestValues[](4);
+    for (uint256 i = 0; i < 4; ++i) {
+      values[i].baseBorrowRate = hub1.getAsset(testAmounts[i].assetId).drawnRate.toUint96();
+    }
 
     // Check bob's drawn debt, premium debt, and supplied amounts for all assets at user, reserve, spoke, and asset level
-    uint256 drawnDebt = _calculateExpectedDrawnDebt(
-      amounts.daiBorrowAmount,
-      rates.daiBaseBorrowRate,
-      startTime
-    );
-    _assertSingleUserProtocolDebt(
-      spoke2,
-      _daiReserveId(spoke2),
-      bob,
-      drawnDebt,
-      0,
-      'dai before accrual'
-    );
-    _assertUserSupply(
-      spoke2,
-      _daiReserveId(spoke2),
-      bob,
-      amounts.daiSupplyAmount,
-      'dai before accrual'
-    );
-    _assertReserveSupply(spoke2, _daiReserveId(spoke2), MAX_SUPPLY_AMOUNT, 'dai before accrual');
-    _assertSpokeSupply(spoke2, _daiReserveId(spoke2), MAX_SUPPLY_AMOUNT, 'dai before accrual');
-    _assertAssetSupply(spoke2, _daiReserveId(spoke2), MAX_SUPPLY_AMOUNT, 'dai before accrual');
-
-    drawnDebt = _calculateExpectedDrawnDebt(
-      amounts.wethBorrowAmount,
-      rates.wethBaseBorrowRate,
-      startTime
-    );
-    _assertSingleUserProtocolDebt(
-      spoke2,
-      _wethReserveId(spoke2),
-      bob,
-      drawnDebt,
-      0,
-      'weth before accrual'
-    );
-    _assertUserSupply(
-      spoke2,
-      _wethReserveId(spoke2),
-      bob,
-      amounts.wethSupplyAmount,
-      'weth before accrual'
-    );
-    _assertReserveSupply(spoke2, _wethReserveId(spoke2), MAX_SUPPLY_AMOUNT, 'weth before accrual');
-    _assertSpokeSupply(spoke2, _wethReserveId(spoke2), MAX_SUPPLY_AMOUNT, 'weth before accrual');
-    _assertAssetSupply(spoke2, _wethReserveId(spoke2), MAX_SUPPLY_AMOUNT, 'weth before accrual');
-
-    drawnDebt = _calculateExpectedDrawnDebt(
-      amounts.usdxBorrowAmount,
-      rates.usdxBaseBorrowRate,
-      startTime
-    );
-    _assertSingleUserProtocolDebt(
-      spoke2,
-      _usdxReserveId(spoke2),
-      bob,
-      drawnDebt,
-      0,
-      'usdx before accrual'
-    );
-    _assertUserSupply(
-      spoke2,
-      _usdxReserveId(spoke2),
-      bob,
-      amounts.usdxSupplyAmount,
-      'usdx before accrual'
-    );
-    _assertReserveSupply(spoke2, _usdxReserveId(spoke2), MAX_SUPPLY_AMOUNT, 'usdx before accrual');
-    _assertSpokeSupply(spoke2, _usdxReserveId(spoke2), MAX_SUPPLY_AMOUNT, 'usdx before accrual');
-    _assertAssetSupply(spoke2, _usdxReserveId(spoke2), MAX_SUPPLY_AMOUNT, 'usdx before accrual');
-
-    drawnDebt = _calculateExpectedDrawnDebt(
-      amounts.wbtcBorrowAmount,
-      rates.wbtcBaseBorrowRate,
-      startTime
-    );
-    _assertSingleUserProtocolDebt(
-      spoke2,
-      _wbtcReserveId(spoke2),
-      bob,
-      drawnDebt,
-      0,
-      'wbtc before accrual'
-    );
-    _assertUserSupply(
-      spoke2,
-      _wbtcReserveId(spoke2),
-      bob,
-      amounts.wbtcSupplyAmount,
-      'wbtc before accrual'
-    );
-    _assertReserveSupply(spoke2, _wbtcReserveId(spoke2), MAX_SUPPLY_AMOUNT, 'wbtc before accrual');
-    _assertSpokeSupply(spoke2, _wbtcReserveId(spoke2), MAX_SUPPLY_AMOUNT, 'wbtc before accrual');
-    _assertAssetSupply(spoke2, _wbtcReserveId(spoke2), MAX_SUPPLY_AMOUNT, 'wbtc before accrual');
+    for (uint256 i = 0; i < 4; ++i) {
+      uint256 drawnDebt = _calculateExpectedDrawnDebt(
+        testAmounts[i].borrowAmount,
+        values[i].baseBorrowRate,
+        startTime
+      );
+      _assertProtocolSupplyAndDebt({
+        reserveId: testAmounts[i].reserveId,
+        reserveName: testAmounts[i].name,
+        expectedUserSupply: testAmounts[i].supplyAmount,
+        expectedReserveSupply: MAX_SUPPLY_AMOUNT,
+        expectedDrawnDebt: drawnDebt,
+        expectedPremiumDebt: 0,
+        label: ' before first accrual'
+      });
+    }
 
     // Skip time to accrue interest
     skip(skipTime);
 
     // Check bob's drawn debt, premium debt, and supplied amounts for all assets at user, reserve, spoke, and asset level
-    ISpoke.UserPosition memory bobPosition = spoke2.getUserPosition(_daiReserveId(spoke2), bob);
-    drawnDebt = _calculateExpectedDrawnDebt(
-      amounts.daiBorrowAmount,
-      rates.daiBaseBorrowRate,
-      startTime
-    );
-    uint256 expectedPremiumDebt = _calculateExpectedPremiumDebt(
-      amounts.daiBorrowAmount,
-      drawnDebt,
-      bobRp
-    );
-    uint256 interest = (drawnDebt + expectedPremiumDebt) -
-      amounts.daiBorrowAmount -
-      _calculateBurntInterest(hub1, daiAssetId);
-    _assertSingleUserProtocolDebt(
-      spoke2,
-      _daiReserveId(spoke2),
-      bob,
-      drawnDebt,
-      expectedPremiumDebt,
-      'dai after accrual'
-    );
-    _assertUserSupply(
-      spoke2,
-      _daiReserveId(spoke2),
-      bob,
-      amounts.daiSupplyAmount + (interest * amounts.daiSupplyAmount) / MAX_SUPPLY_AMOUNT,
-      'dai after accrual'
-    );
-    _assertReserveSupply(
-      spoke2,
-      _daiReserveId(spoke2),
-      MAX_SUPPLY_AMOUNT + interest,
-      'dai after accrual'
-    );
-    _assertSpokeSupply(
-      spoke2,
-      _daiReserveId(spoke2),
-      MAX_SUPPLY_AMOUNT + interest,
-      'dai after accrual'
-    );
-    _assertAssetSupply(
-      spoke2,
-      _daiReserveId(spoke2),
-      MAX_SUPPLY_AMOUNT + interest,
-      'dai after accrual'
-    );
+    for (uint256 i = 0; i < 4; ++i) {
+      uint256 drawnDebt = _calculateExpectedDrawnDebt(
+        testAmounts[i].borrowAmount,
+        values[i].baseBorrowRate,
+        startTime
+      );
+      uint256 expectedPremiumDebt = _calculateExpectedPremiumDebt(
+        testAmounts[i].borrowAmount,
+        drawnDebt,
+        bobRp
+      );
+      uint256 interest = (drawnDebt + expectedPremiumDebt) -
+        testAmounts[i].borrowAmount -
+        _calculateBurntInterest(hub1, testAmounts[i].assetId);
+      uint256 expectedUserSupply = testAmounts[i].supplyAmount +
+        (interest * testAmounts[i].supplyAmount) / MAX_SUPPLY_AMOUNT;
 
-    bobPosition = spoke2.getUserPosition(_wethReserveId(spoke2), bob);
-    drawnDebt = _calculateExpectedDrawnDebt(
-      amounts.wethBorrowAmount,
-      rates.wethBaseBorrowRate,
-      startTime
-    );
-    expectedPremiumDebt = _calculateExpectedPremiumDebt(amounts.wethBorrowAmount, drawnDebt, bobRp);
-    interest =
-      (drawnDebt + expectedPremiumDebt) -
-      amounts.wethBorrowAmount -
-      _calculateBurntInterest(hub1, wethAssetId);
-    _assertSingleUserProtocolDebt(
-      spoke2,
-      _wethReserveId(spoke2),
-      bob,
-      drawnDebt,
-      expectedPremiumDebt,
-      'weth after accrual'
-    );
-    _assertUserSupply(
-      spoke2,
-      _wethReserveId(spoke2),
-      bob,
-      amounts.wethSupplyAmount + (interest * amounts.wethSupplyAmount) / MAX_SUPPLY_AMOUNT,
-      'weth after accrual'
-    );
-    _assertReserveSupply(
-      spoke2,
-      _wethReserveId(spoke2),
-      MAX_SUPPLY_AMOUNT + interest,
-      'weth after accrual'
-    );
-    _assertSpokeSupply(
-      spoke2,
-      _wethReserveId(spoke2),
-      MAX_SUPPLY_AMOUNT + interest,
-      'weth after accrual'
-    );
-    _assertAssetSupply(
-      spoke2,
-      _wethReserveId(spoke2),
-      MAX_SUPPLY_AMOUNT + interest,
-      'weth after accrual'
-    );
-
-    bobPosition = spoke2.getUserPosition(_usdxReserveId(spoke2), bob);
-    drawnDebt = _calculateExpectedDrawnDebt(
-      amounts.usdxBorrowAmount,
-      rates.usdxBaseBorrowRate,
-      startTime
-    );
-    expectedPremiumDebt = _calculateExpectedPremiumDebt(amounts.usdxBorrowAmount, drawnDebt, bobRp);
-    interest =
-      (drawnDebt + expectedPremiumDebt) -
-      amounts.usdxBorrowAmount -
-      _calculateBurntInterest(hub1, usdxAssetId);
-    _assertSingleUserProtocolDebt(
-      spoke2,
-      _usdxReserveId(spoke2),
-      bob,
-      drawnDebt,
-      expectedPremiumDebt,
-      'usdx after accrual'
-    );
-    _assertUserSupply(
-      spoke2,
-      _usdxReserveId(spoke2),
-      bob,
-      amounts.usdxSupplyAmount + (interest * amounts.usdxSupplyAmount) / MAX_SUPPLY_AMOUNT,
-      'usdx after accrual'
-    );
-    _assertReserveSupply(
-      spoke2,
-      _usdxReserveId(spoke2),
-      MAX_SUPPLY_AMOUNT + interest,
-      'usdx after accrual'
-    );
-    _assertSpokeSupply(
-      spoke2,
-      _usdxReserveId(spoke2),
-      MAX_SUPPLY_AMOUNT + interest,
-      'usdx after accrual'
-    );
-    _assertAssetSupply(
-      spoke2,
-      _usdxReserveId(spoke2),
-      MAX_SUPPLY_AMOUNT + interest,
-      'usdx after accrual'
-    );
-
-    bobPosition = spoke2.getUserPosition(_wbtcReserveId(spoke2), bob);
-    drawnDebt = _calculateExpectedDrawnDebt(
-      amounts.wbtcBorrowAmount,
-      rates.wbtcBaseBorrowRate,
-      startTime
-    );
-    expectedPremiumDebt = _calculateExpectedPremiumDebt(amounts.wbtcBorrowAmount, drawnDebt, bobRp);
-    interest =
-      (drawnDebt + expectedPremiumDebt) -
-      amounts.wbtcBorrowAmount -
-      _calculateBurntInterest(hub1, wbtcAssetId);
-    _assertSingleUserProtocolDebt(
-      spoke2,
-      _wbtcReserveId(spoke2),
-      bob,
-      drawnDebt,
-      expectedPremiumDebt,
-      'wbtc after accrual'
-    );
-    _assertUserSupply(
-      spoke2,
-      _wbtcReserveId(spoke2),
-      bob,
-      amounts.wbtcSupplyAmount + (interest * amounts.wbtcSupplyAmount) / MAX_SUPPLY_AMOUNT,
-      'wbtc after accrual'
-    );
-    _assertReserveSupply(
-      spoke2,
-      _wbtcReserveId(spoke2),
-      MAX_SUPPLY_AMOUNT + interest,
-      'wbtc after accrual'
-    );
-    _assertSpokeSupply(
-      spoke2,
-      _wbtcReserveId(spoke2),
-      MAX_SUPPLY_AMOUNT + interest,
-      'wbtc after accrual'
-    );
-    _assertAssetSupply(
-      spoke2,
-      _wbtcReserveId(spoke2),
-      MAX_SUPPLY_AMOUNT + interest,
-      'wbtc after accrual'
-    );
+      _assertProtocolSupplyAndDebt({
+        reserveId: testAmounts[i].reserveId,
+        reserveName: testAmounts[i].name,
+        expectedUserSupply: expectedUserSupply,
+        expectedReserveSupply: MAX_SUPPLY_AMOUNT + interest,
+        expectedDrawnDebt: drawnDebt,
+        expectedPremiumDebt: expectedPremiumDebt,
+        label: ' after first accrual'
+      });
+    }
 
     // Only proceed with test if position is healthy
     if (_getUserHealthFactor(spoke2, bob) >= HEALTH_FACTOR_LIQUIDATION_THRESHOLD) {
@@ -437,99 +155,53 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
       deal(address(tokenList.dai), bob, MAX_SUPPLY_AMOUNT);
       Utils.supplyCollateral(spoke2, _usdzReserveId(spoke2), bob, MAX_SUPPLY_AMOUNT, bob);
 
-      // Handle case that bob isn't already borrowing dai by borrowing 1 share
-      bobPosition = spoke2.getUserPosition(_daiReserveId(spoke2), bob);
-      if (bobPosition.drawnShares == 0) {
-        Utils.borrow(
-          spoke2,
-          _daiReserveId(spoke2),
-          bob,
-          hub1.previewRestoreByShares(daiAssetId, 1),
-          bob
-        );
-      }
-      // Workaround for precision loss with RP calc: https://github.com/aave/aave-v4/issues/421
-      // Construct mock call so we can see the same user rp calc as within the borrow function
-      vm.mockCall(
-        address(spoke2),
-        abi.encodeCall(Spoke.getUserTotalDebt, (_daiReserveId(spoke2), bob)),
-        abi.encode(spoke2.getUserTotalDebt(_daiReserveId(spoke2), bob) + 1e18) // Debt amount seen in the borrow function when calculating user rp
-      );
-      bobRp = _calculateExpectedUserRP(spoke2, bob);
-      vm.clearMockedCalls();
+      uint256 daiBorrowAmount = 1e18;
 
       // Bob borrows more dai to trigger accrual
-      Utils.borrow(spoke2, _daiReserveId(spoke2), bob, 1e18, bob);
+      Utils.borrow(spoke2, _daiReserveId(spoke2), bob, daiBorrowAmount, bob);
+      // Account for the dai we just borrowed
+      testAmounts[0].originalBorrowAmount += daiBorrowAmount;
 
-      // Refresh debt values
-      (amounts.daiBorrowAmount, ) = spoke2.getUserDebt(_daiReserveId(spoke2), bob);
-      (amounts.wethBorrowAmount, ) = spoke2.getUserDebt(_wethReserveId(spoke2), bob);
-      (amounts.usdxBorrowAmount, ) = spoke2.getUserDebt(_usdxReserveId(spoke2), bob);
-      (amounts.wbtcBorrowAmount, ) = spoke2.getUserDebt(_wbtcReserveId(spoke2), bob);
+      bobRp = _calculateExpectedUserRP(spoke2, bob);
 
-      // Refresh base borrow rates
-      rates.daiBaseBorrowRate = hub1.getAssetDrawnRate(daiAssetId).toUint96();
-      rates.wethBaseBorrowRate = hub1.getAssetDrawnRate(wethAssetId).toUint96();
-      rates.usdxBaseBorrowRate = hub1.getAssetDrawnRate(usdxAssetId).toUint96();
-      rates.wbtcBaseBorrowRate = hub1.getAssetDrawnRate(wbtcAssetId).toUint96();
+      // Update amounts for second accrual checks
+      for (uint256 i = 0; i < 4; ++i) {
+        (testAmounts[i].borrowAmount, ) = spoke2.getUserDebt(testAmounts[i].reserveId, bob);
+        values[i].baseBorrowRate = hub1.getAsset(testAmounts[i].assetId).drawnRate.toUint96();
+        values[i].index = hub1.getAssetDrawnIndex(testAmounts[i].assetId).toUint120();
+        values[i].timestamp = hub1.getAsset(testAmounts[i].assetId).lastUpdateTimestamp;
+        values[i].baseShares = spoke2.getUserPosition(testAmounts[i].reserveId, bob).drawnShares;
+      }
 
-      BaseShares memory baseShares;
+      // Check bob's drawn debt, premium debt, and supplied amounts for all assets at user, reserve, spoke, and asset level
+      for (uint256 i = 0; i < 4; ++i) {
+        ISpoke.UserPosition memory bobPosition = spoke2.getUserPosition(
+          testAmounts[i].reserveId,
+          bob
+        );
+        uint256 drawnDebt = testAmounts[i].borrowAmount;
+        uint256 expectedPremiumDebt = _calculatePremiumDebt(
+          hub1,
+          testAmounts[i].assetId,
+          bobPosition.premiumShares,
+          bobPosition.premiumOffsetRay
+        );
+        uint256 interest = (drawnDebt + expectedPremiumDebt) -
+          testAmounts[i].originalBorrowAmount -
+          _calculateBurntInterest(hub1, testAmounts[i].assetId);
+        uint256 expectedUserSupply = testAmounts[i].originalSupplyAmount +
+          (interest * testAmounts[i].originalSupplyAmount) / MAX_SUPPLY_AMOUNT;
 
-      // Check debt values before accrual
-      bobPosition = spoke2.getUserPosition(_daiReserveId(spoke2), bob);
-      expectedPremiumDebt = _calculatePremiumDebtRay(spoke2, _daiReserveId(spoke2), bob);
-      _assertSingleUserProtocolDebt(
-        spoke2,
-        _daiReserveId(spoke2),
-        bob,
-        amounts.daiBorrowAmount,
-        expectedPremiumDebt,
-        'dai before second accrual'
-      );
-      baseShares.dai = bobPosition.drawnShares;
-
-      bobPosition = spoke2.getUserPosition(_wethReserveId(spoke2), bob);
-      expectedPremiumDebt = _calculatePremiumDebtRay(spoke2, _wethReserveId(spoke2), bob);
-      _assertSingleUserProtocolDebt(
-        spoke2,
-        _wethReserveId(spoke2),
-        bob,
-        amounts.wethBorrowAmount,
-        expectedPremiumDebt,
-        'weth before second accrual'
-      );
-      baseShares.weth = bobPosition.drawnShares;
-
-      bobPosition = spoke2.getUserPosition(_usdxReserveId(spoke2), bob);
-      expectedPremiumDebt = _calculatePremiumDebtRay(spoke2, _usdxReserveId(spoke2), bob);
-      _assertSingleUserProtocolDebt(
-        spoke2,
-        _usdxReserveId(spoke2),
-        bob,
-        amounts.usdxBorrowAmount,
-        expectedPremiumDebt,
-        'usdx before second accrual'
-      );
-      baseShares.usdx = bobPosition.drawnShares;
-
-      bobPosition = spoke2.getUserPosition(_wbtcReserveId(spoke2), bob);
-      expectedPremiumDebt = _calculatePremiumDebtRay(spoke2, _wbtcReserveId(spoke2), bob);
-      _assertSingleUserProtocolDebt(
-        spoke2,
-        _wbtcReserveId(spoke2),
-        bob,
-        amounts.wbtcBorrowAmount,
-        expectedPremiumDebt,
-        'wbtc before second accrual'
-      );
-      baseShares.wbtc = bobPosition.drawnShares;
-
-      // Store index before accrual, and use this for calculating expected drawn debt
-      Indices memory indices;
-      indices.daiIndex = hub1.getAssetDrawnIndex(daiAssetId);
-      indices.wethIndex = hub1.getAssetDrawnIndex(wethAssetId);
-      indices.usdxIndex = hub1.getAssetDrawnIndex(usdxAssetId);
-      indices.wbtcIndex = hub1.getAssetDrawnIndex(wbtcAssetId);
+        _assertProtocolSupplyAndDebt({
+          reserveId: testAmounts[i].reserveId,
+          reserveName: testAmounts[i].name,
+          expectedUserSupply: expectedUserSupply,
+          expectedReserveSupply: MAX_SUPPLY_AMOUNT + interest,
+          expectedDrawnDebt: drawnDebt,
+          expectedPremiumDebt: expectedPremiumDebt,
+          label: ' before second accrual'
+        });
+      }
 
       // Store timestamp before next skip time
       startTime = vm.getBlockTimestamp().toUint40();
@@ -537,322 +209,210 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
       skip(skipTime);
 
       // Check bob's drawn debt, premium debt, and supplied amounts for all assets at user, reserve, spoke, and asset level
-      indices.daiIndex = _calculateExpectedDrawnIndex(
-        indices.daiIndex,
-        rates.daiBaseBorrowRate,
-        startTime
-      );
-      bobPosition = spoke2.getUserPosition(_daiReserveId(spoke2), bob);
-      drawnDebt = baseShares.dai.rayMulUp(indices.daiIndex);
-      expectedPremiumDebt = _calculateExpectedPremiumDebt(
-        amounts.daiBorrowAmount,
-        drawnDebt,
-        bobRp
-      );
-      interest =
-        (drawnDebt + expectedPremiumDebt) -
-        (originalAmounts.daiBorrowAmount + 1e18) -
-        _calculateBurntInterest(hub1, daiAssetId); // subtract out the extra amount we borrowed
-      _assertSingleUserProtocolDebt(
-        spoke2,
-        _daiReserveId(spoke2),
-        bob,
-        drawnDebt,
-        expectedPremiumDebt,
-        'dai after second accrual'
-      );
-      _assertUserSupply(
-        spoke2,
-        _daiReserveId(spoke2),
-        bob,
-        originalAmounts.daiSupplyAmount +
-          (interest * originalAmounts.daiSupplyAmount) /
-          MAX_SUPPLY_AMOUNT,
-        'dai after second accrual'
-      );
-      _assertReserveSupply(
-        spoke2,
-        _daiReserveId(spoke2),
-        MAX_SUPPLY_AMOUNT + interest,
-        'dai after second accrual'
-      );
-      _assertSpokeSupply(
-        spoke2,
-        _daiReserveId(spoke2),
-        MAX_SUPPLY_AMOUNT + interest,
-        'dai after second accrual'
-      );
-      _assertAssetSupply(
-        spoke2,
-        _daiReserveId(spoke2),
-        MAX_SUPPLY_AMOUNT + interest,
-        'dai after second accrual'
-      );
+      for (uint256 i = 0; i < 4; ++i) {
+        if (testAmounts[i].originalBorrowAmount == 0) {
+          _assertProtocolSupplyAndDebt({
+            reserveId: testAmounts[i].reserveId,
+            reserveName: testAmounts[i].name,
+            expectedUserSupply: testAmounts[i].originalSupplyAmount,
+            expectedReserveSupply: MAX_SUPPLY_AMOUNT,
+            expectedDrawnDebt: 0,
+            expectedPremiumDebt: 0,
+            label: ' after second accrual'
+          });
+          continue;
+        }
+        values[i].index = _calculateExpectedDrawnIndex(
+          values[i].timestamp == 1 ? testAmounts[i].originalIndex : values[i].index, // If reserve never updated, use original index
+          values[i].baseBorrowRate,
+          values[i].timestamp
+        );
+        ISpoke.UserPosition memory bobPosition = spoke2.getUserPosition(
+          testAmounts[i].reserveId,
+          bob
+        );
+        uint256 drawnDebt = values[i].baseShares.rayMulUp(values[i].index);
+        uint256 expectedPremiumDebt = _calculatePremiumDebt(
+          hub1,
+          testAmounts[i].assetId,
+          bobPosition.premiumShares,
+          bobPosition.premiumOffsetRay
+        );
+        uint256 interest = (drawnDebt + expectedPremiumDebt) -
+          testAmounts[i].originalBorrowAmount -
+          _calculateBurntInterest(hub1, testAmounts[i].assetId);
+        uint256 expectedUserSupply = testAmounts[i].originalSupplyAmount +
+          (interest * testAmounts[i].originalSupplyAmount) / MAX_SUPPLY_AMOUNT;
 
-      indices.wethIndex = _calculateExpectedDrawnIndex(
-        indices.wethIndex,
-        rates.wethBaseBorrowRate,
-        startTime
-      );
-      bobPosition = spoke2.getUserPosition(_wethReserveId(spoke2), bob);
-      assertEq(
-        bobPosition.drawnShares,
-        baseShares.weth,
-        'weth base drawn shares after second accrual'
-      );
-      drawnDebt = baseShares.weth.rayMulUp(indices.wethIndex);
-      expectedPremiumDebt = _calculateExpectedPremiumDebt(
-        amounts.wethBorrowAmount,
-        drawnDebt,
-        bobRp
-      );
-      interest =
-        (drawnDebt + expectedPremiumDebt) -
-        originalAmounts.wethBorrowAmount -
-        _calculateBurntInterest(hub1, wethAssetId);
-      _assertSingleUserProtocolDebt(
-        spoke2,
-        _wethReserveId(spoke2),
-        bob,
-        drawnDebt,
-        expectedPremiumDebt,
-        'weth after second accrual'
-      );
-      _assertUserSupply(
-        spoke2,
-        _wethReserveId(spoke2),
-        bob,
-        originalAmounts.wethSupplyAmount +
-          (interest * originalAmounts.wethSupplyAmount) /
-          MAX_SUPPLY_AMOUNT,
-        'weth after second accrual'
-      );
-      _assertReserveSupply(
-        spoke2,
-        _wethReserveId(spoke2),
-        MAX_SUPPLY_AMOUNT + interest,
-        'weth after second accrual'
-      );
-      _assertSpokeSupply(
-        spoke2,
-        _wethReserveId(spoke2),
-        MAX_SUPPLY_AMOUNT + interest,
-        'weth after second accrual'
-      );
-      _assertAssetSupply(
-        spoke2,
-        _wethReserveId(spoke2),
-        MAX_SUPPLY_AMOUNT + interest,
-        'weth after second accrual'
-      );
-
-      indices.usdxIndex = _calculateExpectedDrawnIndex(
-        indices.usdxIndex,
-        rates.usdxBaseBorrowRate,
-        startTime
-      );
-      bobPosition = spoke2.getUserPosition(_usdxReserveId(spoke2), bob);
-      drawnDebt = baseShares.usdx.rayMulUp(indices.usdxIndex);
-      expectedPremiumDebt = _calculateExpectedPremiumDebt(
-        amounts.usdxBorrowAmount,
-        drawnDebt,
-        bobRp
-      );
-      interest =
-        (drawnDebt + expectedPremiumDebt) -
-        originalAmounts.usdxBorrowAmount -
-        _calculateBurntInterest(hub1, usdxAssetId);
-      _assertSingleUserProtocolDebt(
-        spoke2,
-        _usdxReserveId(spoke2),
-        bob,
-        drawnDebt,
-        expectedPremiumDebt,
-        'usdx after second accrual'
-      );
-      _assertUserSupply(
-        spoke2,
-        _usdxReserveId(spoke2),
-        bob,
-        originalAmounts.usdxSupplyAmount +
-          (interest * originalAmounts.usdxSupplyAmount) /
-          MAX_SUPPLY_AMOUNT,
-        'usdx after second accrual'
-      );
-      _assertReserveSupply(
-        spoke2,
-        _usdxReserveId(spoke2),
-        MAX_SUPPLY_AMOUNT + interest,
-        'usdx after second accrual'
-      );
-      _assertSpokeSupply(
-        spoke2,
-        _usdxReserveId(spoke2),
-        MAX_SUPPLY_AMOUNT + interest,
-        'usdx after second accrual'
-      );
-      _assertAssetSupply(
-        spoke2,
-        _usdxReserveId(spoke2),
-        MAX_SUPPLY_AMOUNT + interest,
-        'usdx after second accrual'
-      );
-
-      indices.wbtcIndex = _calculateExpectedDrawnIndex(
-        indices.wbtcIndex,
-        rates.wbtcBaseBorrowRate,
-        startTime
-      );
-      bobPosition = spoke2.getUserPosition(_wbtcReserveId(spoke2), bob);
-      drawnDebt = baseShares.wbtc.rayMulUp(indices.wbtcIndex);
-      expectedPremiumDebt = _calculateExpectedPremiumDebt(
-        amounts.wbtcBorrowAmount,
-        drawnDebt,
-        bobRp
-      );
-      interest =
-        (drawnDebt + expectedPremiumDebt) -
-        originalAmounts.wbtcBorrowAmount -
-        _calculateBurntInterest(hub1, wbtcAssetId);
-      _assertSingleUserProtocolDebt(
-        spoke2,
-        _wbtcReserveId(spoke2),
-        bob,
-        drawnDebt,
-        expectedPremiumDebt,
-        'wbtc after second accrual'
-      );
-      _assertUserSupply(
-        spoke2,
-        _wbtcReserveId(spoke2),
-        bob,
-        originalAmounts.wbtcSupplyAmount +
-          (interest * originalAmounts.wbtcSupplyAmount) /
-          MAX_SUPPLY_AMOUNT,
-        'wbtc after second accrual'
-      );
-      _assertReserveSupply(
-        spoke2,
-        _wbtcReserveId(spoke2),
-        MAX_SUPPLY_AMOUNT + interest,
-        'wbtc after second accrual'
-      );
-      _assertSpokeSupply(
-        spoke2,
-        _wbtcReserveId(spoke2),
-        MAX_SUPPLY_AMOUNT + interest,
-        'wbtc after second accrual'
-      );
-      _assertAssetSupply(
-        spoke2,
-        _wbtcReserveId(spoke2),
-        MAX_SUPPLY_AMOUNT + interest,
-        'wbtc after second accrual'
-      );
+        _assertProtocolSupplyAndDebt({
+          reserveId: testAmounts[i].reserveId,
+          reserveName: testAmounts[i].name,
+          expectedUserSupply: expectedUserSupply,
+          expectedReserveSupply: MAX_SUPPLY_AMOUNT + interest,
+          expectedDrawnDebt: drawnDebt,
+          expectedPremiumDebt: expectedPremiumDebt,
+          label: ' after second accrual'
+        });
+      }
     }
   }
 
-  function _bound(TestAmounts memory amounts) internal pure returns (TestAmounts memory) {
-    amounts.daiSupplyAmount = bound(amounts.daiSupplyAmount, 0, MAX_SUPPLY_AMOUNT);
-    amounts.wethSupplyAmount = bound(amounts.wethSupplyAmount, 0, MAX_SUPPLY_AMOUNT);
-    amounts.usdxSupplyAmount = bound(amounts.usdxSupplyAmount, 0, MAX_SUPPLY_AMOUNT);
-    amounts.wbtcSupplyAmount = bound(amounts.wbtcSupplyAmount, 0, MAX_SUPPLY_AMOUNT);
-    amounts.daiBorrowAmount = bound(amounts.daiBorrowAmount, 0, MAX_SUPPLY_AMOUNT / 2);
-    amounts.wethBorrowAmount = bound(amounts.wethBorrowAmount, 0, MAX_SUPPLY_AMOUNT / 2);
-    amounts.usdxBorrowAmount = bound(amounts.usdxBorrowAmount, 0, MAX_SUPPLY_AMOUNT / 2);
-    amounts.wbtcBorrowAmount = bound(amounts.wbtcBorrowAmount, 0, MAX_SUPPLY_AMOUNT / 2);
+  function _bound(TestInputs memory amounts) internal view returns (TestInputs memory) {
+    amounts.daiSupplyAmount = bound(amounts.daiSupplyAmount, 0, MAX_SUPPLY_AMOUNT_DAI);
+    amounts.wethSupplyAmount = bound(amounts.wethSupplyAmount, 0, MAX_SUPPLY_AMOUNT_WETH);
+    amounts.usdxSupplyAmount = bound(amounts.usdxSupplyAmount, 0, MAX_SUPPLY_AMOUNT_USDX);
+    amounts.wbtcSupplyAmount = bound(amounts.wbtcSupplyAmount, 0, MAX_SUPPLY_AMOUNT_WBTC);
+    amounts.daiBorrowAmount = bound(amounts.daiBorrowAmount, 0, MAX_SUPPLY_AMOUNT_DAI / 2);
+    amounts.wethBorrowAmount = bound(amounts.wethBorrowAmount, 0, MAX_SUPPLY_AMOUNT_WETH / 2);
+    amounts.usdxBorrowAmount = bound(amounts.usdxBorrowAmount, 0, MAX_SUPPLY_AMOUNT_USDX / 2);
+    amounts.wbtcBorrowAmount = bound(amounts.wbtcBorrowAmount, 0, MAX_SUPPLY_AMOUNT_WBTC / 2);
 
     return amounts;
   }
 
-  function _bound(Rates memory rates) internal view returns (Rates memory) {
-    rates.daiBaseBorrowRate = _bpsToRay(
-      bound(rates.daiBaseBorrowRate, 1, irStrategy.MAX_BORROW_RATE())
-    ).toUint96();
-    rates.wethBaseBorrowRate = _bpsToRay(
-      bound(rates.wethBaseBorrowRate, 1, irStrategy.MAX_BORROW_RATE())
-    ).toUint96();
-    rates.usdxBaseBorrowRate = _bpsToRay(
-      bound(rates.usdxBaseBorrowRate, 1, irStrategy.MAX_BORROW_RATE())
-    ).toUint96();
-    rates.wbtcBaseBorrowRate = _bpsToRay(
-      bound(rates.wbtcBaseBorrowRate, 1, irStrategy.MAX_BORROW_RATE())
-    ).toUint96();
+  function _parseTestInputs(TestInputs memory amounts) internal view returns (TestAmount[] memory) {
+    TestAmount[] memory testAmounts = new TestAmount[](4);
 
-    return rates;
+    testAmounts[0] = TestAmount({
+      supplyAmount: amounts.daiSupplyAmount,
+      borrowAmount: amounts.daiBorrowAmount,
+      originalSupplyAmount: amounts.daiSupplyAmount,
+      originalBorrowAmount: amounts.daiBorrowAmount,
+      index: hub1.getAssetDrawnIndex(daiAssetId),
+      originalIndex: hub1.getAssetDrawnIndex(daiAssetId),
+      reserveId: _daiReserveId(spoke2),
+      assetId: daiAssetId,
+      name: 'DAI'
+    });
+
+    testAmounts[1] = TestAmount({
+      supplyAmount: amounts.wethSupplyAmount,
+      borrowAmount: amounts.wethBorrowAmount,
+      originalSupplyAmount: amounts.wethSupplyAmount,
+      originalBorrowAmount: amounts.wethBorrowAmount,
+      index: hub1.getAssetDrawnIndex(wethAssetId),
+      originalIndex: hub1.getAssetDrawnIndex(wethAssetId),
+      reserveId: _wethReserveId(spoke2),
+      assetId: wethAssetId,
+      name: 'WETH'
+    });
+
+    testAmounts[2] = TestAmount({
+      supplyAmount: amounts.usdxSupplyAmount,
+      borrowAmount: amounts.usdxBorrowAmount,
+      originalSupplyAmount: amounts.usdxSupplyAmount,
+      originalBorrowAmount: amounts.usdxBorrowAmount,
+      index: hub1.getAssetDrawnIndex(usdxAssetId),
+      originalIndex: hub1.getAssetDrawnIndex(usdxAssetId),
+      reserveId: _usdxReserveId(spoke2),
+      assetId: usdxAssetId,
+      name: 'USDX'
+    });
+
+    testAmounts[3] = TestAmount({
+      supplyAmount: amounts.wbtcSupplyAmount,
+      borrowAmount: amounts.wbtcBorrowAmount,
+      originalSupplyAmount: amounts.wbtcSupplyAmount,
+      originalBorrowAmount: amounts.wbtcBorrowAmount,
+      index: hub1.getAssetDrawnIndex(wbtcAssetId),
+      originalIndex: hub1.getAssetDrawnIndex(wbtcAssetId),
+      reserveId: _wbtcReserveId(spoke2),
+      assetId: wbtcAssetId,
+      name: 'WBTC'
+    });
+
+    return testAmounts;
   }
 
   function _ensureSufficientCollateral(
     ISpoke spoke,
-    TestAmounts memory amounts
-  ) internal view returns (TestAmounts memory) {
-    uint256 remainingCollateralValue = _getValue(
+    TestInputs memory amounts
+  ) internal view returns (TestInputs memory) {
+    uint256 remainingCollateralValue = _convertAmountToValue(
       spoke,
       _daiReserveId(spoke),
       amounts.daiSupplyAmount
     ) +
-      _getValue(spoke, _wethReserveId(spoke), amounts.wethSupplyAmount) +
-      _getValue(spoke, _usdxReserveId(spoke), amounts.usdxSupplyAmount) +
-      _getValue(spoke, _wbtcReserveId(spoke), amounts.wbtcSupplyAmount);
+      _convertAmountToValue(spoke, _wethReserveId(spoke), amounts.wethSupplyAmount) +
+      _convertAmountToValue(spoke, _usdxReserveId(spoke), amounts.usdxSupplyAmount) +
+      _convertAmountToValue(spoke, _wbtcReserveId(spoke), amounts.wbtcSupplyAmount);
 
     // Bound each debt amount to be no more than half the remaining collateral value
     amounts.daiBorrowAmount = bound(
       amounts.daiBorrowAmount,
       0,
-      (remainingCollateralValue / 2) / _getValue(spoke, _daiReserveId(spoke), 1)
+      (remainingCollateralValue / 2) / _convertAmountToValue(spoke, _daiReserveId(spoke), 1)
     );
     // Subtract out the set debt value from the remaining collateral value
-    remainingCollateralValue -= _getValue(spoke, _daiReserveId(spoke), amounts.daiBorrowAmount) * 2;
+    remainingCollateralValue -=
+      _convertAmountToValue(spoke, _daiReserveId(spoke), amounts.daiBorrowAmount) * 2;
     amounts.wethBorrowAmount = bound(
       amounts.wethBorrowAmount,
       0,
-      (remainingCollateralValue / 2) / _getValue(spoke, _wethReserveId(spoke), 1)
+      (remainingCollateralValue / 2) / _convertAmountToValue(spoke, _wethReserveId(spoke), 1)
     );
     remainingCollateralValue -=
-      _getValue(spoke, _wethReserveId(spoke), amounts.wethBorrowAmount) *
-      2;
+      _convertAmountToValue(spoke, _wethReserveId(spoke), amounts.wethBorrowAmount) * 2;
     amounts.usdxBorrowAmount = bound(
       amounts.usdxBorrowAmount,
       0,
-      (remainingCollateralValue / 2) / _getValue(spoke, _usdxReserveId(spoke), 1)
+      (remainingCollateralValue / 2) / _convertAmountToValue(spoke, _usdxReserveId(spoke), 1)
     );
     remainingCollateralValue -=
-      _getValue(spoke, _usdxReserveId(spoke), amounts.usdxBorrowAmount) *
-      2;
+      _convertAmountToValue(spoke, _usdxReserveId(spoke), amounts.usdxBorrowAmount) * 2;
     amounts.wbtcBorrowAmount = bound(
       amounts.wbtcBorrowAmount,
       0,
-      (remainingCollateralValue / 2) / _getValue(spoke, _wbtcReserveId(spoke), 1)
+      (remainingCollateralValue / 2) / _convertAmountToValue(spoke, _wbtcReserveId(spoke), 1)
     );
 
     assertGt(
-      _getValue(spoke, _daiReserveId(spoke), amounts.daiSupplyAmount) +
-        _getValue(spoke, _wethReserveId(spoke), amounts.wethSupplyAmount) +
-        _getValue(spoke, _usdxReserveId(spoke), amounts.usdxSupplyAmount) +
-        _getValue(spoke, _wbtcReserveId(spoke), amounts.wbtcSupplyAmount),
+      _convertAmountToValue(spoke, _daiReserveId(spoke), amounts.daiSupplyAmount) +
+        _convertAmountToValue(spoke, _wethReserveId(spoke), amounts.wethSupplyAmount) +
+        _convertAmountToValue(spoke, _usdxReserveId(spoke), amounts.usdxSupplyAmount) +
+        _convertAmountToValue(spoke, _wbtcReserveId(spoke), amounts.wbtcSupplyAmount),
       2 *
-        (_getValue(spoke, _daiReserveId(spoke), amounts.daiBorrowAmount) +
-          _getValue(spoke, _wethReserveId(spoke), amounts.wethBorrowAmount) +
-          _getValue(spoke, _usdxReserveId(spoke), amounts.usdxBorrowAmount) +
-          _getValue(spoke, _wbtcReserveId(spoke), amounts.wbtcBorrowAmount)),
+        (_convertAmountToValue(spoke, _daiReserveId(spoke), amounts.daiBorrowAmount) +
+          _convertAmountToValue(spoke, _wethReserveId(spoke), amounts.wethBorrowAmount) +
+          _convertAmountToValue(spoke, _usdxReserveId(spoke), amounts.usdxBorrowAmount) +
+          _convertAmountToValue(spoke, _wbtcReserveId(spoke), amounts.wbtcBorrowAmount)),
       'collateral sufficiently covers debt'
     );
 
     return amounts;
   }
 
-  /// @dev Helper to deep copy TestAmounts struct
-  function _copyAmounts(TestAmounts memory amounts) internal pure returns (TestAmounts memory) {
-    return
-      TestAmounts({
-        daiSupplyAmount: amounts.daiSupplyAmount,
-        wethSupplyAmount: amounts.wethSupplyAmount,
-        usdxSupplyAmount: amounts.usdxSupplyAmount,
-        wbtcSupplyAmount: amounts.wbtcSupplyAmount,
-        daiBorrowAmount: amounts.daiBorrowAmount,
-        wethBorrowAmount: amounts.wethBorrowAmount,
-        usdxBorrowAmount: amounts.usdxBorrowAmount,
-        wbtcBorrowAmount: amounts.wbtcBorrowAmount
-      });
+  function _assertProtocolSupplyAndDebt(
+    uint256 reserveId,
+    string memory reserveName,
+    uint256 expectedUserSupply,
+    uint256 expectedReserveSupply,
+    uint256 expectedDrawnDebt,
+    uint256 expectedPremiumDebt,
+    string memory label
+  ) internal view {
+    _assertUserSupply(
+      spoke2,
+      reserveId,
+      bob,
+      expectedUserSupply,
+      string.concat(reserveName, label)
+    );
+    _assertReserveSupply(
+      spoke2,
+      reserveId,
+      expectedReserveSupply,
+      string.concat(reserveName, label)
+    );
+    _assertSpokeSupply(spoke2, reserveId, expectedReserveSupply, string.concat(reserveName, label));
+    _assertAssetSupply(spoke2, reserveId, expectedReserveSupply, string.concat(reserveName, label));
+    _assertSingleUserProtocolDebt(
+      spoke2,
+      reserveId,
+      bob,
+      expectedDrawnDebt,
+      expectedPremiumDebt,
+      string.concat(reserveName, label)
+    );
   }
 }

@@ -20,7 +20,7 @@ interface IHub is IHubBase, IAccessManaged {
   /// @dev premiumShares The total premium shares across all spokes.
   /// @dev liquidityFee The protocol fee charged on drawn and premium liquidity growth, expressed in BPS.
   /// @dev drawnIndex The drawn index which monotonically increases according to the drawn rate, expressed in RAY.
-  /// @dev drawnRate The rate at which drawn assets grows, expressed in RAY.
+  /// @dev drawnRate The rate at which drawn assets grow, expressed in RAY.
   /// @dev lastUpdateTimestamp The timestamp of the last accrual.
   /// @dev underlying The address of the underlying asset.
   /// @dev irStrategy The address of the interest rate strategy.
@@ -72,8 +72,8 @@ interface IHub is IHubBase, IAccessManaged {
   /// @dev addCap The maximum amount that can be added by a spoke, expressed in whole assets (not scaled by decimals). A value of `MAX_ALLOWED_SPOKE_CAP` indicates no cap.
   /// @dev drawCap The maximum amount that can be drawn by a spoke, expressed in whole assets (not scaled by decimals). A value of `MAX_ALLOWED_SPOKE_CAP` indicates no cap.
   /// @dev riskPremiumThreshold The maximum ratio of premium to drawn shares a spoke can have, expressed in BPS. A value of `MAX_RISK_PREMIUM_THRESHOLD` indicates no threshold.
-  /// @dev active True if the spoke is prevented from performing any actions.
-  /// @dev paused True if the spoke is prevented from performing actions that instantly update the liquidity.
+  /// @dev active False if the spoke is prevented from performing any actions.
+  /// @dev halted True if the spoke is prevented from performing any user-facing actions.
   /// @dev deficitRay The deficit reported by a spoke for a given asset, expressed in asset units and scaled by RAY.
   struct SpokeData {
     uint120 drawnShares;
@@ -86,7 +86,7 @@ interface IHub is IHubBase, IAccessManaged {
     uint40 drawCap;
     uint24 riskPremiumThreshold;
     bool active;
-    bool paused;
+    bool halted;
     //
     uint200 deficitRay;
   }
@@ -97,7 +97,7 @@ interface IHub is IHubBase, IAccessManaged {
     uint40 drawCap;
     uint24 riskPremiumThreshold;
     bool active;
-    bool paused;
+    bool halted;
   }
 
   /// @notice Emitted when an asset is added.
@@ -146,19 +146,19 @@ interface IHub is IHubBase, IAccessManaged {
     uint256 assets
   );
 
-  /// @notice Emitted when an amount of liquidity is invested by the reinvestment controller.
+  /// @notice Emitted when liquidity is invested by the reinvestment controller.
   /// @param assetId The identifier of the asset.
   /// @param reinvestmentController The active asset controller.
   /// @param amount The amount invested.
   event Sweep(uint256 indexed assetId, address indexed reinvestmentController, uint256 amount);
 
-  /// @notice Emitted when an amount of liquidity is reclaimed (from swept liquidity) by the reinvestment controller.
+  /// @notice Emitted when liquidity is reclaimed (from swept liquidity) by the reinvestment controller.
   /// @param assetId The identifier of the asset.
   /// @param reinvestmentController The active asset controller.
   /// @param amount The amount reclaimed.
   event Reclaim(uint256 indexed assetId, address indexed reinvestmentController, uint256 amount);
 
-  /// @notice Emitted when deficit is eliminated.
+  /// @notice Emitted when a deficit is eliminated.
   /// @param assetId The identifier of the asset.
   /// @param callerSpoke The spoke that eliminated the deficit using its supplied shares.
   /// @param coveredSpoke The spoke for which the deficit was eliminated.
@@ -216,8 +216,8 @@ interface IHub is IHubBase, IAccessManaged {
   /// @notice Thrown when a spoke is not active.
   error SpokeNotActive();
 
-  /// @notice Thrown when a spoke is paused.
-  error SpokePaused();
+  /// @notice Thrown when a spoke is halted.
+  error SpokeHalted();
 
   /// @notice Thrown when a new reinvestment controller is the zero address and the asset has existing swept liquidity.
   error InvalidReinvestmentController();
@@ -305,7 +305,7 @@ interface IHub is IHubBase, IAccessManaged {
   function mintFeeShares(uint256 assetId) external returns (uint256);
 
   /// @notice Eliminates deficit by removing supplied shares of caller spoke.
-  /// @dev Only callable by active spokes.
+  /// @dev Only callable by active and authorized spokes.
   /// @param assetId The identifier of the asset.
   /// @param amount The amount of deficit to eliminate.
   /// @param spoke The spoke for which the deficit is eliminated.
@@ -331,6 +331,8 @@ interface IHub is IHubBase, IAccessManaged {
 
   /// @notice Reclaims an amount of liquidity of the corresponding asset from the configured reinvestment controller.
   /// @dev The controller can only reclaim up to swept amount. All accrued interest is distributed offchain.
+  /// @dev Underlying assets must be transferred to the Hub before invocation.
+  /// @dev Extra underlying liquidity retained in the Hub can be skimmed by the investment controller through this action.
   /// @param assetId The identifier of the asset.
   /// @param amount The amount to reclaim.
   function reclaim(uint256 assetId, uint256 amount) external;
@@ -339,6 +341,12 @@ interface IHub is IHubBase, IAccessManaged {
   /// @param underlying The address of the underlying asset.
   /// @return True if the underlying asset is listed.
   function isUnderlyingListed(address underlying) external view returns (bool);
+
+  /// @notice Returns the asset identifier for the specified underlying asset.
+  /// @dev Reverts with `AssetNotListed` if the underlying is not listed.
+  /// @param underlying The address of the underlying asset.
+  /// @return The `assetId` of the underlying asset.
+  function getAssetId(address underlying) external view returns (uint256);
 
   /// @notice Returns the number of listed assets.
   /// @return The number of listed assets.
@@ -366,7 +374,7 @@ interface IHub is IHubBase, IAccessManaged {
   /// @return The amount of liquidity swept.
   function getAssetSwept(uint256 assetId) external view returns (uint256);
 
-  /// @notice Returns the current drawn rate for the specified asset.
+  /// @notice Calculates the current drawn rate for the specified asset.
   /// @param assetId The identifier of the asset.
   /// @return The current drawn rate of the asset.
   function getAssetDrawnRate(uint256 assetId) external view returns (uint256);

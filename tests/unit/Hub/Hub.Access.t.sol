@@ -16,7 +16,7 @@ contract HubAccessTest is HubBase {
     });
     IHub.SpokeConfig memory spokeConfig = IHub.SpokeConfig({
       active: true,
-      paused: false,
+      halted: false,
       addCap: 1000,
       drawCap: 1000,
       riskPremiumThreshold: 1000_00
@@ -71,6 +71,12 @@ contract HubAccessTest is HubBase {
     // Hub Admin can update spoke config
     vm.prank(HUB_ADMIN);
     hub1.updateSpokeConfig(assetAId, address(spoke1), spokeConfig);
+
+    // Only registered spoke with Deficit Eliminator or Hub Admin role can eliminate deficit
+    vm.expectRevert(
+      abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, address(this))
+    );
+    hub1.eliminateDeficit(daiAssetId, 1000, address(spoke1));
   }
 
   function test_setInterestRateData_access() public {
@@ -139,7 +145,7 @@ contract HubAccessTest is HubBase {
       address(spoke1),
       IHub.SpokeConfig({
         active: true,
-        paused: false,
+        halted: false,
         addCap: 1000,
         drawCap: 1000,
         riskPremiumThreshold: 1000_00
@@ -256,7 +262,7 @@ contract HubAccessTest is HubBase {
     });
     IHub.SpokeConfig memory spokeConfig = IHub.SpokeConfig({
       active: true,
-      paused: false,
+      halted: false,
       addCap: 1000,
       drawCap: 1000,
       riskPremiumThreshold: 1000_00

@@ -12,7 +12,7 @@ contract HubPayFeeTest is HubBase {
   }
 
   function test_payFee_revertsWith_SpokeNotActive() public {
-    updateSpokeActive(hub1, daiAssetId, address(spoke1), false);
+    _updateSpokeActive(hub1, daiAssetId, address(spoke1), false);
     vm.expectRevert(IHub.SpokeNotActive.selector, address(hub1));
     vm.prank(address(spoke1));
     hub1.payFeeShares(daiAssetId, 1);

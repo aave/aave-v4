@@ -111,6 +111,10 @@ contract MathUtilsTest is Base {
     MathUtils.add(UINT256_MAX, 1);
   }
 
+  function test_zeroFloorSub(uint256 a, uint256 b) public pure {
+    assertEq(MathUtils.zeroFloorSub(a, b), a < b ? 0 : a - b);
+  }
+
   function test_uncheckedAdd(uint256 a, uint256 b) public pure {
     uint256 result = MathUtils.uncheckedAdd(a, b);
     assertEq(result, b <= UINT256_MAX - a ? a + b : a - (UINT256_MAX - b) - 1);
@@ -125,6 +129,15 @@ contract MathUtilsTest is Base {
 
     assertTrue(result >= type(int256).min);
     assertTrue(result <= INT256_MAX);
+  }
+
+  function test_signedSub_revertsWith_SafeCastOverflowedUintToInt(uint256 a) public {
+    a = bound(a, uint256(INT256_MAX) + 1, UINT256_MAX);
+    vm.expectRevert(abi.encodeWithSelector(SafeCast.SafeCastOverflowedUintToInt.selector, a));
+    MathUtils.signedSub(a, 0);
+
+    vm.expectRevert(abi.encodeWithSelector(SafeCast.SafeCastOverflowedUintToInt.selector, a));
+    MathUtils.signedSub(0, a);
   }
 
   function test_uncheckedSub(uint256 a, uint256 b) public pure {
@@ -150,6 +163,16 @@ contract MathUtilsTest is Base {
     }
 
     assertEq(result, expectedRes);
+  }
+
+  function test_fuzz_divUp(uint256 a, uint256 b) external {
+    if (b == 0) {
+      vm.expectRevert();
+      MathUtils.divUp(a, b);
+    } else {
+      uint256 result = MathUtils.divUp(a, b);
+      assertEq(result, a / b + (a % b > 0 ? 1 : 0));
+    }
   }
 
   function test_mulDivDown_WithRemainder() external pure {

@@ -12,40 +12,11 @@ contract SpokePositionManagerTest is SpokeBase {
     address positionManager = vm.randomAddress();
     bool approve = vm.randomBool();
 
-    // if position manager not active, then user should not be able to approve, else action should be idempotent
-    if (!spoke1.isPositionManagerActive(positionManager) && approve) {
-      vm.expectRevert(ISpoke.InactivePositionManager.selector);
-    } else {
-      vm.expectEmit(address(spoke1));
-      emit ISpoke.SetUserPositionManager(user, positionManager, approve);
-    }
+    vm.expectEmit(address(spoke1));
+    emit ISpoke.SetUserPositionManager(user, positionManager, approve);
 
     vm.prank(user);
     spoke1.setUserPositionManager(positionManager, approve);
-  }
-
-  function test_setApproval_revertsWith_InactivePositionManager() public {
-    assertFalse(spoke1.isPositionManagerActive(POSITION_MANAGER));
-    vm.expectRevert(ISpoke.InactivePositionManager.selector);
-    spoke1.setUserPositionManager(POSITION_MANAGER, true);
-  }
-
-  function test_disableApproval_on_InactivePositionManager() public {
-    _approvePositionManager(alice);
-    assertTrue(spoke1.isPositionManager(alice, POSITION_MANAGER));
-    assertTrue(spoke1.isPositionManagerActive(POSITION_MANAGER));
-
-    _disablePositionManager();
-    assertFalse(spoke1.isPositionManager(alice, POSITION_MANAGER)); // since posm is not active
-    assertFalse(spoke1.isPositionManagerActive(POSITION_MANAGER));
-
-    vm.expectEmit(address(spoke1));
-    emit ISpoke.SetUserPositionManager(alice, POSITION_MANAGER, false);
-    vm.prank(alice);
-    spoke1.setUserPositionManager(POSITION_MANAGER, false);
-
-    assertFalse(spoke1.isPositionManager(alice, POSITION_MANAGER));
-    assertFalse(spoke1.isPositionManagerActive(POSITION_MANAGER));
   }
 
   function test_renouncePositionManagerRole() public {

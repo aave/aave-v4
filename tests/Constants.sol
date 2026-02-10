@@ -8,15 +8,15 @@ library Constants {
   uint8 public constant MIN_ALLOWED_UNDERLYING_DECIMALS = 6;
   uint40 public constant MAX_ALLOWED_SPOKE_CAP = type(uint40).max;
   uint24 public constant MAX_RISK_PREMIUM_THRESHOLD = type(uint24).max; // 167772.15%
+  uint256 public constant VIRTUAL_ASSETS = 1e6;
+  uint256 public constant VIRTUAL_SHARES = 1e6;
 
   /// @dev Spoke Constants
   uint8 public constant ORACLE_DECIMALS = 8;
   uint64 public constant HEALTH_FACTOR_LIQUIDATION_THRESHOLD = 1e18;
   uint256 public constant DUST_LIQUIDATION_THRESHOLD = 1000e26;
   uint24 public constant MAX_ALLOWED_COLLATERAL_RISK = 1000_00; // 1000.00%
-  uint256 public constant MAX_ALLOWED_DYNAMIC_CONFIG_KEY = type(uint24).max;
-  bytes32 public constant SET_USER_POSITION_MANAGER_TYPEHASH =
-    // keccak256('SetUserPositionManager(address positionManager,address user,bool approve,uint256 nonce,uint256 deadline)')
-    0x758d23a3c07218b7ea0b4f7f63903c4e9d5cbde72d3bcfe3e9896639025a0214;
+  uint256 public constant MAX_ALLOWED_DYNAMIC_CONFIG_KEY = type(uint32).max;
   uint256 public constant MAX_ALLOWED_ASSET_ID = type(uint16).max;
+  uint16 public constant MAX_ALLOWED_USER_RESERVES_LIMIT = type(uint16).max;
 }

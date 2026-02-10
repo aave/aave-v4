@@ -50,13 +50,13 @@ contract SignatureGatewayTest is SignatureGatewayBaseTest {
   }
 
   function test_supplyWithSig() public {
-    EIP712Types.Supply memory p = _supplyData(spoke1, alice, _warpBeforeRandomDeadline());
+    ISignatureGateway.Supply memory p = _supplyData(spoke1, alice, _warpBeforeRandomDeadline());
     p.nonce = _burnRandomNoncesAtKey(gateway, p.onBehalfOf);
     bytes memory signature = _sign(alicePk, _getTypedDataHash(gateway, p));
     Utils.approve(spoke1, p.reserveId, alice, address(gateway), p.amount);
 
     uint256 shares = _hub(spoke1, p.reserveId).previewAddByAssets(
-      _spokeAssetId(spoke1, p.reserveId),
+      _reserveAssetId(spoke1, p.reserveId),
       p.amount
     );
 
@@ -76,14 +76,14 @@ contract SignatureGatewayTest is SignatureGatewayBaseTest {
   }
 
   function test_withdrawWithSig() public {
-    EIP712Types.Withdraw memory p = _withdrawData(spoke1, alice, _warpBeforeRandomDeadline());
+    ISignatureGateway.Withdraw memory p = _withdrawData(spoke1, alice, _warpBeforeRandomDeadline());
     p.nonce = _burnRandomNoncesAtKey(gateway, p.onBehalfOf);
     bytes memory signature = _sign(alicePk, _getTypedDataHash(gateway, p));
 
     Utils.supply(spoke1, p.reserveId, alice, p.amount + 1, alice);
 
     uint256 shares = _hub(spoke1, p.reserveId).previewRemoveByAssets(
-      _spokeAssetId(spoke1, p.reserveId),
+      _reserveAssetId(spoke1, p.reserveId),
       p.amount
     );
     TestReturnValues memory returnValues;
@@ -102,7 +102,7 @@ contract SignatureGatewayTest is SignatureGatewayBaseTest {
   }
 
   function test_borrowWithSig() public {
-    EIP712Types.Borrow memory p = _borrowData(spoke1, alice, _warpBeforeRandomDeadline());
+    ISignatureGateway.Borrow memory p = _borrowData(spoke1, alice, _warpBeforeRandomDeadline());
     p.nonce = _burnRandomNoncesAtKey(gateway, p.onBehalfOf);
     p.reserveId = _daiReserveId(spoke1);
     p.amount = 1e18;
@@ -110,7 +110,7 @@ contract SignatureGatewayTest is SignatureGatewayBaseTest {
     bytes memory signature = _sign(alicePk, _getTypedDataHash(gateway, p));
 
     uint256 shares = _hub(spoke1, p.reserveId).previewDrawByAssets(
-      _spokeAssetId(spoke1, p.reserveId),
+      _reserveAssetId(spoke1, p.reserveId),
       p.amount
     );
     TestReturnValues memory returnValues;
@@ -129,7 +129,7 @@ contract SignatureGatewayTest is SignatureGatewayBaseTest {
   }
 
   function test_repayWithSig() public {
-    EIP712Types.Repay memory p = _repayData(spoke1, alice, _warpBeforeRandomDeadline());
+    ISignatureGateway.Repay memory p = _repayData(spoke1, alice, _warpBeforeRandomDeadline());
     p.nonce = _burnRandomNoncesAtKey(gateway, p.onBehalfOf);
     p.reserveId = _daiReserveId(spoke1);
     p.amount = 1e18;
@@ -145,7 +145,7 @@ contract SignatureGatewayTest is SignatureGatewayBaseTest {
       p.amount
     );
     uint256 shares = _hub(spoke1, p.reserveId).previewRestoreByAssets(
-      _spokeAssetId(spoke1, p.reserveId),
+      _reserveAssetId(spoke1, p.reserveId),
       baseRestored
     );
     TestReturnValues memory returnValues;
@@ -172,7 +172,7 @@ contract SignatureGatewayTest is SignatureGatewayBaseTest {
 
   function test_setUsingAsCollateralWithSig() public {
     uint256 deadline = _warpBeforeRandomDeadline();
-    EIP712Types.SetUsingAsCollateral memory p = _setAsCollateralData(spoke1, alice, deadline);
+    ISignatureGateway.SetUsingAsCollateral memory p = _setAsCollateralData(spoke1, alice, deadline);
     p.nonce = _burnRandomNoncesAtKey(gateway, p.onBehalfOf);
     p.reserveId = _daiReserveId(spoke1);
     Utils.supplyCollateral(spoke1, p.reserveId, alice, 1e18, alice);
@@ -193,7 +193,11 @@ contract SignatureGatewayTest is SignatureGatewayBaseTest {
 
   function test_updateUserRiskPremiumWithSig() public {
     uint256 deadline = _warpBeforeRandomDeadline();
-    EIP712Types.UpdateUserRiskPremium memory p = _updateRiskPremiumData(spoke1, alice, deadline);
+    ISignatureGateway.UpdateUserRiskPremium memory p = _updateRiskPremiumData(
+      spoke1,
+      alice,
+      deadline
+    );
     p.nonce = _burnRandomNoncesAtKey(gateway, alice);
     bytes memory signature = _sign(alicePk, _getTypedDataHash(gateway, p));
 
@@ -212,7 +216,7 @@ contract SignatureGatewayTest is SignatureGatewayBaseTest {
   }
 
   function test_updateUserDynamicConfigWithSig() public {
-    EIP712Types.UpdateUserDynamicConfig memory p = _updateDynamicConfigData(
+    ISignatureGateway.UpdateUserDynamicConfig memory p = _updateDynamicConfigData(
       spoke1,
       alice,
       _warpBeforeRandomDeadline()
@@ -232,20 +236,29 @@ contract SignatureGatewayTest is SignatureGatewayBaseTest {
   }
 
   function test_setSelfAsUserPositionManagerWithSig() public {
-    EIP712Types.SetUserPositionManager memory p = EIP712Types.SetUserPositionManager({
-      positionManager: address(gateway),
-      user: alice,
-      approve: true,
+    ISpoke.PositionManagerUpdate[] memory updates = new ISpoke.PositionManagerUpdate[](1);
+    updates[0] = ISpoke.PositionManagerUpdate(address(gateway), true);
+
+    ISpoke.SetUserPositionManagers memory p = ISpoke.SetUserPositionManagers({
+      updates: updates,
+      onBehalfOf: alice,
       nonce: spoke1.nonces(address(alice), _randomNonceKey()), // note: this typed sig is forwarded to spoke
       deadline: _warpBeforeRandomDeadline()
     });
     bytes memory signature = _sign(alicePk, _getTypedDataHash(spoke1, p));
 
     vm.expectEmit(address(spoke1));
-    emit ISpoke.SetUserPositionManager(alice, address(gateway), p.approve);
+    emit ISpoke.SetUserPositionManager(alice, address(gateway), p.updates[0].approve);
 
     vm.prank(vm.randomAddress());
-    gateway.setSelfAsUserPositionManagerWithSig(address(spoke1), p, signature);
+    gateway.setSelfAsUserPositionManagerWithSig({
+      spoke: address(spoke1),
+      onBehalfOf: p.onBehalfOf,
+      approve: p.updates[0].approve,
+      nonce: p.nonce,
+      deadline: p.deadline,
+      signature: signature
+    });
 
     _assertNonceIncrement(ISignatureGateway(address(spoke1)), alice, p.nonce); // note: nonce consumed on spoke
     _assertGatewayHasNoBalanceOrAllowance(spoke1, gateway, alice);
