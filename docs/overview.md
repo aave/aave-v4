@@ -70,7 +70,7 @@ Users interact with the Spokes, which then interact directly with the Hubs. The 
 - Triggering transfers into the Hubs for user `supply` calls.
 - Handling supplying and borrowing functionality.
 - Managing user data structures and configurations.
-- Providing emergency controls over user-facing operations when needed, with granularity via distinct states (`paused`, `frozen`, `borrowable`, and `receiveSharesEnabled`).
+- Providing emergency controls over user-facing operations when needed, with granularity via distinct states (`paused`, `frozen`), as well as reserve configurations (`borrowable`, and `receiveSharesEnabled`).
 - Maintaining a spoke-level `reserveId` tracking to allow for spoke-specific configurations, independent from the `assetId` of the underlying asset in the Hub.
 - Managing oracle interactions (oracles are spoke-specific).
 - Employing reentrancy guards for extra protection against reentrancy attacks, even though the Hub, Interest Rate Strategy, and Price Feeds are trusted and Aave V4 does not support tokens with callbacks.
@@ -154,7 +154,7 @@ Actions that trigger a premium refresh include risk‑increasing events that can
 
 # Interest Accrual
 
-Interest on every borrow position is split into two concurrent streams accruing at the Hub’s Drawn Rate: the **drawn debt** stream accrues based on the principal (reflects utilization of Hub liquidity), resulting in the base drawn rate $R_{sbase,i}$ for the asset $i$. The **premium debt** stream accrues based on the premium shares minus the offset. The premium debt stream reflects the quality mix of the position's collateral, determined by the Risk Premium $R_{sbase,i}RP_u$, where $RP_u$ is the premium of the user $u$.
+Interest on every borrow position is split into two concurrent streams accruing at the Hub’s Drawn Rate: the **drawn debt** stream accrues based on the principal (reflects utilization of Hub liquidity), resulting in the base drawn rate $R_{sbase,i}$ for the asset $i$. The **premium debt** stream accrues based on the premium shares minus the offset. The premium debt stream reflects the quality mix of the position's collateral, determined by the weighted average of Collateral Risk across all enabled collaterals of the user $u$.
 
 The sum of the resulting drawn debt and premium debt gives the expected total interest accumulation such that the debt $D_{u,i}$ grows at rate $R_{u,i}$ for a user $u$ for the asset $i$.
 
@@ -199,7 +199,7 @@ The Reinvestment Module offers an optional tool to support capital efficiency wh
 
 - **Governance‑Controlled**: The Governor manages all funds allocated to reinvestment strategies. Decisions on strategy selection, risk parameters, and operational guidelines are exclusively governance responsibilities.
 - **Interest Rate Neutral**: Swept liquidity remains part of the usage ratio denominator, so sweeping funds to external strategies does not affect the borrow rate experienced by users.
-- **Opt‑In for Users**: Participation in reinvestment is not compulsory. Users can opt in by supplying their assets to a reinvestment-enabled pool.
+- **Opt‑In for Users**: Participation in reinvestment is not compulsory. Users can opt in by supplying their assets to a spoke reserve connected to a reinvestment-enabled Hub asset.
 - **Enhanced Yields**: By deploying otherwise idle liquidity into external strategies, opt‑in liquidity providers can earn incremental returns on top of borrower interest.
 - **Risk Allocation**: Any losses incurred from reinvestment strategies are absorbed by the Governor treasury, protecting individual liquidity providers from direct exposure to strategy‑specific risks.
 - **Optional by Design**: The module can remain disabled, leaving the core supplying and borrowing system unchanged. When disabled, all liquidity remains in the Hub without external deployment.
@@ -222,7 +222,7 @@ Dynamic configuration keys allow parameter updates without affecting existing op
 
 ## Design
 
-Dynamic configuration extends the reserve model with a per‑reserve mapping that holds every historic configuration key, referenced by a `dynamicConfigKey`. Collateralization parameters now reside inside the dynamic mapping rather than the static reserve record; this set comprises the CF, the LB and the PF.
+Dynamic configuration extends the reserve model with a per‑reserve mapping that holds every historic configuration key, referenced by a `dynamicConfigKey`. Collateralization parameters now reside inside the dynamic mapping rather than the static reserve record; this set comprises the Collateral Factor (LF), the Maximum Liquidation Bonus (LB) and the Liquidation Fee (LF).
 
 Each reserve stores the latest `dynamicConfigKey`, which represents the current up-to-date risk configuration. In contrast, every user position retains a snapshot of the active `dynamicConfigKey` corresponding to the configuration in effect at the time of its last risk-increasing event. This snapshot is refreshed across all assets of a user position only when the user performs an action which elevates the risk posed to the system, such as disabling an asset as collateral, withdrawing, or borrowing. When a user designates a new asset as collateral, only the `dynamicConfigKey` snapshot of the asset in play is refreshed.
 
@@ -313,7 +313,7 @@ $$ minLB = (maxLB - 100\\%) \times lbFactor + 100\\% $$
 where
 
 - $maxLB$: per collateral. Represents the maximum liquidation bonus that can be awarded. Represented as a value greater than 100%. For example, 103% means a 3% effective liquidation bonus.
-- $liquidationBonusFactor$: per collateral. Represents the proportion of the max liquidation bonus that can be awarded. Must be at most 100%. For example, 50% while $maxLB = 103\%$ means $minLB = 101.5\%$.
+- $liquidationBonusFactor$: per spoke. Represents the proportion of the max liquidation bonus that can be awarded. Must be at most 100%. For example, 50% while $maxLB = 103\%$ means $minLB = 101.5\%$.
 
 As a user’s health factor decreases, the protocol increases the liquidation bonus it offers to liquidators. For a liquidatable user, the liquidation bonus is
 
@@ -326,6 +326,6 @@ $$
 
 where
 
-- $HF\_LIQ\_THRESHOLD$: per Spoke. Represents the health factor threshold under which the user becomes liquidatable. Equals 1.
+- $HF\_LIQ\_THRESHOLD$: configured as a Spoke-wide constant. Represents the health factor threshold under which the user becomes liquidatable. Equals 1.
 - $hf_{beforeLiq}$: per user. Represents the user’s health factor before liquidation.
 - $hfForMaxBonus$: per Spoke. Represents the health factor threshold under which the protocol awards the maximum liquidation bonus.
