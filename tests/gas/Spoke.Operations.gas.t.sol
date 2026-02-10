@@ -237,7 +237,6 @@ contract SpokeOperations_Gas_Tests is SpokeBase {
 
     // supplyWithPermit (dai)
     tokenList.dai.approve(address(spoke), 0);
-    (, uint256 bobPk) = makeAddrAndKey('bob');
     EIP712Types.Permit memory permit = EIP712Types.Permit({
       owner: bob,
       spender: address(spoke),
@@ -277,7 +276,6 @@ contract SpokeOperations_Gas_Tests is SpokeBase {
     // supplyWithPermitAndEnableCollateral (wbtc)
     calls = new bytes[](3);
     tokenList.wbtc.approve(address(spoke), 0);
-    (, bobPk) = makeAddrAndKey('bob');
     permit = EIP712Types.Permit({
       owner: bob,
       spender: address(spoke),

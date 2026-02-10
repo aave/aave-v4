@@ -3,11 +3,14 @@
 pragma solidity ^0.8.0;
 
 import {Vm} from 'forge-std/Vm.sol';
-import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
+import {SafeERC20, IERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
 import {IHub, IHubBase} from 'src/hub/interfaces/IHub.sol';
 import {ISpokeBase, ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
+import {ITokenizationSpoke} from 'src/spoke/interfaces/ITokenizationSpoke.sol';
 
 library Utils {
+  using SafeERC20 for *;
+
   Vm internal constant vm = Vm(address(uint160(uint256(keccak256('hevm cheat code')))));
 
   // hub
@@ -215,10 +218,13 @@ library Utils {
     _approve(IERC20(hub.getAsset(assetId).underlying), owner, caller, amount);
   }
 
+  function approve(ITokenizationSpoke vault, address owner, uint256 amount) internal {
+    _approve(IERC20(vault.asset()), owner, address(vault), amount);
+  }
+
   function _approve(IERC20 underlying, address owner, address spender, uint256 amount) private {
     vm.startPrank(owner);
-    underlying.approve(spender, 0);
-    underlying.approve(spender, amount);
+    underlying.forceApprove(spender, amount);
     vm.stopPrank();
   }
 

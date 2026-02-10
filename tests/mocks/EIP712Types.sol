@@ -87,4 +87,37 @@ library EIP712Types {
     uint256 nonce;
     uint256 deadline;
   }
+
+  /// @dev TokenizationSpoke Intents
+  struct TokenizedDeposit {
+    address depositor;
+    uint256 assets;
+    address receiver;
+    uint256 nonce;
+    uint256 deadline;
+  }
+
+  struct TokenizedMint {
+    address depositor;
+    uint256 shares;
+    address receiver;
+    uint256 nonce;
+    uint256 deadline;
+  }
+
+  struct TokenizedWithdraw {
+    address owner;
+    uint256 assets;
+    address receiver;
+    uint256 nonce;
+    uint256 deadline;
+  }
+
+  struct TokenizedRedeem {
+    address owner;
+    uint256 shares;
+    address receiver;
+    uint256 nonce;
+    uint256 deadline;
+  }
 }

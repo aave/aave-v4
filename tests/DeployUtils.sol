@@ -39,7 +39,7 @@ library DeployUtils {
   ) internal returns (ISpoke) {
     return
       ISpoke(
-        _proxify(
+        proxify(
           address(deploySpokeImplementation(oracle, maxUserReservesLimit, '')),
           proxyAdminOwner,
           initData
@@ -85,7 +85,7 @@ library DeployUtils {
     return Create2Utils.computeCreate2Address(salt, initCodeHash);
   }
 
-  function _proxify(
+  function proxify(
     address impl,
     address proxyAdminOwner,
     bytes memory initData

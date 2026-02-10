@@ -86,8 +86,7 @@ contract SignatureGatewayInvalidSignatureTest is SignatureGatewayBaseTest {
 
   function test_supplyWithSig_revertsWith_InvalidSignature_dueTo_InvalidSigner() public {
     (address randomUser, uint256 randomUserPk) = makeAddrAndKey(string(vm.randomBytes(32)));
-    address onBehalfOf = vm.randomAddress();
-    while (onBehalfOf == randomUser) onBehalfOf = vm.randomAddress();
+    address onBehalfOf = _randomAddressOmit(randomUser);
 
     ISignatureGateway.Supply memory p = _supplyData(spoke1, onBehalfOf, _warpAfterRandomDeadline());
     bytes memory signature = _sign(randomUserPk, _getTypedDataHash(gateway, p));
@@ -99,8 +98,7 @@ contract SignatureGatewayInvalidSignatureTest is SignatureGatewayBaseTest {
 
   function test_withdrawWithSig_revertsWith_InvalidSignature_dueTo_InvalidSigner() public {
     (address randomUser, uint256 randomUserPk) = makeAddrAndKey(string(vm.randomBytes(32)));
-    address onBehalfOf = vm.randomAddress();
-    while (onBehalfOf == randomUser) onBehalfOf = vm.randomAddress();
+    address onBehalfOf = _randomAddressOmit(randomUser);
 
     ISignatureGateway.Withdraw memory p = _withdrawData(
       spoke1,
@@ -116,8 +114,7 @@ contract SignatureGatewayInvalidSignatureTest is SignatureGatewayBaseTest {
 
   function test_borrowWithSig_revertsWith_InvalidSignature_dueTo_InvalidSigner() public {
     (address randomUser, uint256 randomUserPk) = makeAddrAndKey(string(vm.randomBytes(32)));
-    address onBehalfOf = vm.randomAddress();
-    while (onBehalfOf == randomUser) onBehalfOf = vm.randomAddress();
+    address onBehalfOf = _randomAddressOmit(randomUser);
 
     ISignatureGateway.Borrow memory p = _borrowData(spoke1, onBehalfOf, _warpAfterRandomDeadline());
     bytes memory signature = _sign(randomUserPk, _getTypedDataHash(gateway, p));
@@ -129,8 +126,7 @@ contract SignatureGatewayInvalidSignatureTest is SignatureGatewayBaseTest {
 
   function test_repayWithSig_revertsWith_InvalidSignature_dueTo_InvalidSigner() public {
     (address randomUser, uint256 randomUserPk) = makeAddrAndKey(string(vm.randomBytes(32)));
-    address onBehalfOf = vm.randomAddress();
-    while (onBehalfOf == randomUser) onBehalfOf = vm.randomAddress();
+    address onBehalfOf = _randomAddressOmit(randomUser);
 
     ISignatureGateway.Repay memory p = _repayData(spoke1, onBehalfOf, _warpAfterRandomDeadline());
     bytes memory signature = _sign(randomUserPk, _getTypedDataHash(gateway, p));
@@ -144,8 +140,7 @@ contract SignatureGatewayInvalidSignatureTest is SignatureGatewayBaseTest {
     public
   {
     (address randomUser, uint256 randomUserPk) = makeAddrAndKey(string(vm.randomBytes(32)));
-    address onBehalfOf = vm.randomAddress();
-    while (onBehalfOf == randomUser) onBehalfOf = vm.randomAddress();
+    address onBehalfOf = _randomAddressOmit(randomUser);
 
     uint256 deadline = _warpAfterRandomDeadline();
     ISignatureGateway.SetUsingAsCollateral memory p = _setAsCollateralData(
@@ -164,8 +159,7 @@ contract SignatureGatewayInvalidSignatureTest is SignatureGatewayBaseTest {
     public
   {
     (address randomUser, uint256 randomUserPk) = makeAddrAndKey(string(vm.randomBytes(32)));
-    address user = vm.randomAddress();
-    while (user == randomUser) user = vm.randomAddress();
+    address user = _randomAddressOmit(randomUser);
 
     uint256 deadline = _warpAfterRandomDeadline();
     ISignatureGateway.UpdateUserRiskPremium memory p = _updateRiskPremiumData(
@@ -184,8 +178,7 @@ contract SignatureGatewayInvalidSignatureTest is SignatureGatewayBaseTest {
     public
   {
     (address randomUser, uint256 randomUserPk) = makeAddrAndKey(string(vm.randomBytes(32)));
-    address user = vm.randomAddress();
-    while (user == randomUser) user = vm.randomAddress();
+    address user = _randomAddressOmit(randomUser);
 
     uint256 deadline = _warpAfterRandomDeadline();
     ISignatureGateway.UpdateUserDynamicConfig memory p = _updateDynamicConfigData(

@@ -6,21 +6,14 @@ import 'tests/unit/Spoke/SpokeBase.t.sol';
 
 contract SignatureGatewayBaseTest is SpokeBase {
   ISignatureGateway public gateway;
-  uint256 public alicePk;
 
   function setUp() public virtual override {
     deployFixtures();
     initEnvironment();
     gateway = ISignatureGateway(new SignatureGateway(ADMIN));
-    (alice, alicePk) = makeAddrAndKey('alice');
 
     vm.prank(address(ADMIN));
     gateway.registerSpoke(address(spoke1), true);
-  }
-
-  function _sign(uint256 pk, bytes32 digest) internal pure returns (bytes memory) {
-    (uint8 v, bytes32 r, bytes32 s) = vm.sign(pk, digest);
-    return abi.encodePacked(r, s, v);
   }
 
   function _supplyData(
@@ -194,11 +187,13 @@ contract SignatureGatewayBaseTest is SpokeBase {
     ISpoke spoke,
     ISignatureGateway _gateway,
     address who
-  ) internal view {
+  ) internal {
     for (uint256 reserveId; reserveId < spoke.getReserveCount(); ++reserveId) {
-      IERC20 underlying = _underlying(spoke, reserveId);
-      assertEq(underlying.balanceOf(address(_gateway)), 0);
-      assertEq(underlying.allowance({owner: who, spender: address(_gateway)}), 0);
+      _assertEntityHasNoBalanceOrAllowance({
+        underlying: _underlying(spoke, reserveId),
+        entity: address(_gateway),
+        user: who
+      });
     }
   }
 

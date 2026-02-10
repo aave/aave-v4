@@ -5,9 +5,6 @@ pragma solidity ^0.8.0;
 import 'tests/unit/Spoke/SpokeBase.t.sol';
 
 contract SpokeUpgradeableTest is SpokeBase {
-  bytes32 internal constant INITIALIZABLE_STORAGE =
-    0xf0c57e16840df040f15088dc2f81fe391c3923bec73e23a9662efc9c229c6a00;
-
   address internal proxyAdminOwner = makeAddr('proxyAdminOwner');
   address internal oracle = makeAddr('AaveOracle');
 
@@ -208,11 +205,6 @@ contract SpokeUpgradeableTest is SpokeBase {
       address(spokeImpl2),
       _getInitializeCalldata(address(accessManager))
     );
-  }
-
-  function _getProxyInitializedVersion(address proxy) internal view returns (uint64) {
-    bytes32 slotData = vm.load(proxy, INITIALIZABLE_STORAGE);
-    return uint64(uint256(slotData) & ((1 << 64) - 1));
   }
 
   function _getInitializeCalldata(address manager) internal pure returns (bytes memory) {

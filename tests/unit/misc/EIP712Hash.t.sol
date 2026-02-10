@@ -4,8 +4,9 @@ pragma solidity ^0.8.0;
 
 import {Test} from 'forge-std/Test.sol';
 
-import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 import {ISignatureGateway} from 'src/position-manager/interfaces/ISignatureGateway.sol';
+import {ITokenizationSpoke} from 'src/spoke/interfaces/ITokenizationSpoke.sol';
+import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 
 import {EIP712Hash as PositionManagerEIP712Hash} from 'src/position-manager/libraries/EIP712Hash.sol';
 import {EIP712Hash as SpokeEIP712Hash} from 'src/spoke/libraries/EIP712Hash.sol';
@@ -96,72 +97,63 @@ contract EIP712HashTest is Test {
       keccak256('PositionManagerUpdate(address positionManager,bool approve)')
     );
     assertEq(SpokeEIP712Hash.POSITION_MANAGER_UPDATE, vm.eip712HashType('PositionManagerUpdate'));
-  }
 
-  function test_hash_supply_fuzz(ISignatureGateway.Supply calldata params) public pure {
-    bytes32 expectedHash = keccak256(
-      abi.encode(
-        PositionManagerEIP712Hash.SUPPLY_TYPEHASH,
-        params.spoke,
-        params.reserveId,
-        params.amount,
-        params.onBehalfOf,
-        params.nonce,
-        params.deadline
+    assertEq(
+      SpokeEIP712Hash.TOKENIZED_DEPOSIT_TYPEHASH,
+      keccak256(
+        'TokenizedDeposit(address depositor,uint256 assets,address receiver,uint256 nonce,uint256 deadline)'
       )
     );
+    assertEq(SpokeEIP712Hash.TOKENIZED_DEPOSIT_TYPEHASH, vm.eip712HashType('TokenizedDeposit'));
 
+    assertEq(
+      SpokeEIP712Hash.TOKENIZED_MINT_TYPEHASH,
+      keccak256(
+        'TokenizedMint(address depositor,uint256 shares,address receiver,uint256 nonce,uint256 deadline)'
+      )
+    );
+    assertEq(SpokeEIP712Hash.TOKENIZED_MINT_TYPEHASH, vm.eip712HashType('TokenizedMint'));
+
+    assertEq(
+      SpokeEIP712Hash.TOKENIZED_WITHDRAW_TYPEHASH,
+      keccak256(
+        'TokenizedWithdraw(address owner,uint256 assets,address receiver,uint256 nonce,uint256 deadline)'
+      )
+    );
+    assertEq(SpokeEIP712Hash.TOKENIZED_WITHDRAW_TYPEHASH, vm.eip712HashType('TokenizedWithdraw'));
+
+    assertEq(
+      SpokeEIP712Hash.TOKENIZED_REDEEM_TYPEHASH,
+      keccak256(
+        'TokenizedRedeem(address owner,uint256 shares,address receiver,uint256 nonce,uint256 deadline)'
+      )
+    );
+    assertEq(SpokeEIP712Hash.TOKENIZED_REDEEM_TYPEHASH, vm.eip712HashType('TokenizedRedeem'));
+  }
+
+  // @dev all struct params should be hashed & placed in the same order as the typehash
+  function test_hash_supply_fuzz(ISignatureGateway.Supply calldata params) public pure {
+    bytes32 expectedHash = keccak256(abi.encode(PositionManagerEIP712Hash.SUPPLY_TYPEHASH, params));
     assertEq(params.hash(), expectedHash);
     assertEq(params.hash(), vm.eip712HashStruct('Supply', abi.encode(params)));
   }
 
   function test_hash_withdraw_fuzz(ISignatureGateway.Withdraw calldata params) public pure {
     bytes32 expectedHash = keccak256(
-      abi.encode(
-        PositionManagerEIP712Hash.WITHDRAW_TYPEHASH,
-        params.spoke,
-        params.reserveId,
-        params.amount,
-        params.onBehalfOf,
-        params.nonce,
-        params.deadline
-      )
+      abi.encode(PositionManagerEIP712Hash.WITHDRAW_TYPEHASH, params)
     );
-
     assertEq(params.hash(), expectedHash);
     assertEq(params.hash(), vm.eip712HashStruct('Withdraw', abi.encode(params)));
   }
 
   function test_hash_borrow_fuzz(ISignatureGateway.Borrow calldata params) public pure {
-    bytes32 expectedHash = keccak256(
-      abi.encode(
-        PositionManagerEIP712Hash.BORROW_TYPEHASH,
-        params.spoke,
-        params.reserveId,
-        params.amount,
-        params.onBehalfOf,
-        params.nonce,
-        params.deadline
-      )
-    );
-
+    bytes32 expectedHash = keccak256(abi.encode(PositionManagerEIP712Hash.BORROW_TYPEHASH, params));
     assertEq(params.hash(), expectedHash);
     assertEq(params.hash(), vm.eip712HashStruct('Borrow', abi.encode(params)));
   }
 
   function test_hash_repay_fuzz(ISignatureGateway.Repay calldata params) public pure {
-    bytes32 expectedHash = keccak256(
-      abi.encode(
-        PositionManagerEIP712Hash.REPAY_TYPEHASH,
-        params.spoke,
-        params.reserveId,
-        params.amount,
-        params.onBehalfOf,
-        params.nonce,
-        params.deadline
-      )
-    );
-
+    bytes32 expectedHash = keccak256(abi.encode(PositionManagerEIP712Hash.REPAY_TYPEHASH, params));
     assertEq(params.hash(), expectedHash);
     assertEq(params.hash(), vm.eip712HashStruct('Repay', abi.encode(params)));
   }
@@ -170,17 +162,8 @@ contract EIP712HashTest is Test {
     ISignatureGateway.SetUsingAsCollateral calldata params
   ) public pure {
     bytes32 expectedHash = keccak256(
-      abi.encode(
-        PositionManagerEIP712Hash.SET_USING_AS_COLLATERAL_TYPEHASH,
-        params.spoke,
-        params.reserveId,
-        params.useAsCollateral,
-        params.onBehalfOf,
-        params.nonce,
-        params.deadline
-      )
+      abi.encode(PositionManagerEIP712Hash.SET_USING_AS_COLLATERAL_TYPEHASH, params)
     );
-
     assertEq(params.hash(), expectedHash);
     assertEq(params.hash(), vm.eip712HashStruct('SetUsingAsCollateral', abi.encode(params)));
   }
@@ -189,15 +172,8 @@ contract EIP712HashTest is Test {
     ISignatureGateway.UpdateUserRiskPremium calldata params
   ) public pure {
     bytes32 expectedHash = keccak256(
-      abi.encode(
-        PositionManagerEIP712Hash.UPDATE_USER_RISK_PREMIUM_TYPEHASH,
-        params.spoke,
-        params.onBehalfOf,
-        params.nonce,
-        params.deadline
-      )
+      abi.encode(PositionManagerEIP712Hash.UPDATE_USER_RISK_PREMIUM_TYPEHASH, params)
     );
-
     assertEq(params.hash(), expectedHash);
     assertEq(params.hash(), vm.eip712HashStruct('UpdateUserRiskPremium', abi.encode(params)));
   }
@@ -206,17 +182,46 @@ contract EIP712HashTest is Test {
     ISignatureGateway.UpdateUserDynamicConfig calldata params
   ) public pure {
     bytes32 expectedHash = keccak256(
-      abi.encode(
-        PositionManagerEIP712Hash.UPDATE_USER_DYNAMIC_CONFIG_TYPEHASH,
-        params.spoke,
-        params.onBehalfOf,
-        params.nonce,
-        params.deadline
-      )
+      abi.encode(PositionManagerEIP712Hash.UPDATE_USER_DYNAMIC_CONFIG_TYPEHASH, params)
     );
-
     assertEq(params.hash(), expectedHash);
     assertEq(params.hash(), vm.eip712HashStruct('UpdateUserDynamicConfig', abi.encode(params)));
+  }
+
+  function test_hash_tokenizedDeposit_fuzz(
+    ITokenizationSpoke.TokenizedDeposit calldata params
+  ) public pure {
+    bytes32 expectedHash = keccak256(
+      abi.encode(SpokeEIP712Hash.TOKENIZED_DEPOSIT_TYPEHASH, params)
+    );
+    assertEq(params.hash(), expectedHash);
+    assertEq(params.hash(), vm.eip712HashStruct('TokenizedDeposit', abi.encode(params)));
+  }
+
+  function test_hash_tokenizedMint_fuzz(
+    ITokenizationSpoke.TokenizedMint calldata params
+  ) public pure {
+    bytes32 expectedHash = keccak256(abi.encode(SpokeEIP712Hash.TOKENIZED_MINT_TYPEHASH, params));
+    assertEq(params.hash(), expectedHash);
+    assertEq(params.hash(), vm.eip712HashStruct('TokenizedMint', abi.encode(params)));
+  }
+
+  function test_hash_tokenizedWithdraw_fuzz(
+    ITokenizationSpoke.TokenizedWithdraw calldata params
+  ) public pure {
+    bytes32 expectedHash = keccak256(
+      abi.encode(SpokeEIP712Hash.TOKENIZED_WITHDRAW_TYPEHASH, params)
+    );
+    assertEq(params.hash(), expectedHash);
+    assertEq(params.hash(), vm.eip712HashStruct('TokenizedWithdraw', abi.encode(params)));
+  }
+
+  function test_hash_tokenizedRedeem_fuzz(
+    ITokenizationSpoke.TokenizedRedeem calldata params
+  ) public pure {
+    bytes32 expectedHash = keccak256(abi.encode(SpokeEIP712Hash.TOKENIZED_REDEEM_TYPEHASH, params));
+    assertEq(params.hash(), expectedHash);
+    assertEq(params.hash(), vm.eip712HashStruct('TokenizedRedeem', abi.encode(params)));
   }
 
   function test_hash_setUserPositionManagers_fuzz(
