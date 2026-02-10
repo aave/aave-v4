@@ -70,7 +70,7 @@ interface ISpoke is ISpokeBase, IAccessManaged, IIntentConsumer, IExtSload, IMul
 
   /// @notice Dynamic reserve configuration data.
   /// @dev collateralFactor The proportion of a reserve's value eligible to be used as collateral, expressed in BPS.
-  /// @dev maxLiquidationBonus The maximum extra amount of collateral given to the liquidator as bonus, expressed in BPS. 100_00 represents 100.00% bonus.
+  /// @dev maxLiquidationBonus The maximum extra amount of collateral given to the liquidator as bonus, expressed in BPS. 100_00 represents 0.00% bonus.
   /// @dev liquidationFee The protocol fee charged on liquidations, taken from the collateral bonus given to the liquidator, expressed in BPS.
   struct DynamicReserveConfig {
     uint16 collateralFactor;

@@ -38,7 +38,7 @@ flowchart TD
   class LP,BR,S1,S2,S3,HUB box;
 ```
 
-Spokes are individual modules that can connect to one or more Hubs. They route user actions (`supply()`/`withdraw()` and `borrow()`/`repay()`) to the appropriate Hub based on reserve configuration and available caps. Whenever liquidity is restored on the Hub, Spokes have to pay a base interest (determined by an interest rate strategy at the Hub level) and a Risk Premium (determined by the collateral composition of the user that triggered the action).
+Spokes are individual modules that can connect to one or more Hubs. They route user actions (`supply`,`withdraw`, `borrow` and `repay`) to the appropriate Hub based on reserve configuration and available caps. Whenever liquidity is restored on the Hub, Spokes have to pay a base interest (determined by an interest rate strategy at the Hub level) and a Risk Premium (determined by the collateral composition of the user that triggered the action).
 
 A Hub can have an unspecified number of Spokes, each one contributing to the total outstanding debt and to the interest generated. The Hub manages the basic accounting (total liquidity vs available), the interest rates, and the draw and supply caps, among other parameters.
 
@@ -50,12 +50,14 @@ The key aspects of the Hub include:
 
 - Maintaining a registry of authorized Spokes for each supported asset.
 - Setting liquidity caps to limit Spoke drawing and adding.
-- Providing emergency stop functionality to halt user-facing operations, if needed. Internal operations (e.g. `eliminateDeficit()` and `refreshPremium()`) remain callable when halted.
+- Providing emergency controls over user-facing operations when needed, with granularity via two distinct states (`active` and `halt`).
 - Managing deficit accounting to keep protocol solvency.
 - Enforcing accounting invariants:
-  - Total borrowed assets <= total supplied assets
-  - Total borrowed shares == total minted debt shares
-  - Hub assets <= sum of Spoke assets (converted from shares)
+  1. Total borrowed assets >= total supplied assets
+  2. Total borrowed shares == sum of Spoke debt shares
+  3. Hub added assets >= sum of Spoke added assets (converted from shares)
+  4. Hub added shares == sum of Spoke added shares
+  5. Supply share price and drawn index cannot decrease (remains constant or increases)
 
 ## Spokes
 
@@ -63,14 +65,13 @@ The Spokes are upgradeable and the primary components responsible for facilitati
 
 Users interact with the Spokes, which then interact directly with the Hubs. The Spokes manage the following aspects:
 
-- Triggering transfers into the Hubs for user `supply()` calls.
+- Triggering transfers into the Hubs for user `supply` calls.
 - Handling lending and borrowing functionality.
 - Managing user data structures and configurations.
-- Providing emergency stop functionality to halt operations, if needed.
-- Utilizing share-based accounting internally to simplify bookkeeping and ensure assets remain within designated Hub's caps as interest accrues.
+- Providing emergency controls over user-facing operations when needed, with granularity via two distinct states (`pause` and `freeze`).
 - Maintaining a Spoke-level `reserveId` tracking to allow for Spoke-specific configurations, different from the `assetId` of the underlying asset in the Hub.
-- Managing oracle interactions. Oracle is spoke-specific and may be bound once post-deployment of the Spoke.
-- Employing transient reentrancy guards for extra protection against reentrancy attacks. Even though Hub, IR Strategy, and Price Feeds are trusted and V4 does not support ERC20s with callbacks.
+- Managing oracle interactions (oracles are spoke-specific).
+- Employing reentrancy guards for extra protection against reentrancy attacks. Even though Hub, IR Strategy, and Price Feeds are trusted and V4 does not support tokens with callbacks.
 - Enforcing position constraints through a configurable `MAX_USER_RESERVES_LIMIT` which limits the number of collateral reserves and the number of borrow reserves a user can have (each counted separately).
 
 # Risk Premium
@@ -93,9 +94,9 @@ The User Risk Premium $RP_u$ represents the quality of assets used as collateral
 - Asset price ($P_i$) of asset $i$: Prices are continuously fluctuating, with some assets being less volatile than others.
 - Collateral Risk ($CR_i$) of asset $i$: Risk parameter configured and updated on a regular basis by the Governor.
 
-Ideally, the User Risk Premium would be updated continuously to reflect its dynamic nature, ensuring it is always up-to-date and aligned with the last state of the user’s position. However, this is technically infeasible because of the limitations of EVM blockchains, requiring constant updates by means of onchain transactions. Instead, the User Risk Premium is refreshed only on actions that can change the position’s effective collateralization (e.g., `borrow()`, `withdraw()` when withdrawing collateral, `setUsingAsCollateral()` when disabling collateral and `liquidateUser()`). Actions that only reduce risk exposure (e.g., `repay()` and `supply()`) do not refresh the User Risk Premium.
+Ideally, the User Risk Premium would be updated continuously to reflect its dynamic nature, ensuring it is always up-to-date and aligned with the last state of the user’s position. However, this is technically infeasible because of the limitations of EVM blockchains, requiring constant updates by means of onchain transactions. Instead, the User Risk Premium is refreshed only on actions that can change the position’s effective collateralization (e.g., `borrow`, changes on collateral composition via `withdraw` and `setUsingAsCollateral` and `liquidationCall`). Actions that, in the average case, reduce risk exposure (e.g., `repay` and `supply`) do not refresh the User Risk Premium.
 
-An update can also be permissionlessly triggered (`updateUserRiskPremium()`) by a user on their own position or permissionedly triggered by a position manager or the Governor (in particular cases). If the user remains inactive, their User Risk Premium remains constant. Exceptionally, the Governor retains the ability to forcibly update the User Risk Premium of a given user to match the most recent risk parameters of its collateral assets, even in the absence of user interaction. This is particularly relevant in scenarios where a specific user position has accumulated additional risk between interactions.
+If a user remains inactive, their User Risk Premium stays constant. If they want to refresh it without performing a specific action, they can call `updateUserRiskPremium` function. Exceptionally, the Governor retains the ability to forcibly update the User Risk Premium of a given user to match the most recent risk parameters of its collateral assets, even in the absence of user interaction. This is particularly relevant in scenarios where a specific user position has accumulated additional risk between interactions.
 
 $RP_u$ is the Risk Premium of the user $u$
 
@@ -139,7 +140,7 @@ A user’s accrued premium debt at any time equals the assets value of their pre
 
 ## Refresh Premium Mechanism
 
-When a user's Risk Premium changes due to specific actions (such as disabling collateral, withdrawing collateral, or explicitly updating the risk premium), the system must recalibrate the premium accounting without altering the user's total accrued premium debt. This is achieved through the Hub's `refreshPremium` function.
+When a user's Risk Premium changes due to specific actions, the system must recalibrate the premium accounting without altering the user's total accrued premium debt. This is achieved through the Hub's `refreshPremium` function.
 
 The refresh mechanism preserves the total premium debt while updating the premium shares and offset to reflect the new Risk Premium. This ensures that:
 
@@ -147,7 +148,7 @@ The refresh mechanism preserves the total premium debt while updating the premiu
 - Future premium accrual reflects the updated Risk Premium
 - The accounting system maintains consistency across premium recalculations
 
-Actions that trigger a premium refresh include risk‑increasing events that can change $RP_u$, such as `setUsingAsCollateral()` when disabling collateral, `withdraw()` when withdrawing collateral, and explicit `updateUserRiskPremium()` updates (user-initiated or permissioned by the Governor). In these flows, `refreshPremium` updates premium shares and the offset so the total premium debt stays constant, while future accrual reflects the new Risk Premium.
+Actions that trigger a premium refresh include risk‑increasing events that can change $RP_u$, such as `setUsingAsCollateral` when disabling collateral, `withdraw` when withdrawing collateral, and explicit `updateUserRiskPremium` updates (user-initiated or permissioned by the Governor). In these flows, `refreshPremium` updates premium shares and the offset so the total premium debt stays constant, while future accrual reflects the new Risk Premium.
 
 # Interest Accrual
 
@@ -195,8 +196,8 @@ Aave V4 includes a Reinvestment Module that provides the infrastructure to alloc
 The Reinvestment Module offers an optional tool to support capital efficiency when deemed appropriate by the Governor. Key characteristics include:
 
 - **Governance‑Controlled**: The Governor manages all funds allocated to reinvestment strategies. Decisions on strategy selection, risk parameters, and operational guidelines are exclusively governance responsibilities.
-- **Opt‑In for Users**: Participation in reinvestment is not compulsory. Users can choose whether to allocate their supplied liquidity to reinvestment strategies or maintain their position in the standard Hub pool.
-- **Enhanced Yields**: Reinvestment provides the potential for higher yields to liquidity providers who opt in, as idle capital can be deployed to generate additional returns beyond the base interest from borrowers.
+- **Opt‑In for Users**: Participation in reinvestment is not compulsory. Users can opt in by supplying their assets to a reinvestment-enabled pool.
+- **Enhanced Yields**: By deploying otherwise idle liquidity into external strategies, opt‑in liquidity providers can earn incremental returns on top of borrower interest.
 - **Risk Allocation**: Any losses incurred from reinvestment strategies are absorbed by the Governor treasury, protecting individual liquidity providers from direct exposure to strategy‑specific risks.
 - **Optional by Design**: The module can remain disabled, leaving the core lending and borrowing system unchanged. When disabled, all liquidity remains in the Hub without external deployment.
 
@@ -232,19 +233,19 @@ The architecture of dynamic configuration comes with several practical constrain
 
 1. The `configKey` is currently defined as a `uint32` (~4.29B max active configurations).
 2. For a given user position, the snapshot updates to the latest key on:
-   1. `setUsingAsCollateral()`
-   2. `borrow()`
-   3. `withdraw()`
+   1. `setUsingAsCollateral` updates a single reserve when enabling and all reserves when disabling
+   2. `borrow`
+   3. `withdraw`
 3. The snapshot does **not** update on actions that reduce risk exposure of the system:
-   1. `supply()`
-   2. `repay()`
-   3. `liquidationCall()` as liquidations will always improve the health of a user position
-   4. `updateUserRiskPremium()`
+   1. `supply`
+   2. `repay`
+   3. `liquidationCall` as liquidations will always improve the health of a user position
+   4. `updateUserRiskPremium`
 4. Dynamic Risk Configurations can be adjusted by the Governor utilizing the following methods:
-   1. `addDynamicReserveConfig()` creates a new risk configuration and increments the latest `configKey`. User positions created or subsequently updated bind to this latest `configKey`.
-   2. `updateDynamicReserveConfig()` updates a prior configuration, affecting existing positions bound to that `configKey`.
+   1. `addDynamicReserveConfig` creates a new risk configuration and increments the latest `configKey`. User positions created or subsequently updated bind to this latest `configKey`.
+   2. `updateDynamicReserveConfig` updates a prior configuration, affecting existing positions bound to that `configKey`.
 5. Users can refresh their Dynamic Risk Configuration:
-   1. `updateUserDynamicConfig()` updates their snapshots to the latest `configKey` for all collateral reserves. Upon successful update, it also refreshes the user's risk premium to reflect any changes in collateral factors.
+   1. `updateUserDynamicConfig` updates their snapshots to the latest `configKey` for all collateral reserves. Upon successful update, it also refreshes the user's risk premium to reflect any changes in collateral factors.
 
 # Liquidation Engine
 
@@ -252,7 +253,7 @@ Aave V4 introduces a redesigned liquidation mechanism that replaces the fixed cl
 
 ## Key Differences from Aave V3
 
-- **Target Health Factor vs Close Factor:** In V3, the default close factor is 50% (with a 100% close factor when HF < 0.95 or when liquidation amounts are under a given base currency threshold). Liquidators would typically repay half of a borrower’s debt and seize half of their collateral. V4 removes the default close‑factor: a liquidator only repays the debt required to bring the borrower back to the `TargetHealthFactor` determined by the Governor.
+- **Target Health Factor vs Close Factor:** In V3, the default close factor is 50% (with a 100% close factor when HF < 0.95 or when liquidation amounts are under a given base currency threshold). Liquidators would typically repay half of a borrower’s debt and seize half of their collateral. V4 removes the default close‑factor: the maximum a liquidator can repay is the amount needed to bring the borrower back to the `TargetHealthFactor` determined by the Governor.
 - **Dynamic Dust Handling during Liquidations**: Both V3 and V4 revert when the remaining amount is below a hard‑coded threshold, while dynamically adjusting the maximum debt that can be liquidated and, if the liquidator opts to fully repay, allow full repayment to prevent dust. However, V4 allows more flexibility because of removing the close-factor and facilitating the liquidation steps required to bring the position back to the target HF. Dust may still remain if either the collateral or debt reserve is fully liquidated.
 - **Dutch‑Auction Style Liquidation Bonus:** V3 applies a static liquidation bonus that does not depend on the borrower’s health factor. V4 introduces a variable liquidation bonus that increases linearly as the health factor decreases. Governance can specify two spoke‑wide parameters that shape the liquidation bonus: `healthFactorForMaxBonus` and `liquidationBonusFactor`.
 
@@ -273,11 +274,11 @@ Aave V4 exposes several configurable parameters that influence liquidation:
 
 The following high‑level steps outline the V4 liquidation flow:
 
-1. **Check Eligibility:** When a borrower’s HF drops below the `HEALTH_FACTOR_LIQUIDATION_THRESHOLD`, anyone can trigger a liquidation; however, accounts are not allowed to liquidate their own positions. The protocol retrieves the borrower’s total debt value, current HF, and total collateral value, including only reserves with `usingAsCollateral` enabled, CF > 0, and not paused. Liquidations of frozen reserves are allowed. Other paused reserves and halted spokes (not the target reserve being liquidated or the spoke being called by the liquidator) don't block liquidations.
+1. **Check Eligibility:** When a borrower’s HF drops below the `HEALTH_FACTOR_LIQUIDATION_THRESHOLD`, anyone can trigger a liquidation; however, users are not allowed to liquidate their own positions. The protocol retrieves the borrower’s total debt value, current HF, and total collateral value, including only reserves with `usingAsCollateral` enabled and CF > 0. Liquidations of frozen reserves are allowed. If other reserves in the user position (not the target being liquidated or seized) are paused, liquidations are not blocked.
 2. **Determine Debt to Repay:** Based on the Target Health Factor `TargetHealthFactor`, the protocol computes the debt that must be repaid to restore the borrower’s HF to `TargetHealthFactor`. The required repayment amount depends on the borrower’s current debt and collateral (CF, LB, HF).
 3. **Handle Dust Debt:** If the borrower’s remaining debt after a standard liquidation would be below the `DUST_LIQUIDATION_THRESHOLD`, and the liquidator intends to fully repay the debt, the protocol increases the allowable debt that can be liquidated, so that the entire debt can be covered. However, dust may still remain if the liquidator targets debt equal to the full amount of the collateral reserve $C_i$ being seized (i.e., $Δ C_i = C_i$), then a residual debt $D_{dust} > 0$ can remain when there are multiple collateral reserves ($N_{coll} > 1$). If there is a single collateral reserve ($N_{coll} = 1$), the residual, along with any other existing debt across all reserves, is recorded as a protocol deficit.
 4. **Calculate Collateral to Seize and Handle Collateral Dust**: Convert the debt to be repaid into the collateral asset’s value and apply the liquidation bonus for this specific liquidation. By this point the bonus is fixed (not variable during execution) based on the position’s HF at the start of liquidation and the reserve’s `maxLiquidationBonus`. The formula in this step just computes that liquidation bonus and the resulting collateral to transfer. If the chosen collateral is not sufficient, all of that collateral is seized and the repaid debt is recomputed. Lastly, collateral dust is accounted for.
-5. **Apply Debt Repayment & Transfer Collateral**: Reduce the borrower’s debt amount by the repaid amount. Transfer the corresponding collateral to the liquidator with the liquidation bonus applied, minus the protocol fee (as in V3). If `receiveSharesEnabled` is true for the collateral reserve and the reserve is not frozen, the liquidator can opt to receive Hub shares directly instead of underlying assets by setting the `receiveShares` parameter to true. Shares accrue yield in the Hub, providing a more capital-efficient liquidation mechanism. The fee portion is sent to the protocol/fee receiver via the Hub as shares, accrues yield there, and the shares are assigned directly via Hub accounting.
+5. **Apply Debt Repayment & Transfer Collateral**: Reduce the borrower’s debt amount by the repaid amount. Transfer the corresponding collateral to the liquidator with the liquidation bonus applied, minus the protocol fee (as in V3). If `receiveSharesEnabled` is true for the collateral reserve and the reserve is not frozen, the liquidator can opt to receive added shares directly instead of underlying assets by setting the `receiveShares` parameter to true. Added shares accrue yield in the Hub, providing a more capital-efficient liquidation mechanism. The fee portion is sent to the protocol/fee receiver via the Hub as shares, accrues yield there, and the shares are assigned directly via Hub accounting.
 6. **Emit Events and Update State:** A `LiquidationCall` event is emitted containing details of the liquidation. The borrower’s and reserve’s interest indices are updated. If the borrower still has debt outstanding and no remaining collateral, the system will record a protocol deficit. Reporting deficit is allowed even when the reporting spoke is halted (as long as it’s active).
 
 ## Dust and Rounding Considerations
@@ -290,7 +291,7 @@ A deficit is only reported if, after liquidation, the borrower has no more colla
 
 ## Deficit Elimination
 
-When a deficit is reported (typically after a liquidation where a borrower has no remaining collateral but still has outstanding debt), any authorized spoke, that is active, can eliminate the deficit by calling the Hub's `eliminateDeficit()` function. In the deficit-reporting path, the protocol clears the user’s debt components and resets their tracked risk premium to 0 (emitting an `UpdateUserRiskPremium` event). This function allows a spoke to use its supplied shares to cover another spoke's deficit, effectively transferring liquidity to restore the Hub's accounting balance. The calling spoke must have sufficient supplied shares to cover the deficit amount being eliminated. This mechanism enables the protocol to recover from bad debt situations without requiring external capital injection.
+When a deficit is reported (typically after a liquidation where a borrower has no remaining collateral but still has outstanding debt), any authorized spoke, that is active, can eliminate the deficit by calling the Hub's `eliminateDeficit` function. In the deficit-reporting path, the protocol clears the user’s debt components and resets their tracked risk premium to 0 (emitting an `UpdateUserRiskPremium` event). This function allows a spoke to use its supplied shares to cover another spoke's deficit, effectively transferring liquidity to restore the Hub's accounting balance. The calling spoke must have sufficient supplied shares to cover the deficit amount being eliminated. This mechanism enables the protocol to recover from bad debt situations without requiring external capital injection.
 
 Deficit elimination can be performed even when the spoke covering the deficit is halted (as long as it remains active), providing flexibility in emergency situations.
 
