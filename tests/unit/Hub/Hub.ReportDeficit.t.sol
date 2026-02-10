@@ -39,7 +39,7 @@ contract HubReportDeficitTest is HubBase {
     vm.expectRevert(IHub.SpokeNotActive.selector);
 
     vm.prank(caller);
-    hub1.reportDeficit(usdxAssetId, 0, ZERO_PREMIUM_DELTA);
+    hub1.reportDeficit(usdxAssetId, 1, ZERO_PREMIUM_DELTA);
   }
 
   function test_reportDeficit_revertsWith_InvalidAmount() public {

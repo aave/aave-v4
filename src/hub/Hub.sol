@@ -896,8 +896,8 @@ contract Hub is IHub, AccessManaged {
     uint256 drawnAmount,
     uint256 premiumAmountRay
   ) internal view {
-    require(spoke.active, SpokeNotActive());
     require(drawnAmount > 0 || premiumAmountRay > 0, InvalidAmount());
+    require(spoke.active, SpokeNotActive());
     uint256 drawn = _getSpokeDrawn(asset, spoke);
     uint256 premiumRay = _getSpokePremiumRay(asset, spoke);
     require(drawnAmount <= drawn, SurplusDrawnDeficitReported(drawn));
