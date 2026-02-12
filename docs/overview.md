@@ -55,11 +55,10 @@ The key aspects of the Hub include:
   - Providing emergency controls over user-facing operations when needed, with granularity via two distinct states (`active` and `halted`).
 - Managing spoke-specific deficit accounting to keep protocol solvency.
 - Enforcing accounting invariants:
-  1. Total borrowed assets amount >= total supplied assets amount
-  2. Total borrowed shares == sum of Spoke debt shares
-  3. Hub added assets amount >= sum of Spoke added assets amount (converted from shares)
-  4. Hub added shares == sum of Spoke added shares
-  5. Supply share price and drawn index cannot decrease (remains constant or increases)
+  1. Total borrowed shares == sum of Spoke debt shares
+  2. Hub added assets amount >= sum of Spoke added assets amount (converted from shares)
+  3. Hub added shares == sum of Spoke added shares
+  4. Supply share price and drawn index cannot decrease (remains constant or increases)
 
 ## Spokes
 
