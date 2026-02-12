@@ -28,4 +28,9 @@ library BatchReports {
     address signatureGateway;
     address nativeGateway;
   }
+
+  struct TokenizationSpokeBatchReport {
+    address tokenizationSpokeImplementation;
+    address tokenizationSpokeProxy;
+  }
 }
