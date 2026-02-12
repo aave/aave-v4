@@ -26,9 +26,9 @@
   "usingAsCollateral: 1 borrow, enable": "42504",
   "usingAsCollateral: 2 borrows, disable": "127250",
   "usingAsCollateral: 2 borrows, enable": "42516",
-  "withdraw: 0 borrows, full": "127944",
-  "withdraw: 0 borrows, partial": "132840",
-  "withdraw: 1 borrow, partial": "159894",
-  "withdraw: 2 borrows, partial": "174452",
-  "withdraw: non collateral": "105891"
+  "withdraw: 0 borrows, full": "109316",
+  "withdraw: 0 borrows, partial": "109116",
+  "withdraw: 1 borrow, partial": "160457",
+  "withdraw: 2 borrows, partial": "175015",
+  "withdraw: non collateral": "105916"
 }

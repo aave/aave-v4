@@ -261,7 +261,10 @@ abstract contract Spoke is
 
     userPosition.suppliedShares -= withdrawnShares.toUint120();
 
-    if (_positionStatus[onBehalfOf].isUsingAsCollateral(reserveId)) {
+    PositionStatus storage positionStatus = _positionStatus[onBehalfOf];
+    if (
+      positionStatus.isUsingAsCollateral(reserveId) && positionStatus.borrowCount(_reserveCount) > 0
+    ) {
       uint256 newRiskPremium = _refreshAndValidateUserAccountData(onBehalfOf).riskPremium;
       _notifyRiskPremiumUpdate(onBehalfOf, newRiskPremium);
     }
