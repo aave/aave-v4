@@ -3,12 +3,6 @@
 pragma solidity ^0.8.0;
 
 import 'tests/deployments/batches/BatchBase.t.sol';
-import {AaveV4TokenizationSpokeBatch} from 'src/deployments/batches/AaveV4TokenizationSpokeBatch.sol';
-import {AaveV4HubRolesProcedure} from 'src/deployments/procedures/roles/AaveV4HubRolesProcedure.sol';
-import {IHub} from 'src/hub/interfaces/IHub.sol';
-import {ITokenizationSpoke} from 'src/spoke/interfaces/ITokenizationSpoke.sol';
-import {IAssetInterestRateStrategy} from 'src/hub/interfaces/IAssetInterestRateStrategy.sol';
-import {TestnetERC20} from 'tests/mocks/TestnetERC20.sol';
 
 contract AaveV4TokenizationSpokeBatchTest is BatchBaseTest {
   AaveV4TokenizationSpokeBatch public tokenizationSpokeBatch;
@@ -25,7 +19,7 @@ contract AaveV4TokenizationSpokeBatchTest is BatchBaseTest {
   function setUp() public override {
     super.setUp();
 
-    // Deploy a real Hub with an asset
+    // Deploy a Hub with asset
     AaveV4HubBatch hubBatch = new AaveV4HubBatch(admin, accessManager, salt);
     BatchReports.HubBatchReport memory hubReport = hubBatch.getReport();
     hub = hubReport.hub;
