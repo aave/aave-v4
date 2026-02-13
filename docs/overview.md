@@ -54,6 +54,10 @@ The key aspects of the Hub include:
   - Risk Premium Thresholds that limit the maximum ratio of premium shares to drawn shares that a spoke can report
   - Providing emergency controls over user-facing operations when needed, with granularity via two distinct states (`active` and `halted`).
 - Managing spoke-specific deficit accounting to keep protocol solvency.
+- Managing reinvestment controller per asset, authorizing sweep and reclaim of idle liquidity to and from external strategies.
+- Managing interest rate strategy per asset, defining the optimal usage ratio, base borrow rate, and rate slopes, among other parameters.
+- Managing the access controls for the Governor entity authorized to execute emergency controls, the authorized entity which can call `mintFeeShares`, and general access controls via the `AccessManaged` authority.
+- Setting the liquidity fee per asset, determining the share of interest revenue retained by the protocol.
 - Enforcing accounting invariants:
   1. Total borrowed shares == sum of Spoke debt shares
   2. Hub added assets amount >= sum of Spoke added assets amount (converted from shares)
@@ -198,7 +202,7 @@ The Reinvestment Module offers an optional tool to support capital efficiency wh
 
 - **Governance‑Controlled**: The Governor manages all funds allocated to reinvestment strategies. Decisions on strategy selection, risk parameters, and operational guidelines are exclusively governance responsibilities.
 - **Interest Rate Neutral**: Swept liquidity remains part of the usage ratio denominator, so sweeping funds to external strategies does not affect the borrow rate experienced by users.
-- **Opt‑In for Users**: Participation in reinvestment is not compulsory. Users can opt in by supplying their assets to a spoke reserve connected to a reinvestment-enabled Hub asset.
+- **Opt‑In for Users**: Participation in reinvestment is not compulsory. Reinvestment is enabled at the Hub level on a per-asset basis; users choose whether to interact with a reinvestment-enabled asset by supplying to a Spoke reserve that is connected to that Hub asset. Users who prefer not to participate can supply to Spoke reserves linked to Hub assets without an active reinvestment controller.
 - **Enhanced Yields**: By deploying otherwise idle liquidity into external strategies, opt‑in liquidity providers can earn incremental returns on top of borrower interest.
 - **Risk Allocation**: Any losses incurred from reinvestment strategies are absorbed by the Governor treasury, protecting individual liquidity providers from direct exposure to strategy‑specific risks.
 - **Optional by Design**: The module can remain disabled, leaving the core supplying and borrowing system unchanged. When disabled, all liquidity remains in the Hub without external deployment.
