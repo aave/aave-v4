@@ -46,6 +46,10 @@ contract PositionStatusMapWrapper {
     return _p.borrowCount(reserveCount);
   }
 
+  function isBorrowingAny(uint256 reserveCount) external view returns (bool) {
+    return _p.isBorrowingAny(reserveCount);
+  }
+
   function getBucketWord(uint256 reserveId) external view returns (uint256) {
     return _p.getBucketWord(reserveId);
   }

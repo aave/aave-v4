@@ -115,6 +115,27 @@ library PositionStatusMap {
     }
   }
 
+  /// @notice Checks if the user is borrowing any reserve.
+  /// @dev Disregards potential dirty bits set after `reserveCount`.
+  /// @param reserveCount The current `reserveCount`, to avoid reading uninitialized buckets.
+  function isBorrowingAny(
+    ISpoke.PositionStatus storage self,
+    uint256 reserveCount
+  ) internal view returns (bool) {
+    unchecked {
+      uint256 bucket = reserveCount.bucketId();
+      if (self.map[bucket].isolateBorrowingUntil(reserveCount) != 0) {
+        return true;
+      }
+      while (bucket != 0) {
+        if (self.map[--bucket].isolateBorrowing() != 0) {
+          return true;
+        }
+      }
+      return false;
+    }
+  }
+
   /// @notice Finds the previous borrowing or collateralized reserve strictly before `fromReserveId`.
   /// @dev The search starts at `fromReserveId` (exclusive) and scans backward across buckets.
   /// @dev Returns `NOT_FOUND` if no borrowing or collateralized reserve exists before the bound.

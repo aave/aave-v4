@@ -263,7 +263,7 @@ abstract contract Spoke is
 
     PositionStatus storage positionStatus = _positionStatus[onBehalfOf];
     if (
-      positionStatus.isUsingAsCollateral(reserveId) && positionStatus.borrowCount(_reserveCount) > 0
+      positionStatus.isUsingAsCollateral(reserveId) && positionStatus.isBorrowingAny(_reserveCount)
     ) {
       uint256 newRiskPremium = _refreshAndValidateUserAccountData(onBehalfOf).riskPremium;
       _notifyRiskPremiumUpdate(onBehalfOf, newRiskPremium);

@@ -275,6 +275,78 @@ contract PositionStatusMapTest is Base {
     assertEq(p.borrowCount(reserveCount), borrowCount);
   }
 
+  function test_isBorrowingAny() public {
+    p.setBorrowing(127, true);
+    assertTrue(p.isBorrowingAny(128));
+    p.setBorrowing(127, false);
+
+    p.setBorrowing(128, true);
+    assertFalse(p.isBorrowingAny(128));
+    assertTrue(p.isBorrowingAny(129));
+
+    // ignore invalid bits
+    assertFalse(p.isBorrowingAny(100));
+
+    p.setBorrowing(2, true);
+    assertTrue(p.isBorrowingAny(128));
+
+    p.setBorrowing(32, true);
+    assertTrue(p.isBorrowingAny(128));
+    p.setBorrowing(342, true);
+    assertTrue(p.isBorrowingAny(343));
+
+    p.setBorrowing(32, false);
+    assertTrue(p.isBorrowingAny(343));
+    p.setBorrowing(342, false);
+    p.setBorrowing(128, false);
+    p.setBorrowing(2, false);
+
+    // disregards collateral reserves
+    p.setUsingAsCollateral(32, true);
+    assertFalse(p.isBorrowingAny(343));
+
+    p.setUsingAsCollateral(79, true);
+    assertFalse(p.isBorrowingAny(343));
+
+    p.setUsingAsCollateral(255, true);
+    assertFalse(p.isBorrowingAny(343));
+  }
+
+  function test_isBorrowingAny_ignoresInvalidBits() public {
+    p.setBorrowing(127, true);
+    assertFalse(p.isBorrowingAny(100));
+    assertTrue(p.isBorrowingAny(200));
+    p.setBorrowing(127, false);
+
+    p.setBorrowing(255, true);
+    assertFalse(p.isBorrowingAny(200));
+    p.setBorrowing(133, true);
+    assertTrue(p.isBorrowingAny(200));
+    p.setBorrowing(255, false);
+    p.setBorrowing(133, false);
+
+    p.setBorrowing(383, true);
+    assertFalse(p.isBorrowingAny(300));
+    p.setBorrowing(283, true);
+    assertTrue(p.isBorrowingAny(300));
+    p.setBorrowing(383, false);
+    p.setBorrowing(283, false);
+
+    p.setBorrowing(511, true);
+    assertFalse(p.isBorrowingAny(500));
+    assertTrue(p.isBorrowingAny(600));
+    p.setBorrowing(511, false);
+  }
+
+  function test_isBorrowingAny(uint256 reserveCount, uint256 borrowingReserveId) public {
+    reserveCount = bound(reserveCount, 1, 1 << 10); // gas limit
+    borrowingReserveId = bound(borrowingReserveId, 0, 1 << 10); // gas limit
+
+    p.setBorrowing(borrowingReserveId, true);
+
+    assertEq(p.isBorrowingAny(reserveCount), reserveCount > borrowingReserveId ? true : false);
+  }
+
   function test_setters_use_correct_slot(uint256 a) public {
     uint256 bucket = a / 128;
     bytes32 slot = keccak256(abi.encode(bucket, p.slot()));
