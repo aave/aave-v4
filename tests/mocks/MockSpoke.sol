@@ -110,7 +110,11 @@ contract MockSpoke is Spoke, Test {
     address user,
     bool refreshConfig
   ) external returns (UserAccountData memory) {
-    return _processUserAccountData(user, refreshConfig);
+    // set borrowing for at least one reserve to bypass the early return in calculateUserAccountData
+    _positionStatus[user].setBorrowing(0, true);
+    UserAccountData memory accountData = _processUserAccountData(user, refreshConfig);
+    _positionStatus[user].setBorrowing(0, false);
+    return accountData;
   }
 
   function getRiskPremium(address user) external view returns (uint24) {

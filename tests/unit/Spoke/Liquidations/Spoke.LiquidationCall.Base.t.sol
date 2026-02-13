@@ -10,6 +10,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
   using WadRayMath for *;
   using KeyValueList for KeyValueList.List;
   using MathUtils for uint256;
+  using PositionStatusMap for *;
 
   uint256 internal constant MAX_AMOUNT_IN_BASE_CURRENCY = 1_000_000_000e26; // 1 billion USD
   uint256 internal constant MIN_AMOUNT_IN_BASE_CURRENCY = 100e26; // 1 USD
@@ -237,6 +238,32 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
     LiquidationMetadata memory liquidationMetadata
   ) internal virtual returns (ISpoke.UserAccountData memory expectedUserAccountData) {
     KeyValueList.List memory list = KeyValueList.init(params.spoke.getReserveCount());
+
+    {
+      bool isBorrowingAny = false;
+      for (uint256 reserveId = 0; reserveId < params.spoke.getReserveCount(); reserveId++) {
+        if (params.debtReserveId == reserveId) {
+          if (
+            _isBorrowing(params.spoke, reserveId, params.user) &&
+            !liquidationMetadata.fullDebtReserveLiquidated
+          ) {
+            isBorrowingAny = true;
+            break;
+          }
+          continue;
+        } else {
+          if (_isUsingAsCollateral(params.spoke, reserveId, params.user)) {
+            isBorrowingAny = true;
+            break;
+          }
+        }
+      }
+      if (!isBorrowingAny) {
+        // user has no debt, return early with health factor of `type(uint256).max` and risk premium of 0.
+        expectedUserAccountData.healthFactor = type(uint256).max;
+        return expectedUserAccountData;
+      }
+    }
 
     for (uint256 reserveId = 0; reserveId < params.spoke.getReserveCount(); reserveId++) {
       if (!_isUsingAsCollateral(params.spoke, reserveId, params.user)) {

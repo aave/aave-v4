@@ -262,9 +262,7 @@ abstract contract Spoke is
     userPosition.suppliedShares -= withdrawnShares.toUint120();
 
     PositionStatus storage positionStatus = _positionStatus[onBehalfOf];
-    if (
-      positionStatus.isUsingAsCollateral(reserveId) && positionStatus.isBorrowingAny(_reserveCount)
-    ) {
+    if (positionStatus.isUsingAsCollateral(reserveId)) {
       uint256 newRiskPremium = _refreshAndValidateUserAccountData(onBehalfOf).riskPremium;
       _notifyRiskPremiumUpdate(onBehalfOf, newRiskPremium);
     }
@@ -714,6 +712,11 @@ abstract contract Spoke is
     PositionStatus storage positionStatus = _positionStatus[user];
 
     uint256 reserveId = _reserveCount;
+    if (!positionStatus.isBorrowingAny(reserveId)) {
+      // user has no debt, return early with health factor of `type(uint256).max` and risk premium of 0.
+      accountData.healthFactor = type(uint256).max;
+      return accountData;
+    }
     KeyValueList.List memory collateralInfo = KeyValueList.init(
       positionStatus.collateralCount(reserveId)
     );
