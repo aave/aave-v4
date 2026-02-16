@@ -158,24 +158,6 @@ contract SpokeConfiguratorTest is SpokeBase {
     assertEq(spoke.getLiquidationConfig(), newLiquidationConfig);
   }
 
-  function test_updateMaxReserves_revertsWith_AccessManagedUnauthorized() public {
-    vm.expectRevert(
-      abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, alice)
-    );
-    vm.prank(alice);
-    spokeConfigurator.updateMaxReserves(spokeAddr, 0);
-  }
-
-  function test_updateMaxReserves() public {
-    uint256 newMaxReserves = vm.randomUint();
-    vm.expectEmit(address(spokeConfigurator));
-    emit ISpokeConfigurator.UpdateMaxReserves(spokeAddr, newMaxReserves);
-    vm.prank(SPOKE_CONFIGURATOR);
-    spokeConfigurator.updateMaxReserves(spokeAddr, newMaxReserves);
-
-    assertEq(spokeConfigurator.getMaxReserves(spokeAddr), newMaxReserves);
-  }
-
   function test_addReserve_revertsWith_AccessManagedUnauthorized() public {
     vm.expectRevert(
       abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, alice)
@@ -195,39 +177,8 @@ contract SpokeConfiguratorTest is SpokeBase {
     });
   }
 
-  function test_addReserve_revertsWith_MaximumReservesReached() public {
-    uint256 maxReserves = vm.randomUint(0, spoke.getReserveCount());
-    vm.prank(SPOKE_CONFIGURATOR);
-    spokeConfigurator.updateMaxReserves(spokeAddr, maxReserves);
-
-    address newPriceSource = _deployMockPriceFeed(spoke, 1000e8);
-    vm.expectRevert(
-      abi.encodeWithSelector(
-        ISpokeConfigurator.MaximumReservesReached.selector,
-        spokeAddr,
-        maxReserves
-      )
-    );
-    vm.prank(SPOKE_CONFIGURATOR);
-    spokeConfigurator.addReserve({
-      spoke: spokeAddr,
-      hub: address(hub1),
-      assetId: usdzAssetId,
-      priceSource: newPriceSource,
-      config: _getDefaultReserveConfig(15_00),
-      dynamicConfig: ISpoke.DynamicReserveConfig({
-        collateralFactor: 80_00,
-        maxLiquidationBonus: 100_00,
-        liquidationFee: 0
-      })
-    });
-  }
-
   function test_addReserve() public {
     uint256 expectedReserveId = spoke.getReserveCount();
-
-    vm.prank(SPOKE_CONFIGURATOR);
-    spokeConfigurator.updateMaxReserves(spokeAddr, expectedReserveId + 1);
 
     address newPriceSource = _deployMockPriceFeed(spoke, 1000e8);
     ISpoke.ReserveConfig memory config = _getDefaultReserveConfig(15_00);
