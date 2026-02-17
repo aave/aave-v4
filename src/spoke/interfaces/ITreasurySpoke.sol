@@ -2,8 +2,6 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import {IHubBase} from 'src/hub/interfaces/IHubBase.sol';
-
 /// @title ITreasurySpoke
 /// @author Aave Labs
 /// @notice Interface for the TreasurySpoke.
@@ -16,8 +14,8 @@ interface ITreasurySpoke {
 
   /// @notice Supplies a specified amount of the underlying asset to a given reserve.
   /// @dev The Spoke pulls the underlying asset from the caller, so prior approval is required.
-  /// @dev The given asset identifier must match the asset identifier in the given hub.
-  /// @param hub The address of the hub contract.
+  /// @dev The given asset identifier must match the asset identifier in the given Hub.
+  /// @param hub The address of the Hub contract.
   /// @param assetId The identifier of the asset.
   /// @param amount The amount of asset to supply.
   /// @param onBehalfOf Unused parameter for this spoke.
@@ -32,8 +30,8 @@ interface ITreasurySpoke {
 
   /// @notice Withdraws a specified amount of underlying asset from the given reserve.
   /// @dev Providing an amount greater than the maximum withdrawable value signals a full withdrawal.
-  /// @dev The given asset identifier must match the asset identifier in the given hub.
-  /// @param hub The address of the hub contract.
+  /// @dev The given asset identifier must match the asset identifier in the given Hub.
+  /// @param hub The address of the Hub contract.
   /// @param assetId The identifier of the asset.
   /// @param amount The amount of asset to withdraw.
   /// @param onBehalfOf Unused parameter for this spoke.
@@ -53,16 +51,16 @@ interface ITreasurySpoke {
   function transfer(address token, address to, uint256 amount) external;
 
   /// @notice Returns the amount of assets supplied.
-  /// @dev The given asset identifier must match the asset identifier in the given hub.
-  /// @param hub The address of the hub contract.
+  /// @dev The given asset identifier must match the asset identifier in the given Hub.
+  /// @param hub The address of the Hub contract.
   /// @param assetId The identifier of the asset.
   /// @return The amount of assets supplied.
   function getSuppliedAmount(address hub, uint256 assetId) external view returns (uint256);
 
   /// @notice Returns the amount of shares supplied.
   /// @dev Shares are denominated relative to the supply side.
-  /// @dev The asset identifier must match the asset identifier in the hub.
-  /// @param hub The address of the hub contract.
+  /// @dev The asset identifier must match the asset identifier in the Hub.
+  /// @param hub The address of the Hub contract.
   /// @param assetId The identifier of the asset.
   /// @return The amount of shares supplied.
   function getSuppliedShares(address hub, uint256 assetId) external view returns (uint256);

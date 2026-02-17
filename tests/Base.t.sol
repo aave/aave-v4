@@ -2337,7 +2337,7 @@ abstract contract Base is Test {
       return; // nothing to withdraw
     }
     vm.prank(TREASURY_ADMIN);
-    treasurySpoke.withdraw(address(hub1), assetId, amount, address(treasurySpoke));
+    treasurySpoke.withdraw(address(hub), assetId, amount, address(treasurySpoke));
   }
 
   function _assumeValidSupplier(address user) internal view {
