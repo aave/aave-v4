@@ -13,6 +13,7 @@ contract WadRayMathDifferentialTests is Test {
   }
 
   function test_constants() public view {
+    assertEq(w.WAD_DECIMALS(), 18, 'wad decimals');
     assertEq(w.WAD(), 1e18, 'wad');
     assertEq(w.RAY(), 1e27, 'ray');
     assertEq(w.PERCENTAGE_FACTOR(), 1e4, 'percentage factor');
@@ -72,7 +73,7 @@ contract WadRayMathDifferentialTests is Test {
     assertEq(w.rayDivUp(a, b), a == 0 ? 0 : (a * w.RAY() - 1) / b + 1);
   }
 
-  function test_wadMul() public {
+  function test_wadMul() public view {
     assertEq(w.wadMulDown(0, 1e18), 0);
     assertEq(w.wadMulDown(1e18, 0), 0);
     assertEq(w.wadMulDown(0, 0), 0);
@@ -94,7 +95,7 @@ contract WadRayMathDifferentialTests is Test {
     assertEq(w.wadMulUp(6e18, 2e18), 12e18);
   }
 
-  function test_rayMul() public {
+  function test_rayMul() public view {
     assertEq(w.rayMulDown(0, 1e27), 0);
     assertEq(w.rayMulDown(1e27, 0), 0);
     assertEq(w.rayMulDown(0, 0), 0);
@@ -176,8 +177,17 @@ contract WadRayMathDifferentialTests is Test {
     assertEq(w.rayDivUp(2, 100000000000000e27), 1);
   }
 
-  function test_fromWadDown_fuzz(uint256 a) public {
+  function test_fromWadDown_fuzz(uint256 a) public view {
     assertEq(w.fromWadDown(a), a / w.WAD());
+  }
+
+  function test_fromRayUp_fuzz(uint256 a) public view {
+    assertEq(
+      w.fromRayUp(a),
+      (a <= type(uint256).max - w.RAY() + 1)
+        ? (a + (w.RAY() - 1)) / w.RAY()
+        : type(uint256).max / w.RAY() + 1
+    );
   }
 
   function test_toWad_fuzz(uint256 a) public {
@@ -196,23 +206,7 @@ contract WadRayMathDifferentialTests is Test {
     }
   }
 
-  function test_bpsToWad_fuzz(uint256 a) public {
-    uint256 b;
-    bool safetyCheck;
-    unchecked {
-      b = a * w.WAD();
-      safetyCheck = b / w.WAD() == a;
-    }
-    if (!safetyCheck) {
-      vm.expectRevert();
-      w.bpsToWad(a);
-    } else {
-      assertEq(w.bpsToWad(a), (a * w.WAD()) / 100_00);
-      assertEq(w.bpsToWad(a), b / 100_00);
-    }
-  }
-
-  function test_bpsToRay_fuzz(uint256 a) public {
+  function test_toRay_fuzz(uint256 a) public {
     uint256 b;
     bool safetyCheck;
     unchecked {
@@ -221,10 +215,57 @@ contract WadRayMathDifferentialTests is Test {
     }
     if (!safetyCheck) {
       vm.expectRevert();
+      w.toRay(a);
+    } else {
+      assertEq(w.toRay(a), a * w.RAY());
+      assertEq(w.toRay(a), b);
+    }
+  }
+
+  function test_bpsToWad_fuzz(uint256 a) public {
+    uint256 b;
+    bool safetyCheck;
+    unchecked {
+      b = a * (w.WAD() / w.PERCENTAGE_FACTOR());
+      safetyCheck = (a == 0 || type(uint256).max / a >= w.WAD() / w.PERCENTAGE_FACTOR());
+    }
+    if (!safetyCheck) {
+      vm.expectRevert();
+      w.bpsToWad(a);
+    } else {
+      assertEq(w.bpsToWad(a), b);
+    }
+  }
+
+  function test_bpsToRay_fuzz(uint256 a) public {
+    uint256 b;
+    bool safetyCheck;
+    unchecked {
+      b = a * (w.RAY() / w.PERCENTAGE_FACTOR());
+      safetyCheck = (a == 0 || type(uint256).max / a >= w.RAY() / w.PERCENTAGE_FACTOR());
+    }
+    if (!safetyCheck) {
+      vm.expectRevert();
       w.bpsToRay(a);
     } else {
-      assertEq(w.bpsToRay(a), (a * w.RAY()) / 100_00);
-      assertEq(w.bpsToRay(a), b / 100_00);
+      assertEq(w.bpsToRay(a), b);
     }
+  }
+
+  function test_roundRayUp_fuzz(uint256 a) public {
+    if (a % w.RAY() == 0) {
+      assertEq(w.roundRayUp(a), a);
+    } else if (a <= (type(uint256).max / w.RAY()) * w.RAY()) {
+      assertEq(w.roundRayUp(a), ((a - 1) / w.RAY() + 1) * w.RAY()); // a == 0 enters the first if block
+    } else {
+      vm.expectRevert();
+      w.roundRayUp(a);
+    }
+  }
+
+  function test_roundRayUp_overflow() public {
+    uint256 maxA = (type(uint256).max / w.RAY()) * w.RAY();
+    test_roundRayUp_fuzz(maxA);
+    test_roundRayUp_fuzz(maxA + 1);
   }
 }

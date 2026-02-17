@@ -15,10 +15,10 @@ contract SpokeBorrowScenarioTest is SpokeBase {
     uint256 daiBorrowAmount2,
     uint256 usdxBorrowAmount2
   ) public {
-    daiBorrowAmount = bound(daiBorrowAmount, 0, MAX_SUPPLY_AMOUNT / 4);
-    usdxBorrowAmount = bound(usdxBorrowAmount, 0, MAX_SUPPLY_AMOUNT / 4);
-    daiBorrowAmount2 = bound(daiBorrowAmount2, 0, MAX_SUPPLY_AMOUNT / 4);
-    usdxBorrowAmount2 = bound(usdxBorrowAmount2, 0, MAX_SUPPLY_AMOUNT / 4);
+    daiBorrowAmount = bound(daiBorrowAmount, 0, MAX_SUPPLY_AMOUNT_DAI / 4);
+    usdxBorrowAmount = bound(usdxBorrowAmount, 0, MAX_SUPPLY_AMOUNT_USDX / 4);
+    daiBorrowAmount2 = bound(daiBorrowAmount2, 0, MAX_SUPPLY_AMOUNT_DAI / 4);
+    usdxBorrowAmount2 = bound(usdxBorrowAmount2, 0, MAX_SUPPLY_AMOUNT_USDX / 4);
 
     BorrowTestData memory state;
 
@@ -28,30 +28,23 @@ contract SpokeBorrowScenarioTest is SpokeBase {
     state.wbtcReserveId = _wbtcReserveId(spoke1);
 
     // should be 0 because no realized premium yet
-    state.daiAlice.userPosBefore.realizedPremium = _calculateExpectedRealizedPremium(
+    state.daiAlice.premiumDebtRayBefore = _calculatePremiumDebtRay(
       spoke1,
       state.daiReserveId,
       alice
     );
-    state.usdxAlice.userPosBefore.realizedPremium = _calculateExpectedRealizedPremium(
+    state.usdxAlice.premiumDebtRayBefore = _calculatePremiumDebtRay(
       spoke1,
       state.usdxReserveId,
       alice
     );
-    state.daiBob.userPosBefore.realizedPremium = _calculateExpectedRealizedPremium(
-      spoke1,
-      state.daiReserveId,
-      bob
-    );
-    state.usdxBob.userPosBefore.realizedPremium = _calculateExpectedRealizedPremium(
-      spoke1,
-      state.usdxReserveId,
-      bob
-    );
+    state.daiBob.premiumDebtRayBefore = _calculatePremiumDebtRay(spoke1, state.daiReserveId, bob);
+    state.usdxBob.premiumDebtRayBefore = _calculatePremiumDebtRay(spoke1, state.usdxReserveId, bob);
 
-    state.wethAlice.supplyAmount = state.wbtcAlice.supplyAmount = state.wethBob.supplyAmount = state
-      .wbtcBob
-      .supplyAmount = MAX_SUPPLY_AMOUNT / 2;
+    state.wethAlice.supplyAmount = MAX_SUPPLY_AMOUNT_WETH / 2;
+    state.wbtcAlice.supplyAmount = MAX_SUPPLY_AMOUNT_WBTC / 2;
+    state.wethBob.supplyAmount = MAX_SUPPLY_AMOUNT_WETH / 2;
+    state.wbtcBob.supplyAmount = MAX_SUPPLY_AMOUNT_WBTC / 2;
 
     // Alice supply collateral through spoke1
     Utils.supplyCollateral(spoke1, state.wethReserveId, alice, state.wethAlice.supplyAmount, alice);
@@ -70,7 +63,7 @@ contract SpokeBorrowScenarioTest is SpokeBase {
       user: alice,
       debtAmount: 0,
       suppliedAmount: state.daiAlice.supplyAmount,
-      expectedRealizedPremium: state.daiAlice.userPosBefore.realizedPremium,
+      expectedPremiumDebtRay: state.daiAlice.premiumDebtRayBefore,
       label: 'alice dai data before'
     });
     _assertUserPositionAndDebt({
@@ -79,7 +72,7 @@ contract SpokeBorrowScenarioTest is SpokeBase {
       user: alice,
       debtAmount: 0,
       suppliedAmount: state.usdxAlice.supplyAmount,
-      expectedRealizedPremium: state.usdxAlice.userPosBefore.realizedPremium,
+      expectedPremiumDebtRay: state.usdxAlice.premiumDebtRayBefore,
       label: 'alice usdx data before'
     });
     _assertUserPositionAndDebt({
@@ -88,7 +81,7 @@ contract SpokeBorrowScenarioTest is SpokeBase {
       user: bob,
       debtAmount: 0,
       suppliedAmount: state.daiBob.supplyAmount,
-      expectedRealizedPremium: state.daiBob.userPosBefore.realizedPremium,
+      expectedPremiumDebtRay: state.daiBob.premiumDebtRayBefore,
       label: 'bob dai data before'
     });
     _assertUserPositionAndDebt({
@@ -97,7 +90,7 @@ contract SpokeBorrowScenarioTest is SpokeBase {
       user: bob,
       debtAmount: 0,
       suppliedAmount: state.usdxBob.supplyAmount,
-      expectedRealizedPremium: state.usdxBob.userPosBefore.realizedPremium,
+      expectedPremiumDebtRay: state.usdxBob.premiumDebtRayBefore,
       label: 'bob usdx data before'
     });
 
@@ -126,7 +119,7 @@ contract SpokeBorrowScenarioTest is SpokeBase {
       user: alice,
       debtAmount: daiBorrowAmount,
       suppliedAmount: state.daiAlice.supplyAmount,
-      expectedRealizedPremium: state.daiAlice.userPosBefore.realizedPremium,
+      expectedPremiumDebtRay: state.daiAlice.premiumDebtRayBefore,
       label: 'alice dai data after'
     });
     _assertUserPositionAndDebt({
@@ -135,7 +128,7 @@ contract SpokeBorrowScenarioTest is SpokeBase {
       user: alice,
       debtAmount: usdxBorrowAmount,
       suppliedAmount: state.usdxAlice.supplyAmount,
-      expectedRealizedPremium: state.usdxAlice.userPosBefore.realizedPremium,
+      expectedPremiumDebtRay: state.usdxAlice.premiumDebtRayBefore,
       label: 'alice usdx data after'
     });
     _assertUserPositionAndDebt({
@@ -144,7 +137,7 @@ contract SpokeBorrowScenarioTest is SpokeBase {
       user: bob,
       debtAmount: daiBorrowAmount2,
       suppliedAmount: state.daiBob.supplyAmount,
-      expectedRealizedPremium: state.daiBob.userPosBefore.realizedPremium,
+      expectedPremiumDebtRay: state.daiBob.premiumDebtRayBefore,
       label: 'bob dai data after'
     });
     _assertUserPositionAndDebt({
@@ -153,7 +146,7 @@ contract SpokeBorrowScenarioTest is SpokeBase {
       user: bob,
       debtAmount: usdxBorrowAmount2,
       suppliedAmount: state.usdxBob.supplyAmount,
-      expectedRealizedPremium: state.usdxBob.userPosBefore.realizedPremium,
+      expectedPremiumDebtRay: state.usdxBob.premiumDebtRayBefore,
       label: 'bob usdx data after'
     });
 
@@ -179,36 +172,21 @@ contract SpokeBorrowScenarioTest is SpokeBase {
     state.usdxReserveId = _usdxReserveId(spoke2);
     state.wbtcReserveId = _wbtcReserveId(spoke2);
 
-    daiBorrowAmount = bound(daiBorrowAmount, 0, MAX_SUPPLY_AMOUNT / 2);
-    wethBorrowAmount = bound(wethBorrowAmount, 0, MAX_SUPPLY_AMOUNT / 2);
-    usdxBorrowAmount = bound(usdxBorrowAmount, 0, MAX_SUPPLY_AMOUNT / 2);
-    wbtcBorrowAmount = bound(wbtcBorrowAmount, 0, MAX_SUPPLY_AMOUNT / 2);
+    daiBorrowAmount = bound(daiBorrowAmount, 0, MAX_SUPPLY_AMOUNT_DAI / 4);
+    wethBorrowAmount = bound(wethBorrowAmount, 0, MAX_SUPPLY_AMOUNT_WETH / 4);
+    usdxBorrowAmount = bound(usdxBorrowAmount, 0, MAX_SUPPLY_AMOUNT_USDX / 4);
+    wbtcBorrowAmount = bound(wbtcBorrowAmount, 0, MAX_SUPPLY_AMOUNT_WBTC / 4);
 
     // should be 0 because no realized premium yet
-    state.daiBob.userPosBefore.realizedPremium = _calculateExpectedRealizedPremium(
-      spoke1,
-      state.daiReserveId,
-      bob
-    );
-    state.wethBob.userPosBefore.realizedPremium = _calculateExpectedRealizedPremium(
-      spoke1,
-      state.wethReserveId,
-      bob
-    );
-    state.usdxBob.userPosBefore.realizedPremium = _calculateExpectedRealizedPremium(
-      spoke1,
-      state.usdxReserveId,
-      bob
-    );
-    state.wbtcBob.userPosBefore.realizedPremium = _calculateExpectedRealizedPremium(
-      spoke1,
-      state.wbtcReserveId,
-      bob
-    );
+    state.daiBob.premiumDebtRayBefore = _calculatePremiumDebtRay(spoke1, state.daiReserveId, bob);
+    state.wethBob.premiumDebtRayBefore = _calculatePremiumDebtRay(spoke1, state.wethReserveId, bob);
+    state.usdxBob.premiumDebtRayBefore = _calculatePremiumDebtRay(spoke1, state.usdxReserveId, bob);
+    state.wbtcBob.premiumDebtRayBefore = _calculatePremiumDebtRay(spoke1, state.wbtcReserveId, bob);
 
-    state.daiBob.supplyAmount = state.wethBob.supplyAmount = state.usdxBob.supplyAmount = state
-      .wbtcBob
-      .supplyAmount = MAX_SUPPLY_AMOUNT;
+    state.daiBob.supplyAmount = MAX_SUPPLY_AMOUNT_DAI;
+    state.wethBob.supplyAmount = MAX_SUPPLY_AMOUNT_WETH;
+    state.usdxBob.supplyAmount = MAX_SUPPLY_AMOUNT_USDX;
+    state.wbtcBob.supplyAmount = MAX_SUPPLY_AMOUNT_WBTC;
 
     // Bob supply all reserves as collateral
     Utils.supplyCollateral(spoke2, state.daiReserveId, bob, state.daiBob.supplyAmount, bob);
@@ -222,7 +200,7 @@ contract SpokeBorrowScenarioTest is SpokeBase {
       user: bob,
       debtAmount: 0,
       suppliedAmount: state.daiBob.supplyAmount,
-      expectedRealizedPremium: state.daiBob.userPosBefore.realizedPremium,
+      expectedPremiumDebtRay: state.daiBob.premiumDebtRayBefore,
       label: 'bob dai data before'
     });
     _assertUserPositionAndDebt({
@@ -231,7 +209,7 @@ contract SpokeBorrowScenarioTest is SpokeBase {
       user: bob,
       debtAmount: 0,
       suppliedAmount: state.wethBob.supplyAmount,
-      expectedRealizedPremium: state.wethBob.userPosBefore.realizedPremium,
+      expectedPremiumDebtRay: state.wethBob.premiumDebtRayBefore,
       label: 'bob weth data before'
     });
     _assertUserPositionAndDebt({
@@ -240,7 +218,7 @@ contract SpokeBorrowScenarioTest is SpokeBase {
       user: bob,
       debtAmount: 0,
       suppliedAmount: state.usdxBob.supplyAmount,
-      expectedRealizedPremium: state.usdxBob.userPosBefore.realizedPremium,
+      expectedPremiumDebtRay: state.usdxBob.premiumDebtRayBefore,
       label: 'bob usdx data before'
     });
     _assertUserPositionAndDebt({
@@ -249,7 +227,7 @@ contract SpokeBorrowScenarioTest is SpokeBase {
       user: bob,
       debtAmount: 0,
       suppliedAmount: state.wbtcBob.supplyAmount,
-      expectedRealizedPremium: state.wbtcBob.userPosBefore.realizedPremium,
+      expectedPremiumDebtRay: state.wbtcBob.premiumDebtRayBefore,
       label: 'bob wbtc data before'
     });
 
@@ -277,7 +255,7 @@ contract SpokeBorrowScenarioTest is SpokeBase {
       user: bob,
       debtAmount: daiBorrowAmount,
       suppliedAmount: state.daiBob.supplyAmount,
-      expectedRealizedPremium: state.daiBob.userPosBefore.realizedPremium,
+      expectedPremiumDebtRay: state.daiBob.premiumDebtRayBefore,
       label: 'bob dai data after'
     });
     _assertUserPositionAndDebt({
@@ -286,7 +264,7 @@ contract SpokeBorrowScenarioTest is SpokeBase {
       user: bob,
       debtAmount: wethBorrowAmount,
       suppliedAmount: state.wethBob.supplyAmount,
-      expectedRealizedPremium: state.wethBob.userPosBefore.realizedPremium,
+      expectedPremiumDebtRay: state.wethBob.premiumDebtRayBefore,
       label: 'bob weth data after'
     });
     _assertUserPositionAndDebt({
@@ -295,7 +273,7 @@ contract SpokeBorrowScenarioTest is SpokeBase {
       user: bob,
       debtAmount: usdxBorrowAmount,
       suppliedAmount: state.usdxBob.supplyAmount,
-      expectedRealizedPremium: state.usdxBob.userPosBefore.realizedPremium,
+      expectedPremiumDebtRay: state.usdxBob.premiumDebtRayBefore,
       label: 'bob usdx data after'
     });
     _assertUserPositionAndDebt({
@@ -304,7 +282,7 @@ contract SpokeBorrowScenarioTest is SpokeBase {
       user: bob,
       debtAmount: wbtcBorrowAmount,
       suppliedAmount: state.wbtcBob.supplyAmount,
-      expectedRealizedPremium: state.wbtcBob.userPosBefore.realizedPremium,
+      expectedPremiumDebtRay: state.wbtcBob.premiumDebtRayBefore,
       label: 'bob wbtc data after'
     });
 
@@ -339,22 +317,22 @@ contract SpokeBorrowScenarioTest is SpokeBase {
     states[1].usdxReserveId = _usdxReserveId(spoke2);
 
     // should be 0 because no realized premium yet
-    states[0].daiBob.userPosBefore.realizedPremium = _calculateExpectedRealizedPremium(
+    states[0].daiBob.premiumDebtRayBefore = _calculatePremiumDebtRay(
       spoke1,
       states[0].daiReserveId,
       bob
     );
-    states[0].usdxBob.userPosBefore.realizedPremium = _calculateExpectedRealizedPremium(
+    states[0].usdxBob.premiumDebtRayBefore = _calculatePremiumDebtRay(
       spoke1,
       states[0].usdxReserveId,
       bob
     );
-    states[1].daiBob.userPosBefore.realizedPremium = _calculateExpectedRealizedPremium(
+    states[1].daiBob.premiumDebtRayBefore = _calculatePremiumDebtRay(
       spoke2,
       states[1].daiReserveId,
       bob
     );
-    states[1].usdxBob.userPosBefore.realizedPremium = _calculateExpectedRealizedPremium(
+    states[1].usdxBob.premiumDebtRayBefore = _calculatePremiumDebtRay(
       spoke2,
       states[1].usdxReserveId,
       bob
@@ -375,7 +353,7 @@ contract SpokeBorrowScenarioTest is SpokeBase {
       user: bob,
       debtAmount: 0,
       suppliedAmount: supplyAmount,
-      expectedRealizedPremium: states[0].daiBob.userPosBefore.realizedPremium,
+      expectedPremiumDebtRay: states[0].daiBob.premiumDebtRayBefore,
       label: 'spoke1 bob dai before'
     });
     _assertUserPositionAndDebt({
@@ -384,7 +362,7 @@ contract SpokeBorrowScenarioTest is SpokeBase {
       user: bob,
       debtAmount: 0,
       suppliedAmount: supplyAmount,
-      expectedRealizedPremium: states[0].usdxBob.userPosBefore.realizedPremium,
+      expectedPremiumDebtRay: states[0].usdxBob.premiumDebtRayBefore,
       label: 'spoke1 bob usdx before'
     });
     _assertUserPositionAndDebt({
@@ -393,7 +371,7 @@ contract SpokeBorrowScenarioTest is SpokeBase {
       user: bob,
       debtAmount: 0,
       suppliedAmount: supplyAmount,
-      expectedRealizedPremium: states[1].daiBob.userPosBefore.realizedPremium,
+      expectedPremiumDebtRay: states[1].daiBob.premiumDebtRayBefore,
       label: 'spoke2 bob dai before'
     });
     _assertUserPositionAndDebt({
@@ -402,7 +380,7 @@ contract SpokeBorrowScenarioTest is SpokeBase {
       user: bob,
       debtAmount: 0,
       suppliedAmount: supplyAmount,
-      expectedRealizedPremium: states[1].usdxBob.userPosBefore.realizedPremium,
+      expectedPremiumDebtRay: states[1].usdxBob.premiumDebtRayBefore,
       label: 'spoke2 bob usdx before'
     });
 
@@ -436,7 +414,7 @@ contract SpokeBorrowScenarioTest is SpokeBase {
       user: bob,
       debtAmount: daiBorrowAmount,
       suppliedAmount: supplyAmount,
-      expectedRealizedPremium: states[0].daiBob.userPosBefore.realizedPremium,
+      expectedPremiumDebtRay: states[0].daiBob.premiumDebtRayBefore,
       label: 'spoke1 bob dai after'
     });
     // usdx
@@ -446,7 +424,7 @@ contract SpokeBorrowScenarioTest is SpokeBase {
       user: bob,
       debtAmount: usdxBorrowAmount,
       suppliedAmount: supplyAmount,
-      expectedRealizedPremium: states[0].usdxBob.userPosBefore.realizedPremium,
+      expectedPremiumDebtRay: states[0].usdxBob.premiumDebtRayBefore,
       label: 'spoke1 bob usdx after'
     });
 
@@ -458,7 +436,7 @@ contract SpokeBorrowScenarioTest is SpokeBase {
       user: bob,
       debtAmount: daiBorrowAmount2,
       suppliedAmount: supplyAmount,
-      expectedRealizedPremium: states[1].daiBob.userPosBefore.realizedPremium,
+      expectedPremiumDebtRay: states[1].daiBob.premiumDebtRayBefore,
       label: 'spoke2 bob dai after'
     });
     // usdx
@@ -468,7 +446,7 @@ contract SpokeBorrowScenarioTest is SpokeBase {
       user: bob,
       debtAmount: usdxBorrowAmount2,
       suppliedAmount: supplyAmount,
-      expectedRealizedPremium: states[1].usdxBob.userPosBefore.realizedPremium,
+      expectedPremiumDebtRay: states[1].usdxBob.premiumDebtRayBefore,
       label: 'spoke2 bob usdx after'
     });
 
@@ -500,11 +478,7 @@ contract SpokeBorrowScenarioTest is SpokeBase {
     state.wethReserveId = _wethReserveId(spoke1);
     state.daiReserveId = _daiReserveId(spoke1);
     state.wethBob.supplyAmount = MAX_SUPPLY_AMOUNT;
-    state.daiBob.userPosBefore.realizedPremium = _calculateExpectedRealizedPremium(
-      spoke1,
-      state.daiReserveId,
-      bob
-    );
+    state.daiBob.premiumDebtRayBefore = _calculatePremiumDebtRay(spoke1, state.daiReserveId, bob);
 
     address[] memory users = new address[](1);
     users[0] = bob;
@@ -535,12 +509,12 @@ contract SpokeBorrowScenarioTest is SpokeBase {
       user: bob,
       debtAmount: borrowAmount1,
       suppliedAmount: 0,
-      expectedRealizedPremium: state.daiBob.userPosBefore.realizedPremium,
+      expectedPremiumDebtRay: state.daiBob.premiumDebtRayBefore,
       label: 'bob dai data after borrow1'
     });
 
     state.daiBob.userPosBefore = spoke1.getUserPosition(state.daiReserveId, bob);
-    uint32 lastTimestamp = vm.getBlockTimestamp().toUint32();
+    uint40 lastTimestamp = vm.getBlockTimestamp().toUint40();
     (uint256 drawnDebt, ) = spoke1.getUserDebt(state.daiReserveId, bob);
 
     skip(skipTime);
@@ -551,19 +525,7 @@ contract SpokeBorrowScenarioTest is SpokeBase {
     );
     uint256 expectedDrawnDebt = cumulatedInterest.rayMulUp(borrowAmount1) + borrowAmount2;
 
-    // calculate expected realized premium prior to action
-    state.daiBob.userPosBefore.realizedPremium = _calculateExpectedRealizedPremium(
-      spoke1,
-      state.daiReserveId,
-      bob
-    );
-    _assertRealizedPremiumCalcMatchesNaive(
-      spoke1,
-      state.daiReserveId,
-      drawnDebt,
-      state.daiBob.userPosBefore,
-      lastTimestamp
-    );
+    state.daiBob.premiumDebtRayBefore = _calculatePremiumDebtRay(spoke1, state.daiReserveId, bob);
 
     uint256 expectedShares2 = hub1.previewRestoreByAssets(daiAssetId, borrowAmount2);
 
@@ -590,7 +552,7 @@ contract SpokeBorrowScenarioTest is SpokeBase {
       user: bob,
       debtAmount: drawnDebt,
       suppliedAmount: state.daiBob.supplyAmount,
-      expectedRealizedPremium: state.daiBob.userPosBefore.realizedPremium,
+      expectedPremiumDebtRay: state.daiBob.premiumDebtRayBefore,
       label: 'bob dai data after'
     });
   }
@@ -607,8 +569,7 @@ contract SpokeBorrowScenarioTest is SpokeBase {
     assertEq(_getCollateralFactor(spoke1, coll1ReserveId), 0); // initially
     assertNotEq(_getCollateralFactor(spoke1, coll2ReserveId), 0);
 
-    uint256 coll1Value = _getValue(spoke1, coll1ReserveId, coll1Amount);
-    uint256 coll2Value = _getValue(spoke1, coll2ReserveId, coll2Amount);
+    uint256 coll2Value = _convertAmountToValue(spoke1, coll2ReserveId, coll2Amount);
 
     Utils.supplyCollateral(spoke1, coll1ReserveId, alice, coll1Amount, alice);
     Utils.supplyCollateral(spoke1, coll2ReserveId, alice, coll2Amount, alice);
@@ -616,7 +577,7 @@ contract SpokeBorrowScenarioTest is SpokeBase {
     Utils.borrow(spoke1, debtReserveId, alice, debtBorrowAmount, alice);
 
     ISpoke.UserAccountData memory userAccountData = spoke1.getUserAccountData(alice);
-    assertEq(_calculateExpectedUserRP(alice, spoke1), userAccountData.riskPremium);
+    assertEq(_calculateExpectedUserRP(spoke1, alice), userAccountData.riskPremium);
     assertEq(coll2Value, userAccountData.totalCollateralValue); // coll1 is not included
   }
 }

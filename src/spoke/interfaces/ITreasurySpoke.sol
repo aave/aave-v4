@@ -15,7 +15,7 @@ interface ITreasurySpoke {
   error InvalidAddress();
 
   /// @notice Supplies a specified amount of the underlying asset to a given reserve.
-  /// @dev The hub pulls the underlying asset from the caller, so prior approval is required.
+  /// @dev The Spoke pulls the underlying asset from the caller, so prior approval is required.
   /// @dev The given asset identifier must match the asset identifier in the given hub.
   /// @param hub The address of the hub contract.
   /// @param assetId The identifier of the asset.

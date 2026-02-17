@@ -11,8 +11,8 @@ contract MockERC1271Wallet is IERC1271 {
 
   error OnlyOwner();
 
-  constructor(address _owner) {
-    owner = _owner;
+  constructor(address owner_) {
+    owner = owner_;
   }
 
   function approveHash(bytes32 _hash) external {

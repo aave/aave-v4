@@ -62,7 +62,8 @@ contract HubSweepTest is HubBase {
 
     assertEq(hub1.getAssetSwept(daiAssetId), sweepAmount);
     assertEq(hub1.getAssetLiquidity(daiAssetId), assetLiquidity - sweepAmount);
-    assertBorrowRateSynced(hub1, daiAssetId, 'sweep');
+    _assertBorrowRateSynced(hub1, daiAssetId, 'sweep');
+    _assertHubLiquidity(hub1, daiAssetId, 'sweep');
   }
 
   ///@dev swept amount is not withdrawable
@@ -72,8 +73,10 @@ contract HubSweepTest is HubBase {
     uint256 initialLiquidity = vm.randomUint(2, MAX_SUPPLY_AMOUNT);
     uint256 swept = vm.randomUint(1, initialLiquidity);
 
-    vm.prank(address(spoke1));
-    hub1.add(daiAssetId, initialLiquidity, alice);
+    vm.startPrank(address(spoke1));
+    tokenList.dai.transferFrom(bob, address(hub1), initialLiquidity);
+    hub1.add(daiAssetId, initialLiquidity);
+    vm.stopPrank();
 
     vm.prank(reinvestmentController);
     hub1.sweep(daiAssetId, swept);
@@ -82,7 +85,7 @@ contract HubSweepTest is HubBase {
       abi.encodeWithSelector(IHub.InsufficientLiquidity.selector, initialLiquidity - swept)
     );
     vm.prank(address(spoke1));
-    hub1.remove(daiAssetId, swept + 1, alice);
+    hub1.remove(daiAssetId, initialLiquidity - swept + 1, alice);
   }
 
   function test_sweep_does_not_impact_utilization(uint256 supplyAmount, uint256 drawAmount) public {
@@ -100,7 +103,9 @@ contract HubSweepTest is HubBase {
     hub1.sweep(daiAssetId, swept);
 
     assertEq(hub1.getAssetDrawnRate(daiAssetId), drawnRate, 'drawnRate');
-    assertBorrowRateSynced(hub1, daiAssetId, 'swept');
+    assertEq(hub1.getAsset(daiAssetId).drawnRate, drawnRate, 'drawnRate');
+    _assertBorrowRateSynced(hub1, daiAssetId, 'swept');
+    _assertHubLiquidity(hub1, daiAssetId, 'sweep');
     (uint256 drawn, ) = hub1.getAssetOwed(daiAssetId);
     assertEq(
       IBasicInterestRateStrategy(hub1.getAsset(daiAssetId).irStrategy).calculateInterestRate({

@@ -57,7 +57,7 @@ library PositionStatusMap {
     uint256 reserveId
   ) internal view returns (bool) {
     unchecked {
-      return (self.map[reserveId.bucketId()] >> ((reserveId % 128) << 1)) & 3 != 0;
+      return (self.getBucketWord(reserveId) >> ((reserveId % 128) << 1)) & 3 != 0;
     }
   }
 
@@ -98,10 +98,27 @@ library PositionStatusMap {
     }
   }
 
+  /// @notice Counts the number of reserves borrowed.
+  /// @dev Disregards potential dirty bits set after `reserveCount`.
+  /// @param reserveCount The current `reserveCount`, to avoid reading uninitialized buckets.
+  function borrowCount(
+    ISpoke.PositionStatus storage self,
+    uint256 reserveCount
+  ) internal view returns (uint256) {
+    unchecked {
+      uint256 bucket = reserveCount.bucketId();
+      uint256 count = self.map[bucket].isolateBorrowingUntil(reserveCount).popCount();
+      while (bucket != 0) {
+        count += self.map[--bucket].isolateBorrowing().popCount();
+      }
+      return count;
+    }
+  }
+
   /// @notice Finds the previous borrowing or collateralized reserve strictly before `fromReserveId`.
   /// @dev The search starts at `fromReserveId` (exclusive) and scans backward across buckets.
   /// @dev Returns `NOT_FOUND` if no borrowing or collateralized reserve exists before the bound.
-  /// @dev Ignores dirty bits beyond the configured `reserveCount` within the current bucket.
+  /// @dev Ignores dirty bits beyond the configured `reserveCount` within the last bucket.
   /// @param fromReserveId The identifier of the reserve to start searching from.
   /// @return reserveId The reserve identifier for the next reserve that is borrowed or used as collateral.
   /// @return borrowing True if the next reserveId is borrowed.
@@ -130,7 +147,7 @@ library PositionStatusMap {
   /// @notice Finds the previous borrowed reserve strictly before `fromReserveId`.
   /// @dev The search starts at `fromReserveId` (exclusive) and scans backward across buckets.
   /// @dev Returns `NOT_FOUND` if no borrowed reserve exists before the bound.
-  /// @dev Ignores dirty bits beyond the configured `reserveCount` within the current bucket.
+  /// @dev Ignores dirty bits beyond the configured `reserveCount` within the last bucket.
   /// @param fromReserveId The exclusive upper bound to start from (this reserveId is not considered).
   /// @return The previous borrowed reserveId, or `NOT_FOUND` if none is found.
   function nextBorrowing(
@@ -150,7 +167,7 @@ library PositionStatusMap {
   /// @notice Finds the previous collateral reserve strictly before `fromReserveId`.
   /// @dev The search starts at `fromReserveId` (exclusive) and scans backward across buckets.
   /// @dev Returns `NOT_FOUND` if no collateral reserve exists before the bound.
-  /// @dev Ignores dirty bits beyond the configured `reserveCount` within the current bucket.
+  /// @dev Ignores dirty bits beyond the configured `reserveCount` within the last bucket.
   /// @param fromReserveId The exclusive upper bound to start from (this reserveId is not considered).
   /// @return The previous collateral reserveId, or `NOT_FOUND` if none is found.
   function nextCollateral(

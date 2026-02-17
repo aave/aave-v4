@@ -107,8 +107,7 @@ contract AssetInterestRateStrategyTest is Base {
 
   function test_setInterestRateData_revertsWith_InvalidMaxRate() public {
     rateData.baseVariableBorrowRate = rateData.variableRateSlope1 = rateData.variableRateSlope2 =
-      rateStrategy.MAX_BORROW_RATE().toUint32() /
-      3 +
+      rateStrategy.MAX_BORROW_RATE().toUint32() / 3 +
       1;
     encodedRateData = abi.encode(rateData);
     vm.expectRevert(IAssetInterestRateStrategy.InvalidMaxRate.selector);
@@ -171,7 +170,7 @@ contract AssetInterestRateStrategyTest is Base {
   }
 
   function test_calculateInterestRate_fuzz_ZeroDebt(uint256 liquidity) public view {
-    liquidity = bound(liquidity, 0, type(uint128).max);
+    liquidity = bound(liquidity, 0, type(uint120).max);
 
     uint256 variableBorrowRate = rateStrategy.calculateInterestRate({
       assetId: mockAssetId,
@@ -184,7 +183,7 @@ contract AssetInterestRateStrategyTest is Base {
     assertEq(variableBorrowRate, rateData.baseVariableBorrowRate.bpsToRay());
   }
 
-  function test_calculateInterestRate_ZeroDebtZeroLiquidity() public {
+  function test_calculateInterestRate_ZeroDebtZeroLiquidity() public view {
     test_calculateInterestRate_fuzz_ZeroDebt(0);
   }
 

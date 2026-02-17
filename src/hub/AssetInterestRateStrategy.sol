@@ -3,32 +3,35 @@
 pragma solidity 0.8.28;
 
 import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
-import {IAssetInterestRateStrategy, IBasicInterestRateStrategy} from 'src/hub/interfaces/IAssetInterestRateStrategy.sol';
+import {
+  IAssetInterestRateStrategy,
+  IBasicInterestRateStrategy
+} from 'src/hub/interfaces/IAssetInterestRateStrategy.sol';
 
 /// @title AssetInterestRateStrategy
 /// @author Aave Labs
 /// @notice Manages the kink-based interest rate strategy for an asset.
-/// @dev Strategies are hub-specific, due to the usage of asset identifier as index of the _interestRateData.
+/// @dev Strategies are Hub-specific, due to the usage of asset identifier as index of the `_interestRateData` mapping.
 contract AssetInterestRateStrategy is IAssetInterestRateStrategy {
   using WadRayMath for *;
 
   /// @inheritdoc IAssetInterestRateStrategy
-  uint256 public constant MAX_BORROW_RATE = 1000_00; // 1000.00% in BPS
+  uint256 public constant MAX_BORROW_RATE = 1000_00;
 
   /// @inheritdoc IAssetInterestRateStrategy
-  uint256 public constant MIN_OPTIMAL_RATIO = 1_00; // 1.00% in BPS
+  uint256 public constant MIN_OPTIMAL_RATIO = 1_00;
 
   /// @inheritdoc IAssetInterestRateStrategy
-  uint256 public constant MAX_OPTIMAL_RATIO = 99_00; // 99.00% in BPS
+  uint256 public constant MAX_OPTIMAL_RATIO = 99_00;
 
   /// @inheritdoc IAssetInterestRateStrategy
   address public immutable HUB;
 
-  /// @dev Map of assetId and their interest rate data (assetId => interestRateData)
+  /// @dev Map of asset identifiers to their interest rate data.
   mapping(uint256 assetId => InterestRateData) internal _interestRateData;
 
   /// @dev Constructor.
-  /// @param hub_ The address of the associated hub.
+  /// @param hub_ The address of the associated Hub.
   constructor(address hub_) {
     require(hub_ != address(0), InvalidAddress());
     HUB = hub_;

@@ -9,7 +9,7 @@ contract HubDrawTest is HubBase {
   using SafeCast for uint256;
 
   function test_draw_fuzz_amounts_same_block(uint256 assetId, uint256 amount) public {
-    assetId = bound(assetId, 0, hub1.getAssetCount() - 3); // Exclude duplicated DAI and usdy
+    assetId = bound(assetId, 0, hub1.getAssetCount() - 3); // Exclude usdy & usdz
     amount = bound(amount, 1, MAX_SUPPLY_AMOUNT);
 
     IERC20 underlying = IERC20(hub1.getAsset(assetId).underlying);
@@ -29,7 +29,7 @@ contract HubDrawTest is HubBase {
           assetId,
           assetBefore.liquidity - assetBefore.swept - amount,
           hub1.previewRestoreByShares(assetId, assetBefore.drawnShares + shares),
-          assetBefore.deficit,
+          assetBefore.deficitRay,
           assetBefore.swept
         )
       )
@@ -43,9 +43,10 @@ contract HubDrawTest is HubBase {
         assetId: assetId,
         liquidity: assetBefore.liquidity - assetBefore.swept - amount,
         drawn: hub1.previewRestoreByShares(assetId, assetBefore.drawnShares + shares),
-        deficit: assetBefore.deficit,
+        deficit: assetBefore.deficitRay,
         swept: assetBefore.swept
-      })
+      }),
+      hub1.getAssetAccruedFees(assetId)
     );
     vm.expectEmit(address(hub1.getAsset(assetId).underlying));
     emit IERC20.Transfer(address(hub1), alice, amount);
@@ -77,7 +78,8 @@ contract HubDrawTest is HubBase {
       assetBefore.drawnShares + shares,
       'drawnShares after draw'
     );
-    assertBorrowRateSynced(hub1, assetId, 'hub1.draw');
+    _assertBorrowRateSynced(hub1, assetId, 'hub1.draw');
+    _assertHubLiquidity(hub1, assetId, 'hub1.draw');
     // spoke
     (drawn, premium) = hub1.getSpokeOwed(assetId, address(spoke1));
     assertEq(hub1.getSpokeTotalOwed(assetId, address(spoke1)), amount, 'spoke totalDebt after');
@@ -95,7 +97,7 @@ contract HubDrawTest is HubBase {
   }
 
   function test_draw_fuzz_IncreasedBorrowRate(uint256 assetId, uint256 amount) public {
-    assetId = bound(assetId, 0, hub1.getAssetCount() - 3); // Exclude duplicated DAI and usdy
+    assetId = bound(assetId, 0, hub1.getAssetCount() - 3); // Exclude usdy & usdz
     amount = bound(amount, 1, MAX_SUPPLY_AMOUNT / 10);
 
     _addLiquidity(assetId, amount * 2);
@@ -113,7 +115,7 @@ contract HubDrawTest is HubBase {
           assetId,
           assetBefore.liquidity - assetBefore.swept - amount,
           hub1.previewRestoreByShares(assetId, assetBefore.drawnShares + shares),
-          assetBefore.deficit,
+          assetBefore.deficitRay,
           assetBefore.swept
         )
       )
@@ -127,9 +129,10 @@ contract HubDrawTest is HubBase {
         assetId: assetId,
         liquidity: assetBefore.liquidity - assetBefore.swept - amount,
         drawn: hub1.previewRestoreByShares(assetId, assetBefore.drawnShares + shares),
-        deficit: assetBefore.deficit,
+        deficit: assetBefore.deficitRay,
         swept: assetBefore.swept
-      })
+      }),
+      hub1.getAssetAccruedFees(assetId)
     );
     vm.expectEmit(address(hub1.getAsset(assetId).underlying));
     emit IERC20.Transfer(address(hub1), alice, amount);
@@ -137,7 +140,7 @@ contract HubDrawTest is HubBase {
     emit IHubBase.Draw(assetId, address(spoke1), shares, amount);
 
     vm.prank(address(spoke1));
-    hub1.draw(assetId, amount, alice);
+    uint256 drawnShares = hub1.draw(assetId, amount, alice);
 
     assertEq(
       hub1.getAsset(assetId).liquidity,
@@ -149,19 +152,21 @@ contract HubDrawTest is HubBase {
       assetBefore.drawnShares + shares,
       'drawnShares after draw'
     );
+    assertGe(hub1.previewDrawByShares(assetId, drawnShares), amount);
 
-    assertBorrowRateSynced(hub1, assetId, 'hub1.draw');
+    _assertBorrowRateSynced(hub1, assetId, 'hub1.draw');
+    _assertHubLiquidity(hub1, assetId, 'hub1.draw');
   }
 
-  function test_draw_revertsWith_SpokePaused() public {
-    _updateSpokePaused(hub1, daiAssetId, address(spoke1), true);
-    vm.expectRevert(IHub.SpokePaused.selector);
+  function test_draw_revertsWith_SpokeHalted() public {
+    _updateSpokeHalted(hub1, daiAssetId, address(spoke1), true);
+    vm.expectRevert(IHub.SpokeHalted.selector);
     vm.prank(address(spoke1));
     hub1.draw(daiAssetId, 100e18, alice);
   }
 
   function test_draw_revertsWith_SpokeNotActive() public {
-    updateSpokeActive(hub1, daiAssetId, address(spoke1), false);
+    _updateSpokeActive(hub1, daiAssetId, address(spoke1), false);
     vm.expectRevert(IHub.SpokeNotActive.selector);
     vm.prank(address(spoke1));
     hub1.draw(daiAssetId, 100e18, alice);
@@ -181,7 +186,7 @@ contract HubDrawTest is HubBase {
     uint256 assetId,
     uint256 drawAmount
   ) public {
-    assetId = bound(assetId, 0, hub1.getAssetCount() - 3); // Exclude duplicated DAI and usdy
+    assetId = bound(assetId, 0, hub1.getAssetCount() - 3); // Exclude usdy & usdz
     drawAmount = bound(drawAmount, 1, MAX_SUPPLY_AMOUNT);
 
     assertTrue(hub1.getAssetLiquidity(assetId) == 0);
@@ -350,12 +355,11 @@ contract HubDrawTest is HubBase {
     // restore to provide liquidity
     // Must restore at least one full share;
     vm.startPrank(address(spoke1));
+    tokenList.dai.transferFrom(alice, address(hub1), singleShareInAssets);
     hub1.restore({
       assetId: daiAssetId,
       drawnAmount: singleShareInAssets,
-      premiumAmount: 0,
-      premiumDelta: IHubBase.PremiumDelta(0, 0, 0),
-      from: alice
+      premiumDelta: ZERO_PREMIUM_DELTA
     });
 
     vm.expectRevert(abi.encodeWithSelector(IHub.DrawCapExceeded.selector, drawCap));
@@ -382,7 +386,7 @@ contract HubDrawTest is HubBase {
     });
 
     vm.prank(address(spoke1));
-    hub1.reportDeficit(daiAssetId, amount, 0, IHubBase.PremiumDelta(0, 0, 0));
+    hub1.reportDeficit(daiAssetId, amount, ZERO_PREMIUM_DELTA);
 
     vm.expectRevert(abi.encodeWithSelector(IHub.DrawCapExceeded.selector, drawCap));
     Utils.draw({
@@ -418,12 +422,11 @@ contract HubDrawTest is HubBase {
     // restore to provide liquidity
     // Must repay at least one full share
     vm.startPrank(address(spoke1));
+    tokenList.dai.transferFrom(alice, address(hub1), minimumAssetsPerDrawnShare(hub1, daiAssetId));
     hub1.restore({
       assetId: daiAssetId,
       drawnAmount: minimumAssetsPerDrawnShare(hub1, daiAssetId),
-      premiumAmount: 0,
-      premiumDelta: IHubBase.PremiumDelta(0, 0, 0),
-      from: alice
+      premiumDelta: ZERO_PREMIUM_DELTA
     });
     vm.stopPrank();
 

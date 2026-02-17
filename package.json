@@ -1,6 +1,6 @@
 {
   "name": "aave-v4",
-  "version": "1.0.0",
+  "version": "0.5.9",
   "scripts": {
     "lint": "prettier . --check",
     "lint:fix": "prettier . --write",
@@ -11,11 +11,16 @@
   },
   "keywords": [],
   "author": "Aave Labs",
+  "license": "UNLICENSED",
+  "bugs": {
+    "url": "https://github.com/aave/aave-v4/issues"
+  },
+  "homepage": "https://github.com/aave/aave-v4#readme",
   "devDependencies": {
     "husky": "9.1.7",
     "lint-staged": "16.2.3",
-    "prettier": "3.6.2",
-    "prettier-plugin-solidity": "2.1.0"
+    "prettier": "3.7.4",
+    "prettier-plugin-solidity": "2.2.1"
   },
   "lint-staged": {
     "*.{sol,md,py,ts}": "prettier . --write"

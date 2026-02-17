@@ -16,10 +16,10 @@ contract HubAccessTest is HubBase {
     });
     IHub.SpokeConfig memory spokeConfig = IHub.SpokeConfig({
       active: true,
-      paused: false,
+      halted: false,
       addCap: 1000,
       drawCap: 1000,
-      riskPremiumCap: 1000_00
+      riskPremiumThreshold: 1000_00
     });
 
     bytes memory encodedIrData = abi.encode(
@@ -71,6 +71,12 @@ contract HubAccessTest is HubBase {
     // Hub Admin can update spoke config
     vm.prank(HUB_ADMIN);
     hub1.updateSpokeConfig(assetAId, address(spoke1), spokeConfig);
+
+    // Only registered spoke with Deficit Eliminator or Hub Admin role can eliminate deficit
+    vm.expectRevert(
+      abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, address(this))
+    );
+    hub1.eliminateDeficit(daiAssetId, 1000, address(spoke1));
   }
 
   function test_setInterestRateData_access() public {
@@ -101,7 +107,7 @@ contract HubAccessTest is HubBase {
     vm.prank(HUB_ADMIN);
     hub1.setInterestRateData(daiAssetId, encodedIrData);
 
-    assertBorrowRateSynced(hub1, daiAssetId, 'setInterestRateData');
+    _assertBorrowRateSynced(hub1, daiAssetId, 'setInterestRateData');
   }
 
   /// @dev Test showcasing ability to change role responsibility for a function selector.
@@ -139,10 +145,10 @@ contract HubAccessTest is HubBase {
       address(spoke1),
       IHub.SpokeConfig({
         active: true,
-        paused: false,
+        halted: false,
         addCap: 1000,
         drawCap: 1000,
-        riskPremiumCap: 1000_00
+        riskPremiumThreshold: 1000_00
       })
     );
   }
@@ -256,10 +262,10 @@ contract HubAccessTest is HubBase {
     });
     IHub.SpokeConfig memory spokeConfig = IHub.SpokeConfig({
       active: true,
-      paused: false,
+      halted: false,
       addCap: 1000,
       drawCap: 1000,
-      riskPremiumCap: 1000_00
+      riskPremiumThreshold: 1000_00
     });
 
     IAccessManager authority = IAccessManager(hub1.authority());

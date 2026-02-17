@@ -51,6 +51,7 @@ contract HubRemoveTest is HubBase {
       vm.getBlockTimestamp(),
       'asset lastUpdateTimestamp after'
     );
+    _assertHubLiquidity(hub1, assetId, 'hub1.remove');
     // spoke
     assertEq(spokeData, assetData);
     // dai
@@ -86,6 +87,7 @@ contract HubRemoveTest is HubBase {
       vm.getBlockTimestamp(),
       'asset lastUpdateTimestamp after'
     );
+    _assertHubLiquidity(hub1, assetId, 'hub1.remove');
     // spoke 1
     assertEq(spokePosition1.addedAmount, 0, 'spoke1 addedAmount after');
     assertEq(spokePosition1.addedShares, 0, 'spoke1 addedShares after');
@@ -144,23 +146,11 @@ contract HubRemoveTest is HubBase {
     SpokePosition memory spokePosition1 = getSpokePosition(spoke1, _daiReserveId);
     SpokePosition memory spokePosition2 = getSpokePosition(spoke2, _daiReserveId);
 
-    address feeReceiver = _getFeeReceiver(hub1, assetId);
-
     // asset
     // only remaining added amount are fees
     assertEq(
-      assetData.addedAmount,
-      hub1.getSpokeAddedAssets(assetId, feeReceiver),
-      'asset addedAmount after'
-    );
-    assertEq(
-      assetData.addedShares,
-      hub1.getSpokeAddedShares(assetId, feeReceiver),
-      'asset addedShares after'
-    );
-    assertEq(
       assetData.liquidity,
-      hub1.getSpokeAddedAssets(assetId, feeReceiver) + _calculateBurntInterest(hub1, assetId),
+      hub1.getAsset(assetId).realizedFees + _calculateBurntInterest(hub1, assetId),
       'asset liquidity after'
     );
     assertEq(
@@ -168,6 +158,7 @@ contract HubRemoveTest is HubBase {
       vm.getBlockTimestamp(),
       'asset lastUpdateTimestamp after'
     );
+    _assertHubLiquidity(hub1, assetId, 'hub1.remove');
     // spoke 1
     assertEq(spokePosition1.addedAmount, 0, 'spoke1 addedAmount after');
     assertEq(spokePosition1.addedShares, 0, 'spoke1 addedShares after');
@@ -176,7 +167,6 @@ contract HubRemoveTest is HubBase {
     // underlying
     assertEq(underlying.balanceOf(address(spoke1)), 0, 'spoke1 token balance after');
     assertEq(underlying.balanceOf(address(spoke2)), 0, 'spoke2 token balance after');
-    assertEq(underlying.balanceOf(address(hub1)), assetData.liquidity, 'hub token balance after');
     assertApproxEqAbs(
       underlying.balanceOf(alice),
       aliceBalanceBefore + spoke1Amount + spoke2Amount,
@@ -224,14 +214,6 @@ contract HubRemoveTest is HubBase {
 
     uint256 removeAmount = hub1.getSpokeAddedAssets(daiAssetId, address(spoke2));
     uint256 daiBalanceBefore = tokenList.dai.balanceOf(bob);
-    uint256 feeAmount = hub1.getSpokeAddedAssets(
-      daiAssetId,
-      hub1.getAssetConfig(daiAssetId).feeReceiver
-    );
-    uint256 feeShares = hub1.getSpokeAddedShares(
-      daiAssetId,
-      hub1.getAssetConfig(daiAssetId).feeReceiver
-    );
 
     // removable amount should exceed initial added amount due to accrued interest
     assertTrue(removeAmount > addAmount);
@@ -246,12 +228,13 @@ contract HubRemoveTest is HubBase {
     asset = getAssetPosition(hub1, daiAssetId);
 
     // hub
-    assertApproxEqAbs(asset.addedAmount, feeAmount, 1, 'asset addedAmount');
-    assertEq(asset.addedShares, feeShares, 'asset addedShares');
+    assertApproxEqAbs(asset.addedAmount, 0, 1, 'asset addedAmount');
+    assertEq(asset.addedShares, 0, 'asset addedShares');
     assertApproxEqAbs(asset.liquidity, initialLiquidity - removeAmount, 1, 'dai liquidity');
     assertEq(asset.drawn, 0, 'dai drawn');
     assertEq(asset.premium, 0, 'dai premium');
     assertEq(asset.lastUpdateTimestamp, vm.getBlockTimestamp(), 'dai lastUpdateTimestamp');
+    _assertHubLiquidity(hub1, daiAssetId, 'hub1.remove');
     // spoke1
     assertEq(spokePosition1.addedShares, 0, 'spoke1 addedShares');
     assertEq(spokePosition1.addedAmount, 0, 'spoke1 addedAmount');
@@ -273,8 +256,6 @@ contract HubRemoveTest is HubBase {
 
     drawAmount = bound(drawAmount, 1, daiAmount); // within added dai amount
     skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
-
-    uint256 lastUpdateTimestamp = vm.getBlockTimestamp();
 
     // add and draw dai liquidity to accrue interest
     // add from spoke2, draw from spoke1
@@ -325,14 +306,6 @@ contract HubRemoveTest is HubBase {
 
     uint256 removeAmount = hub1.getSpokeAddedAssets(daiAssetId, address(spoke2));
     uint256 daiBalanceBefore = tokenList.dai.balanceOf(bob);
-    uint256 feeAmount = hub1.getSpokeAddedAssets(
-      daiAssetId,
-      hub1.getAssetConfig(daiAssetId).feeReceiver
-    );
-    uint256 feeShares = hub1.getSpokeAddedShares(
-      daiAssetId,
-      hub1.getAssetConfig(daiAssetId).feeReceiver
-    );
 
     // bob removes all possible liquidity
     // some has gone to feeReceiver
@@ -344,17 +317,18 @@ contract HubRemoveTest is HubBase {
     asset = getAssetPosition(hub1, daiAssetId);
 
     // hub
-    assertApproxEqAbs(asset.addedAmount, feeAmount, 1, 'hub addedAmount');
-    assertEq(asset.addedShares, feeShares, 'hub addedShares');
+    assertApproxEqAbs(asset.addedAmount, 0, 1, 'hub addedAmount');
+    assertEq(asset.addedShares, 0, 'hub addedShares');
     assertApproxEqAbs(
       asset.liquidity,
-      feeAmount + _calculateBurntInterest(hub1, daiAssetId),
+      _calculateBurntInterest(hub1, daiAssetId) + hub1.getAsset(daiAssetId).realizedFees,
       1,
       'dai liquidity'
     );
     assertEq(asset.drawn, 0, 'dai drawn');
     assertEq(asset.premium, 0, 'dai premium');
     assertEq(asset.lastUpdateTimestamp, vm.getBlockTimestamp(), 'dai lastUpdateTimestamp');
+    _assertHubLiquidity(hub1, daiAssetId, 'hub1.remove');
     // spoke1
     assertEq(spokePosition1.addedShares, 0, 'spoke1 addedShares');
     assertEq(spokePosition1.addedAmount, 0, 'spoke1 addedAmount');
@@ -533,15 +507,15 @@ contract HubRemoveTest is HubBase {
     hub1.remove(daiAssetId, 0, alice);
   }
 
-  function test_remove_revertsWith_SpokePaused() public {
-    _updateSpokePaused(hub1, daiAssetId, address(spoke1), true);
-    vm.expectRevert(IHub.SpokePaused.selector);
+  function test_remove_revertsWith_SpokeHalted() public {
+    _updateSpokeHalted(hub1, daiAssetId, address(spoke1), true);
+    vm.expectRevert(IHub.SpokeHalted.selector);
     vm.prank(address(spoke1));
     hub1.remove(daiAssetId, 100e18, alice);
   }
 
   function test_remove_revertsWith_SpokeNotActive() public {
-    updateSpokeActive(hub1, daiAssetId, address(spoke1), false);
+    _updateSpokeActive(hub1, daiAssetId, address(spoke1), false);
     vm.expectRevert(IHub.SpokeNotActive.selector);
     vm.prank(address(spoke1));
     hub1.remove(daiAssetId, 100e18, alice);

@@ -41,14 +41,14 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
     vm.assume(bobDebt.premiumDebt > 1);
     uint256 daiRepayAmount = vm.randomUint(1, bobDebt.premiumDebt - 1);
 
-    _calculateExactRestoreAmount(
+    (uint256 baseRestored, uint256 premiumRestored) = _calculateExactRestoreAmount(
       bobDebt.drawnDebt,
       bobDebt.premiumDebt,
       daiRepayAmount,
       daiAssetId
     );
 
-    IHubBase.PremiumDelta memory expectedPremiumDelta = _getExpectedPremiumDelta(
+    IHubBase.PremiumDelta memory expectedPremiumDelta = _getExpectedPremiumDeltaForRestore(
       spoke1,
       bob,
       _daiReserveId(spoke1),
@@ -57,7 +57,14 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
 
     TestReturnValues memory returnValues;
     vm.expectEmit(address(spoke1));
-    emit ISpokeBase.Repay(_daiReserveId(spoke1), bob, bob, 0, expectedPremiumDelta);
+    emit ISpokeBase.Repay(
+      _daiReserveId(spoke1),
+      bob,
+      bob,
+      0,
+      baseRestored + premiumRestored,
+      expectedPremiumDelta
+    );
     vm.prank(bob);
     (returnValues.shares, returnValues.amount) = spoke1.repay(
       _daiReserveId(spoke1),
@@ -348,7 +355,7 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
       daiAssetId
     );
 
-    IHubBase.PremiumDelta memory expectedPremiumDelta = _getExpectedPremiumDelta(
+    IHubBase.PremiumDelta memory expectedPremiumDelta = _getExpectedPremiumDeltaForRestore(
       spoke1,
       bob,
       _daiReserveId(spoke1),
@@ -362,7 +369,8 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
     // Repay
     TestReturnValues memory returnValues;
     vm.expectEmit(address(spoke1));
-    emit ISpokeBase.Repay(_daiReserveId(spoke1), bob, bob, 0, expectedPremiumDelta);
+    // 0 drawn shares restored
+    emit ISpokeBase.Repay(_daiReserveId(spoke1), bob, bob, 0, repayAmount, expectedPremiumDelta);
     vm.prank(bob);
     (returnValues.shares, returnValues.amount) = spoke1.repay(
       _daiReserveId(spoke1),
@@ -476,7 +484,7 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
 
     TestReturnValues memory returnValues;
     {
-      IHubBase.PremiumDelta memory expectedPremiumDelta = _getExpectedPremiumDelta(
+      IHubBase.PremiumDelta memory expectedPremiumDelta = _getExpectedPremiumDeltaForRestore(
         spoke1,
         bob,
         _daiReserveId(spoke1),
@@ -489,6 +497,7 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
         bob,
         bob,
         hub1.previewRestoreByAssets(daiAssetId, baseRestored),
+        daiRepayAmount,
         expectedPremiumDelta
       );
     }
@@ -586,7 +595,7 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
     uint256 daiRepayAmount = bobDaiBefore.drawnDebt - daiBorrowAmount;
     assertGt(daiRepayAmount, 0); // interest is not zero
 
-    IHubBase.PremiumDelta memory expectedPremiumDelta = _getExpectedPremiumDelta(
+    IHubBase.PremiumDelta memory expectedPremiumDelta = _getExpectedPremiumDeltaForRestore(
       spoke1,
       bob,
       _daiReserveId(spoke1),
@@ -600,6 +609,7 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
       bob,
       bob,
       hub1.previewRestoreByAssets(daiAssetId, daiRepayAmount),
+      daiRepayAmount,
       expectedPremiumDelta
     );
     vm.prank(bob);

@@ -8,7 +8,7 @@ contract LiquidationLogicLiquidationBonusTest is LiquidationLogicBaseTest {
   using PercentageMath for uint256;
   using SafeCast for uint256;
 
-  function test_calculateLiquidationBonus_MinBonusDueToRounding() public {
+  function test_calculateLiquidationBonus_MinBonusDueToRounding() public view {
     uint256 liquidationBonus = liquidationLogicWrapper.calculateLiquidationBonus({
       healthFactorForMaxBonus: 0.8e18,
       liquidationBonusFactor: 50_00,
@@ -18,7 +18,7 @@ contract LiquidationLogicLiquidationBonusTest is LiquidationLogicBaseTest {
     assertEq(liquidationBonus, 100_00 + 5_00);
   }
 
-  function test_calculateLiquidationBonus_PartialBonus() public {
+  function test_calculateLiquidationBonus_PartialBonus() public view {
     uint256 liquidationBonus = liquidationLogicWrapper.calculateLiquidationBonus({
       healthFactorForMaxBonus: 0.8e18,
       liquidationBonusFactor: 50_00,

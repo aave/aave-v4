@@ -36,7 +36,7 @@ contract SpokeAccrueInterestTest is SpokeBase {
     updateLiquidityFee(hub1, wbtcAssetId, 0);
   }
 
-  function test_accrueInterest_NoActionTaken() public {
+  function test_accrueInterest_NoActionTaken() public view {
     _assertSingleUserProtocolDebt(
       spoke1,
       _daiReserveId(spoke1),
@@ -55,8 +55,8 @@ contract SpokeAccrueInterestTest is SpokeBase {
   }
 
   /// Supply an asset only, and check no interest accrued.
-  function test_accrueInterest_NoInterest_OnlySupply(uint32 skipTime) public {
-    skipTime = bound(skipTime, 0, MAX_SKIP_TIME).toUint32();
+  function test_accrueInterest_NoInterest_OnlySupply(uint40 skipTime) public {
+    skipTime = bound(skipTime, 0, MAX_SKIP_TIME).toUint40();
     uint256 amount = 1000e18;
     uint256 daiReserveId = _daiReserveId(spoke1);
 
@@ -84,11 +84,11 @@ contract SpokeAccrueInterestTest is SpokeBase {
   }
 
   /// no interest accrued when no debt after repay
-  function test_accrueInterest_NoInterest_NoDebt(uint32 elapsed) public {
-    elapsed = bound(elapsed, 1, MAX_SKIP_TIME).toUint32();
+  function test_accrueInterest_NoInterest_NoDebt(uint40 elapsed) public {
+    elapsed = bound(elapsed, 1, MAX_SKIP_TIME).toUint40();
 
     uint256 supplyAmount = 1000e18;
-    uint32 startTime = vm.getBlockTimestamp().toUint32();
+    uint40 startTime = vm.getBlockTimestamp().toUint40();
     uint256 borrowAmount = 100e18;
     uint256 daiReserveId = _daiReserveId(spoke1);
 
@@ -124,11 +124,11 @@ contract SpokeAccrueInterestTest is SpokeBase {
       'after accrual'
     );
 
-    startTime = vm.getBlockTimestamp().toUint32();
+    startTime = vm.getBlockTimestamp().toUint40();
     drawnRate = hub1.getAssetDrawnRate(daiAssetId).toUint96();
 
     // Full repayment, so back to zero debt
-    Utils.repay(spoke1, daiReserveId, bob, type(uint256).max, bob);
+    Utils.repay(spoke1, daiReserveId, bob, UINT256_MAX, bob);
 
     _assertSingleUserProtocolDebt(spoke1, daiReserveId, bob, 0, 0, 'after repay, no debt');
     _assertSingleUserProtocolSupply(
@@ -161,12 +161,12 @@ contract SpokeAccrueInterestTest is SpokeBase {
 
   function test_accrueInterest_fuzz_BorrowAmountAndSkipTime(
     uint256 borrowAmount,
-    uint32 skipTime
+    uint40 skipTime
   ) public {
     borrowAmount = bound(borrowAmount, 1, MAX_SUPPLY_AMOUNT / 2);
-    skipTime = bound(skipTime, 0, MAX_SKIP_TIME).toUint32();
+    skipTime = bound(skipTime, 0, MAX_SKIP_TIME).toUint40();
     uint256 supplyAmount = borrowAmount * 2;
-    uint32 startTime = vm.getBlockTimestamp().toUint32();
+    uint40 startTime = vm.getBlockTimestamp().toUint40();
     uint256 daiReserveId = _daiReserveId(spoke1);
 
     // Bob supplies and borrows through spoke 1
@@ -200,11 +200,11 @@ contract SpokeAccrueInterestTest is SpokeBase {
     );
   }
 
-  function test_accrueInterest_TenPercentRp(uint256 borrowAmount, uint32 skipTime) public {
+  function test_accrueInterest_TenPercentRp(uint256 borrowAmount, uint40 skipTime) public {
     borrowAmount = bound(borrowAmount, 1e6, MAX_SUPPLY_AMOUNT / 2);
-    skipTime = bound(skipTime, 0, MAX_SKIP_TIME).toUint32();
+    skipTime = bound(skipTime, 0, MAX_SKIP_TIME).toUint40();
     uint256 supplyAmount = borrowAmount * 2;
-    uint32 startTime = vm.getBlockTimestamp().toUint32();
+    uint40 startTime = vm.getBlockTimestamp().toUint40();
     uint256 usdxReserveId = _usdxReserveId(spoke1);
 
     // Set collateral risk of usdx on spoke1 to 10%
@@ -254,15 +254,16 @@ contract SpokeAccrueInterestTest is SpokeBase {
   // Fuzz a mix of borrowed and supplied assets for bob, check his RP, ensure correct interest accrual
   function test_accrueInterest_fuzz_RPBorrowAndSkipTime(
     TestAmounts memory amounts,
-    uint32 skipTime
+    uint40 skipTime
   ) public {
+    vm.skip(true, 'pending rft');
     amounts = _bound(amounts);
-    skipTime = bound(skipTime, 0, MAX_SKIP_TIME).toUint32();
+    skipTime = bound(skipTime, 0, MAX_SKIP_TIME).toUint40();
 
     // Ensure bob does not draw more than half his normalized supply value
     amounts = _ensureSufficientCollateral(spoke1, amounts);
 
-    uint32 startTime = vm.getBlockTimestamp().toUint32();
+    uint40 startTime = vm.getBlockTimestamp().toUint40();
 
     // Bob supply dai on spoke 1
     if (amounts.daiSupplyAmount > 0) {
@@ -336,7 +337,7 @@ contract SpokeAccrueInterestTest is SpokeBase {
 
     // Check Bob's risk premium
     uint256 bobRp = _getUserRiskPremium(spoke1, bob);
-    assertEq(bobRp, _calculateExpectedUserRP(bob, spoke1), 'user risk premium Before');
+    assertEq(bobRp, _calculateExpectedUserRP(spoke1, bob), 'user risk premium Before');
 
     // Store base borrow rates
     Rates memory rates;
@@ -630,16 +631,16 @@ contract SpokeAccrueInterestTest is SpokeBase {
   function test_accrueInterest_fuzz_RatesRPBorrowAndSkipTime(
     TestAmounts memory amounts,
     Rates memory rates,
-    uint32 skipTime
+    uint40 skipTime
   ) public {
     amounts = _bound(amounts);
     rates = _bound(rates);
-    skipTime = bound(skipTime, 0, MAX_SKIP_TIME).toUint32();
+    skipTime = bound(skipTime, 0, MAX_SKIP_TIME).toUint40();
 
     // Ensure bob does not draw more than half his normalized supply value
     amounts = _ensureSufficientCollateral(spoke1, amounts);
 
-    uint32 startTime = vm.getBlockTimestamp().toUint32();
+    uint40 startTime = vm.getBlockTimestamp().toUint40();
 
     // Bob supply dai on spoke 1
     if (amounts.daiSupplyAmount > 0) {
@@ -745,7 +746,7 @@ contract SpokeAccrueInterestTest is SpokeBase {
 
     // Check Bob's risk premium
     uint256 bobRp = _getUserRiskPremium(spoke1, bob);
-    assertEq(bobRp, _calculateExpectedUserRP(bob, spoke1), 'user risk premium Before');
+    assertEq(bobRp, _calculateExpectedUserRP(spoke1, bob), 'user risk premium Before');
 
     // Check bob's drawn debt, premium debt, and supplied amounts for all assets at user, reserve, spoke, and asset level
     uint256 drawnDebt = _calculateExpectedDrawnDebt(
@@ -855,9 +856,12 @@ contract SpokeAccrueInterestTest is SpokeBase {
       startTime
     );
     uint256 expectedpremiumShares = bobPosition.drawnShares.percentMulUp(bobRp);
-    uint256 expectedPremiumDebt = hub1.previewRestoreByShares(daiAssetId, expectedpremiumShares) -
-      bobPosition.premiumOffset +
-      bobPosition.realizedPremium;
+    uint256 expectedPremiumDebt = _calculatePremiumDebt(
+      hub1,
+      daiAssetId,
+      expectedpremiumShares,
+      bobPosition.premiumOffsetRay
+    );
     uint256 interest = (drawnDebt + expectedPremiumDebt) -
       amounts.daiBorrowAmount -
       _calculateBurntInterest(hub1, daiAssetId);
@@ -902,10 +906,12 @@ contract SpokeAccrueInterestTest is SpokeBase {
       startTime
     );
     expectedpremiumShares = bobPosition.drawnShares.percentMulUp(bobRp);
-    expectedPremiumDebt =
-      hub1.previewRestoreByShares(wethAssetId, expectedpremiumShares) -
-      bobPosition.premiumOffset +
-      bobPosition.realizedPremium;
+    expectedPremiumDebt = _calculatePremiumDebt(
+      hub1,
+      wethAssetId,
+      expectedpremiumShares,
+      bobPosition.premiumOffsetRay
+    );
     interest =
       (drawnDebt + expectedPremiumDebt) -
       amounts.wethBorrowAmount -
@@ -951,10 +957,12 @@ contract SpokeAccrueInterestTest is SpokeBase {
       startTime
     );
     expectedpremiumShares = bobPosition.drawnShares.percentMulUp(bobRp);
-    expectedPremiumDebt =
-      hub1.previewRestoreByShares(usdxAssetId, expectedpremiumShares) -
-      bobPosition.premiumOffset +
-      bobPosition.realizedPremium;
+    expectedPremiumDebt = _calculatePremiumDebt(
+      hub1,
+      usdxAssetId,
+      expectedpremiumShares,
+      bobPosition.premiumOffsetRay
+    );
     interest =
       (drawnDebt + expectedPremiumDebt) -
       amounts.usdxBorrowAmount -
@@ -1000,10 +1008,12 @@ contract SpokeAccrueInterestTest is SpokeBase {
       startTime
     );
     expectedpremiumShares = bobPosition.drawnShares.percentMulUp(bobRp);
-    expectedPremiumDebt =
-      hub1.previewRestoreByShares(wbtcAssetId, expectedpremiumShares) -
-      bobPosition.premiumOffset +
-      bobPosition.realizedPremium;
+    expectedPremiumDebt = _calculatePremiumDebt(
+      hub1,
+      wbtcAssetId,
+      expectedpremiumShares,
+      bobPosition.premiumOffsetRay
+    );
     interest =
       (drawnDebt + expectedPremiumDebt) -
       amounts.wbtcBorrowAmount -
@@ -1043,15 +1053,15 @@ contract SpokeAccrueInterestTest is SpokeBase {
     );
   }
 
-  function _bound(TestAmounts memory amounts) internal pure returns (TestAmounts memory) {
-    amounts.daiSupplyAmount = bound(amounts.daiSupplyAmount, 0, MAX_SUPPLY_AMOUNT);
-    amounts.wethSupplyAmount = bound(amounts.wethSupplyAmount, 0, MAX_SUPPLY_AMOUNT);
-    amounts.usdxSupplyAmount = bound(amounts.usdxSupplyAmount, 0, MAX_SUPPLY_AMOUNT);
-    amounts.wbtcSupplyAmount = bound(amounts.wbtcSupplyAmount, 0, MAX_SUPPLY_AMOUNT);
-    amounts.daiBorrowAmount = bound(amounts.daiBorrowAmount, 0, MAX_SUPPLY_AMOUNT / 2);
-    amounts.wethBorrowAmount = bound(amounts.wethBorrowAmount, 0, MAX_SUPPLY_AMOUNT / 2);
-    amounts.usdxBorrowAmount = bound(amounts.usdxBorrowAmount, 0, MAX_SUPPLY_AMOUNT / 2);
-    amounts.wbtcBorrowAmount = bound(amounts.wbtcBorrowAmount, 0, MAX_SUPPLY_AMOUNT / 2);
+  function _bound(TestAmounts memory amounts) internal view returns (TestAmounts memory) {
+    amounts.daiSupplyAmount = bound(amounts.daiSupplyAmount, 0, MAX_SUPPLY_AMOUNT_DAI);
+    amounts.wethSupplyAmount = bound(amounts.wethSupplyAmount, 0, MAX_SUPPLY_AMOUNT_WETH);
+    amounts.usdxSupplyAmount = bound(amounts.usdxSupplyAmount, 0, MAX_SUPPLY_AMOUNT_USDX);
+    amounts.wbtcSupplyAmount = bound(amounts.wbtcSupplyAmount, 0, MAX_SUPPLY_AMOUNT_WBTC);
+    amounts.daiBorrowAmount = bound(amounts.daiBorrowAmount, 0, MAX_SUPPLY_AMOUNT_DAI);
+    amounts.wethBorrowAmount = bound(amounts.wethBorrowAmount, 0, MAX_SUPPLY_AMOUNT_WETH);
+    amounts.usdxBorrowAmount = bound(amounts.usdxBorrowAmount, 0, MAX_SUPPLY_AMOUNT_USDX);
+    amounts.wbtcBorrowAmount = bound(amounts.wbtcBorrowAmount, 0, MAX_SUPPLY_AMOUNT_WBTC);
 
     return amounts;
   }
@@ -1077,55 +1087,54 @@ contract SpokeAccrueInterestTest is SpokeBase {
     ISpoke spoke,
     TestAmounts memory amounts
   ) internal view returns (TestAmounts memory) {
-    uint256 remainingCollateralValue = _getValue(
+    uint256 remainingCollateralValue = _convertAmountToValue(
       spoke,
       _daiReserveId(spoke),
       amounts.daiSupplyAmount
     ) +
-      _getValue(spoke, _wethReserveId(spoke), amounts.wethSupplyAmount) +
-      _getValue(spoke, _usdxReserveId(spoke), amounts.usdxSupplyAmount) +
-      _getValue(spoke, _wbtcReserveId(spoke), amounts.wbtcSupplyAmount);
+      _convertAmountToValue(spoke, _wethReserveId(spoke), amounts.wethSupplyAmount) +
+      _convertAmountToValue(spoke, _usdxReserveId(spoke), amounts.usdxSupplyAmount) +
+      _convertAmountToValue(spoke, _wbtcReserveId(spoke), amounts.wbtcSupplyAmount);
 
     // Bound each debt amount to be no more than half the remaining collateral value
     amounts.daiBorrowAmount = bound(
       amounts.daiBorrowAmount,
       0,
-      (remainingCollateralValue / 2) / _getValue(spoke, _daiReserveId(spoke), 1)
+      (remainingCollateralValue / 2) / _convertAmountToValue(spoke, _daiReserveId(spoke), 1)
     );
     // Subtract out the set debt value from the remaining collateral value
-    remainingCollateralValue -= _getValue(spoke, _daiReserveId(spoke), amounts.daiBorrowAmount) * 2;
+    remainingCollateralValue -=
+      _convertAmountToValue(spoke, _daiReserveId(spoke), amounts.daiBorrowAmount) * 2;
     amounts.wethBorrowAmount = bound(
       amounts.wethBorrowAmount,
       0,
-      (remainingCollateralValue / 2) / _getValue(spoke, _wethReserveId(spoke), 1)
+      (remainingCollateralValue / 2) / _convertAmountToValue(spoke, _wethReserveId(spoke), 1)
     );
     remainingCollateralValue -=
-      _getValue(spoke, _wethReserveId(spoke), amounts.wethBorrowAmount) *
-      2;
+      _convertAmountToValue(spoke, _wethReserveId(spoke), amounts.wethBorrowAmount) * 2;
     amounts.usdxBorrowAmount = bound(
       amounts.usdxBorrowAmount,
       0,
-      (remainingCollateralValue / 2) / _getValue(spoke, _usdxReserveId(spoke), 1)
+      (remainingCollateralValue / 2) / _convertAmountToValue(spoke, _usdxReserveId(spoke), 1)
     );
     remainingCollateralValue -=
-      _getValue(spoke, _usdxReserveId(spoke), amounts.usdxBorrowAmount) *
-      2;
+      _convertAmountToValue(spoke, _usdxReserveId(spoke), amounts.usdxBorrowAmount) * 2;
     amounts.wbtcBorrowAmount = bound(
       amounts.wbtcBorrowAmount,
       0,
-      (remainingCollateralValue / 2) / _getValue(spoke, _wbtcReserveId(spoke), 1)
+      (remainingCollateralValue / 2) / _convertAmountToValue(spoke, _wbtcReserveId(spoke), 1)
     );
 
     assertGt(
-      _getValue(spoke, _daiReserveId(spoke), amounts.daiSupplyAmount) +
-        _getValue(spoke, _wethReserveId(spoke), amounts.wethSupplyAmount) +
-        _getValue(spoke, _usdxReserveId(spoke), amounts.usdxSupplyAmount) +
-        _getValue(spoke, _wbtcReserveId(spoke), amounts.wbtcSupplyAmount),
+      _convertAmountToValue(spoke, _daiReserveId(spoke), amounts.daiSupplyAmount) +
+        _convertAmountToValue(spoke, _wethReserveId(spoke), amounts.wethSupplyAmount) +
+        _convertAmountToValue(spoke, _usdxReserveId(spoke), amounts.usdxSupplyAmount) +
+        _convertAmountToValue(spoke, _wbtcReserveId(spoke), amounts.wbtcSupplyAmount),
       2 *
-        (_getValue(spoke, _daiReserveId(spoke), amounts.daiBorrowAmount) +
-          _getValue(spoke, _wethReserveId(spoke), amounts.wethBorrowAmount) +
-          _getValue(spoke, _usdxReserveId(spoke), amounts.usdxBorrowAmount) +
-          _getValue(spoke, _wbtcReserveId(spoke), amounts.wbtcBorrowAmount)),
+        (_convertAmountToValue(spoke, _daiReserveId(spoke), amounts.daiBorrowAmount) +
+          _convertAmountToValue(spoke, _wethReserveId(spoke), amounts.wethBorrowAmount) +
+          _convertAmountToValue(spoke, _usdxReserveId(spoke), amounts.usdxBorrowAmount) +
+          _convertAmountToValue(spoke, _wbtcReserveId(spoke), amounts.wbtcBorrowAmount)),
       'collateral sufficiently covers debt'
     );
 

@@ -22,23 +22,15 @@ contract SpokeOperations_Gas_Tests is SpokeBase {
     vm.startPrank(alice);
     spoke.supply(reserveId.usdx, 1000e6, alice);
     vm.snapshotGasLastCall(NAMESPACE, 'supply: 0 borrows, collateral disabled');
-    skip(100);
+
+    spoke.supply(reserveId.usdx, 1000e6, alice);
+    vm.snapshotGasLastCall(NAMESPACE, 'supply: second action, same reserve');
+
+    spoke.supply(reserveId.weth, 1000e18, alice);
 
     spoke.setUsingAsCollateral(reserveId.weth, true, alice);
     spoke.supply(reserveId.weth, 1e18, alice);
     vm.snapshotGasLastCall(NAMESPACE, 'supply: 0 borrows, collateral enabled');
-    skip(100);
-
-    spoke.supply(reserveId.weth, 1e18, alice);
-    vm.snapshotGasLastCall(NAMESPACE, 'supply: second action, same reserve');
-    skip(100);
-
-    spoke.setUsingAsCollateral(reserveId.usdx, true, alice);
-    spoke.borrow(reserveId.dai, 100e18, alice);
-    skip(100);
-
-    spoke.supply(reserveId.wbtc, 1e18, alice);
-    vm.snapshotGasLastCall(NAMESPACE, 'supply: 1 borrow');
     vm.stopPrank();
   }
 
@@ -50,14 +42,12 @@ contract SpokeOperations_Gas_Tests is SpokeBase {
     spoke.setUsingAsCollateral(reserveId.usdx, true, alice);
     vm.snapshotGasLastCall(NAMESPACE, 'usingAsCollateral: 0 borrows, enable');
 
-    spoke.supply(reserveId.usdx, 1000e6, alice);
+    spoke.supply(reserveId.usdx, 10000e6, alice);
     spoke.borrow(reserveId.dai, 100e18, alice);
     skip(100);
 
-    spoke.setUsingAsCollateral(reserveId.usdx, true, alice);
-    vm.snapshotGasLastCall(NAMESPACE, 'usingAsCollateral: 1 borrow, enable');
-
     spoke.setUsingAsCollateral(reserveId.weth, true, alice);
+    vm.snapshotGasLastCall(NAMESPACE, 'usingAsCollateral: 1 borrow, enable');
 
     spoke.setUsingAsCollateral(reserveId.weth, false, alice);
     vm.snapshotGasLastCall(NAMESPACE, 'usingAsCollateral: 1 borrow, disable');
@@ -94,13 +84,9 @@ contract SpokeOperations_Gas_Tests is SpokeBase {
     vm.snapshotGasLastCall(NAMESPACE, 'withdraw: 1 borrow, partial');
     spoke.borrow(reserveId.weth, 1e18, alice);
 
-    skip(100);
-
     spoke.withdraw(reserveId.usdx, 1e6, alice);
     vm.snapshotGasLastCall(NAMESPACE, 'withdraw: 2 borrows, partial');
     spoke.supply(reserveId.weth, 1000e18, alice);
-
-    skip(100);
 
     spoke.withdraw(reserveId.weth, UINT256_MAX, alice);
     vm.snapshotGasLastCall(NAMESPACE, 'withdraw: non collateral');
@@ -112,6 +98,8 @@ contract SpokeOperations_Gas_Tests is SpokeBase {
     spoke.supply(reserveId.dai, 1000e18, bob);
     spoke.setUsingAsCollateral(reserveId.dai, true, bob);
     spoke.borrow(reserveId.dai, 500e18, bob);
+    skip(100);
+    spoke.borrow(reserveId.dai, 1e18, bob);
     vm.stopPrank();
 
     skip(100);
@@ -147,54 +135,51 @@ contract SpokeOperations_Gas_Tests is SpokeBase {
     vm.stopPrank();
   }
 
-  function test_liquidation() public {
-    _updateMaxLiquidationBonus(spoke, _usdxReserveId(spoke), 105_00);
-    _updateLiquidationFee(spoke, _usdxReserveId(spoke), 10_00);
-
-    vm.prank(bob);
-    spoke.supply(reserveId.dai, 1_000_000e18, bob);
-
-    vm.startPrank(alice);
-    spoke.supply(reserveId.usdx, 1_000_000e6, alice);
-    spoke.setUsingAsCollateral(reserveId.usdx, true, alice);
-    vm.stopPrank();
-
-    _borrowToBeAtHf(spoke, alice, reserveId.dai, 0.9e18);
-
-    skip(100);
+  function test_liquidation_partial() public {
+    _liquidationSetup(85_00);
 
     vm.startPrank(bob);
     spoke.liquidationCall(reserveId.usdx, reserveId.dai, alice, 100_000e18, false);
     vm.snapshotGasLastCall(NAMESPACE, 'liquidationCall: partial');
+    vm.stopPrank();
+  }
 
+  function test_liquidation_full() public {
+    _liquidationSetup(85_00);
+
+    vm.startPrank(bob);
     spoke.liquidationCall(reserveId.usdx, reserveId.dai, alice, UINT256_MAX, false);
     vm.snapshotGasLastCall(NAMESPACE, 'liquidationCall: full');
 
     vm.stopPrank();
   }
 
-  function test_liquidation_receiveShares() public {
-    _updateMaxLiquidationBonus(spoke, _usdxReserveId(spoke), 105_00);
-    _updateLiquidationFee(spoke, _usdxReserveId(spoke), 10_00);
-
-    vm.prank(bob);
-    spoke.supply(reserveId.dai, 1_000_000e18, bob);
-
-    vm.startPrank(alice);
-    spoke.supply(reserveId.usdx, 1_000_000e6, alice);
-    spoke.setUsingAsCollateral(reserveId.usdx, true, alice);
-    vm.stopPrank();
-
-    _borrowToBeAtHf(spoke, alice, reserveId.dai, 0.9e18);
-
-    skip(100);
+  function test_liquidation_receiveShares_partial() public {
+    _liquidationSetup(85_00);
 
     vm.startPrank(bob);
     spoke.liquidationCall(reserveId.usdx, reserveId.dai, alice, 100_000e18, true);
     vm.snapshotGasLastCall(NAMESPACE, 'liquidationCall (receiveShares): partial');
 
+    vm.stopPrank();
+  }
+
+  function test_liquidation_receiveShares_full() public {
+    _liquidationSetup(85_00);
+
+    vm.startPrank(bob);
     spoke.liquidationCall(reserveId.usdx, reserveId.dai, alice, UINT256_MAX, true);
     vm.snapshotGasLastCall(NAMESPACE, 'liquidationCall (receiveShares): full');
+
+    vm.stopPrank();
+  }
+
+  function test_liquidation_reportDeficit_full() public {
+    _liquidationSetup(45_00);
+
+    vm.startPrank(bob);
+    spoke.liquidationCall(reserveId.usdx, reserveId.dai, alice, UINT256_MAX, false);
+    vm.snapshotGasLastCall(NAMESPACE, 'liquidationCall (reportDeficit): full');
 
     vm.stopPrank();
   }
@@ -238,13 +223,10 @@ contract SpokeOperations_Gas_Tests is SpokeBase {
   }
 
   function test_multicall_ops() public {
-    vm.startPrank(alice);
-    spoke.supply(reserveId.dai, 1000e18, alice);
-    spoke.supply(reserveId.usdx, 1000e6, alice);
-    spoke.supply(reserveId.wbtc, 1e18, alice);
-    vm.stopPrank();
-    skip(100);
     vm.startPrank(bob);
+    spoke.supply(reserveId.dai, 1000e18, bob);
+    spoke.supply(reserveId.usdx, 1000e6, bob);
+    spoke.supply(reserveId.wbtc, 1e18, bob);
 
     bytes[] memory calls = new bytes[](2);
     calls[0] = abi.encodeCall(ISpokeBase.supply, (reserveId.dai, 1000e18, bob));
@@ -254,12 +236,10 @@ contract SpokeOperations_Gas_Tests is SpokeBase {
     vm.snapshotGasLastCall(NAMESPACE, 'supply + enable collateral (multicall)');
 
     // supplyWithPermit (dai)
-    IHub hub = _hub(spoke, reserveId.dai);
-    tokenList.dai.approve(address(hub), 0);
-    (, uint256 bobPk) = makeAddrAndKey('bob');
+    tokenList.dai.approve(address(spoke), 0);
     EIP712Types.Permit memory permit = EIP712Types.Permit({
       owner: bob,
-      spender: address(hub),
+      spender: address(spoke),
       value: 1000e6,
       nonce: tokenList.dai.nonces(bob),
       deadline: vm.getBlockTimestamp()
@@ -274,14 +254,12 @@ contract SpokeOperations_Gas_Tests is SpokeBase {
     vm.snapshotGasLastCall(NAMESPACE, 'permitReserve + supply (multicall)');
 
     spoke.borrow(reserveId.usdx, 500e6, bob);
-    skip(100);
 
     // repayWithPermit (usdx)
-    hub = _hub(spoke, reserveId.usdx);
-    tokenList.usdx.approve(address(hub), 0);
+    tokenList.usdx.approve(address(spoke), 0);
     permit = EIP712Types.Permit({
       owner: bob,
-      spender: address(hub),
+      spender: address(spoke),
       value: 500e6,
       nonce: tokenList.usdx.nonces(bob),
       deadline: vm.getBlockTimestamp()
@@ -295,16 +273,12 @@ contract SpokeOperations_Gas_Tests is SpokeBase {
     spoke.multicall(calls);
     vm.snapshotGasLastCall(NAMESPACE, 'permitReserve + repay (multicall)');
 
-    skip(100);
-
     // supplyWithPermitAndEnableCollateral (wbtc)
     calls = new bytes[](3);
-    hub = _hub(spoke, reserveId.wbtc);
-    tokenList.wbtc.approve(address(hub), 0);
-    (, bobPk) = makeAddrAndKey('bob');
+    tokenList.wbtc.approve(address(spoke), 0);
     permit = EIP712Types.Permit({
       owner: bob,
-      spender: address(hub),
+      spender: address(spoke),
       value: 1000e6,
       nonce: tokenList.wbtc.nonces(bob),
       deadline: vm.getBlockTimestamp()
@@ -322,60 +296,81 @@ contract SpokeOperations_Gas_Tests is SpokeBase {
     vm.stopPrank();
   }
 
-  function test_setUserPositionManagerWithSig() public {
-    (address user, uint256 userPk) = makeAddrAndKey(string(vm.randomBytes(32)));
-    vm.label(user, 'user');
-    address positionManager = vm.randomAddress();
+  function test_setUserPositionManagersWithSig() public {
+    (address user, uint256 userPk) = makeAddrAndKey('user');
+    address positionManager = makeAddr('positionManager');
     vm.prank(SPOKE_ADMIN);
     spoke.updatePositionManager(positionManager, true);
 
-    uint192 nonceKey = _randomNonceKey();
+    uint192 nonceKey = 100;
     vm.prank(user);
     spoke.useNonce(nonceKey);
 
-    EIP712Types.SetUserPositionManager memory params = EIP712Types.SetUserPositionManager({
-      positionManager: positionManager,
-      user: user,
-      approve: true,
+    ISpoke.PositionManagerUpdate[] memory updates = new ISpoke.PositionManagerUpdate[](1);
+    updates[0] = ISpoke.PositionManagerUpdate(positionManager, true);
+
+    ISpoke.SetUserPositionManagers memory p = ISpoke.SetUserPositionManagers({
+      onBehalfOf: user,
+      updates: updates,
       nonce: spoke.nonces(user, nonceKey),
-      deadline: vm.randomUint(vm.getBlockTimestamp(), MAX_SKIP_TIME)
+      deadline: vm.getBlockTimestamp()
     });
-    (uint8 v, bytes32 r, bytes32 s) = vm.sign(userPk, _getTypedDataHash(spoke, params));
+    (uint8 v, bytes32 r, bytes32 s) = vm.sign(userPk, _getTypedDataHash(spoke, p));
     bytes memory signature = abi.encodePacked(r, s, v);
 
-    spoke.setUserPositionManagerWithSig(
-      params.positionManager,
-      params.user,
-      params.approve,
-      params.nonce,
-      params.deadline,
-      signature
-    );
-    vm.snapshotGasLastCall(NAMESPACE, 'setUserPositionManagerWithSig: enable');
+    spoke.setUserPositionManagersWithSig(p, signature);
+    vm.snapshotGasLastCall(NAMESPACE, 'setUserPositionManagersWithSig: enable');
 
-    params.approve = false;
-    params.nonce = spoke.nonces(user, nonceKey);
-    (v, r, s) = vm.sign(userPk, _getTypedDataHash(spoke, params));
+    p.updates[0].approve = false;
+    p.nonce = spoke.nonces(user, nonceKey);
+    (v, r, s) = vm.sign(userPk, _getTypedDataHash(spoke, p));
     signature = abi.encodePacked(r, s, v);
 
-    spoke.setUserPositionManagerWithSig(
-      params.positionManager,
-      params.user,
-      params.approve,
-      params.nonce,
-      params.deadline,
-      signature
-    );
-    vm.snapshotGasLastCall(NAMESPACE, 'setUserPositionManagerWithSig: disable');
+    spoke.setUserPositionManagersWithSig(p, signature);
+    vm.snapshotGasLastCall(NAMESPACE, 'setUserPositionManagersWithSig: disable');
   }
 
   function _seed() internal {
     vm.startPrank(address(spoke2));
-    hub1.add(daiAssetId, 10000e18, bob);
-    hub1.add(wethAssetId, 10000e18, bob);
-    hub1.add(usdxAssetId, 10000e6, bob);
-    hub1.add(wbtcAssetId, 10000e8, bob);
+    tokenList.dai.transferFrom(bob, address(hub1), 10000e18);
+    hub1.add(daiAssetId, 10000e18);
+    tokenList.weth.transferFrom(bob, address(hub1), 1000e18);
+    hub1.add(wethAssetId, 1000e18);
+    tokenList.usdx.transferFrom(bob, address(hub1), 1000e6);
+    hub1.add(usdxAssetId, 1000e6);
+    tokenList.wbtc.transferFrom(bob, address(hub1), 1000e8);
+    hub1.add(wbtcAssetId, 1000e8);
     vm.stopPrank();
+  }
+
+  function _liquidationSetup(uint256 pricePercentage) internal {
+    _updateMaxLiquidationBonus(spoke, _usdxReserveId(spoke), 105_00);
+    _updateLiquidationFee(spoke, _usdxReserveId(spoke), 10_00);
+
+    vm.prank(bob);
+    spoke.supply(reserveId.dai, 1_000_000e18, bob);
+
+    vm.startPrank(alice);
+    spoke.supply(reserveId.usdx, 1_000_000e6, alice);
+    spoke.setUsingAsCollateral(reserveId.usdx, true, alice);
+    vm.stopPrank();
+
+    ISpoke.UserAccountData memory userAccountData = _borrowToBeLiquidatableWithPriceChange(
+      spoke,
+      alice,
+      reserveId.dai,
+      reserveId.usdx,
+      1.05e18,
+      pricePercentage
+    );
+
+    skip(100);
+
+    if (keccak256(bytes(NAMESPACE)) == keccak256(bytes('Spoke.Operations.ZeroRiskPremium'))) {
+      assertEq(userAccountData.riskPremium, 0); // rp after borrow should be 0
+    } else {
+      assertGt(userAccountData.riskPremium, 0); // rp after borrow should be non zero
+    }
   }
 }
 

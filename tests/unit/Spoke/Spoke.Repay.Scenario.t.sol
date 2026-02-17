@@ -11,12 +11,12 @@ contract SpokeRepayScenarioTest is SpokeBase {
     UserAssetInfo memory bobInfo,
     UserAssetInfo memory aliceInfo,
     UserAssetInfo memory carolInfo,
-    uint32 skipTime
+    uint40 skipTime
   ) public {
     bobInfo = _bound(bobInfo);
     aliceInfo = _bound(aliceInfo);
     carolInfo = _bound(carolInfo);
-    skipTime = bound(skipTime, 1, MAX_SKIP_TIME).toUint32();
+    skipTime = bound(skipTime, 1, MAX_SKIP_TIME).toUint40();
 
     // Assign user addresses to the structs
     bobInfo.user = bob;
@@ -63,9 +63,9 @@ contract SpokeRepayScenarioTest is SpokeBase {
       }
 
       if (usersInfo[i].usdxInfo.borrowAmount > 0) {
-        wethCollateralNeeded += _calcMinimumCollAmount(
+        wbtcCollateralNeeded += _calcMinimumCollAmount(
           spoke1,
-          _wethReserveId(spoke1),
+          _wbtcReserveId(spoke1),
           _usdxReserveId(spoke1),
           usersInfo[i].usdxInfo.borrowAmount
         );
@@ -357,11 +357,11 @@ contract SpokeRepayScenarioTest is SpokeBase {
   function test_repay_fuzz_two_users_multiple_assets(
     UserAssetInfo memory bobInfo,
     UserAssetInfo memory aliceInfo,
-    uint32 skipTime
+    uint40 skipTime
   ) public {
     bobInfo = _bound(bobInfo);
     aliceInfo = _bound(aliceInfo);
-    skipTime = bound(skipTime, 1, MAX_SKIP_TIME).toUint32();
+    skipTime = bound(skipTime, 1, MAX_SKIP_TIME).toUint40();
 
     // Assign user addresses to the structs
     bobInfo.user = bob;
@@ -407,9 +407,9 @@ contract SpokeRepayScenarioTest is SpokeBase {
       }
 
       if (usersInfo[i].usdxInfo.borrowAmount > 0) {
-        wethCollateralNeeded += _calcMinimumCollAmount(
+        wbtcCollateralNeeded += _calcMinimumCollAmount(
           spoke1,
-          _wethReserveId(spoke1),
+          _wbtcReserveId(spoke1),
           _usdxReserveId(spoke1),
           usersInfo[i].usdxInfo.borrowAmount
         );
@@ -709,7 +709,7 @@ contract SpokeRepayScenarioTest is SpokeBase {
     aliceInfo = _boundUserAction(aliceInfo);
     carolInfo = _boundUserAction(carolInfo);
 
-    skipTime = bound(skipTime, 1, MAX_SKIP_TIME).toUint32();
+    skipTime = bound(skipTime, 1, MAX_SKIP_TIME).toUint40();
 
     // Assign user addresses to the structs
     bobInfo.user = bob;
@@ -820,7 +820,7 @@ contract SpokeRepayScenarioTest is SpokeBase {
     bobInfo = _boundUserAction(bobInfo);
     aliceInfo = _boundUserAction(aliceInfo);
 
-    skipTime = bound(skipTime, 1, MAX_SKIP_TIME).toUint32();
+    skipTime = bound(skipTime, 1, MAX_SKIP_TIME).toUint40();
 
     // Assign user addresses to the structs
     bobInfo.user = bob;
@@ -926,8 +926,8 @@ contract SpokeRepayScenarioTest is SpokeBase {
     Action memory action1,
     Action memory action2
   ) public {
-    action1.skipTime = bound(action1.skipTime, 1, MAX_SKIP_TIME / 2).toUint32();
-    action2.skipTime = bound(action2.skipTime, 1, MAX_SKIP_TIME / 2).toUint32();
+    action1.skipTime = bound(action1.skipTime, 1, MAX_SKIP_TIME / 2).toUint40();
+    action2.skipTime = bound(action2.skipTime, 1, MAX_SKIP_TIME / 2).toUint40();
     action1.borrowAmount = bound(action1.borrowAmount, 1, MAX_SUPPLY_AMOUNT / 4);
     action2.borrowAmount = bound(action2.borrowAmount, 1, MAX_SUPPLY_AMOUNT / 4);
     action1.repayAmount = bound(action1.repayAmount, 1, action1.borrowAmount);
@@ -943,8 +943,7 @@ contract SpokeRepayScenarioTest is SpokeBase {
         _wethReserveId(spoke1),
         _daiReserveId(spoke1),
         action1.borrowAmount
-      ) +
-      1;
+      ) + 1;
     Utils.supplyCollateral(spoke1, _wethReserveId(spoke1), bob, action1.supplyAmount, bob);
 
     // Alice supply dai
@@ -992,7 +991,7 @@ contract SpokeRepayScenarioTest is SpokeBase {
       daiAssetId
     );
 
-    IHubBase.PremiumDelta memory expectedPremiumDelta = _getExpectedPremiumDelta(
+    IHubBase.PremiumDelta memory expectedPremiumDelta = _getExpectedPremiumDeltaForRestore(
       spoke1,
       bob,
       _daiReserveId(spoke1),
@@ -1008,6 +1007,7 @@ contract SpokeRepayScenarioTest is SpokeBase {
         bob,
         bob,
         hub1.previewRestoreByAssets(daiAssetId, baseRestored),
+        action1.repayAmount,
         expectedPremiumDelta
       );
     }
@@ -1099,7 +1099,7 @@ contract SpokeRepayScenarioTest is SpokeBase {
       daiAssetId
     );
 
-    expectedPremiumDelta = _getExpectedPremiumDelta(
+    expectedPremiumDelta = _getExpectedPremiumDeltaForRestore(
       spoke1,
       bob,
       _daiReserveId(spoke1),
@@ -1115,6 +1115,7 @@ contract SpokeRepayScenarioTest is SpokeBase {
         bob,
         bob,
         hub1.previewRestoreByAssets(daiAssetId, baseRestored),
+        action2.repayAmount,
         expectedPremiumDelta
       );
     }
@@ -1199,7 +1200,7 @@ contract SpokeRepayScenarioTest is SpokeBase {
       daiAssetId
     );
 
-    IHubBase.PremiumDelta memory expectedPremiumDelta = _getExpectedPremiumDelta(
+    IHubBase.PremiumDelta memory expectedPremiumDelta = _getExpectedPremiumDeltaForRestore(
       spoke1,
       bob,
       _daiReserveId(spoke1),
@@ -1213,6 +1214,7 @@ contract SpokeRepayScenarioTest is SpokeBase {
       bob,
       bob,
       hub1.previewRestoreByAssets(daiAssetId, baseRestored),
+      baseRestored + premiumRestored,
       expectedPremiumDelta
     );
 
@@ -1262,7 +1264,7 @@ contract SpokeRepayScenarioTest is SpokeBase {
       daiAssetId
     );
 
-    expectedPremiumDelta = _getExpectedPremiumDelta(
+    expectedPremiumDelta = _getExpectedPremiumDeltaForRestore(
       spoke1,
       bob,
       _daiReserveId(spoke1),
@@ -1276,6 +1278,7 @@ contract SpokeRepayScenarioTest is SpokeBase {
       bob,
       bob,
       hub1.previewRestoreByAssets(daiAssetId, baseRestored),
+      baseRestored + premiumRestored,
       expectedPremiumDelta
     );
 
@@ -1315,16 +1318,16 @@ contract SpokeRepayScenarioTest is SpokeBase {
   function test_repay_round_trip_borrow_repay(
     uint256 reserveId,
     uint256 userBorrowing,
-    uint32 skipTime,
+    uint40 skipTime,
     address caller,
     uint256 assets
   ) public {
     _assumeValidSupplier(caller);
     vm.assume(caller != derl);
     reserveId = bound(reserveId, 0, spoke1.getReserveCount() - 1);
-    userBorrowing = bound(userBorrowing, 0, MAX_SUPPLY_AMOUNT / 2 - 1); // Allow some buffer from borrow cap
-    skipTime = bound(skipTime, 0, MAX_SKIP_TIME).toUint32();
-    assets = bound(assets, 1, MAX_SUPPLY_AMOUNT / 2 - userBorrowing);
+    userBorrowing = bound(userBorrowing, 0, _calculateMaxSupplyAmount(spoke1, reserveId) / 2 - 1); // Allow some buffer from borrow cap
+    skipTime = bound(skipTime, 0, MAX_SKIP_TIME).toUint40();
+    assets = bound(assets, 1, _calculateMaxSupplyAmount(spoke1, reserveId) / 2 - userBorrowing);
 
     // Set up initial state of the vault by having derl borrow
     uint256 supplyAmount = _calcMinimumCollAmount(spoke1, reserveId, reserveId, userBorrowing);
@@ -1339,11 +1342,11 @@ contract SpokeRepayScenarioTest is SpokeBase {
 
     IERC20 underlying = getAssetUnderlyingByReserveId(spoke1, reserveId);
 
-    // Deal caller max collateral amount, approve hub, supply
-    supplyAmount = MAX_SUPPLY_AMOUNT - supplyAmount;
+    // Deal caller max collateral amount, approve spoke, supply
+    supplyAmount = _calculateMaxSupplyAmount(spoke1, reserveId) - supplyAmount;
     deal(address(underlying), caller, supplyAmount);
     vm.prank(caller);
-    underlying.approve(address(hub1), supplyAmount);
+    underlying.approve(address(spoke1), supplyAmount);
     Utils.supplyCollateral(spoke1, reserveId, caller, supplyAmount, caller);
 
     // Borrow
@@ -1354,7 +1357,7 @@ contract SpokeRepayScenarioTest is SpokeBase {
     // Repay
     uint256 shares2 = hub1.previewRestoreByAssets(reserve.assetId, assets);
     deal(address(underlying), caller, assets);
-    underlying.approve(address(hub1), assets);
+    underlying.approve(address(spoke1), assets);
     spoke1.repay(reserveId, assets, caller);
     vm.stopPrank();
 
@@ -1368,16 +1371,16 @@ contract SpokeRepayScenarioTest is SpokeBase {
     uint256 reserveId,
     uint256 userBorrowing,
     uint256 callerStartingDebt,
-    uint32 skipTime,
+    uint40 skipTime,
     address caller,
     uint256 assets
   ) public {
-    uint256 MAX_BORROW_AMOUNT = MAX_SUPPLY_AMOUNT / 2;
     _assumeValidSupplier(caller);
     vm.assume(caller != derl);
     reserveId = bound(reserveId, 0, spoke1.getReserveCount() - 1);
+    uint256 MAX_BORROW_AMOUNT = _calculateMaxSupplyAmount(spoke1, reserveId) / 2;
     userBorrowing = bound(userBorrowing, 0, MAX_BORROW_AMOUNT - 2); // Allow some buffer from borrow cap
-    skipTime = bound(skipTime, 0, MAX_SKIP_TIME).toUint32();
+    skipTime = bound(skipTime, 0, MAX_SKIP_TIME).toUint40();
     assets = bound(assets, 1, MAX_BORROW_AMOUNT - userBorrowing - 1); // Allow some buffer from borrow cap
     callerStartingDebt = bound(callerStartingDebt, 1, MAX_BORROW_AMOUNT - userBorrowing - assets);
 
@@ -1395,10 +1398,10 @@ contract SpokeRepayScenarioTest is SpokeBase {
     IERC20 underlying = getAssetUnderlyingByReserveId(spoke1, reserveId);
 
     // Set up caller initial debt position
-    supplyAmount = MAX_SUPPLY_AMOUNT - supplyAmount;
+    supplyAmount = _calculateMaxSupplyAmount(spoke1, reserveId) - supplyAmount;
     deal(address(underlying), caller, supplyAmount);
     vm.prank(caller);
-    underlying.approve(address(hub1), supplyAmount);
+    underlying.approve(address(spoke1), supplyAmount);
     Utils.supplyCollateral(spoke1, reserveId, caller, supplyAmount, caller);
     Utils.borrow(spoke1, reserveId, caller, callerStartingDebt, caller);
 
@@ -1406,7 +1409,7 @@ contract SpokeRepayScenarioTest is SpokeBase {
     uint256 shares1 = hub1.previewRestoreByAssets(reserve.assetId, assets);
     deal(address(underlying), caller, assets);
     vm.startPrank(caller);
-    underlying.approve(address(hub1), assets);
+    underlying.approve(address(spoke1), assets);
     spoke1.repay(reserveId, assets, caller);
 
     // Borrow

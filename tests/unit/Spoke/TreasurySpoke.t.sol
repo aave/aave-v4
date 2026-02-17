@@ -87,12 +87,19 @@ contract TreasurySpokeTest is SpokeBase {
     _openDebtPosition(spoke1, getReserveIdByAssetId(spoke1, hub1, daiAssetId), 100e18, true);
 
     skip(365 days);
+    assertEq(hub1.getAsset(daiAssetId).realizedFees, 0, 'fees'); // fees not yet accrued
 
-    assertGe(treasurySpoke.getSuppliedShares(address(hub1), daiAssetId), 0);
-    uint256 fees = treasurySpoke.getSuppliedAmount(address(hub1), daiAssetId);
+    uint256 expectedFeeAmount = _calcUnrealizedFees(hub1, daiAssetId);
+    Utils.mintFeeShares(hub1, daiAssetId, ADMIN);
+
+    assertEq(hub1.getAsset(daiAssetId).realizedFees, 0, 'realized fees after minting');
+    assertGe(
+      treasurySpoke.getSuppliedShares(address(hub1), daiAssetId),
+      hub1.previewAddByAssets(daiAssetId, expectedFeeAmount)
+    );
 
     vm.prank(TREASURY_ADMIN);
-    treasurySpoke.withdraw(address(hub1), daiAssetId, fees, TREASURY_ADMIN);
+    treasurySpoke.withdraw(address(hub1), daiAssetId, UINT256_MAX, address(treasurySpoke));
   }
 
   /// treasury supplies to earn interest and fees
@@ -126,7 +133,7 @@ contract TreasurySpokeTest is SpokeBase {
     treasurySpoke.transfer(vm.randomAddress(), vm.randomAddress(), 1);
   }
 
-  function test_transfer_revertsWith_InsufficientBalance(uint256 amount) public {
+  function test_transfer_revertsWith_ERC20InsufficientBalance(uint256 amount) public {
     vm.assume(amount > 0);
     address token = address(new MockERC20());
 
@@ -145,7 +152,7 @@ contract TreasurySpokeTest is SpokeBase {
   function test_transfer_fuzz(address recipient, uint256 amount, uint256 transferAmount) public {
     vm.assume(recipient != address(0));
     vm.assume(recipient != address(treasurySpoke));
-    amount = bound(amount, 1, type(uint128).max);
+    amount = bound(amount, 1, type(uint120).max);
     transferAmount = bound(transferAmount, 1, amount);
 
     _testToken.mint(address(treasurySpoke), amount);
@@ -168,9 +175,9 @@ contract TreasurySpokeTest is SpokeBase {
     uint256 amount,
     uint256 skipTime
   ) public {
-    amount = bound(amount, 1, MAX_SUPPLY_AMOUNT);
-    skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
     reserveId = bound(reserveId, 0, spoke1.getReserveCount() - 1);
+    amount = bound(amount, 1, _calculateMaxSupplyAmount(spoke1, reserveId));
+    skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
 
     uint256 assetId = spoke1.getReserve(reserveId).assetId;
     updateLiquidityFee(hub1, spoke1.getReserve(reserveId).assetId, 100_00);
@@ -181,9 +188,15 @@ contract TreasurySpokeTest is SpokeBase {
     address tempUser = _openDebtPosition(spoke1, reserveId, amount, true);
 
     skip(skipTime);
+    assertEq(hub1.getAsset(assetId).realizedFees, 0, 'fees'); // fees not yet accrued
 
+    uint256 expectedFeeAmount = _calcUnrealizedFees(hub1, assetId);
+
+    Utils.mintFeeShares(hub1, assetId, ADMIN);
     uint256 fees = treasurySpoke.getSuppliedAmount(address(hub1), assetId);
 
+    assertEq(fees, expectedFeeAmount, 'supplied amount of fees');
+    assertEq(hub1.getAsset(assetId).realizedFees, 0, 'realized fees after minting');
     assertApproxEqAbs(
       hub1.getSpokeAddedAssets(assetId, address(treasurySpoke)),
       hub1.getAssetTotalOwed(assetId) - amount,

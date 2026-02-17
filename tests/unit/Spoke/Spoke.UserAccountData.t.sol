@@ -13,7 +13,9 @@ contract SpokeUserAccountDataTest is SpokeBase {
   function setUp() public override {
     super.setUp();
     spoke = MockSpoke(address(spoke1));
-    address mockSpokeImpl = address(new MockSpoke(address(spoke.ORACLE())));
+    address mockSpokeImpl = address(
+      new MockSpoke(address(spoke.ORACLE()), Constants.MAX_ALLOWED_USER_RESERVES_LIMIT)
+    );
     vm.etch(address(spoke1), mockSpokeImpl.code);
 
     _updateCollateralFactor(spoke, _wethReserveId(spoke), 80_00);
@@ -43,19 +45,19 @@ contract SpokeUserAccountDataTest is SpokeBase {
     );
     accountDataInfo.debtReserveIds.push(_wethReserveId(spoke));
     accountDataInfo.drawnDebtAmounts.push(0.025e18);
-    accountDataInfo.realizedPremiumAmounts.push(0.005e18);
+    accountDataInfo.realizedPremiumAmountsRay.push(0.005e18 * WadRayMath.RAY);
     accountDataInfo.accruedPremiumAmounts.push(0.0075e18);
 
-    _checkedUserAccounData(
+    _checkedUserAccountData(
       false,
       ISpoke.UserAccountData({
         totalCollateralValue: 100e26,
-        totalDebtValue: 75e26,
+        totalDebtValueRay: 75e26 * WadRayMath.RAY,
         avgCollateralFactor: 0.72e18,
         healthFactor: 0.96e18,
         riskPremium: 10_00,
         activeCollateralCount: 1,
-        borrowedCount: 1
+        borrowCount: 1
       })
     );
   }
@@ -77,19 +79,19 @@ contract SpokeUserAccountDataTest is SpokeBase {
     accountDataInfo.collateralDynamicConfigKeys.push(configKeyBefore);
     accountDataInfo.debtReserveIds.push(_wethReserveId(spoke));
     accountDataInfo.drawnDebtAmounts.push(0.025e18);
-    accountDataInfo.realizedPremiumAmounts.push(0.005e18);
+    accountDataInfo.realizedPremiumAmountsRay.push(0.005e18 * WadRayMath.RAY);
     accountDataInfo.accruedPremiumAmounts.push(0.0075e18);
 
-    _checkedUserAccounData(
+    _checkedUserAccountData(
       false,
       ISpoke.UserAccountData({
         totalCollateralValue: 100e26,
-        totalDebtValue: 75e26,
+        totalDebtValueRay: 75e26 * WadRayMath.RAY,
         avgCollateralFactor: 0.72e18,
         healthFactor: 0.96e18,
         riskPremium: 10_00,
         activeCollateralCount: 1,
-        borrowedCount: 1
+        borrowCount: 1
       })
     );
   }
@@ -111,19 +113,19 @@ contract SpokeUserAccountDataTest is SpokeBase {
     accountDataInfo.collateralDynamicConfigKeys.push(configKeyBefore);
     accountDataInfo.debtReserveIds.push(_wethReserveId(spoke));
     accountDataInfo.drawnDebtAmounts.push(0.025e18);
-    accountDataInfo.realizedPremiumAmounts.push(0.005e18);
+    accountDataInfo.realizedPremiumAmountsRay.push(0.005e18 * WadRayMath.RAY);
     accountDataInfo.accruedPremiumAmounts.push(0.0075e18);
 
-    _checkedUserAccounData(
+    _checkedUserAccountData(
       true,
       ISpoke.UserAccountData({
         totalCollateralValue: 100e26,
-        totalDebtValue: 75e26,
+        totalDebtValueRay: 75e26 * WadRayMath.RAY,
         avgCollateralFactor: 0.96e18,
         healthFactor: 1.28e18,
         riskPremium: 10_00,
         activeCollateralCount: 1,
-        borrowedCount: 1
+        borrowCount: 1
       })
     );
   }
@@ -139,7 +141,8 @@ contract SpokeUserAccountDataTest is SpokeBase {
     // Supplied Assets: 1 WETH
     // Debt: 0.3 + 0.15 + 0.05 = 0.5 WETH = 0.5 * $2000 = $1000
     // Health Factor: ($100 * 0.96 + $5000 * 0.5) / $1000 = 2.596
-    // Avg Collateral Factor: (0.96 * $100 + 0.5 * $5000) / ($100 + $5000) = 0.509019608
+    // Total Adjusted Collateral Value: 0.96 * $100 + 0.5 * $5000 = 2596
+    // Avg Collateral Factor: $2596 / ($100 + $5000) = 0.509019607843137254
     // Risk Premium: (0.1 * $100 + 0.15 * $900) / $1000 = 0.145
     // Supplied Collaterals Count: 2
     // Borrowed Reserves Count: 1
@@ -153,19 +156,19 @@ contract SpokeUserAccountDataTest is SpokeBase {
     accountDataInfo.suppliedAssetsAmounts.push(1e18);
     accountDataInfo.debtReserveIds.push(_wethReserveId(spoke));
     accountDataInfo.drawnDebtAmounts.push(0.3e18);
-    accountDataInfo.realizedPremiumAmounts.push(0.15e18);
+    accountDataInfo.realizedPremiumAmountsRay.push(0.15e18 * WadRayMath.RAY);
     accountDataInfo.accruedPremiumAmounts.push(0.05e18);
 
-    _checkedUserAccounData(
+    _checkedUserAccountData(
       true,
       ISpoke.UserAccountData({
         totalCollateralValue: 5100e26,
-        totalDebtValue: 1000e26,
-        avgCollateralFactor: 0.509019608e18,
+        totalDebtValueRay: 1000e26 * WadRayMath.RAY,
+        avgCollateralFactor: 0.509019607843137254e18,
         healthFactor: 2.596e18,
         riskPremium: 14_50,
         activeCollateralCount: 2,
-        borrowedCount: 1
+        borrowCount: 1
       })
     );
   }
@@ -191,23 +194,23 @@ contract SpokeUserAccountDataTest is SpokeBase {
     );
     accountDataInfo.debtReserveIds.push(_wethReserveId(spoke));
     accountDataInfo.drawnDebtAmounts.push(0.025e18);
-    accountDataInfo.realizedPremiumAmounts.push(0.005e18);
+    accountDataInfo.realizedPremiumAmountsRay.push(0.005e18 * WadRayMath.RAY);
     accountDataInfo.accruedPremiumAmounts.push(0.0075e18);
     accountDataInfo.debtReserveIds.push(_wbtcReserveId(spoke));
     accountDataInfo.drawnDebtAmounts.push(0.001e8);
-    accountDataInfo.realizedPremiumAmounts.push(0);
+    accountDataInfo.realizedPremiumAmountsRay.push(0 * WadRayMath.RAY);
     accountDataInfo.accruedPremiumAmounts.push(0);
 
-    _checkedUserAccounData(
+    _checkedUserAccountData(
       false,
       ISpoke.UserAccountData({
         totalCollateralValue: 100e26,
-        totalDebtValue: 125e26,
+        totalDebtValueRay: 125e26 * WadRayMath.RAY,
         avgCollateralFactor: 0.72e18,
         healthFactor: 0.576e18,
         riskPremium: 10_00,
         activeCollateralCount: 1,
-        borrowedCount: 2
+        borrowCount: 2
       })
     );
   }
@@ -235,48 +238,37 @@ contract SpokeUserAccountDataTest is SpokeBase {
     );
     accountDataInfo.debtReserveIds.push(_wethReserveId(spoke));
     accountDataInfo.drawnDebtAmounts.push(0.025e18);
-    accountDataInfo.realizedPremiumAmounts.push(0.005e18);
+    accountDataInfo.realizedPremiumAmountsRay.push(0.005e18 * WadRayMath.RAY);
     accountDataInfo.accruedPremiumAmounts.push(0.0075e18);
 
-    _checkedUserAccounData(
+    _checkedUserAccountData(
       false,
       ISpoke.UserAccountData({
         totalCollateralValue: 100e26,
-        totalDebtValue: 75e26,
+        totalDebtValueRay: 75e26 * WadRayMath.RAY,
         avgCollateralFactor: 0.72e18,
         healthFactor: 0.96e18,
         riskPremium: 10_00,
         activeCollateralCount: 1,
-        borrowedCount: 1
+        borrowCount: 1
       })
     );
   }
 
-  function _checkedUserAccounData(
+  function _checkedUserAccountData(
     bool refreshConfig,
     ISpoke.UserAccountData memory expectedUserAccountData
   ) internal {
     spoke.mockStorage(user, accountDataInfo);
 
-    ISpoke.UserAccountData memory userAccountData = spoke
-      .calculateAndPotentiallyRefreshUserAccountData(user, refreshConfig);
-    assertApproxEq(userAccountData, expectedUserAccountData);
+    ISpoke.UserAccountData memory userAccountData = spoke.calculateUserAccountData(
+      user,
+      refreshConfig
+    );
+    assertEq(userAccountData, expectedUserAccountData);
   }
 
-  function _getLastReserveConfigKey(uint256 reserveId) internal view returns (uint16) {
+  function _getLastReserveConfigKey(uint256 reserveId) internal view returns (uint32) {
     return spoke.getReserve(reserveId).dynamicConfigKey;
-  }
-
-  function assertApproxEq(
-    ISpoke.UserAccountData memory a,
-    ISpoke.UserAccountData memory b
-  ) internal pure {
-    assertEq(a.totalCollateralValue, b.totalCollateralValue, 'totalCollateralValue');
-    assertEq(a.totalDebtValue, b.totalDebtValue, 'totalDebtValue');
-    assertApproxEqAbs(a.avgCollateralFactor, b.avgCollateralFactor, 1e12, 'avgCollateralFactor');
-    assertApproxEqAbs(a.healthFactor, b.healthFactor, 1e12, 'healthFactor');
-    assertApproxEqAbs(a.riskPremium, b.riskPremium, 1, 'riskPremium');
-    assertEq(a.activeCollateralCount, b.activeCollateralCount, 'activeCollateralCount');
-    assertEq(a.borrowedCount, b.borrowedCount, 'borrowedCount');
   }
 }

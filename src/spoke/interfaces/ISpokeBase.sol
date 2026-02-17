@@ -13,23 +13,27 @@ interface ISpokeBase {
   /// @param caller The transaction initiator, and supplier of the underlying asset.
   /// @param user The owner of the modified position.
   /// @param suppliedShares The amount of supply shares minted.
+  /// @param suppliedAmount The amount of underlying asset supplied.
   event Supply(
     uint256 indexed reserveId,
     address indexed caller,
     address indexed user,
-    uint256 suppliedShares
+    uint256 suppliedShares,
+    uint256 suppliedAmount
   );
 
   /// @notice Emitted on the withdraw action.
   /// @param reserveId The reserve identifier of the underlying asset.
   /// @param caller The transaction initiator, and recipient of the underlying asset being withdrawn.
   /// @param user The owner of the modified position.
-  /// @param suppliedShares The amount of supply shares burned.
+  /// @param withdrawnShares The amount of supply shares burned.
+  /// @param withdrawnAmount The amount of underlying asset withdrawn.
   event Withdraw(
     uint256 indexed reserveId,
     address indexed caller,
     address indexed user,
-    uint256 suppliedShares
+    uint256 withdrawnShares,
+    uint256 withdrawnAmount
   );
 
   /// @notice Emitted on the borrow action.
@@ -37,48 +41,60 @@ interface ISpokeBase {
   /// @param caller The transaction initiator, and recipient of the underlying asset being borrowed.
   /// @param user The owner of the position on which debt is generated.
   /// @param drawnShares The amount of debt shares minted.
+  /// @param drawnAmount The amount of underlying asset borrowed.
   event Borrow(
     uint256 indexed reserveId,
     address indexed caller,
     address indexed user,
-    uint256 drawnShares
+    uint256 drawnShares,
+    uint256 drawnAmount
   );
 
   /// @notice Emitted on the repay action.
   /// @param reserveId The reserve identifier of the underlying asset.
   /// @param caller The transaction initiator who is repaying the underlying asset.
   /// @param user The owner of the position whose debt is being repaid.
-  /// @param drawnShares The amount of debt shares burned.
+  /// @param drawnShares The amount of drawn shares burned.
+  /// @param totalAmountRepaid The amount of drawn and premium underlying assets repaid.
   /// @param premiumDelta A struct representing the changes to premium debt after repayment.
   event Repay(
     uint256 indexed reserveId,
     address indexed caller,
     address indexed user,
     uint256 drawnShares,
+    uint256 totalAmountRepaid,
     IHubBase.PremiumDelta premiumDelta
   );
 
   /// @dev Emitted when a borrower is liquidated.
-  /// @param collateralAssetId The identifier of the asset used as collateral, to receive as result of the liquidation.
-  /// @param debtAssetId The identifier of the asset to be repaid with the liquidation.
+  /// @param collateralReserveId The identifier of the reserve used as collateral, to receive as a result of the liquidation.
+  /// @param debtReserveId The identifier of the reserve to be repaid with the liquidation.
   /// @param user The address of the borrower getting liquidated.
-  /// @param liquidatedDebt The debt amount of borrowed asset to be liquidated.
-  /// @param liquidatedCollateral The amount of collateral received by the liquidator.
   /// @param liquidator The address of the liquidator.
-  /// @param receiveShares Whether the liquidator receives collateral in supplied shares or in underlying assets.
+  /// @param receiveShares True if the liquidator received collateral in supplied shares rather than underlying assets.
+  /// @param debtAmountRestored The amount of debt restored, expressed in asset units.
+  /// @param drawnSharesLiquidated The amount of drawn shares liquidated.
+  /// @param premiumDelta A struct representing the changes to premium debt after liquidation.
+  /// @param collateralAmountRemoved The amount of collateral removed, expressed in asset units.
+  /// @param collateralSharesLiquidated The total amount of collateral shares liquidated.
+  /// @param collateralSharesToLiquidator The amount of collateral shares that the liquidator received.
   event LiquidationCall(
-    uint256 indexed collateralAssetId,
-    uint256 indexed debtAssetId,
+    uint256 indexed collateralReserveId,
+    uint256 indexed debtReserveId,
     address indexed user,
-    uint256 liquidatedDebt,
-    uint256 liquidatedCollateral,
     address liquidator,
-    bool receiveShares
+    bool receiveShares,
+    uint256 debtAmountRestored,
+    uint256 drawnSharesLiquidated,
+    IHubBase.PremiumDelta premiumDelta,
+    uint256 collateralAmountRemoved,
+    uint256 collateralSharesLiquidated,
+    uint256 collateralSharesToLiquidator
   );
 
   /// @notice Supplies an amount of underlying asset of the specified reserve.
   /// @dev It reverts if the reserve associated with the given reserve identifier is not listed.
-  /// @dev The hub pulls the underlying asset from the caller, so prior token approval is required.
+  /// @dev The Spoke pulls the underlying asset from the caller, so prior token approval is required.
   /// @dev Caller must be `onBehalfOf` or an authorized position manager for `onBehalfOf`.
   /// @param reserveId The reserve identifier.
   /// @param amount The amount of asset to supply.
@@ -109,6 +125,7 @@ interface ISpokeBase {
 
   /// @notice Borrows a specified amount of underlying asset from the given reserve.
   /// @dev It reverts if the reserve associated with the given reserve identifier is not listed.
+  /// @dev It reverts if the user would borrow more than the maximum allowed number of borrowed reserves.
   /// @dev Caller must be `onBehalfOf` or an authorized position manager for `onBehalfOf`.
   /// @dev Caller receives the underlying asset borrowed.
   /// @param reserveId The identifier of the reserve.
@@ -124,7 +141,7 @@ interface ISpokeBase {
 
   /// @notice Repays a specified amount of underlying asset to a given reserve.
   /// @dev It reverts if the reserve associated with the given reserve identifier is not listed.
-  /// @dev The hub pulls the underlying asset from the caller, so prior approval is required.
+  /// @dev The Spoke pulls the underlying asset from the caller, so prior approval is required.
   /// @dev Caller must be `onBehalfOf` or an authorized position manager for `onBehalfOf`.
   /// @param reserveId The identifier of the reserve.
   /// @param amount The amount of asset to repay.
@@ -139,7 +156,7 @@ interface ISpokeBase {
 
   /// @notice Liquidates a user position.
   /// @dev It reverts if the reserves associated with any of the given reserve identifiers are not listed.
-  /// @dev Invokes hub `restore`, and pulls underlying repaid debt assets from caller (Liquidator), hence it needs prior approval.
+  /// @dev The Spoke pulls underlying repaid debt assets from caller (Liquidator), hence it needs prior approval.
   /// @param collateralReserveId The reserveId of the underlying asset used as collateral by the liquidated user.
   /// @param debtReserveId The reserveId of the underlying asset borrowed by the liquidated user, to be repaid by Liquidator.
   /// @param user The address of the user to liquidate.
@@ -209,4 +226,11 @@ interface ISpokeBase {
   /// @param user The address of the user.
   /// @return The total debt amount.
   function getUserTotalDebt(uint256 reserveId, address user) external view returns (uint256);
+
+  /// @notice Returns the full precision premium debt of a specific user for a given reserve.
+  /// @dev It reverts if the reserve associated with the given reserve identifier is not listed.
+  /// @param reserveId The identifier of the reserve.
+  /// @param user The address of the user.
+  /// @return The amount of premium debt, expressed in asset units and scaled by RAY.
+  function getUserPremiumDebtRay(uint256 reserveId, address user) external view returns (uint256);
 }

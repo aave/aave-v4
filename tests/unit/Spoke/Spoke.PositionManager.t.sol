@@ -12,40 +12,11 @@ contract SpokePositionManagerTest is SpokeBase {
     address positionManager = vm.randomAddress();
     bool approve = vm.randomBool();
 
-    // if position manager not active, then user should not be able to approve, else action should be idempotent
-    if (!spoke1.isPositionManagerActive(positionManager) && approve) {
-      vm.expectRevert(ISpoke.InactivePositionManager.selector);
-    } else {
-      vm.expectEmit(address(spoke1));
-      emit ISpoke.SetUserPositionManager(user, positionManager, approve);
-    }
+    vm.expectEmit(address(spoke1));
+    emit ISpoke.SetUserPositionManager(user, positionManager, approve);
 
     vm.prank(user);
     spoke1.setUserPositionManager(positionManager, approve);
-  }
-
-  function test_setApproval_revertsWith_InactivePositionManager() public {
-    assertFalse(spoke1.isPositionManagerActive(POSITION_MANAGER));
-    vm.expectRevert(ISpoke.InactivePositionManager.selector);
-    spoke1.setUserPositionManager(POSITION_MANAGER, true);
-  }
-
-  function test_disableApproval_on_InactivePositionManager() public {
-    _approvePositionManager(alice);
-    assertTrue(spoke1.isPositionManager(alice, POSITION_MANAGER));
-    assertTrue(spoke1.isPositionManagerActive(POSITION_MANAGER));
-
-    _disablePositionManager();
-    assertFalse(spoke1.isPositionManager(alice, POSITION_MANAGER)); // since posm is not active
-    assertFalse(spoke1.isPositionManagerActive(POSITION_MANAGER));
-
-    vm.expectEmit(address(spoke1));
-    emit ISpoke.SetUserPositionManager(alice, POSITION_MANAGER, false);
-    vm.prank(alice);
-    spoke1.setUserPositionManager(POSITION_MANAGER, false);
-
-    assertFalse(spoke1.isPositionManager(alice, POSITION_MANAGER));
-    assertFalse(spoke1.isPositionManagerActive(POSITION_MANAGER));
   }
 
   function test_renouncePositionManagerRole() public {
@@ -68,7 +39,6 @@ contract SpokePositionManagerTest is SpokeBase {
     vm.setArbitraryStorage(address(spoke1));
 
     address user = vm.randomAddress();
-    address positionManager = vm.randomAddress();
     vm.prank(user);
     spoke1.setUserPositionManager(POSITION_MANAGER, false);
 
@@ -96,7 +66,13 @@ contract SpokePositionManagerTest is SpokeBase {
     vm.expectEmit(address(tokenList.usdx));
     emit IERC20.Transfer(address(POSITION_MANAGER), address(hub1), amount);
     vm.expectEmit(address(spoke1));
-    emit ISpokeBase.Supply(reserveId, POSITION_MANAGER, alice, amount);
+    emit ISpokeBase.Supply(
+      reserveId,
+      POSITION_MANAGER,
+      alice,
+      hub1.previewAddByAssets(usdxAssetId, amount),
+      amount
+    );
     Utils.supply(spoke1, reserveId, POSITION_MANAGER, amount, alice);
 
     assertEq(spoke1.getUserPosition(reserveId, POSITION_MANAGER), posBefore);
@@ -125,7 +101,13 @@ contract SpokePositionManagerTest is SpokeBase {
     vm.expectEmit(address(tokenList.usdx));
     emit IERC20.Transfer(address(hub1), address(POSITION_MANAGER), amount);
     vm.expectEmit(address(spoke1));
-    emit ISpokeBase.Withdraw(reserveId, POSITION_MANAGER, alice, amount);
+    emit ISpokeBase.Withdraw(
+      reserveId,
+      POSITION_MANAGER,
+      alice,
+      hub1.previewRemoveByAssets(usdxAssetId, amount),
+      amount
+    );
     Utils.withdraw(spoke1, reserveId, POSITION_MANAGER, amount, alice);
 
     assertEq(spoke1.getUserPosition(reserveId, POSITION_MANAGER), posBefore);
@@ -153,14 +135,20 @@ contract SpokePositionManagerTest is SpokeBase {
     vm.expectEmit(address(tokenList.usdx));
     emit IERC20.Transfer(address(hub1), address(POSITION_MANAGER), amount);
     vm.expectEmit(address(spoke1));
-    emit ISpokeBase.Borrow(reserveId, POSITION_MANAGER, alice, amount);
+    emit ISpokeBase.Borrow(
+      reserveId,
+      POSITION_MANAGER,
+      alice,
+      hub1.previewRestoreByAssets(usdxAssetId, amount),
+      amount
+    );
     Utils.borrow(spoke1, reserveId, POSITION_MANAGER, amount, alice);
 
     assertEq(spoke1.getUserPosition(reserveId, POSITION_MANAGER), posBefore);
     assertEq(spoke1.getUserTotalDebt(reserveId, POSITION_MANAGER), 0);
-    assertFalse(spoke1.isBorrowing(reserveId, POSITION_MANAGER));
+    assertFalse(_isBorrowing(spoke1, reserveId, POSITION_MANAGER));
     assertEq(spoke1.getUserTotalDebt(reserveId, alice), amount);
-    assertTrue(spoke1.isBorrowing(reserveId, alice));
+    assertTrue(_isBorrowing(spoke1, reserveId, alice));
 
     _disablePositionManager();
     vm.expectRevert(ISpoke.Unauthorized.selector);
@@ -182,7 +170,7 @@ contract SpokePositionManagerTest is SpokeBase {
     ISpoke.UserPosition memory posBefore = spoke1.getUserPosition(reserveId, POSITION_MANAGER);
     uint256 repayAmount = amount / 3;
 
-    IHubBase.PremiumDelta memory expectedPremiumDelta = _getExpectedPremiumDelta(
+    IHubBase.PremiumDelta memory expectedPremiumDelta = _getExpectedPremiumDeltaForRestore(
       spoke1,
       alice,
       reserveId,
@@ -192,21 +180,28 @@ contract SpokePositionManagerTest is SpokeBase {
     vm.expectEmit(address(tokenList.usdx));
     emit IERC20.Transfer(address(POSITION_MANAGER), address(hub1), repayAmount);
     vm.expectEmit(address(spoke1));
-    emit ISpokeBase.Repay(reserveId, POSITION_MANAGER, alice, repayAmount, expectedPremiumDelta);
+    emit ISpokeBase.Repay(
+      reserveId,
+      POSITION_MANAGER,
+      alice,
+      hub1.previewRestoreByAssets(usdxAssetId, repayAmount),
+      repayAmount,
+      expectedPremiumDelta
+    );
     Utils.repay(spoke1, reserveId, POSITION_MANAGER, repayAmount, alice);
 
     assertEq(spoke1.getUserPosition(reserveId, POSITION_MANAGER), posBefore);
     assertEq(spoke1.getUserTotalDebt(reserveId, POSITION_MANAGER), 0);
     assertEq(spoke1.getUserTotalDebt(reserveId, alice), amount - repayAmount);
-    assertFalse(spoke1.isBorrowing(reserveId, POSITION_MANAGER));
-    assertTrue(spoke1.isBorrowing(reserveId, alice));
+    assertFalse(_isBorrowing(spoke1, reserveId, POSITION_MANAGER));
+    assertTrue(_isBorrowing(spoke1, reserveId, alice));
 
     Utils.repay(spoke1, reserveId, POSITION_MANAGER, type(uint256).max, alice);
     assertEq(spoke1.getUserPosition(reserveId, POSITION_MANAGER), posBefore);
     assertEq(spoke1.getUserTotalDebt(reserveId, POSITION_MANAGER), 0);
     assertEq(spoke1.getUserTotalDebt(reserveId, alice), 0);
-    assertFalse(spoke1.isBorrowing(reserveId, POSITION_MANAGER));
-    assertFalse(spoke1.isBorrowing(reserveId, alice));
+    assertFalse(_isBorrowing(spoke1, reserveId, POSITION_MANAGER));
+    assertFalse(_isBorrowing(spoke1, reserveId, alice));
 
     _disablePositionManager();
     vm.expectRevert(ISpoke.Unauthorized.selector);
@@ -215,7 +210,7 @@ contract SpokePositionManagerTest is SpokeBase {
 
   function test_onlyPositionManager_on_usingAsCollateral() public {
     uint256 reserveId = _usdxReserveId(spoke1);
-    assertFalse(spoke1.isUsingAsCollateral(reserveId, alice));
+    assertFalse(_isUsingAsCollateral(spoke1, reserveId, alice));
 
     bool usingAsCollateral = true;
 
@@ -228,7 +223,7 @@ contract SpokePositionManagerTest is SpokeBase {
     emit ISpoke.SetUsingAsCollateral(reserveId, POSITION_MANAGER, alice, usingAsCollateral);
     Utils.setUsingAsCollateral(spoke1, reserveId, POSITION_MANAGER, usingAsCollateral, alice);
 
-    assertEq(spoke1.isUsingAsCollateral(reserveId, alice), usingAsCollateral);
+    assertEq(_isUsingAsCollateral(spoke1, reserveId, alice), usingAsCollateral);
 
     _disablePositionManager();
     vm.expectRevert(ISpoke.Unauthorized.selector);
@@ -254,7 +249,7 @@ contract SpokePositionManagerTest is SpokeBase {
     _approvePositionManager(alice);
 
     vm.expectEmit(address(spoke1));
-    emit ISpoke.UpdateUserRiskPremium(alice, _calculateExpectedUserRP(alice, spoke1));
+    emit ISpoke.UpdateUserRiskPremium(alice, _calculateExpectedUserRP(spoke1, alice));
     vm.prank(POSITION_MANAGER);
     spoke1.updateUserRiskPremium(alice);
 

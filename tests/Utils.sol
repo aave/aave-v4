@@ -3,11 +3,14 @@
 pragma solidity ^0.8.0;
 
 import {Vm} from 'forge-std/Vm.sol';
-import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
+import {SafeERC20, IERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
 import {IHub, IHubBase} from 'src/hub/interfaces/IHub.sol';
 import {ISpokeBase, ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
+import {ITokenizationSpoke} from 'src/spoke/interfaces/ITokenizationSpoke.sol';
 
 library Utils {
+  using SafeERC20 for *;
+
   Vm internal constant vm = Vm(address(uint160(uint256(keccak256('hevm cheat code')))));
 
   // hub
@@ -18,9 +21,11 @@ library Utils {
     uint256 amount,
     address user
   ) internal returns (uint256) {
-    approve(IHub(address(hub)), assetId, user, amount);
+    IHub ihub = IHub(address(hub));
+    approve(ihub, assetId, caller, user, amount);
+    transferFrom(ihub, assetId, caller, user, address(hub), amount);
     vm.prank(caller);
-    return hub.add(assetId, amount, user);
+    return hub.add(assetId, amount);
   }
 
   function draw(
@@ -52,9 +57,11 @@ library Utils {
     uint256 drawnAmount,
     address restorer
   ) internal returns (uint256) {
-    approve(IHub(address(hub)), assetId, restorer, drawnAmount);
+    IHub ihub = IHub(address(hub));
+    approve(ihub, assetId, caller, restorer, drawnAmount);
+    transferFrom(ihub, assetId, caller, restorer, address(hub), drawnAmount);
     vm.prank(caller);
-    return hub.restore(assetId, drawnAmount, 0, IHubBase.PremiumDelta(0, 0, 0), restorer);
+    return hub.restore(assetId, drawnAmount, IHubBase.PremiumDelta(0, 0, 0));
   }
 
   function addSpoke(
@@ -170,10 +177,18 @@ library Utils {
     spoke.repay(reserveId, amount, onBehalfOf);
   }
 
+  function mintFeeShares(IHub hub, uint256 assetId, address caller) internal returns (uint256) {
+    vm.prank(caller);
+    return hub.mintFeeShares(assetId);
+  }
+
   function approve(ISpoke spoke, uint256 reserveId, address owner, uint256 amount) internal {
-    IHubBase hub = spoke.getReserve(reserveId).hub;
-    (address underlying, ) = hub.getAssetUnderlyingAndDecimals(spoke.getReserve(reserveId).assetId);
-    _approve(IERC20(underlying), owner, address(hub), amount);
+    address underlying = spoke.getReserve(reserveId).underlying;
+    _approve(IERC20(underlying), owner, address(spoke), amount);
+  }
+
+  function approve(ISpoke spoke, address underlying, address owner, uint256 amount) internal {
+    _approve(IERC20(underlying), owner, address(spoke), amount);
   }
 
   function approve(
@@ -192,14 +207,57 @@ library Utils {
     );
   }
 
-  function approve(IHub hub, uint256 assetId, address owner, uint256 amount) internal {
-    _approve(IERC20(hub.getAsset(assetId).underlying), owner, address(hub), amount);
+  function approve(
+    IHub hub,
+    uint256 assetId,
+    address caller,
+    address owner,
+    uint256 amount
+  ) internal {
+    /// @dev caller is always a spoke
+    _approve(IERC20(hub.getAsset(assetId).underlying), owner, caller, amount);
+  }
+
+  function approve(ITokenizationSpoke vault, address owner, uint256 amount) internal {
+    _approve(IERC20(vault.asset()), owner, address(vault), amount);
   }
 
   function _approve(IERC20 underlying, address owner, address spender, uint256 amount) private {
     vm.startPrank(owner);
-    underlying.approve(spender, 0);
-    underlying.approve(spender, amount);
+    underlying.forceApprove(spender, amount);
     vm.stopPrank();
+  }
+
+  function transferFrom(
+    ISpoke spoke,
+    uint256 reserveId,
+    address caller,
+    address from,
+    address to,
+    uint256 amount
+  ) internal {
+    _transferFrom(IERC20(spoke.getReserve(reserveId).underlying), caller, from, to, amount);
+  }
+
+  function transferFrom(
+    IHub hub,
+    uint256 assetId,
+    address caller,
+    address from,
+    address to,
+    uint256 amount
+  ) internal {
+    _transferFrom(IERC20(hub.getAsset(assetId).underlying), caller, from, to, amount);
+  }
+
+  function _transferFrom(
+    IERC20 underlying,
+    address caller,
+    address from,
+    address to,
+    uint256 amount
+  ) private {
+    vm.prank(caller);
+    underlying.transferFrom(from, to, amount);
   }
 }

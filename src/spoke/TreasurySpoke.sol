@@ -3,10 +3,10 @@
 pragma solidity 0.8.28;
 
 import {Ownable2Step, Ownable} from 'src/dependencies/openzeppelin/Ownable2Step.sol';
-import {SafeERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
-import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
+import {SafeERC20, IERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
 import {MathUtils} from 'src/libraries/math/MathUtils.sol';
 import {IHubBase} from 'src/hub/interfaces/IHubBase.sol';
+import {IHub} from 'src/hub/interfaces/IHub.sol';
 import {ITreasurySpoke} from 'src/spoke/interfaces/ITreasurySpoke.sol';
 
 /// @title TreasurySpoke
@@ -28,7 +28,10 @@ contract TreasurySpoke is ITreasurySpoke, Ownable2Step {
     uint256 amount,
     address
   ) external onlyOwner returns (uint256, uint256) {
-    uint256 shares = IHubBase(hub).add(assetId, amount, msg.sender);
+    IHub hubContract = IHub(hub);
+    address underlying = hubContract.getAsset(assetId).underlying;
+    IERC20(underlying).safeTransferFrom(msg.sender, hub, amount);
+    uint256 shares = hubContract.add(assetId, amount);
 
     return (shares, amount);
   }

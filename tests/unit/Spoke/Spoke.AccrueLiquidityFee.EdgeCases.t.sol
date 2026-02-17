@@ -24,12 +24,13 @@ contract SpokeAccrueLiquidityFeeEdgeCasesTest is SpokeBase {
     uint256 skipTime,
     uint256 rate
   ) public {
-    borrowAmount = bound(borrowAmount, 1, MAX_SUPPLY_AMOUNT / 2); // within collateralization
     rate = bound(rate, 1, MAX_BORROW_RATE);
     skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
 
     reserveId = bound(reserveId, 0, spoke1.getReserveCount() - 1);
     uint256 assetId = spoke1.getReserve(reserveId).assetId;
+
+    borrowAmount = bound(borrowAmount, 1, _calculateMaxSupplyAmount(spoke1, reserveId) / 2); // within collateralization
 
     updateLiquidityFee(hub1, assetId, MAX_LIQUIDITY_FEE);
 
@@ -40,6 +41,7 @@ contract SpokeAccrueLiquidityFeeEdgeCasesTest is SpokeBase {
     Utils.borrow(spoke1, reserveId, alice, borrowAmount, alice);
 
     skip(skipTime);
+    Utils.mintFeeShares(hub1, assetId, ADMIN);
 
     (, uint256 premiumDebt) = spoke1.getUserDebt(reserveId, alice);
     assertGt(premiumDebt, 0);
@@ -72,12 +74,12 @@ contract SpokeAccrueLiquidityFeeEdgeCasesTest is SpokeBase {
     uint256 skipTime,
     uint256 rate
   ) public {
-    borrowAmount = bound(borrowAmount, 1, MAX_SUPPLY_AMOUNT / 4); // within collateralization
-    borrowAmount2 = bound(borrowAmount2, 1, MAX_SUPPLY_AMOUNT / 4); // within collateralization
     rate = bound(rate, 1, MAX_BORROW_RATE);
     skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
     reserveId = bound(reserveId, 0, spoke1.getReserveCount() - 1);
     uint256 assetId = spoke1.getReserve(reserveId).assetId;
+    borrowAmount = bound(borrowAmount, 1, _calculateMaxSupplyAmount(spoke1, reserveId) / 4); // within collateralization
+    borrowAmount2 = bound(borrowAmount2, 1, _calculateMaxSupplyAmount(spoke1, reserveId) / 4); // within collateralization
 
     updateLiquidityFee(hub1, spoke1.getReserve(reserveId).assetId, MAX_LIQUIDITY_FEE);
 
@@ -92,6 +94,7 @@ contract SpokeAccrueLiquidityFeeEdgeCasesTest is SpokeBase {
     Utils.borrow(spoke1, reserveId, bob, borrowAmount2, bob);
 
     skip(skipTime);
+    Utils.mintFeeShares(hub1, assetId, ADMIN);
 
     assertApproxEqAbs(
       spoke1.getUserSuppliedAssets(reserveId, alice),
@@ -131,7 +134,7 @@ contract SpokeAccrueLiquidityFeeEdgeCasesTest is SpokeBase {
     uint256 count = vm.randomUint(10, 1000);
     for (uint256 i; i < count; ++i) {
       address user = makeUser(i);
-      uint256 borrowAmount = vm.randomUint(1, MAX_SUPPLY_AMOUNT / count);
+      uint256 borrowAmount = vm.randomUint(1, _calculateMaxSupplyAmount(spoke1, reserveId) / count);
       _backedBorrow(spoke1, user, reserveId, reserveId, borrowAmount);
     }
     uint256 totalOwedBefore = hub1.getAssetTotalOwed(assetId);
@@ -146,9 +149,9 @@ contract SpokeAccrueLiquidityFeeEdgeCasesTest is SpokeBase {
       assertApproxEqAbs(totalOwedAfter, hub1.getAssetTotalOwed(assetId), 1);
 
       feesAccrued += totalOwedAfter - totalOwedBefore;
-      totalOwedBefore = totalOwedAfter;
+      totalOwedBefore = hub1.getAssetTotalOwed(assetId);
 
-      uint256 actualFeesAccrued = hub1.getSpokeAddedAssets(assetId, address(treasurySpoke));
+      uint256 actualFeesAccrued = _getExpectedFeeReceiverAddedAssets(hub1, assetId);
       assertApproxEqRel(actualFeesAccrued, feesAccrued, 0.0000001e18); // 0.00001%
       assertLe(actualFeesAccrued, feesAccrued, 'actual fees <= expected fees');
 
@@ -191,9 +194,9 @@ contract SpokeAccrueLiquidityFeeEdgeCasesTest is SpokeBase {
       assertApproxEqAbs(totalOwedAfter, hub1.getAssetTotalOwed(assetId), 1);
 
       feesAccrued += totalOwedAfter - totalOwedBefore;
-      totalOwedBefore = totalOwedAfter;
+      totalOwedBefore = hub1.getAssetTotalOwed(assetId);
 
-      uint256 actualFeesAccrued = hub1.getSpokeAddedAssets(assetId, address(treasurySpoke));
+      uint256 actualFeesAccrued = _getExpectedFeeReceiverAddedAssets(hub1, assetId);
       assertApproxEqRel(actualFeesAccrued, feesAccrued, 0.0000001e18); // 0.00001%
       assertLe(actualFeesAccrued, feesAccrued, 'actual fees <= expected fees');
 
