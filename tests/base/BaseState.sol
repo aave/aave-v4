@@ -195,4 +195,16 @@ abstract contract BaseState is TestTypes, Test {
         user != _getProxyAdminAddress(address(spoke3))
     );
   }
+
+  function _underlying(ISpoke spoke, uint256 reserveId) internal view returns (TestnetERC20) {
+    return TestnetERC20(spoke.getReserve(reserveId).underlying);
+  }
+
+  function _hub(ISpoke spoke, uint256 reserveId) internal view returns (IHub) {
+    return IHub(address(spoke.getReserve(reserveId).hub));
+  }
+
+  function _reserveAssetId(ISpoke spoke, uint256 reserveId) internal view returns (uint256) {
+    return spoke.getReserve(reserveId).assetId;
+  }
 }

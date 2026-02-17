@@ -26,6 +26,7 @@ abstract contract QueryHelpers is MathHelpers {
   using MathUtils for uint256;
   using PercentageMath for uint256;
   using SafeCast for *;
+
   function getUserInfo(
     ISpoke spoke,
     address user,
@@ -255,6 +256,24 @@ abstract contract QueryHelpers is MathHelpers {
       vm.prank(owner);
       underlying_.approve(spender, UINT256_MAX);
     }
+  }
+
+  // --- Exchange rate / share price helpers ---
+
+  function minimumAssetsPerAddedShare(IHub hub, uint256 assetId) internal view returns (uint256) {
+    return hub.previewAddByShares(assetId, 1);
+  }
+
+  function minimumAssetsPerDrawnShare(IHub hub, uint256 assetId) internal view returns (uint256) {
+    return hub.previewRestoreByShares(assetId, 1);
+  }
+
+  function getAddExRate(uint256 assetId) internal view returns (uint256) {
+    return hub1.previewRemoveByShares(assetId, MAX_SUPPLY_AMOUNT);
+  }
+
+  function getDebtExRate(uint256 assetId) internal view returns (uint256) {
+    return hub1.previewRestoreByShares(assetId, MAX_SUPPLY_AMOUNT);
   }
 
   // --- Reserve ID lookups ---

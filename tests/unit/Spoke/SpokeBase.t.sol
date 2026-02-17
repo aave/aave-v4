@@ -81,6 +81,10 @@ contract SpokeBase is Base, CheckedActions {
     uint256 amount,
     address user
   ) public {
+    uint256 assetId = _reserveAssetId(spoke, reserveId);
+    IHub hub = _hub(spoke, reserveId);
+    uint256 initialLiq = hub.getAssetLiquidity(assetId);
+
     deal(spoke, reserveId, user, amount);
     Utils.approve(spoke, reserveId, user, UINT256_MAX);
 
@@ -93,7 +97,8 @@ contract SpokeBase is Base, CheckedActions {
         onBehalfOf: user
       })
     );
-    // _checkedSupply already asserts supply shares and reserve supply increased
+
+    assertEq(hub.getAssetLiquidity(assetId), initialLiq + amount);
   }
 
   function _increaseReserveDebt(

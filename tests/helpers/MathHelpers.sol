@@ -226,7 +226,7 @@ abstract contract MathHelpers is BaseState {
     int256 premiumOffsetRay
   ) internal view returns (uint256) {
     IHub hub = _hub(spoke, reserveId);
-    uint256 assetId = spoke.getReserve(reserveId).assetId;
+    uint256 assetId = _reserveAssetId(spoke, reserveId);
     return _calculatePremiumDebtRay(hub, assetId, premiumShares, premiumOffsetRay);
   }
 
@@ -374,39 +374,5 @@ abstract contract MathHelpers is BaseState {
     uint256 sharesAmount = assetsAmount.toSharesDown(totalAddedAssets, totalAddedShares);
     return
       sharesAmount.toAssetsDown(totalAddedAssets + assetsAmount, totalAddedShares + sharesAmount);
-  }
-
-  function minimumAssetsPerAddedShare(IHub hub, uint256 assetId) internal view returns (uint256) {
-    return hub.previewAddByShares(assetId, 1);
-  }
-
-  function minimumAssetsPerDrawnShare(IHub hub, uint256 assetId) internal view returns (uint256) {
-    return hub.previewRestoreByShares(assetId, 1);
-  }
-
-  function getAddExRate(uint256 assetId) internal view returns (uint256) {
-    return hub1.previewRemoveByShares(assetId, MAX_SUPPLY_AMOUNT);
-  }
-
-  function getDebtExRate(uint256 assetId) internal view returns (uint256) {
-    return hub1.previewRestoreByShares(assetId, MAX_SUPPLY_AMOUNT);
-  }
-
-  function getAssetDrawnRate(IHub hub, uint256 assetId) internal view returns (uint256) {
-    return hub.getAsset(assetId).drawnRate;
-  }
-
-  // --- Helper references needed by math functions ---
-  // These are defined in QueryHelpers but needed here for the _convertAmountToValue/_convertValueToAmount overloads
-  function _underlying(ISpoke spoke, uint256 reserveId) internal view returns (TestnetERC20) {
-    return TestnetERC20(spoke.getReserve(reserveId).underlying);
-  }
-
-  function _hub(ISpoke spoke, uint256 reserveId) internal view returns (IHub) {
-    return IHub(address(spoke.getReserve(reserveId).hub));
-  }
-
-  function _reserveAssetId(ISpoke spoke, uint256 reserveId) internal view returns (uint256) {
-    return spoke.getReserve(reserveId).assetId;
   }
 }
