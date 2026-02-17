@@ -3,158 +3,14 @@
 pragma solidity ^0.8.0;
 
 import 'tests/Base.t.sol';
+import {CheckedActions} from 'tests/helpers/CheckedActions.sol';
 
-contract SpokeBase is Base {
+contract SpokeBase is Base, CheckedActions {
   using SafeCast for *;
   using PercentageMath for *;
   using WadRayMath for *;
   using KeyValueList for KeyValueList.List;
   using ReserveFlagsMap for ReserveFlags;
-
-  struct TestData {
-    SpokePosition data;
-    uint256 addedAmount;
-  }
-
-  struct TestUserData {
-    ISpoke.UserPosition data;
-    uint256 suppliedAmount;
-  }
-
-  struct TokenData {
-    uint256 spokeBalance;
-    uint256 hubBalance;
-  }
-
-  struct TestReserve {
-    uint256 reserveId;
-    uint256 supplyAmount;
-    uint256 borrowAmount;
-    address supplier;
-    address borrower;
-  }
-
-  struct TestReturnValues {
-    uint256 amount;
-    uint256 shares;
-  }
-
-  struct DebtData {
-    uint256 totalDebt;
-    uint256 drawnDebt;
-    uint256 premiumDebt;
-  }
-
-  struct UserActionData {
-    uint256 supplyAmount;
-    uint256 borrowAmount;
-    uint256 repayAmount;
-    uint256 userBalanceBefore;
-    uint256 userBalanceAfter;
-    ISpoke.UserPosition userPosBefore;
-    uint256 premiumDebtRayBefore;
-  }
-
-  struct BorrowTestData {
-    uint256 daiReserveId;
-    uint256 wethReserveId;
-    uint256 usdxReserveId;
-    uint256 wbtcReserveId;
-    UserActionData daiAlice;
-    UserActionData wethAlice;
-    UserActionData usdxAlice;
-    UserActionData wbtcAlice;
-    UserActionData daiBob;
-    UserActionData wethBob;
-    UserActionData usdxBob;
-    UserActionData wbtcBob;
-  }
-
-  struct SupplyBorrowLocal {
-    uint256 collateralReserveAssetId;
-    uint256 borrowReserveAssetId;
-    uint256 collateralSupplyShares;
-    uint256 borrowSupplyShares;
-    uint256 reserveSharesBefore;
-    uint256 userSharesBefore;
-    uint256 borrowerDrawnDebtBefore;
-    uint256 reserveDrawnDebtBefore;
-    uint256 borrowerDrawnDebtAfter;
-    uint256 reserveDrawnDebtAfter;
-  }
-
-  struct RepayMultipleLocal {
-    uint256 borrowAmount;
-    uint256 repayAmount;
-    ISpoke.UserPosition posBefore; // positionBefore
-    ISpoke.UserPosition posAfter; // positionAfter
-    uint256 baseRestored;
-    uint256 premiumRestored;
-  }
-
-  struct CalculateRiskPremiumLocal {
-    uint256 reserveCount;
-    uint256 totalDebtValue;
-    uint256 healthFactor;
-    uint256 activeCollateralCount;
-    uint32 dynamicConfigKey;
-    uint256 collateralFactor;
-    uint256 collateralValue;
-    ISpoke.UserPosition pos;
-    uint256 riskPremium;
-    uint256 utilizedSupply;
-    uint256 idx;
-  }
-
-  struct Action {
-    uint256 supplyAmount;
-    uint256 borrowAmount;
-    uint256 repayAmount;
-    uint40 skipTime;
-  }
-
-  struct AssetInfo {
-    uint256 borrowAmount;
-    uint256 repayAmount;
-    uint256 baseRestored;
-    uint256 premiumRestored;
-    uint256 suppliedShares;
-  }
-
-  struct UserAction {
-    uint256 supplyAmount;
-    uint256 borrowAmount;
-    uint256 suppliedShares;
-    uint256 repayAmount;
-    uint256 baseRestored;
-    uint256 premiumRestored;
-    address user;
-  }
-
-  struct UserBorrowAction {
-    uint256 supplyAmount;
-    uint256 borrowAmount;
-  }
-
-  struct UserAssetInfo {
-    AssetInfo daiInfo;
-    AssetInfo wethInfo;
-    AssetInfo usdxInfo;
-    AssetInfo wbtcInfo;
-    address user;
-  }
-
-  struct ReserveIds {
-    uint256 dai;
-    uint256 weth;
-    uint256 usdx;
-    uint256 wbtc;
-  }
-
-  struct DynamicConfig {
-    uint32 key;
-    bool enabled;
-  }
 
   function setUp() public virtual override {
     super.setUp();
@@ -703,60 +559,6 @@ contract SpokeBase is Base {
     );
   }
 
-  function assertEq(ISpoke.Reserve memory a, ISpoke.Reserve memory b) internal pure {
-    assertEq(address(a.hub), address(b.hub), 'hub');
-    assertEq(a.assetId, b.assetId, 'asset Id');
-    assertEq(a.decimals, b.decimals, 'decimals');
-    assertEq(a.dynamicConfigKey, b.dynamicConfigKey, 'dynamicConfigKey');
-    assertEq(a.flags.paused(), b.flags.paused(), 'paused');
-    assertEq(a.flags.frozen(), b.flags.frozen(), 'frozen');
-    assertEq(a.flags.borrowable(), b.flags.borrowable(), 'borrowable');
-    assertEq(
-      a.flags.receiveSharesEnabled(),
-      b.flags.receiveSharesEnabled(),
-      'receiveSharesEnabled'
-    );
-    assertEq(a.collateralRisk, b.collateralRisk, 'collateralRisk');
-    assertEq(abi.encode(a), abi.encode(b)); // sanity check
-  }
-
-  function assertEq(ISpoke.UserPosition memory a, ISpoke.UserPosition memory b) internal pure {
-    assertEq(a.suppliedShares, b.suppliedShares, 'suppliedShares');
-    assertEq(a.drawnShares, b.drawnShares, 'drawnShares');
-    assertEq(a.premiumShares, b.premiumShares, 'premiumShares');
-    assertEq(a.premiumOffsetRay, b.premiumOffsetRay, 'premiumOffsetRay');
-    assertEq(a.dynamicConfigKey, b.dynamicConfigKey, 'dynamicConfigKey');
-    assertEq(abi.encode(a), abi.encode(b)); // sanity check
-  }
-
-  function assertEq(IHub.SpokeData memory a, IHub.SpokeData memory b) internal pure {
-    assertEq(a.premiumShares, b.premiumShares, 'premiumShares');
-    assertEq(a.premiumOffsetRay, b.premiumOffsetRay, 'premiumOffsetRay');
-    assertEq(a.drawnShares, b.drawnShares, 'drawnShares');
-    assertEq(a.addedShares, b.addedShares, 'addedShares');
-    assertEq(a.addCap, b.addCap, 'addCap');
-    assertEq(a.drawCap, b.drawCap, 'drawCap');
-    assertEq(a.riskPremiumThreshold, b.riskPremiumThreshold, 'riskPremiumThreshold');
-    assertEq(a.active, b.active, 'active');
-    assertEq(a.halted, b.halted, 'halted');
-    assertEq(a.deficitRay, b.deficitRay, 'deficitRay');
-    assertEq(abi.encode(a), abi.encode(b)); // sanity check
-  }
-
-  function assertEq(
-    ISpoke.UserAccountData memory a,
-    ISpoke.UserAccountData memory b
-  ) internal pure {
-    assertEq(a.riskPremium, b.riskPremium, 'riskPremium');
-    assertEq(a.avgCollateralFactor, b.avgCollateralFactor, 'avgCollateralFactor');
-    assertEq(a.totalCollateralValue, b.totalCollateralValue, 'totalCollateralValue');
-    assertEq(a.totalDebtValueRay, b.totalDebtValueRay, 'totalDebtValueRay');
-    assertEq(a.healthFactor, b.healthFactor, 'healthFactor');
-    assertEq(a.activeCollateralCount, b.activeCollateralCount, 'activeCollateralCount');
-    assertEq(a.borrowCount, b.borrowCount, 'borrowCount');
-    assertEq(abi.encode(a), abi.encode(b)); // sanity check
-  }
-
   function _assertUserRpUnchanged(ISpoke spoke, address user) internal view {
     uint256 riskPremiumPreview = spoke.getUserAccountData(user).riskPremium;
     uint256 riskPremiumStored = _getUserRpStored(spoke, user);
@@ -806,20 +608,6 @@ contract SpokeBase is Base {
     info.wbtcInfo.repayAmount = bound(info.wbtcInfo.repayAmount, 1, UINT256_MAX);
 
     return info;
-  }
-
-  // todo: merge with _assertUserDebt
-  function assertEq(Debts memory a, Debts memory b) internal pure {
-    assertEq(a.drawnDebt, b.drawnDebt, 'drawn debt');
-    assertEq(a.premiumDebt, b.premiumDebt, 'premium debt');
-    assertEq(a.totalDebt, b.totalDebt, 'total debt');
-    assertEq(keccak256(abi.encode(a)), keccak256(abi.encode(b)), 'debt data'); // sanity
-  }
-
-  function assertEq(DynamicConfig memory a, DynamicConfig memory b) internal pure {
-    assertEq(a.key, b.key, 'key');
-    assertEq(a.enabled, b.enabled, 'enabled');
-    assertEq(abi.encode(a), abi.encode(b)); // sanity
   }
 
   function _isHealthy(ISpoke spoke, address user) internal view returns (bool) {
@@ -957,29 +745,6 @@ contract SpokeBase is Base {
   ) internal view returns (DynamicConfig memory) {
     ISpoke.UserPosition memory pos = spoke.getUserPosition(reserveId, user);
     return DynamicConfig(pos.dynamicConfigKey, _isUsingAsCollateral(spoke, reserveId, user));
-  }
-
-  function assertEq(DynamicConfig[] memory a, DynamicConfig[] memory b) internal pure {
-    require(a.length == b.length);
-    for (uint256 i; i < a.length; ++i) {
-      if (a[i].enabled && b[i].enabled) {
-        assertEq(a[i].key, b[i].key, string.concat('reserve ', vm.toString(i)));
-      }
-    }
-  }
-
-  function assertNotEq(DynamicConfig[] memory a, DynamicConfig[] memory b) internal pure {
-    require(a.length == b.length);
-    for (uint256 i; i < a.length; ++i) {
-      if (a[i].enabled && b[i].enabled) {
-        assertNotEq(a[i].key, b[i].key, string.concat('reserve ', vm.toString(i)));
-      }
-    }
-  }
-
-  /// @dev notify is not called after supply or repay, thus refreshPremium should not be called
-  function _assertRefreshPremiumNotCalled() internal {
-    vm.expectCall(address(hub1), abi.encodeWithSelector(IHubBase.refreshPremium.selector), 0);
   }
 
   function _randomReserveId(ISpoke spoke) internal returns (uint256) {

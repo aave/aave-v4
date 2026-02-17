@@ -14,67 +14,6 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
   uint256 internal constant MAX_AMOUNT_IN_BASE_CURRENCY = 1_000_000_000e26; // 1 billion USD
   uint256 internal constant MIN_AMOUNT_IN_BASE_CURRENCY = 100e26; // 1 USD
 
-  struct CheckedLiquidationCallParams {
-    ISpoke spoke;
-    uint256 collateralReserveId;
-    uint256 debtReserveId;
-    address user;
-    uint256 debtToCover;
-    address liquidator;
-    bool isSolvent;
-    bool receiveShares;
-  }
-
-  struct BalanceInfo {
-    uint256 collateralErc20Balance;
-    uint256 suppliedInSpoke;
-    uint256 addedInHub;
-    uint256 debtErc20Balance;
-    uint256 borrowedFromSpoke;
-    uint256 drawnFromHub;
-  }
-
-  struct AccountsInfo {
-    ISpoke.UserAccountData userAccountData;
-    BalanceInfo userBalanceInfo;
-    BalanceInfo collateralHubBalanceInfo;
-    BalanceInfo debtHubBalanceInfo;
-    BalanceInfo liquidatorBalanceInfo;
-    BalanceInfo collateralFeeReceiverBalanceInfo;
-    BalanceInfo debtFeeReceiverBalanceInfo;
-    BalanceInfo spokeBalanceInfo;
-    uint256 userLastRiskPremium;
-  }
-
-  struct LiquidationMetadata {
-    uint256 debtRayToTarget;
-    uint256 collateralAssetsToLiquidate;
-    uint256 collateralAssetsToLiquidator;
-    uint256 collateralSharesToLiquidate;
-    uint256 collateralSharesToLiquidator;
-    uint256 debtAssetsToLiquidate;
-    uint256 debtRayToLiquidate;
-    uint256 drawnSharesToLiquidate;
-    uint256 premiumDebtRayToLiquidate;
-    uint256 debtAssetsToRestore;
-    uint256 liquidationBonus;
-    bool fullDebtReserveLiquidated;
-    bool hasDeficit;
-  }
-  struct ExpectEventsAndCallsParams {
-    uint256 userDrawnDebt;
-    uint256 userPremiumDebt;
-    uint256 drawnAmountToRestore;
-    int256 realizedDelta;
-    IHubBase.PremiumDelta premiumDelta;
-    ISpoke.UserPosition userReservePosition;
-    ISpoke.UserPosition userDebtPosition;
-    IHub collateralHub;
-    IHub debtHub;
-    uint256 debtAssetId;
-    uint256 collateralAssetId;
-  }
-
   function _bound(
     ISpoke spoke,
     uint256 collateralReserveId,

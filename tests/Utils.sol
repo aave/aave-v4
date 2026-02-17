@@ -177,6 +177,50 @@ library Utils {
     spoke.repay(reserveId, amount, onBehalfOf);
   }
 
+  function liquidationCall(
+    ISpokeBase spoke,
+    uint256 collateralReserveId,
+    uint256 debtReserveId,
+    address user,
+    uint256 debtToCover,
+    bool receiveShares,
+    address caller
+  ) internal {
+    vm.prank(caller);
+    spoke.liquidationCall(collateralReserveId, debtReserveId, user, debtToCover, receiveShares);
+  }
+
+  function updateReserveConfig(
+    ISpoke spoke,
+    uint256 reserveId,
+    ISpoke.ReserveConfig memory config,
+    address caller
+  ) internal {
+    vm.prank(caller);
+    spoke.updateReserveConfig(reserveId, config);
+  }
+
+  function addDynamicReserveConfig(
+    ISpoke spoke,
+    uint256 reserveId,
+    ISpoke.DynamicReserveConfig memory config,
+    address caller
+  ) internal returns (uint32) {
+    vm.prank(caller);
+    return spoke.addDynamicReserveConfig(reserveId, config);
+  }
+
+  function updateDynamicReserveConfig(
+    ISpoke spoke,
+    uint256 reserveId,
+    uint32 key,
+    ISpoke.DynamicReserveConfig memory config,
+    address caller
+  ) internal {
+    vm.prank(caller);
+    spoke.updateDynamicReserveConfig(reserveId, key, config);
+  }
+
   function mintFeeShares(IHub hub, uint256 assetId, address caller) internal returns (uint256) {
     vm.prank(caller);
     return hub.mintFeeShares(assetId);

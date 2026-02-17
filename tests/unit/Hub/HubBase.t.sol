@@ -9,43 +9,6 @@ contract HubBase is Base {
   using MathUtils for uint256;
   using SafeCast for *;
 
-  struct TestAddParams {
-    uint256 drawnAmount;
-    uint256 drawnShares;
-    uint256 assetAddedAmount;
-    uint256 assetAddedShares;
-    uint256 spoke1AddedAmount;
-    uint256 spoke1AddedShares;
-    uint256 spoke2AddedAmount;
-    uint256 spoke2AddedShares;
-    uint256 availableLiq;
-    uint256 bobBalance;
-    uint256 aliceBalance;
-  }
-
-  struct HubData {
-    IHub.Asset daiData;
-    IHub.Asset daiData1;
-    IHub.Asset daiData2;
-    IHub.Asset daiData3;
-    IHub.Asset wethData;
-    IHub.SpokeData spoke1WethData;
-    IHub.SpokeData spoke1DaiData;
-    IHub.SpokeData spoke2WethData;
-    IHub.SpokeData spoke2DaiData;
-    uint256 timestamp;
-    uint256 accruedBase;
-    uint256 initialLiquidity;
-    uint256 initialAddShares;
-    uint256 add2Amount;
-    uint256 expectedAdd2Shares;
-  }
-
-  struct DrawnData {
-    DrawnAccounting asset;
-    DrawnAccounting[3] spoke;
-  }
-
   function setUp() public virtual override {
     super.setUp();
     initEnvironment();
