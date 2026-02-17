@@ -7,6 +7,7 @@ import {TransparentUpgradeableProxy} from 'src/dependencies/openzeppelin/Transpa
 import {IHub} from 'src/hub/interfaces/IHub.sol';
 import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 import {ISpokeInstance} from 'tests/mocks/ISpokeInstance.sol';
+import {Create1Utils} from 'tests/Create1Utils.sol';
 import {Create2Utils} from 'tests/Create2Utils.sol';
 
 library DeployUtils {
@@ -16,7 +17,10 @@ library DeployUtils {
     address oracle,
     uint16 maxUserReservesLimit
   ) internal returns (ISpokeInstance) {
-    return deploySpokeImplementation(oracle, maxUserReservesLimit, '');
+    return
+      ISpokeInstance(
+        Create1Utils.create1Deploy(_getSpokeInstanceInitCode(oracle, maxUserReservesLimit))
+      );
   }
 
   function deploySpokeImplementation(
@@ -40,18 +44,28 @@ library DeployUtils {
     return
       ISpoke(
         proxify(
-          address(deploySpokeImplementation(oracle, maxUserReservesLimit, '')),
+          address(deploySpokeImplementation(oracle, maxUserReservesLimit)),
           proxyAdminOwner,
           initData
         )
       );
   }
 
-  function getDeterministicSpokeInstanceAddress(
+  function deploySpoke(
     address oracle,
-    uint16 maxUserReservesLimit
-  ) internal returns (address) {
-    return getDeterministicSpokeInstanceAddress(oracle, maxUserReservesLimit, '');
+    uint16 maxUserReservesLimit,
+    address proxyAdminOwner,
+    bytes32 salt,
+    bytes memory initData
+  ) internal returns (ISpoke) {
+    return
+      ISpoke(
+        proxify(
+          address(deploySpokeImplementation(oracle, maxUserReservesLimit, salt)),
+          proxyAdminOwner,
+          initData
+        )
+      );
   }
 
   function getDeterministicSpokeInstanceAddress(
@@ -66,16 +80,12 @@ library DeployUtils {
   }
 
   function deployHub(address authority) internal returns (IHub) {
-    return deployHub(authority, '');
+    return IHub(Create1Utils.create1Deploy(_getHubInitCode(authority)));
   }
 
   function deployHub(address authority, bytes32 salt) internal returns (IHub hub) {
     Create2Utils.loadCreate2Factory();
     return IHub(Create2Utils.create2Deploy(salt, _getHubInitCode(authority)));
-  }
-
-  function getDeterministicHubAddress(address authority) internal returns (address) {
-    return getDeterministicHubAddress(authority, '');
   }
 
   function getDeterministicHubAddress(address authority, bytes32 salt) internal returns (address) {

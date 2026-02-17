@@ -82,6 +82,7 @@ import {SignatureGateway, ISignatureGateway} from 'src/position-manager/Signatur
 // test
 import {Constants} from 'tests/Constants.sol';
 import {DeployUtils} from 'tests/DeployUtils.sol';
+import {Create1Utils} from 'tests/Create1Utils.sol';
 import {Utils} from 'tests/Utils.sol';
 
 // mocks

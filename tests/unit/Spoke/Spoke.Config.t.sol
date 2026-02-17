@@ -25,7 +25,7 @@ contract SpokeConfigTest is SpokeBase {
   function test_spoke_deploy_reverts_on_InvalidConstructorInput() public {
     DeployWrapper deployer = new DeployWrapper();
 
-    vm.expectRevert();
+    vm.expectRevert(Create1Utils.Create1DeploymentFailed.selector);
     deployer.deploySpokeImplementation(address(0), Constants.MAX_ALLOWED_USER_RESERVES_LIMIT);
   }
 
@@ -34,7 +34,7 @@ contract SpokeConfigTest is SpokeBase {
     address oracle = makeAddr('AaveOracle');
 
     vm.mockCall(oracle, abi.encodeCall(IPriceOracle.DECIMALS, ()), abi.encode(7));
-    vm.expectRevert();
+    vm.expectRevert(Create1Utils.Create1DeploymentFailed.selector);
     deployer.deploySpokeImplementation(oracle, Constants.MAX_ALLOWED_USER_RESERVES_LIMIT);
   }
 
@@ -43,7 +43,7 @@ contract SpokeConfigTest is SpokeBase {
     address oracle = makeAddr('AaveOracle');
 
     vm.mockCall(oracle, abi.encodeCall(IPriceOracle.DECIMALS, ()), abi.encode(8));
-    vm.expectRevert();
+    vm.expectRevert(Create1Utils.Create1DeploymentFailed.selector);
     deployer.deploySpokeImplementation(oracle, 0);
   }
 
