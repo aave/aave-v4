@@ -96,7 +96,15 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
     uint256 addExRateBefore = getAddExRate(daiAssetId);
 
     // Withdraw partial supplied assets
-    Utils.withdraw(spoke1, _daiReserveId(spoke1), bob, partialWithdrawAmount, bob);
+    CheckedWithdrawResult memory r1 = _checkedWithdraw(
+      CheckedWithdrawParams({
+        spoke: spoke1,
+        reserveId: _daiReserveId(spoke1),
+        user: bob,
+        amount: partialWithdrawAmount,
+        onBehalfOf: bob
+      })
+    );
 
     interestAccrued =
       hub1.getAddedAssets(daiAssetId) -
@@ -104,12 +112,7 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
       (supplyAmount - partialWithdrawAmount);
 
     totalSupplied = interestAccrued + supplyAmount - partialWithdrawAmount;
-    assertApproxEqAbs(
-      totalSupplied,
-      spoke1.getUserSuppliedAssets(_daiReserveId(spoke1), bob),
-      1,
-      'expected supplied'
-    );
+    assertApproxEqAbs(totalSupplied, r1.userAfter.suppliedAmount, 1, 'expected supplied');
 
     // Check supply rate monotonically increasing after partial withdraw
     _checkSupplyRateIncreasing(addExRateBefore, getAddExRate(daiAssetId), 'after partial withdraw');
@@ -118,7 +121,15 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
     addExRateBefore = getAddExRate(daiAssetId);
 
     // Withdraw all supplied assets
-    Utils.withdraw(spoke1, _daiReserveId(spoke1), bob, UINT256_MAX, bob);
+    _checkedWithdraw(
+      CheckedWithdrawParams({
+        spoke: spoke1,
+        reserveId: _daiReserveId(spoke1),
+        user: bob,
+        amount: UINT256_MAX,
+        onBehalfOf: bob
+      })
+    );
 
     _checkSuppliedAmounts(daiAssetId, _daiReserveId(spoke1), spoke1, bob, 0, 'after withdraw');
 
@@ -210,32 +221,23 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
 
     assertEq(hub1.getAsset(params.reserveId).realizedFees, expectedFeeAmount, 'realized fees');
 
-    TestData[3] memory reserveData;
-    TestUserData[3] memory aliceData;
-    TestUserData[3] memory bobData;
-    TokenData[3] memory tokenData;
-    TestReturnValues[2] memory returnValues;
-
-    state.stage = 0;
-    reserveData[state.stage] = loadReserveInfo(spoke1, params.reserveId);
-    aliceData[state.stage] = loadUserInfo(spoke1, params.reserveId, alice);
-    bobData[state.stage] = loadUserInfo(spoke1, params.reserveId, bob);
-    tokenData[state.stage] = getTokenBalances(state.underlying, address(spoke1));
     state.addExRate = getAddExRate(state.assetId);
 
     // make sure alice has a share to withdraw
-    vm.assume(
-      aliceData[state.stage].suppliedAmount > params.aliceAmount &&
-        aliceData[state.stage].data.suppliedShares > 0
-    );
+    uint256 aliceSuppliedAmount = spoke1.getUserSuppliedAssets(params.reserveId, alice);
+    uint256 aliceSuppliedShares = spoke1.getUserPosition(params.reserveId, alice).suppliedShares;
+    vm.assume(aliceSuppliedAmount > params.aliceAmount && aliceSuppliedShares > 0);
 
     // withdraw all supplied
-    vm.prank(alice);
-    (returnValues[0].shares, returnValues[0].amount) = spoke1.withdraw({
-      reserveId: params.reserveId,
-      amount: aliceData[state.stage].suppliedAmount,
-      onBehalfOf: alice
-    });
+    CheckedWithdrawResult memory rAlice = _checkedWithdraw(
+      CheckedWithdrawParams({
+        spoke: spoke1,
+        reserveId: params.reserveId,
+        user: alice,
+        amount: aliceSuppliedAmount,
+        onBehalfOf: alice
+      })
+    );
 
     _checkSupplyRateIncreasing(
       state.addExRate,
@@ -246,76 +248,83 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
     // skip time to accrue interest for bob
     skip(params.skipTime[1]);
 
-    state.stage = 1;
-    reserveData[state.stage] = loadReserveInfo(spoke1, params.reserveId);
-    aliceData[state.stage] = loadUserInfo(spoke1, params.reserveId, alice);
-    bobData[state.stage] = loadUserInfo(spoke1, params.reserveId, bob);
-    tokenData[state.stage] = getTokenBalances(state.underlying, address(spoke1));
     state.addExRate = getAddExRate(state.assetId);
 
     // make sure bob has a share to withdraw
-    vm.assume(
-      bobData[state.stage].suppliedAmount > params.bobAmount &&
-        bobData[state.stage].data.suppliedShares > 0
-    );
+    uint256 bobSuppliedAmount = spoke1.getUserSuppliedAssets(params.reserveId, bob);
+    uint256 bobSuppliedShares = spoke1.getUserPosition(params.reserveId, bob).suppliedShares;
+    vm.assume(bobSuppliedAmount > params.bobAmount && bobSuppliedShares > 0);
 
     // bob withdraws all supplied
-    vm.prank(bob);
-    (returnValues[1].shares, returnValues[1].amount) = spoke1.withdraw({
-      reserveId: params.reserveId,
-      amount: bobData[state.stage].suppliedAmount,
-      onBehalfOf: bob
-    });
+    CheckedWithdrawResult memory rBob = _checkedWithdraw(
+      CheckedWithdrawParams({
+        spoke: spoke1,
+        reserveId: params.reserveId,
+        user: bob,
+        amount: bobSuppliedAmount,
+        onBehalfOf: bob
+      })
+    );
 
     _checkSupplyRateIncreasing(state.addExRate, getAddExRate(state.assetId), 'after bob withdraw');
 
-    state.stage = 2;
-    reserveData[state.stage] = loadReserveInfo(spoke1, params.reserveId);
-    aliceData[state.stage] = loadUserInfo(spoke1, params.reserveId, alice);
-    bobData[state.stage] = loadUserInfo(spoke1, params.reserveId, bob);
-    tokenData[state.stage] = getTokenBalances(state.underlying, address(spoke1));
+    assertEq(rAlice.amount, rAlice.userBefore.suppliedAmount);
+    assertEq(rBob.amount, rBob.userBefore.suppliedAmount);
 
-    assertEq(returnValues[0].amount, aliceData[0].suppliedAmount);
-    assertEq(returnValues[1].amount, bobData[1].suppliedAmount);
-
-    assertEq(returnValues[0].shares, aliceData[0].data.suppliedShares);
-    assertEq(returnValues[1].shares, bobData[1].data.suppliedShares);
+    assertEq(rAlice.shares, rAlice.userBefore.suppliedShares);
+    assertEq(rBob.shares, rBob.userBefore.suppliedShares);
 
     // reserve
-    (uint256 reserveDrawnDebt, uint256 reservePremiumDebt) = spoke1.getReserveDebt(
-      params.reserveId
-    );
-    assertEq(reserveDrawnDebt, 0, 'reserveData drawn debt');
-    assertEq(reservePremiumDebt, 0, 'reserveData premium debt');
-    assertEq(reserveData[state.stage].data.addedShares, 0, 'reserveData added shares');
+    {
+      (uint256 reserveDrawnDebt, uint256 reservePremiumDebt) = spoke1.getReserveDebt(
+        params.reserveId
+      );
+      assertEq(reserveDrawnDebt, 0, 'reserveData drawn debt');
+      assertEq(reservePremiumDebt, 0, 'reserveData premium debt');
+      assertEq(rBob.reserveAfter.totalSuppliedShares, 0, 'reserveData added shares');
+    }
 
     // alice
-    (uint256 userDrawnDebt, uint256 userPremiumDebt) = spoke1.getUserDebt(params.reserveId, alice);
-    assertEq(userDrawnDebt, 0, 'aliceData drawn debt');
-    assertEq(userPremiumDebt, 0, 'aliceData premium debt');
-    assertEq(aliceData[state.stage].data.suppliedShares, 0, 'aliceData supplied shares');
+    {
+      (uint256 userDrawnDebt, uint256 userPremiumDebt) = spoke1.getUserDebt(
+        params.reserveId,
+        alice
+      );
+      assertEq(userDrawnDebt, 0, 'aliceData drawn debt');
+      assertEq(userPremiumDebt, 0, 'aliceData premium debt');
+      assertEq(
+        spoke1.getUserPosition(params.reserveId, alice).suppliedShares,
+        0,
+        'aliceData supplied shares'
+      );
+    }
 
     // bob
-    (userDrawnDebt, userPremiumDebt) = spoke1.getUserDebt(params.reserveId, bob);
-    assertEq(userDrawnDebt, 0, 'bobData drawn debt');
-    assertEq(userPremiumDebt, 0, 'bobData premium debt');
-    assertEq(bobData[state.stage].data.suppliedShares, 0, 'bobData supplied shares');
+    {
+      (uint256 userDrawnDebt, uint256 userPremiumDebt) = spoke1.getUserDebt(params.reserveId, bob);
+      assertEq(userDrawnDebt, 0, 'bobData drawn debt');
+      assertEq(userPremiumDebt, 0, 'bobData premium debt');
+      assertEq(rBob.userAfter.suppliedShares, 0, 'bobData supplied shares');
+    }
 
     // token
-    assertEq(tokenData[state.stage].spokeBalance, 0, 'tokenData spoke balance');
-    assertEq(
-      tokenData[state.stage].hubBalance,
-      _calculateBurntInterest(hub1, state.assetId) + hub1.getAsset(state.assetId).realizedFees,
-      'tokenData hub balance'
-    );
+    {
+      TokenData memory tokenDataAfter = getTokenBalances(state.underlying, address(spoke1));
+      assertEq(tokenDataAfter.spokeBalance, 0, 'tokenData spoke balance');
+      assertEq(
+        tokenDataAfter.hubBalance,
+        _calculateBurntInterest(hub1, state.assetId) + hub1.getAsset(state.assetId).realizedFees,
+        'tokenData hub balance'
+      );
+    }
     assertEq(
       state.underlying.balanceOf(alice),
-      MAX_SUPPLY_AMOUNT - params.aliceAmount + aliceData[0].suppliedAmount,
+      MAX_SUPPLY_AMOUNT - params.aliceAmount + rAlice.userBefore.suppliedAmount,
       'alice balance'
     );
     assertEq(
       state.underlying.balanceOf(bob),
-      MAX_SUPPLY_AMOUNT - params.bobAmount + bobData[1].suppliedAmount,
+      MAX_SUPPLY_AMOUNT - params.bobAmount + rBob.userBefore.suppliedAmount,
       'bob balance'
     );
   }

@@ -29,21 +29,19 @@ contract SpokeBase is Base, CheckedActions {
     uint256 amount,
     address user
   ) public {
-    uint256 assetId = spoke.getReserve(reserveId).assetId;
-    uint256 initialLiq = _hub(spoke, reserveId).getAssetLiquidity(assetId);
-
     deal(spoke, reserveId, user, amount);
     Utils.approve(spoke, reserveId, user, UINT256_MAX);
 
-    Utils.supplyCollateral({
-      spoke: spoke,
-      reserveId: reserveId,
-      caller: user,
-      amount: amount,
-      onBehalfOf: user
-    });
-
-    assertEq(hub1.getAssetLiquidity(assetId), initialLiq + amount);
+    _checkedSupplyCollateral(
+      CheckedSupplyCollateralParams({
+        spoke: spoke,
+        reserveId: reserveId,
+        user: user,
+        amount: amount,
+        onBehalfOf: user
+      })
+    );
+    // _checkedSupply already asserts supply shares and reserve supply increased
   }
 
   function _increaseReserveDebt(
@@ -205,73 +203,56 @@ contract SpokeBase is Base, CheckedActions {
     bool isMockRate,
     uint256 skipTime
   ) internal returns (uint256, uint256) {
-    SupplyBorrowLocal memory state;
     if (isMockRate) {
       _mockInterestRateBps(rate);
     }
-    (state.collateralReserveAssetId, ) = getAssetByReserveId(spoke, collateral.reserveId);
-    (state.borrowReserveAssetId, ) = getAssetByReserveId(spoke, borrow.reserveId);
-    state.collateralSupplyShares = hub1.previewAddByAssets(
-      state.collateralReserveAssetId,
-      collateral.supplyAmount
-    );
-    state.borrowSupplyShares = hub1.previewAddByAssets(
-      state.borrowReserveAssetId,
-      borrow.supplyAmount
-    );
-    state.reserveSharesBefore = spoke.getReserveSuppliedShares(collateral.reserveId);
-    state.userSharesBefore = spoke.getUserSuppliedShares(collateral.reserveId, collateral.supplier);
+
     // supply collateral asset
-    Utils.supplyCollateral({
-      spoke: spoke,
-      reserveId: collateral.reserveId,
-      caller: collateral.supplier,
-      amount: collateral.supplyAmount,
-      onBehalfOf: collateral.supplier
-    });
-    assertEq(
-      state.reserveSharesBefore + state.collateralSupplyShares,
-      spoke.getReserveSuppliedShares(collateral.reserveId)
+    CheckedSupplyResult memory collResult = _checkedSupplyCollateral(
+      CheckedSupplyCollateralParams({
+        spoke: spoke,
+        reserveId: collateral.reserveId,
+        user: collateral.supplier,
+        amount: collateral.supplyAmount,
+        onBehalfOf: collateral.supplier
+      })
     );
-    assertEq(
-      state.userSharesBefore + state.collateralSupplyShares,
-      spoke.getUserSuppliedShares(collateral.reserveId, collateral.supplier)
-    );
-    state.reserveSharesBefore = spoke.getReserveSuppliedShares(borrow.reserveId);
-    state.userSharesBefore = spoke.getUserSuppliedShares(borrow.reserveId, borrow.supplier);
+
     // other user supplies enough asset to be drawn
-    Utils.supply({
-      spoke: spoke,
-      reserveId: borrow.reserveId,
-      caller: borrow.supplier,
-      amount: borrow.supplyAmount,
-      onBehalfOf: borrow.supplier
-    });
-    assertEq(
-      state.reserveSharesBefore + state.borrowSupplyShares,
-      spoke.getReserveSuppliedShares(borrow.reserveId)
+    CheckedSupplyResult memory supplyResult = _checkedSupply(
+      CheckedSupplyParams({
+        spoke: spoke,
+        reserveId: borrow.reserveId,
+        user: borrow.supplier,
+        amount: borrow.supplyAmount,
+        onBehalfOf: borrow.supplier
+      })
     );
-    assertEq(
-      state.userSharesBefore + state.borrowSupplyShares,
-      spoke.getUserSuppliedShares(borrow.reserveId, borrow.supplier)
-    );
-    (state.borrowerDrawnDebtBefore, ) = spoke.getUserDebt(borrow.reserveId, borrow.borrower);
-    (state.reserveDrawnDebtBefore, ) = spoke.getReserveDebt(borrow.reserveId);
+
     // borrower borrows asset
-    Utils.borrow({
-      spoke: spoke,
-      reserveId: borrow.reserveId,
-      caller: borrow.borrower,
-      amount: borrow.borrowAmount,
-      onBehalfOf: borrow.borrower
-    });
-    (state.borrowerDrawnDebtAfter, ) = spoke.getUserDebt(borrow.reserveId, borrow.borrower);
-    (state.reserveDrawnDebtAfter, ) = spoke.getReserveDebt(borrow.reserveId);
-    assertEq(state.borrowerDrawnDebtBefore + borrow.borrowAmount, state.borrowerDrawnDebtAfter);
-    assertEq(state.reserveDrawnDebtBefore + borrow.borrowAmount, state.reserveDrawnDebtAfter);
+    CheckedBorrowResult memory borrowResult = _checkedBorrow(
+      CheckedBorrowParams({
+        spoke: spoke,
+        reserveId: borrow.reserveId,
+        user: borrow.borrower,
+        amount: borrow.borrowAmount,
+        onBehalfOf: borrow.borrower
+      })
+    );
+
+    // Assert borrow amount matches
+    assertEq(
+      borrowResult.userAfter.drawnDebt - borrowResult.userBefore.drawnDebt,
+      borrow.borrowAmount
+    );
+    assertEq(
+      borrowResult.reserveAfter.totalDrawnDebt - borrowResult.reserveBefore.totalDrawnDebt,
+      borrow.borrowAmount
+    );
+
     // skip time to increase index
     skip(skipTime);
-    return (state.collateralSupplyShares, state.borrowSupplyShares);
+    return (collResult.shares, supplyResult.shares);
   }
 
   function _repayAll(

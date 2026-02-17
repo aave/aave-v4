@@ -21,6 +21,8 @@ abstract contract CheckedActions is SnapshotHelpers {
   }
 
   struct CheckedSupplyResult {
+    uint256 shares;
+    uint256 amount;
     UserSnapshot userBefore;
     UserSnapshot userAfter;
     ReserveSnapshot reserveBefore;
@@ -36,6 +38,8 @@ abstract contract CheckedActions is SnapshotHelpers {
   }
 
   struct CheckedWithdrawResult {
+    uint256 shares;
+    uint256 amount;
     UserSnapshot userBefore;
     UserSnapshot userAfter;
     ReserveSnapshot reserveBefore;
@@ -51,6 +55,8 @@ abstract contract CheckedActions is SnapshotHelpers {
   }
 
   struct CheckedBorrowResult {
+    uint256 shares;
+    uint256 amount;
     UserSnapshot userBefore;
     UserSnapshot userAfter;
     ReserveSnapshot reserveBefore;
@@ -66,6 +72,8 @@ abstract contract CheckedActions is SnapshotHelpers {
   }
 
   struct CheckedRepayResult {
+    uint256 shares;
+    uint256 amount;
     uint256 baseRestored;
     uint256 premiumRestored;
     UserSnapshot userBefore;
@@ -74,13 +82,26 @@ abstract contract CheckedActions is SnapshotHelpers {
     ReserveSnapshot reserveAfter;
   }
 
+  struct CheckedSupplyCollateralParams {
+    ISpoke spoke;
+    uint256 reserveId;
+    address user;
+    uint256 amount;
+    address onBehalfOf;
+  }
+
   function _checkedSupply(
     CheckedSupplyParams memory params
   ) internal returns (CheckedSupplyResult memory result) {
     result.userBefore = _snapshotUser(params.spoke, params.reserveId, params.onBehalfOf);
     result.reserveBefore = _snapshotReserve(params.spoke, params.reserveId);
 
-    Utils.supply(params.spoke, params.reserveId, params.user, params.amount, params.onBehalfOf);
+    vm.prank(params.user);
+    (result.shares, result.amount) = params.spoke.supply(
+      params.reserveId,
+      params.amount,
+      params.onBehalfOf
+    );
 
     result.userAfter = _snapshotUser(params.spoke, params.reserveId, params.onBehalfOf);
     result.reserveAfter = _snapshotReserve(params.spoke, params.reserveId);
@@ -104,7 +125,12 @@ abstract contract CheckedActions is SnapshotHelpers {
     result.userBefore = _snapshotUser(params.spoke, params.reserveId, params.onBehalfOf);
     result.reserveBefore = _snapshotReserve(params.spoke, params.reserveId);
 
-    Utils.withdraw(params.spoke, params.reserveId, params.user, params.amount, params.onBehalfOf);
+    vm.prank(params.user);
+    (result.shares, result.amount) = params.spoke.withdraw(
+      params.reserveId,
+      params.amount,
+      params.onBehalfOf
+    );
 
     result.userAfter = _snapshotUser(params.spoke, params.reserveId, params.onBehalfOf);
     result.reserveAfter = _snapshotReserve(params.spoke, params.reserveId);
@@ -128,7 +154,12 @@ abstract contract CheckedActions is SnapshotHelpers {
     result.userBefore = _snapshotUser(params.spoke, params.reserveId, params.onBehalfOf);
     result.reserveBefore = _snapshotReserve(params.spoke, params.reserveId);
 
-    Utils.borrow(params.spoke, params.reserveId, params.user, params.amount, params.onBehalfOf);
+    vm.prank(params.user);
+    (result.shares, result.amount) = params.spoke.borrow(
+      params.reserveId,
+      params.amount,
+      params.onBehalfOf
+    );
 
     result.userAfter = _snapshotUser(params.spoke, params.reserveId, params.onBehalfOf);
     result.reserveAfter = _snapshotReserve(params.spoke, params.reserveId);
@@ -159,7 +190,12 @@ abstract contract CheckedActions is SnapshotHelpers {
       params.amount
     );
 
-    Utils.repay(params.spoke, params.reserveId, params.user, params.amount, params.onBehalfOf);
+    vm.prank(params.user);
+    (result.shares, result.amount) = params.spoke.repay(
+      params.reserveId,
+      params.amount,
+      params.onBehalfOf
+    );
 
     result.userAfter = _snapshotUser(params.spoke, params.reserveId, params.onBehalfOf);
     result.reserveAfter = _snapshotReserve(params.spoke, params.reserveId);
@@ -174,6 +210,27 @@ abstract contract CheckedActions is SnapshotHelpers {
       result.reserveAfter.totalDebt,
       result.reserveBefore.totalDebt,
       'checkedRepay: reserve debt should decrease'
+    );
+  }
+
+  function _checkedSupplyCollateral(
+    CheckedSupplyCollateralParams memory params
+  ) internal returns (CheckedSupplyResult memory result) {
+    result = _checkedSupply(
+      CheckedSupplyParams({
+        spoke: params.spoke,
+        reserveId: params.reserveId,
+        user: params.user,
+        amount: params.amount,
+        onBehalfOf: params.onBehalfOf
+      })
+    );
+    Utils.setUsingAsCollateral(
+      params.spoke,
+      params.reserveId,
+      params.user,
+      true,
+      params.onBehalfOf
     );
   }
 }

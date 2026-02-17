@@ -49,35 +49,39 @@ contract SpokeBorrowEdgeCasesTest is SpokeBase {
     uint256 amount1 = 8;
     uint256 amount2 = 8;
 
-    uint256 carolDaiBefore = tokenList.dai.balanceOf(carol);
-    uint256 bobDaiBefore = tokenList.dai.balanceOf(bob);
-
-    uint256[3] memory expectedShares;
-    TestReturnValues[3] memory returnedValues;
-    expectedShares[0] = hub1.previewDrawByAssets(daiAssetId, amount1);
-    expectedShares[1] = hub1.previewDrawByAssets(daiAssetId, amount2);
-    expectedShares[2] = hub1.previewDrawByAssets(daiAssetId, amount1 + amount2);
+    uint256 expectedSharesSmall1 = hub1.previewDrawByAssets(daiAssetId, amount1);
+    uint256 expectedSharesSmall2 = hub1.previewDrawByAssets(daiAssetId, amount2);
+    uint256 expectedSharesCombined = hub1.previewDrawByAssets(daiAssetId, amount1 + amount2);
 
     // carol borrows 2 smaller amounts in 2 actions
-    vm.startPrank(carol);
-    (returnedValues[0].shares, returnedValues[0].amount) = spoke1.borrow(
-      _daiReserveId(spoke1),
-      amount1,
-      carol
+    CheckedBorrowResult memory carolBorrow1 = _checkedBorrow(
+      CheckedBorrowParams({
+        spoke: spoke1,
+        reserveId: _daiReserveId(spoke1),
+        user: carol,
+        amount: amount1,
+        onBehalfOf: carol
+      })
     );
-    (returnedValues[1].shares, returnedValues[1].amount) = spoke1.borrow(
-      _daiReserveId(spoke1),
-      amount2,
-      carol
+    CheckedBorrowResult memory carolBorrow2 = _checkedBorrow(
+      CheckedBorrowParams({
+        spoke: spoke1,
+        reserveId: _daiReserveId(spoke1),
+        user: carol,
+        amount: amount2,
+        onBehalfOf: carol
+      })
     );
-    vm.stopPrank();
 
     // bob borrows whole amount at once
-    vm.prank(bob);
-    (returnedValues[2].shares, returnedValues[2].amount) = spoke1.borrow(
-      _daiReserveId(spoke1),
-      amount1 + amount2,
-      bob
+    CheckedBorrowResult memory bobBorrow = _checkedBorrow(
+      CheckedBorrowParams({
+        spoke: spoke1,
+        reserveId: _daiReserveId(spoke1),
+        user: bob,
+        amount: amount1 + amount2,
+        onBehalfOf: bob
+      })
     );
 
     // bob benefits by having less debt shares than carol
@@ -88,17 +92,18 @@ contract SpokeBorrowEdgeCasesTest is SpokeBase {
     );
     // but both users have the same amount of drawn asset
     assertEq(
-      tokenList.dai.balanceOf(bob) - bobDaiBefore,
-      tokenList.dai.balanceOf(carol) - carolDaiBefore,
+      bobBorrow.userAfter.tokenBalance - bobBorrow.userBefore.tokenBalance,
+      (carolBorrow1.userAfter.tokenBalance - carolBorrow1.userBefore.tokenBalance) +
+        (carolBorrow2.userAfter.tokenBalance - carolBorrow2.userBefore.tokenBalance),
       'drawn assets should match'
     );
 
-    assertEq(returnedValues[0].shares, expectedShares[0]);
-    assertEq(returnedValues[0].amount, amount1);
-    assertEq(returnedValues[1].shares, expectedShares[1]);
-    assertEq(returnedValues[1].amount, amount2);
-    assertEq(returnedValues[2].shares, expectedShares[2]);
-    assertEq(returnedValues[2].amount, amount1 + amount2);
+    assertEq(carolBorrow1.shares, expectedSharesSmall1);
+    assertEq(carolBorrow1.amount, amount1);
+    assertEq(carolBorrow2.shares, expectedSharesSmall2);
+    assertEq(carolBorrow2.amount, amount2);
+    assertEq(bobBorrow.shares, expectedSharesCombined);
+    assertEq(bobBorrow.amount, amount1 + amount2);
   }
 
   /// fuzz - given an inflated ex rate, it's better for the user to borrow 1 big amount than 2 small amounts due to rounding(up)
@@ -167,36 +172,40 @@ contract SpokeBorrowEdgeCasesTest is SpokeBase {
         )
     );
 
-    uint256 carolDaiBefore = tokenList.dai.balanceOf(carol);
-    uint256 bobDaiBefore = tokenList.dai.balanceOf(bob);
-
-    uint256[3] memory expectedShares;
-    TestReturnValues[3] memory returnedValues;
-    expectedShares[0] = hub1.previewDrawByAssets(daiAssetId, amount1 + amount2);
-    expectedShares[1] = hub1.previewDrawByAssets(daiAssetId, amount1);
-    expectedShares[2] = hub1.previewDrawByAssets(daiAssetId, amount2);
+    uint256 expectedSharesCombined = hub1.previewDrawByAssets(daiAssetId, amount1 + amount2);
+    uint256 expectedSharesSmall1 = hub1.previewDrawByAssets(daiAssetId, amount1);
+    uint256 expectedSharesSmall2 = hub1.previewDrawByAssets(daiAssetId, amount2);
 
     // bob borrows whole amount at once
-    vm.prank(bob);
-    (returnedValues[0].shares, returnedValues[0].amount) = spoke1.borrow(
-      _daiReserveId(spoke1),
-      amount1 + amount2,
-      bob
+    CheckedBorrowResult memory bobBorrow = _checkedBorrow(
+      CheckedBorrowParams({
+        spoke: spoke1,
+        reserveId: _daiReserveId(spoke1),
+        user: bob,
+        amount: amount1 + amount2,
+        onBehalfOf: bob
+      })
     );
 
     // carol borrows 2 smaller amounts in 2 actions
-    vm.startPrank(carol);
-    (returnedValues[1].shares, returnedValues[1].amount) = spoke1.borrow(
-      _daiReserveId(spoke1),
-      amount1,
-      carol
+    CheckedBorrowResult memory carolBorrow1 = _checkedBorrow(
+      CheckedBorrowParams({
+        spoke: spoke1,
+        reserveId: _daiReserveId(spoke1),
+        user: carol,
+        amount: amount1,
+        onBehalfOf: carol
+      })
     );
-    (returnedValues[2].shares, returnedValues[2].amount) = spoke1.borrow(
-      _daiReserveId(spoke1),
-      amount2,
-      carol
+    CheckedBorrowResult memory carolBorrow2 = _checkedBorrow(
+      CheckedBorrowParams({
+        spoke: spoke1,
+        reserveId: _daiReserveId(spoke1),
+        user: carol,
+        amount: amount2,
+        onBehalfOf: carol
+      })
     );
-    vm.stopPrank();
 
     // bob benefits by having less debt shares than carol
     assertLe(
@@ -206,17 +215,18 @@ contract SpokeBorrowEdgeCasesTest is SpokeBase {
     );
     // but both users have the same amount of drawn asset
     assertEq(
-      tokenList.dai.balanceOf(bob) - bobDaiBefore,
-      tokenList.dai.balanceOf(carol) - carolDaiBefore,
+      bobBorrow.userAfter.tokenBalance - bobBorrow.userBefore.tokenBalance,
+      (carolBorrow1.userAfter.tokenBalance - carolBorrow1.userBefore.tokenBalance) +
+        (carolBorrow2.userAfter.tokenBalance - carolBorrow2.userBefore.tokenBalance),
       'drawn assets should match'
     );
 
-    assertEq(returnedValues[0].shares, expectedShares[0]);
-    assertEq(returnedValues[0].amount, amount1 + amount2);
-    assertEq(returnedValues[1].shares, expectedShares[1]);
-    assertEq(returnedValues[1].amount, amount1);
-    assertEq(returnedValues[2].shares, expectedShares[2]);
-    assertEq(returnedValues[2].amount, amount2);
+    assertEq(bobBorrow.shares, expectedSharesCombined);
+    assertEq(bobBorrow.amount, amount1 + amount2);
+    assertEq(carolBorrow1.shares, expectedSharesSmall1);
+    assertEq(carolBorrow1.amount, amount1);
+    assertEq(carolBorrow2.shares, expectedSharesSmall2);
+    assertEq(carolBorrow2.amount, amount2);
   }
 
   /// base exch rate, it's the same for user to borrow 1 big amount vs 2 small amounts
@@ -242,35 +252,39 @@ contract SpokeBorrowEdgeCasesTest is SpokeBase {
 
     _openSupplyPosition(spoke1, _daiReserveId(spoke1), MAX_SUPPLY_AMOUNT_DAI);
 
-    uint256 carolDaiBefore = tokenList.dai.balanceOf(carol);
-    uint256 bobDaiBefore = tokenList.dai.balanceOf(bob);
-
-    uint256[3] memory expectedShares;
-    TestReturnValues[3] memory returnedValues;
-    expectedShares[0] = hub1.previewDrawByAssets(daiAssetId, amount1);
-    expectedShares[1] = hub1.previewDrawByAssets(daiAssetId, amount2);
-    expectedShares[2] = hub1.previewDrawByAssets(daiAssetId, amount1 + amount2);
+    uint256 expectedSharesSmall1 = hub1.previewDrawByAssets(daiAssetId, amount1);
+    uint256 expectedSharesSmall2 = hub1.previewDrawByAssets(daiAssetId, amount2);
+    uint256 expectedSharesCombined = hub1.previewDrawByAssets(daiAssetId, amount1 + amount2);
 
     // carol borrows 2 smaller amounts in 2 actions
-    vm.startPrank(carol);
-    (returnedValues[0].shares, returnedValues[0].amount) = spoke1.borrow(
-      _daiReserveId(spoke1),
-      amount1,
-      carol
+    CheckedBorrowResult memory carolBorrow1 = _checkedBorrow(
+      CheckedBorrowParams({
+        spoke: spoke1,
+        reserveId: _daiReserveId(spoke1),
+        user: carol,
+        amount: amount1,
+        onBehalfOf: carol
+      })
     );
-    (returnedValues[1].shares, returnedValues[1].amount) = spoke1.borrow(
-      _daiReserveId(spoke1),
-      amount2,
-      carol
+    CheckedBorrowResult memory carolBorrow2 = _checkedBorrow(
+      CheckedBorrowParams({
+        spoke: spoke1,
+        reserveId: _daiReserveId(spoke1),
+        user: carol,
+        amount: amount2,
+        onBehalfOf: carol
+      })
     );
-    vm.stopPrank();
 
     // bob borrows whole amount at once
-    vm.prank(bob);
-    (returnedValues[2].shares, returnedValues[2].amount) = spoke1.borrow(
-      _daiReserveId(spoke1),
-      amount1 + amount2,
-      bob
+    CheckedBorrowResult memory bobBorrow = _checkedBorrow(
+      CheckedBorrowParams({
+        spoke: spoke1,
+        reserveId: _daiReserveId(spoke1),
+        user: bob,
+        amount: amount1 + amount2,
+        onBehalfOf: bob
+      })
     );
 
     // both users have the same amount of debt shares
@@ -281,17 +295,18 @@ contract SpokeBorrowEdgeCasesTest is SpokeBase {
     );
     // both users have the same amount of drawn asset
     assertEq(
-      tokenList.dai.balanceOf(bob) - bobDaiBefore,
-      tokenList.dai.balanceOf(carol) - carolDaiBefore,
+      bobBorrow.userAfter.tokenBalance - bobBorrow.userBefore.tokenBalance,
+      (carolBorrow1.userAfter.tokenBalance - carolBorrow1.userBefore.tokenBalance) +
+        (carolBorrow2.userAfter.tokenBalance - carolBorrow2.userBefore.tokenBalance),
       'drawn assets should match'
     );
 
-    assertEq(returnedValues[0].shares, expectedShares[0]);
-    assertEq(returnedValues[0].amount, amount1);
-    assertEq(returnedValues[1].shares, expectedShares[1]);
-    assertEq(returnedValues[1].amount, amount2);
-    assertEq(returnedValues[2].shares, expectedShares[2]);
-    assertEq(returnedValues[2].amount, amount1 + amount2);
+    assertEq(carolBorrow1.shares, expectedSharesSmall1);
+    assertEq(carolBorrow1.amount, amount1);
+    assertEq(carolBorrow2.shares, expectedSharesSmall2);
+    assertEq(carolBorrow2.amount, amount2);
+    assertEq(bobBorrow.shares, expectedSharesCombined);
+    assertEq(bobBorrow.amount, amount1 + amount2);
   }
 
   /// base exch rate, assert that user receives debt shares with correct rounding
@@ -344,12 +359,18 @@ contract SpokeBorrowEdgeCasesTest is SpokeBase {
       Math.Rounding.Ceil
     );
 
-    TestReturnValues memory returnValues;
-    vm.prank(bob);
-    (returnValues.shares, returnValues.amount) = spoke1.borrow(_daiReserveId(spoke1), amount1, bob);
+    CheckedBorrowResult memory r = _checkedBorrow(
+      CheckedBorrowParams({
+        spoke: spoke1,
+        reserveId: _daiReserveId(spoke1),
+        user: bob,
+        amount: amount1,
+        onBehalfOf: bob
+      })
+    );
 
-    assertEq(returnValues.shares, expectedDebtShares);
-    assertEq(returnValues.amount, amount1);
+    assertEq(r.shares, expectedDebtShares);
+    assertEq(r.amount, amount1);
 
     assertApproxEqAbs(
       expectedDebtShares,

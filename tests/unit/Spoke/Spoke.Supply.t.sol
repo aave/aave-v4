@@ -105,42 +105,39 @@ contract SpokeSupplyTest is SpokeBase {
 
   function test_supply() public {
     uint256 amount = 100e18;
-    TestUserData[2] memory bobData;
-    TestData[2] memory daiData;
-    uint256 stage = 0;
-    bobData[stage] = loadUserInfo(spoke1, _daiReserveId(spoke1), bob);
-    daiData[stage] = loadReserveInfo(spoke1, _daiReserveId(spoke1));
-    // dai balance
+
+    // pre-supply token assertions
     assertEq(tokenList.dai.balanceOf(bob), mintAmount_DAI);
     assertEq(tokenList.dai.balanceOf(address(hub1)), 0);
     assertEq(tokenList.dai.balanceOf(address(spoke1)), 0);
-    // reserve
-    assertEq(daiData[stage].data.drawnShares, 0);
-    assertEq(daiData[stage].data.premiumShares, 0);
-    assertEq(daiData[stage].data.premiumOffsetRay, 0);
-    assertEq(daiData[stage].data.addedShares, 0);
-    // user
-    assertEq(bobData[stage].data.drawnShares, 0);
-    assertEq(bobData[stage].data.premiumShares, 0);
-    assertEq(bobData[stage].data.premiumOffsetRay, 0);
-    assertEq(bobData[stage].data.suppliedShares, 0);
-    TestReturnValues memory returnValues;
+
+    uint256 expectedShares = hub1.previewAddByAssets(daiAssetId, amount);
     vm.expectEmit(address(spoke1));
-    emit ISpokeBase.Supply(
-      _daiReserveId(spoke1),
-      bob,
-      bob,
-      hub1.previewAddByAssets(daiAssetId, amount),
-      amount
+    emit ISpokeBase.Supply(_daiReserveId(spoke1), bob, bob, expectedShares, amount);
+    CheckedSupplyResult memory r = _checkedSupply(
+      CheckedSupplyParams({
+        spoke: spoke1,
+        reserveId: _daiReserveId(spoke1),
+        user: bob,
+        amount: amount,
+        onBehalfOf: bob
+      })
     );
-    vm.prank(bob);
-    (returnValues.shares, returnValues.amount) = spoke1.supply(_daiReserveId(spoke1), amount, bob);
-    stage = 1;
-    bobData[stage] = loadUserInfo(spoke1, _daiReserveId(spoke1), bob);
-    daiData[stage] = loadReserveInfo(spoke1, _daiReserveId(spoke1));
-    assertEq(returnValues.shares, hub1.previewAddByAssets(daiAssetId, amount));
-    assertEq(returnValues.amount, amount);
-    // dai balance
+
+    // pre-supply state via snapshots
+    // reserve
+    assertEq(r.reserveBefore.totalSuppliedShares, 0);
+    // user
+    assertEq(r.userBefore.position.drawnShares, 0);
+    assertEq(r.userBefore.position.premiumShares, 0);
+    assertEq(r.userBefore.position.premiumOffsetRay, 0);
+    assertEq(r.userBefore.position.suppliedShares, 0);
+
+    // return values
+    assertEq(r.shares, expectedShares);
+    assertEq(r.amount, amount);
+
+    // post-supply token assertions
     assertEq(
       tokenList.dai.balanceOf(bob),
       mintAmount_DAI - amount,
@@ -148,13 +145,15 @@ contract SpokeSupplyTest is SpokeBase {
     );
     assertEq(tokenList.dai.balanceOf(address(hub1)), amount, 'hub token balance after-supply');
     assertEq(tokenList.dai.balanceOf(address(spoke1)), 0, 'spoke token balance after-supply');
-    // reserve
-    assertEq(daiData[stage].data.drawnShares, 0, 'reserve drawnShares after-supply');
-    assertEq(daiData[stage].data.premiumShares, 0, 'reserve premiumShares after-supply');
-    assertEq(daiData[stage].data.premiumOffsetRay, 0, 'reserve premiumOffsetRay after-supply');
+
+    // post-supply reserve assertions
+    IHub.SpokeData memory spokeData = hub1.getSpoke(daiAssetId, address(spoke1));
+    assertEq(spokeData.drawnShares, 0, 'reserve drawnShares after-supply');
+    assertEq(spokeData.premiumShares, 0, 'reserve premiumShares after-supply');
+    assertEq(spokeData.premiumOffsetRay, 0, 'reserve premiumOffsetRay after-supply');
     assertEq(
-      daiData[stage].data.addedShares,
-      hub1.previewAddByAssets(daiAssetId, amount),
+      r.reserveAfter.totalSuppliedShares,
+      expectedShares,
       'reserve suppliedShares after-supply'
     );
     assertEq(
@@ -165,13 +164,13 @@ contract SpokeSupplyTest is SpokeBase {
     assertEq(amount, hub1.getAddedAssets(daiAssetId), 'asset supplied amount after-supply');
     _assertHubLiquidity(hub1, daiAssetId, 'spoke1.supply');
 
-    // user
-    assertEq(bobData[stage].data.drawnShares, 0, 'bob drawnShares after-supply');
-    assertEq(bobData[stage].data.premiumShares, 0, 'bob premiumShares after-supply');
-    assertEq(bobData[stage].data.premiumOffsetRay, 0, 'bob premiumOffsetRay after-supply');
+    // post-supply user assertions
+    assertEq(r.userAfter.position.drawnShares, 0, 'bob drawnShares after-supply');
+    assertEq(r.userAfter.position.premiumShares, 0, 'bob premiumShares after-supply');
+    assertEq(r.userAfter.position.premiumOffsetRay, 0, 'bob premiumOffsetRay after-supply');
     assertEq(
-      bobData[stage].data.suppliedShares,
-      hub1.previewAddByAssets(daiAssetId, amount),
+      r.userAfter.position.suppliedShares,
+      expectedShares,
       'bob suppliedShares after-supply'
     );
     assertEq(
@@ -186,57 +185,50 @@ contract SpokeSupplyTest is SpokeBase {
 
     deal(address(tokenList.dai), bob, amount);
 
-    TestUserData[2] memory bobData;
-    TestData[2] memory daiData;
-    uint256 stage = 0;
-
-    bobData[stage] = loadUserInfo(spoke1, _daiReserveId(spoke1), bob);
-    daiData[stage] = loadReserveInfo(spoke1, _daiReserveId(spoke1));
-
-    // dai balance
+    // pre-supply token assertions
     assertEq(tokenList.dai.balanceOf(bob), amount);
     assertEq(tokenList.dai.balanceOf(address(hub1)), 0);
     assertEq(tokenList.dai.balanceOf(address(spoke1)), 0);
-    // reserve
-    assertEq(daiData[stage].data.drawnShares, 0);
-    assertEq(daiData[stage].data.premiumShares, 0);
-    assertEq(daiData[stage].data.premiumOffsetRay, 0);
-    assertEq(daiData[stage].data.addedShares, 0);
-    // user
-    assertEq(bobData[stage].data.drawnShares, 0);
-    assertEq(bobData[stage].data.premiumShares, 0);
-    assertEq(bobData[stage].data.premiumOffsetRay, 0);
-    assertEq(bobData[stage].data.suppliedShares, 0);
 
-    TestReturnValues memory returnValues;
+    uint256 expectedShares = hub1.previewAddByAssets(daiAssetId, amount);
     vm.expectEmit(address(spoke1));
-    emit ISpokeBase.Supply(
-      _daiReserveId(spoke1),
-      bob,
-      bob,
-      hub1.previewAddByAssets(daiAssetId, amount),
-      amount
+    emit ISpokeBase.Supply(_daiReserveId(spoke1), bob, bob, expectedShares, amount);
+    CheckedSupplyResult memory r = _checkedSupply(
+      CheckedSupplyParams({
+        spoke: spoke1,
+        reserveId: _daiReserveId(spoke1),
+        user: bob,
+        amount: amount,
+        onBehalfOf: bob
+      })
     );
-    vm.prank(bob);
-    (returnValues.shares, returnValues.amount) = spoke1.supply(_daiReserveId(spoke1), amount, bob);
 
-    stage = 1;
-    bobData[stage] = loadUserInfo(spoke1, _daiReserveId(spoke1), bob);
-    daiData[stage] = loadReserveInfo(spoke1, _daiReserveId(spoke1));
+    // pre-supply state via snapshots
+    // reserve
+    assertEq(r.reserveBefore.totalSuppliedShares, 0);
+    // user
+    assertEq(r.userBefore.position.drawnShares, 0);
+    assertEq(r.userBefore.position.premiumShares, 0);
+    assertEq(r.userBefore.position.premiumOffsetRay, 0);
+    assertEq(r.userBefore.position.suppliedShares, 0);
 
-    assertEq(returnValues.shares, hub1.previewAddByAssets(daiAssetId, amount));
-    assertEq(returnValues.amount, amount);
-    // dai balance
+    // return values
+    assertEq(r.shares, expectedShares);
+    assertEq(r.amount, amount);
+
+    // post-supply token assertions
     assertEq(tokenList.dai.balanceOf(bob), 0, 'user token balance after-supply');
     assertEq(tokenList.dai.balanceOf(address(hub1)), amount, 'hub token balance after-supply');
     assertEq(tokenList.dai.balanceOf(address(spoke1)), 0, 'spoke token balance after-supply');
-    // reserve
-    assertEq(daiData[stage].data.drawnShares, 0, 'reserve drawnShares after-supply');
-    assertEq(daiData[stage].data.premiumShares, 0, 'reserve premiumShares after-supply');
-    assertEq(daiData[stage].data.premiumOffsetRay, 0, 'reserve premiumOffsetRay after-supply');
+
+    // post-supply reserve assertions
+    IHub.SpokeData memory spokeData = hub1.getSpoke(daiAssetId, address(spoke1));
+    assertEq(spokeData.drawnShares, 0, 'reserve drawnShares after-supply');
+    assertEq(spokeData.premiumShares, 0, 'reserve premiumShares after-supply');
+    assertEq(spokeData.premiumOffsetRay, 0, 'reserve premiumOffsetRay after-supply');
     assertEq(
-      daiData[stage].data.addedShares,
-      hub1.previewAddByAssets(daiAssetId, amount),
+      r.reserveAfter.totalSuppliedShares,
+      expectedShares,
       'reserve suppliedShares after-supply'
     );
     assertEq(
@@ -247,13 +239,13 @@ contract SpokeSupplyTest is SpokeBase {
     assertEq(amount, hub1.getAddedAssets(daiAssetId), 'asset supplied amount after-supply');
     _assertHubLiquidity(hub1, daiAssetId, 'spoke1.supply');
 
-    // user
-    assertEq(bobData[stage].data.drawnShares, 0, 'user drawnShares after-supply');
-    assertEq(bobData[stage].data.premiumShares, 0, 'user premiumShares after-supply');
-    assertEq(bobData[stage].data.premiumOffsetRay, 0, 'user premiumOffsetRay after-supply');
+    // post-supply user assertions
+    assertEq(r.userAfter.position.drawnShares, 0, 'user drawnShares after-supply');
+    assertEq(r.userAfter.position.premiumShares, 0, 'user premiumShares after-supply');
+    assertEq(r.userAfter.position.premiumOffsetRay, 0, 'user premiumOffsetRay after-supply');
     assertEq(
-      bobData[stage].data.suppliedShares,
-      hub1.previewAddByAssets(daiAssetId, amount),
+      r.userAfter.position.suppliedShares,
+      expectedShares,
       'user suppliedShares after-supply'
     );
     assertEq(
@@ -274,65 +266,59 @@ contract SpokeSupplyTest is SpokeBase {
     uint256 expectedShares = hub1.previewAddByAssets(daiAssetId, amount);
     assertGt(amount, expectedShares, 'exchange rate should be > 1');
 
-    TestUserData[2] memory carolData;
-    TestData[2] memory daiData;
-    TokenData[2] memory tokenData;
-    uint256 stage = 0;
-
-    carolData[stage] = loadUserInfo(spoke1, _daiReserveId(spoke1), carol);
-    daiData[stage] = loadReserveInfo(spoke1, _daiReserveId(spoke1));
-    tokenData[stage] = getTokenBalances(tokenList.dai, address(spoke1));
+    uint256 hubBalanceBefore = tokenList.dai.balanceOf(address(hub1));
+    IHub.SpokeData memory spokeDataBefore = hub1.getSpoke(daiAssetId, address(spoke1));
 
     deal(address(tokenList.dai), carol, amount);
 
-    TestReturnValues memory returnValues;
     vm.expectEmit(address(spoke1));
     emit ISpokeBase.Supply(_daiReserveId(spoke1), carol, carol, expectedShares, amount);
     _assertRefreshPremiumNotCalled();
-    vm.prank(carol);
-    (returnValues.shares, returnValues.amount) = spoke1.supply(
-      _daiReserveId(spoke1),
-      amount,
-      carol
+    CheckedSupplyResult memory r = _checkedSupply(
+      CheckedSupplyParams({
+        spoke: spoke1,
+        reserveId: _daiReserveId(spoke1),
+        user: carol,
+        amount: amount,
+        onBehalfOf: carol
+      })
     );
-    stage = 1;
 
-    carolData[stage] = loadUserInfo(spoke1, _daiReserveId(spoke1), carol);
-    daiData[stage] = loadReserveInfo(spoke1, _daiReserveId(spoke1));
-    tokenData[stage] = getTokenBalances(tokenList.dai, address(spoke1));
+    // return values
+    assertEq(r.shares, expectedShares);
+    assertEq(r.amount, amount);
 
-    assertEq(returnValues.shares, expectedShares);
-    assertEq(returnValues.amount, amount);
-    // dai balance
+    // token assertions
     assertEq(tokenList.dai.balanceOf(carol), 0, 'user token balance after-supply');
     assertEq(
       tokenList.dai.balanceOf(address(hub1)),
-      tokenData[stage - 1].hubBalance + amount,
+      hubBalanceBefore + amount,
       'hub token balance after-supply'
     );
     assertEq(tokenList.dai.balanceOf(address(spoke1)), 0, 'spoke token balance after-supply');
 
-    // reserve
+    // reserve assertions
+    IHub.SpokeData memory spokeDataAfter = hub1.getSpoke(daiAssetId, address(spoke1));
     assertEq(
-      daiData[stage].data.drawnShares,
-      daiData[stage - 1].data.drawnShares,
+      spokeDataAfter.drawnShares,
+      spokeDataBefore.drawnShares,
       'reserve drawnShares after-supply'
     );
-    assertEq(daiData[stage].data.premiumShares, 0, 'reserve premiumShares after-supply');
-    assertEq(daiData[stage].data.premiumOffsetRay, 0, 'reserve premiumOffsetRay after-supply');
+    assertEq(spokeDataAfter.premiumShares, 0, 'reserve premiumShares after-supply');
+    assertEq(spokeDataAfter.premiumOffsetRay, 0, 'reserve premiumOffsetRay after-supply');
     assertEq(
-      daiData[stage].data.addedShares,
-      daiData[stage - 1].data.addedShares + expectedShares,
+      r.reserveAfter.totalSuppliedShares,
+      r.reserveBefore.totalSuppliedShares + expectedShares,
       'reserve addedShares after-supply'
     );
     _assertHubLiquidity(hub1, daiAssetId, 'spoke1.supply');
 
-    // user
-    assertEq(carolData[stage].data.drawnShares, 0, 'user drawnShares after-supply');
-    assertEq(carolData[stage].data.premiumShares, 0, 'user premiumShares after-supply');
-    assertEq(carolData[stage].data.premiumOffsetRay, 0, 'user premiumOffsetRay after-supply');
+    // user assertions
+    assertEq(r.userAfter.position.drawnShares, 0, 'user drawnShares after-supply');
+    assertEq(r.userAfter.position.premiumShares, 0, 'user premiumShares after-supply');
+    assertEq(r.userAfter.position.premiumOffsetRay, 0, 'user premiumOffsetRay after-supply');
     assertEq(
-      carolData[stage].data.suppliedShares,
+      r.userAfter.position.suppliedShares,
       expectedShares,
       'user suppliedShares after-supply'
     );
@@ -393,32 +379,26 @@ contract SpokeSupplyTest is SpokeBase {
     vm.assume(state.expectedShares > 0);
     assertGt(amount, state.expectedShares, 'exchange rate should be > 1');
 
-    TestUserData[2] memory carolData;
-    TestData[2] memory reserveData;
-    TokenData[2] memory tokenData;
-    uint256 stage = 0;
+    uint256 hubBalanceBefore = state.underlying.balanceOf(address(hub1));
+    IHub.SpokeData memory spokeDataBefore = hub1.getSpoke(state.assetId, address(spoke1));
 
-    carolData[stage] = loadUserInfo(spoke1, reserveId, carol);
-    reserveData[stage] = loadReserveInfo(spoke1, reserveId);
-    tokenData[stage] = getTokenBalances(state.underlying, address(spoke1));
-
-    uint256 expectedSuppliedShares = hub1.previewAddByAssets(state.assetId, amount);
-    vm.assume(expectedSuppliedShares > 0);
-
-    TestReturnValues memory returnValues;
     vm.expectEmit(address(spoke1));
-    emit ISpokeBase.Supply(reserveId, carol, carol, expectedSuppliedShares, amount);
+    emit ISpokeBase.Supply(reserveId, carol, carol, state.expectedShares, amount);
     _assertRefreshPremiumNotCalled();
-    vm.prank(carol);
-    (returnValues.shares, returnValues.amount) = spoke1.supply(reserveId, amount, carol);
-    stage = 1;
+    CheckedSupplyResult memory r = _checkedSupply(
+      CheckedSupplyParams({
+        spoke: spoke1,
+        reserveId: reserveId,
+        user: carol,
+        amount: amount,
+        onBehalfOf: carol
+      })
+    );
 
-    carolData[stage] = loadUserInfo(spoke1, reserveId, carol);
-    reserveData[stage] = loadReserveInfo(spoke1, reserveId);
-    tokenData[stage] = getTokenBalances(state.underlying, address(spoke1));
+    // return values
+    assertEq(r.shares, state.expectedShares);
+    assertEq(r.amount, amount);
 
-    assertEq(returnValues.shares, expectedSuppliedShares);
-    assertEq(returnValues.amount, amount);
     // token balance
     assertEq(
       state.underlying.balanceOf(carol),
@@ -427,32 +407,33 @@ contract SpokeSupplyTest is SpokeBase {
     );
     assertEq(
       state.underlying.balanceOf(address(hub1)),
-      tokenData[stage - 1].hubBalance + amount,
+      hubBalanceBefore + amount,
       'hub token balance after-supply'
     );
     assertEq(state.underlying.balanceOf(address(spoke1)), 0, 'spoke token balance after-supply');
 
-    // reserve
+    // reserve assertions
+    IHub.SpokeData memory spokeDataAfter = hub1.getSpoke(state.assetId, address(spoke1));
     assertEq(
-      reserveData[stage].data.drawnShares,
-      reserveData[stage - 1].data.drawnShares,
+      spokeDataAfter.drawnShares,
+      spokeDataBefore.drawnShares,
       'reserve drawnShares after-supply'
     );
-    assertEq(reserveData[stage].data.premiumShares, 0, 'reserve premiumShares after-supply');
-    assertEq(reserveData[stage].data.premiumOffsetRay, 0, 'reserve premiumOffsetRay after-supply');
+    assertEq(spokeDataAfter.premiumShares, 0, 'reserve premiumShares after-supply');
+    assertEq(spokeDataAfter.premiumOffsetRay, 0, 'reserve premiumOffsetRay after-supply');
     assertEq(
-      reserveData[stage].data.addedShares,
-      reserveData[stage - 1].data.addedShares + state.expectedShares,
+      r.reserveAfter.totalSuppliedShares,
+      r.reserveBefore.totalSuppliedShares + state.expectedShares,
       'reserve addedShares after-supply'
     );
     _assertHubLiquidity(hub1, daiAssetId, 'spoke1.supply');
 
-    // user
-    assertEq(carolData[stage].data.drawnShares, 0, 'user drawnShares after-supply');
-    assertEq(carolData[stage].data.premiumShares, 0, 'user premiumShares after-supply');
-    assertEq(carolData[stage].data.premiumOffsetRay, 0, 'user premiumOffsetRay after-supply');
+    // user assertions
+    assertEq(r.userAfter.position.drawnShares, 0, 'user drawnShares after-supply');
+    assertEq(r.userAfter.position.premiumShares, 0, 'user premiumShares after-supply');
+    assertEq(r.userAfter.position.premiumOffsetRay, 0, 'user premiumOffsetRay after-supply');
     assertEq(
-      carolData[stage].data.suppliedShares,
+      r.userAfter.position.suppliedShares,
       state.expectedShares,
       'user suppliedShares after-supply'
     );
@@ -465,65 +446,59 @@ contract SpokeSupplyTest is SpokeBase {
     uint256 expectedShares = hub1.previewAddByAssets(daiAssetId, amount);
     assertGt(amount, expectedShares, 'exchange rate should be > 1');
 
-    TestUserData[2] memory carolData;
-    TestData[2] memory daiData;
-    TokenData[2] memory tokenData;
-    uint256 stage = 0;
+    uint256 hubBalanceBefore = tokenList.dai.balanceOf(address(hub1));
+    IHub.SpokeData memory spokeDataBefore = hub1.getSpoke(daiAssetId, address(spoke1));
 
-    carolData[stage] = loadUserInfo(spoke1, _daiReserveId(spoke1), carol);
-    daiData[stage] = loadReserveInfo(spoke1, _daiReserveId(spoke1));
-    tokenData[stage] = getTokenBalances(tokenList.dai, address(spoke1));
-
-    assertGt(daiData[stage].data.premiumShares, 0, 'reserve premiumShares after-supply');
+    assertGt(spokeDataBefore.premiumShares, 0, 'reserve premiumShares after-supply');
 
     deal(address(tokenList.dai), carol, amount);
 
-    TestReturnValues memory returnValues;
-    vm.prank(carol);
     vm.expectEmit(address(spoke1));
     emit ISpokeBase.Supply(_daiReserveId(spoke1), carol, carol, expectedShares, amount);
     _assertRefreshPremiumNotCalled();
-    (returnValues.shares, returnValues.amount) = spoke1.supply(
-      _daiReserveId(spoke1),
-      amount,
-      carol
+    CheckedSupplyResult memory r = _checkedSupply(
+      CheckedSupplyParams({
+        spoke: spoke1,
+        reserveId: _daiReserveId(spoke1),
+        user: carol,
+        amount: amount,
+        onBehalfOf: carol
+      })
     );
-    stage = 1;
 
-    carolData[stage] = loadUserInfo(spoke1, _daiReserveId(spoke1), carol);
-    daiData[stage] = loadReserveInfo(spoke1, _daiReserveId(spoke1));
-    tokenData[stage] = getTokenBalances(tokenList.dai, address(spoke1));
+    // return values
+    assertEq(r.shares, expectedShares);
+    assertEq(r.amount, amount);
 
-    assertEq(returnValues.shares, expectedShares);
-    assertEq(returnValues.amount, amount);
-    // dai balance
+    // token assertions
     assertEq(tokenList.dai.balanceOf(carol), 0, 'user token balance after-supply');
     assertEq(
       tokenList.dai.balanceOf(address(hub1)),
-      tokenData[stage - 1].hubBalance + amount,
+      hubBalanceBefore + amount,
       'hub token balance after-supply'
     );
     assertEq(tokenList.dai.balanceOf(address(spoke1)), 0, 'spoke token balance after-supply');
 
-    // reserve
+    // reserve assertions
+    IHub.SpokeData memory spokeDataAfter = hub1.getSpoke(daiAssetId, address(spoke1));
     assertEq(
-      daiData[stage].data.drawnShares,
-      daiData[stage - 1].data.drawnShares,
+      spokeDataAfter.drawnShares,
+      spokeDataBefore.drawnShares,
       'reserve drawnShares after-supply'
     );
     assertEq(
-      daiData[stage].data.addedShares,
-      daiData[stage - 1].data.addedShares + expectedShares,
+      r.reserveAfter.totalSuppliedShares,
+      r.reserveBefore.totalSuppliedShares + expectedShares,
       'reserve addedShares after-supply'
     );
     _assertHubLiquidity(hub1, daiAssetId, 'spoke1.supply');
 
-    // user
-    assertEq(carolData[stage].data.drawnShares, 0, 'user drawnShares after-supply');
-    assertEq(carolData[stage].data.premiumShares, 0, 'user premiumShares after-supply');
-    assertEq(carolData[stage].data.premiumOffsetRay, 0, 'user premiumOffsetRay after-supply');
+    // user assertions
+    assertEq(r.userAfter.position.drawnShares, 0, 'user drawnShares after-supply');
+    assertEq(r.userAfter.position.premiumShares, 0, 'user premiumShares after-supply');
+    assertEq(r.userAfter.position.premiumOffsetRay, 0, 'user premiumOffsetRay after-supply');
     assertEq(
-      carolData[stage].data.suppliedShares,
+      r.userAfter.position.suppliedShares,
       expectedShares,
       'user suppliedShares after-supply'
     );
@@ -564,66 +539,65 @@ contract SpokeSupplyTest is SpokeBase {
       skipTime: skipTime
     });
 
-    uint256 expectedShares = hub1.previewAddByAssets(spoke1.getReserve(reserveId).assetId, amount);
+    uint256 assetId = spoke1.getReserve(reserveId).assetId;
+    uint256 expectedShares = hub1.previewAddByAssets(assetId, amount);
     vm.assume(expectedShares > 0);
     assertGt(amount, expectedShares, 'exchange rate should be > 1');
 
-    TestUserData[2] memory carolData;
-    TestData[2] memory reserveData;
-    TokenData[2] memory tokenData;
-    uint256 stage = 0;
+    uint256 hubBalanceBefore = underlying.balanceOf(address(hub1));
+    IHub.SpokeData memory spokeDataBefore = hub1.getSpoke(assetId, address(spoke1));
 
-    carolData[stage] = loadUserInfo(spoke1, reserveId, carol);
-    reserveData[stage] = loadReserveInfo(spoke1, reserveId);
-    tokenData[stage] = getTokenBalances(underlying, address(spoke1));
-
-    assertGt(reserveData[stage].data.premiumShares, 0);
+    assertGt(spokeDataBefore.premiumShares, 0);
 
     deal(address(underlying), carol, amount);
 
-    TestReturnValues memory returnValues;
     vm.expectEmit(address(spoke1));
     emit ISpokeBase.Supply(reserveId, carol, carol, expectedShares, amount);
     _assertRefreshPremiumNotCalled();
-    vm.prank(carol);
-    (returnValues.shares, returnValues.amount) = spoke1.supply(reserveId, amount, carol);
+    CheckedSupplyResult memory r = _checkedSupply(
+      CheckedSupplyParams({
+        spoke: spoke1,
+        reserveId: reserveId,
+        user: carol,
+        amount: amount,
+        onBehalfOf: carol
+      })
+    );
 
-    stage = 1;
-    carolData[stage] = loadUserInfo(spoke1, reserveId, carol);
-    reserveData[stage] = loadReserveInfo(spoke1, reserveId);
-    tokenData[stage] = getTokenBalances(underlying, address(spoke1));
+    // return values
+    assertEq(r.shares, expectedShares);
+    assertEq(r.amount, amount);
 
-    assertEq(returnValues.shares, expectedShares);
-    assertEq(returnValues.amount, amount);
     // token balance
     assertEq(underlying.balanceOf(carol), 0, 'user token balance after-supply');
     assertEq(
       underlying.balanceOf(address(hub1)),
-      tokenData[stage - 1].hubBalance + amount,
+      hubBalanceBefore + amount,
       'hub token balance after-supply'
     );
     assertEq(underlying.balanceOf(address(spoke1)), 0, 'spoke token balance after-supply');
 
-    // reserve
+    // reserve assertions
+    IHub.SpokeData memory spokeDataAfter = hub1.getSpoke(assetId, address(spoke1));
     assertEq(
-      reserveData[stage].data.drawnShares,
-      reserveData[stage - 1].data.drawnShares,
+      spokeDataAfter.drawnShares,
+      spokeDataBefore.drawnShares,
       'reserve drawnShares after-supply'
     );
-    assertTrue(reserveData[stage].data.premiumShares > 0, 'reserve premiumShares after-supply');
+    assertTrue(spokeDataAfter.premiumShares > 0, 'reserve premiumShares after-supply');
     assertEq(
-      reserveData[stage].data.addedShares,
-      reserveData[stage - 1].data.addedShares + expectedShares,
+      r.reserveAfter.totalSuppliedShares,
+      r.reserveBefore.totalSuppliedShares + expectedShares,
       'reserve addedShares after-supply'
     );
     _assertHubLiquidity(hub1, daiAssetId, 'spoke1.supply');
 
-    // user
-    assertEq(carolData[stage].data.drawnShares, 0, 'user drawnShares after-supply');
-    assertEq(carolData[stage].data.premiumShares, 0, 'user premiumShares after-supply');
-    assertEq(carolData[stage].data.premiumOffsetRay, 0, 'user premiumOffsetRay after-supply');
+    // user assertions
+    assertEq(r.userAfter.position.drawnShares, 0, 'user drawnShares after-supply');
+    assertEq(r.userAfter.position.premiumShares, 0, 'user premiumShares after-supply');
+    assertEq(r.userAfter.position.premiumOffsetRay, 0, 'user premiumOffsetRay after-supply');
     assertEq(
-      carolData[stage].data.suppliedShares,
+      r.userAfter.position.suppliedShares,
       expectedShares,
       'user suppliedShares after-supply'
     );
