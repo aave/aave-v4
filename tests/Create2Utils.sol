@@ -7,6 +7,7 @@ import {Vm} from 'forge-std/Vm.sol';
 library Create2Utils {
   error NoCreate2Factory();
   error Create2DeploymentFailed();
+  error Create2ContractAlreadyDeployed();
 
   // https://github.com/safe-global/safe-singleton-factory
   address public constant CREATE2_FACTORY = 0x914d7Fec6aaC8cd542e72Bca78B30650d45643d7;
@@ -26,19 +27,16 @@ library Create2Utils {
     require(_isContractDeployed(CREATE2_FACTORY), NoCreate2Factory());
 
     address computed = computeCreate2Address(salt, bytecode);
+    require(!_isContractDeployed(computed), Create2ContractAlreadyDeployed());
 
-    if (_isContractDeployed(computed)) {
-      return computed;
-    } else {
-      bytes memory creationBytecode = abi.encodePacked(salt, bytecode);
-      bytes memory returnData;
-      (, returnData) = CREATE2_FACTORY.call(creationBytecode);
+    bytes memory creationBytecode = abi.encodePacked(salt, bytecode);
+    bytes memory returnData;
+    (, returnData) = CREATE2_FACTORY.call(creationBytecode);
 
-      address deployedAt = address(uint160(bytes20(returnData)));
-      require(deployedAt == computed, Create2DeploymentFailed());
+    address deployedAt = address(uint160(bytes20(returnData)));
+    require(deployedAt == computed, Create2DeploymentFailed());
 
-      return deployedAt;
-    }
+    return deployedAt;
   }
 
   function _isContractDeployed(address instance) internal view returns (bool) {

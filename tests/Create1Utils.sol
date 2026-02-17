@@ -10,8 +10,7 @@ library Create1Utils {
   Vm internal constant vm = Vm(address(uint160(uint256(keccak256('hevm cheat code')))));
 
   function create1Deploy(bytes memory bytecode) internal returns (address addr) {
-    /// @solidity memory-safe-assembly
-    assembly {
+    assembly ('memory-safe') {
       addr := create(0, add(bytecode, 0x20), mload(bytecode))
     }
     require(addr != address(0), Create1DeploymentFailed());
