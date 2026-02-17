@@ -13,7 +13,6 @@ import {IHub, IHubBase} from 'src/hub/interfaces/IHub.sol';
 import {ISpoke, ISpokeBase} from 'src/spoke/interfaces/ISpoke.sol';
 import {IPriceOracle} from 'src/spoke/interfaces/IPriceOracle.sol';
 import {IBasicInterestRateStrategy} from 'src/hub/AssetInterestRateStrategy.sol';
-import {ReserveFlags, ReserveFlagsMap} from 'src/spoke/libraries/ReserveFlagsMap.sol';
 import {IAccessManager} from 'src/dependencies/openzeppelin/IAccessManager.sol';
 import {Constants} from 'tests/Constants.sol';
 import {Utils} from 'tests/Utils.sol';
@@ -27,8 +26,6 @@ abstract contract QueryHelpers is MathHelpers {
   using MathUtils for uint256;
   using PercentageMath for uint256;
   using SafeCast for *;
-  using ReserveFlagsMap for ReserveFlags;
-
   function getUserInfo(
     ISpoke spoke,
     address user,
@@ -85,17 +82,6 @@ abstract contract QueryHelpers is MathHelpers {
   ) internal view returns (ISpoke.DynamicReserveConfig memory) {
     return
       spoke.getDynamicReserveConfig(reserveId, _getReserveLastDynamicConfigKey(spoke, reserveId));
-  }
-
-  function getSpokeInfo(
-    uint256 assetId,
-    address spoke
-  ) internal view returns (IHub.SpokeData memory) {
-    return hub1.getSpoke(assetId, spoke);
-  }
-
-  function getAssetInfo(uint256 assetId) internal view returns (IHub.Asset memory) {
-    return hub1.getAsset(assetId);
   }
 
   function getAssetByReserveId(
@@ -350,23 +336,6 @@ abstract contract QueryHelpers is MathHelpers {
       });
   }
 
-  function _getReserve(ISpoke spoke, uint256 reserveId) internal view returns (Reserve memory) {
-    ISpoke.Reserve memory reserve = spoke.getReserve(reserveId);
-    return
-      Reserve({
-        reserveId: reserveId,
-        hub: _hub(spoke, reserveId),
-        assetId: reserve.assetId,
-        decimals: reserve.decimals,
-        collateralRisk: reserve.collateralRisk,
-        paused: reserve.flags.paused(),
-        frozen: reserve.flags.frozen(),
-        borrowable: reserve.flags.borrowable(),
-        receiveSharesEnabled: reserve.flags.receiveSharesEnabled(),
-        dynamicConfigKey: reserve.dynamicConfigKey
-      });
-  }
-
   // --- Higher-level calculations (need query + math) ---
 
   function _getExpectedPremiumDelta(
@@ -488,21 +457,6 @@ abstract contract QueryHelpers is MathHelpers {
     return targetTotalDebtValue - userAccountData.totalDebtValueRay / WadRayMath.RAY;
   }
 
-  function _getRequiredDebtForGtHf(
-    ISpoke spoke,
-    address user,
-    uint256 desiredHf
-  ) internal view returns (uint256) {
-    ISpoke.UserAccountData memory userAccountData = spoke.getUserAccountData(user);
-
-    return
-      userAccountData
-        .totalCollateralValue
-        .percentMulDown(userAccountData.avgCollateralFactor.fromWadDown())
-        .percentMulDown(99_00)
-        .wadDivDown(desiredHf) - userAccountData.totalDebtValueRay.fromRayUp();
-  }
-
   function _getLiquidationBonus(
     ISpoke spoke,
     uint256 reserveId,
@@ -510,24 +464,5 @@ abstract contract QueryHelpers is MathHelpers {
     uint256 healthFactor
   ) internal view returns (uint256) {
     return spoke.getLiquidationBonus(reserveId, user, healthFactor);
-  }
-
-  function _borrowToBeAboveHealthyHf(
-    ISpoke spoke,
-    address user,
-    uint256 reserveId,
-    uint256 desiredHf
-  ) internal returns (uint256, uint256) {
-    uint256 requiredDebtInBase = _getRequiredDebtForGtHf(spoke, user, desiredHf);
-    uint256 requiredDebtAmount = _convertValueToAmount(spoke, reserveId, requiredDebtInBase) - 1;
-
-    vm.assume(requiredDebtAmount < MAX_SUPPLY_AMOUNT);
-
-    vm.prank(user);
-    spoke.borrow(reserveId, requiredDebtAmount, user);
-
-    uint256 finalHf = _getUserHealthFactor(spoke, user);
-    assertGt(finalHf, desiredHf, 'should borrow so that HF is above desiredHf');
-    return (finalHf, requiredDebtAmount);
   }
 }

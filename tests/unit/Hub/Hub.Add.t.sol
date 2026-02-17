@@ -252,13 +252,12 @@ contract HubAddTest is HubBase {
 
     IERC20 underlying = IERC20(hub1.getAsset(assetId).underlying);
 
-    (uint256 drawnBefore, ) = hub1.getAssetOwed(assetId);
-    uint256 liquidityBefore = hub1.getAssetLiquidity(assetId);
+    HubSnapshot memory hubBefore = _snapshotHub(hub1, assetId);
     vm.expectCall(
       address(irStrategy),
       abi.encodeCall(
         IBasicInterestRateStrategy.calculateInterestRate,
-        (assetId, liquidityBefore + amount, drawnBefore, 0, 0)
+        (assetId, hubBefore.liquidity + amount, hubBefore.drawnAssets, 0, 0)
       )
     );
 
@@ -293,11 +292,11 @@ contract HubAddTest is HubBase {
     assertEq(hub1.getAsset(assetId).lastUpdateTimestamp, vm.getBlockTimestamp());
     assertEq(
       hub1.getAsset(assetId).liquidity,
-      liquidityBefore + amount,
+      hubBefore.liquidity + amount,
       'hub available liquidity after'
     );
     (uint256 drawnAfter, ) = hub1.getAssetOwed(assetId);
-    assertEq(drawnAfter, drawnBefore, 'hub drawn debt after');
+    assertEq(drawnAfter, hubBefore.drawnAssets, 'hub drawn debt after');
     _assertBorrowRateSynced(hub1, assetId, 'hub1.add');
     _assertHubLiquidity(hub1, assetId, 'hub1.add');
     // token balance
@@ -497,16 +496,14 @@ contract HubAddTest is HubBase {
     assertLt(shares, addAmount); // index increased, exch rate > 1
 
     uint256 spokeAddedSharesBefore = hub1.getSpokeAddedShares(daiAssetId, address(spoke2));
-    uint256 addedAssetsBefore = hub1.getSpokeAddedAssets(daiAssetId, address(spoke2));
-    uint256 addedSharesBefore = hub1.getAddedShares(daiAssetId);
+    uint256 spokeAddedAssetsBefore = hub1.getSpokeAddedAssets(daiAssetId, address(spoke2));
+    HubSnapshot memory hubBefore = _snapshotHub(hub1, daiAssetId);
 
-    (uint256 drawnBefore, ) = hub1.getAssetOwed(daiAssetId);
-    uint256 liquidityBefore = hub1.getAssetLiquidity(daiAssetId);
     vm.expectCall(
       address(irStrategy),
       abi.encodeCall(
         IBasicInterestRateStrategy.calculateInterestRate,
-        (daiAssetId, liquidityBefore + addAmount, drawnBefore, 0, 0)
+        (daiAssetId, hubBefore.liquidity + addAmount, hubBefore.drawnAssets, 0, 0)
       )
     );
 
@@ -524,7 +521,7 @@ contract HubAddTest is HubBase {
 
     assertEq(
       hub1.getSpokeAddedAssets(daiAssetId, address(spoke2)),
-      addedAssetsBefore + addAmount,
+      spokeAddedAssetsBefore + addAmount,
       'spoke addedAssets after'
     );
     assertEq(
@@ -535,17 +532,21 @@ contract HubAddTest is HubBase {
     // Hub and Spoke accounting do not match because of liquidity fees
     assertGe(
       hub1.getAddedAssets(daiAssetId),
-      addedAssetsBefore + addAmount,
+      spokeAddedAssetsBefore + addAmount,
       'hub addedAssets after'
     );
-    assertGe(hub1.getAddedShares(daiAssetId), addedSharesBefore + shares, 'hub addedShares after');
+    assertGe(
+      hub1.getAddedShares(daiAssetId),
+      hubBefore.addedShares + shares,
+      'hub addedShares after'
+    );
     assertEq(
       hub1.getAsset(daiAssetId).liquidity,
-      liquidityBefore + addAmount,
+      hubBefore.liquidity + addAmount,
       'hub available liquidity after'
     );
     (uint256 drawnAfter, ) = hub1.getAssetOwed(daiAssetId);
-    assertEq(drawnAfter, drawnBefore, 'hub drawn debt after');
+    assertEq(drawnAfter, hubBefore.drawnAssets, 'hub drawn debt after');
     _assertBorrowRateSynced(hub1, daiAssetId, 'hub1.add');
     _assertHubLiquidity(hub1, daiAssetId, 'hub1.add');
   }

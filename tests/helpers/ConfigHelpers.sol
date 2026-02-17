@@ -14,20 +14,6 @@ import {SnapshotHelpers} from 'tests/helpers/SnapshotHelpers.sol';
 abstract contract ConfigHelpers is SnapshotHelpers {
   using SafeCast for *;
 
-  function updateAssetFeeReceiver(
-    IHub hub,
-    uint256 assetId,
-    address newFeeReceiver
-  ) internal pausePrank {
-    IHub.AssetConfig memory config = hub.getAssetConfig(assetId);
-    config.feeReceiver = newFeeReceiver;
-
-    vm.prank(HUB_ADMIN);
-    hub.updateAssetConfig(assetId, config, new bytes(0));
-
-    assertEq(hub.getAssetConfig(assetId), config);
-  }
-
   function updateAssetReinvestmentController(
     IHub hub,
     uint256 assetId,
@@ -153,23 +139,6 @@ abstract contract ConfigHelpers is SnapshotHelpers {
 
     assertEq(_getLatestDynamicReserveConfig(spoke, reserveId), config);
     return dynamicConfigKey;
-  }
-
-  function _updateCollateralFactorAtKey(
-    ISpoke spoke,
-    uint256 reserveId,
-    uint256 newCollateralFactor,
-    uint32 dynamicConfigKey
-  ) internal pausePrank {
-    ISpoke.DynamicReserveConfig memory config = spoke.getDynamicReserveConfig(
-      reserveId,
-      dynamicConfigKey
-    );
-    config.collateralFactor = newCollateralFactor.toUint16();
-    vm.prank(SPOKE_ADMIN);
-    spoke.updateDynamicReserveConfig(reserveId, dynamicConfigKey, config);
-
-    assertEq(_getLatestDynamicReserveConfig(spoke, reserveId), config);
   }
 
   function _addDynamicReserveConfig(
@@ -314,11 +283,5 @@ abstract contract ConfigHelpers is SnapshotHelpers {
     IAccessManager manager = IAccessManager(hub.authority());
     vm.prank(ADMIN);
     manager.grantRole(Roles.DEFICIT_ELIMINATOR_ROLE, target, 0);
-  }
-
-  function revokeDeficitEliminatorRole(IHub hub, address target) internal pausePrank {
-    IAccessManager manager = IAccessManager(hub.authority());
-    vm.prank(ADMIN);
-    manager.revokeRole(Roles.DEFICIT_ELIMINATOR_ROLE, target);
   }
 }

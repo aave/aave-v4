@@ -34,10 +34,6 @@ abstract contract MathHelpers is BaseState {
     return (a + b - 1) / b;
   }
 
-  function _approxRelFromBps(uint256 bps) internal pure returns (uint256) {
-    return (bps * 1e18) / 100_00;
-  }
-
   function _convertAmountToValue(
     ISpoke spoke,
     uint256 reserveId,

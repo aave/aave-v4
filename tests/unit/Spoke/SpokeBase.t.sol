@@ -290,28 +290,6 @@ contract SpokeBase is Base, CheckedActions {
     );
   }
 
-  function loadReserveInfo(
-    ISpoke spoke,
-    uint256 reserveId
-  ) internal view returns (TestData memory) {
-    return
-      TestData({
-        data: getSpokePosition(spoke, reserveId),
-        addedAmount: spoke.getReserveSuppliedAssets(reserveId)
-      });
-  }
-
-  function loadUserInfo(
-    ISpoke spoke,
-    uint256 reserveId,
-    address user
-  ) internal view returns (TestUserData memory) {
-    TestUserData memory userInfo;
-    userInfo.data = getUserInfo(spoke, user, reserveId);
-    userInfo.suppliedAmount = spoke.getUserSuppliedAssets(reserveId, user);
-    return userInfo;
-  }
-
   function getTokenBalances(IERC20 token, address spoke) internal view returns (TokenData memory) {
     return
       TokenData({spokeBalance: token.balanceOf(spoke), hubBalance: token.balanceOf(address(hub1))});
