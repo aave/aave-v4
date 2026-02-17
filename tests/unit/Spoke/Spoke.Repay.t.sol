@@ -179,10 +179,10 @@ contract SpokeRepayTest is SpokeBase {
     assertEq(r.amount, daiRepayAmount);
     assertEq(r.shares, expectedShares);
 
-    assertEq(r.userAfter.suppliedShares, r.userBefore.suppliedShares);
+    assertEq(r.ownerAfter.suppliedShares, r.ownerBefore.suppliedShares);
     assertApproxEqAbs(
-      r.userAfter.totalDebt,
-      r.userBefore.totalDebt - daiRepayAmount,
+      r.ownerAfter.totalDebt,
+      r.ownerBefore.totalDebt - daiRepayAmount,
       2,
       'bob dai debt final balance'
     );
@@ -191,8 +191,8 @@ contract SpokeRepayTest is SpokeBase {
     UserSnapshot memory bobWethAfter = _snapshotUser(spoke1, _wethReserveId(spoke1), bob);
     assertEq(bobWethAfter.suppliedShares, hub1.previewAddByAssets(wethAssetId, wethSupplyAmount));
     assertEq(
-      r.userAfter.tokenBalance,
-      r.userBefore.tokenBalance - daiRepayAmount,
+      r.callerAfter.tokenBalance,
+      r.callerBefore.tokenBalance - daiRepayAmount,
       'bob dai final balance'
     );
     assertEq(tokenList.weth.balanceOf(bob), bobWethBalanceBefore);
@@ -299,15 +299,15 @@ contract SpokeRepayTest is SpokeBase {
     assertEq(r.shares, daiRepayAmount);
     assertEq(r.amount, daiRepayAmount);
 
-    assertEq(r.userAfter.suppliedShares, r.userBefore.suppliedShares);
+    assertEq(r.ownerAfter.suppliedShares, r.ownerBefore.suppliedShares);
     assertEq(
-      r.userAfter.totalDebt,
-      r.userBefore.totalDebt - daiRepayAmount,
+      r.ownerAfter.totalDebt,
+      r.ownerBefore.totalDebt - daiRepayAmount,
       'bob dai debt final balance'
     );
     assertEq(
-      r.userAfter.tokenBalance,
-      r.userBefore.tokenBalance - daiRepayAmount,
+      r.callerAfter.tokenBalance,
+      r.callerBefore.tokenBalance - daiRepayAmount,
       'bob dai final balance'
     );
 
@@ -395,18 +395,18 @@ contract SpokeRepayTest is SpokeBase {
     assertEq(r.amount, daiRepayAmount);
     assertEq(r.shares, expectedShares);
 
-    assertEq(r.userAfter.suppliedShares, r.userBefore.suppliedShares);
-    assertApproxEqAbs(r.userAfter.premiumDebt, 0, 1, 'bob dai premium debt final balance');
+    assertEq(r.ownerAfter.suppliedShares, r.ownerBefore.suppliedShares);
+    assertApproxEqAbs(r.ownerAfter.premiumDebt, 0, 1, 'bob dai premium debt final balance');
     assertApproxEqAbs(
-      r.userAfter.drawnDebt,
+      r.ownerAfter.drawnDebt,
       daiBorrowAmount,
       1,
       'bob dai drawn debt final balance'
     );
-    assertApproxEqAbs(r.userAfter.totalDebt, daiBorrowAmount, 2, 'bob dai debt final balance');
+    assertApproxEqAbs(r.ownerAfter.totalDebt, daiBorrowAmount, 2, 'bob dai debt final balance');
     assertEq(
-      r.userAfter.tokenBalance,
-      r.userBefore.tokenBalance - daiRepayAmount,
+      r.callerAfter.tokenBalance,
+      r.callerBefore.tokenBalance - daiRepayAmount,
       'bob dai final balance'
     );
 
@@ -480,16 +480,16 @@ contract SpokeRepayTest is SpokeBase {
     assertEq(r.amount, daiRepayAmount);
     assertEq(r.shares, 0);
 
-    assertEq(r.userAfter.suppliedShares, r.userBefore.suppliedShares);
+    assertEq(r.ownerAfter.suppliedShares, r.ownerBefore.suppliedShares);
     assertApproxEqAbs(
-      r.userAfter.totalDebt,
-      r.userBefore.totalDebt - daiRepayAmount,
+      r.ownerAfter.totalDebt,
+      r.ownerBefore.totalDebt - daiRepayAmount,
       1,
       'bob dai debt final balance'
     );
     assertApproxEqAbs(
-      r.userAfter.premiumDebt,
-      r.userBefore.premiumDebt - daiRepayAmount,
+      r.ownerAfter.premiumDebt,
+      r.ownerBefore.premiumDebt - daiRepayAmount,
       1,
       'bob dai premium debt final balance'
     );
@@ -500,8 +500,8 @@ contract SpokeRepayTest is SpokeBase {
     assertEq(bobWethAfter.totalDebt, 0);
 
     assertEq(
-      r.userAfter.tokenBalance,
-      r.userBefore.tokenBalance - daiRepayAmount,
+      r.callerAfter.tokenBalance,
+      r.callerBefore.tokenBalance - daiRepayAmount,
       'bob dai final balance'
     );
     assertEq(tokenList.weth.balanceOf(bob), bobWethBalanceBefore);
@@ -570,13 +570,13 @@ contract SpokeRepayTest is SpokeBase {
     assertEq(r.shares, expectedShares);
 
     // Verify that Bob's debt is fully cleared after repayment
-    assertEq(r.userAfter.totalDebt, 0, 'Bob dai debt should be cleared');
+    assertEq(r.ownerAfter.totalDebt, 0, 'Bob dai debt should be cleared');
     assertFalse(_isBorrowing(spoke1, _daiReserveId(spoke1), bob));
 
     // Verify that his DAI balance was reduced by the full debt amount
     assertEq(
-      r.userAfter.tokenBalance,
-      r.userBefore.tokenBalance - fullDebt,
+      r.callerAfter.tokenBalance,
+      r.callerBefore.tokenBalance - fullDebt,
       'Bob dai balance decreased by full debt repaid'
     );
 
@@ -670,15 +670,15 @@ contract SpokeRepayTest is SpokeBase {
     assertEq(r.amount, daiRepayAmount);
     assertEq(r.shares, expectedShares);
 
-    assertEq(r.userAfter.suppliedShares, r.userBefore.suppliedShares);
+    assertEq(r.ownerAfter.suppliedShares, r.ownerBefore.suppliedShares);
     assertEq(
-      r.userAfter.totalDebt,
-      r.userBefore.totalDebt - daiRepayAmount,
+      r.ownerAfter.totalDebt,
+      r.ownerBefore.totalDebt - daiRepayAmount,
       'bob dai debt final balance'
     );
     assertEq(
-      r.userAfter.tokenBalance,
-      r.userBefore.tokenBalance - daiRepayAmount,
+      r.callerAfter.tokenBalance,
+      r.callerBefore.tokenBalance - daiRepayAmount,
       'bob dai final balance'
     );
 
@@ -777,10 +777,10 @@ contract SpokeRepayTest is SpokeBase {
     assertEq(r.amount, daiRepayAmount);
     assertEq(r.shares, hub1.previewRestoreByAssets(daiAssetId, baseRestored));
 
-    assertEq(r.userAfter.suppliedShares, r.userBefore.suppliedShares);
+    assertEq(r.ownerAfter.suppliedShares, r.ownerBefore.suppliedShares);
     assertApproxEqAbs(
-      r.userAfter.totalDebt,
-      r.userBefore.totalDebt - baseRestored - premiumRestored,
+      r.ownerAfter.totalDebt,
+      r.ownerBefore.totalDebt - baseRestored - premiumRestored,
       2,
       'bob dai debt final balance'
     );
@@ -788,7 +788,7 @@ contract SpokeRepayTest is SpokeBase {
     // If any drawn debt was repaid, then premium debt must be zero, or one
     if (baseRestored > 0) {
       assertApproxEqAbs(
-        r.userAfter.premiumDebt,
+        r.ownerAfter.premiumDebt,
         0,
         1,
         'bob dai premium debt final balance when base repaid'
@@ -797,8 +797,8 @@ contract SpokeRepayTest is SpokeBase {
 
     assertEq(spoke1.getUserTotalDebt(_wethReserveId(spoke1), bob), 0);
     assertEq(
-      r.userAfter.tokenBalance,
-      r.userBefore.tokenBalance - daiRepayAmount,
+      r.callerAfter.tokenBalance,
+      r.callerBefore.tokenBalance - daiRepayAmount,
       'bob dai final balance'
     );
     assertGe(daiRepayAmount, baseRestored + premiumRestored); // excess amount donated
@@ -906,10 +906,10 @@ contract SpokeRepayTest is SpokeBase {
     assertEq(r.amount, daiRepayAmount);
     assertEq(r.shares, hub1.previewRestoreByAssets(daiAssetId, baseRestored));
 
-    assertEq(r.userAfter.suppliedShares, r.userBefore.suppliedShares);
+    assertEq(r.ownerAfter.suppliedShares, r.ownerBefore.suppliedShares);
     assertApproxEqAbs(
-      r.userAfter.totalDebt,
-      r.userBefore.totalDebt - (r.baseRestored + r.premiumRestored),
+      r.ownerAfter.totalDebt,
+      r.ownerBefore.totalDebt - (r.baseRestored + r.premiumRestored),
       2,
       'bob dai debt final balance'
     );
@@ -924,7 +924,7 @@ contract SpokeRepayTest is SpokeBase {
 
     // repays only interest
     // it can be equal because of 1 wei rounding issue when repaying
-    assertGe(r.userAfter.totalDebt, daiBorrowAmount);
+    assertGe(r.ownerAfter.totalDebt, daiBorrowAmount);
 
     _assertHubLiquidity(hub1, daiAssetId, 'spoke1.repay');
   }
@@ -1021,17 +1021,17 @@ contract SpokeRepayTest is SpokeBase {
     assertEq(r.amount, daiRepayAmount);
     assertEq(r.shares, 0);
 
-    assertEq(r.userAfter.suppliedShares, r.userBefore.suppliedShares);
-    assertEq(r.userAfter.drawnDebt, r.userBefore.drawnDebt, 'bob dai drawn debt final balance');
+    assertEq(r.ownerAfter.suppliedShares, r.ownerBefore.suppliedShares);
+    assertEq(r.ownerAfter.drawnDebt, r.ownerBefore.drawnDebt, 'bob dai drawn debt final balance');
     assertApproxEqAbs(
-      r.userAfter.premiumDebt,
-      r.userBefore.premiumDebt - r.premiumRestored,
+      r.ownerAfter.premiumDebt,
+      r.ownerBefore.premiumDebt - r.premiumRestored,
       1,
       'bob dai premium debt final balance'
     );
     assertApproxEqAbs(
-      r.userAfter.totalDebt,
-      r.userBefore.totalDebt - r.premiumRestored,
+      r.ownerAfter.totalDebt,
+      r.ownerBefore.totalDebt - r.premiumRestored,
       1,
       'bob dai debt final balance'
     );
@@ -1045,7 +1045,7 @@ contract SpokeRepayTest is SpokeBase {
     assertEq(tokenList.weth.balanceOf(bob), bobWethBalanceBefore);
 
     // repays only premium
-    assertGe(r.userAfter.premiumDebt, 0);
+    assertGe(r.ownerAfter.premiumDebt, 0);
 
     _assertHubLiquidity(hub1, daiAssetId, 'spoke1.repay');
   }
@@ -1153,18 +1153,18 @@ contract SpokeRepayTest is SpokeBase {
     assertEq(r.amount, daiRepayAmount);
     assertEq(r.shares, hub1.previewRestoreByAssets(daiAssetId, baseRestored));
 
-    assertEq(r.userAfter.suppliedShares, r.userBefore.suppliedShares);
-    assertApproxEqAbs(r.userAfter.premiumDebt, 0, 1, 'bob dai premium debt final balance');
+    assertEq(r.ownerAfter.suppliedShares, r.ownerBefore.suppliedShares);
+    assertApproxEqAbs(r.ownerAfter.premiumDebt, 0, 1, 'bob dai premium debt final balance');
     assertApproxEqAbs(
-      r.userAfter.totalDebt,
-      r.userBefore.totalDebt - (r.baseRestored + r.premiumRestored),
+      r.ownerAfter.totalDebt,
+      r.ownerBefore.totalDebt - (r.baseRestored + r.premiumRestored),
       2,
       'bob dai debt final balance'
     );
     // repays only drawn debt
     assertApproxEqAbs(
-      r.userAfter.drawnDebt,
-      r.userBefore.drawnDebt - r.baseRestored,
+      r.ownerAfter.drawnDebt,
+      r.ownerBefore.drawnDebt - r.baseRestored,
       1,
       'bob dai drawn debt final balance'
     );
@@ -1282,17 +1282,17 @@ contract SpokeRepayTest is SpokeBase {
     assertEq(r.amount, daiRepayAmount);
     assertEq(r.shares, hub1.previewRestoreByAssets(daiAssetId, baseRestored));
 
-    assertEq(r.userAfter.suppliedShares, r.userBefore.suppliedShares);
+    assertEq(r.ownerAfter.suppliedShares, r.ownerBefore.suppliedShares);
     assertApproxEqAbs(
-      r.userAfter.drawnDebt,
-      r.userBefore.drawnDebt - r.baseRestored,
+      r.ownerAfter.drawnDebt,
+      r.ownerBefore.drawnDebt - r.baseRestored,
       1,
       'bob dai drawn debt final balance'
     );
-    assertEq(r.userAfter.premiumDebt, 0, 'bob dai premium debt final balance');
+    assertEq(r.ownerAfter.premiumDebt, 0, 'bob dai premium debt final balance');
     assertApproxEqAbs(
-      r.userAfter.totalDebt,
-      r.userBefore.totalDebt - (r.baseRestored + r.premiumRestored),
+      r.ownerAfter.totalDebt,
+      r.ownerBefore.totalDebt - (r.baseRestored + r.premiumRestored),
       1,
       'bob dai debt final balance'
     );
@@ -1307,8 +1307,8 @@ contract SpokeRepayTest is SpokeBase {
 
     // repays only drawn debt
     assertGe(
-      r.userAfter.drawnDebt,
-      r.userBefore.drawnDebt - daiRepayAmount,
+      r.ownerAfter.drawnDebt,
+      r.ownerBefore.drawnDebt - daiRepayAmount,
       'bob dai drawn debt final balance'
     );
 
@@ -1651,13 +1651,13 @@ contract SpokeRepayTest is SpokeBase {
     assertEq(r.shares, expectedDrawnShares);
 
     // Bob should have 0 drawn shares
-    assertEq(r.userAfter.position.drawnShares, 0, 'bob drawn shares after repay');
+    assertEq(r.ownerAfter.position.drawnShares, 0, 'bob drawn shares after repay');
     // Bob's debt should be 0
-    assertEq(r.userAfter.totalDebt, 0, 'bob total debt after repay');
+    assertEq(r.ownerAfter.totalDebt, 0, 'bob total debt after repay');
     // Bob's debt change vs the amount repaid
     assertEq(
-      stdMath.delta(r.userAfter.totalDebt, r.userBefore.totalDebt),
-      stdMath.delta(r.userAfter.tokenBalance, r.userBefore.tokenBalance),
+      stdMath.delta(r.ownerAfter.totalDebt, r.ownerBefore.totalDebt),
+      stdMath.delta(r.callerAfter.tokenBalance, r.callerBefore.tokenBalance),
       'bob balance vs debt change'
     );
     _assertHubLiquidity(hub1, daiAssetId, 'spoke1.repay');

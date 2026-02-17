@@ -112,7 +112,7 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
       (supplyAmount - partialWithdrawAmount);
 
     totalSupplied = interestAccrued + supplyAmount - partialWithdrawAmount;
-    assertApproxEqAbs(totalSupplied, r1.userAfter.suppliedAmount, 1, 'expected supplied');
+    assertApproxEqAbs(totalSupplied, r1.ownerAfter.suppliedAmount, 1, 'expected supplied');
 
     // Check supply rate monotonically increasing after partial withdraw
     _checkSupplyRateIncreasing(addExRateBefore, getAddExRate(daiAssetId), 'after partial withdraw');
@@ -268,11 +268,11 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
 
     _checkSupplyRateIncreasing(state.addExRate, getAddExRate(state.assetId), 'after bob withdraw');
 
-    assertEq(rAlice.amount, rAlice.userBefore.suppliedAmount);
-    assertEq(rBob.amount, rBob.userBefore.suppliedAmount);
+    assertEq(rAlice.amount, rAlice.ownerBefore.suppliedAmount);
+    assertEq(rBob.amount, rBob.ownerBefore.suppliedAmount);
 
-    assertEq(rAlice.shares, rAlice.userBefore.suppliedShares);
-    assertEq(rBob.shares, rBob.userBefore.suppliedShares);
+    assertEq(rAlice.shares, rAlice.ownerBefore.suppliedShares);
+    assertEq(rBob.shares, rBob.ownerBefore.suppliedShares);
 
     // reserve
     {
@@ -304,7 +304,7 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
       (uint256 userDrawnDebt, uint256 userPremiumDebt) = spoke1.getUserDebt(params.reserveId, bob);
       assertEq(userDrawnDebt, 0, 'bobData drawn debt');
       assertEq(userPremiumDebt, 0, 'bobData premium debt');
-      assertEq(rBob.userAfter.suppliedShares, 0, 'bobData supplied shares');
+      assertEq(rBob.ownerAfter.suppliedShares, 0, 'bobData supplied shares');
     }
 
     // token
@@ -319,12 +319,12 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
     }
     assertEq(
       state.underlying.balanceOf(alice),
-      MAX_SUPPLY_AMOUNT - params.aliceAmount + rAlice.userBefore.suppliedAmount,
+      MAX_SUPPLY_AMOUNT - params.aliceAmount + rAlice.ownerBefore.suppliedAmount,
       'alice balance'
     );
     assertEq(
       state.underlying.balanceOf(bob),
-      MAX_SUPPLY_AMOUNT - params.bobAmount + rBob.userBefore.suppliedAmount,
+      MAX_SUPPLY_AMOUNT - params.bobAmount + rBob.ownerBefore.suppliedAmount,
       'bob balance'
     );
   }

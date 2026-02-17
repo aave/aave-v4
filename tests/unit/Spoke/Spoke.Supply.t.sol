@@ -128,10 +128,10 @@ contract SpokeSupplyTest is SpokeBase {
     // reserve
     assertEq(r.reserveBefore.totalSuppliedShares, 0);
     // user
-    assertEq(r.userBefore.position.drawnShares, 0);
-    assertEq(r.userBefore.position.premiumShares, 0);
-    assertEq(r.userBefore.position.premiumOffsetRay, 0);
-    assertEq(r.userBefore.position.suppliedShares, 0);
+    assertEq(r.ownerBefore.position.drawnShares, 0);
+    assertEq(r.ownerBefore.position.premiumShares, 0);
+    assertEq(r.ownerBefore.position.premiumOffsetRay, 0);
+    assertEq(r.ownerBefore.position.suppliedShares, 0);
 
     // return values
     assertEq(r.shares, expectedShares);
@@ -165,11 +165,11 @@ contract SpokeSupplyTest is SpokeBase {
     _assertHubLiquidity(hub1, daiAssetId, 'spoke1.supply');
 
     // post-supply user assertions
-    assertEq(r.userAfter.position.drawnShares, 0, 'bob drawnShares after-supply');
-    assertEq(r.userAfter.position.premiumShares, 0, 'bob premiumShares after-supply');
-    assertEq(r.userAfter.position.premiumOffsetRay, 0, 'bob premiumOffsetRay after-supply');
+    assertEq(r.ownerAfter.position.drawnShares, 0, 'bob drawnShares after-supply');
+    assertEq(r.ownerAfter.position.premiumShares, 0, 'bob premiumShares after-supply');
+    assertEq(r.ownerAfter.position.premiumOffsetRay, 0, 'bob premiumOffsetRay after-supply');
     assertEq(
-      r.userAfter.position.suppliedShares,
+      r.ownerAfter.position.suppliedShares,
       expectedShares,
       'bob suppliedShares after-supply'
     );
@@ -207,10 +207,10 @@ contract SpokeSupplyTest is SpokeBase {
     // reserve
     assertEq(r.reserveBefore.totalSuppliedShares, 0);
     // user
-    assertEq(r.userBefore.position.drawnShares, 0);
-    assertEq(r.userBefore.position.premiumShares, 0);
-    assertEq(r.userBefore.position.premiumOffsetRay, 0);
-    assertEq(r.userBefore.position.suppliedShares, 0);
+    assertEq(r.ownerBefore.position.drawnShares, 0);
+    assertEq(r.ownerBefore.position.premiumShares, 0);
+    assertEq(r.ownerBefore.position.premiumOffsetRay, 0);
+    assertEq(r.ownerBefore.position.suppliedShares, 0);
 
     // return values
     assertEq(r.shares, expectedShares);
@@ -240,11 +240,11 @@ contract SpokeSupplyTest is SpokeBase {
     _assertHubLiquidity(hub1, daiAssetId, 'spoke1.supply');
 
     // post-supply user assertions
-    assertEq(r.userAfter.position.drawnShares, 0, 'user drawnShares after-supply');
-    assertEq(r.userAfter.position.premiumShares, 0, 'user premiumShares after-supply');
-    assertEq(r.userAfter.position.premiumOffsetRay, 0, 'user premiumOffsetRay after-supply');
+    assertEq(r.ownerAfter.position.drawnShares, 0, 'user drawnShares after-supply');
+    assertEq(r.ownerAfter.position.premiumShares, 0, 'user premiumShares after-supply');
+    assertEq(r.ownerAfter.position.premiumOffsetRay, 0, 'user premiumOffsetRay after-supply');
     assertEq(
-      r.userAfter.position.suppliedShares,
+      r.ownerAfter.position.suppliedShares,
       expectedShares,
       'user suppliedShares after-supply'
     );
@@ -314,11 +314,11 @@ contract SpokeSupplyTest is SpokeBase {
     _assertHubLiquidity(hub1, daiAssetId, 'spoke1.supply');
 
     // user assertions
-    assertEq(r.userAfter.position.drawnShares, 0, 'user drawnShares after-supply');
-    assertEq(r.userAfter.position.premiumShares, 0, 'user premiumShares after-supply');
-    assertEq(r.userAfter.position.premiumOffsetRay, 0, 'user premiumOffsetRay after-supply');
+    assertEq(r.ownerAfter.position.drawnShares, 0, 'user drawnShares after-supply');
+    assertEq(r.ownerAfter.position.premiumShares, 0, 'user premiumShares after-supply');
+    assertEq(r.ownerAfter.position.premiumOffsetRay, 0, 'user premiumOffsetRay after-supply');
     assertEq(
-      r.userAfter.position.suppliedShares,
+      r.ownerAfter.position.suppliedShares,
       expectedShares,
       'user suppliedShares after-supply'
     );
@@ -429,11 +429,11 @@ contract SpokeSupplyTest is SpokeBase {
     _assertHubLiquidity(hub1, daiAssetId, 'spoke1.supply');
 
     // user assertions
-    assertEq(r.userAfter.position.drawnShares, 0, 'user drawnShares after-supply');
-    assertEq(r.userAfter.position.premiumShares, 0, 'user premiumShares after-supply');
-    assertEq(r.userAfter.position.premiumOffsetRay, 0, 'user premiumOffsetRay after-supply');
+    assertEq(r.ownerAfter.position.drawnShares, 0, 'user drawnShares after-supply');
+    assertEq(r.ownerAfter.position.premiumShares, 0, 'user premiumShares after-supply');
+    assertEq(r.ownerAfter.position.premiumOffsetRay, 0, 'user premiumOffsetRay after-supply');
     assertEq(
-      r.userAfter.position.suppliedShares,
+      r.ownerAfter.position.suppliedShares,
       state.expectedShares,
       'user suppliedShares after-supply'
     );
@@ -494,11 +494,11 @@ contract SpokeSupplyTest is SpokeBase {
     _assertHubLiquidity(hub1, daiAssetId, 'spoke1.supply');
 
     // user assertions
-    assertEq(r.userAfter.position.drawnShares, 0, 'user drawnShares after-supply');
-    assertEq(r.userAfter.position.premiumShares, 0, 'user premiumShares after-supply');
-    assertEq(r.userAfter.position.premiumOffsetRay, 0, 'user premiumOffsetRay after-supply');
+    assertEq(r.ownerAfter.position.drawnShares, 0, 'user drawnShares after-supply');
+    assertEq(r.ownerAfter.position.premiumShares, 0, 'user premiumShares after-supply');
+    assertEq(r.ownerAfter.position.premiumOffsetRay, 0, 'user premiumOffsetRay after-supply');
     assertEq(
-      r.userAfter.position.suppliedShares,
+      r.ownerAfter.position.suppliedShares,
       expectedShares,
       'user suppliedShares after-supply'
     );
@@ -593,11 +593,11 @@ contract SpokeSupplyTest is SpokeBase {
     _assertHubLiquidity(hub1, daiAssetId, 'spoke1.supply');
 
     // user assertions
-    assertEq(r.userAfter.position.drawnShares, 0, 'user drawnShares after-supply');
-    assertEq(r.userAfter.position.premiumShares, 0, 'user premiumShares after-supply');
-    assertEq(r.userAfter.position.premiumOffsetRay, 0, 'user premiumOffsetRay after-supply');
+    assertEq(r.ownerAfter.position.drawnShares, 0, 'user drawnShares after-supply');
+    assertEq(r.ownerAfter.position.premiumShares, 0, 'user premiumShares after-supply');
+    assertEq(r.ownerAfter.position.premiumOffsetRay, 0, 'user premiumOffsetRay after-supply');
     assertEq(
-      r.userAfter.position.suppliedShares,
+      r.ownerAfter.position.suppliedShares,
       expectedShares,
       'user suppliedShares after-supply'
     );

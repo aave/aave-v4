@@ -294,7 +294,7 @@ contract SpokeBase is Base, CheckedActions {
 
     // Assert borrow amount matches
     assertEq(
-      borrowResult.userAfter.drawnDebt - borrowResult.userBefore.drawnDebt,
+      borrowResult.ownerAfter.drawnDebt - borrowResult.ownerBefore.drawnDebt,
       borrow.borrowAmount
     );
     assertEq(

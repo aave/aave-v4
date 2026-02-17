@@ -23,8 +23,10 @@ abstract contract CheckedActions is SnapshotHelpers {
   struct CheckedSupplyResult {
     uint256 shares;
     uint256 amount;
-    UserSnapshot userBefore;
-    UserSnapshot userAfter;
+    UserSnapshot callerBefore;
+    UserSnapshot callerAfter;
+    UserSnapshot ownerBefore;
+    UserSnapshot ownerAfter;
     ReserveSnapshot reserveBefore;
     ReserveSnapshot reserveAfter;
   }
@@ -40,8 +42,10 @@ abstract contract CheckedActions is SnapshotHelpers {
   struct CheckedWithdrawResult {
     uint256 shares;
     uint256 amount;
-    UserSnapshot userBefore;
-    UserSnapshot userAfter;
+    UserSnapshot callerBefore;
+    UserSnapshot callerAfter;
+    UserSnapshot ownerBefore;
+    UserSnapshot ownerAfter;
     ReserveSnapshot reserveBefore;
     ReserveSnapshot reserveAfter;
   }
@@ -57,8 +61,10 @@ abstract contract CheckedActions is SnapshotHelpers {
   struct CheckedBorrowResult {
     uint256 shares;
     uint256 amount;
-    UserSnapshot userBefore;
-    UserSnapshot userAfter;
+    UserSnapshot callerBefore;
+    UserSnapshot callerAfter;
+    UserSnapshot ownerBefore;
+    UserSnapshot ownerAfter;
     ReserveSnapshot reserveBefore;
     ReserveSnapshot reserveAfter;
   }
@@ -76,8 +82,10 @@ abstract contract CheckedActions is SnapshotHelpers {
     uint256 amount;
     uint256 baseRestored;
     uint256 premiumRestored;
-    UserSnapshot userBefore;
-    UserSnapshot userAfter;
+    UserSnapshot callerBefore;
+    UserSnapshot callerAfter;
+    UserSnapshot ownerBefore;
+    UserSnapshot ownerAfter;
     ReserveSnapshot reserveBefore;
     ReserveSnapshot reserveAfter;
   }
@@ -93,7 +101,8 @@ abstract contract CheckedActions is SnapshotHelpers {
   function _checkedSupply(
     CheckedSupplyParams memory params
   ) internal returns (CheckedSupplyResult memory result) {
-    result.userBefore = _snapshotUser(params.spoke, params.reserveId, params.onBehalfOf);
+    result.callerBefore = _snapshotUser(params.spoke, params.reserveId, params.user);
+    result.ownerBefore = _snapshotUser(params.spoke, params.reserveId, params.onBehalfOf);
     result.reserveBefore = _snapshotReserve(params.spoke, params.reserveId);
 
     vm.prank(params.user);
@@ -103,13 +112,14 @@ abstract contract CheckedActions is SnapshotHelpers {
       params.onBehalfOf
     );
 
-    result.userAfter = _snapshotUser(params.spoke, params.reserveId, params.onBehalfOf);
+    result.callerAfter = _snapshotUser(params.spoke, params.reserveId, params.user);
+    result.ownerAfter = _snapshotUser(params.spoke, params.reserveId, params.onBehalfOf);
     result.reserveAfter = _snapshotReserve(params.spoke, params.reserveId);
 
     // Basic invariants
     assertGe(
-      result.userAfter.suppliedShares,
-      result.userBefore.suppliedShares,
+      result.ownerAfter.suppliedShares,
+      result.ownerBefore.suppliedShares,
       'checkedSupply: shares should increase'
     );
     assertGe(
@@ -122,7 +132,8 @@ abstract contract CheckedActions is SnapshotHelpers {
   function _checkedWithdraw(
     CheckedWithdrawParams memory params
   ) internal returns (CheckedWithdrawResult memory result) {
-    result.userBefore = _snapshotUser(params.spoke, params.reserveId, params.onBehalfOf);
+    result.callerBefore = _snapshotUser(params.spoke, params.reserveId, params.user);
+    result.ownerBefore = _snapshotUser(params.spoke, params.reserveId, params.onBehalfOf);
     result.reserveBefore = _snapshotReserve(params.spoke, params.reserveId);
 
     vm.prank(params.user);
@@ -132,13 +143,14 @@ abstract contract CheckedActions is SnapshotHelpers {
       params.onBehalfOf
     );
 
-    result.userAfter = _snapshotUser(params.spoke, params.reserveId, params.onBehalfOf);
+    result.callerAfter = _snapshotUser(params.spoke, params.reserveId, params.user);
+    result.ownerAfter = _snapshotUser(params.spoke, params.reserveId, params.onBehalfOf);
     result.reserveAfter = _snapshotReserve(params.spoke, params.reserveId);
 
     // Basic invariants
     assertLe(
-      result.userAfter.suppliedShares,
-      result.userBefore.suppliedShares,
+      result.ownerAfter.suppliedShares,
+      result.ownerBefore.suppliedShares,
       'checkedWithdraw: shares should decrease'
     );
     assertLe(
@@ -151,7 +163,8 @@ abstract contract CheckedActions is SnapshotHelpers {
   function _checkedBorrow(
     CheckedBorrowParams memory params
   ) internal returns (CheckedBorrowResult memory result) {
-    result.userBefore = _snapshotUser(params.spoke, params.reserveId, params.onBehalfOf);
+    result.callerBefore = _snapshotUser(params.spoke, params.reserveId, params.user);
+    result.ownerBefore = _snapshotUser(params.spoke, params.reserveId, params.onBehalfOf);
     result.reserveBefore = _snapshotReserve(params.spoke, params.reserveId);
 
     vm.prank(params.user);
@@ -161,13 +174,14 @@ abstract contract CheckedActions is SnapshotHelpers {
       params.onBehalfOf
     );
 
-    result.userAfter = _snapshotUser(params.spoke, params.reserveId, params.onBehalfOf);
+    result.callerAfter = _snapshotUser(params.spoke, params.reserveId, params.user);
+    result.ownerAfter = _snapshotUser(params.spoke, params.reserveId, params.onBehalfOf);
     result.reserveAfter = _snapshotReserve(params.spoke, params.reserveId);
 
     // Basic invariants
     assertGe(
-      result.userAfter.totalDebt,
-      result.userBefore.totalDebt,
+      result.ownerAfter.totalDebt,
+      result.ownerBefore.totalDebt,
       'checkedBorrow: user debt should increase'
     );
     assertGe(
@@ -180,7 +194,8 @@ abstract contract CheckedActions is SnapshotHelpers {
   function _checkedRepay(
     CheckedRepayParams memory params
   ) internal returns (CheckedRepayResult memory result) {
-    result.userBefore = _snapshotUser(params.spoke, params.reserveId, params.onBehalfOf);
+    result.callerBefore = _snapshotUser(params.spoke, params.reserveId, params.user);
+    result.ownerBefore = _snapshotUser(params.spoke, params.reserveId, params.onBehalfOf);
     result.reserveBefore = _snapshotReserve(params.spoke, params.reserveId);
 
     (result.baseRestored, result.premiumRestored) = _calculateExactRestoreAmount(
@@ -197,13 +212,14 @@ abstract contract CheckedActions is SnapshotHelpers {
       params.onBehalfOf
     );
 
-    result.userAfter = _snapshotUser(params.spoke, params.reserveId, params.onBehalfOf);
+    result.callerAfter = _snapshotUser(params.spoke, params.reserveId, params.user);
+    result.ownerAfter = _snapshotUser(params.spoke, params.reserveId, params.onBehalfOf);
     result.reserveAfter = _snapshotReserve(params.spoke, params.reserveId);
 
     // Basic invariants
     assertLe(
-      result.userAfter.totalDebt,
-      result.userBefore.totalDebt,
+      result.ownerAfter.totalDebt,
+      result.ownerBefore.totalDebt,
       'checkedRepay: user debt should decrease'
     );
     assertLe(

@@ -271,11 +271,11 @@ contract SpokeRepayScenarioTest is SpokeBase {
               onBehalfOf: user
             })
           );
-          uint256 expectedDebt = usersInfo[i].daiInfo.repayAmount >= r.userBefore.totalDebt
+          uint256 expectedDebt = usersInfo[i].daiInfo.repayAmount >= r.ownerBefore.totalDebt
             ? 0
-            : r.userBefore.totalDebt - r.baseRestored - r.premiumRestored;
+            : r.ownerBefore.totalDebt - r.baseRestored - r.premiumRestored;
           assertApproxEqAbs(
-            r.userAfter.totalDebt,
+            r.ownerAfter.totalDebt,
             expectedDebt,
             2,
             'DAI debt not reduced correctly'
@@ -302,11 +302,11 @@ contract SpokeRepayScenarioTest is SpokeBase {
               onBehalfOf: user
             })
           );
-          uint256 expectedDebt = usersInfo[i].wethInfo.repayAmount >= r.userBefore.totalDebt
+          uint256 expectedDebt = usersInfo[i].wethInfo.repayAmount >= r.ownerBefore.totalDebt
             ? 0
-            : r.userBefore.totalDebt - r.baseRestored - r.premiumRestored;
+            : r.ownerBefore.totalDebt - r.baseRestored - r.premiumRestored;
           assertApproxEqAbs(
-            r.userAfter.totalDebt,
+            r.ownerAfter.totalDebt,
             expectedDebt,
             2,
             'WETH debt not reduced correctly'
@@ -333,11 +333,11 @@ contract SpokeRepayScenarioTest is SpokeBase {
               onBehalfOf: user
             })
           );
-          uint256 expectedDebt = usersInfo[i].usdxInfo.repayAmount >= r.userBefore.totalDebt
+          uint256 expectedDebt = usersInfo[i].usdxInfo.repayAmount >= r.ownerBefore.totalDebt
             ? 0
-            : r.userBefore.totalDebt - r.baseRestored - r.premiumRestored;
+            : r.ownerBefore.totalDebt - r.baseRestored - r.premiumRestored;
           assertApproxEqAbs(
-            r.userAfter.totalDebt,
+            r.ownerAfter.totalDebt,
             expectedDebt,
             2,
             'USDX debt not reduced correctly'
@@ -364,11 +364,11 @@ contract SpokeRepayScenarioTest is SpokeBase {
               onBehalfOf: user
             })
           );
-          uint256 expectedDebt = usersInfo[i].wbtcInfo.repayAmount >= r.userBefore.totalDebt
+          uint256 expectedDebt = usersInfo[i].wbtcInfo.repayAmount >= r.ownerBefore.totalDebt
             ? 0
-            : r.userBefore.totalDebt - r.baseRestored - r.premiumRestored;
+            : r.ownerBefore.totalDebt - r.baseRestored - r.premiumRestored;
           assertApproxEqAbs(
-            r.userAfter.totalDebt,
+            r.ownerAfter.totalDebt,
             expectedDebt,
             2,
             'WBTC debt not reduced correctly'
@@ -632,11 +632,11 @@ contract SpokeRepayScenarioTest is SpokeBase {
               onBehalfOf: user
             })
           );
-          uint256 expectedDebt = usersInfo[i].daiInfo.repayAmount >= r.userBefore.totalDebt
+          uint256 expectedDebt = usersInfo[i].daiInfo.repayAmount >= r.ownerBefore.totalDebt
             ? 0
-            : r.userBefore.totalDebt - r.baseRestored - r.premiumRestored;
+            : r.ownerBefore.totalDebt - r.baseRestored - r.premiumRestored;
           assertApproxEqAbs(
-            r.userAfter.totalDebt,
+            r.ownerAfter.totalDebt,
             expectedDebt,
             2,
             'DAI debt not reduced correctly'
@@ -663,11 +663,11 @@ contract SpokeRepayScenarioTest is SpokeBase {
               onBehalfOf: user
             })
           );
-          uint256 expectedDebt = usersInfo[i].wethInfo.repayAmount >= r.userBefore.totalDebt
+          uint256 expectedDebt = usersInfo[i].wethInfo.repayAmount >= r.ownerBefore.totalDebt
             ? 0
-            : r.userBefore.totalDebt - r.baseRestored - r.premiumRestored;
+            : r.ownerBefore.totalDebt - r.baseRestored - r.premiumRestored;
           assertApproxEqAbs(
-            r.userAfter.totalDebt,
+            r.ownerAfter.totalDebt,
             expectedDebt,
             2,
             'WETH debt not reduced correctly'
@@ -694,11 +694,11 @@ contract SpokeRepayScenarioTest is SpokeBase {
               onBehalfOf: user
             })
           );
-          uint256 expectedDebt = usersInfo[i].usdxInfo.repayAmount >= r.userBefore.totalDebt
+          uint256 expectedDebt = usersInfo[i].usdxInfo.repayAmount >= r.ownerBefore.totalDebt
             ? 0
-            : r.userBefore.totalDebt - r.baseRestored - r.premiumRestored;
+            : r.ownerBefore.totalDebt - r.baseRestored - r.premiumRestored;
           assertApproxEqAbs(
-            r.userAfter.totalDebt,
+            r.ownerAfter.totalDebt,
             expectedDebt,
             2,
             'USDX debt not reduced correctly'
@@ -725,11 +725,11 @@ contract SpokeRepayScenarioTest is SpokeBase {
               onBehalfOf: user
             })
           );
-          uint256 expectedDebt = usersInfo[i].wbtcInfo.repayAmount >= r.userBefore.totalDebt
+          uint256 expectedDebt = usersInfo[i].wbtcInfo.repayAmount >= r.ownerBefore.totalDebt
             ? 0
-            : r.userBefore.totalDebt - r.baseRestored - r.premiumRestored;
+            : r.ownerBefore.totalDebt - r.baseRestored - r.premiumRestored;
           assertApproxEqAbs(
-            r.userAfter.totalDebt,
+            r.ownerAfter.totalDebt,
             expectedDebt,
             2,
             'WBTC debt not reduced correctly'
@@ -851,10 +851,15 @@ contract SpokeRepayScenarioTest is SpokeBase {
             onBehalfOf: user
           })
         );
-        uint256 expectedDebt = usersInfo[i].repayAmount >= r.userBefore.totalDebt
+        uint256 expectedDebt = usersInfo[i].repayAmount >= r.ownerBefore.totalDebt
           ? 0
-          : r.userBefore.totalDebt - r.baseRestored - r.premiumRestored;
-        assertApproxEqAbs(r.userAfter.totalDebt, expectedDebt, 2, 'DAI debt not reduced correctly');
+          : r.ownerBefore.totalDebt - r.baseRestored - r.premiumRestored;
+        assertApproxEqAbs(
+          r.ownerAfter.totalDebt,
+          expectedDebt,
+          2,
+          'DAI debt not reduced correctly'
+        );
       }
     }
 
@@ -955,10 +960,15 @@ contract SpokeRepayScenarioTest is SpokeBase {
             onBehalfOf: user
           })
         );
-        uint256 expectedDebt = usersInfo[i].repayAmount >= r.userBefore.totalDebt
+        uint256 expectedDebt = usersInfo[i].repayAmount >= r.ownerBefore.totalDebt
           ? 0
-          : r.userBefore.totalDebt - r.baseRestored - r.premiumRestored;
-        assertApproxEqAbs(r.userAfter.totalDebt, expectedDebt, 2, 'DAI debt not reduced correctly');
+          : r.ownerBefore.totalDebt - r.baseRestored - r.premiumRestored;
+        assertApproxEqAbs(
+          r.ownerAfter.totalDebt,
+          expectedDebt,
+          2,
+          'DAI debt not reduced correctly'
+        );
       }
     }
 
@@ -1069,16 +1079,16 @@ contract SpokeRepayScenarioTest is SpokeBase {
       })
     );
 
-    assertEq(r1.userAfter.suppliedShares, r1.userBefore.suppliedShares);
+    assertEq(r1.ownerAfter.suppliedShares, r1.ownerBefore.suppliedShares);
     assertApproxEqAbs(
-      r1.userAfter.totalDebt,
-      r1.userBefore.totalDebt - r1.baseRestored - r1.premiumRestored,
+      r1.ownerAfter.totalDebt,
+      r1.ownerBefore.totalDebt - r1.baseRestored - r1.premiumRestored,
       2,
       'bob dai debt final balance'
     );
     assertEq(
-      r1.userAfter.tokenBalance,
-      r1.userBefore.tokenBalance - action1.repayAmount,
+      r1.callerAfter.tokenBalance,
+      r1.callerBefore.tokenBalance - action1.repayAmount,
       'bob dai final balance'
     );
     assertEq(
@@ -1169,16 +1179,16 @@ contract SpokeRepayScenarioTest is SpokeBase {
       })
     );
 
-    assertEq(r2.userAfter.suppliedShares, r2.userBefore.suppliedShares);
+    assertEq(r2.ownerAfter.suppliedShares, r2.ownerBefore.suppliedShares);
     assertApproxEqAbs(
-      r2.userAfter.totalDebt,
-      r2.userBefore.totalDebt - r2.baseRestored - r2.premiumRestored,
+      r2.ownerAfter.totalDebt,
+      r2.ownerBefore.totalDebt - r2.baseRestored - r2.premiumRestored,
       2,
       'bob dai debt final balance'
     );
     assertEq(
-      r2.userAfter.tokenBalance,
-      r2.userBefore.tokenBalance - action2.repayAmount,
+      r2.callerAfter.tokenBalance,
+      r2.callerBefore.tokenBalance - action2.repayAmount,
       'bob dai final balance'
     );
     assertEq(
@@ -1263,15 +1273,15 @@ contract SpokeRepayScenarioTest is SpokeBase {
 
     // Verify that Bob's debt is reduced after partial repayment
     assertApproxEqAbs(
-      r1.userAfter.totalDebt,
+      r1.ownerAfter.totalDebt,
       fullDebt - r1.baseRestored - r1.premiumRestored,
       2,
       'Bob dai debt should be reduced'
     );
     // Verify that his DAI balance was reduced by the partial repay amount
     assertEq(
-      r1.userAfter.tokenBalance,
-      r1.userBefore.tokenBalance - partialRepayAmount,
+      r1.callerAfter.tokenBalance,
+      r1.callerBefore.tokenBalance - partialRepayAmount,
       'Bob dai balance decreased by partial repay amount'
     );
     // Verify reserve debt was decreased by partial repayment
@@ -1328,12 +1338,12 @@ contract SpokeRepayScenarioTest is SpokeBase {
     );
 
     // Verify that Bob's debt is fully cleared after repayment
-    assertEq(r2.userAfter.totalDebt, 0, 'Bob dai debt should be cleared');
+    assertEq(r2.ownerAfter.totalDebt, 0, 'Bob dai debt should be cleared');
 
     // Verify that his DAI balance was reduced by the full debt amount
     assertApproxEqAbs(
-      r2.userAfter.tokenBalance,
-      r1.userBefore.tokenBalance - fullDebt,
+      r2.callerAfter.tokenBalance,
+      r1.callerBefore.tokenBalance - fullDebt,
       2,
       'Bob dai balance decreased by full debt repaid'
     );

@@ -142,8 +142,8 @@ contract SpokeWithdrawTest is SpokeBase {
     );
 
     // Bob assertions before withdrawal
-    assertEq(r.userBefore.suppliedAmount, amount, 'bob suppliedAmount pre-withdraw');
-    assertEq(r.userBefore.suppliedShares, expectedSupplyShares, 'bob suppliedShares pre-withdraw');
+    assertEq(r.ownerBefore.suppliedAmount, amount, 'bob suppliedAmount pre-withdraw');
+    assertEq(r.ownerBefore.suppliedShares, expectedSupplyShares, 'bob suppliedShares pre-withdraw');
 
     assertEq(r.amount, amount);
     assertEq(r.shares, expectedSupplyShares);
@@ -153,8 +153,8 @@ contract SpokeWithdrawTest is SpokeBase {
     assertEq(r.reserveAfter.totalSuppliedShares, 0, 'reserve addedShares post-withdraw');
 
     // Bob assertions after withdrawal
-    assertEq(r.userAfter.suppliedAmount, 0, 'bob suppliedAmount post-withdraw');
-    assertEq(r.userAfter.suppliedShares, 0, 'bob suppliedShares post-withdraw');
+    assertEq(r.ownerAfter.suppliedAmount, 0, 'bob suppliedAmount post-withdraw');
+    assertEq(r.ownerAfter.suppliedShares, 0, 'bob suppliedShares post-withdraw');
 
     // Token assertions after withdrawal
     assertEq(tokenDataAfter.spokeBalance, 0, 'dai spokeBalance post-withdraw');
@@ -200,7 +200,7 @@ contract SpokeWithdrawTest is SpokeBase {
     );
 
     assertEq(r.amount, supplyAmount);
-    assertEq(r.shares, r.userBefore.suppliedShares);
+    assertEq(r.shares, r.ownerBefore.suppliedShares);
 
     _checkSuppliedAmounts(daiAssetId, _daiReserveId(spoke1), spoke1, bob, 0, 'after withdraw');
     _checkSupplyRateIncreasing(addExRate, getAddExRate(daiAssetId), 'after withdraw');
@@ -240,7 +240,7 @@ contract SpokeWithdrawTest is SpokeBase {
     );
 
     assertEq(r.amount, supplyAmount);
-    assertEq(r.shares, r.userBefore.suppliedShares);
+    assertEq(r.shares, r.ownerBefore.suppliedShares);
 
     _checkSuppliedAmounts(daiAssetId, _daiReserveId(spoke1), spoke1, bob, 0, 'after withdraw');
     _checkSupplyRateIncreasing(addExRate, getAddExRate(daiAssetId), 'after withdraw');
@@ -280,7 +280,7 @@ contract SpokeWithdrawTest is SpokeBase {
     );
 
     assertEq(r.amount, supplyAmount);
-    assertEq(r.shares, r.userBefore.suppliedShares);
+    assertEq(r.shares, r.ownerBefore.suppliedShares);
 
     _checkSuppliedAmounts(daiAssetId, _daiReserveId(spoke1), spoke1, bob, 0, 'after withdraw');
     _checkSupplyRateIncreasing(addExRate, getAddExRate(daiAssetId), 'after withdraw');
@@ -352,8 +352,8 @@ contract SpokeWithdrawTest is SpokeBase {
       })
     );
 
-    assertEq(r.amount, r.userBefore.suppliedAmount);
-    assertEq(r.shares, r.userBefore.suppliedShares);
+    assertEq(r.amount, r.ownerBefore.suppliedAmount);
+    assertEq(r.shares, r.ownerBefore.suppliedShares);
 
     _checkSuppliedAmounts(daiAssetId, _daiReserveId(spoke1), spoke1, bob, 0, 'after withdraw');
     _checkSupplyRateIncreasing(addExRate, getAddExRate(daiAssetId), 'after withdraw');
@@ -425,8 +425,8 @@ contract SpokeWithdrawTest is SpokeBase {
       })
     );
 
-    assertEq(r.amount, r.userBefore.suppliedAmount);
-    assertEq(r.shares, r.userBefore.suppliedShares);
+    assertEq(r.amount, r.ownerBefore.suppliedAmount);
+    assertEq(r.shares, r.ownerBefore.suppliedShares);
 
     _checkSuppliedAmounts(daiAssetId, _daiReserveId(spoke1), spoke1, bob, 0, 'after withdraw');
     _checkSupplyRateIncreasing(addExRate, getAddExRate(daiAssetId), 'after withdraw');
@@ -508,7 +508,7 @@ contract SpokeWithdrawTest is SpokeBase {
     (userDrawnDebt, userPremiumDebt) = spoke1.getUserDebt(state.reserveId, bob);
     assertEq(userDrawnDebt, 0, 'bobData drawn debt');
     assertEq(userPremiumDebt, 0, 'bobData premium debt');
-    assertEq(r.userAfter.suppliedShares, 0, 'bobData supplied shares');
+    assertEq(r.ownerAfter.suppliedShares, 0, 'bobData supplied shares');
 
     // token
     assertEq(tokenDataAfter.spokeBalance, 0, 'tokenData spoke balance');
@@ -658,7 +658,7 @@ contract SpokeWithdrawTest is SpokeBase {
       assertEq(userDrawnDebt, 0, 'bobData drawn debt');
       assertEq(userPremiumDebt, 0, 'bobData premium debt');
       assertEq(
-        r.userAfter.suppliedShares,
+        r.ownerAfter.suppliedShares,
         state.supplyShares - r.shares,
         'bobData supplied shares'
       );
@@ -760,7 +760,7 @@ contract SpokeWithdrawTest is SpokeBase {
     (userDrawnDebt, userPremiumDebt) = spoke1.getUserDebt(state.reserveId, bob);
     assertEq(userDrawnDebt, 0, 'bobData drawn debt');
     assertEq(userPremiumDebt, 0, 'bobData premium debt');
-    assertEq(r.userAfter.suppliedShares, 0, 'bobData supplied shares');
+    assertEq(r.ownerAfter.suppliedShares, 0, 'bobData supplied shares');
 
     // token
     assertEq(tokenDataAfter.spokeBalance, 0, 'tokenData spoke balance');
@@ -904,7 +904,7 @@ contract SpokeWithdrawTest is SpokeBase {
       assertEq(userDrawnDebt, 0, 'bobData drawn debt');
       assertEq(userPremiumDebt, 0, 'bobData premium debt');
       assertEq(
-        r.userAfter.suppliedShares,
+        r.ownerAfter.suppliedShares,
         state.supplyShares - r.shares,
         'bobData supplied shares'
       );
@@ -1003,7 +1003,7 @@ contract SpokeWithdrawTest is SpokeBase {
       })
     );
 
-    assertEq(r.shares, r.userBefore.suppliedShares);
+    assertEq(r.shares, r.ownerBefore.suppliedShares);
     assertEq(r.amount, withdrawable);
 
     assertEq(getTotalWithdrawable(spoke1, reserveId, alice), 0);

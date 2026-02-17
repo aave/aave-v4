@@ -92,9 +92,9 @@ contract SpokeBorrowEdgeCasesTest is SpokeBase {
     );
     // but both users have the same amount of drawn asset
     assertEq(
-      bobBorrow.userAfter.tokenBalance - bobBorrow.userBefore.tokenBalance,
-      (carolBorrow1.userAfter.tokenBalance - carolBorrow1.userBefore.tokenBalance) +
-        (carolBorrow2.userAfter.tokenBalance - carolBorrow2.userBefore.tokenBalance),
+      bobBorrow.callerAfter.tokenBalance - bobBorrow.callerBefore.tokenBalance,
+      (carolBorrow1.callerAfter.tokenBalance - carolBorrow1.callerBefore.tokenBalance) +
+        (carolBorrow2.callerAfter.tokenBalance - carolBorrow2.callerBefore.tokenBalance),
       'drawn assets should match'
     );
 
@@ -215,9 +215,9 @@ contract SpokeBorrowEdgeCasesTest is SpokeBase {
     );
     // but both users have the same amount of drawn asset
     assertEq(
-      bobBorrow.userAfter.tokenBalance - bobBorrow.userBefore.tokenBalance,
-      (carolBorrow1.userAfter.tokenBalance - carolBorrow1.userBefore.tokenBalance) +
-        (carolBorrow2.userAfter.tokenBalance - carolBorrow2.userBefore.tokenBalance),
+      bobBorrow.callerAfter.tokenBalance - bobBorrow.callerBefore.tokenBalance,
+      (carolBorrow1.callerAfter.tokenBalance - carolBorrow1.callerBefore.tokenBalance) +
+        (carolBorrow2.callerAfter.tokenBalance - carolBorrow2.callerBefore.tokenBalance),
       'drawn assets should match'
     );
 
@@ -295,9 +295,9 @@ contract SpokeBorrowEdgeCasesTest is SpokeBase {
     );
     // both users have the same amount of drawn asset
     assertEq(
-      bobBorrow.userAfter.tokenBalance - bobBorrow.userBefore.tokenBalance,
-      (carolBorrow1.userAfter.tokenBalance - carolBorrow1.userBefore.tokenBalance) +
-        (carolBorrow2.userAfter.tokenBalance - carolBorrow2.userBefore.tokenBalance),
+      bobBorrow.callerAfter.tokenBalance - bobBorrow.callerBefore.tokenBalance,
+      (carolBorrow1.callerAfter.tokenBalance - carolBorrow1.callerBefore.tokenBalance) +
+        (carolBorrow2.callerAfter.tokenBalance - carolBorrow2.callerBefore.tokenBalance),
       'drawn assets should match'
     );
 
