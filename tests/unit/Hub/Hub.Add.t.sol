@@ -8,6 +8,20 @@ contract HubAddTest is HubBase {
   using SharesMath for uint256;
   using SafeCast for uint256;
 
+  struct HubAddTestState {
+    uint256 drawnAmount;
+    uint256 drawnShares;
+    uint256 assetAddedAmount;
+    uint256 assetAddedShares;
+    uint256 spoke1AddedAmount;
+    uint256 spoke1AddedShares;
+    uint256 spoke2AddedAmount;
+    uint256 spoke2AddedShares;
+    uint256 availableLiq;
+    uint256 bobBalance;
+    uint256 aliceBalance;
+  }
+
   uint256 minDecimalAssetId;
 
   function setUp() public override {
@@ -712,7 +726,7 @@ contract HubAddTest is HubBase {
     amount = bound(amount, 1, MAX_SUPPLY_AMOUNT / numAdds);
     skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
 
-    TestAddParams memory params;
+    HubAddTestState memory params;
     (params.assetAddedShares, params.drawnShares) = _addAndDrawLiquidity({
       hub: hub1,
       assetId: assetId,

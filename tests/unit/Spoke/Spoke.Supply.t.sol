@@ -353,14 +353,14 @@ contract SpokeSupplyTest is SpokeBase {
     // increase index on reserveId
     _executeSpokeSupplyAndBorrow({
       spoke: spoke1,
-      collateral: TestReserve({
+      collateral: ReserveSetupParams({
         reserveId: _wethReserveId(spoke1),
         supplier: alice,
         borrower: address(0),
         supplyAmount: 100e18,
         borrowAmount: 0
       }),
-      borrow: TestReserve({
+      borrow: ReserveSetupParams({
         reserveId: reserveId,
         borrowAmount: 10e18,
         supplyAmount: 20e18,
@@ -520,14 +520,14 @@ contract SpokeSupplyTest is SpokeBase {
     // alice supplies WETH as collateral, borrows DAI
     _executeSpokeSupplyAndBorrow({
       spoke: spoke1,
-      collateral: TestReserve({
+      collateral: ReserveSetupParams({
         reserveId: _wethReserveId(spoke1),
         supplier: alice,
         supplyAmount: 100e18,
         borrower: address(0),
         borrowAmount: 0
       }),
-      borrow: TestReserve({
+      borrow: ReserveSetupParams({
         reserveId: reserveId,
         borrowAmount: 10e18,
         supplyAmount: 20e18,

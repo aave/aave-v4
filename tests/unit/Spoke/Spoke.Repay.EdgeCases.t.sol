@@ -33,7 +33,7 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
     Utils.borrow(spoke1, _daiReserveId(spoke1), bob, daiBorrowAmount, bob);
     skip(skipTime); // initial increase in index, no time passes for subsequent checks
 
-    Debts memory bobDebt = getUserDebt(spoke1, bob, _daiReserveId(spoke1));
+    DebtData memory bobDebt = getUserDebt(spoke1, bob, _daiReserveId(spoke1));
     uint256 addExRateBefore = getAddExRate(daiAssetId);
     uint256 debtExRateBefore = getDebtExRate(daiAssetId);
 
@@ -55,7 +55,7 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
       daiRepayAmount
     );
 
-    TestReturnValues memory returnValues;
+    SharesAndAmount memory returnValues;
     vm.expectEmit(address(spoke1));
     emit ISpokeBase.Repay(
       _daiReserveId(spoke1),
@@ -225,7 +225,7 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
     // Bob borrows DAI
     Utils.borrow(spoke1, _daiReserveId(spoke1), bob, daiBorrowAmount, bob);
 
-    Debts memory bobDaiDebtBefore = getUserDebt(spoke1, bob, _daiReserveId(spoke1));
+    DebtData memory bobDaiDebtBefore = getUserDebt(spoke1, bob, _daiReserveId(spoke1));
     assertEq(bobDaiDebtBefore.totalDebt, daiBorrowAmount, 'Initial bob dai debt');
     assertEq(getUserDebt(spoke1, bob, _wethReserveId(spoke1)).totalDebt, 0);
 
@@ -389,7 +389,7 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
     // Time passes
     skip(10 days);
 
-    Debts memory bobDaiBefore = getUserDebt(spoke1, bob, _daiReserveId(spoke1));
+    DebtData memory bobDaiBefore = getUserDebt(spoke1, bob, _daiReserveId(spoke1));
     assertGt(bobDaiBefore.totalDebt, daiBorrowAmount, 'bob dai debt before');
 
     // Bob repays premium
@@ -489,7 +489,7 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
     // Time passes
     skip(10 days);
 
-    Debts memory bobDaiBefore = getUserDebt(spoke1, bob, _daiReserveId(spoke1));
+    DebtData memory bobDaiBefore = getUserDebt(spoke1, bob, _daiReserveId(spoke1));
     assertGt(bobDaiBefore.totalDebt, daiBorrowAmount, 'bob dai debt before');
     assertEq(bobDaiBefore.premiumDebt, 0, 'bob dai premium debt before');
 

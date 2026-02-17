@@ -8,6 +8,15 @@ contract SpokeRepayTest is SpokeBase {
   using PercentageMath for uint256;
   using SafeCast for uint256;
 
+  struct RepayMultipleLocal {
+    uint256 borrowAmount;
+    uint256 repayAmount;
+    ISpoke.UserPosition posBefore;
+    ISpoke.UserPosition posAfter;
+    uint256 baseRestored;
+    uint256 premiumRestored;
+  }
+
   function test_repay_revertsWith_ERC20InsufficientAllowance() public {
     uint256 daiSupplyAmount = 100e18;
     uint256 wethSupplyAmount = 10e18;
@@ -125,7 +134,7 @@ contract SpokeRepayTest is SpokeBase {
     // Time passes
     skip(10 days);
 
-    Debts memory bobDaiBefore = getUserDebt(spoke1, bob, _daiReserveId(spoke1));
+    DebtData memory bobDaiBefore = getUserDebt(spoke1, bob, _daiReserveId(spoke1));
     assertGe(bobDaiBefore.drawnDebt, daiBorrowAmount, 'bob dai debt before');
 
     (uint256 baseRestored, uint256 premiumRestored) = _calculateExactRestoreAmount(
@@ -337,7 +346,7 @@ contract SpokeRepayTest is SpokeBase {
     // Time passes
     skip(10 days);
 
-    Debts memory bobDaiBefore = getUserDebt(spoke1, bob, _daiReserveId(spoke1));
+    DebtData memory bobDaiBefore = getUserDebt(spoke1, bob, _daiReserveId(spoke1));
     assertGt(bobDaiBefore.totalDebt, daiBorrowAmount, 'bob dai debt before');
 
     // Bob repays interest
@@ -523,7 +532,7 @@ contract SpokeRepayTest is SpokeBase {
     // Time passes so that interest accrues
     skip(10 days);
 
-    Debts memory bobDaiBefore = getUserDebt(spoke1, bob, _daiReserveId(spoke1));
+    DebtData memory bobDaiBefore = getUserDebt(spoke1, bob, _daiReserveId(spoke1));
     assertGt(bobDaiBefore.totalDebt, daiBorrowAmount, 'Accrued interest increased bob dai debt');
 
     uint256 fullDebt = bobDaiBefore.drawnDebt + bobDaiBefore.premiumDebt;
@@ -615,7 +624,7 @@ contract SpokeRepayTest is SpokeBase {
 
     uint256 bobWethBalanceBefore = tokenList.weth.balanceOf(bob);
 
-    Debts memory bobDaiBefore = getUserDebt(spoke1, bob, _daiReserveId(spoke1));
+    DebtData memory bobDaiBefore = getUserDebt(spoke1, bob, _daiReserveId(spoke1));
 
     uint256 expectedShares;
     {
@@ -721,7 +730,7 @@ contract SpokeRepayTest is SpokeBase {
     // Time passes
     skip(skipTime);
 
-    Debts memory bobDaiBefore = getUserDebt(spoke1, bob, _daiReserveId(spoke1));
+    DebtData memory bobDaiBefore = getUserDebt(spoke1, bob, _daiReserveId(spoke1));
     assertGe(bobDaiBefore.totalDebt, daiBorrowAmount, 'bob dai debt before');
 
     // Calculate minimum repay amount
@@ -843,7 +852,7 @@ contract SpokeRepayTest is SpokeBase {
     // Time passes
     skip(skipTime);
 
-    Debts memory bobDaiBefore = getUserDebt(spoke1, bob, _daiReserveId(spoke1));
+    DebtData memory bobDaiBefore = getUserDebt(spoke1, bob, _daiReserveId(spoke1));
     assertGe(bobDaiBefore.totalDebt, daiBorrowAmount, 'bob dai debt before');
 
     // Bob repays
@@ -963,7 +972,7 @@ contract SpokeRepayTest is SpokeBase {
     // Time passes
     skip(skipTime);
 
-    Debts memory bobDaiBefore = getUserDebt(spoke1, bob, _daiReserveId(spoke1));
+    DebtData memory bobDaiBefore = getUserDebt(spoke1, bob, _daiReserveId(spoke1));
     assertGe(bobDaiBefore.totalDebt, daiBorrowAmount, 'bob dai debt before');
 
     // Bob repays
@@ -1082,7 +1091,7 @@ contract SpokeRepayTest is SpokeBase {
     // Time passes
     skip(skipTime);
 
-    Debts memory bobDaiBefore = getUserDebt(spoke1, bob, _daiReserveId(spoke1));
+    DebtData memory bobDaiBefore = getUserDebt(spoke1, bob, _daiReserveId(spoke1));
     assertGe(bobDaiBefore.totalDebt, daiBorrowAmount, 'bob dai debt before');
 
     // Bob repays premium first if any
@@ -1215,7 +1224,7 @@ contract SpokeRepayTest is SpokeBase {
     // Time passes
     skip(skipTime);
 
-    Debts memory bobDaiBefore = getUserDebt(spoke1, bob, _daiReserveId(spoke1));
+    DebtData memory bobDaiBefore = getUserDebt(spoke1, bob, _daiReserveId(spoke1));
     assertGe(bobDaiBefore.totalDebt, daiBorrowAmount, 'bob dai debt before');
     assertEq(bobDaiBefore.premiumDebt, 0, 'bob dai premium debt before');
 
@@ -1386,10 +1395,10 @@ contract SpokeRepayTest is SpokeBase {
     usdxInfo.posBefore = getUserInfo(spoke1, bob, _usdxReserveId(spoke1));
     wbtcInfo.posBefore = getUserInfo(spoke1, bob, _wbtcReserveId(spoke1));
 
-    Debts memory bobDaiBefore = getUserDebt(spoke1, bob, _daiReserveId(spoke1));
-    Debts memory bobWethBefore = getUserDebt(spoke1, bob, _wethReserveId(spoke1));
-    Debts memory bobUsdxBefore = getUserDebt(spoke1, bob, _usdxReserveId(spoke1));
-    Debts memory bobWbtcBefore = getUserDebt(spoke1, bob, _wbtcReserveId(spoke1));
+    DebtData memory bobDaiBefore = getUserDebt(spoke1, bob, _daiReserveId(spoke1));
+    DebtData memory bobWethBefore = getUserDebt(spoke1, bob, _wethReserveId(spoke1));
+    DebtData memory bobUsdxBefore = getUserDebt(spoke1, bob, _usdxReserveId(spoke1));
+    DebtData memory bobWbtcBefore = getUserDebt(spoke1, bob, _wbtcReserveId(spoke1));
 
     assertEq(bobDaiBefore.totalDebt, daiInfo.borrowAmount);
     assertEq(bobWethBefore.totalDebt, wethInfo.borrowAmount);
@@ -1414,7 +1423,7 @@ contract SpokeRepayTest is SpokeBase {
       deal(address(tokenList.dai), bob, daiInfo.repayAmount);
       Utils.repay(spoke1, _daiReserveId(spoke1), bob, daiInfo.repayAmount, bob);
     }
-    Debts memory bobDaiAfter = getUserDebt(spoke1, bob, _daiReserveId(spoke1));
+    DebtData memory bobDaiAfter = getUserDebt(spoke1, bob, _daiReserveId(spoke1));
 
     wethInfo.posBefore = getUserInfo(spoke1, bob, _wethReserveId(spoke1));
     bobWethBefore = getUserDebt(spoke1, bob, _wethReserveId(spoke1));
@@ -1429,7 +1438,7 @@ contract SpokeRepayTest is SpokeBase {
       deal(address(tokenList.weth), bob, wethInfo.repayAmount);
       Utils.repay(spoke1, _wethReserveId(spoke1), bob, wethInfo.repayAmount, bob);
     }
-    Debts memory bobWethAfter = getUserDebt(spoke1, bob, _wethReserveId(spoke1));
+    DebtData memory bobWethAfter = getUserDebt(spoke1, bob, _wethReserveId(spoke1));
 
     wbtcInfo.posBefore = getUserInfo(spoke1, bob, _wbtcReserveId(spoke1));
     bobWbtcBefore = getUserDebt(spoke1, bob, _wbtcReserveId(spoke1));
@@ -1444,7 +1453,7 @@ contract SpokeRepayTest is SpokeBase {
       deal(address(tokenList.wbtc), bob, wbtcInfo.repayAmount);
       Utils.repay(spoke1, _wbtcReserveId(spoke1), bob, wbtcInfo.repayAmount, bob);
     }
-    Debts memory bobWbtcAfter = getUserDebt(spoke1, bob, _wbtcReserveId(spoke1));
+    DebtData memory bobWbtcAfter = getUserDebt(spoke1, bob, _wbtcReserveId(spoke1));
 
     usdxInfo.posBefore = getUserInfo(spoke1, bob, _usdxReserveId(spoke1));
     bobUsdxBefore = getUserDebt(spoke1, bob, _usdxReserveId(spoke1));
@@ -1459,7 +1468,7 @@ contract SpokeRepayTest is SpokeBase {
       deal(address(tokenList.usdx), bob, usdxInfo.repayAmount);
       Utils.repay(spoke1, _usdxReserveId(spoke1), bob, usdxInfo.repayAmount, bob);
     }
-    Debts memory bobUsdxAfter = getUserDebt(spoke1, bob, _usdxReserveId(spoke1));
+    DebtData memory bobUsdxAfter = getUserDebt(spoke1, bob, _usdxReserveId(spoke1));
 
     daiInfo.posAfter = getUserInfo(spoke1, bob, _daiReserveId(spoke1));
     wethInfo.posAfter = getUserInfo(spoke1, bob, _wethReserveId(spoke1));

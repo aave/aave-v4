@@ -491,7 +491,7 @@ contract SpokeBorrowScenarioTest is SpokeBase {
     uint256 expectedShares = hub1.previewRestoreByAssets(daiAssetId, borrowAmount1);
 
     // Bob borrow dai
-    TestReturnValues memory returnValues;
+    SharesAndAmount memory returnValues;
     vm.prank(bob);
     (returnValues.shares, returnValues.amount) = spoke1.borrow(
       state.daiReserveId,
@@ -530,7 +530,7 @@ contract SpokeBorrowScenarioTest is SpokeBase {
     uint256 expectedShares2 = hub1.previewRestoreByAssets(daiAssetId, borrowAmount2);
 
     // Bob borrow more dai
-    TestReturnValues memory returnValues2;
+    SharesAndAmount memory returnValues2;
     vm.prank(bob);
     (returnValues2.shares, returnValues2.amount) = spoke1.borrow(
       state.daiReserveId,

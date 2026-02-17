@@ -6,7 +6,7 @@ import 'tests/unit/Spoke/SpokeBase.t.sol';
 
 contract NativeTokenGatewayTest is SpokeBase {
   NativeTokenGateway public nativeTokenGateway;
-  TestReturnValues public returnValues;
+  SharesAndAmount public returnValues;
 
   function setUp() public virtual override {
     super.setUp();

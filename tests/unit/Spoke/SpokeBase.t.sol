@@ -12,6 +12,58 @@ contract SpokeBase is Base, CheckedActions {
   using KeyValueList for KeyValueList.List;
   using ReserveFlagsMap for ReserveFlags;
 
+  struct SupplyBorrowLocal {
+    uint256 collateralReserveAssetId;
+    uint256 borrowReserveAssetId;
+    uint256 collateralSupplyShares;
+    uint256 borrowSupplyShares;
+    uint256 reserveSharesBefore;
+    uint256 userSharesBefore;
+    uint256 borrowerDrawnDebtBefore;
+    uint256 reserveDrawnDebtBefore;
+    uint256 borrowerDrawnDebtAfter;
+    uint256 reserveDrawnDebtAfter;
+  }
+
+  struct CalculateRiskPremiumLocal {
+    uint256 reserveCount;
+    uint256 totalDebtValue;
+    uint256 healthFactor;
+    uint256 activeCollateralCount;
+    uint32 dynamicConfigKey;
+    uint256 collateralFactor;
+    uint256 collateralValue;
+    ISpoke.UserPosition pos;
+    uint256 riskPremium;
+    uint256 utilizedSupply;
+    uint256 idx;
+  }
+
+  struct UserActionData {
+    uint256 supplyAmount;
+    uint256 borrowAmount;
+    uint256 repayAmount;
+    uint256 userBalanceBefore;
+    uint256 userBalanceAfter;
+    ISpoke.UserPosition userPosBefore;
+    uint256 premiumDebtRayBefore;
+  }
+
+  struct BorrowTestData {
+    uint256 daiReserveId;
+    uint256 wethReserveId;
+    uint256 usdxReserveId;
+    uint256 wbtcReserveId;
+    UserActionData daiAlice;
+    UserActionData wethAlice;
+    UserActionData usdxAlice;
+    UserActionData wbtcAlice;
+    UserActionData daiBob;
+    UserActionData wethBob;
+    UserActionData usdxBob;
+    UserActionData wbtcBob;
+  }
+
   function setUp() public virtual override {
     super.setUp();
     initEnvironment();
@@ -155,12 +207,12 @@ contract SpokeBase is Base, CheckedActions {
   ) internal returns (uint256, uint256, uint256, uint256, uint256) {
     SupplyBorrowLocal memory state;
 
-    TestReserve memory collateral;
+    ReserveSetupParams memory collateral;
     collateral.reserveId = _wethReserveId(spoke);
     collateral.supplyAmount = 1_000e18;
     collateral.supplier = alice;
 
-    TestReserve memory borrow;
+    ReserveSetupParams memory borrow;
     borrow.reserveId = reserveId;
     borrow.supplier = bob;
     borrow.borrower = alice;
@@ -197,8 +249,8 @@ contract SpokeBase is Base, CheckedActions {
   /// @return supplyShares of borrowed asset
   function _executeSpokeSupplyAndBorrow(
     ISpoke spoke,
-    TestReserve memory collateral,
-    TestReserve memory borrow,
+    ReserveSetupParams memory collateral,
+    ReserveSetupParams memory borrow,
     uint256 rate,
     bool isMockRate,
     uint256 skipTime
@@ -290,9 +342,15 @@ contract SpokeBase is Base, CheckedActions {
     );
   }
 
-  function getTokenBalances(IERC20 token, address spoke) internal view returns (TokenData memory) {
+  function getTokenBalances(
+    IERC20 token,
+    address spoke
+  ) internal view returns (TokenBalances memory) {
     return
-      TokenData({spokeBalance: token.balanceOf(spoke), hubBalance: token.balanceOf(address(hub1))});
+      TokenBalances({
+        spokeBalance: token.balanceOf(spoke),
+        hubBalance: token.balanceOf(address(hub1))
+      });
   }
 
   function _calcMaxDebtAmount(
@@ -546,29 +604,6 @@ contract SpokeBase is Base, CheckedActions {
     return spoke.getUserLastRiskPremium(user);
   }
 
-  function _boundUserAction(UserAction memory action) internal view returns (UserAction memory) {
-    action.borrowAmount = bound(action.borrowAmount, 1, MAX_SUPPLY_AMOUNT_DAI / 8);
-    action.repayAmount = bound(action.repayAmount, 1, UINT256_MAX);
-
-    return action;
-  }
-
-  function _bound(UserAssetInfo memory info) internal view returns (UserAssetInfo memory) {
-    // Bound borrow amounts
-    info.daiInfo.borrowAmount = bound(info.daiInfo.borrowAmount, 1, MAX_SUPPLY_AMOUNT_DAI / 8);
-    info.wethInfo.borrowAmount = bound(info.wethInfo.borrowAmount, 1, MAX_SUPPLY_AMOUNT_WETH / 8);
-    info.usdxInfo.borrowAmount = bound(info.usdxInfo.borrowAmount, 1, MAX_SUPPLY_AMOUNT_USDX / 8);
-    info.wbtcInfo.borrowAmount = bound(info.wbtcInfo.borrowAmount, 1, MAX_SUPPLY_AMOUNT_WBTC / 8);
-
-    // Bound repay amounts
-    info.daiInfo.repayAmount = bound(info.daiInfo.repayAmount, 1, UINT256_MAX);
-    info.wethInfo.repayAmount = bound(info.wethInfo.repayAmount, 1, UINT256_MAX);
-    info.usdxInfo.repayAmount = bound(info.usdxInfo.repayAmount, 1, UINT256_MAX);
-    info.wbtcInfo.repayAmount = bound(info.wbtcInfo.repayAmount, 1, UINT256_MAX);
-
-    return info;
-  }
-
   function _isHealthy(ISpoke spoke, address user) internal view returns (bool) {
     return _isHealthy(spoke.getUserAccountData(user).healthFactor);
   }
@@ -662,11 +697,13 @@ contract SpokeBase is Base, CheckedActions {
     return _divUp(vars.riskPremium, vars.utilizedSupply);
   }
 
-  function _getSpokeDynConfigKeys(ISpoke spoke) internal view returns (DynamicConfig[] memory) {
+  function _getSpokeDynConfigKeys(
+    ISpoke spoke
+  ) internal view returns (DynamicConfigEntry[] memory) {
     uint256 reserveCount = spoke.getReserveCount();
-    DynamicConfig[] memory configs = new DynamicConfig[](reserveCount);
+    DynamicConfigEntry[] memory configs = new DynamicConfigEntry[](reserveCount);
     for (uint256 reserveId; reserveId < reserveCount; ++reserveId) {
-      configs[reserveId] = DynamicConfig(spoke.getReserve(reserveId).dynamicConfigKey, true);
+      configs[reserveId] = DynamicConfigEntry(spoke.getReserve(reserveId).dynamicConfigKey, true);
     }
     return configs;
   }
@@ -675,9 +712,9 @@ contract SpokeBase is Base, CheckedActions {
   function _getUserDynConfigKeys(
     ISpoke spoke,
     address user
-  ) internal view returns (DynamicConfig[] memory) {
+  ) internal view returns (DynamicConfigEntry[] memory) {
     uint256 reserveCount = spoke.getReserveCount();
-    DynamicConfig[] memory configs = new DynamicConfig[](reserveCount);
+    DynamicConfigEntry[] memory configs = new DynamicConfigEntry[](reserveCount);
     for (uint256 reserveId; reserveId < reserveCount; ++reserveId) {
       configs[reserveId] = _getUserDynConfigKeys(spoke, user, reserveId);
     }
@@ -701,9 +738,9 @@ contract SpokeBase is Base, CheckedActions {
     ISpoke spoke,
     address user,
     uint256 reserveId
-  ) internal view returns (DynamicConfig memory) {
+  ) internal view returns (DynamicConfigEntry memory) {
     ISpoke.UserPosition memory pos = spoke.getUserPosition(reserveId, user);
-    return DynamicConfig(pos.dynamicConfigKey, _isUsingAsCollateral(spoke, reserveId, user));
+    return DynamicConfigEntry(pos.dynamicConfigKey, _isUsingAsCollateral(spoke, reserveId, user));
   }
 
   function _randomReserveId(ISpoke spoke) internal returns (uint256) {

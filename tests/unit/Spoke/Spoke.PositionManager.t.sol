@@ -273,7 +273,7 @@ contract SpokePositionManagerTest is SpokeBase {
 
     _updateCollateralFactor(spoke1, _wethReserveId(spoke1), 90_00);
     _updateCollateralFactor(spoke1, _daiReserveId(spoke1), 90_00);
-    DynamicConfig[] memory configs = _getUserDynConfigKeys(spoke1, alice);
+    DynamicConfigEntry[] memory configs = _getUserDynConfigKeys(spoke1, alice);
 
     vm.expectRevert(
       abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, POSITION_MANAGER)

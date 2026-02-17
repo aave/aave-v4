@@ -64,6 +64,11 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
     uint256 aliceRiskPremium;
   }
 
+  struct SupplyBorrowAmounts {
+    uint256 supplyAmount;
+    uint256 borrowAmount;
+  }
+
   struct Rates {
     uint96 baseRateDai;
     uint96 baseRateUsdx;
@@ -571,18 +576,18 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
   /// with different risk premiums. We check interest accrues correctly and values percolate to hub1.
   /// @dev We don't store user risk premium directly, so compare calculated premiumShares as proxy for expected previous risk premium
   function test_getUserRiskPremium_fuzz_two_users_two_reserves_borrowed(
-    UserBorrowAction memory bobDaiAction,
-    UserBorrowAction memory bobUsdxAction,
-    UserBorrowAction memory aliceDaiAction,
-    UserBorrowAction memory aliceUsdxAction,
+    SupplyBorrowAmounts memory bobDaiAction,
+    SupplyBorrowAmounts memory bobUsdxAction,
+    SupplyBorrowAmounts memory aliceDaiAction,
+    SupplyBorrowAmounts memory aliceUsdxAction,
     uint16 daiCollateralRisk,
     uint16 usdxCollateralRisk,
     uint40[3] memory timeSkip
   ) public {
-    bobDaiAction = _boundUserBorrowAction(bobDaiAction, MAX_SUPPLY_AMOUNT_DAI);
-    bobUsdxAction = _boundUserBorrowAction(bobUsdxAction, MAX_SUPPLY_AMOUNT_USDX);
-    aliceDaiAction = _boundUserBorrowAction(aliceDaiAction, MAX_SUPPLY_AMOUNT_DAI);
-    aliceUsdxAction = _boundUserBorrowAction(aliceUsdxAction, MAX_SUPPLY_AMOUNT_USDX);
+    bobDaiAction = _boundSupplyBorrowAmounts(bobDaiAction, MAX_SUPPLY_AMOUNT_DAI);
+    bobUsdxAction = _boundSupplyBorrowAmounts(bobUsdxAction, MAX_SUPPLY_AMOUNT_USDX);
+    aliceDaiAction = _boundSupplyBorrowAmounts(aliceDaiAction, MAX_SUPPLY_AMOUNT_DAI);
+    aliceUsdxAction = _boundSupplyBorrowAmounts(aliceUsdxAction, MAX_SUPPLY_AMOUNT_USDX);
 
     daiCollateralRisk = bound(daiCollateralRisk, 0, MAX_COLLATERAL_RISK_BPS).toUint16();
     usdxCollateralRisk = bound(usdxCollateralRisk, 0, MAX_COLLATERAL_RISK_BPS).toUint16();
@@ -904,10 +909,10 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
   /// Bob supplies and borrows varying amounts of 4 reserves. We fuzz prices and collateral risks, and wait arbitrary time.
   /// We ensure risk premium is calculated correctly before and after the time passing
   function test_getUserRiskPremium_fuzz_inflight_calcs(
-    UserBorrowAction memory daiAmounts,
-    UserBorrowAction memory wethAmounts,
-    UserBorrowAction memory usdxAmounts,
-    UserBorrowAction memory wbtcAmounts,
+    SupplyBorrowAmounts memory daiAmounts,
+    SupplyBorrowAmounts memory wethAmounts,
+    SupplyBorrowAmounts memory usdxAmounts,
+    SupplyBorrowAmounts memory wbtcAmounts,
     uint40 skipTime
   ) public {
     skipTime = bound(skipTime, 1, MAX_SKIP_TIME).toUint40();
@@ -980,10 +985,10 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
     );
   }
 
-  function _boundUserBorrowAction(
-    UserBorrowAction memory action,
+  function _boundSupplyBorrowAmounts(
+    SupplyBorrowAmounts memory action,
     uint256 maxSupplyAmount
-  ) internal pure returns (UserBorrowAction memory) {
+  ) internal pure returns (SupplyBorrowAmounts memory) {
     action.supplyAmount = bound(action.supplyAmount, 2, maxSupplyAmount / 2);
     action.borrowAmount = bound(action.borrowAmount, 1, action.supplyAmount / 2);
     return action;

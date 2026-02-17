@@ -109,7 +109,7 @@ contract SpokeWithdrawTest is SpokeBase {
     uint256 addExRate = getAddExRate(daiAssetId);
 
     // Token assertions before withdrawal
-    TokenData memory tokenDataBefore = getTokenBalances(tokenList.dai, address(spoke1));
+    TokenBalances memory tokenDataBefore = getTokenBalances(tokenList.dai, address(spoke1));
     assertEq(tokenDataBefore.spokeBalance, 0, 'dai spokeBalance pre-withdraw');
     assertEq(tokenDataBefore.hubBalance, amount, 'dai hubBalance pre-withdraw');
     assertEq(
@@ -131,7 +131,7 @@ contract SpokeWithdrawTest is SpokeBase {
       })
     );
 
-    TokenData memory tokenDataAfter = getTokenBalances(tokenList.dai, address(spoke1));
+    TokenBalances memory tokenDataAfter = getTokenBalances(tokenList.dai, address(spoke1));
 
     // Reserve assertions before withdrawal
     assertEq(r.reserveBefore.totalSuppliedAmount, amount, 'reserve addedAmount pre-withdraw');
@@ -482,7 +482,7 @@ contract SpokeWithdrawTest is SpokeBase {
 
     assertEq(hub1.getAsset(daiAssetId).realizedFees, state.expectedFeeAmount, 'realized fees');
 
-    TokenData memory tokenDataAfter = getTokenBalances(tokenList.dai, address(spoke1));
+    TokenBalances memory tokenDataAfter = getTokenBalances(tokenList.dai, address(spoke1));
 
     assertEq(r.amount, state.withdrawAmount);
     assertEq(r.shares, state.withdrawnShares);
@@ -570,14 +570,14 @@ contract SpokeWithdrawTest is SpokeBase {
 
     (, state.supplyShares) = _executeSpokeSupplyAndBorrow({
       spoke: spoke1,
-      collateral: TestReserve({
+      collateral: ReserveSetupParams({
         reserveId: state.collateralReserveId,
         supplier: alice,
         supplyAmount: state.suppliedCollateralAmount,
         borrower: address(0),
         borrowAmount: 0
       }),
-      borrow: TestReserve({
+      borrow: ReserveSetupParams({
         reserveId: state.reserveId,
         borrowAmount: state.borrowAmount,
         supplyAmount: state.borrowReserveSupplyAmount,
@@ -627,7 +627,7 @@ contract SpokeWithdrawTest is SpokeBase {
       })
     );
 
-    TokenData memory tokenDataAfter = getTokenBalances(underlying, address(spoke1));
+    TokenBalances memory tokenDataAfter = getTokenBalances(underlying, address(spoke1));
 
     assertEq(r.shares, state.withdrawnShares);
     assertEq(r.amount, state.withdrawAmount);
@@ -731,7 +731,7 @@ contract SpokeWithdrawTest is SpokeBase {
       })
     );
 
-    TokenData memory tokenDataAfter = getTokenBalances(tokenList.dai, address(spoke1));
+    TokenBalances memory tokenDataAfter = getTokenBalances(tokenList.dai, address(spoke1));
 
     assertEq(r.shares, state.withdrawnShares);
     assertEq(r.amount, state.withdrawAmount);
@@ -816,14 +816,14 @@ contract SpokeWithdrawTest is SpokeBase {
 
     (, state.supplyShares) = _executeSpokeSupplyAndBorrow({
       spoke: spoke1,
-      collateral: TestReserve({
+      collateral: ReserveSetupParams({
         reserveId: state.collateralReserveId,
         supplier: alice,
         supplyAmount: state.suppliedCollateralAmount,
         borrower: address(0),
         borrowAmount: 0
       }),
-      borrow: TestReserve({
+      borrow: ReserveSetupParams({
         reserveId: state.reserveId,
         borrowAmount: state.borrowAmount,
         supplyAmount: state.borrowReserveSupplyAmount,
@@ -873,7 +873,7 @@ contract SpokeWithdrawTest is SpokeBase {
       })
     );
 
-    TokenData memory tokenDataAfter = getTokenBalances(underlying, address(spoke1));
+    TokenBalances memory tokenDataAfter = getTokenBalances(underlying, address(spoke1));
 
     assertEq(r.shares, state.withdrawnShares);
     assertEq(r.amount, state.withdrawAmount);

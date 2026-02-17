@@ -386,7 +386,7 @@ contract SpokeLiquidationCallTest_NoLiquidationBonus is SpokeLiquidationCallHelp
 
   function _assertBeforeLiquidation(
     CheckedLiquidationCallParams memory /* params */,
-    AccountsInfo memory /* accountsInfoBefore */,
+    LiquidationAccountsSnapshot memory /* accountsInfoBefore */,
     LiquidationMetadata memory liquidationMetadata
   ) internal view virtual override {
     assertEq(liquidationMetadata.liquidationBonus, 100_00, 'Liquidation bonus');
@@ -418,7 +418,7 @@ contract SpokeLiquidationCallTest_SmallLiquidationBonus is SpokeLiquidationCallH
 
   function _assertBeforeLiquidation(
     CheckedLiquidationCallParams memory /* params */,
-    AccountsInfo memory /* accountsInfoBefore */,
+    LiquidationAccountsSnapshot memory /* accountsInfoBefore */,
     LiquidationMetadata memory liquidationMetadata
   ) internal view virtual override {
     assertLe(
@@ -454,7 +454,7 @@ contract SpokeLiquidationCallTest_LargeLiquidationBonus is SpokeLiquidationCallH
 
   function _assertBeforeLiquidation(
     CheckedLiquidationCallParams memory /* params */,
-    AccountsInfo memory /* accountsInfoBefore */,
+    LiquidationAccountsSnapshot memory /* accountsInfoBefore */,
     LiquidationMetadata memory liquidationMetadata
   ) internal view virtual override {
     assertGe(
@@ -476,7 +476,7 @@ contract SpokeLiquidationCallTest_LiquidationFeeZero is SpokeLiquidationCallHelp
 
   function _assertBeforeLiquidation(
     CheckedLiquidationCallParams memory params,
-    AccountsInfo memory /* accountsInfoBefore */,
+    LiquidationAccountsSnapshot memory /* accountsInfoBefore */,
     LiquidationMetadata memory /* liquidationMetadata */
   ) internal view virtual override {
     assertEq(
@@ -500,7 +500,7 @@ contract SpokeLiquidationCallTest_NoPremium is SpokeLiquidationCallHelperTest {
 
   function _assertBeforeLiquidation(
     CheckedLiquidationCallParams memory params,
-    AccountsInfo memory /* accountsInfoBefore */,
+    LiquidationAccountsSnapshot memory /* accountsInfoBefore */,
     LiquidationMetadata memory /* liquidationMetadata */
   ) internal view virtual override {
     (, uint256 premiumDebt) = params.spoke.getUserDebt(params.debtReserveId, params.user);
@@ -545,7 +545,7 @@ contract SpokeLiquidationCallTest_Premium is SpokeLiquidationCallHelperTest {
 
   function _assertBeforeLiquidation(
     CheckedLiquidationCallParams memory params,
-    AccountsInfo memory /* accountsInfoBefore */,
+    LiquidationAccountsSnapshot memory /* accountsInfoBefore */,
     LiquidationMetadata memory /* liquidationMetadata */
   ) internal view virtual override {
     (, uint256 premiumDebt) = params.spoke.getUserDebt(params.debtReserveId, params.user);
@@ -564,7 +564,7 @@ contract SpokeLiquidationCallTest_NoTimeSkip is SpokeLiquidationCallHelperTest {
 
   function _assertBeforeLiquidation(
     CheckedLiquidationCallParams memory params,
-    AccountsInfo memory /* accountsInfoBefore */,
+    LiquidationAccountsSnapshot memory /* accountsInfoBefore */,
     LiquidationMetadata memory /* liquidationMetadata */
   ) internal view virtual override {
     uint256 reserveCount = params.spoke.getReserveCount();
@@ -588,7 +588,7 @@ contract SpokeLiquidationCallTest_TargetHealthFactorOne is SpokeLiquidationCallH
 
   function _assertBeforeLiquidation(
     CheckedLiquidationCallParams memory params,
-    AccountsInfo memory /* accountsInfoBefore */,
+    LiquidationAccountsSnapshot memory /* accountsInfoBefore */,
     LiquidationMetadata memory /* liquidationMetadata */
   ) internal view virtual override {
     assertEq(params.spoke.getLiquidationConfig().targetHealthFactor, 1e18, 'Target health factor');

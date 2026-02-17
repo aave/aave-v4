@@ -60,7 +60,7 @@ contract SignatureGatewayTest is SignatureGatewayBaseTest {
       p.amount
     );
 
-    TestReturnValues memory returnValues;
+    SharesAndAmount memory returnValues;
     vm.expectEmit(address(spoke1));
     emit ISpokeBase.Supply(p.reserveId, address(gateway), alice, shares, p.amount);
 
@@ -86,7 +86,7 @@ contract SignatureGatewayTest is SignatureGatewayBaseTest {
       _reserveAssetId(spoke1, p.reserveId),
       p.amount
     );
-    TestReturnValues memory returnValues;
+    SharesAndAmount memory returnValues;
     vm.expectEmit(address(spoke1));
     emit ISpokeBase.Withdraw(p.reserveId, address(gateway), alice, shares, p.amount);
 
@@ -113,7 +113,7 @@ contract SignatureGatewayTest is SignatureGatewayBaseTest {
       _reserveAssetId(spoke1, p.reserveId),
       p.amount
     );
-    TestReturnValues memory returnValues;
+    SharesAndAmount memory returnValues;
     vm.expectEmit(address(spoke1));
     emit ISpokeBase.Borrow(p.reserveId, address(gateway), alice, shares, p.amount);
 
@@ -148,7 +148,7 @@ contract SignatureGatewayTest is SignatureGatewayBaseTest {
       _reserveAssetId(spoke1, p.reserveId),
       baseRestored
     );
-    TestReturnValues memory returnValues;
+    SharesAndAmount memory returnValues;
     vm.expectEmit(address(spoke1));
     emit ISpokeBase.Repay(
       p.reserveId,

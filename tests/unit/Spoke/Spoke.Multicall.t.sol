@@ -7,6 +7,19 @@ import 'tests/unit/Spoke/SpokeBase.t.sol';
 contract SpokeMulticall is SpokeBase {
   using SafeCast for uint256;
 
+  struct Reserve {
+    uint256 reserveId;
+    IHub hub;
+    uint16 assetId;
+    uint8 decimals;
+    uint24 collateralRisk;
+    bool paused;
+    bool frozen;
+    bool borrowable;
+    bool receiveSharesEnabled;
+    uint32 dynamicConfigKey;
+  }
+
   TestnetERC20 usda;
 
   function setUp() public override {

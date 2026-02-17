@@ -114,7 +114,7 @@ contract SpokeSetUsingAsCollateralTest is SpokeBase {
     assertFalse(_isUsingAsCollateral(spoke1, daiReserveId, bob), 'bob not using as collateral');
 
     // No action taken, because collateral status is already false
-    DynamicConfig[] memory bobDynConfig = _getUserDynConfigKeys(spoke1, bob);
+    DynamicConfigEntry[] memory bobDynConfig = _getUserDynConfigKeys(spoke1, bob);
     uint256 bobRp = _getUserRpStored(spoke1, bob);
 
     vm.recordLogs();

@@ -309,7 +309,7 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
 
     // token
     {
-      TokenData memory tokenDataAfter = getTokenBalances(state.underlying, address(spoke1));
+      TokenBalances memory tokenDataAfter = getTokenBalances(state.underlying, address(spoke1));
       assertEq(tokenDataAfter.spokeBalance, 0, 'tokenData spoke balance');
       assertEq(
         tokenDataAfter.hubBalance,
@@ -404,7 +404,7 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
     underlying.approve(address(spoke1), assets);
 
     // Supply and confirm share amount from event emission
-    TestReturnValues memory returnValues1;
+    SharesAndAmount memory returnValues1;
     uint256 shares1 = hub1.previewAddByAssets(reserve.assetId, assets);
     vm.expectEmit(address(spoke1));
     emit ISpokeBase.Supply(reserveId, caller, caller, shares1, assets);
@@ -412,7 +412,7 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
     (returnValues1.shares, returnValues1.amount) = spoke1.supply(reserveId, assets, caller);
 
     // Withdraw and confirm share amount from event emission
-    TestReturnValues memory returnValues2;
+    SharesAndAmount memory returnValues2;
     uint256 shares2 = hub1.previewAddByAssets(reserve.assetId, assets);
     vm.expectEmit(address(spoke1));
     emit ISpokeBase.Withdraw(reserveId, caller, caller, shares2, assets);
@@ -474,7 +474,7 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
     });
 
     // Withdraw and confirm share amount from event emission
-    TestReturnValues memory returnValues1;
+    SharesAndAmount memory returnValues1;
     uint256 shares1 = hub1.previewAddByAssets(reserve.assetId, assets);
     vm.expectEmit(address(spoke1));
     emit ISpokeBase.Withdraw(reserveId, caller, caller, shares1, assets);
@@ -482,7 +482,7 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
     (returnValues1.shares, returnValues1.amount) = spoke1.withdraw(reserveId, assets, caller);
 
     // Supply and confirm share amount from event emission
-    TestReturnValues memory returnValues2;
+    SharesAndAmount memory returnValues2;
     uint256 shares2 = hub1.previewAddByAssets(reserve.assetId, assets);
     vm.expectEmit(address(spoke1));
     emit ISpokeBase.Supply(reserveId, caller, caller, shares2, assets);

@@ -38,7 +38,7 @@ abstract contract QueryHelpers is MathHelpers {
     ISpoke spoke,
     address user,
     uint256 reserveId
-  ) internal view returns (Debts memory data) {
+  ) internal view returns (DebtData memory data) {
     (data.drawnDebt, data.premiumDebt) = spoke.getUserDebt(reserveId, user);
     data.premiumDebtRay = spoke.getUserPremiumDebtRay(reserveId, user);
     data.totalDebt = data.drawnDebt + data.premiumDebt;
@@ -344,7 +344,7 @@ abstract contract QueryHelpers is MathHelpers {
     uint256 reserveId,
     uint256 repayAmount
   ) internal view virtual returns (IHubBase.PremiumDelta memory) {
-    Debts memory userDebt = getUserDebt(spoke, user, reserveId);
+    DebtData memory userDebt = getUserDebt(spoke, user, reserveId);
     (, uint256 premiumRayToRestore) = _calculateRestoreAmounts(
       repayAmount,
       userDebt.drawnDebt,
@@ -372,7 +372,7 @@ abstract contract QueryHelpers is MathHelpers {
     uint256 reserveId,
     uint256 repayAmount
   ) internal view virtual returns (IHubBase.PremiumDelta memory) {
-    Debts memory userDebt = getUserDebt(spoke, user, reserveId);
+    DebtData memory userDebt = getUserDebt(spoke, user, reserveId);
     (uint256 drawnDebtToRestore, uint256 premiumRayToRestore) = _calculateRestoreAmounts(
       repayAmount,
       userDebt.drawnDebt,

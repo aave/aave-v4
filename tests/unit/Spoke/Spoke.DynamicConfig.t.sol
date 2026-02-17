@@ -303,7 +303,7 @@ contract SpokeDynamicConfigTest is SpokeBase {
   // update each reserve's config key
   function test_addDynamicReserveConfig_once() public {
     test_addDynamicReserveConfig();
-    DynamicConfig[] memory configs = _getSpokeDynConfigKeys(spoke1);
+    DynamicConfigEntry[] memory configs = _getSpokeDynConfigKeys(spoke1);
 
     for (uint256 reserveId; reserveId < spoke1.getReserveCount(); ++reserveId) {
       uint32 dynamicConfigKey = _nextDynamicConfigKey(spoke1, reserveId);
@@ -325,7 +325,7 @@ contract SpokeDynamicConfigTest is SpokeBase {
 
   // more realistic, update config keys in a random order
   function test_fuzz_addDynamicReserveConfig_trailing_order(bytes32) public {
-    DynamicConfig[] memory configs = _getSpokeDynConfigKeys(spoke1);
+    DynamicConfigEntry[] memory configs = _getSpokeDynConfigKeys(spoke1);
     uint256 runs = vm.randomUint(1, 10); // [1,10] iterations each fuzz run
 
     while (--runs != 0) {
@@ -353,7 +353,7 @@ contract SpokeDynamicConfigTest is SpokeBase {
 
   // update duplicated config values
   function test_fuzz_addDynamicReserveConfig_spaced_dup_updates(bytes32) public {
-    DynamicConfig[] memory configs = _getSpokeDynConfigKeys(spoke1);
+    DynamicConfigEntry[] memory configs = _getSpokeDynConfigKeys(spoke1);
     uint256 runs = vm.randomUint(1, 10); // [1,10] iterations each fuzz run
 
     while (--runs != 0) {

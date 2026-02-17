@@ -7,10 +7,43 @@ import 'tests/unit/Spoke/SpokeBase.t.sol';
 contract SpokeRepayScenarioTest is SpokeBase {
   using SafeCast for uint256;
 
+  struct RepayAction {
+    uint256 supplyAmount;
+    uint256 borrowAmount;
+    uint256 repayAmount;
+    uint40 skipTime;
+  }
+
+  struct RepayAssetInfo {
+    uint256 borrowAmount;
+    uint256 repayAmount;
+    uint256 baseRestored;
+    uint256 premiumRestored;
+    uint256 suppliedShares;
+  }
+
+  struct RepayUserAction {
+    uint256 supplyAmount;
+    uint256 borrowAmount;
+    uint256 suppliedShares;
+    uint256 repayAmount;
+    uint256 baseRestored;
+    uint256 premiumRestored;
+    address user;
+  }
+
+  struct RepayUserAssetInfo {
+    RepayAssetInfo daiInfo;
+    RepayAssetInfo wethInfo;
+    RepayAssetInfo usdxInfo;
+    RepayAssetInfo wbtcInfo;
+    address user;
+  }
+
   function test_repay_fuzz_multiple_users_multiple_assets(
-    UserAssetInfo memory bobInfo,
-    UserAssetInfo memory aliceInfo,
-    UserAssetInfo memory carolInfo,
+    RepayUserAssetInfo memory bobInfo,
+    RepayUserAssetInfo memory aliceInfo,
+    RepayUserAssetInfo memory carolInfo,
     uint40 skipTime
   ) public {
     bobInfo = _bound(bobInfo);
@@ -24,7 +57,7 @@ contract SpokeRepayScenarioTest is SpokeBase {
     carolInfo.user = carol;
 
     // Put structs into array
-    UserAssetInfo[3] memory usersInfo = [bobInfo, aliceInfo, carolInfo];
+    RepayUserAssetInfo[3] memory usersInfo = [bobInfo, aliceInfo, carolInfo];
 
     // Calculate needed supply for each asset
     uint256 totalDaiNeeded = 0;
@@ -372,8 +405,8 @@ contract SpokeRepayScenarioTest is SpokeBase {
   }
 
   function test_repay_fuzz_two_users_multiple_assets(
-    UserAssetInfo memory bobInfo,
-    UserAssetInfo memory aliceInfo,
+    RepayUserAssetInfo memory bobInfo,
+    RepayUserAssetInfo memory aliceInfo,
     uint40 skipTime
   ) public {
     bobInfo = _bound(bobInfo);
@@ -385,7 +418,7 @@ contract SpokeRepayScenarioTest is SpokeBase {
     aliceInfo.user = alice;
 
     // Put structs into array
-    UserAssetInfo[2] memory usersInfo = [bobInfo, aliceInfo];
+    RepayUserAssetInfo[2] memory usersInfo = [bobInfo, aliceInfo];
 
     // Calculate needed supply for each asset
     uint256 totalDaiNeeded = 0;
@@ -733,9 +766,9 @@ contract SpokeRepayScenarioTest is SpokeBase {
   }
 
   function test_fuzz_repay_multiple_users_repay_same_reserve(
-    UserAction memory bobInfo,
-    UserAction memory aliceInfo,
-    UserAction memory carolInfo,
+    RepayUserAction memory bobInfo,
+    RepayUserAction memory aliceInfo,
+    RepayUserAction memory carolInfo,
     uint256 skipTime
   ) public {
     // Bound borrow and repay amounts
@@ -751,7 +784,7 @@ contract SpokeRepayScenarioTest is SpokeBase {
     carolInfo.user = carol;
 
     // Put structs into array
-    UserAction[3] memory usersInfo = [bobInfo, aliceInfo, carolInfo];
+    RepayUserAction[3] memory usersInfo = [bobInfo, aliceInfo, carolInfo];
 
     // Calculate needed supply for DAI
     uint256 totalDaiNeeded = bobInfo.borrowAmount + aliceInfo.borrowAmount + carolInfo.borrowAmount;
@@ -840,8 +873,8 @@ contract SpokeRepayScenarioTest is SpokeBase {
   }
 
   function test_repay_two_users_repay_same_reserve(
-    UserAction memory bobInfo,
-    UserAction memory aliceInfo,
+    RepayUserAction memory bobInfo,
+    RepayUserAction memory aliceInfo,
     uint256 skipTime
   ) public {
     // Bound borrow and repay amounts
@@ -855,7 +888,7 @@ contract SpokeRepayScenarioTest is SpokeBase {
     aliceInfo.user = alice;
 
     // Put structs into array
-    UserAction[2] memory usersInfo = [bobInfo, aliceInfo];
+    RepayUserAction[2] memory usersInfo = [bobInfo, aliceInfo];
 
     // Calculate needed supply for DAI
     uint256 totalDaiNeeded = bobInfo.borrowAmount + aliceInfo.borrowAmount;
@@ -945,8 +978,8 @@ contract SpokeRepayScenarioTest is SpokeBase {
 
   /// Borrow, repay, borrow more, repay
   function test_fuzz_repay_borrow_twice_repay_twice(
-    Action memory action1,
-    Action memory action2
+    RepayAction memory action1,
+    RepayAction memory action2
   ) public {
     action1.skipTime = bound(action1.skipTime, 1, MAX_SKIP_TIME / 2).toUint40();
     action2.skipTime = bound(action2.skipTime, 1, MAX_SKIP_TIME / 2).toUint40();
@@ -1183,7 +1216,7 @@ contract SpokeRepayScenarioTest is SpokeBase {
     // Time passes so that interest accrues
     skip(10 days);
 
-    Debts memory bobDaiBefore = getUserDebt(spoke1, bob, _daiReserveId(spoke1));
+    DebtData memory bobDaiBefore = getUserDebt(spoke1, bob, _daiReserveId(spoke1));
     // Bob's debt (drawn debt + premium) is greater than the original borrow amount
     assertGt(bobDaiBefore.totalDebt, daiBorrowAmount, 'Accrued interest increased bob dai debt');
 
@@ -1418,5 +1451,32 @@ contract SpokeRepayScenarioTest is SpokeBase {
     vm.stopPrank();
 
     assertEq(shares2, shares1, 'borrowed and repaid shares');
+  }
+
+  function _boundUserAction(
+    RepayUserAction memory action
+  ) internal view returns (RepayUserAction memory) {
+    action.borrowAmount = bound(action.borrowAmount, 1, MAX_SUPPLY_AMOUNT_DAI / 8);
+    action.repayAmount = bound(action.repayAmount, 1, UINT256_MAX);
+
+    return action;
+  }
+
+  function _bound(
+    RepayUserAssetInfo memory info
+  ) internal view returns (RepayUserAssetInfo memory) {
+    // Bound borrow amounts
+    info.daiInfo.borrowAmount = bound(info.daiInfo.borrowAmount, 1, MAX_SUPPLY_AMOUNT_DAI / 8);
+    info.wethInfo.borrowAmount = bound(info.wethInfo.borrowAmount, 1, MAX_SUPPLY_AMOUNT_WETH / 8);
+    info.usdxInfo.borrowAmount = bound(info.usdxInfo.borrowAmount, 1, MAX_SUPPLY_AMOUNT_USDX / 8);
+    info.wbtcInfo.borrowAmount = bound(info.wbtcInfo.borrowAmount, 1, MAX_SUPPLY_AMOUNT_WBTC / 8);
+
+    // Bound repay amounts
+    info.daiInfo.repayAmount = bound(info.daiInfo.repayAmount, 1, UINT256_MAX);
+    info.wethInfo.repayAmount = bound(info.wethInfo.repayAmount, 1, UINT256_MAX);
+    info.usdxInfo.repayAmount = bound(info.usdxInfo.repayAmount, 1, UINT256_MAX);
+    info.wbtcInfo.repayAmount = bound(info.wbtcInfo.repayAmount, 1, UINT256_MAX);
+
+    return info;
   }
 }

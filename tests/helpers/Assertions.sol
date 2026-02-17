@@ -518,20 +518,20 @@ abstract contract Assertions is QueryHelpers {
     assertEq(abi.encode(a), abi.encode(b)); // sanity check
   }
 
-  function assertEq(Debts memory a, Debts memory b) internal pure {
+  function assertEq(DebtData memory a, DebtData memory b) internal pure {
     assertEq(a.drawnDebt, b.drawnDebt, 'drawn debt');
     assertEq(a.premiumDebt, b.premiumDebt, 'premium debt');
     assertEq(a.totalDebt, b.totalDebt, 'total debt');
     assertEq(keccak256(abi.encode(a)), keccak256(abi.encode(b)), 'debt data'); // sanity
   }
 
-  function assertEq(DynamicConfig memory a, DynamicConfig memory b) internal pure {
+  function assertEq(DynamicConfigEntry memory a, DynamicConfigEntry memory b) internal pure {
     assertEq(a.key, b.key, 'key');
     assertEq(a.enabled, b.enabled, 'enabled');
     assertEq(abi.encode(a), abi.encode(b)); // sanity
   }
 
-  function assertEq(DynamicConfig[] memory a, DynamicConfig[] memory b) internal pure {
+  function assertEq(DynamicConfigEntry[] memory a, DynamicConfigEntry[] memory b) internal pure {
     require(a.length == b.length);
     for (uint256 i; i < a.length; ++i) {
       if (a[i].enabled && b[i].enabled) {
@@ -540,7 +540,7 @@ abstract contract Assertions is QueryHelpers {
     }
   }
 
-  function assertNotEq(DynamicConfig[] memory a, DynamicConfig[] memory b) internal pure {
+  function assertNotEq(DynamicConfigEntry[] memory a, DynamicConfigEntry[] memory b) internal pure {
     require(a.length == b.length);
     for (uint256 i; i < a.length; ++i) {
       if (a[i].enabled && b[i].enabled) {

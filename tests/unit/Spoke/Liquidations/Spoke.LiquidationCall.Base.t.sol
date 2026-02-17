@@ -11,6 +11,68 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
   using KeyValueList for KeyValueList.List;
   using MathUtils for uint256;
 
+  struct CheckedLiquidationCallParams {
+    ISpoke spoke;
+    uint256 collateralReserveId;
+    uint256 debtReserveId;
+    address user;
+    uint256 debtToCover;
+    address liquidator;
+    bool isSolvent;
+    bool receiveShares;
+  }
+
+  struct LiquidationBalanceSnapshot {
+    uint256 collateralErc20Balance;
+    uint256 suppliedInSpoke;
+    uint256 addedInHub;
+    uint256 debtErc20Balance;
+    uint256 borrowedFromSpoke;
+    uint256 drawnFromHub;
+  }
+
+  struct LiquidationAccountsSnapshot {
+    ISpoke.UserAccountData userAccountData;
+    LiquidationBalanceSnapshot userBalanceInfo;
+    LiquidationBalanceSnapshot collateralHubBalanceInfo;
+    LiquidationBalanceSnapshot debtHubBalanceInfo;
+    LiquidationBalanceSnapshot liquidatorBalanceInfo;
+    LiquidationBalanceSnapshot collateralFeeReceiverBalanceInfo;
+    LiquidationBalanceSnapshot debtFeeReceiverBalanceInfo;
+    LiquidationBalanceSnapshot spokeBalanceInfo;
+    uint256 userLastRiskPremium;
+  }
+
+  struct LiquidationMetadata {
+    uint256 debtRayToTarget;
+    uint256 collateralAssetsToLiquidate;
+    uint256 collateralAssetsToLiquidator;
+    uint256 collateralSharesToLiquidate;
+    uint256 collateralSharesToLiquidator;
+    uint256 debtAssetsToLiquidate;
+    uint256 debtRayToLiquidate;
+    uint256 drawnSharesToLiquidate;
+    uint256 premiumDebtRayToLiquidate;
+    uint256 debtAssetsToRestore;
+    uint256 liquidationBonus;
+    bool fullDebtReserveLiquidated;
+    bool hasDeficit;
+  }
+
+  struct LiquidationExpectedEventsParams {
+    uint256 userDrawnDebt;
+    uint256 userPremiumDebt;
+    uint256 drawnAmountToRestore;
+    int256 realizedDelta;
+    IHubBase.PremiumDelta premiumDelta;
+    ISpoke.UserPosition userReservePosition;
+    ISpoke.UserPosition userDebtPosition;
+    IHub collateralHub;
+    IHub debtHub;
+    uint256 debtAssetId;
+    uint256 collateralAssetId;
+  }
+
   uint256 internal constant MAX_AMOUNT_IN_BASE_CURRENCY = 1_000_000_000e26; // 1 billion USD
   uint256 internal constant MIN_AMOUNT_IN_BASE_CURRENCY = 100e26; // 1 USD
 
@@ -313,11 +375,11 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
 
   function _expectEventsAndCalls(
     CheckedLiquidationCallParams memory params,
-    AccountsInfo memory accountsInfoBefore,
+    LiquidationAccountsSnapshot memory accountsInfoBefore,
     LiquidationMetadata memory liquidationMetadata,
     ISpoke.UserAccountData memory expectedUserAccountData
   ) internal virtual {
-    ExpectEventsAndCallsParams memory vars;
+    LiquidationExpectedEventsParams memory vars;
 
     vars.userDebtPosition = params.spoke.getUserPosition(params.debtReserveId, params.user);
     vars.collateralHub = _hub(params.spoke, params.collateralReserveId);
@@ -529,9 +591,9 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
     address addr,
     uint256 collateralReserveId,
     uint256 debtReserveId
-  ) internal virtual returns (BalanceInfo memory) {
+  ) internal virtual returns (LiquidationBalanceSnapshot memory) {
     return
-      BalanceInfo({
+      LiquidationBalanceSnapshot({
         collateralErc20Balance: getAssetUnderlyingByReserveId(spoke, collateralReserveId).balanceOf(
           addr
         ),
@@ -551,9 +613,9 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
 
   function _getAccountsInfo(
     CheckedLiquidationCallParams memory params
-  ) internal virtual returns (AccountsInfo memory) {
+  ) internal virtual returns (LiquidationAccountsSnapshot memory) {
     return
-      AccountsInfo({
+      LiquidationAccountsSnapshot({
         userAccountData: params.spoke.getUserAccountData(params.user),
         userBalanceInfo: _getBalanceInfo(
           params.spoke,
@@ -737,8 +799,8 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
 
   function _checkHealthFactor(
     CheckedLiquidationCallParams memory params,
-    AccountsInfo memory accountsInfoBefore,
-    AccountsInfo memory accountsInfoAfter,
+    LiquidationAccountsSnapshot memory accountsInfoBefore,
+    LiquidationAccountsSnapshot memory accountsInfoAfter,
     LiquidationMetadata memory liquidationMetadata
   ) internal virtual {
     // accountsInfoAfter.userAccountData was already checked against expectedUserAccountData
@@ -794,8 +856,8 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
 
   function _checkErc20Balances(
     CheckedLiquidationCallParams memory params,
-    AccountsInfo memory accountsInfoBefore,
-    AccountsInfo memory accountsInfoAfter,
+    LiquidationAccountsSnapshot memory accountsInfoBefore,
+    LiquidationAccountsSnapshot memory accountsInfoAfter,
     LiquidationMetadata memory liquidationMetadata
   ) internal view {
     // Hubs/liquidator balances check
@@ -864,8 +926,8 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
 
   function _checkErc20BalancesReceiveShares(
     CheckedLiquidationCallParams memory params,
-    AccountsInfo memory accountsInfoBefore,
-    AccountsInfo memory accountsInfoAfter,
+    LiquidationAccountsSnapshot memory accountsInfoBefore,
+    LiquidationAccountsSnapshot memory accountsInfoAfter,
     LiquidationMetadata memory liquidationMetadata
   ) internal view {
     // Hubs
@@ -935,8 +997,8 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
 
   function _checkErc20BalancesReceiveAssets(
     CheckedLiquidationCallParams memory params,
-    AccountsInfo memory accountsInfoBefore,
-    AccountsInfo memory accountsInfoAfter,
+    LiquidationAccountsSnapshot memory accountsInfoBefore,
+    LiquidationAccountsSnapshot memory accountsInfoAfter,
     LiquidationMetadata memory liquidationMetadata
   ) internal view {
     // Hubs
@@ -1010,8 +1072,8 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
 
   function _checkSpokeBalances(
     CheckedLiquidationCallParams memory params,
-    AccountsInfo memory accountsInfoBefore,
-    AccountsInfo memory accountsInfoAfter,
+    LiquidationAccountsSnapshot memory accountsInfoBefore,
+    LiquidationAccountsSnapshot memory accountsInfoAfter,
     LiquidationMetadata memory liquidationMetadata
   ) internal pure {
     // User
@@ -1115,8 +1177,8 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
 
   function _checkHubBalances(
     CheckedLiquidationCallParams memory params,
-    AccountsInfo memory accountsInfoBefore,
-    AccountsInfo memory accountsInfoAfter,
+    LiquidationAccountsSnapshot memory accountsInfoBefore,
+    LiquidationAccountsSnapshot memory accountsInfoAfter,
     LiquidationMetadata memory liquidationMetadata
   ) internal view {
     // User
@@ -1223,7 +1285,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
 
   function _checkUserAccountData(
     CheckedLiquidationCallParams memory params,
-    AccountsInfo memory accountsInfoAfter,
+    LiquidationAccountsSnapshot memory accountsInfoAfter,
     LiquidationMetadata memory liquidationMetadata,
     ISpoke.UserAccountData memory expectedUserAccountData
   ) internal view {
@@ -1256,7 +1318,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
 
   function _assertBeforeLiquidation(
     CheckedLiquidationCallParams memory params,
-    AccountsInfo memory accountsInfoBefore,
+    LiquidationAccountsSnapshot memory accountsInfoBefore,
     LiquidationMetadata memory liquidationMetadata
   ) internal view virtual {}
 
@@ -1268,7 +1330,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
       params.spoke.getUserSuppliedAssets(params.collateralReserveId, params.user)
     );
 
-    AccountsInfo memory accountsInfoBefore = _getAccountsInfo(params);
+    LiquidationAccountsSnapshot memory accountsInfoBefore = _getAccountsInfo(params);
     LiquidationMetadata memory liquidationMetadata = _getLiquidationMetadata(
       params,
       accountsInfoBefore.userAccountData
@@ -1287,7 +1349,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
       params.debtToCover,
       params.receiveShares
     );
-    AccountsInfo memory accountsInfoAfter = _getAccountsInfo(params);
+    LiquidationAccountsSnapshot memory accountsInfoAfter = _getAccountsInfo(params);
     _checkUserAccountData(params, accountsInfoAfter, liquidationMetadata, expectedUserAccountData);
     _checkPositionStatus(params, liquidationMetadata);
     _checkHealthFactor(params, accountsInfoBefore, accountsInfoAfter, liquidationMetadata);
