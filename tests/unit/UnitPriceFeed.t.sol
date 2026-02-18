@@ -49,7 +49,7 @@ contract UnitPriceFeedTest is Base {
       uint80 answeredInRound
     ) = unitPriceFeed.getRoundData(_roundId);
     assertEq(roundId, _roundId);
-    assertEq(answer, (10 ** uint256(DECIMALS)).toInt256());
+    assertEq(answer, (10 ** DECIMALS).toInt256());
     assertEq(startedAt, roundId);
     assertEq(updatedAt, roundId);
     assertEq(answeredInRound, roundId);
@@ -83,7 +83,7 @@ contract UnitPriceFeedTest is Base {
       uint80 answeredInRound
     ) = unitPriceFeed.latestRoundData();
     assertEq(roundId, blockTimestamp);
-    assertEq(answer, (10 ** uint256(DECIMALS)).toInt256());
+    assertEq(answer, (10 ** DECIMALS).toInt256());
     assertEq(startedAt, blockTimestamp);
     assertEq(updatedAt, blockTimestamp);
     assertEq(answeredInRound, blockTimestamp);
@@ -97,7 +97,7 @@ contract UnitPriceFeedTest is Base {
   }
 
   function test_latestAnswer() public view {
-    assertEq(unitPriceFeed.latestAnswer(), (10 ** uint256(DECIMALS)).toInt256());
+    assertEq(unitPriceFeed.latestAnswer(), (10 ** DECIMALS).toInt256());
   }
 
   function test_latestTimestamp() public {
@@ -116,7 +116,7 @@ contract UnitPriceFeedTest is Base {
     uint80 skipTime = vm.randomUint(80).toUint80();
     skip(skipTime);
     uint256 roundId = vm.randomUint(0, skipTime);
-    assertEq(unitPriceFeed.getAnswer(roundId), (10 ** uint256(DECIMALS)).toInt256());
+    assertEq(unitPriceFeed.getAnswer(roundId), (10 ** DECIMALS).toInt256());
   }
 
   function test_getAnswer_futureRound() public {
