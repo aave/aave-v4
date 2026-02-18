@@ -25,7 +25,7 @@ contract NativeTokenGateway_Gas_Tests is Base {
     spoke1.setUserPositionManager(address(nativeTokenGateway), true);
 
     deal(address(tokenList.weth), MAX_SUPPLY_AMOUNT);
-    deal(bob, mintAmount_WETH);
+    deal(bob, MAX_SUPPLY_AMOUNT_WETH);
   }
 
   function test_supplyNative() public {
@@ -52,7 +52,7 @@ contract NativeTokenGateway_Gas_Tests is Base {
 
   function test_withdrawNative() public {
     uint256 amount = 100e18;
-    Utils.supply(spoke1, _wethReserveId(spoke1), bob, mintAmount_WETH, bob);
+    Utils.supply(spoke1, _wethReserveId(spoke1), bob, MAX_SUPPLY_AMOUNT_WETH, bob);
     Utils.withdraw(spoke1, _wethReserveId(spoke1), bob, amount, bob);
 
     vm.prank(bob);

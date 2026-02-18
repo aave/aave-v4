@@ -290,11 +290,11 @@ abstract contract Base is ConfigHelpers, MockHelpers, EIP712Helpers {
   function deployMintAndApproveTokenList() internal {
     tokenList = TokenList(
       new WETH9(),
-      new TestnetERC20('USDX', 'USDX', _decimals.usdx),
-      new TestnetERC20('DAI', 'DAI', _decimals.dai),
-      new TestnetERC20('WBTC', 'WBTC', _decimals.wbtc),
-      new TestnetERC20('USDY', 'USDY', _decimals.usdy),
-      new TestnetERC20('USDZ', 'USDZ', _decimals.usdz)
+      new TestnetERC20('USDX', 'USDX', 6),
+      new TestnetERC20('DAI', 'DAI', 18),
+      new TestnetERC20('WBTC', 'WBTC', 8),
+      new TestnetERC20('USDY', 'USDY', 18),
+      new TestnetERC20('USDZ', 'USDZ', 18)
     );
 
     vm.label(address(tokenList.weth), 'WETH');
@@ -328,12 +328,12 @@ abstract contract Base is ConfigHelpers, MockHelpers, EIP712Helpers {
     ];
 
     for (uint256 x; x < users.length; ++x) {
-      tokenList.usdx.mint(users[x], mintAmount_USDX);
-      tokenList.dai.mint(users[x], mintAmount_DAI);
-      tokenList.wbtc.mint(users[x], mintAmount_WBTC);
-      tokenList.usdy.mint(users[x], mintAmount_USDY);
-      tokenList.usdz.mint(users[x], mintAmount_USDZ);
-      deal(address(tokenList.weth), users[x], mintAmount_WETH);
+      tokenList.usdx.mint(users[x], MAX_SUPPLY_AMOUNT_USDX);
+      tokenList.dai.mint(users[x], MAX_SUPPLY_AMOUNT_DAI);
+      tokenList.wbtc.mint(users[x], MAX_SUPPLY_AMOUNT_WBTC);
+      tokenList.usdy.mint(users[x], MAX_SUPPLY_AMOUNT_USDY);
+      tokenList.usdz.mint(users[x], MAX_SUPPLY_AMOUNT_USDZ);
+      deal(address(tokenList.weth), users[x], MAX_SUPPLY_AMOUNT_WETH);
 
       vm.startPrank(users[x]);
       for (uint256 y; y < spokes.length; ++y) {
@@ -344,34 +344,6 @@ abstract contract Base is ConfigHelpers, MockHelpers, EIP712Helpers {
         tokenList.usdy.approve(spokes[y], UINT256_MAX);
         tokenList.usdz.approve(spokes[y], UINT256_MAX);
       }
-      vm.stopPrank();
-    }
-  }
-
-  function spokeMintAndApprove() internal {
-    uint256 spokeMintAmount_USDX = 100e6 * 10 ** tokenList.usdx.decimals();
-    uint256 spokeMintAmount_DAI = 1e60;
-    uint256 spokeMintAmount_WBTC = 100e6 * 10 ** tokenList.wbtc.decimals();
-    uint256 spokeMintAmount_WETH = 100e6 * 10 ** tokenList.weth.decimals();
-    uint256 spokeMintAmount_USDY = 100e6 * 10 ** tokenList.usdy.decimals();
-    uint256 spokeMintAmount_USDZ = 100e6 * 10 ** tokenList.usdz.decimals();
-    address[3] memory spokes = [address(spoke1), address(spoke2), address(spoke3)];
-
-    for (uint256 x; x < spokes.length; ++x) {
-      tokenList.usdx.mint(spokes[x], spokeMintAmount_USDX);
-      tokenList.dai.mint(spokes[x], spokeMintAmount_DAI);
-      tokenList.wbtc.mint(spokes[x], spokeMintAmount_WBTC);
-      tokenList.usdy.mint(spokes[x], spokeMintAmount_USDY);
-      tokenList.usdz.mint(spokes[x], spokeMintAmount_USDZ);
-      deal(address(tokenList.weth), spokes[x], spokeMintAmount_WETH);
-
-      vm.startPrank(spokes[x]);
-      tokenList.weth.approve(address(hub1), UINT256_MAX);
-      tokenList.usdx.approve(address(hub1), UINT256_MAX);
-      tokenList.dai.approve(address(hub1), UINT256_MAX);
-      tokenList.wbtc.approve(address(hub1), UINT256_MAX);
-      tokenList.usdy.approve(address(hub1), UINT256_MAX);
-      tokenList.usdz.approve(address(hub1), UINT256_MAX);
       vm.stopPrank();
     }
   }

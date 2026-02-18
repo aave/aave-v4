@@ -136,7 +136,7 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
     // withdraw any treasury fees
     _withdrawLiquidityFees(hub1, assetId, UINT256_MAX);
 
-    // todo: _updateCollateralRisk, updateLiquidityFee or updateInterestRateStrategy needs reserve update?
+    // todo: _updateCollateralRisk, _updateLiquidityFee or updateInterestRateStrategy needs reserve update?
 
     // Time passes
     skip(skipTime);
@@ -164,7 +164,7 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
     );
 
     // now no liquidity fee, so no fees
-    updateLiquidityFee(hub1, assetId, 0);
+    _updateLiquidityFee(hub1, assetId, 0);
 
     // withdraw any treasury fees
     _withdrawLiquidityFees(hub1, assetId, UINT256_MAX);
@@ -196,7 +196,7 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
     uint24 expectedRp = 10_00;
     _updateCollateralRisk(spoke1, reserveId, expectedRp);
     uint256 liquidityFee = 5_00;
-    updateLiquidityFee(hub1, assetId, liquidityFee);
+    _updateLiquidityFee(hub1, assetId, liquidityFee);
 
     uint256 borrowAmount = 1000e18;
     uint256 supplyAmount = _calcMinimumCollAmount(spoke1, reserveId, reserveId, borrowAmount);
@@ -263,7 +263,7 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
 
     // 0.00% liquidity fee
     liquidityFee = 0;
-    updateLiquidityFee(hub1, assetId, liquidityFee);
+    _updateLiquidityFee(hub1, assetId, liquidityFee);
 
     vm.recordLogs();
     // Bob supplies 1 share to trigger interest accrual with new liquidity fee
@@ -307,7 +307,7 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
     uint24 expectedRp = 10_00;
     _updateCollateralRisk(spoke1, reserveId, expectedRp);
     uint256 liquidityFee = 5_00;
-    updateLiquidityFee(hub1, assetId, liquidityFee);
+    _updateLiquidityFee(hub1, assetId, liquidityFee);
 
     uint256 borrowAmount = 1000e18;
     uint256 supplyAmount = _calcMinimumCollAmount(spoke1, reserveId, reserveId, borrowAmount);
@@ -379,7 +379,7 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
 
     // 0.00% liquidity fee
     liquidityFee = 0;
-    updateLiquidityFee(hub1, assetId, liquidityFee);
+    _updateLiquidityFee(hub1, assetId, liquidityFee);
 
     vm.recordLogs();
     // Bob supplies 1 share to trigger interest accrual with new liquidity fee
@@ -426,8 +426,8 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
     // 50.00% premium for second collateral asset
     _updateCollateralRisk(spoke1, reserveId2, 50_00);
     uint256 liquidityFee = 5_00;
-    updateLiquidityFee(hub1, assetId, liquidityFee);
-    updateLiquidityFee(hub1, spoke1.getReserve(reserveId2).assetId, liquidityFee);
+    _updateLiquidityFee(hub1, assetId, liquidityFee);
+    _updateLiquidityFee(hub1, spoke1.getReserve(reserveId2).assetId, liquidityFee);
 
     uint256 borrowAmount = 1000e18;
     // supply way more than needed to cover borrow amount
@@ -495,7 +495,7 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
     uint256 assetId = spoke1.getReserve(reserveId).assetId;
 
     uint256 liquidityFee = 100_00;
-    updateLiquidityFee(hub1, assetId, liquidityFee);
+    _updateLiquidityFee(hub1, assetId, liquidityFee);
 
     uint256 borrowAmount = 1000e18;
     uint256 supplyAmount = _calcMinimumCollAmount(spoke1, reserveId, reserveId, borrowAmount);

@@ -815,7 +815,7 @@ contract HubAddTest is HubBase {
       assertEq(tokenList.dai.balanceOf(alice), params.aliceBalance, 'alice token balance after');
       assertEq(tokenList.dai.balanceOf(bob), params.bobBalance, 'bob token balance after');
 
-      skip(randomizer(1 days, 365 days));
+      skip(vm.randomUint(1 days, 365 days));
     }
   }
 }

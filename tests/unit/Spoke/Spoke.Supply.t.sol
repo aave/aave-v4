@@ -107,7 +107,7 @@ contract SpokeSupplyTest is SpokeBase {
     uint256 amount = 100e18;
 
     // pre-supply token assertions
-    assertEq(tokenList.dai.balanceOf(bob), mintAmount_DAI);
+    assertEq(tokenList.dai.balanceOf(bob), MAX_SUPPLY_AMOUNT_DAI);
     assertEq(tokenList.dai.balanceOf(address(hub1)), 0);
     assertEq(tokenList.dai.balanceOf(address(spoke1)), 0);
 
@@ -140,7 +140,7 @@ contract SpokeSupplyTest is SpokeBase {
     // post-supply token assertions
     assertEq(
       tokenList.dai.balanceOf(bob),
-      mintAmount_DAI - amount,
+      MAX_SUPPLY_AMOUNT_DAI - amount,
       'user token balance after-supply'
     );
     assertEq(tokenList.dai.balanceOf(address(hub1)), amount, 'hub token balance after-supply');

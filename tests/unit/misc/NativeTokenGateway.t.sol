@@ -20,7 +20,7 @@ contract NativeTokenGatewayTest is SpokeBase {
     nativeTokenGateway.registerSpoke(address(spoke1), true);
 
     deal(address(tokenList.weth), MAX_SUPPLY_AMOUNT);
-    deal(bob, mintAmount_WETH);
+    deal(bob, MAX_SUPPLY_AMOUNT_WETH);
   }
 
   function test_constructor() public {
@@ -42,7 +42,7 @@ contract NativeTokenGatewayTest is SpokeBase {
   }
 
   function test_supplyNative_fuzz(uint256 amount) public {
-    amount = bound(amount, 1, mintAmount_WETH);
+    amount = bound(amount, 1, MAX_SUPPLY_AMOUNT_WETH);
     vm.prank(bob);
     spoke1.setUserPositionManager(address(nativeTokenGateway), true);
 
@@ -166,7 +166,7 @@ contract NativeTokenGatewayTest is SpokeBase {
   }
 
   function test_supplyAndCollateralNative_fuzz(uint256 amount) public {
-    amount = bound(amount, 1, mintAmount_WETH);
+    amount = bound(amount, 1, MAX_SUPPLY_AMOUNT_WETH);
     vm.prank(bob);
     spoke1.setUserPositionManager(address(nativeTokenGateway), true);
 
@@ -209,16 +209,16 @@ contract NativeTokenGatewayTest is SpokeBase {
   }
 
   function test_withdrawNative_fuzz(uint256 amount) public {
-    amount = bound(amount, 1, mintAmount_WETH);
+    amount = bound(amount, 1, MAX_SUPPLY_AMOUNT_WETH);
 
     Utils.supply({
       spoke: spoke1,
       reserveId: _wethReserveId(spoke1),
       caller: bob,
-      amount: mintAmount_WETH,
+      amount: MAX_SUPPLY_AMOUNT_WETH,
       onBehalfOf: bob
     });
-    uint256 expectedSupplyShares = hub1.previewAddByAssets(wethAssetId, mintAmount_WETH);
+    uint256 expectedSupplyShares = hub1.previewAddByAssets(wethAssetId, MAX_SUPPLY_AMOUNT_WETH);
 
     vm.prank(bob);
     spoke1.setUserPositionManager(address(nativeTokenGateway), true);
@@ -257,7 +257,7 @@ contract NativeTokenGatewayTest is SpokeBase {
   }
 
   function test_withdrawNative_fuzz_allBalance(uint256 supplyAmount) public {
-    supplyAmount = bound(supplyAmount, 1, mintAmount_WETH);
+    supplyAmount = bound(supplyAmount, 1, MAX_SUPPLY_AMOUNT_WETH);
 
     Utils.supply({
       spoke: spoke1,
@@ -304,7 +304,7 @@ contract NativeTokenGatewayTest is SpokeBase {
     uint256 supplyAmount,
     uint256 borrowAmount
   ) public {
-    supplyAmount = bound(supplyAmount, 2, mintAmount_WETH / 2);
+    supplyAmount = bound(supplyAmount, 2, MAX_SUPPLY_AMOUNT_WETH / 2);
     borrowAmount = bound(borrowAmount, 1, supplyAmount / 2);
 
     vm.prank(bob);

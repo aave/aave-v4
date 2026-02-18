@@ -117,7 +117,7 @@ contract HubMintFeeSharesTest is HubBase {
   }
 
   function test_mintFeeShares_noShares() public {
-    updateLiquidityFee(hub1, daiAssetId, 0);
+    _updateLiquidityFee(hub1, daiAssetId, 0);
     _mockInterestRateRay(2);
 
     // Create debt to build up fees on the existing treasury spoke
@@ -137,7 +137,7 @@ contract HubMintFeeSharesTest is HubBase {
     assertEq(hub1.getAssetDrawnIndex(daiAssetId), 1e27 + 2);
 
     _mockInterestRateRay(1e27 - 3);
-    updateLiquidityFee(hub1, daiAssetId, PercentageMath.PERCENTAGE_FACTOR);
+    _updateLiquidityFee(hub1, daiAssetId, PercentageMath.PERCENTAGE_FACTOR);
 
     // mint fee shares just to accrue (liquidity fee is 0, so no fees are minted)
     Utils.mintFeeShares(hub1, daiAssetId, ADMIN);

@@ -10,15 +10,6 @@ import {TestnetERC20} from 'tests/mocks/TestnetERC20.sol';
 /// @notice Canonical shared struct definitions for the Aave V4 test suite.
 ///         All test base contracts inherit from here to avoid duplicate definitions.
 abstract contract TestTypes {
-  struct Decimals {
-    uint8 usdx;
-    uint8 dai;
-    uint8 wbtc;
-    uint8 usdy;
-    uint8 weth;
-    uint8 usdz;
-  }
-
   struct TokenList {
     WETH9 weth;
     TestnetERC20 usdx;

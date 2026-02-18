@@ -30,10 +30,10 @@ contract SpokeAccrueInterestTest is SpokeBase {
 
   function setUp() public override {
     super.setUp();
-    updateLiquidityFee(hub1, daiAssetId, 0);
-    updateLiquidityFee(hub1, wethAssetId, 0);
-    updateLiquidityFee(hub1, usdxAssetId, 0);
-    updateLiquidityFee(hub1, wbtcAssetId, 0);
+    _updateLiquidityFee(hub1, daiAssetId, 0);
+    _updateLiquidityFee(hub1, wethAssetId, 0);
+    _updateLiquidityFee(hub1, usdxAssetId, 0);
+    _updateLiquidityFee(hub1, wbtcAssetId, 0);
   }
 
   function test_accrueInterest_NoActionTaken() public view {

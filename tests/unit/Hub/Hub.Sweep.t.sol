@@ -21,7 +21,7 @@ contract HubSweepTest is HubBase {
 
   function test_sweep_revertsWith_OnlyReinvestmentController(address caller) public {
     vm.assume(caller != reinvestmentController);
-    updateAssetReinvestmentController(hub1, daiAssetId, reinvestmentController);
+    _updateAssetReinvestmentController(hub1, daiAssetId, reinvestmentController);
 
     vm.expectRevert(IHub.OnlyReinvestmentController.selector);
     vm.prank(caller);
@@ -30,7 +30,7 @@ contract HubSweepTest is HubBase {
 
   function test_sweep_revertsWith_InvalidAmount() public {
     assertEq(hub1.getAsset(daiAssetId).swept, 0);
-    updateAssetReinvestmentController(hub1, daiAssetId, reinvestmentController);
+    _updateAssetReinvestmentController(hub1, daiAssetId, reinvestmentController);
 
     vm.prank(reinvestmentController);
     vm.expectRevert(IHub.InvalidAmount.selector);
@@ -45,7 +45,7 @@ contract HubSweepTest is HubBase {
     supplyAmount = bound(supplyAmount, 1, MAX_SUPPLY_AMOUNT);
     sweepAmount = bound(sweepAmount, 1, supplyAmount);
 
-    updateAssetReinvestmentController(hub1, daiAssetId, reinvestmentController);
+    _updateAssetReinvestmentController(hub1, daiAssetId, reinvestmentController);
 
     _addLiquidity(daiAssetId, supplyAmount);
 
@@ -68,7 +68,7 @@ contract HubSweepTest is HubBase {
 
   ///@dev swept amount is not withdrawable
   function test_sweep_revertsWith_InsufficientLiquidity() public {
-    updateAssetReinvestmentController(hub1, daiAssetId, reinvestmentController);
+    _updateAssetReinvestmentController(hub1, daiAssetId, reinvestmentController);
 
     uint256 initialLiquidity = vm.randomUint(2, MAX_SUPPLY_AMOUNT);
     uint256 swept = vm.randomUint(1, initialLiquidity);
@@ -91,7 +91,7 @@ contract HubSweepTest is HubBase {
   function test_sweep_does_not_impact_utilization(uint256 supplyAmount, uint256 drawAmount) public {
     supplyAmount = bound(supplyAmount, 2, MAX_SUPPLY_AMOUNT);
     drawAmount = bound(drawAmount, 1, supplyAmount - 1);
-    updateAssetReinvestmentController(hub1, daiAssetId, reinvestmentController);
+    _updateAssetReinvestmentController(hub1, daiAssetId, reinvestmentController);
 
     _addLiquidity(daiAssetId, supplyAmount);
     _drawLiquidity(daiAssetId, drawAmount, false, false);

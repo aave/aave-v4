@@ -32,7 +32,7 @@ contract SpokeAccrueLiquidityFeeEdgeCasesTest is SpokeBase {
 
     borrowAmount = bound(borrowAmount, 1, _calculateMaxSupplyAmount(spoke1, reserveId) / 2); // within collateralization
 
-    updateLiquidityFee(hub1, assetId, MAX_LIQUIDITY_FEE);
+    _updateLiquidityFee(hub1, assetId, MAX_LIQUIDITY_FEE);
 
     uint256 supplyAmount = _calcMinimumCollAmount(spoke1, reserveId, reserveId, borrowAmount);
     _mockInterestRateBps(rate);
@@ -81,7 +81,7 @@ contract SpokeAccrueLiquidityFeeEdgeCasesTest is SpokeBase {
     borrowAmount = bound(borrowAmount, 1, _calculateMaxSupplyAmount(spoke1, reserveId) / 4); // within collateralization
     borrowAmount2 = bound(borrowAmount2, 1, _calculateMaxSupplyAmount(spoke1, reserveId) / 4); // within collateralization
 
-    updateLiquidityFee(hub1, spoke1.getReserve(reserveId).assetId, MAX_LIQUIDITY_FEE);
+    _updateLiquidityFee(hub1, spoke1.getReserve(reserveId).assetId, MAX_LIQUIDITY_FEE);
 
     uint256 supplyAmount = _calcMinimumCollAmount(spoke1, reserveId, reserveId, borrowAmount);
     uint256 supplyAmount2 = _calcMinimumCollAmount(spoke1, reserveId, reserveId, borrowAmount2);
@@ -129,7 +129,7 @@ contract SpokeAccrueLiquidityFeeEdgeCasesTest is SpokeBase {
   function test_accrueLiquidityFee_maxLiquidityFee_multi_user() public {
     uint256 reserveId = _randomReserveId(spoke1);
     uint256 assetId = spoke1.getReserve(reserveId).assetId;
-    updateLiquidityFee(hub1, assetId, MAX_LIQUIDITY_FEE);
+    _updateLiquidityFee(hub1, assetId, MAX_LIQUIDITY_FEE);
 
     uint256 count = vm.randomUint(10, 1000);
     for (uint256 i; i < count; ++i) {
@@ -162,7 +162,7 @@ contract SpokeAccrueLiquidityFeeEdgeCasesTest is SpokeBase {
   function test_accrueLiquidityFee_maxLiquidityFee_multi_spoke() public {
     uint256 assetId = daiAssetId; // on all spokes
     uint256 spokeCount = hub1.getSpokeCount(assetId);
-    updateLiquidityFee(hub1, assetId, MAX_LIQUIDITY_FEE);
+    _updateLiquidityFee(hub1, assetId, MAX_LIQUIDITY_FEE);
     // build spoke list excluding treasury spoke
     ISpoke[] memory spokes = new ISpoke[](spokeCount - 1);
     uint256 spokeIndex;

@@ -14,7 +14,7 @@ import {SnapshotHelpers} from 'tests/helpers/SnapshotHelpers.sol';
 abstract contract ConfigHelpers is SnapshotHelpers {
   using SafeCast for *;
 
-  function updateAssetReinvestmentController(
+  function _updateAssetReinvestmentController(
     IHub hub,
     uint256 assetId,
     address newReinvestmentController
@@ -176,7 +176,11 @@ abstract contract ConfigHelpers is SnapshotHelpers {
     assertEq(spoke.getReserveConfig(reserveId), config);
   }
 
-  function updateLiquidityFee(IHub hub, uint256 assetId, uint256 liquidityFee) internal pausePrank {
+  function _updateLiquidityFee(
+    IHub hub,
+    uint256 assetId,
+    uint256 liquidityFee
+  ) internal pausePrank {
     IHub.AssetConfig memory config = hub.getAssetConfig(assetId);
     config.liquidityFee = liquidityFee.toUint16();
     vm.prank(HUB_ADMIN);
@@ -251,7 +255,7 @@ abstract contract ConfigHelpers is SnapshotHelpers {
     assertEq(hub.getSpokeConfig(assetId, spoke), spokeConfig);
   }
 
-  function updateDrawCap(
+  function _updateDrawCap(
     IHub hub,
     uint256 assetId,
     address spoke,
@@ -279,7 +283,7 @@ abstract contract ConfigHelpers is SnapshotHelpers {
     assertEq(hub.getSpokeConfig(assetId, spoke), spokeConfig);
   }
 
-  function grantDeficitEliminatorRole(IHub hub, address target) internal pausePrank {
+  function _grantDeficitEliminatorRole(IHub hub, address target) internal pausePrank {
     IAccessManager manager = IAccessManager(hub.authority());
     vm.prank(ADMIN);
     manager.grantRole(Roles.DEFICIT_ELIMINATOR_ROLE, target, 0);

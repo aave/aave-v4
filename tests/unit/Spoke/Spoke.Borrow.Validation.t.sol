@@ -133,7 +133,7 @@ contract SpokeBorrowValidationTest is SpokeBase {
     uint256 drawAmount = drawCap * 10 ** tokenList.dai.decimals() + 1;
 
     uint256 assetId = spoke1.getReserve(reserveId).assetId;
-    updateDrawCap(hub1, assetId, address(spoke1), drawCap);
+    _updateDrawCap(hub1, assetId, address(spoke1), drawCap);
     assertEq(hub1.getSpoke(assetId, address(spoke1)).drawCap, drawCap);
 
     // Bob borrow dai amount exceeding draw cap
@@ -153,7 +153,7 @@ contract SpokeBorrowValidationTest is SpokeBase {
     uint256 wethSupplyAmount = 10e18;
     uint256 drawAmount = daiAmount - 1;
 
-    updateDrawCap(hub1, daiAssetId, address(spoke1), drawCap);
+    _updateDrawCap(hub1, daiAssetId, address(spoke1), drawCap);
     assertEq(hub1.getSpoke(daiAssetId, address(spoke1)).drawCap, drawCap);
 
     // Bob supply weth collateral

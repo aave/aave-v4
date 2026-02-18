@@ -226,7 +226,7 @@ contract HubSpokeConfigTest is HubBase {
   function test_eliminateDeficit_active_halted_scenarios() public {
     address coveredSpoke = address(spoke1);
     address callerSpoke = address(spoke2);
-    grantDeficitEliminatorRole(hub1, callerSpoke);
+    _grantDeficitEliminatorRole(hub1, callerSpoke);
 
     // create reported deficit on spoke1
     _createReportedDeficit(hub1, coveredSpoke, usdxAssetId);
@@ -262,7 +262,7 @@ contract HubSpokeConfigTest is HubBase {
     _updateSpokeHalted(hub1, usdxAssetId, address(spoke1), false);
     _updateSpokeActive(hub1, usdxAssetId, address(spoke1), false);
 
-    grantDeficitEliminatorRole(hub1, address(spoke1));
+    _grantDeficitEliminatorRole(hub1, address(spoke1));
     vm.expectRevert(IHub.SpokeNotActive.selector);
     vm.prank(address(spoke1));
     hub1.eliminateDeficit(usdxAssetId, 1, coveredSpoke);

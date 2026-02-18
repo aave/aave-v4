@@ -124,7 +124,7 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
     _mockInterestRateBps(50_00);
     _updateCollateralRisk(spoke1, _daiReserveId(spoke1), 0);
     _updateCollateralRisk(spoke1, _wethReserveId(spoke1), 0);
-    updateLiquidityFee(hub1, daiAssetId, 0);
+    _updateLiquidityFee(hub1, daiAssetId, 0);
 
     // enough coll
     Utils.supplyCollateral(spoke1, _wethReserveId(spoke1), alice, 1e18, alice);
@@ -167,7 +167,7 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
     _mockInterestRateBps(50_00);
     _updateCollateralRisk(spoke1, _daiReserveId(spoke1), 0);
     _updateCollateralRisk(spoke1, _wethReserveId(spoke1), 0);
-    updateLiquidityFee(hub1, daiAssetId, 0);
+    _updateLiquidityFee(hub1, daiAssetId, 0);
 
     // enough coll
     Utils.supplyCollateral(spoke1, _wethReserveId(spoke1), alice, 1e18, alice);

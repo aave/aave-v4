@@ -22,7 +22,7 @@ contract HubReclaimTest is HubBase {
   function test_reclaim_revertsWith_OnlyReinvestmentController(address caller) public {
     address reinvestmentController = makeAddr('reinvestmentController');
     vm.assume(caller != reinvestmentController);
-    updateAssetReinvestmentController(hub1, daiAssetId, reinvestmentController);
+    _updateAssetReinvestmentController(hub1, daiAssetId, reinvestmentController);
 
     vm.expectRevert(IHub.OnlyReinvestmentController.selector);
     vm.prank(caller);
@@ -31,7 +31,7 @@ contract HubReclaimTest is HubBase {
 
   function test_reclaim_revertsWith_InvalidAmount_zero() public {
     address reinvestmentController = makeAddr('reinvestmentController');
-    updateAssetReinvestmentController(hub1, daiAssetId, reinvestmentController);
+    _updateAssetReinvestmentController(hub1, daiAssetId, reinvestmentController);
 
     vm.prank(reinvestmentController);
     vm.expectRevert(IHub.InvalidAmount.selector);
@@ -43,7 +43,7 @@ contract HubReclaimTest is HubBase {
     uint256 sweepAmount = 500e18;
 
     address reinvestmentController = makeAddr('reinvestmentController');
-    updateAssetReinvestmentController(hub1, daiAssetId, reinvestmentController);
+    _updateAssetReinvestmentController(hub1, daiAssetId, reinvestmentController);
 
     _addLiquidity(daiAssetId, supplyAmount);
 
@@ -59,7 +59,7 @@ contract HubReclaimTest is HubBase {
 
   function test_reclaim_revertsWith_InsufficientTransferred_noSwept() public {
     address reinvestmentController = makeAddr('reinvestmentController');
-    updateAssetReinvestmentController(hub1, daiAssetId, reinvestmentController);
+    _updateAssetReinvestmentController(hub1, daiAssetId, reinvestmentController);
 
     assertEq(hub1.getAssetSwept(daiAssetId), 0);
 
@@ -73,7 +73,7 @@ contract HubReclaimTest is HubBase {
     uint256 sweepAmount = 500e18;
 
     address reinvestmentController = makeAddr('reinvestmentController');
-    updateAssetReinvestmentController(hub1, daiAssetId, reinvestmentController);
+    _updateAssetReinvestmentController(hub1, daiAssetId, reinvestmentController);
 
     _addLiquidity(daiAssetId, supplyAmount);
 
@@ -105,7 +105,7 @@ contract HubReclaimTest is HubBase {
     reclaimAmount = bound(reclaimAmount, 1, sweepAmount);
 
     address reinvestmentController = makeAddr('reinvestmentController');
-    updateAssetReinvestmentController(hub1, daiAssetId, reinvestmentController);
+    _updateAssetReinvestmentController(hub1, daiAssetId, reinvestmentController);
 
     _addLiquidity(daiAssetId, supplyAmount);
 
@@ -141,7 +141,7 @@ contract HubReclaimTest is HubBase {
     uint256 sweepAmount = 500e18;
 
     address reinvestmentController = makeAddr('reinvestmentController');
-    updateAssetReinvestmentController(hub1, daiAssetId, reinvestmentController);
+    _updateAssetReinvestmentController(hub1, daiAssetId, reinvestmentController);
 
     _addLiquidity(daiAssetId, supplyAmount);
 
@@ -166,7 +166,7 @@ contract HubReclaimTest is HubBase {
     uint256 supplyAmount = 1000e18;
 
     address reinvestmentController = makeAddr('reinvestmentController');
-    updateAssetReinvestmentController(hub1, daiAssetId, reinvestmentController);
+    _updateAssetReinvestmentController(hub1, daiAssetId, reinvestmentController);
 
     _addLiquidity(daiAssetId, supplyAmount);
 

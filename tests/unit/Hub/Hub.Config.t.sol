@@ -406,7 +406,7 @@ contract HubConfigTest is HubBase {
     assertEq(hub1.getAsset(assetId).reinvestmentController, address(0));
 
     address reinvestmentController = makeAddr('reinvestmentController');
-    updateAssetReinvestmentController(hub1, assetId, reinvestmentController);
+    _updateAssetReinvestmentController(hub1, assetId, reinvestmentController);
     _addLiquidity(assetId, 1000e18);
     vm.prank(reinvestmentController);
     hub1.sweep(assetId, 100e18);

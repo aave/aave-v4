@@ -40,11 +40,11 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
 
   function setUp() public override {
     super.setUp();
-    updateLiquidityFee(hub1, daiAssetId, 0);
-    updateLiquidityFee(hub1, wethAssetId, 0);
-    updateLiquidityFee(hub1, usdxAssetId, 0);
-    updateLiquidityFee(hub1, wbtcAssetId, 0);
-    updateLiquidityFee(hub1, usdzAssetId, 0);
+    _updateLiquidityFee(hub1, daiAssetId, 0);
+    _updateLiquidityFee(hub1, wethAssetId, 0);
+    _updateLiquidityFee(hub1, usdxAssetId, 0);
+    _updateLiquidityFee(hub1, wbtcAssetId, 0);
+    _updateLiquidityFee(hub1, usdzAssetId, 0);
   }
 
   /// @dev Check protocol supply and debt values after two separate interest accruals with multiple assets supplied and borrowed
@@ -205,7 +205,7 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
 
       // Store timestamp before next skip time
       startTime = vm.getBlockTimestamp().toUint40();
-      skipTime = randomizer(0, MAX_SKIP_TIME / 2).toUint40();
+      skipTime = vm.randomUint(0, MAX_SKIP_TIME / 2).toUint40();
       skip(skipTime);
 
       // Check bob's drawn debt, premium debt, and supplied amounts for all assets at user, reserve, spoke, and asset level

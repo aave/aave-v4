@@ -469,8 +469,9 @@ abstract contract QueryHelpers is MathHelpers {
       userAccountData.avgCollateralFactor
     );
     uint256 targetTotalDebtValue = totalAdjustedCollateralValue.wadDivUp(desiredHf);
-    require(
-      userAccountData.totalDebtValueRay / WadRayMath.RAY < targetTotalDebtValue,
+    assertLt(
+      userAccountData.totalDebtValueRay / WadRayMath.RAY,
+      targetTotalDebtValue,
       'User has enough debt'
     );
     return targetTotalDebtValue - userAccountData.totalDebtValueRay / WadRayMath.RAY;

@@ -111,17 +111,9 @@ abstract contract BaseState is TestTypes, Test {
   uint256 internal usdyAssetId = 4;
   uint256 internal usdzAssetId = 5;
 
-  uint256 internal mintAmount_WETH = MAX_SUPPLY_AMOUNT;
-  uint256 internal mintAmount_USDX = MAX_SUPPLY_AMOUNT;
-  uint256 internal mintAmount_DAI = MAX_SUPPLY_AMOUNT;
-  uint256 internal mintAmount_WBTC = MAX_SUPPLY_AMOUNT;
-  uint256 internal mintAmount_USDY = MAX_SUPPLY_AMOUNT;
-  uint256 internal mintAmount_USDZ = MAX_SUPPLY_AMOUNT;
-
-  Decimals internal _decimals = Decimals({usdx: 6, usdy: 18, dai: 18, wbtc: 8, weth: 18, usdz: 18});
-
   mapping(ISpoke => SpokeInfo) internal spokeInfo;
 
+  /// @notice Pauses the prank mode to allow test helpers to prank other actors.
   modifier pausePrank() {
     (VmSafe.CallerMode callerMode, address msgSender, address txOrigin) = vm.readCallers();
     if (callerMode == VmSafe.CallerMode.RecurrentPrank) vm.stopPrank();
@@ -163,10 +155,6 @@ abstract contract BaseState is TestTypes, Test {
   function makeKey(string memory name) internal returns (uint256) {
     (, uint256 key) = makeAddrAndKey(name);
     return key;
-  }
-
-  function randomizer(uint256 min, uint256 max) internal returns (uint256) {
-    return vm.randomUint(min, max);
   }
 
   function _randomBps() internal returns (uint16) {

@@ -57,7 +57,7 @@ contract TreasurySpokeTest is SpokeBase {
   function test_withdraw_fuzz_amount_interestOnly(uint256 amount) public {
     amount = bound(amount, 1, MAX_SUPPLY_AMOUNT);
 
-    updateLiquidityFee(hub1, daiAssetId, 0);
+    _updateLiquidityFee(hub1, daiAssetId, 0);
 
     Utils.supply(_treasurySpoke(), daiAssetId, TREASURY_ADMIN, amount, address(treasurySpoke));
     assertEq(treasurySpoke.getSuppliedAmount(daiAssetId), amount);
@@ -194,7 +194,7 @@ contract TreasurySpokeTest is SpokeBase {
     skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
 
     uint256 assetId = spoke1.getReserve(reserveId).assetId;
-    updateLiquidityFee(hub1, spoke1.getReserve(reserveId).assetId, 100_00);
+    _updateLiquidityFee(hub1, spoke1.getReserve(reserveId).assetId, 100_00);
 
     assertEq(treasurySpoke.getSuppliedShares(reserveId), 0);
 
@@ -274,7 +274,7 @@ contract TreasurySpokeTest is SpokeBase {
     assertEq(treasurySpoke.getUserTotalDebt(reserveId, alice), 0);
     assertEq(treasurySpoke.getUserPremiumDebtRay(reserveId, alice), 0);
 
-    updateLiquidityFee(hub1, spoke1.getReserve(reserveId).assetId, 100_00);
+    _updateLiquidityFee(hub1, spoke1.getReserve(reserveId).assetId, 100_00);
 
     // create debt
     _openDebtPosition(spoke1, reserveId, amount, true);
