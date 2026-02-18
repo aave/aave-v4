@@ -40,7 +40,7 @@ contract UnitPriceFeedTest is Base {
   function test_getRoundData() public {
     uint80 skipTime = vm.randomUint(80).toUint80();
     skip(skipTime);
-    uint80 _roundId = uint80(vm.randomUint(0, skipTime));
+    uint80 _roundId = vm.randomUint(0, skipTime).toUint80();
     (
       uint80 roundId,
       int256 answer,
@@ -49,7 +49,7 @@ contract UnitPriceFeedTest is Base {
       uint80 answeredInRound
     ) = unitPriceFeed.getRoundData(_roundId);
     assertEq(roundId, _roundId);
-    assertEq(answer, int256(10 ** DECIMALS));
+    assertEq(answer, (10 ** uint256(DECIMALS)).toInt256());
     assertEq(startedAt, roundId);
     assertEq(updatedAt, roundId);
     assertEq(answeredInRound, roundId);
@@ -83,7 +83,7 @@ contract UnitPriceFeedTest is Base {
       uint80 answeredInRound
     ) = unitPriceFeed.latestRoundData();
     assertEq(roundId, blockTimestamp);
-    assertEq(answer, int256(10 ** DECIMALS));
+    assertEq(answer, (10 ** uint256(DECIMALS)).toInt256());
     assertEq(startedAt, blockTimestamp);
     assertEq(updatedAt, blockTimestamp);
     assertEq(answeredInRound, blockTimestamp);
@@ -94,5 +94,49 @@ contract UnitPriceFeedTest is Base {
     unitPriceFeed = new UnitPriceFeed(decimals, _description);
     (, int256 answer, , , ) = unitPriceFeed.latestRoundData();
     assertEq(answer, int256(10 ** decimals));
+  }
+
+  function test_latestAnswer() public view {
+    assertEq(unitPriceFeed.latestAnswer(), (10 ** uint256(DECIMALS)).toInt256());
+  }
+
+  function test_latestTimestamp() public {
+    uint80 skipTime = vm.randomUint(80).toUint80();
+    skip(skipTime);
+    assertEq(unitPriceFeed.latestTimestamp(), block.timestamp);
+  }
+
+  function test_latestRound() public {
+    uint80 skipTime = vm.randomUint(80).toUint80();
+    skip(skipTime);
+    assertEq(unitPriceFeed.latestRound(), block.timestamp);
+  }
+
+  function test_getAnswer() public {
+    uint80 skipTime = vm.randomUint(80).toUint80();
+    skip(skipTime);
+    uint256 roundId = vm.randomUint(0, skipTime);
+    assertEq(unitPriceFeed.getAnswer(roundId), (10 ** uint256(DECIMALS)).toInt256());
+  }
+
+  function test_getAnswer_futureRound() public {
+    uint80 skipTime = vm.randomUint(0, type(uint80).max - 1).toUint80();
+    skip(skipTime);
+    uint256 roundId = vm.randomUint(skipTime + 1, type(uint80).max);
+    assertEq(unitPriceFeed.getAnswer(roundId), 0);
+  }
+
+  function test_getTimestamp() public {
+    uint80 skipTime = vm.randomUint(80).toUint80();
+    skip(skipTime);
+    uint256 roundId = vm.randomUint(0, skipTime);
+    assertEq(unitPriceFeed.getTimestamp(roundId), roundId);
+  }
+
+  function test_getTimestamp_futureRound() public {
+    uint80 skipTime = vm.randomUint(0, type(uint80).max - 1).toUint80();
+    skip(skipTime);
+    uint256 roundId = vm.randomUint(skipTime + 1, type(uint80).max);
+    assertEq(unitPriceFeed.getTimestamp(roundId), 0);
   }
 }

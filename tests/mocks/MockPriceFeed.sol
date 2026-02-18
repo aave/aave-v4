@@ -2,9 +2,9 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import {AggregatorV3Interface} from 'src/dependencies/chainlink/AggregatorV3Interface.sol';
+import {AggregatorV2V3Interface} from 'src/dependencies/chainlink/AggregatorV2V3Interface.sol';
 
-contract MockPriceFeed is AggregatorV3Interface {
+contract MockPriceFeed is AggregatorV2V3Interface {
   uint8 public immutable override decimals;
   string public override description;
 
@@ -46,5 +46,25 @@ contract MockPriceFeed is AggregatorV3Interface {
     startedAt = block.timestamp;
     updatedAt = block.timestamp;
     answeredInRound = roundId;
+  }
+
+  function latestAnswer() external view override returns (int256) {
+    return _price;
+  }
+
+  function latestTimestamp() external view override returns (uint256) {
+    return block.timestamp;
+  }
+
+  function latestRound() external view override returns (uint256) {
+    return block.timestamp;
+  }
+
+  function getAnswer(uint256) external view override returns (int256) {
+    return _price;
+  }
+
+  function getTimestamp(uint256) external view override returns (uint256) {
+    return block.timestamp;
   }
 }

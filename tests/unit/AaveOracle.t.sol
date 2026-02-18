@@ -2,6 +2,7 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
+import {AggregatorInterface} from 'src/dependencies/chainlink/AggregatorInterface.sol';
 import 'tests/Base.t.sol';
 
 /// forge-config: default.allow_internal_expect_revert = true
@@ -134,17 +135,17 @@ contract AaveOracleTest is Base {
 
   function test_setReserveSource_revertsWith_InvalidPrice() public {
     _mockSourceDecimals(_source1, _oracleDecimals);
-    _mockSourceLatestRoundData(_source1, -1e8);
+    _mockSourceLatestAnswer(_source1, -1e8);
     vm.expectRevert(abi.encodeWithSelector(IAaveOracle.InvalidPrice.selector, reserveId1));
     vm.prank(address(spoke1));
     oracle.setReserveSource(reserveId1, _source1);
 
-    _mockSourceLatestRoundData(_source1, 0);
+    _mockSourceLatestAnswer(_source1, 0);
     vm.expectRevert(abi.encodeWithSelector(IAaveOracle.InvalidPrice.selector, reserveId1));
     vm.prank(address(spoke1));
     oracle.setReserveSource(reserveId1, _source1);
 
-    _mockSourceLatestRoundData(_source1, -100e18);
+    _mockSourceLatestAnswer(_source1, -100e18);
     vm.expectRevert(abi.encodeWithSelector(IAaveOracle.InvalidPrice.selector, reserveId1));
     vm.prank(address(spoke1));
     oracle.setReserveSource(reserveId1, _source1);
@@ -169,11 +170,11 @@ contract AaveOracleTest is Base {
 
   function test_setReserveSource() public {
     _mockSourceDecimals(_source1, _oracleDecimals);
-    _mockSourceLatestRoundData(_source1, 1e8);
+    _mockSourceLatestAnswer(_source1, 1e8);
 
     vm.expectEmit();
     emit IAaveOracle.UpdateReserveSource(reserveId1, _source1);
-    vm.expectCall(_source1, abi.encodeCall(AggregatorV3Interface.latestRoundData, ()));
+    vm.expectCall(_source1, abi.encodeCall(AggregatorInterface.latestAnswer, ()));
 
     vm.prank(address(spoke1));
     oracle.setReserveSource(reserveId1, _source1);
@@ -192,12 +193,12 @@ contract AaveOracleTest is Base {
 
   function test_getReservePrice_revertsWith_InvalidPrice() public {
     _mockSourceDecimals(_source1, _oracleDecimals);
-    _mockSourceLatestRoundData(_source1, 1e8);
+    _mockSourceLatestAnswer(_source1, 1e8);
 
     vm.prank(address(spoke1));
     oracle.setReserveSource(reserveId1, _source1);
 
-    _mockSourceLatestRoundData(_source1, -1e8);
+    _mockSourceLatestAnswer(_source1, -1e8);
 
     vm.expectRevert(abi.encodeWithSelector(IAaveOracle.InvalidPrice.selector, reserveId1));
     oracle.getReservePrice(reserveId1);
@@ -206,13 +207,13 @@ contract AaveOracleTest is Base {
   function test_getReservePrice() public {
     test_setReserveSource();
 
-    vm.expectCall(_source1, abi.encodeCall(AggregatorV3Interface.latestRoundData, ()));
+    vm.expectCall(_source1, abi.encodeCall(AggregatorInterface.latestAnswer, ()));
     assertEq(oracle.getReservePrice(reserveId1), 1e8);
   }
 
   function test_getReservePrices_revertsWith_InvalidSource() public {
     _mockSourceDecimals(_source1, _oracleDecimals);
-    _mockSourceLatestRoundData(_source1, 1e8);
+    _mockSourceLatestAnswer(_source1, 1e8);
 
     vm.prank(address(spoke1));
     oracle.setReserveSource(reserveId1, _source1);
@@ -227,9 +228,9 @@ contract AaveOracleTest is Base {
 
   function test_getReservePrices() public {
     _mockSourceDecimals(_source1, _oracleDecimals);
-    _mockSourceLatestRoundData(_source1, 1e8);
+    _mockSourceLatestAnswer(_source1, 1e8);
     _mockSourceDecimals(_source2, _oracleDecimals);
-    _mockSourceLatestRoundData(_source2, 2e8);
+    _mockSourceLatestAnswer(_source2, 2e8);
 
     vm.prank(address(spoke1));
     oracle.setReserveSource(reserveId1, _source1);
@@ -249,17 +250,7 @@ contract AaveOracleTest is Base {
     vm.mockCall(source, abi.encodeCall(AggregatorV3Interface.decimals, ()), abi.encode(decimals));
   }
 
-  function _mockSourceLatestRoundData(address source, int256 price) internal {
-    vm.mockCall(
-      source,
-      abi.encodeCall(AggregatorV3Interface.latestRoundData, ()),
-      abi.encode(
-        uint80(vm.getBlockTimestamp()),
-        price,
-        vm.getBlockTimestamp(),
-        vm.getBlockTimestamp(),
-        uint80(vm.getBlockTimestamp())
-      )
-    );
+  function _mockSourceLatestAnswer(address source, int256 price) internal {
+    vm.mockCall(source, abi.encodeCall(AggregatorInterface.latestAnswer, ()), abi.encode(price));
   }
 }

@@ -2,7 +2,7 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity 0.8.28;
 
-import {AggregatorV3Interface} from 'src/dependencies/chainlink/AggregatorV3Interface.sol';
+import {AggregatorV2V3Interface} from 'src/dependencies/chainlink/AggregatorV2V3Interface.sol';
 import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 import {IAaveOracle, IPriceOracle} from 'src/spoke/interfaces/IAaveOracle.sol';
 
@@ -23,7 +23,7 @@ contract AaveOracle is IAaveOracle {
   /// @dev The address of the deployer.
   address private immutable DEPLOYER;
 
-  mapping(uint256 reserveId => AggregatorV3Interface) internal _sources;
+  mapping(uint256 reserveId => AggregatorV2V3Interface) internal _sources;
 
   /// @dev Constructor.
   /// @dev `decimals` must match the spoke's decimals for compatibility.
@@ -48,7 +48,7 @@ contract AaveOracle is IAaveOracle {
   /// @inheritdoc IAaveOracle
   function setReserveSource(uint256 reserveId, address source) external {
     require(msg.sender == SPOKE, OnlySpoke());
-    AggregatorV3Interface targetSource = AggregatorV3Interface(source);
+    AggregatorV2V3Interface targetSource = AggregatorV2V3Interface(source);
     require(targetSource.decimals() == DECIMALS, InvalidSourceDecimals(reserveId));
     _sources[reserveId] = targetSource;
     _getSourcePrice(reserveId);
@@ -78,10 +78,10 @@ contract AaveOracle is IAaveOracle {
 
   /// @dev Price of zero will revert with `InvalidPrice`.
   function _getSourcePrice(uint256 reserveId) internal view returns (uint256) {
-    AggregatorV3Interface source = _sources[reserveId];
+    AggregatorV2V3Interface source = _sources[reserveId];
     require(address(source) != address(0), InvalidSource(reserveId));
 
-    (, int256 price, , , ) = source.latestRoundData();
+    int256 price = source.latestAnswer();
     require(price > 0, InvalidPrice(reserveId));
 
     return uint256(price);

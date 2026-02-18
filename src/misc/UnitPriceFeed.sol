@@ -2,14 +2,16 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity 0.8.28;
 
+import {AggregatorV2V3Interface} from 'src/dependencies/chainlink/AggregatorV2V3Interface.sol';
 import {AggregatorV3Interface} from 'src/dependencies/chainlink/AggregatorV3Interface.sol';
+import {AggregatorInterface} from 'src/dependencies/chainlink/AggregatorInterface.sol';
 import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
 
 /// @title UnitPriceFeed contract
 /// @author Aave Labs
 /// @notice Price feed that returns the unit price (1), with decimals precision.
 /// @dev This price feed can be set for reserves that use the base currency as collateral.
-contract UnitPriceFeed is AggregatorV3Interface {
+contract UnitPriceFeed is AggregatorV2V3Interface {
   using SafeCast for uint256;
 
   /// @inheritdoc AggregatorV3Interface
@@ -46,7 +48,7 @@ contract UnitPriceFeed is AggregatorV3Interface {
       uint80 answeredInRound
     )
   {
-    if (_roundId <= uint80(block.timestamp)) {
+    if (_roundId <= block.timestamp.toUint80()) {
       roundId = _roundId;
       answer = UNITS;
       startedAt = _roundId;
@@ -67,7 +69,7 @@ contract UnitPriceFeed is AggregatorV3Interface {
       uint80 answeredInRound
     )
   {
-    roundId = uint80(block.timestamp);
+    roundId = block.timestamp.toUint80();
     answer = UNITS;
     startedAt = block.timestamp;
     updatedAt = block.timestamp;
@@ -77,5 +79,36 @@ contract UnitPriceFeed is AggregatorV3Interface {
   /// @inheritdoc AggregatorV3Interface
   function decimals() external view returns (uint8) {
     return DECIMALS;
+  }
+
+  /// @inheritdoc AggregatorInterface
+  function latestAnswer() external view returns (int256) {
+    return UNITS;
+  }
+
+  /// @inheritdoc AggregatorInterface
+  function latestTimestamp() external view returns (uint256) {
+    return block.timestamp;
+  }
+
+  /// @inheritdoc AggregatorInterface
+  function latestRound() external view returns (uint256) {
+    return block.timestamp;
+  }
+
+  /// @inheritdoc AggregatorInterface
+  function getAnswer(uint256 roundId) external view returns (int256) {
+    if (roundId <= block.timestamp) {
+      return UNITS;
+    }
+    return 0;
+  }
+
+  /// @inheritdoc AggregatorInterface
+  function getTimestamp(uint256 roundId) external view returns (uint256) {
+    if (roundId <= block.timestamp) {
+      return roundId;
+    }
+    return 0;
   }
 }
