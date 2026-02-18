@@ -225,7 +225,7 @@ Dynamic configuration keys allow parameter updates without affecting existing op
 
 ## Design
 
-Dynamic configuration extends the reserve model with a per‑reserve mapping that holds every historic configuration key, referenced by a `dynamicConfigKey`. Collateralization parameters now reside inside the dynamic mapping rather than the static reserve record; this set comprises the Collateral Factor (LF), the Maximum Liquidation Bonus (LB) and the Liquidation Fee (LF).
+Dynamic configuration extends the reserve model with a per‑reserve mapping that holds every historic configuration key, referenced by a `dynamicConfigKey`. Collateralization parameters now reside inside the dynamic mapping rather than the static reserve record; this set comprises the Collateral Factor (CF), the Maximum Liquidation Bonus (LB) and the Liquidation Fee (LF).
 
 Each reserve stores the latest `dynamicConfigKey`, which represents the current up-to-date risk configuration. In contrast, every user position retains a snapshot of the active `dynamicConfigKey` corresponding to the configuration in effect at the time of its last risk-increasing event. This snapshot is refreshed across all assets of a user position only when the user performs an action which elevates the risk posed to the system, such as disabling an asset as collateral, withdrawing, or borrowing. When a user designates a new asset as collateral, only the `dynamicConfigKey` snapshot of the asset in play is refreshed.
 
@@ -304,8 +304,8 @@ Deficit elimination can be performed even when the Spoke covering the deficit is
 The liquidation bonus in Aave V4 varies linearly between a minimum and maximum value based on the borrower’s health factor:
 
 - **Max‑bonus region**: When HF ≤ `healthFactorForMaxBonus`, the liquidator earns the maximum bonus (`maxLiquidationBonus`) minus a portion (`liquidationFee`) that is taken as protocol fees. Example: if `maxLiquidationBonus = 105_00` and `liquidationFee = 10_00`, the gross bonus is 5% of the repaid debt; 10% of that bonus is taken as fees, so the liquidator receives a net 4.5% collateral bonus.
-- **Threshold region:** At HF = `HEALTH_FACTOR_LIQUIDATION_THRESHOLD`, the bonus equals `liquidationBonusFactor × maxLiquidationBonus`. This ensures that even the safest possible liquidation (just below the threshold) still yields a non‑zero bonus.
-- **Linear interpolation:** For HF between the liquidation threshold and `healthFactorForMaxBonus`, the bonus increases linearly from `liquidationBonusFactor × maxLiquidationBonus` to `maxLiquidationBonus`.
+- **Threshold region:** At HF = `HEALTH_FACTOR_LIQUIDATION_THRESHOLD`, the bonus equals `(maxLiquidationBonus − 100%) × liquidationBonusFactor + 100%`. This ensures that even the safest possible liquidation (just below the threshold) still yields a non‑zero bonus.
+- **Linear interpolation:** For HF between the liquidation threshold and `healthFactorForMaxBonus`, the bonus increases linearly from `(maxLiquidationBonus − 100%) × liquidationBonusFactor + 100%` to `maxLiquidationBonus`.
 
 The lower the HF of a position becomes, the larger the bonus the liquidators receive.
 
