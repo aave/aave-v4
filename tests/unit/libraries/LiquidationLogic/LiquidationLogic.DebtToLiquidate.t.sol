@@ -104,7 +104,7 @@ contract LiquidationLogicDebtToLiquidateTest is LiquidationLogicBaseTest {
     params.drawnShares = bound(
       params.drawnShares,
       drawnSharesToTarget.min(drawnSharesToCover),
-      MAX_SUPPLY_ASSET_UNITS * params.debtAssetUnit
+      drawnSharesToTarget.min(drawnSharesToCover) + MAX_SUPPLY_ASSET_UNITS * params.debtAssetUnit
     );
 
     (uint256 drawnSharesToLiquidate, uint256 premiumDebtRayToLiquidate) = liquidationLogicWrapper

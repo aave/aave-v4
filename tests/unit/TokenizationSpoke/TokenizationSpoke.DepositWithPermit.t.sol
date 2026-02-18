@@ -20,7 +20,7 @@ contract TokenizationSpokeDepositWithPermitTest is TokenizationSpokeBaseTest {
     address spender = address(vault);
     uint256 maxAssets = vault.maxDeposit(receiver);
     uint256 value = maxAssets == type(uint256).max
-      ? vm.randomUint(1, MAX_SUPPLY_AMOUNT_DAI)
+      ? vm.randomUint(1, _calculateMaxSupplyAmount(vault))
       : vm.randomUint(1, maxAssets);
     uint256 deadline = vm.randomUint();
     uint8 v = uint8(vm.randomUint());
@@ -47,7 +47,7 @@ contract TokenizationSpokeDepositWithPermitTest is TokenizationSpokeBaseTest {
     address receiver = vm.randomAddress();
     uint256 maxAssets = vault.maxDeposit(receiver);
     uint256 assets = maxAssets == type(uint256).max
-      ? vm.randomUint(1, MAX_SUPPLY_AMOUNT_DAI)
+      ? vm.randomUint(1, _calculateMaxSupplyAmount(vault))
       : vm.randomUint(1, maxAssets);
 
     asset.mint(owner, assets);
@@ -70,7 +70,7 @@ contract TokenizationSpokeDepositWithPermitTest is TokenizationSpokeBaseTest {
     address receiver = vm.randomAddress();
     uint256 maxAssets = vault.maxDeposit(receiver);
     uint256 assets = maxAssets == type(uint256).max
-      ? vm.randomUint(1, MAX_SUPPLY_AMOUNT_DAI)
+      ? vm.randomUint(1, _calculateMaxSupplyAmount(vault))
       : vm.randomUint(1, maxAssets);
 
     asset.mint(user, assets);
@@ -107,7 +107,7 @@ contract TokenizationSpokeDepositWithPermitTest is TokenizationSpokeBaseTest {
     address receiver = vm.randomAddress();
     uint256 maxAssets = vault.maxDeposit(receiver);
     uint256 assets = maxAssets == type(uint256).max
-      ? vm.randomUint(1, MAX_SUPPLY_AMOUNT_DAI)
+      ? vm.randomUint(1, _calculateMaxSupplyAmount(vault))
       : vm.randomUint(1, maxAssets);
 
     asset.mint(user, assets);

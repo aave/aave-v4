@@ -32,10 +32,7 @@ contract LiquidationLogicLiquidationAmountsTest is LiquidationLogicBaseTest {
       expectedLiquidationAmounts.collateralSharesToLiquidate +
         dustSharesBufferLowerBound +
         1 +
-        _calculateMaxSupplyAmount(
-          IHub(address(params.collateralReserveHub)),
-          params.collateralReserveAssetId
-        )
+        _calculateMaxSupplyAmount(params.collateralReserveHub, params.collateralReserveAssetId)
     );
 
     params.debtToCover = bound(
@@ -66,10 +63,7 @@ contract LiquidationLogicLiquidationAmountsTest is LiquidationLogicBaseTest {
       params.suppliedShares,
       expectedLiquidationAmounts.collateralSharesToLiquidate,
       expectedLiquidationAmounts.collateralSharesToLiquidate +
-        _calculateMaxSupplyAmount(
-          IHub(address(params.collateralReserveHub)),
-          params.collateralReserveAssetId
-        )
+        _calculateMaxSupplyAmount(params.collateralReserveHub, params.collateralReserveAssetId)
     );
 
     params.debtToCover = bound(

@@ -292,7 +292,7 @@ contract SpokeBorrowHealthFactorTest is SpokeBase {
     uint256 skipTime
   ) public {
     wethCollForDai = bound(wethCollForDai, 1, MAX_SUPPLY_AMOUNT_WETH / 2);
-    wethCollForUsdx = bound(wethCollForUsdx, 1, MAX_SUPPLY_AMOUNT_USDX / 2);
+    wethCollForUsdx = bound(wethCollForUsdx, 1, MAX_SUPPLY_AMOUNT_WETH / 2);
     skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
 
     // weth collateral

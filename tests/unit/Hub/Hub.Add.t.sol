@@ -728,7 +728,7 @@ contract HubAddTest is HubBase {
     uint256 assetId = daiAssetId;
     uint256 numAdds = 5;
 
-    amount = bound(amount, 1, MAX_SUPPLY_AMOUNT_DAI / numAdds);
+    amount = bound(amount, 1, _calculateMaxSupplyAmount(hub1, assetId) / numAdds);
     skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
 
     HubAddTestState memory params;
@@ -750,8 +750,8 @@ contract HubAddTest is HubBase {
     params.availableLiq = amount - params.drawnAmount;
     params.spoke2AddedShares = hub1.getSpokeAddedShares(assetId, address(spoke2));
     params.spoke2AddedAmount = hub1.previewRemoveByShares(assetId, params.spoke2AddedShares);
-    params.aliceBalance = MAX_SUPPLY_AMOUNT_DAI + params.drawnAmount;
-    params.bobBalance = MAX_SUPPLY_AMOUNT_DAI - amount;
+    params.aliceBalance = _calculateMaxSupplyAmount(hub1, assetId) + params.drawnAmount;
+    params.bobBalance = _calculateMaxSupplyAmount(hub1, assetId) - amount;
 
     uint256 addShares = 1; // minimum for 1 share
     uint256 addAmount;

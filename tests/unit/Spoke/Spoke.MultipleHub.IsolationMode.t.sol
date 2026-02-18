@@ -135,8 +135,8 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
     vm.stopPrank();
 
     // Deal tokens
-    deal(address(assetA), bob, _calculateMaxSupplyAmount(IERC20(address(assetA))));
-    deal(address(assetB), alice, _calculateMaxSupplyAmount(IERC20(address(assetB))) * 2); // Alice supplies on 2 different hubs
+    deal(address(assetA), bob, _calculateMaxSupplyAmount(assetA));
+    deal(address(assetB), alice, _calculateMaxSupplyAmount(assetB) * 2); // Alice supplies on 2 different hubs
   }
 
   /* @dev Test showcasing a possible configuration for isolation mode

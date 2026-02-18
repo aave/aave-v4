@@ -7,19 +7,6 @@ import 'tests/unit/Spoke/SpokeBase.t.sol';
 contract SpokeMulticall is SpokeBase {
   using SafeCast for uint256;
 
-  struct Reserve {
-    uint256 reserveId;
-    IHub hub;
-    uint16 assetId;
-    uint8 decimals;
-    uint24 collateralRisk;
-    bool paused;
-    bool frozen;
-    bool borrowable;
-    bool receiveSharesEnabled;
-    uint32 dynamicConfigKey;
-  }
-
   TestnetERC20 usda;
 
   function setUp() public override {
@@ -141,21 +128,6 @@ contract SpokeMulticall is SpokeBase {
     vm.prank(HUB_ADMIN);
     hub1.addAsset(address(usda), 18, address(treasurySpoke), address(irStrategy), encodedIrData);
     uint256 usdaAssetId = hub1.getAssetCount() - 1;
-
-    Reserve memory usdzReserveExpected;
-    usdzReserveExpected.reserveId = usdzReserveId;
-    usdzReserveExpected.assetId = usdzAssetId.toUint16();
-    usdzReserveExpected.paused = usdzConfig.paused;
-    usdzReserveExpected.frozen = usdzConfig.frozen;
-    usdzReserveExpected.borrowable = usdzConfig.borrowable;
-    usdzReserveExpected.collateralRisk = usdzConfig.collateralRisk;
-    Reserve memory usdaReserveExpected;
-    usdaReserveExpected.reserveId = usdaReserveId;
-    usdaReserveExpected.assetId = usdaAssetId.toUint16();
-    usdaReserveExpected.paused = usdaConfig.paused;
-    usdaReserveExpected.frozen = usdaConfig.frozen;
-    usdaReserveExpected.borrowable = usdaConfig.borrowable;
-    usdaReserveExpected.collateralRisk = usdaConfig.collateralRisk;
 
     {
       // Set up the multicall
