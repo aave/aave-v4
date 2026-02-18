@@ -42,7 +42,7 @@ contract SpokeWithdrawValidationTest is SpokeBase {
   }
 
   function test_withdraw_fuzz_revertsWith_InsufficientSupply_zero_supplied(uint256 amount) public {
-    amount = bound(amount, 1, MAX_SUPPLY_AMOUNT);
+    amount = bound(amount, 1, MAX_SUPPLY_AMOUNT_DAI);
     uint256 reserveId = _daiReserveId(spoke1);
 
     assertEq(spoke1.getUserSuppliedAssets(reserveId, alice), 0);
@@ -106,7 +106,7 @@ contract SpokeWithdrawValidationTest is SpokeBase {
     uint256 skipTime
   ) public {
     reserveId = bound(reserveId, 0, spokeInfo[spoke1].MAX_ALLOWED_ASSET_ID);
-    supplyAmount = bound(supplyAmount, 2, MAX_SUPPLY_AMOUNT);
+    supplyAmount = bound(supplyAmount, 2, _calculateMaxSupplyAmount(spoke1, reserveId));
     borrowAmount = bound(borrowAmount, 1, supplyAmount / 2); // ensure it is within Collateral Factor
     rate = bound(rate, 1, MAX_BORROW_RATE);
     skipTime = bound(skipTime, 1, MAX_SKIP_TIME);

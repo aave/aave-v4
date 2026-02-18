@@ -269,11 +269,11 @@ abstract contract QueryHelpers is MathHelpers {
   }
 
   function getAddExRate(uint256 assetId) internal view returns (uint256) {
-    return hub1.previewRemoveByShares(assetId, MAX_SUPPLY_AMOUNT);
+    return hub1.previewRemoveByShares(assetId, _calculateMaxSupplyAmount(hub1, assetId));
   }
 
   function getDebtExRate(uint256 assetId) internal view returns (uint256) {
-    return hub1.previewRestoreByShares(assetId, MAX_SUPPLY_AMOUNT);
+    return hub1.previewRestoreByShares(assetId, _calculateMaxSupplyAmount(hub1, assetId));
   }
 
   // --- Reserve ID lookups ---

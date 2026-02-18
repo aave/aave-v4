@@ -262,7 +262,7 @@ contract AssetInterestRateStrategyTest is Base {
   function _generateCalculateInterestRateParams(
     uint256 targetUtilizationRatioRay
   ) internal returns (uint256 liquidity, uint256 drawn, uint256 deficit, uint256 swept) {
-    drawn = bound(vm.randomUint(), 1, MAX_SUPPLY_AMOUNT);
+    drawn = bound(vm.randomUint(), 1, _calculateMaxSupplyAmount(hub1, mockAssetId));
 
     // utilizationRatio = drawn / (drawn + liquidity)
     // utilizationRatio * drawn + utilizationRatio * liquidity = drawn

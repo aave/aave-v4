@@ -31,11 +31,9 @@ abstract contract BaseState is TestTypes, Test {
   bytes32 internal constant INITIALIZABLE_SLOT =
     0xf0c57e16840df040f15088dc2f81fe391c3923bec73e23a9662efc9c229c6a00;
 
-  uint256 internal constant MAX_SUPPLY_AMOUNT = 1e30;
   uint256 internal constant MIN_TOKEN_DECIMALS_SUPPORTED = 6;
   uint256 internal constant MAX_TOKEN_DECIMALS_SUPPORTED = 18;
-  uint256 internal constant MAX_SUPPLY_ASSET_UNITS =
-    MAX_SUPPLY_AMOUNT / 10 ** MAX_TOKEN_DECIMALS_SUPPORTED;
+  uint256 internal constant MAX_SUPPLY_ASSET_UNITS = 1e12;
   uint256 internal MAX_SUPPLY_AMOUNT_USDX;
   uint256 internal MAX_SUPPLY_AMOUNT_DAI;
   uint256 internal MAX_SUPPLY_AMOUNT_WBTC;

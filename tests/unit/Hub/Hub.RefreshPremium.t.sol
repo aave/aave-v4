@@ -218,9 +218,9 @@ contract HubRefreshPremiumTest is HubBase {
     int256 sharesDelta,
     int256 offsetRayDelta
   ) public {
-    sharesDelta = bound(sharesDelta, 0, MAX_SUPPLY_AMOUNT.toInt256());
-    offsetRayDelta = bound(offsetRayDelta, 0, MAX_SUPPLY_AMOUNT.toInt256());
-    borrowAmount = bound(borrowAmount, 0, MAX_SUPPLY_AMOUNT / 2);
+    sharesDelta = bound(sharesDelta, 0, MAX_SUPPLY_AMOUNT_DAI.toInt256());
+    offsetRayDelta = bound(offsetRayDelta, 0, MAX_SUPPLY_AMOUNT_DAI.toInt256());
+    borrowAmount = bound(borrowAmount, 0, MAX_SUPPLY_AMOUNT_DAI / 2);
     IHubBase.PremiumDelta memory premiumDelta = IHubBase.PremiumDelta({
       sharesDelta: sharesDelta,
       offsetRayDelta: offsetRayDelta,
@@ -383,9 +383,9 @@ contract HubRefreshPremiumTest is HubBase {
     uint256 assetId = daiAssetId;
     uint256 skipTime = vm.randomUint(0, MAX_SKIP_TIME);
 
-    borrowAmount = bound(borrowAmount, 1, MAX_SUPPLY_AMOUNT / 2);
+    borrowAmount = bound(borrowAmount, 1, MAX_SUPPLY_AMOUNT_DAI / 2);
 
-    Utils.supplyCollateral(spoke1, _daiReserveId(spoke1), bob, MAX_SUPPLY_AMOUNT, bob);
+    Utils.supplyCollateral(spoke1, _daiReserveId(spoke1), bob, MAX_SUPPLY_AMOUNT_DAI, bob);
     Utils.borrow(spoke1, _daiReserveId(spoke1), bob, borrowAmount, bob);
     skip(skipTime);
 
@@ -410,7 +410,7 @@ contract HubRefreshPremiumTest is HubBase {
     userPremiumSharesNew = bound(
       userPremiumSharesNew,
       0,
-      hub1.previewRestoreByAssets(assetId, MAX_SUPPLY_AMOUNT / 2)
+      hub1.previewRestoreByAssets(assetId, MAX_SUPPLY_AMOUNT_DAI / 2)
     );
 
     IHubBase.PremiumDelta memory premiumDelta = _getExpectedPremiumDelta({
@@ -454,7 +454,7 @@ contract HubRefreshPremiumTest is HubBase {
 
   function test_refreshPremium_spokePremiumUpdateIsContained() public {
     uint256 assetId = daiAssetId;
-    Utils.supplyCollateral(spoke1, _daiReserveId(spoke1), bob, MAX_SUPPLY_AMOUNT, bob);
+    Utils.supplyCollateral(spoke1, _daiReserveId(spoke1), bob, MAX_SUPPLY_AMOUNT_DAI, bob);
     Utils.borrow(spoke1, _daiReserveId(spoke1), bob, 5000e18, bob);
     Utils.supplyCollateral(spoke2, _daiReserveId(spoke2), alice, 10000e18, alice);
     Utils.borrow(spoke2, _daiReserveId(spoke2), alice, 5000e18, alice);

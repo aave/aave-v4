@@ -42,7 +42,7 @@ contract HubSweepTest is HubBase {
   }
 
   function test_sweep_fuzz(uint256 supplyAmount, uint256 sweepAmount) public {
-    supplyAmount = bound(supplyAmount, 1, MAX_SUPPLY_AMOUNT);
+    supplyAmount = bound(supplyAmount, 1, MAX_SUPPLY_AMOUNT_DAI);
     sweepAmount = bound(sweepAmount, 1, supplyAmount);
 
     _updateAssetReinvestmentController(hub1, daiAssetId, reinvestmentController);
@@ -70,7 +70,7 @@ contract HubSweepTest is HubBase {
   function test_sweep_revertsWith_InsufficientLiquidity() public {
     _updateAssetReinvestmentController(hub1, daiAssetId, reinvestmentController);
 
-    uint256 initialLiquidity = vm.randomUint(2, MAX_SUPPLY_AMOUNT);
+    uint256 initialLiquidity = vm.randomUint(2, MAX_SUPPLY_AMOUNT_DAI);
     uint256 swept = vm.randomUint(1, initialLiquidity);
 
     vm.startPrank(address(spoke1));
@@ -89,7 +89,7 @@ contract HubSweepTest is HubBase {
   }
 
   function test_sweep_does_not_impact_utilization(uint256 supplyAmount, uint256 drawAmount) public {
-    supplyAmount = bound(supplyAmount, 2, MAX_SUPPLY_AMOUNT);
+    supplyAmount = bound(supplyAmount, 2, MAX_SUPPLY_AMOUNT_DAI);
     drawAmount = bound(drawAmount, 1, supplyAmount - 1);
     _updateAssetReinvestmentController(hub1, daiAssetId, reinvestmentController);
 

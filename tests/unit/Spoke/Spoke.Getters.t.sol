@@ -262,8 +262,8 @@ contract SpokeGettersTest is SpokeBase {
     _mockInterestRateBps(25_00);
     Utils.approve(spoke, _daiReserveId(spoke), alice, 9_000e18);
     Utils.supplyCollateral(spoke, _daiReserveId(spoke), alice, 9_000e18, alice); // CR 20%
-    Utils.approve(spoke, _usdxReserveId(spoke), bob, 18_000e18);
-    Utils.supplyCollateral(spoke, _usdxReserveId(spoke), bob, 18_000e18, bob); // CR 50%
+    Utils.approve(spoke, _usdxReserveId(spoke), bob, 18_000e6);
+    Utils.supplyCollateral(spoke, _usdxReserveId(spoke), bob, 18_000e6, bob); // CR 50%
     _openSupplyPosition(spoke, _wethReserveId(spoke), 5e18); // liquidity provision
     Utils.borrow(spoke, _wethReserveId(spoke), alice, 1e18, alice);
     Utils.borrow(spoke, _wethReserveId(spoke), bob, 2e18, bob);

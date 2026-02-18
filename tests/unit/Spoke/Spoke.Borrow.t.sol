@@ -91,10 +91,10 @@ contract SpokeBorrowTest is SpokeBase {
     state.wethAlice.userBalanceBefore = tokenList.weth.balanceOf(alice);
 
     // token balance
-    assertEq(state.daiBob.userBalanceBefore, MAX_SUPPLY_AMOUNT);
-    assertEq(state.wethBob.userBalanceBefore, MAX_SUPPLY_AMOUNT - state.wethBob.supplyAmount);
-    assertEq(state.daiAlice.userBalanceBefore, MAX_SUPPLY_AMOUNT - state.daiBob.borrowAmount);
-    assertEq(state.wethAlice.userBalanceBefore, MAX_SUPPLY_AMOUNT);
+    assertEq(state.daiBob.userBalanceBefore, MAX_SUPPLY_AMOUNT_DAI);
+    assertEq(state.wethBob.userBalanceBefore, MAX_SUPPLY_AMOUNT_WETH - state.wethBob.supplyAmount);
+    assertEq(state.daiAlice.userBalanceBefore, MAX_SUPPLY_AMOUNT_DAI - state.daiBob.borrowAmount);
+    assertEq(state.wethAlice.userBalanceBefore, MAX_SUPPLY_AMOUNT_WETH);
 
     _assertUserPositionAndDebt({
       spoke: spoke1,
@@ -213,7 +213,7 @@ contract SpokeBorrowTest is SpokeBase {
   function test_borrow_fuzz_amounts(uint256 wethSupplyAmount, uint256 daiBorrowAmount) public {
     BorrowTestData memory state;
 
-    state.wethBob.supplyAmount = bound(wethSupplyAmount, 1, MAX_SUPPLY_AMOUNT);
+    state.wethBob.supplyAmount = bound(wethSupplyAmount, 1, MAX_SUPPLY_AMOUNT_WETH);
     state.daiBob.borrowAmount = bound(daiBorrowAmount, 1, state.wethBob.supplyAmount); // to maintain HF
     state.daiAlice.supplyAmount = state.daiBob.borrowAmount;
 
@@ -246,10 +246,10 @@ contract SpokeBorrowTest is SpokeBase {
     state.wethAlice.userBalanceBefore = tokenList.weth.balanceOf(alice);
 
     // token balance
-    assertEq(state.daiBob.userBalanceBefore, MAX_SUPPLY_AMOUNT);
-    assertEq(state.wethBob.userBalanceBefore, MAX_SUPPLY_AMOUNT - state.wethBob.supplyAmount);
-    assertEq(state.daiAlice.userBalanceBefore, MAX_SUPPLY_AMOUNT - state.daiBob.borrowAmount);
-    assertEq(state.wethAlice.userBalanceBefore, MAX_SUPPLY_AMOUNT);
+    assertEq(state.daiBob.userBalanceBefore, MAX_SUPPLY_AMOUNT_DAI);
+    assertEq(state.wethBob.userBalanceBefore, MAX_SUPPLY_AMOUNT_WETH - state.wethBob.supplyAmount);
+    assertEq(state.daiAlice.userBalanceBefore, MAX_SUPPLY_AMOUNT_DAI - state.daiBob.borrowAmount);
+    assertEq(state.wethAlice.userBalanceBefore, MAX_SUPPLY_AMOUNT_WETH);
 
     _assertUserPositionAndDebt({
       spoke: spoke1,

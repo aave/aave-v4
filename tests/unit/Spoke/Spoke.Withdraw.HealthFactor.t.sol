@@ -57,7 +57,7 @@ contract SpokeWithdrawHealthFactorTest is SpokeBase {
   function test_withdraw_fuzz_revertsWith_HealthFactorBelowThreshold_singleBorrow(
     uint256 debtAmount
   ) public {
-    debtAmount = bound(debtAmount, 1, MAX_SUPPLY_AMOUNT); // to stay within uint256 bounds for _calcMaxDebtAmount
+    debtAmount = bound(debtAmount, 1, MAX_SUPPLY_AMOUNT_DAI); // to stay within uint256 bounds for _calcMaxDebtAmount
     uint256 collReserveId = _wethReserveId(spoke1);
     uint256 debtReserveId = _daiReserveId(spoke1);
 
@@ -68,7 +68,7 @@ contract SpokeWithdrawHealthFactorTest is SpokeBase {
       debtAmount: debtAmount
     });
 
-    vm.assume(collAmount < MAX_SUPPLY_AMOUNT && collAmount > 1);
+    vm.assume(collAmount < MAX_SUPPLY_AMOUNT_WETH && collAmount > 1);
 
     // Alice supplies weth as collateral
     Utils.supplyCollateral({
@@ -109,13 +109,15 @@ contract SpokeWithdrawHealthFactorTest is SpokeBase {
   function test_unsetCollateral_fuzz_revertsWith_HealthFactorBelowThreshold(
     uint256 daiBorrowAmount
   ) public {
-    daiBorrowAmount = bound(daiBorrowAmount, 1, MAX_SUPPLY_AMOUNT / 2);
+    daiBorrowAmount = bound(daiBorrowAmount, 1, MAX_SUPPLY_AMOUNT_DAI / 2);
     uint256 wbtcSupplyAmount = _calcMinimumCollAmount(
       spoke1,
       _wbtcReserveId(spoke1),
       _daiReserveId(spoke1),
       daiBorrowAmount
     );
+
+    vm.assume(wbtcSupplyAmount <= MAX_SUPPLY_AMOUNT_WBTC);
 
     _openSupplyPosition(spoke1, _daiReserveId(spoke1), daiBorrowAmount);
 
@@ -187,7 +189,7 @@ contract SpokeWithdrawHealthFactorTest is SpokeBase {
   ) public {
     uint256 currPrice = IPriceOracle(spoke1.ORACLE()).getReservePrice(_wethReserveId(spoke1));
     newPrice = bound(newPrice, 1, currPrice - 1);
-    collAmount = bound(collAmount, 1, MAX_SUPPLY_AMOUNT / 2); // to stay within uint256 bounds for _calcMaxDebtAmount
+    collAmount = bound(collAmount, 1, MAX_SUPPLY_AMOUNT_WETH / 2); // to stay within uint256 bounds for _calcMaxDebtAmount
     uint256 collReserveId = _wethReserveId(spoke1);
     uint256 debtReserveId = _daiReserveId(spoke1);
 
@@ -198,7 +200,7 @@ contract SpokeWithdrawHealthFactorTest is SpokeBase {
       collAmount: collAmount
     });
 
-    vm.assume(maxDebtAmount < MAX_SUPPLY_AMOUNT && maxDebtAmount > 1);
+    vm.assume(maxDebtAmount < MAX_SUPPLY_AMOUNT_DAI && maxDebtAmount > 1);
 
     // Alice supplies weth as collateral
     Utils.supplyCollateral({
@@ -298,7 +300,7 @@ contract SpokeWithdrawHealthFactorTest is SpokeBase {
     uint256 collAmount,
     uint256 skipTime
   ) public {
-    collAmount = bound(collAmount, 1, MAX_SUPPLY_AMOUNT);
+    collAmount = bound(collAmount, 1, MAX_SUPPLY_AMOUNT_WETH);
     skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
     uint256 collReserveId = _wethReserveId(spoke1);
     uint256 debtReserveId = _daiReserveId(spoke1);
@@ -310,7 +312,7 @@ contract SpokeWithdrawHealthFactorTest is SpokeBase {
       collAmount: collAmount
     });
 
-    vm.assume(maxDebtAmount < MAX_SUPPLY_AMOUNT && maxDebtAmount > 1);
+    vm.assume(maxDebtAmount < MAX_SUPPLY_AMOUNT_DAI && maxDebtAmount > 1);
 
     // Alice supplies weth as collateral
     Utils.supplyCollateral({
@@ -433,8 +435,8 @@ contract SpokeWithdrawHealthFactorTest is SpokeBase {
     uint256 daiDebtAmount,
     uint256 usdxDebtAmount
   ) public {
-    daiDebtAmount = bound(daiDebtAmount, 1, MAX_SUPPLY_AMOUNT);
-    usdxDebtAmount = bound(usdxDebtAmount, 1, MAX_SUPPLY_AMOUNT);
+    daiDebtAmount = bound(daiDebtAmount, 1, MAX_SUPPLY_AMOUNT_DAI);
+    usdxDebtAmount = bound(usdxDebtAmount, 1, MAX_SUPPLY_AMOUNT_USDX);
 
     // weth collateral
     uint256 wethReserveId = _wethReserveId(spoke1);
@@ -457,7 +459,7 @@ contract SpokeWithdrawHealthFactorTest is SpokeBase {
     });
 
     vm.assume(
-      wethCollAmountDai + wethCollAmountUsdx < MAX_SUPPLY_AMOUNT &&
+      wethCollAmountDai + wethCollAmountUsdx < MAX_SUPPLY_AMOUNT_WETH &&
         wethCollAmountDai + wethCollAmountUsdx > 0
     );
 
@@ -605,8 +607,8 @@ contract SpokeWithdrawHealthFactorTest is SpokeBase {
     uint256 currPrice = IPriceOracle(spoke1.ORACLE()).getReservePrice(_wethReserveId(spoke1));
     newPrice = bound(newPrice, 1, currPrice - 1);
 
-    daiDebtAmount = bound(daiDebtAmount, 1, MAX_SUPPLY_AMOUNT);
-    usdxDebtAmount = bound(usdxDebtAmount, 1, MAX_SUPPLY_AMOUNT);
+    daiDebtAmount = bound(daiDebtAmount, 1, MAX_SUPPLY_AMOUNT_DAI);
+    usdxDebtAmount = bound(usdxDebtAmount, 1, MAX_SUPPLY_AMOUNT_USDX);
 
     // weth collateral
     uint256 wethReserveId = _wethReserveId(spoke1);
@@ -629,7 +631,7 @@ contract SpokeWithdrawHealthFactorTest is SpokeBase {
     });
 
     vm.assume(
-      wethCollAmountDai + wethCollAmountUsdx < MAX_SUPPLY_AMOUNT &&
+      wethCollAmountDai + wethCollAmountUsdx < MAX_SUPPLY_AMOUNT_WETH &&
         wethCollAmountDai + wethCollAmountUsdx > 0
     );
 
@@ -779,8 +781,8 @@ contract SpokeWithdrawHealthFactorTest is SpokeBase {
   ) public {
     skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
 
-    daiDebtAmount = bound(daiDebtAmount, 1, MAX_SUPPLY_AMOUNT);
-    usdxDebtAmount = bound(usdxDebtAmount, 1, MAX_SUPPLY_AMOUNT);
+    daiDebtAmount = bound(daiDebtAmount, 1, MAX_SUPPLY_AMOUNT_DAI);
+    usdxDebtAmount = bound(usdxDebtAmount, 1, MAX_SUPPLY_AMOUNT_USDX);
 
     // weth collateral
     uint256 wethReserveId = _wethReserveId(spoke1);
@@ -803,7 +805,7 @@ contract SpokeWithdrawHealthFactorTest is SpokeBase {
     });
 
     vm.assume(
-      wethCollAmountDai + wethCollAmountUsdx < MAX_SUPPLY_AMOUNT &&
+      wethCollAmountDai + wethCollAmountUsdx < MAX_SUPPLY_AMOUNT_WETH &&
         wethCollAmountDai + wethCollAmountUsdx > 0
     );
 
@@ -918,8 +920,8 @@ contract SpokeWithdrawHealthFactorTest is SpokeBase {
     uint256 usdxDebtAmountWeth,
     uint256 usdxDebtAmountDai
   ) public {
-    usdxDebtAmountWeth = bound(usdxDebtAmountWeth, 1, MAX_SUPPLY_AMOUNT);
-    usdxDebtAmountDai = bound(usdxDebtAmountDai, 1, MAX_SUPPLY_AMOUNT);
+    usdxDebtAmountWeth = bound(usdxDebtAmountWeth, 1, MAX_SUPPLY_AMOUNT_USDX / 2);
+    usdxDebtAmountDai = bound(usdxDebtAmountDai, 1, MAX_SUPPLY_AMOUNT_USDX / 2);
 
     // weth/dai collateral
     uint256 wethReserveId = _wethReserveId(spoke1);
@@ -940,8 +942,8 @@ contract SpokeWithdrawHealthFactorTest is SpokeBase {
       debtAmount: usdxDebtAmountDai
     });
 
-    vm.assume(wethCollAmount < MAX_SUPPLY_AMOUNT && wethCollAmount > 0);
-    vm.assume(daiCollAmount < MAX_SUPPLY_AMOUNT && daiCollAmount > 0);
+    vm.assume(wethCollAmount < MAX_SUPPLY_AMOUNT_WETH && wethCollAmount > 0);
+    vm.assume(daiCollAmount < MAX_SUPPLY_AMOUNT_DAI && daiCollAmount > 0);
 
     // Bob supply weth collateral
     Utils.supplyCollateral(spoke1, wethReserveId, bob, wethCollAmount, bob);
@@ -1033,8 +1035,8 @@ contract SpokeWithdrawHealthFactorTest is SpokeBase {
     uint256 usdxDebtAmountWeth,
     uint256 usdxDebtAmountDai
   ) public {
-    usdxDebtAmountWeth = bound(usdxDebtAmountWeth, 1, MAX_SUPPLY_AMOUNT);
-    usdxDebtAmountDai = bound(usdxDebtAmountDai, 1, MAX_SUPPLY_AMOUNT);
+    usdxDebtAmountWeth = bound(usdxDebtAmountWeth, 1, MAX_SUPPLY_AMOUNT_USDX / 2);
+    usdxDebtAmountDai = bound(usdxDebtAmountDai, 1, MAX_SUPPLY_AMOUNT_USDX / 2);
 
     // weth/dai collateral
     uint256 wethReserveId = _wethReserveId(spoke1);
@@ -1055,8 +1057,8 @@ contract SpokeWithdrawHealthFactorTest is SpokeBase {
       debtAmount: usdxDebtAmountDai
     });
 
-    vm.assume(wethCollAmount < MAX_SUPPLY_AMOUNT && wethCollAmount > 0);
-    vm.assume(daiCollAmount < MAX_SUPPLY_AMOUNT && daiCollAmount > 0);
+    vm.assume(wethCollAmount < MAX_SUPPLY_AMOUNT_WETH && wethCollAmount > 0);
+    vm.assume(daiCollAmount < MAX_SUPPLY_AMOUNT_DAI && daiCollAmount > 0);
 
     // Bob supply weth collateral
     Utils.supplyCollateral(spoke1, wethReserveId, bob, wethCollAmount, bob);
@@ -1156,8 +1158,8 @@ contract SpokeWithdrawHealthFactorTest is SpokeBase {
   ) public {
     uint256 currPrice = IPriceOracle(spoke1.ORACLE()).getReservePrice(_wethReserveId(spoke1));
     newPrice = bound(newPrice, 1, currPrice - 1);
-    usdxDebtAmountWeth = bound(usdxDebtAmountWeth, 1, MAX_SUPPLY_AMOUNT);
-    usdxDebtAmountDai = bound(usdxDebtAmountDai, 1, MAX_SUPPLY_AMOUNT);
+    usdxDebtAmountWeth = bound(usdxDebtAmountWeth, 1, MAX_SUPPLY_AMOUNT_USDX / 2);
+    usdxDebtAmountDai = bound(usdxDebtAmountDai, 1, MAX_SUPPLY_AMOUNT_USDX / 2);
 
     // weth/dai collateral
     uint256 wethReserveId = _wethReserveId(spoke1);
@@ -1178,8 +1180,8 @@ contract SpokeWithdrawHealthFactorTest is SpokeBase {
       debtAmount: usdxDebtAmountDai
     });
 
-    vm.assume(wethCollAmount < MAX_SUPPLY_AMOUNT && wethCollAmount > 0);
-    vm.assume(daiCollAmount < MAX_SUPPLY_AMOUNT && daiCollAmount > 0);
+    vm.assume(wethCollAmount < MAX_SUPPLY_AMOUNT_WETH && wethCollAmount > 0);
+    vm.assume(daiCollAmount < MAX_SUPPLY_AMOUNT_DAI && daiCollAmount > 0);
 
     // Bob supply weth collateral
     Utils.supplyCollateral(spoke1, wethReserveId, bob, wethCollAmount, bob);
@@ -1279,8 +1281,8 @@ contract SpokeWithdrawHealthFactorTest is SpokeBase {
   ) public {
     uint256 currPrice = IPriceOracle(spoke1.ORACLE()).getReservePrice(_daiReserveId(spoke1));
     newPrice = bound(newPrice, 1, currPrice - 1);
-    usdxDebtAmountWeth = bound(usdxDebtAmountWeth, 1, MAX_SUPPLY_AMOUNT);
-    usdxDebtAmountDai = bound(usdxDebtAmountDai, 1, MAX_SUPPLY_AMOUNT);
+    usdxDebtAmountWeth = bound(usdxDebtAmountWeth, 1, MAX_SUPPLY_AMOUNT_USDX / 2);
+    usdxDebtAmountDai = bound(usdxDebtAmountDai, 1, MAX_SUPPLY_AMOUNT_USDX / 2);
 
     // weth/dai collateral
     uint256 wethReserveId = _wethReserveId(spoke1);
@@ -1301,8 +1303,8 @@ contract SpokeWithdrawHealthFactorTest is SpokeBase {
       debtAmount: usdxDebtAmountDai
     });
 
-    vm.assume(wethCollAmount < MAX_SUPPLY_AMOUNT && wethCollAmount > 0);
-    vm.assume(daiCollAmount < MAX_SUPPLY_AMOUNT && daiCollAmount > 0);
+    vm.assume(wethCollAmount < MAX_SUPPLY_AMOUNT_WETH && wethCollAmount > 0);
+    vm.assume(daiCollAmount < MAX_SUPPLY_AMOUNT_DAI && daiCollAmount > 0);
 
     // Bob supply weth collateral
     Utils.supplyCollateral(spoke1, wethReserveId, bob, wethCollAmount, bob);

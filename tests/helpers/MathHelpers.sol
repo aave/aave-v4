@@ -13,6 +13,7 @@ import {IHub, IHubBase} from 'src/hub/interfaces/IHub.sol';
 import {SharesMath} from 'src/hub/libraries/SharesMath.sol';
 import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 import {IPriceOracle} from 'src/spoke/interfaces/IPriceOracle.sol';
+import {IERC20Metadata} from 'src/dependencies/openzeppelin/IERC20Metadata.sol';
 import {TestnetERC20} from 'tests/mocks/TestnetERC20.sol';
 
 abstract contract MathHelpers is BaseState {
@@ -357,6 +358,14 @@ abstract contract MathHelpers is BaseState {
       hub.getAddedAssets(assetId) +
       hub.getAsset(assetId).realizedFees +
       _calcUnrealizedFees(hub, assetId);
+  }
+
+  function _calculateMaxSupplyAmount(IERC20 token) internal view returns (uint256) {
+    return MAX_SUPPLY_ASSET_UNITS * 10 ** IERC20Metadata(address(token)).decimals();
+  }
+
+  function _calculateMaxSupplyAmount(IHub hub, uint256 assetId) internal view returns (uint256) {
+    return MAX_SUPPLY_ASSET_UNITS * 10 ** hub.getAsset(assetId).decimals;
   }
 
   function _calculateMaxSupplyAmount(

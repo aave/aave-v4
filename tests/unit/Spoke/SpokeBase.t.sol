@@ -868,7 +868,7 @@ contract SpokeBase is Base, CheckedActions {
   ) internal returns (uint256, uint256) {
     uint256 requiredDebtAmount = _getRequiredDebtAmountForHf(spoke, user, reserveId, desiredHf);
     require(
-      0 < requiredDebtAmount && requiredDebtAmount <= MAX_SUPPLY_AMOUNT,
+      0 < requiredDebtAmount && requiredDebtAmount <= _calculateMaxSupplyAmount(spoke, reserveId),
       'required debt amount 0 or too high'
     );
 
@@ -892,7 +892,10 @@ contract SpokeBase is Base, CheckedActions {
     uint256 pricePercentage
   ) internal returns (ISpoke.UserAccountData memory) {
     uint256 requiredDebtAmount = _getRequiredDebtAmountForHf(spoke, user, reserveId, desiredHf);
-    require(requiredDebtAmount <= MAX_SUPPLY_AMOUNT, 'required debt amount too high');
+    require(
+      requiredDebtAmount <= _calculateMaxSupplyAmount(spoke, reserveId),
+      'required debt amount too high'
+    );
     Utils.borrow(spoke, reserveId, user, requiredDebtAmount, user);
     ISpoke.UserAccountData memory userAccountData = spoke.getUserAccountData(user);
 

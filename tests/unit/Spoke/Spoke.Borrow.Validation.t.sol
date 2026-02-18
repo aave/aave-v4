@@ -19,7 +19,7 @@ contract SpokeBorrowValidationTest is SpokeBase {
     uint256 amount
   ) public {
     reserveId = bound(reserveId, 0, spoke1.getReserveCount() - 1);
-    amount = bound(amount, 1, MAX_SUPPLY_AMOUNT);
+    amount = bound(amount, 1, _calculateMaxSupplyAmount(spoke1, reserveId));
 
     // set reserve not borrowable
     _updateReserveBorrowableFlag(spoke1, reserveId, false);
@@ -39,7 +39,6 @@ contract SpokeBorrowValidationTest is SpokeBase {
 
   function test_borrow_fuzz_revertsWith_ReserveNotListed(uint256 reserveId, uint256 amount) public {
     vm.assume(reserveId >= spoke1.getReserveCount());
-    amount = bound(amount, 1, MAX_SUPPLY_AMOUNT);
 
     // Bob try to draw some dai
     vm.expectRevert(ISpoke.ReserveNotListed.selector);
@@ -55,7 +54,7 @@ contract SpokeBorrowValidationTest is SpokeBase {
 
   function test_borrow_fuzz_revertsWith_ReservePaused(uint256 reserveId, uint256 amount) public {
     reserveId = bound(reserveId, 0, spoke1.getReserveCount() - 1);
-    amount = bound(amount, 1, MAX_SUPPLY_AMOUNT);
+    amount = bound(amount, 1, _calculateMaxSupplyAmount(spoke1, reserveId));
 
     _updateReservePausedFlag(spoke1, reserveId, true);
     assertTrue(spoke1.getReserve(reserveId).flags.paused());
@@ -74,7 +73,7 @@ contract SpokeBorrowValidationTest is SpokeBase {
 
   function test_borrow_fuzz_revertsWith_ReserveFrozen(uint256 reserveId, uint256 amount) public {
     reserveId = bound(reserveId, 0, spoke1.getReserveCount() - 1);
-    amount = bound(amount, 1, MAX_SUPPLY_AMOUNT);
+    amount = bound(amount, 1, _calculateMaxSupplyAmount(spoke1, reserveId));
 
     _updateReserveFrozenFlag(spoke1, reserveId, true);
     assertTrue(spoke1.getReserve(reserveId).flags.frozen());
@@ -96,9 +95,12 @@ contract SpokeBorrowValidationTest is SpokeBase {
     uint256 daiReserveId = _daiReserveId(spoke1);
     uint256 wethReserveId = _wethReserveId(spoke1);
 
-    wethAmount = bound(wethAmount, 10, MAX_SUPPLY_AMOUNT);
+    wethAmount = bound(wethAmount, 10, _calculateMaxSupplyAmount(spoke1, wethReserveId));
     daiAmount = wethAmount / 10;
-    uint256 borrowAmount = vm.randomUint(daiAmount + 1, MAX_SUPPLY_AMOUNT);
+    uint256 borrowAmount = vm.randomUint(
+      daiAmount + 1,
+      _calculateMaxSupplyAmount(spoke1, daiReserveId)
+    );
 
     // Bob supply weth
     Utils.supply(spoke1, wethReserveId, bob, wethAmount, bob);
@@ -128,7 +130,7 @@ contract SpokeBorrowValidationTest is SpokeBase {
 
   function test_borrow_fuzz_revertsWith_DrawCapExceeded(uint256 reserveId, uint40 drawCap) public {
     reserveId = bound(reserveId, 0, spoke1.getReserveCount() - 1);
-    drawCap = bound(drawCap, 1, MAX_SUPPLY_AMOUNT / 10 ** tokenList.dai.decimals()).toUint40();
+    drawCap = bound(drawCap, 1, MAX_SUPPLY_AMOUNT_DAI / 10 ** tokenList.dai.decimals()).toUint40();
 
     uint256 drawAmount = drawCap * 10 ** tokenList.dai.decimals() + 1;
 
@@ -185,14 +187,20 @@ contract SpokeBorrowValidationTest is SpokeBase {
     assertGt(spoke1.getReserveCount(), maxUserReservesLimit, 'More reserves than limit');
 
     for (uint256 i = 0; i < maxUserReservesLimit; ++i) {
-      Utils.supplyCollateral(spoke1, i, bob, MAX_SUPPLY_AMOUNT, bob);
+      Utils.supplyCollateral(spoke1, i, bob, _calculateMaxSupplyAmount(spoke1, i), bob);
       Utils.borrow(spoke1, i, bob, 1e18, bob);
     }
     ISpoke.UserAccountData memory accountData = spoke1.getUserAccountData(bob);
     assertEq(accountData.borrowCount, maxUserReservesLimit, 'Bob has reached the borrow limit');
 
     // Ensure the next reserve has supply
-    Utils.supply(spoke1, maxUserReservesLimit, bob, MAX_SUPPLY_AMOUNT, bob);
+    Utils.supply(
+      spoke1,
+      maxUserReservesLimit,
+      bob,
+      _calculateMaxSupplyAmount(spoke1, maxUserReservesLimit),
+      bob
+    );
 
     // Bob tries to borrow from the last reserve - should revert due to limit
     vm.expectRevert(ISpoke.MaximumUserReservesExceeded.selector);
@@ -209,7 +217,7 @@ contract SpokeBorrowValidationTest is SpokeBase {
 
     uint256 borrowAmount = 1e18;
     for (uint256 i = 0; i < maxUserReservesLimit; ++i) {
-      Utils.supplyCollateral(spoke1, i, bob, MAX_SUPPLY_AMOUNT, bob);
+      Utils.supplyCollateral(spoke1, i, bob, _calculateMaxSupplyAmount(spoke1, i), bob);
       Utils.borrow(spoke1, i, bob, borrowAmount, bob);
     }
 
@@ -222,7 +230,13 @@ contract SpokeBorrowValidationTest is SpokeBase {
     assertEq(accountData.borrowCount, maxUserReservesLimit - 1, 'Bob has repaid one reserve');
 
     // Ensure the next reserve has supply
-    Utils.supply(spoke1, maxUserReservesLimit, bob, MAX_SUPPLY_AMOUNT, bob);
+    Utils.supply(
+      spoke1,
+      maxUserReservesLimit,
+      bob,
+      _calculateMaxSupplyAmount(spoke1, maxUserReservesLimit),
+      bob
+    );
 
     Utils.borrow(spoke1, maxUserReservesLimit, bob, borrowAmount, bob);
 
@@ -237,7 +251,7 @@ contract SpokeBorrowValidationTest is SpokeBase {
     uint256 reservesToBorrow = spoke1.getReserveCount();
 
     for (uint256 i = 0; i < reservesToBorrow; ++i) {
-      Utils.supplyCollateral(spoke1, i, bob, MAX_SUPPLY_AMOUNT, bob);
+      Utils.supplyCollateral(spoke1, i, bob, _calculateMaxSupplyAmount(spoke1, i), bob);
       Utils.borrow(spoke1, i, bob, 1e18, bob);
     }
 

@@ -163,7 +163,7 @@ contract SpokeAccrueInterestTest is SpokeBase {
     uint256 borrowAmount,
     uint40 skipTime
   ) public {
-    borrowAmount = bound(borrowAmount, 1, MAX_SUPPLY_AMOUNT / 2);
+    borrowAmount = bound(borrowAmount, 1, MAX_SUPPLY_AMOUNT_DAI / 2);
     skipTime = bound(skipTime, 0, MAX_SKIP_TIME).toUint40();
     uint256 supplyAmount = borrowAmount * 2;
     uint40 startTime = vm.getBlockTimestamp().toUint40();
@@ -201,7 +201,7 @@ contract SpokeAccrueInterestTest is SpokeBase {
   }
 
   function test_accrueInterest_TenPercentRp(uint256 borrowAmount, uint40 skipTime) public {
-    borrowAmount = bound(borrowAmount, 1e6, MAX_SUPPLY_AMOUNT / 2);
+    borrowAmount = bound(borrowAmount, 1e6, MAX_SUPPLY_AMOUNT_USDX / 2);
     skipTime = bound(skipTime, 0, MAX_SKIP_TIME).toUint40();
     uint256 supplyAmount = borrowAmount * 2;
     uint40 startTime = vm.getBlockTimestamp().toUint40();
@@ -286,32 +286,32 @@ contract SpokeAccrueInterestTest is SpokeBase {
     }
 
     // Deploy remainder of liquidity
-    if (amounts.daiSupplyAmount < MAX_SUPPLY_AMOUNT) {
+    if (amounts.daiSupplyAmount < MAX_SUPPLY_AMOUNT_DAI) {
       _openSupplyPosition(
         spoke1,
         _daiReserveId(spoke1),
-        MAX_SUPPLY_AMOUNT - amounts.daiSupplyAmount
+        MAX_SUPPLY_AMOUNT_DAI - amounts.daiSupplyAmount
       );
     }
-    if (amounts.wethSupplyAmount < MAX_SUPPLY_AMOUNT) {
+    if (amounts.wethSupplyAmount < MAX_SUPPLY_AMOUNT_WETH) {
       _openSupplyPosition(
         spoke1,
         _wethReserveId(spoke1),
-        MAX_SUPPLY_AMOUNT - amounts.wethSupplyAmount
+        MAX_SUPPLY_AMOUNT_WETH - amounts.wethSupplyAmount
       );
     }
-    if (amounts.usdxSupplyAmount < MAX_SUPPLY_AMOUNT) {
+    if (amounts.usdxSupplyAmount < MAX_SUPPLY_AMOUNT_USDX) {
       _openSupplyPosition(
         spoke1,
         _usdxReserveId(spoke1),
-        MAX_SUPPLY_AMOUNT - amounts.usdxSupplyAmount
+        MAX_SUPPLY_AMOUNT_USDX - amounts.usdxSupplyAmount
       );
     }
-    if (amounts.wbtcSupplyAmount < MAX_SUPPLY_AMOUNT) {
+    if (amounts.wbtcSupplyAmount < MAX_SUPPLY_AMOUNT_WBTC) {
       _openSupplyPosition(
         spoke1,
         _wbtcReserveId(spoke1),
-        MAX_SUPPLY_AMOUNT - amounts.wbtcSupplyAmount
+        MAX_SUPPLY_AMOUNT_WBTC - amounts.wbtcSupplyAmount
       );
     }
 
@@ -367,9 +367,14 @@ contract SpokeAccrueInterestTest is SpokeBase {
       amounts.daiSupplyAmount,
       'dai before accrual'
     );
-    _assertReserveSupply(spoke1, _daiReserveId(spoke1), MAX_SUPPLY_AMOUNT, 'dai before accrual');
-    _assertSpokeSupply(spoke1, _daiReserveId(spoke1), MAX_SUPPLY_AMOUNT, 'dai before accrual');
-    _assertAssetSupply(spoke1, _daiReserveId(spoke1), MAX_SUPPLY_AMOUNT, 'dai before accrual');
+    _assertReserveSupply(
+      spoke1,
+      _daiReserveId(spoke1),
+      MAX_SUPPLY_AMOUNT_DAI,
+      'dai before accrual'
+    );
+    _assertSpokeSupply(spoke1, _daiReserveId(spoke1), MAX_SUPPLY_AMOUNT_DAI, 'dai before accrual');
+    _assertAssetSupply(spoke1, _daiReserveId(spoke1), MAX_SUPPLY_AMOUNT_DAI, 'dai before accrual');
 
     drawnDebt = _calculateExpectedDrawnDebt(
       amounts.wethBorrowAmount,
@@ -391,9 +396,24 @@ contract SpokeAccrueInterestTest is SpokeBase {
       amounts.wethSupplyAmount,
       'weth before accrual'
     );
-    _assertReserveSupply(spoke1, _wethReserveId(spoke1), MAX_SUPPLY_AMOUNT, 'weth before accrual');
-    _assertSpokeSupply(spoke1, _wethReserveId(spoke1), MAX_SUPPLY_AMOUNT, 'weth before accrual');
-    _assertAssetSupply(spoke1, _wethReserveId(spoke1), MAX_SUPPLY_AMOUNT, 'weth before accrual');
+    _assertReserveSupply(
+      spoke1,
+      _wethReserveId(spoke1),
+      MAX_SUPPLY_AMOUNT_WETH,
+      'weth before accrual'
+    );
+    _assertSpokeSupply(
+      spoke1,
+      _wethReserveId(spoke1),
+      MAX_SUPPLY_AMOUNT_WETH,
+      'weth before accrual'
+    );
+    _assertAssetSupply(
+      spoke1,
+      _wethReserveId(spoke1),
+      MAX_SUPPLY_AMOUNT_WETH,
+      'weth before accrual'
+    );
 
     drawnDebt = _calculateExpectedDrawnDebt(
       amounts.usdxBorrowAmount,
@@ -415,9 +435,24 @@ contract SpokeAccrueInterestTest is SpokeBase {
       amounts.usdxSupplyAmount,
       'usdx before accrual'
     );
-    _assertReserveSupply(spoke1, _usdxReserveId(spoke1), MAX_SUPPLY_AMOUNT, 'usdx before accrual');
-    _assertSpokeSupply(spoke1, _usdxReserveId(spoke1), MAX_SUPPLY_AMOUNT, 'usdx before accrual');
-    _assertAssetSupply(spoke1, _usdxReserveId(spoke1), MAX_SUPPLY_AMOUNT, 'usdx before accrual');
+    _assertReserveSupply(
+      spoke1,
+      _usdxReserveId(spoke1),
+      MAX_SUPPLY_AMOUNT_USDX,
+      'usdx before accrual'
+    );
+    _assertSpokeSupply(
+      spoke1,
+      _usdxReserveId(spoke1),
+      MAX_SUPPLY_AMOUNT_USDX,
+      'usdx before accrual'
+    );
+    _assertAssetSupply(
+      spoke1,
+      _usdxReserveId(spoke1),
+      MAX_SUPPLY_AMOUNT_USDX,
+      'usdx before accrual'
+    );
 
     drawnDebt = _calculateExpectedDrawnDebt(
       amounts.wbtcBorrowAmount,
@@ -439,9 +474,24 @@ contract SpokeAccrueInterestTest is SpokeBase {
       amounts.wbtcSupplyAmount,
       'wbtc before accrual'
     );
-    _assertReserveSupply(spoke1, _wbtcReserveId(spoke1), MAX_SUPPLY_AMOUNT, 'wbtc before accrual');
-    _assertSpokeSupply(spoke1, _wbtcReserveId(spoke1), MAX_SUPPLY_AMOUNT, 'wbtc before accrual');
-    _assertAssetSupply(spoke1, _wbtcReserveId(spoke1), MAX_SUPPLY_AMOUNT, 'wbtc before accrual');
+    _assertReserveSupply(
+      spoke1,
+      _wbtcReserveId(spoke1),
+      MAX_SUPPLY_AMOUNT_WBTC,
+      'wbtc before accrual'
+    );
+    _assertSpokeSupply(
+      spoke1,
+      _wbtcReserveId(spoke1),
+      MAX_SUPPLY_AMOUNT_WBTC,
+      'wbtc before accrual'
+    );
+    _assertAssetSupply(
+      spoke1,
+      _wbtcReserveId(spoke1),
+      MAX_SUPPLY_AMOUNT_WBTC,
+      'wbtc before accrual'
+    );
 
     // Skip time to accrue interest
     skip(skipTime);
@@ -472,25 +522,25 @@ contract SpokeAccrueInterestTest is SpokeBase {
       spoke1,
       _daiReserveId(spoke1),
       bob,
-      amounts.daiSupplyAmount + (interest * amounts.daiSupplyAmount) / MAX_SUPPLY_AMOUNT, // Bob's pro-rata share of interest
+      amounts.daiSupplyAmount + (interest * amounts.daiSupplyAmount) / MAX_SUPPLY_AMOUNT_DAI, // Bob's pro-rata share of interest
       'dai after accrual'
     );
     _assertReserveSupply(
       spoke1,
       _daiReserveId(spoke1),
-      MAX_SUPPLY_AMOUNT + interest,
+      MAX_SUPPLY_AMOUNT_DAI + interest,
       'dai after accrual'
     );
     _assertSpokeSupply(
       spoke1,
       _daiReserveId(spoke1),
-      MAX_SUPPLY_AMOUNT + interest,
+      MAX_SUPPLY_AMOUNT_DAI + interest,
       'dai after accrual'
     );
     _assertAssetSupply(
       spoke1,
       _daiReserveId(spoke1),
-      MAX_SUPPLY_AMOUNT + interest,
+      MAX_SUPPLY_AMOUNT_DAI + interest,
       'dai after accrual'
     );
 
@@ -516,25 +566,25 @@ contract SpokeAccrueInterestTest is SpokeBase {
       spoke1,
       _wethReserveId(spoke1),
       bob,
-      amounts.wethSupplyAmount + (interest * amounts.wethSupplyAmount) / MAX_SUPPLY_AMOUNT, // Bob's pro-rata share of interest
+      amounts.wethSupplyAmount + (interest * amounts.wethSupplyAmount) / MAX_SUPPLY_AMOUNT_WETH, // Bob's pro-rata share of interest
       'weth after accrual'
     );
     _assertReserveSupply(
       spoke1,
       _wethReserveId(spoke1),
-      MAX_SUPPLY_AMOUNT + interest,
+      MAX_SUPPLY_AMOUNT_WETH + interest,
       'weth after accrual'
     );
     _assertSpokeSupply(
       spoke1,
       _wethReserveId(spoke1),
-      MAX_SUPPLY_AMOUNT + interest,
+      MAX_SUPPLY_AMOUNT_WETH + interest,
       'weth after accrual'
     );
     _assertAssetSupply(
       spoke1,
       _wethReserveId(spoke1),
-      MAX_SUPPLY_AMOUNT + interest,
+      MAX_SUPPLY_AMOUNT_WETH + interest,
       'weth after accrual'
     );
 
@@ -560,25 +610,25 @@ contract SpokeAccrueInterestTest is SpokeBase {
       spoke1,
       _usdxReserveId(spoke1),
       bob,
-      amounts.usdxSupplyAmount + (interest * amounts.usdxSupplyAmount) / MAX_SUPPLY_AMOUNT, // Bob's pro-rata share of interest
+      amounts.usdxSupplyAmount + (interest * amounts.usdxSupplyAmount) / MAX_SUPPLY_AMOUNT_USDX, // Bob's pro-rata share of interest
       'usdx after accrual'
     );
     _assertReserveSupply(
       spoke1,
       _usdxReserveId(spoke1),
-      MAX_SUPPLY_AMOUNT + interest,
+      MAX_SUPPLY_AMOUNT_USDX + interest,
       'usdx after accrual'
     );
     _assertSpokeSupply(
       spoke1,
       _usdxReserveId(spoke1),
-      MAX_SUPPLY_AMOUNT + interest,
+      MAX_SUPPLY_AMOUNT_USDX + interest,
       'usdx after accrual'
     );
     _assertAssetSupply(
       spoke1,
       _usdxReserveId(spoke1),
-      MAX_SUPPLY_AMOUNT + interest,
+      MAX_SUPPLY_AMOUNT_USDX + interest,
       'usdx after accrual'
     );
 
@@ -604,25 +654,25 @@ contract SpokeAccrueInterestTest is SpokeBase {
       spoke1,
       _wbtcReserveId(spoke1),
       bob,
-      amounts.wbtcSupplyAmount + (interest * amounts.wbtcSupplyAmount) / MAX_SUPPLY_AMOUNT, // Bob's pro-rata share of interest
+      amounts.wbtcSupplyAmount + (interest * amounts.wbtcSupplyAmount) / MAX_SUPPLY_AMOUNT_WBTC, // Bob's pro-rata share of interest
       'wbtc after accrual'
     );
     _assertReserveSupply(
       spoke1,
       _wbtcReserveId(spoke1),
-      MAX_SUPPLY_AMOUNT + interest,
+      MAX_SUPPLY_AMOUNT_WBTC + interest,
       'wbtc after accrual'
     );
     _assertSpokeSupply(
       spoke1,
       _wbtcReserveId(spoke1),
-      MAX_SUPPLY_AMOUNT + interest,
+      MAX_SUPPLY_AMOUNT_WBTC + interest,
       'wbtc after accrual'
     );
     _assertAssetSupply(
       spoke1,
       _wbtcReserveId(spoke1),
-      MAX_SUPPLY_AMOUNT + interest,
+      MAX_SUPPLY_AMOUNT_WBTC + interest,
       'wbtc after accrual'
     );
   }
@@ -663,32 +713,32 @@ contract SpokeAccrueInterestTest is SpokeBase {
     }
 
     // Deploy remainder of liquidity
-    if (amounts.daiSupplyAmount < MAX_SUPPLY_AMOUNT) {
+    if (amounts.daiSupplyAmount < MAX_SUPPLY_AMOUNT_DAI) {
       _openSupplyPosition(
         spoke1,
         _daiReserveId(spoke1),
-        MAX_SUPPLY_AMOUNT - amounts.daiSupplyAmount
+        MAX_SUPPLY_AMOUNT_DAI - amounts.daiSupplyAmount
       );
     }
-    if (amounts.wethSupplyAmount < MAX_SUPPLY_AMOUNT) {
+    if (amounts.wethSupplyAmount < MAX_SUPPLY_AMOUNT_WETH) {
       _openSupplyPosition(
         spoke1,
         _wethReserveId(spoke1),
-        MAX_SUPPLY_AMOUNT - amounts.wethSupplyAmount
+        MAX_SUPPLY_AMOUNT_WETH - amounts.wethSupplyAmount
       );
     }
-    if (amounts.usdxSupplyAmount < MAX_SUPPLY_AMOUNT) {
+    if (amounts.usdxSupplyAmount < MAX_SUPPLY_AMOUNT_USDX) {
       _openSupplyPosition(
         spoke1,
         _usdxReserveId(spoke1),
-        MAX_SUPPLY_AMOUNT - amounts.usdxSupplyAmount
+        MAX_SUPPLY_AMOUNT_USDX - amounts.usdxSupplyAmount
       );
     }
-    if (amounts.wbtcSupplyAmount < MAX_SUPPLY_AMOUNT) {
+    if (amounts.wbtcSupplyAmount < MAX_SUPPLY_AMOUNT_WBTC) {
       _openSupplyPosition(
         spoke1,
         _wbtcReserveId(spoke1),
-        MAX_SUPPLY_AMOUNT - amounts.wbtcSupplyAmount
+        MAX_SUPPLY_AMOUNT_WBTC - amounts.wbtcSupplyAmount
       );
     }
 
@@ -769,9 +819,14 @@ contract SpokeAccrueInterestTest is SpokeBase {
       amounts.daiSupplyAmount,
       'dai before accrual'
     );
-    _assertReserveSupply(spoke1, _daiReserveId(spoke1), MAX_SUPPLY_AMOUNT, 'dai before accrual');
-    _assertSpokeSupply(spoke1, _daiReserveId(spoke1), MAX_SUPPLY_AMOUNT, 'dai before accrual');
-    _assertAssetSupply(spoke1, _daiReserveId(spoke1), MAX_SUPPLY_AMOUNT, 'dai before accrual');
+    _assertReserveSupply(
+      spoke1,
+      _daiReserveId(spoke1),
+      MAX_SUPPLY_AMOUNT_DAI,
+      'dai before accrual'
+    );
+    _assertSpokeSupply(spoke1, _daiReserveId(spoke1), MAX_SUPPLY_AMOUNT_DAI, 'dai before accrual');
+    _assertAssetSupply(spoke1, _daiReserveId(spoke1), MAX_SUPPLY_AMOUNT_DAI, 'dai before accrual');
 
     drawnDebt = _calculateExpectedDrawnDebt(
       amounts.wethBorrowAmount,
@@ -793,9 +848,24 @@ contract SpokeAccrueInterestTest is SpokeBase {
       amounts.wethSupplyAmount,
       'weth before accrual'
     );
-    _assertReserveSupply(spoke1, _wethReserveId(spoke1), MAX_SUPPLY_AMOUNT, 'weth before accrual');
-    _assertSpokeSupply(spoke1, _wethReserveId(spoke1), MAX_SUPPLY_AMOUNT, 'weth before accrual');
-    _assertAssetSupply(spoke1, _wethReserveId(spoke1), MAX_SUPPLY_AMOUNT, 'weth before accrual');
+    _assertReserveSupply(
+      spoke1,
+      _wethReserveId(spoke1),
+      MAX_SUPPLY_AMOUNT_WETH,
+      'weth before accrual'
+    );
+    _assertSpokeSupply(
+      spoke1,
+      _wethReserveId(spoke1),
+      MAX_SUPPLY_AMOUNT_WETH,
+      'weth before accrual'
+    );
+    _assertAssetSupply(
+      spoke1,
+      _wethReserveId(spoke1),
+      MAX_SUPPLY_AMOUNT_WETH,
+      'weth before accrual'
+    );
 
     drawnDebt = _calculateExpectedDrawnDebt(
       amounts.usdxBorrowAmount,
@@ -817,9 +887,24 @@ contract SpokeAccrueInterestTest is SpokeBase {
       amounts.usdxSupplyAmount,
       'usdx before accrual'
     );
-    _assertReserveSupply(spoke1, _usdxReserveId(spoke1), MAX_SUPPLY_AMOUNT, 'usdx before accrual');
-    _assertSpokeSupply(spoke1, _usdxReserveId(spoke1), MAX_SUPPLY_AMOUNT, 'usdx before accrual');
-    _assertAssetSupply(spoke1, _usdxReserveId(spoke1), MAX_SUPPLY_AMOUNT, 'usdx before accrual');
+    _assertReserveSupply(
+      spoke1,
+      _usdxReserveId(spoke1),
+      MAX_SUPPLY_AMOUNT_USDX,
+      'usdx before accrual'
+    );
+    _assertSpokeSupply(
+      spoke1,
+      _usdxReserveId(spoke1),
+      MAX_SUPPLY_AMOUNT_USDX,
+      'usdx before accrual'
+    );
+    _assertAssetSupply(
+      spoke1,
+      _usdxReserveId(spoke1),
+      MAX_SUPPLY_AMOUNT_USDX,
+      'usdx before accrual'
+    );
 
     drawnDebt = _calculateExpectedDrawnDebt(
       amounts.wbtcBorrowAmount,
@@ -841,9 +926,24 @@ contract SpokeAccrueInterestTest is SpokeBase {
       amounts.wbtcSupplyAmount,
       'wbtc before accrual'
     );
-    _assertReserveSupply(spoke1, _wbtcReserveId(spoke1), MAX_SUPPLY_AMOUNT, 'wbtc before accrual');
-    _assertSpokeSupply(spoke1, _wbtcReserveId(spoke1), MAX_SUPPLY_AMOUNT, 'wbtc before accrual');
-    _assertAssetSupply(spoke1, _wbtcReserveId(spoke1), MAX_SUPPLY_AMOUNT, 'wbtc before accrual');
+    _assertReserveSupply(
+      spoke1,
+      _wbtcReserveId(spoke1),
+      MAX_SUPPLY_AMOUNT_WBTC,
+      'wbtc before accrual'
+    );
+    _assertSpokeSupply(
+      spoke1,
+      _wbtcReserveId(spoke1),
+      MAX_SUPPLY_AMOUNT_WBTC,
+      'wbtc before accrual'
+    );
+    _assertAssetSupply(
+      spoke1,
+      _wbtcReserveId(spoke1),
+      MAX_SUPPLY_AMOUNT_WBTC,
+      'wbtc before accrual'
+    );
 
     // Skip time to accrue interest
     skip(skipTime);
@@ -877,25 +977,25 @@ contract SpokeAccrueInterestTest is SpokeBase {
       spoke1,
       _daiReserveId(spoke1),
       bob,
-      amounts.daiSupplyAmount + (interest * amounts.daiSupplyAmount) / MAX_SUPPLY_AMOUNT, // Bob's pro-rata share of interest
+      amounts.daiSupplyAmount + (interest * amounts.daiSupplyAmount) / MAX_SUPPLY_AMOUNT_DAI, // Bob's pro-rata share of interest
       'dai after accrual'
     );
     _assertReserveSupply(
       spoke1,
       _daiReserveId(spoke1),
-      MAX_SUPPLY_AMOUNT + interest,
+      MAX_SUPPLY_AMOUNT_DAI + interest,
       'dai after accrual'
     );
     _assertSpokeSupply(
       spoke1,
       _daiReserveId(spoke1),
-      MAX_SUPPLY_AMOUNT + interest,
+      MAX_SUPPLY_AMOUNT_DAI + interest,
       'dai after accrual'
     );
     _assertAssetSupply(
       spoke1,
       _daiReserveId(spoke1),
-      MAX_SUPPLY_AMOUNT + interest,
+      MAX_SUPPLY_AMOUNT_DAI + interest,
       'dai after accrual'
     );
 
@@ -928,25 +1028,25 @@ contract SpokeAccrueInterestTest is SpokeBase {
       spoke1,
       _wethReserveId(spoke1),
       bob,
-      amounts.wethSupplyAmount + (interest * amounts.wethSupplyAmount) / MAX_SUPPLY_AMOUNT, // Bob's pro-rata share of interest
+      amounts.wethSupplyAmount + (interest * amounts.wethSupplyAmount) / MAX_SUPPLY_AMOUNT_WETH, // Bob's pro-rata share of interest
       'weth after accrual'
     );
     _assertReserveSupply(
       spoke1,
       _wethReserveId(spoke1),
-      MAX_SUPPLY_AMOUNT + interest,
+      MAX_SUPPLY_AMOUNT_WETH + interest,
       'weth after accrual'
     );
     _assertSpokeSupply(
       spoke1,
       _wethReserveId(spoke1),
-      MAX_SUPPLY_AMOUNT + interest,
+      MAX_SUPPLY_AMOUNT_WETH + interest,
       'weth after accrual'
     );
     _assertAssetSupply(
       spoke1,
       _wethReserveId(spoke1),
-      MAX_SUPPLY_AMOUNT + interest,
+      MAX_SUPPLY_AMOUNT_WETH + interest,
       'weth after accrual'
     );
 
@@ -979,25 +1079,25 @@ contract SpokeAccrueInterestTest is SpokeBase {
       spoke1,
       _usdxReserveId(spoke1),
       bob,
-      amounts.usdxSupplyAmount + (interest * amounts.usdxSupplyAmount) / MAX_SUPPLY_AMOUNT, // Bob's pro-rata share of interest
+      amounts.usdxSupplyAmount + (interest * amounts.usdxSupplyAmount) / MAX_SUPPLY_AMOUNT_USDX, // Bob's pro-rata share of interest
       'usdx after accrual'
     );
     _assertReserveSupply(
       spoke1,
       _usdxReserveId(spoke1),
-      MAX_SUPPLY_AMOUNT + interest,
+      MAX_SUPPLY_AMOUNT_USDX + interest,
       'usdx after accrual'
     );
     _assertSpokeSupply(
       spoke1,
       _usdxReserveId(spoke1),
-      MAX_SUPPLY_AMOUNT + interest,
+      MAX_SUPPLY_AMOUNT_USDX + interest,
       'usdx after accrual'
     );
     _assertAssetSupply(
       spoke1,
       _usdxReserveId(spoke1),
-      MAX_SUPPLY_AMOUNT + interest,
+      MAX_SUPPLY_AMOUNT_USDX + interest,
       'usdx after accrual'
     );
 
@@ -1030,25 +1130,25 @@ contract SpokeAccrueInterestTest is SpokeBase {
       spoke1,
       _wbtcReserveId(spoke1),
       bob,
-      amounts.wbtcSupplyAmount + (interest * amounts.wbtcSupplyAmount) / MAX_SUPPLY_AMOUNT, // Bob's pro-rata share of interest
+      amounts.wbtcSupplyAmount + (interest * amounts.wbtcSupplyAmount) / MAX_SUPPLY_AMOUNT_WBTC, // Bob's pro-rata share of interest
       'wbtc after accrual'
     );
     _assertReserveSupply(
       spoke1,
       _wbtcReserveId(spoke1),
-      MAX_SUPPLY_AMOUNT + interest,
+      MAX_SUPPLY_AMOUNT_WBTC + interest,
       'wbtc after accrual'
     );
     _assertSpokeSupply(
       spoke1,
       _wbtcReserveId(spoke1),
-      MAX_SUPPLY_AMOUNT + interest,
+      MAX_SUPPLY_AMOUNT_WBTC + interest,
       'wbtc after accrual'
     );
     _assertAssetSupply(
       spoke1,
       _wbtcReserveId(spoke1),
-      MAX_SUPPLY_AMOUNT + interest,
+      MAX_SUPPLY_AMOUNT_WBTC + interest,
       'wbtc after accrual'
     );
   }

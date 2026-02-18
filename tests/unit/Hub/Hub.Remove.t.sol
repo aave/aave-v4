@@ -16,7 +16,7 @@ contract HubRemoveTest is HubBase {
 
   function test_remove_fuzz(uint256 reserveId, uint256 amount) public {
     reserveId = bound(reserveId, 0, spoke1.getReserveCount() - 1);
-    amount = bound(amount, 1, MAX_SUPPLY_AMOUNT);
+    amount = bound(amount, 1, _calculateMaxSupplyAmount(spoke1, reserveId));
     uint256 assetId = spoke1.getReserve(reserveId).assetId;
     IERC20 underlying = IERC20(hub1.getAsset(assetId).underlying);
 
@@ -57,14 +57,18 @@ contract HubRemoveTest is HubBase {
     // dai
     assertEq(underlying.balanceOf(address(spoke1)), 0, 'spoke token balance after');
     assertEq(underlying.balanceOf(address(hub1)), 0, 'hub token balance after');
-    assertEq(underlying.balanceOf(alice), MAX_SUPPLY_AMOUNT, 'user token balance after');
+    assertEq(
+      underlying.balanceOf(alice),
+      _calculateMaxSupplyAmount(underlying),
+      'user token balance after'
+    );
   }
 
   // single asset, multiple spokes added. No debt
   function test_remove_fuzz_multi_spoke(uint256 amount, uint256 amount2) public {
     uint256 assetId = daiAssetId;
-    amount = bound(amount, 1, MAX_SUPPLY_AMOUNT - 1);
-    amount2 = bound(amount2, 1, MAX_SUPPLY_AMOUNT - amount);
+    amount = bound(amount, 1, _calculateMaxSupplyAmount(hub1, assetId) - 1);
+    amount2 = bound(amount2, 1, _calculateMaxSupplyAmount(hub1, assetId) - amount);
 
     IERC20 underlying = IERC20(hub1.getAsset(assetId).underlying);
 
@@ -97,7 +101,11 @@ contract HubRemoveTest is HubBase {
     assertEq(underlying.balanceOf(address(spoke1)), 0, 'spoke1 token balance after');
     assertEq(underlying.balanceOf(address(spoke2)), 0, 'spoke2 token balance after');
     assertEq(underlying.balanceOf(address(hub1)), 0, 'hub token balance after');
-    assertEq(underlying.balanceOf(alice), MAX_SUPPLY_AMOUNT, 'user token balance after');
+    assertEq(
+      underlying.balanceOf(alice),
+      _calculateMaxSupplyAmount(underlying),
+      'user token balance after'
+    );
   }
 
   /// @dev single asset, multiple spokes added, with interest accrued.
@@ -107,12 +115,13 @@ contract HubRemoveTest is HubBase {
     uint256 drawAmount,
     uint256 skipTime
   ) public {
-    amount = bound(amount, 1, MAX_SUPPLY_AMOUNT / 10 - 1);
-    amount2 = bound(amount2, 1, MAX_SUPPLY_AMOUNT / 10 - amount);
+    uint256 assetId = daiAssetId;
+
+    amount = bound(amount, 1, _calculateMaxSupplyAmount(hub1, assetId) / 10 - 1);
+    amount2 = bound(amount2, 1, _calculateMaxSupplyAmount(hub1, assetId) / 10 - amount);
     drawAmount = bound(drawAmount, 1, amount + amount2);
     skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
 
-    uint256 assetId = daiAssetId;
     IERC20 underlying = IERC20(hub1.getAsset(assetId).underlying);
 
     Utils.add({hub: hub1, assetId: assetId, caller: address(spoke1), amount: amount, user: alice});
@@ -124,7 +133,7 @@ contract HubRemoveTest is HubBase {
 
     (uint256 drawn, uint256 premium) = hub1.getAssetOwed(assetId);
     assertEq(premium, 0);
-    vm.assume(drawn + premium <= MAX_SUPPLY_AMOUNT);
+    vm.assume(drawn + premium <= _calculateMaxSupplyAmount(hub1, assetId));
 
     // restore all drawn liquidity
     Utils.restoreDrawn({

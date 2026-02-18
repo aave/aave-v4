@@ -56,7 +56,7 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
     uint256 borrowAmount,
     uint40 skipTime
   ) public {
-    borrowAmount = bound(borrowAmount, 1, MAX_SUPPLY_AMOUNT / 2);
+    borrowAmount = bound(borrowAmount, 1, MAX_SUPPLY_AMOUNT_DAI / 2);
     skipTime = bound(skipTime, 0, MAX_SKIP_TIME / 3).toUint40();
     uint256 supplyAmount = borrowAmount * 2;
     uint40 startTime = vm.getBlockTimestamp().toUint40();

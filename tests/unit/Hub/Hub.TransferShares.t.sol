@@ -13,7 +13,7 @@ contract HubTransferSharesTest is HubBase {
   }
 
   function test_transferShares_fuzz(uint256 supplyAmount, uint256 moveAmount) public {
-    supplyAmount = bound(supplyAmount, 1, MAX_SUPPLY_AMOUNT);
+    supplyAmount = bound(supplyAmount, 1, MAX_SUPPLY_AMOUNT_DAI);
     moveAmount = bound(moveAmount, 1, supplyAmount);
 
     // supply from spoke1
@@ -42,7 +42,7 @@ contract HubTransferSharesTest is HubBase {
   function test_transferShares_fuzz_revertsWith_underflow_spoke_added_shares_exceeded(
     uint256 supplyAmount
   ) public {
-    supplyAmount = bound(supplyAmount, 1, MAX_SUPPLY_AMOUNT - 1);
+    supplyAmount = bound(supplyAmount, 1, MAX_SUPPLY_AMOUNT_DAI - 1);
 
     // supply from spoke1
     Utils.add(hub1, daiAssetId, address(spoke1), supplyAmount, bob);

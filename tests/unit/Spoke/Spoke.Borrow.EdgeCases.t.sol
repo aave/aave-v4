@@ -239,14 +239,14 @@ contract SpokeBorrowEdgeCasesTest is SpokeBase {
       spoke: spoke1,
       reserveId: _wethReserveId(spoke1),
       caller: carol,
-      amount: MAX_SUPPLY_AMOUNT,
+      amount: MAX_SUPPLY_AMOUNT_WETH,
       onBehalfOf: carol
     });
     Utils.supplyCollateral({
       spoke: spoke1,
       reserveId: _wethReserveId(spoke1),
       caller: bob,
-      amount: MAX_SUPPLY_AMOUNT,
+      amount: MAX_SUPPLY_AMOUNT_WETH,
       onBehalfOf: bob
     });
 
@@ -323,14 +323,14 @@ contract SpokeBorrowEdgeCasesTest is SpokeBase {
       spoke: spoke1,
       reserveId: _wethReserveId(spoke1),
       caller: bob,
-      amount: MAX_SUPPLY_AMOUNT,
+      amount: MAX_SUPPLY_AMOUNT_WETH,
       onBehalfOf: bob
     });
 
     ReserveSetupParams memory collateral;
     collateral.reserveId = _wethReserveId(spoke1);
     collateral.supplier = alice;
-    collateral.supplyAmount = MAX_SUPPLY_AMOUNT;
+    collateral.supplyAmount = MAX_SUPPLY_AMOUNT_WETH;
 
     _openSupplyPosition(spoke1, _daiReserveId(spoke1), MAX_SUPPLY_AMOUNT_DAI);
 

@@ -47,7 +47,7 @@ contract TreasurySpokeTest is SpokeBase {
   }
 
   function test_supply(uint256 amount) public {
-    amount = bound(amount, 1, MAX_SUPPLY_AMOUNT);
+    amount = bound(amount, 1, MAX_SUPPLY_AMOUNT_DAI);
     Utils.supply(_treasurySpoke(), daiAssetId, TREASURY_ADMIN, amount, address(treasurySpoke));
 
     assertEq(treasurySpoke.getSuppliedAmount(daiAssetId), amount);
@@ -55,7 +55,7 @@ contract TreasurySpokeTest is SpokeBase {
 
   /// treasury supplies to earn interest
   function test_withdraw_fuzz_amount_interestOnly(uint256 amount) public {
-    amount = bound(amount, 1, MAX_SUPPLY_AMOUNT);
+    amount = bound(amount, 1, MAX_SUPPLY_AMOUNT_DAI);
 
     _updateLiquidityFee(hub1, daiAssetId, 0);
 
@@ -85,7 +85,7 @@ contract TreasurySpokeTest is SpokeBase {
 
   /// treasury does not supply but earn fees
   function test_withdraw_fuzz_amount_feesOnly(uint256 amount) public {
-    amount = bound(amount, 1, MAX_SUPPLY_AMOUNT);
+    amount = bound(amount, 1, MAX_SUPPLY_AMOUNT_DAI);
 
     assertEq(treasurySpoke.getSuppliedShares(daiAssetId), 0);
 
@@ -115,7 +115,7 @@ contract TreasurySpokeTest is SpokeBase {
 
   /// treasury supplies to earn interest and fees
   function test_withdraw_fuzz_amount_interestAndFees(uint256 amount) public {
-    amount = bound(amount, 1, MAX_SUPPLY_AMOUNT);
+    amount = bound(amount, 1, MAX_SUPPLY_AMOUNT_DAI);
 
     Utils.supply(_treasurySpoke(), daiAssetId, TREASURY_ADMIN, amount, address(treasurySpoke));
     assertEq(treasurySpoke.getSuppliedAmount(daiAssetId), amount);

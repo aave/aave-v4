@@ -114,7 +114,7 @@ contract SpokeWithdrawTest is SpokeBase {
     assertEq(tokenDataBefore.hubBalance, amount, 'dai hubBalance pre-withdraw');
     assertEq(
       tokenList.dai.balanceOf(bob),
-      MAX_SUPPLY_AMOUNT - amount,
+      MAX_SUPPLY_AMOUNT_DAI - amount,
       'bob dai balance pre-withdraw'
     );
 
@@ -159,7 +159,7 @@ contract SpokeWithdrawTest is SpokeBase {
     // Token assertions after withdrawal
     assertEq(tokenDataAfter.spokeBalance, 0, 'dai spokeBalance post-withdraw');
     assertEq(tokenDataAfter.hubBalance, 0, 'dai hubBalance post-withdraw');
-    assertEq(tokenList.dai.balanceOf(bob), MAX_SUPPLY_AMOUNT, 'bob dai balance post-withdraw');
+    assertEq(tokenList.dai.balanceOf(bob), MAX_SUPPLY_AMOUNT_DAI, 'bob dai balance post-withdraw');
 
     // Check supply rate monotonically increases after withdrawal
     _checkSupplyRateIncreasing(addExRate, getAddExRate(daiAssetId), 'after withdraw');
@@ -248,7 +248,7 @@ contract SpokeWithdrawTest is SpokeBase {
   }
 
   function test_withdraw_fuzz_all_greater_than_supplied(uint256 supplyAmount) public {
-    supplyAmount = bound(supplyAmount, 1, MAX_SUPPLY_AMOUNT);
+    supplyAmount = bound(supplyAmount, 1, MAX_SUPPLY_AMOUNT_DAI);
     Utils.supply({
       spoke: spoke1,
       reserveId: _daiReserveId(spoke1),
@@ -365,7 +365,7 @@ contract SpokeWithdrawTest is SpokeBase {
     uint256 borrowAmount,
     uint40 elapsed
   ) public {
-    supplyAmount = bound(supplyAmount, 2, MAX_SUPPLY_AMOUNT);
+    supplyAmount = bound(supplyAmount, 2, MAX_SUPPLY_AMOUNT_DAI);
     borrowAmount = bound(borrowAmount, 1, supplyAmount / 2);
     elapsed = bound(elapsed, 0, MAX_SKIP_TIME).toUint40();
 
@@ -519,12 +519,12 @@ contract SpokeWithdrawTest is SpokeBase {
     );
     assertEq(
       tokenList.dai.balanceOf(alice),
-      MAX_SUPPLY_AMOUNT + state.borrowAmount - repayAmount,
+      MAX_SUPPLY_AMOUNT_DAI + state.borrowAmount - repayAmount,
       'alice balance'
     );
     assertEq(
       tokenList.dai.balanceOf(bob),
-      MAX_SUPPLY_AMOUNT - state.borrowReserveSupplyAmount + state.withdrawAmount,
+      MAX_SUPPLY_AMOUNT_DAI - state.borrowReserveSupplyAmount + state.withdrawAmount,
       'bob balance'
     );
 
@@ -674,7 +674,7 @@ contract SpokeWithdrawTest is SpokeBase {
     assertEq(underlying.balanceOf(alice), 0, 'alice balance');
     assertEq(
       underlying.balanceOf(bob),
-      MAX_SUPPLY_AMOUNT - state.borrowReserveSupplyAmount + state.withdrawAmount,
+      MAX_SUPPLY_AMOUNT_DAI - state.borrowReserveSupplyAmount + state.withdrawAmount,
       'bob balance'
     );
 
@@ -771,12 +771,12 @@ contract SpokeWithdrawTest is SpokeBase {
     );
     assertEq(
       tokenList.dai.balanceOf(alice),
-      MAX_SUPPLY_AMOUNT + state.borrowAmount - repayAmount,
+      MAX_SUPPLY_AMOUNT_DAI + state.borrowAmount - repayAmount,
       'alice balance'
     );
     assertEq(
       tokenList.dai.balanceOf(bob),
-      MAX_SUPPLY_AMOUNT - state.borrowReserveSupplyAmount + state.withdrawAmount,
+      MAX_SUPPLY_AMOUNT_DAI - state.borrowReserveSupplyAmount + state.withdrawAmount,
       'bob balance'
     );
 
@@ -920,7 +920,7 @@ contract SpokeWithdrawTest is SpokeBase {
     assertEq(underlying.balanceOf(alice), 0, 'alice balance');
     assertEq(
       underlying.balanceOf(bob),
-      MAX_SUPPLY_AMOUNT - state.borrowReserveSupplyAmount + state.withdrawAmount,
+      MAX_SUPPLY_AMOUNT_DAI - state.borrowReserveSupplyAmount + state.withdrawAmount,
       'bob balance'
     );
 
@@ -947,26 +947,26 @@ contract SpokeWithdrawTest is SpokeBase {
     Utils.borrow(spoke1, _daiReserveId(spoke1), bob, amount / 2, bob); // introduce debt
     Utils.supply(spoke1, _daiReserveId(spoke1), alice, amount, alice); // alice supply
 
-    uint256 supplyExchangeRatio = hub1.previewRemoveByShares(daiAssetId, MAX_SUPPLY_AMOUNT);
-    uint256 debtExchangeRatio = hub1.previewRestoreByShares(daiAssetId, MAX_SUPPLY_AMOUNT);
+    uint256 supplyExchangeRatio = hub1.previewRemoveByShares(daiAssetId, MAX_SUPPLY_AMOUNT_DAI);
+    uint256 debtExchangeRatio = hub1.previewRestoreByShares(daiAssetId, MAX_SUPPLY_AMOUNT_DAI);
 
     Utils.withdraw(spoke1, _daiReserveId(spoke1), alice, amount / 2, alice);
 
-    assertGe(hub1.previewRemoveByShares(daiAssetId, MAX_SUPPLY_AMOUNT), supplyExchangeRatio);
-    assertGe(hub1.previewRestoreByShares(daiAssetId, MAX_SUPPLY_AMOUNT), debtExchangeRatio);
+    assertGe(hub1.previewRemoveByShares(daiAssetId, MAX_SUPPLY_AMOUNT_DAI), supplyExchangeRatio);
+    assertGe(hub1.previewRestoreByShares(daiAssetId, MAX_SUPPLY_AMOUNT_DAI), debtExchangeRatio);
 
     skip(delay); // with interest accrual, both ex rates should strictly
 
-    assertGt(hub1.previewRemoveByShares(daiAssetId, MAX_SUPPLY_AMOUNT), supplyExchangeRatio);
-    assertGt(hub1.previewRestoreByShares(daiAssetId, MAX_SUPPLY_AMOUNT), debtExchangeRatio);
+    assertGt(hub1.previewRemoveByShares(daiAssetId, MAX_SUPPLY_AMOUNT_DAI), supplyExchangeRatio);
+    assertGt(hub1.previewRestoreByShares(daiAssetId, MAX_SUPPLY_AMOUNT_DAI), debtExchangeRatio);
 
-    supplyExchangeRatio = hub1.previewRemoveByShares(daiAssetId, MAX_SUPPLY_AMOUNT);
-    debtExchangeRatio = hub1.previewRestoreByShares(daiAssetId, MAX_SUPPLY_AMOUNT);
+    supplyExchangeRatio = hub1.previewRemoveByShares(daiAssetId, MAX_SUPPLY_AMOUNT_DAI);
+    debtExchangeRatio = hub1.previewRestoreByShares(daiAssetId, MAX_SUPPLY_AMOUNT_DAI);
 
     Utils.withdraw(spoke1, _daiReserveId(spoke1), alice, amount / 2, alice);
 
-    assertGe(hub1.previewRemoveByShares(daiAssetId, MAX_SUPPLY_AMOUNT), supplyExchangeRatio);
-    assertGe(hub1.previewRestoreByShares(daiAssetId, MAX_SUPPLY_AMOUNT), debtExchangeRatio);
+    assertGe(hub1.previewRemoveByShares(daiAssetId, MAX_SUPPLY_AMOUNT_DAI), supplyExchangeRatio);
+    assertGe(hub1.previewRestoreByShares(daiAssetId, MAX_SUPPLY_AMOUNT_DAI), debtExchangeRatio);
   }
 
   /// @dev Withdraw exceeding supplied amount withdraws everything

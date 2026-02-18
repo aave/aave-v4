@@ -68,7 +68,7 @@ contract HubPayFeeTest is HubBase {
     uint256 feeShares,
     uint256 skipTime
   ) public {
-    addAmount = bound(addAmount, 1, MAX_SUPPLY_AMOUNT);
+    addAmount = bound(addAmount, 1, MAX_SUPPLY_AMOUNT_DAI);
     skipTime = bound(skipTime, 0, MAX_SKIP_TIME);
 
     Utils.add({

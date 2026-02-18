@@ -97,7 +97,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
     debtToCover = bound(
       debtToCover,
       _convertValueToAmount(spoke, debtReserveId, 1e26),
-      MAX_SUPPLY_AMOUNT
+      _calculateMaxSupplyAmount(spoke, debtReserveId)
     );
 
     LiquidationLogic.CalculateLiquidationAmountsParams
@@ -132,7 +132,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
             debtReserveId
           )
         ),
-        MAX_SUPPLY_AMOUNT
+        _calculateMaxSupplyAmount(spoke, debtReserveId)
       );
     }
     deal(spoke, debtReserveId, liquidator, debtToCover.percentMulUp(101_00));

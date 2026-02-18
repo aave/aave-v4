@@ -49,8 +49,8 @@ contract SpokeLiquidationCallScenariosTest is SpokeLiquidationCallBaseTest {
     );
 
     for (uint256 reserveId = 0; reserveId < spoke.getReserveCount(); reserveId++) {
-      deal(spoke, reserveId, liquidator, MAX_SUPPLY_AMOUNT);
-      Utils.approve(spoke, reserveId, liquidator, MAX_SUPPLY_AMOUNT);
+      deal(spoke, reserveId, liquidator, _calculateMaxSupplyAmount(spoke, reserveId));
+      Utils.approve(spoke, reserveId, liquidator, _calculateMaxSupplyAmount(spoke, reserveId));
     }
   }
 
@@ -726,7 +726,11 @@ contract SpokeLiquidationCallScenariosTest is SpokeLiquidationCallBaseTest {
     IHub hub = _hub(spoke, _usdxReserveId(spoke));
     _updateSpokeHalted(hub, usdxAssetId, address(spoke), true);
 
-    _openSupplyPosition(spoke, collateralReserveId, MAX_SUPPLY_AMOUNT);
+    _openSupplyPosition(
+      spoke,
+      collateralReserveId,
+      _calculateMaxSupplyAmount(spoke, collateralReserveId)
+    );
 
     vm.expectCall(
       address(hub),
@@ -753,7 +757,11 @@ contract SpokeLiquidationCallScenariosTest is SpokeLiquidationCallBaseTest {
     IHub hub = _hub(spoke, _usdxReserveId(spoke));
     _updateSpokeHalted(hub, usdxAssetId, address(spoke), true);
 
-    _openSupplyPosition(spoke, collateralReserveId, MAX_SUPPLY_AMOUNT);
+    _openSupplyPosition(
+      spoke,
+      collateralReserveId,
+      _calculateMaxSupplyAmount(spoke, collateralReserveId)
+    );
 
     vm.expectCall(
       address(hub),

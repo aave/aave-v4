@@ -976,8 +976,8 @@ abstract contract Base is ConfigHelpers, MockHelpers, EIP712Helpers {
   function _addNewAssetsAndReserves(IHub hub, ISpoke spoke, uint256 count) internal {
     for (uint256 i = 0; i < count; i++) {
       MockERC20 newToken = new MockERC20();
-      newToken.mint(alice, MAX_SUPPLY_AMOUNT * 10 ** 18);
-      newToken.mint(bob, MAX_SUPPLY_AMOUNT * 10 ** 18);
+      newToken.mint(alice, MAX_SUPPLY_ASSET_UNITS * 10 ** 18);
+      newToken.mint(bob, MAX_SUPPLY_ASSET_UNITS * 10 ** 18);
       vm.prank(alice);
       newToken.approve(address(spoke), UINT256_MAX);
       vm.prank(bob);

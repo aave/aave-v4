@@ -135,8 +135,8 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
     vm.stopPrank();
 
     // Deal tokens
-    deal(address(assetA), bob, MAX_SUPPLY_AMOUNT);
-    deal(address(assetB), alice, MAX_SUPPLY_AMOUNT * 2); // Alice supplies on 2 different hubs
+    deal(address(assetA), bob, _calculateMaxSupplyAmount(IERC20(address(assetA))));
+    deal(address(assetB), alice, _calculateMaxSupplyAmount(IERC20(address(assetB))) * 2); // Alice supplies on 2 different hubs
   }
 
   /* @dev Test showcasing a possible configuration for isolation mode
@@ -149,12 +149,13 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
    */
   function test_isolation_mode() public {
     // Bob can supply asset A to the new spoke and set it as collateral
-    Utils.supplyCollateral(newSpoke, isolationVars.reserveAId, bob, MAX_SUPPLY_AMOUNT, bob);
+    uint256 maxSupplyA = _calculateMaxSupplyAmount(newSpoke, isolationVars.reserveAId);
+    Utils.supplyCollateral(newSpoke, isolationVars.reserveAId, bob, maxSupplyA, bob);
 
     // Check Bob's supplied amounts and collateral status
     assertEq(
       newSpoke.getUserSuppliedAssets(isolationVars.reserveAId, bob),
-      MAX_SUPPLY_AMOUNT,
+      maxSupplyA,
       'bob supplied amount of reserve A on new spoke'
     );
     assertTrue(
@@ -163,7 +164,7 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
     );
     assertEq(
       newHub.getAddedAssets(isolationVars.assetAId),
-      MAX_SUPPLY_AMOUNT,
+      maxSupplyA,
       'total supplied amount of assetA on new hub'
     );
 
@@ -231,17 +232,18 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
     Utils.supply(newSpoke, isolationVars.reserveBIdMainHub, bob, 1e18, bob);
 
     // Alice can supply B to the new hub via new spoke
-    Utils.supply(newSpoke, isolationVars.reserveBId, alice, MAX_SUPPLY_AMOUNT, alice);
+    uint256 maxSupplyB = _calculateMaxSupplyAmount(newSpoke, isolationVars.reserveBId);
+    Utils.supply(newSpoke, isolationVars.reserveBId, alice, maxSupplyB, alice);
 
     // Now there is liquidity for asset B on the new hub
     assertEq(
       newHub.getAddedAssets(isolationVars.assetBId),
-      MAX_SUPPLY_AMOUNT,
+      maxSupplyB,
       'total supplied amount of asset B on new hub'
     );
     assertEq(
       newSpoke.getReserveSuppliedAssets(isolationVars.reserveBId),
-      MAX_SUPPLY_AMOUNT,
+      maxSupplyB,
       'total supplied amount of reserve B on new spoke'
     );
 

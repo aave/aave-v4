@@ -25,7 +25,7 @@ contract HubRescueTest is HubBase {
 
   /// @dev Rescue of funds directly transferred to the hub & ensure asset liquidity tracking is not impacted.
   function test_rescue_scenario_fuzz(uint256 lostAmount) public {
-    lostAmount = bound(lostAmount, 1, MAX_SUPPLY_AMOUNT / 10);
+    lostAmount = bound(lostAmount, 1, MAX_SUPPLY_AMOUNT_DAI / 10);
 
     IERC20 underlying = IERC20(hub1.getAsset(daiAssetId).underlying);
 
@@ -89,7 +89,7 @@ contract HubRescueTest is HubBase {
   /// @dev Rescue of funds directly transferred to the hub including interest accrual
   function test_rescue_fuzz_with_interest(uint256 lostAmount, uint256 skipTime) public {
     skipTime = bound(skipTime, 0, MAX_SKIP_TIME);
-    lostAmount = bound(lostAmount, 1, MAX_SUPPLY_AMOUNT / 10);
+    lostAmount = bound(lostAmount, 1, MAX_SUPPLY_AMOUNT_DAI / 10);
 
     IERC20 underlying = IERC20(hub1.getAsset(daiAssetId).underlying);
 

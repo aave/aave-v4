@@ -78,7 +78,7 @@ contract SpokeBorrowHealthFactorTest is SpokeBase {
     uint256 wethSupplyAmount,
     uint256 skipTime
   ) public {
-    wethSupplyAmount = bound(wethSupplyAmount, 1, MAX_SUPPLY_AMOUNT);
+    wethSupplyAmount = bound(wethSupplyAmount, 1, MAX_SUPPLY_AMOUNT_WETH);
     skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
 
     uint256 daiReserveId = _daiReserveId(spoke1);
@@ -91,7 +91,7 @@ contract SpokeBorrowHealthFactorTest is SpokeBase {
       collAmount: wethSupplyAmount
     });
 
-    vm.assume(maxDebtAmount < MAX_SUPPLY_AMOUNT / 2 && maxDebtAmount > 0);
+    vm.assume(maxDebtAmount < MAX_SUPPLY_AMOUNT_DAI / 2 && maxDebtAmount > 0);
 
     // Bob supply weth
     Utils.supplyCollateral(spoke1, wethReserveId, bob, wethSupplyAmount, bob);
@@ -178,8 +178,8 @@ contract SpokeBorrowHealthFactorTest is SpokeBase {
     uint256 daiReserveId = _daiReserveId(spoke1);
     uint256 usdxReserveId = _usdxReserveId(spoke1);
 
-    wethCollAmountDai = bound(wethCollAmountDai, 1e15, MAX_SUPPLY_AMOUNT / 1e4);
-    wethCollAmountUsdx = bound(wethCollAmountUsdx, 1e15, MAX_SUPPLY_AMOUNT / 1e4);
+    wethCollAmountDai = bound(wethCollAmountDai, 1e15, MAX_SUPPLY_AMOUNT_WETH / 1e4);
+    wethCollAmountUsdx = bound(wethCollAmountUsdx, 1e15, MAX_SUPPLY_AMOUNT_WETH / 1e4);
 
     uint256 daiDebtAmount = _calcMaxDebtAmount({
       spoke: spoke1,
@@ -291,8 +291,8 @@ contract SpokeBorrowHealthFactorTest is SpokeBase {
     uint256 wethCollForUsdx,
     uint256 skipTime
   ) public {
-    wethCollForDai = bound(wethCollForDai, 1, MAX_SUPPLY_AMOUNT / 2);
-    wethCollForUsdx = bound(wethCollForUsdx, 1, MAX_SUPPLY_AMOUNT / 2);
+    wethCollForDai = bound(wethCollForDai, 1, MAX_SUPPLY_AMOUNT_WETH / 2);
+    wethCollForUsdx = bound(wethCollForUsdx, 1, MAX_SUPPLY_AMOUNT_USDX / 2);
     skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
 
     // weth collateral
@@ -314,8 +314,8 @@ contract SpokeBorrowHealthFactorTest is SpokeBase {
       collAmount: wethCollForUsdx
     });
 
-    vm.assume(daiDebtAmount < MAX_SUPPLY_AMOUNT / 2 && daiDebtAmount > 0);
-    vm.assume(usdxDebtAmount < MAX_SUPPLY_AMOUNT / 2 && usdxDebtAmount > 0);
+    vm.assume(daiDebtAmount < MAX_SUPPLY_AMOUNT_DAI / 2 && daiDebtAmount > 0);
+    vm.assume(usdxDebtAmount < MAX_SUPPLY_AMOUNT_USDX / 2 && usdxDebtAmount > 0);
 
     // Bob supply weth
     Utils.supplyCollateral(spoke1, wethReserveId, bob, wethCollForDai + wethCollForUsdx, bob);
@@ -390,7 +390,7 @@ contract SpokeBorrowHealthFactorTest is SpokeBase {
     uint256 currPrice = IPriceOracle(spoke1.ORACLE()).getReservePrice(_wethReserveId(spoke1));
     newPrice = bound(newPrice, 1, currPrice - 1);
     // weth collateral
-    wethSupplyAmount = bound(wethSupplyAmount, 1, MAX_SUPPLY_AMOUNT);
+    wethSupplyAmount = bound(wethSupplyAmount, 1, MAX_SUPPLY_AMOUNT_WETH);
 
     uint256 daiReserveId = _daiReserveId(spoke1); // debt
     uint256 wethReserveId = _wethReserveId(spoke1); // collateral
@@ -403,7 +403,7 @@ contract SpokeBorrowHealthFactorTest is SpokeBase {
       collAmount: wethSupplyAmount
     });
 
-    vm.assume(maxDebtAmount < MAX_SUPPLY_AMOUNT / 2 && maxDebtAmount > 0);
+    vm.assume(maxDebtAmount < MAX_SUPPLY_AMOUNT_DAI / 2 && maxDebtAmount > 0);
 
     // Bob supply weth
     Utils.supplyCollateral(spoke1, wethReserveId, bob, wethSupplyAmount, bob);
@@ -477,8 +477,8 @@ contract SpokeBorrowHealthFactorTest is SpokeBase {
     uint256 usdxDebtAmountWeth,
     uint256 usdxDebtAmountDai
   ) public {
-    usdxDebtAmountWeth = bound(usdxDebtAmountWeth, 1, MAX_SUPPLY_AMOUNT / 2 - 1); // so that liquidity is sufficient for next draw attempt
-    usdxDebtAmountDai = bound(usdxDebtAmountDai, 1, MAX_SUPPLY_AMOUNT / 2 - 1); // so that liquidity is sufficient for next draw attempt
+    usdxDebtAmountWeth = bound(usdxDebtAmountWeth, 1, MAX_SUPPLY_AMOUNT_USDX / 2 - 1); // so that liquidity is sufficient for next draw attempt
+    usdxDebtAmountDai = bound(usdxDebtAmountDai, 1, MAX_SUPPLY_AMOUNT_USDX / 2 - 1); // so that liquidity is sufficient for next draw attempt
 
     // weth/dai collateral
     uint256 wethReserveId = _wethReserveId(spoke1);
@@ -499,8 +499,8 @@ contract SpokeBorrowHealthFactorTest is SpokeBase {
       debtAmount: usdxDebtAmountDai
     });
 
-    vm.assume(wethCollAmount < MAX_SUPPLY_AMOUNT && wethCollAmount > 0);
-    vm.assume(daiCollAmount < MAX_SUPPLY_AMOUNT && daiCollAmount > 0);
+    vm.assume(wethCollAmount < MAX_SUPPLY_AMOUNT_WETH && wethCollAmount > 0);
+    vm.assume(daiCollAmount < MAX_SUPPLY_AMOUNT_DAI && daiCollAmount > 0);
 
     // Bob supply weth collateral
     Utils.supplyCollateral(spoke1, wethReserveId, bob, wethCollAmount, bob);
@@ -584,8 +584,8 @@ contract SpokeBorrowHealthFactorTest is SpokeBase {
     uint256 usdxDebtAmountDai,
     uint256 skipTime
   ) public {
-    usdxDebtAmountWeth = bound(usdxDebtAmountWeth, 1, MAX_SUPPLY_AMOUNT / 2 - 1); // so that additional draw has liquidity
-    usdxDebtAmountDai = bound(usdxDebtAmountDai, 1, MAX_SUPPLY_AMOUNT / 2 - 1); // so that additional draw has liquidity
+    usdxDebtAmountWeth = bound(usdxDebtAmountWeth, 1, MAX_SUPPLY_AMOUNT_USDX / 2 - 1); // so that additional draw has liquidity
+    usdxDebtAmountDai = bound(usdxDebtAmountDai, 1, MAX_SUPPLY_AMOUNT_USDX / 2 - 1); // so that additional draw has liquidity
     skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
 
     // weth/dai collateral
@@ -607,8 +607,8 @@ contract SpokeBorrowHealthFactorTest is SpokeBase {
       debtAmount: usdxDebtAmountDai
     });
 
-    vm.assume(wethCollAmount < MAX_SUPPLY_AMOUNT && wethCollAmount > 0);
-    vm.assume(daiCollAmount < MAX_SUPPLY_AMOUNT && daiCollAmount > 0);
+    vm.assume(wethCollAmount < MAX_SUPPLY_AMOUNT_WETH && wethCollAmount > 0);
+    vm.assume(daiCollAmount < MAX_SUPPLY_AMOUNT_DAI && daiCollAmount > 0);
 
     // Bob supply weth collateral
     Utils.supplyCollateral(spoke1, wethReserveId, bob, wethCollAmount, bob);
@@ -617,7 +617,7 @@ contract SpokeBorrowHealthFactorTest is SpokeBase {
     Utils.supplyCollateral(spoke1, daiReserveId, bob, daiCollAmount, bob);
 
     // Alice supply usdx
-    Utils.supply(spoke1, usdxReserveId, alice, MAX_SUPPLY_AMOUNT, alice); // supply enough buffer for multiple borrows
+    Utils.supply(spoke1, usdxReserveId, alice, MAX_SUPPLY_AMOUNT_USDX, alice); // supply enough buffer for multiple borrows
 
     // Bob draw max allowed usdx debt
     vm.prank(bob);
@@ -701,8 +701,8 @@ contract SpokeBorrowHealthFactorTest is SpokeBase {
   ) public {
     uint256 currPrice = IPriceOracle(spoke1.ORACLE()).getReservePrice(_wethReserveId(spoke1));
     newPrice = bound(newPrice, 1, currPrice - 1);
-    usdxDebtAmountWeth = bound(usdxDebtAmountWeth, 1, MAX_SUPPLY_AMOUNT / 4);
-    usdxDebtAmountDai = bound(usdxDebtAmountDai, 1, MAX_SUPPLY_AMOUNT / 4);
+    usdxDebtAmountWeth = bound(usdxDebtAmountWeth, 1, MAX_SUPPLY_AMOUNT_USDX / 4);
+    usdxDebtAmountDai = bound(usdxDebtAmountDai, 1, MAX_SUPPLY_AMOUNT_USDX / 4);
 
     // weth/dai collateral
     uint256 wethReserveId = _wethReserveId(spoke1);
@@ -723,8 +723,8 @@ contract SpokeBorrowHealthFactorTest is SpokeBase {
       debtAmount: usdxDebtAmountDai
     });
 
-    vm.assume(wethCollAmount < MAX_SUPPLY_AMOUNT && wethCollAmount > 0);
-    vm.assume(daiCollAmount < MAX_SUPPLY_AMOUNT && daiCollAmount > 0);
+    vm.assume(wethCollAmount < MAX_SUPPLY_AMOUNT_WETH && wethCollAmount > 0);
+    vm.assume(daiCollAmount < MAX_SUPPLY_AMOUNT_DAI && daiCollAmount > 0);
 
     // Bob supply weth collateral
     Utils.supplyCollateral(spoke1, wethReserveId, bob, wethCollAmount, bob);
@@ -733,7 +733,7 @@ contract SpokeBorrowHealthFactorTest is SpokeBase {
     Utils.supplyCollateral(spoke1, daiReserveId, bob, daiCollAmount, bob);
 
     // Alice supply usdx
-    Utils.supply(spoke1, usdxReserveId, alice, MAX_SUPPLY_AMOUNT, alice); // supply enough buffer for multiple borrows
+    Utils.supply(spoke1, usdxReserveId, alice, MAX_SUPPLY_AMOUNT_USDX, alice); // supply enough buffer for multiple borrows
 
     // Bob draw max allowed usdx debt
     vm.prank(bob);
@@ -816,8 +816,8 @@ contract SpokeBorrowHealthFactorTest is SpokeBase {
   ) public {
     uint256 currPrice = IPriceOracle(spoke1.ORACLE()).getReservePrice(_wethReserveId(spoke1));
     newPrice = bound(newPrice, 1, currPrice - 1);
-    usdxDebtAmountWeth = bound(usdxDebtAmountWeth, 1, MAX_SUPPLY_AMOUNT / 4);
-    usdxDebtAmountDai = bound(usdxDebtAmountDai, 1, MAX_SUPPLY_AMOUNT / 4);
+    usdxDebtAmountWeth = bound(usdxDebtAmountWeth, 1, MAX_SUPPLY_AMOUNT_USDX / 4);
+    usdxDebtAmountDai = bound(usdxDebtAmountDai, 1, MAX_SUPPLY_AMOUNT_USDX / 4);
 
     // weth/dai collateral
     uint256 wethReserveId = _wethReserveId(spoke1);
@@ -838,8 +838,8 @@ contract SpokeBorrowHealthFactorTest is SpokeBase {
       debtAmount: usdxDebtAmountDai
     });
 
-    vm.assume(wethCollAmount < MAX_SUPPLY_AMOUNT && wethCollAmount > 0);
-    vm.assume(daiCollAmount < MAX_SUPPLY_AMOUNT && daiCollAmount > 0);
+    vm.assume(wethCollAmount < MAX_SUPPLY_AMOUNT_WETH && wethCollAmount > 0);
+    vm.assume(daiCollAmount < MAX_SUPPLY_AMOUNT_DAI && daiCollAmount > 0);
 
     // Bob supply weth collateral
     Utils.supplyCollateral(spoke1, wethReserveId, bob, wethCollAmount, bob);
@@ -847,7 +847,7 @@ contract SpokeBorrowHealthFactorTest is SpokeBase {
     Utils.supplyCollateral(spoke1, daiReserveId, bob, daiCollAmount, bob);
 
     // Alice supply usdx
-    Utils.supply(spoke1, usdxReserveId, alice, MAX_SUPPLY_AMOUNT, alice); // supply enough buffer for multiple borrows
+    Utils.supply(spoke1, usdxReserveId, alice, MAX_SUPPLY_AMOUNT_USDX, alice); // supply enough buffer for multiple borrows
 
     // Bob draw max allowed usdx debt
     vm.prank(bob);

@@ -21,11 +21,12 @@ contract SignatureGatewayBaseTest is SpokeBase {
     address who,
     uint256 deadline
   ) internal returns (ISignatureGateway.Supply memory) {
+    uint256 reserveId = _randomReserveId(spoke);
     return
       ISignatureGateway.Supply({
         spoke: address(spoke),
-        reserveId: _randomReserveId(spoke),
-        amount: vm.randomUint(1, MAX_SUPPLY_AMOUNT),
+        reserveId: reserveId,
+        amount: vm.randomUint(1, _calculateMaxSupplyAmount(spoke, reserveId)),
         onBehalfOf: who,
         nonce: gateway.nonces(who, _randomNonceKey()),
         deadline: deadline
@@ -37,11 +38,12 @@ contract SignatureGatewayBaseTest is SpokeBase {
     address who,
     uint256 deadline
   ) internal returns (ISignatureGateway.Withdraw memory) {
+    uint256 reserveId = _randomReserveId(spoke);
     return
       ISignatureGateway.Withdraw({
         spoke: address(spoke),
-        reserveId: _randomReserveId(spoke),
-        amount: vm.randomUint(1, MAX_SUPPLY_AMOUNT),
+        reserveId: reserveId,
+        amount: vm.randomUint(1, _calculateMaxSupplyAmount(spoke, reserveId)),
         onBehalfOf: who,
         nonce: gateway.nonces(who, _randomNonceKey()),
         deadline: deadline
@@ -53,11 +55,12 @@ contract SignatureGatewayBaseTest is SpokeBase {
     address who,
     uint256 deadline
   ) internal returns (ISignatureGateway.Borrow memory) {
+    uint256 reserveId = _randomReserveId(spoke);
     return
       ISignatureGateway.Borrow({
         spoke: address(spoke),
-        reserveId: _randomReserveId(spoke),
-        amount: vm.randomUint(1, MAX_SUPPLY_AMOUNT),
+        reserveId: reserveId,
+        amount: vm.randomUint(1, _calculateMaxSupplyAmount(spoke, reserveId)),
         onBehalfOf: who,
         nonce: gateway.nonces(who, _randomNonceKey()),
         deadline: deadline
@@ -69,11 +72,12 @@ contract SignatureGatewayBaseTest is SpokeBase {
     address who,
     uint256 deadline
   ) internal returns (ISignatureGateway.Repay memory) {
+    uint256 reserveId = _randomReserveId(spoke);
     return
       ISignatureGateway.Repay({
         spoke: address(spoke),
-        reserveId: _randomReserveId(spoke),
-        amount: vm.randomUint(1, MAX_SUPPLY_AMOUNT),
+        reserveId: reserveId,
+        amount: vm.randomUint(1, _calculateMaxSupplyAmount(spoke, reserveId)),
         onBehalfOf: who,
         nonce: gateway.nonces(who, _randomNonceKey()),
         deadline: deadline

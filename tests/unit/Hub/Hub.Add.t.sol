@@ -28,7 +28,6 @@ contract HubAddTest is HubBase {
     super.setUp();
 
     TestnetERC20 usda = new TestnetERC20('USDA', 'USDA', Constants.MIN_ALLOWED_UNDERLYING_DECIMALS);
-    deal(address(usda), alice, MAX_SUPPLY_AMOUNT);
 
     /// @dev add a minimum decimal asset to test add cap rounding
     IHub.SpokeConfig memory spokeConfig = IHub.SpokeConfig({
@@ -77,6 +76,8 @@ contract HubAddTest is HubBase {
     );
     hub1.addSpoke(minDecimalAssetId, address(spoke1), spokeConfig);
     vm.stopPrank();
+
+    deal(address(usda), alice, _calculateMaxSupplyAmount(hub1, minDecimalAssetId));
   }
 
   function test_add_revertsWith_SpokeHalted() public {
@@ -156,7 +157,7 @@ contract HubAddTest is HubBase {
   }
 
   function test_add_fuzz_revertsWith_AddCapExceeded(uint40 newAddCap) public {
-    newAddCap = bound(newAddCap, 1, MAX_SUPPLY_AMOUNT / 10 ** tokenList.dai.decimals()).toUint40();
+    newAddCap = bound(newAddCap, 1, MAX_SUPPLY_ASSET_UNITS).toUint40();
     _updateAddCap(daiAssetId, address(spoke1), newAddCap);
     uint256 amount = newAddCap * 10 ** tokenList.dai.decimals() + 1;
     vm.startPrank(address(spoke1));
@@ -167,7 +168,7 @@ contract HubAddTest is HubBase {
   }
 
   function test_add_fuzz_AddCapReachedButNotExceeded(uint40 newAddCap) public {
-    newAddCap = bound(newAddCap, 1, MAX_SUPPLY_AMOUNT / 10 ** tokenList.dai.decimals()).toUint40();
+    newAddCap = bound(newAddCap, 1, MAX_SUPPLY_ASSET_UNITS).toUint40();
     _updateAddCap(daiAssetId, address(spoke1), newAddCap);
     uint256 amount = newAddCap * 10 ** tokenList.dai.decimals();
     vm.startPrank(address(spoke1));
@@ -182,7 +183,7 @@ contract HubAddTest is HubBase {
     uint256 drawAmount,
     uint256 skipTime
   ) public {
-    newAddCap = bound(newAddCap, 1, MAX_SUPPLY_AMOUNT / 10 ** tokenList.dai.decimals()).toUint40();
+    newAddCap = bound(newAddCap, 1, MAX_SUPPLY_ASSET_UNITS).toUint40();
     uint256 daiAmount = newAddCap * 10 ** tokenList.dai.decimals() - 1;
     drawAmount = bound(drawAmount, 1, daiAmount);
     skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
@@ -262,7 +263,7 @@ contract HubAddTest is HubBase {
     _assumeValidSupplier(user);
 
     assetId = bound(assetId, 0, hub1.getAssetCount() - 3); // Exclude usdy & usdz
-    amount = bound(amount, 1, MAX_SUPPLY_AMOUNT);
+    amount = bound(amount, 1, _calculateMaxSupplyAmount(hub1, assetId));
 
     IERC20 underlying = IERC20(hub1.getAsset(assetId).underlying);
 
@@ -326,13 +327,13 @@ contract HubAddTest is HubBase {
     uint256 amount2
   ) public {
     assetId = bound(assetId, 0, hub1.getAssetCount() - 4); // Exclude usdy & usdz
-    amount = bound(amount, 1, MAX_SUPPLY_AMOUNT);
-    amount2 = bound(amount2, 1, MAX_SUPPLY_AMOUNT);
-
     uint256 assetId2 = assetId + 1;
 
     IERC20 underlying = IERC20(hub1.getAsset(assetId).underlying);
     IERC20 underlying2 = IERC20(hub1.getAsset(assetId2).underlying);
+
+    amount = bound(amount, 1, _calculateMaxSupplyAmount(hub1, assetId));
+    amount2 = bound(amount2, 1, _calculateMaxSupplyAmount(hub1, assetId2));
 
     vm.startPrank(address(spoke1));
     underlying.transferFrom(alice, address(hub1), amount);
@@ -377,7 +378,11 @@ contract HubAddTest is HubBase {
       amount,
       'spoke1 addedAmount after'
     );
-    assertEq(underlying.balanceOf(alice), MAX_SUPPLY_AMOUNT - amount, 'user asset1 balance after');
+    assertEq(
+      underlying.balanceOf(alice),
+      _calculateMaxSupplyAmount(hub1, assetId) - amount,
+      'user asset1 balance after'
+    );
     assertEq(underlying.balanceOf(address(spoke1)), 0, 'spoke1 asset1 balance after');
     assertEq(underlying.balanceOf(address(hub1)), amount, 'hub asset1 balance after');
     _assertHubLiquidity(hub1, assetId, 'hub1.add');
@@ -405,7 +410,7 @@ contract HubAddTest is HubBase {
     );
     assertEq(
       underlying2.balanceOf(alice),
-      MAX_SUPPLY_AMOUNT - amount2,
+      _calculateMaxSupplyAmount(hub1, assetId2) - amount2,
       'user asset2 balance after'
     );
     assertEq(underlying2.balanceOf(address(spoke2)), 0, 'spoke2 asset2 balance after');
@@ -458,7 +463,7 @@ contract HubAddTest is HubBase {
     uint256 skipTime
   ) public {
     // inflate exchange rate using large values
-    daiAmount = bound(daiAmount, 1e20, MAX_SUPPLY_AMOUNT);
+    daiAmount = bound(daiAmount, 1e20, MAX_SUPPLY_AMOUNT_DAI);
     skipTime = bound(skipTime, 365 days, 100 * 365 days);
     _addAndDrawLiquidity({
       hub: hub1,
@@ -708,12 +713,12 @@ contract HubAddTest is HubBase {
     );
     assertEq(
       tokenList.dai.balanceOf(alice),
-      MAX_SUPPLY_AMOUNT + drawnAmount,
+      MAX_SUPPLY_AMOUNT_DAI + drawnAmount,
       'alice token balance after'
     );
     assertEq(
       tokenList.dai.balanceOf(bob),
-      MAX_SUPPLY_AMOUNT - amount - addAmount,
+      MAX_SUPPLY_AMOUNT_DAI - amount - addAmount,
       'bob token balance after'
     );
     _assertHubLiquidity(hub1, daiAssetId, 'hub1.add');
@@ -723,7 +728,7 @@ contract HubAddTest is HubBase {
     uint256 assetId = daiAssetId;
     uint256 numAdds = 5;
 
-    amount = bound(amount, 1, MAX_SUPPLY_AMOUNT / numAdds);
+    amount = bound(amount, 1, MAX_SUPPLY_AMOUNT_DAI / numAdds);
     skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
 
     HubAddTestState memory params;
@@ -745,8 +750,8 @@ contract HubAddTest is HubBase {
     params.availableLiq = amount - params.drawnAmount;
     params.spoke2AddedShares = hub1.getSpokeAddedShares(assetId, address(spoke2));
     params.spoke2AddedAmount = hub1.previewRemoveByShares(assetId, params.spoke2AddedShares);
-    params.aliceBalance = MAX_SUPPLY_AMOUNT + params.drawnAmount;
-    params.bobBalance = MAX_SUPPLY_AMOUNT - amount;
+    params.aliceBalance = MAX_SUPPLY_AMOUNT_DAI + params.drawnAmount;
+    params.bobBalance = MAX_SUPPLY_AMOUNT_DAI - amount;
 
     uint256 addShares = 1; // minimum for 1 share
     uint256 addAmount;
