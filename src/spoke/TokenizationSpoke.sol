@@ -275,7 +275,7 @@ abstract contract TokenizationSpoke is ITokenizationSpoke, ERC20Upgradeable, Int
       return type(uint256).max;
     }
     uint256 allowed = config.addCap * ASSET_UNITS;
-    uint256 balance = totalAssets();
+    uint256 balance = previewMint(totalSupply());
     return allowed.zeroFloorSub(balance);
   }
 

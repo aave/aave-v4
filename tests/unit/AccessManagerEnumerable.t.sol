@@ -454,6 +454,74 @@ contract AccessManagerEnumerableTest is Test {
     assertEq(roleMembers[1], user3);
   }
 
+  function test_renounceRole() public {
+    uint64 roleId = 1;
+    address user1 = makeAddr('user1');
+    address user2 = makeAddr('user2');
+    address user3 = makeAddr('user3');
+
+    vm.startPrank(ADMIN);
+    accessManagerEnumerable.labelRole(roleId, 'test_role');
+    accessManagerEnumerable.setGrantDelay(roleId, 0);
+    accessManagerEnumerable.grantRole(roleId, user1, 0);
+    accessManagerEnumerable.grantRole(roleId, user2, 0);
+    accessManagerEnumerable.grantRole(roleId, user3, 0);
+    vm.stopPrank();
+
+    assertEq(accessManagerEnumerable.getRoleMemberCount(roleId), 3);
+
+    vm.prank(user2);
+    accessManagerEnumerable.renounceRole(roleId, user2);
+
+    assertEq(accessManagerEnumerable.getRoleMemberCount(roleId), 2);
+    assertEq(accessManagerEnumerable.getRoleMember(roleId, 0), user1);
+    assertEq(accessManagerEnumerable.getRoleMember(roleId, 1), user3);
+    address[] memory roleMembers = accessManagerEnumerable.getRoleMembers(
+      roleId,
+      0,
+      accessManagerEnumerable.getRoleMemberCount(roleId)
+    );
+    assertEq(roleMembers.length, 2);
+    assertEq(roleMembers[0], user1);
+    assertEq(roleMembers[1], user3);
+  }
+
+  function test_revokeRole_shouldNotTrack() public {
+    uint64 roleId = 1;
+    address user1 = makeAddr('user1');
+
+    (bool isMember, ) = accessManagerEnumerable.hasRole(roleId, user1);
+    assertFalse(isMember);
+    assertEq(accessManagerEnumerable.getRoleMemberCount(roleId), 0);
+
+    vm.prank(ADMIN);
+    accessManagerEnumerable.revokeRole(roleId, user1);
+
+    assertEq(accessManagerEnumerable.getRoleMemberCount(roleId), 0);
+    assertEq(accessManagerEnumerable.getRoleMembers(roleId, 0, 1).length, 0);
+
+    (isMember, ) = accessManagerEnumerable.hasRole(roleId, user1);
+    assertFalse(isMember);
+  }
+
+  function test_renounceRole_shouldNotTrack() public {
+    uint64 roleId = 1;
+    address user1 = makeAddr('user1');
+
+    (bool isMember, ) = accessManagerEnumerable.hasRole(roleId, user1);
+    assertFalse(isMember);
+    assertEq(accessManagerEnumerable.getRoleMemberCount(roleId), 0);
+
+    vm.prank(user1);
+    accessManagerEnumerable.renounceRole(roleId, user1);
+
+    assertEq(accessManagerEnumerable.getRoleMemberCount(roleId), 0);
+    assertEq(accessManagerEnumerable.getRoleMembers(roleId, 0, 1).length, 0);
+
+    (isMember, ) = accessManagerEnumerable.hasRole(roleId, user1);
+    assertFalse(isMember);
+  }
+
   function test_setTargetFunctionRole() public {
     uint64 roleId = 1;
     address target = makeAddr('target');

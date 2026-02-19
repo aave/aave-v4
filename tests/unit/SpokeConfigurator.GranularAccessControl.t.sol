@@ -44,26 +44,25 @@ contract SpokeConfiguratorGranularAccessControlTest is SpokeBase {
     manager.grantRole(LIQUIDATION_CONFIG_MANAGER_ROLE, LIQUIDATION_CONFIG_MANAGER, 0);
     manager.grantRole(POSITION_MANAGER_ADMIN_ROLE, POSITION_MANAGER_ADMIN, 0);
 
-    // Set up RESERVE_MANAGER_ROLE permissions (19 functions)
-    bytes4[] memory reserveSelectors = new bytes4[](19);
+    // Set up RESERVE_MANAGER_ROLE permissions (18 functions)
+    bytes4[] memory reserveSelectors = new bytes4[](18);
     reserveSelectors[0] = ISpokeConfigurator.updateReservePriceSource.selector;
-    reserveSelectors[1] = ISpokeConfigurator.updateMaxReserves.selector;
-    reserveSelectors[2] = ISpokeConfigurator.addReserve.selector;
-    reserveSelectors[3] = ISpokeConfigurator.updatePaused.selector;
-    reserveSelectors[4] = ISpokeConfigurator.updateFrozen.selector;
-    reserveSelectors[5] = ISpokeConfigurator.updateBorrowable.selector;
-    reserveSelectors[7] = ISpokeConfigurator.updateReceiveSharesEnabled.selector;
-    reserveSelectors[8] = ISpokeConfigurator.updateCollateralRisk.selector;
-    reserveSelectors[9] = ISpokeConfigurator.addCollateralFactor.selector;
-    reserveSelectors[10] = ISpokeConfigurator.updateCollateralFactor.selector;
-    reserveSelectors[11] = ISpokeConfigurator.addMaxLiquidationBonus.selector;
-    reserveSelectors[12] = ISpokeConfigurator.updateMaxLiquidationBonus.selector;
-    reserveSelectors[13] = ISpokeConfigurator.addLiquidationFee.selector;
-    reserveSelectors[14] = ISpokeConfigurator.updateLiquidationFee.selector;
-    reserveSelectors[15] = ISpokeConfigurator.addDynamicReserveConfig.selector;
-    reserveSelectors[16] = ISpokeConfigurator.updateDynamicReserveConfig.selector;
-    reserveSelectors[17] = ISpokeConfigurator.pauseAllReserves.selector;
-    reserveSelectors[18] = ISpokeConfigurator.freezeAllReserves.selector;
+    reserveSelectors[1] = ISpokeConfigurator.addReserve.selector;
+    reserveSelectors[2] = ISpokeConfigurator.updatePaused.selector;
+    reserveSelectors[3] = ISpokeConfigurator.updateFrozen.selector;
+    reserveSelectors[4] = ISpokeConfigurator.updateBorrowable.selector;
+    reserveSelectors[5] = ISpokeConfigurator.updateReceiveSharesEnabled.selector;
+    reserveSelectors[6] = ISpokeConfigurator.updateCollateralRisk.selector;
+    reserveSelectors[7] = ISpokeConfigurator.addCollateralFactor.selector;
+    reserveSelectors[8] = ISpokeConfigurator.updateCollateralFactor.selector;
+    reserveSelectors[9] = ISpokeConfigurator.addMaxLiquidationBonus.selector;
+    reserveSelectors[10] = ISpokeConfigurator.updateMaxLiquidationBonus.selector;
+    reserveSelectors[11] = ISpokeConfigurator.addLiquidationFee.selector;
+    reserveSelectors[12] = ISpokeConfigurator.updateLiquidationFee.selector;
+    reserveSelectors[13] = ISpokeConfigurator.addDynamicReserveConfig.selector;
+    reserveSelectors[14] = ISpokeConfigurator.updateDynamicReserveConfig.selector;
+    reserveSelectors[15] = ISpokeConfigurator.pauseAllReserves.selector;
+    reserveSelectors[16] = ISpokeConfigurator.freezeAllReserves.selector;
     manager.setTargetFunctionRole(
       address(spokeConfigurator),
       reserveSelectors,
@@ -98,10 +97,6 @@ contract SpokeConfiguratorGranularAccessControlTest is SpokeBase {
     spoke = ISpoke(spokeAddr);
     reserveId = 0;
 
-    // Set max reserves to allow operations
-    vm.prank(RESERVE_MANAGER);
-    spokeConfigurator.updateMaxReserves(spokeAddr, 10);
-
     // Build calldata arrays for testing
     _buildReserveManagerCalldata();
     _buildLiquidationConfigManagerCalldata();
@@ -121,9 +116,6 @@ contract SpokeConfiguratorGranularAccessControlTest is SpokeBase {
         ISpokeConfigurator.updateReservePriceSource,
         (spokeAddr, reserveId, newPriceSource)
       )
-    );
-    reserveManagerCalldata.push(
-      abi.encodeCall(ISpokeConfigurator.updateMaxReserves, (spokeAddr, 20))
     );
     // Skipping addReserve as it requires more complex setup
     reserveManagerCalldata.push(
