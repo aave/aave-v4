@@ -48,21 +48,15 @@ contract HubAccrueInterestTest is Base {
     super.setUp();
     initEnvironment();
 
-    uint256 spokeMintAmount_USDX = 100e6 * 10 ** tokenList.usdx.decimals();
-    uint256 spokeMintAmount_DAI = 100e6 * 10 ** tokenList.dai.decimals();
-    uint256 spokeMintAmount_WBTC = 100e6 * 10 ** tokenList.wbtc.decimals();
-    uint256 spokeMintAmount_WETH = 100e6 * 10 ** tokenList.weth.decimals();
-    uint256 spokeMintAmount_USDY = 100e6 * 10 ** tokenList.usdy.decimals();
-    uint256 spokeMintAmount_USDZ = 100e6 * 10 ** tokenList.usdz.decimals();
     address[3] memory spokes = [address(spoke1), address(spoke2), address(spoke3)];
 
     for (uint256 x; x < spokes.length; ++x) {
-      tokenList.usdx.mint(spokes[x], spokeMintAmount_USDX);
-      tokenList.dai.mint(spokes[x], spokeMintAmount_DAI);
-      tokenList.wbtc.mint(spokes[x], spokeMintAmount_WBTC);
-      tokenList.usdy.mint(spokes[x], spokeMintAmount_USDY);
-      tokenList.usdz.mint(spokes[x], spokeMintAmount_USDZ);
-      deal(address(tokenList.weth), spokes[x], spokeMintAmount_WETH);
+      tokenList.usdx.mint(spokes[x], MAX_SUPPLY_AMOUNT);
+      tokenList.dai.mint(spokes[x], MAX_SUPPLY_AMOUNT);
+      tokenList.wbtc.mint(spokes[x], MAX_SUPPLY_AMOUNT);
+      tokenList.usdy.mint(spokes[x], MAX_SUPPLY_AMOUNT);
+      tokenList.usdz.mint(spokes[x], MAX_SUPPLY_AMOUNT);
+      deal(address(tokenList.weth), spokes[x], MAX_SUPPLY_AMOUNT);
 
       vm.startPrank(spokes[x]);
       tokenList.weth.approve(address(hub1), UINT256_MAX);

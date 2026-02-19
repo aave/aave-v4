@@ -65,7 +65,7 @@ abstract contract BaseState is TestTypes, Test {
   uint256 internal constant MAX_ASSET_PRICE = 1e8 * 1e8;
   uint256 internal constant MAX_LIQUIDATION_PROTOCOL_FEE_PERCENTAGE =
     PercentageMath.PERCENTAGE_FACTOR;
-  IHubBase.PremiumDelta internal ZERO_PREMIUM_DELTA = ZERO_PREMIUM_DELTA;
+  IHubBase.PremiumDelta internal ZERO_PREMIUM_DELTA;
 
   IAaveOracle internal oracle1;
   IAaveOracle internal oracle2;

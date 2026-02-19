@@ -328,12 +328,12 @@ abstract contract Base is ConfigHelpers, MockHelpers, EIP712Helpers {
     ];
 
     for (uint256 x; x < users.length; ++x) {
-      tokenList.usdx.mint(users[x], MAX_SUPPLY_AMOUNT_USDX);
-      tokenList.dai.mint(users[x], MAX_SUPPLY_AMOUNT_DAI);
-      tokenList.wbtc.mint(users[x], MAX_SUPPLY_AMOUNT_WBTC);
-      tokenList.usdy.mint(users[x], MAX_SUPPLY_AMOUNT_USDY);
-      tokenList.usdz.mint(users[x], MAX_SUPPLY_AMOUNT_USDZ);
-      deal(address(tokenList.weth), users[x], MAX_SUPPLY_AMOUNT_WETH);
+      tokenList.usdx.mint(users[x], MAX_SUPPLY_AMOUNT);
+      tokenList.dai.mint(users[x], MAX_SUPPLY_AMOUNT);
+      tokenList.wbtc.mint(users[x], MAX_SUPPLY_AMOUNT);
+      tokenList.usdy.mint(users[x], MAX_SUPPLY_AMOUNT);
+      tokenList.usdz.mint(users[x], MAX_SUPPLY_AMOUNT);
+      deal(address(tokenList.weth), users[x], MAX_SUPPLY_AMOUNT);
 
       vm.startPrank(users[x]);
       for (uint256 y; y < spokes.length; ++y) {
