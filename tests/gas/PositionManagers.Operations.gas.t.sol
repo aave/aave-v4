@@ -55,16 +55,16 @@ contract PositionManager_Gas_Tests is SpokeBase {
 }
 
 /// forge-config: default.isolate = true
-contract SupplyRepayPositionManager_Gas_Tests is SpokeBase {
-  string internal NAMESPACE = 'SupplyRepayPositionManager.Operations';
+contract GiverPositionManager_Gas_Tests is SpokeBase {
+  string internal NAMESPACE = 'GiverPositionManager.Operations';
 
-  SupplyRepayPositionManager public positionManager;
+  GiverPositionManager public positionManager;
 
   function setUp() public virtual override {
     deployFixtures();
     initEnvironment();
 
-    positionManager = new SupplyRepayPositionManager(address(ADMIN));
+    positionManager = new GiverPositionManager(address(ADMIN));
     vm.prank(SPOKE_ADMIN);
     spoke1.updatePositionManager(address(positionManager), true);
     vm.prank(ADMIN);
@@ -102,10 +102,10 @@ contract SupplyRepayPositionManager_Gas_Tests is SpokeBase {
 }
 
 /// forge-config: default.isolate = true
-contract AllowancePositionManager_Gas_Tests is SpokeBase {
-  string internal NAMESPACE = 'AllowancePositionManager.Operations';
+contract TakerPositionManager_Gas_Tests is SpokeBase {
+  string internal NAMESPACE = 'TakerPositionManager.Operations';
 
-  AllowancePositionManager public positionManager;
+  TakerPositionManager public positionManager;
   uint192 internal withdrawNonceKey = 0;
   uint192 internal creditNonceKey = 1;
 
@@ -113,7 +113,7 @@ contract AllowancePositionManager_Gas_Tests is SpokeBase {
     deployFixtures();
     initEnvironment();
 
-    positionManager = new AllowancePositionManager(address(ADMIN));
+    positionManager = new TakerPositionManager(address(ADMIN));
     vm.prank(SPOKE_ADMIN);
     spoke1.updatePositionManager(address(positionManager), true);
     vm.prank(ADMIN);
@@ -172,7 +172,7 @@ contract AllowancePositionManager_Gas_Tests is SpokeBase {
     vm.prank(alice);
     positionManager.useNonce(withdrawNonceKey);
 
-    IAllowancePositionManager.WithdrawPermit memory p = IAllowancePositionManager.WithdrawPermit({
+    ITakerPositionManager.WithdrawPermit memory p = ITakerPositionManager.WithdrawPermit({
       spoke: address(spoke1),
       reserveId: _daiReserveId(spoke1),
       owner: alice,
@@ -217,7 +217,7 @@ contract AllowancePositionManager_Gas_Tests is SpokeBase {
     vm.prank(alice);
     positionManager.useNonce(creditNonceKey);
 
-    IAllowancePositionManager.BorrowPermit memory p = IAllowancePositionManager.BorrowPermit({
+    ITakerPositionManager.BorrowPermit memory p = ITakerPositionManager.BorrowPermit({
       spoke: address(spoke1),
       reserveId: _daiReserveId(spoke1),
       owner: alice,
@@ -249,7 +249,7 @@ contract AllowancePositionManager_Gas_Tests is SpokeBase {
   }
 
   function _typedDataHash(
-    IAllowancePositionManager _positionManager,
+    ITakerPositionManager _positionManager,
     bytes32 typeHash
   ) internal view returns (bytes32) {
     return keccak256(abi.encodePacked('\x19\x01', _positionManager.DOMAIN_SEPARATOR(), typeHash));

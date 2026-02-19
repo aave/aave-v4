@@ -4,10 +4,10 @@ pragma solidity ^0.8.0;
 
 import {IPositionManagerBase} from 'src/position-manager/interfaces/IPositionManagerBase.sol';
 
-/// @title IAllowancePositionManager
+/// @title ITakerPositionManager
 /// @author Aave Labs
 /// @notice Interface for position manager handling withdraw permit and borrow permit actions on behalf of users.
-interface IAllowancePositionManager is IPositionManagerBase {
+interface ITakerPositionManager is IPositionManagerBase {
   /// @notice Structured parameters for withdraw permit intent.
   /// @param spoke The address of the spoke.
   /// @param reserveId The identifier of the reserve.

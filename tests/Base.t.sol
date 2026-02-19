@@ -82,13 +82,13 @@ import {
 import {NativeTokenGateway, INativeTokenGateway} from 'src/position-manager/NativeTokenGateway.sol';
 import {SignatureGateway, ISignatureGateway} from 'src/position-manager/SignatureGateway.sol';
 import {
-  SupplyRepayPositionManager,
-  ISupplyRepayPositionManager
-} from 'src/position-manager/SupplyRepayPositionManager.sol';
+  GiverPositionManager,
+  IGiverPositionManager
+} from 'src/position-manager/GiverPositionManager.sol';
 import {
-  AllowancePositionManager,
-  IAllowancePositionManager
-} from 'src/position-manager/AllowancePositionManager.sol';
+  TakerPositionManager,
+  ITakerPositionManager
+} from 'src/position-manager/TakerPositionManager.sol';
 import {
   ConfigPositionManager,
   IConfigPositionManager

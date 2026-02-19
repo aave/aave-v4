@@ -4,14 +4,14 @@ pragma solidity ^0.8.0;
 
 import 'tests/unit/Spoke/SpokeBase.t.sol';
 
-contract SupplyRepayPositionManagerTest is SpokeBase {
-  SupplyRepayPositionManager public positionManager;
+contract GiverPositionManagerTest is SpokeBase {
+  GiverPositionManager public positionManager;
   TestReturnValues public returnValues;
 
   function setUp() public virtual override {
     super.setUp();
 
-    positionManager = new SupplyRepayPositionManager(address(ADMIN));
+    positionManager = new GiverPositionManager(address(ADMIN));
 
     vm.prank(SPOKE_ADMIN);
     spoke1.updatePositionManager(address(positionManager), true);
@@ -316,7 +316,7 @@ contract SupplyRepayPositionManagerTest is SpokeBase {
     vm.prank(bob);
     tokenList.dai.approve(address(positionManager), UINT256_MAX);
 
-    vm.expectRevert(ISupplyRepayPositionManager.NoMaxUintRepayOnBehalfOfAllowed.selector);
+    vm.expectRevert(IGiverPositionManager.NoMaxUintRepayOnBehalfOfAllowed.selector);
     vm.prank(bob);
     positionManager.repayOnBehalfOf(address(spoke1), _daiReserveId(spoke1), UINT256_MAX, alice);
   }

@@ -2,17 +2,17 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import 'tests/unit/position-managers/AllowancePositionManager/AllowancePositionManager.Base.t.sol';
+import 'tests/unit/position-managers/TakerPositionManager/TakerPositionManager.Base.t.sol';
 
-contract AllowancePositionManagerPermitTest is AllowancePositionManagerBaseTest {
+contract TakerPositionManagerPermitTest is TakerPositionManagerBaseTest {
   function setUp() public virtual override {
     super.setUp();
   }
 
   function test_eip712Domain() public {
-    AllowancePositionManager instance = new AllowancePositionManager{
-      salt: bytes32(vm.randomUint())
-    }(vm.randomAddress());
+    TakerPositionManager instance = new TakerPositionManager{salt: bytes32(vm.randomUint())}(
+      vm.randomAddress()
+    );
     (
       bytes1 fields,
       string memory name,
@@ -24,7 +24,7 @@ contract AllowancePositionManagerPermitTest is AllowancePositionManagerBaseTest 
     ) = IERC5267(address(instance)).eip712Domain();
 
     assertEq(fields, bytes1(0x0f));
-    assertEq(name, 'AllowancePositionManager');
+    assertEq(name, 'TakerPositionManager');
     assertEq(version, '1');
     assertEq(chainId, block.chainid);
     assertEq(verifyingContract, address(instance));
@@ -33,15 +33,15 @@ contract AllowancePositionManagerPermitTest is AllowancePositionManagerBaseTest 
   }
 
   function test_DOMAIN_SEPARATOR() public {
-    AllowancePositionManager instance = new AllowancePositionManager{
-      salt: bytes32(vm.randomUint())
-    }(vm.randomAddress());
+    TakerPositionManager instance = new TakerPositionManager{salt: bytes32(vm.randomUint())}(
+      vm.randomAddress()
+    );
     bytes32 expectedDomainSeparator = keccak256(
       abi.encode(
         keccak256(
           'EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)'
         ),
-        keccak256('AllowancePositionManager'),
+        keccak256('TakerPositionManager'),
         keccak256('1'),
         block.chainid,
         address(instance)
@@ -79,7 +79,7 @@ contract AllowancePositionManagerPermitTest is AllowancePositionManagerBaseTest 
     reserveId = bound(reserveId, 0, spoke1.getReserveCount() - 1);
     amount = bound(amount, 1, mintAmount_DAI);
 
-    IAllowancePositionManager.WithdrawPermit memory p = _withdrawPermitData(
+    ITakerPositionManager.WithdrawPermit memory p = _withdrawPermitData(
       spender,
       alice,
       _warpBeforeRandomDeadline()
@@ -90,13 +90,7 @@ contract AllowancePositionManagerPermitTest is AllowancePositionManagerBaseTest 
     bytes memory signature = _sign(alicePk, _getTypedDataHash(positionManager, p));
 
     vm.expectEmit(address(positionManager));
-    emit IAllowancePositionManager.WithdrawApproval(
-      address(spoke1),
-      reserveId,
-      alice,
-      spender,
-      amount
-    );
+    emit ITakerPositionManager.WithdrawApproval(address(spoke1), reserveId, alice, spender, amount);
     vm.prank(vm.randomAddress());
     positionManager.approveWithdrawWithSig(p, signature);
 
@@ -104,7 +98,7 @@ contract AllowancePositionManagerPermitTest is AllowancePositionManagerBaseTest 
   }
 
   function test_approveWithdrawWithSig_revertsWith_InvalidSignature_dueTo_ExpiredDeadline() public {
-    IAllowancePositionManager.WithdrawPermit memory p = _withdrawPermitData(
+    ITakerPositionManager.WithdrawPermit memory p = _withdrawPermitData(
       vm.randomAddress(),
       alice,
       _warpAfterRandomDeadline()
@@ -121,7 +115,7 @@ contract AllowancePositionManagerPermitTest is AllowancePositionManagerBaseTest 
     address onBehalfOf = vm.randomAddress();
     while (onBehalfOf == randomUser) onBehalfOf = vm.randomAddress();
 
-    IAllowancePositionManager.WithdrawPermit memory p = _withdrawPermitData(
+    ITakerPositionManager.WithdrawPermit memory p = _withdrawPermitData(
       randomUser,
       onBehalfOf,
       _warpAfterRandomDeadline()
@@ -134,7 +128,7 @@ contract AllowancePositionManagerPermitTest is AllowancePositionManagerBaseTest 
   }
 
   function test_approveWithdrawWithSig_revertsWith_InvalidAccountNonce(bytes32) public {
-    IAllowancePositionManager.WithdrawPermit memory p = _withdrawPermitData(
+    ITakerPositionManager.WithdrawPermit memory p = _withdrawPermitData(
       vm.randomAddress(),
       alice,
       _warpBeforeRandomDeadline()
@@ -153,7 +147,7 @@ contract AllowancePositionManagerPermitTest is AllowancePositionManagerBaseTest 
   }
 
   function test_approveWithdrawWithSig_revertsWith_SpokeNotRegistered() public {
-    IAllowancePositionManager.WithdrawPermit memory p = _withdrawPermitData(
+    ITakerPositionManager.WithdrawPermit memory p = _withdrawPermitData(
       bob,
       alice,
       _warpBeforeRandomDeadline()
@@ -176,7 +170,7 @@ contract AllowancePositionManagerPermitTest is AllowancePositionManagerBaseTest 
     reserveId = bound(reserveId, 0, spoke1.getReserveCount() - 1);
     amount = bound(amount, 1, mintAmount_DAI);
 
-    IAllowancePositionManager.BorrowPermit memory p = _approveBorrowData(
+    ITakerPositionManager.BorrowPermit memory p = _approveBorrowData(
       spender,
       alice,
       _warpBeforeRandomDeadline()
@@ -187,13 +181,7 @@ contract AllowancePositionManagerPermitTest is AllowancePositionManagerBaseTest 
     bytes memory signature = _sign(alicePk, _getTypedDataHash(positionManager, p));
 
     vm.expectEmit(address(positionManager));
-    emit IAllowancePositionManager.BorrowApproval(
-      address(spoke1),
-      reserveId,
-      alice,
-      spender,
-      amount
-    );
+    emit ITakerPositionManager.BorrowApproval(address(spoke1), reserveId, alice, spender, amount);
     vm.prank(vm.randomAddress());
     positionManager.approveBorrowWithSig(p, signature);
 
@@ -201,7 +189,7 @@ contract AllowancePositionManagerPermitTest is AllowancePositionManagerBaseTest 
   }
 
   function test_approveBorrowWithSig_revertsWith_InvalidSignature_dueTo_ExpiredDeadline() public {
-    IAllowancePositionManager.BorrowPermit memory p = _approveBorrowData(
+    ITakerPositionManager.BorrowPermit memory p = _approveBorrowData(
       vm.randomAddress(),
       alice,
       _warpAfterRandomDeadline()
@@ -218,7 +206,7 @@ contract AllowancePositionManagerPermitTest is AllowancePositionManagerBaseTest 
     address onBehalfOf = vm.randomAddress();
     while (onBehalfOf == randomUser) onBehalfOf = vm.randomAddress();
 
-    IAllowancePositionManager.BorrowPermit memory p = _approveBorrowData(
+    ITakerPositionManager.BorrowPermit memory p = _approveBorrowData(
       randomUser,
       onBehalfOf,
       _warpAfterRandomDeadline()
@@ -231,7 +219,7 @@ contract AllowancePositionManagerPermitTest is AllowancePositionManagerBaseTest 
   }
 
   function test_approveBorrowWithSig_revertsWith_InvalidAccountNonce(bytes32) public {
-    IAllowancePositionManager.BorrowPermit memory p = _approveBorrowData(
+    ITakerPositionManager.BorrowPermit memory p = _approveBorrowData(
       vm.randomAddress(),
       alice,
       _warpBeforeRandomDeadline()
@@ -250,7 +238,7 @@ contract AllowancePositionManagerPermitTest is AllowancePositionManagerBaseTest 
   }
 
   function test_approveBorrowWithSig_revertsWith_SpokeNotRegistered() public {
-    IAllowancePositionManager.BorrowPermit memory p = _approveBorrowData(
+    ITakerPositionManager.BorrowPermit memory p = _approveBorrowData(
       bob,
       alice,
       _warpBeforeRandomDeadline()

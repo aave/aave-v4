@@ -4,10 +4,10 @@ pragma solidity ^0.8.0;
 
 import {IPositionManagerBase} from 'src/position-manager/interfaces/IPositionManagerBase.sol';
 
-/// @title ISupplyRepayPositionManager
+/// @title IGiverPositionManager
 /// @author Aave Labs
 /// @notice Interface for position manager handling supply and repay actions on behalf of users.
-interface ISupplyRepayPositionManager is IPositionManagerBase {
+interface IGiverPositionManager is IPositionManagerBase {
   /// @notice Error thrown when the repay amount is not an allowed value.
   error NoMaxUintRepayOnBehalfOfAllowed();
 

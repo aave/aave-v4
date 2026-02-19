@@ -4,14 +4,14 @@ pragma solidity ^0.8.0;
 
 import 'tests/unit/Spoke/SpokeBase.t.sol';
 
-contract AllowancePositionManagerBaseTest is SpokeBase {
-  AllowancePositionManager public positionManager;
+contract TakerPositionManagerBaseTest is SpokeBase {
+  TakerPositionManager public positionManager;
   TestReturnValues public returnValues;
 
   function setUp() public virtual override {
     super.setUp();
 
-    positionManager = new AllowancePositionManager(address(ADMIN));
+    positionManager = new TakerPositionManager(address(ADMIN));
 
     vm.prank(SPOKE_ADMIN);
     spoke1.updatePositionManager(address(positionManager), true);
@@ -27,9 +27,9 @@ contract AllowancePositionManagerBaseTest is SpokeBase {
     address spender,
     address onBehalfOf,
     uint256 deadline
-  ) internal returns (IAllowancePositionManager.WithdrawPermit memory) {
+  ) internal returns (ITakerPositionManager.WithdrawPermit memory) {
     return
-      IAllowancePositionManager.WithdrawPermit({
+      ITakerPositionManager.WithdrawPermit({
         spoke: address(spoke1),
         reserveId: _randomReserveId(spoke1),
         owner: onBehalfOf,
@@ -44,9 +44,9 @@ contract AllowancePositionManagerBaseTest is SpokeBase {
     address spender,
     address onBehalfOf,
     uint256 deadline
-  ) internal returns (IAllowancePositionManager.BorrowPermit memory) {
+  ) internal returns (ITakerPositionManager.BorrowPermit memory) {
     return
-      IAllowancePositionManager.BorrowPermit({
+      ITakerPositionManager.BorrowPermit({
         spoke: address(spoke1),
         reserveId: _randomReserveId(spoke1),
         owner: onBehalfOf,
@@ -58,23 +58,23 @@ contract AllowancePositionManagerBaseTest is SpokeBase {
   }
 
   function _getTypedDataHash(
-    IAllowancePositionManager _positionManager,
-    IAllowancePositionManager.WithdrawPermit memory _params
+    ITakerPositionManager _positionManager,
+    ITakerPositionManager.WithdrawPermit memory _params
   ) internal view returns (bytes32) {
     return
       _typedDataHash(_positionManager, vm.eip712HashStruct('WithdrawPermit', abi.encode(_params)));
   }
 
   function _getTypedDataHash(
-    IAllowancePositionManager _positionManager,
-    IAllowancePositionManager.BorrowPermit memory _params
+    ITakerPositionManager _positionManager,
+    ITakerPositionManager.BorrowPermit memory _params
   ) internal view returns (bytes32) {
     return
       _typedDataHash(_positionManager, vm.eip712HashStruct('BorrowPermit', abi.encode(_params)));
   }
 
   function _typedDataHash(
-    IAllowancePositionManager _positionManager,
+    ITakerPositionManager _positionManager,
     bytes32 typeHash
   ) internal view returns (bytes32) {
     return keccak256(abi.encodePacked('\x19\x01', _positionManager.DOMAIN_SEPARATOR(), typeHash));

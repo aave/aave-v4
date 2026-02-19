@@ -3,7 +3,7 @@
 pragma solidity ^0.8.20;
 
 import {ISignatureGateway} from 'src/position-manager/interfaces/ISignatureGateway.sol';
-import {IAllowancePositionManager} from 'src/position-manager/interfaces/IAllowancePositionManager.sol';
+import {ITakerPositionManager} from 'src/position-manager/interfaces/ITakerPositionManager.sol';
 
 /// @title EIP712Hash library
 /// @author Aave Labs
@@ -153,7 +153,7 @@ library EIP712Hash {
   }
 
   function hash(
-    IAllowancePositionManager.WithdrawPermit calldata params
+    ITakerPositionManager.WithdrawPermit calldata params
   ) internal pure returns (bytes32) {
     return
       keccak256(
@@ -171,7 +171,7 @@ library EIP712Hash {
   }
 
   function hash(
-    IAllowancePositionManager.BorrowPermit calldata params
+    ITakerPositionManager.BorrowPermit calldata params
   ) internal pure returns (bytes32) {
     return
       keccak256(

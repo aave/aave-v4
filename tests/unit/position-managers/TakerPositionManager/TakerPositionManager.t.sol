@@ -2,9 +2,9 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import 'tests/unit/position-managers/AllowancePositionManager/AllowancePositionManager.Base.t.sol';
+import 'tests/unit/position-managers/TakerPositionManager/TakerPositionManager.Base.t.sol';
 
-contract AllowancePositionManagerTest is AllowancePositionManagerBaseTest {
+contract TakerPositionManagerTest is TakerPositionManagerBaseTest {
   function setUp() public virtual override {
     super.setUp();
   }
@@ -15,13 +15,7 @@ contract AllowancePositionManagerTest is AllowancePositionManagerBaseTest {
     amount = bound(amount, 1, mintAmount_DAI);
 
     vm.expectEmit(address(positionManager));
-    emit IAllowancePositionManager.WithdrawApproval(
-      address(spoke1),
-      reserveId,
-      alice,
-      spender,
-      amount
-    );
+    emit ITakerPositionManager.WithdrawApproval(address(spoke1), reserveId, alice, spender, amount);
     vm.prank(alice);
     positionManager.approveWithdraw(address(spoke1), reserveId, spender, amount);
 
@@ -42,7 +36,7 @@ contract AllowancePositionManagerTest is AllowancePositionManagerBaseTest {
     positionManager.approveWithdraw(address(spoke1), reserveId, bob, initialAllowance);
 
     vm.expectEmit(address(positionManager));
-    emit IAllowancePositionManager.WithdrawApproval(address(spoke1), reserveId, alice, bob, 0);
+    emit ITakerPositionManager.WithdrawApproval(address(spoke1), reserveId, alice, bob, 0);
     vm.prank(bob);
     positionManager.renounceWithdrawAllowance(address(spoke1), reserveId, alice);
 
@@ -96,7 +90,7 @@ contract AllowancePositionManagerTest is AllowancePositionManagerBaseTest {
     assertEq(spoke1.getUserSuppliedShares(_daiReserveId(spoke1), alice), expectedSupplyShares);
 
     vm.expectEmit(address(positionManager));
-    emit IAllowancePositionManager.WithdrawApproval(
+    emit ITakerPositionManager.WithdrawApproval(
       address(spoke1),
       _daiReserveId(spoke1),
       alice,
@@ -165,7 +159,7 @@ contract AllowancePositionManagerTest is AllowancePositionManagerBaseTest {
     assertEq(spoke1.getUserSuppliedShares(_daiReserveId(spoke1), alice), expectedSupplyShares);
 
     vm.expectEmit(address(positionManager));
-    emit IAllowancePositionManager.WithdrawApproval(
+    emit ITakerPositionManager.WithdrawApproval(
       address(spoke1),
       _daiReserveId(spoke1),
       alice,
@@ -243,7 +237,7 @@ contract AllowancePositionManagerTest is AllowancePositionManagerBaseTest {
       alice
     );
     vm.getRecordedLogs();
-    _assertEventNotEmitted(IAllowancePositionManager.WithdrawApproval.selector);
+    _assertEventNotEmitted(ITakerPositionManager.WithdrawApproval.selector);
 
     assertEq(returnValues.amount, supplyAmount);
     assertEq(returnValues.shares, expectedSupplyShares);
@@ -316,7 +310,7 @@ contract AllowancePositionManagerTest is AllowancePositionManagerBaseTest {
     assertEq(spoke1.getUserSuppliedShares(_daiReserveId(spoke1), alice), expectedSupplyShares);
 
     vm.expectEmit(address(positionManager));
-    emit IAllowancePositionManager.WithdrawApproval(
+    emit ITakerPositionManager.WithdrawApproval(
       address(spoke1),
       _daiReserveId(spoke1),
       alice,
@@ -373,7 +367,7 @@ contract AllowancePositionManagerTest is AllowancePositionManagerBaseTest {
 
     vm.expectRevert(
       abi.encodeWithSelector(
-        IAllowancePositionManager.InsufficientWithdrawAllowance.selector,
+        ITakerPositionManager.InsufficientWithdrawAllowance.selector,
         approvalAmount,
         amount
       )
@@ -405,13 +399,7 @@ contract AllowancePositionManagerTest is AllowancePositionManagerBaseTest {
     amount = bound(amount, 1, mintAmount_DAI);
 
     vm.expectEmit(address(positionManager));
-    emit IAllowancePositionManager.BorrowApproval(
-      address(spoke1),
-      reserveId,
-      alice,
-      spender,
-      amount
-    );
+    emit ITakerPositionManager.BorrowApproval(address(spoke1), reserveId, alice, spender, amount);
     vm.prank(alice);
     positionManager.approveBorrow(address(spoke1), reserveId, spender, amount);
 
@@ -432,7 +420,7 @@ contract AllowancePositionManagerTest is AllowancePositionManagerBaseTest {
     positionManager.approveBorrow(address(spoke1), reserveId, bob, initialAllowance);
 
     vm.expectEmit(address(positionManager));
-    emit IAllowancePositionManager.BorrowApproval(address(spoke1), reserveId, alice, bob, 0);
+    emit ITakerPositionManager.BorrowApproval(address(spoke1), reserveId, alice, bob, 0);
     vm.prank(bob);
     positionManager.renounceBorrowAllowance(address(spoke1), reserveId, alice);
 
@@ -480,7 +468,7 @@ contract AllowancePositionManagerTest is AllowancePositionManagerBaseTest {
     uint256 hubBalanceBefore = tokenList.dai.balanceOf(address(hub1));
 
     vm.expectEmit(address(positionManager));
-    emit IAllowancePositionManager.BorrowApproval(
+    emit ITakerPositionManager.BorrowApproval(
       address(spoke1),
       _daiReserveId(spoke1),
       alice,
@@ -554,7 +542,7 @@ contract AllowancePositionManagerTest is AllowancePositionManagerBaseTest {
       alice
     );
     vm.getRecordedLogs();
-    _assertEventNotEmitted(IAllowancePositionManager.BorrowApproval.selector);
+    _assertEventNotEmitted(ITakerPositionManager.BorrowApproval.selector);
 
     (uint256 userDrawnDebt, uint256 userPremiumDebt) = spoke1.getUserDebt(
       _daiReserveId(spoke1),
@@ -588,7 +576,7 @@ contract AllowancePositionManagerTest is AllowancePositionManagerBaseTest {
 
     vm.expectRevert(
       abi.encodeWithSelector(
-        IAllowancePositionManager.InsufficientBorrowAllowance.selector,
+        ITakerPositionManager.InsufficientBorrowAllowance.selector,
         approveBorrowAmount,
         borrowAmount
       )

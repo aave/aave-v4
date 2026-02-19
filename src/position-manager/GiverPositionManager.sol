@@ -4,20 +4,20 @@ pragma solidity 0.8.28;
 
 import {SafeERC20, IERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
 import {ISpokeBase} from 'src/spoke/interfaces/ISpokeBase.sol';
-import {ISupplyRepayPositionManager} from 'src/position-manager/interfaces/ISupplyRepayPositionManager.sol';
+import {IGiverPositionManager} from 'src/position-manager/interfaces/IGiverPositionManager.sol';
 import {PositionManagerBase} from 'src/position-manager/PositionManagerBase.sol';
 
-/// @title SupplyRepayPositionManager
+/// @title GiverPositionManager
 /// @author Aave Labs
 /// @notice Position manager to handle supply and repay actions on behalf of users.
-contract SupplyRepayPositionManager is ISupplyRepayPositionManager, PositionManagerBase {
+contract GiverPositionManager is IGiverPositionManager, PositionManagerBase {
   using SafeERC20 for IERC20;
 
   /// @dev Constructor.
   /// @param initialOwner_ The address of the initial owner.
   constructor(address initialOwner_) PositionManagerBase(initialOwner_) {}
 
-  /// @inheritdoc ISupplyRepayPositionManager
+  /// @inheritdoc IGiverPositionManager
   function supplyOnBehalfOf(
     address spoke,
     uint256 reserveId,
@@ -30,7 +30,7 @@ contract SupplyRepayPositionManager is ISupplyRepayPositionManager, PositionMana
     return ISpokeBase(spoke).supply(reserveId, amount, onBehalfOf);
   }
 
-  /// @inheritdoc ISupplyRepayPositionManager
+  /// @inheritdoc IGiverPositionManager
   function repayOnBehalfOf(
     address spoke,
     uint256 reserveId,
@@ -53,6 +53,6 @@ contract SupplyRepayPositionManager is ISupplyRepayPositionManager, PositionMana
   }
 
   function _domainNameAndVersion() internal pure override returns (string memory, string memory) {
-    return ('SupplyRepayPositionManager', '1');
+    return ('GiverPositionManager', '1');
   }
 }

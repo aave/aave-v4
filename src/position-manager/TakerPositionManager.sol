@@ -6,21 +6,21 @@ import {SafeERC20, IERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
 import {MathUtils} from 'src/libraries/math/MathUtils.sol';
 import {EIP712Hash} from 'src/position-manager/libraries/EIP712Hash.sol';
 import {ISpokeBase} from 'src/spoke/interfaces/ISpokeBase.sol';
-import {IAllowancePositionManager} from 'src/position-manager/interfaces/IAllowancePositionManager.sol';
+import {ITakerPositionManager} from 'src/position-manager/interfaces/ITakerPositionManager.sol';
 import {PositionManagerBase} from 'src/position-manager/PositionManagerBase.sol';
 
-/// @title AllowancePositionManager
+/// @title TakerPositionManager
 /// @author Aave Labs
 /// @notice Position manager to handle withdraw permit and borrow permit actions on behalf of users.
-contract AllowancePositionManager is IAllowancePositionManager, PositionManagerBase {
+contract TakerPositionManager is ITakerPositionManager, PositionManagerBase {
   using SafeERC20 for IERC20;
   using MathUtils for uint256;
   using EIP712Hash for *;
 
-  /// @inheritdoc IAllowancePositionManager
+  /// @inheritdoc ITakerPositionManager
   bytes32 public constant WITHDRAW_PERMIT_TYPEHASH = EIP712Hash.WITHDRAW_PERMIT_TYPEHASH;
 
-  /// @inheritdoc IAllowancePositionManager
+  /// @inheritdoc ITakerPositionManager
   bytes32 public constant BORROW_PERMIT_TYPEHASH = EIP712Hash.BORROW_PERMIT_TYPEHASH;
 
   /// @dev Map of withdraw allowances based on the spoke, reserveId, owner and spender.
@@ -35,7 +35,7 @@ contract AllowancePositionManager is IAllowancePositionManager, PositionManagerB
   /// @param initialOwner_ The address of the initial owner.
   constructor(address initialOwner_) PositionManagerBase(initialOwner_) {}
 
-  /// @inheritdoc IAllowancePositionManager
+  /// @inheritdoc ITakerPositionManager
   function approveWithdraw(
     address spoke,
     uint256 reserveId,
@@ -51,7 +51,7 @@ contract AllowancePositionManager is IAllowancePositionManager, PositionManagerB
     });
   }
 
-  /// @inheritdoc IAllowancePositionManager
+  /// @inheritdoc ITakerPositionManager
   function approveWithdrawWithSig(
     WithdrawPermit calldata params,
     bytes calldata signature
@@ -73,7 +73,7 @@ contract AllowancePositionManager is IAllowancePositionManager, PositionManagerB
     });
   }
 
-  /// @inheritdoc IAllowancePositionManager
+  /// @inheritdoc ITakerPositionManager
   function approveBorrow(
     address spoke,
     uint256 reserveId,
@@ -89,7 +89,7 @@ contract AllowancePositionManager is IAllowancePositionManager, PositionManagerB
     });
   }
 
-  /// @inheritdoc IAllowancePositionManager
+  /// @inheritdoc ITakerPositionManager
   function approveBorrowWithSig(
     BorrowPermit calldata params,
     bytes calldata signature
@@ -111,7 +111,7 @@ contract AllowancePositionManager is IAllowancePositionManager, PositionManagerB
     });
   }
 
-  /// @inheritdoc IAllowancePositionManager
+  /// @inheritdoc ITakerPositionManager
   function renounceWithdrawAllowance(
     address spoke,
     uint256 reserveId,
@@ -129,7 +129,7 @@ contract AllowancePositionManager is IAllowancePositionManager, PositionManagerB
     });
   }
 
-  /// @inheritdoc IAllowancePositionManager
+  /// @inheritdoc ITakerPositionManager
   function renounceBorrowAllowance(
     address spoke,
     uint256 reserveId,
@@ -147,7 +147,7 @@ contract AllowancePositionManager is IAllowancePositionManager, PositionManagerB
     });
   }
 
-  /// @inheritdoc IAllowancePositionManager
+  /// @inheritdoc ITakerPositionManager
   function withdrawOnBehalfOf(
     address spoke,
     uint256 reserveId,
@@ -173,7 +173,7 @@ contract AllowancePositionManager is IAllowancePositionManager, PositionManagerB
     return (withdrawnShares, withdrawnAmount);
   }
 
-  /// @inheritdoc IAllowancePositionManager
+  /// @inheritdoc ITakerPositionManager
   function borrowOnBehalfOf(
     address spoke,
     uint256 reserveId,
@@ -199,7 +199,7 @@ contract AllowancePositionManager is IAllowancePositionManager, PositionManagerB
     return (borrowedShares, borrowedAmount);
   }
 
-  /// @inheritdoc IAllowancePositionManager
+  /// @inheritdoc ITakerPositionManager
   function withdrawAllowance(
     address spoke,
     uint256 reserveId,
@@ -209,7 +209,7 @@ contract AllowancePositionManager is IAllowancePositionManager, PositionManagerB
     return _getWithdrawAllowance(spoke, reserveId, owner, spender);
   }
 
-  /// @inheritdoc IAllowancePositionManager
+  /// @inheritdoc ITakerPositionManager
   function borrowAllowance(
     address spoke,
     uint256 reserveId,
@@ -304,6 +304,6 @@ contract AllowancePositionManager is IAllowancePositionManager, PositionManagerB
   }
 
   function _domainNameAndVersion() internal pure override returns (string memory, string memory) {
-    return ('AllowancePositionManager', '1');
+    return ('TakerPositionManager', '1');
   }
 }

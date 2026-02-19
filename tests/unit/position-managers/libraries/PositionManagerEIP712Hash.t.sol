@@ -5,7 +5,7 @@ pragma solidity ^0.8.0;
 import {Test} from 'forge-std/Test.sol';
 
 import {ISignatureGateway} from 'src/position-manager/interfaces/ISignatureGateway.sol';
-import {IAllowancePositionManager} from 'src/position-manager/interfaces/IAllowancePositionManager.sol';
+import {ITakerPositionManager} from 'src/position-manager/interfaces/ITakerPositionManager.sol';
 
 import {EIP712Hash} from 'src/position-manager/libraries/EIP712Hash.sol';
 
@@ -151,7 +151,7 @@ contract PositionManagerEIP712HashTest is Test {
   }
 
   function test_hash_withdrawPermit_fuzz(
-    IAllowancePositionManager.WithdrawPermit calldata params
+    ITakerPositionManager.WithdrawPermit calldata params
   ) public pure {
     bytes32 expectedHash = keccak256(abi.encode(EIP712Hash.WITHDRAW_PERMIT_TYPEHASH, params));
 
@@ -159,7 +159,7 @@ contract PositionManagerEIP712HashTest is Test {
   }
 
   function test_hash_creditDelegation_fuzz(
-    IAllowancePositionManager.BorrowPermit calldata params
+    ITakerPositionManager.BorrowPermit calldata params
   ) public pure {
     bytes32 expectedHash = keccak256(abi.encode(EIP712Hash.BORROW_PERMIT_TYPEHASH, params));
 
