@@ -812,14 +812,14 @@ contract SpokeRiskPremiumTest is SpokeBase {
         wethInfo.supplyAmount +
         usdxInfo.supplyAmount +
         wbtcInfo.supplyAmount <=
-        MAX_SUPPLY_AMOUNT_DAI
+        MAX_SUPPLY_AMOUNT
     );
     vm.assume(
       daiInfo.borrowAmount +
         wethInfo.borrowAmount +
         usdxInfo.borrowAmount +
         wbtcInfo.borrowAmount <=
-        MAX_SUPPLY_AMOUNT_DAI / 2
+        MAX_SUPPLY_AMOUNT / 2
     );
 
     daiInfo.price = bound(daiInfo.price, 1, 1e16);

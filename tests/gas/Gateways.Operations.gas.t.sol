@@ -24,7 +24,7 @@ contract NativeTokenGateway_Gas_Tests is Base {
     vm.prank(bob);
     spoke1.setUserPositionManager(address(nativeTokenGateway), true);
 
-    deal(address(tokenList.weth), MAX_SUPPLY_AMOUNT_WETH);
+    deal(address(tokenList.weth), MAX_SUPPLY_AMOUNT);
     deal(bob, MAX_SUPPLY_AMOUNT_WETH);
   }
 

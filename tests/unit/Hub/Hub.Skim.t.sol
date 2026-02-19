@@ -39,8 +39,8 @@ contract HubSkimTest is HubBase {
     uint256 donationAmount
   ) public {
     assetId = bound(assetId, 0, hub1.getAssetCount() - 3); // Exclude usdy & usdz
-    amount = bound(amount, 1, _calculateMaxSupplyAmount(hub1, assetId) / 10);
-    donationAmount = bound(donationAmount, 1, _calculateMaxSupplyAmount(hub1, assetId) / 10);
+    amount = bound(amount, 1, MAX_SUPPLY_AMOUNT / 10);
+    donationAmount = bound(donationAmount, 1, MAX_SUPPLY_AMOUNT / 10);
 
     IERC20 underlying = IERC20(hub1.getAsset(assetId).underlying);
 
@@ -114,8 +114,8 @@ contract HubSkimTest is HubBase {
     uint256 donationAmount
   ) public {
     assetId = bound(assetId, 0, hub1.getAssetCount() - 3); // Exclude usdy & usdz
-    amount = bound(amount, 1, _calculateMaxSupplyAmount(hub1, assetId) / 10);
-    donationAmount = bound(donationAmount, 1, _calculateMaxSupplyAmount(hub1, assetId) / 10);
+    amount = bound(amount, 1, MAX_SUPPLY_AMOUNT / 10);
+    donationAmount = bound(donationAmount, 1, MAX_SUPPLY_AMOUNT / 10);
 
     IERC20 underlying = IERC20(hub1.getAsset(assetId).underlying);
 
@@ -189,7 +189,7 @@ contract HubSkimTest is HubBase {
     uint256 donationAmount
   ) public {
     assetId = bound(assetId, 0, hub1.getAssetCount() - 3); // Exclude usdy & usdz
-    amount = bound(amount, 1e4, _calculateMaxSupplyAmount(hub1, assetId) / 10);
+    amount = bound(amount, 1e4, MAX_SUPPLY_AMOUNT / 10);
     donationAmount = bound(donationAmount, 1, amount / 2);
     uint256 addAmount = amount - donationAmount;
 
@@ -257,7 +257,7 @@ contract HubSkimTest is HubBase {
     uint256 donationAmount
   ) public {
     assetId = bound(assetId, 0, hub1.getAssetCount() - 3); // Exclude usdy & usdz
-    drawAmount = bound(drawAmount, 1, _calculateMaxSupplyAmount(hub1, assetId) / 10);
+    drawAmount = bound(drawAmount, 1, MAX_SUPPLY_AMOUNT / 10);
     donationAmount = bound(donationAmount, 1, drawAmount);
     _addAndDrawLiquidity({
       hub: hub1,

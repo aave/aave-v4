@@ -993,8 +993,8 @@ contract SpokeRepayScenarioTest is SpokeBase {
   ) public {
     action1.skipTime = bound(action1.skipTime, 1, MAX_SKIP_TIME / 2).toUint40();
     action2.skipTime = bound(action2.skipTime, 1, MAX_SKIP_TIME / 2).toUint40();
-    action1.borrowAmount = bound(action1.borrowAmount, 1, MAX_SUPPLY_AMOUNT_DAI / 4);
-    action2.borrowAmount = bound(action2.borrowAmount, 1, MAX_SUPPLY_AMOUNT_DAI / 4);
+    action1.borrowAmount = bound(action1.borrowAmount, 1, MAX_SUPPLY_AMOUNT / 4);
+    action2.borrowAmount = bound(action2.borrowAmount, 1, MAX_SUPPLY_AMOUNT / 4);
     action1.repayAmount = bound(action1.repayAmount, 1, action1.borrowAmount);
     action2.repayAmount = bound(action2.repayAmount, 1, action2.borrowAmount);
 

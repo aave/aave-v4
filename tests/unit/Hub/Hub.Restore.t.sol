@@ -284,14 +284,10 @@ contract HubRestoreTest is HubBase {
     );
     assertEq(
       tokenList.dai.balanceOf(alice),
-      drawAmount - restoreAmount + MAX_SUPPLY_AMOUNT_DAI,
+      drawAmount - restoreAmount + MAX_SUPPLY_AMOUNT,
       'alice dai final balance'
     );
-    assertEq(
-      tokenList.dai.balanceOf(bob),
-      MAX_SUPPLY_AMOUNT_DAI - daiAmount,
-      'bob dai final balance'
-    );
+    assertEq(tokenList.dai.balanceOf(bob), MAX_SUPPLY_AMOUNT - daiAmount, 'bob dai final balance');
     assertEq(tokenList.dai.balanceOf(address(spoke1)), 0, 'spoke1 dai final balance');
   }
 
@@ -831,10 +827,10 @@ contract HubRestoreTest is HubBase {
     assertEq(dai.balanceOf(address(hub1)), daiAmount - restoreAmount, 'hub dai final balance');
     assertEq(
       dai.balanceOf(alice),
-      drawAmount - restoreAmount + MAX_SUPPLY_AMOUNT_DAI,
+      drawAmount - restoreAmount + MAX_SUPPLY_AMOUNT,
       'alice dai final balance'
     );
-    assertEq(dai.balanceOf(bob), MAX_SUPPLY_AMOUNT_DAI - daiAmount, 'bob dai final balance');
+    assertEq(dai.balanceOf(bob), MAX_SUPPLY_AMOUNT - daiAmount, 'bob dai final balance');
     assertEq(dai.balanceOf(address(spoke1)), 0, 'spoke1 dai final balance');
   }
 

@@ -419,7 +419,7 @@ contract SpokeRepayTest is SpokeBase {
 
   /// repay partial or full premium debt, but no drawn debt
   function test_fuzz_repay_only_premium(uint256 daiBorrowAmount, uint40 skipTime) public {
-    daiBorrowAmount = bound(daiBorrowAmount, 1, MAX_SUPPLY_AMOUNT_DAI / 2);
+    daiBorrowAmount = bound(daiBorrowAmount, 1, MAX_SUPPLY_AMOUNT / 2);
     uint256 wethSupplyAmount = _calcMinimumCollAmount(
       spoke1,
       _wethReserveId(spoke1),
@@ -595,7 +595,7 @@ contract SpokeRepayTest is SpokeBase {
     uint256 daiBorrowAmount,
     uint256 daiRepayAmount
   ) public {
-    daiBorrowAmount = bound(daiBorrowAmount, 1, MAX_SUPPLY_AMOUNT_DAI / 2);
+    daiBorrowAmount = bound(daiBorrowAmount, 1, MAX_SUPPLY_AMOUNT / 2);
     daiRepayAmount = bound(daiRepayAmount, 1, daiBorrowAmount);
 
     // calculate weth collateral
@@ -697,7 +697,7 @@ contract SpokeRepayTest is SpokeBase {
     uint256 daiRepayAmount,
     uint40 skipTime
   ) public {
-    daiBorrowAmount = bound(daiBorrowAmount, 1, MAX_SUPPLY_AMOUNT_DAI / 2);
+    daiBorrowAmount = bound(daiBorrowAmount, 1, MAX_SUPPLY_AMOUNT / 2);
     daiRepayAmount = bound(daiRepayAmount, 1, daiBorrowAmount);
     skipTime = bound(skipTime, 0, MAX_SKIP_TIME).toUint40();
 
@@ -815,7 +815,7 @@ contract SpokeRepayTest is SpokeBase {
     uint256 daiRepayAmount,
     uint40 skipTime
   ) public {
-    daiBorrowAmount = bound(daiBorrowAmount, 1, MAX_SUPPLY_AMOUNT_DAI / 2);
+    daiBorrowAmount = bound(daiBorrowAmount, 1, MAX_SUPPLY_AMOUNT / 2);
     skipTime = bound(skipTime, 0, MAX_SKIP_TIME).toUint40();
 
     // calculate weth collateral
@@ -935,7 +935,7 @@ contract SpokeRepayTest is SpokeBase {
     uint256 daiRepayAmount,
     uint40 skipTime
   ) public {
-    daiBorrowAmount = bound(daiBorrowAmount, 1, MAX_SUPPLY_AMOUNT_DAI / 2);
+    daiBorrowAmount = bound(daiBorrowAmount, 1, MAX_SUPPLY_AMOUNT / 2);
     skipTime = bound(skipTime, 0, MAX_SKIP_TIME).toUint40();
 
     // calculate weth collateral
@@ -1056,7 +1056,7 @@ contract SpokeRepayTest is SpokeBase {
     uint256 daiRepayAmount,
     uint40 skipTime
   ) public {
-    daiBorrowAmount = bound(daiBorrowAmount, 1, MAX_SUPPLY_AMOUNT_DAI / 2);
+    daiBorrowAmount = bound(daiBorrowAmount, 1, MAX_SUPPLY_AMOUNT / 2);
     skipTime = bound(skipTime, 0, MAX_SKIP_TIME).toUint40();
 
     // calculate weth collateral
@@ -1184,7 +1184,7 @@ contract SpokeRepayTest is SpokeBase {
     uint256 daiRepayAmount,
     uint40 skipTime
   ) public {
-    daiBorrowAmount = bound(daiBorrowAmount, 1, MAX_SUPPLY_AMOUNT_DAI / 2);
+    daiBorrowAmount = bound(daiBorrowAmount, 1, MAX_SUPPLY_AMOUNT / 2);
     skipTime = bound(skipTime, 0, MAX_SKIP_TIME).toUint40();
 
     // update collateral risk to zero
@@ -1568,7 +1568,7 @@ contract SpokeRepayTest is SpokeBase {
 
   // Borrow X amount, receive Y Shares. Repay all, ensure Y shares repaid
   function test_fuzz_repay_x_y_shares(uint256 borrowAmount, uint40 skipTime) public {
-    borrowAmount = bound(borrowAmount, 1, MAX_SUPPLY_AMOUNT_DAI / 10);
+    borrowAmount = bound(borrowAmount, 1, MAX_SUPPLY_AMOUNT / 10);
     skipTime = bound(skipTime, 1, MAX_SKIP_TIME).toUint40();
 
     // calculate weth collateral

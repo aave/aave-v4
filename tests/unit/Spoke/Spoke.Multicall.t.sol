@@ -63,10 +63,10 @@ contract SpokeMulticall is SpokeBase {
   /// Supply and update user risk premium using multicall
   function test_multicall_supply_updateUserRp() public {
     // Deal bob dai for supplying dai and usdz
-    deal(address(tokenList.dai), bob, MAX_SUPPLY_AMOUNT_DAI * 2);
+    deal(address(tokenList.dai), bob, MAX_SUPPLY_AMOUNT * 2);
 
     // Bob supplies usdz and borrows half of it
-    Utils.supplyCollateral(spoke2, _usdzReserveId(spoke2), bob, MAX_SUPPLY_AMOUNT_USDZ, bob);
+    Utils.supplyCollateral(spoke2, _usdzReserveId(spoke2), bob, MAX_SUPPLY_AMOUNT, bob);
     Utils.borrow(spoke2, _usdzReserveId(spoke2), bob, 1000e18, bob);
 
     // Check bob's premium drawn shares as proxy for user rp
@@ -76,10 +76,7 @@ contract SpokeMulticall is SpokeBase {
 
     // Set up the multicall
     bytes[] memory calls = new bytes[](3);
-    calls[0] = abi.encodeCall(
-      ISpokeBase.supply,
-      (_daiReserveId(spoke2), MAX_SUPPLY_AMOUNT_DAI, bob)
-    );
+    calls[0] = abi.encodeCall(ISpokeBase.supply, (_daiReserveId(spoke2), MAX_SUPPLY_AMOUNT, bob));
     calls[1] = abi.encodeCall(ISpoke.setUsingAsCollateral, (_daiReserveId(spoke2), true, bob));
     calls[2] = abi.encodeCall(ISpoke.updateUserRiskPremium, (bob));
 
@@ -88,8 +85,8 @@ contract SpokeMulticall is SpokeBase {
       _daiReserveId(spoke2),
       bob,
       bob,
-      hub1.previewAddByAssets(daiAssetId, MAX_SUPPLY_AMOUNT_DAI),
-      MAX_SUPPLY_AMOUNT_DAI
+      hub1.previewAddByAssets(daiAssetId, MAX_SUPPLY_AMOUNT),
+      MAX_SUPPLY_AMOUNT
     );
     vm.expectEmit(address(spoke2));
     emit ISpoke.SetUsingAsCollateral(_daiReserveId(spoke2), bob, bob, true);

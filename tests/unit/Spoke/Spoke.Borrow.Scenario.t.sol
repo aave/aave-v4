@@ -303,10 +303,10 @@ contract SpokeBorrowScenarioTest is SpokeBase {
     uint256 usdxBorrowAmount2,
     uint256 skipTime
   ) public {
-    daiBorrowAmount = bound(daiBorrowAmount, 0, MAX_SUPPLY_AMOUNT_DAI / 4);
-    usdxBorrowAmount = bound(usdxBorrowAmount, 0, MAX_SUPPLY_AMOUNT_USDX / 4);
-    daiBorrowAmount2 = bound(daiBorrowAmount2, 0, MAX_SUPPLY_AMOUNT_DAI / 4);
-    usdxBorrowAmount2 = bound(usdxBorrowAmount2, 0, MAX_SUPPLY_AMOUNT_USDX / 4);
+    daiBorrowAmount = bound(daiBorrowAmount, 0, MAX_SUPPLY_AMOUNT / 4);
+    usdxBorrowAmount = bound(usdxBorrowAmount, 0, MAX_SUPPLY_AMOUNT / 4);
+    daiBorrowAmount2 = bound(daiBorrowAmount2, 0, MAX_SUPPLY_AMOUNT / 4);
+    usdxBorrowAmount2 = bound(usdxBorrowAmount2, 0, MAX_SUPPLY_AMOUNT / 4);
     skipTime = bound(skipTime, 0, MAX_SKIP_TIME);
 
     BorrowTestData[2] memory states; // 2 spokes involved
@@ -338,22 +338,21 @@ contract SpokeBorrowScenarioTest is SpokeBase {
       bob
     );
 
-    uint256 daiSupplyAmount = MAX_SUPPLY_AMOUNT_DAI / 2;
-    uint256 usdxSupplyAmount = MAX_SUPPLY_AMOUNT_USDX / 2;
+    uint256 supplyAmount = MAX_SUPPLY_AMOUNT / 2;
 
     // Bob supply collateralthrough spoke1
-    Utils.supplyCollateral(spoke1, states[0].daiReserveId, bob, daiSupplyAmount, bob);
-    Utils.supplyCollateral(spoke1, states[0].usdxReserveId, bob, usdxSupplyAmount, bob);
+    Utils.supplyCollateral(spoke1, states[0].daiReserveId, bob, supplyAmount, bob);
+    Utils.supplyCollateral(spoke1, states[0].usdxReserveId, bob, supplyAmount, bob);
     // Bob supply collateral through spoke1
-    Utils.supplyCollateral(spoke2, states[1].daiReserveId, bob, daiSupplyAmount, bob);
-    Utils.supplyCollateral(spoke2, states[1].usdxReserveId, bob, usdxSupplyAmount, bob);
+    Utils.supplyCollateral(spoke2, states[1].daiReserveId, bob, supplyAmount, bob);
+    Utils.supplyCollateral(spoke2, states[1].usdxReserveId, bob, supplyAmount, bob);
 
     _assertUserPositionAndDebt({
       spoke: spoke1,
       reserveId: states[0].daiReserveId,
       user: bob,
       debtAmount: 0,
-      suppliedAmount: daiSupplyAmount,
+      suppliedAmount: supplyAmount,
       expectedPremiumDebtRay: states[0].daiBob.premiumDebtRayBefore,
       label: 'spoke1 bob dai before'
     });
@@ -362,7 +361,7 @@ contract SpokeBorrowScenarioTest is SpokeBase {
       reserveId: states[0].usdxReserveId,
       user: bob,
       debtAmount: 0,
-      suppliedAmount: usdxSupplyAmount,
+      suppliedAmount: supplyAmount,
       expectedPremiumDebtRay: states[0].usdxBob.premiumDebtRayBefore,
       label: 'spoke1 bob usdx before'
     });
@@ -371,7 +370,7 @@ contract SpokeBorrowScenarioTest is SpokeBase {
       reserveId: states[1].daiReserveId,
       user: bob,
       debtAmount: 0,
-      suppliedAmount: daiSupplyAmount,
+      suppliedAmount: supplyAmount,
       expectedPremiumDebtRay: states[1].daiBob.premiumDebtRayBefore,
       label: 'spoke2 bob dai before'
     });
@@ -380,7 +379,7 @@ contract SpokeBorrowScenarioTest is SpokeBase {
       reserveId: states[1].usdxReserveId,
       user: bob,
       debtAmount: 0,
-      suppliedAmount: usdxSupplyAmount,
+      suppliedAmount: supplyAmount,
       expectedPremiumDebtRay: states[1].usdxBob.premiumDebtRayBefore,
       label: 'spoke2 bob usdx before'
     });
@@ -414,7 +413,7 @@ contract SpokeBorrowScenarioTest is SpokeBase {
       reserveId: states[0].daiReserveId,
       user: bob,
       debtAmount: daiBorrowAmount,
-      suppliedAmount: daiSupplyAmount,
+      suppliedAmount: supplyAmount,
       expectedPremiumDebtRay: states[0].daiBob.premiumDebtRayBefore,
       label: 'spoke1 bob dai after'
     });
@@ -424,7 +423,7 @@ contract SpokeBorrowScenarioTest is SpokeBase {
       reserveId: states[0].usdxReserveId,
       user: bob,
       debtAmount: usdxBorrowAmount,
-      suppliedAmount: usdxSupplyAmount,
+      suppliedAmount: supplyAmount,
       expectedPremiumDebtRay: states[0].usdxBob.premiumDebtRayBefore,
       label: 'spoke1 bob usdx after'
     });
@@ -436,7 +435,7 @@ contract SpokeBorrowScenarioTest is SpokeBase {
       reserveId: states[1].daiReserveId,
       user: bob,
       debtAmount: daiBorrowAmount2,
-      suppliedAmount: daiSupplyAmount,
+      suppliedAmount: supplyAmount,
       expectedPremiumDebtRay: states[1].daiBob.premiumDebtRayBefore,
       label: 'spoke2 bob dai after'
     });
@@ -446,7 +445,7 @@ contract SpokeBorrowScenarioTest is SpokeBase {
       reserveId: states[1].usdxReserveId,
       user: bob,
       debtAmount: usdxBorrowAmount2,
-      suppliedAmount: usdxSupplyAmount,
+      suppliedAmount: supplyAmount,
       expectedPremiumDebtRay: states[1].usdxBob.premiumDebtRayBefore,
       label: 'spoke2 bob usdx after'
     });
@@ -478,7 +477,7 @@ contract SpokeBorrowScenarioTest is SpokeBase {
 
     state.wethReserveId = _wethReserveId(spoke1);
     state.daiReserveId = _daiReserveId(spoke1);
-    state.wethBob.supplyAmount = MAX_SUPPLY_AMOUNT_WETH;
+    state.wethBob.supplyAmount = MAX_SUPPLY_AMOUNT;
     state.daiBob.premiumDebtRayBefore = _calculatePremiumDebtRay(spoke1, state.daiReserveId, bob);
 
     address[] memory users = new address[](1);

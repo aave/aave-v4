@@ -10,7 +10,7 @@ contract HubDrawTest is HubBase {
 
   function test_draw_fuzz_amounts_same_block(uint256 assetId, uint256 amount) public {
     assetId = bound(assetId, 0, hub1.getAssetCount() - 3); // Exclude usdy & usdz
-    amount = bound(amount, 1, _calculateMaxSupplyAmount(hub1, assetId));
+    amount = bound(amount, 1, MAX_SUPPLY_AMOUNT);
 
     IERC20 underlying = IERC20(hub1.getAsset(assetId).underlying);
 
@@ -86,16 +86,8 @@ contract HubDrawTest is HubBase {
     assertEq(drawn, amount, 'spoke drawn after');
     assertEq(premium, 0, 'spoke premium after');
     // token balance
-    assertEq(
-      underlying.balanceOf(alice),
-      amount + _calculateMaxSupplyAmount(hub1, assetId),
-      'alice asset final balance'
-    );
-    assertEq(
-      underlying.balanceOf(bob),
-      _calculateMaxSupplyAmount(hub1, assetId) - amount,
-      'bob asset final balance'
-    );
+    assertEq(underlying.balanceOf(alice), amount + MAX_SUPPLY_AMOUNT, 'alice asset final balance');
+    assertEq(underlying.balanceOf(bob), MAX_SUPPLY_AMOUNT - amount, 'bob asset final balance');
     assertEq(underlying.balanceOf(address(spoke1)), 0, 'spoke1 asset final balance');
     assertEq(underlying.balanceOf(address(spoke2)), 0, 'spoke2 asset final balance');
     assertEq(
@@ -106,7 +98,7 @@ contract HubDrawTest is HubBase {
 
   function test_draw_fuzz_IncreasedBorrowRate(uint256 assetId, uint256 amount) public {
     assetId = bound(assetId, 0, hub1.getAssetCount() - 3); // Exclude usdy & usdz
-    amount = bound(amount, 1, _calculateMaxSupplyAmount(hub1, assetId) / 10);
+    amount = bound(amount, 1, MAX_SUPPLY_AMOUNT / 10);
 
     _addLiquidity(assetId, amount * 2);
     _drawLiquidity(assetId, amount, true);
@@ -195,7 +187,7 @@ contract HubDrawTest is HubBase {
     uint256 drawAmount
   ) public {
     assetId = bound(assetId, 0, hub1.getAssetCount() - 3); // Exclude usdy & usdz
-    drawAmount = bound(drawAmount, 1, _calculateMaxSupplyAmount(hub1, assetId));
+    drawAmount = bound(drawAmount, 1, MAX_SUPPLY_AMOUNT);
 
     assertTrue(hub1.getAssetLiquidity(assetId) == 0);
 
@@ -236,7 +228,7 @@ contract HubDrawTest is HubBase {
   function test_draw_fuzz_revertsWith_InsufficientLiquidity_due_to_remove(
     uint256 daiAmount
   ) public {
-    daiAmount = bound(daiAmount, 1, MAX_SUPPLY_AMOUNT_DAI);
+    daiAmount = bound(daiAmount, 1, MAX_SUPPLY_AMOUNT);
 
     // spoke2, bob add dai
     Utils.add({
@@ -294,7 +286,7 @@ contract HubDrawTest is HubBase {
   }
 
   function test_draw_fuzz_revertsWith_InsufficientLiquidity_due_to_draw(uint256 daiAmount) public {
-    daiAmount = bound(daiAmount, 1, MAX_SUPPLY_AMOUNT_DAI);
+    daiAmount = bound(daiAmount, 1, MAX_SUPPLY_AMOUNT);
 
     // spoke2, bob add dai
     Utils.add({
@@ -335,7 +327,7 @@ contract HubDrawTest is HubBase {
     uint256 rate,
     uint256 skipTime
   ) public {
-    drawCap = bound(drawCap, 1, MAX_SUPPLY_AMOUNT_DAI / 10 ** tokenList.dai.decimals()).toUint40();
+    drawCap = bound(drawCap, 1, MAX_SUPPLY_AMOUNT / 10 ** tokenList.dai.decimals()).toUint40();
     uint256 daiAmount = drawCap * 10 ** tokenList.dai.decimals() - 1;
     rate = bound(rate, 1, MAX_BORROW_RATE);
     skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
@@ -450,7 +442,7 @@ contract HubDrawTest is HubBase {
   }
 
   function test_draw_fuzz_revertsWith_DrawCapExceeded(uint40 drawCap) public {
-    drawCap = bound(drawCap, 1, MAX_SUPPLY_AMOUNT_DAI / 10 ** tokenList.dai.decimals()).toUint40();
+    drawCap = bound(drawCap, 1, MAX_SUPPLY_AMOUNT / 10 ** tokenList.dai.decimals()).toUint40();
     uint256 daiAmount = drawCap * 10 ** tokenList.dai.decimals();
     uint256 drawAmount = daiAmount + 1;
 

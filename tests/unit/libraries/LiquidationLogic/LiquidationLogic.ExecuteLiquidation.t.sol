@@ -94,22 +94,16 @@ contract LiquidationLogicExecuteLiquidationTest is LiquidationLogicBaseTest {
 
     // Collateral hub: Add liquidity
     address tempUser = makeUser();
-    deal(address(tokenList.usdx), tempUser, MAX_SUPPLY_AMOUNT_USDX);
-    Utils.add(
-      hub1,
-      usdxAssetId,
-      address(liquidationLogicWrapper),
-      MAX_SUPPLY_AMOUNT_USDX,
-      tempUser
-    );
+    deal(address(tokenList.usdx), tempUser, MAX_SUPPLY_AMOUNT);
+    Utils.add(hub1, usdxAssetId, address(liquidationLogicWrapper), MAX_SUPPLY_AMOUNT, tempUser);
 
     // Debt hub: Add liquidity, remove liquidity, refresh premium and skip time to accrue both drawn and premium debt
-    deal(address(tokenList.weth), tempUser, MAX_SUPPLY_AMOUNT_WETH);
+    deal(address(tokenList.weth), tempUser, MAX_SUPPLY_AMOUNT);
     Utils.add(
       debtReserveHub,
       wethAssetId,
       address(liquidationLogicWrapper),
-      MAX_SUPPLY_AMOUNT_WETH,
+      MAX_SUPPLY_AMOUNT,
       tempUser
     );
     Utils.draw(
@@ -117,7 +111,7 @@ contract LiquidationLogicExecuteLiquidationTest is LiquidationLogicBaseTest {
       wethAssetId,
       address(liquidationLogicWrapper),
       tempUser,
-      MAX_SUPPLY_AMOUNT_WETH
+      MAX_SUPPLY_AMOUNT
     );
     vm.startPrank(address(liquidationLogicWrapper));
     debtReserveHub.refreshPremium(

@@ -11,7 +11,7 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
   /// supply ex rate can increase while debt ex rate should remain the same
   /// this is due to donation on available liquidity
   function test_fuzz_repay_effect_on_ex_rates(uint256 daiBorrowAmount, uint256 skipTime) public {
-    daiBorrowAmount = bound(daiBorrowAmount, 1, MAX_SUPPLY_AMOUNT_DAI / 10);
+    daiBorrowAmount = bound(daiBorrowAmount, 1, MAX_SUPPLY_AMOUNT / 10);
     skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
     uint256 wethSupplyAmount = _calcMinimumCollAmount(
       spoke1,
@@ -140,7 +140,7 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
 
     // inflated to 1.5
     uint256 addExRateBefore = getAddExRate(daiAssetId);
-    uint256 exchangeRateBefore = hub1.previewRemoveByShares(daiAssetId, MAX_SUPPLY_AMOUNT_DAI);
+    uint256 exchangeRateBefore = hub1.previewRemoveByShares(daiAssetId, MAX_SUPPLY_AMOUNT);
     assertApproxEqAbs(exchangeRateBefore, 1.5e30, 0.0000001e30);
 
     _openSupplyPosition(spoke1, _daiReserveId(spoke1), 30);
@@ -181,7 +181,7 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
     skip(365 days);
 
     // inflated to 1.5
-    uint256 exchangeRateBefore = hub1.previewRemoveByShares(daiAssetId, MAX_SUPPLY_AMOUNT_DAI);
+    uint256 exchangeRateBefore = hub1.previewRemoveByShares(daiAssetId, MAX_SUPPLY_AMOUNT);
     assertApproxEqAbs(exchangeRateBefore, 1.5e30, 0.0000001e30);
 
     _openSupplyPosition(spoke1, _daiReserveId(spoke1), 30e18);
@@ -194,7 +194,7 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
     vm.prank(bob);
     spoke1.borrow(_daiReserveId(spoke1), 15, bob);
 
-    uint256 exchangeRateAfter = hub1.previewRemoveByShares(daiAssetId, MAX_SUPPLY_AMOUNT_DAI);
+    uint256 exchangeRateAfter = hub1.previewRemoveByShares(daiAssetId, MAX_SUPPLY_AMOUNT);
     assertGt(exchangeRateAfter, exchangeRateBefore);
     exchangeRateBefore = exchangeRateAfter;
 
@@ -203,7 +203,7 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
     // alice repays full
     Utils.repay(spoke1, _daiReserveId(spoke1), alice, UINT256_MAX, alice);
 
-    exchangeRateAfter = hub1.previewRemoveByShares(daiAssetId, MAX_SUPPLY_AMOUNT_DAI);
+    exchangeRateAfter = hub1.previewRemoveByShares(daiAssetId, MAX_SUPPLY_AMOUNT);
     assertGt(exchangeRateAfter, exchangeRateBefore, 'supply rate decreased');
   }
 

@@ -60,7 +60,7 @@ contract SpokeSupplyTest is SpokeBase {
   }
 
   function test_supply_fuzz_revertsWith_ERC20InsufficientBalance(uint256 amount) public {
-    amount = bound(amount, 1, MAX_SUPPLY_AMOUNT_DAI);
+    amount = bound(amount, 1, MAX_SUPPLY_AMOUNT);
     address randomUser = makeAddr('randomUser');
 
     vm.startPrank(randomUser);
@@ -181,7 +181,7 @@ contract SpokeSupplyTest is SpokeBase {
   }
 
   function test_supply_fuzz_amounts(uint256 amount) public {
-    amount = bound(amount, 1, MAX_SUPPLY_AMOUNT_DAI);
+    amount = bound(amount, 1, MAX_SUPPLY_AMOUNT);
 
     deal(address(tokenList.dai), bob, amount);
 
@@ -342,9 +342,9 @@ contract SpokeSupplyTest is SpokeBase {
     uint256 reserveId,
     uint256 skipTime
   ) public {
-    reserveId = bound(reserveId, 0, spokeInfo[spoke1].MAX_ALLOWED_ASSET_ID);
-    amount = bound(amount, 1, _calculateMaxSupplyAmount(spoke1, reserveId));
+    amount = bound(amount, 1, MAX_SUPPLY_AMOUNT);
     rate = bound(rate, 1, MAX_BORROW_RATE);
+    reserveId = bound(reserveId, 0, spokeInfo[spoke1].MAX_ALLOWED_ASSET_ID);
     skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
 
     // set weth collateral risk to 0 for no premium contribution
@@ -402,7 +402,7 @@ contract SpokeSupplyTest is SpokeBase {
     // token balance
     assertEq(
       state.underlying.balanceOf(carol),
-      _calculateMaxSupplyAmount(spoke1, reserveId) - amount,
+      MAX_SUPPLY_AMOUNT - amount,
       'user token balance after-supply'
     );
     assertEq(
@@ -510,9 +510,9 @@ contract SpokeSupplyTest is SpokeBase {
     uint256 reserveId,
     uint256 skipTime
   ) public {
-    reserveId = bound(reserveId, 0, spokeInfo[spoke1].MAX_ALLOWED_ASSET_ID);
-    amount = bound(amount, 1, _calculateMaxSupplyAmount(spoke1, reserveId));
+    amount = bound(amount, 1, MAX_SUPPLY_AMOUNT);
     rate = bound(rate, 1, MAX_BORROW_RATE);
+    reserveId = bound(reserveId, 0, spokeInfo[spoke1].MAX_ALLOWED_ASSET_ID);
     skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
 
     (, IERC20 underlying) = getAssetByReserveId(spoke1, reserveId);
@@ -607,7 +607,7 @@ contract SpokeSupplyTest is SpokeBase {
   /// can increase due to rounding, with interest accrual should strictly increase
   function test_fuzz_supply_effect_on_ex_rates(uint256 amount, uint256 delay) public {
     delay = bound(delay, 1, MAX_SKIP_TIME);
-    amount = bound(amount, 1, MAX_SUPPLY_AMOUNT_DAI / 2);
+    amount = bound(amount, 1, MAX_SUPPLY_AMOUNT / 2);
     uint256 wethSupplyAmount = _calcMinimumCollAmount(
       spoke1,
       _wethReserveId(spoke1),
@@ -618,34 +618,34 @@ contract SpokeSupplyTest is SpokeBase {
     Utils.supplyCollateral(spoke1, _wethReserveId(spoke1), bob, wethSupplyAmount, bob); // bob collateral
     Utils.borrow(spoke1, _daiReserveId(spoke1), bob, amount, bob); // introduce debt
 
-    uint256 supplyExchangeRatio = hub1.previewRemoveByShares(daiAssetId, MAX_SUPPLY_AMOUNT_DAI);
-    uint256 debtExchangeRatio = hub1.previewRestoreByShares(daiAssetId, MAX_SUPPLY_AMOUNT_DAI);
+    uint256 supplyExchangeRatio = hub1.previewRemoveByShares(daiAssetId, MAX_SUPPLY_AMOUNT);
+    uint256 debtExchangeRatio = hub1.previewRestoreByShares(daiAssetId, MAX_SUPPLY_AMOUNT);
 
     Utils.supply(spoke1, _daiReserveId(spoke1), alice, amount, alice);
 
-    assertGe(hub1.previewRemoveByShares(daiAssetId, MAX_SUPPLY_AMOUNT_DAI), supplyExchangeRatio);
-    assertGe(hub1.previewRestoreByShares(daiAssetId, MAX_SUPPLY_AMOUNT_DAI), debtExchangeRatio);
+    assertGe(hub1.previewRemoveByShares(daiAssetId, MAX_SUPPLY_AMOUNT), supplyExchangeRatio);
+    assertGe(hub1.previewRestoreByShares(daiAssetId, MAX_SUPPLY_AMOUNT), debtExchangeRatio);
 
     skip(delay); // with interest accrual, both ex rates should strictly
 
-    assertGt(hub1.previewRemoveByShares(daiAssetId, MAX_SUPPLY_AMOUNT_DAI), supplyExchangeRatio);
-    assertGt(hub1.previewRestoreByShares(daiAssetId, MAX_SUPPLY_AMOUNT_DAI), debtExchangeRatio);
+    assertGt(hub1.previewRemoveByShares(daiAssetId, MAX_SUPPLY_AMOUNT), supplyExchangeRatio);
+    assertGt(hub1.previewRestoreByShares(daiAssetId, MAX_SUPPLY_AMOUNT), debtExchangeRatio);
 
     if (hub1.previewAddByAssets(daiAssetId, amount) > 0) {
-      supplyExchangeRatio = hub1.previewRemoveByShares(daiAssetId, MAX_SUPPLY_AMOUNT_DAI);
-      debtExchangeRatio = hub1.previewRestoreByShares(daiAssetId, MAX_SUPPLY_AMOUNT_DAI);
+      supplyExchangeRatio = hub1.previewRemoveByShares(daiAssetId, MAX_SUPPLY_AMOUNT);
+      debtExchangeRatio = hub1.previewRestoreByShares(daiAssetId, MAX_SUPPLY_AMOUNT);
 
       Utils.supply(spoke1, _daiReserveId(spoke1), alice, amount, alice);
 
-      assertGe(hub1.previewRemoveByShares(daiAssetId, MAX_SUPPLY_AMOUNT_DAI), supplyExchangeRatio);
-      assertGe(hub1.previewRestoreByShares(daiAssetId, MAX_SUPPLY_AMOUNT_DAI), debtExchangeRatio);
+      assertGe(hub1.previewRemoveByShares(daiAssetId, MAX_SUPPLY_AMOUNT), supplyExchangeRatio);
+      assertGe(hub1.previewRestoreByShares(daiAssetId, MAX_SUPPLY_AMOUNT), debtExchangeRatio);
     }
   }
 
   /// test that during a supply action with existing debt assets, risk premium is not refreshed
   function test_supply_does_not_update_risk_premium() public {
-    _openSupplyPosition(spoke1, _usdxReserveId(spoke1), MAX_SUPPLY_AMOUNT_USDX);
-    _openSupplyPosition(spoke1, _daiReserveId(spoke1), MAX_SUPPLY_AMOUNT_DAI);
+    _openSupplyPosition(spoke1, _usdxReserveId(spoke1), MAX_SUPPLY_AMOUNT);
+    _openSupplyPosition(spoke1, _daiReserveId(spoke1), MAX_SUPPLY_AMOUNT);
 
     Utils.supplyCollateral(spoke1, _daiReserveId(spoke1), bob, 50_000e18, bob); // bob dai collateral, $50k
     Utils.supplyCollateral(spoke1, _wethReserveId(spoke1), bob, 1e18, bob); // bob weth collateral, $2k

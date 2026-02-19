@@ -32,7 +32,7 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
     uint256 partialWithdrawAmount,
     uint40 elapsed
   ) public {
-    supplyAmount = bound(supplyAmount, 2, MAX_SUPPLY_AMOUNT_DAI);
+    supplyAmount = bound(supplyAmount, 2, MAX_SUPPLY_AMOUNT);
     borrowAmount = bound(borrowAmount, 1, supplyAmount / 2);
     partialWithdrawAmount = bound(partialWithdrawAmount, 1, supplyAmount - 1);
     elapsed = bound(elapsed, 0, MAX_SKIP_TIME).toUint40();
@@ -317,15 +317,14 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
         'tokenData hub balance'
       );
     }
-    uint256 maxSupply = _calculateMaxSupplyAmount(spoke1, params.reserveId);
     assertEq(
       state.underlying.balanceOf(alice),
-      maxSupply - params.aliceAmount + rAlice.ownerBefore.suppliedAmount,
+      MAX_SUPPLY_AMOUNT - params.aliceAmount + rAlice.ownerBefore.suppliedAmount,
       'alice balance'
     );
     assertEq(
       state.underlying.balanceOf(bob),
-      maxSupply - params.bobAmount + rBob.ownerBefore.suppliedAmount,
+      MAX_SUPPLY_AMOUNT - params.bobAmount + rBob.ownerBefore.suppliedAmount,
       'bob balance'
     );
   }
@@ -383,9 +382,8 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
   ) public {
     _assumeValidSupplier(caller);
     reserveId = bound(reserveId, 0, spoke1.getReserveCount() - 1);
-    uint256 maxSupply = _calculateMaxSupplyAmount(spoke1, reserveId);
-    protocolStartingBalance = bound(protocolStartingBalance, 1, maxSupply - 1); // Allow some buffer from supply cap
-    assets = bound(assets, 1, maxSupply - protocolStartingBalance);
+    protocolStartingBalance = bound(protocolStartingBalance, 1, MAX_SUPPLY_AMOUNT - 1); // Allow some buffer from supply cap
+    assets = bound(assets, 1, MAX_SUPPLY_AMOUNT - protocolStartingBalance);
 
     // Set up initial state of the vault by having derl supply some starting balance
     Utils.supply({
@@ -439,14 +437,13 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
   ) public {
     _assumeValidSupplier(caller);
     reserveId = bound(reserveId, 0, spoke1.getReserveCount() - 1);
-    uint256 maxSupply2 = _calculateMaxSupplyAmount(spoke1, reserveId);
-    protocolStartingBalance = bound(protocolStartingBalance, 1, maxSupply2 - 1); // Allow some buffer from supply cap
-    assets = bound(assets, 1, maxSupply2 - protocolStartingBalance);
+    protocolStartingBalance = bound(protocolStartingBalance, 1, MAX_SUPPLY_AMOUNT - 1); // Allow some buffer from supply cap
+    assets = bound(assets, 1, MAX_SUPPLY_AMOUNT - protocolStartingBalance);
     // Caller starting balance must be at least the amount they will withdraw during test
     callerStartingBalance = bound(
       callerStartingBalance,
       assets,
-      maxSupply2 - protocolStartingBalance
+      MAX_SUPPLY_AMOUNT - protocolStartingBalance
     );
 
     // Set up initial state of the vault by having derl supply some starting balance

@@ -73,12 +73,11 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
         );
       }
       // Deploy remainder of liquidity for each asset
-      uint256 maxSupply = _calculateMaxSupplyAmount(spoke2, testAmounts[i].reserveId);
-      if (testAmounts[i].supplyAmount < maxSupply) {
+      if (testAmounts[i].supplyAmount < MAX_SUPPLY_AMOUNT) {
         _openSupplyPosition(
           spoke2,
           testAmounts[i].reserveId,
-          maxSupply - testAmounts[i].supplyAmount
+          MAX_SUPPLY_AMOUNT - testAmounts[i].supplyAmount
         );
       }
     }
@@ -111,7 +110,7 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
         reserveId: testAmounts[i].reserveId,
         reserveName: testAmounts[i].name,
         expectedUserSupply: testAmounts[i].supplyAmount,
-        expectedReserveSupply: _calculateMaxSupplyAmount(spoke2, testAmounts[i].reserveId),
+        expectedReserveSupply: MAX_SUPPLY_AMOUNT,
         expectedDrawnDebt: drawnDebt,
         expectedPremiumDebt: 0,
         label: ' before first accrual'
@@ -136,15 +135,14 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
       uint256 interest = (drawnDebt + expectedPremiumDebt) -
         testAmounts[i].borrowAmount -
         _calculateBurntInterest(hub1, testAmounts[i].assetId);
-      uint256 assetMaxSupply = _calculateMaxSupplyAmount(spoke2, testAmounts[i].reserveId);
       uint256 expectedUserSupply = testAmounts[i].supplyAmount +
-        (interest * testAmounts[i].supplyAmount) / assetMaxSupply;
+        (interest * testAmounts[i].supplyAmount) / MAX_SUPPLY_AMOUNT;
 
       _assertProtocolSupplyAndDebt({
         reserveId: testAmounts[i].reserveId,
         reserveName: testAmounts[i].name,
         expectedUserSupply: expectedUserSupply,
-        expectedReserveSupply: assetMaxSupply + interest,
+        expectedReserveSupply: MAX_SUPPLY_AMOUNT + interest,
         expectedDrawnDebt: drawnDebt,
         expectedPremiumDebt: expectedPremiumDebt,
         label: ' after first accrual'
@@ -154,8 +152,8 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
     // Only proceed with test if position is healthy
     if (_getUserHealthFactor(spoke2, bob) >= HEALTH_FACTOR_LIQUIDATION_THRESHOLD) {
       // Supply more collateral to ensure bob can borrow more dai to trigger accrual
-      deal(address(tokenList.dai), bob, MAX_SUPPLY_AMOUNT_DAI);
-      Utils.supplyCollateral(spoke2, _usdzReserveId(spoke2), bob, MAX_SUPPLY_AMOUNT_USDZ, bob);
+      deal(address(tokenList.dai), bob, MAX_SUPPLY_AMOUNT);
+      Utils.supplyCollateral(spoke2, _usdzReserveId(spoke2), bob, MAX_SUPPLY_AMOUNT, bob);
 
       uint256 daiBorrowAmount = 1e18;
 
@@ -191,15 +189,14 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
         uint256 interest = (drawnDebt + expectedPremiumDebt) -
           testAmounts[i].originalBorrowAmount -
           _calculateBurntInterest(hub1, testAmounts[i].assetId);
-        uint256 assetMaxSupply = _calculateMaxSupplyAmount(spoke2, testAmounts[i].reserveId);
         uint256 expectedUserSupply = testAmounts[i].originalSupplyAmount +
-          (interest * testAmounts[i].originalSupplyAmount) / assetMaxSupply;
+          (interest * testAmounts[i].originalSupplyAmount) / MAX_SUPPLY_AMOUNT;
 
         _assertProtocolSupplyAndDebt({
           reserveId: testAmounts[i].reserveId,
           reserveName: testAmounts[i].name,
           expectedUserSupply: expectedUserSupply,
-          expectedReserveSupply: assetMaxSupply + interest,
+          expectedReserveSupply: MAX_SUPPLY_AMOUNT + interest,
           expectedDrawnDebt: drawnDebt,
           expectedPremiumDebt: expectedPremiumDebt,
           label: ' before second accrual'
@@ -218,7 +215,7 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
             reserveId: testAmounts[i].reserveId,
             reserveName: testAmounts[i].name,
             expectedUserSupply: testAmounts[i].originalSupplyAmount,
-            expectedReserveSupply: _calculateMaxSupplyAmount(spoke2, testAmounts[i].reserveId),
+            expectedReserveSupply: MAX_SUPPLY_AMOUNT,
             expectedDrawnDebt: 0,
             expectedPremiumDebt: 0,
             label: ' after second accrual'
@@ -244,15 +241,14 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
         uint256 interest = (drawnDebt + expectedPremiumDebt) -
           testAmounts[i].originalBorrowAmount -
           _calculateBurntInterest(hub1, testAmounts[i].assetId);
-        uint256 assetMaxSupply = _calculateMaxSupplyAmount(spoke2, testAmounts[i].reserveId);
         uint256 expectedUserSupply = testAmounts[i].originalSupplyAmount +
-          (interest * testAmounts[i].originalSupplyAmount) / assetMaxSupply;
+          (interest * testAmounts[i].originalSupplyAmount) / MAX_SUPPLY_AMOUNT;
 
         _assertProtocolSupplyAndDebt({
           reserveId: testAmounts[i].reserveId,
           reserveName: testAmounts[i].name,
           expectedUserSupply: expectedUserSupply,
-          expectedReserveSupply: assetMaxSupply + interest,
+          expectedReserveSupply: MAX_SUPPLY_AMOUNT + interest,
           expectedDrawnDebt: drawnDebt,
           expectedPremiumDebt: expectedPremiumDebt,
           label: ' after second accrual'

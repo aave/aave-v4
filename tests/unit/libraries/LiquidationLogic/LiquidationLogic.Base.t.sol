@@ -89,13 +89,13 @@ contract LiquidationLogicBaseTest is SpokeBase {
       _getDebtToTargetHealthFactorParams(params)
     );
 
-    uint256 debtToCover = bound(params.debtToCover, 0, MAX_SUPPLY_AMOUNT_DAI);
+    uint256 debtToCover = bound(params.debtToCover, 0, MAX_SUPPLY_AMOUNT);
     uint256 drawnIndex = bound(params.drawnIndex, MIN_DRAWN_INDEX, MAX_DRAWN_INDEX);
     uint256 drawnShares = bound(
       params.drawnShares,
       1,
       _convertValueToAmount(
-        MAX_SUPPLY_AMOUNT_DAI,
+        MAX_SUPPLY_AMOUNT,
         debtToTargetParams.debtAssetPrice,
         debtToTargetParams.debtAssetUnit
       )
@@ -104,7 +104,7 @@ contract LiquidationLogicBaseTest is SpokeBase {
       params.premiumDebtRay,
       0,
       _convertValueToAmount(
-        MAX_SUPPLY_AMOUNT_DAI,
+        MAX_SUPPLY_AMOUNT,
         debtToTargetParams.debtAssetPrice,
         debtToTargetParams.debtAssetUnit
       )
@@ -184,19 +184,15 @@ contract LiquidationLogicBaseTest is SpokeBase {
       bound(params.collateralAssetUnit, MIN_TOKEN_DECIMALS_SUPPORTED, MAX_TOKEN_DECIMALS_SUPPORTED);
     params.collateralAssetPrice = bound(params.collateralAssetPrice, 1, MAX_ASSET_PRICE);
     params.drawnIndex = bound(params.drawnIndex, MIN_DRAWN_INDEX, MAX_DRAWN_INDEX);
-    uint256 collateralMaxSupply = _calculateMaxSupplyAmount(
-      IHub(address(params.collateralReserveHub)),
-      params.collateralReserveAssetId
-    );
     params.drawnSharesToLiquidate = bound(
       params.drawnSharesToLiquidate,
       0,
-      collateralMaxSupply / params.drawnIndex
+      MAX_SUPPLY_AMOUNT / params.drawnIndex
     );
     params.premiumDebtRayToLiquidate = bound(
       params.premiumDebtRayToLiquidate,
       0,
-      collateralMaxSupply - params.drawnSharesToLiquidate * params.drawnIndex
+      MAX_SUPPLY_AMOUNT - params.drawnSharesToLiquidate * params.drawnIndex
     );
     params.debtAssetUnit =
       10 ** bound(params.debtAssetUnit, MIN_TOKEN_DECIMALS_SUPPORTED, MAX_TOKEN_DECIMALS_SUPPORTED);
@@ -205,7 +201,7 @@ contract LiquidationLogicBaseTest is SpokeBase {
     params.debtAssetPrice = bound(
       params.debtAssetPrice,
       1,
-      collateralMaxSupply /
+      MAX_SUPPLY_AMOUNT /
         _max(1, _convertAmountToValue(debtRayToLiquidate.fromRayUp(), 1, params.debtAssetUnit))
     );
     params.liquidationBonus = bound(
@@ -214,10 +210,10 @@ contract LiquidationLogicBaseTest is SpokeBase {
       MAX_LIQUIDATION_BONUS
     );
 
-    uint256 hubAddedShares = vm.randomUint(1, collateralMaxSupply);
+    uint256 hubAddedShares = vm.randomUint(1, MAX_SUPPLY_AMOUNT);
     uint256 hubAddedAssets = vm.randomUint(
       hubAddedShares,
-      collateralMaxSupply.min(
+      MAX_SUPPLY_AMOUNT.min(
         MAX_SUPPLY_PRICE * (hubAddedShares + SharesMath.VIRTUAL_SHARES) - SharesMath.VIRTUAL_ASSETS
       )
     );
@@ -274,23 +270,19 @@ contract LiquidationLogicBaseTest is SpokeBase {
     );
     params.liquidationFee = bound(params.liquidationFee, 0, PercentageMath.PERCENTAGE_FACTOR);
 
+    params.suppliedShares = bound(params.suppliedShares, 0, MAX_SUPPLY_AMOUNT);
+    uint256 hubAddedShares = vm.randomUint(params.suppliedShares, MAX_SUPPLY_AMOUNT);
+    uint256 hubAddedAssets = vm.randomUint(
+      hubAddedShares,
+      MAX_SUPPLY_AMOUNT.min(
+        MAX_SUPPLY_PRICE * (hubAddedShares + SharesMath.VIRTUAL_SHARES) - SharesMath.VIRTUAL_ASSETS
+      )
+    );
     params.collateralReserveHub = hub1;
     params.collateralReserveAssetId = bound(
       params.collateralReserveAssetId,
       0,
       IHub(address(params.collateralReserveHub)).getAssetCount() - 1
-    );
-    uint256 collateralMaxSupply = _calculateMaxSupplyAmount(
-      IHub(address(params.collateralReserveHub)),
-      params.collateralReserveAssetId
-    );
-    params.suppliedShares = bound(params.suppliedShares, 0, collateralMaxSupply);
-    uint256 hubAddedShares = vm.randomUint(params.suppliedShares, collateralMaxSupply);
-    uint256 hubAddedAssets = vm.randomUint(
-      hubAddedShares,
-      collateralMaxSupply.min(
-        MAX_SUPPLY_PRICE * (hubAddedShares + SharesMath.VIRTUAL_SHARES) - SharesMath.VIRTUAL_ASSETS
-      )
     );
     _mockSupplySharePrice(
       IHub(address(params.collateralReserveHub)),

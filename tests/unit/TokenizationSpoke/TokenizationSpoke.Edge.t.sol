@@ -66,7 +66,7 @@ contract TokenizationSpokeEdgeTest is TokenizationSpokeBaseTest {
 
   function test_singleDepositWithdraw() public {
     address depositor = alice;
-    uint256 assets = vm.randomUint(1, MAX_SUPPLY_AMOUNT_DAI);
+    uint256 assets = vm.randomUint(1, MAX_SUPPLY_AMOUNT);
     asset.mint(depositor, assets);
     Utils.approve(vault, depositor, assets);
 
@@ -95,7 +95,7 @@ contract TokenizationSpokeEdgeTest is TokenizationSpokeBaseTest {
 
   function test_singleMintRedeem() public {
     address depositor = alice;
-    uint256 shares = vm.randomUint(1, MAX_SUPPLY_AMOUNT_DAI);
+    uint256 shares = vm.randomUint(1, MAX_SUPPLY_AMOUNT);
     uint256 expectedAssets = IHub(vault.hub()).previewAddByShares(vault.assetId(), shares);
     asset.mint(depositor, expectedAssets);
     Utils.approve(vault, depositor, expectedAssets);

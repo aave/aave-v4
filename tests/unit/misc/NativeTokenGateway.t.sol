@@ -19,7 +19,7 @@ contract NativeTokenGatewayTest is SpokeBase {
     vm.prank(address(ADMIN));
     nativeTokenGateway.registerSpoke(address(spoke1), true);
 
-    deal(address(tokenList.weth), MAX_SUPPLY_AMOUNT_WETH);
+    deal(address(tokenList.weth), MAX_SUPPLY_AMOUNT);
     deal(bob, MAX_SUPPLY_AMOUNT_WETH);
   }
 

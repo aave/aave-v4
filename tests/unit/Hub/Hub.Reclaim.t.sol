@@ -100,7 +100,7 @@ contract HubReclaimTest is HubBase {
     uint256 sweepAmount,
     uint256 reclaimAmount
   ) public {
-    supplyAmount = bound(supplyAmount, 1, _calculateMaxSupplyAmount(hub1, daiAssetId));
+    supplyAmount = bound(supplyAmount, 1, MAX_SUPPLY_AMOUNT);
     sweepAmount = bound(sweepAmount, 1, supplyAmount);
     reclaimAmount = bound(reclaimAmount, 1, sweepAmount);
 
