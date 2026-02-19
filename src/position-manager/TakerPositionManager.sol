@@ -206,7 +206,8 @@ contract TakerPositionManager is ITakerPositionManager, PositionManagerBase {
     address owner,
     address spender
   ) external view returns (uint256) {
-    return _getWithdrawAllowance(spoke, reserveId, owner, spender);
+    return
+      _getWithdrawAllowance({spoke: spoke, reserveId: reserveId, owner: owner, spender: spender});
   }
 
   /// @inheritdoc ITakerPositionManager
@@ -216,7 +217,8 @@ contract TakerPositionManager is ITakerPositionManager, PositionManagerBase {
     address owner,
     address spender
   ) external view returns (uint256) {
-    return _getBorrowAllowance(spoke, reserveId, owner, spender);
+    return
+      _getBorrowAllowance({spoke: spoke, reserveId: reserveId, owner: owner, spender: spender});
   }
 
   function _getWithdrawAllowance(
@@ -266,7 +268,12 @@ contract TakerPositionManager is ITakerPositionManager, PositionManagerBase {
     address spender,
     uint256 amount
   ) internal {
-    uint256 currentAllowance = _getWithdrawAllowance(spoke, reserveId, owner, spender);
+    uint256 currentAllowance = _getWithdrawAllowance({
+      spoke: spoke,
+      reserveId: reserveId,
+      owner: owner,
+      spender: spender
+    });
     require(currentAllowance >= amount, InsufficientWithdrawAllowance(currentAllowance, amount));
     if (currentAllowance != type(uint256).max) {
       _updateWithdrawAllowance({
@@ -286,7 +293,12 @@ contract TakerPositionManager is ITakerPositionManager, PositionManagerBase {
     address spender,
     uint256 amount
   ) internal {
-    uint256 currentAllowance = _getBorrowAllowance(spoke, reserveId, owner, spender);
+    uint256 currentAllowance = _getBorrowAllowance({
+      spoke: spoke,
+      reserveId: reserveId,
+      owner: owner,
+      spender: spender
+    });
     require(currentAllowance >= amount, InsufficientBorrowAllowance(currentAllowance, amount));
     if (currentAllowance != type(uint256).max) {
       _updateBorrowAllowance({
