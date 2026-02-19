@@ -251,6 +251,18 @@ contract PositionManagerBaseTest is SpokeBase {
     assertTrue(positionManager.isSpokeRegistered(address(spoke2)));
   }
 
+  function test_multicall_atomicity_on_revert() public {
+    bytes[] memory calls = new bytes[](2);
+    calls[0] = abi.encodeWithSignature('registerSpoke(address,bool)', address(spoke1), true);
+    calls[1] = abi.encodeWithSignature('registerSpoke(address,bool)', address(0), true); // will revert
+
+    vm.prank(ADMIN);
+    vm.expectRevert(IPositionManagerBase.InvalidAddress.selector);
+    positionManager.multicall(calls);
+
+    assertFalse(positionManager.isSpokeRegistered(address(spoke1)));
+  }
+
   function test_renouncePositionManagerRole() public {
     address user = vm.randomAddress();
 

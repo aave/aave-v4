@@ -304,4 +304,70 @@ contract SignatureGatewayTest is SignatureGatewayBaseTest {
     _assertGatewayHasNoBalanceOrAllowance(spoke1, gateway, alice);
     _assertGatewayHasNoActivePosition(spoke1, gateway);
   }
+
+  function test_multicall_atomicity_on_revert() public {
+    uint256 deadline = _warpBeforeRandomDeadline();
+    uint256 reserveId = _daiReserveId(spoke1);
+
+    ISignatureGateway.Supply memory p1 = _supplyData(spoke1, alice, deadline);
+    p1.reserveId = reserveId;
+    p1.nonce = _burnRandomNoncesAtKey(gateway, p1.onBehalfOf);
+    bytes memory sig1 = _sign(alicePk, _getTypedDataHash(gateway, p1));
+    Utils.approve(spoke1, p1.reserveId, alice, address(gateway), p1.amount);
+
+    ISignatureGateway.Supply memory p2 = _supplyData(spoke1, alice, deadline);
+    p2.reserveId = reserveId;
+    p2.nonce = _getNextNoncePacked(p1.nonce);
+    bytes memory sig2 = _sign(bobPk, _getTypedDataHash(gateway, p2));
+    Utils.approve(spoke1, p2.reserveId, alice, address(gateway), p2.amount);
+
+    uint256 balanceBefore = _underlying(spoke1, reserveId).balanceOf(alice);
+
+    bytes[] memory calls = new bytes[](2);
+    calls[0] = abi.encodeCall(gateway.supplyWithSig, (p1, sig1));
+    calls[1] = abi.encodeCall(gateway.supplyWithSig, (p2, sig2));
+
+    vm.expectRevert(IIntentConsumer.InvalidSignature.selector);
+    gateway.multicall(calls);
+
+    assertEq(_underlying(spoke1, reserveId).balanceOf(alice), balanceBefore);
+    assertEq(spoke1.getUserSuppliedShares(reserveId, alice), 0);
+    _assertGatewayHasNoActivePosition(spoke1, gateway);
+  }
+
+  function test_multicall_no_atomicity_with_trycatch() public {
+    uint256 deadline = _warpBeforeRandomDeadline();
+    uint256 reserveId = _daiReserveId(spoke1);
+
+    ISignatureGateway.Supply memory p = _supplyData(spoke1, alice, deadline);
+    p.reserveId = reserveId;
+    p.nonce = _burnRandomNoncesAtKey(gateway, p.onBehalfOf);
+    bytes memory signature = _sign(alicePk, _getTypedDataHash(gateway, p));
+    Utils.approve(spoke1, p.reserveId, alice, address(gateway), p.amount);
+
+    uint256 expectedShares = _hub(spoke1, reserveId).previewAddByAssets(
+      _reserveAssetId(spoke1, reserveId),
+      p.amount
+    );
+
+    bytes[] memory calls = new bytes[](2);
+    calls[0] = abi.encodeCall(
+      gateway.permitReserveUnderlying,
+      (address(spoke1), reserveId, alice, 100e18, deadline, uint8(0), bytes32(0), bytes32(0))
+    );
+    calls[1] = abi.encodeCall(gateway.supplyWithSig, (p, signature));
+
+    bytes[] memory res = gateway.multicall(calls);
+
+    assertEq(res[0].length, 0);
+    (uint256 returnedShares, uint256 returnedAmount) = abi.decode(res[1], (uint256, uint256));
+    assertEq(returnedShares, expectedShares);
+    assertEq(returnedAmount, p.amount);
+
+    assertEq(_underlying(spoke1, reserveId).allowance(alice, address(gateway)), 0);
+
+    _assertNonceIncrement(gateway, alice, p.nonce);
+    _assertGatewayHasNoBalanceOrAllowance(spoke1, gateway, alice);
+    _assertGatewayHasNoActivePosition(spoke1, gateway);
+  }
 }
