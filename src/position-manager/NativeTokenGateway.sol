@@ -13,7 +13,6 @@ import {PositionManagerBase} from 'src/position-manager/PositionManagerBase.sol'
 /// @title NativeTokenGateway
 /// @author Aave Labs
 /// @notice Gateway to interact with a spoke using the native coin of a chain.
-/// @dev Contract must be an active & approved user position manager in order to execute spoke actions on a user's behalf.
 contract NativeTokenGateway is INativeTokenGateway, PositionManagerBase, ReentrancyGuardTransient {
   using SafeERC20 for IERC20;
 

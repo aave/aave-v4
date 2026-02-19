@@ -16,6 +16,7 @@ import {PositionManagerBase} from 'src/position-manager/PositionManagerBase.sol'
 contract ConfigPositionManager is IConfigPositionManager, PositionManagerBase {
   using ConfigPermissionsMap for ConfigPermissions;
 
+  /// @dev Map of configuration permissions based on the spoke, delegator and delegatee.
   mapping(address spoke => mapping(address delegator => mapping(address delegatee => ConfigPermissions)))
     private _config;
 
@@ -30,7 +31,7 @@ contract ConfigPositionManager is IConfigPositionManager, PositionManagerBase {
     bool permission
   ) external onlyRegisteredSpoke(spoke) {
     ConfigPermissions newPermissions = ConfigPermissionsMap.setFullPermissions(permission);
-    _writeNewPermissions({
+    _updatePermissions({
       spoke: spoke,
       delegator: msg.sender,
       delegatee: delegatee,
@@ -47,7 +48,7 @@ contract ConfigPositionManager is IConfigPositionManager, PositionManagerBase {
   ) external onlyRegisteredSpoke(spoke) {
     ConfigPermissions oldPermissions = _config[spoke][msg.sender][delegatee];
     ConfigPermissions newPermissions = oldPermissions.setCanSetUsingAsCollateral(permission);
-    _writeNewPermissions({
+    _updatePermissions({
       spoke: spoke,
       delegator: msg.sender,
       delegatee: delegatee,
@@ -64,7 +65,7 @@ contract ConfigPositionManager is IConfigPositionManager, PositionManagerBase {
   ) external onlyRegisteredSpoke(spoke) {
     ConfigPermissions oldPermissions = _config[spoke][msg.sender][delegatee];
     ConfigPermissions newPermissions = oldPermissions.setCanUpdateUserRiskPremium(permission);
-    _writeNewPermissions({
+    _updatePermissions({
       spoke: spoke,
       delegator: msg.sender,
       delegatee: delegatee,
@@ -81,7 +82,7 @@ contract ConfigPositionManager is IConfigPositionManager, PositionManagerBase {
   ) external onlyRegisteredSpoke(spoke) {
     ConfigPermissions oldPermissions = _config[spoke][msg.sender][delegatee];
     ConfigPermissions newPermissions = oldPermissions.setCanUpdateUserDynamicConfig(permission);
-    _writeNewPermissions({
+    _updatePermissions({
       spoke: spoke,
       delegator: msg.sender,
       delegatee: delegatee,
@@ -96,7 +97,7 @@ contract ConfigPositionManager is IConfigPositionManager, PositionManagerBase {
     address delegator
   ) external onlyRegisteredSpoke(spoke) {
     ConfigPermissions newPermissions = ConfigPermissionsMap.setFullPermissions(false);
-    _writeNewPermissions({
+    _updatePermissions({
       spoke: spoke,
       delegator: delegator,
       delegatee: msg.sender,
@@ -112,7 +113,7 @@ contract ConfigPositionManager is IConfigPositionManager, PositionManagerBase {
   ) external onlyRegisteredSpoke(spoke) {
     ConfigPermissions oldPermissions = _config[spoke][delegator][msg.sender];
     ConfigPermissions newPermissions = oldPermissions.setCanSetUsingAsCollateral(false);
-    _writeNewPermissions({
+    _updatePermissions({
       spoke: spoke,
       delegator: delegator,
       delegatee: msg.sender,
@@ -128,7 +129,7 @@ contract ConfigPositionManager is IConfigPositionManager, PositionManagerBase {
   ) external onlyRegisteredSpoke(spoke) {
     ConfigPermissions oldPermissions = _config[spoke][delegator][msg.sender];
     ConfigPermissions newPermissions = oldPermissions.setCanUpdateUserRiskPremium(false);
-    _writeNewPermissions({
+    _updatePermissions({
       spoke: spoke,
       delegator: delegator,
       delegatee: msg.sender,
@@ -144,7 +145,7 @@ contract ConfigPositionManager is IConfigPositionManager, PositionManagerBase {
   ) external onlyRegisteredSpoke(spoke) {
     ConfigPermissions oldPermissions = _config[spoke][delegator][msg.sender];
     ConfigPermissions newPermissions = oldPermissions.setCanUpdateUserDynamicConfig(false);
-    _writeNewPermissions({
+    _updatePermissions({
       spoke: spoke,
       delegator: delegator,
       delegatee: msg.sender,
@@ -209,7 +210,8 @@ contract ConfigPositionManager is IConfigPositionManager, PositionManagerBase {
       });
   }
 
-  function _writeNewPermissions(
+  /// @dev Does not update if the new permissions are equal to the old permissions.
+  function _updatePermissions(
     address spoke,
     address delegator,
     address delegatee,

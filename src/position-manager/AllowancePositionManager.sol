@@ -206,7 +206,7 @@ contract AllowancePositionManager is IAllowancePositionManager, PositionManagerB
     address owner,
     address spender
   ) external view returns (uint256) {
-    return _withdrawAllowances[spoke][reserveId][owner][spender];
+    return _getWithdrawAllowance(spoke, reserveId, owner, spender);
   }
 
   /// @inheritdoc IAllowancePositionManager
@@ -216,6 +216,24 @@ contract AllowancePositionManager is IAllowancePositionManager, PositionManagerB
     address owner,
     address spender
   ) external view returns (uint256) {
+    return _getBorrowAllowance(spoke, reserveId, owner, spender);
+  }
+
+  function _getWithdrawAllowance(
+    address spoke,
+    uint256 reserveId,
+    address owner,
+    address spender
+  ) internal view returns (uint256) {
+    return _withdrawAllowances[spoke][reserveId][owner][spender];
+  }
+
+  function _getBorrowAllowance(
+    address spoke,
+    uint256 reserveId,
+    address owner,
+    address spender
+  ) internal view returns (uint256) {
     return _borrowAllowances[spoke][reserveId][owner][spender];
   }
 
@@ -248,7 +266,7 @@ contract AllowancePositionManager is IAllowancePositionManager, PositionManagerB
     address spender,
     uint256 amount
   ) internal {
-    uint256 currentAllowance = _withdrawAllowances[spoke][reserveId][owner][spender];
+    uint256 currentAllowance = _getWithdrawAllowance(spoke, reserveId, owner, spender);
     require(currentAllowance >= amount, InsufficientWithdrawAllowance(currentAllowance, amount));
     if (currentAllowance != type(uint256).max) {
       _updateWithdrawAllowance({
@@ -268,7 +286,7 @@ contract AllowancePositionManager is IAllowancePositionManager, PositionManagerB
     address spender,
     uint256 amount
   ) internal {
-    uint256 currentAllowance = _borrowAllowances[spoke][reserveId][owner][spender];
+    uint256 currentAllowance = _getBorrowAllowance(spoke, reserveId, owner, spender);
     require(currentAllowance >= amount, InsufficientBorrowAllowance(currentAllowance, amount));
     if (currentAllowance != type(uint256).max) {
       _updateBorrowAllowance({

@@ -9,7 +9,7 @@ import {IPositionManagerBase} from 'src/position-manager/interfaces/IPositionMan
 /// @notice Interface for position manager handling supply and repay actions on behalf of users.
 interface ISupplyRepayPositionManager is IPositionManagerBase {
   /// @notice Error thrown when the repay amount is not an allowed value.
-  error NoMaxRepayOnBehalfOfAllowed();
+  error NoMaxUintRepayOnBehalfOfAllowed();
 
   /// @notice Executes a supply on behalf of a user.
   /// @param spoke The address of the spoke.

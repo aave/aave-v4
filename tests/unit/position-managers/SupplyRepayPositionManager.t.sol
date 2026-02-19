@@ -316,7 +316,7 @@ contract SupplyRepayPositionManagerTest is SpokeBase {
     vm.prank(bob);
     tokenList.dai.approve(address(positionManager), UINT256_MAX);
 
-    vm.expectRevert(ISupplyRepayPositionManager.NoMaxRepayOnBehalfOfAllowed.selector);
+    vm.expectRevert(ISupplyRepayPositionManager.NoMaxUintRepayOnBehalfOfAllowed.selector);
     vm.prank(bob);
     positionManager.repayOnBehalfOf(address(spoke1), _daiReserveId(spoke1), UINT256_MAX, alice);
   }

@@ -6,7 +6,7 @@ import {IPositionManagerBase} from 'src/position-manager/interfaces/IPositionMan
 
 /// @title IAllowancePositionManager
 /// @author Aave Labs
-/// @notice Interface for position manager handling withdraw permit & credit delegation actions.
+/// @notice Interface for position manager handling withdraw permit and borrow permit actions on behalf of users.
 interface IAllowancePositionManager is IPositionManagerBase {
   /// @notice Structured parameters for withdraw permit intent.
   /// @param spoke The address of the spoke.
@@ -92,6 +92,7 @@ interface IAllowancePositionManager is IPositionManagerBase {
   ) external;
 
   /// @notice Approves a spender to withdraw from the specified reserve using an EIP712-typed intent.
+  /// @dev Using `type(uint256).max` as the amount results in an infinite approval, so the allowance is never decreased.
   /// @param params The structured WithdrawPermit parameters.
   /// @param signature The EIP712-compliant signature bytes.
   function approveWithdrawWithSig(
@@ -113,6 +114,7 @@ interface IAllowancePositionManager is IPositionManagerBase {
   ) external;
 
   /// @notice Approves a spender to borrow from the specified reserve using an EIP712-typed intent.
+  /// @dev Using `type(uint256).max` as the amount results in an infinite approval, so the allowance is never decreased.
   /// @param params The structured BorrowPermit parameters.
   /// @param signature The EIP712-compliant signature bytes.
   function approveBorrowWithSig(BorrowPermit calldata params, bytes calldata signature) external;
