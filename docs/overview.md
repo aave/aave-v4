@@ -2,7 +2,7 @@
 
 Aave V4 introduces an architectural redesign centered around the Hub, enabling protocol flexibility and capital efficiency. This innovative architecture allows the Governor (e.g., the Aave DAO) to dynamically manage Spokes, adding new borrowing capabilities and removing outdated ones without requiring costly liquidity migrations.
 
-The protocol implements sophisticated risk management through its Risk Premiums system, where each asset receives a dynamic risk factor (called Collateral Risk) ranging from 0 to 1000_00 (BPS) based on the asset's implied volatility, market conditions, liquidity, risk, etc. This granular pricing mechanism introduces base drawn rates for pristine-quality collateral (such as ETH) while adjusting borrowing costs proportionally to Collateral Risk profiles.
+The protocol implements sophisticated risk management through its Risk Premiums system, where each asset receives a specific risk factor (called Collateral Risk) ranging from 0 to 1000_00 (BPS) based on the asset's implied volatility, market conditions, liquidity, risk, etc. This granular pricing mechanism introduces base drawn rates for pristine-quality collateral (such as ETH) while adjusting borrowing costs proportionally to Collateral Risk profiles.
 
 By providing preferential rates for stronger collateral and optimizing capital efficiency, Aave V4 creates a more robust lending environment that accurately prices risk and rewards. Consequently, the protocol attracts higher-quality collateral, while offering improved yields for suppliers and lower fees for borrowers utilizing safer collateral assets.
 
@@ -56,7 +56,7 @@ The key aspects of the Hub include:
 - Managing spoke-specific deficit accounting to keep protocol solvency.
 - Managing reinvestment controller per asset, authorizing sweep and reclaim of idle liquidity to and from external strategies.
 - Managing interest rate strategy per asset, defining the optimal usage ratio, base borrow rate, and rate slopes, among other parameters.
-- Managing the access controls for the Governor entity authorized to execute emergency controls, the authorized entity which can call `mintFeeShares`, and general access controls via the `AccessManaged` authority.
+- Managing the access controls for the Governor entity authorized to execute emergency controls, the authorized entity which can call `mintFeeShares`, and general access controls via the `AccessManager` authority.
 - Setting the liquidity fee per asset, determining the share of interest revenue retained by the protocol.
 - Enforcing accounting invariants:
   1. Total borrowed shares == sum of Spoke debt shares
@@ -153,7 +153,7 @@ The refresh mechanism preserves the total premium debt while updating the premiu
 - The user's previously accrued premium debt remains unchanged
 - Future premium accrual reflects the updated Risk Premium
 
-Actions that trigger a premium refresh include risk‑increasing events that can change $RP_u$, such as `setUsingAsCollateral` when disabling collateral, `withdraw` when withdrawing collateral, `borrow` when increasing debt, and explicit `updateUserRiskPremium` updates (user-initiated or permissioned by the Governor). In these flows, `refreshPremium` updates premium shares and the offset so the total premium debt stays constant, while future accrual reflects the new Risk Premium.
+Actions that trigger a premium refresh include events that can change $RP_u$, such as `setUsingAsCollateral` when disabling collateral, `withdraw` when withdrawing collateral, `borrow` when increasing debt, `liquidationCall` (non-deficit path), and explicit `updateUserRiskPremium` updates (user-initiated or permissioned by the Governor). In these flows, `refreshPremium` updates premium shares and the offset so the total premium debt stays constant, while future accrual reflects the new Risk Premium.
 
 # Interest Accrual
 
