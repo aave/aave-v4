@@ -89,15 +89,26 @@ contract LiquidationLogicBaseTest is SpokeBase {
       _getDebtToTargetHealthFactorParams(params)
     );
 
-    uint256 debtToCover = bound(
-      params.debtToCover,
-      0,
-      MAX_SUPPLY_ASSET_UNITS * debtToTargetParams.debtAssetUnit
-    );
+    uint256 debtToCover = bound(params.debtToCover, 0, MAX_SUPPLY_AMOUNT_DAI);
     uint256 drawnIndex = bound(params.drawnIndex, MIN_DRAWN_INDEX, MAX_DRAWN_INDEX);
-    uint256 maxDebtAmount = MAX_SUPPLY_ASSET_UNITS * debtToTargetParams.debtAssetUnit;
-    uint256 drawnShares = bound(params.drawnShares, 1, maxDebtAmount);
-    uint256 premiumDebtRay = bound(params.premiumDebtRay, 0, maxDebtAmount);
+    uint256 drawnShares = bound(
+      params.drawnShares,
+      1,
+      _convertValueToAmount(
+        MAX_SUPPLY_AMOUNT_DAI,
+        debtToTargetParams.debtAssetPrice,
+        debtToTargetParams.debtAssetUnit
+      )
+    );
+    uint256 premiumDebtRay = bound(
+      params.premiumDebtRay,
+      0,
+      _convertValueToAmount(
+        MAX_SUPPLY_AMOUNT_DAI,
+        debtToTargetParams.debtAssetPrice,
+        debtToTargetParams.debtAssetUnit
+      )
+    );
 
     return
       LiquidationLogic.CalculateDebtToLiquidateParams({
@@ -174,7 +185,7 @@ contract LiquidationLogicBaseTest is SpokeBase {
     params.collateralAssetPrice = bound(params.collateralAssetPrice, 1, MAX_ASSET_PRICE);
     params.drawnIndex = bound(params.drawnIndex, MIN_DRAWN_INDEX, MAX_DRAWN_INDEX);
     uint256 collateralMaxSupply = _calculateMaxSupplyAmount(
-      params.collateralReserveHub,
+      IHub(address(params.collateralReserveHub)),
       params.collateralReserveAssetId
     );
     params.drawnSharesToLiquidate = bound(
@@ -249,7 +260,6 @@ contract LiquidationLogicBaseTest is SpokeBase {
     params.premiumDebtRay = debtToLiquidateParams.premiumDebtRay;
     params.drawnIndex = debtToLiquidateParams.drawnIndex;
     params.totalDebtValueRay = debtToLiquidateParams.totalDebtValueRay;
-    params.debtAssetDecimals = debtToLiquidateParams.debtAssetDecimals;
     params.debtAssetPrice = debtToLiquidateParams.debtAssetPrice;
     params.debtToCover = debtToLiquidateParams.debtToCover;
     params.healthFactor = debtToLiquidateParams.healthFactor;
@@ -271,7 +281,7 @@ contract LiquidationLogicBaseTest is SpokeBase {
       IHub(address(params.collateralReserveHub)).getAssetCount() - 1
     );
     uint256 collateralMaxSupply = _calculateMaxSupplyAmount(
-      params.collateralReserveHub,
+      IHub(address(params.collateralReserveHub)),
       params.collateralReserveAssetId
     );
     params.suppliedShares = bound(params.suppliedShares, 0, collateralMaxSupply);

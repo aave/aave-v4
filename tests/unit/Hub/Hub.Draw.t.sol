@@ -335,7 +335,7 @@ contract HubDrawTest is HubBase {
     uint256 rate,
     uint256 skipTime
   ) public {
-    drawCap = bound(drawCap, 1, MAX_SUPPLY_ASSET_UNITS).toUint40();
+    drawCap = bound(drawCap, 1, MAX_SUPPLY_AMOUNT_DAI / 10 ** tokenList.dai.decimals()).toUint40();
     uint256 daiAmount = drawCap * 10 ** tokenList.dai.decimals() - 1;
     rate = bound(rate, 1, MAX_BORROW_RATE);
     skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
@@ -450,7 +450,7 @@ contract HubDrawTest is HubBase {
   }
 
   function test_draw_fuzz_revertsWith_DrawCapExceeded(uint40 drawCap) public {
-    drawCap = bound(drawCap, 1, MAX_SUPPLY_ASSET_UNITS).toUint40();
+    drawCap = bound(drawCap, 1, MAX_SUPPLY_AMOUNT_DAI / 10 ** tokenList.dai.decimals()).toUint40();
     uint256 daiAmount = drawCap * 10 ** tokenList.dai.decimals();
     uint256 drawAmount = daiAmount + 1;
 

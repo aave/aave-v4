@@ -137,8 +137,8 @@ contract SpokeMultipleHubSiloedBorrowingTest is SpokeMultipleHubBase {
     vm.stopPrank();
 
     // Deal tokens
-    deal(address(assetA), bob, _calculateMaxSupplyAmount(assetA));
-    deal(address(assetB), alice, _calculateMaxSupplyAmount(assetB));
+    deal(address(assetA), bob, _calculateMaxSupplyAmount(IERC20(address(assetA))));
+    deal(address(assetB), alice, _calculateMaxSupplyAmount(IERC20(address(assetB))));
   }
 
   /* @dev Test showcasing a possible configuration for siloed mode

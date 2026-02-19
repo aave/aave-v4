@@ -117,6 +117,8 @@ contract SpokeWithdrawHealthFactorTest is SpokeBase {
       daiBorrowAmount
     );
 
+    vm.assume(wbtcSupplyAmount <= MAX_SUPPLY_AMOUNT_WBTC);
+
     _openSupplyPosition(spoke1, _daiReserveId(spoke1), daiBorrowAmount);
 
     Utils.supplyCollateral(spoke1, _wbtcReserveId(spoke1), alice, wbtcSupplyAmount, alice);

@@ -59,7 +59,7 @@ contract HubRemoveTest is HubBase {
     assertEq(underlying.balanceOf(address(hub1)), 0, 'hub token balance after');
     assertEq(
       underlying.balanceOf(alice),
-      _calculateMaxSupplyAmount(TestnetERC20(address(underlying))),
+      _calculateMaxSupplyAmount(underlying),
       'user token balance after'
     );
   }
@@ -103,7 +103,7 @@ contract HubRemoveTest is HubBase {
     assertEq(underlying.balanceOf(address(hub1)), 0, 'hub token balance after');
     assertEq(
       underlying.balanceOf(alice),
-      _calculateMaxSupplyAmount(TestnetERC20(address(underlying))),
+      _calculateMaxSupplyAmount(underlying),
       'user token balance after'
     );
   }

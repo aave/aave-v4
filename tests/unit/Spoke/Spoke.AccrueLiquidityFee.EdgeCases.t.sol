@@ -175,7 +175,7 @@ contract SpokeAccrueLiquidityFeeEdgeCasesTest is SpokeBase {
     uint256 count = vm.randomUint(10, 1000);
     for (uint256 i; i < count; ++i) {
       address user = makeUser(i);
-      uint256 borrowAmount = vm.randomUint(1, _calculateMaxSupplyAmount(hub1, assetId) / count);
+      uint256 borrowAmount = vm.randomUint(1, MAX_SUPPLY_AMOUNT_DAI / count);
       ISpoke spoke = spokes[i % spokes.length]; // to deterministically pick random spoke
       uint256 reserveId = _reserveId(spoke, assetId);
       _backedBorrow(spoke, user, reserveId, reserveId, borrowAmount);

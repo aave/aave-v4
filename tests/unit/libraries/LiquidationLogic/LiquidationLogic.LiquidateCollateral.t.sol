@@ -54,7 +54,7 @@ contract LiquidationLogicLiquidateCollateralTest is LiquidationLogicBaseTest, Hu
     hub.addSpoke(assetId, address(spoke), spokeConfig);
 
     // add and drawn liquidity to increase supply share price of assetId
-    deal(address(asset), alice, _calculateMaxSupplyAmount(hub, assetId) * 2);
+    deal(address(asset), alice, MAX_SUPPLY_AMOUNT_WETH * 2);
     _addAndDrawLiquidity({
       hub: hub,
       assetId: assetId,

@@ -24,7 +24,7 @@ contract TokenizationSpokeBaseTest is Base {
     return
       ITokenizationSpoke.TokenizedDeposit({
         depositor: who,
-        assets: vm.randomUint(1, _calculateMaxSupplyAmount(vault)),
+        assets: vm.randomUint(1, _calculateMaxSupplyAmount(IHub(vault.hub()), vault.assetId())),
         receiver: vm.randomAddress(),
         nonce: vault.nonces(who, _randomNonceKey()),
         deadline: deadline
@@ -39,7 +39,7 @@ contract TokenizationSpokeBaseTest is Base {
     return
       ITokenizationSpoke.TokenizedMint({
         depositor: who,
-        shares: vm.randomUint(1, _calculateMaxSupplyAmount(vault)),
+        shares: vm.randomUint(1, _calculateMaxSupplyAmount(IHub(vault.hub()), vault.assetId())),
         receiver: vm.randomAddress(),
         nonce: vault.nonces(who, _randomNonceKey()),
         deadline: deadline
@@ -54,7 +54,7 @@ contract TokenizationSpokeBaseTest is Base {
     return
       ITokenizationSpoke.TokenizedWithdraw({
         owner: who,
-        assets: vm.randomUint(1, _calculateMaxSupplyAmount(vault)),
+        assets: vm.randomUint(1, _calculateMaxSupplyAmount(IHub(vault.hub()), vault.assetId())),
         receiver: vm.randomAddress(),
         nonce: vault.nonces(who, _randomNonceKey()),
         deadline: deadline
@@ -69,7 +69,7 @@ contract TokenizationSpokeBaseTest is Base {
     return
       ITokenizationSpoke.TokenizedRedeem({
         owner: who,
-        shares: vm.randomUint(1, _calculateMaxSupplyAmount(vault)),
+        shares: vm.randomUint(1, _calculateMaxSupplyAmount(IHub(vault.hub()), vault.assetId())),
         receiver: vm.randomAddress(),
         nonce: vault.nonces(who, _randomNonceKey()),
         deadline: deadline
@@ -85,7 +85,7 @@ contract TokenizationSpokeBaseTest is Base {
       EIP712Types.Permit({
         owner: who,
         spender: address(vault),
-        value: vm.randomUint(1, _calculateMaxSupplyAmount(vault)),
+        value: vm.randomUint(1, _calculateMaxSupplyAmount(IHub(vault.hub()), vault.assetId())),
         deadline: deadline,
         nonce: vault.nonces(who, vault.PERMIT_NONCE_NAMESPACE()) // can only use permit nonce key namespace
       });

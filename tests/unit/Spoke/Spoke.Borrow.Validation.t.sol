@@ -130,7 +130,7 @@ contract SpokeBorrowValidationTest is SpokeBase {
 
   function test_borrow_fuzz_revertsWith_DrawCapExceeded(uint256 reserveId, uint40 drawCap) public {
     reserveId = bound(reserveId, 0, spoke1.getReserveCount() - 1);
-    drawCap = bound(drawCap, 1, MAX_SUPPLY_ASSET_UNITS).toUint40();
+    drawCap = bound(drawCap, 1, MAX_SUPPLY_AMOUNT_DAI / 10 ** tokenList.dai.decimals()).toUint40();
 
     uint256 drawAmount = drawCap * 10 ** tokenList.dai.decimals() + 1;
 

@@ -84,8 +84,8 @@ contract SpokeUtilsTest is SpokeBase {
   }
 
   function test_fuzz_toValue(uint256 amount, uint256 decimals, uint256 price) public view {
+    amount = bound(amount, 0, MAX_SUPPLY_AMOUNT_DAI);
     decimals = bound(decimals, MIN_TOKEN_DECIMALS_SUPPORTED, MAX_TOKEN_DECIMALS_SUPPORTED);
-    amount = bound(amount, 0, MAX_SUPPLY_ASSET_UNITS * 10 ** decimals);
     price = bound(price, 0, MAX_ASSET_PRICE);
     assertEq(w.toValue(amount, decimals, price), amount * price * (10 ** (18 - decimals)));
   }
