@@ -305,7 +305,7 @@ contract SignatureGatewayTest is SignatureGatewayBaseTest {
     _assertGatewayHasNoActivePosition(spoke1, gateway);
   }
 
-  /// @dev We expect the multicall to revert due to the second supplyWithSig() call being invalid.
+  /// @dev We expect the multicall to revert due to the supplyWithSig() call being invalid because it was executed before the multicall.
   function test_multicall_atomicity_on_revert() public {
     uint256 deadline = _warpBeforeRandomDeadline();
     uint256 reserveId = _daiReserveId(spoke1);
@@ -316,27 +316,34 @@ contract SignatureGatewayTest is SignatureGatewayBaseTest {
     bytes memory sig1 = _sign(alicePk, _getTypedDataHash(gateway, p1));
     Utils.approve(spoke1, p1.reserveId, alice, address(gateway), p1.amount);
 
-    ISignatureGateway.Supply memory p2 = _supplyData(spoke1, alice, deadline);
+    ISignatureGateway.SetUsingAsCollateral memory p2 = _setAsCollateralData(
+      spoke1,
+      alice,
+      deadline
+    );
     p2.reserveId = reserveId;
     p2.nonce = _getNextNoncePacked(p1.nonce);
-    bytes memory sig2 = _sign(bobPk, _getTypedDataHash(gateway, p2));
-    Utils.approve(spoke1, p2.reserveId, alice, address(gateway), p2.amount);
-
-    uint256 balanceBefore = _underlying(spoke1, reserveId).balanceOf(alice);
+    bytes memory sig2 = _sign(alicePk, _getTypedDataHash(gateway, p2));
 
     bytes[] memory calls = new bytes[](2);
     calls[0] = abi.encodeCall(gateway.supplyWithSig, (p1, sig1));
-    calls[1] = abi.encodeCall(gateway.supplyWithSig, (p2, sig2));
+    calls[1] = abi.encodeCall(gateway.setUsingAsCollateralWithSig, (p2, sig2));
 
-    vm.expectRevert(IIntentConsumer.InvalidSignature.selector);
+    vm.prank(vm.randomAddress());
+    gateway.supplyWithSig(p1, sig1);
+
+    uint256 balanceBefore = _underlying(spoke1, reserveId).balanceOf(alice);
+
+    vm.expectRevert(
+      abi.encodeWithSelector(INoncesKeyed.InvalidAccountNonce.selector, alice, p2.nonce)
+    );
     gateway.multicall(calls);
 
     assertEq(_underlying(spoke1, reserveId).balanceOf(alice), balanceBefore);
-    assertEq(spoke1.getUserSuppliedShares(reserveId, alice), 0);
     _assertGatewayHasNoActivePosition(spoke1, gateway);
   }
 
-  /// @dev We expect the multicall not to revert, even if the second call to setUsingAsCollateralWithSig() is invalid, due to the use of try/catch.
+  /// @dev We expect the multicall not to revert, even if the call permitReserveUnderlying() is invalid, due to the use of try/catch.
   function test_multicall_no_atomicity_with_trycatch() public {
     uint256 deadline = _warpBeforeRandomDeadline();
     uint256 reserveId = _daiReserveId(spoke1);
