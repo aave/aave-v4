@@ -2,12 +2,17 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.20;
 
-import {ConfigPermissions} from 'src/position-manager/interfaces/IConfigPositionManager.sol';
+import {
+  ConfigPermissions,
+  IConfigPositionManager
+} from 'src/position-manager/interfaces/IConfigPositionManager.sol';
 
 /// @title ConfigPermissions Library
 /// @author Aave Labs
 /// @notice Implements the bitmap logic to handle the ConfigPermissions configuration.
 library ConfigPermissionsMap {
+  using ConfigPermissionsMap for ConfigPermissions;
+
   /// @dev Mask for the `canSetUsingAsCollateral` permission.
   uint8 internal constant CAN_SET_USING_AS_COLLATERAL_MASK = 0x1;
   /// @dev Mask for the `canUpdateUserRiskPremium` permission.
@@ -93,6 +98,20 @@ library ConfigPermissionsMap {
   /// @return True if both ConfigPermissions are equal, false otherwise.
   function eq(ConfigPermissions self, ConfigPermissions other) internal pure returns (bool) {
     return ConfigPermissions.unwrap(self) == ConfigPermissions.unwrap(other);
+  }
+
+  /// @notice Returns the ConfigPermissionValues struct with the values of each permission.
+  /// @param self The current ConfigPermissions.
+  /// @return The ConfigPermissionValues struct with the values of each permission.
+  function getConfigPermissionValues(
+    ConfigPermissions self
+  ) internal pure returns (IConfigPositionManager.ConfigPermissionValues memory) {
+    return
+      IConfigPositionManager.ConfigPermissionValues({
+        canSetUsingAsCollateral: self.canSetUsingAsCollateral(),
+        canUpdateUserRiskPremium: self.canUpdateUserRiskPremium(),
+        canUpdateUserDynamicConfig: self.canUpdateUserDynamicConfig()
+      });
   }
 
   /// @notice Sets the new status for the given permission.

@@ -6,6 +6,7 @@ import {
   ConfigPermissions,
   ConfigPermissionsMap
 } from 'src/position-manager/libraries/ConfigPermissionsMap.sol';
+import {IConfigPositionManager} from 'src/position-manager/interfaces/IConfigPositionManager.sol';
 
 contract ConfigPermissionsWrapper {
   using ConfigPermissionsMap for ConfigPermissions;
@@ -45,6 +46,12 @@ contract ConfigPermissionsWrapper {
 
   function canUpdateUserDynamicConfig(ConfigPermissions self) external pure returns (bool) {
     return self.canUpdateUserDynamicConfig();
+  }
+
+  function getConfigPermissionValues(
+    ConfigPermissions self
+  ) external pure returns (IConfigPositionManager.ConfigPermissionValues memory) {
+    return self.getConfigPermissionValues();
   }
 
   function CAN_SET_USING_AS_COLLATERAL_MASK() external pure returns (uint8) {

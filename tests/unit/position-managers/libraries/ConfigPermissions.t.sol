@@ -4,6 +4,7 @@ pragma solidity ^0.8.0;
 
 import {Test} from 'forge-std/Test.sol';
 import {ConfigPermissions} from 'src/position-manager/libraries/ConfigPermissionsMap.sol';
+import {IConfigPositionManager} from 'src/position-manager/interfaces/IConfigPositionManager.sol';
 import {ConfigPermissionsWrapper} from 'tests/mocks/ConfigPermissionsWrapper.sol';
 
 contract ConfigPermissionsTests is Test {
@@ -60,6 +61,17 @@ contract ConfigPermissionsTests is Test {
     uint8 expected = _changeStatus(perms, CAN_UPDATE_USER_DYNAMIC_CONFIG_MASK, status);
     assertEq(uint8(ConfigPermissions.unwrap(updatedPerms)), expected);
     assertEq(w.canUpdateUserDynamicConfig(updatedPerms), status);
+  }
+
+  function test_getConfigPermissionValues(uint8 rawPermissions) public view {
+    ConfigPermissions perms = _sanitizePermissions(rawPermissions);
+    IConfigPositionManager.ConfigPermissionValues memory values = w.getConfigPermissionValues(
+      perms
+    );
+
+    assertEq(values.canSetUsingAsCollateral, w.canSetUsingAsCollateral(perms));
+    assertEq(values.canUpdateUserRiskPremium, w.canUpdateUserRiskPremium(perms));
+    assertEq(values.canUpdateUserDynamicConfig, w.canUpdateUserDynamicConfig(perms));
   }
 
   /// @dev Sanitizes the raw permissions by masking out any irrelevant bits.

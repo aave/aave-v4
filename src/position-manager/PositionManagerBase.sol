@@ -24,7 +24,7 @@ abstract contract PositionManagerBase is
   Multicall
 {
   /// @dev Map of registered spokes.
-  mapping(address => bool) internal _registeredSpokes;
+  mapping(address spoke => bool registered) internal _registeredSpokes;
 
   /// @notice Modifier that checks if the specified spoke is registered.
   modifier onlyRegisteredSpoke(address spoke) {

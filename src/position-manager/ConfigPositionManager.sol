@@ -30,7 +30,11 @@ contract ConfigPositionManager is IConfigPositionManager, PositionManagerBase {
     address delegatee,
     bool permission
   ) external onlyRegisteredSpoke(spoke) {
-    ConfigPermissions oldPermissions = _config[spoke][msg.sender][delegatee];
+    ConfigPermissions oldPermissions = _getPermissions({
+      spoke: spoke,
+      delegator: msg.sender,
+      delegatee: delegatee
+    });
     ConfigPermissions newPermissions = ConfigPermissionsMap.setFullPermissions(permission);
     _updatePermissions({
       spoke: spoke,
@@ -47,7 +51,11 @@ contract ConfigPositionManager is IConfigPositionManager, PositionManagerBase {
     address delegatee,
     bool permission
   ) external onlyRegisteredSpoke(spoke) {
-    ConfigPermissions oldPermissions = _config[spoke][msg.sender][delegatee];
+    ConfigPermissions oldPermissions = _getPermissions({
+      spoke: spoke,
+      delegator: msg.sender,
+      delegatee: delegatee
+    });
     ConfigPermissions newPermissions = oldPermissions.setCanSetUsingAsCollateral(permission);
     _updatePermissions({
       spoke: spoke,
@@ -64,7 +72,11 @@ contract ConfigPositionManager is IConfigPositionManager, PositionManagerBase {
     address delegatee,
     bool permission
   ) external onlyRegisteredSpoke(spoke) {
-    ConfigPermissions oldPermissions = _config[spoke][msg.sender][delegatee];
+    ConfigPermissions oldPermissions = _getPermissions({
+      spoke: spoke,
+      delegator: msg.sender,
+      delegatee: delegatee
+    });
     ConfigPermissions newPermissions = oldPermissions.setCanUpdateUserRiskPremium(permission);
     _updatePermissions({
       spoke: spoke,
@@ -81,7 +93,11 @@ contract ConfigPositionManager is IConfigPositionManager, PositionManagerBase {
     address delegatee,
     bool permission
   ) external onlyRegisteredSpoke(spoke) {
-    ConfigPermissions oldPermissions = _config[spoke][msg.sender][delegatee];
+    ConfigPermissions oldPermissions = _getPermissions({
+      spoke: spoke,
+      delegator: msg.sender,
+      delegatee: delegatee
+    });
     ConfigPermissions newPermissions = oldPermissions.setCanUpdateUserDynamicConfig(permission);
     _updatePermissions({
       spoke: spoke,
@@ -97,7 +113,11 @@ contract ConfigPositionManager is IConfigPositionManager, PositionManagerBase {
     address spoke,
     address delegator
   ) external onlyRegisteredSpoke(spoke) {
-    ConfigPermissions oldPermissions = _config[spoke][delegator][msg.sender];
+    ConfigPermissions oldPermissions = _getPermissions({
+      spoke: spoke,
+      delegator: delegator,
+      delegatee: msg.sender
+    });
     ConfigPermissions newPermissions = ConfigPermissionsMap.setFullPermissions(false);
     _updatePermissions({
       spoke: spoke,
@@ -113,7 +133,11 @@ contract ConfigPositionManager is IConfigPositionManager, PositionManagerBase {
     address spoke,
     address delegator
   ) external onlyRegisteredSpoke(spoke) {
-    ConfigPermissions oldPermissions = _config[spoke][delegator][msg.sender];
+    ConfigPermissions oldPermissions = _getPermissions({
+      spoke: spoke,
+      delegator: delegator,
+      delegatee: msg.sender
+    });
     ConfigPermissions newPermissions = oldPermissions.setCanSetUsingAsCollateral(false);
     _updatePermissions({
       spoke: spoke,
@@ -129,7 +153,11 @@ contract ConfigPositionManager is IConfigPositionManager, PositionManagerBase {
     address spoke,
     address delegator
   ) external onlyRegisteredSpoke(spoke) {
-    ConfigPermissions oldPermissions = _config[spoke][delegator][msg.sender];
+    ConfigPermissions oldPermissions = _getPermissions({
+      spoke: spoke,
+      delegator: delegator,
+      delegatee: msg.sender
+    });
     ConfigPermissions newPermissions = oldPermissions.setCanUpdateUserRiskPremium(false);
     _updatePermissions({
       spoke: spoke,
@@ -145,7 +173,11 @@ contract ConfigPositionManager is IConfigPositionManager, PositionManagerBase {
     address spoke,
     address delegator
   ) external onlyRegisteredSpoke(spoke) {
-    ConfigPermissions oldPermissions = _config[spoke][delegator][msg.sender];
+    ConfigPermissions oldPermissions = _getPermissions({
+      spoke: spoke,
+      delegator: delegator,
+      delegatee: msg.sender
+    });
     ConfigPermissions newPermissions = oldPermissions.setCanUpdateUserDynamicConfig(false);
     _updatePermissions({
       spoke: spoke,
@@ -164,7 +196,8 @@ contract ConfigPositionManager is IConfigPositionManager, PositionManagerBase {
     address onBehalfOf
   ) external onlyRegisteredSpoke(spoke) {
     require(
-      _config[spoke][onBehalfOf][msg.sender].canSetUsingAsCollateral(),
+      _getPermissions({spoke: spoke, delegator: onBehalfOf, delegatee: msg.sender})
+        .canSetUsingAsCollateral(),
       DelegateeNotAllowed()
     );
 
@@ -177,7 +210,8 @@ contract ConfigPositionManager is IConfigPositionManager, PositionManagerBase {
     address onBehalfOf
   ) external onlyRegisteredSpoke(spoke) {
     require(
-      _config[spoke][onBehalfOf][msg.sender].canUpdateUserRiskPremium(),
+      _getPermissions({spoke: spoke, delegator: onBehalfOf, delegatee: msg.sender})
+        .canUpdateUserRiskPremium(),
       DelegateeNotAllowed()
     );
 
@@ -190,7 +224,8 @@ contract ConfigPositionManager is IConfigPositionManager, PositionManagerBase {
     address onBehalfOf
   ) external onlyRegisteredSpoke(spoke) {
     require(
-      _config[spoke][onBehalfOf][msg.sender].canUpdateUserDynamicConfig(),
+      _getPermissions({spoke: spoke, delegator: onBehalfOf, delegatee: msg.sender})
+        .canUpdateUserDynamicConfig(),
       DelegateeNotAllowed()
     );
 
@@ -203,13 +238,9 @@ contract ConfigPositionManager is IConfigPositionManager, PositionManagerBase {
     address delegatee,
     address onBehalfOf
   ) external view returns (ConfigPermissionValues memory) {
-    ConfigPermissions permissions = _config[spoke][onBehalfOf][delegatee];
     return
-      ConfigPermissionValues({
-        canSetUsingAsCollateral: permissions.canSetUsingAsCollateral(),
-        canUpdateUserRiskPremium: permissions.canUpdateUserRiskPremium(),
-        canUpdateUserDynamicConfig: permissions.canUpdateUserDynamicConfig()
-      });
+      _getPermissions({spoke: spoke, delegator: onBehalfOf, delegatee: delegatee})
+        .getConfigPermissionValues();
   }
 
   /// @dev Does not update if the new permissions are equal to the old permissions.
@@ -225,6 +256,14 @@ contract ConfigPositionManager is IConfigPositionManager, PositionManagerBase {
     }
     _config[spoke][delegator][delegatee] = newPermissions;
     emit ConfigPermissionsUpdated(spoke, delegator, delegatee, newPermissions);
+  }
+
+  function _getPermissions(
+    address spoke,
+    address delegator,
+    address delegatee
+  ) internal view returns (ConfigPermissions) {
+    return _config[spoke][delegator][delegatee];
   }
 
   function _multicallEnabled() internal pure override returns (bool) {
