@@ -30,12 +30,13 @@ contract ConfigPositionManager is IConfigPositionManager, PositionManagerBase {
     address delegatee,
     bool permission
   ) external onlyRegisteredSpoke(spoke) {
+    ConfigPermissions oldPermissions = _config[spoke][msg.sender][delegatee];
     ConfigPermissions newPermissions = ConfigPermissionsMap.setFullPermissions(permission);
     _updatePermissions({
       spoke: spoke,
       delegator: msg.sender,
       delegatee: delegatee,
-      oldPermissions: _config[spoke][msg.sender][delegatee],
+      oldPermissions: oldPermissions,
       newPermissions: newPermissions
     });
   }
@@ -96,12 +97,13 @@ contract ConfigPositionManager is IConfigPositionManager, PositionManagerBase {
     address spoke,
     address delegator
   ) external onlyRegisteredSpoke(spoke) {
+    ConfigPermissions oldPermissions = _config[spoke][delegator][msg.sender];
     ConfigPermissions newPermissions = ConfigPermissionsMap.setFullPermissions(false);
     _updatePermissions({
       spoke: spoke,
       delegator: delegator,
       delegatee: msg.sender,
-      oldPermissions: _config[spoke][delegator][msg.sender],
+      oldPermissions: oldPermissions,
       newPermissions: newPermissions
     });
   }

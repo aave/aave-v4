@@ -92,7 +92,7 @@ interface IConfigPositionManager is IPositionManagerBase {
   function renounceCanUpdateUserDynamicConfigPermission(address spoke, address delegator) external;
 
   /// @notice Sets the using as collateral status on behalf of a user for a specified reserve.
-  /// @dev The `msg.sender` must have the permission to perform this action on behalf of the user.
+  /// @dev The `msg.sender` must be the delegatee to perform this action on behalf of the user.
   /// @param spoke The address of the spoke.
   /// @param reserveId The id of the reserve.
   /// @param usingAsCollateral The new using as collateral status.
@@ -105,13 +105,13 @@ interface IConfigPositionManager is IPositionManagerBase {
   ) external;
 
   /// @notice Updates the user risk premium on behalf of a user.
-  /// @dev The `msg.sender` must have the permission to perform this action on behalf of the user.
+  /// @dev The `msg.sender` must be the delegatee to perform this action on behalf of the user.
   /// @param spoke The address of the spoke.
   /// @param onBehalfOf The address of the user.
   function updateUserRiskPremiumOnBehalfOf(address spoke, address onBehalfOf) external;
 
   /// @notice Updates the user dynamic config on behalf of a user.
-  /// @dev The `msg.sender` must have the permission to perform this action on behalf of the user.
+  /// @dev The `msg.sender` must be the delegatee to perform this action on behalf of the user.
   /// @param spoke The address of the spoke.
   /// @param onBehalfOf The address of the user.
   function updateUserDynamicConfigOnBehalfOf(address spoke, address onBehalfOf) external;

@@ -37,7 +37,7 @@ contract GiverPositionManager is IGiverPositionManager, PositionManagerBase {
     uint256 amount,
     address onBehalfOf
   ) external onlyRegisteredSpoke(spoke) returns (uint256, uint256) {
-    require(amount != type(uint256).max, NoMaxUintRepayOnBehalfOfAllowed());
+    require(amount != type(uint256).max, RepayOnBehalfMaxUintNotAllowed());
     IERC20 underlying = IERC20(_getReserveUnderlying(spoke, reserveId));
 
     uint256 userTotalDebt = ISpokeBase(spoke).getUserTotalDebt(reserveId, onBehalfOf);

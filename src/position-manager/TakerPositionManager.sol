@@ -117,7 +117,14 @@ contract TakerPositionManager is ITakerPositionManager, PositionManagerBase {
     uint256 reserveId,
     address owner
   ) external onlyRegisteredSpoke(spoke) {
-    if (_withdrawAllowances[spoke][reserveId][owner][msg.sender] == 0) {
+    if (
+      _getWithdrawAllowance({
+        spoke: spoke,
+        reserveId: reserveId,
+        owner: owner,
+        spender: msg.sender
+      }) == 0
+    ) {
       return;
     }
     _updateWithdrawAllowance({
@@ -135,7 +142,14 @@ contract TakerPositionManager is ITakerPositionManager, PositionManagerBase {
     uint256 reserveId,
     address owner
   ) external onlyRegisteredSpoke(spoke) {
-    if (_borrowAllowances[spoke][reserveId][owner][msg.sender] == 0) {
+    if (
+      _getBorrowAllowance({
+        spoke: spoke,
+        reserveId: reserveId,
+        owner: owner,
+        spender: msg.sender
+      }) == 0
+    ) {
       return;
     }
     _updateBorrowAllowance({

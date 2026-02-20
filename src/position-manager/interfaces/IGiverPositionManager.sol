@@ -8,8 +8,8 @@ import {IPositionManagerBase} from 'src/position-manager/interfaces/IPositionMan
 /// @author Aave Labs
 /// @notice Interface for position manager handling supply and repay actions on behalf of users.
 interface IGiverPositionManager is IPositionManagerBase {
-  /// @notice Error thrown when the repay amount is not an allowed value.
-  error NoMaxUintRepayOnBehalfOfAllowed();
+  /// @notice Error thrown when the repay amount is set to `type(uint256).max`, as it is not allowed.
+  error RepayOnBehalfMaxUintNotAllowed();
 
   /// @notice Executes a supply on behalf of a user.
   /// @param spoke The address of the spoke.

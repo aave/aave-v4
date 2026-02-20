@@ -305,6 +305,7 @@ contract SignatureGatewayTest is SignatureGatewayBaseTest {
     _assertGatewayHasNoActivePosition(spoke1, gateway);
   }
 
+  /// @dev We expect the multicall to revert due to the second supplyWithSig() call being invalid.
   function test_multicall_atomicity_on_revert() public {
     uint256 deadline = _warpBeforeRandomDeadline();
     uint256 reserveId = _daiReserveId(spoke1);
@@ -335,6 +336,7 @@ contract SignatureGatewayTest is SignatureGatewayBaseTest {
     _assertGatewayHasNoActivePosition(spoke1, gateway);
   }
 
+  /// @dev We expect the multicall not to revert, even if the second call to setUsingAsCollateralWithSig() is invalid, due to the use of try/catch.
   function test_multicall_no_atomicity_with_trycatch() public {
     uint256 deadline = _warpBeforeRandomDeadline();
     uint256 reserveId = _daiReserveId(spoke1);

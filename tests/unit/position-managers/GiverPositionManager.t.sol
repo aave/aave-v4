@@ -316,7 +316,7 @@ contract GiverPositionManagerTest is SpokeBase {
     vm.prank(bob);
     tokenList.dai.approve(address(positionManager), UINT256_MAX);
 
-    vm.expectRevert(IGiverPositionManager.NoMaxUintRepayOnBehalfOfAllowed.selector);
+    vm.expectRevert(IGiverPositionManager.RepayOnBehalfMaxUintNotAllowed.selector);
     vm.prank(bob);
     positionManager.repayOnBehalfOf(address(spoke1), _daiReserveId(spoke1), UINT256_MAX, alice);
   }
