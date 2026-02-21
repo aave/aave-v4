@@ -2,7 +2,7 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import 'tests/Base.t.sol';
+import 'tests/unit/setup/Base.t.sol';
 
 contract HubAccrueInterestTest is Base {
   using SafeCast for uint256;
@@ -46,7 +46,6 @@ contract HubAccrueInterestTest is Base {
 
   function setUp() public override {
     super.setUp();
-    initEnvironment();
 
     address[3] memory spokes = [address(spoke1), address(spoke2), address(spoke3)];
 
@@ -76,7 +75,7 @@ contract HubAccrueInterestTest is Base {
     assertEq(daiInfo.drawnIndex, WadRayMath.RAY);
     assertEq(daiInfo.premiumOffsetRay, 0);
     assertEq(hub1.getAddedAssets(daiAssetId), 0);
-    assertEq(getAssetDrawnDebt(daiAssetId), 0);
+    assertEq(getAssetDrawnDebt(hub1, daiAssetId), 0);
   }
 
   /// no interest accrued with only add
@@ -84,13 +83,13 @@ contract HubAccrueInterestTest is Base {
     elapsed = bound(elapsed, 1, type(uint40).max / 3).toUint40();
 
     uint256 addAmount = 1000e18;
-    Utils.add(hub1, daiAssetId, address(spoke1), addAmount, address(spoke1));
+    HubActions.add(hub1, daiAssetId, address(spoke1), addAmount, address(spoke1));
 
     // Time passes
     skip(elapsed);
 
     // Spoke 2 does a add to accrue interest
-    Utils.add(hub1, daiAssetId, address(spoke2), addAmount, address(spoke2));
+    HubActions.add(hub1, daiAssetId, address(spoke2), addAmount, address(spoke2));
 
     IHub.Asset memory daiInfo = hub1.getAsset(daiAssetId);
 
@@ -98,7 +97,7 @@ contract HubAccrueInterestTest is Base {
     assertEq(daiInfo.lastUpdateTimestamp, vm.getBlockTimestamp(), 'lastUpdateTimestamp');
     assertEq(daiInfo.drawnIndex, WadRayMath.RAY, 'drawnIndex');
     assertEq(hub1.getAddedAssets(daiAssetId), addAmount * 2);
-    assertEq(getAssetDrawnDebt(daiAssetId), 0);
+    assertEq(getAssetDrawnDebt(hub1, daiAssetId), 0);
   }
 
   /// no interest accrued when no debt after restore
@@ -110,15 +109,15 @@ contract HubAccrueInterestTest is Base {
     uint40 startTime = vm.getBlockTimestamp().toUint40();
     uint256 borrowAmount = 100e18;
 
-    Utils.add(hub1, daiAssetId, address(spoke1), addAmount, address(spoke1));
-    Utils.draw(hub1, daiAssetId, address(spoke1), address(spoke1), borrowAmount);
+    HubActions.add(hub1, daiAssetId, address(spoke1), addAmount, address(spoke1));
+    HubActions.draw(hub1, daiAssetId, address(spoke1), address(spoke1), borrowAmount);
     uint96 drawnRate = hub1.getAssetDrawnRate(daiAssetId).toUint96();
 
     // Time passes
     skip(elapsed);
 
     // Spoke 2 does an add to accrue interest
-    Utils.add(hub1, daiAssetId, address(spoke2), addAmount2, address(spoke2));
+    HubActions.add(hub1, daiAssetId, address(spoke2), addAmount2, address(spoke2));
 
     IHub.Asset memory daiInfo = hub1.getAsset(daiAssetId);
 
@@ -137,7 +136,7 @@ contract HubAccrueInterestTest is Base {
       addAmount + addAmount2 + interest,
       'addAmount'
     );
-    assertEq(getAssetDrawnDebt(daiAssetId), expectedDrawnDebt1, 'drawn');
+    assertEq(getAssetDrawnDebt(hub1, daiAssetId), expectedDrawnDebt1, 'drawn');
 
     startTime = vm.getBlockTimestamp().toUint40();
     drawnRate = hub1.getAssetDrawnRate(daiAssetId).toUint96();
@@ -151,7 +150,13 @@ contract HubAccrueInterestTest is Base {
     );
 
     // Full repayment, so back to zero debt
-    Utils.restoreDrawn(hub1, daiAssetId, address(spoke1), borrowAmount + interest, address(spoke1));
+    HubActions.restoreDrawn(
+      hub1,
+      daiAssetId,
+      address(spoke1),
+      borrowAmount + interest,
+      address(spoke1)
+    );
 
     assertEq(expectedDrawnIndex2, expectedDrawnIndex1, 'expectedDrawnIndex');
     assertEq(expectedDrawnDebt2, expectedDrawnDebt1, 'expectedDrawnDebt');
@@ -166,13 +171,13 @@ contract HubAccrueInterestTest is Base {
       addAmount + addAmount2 + interest,
       'addAmount'
     );
-    assertEq(getAssetDrawnDebt(daiAssetId), 0, 'drawn');
+    assertEq(getAssetDrawnDebt(hub1, daiAssetId), 0, 'drawn');
 
     // Time passes
     skip(elapsed);
 
     // Spoke 2 does a add to accrue interest
-    Utils.add(hub1, daiAssetId, address(spoke2), addAmount2, address(spoke2));
+    HubActions.add(hub1, daiAssetId, address(spoke2), addAmount2, address(spoke2));
 
     daiInfo = hub1.getAsset(daiAssetId);
 
@@ -183,7 +188,7 @@ contract HubAccrueInterestTest is Base {
       addAmount + addAmount2 * 2 + interest,
       'addAmount'
     );
-    assertEq(getAssetDrawnDebt(daiAssetId), 0, 'drawn');
+    assertEq(getAssetDrawnDebt(hub1, daiAssetId), 0, 'drawn');
   }
 
   /// accrue interest after some time has passed
@@ -196,15 +201,15 @@ contract HubAccrueInterestTest is Base {
     uint256 borrowAmount = 100e18;
     uint256 initialDrawnIndex = WadRayMath.RAY;
 
-    Utils.add(hub1, daiAssetId, address(spoke1), addAmount, address(spoke1));
-    Utils.draw(hub1, daiAssetId, address(spoke1), address(spoke1), borrowAmount);
+    HubActions.add(hub1, daiAssetId, address(spoke1), addAmount, address(spoke1));
+    HubActions.draw(hub1, daiAssetId, address(spoke1), address(spoke1), borrowAmount);
     uint96 drawnRate = hub1.getAssetDrawnRate(daiAssetId).toUint96();
 
     // Time passes
     skip(elapsed);
 
     // Spoke 2 does a add to accrue interest
-    Utils.add(hub1, daiAssetId, address(spoke2), addAmount2, address(spoke2));
+    HubActions.add(hub1, daiAssetId, address(spoke2), addAmount2, address(spoke2));
 
     IHub.Asset memory daiInfo = hub1.getAsset(daiAssetId);
 
@@ -223,7 +228,7 @@ contract HubAccrueInterestTest is Base {
       addAmount + addAmount2 + interest,
       'addAmount'
     );
-    assertEq(getAssetDrawnDebt(daiAssetId), expectedDrawnDebt, 'drawn');
+    assertEq(getAssetDrawnDebt(hub1, daiAssetId), expectedDrawnDebt, 'drawn');
   }
 
   /// accrue interest on any borrow amount after any time has passed
@@ -239,15 +244,15 @@ contract HubAccrueInterestTest is Base {
     uint256 addAmount2 = 100e18;
     uint256 initialDrawnIndex = WadRayMath.RAY;
 
-    Utils.add(hub1, daiAssetId, address(spoke1), addAmount, address(spoke1));
-    Utils.draw(hub1, daiAssetId, address(spoke1), address(spoke1), borrowAmount);
+    HubActions.add(hub1, daiAssetId, address(spoke1), addAmount, address(spoke1));
+    HubActions.draw(hub1, daiAssetId, address(spoke1), address(spoke1), borrowAmount);
     uint96 drawnRate = hub1.getAssetDrawnRate(daiAssetId).toUint96();
 
     // Time passes
     skip(elapsed);
 
     // Spoke 2 does a add to accrue interest
-    Utils.add(hub1, daiAssetId, address(spoke2), addAmount2, address(spoke2));
+    HubActions.add(hub1, daiAssetId, address(spoke2), addAmount2, address(spoke2));
 
     IHub.Asset memory daiInfo = hub1.getAsset(daiAssetId);
 
@@ -266,7 +271,7 @@ contract HubAccrueInterestTest is Base {
       addAmount + addAmount2 + interest,
       'addAmount'
     );
-    assertEq(getAssetDrawnDebt(daiAssetId), expectedDrawnDebt, 'drawn');
+    assertEq(getAssetDrawnDebt(hub1, daiAssetId), expectedDrawnDebt, 'drawn');
   }
 
   /// accrue interest on any borrow amount after a borrow rate change and any time has passed
@@ -289,8 +294,8 @@ contract HubAccrueInterestTest is Base {
     spoke1Amounts.add0 = borrowAmount * 2;
     timestamps.t0 = vm.getBlockTimestamp().toUint40();
 
-    Utils.add(hub1, daiAssetId, address(spoke1), spoke1Amounts.add0, address(spoke1));
-    Utils.draw(hub1, daiAssetId, address(spoke1), address(spoke1), borrowAmount);
+    HubActions.add(hub1, daiAssetId, address(spoke1), spoke1Amounts.add0, address(spoke1));
+    HubActions.draw(hub1, daiAssetId, address(spoke1), address(spoke1), borrowAmount);
 
     assetData.t0 = hub1.getAsset(daiAssetId);
 
@@ -298,7 +303,7 @@ contract HubAccrueInterestTest is Base {
     skip(elapsed);
 
     // Spoke 2 does a add to accrue interest
-    Utils.add(hub1, daiAssetId, address(spoke2), addAmount2, address(spoke2));
+    HubActions.add(hub1, daiAssetId, address(spoke2), addAmount2, address(spoke2));
 
     assetData.t1 = hub1.getAsset(daiAssetId);
     timestamps.t1 = vm.getBlockTimestamp().toUint40();
@@ -318,19 +323,19 @@ contract HubAccrueInterestTest is Base {
       spoke1Amounts.add0 + addAmount2 + interest1,
       'addAmount'
     );
-    assertEq(getAssetDrawnDebt(daiAssetId), expectedDrawnDebt1, 'drawn');
+    assertEq(getAssetDrawnDebt(hub1, daiAssetId), expectedDrawnDebt1, 'drawn');
 
     // Say borrow rate changes
-    _mockInterestRateBps(borrowRate);
+    _mockInterestRateBps(address(irStrategy), borrowRate);
     // Make an action to cache this new borrow rate
-    Utils.add(hub1, daiAssetId, address(spoke2), addAmount2, address(spoke2));
+    HubActions.add(hub1, daiAssetId, address(spoke2), addAmount2, address(spoke2));
 
     // Time passes
     skip(elapsed);
     timestamps.t2 = vm.getBlockTimestamp().toUint40();
 
     // Spoke 2 does a add to accrue interest
-    Utils.add(hub1, daiAssetId, address(spoke2), addAmount2, address(spoke2));
+    HubActions.add(hub1, daiAssetId, address(spoke2), addAmount2, address(spoke2));
 
     assetData.t2 = hub1.getAsset(daiAssetId);
     timestamps.t2 = vm.getBlockTimestamp().toUint40();
@@ -351,15 +356,15 @@ contract HubAccrueInterestTest is Base {
       spoke1Amounts.add0 + addAmount2 * 3 + interest1 + interest2,
       'addAmount t2'
     );
-    assertEq(getAssetDrawnDebt(daiAssetId), expectedDrawnDebt2, 'drawn t2');
+    assertEq(getAssetDrawnDebt(hub1, daiAssetId), expectedDrawnDebt2, 'drawn t2');
   }
 
   function test_getAssetDrawnRate_MatchesStoredAfterAction() public {
     uint256 addAmount = 1000e18;
     uint256 borrowAmount = 100e18;
 
-    Utils.add(hub1, daiAssetId, address(spoke1), addAmount, address(spoke1));
-    Utils.draw(hub1, daiAssetId, address(spoke1), address(spoke1), borrowAmount);
+    HubActions.add(hub1, daiAssetId, address(spoke1), addAmount, address(spoke1));
+    HubActions.draw(hub1, daiAssetId, address(spoke1), address(spoke1), borrowAmount);
 
     uint256 storedRate = hub1.getAsset(daiAssetId).drawnRate;
     uint256 computedRate = hub1.getAssetDrawnRate(daiAssetId);
@@ -372,8 +377,8 @@ contract HubAccrueInterestTest is Base {
     uint256 addAmount = 1000e18;
     uint256 borrowAmount = 100e18;
 
-    Utils.add(hub1, daiAssetId, address(spoke1), addAmount, address(spoke1));
-    Utils.draw(hub1, daiAssetId, address(spoke1), address(spoke1), borrowAmount);
+    HubActions.add(hub1, daiAssetId, address(spoke1), addAmount, address(spoke1));
+    HubActions.draw(hub1, daiAssetId, address(spoke1), address(spoke1), borrowAmount);
 
     uint256 storedRateBefore = hub1.getAsset(daiAssetId).drawnRate;
 

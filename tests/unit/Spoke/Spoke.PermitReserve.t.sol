@@ -2,9 +2,9 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import 'tests/unit/Spoke/SpokeBase.t.sol';
+import 'tests/unit/setup/Base.t.sol';
 
-contract SpokePermitReserveTest is SpokeBase {
+contract SpokePermitReserveTest is Base {
   function test_permitReserve_revertsWith_ReserveNotListedIn() public {
     uint256 unlistedReserveId = vm.randomUint(spoke1.getReserveCount() + 1, UINT256_MAX);
     vm.expectRevert(ISpoke.ReserveNotListed.selector);

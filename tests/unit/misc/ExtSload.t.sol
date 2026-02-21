@@ -3,7 +3,7 @@
 pragma solidity ^0.8.0;
 
 import {Test} from 'forge-std/Test.sol';
-import {ExtSloadWrapper, ExtSload} from 'tests/mocks/ExtSloadWrapper.sol';
+import {ExtSloadWrapper, ExtSload} from 'tests/helpers/mocks/ExtSloadWrapper.sol';
 
 contract ExtSloadTest is Test {
   ExtSloadWrapper internal w;

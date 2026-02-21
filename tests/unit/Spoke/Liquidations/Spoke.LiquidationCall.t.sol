@@ -28,7 +28,11 @@ abstract contract SpokeLiquidationCallHelperTest is SpokeLiquidationCallBaseTest
     skipTime = vm.randomUint(0, 10 * 365 days);
     baseAmountValue = vm.randomUint(MIN_AMOUNT_IN_BASE_CURRENCY, MAX_AMOUNT_IN_BASE_CURRENCY);
 
-    _updateTargetHealthFactor(spoke, vm.randomUint(MIN_CLOSE_FACTOR, MAX_CLOSE_FACTOR).toUint128());
+    _updateTargetHealthFactor(
+      spoke,
+      vm.randomUint(MIN_CLOSE_FACTOR, MAX_CLOSE_FACTOR).toUint128(),
+      SPOKE_ADMIN
+    );
     _updateLiquidationConfig(
       spoke,
       ISpoke.LiquidationConfig({
@@ -37,34 +41,38 @@ abstract contract SpokeLiquidationCallHelperTest is SpokeLiquidationCallBaseTest
           .randomUint(0, HEALTH_FACTOR_LIQUIDATION_THRESHOLD - 1)
           .toUint64(),
         liquidationBonusFactor: vm.randomUint(0, PercentageMath.PERCENTAGE_FACTOR).toUint16()
-      })
+      }),
+      SPOKE_ADMIN
     );
 
     for (uint256 i = 0; i < spoke.getReserveCount(); i++) {
-      _updateMaxLiquidationBonus(spoke, i, _randomMaxLiquidationBonus(spoke, i));
-      _updateCollateralFactor(spoke, i, 1); // temporary value to have full range of possibility for liquidation fee
+      _updateMaxLiquidationBonus(spoke, i, _randomMaxLiquidationBonus(spoke, i), SPOKE_ADMIN);
+      _updateCollateralFactor(spoke, i, 1, SPOKE_ADMIN); // temporary value to have full range of possibility for liquidation fee
       _updateLiquidationFee(
         spoke,
         i,
-        vm.randomUint(MIN_LIQUIDATION_FEE, MAX_LIQUIDATION_FEE).toUint16()
+        vm.randomUint(MIN_LIQUIDATION_FEE, MAX_LIQUIDATION_FEE).toUint16(),
+        SPOKE_ADMIN
       );
-      _updateCollateralFactor(spoke, i, _randomCollateralFactor(spoke, i));
+      _updateCollateralFactor(spoke, i, _randomCollateralFactor(spoke, i), SPOKE_ADMIN);
       _updateCollateralRisk(
         spoke,
         i,
-        vm.randomUint(MIN_COLLATERAL_RISK_BPS, MAX_COLLATERAL_RISK_BPS).toUint24()
+        vm.randomUint(MIN_COLLATERAL_RISK_BPS, MAX_COLLATERAL_RISK_BPS).toUint24(),
+        SPOKE_ADMIN
       );
       _setConstantInterestRateBps(
         _hub(spoke, i),
         _reserveAssetId(spoke, i),
-        vm.randomUint(MIN_BORROW_RATE, MAX_BORROW_RATE).toUint32()
+        vm.randomUint(MIN_BORROW_RATE, MAX_BORROW_RATE).toUint32(),
+        HUB_ADMIN
       );
     }
 
     // user enables more collaterals, but still has deficit given that only one collateral is supplied
     for (uint256 reserveId = 0; reserveId < spoke.getReserveCount(); reserveId++) {
       if (vm.randomBool()) {
-        Utils.setUsingAsCollateral(spoke, reserveId, user, true, user);
+        SpokeActions.setUsingAsCollateral(spoke, reserveId, user, true, user);
       }
     }
   }
@@ -289,7 +297,7 @@ abstract contract SpokeLiquidationCallHelperTest is SpokeLiquidationCallBaseTest
     uint256 maxBorrowValue = _getRequiredDebtValueForHf(
       spoke,
       addr,
-      Constants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD
+      SpokeConstants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD
     );
 
     // buffer
@@ -381,7 +389,7 @@ contract SpokeLiquidationCallTest_NoLiquidationBonus is SpokeLiquidationCallHelp
     uint256 debtReserveId
   ) internal virtual override {
     super._processAdditionalSetup(collateralReserveId, debtReserveId);
-    _updateMaxLiquidationBonus(spoke, collateralReserveId, 100_00);
+    _updateMaxLiquidationBonus(spoke, collateralReserveId, 100_00, SPOKE_ADMIN);
   }
 
   function _assertBeforeLiquidation(
@@ -402,17 +410,19 @@ contract SpokeLiquidationCallTest_SmallLiquidationBonus is SpokeLiquidationCallH
     uint256 debtReserveId
   ) internal virtual override {
     super._processAdditionalSetup(collateralReserveId, debtReserveId);
-    _updateCollateralFactor(spoke, collateralReserveId, 1); // temporary value to have full range of possibility for liquidation bonus
+    _updateCollateralFactor(spoke, collateralReserveId, 1, SPOKE_ADMIN); // temporary value to have full range of possibility for liquidation bonus
     _updateMaxLiquidationBonus(
       spoke,
       collateralReserveId,
-      vm.randomUint(MIN_LIQUIDATION_BONUS, MIN_LIQUIDATION_BONUS.percentMulUp(102_00)).toUint32()
+      vm.randomUint(MIN_LIQUIDATION_BONUS, MIN_LIQUIDATION_BONUS.percentMulUp(102_00)).toUint32(),
+      SPOKE_ADMIN
     );
-    _updateLiquidationBonusFactor(spoke, 100_00);
+    _updateLiquidationBonusFactor(spoke, 100_00, SPOKE_ADMIN);
     _updateCollateralFactor(
       spoke,
       collateralReserveId,
-      _randomCollateralFactor(spoke, collateralReserveId)
+      _randomCollateralFactor(spoke, collateralReserveId),
+      SPOKE_ADMIN
     );
   }
 
@@ -438,17 +448,19 @@ contract SpokeLiquidationCallTest_LargeLiquidationBonus is SpokeLiquidationCallH
     uint256 debtReserveId
   ) internal virtual override {
     super._processAdditionalSetup(collateralReserveId, debtReserveId);
-    _updateCollateralFactor(spoke, collateralReserveId, 1); // temporary value to have full range of possibility for liquidation bonus
+    _updateCollateralFactor(spoke, collateralReserveId, 1, SPOKE_ADMIN); // temporary value to have full range of possibility for liquidation bonus
     _updateMaxLiquidationBonus(
       spoke,
       collateralReserveId,
-      vm.randomUint(MAX_LIQUIDATION_BONUS.percentMulDown(97_00), MAX_LIQUIDATION_BONUS).toUint32()
+      vm.randomUint(MAX_LIQUIDATION_BONUS.percentMulDown(97_00), MAX_LIQUIDATION_BONUS).toUint32(),
+      SPOKE_ADMIN
     );
-    _updateLiquidationBonusFactor(spoke, 100_00);
+    _updateLiquidationBonusFactor(spoke, 100_00, SPOKE_ADMIN);
     _updateCollateralFactor(
       spoke,
       collateralReserveId,
-      _randomCollateralFactor(spoke, collateralReserveId)
+      _randomCollateralFactor(spoke, collateralReserveId),
+      SPOKE_ADMIN
     );
   }
 
@@ -471,7 +483,7 @@ contract SpokeLiquidationCallTest_LiquidationFeeZero is SpokeLiquidationCallHelp
     uint256 debtReserveId
   ) internal virtual override {
     super._processAdditionalSetup(collateralReserveId, debtReserveId);
-    _updateLiquidationFee(spoke, collateralReserveId, 0);
+    _updateLiquidationFee(spoke, collateralReserveId, 0, SPOKE_ADMIN);
   }
 
   function _assertBeforeLiquidation(
@@ -494,7 +506,7 @@ contract SpokeLiquidationCallTest_NoPremium is SpokeLiquidationCallHelperTest {
   ) internal virtual override {
     super._processAdditionalSetup(collateralReserveId, debtReserveId);
     for (uint256 i = 0; i < spoke.getReserveCount(); i++) {
-      _updateCollateralRisk(spoke, i, 0);
+      _updateCollateralRisk(spoke, i, 0, SPOKE_ADMIN);
     }
   }
 
@@ -521,12 +533,14 @@ contract SpokeLiquidationCallTest_Premium is SpokeLiquidationCallHelperTest {
     _updateCollateralRisk(
       spoke,
       collateralReserveId,
-      vm.randomUint(1, MAX_COLLATERAL_RISK_BPS).toUint24()
+      vm.randomUint(1, MAX_COLLATERAL_RISK_BPS).toUint24(),
+      SPOKE_ADMIN
     );
     _setConstantInterestRateBps(
       _hub(spoke, debtReserveId),
       _reserveAssetId(spoke, debtReserveId),
-      vm.randomUint(1, MAX_BORROW_RATE).toUint32()
+      vm.randomUint(1, MAX_BORROW_RATE).toUint32(),
+      HUB_ADMIN
     );
     _increaseCollateralSupply(
       spoke,
@@ -583,7 +597,7 @@ contract SpokeLiquidationCallTest_TargetHealthFactorOne is SpokeLiquidationCallH
     uint256 debtReserveId
   ) internal virtual override {
     super._processAdditionalSetup(collateralReserveId, debtReserveId);
-    _updateTargetHealthFactor(spoke, 1e18);
+    _updateTargetHealthFactor(spoke, 1e18, SPOKE_ADMIN);
   }
 
   function _assertBeforeLiquidation(
@@ -629,12 +643,12 @@ contract SpokeLiquidationCallTest_LiquidatorHistory is SpokeLiquidationCallHelpe
 
     // make liquidator unhealthy now, but might get healthy when liquidation happens
     liquidatorAccountData = spoke.getUserAccountData(liquidator);
-    if (liquidatorAccountData.healthFactor > Constants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD) {
+    if (liquidatorAccountData.healthFactor > SpokeConstants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD) {
       _makeUserLiquidatable(
         spoke,
         liquidator,
         vm.randomUint(0, spoke.getReserveCount() - 1),
-        vm.randomUint(0.1e18, Constants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD - 0.0000001e18)
+        vm.randomUint(0.1e18, SpokeConstants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD - 0.0000001e18)
       );
     }
   }

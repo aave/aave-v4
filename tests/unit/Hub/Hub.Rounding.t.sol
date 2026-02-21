@@ -2,10 +2,10 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import 'tests/unit/Hub/HubBase.t.sol';
+import 'tests/unit/setup/Base.t.sol';
 
 /// forge-config: default.disable_block_gas_limit = true
-contract HubRoundingTest is HubBase {
+contract HubRoundingTest is Base {
   using Math for uint256;
 
   /// @dev Added share price is not significantly affected by multiple donations
@@ -23,12 +23,12 @@ contract HubRoundingTest is HubBase {
       skipTime: 12
     });
 
-    uint256 initialSharePrice = getAddExRate(daiAssetId);
+    uint256 initialSharePrice = getAddExRate(hub1, daiAssetId);
     assertGt(initialSharePrice, 1e30);
     assertLt(initialSharePrice, 1.000001e30);
 
     for (uint256 i = 0; i < 1e4; ++i) {
-      Utils.supply({
+      SpokeActions.supply({
         spoke: spoke1,
         reserveId: _daiReserveId(spoke1),
         caller: alice,
@@ -36,7 +36,7 @@ contract HubRoundingTest is HubBase {
         onBehalfOf: alice
       });
 
-      Utils.withdraw({
+      SpokeActions.withdraw({
         spoke: spoke1,
         reserveId: _daiReserveId(spoke1),
         caller: alice,
@@ -45,7 +45,7 @@ contract HubRoundingTest is HubBase {
       });
 
       assertLt(
-        getAddExRate(daiAssetId),
+        getAddExRate(hub1, daiAssetId),
         initialSharePrice +
           initialSharePrice.mulDiv(i + 1, SharesMath.VIRTUAL_ASSETS, Math.Rounding.Ceil)
       );

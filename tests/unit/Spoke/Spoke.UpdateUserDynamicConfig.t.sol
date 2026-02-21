@@ -2,11 +2,11 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import 'tests/unit/Spoke/SpokeBase.t.sol';
+import 'tests/unit/setup/Base.t.sol';
 
-contract SpokeUpdateUserDynamicConfigTest is SpokeBase {
+contract SpokeUpdateUserDynamicConfigTest is Base {
   function test_updateUserDynamicConfig_revertsWith_ReentrancyGuardReentrantCall() public {
-    Utils.supplyCollateral({
+    SpokeActions.supplyCollateral({
       spoke: spoke1,
       reserveId: _daiReserveId(spoke1),
       caller: bob,
@@ -14,7 +14,7 @@ contract SpokeUpdateUserDynamicConfigTest is SpokeBase {
       onBehalfOf: bob
     });
 
-    Utils.borrow({
+    SpokeActions.borrow({
       spoke: spoke1,
       reserveId: _daiReserveId(spoke1),
       caller: bob,

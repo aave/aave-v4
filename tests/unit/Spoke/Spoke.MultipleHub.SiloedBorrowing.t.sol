@@ -60,9 +60,9 @@ contract SpokeMultipleHubSiloedBorrowingTest is SpokeMultipleHubBase {
       IHub.SpokeConfig({
         halted: false,
         active: true,
-        addCap: Constants.MAX_ALLOWED_SPOKE_CAP,
+        addCap: HubConstants.MAX_ALLOWED_SPOKE_CAP,
         drawCap: siloedVars.assetBDrawCap,
-        riskPremiumThreshold: Constants.MAX_ALLOWED_COLLATERAL_RISK
+        riskPremiumThreshold: SpokeConstants.MAX_ALLOWED_COLLATERAL_RISK
       })
     );
 
@@ -92,9 +92,9 @@ contract SpokeMultipleHubSiloedBorrowingTest is SpokeMultipleHubBase {
       IHub.SpokeConfig({
         active: true,
         halted: false,
-        addCap: Constants.MAX_ALLOWED_SPOKE_CAP,
-        drawCap: Constants.MAX_ALLOWED_SPOKE_CAP,
-        riskPremiumThreshold: Constants.MAX_ALLOWED_COLLATERAL_RISK
+        addCap: HubConstants.MAX_ALLOWED_SPOKE_CAP,
+        drawCap: HubConstants.MAX_ALLOWED_SPOKE_CAP,
+        riskPremiumThreshold: SpokeConstants.MAX_ALLOWED_COLLATERAL_RISK
       })
     );
 
@@ -116,7 +116,7 @@ contract SpokeMultipleHubSiloedBorrowingTest is SpokeMultipleHubBase {
         halted: false,
         addCap: siloedVars.assetAAddCap,
         drawCap: 0,
-        riskPremiumThreshold: Constants.MAX_ALLOWED_COLLATERAL_RISK
+        riskPremiumThreshold: SpokeConstants.MAX_ALLOWED_COLLATERAL_RISK
       })
     );
     vm.stopPrank();
@@ -150,7 +150,13 @@ contract SpokeMultipleHubSiloedBorrowingTest is SpokeMultipleHubBase {
   function test_siloed_borrowing() public {
     // Bob can supply Asset A to the new spoke, canonical hub, up to 500k and set it as collateral
     uint256 assetAAddCapAmount = siloedVars.assetAAddCap * 10 ** assetA.decimals();
-    Utils.supplyCollateral(newSpoke, siloedVars.reserveAIdNewSpoke, bob, assetAAddCapAmount, bob);
+    SpokeActions.supplyCollateral(
+      newSpoke,
+      siloedVars.reserveAIdNewSpoke,
+      bob,
+      assetAAddCapAmount,
+      bob
+    );
     assertEq(
       newSpoke.getUserSuppliedAssets(siloedVars.reserveAIdNewSpoke, bob),
       assetAAddCapAmount,
@@ -168,19 +174,19 @@ contract SpokeMultipleHubSiloedBorrowingTest is SpokeMultipleHubBase {
 
     // Bob cannot supply past his currently supplied amount due to supply cap
     vm.expectRevert(abi.encodeWithSelector(IHub.AddCapExceeded.selector, siloedVars.assetAAddCap));
-    Utils.supply(newSpoke, siloedVars.reserveAIdNewSpoke, bob, 1e18, bob);
+    SpokeActions.supply(newSpoke, siloedVars.reserveAIdNewSpoke, bob, 1e18, bob);
 
     // Bob cannot borrow asset A from the new spoke, canonical hub, because draw cap is 0
     vm.expectRevert(abi.encodeWithSelector(IHub.DrawCapExceeded.selector, 0));
-    Utils.borrow(newSpoke, siloedVars.reserveAIdNewSpoke, bob, 1e18, bob);
+    SpokeActions.borrow(newSpoke, siloedVars.reserveAIdNewSpoke, bob, 1e18, bob);
 
     uint256 assetBDrawCapAmount = siloedVars.assetBDrawCap * 10 ** assetB.decimals();
 
     // Let Alice supply some asset B to the new spoke
-    Utils.supply(newSpoke, siloedVars.reserveBId, alice, assetBDrawCapAmount * 2, alice);
+    SpokeActions.supply(newSpoke, siloedVars.reserveBId, alice, assetBDrawCapAmount * 2, alice);
 
     // Bob can borrow asset B from the new spoke, new hub, up to 100k
-    Utils.borrow(newSpoke, siloedVars.reserveBId, bob, assetBDrawCapAmount, bob);
+    SpokeActions.borrow(newSpoke, siloedVars.reserveBId, bob, assetBDrawCapAmount, bob);
 
     // Check Bob's total debt of asset B on the new spoke
     assertEq(newSpoke.getUserTotalDebt(siloedVars.reserveBId, bob), assetBDrawCapAmount);
@@ -195,6 +201,6 @@ contract SpokeMultipleHubSiloedBorrowingTest is SpokeMultipleHubBase {
     vm.expectRevert(
       abi.encodeWithSelector(IHub.DrawCapExceeded.selector, siloedVars.assetBDrawCap)
     );
-    Utils.borrow(newSpoke, siloedVars.reserveBId, bob, 1e18, bob);
+    SpokeActions.borrow(newSpoke, siloedVars.reserveBId, bob, 1e18, bob);
   }
 }

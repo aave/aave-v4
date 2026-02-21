@@ -2,9 +2,9 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import 'tests/unit/Hub/HubBase.t.sol';
+import 'tests/unit/setup/Base.t.sol';
 
-contract HubRestoreTest is HubBase {
+contract HubRestoreTest is Base {
   using SharesMath for uint256;
   using WadRayMath for uint256;
   using PercentageMath for uint256;
@@ -27,7 +27,7 @@ contract HubRestoreTest is HubBase {
     uint256 drawAmount = daiAmount / 2;
 
     // spoke1 add weth
-    Utils.add({
+    HubActions.add({
       hub: hub1,
       assetId: wethAssetId,
       caller: address(spoke1),
@@ -36,7 +36,7 @@ contract HubRestoreTest is HubBase {
     });
 
     // spoke2 add dai
-    Utils.add({
+    HubActions.add({
       hub: hub1,
       assetId: daiAssetId,
       caller: address(spoke2),
@@ -45,7 +45,7 @@ contract HubRestoreTest is HubBase {
     });
 
     // spoke1 draw liquidity
-    Utils.draw({
+    HubActions.draw({
       hub: hub1,
       assetId: daiAssetId,
       to: alice,
@@ -73,8 +73,8 @@ contract HubRestoreTest is HubBase {
 
   function test_restore_revertsWith_SurplusPremiumRayRestored() public {
     uint256 drawAmount = 100e18;
-    _addLiquidity(daiAssetId, drawAmount);
-    _drawLiquidity(daiAssetId, drawAmount, true, true, address(spoke1));
+    _addLiquidity(hub1, daiAssetId, drawAmount, ADMIN);
+    _drawLiquidity(hub1, daiAssetId, drawAmount, true, true, address(spoke1));
 
     (uint256 drawn, uint256 premium) = hub1.getSpokeOwed(daiAssetId, address(spoke1));
     assertGt(drawn, 0);
@@ -135,7 +135,7 @@ contract HubRestoreTest is HubBase {
   }
 
   function test_restore_revertsWith_SpokeHalted() public {
-    _updateSpokeHalted(hub1, daiAssetId, address(spoke1), true);
+    _updateSpokeHalted(hub1, daiAssetId, address(spoke1), true, HUB_ADMIN);
 
     IHubBase.PremiumDelta memory premiumDelta = _getExpectedPremiumDelta(
       spoke1,
@@ -189,7 +189,7 @@ contract HubRestoreTest is HubBase {
     uint256 drawAmount = daiAmount / 2;
 
     // spoke2 add dai
-    Utils.add({
+    HubActions.add({
       hub: hub1,
       assetId: daiAssetId,
       amount: daiAmount,
@@ -198,7 +198,7 @@ contract HubRestoreTest is HubBase {
     });
 
     // spoke1 draw liquidity
-    Utils.draw({
+    HubActions.draw({
       hub: hub1,
       assetId: daiAssetId,
       to: alice,
@@ -314,7 +314,7 @@ contract HubRestoreTest is HubBase {
     skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
 
     // spoke2 add dai
-    Utils.add({
+    HubActions.add({
       hub: hub1,
       assetId: daiAssetId,
       caller: address(spoke2),
@@ -323,7 +323,7 @@ contract HubRestoreTest is HubBase {
     });
 
     // spoke1 draw half of dai reserve liquidity
-    Utils.draw({
+    HubActions.draw({
       hub: hub1,
       assetId: daiAssetId,
       to: alice,
@@ -377,7 +377,7 @@ contract HubRestoreTest is HubBase {
     uint256 wethAmount = daiAmount; // to ensure enough collateralization
 
     // spoke1 add weth
-    Utils.supplyCollateral({
+    SpokeActions.supplyCollateral({
       spoke: spoke1,
       reserveId: _wethReserveId(spoke1),
       caller: alice,
@@ -386,7 +386,7 @@ contract HubRestoreTest is HubBase {
     });
 
     // spoke2 add dai
-    Utils.supplyCollateral({
+    SpokeActions.supplyCollateral({
       spoke: spoke2,
       reserveId: _daiReserveId(spoke2),
       caller: bob,
@@ -395,7 +395,7 @@ contract HubRestoreTest is HubBase {
     });
 
     // spoke1 draw half of dai reserve liquidity
-    Utils.borrow({
+    SpokeActions.borrow({
       spoke: spoke1,
       reserveId: _daiReserveId(spoke1),
       onBehalfOf: alice,
@@ -429,7 +429,7 @@ contract HubRestoreTest is HubBase {
     uint256 skipTime = 20000 days;
     uint256 drawAmount = 999e18;
 
-    Utils.add({
+    HubActions.add({
       hub: hub1,
       assetId: daiAssetId,
       caller: address(spoke1),
@@ -437,7 +437,7 @@ contract HubRestoreTest is HubBase {
       user: alice
     });
 
-    Utils.draw({
+    HubActions.draw({
       hub: hub1,
       assetId: daiAssetId,
       caller: address(spoke1),
@@ -467,7 +467,7 @@ contract HubRestoreTest is HubBase {
     uint256 drawAmount = daiAmount / 2;
 
     // spoke2 add dai
-    Utils.add({
+    HubActions.add({
       hub: hub1,
       assetId: daiAssetId,
       amount: daiAmount,
@@ -476,7 +476,7 @@ contract HubRestoreTest is HubBase {
     });
 
     // spoke1 draw liquidity
-    Utils.draw({
+    HubActions.draw({
       hub: hub1,
       assetId: daiAssetId,
       to: alice,
@@ -516,7 +516,7 @@ contract HubRestoreTest is HubBase {
     uint256 drawAmount = daiAmount / 2;
 
     // spoke2 add dai
-    Utils.add({
+    HubActions.add({
       hub: hub1,
       assetId: daiAssetId,
       amount: daiAmount,
@@ -525,7 +525,7 @@ contract HubRestoreTest is HubBase {
     });
 
     // spoke1 draw liquidity
-    Utils.draw({
+    HubActions.draw({
       hub: hub1,
       assetId: daiAssetId,
       to: alice,
@@ -557,7 +557,7 @@ contract HubRestoreTest is HubBase {
     uint256 drawAmount = daiAmount / 2;
 
     // spoke2 add dai
-    Utils.add({
+    HubActions.add({
       hub: hub1,
       assetId: daiAssetId,
       amount: daiAmount,
@@ -566,7 +566,7 @@ contract HubRestoreTest is HubBase {
     });
 
     // spoke1 draw liquidity
-    Utils.draw({
+    HubActions.draw({
       hub: hub1,
       assetId: daiAssetId,
       to: alice,
@@ -600,7 +600,7 @@ contract HubRestoreTest is HubBase {
     uint256 drawAmount = daiAmount / 2;
 
     // spoke2 add dai
-    Utils.add({
+    HubActions.add({
       hub: hub1,
       assetId: daiAssetId,
       amount: daiAmount,
@@ -609,7 +609,7 @@ contract HubRestoreTest is HubBase {
     });
 
     // spoke1 draw liquidity
-    Utils.draw({
+    HubActions.draw({
       hub: hub1,
       assetId: daiAssetId,
       to: alice,
@@ -638,7 +638,7 @@ contract HubRestoreTest is HubBase {
     uint256 drawAmount = daiAmount / 2;
 
     // spoke2 add dai
-    Utils.add({
+    HubActions.add({
       hub: hub1,
       assetId: daiAssetId,
       amount: daiAmount,
@@ -647,7 +647,7 @@ contract HubRestoreTest is HubBase {
     });
 
     // spoke1 draw liquidity
-    Utils.draw({
+    HubActions.draw({
       hub: hub1,
       assetId: daiAssetId,
       to: alice,
@@ -739,7 +739,7 @@ contract HubRestoreTest is HubBase {
     uint256 drawAmount = daiAmount / 2;
 
     // spoke2 add dai
-    Utils.add({
+    HubActions.add({
       hub: hub1,
       assetId: daiAssetId,
       amount: daiAmount,
@@ -748,7 +748,7 @@ contract HubRestoreTest is HubBase {
     });
 
     // spoke1 draw liquidity
-    Utils.draw({
+    HubActions.draw({
       hub: hub1,
       assetId: daiAssetId,
       to: alice,
@@ -853,7 +853,7 @@ contract HubRestoreTest is HubBase {
     skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
 
     // spoke2 add dai
-    Utils.supplyCollateral({
+    SpokeActions.supplyCollateral({
       spoke: spoke2,
       reserveId: _daiReserveId(spoke2),
       amount: daiAmount,
@@ -862,7 +862,7 @@ contract HubRestoreTest is HubBase {
     });
 
     // spoke1 draw liquidity
-    Utils.draw({
+    HubActions.draw({
       hub: hub1,
       assetId: daiAssetId,
       to: address(spoke1),
@@ -945,7 +945,7 @@ contract HubRestoreTest is HubBase {
     uint256 wethAmount = daiAmount; // to ensure collateralization
 
     // spoke1 add weth
-    Utils.supplyCollateral({
+    SpokeActions.supplyCollateral({
       spoke: spoke1,
       reserveId: _wethReserveId(spoke1),
       caller: alice,
@@ -954,7 +954,7 @@ contract HubRestoreTest is HubBase {
     });
 
     // spoke2 add dai
-    Utils.supplyCollateral({
+    SpokeActions.supplyCollateral({
       spoke: spoke2,
       reserveId: _daiReserveId(spoke2),
       caller: bob,
@@ -963,7 +963,7 @@ contract HubRestoreTest is HubBase {
     });
 
     // spoke1 draw liquidity
-    Utils.borrow({
+    SpokeActions.borrow({
       spoke: spoke1,
       reserveId: _daiReserveId(spoke1),
       caller: alice,

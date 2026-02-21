@@ -2,9 +2,9 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import 'tests/unit/Spoke/SpokeBase.t.sol';
+import 'tests/unit/setup/Base.t.sol';
 
-contract SpokeBorrowHealthFactorTest is SpokeBase {
+contract SpokeBorrowHealthFactorTest is Base {
   /// basic case, cannot borrow an amount that leads to HF < 1
   function test_borrow_revertsWith_HealthFactorBelowThreshold() public {
     uint256 daiReserveId = _daiReserveId(spoke1);
@@ -19,10 +19,10 @@ contract SpokeBorrowHealthFactorTest is SpokeBase {
     });
 
     // Bob supply weth
-    Utils.supplyCollateral(spoke1, wethReserveId, bob, wethSupplyAmount, bob);
+    SpokeActions.supplyCollateral(spoke1, wethReserveId, bob, wethSupplyAmount, bob);
 
     // Alice supply dai
-    Utils.supply(spoke1, daiReserveId, alice, maxDebtAmount * 2, alice); // supply enough buffer for multiple borrows
+    SpokeActions.supply(spoke1, daiReserveId, alice, maxDebtAmount * 2, alice); // supply enough buffer for multiple borrows
 
     // Bob draw max allowed debt amt of dai reserve liquidity
     vm.prank(bob);
@@ -51,10 +51,10 @@ contract SpokeBorrowHealthFactorTest is SpokeBase {
     });
 
     // Bob supply weth
-    Utils.supplyCollateral(spoke1, wethReserveId, bob, wethSupplyAmount, bob);
+    SpokeActions.supplyCollateral(spoke1, wethReserveId, bob, wethSupplyAmount, bob);
 
     // Alice supply dai
-    Utils.supply(spoke1, daiReserveId, alice, maxDebtAmount * 2, alice); // supply enough buffer for multiple borrows
+    SpokeActions.supply(spoke1, daiReserveId, alice, maxDebtAmount * 2, alice); // supply enough buffer for multiple borrows
 
     // Bob draw max allowed debt amt of dai reserve liquidity
     vm.prank(bob);
@@ -94,10 +94,10 @@ contract SpokeBorrowHealthFactorTest is SpokeBase {
     vm.assume(maxDebtAmount < MAX_SUPPLY_AMOUNT / 2 && maxDebtAmount > 0);
 
     // Bob supply weth
-    Utils.supplyCollateral(spoke1, wethReserveId, bob, wethSupplyAmount, bob);
+    SpokeActions.supplyCollateral(spoke1, wethReserveId, bob, wethSupplyAmount, bob);
 
     // Alice supply dai
-    Utils.supply(spoke1, daiReserveId, alice, maxDebtAmount * 2, alice); // supply enough buffer for multiple borrows
+    SpokeActions.supply(spoke1, daiReserveId, alice, maxDebtAmount * 2, alice); // supply enough buffer for multiple borrows
 
     // Bob draw max allowed debt amt of dai reserve liquidity
     vm.prank(bob);
@@ -140,12 +140,18 @@ contract SpokeBorrowHealthFactorTest is SpokeBase {
     });
 
     // Bob supply weth
-    Utils.supplyCollateral(spoke1, wethReserveId, bob, wethCollAmountDai + wethCollAmountUsdx, bob);
+    SpokeActions.supplyCollateral(
+      spoke1,
+      wethReserveId,
+      bob,
+      wethCollAmountDai + wethCollAmountUsdx,
+      bob
+    );
 
     // Alice supply dai
-    Utils.supply(spoke1, daiReserveId, alice, daiDebtAmount * 2, alice); // supply enough buffer for multiple borrows
+    SpokeActions.supply(spoke1, daiReserveId, alice, daiDebtAmount * 2, alice); // supply enough buffer for multiple borrows
     // Alice supply usdx
-    Utils.supply(spoke1, usdxReserveId, alice, usdxDebtAmount * 2, alice); // supply enough buffer for multiple borrows
+    SpokeActions.supply(spoke1, usdxReserveId, alice, usdxDebtAmount * 2, alice); // supply enough buffer for multiple borrows
 
     // Bob draw max allowed debt amt of dai/usdx reserve liquidity
     vm.prank(bob);
@@ -195,12 +201,18 @@ contract SpokeBorrowHealthFactorTest is SpokeBase {
     });
 
     // Bob supply weth
-    Utils.supplyCollateral(spoke1, wethReserveId, bob, wethCollAmountDai + wethCollAmountUsdx, bob);
+    SpokeActions.supplyCollateral(
+      spoke1,
+      wethReserveId,
+      bob,
+      wethCollAmountDai + wethCollAmountUsdx,
+      bob
+    );
 
     // Alice supply dai
-    Utils.supply(spoke1, daiReserveId, alice, daiDebtAmount * 2, alice); // supply enough buffer for multiple borrows
+    SpokeActions.supply(spoke1, daiReserveId, alice, daiDebtAmount * 2, alice); // supply enough buffer for multiple borrows
     // Alice supply usdx
-    Utils.supply(spoke1, usdxReserveId, alice, usdxDebtAmount * 2, alice); // supply enough buffer for multiple borrows
+    SpokeActions.supply(spoke1, usdxReserveId, alice, usdxDebtAmount * 2, alice); // supply enough buffer for multiple borrows
 
     // Bob draw max allowed debt amt of dai/usdx reserve liquidity
     vm.prank(bob);
@@ -253,12 +265,12 @@ contract SpokeBorrowHealthFactorTest is SpokeBase {
       });
 
     // Bob supply weth
-    Utils.supplyCollateral(spoke1, wethReserveId, bob, wethCollAmount, bob);
+    SpokeActions.supplyCollateral(spoke1, wethReserveId, bob, wethCollAmount, bob);
 
     // Alice supply dai
-    Utils.supply(spoke1, daiReserveId, alice, daiDebtAmount * 2, alice); // supply enough buffer for multiple borrows
+    SpokeActions.supply(spoke1, daiReserveId, alice, daiDebtAmount * 2, alice); // supply enough buffer for multiple borrows
     // Alice supply usdx
-    Utils.supply(spoke1, usdxReserveId, alice, usdxDebtAmount * 2, alice); // supply enough buffer for multiple borrows
+    SpokeActions.supply(spoke1, usdxReserveId, alice, usdxDebtAmount * 2, alice); // supply enough buffer for multiple borrows
 
     // Bob draw max allowed debt amt of dai/usdx reserve liquidity
     vm.prank(bob);
@@ -318,12 +330,18 @@ contract SpokeBorrowHealthFactorTest is SpokeBase {
     vm.assume(usdxDebtAmount < MAX_SUPPLY_AMOUNT / 2 && usdxDebtAmount > 0);
 
     // Bob supply weth
-    Utils.supplyCollateral(spoke1, wethReserveId, bob, wethCollForDai + wethCollForUsdx, bob);
+    SpokeActions.supplyCollateral(
+      spoke1,
+      wethReserveId,
+      bob,
+      wethCollForDai + wethCollForUsdx,
+      bob
+    );
 
     // Alice supply dai
-    Utils.supply(spoke1, daiReserveId, alice, daiDebtAmount * 2, alice); // supply enough buffer for multiple borrows
+    SpokeActions.supply(spoke1, daiReserveId, alice, daiDebtAmount * 2, alice); // supply enough buffer for multiple borrows
     // Alice supply usdx
-    Utils.supply(spoke1, usdxReserveId, alice, usdxDebtAmount * 2, alice); // supply enough buffer for multiple borrows
+    SpokeActions.supply(spoke1, usdxReserveId, alice, usdxDebtAmount * 2, alice); // supply enough buffer for multiple borrows
 
     // Bob draw max allowed debt amt of dai/usdx reserve liquidity
     vm.prank(bob);
@@ -362,10 +380,10 @@ contract SpokeBorrowHealthFactorTest is SpokeBase {
     });
 
     // Bob supply weth
-    Utils.supplyCollateral(spoke1, wethReserveId, bob, wethSupplyAmount, bob);
+    SpokeActions.supplyCollateral(spoke1, wethReserveId, bob, wethSupplyAmount, bob);
 
     // Alice supply dai
-    Utils.supply(spoke1, daiReserveId, alice, maxDebtAmount * 2, alice); // supply enough buffer for multiple borrows
+    SpokeActions.supply(spoke1, daiReserveId, alice, maxDebtAmount * 2, alice); // supply enough buffer for multiple borrows
 
     // Bob draw max allowed debt amt of dai reserve liquidity
     vm.prank(bob);
@@ -374,7 +392,7 @@ contract SpokeBorrowHealthFactorTest is SpokeBase {
     assertEq(_getUserHealthFactor(spoke1, bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
 
     // collateral price drop by half so that bob is undercollateralized
-    _mockReservePriceByPercent(spoke1, wethReserveId, 50_00);
+    _mockReservePriceByPercent(spoke1, wethReserveId, 50_00, SPOKE_ADMIN);
     assertLt(_getUserHealthFactor(spoke1, bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
 
     vm.prank(bob);
@@ -406,10 +424,10 @@ contract SpokeBorrowHealthFactorTest is SpokeBase {
     vm.assume(maxDebtAmount < MAX_SUPPLY_AMOUNT / 2 && maxDebtAmount > 0);
 
     // Bob supply weth
-    Utils.supplyCollateral(spoke1, wethReserveId, bob, wethSupplyAmount, bob);
+    SpokeActions.supplyCollateral(spoke1, wethReserveId, bob, wethSupplyAmount, bob);
 
     // Alice supply dai
-    Utils.supply(spoke1, daiReserveId, alice, maxDebtAmount * 2, alice); // supply enough buffer for multiple borrows
+    SpokeActions.supply(spoke1, daiReserveId, alice, maxDebtAmount * 2, alice); // supply enough buffer for multiple borrows
 
     // Bob draw max allowed debt amt of dai reserve liquidity
     vm.prank(bob);
@@ -418,7 +436,7 @@ contract SpokeBorrowHealthFactorTest is SpokeBase {
     assertEq(_getUserHealthFactor(spoke1, bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
 
     // collateral price drop so that bob is undercollateralized
-    _mockReservePrice(spoke1, wethReserveId, newPrice);
+    _mockReservePrice(spoke1, wethReserveId, newPrice, SPOKE_ADMIN);
     assertLt(_getUserHealthFactor(spoke1, bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
 
     vm.prank(bob);
@@ -451,13 +469,19 @@ contract SpokeBorrowHealthFactorTest is SpokeBase {
     });
 
     // Bob supply weth collateral
-    Utils.supplyCollateral(spoke1, wethReserveId, bob, wethCollAmount, bob);
+    SpokeActions.supplyCollateral(spoke1, wethReserveId, bob, wethCollAmount, bob);
 
     // Bob supply dai collateral
-    Utils.supplyCollateral(spoke1, daiReserveId, bob, daiCollAmount, bob);
+    SpokeActions.supplyCollateral(spoke1, daiReserveId, bob, daiCollAmount, bob);
 
     // Alice supply usdx
-    Utils.supply(spoke1, usdxReserveId, alice, (usdxDebtAmountWeth + usdxDebtAmountDai) * 2, alice); // supply enough buffer for multiple borrows
+    SpokeActions.supply(
+      spoke1,
+      usdxReserveId,
+      alice,
+      (usdxDebtAmountWeth + usdxDebtAmountDai) * 2,
+      alice
+    ); // supply enough buffer for multiple borrows
 
     // Bob draw max allowed usdx debt
     vm.prank(bob);
@@ -503,13 +527,19 @@ contract SpokeBorrowHealthFactorTest is SpokeBase {
     vm.assume(daiCollAmount < MAX_SUPPLY_AMOUNT && daiCollAmount > 0);
 
     // Bob supply weth collateral
-    Utils.supplyCollateral(spoke1, wethReserveId, bob, wethCollAmount, bob);
+    SpokeActions.supplyCollateral(spoke1, wethReserveId, bob, wethCollAmount, bob);
 
     // Bob supply dai collateral
-    Utils.supplyCollateral(spoke1, daiReserveId, bob, daiCollAmount, bob);
+    SpokeActions.supplyCollateral(spoke1, daiReserveId, bob, daiCollAmount, bob);
 
     // Alice supply usdx
-    Utils.supply(spoke1, usdxReserveId, alice, (usdxDebtAmountWeth + usdxDebtAmountDai) + 1, alice); // supply enough buffer for multiple borrows
+    SpokeActions.supply(
+      spoke1,
+      usdxReserveId,
+      alice,
+      (usdxDebtAmountWeth + usdxDebtAmountDai) + 1,
+      alice
+    ); // supply enough buffer for multiple borrows
 
     // Bob draw max allowed usdx debt
     vm.prank(bob);
@@ -551,13 +581,19 @@ contract SpokeBorrowHealthFactorTest is SpokeBase {
     });
 
     // Bob supply weth collateral
-    Utils.supplyCollateral(spoke1, wethReserveId, bob, wethCollAmount, bob);
+    SpokeActions.supplyCollateral(spoke1, wethReserveId, bob, wethCollAmount, bob);
 
     // Bob supply dai collateral
-    Utils.supplyCollateral(spoke1, daiReserveId, bob, daiCollAmount, bob);
+    SpokeActions.supplyCollateral(spoke1, daiReserveId, bob, daiCollAmount, bob);
 
     // Alice supply usdx
-    Utils.supply(spoke1, usdxReserveId, alice, (usdxDebtAmountWeth + usdxDebtAmountDai) * 2, alice); // supply enough buffer for multiple borrows
+    SpokeActions.supply(
+      spoke1,
+      usdxReserveId,
+      alice,
+      (usdxDebtAmountWeth + usdxDebtAmountDai) * 2,
+      alice
+    ); // supply enough buffer for multiple borrows
 
     // Bob draw max allowed usdx debt
     vm.prank(bob);
@@ -611,13 +647,13 @@ contract SpokeBorrowHealthFactorTest is SpokeBase {
     vm.assume(daiCollAmount < MAX_SUPPLY_AMOUNT && daiCollAmount > 0);
 
     // Bob supply weth collateral
-    Utils.supplyCollateral(spoke1, wethReserveId, bob, wethCollAmount, bob);
+    SpokeActions.supplyCollateral(spoke1, wethReserveId, bob, wethCollAmount, bob);
 
     // Bob supply dai collateral
-    Utils.supplyCollateral(spoke1, daiReserveId, bob, daiCollAmount, bob);
+    SpokeActions.supplyCollateral(spoke1, daiReserveId, bob, daiCollAmount, bob);
 
     // Alice supply usdx
-    Utils.supply(spoke1, usdxReserveId, alice, MAX_SUPPLY_AMOUNT, alice); // supply enough buffer for multiple borrows
+    SpokeActions.supply(spoke1, usdxReserveId, alice, MAX_SUPPLY_AMOUNT, alice); // supply enough buffer for multiple borrows
 
     // Bob draw max allowed usdx debt
     vm.prank(bob);
@@ -666,13 +702,19 @@ contract SpokeBorrowHealthFactorTest is SpokeBase {
     });
 
     // Bob supply weth collateral
-    Utils.supplyCollateral(spoke1, wethReserveId, bob, wethCollAmount, bob);
+    SpokeActions.supplyCollateral(spoke1, wethReserveId, bob, wethCollAmount, bob);
 
     // Bob supply dai collateral
-    Utils.supplyCollateral(spoke1, daiReserveId, bob, daiCollAmount, bob);
+    SpokeActions.supplyCollateral(spoke1, daiReserveId, bob, daiCollAmount, bob);
 
     // Alice supply usdx
-    Utils.supply(spoke1, usdxReserveId, alice, (usdxDebtAmountWeth + usdxDebtAmountDai) * 2, alice); // supply enough buffer for multiple borrows
+    SpokeActions.supply(
+      spoke1,
+      usdxReserveId,
+      alice,
+      (usdxDebtAmountWeth + usdxDebtAmountDai) * 2,
+      alice
+    ); // supply enough buffer for multiple borrows
 
     // Bob draw max allowed usdx debt
     vm.prank(bob);
@@ -682,7 +724,7 @@ contract SpokeBorrowHealthFactorTest is SpokeBase {
     assertEq(_getUserHealthFactor(spoke1, bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
 
     // collateral price drop by half so that bob is undercollateralized
-    _mockReservePriceByPercent(spoke1, wethReserveId, 50_00);
+    _mockReservePriceByPercent(spoke1, wethReserveId, 50_00, SPOKE_ADMIN);
 
     // invalid HF
     assertLt(_getUserHealthFactor(spoke1, bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
@@ -727,13 +769,13 @@ contract SpokeBorrowHealthFactorTest is SpokeBase {
     vm.assume(daiCollAmount < MAX_SUPPLY_AMOUNT && daiCollAmount > 0);
 
     // Bob supply weth collateral
-    Utils.supplyCollateral(spoke1, wethReserveId, bob, wethCollAmount, bob);
+    SpokeActions.supplyCollateral(spoke1, wethReserveId, bob, wethCollAmount, bob);
 
     // Bob supply dai collateral
-    Utils.supplyCollateral(spoke1, daiReserveId, bob, daiCollAmount, bob);
+    SpokeActions.supplyCollateral(spoke1, daiReserveId, bob, daiCollAmount, bob);
 
     // Alice supply usdx
-    Utils.supply(spoke1, usdxReserveId, alice, MAX_SUPPLY_AMOUNT, alice); // supply enough buffer for multiple borrows
+    SpokeActions.supply(spoke1, usdxReserveId, alice, MAX_SUPPLY_AMOUNT, alice); // supply enough buffer for multiple borrows
 
     // Bob draw max allowed usdx debt
     vm.prank(bob);
@@ -743,7 +785,7 @@ contract SpokeBorrowHealthFactorTest is SpokeBase {
     assertGe(_getUserHealthFactor(spoke1, bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD); // can be GE due to edge cases
 
     // collateral price drop by half so that bob is undercollateralized
-    _mockReservePriceByPercent(spoke1, wethReserveId, 50_00);
+    _mockReservePriceByPercent(spoke1, wethReserveId, 50_00, SPOKE_ADMIN);
 
     // invalid HF
     assertLt(_getUserHealthFactor(spoke1, bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
@@ -781,13 +823,19 @@ contract SpokeBorrowHealthFactorTest is SpokeBase {
     });
 
     // Bob supply weth collateral
-    Utils.supplyCollateral(spoke1, wethReserveId, bob, wethCollAmount, bob);
+    SpokeActions.supplyCollateral(spoke1, wethReserveId, bob, wethCollAmount, bob);
 
     // Bob supply dai collateral
-    Utils.supplyCollateral(spoke1, daiReserveId, bob, daiCollAmount, bob);
+    SpokeActions.supplyCollateral(spoke1, daiReserveId, bob, daiCollAmount, bob);
 
     // Alice supply usdx
-    Utils.supply(spoke1, usdxReserveId, alice, (usdxDebtAmountWeth + usdxDebtAmountDai) * 2, alice); // supply enough buffer for multiple borrows
+    SpokeActions.supply(
+      spoke1,
+      usdxReserveId,
+      alice,
+      (usdxDebtAmountWeth + usdxDebtAmountDai) * 2,
+      alice
+    ); // supply enough buffer for multiple borrows
 
     // Bob draw max allowed usdx debt
     vm.prank(bob);
@@ -797,7 +845,7 @@ contract SpokeBorrowHealthFactorTest is SpokeBase {
     assertEq(_getUserHealthFactor(spoke1, bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
 
     // collateral price drop by half so that bob is undercollateralized
-    _mockReservePriceByPercent(spoke1, daiReserveId, 50_00);
+    _mockReservePriceByPercent(spoke1, daiReserveId, 50_00, SPOKE_ADMIN);
 
     // invalid HF
     assertLt(_getUserHealthFactor(spoke1, bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
@@ -842,12 +890,12 @@ contract SpokeBorrowHealthFactorTest is SpokeBase {
     vm.assume(daiCollAmount < MAX_SUPPLY_AMOUNT && daiCollAmount > 0);
 
     // Bob supply weth collateral
-    Utils.supplyCollateral(spoke1, wethReserveId, bob, wethCollAmount, bob);
+    SpokeActions.supplyCollateral(spoke1, wethReserveId, bob, wethCollAmount, bob);
     // Bob supply dai collateral
-    Utils.supplyCollateral(spoke1, daiReserveId, bob, daiCollAmount, bob);
+    SpokeActions.supplyCollateral(spoke1, daiReserveId, bob, daiCollAmount, bob);
 
     // Alice supply usdx
-    Utils.supply(spoke1, usdxReserveId, alice, MAX_SUPPLY_AMOUNT, alice); // supply enough buffer for multiple borrows
+    SpokeActions.supply(spoke1, usdxReserveId, alice, MAX_SUPPLY_AMOUNT, alice); // supply enough buffer for multiple borrows
 
     // Bob draw max allowed usdx debt
     vm.prank(bob);
@@ -857,7 +905,7 @@ contract SpokeBorrowHealthFactorTest is SpokeBase {
     assertGe(_getUserHealthFactor(spoke1, bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD); // can be GE due to edge cases
 
     // collateral price drop by half so that bob is undercollateralized
-    _mockReservePriceByPercent(spoke1, daiReserveId, 50_00);
+    _mockReservePriceByPercent(spoke1, daiReserveId, 50_00, SPOKE_ADMIN);
 
     // invalid HF
     assertLt(_getUserHealthFactor(spoke1, bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);

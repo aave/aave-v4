@@ -2,9 +2,9 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import 'tests/unit/Spoke/SpokeBase.t.sol';
+import 'tests/unit/setup/Base.t.sol';
 
-contract SpokeUpgradeableTest is SpokeBase {
+contract SpokeUpgradeableTest is Base {
   address internal proxyAdminOwner = makeAddr('proxyAdminOwner');
   address internal oracle = makeAddr('AaveOracle');
 
@@ -36,7 +36,7 @@ contract SpokeUpgradeableTest is SpokeBase {
     address proxyAdminAddress = vm.computeCreateAddress(spokeProxyAddress, 1);
 
     ISpoke.LiquidationConfig memory expectedLiquidationConfig = ISpoke.LiquidationConfig({
-      targetHealthFactor: Constants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
+      targetHealthFactor: SpokeConstants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
       healthFactorForMaxBonus: 0,
       liquidationBonusFactor: 0
     });
@@ -44,7 +44,7 @@ contract SpokeUpgradeableTest is SpokeBase {
     vm.expectEmit(spokeProxyAddress);
     emit IERC1967.Upgraded(address(spokeImpl));
     vm.expectEmit(spokeProxyAddress);
-    emit ISpoke.SetSpokeImmutables(oracle, Constants.MAX_ALLOWED_USER_RESERVES_LIMIT);
+    emit ISpoke.SetSpokeImmutables(oracle, SpokeConstants.MAX_ALLOWED_USER_RESERVES_LIMIT);
     vm.expectEmit(spokeProxyAddress);
     emit IAccessManaged.AuthorityUpdated(address(accessManager));
     vm.expectEmit(spokeProxyAddress);
@@ -71,7 +71,7 @@ contract SpokeUpgradeableTest is SpokeBase {
 
     assertEq(_getProxyInitializedVersion(address(spokeProxy)), revision);
     assertEq(spokeProxy.getLiquidationConfig(), expectedLiquidationConfig);
-    assertEq(spokeProxy.MAX_USER_RESERVES_LIMIT(), Constants.MAX_ALLOWED_USER_RESERVES_LIMIT);
+    assertEq(spokeProxy.MAX_USER_RESERVES_LIMIT(), SpokeConstants.MAX_ALLOWED_USER_RESERVES_LIMIT);
   }
 
   function test_proxy_reinitialization_fuzz(uint64 initialRevision) public {
@@ -89,7 +89,7 @@ contract SpokeUpgradeableTest is SpokeBase {
 
     setUpRoles(hub1, ISpoke(address(spokeProxy)), accessManager);
     uint128 targetHealthFactor = 1.05e18;
-    _updateTargetHealthFactor(ISpoke(address(spokeProxy)), targetHealthFactor);
+    _updateTargetHealthFactor(ISpoke(address(spokeProxy)), targetHealthFactor, SPOKE_ADMIN);
 
     uint64 secondRevision = uint64(vm.randomUint(initialRevision + 1, type(uint64).max));
     ISpokeInstance spokeImpl2 = _deployMockSpokeInstance(secondRevision);
@@ -152,7 +152,7 @@ contract SpokeUpgradeableTest is SpokeBase {
   function test_proxy_constructor_revertsWith_InvalidAddress() public {
     ISpokeInstance spokeImpl = DeployUtils.deploySpokeImplementation(
       oracle,
-      Constants.MAX_ALLOWED_USER_RESERVES_LIMIT
+      SpokeConstants.MAX_ALLOWED_USER_RESERVES_LIMIT
     );
     vm.expectRevert(ISpoke.InvalidAddress.selector);
     new TransparentUpgradeableProxy(
@@ -165,7 +165,7 @@ contract SpokeUpgradeableTest is SpokeBase {
   function test_proxy_reinitialization_revertsWith_InvalidAddress() public {
     ISpokeInstance spokeImpl = DeployUtils.deploySpokeImplementation(
       oracle,
-      Constants.MAX_ALLOWED_USER_RESERVES_LIMIT
+      SpokeConstants.MAX_ALLOWED_USER_RESERVES_LIMIT
     );
     ITransparentUpgradeableProxy spokeProxy = ITransparentUpgradeableProxy(
       address(
@@ -186,7 +186,7 @@ contract SpokeUpgradeableTest is SpokeBase {
   function test_proxy_reinitialization_revertsWith_CallerNotProxyAdmin() public {
     ISpokeInstance spokeImpl = DeployUtils.deploySpokeImplementation(
       oracle,
-      Constants.MAX_ALLOWED_USER_RESERVES_LIMIT
+      SpokeConstants.MAX_ALLOWED_USER_RESERVES_LIMIT
     );
     ITransparentUpgradeableProxy spokeProxy = ITransparentUpgradeableProxy(
       address(
@@ -214,7 +214,9 @@ contract SpokeUpgradeableTest is SpokeBase {
   function _deployMockSpokeInstance(uint64 revision) internal returns (ISpokeInstance) {
     return
       ISpokeInstance(
-        address(new MockSpokeInstance(revision, oracle, Constants.MAX_ALLOWED_USER_RESERVES_LIMIT))
+        address(
+          new MockSpokeInstance(revision, oracle, SpokeConstants.MAX_ALLOWED_USER_RESERVES_LIMIT)
+        )
       );
   }
 }

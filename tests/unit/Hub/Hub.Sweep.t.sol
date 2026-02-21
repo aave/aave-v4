@@ -2,9 +2,9 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import 'tests/unit/Hub/HubBase.t.sol';
+import 'tests/unit/setup/Base.t.sol';
 
-contract HubSweepTest is HubBase {
+contract HubSweepTest is Base {
   address public reinvestmentController = makeAddr('reinvestmentController');
 
   function test_sweep_revertsWith_AssetNotListed() public {
@@ -21,7 +21,7 @@ contract HubSweepTest is HubBase {
 
   function test_sweep_revertsWith_OnlyReinvestmentController(address caller) public {
     vm.assume(caller != reinvestmentController);
-    _updateAssetReinvestmentController(hub1, daiAssetId, reinvestmentController);
+    _updateAssetReinvestmentController(hub1, daiAssetId, reinvestmentController, HUB_ADMIN);
 
     vm.expectRevert(IHub.OnlyReinvestmentController.selector);
     vm.prank(caller);
@@ -30,7 +30,7 @@ contract HubSweepTest is HubBase {
 
   function test_sweep_revertsWith_InvalidAmount() public {
     assertEq(hub1.getAsset(daiAssetId).swept, 0);
-    _updateAssetReinvestmentController(hub1, daiAssetId, reinvestmentController);
+    _updateAssetReinvestmentController(hub1, daiAssetId, reinvestmentController, HUB_ADMIN);
 
     vm.prank(reinvestmentController);
     vm.expectRevert(IHub.InvalidAmount.selector);
@@ -45,9 +45,9 @@ contract HubSweepTest is HubBase {
     supplyAmount = bound(supplyAmount, 1, MAX_SUPPLY_AMOUNT);
     sweepAmount = bound(sweepAmount, 1, supplyAmount);
 
-    _updateAssetReinvestmentController(hub1, daiAssetId, reinvestmentController);
+    _updateAssetReinvestmentController(hub1, daiAssetId, reinvestmentController, HUB_ADMIN);
 
-    _addLiquidity(daiAssetId, supplyAmount);
+    _addLiquidity(hub1, daiAssetId, supplyAmount, ADMIN);
 
     uint256 assetLiquidity = hub1.getAssetLiquidity(daiAssetId);
 
@@ -68,7 +68,7 @@ contract HubSweepTest is HubBase {
 
   ///@dev swept amount is not withdrawable
   function test_sweep_revertsWith_InsufficientLiquidity() public {
-    _updateAssetReinvestmentController(hub1, daiAssetId, reinvestmentController);
+    _updateAssetReinvestmentController(hub1, daiAssetId, reinvestmentController, HUB_ADMIN);
 
     uint256 initialLiquidity = vm.randomUint(2, MAX_SUPPLY_AMOUNT);
     uint256 swept = vm.randomUint(1, initialLiquidity);
@@ -91,10 +91,10 @@ contract HubSweepTest is HubBase {
   function test_sweep_does_not_impact_utilization(uint256 supplyAmount, uint256 drawAmount) public {
     supplyAmount = bound(supplyAmount, 2, MAX_SUPPLY_AMOUNT);
     drawAmount = bound(drawAmount, 1, supplyAmount - 1);
-    _updateAssetReinvestmentController(hub1, daiAssetId, reinvestmentController);
+    _updateAssetReinvestmentController(hub1, daiAssetId, reinvestmentController, HUB_ADMIN);
 
-    _addLiquidity(daiAssetId, supplyAmount);
-    _drawLiquidity(daiAssetId, drawAmount, false, false);
+    _addLiquidity(hub1, daiAssetId, supplyAmount, ADMIN);
+    _drawLiquidityViaTempSpoke(hub1, daiAssetId, drawAmount, false, false, HUB_ADMIN);
     uint256 swept = vm.randomUint(1, supplyAmount - drawAmount);
 
     uint256 drawnRate = hub1.getAssetDrawnRate(daiAssetId);

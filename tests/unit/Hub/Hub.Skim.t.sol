@@ -2,9 +2,9 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import 'tests/unit/Hub/HubBase.t.sol';
+import 'tests/unit/setup/Base.t.sol';
 
-contract HubSkimTest is HubBase {
+contract HubSkimTest is Base {
   using SharesMath for uint256;
   using SafeCast for uint256;
 
@@ -19,9 +19,9 @@ contract HubSkimTest is HubBase {
     IHub.SpokeConfig memory spokeConfig = IHub.SpokeConfig({
       active: true,
       halted: false,
-      addCap: Constants.MAX_ALLOWED_SPOKE_CAP,
-      drawCap: Constants.MAX_ALLOWED_SPOKE_CAP,
-      riskPremiumThreshold: Constants.MAX_ALLOWED_COLLATERAL_RISK
+      addCap: HubConstants.MAX_ALLOWED_SPOKE_CAP,
+      drawCap: HubConstants.MAX_ALLOWED_SPOKE_CAP,
+      riskPremiumThreshold: SpokeConstants.MAX_ALLOWED_COLLATERAL_RISK
     });
     vm.startPrank(ADMIN);
     // add skim spoke

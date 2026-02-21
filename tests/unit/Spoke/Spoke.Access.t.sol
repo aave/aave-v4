@@ -2,9 +2,9 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import 'tests/unit/Spoke/SpokeBase.t.sol';
+import 'tests/unit/setup/Base.t.sol';
 
-contract SpokeAccessTest is SpokeBase {
+contract SpokeAccessTest is Base {
   using SafeCast for uint256;
 
   /// @dev Test showing that the hub functions can only be called by spokes, and not by users.

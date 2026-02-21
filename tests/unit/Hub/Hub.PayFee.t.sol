@@ -2,9 +2,9 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import 'tests/unit/Hub/HubBase.t.sol';
+import 'tests/unit/setup/Base.t.sol';
 
-contract HubPayFeeTest is HubBase {
+contract HubPayFeeTest is Base {
   function test_payFee_revertsWith_InvalidShares() public {
     vm.expectRevert(IHub.InvalidShares.selector, address(hub1));
     vm.prank(address(spoke1));
@@ -12,7 +12,7 @@ contract HubPayFeeTest is HubBase {
   }
 
   function test_payFee_revertsWith_SpokeNotActive() public {
-    _updateSpokeActive(hub1, daiAssetId, address(spoke1), false);
+    _updateSpokeActive(hub1, daiAssetId, address(spoke1), false, HUB_ADMIN);
     vm.expectRevert(IHub.SpokeNotActive.selector, address(hub1));
     vm.prank(address(spoke1));
     hub1.payFeeShares(daiAssetId, 1);
@@ -20,7 +20,7 @@ contract HubPayFeeTest is HubBase {
 
   function test_payFee_revertsWith_underflow_added_shares_exceeded() public {
     uint256 addAmount = 100e18;
-    Utils.add({
+    HubActions.add({
       hub: hub1,
       assetId: daiAssetId,
       caller: address(spoke1),
@@ -37,7 +37,7 @@ contract HubPayFeeTest is HubBase {
 
   function test_payFee_revertsWith_underflow_added_shares_exceeded_with_interest() public {
     uint256 addAmount = 100e18;
-    Utils.add({
+    HubActions.add({
       hub: hub1,
       assetId: daiAssetId,
       caller: address(spoke1),
@@ -45,8 +45,8 @@ contract HubPayFeeTest is HubBase {
       user: alice
     });
 
-    _addLiquidity(daiAssetId, addAmount);
-    _drawLiquidity(daiAssetId, addAmount, true);
+    _addLiquidity(hub1, daiAssetId, addAmount, ADMIN);
+    _drawLiquidity(hub1, daiAssetId, addAmount, true, HUB_ADMIN);
 
     uint256 feeShares = hub1.getSpokeAddedShares(daiAssetId, address(spoke1));
     uint256 feeAmount = hub1.getSpokeAddedAssets(daiAssetId, address(spoke1));
@@ -71,7 +71,7 @@ contract HubPayFeeTest is HubBase {
     addAmount = bound(addAmount, 1, MAX_SUPPLY_AMOUNT);
     skipTime = bound(skipTime, 0, MAX_SKIP_TIME);
 
-    Utils.add({
+    HubActions.add({
       hub: hub1,
       assetId: daiAssetId,
       caller: address(spoke1),
@@ -79,8 +79,8 @@ contract HubPayFeeTest is HubBase {
       user: alice
     });
 
-    _addLiquidity(daiAssetId, 100e18);
-    _drawLiquidity(daiAssetId, 100e18, true);
+    _addLiquidity(hub1, daiAssetId, 100e18, ADMIN);
+    _drawLiquidity(hub1, daiAssetId, 100e18, true, HUB_ADMIN);
 
     uint256 spokeSharesBefore = hub1.getSpokeAddedShares(daiAssetId, address(spoke1));
 

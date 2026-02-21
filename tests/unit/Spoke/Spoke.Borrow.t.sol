@@ -2,12 +2,12 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import 'tests/unit/Spoke/SpokeBase.t.sol';
+import 'tests/unit/setup/Base.t.sol';
 
-contract SpokeBorrowTest is SpokeBase {
+contract SpokeBorrowTest is Base {
   function test_borrow_revertsWith_ReentrancyGuardReentrantCall_hubDraw() public {
     uint256 amount = 100e18;
-    Utils.supplyCollateral({
+    SpokeActions.supplyCollateral({
       spoke: spoke1,
       reserveId: _daiReserveId(spoke1),
       caller: bob,
@@ -32,7 +32,7 @@ contract SpokeBorrowTest is SpokeBase {
 
   function test_borrow_revertsWith_ReentrancyGuardReentrantCall_hubRefreshPremium() public {
     uint256 amount = 100e18;
-    Utils.supplyCollateral({
+    SpokeActions.supplyCollateral({
       spoke: spoke1,
       reserveId: _daiReserveId(spoke1),
       caller: bob,
@@ -80,10 +80,16 @@ contract SpokeBorrowTest is SpokeBase {
     );
 
     // Bob supply weth collateral
-    Utils.supplyCollateral(spoke1, state.wethReserveId, bob, state.wethBob.supplyAmount, bob);
+    SpokeActions.supplyCollateral(
+      spoke1,
+      state.wethReserveId,
+      bob,
+      state.wethBob.supplyAmount,
+      bob
+    );
 
     // Alice supply dai
-    Utils.supply(spoke1, state.daiReserveId, alice, state.daiAlice.supplyAmount, alice);
+    SpokeActions.supply(spoke1, state.daiReserveId, alice, state.daiAlice.supplyAmount, alice);
 
     state.daiBob.userBalanceBefore = tokenList.dai.balanceOf(bob);
     state.wethBob.userBalanceBefore = tokenList.weth.balanceOf(bob);
@@ -221,10 +227,16 @@ contract SpokeBorrowTest is SpokeBase {
     state.wethReserveId = _wethReserveId(spoke1);
 
     // Bob supply weth
-    Utils.supplyCollateral(spoke1, state.wethReserveId, bob, state.wethBob.supplyAmount, bob);
+    SpokeActions.supplyCollateral(
+      spoke1,
+      state.wethReserveId,
+      bob,
+      state.wethBob.supplyAmount,
+      bob
+    );
 
     // Alice supply dai
-    Utils.supply(spoke1, state.daiReserveId, alice, state.daiAlice.supplyAmount, alice);
+    SpokeActions.supply(spoke1, state.daiReserveId, alice, state.daiAlice.supplyAmount, alice);
 
     // should be 0 because no realized premium yet
     state.daiBob.premiumDebtRayBefore = _calculatePremiumDebtRay(spoke1, state.daiReserveId, bob);

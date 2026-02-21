@@ -136,7 +136,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
       );
     }
     deal(spoke, debtReserveId, liquidator, debtToCover.percentMulUp(101_00));
-    Utils.approve(spoke, debtReserveId, liquidator, debtToCover.percentMulUp(101_00));
+    SpokeActions.approve(spoke, debtReserveId, liquidator, debtToCover.percentMulUp(101_00));
 
     return debtToCover;
   }
@@ -286,8 +286,8 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
       }
 
       uint256 userSuppliedAssets = userSuppliedShares.mulDivDown(
-        totalAddedAssets + Constants.VIRTUAL_ASSETS,
-        totalAddedShares + Constants.VIRTUAL_SHARES
+        totalAddedAssets + HubConstants.VIRTUAL_ASSETS,
+        totalAddedShares + HubConstants.VIRTUAL_SHARES
       );
       uint256 userSuppliedValue = _convertAmountToValue(
         params.spoke,

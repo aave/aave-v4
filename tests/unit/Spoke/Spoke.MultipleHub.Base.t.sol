@@ -2,9 +2,9 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import 'tests/unit/Spoke/SpokeBase.t.sol';
+import 'tests/unit/setup/Base.t.sol';
 
-contract SpokeMultipleHubBase is SpokeBase {
+contract SpokeMultipleHubBase is Base {
   // New hub and spoke
   IHub internal newHub;
   IAaveOracle internal newOracle;

@@ -18,7 +18,7 @@ contract TokenizationSpokeTest is TokenizationSpokeBaseTest {
     address depositor = alice;
     uint256 assets = vm.randomUint(1, MAX_SUPPLY_AMOUNT);
     asset.mint(depositor, assets);
-    Utils.approve(vault, depositor, assets);
+    SpokeActions.approve(vault, depositor, assets);
 
     uint256 alicePreDepositBal = asset.balanceOf(depositor);
     uint256 expectedShares = IHub(vault.hub()).previewAddByAssets(vault.assetId(), assets);
@@ -48,7 +48,7 @@ contract TokenizationSpokeTest is TokenizationSpokeBaseTest {
     address receiver = bob;
     uint256 assets = vm.randomUint(1, MAX_SUPPLY_AMOUNT);
     asset.mint(depositor, assets);
-    Utils.approve(vault, depositor, assets);
+    SpokeActions.approve(vault, depositor, assets);
 
     uint256 expectedShares = IHub(vault.hub()).previewAddByAssets(vault.assetId(), assets);
 
@@ -73,7 +73,7 @@ contract TokenizationSpokeTest is TokenizationSpokeBaseTest {
     uint256 shares = vm.randomUint(1, MAX_SUPPLY_AMOUNT);
     uint256 expectedAssets = IHub(vault.hub()).previewAddByShares(vault.assetId(), shares);
     asset.mint(depositor, expectedAssets);
-    Utils.approve(vault, depositor, expectedAssets);
+    SpokeActions.approve(vault, depositor, expectedAssets);
 
     uint256 alicePreDepositBal = asset.balanceOf(depositor);
 
@@ -103,7 +103,7 @@ contract TokenizationSpokeTest is TokenizationSpokeBaseTest {
     uint256 shares = vm.randomUint(1, MAX_SUPPLY_AMOUNT);
     uint256 expectedAssets = IHub(vault.hub()).previewAddByShares(vault.assetId(), shares);
     asset.mint(depositor, expectedAssets);
-    Utils.approve(vault, depositor, expectedAssets);
+    SpokeActions.approve(vault, depositor, expectedAssets);
 
     vm.expectCall(vault.hub(), abi.encodeCall(IHubBase.add, (vault.assetId(), expectedAssets)));
     vm.expectEmit(address(vault));
@@ -125,7 +125,7 @@ contract TokenizationSpokeTest is TokenizationSpokeBaseTest {
     address owner = alice;
     uint256 depositAssets = vm.randomUint(1, MAX_SUPPLY_AMOUNT);
     asset.mint(owner, depositAssets);
-    Utils.approve(vault, owner, depositAssets);
+    SpokeActions.approve(vault, owner, depositAssets);
     vm.prank(owner);
     vault.deposit(depositAssets, owner);
 
@@ -162,7 +162,7 @@ contract TokenizationSpokeTest is TokenizationSpokeBaseTest {
     address receiver = carol;
     uint256 depositAssets = vm.randomUint(1, MAX_SUPPLY_AMOUNT);
     asset.mint(owner, depositAssets);
-    Utils.approve(vault, owner, depositAssets);
+    SpokeActions.approve(vault, owner, depositAssets);
     vm.prank(owner);
     uint256 depositedShares = vault.deposit(depositAssets, owner);
 
@@ -200,7 +200,7 @@ contract TokenizationSpokeTest is TokenizationSpokeBaseTest {
     uint256 mintShares = vm.randomUint(1, MAX_SUPPLY_AMOUNT);
     uint256 mintAssets = IHub(vault.hub()).previewAddByShares(vault.assetId(), mintShares);
     asset.mint(owner, mintAssets);
-    Utils.approve(vault, owner, mintAssets);
+    SpokeActions.approve(vault, owner, mintAssets);
     vm.prank(owner);
     vault.mint(mintShares, owner);
 
@@ -235,7 +235,7 @@ contract TokenizationSpokeTest is TokenizationSpokeBaseTest {
     uint256 mintShares = vm.randomUint(1, MAX_SUPPLY_AMOUNT);
     uint256 mintAssets = IHub(vault.hub()).previewAddByShares(vault.assetId(), mintShares);
     asset.mint(owner, mintAssets);
-    Utils.approve(vault, owner, mintAssets);
+    SpokeActions.approve(vault, owner, mintAssets);
     vm.prank(owner);
     vault.mint(mintShares, owner);
 

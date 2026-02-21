@@ -2,9 +2,9 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import 'tests/unit/Spoke/SpokeBase.t.sol';
+import 'tests/unit/setup/Base.t.sol';
 
-contract SpokeRiskPremiumScenarioTest is SpokeBase {
+contract SpokeRiskPremiumScenarioTest is Base {
   using SharesMath for uint256;
   using WadRayMath for uint256;
   using PercentageMath for *;
@@ -103,19 +103,25 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
     assertEq(_getCollateralRisk(spoke1, reservesIds.dai), 20_00, 'dai collateral risk');
 
     // Set collateral factor to 99.99% for Alice collateral
-    _updateMaxLiquidationBonus(spoke1, reservesIds.weth, 100_00);
-    _updateCollateralFactor(spoke1, reservesIds.weth, 99_99);
-    _updateMaxLiquidationBonus(spoke1, reservesIds.usdx, 100_00);
-    _updateCollateralFactor(spoke1, reservesIds.usdx, 99_99);
+    _updateMaxLiquidationBonus(spoke1, reservesIds.weth, 100_00, SPOKE_ADMIN);
+    _updateCollateralFactor(spoke1, reservesIds.weth, 99_99, SPOKE_ADMIN);
+    _updateMaxLiquidationBonus(spoke1, reservesIds.usdx, 100_00, SPOKE_ADMIN);
+    _updateCollateralFactor(spoke1, reservesIds.usdx, 99_99, SPOKE_ADMIN);
 
     // supply twice the amount that alice borrows, usage ratio ~45%, borrow rate ~7.5%
-    Utils.supply(spoke1, reservesIds.dai, bob, vars.daiBorrowAmount.percentDivDown(45_00), bob);
+    SpokeActions.supply(
+      spoke1,
+      reservesIds.dai,
+      bob,
+      vars.daiBorrowAmount.percentDivDown(45_00),
+      bob
+    );
 
-    Utils.supplyCollateral(spoke1, reservesIds.usdx, alice, vars.usdxSupplyAmount, alice);
+    SpokeActions.supplyCollateral(spoke1, reservesIds.usdx, alice, vars.usdxSupplyAmount, alice);
 
-    Utils.supplyCollateral(spoke1, reservesIds.weth, alice, vars.wethSupplyAmount, alice);
+    SpokeActions.supplyCollateral(spoke1, reservesIds.weth, alice, vars.wethSupplyAmount, alice);
 
-    Utils.borrow(spoke1, reservesIds.dai, alice, vars.daiBorrowAmount, alice);
+    SpokeActions.borrow(spoke1, reservesIds.dai, alice, vars.daiBorrowAmount, alice);
 
     uint256 usdxCollateralRisk = _getCollateralRisk(spoke1, reservesIds.usdx);
     uint256 wethCollateralRisk = _getCollateralRisk(spoke1, reservesIds.weth);
@@ -186,7 +192,7 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
     );
 
     // Alice supplies more usdx
-    Utils.supply(spoke1, reservesIds.usdx, alice, 500e6, alice);
+    SpokeActions.supply(spoke1, reservesIds.usdx, alice, 500e6, alice);
 
     assertEq(
       _getUserRiskPremium(spoke1, alice),
@@ -201,7 +207,7 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
     skip(vars.delay);
 
     // Now we supply more weth such that new total debt from now on is covered by weth
-    Utils.supply(spoke1, reservesIds.weth, alice, vars.wethSupplyAmount, alice);
+    SpokeActions.supply(spoke1, reservesIds.weth, alice, vars.wethSupplyAmount, alice);
 
     assertEq(
       _getUserRiskPremium(spoke1, alice),
@@ -210,15 +216,15 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
     );
 
     // Alice repays everything
-    _repayAll(spoke1, _daiReserveId);
+    _repayAll(spoke1, hub1, _daiReserveId(spoke1), _defaultUsers());
   }
 
   /// Bob and Alice each supply and borrow varying amounts of usdx and dai, we check interest accrues and values percolate to hub1.
   /// After 1 year, Alice does a repay, and we ensure that the RP has not changed.
   function test_getUserRiskPremium_applyInterest_two_users_two_reserves_borrowed() public {
     // Set dai collateral risk to 10% and usdx to 20%
-    _updateCollateralRisk(spoke1, _daiReserveId(spoke1), 10_00);
-    _updateCollateralRisk(spoke1, _usdxReserveId(spoke1), 20_00);
+    _updateCollateralRisk(spoke1, _daiReserveId(spoke1), 10_00, SPOKE_ADMIN);
+    _updateCollateralRisk(spoke1, _usdxReserveId(spoke1), 20_00, SPOKE_ADMIN);
 
     UserInfoLocal memory bobDaiInfo;
     UserInfoLocal memory aliceDaiInfo;
@@ -245,28 +251,40 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
     usdxInfo.collateralRisk = _getCollateralRisk(spoke1, usdxInfo.reserveId);
 
     // Bob supply dai into spoke1
-    Utils.supplyCollateral(spoke1, daiInfo.reserveId, bob, bobDaiInfo.supplyAmount, bob);
+    SpokeActions.supplyCollateral(spoke1, daiInfo.reserveId, bob, bobDaiInfo.supplyAmount, bob);
 
     // Bob supply usdx into spoke1
-    Utils.supplyCollateral(spoke1, usdxInfo.reserveId, bob, bobUsdxInfo.supplyAmount, bob);
+    SpokeActions.supplyCollateral(spoke1, usdxInfo.reserveId, bob, bobUsdxInfo.supplyAmount, bob);
 
     // Alice supply dai into spoke1
-    Utils.supplyCollateral(spoke1, daiInfo.reserveId, alice, aliceDaiInfo.supplyAmount, alice);
+    SpokeActions.supplyCollateral(
+      spoke1,
+      daiInfo.reserveId,
+      alice,
+      aliceDaiInfo.supplyAmount,
+      alice
+    );
 
     // Alice supply usdx into spoke1
-    Utils.supplyCollateral(spoke1, usdxInfo.reserveId, alice, aliceUsdxInfo.supplyAmount, alice);
+    SpokeActions.supplyCollateral(
+      spoke1,
+      usdxInfo.reserveId,
+      alice,
+      aliceUsdxInfo.supplyAmount,
+      alice
+    );
 
     // Bob draw dai
-    Utils.borrow(spoke1, daiInfo.reserveId, bob, bobDaiInfo.borrowAmount, bob);
+    SpokeActions.borrow(spoke1, daiInfo.reserveId, bob, bobDaiInfo.borrowAmount, bob);
 
     // Bob draw usdx
-    Utils.borrow(spoke1, usdxInfo.reserveId, bob, bobUsdxInfo.borrowAmount, bob);
+    SpokeActions.borrow(spoke1, usdxInfo.reserveId, bob, bobUsdxInfo.borrowAmount, bob);
 
     // Alice draw dai
-    Utils.borrow(spoke1, daiInfo.reserveId, alice, aliceDaiInfo.borrowAmount, alice);
+    SpokeActions.borrow(spoke1, daiInfo.reserveId, alice, aliceDaiInfo.borrowAmount, alice);
 
     // Alice draw usdx
-    Utils.borrow(spoke1, usdxInfo.reserveId, alice, aliceUsdxInfo.borrowAmount, alice);
+    SpokeActions.borrow(spoke1, usdxInfo.reserveId, alice, aliceUsdxInfo.borrowAmount, alice);
 
     ExpectedUserRp memory expectedUserRp;
     expectedUserRp.bobRiskPremium = _calculateExpectedUserRP(spoke1, bob);
@@ -453,6 +471,7 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
       aliceDaiInfo.drawnDebt,
       aliceDaiInfo.premiumDebt,
       aliceDaiInfo.borrowAmount / 2,
+      hub1,
       daiAssetId
     );
 
@@ -466,7 +485,7 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
     aliceUsdxInfo.drawnShares = spoke1.getUserPosition(usdxInfo.reserveId, alice).drawnShares;
 
     // Now, if Alice repays some debt, her user risk premium should change and percolate through protocol
-    Utils.repay(spoke1, daiInfo.reserveId, alice, aliceDaiInfo.borrowAmount / 2, alice);
+    SpokeActions.repay(spoke1, daiInfo.reserveId, alice, aliceDaiInfo.borrowAmount / 2, alice);
 
     // Bob's user risk premium remains unchanged
     assertEq(
@@ -597,8 +616,8 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
     timeSkip[2] = bound(timeSkip[2], 0, MAX_SKIP_TIME).toUint40();
 
     // Set collateral risks
-    _updateCollateralRisk(spoke1, _daiReserveId(spoke1), daiCollateralRisk);
-    _updateCollateralRisk(spoke1, _usdxReserveId(spoke1), usdxCollateralRisk);
+    _updateCollateralRisk(spoke1, _daiReserveId(spoke1), daiCollateralRisk, SPOKE_ADMIN);
+    _updateCollateralRisk(spoke1, _usdxReserveId(spoke1), usdxCollateralRisk, SPOKE_ADMIN);
     assertEq(
       _getCollateralRisk(spoke1, _daiReserveId(spoke1)),
       daiCollateralRisk,
@@ -629,16 +648,28 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
     // Users supply
 
     // Bob supply dai
-    Utils.supplyCollateral(spoke1, _daiReserveId(spoke1), bob, bobDaiInfo.supplyAmount, bob);
+    SpokeActions.supplyCollateral(spoke1, _daiReserveId(spoke1), bob, bobDaiInfo.supplyAmount, bob);
 
     // Bob supply usdx
-    Utils.supplyCollateral(spoke1, _usdxReserveId(spoke1), bob, bobUsdxInfo.supplyAmount, bob);
+    SpokeActions.supplyCollateral(
+      spoke1,
+      _usdxReserveId(spoke1),
+      bob,
+      bobUsdxInfo.supplyAmount,
+      bob
+    );
 
     // Alice supply dai
-    Utils.supplyCollateral(spoke1, _daiReserveId(spoke1), alice, aliceDaiInfo.supplyAmount, alice);
+    SpokeActions.supplyCollateral(
+      spoke1,
+      _daiReserveId(spoke1),
+      alice,
+      aliceDaiInfo.supplyAmount,
+      alice
+    );
 
     // Alice supply usdx
-    Utils.supplyCollateral(
+    SpokeActions.supplyCollateral(
       spoke1,
       _usdxReserveId(spoke1),
       alice,
@@ -650,22 +681,22 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
 
     // Bob draw dai (if any)
     if (bobDaiInfo.borrowAmount > 0) {
-      Utils.borrow(spoke1, _daiReserveId(spoke1), bob, bobDaiInfo.borrowAmount, bob);
+      SpokeActions.borrow(spoke1, _daiReserveId(spoke1), bob, bobDaiInfo.borrowAmount, bob);
     }
 
     // Bob draw usdx (if any)
     if (bobUsdxInfo.borrowAmount > 0) {
-      Utils.borrow(spoke1, _usdxReserveId(spoke1), bob, bobUsdxInfo.borrowAmount, bob);
+      SpokeActions.borrow(spoke1, _usdxReserveId(spoke1), bob, bobUsdxInfo.borrowAmount, bob);
     }
 
     // Alice draw dai (if any)
     if (aliceDaiInfo.borrowAmount > 0) {
-      Utils.borrow(spoke1, _daiReserveId(spoke1), alice, aliceDaiInfo.borrowAmount, alice);
+      SpokeActions.borrow(spoke1, _daiReserveId(spoke1), alice, aliceDaiInfo.borrowAmount, alice);
     }
 
     // Alice draw usdx (if any)
     if (aliceUsdxInfo.borrowAmount > 0) {
-      Utils.borrow(spoke1, _usdxReserveId(spoke1), alice, aliceUsdxInfo.borrowAmount, alice);
+      SpokeActions.borrow(spoke1, _usdxReserveId(spoke1), alice, aliceUsdxInfo.borrowAmount, alice);
     }
 
     // Calculate expected risk premiums
@@ -818,7 +849,7 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
     // Bob repay half dai debt
     if (bobDaiInfo.borrowAmount > 2) {
       uint256 repayAmount = (bobDaiInfo.drawnDebt + bobDaiInfo.premiumDebt) / 2;
-      Utils.repay(spoke1, _daiReserveId(spoke1), bob, repayAmount, bob);
+      SpokeActions.repay(spoke1, _daiReserveId(spoke1), bob, repayAmount, bob);
 
       // Bob's risk premium should change
       bobExpectedRiskPremium = _calculateExpectedUserRP(spoke1, bob);
@@ -858,7 +889,7 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
 
       // Alice increases her USDX borrow by 50%
       uint256 additionalBorrow = aliceUsdxInfo.borrowAmount / 2;
-      Utils.borrow(spoke1, _usdxReserveId(spoke1), alice, additionalBorrow, alice);
+      SpokeActions.borrow(spoke1, _usdxReserveId(spoke1), alice, additionalBorrow, alice);
 
       // Alice's risk premium should change
       aliceExpectedRiskPremium = _calculateExpectedUserRP(spoke1, alice);
@@ -942,29 +973,53 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
 
     // Bob supplies and draws all assets on spoke1
     if (daiAmounts.supplyAmount > 0) {
-      Utils.supplyCollateral(spoke1, _daiReserveId(spoke1), bob, daiAmounts.supplyAmount, bob);
+      SpokeActions.supplyCollateral(
+        spoke1,
+        _daiReserveId(spoke1),
+        bob,
+        daiAmounts.supplyAmount,
+        bob
+      );
     }
     if (wethAmounts.supplyAmount > 0) {
-      Utils.supplyCollateral(spoke1, _wethReserveId(spoke1), bob, wethAmounts.supplyAmount, bob);
+      SpokeActions.supplyCollateral(
+        spoke1,
+        _wethReserveId(spoke1),
+        bob,
+        wethAmounts.supplyAmount,
+        bob
+      );
     }
     if (usdxAmounts.supplyAmount > 0) {
-      Utils.supplyCollateral(spoke1, _usdxReserveId(spoke1), bob, usdxAmounts.supplyAmount, bob);
+      SpokeActions.supplyCollateral(
+        spoke1,
+        _usdxReserveId(spoke1),
+        bob,
+        usdxAmounts.supplyAmount,
+        bob
+      );
     }
     if (wbtcAmounts.supplyAmount > 0) {
-      Utils.supplyCollateral(spoke1, _wbtcReserveId(spoke1), bob, wbtcAmounts.supplyAmount, bob);
+      SpokeActions.supplyCollateral(
+        spoke1,
+        _wbtcReserveId(spoke1),
+        bob,
+        wbtcAmounts.supplyAmount,
+        bob
+      );
     }
 
     if (daiAmounts.borrowAmount > 0) {
-      Utils.borrow(spoke1, _daiReserveId(spoke1), bob, daiAmounts.borrowAmount, bob);
+      SpokeActions.borrow(spoke1, _daiReserveId(spoke1), bob, daiAmounts.borrowAmount, bob);
     }
     if (wethAmounts.borrowAmount > 0) {
-      Utils.borrow(spoke1, _wethReserveId(spoke1), bob, wethAmounts.borrowAmount, bob);
+      SpokeActions.borrow(spoke1, _wethReserveId(spoke1), bob, wethAmounts.borrowAmount, bob);
     }
     if (usdxAmounts.borrowAmount > 0) {
-      Utils.borrow(spoke1, _usdxReserveId(spoke1), bob, usdxAmounts.borrowAmount, bob);
+      SpokeActions.borrow(spoke1, _usdxReserveId(spoke1), bob, usdxAmounts.borrowAmount, bob);
     }
     if (wbtcAmounts.borrowAmount > 0) {
-      Utils.borrow(spoke1, _wbtcReserveId(spoke1), bob, wbtcAmounts.borrowAmount, bob);
+      SpokeActions.borrow(spoke1, _wbtcReserveId(spoke1), bob, wbtcAmounts.borrowAmount, bob);
     }
 
     // Check bob's user risk premium

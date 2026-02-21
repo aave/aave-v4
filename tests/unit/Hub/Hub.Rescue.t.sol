@@ -2,9 +2,9 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import 'tests/unit/Hub/HubBase.t.sol';
+import 'tests/unit/setup/Base.t.sol';
 
-contract HubRescueTest is HubBase {
+contract HubRescueTest is Base {
   address internal _rescueSpoke;
 
   function setUp() public override {
@@ -15,9 +15,9 @@ contract HubRescueTest is HubBase {
     IHub.SpokeConfig memory spokeConfig = IHub.SpokeConfig({
       active: true,
       halted: false,
-      addCap: Constants.MAX_ALLOWED_SPOKE_CAP,
-      drawCap: Constants.MAX_ALLOWED_SPOKE_CAP,
-      riskPremiumThreshold: Constants.MAX_ALLOWED_COLLATERAL_RISK
+      addCap: HubConstants.MAX_ALLOWED_SPOKE_CAP,
+      drawCap: HubConstants.MAX_ALLOWED_SPOKE_CAP,
+      riskPremiumThreshold: SpokeConstants.MAX_ALLOWED_COLLATERAL_RISK
     });
     vm.prank(ADMIN);
     hub1.addSpoke(daiAssetId, _rescueSpoke, spokeConfig);
@@ -32,7 +32,7 @@ contract HubRescueTest is HubBase {
     deal(address(underlying), address(hub1), lostAmount);
 
     // spoke1, alice add dai
-    Utils.add({
+    HubActions.add({
       hub: hub1,
       assetId: daiAssetId,
       caller: address(spoke1),
@@ -40,7 +40,13 @@ contract HubRescueTest is HubBase {
       user: alice
     });
     // spoke2, bob add dai
-    Utils.add({hub: hub1, assetId: daiAssetId, caller: address(spoke2), amount: 7.5e22, user: bob});
+    HubActions.add({
+      hub: hub1,
+      assetId: daiAssetId,
+      caller: address(spoke2),
+      amount: 7.5e22,
+      user: bob
+    });
 
     uint256 prevHubBalance = underlying.balanceOf(address(hub1));
     uint256 prevRescueBalance = underlying.balanceOf(_rescueSpoke);
@@ -56,7 +62,7 @@ contract HubRescueTest is HubBase {
     uint256 finalRescueBalance = underlying.balanceOf(_rescueSpoke);
 
     // spoke1, alice remove dai
-    Utils.remove({
+    HubActions.remove({
       hub: hub1,
       assetId: daiAssetId,
       caller: address(spoke1),
@@ -64,7 +70,13 @@ contract HubRescueTest is HubBase {
       to: alice
     });
     // spoke2, bob add dai
-    Utils.add({hub: hub1, assetId: daiAssetId, caller: address(spoke2), amount: 2.5e22, user: bob});
+    HubActions.add({
+      hub: hub1,
+      assetId: daiAssetId,
+      caller: address(spoke2),
+      amount: 2.5e22,
+      user: bob
+    });
 
     // check amounts & balances
     assertEq(rescueAmount, lostAmount, 'rescue amount');
@@ -74,14 +86,20 @@ contract HubRescueTest is HubBase {
     _assertHubLiquidity(hub1, daiAssetId, 'hub1.rescue');
 
     // remove all, ensure there is enough liquidity to honor all withdrawals.
-    Utils.remove({
+    HubActions.remove({
       hub: hub1,
       assetId: daiAssetId,
       caller: address(spoke1),
       amount: 5e20,
       to: alice
     });
-    Utils.remove({hub: hub1, assetId: daiAssetId, caller: address(spoke2), amount: 10e22, to: bob});
+    HubActions.remove({
+      hub: hub1,
+      assetId: daiAssetId,
+      caller: address(spoke2),
+      amount: 10e22,
+      to: bob
+    });
 
     assertEq(underlying.balanceOf(address(hub1)), 0, 'final hub amount');
   }
@@ -96,7 +114,7 @@ contract HubRescueTest is HubBase {
     deal(address(underlying), address(hub1), lostAmount);
 
     // spoke1, alice add dai
-    Utils.add({
+    HubActions.add({
       hub: hub1,
       assetId: daiAssetId,
       caller: address(spoke1),
@@ -104,12 +122,24 @@ contract HubRescueTest is HubBase {
       user: alice
     });
     // spoke2, bob add dai
-    Utils.add({hub: hub1, assetId: daiAssetId, caller: address(spoke2), amount: 7.5e22, user: bob});
-    Utils.draw({hub: hub1, assetId: daiAssetId, caller: address(spoke1), to: alice, amount: 10e20});
+    HubActions.add({
+      hub: hub1,
+      assetId: daiAssetId,
+      caller: address(spoke2),
+      amount: 7.5e22,
+      user: bob
+    });
+    HubActions.draw({
+      hub: hub1,
+      assetId: daiAssetId,
+      caller: address(spoke1),
+      to: alice,
+      amount: 10e20
+    });
 
     skip(skipTime);
 
-    Utils.restoreDrawn({
+    HubActions.restoreDrawn({
       hub: hub1,
       assetId: daiAssetId,
       caller: address(spoke1),
@@ -118,14 +148,14 @@ contract HubRescueTest is HubBase {
     });
 
     // remove all
-    Utils.remove({
+    HubActions.remove({
       hub: hub1,
       assetId: daiAssetId,
       caller: address(spoke1),
       amount: hub1.getSpokeAddedAssets(daiAssetId, address(spoke1)),
       to: alice
     });
-    Utils.remove({
+    HubActions.remove({
       hub: hub1,
       assetId: daiAssetId,
       caller: address(spoke2),
@@ -162,7 +192,7 @@ contract HubRescueTest is HubBase {
   /// @dev Another spoke cannot improperly rescue liquidity fee without transferring underlying tokens
   function test_cannot_rescue_liquidity_fee_reverts_with_InsufficientTransferred() public {
     // spoke1, alice add dai
-    Utils.add({
+    HubActions.add({
       hub: hub1,
       assetId: daiAssetId,
       caller: address(spoke1),
@@ -170,12 +200,24 @@ contract HubRescueTest is HubBase {
       user: alice
     });
     // spoke2, bob add dai
-    Utils.add({hub: hub1, assetId: daiAssetId, caller: address(spoke2), amount: 7.5e22, user: bob});
-    Utils.draw({hub: hub1, assetId: daiAssetId, caller: address(spoke1), to: alice, amount: 10e20});
+    HubActions.add({
+      hub: hub1,
+      assetId: daiAssetId,
+      caller: address(spoke2),
+      amount: 7.5e22,
+      user: bob
+    });
+    HubActions.draw({
+      hub: hub1,
+      assetId: daiAssetId,
+      caller: address(spoke1),
+      to: alice,
+      amount: 10e20
+    });
 
     skip(322 days);
 
-    Utils.restoreDrawn({
+    HubActions.restoreDrawn({
       hub: hub1,
       assetId: daiAssetId,
       caller: address(spoke1),

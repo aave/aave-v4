@@ -2,9 +2,9 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import 'tests/unit/Spoke/SpokeBase.t.sol';
+import 'tests/unit/setup/Base.t.sol';
 
-contract SpokeAccrueInterestScenarioTest is SpokeBase {
+contract SpokeAccrueInterestScenarioTest is Base {
   using WadRayMath for *;
   using SafeCast for *;
 
@@ -40,11 +40,11 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
 
   function setUp() public override {
     super.setUp();
-    _updateLiquidityFee(hub1, daiAssetId, 0);
-    _updateLiquidityFee(hub1, wethAssetId, 0);
-    _updateLiquidityFee(hub1, usdxAssetId, 0);
-    _updateLiquidityFee(hub1, wbtcAssetId, 0);
-    _updateLiquidityFee(hub1, usdzAssetId, 0);
+    _updateLiquidityFee(hub1, daiAssetId, 0, HUB_ADMIN);
+    _updateLiquidityFee(hub1, wethAssetId, 0, HUB_ADMIN);
+    _updateLiquidityFee(hub1, usdxAssetId, 0, HUB_ADMIN);
+    _updateLiquidityFee(hub1, wbtcAssetId, 0, HUB_ADMIN);
+    _updateLiquidityFee(hub1, usdzAssetId, 0, HUB_ADMIN);
   }
 
   /// @dev Check protocol supply and debt values after two separate interest accruals with multiple assets supplied and borrowed
@@ -64,7 +64,7 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
     // Bob supplies amounts on spoke 2, then we deploy remainder of liquidity up to respective supply caps
     for (uint256 i = 0; i < 4; ++i) {
       if (testAmounts[i].supplyAmount > 0) {
-        Utils.supplyCollateral(
+        SpokeActions.supplyCollateral(
           spoke2,
           testAmounts[i].reserveId,
           bob,
@@ -85,7 +85,13 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
     // Bob borrows amounts from spoke 2
     for (uint256 i = 0; i < 4; ++i) {
       if (testAmounts[i].borrowAmount > 0) {
-        Utils.borrow(spoke2, testAmounts[i].reserveId, bob, testAmounts[i].borrowAmount, bob);
+        SpokeActions.borrow(
+          spoke2,
+          testAmounts[i].reserveId,
+          bob,
+          testAmounts[i].borrowAmount,
+          bob
+        );
       }
     }
 
@@ -153,12 +159,12 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
     if (_getUserHealthFactor(spoke2, bob) >= HEALTH_FACTOR_LIQUIDATION_THRESHOLD) {
       // Supply more collateral to ensure bob can borrow more dai to trigger accrual
       deal(address(tokenList.dai), bob, MAX_SUPPLY_AMOUNT);
-      Utils.supplyCollateral(spoke2, _usdzReserveId(spoke2), bob, MAX_SUPPLY_AMOUNT, bob);
+      SpokeActions.supplyCollateral(spoke2, _usdzReserveId(spoke2), bob, MAX_SUPPLY_AMOUNT, bob);
 
       uint256 daiBorrowAmount = 1e18;
 
       // Bob borrows more dai to trigger accrual
-      Utils.borrow(spoke2, _daiReserveId(spoke2), bob, daiBorrowAmount, bob);
+      SpokeActions.borrow(spoke2, _daiReserveId(spoke2), bob, daiBorrowAmount, bob);
       // Account for the dai we just borrowed
       testAmounts[0].originalBorrowAmount += daiBorrowAmount;
 

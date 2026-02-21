@@ -2,9 +2,9 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import 'tests/unit/Spoke/SpokeBase.t.sol';
+import 'tests/unit/setup/Base.t.sol';
 
-contract SpokeWithdrawScenarioTest is SpokeBase {
+contract SpokeWithdrawScenarioTest is Base {
   using SafeCast for uint256;
 
   struct MultiUserTestState {
@@ -37,7 +37,7 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
     partialWithdrawAmount = bound(partialWithdrawAmount, 1, supplyAmount - 1);
     elapsed = bound(elapsed, 0, MAX_SKIP_TIME).toUint40();
 
-    Utils.supplyCollateral({
+    SpokeActions.supplyCollateral({
       spoke: spoke1,
       reserveId: _daiReserveId(spoke1),
       caller: bob,
@@ -55,7 +55,7 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
     );
 
     // Bob borrows dai
-    Utils.borrow({
+    SpokeActions.borrow({
       spoke: spoke1,
       reserveId: _daiReserveId(spoke1),
       caller: bob,
@@ -73,7 +73,7 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
     uint256 repayAmount = spoke1.getReserveTotalDebt(_daiReserveId(spoke1));
     deal(address(tokenList.dai), bob, repayAmount);
 
-    Utils.repay({
+    SpokeActions.repay({
       spoke: spoke1,
       reserveId: _daiReserveId(spoke1),
       caller: bob,
@@ -93,7 +93,7 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
     );
 
     // Fetch supply exchange rate before partial withdraw
-    uint256 addExRateBefore = getAddExRate(daiAssetId);
+    uint256 addExRateBefore = getAddExRate(hub1, daiAssetId);
 
     // Withdraw partial supplied assets
     CheckedWithdrawResult memory r1 = _checkedWithdraw(
@@ -115,10 +115,14 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
     assertApproxEqAbs(totalSupplied, r1.ownerAfter.suppliedAmount, 1, 'expected supplied');
 
     // Check supply rate monotonically increasing after partial withdraw
-    _checkSupplyRateIncreasing(addExRateBefore, getAddExRate(daiAssetId), 'after partial withdraw');
+    _checkSupplyRateIncreasing(
+      addExRateBefore,
+      getAddExRate(hub1, daiAssetId),
+      'after partial withdraw'
+    );
 
     // Fetch supply exchange rate before withdraw
-    addExRateBefore = getAddExRate(daiAssetId);
+    addExRateBefore = getAddExRate(hub1, daiAssetId);
 
     // Withdraw all supplied assets
     _checkedWithdraw(
@@ -134,7 +138,7 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
     _checkSuppliedAmounts(daiAssetId, _daiReserveId(spoke1), spoke1, bob, 0, 'after withdraw');
 
     // Check supply rate monotonically increasing after withdraw
-    _checkSupplyRateIncreasing(addExRateBefore, getAddExRate(daiAssetId), 'after withdraw');
+    _checkSupplyRateIncreasing(addExRateBefore, getAddExRate(hub1, daiAssetId), 'after withdraw');
   }
 
   // multiple users, same asset
@@ -161,13 +165,13 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
       (params.aliceAmount + params.bobAmount) / 2
     ); // some buffer on available borrowable liquidity
     params.rate = bound(params.rate, 1, MAX_BORROW_RATE);
-    _mockInterestRateBps(params.rate);
+    _mockInterestRateBps(address(irStrategy), params.rate);
 
     MultiUserTestState memory state;
     (state.assetId, state.underlying) = getAssetByReserveId(spoke1, params.reserveId);
 
     // alice supplies reserve
-    Utils.supply({
+    SpokeActions.supply({
       spoke: spoke1,
       reserveId: params.reserveId,
       caller: alice,
@@ -175,7 +179,7 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
       onBehalfOf: alice
     });
     // bob supplies reserve
-    Utils.supply({
+    SpokeActions.supply({
       spoke: spoke1,
       reserveId: params.reserveId,
       caller: bob,
@@ -184,7 +188,7 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
     });
 
     // carol borrows in order to increase index
-    Utils.supplyCollateral({
+    SpokeActions.supplyCollateral({
       spoke: spoke1,
       reserveId: _wbtcReserveId(spoke1),
       caller: carol,
@@ -199,7 +203,7 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
       ), // highest value asset so that it is enough collateral
       onBehalfOf: carol
     });
-    Utils.borrow({
+    SpokeActions.borrow({
       spoke: spoke1,
       reserveId: params.reserveId,
       caller: carol,
@@ -221,7 +225,7 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
 
     assertEq(hub1.getAsset(params.reserveId).realizedFees, expectedFeeAmount, 'realized fees');
 
-    state.addExRate = getAddExRate(state.assetId);
+    state.addExRate = getAddExRate(hub1, state.assetId);
 
     // make sure alice has a share to withdraw
     uint256 aliceSuppliedAmount = spoke1.getUserSuppliedAssets(params.reserveId, alice);
@@ -241,14 +245,14 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
 
     _checkSupplyRateIncreasing(
       state.addExRate,
-      getAddExRate(state.assetId),
+      getAddExRate(hub1, state.assetId),
       'after alice withdraw'
     );
 
     // skip time to accrue interest for bob
     skip(params.skipTime[1]);
 
-    state.addExRate = getAddExRate(state.assetId);
+    state.addExRate = getAddExRate(hub1, state.assetId);
 
     // make sure bob has a share to withdraw
     uint256 bobSuppliedAmount = spoke1.getUserSuppliedAssets(params.reserveId, bob);
@@ -266,7 +270,11 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
       })
     );
 
-    _checkSupplyRateIncreasing(state.addExRate, getAddExRate(state.assetId), 'after bob withdraw');
+    _checkSupplyRateIncreasing(
+      state.addExRate,
+      getAddExRate(hub1, state.assetId),
+      'after bob withdraw'
+    );
 
     assertEq(rAlice.amount, rAlice.ownerBefore.suppliedAmount);
     assertEq(rBob.amount, rBob.ownerBefore.suppliedAmount);
@@ -309,7 +317,11 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
 
     // token
     {
-      TokenBalances memory tokenDataAfter = getTokenBalances(state.underlying, address(spoke1));
+      TokenBalances memory tokenDataAfter = getTokenBalances(
+        state.underlying,
+        address(spoke1),
+        address(hub1)
+      );
       assertEq(tokenDataAfter.spokeBalance, 0, 'tokenData spoke balance');
       assertEq(
         tokenDataAfter.hubBalance,
@@ -336,14 +348,14 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
     uint256 wbtcReserveId = _wbtcReserveId(spoke1);
     uint256 wethReserveId = _wethReserveId(spoke1);
 
-    Utils.supplyCollateral({
+    SpokeActions.supplyCollateral({
       spoke: spoke1,
       reserveId: daiReserveId,
       caller: bob,
       amount: 10_000e18,
       onBehalfOf: bob
     });
-    Utils.supply({
+    SpokeActions.supply({
       spoke: spoke1,
       reserveId: wbtcReserveId,
       caller: bob,
@@ -354,7 +366,7 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
     _openSupplyPosition(spoke1, wethReserveId, 2e18);
 
     // Bob borrows weth
-    Utils.borrow({
+    SpokeActions.borrow({
       spoke: spoke1,
       reserveId: wethReserveId,
       caller: bob,
@@ -386,7 +398,7 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
     assets = bound(assets, 1, MAX_SUPPLY_AMOUNT - protocolStartingBalance);
 
     // Set up initial state of the vault by having derl supply some starting balance
-    Utils.supply({
+    SpokeActions.supply({
       spoke: spoke1,
       reserveId: reserveId,
       caller: derl,
@@ -447,7 +459,7 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
     );
 
     // Set up initial state of the vault by having derl supply some starting balance
-    Utils.supply({
+    SpokeActions.supply({
       spoke: spoke1,
       reserveId: reserveId,
       caller: derl,
@@ -465,7 +477,7 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
     underlying.approve(address(spoke1), UINT256_MAX);
 
     // Set up initial state of caller by supplying their starting balance
-    Utils.supply({
+    SpokeActions.supply({
       spoke: spoke1,
       reserveId: reserveId,
       caller: caller,

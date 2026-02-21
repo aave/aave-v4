@@ -2,9 +2,9 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import 'tests/unit/Spoke/SpokeBase.t.sol';
+import 'tests/unit/setup/Base.t.sol';
 
-contract SpokeUserAccountDataTest is SpokeBase {
+contract SpokeUserAccountDataTest is Base {
   address internal user = makeAddr('user');
   MockSpoke internal spoke;
 
@@ -14,19 +14,19 @@ contract SpokeUserAccountDataTest is SpokeBase {
     super.setUp();
     spoke = MockSpoke(address(spoke1));
     address mockSpokeImpl = address(
-      new MockSpoke(address(spoke.ORACLE()), Constants.MAX_ALLOWED_USER_RESERVES_LIMIT)
+      new MockSpoke(address(spoke.ORACLE()), SpokeConstants.MAX_ALLOWED_USER_RESERVES_LIMIT)
     );
     vm.etch(address(spoke1), mockSpokeImpl.code);
 
-    _updateCollateralFactor(spoke, _wethReserveId(spoke), 80_00);
-    _updateCollateralFactor(spoke, _wbtcReserveId(spoke), 70_00);
-    _updateCollateralFactor(spoke, _usdxReserveId(spoke), 72_00);
-    _updateCollateralFactor(spoke, _daiReserveId(spoke), 75_00);
+    _updateCollateralFactor(spoke, _wethReserveId(spoke), 80_00, SPOKE_ADMIN);
+    _updateCollateralFactor(spoke, _wbtcReserveId(spoke), 70_00, SPOKE_ADMIN);
+    _updateCollateralFactor(spoke, _usdxReserveId(spoke), 72_00, SPOKE_ADMIN);
+    _updateCollateralFactor(spoke, _daiReserveId(spoke), 75_00, SPOKE_ADMIN);
 
-    _updateCollateralRisk(spoke, _wethReserveId(spoke), 5_00);
-    _updateCollateralRisk(spoke, _wbtcReserveId(spoke), 15_00);
-    _updateCollateralRisk(spoke, _usdxReserveId(spoke), 10_00);
-    _updateCollateralRisk(spoke, _daiReserveId(spoke), 12_00);
+    _updateCollateralRisk(spoke, _wethReserveId(spoke), 5_00, SPOKE_ADMIN);
+    _updateCollateralRisk(spoke, _wbtcReserveId(spoke), 15_00, SPOKE_ADMIN);
+    _updateCollateralRisk(spoke, _usdxReserveId(spoke), 10_00, SPOKE_ADMIN);
+    _updateCollateralRisk(spoke, _daiReserveId(spoke), 12_00, SPOKE_ADMIN);
   }
 
   // Simple scenario: 1 collateral, 1 debt, no refresh config, latest config key
@@ -65,7 +65,7 @@ contract SpokeUserAccountDataTest is SpokeBase {
   // 1 collateral, 1 debt, no refresh config, old config key
   function test_userAccountData_scenario2() public {
     uint256 configKeyBefore = _getLastReserveConfigKey(_usdxReserveId(spoke));
-    _updateCollateralFactor(spoke, _usdxReserveId(spoke), 80_00);
+    _updateCollateralFactor(spoke, _usdxReserveId(spoke), 80_00, SPOKE_ADMIN);
 
     // Collateral: 100 USDX
     // Debt: 0.025 + 0.005 + 0.0075 = 0.0375 WETH = 0.0375 * $2000 = $75
@@ -99,7 +99,7 @@ contract SpokeUserAccountDataTest is SpokeBase {
   // 1 collateral, 1 debt, refresh config, old config key
   function test_userAccountData_scenario3() public {
     uint256 configKeyBefore = _getLastReserveConfigKey(_usdxReserveId(spoke));
-    _updateCollateralFactor(spoke, _usdxReserveId(spoke), 96_00);
+    _updateCollateralFactor(spoke, _usdxReserveId(spoke), 96_00, SPOKE_ADMIN);
 
     // Collateral: 100 USDX
     // Debt: 0.025 + 0.005 + 0.0075 = 0.0375 WETH = 0.0375 * $2000 = $75
@@ -134,8 +134,8 @@ contract SpokeUserAccountDataTest is SpokeBase {
   function test_userAccountData_scenario4() public {
     uint256 usdxConfigKeyBefore = _getLastReserveConfigKey(_usdxReserveId(spoke));
     uint256 wbtcConfigKeyBefore = _getLastReserveConfigKey(_wbtcReserveId(spoke));
-    _updateCollateralFactor(spoke, _usdxReserveId(spoke), 96_00);
-    _updateCollateralFactor(spoke, _wbtcReserveId(spoke), 50_00);
+    _updateCollateralFactor(spoke, _usdxReserveId(spoke), 96_00, SPOKE_ADMIN);
+    _updateCollateralFactor(spoke, _wbtcReserveId(spoke), 50_00, SPOKE_ADMIN);
 
     // Collateral: 100 USDX, 0.1 WBTC = 0.1 * $50000 = $5000
     // Supplied Assets: 1 WETH
@@ -217,7 +217,7 @@ contract SpokeUserAccountDataTest is SpokeBase {
 
   // 2 collaterals (one with collateral factor 0), 1 debt, no refresh config, latest config key
   function test_userAccountData_scenario6() public {
-    _updateCollateralFactor(spoke, _wbtcReserveId(spoke), 0);
+    _updateCollateralFactor(spoke, _wbtcReserveId(spoke), 0, SPOKE_ADMIN);
 
     // Collateral: 100 USDX
     // Debt: 0.0375 WETH = 0.0375 * $2000 = $75

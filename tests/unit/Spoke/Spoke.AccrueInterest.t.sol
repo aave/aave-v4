@@ -2,9 +2,9 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import 'tests/unit/Spoke/SpokeBase.t.sol';
+import 'tests/unit/setup/Base.t.sol';
 
-contract SpokeAccrueInterestTest is SpokeBase {
+contract SpokeAccrueInterestTest is Base {
   using SharesMath for uint256;
   using WadRayMath for uint256;
   using PercentageMath for *;
@@ -30,10 +30,10 @@ contract SpokeAccrueInterestTest is SpokeBase {
 
   function setUp() public override {
     super.setUp();
-    _updateLiquidityFee(hub1, daiAssetId, 0);
-    _updateLiquidityFee(hub1, wethAssetId, 0);
-    _updateLiquidityFee(hub1, usdxAssetId, 0);
-    _updateLiquidityFee(hub1, wbtcAssetId, 0);
+    _updateLiquidityFee(hub1, daiAssetId, 0, HUB_ADMIN);
+    _updateLiquidityFee(hub1, wethAssetId, 0, HUB_ADMIN);
+    _updateLiquidityFee(hub1, usdxAssetId, 0, HUB_ADMIN);
+    _updateLiquidityFee(hub1, wbtcAssetId, 0, HUB_ADMIN);
   }
 
   function test_accrueInterest_NoActionTaken() public view {
@@ -61,7 +61,7 @@ contract SpokeAccrueInterestTest is SpokeBase {
     uint256 daiReserveId = _daiReserveId(spoke1);
 
     // Bob supplies through spoke 1
-    Utils.supply(spoke1, daiReserveId, bob, amount, bob);
+    SpokeActions.supply(spoke1, daiReserveId, bob, amount, bob);
 
     // Skip time
     skip(skipTime);
@@ -92,8 +92,8 @@ contract SpokeAccrueInterestTest is SpokeBase {
     uint256 borrowAmount = 100e18;
     uint256 daiReserveId = _daiReserveId(spoke1);
 
-    Utils.supplyCollateral(spoke1, daiReserveId, bob, supplyAmount, bob);
-    Utils.borrow(spoke1, daiReserveId, bob, borrowAmount, bob);
+    SpokeActions.supplyCollateral(spoke1, daiReserveId, bob, supplyAmount, bob);
+    SpokeActions.borrow(spoke1, daiReserveId, bob, borrowAmount, bob);
 
     uint96 drawnRate = hub1.getAssetDrawnRate(daiAssetId).toUint96();
     uint256 userRp = _getUserRiskPremium(spoke1, bob);
@@ -128,7 +128,7 @@ contract SpokeAccrueInterestTest is SpokeBase {
     drawnRate = hub1.getAssetDrawnRate(daiAssetId).toUint96();
 
     // Full repayment, so back to zero debt
-    Utils.repay(spoke1, daiReserveId, bob, UINT256_MAX, bob);
+    SpokeActions.repay(spoke1, daiReserveId, bob, UINT256_MAX, bob);
 
     _assertSingleUserProtocolDebt(spoke1, daiReserveId, bob, 0, 0, 'after repay, no debt');
     _assertSingleUserProtocolSupply(
@@ -170,8 +170,8 @@ contract SpokeAccrueInterestTest is SpokeBase {
     uint256 daiReserveId = _daiReserveId(spoke1);
 
     // Bob supplies and borrows through spoke 1
-    Utils.supplyCollateral(spoke1, daiReserveId, bob, supplyAmount, bob);
-    Utils.borrow(spoke1, daiReserveId, bob, borrowAmount, bob);
+    SpokeActions.supplyCollateral(spoke1, daiReserveId, bob, supplyAmount, bob);
+    SpokeActions.borrow(spoke1, daiReserveId, bob, borrowAmount, bob);
 
     uint96 drawnRate = hub1.getAssetDrawnRate(daiAssetId).toUint96();
     uint256 userRp = _getUserRiskPremium(spoke1, bob);
@@ -208,14 +208,14 @@ contract SpokeAccrueInterestTest is SpokeBase {
     uint256 usdxReserveId = _usdxReserveId(spoke1);
 
     // Set collateral risk of usdx on spoke1 to 10%
-    _updateCollateralRisk(spoke1, usdxReserveId, 10_00);
+    _updateCollateralRisk(spoke1, usdxReserveId, 10_00, SPOKE_ADMIN);
     assertEq(10_00, _getCollateralRisk(spoke1, usdxReserveId), 'usdx collateral risk');
 
     // Bob supply usdx
-    Utils.supplyCollateral(spoke1, usdxReserveId, bob, supplyAmount, bob);
+    SpokeActions.supplyCollateral(spoke1, usdxReserveId, bob, supplyAmount, bob);
 
     // Bob borrows usdx
-    Utils.borrow(spoke1, usdxReserveId, bob, borrowAmount, bob);
+    SpokeActions.borrow(spoke1, usdxReserveId, bob, borrowAmount, bob);
 
     // User risk premium should be 10%
     uint256 riskPremium = _getUserRiskPremium(spoke1, bob);
@@ -267,22 +267,46 @@ contract SpokeAccrueInterestTest is SpokeBase {
 
     // Bob supply dai on spoke 1
     if (amounts.daiSupplyAmount > 0) {
-      Utils.supplyCollateral(spoke1, _daiReserveId(spoke1), bob, amounts.daiSupplyAmount, bob);
+      SpokeActions.supplyCollateral(
+        spoke1,
+        _daiReserveId(spoke1),
+        bob,
+        amounts.daiSupplyAmount,
+        bob
+      );
     }
 
     // Bob supply weth on spoke 1
     if (amounts.wethSupplyAmount > 0) {
-      Utils.supplyCollateral(spoke1, _wethReserveId(spoke1), bob, amounts.wethSupplyAmount, bob);
+      SpokeActions.supplyCollateral(
+        spoke1,
+        _wethReserveId(spoke1),
+        bob,
+        amounts.wethSupplyAmount,
+        bob
+      );
     }
 
     // Bob supply usdx on spoke 1
     if (amounts.usdxSupplyAmount > 0) {
-      Utils.supplyCollateral(spoke1, _usdxReserveId(spoke1), bob, amounts.usdxSupplyAmount, bob);
+      SpokeActions.supplyCollateral(
+        spoke1,
+        _usdxReserveId(spoke1),
+        bob,
+        amounts.usdxSupplyAmount,
+        bob
+      );
     }
 
     // Bob supply wbtc on spoke 1
     if (amounts.wbtcSupplyAmount > 0) {
-      Utils.supplyCollateral(spoke1, _wbtcReserveId(spoke1), bob, amounts.wbtcSupplyAmount, bob);
+      SpokeActions.supplyCollateral(
+        spoke1,
+        _wbtcReserveId(spoke1),
+        bob,
+        amounts.wbtcSupplyAmount,
+        bob
+      );
     }
 
     // Deploy remainder of liquidity
@@ -317,22 +341,22 @@ contract SpokeAccrueInterestTest is SpokeBase {
 
     // Bob borrows dai from spoke 1
     if (amounts.daiBorrowAmount > 0) {
-      Utils.borrow(spoke1, _daiReserveId(spoke1), bob, amounts.daiBorrowAmount, bob);
+      SpokeActions.borrow(spoke1, _daiReserveId(spoke1), bob, amounts.daiBorrowAmount, bob);
     }
 
     // Bob borrows weth from spoke 1
     if (amounts.wethBorrowAmount > 0) {
-      Utils.borrow(spoke1, _wethReserveId(spoke1), bob, amounts.wethBorrowAmount, bob);
+      SpokeActions.borrow(spoke1, _wethReserveId(spoke1), bob, amounts.wethBorrowAmount, bob);
     }
 
     // Bob borrows usdx from spoke 1
     if (amounts.usdxBorrowAmount > 0) {
-      Utils.borrow(spoke1, _usdxReserveId(spoke1), bob, amounts.usdxBorrowAmount, bob);
+      SpokeActions.borrow(spoke1, _usdxReserveId(spoke1), bob, amounts.usdxBorrowAmount, bob);
     }
 
     // Bob borrows wbtc from spoke 1
     if (amounts.wbtcBorrowAmount > 0) {
-      Utils.borrow(spoke1, _wbtcReserveId(spoke1), bob, amounts.wbtcBorrowAmount, bob);
+      SpokeActions.borrow(spoke1, _wbtcReserveId(spoke1), bob, amounts.wbtcBorrowAmount, bob);
     }
 
     // Check Bob's risk premium
@@ -644,22 +668,46 @@ contract SpokeAccrueInterestTest is SpokeBase {
 
     // Bob supply dai on spoke 1
     if (amounts.daiSupplyAmount > 0) {
-      Utils.supplyCollateral(spoke1, _daiReserveId(spoke1), bob, amounts.daiSupplyAmount, bob);
+      SpokeActions.supplyCollateral(
+        spoke1,
+        _daiReserveId(spoke1),
+        bob,
+        amounts.daiSupplyAmount,
+        bob
+      );
     }
 
     // Bob supply weth on spoke 1
     if (amounts.wethSupplyAmount > 0) {
-      Utils.supplyCollateral(spoke1, _wethReserveId(spoke1), bob, amounts.wethSupplyAmount, bob);
+      SpokeActions.supplyCollateral(
+        spoke1,
+        _wethReserveId(spoke1),
+        bob,
+        amounts.wethSupplyAmount,
+        bob
+      );
     }
 
     // Bob supply usdx on spoke 1
     if (amounts.usdxSupplyAmount > 0) {
-      Utils.supplyCollateral(spoke1, _usdxReserveId(spoke1), bob, amounts.usdxSupplyAmount, bob);
+      SpokeActions.supplyCollateral(
+        spoke1,
+        _usdxReserveId(spoke1),
+        bob,
+        amounts.usdxSupplyAmount,
+        bob
+      );
     }
 
     // Bob supply wbtc on spoke 1
     if (amounts.wbtcSupplyAmount > 0) {
-      Utils.supplyCollateral(spoke1, _wbtcReserveId(spoke1), bob, amounts.wbtcSupplyAmount, bob);
+      SpokeActions.supplyCollateral(
+        spoke1,
+        _wbtcReserveId(spoke1),
+        bob,
+        amounts.wbtcSupplyAmount,
+        bob
+      );
     }
 
     // Deploy remainder of liquidity
@@ -696,52 +744,64 @@ contract SpokeAccrueInterestTest is SpokeBase {
     if (amounts.daiBorrowAmount > 0) {
       IHub.Asset memory asset = hub1.getAsset(daiAssetId);
       uint256 daiBorrowShares = hub1.previewDrawByAssets(daiAssetId, amounts.daiBorrowAmount);
-      _mockInterestRateRay({
-        interestRateRay: rates.daiBaseBorrowRate,
-        assetId: daiAssetId,
-        liquidity: asset.liquidity - amounts.daiBorrowAmount,
-        drawn: hub1.previewRestoreByShares(daiAssetId, asset.drawnShares + daiBorrowShares)
-      });
-      Utils.borrow(spoke1, _daiReserveId(spoke1), bob, amounts.daiBorrowAmount, bob);
+      _mockInterestRateRay(
+        address(irStrategy),
+        rates.daiBaseBorrowRate,
+        daiAssetId,
+        asset.liquidity - amounts.daiBorrowAmount,
+        hub1.previewRestoreByShares(daiAssetId, asset.drawnShares + daiBorrowShares),
+        0,
+        0
+      );
+      SpokeActions.borrow(spoke1, _daiReserveId(spoke1), bob, amounts.daiBorrowAmount, bob);
     }
 
     // Bob borrows weth from spoke 1
     if (amounts.wethBorrowAmount > 0) {
       IHub.Asset memory asset = hub1.getAsset(wethAssetId);
       uint256 wethBorrowShares = hub1.previewDrawByAssets(wethAssetId, amounts.wethBorrowAmount);
-      _mockInterestRateRay({
-        interestRateRay: rates.wethBaseBorrowRate,
-        assetId: wethAssetId,
-        liquidity: asset.liquidity - amounts.wethBorrowAmount,
-        drawn: hub1.previewRestoreByShares(wethAssetId, asset.drawnShares + wethBorrowShares)
-      });
-      Utils.borrow(spoke1, _wethReserveId(spoke1), bob, amounts.wethBorrowAmount, bob);
+      _mockInterestRateRay(
+        address(irStrategy),
+        rates.wethBaseBorrowRate,
+        wethAssetId,
+        asset.liquidity - amounts.wethBorrowAmount,
+        hub1.previewRestoreByShares(wethAssetId, asset.drawnShares + wethBorrowShares),
+        0,
+        0
+      );
+      SpokeActions.borrow(spoke1, _wethReserveId(spoke1), bob, amounts.wethBorrowAmount, bob);
     }
 
     // Bob borrows usdx from spoke 1
     if (amounts.usdxBorrowAmount > 0) {
       IHub.Asset memory asset = hub1.getAsset(usdxAssetId);
       uint256 usdxBorrowShares = hub1.previewDrawByAssets(usdxAssetId, amounts.usdxBorrowAmount);
-      _mockInterestRateRay({
-        interestRateRay: rates.usdxBaseBorrowRate,
-        assetId: usdxAssetId,
-        liquidity: asset.liquidity - amounts.usdxBorrowAmount,
-        drawn: hub1.previewRestoreByShares(usdxAssetId, asset.drawnShares + usdxBorrowShares)
-      });
-      Utils.borrow(spoke1, _usdxReserveId(spoke1), bob, amounts.usdxBorrowAmount, bob);
+      _mockInterestRateRay(
+        address(irStrategy),
+        rates.usdxBaseBorrowRate,
+        usdxAssetId,
+        asset.liquidity - amounts.usdxBorrowAmount,
+        hub1.previewRestoreByShares(usdxAssetId, asset.drawnShares + usdxBorrowShares),
+        0,
+        0
+      );
+      SpokeActions.borrow(spoke1, _usdxReserveId(spoke1), bob, amounts.usdxBorrowAmount, bob);
     }
 
     // Bob borrows wbtc from spoke 1
     if (amounts.wbtcBorrowAmount > 0) {
       IHub.Asset memory asset = hub1.getAsset(wbtcAssetId);
       uint256 wbtcBorrowShares = hub1.previewDrawByAssets(wbtcAssetId, amounts.wbtcBorrowAmount);
-      _mockInterestRateRay({
-        interestRateRay: rates.wbtcBaseBorrowRate,
-        assetId: wbtcAssetId,
-        liquidity: asset.liquidity - amounts.wbtcBorrowAmount,
-        drawn: hub1.previewRestoreByShares(wbtcAssetId, asset.drawnShares + wbtcBorrowShares)
-      });
-      Utils.borrow(spoke1, _wbtcReserveId(spoke1), bob, amounts.wbtcBorrowAmount, bob);
+      _mockInterestRateRay(
+        address(irStrategy),
+        rates.wbtcBaseBorrowRate,
+        wbtcAssetId,
+        asset.liquidity - amounts.wbtcBorrowAmount,
+        hub1.previewRestoreByShares(wbtcAssetId, asset.drawnShares + wbtcBorrowShares),
+        0,
+        0
+      );
+      SpokeActions.borrow(spoke1, _wbtcReserveId(spoke1), bob, amounts.wbtcBorrowAmount, bob);
     }
 
     // Check Bob's risk premium

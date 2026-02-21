@@ -3,9 +3,8 @@
 pragma solidity ^0.8.0;
 
 import 'tests/unit/libraries/LiquidationLogic/LiquidationLogic.Base.t.sol';
-import {HubBase} from 'tests/unit/Hub/HubBase.t.sol';
 
-contract LiquidationLogicLiquidateCollateralTest is LiquidationLogicBaseTest, HubBase {
+contract LiquidationLogicLiquidateCollateralTest is LiquidationLogicBaseTest {
   using SafeCast for uint256;
 
   address borrower;
@@ -22,7 +21,7 @@ contract LiquidationLogicLiquidateCollateralTest is LiquidationLogicBaseTest, Hu
   ISpoke.UserPosition initialLiquidatorPosition;
   IHub.SpokeData initialTreasurySpokeData;
 
-  function setUp() public override(HubBase, LiquidationLogicBaseTest) {
+  function setUp() public override {
     LiquidationLogicBaseTest.setUp();
 
     hub = hub1;
@@ -45,9 +44,9 @@ contract LiquidationLogicLiquidateCollateralTest is LiquidationLogicBaseTest, Hu
     IHub.SpokeConfig memory spokeConfig = IHub.SpokeConfig({
       active: true,
       halted: false,
-      addCap: Constants.MAX_ALLOWED_SPOKE_CAP,
-      drawCap: Constants.MAX_ALLOWED_SPOKE_CAP,
-      riskPremiumThreshold: Constants.MAX_ALLOWED_COLLATERAL_RISK
+      addCap: HubConstants.MAX_ALLOWED_SPOKE_CAP,
+      drawCap: HubConstants.MAX_ALLOWED_SPOKE_CAP,
+      riskPremiumThreshold: SpokeConstants.MAX_ALLOWED_COLLATERAL_RISK
     });
 
     vm.prank(HUB_ADMIN);

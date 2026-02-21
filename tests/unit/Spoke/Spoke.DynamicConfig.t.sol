@@ -2,9 +2,9 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import 'tests/unit/Spoke/SpokeBase.t.sol';
+import 'tests/unit/setup/Base.t.sol';
 
-contract SpokeDynamicConfigTest is SpokeBase {
+contract SpokeDynamicConfigTest is Base {
   using SafeCast for uint256;
   using PercentageMath for uint256;
   MockSpoke internal spoke;
@@ -13,7 +13,7 @@ contract SpokeDynamicConfigTest is SpokeBase {
     super.setUp();
     spoke = MockSpoke(address(spoke1));
     address mockSpokeImpl = address(
-      new MockSpoke(address(spoke.ORACLE()), Constants.MAX_ALLOWED_USER_RESERVES_LIMIT)
+      new MockSpoke(address(spoke.ORACLE()), SpokeConstants.MAX_ALLOWED_USER_RESERVES_LIMIT)
     );
     vm.etch(address(spoke1), mockSpokeImpl.code);
   }
@@ -101,7 +101,7 @@ contract SpokeDynamicConfigTest is SpokeBase {
 
     MockSpoke(address(spoke1)).setReserveDynamicConfigKey(
       reserveId,
-      uint32(Constants.MAX_ALLOWED_DYNAMIC_CONFIG_KEY)
+      uint32(SpokeConstants.MAX_ALLOWED_DYNAMIC_CONFIG_KEY)
     );
 
     vm.expectRevert(ISpoke.MaximumDynamicConfigKeyReached.selector, address(spoke1));
@@ -386,27 +386,30 @@ contract SpokeDynamicConfigTest is SpokeBase {
   function test_offboardReserve_existing_borrows_remain_unaffected() public {
     _openSupplyPosition(spoke1, _wethReserveId(spoke1), 3e18);
 
-    Utils.supplyCollateral(spoke1, _usdxReserveId(spoke1), alice, 2600e6, alice);
-    Utils.supplyCollateral(spoke1, _usdxReserveId(spoke1), bob, 2600e6, bob);
-    Utils.borrow(spoke1, _wethReserveId(spoke1), alice, 1e18, alice);
+    SpokeActions.supplyCollateral(spoke1, _usdxReserveId(spoke1), alice, 2600e6, alice);
+    SpokeActions.supplyCollateral(spoke1, _usdxReserveId(spoke1), bob, 2600e6, bob);
+    SpokeActions.borrow(spoke1, _wethReserveId(spoke1), alice, 1e18, alice);
 
     // offboard usdx
-    _updateCollateralFactor(spoke1, _usdxReserveId(spoke1), 0);
+    _updateCollateralFactor(spoke1, _usdxReserveId(spoke1), 0, SPOKE_ADMIN);
 
     // existing users: alice, bob
     // alice still healthy
-    assertGt(_getUserHealthFactor(spoke1, alice), Constants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
+    assertGt(
+      _getUserHealthFactor(spoke1, alice),
+      SpokeConstants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD
+    );
     // bob cannot borrow after collateral is disabled
     vm.expectRevert(ISpoke.HealthFactorBelowThreshold.selector);
-    Utils.borrow(spoke1, _wethReserveId(spoke1), bob, 1e18, bob);
+    SpokeActions.borrow(spoke1, _wethReserveId(spoke1), bob, 1e18, bob);
 
     // new user: carol; cannot borrow with usdx as collateral
-    Utils.supplyCollateral(spoke1, _usdxReserveId(spoke1), carol, 2600e6, carol);
+    SpokeActions.supplyCollateral(spoke1, _usdxReserveId(spoke1), carol, 2600e6, carol);
     vm.expectRevert(ISpoke.HealthFactorBelowThreshold.selector);
-    Utils.borrow(spoke1, _wethReserveId(spoke1), carol, 1e18, carol);
+    SpokeActions.borrow(spoke1, _wethReserveId(spoke1), carol, 1e18, carol);
 
     // alice cannot borrow more with usdx as collateral
     vm.expectRevert(ISpoke.HealthFactorBelowThreshold.selector);
-    Utils.borrow(spoke1, _wethReserveId(spoke1), alice, 1, alice);
+    SpokeActions.borrow(spoke1, _wethReserveId(spoke1), alice, 1, alice);
   }
 }

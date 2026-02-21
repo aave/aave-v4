@@ -2,8 +2,7 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import 'tests/Base.t.sol';
-import 'tests/unit/misc/SignatureGateway/SignatureGateway.Base.t.sol';
+import 'tests/gas/Base.t.sol';
 
 /// forge-config: default.isolate = true
 contract NativeTokenGateway_Gas_Tests is Base {
@@ -13,7 +12,6 @@ contract NativeTokenGateway_Gas_Tests is Base {
 
   function setUp() public virtual override {
     super.setUp();
-    initEnvironment();
 
     nativeTokenGateway = new NativeTokenGateway(address(tokenList.weth), address(ADMIN));
 
@@ -30,7 +28,7 @@ contract NativeTokenGateway_Gas_Tests is Base {
 
   function test_supplyNative() public {
     uint256 amount = 100e18;
-    Utils.supply(spoke1, _wethReserveId(spoke1), bob, amount, bob);
+    SpokeActions.supply(spoke1, _wethReserveId(spoke1), bob, amount, bob);
 
     vm.prank(bob);
     nativeTokenGateway.supplyNative{value: amount}(address(spoke1), _wethReserveId(spoke1), amount);
@@ -39,7 +37,7 @@ contract NativeTokenGateway_Gas_Tests is Base {
 
   function test_supplyAndCollateralNative() public {
     uint256 amount = 100e18;
-    Utils.supply(spoke1, _wethReserveId(spoke1), bob, amount, bob);
+    SpokeActions.supply(spoke1, _wethReserveId(spoke1), bob, amount, bob);
 
     vm.prank(bob);
     nativeTokenGateway.supplyAsCollateralNative{value: amount}(
@@ -52,8 +50,8 @@ contract NativeTokenGateway_Gas_Tests is Base {
 
   function test_withdrawNative() public {
     uint256 amount = 100e18;
-    Utils.supply(spoke1, _wethReserveId(spoke1), bob, MAX_SUPPLY_AMOUNT_WETH, bob);
-    Utils.withdraw(spoke1, _wethReserveId(spoke1), bob, amount, bob);
+    SpokeActions.supply(spoke1, _wethReserveId(spoke1), bob, MAX_SUPPLY_AMOUNT_WETH, bob);
+    SpokeActions.withdraw(spoke1, _wethReserveId(spoke1), bob, amount, bob);
 
     vm.prank(bob);
     nativeTokenGateway.withdrawNative(address(spoke1), _wethReserveId(spoke1), amount);
@@ -69,9 +67,9 @@ contract NativeTokenGateway_Gas_Tests is Base {
     uint256 bobSupplyAmount = 100000e18;
     uint256 borrowAmount = 5e18;
 
-    Utils.supplyCollateral(spoke1, _daiReserveId(spoke1), bob, bobSupplyAmount, bob);
-    Utils.supply(spoke1, _wethReserveId(spoke1), alice, aliceSupplyAmount, alice);
-    Utils.borrow(spoke1, _wethReserveId(spoke1), bob, 1e18, bob);
+    SpokeActions.supplyCollateral(spoke1, _daiReserveId(spoke1), bob, bobSupplyAmount, bob);
+    SpokeActions.supply(spoke1, _wethReserveId(spoke1), alice, aliceSupplyAmount, alice);
+    SpokeActions.borrow(spoke1, _wethReserveId(spoke1), bob, 1e18, bob);
 
     vm.prank(bob);
     nativeTokenGateway.borrowNative(address(spoke1), _wethReserveId(spoke1), borrowAmount);
@@ -84,10 +82,10 @@ contract NativeTokenGateway_Gas_Tests is Base {
     uint256 borrowAmount = 10e18;
     uint256 repayAmount = 5e18;
 
-    Utils.supplyCollateral(spoke1, _daiReserveId(spoke1), bob, bobSupplyAmount, bob);
-    Utils.supply(spoke1, _wethReserveId(spoke1), alice, aliceSupplyAmount, alice);
-    Utils.borrow(spoke1, _wethReserveId(spoke1), bob, borrowAmount, bob);
-    Utils.repay(spoke1, _wethReserveId(spoke1), bob, 1e18, bob);
+    SpokeActions.supplyCollateral(spoke1, _daiReserveId(spoke1), bob, bobSupplyAmount, bob);
+    SpokeActions.supply(spoke1, _wethReserveId(spoke1), alice, aliceSupplyAmount, alice);
+    SpokeActions.borrow(spoke1, _wethReserveId(spoke1), bob, borrowAmount, bob);
+    SpokeActions.repay(spoke1, _wethReserveId(spoke1), bob, 1e18, bob);
 
     vm.prank(bob);
     nativeTokenGateway.repayNative{value: repayAmount}(
@@ -100,12 +98,18 @@ contract NativeTokenGateway_Gas_Tests is Base {
 }
 
 /// forge-config: default.isolate = true
-contract SignatureGateway_Gas_Tests is SignatureGatewayBaseTest {
+contract SignatureGateway_Gas_Tests is Base {
   string internal NAMESPACE = 'SignatureGateway.Operations';
   uint192 internal nonceKey = 0;
 
+  ISignatureGateway public gateway;
+
   function setUp() public virtual override {
     super.setUp();
+    gateway = ISignatureGateway(new SignatureGateway(ADMIN));
+
+    vm.prank(address(ADMIN));
+    gateway.registerSpoke(address(spoke1), true);
     vm.prank(SPOKE_ADMIN);
     spoke1.updatePositionManager(address(gateway), true);
     vm.prank(alice);
@@ -123,9 +127,9 @@ contract SignatureGateway_Gas_Tests is SignatureGatewayBaseTest {
       nonce: gateway.nonces(alice, nonceKey),
       deadline: vm.getBlockTimestamp()
     });
-    bytes memory signature = _sign(alicePk, _getTypedDataHash(gateway, p));
-    Utils.approve(spoke1, p.reserveId, alice, address(gateway), p.amount);
-    Utils.supply(spoke1, p.reserveId, alice, p.amount, alice);
+    bytes memory signature = _sign(alicePk, _getGatewayTypedDataHash(p));
+    SpokeActions.approve(spoke1, p.reserveId, alice, address(gateway), p.amount);
+    SpokeActions.supply(spoke1, p.reserveId, alice, p.amount, alice);
 
     gateway.supplyWithSig(p, signature);
     vm.snapshotGasLastCall(NAMESPACE, 'supplyWithSig');
@@ -140,10 +144,10 @@ contract SignatureGateway_Gas_Tests is SignatureGatewayBaseTest {
       nonce: gateway.nonces(alice, nonceKey),
       deadline: vm.getBlockTimestamp()
     });
-    bytes memory signature = _sign(alicePk, _getTypedDataHash(gateway, p));
+    bytes memory signature = _sign(alicePk, _getGatewayTypedDataHash(p));
 
-    Utils.supply(spoke1, p.reserveId, alice, 200e18, alice);
-    Utils.withdraw(spoke1, p.reserveId, alice, 100e18, alice);
+    SpokeActions.supply(spoke1, p.reserveId, alice, 200e18, alice);
+    SpokeActions.withdraw(spoke1, p.reserveId, alice, 100e18, alice);
 
     gateway.withdrawWithSig(p, signature);
     vm.snapshotGasLastCall(NAMESPACE, 'withdrawWithSig');
@@ -158,9 +162,9 @@ contract SignatureGateway_Gas_Tests is SignatureGatewayBaseTest {
       nonce: gateway.nonces(alice, nonceKey),
       deadline: vm.getBlockTimestamp()
     });
-    Utils.supplyCollateral(spoke1, p.reserveId, alice, p.amount * 4, alice);
-    Utils.borrow(spoke1, p.reserveId, alice, p.amount, alice);
-    bytes memory signature = _sign(alicePk, _getTypedDataHash(gateway, p));
+    SpokeActions.supplyCollateral(spoke1, p.reserveId, alice, p.amount * 4, alice);
+    SpokeActions.borrow(spoke1, p.reserveId, alice, p.amount, alice);
+    bytes memory signature = _sign(alicePk, _getGatewayTypedDataHash(p));
 
     gateway.borrowWithSig(p, signature);
     vm.snapshotGasLastCall(NAMESPACE, 'borrowWithSig');
@@ -175,11 +179,11 @@ contract SignatureGateway_Gas_Tests is SignatureGatewayBaseTest {
       nonce: gateway.nonces(alice, nonceKey),
       deadline: vm.getBlockTimestamp()
     });
-    Utils.supplyCollateral(spoke1, p.reserveId, alice, p.amount * 10, alice);
-    Utils.borrow(spoke1, p.reserveId, alice, p.amount * 3, alice);
-    Utils.approve(spoke1, p.reserveId, alice, address(gateway), p.amount * 2);
-    Utils.repay(spoke1, p.reserveId, alice, p.amount, alice);
-    bytes memory signature = _sign(alicePk, _getTypedDataHash(gateway, p));
+    SpokeActions.supplyCollateral(spoke1, p.reserveId, alice, p.amount * 10, alice);
+    SpokeActions.borrow(spoke1, p.reserveId, alice, p.amount * 3, alice);
+    SpokeActions.approve(spoke1, p.reserveId, alice, address(gateway), p.amount * 2);
+    SpokeActions.repay(spoke1, p.reserveId, alice, p.amount, alice);
+    bytes memory signature = _sign(alicePk, _getGatewayTypedDataHash(p));
 
     gateway.repayWithSig(p, signature);
     vm.snapshotGasLastCall(NAMESPACE, 'repayWithSig');
@@ -194,8 +198,8 @@ contract SignatureGateway_Gas_Tests is SignatureGatewayBaseTest {
       nonce: gateway.nonces(alice, nonceKey),
       deadline: vm.getBlockTimestamp()
     });
-    Utils.supply(spoke1, p.reserveId, alice, 1e18, alice);
-    bytes memory signature = _sign(alicePk, _getTypedDataHash(gateway, p));
+    SpokeActions.supply(spoke1, p.reserveId, alice, 1e18, alice);
+    bytes memory signature = _sign(alicePk, _getGatewayTypedDataHash(p));
 
     gateway.setUsingAsCollateralWithSig(p, signature);
     vm.snapshotGasLastCall(NAMESPACE, 'setUsingAsCollateralWithSig');
@@ -208,7 +212,7 @@ contract SignatureGateway_Gas_Tests is SignatureGatewayBaseTest {
       nonce: gateway.nonces(alice, nonceKey),
       deadline: vm.getBlockTimestamp()
     });
-    bytes memory signature = _sign(alicePk, _getTypedDataHash(gateway, p));
+    bytes memory signature = _sign(alicePk, _getGatewayTypedDataHash(p));
 
     vm.prank(alice);
     spoke1.updateUserRiskPremium(alice);
@@ -224,7 +228,7 @@ contract SignatureGateway_Gas_Tests is SignatureGatewayBaseTest {
       nonce: gateway.nonces(alice, nonceKey),
       deadline: vm.getBlockTimestamp()
     });
-    bytes memory signature = _sign(alicePk, _getTypedDataHash(gateway, p));
+    bytes memory signature = _sign(alicePk, _getGatewayTypedDataHash(p));
 
     vm.prank(alice);
     spoke1.updateUserDynamicConfig(alice);
@@ -258,5 +262,54 @@ contract SignatureGateway_Gas_Tests is SignatureGatewayBaseTest {
       signature: signature
     });
     vm.snapshotGasLastCall(NAMESPACE, 'setSelfAsUserPositionManagerWithSig');
+  }
+
+  // ── Signature helpers (inlined from SignatureGatewayBaseTest) ──
+
+  function _getGatewayTypedDataHash(
+    ISignatureGateway.Supply memory _params
+  ) internal view returns (bytes32) {
+    return _gatewayTypedDataHash(vm.eip712HashStruct('Supply', abi.encode(_params)));
+  }
+
+  function _getGatewayTypedDataHash(
+    ISignatureGateway.Withdraw memory _params
+  ) internal view returns (bytes32) {
+    return _gatewayTypedDataHash(vm.eip712HashStruct('Withdraw', abi.encode(_params)));
+  }
+
+  function _getGatewayTypedDataHash(
+    ISignatureGateway.Borrow memory _params
+  ) internal view returns (bytes32) {
+    return _gatewayTypedDataHash(vm.eip712HashStruct('Borrow', abi.encode(_params)));
+  }
+
+  function _getGatewayTypedDataHash(
+    ISignatureGateway.Repay memory _params
+  ) internal view returns (bytes32) {
+    return _gatewayTypedDataHash(vm.eip712HashStruct('Repay', abi.encode(_params)));
+  }
+
+  function _getGatewayTypedDataHash(
+    ISignatureGateway.SetUsingAsCollateral memory _params
+  ) internal view returns (bytes32) {
+    return _gatewayTypedDataHash(vm.eip712HashStruct('SetUsingAsCollateral', abi.encode(_params)));
+  }
+
+  function _getGatewayTypedDataHash(
+    ISignatureGateway.UpdateUserRiskPremium memory _params
+  ) internal view returns (bytes32) {
+    return _gatewayTypedDataHash(vm.eip712HashStruct('UpdateUserRiskPremium', abi.encode(_params)));
+  }
+
+  function _getGatewayTypedDataHash(
+    ISignatureGateway.UpdateUserDynamicConfig memory _params
+  ) internal view returns (bytes32) {
+    return
+      _gatewayTypedDataHash(vm.eip712HashStruct('UpdateUserDynamicConfig', abi.encode(_params)));
+  }
+
+  function _gatewayTypedDataHash(bytes32 typeHash) internal view returns (bytes32) {
+    return keccak256(abi.encodePacked('\x19\x01', gateway.DOMAIN_SEPARATOR(), typeHash));
   }
 }

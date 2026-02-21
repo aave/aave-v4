@@ -2,9 +2,9 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import 'tests/unit/Hub/HubBase.t.sol';
+import 'tests/unit/setup/Base.t.sol';
 
-contract HubReportDeficitTest is HubBase {
+contract HubReportDeficitTest is Base {
   using SafeCast for *;
   using PercentageMath for uint256;
   using WadRayMath for uint256;
@@ -28,9 +28,9 @@ contract HubReportDeficitTest is HubBase {
     super.setUp();
 
     // deploy borrowable liquidity
-    _addLiquidity(daiAssetId, MAX_SUPPLY_AMOUNT_DAI);
-    _addLiquidity(wethAssetId, MAX_SUPPLY_AMOUNT_WETH);
-    _addLiquidity(usdxAssetId, MAX_SUPPLY_AMOUNT_USDX);
+    _addLiquidity(hub1, daiAssetId, MAX_SUPPLY_AMOUNT_DAI, ADMIN);
+    _addLiquidity(hub1, wethAssetId, MAX_SUPPLY_AMOUNT_WETH, ADMIN);
+    _addLiquidity(hub1, usdxAssetId, MAX_SUPPLY_AMOUNT_USDX, ADMIN);
   }
 
   function test_reportDeficit_revertsWith_SpokeNotActive(address caller) public {
@@ -56,6 +56,7 @@ contract HubReportDeficitTest is HubBase {
 
     // draw usdx liquidity to be restored
     _drawLiquidity({
+      hub: hub1,
       assetId: usdxAssetId,
       amount: drawnAmount,
       withPremium: true,
@@ -103,7 +104,7 @@ contract HubReportDeficitTest is HubBase {
     drawnAmount = bound(drawnAmount, 1, MAX_SUPPLY_AMOUNT_USDX);
 
     // draw usdx liquidity to be restored
-    _drawLiquidity(usdxAssetId, drawnAmount, true, true, address(spoke1));
+    _drawLiquidity(hub1, usdxAssetId, drawnAmount, true, true, address(spoke1));
 
     (uint256 drawn, uint256 premium) = hub1.getSpokeOwed(usdxAssetId, address(spoke1));
     assertGt(drawn, 0);
@@ -140,6 +141,7 @@ contract HubReportDeficitTest is HubBase {
   function test_reportDeficit_halted() public {
     // draw usdx liquidity to be restored
     _drawLiquidity({
+      hub: hub1,
       assetId: usdxAssetId,
       amount: 1,
       withPremium: true,
@@ -147,7 +149,7 @@ contract HubReportDeficitTest is HubBase {
       spoke: address(spoke1)
     });
 
-    _updateSpokeHalted(hub1, usdxAssetId, address(spoke1), true);
+    _updateSpokeHalted(hub1, usdxAssetId, address(spoke1), true, HUB_ADMIN);
 
     // even if spoke is halted, it can report deficit
     vm.prank(address(spoke1));
@@ -177,11 +179,13 @@ contract HubReportDeficitTest is HubBase {
 
     // create premium debt via spoke1
     (params.drawn, params.premiumRay) = _drawLiquidityFromSpoke(
+      hub1,
       address(spoke1),
       usdxAssetId,
       _usdxReserveId(spoke1),
       drawnAmount,
-      skipTime
+      skipTime,
+      alice
     );
 
     IHub.Asset memory asset = hub1.getAsset(usdxAssetId);

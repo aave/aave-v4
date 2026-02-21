@@ -2,9 +2,9 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import 'tests/Base.t.sol';
+import 'tests/unit/setup/Base.t.sol';
 
-import {UserPositionUtilsWrapper} from 'tests/mocks/UserPositionUtilsWrapper.sol';
+import {UserPositionUtilsWrapper} from 'tests/helpers/mocks/UserPositionUtilsWrapper.sol';
 
 contract UserPositionUtilsTest is Base {
   using SafeCast for *;

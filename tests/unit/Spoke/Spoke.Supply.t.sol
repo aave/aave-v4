@@ -2,9 +2,9 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import 'tests/unit/Spoke/SpokeBase.t.sol';
+import 'tests/unit/setup/Base.t.sol';
 
-contract SpokeSupplyTest is SpokeBase {
+contract SpokeSupplyTest is Base {
   using PercentageMath for *;
   using ReserveFlagsMap for ReserveFlags;
 
@@ -21,7 +21,7 @@ contract SpokeSupplyTest is SpokeBase {
     uint256 daiReserveId = _daiReserveId(spoke1);
     uint256 amount = 100e18;
 
-    _updateReservePausedFlag(spoke1, daiReserveId, true);
+    _updateReservePausedFlag(spoke1, daiReserveId, true, SPOKE_ADMIN);
     assertTrue(spoke1.getReserve(daiReserveId).flags.paused());
 
     vm.expectRevert(ISpoke.ReservePaused.selector);
@@ -33,7 +33,7 @@ contract SpokeSupplyTest is SpokeBase {
     uint256 daiReserveId = _daiReserveId(spoke1);
     uint256 amount = 100e18;
 
-    _updateReserveFrozenFlag(spoke1, daiReserveId, true);
+    _updateReserveFrozenFlag(spoke1, daiReserveId, true, SPOKE_ADMIN);
     assertTrue(spoke1.getReserve(daiReserveId).flags.frozen());
 
     vm.expectRevert(ISpoke.ReserveFrozen.selector);
@@ -257,10 +257,15 @@ contract SpokeSupplyTest is SpokeBase {
 
   function test_supply_index_increase_no_premium() public {
     // set weth collateral risk to 0 for no premium contribution
-    _updateCollateralRisk({spoke: spoke1, reserveId: _wethReserveId(spoke1), newCollateralRisk: 0});
+    _updateCollateralRisk({
+      spoke: spoke1,
+      reserveId: _wethReserveId(spoke1),
+      newCollateralRisk: 0,
+      spokeAdmin: SPOKE_ADMIN
+    });
 
     // increase index on reserveId (uses weth as collateral)
-    _increaseReserveIndex(spoke1, _daiReserveId(spoke1));
+    _increaseReserveIndex(spoke1, _daiReserveId(spoke1), _wethReserveId(spoke1), alice, bob);
 
     uint256 amount = 1e18;
     uint256 expectedShares = hub1.previewAddByAssets(daiAssetId, amount);
@@ -273,7 +278,7 @@ contract SpokeSupplyTest is SpokeBase {
 
     vm.expectEmit(address(spoke1));
     emit ISpokeBase.Supply(_daiReserveId(spoke1), carol, carol, expectedShares, amount);
-    _assertRefreshPremiumNotCalled();
+    _assertRefreshPremiumNotCalled(hub1);
     CheckedSupplyResult memory r = _checkedSupply(
       CheckedSupplyParams({
         spoke: spoke1,
@@ -344,11 +349,25 @@ contract SpokeSupplyTest is SpokeBase {
   ) public {
     amount = bound(amount, 1, MAX_SUPPLY_AMOUNT);
     rate = bound(rate, 1, MAX_BORROW_RATE);
-    reserveId = bound(reserveId, 0, spokeInfo[spoke1].MAX_ALLOWED_ASSET_ID);
+    reserveId = bound(reserveId, 0, spoke1.getReserveCount() - 1);
+    vm.assume(reserveId != _wethReserveId(spoke1)); // weth is used as collateral
     skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
 
+    uint256 maxSupply = _calculateMaxSupplyAmount(spoke1, reserveId);
+    uint256 wethMaxSupply = _calculateMaxSupplyAmount(spoke1, _wethReserveId(spoke1));
+    // skip reserves where weth collateral cannot support the borrow
+    vm.assume(
+      _calcMinimumCollAmount(spoke1, _wethReserveId(spoke1), reserveId, maxSupply / 10) <=
+        wethMaxSupply
+    );
+
     // set weth collateral risk to 0 for no premium contribution
-    _updateCollateralRisk({spoke: spoke1, reserveId: _wethReserveId(spoke1), newCollateralRisk: 0});
+    _updateCollateralRisk({
+      spoke: spoke1,
+      reserveId: _wethReserveId(spoke1),
+      newCollateralRisk: 0,
+      spokeAdmin: SPOKE_ADMIN
+    });
 
     // increase index on reserveId
     _executeSpokeSupplyAndBorrow({
@@ -357,19 +376,20 @@ contract SpokeSupplyTest is SpokeBase {
         reserveId: _wethReserveId(spoke1),
         supplier: alice,
         borrower: address(0),
-        supplyAmount: 100e18,
+        supplyAmount: wethMaxSupply,
         borrowAmount: 0
       }),
       borrow: ReserveSetupParams({
         reserveId: reserveId,
-        borrowAmount: 10e18,
-        supplyAmount: 20e18,
+        borrowAmount: maxSupply / 10,
+        supplyAmount: maxSupply / 5,
         supplier: bob,
         borrower: alice
       }),
       rate: rate,
       isMockRate: true,
-      skipTime: skipTime
+      skipTime: skipTime,
+      interestRateStrategy: address(irStrategy)
     });
 
     SupplyFuzzLocal memory state;
@@ -384,7 +404,7 @@ contract SpokeSupplyTest is SpokeBase {
 
     vm.expectEmit(address(spoke1));
     emit ISpokeBase.Supply(reserveId, carol, carol, state.expectedShares, amount);
-    _assertRefreshPremiumNotCalled();
+    _assertRefreshPremiumNotCalled(hub1);
     CheckedSupplyResult memory r = _checkedSupply(
       CheckedSupplyParams({
         spoke: spoke1,
@@ -440,7 +460,7 @@ contract SpokeSupplyTest is SpokeBase {
   }
 
   function test_supply_index_increase_with_premium() public {
-    _increaseReserveIndex(spoke1, _daiReserveId(spoke1));
+    _increaseReserveIndex(spoke1, _daiReserveId(spoke1), _wethReserveId(spoke1), alice, bob);
 
     uint256 amount = 1e18;
     uint256 expectedShares = hub1.previewAddByAssets(daiAssetId, amount);
@@ -455,7 +475,7 @@ contract SpokeSupplyTest is SpokeBase {
 
     vm.expectEmit(address(spoke1));
     emit ISpokeBase.Supply(_daiReserveId(spoke1), carol, carol, expectedShares, amount);
-    _assertRefreshPremiumNotCalled();
+    _assertRefreshPremiumNotCalled(hub1);
     CheckedSupplyResult memory r = _checkedSupply(
       CheckedSupplyParams({
         spoke: spoke1,
@@ -512,31 +532,41 @@ contract SpokeSupplyTest is SpokeBase {
   ) public {
     amount = bound(amount, 1, MAX_SUPPLY_AMOUNT);
     rate = bound(rate, 1, MAX_BORROW_RATE);
-    reserveId = bound(reserveId, 0, spokeInfo[spoke1].MAX_ALLOWED_ASSET_ID);
+    reserveId = bound(reserveId, 0, spoke1.getReserveCount() - 1);
+    vm.assume(reserveId != _wethReserveId(spoke1)); // weth is used as collateral
     skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
+
+    uint256 maxSupply = _calculateMaxSupplyAmount(spoke1, reserveId);
+    uint256 wethMaxSupply = _calculateMaxSupplyAmount(spoke1, _wethReserveId(spoke1));
+    // skip reserves where weth collateral cannot support the borrow
+    vm.assume(
+      _calcMinimumCollAmount(spoke1, _wethReserveId(spoke1), reserveId, maxSupply / 10) <=
+        wethMaxSupply
+    );
 
     (, IERC20 underlying) = getAssetByReserveId(spoke1, reserveId);
 
-    // alice supplies WETH as collateral, borrows DAI
+    // alice supplies WETH as collateral, borrows from reserveId
     _executeSpokeSupplyAndBorrow({
       spoke: spoke1,
       collateral: ReserveSetupParams({
         reserveId: _wethReserveId(spoke1),
         supplier: alice,
-        supplyAmount: 100e18,
+        supplyAmount: wethMaxSupply,
         borrower: address(0),
         borrowAmount: 0
       }),
       borrow: ReserveSetupParams({
         reserveId: reserveId,
-        borrowAmount: 10e18,
-        supplyAmount: 20e18,
+        borrowAmount: maxSupply / 10,
+        supplyAmount: maxSupply / 5,
         borrower: alice,
         supplier: bob
       }),
       rate: rate,
       isMockRate: true,
-      skipTime: skipTime
+      skipTime: skipTime,
+      interestRateStrategy: address(irStrategy)
     });
 
     uint256 assetId = spoke1.getReserve(reserveId).assetId;
@@ -553,7 +583,7 @@ contract SpokeSupplyTest is SpokeBase {
 
     vm.expectEmit(address(spoke1));
     emit ISpokeBase.Supply(reserveId, carol, carol, expectedShares, amount);
-    _assertRefreshPremiumNotCalled();
+    _assertRefreshPremiumNotCalled(hub1);
     CheckedSupplyResult memory r = _checkedSupply(
       CheckedSupplyParams({
         spoke: spoke1,
@@ -614,14 +644,14 @@ contract SpokeSupplyTest is SpokeBase {
       _daiReserveId(spoke1),
       amount
     );
-    Utils.supply(spoke1, _daiReserveId(spoke1), bob, amount, bob);
-    Utils.supplyCollateral(spoke1, _wethReserveId(spoke1), bob, wethSupplyAmount, bob); // bob collateral
-    Utils.borrow(spoke1, _daiReserveId(spoke1), bob, amount, bob); // introduce debt
+    SpokeActions.supply(spoke1, _daiReserveId(spoke1), bob, amount, bob);
+    SpokeActions.supplyCollateral(spoke1, _wethReserveId(spoke1), bob, wethSupplyAmount, bob); // bob collateral
+    SpokeActions.borrow(spoke1, _daiReserveId(spoke1), bob, amount, bob); // introduce debt
 
     uint256 supplyExchangeRatio = hub1.previewRemoveByShares(daiAssetId, MAX_SUPPLY_AMOUNT);
     uint256 debtExchangeRatio = hub1.previewRestoreByShares(daiAssetId, MAX_SUPPLY_AMOUNT);
 
-    Utils.supply(spoke1, _daiReserveId(spoke1), alice, amount, alice);
+    SpokeActions.supply(spoke1, _daiReserveId(spoke1), alice, amount, alice);
 
     assertGe(hub1.previewRemoveByShares(daiAssetId, MAX_SUPPLY_AMOUNT), supplyExchangeRatio);
     assertGe(hub1.previewRestoreByShares(daiAssetId, MAX_SUPPLY_AMOUNT), debtExchangeRatio);
@@ -635,7 +665,7 @@ contract SpokeSupplyTest is SpokeBase {
       supplyExchangeRatio = hub1.previewRemoveByShares(daiAssetId, MAX_SUPPLY_AMOUNT);
       debtExchangeRatio = hub1.previewRestoreByShares(daiAssetId, MAX_SUPPLY_AMOUNT);
 
-      Utils.supply(spoke1, _daiReserveId(spoke1), alice, amount, alice);
+      SpokeActions.supply(spoke1, _daiReserveId(spoke1), alice, amount, alice);
 
       assertGe(hub1.previewRemoveByShares(daiAssetId, MAX_SUPPLY_AMOUNT), supplyExchangeRatio);
       assertGe(hub1.previewRestoreByShares(daiAssetId, MAX_SUPPLY_AMOUNT), debtExchangeRatio);
@@ -647,12 +677,12 @@ contract SpokeSupplyTest is SpokeBase {
     _openSupplyPosition(spoke1, _usdxReserveId(spoke1), MAX_SUPPLY_AMOUNT);
     _openSupplyPosition(spoke1, _daiReserveId(spoke1), MAX_SUPPLY_AMOUNT);
 
-    Utils.supplyCollateral(spoke1, _daiReserveId(spoke1), bob, 50_000e18, bob); // bob dai collateral, $50k
-    Utils.supplyCollateral(spoke1, _wethReserveId(spoke1), bob, 1e18, bob); // bob weth collateral, $2k
+    SpokeActions.supplyCollateral(spoke1, _daiReserveId(spoke1), bob, 50_000e18, bob); // bob dai collateral, $50k
+    SpokeActions.supplyCollateral(spoke1, _wethReserveId(spoke1), bob, 1e18, bob); // bob weth collateral, $2k
 
     // bob borrows 2 assets
-    Utils.borrow(spoke1, _usdxReserveId(spoke1), bob, 10_000e6, bob); // bob borrows usdx, $5k
-    Utils.borrow(spoke1, _daiReserveId(spoke1), bob, 10_000e18, bob); // bob borrows dai, $10k
+    SpokeActions.borrow(spoke1, _usdxReserveId(spoke1), bob, 10_000e6, bob); // bob borrows usdx, $5k
+    SpokeActions.borrow(spoke1, _daiReserveId(spoke1), bob, 10_000e18, bob); // bob borrows dai, $10k
 
     uint256 initialRP = _getUserRiskPremium(spoke1, bob);
     assertEq(initialRP, _calculateExpectedUserRP(spoke1, bob));
@@ -663,7 +693,7 @@ contract SpokeSupplyTest is SpokeBase {
     );
     // bob does another supply action of the lower collateral risk reserve
     // risk premium should not be refreshed
-    Utils.supplyCollateral(spoke1, _wethReserveId(spoke1), bob, 10_000e18, bob);
+    SpokeActions.supplyCollateral(spoke1, _wethReserveId(spoke1), bob, 10_000e18, bob);
 
     // on-the-fly RP calc does not match initial value
     assertNotEq(_getUserRiskPremium(spoke1, bob), initialRP);

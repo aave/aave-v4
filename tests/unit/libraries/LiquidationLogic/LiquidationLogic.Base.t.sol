@@ -2,10 +2,10 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import 'tests/unit/Spoke/SpokeBase.t.sol';
-import {LiquidationLogicWrapper} from 'tests/mocks/LiquidationLogicWrapper.sol';
+import 'tests/unit/setup/Base.t.sol';
+import {LiquidationLogicWrapper} from 'tests/helpers/mocks/LiquidationLogicWrapper.sol';
 
-contract LiquidationLogicBaseTest is SpokeBase {
+contract LiquidationLogicBaseTest is Base {
   using PercentageMath for uint256;
   using WadRayMath for uint256;
   using MathUtils for uint256;
@@ -30,10 +30,10 @@ contract LiquidationLogicBaseTest is SpokeBase {
     healthFactorForMaxBonus = bound(
       healthFactorForMaxBonus,
       0,
-      Constants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD - 1
+      SpokeConstants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD - 1
     );
     liquidationBonusFactor = bound(liquidationBonusFactor, 0, PercentageMath.PERCENTAGE_FACTOR);
-    healthFactor = bound(healthFactor, 0, Constants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD - 1);
+    healthFactor = bound(healthFactor, 0, SpokeConstants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD - 1);
     maxLiquidationBonus = bound(maxLiquidationBonus, MIN_LIQUIDATION_BONUS, MAX_LIQUIDATION_BONUS);
     return (healthFactorForMaxBonus, liquidationBonusFactor, healthFactor, maxLiquidationBonus);
   }
@@ -61,7 +61,7 @@ contract LiquidationLogicBaseTest is SpokeBase {
 
     uint256 targetHealthFactor = bound(
       params.targetHealthFactor,
-      Constants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
+      SpokeConstants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
       MAX_CLOSE_FACTOR
     );
 
@@ -221,7 +221,9 @@ contract LiquidationLogicBaseTest is SpokeBase {
       IHub(address(params.collateralReserveHub)),
       params.collateralReserveAssetId,
       hubAddedAssets,
-      hubAddedShares
+      hubAddedShares,
+      address(spoke1),
+      HUB_ADMIN
     );
 
     return params;
@@ -288,7 +290,9 @@ contract LiquidationLogicBaseTest is SpokeBase {
       IHub(address(params.collateralReserveHub)),
       params.collateralReserveAssetId,
       hubAddedAssets,
-      hubAddedShares
+      hubAddedShares,
+      address(spoke1),
+      HUB_ADMIN
     );
 
     return params;

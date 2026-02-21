@@ -2,9 +2,9 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import 'tests/unit/Spoke/SpokeBase.t.sol';
+import 'tests/unit/setup/Base.t.sol';
 
-contract SpokeAccrueLiquidityFeeEdgeCasesTest is SpokeBase {
+contract SpokeAccrueLiquidityFeeEdgeCasesTest is Base {
   uint256 public constant MAX_LIQUIDITY_FEE = 100_00;
 
   /// @dev Max liquidity fee with premium debt accrual
@@ -32,16 +32,16 @@ contract SpokeAccrueLiquidityFeeEdgeCasesTest is SpokeBase {
 
     borrowAmount = bound(borrowAmount, 1, _calculateMaxSupplyAmount(spoke1, reserveId) / 2); // within collateralization
 
-    _updateLiquidityFee(hub1, assetId, MAX_LIQUIDITY_FEE);
+    _updateLiquidityFee(hub1, assetId, MAX_LIQUIDITY_FEE, HUB_ADMIN);
 
     uint256 supplyAmount = _calcMinimumCollAmount(spoke1, reserveId, reserveId, borrowAmount);
-    _mockInterestRateBps(rate);
+    _mockInterestRateBps(address(irStrategy), rate);
 
-    Utils.supplyCollateral(spoke1, reserveId, alice, supplyAmount, alice);
-    Utils.borrow(spoke1, reserveId, alice, borrowAmount, alice);
+    SpokeActions.supplyCollateral(spoke1, reserveId, alice, supplyAmount, alice);
+    SpokeActions.borrow(spoke1, reserveId, alice, borrowAmount, alice);
 
     skip(skipTime);
-    Utils.mintFeeShares(hub1, assetId, ADMIN);
+    HubActions.mintFeeShares(hub1, assetId, ADMIN);
 
     (, uint256 premiumDebt) = spoke1.getUserDebt(reserveId, alice);
     assertGt(premiumDebt, 0);
@@ -81,20 +81,20 @@ contract SpokeAccrueLiquidityFeeEdgeCasesTest is SpokeBase {
     borrowAmount = bound(borrowAmount, 1, _calculateMaxSupplyAmount(spoke1, reserveId) / 4); // within collateralization
     borrowAmount2 = bound(borrowAmount2, 1, _calculateMaxSupplyAmount(spoke1, reserveId) / 4); // within collateralization
 
-    _updateLiquidityFee(hub1, spoke1.getReserve(reserveId).assetId, MAX_LIQUIDITY_FEE);
+    _updateLiquidityFee(hub1, spoke1.getReserve(reserveId).assetId, MAX_LIQUIDITY_FEE, HUB_ADMIN);
 
     uint256 supplyAmount = _calcMinimumCollAmount(spoke1, reserveId, reserveId, borrowAmount);
     uint256 supplyAmount2 = _calcMinimumCollAmount(spoke1, reserveId, reserveId, borrowAmount2);
-    _mockInterestRateBps(rate);
+    _mockInterestRateBps(address(irStrategy), rate);
 
-    Utils.supplyCollateral(spoke1, reserveId, alice, supplyAmount, alice);
-    Utils.borrow(spoke1, reserveId, alice, borrowAmount, alice);
+    SpokeActions.supplyCollateral(spoke1, reserveId, alice, supplyAmount, alice);
+    SpokeActions.borrow(spoke1, reserveId, alice, borrowAmount, alice);
 
-    Utils.supplyCollateral(spoke1, reserveId, bob, supplyAmount2, bob);
-    Utils.borrow(spoke1, reserveId, bob, borrowAmount2, bob);
+    SpokeActions.supplyCollateral(spoke1, reserveId, bob, supplyAmount2, bob);
+    SpokeActions.borrow(spoke1, reserveId, bob, borrowAmount2, bob);
 
     skip(skipTime);
-    Utils.mintFeeShares(hub1, assetId, ADMIN);
+    HubActions.mintFeeShares(hub1, assetId, ADMIN);
 
     assertApproxEqAbs(
       spoke1.getUserSuppliedAssets(reserveId, alice),
@@ -129,7 +129,7 @@ contract SpokeAccrueLiquidityFeeEdgeCasesTest is SpokeBase {
   function test_accrueLiquidityFee_maxLiquidityFee_multi_user() public {
     uint256 reserveId = _randomReserveId(spoke1);
     uint256 assetId = spoke1.getReserve(reserveId).assetId;
-    _updateLiquidityFee(hub1, assetId, MAX_LIQUIDITY_FEE);
+    _updateLiquidityFee(hub1, assetId, MAX_LIQUIDITY_FEE, HUB_ADMIN);
 
     uint256 count = vm.randomUint(10, 1000);
     for (uint256 i; i < count; ++i) {
@@ -145,7 +145,7 @@ contract SpokeAccrueLiquidityFeeEdgeCasesTest is SpokeBase {
     for (uint256 i; i < count; ++i) {
       address user = makeUser(i); // deterministic operation
       uint256 totalOwedAfter = hub1.getAssetTotalOwed(assetId);
-      Utils.repay(spoke1, reserveId, user, 1, user); // accrue interest & realize premium
+      SpokeActions.repay(spoke1, reserveId, user, 1, user); // accrue interest & realize premium
       assertApproxEqAbs(totalOwedAfter, hub1.getAssetTotalOwed(assetId), 1);
 
       feesAccrued += totalOwedAfter - totalOwedBefore;
@@ -162,7 +162,7 @@ contract SpokeAccrueLiquidityFeeEdgeCasesTest is SpokeBase {
   function test_accrueLiquidityFee_maxLiquidityFee_multi_spoke() public {
     uint256 assetId = daiAssetId; // on all spokes
     uint256 spokeCount = hub1.getSpokeCount(assetId);
-    _updateLiquidityFee(hub1, assetId, MAX_LIQUIDITY_FEE);
+    _updateLiquidityFee(hub1, assetId, MAX_LIQUIDITY_FEE, HUB_ADMIN);
     // build spoke list excluding treasury spoke
     ISpoke[] memory spokes = new ISpoke[](spokeCount - 1);
     uint256 spokeIndex;
@@ -190,7 +190,7 @@ contract SpokeAccrueLiquidityFeeEdgeCasesTest is SpokeBase {
       ISpoke spoke = spokes[i % spokes.length]; // deterministic operation
       uint256 reserveId = _reserveId(spoke, assetId);
       uint256 totalOwedAfter = hub1.getAssetTotalOwed(assetId);
-      Utils.repay(spoke, reserveId, user, 1, user); // accrue interest & realize premium
+      SpokeActions.repay(spoke, reserveId, user, 1, user); // accrue interest & realize premium
       assertApproxEqAbs(totalOwedAfter, hub1.getAssetTotalOwed(assetId), 1);
 
       feesAccrued += totalOwedAfter - totalOwedBefore;

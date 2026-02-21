@@ -2,10 +2,10 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import 'tests/unit/Spoke/SpokeBase.t.sol';
+import 'tests/unit/setup/Base.t.sol';
 import {EIP712Hash} from 'src/spoke/libraries/EIP712Hash.sol';
 
-contract SpokeSetUserPositionManagersWithSigTest is SpokeBase {
+contract SpokeSetUserPositionManagersWithSigTest is Base {
   using SafeCast for *;
 
   mapping(address positionManager => bool approve) internal _lookup;

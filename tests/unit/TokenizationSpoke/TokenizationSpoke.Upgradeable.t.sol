@@ -3,7 +3,7 @@
 pragma solidity ^0.8.0;
 
 import 'tests/unit/TokenizationSpoke/TokenizationSpoke.Base.t.sol';
-import {MockTokenizationSpokeInstance} from 'tests/mocks/MockTokenizationSpokeInstance.sol';
+import {MockTokenizationSpokeInstance} from 'tests/helpers/mocks/MockTokenizationSpokeInstance.sol';
 
 contract TokenizationSpokeUpgradeableTest is TokenizationSpokeBaseTest {
   address internal proxyAdminOwner = makeAddr('proxyAdminOwner');

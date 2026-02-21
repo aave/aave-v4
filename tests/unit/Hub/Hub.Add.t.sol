@@ -2,9 +2,9 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import 'tests/unit/Hub/HubBase.t.sol';
+import 'tests/unit/setup/Base.t.sol';
 
-contract HubAddTest is HubBase {
+contract HubAddTest is Base {
   using SharesMath for uint256;
   using SafeCast for uint256;
 
@@ -27,16 +27,20 @@ contract HubAddTest is HubBase {
   function setUp() public override {
     super.setUp();
 
-    TestnetERC20 usda = new TestnetERC20('USDA', 'USDA', Constants.MIN_ALLOWED_UNDERLYING_DECIMALS);
+    TestnetERC20 usda = new TestnetERC20(
+      'USDA',
+      'USDA',
+      HubConstants.MIN_ALLOWED_UNDERLYING_DECIMALS
+    );
     deal(address(usda), alice, MAX_SUPPLY_AMOUNT);
 
     /// @dev add a minimum decimal asset to test add cap rounding
     IHub.SpokeConfig memory spokeConfig = IHub.SpokeConfig({
       active: true,
       halted: false,
-      addCap: Constants.MAX_ALLOWED_SPOKE_CAP,
-      drawCap: Constants.MAX_ALLOWED_SPOKE_CAP,
-      riskPremiumThreshold: Constants.MAX_ALLOWED_COLLATERAL_RISK
+      addCap: HubConstants.MAX_ALLOWED_SPOKE_CAP,
+      drawCap: HubConstants.MAX_ALLOWED_SPOKE_CAP,
+      riskPremiumThreshold: SpokeConstants.MAX_ALLOWED_COLLATERAL_RISK
     });
     bytes memory encodedIrData = abi.encode(
       IAssetInterestRateStrategy.InterestRateData({
@@ -49,7 +53,7 @@ contract HubAddTest is HubBase {
     vm.startPrank(ADMIN);
     minDecimalAssetId = hub1.addAsset(
       address(usda),
-      Constants.MIN_ALLOWED_UNDERLYING_DECIMALS,
+      HubConstants.MIN_ALLOWED_UNDERLYING_DECIMALS,
       address(treasurySpoke),
       address(irStrategy),
       encodedIrData
@@ -80,7 +84,7 @@ contract HubAddTest is HubBase {
   }
 
   function test_add_revertsWith_SpokeHalted() public {
-    _updateSpokeHalted(hub1, daiAssetId, address(spoke1), true);
+    _updateSpokeHalted(hub1, daiAssetId, address(spoke1), true, HUB_ADMIN);
     vm.startPrank(address(spoke1));
     tokenList.dai.transferFrom(alice, address(hub1), 100e18);
 
@@ -90,7 +94,7 @@ contract HubAddTest is HubBase {
   }
 
   function test_add_revertsWith_SpokeNotActive() public {
-    _updateSpokeActive(hub1, daiAssetId, address(spoke1), false);
+    _updateSpokeActive(hub1, daiAssetId, address(spoke1), false, HUB_ADMIN);
     vm.startPrank(address(spoke1));
     tokenList.dai.transferFrom(alice, address(hub1), 100e18);
 
@@ -157,7 +161,7 @@ contract HubAddTest is HubBase {
 
   function test_add_fuzz_revertsWith_AddCapExceeded(uint40 newAddCap) public {
     newAddCap = bound(newAddCap, 1, MAX_SUPPLY_AMOUNT / 10 ** tokenList.dai.decimals()).toUint40();
-    _updateAddCap(daiAssetId, address(spoke1), newAddCap);
+    _updateAddCap(hub1, daiAssetId, address(spoke1), newAddCap, HUB_ADMIN);
     uint256 amount = newAddCap * 10 ** tokenList.dai.decimals() + 1;
     vm.startPrank(address(spoke1));
     tokenList.dai.transferFrom(alice, address(hub1), amount);
@@ -168,7 +172,7 @@ contract HubAddTest is HubBase {
 
   function test_add_fuzz_AddCapReachedButNotExceeded(uint40 newAddCap) public {
     newAddCap = bound(newAddCap, 1, MAX_SUPPLY_AMOUNT / 10 ** tokenList.dai.decimals()).toUint40();
-    _updateAddCap(daiAssetId, address(spoke1), newAddCap);
+    _updateAddCap(hub1, daiAssetId, address(spoke1), newAddCap, HUB_ADMIN);
     uint256 amount = newAddCap * 10 ** tokenList.dai.decimals();
     vm.startPrank(address(spoke1));
     tokenList.dai.transferFrom(alice, address(hub1), amount);
@@ -187,7 +191,7 @@ contract HubAddTest is HubBase {
     drawAmount = bound(drawAmount, 1, daiAmount);
     skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
 
-    _updateAddCap(daiAssetId, address(spoke2), newAddCap);
+    _updateAddCap(hub1, daiAssetId, address(spoke2), newAddCap, HUB_ADMIN);
     _addAndDrawLiquidity({
       hub: hub1,
       assetId: daiAssetId,
@@ -213,8 +217,8 @@ contract HubAddTest is HubBase {
 
   // add succeeds if cap is reached but not exceeded
   function test_add_AddCapReachedButNotExceeded_rounding() public {
-    _addLiquidity(minDecimalAssetId, 100e18);
-    _drawLiquidity(minDecimalAssetId, 45e18, true);
+    _addLiquidity(hub1, minDecimalAssetId, 100e18, ADMIN);
+    _drawLiquidity(hub1, minDecimalAssetId, 45e18, true, HUB_ADMIN);
 
     uint256 totalAddedAssets = hub1.getAddedAssets(minDecimalAssetId);
     uint256 totalAddedShares = hub1.getAddedShares(minDecimalAssetId);
@@ -242,9 +246,9 @@ contract HubAddTest is HubBase {
     );
 
     uint40 newAddCap = (spokeAddedAssetsRoundedUp + addedAmount).toUint40();
-    _updateAddCap(minDecimalAssetId, address(spoke1), newAddCap);
+    _updateAddCap(hub1, minDecimalAssetId, address(spoke1), newAddCap, HUB_ADMIN);
 
-    Utils.add({
+    HubActions.add({
       hub: hub1,
       assetId: minDecimalAssetId,
       caller: address(spoke1),
@@ -567,8 +571,8 @@ contract HubAddTest is HubBase {
 
   function test_add_with_increased_index_with_premium() public {
     uint256 daiAmount = 100e18;
-    _addLiquidity(daiAssetId, daiAmount);
-    _drawLiquidity(daiAssetId, daiAmount, true);
+    _addLiquidity(hub1, daiAssetId, daiAmount, ADMIN);
+    _drawLiquidity(hub1, daiAssetId, daiAmount, true, HUB_ADMIN);
     assertLt(hub1.previewAddByAssets(daiAssetId, daiAmount), daiAmount); // index increased, exch rate > 1
 
     uint256 addAmount = 10e18;
@@ -583,7 +587,7 @@ contract HubAddTest is HubBase {
       hub1.getAddedShares(daiAssetId)
     );
 
-    Utils.add({
+    HubActions.add({
       hub: hub1,
       assetId: daiAssetId,
       caller: address(spoke2),
@@ -643,7 +647,7 @@ contract HubAddTest is HubBase {
       hub1.getAddedShares(daiAssetId)
     );
 
-    Utils.add({
+    HubActions.add({
       hub: hub1,
       assetId: daiAssetId,
       caller: address(spoke1),
@@ -754,7 +758,7 @@ contract HubAddTest is HubBase {
       addAmount = minimumAssetsPerAddedShare(hub1, assetId);
 
       // bob add minimal amount
-      Utils.add({
+      HubActions.add({
         hub: hub1,
         assetId: assetId,
         caller: address(spoke1),

@@ -2,16 +2,16 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import 'tests/unit/Spoke/SpokeBase.t.sol';
+import 'tests/unit/setup/Base.t.sol';
 
-contract SpokeRepayValidationTest is SpokeBase {
+contract SpokeRepayValidationTest is Base {
   using ReserveFlagsMap for ReserveFlags;
 
   function test_repay_revertsWith_ReservePaused() public {
     uint256 daiReserveId = _daiReserveId(spoke1);
     uint256 amount = 100e18;
 
-    _updateReservePausedFlag(spoke1, daiReserveId, true);
+    _updateReservePausedFlag(spoke1, daiReserveId, true, SPOKE_ADMIN);
     assertTrue(spoke1.getReserve(daiReserveId).flags.paused());
 
     vm.expectRevert(ISpoke.ReservePaused.selector);

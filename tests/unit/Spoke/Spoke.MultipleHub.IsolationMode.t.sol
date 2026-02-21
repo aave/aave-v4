@@ -67,9 +67,9 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
       IHub.SpokeConfig({
         active: true,
         halted: false,
-        addCap: Constants.MAX_ALLOWED_SPOKE_CAP,
-        drawCap: Constants.MAX_ALLOWED_SPOKE_CAP,
-        riskPremiumThreshold: Constants.MAX_ALLOWED_COLLATERAL_RISK
+        addCap: HubConstants.MAX_ALLOWED_SPOKE_CAP,
+        drawCap: HubConstants.MAX_ALLOWED_SPOKE_CAP,
+        riskPremiumThreshold: SpokeConstants.MAX_ALLOWED_COLLATERAL_RISK
       })
     );
     newHub.addSpoke(
@@ -78,9 +78,9 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
       IHub.SpokeConfig({
         active: true,
         halted: false,
-        addCap: Constants.MAX_ALLOWED_SPOKE_CAP,
-        drawCap: Constants.MAX_ALLOWED_SPOKE_CAP,
-        riskPremiumThreshold: Constants.MAX_ALLOWED_COLLATERAL_RISK
+        addCap: HubConstants.MAX_ALLOWED_SPOKE_CAP,
+        drawCap: HubConstants.MAX_ALLOWED_SPOKE_CAP,
+        riskPremiumThreshold: SpokeConstants.MAX_ALLOWED_COLLATERAL_RISK
       })
     );
     vm.stopPrank();
@@ -112,9 +112,9 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
       IHub.SpokeConfig({
         active: true,
         halted: false,
-        addCap: Constants.MAX_ALLOWED_SPOKE_CAP,
-        drawCap: Constants.MAX_ALLOWED_SPOKE_CAP,
-        riskPremiumThreshold: Constants.MAX_ALLOWED_COLLATERAL_RISK
+        addCap: HubConstants.MAX_ALLOWED_SPOKE_CAP,
+        drawCap: HubConstants.MAX_ALLOWED_SPOKE_CAP,
+        riskPremiumThreshold: SpokeConstants.MAX_ALLOWED_COLLATERAL_RISK
       })
     );
     vm.stopPrank();
@@ -149,7 +149,7 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
    */
   function test_isolation_mode() public {
     // Bob can supply asset A to the new spoke and set it as collateral
-    Utils.supplyCollateral(newSpoke, isolationVars.reserveAId, bob, MAX_SUPPLY_AMOUNT, bob);
+    SpokeActions.supplyCollateral(newSpoke, isolationVars.reserveAId, bob, MAX_SUPPLY_AMOUNT, bob);
 
     // Check Bob's supplied amounts and collateral status
     assertEq(
@@ -169,7 +169,7 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
 
     // Bob cannot borrow asset B because there is no liquidity
     vm.expectRevert(abi.encodeWithSelector(IHub.InsufficientLiquidity.selector, 0));
-    Utils.borrow(newSpoke, isolationVars.reserveBId, bob, 1, bob);
+    SpokeActions.borrow(newSpoke, isolationVars.reserveBId, bob, 1, bob);
 
     // Add main hub reserve B to the new spoke
     vm.startPrank(ADMIN);
@@ -198,10 +198,10 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
 
     // Bob still cannot borrow asset B from the new hub because there is no liquidity
     vm.expectRevert(abi.encodeWithSelector(IHub.InsufficientLiquidity.selector, 0));
-    Utils.borrow(newSpoke, isolationVars.reserveBId, bob, 1, bob);
+    SpokeActions.borrow(newSpoke, isolationVars.reserveBId, bob, 1, bob);
 
     // Alice can supply asset B to the main hub via spoke 1 (and will earn yield as usual)
-    Utils.supply(spoke1, isolationVars.spoke1ReserveBId, alice, 500_000e18, alice);
+    SpokeActions.supply(spoke1, isolationVars.spoke1ReserveBId, alice, 500_000e18, alice);
 
     // Check Alice's supplied amount of asset B on spoke 1
     assertEq(
@@ -216,7 +216,7 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
     );
 
     // Bob CAN borrow asset B from the main hub via new spoke up until the draw cap of 100k
-    Utils.borrow(newSpoke, isolationVars.reserveBIdMainHub, bob, 100_000e18, bob);
+    SpokeActions.borrow(newSpoke, isolationVars.reserveBIdMainHub, bob, 100_000e18, bob);
 
     // Check Bob's total debt of asset B on the new spoke
     assertEq(newSpoke.getUserTotalDebt(isolationVars.reserveBIdMainHub, bob), 100_000e18);
@@ -224,14 +224,14 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
 
     // Bob cannot borrow asset B from main hub via new spoke past draw cap
     vm.expectRevert(abi.encodeWithSelector(IHub.DrawCapExceeded.selector, 100_000));
-    Utils.borrow(newSpoke, isolationVars.reserveBIdMainHub, bob, 1, bob);
+    SpokeActions.borrow(newSpoke, isolationVars.reserveBIdMainHub, bob, 1, bob);
 
     // Bob cannot supply B to main hub via new spoke because supply cap is 0
     vm.expectRevert(abi.encodeWithSelector(IHub.AddCapExceeded.selector, 0));
-    Utils.supply(newSpoke, isolationVars.reserveBIdMainHub, bob, 1e18, bob);
+    SpokeActions.supply(newSpoke, isolationVars.reserveBIdMainHub, bob, 1e18, bob);
 
     // Alice can supply B to the new hub via new spoke
-    Utils.supply(newSpoke, isolationVars.reserveBId, alice, MAX_SUPPLY_AMOUNT, alice);
+    SpokeActions.supply(newSpoke, isolationVars.reserveBId, alice, MAX_SUPPLY_AMOUNT, alice);
 
     // Now there is liquidity for asset B on the new hub
     assertEq(
@@ -246,12 +246,12 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
     );
 
     // Bob will migrate to borrowing asset B from the new spoke, new hub, so repays canonical hub position
-    Utils.repay(newSpoke, isolationVars.reserveBIdMainHub, bob, 100_000e18, bob);
+    SpokeActions.repay(newSpoke, isolationVars.reserveBIdMainHub, bob, 100_000e18, bob);
     assertEq(newSpoke.getUserTotalDebt(isolationVars.reserveBIdMainHub, bob), 0);
     assertEq(hub1.getAssetTotalOwed(isolationVars.assetBIdMainHub), 0);
 
     // Bob opens new borrow position for asset B on the new spoke, new hub
-    Utils.borrow(newSpoke, isolationVars.reserveBId, bob, 100_000e18, bob);
+    SpokeActions.borrow(newSpoke, isolationVars.reserveBId, bob, 100_000e18, bob);
     assertEq(newSpoke.getUserTotalDebt(isolationVars.reserveBId, bob), 100_000e18);
     assertEq(newHub.getAssetTotalOwed(isolationVars.assetBId), 100_000e18);
 
@@ -271,6 +271,6 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
 
     // Now Bob or any other users cannot draw any asset B from the new spoke main hub due to new draw cap of 0
     vm.expectRevert(abi.encodeWithSelector(IHub.DrawCapExceeded.selector, 0));
-    Utils.borrow(newSpoke, isolationVars.reserveBIdMainHub, bob, 1e18, bob);
+    SpokeActions.borrow(newSpoke, isolationVars.reserveBIdMainHub, bob, 1e18, bob);
   }
 }

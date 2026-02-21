@@ -2,13 +2,12 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import 'tests/Base.t.sol';
+import 'tests/gas/Base.t.sol';
 
 /// forge-config: default.isolate = true
 contract SpokeGetters_Gas_Tests is Base {
   function setUp() public override {
-    deployFixtures();
-    initEnvironment();
+    super.setUp();
   }
 
   function test_getUserAccountData() external {

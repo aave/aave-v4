@@ -2,14 +2,14 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import 'tests/unit/Hub/HubBase.t.sol';
+import 'tests/unit/setup/Base.t.sol';
 
-contract HubMintFeeSharesTest is HubBase {
+contract HubMintFeeSharesTest is Base {
   function test_mintFeeShares_revertsWith_AccessManagedUnauthorized() public {
     vm.expectRevert(
       abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, address(this))
     );
-    Utils.mintFeeShares(hub1, daiAssetId, address(this));
+    HubActions.mintFeeShares(hub1, daiAssetId, address(this));
   }
 
   function test_mintFeeShares_revertsWith_SpokeNotActive() public {
@@ -26,15 +26,15 @@ contract HubMintFeeSharesTest is HubBase {
       skipTime: 365 days
     });
 
-    _updateSpokeActive(hub1, daiAssetId, _getFeeReceiver(hub1, daiAssetId), false);
+    _updateSpokeActive(hub1, daiAssetId, _getFeeReceiver(hub1, daiAssetId), false, HUB_ADMIN);
     vm.expectRevert(IHub.SpokeNotActive.selector, address(hub1));
-    Utils.mintFeeShares(hub1, daiAssetId, ADMIN);
+    HubActions.mintFeeShares(hub1, daiAssetId, ADMIN);
   }
 
   function test_mintFeeShares_revertsWith_AssetNotListed() public {
     uint256 invalidAssetId = hub1.getAssetCount();
     vm.expectRevert(IHub.AssetNotListed.selector);
-    Utils.mintFeeShares(hub1, invalidAssetId, ADMIN);
+    HubActions.mintFeeShares(hub1, invalidAssetId, ADMIN);
   }
 
   function test_mintFeeShares() public {
@@ -86,7 +86,7 @@ contract HubMintFeeSharesTest is HubBase {
     uint256 sharePriceBefore = hub1.previewAddByShares(daiAssetId, 1e18);
 
     vm.expectCall(address(irStrategy), irCalldata);
-    uint256 mintedShares = Utils.mintFeeShares(hub1, daiAssetId, ADMIN);
+    uint256 mintedShares = HubActions.mintFeeShares(hub1, daiAssetId, ADMIN);
 
     assertEq(mintedShares, expectedMintedShares, 'minted shares');
     assertEq(hub1.getAsset(daiAssetId).realizedFees, 0, 'realized fees after');
@@ -105,20 +105,20 @@ contract HubMintFeeSharesTest is HubBase {
     IHub.Asset memory asset = hub1.getAsset(daiAssetId);
 
     // pausing the fee receiver does not revert the action since no shares are minted
-    _updateSpokeActive(hub1, daiAssetId, _getFeeReceiver(hub1, daiAssetId), false);
+    _updateSpokeActive(hub1, daiAssetId, _getFeeReceiver(hub1, daiAssetId), false, HUB_ADMIN);
 
     vm.expectEmit(address(hub1));
     emit IHub.UpdateAsset(daiAssetId, asset.drawnIndex, asset.drawnRate, 0);
 
     vm.recordLogs();
-    Utils.mintFeeShares(hub1, daiAssetId, ADMIN);
+    HubActions.mintFeeShares(hub1, daiAssetId, ADMIN);
     vm.getRecordedLogs();
     _assertEventNotEmitted(IHub.MintFeeShares.selector);
   }
 
   function test_mintFeeShares_noShares() public {
-    _updateLiquidityFee(hub1, daiAssetId, 0);
-    _mockInterestRateRay(2);
+    _updateLiquidityFee(hub1, daiAssetId, 0, HUB_ADMIN);
+    _mockInterestRateRay(address(irStrategy), 2);
 
     // Create debt to build up fees on the existing treasury spoke
     _addAndDrawLiquidity({
@@ -136,18 +136,18 @@ contract HubMintFeeSharesTest is HubBase {
     // drawn index is 1.0000...002
     assertEq(hub1.getAssetDrawnIndex(daiAssetId), 1e27 + 2);
 
-    _mockInterestRateRay(1e27 - 3);
-    _updateLiquidityFee(hub1, daiAssetId, PercentageMath.PERCENTAGE_FACTOR);
+    _mockInterestRateRay(address(irStrategy), 1e27 - 3);
+    _updateLiquidityFee(hub1, daiAssetId, PercentageMath.PERCENTAGE_FACTOR, HUB_ADMIN);
 
     // mint fee shares just to accrue (liquidity fee is 0, so no fees are minted)
-    Utils.mintFeeShares(hub1, daiAssetId, ADMIN);
+    HubActions.mintFeeShares(hub1, daiAssetId, ADMIN);
     skip(365 days);
 
     // drawn index is 2.000...001
     assertEq(hub1.getAssetDrawnIndex(daiAssetId), 2e27 + 1);
 
     vm.recordLogs();
-    Utils.mintFeeShares(hub1, daiAssetId, ADMIN);
+    HubActions.mintFeeShares(hub1, daiAssetId, ADMIN);
     vm.getRecordedLogs();
     _assertEventNotEmitted(IHub.MintFeeShares.selector);
 

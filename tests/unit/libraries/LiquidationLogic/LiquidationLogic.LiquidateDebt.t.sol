@@ -38,9 +38,9 @@ contract LiquidationLogicLiquidateDebtTest is LiquidationLogicBaseTest {
     IHub.SpokeConfig memory spokeConfig = IHub.SpokeConfig({
       active: true,
       halted: false,
-      addCap: Constants.MAX_ALLOWED_SPOKE_CAP,
-      drawCap: Constants.MAX_ALLOWED_SPOKE_CAP,
-      riskPremiumThreshold: Constants.MAX_ALLOWED_COLLATERAL_RISK
+      addCap: HubConstants.MAX_ALLOWED_SPOKE_CAP,
+      drawCap: HubConstants.MAX_ALLOWED_SPOKE_CAP,
+      riskPremiumThreshold: SpokeConstants.MAX_ALLOWED_COLLATERAL_RISK
     });
     vm.prank(HUB_ADMIN);
     hub.addSpoke(assetId, address(spoke), spokeConfig);
@@ -48,8 +48,8 @@ contract LiquidationLogicLiquidateDebtTest is LiquidationLogicBaseTest {
     // Add liquidity, remove liquidity, refresh premium and skip time to accrue both drawn and premium debt
     address tempUser = makeUser();
     deal(address(asset), tempUser, MAX_SUPPLY_AMOUNT);
-    Utils.add(hub, assetId, address(spoke), MAX_SUPPLY_AMOUNT, tempUser);
-    Utils.draw(hub, assetId, address(spoke), tempUser, MAX_SUPPLY_AMOUNT);
+    HubActions.add(hub, assetId, address(spoke), MAX_SUPPLY_AMOUNT, tempUser);
+    HubActions.draw(hub, assetId, address(spoke), tempUser, MAX_SUPPLY_AMOUNT);
     vm.startPrank(address(spoke));
     hub.refreshPremium(
       assetId,
@@ -71,7 +71,7 @@ contract LiquidationLogicLiquidateDebtTest is LiquidationLogicBaseTest {
 
     // Mint tokens to liquidator and approve spoke
     deal(address(asset), liquidator, spokeDrawnOwed + spokePremiumOwed);
-    Utils.approve(spoke, address(asset), liquidator, spokeDrawnOwed + spokePremiumOwed);
+    SpokeActions.approve(spoke, address(asset), liquidator, spokeDrawnOwed + spokePremiumOwed);
   }
 
   function test_liquidateDebt_fuzz(uint256) public {
@@ -188,7 +188,7 @@ contract LiquidationLogicLiquidateDebtTest is LiquidationLogicBaseTest {
     uint256 drawnIndex = hub.getAssetDrawnIndex(assetId);
 
     uint256 amountToRestore = drawnShares.rayMulUp(drawnIndex) + premiumDebtRay.fromRayUp();
-    Utils.approve(spoke, address(asset), liquidator, amountToRestore - 1);
+    SpokeActions.approve(spoke, address(asset), liquidator, amountToRestore - 1);
 
     vm.expectRevert();
     liquidationLogicWrapper.liquidateDebt(

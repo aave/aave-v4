@@ -2,9 +2,9 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import 'tests/unit/Hub/HubBase.t.sol';
+import 'tests/unit/setup/Base.t.sol';
 
-contract HubAccessTest is HubBase {
+contract HubAccessTest is Base {
   /// @dev Test showing that restricted functions on hub can only be called by hub admin.
   function test_hub_admin_access() public {
     TestnetERC20 tokenA = new TestnetERC20('A', 'A', 18);

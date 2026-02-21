@@ -8,7 +8,7 @@ import {ERC4626Test} from 'lib/erc4626-tests/ERC4626.test.sol';
 contract TokenizationSpokeERC4626ComplianceTest is TokenizationSpokeBaseTest, ERC4626Test {
   function setUp() public override(TokenizationSpokeBaseTest, ERC4626Test) {
     TokenizationSpokeBaseTest.setUp();
-    _updateLiquidityFee(IHub(daiVault.hub()), daiVault.assetId(), 0);
+    _updateLiquidityFee(IHub(daiVault.hub()), daiVault.assetId(), 0, HUB_ADMIN);
 
     _underlying_ = daiVault.asset();
     _vault_ = address(daiVault);

@@ -2,7 +2,7 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import 'tests/Base.t.sol';
+import 'tests/gas/Base.t.sol';
 
 /// forge-config: default.isolate = true
 contract HubOperations_Gas_Tests is Base {
@@ -10,8 +10,7 @@ contract HubOperations_Gas_Tests is Base {
   using WadRayMath for uint256;
 
   function setUp() public override {
-    deployFixtures();
-    initEnvironment();
+    super.setUp();
   }
 
   function test_add() public {
@@ -199,8 +198,8 @@ contract HubOperations_Gas_Tests is Base {
       )
     });
 
-    Utils.supplyCollateral(spoke1, _daiReserveId(spoke1), alice, 1000e18, alice);
-    Utils.borrow(spoke1, _daiReserveId(spoke1), alice, 500e18, alice);
+    SpokeActions.supplyCollateral(spoke1, _daiReserveId(spoke1), alice, 1000e18, alice);
+    SpokeActions.borrow(spoke1, _daiReserveId(spoke1), alice, 500e18, alice);
 
     vm.prank(address(spoke1));
     hub1.refreshPremium(daiAssetId, premiumDelta);
@@ -221,12 +220,12 @@ contract HubOperations_Gas_Tests is Base {
 
     skip(100);
 
-    Utils.mintFeeShares(hub1, daiAssetId, ADMIN);
+    HubActions.mintFeeShares(hub1, daiAssetId, ADMIN);
     vm.snapshotGasLastCall('Hub.Operations', 'mintFeeShares');
   }
 
   function test_payFee_transferShares() public {
-    Utils.add({
+    HubActions.add({
       hub: hub1,
       assetId: daiAssetId,
       caller: address(spoke1),
@@ -254,7 +253,7 @@ contract HubOperations_Gas_Tests is Base {
   }
 
   function test_deficit() public {
-    Utils.add({
+    HubActions.add({
       hub: hub1,
       assetId: daiAssetId,
       caller: address(spoke1),
@@ -279,7 +278,7 @@ contract HubOperations_Gas_Tests is Base {
       type(uint256).max
     );
 
-    _grantDeficitEliminatorRole(hub1, address(spoke1));
+    _grantDeficitEliminatorRole(hub1, address(spoke1), ADMIN);
 
     vm.prank(address(spoke1));
     hub1.reportDeficit(daiAssetId, drawnDebt, premiumDelta);

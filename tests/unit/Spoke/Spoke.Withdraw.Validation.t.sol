@@ -2,16 +2,16 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import 'tests/unit/Spoke/SpokeBase.t.sol';
+import 'tests/unit/setup/Base.t.sol';
 
-contract SpokeWithdrawValidationTest is SpokeBase {
+contract SpokeWithdrawValidationTest is Base {
   using ReserveFlagsMap for ReserveFlags;
 
   function test_withdraw_revertsWith_ReservePaused() public {
     uint256 daiReserveId = _daiReserveId(spoke1);
     uint256 amount = 100e18;
 
-    _updateReservePausedFlag(spoke1, daiReserveId, true);
+    _updateReservePausedFlag(spoke1, daiReserveId, true, SPOKE_ADMIN);
     assertTrue(spoke1.getReserve(daiReserveId).flags.paused());
 
     vm.expectRevert(ISpoke.ReservePaused.selector);
@@ -59,7 +59,7 @@ contract SpokeWithdrawValidationTest is SpokeBase {
     uint256 reserveId = _daiReserveId(spoke1);
 
     // Alice supplies dai
-    Utils.supplyCollateral({
+    SpokeActions.supplyCollateral({
       spoke: spoke1,
       reserveId: reserveId,
       caller: alice,
@@ -68,7 +68,7 @@ contract SpokeWithdrawValidationTest is SpokeBase {
     });
 
     // Alice borrows dai
-    Utils.borrow({
+    SpokeActions.borrow({
       spoke: spoke1,
       reserveId: reserveId,
       caller: alice,
@@ -105,16 +105,16 @@ contract SpokeWithdrawValidationTest is SpokeBase {
     uint256 rate,
     uint256 skipTime
   ) public {
-    reserveId = bound(reserveId, 0, spokeInfo[spoke1].MAX_ALLOWED_ASSET_ID);
-    supplyAmount = bound(supplyAmount, 2, MAX_SUPPLY_AMOUNT);
+    reserveId = bound(reserveId, 0, spoke1.getReserveCount() - 1);
+    supplyAmount = bound(supplyAmount, 2, _calculateMaxSupplyAmount(spoke1, reserveId));
     borrowAmount = bound(borrowAmount, 1, supplyAmount / 2); // ensure it is within Collateral Factor
     rate = bound(rate, 1, MAX_BORROW_RATE);
     skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
 
-    _mockInterestRateBps(rate);
+    _mockInterestRateBps(address(irStrategy), rate);
 
     // Alice supply
-    Utils.supplyCollateral({
+    SpokeActions.supplyCollateral({
       spoke: spoke1,
       reserveId: reserveId,
       caller: alice,
@@ -122,7 +122,7 @@ contract SpokeWithdrawValidationTest is SpokeBase {
       onBehalfOf: alice
     });
     // Alice borrows dai
-    Utils.borrow({
+    SpokeActions.borrow({
       spoke: spoke1,
       reserveId: reserveId,
       caller: alice,

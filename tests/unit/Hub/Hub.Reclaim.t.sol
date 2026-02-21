@@ -2,9 +2,9 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import 'tests/unit/Hub/HubBase.t.sol';
+import 'tests/unit/setup/Base.t.sol';
 
-contract HubReclaimTest is HubBase {
+contract HubReclaimTest is Base {
   using SafeERC20 for *;
 
   function test_reclaim_revertsWith_AssetNotListed() public {
@@ -22,7 +22,7 @@ contract HubReclaimTest is HubBase {
   function test_reclaim_revertsWith_OnlyReinvestmentController(address caller) public {
     address reinvestmentController = makeAddr('reinvestmentController');
     vm.assume(caller != reinvestmentController);
-    _updateAssetReinvestmentController(hub1, daiAssetId, reinvestmentController);
+    _updateAssetReinvestmentController(hub1, daiAssetId, reinvestmentController, HUB_ADMIN);
 
     vm.expectRevert(IHub.OnlyReinvestmentController.selector);
     vm.prank(caller);
@@ -31,7 +31,7 @@ contract HubReclaimTest is HubBase {
 
   function test_reclaim_revertsWith_InvalidAmount_zero() public {
     address reinvestmentController = makeAddr('reinvestmentController');
-    _updateAssetReinvestmentController(hub1, daiAssetId, reinvestmentController);
+    _updateAssetReinvestmentController(hub1, daiAssetId, reinvestmentController, HUB_ADMIN);
 
     vm.prank(reinvestmentController);
     vm.expectRevert(IHub.InvalidAmount.selector);
@@ -43,9 +43,9 @@ contract HubReclaimTest is HubBase {
     uint256 sweepAmount = 500e18;
 
     address reinvestmentController = makeAddr('reinvestmentController');
-    _updateAssetReinvestmentController(hub1, daiAssetId, reinvestmentController);
+    _updateAssetReinvestmentController(hub1, daiAssetId, reinvestmentController, HUB_ADMIN);
 
-    _addLiquidity(daiAssetId, supplyAmount);
+    _addLiquidity(hub1, daiAssetId, supplyAmount, ADMIN);
 
     vm.prank(reinvestmentController);
     hub1.sweep(daiAssetId, sweepAmount);
@@ -59,7 +59,7 @@ contract HubReclaimTest is HubBase {
 
   function test_reclaim_revertsWith_InsufficientTransferred_noSwept() public {
     address reinvestmentController = makeAddr('reinvestmentController');
-    _updateAssetReinvestmentController(hub1, daiAssetId, reinvestmentController);
+    _updateAssetReinvestmentController(hub1, daiAssetId, reinvestmentController, HUB_ADMIN);
 
     assertEq(hub1.getAssetSwept(daiAssetId), 0);
 
@@ -73,9 +73,9 @@ contract HubReclaimTest is HubBase {
     uint256 sweepAmount = 500e18;
 
     address reinvestmentController = makeAddr('reinvestmentController');
-    _updateAssetReinvestmentController(hub1, daiAssetId, reinvestmentController);
+    _updateAssetReinvestmentController(hub1, daiAssetId, reinvestmentController, HUB_ADMIN);
 
-    _addLiquidity(daiAssetId, supplyAmount);
+    _addLiquidity(hub1, daiAssetId, supplyAmount, ADMIN);
 
     vm.prank(reinvestmentController);
     hub1.sweep(daiAssetId, sweepAmount);
@@ -105,9 +105,9 @@ contract HubReclaimTest is HubBase {
     reclaimAmount = bound(reclaimAmount, 1, sweepAmount);
 
     address reinvestmentController = makeAddr('reinvestmentController');
-    _updateAssetReinvestmentController(hub1, daiAssetId, reinvestmentController);
+    _updateAssetReinvestmentController(hub1, daiAssetId, reinvestmentController, HUB_ADMIN);
 
-    _addLiquidity(daiAssetId, supplyAmount);
+    _addLiquidity(hub1, daiAssetId, supplyAmount, ADMIN);
 
     uint256 liquidityBeforeSweep = hub1.getAssetLiquidity(daiAssetId);
 
@@ -141,9 +141,9 @@ contract HubReclaimTest is HubBase {
     uint256 sweepAmount = 500e18;
 
     address reinvestmentController = makeAddr('reinvestmentController');
-    _updateAssetReinvestmentController(hub1, daiAssetId, reinvestmentController);
+    _updateAssetReinvestmentController(hub1, daiAssetId, reinvestmentController, HUB_ADMIN);
 
-    _addLiquidity(daiAssetId, supplyAmount);
+    _addLiquidity(hub1, daiAssetId, supplyAmount, ADMIN);
 
     vm.prank(reinvestmentController);
     hub1.sweep(daiAssetId, sweepAmount);
@@ -166,9 +166,9 @@ contract HubReclaimTest is HubBase {
     uint256 supplyAmount = 1000e18;
 
     address reinvestmentController = makeAddr('reinvestmentController');
-    _updateAssetReinvestmentController(hub1, daiAssetId, reinvestmentController);
+    _updateAssetReinvestmentController(hub1, daiAssetId, reinvestmentController, HUB_ADMIN);
 
-    _addLiquidity(daiAssetId, supplyAmount);
+    _addLiquidity(hub1, daiAssetId, supplyAmount, ADMIN);
 
     uint256 initialLiquidity = hub1.getAssetLiquidity(daiAssetId);
 

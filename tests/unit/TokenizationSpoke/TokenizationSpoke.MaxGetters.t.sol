@@ -59,14 +59,14 @@ abstract contract TokenizationSpokeMaxGettersAllZeroTest is TokenizationSpokeMax
 contract TokenizationSpokeMaxGettersNotActiveTest is TokenizationSpokeMaxGettersAllZeroTest {
   function setUp() public override {
     super.setUp();
-    _updateSpokeActive(hub, assetId, address(vault), false);
+    _updateSpokeActive(hub, assetId, address(vault), false, HUB_ADMIN);
   }
 }
 
 contract TokenizationSpokeMaxGettersHaltedTest is TokenizationSpokeMaxGettersAllZeroTest {
   function setUp() public override {
     super.setUp();
-    _updateSpokeHalted(hub, assetId, address(vault), true);
+    _updateSpokeHalted(hub, assetId, address(vault), true, HUB_ADMIN);
   }
 }
 
@@ -75,15 +75,15 @@ contract TokenizationSpokeMaxGettersNotActiveAndHaltedTest is
 {
   function setUp() public override {
     super.setUp();
-    _updateSpokeActive(hub, assetId, address(vault), false);
-    _updateSpokeHalted(hub, assetId, address(vault), true);
+    _updateSpokeActive(hub, assetId, address(vault), false, HUB_ADMIN);
+    _updateSpokeHalted(hub, assetId, address(vault), true, HUB_ADMIN);
   }
 }
 
 contract TokenizationSpokeMaxGettersAddCapZeroTest is TokenizationSpokeMaxGettersBaseTest {
   function setUp() public override {
     super.setUp();
-    _updateAddCap(hub, assetId, address(vault), 0);
+    _updateAddCap(hub, assetId, address(vault), 0, HUB_ADMIN);
   }
 
   function test_maxDeposit_returnsZero() public view {
@@ -100,7 +100,7 @@ contract TokenizationSpokeMaxGettersAddCapMaxTest is TokenizationSpokeMaxGetters
     super.setUp();
     uint256 depositAmount = 10e18;
     asset.mint(alice, depositAmount);
-    Utils.approve(vault, alice, depositAmount);
+    SpokeActions.approve(vault, alice, depositAmount);
     vm.prank(alice);
     vault.deposit(depositAmount, alice);
   }
@@ -122,7 +122,7 @@ contract TokenizationSpokeMaxGettersAddCapVariableEmptyTest is TokenizationSpoke
   function setUp() public override {
     super.setUp();
     addCap = vm.randomUint(1, 1000).toUint40();
-    _updateAddCap(hub, assetId, address(vault), addCap);
+    _updateAddCap(hub, assetId, address(vault), addCap, HUB_ADMIN);
   }
 
   function test_maxDeposit_returnsCapTimesUnits() public view {
@@ -149,12 +149,12 @@ contract TokenizationSpokeMaxGettersAddCapVariablePartialTest is
   function setUp() public override {
     super.setUp();
     addCap = vm.randomUint(100, 1000).toUint40();
-    _updateAddCap(hub, assetId, address(vault), addCap);
+    _updateAddCap(hub, assetId, address(vault), addCap, HUB_ADMIN);
 
     capWithDecimals = uint256(addCap) * MathUtils.uncheckedExp(10, vault.decimals());
     depositAmount = capWithDecimals / 2;
     asset.mint(alice, depositAmount);
-    Utils.approve(vault, alice, depositAmount);
+    SpokeActions.approve(vault, alice, depositAmount);
     vm.prank(alice);
     vault.deposit(depositAmount, alice);
   }
@@ -182,11 +182,11 @@ contract TokenizationSpokeMaxGettersAddCapExactlyReachedTest is
   function setUp() public override {
     super.setUp();
     addCap = vm.randomUint(1, 1000).toUint40();
-    _updateAddCap(hub, assetId, address(vault), addCap);
+    _updateAddCap(hub, assetId, address(vault), addCap, HUB_ADMIN);
 
     capWithDecimals = uint256(addCap) * MathUtils.uncheckedExp(10, vault.decimals());
     asset.mint(alice, capWithDecimals);
-    Utils.approve(vault, alice, capWithDecimals);
+    SpokeActions.approve(vault, alice, capWithDecimals);
     vm.prank(alice);
     vault.deposit(capWithDecimals, alice);
   }
@@ -209,11 +209,11 @@ contract TokenizationSpokeMaxGettersCapExceededByYieldTest is TokenizationSpokeM
   function setUp() public override {
     super.setUp();
     addCap = 10;
-    _updateAddCap(hub, assetId, address(vault), addCap);
+    _updateAddCap(hub, assetId, address(vault), addCap, HUB_ADMIN);
 
     capWithDecimals = uint256(addCap) * MathUtils.uncheckedExp(10, vault.decimals());
     asset.mint(alice, capWithDecimals);
-    Utils.approve(vault, alice, capWithDecimals);
+    SpokeActions.approve(vault, alice, capWithDecimals);
     vm.prank(alice);
     vault.deposit(capWithDecimals, alice);
 
@@ -238,7 +238,7 @@ contract TokenizationSpokeMaxGettersZeroLiquidityTest is TokenizationSpokeMaxGet
     super.setUp();
     depositAmount = 10e18;
     asset.mint(alice, depositAmount);
-    Utils.approve(vault, alice, depositAmount);
+    SpokeActions.approve(vault, alice, depositAmount);
     vm.prank(alice);
     vault.deposit(depositAmount, alice);
 
@@ -272,7 +272,7 @@ contract TokenizationSpokeMaxGettersLiquidityLessThanBalanceTest is
     super.setUp();
     depositAmount = 10e18;
     asset.mint(alice, depositAmount);
-    Utils.approve(vault, alice, depositAmount);
+    SpokeActions.approve(vault, alice, depositAmount);
     vm.prank(alice);
     vault.deposit(depositAmount, alice);
 
@@ -313,13 +313,13 @@ contract TokenizationSpokeMaxGettersLiquidityGreaterThanBalanceTest is
     super.setUp();
     depositAmount = 10e18;
     asset.mint(alice, depositAmount);
-    Utils.approve(vault, alice, depositAmount);
+    SpokeActions.approve(vault, alice, depositAmount);
     vm.prank(alice);
     vault.deposit(depositAmount, alice);
 
     uint256 extraLiquidity = 5e18;
     asset.mint(bob, extraLiquidity);
-    Utils.approve(vault, bob, extraLiquidity);
+    SpokeActions.approve(vault, bob, extraLiquidity);
     vm.prank(bob);
     vault.deposit(extraLiquidity, bob);
   }
@@ -347,7 +347,7 @@ contract TokenizationSpokeMaxGettersOwnerZeroSharesTest is TokenizationSpokeMaxG
     super.setUp();
     uint256 depositAmount = 10e18;
     asset.mint(bob, depositAmount);
-    Utils.approve(vault, bob, depositAmount);
+    SpokeActions.approve(vault, bob, depositAmount);
     vm.prank(bob);
     vault.deposit(depositAmount, bob);
 
@@ -373,12 +373,12 @@ contract TokenizationSpokeMaxGettersExactBoundaryAfterYieldTest is
   function setUp() public override {
     super.setUp();
     addCap = 100;
-    _updateAddCap(hub, assetId, address(vault), addCap);
+    _updateAddCap(hub, assetId, address(vault), addCap, HUB_ADMIN);
 
     capWithDecimals = uint256(addCap) * MathUtils.uncheckedExp(10, vault.decimals());
     uint256 depositAmount = capWithDecimals / 2;
     asset.mint(alice, depositAmount);
-    Utils.approve(vault, alice, depositAmount);
+    SpokeActions.approve(vault, alice, depositAmount);
     vm.prank(alice);
     vault.deposit(depositAmount, alice);
 
@@ -391,7 +391,7 @@ contract TokenizationSpokeMaxGettersExactBoundaryAfterYieldTest is
     assertGt(max, 0);
 
     asset.mint(bob, max);
-    Utils.approve(vault, bob, max);
+    SpokeActions.approve(vault, bob, max);
     vm.prank(bob);
     vault.deposit(max, bob);
   }
@@ -402,7 +402,7 @@ contract TokenizationSpokeMaxGettersExactBoundaryAfterYieldTest is
 
     uint256 assets = vault.previewMint(max);
     asset.mint(bob, assets);
-    Utils.approve(vault, bob, assets);
+    SpokeActions.approve(vault, bob, assets);
     vm.prank(bob);
     vault.mint(max, bob);
   }
@@ -417,7 +417,7 @@ contract TokenizationSpokeMaxGettersExactBoundaryLimitedLiquidityTest is
     super.setUp();
     depositAmount = 10e18;
     asset.mint(alice, depositAmount);
-    Utils.approve(vault, alice, depositAmount);
+    SpokeActions.approve(vault, alice, depositAmount);
     vm.prank(alice);
     vault.deposit(depositAmount, alice);
 

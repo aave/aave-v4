@@ -2,22 +2,22 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import 'tests/unit/Spoke/SpokeBase.t.sol';
+import 'tests/unit/setup/Base.t.sol';
 
-contract SpokeBorrowEdgeCasesTest is SpokeBase {
+contract SpokeBorrowEdgeCasesTest is Base {
   using Math for uint256;
 
   /// inflated exch rate, it's better for user to borrow 1 big amount than 2 small amounts due to rounding up
   function test_borrow_rounding_effect_multiple_actions() public {
     // supply enough weth for high collateral factor
-    Utils.supplyCollateral({
+    SpokeActions.supplyCollateral({
       spoke: spoke1,
       reserveId: _wethReserveId(spoke1),
       caller: carol,
       amount: 100e18,
       onBehalfOf: carol
     });
-    Utils.supplyCollateral({
+    SpokeActions.supplyCollateral({
       spoke: spoke1,
       reserveId: _wethReserveId(spoke1),
       caller: bob,
@@ -43,7 +43,8 @@ contract SpokeBorrowEdgeCasesTest is SpokeBase {
       }),
       rate: 0,
       isMockRate: false,
-      skipTime: 365 days * 100
+      skipTime: 365 days * 100,
+      interestRateStrategy: address(irStrategy)
     });
 
     uint256 amount1 = 8;
@@ -118,7 +119,7 @@ contract SpokeBorrowEdgeCasesTest is SpokeBase {
     skipTime = bound(skipTime, 365 days, MAX_SKIP_TIME); // bound with higher elapsed time to inflate exch rate
 
     // bob supplies max weth for high collateral factor
-    Utils.supplyCollateral({
+    SpokeActions.supplyCollateral({
       spoke: spoke1,
       reserveId: _wethReserveId(spoke1),
       caller: bob,
@@ -126,7 +127,7 @@ contract SpokeBorrowEdgeCasesTest is SpokeBase {
       onBehalfOf: bob
     });
     // carol supplies max weth for high collateral factor
-    Utils.supplyCollateral({
+    SpokeActions.supplyCollateral({
       spoke: spoke1,
       reserveId: _wethReserveId(spoke1),
       caller: carol,
@@ -154,7 +155,8 @@ contract SpokeBorrowEdgeCasesTest is SpokeBase {
       }),
       rate: 0,
       isMockRate: false,
-      skipTime: skipTime
+      skipTime: skipTime,
+      interestRateStrategy: address(irStrategy)
     });
 
     (uint256 drawnDebt, ) = hub1.getAssetOwed(daiAssetId);
@@ -235,14 +237,14 @@ contract SpokeBorrowEdgeCasesTest is SpokeBase {
     amount2 = bound(amount2, 1, MAX_SUPPLY_AMOUNT_DAI / 4);
 
     // supply enough weth for high collateral factor
-    Utils.supplyCollateral({
+    SpokeActions.supplyCollateral({
       spoke: spoke1,
       reserveId: _wethReserveId(spoke1),
       caller: carol,
       amount: MAX_SUPPLY_AMOUNT,
       onBehalfOf: carol
     });
-    Utils.supplyCollateral({
+    SpokeActions.supplyCollateral({
       spoke: spoke1,
       reserveId: _wethReserveId(spoke1),
       caller: bob,
@@ -319,7 +321,7 @@ contract SpokeBorrowEdgeCasesTest is SpokeBase {
     amount1 = bound(amount1, 1, MAX_SUPPLY_AMOUNT_DAI / 4);
     skipTime = bound(skipTime, 365 days, MAX_SKIP_TIME);
 
-    Utils.supplyCollateral({
+    SpokeActions.supplyCollateral({
       spoke: spoke1,
       reserveId: _wethReserveId(spoke1),
       caller: bob,
@@ -347,7 +349,8 @@ contract SpokeBorrowEdgeCasesTest is SpokeBase {
       }),
       rate: 0,
       isMockRate: false,
-      skipTime: skipTime
+      skipTime: skipTime,
+      interestRateStrategy: address(irStrategy)
     });
 
     (uint256 drawnDebt, ) = hub1.getAssetOwed(daiAssetId);

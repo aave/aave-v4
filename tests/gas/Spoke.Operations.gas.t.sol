@@ -2,10 +2,10 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import 'tests/unit/Spoke/SpokeBase.t.sol';
+import 'tests/gas/Base.t.sol';
 
 /// forge-config: default.isolate = true
-contract SpokeOperations_Gas_Tests is SpokeBase {
+contract SpokeOperations_Gas_Tests is Base {
   string internal NAMESPACE = 'Spoke.Operations';
   ReserveIds internal reserveId;
   ISpoke internal spoke;
@@ -209,13 +209,13 @@ contract SpokeOperations_Gas_Tests is SpokeBase {
   function test_updateUserDynamicConfig() public {
     vm.startPrank(alice);
     spoke.setUsingAsCollateral(reserveId.usdx, true, alice);
-    _updateLiquidationFee(spoke, reserveId.usdx, 10_00);
+    _updateLiquidationFee(spoke, reserveId.usdx, 10_00, SPOKE_ADMIN);
 
     spoke.updateUserDynamicConfig(alice);
     vm.snapshotGasLastCall(NAMESPACE, 'updateUserDynamicConfig: 1 collateral');
 
     spoke.setUsingAsCollateral(reserveId.dai, true, alice);
-    _updateLiquidationFee(spoke, reserveId.dai, 15_00);
+    _updateLiquidationFee(spoke, reserveId.dai, 15_00, SPOKE_ADMIN);
 
     spoke.updateUserDynamicConfig(alice);
     vm.snapshotGasLastCall(NAMESPACE, 'updateUserDynamicConfig: 2 collaterals');
@@ -344,8 +344,8 @@ contract SpokeOperations_Gas_Tests is SpokeBase {
   }
 
   function _liquidationSetup(uint256 pricePercentage) internal {
-    _updateMaxLiquidationBonus(spoke, _usdxReserveId(spoke), 105_00);
-    _updateLiquidationFee(spoke, _usdxReserveId(spoke), 10_00);
+    _updateMaxLiquidationBonus(spoke, _usdxReserveId(spoke), 105_00, SPOKE_ADMIN);
+    _updateLiquidationFee(spoke, _usdxReserveId(spoke), 10_00, SPOKE_ADMIN);
 
     vm.prank(bob);
     spoke.supply(reserveId.dai, 1_000_000e18, bob);
@@ -361,7 +361,8 @@ contract SpokeOperations_Gas_Tests is SpokeBase {
       reserveId.dai,
       reserveId.usdx,
       1.05e18,
-      pricePercentage
+      pricePercentage,
+      SPOKE_ADMIN
     );
 
     skip(100);
@@ -380,9 +381,9 @@ contract SpokeOperations_ZeroRiskPremium_Gas_Tests is SpokeOperations_Gas_Tests 
     super.setUp();
     NAMESPACE = 'Spoke.Operations.ZeroRiskPremium';
 
-    _updateCollateralRisk(spoke, reserveId.dai, 0);
-    _updateCollateralRisk(spoke, reserveId.weth, 0);
-    _updateCollateralRisk(spoke, reserveId.usdx, 0);
-    _updateCollateralRisk(spoke, reserveId.wbtc, 0);
+    _updateCollateralRisk(spoke, reserveId.dai, 0, SPOKE_ADMIN);
+    _updateCollateralRisk(spoke, reserveId.weth, 0, SPOKE_ADMIN);
+    _updateCollateralRisk(spoke, reserveId.usdx, 0, SPOKE_ADMIN);
+    _updateCollateralRisk(spoke, reserveId.wbtc, 0, SPOKE_ADMIN);
   }
 }

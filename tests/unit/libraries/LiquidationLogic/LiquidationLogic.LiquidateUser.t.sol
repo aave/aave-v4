@@ -30,7 +30,14 @@ contract LiquidationLogicLiquidateUserTest is LiquidationLogicBaseTest {
   function setUp() public override {
     super.setUp();
     collateralReserveHub = hub1;
-    _mockSupplySharePrice(collateralReserveHub, usdxAssetId, 12_500.25e6, 10_000e6);
+    _mockSupplySharePrice(
+      collateralReserveHub,
+      usdxAssetId,
+      12_500.25e6,
+      10_000e6,
+      address(spoke1),
+      HUB_ADMIN
+    );
     (debtReserveHub, ) = hub2Fixture();
     _mockInterestRateBps(debtReserveHub.getAsset(wethAssetId).irStrategy, 5_00);
 
@@ -95,9 +102,9 @@ contract LiquidationLogicLiquidateUserTest is LiquidationLogicBaseTest {
     IHub.SpokeConfig memory spokeConfig = IHub.SpokeConfig({
       active: true,
       halted: false,
-      addCap: Constants.MAX_ALLOWED_SPOKE_CAP,
-      drawCap: Constants.MAX_ALLOWED_SPOKE_CAP,
-      riskPremiumThreshold: Constants.MAX_ALLOWED_COLLATERAL_RISK
+      addCap: HubConstants.MAX_ALLOWED_SPOKE_CAP,
+      drawCap: HubConstants.MAX_ALLOWED_SPOKE_CAP,
+      riskPremiumThreshold: SpokeConstants.MAX_ALLOWED_COLLATERAL_RISK
     });
     vm.startPrank(HUB_ADMIN);
     collateralReserveHub.addSpoke(usdxAssetId, address(liquidationLogicWrapper), spokeConfig);
@@ -107,18 +114,24 @@ contract LiquidationLogicLiquidateUserTest is LiquidationLogicBaseTest {
     // Collateral hub: Add liquidity
     address tempUser = makeUser();
     deal(address(tokenList.usdx), tempUser, MAX_SUPPLY_AMOUNT);
-    Utils.add(hub1, usdxAssetId, address(liquidationLogicWrapper), MAX_SUPPLY_AMOUNT, tempUser);
+    HubActions.add(
+      hub1,
+      usdxAssetId,
+      address(liquidationLogicWrapper),
+      MAX_SUPPLY_AMOUNT,
+      tempUser
+    );
 
     // Debt hub: Add liquidity, remove liquidity, refresh premium and skip time to accrue both drawn and premium debt
     deal(address(tokenList.weth), tempUser, MAX_SUPPLY_AMOUNT);
-    Utils.add(
+    HubActions.add(
       debtReserveHub,
       wethAssetId,
       address(liquidationLogicWrapper),
       MAX_SUPPLY_AMOUNT,
       tempUser
     );
-    Utils.draw(
+    HubActions.draw(
       debtReserveHub,
       wethAssetId,
       address(liquidationLogicWrapper),
@@ -149,7 +162,7 @@ contract LiquidationLogicLiquidateUserTest is LiquidationLogicBaseTest {
 
     // Mint tokens to liquidator and approve spoke
     deal(address(tokenList.weth), params.liquidator, spokeDrawnOwed + spokePremiumOwed);
-    Utils.approve(
+    SpokeActions.approve(
       ISpoke(address(liquidationLogicWrapper)),
       address(tokenList.weth),
       params.liquidator,

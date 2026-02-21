@@ -2,9 +2,9 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import 'tests/unit/Spoke/SpokeBase.t.sol';
+import 'tests/unit/setup/Base.t.sol';
 
-contract SpokeMulticall is SpokeBase {
+contract SpokeMulticall is Base {
   using SafeCast for uint256;
 
   struct Reserve {
@@ -24,7 +24,7 @@ contract SpokeMulticall is SpokeBase {
 
   function setUp() public override {
     super.setUp();
-    usda = new TestnetERC20('USDA', 'USDA', Constants.MIN_ALLOWED_UNDERLYING_DECIMALS);
+    usda = new TestnetERC20('USDA', 'USDA', HubConstants.MIN_ALLOWED_UNDERLYING_DECIMALS);
   }
 
   /// Supply and set collateral using multicall
@@ -66,8 +66,8 @@ contract SpokeMulticall is SpokeBase {
     deal(address(tokenList.dai), bob, MAX_SUPPLY_AMOUNT * 2);
 
     // Bob supplies usdz and borrows half of it
-    Utils.supplyCollateral(spoke2, _usdzReserveId(spoke2), bob, MAX_SUPPLY_AMOUNT, bob);
-    Utils.borrow(spoke2, _usdzReserveId(spoke2), bob, 1000e18, bob);
+    SpokeActions.supplyCollateral(spoke2, _usdzReserveId(spoke2), bob, MAX_SUPPLY_AMOUNT, bob);
+    SpokeActions.borrow(spoke2, _usdzReserveId(spoke2), bob, 1000e18, bob);
 
     // Check bob's premium drawn shares as proxy for user rp
     uint256 bobpremiumSharesBefore = spoke2

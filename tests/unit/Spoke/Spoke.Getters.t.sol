@@ -2,9 +2,9 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import 'tests/unit/Spoke/SpokeBase.t.sol';
+import 'tests/unit/setup/Base.t.sol';
 
-contract SpokeGettersTest is SpokeBase {
+contract SpokeGettersTest is Base {
   using LiquidationLogic for ISpoke.LiquidationConfig;
   using SafeCast for uint256;
 
@@ -22,9 +22,9 @@ contract SpokeGettersTest is SpokeBase {
     IHub.SpokeConfig memory spokeConfig = IHub.SpokeConfig({
       active: true,
       halted: false,
-      addCap: Constants.MAX_ALLOWED_SPOKE_CAP,
-      drawCap: Constants.MAX_ALLOWED_SPOKE_CAP,
-      riskPremiumThreshold: Constants.MAX_ALLOWED_COLLATERAL_RISK
+      addCap: HubConstants.MAX_ALLOWED_SPOKE_CAP,
+      drawCap: HubConstants.MAX_ALLOWED_SPOKE_CAP,
+      riskPremiumThreshold: SpokeConstants.MAX_ALLOWED_COLLATERAL_RISK
     });
 
     spokeInfo[spoke].weth.reserveConfig = _getDefaultReserveConfig(15_00);
@@ -191,7 +191,7 @@ contract SpokeGettersTest is SpokeBase {
     uint256 supplyAmount = 10_000e18;
     vm.prank(alice);
     tokenList.dai.approve(address(spoke), supplyAmount);
-    Utils.supplyCollateral(spoke, reserveId, alice, supplyAmount, alice);
+    SpokeActions.supplyCollateral(spoke, reserveId, alice, supplyAmount, alice);
 
     // User debts
     (uint256 drawn, uint256 premium) = spoke.getUserDebt(reserveId, alice);
@@ -259,14 +259,14 @@ contract SpokeGettersTest is SpokeBase {
 
   function test_premiumRayGetters() public {
     // 2 user, single spoke
-    _mockInterestRateBps(25_00);
-    Utils.approve(spoke, _daiReserveId(spoke), alice, 9_000e18);
-    Utils.supplyCollateral(spoke, _daiReserveId(spoke), alice, 9_000e18, alice); // CR 20%
-    Utils.approve(spoke, _usdxReserveId(spoke), bob, 18_000e18);
-    Utils.supplyCollateral(spoke, _usdxReserveId(spoke), bob, 18_000e18, bob); // CR 50%
+    _mockInterestRateBps(address(irStrategy), 25_00);
+    SpokeActions.approve(spoke, _daiReserveId(spoke), alice, 9_000e18);
+    SpokeActions.supplyCollateral(spoke, _daiReserveId(spoke), alice, 9_000e18, alice); // CR 20%
+    SpokeActions.approve(spoke, _usdxReserveId(spoke), bob, 18_000e18);
+    SpokeActions.supplyCollateral(spoke, _usdxReserveId(spoke), bob, 18_000e18, bob); // CR 50%
     _openSupplyPosition(spoke, _wethReserveId(spoke), 5e18); // liquidity provision
-    Utils.borrow(spoke, _wethReserveId(spoke), alice, 1e18, alice);
-    Utils.borrow(spoke, _wethReserveId(spoke), bob, 2e18, bob);
+    SpokeActions.borrow(spoke, _wethReserveId(spoke), alice, 1e18, alice);
+    SpokeActions.borrow(spoke, _wethReserveId(spoke), bob, 2e18, bob);
     skip(365 days);
 
     // check premium in ray across spoke and hub
@@ -297,9 +297,9 @@ contract SpokeGettersTest is SpokeBase {
     assertEq(hub1.getAssetPremiumRay(wethAssetId), alicePremiumDebtRay + bobPremiumDebtRay);
 
     // introduce another spoke
-    Utils.approve(spoke, _daiReserveId(spoke), carol, 1_000e18);
-    Utils.supplyCollateral(spoke1, _daiReserveId(spoke1), carol, 1_000e18, carol);
-    Utils.borrow(spoke1, _wethReserveId(spoke), carol, 0.1e18, carol);
+    SpokeActions.approve(spoke, _daiReserveId(spoke), carol, 1_000e18);
+    SpokeActions.supplyCollateral(spoke1, _daiReserveId(spoke1), carol, 1_000e18, carol);
+    SpokeActions.borrow(spoke1, _wethReserveId(spoke), carol, 0.1e18, carol);
 
     skip(365 days);
 

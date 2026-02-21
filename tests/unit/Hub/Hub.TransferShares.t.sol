@@ -2,9 +2,9 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import 'tests/unit/Hub/HubBase.t.sol';
+import 'tests/unit/setup/Base.t.sol';
 
-contract HubTransferSharesTest is HubBase {
+contract HubTransferSharesTest is Base {
   using SharesMath for uint256;
   using SafeCast for uint256;
 
@@ -17,7 +17,7 @@ contract HubTransferSharesTest is HubBase {
     moveAmount = bound(moveAmount, 1, supplyAmount);
 
     // supply from spoke1
-    Utils.add(hub1, daiAssetId, address(spoke1), supplyAmount, bob);
+    HubActions.add(hub1, daiAssetId, address(spoke1), supplyAmount, bob);
 
     uint256 suppliedShares = hub1.getSpokeAddedShares(daiAssetId, address(spoke1));
     uint256 assetSuppliedShares = hub1.getAddedShares(daiAssetId);
@@ -45,7 +45,7 @@ contract HubTransferSharesTest is HubBase {
     supplyAmount = bound(supplyAmount, 1, MAX_SUPPLY_AMOUNT - 1);
 
     // supply from spoke1
-    Utils.add(hub1, daiAssetId, address(spoke1), supplyAmount, bob);
+    HubActions.add(hub1, daiAssetId, address(spoke1), supplyAmount, bob);
 
     uint256 suppliedShares = hub1.getSpokeAddedShares(daiAssetId, address(spoke1));
     assertEq(suppliedShares, hub1.previewRemoveByShares(daiAssetId, supplyAmount));
@@ -64,7 +64,7 @@ contract HubTransferSharesTest is HubBase {
 
   function test_transferShares_revertsWith_SpokeNotActive() public {
     uint256 supplyAmount = 1000e18;
-    Utils.add(hub1, daiAssetId, address(spoke1), supplyAmount, bob);
+    HubActions.add(hub1, daiAssetId, address(spoke1), supplyAmount, bob);
 
     // deactivate spoke1
     IHub.SpokeConfig memory spokeConfig = hub1.getSpokeConfig(daiAssetId, address(spoke1));
@@ -84,10 +84,10 @@ contract HubTransferSharesTest is HubBase {
 
   function test_transferShares_revertsWith_SpokeHalted() public {
     uint256 supplyAmount = 1000e18;
-    Utils.add(hub1, daiAssetId, address(spoke1), supplyAmount, bob);
+    HubActions.add(hub1, daiAssetId, address(spoke1), supplyAmount, bob);
 
     // halt spoke1
-    _updateSpokeHalted(hub1, daiAssetId, address(spoke1), true);
+    _updateSpokeHalted(hub1, daiAssetId, address(spoke1), true, HUB_ADMIN);
 
     uint256 suppliedShares = hub1.getSpokeAddedShares(daiAssetId, address(spoke1));
     assertEq(suppliedShares, hub1.previewRemoveByShares(daiAssetId, supplyAmount));
@@ -102,12 +102,12 @@ contract HubTransferSharesTest is HubBase {
     uint40 newSupplyCap = 1000;
 
     uint256 supplyAmount = newSupplyCap * 10 ** tokenList.dai.decimals() + 1;
-    Utils.add(hub1, daiAssetId, address(spoke1), supplyAmount, bob);
+    HubActions.add(hub1, daiAssetId, address(spoke1), supplyAmount, bob);
 
     uint256 suppliedShares = hub1.getSpokeAddedShares(daiAssetId, address(spoke1));
     assertEq(suppliedShares, hub1.previewRemoveByShares(daiAssetId, supplyAmount));
 
-    _updateAddCap(daiAssetId, address(spoke2), newSupplyCap);
+    _updateAddCap(hub1, daiAssetId, address(spoke2), newSupplyCap, HUB_ADMIN);
 
     // attempting transfer of supplied shares exceeding cap on spoke2
     assertLt(

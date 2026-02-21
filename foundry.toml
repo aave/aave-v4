@@ -3,7 +3,7 @@ src = 'src'
 test = 'tests'
 out = 'out'
 libs = ['lib']
-fs_permissions = [{ access = "read", path = "tests/mocks/JsonBindings.sol" }]
+fs_permissions = [{ access = "read", path = "tests/helpers/mocks/JsonBindings.sol" }]
 solc_version = "0.8.28"
 evm_version = "cancun"
 optimizer = true
@@ -26,7 +26,7 @@ compilation_restrictions = [
 ]
 
 [bind_json]
-out = "tests/mocks/JsonBindings.sol"
+out = "tests/helpers/mocks/JsonBindings.sol"
 include = ["tests/mocks/EIP712Types.sol"]
 
 [lint]

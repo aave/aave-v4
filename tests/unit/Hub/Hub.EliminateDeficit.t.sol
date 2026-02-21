@@ -2,9 +2,9 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import 'tests/unit/Hub/HubBase.t.sol';
+import 'tests/unit/setup/Base.t.sol';
 
-contract HubEliminateDeficitTest is HubBase {
+contract HubEliminateDeficitTest is Base {
   using WadRayMath for *;
   using MathUtils for *;
   using SafeCast for uint256;
@@ -23,7 +23,7 @@ contract HubEliminateDeficitTest is HubBase {
     _coveredSpoke = address(spoke1);
     _otherSpoke = address(spoke3);
 
-    _grantDeficitEliminatorRole(hub1, address(_callerSpoke));
+    _grantDeficitEliminatorRole(hub1, address(_callerSpoke), ADMIN);
   }
 
   function test_eliminateDeficit_revertsWith_InvalidAmount_ZeroAmountNoDeficit() public {
@@ -83,8 +83,8 @@ contract HubEliminateDeficitTest is HubBase {
 
   function test_eliminateDeficit_revertsWith_callerSpokeNotActive() public {
     address caller = address(spoke1);
-    _updateSpokeActive(hub1, _assetId, caller, false);
-    _grantDeficitEliminatorRole(hub1, caller);
+    _updateSpokeActive(hub1, _assetId, caller, false, HUB_ADMIN);
+    _grantDeficitEliminatorRole(hub1, caller, ADMIN);
 
     vm.expectRevert(IHub.SpokeNotActive.selector);
     vm.prank(caller);
@@ -100,7 +100,7 @@ contract HubEliminateDeficitTest is HubBase {
     uint256 clearedDeficitRay = eliminateDeficitRay.min(_deficitAmountRay);
     uint256 clearedDeficit = clearedDeficitRay.fromRayUp();
 
-    Utils.add(
+    HubActions.add(
       hub1,
       _assetId,
       _callerSpoke,
@@ -112,7 +112,7 @@ contract HubEliminateDeficitTest is HubBase {
     uint256 expectedRemoveShares = hub1.previewRemoveByAssets(_assetId, clearedDeficit);
     uint256 spokeAddedShares = hub1.getSpokeAddedShares(_assetId, _callerSpoke);
     uint256 assetSuppliedShares = hub1.getAddedShares(_assetId);
-    uint256 addExRate = getAddExRate(_assetId);
+    uint256 addExRate = getAddExRate(hub1, _assetId);
 
     vm.expectEmit(address(hub1));
     emit IHub.EliminateDeficit(
@@ -139,15 +139,15 @@ contract HubEliminateDeficitTest is HubBase {
       hub1.getSpokeDeficitRay(_assetId, _coveredSpoke),
       _deficitAmountRay - clearedDeficitRay
     );
-    assertGe(getAddExRate(_assetId), addExRate);
+    assertGe(getAddExRate(hub1, _assetId), addExRate);
     _assertBorrowRateSynced(hub1, _assetId, 'eliminateDeficit');
   }
 
   function _createDeficit(uint256 assetId, address spoke, uint256 amountRay) internal {
-    _mockInterestRateBps(100_00);
+    _mockInterestRateBps(address(irStrategy), 100_00);
     uint256 amount = amountRay.fromRayUp();
-    Utils.add(hub1, assetId, spoke, amount, alice);
-    _drawLiquidity(assetId, amount, true, true, spoke);
+    HubActions.add(hub1, assetId, spoke, amount, alice);
+    _drawLiquidity(hub1, assetId, amount, true, true, spoke);
 
     (uint256 spokePremiumShares, int256 spokePremiumOffsetRay) = hub1.getSpokePremiumData(
       assetId,

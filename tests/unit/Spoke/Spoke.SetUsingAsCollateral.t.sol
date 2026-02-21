@@ -2,9 +2,9 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import 'tests/unit/Spoke/SpokeBase.t.sol';
+import 'tests/unit/setup/Base.t.sol';
 
-contract SpokeSetUsingAsCollateralTest is SpokeBase {
+contract SpokeSetUsingAsCollateralTest is Base {
   using SafeCast for uint256;
   using ReserveFlagsMap for ReserveFlags;
 
@@ -28,7 +28,7 @@ contract SpokeSetUsingAsCollateralTest is SpokeBase {
     assertTrue(_isUsingAsCollateral(spoke1, daiReserveId, alice), 'alice using as collateral');
     assertFalse(_isUsingAsCollateral(spoke1, daiReserveId, bob), 'bob not using as collateral');
 
-    _updateReserveFrozenFlag(spoke1, daiReserveId, true);
+    _updateReserveFrozenFlag(spoke1, daiReserveId, true, SPOKE_ADMIN);
     assertTrue(spoke1.getReserve(daiReserveId).flags.frozen(), 'reserve status frozen');
 
     // disallow when activating
@@ -48,7 +48,7 @@ contract SpokeSetUsingAsCollateralTest is SpokeBase {
 
   function test_setUsingAsCollateral_revertsWith_ReservePaused() public {
     uint256 daiReserveId = _daiReserveId(spoke1);
-    _updateReservePausedFlag(spoke1, daiReserveId, true);
+    _updateReservePausedFlag(spoke1, daiReserveId, true, SPOKE_ADMIN);
     assertTrue(spoke1.getReserve(daiReserveId).flags.paused());
 
     vm.expectRevert(ISpoke.ReservePaused.selector);
@@ -57,7 +57,7 @@ contract SpokeSetUsingAsCollateralTest is SpokeBase {
   }
 
   function test_setUsingAsCollateral_revertsWith_ReentrancyGuardReentrantCall() public {
-    Utils.supplyCollateral({
+    SpokeActions.supplyCollateral({
       spoke: spoke1,
       reserveId: _wethReserveId(spoke1),
       caller: bob,
@@ -65,7 +65,7 @@ contract SpokeSetUsingAsCollateralTest is SpokeBase {
       onBehalfOf: bob
     });
 
-    Utils.supplyCollateral({
+    SpokeActions.supplyCollateral({
       spoke: spoke1,
       reserveId: _daiReserveId(spoke1),
       caller: bob,
@@ -73,7 +73,7 @@ contract SpokeSetUsingAsCollateralTest is SpokeBase {
       onBehalfOf: bob
     });
 
-    Utils.borrow({
+    SpokeActions.borrow({
       spoke: spoke1,
       reserveId: _daiReserveId(spoke1),
       caller: bob,
@@ -105,10 +105,16 @@ contract SpokeSetUsingAsCollateralTest is SpokeBase {
     _updateCollateralFactor(
       spoke1,
       daiReserveId,
-      _getCollateralFactor(spoke1, daiReserveId) + 1_00
+      _getCollateralFactor(spoke1, daiReserveId) + 1_00,
+      SPOKE_ADMIN
     );
     // slight update collateral risk so user is subject to risk premium refresh
-    _updateCollateralRisk(spoke1, daiReserveId, _getCollateralRisk(spoke1, daiReserveId) + 1_00);
+    _updateCollateralRisk(
+      spoke1,
+      daiReserveId,
+      _getCollateralRisk(spoke1, daiReserveId) + 1_00,
+      SPOKE_ADMIN
+    );
 
     // Bob not using DAI as collateral
     assertFalse(_isUsingAsCollateral(spoke1, daiReserveId, bob), 'bob not using as collateral');
@@ -118,7 +124,7 @@ contract SpokeSetUsingAsCollateralTest is SpokeBase {
     uint256 bobRp = _getUserRpStored(spoke1, bob);
 
     vm.recordLogs();
-    Utils.setUsingAsCollateral(spoke1, daiReserveId, bob, false, bob);
+    SpokeActions.setUsingAsCollateral(spoke1, daiReserveId, bob, false, bob);
     _assertEventNotEmitted(ISpoke.SetUsingAsCollateral.selector);
 
     assertFalse(_isUsingAsCollateral(spoke1, daiReserveId, bob));
@@ -126,24 +132,30 @@ contract SpokeSetUsingAsCollateralTest is SpokeBase {
     assertEq(_getUserDynConfigKeys(spoke1, bob), bobDynConfig);
 
     // Bob can change dai collateral status to true
-    Utils.setUsingAsCollateral(spoke1, daiReserveId, bob, true, bob);
+    SpokeActions.setUsingAsCollateral(spoke1, daiReserveId, bob, true, bob);
     assertTrue(_isUsingAsCollateral(spoke1, daiReserveId, bob), 'bob using as collateral');
 
     // slight update in collateral factor so user is subject to dynamic risk config refresh
     _updateCollateralFactor(
       spoke1,
       daiReserveId,
-      _getCollateralFactor(spoke1, daiReserveId) + 1_00
+      _getCollateralFactor(spoke1, daiReserveId) + 1_00,
+      SPOKE_ADMIN
     );
     // slight update collateral risk so user is subject to risk premium refresh
-    _updateCollateralRisk(spoke1, daiReserveId, _getCollateralRisk(spoke1, daiReserveId) + 1_00);
+    _updateCollateralRisk(
+      spoke1,
+      daiReserveId,
+      _getCollateralRisk(spoke1, daiReserveId) + 1_00,
+      SPOKE_ADMIN
+    );
 
     // No action taken, because collateral status is already true
     bobDynConfig = _getUserDynConfigKeys(spoke1, bob);
     bobRp = _getUserRpStored(spoke1, bob);
 
     vm.recordLogs();
-    Utils.setUsingAsCollateral(spoke1, daiReserveId, bob, true, bob);
+    SpokeActions.setUsingAsCollateral(spoke1, daiReserveId, bob, true, bob);
     _assertEventsNotEmitted(
       ISpoke.SetUsingAsCollateral.selector,
       ISpoke.RefreshSingleUserDynamicConfig.selector,
@@ -163,7 +175,7 @@ contract SpokeSetUsingAsCollateralTest is SpokeBase {
 
     // Bob supply dai into spoke1
     deal(address(tokenList.dai), bob, daiAmount);
-    Utils.supply(spoke1, daiReserveId, bob, daiAmount, bob);
+    SpokeActions.supply(spoke1, daiReserveId, bob, daiAmount, bob);
 
     vm.prank(bob);
     vm.expectEmit(address(spoke1));
@@ -184,7 +196,7 @@ contract SpokeSetUsingAsCollateralTest is SpokeBase {
     assertGt(spoke1.getReserveCount(), maxUserReservesLimit, 'More reserves than limit');
 
     for (uint256 i = 0; i < maxUserReservesLimit; ++i) {
-      Utils.supplyCollateral(spoke1, i, bob, 1e18, bob);
+      SpokeActions.supplyCollateral(spoke1, i, bob, 1e18, bob);
     }
     ISpoke.UserAccountData memory accountData = spoke1.getUserAccountData(bob);
     assertEq(
@@ -206,7 +218,7 @@ contract SpokeSetUsingAsCollateralTest is SpokeBase {
     assertGt(spoke1.getReserveCount(), maxUserReservesLimit, 'More reserves than limit');
 
     for (uint256 i = 0; i < maxUserReservesLimit; ++i) {
-      Utils.supplyCollateral(spoke1, i, bob, 1e18, bob);
+      SpokeActions.supplyCollateral(spoke1, i, bob, 1e18, bob);
     }
 
     ISpoke.UserAccountData memory accountData = spoke1.getUserAccountData(bob);
@@ -216,7 +228,7 @@ contract SpokeSetUsingAsCollateralTest is SpokeBase {
       'Bob has reached the collateral limit'
     );
 
-    Utils.setUsingAsCollateral(spoke1, 0, bob, false, bob);
+    SpokeActions.setUsingAsCollateral(spoke1, 0, bob, false, bob);
 
     accountData = spoke1.getUserAccountData(bob);
     assertEq(
@@ -225,7 +237,7 @@ contract SpokeSetUsingAsCollateralTest is SpokeBase {
       'Bob has disabled one collateral'
     );
 
-    Utils.supplyCollateral(spoke1, maxUserReservesLimit, bob, 1e18, bob);
+    SpokeActions.supplyCollateral(spoke1, maxUserReservesLimit, bob, 1e18, bob);
 
     accountData = spoke1.getUserAccountData(bob);
     assertEq(
@@ -237,12 +249,12 @@ contract SpokeSetUsingAsCollateralTest is SpokeBase {
 
   /// @dev Test showing that when the collateral limit is max, all reserves can be enabled as collateral.
   function test_setUsingAsCollateral_unlimited_whenLimitIsMax() public {
-    assertEq(spoke1.MAX_USER_RESERVES_LIMIT(), Constants.MAX_ALLOWED_USER_RESERVES_LIMIT);
+    assertEq(spoke1.MAX_USER_RESERVES_LIMIT(), SpokeConstants.MAX_ALLOWED_USER_RESERVES_LIMIT);
 
     uint256 collateralsToEnable = spoke1.getReserveCount();
 
     for (uint256 i = 0; i < collateralsToEnable; ++i) {
-      Utils.supplyCollateral(spoke1, i, bob, 1e18, bob);
+      SpokeActions.supplyCollateral(spoke1, i, bob, 1e18, bob);
     }
 
     ISpoke.UserAccountData memory accountData = spoke1.getUserAccountData(bob);

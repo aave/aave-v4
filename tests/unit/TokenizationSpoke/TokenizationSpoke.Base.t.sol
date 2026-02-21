@@ -2,7 +2,7 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import 'tests/Base.t.sol';
+import 'tests/unit/setup/Base.t.sol';
 
 contract TokenizationSpokeBaseTest is Base {
   ITokenizationSpoke public daiVault;
@@ -149,7 +149,7 @@ contract TokenizationSpokeBaseTest is Base {
     asset.mint(address(hub), amount);
     vm.startPrank(address(spoke2));
     hub.add(assetId, amount);
-    _mockInterestRateBps(100_00);
+    _mockInterestRateBps(address(irStrategy), 100_00);
     hub.draw(assetId, amount, address(spoke2));
     skip(365 days);
     asset.mint(address(hub), amount);
