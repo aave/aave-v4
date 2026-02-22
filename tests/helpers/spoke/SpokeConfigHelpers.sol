@@ -41,21 +41,6 @@ abstract contract SpokeConfigHelpers is SpokeAssertions {
     assertEq(spoke.getReserveConfig(reserveId), config);
   }
 
-  function _updateReserveReceiveSharesEnabledFlag(
-    ISpoke spoke,
-    uint256 reserveId,
-    bool receiveSharesEnabled,
-    address spokeAdmin
-  ) internal pausePrank {
-    ISpoke.ReserveConfig memory config = spoke.getReserveConfig(reserveId);
-    config.receiveSharesEnabled = receiveSharesEnabled;
-
-    vm.prank(spokeAdmin);
-    spoke.updateReserveConfig(reserveId, config);
-
-    assertEq(spoke.getReserveConfig(reserveId), config);
-  }
-
   function _updateReserveBorrowableFlag(
     ISpoke spoke,
     uint256 reserveId,

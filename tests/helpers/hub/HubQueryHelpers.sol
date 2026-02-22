@@ -123,14 +123,6 @@ abstract contract HubQueryHelpers is CommonsHelpers {
     return MathUtils.calculateLinearInterest(borrowRate, startTime).rayMulUp(initialDebt);
   }
 
-  function _calculateExpectedFees(
-    uint256 drawnIncrease,
-    uint256 premiumIncrease,
-    uint256 liquidityFee
-  ) internal pure returns (uint256) {
-    return (drawnIncrease + premiumIncrease).percentMulDown(liquidityFee);
-  }
-
   function _calculateExpectedFeesAmount(
     uint256 initialDrawnShares,
     uint256 initialPremiumShares,

@@ -47,24 +47,6 @@ library DeployUtils {
       );
   }
 
-  function getDeterministicSpokeInstanceAddress(
-    address oracle,
-    uint16 maxUserReservesLimit
-  ) internal returns (address) {
-    return getDeterministicSpokeInstanceAddress(oracle, maxUserReservesLimit, '');
-  }
-
-  function getDeterministicSpokeInstanceAddress(
-    address oracle,
-    uint16 maxUserReservesLimit,
-    bytes32 salt
-  ) internal returns (address) {
-    bytes32 initCodeHash = keccak256(_getSpokeInstanceInitCode(oracle, maxUserReservesLimit));
-
-    Create2Utils.loadCreate2Factory();
-    return Create2Utils.computeCreate2Address(salt, initCodeHash);
-  }
-
   function deployHub(address authority) internal returns (IHub) {
     return deployHub(authority, '');
   }
@@ -72,17 +54,6 @@ library DeployUtils {
   function deployHub(address authority, bytes32 salt) internal returns (IHub hub) {
     Create2Utils.loadCreate2Factory();
     return IHub(Create2Utils.create2Deploy(salt, _getHubInitCode(authority)));
-  }
-
-  function getDeterministicHubAddress(address authority) internal returns (address) {
-    return getDeterministicHubAddress(authority, '');
-  }
-
-  function getDeterministicHubAddress(address authority, bytes32 salt) internal returns (address) {
-    bytes32 initCodeHash = keccak256(_getHubInitCode(authority));
-
-    Create2Utils.loadCreate2Factory();
-    return Create2Utils.computeCreate2Address(salt, initCodeHash);
   }
 
   function proxify(

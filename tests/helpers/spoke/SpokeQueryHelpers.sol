@@ -899,18 +899,8 @@ abstract contract SpokeQueryHelpers is HubQueryHelpers {
     return vm.randomUint(0, spoke.getReserveCount() - 1);
   }
 
-  function _randomInvalidReserveId(ISpoke spoke) internal returns (uint256) {
-    return vm.randomUint(spoke.getReserveCount(), UINT256_MAX);
-  }
-
   function _randomConfigKey() internal returns (uint16) {
     return vm.randomUint(0, type(uint16).max).toUint16();
-  }
-
-  function _randomSpoke(IHub hub, uint256 assetId) internal returns (ISpoke) {
-    uint256 spokeCount = hub.getSpokeCount(assetId);
-    uint256 spokeIndex = vm.randomUint(0, spokeCount - 1);
-    return ISpoke(hub.getSpokeAddress(assetId, spokeIndex));
   }
 
   function _reserveId(ISpoke spoke, uint256 assetId) internal view returns (uint256) {

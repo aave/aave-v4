@@ -120,9 +120,7 @@ abstract contract BaseState is HubHelpers, SpokeHelpers {
   address internal bob = makeAddr(BOB);
   uint256 internal bobPk = makeKey(BOB);
   address internal carol = makeAddr(CAROL);
-  uint256 internal carolPk = makeKey(CAROL);
   address internal derl = makeAddr(DERL);
-  uint256 internal derlPk = makeKey(DERL);
 
   address internal ADMIN = makeAddr('ADMIN');
   address internal HUB_ADMIN = makeAddr('HUB_ADMIN');
@@ -144,10 +142,6 @@ abstract contract BaseState is HubHelpers, SpokeHelpers {
   uint256 internal usdzAssetId = 5;
 
   mapping(ISpoke => SpokeInfo) internal spokeInfo;
-
-  function makeSpoke() internal returns (address) {
-    return makeEntity('spoke', vm.randomBytes8());
-  }
 
   function _randomBps() internal returns (uint16) {
     return vm.randomUint(0, PercentageMath.PERCENTAGE_FACTOR).toUint16();
