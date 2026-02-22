@@ -71,6 +71,20 @@ library ConfigPermissionsMap {
       );
   }
 
+  /// @notice Returns the ConfigPermissionValues struct with the values of each permission.
+  /// @param self The current ConfigPermissions.
+  /// @return The ConfigPermissionValues struct with the values of each permission.
+  function getConfigPermissionValues(
+    ConfigPermissions self
+  ) internal pure returns (IConfigPositionManager.ConfigPermissionValues memory) {
+    return
+      IConfigPositionManager.ConfigPermissionValues({
+        canSetUsingAsCollateral: self.canSetUsingAsCollateral(),
+        canUpdateUserRiskPremium: self.canUpdateUserRiskPremium(),
+        canUpdateUserDynamicConfig: self.canUpdateUserDynamicConfig()
+      });
+  }
+
   /// @notice Returns whether the `canSetUsingAsCollateral` permission or global permissions are enabled.
   /// @param self The current ConfigPermissions.
   /// @return Whether the `canSetUsingAsCollateral` permission or global permissions are enabled.
@@ -98,20 +112,6 @@ library ConfigPermissionsMap {
   /// @return True if both ConfigPermissions are equal, false otherwise.
   function eq(ConfigPermissions self, ConfigPermissions other) internal pure returns (bool) {
     return ConfigPermissions.unwrap(self) == ConfigPermissions.unwrap(other);
-  }
-
-  /// @notice Returns the ConfigPermissionValues struct with the values of each permission.
-  /// @param self The current ConfigPermissions.
-  /// @return The ConfigPermissionValues struct with the values of each permission.
-  function getConfigPermissionValues(
-    ConfigPermissions self
-  ) internal pure returns (IConfigPositionManager.ConfigPermissionValues memory) {
-    return
-      IConfigPositionManager.ConfigPermissionValues({
-        canSetUsingAsCollateral: self.canSetUsingAsCollateral(),
-        canUpdateUserRiskPremium: self.canUpdateUserRiskPremium(),
-        canUpdateUserDynamicConfig: self.canUpdateUserDynamicConfig()
-      });
   }
 
   /// @notice Sets the new status for the given permission.
