@@ -689,7 +689,7 @@ library LiquidationLogic {
     );
 
     uint256 collateralSharesToLiquidator = collateralSharesToLiquidate -
-      collateralSharesToLiquidate.mulDivDown(
+      collateralSharesToLiquidate.mulDivUp(
         params.liquidationFee * (liquidationBonus - PercentageMath.PERCENTAGE_FACTOR),
         liquidationBonus * PercentageMath.PERCENTAGE_FACTOR
       );
