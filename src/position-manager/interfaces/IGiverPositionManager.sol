@@ -12,6 +12,7 @@ interface IGiverPositionManager is IPositionManagerBase {
   error RepayOnBehalfMaxUintNotAllowed();
 
   /// @notice Executes a supply on behalf of a user.
+  /// @dev Contract must be an active & approved user position manager of the caller.
   /// @param spoke The address of the spoke.
   /// @param reserveId The identifier of the reserve.
   /// @param amount The amount to supply.
@@ -28,6 +29,7 @@ interface IGiverPositionManager is IPositionManagerBase {
   /// @notice Executes a repay on behalf of a user.
   /// @dev If the amount exceeds the user's current debt, the entire debt is repaid.
   /// @dev Using `type(uint256).max` to repay the full debt is not allowed with this method.
+  /// @dev Contract must be an active & approved user position manager of the caller.
   /// @param spoke The address of the spoke.
   /// @param reserveId The identifier of the reserve.
   /// @param amount The amount to repay.

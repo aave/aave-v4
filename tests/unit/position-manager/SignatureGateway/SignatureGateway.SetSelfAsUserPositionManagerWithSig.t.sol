@@ -2,7 +2,7 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import 'tests/unit/position-managers/SignatureGateway/SignatureGateway.Base.t.sol';
+import 'tests/unit/position-manager/SignatureGateway/SignatureGateway.Base.t.sol';
 
 contract SignatureGatewaySetSelfAsUserPositionManagerTest is SignatureGatewayBaseTest {
   function test_setSelfAsUserPositionManagerWithSig_revertsWith_SpokeNotRegistered() public {

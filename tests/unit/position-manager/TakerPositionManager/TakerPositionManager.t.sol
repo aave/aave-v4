@@ -2,13 +2,9 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import 'tests/unit/position-managers/TakerPositionManager/TakerPositionManager.Base.t.sol';
+import 'tests/unit/position-manager/TakerPositionManager/TakerPositionManager.Base.t.sol';
 
 contract TakerPositionManagerTest is TakerPositionManagerBaseTest {
-  function setUp() public virtual override {
-    super.setUp();
-  }
-
   function test_approveWithdraw_fuzz(address spender, uint256 reserveId, uint256 amount) public {
     vm.assume(spender != address(0));
     reserveId = bound(reserveId, 0, spoke1.getReserveCount() - 1);

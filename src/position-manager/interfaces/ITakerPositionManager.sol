@@ -134,6 +134,7 @@ interface ITakerPositionManager is IPositionManagerBase {
   /// @notice Executes a withdraw on behalf of a user.
   /// @dev The caller must have sufficient withdraw allowance from onBehalfOf.
   /// @dev The caller receives the withdrawn assets.
+  /// @dev Contract must be an active & approved user position manager of the caller.
   /// @param spoke The address of the spoke.
   /// @param reserveId The identifier of the reserve.
   /// @param amount The amount to withdraw.
@@ -150,6 +151,7 @@ interface ITakerPositionManager is IPositionManagerBase {
   /// @notice Executes a borrow on behalf of a user.
   /// @dev The caller must have sufficient borrow allowance from onBehalfOf.
   /// @dev The caller receives the borrowed assets.
+  /// @dev Contract must be an active & approved user position manager of the caller.
   /// @param spoke The address of the spoke.
   /// @param reserveId The identifier of the reserve.
   /// @param amount The amount to borrow.
