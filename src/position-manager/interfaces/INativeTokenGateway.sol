@@ -16,7 +16,7 @@ interface INativeTokenGateway is IPositionManagerBase {
   error NativeAmountMismatch();
 
   /// @notice Wraps the native asset and supplies to a specified registered `spoke`.
-  /// @dev Contract must be an active & approved user position manager of `onBehalfOf`.
+  /// @dev Contract must be an active & approved user position manager of the caller.
   /// @param spoke The address of the registered `spoke`.
   /// @param reserveId The identifier of the reserve for the wrapped asset.
   /// @param amount Amount to wrap and supply.
@@ -29,7 +29,7 @@ interface INativeTokenGateway is IPositionManagerBase {
   ) external payable returns (uint256, uint256);
 
   /// @notice Wraps the native asset,supplies to a specified registered `spoke` and sets it as collateral.
-  /// @dev Contract must be an active & approved user position manager of `onBehalfOf`.
+  /// @dev Contract must be an active & approved user position manager of the caller.
   /// @param spoke The address of the registered `spoke`.
   /// @param reserveId The identifier of the reserve for the wrapped asset.
   /// @param amount Amount to wrap and supply.
@@ -42,7 +42,7 @@ interface INativeTokenGateway is IPositionManagerBase {
   ) external payable returns (uint256, uint256);
 
   /// @notice Withdraws the wrapped asset from a specified registered `spoke` and unwraps it back to the native asset.
-  /// @dev Contract must be an active & approved user position manager of `onBehalfOf`.
+  /// @dev Contract must be an active & approved user position manager of the caller.
   /// @param spoke The address of the registered `spoke`.
   /// @param reserveId The identifier of the reserve for the wrapped asset.
   /// @param amount Amount to withdraw and unwrap.
@@ -55,7 +55,7 @@ interface INativeTokenGateway is IPositionManagerBase {
   ) external returns (uint256, uint256);
 
   /// @notice Borrows the wrapped asset from a specified registered `spoke` and unwraps it back to the native asset.
-  /// @dev Contract must be an active & approved user position manager of `onBehalfOf`.
+  /// @dev Contract must be an active & approved user position manager of the caller.
   /// @param spoke The address of the registered `spoke`.
   /// @param reserveId The identifier of the reserve for the wrapped asset.
   /// @param amount Amount to borrow and unwrap.
@@ -69,7 +69,7 @@ interface INativeTokenGateway is IPositionManagerBase {
 
   /// @notice Wraps the native asset and repays debt on a specified registered `spoke`.
   /// @dev It refunds any excess funds sent beyond the required debt repayment.
-  /// @dev Contract must be an active & approved user position manager of `onBehalfOf`.
+  /// @dev Contract must be an active & approved user position manager of the caller.
   /// @param spoke The address of the registered `spoke`.
   /// @param reserveId The identifier of the reserve for the wrapped asset.
   /// @param amount Amount to wrap and repay.

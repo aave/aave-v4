@@ -134,7 +134,7 @@ interface ITakerPositionManager is IPositionManagerBase {
   function renounceBorrowAllowance(address spoke, uint256 reserveId, address owner) external;
 
   /// @notice Executes a withdraw on behalf of a user.
-  /// @dev The caller must have sufficient withdraw allowance from onBehalfOf.
+  /// @dev The caller must have sufficient withdraw allowance from `onBehalfOf`.
   /// @dev The caller receives the withdrawn assets.
   /// @dev Contract must be an active & approved user position manager of `onBehalfOf`.
   /// @param spoke The address of the spoke.
@@ -151,7 +151,7 @@ interface ITakerPositionManager is IPositionManagerBase {
   ) external returns (uint256, uint256);
 
   /// @notice Executes a borrow on behalf of a user.
-  /// @dev The caller must have sufficient borrow allowance from onBehalfOf.
+  /// @dev The caller must have sufficient borrow allowance from `onBehalfOf`.
   /// @dev The caller receives the borrowed assets.
   /// @dev Contract must be an active & approved user position manager of `onBehalfOf`.
   /// @param spoke The address of the spoke.
