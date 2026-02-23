@@ -92,6 +92,7 @@ interface ITakerPositionManager is IPositionManagerBase {
   ) external;
 
   /// @notice Approves a spender to withdraw from the specified reserve using an EIP712-typed intent.
+  /// @dev Uses keyed-nonces where for each key's namespace nonce is consumed sequentially.
   /// @dev Using `type(uint256).max` as the amount results in an infinite approval, so the allowance is never decreased.
   /// @param params The structured WithdrawPermit parameters.
   /// @param signature The EIP712-compliant signature bytes.
@@ -114,6 +115,7 @@ interface ITakerPositionManager is IPositionManagerBase {
   ) external;
 
   /// @notice Approves a spender to borrow from the specified reserve using an EIP712-typed intent.
+  /// @dev Uses keyed-nonces where for each key's namespace nonce is consumed sequentially.
   /// @dev Using `type(uint256).max` as the amount results in an infinite approval, so the allowance is never decreased.
   /// @param params The structured BorrowPermit parameters.
   /// @param signature The EIP712-compliant signature bytes.
@@ -134,7 +136,7 @@ interface ITakerPositionManager is IPositionManagerBase {
   /// @notice Executes a withdraw on behalf of a user.
   /// @dev The caller must have sufficient withdraw allowance from onBehalfOf.
   /// @dev The caller receives the withdrawn assets.
-  /// @dev Contract must be an active & approved user position manager of the caller.
+  /// @dev Contract must be an active & approved user position manager of `onBehalfOf`.
   /// @param spoke The address of the spoke.
   /// @param reserveId The identifier of the reserve.
   /// @param amount The amount to withdraw.
@@ -151,7 +153,7 @@ interface ITakerPositionManager is IPositionManagerBase {
   /// @notice Executes a borrow on behalf of a user.
   /// @dev The caller must have sufficient borrow allowance from onBehalfOf.
   /// @dev The caller receives the borrowed assets.
-  /// @dev Contract must be an active & approved user position manager of the caller.
+  /// @dev Contract must be an active & approved user position manager of `onBehalfOf`.
   /// @param spoke The address of the spoke.
   /// @param reserveId The identifier of the reserve.
   /// @param amount The amount to borrow.
