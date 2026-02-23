@@ -253,7 +253,7 @@ contract HubReportDeficitTest is Base {
       assertApproxEqAbs(
         params.drawnAfter,
         params.drawn - baseAmount,
-        minimumAssetsPerDrawnShare(hub1, usdxAssetId) + 1,
+        _minimumAssetsPerDrawnShare(hub1, usdxAssetId) + 1,
         'drawn debt'
       );
       assertEq(drawnSharesAfter, drawnSharesBefore - drawnShares, 'base drawn shares');

@@ -46,7 +46,7 @@ contract LiquidationLogicLiquidateDebtTest is LiquidationLogicBaseTest {
     hub.addSpoke(assetId, address(spoke), spokeConfig);
 
     // Add liquidity, remove liquidity, refresh premium and skip time to accrue both drawn and premium debt
-    address tempUser = makeUser();
+    address tempUser = _makeUser();
     deal(address(asset), tempUser, MAX_SUPPLY_AMOUNT);
     HubActions.add(hub, assetId, address(spoke), MAX_SUPPLY_AMOUNT, tempUser);
     HubActions.draw(hub, assetId, address(spoke), tempUser, MAX_SUPPLY_AMOUNT);

@@ -393,7 +393,7 @@ contract SpokeSupplyTest is Base {
     });
 
     SupplyFuzzLocal memory state;
-    (state.assetId, state.underlying) = getAssetByReserveId(spoke1, reserveId);
+    (state.assetId, state.underlying) = _getAssetByReserveId(spoke1, reserveId);
     state.expectedShares = hub1.previewAddByAssets(state.assetId, amount);
 
     vm.assume(state.expectedShares > 0);
@@ -544,7 +544,7 @@ contract SpokeSupplyTest is Base {
         wethMaxSupply
     );
 
-    (, IERC20 underlying) = getAssetByReserveId(spoke1, reserveId);
+    (, IERC20 underlying) = _getAssetByReserveId(spoke1, reserveId);
 
     // alice supplies WETH as collateral, borrows from reserveId
     _executeSpokeSupplyAndBorrow({

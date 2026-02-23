@@ -36,7 +36,7 @@ import {SignatureGateway, ISignatureGateway} from 'src/position-manager/Signatur
 // helpers
 import 'tests/helpers/hub/HubHelpers.sol';
 import 'tests/helpers/spoke/SpokeHelpers.sol';
-import 'tests/helpers/deploy/DeployHelpers.sol';
+import {DeployUtils} from 'tests/helpers/deploy/DeployUtils.sol';
 
 // mocks
 import {EIP712Types} from 'tests/helpers/mocks/EIP712Types.sol';
@@ -89,9 +89,9 @@ abstract contract Base is HubHelpers, SpokeHelpers {
   string internal constant BOB = 'bob';
 
   address internal alice = makeAddr(ALICE);
-  uint256 internal alicePk = makeKey(ALICE);
+  uint256 internal alicePk = _makeKey(ALICE);
   address internal bob = makeAddr(BOB);
-  uint256 internal bobPk = makeKey(BOB);
+  uint256 internal bobPk = _makeKey(BOB);
 
   address internal ADMIN = makeAddr('ADMIN');
   address internal HUB_ADMIN = makeAddr('HUB_ADMIN');
@@ -389,27 +389,6 @@ abstract contract Base is HubHelpers, SpokeHelpers {
   }
 
   // ──────────────────────────── Deploy helpers ─────────────────────
-
-  function _deploySpokeWithOracle(
-    address proxyAdminOwner,
-    address _accessManager,
-    string memory _oracleDesc
-  ) internal pausePrank returns (ISpoke, IAaveOracle) {
-    address deployer = makeAddr('deployer');
-
-    vm.startPrank(deployer);
-    IAaveOracle oracle = new AaveOracle(8, _oracleDesc);
-    ISpoke spoke = DeployUtils.deploySpoke(
-      address(oracle),
-      SpokeConstants.MAX_ALLOWED_USER_RESERVES_LIMIT,
-      proxyAdminOwner,
-      abi.encodeCall(ISpokeInstance.initialize, (_accessManager))
-    );
-    oracle.setSpoke(address(spoke));
-    vm.stopPrank();
-
-    return (spoke, oracle);
-  }
 
   function _deployTokenizationSpoke(
     IHub hub,

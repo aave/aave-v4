@@ -45,7 +45,7 @@ contract SpokeWithdrawScenarioTest is Base {
       onBehalfOf: bob
     });
 
-    _checkSuppliedAmounts(
+    _assertSuppliedAmounts(
       daiAssetId,
       _daiReserveId(spoke1),
       spoke1,
@@ -93,7 +93,7 @@ contract SpokeWithdrawScenarioTest is Base {
     );
 
     // Fetch supply exchange rate before partial withdraw
-    uint256 addExRateBefore = getAddExRate(hub1, daiAssetId);
+    uint256 addExRateBefore = _getAddExRate(hub1, daiAssetId);
 
     // Withdraw partial supplied assets
     CheckedWithdrawResult memory r1 = _checkedWithdraw(
@@ -117,12 +117,12 @@ contract SpokeWithdrawScenarioTest is Base {
     // Check supply rate monotonically increasing after partial withdraw
     _checkSupplyRateIncreasing(
       addExRateBefore,
-      getAddExRate(hub1, daiAssetId),
+      _getAddExRate(hub1, daiAssetId),
       'after partial withdraw'
     );
 
     // Fetch supply exchange rate before withdraw
-    addExRateBefore = getAddExRate(hub1, daiAssetId);
+    addExRateBefore = _getAddExRate(hub1, daiAssetId);
 
     // Withdraw all supplied assets
     _checkedWithdraw(
@@ -135,10 +135,10 @@ contract SpokeWithdrawScenarioTest is Base {
       })
     );
 
-    _checkSuppliedAmounts(daiAssetId, _daiReserveId(spoke1), spoke1, bob, 0, 'after withdraw');
+    _assertSuppliedAmounts(daiAssetId, _daiReserveId(spoke1), spoke1, bob, 0, 'after withdraw');
 
     // Check supply rate monotonically increasing after withdraw
-    _checkSupplyRateIncreasing(addExRateBefore, getAddExRate(hub1, daiAssetId), 'after withdraw');
+    _checkSupplyRateIncreasing(addExRateBefore, _getAddExRate(hub1, daiAssetId), 'after withdraw');
   }
 
   // multiple users, same asset
@@ -168,7 +168,7 @@ contract SpokeWithdrawScenarioTest is Base {
     _mockInterestRateBps(address(irStrategy), params.rate);
 
     MultiUserTestState memory state;
-    (state.assetId, state.underlying) = getAssetByReserveId(spoke1, params.reserveId);
+    (state.assetId, state.underlying) = _getAssetByReserveId(spoke1, params.reserveId);
 
     // alice supplies reserve
     SpokeActions.supply({
@@ -225,7 +225,7 @@ contract SpokeWithdrawScenarioTest is Base {
 
     assertEq(hub1.getAsset(params.reserveId).realizedFees, expectedFeeAmount, 'realized fees');
 
-    state.addExRate = getAddExRate(hub1, state.assetId);
+    state.addExRate = _getAddExRate(hub1, state.assetId);
 
     // make sure alice has a share to withdraw
     uint256 aliceSuppliedAmount = spoke1.getUserSuppliedAssets(params.reserveId, alice);
@@ -245,14 +245,14 @@ contract SpokeWithdrawScenarioTest is Base {
 
     _checkSupplyRateIncreasing(
       state.addExRate,
-      getAddExRate(hub1, state.assetId),
+      _getAddExRate(hub1, state.assetId),
       'after alice withdraw'
     );
 
     // skip time to accrue interest for bob
     skip(params.skipTime[1]);
 
-    state.addExRate = getAddExRate(hub1, state.assetId);
+    state.addExRate = _getAddExRate(hub1, state.assetId);
 
     // make sure bob has a share to withdraw
     uint256 bobSuppliedAmount = spoke1.getUserSuppliedAssets(params.reserveId, bob);
@@ -272,7 +272,7 @@ contract SpokeWithdrawScenarioTest is Base {
 
     _checkSupplyRateIncreasing(
       state.addExRate,
-      getAddExRate(hub1, state.assetId),
+      _getAddExRate(hub1, state.assetId),
       'after bob withdraw'
     );
 
@@ -317,7 +317,7 @@ contract SpokeWithdrawScenarioTest is Base {
 
     // token
     {
-      TokenBalances memory tokenDataAfter = getTokenBalances(
+      TokenBalances memory tokenDataAfter = _getTokenBalances(
         state.underlying,
         address(spoke1),
         address(hub1)
@@ -408,7 +408,7 @@ contract SpokeWithdrawScenarioTest is Base {
 
     ISpoke.Reserve memory reserve = spoke1.getReserve(reserveId);
 
-    IERC20 underlying = getAssetUnderlyingByReserveId(spoke1, reserveId);
+    IERC20 underlying = _getAssetUnderlyingByReserveId(spoke1, reserveId);
 
     // Deal caller the balance to deposit, and approve spoke
     deal(address(underlying), caller, assets);
@@ -469,7 +469,7 @@ contract SpokeWithdrawScenarioTest is Base {
 
     ISpoke.Reserve memory reserve = spoke1.getReserve(reserveId);
 
-    IERC20 underlying = getAssetUnderlyingByReserveId(spoke1, reserveId);
+    IERC20 underlying = _getAssetUnderlyingByReserveId(spoke1, reserveId);
 
     // Deal caller the balance they will supply, and approve spoke
     deal(address(underlying), caller, callerStartingBalance);

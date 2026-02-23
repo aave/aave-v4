@@ -105,7 +105,7 @@ abstract contract HubQueryHelpers is CommonsHelpers {
     return initialDrawnIndex.rayMulUp(MathUtils.calculateLinearInterest(borrowRate, startTime));
   }
 
-  function calculateExpectedDebt(
+  function _calculateExpectedDebt(
     uint256 initialDrawnShares,
     uint256 initialDrawnIndex,
     uint96 borrowRate,
@@ -133,7 +133,7 @@ abstract contract HubQueryHelpers is CommonsHelpers {
       indexDelta.rayMulUp(initialDrawnShares + initialPremiumShares).percentMulDown(liquidityFee);
   }
 
-  function calculateEffectiveAddedAssets(
+  function _calculateEffectiveAddedAssets(
     uint256 assetsAmount,
     uint256 totalAddedAssets,
     uint256 totalAddedShares
@@ -233,7 +233,7 @@ abstract contract HubQueryHelpers is CommonsHelpers {
 
   // --- Hub query helpers (parameterized with IHub) ---
 
-  function getAssetDrawnDebt(IHub hub, uint256 assetId) internal view returns (uint256) {
+  function _getAssetDrawnDebt(IHub hub, uint256 assetId) internal view returns (uint256) {
     (uint256 drawn, ) = hub.getAssetOwed(assetId);
     return drawn;
   }
@@ -246,25 +246,25 @@ abstract contract HubQueryHelpers is CommonsHelpers {
     return hub.getAssetConfig(assetId).feeReceiver;
   }
 
-  function minimumAssetsPerAddedShare(IHub hub, uint256 assetId) internal view returns (uint256) {
+  function _minimumAssetsPerAddedShare(IHub hub, uint256 assetId) internal view returns (uint256) {
     return hub.previewAddByShares(assetId, 1);
   }
 
-  function minimumAssetsPerDrawnShare(IHub hub, uint256 assetId) internal view returns (uint256) {
+  function _minimumAssetsPerDrawnShare(IHub hub, uint256 assetId) internal view returns (uint256) {
     return hub.previewRestoreByShares(assetId, 1);
   }
 
-  function getAddExRate(IHub hub, uint256 assetId) internal view returns (uint256) {
+  function _getAddExRate(IHub hub, uint256 assetId) internal view returns (uint256) {
     return hub.previewRemoveByShares(assetId, MAX_SUPPLY_AMOUNT);
   }
 
-  function getDebtExRate(IHub hub, uint256 assetId) internal view returns (uint256) {
+  function _getDebtExRate(IHub hub, uint256 assetId) internal view returns (uint256) {
     return hub.previewRestoreByShares(assetId, MAX_SUPPLY_AMOUNT);
   }
 
   // --- Hub snapshot builders ---
 
-  function getAssetPosition(
+  function _getAssetPosition(
     IHub hub,
     uint256 assetId
   ) internal view returns (AssetPosition memory) {

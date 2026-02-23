@@ -41,8 +41,8 @@ contract HubRemoveTest is Base {
     vm.prank(address(spoke1));
     hub1.remove(assetId, amount, alice);
 
-    AssetPosition memory assetData = getAssetPosition(hub1, assetId);
-    SpokePosition memory spokeData = getSpokePosition(spoke1, reserveId);
+    AssetPosition memory assetData = _getAssetPosition(hub1, assetId);
+    SpokePosition memory spokeData = _getSpokePosition(spoke1, reserveId);
 
     // hub
     assertEq(assetData.addedAmount, 0, 'asset added amount after');
@@ -92,9 +92,9 @@ contract HubRemoveTest is Base {
     HubActions.remove(hub1, assetId, address(spoke1), amount, alice);
     HubActions.remove(hub1, assetId, address(spoke2), amount2, alice);
 
-    AssetPosition memory assetData = getAssetPosition(hub1, assetId);
-    SpokePosition memory spokePosition1 = getSpokePosition(spoke1, _daiReserveId);
-    SpokePosition memory spokePosition2 = getSpokePosition(spoke2, _daiReserveId);
+    AssetPosition memory assetData = _getAssetPosition(hub1, assetId);
+    SpokePosition memory spokePosition1 = _getSpokePosition(spoke1, _daiReserveId);
+    SpokePosition memory spokePosition2 = _getSpokePosition(spoke2, _daiReserveId);
 
     // asset
     assertEq(assetData.addedAmount, 0, 'asset addedAmount after');
@@ -178,9 +178,9 @@ contract HubRemoveTest is Base {
     uint256 spoke2Amount = hub1.getSpokeAddedAssets(assetId, address(spoke2));
     HubActions.remove(hub1, assetId, address(spoke2), spoke2Amount, alice);
 
-    AssetPosition memory assetData = getAssetPosition(hub1, assetId);
-    SpokePosition memory spokePosition1 = getSpokePosition(spoke1, _daiReserveId);
-    SpokePosition memory spokePosition2 = getSpokePosition(spoke2, _daiReserveId);
+    AssetPosition memory assetData = _getAssetPosition(hub1, assetId);
+    SpokePosition memory spokePosition1 = _getSpokePosition(spoke1, _daiReserveId);
+    SpokePosition memory spokePosition2 = _getSpokePosition(spoke2, _daiReserveId);
 
     // asset
     // only remaining added amount are fees
@@ -242,7 +242,7 @@ contract HubRemoveTest is Base {
       restorer: alice
     });
 
-    AssetPosition memory asset = getAssetPosition(hub1, daiAssetId);
+    AssetPosition memory asset = _getAssetPosition(hub1, daiAssetId);
     assertEq(asset.liquidity, initialLiquidity + drawnRestored + premiumRestored, 'dai liquidity');
 
     // reset available liquidity variable
@@ -259,9 +259,9 @@ contract HubRemoveTest is Base {
     vm.prank(address(spoke2));
     hub1.remove(daiAssetId, removeAmount, bob);
 
-    SpokePosition memory spokePosition1 = getSpokePosition(spoke1, _daiReserveId);
-    SpokePosition memory spokePosition2 = getSpokePosition(spoke2, _daiReserveId);
-    asset = getAssetPosition(hub1, daiAssetId);
+    SpokePosition memory spokePosition1 = _getSpokePosition(spoke1, _daiReserveId);
+    SpokePosition memory spokePosition2 = _getSpokePosition(spoke2, _daiReserveId);
+    asset = _getAssetPosition(hub1, daiAssetId);
 
     // hub
     assertApproxEqAbs(asset.addedAmount, 0, 1, 'asset addedAmount');
@@ -333,7 +333,7 @@ contract HubRemoveTest is Base {
       restorer: alice
     });
 
-    AssetPosition memory asset = getAssetPosition(hub1, daiAssetId);
+    AssetPosition memory asset = _getAssetPosition(hub1, daiAssetId);
     assertEq(
       asset.liquidity,
       initialLiquidity + drawnRestored + premiumRestored + add2Amount,
@@ -348,9 +348,9 @@ contract HubRemoveTest is Base {
     vm.prank(address(spoke2));
     hub1.remove(daiAssetId, removeAmount, bob);
 
-    SpokePosition memory spokePosition1 = getSpokePosition(spoke1, _daiReserveId);
-    SpokePosition memory spokePosition2 = getSpokePosition(spoke2, _daiReserveId);
-    asset = getAssetPosition(hub1, daiAssetId);
+    SpokePosition memory spokePosition1 = _getSpokePosition(spoke1, _daiReserveId);
+    SpokePosition memory spokePosition2 = _getSpokePosition(spoke2, _daiReserveId);
+    asset = _getAssetPosition(hub1, daiAssetId);
 
     // hub
     assertApproxEqAbs(asset.addedAmount, 0, 1, 'hub addedAmount');

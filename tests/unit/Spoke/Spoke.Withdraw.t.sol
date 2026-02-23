@@ -106,10 +106,10 @@ contract SpokeWithdrawTest is Base {
       onBehalfOf: bob
     });
 
-    uint256 addExRate = getAddExRate(hub1, daiAssetId);
+    uint256 addExRate = _getAddExRate(hub1, daiAssetId);
 
     // Token assertions before withdrawal
-    TokenBalances memory tokenDataBefore = getTokenBalances(
+    TokenBalances memory tokenDataBefore = _getTokenBalances(
       tokenList.dai,
       address(spoke1),
       address(hub1)
@@ -135,7 +135,7 @@ contract SpokeWithdrawTest is Base {
       })
     );
 
-    TokenBalances memory tokenDataAfter = getTokenBalances(
+    TokenBalances memory tokenDataAfter = _getTokenBalances(
       tokenList.dai,
       address(spoke1),
       address(hub1)
@@ -170,7 +170,7 @@ contract SpokeWithdrawTest is Base {
     assertEq(tokenList.dai.balanceOf(bob), MAX_SUPPLY_AMOUNT, 'bob dai balance post-withdraw');
 
     // Check supply rate monotonically increases after withdrawal
-    _checkSupplyRateIncreasing(addExRate, getAddExRate(hub1, daiAssetId), 'after withdraw');
+    _checkSupplyRateIncreasing(addExRate, _getAddExRate(hub1, daiAssetId), 'after withdraw');
 
     _assertHubLiquidity(hub1, daiAssetId, 'spoke1.withdraw');
   }
@@ -185,7 +185,7 @@ contract SpokeWithdrawTest is Base {
       onBehalfOf: bob
     });
 
-    _checkSuppliedAmounts(
+    _assertSuppliedAmounts(
       daiAssetId,
       _daiReserveId(spoke1),
       spoke1,
@@ -194,7 +194,7 @@ contract SpokeWithdrawTest is Base {
       'after supply'
     );
 
-    uint256 addExRate = getAddExRate(hub1, daiAssetId);
+    uint256 addExRate = _getAddExRate(hub1, daiAssetId);
 
     // Withdraw all supplied assets
     CheckedWithdrawResult memory r = _checkedWithdraw(
@@ -210,8 +210,8 @@ contract SpokeWithdrawTest is Base {
     assertEq(r.amount, supplyAmount);
     assertEq(r.shares, r.ownerBefore.suppliedShares);
 
-    _checkSuppliedAmounts(daiAssetId, _daiReserveId(spoke1), spoke1, bob, 0, 'after withdraw');
-    _checkSupplyRateIncreasing(addExRate, getAddExRate(hub1, daiAssetId), 'after withdraw');
+    _assertSuppliedAmounts(daiAssetId, _daiReserveId(spoke1), spoke1, bob, 0, 'after withdraw');
+    _checkSupplyRateIncreasing(addExRate, _getAddExRate(hub1, daiAssetId), 'after withdraw');
     _assertHubLiquidity(hub1, daiAssetId, 'spoke1.withdraw');
   }
 
@@ -225,7 +225,7 @@ contract SpokeWithdrawTest is Base {
       onBehalfOf: bob
     });
 
-    _checkSuppliedAmounts(
+    _assertSuppliedAmounts(
       daiAssetId,
       _daiReserveId(spoke1),
       spoke1,
@@ -234,7 +234,7 @@ contract SpokeWithdrawTest is Base {
       'after supply'
     );
 
-    uint256 addExRate = getAddExRate(hub1, daiAssetId);
+    uint256 addExRate = _getAddExRate(hub1, daiAssetId);
 
     // Withdraw all supplied assets
     CheckedWithdrawResult memory r = _checkedWithdraw(
@@ -250,8 +250,8 @@ contract SpokeWithdrawTest is Base {
     assertEq(r.amount, supplyAmount);
     assertEq(r.shares, r.ownerBefore.suppliedShares);
 
-    _checkSuppliedAmounts(daiAssetId, _daiReserveId(spoke1), spoke1, bob, 0, 'after withdraw');
-    _checkSupplyRateIncreasing(addExRate, getAddExRate(hub1, daiAssetId), 'after withdraw');
+    _assertSuppliedAmounts(daiAssetId, _daiReserveId(spoke1), spoke1, bob, 0, 'after withdraw');
+    _checkSupplyRateIncreasing(addExRate, _getAddExRate(hub1, daiAssetId), 'after withdraw');
     _assertHubLiquidity(hub1, daiAssetId, 'spoke1.withdraw');
   }
 
@@ -265,7 +265,7 @@ contract SpokeWithdrawTest is Base {
       onBehalfOf: bob
     });
 
-    _checkSuppliedAmounts(
+    _assertSuppliedAmounts(
       daiAssetId,
       _daiReserveId(spoke1),
       spoke1,
@@ -274,7 +274,7 @@ contract SpokeWithdrawTest is Base {
       'after supply'
     );
 
-    uint256 addExRate = getAddExRate(hub1, daiAssetId);
+    uint256 addExRate = _getAddExRate(hub1, daiAssetId);
 
     // Withdraw all supplied assets
     CheckedWithdrawResult memory r = _checkedWithdraw(
@@ -290,8 +290,8 @@ contract SpokeWithdrawTest is Base {
     assertEq(r.amount, supplyAmount);
     assertEq(r.shares, r.ownerBefore.suppliedShares);
 
-    _checkSuppliedAmounts(daiAssetId, _daiReserveId(spoke1), spoke1, bob, 0, 'after withdraw');
-    _checkSupplyRateIncreasing(addExRate, getAddExRate(hub1, daiAssetId), 'after withdraw');
+    _assertSuppliedAmounts(daiAssetId, _daiReserveId(spoke1), spoke1, bob, 0, 'after withdraw');
+    _checkSupplyRateIncreasing(addExRate, _getAddExRate(hub1, daiAssetId), 'after withdraw');
     _assertHubLiquidity(hub1, daiAssetId, 'spoke1.withdraw');
   }
 
@@ -307,7 +307,7 @@ contract SpokeWithdrawTest is Base {
       onBehalfOf: bob
     });
 
-    _checkSuppliedAmounts(
+    _assertSuppliedAmounts(
       daiAssetId,
       _daiReserveId(spoke1),
       spoke1,
@@ -347,7 +347,7 @@ contract SpokeWithdrawTest is Base {
 
     assertEq(hub1.getAsset(daiAssetId).realizedFees, expectedFeeAmount, 'realized fees');
 
-    uint256 addExRate = getAddExRate(hub1, daiAssetId);
+    uint256 addExRate = _getAddExRate(hub1, daiAssetId);
 
     // bob withdraws all
     CheckedWithdrawResult memory r = _checkedWithdraw(
@@ -363,8 +363,8 @@ contract SpokeWithdrawTest is Base {
     assertEq(r.amount, r.ownerBefore.suppliedAmount);
     assertEq(r.shares, r.ownerBefore.suppliedShares);
 
-    _checkSuppliedAmounts(daiAssetId, _daiReserveId(spoke1), spoke1, bob, 0, 'after withdraw');
-    _checkSupplyRateIncreasing(addExRate, getAddExRate(hub1, daiAssetId), 'after withdraw');
+    _assertSuppliedAmounts(daiAssetId, _daiReserveId(spoke1), spoke1, bob, 0, 'after withdraw');
+    _checkSupplyRateIncreasing(addExRate, _getAddExRate(hub1, daiAssetId), 'after withdraw');
     _assertHubLiquidity(hub1, daiAssetId, 'spoke1.withdraw');
   }
 
@@ -385,7 +385,7 @@ contract SpokeWithdrawTest is Base {
       onBehalfOf: bob
     });
 
-    _checkSuppliedAmounts(
+    _assertSuppliedAmounts(
       daiAssetId,
       _daiReserveId(spoke1),
       spoke1,
@@ -421,7 +421,7 @@ contract SpokeWithdrawTest is Base {
       onBehalfOf: bob
     });
 
-    uint256 addExRate = getAddExRate(hub1, daiAssetId);
+    uint256 addExRate = _getAddExRate(hub1, daiAssetId);
 
     CheckedWithdrawResult memory r = _checkedWithdraw(
       CheckedWithdrawParams({
@@ -436,8 +436,8 @@ contract SpokeWithdrawTest is Base {
     assertEq(r.amount, r.ownerBefore.suppliedAmount);
     assertEq(r.shares, r.ownerBefore.suppliedShares);
 
-    _checkSuppliedAmounts(daiAssetId, _daiReserveId(spoke1), spoke1, bob, 0, 'after withdraw');
-    _checkSupplyRateIncreasing(addExRate, getAddExRate(hub1, daiAssetId), 'after withdraw');
+    _assertSuppliedAmounts(daiAssetId, _daiReserveId(spoke1), spoke1, bob, 0, 'after withdraw');
+    _checkSupplyRateIncreasing(addExRate, _getAddExRate(hub1, daiAssetId), 'after withdraw');
     _assertHubLiquidity(hub1, daiAssetId, 'spoke1.withdraw');
   }
 
@@ -479,7 +479,7 @@ contract SpokeWithdrawTest is Base {
     );
 
     state.withdrawnShares = hub1.previewRemoveByAssets(daiAssetId, state.withdrawAmount);
-    state.addExRate = getAddExRate(hub1, daiAssetId);
+    state.addExRate = _getAddExRate(hub1, daiAssetId);
 
     // withdraw all available liquidity
     // bc debt is fully repaid, bob can withdraw all supplied
@@ -495,7 +495,7 @@ contract SpokeWithdrawTest is Base {
 
     assertEq(hub1.getAsset(daiAssetId).realizedFees, state.expectedFeeAmount, 'realized fees');
 
-    TokenBalances memory tokenDataAfter = getTokenBalances(
+    TokenBalances memory tokenDataAfter = _getTokenBalances(
       tokenList.dai,
       address(spoke1),
       address(hub1)
@@ -546,7 +546,7 @@ contract SpokeWithdrawTest is Base {
     );
 
     // Check supply rate monotonically increasing after withdraw
-    _checkSupplyRateIncreasing(state.addExRate, getAddExRate(hub1, daiAssetId), 'after withdraw');
+    _checkSupplyRateIncreasing(state.addExRate, _getAddExRate(hub1, daiAssetId), 'after withdraw');
   }
 
   function test_withdraw_fuzz_all_liquidity_with_interest_no_premium(
@@ -567,7 +567,7 @@ contract SpokeWithdrawTest is Base {
     // don't borrow the collateral asset
     vm.assume(params.reserveId != _wbtcReserveId(spoke1));
 
-    (uint256 assetId, IERC20 underlying) = getAssetByReserveId(spoke1, params.reserveId);
+    (uint256 assetId, IERC20 underlying) = _getAssetByReserveId(spoke1, params.reserveId);
 
     // set weth collateral risk to 0 for no premium contribution
     _updateCollateralRisk({
@@ -633,7 +633,7 @@ contract SpokeWithdrawTest is Base {
     );
 
     state.withdrawnShares = hub1.previewRemoveByAssets(assetId, state.withdrawAmount);
-    uint256 addExRateBefore = getAddExRate(hub1, assetId);
+    uint256 addExRateBefore = _getAddExRate(hub1, assetId);
 
     // bob withdraws all
     CheckedWithdrawResult memory r = _checkedWithdraw(
@@ -646,7 +646,7 @@ contract SpokeWithdrawTest is Base {
       })
     );
 
-    TokenBalances memory tokenDataAfter = getTokenBalances(
+    TokenBalances memory tokenDataAfter = _getTokenBalances(
       underlying,
       address(spoke1),
       address(hub1)
@@ -704,7 +704,7 @@ contract SpokeWithdrawTest is Base {
     _assertHubLiquidity(hub1, daiAssetId, 'spoke1.withdraw');
 
     // Check supply rate monotonically increasing after withdraw
-    uint256 addExRateAfter = getAddExRate(hub1, assetId); // caching to avoid stack too deep
+    uint256 addExRateAfter = _getAddExRate(hub1, assetId); // caching to avoid stack too deep
     _checkSupplyRateIncreasing(addExRateBefore, addExRateAfter, 'after withdraw');
   }
 
@@ -741,7 +741,7 @@ contract SpokeWithdrawTest is Base {
     );
 
     state.withdrawnShares = hub1.previewRemoveByAssets(daiAssetId, state.withdrawAmount);
-    state.addExRate = getAddExRate(hub1, daiAssetId);
+    state.addExRate = _getAddExRate(hub1, daiAssetId);
 
     // debt is fully repaid, so bob can withdraw all supplied
     CheckedWithdrawResult memory r = _checkedWithdraw(
@@ -754,7 +754,7 @@ contract SpokeWithdrawTest is Base {
       })
     );
 
-    TokenBalances memory tokenDataAfter = getTokenBalances(
+    TokenBalances memory tokenDataAfter = _getTokenBalances(
       tokenList.dai,
       address(spoke1),
       address(hub1)
@@ -810,7 +810,7 @@ contract SpokeWithdrawTest is Base {
     _assertHubLiquidity(hub1, daiAssetId, 'spoke1.withdraw');
 
     // Check supply rate monotonically increasing after withdraw
-    _checkSupplyRateIncreasing(state.addExRate, getAddExRate(hub1, daiAssetId), 'after withdraw');
+    _checkSupplyRateIncreasing(state.addExRate, _getAddExRate(hub1, daiAssetId), 'after withdraw');
   }
 
   function test_withdraw_fuzz_all_liquidity_with_interest_with_premium(
@@ -830,7 +830,7 @@ contract SpokeWithdrawTest is Base {
 
     vm.assume(params.reserveId != _wbtcReserveId(spoke1)); // wbtc used as collateral
 
-    (uint256 assetId, IERC20 underlying) = getAssetByReserveId(spoke1, params.reserveId);
+    (uint256 assetId, IERC20 underlying) = _getAssetByReserveId(spoke1, params.reserveId);
 
     TestState memory state;
     state.reserveId = params.reserveId;
@@ -888,7 +888,7 @@ contract SpokeWithdrawTest is Base {
     assertEq(state.alicePremiumDebt, 0, 'alice has no premium contribution to exchange rate');
 
     state.withdrawnShares = hub1.previewRemoveByAssets(assetId, state.withdrawAmount);
-    uint256 addExRateBefore = getAddExRate(hub1, assetId);
+    uint256 addExRateBefore = _getAddExRate(hub1, assetId);
 
     // bob withdraws all
     CheckedWithdrawResult memory r = _checkedWithdraw(
@@ -901,7 +901,7 @@ contract SpokeWithdrawTest is Base {
       })
     );
 
-    TokenBalances memory tokenDataAfter = getTokenBalances(
+    TokenBalances memory tokenDataAfter = _getTokenBalances(
       underlying,
       address(spoke1),
       address(hub1)
@@ -959,7 +959,7 @@ contract SpokeWithdrawTest is Base {
     _assertHubLiquidity(hub1, daiAssetId, 'spoke1.withdraw');
 
     // Check supply rate monotonically increasing after withdraw
-    uint256 addExRateAfter = getAddExRate(hub1, assetId); // caching to avoid stack too deep
+    uint256 addExRateAfter = _getAddExRate(hub1, assetId); // caching to avoid stack too deep
     _checkSupplyRateIncreasing(addExRateBefore, addExRateAfter, 'after withdraw');
   }
 
@@ -1015,15 +1015,15 @@ contract SpokeWithdrawTest is Base {
       onBehalfOf: alice
     });
 
-    uint256 withdrawable = getTotalWithdrawable(spoke1, reserveId, alice);
+    uint256 withdrawable = _getTotalWithdrawable(spoke1, reserveId, alice);
     assertGt(withdrawable, 0);
 
-    uint256 addExRateBefore = getAddExRate(hub1, daiAssetId);
+    uint256 addExRateBefore = _getAddExRate(hub1, daiAssetId);
 
     // skip time but no index increase with no borrow
     skip(365 days);
     // withdrawable remains constant
-    assertEq(withdrawable, getTotalWithdrawable(spoke1, reserveId, alice));
+    assertEq(withdrawable, _getTotalWithdrawable(spoke1, reserveId, alice));
 
     CheckedWithdrawResult memory r = _checkedWithdraw(
       CheckedWithdrawParams({
@@ -1038,11 +1038,11 @@ contract SpokeWithdrawTest is Base {
     assertEq(r.shares, r.ownerBefore.suppliedShares);
     assertEq(r.amount, withdrawable);
 
-    assertEq(getTotalWithdrawable(spoke1, reserveId, alice), 0);
-    _checkSuppliedAmounts(daiAssetId, reserveId, spoke1, alice, 0, 'after withdraw');
+    assertEq(_getTotalWithdrawable(spoke1, reserveId, alice), 0);
+    _assertSuppliedAmounts(daiAssetId, reserveId, spoke1, alice, 0, 'after withdraw');
 
     // Check supply rate monotonically increasing after withdraw
-    _checkSupplyRateIncreasing(addExRateBefore, getAddExRate(hub1, daiAssetId), 'after withdraw');
+    _checkSupplyRateIncreasing(addExRateBefore, _getAddExRate(hub1, daiAssetId), 'after withdraw');
 
     _assertHubLiquidity(hub1, daiAssetId, 'spoke1.withdraw');
   }

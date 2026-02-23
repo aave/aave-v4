@@ -133,7 +133,7 @@ contract SpokeAccrueLiquidityFeeEdgeCasesTest is Base {
 
     uint256 count = vm.randomUint(10, 1000);
     for (uint256 i; i < count; ++i) {
-      address user = makeUser(i);
+      address user = _makeUser(i);
       uint256 borrowAmount = vm.randomUint(1, _calculateMaxSupplyAmount(spoke1, reserveId) / count);
       _backedBorrow(spoke1, user, reserveId, reserveId, borrowAmount);
     }
@@ -143,7 +143,7 @@ contract SpokeAccrueLiquidityFeeEdgeCasesTest is Base {
 
     uint256 feesAccrued;
     for (uint256 i; i < count; ++i) {
-      address user = makeUser(i); // deterministic operation
+      address user = _makeUser(i); // deterministic operation
       uint256 totalOwedAfter = hub1.getAssetTotalOwed(assetId);
       SpokeActions.repay(spoke1, reserveId, user, 1, user); // accrue interest & realize premium
       assertApproxEqAbs(totalOwedAfter, hub1.getAssetTotalOwed(assetId), 1);
@@ -174,7 +174,7 @@ contract SpokeAccrueLiquidityFeeEdgeCasesTest is Base {
 
     uint256 count = vm.randomUint(10, 1000);
     for (uint256 i; i < count; ++i) {
-      address user = makeUser(i);
+      address user = _makeUser(i);
       uint256 borrowAmount = vm.randomUint(1, MAX_SUPPLY_AMOUNT / count);
       ISpoke spoke = spokes[i % spokes.length]; // to deterministically pick random spoke
       uint256 reserveId = _reserveId(spoke, assetId);
@@ -186,7 +186,7 @@ contract SpokeAccrueLiquidityFeeEdgeCasesTest is Base {
 
     uint256 feesAccrued;
     for (uint256 i; i < count; ++i) {
-      address user = makeUser(i); // deterministic operation
+      address user = _makeUser(i); // deterministic operation
       ISpoke spoke = spokes[i % spokes.length]; // deterministic operation
       uint256 reserveId = _reserveId(spoke, assetId);
       uint256 totalOwedAfter = hub1.getAssetTotalOwed(assetId);

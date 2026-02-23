@@ -865,7 +865,7 @@ contract NativeTokenGatewayTest is Base {
   }
 
   function _getUserData(address user) internal view returns (ISpoke.UserPosition memory) {
-    return getUserInfo(spoke1, user, _wethReserveId(spoke1));
+    return _getUserInfo(spoke1, user, _wethReserveId(spoke1));
   }
 
   function _checkFinalBalances() internal view {

@@ -6,10 +6,6 @@ import 'tests/gas/Base.t.sol';
 
 /// forge-config: default.isolate = true
 contract SpokeGetters_Gas_Tests is Base {
-  function setUp() public override {
-    super.setUp();
-  }
-
   function test_getUserAccountData() external {
     spoke1.getUserAccountData(alice);
     vm.snapshotGasLastCall('Spoke.Getters', 'getUserAccountData: supplies: 0, borrows: 0');

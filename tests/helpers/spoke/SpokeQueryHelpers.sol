@@ -256,7 +256,7 @@ abstract contract SpokeQueryHelpers is HubQueryHelpers {
 
   // --- Spoke query helpers ---
 
-  function getUserInfo(
+  function _getUserInfo(
     ISpoke spoke,
     address user,
     uint256 reserveId
@@ -264,7 +264,7 @@ abstract contract SpokeQueryHelpers is HubQueryHelpers {
     return spoke.getUserPosition(reserveId, user);
   }
 
-  function getUserDebt(
+  function _getUserDebt(
     ISpoke spoke,
     address user,
     uint256 reserveId
@@ -292,7 +292,7 @@ abstract contract SpokeQueryHelpers is HubQueryHelpers {
     return res;
   }
 
-  function getReserveInfo(
+  function _getReserveInfo(
     ISpoke spoke,
     uint256 reserveId
   ) internal view returns (ISpoke.Reserve memory) {
@@ -314,7 +314,7 @@ abstract contract SpokeQueryHelpers is HubQueryHelpers {
       spoke.getDynamicReserveConfig(reserveId, _getReserveLastDynamicConfigKey(spoke, reserveId));
   }
 
-  function getAssetByReserveId(
+  function _getAssetByReserveId(
     ISpoke spoke,
     uint256 reserveId
   ) internal view returns (uint256, IERC20) {
@@ -323,7 +323,7 @@ abstract contract SpokeQueryHelpers is HubQueryHelpers {
     return (reserve.assetId, IERC20(underlying));
   }
 
-  function getAssetUnderlyingByReserveId(
+  function _getAssetUnderlyingByReserveId(
     ISpoke spoke,
     uint256 reserveId
   ) internal view returns (IERC20) {
@@ -332,7 +332,7 @@ abstract contract SpokeQueryHelpers is HubQueryHelpers {
     return IERC20(underlying);
   }
 
-  function getTotalWithdrawable(
+  function _getTotalWithdrawable(
     ISpoke spoke,
     uint256 reserveId,
     address user
@@ -380,11 +380,6 @@ abstract contract SpokeQueryHelpers is HubQueryHelpers {
     return userAccountData;
   }
 
-  function getTargetHealthFactor(ISpoke spoke) internal view returns (uint256) {
-    ISpoke.LiquidationConfig memory liqConfig = spoke.getLiquidationConfig();
-    return liqConfig.targetHealthFactor;
-  }
-
   function _getTargetHealthFactor(ISpoke spoke) internal view returns (uint128) {
     return spoke.getLiquidationConfig().targetHealthFactor;
   }
@@ -395,6 +390,14 @@ abstract contract SpokeQueryHelpers is HubQueryHelpers {
 
   function _getCollateralFactor(ISpoke spoke, uint256 reserveId) internal view returns (uint16) {
     return _getLatestDynamicReserveConfig(spoke, reserveId).collateralFactor;
+  }
+
+  function _getTokenBalances(
+    IERC20 token,
+    address spoke,
+    address hub
+  ) internal view returns (TokenBalances memory) {
+    return TokenBalances({spokeBalance: token.balanceOf(spoke), hubBalance: token.balanceOf(hub)});
   }
 
   function _getCollateralFactor(
@@ -491,7 +494,7 @@ abstract contract SpokeQueryHelpers is HubQueryHelpers {
     uint256 reserveId,
     uint256 repayAmount
   ) internal view virtual returns (IHubBase.PremiumDelta memory) {
-    DebtData memory userDebt = getUserDebt(spoke, user, reserveId);
+    DebtData memory userDebt = _getUserDebt(spoke, user, reserveId);
     (, uint256 premiumRayToRestore) = _calculateRestoreAmounts(
       repayAmount,
       userDebt.drawnDebt,
@@ -520,7 +523,7 @@ abstract contract SpokeQueryHelpers is HubQueryHelpers {
     uint256 reserveId,
     uint256 repayAmount
   ) internal view virtual returns (IHubBase.PremiumDelta memory) {
-    DebtData memory userDebt = getUserDebt(spoke, user, reserveId);
+    DebtData memory userDebt = _getUserDebt(spoke, user, reserveId);
     (uint256 drawnDebtToRestore, uint256 premiumRayToRestore) = _calculateRestoreAmounts(
       repayAmount,
       userDebt.drawnDebt,
@@ -610,14 +613,14 @@ abstract contract SpokeQueryHelpers is HubQueryHelpers {
 
   // --- Spoke position builders (derive hub from spoke) ---
 
-  function getSpokePosition(
+  function _getSpokePosition(
     ISpoke spoke,
     function(ISpoke) internal view returns (uint256) reserveIdFn
   ) internal view returns (SpokePosition memory) {
-    return getSpokePosition(spoke, reserveIdFn(spoke));
+    return _getSpokePosition(spoke, reserveIdFn(spoke));
   }
 
-  function getSpokePosition(
+  function _getSpokePosition(
     ISpoke spoke,
     uint256 reserveId
   ) internal view returns (SpokePosition memory) {
@@ -985,7 +988,7 @@ abstract contract SpokeQueryHelpers is HubQueryHelpers {
   }
 
   /// @dev Returns the id of the reserve corresponding to the given Liquidity Hub asset id
-  function getReserveIdByAssetId(
+  function _getReserveIdByAssetId(
     ISpoke spoke,
     IHub hub,
     uint256 assetId
@@ -1013,7 +1016,7 @@ abstract contract SpokeQueryHelpers is HubQueryHelpers {
     IHub hub = _hub(spoke, reserveId);
 
     // user position
-    ISpoke.UserPosition memory userPos = getUserInfo(spoke, user, reserveId);
+    ISpoke.UserPosition memory userPos = _getUserInfo(spoke, user, reserveId);
     ISpoke.UserPosition memory expectedUserPos = _calcUserPositionBySuppliedAndDebtAmount(
       spoke,
       user,
@@ -1121,7 +1124,7 @@ abstract contract SpokeQueryHelpers is HubQueryHelpers {
     (reserveDebt.drawnDebt, reserveDebt.premiumDebt) = spoke.getReserveDebt(reserveId);
 
     for (uint256 i = 0; i < users.length; ++i) {
-      ISpoke.UserPosition memory userData = getUserInfo(spoke, users[i], reserveId);
+      ISpoke.UserPosition memory userData = _getUserInfo(spoke, users[i], reserveId);
       (uint256 drawnDebt, uint256 premiumDebt) = spoke.getUserDebt(reserveId, users[i]);
 
       usersDebt.drawnDebt += drawnDebt;

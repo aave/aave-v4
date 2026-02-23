@@ -75,7 +75,7 @@ contract HubAccrueInterestTest is Base {
     assertEq(daiInfo.drawnIndex, WadRayMath.RAY);
     assertEq(daiInfo.premiumOffsetRay, 0);
     assertEq(hub1.getAddedAssets(daiAssetId), 0);
-    assertEq(getAssetDrawnDebt(hub1, daiAssetId), 0);
+    assertEq(_getAssetDrawnDebt(hub1, daiAssetId), 0);
   }
 
   /// no interest accrued with only add
@@ -97,7 +97,7 @@ contract HubAccrueInterestTest is Base {
     assertEq(daiInfo.lastUpdateTimestamp, vm.getBlockTimestamp(), 'lastUpdateTimestamp');
     assertEq(daiInfo.drawnIndex, WadRayMath.RAY, 'drawnIndex');
     assertEq(hub1.getAddedAssets(daiAssetId), addAmount * 2);
-    assertEq(getAssetDrawnDebt(hub1, daiAssetId), 0);
+    assertEq(_getAssetDrawnDebt(hub1, daiAssetId), 0);
   }
 
   /// no interest accrued when no debt after restore
@@ -121,7 +121,7 @@ contract HubAccrueInterestTest is Base {
 
     IHub.Asset memory daiInfo = hub1.getAsset(daiAssetId);
 
-    (uint256 expectedDrawnIndex1, uint256 expectedDrawnDebt1) = calculateExpectedDebt(
+    (uint256 expectedDrawnIndex1, uint256 expectedDrawnDebt1) = _calculateExpectedDebt(
       daiInfo.drawnShares,
       WadRayMath.RAY,
       drawnRate,
@@ -136,13 +136,13 @@ contract HubAccrueInterestTest is Base {
       addAmount + addAmount2 + interest,
       'addAmount'
     );
-    assertEq(getAssetDrawnDebt(hub1, daiAssetId), expectedDrawnDebt1, 'drawn');
+    assertEq(_getAssetDrawnDebt(hub1, daiAssetId), expectedDrawnDebt1, 'drawn');
 
     startTime = vm.getBlockTimestamp().toUint40();
     drawnRate = hub1.getAssetDrawnRate(daiAssetId).toUint96();
 
     // calculate expected drawn to restore
-    (uint256 expectedDrawnIndex2, uint256 expectedDrawnDebt2) = calculateExpectedDebt(
+    (uint256 expectedDrawnIndex2, uint256 expectedDrawnDebt2) = _calculateExpectedDebt(
       daiInfo.drawnShares,
       expectedDrawnIndex1,
       drawnRate,
@@ -171,7 +171,7 @@ contract HubAccrueInterestTest is Base {
       addAmount + addAmount2 + interest,
       'addAmount'
     );
-    assertEq(getAssetDrawnDebt(hub1, daiAssetId), 0, 'drawn');
+    assertEq(_getAssetDrawnDebt(hub1, daiAssetId), 0, 'drawn');
 
     // Time passes
     skip(elapsed);
@@ -188,7 +188,7 @@ contract HubAccrueInterestTest is Base {
       addAmount + addAmount2 * 2 + interest,
       'addAmount'
     );
-    assertEq(getAssetDrawnDebt(hub1, daiAssetId), 0, 'drawn');
+    assertEq(_getAssetDrawnDebt(hub1, daiAssetId), 0, 'drawn');
   }
 
   /// accrue interest after some time has passed
@@ -213,7 +213,7 @@ contract HubAccrueInterestTest is Base {
 
     IHub.Asset memory daiInfo = hub1.getAsset(daiAssetId);
 
-    (uint256 expectedDrawnIndex, uint256 expectedDrawnDebt) = calculateExpectedDebt(
+    (uint256 expectedDrawnIndex, uint256 expectedDrawnDebt) = _calculateExpectedDebt(
       daiInfo.drawnShares,
       initialDrawnIndex,
       drawnRate,
@@ -228,7 +228,7 @@ contract HubAccrueInterestTest is Base {
       addAmount + addAmount2 + interest,
       'addAmount'
     );
-    assertEq(getAssetDrawnDebt(hub1, daiAssetId), expectedDrawnDebt, 'drawn');
+    assertEq(_getAssetDrawnDebt(hub1, daiAssetId), expectedDrawnDebt, 'drawn');
   }
 
   /// accrue interest on any borrow amount after any time has passed
@@ -256,7 +256,7 @@ contract HubAccrueInterestTest is Base {
 
     IHub.Asset memory daiInfo = hub1.getAsset(daiAssetId);
 
-    (uint256 expectedDrawnIndex, uint256 expectedDrawnDebt) = calculateExpectedDebt(
+    (uint256 expectedDrawnIndex, uint256 expectedDrawnDebt) = _calculateExpectedDebt(
       daiInfo.drawnShares,
       initialDrawnIndex,
       drawnRate,
@@ -271,7 +271,7 @@ contract HubAccrueInterestTest is Base {
       addAmount + addAmount2 + interest,
       'addAmount'
     );
-    assertEq(getAssetDrawnDebt(hub1, daiAssetId), expectedDrawnDebt, 'drawn');
+    assertEq(_getAssetDrawnDebt(hub1, daiAssetId), expectedDrawnDebt, 'drawn');
   }
 
   /// accrue interest on any borrow amount after a borrow rate change and any time has passed
@@ -307,7 +307,7 @@ contract HubAccrueInterestTest is Base {
 
     assetData.t1 = hub1.getAsset(daiAssetId);
     timestamps.t1 = vm.getBlockTimestamp().toUint40();
-    (uint256 expectedDrawnIndex, uint256 expectedDrawnDebt1) = calculateExpectedDebt(
+    (uint256 expectedDrawnIndex, uint256 expectedDrawnDebt1) = _calculateExpectedDebt(
       assetData.t0.drawnShares,
       initialDrawnIndex,
       assetData.t0.drawnRate,
@@ -323,7 +323,7 @@ contract HubAccrueInterestTest is Base {
       spoke1Amounts.add0 + addAmount2 + interest1,
       'addAmount'
     );
-    assertEq(getAssetDrawnDebt(hub1, daiAssetId), expectedDrawnDebt1, 'drawn');
+    assertEq(_getAssetDrawnDebt(hub1, daiAssetId), expectedDrawnDebt1, 'drawn');
 
     // Say borrow rate changes
     _mockInterestRateBps(address(irStrategy), borrowRate);
@@ -340,7 +340,7 @@ contract HubAccrueInterestTest is Base {
     assetData.t2 = hub1.getAsset(daiAssetId);
     timestamps.t2 = vm.getBlockTimestamp().toUint40();
     uint256 expectedDrawnDebt2;
-    (expectedDrawnIndex, expectedDrawnDebt2) = calculateExpectedDebt(
+    (expectedDrawnIndex, expectedDrawnDebt2) = _calculateExpectedDebt(
       assetData.t0.drawnShares,
       cumulated.t1,
       assetData.t2.drawnRate,
@@ -356,7 +356,7 @@ contract HubAccrueInterestTest is Base {
       spoke1Amounts.add0 + addAmount2 * 3 + interest1 + interest2,
       'addAmount t2'
     );
-    assertEq(getAssetDrawnDebt(hub1, daiAssetId), expectedDrawnDebt2, 'drawn t2');
+    assertEq(_getAssetDrawnDebt(hub1, daiAssetId), expectedDrawnDebt2, 'drawn t2');
   }
 
   function test_getAssetDrawnRate_MatchesStoredAfterAction() public {

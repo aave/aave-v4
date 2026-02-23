@@ -196,7 +196,7 @@ abstract contract SpokeAssertions is SpokeQueryHelpers {
     );
   }
 
-  function _checkSuppliedAmounts(
+  function _assertSuppliedAmounts(
     uint256 assetId,
     uint256 reserveId,
     ISpoke spoke,

@@ -112,7 +112,7 @@ contract HubEliminateDeficitTest is Base {
     uint256 expectedRemoveShares = hub1.previewRemoveByAssets(_assetId, clearedDeficit);
     uint256 spokeAddedShares = hub1.getSpokeAddedShares(_assetId, _callerSpoke);
     uint256 assetSuppliedShares = hub1.getAddedShares(_assetId);
-    uint256 addExRate = getAddExRate(hub1, _assetId);
+    uint256 addExRate = _getAddExRate(hub1, _assetId);
 
     vm.expectEmit(address(hub1));
     emit IHub.EliminateDeficit(
@@ -139,7 +139,7 @@ contract HubEliminateDeficitTest is Base {
       hub1.getSpokeDeficitRay(_assetId, _coveredSpoke),
       _deficitAmountRay - clearedDeficitRay
     );
-    assertGe(getAddExRate(hub1, _assetId), addExRate);
+    assertGe(_getAddExRate(hub1, _assetId), addExRate);
     _assertBorrowRateSynced(hub1, _assetId, 'eliminateDeficit');
   }
 

@@ -82,7 +82,7 @@ import {SignatureGateway, ISignatureGateway} from 'src/position-manager/Signatur
 // helpers
 import 'tests/helpers/hub/HubHelpers.sol';
 import 'tests/helpers/spoke/SpokeHelpers.sol';
-import 'tests/helpers/deploy/DeployHelpers.sol';
+import {DeployUtils} from 'tests/helpers/deploy/DeployUtils.sol';
 import {BaseHelpers} from 'tests/unit/setup/BaseHelpers.sol';
 
 // mocks
@@ -866,47 +866,6 @@ abstract contract Base is BaseHelpers {
     }
     vm.prank(TREASURY_ADMIN);
     treasurySpoke.withdraw(assetId, amount, address(treasurySpoke));
-  }
-
-  function _deploySpokeWithOracle(
-    address proxyAdminOwner,
-    address _accessManager,
-    string memory _oracleDesc
-  ) internal pausePrank returns (ISpoke, IAaveOracle) {
-    return
-      _deploySpokeWithOracle(
-        proxyAdminOwner,
-        _accessManager,
-        _oracleDesc,
-        SpokeConstants.MAX_ALLOWED_USER_RESERVES_LIMIT
-      );
-  }
-
-  function _deploySpokeWithOracle(
-    address proxyAdminOwner,
-    address _accessManager,
-    string memory _oracleDesc,
-    uint16 maxUserReservesLimit
-  ) internal pausePrank returns (ISpoke, IAaveOracle) {
-    address deployer = makeAddr('deployer');
-
-    vm.startPrank(deployer);
-    IAaveOracle oracle = new AaveOracle(8, _oracleDesc);
-
-    ISpoke spoke = DeployUtils.deploySpoke(
-      address(oracle),
-      maxUserReservesLimit,
-      proxyAdminOwner,
-      abi.encodeCall(ISpokeInstance.initialize, (_accessManager))
-    );
-
-    oracle.setSpoke(address(spoke));
-    vm.stopPrank();
-
-    assertEq(spoke.ORACLE(), address(oracle));
-    assertEq(oracle.SPOKE(), address(spoke));
-
-    return (spoke, oracle);
   }
 
   function _deployTokenizationSpoke(

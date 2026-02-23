@@ -37,14 +37,7 @@ contract SpokeAccrueInterestTest is Base {
   }
 
   function test_accrueInterest_NoActionTaken() public view {
-    _assertSingleUserProtocolDebt(
-      spoke1,
-      _daiReserveId(spoke1),
-      bob,
-      0,
-      0,
-      'no debt without action'
-    );
+    _assertOnlyOneUserDebt(spoke1, _daiReserveId(spoke1), bob, 0, 0, 'no debt without action');
     _assertSingleUserProtocolSupply(
       spoke1,
       _daiReserveId(spoke1),
@@ -66,14 +59,7 @@ contract SpokeAccrueInterestTest is Base {
     // Skip time
     skip(skipTime);
 
-    _assertSingleUserProtocolDebt(
-      spoke1,
-      daiReserveId,
-      bob,
-      0,
-      0,
-      'after supply, no interest accrued'
-    );
+    _assertOnlyOneUserDebt(spoke1, daiReserveId, bob, 0, 0, 'after supply, no interest accrued');
     _assertSingleUserProtocolSupply(
       spoke1,
       daiReserveId,
@@ -108,7 +94,7 @@ contract SpokeAccrueInterestTest is Base {
       borrowAmount -
       _calculateBurntInterest(hub1, daiAssetId);
 
-    _assertSingleUserProtocolDebt(
+    _assertOnlyOneUserDebt(
       spoke1,
       daiReserveId,
       bob,
@@ -130,7 +116,7 @@ contract SpokeAccrueInterestTest is Base {
     // Full repayment, so back to zero debt
     SpokeActions.repay(spoke1, daiReserveId, bob, UINT256_MAX, bob);
 
-    _assertSingleUserProtocolDebt(spoke1, daiReserveId, bob, 0, 0, 'after repay, no debt');
+    _assertOnlyOneUserDebt(spoke1, daiReserveId, bob, 0, 0, 'after repay, no debt');
     _assertSingleUserProtocolSupply(
       spoke1,
       daiReserveId,
@@ -142,14 +128,7 @@ contract SpokeAccrueInterestTest is Base {
     // Time passes
     skip(elapsed);
 
-    _assertSingleUserProtocolDebt(
-      spoke1,
-      daiReserveId,
-      bob,
-      0,
-      0,
-      'after repay and time skip, no debt'
-    );
+    _assertOnlyOneUserDebt(spoke1, daiReserveId, bob, 0, 0, 'after repay and time skip, no debt');
     _assertSingleUserProtocolSupply(
       spoke1,
       daiReserveId,
@@ -183,7 +162,7 @@ contract SpokeAccrueInterestTest is Base {
     uint256 expectedPremiumDebt = _calculateExpectedPremiumDebt(borrowAmount, drawnDebt, userRp);
     uint256 interest = (drawnDebt + expectedPremiumDebt) - borrowAmount;
 
-    _assertSingleUserProtocolDebt(
+    _assertOnlyOneUserDebt(
       spoke1,
       daiReserveId,
       bob,
@@ -234,7 +213,7 @@ contract SpokeAccrueInterestTest is Base {
       borrowAmount -
       _calculateBurntInterest(hub1, usdxAssetId);
 
-    _assertSingleUserProtocolDebt(
+    _assertOnlyOneUserDebt(
       spoke1,
       usdxReserveId,
       bob,
@@ -376,14 +355,7 @@ contract SpokeAccrueInterestTest is Base {
       rates.daiBaseBorrowRate,
       startTime
     );
-    _assertSingleUserProtocolDebt(
-      spoke1,
-      _daiReserveId(spoke1),
-      bob,
-      drawnDebt,
-      0,
-      'dai before accrual'
-    );
+    _assertOnlyOneUserDebt(spoke1, _daiReserveId(spoke1), bob, drawnDebt, 0, 'dai before accrual');
     _assertUserSupply(
       spoke1,
       _daiReserveId(spoke1),
@@ -400,7 +372,7 @@ contract SpokeAccrueInterestTest is Base {
       rates.wethBaseBorrowRate,
       startTime
     );
-    _assertSingleUserProtocolDebt(
+    _assertOnlyOneUserDebt(
       spoke1,
       _wethReserveId(spoke1),
       bob,
@@ -424,7 +396,7 @@ contract SpokeAccrueInterestTest is Base {
       rates.usdxBaseBorrowRate,
       startTime
     );
-    _assertSingleUserProtocolDebt(
+    _assertOnlyOneUserDebt(
       spoke1,
       _usdxReserveId(spoke1),
       bob,
@@ -448,7 +420,7 @@ contract SpokeAccrueInterestTest is Base {
       rates.wbtcBaseBorrowRate,
       startTime
     );
-    _assertSingleUserProtocolDebt(
+    _assertOnlyOneUserDebt(
       spoke1,
       _wbtcReserveId(spoke1),
       bob,
@@ -484,7 +456,7 @@ contract SpokeAccrueInterestTest is Base {
     uint256 interest = (drawnDebt + expectedPremiumDebt) -
       amounts.daiBorrowAmount -
       _calculateBurntInterest(hub1, daiAssetId);
-    _assertSingleUserProtocolDebt(
+    _assertOnlyOneUserDebt(
       spoke1,
       _daiReserveId(spoke1),
       bob,
@@ -528,7 +500,7 @@ contract SpokeAccrueInterestTest is Base {
       (drawnDebt + expectedPremiumDebt) -
       amounts.wethBorrowAmount -
       _calculateBurntInterest(hub1, wethAssetId);
-    _assertSingleUserProtocolDebt(
+    _assertOnlyOneUserDebt(
       spoke1,
       _wethReserveId(spoke1),
       bob,
@@ -572,7 +544,7 @@ contract SpokeAccrueInterestTest is Base {
       (drawnDebt + expectedPremiumDebt) -
       amounts.usdxBorrowAmount -
       _calculateBurntInterest(hub1, usdxAssetId);
-    _assertSingleUserProtocolDebt(
+    _assertOnlyOneUserDebt(
       spoke1,
       _usdxReserveId(spoke1),
       bob,
@@ -616,7 +588,7 @@ contract SpokeAccrueInterestTest is Base {
       (drawnDebt + expectedPremiumDebt) -
       amounts.wbtcBorrowAmount -
       _calculateBurntInterest(hub1, wbtcAssetId);
-    _assertSingleUserProtocolDebt(
+    _assertOnlyOneUserDebt(
       spoke1,
       _wbtcReserveId(spoke1),
       bob,
@@ -814,14 +786,7 @@ contract SpokeAccrueInterestTest is Base {
       rates.daiBaseBorrowRate,
       startTime
     );
-    _assertSingleUserProtocolDebt(
-      spoke1,
-      _daiReserveId(spoke1),
-      bob,
-      drawnDebt,
-      0,
-      'dai before accrual'
-    );
+    _assertOnlyOneUserDebt(spoke1, _daiReserveId(spoke1), bob, drawnDebt, 0, 'dai before accrual');
     _assertUserSupply(
       spoke1,
       _daiReserveId(spoke1),
@@ -838,7 +803,7 @@ contract SpokeAccrueInterestTest is Base {
       rates.wethBaseBorrowRate,
       startTime
     );
-    _assertSingleUserProtocolDebt(
+    _assertOnlyOneUserDebt(
       spoke1,
       _wethReserveId(spoke1),
       bob,
@@ -862,7 +827,7 @@ contract SpokeAccrueInterestTest is Base {
       rates.usdxBaseBorrowRate,
       startTime
     );
-    _assertSingleUserProtocolDebt(
+    _assertOnlyOneUserDebt(
       spoke1,
       _usdxReserveId(spoke1),
       bob,
@@ -886,7 +851,7 @@ contract SpokeAccrueInterestTest is Base {
       rates.wbtcBaseBorrowRate,
       startTime
     );
-    _assertSingleUserProtocolDebt(
+    _assertOnlyOneUserDebt(
       spoke1,
       _wbtcReserveId(spoke1),
       bob,
@@ -925,7 +890,7 @@ contract SpokeAccrueInterestTest is Base {
     uint256 interest = (drawnDebt + expectedPremiumDebt) -
       amounts.daiBorrowAmount -
       _calculateBurntInterest(hub1, daiAssetId);
-    _assertSingleUserProtocolDebt(
+    _assertOnlyOneUserDebt(
       spoke1,
       _daiReserveId(spoke1),
       bob,
@@ -976,7 +941,7 @@ contract SpokeAccrueInterestTest is Base {
       (drawnDebt + expectedPremiumDebt) -
       amounts.wethBorrowAmount -
       _calculateBurntInterest(hub1, wethAssetId);
-    _assertSingleUserProtocolDebt(
+    _assertOnlyOneUserDebt(
       spoke1,
       _wethReserveId(spoke1),
       bob,
@@ -1027,7 +992,7 @@ contract SpokeAccrueInterestTest is Base {
       (drawnDebt + expectedPremiumDebt) -
       amounts.usdxBorrowAmount -
       _calculateBurntInterest(hub1, usdxAssetId);
-    _assertSingleUserProtocolDebt(
+    _assertOnlyOneUserDebt(
       spoke1,
       _usdxReserveId(spoke1),
       bob,
@@ -1078,7 +1043,7 @@ contract SpokeAccrueInterestTest is Base {
       (drawnDebt + expectedPremiumDebt) -
       amounts.wbtcBorrowAmount -
       _calculateBurntInterest(hub1, wbtcAssetId);
-    _assertSingleUserProtocolDebt(
+    _assertOnlyOneUserDebt(
       spoke1,
       _wbtcReserveId(spoke1),
       bob,

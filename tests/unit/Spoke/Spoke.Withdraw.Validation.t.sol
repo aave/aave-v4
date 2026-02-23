@@ -85,7 +85,7 @@ contract SpokeWithdrawValidationTest is Base {
     // accrue interest
     skip(365 days);
 
-    uint256 newWithdrawalLimit = getTotalWithdrawable(spoke1, reserveId, alice);
+    uint256 newWithdrawalLimit = _getTotalWithdrawable(spoke1, reserveId, alice);
     // newWithdrawalLimit with accrued interest should be greater than supplyAmount
     assertGt(newWithdrawalLimit, supplyAmount);
 
@@ -139,7 +139,7 @@ contract SpokeWithdrawValidationTest is Base {
     // debt accrues
     skip(skipTime);
 
-    uint256 newWithdrawalLimit = getTotalWithdrawable(spoke1, reserveId, alice);
+    uint256 newWithdrawalLimit = _getTotalWithdrawable(spoke1, reserveId, alice);
     // newWithdrawalLimit with accrued interest should be greater than supplyAmount
     vm.assume(newWithdrawalLimit > supplyAmount);
 

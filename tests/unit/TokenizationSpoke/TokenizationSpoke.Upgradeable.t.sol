@@ -149,7 +149,7 @@ contract TokenizationSpokeUpgradeableTest is TokenizationSpokeBaseTest {
 
     TokenizationSpokeInstance vaultImpl2 = _deployMockTokenizationSpokeInstance(2);
     vm.expectRevert();
-    vm.prank(makeUser());
+    vm.prank(_makeUser());
     vaultProxy.upgradeToAndCall(
       address(vaultImpl2),
       _getInitializeCalldata(SHARE_NAME, SHARE_SYMBOL)

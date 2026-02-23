@@ -135,7 +135,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
         MAX_SUPPLY_AMOUNT
       );
     }
-    deal(spoke, debtReserveId, liquidator, debtToCover.percentMulUp(101_00));
+    _deal(spoke, debtReserveId, liquidator, debtToCover.percentMulUp(101_00));
     SpokeActions.approve(spoke, debtReserveId, liquidator, debtToCover.percentMulUp(101_00));
 
     return debtToCover;
@@ -594,15 +594,14 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
   ) internal virtual returns (LiquidationBalanceSnapshot memory) {
     return
       LiquidationBalanceSnapshot({
-        collateralErc20Balance: getAssetUnderlyingByReserveId(spoke, collateralReserveId).balanceOf(
-          addr
-        ),
+        collateralErc20Balance: _getAssetUnderlyingByReserveId(spoke, collateralReserveId)
+          .balanceOf(addr),
         suppliedInSpoke: spoke.getUserSuppliedAssets(collateralReserveId, addr),
         addedInHub: _hub(spoke, collateralReserveId).getSpokeAddedAssets(
           _reserveAssetId(spoke, collateralReserveId),
           addr
         ),
-        debtErc20Balance: getAssetUnderlyingByReserveId(spoke, debtReserveId).balanceOf(addr),
+        debtErc20Balance: _getAssetUnderlyingByReserveId(spoke, debtReserveId).balanceOf(addr),
         borrowedFromSpoke: spoke.getUserTotalDebt(debtReserveId, addr),
         drawnFromHub: _hub(spoke, debtReserveId).getSpokeTotalOwed(
           _reserveAssetId(spoke, debtReserveId),
@@ -971,8 +970,8 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
 
     // Liquidator
     if (
-      getAssetUnderlyingByReserveId(params.spoke, params.collateralReserveId) ==
-      getAssetUnderlyingByReserveId(params.spoke, params.debtReserveId)
+      _getAssetUnderlyingByReserveId(params.spoke, params.collateralReserveId) ==
+      _getAssetUnderlyingByReserveId(params.spoke, params.debtReserveId)
     ) {
       assertEq(
         accountsInfoAfter.liquidatorBalanceInfo.collateralErc20Balance,
@@ -1044,8 +1043,8 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
 
     // Liquidator
     if (
-      getAssetUnderlyingByReserveId(params.spoke, params.collateralReserveId) ==
-      getAssetUnderlyingByReserveId(params.spoke, params.debtReserveId)
+      _getAssetUnderlyingByReserveId(params.spoke, params.collateralReserveId) ==
+      _getAssetUnderlyingByReserveId(params.spoke, params.debtReserveId)
     ) {
       assertEq(
         accountsInfoAfter.liquidatorBalanceInfo.collateralErc20Balance,

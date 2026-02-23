@@ -9,6 +9,8 @@ import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
 import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
 import {IHub} from 'src/hub/interfaces/IHub.sol';
 import {ISpoke, ISpokeBase} from 'src/spoke/interfaces/ISpoke.sol';
+import {IAaveOracle} from 'src/spoke/interfaces/IAaveOracle.sol';
+import {AaveOracle} from 'src/spoke/AaveOracle.sol';
 import {SpokeConstants} from 'tests/helpers/spoke/SpokeConstants.sol';
 import {DeployUtils} from 'tests/helpers/deploy/DeployUtils.sol';
 import {ISpokeInstance} from 'tests/helpers/mocks/ISpokeInstance.sol';
@@ -33,7 +35,7 @@ abstract contract SpokeSetupHelpers is
 
   /// @dev Opens a supply position for a random user
   function _openSupplyPosition(ISpoke spoke, uint256 reserveId, uint256 amount) public {
-    _increaseCollateralSupply(spoke, reserveId, amount, makeUser());
+    _increaseCollateralSupply(spoke, reserveId, amount, _makeUser());
   }
 
   /// @dev Increases the collateral supply for a user
@@ -47,7 +49,7 @@ abstract contract SpokeSetupHelpers is
     IHub hub = _hub(spoke, reserveId);
     uint256 initialLiq = hub.getAssetLiquidity(assetId);
 
-    deal(spoke, reserveId, user, amount);
+    _deal(spoke, reserveId, user, amount);
     SpokeActions.approve(spoke, reserveId, user, UINT256_MAX);
 
     _checkedSupplyCollateral(
@@ -85,7 +87,7 @@ abstract contract SpokeSetupHelpers is
     bool withPremium,
     address spokeAdmin
   ) internal returns (address) {
-    address tempUser = makeUser();
+    address tempUser = _makeUser();
 
     // add collateral
     uint256 supplyAmount = _calcMinimumCollAmount({
@@ -95,7 +97,7 @@ abstract contract SpokeSetupHelpers is
       debtAmount: amount
     });
 
-    deal(spoke, reserveId, tempUser, supplyAmount);
+    _deal(spoke, reserveId, tempUser, supplyAmount);
     SpokeActions.approve(spoke, reserveId, tempUser, UINT256_MAX);
 
     SpokeActions.supplyCollateral({
@@ -148,14 +150,14 @@ abstract contract SpokeSetupHelpers is
       debtReserveId,
       borrowAmount
     ) * 5;
-    deal(spoke, collateralReserveId, user, supplyAmount);
+    _deal(spoke, collateralReserveId, user, supplyAmount);
     SpokeActions.approve(spoke, collateralReserveId, user, UINT256_MAX);
     SpokeActions.supplyCollateral(spoke, collateralReserveId, user, supplyAmount, user);
     SpokeActions.borrow(spoke, debtReserveId, user, borrowAmount, user);
   }
 
-  function deal(ISpoke spoke, uint256 reserveId, address user, uint256 amount) internal {
-    IERC20 underlying = getAssetUnderlyingByReserveId(spoke, reserveId);
+  function _deal(ISpoke spoke, uint256 reserveId, address user, uint256 amount) internal {
+    IERC20 underlying = _getAssetUnderlyingByReserveId(spoke, reserveId);
     if (underlying.balanceOf(user) < amount) {
       deal(address(underlying), user, amount);
     }
@@ -189,7 +191,7 @@ abstract contract SpokeSetupHelpers is
     borrow.borrowAmount = borrow.supplyAmount / 2;
 
     IHub hub = _hub(spoke, borrow.reserveId);
-    (state.borrowReserveAssetId, ) = getAssetByReserveId(spoke, borrow.reserveId);
+    (state.borrowReserveAssetId, ) = _getAssetByReserveId(spoke, borrow.reserveId);
     (state.collateralSupplyShares, state.borrowSupplyShares) = _executeSpokeSupplyAndBorrow({
       spoke: spoke,
       collateral: collateral,
@@ -309,14 +311,6 @@ abstract contract SpokeSetupHelpers is
     );
   }
 
-  function getTokenBalances(
-    IERC20 token,
-    address spoke,
-    address hub
-  ) internal view returns (TokenBalances memory) {
-    return TokenBalances({spokeBalance: token.balanceOf(spoke), hubBalance: token.balanceOf(hub)});
-  }
-
   /// @dev Borrow to be at a certain health factor
   function _borrowToBeAtHf(
     ISpoke spoke,
@@ -387,5 +381,46 @@ abstract contract SpokeSetupHelpers is
     address currentImpl = _getImplementationAddress(address(spoke));
     ISpokeInstance newImpl = DeployUtils.deploySpokeImplementation(spoke.ORACLE(), newLimit);
     vm.etch(currentImpl, address(newImpl).code);
+  }
+
+  function _deploySpokeWithOracle(
+    address proxyAdminOwner,
+    address _accessManager,
+    string memory _oracleDesc
+  ) internal pausePrank returns (ISpoke, IAaveOracle) {
+    return
+      _deploySpokeWithOracle(
+        proxyAdminOwner,
+        _accessManager,
+        _oracleDesc,
+        SpokeConstants.MAX_ALLOWED_USER_RESERVES_LIMIT
+      );
+  }
+
+  function _deploySpokeWithOracle(
+    address proxyAdminOwner,
+    address _accessManager,
+    string memory _oracleDesc,
+    uint16 maxUserReservesLimit
+  ) internal pausePrank returns (ISpoke, IAaveOracle) {
+    address deployer = makeAddr('deployer');
+
+    vm.startPrank(deployer);
+    IAaveOracle oracle = new AaveOracle(8, _oracleDesc);
+
+    ISpoke spoke = DeployUtils.deploySpoke(
+      address(oracle),
+      maxUserReservesLimit,
+      proxyAdminOwner,
+      abi.encodeCall(ISpokeInstance.initialize, (_accessManager))
+    );
+
+    oracle.setSpoke(address(spoke));
+    vm.stopPrank();
+
+    assertEq(spoke.ORACLE(), address(oracle));
+    assertEq(oracle.SPOKE(), address(spoke));
+
+    return (spoke, oracle);
   }
 }

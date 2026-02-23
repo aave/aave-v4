@@ -242,7 +242,7 @@ contract HubRestoreTest is Base {
     vm.stopPrank();
 
     assertEq(restoredShares, drawnShares);
-    AssetPosition memory daiData = getAssetPosition(hub1, daiAssetId);
+    AssetPosition memory daiData = _getAssetPosition(hub1, daiAssetId);
     // hub dai data
     assertEq(daiData.addedAmount, daiAmount, 'hub dai total assets post-restore');
     assertEq(
@@ -707,7 +707,7 @@ contract HubRestoreTest is Base {
     hub1.restore(daiAssetId, restoreDrawnAmount, premiumDelta);
     vm.stopPrank();
 
-    AssetPosition memory daiData = getAssetPosition(hub1, daiAssetId);
+    AssetPosition memory daiData = _getAssetPosition(hub1, daiAssetId);
 
     // hub
     assertApproxEqAbs(
@@ -786,7 +786,7 @@ contract HubRestoreTest is Base {
     hub1.restore(daiAssetId, drawnRestored, premiumDelta);
     vm.stopPrank();
 
-    AssetPosition memory daiData = getAssetPosition(hub1, daiAssetId);
+    AssetPosition memory daiData = _getAssetPosition(hub1, daiAssetId);
 
     // hub dai data
     assertEq(daiData.addedAmount, daiAmount, 'hub dai total assets post-restore');
@@ -889,7 +889,7 @@ contract HubRestoreTest is Base {
     hub1.restore(daiAssetId, drawn, premiumDelta);
     vm.stopPrank();
 
-    AssetPosition memory daiData = getAssetPosition(hub1, daiAssetId);
+    AssetPosition memory daiData = _getAssetPosition(hub1, daiAssetId);
 
     // asset
     assertEq(daiData.drawn, 0, 'asset drawn');
@@ -991,7 +991,7 @@ contract HubRestoreTest is Base {
     hub1.restore(daiAssetId, drawn, premiumDelta);
     vm.stopPrank();
 
-    AssetPosition memory daiData = getAssetPosition(hub1, daiAssetId);
+    AssetPosition memory daiData = _getAssetPosition(hub1, daiAssetId);
 
     // asset
     assertEq(daiData.drawn, 0, 'asset drawn');

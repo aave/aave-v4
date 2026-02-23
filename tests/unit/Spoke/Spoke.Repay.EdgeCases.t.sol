@@ -33,9 +33,9 @@ contract SpokeRepayEdgeCaseTest is Base {
     SpokeActions.borrow(spoke1, _daiReserveId(spoke1), bob, daiBorrowAmount, bob);
     skip(skipTime); // initial increase in index, no time passes for subsequent checks
 
-    DebtData memory bobDebt = getUserDebt(spoke1, bob, _daiReserveId(spoke1));
-    uint256 addExRateBefore = getAddExRate(hub1, daiAssetId);
-    uint256 debtExRateBefore = getDebtExRate(hub1, daiAssetId);
+    DebtData memory bobDebt = _getUserDebt(spoke1, bob, _daiReserveId(spoke1));
+    uint256 addExRateBefore = _getAddExRate(hub1, daiAssetId);
+    uint256 debtExRateBefore = _getDebtExRate(hub1, daiAssetId);
 
     // repay partial premium debt
     vm.assume(bobDebt.premiumDebt > 1);
@@ -78,48 +78,48 @@ contract SpokeRepayEdgeCaseTest is Base {
 
     _checkSupplyRateIncreasing(
       addExRateBefore,
-      getAddExRate(hub1, daiAssetId),
+      _getAddExRate(hub1, daiAssetId),
       'after partial premium debt repay'
     );
     _checkDebtRateConstant(
       debtExRateBefore,
-      getDebtExRate(hub1, daiAssetId),
+      _getDebtExRate(hub1, daiAssetId),
       'after partial premium debt repay'
     );
 
-    bobDebt = getUserDebt(spoke1, bob, _daiReserveId(spoke1));
+    bobDebt = _getUserDebt(spoke1, bob, _daiReserveId(spoke1));
 
     // repay partial drawn debt
     daiRepayAmount = bobDebt.premiumDebt + bound(vm.randomUint(), 1, bobDebt.drawnDebt - 1);
-    addExRateBefore = getAddExRate(hub1, daiAssetId);
-    debtExRateBefore = getDebtExRate(hub1, daiAssetId);
+    addExRateBefore = _getAddExRate(hub1, daiAssetId);
+    debtExRateBefore = _getDebtExRate(hub1, daiAssetId);
 
     SpokeActions.repay(spoke1, _daiReserveId(spoke1), bob, daiRepayAmount, bob);
 
     _checkSupplyRateIncreasing(
       addExRateBefore,
-      getAddExRate(hub1, daiAssetId),
+      _getAddExRate(hub1, daiAssetId),
       'after partial drawn debt repay'
     );
     _checkDebtRateConstant(
       debtExRateBefore,
-      getDebtExRate(hub1, daiAssetId),
+      _getDebtExRate(hub1, daiAssetId),
       'after partial drawn debt repay'
     );
 
-    addExRateBefore = getAddExRate(hub1, daiAssetId);
-    debtExRateBefore = getDebtExRate(hub1, daiAssetId);
+    addExRateBefore = _getAddExRate(hub1, daiAssetId);
+    debtExRateBefore = _getDebtExRate(hub1, daiAssetId);
 
     SpokeActions.repay(spoke1, _daiReserveId(spoke1), bob, UINT256_MAX, bob);
 
     _checkSupplyRateIncreasing(
       addExRateBefore,
-      getAddExRate(hub1, daiAssetId),
+      _getAddExRate(hub1, daiAssetId),
       'after partial full debt repay'
     );
     _checkDebtRateConstant(
       debtExRateBefore,
-      getDebtExRate(hub1, daiAssetId),
+      _getDebtExRate(hub1, daiAssetId),
       'after full debt repay'
     );
   }
@@ -144,7 +144,7 @@ contract SpokeRepayEdgeCaseTest is Base {
     skip(365 days);
 
     // inflated to 1.5
-    uint256 addExRateBefore = getAddExRate(hub1, daiAssetId);
+    uint256 addExRateBefore = _getAddExRate(hub1, daiAssetId);
     uint256 exchangeRateBefore = hub1.previewRemoveByShares(daiAssetId, MAX_SUPPLY_AMOUNT);
     assertApproxEqAbs(exchangeRateBefore, 1.5e30, 0.0000001e30);
 
@@ -158,15 +158,15 @@ contract SpokeRepayEdgeCaseTest is Base {
     vm.prank(bob);
     spoke1.borrow(_daiReserveId(spoke1), 15, bob);
 
-    _checkSupplyRateIncreasing(addExRateBefore, getAddExRate(hub1, daiAssetId), 'after borrows');
-    addExRateBefore = getAddExRate(hub1, daiAssetId);
+    _checkSupplyRateIncreasing(addExRateBefore, _getAddExRate(hub1, daiAssetId), 'after borrows');
+    addExRateBefore = _getAddExRate(hub1, daiAssetId);
 
     // alice repays full
     SpokeActions.repay(spoke1, _daiReserveId(spoke1), alice, UINT256_MAX, alice);
 
     _checkSupplyRateIncreasing(
       addExRateBefore,
-      getAddExRate(hub1, daiAssetId),
+      _getAddExRate(hub1, daiAssetId),
       'after alice full repay'
     );
   }
@@ -234,14 +234,14 @@ contract SpokeRepayEdgeCaseTest is Base {
     // Bob borrows DAI
     SpokeActions.borrow(spoke1, _daiReserveId(spoke1), bob, daiBorrowAmount, bob);
 
-    DebtData memory bobDaiDebtBefore = getUserDebt(spoke1, bob, _daiReserveId(spoke1));
+    DebtData memory bobDaiDebtBefore = _getUserDebt(spoke1, bob, _daiReserveId(spoke1));
     assertEq(bobDaiDebtBefore.totalDebt, daiBorrowAmount, 'Initial bob dai debt');
-    assertEq(getUserDebt(spoke1, bob, _wethReserveId(spoke1)).totalDebt, 0);
+    assertEq(_getUserDebt(spoke1, bob, _wethReserveId(spoke1)).totalDebt, 0);
 
     // Time passes so that interest accrues
     skip(365 days);
 
-    bobDaiDebtBefore = getUserDebt(spoke1, bob, _daiReserveId(spoke1));
+    bobDaiDebtBefore = _getUserDebt(spoke1, bob, _daiReserveId(spoke1));
     assertGt(
       bobDaiDebtBefore.totalDebt,
       daiBorrowAmount,
@@ -272,7 +272,7 @@ contract SpokeRepayEdgeCaseTest is Base {
     assertEq(r.premiumRestored, 0);
 
     // debt remains unchanged & is donated (premium was already 0)
-    assertEq(getUserDebt(spoke1, bob, _daiReserveId(spoke1)), bobDaiDebtBefore);
+    assertEq(_getUserDebt(spoke1, bob, _daiReserveId(spoke1)), bobDaiDebtBefore);
   }
 
   // repay less than 1 share of drawn debt, but nonzero premium debt
@@ -398,13 +398,13 @@ contract SpokeRepayEdgeCaseTest is Base {
     // Time passes
     skip(10 days);
 
-    DebtData memory bobDaiBefore = getUserDebt(spoke1, bob, _daiReserveId(spoke1));
+    DebtData memory bobDaiBefore = _getUserDebt(spoke1, bob, _daiReserveId(spoke1));
     assertGt(bobDaiBefore.totalDebt, daiBorrowAmount, 'bob dai debt before');
 
     // Bob repays premium
     SpokeActions.repay(spoke1, _daiReserveId(spoke1), bob, bobDaiBefore.premiumDebt, bob);
 
-    bobDaiBefore = getUserDebt(spoke1, bob, _daiReserveId(spoke1));
+    bobDaiBefore = _getUserDebt(spoke1, bob, _daiReserveId(spoke1));
     // Premium debt can be off by 1 due to rounding
     assertApproxEqAbs(bobDaiBefore.premiumDebt, 0, 1, 'bob dai premium debt after premium repay');
 
@@ -499,7 +499,7 @@ contract SpokeRepayEdgeCaseTest is Base {
     // Time passes
     skip(10 days);
 
-    DebtData memory bobDaiBefore = getUserDebt(spoke1, bob, _daiReserveId(spoke1));
+    DebtData memory bobDaiBefore = _getUserDebt(spoke1, bob, _daiReserveId(spoke1));
     assertGt(bobDaiBefore.totalDebt, daiBorrowAmount, 'bob dai debt before');
     assertEq(bobDaiBefore.premiumDebt, 0, 'bob dai premium debt before');
 

@@ -29,9 +29,9 @@ contract SpokeLiquidationCallDustTest is SpokeLiquidationCallBaseTest {
     _updateMaxLiquidationBonus(_spoke, _usdxReserveId(_spoke), 100_00, SPOKE_ADMIN);
     _updateMaxLiquidationBonus(_spoke, _usdyReserveId(_spoke), 100_00, SPOKE_ADMIN);
 
-    deal(_spoke, _usdxReserveId(_spoke), liquidator, 1e30);
-    deal(_spoke, _daiReserveId(_spoke), liquidator, 1e30);
-    deal(_spoke, _usdyReserveId(_spoke), liquidator, 1e30);
+    _deal(_spoke, _usdxReserveId(_spoke), liquidator, 1e30);
+    _deal(_spoke, _daiReserveId(_spoke), liquidator, 1e30);
+    _deal(_spoke, _usdyReserveId(_spoke), liquidator, 1e30);
 
     SpokeActions.approve(_spoke, _usdxReserveId(_spoke), liquidator, type(uint256).max);
     SpokeActions.approve(_spoke, _daiReserveId(_spoke), liquidator, type(uint256).max);

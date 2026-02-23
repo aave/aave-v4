@@ -16,20 +16,20 @@ abstract contract SetupHelpers is Test {
     if (callerMode == VmSafe.CallerMode.RecurrentPrank) vm.startPrank(msgSender, txOrigin);
   }
 
-  function makeEntity(string memory id, bytes32 key) internal returns (address) {
+  function _makeEntity(string memory id, bytes32 key) internal returns (address) {
     return makeAddr(string.concat(id, '-', vm.toString(uint256(key))));
   }
 
-  function makeKey(string memory name) internal returns (uint256) {
+  function _makeKey(string memory name) internal returns (uint256) {
     (, uint256 key) = makeAddrAndKey(name);
     return key;
   }
 
-  function makeUser(uint256 i) internal virtual returns (address) {
-    return makeEntity('user', bytes32(i));
+  function _makeUser(uint256 i) internal virtual returns (address) {
+    return _makeEntity('user', bytes32(i));
   }
 
-  function makeUser() internal virtual returns (address) {
-    return makeEntity('user', vm.randomBytes8());
+  function _makeUser() internal virtual returns (address) {
+    return _makeEntity('user', vm.randomBytes8());
   }
 }

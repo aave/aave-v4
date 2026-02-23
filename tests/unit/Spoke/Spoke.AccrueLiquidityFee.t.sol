@@ -11,14 +11,7 @@ contract SpokeAccrueLiquidityFeeTest is Base {
 
   function test_accrueLiquidityFee_NoActionTaken() public view {
     assertEq(hub1.getSpokeAddedShares(daiAssetId, address(treasurySpoke)), 0);
-    _assertSingleUserProtocolDebt(
-      spoke1,
-      _daiReserveId(spoke1),
-      bob,
-      0,
-      0,
-      'no debt without action'
-    );
+    _assertOnlyOneUserDebt(spoke1, _daiReserveId(spoke1), bob, 0, 0, 'no debt without action');
 
     _assertHubLiquidity(hub1, _daiReserveId(spoke1), 'spoke1.accrueLiquidityFee');
   }
@@ -37,14 +30,7 @@ contract SpokeAccrueLiquidityFeeTest is Base {
     // Skip time
     skip(skipTime);
 
-    _assertSingleUserProtocolDebt(
-      spoke1,
-      daiReserveId,
-      bob,
-      0,
-      0,
-      'after supply, no interest accrued'
-    );
+    _assertOnlyOneUserDebt(spoke1, daiReserveId, bob, 0, 0, 'after supply, no interest accrued');
 
     // treasury
     assertEq(hub1.getSpokeAddedAssets(daiAssetId, address(treasurySpoke)), 0);
@@ -87,7 +73,7 @@ contract SpokeAccrueLiquidityFeeTest is Base {
         expectedPremiumShares,
         bobPosition.premiumOffsetRay
       );
-      _assertSingleUserProtocolDebt(
+      _assertOnlyOneUserDebt(
         spoke1,
         reserveId,
         bob,
@@ -102,7 +88,7 @@ contract SpokeAccrueLiquidityFeeTest is Base {
       spoke1,
       reserveId,
       alice,
-      minimumAssetsPerAddedShare(hub1, assetId),
+      _minimumAssetsPerAddedShare(hub1, assetId),
       alice
     );
 
@@ -142,7 +128,13 @@ contract SpokeAccrueLiquidityFeeTest is Base {
     skip(skipTime);
 
     // Alice supplies 1 share to trigger interest accrual
-    SpokeActions.supply(spoke1, reserveId, alice, minimumAssetsPerAddedShare(hub1, assetId), alice);
+    SpokeActions.supply(
+      spoke1,
+      reserveId,
+      alice,
+      _minimumAssetsPerAddedShare(hub1, assetId),
+      alice
+    );
 
     // treasury
     expectedFeeShares = hub1.previewAddByAssets(
@@ -173,7 +165,13 @@ contract SpokeAccrueLiquidityFeeTest is Base {
     skip(skipTime);
 
     // Alice supplies 1 share to trigger interest accrual
-    SpokeActions.supply(spoke1, reserveId, alice, minimumAssetsPerAddedShare(hub1, assetId), alice);
+    SpokeActions.supply(
+      spoke1,
+      reserveId,
+      alice,
+      _minimumAssetsPerAddedShare(hub1, assetId),
+      alice
+    );
 
     // treasury
     expectedFeeShares = 0;
@@ -267,7 +265,7 @@ contract SpokeAccrueLiquidityFeeTest is Base {
 
     vm.recordLogs();
     // Bob supplies 1 share to trigger interest accrual with new liquidity fee
-    SpokeActions.supply(spoke1, reserveId, bob, minimumAssetsPerAddedShare(hub1, assetId), bob);
+    SpokeActions.supply(spoke1, reserveId, bob, _minimumAssetsPerAddedShare(hub1, assetId), bob);
     _assertEventNotEmitted(IHub.MintFeeShares.selector);
 
     vm.recordLogs();
@@ -383,7 +381,7 @@ contract SpokeAccrueLiquidityFeeTest is Base {
 
     vm.recordLogs();
     // Bob supplies 1 share to trigger interest accrual with new liquidity fee
-    SpokeActions.supply(spoke1, reserveId, bob, minimumAssetsPerAddedShare(hub1, assetId), bob);
+    SpokeActions.supply(spoke1, reserveId, bob, _minimumAssetsPerAddedShare(hub1, assetId), bob);
     _assertEventNotEmitted(IHub.MintFeeShares.selector);
 
     vm.recordLogs();

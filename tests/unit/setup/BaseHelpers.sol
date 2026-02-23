@@ -82,7 +82,7 @@ abstract contract BaseHelpers is BaseState {
 
   // --- Cross-layer assertion helpers ---
 
-  function _assertSingleUserProtocolDebt(
+  function _assertOnlyOneUserDebt(
     ISpoke spoke,
     uint256 reserveId,
     address user,

@@ -27,7 +27,7 @@ compilation_restrictions = [
 
 [bind_json]
 out = "tests/helpers/mocks/JsonBindings.sol"
-include = ["tests/mocks/EIP712Types.sol"]
+include = ["tests/helpers/mocks/EIP712Types.sol"]
 
 [lint]
 ignore = ["src/dependencies/**/*", "tests/**/*"]

@@ -116,9 +116,9 @@ abstract contract BaseState is HubHelpers, SpokeHelpers {
   string internal constant DERL = 'derl';
 
   address internal alice = makeAddr(ALICE);
-  uint256 internal alicePk = makeKey(ALICE);
+  uint256 internal alicePk = _makeKey(ALICE);
   address internal bob = makeAddr(BOB);
-  uint256 internal bobPk = makeKey(BOB);
+  uint256 internal bobPk = _makeKey(BOB);
   address internal carol = makeAddr(CAROL);
   address internal derl = makeAddr(DERL);
 

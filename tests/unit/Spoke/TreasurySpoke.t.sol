@@ -80,7 +80,7 @@ contract TreasurySpokeTest is Base {
     // create debt
     _openDebtPosition(
       spoke1,
-      getReserveIdByAssetId(spoke1, hub1, daiAssetId),
+      _getReserveIdByAssetId(spoke1, hub1, daiAssetId),
       100e18,
       true,
       SPOKE_ADMIN
@@ -110,7 +110,7 @@ contract TreasurySpokeTest is Base {
     // create debt
     _openDebtPosition(
       spoke1,
-      getReserveIdByAssetId(spoke1, hub1, daiAssetId),
+      _getReserveIdByAssetId(spoke1, hub1, daiAssetId),
       100e18,
       true,
       SPOKE_ADMIN
@@ -156,7 +156,7 @@ contract TreasurySpokeTest is Base {
     // create debt
     _openDebtPosition(
       spoke1,
-      getReserveIdByAssetId(spoke1, hub1, daiAssetId),
+      _getReserveIdByAssetId(spoke1, hub1, daiAssetId),
       100e18,
       true,
       SPOKE_ADMIN
@@ -261,7 +261,7 @@ contract TreasurySpokeTest is Base {
     );
 
     if (fees > 0) {
-      IERC20 asset = getAssetUnderlyingByReserveId(spoke1, reserveId);
+      IERC20 asset = _getAssetUnderlyingByReserveId(spoke1, reserveId);
       uint256 balanceBefore = asset.balanceOf(TREASURY_ADMIN);
 
       deal(address(asset), tempUser, UINT256_MAX);

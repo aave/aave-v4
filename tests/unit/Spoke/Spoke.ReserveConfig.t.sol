@@ -35,7 +35,7 @@ contract SpokeReserveConfigTest is Base {
     // not paused / not frozen; succeeds
     _updateReservePausedFlag(spoke1, daiReserveId, false, SPOKE_ADMIN);
     _updateReserveFrozenFlag(spoke1, daiReserveId, false, SPOKE_ADMIN);
-    deal(spoke1, daiReserveId, bob, amount);
+    _deal(spoke1, daiReserveId, bob, amount);
     SpokeActions.approve(spoke1, daiReserveId, bob, amount);
     SpokeActions.supply(spoke1, daiReserveId, bob, amount, bob);
   }
@@ -46,7 +46,7 @@ contract SpokeReserveConfigTest is Base {
     uint256 withdrawAmount = 1e18;
 
     // ensure user can withdraw
-    deal(spoke1, daiReserveId, bob, supplyAmount);
+    _deal(spoke1, daiReserveId, bob, supplyAmount);
     SpokeActions.approve(spoke1, daiReserveId, bob, supplyAmount);
     SpokeActions.supplyCollateral(spoke1, daiReserveId, bob, supplyAmount, bob);
 
@@ -95,11 +95,11 @@ contract SpokeReserveConfigTest is Base {
     uint256 daiLiquidity = 1_000e18;
     uint256 borrowAmount = 100e18;
 
-    deal(spoke1, wethReserveId, bob, wethCollateral);
+    _deal(spoke1, wethReserveId, bob, wethCollateral);
     SpokeActions.approve(spoke1, wethReserveId, bob, wethCollateral);
     SpokeActions.supplyCollateral(spoke1, wethReserveId, bob, wethCollateral, bob);
 
-    deal(spoke1, daiReserveId, alice, daiLiquidity);
+    _deal(spoke1, daiReserveId, alice, daiLiquidity);
     SpokeActions.approve(spoke1, daiReserveId, alice, daiLiquidity);
     SpokeActions.supply(spoke1, daiReserveId, alice, daiLiquidity, alice);
 

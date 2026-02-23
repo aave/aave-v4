@@ -200,7 +200,7 @@ contract SpokeUpgradeableTest is Base {
 
     ISpokeInstance spokeImpl2 = _deployMockSpokeInstance(2);
     vm.expectRevert();
-    vm.prank(makeUser());
+    vm.prank(_makeUser());
     spokeProxy.upgradeToAndCall(
       address(spokeImpl2),
       _getInitializeCalldata(address(accessManager))

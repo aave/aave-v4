@@ -115,11 +115,11 @@ contract SpokeMultipleHubTest is Base {
 
     // Verify Dai is indeed the asset Bob is borrowing from both hubs
     assertEq(
-      address(getAssetUnderlyingByReserveId(spoke1, _daiReserveId(spoke1))),
+      address(_getAssetUnderlyingByReserveId(spoke1, _daiReserveId(spoke1))),
       address(tokenList.dai)
     );
     assertEq(
-      address(getAssetUnderlyingByReserveId(spoke1, daiHub2ReserveId)),
+      address(_getAssetUnderlyingByReserveId(spoke1, daiHub2ReserveId)),
       address(tokenList.dai)
     );
 

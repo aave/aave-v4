@@ -50,7 +50,7 @@ contract SpokeLiquidationCallScenariosTest is SpokeLiquidationCallBaseTest {
     );
 
     for (uint256 reserveId = 0; reserveId < spoke.getReserveCount(); reserveId++) {
-      deal(spoke, reserveId, liquidator, MAX_SUPPLY_AMOUNT);
+      _deal(spoke, reserveId, liquidator, MAX_SUPPLY_AMOUNT);
       SpokeActions.approve(spoke, reserveId, liquidator, MAX_SUPPLY_AMOUNT);
     }
   }
@@ -222,13 +222,13 @@ contract SpokeLiquidationCallScenariosTest is SpokeLiquidationCallBaseTest {
 
     // Debt left after liquidation: 3713.4 - 3225.8 = 487.6 DAI (all drawn)
     assertApproxEqAbs(
-      getUserDebt(spoke, user, _daiReserveId(spoke)).drawnDebt,
+      _getUserDebt(spoke, user, _daiReserveId(spoke)).drawnDebt,
       487.6e18,
       0.1e18,
       'post liquidation: drawn debt left'
     );
     assertApproxEqAbs(
-      getUserDebt(spoke, user, _daiReserveId(spoke)).premiumDebt,
+      _getUserDebt(spoke, user, _daiReserveId(spoke)).premiumDebt,
       0,
       2,
       'post liquidation: premium debt left'
@@ -320,13 +320,13 @@ contract SpokeLiquidationCallScenariosTest is SpokeLiquidationCallBaseTest {
 
     // Debt left after liquidation: 3657.0726 - 3203.8835 = 453.1891 DAI (all drawn)
     assertApproxEqAbs(
-      getUserDebt(spoke, user, _daiReserveId(spoke)).drawnDebt,
+      _getUserDebt(spoke, user, _daiReserveId(spoke)).drawnDebt,
       453.1891e18,
       0.1e18,
       'post liquidation: drawn debt left'
     );
     assertApproxEqAbs(
-      getUserDebt(spoke, user, _daiReserveId(spoke)).premiumDebt,
+      _getUserDebt(spoke, user, _daiReserveId(spoke)).premiumDebt,
       0,
       2,
       'post liquidation: premium debt left'

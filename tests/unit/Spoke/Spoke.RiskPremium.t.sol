@@ -37,7 +37,7 @@ contract SpokeRiskPremiumTest is Base {
   function test_getUserRiskPremium_no_collateral() public view {
     // Assert Bob has no collateral
     for (uint256 reserveId = 0; reserveId < spoke1.getReserveCount(); reserveId++) {
-      ISpoke.UserPosition memory bobInfo = getUserInfo(spoke1, bob, reserveId);
+      ISpoke.UserPosition memory bobInfo = _getUserInfo(spoke1, bob, reserveId);
       assertEq(bobInfo.suppliedShares, 0, 'bob supplied collateral');
     }
     assertEq(_getUserRiskPremium(spoke1, bob), 0, 'user risk premium');
@@ -76,7 +76,7 @@ contract SpokeRiskPremiumTest is Base {
     SpokeActions.borrow(spoke1, daiReserveId, bob, borrowAmount, bob);
 
     uint256 userRiskPremium = _getUserRiskPremium(spoke1, bob);
-    ISpoke.Reserve memory daiInfo = getReserveInfo(spoke1, daiReserveId);
+    ISpoke.Reserve memory daiInfo = _getReserveInfo(spoke1, daiReserveId);
 
     // With single collateral, user rp will match collateral risk of collateral
     assertEq(userRiskPremium, daiInfo.collateralRisk, 'user risk premium');

@@ -1071,7 +1071,7 @@ contract SpokeRepayScenarioTest is Base {
     // Bob borrow dai
     SpokeActions.borrow(spoke1, _daiReserveId(spoke1), bob, action1.borrowAmount, bob);
 
-    assertEq(getUserInfo(spoke1, bob, _daiReserveId(spoke1)).suppliedShares, 0);
+    assertEq(_getUserInfo(spoke1, bob, _daiReserveId(spoke1)).suppliedShares, 0);
     assertEq(
       spoke1.getUserTotalDebt(_daiReserveId(spoke1), bob),
       action1.borrowAmount,
@@ -1176,7 +1176,7 @@ contract SpokeRepayScenarioTest is Base {
 
     uint256 totalSuppliedFromActions = action1.supplyAmount + action2.supplyAmount;
 
-    assertEq(getUserInfo(spoke1, bob, _daiReserveId(spoke1)).suppliedShares, 0);
+    assertEq(_getUserInfo(spoke1, bob, _daiReserveId(spoke1)).suppliedShares, 0);
     assertEq(
       spoke1.getUserSuppliedShares(_wethReserveId(spoke1), bob),
       hub1.previewAddByAssets(wethAssetId, totalSuppliedFromActions)
@@ -1264,7 +1264,7 @@ contract SpokeRepayScenarioTest is Base {
     // Bob borrows DAI
     SpokeActions.borrow(spoke1, _daiReserveId(spoke1), bob, daiBorrowAmount, bob);
 
-    assertEq(getUserInfo(spoke1, bob, _daiReserveId(spoke1)).suppliedShares, 0);
+    assertEq(_getUserInfo(spoke1, bob, _daiReserveId(spoke1)).suppliedShares, 0);
     assertEq(
       spoke1.getUserTotalDebt(_daiReserveId(spoke1), bob),
       daiBorrowAmount,
@@ -1274,7 +1274,7 @@ contract SpokeRepayScenarioTest is Base {
     // Time passes so that interest accrues
     skip(10 days);
 
-    DebtData memory bobDaiBefore = getUserDebt(spoke1, bob, _daiReserveId(spoke1));
+    DebtData memory bobDaiBefore = _getUserDebt(spoke1, bob, _daiReserveId(spoke1));
     // Bob's debt (drawn debt + premium) is greater than the original borrow amount
     assertGt(bobDaiBefore.totalDebt, daiBorrowAmount, 'Accrued interest increased bob dai debt');
 
@@ -1432,7 +1432,7 @@ contract SpokeRepayScenarioTest is Base {
 
     ISpoke.Reserve memory reserve = spoke1.getReserve(reserveId);
 
-    IERC20 underlying = getAssetUnderlyingByReserveId(spoke1, reserveId);
+    IERC20 underlying = _getAssetUnderlyingByReserveId(spoke1, reserveId);
 
     // Deal caller max collateral amount, approve spoke, supply
     supplyAmount = _calculateMaxSupplyAmount(spoke1, reserveId) - supplyAmount;
@@ -1487,7 +1487,7 @@ contract SpokeRepayScenarioTest is Base {
 
     ISpoke.Reserve memory reserve = spoke1.getReserve(reserveId);
 
-    IERC20 underlying = getAssetUnderlyingByReserveId(spoke1, reserveId);
+    IERC20 underlying = _getAssetUnderlyingByReserveId(spoke1, reserveId);
 
     // Set up caller initial debt position
     supplyAmount = _calculateMaxSupplyAmount(spoke1, reserveId) - supplyAmount;

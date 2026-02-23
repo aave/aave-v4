@@ -309,7 +309,7 @@ contract SpokeConfigTest is Base {
     uint256 assetId = spoke1.getReserve(reserveId).assetId;
 
     uint256 returnedId = spoke1.getReserveId(address(hub1), assetId);
-    assertEq(returnedId, getReserveIdByAssetId(spoke1, hub1, assetId));
+    assertEq(returnedId, _getReserveIdByAssetId(spoke1, hub1, assetId));
   }
 
   function test_getReserveId_fuzz_multipleHubs(uint256 reserveId) public {
@@ -399,7 +399,7 @@ contract SpokeConfigTest is Base {
     address hub = address(spoke1.getReserve(reserveId).hub);
 
     uint256 returnedId = spoke1.getReserveId(hub, assetId);
-    assertEq(returnedId, getReserveIdByAssetId(spoke1, IHub(hub), assetId));
+    assertEq(returnedId, _getReserveIdByAssetId(spoke1, IHub(hub), assetId));
   }
 
   function test_getReserveId_fuzz_revertsWith_ReserveNotListed(uint256 assetId) public {

@@ -354,7 +354,7 @@ contract HubDrawTest is Base {
     });
 
     (uint256 drawn, ) = hub1.getAssetOwed(daiAssetId);
-    uint256 singleShareInAssets = minimumAssetsPerDrawnShare(hub1, daiAssetId);
+    uint256 singleShareInAssets = _minimumAssetsPerDrawnShare(hub1, daiAssetId);
     // Need the drawn to be greater than the drawCap from interest, past the share we restore
     vm.assume(drawn > drawCap + singleShareInAssets);
 
@@ -428,10 +428,10 @@ contract HubDrawTest is Base {
     // restore to provide liquidity
     // Must repay at least one full share
     vm.startPrank(address(spoke1));
-    tokenList.dai.transferFrom(alice, address(hub1), minimumAssetsPerDrawnShare(hub1, daiAssetId));
+    tokenList.dai.transferFrom(alice, address(hub1), _minimumAssetsPerDrawnShare(hub1, daiAssetId));
     hub1.restore({
       assetId: daiAssetId,
-      drawnAmount: minimumAssetsPerDrawnShare(hub1, daiAssetId),
+      drawnAmount: _minimumAssetsPerDrawnShare(hub1, daiAssetId),
       premiumDelta: ZERO_PREMIUM_DELTA
     });
     vm.stopPrank();

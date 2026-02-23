@@ -100,7 +100,7 @@ contract LiquidationLogicExecuteLiquidationTest is LiquidationLogicBaseTest {
     vm.stopPrank();
 
     // Collateral hub: Add liquidity
-    address tempUser = makeUser();
+    address tempUser = _makeUser();
     deal(address(tokenList.usdx), tempUser, MAX_SUPPLY_AMOUNT);
     HubActions.add(
       hub1,

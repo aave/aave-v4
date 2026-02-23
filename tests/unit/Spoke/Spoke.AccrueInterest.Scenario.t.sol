@@ -412,7 +412,7 @@ contract SpokeAccrueInterestScenarioTest is Base {
     );
     _assertSpokeSupply(spoke2, reserveId, expectedReserveSupply, string.concat(reserveName, label));
     _assertAssetSupply(spoke2, reserveId, expectedReserveSupply, string.concat(reserveName, label));
-    _assertSingleUserProtocolDebt(
+    _assertOnlyOneUserDebt(
       spoke2,
       reserveId,
       bob,

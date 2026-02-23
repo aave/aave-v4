@@ -9,10 +9,6 @@ contract HubOperations_Gas_Tests is Base {
   using SafeCast for *;
   using WadRayMath for uint256;
 
-  function setUp() public override {
-    super.setUp();
-  }
-
   function test_add() public {
     vm.startPrank(address(spoke1));
     tokenList.usdx.transferFrom(alice, address(hub1), 1000e6);
