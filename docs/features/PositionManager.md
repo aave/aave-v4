@@ -16,7 +16,7 @@ Spoke-side authorization is a two-gate system. For a PositionManager contract to
 
 Neither gate alone is sufficient. A PositionManager that is `active` on a Spoke cannot act on a user who has not approved it on that Spoke. A user may approve a PositionManager even while it is inactive; the approval is persisted but only becomes effective once the Spoke activates the PositionManager. The Spoke enforces both checks at the call site before delegating execution. One exception applies: a user is always their own implicit PositionManager: `_isPositionManager` short-circuits to `true` when `user == manager`, bypassing both the `active` flag and the approval check.
 
-This design means PositionManager approvals are scoped to specific Spoke + PositionManager combinations. Approving a PositionManager on one Spoke grants no access on any other Spoke. There is no global PositionManager registry or cross-Spoke approval propagation.
+This design means PositionManager approvals are scoped to specific Spoke + PositionManager combinations. Approving a PositionManager on one Spoke grants no access on any other Spoke. There is no global PositionManager registry or cross-spoke approval propagation.
 
 ## Signature-Based Approval Flows
 
@@ -69,7 +69,7 @@ The intended integrators are lending aggregators and automated repayment systems
 
 ## TakerPositionManager
 
-`TakerPositionManager` can execute `withdraw` and `borrow` on behalf of a user when (i) it has allowlisted the target Spoke (`onlyRegisteredSpoke`), (ii) the Spoke recognizes it as the user’s PositionManager (i.e., it is `active` on that Spoke and approved by the user), and (iii) the spender holds a sufficient allowance in `TakerPositionManager`. Assets from `withdrawOnBehalfOf` and `borrowOnBehalfOf` are transferred to `msg.sender` (the spender), not to the position owner. Allowances are scoped to specific `(Spoke, ReserveId, owner, spender)` tuples; granting allowance for one reserve on one Spoke confers no authority over any other reserve, Spoke, or spender. These allowances are an additional gate and do not replace Spoke-level PositionManager authorization.
+`TakerPositionManager` can execute `withdraw` and `borrow` on behalf of a user when (i) it has allowlisted the target Spoke (`onlyRegisteredSpoke`), (ii) the Spoke recognizes it as the user’s PositionManager (i.e., it is `active` on that Spoke and approved by the user), and (iii) the spender holds a sufficient allowance in `TakerPositionManager`. Assets from `withdrawOnBehalfOf` and `borrowOnBehalfOf` are transferred to `msg.sender` (the spender), not to the position owner. Allowances are scoped to specific `(Spoke, ReserveId, owner, spender)` tuples; granting allowance for one Reserve on one Spoke confers no authority over any other Reserve, Spoke, or spender. These allowances are an additional gate and do not replace Spoke-level PositionManager authorization.
 
 **Allowance mechanics**
 
@@ -85,7 +85,7 @@ In Aave V3, credit delegation signatures allowed users to grant a third party th
 
 `ConfigPositionManager` allows any address a user has granted config permissions to (a delegatee) to execute position configuration actions on that user's behalf. These config permissions are an additional gate and do not replace Spoke-level PositionManager authorization: calls require (i) `ConfigPositionManager` to have allowlisted the target Spoke (`onlyRegisteredSpoke`), (ii) the Spoke to have activated `ConfigPositionManager` (`active=true`), and (iii) the user to have approved `ConfigPositionManager` on that Spoke. The in-scope operations are:
 
-- `setUsingAsCollateralOnBehalfOf`: toggle whether a specific reserve is used as collateral in a user's position
+- `setUsingAsCollateralOnBehalfOf`: toggle whether a specific Reserve is used as collateral in a user's position
 - `updateUserRiskPremiumOnBehalfOf`: update the user-level risk premium applied to a position
 - `updateUserDynamicConfigOnBehalfOf`: update dynamic position configuration parameters
 
@@ -116,7 +116,7 @@ A convenience function `setGlobalPermission` sets or clears all three at once. D
 The following are explicitly excluded from the PositionManager system:
 
 - **Persistent custody**: PositionManagers are not intended to be custodial vaults and do not track per-user balances. They may still hold assets transiently (and can incidentally retain residual balances, e.g., dust or unexpected transfers) before forwarding to or from the Hub/Spoke.
-- **Cross-Spoke authority**: A PositionManager approval on one Spoke grants no authority on any other Spoke.
+- **Cross-spoke authority**: A PositionManager approval on one Spoke grants no authority on any other Spoke.
 - **Flash loan origination**: PositionManagers do not expose flash loan entry points.
 - **Strategy execution or rebalancing logic**: PositionManagers expose delegation primitives. Strategy logic is the responsibility of the integrating protocol.
 - **Liquidation**: The standard Spoke liquidation path is not routed through the PositionManager system.
@@ -128,4 +128,4 @@ In Aave V3, protocol-to-protocol integrations relied on two patterns that are re
 
 **aToken allowances** allowed one address to transfer another user's aTokens (representing supply positions). In V4, aToken allowances are not the primary delegation mechanism. The TakerPositionManager provides an explicit, scoped alternative for withdraw-on-behalf scenarios that does not require aToken transfers.
 
-**Credit delegation signatures** (`approveDelegation` with EIP-712 sig) allowed users to authorize third parties to borrow on their behalf. In V4, the TakerPositionManager replaces this with per-reserve, per-Spoke borrow allowances that support both on-chain and EIP-712 signed grants without aToken-level accounting.
+**Credit delegation signatures** (`approveDelegation` with EIP-712 sig) allowed users to authorize third parties to borrow on their behalf. In V4, the TakerPositionManager replaces this with per-reserve, per-spoke borrow allowances that support both on-chain and EIP-712 signed grants without aToken-level accounting.
