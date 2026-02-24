@@ -8,7 +8,7 @@ The TokenizationSpoke is a minimal ERC-4626–compliant contract that registers 
 
 Standard Spokes in Aave V4 manage both supply and borrow flows, enforce collateralization constraints, apply risk premium accounting, and support the full `ISpoke` and `ISpokeBase` interface including PositionManager delegation. The TokenizationSpoke operates at a narrower scope. It connects exclusively to the supply side of the Hub, calling `Hub.add` on deposit and `Hub.remove` on withdrawal, and exposes no debt surface.
 
-A TokenizationSpoke instance wraps exactly one underlying ERC-20 asset. Where a standard Spoke manages multiple reserves, each TokenizationSpoke deployment is scoped to a single token. The Hub registers the TokenizationSpoke as a distinct entity from any co-existing standard Spoke for the same underlying asset. This means Hub exposure to a given asset can be partitioned across standard Spokes and one or more TokenizationSpoke instances, each governed by independently configured add caps.
+A TokenizationSpoke instance wraps exactly one underlying ERC-20 asset. Where a standard Spoke manages multiple Reserves, each TokenizationSpoke deployment is scoped to a single token. The Hub registers the TokenizationSpoke as a distinct entity from any co-existing standard Spoke for the same underlying asset. This means Hub exposure to a given asset can be partitioned across standard Spokes and one or more TokenizationSpoke instances, each governed by independently configured add caps.
 
 Because the TokenizationSpoke sits on the Hub's supply side without drawing debt, it does not participate in the risk premium system. Positions held through the TokenizationSpoke cannot be used as collateral and do not contribute to a user's health factor.
 
@@ -35,7 +35,7 @@ All four entry points round in favor of the vault per ERC-4626 conventions: `dep
 
 ## Share Price and Accounting
 
-The TokenizationSpoke carries no fee logic at the vault layer. There are no performance fees, management fees, or protocol spreads applied by the contract itself. The share price (the ratio of `totalAssets` to total share supply) drifts solely as a function of Hub-level interest accrual on the underlying asset. As the Hub accrues yield for the TokenizationSpoke's registered position, the balance attributable to that position increases, and `totalAssets` reflects this, causing outstanding shares to appreciate in underlying terms over time.
+The TokenizationSpoke carries no fee logic at the vault layer. There are no performance fees, management fees, or protocol spreads applied by the contract itself. The share price (the ratio of `totalAssets` to total share supply) drifts solely as a function of hub-level interest accrual on the underlying asset. As the Hub accrues yield for the TokenizationSpoke's registered position, the balance attributable to that position increases, and `totalAssets` reflects this, causing outstanding shares to appreciate in underlying terms over time.
 
 `totalAssets` converts the vault's total share supply to underlying via the Hub's exchange rate (`previewRemoveByShares`), denominated in the underlying asset's smallest unit. Caps (`addCap`, type `uint40`) are stored in whole asset units and scaled by `10^decimals` during enforcement.
 
@@ -51,7 +51,7 @@ The TokenizationSpoke deploys behind an upgradeable proxy. The current implement
 
 ## Safety Controls
 
-The TokenizationSpoke supports the same emergency control states as standard Spokes: `halted` and `active` are both checked for deposits and withdrawals. Enforcement is layered: the TokenizationSpoke's `maxDeposit`/`maxWithdraw` view functions return zero when either flag is in its blocking state, and the Hub's `_validateAdd`/`_validateRemove` independently enforce the same checks, reverting on-chain if violated. Both flags are governance-controlled and enforced per spoke at Hub validation time.
+The TokenizationSpoke supports the same emergency control states as standard Spokes: `halted` and `active` are both checked for deposits and withdrawals. Enforcement is layered: the TokenizationSpoke's `maxDeposit`/`maxWithdraw` view functions return zero when either flag is in its blocking state, and the Hub's `_validateAdd`/`_validateRemove` independently enforce the same checks, reverting on-chain if violated. Both flags are governance-controlled and enforced per Spoke at Hub validation time.
 
 ## Out of Scope
 
@@ -63,7 +63,7 @@ The following are explicitly excluded from the TokenizationSpoke:
 - **Multi-asset**: Each deployment handles exactly one underlying ERC-20.
 - **Factory deployment**: Must be deployed and registered manually with `addCap` governance setup.
 - **Rebalancing, strategies, or flashloans**: The contract has no strategy/rebalancing/flashloan logic. Its core state-changing interactions are with `Hub.add`/`Hub.remove`; aside from that, it only performs underlying-token transfer/permit calls required for vault flows.
-- **Collateral use**: Shares held in a TokenizationSpoke cannot serve as collateral in any Spoke configuration.
+- **Collateral use**: Shares held in a TokenizationSpoke cannot serve as collateral in any spoke configuration.
 
 ## Key Differences from Standard Spokes
 
@@ -71,6 +71,6 @@ The following are explicitly excluded from the TokenizationSpoke:
 
 **No PositionManager integration**: Standard Spokes restrict `onBehalfOf` operations to approved PositionManagers. The TokenizationSpoke instead uses ERC-4626 `receiver`/`owner` semantics and natively supports `withSig` flows, reducing friction for integrators who do not need PositionManager delegation.
 
-**Single asset per deployment**: A standard Spoke manages multiple reserves across multiple assets. Each TokenizationSpoke instance corresponds to exactly one underlying ERC-20, making it a per-asset tokenization contract rather than a market-level entry point.
+**Single asset per deployment**: A standard Spoke manages multiple Reserves across multiple assets. Each TokenizationSpoke instance corresponds to exactly one underlying ERC-20, making it a per-asset tokenization contract rather than a market-level entry point.
 
 **Independent cap accounting**: The Hub treats the TokenizationSpoke as a distinct entity from any standard Spoke for the same asset. Add cap must be allocated to the TokenizationSpoke independently; it does not inherit or share cap budget from a co-existing standard Spoke.
