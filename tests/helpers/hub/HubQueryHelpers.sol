@@ -2,7 +2,7 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import {CommonsHelpers} from 'tests/helpers/commons/CommonsHelpers.sol';
+import {CommonHelpers} from 'tests/helpers/commons/CommonHelpers.sol';
 import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
 import {IERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
 import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
@@ -13,7 +13,7 @@ import {SharesMath} from 'src/hub/libraries/SharesMath.sol';
 
 /// @title HubQueryHelpers
 /// @notice Hub-level state-reading helpers and hub-specific calculations.
-abstract contract HubQueryHelpers is CommonsHelpers {
+abstract contract HubQueryHelpers is CommonHelpers {
   using WadRayMath for *;
   using MathUtils for uint256;
   using PercentageMath for uint256;

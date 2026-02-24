@@ -2,7 +2,7 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import {CommonsHelpers} from 'tests/helpers/commons/CommonsHelpers.sol';
+import {CommonHelpers} from 'tests/helpers/commons/CommonHelpers.sol';
 import {HubConstants} from 'tests/helpers/hub/HubConstants.sol';
 import {SpokeConstants} from 'tests/helpers/spoke/SpokeConstants.sol';
 import {HubActions} from 'tests/helpers/hub/HubActions.sol';
@@ -17,7 +17,7 @@ import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
 
 /// @title HubMockHelpers
 /// @notice Hub-level mocking utilities for the Aave V4 test suite.
-abstract contract HubMockHelpers is CommonsHelpers {
+abstract contract HubMockHelpers is CommonHelpers {
   using WadRayMath for *;
   using PercentageMath for uint256;
 

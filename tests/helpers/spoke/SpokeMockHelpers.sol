@@ -2,7 +2,7 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import {CommonsHelpers} from 'tests/helpers/commons/CommonsHelpers.sol';
+import {CommonHelpers} from 'tests/helpers/commons/CommonHelpers.sol';
 import {IERC20Metadata} from 'src/dependencies/openzeppelin/IERC20Metadata.sol';
 import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 import {AaveOracle} from 'src/spoke/AaveOracle.sol';
@@ -13,7 +13,7 @@ import {MockPriceFeed} from 'tests/helpers/mocks/MockPriceFeed.sol';
 
 /// @title SpokeMockHelpers
 /// @notice Spoke-level mocking utilities for the Aave V4 test suite.
-abstract contract SpokeMockHelpers is CommonsHelpers {
+abstract contract SpokeMockHelpers is CommonHelpers {
   using WadRayMath for *;
   using PercentageMath for uint256;
 
