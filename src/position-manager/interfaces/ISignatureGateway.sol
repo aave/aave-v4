@@ -115,7 +115,7 @@ interface ISignatureGateway is IPositionManagerBase {
   /// @notice Facilitates `supply` action on the specified registered `spoke` with a typed signature from `onBehalfOf`.
   /// @dev Supplied assets are pulled from `onBehalfOf`, prior approval to this gateway is required.
   /// @dev Uses keyed-nonces where for each key's namespace nonce is consumed sequentially.
-  /// @dev Contract must be an active & approved user position manager of `onBehalfOf`.
+  /// @dev Contract must be an active and approved user position manager of `onBehalfOf`.
   /// @param params The structured supply parameters.
   /// @param signature The EIP712-typed signed bytes for the intent.
   /// @return The amount of shares supplied.
@@ -129,7 +129,7 @@ interface ISignatureGateway is IPositionManagerBase {
   /// @dev Providing an amount exceeding the user's current withdrawable balance indicates a request for a maximum withdrawal.
   /// @dev Withdrawn assets are pushed to `onBehalfOf`.
   /// @dev Uses keyed-nonces where for each key's namespace nonce is consumed sequentially.
-  /// @dev Contract must be an active & approved user position manager of `onBehalfOf`.
+  /// @dev Contract must be an active and approved user position manager of `onBehalfOf`.
   /// @param params The structured withdraw parameters.
   /// @param signature The EIP712-typed signed bytes for the intent.
   /// @return The amount of shares withdrawn.
@@ -142,7 +142,7 @@ interface ISignatureGateway is IPositionManagerBase {
   /// @notice Facilitates `borrow` action on the specified registered `spoke` with a typed signature from `onBehalfOf`.
   /// @dev Borrowed assets are pushed to `onBehalfOf`.
   /// @dev Uses keyed-nonces where for each key's namespace nonce is consumed sequentially.
-  /// @dev Contract must be an active & approved user position manager of `onBehalfOf`.
+  /// @dev Contract must be an active and approved user position manager of `onBehalfOf`.
   /// @param params The structured borrow parameters.
   /// @param signature The EIP712-typed signed bytes for the intent.
   /// @return The amount of shares borrowed.
@@ -156,7 +156,7 @@ interface ISignatureGateway is IPositionManagerBase {
   /// @dev Repay assets are pulled from `onBehalfOf`, prior approval to this gateway is required.
   /// @dev Providing an amount greater than the user's current debt indicates a request to repay the maximum possible amount.
   /// @dev Uses keyed-nonces where for each key's namespace nonce is consumed sequentially.
-  /// @dev Contract must be an active & approved user position manager of `onBehalfOf`.
+  /// @dev Contract must be an active and approved user position manager of `onBehalfOf`.
   /// @param params The structured repay parameters.
   /// @param signature The EIP712-typed signed bytes for the intent.
   /// @return The amount of shares repaid.
@@ -168,7 +168,7 @@ interface ISignatureGateway is IPositionManagerBase {
 
   /// @notice Facilitates `setUsingAsCollateral` action on the specified registered `spoke` with a typed signature from `onBehalfOf`.
   /// @dev Uses keyed-nonces where for each key's namespace nonce is consumed sequentially.
-  /// @dev Contract must be an active & approved user position manager of `onBehalfOf`.
+  /// @dev Contract must be an active and approved user position manager of `onBehalfOf`.
   /// @param params The structured setUsingAsCollateral parameters.
   /// @param signature The EIP712-typed signed bytes for the intent.
   function setUsingAsCollateralWithSig(
@@ -178,7 +178,7 @@ interface ISignatureGateway is IPositionManagerBase {
 
   /// @notice Facilitates `updateUserRiskPremium` action on the specified registered `spoke` with a typed signature from `onBehalfOf`.
   /// @dev Uses keyed-nonces where for each key's namespace nonce is consumed sequentially.
-  /// @dev Contract must be an active & approved user position manager of `onBehalfOf`.
+  /// @dev Contract must be an active and approved user position manager of `onBehalfOf`.
   /// @param params The structured updateUserRiskPremium parameters.
   /// @param signature The EIP712-typed signed bytes for the intent.
   function updateUserRiskPremiumWithSig(
@@ -188,7 +188,7 @@ interface ISignatureGateway is IPositionManagerBase {
 
   /// @notice Facilitates `updateUserDynamicConfig` action on the specified registered `spoke` with a typed signature from `onBehalfOf`.
   /// @dev Uses keyed-nonces where for each key's namespace nonce is consumed sequentially.
-  /// @dev Contract must be an active & approved user position manager of `onBehalfOf`.
+  /// @dev Contract must be an active and approved user position manager of `onBehalfOf`.
   /// @param params The structured updateUserDynamicConfig parameters.
   /// @param signature The EIP712-typed signed bytes for the intent.
   function updateUserDynamicConfigWithSig(

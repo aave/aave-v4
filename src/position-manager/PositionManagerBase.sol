@@ -14,7 +14,7 @@ import {IPositionManagerBase} from 'src/position-manager/interfaces/IPositionMan
 /// @title PositionManagerBase
 /// @author Aave Labs
 /// @notice Base implementation for position manager common functionalities.
-/// @dev Contract must be an active & approved user position manager in order to execute spoke actions on a user's behalf.
+/// @dev Contract must be an active and approved user position manager in order to execute spoke actions on a user's behalf.
 /// @dev The `_multicallEnabled()` function must be implemented to specify whether multicall is enabled.
 abstract contract PositionManagerBase is
   IPositionManagerBase,
