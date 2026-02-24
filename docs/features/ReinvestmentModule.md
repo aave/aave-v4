@@ -14,22 +14,22 @@ The Hub tracks two liquidity sub-fields per asset: `liquidity` (immediately avai
 
 ## Sweep and Reclaim
 
-`sweep(uint256 assetId, uint256 amount)` transfers `amount` of the underlying asset from the Hub to the registered `reinvestmentController`. The execution sequence is:
+`sweep` transfers `amount` of the underlying asset from the Hub to the registered `reinvestmentController`. The execution sequence is:
 
-1. The asset ID is validated; an unknown asset reverts with `AssetNotListed()`.
+1. The asset ID is validated; an unknown asset reverts with `AssetNotListed`.
 2. Interest is accrued for the asset.
-3. The caller is verified to be the registered `reinvestmentController`. Any other caller reverts with `OnlyReinvestmentController()`. A zero-amount call reverts with `InvalidAmount()`.
+3. The caller is verified to be the registered `reinvestmentController`. Any other caller reverts with `OnlyReinvestmentController`.
 4. If `amount` exceeds `asset.liquidity`, the call reverts with `InsufficientLiquidity`.
 5. `asset.liquidity` decreases by `amount` and `asset.swept` increases by `amount`.
 6. The drawn rate is updated.
 7. The underlying ERC-20 is transferred to the controller.
 8. A `Sweep` event is emitted.
 
-`reclaim(uint256 assetId, uint256 amount)` restores underlying assets to the Hub's available liquidity. The underlying must be transferred to the Hub before `reclaim` is called; the Hub does not pull tokens. The execution sequence is:
+`reclaim` restores underlying assets to the Hub's available liquidity. The underlying must be transferred to the Hub before `reclaim` is called; the Hub does not pull tokens. The execution sequence is:
 
-1. The asset ID is validated; an unknown asset reverts with `AssetNotListed()`.
+1. The asset ID is validated; an unknown asset reverts with `AssetNotListed`.
 2. Interest is accrued.
-3. The caller is verified to be `reinvestmentController`. Any other caller reverts with `OnlyReinvestmentController()`. A zero-amount call reverts with `InvalidAmount()`.
+3. The caller is verified to be `reinvestmentController`. Any other caller reverts with `OnlyReinvestmentController`.
 4. The Hub computes the expected post-reclaim liquidity as `asset.liquidity + amount` and requires the Hub's actual ERC-20 balance to be at least that value. If the balance is short, the call reverts with `InsufficientTransferred`, reporting the shortfall in asset units.
 5. `asset.liquidity` increases by `amount` and `asset.swept` decreases by `amount`.
 6. The drawn rate is updated.
@@ -63,9 +63,9 @@ When the controller returns a yield surplus to the Hub by transferring more than
 
 The `reinvestmentController` address is configured per asset through `HubConfigurator.updateReinvestmentController`, which calls `Hub.updateAssetConfig` under a restricted access role. Exactly one controller address may be registered per asset at a time; assigning a new controller replaces the previous one.
 
-Setting the controller to the zero address is blocked when `asset.swept > 0`. The Hub enforces this with `InvalidReinvestmentController()`. Governance must ensure the controller has reclaimed all swept liquidity before the controller is removed. Replacing the controller with a different non-zero address is permitted at any time regardless of `asset.swept`; governance is responsible for coordinating the handover between outgoing and incoming controllers.
+Setting the controller to the zero address is blocked when `asset.swept > 0`. The Hub enforces this with `InvalidReinvestmentController`. Governance must ensure the controller has reclaimed all swept liquidity before the controller is removed. Replacing the controller with a different non-zero address is permitted at any time regardless of `asset.swept`; governance is responsible for coordinating the handover between outgoing and incoming controllers.
 
-When `reinvestmentController` is `address(0)`, both `sweep` and `reclaim` revert with `OnlyReinvestmentController()`, as the zero address can never be a valid caller. This makes the absence of a controller a sufficient guard against unauthorized invocations.
+When `reinvestmentController` is `address(0)`, both `sweep` and `reclaim` revert with `OnlyReinvestmentController`, as the zero address can never be a valid caller. This makes the absence of a controller a sufficient guard against unauthorized invocations.
 
 The `getAssetSwept` view function returns the current outstanding swept amount for a given asset.
 
