@@ -920,15 +920,15 @@ contract HubConfiguratorTest is HubBase {
     }
   }
 
-  function test_updateSpokeSupplyCap_revertsWith_AccessManagedUnauthorized() public {
+  function test_updateSpokeAddCap_revertsWith_AccessManagedUnauthorized() public {
     vm.expectRevert(
       abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, alice)
     );
     vm.prank(alice);
-    hubConfigurator.updateSpokeSupplyCap(address(hub1), _assetId, spokeAddresses[0], 100);
+    hubConfigurator.updateSpokeAddCap(address(hub1), _assetId, spokeAddresses[0], 100);
   }
 
-  function test_updateSpokeSupplyCap() public {
+  function test_updateSpokeAddCap() public {
     uint40 newSupplyCap = 100;
     IHub.SpokeConfig memory expectedSpokeConfig = hub1.getSpokeConfig(_assetId, spoke);
     expectedSpokeConfig.addCap = newSupplyCap;
@@ -937,7 +937,7 @@ contract HubConfiguratorTest is HubBase {
       abi.encodeCall(IHub.updateSpokeConfig, (_assetId, spoke, expectedSpokeConfig))
     );
     vm.prank(HUB_CONFIGURATOR);
-    hubConfigurator.updateSpokeSupplyCap(address(hub1), _assetId, spoke, newSupplyCap);
+    hubConfigurator.updateSpokeAddCap(address(hub1), _assetId, spoke, newSupplyCap);
     assertEq(hub1.getSpokeConfig(_assetId, spoke), expectedSpokeConfig);
   }
 
