@@ -18,7 +18,7 @@ contract SignatureGatewayBaseTest is SpokeBase {
 
   function _supplyData(
     ISpoke spoke,
-    address who,
+    address user,
     uint256 deadline
   ) internal returns (ISignatureGateway.Supply memory) {
     return
@@ -26,15 +26,15 @@ contract SignatureGatewayBaseTest is SpokeBase {
         spoke: address(spoke),
         reserveId: _randomReserveId(spoke),
         amount: vm.randomUint(1, MAX_SUPPLY_AMOUNT),
-        onBehalfOf: who,
-        nonce: gateway.nonces(who, _randomNonceKey()),
+        onBehalfOf: user,
+        nonce: gateway.nonces(user, _randomNonceKey()),
         deadline: deadline
       });
   }
 
   function _withdrawData(
     ISpoke spoke,
-    address who,
+    address user,
     uint256 deadline
   ) internal returns (ISignatureGateway.Withdraw memory) {
     return
@@ -42,15 +42,15 @@ contract SignatureGatewayBaseTest is SpokeBase {
         spoke: address(spoke),
         reserveId: _randomReserveId(spoke),
         amount: vm.randomUint(1, MAX_SUPPLY_AMOUNT),
-        onBehalfOf: who,
-        nonce: gateway.nonces(who, _randomNonceKey()),
+        onBehalfOf: user,
+        nonce: gateway.nonces(user, _randomNonceKey()),
         deadline: deadline
       });
   }
 
   function _borrowData(
     ISpoke spoke,
-    address who,
+    address user,
     uint256 deadline
   ) internal returns (ISignatureGateway.Borrow memory) {
     return
@@ -58,15 +58,15 @@ contract SignatureGatewayBaseTest is SpokeBase {
         spoke: address(spoke),
         reserveId: _randomReserveId(spoke),
         amount: vm.randomUint(1, MAX_SUPPLY_AMOUNT),
-        onBehalfOf: who,
-        nonce: gateway.nonces(who, _randomNonceKey()),
+        onBehalfOf: user,
+        nonce: gateway.nonces(user, _randomNonceKey()),
         deadline: deadline
       });
   }
 
   function _repayData(
     ISpoke spoke,
-    address who,
+    address user,
     uint256 deadline
   ) internal returns (ISignatureGateway.Repay memory) {
     return
@@ -74,15 +74,15 @@ contract SignatureGatewayBaseTest is SpokeBase {
         spoke: address(spoke),
         reserveId: _randomReserveId(spoke),
         amount: vm.randomUint(1, MAX_SUPPLY_AMOUNT),
-        onBehalfOf: who,
-        nonce: gateway.nonces(who, _randomNonceKey()),
+        onBehalfOf: user,
+        nonce: gateway.nonces(user, _randomNonceKey()),
         deadline: deadline
       });
   }
 
   function _setAsCollateralData(
     ISpoke spoke,
-    address who,
+    address user,
     uint256 deadline
   ) internal returns (ISignatureGateway.SetUsingAsCollateral memory) {
     return
@@ -90,8 +90,8 @@ contract SignatureGatewayBaseTest is SpokeBase {
         spoke: address(spoke),
         reserveId: _randomReserveId(spoke),
         useAsCollateral: vm.randomBool(),
-        onBehalfOf: who,
-        nonce: gateway.nonces(who, _randomNonceKey()),
+        onBehalfOf: user,
+        nonce: gateway.nonces(user, _randomNonceKey()),
         deadline: deadline
       });
   }
