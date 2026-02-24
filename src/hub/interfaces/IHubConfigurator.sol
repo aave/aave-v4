@@ -56,7 +56,7 @@ interface IHubConfigurator {
   /// @param liquidityFee The new liquidity fee.
   function updateLiquidityFee(address hub, uint256 assetId, uint256 liquidityFee) external;
 
-  /// @notice Adds a new asset to a specified Hub with explicit decimals.
+  /// @notice Updates the fee receiver of an asset on a specified hub.
   /// @dev The fee receiver cannot be zero.
   /// @param hub The address of the Hub.
   /// @param assetId The identifier of the asset.
