@@ -8,7 +8,8 @@ import {IRescuable} from 'src/interfaces/IRescuable.sol';
 
 /// @title IPositionManagerBase
 /// @author Aave Labs
-/// @notice Interface for position manager Base.
+/// @notice Base interface for position managers.
+/// @dev This base interface is not mandatory for position managers, it only provides optional convenience methods for position managers.
 interface IPositionManagerBase is IIntentConsumer, IRescuable, IMulticall {
   /// @notice Emitted when a spoke is registered or deregistered.
   event SpokeRegistered(address indexed spoke, bool registered);
