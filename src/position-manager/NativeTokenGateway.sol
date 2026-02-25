@@ -5,31 +5,34 @@ pragma solidity 0.8.28;
 import {ReentrancyGuardTransient} from 'src/dependencies/openzeppelin/ReentrancyGuardTransient.sol';
 import {Address} from 'src/dependencies/openzeppelin/Address.sol';
 import {SafeERC20, IERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
-import {GatewayBase} from 'src/position-manager/GatewayBase.sol';
 import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 import {INativeWrapper} from 'src/position-manager/interfaces/INativeWrapper.sol';
 import {INativeTokenGateway} from 'src/position-manager/interfaces/INativeTokenGateway.sol';
+import {PositionManagerBase} from 'src/position-manager/PositionManagerBase.sol';
 
 /// @title NativeTokenGateway
 /// @author Aave Labs
 /// @notice Gateway to interact with a spoke using the native coin of a chain.
-/// @dev Contract must be an active & approved user position manager in order to execute spoke actions on a user's behalf.
-contract NativeTokenGateway is INativeTokenGateway, GatewayBase, ReentrancyGuardTransient {
+contract NativeTokenGateway is INativeTokenGateway, PositionManagerBase, ReentrancyGuardTransient {
   using SafeERC20 for IERC20;
 
-  address public immutable NATIVE_WRAPPER;
+  /// @inheritdoc INativeTokenGateway
+  address public immutable NATIVE_TOKEN_WRAPPER;
 
   /// @dev Constructor.
-  /// @param nativeWrapper_ The address of the native wrapper contract.
+  /// @param nativeTokenWrapper_ The address of the native token wrapper contract.
   /// @param initialOwner_ The address of the initial owner.
-  constructor(address nativeWrapper_, address initialOwner_) GatewayBase(initialOwner_) {
-    require(nativeWrapper_ != address(0), InvalidAddress());
-    NATIVE_WRAPPER = nativeWrapper_;
+  constructor(
+    address nativeTokenWrapper_,
+    address initialOwner_
+  ) PositionManagerBase(initialOwner_) {
+    require(nativeTokenWrapper_ != address(0), InvalidAddress());
+    NATIVE_TOKEN_WRAPPER = nativeTokenWrapper_;
   }
 
   /// @dev Checks only 'nativeWrapper' can transfer native tokens.
   receive() external payable {
-    require(msg.sender == NATIVE_WRAPPER, UnsupportedAction());
+    require(msg.sender == NATIVE_TOKEN_WRAPPER, UnsupportedAction());
   }
 
   /// @dev Unsupported fallback function.
@@ -79,7 +82,7 @@ contract NativeTokenGateway is INativeTokenGateway, GatewayBase, ReentrancyGuard
       amount,
       msg.sender
     );
-    INativeWrapper(NATIVE_WRAPPER).withdraw(withdrawnAmount);
+    INativeWrapper(NATIVE_TOKEN_WRAPPER).withdraw(withdrawnAmount);
     Address.sendValue(payable(msg.sender), withdrawnAmount);
 
     return (withdrawnShares, withdrawnAmount);
@@ -99,7 +102,7 @@ contract NativeTokenGateway is INativeTokenGateway, GatewayBase, ReentrancyGuard
       amount,
       msg.sender
     );
-    INativeWrapper(NATIVE_WRAPPER).withdraw(borrowedAmount);
+    INativeWrapper(NATIVE_TOKEN_WRAPPER).withdraw(borrowedAmount);
     Address.sendValue(payable(msg.sender), borrowedAmount);
 
     return (borrowedShares, borrowedAmount);
@@ -123,8 +126,8 @@ contract NativeTokenGateway is INativeTokenGateway, GatewayBase, ReentrancyGuard
       repayAmount = userTotalDebt;
     }
 
-    INativeWrapper(NATIVE_WRAPPER).deposit{value: repayAmount}();
-    IERC20(NATIVE_WRAPPER).forceApprove(spoke, repayAmount);
+    INativeWrapper(NATIVE_TOKEN_WRAPPER).deposit{value: repayAmount}();
+    IERC20(NATIVE_TOKEN_WRAPPER).forceApprove(spoke, repayAmount);
     (uint256 repaidShares, uint256 repaidAmount) = ISpoke(spoke).repay(
       reserveId,
       repayAmount,
@@ -148,13 +151,22 @@ contract NativeTokenGateway is INativeTokenGateway, GatewayBase, ReentrancyGuard
     address underlying = _getReserveUnderlying(spoke, reserveId);
     _validateParams(underlying, amount);
 
-    INativeWrapper(NATIVE_WRAPPER).deposit{value: amount}();
-    IERC20(NATIVE_WRAPPER).forceApprove(spoke, amount);
+    INativeWrapper(NATIVE_TOKEN_WRAPPER).deposit{value: amount}();
+    IERC20(NATIVE_TOKEN_WRAPPER).forceApprove(spoke, amount);
     return ISpoke(spoke).supply(reserveId, amount, user);
   }
 
   function _validateParams(address underlying, uint256 amount) internal view {
-    require(NATIVE_WRAPPER == underlying, NotNativeWrappedAsset());
+    require(NATIVE_TOKEN_WRAPPER == underlying, NotNativeWrappedAsset());
     require(amount > 0, InvalidAmount());
+  }
+
+  /// @dev Multicall is disabled to prevent msg.value reuse across delegatecalls.
+  function _multicallEnabled() internal pure override returns (bool) {
+    return false;
+  }
+
+  function _domainNameAndVersion() internal pure override returns (string memory, string memory) {
+    return ('NativeTokenGateway', '1');
   }
 }

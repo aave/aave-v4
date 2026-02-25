@@ -75,9 +75,28 @@ import {TokenizationSpoke, ITokenizationSpoke} from 'src/spoke/TokenizationSpoke
 import {TokenizationSpokeInstance} from 'src/spoke/instances/TokenizationSpokeInstance.sol';
 
 // position manager
-import {GatewayBase, IGatewayBase} from 'src/position-manager/GatewayBase.sol';
+import {
+  PositionManagerBase,
+  IPositionManagerBase
+} from 'src/position-manager/PositionManagerBase.sol';
 import {NativeTokenGateway, INativeTokenGateway} from 'src/position-manager/NativeTokenGateway.sol';
 import {SignatureGateway, ISignatureGateway} from 'src/position-manager/SignatureGateway.sol';
+import {
+  GiverPositionManager,
+  IGiverPositionManager
+} from 'src/position-manager/GiverPositionManager.sol';
+import {
+  TakerPositionManager,
+  ITakerPositionManager
+} from 'src/position-manager/TakerPositionManager.sol';
+import {
+  ConfigPositionManager,
+  IConfigPositionManager
+} from 'src/position-manager/ConfigPositionManager.sol';
+import {
+  ConfigPermissions,
+  ConfigPermissionsMap
+} from 'src/position-manager/libraries/ConfigPermissionsMap.sol';
 
 // test
 import {Constants} from 'tests/Constants.sol';
@@ -91,7 +110,8 @@ import {MockERC20} from 'tests/mocks/MockERC20.sol';
 import {MockPriceFeed} from 'tests/mocks/MockPriceFeed.sol';
 import {PositionStatusMapWrapper} from 'tests/mocks/PositionStatusMapWrapper.sol';
 import {RescuableWrapper} from 'tests/mocks/RescuableWrapper.sol';
-import {GatewayBaseWrapper} from 'tests/mocks/GatewayBaseWrapper.sol';
+import {PositionManagerBaseWrapper} from 'tests/mocks/PositionManagerBaseWrapper.sol';
+import {PositionManagerNoMulticall} from 'tests/mocks/PositionManagerNoMulticall.sol';
 import {MockNoncesKeyed} from 'tests/mocks/MockNoncesKeyed.sol';
 import {MockSpoke} from 'tests/mocks/MockSpoke.sol';
 import {MockERC1271Wallet} from 'tests/mocks/MockERC1271Wallet.sol';
@@ -443,32 +463,31 @@ abstract contract Base is Test {
     IAccessManager(manager).grantRole(Roles.SPOKE_ADMIN_ROLE, spokeConfigurator, 0);
 
     // Set up SpokeConfigurator function permissions - all functions callable by SPOKE_CONFIGURATOR_ROLE
-    bytes4[] memory selectors = new bytes4[](25);
+    bytes4[] memory selectors = new bytes4[](24);
     selectors[0] = ISpokeConfigurator.updateReservePriceSource.selector;
     selectors[1] = ISpokeConfigurator.updateLiquidationTargetHealthFactor.selector;
     selectors[2] = ISpokeConfigurator.updateHealthFactorForMaxBonus.selector;
     selectors[3] = ISpokeConfigurator.updateLiquidationBonusFactor.selector;
     selectors[4] = ISpokeConfigurator.updateLiquidationConfig.selector;
-    selectors[5] = ISpokeConfigurator.updateMaxReserves.selector;
-    selectors[6] = ISpokeConfigurator.addReserve.selector;
-    selectors[7] = ISpokeConfigurator.updatePaused.selector;
-    selectors[8] = ISpokeConfigurator.updateFrozen.selector;
-    selectors[9] = ISpokeConfigurator.updateBorrowable.selector;
-    selectors[10] = ISpokeConfigurator.updateReceiveSharesEnabled.selector;
-    selectors[11] = ISpokeConfigurator.updateCollateralRisk.selector;
-    selectors[12] = ISpokeConfigurator.addCollateralFactor.selector;
-    selectors[13] = ISpokeConfigurator.updateCollateralFactor.selector;
-    selectors[14] = ISpokeConfigurator.addMaxLiquidationBonus.selector;
-    selectors[15] = ISpokeConfigurator.updateMaxLiquidationBonus.selector;
-    selectors[16] = ISpokeConfigurator.addLiquidationFee.selector;
-    selectors[17] = ISpokeConfigurator.updateLiquidationFee.selector;
-    selectors[18] = ISpokeConfigurator.addDynamicReserveConfig.selector;
-    selectors[19] = ISpokeConfigurator.updateDynamicReserveConfig.selector;
-    selectors[20] = ISpokeConfigurator.pauseAllReserves.selector;
-    selectors[21] = ISpokeConfigurator.freezeAllReserves.selector;
-    selectors[22] = ISpokeConfigurator.pauseReserve.selector;
-    selectors[23] = ISpokeConfigurator.freezeReserve.selector;
-    selectors[24] = ISpokeConfigurator.updatePositionManager.selector;
+    selectors[5] = ISpokeConfigurator.addReserve.selector;
+    selectors[6] = ISpokeConfigurator.updatePaused.selector;
+    selectors[7] = ISpokeConfigurator.updateFrozen.selector;
+    selectors[8] = ISpokeConfigurator.updateBorrowable.selector;
+    selectors[9] = ISpokeConfigurator.updateReceiveSharesEnabled.selector;
+    selectors[10] = ISpokeConfigurator.updateCollateralRisk.selector;
+    selectors[11] = ISpokeConfigurator.addCollateralFactor.selector;
+    selectors[12] = ISpokeConfigurator.updateCollateralFactor.selector;
+    selectors[13] = ISpokeConfigurator.addMaxLiquidationBonus.selector;
+    selectors[14] = ISpokeConfigurator.updateMaxLiquidationBonus.selector;
+    selectors[15] = ISpokeConfigurator.addLiquidationFee.selector;
+    selectors[16] = ISpokeConfigurator.updateLiquidationFee.selector;
+    selectors[17] = ISpokeConfigurator.addDynamicReserveConfig.selector;
+    selectors[18] = ISpokeConfigurator.updateDynamicReserveConfig.selector;
+    selectors[19] = ISpokeConfigurator.pauseAllReserves.selector;
+    selectors[20] = ISpokeConfigurator.freezeAllReserves.selector;
+    selectors[21] = ISpokeConfigurator.pauseReserve.selector;
+    selectors[22] = ISpokeConfigurator.freezeReserve.selector;
+    selectors[23] = ISpokeConfigurator.updatePositionManager.selector;
     IAccessManager(manager).setTargetFunctionRole(
       spokeConfigurator,
       selectors,
@@ -3184,10 +3203,15 @@ abstract contract Base is Test {
     address who,
     uint256 prevKeyNonce
   ) internal view {
-    (uint192 nonceKey, uint64 nonce) = _unpackNonce(prevKeyNonce);
+    (uint192 currentKey, ) = _unpackNonce(prevKeyNonce);
+    assertEq(verifier.nonces(who, currentKey), _getNextNoncePacked(prevKeyNonce));
+  }
+
+  function _getNextNoncePacked(uint256 currentKeyNonce) internal pure returns (uint256) {
+    (uint192 nonceKey, uint64 nonce) = _unpackNonce(currentKeyNonce);
     // prettier-ignore
     unchecked { ++nonce; }
-    assertEq(verifier.nonces(who, nonceKey), _packNonce(nonceKey, nonce));
+    return _packNonce(nonceKey, nonce);
   }
 
   function _assertEntityHasNoBalanceOrAllowance(

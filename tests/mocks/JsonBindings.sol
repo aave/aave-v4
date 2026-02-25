@@ -60,6 +60,10 @@ library JsonBindings {
   // prettier-ignore
   string constant schema_UpdateUserDynamicConfig = "UpdateUserDynamicConfig(address spoke,address onBehalfOf,uint256 nonce,uint256 deadline)";
   // prettier-ignore
+  string constant schema_WithdrawPermit = "WithdrawPermit(address spoke,uint256 reserveId,address owner,address spender,uint256 amount,uint256 nonce,uint256 deadline)";
+  // prettier-ignore
+  string constant schema_BorrowPermit = "BorrowPermit(address spoke,uint256 reserveId,address owner,address spender,uint256 amount,uint256 nonce,uint256 deadline)";
+  // prettier-ignore
   string constant schema_TokenizedDeposit = "TokenizedDeposit(address depositor,uint256 assets,address receiver,uint256 nonce,uint256 deadline)";
   // prettier-ignore
   string constant schema_TokenizedMint = "TokenizedMint(address depositor,uint256 shares,address receiver,uint256 nonce,uint256 deadline)";
@@ -405,6 +409,82 @@ library JsonBindings {
       abi.decode(
         vm.parseJsonTypeArray(json, path, schema_UpdateUserDynamicConfig),
         (EIP712Types.UpdateUserDynamicConfig[])
+      );
+  }
+
+  function serialize(
+    EIP712Types.WithdrawPermit memory value
+  ) internal pure returns (string memory) {
+    return vm.serializeJsonType(schema_WithdrawPermit, abi.encode(value));
+  }
+
+  function serialize(
+    EIP712Types.WithdrawPermit memory value,
+    string memory objectKey,
+    string memory valueKey
+  ) internal returns (string memory) {
+    return vm.serializeJsonType(objectKey, valueKey, schema_WithdrawPermit, abi.encode(value));
+  }
+
+  function deserializeWithdrawPermit(
+    string memory json
+  ) public pure returns (EIP712Types.WithdrawPermit memory) {
+    return abi.decode(vm.parseJsonType(json, schema_WithdrawPermit), (EIP712Types.WithdrawPermit));
+  }
+
+  function deserializeWithdrawPermit(
+    string memory json,
+    string memory path
+  ) public pure returns (EIP712Types.WithdrawPermit memory) {
+    return
+      abi.decode(vm.parseJsonType(json, path, schema_WithdrawPermit), (EIP712Types.WithdrawPermit));
+  }
+
+  function deserializeWithdrawPermitArray(
+    string memory json,
+    string memory path
+  ) public pure returns (EIP712Types.WithdrawPermit[] memory) {
+    return
+      abi.decode(
+        vm.parseJsonTypeArray(json, path, schema_WithdrawPermit),
+        (EIP712Types.WithdrawPermit[])
+      );
+  }
+
+  function serialize(EIP712Types.BorrowPermit memory value) internal pure returns (string memory) {
+    return vm.serializeJsonType(schema_BorrowPermit, abi.encode(value));
+  }
+
+  function serialize(
+    EIP712Types.BorrowPermit memory value,
+    string memory objectKey,
+    string memory valueKey
+  ) internal returns (string memory) {
+    return vm.serializeJsonType(objectKey, valueKey, schema_BorrowPermit, abi.encode(value));
+  }
+
+  function deserializeBorrowPermit(
+    string memory json
+  ) public pure returns (EIP712Types.BorrowPermit memory) {
+    return abi.decode(vm.parseJsonType(json, schema_BorrowPermit), (EIP712Types.BorrowPermit));
+  }
+
+  function deserializeBorrowPermit(
+    string memory json,
+    string memory path
+  ) public pure returns (EIP712Types.BorrowPermit memory) {
+    return
+      abi.decode(vm.parseJsonType(json, path, schema_BorrowPermit), (EIP712Types.BorrowPermit));
+  }
+
+  function deserializeBorrowPermitArray(
+    string memory json,
+    string memory path
+  ) public pure returns (EIP712Types.BorrowPermit[] memory) {
+    return
+      abi.decode(
+        vm.parseJsonTypeArray(json, path, schema_BorrowPermit),
+        (EIP712Types.BorrowPermit[])
       );
   }
 
