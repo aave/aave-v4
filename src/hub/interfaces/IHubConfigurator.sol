@@ -152,11 +152,11 @@ interface IHubConfigurator {
   /// @param halted The new halted flag.
   function updateSpokeHalted(address hub, uint256 assetId, address spoke, bool halted) external;
 
-  /// @notice Updates the supply cap of an asset's spoke on a specified hub.
+  /// @notice Updates the add cap of an asset's spoke on a specified hub.
   /// @param hub The address of the Hub.
   /// @param assetId The identifier of the asset.
   /// @param spoke The address of the Spoke.
-  /// @param addCap The new supply cap.
+  /// @param addCap The new add cap.
   function updateSpokeAddCap(address hub, uint256 assetId, address spoke, uint256 addCap) external;
 
   /// @notice Updates the draw cap of an asset's spoke on a specified hub.
@@ -187,7 +187,7 @@ interface IHubConfigurator {
   /// @param hub The address of the Hub.
   /// @param assetId The identifier of the asset.
   /// @param spoke The address of the Spoke.
-  /// @param addCap The new supply cap.
+  /// @param addCap The new add cap.
   /// @param drawCap The new draw cap.
   function updateSpokeCaps(
     address hub,
