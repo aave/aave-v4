@@ -30,10 +30,7 @@ contract AaveOracleTest is Base {
     oracle = new AaveOracle(_oracleDecimals, _description);
     spoke1 = ISpoke(
       address(
-        DeployUtils.deploySpokeImplementation(
-          address(oracle),
-          SpokeConstants.MAX_ALLOWED_USER_RESERVES_LIMIT
-        )
+        DeployUtils.deploySpokeImplementation(address(oracle), MAX_ALLOWED_USER_RESERVES_LIMIT)
       )
     );
     oracle.setSpoke(address(spoke1));
@@ -92,10 +89,7 @@ contract AaveOracleTest is Base {
     oracle = new AaveOracle(_oracleDecimals, _description);
 
     address newSpoke = address(
-      DeployUtils.deploySpokeImplementation(
-        address(oracle),
-        SpokeConstants.MAX_ALLOWED_USER_RESERVES_LIMIT
-      )
+      DeployUtils.deploySpokeImplementation(address(oracle), MAX_ALLOWED_USER_RESERVES_LIMIT)
     );
 
     vm.expectEmit(address(oracle));
@@ -157,10 +151,7 @@ contract AaveOracleTest is Base {
     // set new spoke to a separate oracle
     address mismatchOracle = address(new AaveOracle(_oracleDecimals, _description));
     address newSpoke = address(
-      DeployUtils.deploySpokeImplementation(
-        mismatchOracle,
-        SpokeConstants.MAX_ALLOWED_USER_RESERVES_LIMIT
-      )
+      DeployUtils.deploySpokeImplementation(mismatchOracle, MAX_ALLOWED_USER_RESERVES_LIMIT)
     );
 
     vm.expectRevert(IAaveOracle.OracleMismatch.selector);

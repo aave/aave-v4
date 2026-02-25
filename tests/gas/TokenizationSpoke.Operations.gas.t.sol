@@ -16,7 +16,7 @@ contract TokenizationSpokeOperations_Gas_Tests is Base {
   function setUp() public virtual override {
     super.setUp();
     daiVault = _deployTokenizationSpoke(hub1, daiAssetId, SHARE_NAME, SHARE_SYMBOL, ADMIN);
-    _registerTokenizationSpoke(hub1, daiAssetId, daiVault);
+    _registerTokenizationSpoke(hub1, daiAssetId, daiVault, ADMIN);
 
     SpokeActions.approve(daiVault, alice, 2100e18);
     vm.startPrank(alice);

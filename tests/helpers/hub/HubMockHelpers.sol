@@ -4,7 +4,6 @@ pragma solidity ^0.8.0;
 
 import {CommonHelpers} from 'tests/helpers/commons/CommonHelpers.sol';
 import {HubConstants} from 'tests/helpers/hub/HubConstants.sol';
-import {SpokeConstants} from 'tests/helpers/spoke/SpokeConstants.sol';
 import {HubActions} from 'tests/helpers/hub/HubActions.sol';
 import {SlotDerivation} from 'src/dependencies/openzeppelin/SlotDerivation.sol';
 import {IHub} from 'src/hub/interfaces/IHub.sol';
@@ -17,9 +16,11 @@ import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
 
 /// @title HubMockHelpers
 /// @notice Hub-level mocking utilities for the Aave V4 test suite.
-abstract contract HubMockHelpers is CommonHelpers {
+abstract contract HubMockHelpers is CommonHelpers, HubConstants {
   using WadRayMath for *;
   using PercentageMath for uint256;
+
+  // --- Interest rate mocking ---
 
   function _mockInterestRateBps(address interestRateStrategy, uint256 interestRateBps) internal {
     vm.mockCall(
@@ -75,13 +76,16 @@ abstract contract HubMockHelpers is CommonHelpers {
     );
   }
 
+  // --- Supply share price mocking ---
+
   function _mockSupplySharePrice(
     IHub hub,
     uint256 assetId,
     uint256 totalAddedAssets,
     uint256 addedShares,
     address spoke,
-    address admin
+    address admin,
+    uint24 riskPremiumThreshold
   ) internal {
     if (!hub.isSpokeListed(assetId, spoke)) {
       vm.prank(admin);
@@ -91,9 +95,9 @@ abstract contract HubMockHelpers is CommonHelpers {
         IHub.SpokeConfig({
           active: true,
           halted: false,
-          addCap: HubConstants.MAX_ALLOWED_SPOKE_CAP,
-          drawCap: HubConstants.MAX_ALLOWED_SPOKE_CAP,
-          riskPremiumThreshold: SpokeConstants.MAX_ALLOWED_COLLATERAL_RISK
+          addCap: MAX_ALLOWED_SPOKE_CAP,
+          drawCap: MAX_ALLOWED_SPOKE_CAP,
+          riskPremiumThreshold: riskPremiumThreshold
         })
       );
     }
@@ -118,6 +122,8 @@ abstract contract HubMockHelpers is CommonHelpers {
     );
     assertEq(hub.getAddedShares(assetId), addedShares, '_mockSupplySharePrice: addedShares');
   }
+
+  // --- Interest rate strategy setup ---
 
   function _setConstantInterestRateBps(
     IHub hub,

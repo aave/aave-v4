@@ -27,20 +27,16 @@ contract HubAddTest is Base {
   function setUp() public override {
     super.setUp();
 
-    TestnetERC20 usda = new TestnetERC20(
-      'USDA',
-      'USDA',
-      HubConstants.MIN_ALLOWED_UNDERLYING_DECIMALS
-    );
+    TestnetERC20 usda = new TestnetERC20('USDA', 'USDA', MIN_ALLOWED_UNDERLYING_DECIMALS);
     deal(address(usda), alice, MAX_SUPPLY_AMOUNT);
 
     /// @dev add a minimum decimal asset to test add cap rounding
     IHub.SpokeConfig memory spokeConfig = IHub.SpokeConfig({
       active: true,
       halted: false,
-      addCap: HubConstants.MAX_ALLOWED_SPOKE_CAP,
-      drawCap: HubConstants.MAX_ALLOWED_SPOKE_CAP,
-      riskPremiumThreshold: SpokeConstants.MAX_ALLOWED_COLLATERAL_RISK
+      addCap: MAX_ALLOWED_SPOKE_CAP,
+      drawCap: MAX_ALLOWED_SPOKE_CAP,
+      riskPremiumThreshold: MAX_ALLOWED_COLLATERAL_RISK
     });
     bytes memory encodedIrData = abi.encode(
       IAssetInterestRateStrategy.InterestRateData({
@@ -53,7 +49,7 @@ contract HubAddTest is Base {
     vm.startPrank(ADMIN);
     minDecimalAssetId = hub1.addAsset(
       address(usda),
-      HubConstants.MIN_ALLOWED_UNDERLYING_DECIMALS,
+      MIN_ALLOWED_UNDERLYING_DECIMALS,
       address(treasurySpoke),
       address(irStrategy),
       encodedIrData
@@ -217,8 +213,8 @@ contract HubAddTest is Base {
 
   // add succeeds if cap is reached but not exceeded
   function test_add_AddCapReachedButNotExceeded_rounding() public {
-    _addLiquidity(hub1, minDecimalAssetId, 100e18, ADMIN);
-    _drawLiquidity(hub1, minDecimalAssetId, 45e18, true, HUB_ADMIN);
+    _addLiquidity(hub1, minDecimalAssetId, 100e18, ADMIN, MAX_ALLOWED_COLLATERAL_RISK);
+    _drawLiquidity(hub1, minDecimalAssetId, 45e18, true, HUB_ADMIN, MAX_ALLOWED_COLLATERAL_RISK);
 
     uint256 totalAddedAssets = hub1.getAddedAssets(minDecimalAssetId);
     uint256 totalAddedShares = hub1.getAddedShares(minDecimalAssetId);
@@ -571,8 +567,8 @@ contract HubAddTest is Base {
 
   function test_add_with_increased_index_with_premium() public {
     uint256 daiAmount = 100e18;
-    _addLiquidity(hub1, daiAssetId, daiAmount, ADMIN);
-    _drawLiquidity(hub1, daiAssetId, daiAmount, true, HUB_ADMIN);
+    _addLiquidity(hub1, daiAssetId, daiAmount, ADMIN, MAX_ALLOWED_COLLATERAL_RISK);
+    _drawLiquidity(hub1, daiAssetId, daiAmount, true, HUB_ADMIN, MAX_ALLOWED_COLLATERAL_RISK);
     assertLt(hub1.previewAddByAssets(daiAssetId, daiAmount), daiAmount); // index increased, exch rate > 1
 
     uint256 addAmount = 10e18;

@@ -47,10 +47,7 @@ contract HubConfiguratorTest is Base {
       fetchErc20Decimals: vm.randomBool(),
       underlying: vm.randomAddress(),
       decimals: vm
-        .randomUint(
-          HubConstants.MIN_ALLOWED_UNDERLYING_DECIMALS,
-          HubConstants.MAX_ALLOWED_UNDERLYING_DECIMALS
-        )
+        .randomUint(MIN_ALLOWED_UNDERLYING_DECIMALS, MAX_ALLOWED_UNDERLYING_DECIMALS)
         .toUint8(),
       feeReceiver: vm.randomAddress(),
       liquidityFee: vm.randomUint(),
@@ -85,8 +82,7 @@ contract HubConfiguratorTest is Base {
     assumeNotZeroAddress(feeReceiver);
     assumeNotZeroAddress(interestRateStrategy);
 
-    decimals = bound(decimals, HubConstants.MAX_ALLOWED_UNDERLYING_DECIMALS + 1, type(uint8).max)
-      .toUint8();
+    decimals = bound(decimals, MAX_ALLOWED_UNDERLYING_DECIMALS + 1, type(uint8).max).toUint8();
     liquidityFee = bound(liquidityFee, 0, PercentageMath.PERCENTAGE_FACTOR);
 
     vm.expectRevert(IHub.InvalidAssetDecimals.selector, address(hub1));
@@ -104,10 +100,7 @@ contract HubConfiguratorTest is Base {
 
   function test_addAsset_revertsWith_InvalidAddress_underlying() public {
     uint8 decimals = uint8(
-      vm.randomUint(
-        HubConstants.MIN_ALLOWED_UNDERLYING_DECIMALS,
-        HubConstants.MAX_ALLOWED_UNDERLYING_DECIMALS
-      )
+      vm.randomUint(MIN_ALLOWED_UNDERLYING_DECIMALS, MAX_ALLOWED_UNDERLYING_DECIMALS)
     );
     address feeReceiver = makeAddr('newFeeReceiver');
     address interestRateStrategy = makeAddr('newIrStrategy');
@@ -129,10 +122,7 @@ contract HubConfiguratorTest is Base {
   function test_addAsset_revertsWith_InvalidAddress_irStrategy() public {
     address underlying = makeAddr('newUnderlying');
     uint8 decimals = uint8(
-      vm.randomUint(
-        HubConstants.MIN_ALLOWED_UNDERLYING_DECIMALS,
-        HubConstants.MAX_ALLOWED_UNDERLYING_DECIMALS
-      )
+      vm.randomUint(MIN_ALLOWED_UNDERLYING_DECIMALS, MAX_ALLOWED_UNDERLYING_DECIMALS)
     );
     address feeReceiver = makeAddr('newFeeReceiver');
     uint256 liquidityFee = vm.randomUint(0, PercentageMath.PERCENTAGE_FACTOR);
@@ -145,10 +135,7 @@ contract HubConfiguratorTest is Base {
   function test_addAsset_revertsWith_InvalidLiquidityFee() public {
     address underlying = makeAddr('newUnderlying');
     uint8 decimals = uint8(
-      vm.randomUint(
-        HubConstants.MIN_ALLOWED_UNDERLYING_DECIMALS,
-        HubConstants.MAX_ALLOWED_UNDERLYING_DECIMALS
-      )
+      vm.randomUint(MIN_ALLOWED_UNDERLYING_DECIMALS, MAX_ALLOWED_UNDERLYING_DECIMALS)
     );
     address feeReceiver = makeAddr('newFeeReceiver');
     address interestRateStrategy = address(new AssetInterestRateStrategy(address(hub1)));
@@ -181,11 +168,8 @@ contract HubConfiguratorTest is Base {
     assumeUnusedAddress(underlying);
     assumeNotZeroAddress(feeReceiver);
 
-    decimals = bound(
-      decimals,
-      HubConstants.MIN_ALLOWED_UNDERLYING_DECIMALS,
-      HubConstants.MAX_ALLOWED_UNDERLYING_DECIMALS
-    ).toUint8();
+    decimals = bound(decimals, MIN_ALLOWED_UNDERLYING_DECIMALS, MAX_ALLOWED_UNDERLYING_DECIMALS)
+      .toUint8();
     optimalUsageRatio = bound(optimalUsageRatio, MIN_OPTIMAL_RATIO, MAX_OPTIMAL_RATIO).toUint16();
     liquidityFee = bound(liquidityFee, 0, PercentageMath.PERCENTAGE_FACTOR);
 
@@ -219,7 +203,7 @@ contract HubConfiguratorTest is Base {
     IHub.SpokeConfig memory expectedSpokeConfig = IHub.SpokeConfig({
       active: true,
       halted: false,
-      addCap: HubConstants.MAX_ALLOWED_SPOKE_CAP,
+      addCap: MAX_ALLOWED_SPOKE_CAP,
       drawCap: 0,
       riskPremiumThreshold: 0
     });

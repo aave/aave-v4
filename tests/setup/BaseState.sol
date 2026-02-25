@@ -12,14 +12,15 @@ import {AssetInterestRateStrategy} from 'src/hub/AssetInterestRateStrategy.sol';
 import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 import {IAaveOracle} from 'src/spoke/interfaces/IAaveOracle.sol';
 import {ITreasurySpoke} from 'src/spoke/TreasurySpoke.sol';
-import 'tests/helpers/commons/CommonHelpers.sol';
-import 'tests/helpers/hub/HubHelpers.sol';
-import 'tests/helpers/spoke/SpokeHelpers.sol';
+import {CommonHelpers} from 'tests/helpers/commons/CommonHelpers.sol';
+import {HubHelpers} from 'tests/helpers/hub/HubHelpers.sol';
+import {SpokeHelpers} from 'tests/helpers/spoke/SpokeHelpers.sol';
+import {TokenizationSpokeHelpers} from 'tests/helpers/tokenization-spoke/TokenizationSpokeHelpers.sol';
 import {TestnetERC20} from 'tests/helpers/mocks/TestnetERC20.sol';
 
 /// @title BaseState
 /// @notice Shared state variables, constants, and low-level helpers for the Aave V4 test suite.
-abstract contract BaseState is HubHelpers, SpokeHelpers {
+abstract contract BaseState is HubHelpers, SpokeHelpers, TokenizationSpokeHelpers {
   using WadRayMath for *;
   using PercentageMath for uint256;
   using SafeCast for *;
@@ -72,31 +73,9 @@ abstract contract BaseState is HubHelpers, SpokeHelpers {
   uint256 internal MAX_SUPPLY_AMOUNT_USDZ;
   uint256 internal constant MAX_SUPPLY_IN_BASE_CURRENCY = 1e39;
   uint256 internal constant MAX_SUPPLY_PRICE = 100;
-  uint256 internal constant MIN_DRAWN_INDEX = WadRayMath.RAY;
   uint256 internal constant MAX_DRAWN_INDEX = 100 * WadRayMath.RAY;
-  uint32 internal constant MAX_LIQUIDATION_BONUS = 150_00;
-  uint16 internal constant MAX_LIQUIDATION_FEE = 100_00;
-  uint16 internal constant MIN_LIQUIDATION_FEE = 0;
-  uint128 internal constant MIN_CLOSE_FACTOR = 1e18;
-  uint128 internal constant MAX_CLOSE_FACTOR = 2e18;
+  uint128 internal constant MAX_TARGET_HEALTH_FACTOR = 2e18;
   uint256 internal constant MAX_ASSET_PRICE = 1e8 * 1e8;
-  // Hub library re-exports (bare-name access for tests)
-  uint24 internal constant MIN_BORROW_RATE = HubConstants.MIN_BORROW_RATE;
-  uint256 internal constant MAX_BORROW_RATE = HubConstants.MAX_BORROW_RATE;
-  uint256 internal constant MIN_OPTIMAL_RATIO = HubConstants.MIN_OPTIMAL_RATIO;
-  uint256 internal constant MAX_OPTIMAL_RATIO = HubConstants.MAX_OPTIMAL_RATIO;
-  uint256 internal constant MIN_TOKEN_DECIMALS_SUPPORTED =
-    HubConstants.MIN_ALLOWED_UNDERLYING_DECIMALS;
-  uint256 internal constant MAX_TOKEN_DECIMALS_SUPPORTED =
-    HubConstants.MAX_ALLOWED_UNDERLYING_DECIMALS;
-  // Spoke library re-exports (bare-name access for tests)
-  uint128 internal constant HEALTH_FACTOR_LIQUIDATION_THRESHOLD =
-    SpokeConstants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD;
-  uint24 internal constant MIN_COLLATERAL_RISK_BPS = SpokeConstants.MIN_COLLATERAL_RISK_BPS;
-  uint24 internal constant MAX_COLLATERAL_RISK_BPS = SpokeConstants.MAX_COLLATERAL_RISK_BPS;
-  uint16 internal constant MAX_LIQUIDATION_BONUS_FACTOR =
-    SpokeConstants.MAX_LIQUIDATION_BONUS_FACTOR;
-  uint32 internal constant MIN_LIQUIDATION_BONUS = SpokeConstants.MIN_LIQUIDATION_BONUS;
   IHubBase.PremiumDelta internal ZERO_PREMIUM_DELTA;
 
   IAaveOracle internal oracle1;
@@ -142,16 +121,6 @@ abstract contract BaseState is HubHelpers, SpokeHelpers {
   uint256 internal usdzAssetId = 5;
 
   mapping(ISpoke => SpokeInfo) internal spokeInfo;
-
-  function _randomBps() internal returns (uint16) {
-    return vm.randomUint(0, PercentageMath.PERCENTAGE_FACTOR).toUint16();
-  }
-
-  function _randomAddressOmit(address omit) internal returns (address) {
-    address addr = vm.randomAddress();
-    while (addr == omit) addr = vm.randomAddress();
-    return addr;
-  }
 
   function _defaultUsers() internal view returns (address[] memory users) {
     users = new address[](4);

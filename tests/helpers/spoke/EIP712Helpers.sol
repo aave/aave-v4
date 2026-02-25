@@ -16,6 +16,8 @@ abstract contract EIP712Helpers is Test {
 
   uint256 internal constant MAX_SKIP_TIME = 10_000 days;
 
+  // --- Typed data hash helpers ---
+
   function _getTypedDataHash(
     TestnetERC20 token,
     EIP712Types.Permit memory permit
@@ -44,10 +46,14 @@ abstract contract EIP712Helpers is Test {
       );
   }
 
+  // --- Signing helpers ---
+
   function _sign(uint256 pk, bytes32 digest) internal pure returns (bytes memory) {
     (uint8 v, bytes32 r, bytes32 s) = vm.sign(pk, digest);
     return abi.encodePacked(r, s, v);
   }
+
+  // --- Deadline / warp helpers ---
 
   function _warpAfterRandomDeadline() internal returns (uint256) {
     uint256 deadline = vm.randomUint(0, MAX_SKIP_TIME - 1);
@@ -60,6 +66,8 @@ abstract contract EIP712Helpers is Test {
     vm.warp(vm.randomUint(0, deadline - 1));
     return deadline;
   }
+
+  // --- Nonce utilities ---
 
   function _burnRandomNoncesAtKey(
     INoncesKeyed verifier,

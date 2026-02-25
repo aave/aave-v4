@@ -5,15 +5,15 @@ pragma solidity ^0.8.0;
 import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
 import {IERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
 import {IHub, IHubBase} from 'src/hub/interfaces/IHub.sol';
-import {HubQueryHelpers} from 'tests/helpers/hub/HubQueryHelpers.sol';
+import {HubMathHelpers} from 'tests/helpers/hub/HubMathHelpers.sol';
 import {HubActions} from 'tests/helpers/hub/HubActions.sol';
-import {HubConstants} from 'tests/helpers/hub/HubConstants.sol';
-import {SpokeConstants} from 'tests/helpers/spoke/SpokeConstants.sol';
 
 /// @title HubSetupHelpers
 /// @notice Hub-level state-mutating test setup utilities.
-abstract contract HubSetupHelpers is HubQueryHelpers {
+abstract contract HubSetupHelpers is HubMathHelpers {
   using SafeCast for *;
+
+  // --- Liquidity operations ---
 
   /// @dev mocks rate, addSpoke (addUser) adds asset, drawSpoke (drawUser) draws asset, skips time
   function _addAndDrawLiquidity(
@@ -53,7 +53,8 @@ abstract contract HubSetupHelpers is HubQueryHelpers {
     uint256 amount,
     bool withPremium,
     bool skipTime,
-    address hubAdmin
+    address hubAdmin,
+    uint24 riskPremiumThreshold
   ) internal {
     address tempSpoke = vm.randomAddress();
 
@@ -64,9 +65,9 @@ abstract contract HubSetupHelpers is HubQueryHelpers {
       IHub.SpokeConfig({
         active: true,
         halted: false,
-        addCap: HubConstants.MAX_ALLOWED_SPOKE_CAP,
-        drawCap: HubConstants.MAX_ALLOWED_SPOKE_CAP,
-        riskPremiumThreshold: SpokeConstants.MAX_ALLOWED_COLLATERAL_RISK
+        addCap: MAX_ALLOWED_SPOKE_CAP,
+        drawCap: MAX_ALLOWED_SPOKE_CAP,
+        riskPremiumThreshold: riskPremiumThreshold
       })
     );
 
@@ -79,9 +80,21 @@ abstract contract HubSetupHelpers is HubQueryHelpers {
     uint256 assetId,
     uint256 amount,
     bool premium,
-    address hubAdmin
+    address hubAdmin,
+    uint24 riskPremiumThreshold
   ) internal {
-    _drawLiquidityViaTempSpoke(hub, assetId, amount, premium, true, hubAdmin);
+    _drawLiquidityViaTempSpoke(hub, assetId, amount, premium, true, hubAdmin, riskPremiumThreshold);
+  }
+
+  function _drawLiquidity(
+    IHub hub,
+    uint256 assetId,
+    uint256 amount,
+    bool withPremium,
+    bool skipTime,
+    address spoke
+  ) internal {
+    _drawLiquidity(hub, assetId, amount, withPremium, (skipTime) ? 365 days : 0, spoke);
   }
 
   /// @dev Draws liquidity from the Hub via a specific spoke
@@ -90,7 +103,7 @@ abstract contract HubSetupHelpers is HubQueryHelpers {
     uint256 assetId,
     uint256 amount,
     bool withPremium,
-    bool skipTime,
+    uint256 skipTime,
     address spoke
   ) internal {
     HubActions.draw(hub, assetId, spoke, vm.randomAddress(), amount);
@@ -111,7 +124,7 @@ abstract contract HubSetupHelpers is HubQueryHelpers {
       hub.refreshPremium(assetId, premiumDelta);
     }
 
-    if (skipTime) skip(365 days);
+    skip(skipTime);
 
     (uint256 drawn, uint256 premium) = hub.getAssetOwed(assetId);
     assertGt(drawn, 0); // non-zero drawn debt
@@ -134,7 +147,13 @@ abstract contract HubSetupHelpers is HubQueryHelpers {
   }
 
   /// @dev Adds liquidity to the Hub via a random spoke
-  function _addLiquidity(IHub hub, uint256 assetId, uint256 amount, address admin) public {
+  function _addLiquidity(
+    IHub hub,
+    uint256 assetId,
+    uint256 amount,
+    address admin,
+    uint24 riskPremiumThreshold
+  ) public {
     address tempSpoke = vm.randomAddress();
     address tempUser = vm.randomAddress();
 
@@ -153,9 +172,9 @@ abstract contract HubSetupHelpers is HubQueryHelpers {
       IHub.SpokeConfig({
         active: true,
         halted: false,
-        addCap: HubConstants.MAX_ALLOWED_SPOKE_CAP,
-        drawCap: HubConstants.MAX_ALLOWED_SPOKE_CAP,
-        riskPremiumThreshold: SpokeConstants.MAX_ALLOWED_COLLATERAL_RISK
+        addCap: MAX_ALLOWED_SPOKE_CAP,
+        drawCap: MAX_ALLOWED_SPOKE_CAP,
+        riskPremiumThreshold: riskPremiumThreshold
       })
     );
 
@@ -164,11 +183,23 @@ abstract contract HubSetupHelpers is HubQueryHelpers {
     assertEq(hub.getAssetLiquidity(assetId), initialLiq + amount);
   }
 
+  // --- Snapshot builders ---
+
   function _snapshotHub(IHub hub, uint256 assetId) internal view returns (HubSnapshot memory snap) {
     snap.liquidity = hub.getAssetLiquidity(assetId);
     snap.addedAssets = hub.getAddedAssets(assetId);
     snap.addedShares = hub.getAddedShares(assetId);
     (snap.drawnAssets, ) = hub.getAssetOwed(assetId);
     snap.drawnShares = hub.getAsset(assetId).drawnShares;
+  }
+
+  // --- Random asset ID generators ---
+
+  function _randomAssetId(IHub hub) internal returns (uint256) {
+    return vm.randomUint(0, hub.getAssetCount() - 1);
+  }
+
+  function _randomInvalidAssetId(IHub hub) internal returns (uint256) {
+    return vm.randomUint(hub.getAssetCount(), UINT256_MAX);
   }
 }

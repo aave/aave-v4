@@ -20,6 +20,8 @@ abstract contract HubAssertions is HubQueryHelpers {
   using PercentageMath for uint256;
   using SafeCast for *;
 
+  // --- Hub state assertions ---
+
   function _assertHubLiquidity(IHub targetHub, uint256 assetId, string memory label) internal view {
     IHub.Asset memory asset = targetHub.getAsset(assetId);
     uint256 currentHubBalance = IERC20(asset.underlying).balanceOf(address(targetHub));

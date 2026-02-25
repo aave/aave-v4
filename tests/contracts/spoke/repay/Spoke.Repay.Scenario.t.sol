@@ -916,7 +916,7 @@ contract SpokeRepayScenarioTest is Base {
       );
     }
 
-    _repayAll(spoke1, hub1, _daiReserveId(spoke1), _defaultUsers());
+    _repayAll(spoke1, _daiReserveId(spoke1), _defaultUsers());
   }
 
   function test_repay_two_users_repay_same_reserve(
@@ -1031,7 +1031,7 @@ contract SpokeRepayScenarioTest is Base {
       );
     }
 
-    _repayAll(spoke1, hub1, _daiReserveId(spoke1), _defaultUsers());
+    _repayAll(spoke1, _daiReserveId(spoke1), _defaultUsers());
   }
 
   /// Borrow, repay, borrow more, repay
@@ -1247,7 +1247,7 @@ contract SpokeRepayScenarioTest is Base {
 
     assertEq(tokenList.weth.balanceOf(bob), bobWethBalanceBefore);
 
-    _repayAll(spoke1, hub1, _daiReserveId(spoke1), _defaultUsers());
+    _repayAll(spoke1, _daiReserveId(spoke1), _defaultUsers());
   }
 
   function test_repay_partial_then_max() public {
@@ -1284,11 +1284,11 @@ contract SpokeRepayScenarioTest is Base {
 
     {
       (uint256 baseRestored, uint256 premiumRestored) = _calculateExactRestoreAmount(
+        hub1,
+        daiAssetId,
         bobDaiBefore.drawnDebt,
         bobDaiBefore.premiumDebt,
-        partialRepayAmount,
-        hub1,
-        daiAssetId
+        partialRepayAmount
       );
 
       IHubBase.PremiumDelta memory expectedPremiumDelta = _getExpectedPremiumDeltaForRestore(

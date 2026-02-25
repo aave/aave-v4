@@ -11,6 +11,8 @@ library HubActions {
 
   Vm internal constant vm = Vm(address(uint160(uint256(keccak256('hevm cheat code')))));
 
+  // --- Core hub actions ---
+
   function add(
     IHubBase hub,
     uint256 assetId,
@@ -60,6 +62,8 @@ library HubActions {
     vm.prank(caller);
     return hub.restore(assetId, drawnAmount, IHubBase.PremiumDelta(0, 0, 0));
   }
+
+  // --- Admin actions ---
 
   function addSpoke(
     IHub hub,
@@ -111,6 +115,8 @@ library HubActions {
     vm.prank(caller);
     return hub.mintFeeShares(assetId);
   }
+
+  // --- Token helpers ---
 
   function approve(
     IHub hub,

@@ -38,13 +38,7 @@ contract SpokeAccrueInterestTest is Base {
 
   function test_accrueInterest_NoActionTaken() public view {
     _assertOnlyOneUserDebt(spoke1, _daiReserveId(spoke1), bob, 0, 0, 'no debt without action');
-    _assertSingleUserProtocolSupply(
-      spoke1,
-      _daiReserveId(spoke1),
-      bob,
-      0,
-      'no supply without action'
-    );
+    _assertOnlyOneUserSupply(spoke1, _daiReserveId(spoke1), bob, 0, 'no supply without action');
   }
 
   /// Supply an asset only, and check no interest accrued.
@@ -60,7 +54,7 @@ contract SpokeAccrueInterestTest is Base {
     skip(skipTime);
 
     _assertOnlyOneUserDebt(spoke1, daiReserveId, bob, 0, 0, 'after supply, no interest accrued');
-    _assertSingleUserProtocolSupply(
+    _assertOnlyOneUserSupply(
       spoke1,
       daiReserveId,
       bob,
@@ -102,13 +96,7 @@ contract SpokeAccrueInterestTest is Base {
       expectedPremiumDebt,
       'after accrual'
     );
-    _assertSingleUserProtocolSupply(
-      spoke1,
-      daiReserveId,
-      bob,
-      supplyAmount + interest,
-      'after accrual'
-    );
+    _assertOnlyOneUserSupply(spoke1, daiReserveId, bob, supplyAmount + interest, 'after accrual');
 
     startTime = vm.getBlockTimestamp().toUint40();
     drawnRate = hub1.getAssetDrawnRate(daiAssetId).toUint96();
@@ -117,7 +105,7 @@ contract SpokeAccrueInterestTest is Base {
     SpokeActions.repay(spoke1, daiReserveId, bob, UINT256_MAX, bob);
 
     _assertOnlyOneUserDebt(spoke1, daiReserveId, bob, 0, 0, 'after repay, no debt');
-    _assertSingleUserProtocolSupply(
+    _assertOnlyOneUserSupply(
       spoke1,
       daiReserveId,
       bob,
@@ -129,7 +117,7 @@ contract SpokeAccrueInterestTest is Base {
     skip(elapsed);
 
     _assertOnlyOneUserDebt(spoke1, daiReserveId, bob, 0, 0, 'after repay and time skip, no debt');
-    _assertSingleUserProtocolSupply(
+    _assertOnlyOneUserSupply(
       spoke1,
       daiReserveId,
       bob,
@@ -170,7 +158,7 @@ contract SpokeAccrueInterestTest is Base {
       expectedPremiumDebt,
       'after accrual'
     );
-    _assertSingleUserProtocolSupply(
+    _assertOnlyOneUserSupply(
       spoke1,
       daiReserveId,
       bob,
@@ -221,13 +209,7 @@ contract SpokeAccrueInterestTest is Base {
       expectedPremiumDebt,
       'after accrual'
     );
-    _assertSingleUserProtocolSupply(
-      spoke1,
-      usdxReserveId,
-      bob,
-      supplyAmount + interest,
-      'after accrual'
-    );
+    _assertOnlyOneUserSupply(spoke1, usdxReserveId, bob, supplyAmount + interest, 'after accrual');
   }
 
   // Fuzz a mix of borrowed and supplied assets for bob, check his RP, ensure correct interest accrual

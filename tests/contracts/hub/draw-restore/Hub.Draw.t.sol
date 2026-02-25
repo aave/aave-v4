@@ -106,8 +106,8 @@ contract HubDrawTest is Base {
     assetId = bound(assetId, 0, hub1.getAssetCount() - 3); // Exclude usdy & usdz
     amount = bound(amount, 1, MAX_SUPPLY_AMOUNT / 10);
 
-    _addLiquidity(hub1, assetId, amount * 2, ADMIN);
-    _drawLiquidity(hub1, assetId, amount, true, HUB_ADMIN);
+    _addLiquidity(hub1, assetId, amount * 2, ADMIN, MAX_ALLOWED_COLLATERAL_RISK);
+    _drawLiquidity(hub1, assetId, amount, true, HUB_ADMIN, MAX_ALLOWED_COLLATERAL_RISK);
     skip(365 days);
 
     uint256 shares = hub1.previewDrawByAssets(assetId, amount);

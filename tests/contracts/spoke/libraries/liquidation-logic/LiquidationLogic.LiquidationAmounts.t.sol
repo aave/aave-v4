@@ -187,7 +187,8 @@ contract LiquidationLogicLiquidationAmountsTest is LiquidationLogicBaseTest {
       12_500.25e6,
       10_000e6,
       address(spoke1),
-      HUB_ADMIN
+      HUB_ADMIN,
+      MAX_ALLOWED_COLLATERAL_RISK
     );
 
     LiquidationLogic.LiquidationAmounts memory liquidationAmounts = liquidationLogicWrapper
@@ -248,7 +249,8 @@ contract LiquidationLogicLiquidationAmountsTest is LiquidationLogicBaseTest {
       12500.25e6,
       10_000e6,
       address(spoke1),
-      HUB_ADMIN
+      HUB_ADMIN,
+      MAX_ALLOWED_COLLATERAL_RISK
     );
 
     LiquidationLogic.LiquidationAmounts memory liquidationAmounts = liquidationLogicWrapper

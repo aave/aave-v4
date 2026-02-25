@@ -249,7 +249,7 @@ contract SpokeSetUsingAsCollateralTest is Base {
 
   /// @dev Test showing that when the collateral limit is max, all reserves can be enabled as collateral.
   function test_setUsingAsCollateral_unlimited_whenLimitIsMax() public {
-    assertEq(spoke1.MAX_USER_RESERVES_LIMIT(), SpokeConstants.MAX_ALLOWED_USER_RESERVES_LIMIT);
+    assertEq(spoke1.MAX_USER_RESERVES_LIMIT(), MAX_ALLOWED_USER_RESERVES_LIMIT);
 
     uint256 collateralsToEnable = spoke1.getReserveCount();
 

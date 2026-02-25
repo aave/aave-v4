@@ -24,7 +24,7 @@ contract SpokeMulticall is Base {
 
   function setUp() public override {
     super.setUp();
-    usda = new TestnetERC20('USDA', 'USDA', HubConstants.MIN_ALLOWED_UNDERLYING_DECIMALS);
+    usda = new TestnetERC20('USDA', 'USDA', MIN_ALLOWED_UNDERLYING_DECIMALS);
   }
 
   /// Supply and set collateral using multicall

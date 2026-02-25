@@ -4,7 +4,9 @@ pragma solidity ^0.8.0;
 
 import {SpokeQueryHelpers} from 'tests/helpers/spoke/SpokeQueryHelpers.sol';
 import {Vm} from 'forge-std/Vm.sol';
+import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
 import {IERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
+import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
 import {IHub} from 'src/hub/interfaces/IHub.sol';
 import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 import {IAssetInterestRateStrategy} from 'src/hub/AssetInterestRateStrategy.sol';
@@ -14,6 +16,191 @@ import {ReserveFlags, ReserveFlagsMap} from 'src/spoke/libraries/ReserveFlagsMap
 /// @notice Spoke-level assertion helpers for the Aave V4 test suite.
 abstract contract SpokeAssertions is SpokeQueryHelpers {
   using ReserveFlagsMap for ReserveFlags;
+  using SafeCast for *;
+  using PercentageMath for uint256;
+
+  // --- Position / struct comparison assertions ---
+
+  function _assertUserPositionApprox(
+    ISpoke.UserPosition memory userPos,
+    ISpoke.UserPosition memory expectedUserPos,
+    string memory label
+  ) internal pure {
+    assertEq(
+      userPos.suppliedShares,
+      expectedUserPos.suppliedShares,
+      string.concat('user supplied shares ', label)
+    );
+    assertEq(
+      userPos.drawnShares,
+      expectedUserPos.drawnShares,
+      string.concat('user drawnShares ', label)
+    );
+    assertEq(
+      userPos.premiumShares,
+      expectedUserPos.premiumShares,
+      string.concat('user premiumShares ', label)
+    );
+    assertApproxEqAbs(
+      userPos.premiumOffsetRay,
+      expectedUserPos.premiumOffsetRay,
+      1,
+      string.concat('user premiumOffsetRay ', label)
+    );
+  }
+
+  function _assertDebtDataEq(
+    DebtData memory userDebt,
+    DebtData memory expectedUserDebt,
+    string memory label
+  ) internal pure {
+    assertEq(
+      userDebt.drawnDebt,
+      expectedUserDebt.drawnDebt,
+      string.concat('user drawn debt ', label)
+    );
+    assertApproxEqAbs(
+      userDebt.premiumDebt,
+      expectedUserDebt.premiumDebt,
+      1,
+      string.concat('user premium debt ', label)
+    );
+    assertApproxEqAbs(
+      userDebt.totalDebt,
+      expectedUserDebt.totalDebt,
+      1,
+      string.concat('user total debt ', label)
+    );
+  }
+
+  // --- Risk premium assertions ---
+
+  function _assertUserRpUnchanged(ISpoke spoke, address user) internal view {
+    uint256 riskPremiumPreview = spoke.getUserAccountData(user).riskPremium;
+    uint256 riskPremiumStored = _getUserRpStored(spoke, user);
+    assertEq(riskPremiumStored, riskPremiumPreview, 'user risk premium mismatch vs preview');
+  }
+
+  /// after a repay action, the stored user risk premium should not match the on-the-fly calculation, due to lack of notify
+  /// instead RP should remain same as prior value
+  function _assertUserRpUnchangedAfterRepay(
+    ISpoke spoke,
+    address user,
+    uint256 expectedRP
+  ) internal view {
+    uint256 riskPremiumPreview = spoke.getUserAccountData(user).riskPremium;
+    uint256 riskPremiumStored = _getUserRpStored(spoke, user);
+    assertEq(riskPremiumStored, expectedRP, 'user risk premium mismatch vs expected');
+    assertNotEq(
+      riskPremiumStored,
+      riskPremiumPreview,
+      'user risk premium expected mismatch without notify'
+    );
+  }
+
+  // --- Composite position and debt assertions ---
+
+  function _assertUserPositionAndDebt(
+    ISpoke spoke,
+    uint256 reserveId,
+    address user,
+    uint256 debtAmount,
+    uint256 suppliedAmount,
+    uint256 expectedPremiumDebtRay,
+    string memory label
+  ) internal view {
+    uint256 assetId = spoke.getReserve(reserveId).assetId;
+    IHub hub = _hub(spoke, reserveId);
+
+    // actual
+    ISpoke.UserPosition memory userPos = _getUserInfo(spoke, user, reserveId);
+    DebtData memory userDebt = _getUserDebt(spoke, user, reserveId);
+
+    // expected position
+    uint120 premiumShares = hub
+      .previewRestoreByAssets(assetId, debtAmount)
+      .percentMulUp(_getUserRpStored(spoke, user))
+      .toUint120();
+    ISpoke.UserPosition memory expectedUserPos = ISpoke.UserPosition({
+      suppliedShares: hub.previewAddByAssets(assetId, suppliedAmount).toUint120(),
+      drawnShares: hub.previewRestoreByAssets(assetId, debtAmount).toUint120(),
+      premiumShares: premiumShares,
+      premiumOffsetRay: _calculatePremiumAssetsRay(hub, assetId, premiumShares)
+        .toInt256()
+        .toInt200() - expectedPremiumDebtRay.toInt256().toInt200(),
+      dynamicConfigKey: userPos.dynamicConfigKey
+    });
+
+    // expected debt
+    DebtData memory expectedUserDebt;
+    expectedUserDebt.premiumDebt = _calculatePremiumDebt(
+      hub,
+      assetId,
+      expectedUserPos.premiumShares,
+      expectedUserPos.premiumOffsetRay
+    );
+    expectedUserDebt.drawnDebt = hub.previewRestoreByShares(assetId, expectedUserPos.drawnShares);
+    expectedUserDebt.totalDebt = expectedUserDebt.drawnDebt + expectedUserDebt.premiumDebt;
+
+    // assertions
+    assertEq(_isBorrowing(spoke, reserveId, user), userDebt.totalDebt > 0);
+    _assertUserPositionApprox(userPos, expectedUserPos, label);
+    _assertDebtDataEq(userDebt, expectedUserDebt, label);
+  }
+
+  /// assert that sum across User storage debt matches Reserve storage debt
+  function _assertUsersAndReserveDebt(
+    ISpoke spoke,
+    uint256 reserveId,
+    address[] memory users,
+    string memory label
+  ) internal view {
+    DebtData memory reserveDebt;
+    DebtData memory usersDebt;
+    uint256 assetId = spoke.getReserve(reserveId).assetId;
+    IHub hub = _hub(spoke, reserveId);
+
+    reserveDebt.totalDebt = spoke.getReserveTotalDebt(reserveId);
+    (reserveDebt.drawnDebt, reserveDebt.premiumDebt) = spoke.getReserveDebt(reserveId);
+
+    for (uint256 i = 0; i < users.length; ++i) {
+      ISpoke.UserPosition memory userData = _getUserInfo(spoke, users[i], reserveId);
+      (uint256 drawnDebt, uint256 premiumDebt) = spoke.getUserDebt(reserveId, users[i]);
+
+      usersDebt.drawnDebt += drawnDebt;
+      usersDebt.premiumDebt += premiumDebt;
+      usersDebt.totalDebt += drawnDebt + premiumDebt;
+
+      assertEq(
+        drawnDebt,
+        hub.previewRestoreByShares(assetId, userData.drawnShares),
+        string.concat('user ', vm.toString(i), ' drawn debt ', label)
+      );
+      assertEq(
+        premiumDebt,
+        _calculatePremiumDebt(hub, assetId, userData.premiumShares, userData.premiumOffsetRay),
+        string.concat('user ', vm.toString(i), ' premium debt ', label)
+      );
+    }
+
+    assertEq(
+      reserveDebt.drawnDebt,
+      usersDebt.drawnDebt,
+      string.concat('reserve vs sum users drawn debt ', label)
+    );
+    assertEq(
+      reserveDebt.premiumDebt,
+      usersDebt.premiumDebt,
+      string.concat('reserve vs sum users premium debt ', label)
+    );
+    assertEq(
+      reserveDebt.totalDebt,
+      usersDebt.totalDebt,
+      string.concat('reserve vs sum users total debt ', label)
+    );
+  }
+
+  // --- Individual-level assertions ---
 
   function _assertUserDebt(
     ISpoke spoke,
@@ -196,6 +383,35 @@ abstract contract SpokeAssertions is SpokeQueryHelpers {
     );
   }
 
+  // --- Composite multi-level assertions ---
+
+  function _assertOnlyOneUserSupply(
+    ISpoke spoke,
+    uint256 reserveId,
+    address user,
+    uint256 expectedSuppliedAmount,
+    string memory label
+  ) internal view {
+    _assertUserSupply(spoke, reserveId, user, expectedSuppliedAmount, label);
+    _assertReserveSupply(spoke, reserveId, expectedSuppliedAmount, label);
+    _assertSpokeSupply(spoke, reserveId, expectedSuppliedAmount, label);
+    _assertAssetSupply(spoke, reserveId, expectedSuppliedAmount, label);
+  }
+
+  function _assertOnlyOneUserDebt(
+    ISpoke spoke,
+    uint256 reserveId,
+    address user,
+    uint256 expectedDrawnDebt,
+    uint256 expectedPremiumDebt,
+    string memory label
+  ) internal view {
+    _assertUserDebt(spoke, reserveId, user, expectedDrawnDebt, expectedPremiumDebt, label);
+    _assertReserveDebt(spoke, reserveId, expectedDrawnDebt, expectedPremiumDebt, label);
+    _assertSpokeDebt(spoke, reserveId, expectedDrawnDebt, expectedPremiumDebt, label);
+    _assertAssetDebt(spoke, reserveId, expectedDrawnDebt, expectedPremiumDebt, label);
+  }
+
   function _assertSuppliedAmounts(
     uint256 assetId,
     uint256 reserveId,
@@ -248,6 +464,8 @@ abstract contract SpokeAssertions is SpokeQueryHelpers {
     );
   }
 
+  // --- Event / misc assertions ---
+
   function _assertDynamicConfigRefreshEventsNotEmitted() internal {
     _assertEventsNotEmitted(
       ISpoke.RefreshAllUserDynamicConfig.selector,
@@ -265,7 +483,7 @@ abstract contract SpokeAssertions is SpokeQueryHelpers {
     assertEq(underlying.allowance({owner: entity, spender: vm.randomAddress()}), 0);
   }
 
-  // --- assertEq overloads for Spoke types ---
+  // --- Custom assertEq overloads ---
 
   function assertEq(
     ISpoke.LiquidationConfig memory a,
@@ -347,36 +565,47 @@ abstract contract SpokeAssertions is SpokeQueryHelpers {
     assertEq(abi.encode(a), abi.encode(b));
   }
 
-  // --- Generic event assertion helpers ---
-
-  function _assertEventNotEmitted(bytes32 eventSignature) internal {
-    Vm.Log[] memory entries = vm.getRecordedLogs();
-    for (uint256 i; i < entries.length; i++) {
-      assertNotEq(entries[i].topics[0], eventSignature);
-    }
-    vm.recordLogs();
+  function assertEq(DebtData memory a, DebtData memory b) internal pure {
+    assertEq(a.drawnDebt, b.drawnDebt, 'drawn debt');
+    assertEq(a.premiumDebt, b.premiumDebt, 'premium debt');
+    assertEq(a.totalDebt, b.totalDebt, 'total debt');
+    assertEq(keccak256(abi.encode(a)), keccak256(abi.encode(b)), 'debt data'); // sanity
   }
 
-  function _assertEventsNotEmitted(bytes32 event1Sig, bytes32 event2Sig) internal {
-    Vm.Log[] memory entries = vm.getRecordedLogs();
-    for (uint256 i; i < entries.length; i++) {
-      assertNotEq(entries[i].topics[0], event1Sig);
-      assertNotEq(entries[i].topics[0], event2Sig);
-    }
-    vm.recordLogs();
+  function assertEq(DynamicConfigEntry memory a, DynamicConfigEntry memory b) internal pure {
+    assertEq(a.key, b.key, 'key');
+    assertEq(a.enabled, b.enabled, 'enabled');
+    assertEq(abi.encode(a), abi.encode(b)); // sanity
   }
 
-  function _assertEventsNotEmitted(
-    bytes32 event1Sig,
-    bytes32 event2Sig,
-    bytes32 event3Sig
-  ) internal {
-    Vm.Log[] memory entries = vm.getRecordedLogs();
-    for (uint256 i; i < entries.length; i++) {
-      assertNotEq(entries[i].topics[0], event1Sig);
-      assertNotEq(entries[i].topics[0], event2Sig);
-      assertNotEq(entries[i].topics[0], event3Sig);
+  function assertEq(DynamicConfigEntry[] memory a, DynamicConfigEntry[] memory b) internal pure {
+    require(a.length == b.length);
+    for (uint256 i; i < a.length; ++i) {
+      if (a[i].enabled && b[i].enabled) {
+        assertEq(a[i].key, b[i].key, string.concat('reserve ', vm.toString(i)));
+      }
     }
-    vm.recordLogs();
+  }
+
+  function assertNotEq(DynamicConfigEntry[] memory a, DynamicConfigEntry[] memory b) internal pure {
+    require(a.length == b.length);
+    for (uint256 i; i < a.length; ++i) {
+      if (a[i].enabled && b[i].enabled) {
+        assertNotEq(a[i].key, b[i].key, string.concat('reserve ', vm.toString(i)));
+      }
+    }
+  }
+
+  function assertEq(SpokePosition memory a, SpokePosition memory b) internal pure {
+    assertEq(a.reserveId, b.reserveId, 'reserveId');
+    assertEq(a.assetId, b.assetId, 'assetId');
+    assertEq(a.addedShares, b.addedShares, 'addedShares');
+    assertEq(a.addedAmount, b.addedAmount, 'addedAmount');
+    assertEq(a.drawnShares, b.drawnShares, 'drawnShares');
+    assertEq(a.drawn, b.drawn, 'drawn');
+    assertEq(a.premiumShares, b.premiumShares, 'premiumShares');
+    assertEq(a.premiumOffsetRay, b.premiumOffsetRay, 'premiumOffsetRay');
+    assertEq(a.premium, b.premium, 'premium');
+    assertEq(abi.encode(a), abi.encode(b)); // sanity check
   }
 }

@@ -216,7 +216,7 @@ contract SpokeRiskPremiumScenarioTest is Base {
     );
 
     // Alice repays everything
-    _repayAll(spoke1, hub1, _daiReserveId(spoke1), _defaultUsers());
+    _repayAll(spoke1, _daiReserveId(spoke1), _defaultUsers());
   }
 
   /// Bob and Alice each supply and borrow varying amounts of usdx and dai, we check interest accrues and values percolate to hub1.
@@ -468,11 +468,11 @@ contract SpokeRiskPremiumScenarioTest is Base {
 
     RestoredAmounts memory restored;
     (restored.baseRestored, restored.premiumRestored) = _calculateExactRestoreAmount(
+      hub1,
+      daiAssetId,
       aliceDaiInfo.drawnDebt,
       aliceDaiInfo.premiumDebt,
-      aliceDaiInfo.borrowAmount / 2,
-      hub1,
-      daiAssetId
+      aliceDaiInfo.borrowAmount / 2
     );
 
     // Store premium drawn shares for both users to check as proxy for risk premium

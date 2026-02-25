@@ -30,7 +30,7 @@ contract HubRefreshPremiumTest is Base {
     uint256 amount2 = vm.randomUint(1, MAX_SUPPLY_AMOUNT_DAI - amount1);
 
     // create drawn shares and premium data
-    _addLiquidity(hub1, daiAssetId, MAX_SUPPLY_AMOUNT_DAI, ADMIN);
+    _addLiquidity(hub1, daiAssetId, MAX_SUPPLY_AMOUNT_DAI, ADMIN, MAX_ALLOWED_COLLATERAL_RISK);
     SpokeActions.borrow(spoke1, _daiReserveId(spoke1), bob, amount1, bob);
     skip(322 days);
     SpokeActions.borrow(spoke1, _daiReserveId(spoke1), bob, amount2, bob);
@@ -72,8 +72,7 @@ contract HubRefreshPremiumTest is Base {
     vm.prank(address(spoke1));
     hub1.refreshPremium(daiAssetId, premiumDelta);
 
-    riskPremiumThreshold = (vm.randomUint(0, HubConstants.MAX_RISK_PREMIUM_THRESHOLD - 1))
-      .toUint24();
+    riskPremiumThreshold = (vm.randomUint(0, MAX_RISK_PREMIUM_THRESHOLD - 1)).toUint24();
     _updateSpokeRiskPremiumThreshold(
       hub1,
       daiAssetId,
@@ -153,13 +152,13 @@ contract HubRefreshPremiumTest is Base {
       hub1,
       daiAssetId,
       address(spoke1),
-      HubConstants.MAX_RISK_PREMIUM_THRESHOLD,
+      MAX_RISK_PREMIUM_THRESHOLD,
       HUB_ADMIN
     );
 
     assertEq(
       hub1.getSpokeConfig(daiAssetId, address(spoke1)).riskPremiumThreshold,
-      HubConstants.MAX_RISK_PREMIUM_THRESHOLD
+      MAX_RISK_PREMIUM_THRESHOLD
     );
 
     IHub.SpokeData memory spokeData = hub1.getSpoke(daiAssetId, address(spoke1));
@@ -170,14 +169,14 @@ contract HubRefreshPremiumTest is Base {
       oldPremiumShares: 0,
       oldPremiumOffsetRay: 0,
       drawnShares: spokeData.drawnShares,
-      riskPremium: SpokeConstants.MAX_ALLOWED_COLLATERAL_RISK + 1,
+      riskPremium: MAX_ALLOWED_COLLATERAL_RISK + 1,
       restoredPremiumRay: 0
     });
 
     // condition not met on max coll risk, but still allowed with MAX_RISK_PREMIUM_THRESHOLD
     assertFalse(
       premiumData.premiumShares + premiumDelta.sharesDelta.toUint256() <=
-        spokeData.drawnShares.percentMulUp(SpokeConstants.MAX_ALLOWED_COLLATERAL_RISK)
+        spokeData.drawnShares.percentMulUp(MAX_ALLOWED_COLLATERAL_RISK)
     );
 
     vm.prank(address(spoke1));
@@ -253,19 +252,17 @@ contract HubRefreshPremiumTest is Base {
         hub1,
         daiAssetId,
         address(spoke1),
-        HubConstants.MAX_RISK_PREMIUM_THRESHOLD,
+        MAX_RISK_PREMIUM_THRESHOLD,
         HUB_ADMIN
       );
       SpokeActions.supplyCollateral(spoke1, _daiReserveId(spoke1), bob, borrowAmount * 2, bob);
       SpokeActions.borrow(spoke1, _daiReserveId(spoke1), bob, borrowAmount, bob);
     }
 
-    uint24 riskPremiumThreshold = vm
-      .randomUint(0, HubConstants.MAX_RISK_PREMIUM_THRESHOLD - 1)
-      .toUint24();
+    uint24 riskPremiumThreshold = vm.randomUint(0, MAX_RISK_PREMIUM_THRESHOLD - 1).toUint24();
     if (vm.randomBool()) {
       // sentinel value to preclude check
-      riskPremiumThreshold = HubConstants.MAX_RISK_PREMIUM_THRESHOLD;
+      riskPremiumThreshold = MAX_RISK_PREMIUM_THRESHOLD;
     }
     _updateSpokeRiskPremiumThreshold(
       hub1,
@@ -297,7 +294,7 @@ contract HubRefreshPremiumTest is Base {
         )
       );
     } else if (
-      riskPremiumThreshold != HubConstants.MAX_RISK_PREMIUM_THRESHOLD &&
+      riskPremiumThreshold != MAX_RISK_PREMIUM_THRESHOLD &&
       asset.drawnShares.percentMulUp(riskPremiumThreshold) <
         asset.premiumShares + sharesDelta.toUint256()
     ) {

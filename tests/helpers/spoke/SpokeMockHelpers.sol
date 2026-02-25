@@ -17,6 +17,8 @@ abstract contract SpokeMockHelpers is CommonHelpers {
   using WadRayMath for *;
   using PercentageMath for uint256;
 
+  // --- Price mocking ---
+
   function _mockReservePrice(
     ISpoke spoke,
     uint256 reserveId,
@@ -47,6 +49,8 @@ abstract contract SpokeMockHelpers is CommonHelpers {
     AaveOracle oracle = AaveOracle(spoke.ORACLE());
     return address(new MockPriceFeed(oracle.DECIMALS(), oracle.DESCRIPTION(), price));
   }
+
+  // --- Decimals mocking ---
 
   function _mockDecimals(address underlying, uint8 decimals) internal {
     vm.mockCall(

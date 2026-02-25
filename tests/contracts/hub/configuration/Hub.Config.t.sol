@@ -31,7 +31,7 @@ contract HubConfigTest is Base {
   }
 
   function test_hub_max_riskPremium() public view {
-    assertEq(HubConstants.MAX_RISK_PREMIUM_THRESHOLD, hub1.MAX_RISK_PREMIUM_THRESHOLD());
+    assertEq(MAX_RISK_PREMIUM_THRESHOLD, hub1.MAX_RISK_PREMIUM_THRESHOLD());
   }
 
   function test_addSpoke_fuzz_revertsWith_AssetNotListed(
@@ -114,8 +114,7 @@ contract HubConfigTest is Base {
     assumeNotZeroAddress(feeReceiver);
     assumeNotZeroAddress(interestRateStrategy);
 
-    decimals = bound(decimals, HubConstants.MAX_ALLOWED_UNDERLYING_DECIMALS + 1, type(uint8).max)
-      .toUint8();
+    decimals = bound(decimals, MAX_ALLOWED_UNDERLYING_DECIMALS + 1, type(uint8).max).toUint8();
 
     vm.expectRevert(IHub.InvalidAssetDecimals.selector, address(hub1));
     HubActions.addAsset(
@@ -139,7 +138,7 @@ contract HubConfigTest is Base {
     assumeNotZeroAddress(feeReceiver);
     assumeNotZeroAddress(interestRateStrategy);
 
-    decimals = bound(decimals, 0, HubConstants.MIN_ALLOWED_UNDERLYING_DECIMALS - 1).toUint8();
+    decimals = bound(decimals, 0, MIN_ALLOWED_UNDERLYING_DECIMALS - 1).toUint8();
 
     vm.expectRevert(IHub.InvalidAssetDecimals.selector, address(hub1));
     HubActions.addAsset(
@@ -178,7 +177,7 @@ contract HubConfigTest is Base {
     assumeUnusedAddress(underlying);
     assumeNotZeroAddress(interestRateStrategy);
 
-    decimals = bound(decimals, 0, HubConstants.MAX_ALLOWED_UNDERLYING_DECIMALS).toUint8();
+    decimals = bound(decimals, 0, MAX_ALLOWED_UNDERLYING_DECIMALS).toUint8();
 
     vm.expectRevert(IHub.InvalidAddress.selector, address(hub1));
     HubActions.addAsset(
@@ -200,7 +199,7 @@ contract HubConfigTest is Base {
     assumeUnusedAddress(underlying);
     assumeNotZeroAddress(feeReceiver);
 
-    decimals = bound(decimals, 0, HubConstants.MAX_ALLOWED_UNDERLYING_DECIMALS).toUint8();
+    decimals = bound(decimals, 0, MAX_ALLOWED_UNDERLYING_DECIMALS).toUint8();
 
     vm.expectRevert(IHub.InvalidAddress.selector, address(hub1));
     HubActions.addAsset(hub1, ADMIN, underlying, decimals, feeReceiver, address(0), encodedIrData);
@@ -215,7 +214,7 @@ contract HubConfigTest is Base {
     assumeUnusedAddress(underlying);
     assumeNotZeroAddress(feeReceiver);
     assumeNotZeroAddress(interestRateStrategy);
-    decimals = bound(decimals, 0, HubConstants.MAX_ALLOWED_UNDERLYING_DECIMALS).toUint8();
+    decimals = bound(decimals, 0, MAX_ALLOWED_UNDERLYING_DECIMALS).toUint8();
 
     vm.expectRevert();
     HubActions.addAsset(
@@ -245,9 +244,7 @@ contract HubConfigTest is Base {
   }
 
   function test_addAsset_revertsWith_DrawnRateDowncastOverflow() public {
-    address underlying = address(
-      new TestnetERC20('USDA', 'USDA', HubConstants.MIN_ALLOWED_UNDERLYING_DECIMALS)
-    );
+    address underlying = address(new TestnetERC20('USDA', 'USDA', MIN_ALLOWED_UNDERLYING_DECIMALS));
 
     uint256 drawnRateRay = uint256(type(uint96).max) + 1;
     _mockInterestRateRay(address(irStrategy), drawnRateRay);
@@ -267,9 +264,7 @@ contract HubConfigTest is Base {
   }
 
   function test_addAsset_revertsWith_BlockTimestampDowncastOverflow() public {
-    address underlying = address(
-      new TestnetERC20('USDA', 'USDA', HubConstants.MIN_ALLOWED_UNDERLYING_DECIMALS)
-    );
+    address underlying = address(new TestnetERC20('USDA', 'USDA', MIN_ALLOWED_UNDERLYING_DECIMALS));
     uint256 blockTimestamp = uint256(type(uint40).max) + 1;
     vm.warp(blockTimestamp);
     vm.expectRevert(
@@ -291,11 +286,8 @@ contract HubConfigTest is Base {
     assumeUnusedAddress(underlying);
     assumeNotZeroAddress(feeReceiver);
 
-    decimals = bound(
-      decimals,
-      HubConstants.MAX_ALLOWED_UNDERLYING_DECIMALS,
-      HubConstants.MAX_ALLOWED_UNDERLYING_DECIMALS
-    ).toUint8();
+    decimals = bound(decimals, MAX_ALLOWED_UNDERLYING_DECIMALS, MAX_ALLOWED_UNDERLYING_DECIMALS)
+      .toUint8();
 
     uint256 expectedAssetId = hub1.getAssetCount();
     address interestRateStrategy = address(new AssetInterestRateStrategy(address(hub1)));
@@ -316,7 +308,7 @@ contract HubConfigTest is Base {
     IHub.SpokeConfig memory expectedSpokeConfig = IHub.SpokeConfig({
       active: true,
       halted: false,
-      addCap: HubConstants.MAX_ALLOWED_SPOKE_CAP,
+      addCap: MAX_ALLOWED_SPOKE_CAP,
       drawCap: 0,
       riskPremiumThreshold: 0
     });
@@ -415,7 +407,7 @@ contract HubConfigTest is Base {
 
     address reinvestmentController = makeAddr('reinvestmentController');
     _updateAssetReinvestmentController(hub1, assetId, reinvestmentController, HUB_ADMIN);
-    _addLiquidity(hub1, assetId, 1000e18, ADMIN);
+    _addLiquidity(hub1, assetId, 1000e18, ADMIN, MAX_ALLOWED_COLLATERAL_RISK);
     vm.prank(reinvestmentController);
     hub1.sweep(assetId, 100e18);
 
@@ -524,7 +516,7 @@ contract HubConfigTest is Base {
         IHub.SpokeConfig({
           active: true,
           halted: false,
-          addCap: HubConstants.MAX_ALLOWED_SPOKE_CAP,
+          addCap: MAX_ALLOWED_SPOKE_CAP,
           drawCap: 0,
           riskPremiumThreshold: 0
         })
@@ -595,8 +587,8 @@ contract HubConfigTest is Base {
     assetId = bound(assetId, 0, hub1.getAssetCount() - 1);
 
     uint256 amount = 1000e18;
-    _addLiquidity(hub1, assetId, amount, ADMIN);
-    _drawLiquidity(hub1, assetId, amount, true, HUB_ADMIN);
+    _addLiquidity(hub1, assetId, amount, ADMIN, MAX_ALLOWED_COLLATERAL_RISK);
+    _drawLiquidity(hub1, assetId, amount, true, HUB_ADMIN, MAX_ALLOWED_COLLATERAL_RISK);
 
     skip(365 days);
 
@@ -666,8 +658,8 @@ contract HubConfigTest is Base {
     uint256 assetId = daiAssetId;
 
     uint256 amount = 1000e18;
-    _addLiquidity(hub1, assetId, amount, ADMIN);
-    _drawLiquidity(hub1, assetId, amount, true, HUB_ADMIN);
+    _addLiquidity(hub1, assetId, amount, ADMIN, MAX_ALLOWED_COLLATERAL_RISK);
+    _drawLiquidity(hub1, assetId, amount, true, HUB_ADMIN, MAX_ALLOWED_COLLATERAL_RISK);
     skip(365 days);
 
     _updateSpokeActive(hub1, assetId, _getFeeReceiver(hub1, assetId), false, HUB_ADMIN);
@@ -683,8 +675,8 @@ contract HubConfigTest is Base {
     uint256 assetId = daiAssetId;
 
     uint256 amount = 1000e18;
-    _addLiquidity(hub1, assetId, amount, ADMIN);
-    _drawLiquidity(hub1, assetId, amount, true, HUB_ADMIN);
+    _addLiquidity(hub1, assetId, amount, ADMIN, MAX_ALLOWED_COLLATERAL_RISK);
+    _drawLiquidity(hub1, assetId, amount, true, HUB_ADMIN, MAX_ALLOWED_COLLATERAL_RISK);
     skip(365 days);
 
     HubActions.mintFeeShares(hub1, assetId, ADMIN);
@@ -757,8 +749,8 @@ contract HubConfigTest is Base {
     liquidityFee = bound(liquidityFee, 1, PercentageMath.PERCENTAGE_FACTOR).toUint16();
 
     uint256 amount = 1000e18;
-    _addLiquidity(hub1, assetId, amount, ADMIN);
-    _drawLiquidity(hub1, assetId, amount, true, HUB_ADMIN);
+    _addLiquidity(hub1, assetId, amount, ADMIN, MAX_ALLOWED_COLLATERAL_RISK);
+    _drawLiquidity(hub1, assetId, amount, true, HUB_ADMIN, MAX_ALLOWED_COLLATERAL_RISK);
 
     IHub.AssetConfig memory config = hub1.getAssetConfig(assetId);
     uint256 expectedFeeReceiverAddedAssets = _getExpectedFeeReceiverAddedAssets(hub1, assetId);
@@ -784,8 +776,8 @@ contract HubConfigTest is Base {
     test_updateAssetConfig_fuzz(assetId, config);
 
     uint256 amount = 1000e18;
-    _addLiquidity(hub1, assetId, amount, ADMIN);
-    _drawLiquidity(hub1, assetId, amount, true, HUB_ADMIN);
+    _addLiquidity(hub1, assetId, amount, ADMIN, MAX_ALLOWED_COLLATERAL_RISK);
+    _drawLiquidity(hub1, assetId, amount, true, HUB_ADMIN, MAX_ALLOWED_COLLATERAL_RISK);
 
     config.liquidityFee = liquidityFee;
     config.feeReceiver = makeAddr('feeReceiver');
@@ -801,8 +793,8 @@ contract HubConfigTest is Base {
     assetId = bound(assetId, 0, hub1.getAssetCount() - 1);
 
     uint256 amount = 1000e18;
-    _addLiquidity(hub1, assetId, amount, ADMIN);
-    _drawLiquidity(hub1, assetId, amount, true, HUB_ADMIN);
+    _addLiquidity(hub1, assetId, amount, ADMIN, MAX_ALLOWED_COLLATERAL_RISK);
+    _drawLiquidity(hub1, assetId, amount, true, HUB_ADMIN, MAX_ALLOWED_COLLATERAL_RISK);
 
     uint256 expectedFeeReceiverAddedAssets = _getExpectedFeeReceiverAddedAssets(hub1, assetId);
     assertTrue(expectedFeeReceiverAddedAssets > 0, 'no fees');

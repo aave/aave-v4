@@ -232,7 +232,7 @@ contract SpokeBorrowValidationTest is Base {
 
   /// @dev Test showing that when the borrow limit is max, all reserves can be borrowed.
   function test_borrow_unlimited_whenLimitIsMax() public {
-    assertEq(spoke1.MAX_USER_RESERVES_LIMIT(), SpokeConstants.MAX_ALLOWED_USER_RESERVES_LIMIT);
+    assertEq(spoke1.MAX_USER_RESERVES_LIMIT(), MAX_ALLOWED_USER_RESERVES_LIMIT);
 
     uint256 reservesToBorrow = spoke1.getReserveCount();
 

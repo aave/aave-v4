@@ -180,21 +180,21 @@ contract SpokeConfiguratorGranularAccessControlTest is Base {
 
   function _buildLiquidationConfigManagerCalldata() internal {
     ISpoke.LiquidationConfig memory newConfig = ISpoke.LiquidationConfig({
-      targetHealthFactor: SpokeConstants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD * 2,
-      healthFactorForMaxBonus: SpokeConstants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD / 2,
+      targetHealthFactor: HEALTH_FACTOR_LIQUIDATION_THRESHOLD * 2,
+      healthFactorForMaxBonus: HEALTH_FACTOR_LIQUIDATION_THRESHOLD / 2,
       liquidationBonusFactor: 50_00
     });
 
     liquidationConfigManagerCalldata.push(
       abi.encodeCall(
         ISpokeConfigurator.updateLiquidationTargetHealthFactor,
-        (spokeAddr, SpokeConstants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD * 2)
+        (spokeAddr, HEALTH_FACTOR_LIQUIDATION_THRESHOLD * 2)
       )
     );
     liquidationConfigManagerCalldata.push(
       abi.encodeCall(
         ISpokeConfigurator.updateHealthFactorForMaxBonus,
-        (spokeAddr, SpokeConstants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD / 2)
+        (spokeAddr, HEALTH_FACTOR_LIQUIDATION_THRESHOLD / 2)
       )
     );
     liquidationConfigManagerCalldata.push(
@@ -389,7 +389,7 @@ contract SpokeConfiguratorGranularAccessControlTest is Base {
   }
 
   function test_liquidationConfigManager_canCall_updateLiquidationTargetHealthFactor() public {
-    uint128 newTarget = SpokeConstants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD * 2;
+    uint128 newTarget = HEALTH_FACTOR_LIQUIDATION_THRESHOLD * 2;
 
     vm.prank(LIQUIDATION_CONFIG_MANAGER);
     spokeConfigurator.updateLiquidationTargetHealthFactor(spokeAddr, newTarget);
@@ -399,8 +399,8 @@ contract SpokeConfiguratorGranularAccessControlTest is Base {
 
   function test_liquidationConfigManager_canCall_updateLiquidationConfig() public {
     ISpoke.LiquidationConfig memory newConfig = ISpoke.LiquidationConfig({
-      targetHealthFactor: SpokeConstants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD * 2,
-      healthFactorForMaxBonus: SpokeConstants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD / 2,
+      targetHealthFactor: HEALTH_FACTOR_LIQUIDATION_THRESHOLD * 2,
+      healthFactorForMaxBonus: HEALTH_FACTOR_LIQUIDATION_THRESHOLD / 2,
       liquidationBonusFactor: 50_00
     });
 

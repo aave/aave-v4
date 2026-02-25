@@ -574,11 +574,11 @@ contract NativeTokenGatewayTest is Base {
       bob
     );
     (uint256 baseRestored, ) = _calculateExactRestoreAmount(
+      hub1,
+      wethAssetId,
       userDrawnDebt,
       userPremiumDebt,
-      repayAmount,
-      hub1,
-      wethAssetId
+      repayAmount
     );
     IHubBase.PremiumDelta memory expectedPremiumDelta = _getExpectedPremiumDeltaForRestore(
       spoke1,
@@ -636,11 +636,11 @@ contract NativeTokenGatewayTest is Base {
       bob
     );
     (uint256 baseRestored, uint256 premiumRestored) = _calculateExactRestoreAmount(
+      hub1,
+      wethAssetId,
       userDrawnDebt,
       userPremiumDebt,
-      repayAmount,
-      hub1,
-      wethAssetId
+      repayAmount
     );
 
     {
@@ -711,11 +711,11 @@ contract NativeTokenGatewayTest is Base {
       bob
     );
     (uint256 baseRestored, uint256 premiumRestored) = _calculateExactRestoreAmount(
+      hub1,
+      wethAssetId,
       userDrawnDebt,
       userPremiumDebt,
-      repayAmount,
-      hub1,
-      wethAssetId
+      repayAmount
     );
     uint256 totalRepaid = baseRestored + premiumRestored;
     IHubBase.PremiumDelta memory expectedPremiumDelta = _getExpectedPremiumDeltaForRestore(

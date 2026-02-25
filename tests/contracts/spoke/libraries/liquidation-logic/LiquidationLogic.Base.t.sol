@@ -30,10 +30,10 @@ contract LiquidationLogicBaseTest is Base {
     healthFactorForMaxBonus = bound(
       healthFactorForMaxBonus,
       0,
-      SpokeConstants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD - 1
+      HEALTH_FACTOR_LIQUIDATION_THRESHOLD - 1
     );
     liquidationBonusFactor = bound(liquidationBonusFactor, 0, PercentageMath.PERCENTAGE_FACTOR);
-    healthFactor = bound(healthFactor, 0, SpokeConstants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD - 1);
+    healthFactor = bound(healthFactor, 0, HEALTH_FACTOR_LIQUIDATION_THRESHOLD - 1);
     maxLiquidationBonus = bound(maxLiquidationBonus, MIN_LIQUIDATION_BONUS, MAX_LIQUIDATION_BONUS);
     return (healthFactorForMaxBonus, liquidationBonusFactor, healthFactor, maxLiquidationBonus);
   }
@@ -61,14 +61,14 @@ contract LiquidationLogicBaseTest is Base {
 
     uint256 targetHealthFactor = bound(
       params.targetHealthFactor,
-      SpokeConstants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
-      MAX_CLOSE_FACTOR
+      HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
+      MAX_TARGET_HEALTH_FACTOR
     );
 
     uint256 healthFactor = bound(params.healthFactor, 0, targetHealthFactor);
     uint256 debtAssetPrice = bound(params.debtAssetPrice, 1, MAX_ASSET_PRICE);
     uint256 debtAssetUnit = 10 **
-      bound(params.debtAssetUnit, MIN_TOKEN_DECIMALS_SUPPORTED, MAX_TOKEN_DECIMALS_SUPPORTED);
+      bound(params.debtAssetUnit, MIN_ALLOWED_UNDERLYING_DECIMALS, MAX_ALLOWED_UNDERLYING_DECIMALS);
 
     return
       LiquidationLogic.CalculateDebtToTargetHealthFactorParams({
@@ -181,7 +181,11 @@ contract LiquidationLogicBaseTest is Base {
     );
     params.collateralAssetUnit =
       10 **
-      bound(params.collateralAssetUnit, MIN_TOKEN_DECIMALS_SUPPORTED, MAX_TOKEN_DECIMALS_SUPPORTED);
+      bound(
+        params.collateralAssetUnit,
+        MIN_ALLOWED_UNDERLYING_DECIMALS,
+        MAX_ALLOWED_UNDERLYING_DECIMALS
+      );
     params.collateralAssetPrice = bound(params.collateralAssetPrice, 1, MAX_ASSET_PRICE);
     params.drawnIndex = bound(params.drawnIndex, MIN_DRAWN_INDEX, MAX_DRAWN_INDEX);
     params.drawnSharesToLiquidate = bound(
@@ -195,7 +199,8 @@ contract LiquidationLogicBaseTest is Base {
       MAX_SUPPLY_AMOUNT - params.drawnSharesToLiquidate * params.drawnIndex
     );
     params.debtAssetUnit =
-      10 ** bound(params.debtAssetUnit, MIN_TOKEN_DECIMALS_SUPPORTED, MAX_TOKEN_DECIMALS_SUPPORTED);
+      10 **
+      bound(params.debtAssetUnit, MIN_ALLOWED_UNDERLYING_DECIMALS, MAX_ALLOWED_UNDERLYING_DECIMALS);
     uint256 debtRayToLiquidate = params.drawnSharesToLiquidate * params.drawnIndex +
       params.premiumDebtRayToLiquidate;
     params.debtAssetPrice = bound(
@@ -223,7 +228,8 @@ contract LiquidationLogicBaseTest is Base {
       hubAddedAssets,
       hubAddedShares,
       address(spoke1),
-      HUB_ADMIN
+      HUB_ADMIN,
+      MAX_ALLOWED_COLLATERAL_RISK
     );
 
     return params;
@@ -246,8 +252,8 @@ contract LiquidationLogicBaseTest is Base {
 
     params.debtAssetDecimals = bound(
       params.debtAssetDecimals,
-      MIN_TOKEN_DECIMALS_SUPPORTED,
-      MAX_TOKEN_DECIMALS_SUPPORTED
+      MIN_ALLOWED_UNDERLYING_DECIMALS,
+      MAX_ALLOWED_UNDERLYING_DECIMALS
     );
 
     LiquidationLogic.CalculateDebtToLiquidateParams
@@ -267,8 +273,8 @@ contract LiquidationLogicBaseTest is Base {
     params.collateralAssetPrice = bound(params.collateralAssetPrice, 1, MAX_ASSET_PRICE);
     params.collateralAssetDecimals = bound(
       params.collateralAssetDecimals,
-      MIN_TOKEN_DECIMALS_SUPPORTED,
-      MAX_TOKEN_DECIMALS_SUPPORTED
+      MIN_ALLOWED_UNDERLYING_DECIMALS,
+      MAX_ALLOWED_UNDERLYING_DECIMALS
     );
     params.liquidationFee = bound(params.liquidationFee, 0, PercentageMath.PERCENTAGE_FACTOR);
 
@@ -292,7 +298,8 @@ contract LiquidationLogicBaseTest is Base {
       hubAddedAssets,
       hubAddedShares,
       address(spoke1),
-      HUB_ADMIN
+      HUB_ADMIN,
+      MAX_ALLOWED_COLLATERAL_RISK
     );
 
     return params;

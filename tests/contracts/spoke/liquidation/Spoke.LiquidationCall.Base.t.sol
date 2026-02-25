@@ -286,8 +286,8 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
       }
 
       uint256 userSuppliedAssets = userSuppliedShares.mulDivDown(
-        totalAddedAssets + HubConstants.VIRTUAL_ASSETS,
-        totalAddedShares + HubConstants.VIRTUAL_SHARES
+        totalAddedAssets + VIRTUAL_ASSETS,
+        totalAddedShares + VIRTUAL_SHARES
       );
       uint256 userSuppliedValue = _convertAmountToValue(
         params.spoke,

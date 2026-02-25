@@ -13,15 +13,10 @@ contract SpokeConfigTest is Base {
     vm.expectCall(oracle, abi.encodeCall(IPriceOracle.DECIMALS, ()), 1);
     vm.mockCall(oracle, abi.encodeCall(IPriceOracle.DECIMALS, ()), abi.encode(8));
     ISpoke instance = ISpoke(
-      address(
-        DeployUtils.deploySpokeImplementation(
-          oracle,
-          SpokeConstants.MAX_ALLOWED_USER_RESERVES_LIMIT
-        )
-      )
+      address(DeployUtils.deploySpokeImplementation(oracle, MAX_ALLOWED_USER_RESERVES_LIMIT))
     );
     assertEq(instance.ORACLE(), oracle);
-    assertEq(instance.MAX_USER_RESERVES_LIMIT(), SpokeConstants.MAX_ALLOWED_USER_RESERVES_LIMIT);
+    assertEq(instance.MAX_USER_RESERVES_LIMIT(), MAX_ALLOWED_USER_RESERVES_LIMIT);
     assertNotEq(instance.getLiquidationLogic(), address(0));
   }
 
@@ -29,7 +24,7 @@ contract SpokeConfigTest is Base {
     DeployWrapper deployer = new DeployWrapper();
 
     vm.expectRevert();
-    deployer.deploySpokeImplementation(address(0), SpokeConstants.MAX_ALLOWED_USER_RESERVES_LIMIT);
+    deployer.deploySpokeImplementation(address(0), MAX_ALLOWED_USER_RESERVES_LIMIT);
   }
 
   function test_spoke_deploy_reverts_on_InvalidOracleDecimals() public {
@@ -38,7 +33,7 @@ contract SpokeConfigTest is Base {
 
     vm.mockCall(oracle, abi.encodeCall(IPriceOracle.DECIMALS, ()), abi.encode(7));
     vm.expectRevert();
-    deployer.deploySpokeImplementation(oracle, SpokeConstants.MAX_ALLOWED_USER_RESERVES_LIMIT);
+    deployer.deploySpokeImplementation(oracle, MAX_ALLOWED_USER_RESERVES_LIMIT);
   }
 
   function test_spoke_deploy_reverts_on_InvalidMaxUserReservesLimit() public {
@@ -109,7 +104,7 @@ contract SpokeConfigTest is Base {
     newReserveConfig.collateralRisk = bound(
       newReserveConfig.collateralRisk,
       0,
-      SpokeConstants.MAX_ALLOWED_COLLATERAL_RISK
+      MAX_ALLOWED_COLLATERAL_RISK
     ).toUint24();
 
     uint256 daiReserveId = _daiReserveId(spoke1);
@@ -180,7 +175,7 @@ contract SpokeConfigTest is Base {
   }
 
   function test_addReserve_fuzz_revertsWith_AssetNotListed() public {
-    uint256 assetId = vm.randomUint(hub1.getAssetCount(), SpokeConstants.MAX_ALLOWED_ASSET_ID); // non-existing asset id
+    uint256 assetId = vm.randomUint(hub1.getAssetCount(), MAX_ALLOWED_ASSET_ID); // non-existing asset id
 
     ISpoke.ReserveConfig memory newReserveConfig = _getDefaultReserveConfig(10_00);
     ISpoke.DynamicReserveConfig memory newDynReserveConfig = ISpoke.DynamicReserveConfig({
@@ -297,7 +292,7 @@ contract SpokeConfigTest is Base {
     vm.prank(ADMIN);
     spoke1.addReserve(
       address(hub1),
-      SpokeConstants.MAX_ALLOWED_ASSET_ID + 1, // invalid assetId
+      MAX_ALLOWED_ASSET_ID + 1, // invalid assetId
       address(0),
       newReserveConfig,
       newDynReserveConfig
@@ -378,9 +373,9 @@ contract SpokeConfigTest is Base {
     IHub.SpokeConfig memory spokeConfig = IHub.SpokeConfig({
       active: true,
       halted: false,
-      addCap: HubConstants.MAX_ALLOWED_SPOKE_CAP,
-      drawCap: HubConstants.MAX_ALLOWED_SPOKE_CAP,
-      riskPremiumThreshold: SpokeConstants.MAX_ALLOWED_COLLATERAL_RISK
+      addCap: MAX_ALLOWED_SPOKE_CAP,
+      drawCap: MAX_ALLOWED_SPOKE_CAP,
+      riskPremiumThreshold: MAX_ALLOWED_COLLATERAL_RISK
     });
 
     hub2.addSpoke(0, address(spoke1), spokeConfig);
@@ -488,7 +483,7 @@ contract SpokeConfigTest is Base {
   {
     ISpoke.LiquidationConfig memory liquidationConfig = ISpoke.LiquidationConfig({
       targetHealthFactor: HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
-      healthFactorForMaxBonus: HEALTH_FACTOR_LIQUIDATION_THRESHOLD.toUint64(),
+      healthFactorForMaxBonus: HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
       liquidationBonusFactor: 10_00
     });
 

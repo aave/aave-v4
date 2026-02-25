@@ -67,9 +67,9 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
       IHub.SpokeConfig({
         active: true,
         halted: false,
-        addCap: HubConstants.MAX_ALLOWED_SPOKE_CAP,
-        drawCap: HubConstants.MAX_ALLOWED_SPOKE_CAP,
-        riskPremiumThreshold: SpokeConstants.MAX_ALLOWED_COLLATERAL_RISK
+        addCap: MAX_ALLOWED_SPOKE_CAP,
+        drawCap: MAX_ALLOWED_SPOKE_CAP,
+        riskPremiumThreshold: MAX_ALLOWED_COLLATERAL_RISK
       })
     );
     newHub.addSpoke(
@@ -78,9 +78,9 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
       IHub.SpokeConfig({
         active: true,
         halted: false,
-        addCap: HubConstants.MAX_ALLOWED_SPOKE_CAP,
-        drawCap: HubConstants.MAX_ALLOWED_SPOKE_CAP,
-        riskPremiumThreshold: SpokeConstants.MAX_ALLOWED_COLLATERAL_RISK
+        addCap: MAX_ALLOWED_SPOKE_CAP,
+        drawCap: MAX_ALLOWED_SPOKE_CAP,
+        riskPremiumThreshold: MAX_ALLOWED_COLLATERAL_RISK
       })
     );
     vm.stopPrank();
@@ -112,9 +112,9 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
       IHub.SpokeConfig({
         active: true,
         halted: false,
-        addCap: HubConstants.MAX_ALLOWED_SPOKE_CAP,
-        drawCap: HubConstants.MAX_ALLOWED_SPOKE_CAP,
-        riskPremiumThreshold: SpokeConstants.MAX_ALLOWED_COLLATERAL_RISK
+        addCap: MAX_ALLOWED_SPOKE_CAP,
+        drawCap: MAX_ALLOWED_SPOKE_CAP,
+        riskPremiumThreshold: MAX_ALLOWED_COLLATERAL_RISK
       })
     );
     vm.stopPrank();

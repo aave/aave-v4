@@ -45,7 +45,7 @@ contract HubReclaimTest is Base {
     address reinvestmentController = makeAddr('reinvestmentController');
     _updateAssetReinvestmentController(hub1, daiAssetId, reinvestmentController, HUB_ADMIN);
 
-    _addLiquidity(hub1, daiAssetId, supplyAmount, ADMIN);
+    _addLiquidity(hub1, daiAssetId, supplyAmount, ADMIN, MAX_ALLOWED_COLLATERAL_RISK);
 
     vm.prank(reinvestmentController);
     hub1.sweep(daiAssetId, sweepAmount);
@@ -75,7 +75,7 @@ contract HubReclaimTest is Base {
     address reinvestmentController = makeAddr('reinvestmentController');
     _updateAssetReinvestmentController(hub1, daiAssetId, reinvestmentController, HUB_ADMIN);
 
-    _addLiquidity(hub1, daiAssetId, supplyAmount, ADMIN);
+    _addLiquidity(hub1, daiAssetId, supplyAmount, ADMIN, MAX_ALLOWED_COLLATERAL_RISK);
 
     vm.prank(reinvestmentController);
     hub1.sweep(daiAssetId, sweepAmount);
@@ -107,7 +107,7 @@ contract HubReclaimTest is Base {
     address reinvestmentController = makeAddr('reinvestmentController');
     _updateAssetReinvestmentController(hub1, daiAssetId, reinvestmentController, HUB_ADMIN);
 
-    _addLiquidity(hub1, daiAssetId, supplyAmount, ADMIN);
+    _addLiquidity(hub1, daiAssetId, supplyAmount, ADMIN, MAX_ALLOWED_COLLATERAL_RISK);
 
     uint256 liquidityBeforeSweep = hub1.getAssetLiquidity(daiAssetId);
 
@@ -143,7 +143,7 @@ contract HubReclaimTest is Base {
     address reinvestmentController = makeAddr('reinvestmentController');
     _updateAssetReinvestmentController(hub1, daiAssetId, reinvestmentController, HUB_ADMIN);
 
-    _addLiquidity(hub1, daiAssetId, supplyAmount, ADMIN);
+    _addLiquidity(hub1, daiAssetId, supplyAmount, ADMIN, MAX_ALLOWED_COLLATERAL_RISK);
 
     vm.prank(reinvestmentController);
     hub1.sweep(daiAssetId, sweepAmount);
@@ -168,7 +168,7 @@ contract HubReclaimTest is Base {
     address reinvestmentController = makeAddr('reinvestmentController');
     _updateAssetReinvestmentController(hub1, daiAssetId, reinvestmentController, HUB_ADMIN);
 
-    _addLiquidity(hub1, daiAssetId, supplyAmount, ADMIN);
+    _addLiquidity(hub1, daiAssetId, supplyAmount, ADMIN, MAX_ALLOWED_COLLATERAL_RISK);
 
     uint256 initialLiquidity = hub1.getAssetLiquidity(daiAssetId);
 

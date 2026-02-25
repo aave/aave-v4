@@ -138,11 +138,11 @@ contract SpokeRepayTest is Base {
     assertGe(bobDaiBefore.drawnDebt, daiBorrowAmount, 'bob dai debt before');
 
     (uint256 baseRestored, uint256 premiumRestored) = _calculateExactRestoreAmount(
+      hub1,
+      daiAssetId,
       bobDaiBefore.drawnDebt,
       bobDaiBefore.premiumDebt,
-      daiRepayAmount,
-      hub1,
-      daiAssetId
+      daiRepayAmount
     );
 
     IHubBase.PremiumDelta memory expectedPremiumDelta = _getExpectedPremiumDeltaForRestore(
@@ -269,11 +269,11 @@ contract SpokeRepayTest is Base {
       daiRepayAmount
     );
     (uint256 baseRestored, ) = _calculateExactRestoreAmount(
+      hub1,
+      daiAssetId,
       bobDaiDrawnDebtBefore,
       bobDaiPremiumDebtBefore,
-      daiRepayAmount,
-      hub1,
-      daiAssetId
+      daiRepayAmount
     );
 
     // Bob repays half of principal debt
@@ -358,11 +358,11 @@ contract SpokeRepayTest is Base {
     uint256 expectedShares;
     {
       (uint256 baseRestored, ) = _calculateExactRestoreAmount(
+        hub1,
+        daiAssetId,
         bobDaiBefore.drawnDebt,
         bobDaiBefore.premiumDebt,
-        daiRepayAmount,
-        hub1,
-        daiAssetId
+        daiRepayAmount
       );
       expectedShares = hub1.previewRestoreByAssets(daiAssetId, baseRestored);
     }
@@ -632,11 +632,11 @@ contract SpokeRepayTest is Base {
     uint256 expectedShares;
     {
       (uint256 baseRestored, uint256 premiumRestored) = _calculateExactRestoreAmount(
+        hub1,
+        daiAssetId,
         bobDaiBefore.drawnDebt,
         bobDaiBefore.premiumDebt,
-        daiRepayAmount,
-        hub1,
-        daiAssetId
+        daiRepayAmount
       );
       expectedShares = hub1.previewRestoreByAssets(daiAssetId, baseRestored);
       daiRepayAmount = baseRestored + premiumRestored;
@@ -692,7 +692,7 @@ contract SpokeRepayTest is Base {
 
     _assertHubLiquidity(hub1, daiAssetId, 'spoke1.repay');
 
-    _repayAll(spoke1, hub1, _daiReserveId(spoke1), _defaultUsers());
+    _repayAll(spoke1, _daiReserveId(spoke1), _defaultUsers());
   }
 
   /// repay all or a portion of total debt - handles partial drawn debt repay case
@@ -743,11 +743,11 @@ contract SpokeRepayTest is Base {
     }
 
     (uint256 baseRestored, uint256 premiumRestored) = _calculateExactRestoreAmount(
+      hub1,
+      daiAssetId,
       bobDaiBefore.drawnDebt,
       bobDaiBefore.premiumDebt,
-      daiRepayAmount,
-      hub1,
-      daiAssetId
+      daiRepayAmount
     );
 
     {
@@ -811,7 +811,7 @@ contract SpokeRepayTest is Base {
 
     _assertHubLiquidity(hub1, daiAssetId, 'spoke1.repay');
 
-    _repayAll(spoke1, hub1, _daiReserveId(spoke1), _defaultUsers());
+    _repayAll(spoke1, _daiReserveId(spoke1), _defaultUsers());
   }
 
   /// repay all or a portion of debt interest
@@ -872,11 +872,11 @@ contract SpokeRepayTest is Base {
     }
 
     (uint256 baseRestored, ) = _calculateExactRestoreAmount(
+      hub1,
+      daiAssetId,
       bobDaiBefore.drawnDebt,
       bobDaiBefore.premiumDebt,
-      daiRepayAmount,
-      hub1,
-      daiAssetId
+      daiRepayAmount
     );
     deal(address(tokenList.dai), bob, daiRepayAmount);
 
@@ -1120,11 +1120,11 @@ contract SpokeRepayTest is Base {
     }
 
     (uint256 baseRestored, ) = _calculateExactRestoreAmount(
+      hub1,
+      daiAssetId,
       bobDaiBefore.drawnDebt,
       bobDaiBefore.premiumDebt,
-      daiRepayAmount,
-      hub1,
-      daiAssetId
+      daiRepayAmount
     );
     deal(address(tokenList.dai), bob, daiRepayAmount);
 
@@ -1249,11 +1249,11 @@ contract SpokeRepayTest is Base {
     uint256 baseRestored;
     {
       (baseRestored, ) = _calculateExactRestoreAmount(
+        hub1,
+        daiAssetId,
         bobDaiDrawnDebt,
         0,
-        daiRepayAmount,
-        hub1,
-        daiAssetId
+        daiRepayAmount
       );
     }
     deal(address(tokenList.dai), bob, daiRepayAmount);
@@ -1423,11 +1423,11 @@ contract SpokeRepayTest is Base {
     assertGe(bobDaiBefore.totalDebt, daiInfo.borrowAmount);
     if (daiInfo.repayAmount > 0) {
       (daiInfo.baseRestored, daiInfo.premiumRestored) = _calculateExactRestoreAmount(
+        hub1,
+        daiAssetId,
         bobDaiBefore.drawnDebt,
         bobDaiBefore.premiumDebt,
-        daiInfo.repayAmount,
-        hub1,
-        daiAssetId
+        daiInfo.repayAmount
       );
       deal(address(tokenList.dai), bob, daiInfo.repayAmount);
       SpokeActions.repay(spoke1, _daiReserveId(spoke1), bob, daiInfo.repayAmount, bob);
@@ -1439,11 +1439,11 @@ contract SpokeRepayTest is Base {
     assertGe(bobWethBefore.totalDebt, wethInfo.borrowAmount);
     if (wethInfo.repayAmount > 0) {
       (wethInfo.baseRestored, wethInfo.premiumRestored) = _calculateExactRestoreAmount(
+        hub1,
+        wethAssetId,
         bobWethBefore.drawnDebt,
         bobWethBefore.premiumDebt,
-        wethInfo.repayAmount,
-        hub1,
-        wethAssetId
+        wethInfo.repayAmount
       );
       deal(address(tokenList.weth), bob, wethInfo.repayAmount);
       SpokeActions.repay(spoke1, _wethReserveId(spoke1), bob, wethInfo.repayAmount, bob);
@@ -1455,11 +1455,11 @@ contract SpokeRepayTest is Base {
     assertGe(bobWbtcBefore.totalDebt, wbtcInfo.borrowAmount);
     if (wbtcInfo.repayAmount > 0) {
       (wbtcInfo.baseRestored, wbtcInfo.premiumRestored) = _calculateExactRestoreAmount(
+        hub1,
+        wbtcAssetId,
         bobWbtcBefore.drawnDebt,
         bobWbtcBefore.premiumDebt,
-        wbtcInfo.repayAmount,
-        hub1,
-        wbtcAssetId
+        wbtcInfo.repayAmount
       );
       deal(address(tokenList.wbtc), bob, wbtcInfo.repayAmount);
       SpokeActions.repay(spoke1, _wbtcReserveId(spoke1), bob, wbtcInfo.repayAmount, bob);
@@ -1471,11 +1471,11 @@ contract SpokeRepayTest is Base {
     assertGe(bobUsdxBefore.totalDebt, usdxInfo.borrowAmount);
     if (usdxInfo.repayAmount > 0) {
       (usdxInfo.baseRestored, usdxInfo.premiumRestored) = _calculateExactRestoreAmount(
+        hub1,
+        usdxAssetId,
         bobUsdxBefore.drawnDebt,
         bobUsdxBefore.premiumDebt,
-        usdxInfo.repayAmount,
-        hub1,
-        usdxAssetId
+        usdxInfo.repayAmount
       );
       deal(address(tokenList.usdx), bob, usdxInfo.repayAmount);
       SpokeActions.repay(spoke1, _usdxReserveId(spoke1), bob, usdxInfo.repayAmount, bob);
@@ -1572,10 +1572,10 @@ contract SpokeRepayTest is Base {
     _assertHubLiquidity(hub1, usdxAssetId, 'spoke1.repay');
     _assertHubLiquidity(hub1, wbtcAssetId, 'spoke1.repay');
 
-    _repayAll(spoke1, hub1, _daiReserveId(spoke1), _defaultUsers());
-    _repayAll(spoke1, hub1, _wethReserveId(spoke1), _defaultUsers());
-    _repayAll(spoke1, hub1, _usdxReserveId(spoke1), _defaultUsers());
-    _repayAll(spoke1, hub1, _wbtcReserveId(spoke1), _defaultUsers());
+    _repayAll(spoke1, _daiReserveId(spoke1), _defaultUsers());
+    _repayAll(spoke1, _wethReserveId(spoke1), _defaultUsers());
+    _repayAll(spoke1, _usdxReserveId(spoke1), _defaultUsers());
+    _repayAll(spoke1, _wbtcReserveId(spoke1), _defaultUsers());
   }
 
   // Borrow X amount, receive Y Shares. Repay all, ensure Y shares repaid

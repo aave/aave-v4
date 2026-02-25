@@ -8,4 +8,11 @@ import {SetupHelpers} from 'tests/helpers/commons/SetupHelpers.sol';
 
 /// @title CommonHelpers
 /// @notice Aggregates all commons-level test helpers.
+///
+/// Inheritance tree:
+///   CommonHelpers
+///   ├── MathHelpers
+///   ├── SetupHelpers
+///   │   └── Test
+///   └── ProxyHelpers
 abstract contract CommonHelpers is MathHelpers, SetupHelpers, ProxyHelpers {}

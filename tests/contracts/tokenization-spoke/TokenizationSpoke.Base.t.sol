@@ -13,7 +13,7 @@ contract TokenizationSpokeBaseTest is Base {
     deployFixtures();
     initEnvironment();
     daiVault = _deployTokenizationSpoke(hub1, daiAssetId, SHARE_NAME, SHARE_SYMBOL, ADMIN);
-    _registerTokenizationSpoke(hub1, daiAssetId, daiVault);
+    _registerTokenizationSpoke(hub1, daiAssetId, daiVault, ADMIN);
   }
 
   function _depositData(

@@ -30,13 +30,15 @@ abstract contract SpokeLiquidationCallHelperTest is SpokeLiquidationCallBaseTest
 
     _updateTargetHealthFactor(
       spoke,
-      vm.randomUint(MIN_CLOSE_FACTOR, MAX_CLOSE_FACTOR).toUint128(),
+      vm.randomUint(MIN_TARGET_HEALTH_FACTOR, MAX_TARGET_HEALTH_FACTOR).toUint128(),
       SPOKE_ADMIN
     );
     _updateLiquidationConfig(
       spoke,
       ISpoke.LiquidationConfig({
-        targetHealthFactor: vm.randomUint(MIN_CLOSE_FACTOR, MAX_CLOSE_FACTOR).toUint128(),
+        targetHealthFactor: vm
+          .randomUint(MIN_TARGET_HEALTH_FACTOR, MAX_TARGET_HEALTH_FACTOR)
+          .toUint128(),
         healthFactorForMaxBonus: vm
           .randomUint(0, HEALTH_FACTOR_LIQUIDATION_THRESHOLD - 1)
           .toUint64(),
@@ -297,7 +299,7 @@ abstract contract SpokeLiquidationCallHelperTest is SpokeLiquidationCallBaseTest
     uint256 maxBorrowValue = _getRequiredDebtValueForHf(
       spoke,
       addr,
-      SpokeConstants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD
+      HEALTH_FACTOR_LIQUIDATION_THRESHOLD
     );
 
     // buffer
@@ -643,12 +645,12 @@ contract SpokeLiquidationCallTest_LiquidatorHistory is SpokeLiquidationCallHelpe
 
     // make liquidator unhealthy now, but might get healthy when liquidation happens
     liquidatorAccountData = spoke.getUserAccountData(liquidator);
-    if (liquidatorAccountData.healthFactor > SpokeConstants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD) {
+    if (liquidatorAccountData.healthFactor > HEALTH_FACTOR_LIQUIDATION_THRESHOLD) {
       _makeUserLiquidatable(
         spoke,
         liquidator,
         vm.randomUint(0, spoke.getReserveCount() - 1),
-        vm.randomUint(0.1e18, SpokeConstants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD - 0.0000001e18)
+        vm.randomUint(0.1e18, HEALTH_FACTOR_LIQUIDATION_THRESHOLD - 0.0000001e18)
       );
     }
   }

@@ -11,7 +11,6 @@ import {IHub} from 'src/hub/interfaces/IHub.sol';
 import {ISpoke, ISpokeBase} from 'src/spoke/interfaces/ISpoke.sol';
 import {IAaveOracle} from 'src/spoke/interfaces/IAaveOracle.sol';
 import {AaveOracle} from 'src/spoke/AaveOracle.sol';
-import {SpokeConstants} from 'tests/helpers/spoke/SpokeConstants.sol';
 import {DeployUtils} from 'tests/helpers/deploy/DeployUtils.sol';
 import {ISpokeInstance} from 'tests/helpers/mocks/ISpokeInstance.sol';
 import {MockSpoke} from 'tests/helpers/mocks/MockSpoke.sol';
@@ -32,6 +31,8 @@ abstract contract SpokeSetupHelpers is
   using SafeCast for *;
   using WadRayMath for *;
   using PercentageMath for uint256;
+
+  // --- Position openers ---
 
   /// @dev Opens a supply position for a random user
   function _openSupplyPosition(ISpoke spoke, uint256 reserveId, uint256 amount) public {
@@ -156,12 +157,24 @@ abstract contract SpokeSetupHelpers is
     SpokeActions.borrow(spoke, debtReserveId, user, borrowAmount, user);
   }
 
+  // --- Token / approval helpers ---
+
   function _deal(ISpoke spoke, uint256 reserveId, address user, uint256 amount) internal {
     IERC20 underlying = _getAssetUnderlyingByReserveId(spoke, reserveId);
     if (underlying.balanceOf(user) < amount) {
       deal(address(underlying), user, amount);
     }
   }
+
+  function _approveAllUnderlying(ISpoke spoke, address owner, address spender) internal {
+    for (uint256 reserveId; reserveId < spoke.getReserveCount(); ++reserveId) {
+      address underlying_ = spoke.getReserve(reserveId).underlying;
+      vm.prank(owner);
+      IERC20(underlying_).approve(spender, UINT256_MAX);
+    }
+  }
+
+  // --- Index / interest rate helpers ---
 
   // increase share conversion index on given reserve
   /// @return supply amount of collateral asset
@@ -281,7 +294,10 @@ abstract contract SpokeSetupHelpers is
     return (collResult.shares, supplyResult.shares);
   }
 
-  function _repayAll(ISpoke spoke, IHub hub, uint256 reserveId, address[] memory users) internal {
+  // --- Repay helpers ---
+
+  function _repayAll(ISpoke spoke, uint256 reserveId, address[] memory users) internal {
+    IHub hub = _hub(spoke, reserveId);
     uint256 assetId = spoke.getReserve(reserveId).assetId;
     uint256 assetOwedWithoutSpoke = hub.getAssetTotalOwed(assetId) -
       hub.getSpokeTotalOwed(assetId, address(spoke));
@@ -310,6 +326,8 @@ abstract contract SpokeSetupHelpers is
       'hub asset total debt not settled'
     );
   }
+
+  // --- Health factor manipulation ---
 
   /// @dev Borrow to be at a certain health factor
   function _borrowToBeAtHf(
@@ -348,7 +366,7 @@ abstract contract SpokeSetupHelpers is
     ISpoke.UserAccountData memory userAccountData = spoke.getUserAccountData(user);
 
     _mockReservePriceByPercent(spoke, collateralReserveId, pricePercentage, spokeAdmin);
-    assertLt(_getUserHealthFactor(spoke, user), SpokeConstants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
+    assertLt(_getUserHealthFactor(spoke, user), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
 
     return userAccountData;
   }
@@ -360,9 +378,7 @@ abstract contract SpokeSetupHelpers is
     uint256 reserveId,
     uint256 debtAmount
   ) internal {
-    address mockSpoke = address(
-      new MockSpoke(spoke.ORACLE(), SpokeConstants.MAX_ALLOWED_USER_RESERVES_LIMIT)
-    );
+    address mockSpoke = address(new MockSpoke(spoke.ORACLE(), MAX_ALLOWED_USER_RESERVES_LIMIT));
 
     address implementation = _getImplementationAddress(address(spoke));
 
@@ -375,6 +391,8 @@ abstract contract SpokeSetupHelpers is
     vm.prank(_getProxyAdminAddress(address(spoke)));
     ITransparentUpgradeableProxy(address(spoke)).upgradeToAndCall(implementation, '');
   }
+
+  // --- Spoke deployment / upgrade helpers ---
 
   /// @dev Helper to etch spoke's implementation with a new maxUserReservesLimit
   function _updateMaxUserReservesLimit(ISpoke spoke, uint16 newLimit) internal {
@@ -393,7 +411,7 @@ abstract contract SpokeSetupHelpers is
         proxyAdminOwner,
         _accessManager,
         _oracleDesc,
-        SpokeConstants.MAX_ALLOWED_USER_RESERVES_LIMIT
+        MAX_ALLOWED_USER_RESERVES_LIMIT
       );
   }
 
@@ -422,5 +440,46 @@ abstract contract SpokeSetupHelpers is
     assertEq(oracle.SPOKE(), address(spoke));
 
     return (spoke, oracle);
+  }
+
+  // --- Random utilities ---
+
+  function _randomReserveId(ISpoke spoke) internal returns (uint256) {
+    return vm.randomUint(0, spoke.getReserveCount() - 1);
+  }
+
+  function _randomConfigKey() internal returns (uint16) {
+    return vm.randomUint(0, type(uint16).max).toUint16();
+  }
+
+  function _randomUninitializedConfigKey(
+    ISpoke spoke,
+    uint256 reserveId
+  ) internal returns (uint32) {
+    uint32 dynamicConfigKey = _nextDynamicConfigKey(spoke, reserveId);
+    if (spoke.getDynamicReserveConfig(reserveId, dynamicConfigKey).maxLiquidationBonus != 0) {
+      revert('no uninitialized config keys');
+    }
+    return vm.randomUint(dynamicConfigKey, type(uint32).max).toUint32();
+  }
+
+  function _randomInitializedConfigKey(ISpoke spoke, uint256 reserveId) internal returns (uint32) {
+    uint32 dynamicConfigKey = _nextDynamicConfigKey(spoke, reserveId);
+    if (spoke.getDynamicReserveConfig(reserveId, dynamicConfigKey).maxLiquidationBonus != 0) {
+      // all config keys are initialized
+      return vm.randomUint(0, type(uint32).max).toUint32();
+    }
+    return vm.randomUint(0, spoke.getReserve(reserveId).dynamicConfigKey).toUint32();
+  }
+
+  function _randomMaxLiquidationBonus(ISpoke spoke, uint256 reserveId) internal returns (uint32) {
+    return
+      vm
+        .randomUint(MIN_LIQUIDATION_BONUS, _maxLiquidationBonusUpperBound(spoke, reserveId))
+        .toUint32();
+  }
+
+  function _randomCollateralFactor(ISpoke spoke, uint256 reserveId) internal returns (uint16) {
+    return vm.randomUint(10_00, _collateralFactorUpperBound(spoke, reserveId)).toUint16();
   }
 }

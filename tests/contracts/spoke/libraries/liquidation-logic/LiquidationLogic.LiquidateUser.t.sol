@@ -36,7 +36,8 @@ contract LiquidationLogicLiquidateUserTest is LiquidationLogicBaseTest {
       12_500.25e6,
       10_000e6,
       address(spoke1),
-      HUB_ADMIN
+      HUB_ADMIN,
+      MAX_ALLOWED_COLLATERAL_RISK
     );
     (debtReserveHub, ) = hub2Fixture();
     _mockInterestRateBps(debtReserveHub.getAsset(wethAssetId).irStrategy, 5_00);
@@ -102,9 +103,9 @@ contract LiquidationLogicLiquidateUserTest is LiquidationLogicBaseTest {
     IHub.SpokeConfig memory spokeConfig = IHub.SpokeConfig({
       active: true,
       halted: false,
-      addCap: HubConstants.MAX_ALLOWED_SPOKE_CAP,
-      drawCap: HubConstants.MAX_ALLOWED_SPOKE_CAP,
-      riskPremiumThreshold: SpokeConstants.MAX_ALLOWED_COLLATERAL_RISK
+      addCap: MAX_ALLOWED_SPOKE_CAP,
+      drawCap: MAX_ALLOWED_SPOKE_CAP,
+      riskPremiumThreshold: MAX_ALLOWED_COLLATERAL_RISK
     });
     vm.startPrank(HUB_ADMIN);
     collateralReserveHub.addSpoke(usdxAssetId, address(liquidationLogicWrapper), spokeConfig);

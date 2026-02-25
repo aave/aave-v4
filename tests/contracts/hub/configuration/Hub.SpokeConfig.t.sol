@@ -9,7 +9,7 @@ contract HubSpokeConfigTest is Base {
     super.setUp();
 
     // deploy borrowable liquidity
-    _addLiquidity(hub1, usdxAssetId, MAX_SUPPLY_AMOUNT, ADMIN);
+    _addLiquidity(hub1, usdxAssetId, MAX_SUPPLY_AMOUNT, ADMIN, MAX_ALLOWED_COLLATERAL_RISK);
   }
 
   function test_mintFeeShares_active_halted_scenarios() public {

@@ -45,8 +45,8 @@ contract HubPayFeeTest is Base {
       user: alice
     });
 
-    _addLiquidity(hub1, daiAssetId, addAmount, ADMIN);
-    _drawLiquidity(hub1, daiAssetId, addAmount, true, HUB_ADMIN);
+    _addLiquidity(hub1, daiAssetId, addAmount, ADMIN, MAX_ALLOWED_COLLATERAL_RISK);
+    _drawLiquidity(hub1, daiAssetId, addAmount, true, HUB_ADMIN, MAX_ALLOWED_COLLATERAL_RISK);
 
     uint256 feeShares = hub1.getSpokeAddedShares(daiAssetId, address(spoke1));
     uint256 feeAmount = hub1.getSpokeAddedAssets(daiAssetId, address(spoke1));
@@ -79,8 +79,8 @@ contract HubPayFeeTest is Base {
       user: alice
     });
 
-    _addLiquidity(hub1, daiAssetId, 100e18, ADMIN);
-    _drawLiquidity(hub1, daiAssetId, 100e18, true, HUB_ADMIN);
+    _addLiquidity(hub1, daiAssetId, 100e18, ADMIN, MAX_ALLOWED_COLLATERAL_RISK);
+    _drawLiquidity(hub1, daiAssetId, 100e18, true, HUB_ADMIN, MAX_ALLOWED_COLLATERAL_RISK);
 
     uint256 spokeSharesBefore = hub1.getSpokeAddedShares(daiAssetId, address(spoke1));
 

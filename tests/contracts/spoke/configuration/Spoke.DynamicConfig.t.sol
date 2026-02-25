@@ -13,7 +13,7 @@ contract SpokeDynamicConfigTest is Base {
     super.setUp();
     spoke = MockSpoke(address(spoke1));
     address mockSpokeImpl = address(
-      new MockSpoke(address(spoke.ORACLE()), SpokeConstants.MAX_ALLOWED_USER_RESERVES_LIMIT)
+      new MockSpoke(address(spoke.ORACLE()), MAX_ALLOWED_USER_RESERVES_LIMIT)
     );
     vm.etch(address(spoke1), mockSpokeImpl.code);
   }
@@ -101,7 +101,7 @@ contract SpokeDynamicConfigTest is Base {
 
     MockSpoke(address(spoke1)).setReserveDynamicConfigKey(
       reserveId,
-      uint32(SpokeConstants.MAX_ALLOWED_DYNAMIC_CONFIG_KEY)
+      uint32(MAX_ALLOWED_DYNAMIC_CONFIG_KEY)
     );
 
     vm.expectRevert(ISpoke.MaximumDynamicConfigKeyReached.selector, address(spoke1));
@@ -281,14 +281,14 @@ contract SpokeDynamicConfigTest is Base {
     uint256 reserveId = _randomReserveId(spoke1);
     uint256 count = vm.randomUint(1, 50);
     for (uint256 i; i < count; ++i) {
-      dynConf.liquidationFee = _randomBps();
+      dynConf.liquidationFee = vm.randomUint(0, PercentageMath.PERCENTAGE_FACTOR).toUint16();
       vm.prank(SPOKE_ADMIN);
       spoke1.addDynamicReserveConfig(reserveId, dynConf);
     }
     assertEq(spoke1.getReserve(reserveId).dynamicConfigKey, count);
 
     uint32 dynamicConfigKey = vm.randomUint(0, count).toUint32();
-    dynConf.liquidationFee = _randomBps();
+    dynConf.liquidationFee = vm.randomUint(0, PercentageMath.PERCENTAGE_FACTOR).toUint16();
 
     vm.expectEmit(address(spoke1));
     emit ISpoke.UpdateDynamicReserveConfig(reserveId, dynamicConfigKey, dynConf);
@@ -395,10 +395,7 @@ contract SpokeDynamicConfigTest is Base {
 
     // existing users: alice, bob
     // alice still healthy
-    assertGt(
-      _getUserHealthFactor(spoke1, alice),
-      SpokeConstants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD
-    );
+    assertGt(_getUserHealthFactor(spoke1, alice), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
     // bob cannot borrow after collateral is disabled
     vm.expectRevert(ISpoke.HealthFactorBelowThreshold.selector);
     SpokeActions.borrow(spoke1, _wethReserveId(spoke1), bob, 1e18, bob);

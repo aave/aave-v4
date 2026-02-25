@@ -80,8 +80,8 @@ import {NativeTokenGateway, INativeTokenGateway} from 'src/position-manager/Nati
 import {SignatureGateway, ISignatureGateway} from 'src/position-manager/SignatureGateway.sol';
 
 // helpers
-import 'tests/helpers/hub/HubHelpers.sol';
-import 'tests/helpers/spoke/SpokeHelpers.sol';
+import {HubActions} from 'tests/helpers/hub/HubActions.sol';
+import {SpokeActions} from 'tests/helpers/spoke/SpokeActions.sol';
 import {DeployUtils} from 'tests/helpers/deploy/DeployUtils.sol';
 import {BaseHelpers} from 'tests/setup/BaseHelpers.sol';
 
@@ -349,9 +349,9 @@ abstract contract Base is BaseHelpers {
     IHub.SpokeConfig memory spokeConfig = IHub.SpokeConfig({
       active: true,
       halted: false,
-      addCap: HubConstants.MAX_ALLOWED_SPOKE_CAP,
-      drawCap: HubConstants.MAX_ALLOWED_SPOKE_CAP,
-      riskPremiumThreshold: SpokeConstants.MAX_ALLOWED_COLLATERAL_RISK
+      addCap: MAX_ALLOWED_SPOKE_CAP,
+      drawCap: MAX_ALLOWED_SPOKE_CAP,
+      riskPremiumThreshold: MAX_ALLOWED_COLLATERAL_RISK
     });
 
     bytes memory encodedIrData = abi.encode(
@@ -852,68 +852,6 @@ abstract contract Base is BaseHelpers {
     setUpRoles(hub3, spoke1, accessManager3);
 
     return (hub3, hub3IrStrategy);
-  }
-
-  function _withdrawLiquidityFees(IHub hub, uint256 assetId, uint256 amount) internal {
-    HubActions.mintFeeShares(hub, assetId, ADMIN);
-    uint256 fees = hub.getSpokeAddedAssets(assetId, address(treasurySpoke));
-
-    if (amount > fees) {
-      amount = fees;
-    }
-    if (amount == 0) {
-      return; // nothing to withdraw
-    }
-    vm.prank(TREASURY_ADMIN);
-    treasurySpoke.withdraw(assetId, amount, address(treasurySpoke));
-  }
-
-  function _deployTokenizationSpoke(
-    IHub hub,
-    uint256 assetId,
-    string memory shareName,
-    string memory shareSymbol,
-    address proxyAdminOwner
-  ) internal pausePrank returns (ITokenizationSpoke) {
-    address tokenizationSpokeImpl = address(new TokenizationSpokeInstance(address(hub), assetId));
-    ITokenizationSpoke tokenizationSpoke = ITokenizationSpoke(
-      DeployUtils.proxify(
-        tokenizationSpokeImpl,
-        proxyAdminOwner,
-        abi.encodeCall(TokenizationSpokeInstance.initialize, (shareName, shareSymbol))
-      )
-    );
-    return tokenizationSpoke;
-  }
-
-  function _registerTokenizationSpoke(
-    IHub hub,
-    uint256 assetId,
-    ITokenizationSpoke tokenizationSpoke
-  ) internal {
-    return
-      _registerTokenizationSpoke(
-        hub,
-        assetId,
-        tokenizationSpoke,
-        IHub.SpokeConfig({
-          addCap: type(uint40).max,
-          drawCap: 0,
-          riskPremiumThreshold: 0,
-          active: true,
-          halted: false
-        })
-      );
-  }
-
-  function _registerTokenizationSpoke(
-    IHub hub,
-    uint256 assetId,
-    ITokenizationSpoke tokenizationSpoke,
-    IHub.SpokeConfig memory config
-  ) internal pausePrank {
-    vm.prank(ADMIN);
-    hub.addSpoke(assetId, address(tokenizationSpoke), config);
   }
 
   function _getDefaultReserveConfig(

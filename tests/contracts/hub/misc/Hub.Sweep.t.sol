@@ -47,7 +47,7 @@ contract HubSweepTest is Base {
 
     _updateAssetReinvestmentController(hub1, daiAssetId, reinvestmentController, HUB_ADMIN);
 
-    _addLiquidity(hub1, daiAssetId, supplyAmount, ADMIN);
+    _addLiquidity(hub1, daiAssetId, supplyAmount, ADMIN, MAX_ALLOWED_COLLATERAL_RISK);
 
     uint256 assetLiquidity = hub1.getAssetLiquidity(daiAssetId);
 
@@ -93,8 +93,16 @@ contract HubSweepTest is Base {
     drawAmount = bound(drawAmount, 1, supplyAmount - 1);
     _updateAssetReinvestmentController(hub1, daiAssetId, reinvestmentController, HUB_ADMIN);
 
-    _addLiquidity(hub1, daiAssetId, supplyAmount, ADMIN);
-    _drawLiquidityViaTempSpoke(hub1, daiAssetId, drawAmount, false, false, HUB_ADMIN);
+    _addLiquidity(hub1, daiAssetId, supplyAmount, ADMIN, MAX_ALLOWED_COLLATERAL_RISK);
+    _drawLiquidityViaTempSpoke(
+      hub1,
+      daiAssetId,
+      drawAmount,
+      false,
+      false,
+      HUB_ADMIN,
+      MAX_ALLOWED_COLLATERAL_RISK
+    );
     uint256 swept = vm.randomUint(1, supplyAmount - drawAmount);
 
     uint256 drawnRate = hub1.getAssetDrawnRate(daiAssetId);

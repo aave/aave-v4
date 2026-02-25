@@ -76,10 +76,8 @@ contract SpokeRiskPremiumTest is Base {
     SpokeActions.borrow(spoke1, daiReserveId, bob, borrowAmount, bob);
 
     uint256 userRiskPremium = _getUserRiskPremium(spoke1, bob);
-    ISpoke.Reserve memory daiInfo = _getReserveInfo(spoke1, daiReserveId);
-
     // With single collateral, user rp will match collateral risk of collateral
-    assertEq(userRiskPremium, daiInfo.collateralRisk, 'user risk premium');
+    assertEq(userRiskPremium, spoke1.getReserve(daiReserveId).collateralRisk, 'user risk premium');
   }
 
   /// When supplying and borrowing one reserve (fuzzed amounts), user risk premium matches the collateral risk of that reserve.
@@ -827,26 +825,14 @@ contract SpokeRiskPremiumTest is Base {
     usdxInfo.price = bound(usdxInfo.price, 1, 1e16);
     wbtcInfo.price = bound(wbtcInfo.price, 1, 1e16);
 
-    daiInfo.collateralRisk = bound(
-      daiInfo.collateralRisk,
-      0,
-      SpokeConstants.MAX_ALLOWED_COLLATERAL_RISK
-    ).toUint24();
-    wethInfo.collateralRisk = bound(
-      wethInfo.collateralRisk,
-      0,
-      SpokeConstants.MAX_ALLOWED_COLLATERAL_RISK
-    ).toUint24();
-    usdxInfo.collateralRisk = bound(
-      usdxInfo.collateralRisk,
-      0,
-      SpokeConstants.MAX_ALLOWED_COLLATERAL_RISK
-    ).toUint24();
-    wbtcInfo.collateralRisk = bound(
-      wbtcInfo.collateralRisk,
-      0,
-      SpokeConstants.MAX_ALLOWED_COLLATERAL_RISK
-    ).toUint24();
+    daiInfo.collateralRisk = bound(daiInfo.collateralRisk, 0, MAX_ALLOWED_COLLATERAL_RISK)
+      .toUint24();
+    wethInfo.collateralRisk = bound(wethInfo.collateralRisk, 0, MAX_ALLOWED_COLLATERAL_RISK)
+      .toUint24();
+    usdxInfo.collateralRisk = bound(usdxInfo.collateralRisk, 0, MAX_ALLOWED_COLLATERAL_RISK)
+      .toUint24();
+    wbtcInfo.collateralRisk = bound(wbtcInfo.collateralRisk, 0, MAX_ALLOWED_COLLATERAL_RISK)
+      .toUint24();
 
     // Bob supply dai into spoke2
     if (daiInfo.supplyAmount > 0) {

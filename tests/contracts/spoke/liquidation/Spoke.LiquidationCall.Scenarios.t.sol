@@ -428,7 +428,15 @@ contract SpokeLiquidationCallScenariosTest is SpokeLiquidationCallBaseTest {
     _updateMaxLiquidationBonus(spoke, _wethReserveId(spoke), 100_00, SPOKE_ADMIN);
 
     // Supply share price: 1.25
-    _mockSupplySharePrice(hub1, wethAssetId, 12_500.25e6, 10_000e6, address(spoke1), HUB_ADMIN);
+    _mockSupplySharePrice(
+      hub1,
+      wethAssetId,
+      12_500.25e6,
+      10_000e6,
+      address(spoke1),
+      HUB_ADMIN,
+      MAX_ALLOWED_COLLATERAL_RISK
+    );
 
     // The collateral and debt have the same price
     _mockReservePrice(spoke, _wethReserveId(spoke), 1e8, SPOKE_ADMIN);

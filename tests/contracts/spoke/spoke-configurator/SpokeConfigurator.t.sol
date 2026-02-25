@@ -55,7 +55,7 @@ contract SpokeConfiguratorTest is Base {
   }
 
   function test_updateLiquidationTargetHealthFactor() public {
-    uint128 newTargetHealthFactor = SpokeConstants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD * 2;
+    uint128 newTargetHealthFactor = HEALTH_FACTOR_LIQUIDATION_THRESHOLD * 2;
 
     ISpoke.LiquidationConfig memory expectedLiquidationConfig = spoke.getLiquidationConfig();
     expectedLiquidationConfig.targetHealthFactor = newTargetHealthFactor;
@@ -81,7 +81,7 @@ contract SpokeConfiguratorTest is Base {
   }
 
   function test_updateHealthFactorForMaxBonus() public {
-    uint64 newHealthFactorForMaxBonus = SpokeConstants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD / 2;
+    uint64 newHealthFactorForMaxBonus = HEALTH_FACTOR_LIQUIDATION_THRESHOLD / 2;
 
     ISpoke.LiquidationConfig memory expectedLiquidationConfig = spoke.getLiquidationConfig();
     expectedLiquidationConfig.healthFactorForMaxBonus = newHealthFactorForMaxBonus;
@@ -141,8 +141,8 @@ contract SpokeConfiguratorTest is Base {
 
   function test_updateLiquidationConfig() public {
     ISpoke.LiquidationConfig memory newLiquidationConfig = ISpoke.LiquidationConfig({
-      targetHealthFactor: SpokeConstants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD * 2,
-      healthFactorForMaxBonus: SpokeConstants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD / 2,
+      targetHealthFactor: HEALTH_FACTOR_LIQUIDATION_THRESHOLD * 2,
+      healthFactorForMaxBonus: HEALTH_FACTOR_LIQUIDATION_THRESHOLD / 2,
       liquidationBonusFactor: PercentageMath.PERCENTAGE_FACTOR.toUint16() / 2
     });
 
@@ -384,7 +384,7 @@ contract SpokeConfiguratorTest is Base {
   }
 
   function test_updateCollateralRisk() public {
-    uint24 newCollateralRisk = SpokeConstants.MAX_ALLOWED_COLLATERAL_RISK / 2;
+    uint24 newCollateralRisk = MAX_ALLOWED_COLLATERAL_RISK / 2;
 
     ISpoke.ReserveConfig memory expectedReserveConfig = spoke.getReserveConfig(reserveId);
     expectedReserveConfig.collateralRisk = newCollateralRisk;

@@ -42,11 +42,11 @@ contract SpokeRepayEdgeCaseTest is Base {
     uint256 daiRepayAmount = vm.randomUint(1, bobDebt.premiumDebt - 1);
 
     (uint256 baseRestored, uint256 premiumRestored) = _calculateExactRestoreAmount(
+      hub1,
+      daiAssetId,
       bobDebt.drawnDebt,
       bobDebt.premiumDebt,
-      daiRepayAmount,
-      hub1,
-      daiAssetId
+      daiRepayAmount
     );
 
     IHubBase.PremiumDelta memory expectedPremiumDelta = _getExpectedPremiumDeltaForRestore(
@@ -414,11 +414,11 @@ contract SpokeRepayEdgeCaseTest is Base {
 
     {
       (uint256 baseRestored, ) = _calculateExactRestoreAmount(
+        hub1,
+        daiAssetId,
         bobDaiBefore.drawnDebt,
         bobDaiBefore.premiumDebt,
-        daiRepayAmount,
-        hub1,
-        daiAssetId
+        daiRepayAmount
       );
       IHubBase.PremiumDelta memory expectedPremiumDelta = _getExpectedPremiumDeltaForRestore(
         spoke1,
