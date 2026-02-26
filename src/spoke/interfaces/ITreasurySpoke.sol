@@ -6,15 +6,11 @@ pragma solidity ^0.8.0;
 /// @author Aave Labs
 /// @notice Interface for the TreasurySpoke.
 interface ITreasurySpoke {
-  /// @notice Thrown when an unsupported action is attempted.
-  error UnsupportedAction();
-
   /// @notice Thrown when the given address is invalid.
   error InvalidAddress();
 
   /// @notice Supplies a specified amount of the underlying asset to a given reserve.
   /// @dev The Spoke pulls the underlying asset from the caller, so prior approval is required.
-  /// @dev The given asset identifier must match the asset identifier in the given Hub.
   /// @param hub The address of the Hub contract.
   /// @param assetId The identifier of the asset.
   /// @param amount The amount of asset to supply.
@@ -30,7 +26,6 @@ interface ITreasurySpoke {
 
   /// @notice Withdraws a specified amount of underlying asset from the given reserve.
   /// @dev Providing an amount greater than the maximum withdrawable value signals a full withdrawal.
-  /// @dev The given asset identifier must match the asset identifier in the given Hub.
   /// @param hub The address of the Hub contract.
   /// @param assetId The identifier of the asset.
   /// @param amount The amount of asset to withdraw.
@@ -51,7 +46,6 @@ interface ITreasurySpoke {
   function transfer(address token, address to, uint256 amount) external;
 
   /// @notice Returns the amount of assets supplied.
-  /// @dev The given asset identifier must match the asset identifier in the given Hub.
   /// @param hub The address of the Hub contract.
   /// @param assetId The identifier of the asset.
   /// @return The amount of assets supplied.
@@ -59,7 +53,6 @@ interface ITreasurySpoke {
 
   /// @notice Returns the amount of shares supplied.
   /// @dev Shares are denominated relative to the supply side.
-  /// @dev The asset identifier must match the asset identifier in the Hub.
   /// @param hub The address of the Hub contract.
   /// @param assetId The identifier of the asset.
   /// @return The amount of shares supplied.
