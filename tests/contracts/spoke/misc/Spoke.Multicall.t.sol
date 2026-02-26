@@ -7,7 +7,7 @@ import 'tests/setup/Base.t.sol';
 contract SpokeMulticall is Base {
   using SafeCast for uint256;
 
-  struct Reserve {
+  struct ReserveLocal {
     uint256 reserveId;
     IHub hub;
     uint16 assetId;
@@ -139,14 +139,14 @@ contract SpokeMulticall is Base {
     hub1.addAsset(address(usda), 18, address(treasurySpoke), address(irStrategy), encodedIrData);
     uint256 usdaAssetId = hub1.getAssetCount() - 1;
 
-    Reserve memory usdzReserveExpected;
+    ReserveLocal memory usdzReserveExpected;
     usdzReserveExpected.reserveId = usdzReserveId;
     usdzReserveExpected.assetId = usdzAssetId.toUint16();
     usdzReserveExpected.paused = usdzConfig.paused;
     usdzReserveExpected.frozen = usdzConfig.frozen;
     usdzReserveExpected.borrowable = usdzConfig.borrowable;
     usdzReserveExpected.collateralRisk = usdzConfig.collateralRisk;
-    Reserve memory usdaReserveExpected;
+    ReserveLocal memory usdaReserveExpected;
     usdaReserveExpected.reserveId = usdaReserveId;
     usdaReserveExpected.assetId = usdaAssetId.toUint16();
     usdaReserveExpected.paused = usdaConfig.paused;

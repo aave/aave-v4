@@ -59,7 +59,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
     bool hasDeficit;
   }
 
-  struct LiquidationExpectedEventsParams {
+  struct LiquidationExpectedEventsLocal {
     uint256 userDrawnDebt;
     uint256 userPremiumDebt;
     uint256 drawnAmountToRestore;
@@ -379,7 +379,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
     LiquidationMetadata memory liquidationMetadata,
     ISpoke.UserAccountData memory expectedUserAccountData
   ) internal virtual {
-    LiquidationExpectedEventsParams memory vars;
+    LiquidationExpectedEventsLocal memory vars;
 
     vars.userDebtPosition = params.spoke.getUserPosition(params.debtReserveId, params.user);
     vars.collateralHub = _hub(params.spoke, params.collateralReserveId);

@@ -7,7 +7,7 @@ import 'tests/setup/Base.t.sol';
 contract SpokeWithdrawTest is Base {
   using SafeCast for uint256;
 
-  struct TestState {
+  struct WithdrawLocal {
     uint256 reserveId;
     uint256 collateralReserveId;
     uint256 suppliedCollateralAmount;
@@ -445,7 +445,7 @@ contract SpokeWithdrawTest is Base {
     // set weth collateral risk to 0 for no premium contribution
     _updateCollateralRisk({spoke: spoke1, reserveId: _wethReserveId(spoke1), newCollateralRisk: 0});
 
-    TestState memory state;
+    WithdrawLocal memory state;
     state.reserveId = _daiReserveId(spoke1);
 
     (
@@ -571,7 +571,7 @@ contract SpokeWithdrawTest is Base {
       newCollateralRisk: 0
     });
 
-    TestState memory state;
+    WithdrawLocal memory state;
     state.reserveId = params.reserveId;
     state.collateralReserveId = _wbtcReserveId(spoke1);
     state.suppliedCollateralAmount = _calculateMaxSupplyAmount(spoke1, state.collateralReserveId); // ensure enough collateral
@@ -703,7 +703,7 @@ contract SpokeWithdrawTest is Base {
   }
 
   function test_withdraw_all_liquidity_with_interest_with_premium() public {
-    TestState memory state;
+    WithdrawLocal memory state;
     state.reserveId = _daiReserveId(spoke1);
 
     (
@@ -826,7 +826,7 @@ contract SpokeWithdrawTest is Base {
 
     (uint256 assetId, IERC20 underlying) = _getAssetByReserveId(spoke1, params.reserveId);
 
-    TestState memory state;
+    WithdrawLocal memory state;
     state.reserveId = params.reserveId;
     state.collateralReserveId = _wbtcReserveId(spoke1);
     state.suppliedCollateralAmount = _calculateMaxSupplyAmount(spoke1, state.collateralReserveId); // ensure enough collateral

@@ -9,7 +9,7 @@ contract HubReportDeficitTest is Base {
   using PercentageMath for uint256;
   using WadRayMath for uint256;
 
-  struct ReportDeficitTestParams {
+  struct ReportDeficitLocal {
     uint256 drawn;
     uint256 premiumRay;
     uint256 deficitRayBefore;
@@ -178,7 +178,7 @@ contract HubReportDeficitTest is Base {
     drawnAmount = bound(drawnAmount, 1, MAX_SUPPLY_AMOUNT_USDX);
     skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
 
-    ReportDeficitTestParams memory params;
+    ReportDeficitLocal memory params;
 
     // create premium debt via spoke1
     _drawLiquidity({

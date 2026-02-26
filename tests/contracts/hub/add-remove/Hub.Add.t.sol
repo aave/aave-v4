@@ -8,7 +8,7 @@ contract HubAddTest is Base {
   using SharesMath for uint256;
   using SafeCast for uint256;
 
-  struct HubAddTestState {
+  struct HubAddLocal {
     uint256 drawnAmount;
     uint256 drawnShares;
     uint256 assetAddedAmount;
@@ -726,7 +726,7 @@ contract HubAddTest is Base {
     amount = bound(amount, 1, MAX_SUPPLY_AMOUNT / numAdds);
     skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
 
-    HubAddTestState memory params;
+    HubAddLocal memory params;
     (params.assetAddedShares, params.drawnShares) = _addAndDrawLiquidity({
       hub: hub1,
       assetId: assetId,

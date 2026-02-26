@@ -10,7 +10,7 @@ contract SpokeRiskPremiumScenarioTest is Base {
   using PercentageMath for *;
   using SafeCast for *;
 
-  struct GeneralLocalVars {
+  struct GeneralLocal {
     uint256 usdxSupplyAmount;
     uint256 wethSupplyAmount;
     uint256 daiBorrowAmount;
@@ -54,12 +54,12 @@ contract SpokeRiskPremiumScenarioTest is Base {
     uint256 assetPremium;
   }
 
-  struct RestoredAmounts {
+  struct RestoredAmountsLocal {
     uint256 baseRestored;
     uint256 premiumRestored;
   }
 
-  struct ExpectedUserRp {
+  struct ExpectedUserRpLocal {
     uint256 bobRiskPremium;
     uint256 aliceRiskPremium;
   }
@@ -86,7 +86,7 @@ contract SpokeRiskPremiumScenarioTest is Base {
    */
   /// Borrow, skip, supply, skip, supply, ensure risk premium is correct and accounting updates accordingly throughout protocol
   function test_riskPremiumPropagatesCorrectly_singleBorrow() public {
-    GeneralLocalVars memory vars;
+    GeneralLocal memory vars;
     vars.usdxSupplyAmount = 1500e6; // 1500 usd, 50 collateralRisk
     vars.wethSupplyAmount = 5e18; // 10_000 usd, 15 collateralRisk
     vars.daiBorrowAmount = 10_000e18; // 10_000 usd, 20 collateralRisk
@@ -286,7 +286,7 @@ contract SpokeRiskPremiumScenarioTest is Base {
     // Alice draw usdx
     SpokeActions.borrow(spoke1, usdxInfo.reserveId, alice, aliceUsdxInfo.borrowAmount, alice);
 
-    ExpectedUserRp memory expectedUserRp;
+    ExpectedUserRpLocal memory expectedUserRp;
     expectedUserRp.bobRiskPremium = _calculateExpectedUserRP(spoke1, bob);
     expectedUserRp.aliceRiskPremium = _calculateExpectedUserRP(spoke1, alice);
 
@@ -466,7 +466,7 @@ contract SpokeRiskPremiumScenarioTest is Base {
       'after accrual'
     );
 
-    RestoredAmounts memory restored;
+    RestoredAmountsLocal memory restored;
     (restored.baseRestored, restored.premiumRestored) = _calculateExactRestoreAmount(
       hub1,
       daiAssetId,
