@@ -777,6 +777,10 @@ contract SpokeLiquidationCallScenariosTest is SpokeLiquidationCallBaseTest {
     // Option 2: 2 liquidations of 18 debt
     //   - Collateral siezed: 18 * 1.05 / 0.9 = 21 WETH
     //   - Bonus is 1 WETH: 0 WETH to liquidator, 1 WETH to treasury
+    // Overal, after 2 liquidations:
+    //   - Collateral siezed: 42 WETH
+    //   - Debt siezed: 36 WETH
+    //   - Bonus is 2 WETH: 0 WETH to liquidator, 2 WETH to treasury
     snapshot = vm.snapshot();
     for (uint256 i = 0; i < 2; i++) {
       vm.prank(liquidator);

@@ -467,7 +467,7 @@ library LiquidationLogic {
         liquidatorPosition.suppliedShares += params.sharesToLiquidator.toUint120();
       } else {
         uint256 amountToLiquidator = amountRemoved;
-        if (params.sharesToLiquidator != params.sharesToLiquidate) {
+        if (params.sharesToLiquidator < params.sharesToLiquidate) {
           amountToLiquidator = params.hub.previewRemoveByShares(
             params.assetId,
             params.sharesToLiquidator
