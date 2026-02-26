@@ -6,7 +6,7 @@ import 'tests/contracts/position-manager/SignatureGateway/SignatureGateway.Base.
 
 contract SignatureGatewaySetSelfAsUserPositionManagerTest is SignatureGatewayBaseTest {
   function test_setSelfAsUserPositionManagerWithSig_revertsWith_SpokeNotRegistered() public {
-    vm.expectRevert(IGatewayBase.SpokeNotRegistered.selector);
+    vm.expectRevert(IPositionManagerBase.SpokeNotRegistered.selector);
     vm.prank(vm.randomAddress());
     gateway.setSelfAsUserPositionManagerWithSig({
       spoke: address(spoke2),

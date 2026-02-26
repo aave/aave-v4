@@ -77,6 +77,17 @@ abstract contract BaseHelpers is BaseState {
     assertEq(a.premium, b.premium, 'premium');
   }
 
+  // --- Hub math overloads (default hub1) ---
+
+  function _calculateExactRestoreAmount(
+    uint256 drawn,
+    uint256 premium,
+    uint256 restoreAmount,
+    uint256 assetId
+  ) internal view returns (uint256, uint256) {
+    return _calculateExactRestoreAmount(hub1, assetId, drawn, premium, restoreAmount);
+  }
+
   // --- Hub setup overloads (default HUB_ADMIN + MAX_ALLOWED_COLLATERAL_RISK) ---
 
   function _addLiquidity(IHub hub, uint256 assetId, uint256 amount) public {

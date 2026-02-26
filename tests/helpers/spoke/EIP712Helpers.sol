@@ -122,10 +122,15 @@ abstract contract EIP712Helpers is Test {
     address who,
     uint256 prevKeyNonce
   ) internal view {
-    (uint192 nonceKey, uint64 nonce) = _unpackNonce(prevKeyNonce);
+    (uint192 currentKey, ) = _unpackNonce(prevKeyNonce);
+    assertEq(verifier.nonces(who, currentKey), _getNextNoncePacked(prevKeyNonce));
+  }
+
+  function _getNextNoncePacked(uint256 currentKeyNonce) internal pure returns (uint256) {
+    (uint192 nonceKey, uint64 nonce) = _unpackNonce(currentKeyNonce);
     // prettier-ignore
     unchecked { ++nonce; }
-    assertEq(verifier.nonces(who, nonceKey), _packNonce(nonceKey, nonce));
+    return _packNonce(nonceKey, nonce);
   }
 
   function _packNonce(uint192 key, uint64 nonce) internal pure returns (uint256) {

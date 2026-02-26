@@ -448,6 +448,10 @@ abstract contract SpokeSetupHelpers is
     return vm.randomUint(0, spoke.getReserveCount() - 1);
   }
 
+  function _randomInvalidReserveId(ISpoke spoke) internal returns (uint256) {
+    return vm.randomUint(spoke.getReserveCount(), UINT256_MAX);
+  }
+
   function _randomConfigKey() internal returns (uint16) {
     return vm.randomUint(0, type(uint16).max).toUint16();
   }

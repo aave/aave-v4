@@ -63,38 +63,6 @@ contract EIP712HashTest is Test {
     assertEq(EIP712Hash.TOKENIZED_REDEEM_TYPEHASH, vm.eip712HashType('TokenizedRedeem'));
   }
 
-  function test_hash_tokenizedDeposit_fuzz(
-    ITokenizationSpoke.TokenizedDeposit calldata params
-  ) public pure {
-    bytes32 expectedHash = keccak256(abi.encode(EIP712Hash.TOKENIZED_DEPOSIT_TYPEHASH, params));
-    assertEq(params.hash(), expectedHash);
-    assertEq(params.hash(), vm.eip712HashStruct('TokenizedDeposit', abi.encode(params)));
-  }
-
-  function test_hash_tokenizedMint_fuzz(
-    ITokenizationSpoke.TokenizedMint calldata params
-  ) public pure {
-    bytes32 expectedHash = keccak256(abi.encode(EIP712Hash.TOKENIZED_MINT_TYPEHASH, params));
-    assertEq(params.hash(), expectedHash);
-    assertEq(params.hash(), vm.eip712HashStruct('TokenizedMint', abi.encode(params)));
-  }
-
-  function test_hash_tokenizedWithdraw_fuzz(
-    ITokenizationSpoke.TokenizedWithdraw calldata params
-  ) public pure {
-    bytes32 expectedHash = keccak256(abi.encode(EIP712Hash.TOKENIZED_WITHDRAW_TYPEHASH, params));
-    assertEq(params.hash(), expectedHash);
-    assertEq(params.hash(), vm.eip712HashStruct('TokenizedWithdraw', abi.encode(params)));
-  }
-
-  function test_hash_tokenizedRedeem_fuzz(
-    ITokenizationSpoke.TokenizedRedeem calldata params
-  ) public pure {
-    bytes32 expectedHash = keccak256(abi.encode(EIP712Hash.TOKENIZED_REDEEM_TYPEHASH, params));
-    assertEq(params.hash(), expectedHash);
-    assertEq(params.hash(), vm.eip712HashStruct('TokenizedRedeem', abi.encode(params)));
-  }
-
   function test_hash_setUserPositionManagers_fuzz(
     ISpoke.SetUserPositionManagers calldata params
   ) public pure {
@@ -126,5 +94,37 @@ contract EIP712HashTest is Test {
 
     assertEq(params.hash(), expectedHash);
     assertEq(params.hash(), vm.eip712HashStruct('PositionManagerUpdate', abi.encode(params)));
+  }
+
+  function test_hash_tokenizedDeposit_fuzz(
+    ITokenizationSpoke.TokenizedDeposit calldata params
+  ) public pure {
+    bytes32 expectedHash = keccak256(abi.encode(EIP712Hash.TOKENIZED_DEPOSIT_TYPEHASH, params));
+    assertEq(params.hash(), expectedHash);
+    assertEq(params.hash(), vm.eip712HashStruct('TokenizedDeposit', abi.encode(params)));
+  }
+
+  function test_hash_tokenizedMint_fuzz(
+    ITokenizationSpoke.TokenizedMint calldata params
+  ) public pure {
+    bytes32 expectedHash = keccak256(abi.encode(EIP712Hash.TOKENIZED_MINT_TYPEHASH, params));
+    assertEq(params.hash(), expectedHash);
+    assertEq(params.hash(), vm.eip712HashStruct('TokenizedMint', abi.encode(params)));
+  }
+
+  function test_hash_tokenizedWithdraw_fuzz(
+    ITokenizationSpoke.TokenizedWithdraw calldata params
+  ) public pure {
+    bytes32 expectedHash = keccak256(abi.encode(EIP712Hash.TOKENIZED_WITHDRAW_TYPEHASH, params));
+    assertEq(params.hash(), expectedHash);
+    assertEq(params.hash(), vm.eip712HashStruct('TokenizedWithdraw', abi.encode(params)));
+  }
+
+  function test_hash_tokenizedRedeem_fuzz(
+    ITokenizationSpoke.TokenizedRedeem calldata params
+  ) public pure {
+    bytes32 expectedHash = keccak256(abi.encode(EIP712Hash.TOKENIZED_REDEEM_TYPEHASH, params));
+    assertEq(params.hash(), expectedHash);
+    assertEq(params.hash(), vm.eip712HashStruct('TokenizedRedeem', abi.encode(params)));
   }
 }
