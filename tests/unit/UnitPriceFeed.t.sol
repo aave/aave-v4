@@ -28,6 +28,17 @@ contract UnitPriceFeedTest is Base {
     assertEq(unitPriceFeed.latestAnswer(), (10 ** DECIMALS).toInt256());
   }
 
+  function test_fuzz_latestAnswer_blockTimestamp(uint80 blockTimestamp) public {
+    skip(blockTimestamp);
+    assertEq(unitPriceFeed.latestAnswer(), int256(10 ** DECIMALS));
+  }
+
+  function test_fuzz_latestAnswer_differentDecimals(uint8 decimals) public {
+    decimals = bound(decimals, 0, 18).toUint8();
+    unitPriceFeed = new UnitPriceFeed(decimals);
+    assertEq(unitPriceFeed.latestAnswer(), int256(10 ** decimals));
+  }
+
   function test_latestTimestamp() public {
     uint80 skipTime = vm.randomUint(80).toUint80();
     skip(skipTime);
