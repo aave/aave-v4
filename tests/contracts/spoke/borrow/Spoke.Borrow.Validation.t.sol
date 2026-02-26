@@ -22,7 +22,7 @@ contract SpokeBorrowValidationTest is Base {
     amount = bound(amount, 1, MAX_SUPPLY_AMOUNT);
 
     // set reserve not borrowable
-    _updateReserveBorrowableFlag(spoke1, reserveId, false, SPOKE_ADMIN);
+    _updateReserveBorrowableFlag(spoke1, reserveId, false);
     assertFalse(spoke1.getReserve(reserveId).flags.borrowable());
 
     // Bob tries to draw
@@ -57,7 +57,7 @@ contract SpokeBorrowValidationTest is Base {
     reserveId = bound(reserveId, 0, spoke1.getReserveCount() - 1);
     amount = bound(amount, 1, MAX_SUPPLY_AMOUNT);
 
-    _updateReservePausedFlag(spoke1, reserveId, true, SPOKE_ADMIN);
+    _updateReservePausedFlag(spoke1, reserveId, true);
     assertTrue(spoke1.getReserve(reserveId).flags.paused());
 
     // Bob try to draw
@@ -76,7 +76,7 @@ contract SpokeBorrowValidationTest is Base {
     reserveId = bound(reserveId, 0, spoke1.getReserveCount() - 1);
     amount = bound(amount, 1, MAX_SUPPLY_AMOUNT);
 
-    _updateReserveFrozenFlag(spoke1, reserveId, true, SPOKE_ADMIN);
+    _updateReserveFrozenFlag(spoke1, reserveId, true);
     assertTrue(spoke1.getReserve(reserveId).flags.frozen());
 
     // Bob try to draw
@@ -133,7 +133,7 @@ contract SpokeBorrowValidationTest is Base {
     uint256 drawAmount = drawCap * 10 ** tokenList.dai.decimals() + 1;
 
     uint256 assetId = spoke1.getReserve(reserveId).assetId;
-    _updateDrawCap(hub1, assetId, address(spoke1), drawCap, HUB_ADMIN);
+    _updateDrawCap(hub1, assetId, address(spoke1), drawCap);
     assertEq(hub1.getSpoke(assetId, address(spoke1)).drawCap, drawCap);
 
     // Bob borrow dai amount exceeding draw cap
@@ -153,7 +153,7 @@ contract SpokeBorrowValidationTest is Base {
     uint256 wethSupplyAmount = 10e18;
     uint256 drawAmount = daiAmount - 1;
 
-    _updateDrawCap(hub1, daiAssetId, address(spoke1), drawCap, HUB_ADMIN);
+    _updateDrawCap(hub1, daiAssetId, address(spoke1), drawCap);
     assertEq(hub1.getSpoke(daiAssetId, address(spoke1)).drawCap, drawCap);
 
     // Bob supply weth collateral

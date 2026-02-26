@@ -80,7 +80,7 @@ contract HubAddTest is Base {
   }
 
   function test_add_revertsWith_SpokeHalted() public {
-    _updateSpokeHalted(hub1, daiAssetId, address(spoke1), true, HUB_ADMIN);
+    _updateSpokeHalted(hub1, daiAssetId, address(spoke1), true);
     vm.startPrank(address(spoke1));
     tokenList.dai.transferFrom(alice, address(hub1), 100e18);
 
@@ -90,7 +90,7 @@ contract HubAddTest is Base {
   }
 
   function test_add_revertsWith_SpokeNotActive() public {
-    _updateSpokeActive(hub1, daiAssetId, address(spoke1), false, HUB_ADMIN);
+    _updateSpokeActive(hub1, daiAssetId, address(spoke1), false);
     vm.startPrank(address(spoke1));
     tokenList.dai.transferFrom(alice, address(hub1), 100e18);
 
@@ -157,7 +157,7 @@ contract HubAddTest is Base {
 
   function test_add_fuzz_revertsWith_AddCapExceeded(uint40 newAddCap) public {
     newAddCap = bound(newAddCap, 1, MAX_SUPPLY_AMOUNT / 10 ** tokenList.dai.decimals()).toUint40();
-    _updateAddCap(hub1, daiAssetId, address(spoke1), newAddCap, HUB_ADMIN);
+    _updateAddCap(hub1, daiAssetId, address(spoke1), newAddCap);
     uint256 amount = newAddCap * 10 ** tokenList.dai.decimals() + 1;
     vm.startPrank(address(spoke1));
     tokenList.dai.transferFrom(alice, address(hub1), amount);
@@ -168,7 +168,7 @@ contract HubAddTest is Base {
 
   function test_add_fuzz_AddCapReachedButNotExceeded(uint40 newAddCap) public {
     newAddCap = bound(newAddCap, 1, MAX_SUPPLY_AMOUNT / 10 ** tokenList.dai.decimals()).toUint40();
-    _updateAddCap(hub1, daiAssetId, address(spoke1), newAddCap, HUB_ADMIN);
+    _updateAddCap(hub1, daiAssetId, address(spoke1), newAddCap);
     uint256 amount = newAddCap * 10 ** tokenList.dai.decimals();
     vm.startPrank(address(spoke1));
     tokenList.dai.transferFrom(alice, address(hub1), amount);
@@ -187,7 +187,7 @@ contract HubAddTest is Base {
     drawAmount = bound(drawAmount, 1, daiAmount);
     skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
 
-    _updateAddCap(hub1, daiAssetId, address(spoke2), newAddCap, HUB_ADMIN);
+    _updateAddCap(hub1, daiAssetId, address(spoke2), newAddCap);
     _addAndDrawLiquidity({
       hub: hub1,
       assetId: daiAssetId,
@@ -213,8 +213,8 @@ contract HubAddTest is Base {
 
   // add succeeds if cap is reached but not exceeded
   function test_add_AddCapReachedButNotExceeded_rounding() public {
-    _addLiquidity(hub1, minDecimalAssetId, 100e18, ADMIN, MAX_ALLOWED_COLLATERAL_RISK);
-    _drawLiquidity(hub1, minDecimalAssetId, 45e18, true, HUB_ADMIN, MAX_ALLOWED_COLLATERAL_RISK);
+    _addLiquidity(hub1, minDecimalAssetId, 100e18);
+    _drawLiquidity(hub1, minDecimalAssetId, 45e18, true);
 
     uint256 totalAddedAssets = hub1.getAddedAssets(minDecimalAssetId);
     uint256 totalAddedShares = hub1.getAddedShares(minDecimalAssetId);
@@ -242,7 +242,7 @@ contract HubAddTest is Base {
     );
 
     uint40 newAddCap = (spokeAddedAssetsRoundedUp + addedAmount).toUint40();
-    _updateAddCap(hub1, minDecimalAssetId, address(spoke1), newAddCap, HUB_ADMIN);
+    _updateAddCap(hub1, minDecimalAssetId, address(spoke1), newAddCap);
 
     HubActions.add({
       hub: hub1,
@@ -567,8 +567,8 @@ contract HubAddTest is Base {
 
   function test_add_with_increased_index_with_premium() public {
     uint256 daiAmount = 100e18;
-    _addLiquidity(hub1, daiAssetId, daiAmount, ADMIN, MAX_ALLOWED_COLLATERAL_RISK);
-    _drawLiquidity(hub1, daiAssetId, daiAmount, true, HUB_ADMIN, MAX_ALLOWED_COLLATERAL_RISK);
+    _addLiquidity(hub1, daiAssetId, daiAmount);
+    _drawLiquidity(hub1, daiAssetId, daiAmount, true);
     assertLt(hub1.previewAddByAssets(daiAssetId, daiAmount), daiAmount); // index increased, exch rate > 1
 
     uint256 addAmount = 10e18;

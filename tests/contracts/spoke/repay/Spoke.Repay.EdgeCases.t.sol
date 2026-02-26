@@ -127,9 +127,9 @@ contract SpokeRepayEdgeCaseTest is Base {
   function test_repay_supply_ex_rate_decr() public {
     // inflate ex rate to 1.5
     _mockInterestRateBps(address(irStrategy), 50_00);
-    _updateCollateralRisk(spoke1, _daiReserveId(spoke1), 0, SPOKE_ADMIN);
-    _updateCollateralRisk(spoke1, _wethReserveId(spoke1), 0, SPOKE_ADMIN);
-    _updateLiquidityFee(hub1, daiAssetId, 0, HUB_ADMIN);
+    _updateCollateralRisk(spoke1, _daiReserveId(spoke1), 0);
+    _updateCollateralRisk(spoke1, _wethReserveId(spoke1), 0);
+    _updateLiquidityFee(hub1, daiAssetId, 0);
 
     // enough coll
     SpokeActions.supplyCollateral(spoke1, _wethReserveId(spoke1), alice, 1e18, alice);
@@ -151,7 +151,7 @@ contract SpokeRepayEdgeCaseTest is Base {
     _openSupplyPosition(spoke1, _daiReserveId(spoke1), 30);
 
     // 30% rp
-    _updateCollateralRisk(spoke1, _wethReserveId(spoke1), 30_00, SPOKE_ADMIN);
+    _updateCollateralRisk(spoke1, _wethReserveId(spoke1), 30_00);
 
     vm.prank(alice);
     spoke1.borrow(_daiReserveId(spoke1), 15, alice);
@@ -174,9 +174,9 @@ contract SpokeRepayEdgeCaseTest is Base {
   function test_repay_supply_ex_rate_decr_skip_time() public {
     // inflate ex rate to 1.5
     _mockInterestRateBps(address(irStrategy), 50_00);
-    _updateCollateralRisk(spoke1, _daiReserveId(spoke1), 0, SPOKE_ADMIN);
-    _updateCollateralRisk(spoke1, _wethReserveId(spoke1), 0, SPOKE_ADMIN);
-    _updateLiquidityFee(hub1, daiAssetId, 0, HUB_ADMIN);
+    _updateCollateralRisk(spoke1, _daiReserveId(spoke1), 0);
+    _updateCollateralRisk(spoke1, _wethReserveId(spoke1), 0);
+    _updateLiquidityFee(hub1, daiAssetId, 0);
 
     // enough coll
     SpokeActions.supplyCollateral(spoke1, _wethReserveId(spoke1), alice, 1e18, alice);
@@ -196,7 +196,7 @@ contract SpokeRepayEdgeCaseTest is Base {
     _openSupplyPosition(spoke1, _daiReserveId(spoke1), 30e18);
 
     // 30% rp
-    _updateCollateralRisk(spoke1, _wethReserveId(spoke1), 30_00, SPOKE_ADMIN);
+    _updateCollateralRisk(spoke1, _wethReserveId(spoke1), 30_00);
 
     vm.prank(alice);
     spoke1.borrow(_daiReserveId(spoke1), 15, alice);
@@ -218,7 +218,7 @@ contract SpokeRepayEdgeCaseTest is Base {
 
   function test_repay_less_than_share() public {
     // update collateral risk to zero
-    _updateCollateralRisk(spoke1, _wethReserveId(spoke1), 0, SPOKE_ADMIN);
+    _updateCollateralRisk(spoke1, _wethReserveId(spoke1), 0);
 
     // Accrue interest and ensure it's less than 1 share and pay it off
     uint256 daiSupplyAmount = 1000e18;
@@ -278,7 +278,7 @@ contract SpokeRepayEdgeCaseTest is Base {
   // repay less than 1 share of drawn debt, but nonzero premium debt
   function test_repay_zero_shares_nonzero_premium_debt() public {
     // update collateral risk of weth to 20%
-    _updateCollateralRisk(spoke1, _wethReserveId(spoke1), 20_00, SPOKE_ADMIN);
+    _updateCollateralRisk(spoke1, _wethReserveId(spoke1), 20_00);
 
     // Accrue interest and ensure it's less than 1 share and pay it off
     uint256 daiSupplyAmount = 100e18;
@@ -472,7 +472,7 @@ contract SpokeRepayEdgeCaseTest is Base {
   /// repay all accrued drawn debt interest when premium debt is zero
   function test_repay_only_base_debt_no_premium() public {
     // update collateral risk to zero
-    _updateCollateralRisk(spoke1, _wethReserveId(spoke1), 0, SPOKE_ADMIN);
+    _updateCollateralRisk(spoke1, _wethReserveId(spoke1), 0);
 
     uint256 daiSupplyAmount = 100e18;
     uint256 wethSupplyAmount = 10e18;

@@ -406,8 +406,8 @@ contract HubConfigTest is Base {
     assertEq(hub1.getAsset(assetId).reinvestmentController, address(0));
 
     address reinvestmentController = makeAddr('reinvestmentController');
-    _updateAssetReinvestmentController(hub1, assetId, reinvestmentController, HUB_ADMIN);
-    _addLiquidity(hub1, assetId, 1000e18, ADMIN, MAX_ALLOWED_COLLATERAL_RISK);
+    _updateAssetReinvestmentController(hub1, assetId, reinvestmentController);
+    _addLiquidity(hub1, assetId, 1000e18);
     vm.prank(reinvestmentController);
     hub1.sweep(assetId, 100e18);
 
@@ -587,8 +587,8 @@ contract HubConfigTest is Base {
     assetId = bound(assetId, 0, hub1.getAssetCount() - 1);
 
     uint256 amount = 1000e18;
-    _addLiquidity(hub1, assetId, amount, ADMIN, MAX_ALLOWED_COLLATERAL_RISK);
-    _drawLiquidity(hub1, assetId, amount, true, HUB_ADMIN, MAX_ALLOWED_COLLATERAL_RISK);
+    _addLiquidity(hub1, assetId, amount);
+    _drawLiquidity(hub1, assetId, amount, true);
 
     skip(365 days);
 
@@ -658,11 +658,11 @@ contract HubConfigTest is Base {
     uint256 assetId = daiAssetId;
 
     uint256 amount = 1000e18;
-    _addLiquidity(hub1, assetId, amount, ADMIN, MAX_ALLOWED_COLLATERAL_RISK);
-    _drawLiquidity(hub1, assetId, amount, true, HUB_ADMIN, MAX_ALLOWED_COLLATERAL_RISK);
+    _addLiquidity(hub1, assetId, amount);
+    _drawLiquidity(hub1, assetId, amount, true);
     skip(365 days);
 
-    _updateSpokeActive(hub1, assetId, _getFeeReceiver(hub1, assetId), false, HUB_ADMIN);
+    _updateSpokeActive(hub1, assetId, _getFeeReceiver(hub1, assetId), false);
     IHub.AssetConfig memory config = hub1.getAssetConfig(assetId);
     config.feeReceiver = makeAddr('newFeeReceiver');
 
@@ -675,13 +675,13 @@ contract HubConfigTest is Base {
     uint256 assetId = daiAssetId;
 
     uint256 amount = 1000e18;
-    _addLiquidity(hub1, assetId, amount, ADMIN, MAX_ALLOWED_COLLATERAL_RISK);
-    _drawLiquidity(hub1, assetId, amount, true, HUB_ADMIN, MAX_ALLOWED_COLLATERAL_RISK);
+    _addLiquidity(hub1, assetId, amount);
+    _drawLiquidity(hub1, assetId, amount, true);
     skip(365 days);
 
     HubActions.mintFeeShares(hub1, assetId, ADMIN);
 
-    _updateSpokeActive(hub1, assetId, _getFeeReceiver(hub1, assetId), false, HUB_ADMIN);
+    _updateSpokeActive(hub1, assetId, _getFeeReceiver(hub1, assetId), false);
     IHub.AssetConfig memory config = hub1.getAssetConfig(assetId);
     config.feeReceiver = makeAddr('newFeeReceiver');
 
@@ -749,8 +749,8 @@ contract HubConfigTest is Base {
     liquidityFee = bound(liquidityFee, 1, PercentageMath.PERCENTAGE_FACTOR).toUint16();
 
     uint256 amount = 1000e18;
-    _addLiquidity(hub1, assetId, amount, ADMIN, MAX_ALLOWED_COLLATERAL_RISK);
-    _drawLiquidity(hub1, assetId, amount, true, HUB_ADMIN, MAX_ALLOWED_COLLATERAL_RISK);
+    _addLiquidity(hub1, assetId, amount);
+    _drawLiquidity(hub1, assetId, amount, true);
 
     IHub.AssetConfig memory config = hub1.getAssetConfig(assetId);
     uint256 expectedFeeReceiverAddedAssets = _getExpectedFeeReceiverAddedAssets(hub1, assetId);
@@ -776,8 +776,8 @@ contract HubConfigTest is Base {
     test_updateAssetConfig_fuzz(assetId, config);
 
     uint256 amount = 1000e18;
-    _addLiquidity(hub1, assetId, amount, ADMIN, MAX_ALLOWED_COLLATERAL_RISK);
-    _drawLiquidity(hub1, assetId, amount, true, HUB_ADMIN, MAX_ALLOWED_COLLATERAL_RISK);
+    _addLiquidity(hub1, assetId, amount);
+    _drawLiquidity(hub1, assetId, amount, true);
 
     config.liquidityFee = liquidityFee;
     config.feeReceiver = makeAddr('feeReceiver');
@@ -793,8 +793,8 @@ contract HubConfigTest is Base {
     assetId = bound(assetId, 0, hub1.getAssetCount() - 1);
 
     uint256 amount = 1000e18;
-    _addLiquidity(hub1, assetId, amount, ADMIN, MAX_ALLOWED_COLLATERAL_RISK);
-    _drawLiquidity(hub1, assetId, amount, true, HUB_ADMIN, MAX_ALLOWED_COLLATERAL_RISK);
+    _addLiquidity(hub1, assetId, amount);
+    _drawLiquidity(hub1, assetId, amount, true);
 
     uint256 expectedFeeReceiverAddedAssets = _getExpectedFeeReceiverAddedAssets(hub1, assetId);
     assertTrue(expectedFeeReceiverAddedAssets > 0, 'no fees');

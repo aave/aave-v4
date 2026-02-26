@@ -11,7 +11,7 @@ contract SpokeWithdrawValidationTest is Base {
     uint256 daiReserveId = _daiReserveId(spoke1);
     uint256 amount = 100e18;
 
-    _updateReservePausedFlag(spoke1, daiReserveId, true, SPOKE_ADMIN);
+    _updateReservePausedFlag(spoke1, daiReserveId, true);
     assertTrue(spoke1.getReserve(daiReserveId).flags.paused());
 
     vm.expectRevert(ISpoke.ReservePaused.selector);

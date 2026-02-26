@@ -112,7 +112,7 @@ contract SpokeAccrueLiquidityFeeTest is Base {
     );
 
     // now only drawn debt grows
-    _updateCollateralRisk(spoke1, reserveId, 0, SPOKE_ADMIN);
+    _updateCollateralRisk(spoke1, reserveId, 0);
     vm.prank(bob);
     spoke1.updateUserRiskPremium(bob);
 
@@ -156,7 +156,7 @@ contract SpokeAccrueLiquidityFeeTest is Base {
     );
 
     // now no liquidity fee, so no fees
-    _updateLiquidityFee(hub1, assetId, 0, HUB_ADMIN);
+    _updateLiquidityFee(hub1, assetId, 0);
 
     // withdraw any treasury fees
     _withdrawLiquidityFees(hub1, assetId, UINT256_MAX, treasurySpoke, ADMIN, TREASURY_ADMIN);
@@ -192,9 +192,9 @@ contract SpokeAccrueLiquidityFeeTest is Base {
     uint256 assetId = spoke1.getReserve(reserveId).assetId;
 
     uint24 expectedRp = 10_00;
-    _updateCollateralRisk(spoke1, reserveId, expectedRp, SPOKE_ADMIN);
+    _updateCollateralRisk(spoke1, reserveId, expectedRp);
     uint256 liquidityFee = 5_00;
-    _updateLiquidityFee(hub1, assetId, liquidityFee, HUB_ADMIN);
+    _updateLiquidityFee(hub1, assetId, liquidityFee);
 
     uint256 borrowAmount = 1000e18;
     uint256 supplyAmount = _calcMinimumCollAmount(spoke1, reserveId, reserveId, borrowAmount);
@@ -227,7 +227,7 @@ contract SpokeAccrueLiquidityFeeTest is Base {
 
     // 0% premium
     expectedRp = 0;
-    _updateCollateralRisk(spoke1, reserveId, expectedRp, SPOKE_ADMIN);
+    _updateCollateralRisk(spoke1, reserveId, expectedRp);
 
     vm.prank(alice);
     spoke1.updateUserRiskPremium(alice);
@@ -261,7 +261,7 @@ contract SpokeAccrueLiquidityFeeTest is Base {
 
     // 0.00% liquidity fee
     liquidityFee = 0;
-    _updateLiquidityFee(hub1, assetId, liquidityFee, HUB_ADMIN);
+    _updateLiquidityFee(hub1, assetId, liquidityFee);
 
     vm.recordLogs();
     // Bob supplies 1 share to trigger interest accrual with new liquidity fee
@@ -303,9 +303,9 @@ contract SpokeAccrueLiquidityFeeTest is Base {
     uint256 assetId = spoke1.getReserve(reserveId).assetId;
 
     uint24 expectedRp = 10_00;
-    _updateCollateralRisk(spoke1, reserveId, expectedRp, SPOKE_ADMIN);
+    _updateCollateralRisk(spoke1, reserveId, expectedRp);
     uint256 liquidityFee = 5_00;
-    _updateLiquidityFee(hub1, assetId, liquidityFee, HUB_ADMIN);
+    _updateLiquidityFee(hub1, assetId, liquidityFee);
 
     uint256 borrowAmount = 1000e18;
     uint256 supplyAmount = _calcMinimumCollAmount(spoke1, reserveId, reserveId, borrowAmount);
@@ -342,7 +342,7 @@ contract SpokeAccrueLiquidityFeeTest is Base {
 
     // 0% premium
     expectedRp = 0;
-    _updateCollateralRisk(spoke1, reserveId, expectedRp, SPOKE_ADMIN);
+    _updateCollateralRisk(spoke1, reserveId, expectedRp);
 
     vm.prank(alice);
     spoke1.updateUserRiskPremium(alice);
@@ -377,7 +377,7 @@ contract SpokeAccrueLiquidityFeeTest is Base {
 
     // 0.00% liquidity fee
     liquidityFee = 0;
-    _updateLiquidityFee(hub1, assetId, liquidityFee, HUB_ADMIN);
+    _updateLiquidityFee(hub1, assetId, liquidityFee);
 
     vm.recordLogs();
     // Bob supplies 1 share to trigger interest accrual with new liquidity fee
@@ -420,12 +420,12 @@ contract SpokeAccrueLiquidityFeeTest is Base {
     uint256 assetId = spoke1.getReserve(reserveId).assetId;
 
     uint24 expectedRp = 10_00;
-    _updateCollateralRisk(spoke1, reserveId, expectedRp, SPOKE_ADMIN);
+    _updateCollateralRisk(spoke1, reserveId, expectedRp);
     // 50.00% premium for second collateral asset
-    _updateCollateralRisk(spoke1, reserveId2, 50_00, SPOKE_ADMIN);
+    _updateCollateralRisk(spoke1, reserveId2, 50_00);
     uint256 liquidityFee = 5_00;
-    _updateLiquidityFee(hub1, assetId, liquidityFee, HUB_ADMIN);
-    _updateLiquidityFee(hub1, spoke1.getReserve(reserveId2).assetId, liquidityFee, HUB_ADMIN);
+    _updateLiquidityFee(hub1, assetId, liquidityFee);
+    _updateLiquidityFee(hub1, spoke1.getReserve(reserveId2).assetId, liquidityFee);
 
     uint256 borrowAmount = 1000e18;
     // supply way more than needed to cover borrow amount
@@ -493,7 +493,7 @@ contract SpokeAccrueLiquidityFeeTest is Base {
     uint256 assetId = spoke1.getReserve(reserveId).assetId;
 
     uint256 liquidityFee = 100_00;
-    _updateLiquidityFee(hub1, assetId, liquidityFee, HUB_ADMIN);
+    _updateLiquidityFee(hub1, assetId, liquidityFee);
 
     uint256 borrowAmount = 1000e18;
     uint256 supplyAmount = _calcMinimumCollAmount(spoke1, reserveId, reserveId, borrowAmount);

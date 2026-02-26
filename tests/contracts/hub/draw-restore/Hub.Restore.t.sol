@@ -73,7 +73,7 @@ contract HubRestoreTest is Base {
 
   function test_restore_revertsWith_SurplusPremiumRayRestored() public {
     uint256 drawAmount = 100e18;
-    _addLiquidity(hub1, daiAssetId, drawAmount, ADMIN, MAX_ALLOWED_COLLATERAL_RISK);
+    _addLiquidity(hub1, daiAssetId, drawAmount);
     _drawLiquidity(hub1, daiAssetId, drawAmount, true, true, address(spoke1));
 
     (uint256 drawn, uint256 premium) = hub1.getSpokeOwed(daiAssetId, address(spoke1));
@@ -135,7 +135,7 @@ contract HubRestoreTest is Base {
   }
 
   function test_restore_revertsWith_SpokeHalted() public {
-    _updateSpokeHalted(hub1, daiAssetId, address(spoke1), true, HUB_ADMIN);
+    _updateSpokeHalted(hub1, daiAssetId, address(spoke1), true);
 
     IHubBase.PremiumDelta memory premiumDelta = _getExpectedPremiumDelta(
       spoke1,

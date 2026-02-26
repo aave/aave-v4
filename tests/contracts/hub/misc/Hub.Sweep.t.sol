@@ -21,7 +21,7 @@ contract HubSweepTest is Base {
 
   function test_sweep_revertsWith_OnlyReinvestmentController(address caller) public {
     vm.assume(caller != reinvestmentController);
-    _updateAssetReinvestmentController(hub1, daiAssetId, reinvestmentController, HUB_ADMIN);
+    _updateAssetReinvestmentController(hub1, daiAssetId, reinvestmentController);
 
     vm.expectRevert(IHub.OnlyReinvestmentController.selector);
     vm.prank(caller);
@@ -30,7 +30,7 @@ contract HubSweepTest is Base {
 
   function test_sweep_revertsWith_InvalidAmount() public {
     assertEq(hub1.getAsset(daiAssetId).swept, 0);
-    _updateAssetReinvestmentController(hub1, daiAssetId, reinvestmentController, HUB_ADMIN);
+    _updateAssetReinvestmentController(hub1, daiAssetId, reinvestmentController);
 
     vm.prank(reinvestmentController);
     vm.expectRevert(IHub.InvalidAmount.selector);
@@ -45,9 +45,9 @@ contract HubSweepTest is Base {
     supplyAmount = bound(supplyAmount, 1, MAX_SUPPLY_AMOUNT);
     sweepAmount = bound(sweepAmount, 1, supplyAmount);
 
-    _updateAssetReinvestmentController(hub1, daiAssetId, reinvestmentController, HUB_ADMIN);
+    _updateAssetReinvestmentController(hub1, daiAssetId, reinvestmentController);
 
-    _addLiquidity(hub1, daiAssetId, supplyAmount, ADMIN, MAX_ALLOWED_COLLATERAL_RISK);
+    _addLiquidity(hub1, daiAssetId, supplyAmount);
 
     uint256 assetLiquidity = hub1.getAssetLiquidity(daiAssetId);
 
@@ -68,7 +68,7 @@ contract HubSweepTest is Base {
 
   ///@dev swept amount is not withdrawable
   function test_sweep_revertsWith_InsufficientLiquidity() public {
-    _updateAssetReinvestmentController(hub1, daiAssetId, reinvestmentController, HUB_ADMIN);
+    _updateAssetReinvestmentController(hub1, daiAssetId, reinvestmentController);
 
     uint256 initialLiquidity = vm.randomUint(2, MAX_SUPPLY_AMOUNT);
     uint256 swept = vm.randomUint(1, initialLiquidity);
@@ -91,18 +91,10 @@ contract HubSweepTest is Base {
   function test_sweep_does_not_impact_utilization(uint256 supplyAmount, uint256 drawAmount) public {
     supplyAmount = bound(supplyAmount, 2, MAX_SUPPLY_AMOUNT);
     drawAmount = bound(drawAmount, 1, supplyAmount - 1);
-    _updateAssetReinvestmentController(hub1, daiAssetId, reinvestmentController, HUB_ADMIN);
+    _updateAssetReinvestmentController(hub1, daiAssetId, reinvestmentController);
 
-    _addLiquidity(hub1, daiAssetId, supplyAmount, ADMIN, MAX_ALLOWED_COLLATERAL_RISK);
-    _drawLiquidityViaTempSpoke(
-      hub1,
-      daiAssetId,
-      drawAmount,
-      false,
-      false,
-      HUB_ADMIN,
-      MAX_ALLOWED_COLLATERAL_RISK
-    );
+    _addLiquidity(hub1, daiAssetId, supplyAmount);
+    _drawLiquidityViaTempSpoke(hub1, daiAssetId, drawAmount, false, false);
     uint256 swept = vm.randomUint(1, supplyAmount - drawAmount);
 
     uint256 drawnRate = hub1.getAssetDrawnRate(daiAssetId);

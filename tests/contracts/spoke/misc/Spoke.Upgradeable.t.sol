@@ -89,7 +89,7 @@ contract SpokeUpgradeableTest is Base {
 
     setUpRoles(hub1, ISpoke(address(spokeProxy)), accessManager);
     uint128 targetHealthFactor = 1.05e18;
-    _updateTargetHealthFactor(ISpoke(address(spokeProxy)), targetHealthFactor, SPOKE_ADMIN);
+    _updateTargetHealthFactor(ISpoke(address(spokeProxy)), targetHealthFactor);
 
     uint64 secondRevision = uint64(vm.randomUint(initialRevision + 1, type(uint64).max));
     ISpokeInstance spokeImpl2 = _deployMockSpokeInstance(secondRevision);

@@ -21,7 +21,7 @@ contract SpokeSupplyTest is Base {
     uint256 daiReserveId = _daiReserveId(spoke1);
     uint256 amount = 100e18;
 
-    _updateReservePausedFlag(spoke1, daiReserveId, true, SPOKE_ADMIN);
+    _updateReservePausedFlag(spoke1, daiReserveId, true);
     assertTrue(spoke1.getReserve(daiReserveId).flags.paused());
 
     vm.expectRevert(ISpoke.ReservePaused.selector);
@@ -33,7 +33,7 @@ contract SpokeSupplyTest is Base {
     uint256 daiReserveId = _daiReserveId(spoke1);
     uint256 amount = 100e18;
 
-    _updateReserveFrozenFlag(spoke1, daiReserveId, true, SPOKE_ADMIN);
+    _updateReserveFrozenFlag(spoke1, daiReserveId, true);
     assertTrue(spoke1.getReserve(daiReserveId).flags.frozen());
 
     vm.expectRevert(ISpoke.ReserveFrozen.selector);
@@ -257,12 +257,7 @@ contract SpokeSupplyTest is Base {
 
   function test_supply_index_increase_no_premium() public {
     // set weth collateral risk to 0 for no premium contribution
-    _updateCollateralRisk({
-      spoke: spoke1,
-      reserveId: _wethReserveId(spoke1),
-      newCollateralRisk: 0,
-      spokeAdmin: SPOKE_ADMIN
-    });
+    _updateCollateralRisk({spoke: spoke1, reserveId: _wethReserveId(spoke1), newCollateralRisk: 0});
 
     // increase index on reserveId (uses weth as collateral)
     _increaseReserveIndex(spoke1, _daiReserveId(spoke1), _wethReserveId(spoke1), alice, bob);
@@ -362,12 +357,7 @@ contract SpokeSupplyTest is Base {
     );
 
     // set weth collateral risk to 0 for no premium contribution
-    _updateCollateralRisk({
-      spoke: spoke1,
-      reserveId: _wethReserveId(spoke1),
-      newCollateralRisk: 0,
-      spokeAdmin: SPOKE_ADMIN
-    });
+    _updateCollateralRisk({spoke: spoke1, reserveId: _wethReserveId(spoke1), newCollateralRisk: 0});
 
     // increase index on reserveId
     _executeSpokeSupplyAndBorrow({

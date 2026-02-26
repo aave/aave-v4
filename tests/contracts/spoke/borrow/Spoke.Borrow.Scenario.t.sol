@@ -613,7 +613,7 @@ contract SpokeBorrowScenarioTest is Base {
     uint256 debtReserveId = _usdxReserveId(spoke1);
     uint256 debtBorrowAmount = 500e6;
 
-    _updateCollateralFactor(spoke1, coll1ReserveId, 0, SPOKE_ADMIN);
+    _updateCollateralFactor(spoke1, coll1ReserveId, 0);
     assertEq(_getCollateralFactor(spoke1, coll1ReserveId), 0); // initially
     assertNotEq(_getCollateralFactor(spoke1, coll2ReserveId), 0);
 

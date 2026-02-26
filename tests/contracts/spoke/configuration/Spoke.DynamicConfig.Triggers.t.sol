@@ -21,7 +21,7 @@ contract SpokeDynamicConfigTriggersTest is Base {
       .toUint16();
 
     SpokeActions.supplyCollateral(spoke1, collateralReserveId, alice, supplyAmount, alice);
-    _updateCollateralFactor(spoke1, collateralReserveId, collateralFactor, SPOKE_ADMIN);
+    _updateCollateralFactor(spoke1, collateralReserveId, collateralFactor);
 
     assertEq(_getUserDynConfigKeys(spoke1, alice), configs);
 
@@ -39,8 +39,7 @@ contract SpokeDynamicConfigTriggersTest is Base {
     _updateCollateralFactor(
       spoke1,
       collateralReserveId,
-      vm.randomUint(0, _collateralFactorUpperBound(maxLiquidationBonus)).toUint16(),
-      SPOKE_ADMIN
+      vm.randomUint(0, _collateralFactorUpperBound(maxLiquidationBonus)).toUint16()
     );
 
     assertEq(_getUserDynConfigKeys(spoke1, alice), configs);
@@ -60,7 +59,7 @@ contract SpokeDynamicConfigTriggersTest is Base {
     SpokeActions.borrow(spoke1, _daiReserveId(spoke1), alice, 500e18, alice);
 
     configs = _getUserDynConfigKeys(spoke1, alice);
-    _updateCollateralFactor(spoke1, _usdxReserveId(spoke1), 90_10, SPOKE_ADMIN);
+    _updateCollateralFactor(spoke1, _usdxReserveId(spoke1), 90_10);
     skip(322 days);
     SpokeActions.repay(spoke1, _daiReserveId(spoke1), alice, UINT256_MAX, alice);
 
@@ -80,11 +79,11 @@ contract SpokeDynamicConfigTriggersTest is Base {
     skip(322 days);
 
     // usdx (user coll) is offboarded
-    _updateCollateralFactor(spoke1, _usdxReserveId(spoke1), 0, SPOKE_ADMIN);
+    _updateCollateralFactor(spoke1, _usdxReserveId(spoke1), 0);
     // position is still healthy
     assertGe(_getUserHealthFactor(spoke1, alice), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
 
-    _mockReservePrice(spoke1, _usdxReserveId(spoke1), 0.5e8, SPOKE_ADMIN); // make position partially liquidatable
+    _mockReservePrice(spoke1, _usdxReserveId(spoke1), 0.5e8); // make position partially liquidatable
     assertLe(_getUserHealthFactor(spoke1, alice), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
 
     vm.prank(bob);
@@ -96,7 +95,7 @@ contract SpokeDynamicConfigTriggersTest is Base {
 
     skip(123 days);
 
-    _updateCollateralFactor(spoke1, _usdxReserveId(spoke1), 80_00, SPOKE_ADMIN);
+    _updateCollateralFactor(spoke1, _usdxReserveId(spoke1), 80_00);
 
     vm.prank(bob);
     spoke1.liquidationCall(
@@ -121,7 +120,7 @@ contract SpokeDynamicConfigTriggersTest is Base {
     configs = _getUserDynConfigKeys(spoke1, alice);
     skip(322 days);
 
-    _updateCollateralFactor(spoke1, _usdxReserveId(spoke1), 0, SPOKE_ADMIN);
+    _updateCollateralFactor(spoke1, _usdxReserveId(spoke1), 0);
     vm.expectRevert(ISpoke.HealthFactorBelowThreshold.selector);
     vm.prank(alice);
     spoke1.borrow(_daiReserveId(spoke1), 100e18, alice);
@@ -132,8 +131,7 @@ contract SpokeDynamicConfigTriggersTest is Base {
     _updateCollateralFactor(
       spoke1,
       _usdxReserveId(spoke1),
-      vm.randomUint(0, _collateralFactorUpperBound(maxLiquidationBonus)).toUint16(),
-      SPOKE_ADMIN
+      vm.randomUint(0, _collateralFactorUpperBound(maxLiquidationBonus)).toUint16()
     );
     configs = _getUserDynConfigKeys(spoke1, alice);
     SpokeActions.supplyCollateral(spoke1, _wethReserveId(spoke1), alice, 1e18, alice);
@@ -155,7 +153,7 @@ contract SpokeDynamicConfigTriggersTest is Base {
     configs = _getUserDynConfigKeys(spoke1, alice);
     skip(322 days);
 
-    _updateCollateralFactor(spoke1, _usdxReserveId(spoke1), 0, SPOKE_ADMIN);
+    _updateCollateralFactor(spoke1, _usdxReserveId(spoke1), 0);
     vm.expectRevert(ISpoke.HealthFactorBelowThreshold.selector);
     vm.prank(alice);
     spoke1.withdraw(_usdxReserveId(spoke1), 500e6, alice);
@@ -163,8 +161,7 @@ contract SpokeDynamicConfigTriggersTest is Base {
     _updateCollateralFactor(
       spoke1,
       _usdxReserveId(spoke1),
-      _randomCollateralFactor(spoke1, _usdxReserveId(spoke1)),
-      SPOKE_ADMIN
+      _randomCollateralFactor(spoke1, _usdxReserveId(spoke1))
     );
     configs = _getUserDynConfigKeys(spoke1, alice);
     SpokeActions.supplyCollateral(spoke1, _wethReserveId(spoke1), alice, 1e18, alice);
@@ -186,18 +183,13 @@ contract SpokeDynamicConfigTriggersTest is Base {
     configs = _getUserDynConfigKeys(spoke1, alice);
     skip(322 days);
 
-    _updateCollateralFactor(spoke1, _usdxReserveId(spoke1), 0, SPOKE_ADMIN);
+    _updateCollateralFactor(spoke1, _usdxReserveId(spoke1), 0);
     vm.expectRevert(ISpoke.HealthFactorBelowThreshold.selector);
     vm.prank(alice);
     spoke1.setUsingAsCollateral(_usdxReserveId(spoke1), false, alice);
 
     uint256 reserveId = _usdxReserveId(spoke1);
-    _updateCollateralFactor(
-      spoke1,
-      reserveId,
-      _randomCollateralFactor(spoke1, reserveId),
-      SPOKE_ADMIN
-    );
+    _updateCollateralFactor(spoke1, reserveId, _randomCollateralFactor(spoke1, reserveId));
     configs = _getUserDynConfigKeys(spoke1, alice);
     SpokeActions.supply(spoke1, _wethReserveId(spoke1), alice, 1e18, alice);
 
@@ -227,8 +219,8 @@ contract SpokeDynamicConfigTriggersTest is Base {
     SpokeActions.supplyCollateral(spoke1, _usdxReserveId(spoke1), alice, 1000e6, alice);
     SpokeActions.supplyCollateral(spoke1, _wethReserveId(spoke1), alice, 1e18, alice);
 
-    _updateCollateralFactor(spoke1, _usdxReserveId(spoke1), 95_00, SPOKE_ADMIN);
-    _updateCollateralFactor(spoke1, _wethReserveId(spoke1), 90_00, SPOKE_ADMIN);
+    _updateCollateralFactor(spoke1, _usdxReserveId(spoke1), 95_00);
+    _updateCollateralFactor(spoke1, _wethReserveId(spoke1), 90_00);
     DynamicConfigEntry[] memory configs = _getUserDynConfigKeys(spoke1, alice);
 
     // no action yet, so user config should not change
@@ -258,8 +250,8 @@ contract SpokeDynamicConfigTriggersTest is Base {
     SpokeActions.supplyCollateral(spoke1, _usdxReserveId(spoke1), alice, 1000e6, alice);
     SpokeActions.supplyCollateral(spoke1, _wethReserveId(spoke1), alice, 1e18, alice);
 
-    _updateCollateralFactor(spoke1, _usdxReserveId(spoke1), 95_00, SPOKE_ADMIN);
-    _updateCollateralFactor(spoke1, _wethReserveId(spoke1), 90_00, SPOKE_ADMIN);
+    _updateCollateralFactor(spoke1, _usdxReserveId(spoke1), 95_00);
+    _updateCollateralFactor(spoke1, _wethReserveId(spoke1), 90_00);
     DynamicConfigEntry[] memory configs = _getUserDynConfigKeys(spoke1, alice);
 
     // no action yet, so user config should not change
@@ -312,8 +304,8 @@ contract SpokeDynamicConfigTriggersTest is Base {
     skip(365 days);
 
     // Change some dynamic config
-    _updateCollateralFactor(spoke1, _usdxReserveId(spoke1), 95_00, SPOKE_ADMIN);
-    _updateCollateralFactor(spoke1, _wethReserveId(spoke1), 90_00, SPOKE_ADMIN);
+    _updateCollateralFactor(spoke1, _usdxReserveId(spoke1), 95_00);
+    _updateCollateralFactor(spoke1, _wethReserveId(spoke1), 90_00);
 
     // Alice updates her dynamic config
     DynamicConfigEntry[] memory configs = _getUserDynConfigKeys(spoke1, alice);
@@ -331,7 +323,7 @@ contract SpokeDynamicConfigTriggersTest is Base {
     SpokeActions.borrow(spoke1, _daiReserveId(spoke1), alice, 500e18, alice);
 
     // Change CF such that alice's position is undercollateralized
-    _updateCollateralFactor(spoke1, _usdxReserveId(spoke1), 1, SPOKE_ADMIN);
+    _updateCollateralFactor(spoke1, _usdxReserveId(spoke1), 1);
 
     // Alice cannot update her dynamic config due to HF check
     vm.expectRevert(ISpoke.HealthFactorBelowThreshold.selector);

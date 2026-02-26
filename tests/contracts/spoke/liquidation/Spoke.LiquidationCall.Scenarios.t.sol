@@ -17,27 +17,27 @@ contract SpokeLiquidationCallScenariosTest is SpokeLiquidationCallBaseTest {
 
     spoke = spoke1;
 
-    _updateTargetHealthFactor(spoke, 1.05e18, SPOKE_ADMIN);
+    _updateTargetHealthFactor(spoke, 1.05e18);
 
-    _updateCollateralFactor(spoke, _wethReserveId(spoke), 80_00, SPOKE_ADMIN);
-    _updateCollateralFactor(spoke, _wbtcReserveId(spoke), 70_00, SPOKE_ADMIN);
-    _updateCollateralFactor(spoke, _usdxReserveId(spoke), 72_00, SPOKE_ADMIN);
-    _updateCollateralFactor(spoke, _daiReserveId(spoke), 75_00, SPOKE_ADMIN);
+    _updateCollateralFactor(spoke, _wethReserveId(spoke), 80_00);
+    _updateCollateralFactor(spoke, _wbtcReserveId(spoke), 70_00);
+    _updateCollateralFactor(spoke, _usdxReserveId(spoke), 72_00);
+    _updateCollateralFactor(spoke, _daiReserveId(spoke), 75_00);
 
-    _updateCollateralRisk(spoke, _wethReserveId(spoke), 5_00, SPOKE_ADMIN);
-    _updateCollateralRisk(spoke, _wbtcReserveId(spoke), 15_00, SPOKE_ADMIN);
-    _updateCollateralRisk(spoke, _usdxReserveId(spoke), 10_00, SPOKE_ADMIN);
-    _updateCollateralRisk(spoke, _daiReserveId(spoke), 12_00, SPOKE_ADMIN);
+    _updateCollateralRisk(spoke, _wethReserveId(spoke), 5_00);
+    _updateCollateralRisk(spoke, _wbtcReserveId(spoke), 15_00);
+    _updateCollateralRisk(spoke, _usdxReserveId(spoke), 10_00);
+    _updateCollateralRisk(spoke, _daiReserveId(spoke), 12_00);
 
-    _updateMaxLiquidationBonus(spoke, _wethReserveId(spoke), 105_00, SPOKE_ADMIN);
-    _updateMaxLiquidationBonus(spoke, _wbtcReserveId(spoke), 103_00, SPOKE_ADMIN);
-    _updateMaxLiquidationBonus(spoke, _usdxReserveId(spoke), 101_00, SPOKE_ADMIN);
-    _updateMaxLiquidationBonus(spoke, _daiReserveId(spoke), 106_00, SPOKE_ADMIN);
+    _updateMaxLiquidationBonus(spoke, _wethReserveId(spoke), 105_00);
+    _updateMaxLiquidationBonus(spoke, _wbtcReserveId(spoke), 103_00);
+    _updateMaxLiquidationBonus(spoke, _usdxReserveId(spoke), 101_00);
+    _updateMaxLiquidationBonus(spoke, _daiReserveId(spoke), 106_00);
 
-    _updateLiquidationFee(spoke, _wethReserveId(spoke), 10_00, SPOKE_ADMIN);
-    _updateLiquidationFee(spoke, _wbtcReserveId(spoke), 15_00, SPOKE_ADMIN);
-    _updateLiquidationFee(spoke, _usdxReserveId(spoke), 12_00, SPOKE_ADMIN);
-    _updateLiquidationFee(spoke, _daiReserveId(spoke), 10_00, SPOKE_ADMIN);
+    _updateLiquidationFee(spoke, _wethReserveId(spoke), 10_00);
+    _updateLiquidationFee(spoke, _wbtcReserveId(spoke), 15_00);
+    _updateLiquidationFee(spoke, _usdxReserveId(spoke), 12_00);
+    _updateLiquidationFee(spoke, _daiReserveId(spoke), 10_00);
 
     _updateLiquidationConfig(
       spoke,
@@ -45,8 +45,7 @@ contract SpokeLiquidationCallScenariosTest is SpokeLiquidationCallBaseTest {
         targetHealthFactor: _getTargetHealthFactor(spoke),
         healthFactorForMaxBonus: 0.99e18,
         liquidationBonusFactor: 100_00
-      }),
-      SPOKE_ADMIN
+      })
     );
 
     for (uint256 reserveId = 0; reserveId < spoke.getReserveCount(); reserveId++) {
@@ -146,7 +145,7 @@ contract SpokeLiquidationCallScenariosTest is SpokeLiquidationCallBaseTest {
   // key is not refreshed during liquidations.
   function test_liquidationCall_scenario1() public {
     // A high liquidation bonus will be applied
-    _updateMaxLiquidationBonus(spoke, _wethReserveId(spoke), 124_00, SPOKE_ADMIN);
+    _updateMaxLiquidationBonus(spoke, _wethReserveId(spoke), 124_00);
 
     // Borrow rates:
     //   - DAI: 3%
@@ -173,7 +172,7 @@ contract SpokeLiquidationCallScenariosTest is SpokeLiquidationCallBaseTest {
 
     // Update weth collateral factor to 70%.
     // This will have no effect on the user since liquidation is not refreshing user's dynamic config key.
-    _updateCollateralFactor(spoke, _wethReserveId(spoke), 70_00, SPOKE_ADMIN);
+    _updateCollateralFactor(spoke, _wethReserveId(spoke), 70_00);
 
     ISpoke.UserAccountData memory userAccountData = spoke.getUserAccountData(user);
 
@@ -247,8 +246,8 @@ contract SpokeLiquidationCallScenariosTest is SpokeLiquidationCallBaseTest {
 
   // User is solvent, but health factor decreases after liquidation due to high collateral factor.
   function test_liquidationCall_scenario2() public {
-    _updateMaxLiquidationBonus(spoke, _wethReserveId(spoke), 103_00, SPOKE_ADMIN);
-    _updateCollateralFactor(spoke, _wethReserveId(spoke), 97_00, SPOKE_ADMIN);
+    _updateMaxLiquidationBonus(spoke, _wethReserveId(spoke), 103_00);
+    _updateCollateralFactor(spoke, _wethReserveId(spoke), 97_00);
 
     // Borrow rates:
     //   - DAI: 3%
@@ -346,11 +345,11 @@ contract SpokeLiquidationCallScenariosTest is SpokeLiquidationCallBaseTest {
   // Liquidated collateral is between 0 and 1 wei. It is rounded down and hub.remove is skipped to avoid reverting.
   function test_liquidationCall_scenario3() public {
     // Liquidation bonus: 0
-    _updateMaxLiquidationBonus(spoke, _wethReserveId(spoke), 100_00, SPOKE_ADMIN);
+    _updateMaxLiquidationBonus(spoke, _wethReserveId(spoke), 100_00);
 
     // The collateral has a price 100 times higher than the debt
-    _mockReservePrice(spoke, _wethReserveId(spoke), 100e8, SPOKE_ADMIN);
-    _mockReservePrice(spoke, _daiReserveId(spoke), 1e8, SPOKE_ADMIN);
+    _mockReservePrice(spoke, _wethReserveId(spoke), 100e8);
+    _mockReservePrice(spoke, _daiReserveId(spoke), 1e8);
 
     // Collateral: 1 wei of WETH
     _increaseCollateralSupply(spoke, _wethReserveId(spoke), 1, user);
@@ -360,7 +359,7 @@ contract SpokeLiquidationCallScenariosTest is SpokeLiquidationCallBaseTest {
     _increaseReserveDebt(spoke, _daiReserveId(spoke), 79, user);
 
     // Decrease WETH price by 10% to make user unhealthy
-    _mockReservePriceByPercent(spoke, _wethReserveId(spoke), 90_00, SPOKE_ADMIN);
+    _mockReservePriceByPercent(spoke, _wethReserveId(spoke), 90_00);
 
     // User is liquidatable
     ISpoke.UserAccountData memory userAccountData = spoke.getUserAccountData(user);
@@ -425,25 +424,17 @@ contract SpokeLiquidationCallScenariosTest is SpokeLiquidationCallBaseTest {
   // Full debt is liquidated, and amount of collateral liquidated must be computed based on the effective debt liquidated.
   function test_liquidationCall_scenario5() public {
     // Liquidation bonus: 0
-    _updateMaxLiquidationBonus(spoke, _wethReserveId(spoke), 100_00, SPOKE_ADMIN);
+    _updateMaxLiquidationBonus(spoke, _wethReserveId(spoke), 100_00);
 
     // Supply share price: 1.25
-    _mockSupplySharePrice(
-      hub1,
-      wethAssetId,
-      12_500.25e6,
-      10_000e6,
-      address(spoke1),
-      HUB_ADMIN,
-      MAX_ALLOWED_COLLATERAL_RISK
-    );
+    _mockSupplySharePrice(hub1, wethAssetId, 12_500.25e6, 10_000e6, address(spoke1));
 
     // The collateral and debt have the same price
-    _mockReservePrice(spoke, _wethReserveId(spoke), 1e8, SPOKE_ADMIN);
-    _mockReservePrice(spoke, _daiReserveId(spoke), 1e8, SPOKE_ADMIN);
+    _mockReservePrice(spoke, _wethReserveId(spoke), 1e8);
+    _mockReservePrice(spoke, _daiReserveId(spoke), 1e8);
 
     // Update WETH collateral factor to 80%
-    _updateCollateralFactor(spoke, _wethReserveId(spoke), 80_00, SPOKE_ADMIN);
+    _updateCollateralFactor(spoke, _wethReserveId(spoke), 80_00);
 
     // Collateral: 3 wei of USDX -> 2 share = 2.5 USDX
     _increaseCollateralSupply(spoke, _wethReserveId(spoke), 3, user);
@@ -459,7 +450,7 @@ contract SpokeLiquidationCallScenariosTest is SpokeLiquidationCallBaseTest {
     assertEq(hub1.getAssetDrawnIndex(daiAssetId), 1.1e27);
 
     // Increase DAI price by 101%
-    _mockReservePriceByPercent(spoke, _daiReserveId(spoke), 201_00, SPOKE_ADMIN);
+    _mockReservePriceByPercent(spoke, _daiReserveId(spoke), 201_00);
 
     // User is fully liquidatable
     ISpoke.UserAccountData memory userAccountData = spoke.getUserAccountData(user);
@@ -533,20 +524,20 @@ contract SpokeLiquidationCallScenariosTest is SpokeLiquidationCallBaseTest {
   // cannot be represented within the precision of the debt token but can be represented within the precision of the collateral token.
   function test_liquidationCall_scenario6() public {
     // set target health factor to 1
-    _updateTargetHealthFactor(spoke, 1e18, SPOKE_ADMIN);
+    _updateTargetHealthFactor(spoke, 1e18);
 
     // mock prices such that dust is not created
-    _mockReservePrice(spoke, _usdxReserveId(spoke), 1000e14, SPOKE_ADMIN);
-    _mockReservePrice(spoke, _wbtcReserveId(spoke), 500e17, SPOKE_ADMIN);
-    _mockReservePrice(spoke, _usdyReserveId(spoke), 1000e27, SPOKE_ADMIN);
+    _mockReservePrice(spoke, _usdxReserveId(spoke), 1000e14);
+    _mockReservePrice(spoke, _wbtcReserveId(spoke), 500e17);
+    _mockReservePrice(spoke, _usdyReserveId(spoke), 1000e27);
 
     // collateral configs
-    _updateMaxLiquidationBonus(spoke, _usdxReserveId(spoke), 100_00, SPOKE_ADMIN);
-    _updateMaxLiquidationBonus(spoke, _wbtcReserveId(spoke), 100_00, SPOKE_ADMIN);
-    _updateCollateralFactor(spoke, _usdxReserveId(spoke), 70_00, SPOKE_ADMIN);
-    _updateCollateralFactor(spoke, _wbtcReserveId(spoke), 99_00, SPOKE_ADMIN);
-    _updateCollateralRisk(spoke, _usdxReserveId(spoke), 0, SPOKE_ADMIN);
-    _updateCollateralRisk(spoke, _wbtcReserveId(spoke), 0, SPOKE_ADMIN);
+    _updateMaxLiquidationBonus(spoke, _usdxReserveId(spoke), 100_00);
+    _updateMaxLiquidationBonus(spoke, _wbtcReserveId(spoke), 100_00);
+    _updateCollateralFactor(spoke, _usdxReserveId(spoke), 70_00);
+    _updateCollateralFactor(spoke, _wbtcReserveId(spoke), 99_00);
+    _updateCollateralRisk(spoke, _usdxReserveId(spoke), 0);
+    _updateCollateralRisk(spoke, _wbtcReserveId(spoke), 0);
 
     // mock interest rate
     _mockInterestRateBps(address(irStrategy), 50_00);
@@ -624,20 +615,20 @@ contract SpokeLiquidationCallScenariosTest is SpokeLiquidationCallBaseTest {
   // cannot be represented within the precision of the debt token but can be represented within the precision of the collateral token.
   function test_liquidationCall_scenario7() public {
     // set target health factor to 1
-    _updateTargetHealthFactor(spoke, 1e18, SPOKE_ADMIN);
+    _updateTargetHealthFactor(spoke, 1e18);
 
     // mock prices such that dust is not created
-    _mockReservePrice(spoke, _usdxReserveId(spoke), 1000e14, SPOKE_ADMIN);
-    _mockReservePrice(spoke, _wbtcReserveId(spoke), 500e17, SPOKE_ADMIN);
-    _mockReservePrice(spoke, _usdyReserveId(spoke), 1000e27, SPOKE_ADMIN);
+    _mockReservePrice(spoke, _usdxReserveId(spoke), 1000e14);
+    _mockReservePrice(spoke, _wbtcReserveId(spoke), 500e17);
+    _mockReservePrice(spoke, _usdyReserveId(spoke), 1000e27);
 
     // collateral configs
-    _updateMaxLiquidationBonus(spoke, _usdxReserveId(spoke), 100_00, SPOKE_ADMIN);
-    _updateMaxLiquidationBonus(spoke, _wbtcReserveId(spoke), 100_00, SPOKE_ADMIN);
-    _updateCollateralFactor(spoke, _usdxReserveId(spoke), 70_00, SPOKE_ADMIN);
-    _updateCollateralFactor(spoke, _wbtcReserveId(spoke), 99_00, SPOKE_ADMIN);
-    _updateCollateralRisk(spoke, _usdxReserveId(spoke), 50_00, SPOKE_ADMIN);
-    _updateCollateralRisk(spoke, _wbtcReserveId(spoke), 50_00, SPOKE_ADMIN);
+    _updateMaxLiquidationBonus(spoke, _usdxReserveId(spoke), 100_00);
+    _updateMaxLiquidationBonus(spoke, _wbtcReserveId(spoke), 100_00);
+    _updateCollateralFactor(spoke, _usdxReserveId(spoke), 70_00);
+    _updateCollateralFactor(spoke, _wbtcReserveId(spoke), 99_00);
+    _updateCollateralRisk(spoke, _usdxReserveId(spoke), 50_00);
+    _updateCollateralRisk(spoke, _wbtcReserveId(spoke), 50_00);
 
     // set interest rate
     _mockInterestRateBps(address(irStrategy), 60_00);
@@ -733,7 +724,7 @@ contract SpokeLiquidationCallScenariosTest is SpokeLiquidationCallBaseTest {
 
     // set spoke halted
     IHub hub = _hub(spoke, _usdxReserveId(spoke));
-    _updateSpokeHalted(hub, usdxAssetId, address(spoke), true, HUB_ADMIN);
+    _updateSpokeHalted(hub, usdxAssetId, address(spoke), true);
 
     _openSupplyPosition(spoke, collateralReserveId, MAX_SUPPLY_AMOUNT);
 
@@ -760,7 +751,7 @@ contract SpokeLiquidationCallScenariosTest is SpokeLiquidationCallBaseTest {
 
     // set spoke halted
     IHub hub = _hub(spoke, _usdxReserveId(spoke));
-    _updateSpokeHalted(hub, usdxAssetId, address(spoke), true, HUB_ADMIN);
+    _updateSpokeHalted(hub, usdxAssetId, address(spoke), true);
 
     _openSupplyPosition(spoke, collateralReserveId, MAX_SUPPLY_AMOUNT);
 

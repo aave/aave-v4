@@ -106,8 +106,8 @@ contract HubDrawTest is Base {
     assetId = bound(assetId, 0, hub1.getAssetCount() - 3); // Exclude usdy & usdz
     amount = bound(amount, 1, MAX_SUPPLY_AMOUNT / 10);
 
-    _addLiquidity(hub1, assetId, amount * 2, ADMIN, MAX_ALLOWED_COLLATERAL_RISK);
-    _drawLiquidity(hub1, assetId, amount, true, HUB_ADMIN, MAX_ALLOWED_COLLATERAL_RISK);
+    _addLiquidity(hub1, assetId, amount * 2);
+    _drawLiquidity(hub1, assetId, amount, true);
     skip(365 days);
 
     uint256 shares = hub1.previewDrawByAssets(assetId, amount);
@@ -165,14 +165,14 @@ contract HubDrawTest is Base {
   }
 
   function test_draw_revertsWith_SpokeHalted() public {
-    _updateSpokeHalted(hub1, daiAssetId, address(spoke1), true, HUB_ADMIN);
+    _updateSpokeHalted(hub1, daiAssetId, address(spoke1), true);
     vm.expectRevert(IHub.SpokeHalted.selector);
     vm.prank(address(spoke1));
     hub1.draw(daiAssetId, 100e18, alice);
   }
 
   function test_draw_revertsWith_SpokeNotActive() public {
-    _updateSpokeActive(hub1, daiAssetId, address(spoke1), false, HUB_ADMIN);
+    _updateSpokeActive(hub1, daiAssetId, address(spoke1), false);
     vm.expectRevert(IHub.SpokeNotActive.selector);
     vm.prank(address(spoke1));
     hub1.draw(daiAssetId, 100e18, alice);
@@ -338,7 +338,7 @@ contract HubDrawTest is Base {
     rate = bound(rate, 1, MAX_BORROW_RATE);
     skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
 
-    _updateDrawCap(hub1, daiAssetId, address(spoke1), drawCap, HUB_ADMIN);
+    _updateDrawCap(hub1, daiAssetId, address(spoke1), drawCap);
 
     _mockInterestRateBps(address(irStrategy), rate);
     _addAndDrawLiquidity({
@@ -375,7 +375,7 @@ contract HubDrawTest is Base {
 
   function test_draw_revertsWith_DrawCapExceeded_due_to_deficit() public {
     uint40 drawCap = 100;
-    _updateDrawCap(hub1, daiAssetId, address(spoke1), drawCap, HUB_ADMIN);
+    _updateDrawCap(hub1, daiAssetId, address(spoke1), drawCap);
 
     uint256 amount = drawCap * 10 ** tokenList.dai.decimals();
 
@@ -410,8 +410,8 @@ contract HubDrawTest is Base {
     uint256 daiAmount = drawCap * 10 ** tokenList.dai.decimals();
     uint256 drawAmount = daiAmount;
 
-    _updateDrawCap(hub1, daiAssetId, address(spoke1), drawCap, HUB_ADMIN);
-    _updateDrawCap(hub1, daiAssetId, address(spoke2), drawCap, HUB_ADMIN);
+    _updateDrawCap(hub1, daiAssetId, address(spoke1), drawCap);
+    _updateDrawCap(hub1, daiAssetId, address(spoke2), drawCap);
 
     _addAndDrawLiquidity({
       hub: hub1,
@@ -452,7 +452,7 @@ contract HubDrawTest is Base {
     uint256 daiAmount = drawCap * 10 ** tokenList.dai.decimals();
     uint256 drawAmount = daiAmount + 1;
 
-    _updateDrawCap(hub1, daiAssetId, address(spoke1), drawCap, HUB_ADMIN);
+    _updateDrawCap(hub1, daiAssetId, address(spoke1), drawCap);
 
     vm.expectRevert(abi.encodeWithSelector(IHub.DrawCapExceeded.selector, drawCap));
     vm.prank(address(spoke1));

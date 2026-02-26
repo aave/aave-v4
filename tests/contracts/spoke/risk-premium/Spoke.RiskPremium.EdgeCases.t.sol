@@ -20,7 +20,7 @@ contract SpokeRiskPremiumEdgeCasesTest is Base {
     uint256 repayAmount
   ) public {
     // Make usdx collateral risk 10% so it's the lower collateral risk reserve compared to dai
-    _updateCollateralRisk(spoke2, _usdxReserveId(spoke2), 10_00, SPOKE_ADMIN);
+    _updateCollateralRisk(spoke2, _usdxReserveId(spoke2), 10_00);
     assertLt(
       _getCollateralRisk(spoke2, _usdxReserveId(spoke2)),
       _getCollateralRisk(spoke2, _daiReserveId(spoke2)),
@@ -871,7 +871,7 @@ contract SpokeRiskPremiumEdgeCasesTest is Base {
     );
 
     // Now change the price of dai
-    _mockReservePrice(spoke2, _daiReserveId(spoke2), newPrice, SPOKE_ADMIN);
+    _mockReservePrice(spoke2, _daiReserveId(spoke2), newPrice);
 
     // Now risk premium should equal collateral risk of dai since debt is fully covered by it
     assertGe(

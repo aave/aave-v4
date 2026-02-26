@@ -26,7 +26,7 @@ contract HubMintFeeSharesTest is Base {
       skipTime: 365 days
     });
 
-    _updateSpokeActive(hub1, daiAssetId, _getFeeReceiver(hub1, daiAssetId), false, HUB_ADMIN);
+    _updateSpokeActive(hub1, daiAssetId, _getFeeReceiver(hub1, daiAssetId), false);
     vm.expectRevert(IHub.SpokeNotActive.selector, address(hub1));
     HubActions.mintFeeShares(hub1, daiAssetId, ADMIN);
   }
@@ -105,7 +105,7 @@ contract HubMintFeeSharesTest is Base {
     IHub.Asset memory asset = hub1.getAsset(daiAssetId);
 
     // pausing the fee receiver does not revert the action since no shares are minted
-    _updateSpokeActive(hub1, daiAssetId, _getFeeReceiver(hub1, daiAssetId), false, HUB_ADMIN);
+    _updateSpokeActive(hub1, daiAssetId, _getFeeReceiver(hub1, daiAssetId), false);
 
     vm.expectEmit(address(hub1));
     emit IHub.UpdateAsset(daiAssetId, asset.drawnIndex, asset.drawnRate, 0);
@@ -117,7 +117,7 @@ contract HubMintFeeSharesTest is Base {
   }
 
   function test_mintFeeShares_noShares() public {
-    _updateLiquidityFee(hub1, daiAssetId, 0, HUB_ADMIN);
+    _updateLiquidityFee(hub1, daiAssetId, 0);
     _mockInterestRateRay(address(irStrategy), 2);
 
     // Create debt to build up fees on the existing treasury spoke
@@ -137,7 +137,7 @@ contract HubMintFeeSharesTest is Base {
     assertEq(hub1.getAssetDrawnIndex(daiAssetId), 1e27 + 2);
 
     _mockInterestRateRay(address(irStrategy), 1e27 - 3);
-    _updateLiquidityFee(hub1, daiAssetId, PercentageMath.PERCENTAGE_FACTOR, HUB_ADMIN);
+    _updateLiquidityFee(hub1, daiAssetId, PercentageMath.PERCENTAGE_FACTOR);
 
     // mint fee shares just to accrue (liquidity fee is 0, so no fees are minted)
     HubActions.mintFeeShares(hub1, daiAssetId, ADMIN);

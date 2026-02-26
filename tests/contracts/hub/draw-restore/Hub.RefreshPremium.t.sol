@@ -17,7 +17,7 @@ contract HubRefreshPremiumTest is Base {
 
   function test_refreshPremium_revertsWith_SpokeNotActive() public {
     IHubBase.PremiumDelta memory premiumDelta;
-    _updateSpokeActive(hub1, daiAssetId, address(spoke1), false, HUB_ADMIN);
+    _updateSpokeActive(hub1, daiAssetId, address(spoke1), false);
     vm.expectRevert(IHub.SpokeNotActive.selector);
     vm.prank(address(spoke1));
     hub1.refreshPremium(daiAssetId, premiumDelta);
@@ -30,7 +30,7 @@ contract HubRefreshPremiumTest is Base {
     uint256 amount2 = vm.randomUint(1, MAX_SUPPLY_AMOUNT_DAI - amount1);
 
     // create drawn shares and premium data
-    _addLiquidity(hub1, daiAssetId, MAX_SUPPLY_AMOUNT_DAI, ADMIN, MAX_ALLOWED_COLLATERAL_RISK);
+    _addLiquidity(hub1, daiAssetId, MAX_SUPPLY_AMOUNT_DAI);
     SpokeActions.borrow(spoke1, _daiReserveId(spoke1), bob, amount1, bob);
     skip(322 days);
     SpokeActions.borrow(spoke1, _daiReserveId(spoke1), bob, amount2, bob);
@@ -43,13 +43,7 @@ contract HubRefreshPremiumTest is Base {
     _createDrawnSharesAndPremiumData();
 
     uint24 riskPremiumThreshold = 0.toUint24();
-    _updateSpokeRiskPremiumThreshold(
-      hub1,
-      daiAssetId,
-      address(spoke1),
-      riskPremiumThreshold,
-      HUB_ADMIN
-    );
+    _updateSpokeRiskPremiumThreshold(hub1, daiAssetId, address(spoke1), riskPremiumThreshold);
 
     IHubBase.PremiumDelta memory premiumDelta = _getExpectedPremiumDelta({
       hub: hub1,
@@ -73,13 +67,7 @@ contract HubRefreshPremiumTest is Base {
     hub1.refreshPremium(daiAssetId, premiumDelta);
 
     riskPremiumThreshold = (vm.randomUint(0, MAX_RISK_PREMIUM_THRESHOLD - 1)).toUint24();
-    _updateSpokeRiskPremiumThreshold(
-      hub1,
-      daiAssetId,
-      address(spoke1),
-      riskPremiumThreshold,
-      HUB_ADMIN
-    );
+    _updateSpokeRiskPremiumThreshold(hub1, daiAssetId, address(spoke1), riskPremiumThreshold);
 
     // expect allowed condition to be met
     assertTrue(
@@ -97,13 +85,7 @@ contract HubRefreshPremiumTest is Base {
     _createDrawnSharesAndPremiumData();
 
     uint24 riskPremiumThreshold = 1_00; // 1%
-    _updateSpokeRiskPremiumThreshold(
-      hub1,
-      daiAssetId,
-      address(spoke1),
-      riskPremiumThreshold,
-      HUB_ADMIN
-    );
+    _updateSpokeRiskPremiumThreshold(hub1, daiAssetId, address(spoke1), riskPremiumThreshold);
 
     IHubBase.PremiumDelta memory premiumDelta = _getExpectedPremiumDelta({
       hub: hub1,
@@ -148,13 +130,7 @@ contract HubRefreshPremiumTest is Base {
   function test_refreshPremium_maxRiskPremiumThreshold() public {
     _createDrawnSharesAndPremiumData();
 
-    _updateSpokeRiskPremiumThreshold(
-      hub1,
-      daiAssetId,
-      address(spoke1),
-      MAX_RISK_PREMIUM_THRESHOLD,
-      HUB_ADMIN
-    );
+    _updateSpokeRiskPremiumThreshold(hub1, daiAssetId, address(spoke1), MAX_RISK_PREMIUM_THRESHOLD);
 
     assertEq(
       hub1.getSpokeConfig(daiAssetId, address(spoke1)).riskPremiumThreshold,
@@ -185,8 +161,8 @@ contract HubRefreshPremiumTest is Base {
 
   /// @dev halted but active spokes are allowed to refresh premium
   function test_refreshPremium_haltedSpokesAllowed() public {
-    _updateSpokeActive(hub1, daiAssetId, address(spoke1), true, HUB_ADMIN);
-    _updateSpokeHalted(hub1, daiAssetId, address(spoke1), true, HUB_ADMIN);
+    _updateSpokeActive(hub1, daiAssetId, address(spoke1), true);
+    _updateSpokeHalted(hub1, daiAssetId, address(spoke1), true);
 
     vm.expectEmit(address(hub1));
     emit IHubBase.RefreshPremium(daiAssetId, address(spoke1), ZERO_PREMIUM_DELTA);
@@ -252,8 +228,7 @@ contract HubRefreshPremiumTest is Base {
         hub1,
         daiAssetId,
         address(spoke1),
-        MAX_RISK_PREMIUM_THRESHOLD,
-        HUB_ADMIN
+        MAX_RISK_PREMIUM_THRESHOLD
       );
       SpokeActions.supplyCollateral(spoke1, _daiReserveId(spoke1), bob, borrowAmount * 2, bob);
       SpokeActions.borrow(spoke1, _daiReserveId(spoke1), bob, borrowAmount, bob);
@@ -264,13 +239,7 @@ contract HubRefreshPremiumTest is Base {
       // sentinel value to preclude check
       riskPremiumThreshold = MAX_RISK_PREMIUM_THRESHOLD;
     }
-    _updateSpokeRiskPremiumThreshold(
-      hub1,
-      daiAssetId,
-      address(spoke1),
-      riskPremiumThreshold,
-      HUB_ADMIN
-    );
+    _updateSpokeRiskPremiumThreshold(hub1, daiAssetId, address(spoke1), riskPremiumThreshold);
 
     PremiumDataLocal memory premiumDataBefore = _loadAssetPremiumData(hub1, daiAssetId);
     (, uint256 premiumBefore) = hub1.getAssetOwed(daiAssetId);

@@ -31,9 +31,9 @@ contract HubReportDeficitTest is Base {
     super.setUp();
 
     // deploy borrowable liquidity
-    _addLiquidity(hub1, daiAssetId, MAX_SUPPLY_AMOUNT_DAI, ADMIN, MAX_ALLOWED_COLLATERAL_RISK);
-    _addLiquidity(hub1, wethAssetId, MAX_SUPPLY_AMOUNT_WETH, ADMIN, MAX_ALLOWED_COLLATERAL_RISK);
-    _addLiquidity(hub1, usdxAssetId, MAX_SUPPLY_AMOUNT_USDX, ADMIN, MAX_ALLOWED_COLLATERAL_RISK);
+    _addLiquidity(hub1, daiAssetId, MAX_SUPPLY_AMOUNT_DAI);
+    _addLiquidity(hub1, wethAssetId, MAX_SUPPLY_AMOUNT_WETH);
+    _addLiquidity(hub1, usdxAssetId, MAX_SUPPLY_AMOUNT_USDX);
   }
 
   function test_reportDeficit_revertsWith_SpokeNotActive(address caller) public {
@@ -152,7 +152,7 @@ contract HubReportDeficitTest is Base {
       spoke: address(spoke1)
     });
 
-    _updateSpokeHalted(hub1, usdxAssetId, address(spoke1), true, HUB_ADMIN);
+    _updateSpokeHalted(hub1, usdxAssetId, address(spoke1), true);
 
     // even if spoke is halted, it can report deficit
     vm.prank(address(spoke1));

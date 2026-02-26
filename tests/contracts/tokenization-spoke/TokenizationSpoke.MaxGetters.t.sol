@@ -59,14 +59,14 @@ abstract contract TokenizationSpokeMaxGettersAllZeroTest is TokenizationSpokeMax
 contract TokenizationSpokeMaxGettersNotActiveTest is TokenizationSpokeMaxGettersAllZeroTest {
   function setUp() public override {
     super.setUp();
-    _updateSpokeActive(hub, assetId, address(vault), false, HUB_ADMIN);
+    _updateSpokeActive(hub, assetId, address(vault), false);
   }
 }
 
 contract TokenizationSpokeMaxGettersHaltedTest is TokenizationSpokeMaxGettersAllZeroTest {
   function setUp() public override {
     super.setUp();
-    _updateSpokeHalted(hub, assetId, address(vault), true, HUB_ADMIN);
+    _updateSpokeHalted(hub, assetId, address(vault), true);
   }
 }
 
@@ -75,15 +75,15 @@ contract TokenizationSpokeMaxGettersNotActiveAndHaltedTest is
 {
   function setUp() public override {
     super.setUp();
-    _updateSpokeActive(hub, assetId, address(vault), false, HUB_ADMIN);
-    _updateSpokeHalted(hub, assetId, address(vault), true, HUB_ADMIN);
+    _updateSpokeActive(hub, assetId, address(vault), false);
+    _updateSpokeHalted(hub, assetId, address(vault), true);
   }
 }
 
 contract TokenizationSpokeMaxGettersAddCapZeroTest is TokenizationSpokeMaxGettersBaseTest {
   function setUp() public override {
     super.setUp();
-    _updateAddCap(hub, assetId, address(vault), 0, HUB_ADMIN);
+    _updateAddCap(hub, assetId, address(vault), 0);
   }
 
   function test_maxDeposit_returnsZero() public view {
@@ -122,7 +122,7 @@ contract TokenizationSpokeMaxGettersAddCapVariableEmptyTest is TokenizationSpoke
   function setUp() public override {
     super.setUp();
     addCap = vm.randomUint(1, 1000).toUint40();
-    _updateAddCap(hub, assetId, address(vault), addCap, HUB_ADMIN);
+    _updateAddCap(hub, assetId, address(vault), addCap);
   }
 
   function test_maxDeposit_returnsCapTimesUnits() public view {
@@ -149,7 +149,7 @@ contract TokenizationSpokeMaxGettersAddCapVariablePartialTest is
   function setUp() public override {
     super.setUp();
     addCap = vm.randomUint(100, 1000).toUint40();
-    _updateAddCap(hub, assetId, address(vault), addCap, HUB_ADMIN);
+    _updateAddCap(hub, assetId, address(vault), addCap);
 
     capWithDecimals = uint256(addCap) * MathUtils.uncheckedExp(10, vault.decimals());
     depositAmount = capWithDecimals / 2;
@@ -182,7 +182,7 @@ contract TokenizationSpokeMaxGettersAddCapExactlyReachedTest is
   function setUp() public override {
     super.setUp();
     addCap = vm.randomUint(1, 1000).toUint40();
-    _updateAddCap(hub, assetId, address(vault), addCap, HUB_ADMIN);
+    _updateAddCap(hub, assetId, address(vault), addCap);
 
     capWithDecimals = uint256(addCap) * MathUtils.uncheckedExp(10, vault.decimals());
     asset.mint(alice, capWithDecimals);
@@ -209,7 +209,7 @@ contract TokenizationSpokeMaxGettersCapExceededByYieldTest is TokenizationSpokeM
   function setUp() public override {
     super.setUp();
     addCap = 10;
-    _updateAddCap(hub, assetId, address(vault), addCap, HUB_ADMIN);
+    _updateAddCap(hub, assetId, address(vault), addCap);
 
     capWithDecimals = uint256(addCap) * MathUtils.uncheckedExp(10, vault.decimals());
     asset.mint(alice, capWithDecimals);
@@ -373,7 +373,7 @@ contract TokenizationSpokeMaxGettersExactBoundaryAfterYieldTest is
   function setUp() public override {
     super.setUp();
     addCap = 100;
-    _updateAddCap(hub, assetId, address(vault), addCap, HUB_ADMIN);
+    _updateAddCap(hub, assetId, address(vault), addCap);
 
     capWithDecimals = uint256(addCap) * MathUtils.uncheckedExp(10, vault.decimals());
     uint256 depositAmount = capWithDecimals / 2;

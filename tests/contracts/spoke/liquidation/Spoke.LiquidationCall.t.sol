@@ -30,8 +30,7 @@ abstract contract SpokeLiquidationCallHelperTest is SpokeLiquidationCallBaseTest
 
     _updateTargetHealthFactor(
       spoke,
-      vm.randomUint(MIN_TARGET_HEALTH_FACTOR, MAX_TARGET_HEALTH_FACTOR).toUint128(),
-      SPOKE_ADMIN
+      vm.randomUint(MIN_TARGET_HEALTH_FACTOR, MAX_TARGET_HEALTH_FACTOR).toUint128()
     );
     _updateLiquidationConfig(
       spoke,
@@ -43,31 +42,27 @@ abstract contract SpokeLiquidationCallHelperTest is SpokeLiquidationCallBaseTest
           .randomUint(0, HEALTH_FACTOR_LIQUIDATION_THRESHOLD - 1)
           .toUint64(),
         liquidationBonusFactor: vm.randomUint(0, PercentageMath.PERCENTAGE_FACTOR).toUint16()
-      }),
-      SPOKE_ADMIN
+      })
     );
 
     for (uint256 i = 0; i < spoke.getReserveCount(); i++) {
-      _updateMaxLiquidationBonus(spoke, i, _randomMaxLiquidationBonus(spoke, i), SPOKE_ADMIN);
-      _updateCollateralFactor(spoke, i, 1, SPOKE_ADMIN); // temporary value to have full range of possibility for liquidation fee
+      _updateMaxLiquidationBonus(spoke, i, _randomMaxLiquidationBonus(spoke, i));
+      _updateCollateralFactor(spoke, i, 1); // temporary value to have full range of possibility for liquidation fee
       _updateLiquidationFee(
         spoke,
         i,
-        vm.randomUint(MIN_LIQUIDATION_FEE, MAX_LIQUIDATION_FEE).toUint16(),
-        SPOKE_ADMIN
+        vm.randomUint(MIN_LIQUIDATION_FEE, MAX_LIQUIDATION_FEE).toUint16()
       );
-      _updateCollateralFactor(spoke, i, _randomCollateralFactor(spoke, i), SPOKE_ADMIN);
+      _updateCollateralFactor(spoke, i, _randomCollateralFactor(spoke, i));
       _updateCollateralRisk(
         spoke,
         i,
-        vm.randomUint(MIN_COLLATERAL_RISK_BPS, MAX_COLLATERAL_RISK_BPS).toUint24(),
-        SPOKE_ADMIN
+        vm.randomUint(MIN_COLLATERAL_RISK_BPS, MAX_COLLATERAL_RISK_BPS).toUint24()
       );
       _setConstantInterestRateBps(
         _hub(spoke, i),
         _reserveAssetId(spoke, i),
-        vm.randomUint(MIN_BORROW_RATE, MAX_BORROW_RATE).toUint32(),
-        HUB_ADMIN
+        vm.randomUint(MIN_BORROW_RATE, MAX_BORROW_RATE).toUint32()
       );
     }
 
@@ -391,7 +386,7 @@ contract SpokeLiquidationCallTest_NoLiquidationBonus is SpokeLiquidationCallHelp
     uint256 debtReserveId
   ) internal virtual override {
     super._processAdditionalSetup(collateralReserveId, debtReserveId);
-    _updateMaxLiquidationBonus(spoke, collateralReserveId, 100_00, SPOKE_ADMIN);
+    _updateMaxLiquidationBonus(spoke, collateralReserveId, 100_00);
   }
 
   function _assertBeforeLiquidation(
@@ -412,19 +407,17 @@ contract SpokeLiquidationCallTest_SmallLiquidationBonus is SpokeLiquidationCallH
     uint256 debtReserveId
   ) internal virtual override {
     super._processAdditionalSetup(collateralReserveId, debtReserveId);
-    _updateCollateralFactor(spoke, collateralReserveId, 1, SPOKE_ADMIN); // temporary value to have full range of possibility for liquidation bonus
+    _updateCollateralFactor(spoke, collateralReserveId, 1); // temporary value to have full range of possibility for liquidation bonus
     _updateMaxLiquidationBonus(
       spoke,
       collateralReserveId,
-      vm.randomUint(MIN_LIQUIDATION_BONUS, MIN_LIQUIDATION_BONUS.percentMulUp(102_00)).toUint32(),
-      SPOKE_ADMIN
+      vm.randomUint(MIN_LIQUIDATION_BONUS, MIN_LIQUIDATION_BONUS.percentMulUp(102_00)).toUint32()
     );
-    _updateLiquidationBonusFactor(spoke, 100_00, SPOKE_ADMIN);
+    _updateLiquidationBonusFactor(spoke, 100_00);
     _updateCollateralFactor(
       spoke,
       collateralReserveId,
-      _randomCollateralFactor(spoke, collateralReserveId),
-      SPOKE_ADMIN
+      _randomCollateralFactor(spoke, collateralReserveId)
     );
   }
 
@@ -450,19 +443,17 @@ contract SpokeLiquidationCallTest_LargeLiquidationBonus is SpokeLiquidationCallH
     uint256 debtReserveId
   ) internal virtual override {
     super._processAdditionalSetup(collateralReserveId, debtReserveId);
-    _updateCollateralFactor(spoke, collateralReserveId, 1, SPOKE_ADMIN); // temporary value to have full range of possibility for liquidation bonus
+    _updateCollateralFactor(spoke, collateralReserveId, 1); // temporary value to have full range of possibility for liquidation bonus
     _updateMaxLiquidationBonus(
       spoke,
       collateralReserveId,
-      vm.randomUint(MAX_LIQUIDATION_BONUS.percentMulDown(97_00), MAX_LIQUIDATION_BONUS).toUint32(),
-      SPOKE_ADMIN
+      vm.randomUint(MAX_LIQUIDATION_BONUS.percentMulDown(97_00), MAX_LIQUIDATION_BONUS).toUint32()
     );
-    _updateLiquidationBonusFactor(spoke, 100_00, SPOKE_ADMIN);
+    _updateLiquidationBonusFactor(spoke, 100_00);
     _updateCollateralFactor(
       spoke,
       collateralReserveId,
-      _randomCollateralFactor(spoke, collateralReserveId),
-      SPOKE_ADMIN
+      _randomCollateralFactor(spoke, collateralReserveId)
     );
   }
 
@@ -485,7 +476,7 @@ contract SpokeLiquidationCallTest_LiquidationFeeZero is SpokeLiquidationCallHelp
     uint256 debtReserveId
   ) internal virtual override {
     super._processAdditionalSetup(collateralReserveId, debtReserveId);
-    _updateLiquidationFee(spoke, collateralReserveId, 0, SPOKE_ADMIN);
+    _updateLiquidationFee(spoke, collateralReserveId, 0);
   }
 
   function _assertBeforeLiquidation(
@@ -508,7 +499,7 @@ contract SpokeLiquidationCallTest_NoPremium is SpokeLiquidationCallHelperTest {
   ) internal virtual override {
     super._processAdditionalSetup(collateralReserveId, debtReserveId);
     for (uint256 i = 0; i < spoke.getReserveCount(); i++) {
-      _updateCollateralRisk(spoke, i, 0, SPOKE_ADMIN);
+      _updateCollateralRisk(spoke, i, 0);
     }
   }
 
@@ -535,14 +526,12 @@ contract SpokeLiquidationCallTest_Premium is SpokeLiquidationCallHelperTest {
     _updateCollateralRisk(
       spoke,
       collateralReserveId,
-      vm.randomUint(1, MAX_COLLATERAL_RISK_BPS).toUint24(),
-      SPOKE_ADMIN
+      vm.randomUint(1, MAX_COLLATERAL_RISK_BPS).toUint24()
     );
     _setConstantInterestRateBps(
       _hub(spoke, debtReserveId),
       _reserveAssetId(spoke, debtReserveId),
-      vm.randomUint(1, MAX_BORROW_RATE).toUint32(),
-      HUB_ADMIN
+      vm.randomUint(1, MAX_BORROW_RATE).toUint32()
     );
     _increaseCollateralSupply(
       spoke,
@@ -599,7 +588,7 @@ contract SpokeLiquidationCallTest_TargetHealthFactorOne is SpokeLiquidationCallH
     uint256 debtReserveId
   ) internal virtual override {
     super._processAdditionalSetup(collateralReserveId, debtReserveId);
-    _updateTargetHealthFactor(spoke, 1e18, SPOKE_ADMIN);
+    _updateTargetHealthFactor(spoke, 1e18);
   }
 
   function _assertBeforeLiquidation(

@@ -392,7 +392,7 @@ contract SpokeBorrowHealthFactorTest is Base {
     assertEq(_getUserHealthFactor(spoke1, bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
 
     // collateral price drop by half so that bob is undercollateralized
-    _mockReservePriceByPercent(spoke1, wethReserveId, 50_00, SPOKE_ADMIN);
+    _mockReservePriceByPercent(spoke1, wethReserveId, 50_00);
     assertLt(_getUserHealthFactor(spoke1, bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
 
     vm.prank(bob);
@@ -436,7 +436,7 @@ contract SpokeBorrowHealthFactorTest is Base {
     assertEq(_getUserHealthFactor(spoke1, bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
 
     // collateral price drop so that bob is undercollateralized
-    _mockReservePrice(spoke1, wethReserveId, newPrice, SPOKE_ADMIN);
+    _mockReservePrice(spoke1, wethReserveId, newPrice);
     assertLt(_getUserHealthFactor(spoke1, bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
 
     vm.prank(bob);
@@ -724,7 +724,7 @@ contract SpokeBorrowHealthFactorTest is Base {
     assertEq(_getUserHealthFactor(spoke1, bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
 
     // collateral price drop by half so that bob is undercollateralized
-    _mockReservePriceByPercent(spoke1, wethReserveId, 50_00, SPOKE_ADMIN);
+    _mockReservePriceByPercent(spoke1, wethReserveId, 50_00);
 
     // invalid HF
     assertLt(_getUserHealthFactor(spoke1, bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
@@ -785,7 +785,7 @@ contract SpokeBorrowHealthFactorTest is Base {
     assertGe(_getUserHealthFactor(spoke1, bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD); // can be GE due to edge cases
 
     // collateral price drop by half so that bob is undercollateralized
-    _mockReservePriceByPercent(spoke1, wethReserveId, 50_00, SPOKE_ADMIN);
+    _mockReservePriceByPercent(spoke1, wethReserveId, 50_00);
 
     // invalid HF
     assertLt(_getUserHealthFactor(spoke1, bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
@@ -845,7 +845,7 @@ contract SpokeBorrowHealthFactorTest is Base {
     assertEq(_getUserHealthFactor(spoke1, bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
 
     // collateral price drop by half so that bob is undercollateralized
-    _mockReservePriceByPercent(spoke1, daiReserveId, 50_00, SPOKE_ADMIN);
+    _mockReservePriceByPercent(spoke1, daiReserveId, 50_00);
 
     // invalid HF
     assertLt(_getUserHealthFactor(spoke1, bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
@@ -905,7 +905,7 @@ contract SpokeBorrowHealthFactorTest is Base {
     assertGe(_getUserHealthFactor(spoke1, bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD); // can be GE due to edge cases
 
     // collateral price drop by half so that bob is undercollateralized
-    _mockReservePriceByPercent(spoke1, daiReserveId, 50_00, SPOKE_ADMIN);
+    _mockReservePriceByPercent(spoke1, daiReserveId, 50_00);
 
     // invalid HF
     assertLt(_getUserHealthFactor(spoke1, bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);

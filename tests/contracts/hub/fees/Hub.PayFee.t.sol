@@ -12,7 +12,7 @@ contract HubPayFeeTest is Base {
   }
 
   function test_payFee_revertsWith_SpokeNotActive() public {
-    _updateSpokeActive(hub1, daiAssetId, address(spoke1), false, HUB_ADMIN);
+    _updateSpokeActive(hub1, daiAssetId, address(spoke1), false);
     vm.expectRevert(IHub.SpokeNotActive.selector, address(hub1));
     vm.prank(address(spoke1));
     hub1.payFeeShares(daiAssetId, 1);
@@ -45,8 +45,8 @@ contract HubPayFeeTest is Base {
       user: alice
     });
 
-    _addLiquidity(hub1, daiAssetId, addAmount, ADMIN, MAX_ALLOWED_COLLATERAL_RISK);
-    _drawLiquidity(hub1, daiAssetId, addAmount, true, HUB_ADMIN, MAX_ALLOWED_COLLATERAL_RISK);
+    _addLiquidity(hub1, daiAssetId, addAmount);
+    _drawLiquidity(hub1, daiAssetId, addAmount, true);
 
     uint256 feeShares = hub1.getSpokeAddedShares(daiAssetId, address(spoke1));
     uint256 feeAmount = hub1.getSpokeAddedAssets(daiAssetId, address(spoke1));
@@ -79,8 +79,8 @@ contract HubPayFeeTest is Base {
       user: alice
     });
 
-    _addLiquidity(hub1, daiAssetId, 100e18, ADMIN, MAX_ALLOWED_COLLATERAL_RISK);
-    _drawLiquidity(hub1, daiAssetId, 100e18, true, HUB_ADMIN, MAX_ALLOWED_COLLATERAL_RISK);
+    _addLiquidity(hub1, daiAssetId, 100e18);
+    _drawLiquidity(hub1, daiAssetId, 100e18, true);
 
     uint256 spokeSharesBefore = hub1.getSpokeAddedShares(daiAssetId, address(spoke1));
 

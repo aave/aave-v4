@@ -186,9 +186,7 @@ contract LiquidationLogicLiquidationAmountsTest is LiquidationLogicBaseTest {
       collateralAssetId,
       12_500.25e6,
       10_000e6,
-      address(spoke1),
-      HUB_ADMIN,
-      MAX_ALLOWED_COLLATERAL_RISK
+      address(spoke1)
     );
 
     LiquidationLogic.LiquidationAmounts memory liquidationAmounts = liquidationLogicWrapper
@@ -248,9 +246,7 @@ contract LiquidationLogicLiquidationAmountsTest is LiquidationLogicBaseTest {
       collateralAssetId,
       12500.25e6,
       10_000e6,
-      address(spoke1),
-      HUB_ADMIN,
-      MAX_ALLOWED_COLLATERAL_RISK
+      address(spoke1)
     );
 
     LiquidationLogic.LiquidationAmounts memory liquidationAmounts = liquidationLogicWrapper

@@ -40,11 +40,11 @@ contract SpokeAccrueInterestScenarioTest is Base {
 
   function setUp() public override {
     super.setUp();
-    _updateLiquidityFee(hub1, daiAssetId, 0, HUB_ADMIN);
-    _updateLiquidityFee(hub1, wethAssetId, 0, HUB_ADMIN);
-    _updateLiquidityFee(hub1, usdxAssetId, 0, HUB_ADMIN);
-    _updateLiquidityFee(hub1, wbtcAssetId, 0, HUB_ADMIN);
-    _updateLiquidityFee(hub1, usdzAssetId, 0, HUB_ADMIN);
+    _updateLiquidityFee(hub1, daiAssetId, 0);
+    _updateLiquidityFee(hub1, wethAssetId, 0);
+    _updateLiquidityFee(hub1, usdxAssetId, 0);
+    _updateLiquidityFee(hub1, wbtcAssetId, 0);
+    _updateLiquidityFee(hub1, usdzAssetId, 0);
   }
 
   /// @dev Check protocol supply and debt values after two separate interest accruals with multiple assets supplied and borrowed

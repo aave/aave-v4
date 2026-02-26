@@ -544,14 +544,14 @@ contract HubRemoveTest is Base {
   }
 
   function test_remove_revertsWith_SpokeHalted() public {
-    _updateSpokeHalted(hub1, daiAssetId, address(spoke1), true, HUB_ADMIN);
+    _updateSpokeHalted(hub1, daiAssetId, address(spoke1), true);
     vm.expectRevert(IHub.SpokeHalted.selector);
     vm.prank(address(spoke1));
     hub1.remove(daiAssetId, 100e18, alice);
   }
 
   function test_remove_revertsWith_SpokeNotActive() public {
-    _updateSpokeActive(hub1, daiAssetId, address(spoke1), false, HUB_ADMIN);
+    _updateSpokeActive(hub1, daiAssetId, address(spoke1), false);
     vm.expectRevert(IHub.SpokeNotActive.selector);
     vm.prank(address(spoke1));
     hub1.remove(daiAssetId, 100e18, alice);

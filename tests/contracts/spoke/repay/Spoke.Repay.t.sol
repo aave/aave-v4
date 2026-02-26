@@ -1195,7 +1195,7 @@ contract SpokeRepayTest is Base {
     skipTime = bound(skipTime, 0, MAX_SKIP_TIME).toUint40();
 
     // update collateral risk to zero
-    _updateCollateralRisk(spoke1, _wethReserveId(spoke1), 0, SPOKE_ADMIN);
+    _updateCollateralRisk(spoke1, _wethReserveId(spoke1), 0);
 
     // calculate weth collateral
     uint256 wethSupplyAmount = _calcMinimumCollAmount(

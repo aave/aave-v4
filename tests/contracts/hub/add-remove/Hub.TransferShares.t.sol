@@ -87,7 +87,7 @@ contract HubTransferSharesTest is Base {
     HubActions.add(hub1, daiAssetId, address(spoke1), supplyAmount, bob);
 
     // halt spoke1
-    _updateSpokeHalted(hub1, daiAssetId, address(spoke1), true, HUB_ADMIN);
+    _updateSpokeHalted(hub1, daiAssetId, address(spoke1), true);
 
     uint256 suppliedShares = hub1.getSpokeAddedShares(daiAssetId, address(spoke1));
     assertEq(suppliedShares, hub1.previewRemoveByShares(daiAssetId, supplyAmount));
@@ -107,7 +107,7 @@ contract HubTransferSharesTest is Base {
     uint256 suppliedShares = hub1.getSpokeAddedShares(daiAssetId, address(spoke1));
     assertEq(suppliedShares, hub1.previewRemoveByShares(daiAssetId, supplyAmount));
 
-    _updateAddCap(hub1, daiAssetId, address(spoke2), newSupplyCap, HUB_ADMIN);
+    _updateAddCap(hub1, daiAssetId, address(spoke2), newSupplyCap);
 
     // attempting transfer of supplied shares exceeding cap on spoke2
     assertLt(

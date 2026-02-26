@@ -23,7 +23,7 @@ contract HubEliminateDeficitTest is Base {
     _coveredSpoke = address(spoke1);
     _otherSpoke = address(spoke3);
 
-    _grantDeficitEliminatorRole(hub1, address(_callerSpoke), ADMIN);
+    _grantDeficitEliminatorRole(hub1, address(_callerSpoke));
   }
 
   function test_eliminateDeficit_revertsWith_InvalidAmount_ZeroAmountNoDeficit() public {
@@ -83,8 +83,8 @@ contract HubEliminateDeficitTest is Base {
 
   function test_eliminateDeficit_revertsWith_callerSpokeNotActive() public {
     address caller = address(spoke1);
-    _updateSpokeActive(hub1, _assetId, caller, false, HUB_ADMIN);
-    _grantDeficitEliminatorRole(hub1, caller, ADMIN);
+    _updateSpokeActive(hub1, _assetId, caller, false);
+    _grantDeficitEliminatorRole(hub1, caller);
 
     vm.expectRevert(IHub.SpokeNotActive.selector);
     vm.prank(caller);

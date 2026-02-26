@@ -10,6 +10,7 @@ import {SpokeActions} from 'tests/helpers/spoke/SpokeActions.sol';
 
 /// @title BaseHelpers
 /// @notice Aggregates hub and spoke helpers and adds cross-layer assertion helpers.
+///         Provides convenience overloads that default admin and threshold arguments.
 abstract contract BaseHelpers is BaseState {
   // --- Reserve ID lookups (use spokeInfo state from BaseState) ---
 
@@ -47,6 +48,8 @@ abstract contract BaseHelpers is BaseState {
       });
   }
 
+  // --- Cross-layer assertions ---
+
   function _checkSupplyRateIncreasing(
     uint256 oldRate,
     uint256 newRate,
@@ -72,5 +75,231 @@ abstract contract BaseHelpers is BaseState {
     assertEq(a.premiumShares, b.premiumShares, 'premiumShares');
     assertEq(a.premiumOffsetRay, b.premiumOffsetRay, 'premiumOffsetRay');
     assertEq(a.premium, b.premium, 'premium');
+  }
+
+  // --- Hub setup overloads (default HUB_ADMIN + MAX_ALLOWED_COLLATERAL_RISK) ---
+
+  function _addLiquidity(IHub hub, uint256 assetId, uint256 amount) public {
+    _addLiquidity(hub, assetId, amount, HUB_ADMIN, MAX_ALLOWED_COLLATERAL_RISK);
+  }
+
+  function _drawLiquidity(IHub hub, uint256 assetId, uint256 amount, bool premium) internal {
+    _drawLiquidity(hub, assetId, amount, premium, HUB_ADMIN, MAX_ALLOWED_COLLATERAL_RISK);
+  }
+
+  function _drawLiquidityViaTempSpoke(
+    IHub hub,
+    uint256 assetId,
+    uint256 amount,
+    bool withPremium,
+    bool skipTime
+  ) internal {
+    _drawLiquidityViaTempSpoke(
+      hub,
+      assetId,
+      amount,
+      withPremium,
+      skipTime,
+      HUB_ADMIN,
+      MAX_ALLOWED_COLLATERAL_RISK
+    );
+  }
+
+  // --- Hub mock overloads (default HUB_ADMIN + MAX_ALLOWED_COLLATERAL_RISK) ---
+
+  function _mockSupplySharePrice(
+    IHub hub,
+    uint256 assetId,
+    uint256 totalAddedAssets,
+    uint256 addedShares,
+    address spoke
+  ) internal {
+    _mockSupplySharePrice(
+      hub,
+      assetId,
+      totalAddedAssets,
+      addedShares,
+      spoke,
+      HUB_ADMIN,
+      MAX_ALLOWED_COLLATERAL_RISK
+    );
+  }
+
+  function _setConstantInterestRateBps(IHub hub, uint256 assetId, uint32 interestRateBps) internal {
+    _setConstantInterestRateBps(hub, assetId, interestRateBps, HUB_ADMIN);
+  }
+
+  // --- Hub config overloads (default HUB_ADMIN) ---
+
+  function _updateLiquidityFee(IHub hub, uint256 assetId, uint256 liquidityFee) internal {
+    _updateLiquidityFee(hub, assetId, liquidityFee, HUB_ADMIN);
+  }
+
+  function _updateSpokeHalted(IHub hub, uint256 assetId, address spoke, bool halted) internal {
+    _updateSpokeHalted(hub, assetId, spoke, halted, HUB_ADMIN);
+  }
+
+  function _updateSpokeActive(IHub hub, uint256 assetId, address spoke, bool newActive) internal {
+    _updateSpokeActive(hub, assetId, spoke, newActive, HUB_ADMIN);
+  }
+
+  function _updateAddCap(IHub hub, uint256 assetId, address spoke, uint40 newAddCap) internal {
+    _updateAddCap(hub, assetId, spoke, newAddCap, HUB_ADMIN);
+  }
+
+  function _updateDrawCap(IHub hub, uint256 assetId, address spoke, uint40 newDrawCap) internal {
+    _updateDrawCap(hub, assetId, spoke, newDrawCap, HUB_ADMIN);
+  }
+
+  function _updateAssetReinvestmentController(
+    IHub hub,
+    uint256 assetId,
+    address newReinvestmentController
+  ) internal {
+    _updateAssetReinvestmentController(hub, assetId, newReinvestmentController, HUB_ADMIN);
+  }
+
+  function _updateSpokeRiskPremiumThreshold(
+    IHub hub,
+    uint256 assetId,
+    address spoke,
+    uint24 newRiskPremiumThreshold
+  ) internal {
+    _updateSpokeRiskPremiumThreshold(hub, assetId, spoke, newRiskPremiumThreshold, HUB_ADMIN);
+  }
+
+  function _grantDeficitEliminatorRole(IHub hub, address target) internal {
+    _grantDeficitEliminatorRole(hub, target, ADMIN);
+  }
+
+  // --- Spoke setup overloads (default SPOKE_ADMIN) ---
+
+  function _openDebtPosition(
+    ISpoke spoke,
+    uint256 reserveId,
+    uint256 amount,
+    bool withPremium
+  ) internal returns (address) {
+    return _openDebtPosition(spoke, reserveId, amount, withPremium, SPOKE_ADMIN);
+  }
+
+  function _borrowToBeLiquidatableWithPriceChange(
+    ISpoke spoke,
+    address user,
+    uint256 reserveId,
+    uint256 collateralReserveId,
+    uint256 desiredHf,
+    uint256 pricePercentage
+  ) internal returns (ISpoke.UserAccountData memory) {
+    return
+      _borrowToBeLiquidatableWithPriceChange(
+        spoke,
+        user,
+        reserveId,
+        collateralReserveId,
+        desiredHf,
+        pricePercentage,
+        SPOKE_ADMIN
+      );
+  }
+
+  // --- Spoke mock overloads (default SPOKE_ADMIN) ---
+
+  function _mockReservePrice(ISpoke spoke, uint256 reserveId, uint256 price) internal {
+    _mockReservePrice(spoke, reserveId, price, SPOKE_ADMIN);
+  }
+
+  function _mockReservePriceByPercent(
+    ISpoke spoke,
+    uint256 reserveId,
+    uint256 percentage
+  ) internal {
+    _mockReservePriceByPercent(spoke, reserveId, percentage, SPOKE_ADMIN);
+  }
+
+  // --- Spoke config overloads (default SPOKE_ADMIN) ---
+
+  function _updateReserveFrozenFlag(ISpoke spoke, uint256 reserveId, bool newFrozenFlag) internal {
+    _updateReserveFrozenFlag(spoke, reserveId, newFrozenFlag, SPOKE_ADMIN);
+  }
+
+  function _updateReservePausedFlag(ISpoke spoke, uint256 reserveId, bool paused) internal {
+    _updateReservePausedFlag(spoke, reserveId, paused, SPOKE_ADMIN);
+  }
+
+  function _updateReserveBorrowableFlag(
+    ISpoke spoke,
+    uint256 reserveId,
+    bool newBorrowable
+  ) internal {
+    _updateReserveBorrowableFlag(spoke, reserveId, newBorrowable, SPOKE_ADMIN);
+  }
+
+  function _updateCollateralRisk(
+    ISpoke spoke,
+    uint256 reserveId,
+    uint24 newCollateralRisk
+  ) internal {
+    _updateCollateralRisk(spoke, reserveId, newCollateralRisk, SPOKE_ADMIN);
+  }
+
+  function _updateLiquidationConfig(ISpoke spoke, ISpoke.LiquidationConfig memory config) internal {
+    _updateLiquidationConfig(spoke, config, SPOKE_ADMIN);
+  }
+
+  function _updateMaxLiquidationBonus(
+    ISpoke spoke,
+    uint256 reserveId,
+    uint32 newMaxLiquidationBonus
+  ) internal returns (uint32) {
+    return _updateMaxLiquidationBonus(spoke, reserveId, newMaxLiquidationBonus, SPOKE_ADMIN);
+  }
+
+  function _updateLiquidationFee(
+    ISpoke spoke,
+    uint256 reserveId,
+    uint16 newLiquidationFee
+  ) internal returns (uint32) {
+    return _updateLiquidationFee(spoke, reserveId, newLiquidationFee, SPOKE_ADMIN);
+  }
+
+  function _updateCollateralFactorAndLiquidationBonus(
+    ISpoke spoke,
+    uint256 reserveId,
+    uint256 newCollateralFactor,
+    uint256 newLiquidationBonus
+  ) internal returns (uint32) {
+    return
+      _updateCollateralFactorAndLiquidationBonus(
+        spoke,
+        reserveId,
+        newCollateralFactor,
+        newLiquidationBonus,
+        SPOKE_ADMIN
+      );
+  }
+
+  function _updateCollateralFactor(
+    ISpoke spoke,
+    uint256 reserveId,
+    uint256 newCollateralFactor
+  ) internal returns (uint32) {
+    return _updateCollateralFactor(spoke, reserveId, newCollateralFactor, SPOKE_ADMIN);
+  }
+
+  function _addDynamicReserveConfig(
+    ISpoke spoke,
+    uint256 reserveId,
+    ISpoke.DynamicReserveConfig memory config
+  ) internal returns (uint32) {
+    return _addDynamicReserveConfig(spoke, reserveId, config, SPOKE_ADMIN);
+  }
+
+  function _updateTargetHealthFactor(ISpoke spoke, uint128 newTargetHealthFactor) internal {
+    _updateTargetHealthFactor(spoke, newTargetHealthFactor, SPOKE_ADMIN);
+  }
+
+  function _updateLiquidationBonusFactor(ISpoke spoke, uint16 newLiquidationBonusFactor) internal {
+    _updateLiquidationBonusFactor(spoke, newLiquidationBonusFactor, SPOKE_ADMIN);
   }
 }

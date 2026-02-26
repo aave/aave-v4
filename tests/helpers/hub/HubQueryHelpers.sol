@@ -4,41 +4,17 @@ pragma solidity ^0.8.0;
 
 import {CommonHelpers} from 'tests/helpers/commons/CommonHelpers.sol';
 import {HubConstants} from 'tests/helpers/hub/HubConstants.sol';
+import {HubTypes} from 'tests/helpers/hub/HubTypes.sol';
 import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
 import {IHub} from 'src/hub/interfaces/IHub.sol';
 
 /// @title HubQueryHelpers
 /// @notice Hub-level state-reading helpers, snapshot builders, and random utilities.
 ///         Math/calculation helpers live in HubMathHelpers.
-abstract contract HubQueryHelpers is CommonHelpers, HubConstants {
+abstract contract HubQueryHelpers is CommonHelpers, HubConstants, HubTypes {
   using SafeCast for *;
 
   uint256 internal constant MAX_SUPPLY_AMOUNT = 1e30;
-
-  // --- Types ---
-
-  struct AssetPosition {
-    uint256 assetId;
-    uint256 addedShares;
-    uint256 addedAmount;
-    uint256 drawnShares;
-    uint256 drawn;
-    uint256 premiumShares;
-    int256 premiumOffsetRay;
-    uint256 premium;
-    uint40 lastUpdateTimestamp;
-    uint256 liquidity;
-    uint256 drawnIndex;
-    uint256 drawnRate;
-  }
-
-  struct HubSnapshot {
-    uint256 liquidity;
-    uint256 addedAssets;
-    uint256 addedShares;
-    uint256 drawnAssets;
-    uint256 drawnShares;
-  }
 
   // --- Asset queries ---
 

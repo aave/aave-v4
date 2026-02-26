@@ -30,10 +30,10 @@ contract SpokeAccrueInterestTest is Base {
 
   function setUp() public override {
     super.setUp();
-    _updateLiquidityFee(hub1, daiAssetId, 0, HUB_ADMIN);
-    _updateLiquidityFee(hub1, wethAssetId, 0, HUB_ADMIN);
-    _updateLiquidityFee(hub1, usdxAssetId, 0, HUB_ADMIN);
-    _updateLiquidityFee(hub1, wbtcAssetId, 0, HUB_ADMIN);
+    _updateLiquidityFee(hub1, daiAssetId, 0);
+    _updateLiquidityFee(hub1, wethAssetId, 0);
+    _updateLiquidityFee(hub1, usdxAssetId, 0);
+    _updateLiquidityFee(hub1, wbtcAssetId, 0);
   }
 
   function test_accrueInterest_NoActionTaken() public view {
@@ -175,7 +175,7 @@ contract SpokeAccrueInterestTest is Base {
     uint256 usdxReserveId = _usdxReserveId(spoke1);
 
     // Set collateral risk of usdx on spoke1 to 10%
-    _updateCollateralRisk(spoke1, usdxReserveId, 10_00, SPOKE_ADMIN);
+    _updateCollateralRisk(spoke1, usdxReserveId, 10_00);
     assertEq(10_00, _getCollateralRisk(spoke1, usdxReserveId), 'usdx collateral risk');
 
     // Bob supply usdx

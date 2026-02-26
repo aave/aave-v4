@@ -25,9 +25,9 @@ contract SpokeLiquidationCallDustTest is SpokeLiquidationCallBaseTest {
       })
     );
 
-    _updateMaxLiquidationBonus(_spoke, _daiReserveId(_spoke), 111_00, SPOKE_ADMIN);
-    _updateMaxLiquidationBonus(_spoke, _usdxReserveId(_spoke), 100_00, SPOKE_ADMIN);
-    _updateMaxLiquidationBonus(_spoke, _usdyReserveId(_spoke), 100_00, SPOKE_ADMIN);
+    _updateMaxLiquidationBonus(_spoke, _daiReserveId(_spoke), 111_00);
+    _updateMaxLiquidationBonus(_spoke, _usdxReserveId(_spoke), 100_00);
+    _updateMaxLiquidationBonus(_spoke, _usdyReserveId(_spoke), 100_00);
 
     _deal(_spoke, _usdxReserveId(_spoke), liquidator, 1e30);
     _deal(_spoke, _daiReserveId(_spoke), liquidator, 1e30);
@@ -37,9 +37,9 @@ contract SpokeLiquidationCallDustTest is SpokeLiquidationCallBaseTest {
     SpokeActions.approve(_spoke, _daiReserveId(_spoke), liquidator, type(uint256).max);
     SpokeActions.approve(_spoke, _usdyReserveId(_spoke), liquidator, type(uint256).max);
 
-    _updateCollateralFactor(_spoke, _daiReserveId(_spoke), 90_00, SPOKE_ADMIN);
-    _updateCollateralFactor(_spoke, _usdxReserveId(_spoke), 99_99, SPOKE_ADMIN);
-    _updateCollateralFactor(_spoke, _usdyReserveId(_spoke), 99_99, SPOKE_ADMIN);
+    _updateCollateralFactor(_spoke, _daiReserveId(_spoke), 90_00);
+    _updateCollateralFactor(_spoke, _usdxReserveId(_spoke), 99_99);
+    _updateCollateralFactor(_spoke, _usdyReserveId(_spoke), 99_99);
 
     _openSupplyPosition(_spoke, _daiReserveId(_spoke), 1e30);
     _openSupplyPosition(_spoke, _usdxReserveId(_spoke), 1e30);
@@ -66,8 +66,7 @@ contract SpokeLiquidationCallDustTest is SpokeLiquidationCallBaseTest {
       _spoke,
       _daiReserveId(_spoke),
       collateralFactor,
-      liquidationBonus,
-      SPOKE_ADMIN
+      liquidationBonus
     );
     _increaseCollateralSupply(_spoke, _daiReserveId(_spoke), 1010e18, alice); // $1010
     _increaseCollateralSupply(_spoke, _usdyReserveId(_spoke), 10_000e18, alice);
@@ -140,8 +139,7 @@ contract SpokeLiquidationCallDustTest is SpokeLiquidationCallBaseTest {
       _spoke,
       _daiReserveId(_spoke),
       collateralFactor,
-      liquidationBonus,
-      SPOKE_ADMIN
+      liquidationBonus
     );
     _increaseCollateralSupply(_spoke, _daiReserveId(_spoke), 1100e18, alice); // $1100
     _increaseCollateralSupply(_spoke, _usdyReserveId(_spoke), 10_000e18, alice);
@@ -214,8 +212,7 @@ contract SpokeLiquidationCallDustTest is SpokeLiquidationCallBaseTest {
       _spoke,
       _daiReserveId(_spoke),
       collateralFactor,
-      liquidationBonus,
-      SPOKE_ADMIN
+      liquidationBonus
     );
     _increaseCollateralSupply(_spoke, _daiReserveId(_spoke), 1100e18, alice); // $1100
     _increaseCollateralSupply(_spoke, _usdyReserveId(_spoke), 10_000e18, alice);
@@ -287,8 +284,7 @@ contract SpokeLiquidationCallDustTest is SpokeLiquidationCallBaseTest {
       _spoke,
       _daiReserveId(_spoke),
       collateralFactor,
-      liquidationBonus,
-      SPOKE_ADMIN
+      liquidationBonus
     );
     _increaseCollateralSupply(_spoke, _daiReserveId(_spoke), 2100e18, alice); // $2100
     _increaseCollateralSupply(_spoke, _usdyReserveId(_spoke), 10_000e18, alice);

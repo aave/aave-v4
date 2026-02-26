@@ -443,12 +443,7 @@ contract SpokeWithdrawTest is Base {
 
   function test_withdraw_all_liquidity_with_interest_no_premium() public {
     // set weth collateral risk to 0 for no premium contribution
-    _updateCollateralRisk({
-      spoke: spoke1,
-      reserveId: _wethReserveId(spoke1),
-      newCollateralRisk: 0,
-      spokeAdmin: SPOKE_ADMIN
-    });
+    _updateCollateralRisk({spoke: spoke1, reserveId: _wethReserveId(spoke1), newCollateralRisk: 0});
 
     TestState memory state;
     state.reserveId = _daiReserveId(spoke1);
@@ -573,8 +568,7 @@ contract SpokeWithdrawTest is Base {
     _updateCollateralRisk({
       spoke: spoke1,
       reserveId: _wbtcReserveId(spoke1), // use highest-valued asset
-      newCollateralRisk: 0,
-      spokeAdmin: SPOKE_ADMIN
+      newCollateralRisk: 0
     });
 
     TestState memory state;

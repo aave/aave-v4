@@ -391,7 +391,7 @@ contract SpokeDynamicConfigTest is Base {
     SpokeActions.borrow(spoke1, _wethReserveId(spoke1), alice, 1e18, alice);
 
     // offboard usdx
-    _updateCollateralFactor(spoke1, _usdxReserveId(spoke1), 0, SPOKE_ADMIN);
+    _updateCollateralFactor(spoke1, _usdxReserveId(spoke1), 0);
 
     // existing users: alice, bob
     // alice still healthy

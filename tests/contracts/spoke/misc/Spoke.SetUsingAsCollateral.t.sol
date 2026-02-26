@@ -28,7 +28,7 @@ contract SpokeSetUsingAsCollateralTest is Base {
     assertTrue(_isUsingAsCollateral(spoke1, daiReserveId, alice), 'alice using as collateral');
     assertFalse(_isUsingAsCollateral(spoke1, daiReserveId, bob), 'bob not using as collateral');
 
-    _updateReserveFrozenFlag(spoke1, daiReserveId, true, SPOKE_ADMIN);
+    _updateReserveFrozenFlag(spoke1, daiReserveId, true);
     assertTrue(spoke1.getReserve(daiReserveId).flags.frozen(), 'reserve status frozen');
 
     // disallow when activating
@@ -48,7 +48,7 @@ contract SpokeSetUsingAsCollateralTest is Base {
 
   function test_setUsingAsCollateral_revertsWith_ReservePaused() public {
     uint256 daiReserveId = _daiReserveId(spoke1);
-    _updateReservePausedFlag(spoke1, daiReserveId, true, SPOKE_ADMIN);
+    _updateReservePausedFlag(spoke1, daiReserveId, true);
     assertTrue(spoke1.getReserve(daiReserveId).flags.paused());
 
     vm.expectRevert(ISpoke.ReservePaused.selector);
@@ -105,16 +105,10 @@ contract SpokeSetUsingAsCollateralTest is Base {
     _updateCollateralFactor(
       spoke1,
       daiReserveId,
-      _getCollateralFactor(spoke1, daiReserveId) + 1_00,
-      SPOKE_ADMIN
+      _getCollateralFactor(spoke1, daiReserveId) + 1_00
     );
     // slight update collateral risk so user is subject to risk premium refresh
-    _updateCollateralRisk(
-      spoke1,
-      daiReserveId,
-      _getCollateralRisk(spoke1, daiReserveId) + 1_00,
-      SPOKE_ADMIN
-    );
+    _updateCollateralRisk(spoke1, daiReserveId, _getCollateralRisk(spoke1, daiReserveId) + 1_00);
 
     // Bob not using DAI as collateral
     assertFalse(_isUsingAsCollateral(spoke1, daiReserveId, bob), 'bob not using as collateral');
@@ -139,16 +133,10 @@ contract SpokeSetUsingAsCollateralTest is Base {
     _updateCollateralFactor(
       spoke1,
       daiReserveId,
-      _getCollateralFactor(spoke1, daiReserveId) + 1_00,
-      SPOKE_ADMIN
+      _getCollateralFactor(spoke1, daiReserveId) + 1_00
     );
     // slight update collateral risk so user is subject to risk premium refresh
-    _updateCollateralRisk(
-      spoke1,
-      daiReserveId,
-      _getCollateralRisk(spoke1, daiReserveId) + 1_00,
-      SPOKE_ADMIN
-    );
+    _updateCollateralRisk(spoke1, daiReserveId, _getCollateralRisk(spoke1, daiReserveId) + 1_00);
 
     // No action taken, because collateral status is already true
     bobDynConfig = _getUserDynConfigKeys(spoke1, bob);

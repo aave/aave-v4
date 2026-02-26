@@ -255,7 +255,7 @@ contract SpokePositionManagerTest is Base {
     SpokeActions.borrow(spoke1, _usdxReserveId(spoke1), alice, 1500e6, alice);
 
     uint256 riskPremiumBefore = _getUserRiskPremium(spoke1, alice);
-    _updateCollateralRisk(spoke1, _wethReserveId(spoke1), 100_00, SPOKE_ADMIN);
+    _updateCollateralRisk(spoke1, _wethReserveId(spoke1), 100_00);
     assertGt(_getUserRiskPremium(spoke1, alice), riskPremiumBefore);
 
     vm.expectRevert(
@@ -272,7 +272,7 @@ contract SpokePositionManagerTest is Base {
     spoke1.updateUserRiskPremium(alice);
 
     riskPremiumBefore = _getUserRiskPremium(spoke1, alice);
-    _updateCollateralRisk(spoke1, _wethReserveId(spoke1), 1000_00, SPOKE_ADMIN);
+    _updateCollateralRisk(spoke1, _wethReserveId(spoke1), 1000_00);
     assertGt(_getUserRiskPremium(spoke1, alice), riskPremiumBefore);
     _disablePositionManager();
 
@@ -289,8 +289,8 @@ contract SpokePositionManagerTest is Base {
     SpokeActions.supplyCollateral(spoke1, _daiReserveId(spoke1), alice, 1000e18, alice);
     SpokeActions.borrow(spoke1, _usdxReserveId(spoke1), alice, 1500e6, alice);
 
-    _updateCollateralFactor(spoke1, _wethReserveId(spoke1), 90_00, SPOKE_ADMIN);
-    _updateCollateralFactor(spoke1, _daiReserveId(spoke1), 90_00, SPOKE_ADMIN);
+    _updateCollateralFactor(spoke1, _wethReserveId(spoke1), 90_00);
+    _updateCollateralFactor(spoke1, _daiReserveId(spoke1), 90_00);
     DynamicConfigEntry[] memory configs = _getUserDynConfigKeys(spoke1, alice);
 
     vm.expectRevert(

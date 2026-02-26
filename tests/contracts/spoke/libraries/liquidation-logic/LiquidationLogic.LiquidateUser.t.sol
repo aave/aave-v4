@@ -35,9 +35,7 @@ contract LiquidationLogicLiquidateUserTest is LiquidationLogicBaseTest {
       usdxAssetId,
       12_500.25e6,
       10_000e6,
-      address(spoke1),
-      HUB_ADMIN,
-      MAX_ALLOWED_COLLATERAL_RISK
+      address(spoke1)
     );
     (debtReserveHub, ) = hub2Fixture();
     _mockInterestRateBps(debtReserveHub.getAsset(wethAssetId).irStrategy, 5_00);

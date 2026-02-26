@@ -227,9 +227,7 @@ contract LiquidationLogicBaseTest is Base {
       params.collateralReserveAssetId,
       hubAddedAssets,
       hubAddedShares,
-      address(spoke1),
-      HUB_ADMIN,
-      MAX_ALLOWED_COLLATERAL_RISK
+      address(spoke1)
     );
 
     return params;
@@ -297,9 +295,7 @@ contract LiquidationLogicBaseTest is Base {
       params.collateralReserveAssetId,
       hubAddedAssets,
       hubAddedShares,
-      address(spoke1),
-      HUB_ADMIN,
-      MAX_ALLOWED_COLLATERAL_RISK
+      address(spoke1)
     );
 
     return params;
