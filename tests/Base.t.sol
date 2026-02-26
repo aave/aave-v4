@@ -11,6 +11,7 @@ import {console2 as console} from 'forge-std/console2.sol';
 
 // dependencies
 import {AggregatorV3Interface} from 'src/dependencies/chainlink/AggregatorV3Interface.sol';
+import {AggregatorInterface} from 'src/dependencies/chainlink/AggregatorInterface.sol';
 import {
   TransparentUpgradeableProxy,
   ITransparentUpgradeableProxy

@@ -2,7 +2,6 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import {AggregatorInterface} from 'src/dependencies/chainlink/AggregatorInterface.sol';
 import 'tests/Base.t.sol';
 
 /// forge-config: default.allow_internal_expect_revert = true
@@ -248,6 +247,20 @@ contract AaveOracleTest is Base {
 
   function _mockSourceDecimals(address source, uint8 decimals) internal {
     vm.mockCall(source, abi.encodeCall(AggregatorV3Interface.decimals, ()), abi.encode(decimals));
+  }
+
+  function _mockSourceLatestRoundData(address source, int256 price) internal {
+    vm.mockCall(
+      source,
+      abi.encodeCall(AggregatorV3Interface.latestRoundData, ()),
+      abi.encode(
+        uint80(vm.getBlockTimestamp()),
+        price,
+        vm.getBlockTimestamp(),
+        vm.getBlockTimestamp(),
+        uint80(vm.getBlockTimestamp())
+      )
+    );
   }
 
   function _mockSourceLatestAnswer(address source, int256 price) internal {
