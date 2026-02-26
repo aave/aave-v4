@@ -49,12 +49,13 @@ interface IAaveOracle is IPriceOracle {
 
   /// @notice Sets the price feed source of a reserve.
   /// @dev Must be called by the spoke.
-  /// @dev The source must implement the AggregatorV3Interface.
+  /// @dev The source must implement the AggregatorV2V3Interface.
   /// @param reserveId The identifier of the reserve.
   /// @param source The price feed source of the reserve.
   function setReserveSource(uint256 reserveId, address source) external;
 
   /// @notice Returns the prices of multiple reserves.
+  /// @dev Reverts if the price of one of the reserves is 0.
   /// @param reserveIds The identifiers of the reserves.
   /// @return prices The prices of the reserves.
   function getReservesPrices(

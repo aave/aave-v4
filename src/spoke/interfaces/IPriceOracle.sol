@@ -19,6 +19,7 @@ interface IPriceOracle {
   function DECIMALS() external view returns (uint8);
 
   /// @notice Returns the reserve price with `decimals` precision.
+  /// @dev Reverts if the price is 0.
   /// @param reserveId The identifier of the reserve.
   /// @return The price of the reserve.
   function getReservePrice(uint256 reserveId) external view returns (uint256);

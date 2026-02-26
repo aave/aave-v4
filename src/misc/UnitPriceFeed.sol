@@ -50,7 +50,7 @@ contract UnitPriceFeed is AggregatorV2V3Interface {
   {
     if (_roundId <= block.timestamp.toUint80()) {
       roundId = _roundId;
-      answer = UNITS;
+      answer = latestAnswer();
       startedAt = _roundId;
       updatedAt = _roundId;
       answeredInRound = _roundId;
@@ -70,7 +70,7 @@ contract UnitPriceFeed is AggregatorV2V3Interface {
     )
   {
     roundId = block.timestamp.toUint80();
-    answer = UNITS;
+    answer = latestAnswer();
     startedAt = block.timestamp;
     updatedAt = block.timestamp;
     answeredInRound = roundId;
@@ -82,7 +82,7 @@ contract UnitPriceFeed is AggregatorV2V3Interface {
   }
 
   /// @inheritdoc AggregatorInterface
-  function latestAnswer() external view returns (int256) {
+  function latestAnswer() public view returns (int256) {
     return UNITS;
   }
 
