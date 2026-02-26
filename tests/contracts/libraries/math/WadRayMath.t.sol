@@ -5,7 +5,7 @@ pragma solidity ^0.8.0;
 import {Test} from 'forge-std/Test.sol';
 import {WadRayMathWrapper} from 'tests/helpers/mocks/WadRayMathWrapper.sol';
 
-contract WadRayMathDifferentialTests is Test {
+contract WadRayMathDifferentialTest is Test {
   WadRayMathWrapper internal w;
 
   function setUp() public {

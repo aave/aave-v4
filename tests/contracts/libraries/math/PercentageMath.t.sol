@@ -5,7 +5,7 @@ pragma solidity ^0.8.0;
 import {Test} from 'forge-std/Test.sol';
 import {PercentageMathWrapper} from 'tests/helpers/mocks/PercentageMathWrapper.sol';
 
-contract PercentageMathTests is Test {
+contract PercentageMathTest is Test {
   PercentageMathWrapper internal w;
 
   function setUp() public {

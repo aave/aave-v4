@@ -5,18 +5,18 @@ pragma solidity ^0.8.0;
 import {Test} from 'forge-std/Test.sol';
 import {ConfigPermissions} from 'src/position-manager/libraries/ConfigPermissionsMap.sol';
 import {IConfigPositionManager} from 'src/position-manager/interfaces/IConfigPositionManager.sol';
-import {ConfigPermissionsWrapper} from 'tests/helpers/mocks/ConfigPermissionsWrapper.sol';
+import {ConfigPermissionsMapWrapper} from 'tests/helpers/mocks/ConfigPermissionsMapWrapper.sol';
 
-contract ConfigPermissionsTests is Test {
+contract ConfigPermissionsMapTest is Test {
   uint8 internal constant CAN_SET_USING_AS_COLLATERAL_MASK = 0x1;
   uint8 internal constant CAN_UPDATE_USER_RISK_PREMIUM_MASK = 0x2;
   uint8 internal constant CAN_UPDATE_USER_DYNAMIC_CONFIG_MASK = 0x4;
   uint8 internal constant FULL_PERMISSIONS_MASK = 0x7;
 
-  ConfigPermissionsWrapper internal w;
+  ConfigPermissionsMapWrapper internal w;
 
   function setUp() public {
-    w = new ConfigPermissionsWrapper();
+    w = new ConfigPermissionsMapWrapper();
   }
 
   function test_constants() public view {

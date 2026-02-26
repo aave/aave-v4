@@ -8,7 +8,7 @@ import {
 } from 'src/position-manager/libraries/ConfigPermissionsMap.sol';
 import {IConfigPositionManager} from 'src/position-manager/interfaces/IConfigPositionManager.sol';
 
-contract ConfigPermissionsWrapper {
+contract ConfigPermissionsMapWrapper {
   using ConfigPermissionsMap for ConfigPermissions;
 
   function setFullPermissions(bool status) external pure returns (ConfigPermissions) {

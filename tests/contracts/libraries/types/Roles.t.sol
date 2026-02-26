@@ -5,7 +5,7 @@ pragma solidity ^0.8.0;
 import {Roles} from 'src/libraries/types/Roles.sol';
 import {Test} from 'forge-std/Test.sol';
 
-contract RolesTests is Test {
+contract RolesTest is Test {
   function test_constants() public view {
     assertEq(Roles.DEFAULT_ADMIN_ROLE, 0);
     assertEq(Roles.HUB_ADMIN_ROLE, 1);

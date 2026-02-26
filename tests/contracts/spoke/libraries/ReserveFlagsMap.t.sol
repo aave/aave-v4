@@ -6,7 +6,7 @@ import {Test} from 'forge-std/Test.sol';
 import {ReserveFlags} from 'src/spoke/interfaces/ISpoke.sol';
 import {ReserveFlagsMapWrapper} from 'tests/helpers/mocks/ReserveFlagsMapWrapper.sol';
 
-contract ReserveFlagsTests is Test {
+contract ReserveFlagsMapTest is Test {
   uint8 internal constant PAUSED_MASK = 0x01;
   uint8 internal constant FROZEN_MASK = 0x02;
   uint8 internal constant BORROWABLE_MASK = 0x04;
