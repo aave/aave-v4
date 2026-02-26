@@ -249,20 +249,6 @@ contract AaveOracleTest is Base {
     vm.mockCall(source, abi.encodeCall(AggregatorV3Interface.decimals, ()), abi.encode(decimals));
   }
 
-  function _mockSourceLatestRoundData(address source, int256 price) internal {
-    vm.mockCall(
-      source,
-      abi.encodeCall(AggregatorV3Interface.latestRoundData, ()),
-      abi.encode(
-        uint80(vm.getBlockTimestamp()),
-        price,
-        vm.getBlockTimestamp(),
-        vm.getBlockTimestamp(),
-        uint80(vm.getBlockTimestamp())
-      )
-    );
-  }
-
   function _mockSourceLatestAnswer(address source, int256 price) internal {
     vm.mockCall(source, abi.encodeCall(AggregatorInterface.latestAnswer, ()), abi.encode(price));
   }
