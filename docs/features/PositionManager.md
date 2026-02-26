@@ -2,7 +2,7 @@
 
 ## Summary
 
-PositionManagers are trusted periphery contracts that operate on Aave V4 Spokes on behalf of users. They enable supply, repay, withdraw, borrow, and configuration actions to be delegated to third-party contracts without requiring users to cede persistent custody of funds. Spoke-level PositionManager approval is a simple on/off authorization per (Spoke, user, PositionManager); finer scoping—where present—is implemented inside specific PositionManagers via per-reserve allowances, bitmapped config permissions, or EIP-712 signed intents. The specialized managers (`GiverPositionManager`, `TakerPositionManager`, and `ConfigPositionManager`) each encode a narrow delegation scope (inflow, outflow, or configuration), while gateways provide signature- and native-asset-oriented execution paths. The architecture replaces Aave V3's aToken allowance and credit delegation signature patterns with a more expressive, auditable delegation model designed to support lending aggregators, automated strategies, and protocol-to-protocol integrations.
+PositionManagers are trusted periphery contracts that operate on Aave V4 Spokes on behalf of users. They enable supply, repay, withdraw, borrow, and configuration actions to be delegated to third-party contracts without requiring users to cede persistent custody of funds. Spoke-level PositionManager approval is a simple on/off authorization per (Spoke, user, PositionManager); finer scoping—where present—is implemented inside specific PositionManagers via per-reserve allowances, bitmapped config permissions, or EIP-712 signed intents. The specialized managers (`GiverPositionManager`, `TakerPositionManager`, and `ConfigPositionManager`) each encode a narrow delegation scope (inflow, outflow, or configuration), while gateways provide signature- and native-asset-oriented execution paths. The architecture replaces Aave V3's aToken allowance, credit delegation signature, and `WrappedTokenGatewayV3` (native-asset gateway) patterns with a more expressive, auditable delegation model designed to support lending aggregators, automated strategies, and protocol-to-protocol integrations.
 
 ## Relationship to the Hub/Spoke Architecture
 
@@ -124,8 +124,10 @@ The following are explicitly excluded from the PositionManager system:
 
 ## Key Differences from Aave V3
 
-In Aave V3, protocol-to-protocol integrations relied on two patterns that are replaced or superseded in V4:
+In Aave V3, protocol-to-protocol integrations relied on three patterns that are replaced or superseded in V4:
 
 **aToken allowances** allowed one address to transfer another user's aTokens (representing supply positions). In V4, aToken allowances are not the primary delegation mechanism. The TakerPositionManager provides an explicit, scoped alternative for withdraw-on-behalf scenarios that does not require aToken transfers.
 
 **Credit delegation signatures** (`approveDelegation` with EIP-712 sig) allowed users to authorize third parties to borrow on their behalf. In V4, the TakerPositionManager replaces this with per-reserve, per-spoke borrow allowances that support both on-chain and EIP-712 signed grants without aToken-level accounting.
+
+**Native-asset gateway** (`WrappedTokenGatewayV3`) was a standalone periphery contract for wrapping/unwrapping native assets (ETH) around Pool interactions. In V4, `NativeTokenGateway` subsumes this role as a PositionManager, inheriting `PositionManagerBase` and integrating into the unified authorization model rather than operating as an independent contract with its own trust assumptions.
