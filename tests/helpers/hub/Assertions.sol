@@ -2,7 +2,7 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import {HubQueryHelpers} from 'tests/helpers/hub/HubQueryHelpers.sol';
+import {QueryHelpers} from 'tests/helpers/hub/QueryHelpers.sol';
 import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
 import {IERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
 import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
@@ -13,9 +13,9 @@ import {
   IBasicInterestRateStrategy
 } from 'src/hub/AssetInterestRateStrategy.sol';
 
-/// @title HubAssertions
+/// @title Assertions
 /// @notice Hub-level assertion helpers for the Aave V4 test suite.
-abstract contract HubAssertions is HubQueryHelpers {
+abstract contract Assertions is QueryHelpers {
   using WadRayMath for *;
   using PercentageMath for uint256;
   using SafeCast for *;

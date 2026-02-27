@@ -3,15 +3,15 @@
 pragma solidity ^0.8.0;
 
 import {CommonHelpers} from 'tests/helpers/commons/CommonHelpers.sol';
-import {HubConstants} from 'tests/helpers/hub/HubConstants.sol';
-import {HubTypes} from 'tests/helpers/hub/HubTypes.sol';
+import {Constants} from 'tests/helpers/hub/Constants.sol';
+import {Types} from 'tests/helpers/hub/Types.sol';
 import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
 import {IHub} from 'src/hub/interfaces/IHub.sol';
 
-/// @title HubQueryHelpers
+/// @title QueryHelpers
 /// @notice Hub-level state-reading helpers, snapshot builders, and random utilities.
-///         Math/calculation helpers live in HubMathHelpers.
-abstract contract HubQueryHelpers is CommonHelpers, HubConstants, HubTypes {
+///         Math/calculation helpers live in MathHelpers.
+abstract contract QueryHelpers is CommonHelpers, Constants, Types {
   using SafeCast for *;
 
   uint256 internal constant MAX_SUPPLY_AMOUNT = 1e30;

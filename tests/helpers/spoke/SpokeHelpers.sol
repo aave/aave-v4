@@ -3,7 +3,7 @@
 pragma solidity ^0.8.0;
 
 import {EIP712Helpers} from 'tests/helpers/spoke/EIP712Helpers.sol';
-import {SpokeSetupHelpers} from 'tests/helpers/spoke/SpokeSetupHelpers.sol';
+import {SetupHelpers} from 'tests/helpers/spoke/SetupHelpers.sol';
 
 /// @title SpokeHelpers
 /// @notice Aggregates all spoke-level test helpers.
@@ -12,22 +12,16 @@ import {SpokeSetupHelpers} from 'tests/helpers/spoke/SpokeSetupHelpers.sol';
 ///   SpokeHelpers
 ///   ├── EIP712Helpers
 ///   │   └── Test
-///   └── SpokeSetupHelpers
+///   └── SetupHelpers
 ///       ├── CheckedActions
-///       │   └── SpokeMathHelpers
-///       │       └── SpokeQueryHelpers
-///       │           ├── HubMathHelpers
-///       │           │   └── HubQueryHelpers
-///       │           │       ├── CommonHelpers
-///       │           │       └── HubConstants
-///       │           ├── SpokeConstants
-///       │           └── SpokeTypes
-///       ├── SpokeConfigHelpers
-///       │   └── SpokeAssertions
-///       │       └── SpokeQueryHelpers (shared)
-///       ├── SpokeMockHelpers
-///       │   └── CommonHelpers (shared)
-///       └── HubMockHelpers
-///           ├── CommonHelpers (shared)
-///           └── HubConstants (shared)
-abstract contract SpokeHelpers is EIP712Helpers, SpokeSetupHelpers {}
+///       │   └── MathHelpers
+///       │       └── QueryHelpers
+///       │           ├── HubHelpers
+///       │           ├── Constants
+///       │           └── Types
+///       ├── ConfigHelpers
+///       │   └── Assertions
+///       │       └── QueryHelpers (shared)
+///       └── MockHelpers
+///           └── CommonHelpers
+abstract contract SpokeHelpers is EIP712Helpers, SetupHelpers {}

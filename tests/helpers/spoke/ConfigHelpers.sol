@@ -4,11 +4,11 @@ pragma solidity ^0.8.0;
 
 import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
 import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
-import {SpokeAssertions} from 'tests/helpers/spoke/SpokeAssertions.sol';
+import {Assertions} from 'tests/helpers/spoke/Assertions.sol';
 
-/// @title SpokeConfigHelpers
+/// @title ConfigHelpers
 /// @notice Spoke-level configuration mutator helpers for the Aave V4 test suite.
-abstract contract SpokeConfigHelpers is SpokeAssertions {
+abstract contract ConfigHelpers is Assertions {
   using SafeCast for *;
 
   // --- Reserve flag updates ---

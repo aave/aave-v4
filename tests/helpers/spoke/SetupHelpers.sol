@@ -16,18 +16,11 @@ import {ISpokeInstance} from 'tests/helpers/mocks/ISpokeInstance.sol';
 import {MockSpoke} from 'tests/helpers/mocks/MockSpoke.sol';
 import {SpokeActions} from 'tests/helpers/spoke/SpokeActions.sol';
 import {CheckedActions} from 'tests/helpers/spoke/CheckedActions.sol';
-import {SpokeConfigHelpers} from 'tests/helpers/spoke/SpokeConfigHelpers.sol';
-import {SpokeMockHelpers} from 'tests/helpers/spoke/SpokeMockHelpers.sol';
-import {HubMockHelpers} from 'tests/helpers/hub/HubMockHelpers.sol';
-
-/// @title SpokeSetupHelpers
+import {ConfigHelpers} from 'tests/helpers/spoke/ConfigHelpers.sol';
+import {MockHelpers} from 'tests/helpers/spoke/MockHelpers.sol';
+/// @title SetupHelpers
 /// @notice Spoke-level state-mutating test setup utilities.
-abstract contract SpokeSetupHelpers is
-  CheckedActions,
-  SpokeConfigHelpers,
-  SpokeMockHelpers,
-  HubMockHelpers
-{
+abstract contract SetupHelpers is CheckedActions, ConfigHelpers, MockHelpers {
   using SafeCast for *;
   using WadRayMath for *;
   using PercentageMath for uint256;

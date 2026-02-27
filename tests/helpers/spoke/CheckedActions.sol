@@ -6,12 +6,12 @@ import {IERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
 import {IHub} from 'src/hub/interfaces/IHub.sol';
 import {ISpoke, ISpokeBase} from 'src/spoke/interfaces/ISpoke.sol';
 import {SpokeActions} from 'tests/helpers/spoke/SpokeActions.sol';
-import {SpokeMathHelpers} from 'tests/helpers/spoke/SpokeMathHelpers.sol';
+import {MathHelpers} from 'tests/helpers/spoke/MathHelpers.sol';
 
 /// @title CheckedActions
 /// @notice Composite helpers that encapsulate setup-act-assert for common operations.
 /// Each helper snapshots state, executes the action, and asserts basic invariants.
-abstract contract CheckedActions is SpokeMathHelpers {
+abstract contract CheckedActions is MathHelpers {
   // --- Params / result structs ---
 
   struct CheckedSupplyParams {

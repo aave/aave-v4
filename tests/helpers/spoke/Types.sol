@@ -4,9 +4,9 @@ pragma solidity ^0.8.0;
 
 import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 
-/// @title SpokeTypes
+/// @title Types
 /// @notice Shared struct definitions for spoke-level test helpers.
-abstract contract SpokeTypes {
+abstract contract Types {
   struct ReserveInfo {
     uint256 reserveId;
     ISpoke.ReserveConfig reserveConfig;

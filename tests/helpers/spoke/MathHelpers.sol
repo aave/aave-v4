@@ -2,7 +2,7 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import {SpokeQueryHelpers} from 'tests/helpers/spoke/SpokeQueryHelpers.sol';
+import {QueryHelpers} from 'tests/helpers/spoke/QueryHelpers.sol';
 import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
 import {ITransparentUpgradeableProxy} from 'src/dependencies/openzeppelin/TransparentUpgradeableProxy.sol';
 import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
@@ -14,10 +14,10 @@ import {IPriceOracle} from 'src/spoke/interfaces/IPriceOracle.sol';
 import {KeyValueList} from 'src/spoke/libraries/KeyValueList.sol';
 import {MockSpoke} from 'tests/helpers/mocks/MockSpoke.sol';
 
-/// @title SpokeMathHelpers
+/// @title MathHelpers
 /// @notice Complex spoke-level calculations, premium delta, health-factor math,
 ///         and risk-premium re-implementation for the Aave V4 test suite.
-abstract contract SpokeMathHelpers is SpokeQueryHelpers {
+abstract contract MathHelpers is QueryHelpers {
   using WadRayMath for *;
   using MathUtils for uint256;
   using PercentageMath for uint256;

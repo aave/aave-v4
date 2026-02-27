@@ -2,7 +2,7 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import {HubQueryHelpers} from 'tests/helpers/hub/HubQueryHelpers.sol';
+import {QueryHelpers} from 'tests/helpers/hub/QueryHelpers.sol';
 import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
 import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
 import {MathUtils} from 'src/libraries/math/MathUtils.sol';
@@ -10,11 +10,11 @@ import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
 import {IHub, IHubBase} from 'src/hub/interfaces/IHub.sol';
 import {SharesMath} from 'src/hub/libraries/SharesMath.sol';
 
-/// @title HubMathHelpers
+/// @title MathHelpers
 /// @notice Hub-level math calculations: premium, debt, interest, fees,
 ///         and restore amount helpers for the Aave V4 test suite.
-///         Extends HubQueryHelpers so hub math tests have access to query helpers.
-abstract contract HubMathHelpers is HubQueryHelpers {
+///         Extends QueryHelpers so hub math tests have access to query helpers.
+abstract contract MathHelpers is QueryHelpers {
   using WadRayMath for *;
   using MathUtils for uint256;
   using PercentageMath for uint256;

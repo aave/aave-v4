@@ -2,21 +2,21 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import {HubMathHelpers} from 'tests/helpers/hub/HubMathHelpers.sol';
+import {HubHelpers} from 'tests/helpers/hub/HubHelpers.sol';
 import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
 import {IERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
 import {IHub} from 'src/hub/interfaces/IHub.sol';
 import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 import {IAccessManager} from 'src/dependencies/openzeppelin/IAccessManager.sol';
-import {SpokeConstants} from 'tests/helpers/spoke/SpokeConstants.sol';
-import {SpokeTypes} from 'tests/helpers/spoke/SpokeTypes.sol';
+import {Constants} from 'tests/helpers/spoke/Constants.sol';
+import {Types} from 'tests/helpers/spoke/Types.sol';
 import {TestnetERC20} from 'tests/helpers/mocks/TestnetERC20.sol';
 
-/// @title SpokeQueryHelpers
+/// @title QueryHelpers
 /// @notice Core spoke-level state-reading helpers, dynamic config queries,
 ///         and position builders.
-///         Extends HubMathHelpers so spoke tests have access to hub helpers.
-abstract contract SpokeQueryHelpers is HubMathHelpers, SpokeConstants, SpokeTypes {
+///         Extends HubHelpers so spoke tests have access to hub helpers.
+abstract contract QueryHelpers is HubHelpers, Constants, Types {
   using SafeCast for *;
 
   // --- Reserve accessors ---

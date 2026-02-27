@@ -3,9 +3,7 @@
 pragma solidity ^0.8.0;
 
 import {ISignatureGateway} from 'src/position-manager/interfaces/ISignatureGateway.sol';
-
 import {EIP712Hash} from 'src/position-manager/libraries/EIP712Hash.sol';
-
 import {Test} from 'forge-std/Test.sol';
 
 contract EIP712HashTest is Test {

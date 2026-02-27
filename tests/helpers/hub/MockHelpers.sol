@@ -3,7 +3,7 @@
 pragma solidity ^0.8.0;
 
 import {CommonHelpers} from 'tests/helpers/commons/CommonHelpers.sol';
-import {HubConstants} from 'tests/helpers/hub/HubConstants.sol';
+import {Constants} from 'tests/helpers/hub/Constants.sol';
 import {HubActions} from 'tests/helpers/hub/HubActions.sol';
 import {SlotDerivation} from 'src/dependencies/openzeppelin/SlotDerivation.sol';
 import {IHub} from 'src/hub/interfaces/IHub.sol';
@@ -14,9 +14,9 @@ import {
 import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
 import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
 
-/// @title HubMockHelpers
+/// @title MockHelpers
 /// @notice Hub-level mocking utilities for the Aave V4 test suite.
-abstract contract HubMockHelpers is CommonHelpers, HubConstants {
+abstract contract MockHelpers is CommonHelpers, Constants {
   using WadRayMath for *;
   using PercentageMath for uint256;
 

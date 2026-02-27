@@ -2,9 +2,9 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-/// @title HubTypes
+/// @title Types
 /// @notice Shared struct definitions for hub-level test helpers.
-abstract contract HubTypes {
+abstract contract Types {
   struct AssetPosition {
     uint256 assetId;
     uint256 addedShares;

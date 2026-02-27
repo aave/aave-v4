@@ -11,9 +11,9 @@ import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
 import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
 import {MockPriceFeed} from 'tests/helpers/mocks/MockPriceFeed.sol';
 
-/// @title SpokeMockHelpers
+/// @title MockHelpers
 /// @notice Spoke-level mocking utilities for the Aave V4 test suite.
-abstract contract SpokeMockHelpers is CommonHelpers {
+abstract contract MockHelpers is CommonHelpers {
   using WadRayMath for *;
   using PercentageMath for uint256;
 

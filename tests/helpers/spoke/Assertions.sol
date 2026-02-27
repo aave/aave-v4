@@ -2,7 +2,7 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import {SpokeQueryHelpers} from 'tests/helpers/spoke/SpokeQueryHelpers.sol';
+import {QueryHelpers} from 'tests/helpers/spoke/QueryHelpers.sol';
 import {Vm} from 'forge-std/Vm.sol';
 import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
 import {IERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
@@ -12,9 +12,9 @@ import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 import {IAssetInterestRateStrategy} from 'src/hub/AssetInterestRateStrategy.sol';
 import {ReserveFlags, ReserveFlagsMap} from 'src/spoke/libraries/ReserveFlagsMap.sol';
 
-/// @title SpokeAssertions
+/// @title Assertions
 /// @notice Spoke-level assertion helpers for the Aave V4 test suite.
-abstract contract SpokeAssertions is SpokeQueryHelpers {
+abstract contract Assertions is QueryHelpers {
   using ReserveFlagsMap for ReserveFlags;
   using SafeCast for *;
   using PercentageMath for uint256;

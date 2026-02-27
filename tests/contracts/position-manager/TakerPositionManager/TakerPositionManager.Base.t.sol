@@ -3,8 +3,9 @@
 pragma solidity ^0.8.0;
 
 import 'tests/setup/Base.t.sol';
+import {TakerPositionManagerHelpers} from 'tests/helpers/position-manager/taker-position-manager/TakerPositionManagerHelpers.sol';
 
-contract TakerPositionManagerBaseTest is Base {
+contract TakerPositionManagerBaseTest is Base, TakerPositionManagerHelpers {
   TakerPositionManager public positionManager;
   SharesAndAmount public returnValues;
 
@@ -23,21 +24,14 @@ contract TakerPositionManagerBaseTest is Base {
     positionManager.registerSpoke(address(spoke1), true);
   }
 
+  // --- Convenience overloads (bind positionManager + spoke1) ---
+
   function _withdrawPermitData(
     address spender,
     address onBehalfOf,
     uint256 deadline
   ) internal returns (ITakerPositionManager.WithdrawPermit memory) {
-    return
-      ITakerPositionManager.WithdrawPermit({
-        spoke: address(spoke1),
-        reserveId: _randomReserveId(spoke1),
-        owner: onBehalfOf,
-        spender: spender,
-        amount: vm.randomUint(1, MAX_SUPPLY_AMOUNT),
-        nonce: positionManager.nonces(onBehalfOf, _randomNonceKey()),
-        deadline: deadline
-      });
+    return _withdrawPermitData(positionManager, spoke1, spender, onBehalfOf, deadline);
   }
 
   function _approveBorrowData(
@@ -45,38 +39,6 @@ contract TakerPositionManagerBaseTest is Base {
     address onBehalfOf,
     uint256 deadline
   ) internal returns (ITakerPositionManager.BorrowPermit memory) {
-    return
-      ITakerPositionManager.BorrowPermit({
-        spoke: address(spoke1),
-        reserveId: _randomReserveId(spoke1),
-        owner: onBehalfOf,
-        spender: spender,
-        amount: vm.randomUint(1, MAX_SUPPLY_AMOUNT),
-        nonce: positionManager.nonces(onBehalfOf, _randomNonceKey()),
-        deadline: deadline
-      });
-  }
-
-  function _getTypedDataHash(
-    ITakerPositionManager _positionManager,
-    ITakerPositionManager.WithdrawPermit memory _params
-  ) internal view returns (bytes32) {
-    return
-      _typedDataHash(_positionManager, vm.eip712HashStruct('WithdrawPermit', abi.encode(_params)));
-  }
-
-  function _getTypedDataHash(
-    ITakerPositionManager _positionManager,
-    ITakerPositionManager.BorrowPermit memory _params
-  ) internal view returns (bytes32) {
-    return
-      _typedDataHash(_positionManager, vm.eip712HashStruct('BorrowPermit', abi.encode(_params)));
-  }
-
-  function _typedDataHash(
-    ITakerPositionManager _positionManager,
-    bytes32 typeHash
-  ) internal view returns (bytes32) {
-    return keccak256(abi.encodePacked('\x19\x01', _positionManager.DOMAIN_SEPARATOR(), typeHash));
+    return _approveBorrowData(positionManager, spoke1, spender, onBehalfOf, deadline);
   }
 }

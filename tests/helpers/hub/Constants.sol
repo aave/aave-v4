@@ -2,7 +2,7 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-abstract contract HubConstants {
+abstract contract Constants {
   uint8 public constant MAX_ALLOWED_UNDERLYING_DECIMALS = 18;
   uint8 public constant MIN_ALLOWED_UNDERLYING_DECIMALS = 6;
   uint40 public constant MAX_ALLOWED_SPOKE_CAP = type(uint40).max;

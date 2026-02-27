@@ -5,12 +5,12 @@ pragma solidity ^0.8.0;
 import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
 import {IERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
 import {IHub, IHubBase} from 'src/hub/interfaces/IHub.sol';
-import {HubMathHelpers} from 'tests/helpers/hub/HubMathHelpers.sol';
+import {MathHelpers} from 'tests/helpers/hub/MathHelpers.sol';
 import {HubActions} from 'tests/helpers/hub/HubActions.sol';
 
-/// @title HubSetupHelpers
+/// @title SetupHelpers
 /// @notice Hub-level state-mutating test setup utilities.
-abstract contract HubSetupHelpers is HubMathHelpers {
+abstract contract SetupHelpers is MathHelpers {
   using SafeCast for *;
 
   // --- Liquidity operations ---

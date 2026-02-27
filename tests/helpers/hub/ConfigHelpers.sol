@@ -6,11 +6,11 @@ import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
 import {IAccessManager} from 'src/dependencies/openzeppelin/IAccessManager.sol';
 import {IHub} from 'src/hub/interfaces/IHub.sol';
 import {Roles} from 'src/libraries/types/Roles.sol';
-import {HubAssertions} from 'tests/helpers/hub/HubAssertions.sol';
+import {Assertions} from 'tests/helpers/hub/Assertions.sol';
 
-/// @title HubConfigHelpers
+/// @title ConfigHelpers
 /// @notice Hub-level configuration mutator helpers for the Aave V4 test suite.
-abstract contract HubConfigHelpers is HubAssertions {
+abstract contract ConfigHelpers is Assertions {
   using SafeCast for *;
 
   // --- Asset config updates ---

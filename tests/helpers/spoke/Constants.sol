@@ -2,7 +2,7 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-abstract contract SpokeConstants {
+abstract contract Constants {
   uint64 public constant HEALTH_FACTOR_LIQUIDATION_THRESHOLD = 1e18;
   uint256 public constant DUST_LIQUIDATION_THRESHOLD = 1000e26;
   uint24 public constant MAX_ALLOWED_COLLATERAL_RISK = 1000_00; // 1000.00%

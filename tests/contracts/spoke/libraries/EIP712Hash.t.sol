@@ -4,9 +4,7 @@ pragma solidity ^0.8.0;
 
 import {ITokenizationSpoke} from 'src/spoke/interfaces/ITokenizationSpoke.sol';
 import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
-
 import {EIP712Hash} from 'src/spoke/libraries/EIP712Hash.sol';
-
 import {Test} from 'forge-std/Test.sol';
 
 contract EIP712HashTest is Test {

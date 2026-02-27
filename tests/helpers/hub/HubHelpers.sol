@@ -2,24 +2,25 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import {HubConfigHelpers} from 'tests/helpers/hub/HubConfigHelpers.sol';
-import {HubMockHelpers} from 'tests/helpers/hub/HubMockHelpers.sol';
-import {HubSetupHelpers} from 'tests/helpers/hub/HubSetupHelpers.sol';
+import {ConfigHelpers} from 'tests/helpers/hub/ConfigHelpers.sol';
+import {MockHelpers} from 'tests/helpers/hub/MockHelpers.sol';
+import {SetupHelpers} from 'tests/helpers/hub/SetupHelpers.sol';
 
 /// @title HubHelpers
 /// @notice Aggregates all hub-level test helpers.
 ///
 /// Inheritance tree:
 ///   HubHelpers
-///   ├── HubConfigHelpers
-///   │   └── HubAssertions
-///   │       └── HubQueryHelpers
+///   ├── ConfigHelpers
+///   │   └── Assertions
+///   │       └── QueryHelpers
 ///   │           ├── CommonHelpers
-///   │           └── HubConstants
-///   ├── HubSetupHelpers
-///   │   └── HubMathHelpers
-///   │       └── HubQueryHelpers (shared)
-///   └── HubMockHelpers
+///   │           ├── Constants
+///   │           └── Types
+///   ├── SetupHelpers
+///   │   └── MathHelpers
+///   │       └── QueryHelpers (shared)
+///   └── MockHelpers
 ///       ├── CommonHelpers (shared)
-///       └── HubConstants (shared)
-abstract contract HubHelpers is HubConfigHelpers, HubSetupHelpers, HubMockHelpers {}
+///       └── Constants (shared)
+abstract contract HubHelpers is ConfigHelpers, SetupHelpers, MockHelpers {}
