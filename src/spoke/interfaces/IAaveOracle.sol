@@ -55,7 +55,7 @@ interface IAaveOracle is IPriceOracle {
   function setReserveSource(uint256 reserveId, address source) external;
 
   /// @notice Returns the prices of multiple reserves.
-  /// @dev Reverts if the price of one of the reserves is 0.
+  /// @dev Reverts if the price of one of the reserves is not greater than 0.
   /// @param reserveIds The identifiers of the reserves.
   /// @return prices The prices of the reserves.
   function getReservesPrices(
