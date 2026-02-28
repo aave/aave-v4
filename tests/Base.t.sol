@@ -10,8 +10,6 @@ import {Vm, VmSafe} from 'forge-std/Vm.sol';
 import {console2 as console} from 'forge-std/console2.sol';
 
 // dependencies
-import {AggregatorV3Interface} from 'src/dependencies/chainlink/AggregatorV3Interface.sol';
-import {AggregatorInterface} from 'src/dependencies/chainlink/AggregatorInterface.sol';
 import {
   TransparentUpgradeableProxy,
   ITransparentUpgradeableProxy
@@ -62,6 +60,7 @@ import {
 import {ISpoke, ISpokeBase} from 'src/spoke/interfaces/ISpoke.sol';
 import {TreasurySpoke, ITreasurySpoke} from 'src/spoke/TreasurySpoke.sol';
 import {IPriceOracle} from 'src/spoke/interfaces/IPriceOracle.sol';
+import {IPriceFeed} from 'src/spoke/interfaces/IPriceFeed.sol';
 import {AaveOracle} from 'src/spoke/AaveOracle.sol';
 import {IAaveOracle} from 'src/spoke/interfaces/IAaveOracle.sol';
 import {SpokeConfigurator, ISpokeConfigurator} from 'src/spoke/SpokeConfigurator.sol';
@@ -2887,9 +2886,7 @@ abstract contract Base is Test {
   function _mockReservePrice(ISpoke spoke, uint256 reserveId, uint256 price) internal {
     require(price > 0, 'mockReservePrice: price must be positive');
     AaveOracle oracle = AaveOracle(spoke.ORACLE());
-    address mockPriceFeed = address(
-      new MockPriceFeed(oracle.DECIMALS(), oracle.DESCRIPTION(), price)
-    );
+    address mockPriceFeed = address(new MockPriceFeed(oracle.DECIMALS(), int256(price)));
     vm.prank(address(ADMIN));
     spoke.updateReservePriceSource(reserveId, mockPriceFeed);
   }
@@ -2906,7 +2903,7 @@ abstract contract Base is Test {
 
   function _deployMockPriceFeed(ISpoke spoke, uint256 price) internal returns (address) {
     AaveOracle oracle = AaveOracle(spoke.ORACLE());
-    return address(new MockPriceFeed(oracle.DECIMALS(), oracle.DESCRIPTION(), price));
+    return address(new MockPriceFeed(oracle.DECIMALS(), int256(price)));
   }
 
   function _assertBorrowRateSynced(

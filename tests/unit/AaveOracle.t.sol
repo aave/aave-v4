@@ -173,7 +173,7 @@ contract AaveOracleTest is Base {
 
     vm.expectEmit();
     emit IAaveOracle.UpdateReserveSource(reserveId1, _source1);
-    vm.expectCall(_source1, abi.encodeCall(AggregatorInterface.latestAnswer, ()));
+    vm.expectCall(_source1, abi.encodeCall(IPriceFeed.latestAnswer, ()));
 
     vm.prank(address(spoke1));
     oracle.setReserveSource(reserveId1, _source1);
@@ -206,7 +206,7 @@ contract AaveOracleTest is Base {
   function test_getReservePrice() public {
     test_setReserveSource();
 
-    vm.expectCall(_source1, abi.encodeCall(AggregatorInterface.latestAnswer, ()));
+    vm.expectCall(_source1, abi.encodeCall(IPriceFeed.latestAnswer, ()));
     assertEq(oracle.getReservePrice(reserveId1), 1e8);
   }
 
@@ -246,10 +246,10 @@ contract AaveOracleTest is Base {
   }
 
   function _mockSourceDecimals(address source, uint8 decimals) internal {
-    vm.mockCall(source, abi.encodeCall(AggregatorV3Interface.decimals, ()), abi.encode(decimals));
+    vm.mockCall(source, abi.encodeCall(IPriceFeed.decimals, ()), abi.encode(decimals));
   }
 
   function _mockSourceLatestAnswer(address source, int256 price) internal {
-    vm.mockCall(source, abi.encodeCall(AggregatorInterface.latestAnswer, ()), abi.encode(price));
+    vm.mockCall(source, abi.encodeCall(IPriceFeed.latestAnswer, ()), abi.encode(price));
   }
 }
