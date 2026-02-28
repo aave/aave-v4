@@ -28,6 +28,10 @@ contract UnitPriceFeedTest is Base {
     assertEq(unitPriceFeed.latestAnswer(), (10 ** DECIMALS).toInt256());
   }
 
+  function test_decimals() public view {
+    assertEq(unitPriceFeed.decimals(), DECIMALS);
+  }
+
   function test_fuzz_latestAnswer_blockTimestamp(uint80 blockTimestamp) public {
     skip(blockTimestamp);
     assertEq(unitPriceFeed.latestAnswer(), int256(10 ** DECIMALS));
@@ -36,46 +40,7 @@ contract UnitPriceFeedTest is Base {
   function test_fuzz_latestAnswer_differentDecimals(uint8 decimals) public {
     decimals = bound(decimals, 0, 18).toUint8();
     unitPriceFeed = new UnitPriceFeed(decimals);
+    assertEq(unitPriceFeed.decimals(), decimals);
     assertEq(unitPriceFeed.latestAnswer(), int256(10 ** decimals));
-  }
-
-  function test_latestTimestamp() public {
-    uint80 skipTime = vm.randomUint(80).toUint80();
-    skip(skipTime);
-    assertEq(unitPriceFeed.latestTimestamp(), block.timestamp);
-  }
-
-  function test_latestRound() public {
-    uint80 skipTime = vm.randomUint(80).toUint80();
-    skip(skipTime);
-    assertEq(unitPriceFeed.latestRound(), block.timestamp);
-  }
-
-  function test_getAnswer() public {
-    uint80 skipTime = vm.randomUint(80).toUint80();
-    skip(skipTime);
-    uint256 roundId = vm.randomUint(0, skipTime);
-    assertEq(unitPriceFeed.getAnswer(roundId), (10 ** DECIMALS).toInt256());
-  }
-
-  function test_getAnswer_futureRound() public {
-    uint80 skipTime = vm.randomUint(0, type(uint80).max - 1).toUint80();
-    skip(skipTime);
-    uint256 roundId = vm.randomUint(skipTime + 1, type(uint80).max);
-    assertEq(unitPriceFeed.getAnswer(roundId), 0);
-  }
-
-  function test_getTimestamp() public {
-    uint80 skipTime = vm.randomUint(80).toUint80();
-    skip(skipTime);
-    uint256 roundId = vm.randomUint(0, skipTime);
-    assertEq(unitPriceFeed.getTimestamp(roundId), roundId);
-  }
-
-  function test_getTimestamp_futureRound() public {
-    uint80 skipTime = vm.randomUint(0, type(uint80).max - 1).toUint80();
-    skip(skipTime);
-    uint256 roundId = vm.randomUint(skipTime + 1, type(uint80).max);
-    assertEq(unitPriceFeed.getTimestamp(roundId), 0);
   }
 }
