@@ -40,6 +40,12 @@ contract HubPayFeeTest is HubBase {
     hub1.payFeeShares(daiAssetId, 0);
   }
 
+  function test_payFee_revertsWith_InvalidAddress_selfCall() public {
+    vm.expectRevert(IHub.InvalidAddress.selector, address(hub1));
+    vm.prank(address(tokenSpoke));
+    hub1.payFeeShares(daiAssetId, 1);
+  }
+
   function test_payFee_revertsWith_SpokeNotActive() public {
     _updateSpokeActive(hub1, daiAssetId, address(spoke1), false);
     vm.expectRevert(IHub.SpokeNotActive.selector, address(hub1));

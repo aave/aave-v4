@@ -390,13 +390,12 @@ contract Hub is IHub, AccessManaged {
   function payFeeShares(uint256 assetId, uint256 shares) external {
     Asset storage asset = _assets[assetId];
     address tokenizedSpoke = asset.tokenizedSpoke;
-    require(tokenizedSpoke != address(0), TokenizedSpokeNotListed());
 
     SpokeData storage receiver = _spokes[assetId][tokenizedSpoke];
     SpokeData storage sender = _spokes[assetId][msg.sender];
 
     asset.accrue();
-    _validatePayFeeShares(sender, shares);
+    _validatePayFeeShares(asset, sender, shares);
     _transferShares(sender, receiver, shares);
     ITokenizationSpoke(tokenizedSpoke).mintToTreasury(shares);
     asset.updateDrawnRate(assetId);
@@ -407,12 +406,11 @@ contract Hub is IHub, AccessManaged {
   /// @inheritdoc IHub
   function transferShares(uint256 assetId, uint256 shares, address toSpoke) external {
     Asset storage asset = _assets[assetId];
-    require(toSpoke != asset.tokenizedSpoke, InvalidAddress());
     SpokeData storage sender = _spokes[assetId][msg.sender];
     SpokeData storage receiver = _spokes[assetId][toSpoke];
 
     asset.accrue();
-    _validateTransferShares(asset, sender, receiver, shares);
+    _validateTransferShares(asset, sender, receiver, shares, toSpoke);
     _transferShares(sender, receiver, shares);
     asset.updateDrawnRate(assetId);
 
@@ -900,7 +898,13 @@ contract Hub is IHub, AccessManaged {
     require(deficitAmountRay > 0, InvalidAmount());
   }
 
-  function _validatePayFeeShares(SpokeData storage spoke, uint256 feeShares) internal view {
+  function _validatePayFeeShares(
+    Asset storage asset,
+    SpokeData storage spoke,
+    uint256 feeShares
+  ) internal view {
+    require(asset.tokenizedSpoke != address(0), TokenizedSpokeNotListed());
+    require(msg.sender != asset.tokenizedSpoke, InvalidAddress());
     require(spoke.active, SpokeNotActive());
     require(feeShares > 0, InvalidShares());
   }
@@ -909,8 +913,10 @@ contract Hub is IHub, AccessManaged {
     Asset storage asset,
     SpokeData storage sender,
     SpokeData storage receiver,
-    uint256 shares
+    uint256 shares,
+    address toSpoke
   ) internal view {
+    require(toSpoke != asset.tokenizedSpoke, InvalidAddress());
     require(sender.active && receiver.active, SpokeNotActive());
     require(!sender.halted && !receiver.halted, SpokeHalted());
     require(shares > 0, InvalidShares());
