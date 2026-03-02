@@ -796,6 +796,22 @@ contract AccessManagerEnumerableTest is Test {
     assertEq(accessManagerEnumerable.getRoleCount(), 0);
   }
 
+  function test_setTargetFunctionRole_skipAddPublicRole() public {
+    uint64 roleId = accessManagerEnumerable.PUBLIC_ROLE();
+    address target = makeAddr('target');
+    bytes4 selector = bytes4(keccak256('function()'));
+
+    bytes4[] memory selectors = new bytes4[](1);
+    selectors[0] = selector;
+
+    vm.prank(ADMIN);
+    accessManagerEnumerable.setTargetFunctionRole(target, selectors, roleId);
+
+    // should track selectors for PUBLIC_ROLE but not track PUBLIC_ROLE itself
+    assertEq(accessManagerEnumerable.getRoleTargetSelectorCount(roleId, target), 1);
+    assertEq(accessManagerEnumerable.getRoleCount(), 0);
+  }
+
   function test_getRoleMembers_fuzz(uint256 startIndex, uint256 endIndex) public {
     startIndex = bound(startIndex, 0, 14);
     endIndex = bound(endIndex, startIndex + 1, 15);
