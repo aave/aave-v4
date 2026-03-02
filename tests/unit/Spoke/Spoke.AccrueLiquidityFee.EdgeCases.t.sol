@@ -115,7 +115,10 @@ contract SpokeAccrueLiquidityFeeEdgeCasesTest is SpokeBase {
       'bob does not earn anything'
     );
 
-    uint256 totalAccruedToTreasury = hub1.getSpokeAddedAssets(assetId, hub1.getAssetConfig(assetId).tokenizedSpoke);
+    uint256 totalAccruedToTreasury = hub1.getSpokeAddedAssets(
+      assetId,
+      hub1.getAssetConfig(assetId).tokenizedSpoke
+    );
     assertLe(
       totalAccruedToTreasury,
       spoke1.getUserTotalDebt(reserveId, alice) -

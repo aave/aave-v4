@@ -23,7 +23,11 @@ contract TokenizationSpokeConfigTest is TokenizationSpokeBaseTest {
   function test_constructor_asset_correctly_set() public {
     address treasury = makeAddr('treasury');
     uint256 assetId = vm.randomUint(0, hub1.getAssetCount() - 1);
-    TokenizationSpokeInstance instance = new TokenizationSpokeInstance(address(hub1), assetId, treasury);
+    TokenizationSpokeInstance instance = new TokenizationSpokeInstance(
+      address(hub1),
+      assetId,
+      treasury
+    );
     assertEq(instance.asset(), hub1.getAsset(assetId).underlying);
     assertEq(instance.decimals(), hub1.getAsset(assetId).decimals);
     assertEq(instance.treasury(), treasury);

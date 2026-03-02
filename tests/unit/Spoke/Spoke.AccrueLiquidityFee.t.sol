@@ -233,7 +233,13 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
 
     skip(365 days);
     _test_accrueLiquidityFee_exact_phase1(
-      reserveId, assetId, expectedDrawnDebt, expectedPremiumDebt, expectedPhaseFees, liquidityFee, rate
+      reserveId,
+      assetId,
+      expectedDrawnDebt,
+      expectedPremiumDebt,
+      expectedPhaseFees,
+      liquidityFee,
+      rate
     );
   }
 
@@ -281,7 +287,13 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
 
     skip(365 days);
     _test_accrueLiquidityFee_exact_phase2(
-      reserveId, assetId, expectedDrawnDebt, expectedPremiumDebt, expectedPhaseFees, liquidityFee, rate
+      reserveId,
+      assetId,
+      expectedDrawnDebt,
+      expectedPremiumDebt,
+      expectedPhaseFees,
+      liquidityFee,
+      rate
     );
   }
 
@@ -378,7 +390,15 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
 
     assertEq(_getUserRpStored(spoke1, alice), expectedRp);
 
-    _test_accrueLiquidityFee_phase1(reserveId, assetId, expectedDrawnDebt, expectedPremiumDebt, expectedTreasuryFees, liquidityFee, rate);
+    _test_accrueLiquidityFee_phase1(
+      reserveId,
+      assetId,
+      expectedDrawnDebt,
+      expectedPremiumDebt,
+      expectedTreasuryFees,
+      liquidityFee,
+      rate
+    );
   }
 
   function _test_accrueLiquidityFee_phase1(
@@ -425,7 +445,15 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
     expectedDrawnDebt += expectedDrawnDebtAccrual;
     expectedTreasuryFees = expectedDrawnDebtAccrual.percentMulUp(liquidityFee);
 
-    _test_accrueLiquidityFee_phase2(reserveId, assetId, expectedDrawnDebt, expectedPremiumDebt, expectedTreasuryFees, liquidityFee, rate);
+    _test_accrueLiquidityFee_phase2(
+      reserveId,
+      assetId,
+      expectedDrawnDebt,
+      expectedPremiumDebt,
+      expectedTreasuryFees,
+      liquidityFee,
+      rate
+    );
   }
 
   function _test_accrueLiquidityFee_phase2(

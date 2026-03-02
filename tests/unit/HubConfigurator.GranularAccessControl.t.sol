@@ -101,10 +101,7 @@ contract HubConfiguratorGranularAccessControlTest is HubBase {
       abi.encodeCall(IHubConfigurator.updateTokenizedSpoke, (address(hub1), assetId, address(0)))
     );
     assetManagerCalldata.push(
-      abi.encodeCall(
-        IHubConfigurator.updateFeeConfig,
-        (address(hub1), assetId, 5_00, address(0))
-      )
+      abi.encodeCall(IHubConfigurator.updateFeeConfig, (address(hub1), assetId, 5_00, address(0)))
     );
     assetManagerCalldata.push(
       abi.encodeCall(

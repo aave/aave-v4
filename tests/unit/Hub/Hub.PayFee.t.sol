@@ -122,12 +122,7 @@ contract HubPayFeeTest is HubBase {
     uint256 treasuryBalanceBefore = tokenSpoke.balanceOf(TREASURY);
 
     vm.expectEmit(address(hub1));
-    emit IHubBase.TransferShares(
-      daiAssetId,
-      address(spoke1),
-      address(tokenSpoke),
-      feeShares
-    );
+    emit IHubBase.TransferShares(daiAssetId, address(spoke1), address(tokenSpoke), feeShares);
 
     vm.prank(address(spoke1));
     hub1.payFeeShares(daiAssetId, feeShares);

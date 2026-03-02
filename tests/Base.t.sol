@@ -2527,7 +2527,8 @@ abstract contract Base is Test {
     address proxyAdminOwner
   ) internal pausePrank returns (ITokenizationSpoke) {
     address treasury = makeAddr('treasury');
-    return _deployTokenizationSpoke(hub, assetId, shareName, shareSymbol, proxyAdminOwner, treasury);
+    return
+      _deployTokenizationSpoke(hub, assetId, shareName, shareSymbol, proxyAdminOwner, treasury);
   }
 
   function _deployTokenizationSpoke(
@@ -2538,7 +2539,9 @@ abstract contract Base is Test {
     address proxyAdminOwner,
     address treasury
   ) internal pausePrank returns (ITokenizationSpoke) {
-    address tokenizationSpokeImpl = address(new TokenizationSpokeInstance(address(hub), assetId, treasury));
+    address tokenizationSpokeImpl = address(
+      new TokenizationSpokeInstance(address(hub), assetId, treasury)
+    );
     ITokenizationSpoke tokenizationSpoke = ITokenizationSpoke(
       DeployUtils.proxify(
         tokenizationSpokeImpl,
@@ -2583,13 +2586,7 @@ abstract contract Base is Test {
   function _setupTokenizedSpokesForAllAssets(IHub hub) internal {
     uint256 assetCount = hub.getAssetCount();
     for (uint256 i = 0; i < assetCount; ++i) {
-      ITokenizationSpoke tokenSpoke = _deployTokenizationSpoke(
-        hub,
-        i,
-        'FEE',
-        'FEE',
-        ADMIN
-      );
+      ITokenizationSpoke tokenSpoke = _deployTokenizationSpoke(hub, i, 'FEE', 'FEE', ADMIN);
       _registerTokenizationSpoke(hub, i, tokenSpoke);
       vm.startPrank(ADMIN);
       IHub.AssetConfig memory config = hub.getAssetConfig(i);

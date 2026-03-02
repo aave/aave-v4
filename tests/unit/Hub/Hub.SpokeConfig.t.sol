@@ -18,7 +18,14 @@ contract HubSpokeConfigTest is HubBase {
     _addLiquidity(usdxAssetId, MAX_SUPPLY_AMOUNT);
 
     // Deploy a tokenized spoke for usdxAssetId so mintFeeShares / payFeeShares tests work
-    usdxTokenSpoke = _deployTokenizationSpoke(hub1, usdxAssetId, 'USDX-TST', 'USDX-TST', ADMIN, TREASURY);
+    usdxTokenSpoke = _deployTokenizationSpoke(
+      hub1,
+      usdxAssetId,
+      'USDX-TST',
+      'USDX-TST',
+      ADMIN,
+      TREASURY
+    );
     vm.startPrank(ADMIN);
     hub1.addSpoke(
       usdxAssetId,
