@@ -8,6 +8,11 @@ contract SpokeDynamicConfigTriggersTest is SpokeBase {
   using PercentageMath for uint256;
   using SafeCast for uint256;
 
+  function setUp() public virtual override {
+    super.setUp();
+    _setupTokenizedSpokesForAllAssets(hub1);
+  }
+
   function test_supply_does_not_trigger_dynamicConfigUpdate() public {
     DynamicConfig[] memory configs = _getUserDynConfigKeys(spoke1, alice);
 

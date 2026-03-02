@@ -10,9 +10,7 @@ contract HubMintFeeSharesTest is HubBase {
   address internal constant TREASURY = address(0xBEEF);
 
   /// @dev Helper: deploy a real TokenizationSpokeInstance, register it, and set as tokenizedSpoke
-  function _setUpTokenizedSpoke(
-    uint256 assetId
-  ) internal returns (ITokenizationSpoke tokenSpoke) {
+  function _setUpTokenizedSpoke(uint256 assetId) internal returns (ITokenizationSpoke tokenSpoke) {
     tokenSpoke = _deployTokenizationSpoke(hub1, assetId, 'TST', 'TST', ADMIN, TREASURY);
 
     vm.startPrank(ADMIN);
@@ -69,8 +67,8 @@ contract HubMintFeeSharesTest is HubBase {
     Utils.mintFeeShares(hub1, invalidAssetId, ADMIN);
   }
 
-  /// @dev When tokenizedSpoke is address(0), mintFeeShares is a no-op even if fees have accumulated
-  function test_mintFeeShares_noTokenizedSpoke() public {
+  /// @dev mintFeeShares reverts when tokenizedSpoke is address(0)
+  function test_mintFeeShares_revertsWith_TokenizedSpokeNotListed() public {
     // Base tests have tokenizedSpoke = address(0)
     assertEq(hub1.getAssetConfig(daiAssetId).tokenizedSpoke, address(0));
 
@@ -86,16 +84,10 @@ contract HubMintFeeSharesTest is HubBase {
       skipTime: 365 days
     });
 
-    uint256 accruedFees = hub1.getAssetAccruedFees(daiAssetId);
-    assertGt(accruedFees, 0, 'should have accrued fees');
+    assertGt(hub1.getAssetAccruedFees(daiAssetId), 0, 'should have accrued fees');
 
-    // mintFeeShares is a no-op when tokenizedSpoke is address(0)
-    vm.recordLogs();
-    uint256 mintedShares = Utils.mintFeeShares(hub1, daiAssetId, ADMIN);
-    _assertEventNotEmitted(IHub.MintFeeShares.selector);
-
-    assertEq(mintedShares, 0, 'no shares minted when tokenizedSpoke is zero');
-    // Fees remain in realizedFees (accumulated by accrue()) but not distributed
+    vm.expectRevert(IHub.TokenizedSpokeNotListed.selector, address(hub1));
+    Utils.mintFeeShares(hub1, daiAssetId, ADMIN);
   }
 
   function test_mintFeeShares() public {
@@ -140,7 +132,12 @@ contract HubMintFeeSharesTest is HubBase {
 
     // after mintFeeShares, fee shares go to tokenizedSpoke, and treasury gets ERC20 shares
     vm.expectEmit(address(hub1));
-    emit IHub.MintFeeShares(daiAssetId, address(tokenSpoke), expectedMintedShares, expectedMintedAssets);
+    emit IHub.MintFeeShares(
+      daiAssetId,
+      address(tokenSpoke),
+      expectedMintedShares,
+      expectedMintedAssets
+    );
     vm.expectEmit(address(hub1));
     emit IHub.UpdateAsset(daiAssetId, hub1.getAssetDrawnIndex(daiAssetId), mockRate, 0);
 
@@ -182,6 +179,7 @@ contract HubMintFeeSharesTest is HubBase {
   }
 
   function test_mintFeeShares_noShares() public {
+    _setUpTokenizedSpoke(daiAssetId);
     updateLiquidityFee(hub1, daiAssetId, 0);
     _mockInterestRateRay(2);
 

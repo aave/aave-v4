@@ -12,6 +12,7 @@ contract HubOperations_Gas_Tests is Base {
   function setUp() public override {
     deployFixtures();
     initEnvironment();
+    _setupTokenizedSpokesForAllAssets(hub1);
   }
 
   function test_add() public {

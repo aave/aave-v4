@@ -25,7 +25,7 @@ interface IHub is IHubBase, IAccessManaged {
   /// @dev underlying The address of the underlying asset.
   /// @dev irStrategy The address of the interest rate strategy.
   /// @dev reinvestmentController The address of the reinvestment controller.
-  /// @dev tokenizedSpoke The address of the tokenization spoke that receives fee shares. Zero address if unset.
+  /// @dev tokenizedSpoke The address of the tokenization spoke that receives fee shares. Zero address only during bootstrap (before `updateAssetConfig` sets it).
   /// @dev deficitRay The amount of outstanding bad debt across all spokes, expressed in asset units and scaled by RAY.
   struct Asset {
     uint120 liquidity;
@@ -255,10 +255,12 @@ interface IHub is IHubBase, IAccessManaged {
 
   /// @notice Adds a new asset to the Hub.
   /// @dev The same underlying asset address cannot be added as an asset multiple times.
-  /// @dev `tokenizedSpoke` may be zero address if the spoke is not yet deployed; set it later via `updateAssetConfig`.
+  /// @dev `tokenizedSpoke` may be zero at listing time (spoke not yet deployed at known address); set it via
+  ///      `updateAssetConfig` before the asset processes liquidation fees — `payFeeShares` reverts if zero.
   /// @param underlying The address of the underlying asset.
   /// @param decimals The number of decimals of `underlying`.
-  /// @param tokenizedSpoke The address of the tokenization spoke that will receive fee shares. Zero address is allowed.
+  /// @param tokenizedSpoke The address of the tokenization spoke that will receive fee shares.
+  ///        Zero address is accepted at asset creation only.
   /// @param irStrategy The address of the interest rate strategy contract.
   /// @param irData The interest rate data to apply to the given asset encoded in bytes.
   /// @return The unique identifier of the added asset.
@@ -271,7 +273,7 @@ interface IHub is IHubBase, IAccessManaged {
   ) external returns (uint256);
 
   /// @notice Updates the configuration of an asset.
-  /// @dev If the tokenized spoke is updated, pending fees are minted to the old spoke before the switch. The new spoke must already be listed (or be zero address).
+  /// @dev If the tokenized spoke is updated, pending fees are minted to the old spoke before the switch. The new spoke must already be listed.
   /// @dev If the interest rate strategy is updated, it is configured with `irData`. Otherwise, `irData` must be empty.
   /// @param assetId The identifier of the asset.
   /// @param config The new configuration for the asset.

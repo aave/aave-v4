@@ -116,11 +116,9 @@ contract TreasurySpokeTest is SpokeBase {
     uint256 expectedFeeAmount = _calcUnrealizedFees(hub1, daiAssetId);
     assertGt(expectedFeeAmount, 0, 'should have unrealized fees');
 
-    // mintFeeShares is a no-op when tokenizedSpoke == address(0)
-    Utils.mintFeeShares(hub1, daiAssetId, ADMIN);
-
-    // fees accumulate in realizedFees now (not in treasurySpoke)
-    assertGt(hub1.getAsset(daiAssetId).realizedFees, 0, 'realized fees should be non-zero');
+    // fees accumulate in realizedFees when tokenizedSpoke is address(0) (mintFeeShares would revert)
+    // trigger accrue by calling a view that forces accrual indirectly via getAssetAccruedFees
+    assertGt(hub1.getAssetAccruedFees(daiAssetId), 0, 'unrealized fees should be non-zero');
     // TreasurySpoke still has no shares (fees did NOT auto-flow to it)
     assertEq(treasurySpoke.getSuppliedShares(daiAssetId), 0, 'treasury spoke has no shares');
   }
@@ -222,18 +220,19 @@ contract TreasurySpokeTest is SpokeBase {
 
     uint256 expectedFeeAmount = _calcUnrealizedFees(hub1, assetId);
 
-    // mintFeeShares is a no-op when tokenizedSpoke == address(0); fees go to realizedFees
-    Utils.mintFeeShares(hub1, assetId, ADMIN);
-
-    // Fees accumulate in realizedFees, NOT in treasurySpoke
+    // Fees accumulate as unrealized when tokenizedSpoke is address(0) (mintFeeShares would revert)
     assertApproxEqAbs(
-      hub1.getAsset(assetId).realizedFees,
+      hub1.getAssetAccruedFees(assetId),
       expectedFeeAmount,
       1,
-      'fees in realizedFees'
+      'fees in unrealized/realized'
     );
     // TreasurySpoke has no shares (fees did NOT auto-flow to it)
-    assertEq(hub1.getSpokeAddedAssets(assetId, address(treasurySpoke)), 0, 'treasury spoke has no supplied amount');
+    assertEq(
+      hub1.getSpokeAddedAssets(assetId, address(treasurySpoke)),
+      0,
+      'treasury spoke has no supplied amount'
+    );
   }
 
   function test_borrow_revertsWith_UnsupportedAction() public {
@@ -270,8 +269,16 @@ contract TreasurySpokeTest is SpokeBase {
 
     // TreasurySpoke starts with no supplied assets
     assertEq(treasurySpoke.getSuppliedAmount(assetId), 0, 'initial supplied amount');
-    assertEq(treasurySpoke.getReserveSuppliedAssets(reserveId), 0, 'initial reserve supplied assets');
-    assertEq(treasurySpoke.getReserveSuppliedShares(reserveId), 0, 'initial reserve supplied shares');
+    assertEq(
+      treasurySpoke.getReserveSuppliedAssets(reserveId),
+      0,
+      'initial reserve supplied assets'
+    );
+    assertEq(
+      treasurySpoke.getReserveSuppliedShares(reserveId),
+      0,
+      'initial reserve supplied shares'
+    );
 
     // Supply manually through TreasurySpoke
     Utils.supply(_treasurySpoke(), assetId, TREASURY_ADMIN, amount, address(treasurySpoke));

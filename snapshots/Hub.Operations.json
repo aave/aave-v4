@@ -4,8 +4,8 @@
   "draw": "104076",
   "eliminateDeficit: full": "72483",
   "eliminateDeficit: partial": "82088",
-  "mintFeeShares": "72109",
-  "payFee": "24449",
+  "mintFeeShares": "138807",
+  "payFee": "126762",
   "refreshPremium": "70338",
   "remove: full": "75524",
   "remove: partial": "80662",
@@ -14,5 +14,5 @@
   "restore: full - with transfer": "169101",
   "restore: partial": "85226",
   "restore: partial - with transfer": "143206",
-  "transferShares": "69559"
+  "transferShares": "71690"
 }

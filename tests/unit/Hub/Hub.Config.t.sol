@@ -227,15 +227,7 @@ contract HubConfigTest is HubBase {
       abi.encodeWithSelector(SafeCast.SafeCastOverflowedUintDowncast.selector, 96, drawnRateRay),
       address(hub1)
     );
-    Utils.addAsset(
-      hub1,
-      ADMIN,
-      underlying,
-      18,
-      address(0),
-      address(irStrategy),
-      encodedIrData
-    );
+    Utils.addAsset(hub1, ADMIN, underlying, 18, address(0), address(irStrategy), encodedIrData);
   }
 
   function test_addAsset_revertsWith_BlockTimestampDowncastOverflow() public {
@@ -248,15 +240,7 @@ contract HubConfigTest is HubBase {
       abi.encodeWithSelector(SafeCast.SafeCastOverflowedUintDowncast.selector, 40, blockTimestamp),
       address(hub1)
     );
-    Utils.addAsset(
-      hub1,
-      ADMIN,
-      underlying,
-      18,
-      address(0),
-      address(irStrategy),
-      encodedIrData
-    );
+    Utils.addAsset(hub1, ADMIN, underlying, 18, address(0), address(irStrategy), encodedIrData);
   }
 
   function test_addAsset_fuzz(address underlying, uint8 decimals, address tokenizedSpoke) public {
@@ -533,7 +517,10 @@ contract HubConfigTest is HubBase {
 
     IHub.AssetConfig memory config = hub1.getAssetConfig(assetId);
     // tokenizedSpoke is address(0) in base setup; just verify fees accumulate with no-op mintFeeShares
-    assertTrue(hub1.getAsset(assetId).realizedFees > 0 || _calcUnrealizedFees(hub1, assetId) > 0, 'no fees');
+    assertTrue(
+      hub1.getAsset(assetId).realizedFees > 0 || _calcUnrealizedFees(hub1, assetId) > 0,
+      'no fees'
+    );
 
     // Setting tokenizedSpoke to address(0) is always valid
     config.tokenizedSpoke = address(0);
@@ -574,7 +561,7 @@ contract HubConfigTest is HubBase {
     Utils.updateAssetConfig(hub1, ADMIN, assetId, config, new bytes(0));
   }
 
-  /// Updates the tokenizedSpoke while tokenizedSpoke is address(0) — succeeds without fee minting
+  /// Updates the tokenizedSpoke while tokenizedSpoke is address(0) — succeeds; fees remain in realizedFees
   function test_updateAssetConfig_NewFeeReceiver_noFees() public {
     uint256 assetId = daiAssetId;
 
@@ -583,13 +570,10 @@ contract HubConfigTest is HubBase {
     _drawLiquidity(assetId, amount, true);
     skip(365 days);
 
-    // mintFeeShares is a no-op because tokenizedSpoke is address(0)
-    Utils.mintFeeShares(hub1, assetId, ADMIN);
-
     IHub.AssetConfig memory config = hub1.getAssetConfig(assetId);
     assertEq(config.tokenizedSpoke, address(0));
 
-    // Updating with same config succeeds
+    // Updating with same config (no tokenizedSpoke change) succeeds; fees remain in realizedFees
     Utils.updateAssetConfig(hub1, ADMIN, assetId, config, new bytes(0));
   }
 

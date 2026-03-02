@@ -13,6 +13,7 @@ contract SpokeOperations_Gas_Tests is SpokeBase {
   function setUp() public virtual override {
     deployFixtures();
     initEnvironment();
+    _setupTokenizedSpokesForAllAssets(hub1);
     spoke = spoke1;
     reserveId = _getReserveIds(spoke);
     _seed();

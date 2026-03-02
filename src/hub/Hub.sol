@@ -151,9 +151,7 @@ contract Hub is IHub, AccessManaged {
     if (oldTokenizedSpoke != config.tokenizedSpoke) {
       _mintFeeShares(asset, assetId);
       address newTokenizedSpoke = config.tokenizedSpoke;
-      if (newTokenizedSpoke != address(0)) {
-        require(_assetToSpokes[assetId].contains(newTokenizedSpoke), TokenizedSpokeNotListed());
-      }
+      require(_assetToSpokes[assetId].contains(newTokenizedSpoke), TokenizedSpokeNotListed());
       asset.tokenizedSpoke = newTokenizedSpoke;
     }
 
@@ -205,6 +203,7 @@ contract Hub is IHub, AccessManaged {
   function mintFeeShares(uint256 assetId) external restricted returns (uint256) {
     require(assetId < _assetCount, AssetNotListed());
     Asset storage asset = _assets[assetId];
+    require(asset.tokenizedSpoke != address(0), TokenizedSpokeNotListed());
     asset.accrue();
     uint256 feeShares = _mintFeeShares(asset, assetId);
     asset.updateDrawnRate(assetId);
@@ -391,7 +390,7 @@ contract Hub is IHub, AccessManaged {
   function payFeeShares(uint256 assetId, uint256 shares) external {
     Asset storage asset = _assets[assetId];
     address tokenizedSpoke = asset.tokenizedSpoke;
-    if (tokenizedSpoke == address(0)) return;
+    require(tokenizedSpoke != address(0), TokenizedSpokeNotListed());
 
     SpokeData storage receiver = _spokes[assetId][tokenizedSpoke];
     SpokeData storage sender = _spokes[assetId][msg.sender];
@@ -408,6 +407,7 @@ contract Hub is IHub, AccessManaged {
   /// @inheritdoc IHub
   function transferShares(uint256 assetId, uint256 shares, address toSpoke) external {
     Asset storage asset = _assets[assetId];
+    require(toSpoke != asset.tokenizedSpoke, InvalidAddress());
     SpokeData storage sender = _spokes[assetId][msg.sender];
     SpokeData storage receiver = _spokes[assetId][toSpoke];
 

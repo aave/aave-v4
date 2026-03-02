@@ -292,8 +292,8 @@ contract HubConfiguratorTest is HubBase {
     hubConfigurator.updateTokenizedSpoke(address(hub1), vm.randomUint(), vm.randomAddress());
   }
 
-  /// @dev tokenizedSpoke CAN be address(0) in the new design; no InvalidAddress revert
-  function test_updateTokenizedSpoke_allowsZeroAddress() public {
+  /// @dev Setting tokenizedSpoke to address(0) when it is already address(0) is a no-op — does not revert
+  function test_updateTokenizedSpoke_noopWhenAlreadyZero() public {
     _assetId = vm.randomUint(0, hub1.getAssetCount() - 1);
 
     IHub.AssetConfig memory expectedConfig = hub1.getAssetConfig(_assetId);
@@ -315,21 +315,21 @@ contract HubConfiguratorTest is HubBase {
     IHub.AssetConfig memory expectedConfig = hub1.getAssetConfig(_assetId);
 
     if (tokenizedSpoke != oldConfig.tokenizedSpoke) {
-      if (tokenizedSpoke == address(0) || hub1.isSpokeListed(_assetId, tokenizedSpoke)) {
+      if (hub1.isSpokeListed(_assetId, tokenizedSpoke)) {
         expectedConfig.tokenizedSpoke = tokenizedSpoke;
         vm.expectCall(
           address(hub1),
           abi.encodeCall(IHub.updateAssetConfig, (_assetId, expectedConfig, new bytes(0)))
         );
       } else {
-        // non-zero, non-listed tokenizedSpoke reverts
+        // non-listed tokenizedSpoke (including address(0)) reverts
         vm.expectRevert(IHub.TokenizedSpokeNotListed.selector, address(hub1));
       }
     }
     vm.prank(HUB_CONFIGURATOR);
     hubConfigurator.updateTokenizedSpoke(address(hub1), _assetId, tokenizedSpoke);
 
-    if (tokenizedSpoke == address(0) || hub1.isSpokeListed(_assetId, tokenizedSpoke)) {
+    if (hub1.isSpokeListed(_assetId, tokenizedSpoke)) {
       assertEq(hub1.getAssetConfig(_assetId), expectedConfig);
     }
   }
@@ -358,9 +358,9 @@ contract HubConfiguratorTest is HubBase {
   }
 
   function test_updateTokenizedSpoke_Scenario() public {
-    // set to address(0) (always valid)
+    // address(0) → address(0): no-op, no revert
     test_updateTokenizedSpoke_fuzz(address(0));
-    // set to a listed spoke
+    // address(0) → listed spoke: succeeds
     test_updateTokenizedSpoke_fuzz(address(spoke1));
   }
 
@@ -378,16 +378,15 @@ contract HubConfiguratorTest is HubBase {
     });
   }
 
-  /// @dev tokenizedSpoke can be address(0) in updateFeeConfig — no InvalidAddress revert
-  function test_updateFeeConfig_allowsZeroAddress() public {
+  /// @dev Passing address(0) for tokenizedSpoke when it is already address(0) is a no-op — does not revert
+  function test_updateFeeConfig_noopWhenAlreadyZero() public {
     uint256 assetId = vm.randomUint(0, hub1.getAssetCount() - 1);
     uint256 liquidityFee = vm.randomUint(1, PercentageMath.PERCENTAGE_FACTOR);
 
     IHub.AssetConfig memory expectedConfig = hub1.getAssetConfig(assetId);
     expectedConfig.liquidityFee = uint16(liquidityFee);
-    expectedConfig.tokenizedSpoke = address(0);
+    // tokenizedSpoke stays address(0) — no change, so no TokenizedSpokeNotListed revert
 
-    // address(0) is valid for tokenizedSpoke
     vm.prank(HUB_CONFIGURATOR);
     hubConfigurator.updateFeeConfig(address(hub1), assetId, liquidityFee, address(0));
     assertEq(hub1.getAssetConfig(assetId), expectedConfig);
@@ -419,7 +418,7 @@ contract HubConfiguratorTest is HubBase {
     expectedConfig.liquidityFee = liquidityFee;
 
     if (oldConfig.tokenizedSpoke != tokenizedSpoke) {
-      if (tokenizedSpoke == address(0) || hub1.isSpokeListed(assetId_, tokenizedSpoke)) {
+      if (hub1.isSpokeListed(assetId_, tokenizedSpoke)) {
         expectedConfig.tokenizedSpoke = tokenizedSpoke;
         vm.expectCall(
           address(hub1),
@@ -427,24 +426,24 @@ contract HubConfiguratorTest is HubBase {
         );
       } else {
         expectedConfig.liquidityFee = oldConfig.liquidityFee;
-        // non-zero, non-listed tokenizedSpoke reverts
+        // non-listed tokenizedSpoke (including address(0)) reverts
         vm.expectRevert(IHub.TokenizedSpokeNotListed.selector, address(hub1));
       }
     }
     vm.prank(HUB_CONFIGURATOR);
     hubConfigurator.updateFeeConfig(address(hub1), assetId_, liquidityFee, tokenizedSpoke);
-    if (tokenizedSpoke == address(0) || hub1.isSpokeListed(assetId_, tokenizedSpoke)) {
+    if (hub1.isSpokeListed(assetId_, tokenizedSpoke)) {
       assertEq(hub1.getAssetConfig(assetId_), expectedConfig);
     }
   }
 
   function test_updateFeeConfig_Scenario() public {
-    // set tokenizedSpoke to address(0) (always valid) and change liquidity fee
+    // change liquidity fee only (tokenizedSpoke stays address(0), no-op change)
     test_updateFeeConfig_fuzz(0, 18_00, address(0));
     // set tokenizedSpoke to a listed spoke
     test_updateFeeConfig_fuzz(0, 4_00, address(spoke1));
-    // set to address(0) again
-    test_updateFeeConfig_fuzz(0, 0, address(0));
+    // change liquidity fee only (tokenizedSpoke stays spoke1, no-op change)
+    test_updateFeeConfig_fuzz(0, 0, address(spoke1));
   }
 
   function test_updateInterestRateStrategy_fuzz_revertsWith_AccessManagedUnauthorized(
