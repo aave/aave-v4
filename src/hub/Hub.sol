@@ -14,6 +14,7 @@ import {SharesMath} from 'src/hub/libraries/SharesMath.sol';
 import {Premium} from 'src/hub/libraries/Premium.sol';
 import {IBasicInterestRateStrategy} from 'src/hub/interfaces/IBasicInterestRateStrategy.sol';
 import {IHubBase, IHub} from 'src/hub/interfaces/IHub.sol';
+import {ITokenizationSpoke} from 'src/spoke/interfaces/ITokenizationSpoke.sol';
 
 /// @title Hub
 /// @author Aave Labs
@@ -66,14 +67,11 @@ contract Hub is IHub, AccessManaged {
   function addAsset(
     address underlying,
     uint8 decimals,
-    address feeReceiver,
+    address tokenizedSpoke,
     address irStrategy,
     bytes calldata irData
   ) external restricted returns (uint256) {
-    require(
-      underlying != address(0) && feeReceiver != address(0) && irStrategy != address(0),
-      InvalidAddress()
-    );
+    require(underlying != address(0) && irStrategy != address(0), InvalidAddress());
     require(
       MIN_ALLOWED_UNDERLYING_DECIMALS <= decimals && decimals <= MAX_ALLOWED_UNDERLYING_DECIMALS,
       InvalidAssetDecimals()
@@ -110,16 +108,15 @@ contract Hub is IHub, AccessManaged {
       irStrategy: irStrategy,
       realizedFees: 0,
       reinvestmentController: address(0),
-      feeReceiver: feeReceiver,
+      tokenizedSpoke: tokenizedSpoke,
       liquidityFee: 0
     });
-    _addFeeReceiver(assetId, feeReceiver);
 
     emit AddAsset(assetId, underlying, decimals);
     emit UpdateAssetConfig(
       assetId,
       AssetConfig({
-        feeReceiver: feeReceiver,
+        tokenizedSpoke: tokenizedSpoke,
         liquidityFee: 0,
         irStrategy: irStrategy,
         reinvestmentController: address(0)
@@ -141,7 +138,7 @@ contract Hub is IHub, AccessManaged {
     asset.accrue();
 
     require(config.liquidityFee <= PercentageMath.PERCENTAGE_FACTOR, InvalidLiquidityFee());
-    require(config.feeReceiver != address(0) && config.irStrategy != address(0), InvalidAddress());
+    require(config.irStrategy != address(0), InvalidAddress());
     require(
       config.reinvestmentController != address(0) || asset.swept == 0,
       InvalidReinvestmentController()
@@ -150,15 +147,14 @@ contract Hub is IHub, AccessManaged {
     asset.liquidityFee = config.liquidityFee;
     asset.reinvestmentController = config.reinvestmentController;
 
-    address oldFeeReceiver = asset.feeReceiver;
-    if (oldFeeReceiver != config.feeReceiver) {
+    address oldTokenizedSpoke = asset.tokenizedSpoke;
+    if (oldTokenizedSpoke != config.tokenizedSpoke) {
       _mintFeeShares(asset, assetId);
-      IHub.SpokeConfig memory spokeConfig;
-      spokeConfig.active = _spokes[assetId][oldFeeReceiver].active;
-      spokeConfig.halted = _spokes[assetId][oldFeeReceiver].halted;
-      _updateSpokeConfig(assetId, oldFeeReceiver, spokeConfig);
-      asset.feeReceiver = config.feeReceiver;
-      _addFeeReceiver(assetId, config.feeReceiver);
+      address newTokenizedSpoke = config.tokenizedSpoke;
+      if (newTokenizedSpoke != address(0)) {
+        require(_assetToSpokes[assetId].contains(newTokenizedSpoke), TokenizedSpokeNotListed());
+      }
+      asset.tokenizedSpoke = newTokenizedSpoke;
     }
 
     if (config.irStrategy != asset.irStrategy) {
@@ -394,16 +390,19 @@ contract Hub is IHub, AccessManaged {
   /// @inheritdoc IHubBase
   function payFeeShares(uint256 assetId, uint256 shares) external {
     Asset storage asset = _assets[assetId];
-    address feeReceiver = _assets[assetId].feeReceiver;
-    SpokeData storage receiver = _spokes[assetId][feeReceiver];
+    address tokenizedSpoke = asset.tokenizedSpoke;
+    if (tokenizedSpoke == address(0)) return;
+
+    SpokeData storage receiver = _spokes[assetId][tokenizedSpoke];
     SpokeData storage sender = _spokes[assetId][msg.sender];
 
     asset.accrue();
     _validatePayFeeShares(sender, shares);
     _transferShares(sender, receiver, shares);
+    ITokenizationSpoke(tokenizedSpoke).mintToTreasury(shares);
     asset.updateDrawnRate(assetId);
 
-    emit TransferShares(assetId, msg.sender, feeReceiver, shares);
+    emit TransferShares(assetId, msg.sender, tokenizedSpoke, shares);
   }
 
   /// @inheritdoc IHub
@@ -592,7 +591,7 @@ contract Hub is IHub, AccessManaged {
     Asset storage asset = _assets[assetId];
     return
       AssetConfig({
-        feeReceiver: asset.feeReceiver,
+        tokenizedSpoke: asset.tokenizedSpoke,
         liquidityFee: asset.liquidityFee,
         irStrategy: asset.irStrategy,
         reinvestmentController: asset.reinvestmentController
@@ -702,22 +701,6 @@ contract Hub is IHub, AccessManaged {
       });
   }
 
-  /// @notice Adds a new spoke to an asset with default feeReceiver configuration (maximum add cap, zero draw cap).
-  function _addFeeReceiver(uint256 assetId, address feeReceiver) internal {
-    _addSpoke(assetId, feeReceiver);
-    _updateSpokeConfig(
-      assetId,
-      feeReceiver,
-      SpokeConfig({
-        addCap: MAX_ALLOWED_SPOKE_CAP,
-        drawCap: 0,
-        riskPremiumThreshold: 0,
-        active: true,
-        halted: false
-      })
-    );
-  }
-
   /// @notice Adds a spoke to an asset.
   /// @dev Reverts with `SpokeAlreadyListed` if spoke is already listed for the given asset.
   function _addSpoke(uint256 assetId, address spoke) internal {
@@ -781,20 +764,25 @@ contract Hub is IHub, AccessManaged {
   }
 
   function _mintFeeShares(Asset storage asset, uint256 assetId) internal returns (uint256) {
+    address tokenizedSpoke = asset.tokenizedSpoke;
+    if (tokenizedSpoke == address(0)) {
+      return 0;
+    }
+
     uint256 fees = asset.realizedFees;
     uint120 shares = asset.toAddedSharesDown(fees).toUint120();
     if (shares == 0) {
       return 0;
     }
 
-    address feeReceiver = asset.feeReceiver;
-    SpokeData storage feeReceiverSpoke = _spokes[assetId][feeReceiver];
-    require(feeReceiverSpoke.active, SpokeNotActive());
+    SpokeData storage tokenizedSpokeData = _spokes[assetId][tokenizedSpoke];
+    require(tokenizedSpokeData.active, SpokeNotActive());
 
     asset.addedShares += shares;
-    feeReceiverSpoke.addedShares += shares;
+    tokenizedSpokeData.addedShares += shares;
     asset.realizedFees = 0;
-    emit MintFeeShares(assetId, feeReceiver, shares, fees);
+    ITokenizationSpoke(tokenizedSpoke).mintToTreasury(shares);
+    emit MintFeeShares(assetId, tokenizedSpoke, shares, fees);
 
     return shares;
   }

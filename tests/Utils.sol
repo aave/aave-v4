@@ -91,12 +91,12 @@ library Utils {
     address hubAdmin,
     address underlying,
     uint8 decimals,
-    address feeReceiver,
+    address tokenizedSpoke,
     address interestRateStrategy,
     bytes memory encodedIrData
   ) internal returns (uint256) {
     vm.prank(hubAdmin);
-    return hub.addAsset(underlying, decimals, feeReceiver, interestRateStrategy, encodedIrData);
+    return hub.addAsset(underlying, decimals, tokenizedSpoke, interestRateStrategy, encodedIrData);
   }
 
   function updateAssetConfig(

@@ -7,6 +7,12 @@ import 'tests/unit/Spoke/SpokeBase.t.sol';
 contract SpokeAccrueLiquidityFeeEdgeCasesTest is SpokeBase {
   uint256 public constant MAX_LIQUIDITY_FEE = 100_00;
 
+  function setUp() public virtual override {
+    super.setUp();
+    // Deploy and register a tokenized spoke for every hub1 asset so mintFeeShares distributes fees
+    _setupTokenizedSpokesForAllAssets(hub1);
+  }
+
   /// @dev Max liquidity fee with premium debt accrual
   function test_accrueLiquidityFee_maxLiquidityFee_with_premium() public {
     test_accrueLiquidityFee_fuzz_maxLiquidityFee_with_premium({
@@ -53,13 +59,13 @@ contract SpokeAccrueLiquidityFeeEdgeCasesTest is SpokeBase {
       'alice does not earn anything'
     );
     assertApproxEqAbs(
-      hub1.getSpokeAddedAssets(assetId, address(treasurySpoke)),
+      hub1.getSpokeAddedAssets(assetId, hub1.getAssetConfig(assetId).tokenizedSpoke),
       spoke1.getUserTotalDebt(reserveId, alice) - borrowAmount,
       3,
       'fees == total user accrued'
     );
     assertApproxEqAbs(
-      hub1.getSpokeAddedAssets(assetId, address(treasurySpoke)),
+      hub1.getSpokeAddedAssets(assetId, hub1.getAssetConfig(assetId).tokenizedSpoke),
       hub1.getSpokeTotalOwed(assetId, address(spoke1)) - borrowAmount,
       3,
       'fees == total spoke accrued'
@@ -109,7 +115,7 @@ contract SpokeAccrueLiquidityFeeEdgeCasesTest is SpokeBase {
       'bob does not earn anything'
     );
 
-    uint256 totalAccruedToTreasury = hub1.getSpokeAddedAssets(assetId, address(treasurySpoke));
+    uint256 totalAccruedToTreasury = hub1.getSpokeAddedAssets(assetId, hub1.getAssetConfig(assetId).tokenizedSpoke);
     assertLe(
       totalAccruedToTreasury,
       spoke1.getUserTotalDebt(reserveId, alice) -
@@ -161,43 +167,61 @@ contract SpokeAccrueLiquidityFeeEdgeCasesTest is SpokeBase {
 
   function test_accrueLiquidityFee_maxLiquidityFee_multi_spoke() public {
     uint256 assetId = daiAssetId; // on all spokes
-    uint256 spokeCount = hub1.getSpokeCount(assetId);
     updateLiquidityFee(hub1, assetId, MAX_LIQUIDITY_FEE);
-    // build spoke list excluding treasury spoke
-    ISpoke[] memory spokes = new ISpoke[](spokeCount - 1);
-    uint256 spokeIndex;
-    for (uint256 i; i < spokeCount; ++i) {
-      if (hub1.getSpokeAddress(assetId, i) != address(treasurySpoke)) {
-        spokes[spokeIndex++] = ISpoke(hub1.getSpokeAddress(assetId, i));
-      }
-    }
+    ISpoke[] memory spokes = _buildBorrowableSpokes(assetId);
 
     uint256 count = vm.randomUint(10, 1000);
-    for (uint256 i; i < count; ++i) {
-      address user = makeUser(i);
-      uint256 borrowAmount = vm.randomUint(1, MAX_SUPPLY_AMOUNT / count);
-      ISpoke spoke = spokes[i % spokes.length]; // to deterministically pick random spoke
-      uint256 reserveId = _reserveId(spoke, assetId);
-      _backedBorrow(spoke, user, reserveId, reserveId, borrowAmount);
-    }
+    _borrowFromSpokes(spokes, assetId, count);
     uint256 totalOwedBefore = hub1.getAssetTotalOwed(assetId);
 
     skip(vm.randomUint(1, MAX_SKIP_TIME));
 
+    _repayAndAssertFees(spokes, assetId, count, totalOwedBefore);
+  }
+
+  function _buildBorrowableSpokes(uint256 assetId) internal view returns (ISpoke[] memory) {
+    uint256 spokeCount = hub1.getSpokeCount(assetId);
+    address tokenizedSpokeAddr = hub1.getAssetConfig(assetId).tokenizedSpoke;
+    ISpoke[] memory spokes = new ISpoke[](spokeCount - 1);
+    uint256 spokeIndex;
+    for (uint256 i; i < spokeCount; ++i) {
+      if (hub1.getSpokeAddress(assetId, i) != tokenizedSpokeAddr) {
+        spokes[spokeIndex++] = ISpoke(hub1.getSpokeAddress(assetId, i));
+      }
+    }
+    return spokes;
+  }
+
+  function _borrowFromSpokes(ISpoke[] memory spokes, uint256 assetId, uint256 count) internal {
+    for (uint256 i; i < count; ++i) {
+      address user = makeUser(i);
+      uint256 borrowAmount = vm.randomUint(1, MAX_SUPPLY_AMOUNT / count);
+      ISpoke spoke = spokes[i % spokes.length];
+      uint256 reserveId = _reserveId(spoke, assetId);
+      _backedBorrow(spoke, user, reserveId, reserveId, borrowAmount);
+    }
+  }
+
+  function _repayAndAssertFees(
+    ISpoke[] memory spokes,
+    uint256 assetId,
+    uint256 count,
+    uint256 totalOwedBefore
+  ) internal {
     uint256 feesAccrued;
     for (uint256 i; i < count; ++i) {
-      address user = makeUser(i); // deterministic operation
-      ISpoke spoke = spokes[i % spokes.length]; // deterministic operation
+      address user = makeUser(i);
+      ISpoke spoke = spokes[i % spokes.length];
       uint256 reserveId = _reserveId(spoke, assetId);
       uint256 totalOwedAfter = hub1.getAssetTotalOwed(assetId);
-      Utils.repay(spoke, reserveId, user, 1, user); // accrue interest & realize premium
+      Utils.repay(spoke, reserveId, user, 1, user);
       assertApproxEqAbs(totalOwedAfter, hub1.getAssetTotalOwed(assetId), 1);
 
       feesAccrued += totalOwedAfter - totalOwedBefore;
       totalOwedBefore = hub1.getAssetTotalOwed(assetId);
 
       uint256 actualFeesAccrued = _getExpectedFeeReceiverAddedAssets(hub1, assetId);
-      assertApproxEqRel(actualFeesAccrued, feesAccrued, 0.0000001e18); // 0.00001%
+      assertApproxEqRel(actualFeesAccrued, feesAccrued, 0.0000001e18);
       assertLe(actualFeesAccrued, feesAccrued, 'actual fees <= expected fees');
 
       skip(vm.randomUint(0, MAX_SKIP_TIME / count));

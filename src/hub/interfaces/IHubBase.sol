@@ -149,10 +149,10 @@ interface IHubBase {
   /// @param premiumDelta The change in premium.
   function refreshPremium(uint256 assetId, PremiumDelta calldata premiumDelta) external;
 
-  /// @notice Transfers `shares` amount of existing `addedShares` of caller spoke to `feeReceiver`.
+  /// @notice Transfers `shares` amount of existing `addedShares` of caller spoke to the tokenized spoke and mints them to the treasury.
   /// @dev Only callable by active spokes. Utilized to pay liquidation fee.
   /// @param assetId The identifier of the asset.
-  /// @param shares The amount of shares to pay to feeReceiver.
+  /// @param shares The amount of shares to pay.
   function payFeeShares(uint256 assetId, uint256 shares) external;
 
   /// @notice Converts the specified amount of assets to shares upon an `add` action.
@@ -270,14 +270,14 @@ interface IHubBase {
   function getAssetDeficitRay(uint256 assetId) external view returns (uint256);
 
   /// @notice Returns the total amount of the specified assets added to the Hub by the specified spoke.
-  /// @dev If spoke is `asset.feeReceiver`, includes converted `unrealizedFeeShares` in return value.
+  /// @dev If spoke is `asset.tokenizedSpoke`, includes converted `unrealizedFeeShares` in return value.
   /// @param assetId The identifier of the asset.
   /// @param spoke The address of the spoke.
   /// @return The amount of added assets.
   function getSpokeAddedAssets(uint256 assetId, address spoke) external view returns (uint256);
 
   /// @notice Returns the total amount of shares of the specified asset added to the Hub by the specified spoke.
-  /// @dev If spoke is `asset.feeReceiver`, includes `unrealizedFeeShares` in return value.
+  /// @dev If spoke is `asset.tokenizedSpoke`, includes `unrealizedFeeShares` in return value.
   /// @param assetId The identifier of the asset.
   /// @param spoke The address of the spoke.
   /// @return The amount of added shares.

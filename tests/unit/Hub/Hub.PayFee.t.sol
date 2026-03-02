@@ -3,8 +3,37 @@
 pragma solidity ^0.8.0;
 
 import 'tests/unit/Hub/HubBase.t.sol';
+import {TokenizationSpokeInstance} from 'src/spoke/instances/TokenizationSpokeInstance.sol';
+import {ITokenizationSpoke} from 'src/spoke/interfaces/ITokenizationSpoke.sol';
 
 contract HubPayFeeTest is HubBase {
+  address internal constant TREASURY = address(0xBEEF);
+
+  ITokenizationSpoke internal tokenSpoke;
+
+  function setUp() public virtual override {
+    super.setUp();
+
+    // Deploy and register a tokenized spoke for daiAssetId so payFeeShares works
+    tokenSpoke = _deployTokenizationSpoke(hub1, daiAssetId, 'TST', 'TST', ADMIN, TREASURY);
+    vm.startPrank(ADMIN);
+    hub1.addSpoke(
+      daiAssetId,
+      address(tokenSpoke),
+      IHub.SpokeConfig({
+        active: true,
+        halted: false,
+        addCap: type(uint40).max,
+        drawCap: 0,
+        riskPremiumThreshold: 0
+      })
+    );
+    IHub.AssetConfig memory config = hub1.getAssetConfig(daiAssetId);
+    config.tokenizedSpoke = address(tokenSpoke);
+    hub1.updateAssetConfig(daiAssetId, config, new bytes(0));
+    vm.stopPrank();
+  }
+
   function test_payFee_revertsWith_InvalidShares() public {
     vm.expectRevert(IHub.InvalidShares.selector, address(hub1));
     vm.prank(address(spoke1));
@@ -89,16 +118,14 @@ contract HubPayFeeTest is HubBase {
 
     feeShares = bound(feeShares, 1, spokeSharesBefore);
 
-    uint256 feeReceiverSharesBefore = hub1.getSpokeAddedShares(
-      daiAssetId,
-      _getFeeReceiver(hub1, daiAssetId)
-    );
+    uint256 tokenizedSpokeSharesBefore = hub1.getSpokeAddedShares(daiAssetId, address(tokenSpoke));
+    uint256 treasuryBalanceBefore = tokenSpoke.balanceOf(TREASURY);
 
     vm.expectEmit(address(hub1));
     emit IHubBase.TransferShares(
       daiAssetId,
       address(spoke1),
-      _getFeeReceiver(hub1, daiAssetId),
+      address(tokenSpoke),
       feeShares
     );
 
@@ -108,16 +135,19 @@ contract HubPayFeeTest is HubBase {
     _assertBorrowRateSynced(hub1, daiAssetId, 'payFee');
     _assertHubLiquidity(hub1, daiAssetId, 'payFee');
     uint256 spokeSharesAfter = hub1.getSpokeAddedShares(daiAssetId, address(spoke1));
-    uint256 feeReceiverSharesAfter = hub1.getSpokeAddedShares(
-      daiAssetId,
-      _getFeeReceiver(hub1, daiAssetId)
-    );
+    uint256 tokenizedSpokeSharesAfter = hub1.getSpokeAddedShares(daiAssetId, address(tokenSpoke));
 
     assertEq(spokeSharesAfter, spokeSharesBefore - feeShares, 'spoke supplied shares after');
     assertEq(
-      feeReceiverSharesAfter,
-      feeReceiverSharesBefore + feeShares,
-      'fee receiver supplied shares after'
+      tokenizedSpokeSharesAfter,
+      tokenizedSpokeSharesBefore + feeShares,
+      'tokenized spoke supplied shares after'
+    );
+    // treasury should have received ERC20 shares via mintToTreasury
+    assertEq(
+      tokenSpoke.balanceOf(TREASURY),
+      treasuryBalanceBefore + feeShares,
+      'treasury erc20 balance after'
     );
   }
 }

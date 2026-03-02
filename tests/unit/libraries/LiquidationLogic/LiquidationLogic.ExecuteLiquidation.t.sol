@@ -208,7 +208,10 @@ contract LiquidationLogicExecuteLiquidationTest is LiquidationLogicBaseTest {
     );
     assertEq(tokenList.usdx.balanceOf(address(params.liquidator)), 5900e6);
     assertApproxEqAbs(
-      params.collateralHub.getSpokeAddedShares(usdxAssetId, address(treasurySpoke)),
+      params.collateralHub.getSpokeAddedShares(
+        usdxAssetId,
+        IHub(address(params.collateralHub)).getAssetConfig(usdxAssetId).tokenizedSpoke
+      ),
       80e6,
       1
     );

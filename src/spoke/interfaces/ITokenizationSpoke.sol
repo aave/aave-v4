@@ -150,6 +150,21 @@ interface ITokenizationSpoke is IERC4626, IERC2612, IIntentConsumer {
   /// @param owner The owner of the allowance to renounce.
   function renounceAllowance(address owner) external;
 
+  /// @notice Emitted when fee shares are minted to the treasury.
+  /// @param treasury The address of the treasury receiving the minted shares.
+  /// @param shares The number of shares minted.
+  event MintToTreasury(address indexed treasury, uint256 shares);
+
+  /// @notice Thrown when the caller is not the authorized Hub.
+  error UnauthorizedCaller();
+
+  /// @notice Returns the address of the treasury that receives minted fee shares.
+  function treasury() external view returns (address);
+
+  /// @notice Mints fee shares to the treasury. Only callable by the Hub.
+  /// @param shares The number of shares to mint to the treasury.
+  function mintToTreasury(uint256 shares) external;
+
   /// @notice Returns the address of the associated Hub.
   function hub() external view returns (address);
 

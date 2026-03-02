@@ -45,7 +45,7 @@ contract HubConfiguratorGranularAccessControlTest is HubBase {
     assetSelectors[0] = IHubConfigurator.addAsset.selector;
     assetSelectors[1] = IHubConfigurator.addAssetWithDecimals.selector;
     assetSelectors[2] = IHubConfigurator.updateLiquidityFee.selector;
-    assetSelectors[3] = IHubConfigurator.updateFeeReceiver.selector;
+    assetSelectors[3] = IHubConfigurator.updateTokenizedSpoke.selector;
     assetSelectors[4] = IHubConfigurator.updateFeeConfig.selector;
     assetSelectors[5] = IHubConfigurator.updateInterestRateStrategy.selector;
     assetSelectors[6] = IHubConfigurator.updateReinvestmentController.selector;
@@ -90,7 +90,6 @@ contract HubConfiguratorGranularAccessControlTest is HubBase {
   }
 
   function _buildAssetManagerCalldata() internal {
-    address newFeeReceiver = makeAddr('NEW_FEE_RECEIVER');
     address newIrStrategy = address(new AssetInterestRateStrategy(address(hub1)));
     address newController = makeAddr('NEW_REINVESTMENT_CONTROLLER');
 
@@ -99,12 +98,12 @@ contract HubConfiguratorGranularAccessControlTest is HubBase {
       abi.encodeCall(IHubConfigurator.updateLiquidityFee, (address(hub1), assetId, 10_00))
     );
     assetManagerCalldata.push(
-      abi.encodeCall(IHubConfigurator.updateFeeReceiver, (address(hub1), assetId, newFeeReceiver))
+      abi.encodeCall(IHubConfigurator.updateTokenizedSpoke, (address(hub1), assetId, address(0)))
     );
     assetManagerCalldata.push(
       abi.encodeCall(
         IHubConfigurator.updateFeeConfig,
-        (address(hub1), assetId, 5_00, newFeeReceiver)
+        (address(hub1), assetId, 5_00, address(0))
       )
     );
     assetManagerCalldata.push(

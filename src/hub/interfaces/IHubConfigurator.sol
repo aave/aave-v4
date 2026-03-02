@@ -13,10 +13,9 @@ interface IHubConfigurator {
 
   /// @notice Adds a new asset to a specified hub.
   /// @dev Retrieves the decimals of the underlying asset from its ERC20 contract.
-  /// @dev The fee receiver is automatically added as a spoke with maximum caps.
   /// @param hub The address of the Hub.
   /// @param underlying The address of the underlying asset.
-  /// @param feeReceiver The address of the fee receiver spoke.
+  /// @param tokenizedSpoke The address of the tokenization spoke that receives fee shares. Zero address is allowed.
   /// @param liquidityFee The liquidity fee of the asset, in BPS.
   /// @param irStrategy The address of the interest rate strategy contract.
   /// @param irData The interest rate data to apply to the given asset, encoded in bytes.
@@ -24,18 +23,17 @@ interface IHubConfigurator {
   function addAsset(
     address hub,
     address underlying,
-    address feeReceiver,
+    address tokenizedSpoke,
     uint256 liquidityFee,
     address irStrategy,
     bytes calldata irData
   ) external returns (uint256);
 
   /// @notice Adds a new asset to a specified hub with explicit decimals.
-  /// @dev The fee receiver is automatically added as a spoke with maximum caps.
   /// @param hub The address of the Hub.
   /// @param underlying The address of the underlying asset.
   /// @param decimals The number of decimals of the asset.
-  /// @param feeReceiver The address of the fee receiver spoke.
+  /// @param tokenizedSpoke The address of the tokenization spoke that receives fee shares. Zero address is allowed.
   /// @param liquidityFee The liquidity fee of the asset, in BPS.
   /// @param irStrategy The address of the interest rate strategy contract.
   /// @param irData The interest rate data to apply to the given asset, encoded in bytes.
@@ -44,7 +42,7 @@ interface IHubConfigurator {
     address hub,
     address underlying,
     uint8 decimals,
-    address feeReceiver,
+    address tokenizedSpoke,
     uint256 liquidityFee,
     address irStrategy,
     bytes calldata irData
@@ -56,24 +54,22 @@ interface IHubConfigurator {
   /// @param liquidityFee The new liquidity fee.
   function updateLiquidityFee(address hub, uint256 assetId, uint256 liquidityFee) external;
 
-  /// @notice Updates the fee receiver of an asset on a specified hub.
-  /// @dev The fee receiver cannot be zero.
+  /// @notice Updates the tokenized spoke of an asset on a specified hub.
   /// @param hub The address of the Hub.
   /// @param assetId The identifier of the asset.
-  /// @param feeReceiver The new fee receiver.
-  function updateFeeReceiver(address hub, uint256 assetId, address feeReceiver) external;
+  /// @param tokenizedSpoke The new tokenized spoke address. Zero address is allowed (disables fee minting).
+  function updateTokenizedSpoke(address hub, uint256 assetId, address tokenizedSpoke) external;
 
-  /// @notice Updates the liquidity fee and fee receiver of an asset on a specified hub.
-  /// @dev The fee receiver cannot be zero.
+  /// @notice Updates the liquidity fee and tokenized spoke of an asset on a specified hub.
   /// @param hub The address of the Hub.
   /// @param assetId The identifier of the asset.
   /// @param liquidityFee The new liquidity fee.
-  /// @param feeReceiver The new fee receiver.
+  /// @param tokenizedSpoke The new tokenized spoke address. Zero address is allowed (disables fee minting).
   function updateFeeConfig(
     address hub,
     uint256 assetId,
     uint256 liquidityFee,
-    address feeReceiver
+    address tokenizedSpoke
   ) external;
 
   /// @notice Updates the interest rate strategy of an asset on a specified hub.

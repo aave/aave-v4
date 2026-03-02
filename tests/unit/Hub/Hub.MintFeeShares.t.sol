@@ -3,8 +3,36 @@
 pragma solidity ^0.8.0;
 
 import 'tests/unit/Hub/HubBase.t.sol';
+import {TokenizationSpokeInstance} from 'src/spoke/instances/TokenizationSpokeInstance.sol';
+import {ITokenizationSpoke} from 'src/spoke/interfaces/ITokenizationSpoke.sol';
 
 contract HubMintFeeSharesTest is HubBase {
+  address internal constant TREASURY = address(0xBEEF);
+
+  /// @dev Helper: deploy a real TokenizationSpokeInstance, register it, and set as tokenizedSpoke
+  function _setUpTokenizedSpoke(
+    uint256 assetId
+  ) internal returns (ITokenizationSpoke tokenSpoke) {
+    tokenSpoke = _deployTokenizationSpoke(hub1, assetId, 'TST', 'TST', ADMIN, TREASURY);
+
+    vm.startPrank(ADMIN);
+    hub1.addSpoke(
+      assetId,
+      address(tokenSpoke),
+      IHub.SpokeConfig({
+        active: true,
+        halted: false,
+        addCap: type(uint40).max,
+        drawCap: 0,
+        riskPremiumThreshold: 0
+      })
+    );
+    IHub.AssetConfig memory config = hub1.getAssetConfig(assetId);
+    config.tokenizedSpoke = address(tokenSpoke);
+    hub1.updateAssetConfig(assetId, config, new bytes(0));
+    vm.stopPrank();
+  }
+
   function test_mintFeeShares_revertsWith_AccessManagedUnauthorized() public {
     vm.expectRevert(
       abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, address(this))
@@ -13,7 +41,10 @@ contract HubMintFeeSharesTest is HubBase {
   }
 
   function test_mintFeeShares_revertsWith_SpokeNotActive() public {
-    // Create debt to build up fees on the existing treasury spoke
+    // Deploy a real tokenized spoke and set it as the tokenizedSpoke
+    ITokenizationSpoke tokenSpoke = _setUpTokenizedSpoke(daiAssetId);
+
+    // Create debt to build up fees
     _addAndDrawLiquidity({
       hub: hub1,
       assetId: daiAssetId,
@@ -26,7 +57,8 @@ contract HubMintFeeSharesTest is HubBase {
       skipTime: 365 days
     });
 
-    _updateSpokeActive(hub1, daiAssetId, _getFeeReceiver(hub1, daiAssetId), false);
+    // Deactivate the tokenized spoke so mintFeeShares reverts
+    _updateSpokeActive(hub1, daiAssetId, address(tokenSpoke), false);
     vm.expectRevert(IHub.SpokeNotActive.selector, address(hub1));
     Utils.mintFeeShares(hub1, daiAssetId, ADMIN);
   }
@@ -37,8 +69,11 @@ contract HubMintFeeSharesTest is HubBase {
     Utils.mintFeeShares(hub1, invalidAssetId, ADMIN);
   }
 
-  function test_mintFeeShares() public {
-    // Create debt to build up fees on the existing treasury spoke
+  /// @dev When tokenizedSpoke is address(0), mintFeeShares is a no-op even if fees have accumulated
+  function test_mintFeeShares_noTokenizedSpoke() public {
+    // Base tests have tokenizedSpoke = address(0)
+    assertEq(hub1.getAssetConfig(daiAssetId).tokenizedSpoke, address(0));
+
     _addAndDrawLiquidity({
       hub: hub1,
       assetId: daiAssetId,
@@ -51,12 +86,39 @@ contract HubMintFeeSharesTest is HubBase {
       skipTime: 365 days
     });
 
-    address feeReceiver = _getFeeReceiver(hub1, daiAssetId);
+    uint256 accruedFees = hub1.getAssetAccruedFees(daiAssetId);
+    assertGt(accruedFees, 0, 'should have accrued fees');
+
+    // mintFeeShares is a no-op when tokenizedSpoke is address(0)
+    vm.recordLogs();
+    uint256 mintedShares = Utils.mintFeeShares(hub1, daiAssetId, ADMIN);
+    _assertEventNotEmitted(IHub.MintFeeShares.selector);
+
+    assertEq(mintedShares, 0, 'no shares minted when tokenizedSpoke is zero');
+    // Fees remain in realizedFees (accumulated by accrue()) but not distributed
+  }
+
+  function test_mintFeeShares() public {
+    // Set up a real tokenized spoke
+    ITokenizationSpoke tokenSpoke = _setUpTokenizedSpoke(daiAssetId);
+
+    // Create debt to build up fees
+    _addAndDrawLiquidity({
+      hub: hub1,
+      assetId: daiAssetId,
+      addUser: bob,
+      addSpoke: address(spoke1),
+      addAmount: 1000e18,
+      drawUser: bob,
+      drawSpoke: address(spoke1),
+      drawAmount: 100e18,
+      skipTime: 365 days
+    });
 
     // before mintFeeShares, the fee shares should be 0
     uint256 realizedFees = hub1.getAsset(daiAssetId).realizedFees;
     assertEq(realizedFees, 0);
-    uint256 feeShares = hub1.getSpokeAddedShares(daiAssetId, feeReceiver);
+    uint256 feeShares = hub1.getSpokeAddedShares(daiAssetId, address(tokenSpoke));
     assertEq(feeShares, 0);
 
     uint256 expectedMintedAssets = _getExpectedFeeReceiverAddedAssets(hub1, daiAssetId);
@@ -76,9 +138,9 @@ contract HubMintFeeSharesTest is HubBase {
     uint256 mockRate = 0.3e27;
     vm.mockCall(address(irStrategy), irCalldata, abi.encode(mockRate));
 
-    // after mintFeeShares, the fee shares should be the amount of the fees
+    // after mintFeeShares, fee shares go to tokenizedSpoke, and treasury gets ERC20 shares
     vm.expectEmit(address(hub1));
-    emit IHub.MintFeeShares(daiAssetId, feeReceiver, expectedMintedShares, expectedMintedAssets);
+    emit IHub.MintFeeShares(daiAssetId, address(tokenSpoke), expectedMintedShares, expectedMintedAssets);
     vm.expectEmit(address(hub1));
     emit IHub.UpdateAsset(daiAssetId, hub1.getAssetDrawnIndex(daiAssetId), mockRate, 0);
 
@@ -91,21 +153,24 @@ contract HubMintFeeSharesTest is HubBase {
     assertEq(mintedShares, expectedMintedShares, 'minted shares');
     assertEq(hub1.getAsset(daiAssetId).realizedFees, 0, 'realized fees after');
     assertEq(
-      hub1.getSpokeAddedShares(daiAssetId, feeReceiver),
+      hub1.getSpokeAddedShares(daiAssetId, address(tokenSpoke)),
       expectedMintedShares,
       'added shares'
     );
     assertEq(mintedShares, hub1.getAddedShares(daiAssetId) - addedSharesBefore, 'minted shares');
     assertGe(hub1.previewAddByShares(daiAssetId, 1e18), sharePriceBefore, 'share price');
+    // treasury should have received ERC20 shares
+    assertEq(tokenSpoke.balanceOf(TREASURY), expectedMintedShares, 'treasury erc20 balance');
   }
 
   function test_mintFeeShares_noFees() public {
+    ITokenizationSpoke tokenSpoke = _setUpTokenizedSpoke(daiAssetId);
     test_mintFeeShares();
 
     IHub.Asset memory asset = hub1.getAsset(daiAssetId);
 
-    // pausing the fee receiver does not revert the action since no shares are minted
-    _updateSpokeActive(hub1, daiAssetId, _getFeeReceiver(hub1, daiAssetId), false);
+    // pausing the tokenized spoke does not revert the action since no shares are minted
+    _updateSpokeActive(hub1, daiAssetId, address(tokenSpoke), false);
 
     vm.expectEmit(address(hub1));
     emit IHub.UpdateAsset(daiAssetId, asset.drawnIndex, asset.drawnRate, 0);

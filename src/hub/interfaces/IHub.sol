@@ -25,7 +25,7 @@ interface IHub is IHubBase, IAccessManaged {
   /// @dev underlying The address of the underlying asset.
   /// @dev irStrategy The address of the interest rate strategy.
   /// @dev reinvestmentController The address of the reinvestment controller.
-  /// @dev feeReceiver The address of the fee receiver spoke.
+  /// @dev tokenizedSpoke The address of the tokenization spoke that receives fee shares. Zero address if unset.
   /// @dev deficitRay The amount of outstanding bad debt across all spokes, expressed in asset units and scaled by RAY.
   struct Asset {
     uint120 liquidity;
@@ -51,14 +51,14 @@ interface IHub is IHubBase, IAccessManaged {
     //
     address reinvestmentController;
     //
-    address feeReceiver;
+    address tokenizedSpoke;
     //
     uint200 deficitRay;
   }
 
   /// @notice Asset configuration. Subset of the `Asset` struct.
   struct AssetConfig {
-    address feeReceiver;
+    address tokenizedSpoke;
     uint16 liquidityFee;
     address irStrategy;
     address reinvestmentController;
@@ -134,14 +134,14 @@ interface IHub is IHubBase, IAccessManaged {
   /// @param config The new spoke configuration struct.
   event UpdateSpokeConfig(uint256 indexed assetId, address indexed spoke, SpokeConfig config);
 
-  /// @notice Emitted when fees are minted to the fee receiver spoke.
+  /// @notice Emitted when fees are minted to the tokenized spoke.
   /// @param assetId The identifier of the asset.
-  /// @param feeReceiver The address of the current fee receiver spoke.
+  /// @param tokenizedSpoke The address of the tokenized spoke receiving the fee shares.
   /// @param shares The amount of shares minted.
   /// @param assets The amount of assets used to mint the shares.
   event MintFeeShares(
     uint256 indexed assetId,
-    address indexed feeReceiver,
+    address indexed tokenizedSpoke,
     uint256 shares,
     uint256 assets
   );
@@ -250,26 +250,28 @@ interface IHub is IHubBase, IAccessManaged {
   /// @dev The `irData` must be empty if the interest rate strategy is not updated.
   error InvalidInterestRateStrategy();
 
+  /// @notice Thrown when the tokenized spoke is not listed for the asset.
+  error TokenizedSpokeNotListed();
+
   /// @notice Adds a new asset to the Hub.
   /// @dev The same underlying asset address cannot be added as an asset multiple times.
-  /// @dev The fee receiver is added as a new spoke with maximum add cap and zero draw cap.
+  /// @dev `tokenizedSpoke` may be zero address if the spoke is not yet deployed; set it later via `updateAssetConfig`.
   /// @param underlying The address of the underlying asset.
   /// @param decimals The number of decimals of `underlying`.
-  /// @param feeReceiver The address of the fee receiver spoke.
+  /// @param tokenizedSpoke The address of the tokenization spoke that will receive fee shares. Zero address is allowed.
   /// @param irStrategy The address of the interest rate strategy contract.
   /// @param irData The interest rate data to apply to the given asset encoded in bytes.
   /// @return The unique identifier of the added asset.
   function addAsset(
     address underlying,
     uint8 decimals,
-    address feeReceiver,
+    address tokenizedSpoke,
     address irStrategy,
     bytes calldata irData
   ) external returns (uint256);
 
   /// @notice Updates the configuration of an asset.
-  /// @dev If the fee receiver is updated, adds it as a new spoke with maximum add cap and zero draw cap, and sets old fee receiver caps to zero.
-  /// @dev If the fee receiver is updated, accrued fees are minted as shares before the update if their value exceeds one share.
+  /// @dev If the tokenized spoke is updated, pending fees are minted to the old spoke before the switch. The new spoke must already be listed (or be zero address).
   /// @dev If the interest rate strategy is updated, it is configured with `irData`. Otherwise, `irData` must be empty.
   /// @param assetId The identifier of the asset.
   /// @param config The new configuration for the asset.

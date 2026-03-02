@@ -6,19 +6,27 @@ import 'tests/unit/TokenizationSpoke/TokenizationSpoke.Base.t.sol';
 
 contract TokenizationSpokeConfigTest is TokenizationSpokeBaseTest {
   function test_constructor_reverts_when_invalid_setup() public {
+    address treasury = makeAddr('treasury');
     uint256 invalidAssetId = vm.randomUint(hub1.getAssetCount(), UINT256_MAX);
     vm.expectRevert();
-    new TokenizationSpokeInstance(address(hub1), invalidAssetId);
+    new TokenizationSpokeInstance(address(hub1), invalidAssetId, treasury);
 
     vm.expectRevert();
-    new TokenizationSpokeInstance(address(0), vm.randomUint());
+    new TokenizationSpokeInstance(address(0), vm.randomUint(), treasury);
+
+    // treasury_ must not be address(0)
+    uint256 validAssetId = vm.randomUint(0, hub1.getAssetCount() - 1);
+    vm.expectRevert();
+    new TokenizationSpokeInstance(address(hub1), validAssetId, address(0));
   }
 
   function test_constructor_asset_correctly_set() public {
+    address treasury = makeAddr('treasury');
     uint256 assetId = vm.randomUint(0, hub1.getAssetCount() - 1);
-    TokenizationSpokeInstance instance = new TokenizationSpokeInstance(address(hub1), assetId);
+    TokenizationSpokeInstance instance = new TokenizationSpokeInstance(address(hub1), assetId, treasury);
     assertEq(instance.asset(), hub1.getAsset(assetId).underlying);
     assertEq(instance.decimals(), hub1.getAsset(assetId).decimals);
+    assertEq(instance.treasury(), treasury);
   }
 
   function test_setUp() public {

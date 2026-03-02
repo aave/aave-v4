@@ -18,6 +18,8 @@ contract LiquidationLogicBaseTest is SpokeBase {
       makeAddr('borrower'),
       makeAddr('liquidator')
     );
+    // Deploy tokenized spokes for all hub1 assets so payFeeShares works during liquidation
+    _setupTokenizedSpokesForAllAssets(hub1);
   }
 
   // generic bounds for liquidation logic params

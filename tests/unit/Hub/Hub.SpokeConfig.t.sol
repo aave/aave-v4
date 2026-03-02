@@ -3,17 +3,42 @@
 pragma solidity ^0.8.0;
 
 import 'tests/unit/Hub/HubBase.t.sol';
+import {TokenizationSpokeInstance} from 'src/spoke/instances/TokenizationSpokeInstance.sol';
+import {ITokenizationSpoke} from 'src/spoke/interfaces/ITokenizationSpoke.sol';
 
 contract HubSpokeConfigTest is HubBase {
+  address internal constant TREASURY = address(0xBEEF);
+
+  ITokenizationSpoke internal usdxTokenSpoke;
+
   function setUp() public override {
     super.setUp();
 
     // deploy borrowable liquidity
     _addLiquidity(usdxAssetId, MAX_SUPPLY_AMOUNT);
+
+    // Deploy a tokenized spoke for usdxAssetId so mintFeeShares / payFeeShares tests work
+    usdxTokenSpoke = _deployTokenizationSpoke(hub1, usdxAssetId, 'USDX-TST', 'USDX-TST', ADMIN, TREASURY);
+    vm.startPrank(ADMIN);
+    hub1.addSpoke(
+      usdxAssetId,
+      address(usdxTokenSpoke),
+      IHub.SpokeConfig({
+        active: true,
+        halted: false,
+        addCap: type(uint40).max,
+        drawCap: 0,
+        riskPremiumThreshold: 0
+      })
+    );
+    IHub.AssetConfig memory config = hub1.getAssetConfig(usdxAssetId);
+    config.tokenizedSpoke = address(usdxTokenSpoke);
+    hub1.updateAssetConfig(usdxAssetId, config, new bytes(0));
+    vm.stopPrank();
   }
 
   function test_mintFeeShares_active_halted_scenarios() public {
-    address feeReceiver = _getFeeReceiver(hub1, usdxAssetId);
+    address feeReceiver = address(usdxTokenSpoke);
 
     // set spoke to active / halted; reverts
     _accrueLiquidityFees(hub1, spoke1, usdxAssetId);
@@ -301,14 +326,10 @@ contract HubSpokeConfigTest is HubBase {
   }
 
   function test_payFeeShares_active_halted_scenarios() public {
-    address feeReceiver = _getFeeReceiver(hub1, usdxAssetId);
+    // tokenizedSpoke is set up in setUp as usdxTokenSpoke
     Utils.add(hub1, usdxAssetId, address(spoke1), 1e18, alice);
 
-    // set fee receiver to inactive / halted; does not matter
-    _updateSpokeHalted(hub1, usdxAssetId, feeReceiver, true);
-    _updateSpokeActive(hub1, usdxAssetId, feeReceiver, false);
-
-    // set spoke to active / halted; succeeds
+    // set spoke to active / halted; succeeds (payFeeShares only checks sender's active/halted)
     _updateSpokeHalted(hub1, usdxAssetId, address(spoke1), true);
     _updateSpokeActive(hub1, usdxAssetId, address(spoke1), true);
 

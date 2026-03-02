@@ -36,7 +36,7 @@ contract HubAddTest is HubBase {
     minDecimalAssetId = hub1.addAsset(
       address(usda),
       Constants.MIN_ALLOWED_UNDERLYING_DECIMALS,
-      address(treasurySpoke),
+      address(0),
       address(irStrategy),
       encodedIrData
     );
@@ -44,7 +44,7 @@ contract HubAddTest is HubBase {
       minDecimalAssetId,
       IHub.AssetConfig({
         liquidityFee: 5_00,
-        feeReceiver: address(treasurySpoke),
+        tokenizedSpoke: address(0),
         irStrategy: address(irStrategy),
         reinvestmentController: address(0)
       }),

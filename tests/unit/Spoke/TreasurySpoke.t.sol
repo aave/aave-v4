@@ -10,6 +10,24 @@ contract TreasurySpokeTest is SpokeBase {
   function setUp() public virtual override {
     super.setUp();
     _testToken = new MockERC20();
+
+    // Register treasurySpoke as a spoke for all hub1 assets so it can call hub1.add/remove
+    vm.startPrank(ADMIN);
+    uint256 assetCount = hub1.getAssetCount();
+    for (uint256 i = 0; i < assetCount; ++i) {
+      hub1.addSpoke(
+        i,
+        address(treasurySpoke),
+        IHub.SpokeConfig({
+          active: true,
+          halted: false,
+          addCap: type(uint40).max,
+          drawCap: type(uint40).max,
+          riskPremiumThreshold: 0
+        })
+      );
+    }
+    vm.stopPrank();
   }
 
   function test_deploy_reverts_on_invalid_params() public {
@@ -83,7 +101,7 @@ contract TreasurySpokeTest is SpokeBase {
     );
   }
 
-  /// treasury does not supply but earn fees
+  /// treasury does not supply but fees accumulate in realizedFees (tokenizedSpoke is address(0))
   function test_withdraw_fuzz_amount_feesOnly(uint256 amount) public {
     amount = bound(amount, 1, MAX_SUPPLY_AMOUNT);
 
@@ -93,27 +111,21 @@ contract TreasurySpokeTest is SpokeBase {
     _openDebtPosition(spoke1, getReserveIdByAssetId(spoke1, hub1, daiAssetId), 100e18, true);
 
     skip(365 days);
-    assertEq(hub1.getAsset(daiAssetId).realizedFees, 0, 'fees'); // fees not yet accrued
+    assertEq(hub1.getAsset(daiAssetId).realizedFees, 0, 'fees not yet accrued');
 
     uint256 expectedFeeAmount = _calcUnrealizedFees(hub1, daiAssetId);
+    assertGt(expectedFeeAmount, 0, 'should have unrealized fees');
+
+    // mintFeeShares is a no-op when tokenizedSpoke == address(0)
     Utils.mintFeeShares(hub1, daiAssetId, ADMIN);
 
-    assertEq(hub1.getAsset(daiAssetId).realizedFees, 0, 'realized fees after minting');
-    assertGe(
-      treasurySpoke.getSuppliedShares(daiAssetId),
-      hub1.previewAddByAssets(daiAssetId, expectedFeeAmount)
-    );
-
-    Utils.withdraw(
-      _treasurySpoke(),
-      daiAssetId,
-      TREASURY_ADMIN,
-      UINT256_MAX,
-      address(treasurySpoke)
-    );
+    // fees accumulate in realizedFees now (not in treasurySpoke)
+    assertGt(hub1.getAsset(daiAssetId).realizedFees, 0, 'realized fees should be non-zero');
+    // TreasurySpoke still has no shares (fees did NOT auto-flow to it)
+    assertEq(treasurySpoke.getSuppliedShares(daiAssetId), 0, 'treasury spoke has no shares');
   }
 
-  /// treasury supplies to earn interest and fees
+  /// treasury supplies to earn interest (no fees since tokenizedSpoke is address(0))
   function test_withdraw_fuzz_amount_interestAndFees(uint256 amount) public {
     amount = bound(amount, 1, MAX_SUPPLY_AMOUNT);
 
@@ -128,14 +140,16 @@ contract TreasurySpokeTest is SpokeBase {
 
     skip(365 days);
 
+    // TreasurySpoke only earns interest (shares unchanged), not auto-minted fees
     assertGe(treasurySpoke.getSuppliedShares(daiAssetId), suppliedSharesBefore);
-    uint256 interestAndFees = treasurySpoke.getSuppliedAmount(daiAssetId) - suppliedAssetsBefore;
+    uint256 interest = treasurySpoke.getSuppliedAmount(daiAssetId) - suppliedAssetsBefore;
+    vm.assume(interest > 0);
 
     Utils.withdraw(
       _treasurySpoke(),
       daiAssetId,
       TREASURY_ADMIN,
-      amount + interestAndFees,
+      amount + interest,
       address(treasurySpoke)
     );
   }
@@ -184,6 +198,8 @@ contract TreasurySpokeTest is SpokeBase {
     test_withdraw_fuzz_maxLiquidityFee(_daiReserveId(spoke1), 1000e18, 340 days);
   }
 
+  /// @dev With max liquidity fee and no tokenizedSpoke, fees accumulate in realizedFees.
+  /// TreasurySpoke does not automatically receive fees.
   function test_withdraw_fuzz_maxLiquidityFee(
     uint256 reserveId,
     uint256 amount,
@@ -199,46 +215,25 @@ contract TreasurySpokeTest is SpokeBase {
     assertEq(treasurySpoke.getSuppliedShares(reserveId), 0);
 
     // create debt
-    address tempUser = _openDebtPosition(spoke1, reserveId, amount, true);
+    _openDebtPosition(spoke1, reserveId, amount, true);
 
     skip(skipTime);
-    assertEq(hub1.getAsset(assetId).realizedFees, 0, 'fees'); // fees not yet accrued
+    assertEq(hub1.getAsset(assetId).realizedFees, 0, 'fees not yet accrued'); // fees not yet accrued
 
     uint256 expectedFeeAmount = _calcUnrealizedFees(hub1, assetId);
 
+    // mintFeeShares is a no-op when tokenizedSpoke == address(0); fees go to realizedFees
     Utils.mintFeeShares(hub1, assetId, ADMIN);
-    uint256 fees = treasurySpoke.getSuppliedAmount(assetId);
 
-    assertEq(fees, expectedFeeAmount, 'supplied amount of fees');
-    assertEq(hub1.getAsset(assetId).realizedFees, 0, 'realized fees after minting');
+    // Fees accumulate in realizedFees, NOT in treasurySpoke
     assertApproxEqAbs(
-      hub1.getSpokeAddedAssets(assetId, address(treasurySpoke)),
-      hub1.getAssetTotalOwed(assetId) - amount,
-      3,
-      'treasury spoke supplied amount on hub'
+      hub1.getAsset(assetId).realizedFees,
+      expectedFeeAmount,
+      1,
+      'fees in realizedFees'
     );
-    assertApproxEqAbs(
-      fees,
-      hub1.getSpokeAddedAssets(assetId, address(treasurySpoke)),
-      3,
-      'treasury spoke supplied amount on spoke'
-    );
-
-    if (fees > 0) {
-      IERC20 asset = getAssetUnderlyingByReserveId(spoke1, reserveId);
-      uint256 balanceBefore = asset.balanceOf(TREASURY_ADMIN);
-
-      deal(address(asset), tempUser, UINT256_MAX);
-      Utils.repay(spoke1, reserveId, tempUser, UINT256_MAX, tempUser);
-      Utils.withdraw(_treasurySpoke(), assetId, TREASURY_ADMIN, fees, address(treasurySpoke));
-
-      assertEq(balanceBefore + fees, asset.balanceOf(TREASURY_ADMIN), 'Treasury admin balance');
-      assertEq(
-        0,
-        hub1.getSpokeAddedAssets(assetId, address(treasurySpoke)),
-        'treasury spoke remaining supplied amount'
-      );
-    }
+    // TreasurySpoke has no shares (fees did NOT auto-flow to it)
+    assertEq(hub1.getSpokeAddedAssets(assetId, address(treasurySpoke)), 0, 'treasury spoke has no supplied amount');
   }
 
   function test_borrow_revertsWith_UnsupportedAction() public {
@@ -266,7 +261,6 @@ contract TreasurySpokeTest is SpokeBase {
     uint256 reserveId = _daiReserveId(spoke1);
     uint256 assetId = daiAssetId;
     uint256 amount = 10_000e18;
-    uint256 skipTime = 322 days;
 
     (uint256 drawn, uint256 premium) = treasurySpoke.getUserDebt(reserveId, alice);
     assertEq(drawn, 0);
@@ -274,26 +268,25 @@ contract TreasurySpokeTest is SpokeBase {
     assertEq(treasurySpoke.getUserTotalDebt(reserveId, alice), 0);
     assertEq(treasurySpoke.getUserPremiumDebtRay(reserveId, alice), 0);
 
-    updateLiquidityFee(hub1, spoke1.getReserve(reserveId).assetId, 100_00);
+    // TreasurySpoke starts with no supplied assets
+    assertEq(treasurySpoke.getSuppliedAmount(assetId), 0, 'initial supplied amount');
+    assertEq(treasurySpoke.getReserveSuppliedAssets(reserveId), 0, 'initial reserve supplied assets');
+    assertEq(treasurySpoke.getReserveSuppliedShares(reserveId), 0, 'initial reserve supplied shares');
 
-    // create debt
-    _openDebtPosition(spoke1, reserveId, amount, true);
-
-    skip(skipTime);
-
-    uint256 fees = treasurySpoke.getSuppliedAmount(assetId);
+    // Supply manually through TreasurySpoke
+    Utils.supply(_treasurySpoke(), assetId, TREASURY_ADMIN, amount, address(treasurySpoke));
+    assertEq(treasurySpoke.getSuppliedAmount(assetId), amount, 'supplied amount after supply');
 
     assertApproxEqAbs(
       treasurySpoke.getReserveSuppliedAssets(reserveId),
-      fees,
+      amount,
       1,
-      'reserve supplied assets'
+      'reserve supplied assets after supply'
     );
-    assertApproxEqAbs(
+    assertGt(
       treasurySpoke.getReserveSuppliedShares(reserveId),
-      hub1.previewAddByAssets(assetId, fees),
-      1,
-      'reserve supplied shares'
+      0,
+      'reserve supplied shares after supply'
     );
 
     assertEq(treasurySpoke.getUserSuppliedAssets(reserveId, alice), 0);

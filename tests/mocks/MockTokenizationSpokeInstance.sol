@@ -15,12 +15,14 @@ contract MockTokenizationSpokeInstance is TokenizationSpoke {
    * @param spokeRevision_ The revision of the vault spoke contract.
    * @param hub_ The address of the hub.
    * @param assetId_ The ID of the asset.
+   * @param treasury_ The address of the treasury that will receive minted fee shares.
    */
   constructor(
     uint64 spokeRevision_,
     address hub_,
-    uint256 assetId_
-  ) TokenizationSpoke(hub_, assetId_) {
+    uint256 assetId_,
+    address treasury_
+  ) TokenizationSpoke(hub_, assetId_, treasury_) {
     SPOKE_REVISION = spokeRevision_;
     _disableInitializers();
   }

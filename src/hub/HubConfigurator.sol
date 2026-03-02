@@ -23,7 +23,7 @@ contract HubConfigurator is AccessManaged, IHubConfigurator {
   function addAsset(
     address hub,
     address underlying,
-    address feeReceiver,
+    address tokenizedSpoke,
     uint256 liquidityFee,
     address irStrategy,
     bytes calldata irData
@@ -32,7 +32,7 @@ contract HubConfigurator is AccessManaged, IHubConfigurator {
     uint256 assetId = targetHub.addAsset(
       underlying,
       IERC20Metadata(underlying).decimals(),
-      feeReceiver,
+      tokenizedSpoke,
       irStrategy,
       irData
     );
@@ -45,13 +45,13 @@ contract HubConfigurator is AccessManaged, IHubConfigurator {
     address hub,
     address underlying,
     uint8 decimals,
-    address feeReceiver,
+    address tokenizedSpoke,
     uint256 liquidityFee,
     address irStrategy,
     bytes calldata irData
   ) external restricted returns (uint256) {
     IHub targetHub = IHub(hub);
-    uint256 assetId = targetHub.addAsset(underlying, decimals, feeReceiver, irStrategy, irData);
+    uint256 assetId = targetHub.addAsset(underlying, decimals, tokenizedSpoke, irStrategy, irData);
     _updateLiquidityFee(targetHub, assetId, liquidityFee);
     return assetId;
   }
@@ -66,14 +66,14 @@ contract HubConfigurator is AccessManaged, IHubConfigurator {
   }
 
   /// @inheritdoc IHubConfigurator
-  function updateFeeReceiver(
+  function updateTokenizedSpoke(
     address hub,
     uint256 assetId,
-    address feeReceiver
+    address tokenizedSpoke
   ) external restricted {
     IHub targetHub = IHub(hub);
     IHub.AssetConfig memory config = targetHub.getAssetConfig(assetId);
-    config.feeReceiver = feeReceiver;
+    config.tokenizedSpoke = tokenizedSpoke;
     targetHub.updateAssetConfig(assetId, config, new bytes(0));
   }
 
@@ -82,12 +82,12 @@ contract HubConfigurator is AccessManaged, IHubConfigurator {
     address hub,
     uint256 assetId,
     uint256 liquidityFee,
-    address feeReceiver
+    address tokenizedSpoke
   ) external restricted {
     IHub targetHub = IHub(hub);
     IHub.AssetConfig memory config = targetHub.getAssetConfig(assetId);
     config.liquidityFee = liquidityFee.toUint16();
-    config.feeReceiver = feeReceiver;
+    config.tokenizedSpoke = tokenizedSpoke;
     targetHub.updateAssetConfig(assetId, config, new bytes(0));
   }
 

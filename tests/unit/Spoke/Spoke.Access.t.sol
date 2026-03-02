@@ -3,9 +3,35 @@
 pragma solidity ^0.8.0;
 
 import 'tests/unit/Spoke/SpokeBase.t.sol';
+import {ITokenizationSpoke} from 'src/spoke/interfaces/ITokenizationSpoke.sol';
 
 contract SpokeAccessTest is SpokeBase {
   using SafeCast for uint256;
+
+  address internal constant TREASURY = address(0xBEEF);
+  ITokenizationSpoke internal daiTokenSpoke;
+
+  function setUp() public virtual override {
+    super.setUp();
+    // Deploy and register a tokenized spoke for daiAssetId so payFeeShares works
+    daiTokenSpoke = _deployTokenizationSpoke(hub1, daiAssetId, 'TST', 'TST', ADMIN, TREASURY);
+    vm.startPrank(ADMIN);
+    hub1.addSpoke(
+      daiAssetId,
+      address(daiTokenSpoke),
+      IHub.SpokeConfig({
+        active: true,
+        halted: false,
+        addCap: type(uint40).max,
+        drawCap: 0,
+        riskPremiumThreshold: 0
+      })
+    );
+    IHub.AssetConfig memory config = hub1.getAssetConfig(daiAssetId);
+    config.tokenizedSpoke = address(daiTokenSpoke);
+    hub1.updateAssetConfig(daiAssetId, config, new bytes(0));
+    vm.stopPrank();
+  }
 
   /// @dev Test showing that the hub functions can only be called by spokes, and not by users.
   function testAccess_hub_functions_callable_by_spokes() public {
@@ -45,6 +71,7 @@ contract SpokeAccessTest is SpokeBase {
     hub1.refreshPremium(daiAssetId, ZERO_PREMIUM_DELTA);
     tokenList.dai.transfer(address(hub1), 1000e18);
     hub1.add(daiAssetId, 1000e18);
+    // payFeeShares routes to the tokenizedSpoke (daiTokenSpoke) and mints to TREASURY
     hub1.payFeeShares(daiAssetId, 1e18);
     hub1.transferShares(
       daiAssetId,

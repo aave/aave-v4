@@ -42,17 +42,21 @@ abstract contract TokenizationSpoke is ITokenizationSpoke, ERC20Upgradeable, Int
   address internal immutable ASSET;
   uint8 internal immutable DECIMALS;
   uint256 internal immutable ASSET_UNITS;
+  address internal immutable TREASURY;
 
   /// @dev Constructor.
   /// @param hub_ The address of the associated Hub contract.
   /// @param assetId_ The registered identifier of the asset to be tokenized by this spoke.
-  constructor(address hub_, uint256 assetId_) {
+  /// @param treasury_ The address of the treasury that will receive minted fee shares.
+  constructor(address hub_, uint256 assetId_, address treasury_) {
     require(assetId_ < IHub(hub_).getAssetCount());
+    require(treasury_ != address(0));
     HUB = IHub(hub_);
     ASSET_ID = assetId_;
     (ASSET, DECIMALS) = HUB.getAssetUnderlyingAndDecimals(ASSET_ID);
     ASSET_UNITS = MathUtils.uncheckedExp(10, DECIMALS);
     MAX_ALLOWED_SPOKE_CAP = HUB.MAX_ALLOWED_SPOKE_CAP();
+    TREASURY = treasury_;
   }
 
   /// @dev To be overridden by the inheriting TokenizationSpokeInstance contract.
@@ -305,6 +309,18 @@ abstract contract TokenizationSpoke is ITokenizationSpoke, ERC20Upgradeable, Int
   /// @inheritdoc IERC4626
   function totalAssets() public view virtual returns (uint256) {
     return previewRedeem(totalSupply());
+  }
+
+  /// @inheritdoc ITokenizationSpoke
+  function treasury() public view returns (address) {
+    return TREASURY;
+  }
+
+  /// @inheritdoc ITokenizationSpoke
+  function mintToTreasury(uint256 shares) external {
+    require(msg.sender == address(HUB), UnauthorizedCaller());
+    _mint(TREASURY, shares);
+    emit MintToTreasury(TREASURY, shares);
   }
 
   /// @inheritdoc ITokenizationSpoke

@@ -13,7 +13,8 @@ contract TokenizationSpokeInstance is TokenizationSpoke {
   /// @dev Constructor.
   /// @param hub_ The address of the hub.
   /// @param assetId_ The identifier of the asset.
-  constructor(address hub_, uint256 assetId_) TokenizationSpoke(hub_, assetId_) {
+  /// @param treasury_ The address of the treasury that will receive minted fee shares.
+  constructor(address hub_, uint256 assetId_, address treasury_) TokenizationSpoke(hub_, assetId_, treasury_) {
     _disableInitializers();
   }
 

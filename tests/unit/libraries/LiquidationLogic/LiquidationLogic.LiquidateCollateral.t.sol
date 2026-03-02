@@ -40,7 +40,7 @@ contract LiquidationLogicLiquidateCollateralTest is LiquidationLogicBaseTest, Hu
 
     initialUserPosition = liquidationLogicWrapper.getCollateralPosition(borrower);
     initialLiquidatorPosition = liquidationLogicWrapper.getCollateralPosition(liquidator);
-    initialTreasurySpokeData = hub.getSpoke(assetId, address(treasurySpoke));
+    initialTreasurySpokeData = hub.getSpoke(assetId, hub.getAssetConfig(assetId).tokenizedSpoke);
 
     IHub.SpokeConfig memory spokeConfig = IHub.SpokeConfig({
       active: true,
@@ -118,7 +118,7 @@ contract LiquidationLogicLiquidateCollateralTest is LiquidationLogicBaseTest, Hu
 
     assertEq(asset.balanceOf(address(hub)), initialHubBalance - expectedAmountToLiquidator);
     assertEq(
-      hub.getSpokeAddedShares(assetId, address(treasurySpoke)),
+      hub.getSpokeAddedShares(assetId, hub.getAssetConfig(assetId).tokenizedSpoke),
       params.sharesToLiquidate - params.sharesToLiquidator
     );
   }

@@ -9,7 +9,7 @@ contract HubAccessTest is HubBase {
   function test_hub_admin_access() public {
     TestnetERC20 tokenA = new TestnetERC20('A', 'A', 18);
     IHub.AssetConfig memory assetConfig = IHub.AssetConfig({
-      feeReceiver: address(treasurySpoke),
+      tokenizedSpoke: address(0),
       liquidityFee: 0,
       irStrategy: address(irStrategy),
       reinvestmentController: address(0)
@@ -35,11 +35,11 @@ contract HubAccessTest is HubBase {
     vm.expectRevert(
       abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, address(this))
     );
-    hub1.addAsset(address(tokenA), 18, address(treasurySpoke), address(irStrategy), encodedIrData);
+    hub1.addAsset(address(tokenA), 18, address(0), address(irStrategy), encodedIrData);
 
     // Hub Admin can add assets to the hub
     vm.prank(HUB_ADMIN);
-    hub1.addAsset(address(tokenA), 18, address(treasurySpoke), address(irStrategy), encodedIrData);
+    hub1.addAsset(address(tokenA), 18, address(0), address(irStrategy), encodedIrData);
     uint256 assetAId = hub1.getAssetCount() - 1; // Asset A Id
 
     // Only Hub Admin can update asset config
@@ -255,7 +255,7 @@ contract HubAccessTest is HubBase {
   /// @dev Test showcasing ability to change the authority contract governing access control on the hub1.
   function test_change_authority() public {
     IHub.AssetConfig memory assetConfig = IHub.AssetConfig({
-      feeReceiver: address(treasurySpoke),
+      tokenizedSpoke: address(0),
       liquidityFee: 0,
       irStrategy: address(irStrategy),
       reinvestmentController: address(0)

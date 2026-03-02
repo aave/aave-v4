@@ -107,11 +107,9 @@ contract HubConfigTest is HubBase {
   function test_addAsset_fuzz_revertsWith_InvalidAssetDecimals(
     address underlying,
     uint8 decimals,
-    address feeReceiver,
     address interestRateStrategy
   ) public {
     assumeUnusedAddress(underlying);
-    assumeNotZeroAddress(feeReceiver);
     assumeNotZeroAddress(interestRateStrategy);
 
     decimals = bound(decimals, Constants.MAX_ALLOWED_UNDERLYING_DECIMALS + 1, type(uint8).max)
@@ -123,7 +121,7 @@ contract HubConfigTest is HubBase {
       ADMIN,
       underlying,
       decimals,
-      feeReceiver,
+      address(0),
       interestRateStrategy,
       encodedIrData
     );
@@ -132,11 +130,9 @@ contract HubConfigTest is HubBase {
   function test_addAsset_fuzz_revertsWith_InvalidAssetDecimals_tooLow(
     address underlying,
     uint8 decimals,
-    address feeReceiver,
     address interestRateStrategy
   ) public {
     assumeUnusedAddress(underlying);
-    assumeNotZeroAddress(feeReceiver);
     assumeNotZeroAddress(interestRateStrategy);
 
     decimals = bound(decimals, 0, Constants.MIN_ALLOWED_UNDERLYING_DECIMALS - 1).toUint8();
@@ -147,7 +143,7 @@ contract HubConfigTest is HubBase {
       ADMIN,
       underlying,
       decimals,
-      feeReceiver,
+      address(0),
       interestRateStrategy,
       encodedIrData
     );
@@ -155,7 +151,6 @@ contract HubConfigTest is HubBase {
 
   function test_addAsset_fuzz_revertsWith_InvalidAddress_underlying(
     uint8 decimals,
-    address feeReceiver,
     address interestRateStrategy
   ) public {
     vm.expectRevert(IHub.InvalidAddress.selector, address(hub1));
@@ -164,56 +159,33 @@ contract HubConfigTest is HubBase {
       ADMIN,
       address(0),
       decimals,
-      feeReceiver,
+      address(0),
       interestRateStrategy,
       encodedIrData
     );
   }
 
-  function test_addAsset_fuzz_revertsWith_InvalidAddress_feeReceiver(
-    address underlying,
-    uint8 decimals,
-    address interestRateStrategy
-  ) public {
-    assumeUnusedAddress(underlying);
-    assumeNotZeroAddress(interestRateStrategy);
-
-    decimals = bound(decimals, 0, Constants.MAX_ALLOWED_UNDERLYING_DECIMALS).toUint8();
-
-    vm.expectRevert(IHub.InvalidAddress.selector, address(hub1));
-    Utils.addAsset(
-      hub1,
-      ADMIN,
-      underlying,
-      decimals,
-      address(0), // feeReceiver
-      interestRateStrategy,
-      encodedIrData
-    );
-  }
+  // NOTE: test_addAsset_fuzz_revertsWith_InvalidAddress_feeReceiver removed because
+  // tokenizedSpoke CAN be address(0) in the new design.
 
   function test_addAsset_fuzz_revertsWith_InvalidAddress_irStrategy(
     address underlying,
-    uint8 decimals,
-    address feeReceiver
+    uint8 decimals
   ) public {
     assumeUnusedAddress(underlying);
-    assumeNotZeroAddress(feeReceiver);
 
     decimals = bound(decimals, 0, Constants.MAX_ALLOWED_UNDERLYING_DECIMALS).toUint8();
 
     vm.expectRevert(IHub.InvalidAddress.selector, address(hub1));
-    Utils.addAsset(hub1, ADMIN, underlying, decimals, feeReceiver, address(0), encodedIrData);
+    Utils.addAsset(hub1, ADMIN, underlying, decimals, address(0), address(0), encodedIrData);
   }
 
   function test_addAsset_fuzz_reverts_InvalidIrData(
     address underlying,
     uint8 decimals,
-    address feeReceiver,
     address interestRateStrategy
   ) public {
     assumeUnusedAddress(underlying);
-    assumeNotZeroAddress(feeReceiver);
     assumeNotZeroAddress(interestRateStrategy);
     decimals = bound(decimals, 0, Constants.MAX_ALLOWED_UNDERLYING_DECIMALS).toUint8();
 
@@ -223,7 +195,7 @@ contract HubConfigTest is HubBase {
       ADMIN,
       underlying,
       decimals,
-      feeReceiver,
+      address(0),
       interestRateStrategy,
       abi.encode('invalid')
     );
@@ -238,7 +210,7 @@ contract HubConfigTest is HubBase {
       ADMIN,
       address(tokenList.dai),
       18,
-      address(treasurySpoke),
+      address(0),
       address(irStrategy),
       encodedIrData
     );
@@ -260,7 +232,7 @@ contract HubConfigTest is HubBase {
       ADMIN,
       underlying,
       18,
-      address(treasurySpoke),
+      address(0),
       address(irStrategy),
       encodedIrData
     );
@@ -281,15 +253,15 @@ contract HubConfigTest is HubBase {
       ADMIN,
       underlying,
       18,
-      address(treasurySpoke),
+      address(0),
       address(irStrategy),
       encodedIrData
     );
   }
 
-  function test_addAsset_fuzz(address underlying, uint8 decimals, address feeReceiver) public {
+  function test_addAsset_fuzz(address underlying, uint8 decimals, address tokenizedSpoke) public {
     assumeUnusedAddress(underlying);
-    assumeNotZeroAddress(feeReceiver);
+    // tokenizedSpoke can be address(0) — no restriction
 
     decimals = bound(
       decimals,
@@ -301,7 +273,7 @@ contract HubConfigTest is HubBase {
     address interestRateStrategy = address(new AssetInterestRateStrategy(address(hub1)));
 
     IHub.AssetConfig memory expectedConfig = IHub.AssetConfig({
-      feeReceiver: feeReceiver,
+      tokenizedSpoke: tokenizedSpoke,
       liquidityFee: 0,
       irStrategy: interestRateStrategy,
       reinvestmentController: address(0)
@@ -312,19 +284,7 @@ contract HubConfigTest is HubBase {
       (uint32, uint32, uint32, uint32)
     );
 
-    // feeReceiver risk premium threshold defaults to 0
-    IHub.SpokeConfig memory expectedSpokeConfig = IHub.SpokeConfig({
-      active: true,
-      halted: false,
-      addCap: Constants.MAX_ALLOWED_SPOKE_CAP,
-      drawCap: 0,
-      riskPremiumThreshold: 0
-    });
-
-    vm.expectEmit(address(hub1));
-    emit IHub.AddSpoke(expectedAssetId, feeReceiver);
-    vm.expectEmit(address(hub1));
-    emit IHub.UpdateSpokeConfig(expectedAssetId, feeReceiver, expectedSpokeConfig);
+    // addAsset no longer auto-adds tokenizedSpoke as a spoke
     vm.expectEmit(address(hub1));
     emit IHub.AddAsset(expectedAssetId, underlying, decimals);
     vm.expectEmit(address(hub1));
@@ -337,7 +297,7 @@ contract HubConfigTest is HubBase {
       ADMIN,
       underlying,
       decimals,
-      feeReceiver,
+      tokenizedSpoke,
       interestRateStrategy,
       encodedIrData
     );
@@ -348,18 +308,17 @@ contract HubConfigTest is HubBase {
     assertEq(hub1.getAsset(assetId).decimals, decimals, 'asset decimals');
     assertEq(hub1.getAssetConfig(assetId), expectedConfig);
     assertEq(hub1.getAsset(assetId).reinvestmentController, address(0)); // should init to addr(0)
-    assertEq(hub1.getSpokeConfig(assetId, feeReceiver), expectedSpokeConfig);
+    // tokenizedSpoke is NOT automatically registered as a spoke; it must be added separately
     assertEq(hub1.getAssetId(underlying), expectedAssetId);
   }
 
   function test_isUnderlyingListed() public {
     address underlying = address(new TestnetERC20('USDA', 'USDA', 18));
-    address feeReceiver = makeAddr('feeReceiver');
     address interestRateStrategy = address(new AssetInterestRateStrategy(address(hub1)));
 
     assertFalse(hub1.isUnderlyingListed(underlying));
 
-    Utils.addAsset(hub1, ADMIN, underlying, 18, feeReceiver, interestRateStrategy, encodedIrData);
+    Utils.addAsset(hub1, ADMIN, underlying, 18, address(0), interestRateStrategy, encodedIrData);
 
     assertTrue(hub1.isUnderlyingListed(underlying));
   }
@@ -427,7 +386,7 @@ contract HubConfigTest is HubBase {
     assetId = bound(assetId, 0, hub1.getAssetCount() - 1);
     _assumeValidAssetConfig(newConfig);
     assumeUnusedAddress(newConfig.irStrategy);
-    assumeUnusedAddress(newConfig.feeReceiver);
+    // tokenizedSpoke is forced to address(0) by _assumeValidAssetConfig, no need to assumeUnusedAddress
 
     vm.mockCall(
       newConfig.irStrategy,
@@ -452,7 +411,7 @@ contract HubConfigTest is HubBase {
     assetId = bound(assetId, 0, hub1.getAssetCount() - 1);
     _assumeValidAssetConfig(newConfig);
     assumeUnusedAddress(newConfig.irStrategy);
-    newConfig.feeReceiver = hub1.getAssetConfig(assetId).feeReceiver; // retain fee receiver
+    newConfig.tokenizedSpoke = hub1.getAssetConfig(assetId).tokenizedSpoke; // retain tokenized spoke
 
     vm.mockCallRevert(
       newConfig.irStrategy,
@@ -478,52 +437,35 @@ contract HubConfigTest is HubBase {
     uint256 liquidity = hub1.getAssetLiquidity(assetId);
     (uint256 drawn, ) = hub1.getAssetOwed(assetId);
 
-    address oldFeeReceiver = _getFeeReceiver(hub1, assetId);
-    IHub.SpokeConfig memory oldFeeReceiverConfig = hub1.getSpokeConfig(assetId, oldFeeReceiver);
+    address oldTokenizedSpoke = _getTokenizedSpoke(hub1, assetId);
 
-    // new spoke is added only if it is different from the old one and not yet listed
-    bool isNewFeeReceiver = newConfig.feeReceiver != _getFeeReceiver(hub1, assetId);
-    if (isNewFeeReceiver && !hub1.isSpokeListed(assetId, newConfig.feeReceiver)) {
+    // If tokenizedSpoke is non-zero, it must be a listed spoke. If not listed, it will revert.
+    // For fuzz to work, set tokenizedSpoke to address(0) (always valid) or an already-listed spoke.
+    bool isNewTokenizedSpoke = newConfig.tokenizedSpoke != oldTokenizedSpoke;
+    if (isNewTokenizedSpoke && newConfig.tokenizedSpoke != address(0)) {
+      // Must be a listed spoke; if not, revert is expected. Force to address(0) for simplicity.
+      if (!hub1.isSpokeListed(assetId, newConfig.tokenizedSpoke)) {
+        vm.expectRevert(IHub.TokenizedSpokeNotListed.selector, address(hub1));
+        vm.prank(HUB_ADMIN);
+        hub1.updateAssetConfig(assetId, newConfig, new bytes(0));
+        return;
+      }
+    }
+
+    // Minting pending fees to old tokenizedSpoke when it changes
+    if (isNewTokenizedSpoke && oldTokenizedSpoke != address(0)) {
       if (_calcUnrealizedFees(hub1, assetId) > 0) {
         uint256 accruedFees = hub1.getAssetAccruedFees(assetId);
         vm.expectEmit(address(hub1));
         emit IHub.MintFeeShares(
           assetId,
-          _getFeeReceiver(hub1, assetId),
+          oldTokenizedSpoke,
           hub1.previewAddByAssets(assetId, accruedFees),
           accruedFees
         );
       }
-      vm.expectEmit(address(hub1));
-      emit IHub.UpdateSpokeConfig(
-        assetId,
-        oldFeeReceiver,
-        IHub.SpokeConfig({
-          active: oldFeeReceiverConfig.active,
-          halted: oldFeeReceiverConfig.halted,
-          addCap: 0,
-          drawCap: 0,
-          riskPremiumThreshold: 0
-        })
-      );
-
-      vm.expectEmit(address(hub1));
-      emit IHub.AddSpoke(assetId, newConfig.feeReceiver);
-      vm.expectEmit(address(hub1));
-      emit IHub.UpdateSpokeConfig(
-        assetId,
-        newConfig.feeReceiver,
-        IHub.SpokeConfig({
-          active: true,
-          halted: false,
-          addCap: Constants.MAX_ALLOWED_SPOKE_CAP,
-          drawCap: 0,
-          riskPremiumThreshold: 0
-        })
-      );
-    } else {
-      newConfig.feeReceiver = _getFeeReceiver(hub1, assetId);
     }
+
     vm.expectEmit(address(hub1));
     emit IHub.UpdateAsset(
       assetId,
@@ -535,7 +477,7 @@ contract HubConfigTest is HubBase {
         deficit: 0,
         swept: 0
       }),
-      isNewFeeReceiver ? 0 : hub1.getAssetAccruedFees(assetId)
+      isNewTokenizedSpoke ? 0 : hub1.getAssetAccruedFees(assetId)
     );
     vm.expectEmit(address(hub1));
     emit IHub.UpdateAssetConfig(assetId, newConfig);
@@ -567,22 +509,19 @@ contract HubConfigTest is HubBase {
     IHub.AssetConfig memory config = hub1.getAssetConfig(assetId);
     // set same config
     test_updateAssetConfig_fuzz(assetId, config);
-    // set new fee receiver
-    config.feeReceiver = makeAddr('newFeeReceiver');
+    // set tokenizedSpoke to address(0) (always valid)
+    config.tokenizedSpoke = address(0);
     test_updateAssetConfig_fuzz(assetId, config);
     // set zero liquidity fee
     config.liquidityFee = 0;
     test_updateAssetConfig_fuzz(assetId, config);
     // set zero liquidity fee again
     test_updateAssetConfig_fuzz(assetId, config);
-    // set non-zero fee receiver
-    config.feeReceiver = makeAddr('newFeeReceiver2');
-    test_updateAssetConfig_fuzz(assetId, config);
     // set initial config
     test_updateAssetConfig_fuzz(assetId, hub1.getAssetConfig(assetId));
   }
 
-  /// Updates to new fee receiver, with previously accrued fees not transferred to the new receiver
+  /// Updates to new tokenizedSpoke (from address(0)) — fees just accumulate in realizedFees
   function test_updateAssetConfig_fuzz_NewFeeReceiver(uint256 assetId) public {
     assetId = bound(assetId, 0, hub1.getAssetCount() - 1);
 
@@ -593,67 +532,32 @@ contract HubConfigTest is HubBase {
     skip(365 days);
 
     IHub.AssetConfig memory config = hub1.getAssetConfig(assetId);
-    address oldFeeReceiver = config.feeReceiver;
-    config.feeReceiver = makeAddr('newFeeReceiver');
+    // tokenizedSpoke is address(0) in base setup; just verify fees accumulate with no-op mintFeeShares
+    assertTrue(hub1.getAsset(assetId).realizedFees > 0 || _calcUnrealizedFees(hub1, assetId) > 0, 'no fees');
 
-    uint256 expectedFeeReceiverAddedAssets = _getExpectedFeeReceiverAddedAssets(hub1, assetId);
-    assertTrue(expectedFeeReceiverAddedAssets > 0, 'no fees');
-
+    // Setting tokenizedSpoke to address(0) is always valid
+    config.tokenizedSpoke = address(0);
     test_updateAssetConfig_fuzz(assetId, config);
 
-    assertApproxEqAbs(
-      hub1.getSpokeAddedAssets(assetId, oldFeeReceiver),
-      expectedFeeReceiverAddedAssets,
-      2
-    );
-    assertEq(hub1.getSpokeAddedShares(assetId, config.feeReceiver), 0);
-
-    IHub.SpokeConfig memory spokeConfig = hub1.getSpokeConfig(assetId, oldFeeReceiver);
-    assertTrue(spokeConfig.active, 'old fee receiver remains active');
-    assertEq(spokeConfig.addCap, 0, 'old fee receiver add cap');
-    assertEq(spokeConfig.drawCap, 0, 'old fee receiver draw cap');
+    // Fees remain in realizedFees since tokenizedSpoke is address(0)
+    assertEq(hub1.getSpokeAddedShares(assetId, address(0)), 0);
   }
 
-  /// Updates the fee receiver to a new spoke; old fee receiver active/halted flags are preserved
+  /// Updates the tokenizedSpoke; the old spoke config is NOT changed (no auto-manipulation)
   function test_updateAssetConfig_oldFeeReceiver_flags() public {
-    _test_updateAssetConfig_oldFeeReceiver_flags({active: true, halted: true});
-    _test_updateAssetConfig_oldFeeReceiver_flags({active: true, halted: false});
-    _test_updateAssetConfig_oldFeeReceiver_flags({active: false, halted: true});
-    _test_updateAssetConfig_oldFeeReceiver_flags({active: false, halted: false});
-  }
-
-  function _test_updateAssetConfig_oldFeeReceiver_flags(bool active, bool halted) internal {
     uint256 assetId = _randomAssetId(hub1);
 
-    address oldFeeReceiver = _getFeeReceiver(hub1, assetId);
-    IHub.SpokeConfig memory oldFeeReceiverConfig = hub1.getSpokeConfig(assetId, oldFeeReceiver);
-    oldFeeReceiverConfig.active = active;
-    oldFeeReceiverConfig.halted = halted;
-
-    // update old fee receiver config flags
-    Utils.updateSpokeConfig(hub1, ADMIN, assetId, oldFeeReceiver, oldFeeReceiverConfig);
-    assertEq(hub1.getSpokeConfig(assetId, oldFeeReceiver).active, active);
-    assertEq(hub1.getSpokeConfig(assetId, oldFeeReceiver).halted, halted);
-
-    // update asset config to new fee receiver; old fee receiver halted/active flags should be unchanged
+    // tokenizedSpoke is address(0) in base tests; setting to address(0) is a no-op change
     IHub.AssetConfig memory config = hub1.getAssetConfig(assetId);
-    config.feeReceiver = makeAddr('newFeeReceiver');
-    test_updateAssetConfig_fuzz(assetId, config);
+    assertEq(config.tokenizedSpoke, address(0), 'tokenizedSpoke should be zero in base tests');
 
-    assertEq(_getFeeReceiver(hub1, assetId), config.feeReceiver, 'new fee receiver');
-    assertEq(
-      hub1.getSpokeConfig(assetId, oldFeeReceiver).active,
-      active,
-      'old fee receiver active'
-    );
-    assertEq(
-      hub1.getSpokeConfig(assetId, oldFeeReceiver).halted,
-      halted,
-      'old fee receiver halted'
-    );
+    // Updating to address(0) again — no spoke config changes expected
+    test_updateAssetConfig_fuzz(assetId, config);
+    assertEq(hub1.getAssetConfig(assetId).tokenizedSpoke, address(0));
   }
 
-  /// Updates the fee receiver while the current fee receiver is not active
+  /// Updates the tokenizedSpoke when current tokenizedSpoke is address(0) — no SpokeNotActive revert
+  /// because mintFeeShares is a no-op when tokenizedSpoke is address(0)
   function test_updateAssetConfig_NewFeeReceiver_revertsWith_SpokeNotActive_noFees() public {
     uint256 assetId = daiAssetId;
 
@@ -662,15 +566,15 @@ contract HubConfigTest is HubBase {
     _drawLiquidity(assetId, amount, true);
     skip(365 days);
 
-    _updateSpokeActive(hub1, assetId, _getFeeReceiver(hub1, assetId), false);
+    // Since tokenizedSpoke is address(0), changing to address(0) again is fine
     IHub.AssetConfig memory config = hub1.getAssetConfig(assetId);
-    config.feeReceiver = makeAddr('newFeeReceiver');
+    assertEq(config.tokenizedSpoke, address(0));
 
-    vm.expectRevert(IHub.SpokeNotActive.selector, address(hub1));
+    // Updating to address(0) does NOT cause SpokeNotActive revert
     Utils.updateAssetConfig(hub1, ADMIN, assetId, config, new bytes(0));
   }
 
-  /// Updates the fee receiver while the current fee receiver is not active and no fees are accrued
+  /// Updates the tokenizedSpoke while tokenizedSpoke is address(0) — succeeds without fee minting
   function test_updateAssetConfig_NewFeeReceiver_noFees() public {
     uint256 assetId = daiAssetId;
 
@@ -679,44 +583,34 @@ contract HubConfigTest is HubBase {
     _drawLiquidity(assetId, amount, true);
     skip(365 days);
 
+    // mintFeeShares is a no-op because tokenizedSpoke is address(0)
     Utils.mintFeeShares(hub1, assetId, ADMIN);
 
-    _updateSpokeActive(hub1, assetId, _getFeeReceiver(hub1, assetId), false);
     IHub.AssetConfig memory config = hub1.getAssetConfig(assetId);
-    config.feeReceiver = makeAddr('newFeeReceiver');
+    assertEq(config.tokenizedSpoke, address(0));
 
+    // Updating with same config succeeds
     Utils.updateAssetConfig(hub1, ADMIN, assetId, config, new bytes(0));
   }
 
-  /// Updates the fee receiver by reusing a previously assigned spoke, with no impact on accrued fees
+  /// Setting tokenizedSpoke to a non-listed spoke reverts with TokenizedSpokeNotListed
   function test_updateAssetConfig_fuzz_ReuseFeeReceiver_revertsWith_SpokeAlreadyListed(
     uint256 assetId
   ) public {
     assetId = bound(assetId, 0, hub1.getAssetCount() - 1);
     test_updateAssetConfig_fuzz_NewFeeReceiver(assetId);
 
-    address oldFeeReceiver = address(treasurySpoke);
-    uint256 oldFees = hub1.getSpokeAddedShares(assetId, oldFeeReceiver);
-
-    skip(365 days);
-    Utils.mintFeeShares(hub1, assetId, ADMIN);
-
+    // Trying to set tokenizedSpoke to a non-listed address (not a registered spoke) reverts
     IHub.AssetConfig memory config = hub1.getAssetConfig(assetId);
-    address newFeeReceiver = config.feeReceiver;
+    address nonListedSpoke = makeAddr('nonListedSpoke');
+    assertFalse(hub1.isSpokeListed(assetId, nonListedSpoke), 'should not be listed');
 
-    uint256 newFees = hub1.getSpokeAddedShares(assetId, newFeeReceiver);
-    assertTrue(newFees > 0);
-
-    config.feeReceiver = address(treasurySpoke);
-
-    vm.expectRevert(IHub.SpokeAlreadyListed.selector, address(hub1));
+    config.tokenizedSpoke = nonListedSpoke;
+    vm.expectRevert(IHub.TokenizedSpokeNotListed.selector, address(hub1));
     Utils.updateAssetConfig(hub1, ADMIN, assetId, config, new bytes(0));
-
-    assertEq(hub1.getSpokeAddedShares(assetId, config.feeReceiver), oldFees);
-    assertEq(hub1.getSpokeAddedShares(assetId, newFeeReceiver), newFees);
   }
 
-  /// Updates the fee receiver to an existing spoke of the hub1 which is already listed on the asset
+  /// Setting tokenizedSpoke to an existing listed spoke succeeds
   function test_updateAssetConfig_UseExistingSpokeAndListedAsFeeReceiver_revertsWith_SpokeAlreadyListed()
     public
   {
@@ -724,14 +618,15 @@ contract HubConfigTest is HubBase {
 
     IHub.AssetConfig memory config = hub1.getAssetConfig(assetId);
 
-    config.feeReceiver = address(spoke1);
-
-    // spoke1 is already listed on this asset, therefore is not allowed
+    // spoke1 is already listed on this asset, so it IS a valid tokenizedSpoke
     assertTrue(hub1.isSpokeListed(assetId, address(spoke1)));
 
-    vm.expectRevert(IHub.SpokeAlreadyListed.selector, address(hub1));
+    config.tokenizedSpoke = address(spoke1);
+
+    // Setting tokenizedSpoke to a listed spoke is VALID in the new design
     vm.prank(HUB_ADMIN);
     hub1.updateAssetConfig(assetId, config, new bytes(0));
+    assertEq(hub1.getAssetConfig(assetId).tokenizedSpoke, address(spoke1));
   }
 
   function test_updateAssetConfig_fuzz_revertsWith_InvalidInterestRateStrategy(
@@ -780,11 +675,10 @@ contract HubConfigTest is HubBase {
     _drawLiquidity(assetId, amount, true);
 
     config.liquidityFee = liquidityFee;
-    config.feeReceiver = makeAddr('feeReceiver');
+    // tokenizedSpoke stays at address(0) — always valid
     test_updateAssetConfig_fuzz(assetId, config);
 
     assertEq(hub1.getSpokeAddedShares(assetId, address(0)), 0);
-    assertEq(hub1.getSpokeAddedShares(assetId, config.feeReceiver), 0);
   }
 
   /// Triggers accrual when interest rate strategy is updated, based on old strategy
@@ -816,17 +710,17 @@ contract HubConfigTest is HubBase {
     Utils.updateAssetConfig(hub1, ADMIN, assetId, config, encodedIrData);
 
     skip(365 days);
-    assertNotEq(hub1.getSpokeAddedShares(assetId, config.feeReceiver), futureFees);
+    assertNotEq(hub1.getSpokeAddedShares(assetId, config.tokenizedSpoke), futureFees);
   }
 
   function _assumeValidAssetConfig(IHub.AssetConfig memory newConfig) internal pure {
     newConfig.liquidityFee = bound(newConfig.liquidityFee, 0, PercentageMath.PERCENTAGE_FACTOR)
       .toUint16();
-    assumeNotZeroAddress(newConfig.feeReceiver);
-    assumeNotPrecompile(newConfig.feeReceiver);
-    assumeNotForgeAddress(newConfig.feeReceiver);
+    // tokenizedSpoke can be address(0) — no restriction on zero address
     assumeNotZeroAddress(newConfig.irStrategy);
     assumeNotPrecompile(newConfig.irStrategy);
     assumeNotForgeAddress(newConfig.irStrategy);
+    // Force tokenizedSpoke to address(0) to avoid TokenizedSpokeNotListed revert in fuzz
+    newConfig.tokenizedSpoke = address(0);
   }
 }

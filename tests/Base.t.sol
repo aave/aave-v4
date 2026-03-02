@@ -426,7 +426,7 @@ abstract contract Base is Test {
     // Set up HubConfigurator function permissions - all functions callable by HUB_CONFIGURATOR_ROLE
     bytes4[] memory selectors = new bytes4[](22);
     selectors[0] = IHubConfigurator.updateLiquidityFee.selector;
-    selectors[1] = IHubConfigurator.updateFeeReceiver.selector;
+    selectors[1] = IHubConfigurator.updateTokenizedSpoke.selector;
     selectors[2] = IHubConfigurator.updateFeeConfig.selector;
     selectors[3] = IHubConfigurator.updateInterestRateStrategy.selector;
     selectors[4] = IHubConfigurator.updateReinvestmentController.selector;
@@ -615,7 +615,7 @@ abstract contract Base is Test {
     hub1.addAsset(
       address(tokenList.weth),
       tokenList.weth.decimals(),
-      address(treasurySpoke),
+      address(0),
       address(irStrategy),
       encodedIrData
     );
@@ -623,7 +623,7 @@ abstract contract Base is Test {
       wethAssetId,
       IHub.AssetConfig({
         liquidityFee: 10_00,
-        feeReceiver: address(treasurySpoke),
+        tokenizedSpoke: address(0),
         irStrategy: address(irStrategy),
         reinvestmentController: address(0)
       }),
@@ -633,7 +633,7 @@ abstract contract Base is Test {
     hub1.addAsset(
       address(tokenList.usdx),
       tokenList.usdx.decimals(),
-      address(treasurySpoke),
+      address(0),
       address(irStrategy),
       encodedIrData
     );
@@ -641,7 +641,7 @@ abstract contract Base is Test {
       usdxAssetId,
       IHub.AssetConfig({
         liquidityFee: 5_00,
-        feeReceiver: address(treasurySpoke),
+        tokenizedSpoke: address(0),
         irStrategy: address(irStrategy),
         reinvestmentController: address(0)
       }),
@@ -651,7 +651,7 @@ abstract contract Base is Test {
     hub1.addAsset(
       address(tokenList.dai),
       tokenList.dai.decimals(),
-      address(treasurySpoke),
+      address(0),
       address(irStrategy),
       encodedIrData
     );
@@ -659,7 +659,7 @@ abstract contract Base is Test {
       daiAssetId,
       IHub.AssetConfig({
         liquidityFee: 5_00,
-        feeReceiver: address(treasurySpoke),
+        tokenizedSpoke: address(0),
         irStrategy: address(irStrategy),
         reinvestmentController: address(0)
       }),
@@ -669,7 +669,7 @@ abstract contract Base is Test {
     hub1.addAsset(
       address(tokenList.wbtc),
       tokenList.wbtc.decimals(),
-      address(treasurySpoke),
+      address(0),
       address(irStrategy),
       encodedIrData
     );
@@ -677,7 +677,7 @@ abstract contract Base is Test {
       wbtcAssetId,
       IHub.AssetConfig({
         liquidityFee: 10_00,
-        feeReceiver: address(treasurySpoke),
+        tokenizedSpoke: address(0),
         irStrategy: address(irStrategy),
         reinvestmentController: address(0)
       }),
@@ -687,7 +687,7 @@ abstract contract Base is Test {
     hub1.addAsset(
       address(tokenList.usdy),
       tokenList.usdy.decimals(),
-      address(treasurySpoke),
+      address(0),
       address(irStrategy),
       encodedIrData
     );
@@ -695,7 +695,7 @@ abstract contract Base is Test {
       usdyAssetId,
       IHub.AssetConfig({
         liquidityFee: 10_00,
-        feeReceiver: address(treasurySpoke),
+        tokenizedSpoke: address(0),
         irStrategy: address(irStrategy),
         reinvestmentController: address(0)
       }),
@@ -705,7 +705,7 @@ abstract contract Base is Test {
     hub1.addAsset(
       address(tokenList.usdz),
       tokenList.usdz.decimals(),
-      address(treasurySpoke),
+      address(0),
       address(irStrategy),
       encodedIrData
     );
@@ -713,7 +713,7 @@ abstract contract Base is Test {
       hub1.getAssetCount() - 1,
       IHub.AssetConfig({
         liquidityFee: 5_00,
-        feeReceiver: address(treasurySpoke),
+        tokenizedSpoke: address(0),
         irStrategy: address(irStrategy),
         reinvestmentController: address(0)
       }),
@@ -997,7 +997,7 @@ abstract contract Base is Test {
     hub2.addAsset(
       address(tokenList.weth),
       tokenList.weth.decimals(),
-      address(treasurySpoke),
+      address(0),
       address(hub2IrStrategy),
       encodedIrData
     );
@@ -1006,7 +1006,7 @@ abstract contract Base is Test {
     hub2.addAsset(
       address(tokenList.usdx),
       tokenList.usdx.decimals(),
-      address(treasurySpoke),
+      address(0),
       address(hub2IrStrategy),
       encodedIrData
     );
@@ -1015,7 +1015,7 @@ abstract contract Base is Test {
     hub2.addAsset(
       address(tokenList.dai),
       tokenList.dai.decimals(),
-      address(treasurySpoke),
+      address(0),
       address(hub2IrStrategy),
       encodedIrData
     );
@@ -1024,7 +1024,7 @@ abstract contract Base is Test {
     hub2.addAsset(
       address(tokenList.wbtc),
       tokenList.wbtc.decimals(),
-      address(treasurySpoke),
+      address(0),
       address(hub2IrStrategy),
       encodedIrData
     );
@@ -1061,7 +1061,7 @@ abstract contract Base is Test {
     hub3.addAsset(
       address(tokenList.dai),
       tokenList.dai.decimals(),
-      address(treasurySpoke),
+      address(0),
       address(hub3IrStrategy),
       encodedIrData
     );
@@ -1070,7 +1070,7 @@ abstract contract Base is Test {
     hub3.addAsset(
       address(tokenList.usdx),
       tokenList.usdx.decimals(),
-      address(treasurySpoke),
+      address(0),
       address(hub3IrStrategy),
       encodedIrData
     );
@@ -1079,7 +1079,7 @@ abstract contract Base is Test {
     hub3.addAsset(
       address(tokenList.wbtc),
       tokenList.wbtc.decimals(),
-      address(treasurySpoke),
+      address(0),
       address(hub3IrStrategy),
       encodedIrData
     );
@@ -1088,7 +1088,7 @@ abstract contract Base is Test {
     hub3.addAsset(
       address(tokenList.weth),
       tokenList.weth.decimals(),
-      address(treasurySpoke),
+      address(0),
       address(hub3IrStrategy),
       encodedIrData
     );
@@ -1106,7 +1106,7 @@ abstract contract Base is Test {
     address newFeeReceiver
   ) internal pausePrank {
     IHub.AssetConfig memory config = hub.getAssetConfig(assetId);
-    config.feeReceiver = newFeeReceiver;
+    config.tokenizedSpoke = newFeeReceiver;
 
     vm.prank(HUB_ADMIN);
     hub.updateAssetConfig(assetId, config, new bytes(0));
@@ -2344,19 +2344,12 @@ abstract contract Base is Test {
     return _calculatePremiumAssetsRay(premiumShares, hub.getAssetDrawnIndex(assetId));
   }
 
-  /// @dev Helper function to withdraw fees from the treasury spoke
-  function _withdrawLiquidityFees(IHub hub, uint256 assetId, uint256 amount) internal {
+  /// @dev Helper function to mint fee shares. Since tokenizedSpoke is address(0) in base tests,
+  /// mintFeeShares is a no-op and fees accumulate in realizedFees.
+  function _withdrawLiquidityFees(IHub hub, uint256 assetId, uint256 /*amount*/) internal {
     Utils.mintFeeShares(hub, assetId, ADMIN);
-    uint256 fees = hub.getSpokeAddedAssets(assetId, address(treasurySpoke));
-
-    if (amount > fees) {
-      amount = fees;
-    }
-    if (amount == 0) {
-      return; // nothing to withdraw
-    }
-    vm.prank(TREASURY_ADMIN);
-    treasurySpoke.withdraw(assetId, amount, address(treasurySpoke));
+    // tokenizedSpoke is address(0) in base test setup, so mintFeeShares is a no-op.
+    // Fees accumulate in hub.getAsset(assetId).realizedFees and are not distributed.
   }
 
   function _assumeValidSupplier(address user) internal view {
@@ -2376,8 +2369,12 @@ abstract contract Base is Test {
     return hub1.getAssetConfig(assetId).liquidityFee;
   }
 
+  function _getTokenizedSpoke(IHub hub, uint256 assetId) internal view returns (address) {
+    return hub.getAssetConfig(assetId).tokenizedSpoke;
+  }
+
   function _getFeeReceiver(IHub hub, uint256 assetId) internal view returns (address) {
-    return hub.getAssetConfig(assetId).feeReceiver;
+    return _getTokenizedSpoke(hub, assetId);
   }
 
   function _getFeeReceiver(ISpoke spoke, uint256 reserveId) internal view returns (address) {
@@ -2529,7 +2526,19 @@ abstract contract Base is Test {
     string memory shareSymbol,
     address proxyAdminOwner
   ) internal pausePrank returns (ITokenizationSpoke) {
-    address tokenizationSpokeImpl = address(new TokenizationSpokeInstance(address(hub), assetId));
+    address treasury = makeAddr('treasury');
+    return _deployTokenizationSpoke(hub, assetId, shareName, shareSymbol, proxyAdminOwner, treasury);
+  }
+
+  function _deployTokenizationSpoke(
+    IHub hub,
+    uint256 assetId,
+    string memory shareName,
+    string memory shareSymbol,
+    address proxyAdminOwner,
+    address treasury
+  ) internal pausePrank returns (ITokenizationSpoke) {
+    address tokenizationSpokeImpl = address(new TokenizationSpokeInstance(address(hub), assetId, treasury));
     ITokenizationSpoke tokenizationSpoke = ITokenizationSpoke(
       DeployUtils.proxify(
         tokenizationSpokeImpl,
@@ -2570,6 +2579,26 @@ abstract contract Base is Test {
     hub.addSpoke(assetId, address(tokenizationSpoke), config);
   }
 
+  /// @dev Deploy and register a tokenized spoke for each asset in a given hub, and set it as the tokenizedSpoke.
+  function _setupTokenizedSpokesForAllAssets(IHub hub) internal {
+    uint256 assetCount = hub.getAssetCount();
+    for (uint256 i = 0; i < assetCount; ++i) {
+      ITokenizationSpoke tokenSpoke = _deployTokenizationSpoke(
+        hub,
+        i,
+        'FEE',
+        'FEE',
+        ADMIN
+      );
+      _registerTokenizationSpoke(hub, i, tokenSpoke);
+      vm.startPrank(ADMIN);
+      IHub.AssetConfig memory config = hub.getAssetConfig(i);
+      config.tokenizedSpoke = address(tokenSpoke);
+      hub.updateAssetConfig(i, config, new bytes(0));
+      vm.stopPrank();
+    }
+  }
+
   function _getDefaultReserveConfig(
     uint24 collateralRisk
   ) internal pure returns (ISpoke.ReserveConfig memory) {
@@ -2591,7 +2620,7 @@ abstract contract Base is Test {
   }
 
   function assertEq(IHub.AssetConfig memory a, IHub.AssetConfig memory b) internal pure {
-    assertEq(a.feeReceiver, b.feeReceiver, 'feeReceiver');
+    assertEq(a.tokenizedSpoke, b.tokenizedSpoke, 'tokenizedSpoke');
     assertEq(a.liquidityFee, b.liquidityFee, 'liquidityFee');
     assertEq(a.irStrategy, b.irStrategy, 'irStrategy');
     assertEq(a.reinvestmentController, b.reinvestmentController, 'reinvestmentController');
@@ -3263,7 +3292,7 @@ abstract contract Base is Test {
   ) internal view returns (uint256) {
     uint256 expectedFees = hub.getAsset(assetId).realizedFees + _calcUnrealizedFees(hub, assetId);
     assertEq(expectedFees, hub.getAssetAccruedFees(assetId), 'asset accrued fees');
-    return hub.getSpokeAddedAssets(assetId, hub.getAsset(assetId).feeReceiver) + expectedFees;
+    return hub.getSpokeAddedAssets(assetId, hub.getAsset(assetId).tokenizedSpoke) + expectedFees;
   }
 
   function _getAddedAssetsWithFees(IHub hub, uint256 assetId) internal view returns (uint256) {
@@ -3305,7 +3334,7 @@ abstract contract Base is Test {
       uint256 newTokenAssetId = hub.addAsset(
         address(newToken),
         18,
-        address(treasurySpoke),
+        address(0),
         address(irStrategy),
         encodedIrData
       );
@@ -3313,7 +3342,7 @@ abstract contract Base is Test {
         newTokenAssetId,
         IHub.AssetConfig({
           liquidityFee: 10_00,
-          feeReceiver: address(treasurySpoke),
+          tokenizedSpoke: address(0),
           irStrategy: address(irStrategy),
           reinvestmentController: address(0)
         }),
