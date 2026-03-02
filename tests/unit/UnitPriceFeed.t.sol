@@ -13,7 +13,7 @@ contract UnitPriceFeedTest is Base {
 
   function setUp() public override {
     super.setUp();
-    unitPriceFeed = new UnitPriceFeed(DECIMALS);
+    unitPriceFeed = new UnitPriceFeed(DECIMALS, 'Unit Price Feed');
   }
 
   function test_constructor_revertsWith_Uint8Overflow() public {
@@ -21,7 +21,7 @@ contract UnitPriceFeedTest is Base {
     vm.expectRevert(
       abi.encodeWithSelector(SafeCast.SafeCastOverflowedUintToInt.selector, 10 ** invalidDecimals)
     );
-    new UnitPriceFeed(invalidDecimals);
+    new UnitPriceFeed(invalidDecimals, 'Unit Price Feed');
   }
 
   function test_latestAnswer() public view {
@@ -32,6 +32,10 @@ contract UnitPriceFeedTest is Base {
     assertEq(unitPriceFeed.decimals(), DECIMALS);
   }
 
+  function test_description() public view {
+    assertEq(unitPriceFeed.description(), 'Unit Price Feed');
+  }
+
   function test_fuzz_latestAnswer_blockTimestamp(uint80 blockTimestamp) public {
     skip(blockTimestamp);
     assertEq(unitPriceFeed.latestAnswer(), int256(10 ** DECIMALS));
@@ -39,7 +43,7 @@ contract UnitPriceFeedTest is Base {
 
   function test_fuzz_latestAnswer_differentDecimals(uint8 decimals) public {
     decimals = bound(decimals, 0, 18).toUint8();
-    unitPriceFeed = new UnitPriceFeed(decimals);
+    unitPriceFeed = new UnitPriceFeed(decimals, 'Unit Price Feed');
     assertEq(unitPriceFeed.decimals(), decimals);
     assertEq(unitPriceFeed.latestAnswer(), int256(10 ** decimals));
   }

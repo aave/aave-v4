@@ -15,13 +15,18 @@ contract UnitPriceFeed is IPriceFeed {
   /// @inheritdoc IPriceFeed
   uint8 public immutable decimals;
 
+  /// @inheritdoc IPriceFeed
+  string public description;
+
   int256 private immutable UNITS;
 
   /// @dev Constructor.
   /// @param decimals_ The number of decimals used to represent the unit price.
-  constructor(uint8 decimals_) {
+  /// @param description_ The description of the unit price feed.
+  constructor(uint8 decimals_, string memory description_) {
     UNITS = (10 ** decimals_).toInt256();
     decimals = decimals_;
+    description = description_;
   }
 
   /// @inheritdoc IPriceFeed
