@@ -9,7 +9,7 @@ contract HubMintFeeSharesTest is Base {
     vm.expectRevert(
       abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, address(this))
     );
-    HubActions.mintFeeShares(hub1, daiAssetId, address(this));
+    HubActions.mintFeeShares({hub: hub1, assetId: daiAssetId, caller: address(this)});
   }
 
   function test_mintFeeShares_revertsWith_SpokeNotActive() public {
@@ -28,13 +28,13 @@ contract HubMintFeeSharesTest is Base {
 
     _updateSpokeActive(hub1, daiAssetId, _getFeeReceiver(hub1, daiAssetId), false);
     vm.expectRevert(IHub.SpokeNotActive.selector, address(hub1));
-    HubActions.mintFeeShares(hub1, daiAssetId, ADMIN);
+    HubActions.mintFeeShares({hub: hub1, assetId: daiAssetId, caller: ADMIN});
   }
 
   function test_mintFeeShares_revertsWith_AssetNotListed() public {
     uint256 invalidAssetId = hub1.getAssetCount();
     vm.expectRevert(IHub.AssetNotListed.selector);
-    HubActions.mintFeeShares(hub1, invalidAssetId, ADMIN);
+    HubActions.mintFeeShares({hub: hub1, assetId: invalidAssetId, caller: ADMIN});
   }
 
   function test_mintFeeShares() public {
@@ -86,7 +86,11 @@ contract HubMintFeeSharesTest is Base {
     uint256 sharePriceBefore = hub1.previewAddByShares(daiAssetId, 1e18);
 
     vm.expectCall(address(irStrategy), irCalldata);
-    uint256 mintedShares = HubActions.mintFeeShares(hub1, daiAssetId, ADMIN);
+    uint256 mintedShares = HubActions.mintFeeShares({
+      hub: hub1,
+      assetId: daiAssetId,
+      caller: ADMIN
+    });
 
     assertEq(mintedShares, expectedMintedShares, 'minted shares');
     assertEq(hub1.getAsset(daiAssetId).realizedFees, 0, 'realized fees after');
@@ -111,7 +115,7 @@ contract HubMintFeeSharesTest is Base {
     emit IHub.UpdateAsset(daiAssetId, asset.drawnIndex, asset.drawnRate, 0);
 
     vm.recordLogs();
-    HubActions.mintFeeShares(hub1, daiAssetId, ADMIN);
+    HubActions.mintFeeShares({hub: hub1, assetId: daiAssetId, caller: ADMIN});
     vm.getRecordedLogs();
     _assertEventNotEmitted(IHub.MintFeeShares.selector);
   }
@@ -140,14 +144,14 @@ contract HubMintFeeSharesTest is Base {
     _updateLiquidityFee(hub1, daiAssetId, PercentageMath.PERCENTAGE_FACTOR);
 
     // mint fee shares just to accrue (liquidity fee is 0, so no fees are minted)
-    HubActions.mintFeeShares(hub1, daiAssetId, ADMIN);
+    HubActions.mintFeeShares({hub: hub1, assetId: daiAssetId, caller: ADMIN});
     skip(365 days);
 
     // drawn index is 2.000...001
     assertEq(hub1.getAssetDrawnIndex(daiAssetId), 2e27 + 1);
 
     vm.recordLogs();
-    HubActions.mintFeeShares(hub1, daiAssetId, ADMIN);
+    HubActions.mintFeeShares({hub: hub1, assetId: daiAssetId, caller: ADMIN});
     vm.getRecordedLogs();
     _assertEventNotEmitted(IHub.MintFeeShares.selector);
 

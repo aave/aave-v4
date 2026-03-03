@@ -64,13 +64,13 @@ contract SpokeAccrueInterestScenarioTest is Base {
     // Bob supplies amounts on spoke 2, then we deploy remainder of liquidity up to respective supply caps
     for (uint256 i = 0; i < 4; ++i) {
       if (testAmounts[i].supplyAmount > 0) {
-        SpokeActions.supplyCollateral(
-          spoke2,
-          testAmounts[i].reserveId,
-          bob,
-          testAmounts[i].supplyAmount,
-          bob
-        );
+        SpokeActions.supplyCollateral({
+          spoke: spoke2,
+          reserveId: testAmounts[i].reserveId,
+          caller: bob,
+          amount: testAmounts[i].supplyAmount,
+          onBehalfOf: bob
+        });
       }
       // Deploy remainder of liquidity for each asset
       if (testAmounts[i].supplyAmount < MAX_SUPPLY_AMOUNT) {
@@ -85,13 +85,13 @@ contract SpokeAccrueInterestScenarioTest is Base {
     // Bob borrows amounts from spoke 2
     for (uint256 i = 0; i < 4; ++i) {
       if (testAmounts[i].borrowAmount > 0) {
-        SpokeActions.borrow(
-          spoke2,
-          testAmounts[i].reserveId,
-          bob,
-          testAmounts[i].borrowAmount,
-          bob
-        );
+        SpokeActions.borrow({
+          spoke: spoke2,
+          reserveId: testAmounts[i].reserveId,
+          caller: bob,
+          amount: testAmounts[i].borrowAmount,
+          onBehalfOf: bob
+        });
       }
     }
 
@@ -159,12 +159,24 @@ contract SpokeAccrueInterestScenarioTest is Base {
     if (_getUserHealthFactor(spoke2, bob) >= HEALTH_FACTOR_LIQUIDATION_THRESHOLD) {
       // Supply more collateral to ensure bob can borrow more dai to trigger accrual
       deal(address(tokenList.dai), bob, MAX_SUPPLY_AMOUNT);
-      SpokeActions.supplyCollateral(spoke2, _usdzReserveId(spoke2), bob, MAX_SUPPLY_AMOUNT, bob);
+      SpokeActions.supplyCollateral({
+        spoke: spoke2,
+        reserveId: _usdzReserveId(spoke2),
+        caller: bob,
+        amount: MAX_SUPPLY_AMOUNT,
+        onBehalfOf: bob
+      });
 
       uint256 daiBorrowAmount = 1e18;
 
       // Bob borrows more dai to trigger accrual
-      SpokeActions.borrow(spoke2, _daiReserveId(spoke2), bob, daiBorrowAmount, bob);
+      SpokeActions.borrow({
+        spoke: spoke2,
+        reserveId: _daiReserveId(spoke2),
+        caller: bob,
+        amount: daiBorrowAmount,
+        onBehalfOf: bob
+      });
       // Account for the dai we just borrowed
       testAmounts[0].originalBorrowAmount += daiBorrowAmount;
 

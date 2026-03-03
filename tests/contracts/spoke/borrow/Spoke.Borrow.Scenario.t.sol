@@ -47,35 +47,35 @@ contract SpokeBorrowScenarioTest is Base {
     state.wbtcBob.supplyAmount = MAX_SUPPLY_AMOUNT_WBTC / 2;
 
     // Alice supply collateral through spoke1
-    SpokeActions.supplyCollateral(
-      spoke1,
-      state.wethReserveId,
-      alice,
-      state.wethAlice.supplyAmount,
-      alice
-    );
-    SpokeActions.supplyCollateral(
-      spoke1,
-      state.wbtcReserveId,
-      alice,
-      state.wbtcAlice.supplyAmount,
-      alice
-    );
+    SpokeActions.supplyCollateral({
+      spoke: spoke1,
+      reserveId: state.wethReserveId,
+      caller: alice,
+      amount: state.wethAlice.supplyAmount,
+      onBehalfOf: alice
+    });
+    SpokeActions.supplyCollateral({
+      spoke: spoke1,
+      reserveId: state.wbtcReserveId,
+      caller: alice,
+      amount: state.wbtcAlice.supplyAmount,
+      onBehalfOf: alice
+    });
     // Bob supply collateral through spoke1
-    SpokeActions.supplyCollateral(
-      spoke1,
-      state.wethReserveId,
-      bob,
-      state.wethBob.supplyAmount,
-      bob
-    );
-    SpokeActions.supplyCollateral(
-      spoke1,
-      state.wbtcReserveId,
-      bob,
-      state.wbtcBob.supplyAmount,
-      bob
-    );
+    SpokeActions.supplyCollateral({
+      spoke: spoke1,
+      reserveId: state.wethReserveId,
+      caller: bob,
+      amount: state.wethBob.supplyAmount,
+      onBehalfOf: bob
+    });
+    SpokeActions.supplyCollateral({
+      spoke: spoke1,
+      reserveId: state.wbtcReserveId,
+      caller: bob,
+      amount: state.wbtcBob.supplyAmount,
+      onBehalfOf: bob
+    });
 
     // supply enough available liquidity, at least >= 1
     _openSupplyPosition(spoke1, state.daiReserveId, daiBorrowAmount + daiBorrowAmount2 + 1);
@@ -121,20 +121,44 @@ contract SpokeBorrowScenarioTest is Base {
     // Alice borrow all reserves
     if (daiBorrowAmount > 0) {
       assertGt(_getUserHealthFactor(spoke1, alice), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
-      SpokeActions.borrow(spoke1, state.daiReserveId, alice, daiBorrowAmount, alice);
+      SpokeActions.borrow({
+        spoke: spoke1,
+        reserveId: state.daiReserveId,
+        caller: alice,
+        amount: daiBorrowAmount,
+        onBehalfOf: alice
+      });
     }
     if (usdxBorrowAmount > 0) {
       assertGt(_getUserHealthFactor(spoke1, alice), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
-      SpokeActions.borrow(spoke1, state.usdxReserveId, alice, usdxBorrowAmount, alice);
+      SpokeActions.borrow({
+        spoke: spoke1,
+        reserveId: state.usdxReserveId,
+        caller: alice,
+        amount: usdxBorrowAmount,
+        onBehalfOf: alice
+      });
     }
     // Bob borrow all reserves
     if (daiBorrowAmount2 > 0) {
       assertGt(_getUserHealthFactor(spoke1, bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
-      SpokeActions.borrow(spoke1, state.daiReserveId, bob, daiBorrowAmount2, bob);
+      SpokeActions.borrow({
+        spoke: spoke1,
+        reserveId: state.daiReserveId,
+        caller: bob,
+        amount: daiBorrowAmount2,
+        onBehalfOf: bob
+      });
     }
     if (usdxBorrowAmount2 > 0) {
       assertGt(_getUserHealthFactor(spoke1, bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
-      SpokeActions.borrow(spoke1, state.usdxReserveId, bob, usdxBorrowAmount2, bob);
+      SpokeActions.borrow({
+        spoke: spoke1,
+        reserveId: state.usdxReserveId,
+        caller: bob,
+        amount: usdxBorrowAmount2,
+        onBehalfOf: bob
+      });
     }
 
     _assertUserPositionAndDebt({
@@ -213,28 +237,34 @@ contract SpokeBorrowScenarioTest is Base {
     state.wbtcBob.supplyAmount = MAX_SUPPLY_AMOUNT_WBTC;
 
     // Bob supply all reserves as collateral
-    SpokeActions.supplyCollateral(spoke2, state.daiReserveId, bob, state.daiBob.supplyAmount, bob);
-    SpokeActions.supplyCollateral(
-      spoke2,
-      state.wethReserveId,
-      bob,
-      state.wethBob.supplyAmount,
-      bob
-    );
-    SpokeActions.supplyCollateral(
-      spoke2,
-      state.usdxReserveId,
-      bob,
-      state.usdxBob.supplyAmount,
-      bob
-    );
-    SpokeActions.supplyCollateral(
-      spoke2,
-      state.wbtcReserveId,
-      bob,
-      state.wbtcBob.supplyAmount,
-      bob
-    );
+    SpokeActions.supplyCollateral({
+      spoke: spoke2,
+      reserveId: state.daiReserveId,
+      caller: bob,
+      amount: state.daiBob.supplyAmount,
+      onBehalfOf: bob
+    });
+    SpokeActions.supplyCollateral({
+      spoke: spoke2,
+      reserveId: state.wethReserveId,
+      caller: bob,
+      amount: state.wethBob.supplyAmount,
+      onBehalfOf: bob
+    });
+    SpokeActions.supplyCollateral({
+      spoke: spoke2,
+      reserveId: state.usdxReserveId,
+      caller: bob,
+      amount: state.usdxBob.supplyAmount,
+      onBehalfOf: bob
+    });
+    SpokeActions.supplyCollateral({
+      spoke: spoke2,
+      reserveId: state.wbtcReserveId,
+      caller: bob,
+      amount: state.wbtcBob.supplyAmount,
+      onBehalfOf: bob
+    });
 
     _assertUserPositionAndDebt({
       spoke: spoke2,
@@ -276,19 +306,43 @@ contract SpokeBorrowScenarioTest is Base {
     // Bob borrow all reserves
     if (daiBorrowAmount > 0) {
       assertGt(_getUserHealthFactor(spoke2, bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
-      SpokeActions.borrow(spoke2, state.daiReserveId, bob, daiBorrowAmount, bob);
+      SpokeActions.borrow({
+        spoke: spoke2,
+        reserveId: state.daiReserveId,
+        caller: bob,
+        amount: daiBorrowAmount,
+        onBehalfOf: bob
+      });
     }
     if (wethBorrowAmount > 0) {
       assertGt(_getUserHealthFactor(spoke2, bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
-      SpokeActions.borrow(spoke2, state.wethReserveId, bob, wethBorrowAmount, bob);
+      SpokeActions.borrow({
+        spoke: spoke2,
+        reserveId: state.wethReserveId,
+        caller: bob,
+        amount: wethBorrowAmount,
+        onBehalfOf: bob
+      });
     }
     if (usdxBorrowAmount > 0) {
       assertGt(_getUserHealthFactor(spoke2, bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
-      SpokeActions.borrow(spoke2, state.usdxReserveId, bob, usdxBorrowAmount, bob);
+      SpokeActions.borrow({
+        spoke: spoke2,
+        reserveId: state.usdxReserveId,
+        caller: bob,
+        amount: usdxBorrowAmount,
+        onBehalfOf: bob
+      });
     }
     if (wbtcBorrowAmount > 0) {
       assertGt(_getUserHealthFactor(spoke2, bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
-      SpokeActions.borrow(spoke2, state.wbtcReserveId, bob, wbtcBorrowAmount, bob);
+      SpokeActions.borrow({
+        spoke: spoke2,
+        reserveId: state.wbtcReserveId,
+        caller: bob,
+        amount: wbtcBorrowAmount,
+        onBehalfOf: bob
+      });
     }
 
     _assertUserPositionAndDebt({
@@ -383,11 +437,35 @@ contract SpokeBorrowScenarioTest is Base {
     uint256 supplyAmount = MAX_SUPPLY_AMOUNT / 2;
 
     // Bob supply collateralthrough spoke1
-    SpokeActions.supplyCollateral(spoke1, states[0].daiReserveId, bob, supplyAmount, bob);
-    SpokeActions.supplyCollateral(spoke1, states[0].usdxReserveId, bob, supplyAmount, bob);
+    SpokeActions.supplyCollateral({
+      spoke: spoke1,
+      reserveId: states[0].daiReserveId,
+      caller: bob,
+      amount: supplyAmount,
+      onBehalfOf: bob
+    });
+    SpokeActions.supplyCollateral({
+      spoke: spoke1,
+      reserveId: states[0].usdxReserveId,
+      caller: bob,
+      amount: supplyAmount,
+      onBehalfOf: bob
+    });
     // Bob supply collateral through spoke1
-    SpokeActions.supplyCollateral(spoke2, states[1].daiReserveId, bob, supplyAmount, bob);
-    SpokeActions.supplyCollateral(spoke2, states[1].usdxReserveId, bob, supplyAmount, bob);
+    SpokeActions.supplyCollateral({
+      spoke: spoke2,
+      reserveId: states[1].daiReserveId,
+      caller: bob,
+      amount: supplyAmount,
+      onBehalfOf: bob
+    });
+    SpokeActions.supplyCollateral({
+      spoke: spoke2,
+      reserveId: states[1].usdxReserveId,
+      caller: bob,
+      amount: supplyAmount,
+      onBehalfOf: bob
+    });
 
     _assertUserPositionAndDebt({
       spoke: spoke1,
@@ -528,13 +606,13 @@ contract SpokeBorrowScenarioTest is Base {
     _openSupplyPosition(spoke1, state.daiReserveId, MAX_SUPPLY_AMOUNT_DAI);
 
     // Bob supply weth as collateral
-    SpokeActions.supplyCollateral(
-      spoke1,
-      state.wethReserveId,
-      bob,
-      state.wethBob.supplyAmount,
-      bob
-    );
+    SpokeActions.supplyCollateral({
+      spoke: spoke1,
+      reserveId: state.wethReserveId,
+      caller: bob,
+      amount: state.wethBob.supplyAmount,
+      onBehalfOf: bob
+    });
 
     uint256 expectedShares = hub1.previewRestoreByAssets(daiAssetId, borrowAmount1);
 
@@ -619,10 +697,28 @@ contract SpokeBorrowScenarioTest is Base {
 
     uint256 coll2Value = _convertAmountToValue(spoke1, coll2ReserveId, coll2Amount);
 
-    SpokeActions.supplyCollateral(spoke1, coll1ReserveId, alice, coll1Amount, alice);
-    SpokeActions.supplyCollateral(spoke1, coll2ReserveId, alice, coll2Amount, alice);
+    SpokeActions.supplyCollateral({
+      spoke: spoke1,
+      reserveId: coll1ReserveId,
+      caller: alice,
+      amount: coll1Amount,
+      onBehalfOf: alice
+    });
+    SpokeActions.supplyCollateral({
+      spoke: spoke1,
+      reserveId: coll2ReserveId,
+      caller: alice,
+      amount: coll2Amount,
+      onBehalfOf: alice
+    });
     _openSupplyPosition(spoke1, debtReserveId, debtBorrowAmount);
-    SpokeActions.borrow(spoke1, debtReserveId, alice, debtBorrowAmount, alice);
+    SpokeActions.borrow({
+      spoke: spoke1,
+      reserveId: debtReserveId,
+      caller: alice,
+      amount: debtBorrowAmount,
+      onBehalfOf: alice
+    });
 
     ISpoke.UserAccountData memory userAccountData = spoke1.getUserAccountData(alice);
     assertEq(_calculateExpectedUserRP(spoke1, alice), userAccountData.riskPremium);

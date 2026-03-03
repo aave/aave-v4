@@ -96,9 +96,27 @@ contract GiverPositionManagerTest is Base {
     uint256 borrowAmount = 100e18;
     repayAmount = bound(repayAmount, 1, borrowAmount);
 
-    SpokeActions.supplyCollateral(spoke1, _daiReserveId(spoke1), alice, aliceSupplyAmount, alice);
-    SpokeActions.supply(spoke1, _daiReserveId(spoke1), bob, bobSupplyAmount, bob);
-    SpokeActions.borrow(spoke1, _daiReserveId(spoke1), alice, borrowAmount, alice);
+    SpokeActions.supplyCollateral({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      caller: alice,
+      amount: aliceSupplyAmount,
+      onBehalfOf: alice
+    });
+    SpokeActions.supply({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      caller: bob,
+      amount: bobSupplyAmount,
+      onBehalfOf: bob
+    });
+    SpokeActions.borrow({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      caller: alice,
+      amount: borrowAmount,
+      onBehalfOf: alice
+    });
 
     vm.prank(bob);
     tokenList.dai.approve(address(positionManager), repayAmount);
@@ -159,9 +177,27 @@ contract GiverPositionManagerTest is Base {
     repayAmount = bound(repayAmount, borrowAmount, borrowAmount * 10);
     elapsedTime = bound(elapsedTime, 100 days, 400 days);
 
-    SpokeActions.supplyCollateral(spoke1, _daiReserveId(spoke1), alice, 1000e18, alice);
-    SpokeActions.supply(spoke1, _daiReserveId(spoke1), bob, 150e18, bob);
-    SpokeActions.borrow(spoke1, _daiReserveId(spoke1), alice, borrowAmount, alice);
+    SpokeActions.supplyCollateral({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      caller: alice,
+      amount: 1000e18,
+      onBehalfOf: alice
+    });
+    SpokeActions.supply({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      caller: bob,
+      amount: 150e18,
+      onBehalfOf: bob
+    });
+    SpokeActions.borrow({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      caller: alice,
+      amount: borrowAmount,
+      onBehalfOf: alice
+    });
 
     skip(elapsedTime);
 
@@ -243,9 +279,27 @@ contract GiverPositionManagerTest is Base {
     uint256 borrowAmount = 100e18;
     uint256 repayAmount = 150e18;
 
-    SpokeActions.supplyCollateral(spoke1, _daiReserveId(spoke1), alice, aliceSupplyAmount, alice);
-    SpokeActions.supply(spoke1, _daiReserveId(spoke1), bob, bobSupplyAmount, bob);
-    SpokeActions.borrow(spoke1, _daiReserveId(spoke1), alice, borrowAmount, alice);
+    SpokeActions.supplyCollateral({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      caller: alice,
+      amount: aliceSupplyAmount,
+      onBehalfOf: alice
+    });
+    SpokeActions.supply({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      caller: bob,
+      amount: bobSupplyAmount,
+      onBehalfOf: bob
+    });
+    SpokeActions.borrow({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      caller: alice,
+      amount: borrowAmount,
+      onBehalfOf: alice
+    });
 
     skip(322 days);
 
@@ -309,9 +363,27 @@ contract GiverPositionManagerTest is Base {
     uint256 bobSupplyAmount = 150e18;
     uint256 borrowAmount = 100e18;
 
-    SpokeActions.supplyCollateral(spoke1, _daiReserveId(spoke1), alice, aliceSupplyAmount, alice);
-    SpokeActions.supply(spoke1, _daiReserveId(spoke1), bob, bobSupplyAmount, bob);
-    SpokeActions.borrow(spoke1, _daiReserveId(spoke1), alice, borrowAmount, alice);
+    SpokeActions.supplyCollateral({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      caller: alice,
+      amount: aliceSupplyAmount,
+      onBehalfOf: alice
+    });
+    SpokeActions.supply({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      caller: bob,
+      amount: bobSupplyAmount,
+      onBehalfOf: bob
+    });
+    SpokeActions.borrow({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      caller: alice,
+      amount: borrowAmount,
+      onBehalfOf: alice
+    });
 
     vm.prank(bob);
     tokenList.dai.approve(address(positionManager), UINT256_MAX);

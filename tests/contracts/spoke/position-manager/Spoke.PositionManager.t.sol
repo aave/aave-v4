@@ -73,7 +73,13 @@ contract SpokePositionManagerTest is Base {
       hub1.previewAddByAssets(usdxAssetId, amount),
       amount
     );
-    SpokeActions.supply(spoke1, reserveId, POSITION_MANAGER, amount, alice);
+    SpokeActions.supply({
+      spoke: spoke1,
+      reserveId: reserveId,
+      caller: POSITION_MANAGER,
+      amount: amount,
+      onBehalfOf: alice
+    });
 
     assertEq(spoke1.getUserPosition(reserveId, POSITION_MANAGER), posBefore);
     assertEq(spoke1.getUserSuppliedAssets(reserveId, POSITION_MANAGER), 0);
@@ -81,16 +87,34 @@ contract SpokePositionManagerTest is Base {
 
     _disablePositionManager();
     vm.expectRevert(ISpoke.Unauthorized.selector);
-    SpokeActions.supply(spoke1, reserveId, POSITION_MANAGER, amount, alice);
+    SpokeActions.supply({
+      spoke: spoke1,
+      reserveId: reserveId,
+      caller: POSITION_MANAGER,
+      amount: amount,
+      onBehalfOf: alice
+    });
   }
 
   function test_onlyPositionManager_on_withdraw() public {
     uint256 reserveId = _usdxReserveId(spoke1);
     uint256 amount = 100e6;
-    SpokeActions.supply(spoke1, reserveId, alice, amount, alice);
+    SpokeActions.supply({
+      spoke: spoke1,
+      reserveId: reserveId,
+      caller: alice,
+      amount: amount,
+      onBehalfOf: alice
+    });
 
     vm.expectRevert(ISpoke.Unauthorized.selector);
-    SpokeActions.withdraw(spoke1, reserveId, POSITION_MANAGER, amount, alice);
+    SpokeActions.withdraw({
+      spoke: spoke1,
+      reserveId: reserveId,
+      caller: POSITION_MANAGER,
+      amount: amount,
+      onBehalfOf: alice
+    });
 
     _approvePositionManager(alice);
     _resetTokenAllowance(alice);
@@ -108,7 +132,13 @@ contract SpokePositionManagerTest is Base {
       hub1.previewRemoveByAssets(usdxAssetId, amount),
       amount
     );
-    SpokeActions.withdraw(spoke1, reserveId, POSITION_MANAGER, amount, alice);
+    SpokeActions.withdraw({
+      spoke: spoke1,
+      reserveId: reserveId,
+      caller: POSITION_MANAGER,
+      amount: amount,
+      onBehalfOf: alice
+    });
 
     assertEq(spoke1.getUserPosition(reserveId, POSITION_MANAGER), posBefore);
     assertEq(spoke1.getUserSuppliedAssets(reserveId, POSITION_MANAGER), 0);
@@ -116,16 +146,34 @@ contract SpokePositionManagerTest is Base {
 
     _disablePositionManager();
     vm.expectRevert(ISpoke.Unauthorized.selector);
-    SpokeActions.withdraw(spoke1, reserveId, POSITION_MANAGER, amount, alice);
+    SpokeActions.withdraw({
+      spoke: spoke1,
+      reserveId: reserveId,
+      caller: POSITION_MANAGER,
+      amount: amount,
+      onBehalfOf: alice
+    });
   }
 
   function test_onlyPositionManager_on_borrow() public {
     uint256 reserveId = _usdxReserveId(spoke1);
     uint256 amount = 100e6;
-    SpokeActions.supplyCollateral(spoke1, reserveId, alice, (amount * 3) / 2, alice);
+    SpokeActions.supplyCollateral({
+      spoke: spoke1,
+      reserveId: reserveId,
+      caller: alice,
+      amount: (amount * 3) / 2,
+      onBehalfOf: alice
+    });
 
     vm.expectRevert(ISpoke.Unauthorized.selector);
-    SpokeActions.borrow(spoke1, reserveId, POSITION_MANAGER, amount, alice);
+    SpokeActions.borrow({
+      spoke: spoke1,
+      reserveId: reserveId,
+      caller: POSITION_MANAGER,
+      amount: amount,
+      onBehalfOf: alice
+    });
 
     _approvePositionManager(alice);
     _resetTokenAllowance(alice);
@@ -142,7 +190,13 @@ contract SpokePositionManagerTest is Base {
       hub1.previewRestoreByAssets(usdxAssetId, amount),
       amount
     );
-    SpokeActions.borrow(spoke1, reserveId, POSITION_MANAGER, amount, alice);
+    SpokeActions.borrow({
+      spoke: spoke1,
+      reserveId: reserveId,
+      caller: POSITION_MANAGER,
+      amount: amount,
+      onBehalfOf: alice
+    });
 
     assertEq(spoke1.getUserPosition(reserveId, POSITION_MANAGER), posBefore);
     assertEq(spoke1.getUserTotalDebt(reserveId, POSITION_MANAGER), 0);
@@ -152,17 +206,41 @@ contract SpokePositionManagerTest is Base {
 
     _disablePositionManager();
     vm.expectRevert(ISpoke.Unauthorized.selector);
-    SpokeActions.borrow(spoke1, reserveId, POSITION_MANAGER, amount, alice);
+    SpokeActions.borrow({
+      spoke: spoke1,
+      reserveId: reserveId,
+      caller: POSITION_MANAGER,
+      amount: amount,
+      onBehalfOf: alice
+    });
   }
 
   function test_onlyPositionManager_on_repay() public {
     uint256 reserveId = _usdxReserveId(spoke1);
     uint256 amount = 100e6;
-    SpokeActions.supplyCollateral(spoke1, reserveId, alice, (amount * 3) / 2, alice);
-    SpokeActions.borrow(spoke1, reserveId, alice, amount, alice);
+    SpokeActions.supplyCollateral({
+      spoke: spoke1,
+      reserveId: reserveId,
+      caller: alice,
+      amount: (amount * 3) / 2,
+      onBehalfOf: alice
+    });
+    SpokeActions.borrow({
+      spoke: spoke1,
+      reserveId: reserveId,
+      caller: alice,
+      amount: amount,
+      onBehalfOf: alice
+    });
 
     vm.expectRevert(ISpoke.Unauthorized.selector);
-    SpokeActions.repay(spoke1, reserveId, POSITION_MANAGER, amount, alice);
+    SpokeActions.repay({
+      spoke: spoke1,
+      reserveId: reserveId,
+      caller: POSITION_MANAGER,
+      amount: amount,
+      onBehalfOf: alice
+    });
 
     _approvePositionManager(alice);
     _resetTokenAllowance(alice);
@@ -188,7 +266,13 @@ contract SpokePositionManagerTest is Base {
       repayAmount,
       expectedPremiumDelta
     );
-    SpokeActions.repay(spoke1, reserveId, POSITION_MANAGER, repayAmount, alice);
+    SpokeActions.repay({
+      spoke: spoke1,
+      reserveId: reserveId,
+      caller: POSITION_MANAGER,
+      amount: repayAmount,
+      onBehalfOf: alice
+    });
 
     assertEq(spoke1.getUserPosition(reserveId, POSITION_MANAGER), posBefore);
     assertEq(spoke1.getUserTotalDebt(reserveId, POSITION_MANAGER), 0);
@@ -196,7 +280,13 @@ contract SpokePositionManagerTest is Base {
     assertFalse(_isBorrowing(spoke1, reserveId, POSITION_MANAGER));
     assertTrue(_isBorrowing(spoke1, reserveId, alice));
 
-    SpokeActions.repay(spoke1, reserveId, POSITION_MANAGER, type(uint256).max, alice);
+    SpokeActions.repay({
+      spoke: spoke1,
+      reserveId: reserveId,
+      caller: POSITION_MANAGER,
+      amount: type(uint256).max,
+      onBehalfOf: alice
+    });
     assertEq(spoke1.getUserPosition(reserveId, POSITION_MANAGER), posBefore);
     assertEq(spoke1.getUserTotalDebt(reserveId, POSITION_MANAGER), 0);
     assertEq(spoke1.getUserTotalDebt(reserveId, alice), 0);
@@ -205,7 +295,13 @@ contract SpokePositionManagerTest is Base {
 
     _disablePositionManager();
     vm.expectRevert(ISpoke.Unauthorized.selector);
-    SpokeActions.repay(spoke1, reserveId, POSITION_MANAGER, repayAmount, alice);
+    SpokeActions.repay({
+      spoke: spoke1,
+      reserveId: reserveId,
+      caller: POSITION_MANAGER,
+      amount: repayAmount,
+      onBehalfOf: alice
+    });
   }
 
   function test_onlyPositionManager_on_usingAsCollateral() public {
@@ -215,44 +311,62 @@ contract SpokePositionManagerTest is Base {
     bool usingAsCollateral = true;
 
     vm.expectRevert(ISpoke.Unauthorized.selector);
-    SpokeActions.setUsingAsCollateral(
-      spoke1,
-      reserveId,
-      POSITION_MANAGER,
-      usingAsCollateral,
-      alice
-    );
+    SpokeActions.setUsingAsCollateral({
+      spoke: spoke1,
+      reserveId: reserveId,
+      caller: POSITION_MANAGER,
+      usingAsCollateral: usingAsCollateral,
+      onBehalfOf: alice
+    });
 
     _approvePositionManager(alice);
 
     vm.expectEmit(address(spoke1));
     emit ISpoke.SetUsingAsCollateral(reserveId, POSITION_MANAGER, alice, usingAsCollateral);
-    SpokeActions.setUsingAsCollateral(
-      spoke1,
-      reserveId,
-      POSITION_MANAGER,
-      usingAsCollateral,
-      alice
-    );
+    SpokeActions.setUsingAsCollateral({
+      spoke: spoke1,
+      reserveId: reserveId,
+      caller: POSITION_MANAGER,
+      usingAsCollateral: usingAsCollateral,
+      onBehalfOf: alice
+    });
 
     assertEq(_isUsingAsCollateral(spoke1, reserveId, alice), usingAsCollateral);
 
     _disablePositionManager();
     vm.expectRevert(ISpoke.Unauthorized.selector);
-    SpokeActions.setUsingAsCollateral(
-      spoke1,
-      reserveId,
-      POSITION_MANAGER,
-      usingAsCollateral,
-      alice
-    );
+    SpokeActions.setUsingAsCollateral({
+      spoke: spoke1,
+      reserveId: reserveId,
+      caller: POSITION_MANAGER,
+      usingAsCollateral: usingAsCollateral,
+      onBehalfOf: alice
+    });
   }
 
   function test_onlyPositionManager_on_updateUserRiskPremium() public {
     _openSupplyPosition(spoke1, _usdxReserveId(spoke1), 1500e6);
-    SpokeActions.supplyCollateral(spoke1, _wethReserveId(spoke1), alice, 0.5e18, alice);
-    SpokeActions.supplyCollateral(spoke1, _daiReserveId(spoke1), alice, 1000e18, alice);
-    SpokeActions.borrow(spoke1, _usdxReserveId(spoke1), alice, 1500e6, alice);
+    SpokeActions.supplyCollateral({
+      spoke: spoke1,
+      reserveId: _wethReserveId(spoke1),
+      caller: alice,
+      amount: 0.5e18,
+      onBehalfOf: alice
+    });
+    SpokeActions.supplyCollateral({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      caller: alice,
+      amount: 1000e18,
+      onBehalfOf: alice
+    });
+    SpokeActions.borrow({
+      spoke: spoke1,
+      reserveId: _usdxReserveId(spoke1),
+      caller: alice,
+      amount: 1500e6,
+      onBehalfOf: alice
+    });
 
     uint256 riskPremiumBefore = _getUserRiskPremium(spoke1, alice);
     _updateCollateralRisk(spoke1, _wethReserveId(spoke1), 100_00);
@@ -285,9 +399,27 @@ contract SpokePositionManagerTest is Base {
 
   function test_onlyPositionManager_on_updateUserDynamicConfig() public {
     _openSupplyPosition(spoke1, _usdxReserveId(spoke1), 1500e6);
-    SpokeActions.supplyCollateral(spoke1, _wethReserveId(spoke1), alice, 0.5e18, alice);
-    SpokeActions.supplyCollateral(spoke1, _daiReserveId(spoke1), alice, 1000e18, alice);
-    SpokeActions.borrow(spoke1, _usdxReserveId(spoke1), alice, 1500e6, alice);
+    SpokeActions.supplyCollateral({
+      spoke: spoke1,
+      reserveId: _wethReserveId(spoke1),
+      caller: alice,
+      amount: 0.5e18,
+      onBehalfOf: alice
+    });
+    SpokeActions.supplyCollateral({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      caller: alice,
+      amount: 1000e18,
+      onBehalfOf: alice
+    });
+    SpokeActions.borrow({
+      spoke: spoke1,
+      reserveId: _usdxReserveId(spoke1),
+      caller: alice,
+      amount: 1500e6,
+      onBehalfOf: alice
+    });
 
     _updateCollateralFactor(spoke1, _wethReserveId(spoke1), 90_00);
     _updateCollateralFactor(spoke1, _daiReserveId(spoke1), 90_00);

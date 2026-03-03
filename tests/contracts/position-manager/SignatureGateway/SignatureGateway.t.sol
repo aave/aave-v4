@@ -53,7 +53,13 @@ contract SignatureGatewayTest is SignatureGatewayBaseTest {
     ISignatureGateway.Supply memory p = _supplyData(spoke1, alice, _warpBeforeRandomDeadline());
     p.nonce = _burnRandomNoncesAtKey(gateway, p.onBehalfOf);
     bytes memory signature = _sign(alicePk, _getTypedDataHash(gateway, p));
-    SpokeActions.approve(spoke1, p.reserveId, alice, address(gateway), p.amount);
+    SpokeActions.approve({
+      spoke: spoke1,
+      reserveId: p.reserveId,
+      owner: alice,
+      spender: address(gateway),
+      amount: p.amount
+    });
 
     uint256 shares = _hub(spoke1, p.reserveId).previewAddByAssets(
       _reserveAssetId(spoke1, p.reserveId),
@@ -80,7 +86,13 @@ contract SignatureGatewayTest is SignatureGatewayBaseTest {
     p.nonce = _burnRandomNoncesAtKey(gateway, p.onBehalfOf);
     bytes memory signature = _sign(alicePk, _getTypedDataHash(gateway, p));
 
-    SpokeActions.supply(spoke1, p.reserveId, alice, p.amount + 1, alice);
+    SpokeActions.supply({
+      spoke: spoke1,
+      reserveId: p.reserveId,
+      caller: alice,
+      amount: p.amount + 1,
+      onBehalfOf: alice
+    });
 
     uint256 shares = _hub(spoke1, p.reserveId).previewRemoveByAssets(
       _reserveAssetId(spoke1, p.reserveId),
@@ -106,7 +118,13 @@ contract SignatureGatewayTest is SignatureGatewayBaseTest {
     p.nonce = _burnRandomNoncesAtKey(gateway, p.onBehalfOf);
     p.reserveId = _daiReserveId(spoke1);
     p.amount = 1e18;
-    SpokeActions.supplyCollateral(spoke1, p.reserveId, alice, p.amount * 2, alice);
+    SpokeActions.supplyCollateral({
+      spoke: spoke1,
+      reserveId: p.reserveId,
+      caller: alice,
+      amount: p.amount * 2,
+      onBehalfOf: alice
+    });
     bytes memory signature = _sign(alicePk, _getTypedDataHash(gateway, p));
 
     uint256 shares = _hub(spoke1, p.reserveId).previewDrawByAssets(
@@ -133,9 +151,27 @@ contract SignatureGatewayTest is SignatureGatewayBaseTest {
     p.nonce = _burnRandomNoncesAtKey(gateway, p.onBehalfOf);
     p.reserveId = _daiReserveId(spoke1);
     p.amount = 1e18;
-    SpokeActions.supplyCollateral(spoke1, p.reserveId, alice, p.amount * 2, alice);
-    SpokeActions.borrow(spoke1, p.reserveId, alice, p.amount, alice);
-    SpokeActions.approve(spoke1, p.reserveId, alice, address(gateway), p.amount);
+    SpokeActions.supplyCollateral({
+      spoke: spoke1,
+      reserveId: p.reserveId,
+      caller: alice,
+      amount: p.amount * 2,
+      onBehalfOf: alice
+    });
+    SpokeActions.borrow({
+      spoke: spoke1,
+      reserveId: p.reserveId,
+      caller: alice,
+      amount: p.amount,
+      onBehalfOf: alice
+    });
+    SpokeActions.approve({
+      spoke: spoke1,
+      reserveId: p.reserveId,
+      owner: alice,
+      spender: address(gateway),
+      amount: p.amount
+    });
     bytes memory signature = _sign(alicePk, _getTypedDataHash(gateway, p));
 
     (uint256 baseRestored, uint256 premiumRestored) = _calculateExactRestoreAmount(
@@ -175,7 +211,13 @@ contract SignatureGatewayTest is SignatureGatewayBaseTest {
     ISignatureGateway.SetUsingAsCollateral memory p = _setAsCollateralData(spoke1, alice, deadline);
     p.nonce = _burnRandomNoncesAtKey(gateway, p.onBehalfOf);
     p.reserveId = _daiReserveId(spoke1);
-    SpokeActions.supplyCollateral(spoke1, p.reserveId, alice, 1e18, alice);
+    SpokeActions.supplyCollateral({
+      spoke: spoke1,
+      reserveId: p.reserveId,
+      caller: alice,
+      amount: 1e18,
+      onBehalfOf: alice
+    });
     bytes memory signature = _sign(alicePk, _getTypedDataHash(gateway, p));
 
     if (_isUsingAsCollateral(spoke1, p.reserveId, alice) != p.useAsCollateral) {
@@ -201,8 +243,20 @@ contract SignatureGatewayTest is SignatureGatewayBaseTest {
     p.nonce = _burnRandomNoncesAtKey(gateway, alice);
     bytes memory signature = _sign(alicePk, _getTypedDataHash(gateway, p));
 
-    SpokeActions.supplyCollateral(spoke1, _daiReserveId(spoke1), alice, 10e18, alice);
-    SpokeActions.borrow(spoke1, _daiReserveId(spoke1), alice, 7e18, alice);
+    SpokeActions.supplyCollateral({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      caller: alice,
+      amount: 10e18,
+      onBehalfOf: alice
+    });
+    SpokeActions.borrow({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      caller: alice,
+      amount: 7e18,
+      onBehalfOf: alice
+    });
 
     vm.expectEmit(address(spoke1));
     emit ISpoke.UpdateUserRiskPremium(alice, _calculateExpectedUserRP(spoke1, alice));
@@ -273,7 +327,13 @@ contract SignatureGatewayTest is SignatureGatewayBaseTest {
     p.reserveId = reserveId;
     p.nonce = _burnRandomNoncesAtKey(gateway, p.onBehalfOf);
     bytes memory signature = _sign(alicePk, _getTypedDataHash(gateway, p));
-    SpokeActions.approve(spoke1, p.reserveId, alice, address(gateway), p.amount);
+    SpokeActions.approve({
+      spoke: spoke1,
+      reserveId: p.reserveId,
+      owner: alice,
+      spender: address(gateway),
+      amount: p.amount
+    });
 
     uint256 expectedShares = _hub(spoke1, reserveId).previewAddByAssets(
       _reserveAssetId(spoke1, reserveId),
@@ -314,7 +374,13 @@ contract SignatureGatewayTest is SignatureGatewayBaseTest {
     p1.reserveId = reserveId;
     p1.nonce = _burnRandomNoncesAtKey(gateway, p1.onBehalfOf);
     bytes memory sig1 = _sign(alicePk, _getTypedDataHash(gateway, p1));
-    SpokeActions.approve(spoke1, p1.reserveId, alice, address(gateway), p1.amount);
+    SpokeActions.approve({
+      spoke: spoke1,
+      reserveId: p1.reserveId,
+      owner: alice,
+      spender: address(gateway),
+      amount: p1.amount
+    });
 
     ISignatureGateway.SetUsingAsCollateral memory p2 = _setAsCollateralData(
       spoke1,
@@ -352,7 +418,13 @@ contract SignatureGatewayTest is SignatureGatewayBaseTest {
     p.reserveId = reserveId;
     p.nonce = _burnRandomNoncesAtKey(gateway, p.onBehalfOf);
     bytes memory signature = _sign(alicePk, _getTypedDataHash(gateway, p));
-    SpokeActions.approve(spoke1, p.reserveId, alice, address(gateway), p.amount);
+    SpokeActions.approve({
+      spoke: spoke1,
+      reserveId: p.reserveId,
+      owner: alice,
+      spender: address(gateway),
+      amount: p.amount
+    });
 
     uint256 expectedShares = _hub(spoke1, reserveId).previewAddByAssets(
       _reserveAssetId(spoke1, reserveId),

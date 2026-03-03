@@ -241,12 +241,12 @@ abstract contract CheckedActions is MathHelpers {
         onBehalfOf: params.onBehalfOf
       })
     );
-    SpokeActions.setUsingAsCollateral(
-      params.spoke,
-      params.reserveId,
-      params.user,
-      true,
-      params.onBehalfOf
-    );
+    SpokeActions.setUsingAsCollateral({
+      spoke: params.spoke,
+      reserveId: params.reserveId,
+      caller: params.user,
+      usingAsCollateral: true,
+      onBehalfOf: params.onBehalfOf
+    });
   }
 }

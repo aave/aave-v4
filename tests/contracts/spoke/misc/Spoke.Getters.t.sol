@@ -191,7 +191,13 @@ contract SpokeGettersTest is Base {
     uint256 supplyAmount = 10_000e18;
     vm.prank(alice);
     tokenList.dai.approve(address(spoke), supplyAmount);
-    SpokeActions.supplyCollateral(spoke, reserveId, alice, supplyAmount, alice);
+    SpokeActions.supplyCollateral({
+      spoke: spoke,
+      reserveId: reserveId,
+      caller: alice,
+      amount: supplyAmount,
+      onBehalfOf: alice
+    });
 
     // User debts
     (uint256 drawn, uint256 premium) = spoke.getUserDebt(reserveId, alice);
@@ -260,13 +266,47 @@ contract SpokeGettersTest is Base {
   function test_premiumRayGetters() public {
     // 2 user, single spoke
     _mockInterestRateBps(address(irStrategy), 25_00);
-    SpokeActions.approve(spoke, _daiReserveId(spoke), alice, 9_000e18);
-    SpokeActions.supplyCollateral(spoke, _daiReserveId(spoke), alice, 9_000e18, alice); // CR 20%
-    SpokeActions.approve(spoke, _usdxReserveId(spoke), bob, 18_000e18);
-    SpokeActions.supplyCollateral(spoke, _usdxReserveId(spoke), bob, 18_000e18, bob); // CR 50%
+    SpokeActions.approve({
+      spoke: spoke,
+      reserveId: _daiReserveId(spoke),
+      owner: alice,
+      amount: 9_000e18
+    });
+    SpokeActions.supplyCollateral({
+      spoke: spoke,
+      reserveId: _daiReserveId(spoke),
+      caller: alice,
+      amount: 9_000e18,
+      onBehalfOf: alice
+    }); // CR 20%
+    SpokeActions.approve({
+      spoke: spoke,
+      reserveId: _usdxReserveId(spoke),
+      owner: bob,
+      amount: 18_000e18
+    });
+    SpokeActions.supplyCollateral({
+      spoke: spoke,
+      reserveId: _usdxReserveId(spoke),
+      caller: bob,
+      amount: 18_000e18,
+      onBehalfOf: bob
+    }); // CR 50%
     _openSupplyPosition(spoke, _wethReserveId(spoke), 5e18); // liquidity provision
-    SpokeActions.borrow(spoke, _wethReserveId(spoke), alice, 1e18, alice);
-    SpokeActions.borrow(spoke, _wethReserveId(spoke), bob, 2e18, bob);
+    SpokeActions.borrow({
+      spoke: spoke,
+      reserveId: _wethReserveId(spoke),
+      caller: alice,
+      amount: 1e18,
+      onBehalfOf: alice
+    });
+    SpokeActions.borrow({
+      spoke: spoke,
+      reserveId: _wethReserveId(spoke),
+      caller: bob,
+      amount: 2e18,
+      onBehalfOf: bob
+    });
     skip(365 days);
 
     // check premium in ray across spoke and hub
@@ -297,9 +337,26 @@ contract SpokeGettersTest is Base {
     assertEq(hub1.getAssetPremiumRay(wethAssetId), alicePremiumDebtRay + bobPremiumDebtRay);
 
     // introduce another spoke
-    SpokeActions.approve(spoke, _daiReserveId(spoke), carol, 1_000e18);
-    SpokeActions.supplyCollateral(spoke1, _daiReserveId(spoke1), carol, 1_000e18, carol);
-    SpokeActions.borrow(spoke1, _wethReserveId(spoke), carol, 0.1e18, carol);
+    SpokeActions.approve({
+      spoke: spoke,
+      reserveId: _daiReserveId(spoke),
+      owner: carol,
+      amount: 1_000e18
+    });
+    SpokeActions.supplyCollateral({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      caller: carol,
+      amount: 1_000e18,
+      onBehalfOf: carol
+    });
+    SpokeActions.borrow({
+      spoke: spoke1,
+      reserveId: _wethReserveId(spoke),
+      caller: carol,
+      amount: 0.1e18,
+      onBehalfOf: carol
+    });
 
     skip(365 days);
 

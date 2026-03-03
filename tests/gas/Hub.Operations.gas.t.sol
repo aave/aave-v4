@@ -194,8 +194,20 @@ contract HubOperations_Gas_Tests is Base {
       )
     });
 
-    SpokeActions.supplyCollateral(spoke1, _daiReserveId(spoke1), alice, 1000e18, alice);
-    SpokeActions.borrow(spoke1, _daiReserveId(spoke1), alice, 500e18, alice);
+    SpokeActions.supplyCollateral({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      caller: alice,
+      amount: 1000e18,
+      onBehalfOf: alice
+    });
+    SpokeActions.borrow({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      caller: alice,
+      amount: 500e18,
+      onBehalfOf: alice
+    });
 
     vm.prank(address(spoke1));
     hub1.refreshPremium(daiAssetId, premiumDelta);
@@ -216,7 +228,7 @@ contract HubOperations_Gas_Tests is Base {
 
     skip(100);
 
-    HubActions.mintFeeShares(hub1, daiAssetId, ADMIN);
+    HubActions.mintFeeShares({hub: hub1, assetId: daiAssetId, caller: ADMIN});
     vm.snapshotGasLastCall('Hub.Operations', 'mintFeeShares');
   }
 

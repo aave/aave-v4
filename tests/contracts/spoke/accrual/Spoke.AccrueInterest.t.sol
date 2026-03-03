@@ -48,7 +48,13 @@ contract SpokeAccrueInterestTest is Base {
     uint256 daiReserveId = _daiReserveId(spoke1);
 
     // Bob supplies through spoke 1
-    SpokeActions.supply(spoke1, daiReserveId, bob, amount, bob);
+    SpokeActions.supply({
+      spoke: spoke1,
+      reserveId: daiReserveId,
+      caller: bob,
+      amount: amount,
+      onBehalfOf: bob
+    });
 
     // Skip time
     skip(skipTime);
@@ -72,8 +78,20 @@ contract SpokeAccrueInterestTest is Base {
     uint256 borrowAmount = 100e18;
     uint256 daiReserveId = _daiReserveId(spoke1);
 
-    SpokeActions.supplyCollateral(spoke1, daiReserveId, bob, supplyAmount, bob);
-    SpokeActions.borrow(spoke1, daiReserveId, bob, borrowAmount, bob);
+    SpokeActions.supplyCollateral({
+      spoke: spoke1,
+      reserveId: daiReserveId,
+      caller: bob,
+      amount: supplyAmount,
+      onBehalfOf: bob
+    });
+    SpokeActions.borrow({
+      spoke: spoke1,
+      reserveId: daiReserveId,
+      caller: bob,
+      amount: borrowAmount,
+      onBehalfOf: bob
+    });
 
     uint96 drawnRate = hub1.getAssetDrawnRate(daiAssetId).toUint96();
     uint256 userRp = _getUserRiskPremium(spoke1, bob);
@@ -102,7 +120,13 @@ contract SpokeAccrueInterestTest is Base {
     drawnRate = hub1.getAssetDrawnRate(daiAssetId).toUint96();
 
     // Full repayment, so back to zero debt
-    SpokeActions.repay(spoke1, daiReserveId, bob, UINT256_MAX, bob);
+    SpokeActions.repay({
+      spoke: spoke1,
+      reserveId: daiReserveId,
+      caller: bob,
+      amount: UINT256_MAX,
+      onBehalfOf: bob
+    });
 
     _assertOnlyOneUserDebt(spoke1, daiReserveId, bob, 0, 0, 'after repay, no debt');
     _assertOnlyOneUserSupply(
@@ -137,8 +161,20 @@ contract SpokeAccrueInterestTest is Base {
     uint256 daiReserveId = _daiReserveId(spoke1);
 
     // Bob supplies and borrows through spoke 1
-    SpokeActions.supplyCollateral(spoke1, daiReserveId, bob, supplyAmount, bob);
-    SpokeActions.borrow(spoke1, daiReserveId, bob, borrowAmount, bob);
+    SpokeActions.supplyCollateral({
+      spoke: spoke1,
+      reserveId: daiReserveId,
+      caller: bob,
+      amount: supplyAmount,
+      onBehalfOf: bob
+    });
+    SpokeActions.borrow({
+      spoke: spoke1,
+      reserveId: daiReserveId,
+      caller: bob,
+      amount: borrowAmount,
+      onBehalfOf: bob
+    });
 
     uint96 drawnRate = hub1.getAssetDrawnRate(daiAssetId).toUint96();
     uint256 userRp = _getUserRiskPremium(spoke1, bob);
@@ -179,10 +215,22 @@ contract SpokeAccrueInterestTest is Base {
     assertEq(10_00, _getCollateralRisk(spoke1, usdxReserveId), 'usdx collateral risk');
 
     // Bob supply usdx
-    SpokeActions.supplyCollateral(spoke1, usdxReserveId, bob, supplyAmount, bob);
+    SpokeActions.supplyCollateral({
+      spoke: spoke1,
+      reserveId: usdxReserveId,
+      caller: bob,
+      amount: supplyAmount,
+      onBehalfOf: bob
+    });
 
     // Bob borrows usdx
-    SpokeActions.borrow(spoke1, usdxReserveId, bob, borrowAmount, bob);
+    SpokeActions.borrow({
+      spoke: spoke1,
+      reserveId: usdxReserveId,
+      caller: bob,
+      amount: borrowAmount,
+      onBehalfOf: bob
+    });
 
     // User risk premium should be 10%
     uint256 riskPremium = _getUserRiskPremium(spoke1, bob);
@@ -228,46 +276,46 @@ contract SpokeAccrueInterestTest is Base {
 
     // Bob supply dai on spoke 1
     if (amounts.daiSupplyAmount > 0) {
-      SpokeActions.supplyCollateral(
-        spoke1,
-        _daiReserveId(spoke1),
-        bob,
-        amounts.daiSupplyAmount,
-        bob
-      );
+      SpokeActions.supplyCollateral({
+        spoke: spoke1,
+        reserveId: _daiReserveId(spoke1),
+        caller: bob,
+        amount: amounts.daiSupplyAmount,
+        onBehalfOf: bob
+      });
     }
 
     // Bob supply weth on spoke 1
     if (amounts.wethSupplyAmount > 0) {
-      SpokeActions.supplyCollateral(
-        spoke1,
-        _wethReserveId(spoke1),
-        bob,
-        amounts.wethSupplyAmount,
-        bob
-      );
+      SpokeActions.supplyCollateral({
+        spoke: spoke1,
+        reserveId: _wethReserveId(spoke1),
+        caller: bob,
+        amount: amounts.wethSupplyAmount,
+        onBehalfOf: bob
+      });
     }
 
     // Bob supply usdx on spoke 1
     if (amounts.usdxSupplyAmount > 0) {
-      SpokeActions.supplyCollateral(
-        spoke1,
-        _usdxReserveId(spoke1),
-        bob,
-        amounts.usdxSupplyAmount,
-        bob
-      );
+      SpokeActions.supplyCollateral({
+        spoke: spoke1,
+        reserveId: _usdxReserveId(spoke1),
+        caller: bob,
+        amount: amounts.usdxSupplyAmount,
+        onBehalfOf: bob
+      });
     }
 
     // Bob supply wbtc on spoke 1
     if (amounts.wbtcSupplyAmount > 0) {
-      SpokeActions.supplyCollateral(
-        spoke1,
-        _wbtcReserveId(spoke1),
-        bob,
-        amounts.wbtcSupplyAmount,
-        bob
-      );
+      SpokeActions.supplyCollateral({
+        spoke: spoke1,
+        reserveId: _wbtcReserveId(spoke1),
+        caller: bob,
+        amount: amounts.wbtcSupplyAmount,
+        onBehalfOf: bob
+      });
     }
 
     // Deploy remainder of liquidity
@@ -302,22 +350,46 @@ contract SpokeAccrueInterestTest is Base {
 
     // Bob borrows dai from spoke 1
     if (amounts.daiBorrowAmount > 0) {
-      SpokeActions.borrow(spoke1, _daiReserveId(spoke1), bob, amounts.daiBorrowAmount, bob);
+      SpokeActions.borrow({
+        spoke: spoke1,
+        reserveId: _daiReserveId(spoke1),
+        caller: bob,
+        amount: amounts.daiBorrowAmount,
+        onBehalfOf: bob
+      });
     }
 
     // Bob borrows weth from spoke 1
     if (amounts.wethBorrowAmount > 0) {
-      SpokeActions.borrow(spoke1, _wethReserveId(spoke1), bob, amounts.wethBorrowAmount, bob);
+      SpokeActions.borrow({
+        spoke: spoke1,
+        reserveId: _wethReserveId(spoke1),
+        caller: bob,
+        amount: amounts.wethBorrowAmount,
+        onBehalfOf: bob
+      });
     }
 
     // Bob borrows usdx from spoke 1
     if (amounts.usdxBorrowAmount > 0) {
-      SpokeActions.borrow(spoke1, _usdxReserveId(spoke1), bob, amounts.usdxBorrowAmount, bob);
+      SpokeActions.borrow({
+        spoke: spoke1,
+        reserveId: _usdxReserveId(spoke1),
+        caller: bob,
+        amount: amounts.usdxBorrowAmount,
+        onBehalfOf: bob
+      });
     }
 
     // Bob borrows wbtc from spoke 1
     if (amounts.wbtcBorrowAmount > 0) {
-      SpokeActions.borrow(spoke1, _wbtcReserveId(spoke1), bob, amounts.wbtcBorrowAmount, bob);
+      SpokeActions.borrow({
+        spoke: spoke1,
+        reserveId: _wbtcReserveId(spoke1),
+        caller: bob,
+        amount: amounts.wbtcBorrowAmount,
+        onBehalfOf: bob
+      });
     }
 
     // Check Bob's risk premium
@@ -622,46 +694,46 @@ contract SpokeAccrueInterestTest is Base {
 
     // Bob supply dai on spoke 1
     if (amounts.daiSupplyAmount > 0) {
-      SpokeActions.supplyCollateral(
-        spoke1,
-        _daiReserveId(spoke1),
-        bob,
-        amounts.daiSupplyAmount,
-        bob
-      );
+      SpokeActions.supplyCollateral({
+        spoke: spoke1,
+        reserveId: _daiReserveId(spoke1),
+        caller: bob,
+        amount: amounts.daiSupplyAmount,
+        onBehalfOf: bob
+      });
     }
 
     // Bob supply weth on spoke 1
     if (amounts.wethSupplyAmount > 0) {
-      SpokeActions.supplyCollateral(
-        spoke1,
-        _wethReserveId(spoke1),
-        bob,
-        amounts.wethSupplyAmount,
-        bob
-      );
+      SpokeActions.supplyCollateral({
+        spoke: spoke1,
+        reserveId: _wethReserveId(spoke1),
+        caller: bob,
+        amount: amounts.wethSupplyAmount,
+        onBehalfOf: bob
+      });
     }
 
     // Bob supply usdx on spoke 1
     if (amounts.usdxSupplyAmount > 0) {
-      SpokeActions.supplyCollateral(
-        spoke1,
-        _usdxReserveId(spoke1),
-        bob,
-        amounts.usdxSupplyAmount,
-        bob
-      );
+      SpokeActions.supplyCollateral({
+        spoke: spoke1,
+        reserveId: _usdxReserveId(spoke1),
+        caller: bob,
+        amount: amounts.usdxSupplyAmount,
+        onBehalfOf: bob
+      });
     }
 
     // Bob supply wbtc on spoke 1
     if (amounts.wbtcSupplyAmount > 0) {
-      SpokeActions.supplyCollateral(
-        spoke1,
-        _wbtcReserveId(spoke1),
-        bob,
-        amounts.wbtcSupplyAmount,
-        bob
-      );
+      SpokeActions.supplyCollateral({
+        spoke: spoke1,
+        reserveId: _wbtcReserveId(spoke1),
+        caller: bob,
+        amount: amounts.wbtcSupplyAmount,
+        onBehalfOf: bob
+      });
     }
 
     // Deploy remainder of liquidity
@@ -707,7 +779,13 @@ contract SpokeAccrueInterestTest is Base {
         0,
         0
       );
-      SpokeActions.borrow(spoke1, _daiReserveId(spoke1), bob, amounts.daiBorrowAmount, bob);
+      SpokeActions.borrow({
+        spoke: spoke1,
+        reserveId: _daiReserveId(spoke1),
+        caller: bob,
+        amount: amounts.daiBorrowAmount,
+        onBehalfOf: bob
+      });
     }
 
     // Bob borrows weth from spoke 1
@@ -723,7 +801,13 @@ contract SpokeAccrueInterestTest is Base {
         0,
         0
       );
-      SpokeActions.borrow(spoke1, _wethReserveId(spoke1), bob, amounts.wethBorrowAmount, bob);
+      SpokeActions.borrow({
+        spoke: spoke1,
+        reserveId: _wethReserveId(spoke1),
+        caller: bob,
+        amount: amounts.wethBorrowAmount,
+        onBehalfOf: bob
+      });
     }
 
     // Bob borrows usdx from spoke 1
@@ -739,7 +823,13 @@ contract SpokeAccrueInterestTest is Base {
         0,
         0
       );
-      SpokeActions.borrow(spoke1, _usdxReserveId(spoke1), bob, amounts.usdxBorrowAmount, bob);
+      SpokeActions.borrow({
+        spoke: spoke1,
+        reserveId: _usdxReserveId(spoke1),
+        caller: bob,
+        amount: amounts.usdxBorrowAmount,
+        onBehalfOf: bob
+      });
     }
 
     // Bob borrows wbtc from spoke 1
@@ -755,7 +845,13 @@ contract SpokeAccrueInterestTest is Base {
         0,
         0
       );
-      SpokeActions.borrow(spoke1, _wbtcReserveId(spoke1), bob, amounts.wbtcBorrowAmount, bob);
+      SpokeActions.borrow({
+        spoke: spoke1,
+        reserveId: _wbtcReserveId(spoke1),
+        caller: bob,
+        amount: amounts.wbtcBorrowAmount,
+        onBehalfOf: bob
+      });
     }
 
     // Check Bob's risk premium

@@ -24,7 +24,13 @@ contract SpokeAccrueLiquidityFeeTest is Base {
 
     vm.recordLogs();
     // Bob supplies through spoke 1
-    SpokeActions.supply(spoke1, daiReserveId, bob, amount, bob);
+    SpokeActions.supply({
+      spoke: spoke1,
+      reserveId: daiReserveId,
+      caller: bob,
+      amount: amount,
+      onBehalfOf: bob
+    });
     _assertEventNotEmitted(IHub.MintFeeShares.selector);
 
     // Skip time
@@ -50,8 +56,20 @@ contract SpokeAccrueLiquidityFeeTest is Base {
     uint256 assetId = spoke1.getReserve(reserveId).assetId;
 
     // Bob supplies and borrows through spoke 1
-    SpokeActions.supplyCollateral(spoke1, reserveId, bob, supplyAmount, bob);
-    SpokeActions.borrow(spoke1, reserveId, bob, borrowAmount, bob);
+    SpokeActions.supplyCollateral({
+      spoke: spoke1,
+      reserveId: reserveId,
+      caller: bob,
+      amount: supplyAmount,
+      onBehalfOf: bob
+    });
+    SpokeActions.borrow({
+      spoke: spoke1,
+      reserveId: reserveId,
+      caller: bob,
+      amount: borrowAmount,
+      onBehalfOf: bob
+    });
 
     uint96 drawnRate = hub1.getAssetDrawnRate(assetId).toUint96();
     uint256 initialBaseIndex = hub1.getAsset(assetId).drawnIndex;
@@ -84,13 +102,13 @@ contract SpokeAccrueLiquidityFeeTest is Base {
     }
 
     // Alice supplies 1 share to trigger interest accrual
-    SpokeActions.supplyCollateral(
-      spoke1,
-      reserveId,
-      alice,
-      _minimumAssetsPerAddedShare(hub1, assetId),
-      alice
-    );
+    SpokeActions.supplyCollateral({
+      spoke: spoke1,
+      reserveId: reserveId,
+      caller: alice,
+      amount: _minimumAssetsPerAddedShare(hub1, assetId),
+      onBehalfOf: alice
+    });
 
     // treasury
     uint256 expectedFeeShares = hub1.previewAddByAssets(
@@ -103,7 +121,7 @@ contract SpokeAccrueLiquidityFeeTest is Base {
       })
     );
 
-    HubActions.mintFeeShares(hub1, assetId, ADMIN);
+    HubActions.mintFeeShares({hub: hub1, assetId: assetId, caller: ADMIN});
     assertApproxEqAbs(
       hub1.getSpokeAddedShares(assetId, address(treasurySpoke)),
       expectedFeeShares,
@@ -128,13 +146,13 @@ contract SpokeAccrueLiquidityFeeTest is Base {
     skip(skipTime);
 
     // Alice supplies 1 share to trigger interest accrual
-    SpokeActions.supply(
-      spoke1,
-      reserveId,
-      alice,
-      _minimumAssetsPerAddedShare(hub1, assetId),
-      alice
-    );
+    SpokeActions.supply({
+      spoke: spoke1,
+      reserveId: reserveId,
+      caller: alice,
+      amount: _minimumAssetsPerAddedShare(hub1, assetId),
+      onBehalfOf: alice
+    });
 
     // treasury
     expectedFeeShares = hub1.previewAddByAssets(
@@ -147,7 +165,7 @@ contract SpokeAccrueLiquidityFeeTest is Base {
       })
     );
 
-    HubActions.mintFeeShares(hub1, assetId, ADMIN);
+    HubActions.mintFeeShares({hub: hub1, assetId: assetId, caller: ADMIN});
     assertApproxEqAbs(
       hub1.getSpokeAddedShares(assetId, address(treasurySpoke)),
       expectedFeeShares,
@@ -165,18 +183,18 @@ contract SpokeAccrueLiquidityFeeTest is Base {
     skip(skipTime);
 
     // Alice supplies 1 share to trigger interest accrual
-    SpokeActions.supply(
-      spoke1,
-      reserveId,
-      alice,
-      _minimumAssetsPerAddedShare(hub1, assetId),
-      alice
-    );
+    SpokeActions.supply({
+      spoke: spoke1,
+      reserveId: reserveId,
+      caller: alice,
+      amount: _minimumAssetsPerAddedShare(hub1, assetId),
+      onBehalfOf: alice
+    });
 
     // treasury
     expectedFeeShares = 0;
 
-    HubActions.mintFeeShares(hub1, assetId, ADMIN);
+    HubActions.mintFeeShares({hub: hub1, assetId: assetId, caller: ADMIN});
     assertApproxEqAbs(
       hub1.getSpokeAddedShares(assetId, address(treasurySpoke)),
       expectedFeeShares,
@@ -206,11 +224,23 @@ contract SpokeAccrueLiquidityFeeTest is Base {
 
     _mockInterestRateBps(address(irStrategy), rate);
 
-    SpokeActions.supplyCollateral(spoke1, reserveId, alice, supplyAmount, alice);
-    SpokeActions.borrow(spoke1, reserveId, alice, borrowAmount, alice);
+    SpokeActions.supplyCollateral({
+      spoke: spoke1,
+      reserveId: reserveId,
+      caller: alice,
+      amount: supplyAmount,
+      onBehalfOf: alice
+    });
+    SpokeActions.borrow({
+      spoke: spoke1,
+      reserveId: reserveId,
+      caller: alice,
+      amount: borrowAmount,
+      onBehalfOf: alice
+    });
 
     skip(365 days);
-    HubActions.mintFeeShares(hub1, assetId, ADMIN);
+    HubActions.mintFeeShares({hub: hub1, assetId: assetId, caller: ADMIN});
 
     _assertSpokeDebt(
       spoke1,
@@ -244,7 +274,7 @@ contract SpokeAccrueLiquidityFeeTest is Base {
     expectedTreasuryFees = 37.5e18; // 5% of 750 (liquidity fee on drawn debt)
 
     skip(365 days);
-    HubActions.mintFeeShares(hub1, assetId, ADMIN);
+    HubActions.mintFeeShares({hub: hub1, assetId: assetId, caller: ADMIN});
 
     _assertSpokeDebt(
       spoke1,
@@ -265,7 +295,13 @@ contract SpokeAccrueLiquidityFeeTest is Base {
 
     vm.recordLogs();
     // Bob supplies 1 share to trigger interest accrual with new liquidity fee
-    SpokeActions.supply(spoke1, reserveId, bob, _minimumAssetsPerAddedShare(hub1, assetId), bob);
+    SpokeActions.supply({
+      spoke: spoke1,
+      reserveId: reserveId,
+      caller: bob,
+      amount: _minimumAssetsPerAddedShare(hub1, assetId),
+      onBehalfOf: bob
+    });
     _assertEventNotEmitted(IHub.MintFeeShares.selector);
 
     vm.recordLogs();
@@ -280,7 +316,7 @@ contract SpokeAccrueLiquidityFeeTest is Base {
     expectedTreasuryFees = 0;
 
     skip(365 days);
-    HubActions.mintFeeShares(hub1, assetId, ADMIN);
+    HubActions.mintFeeShares({hub: hub1, assetId: assetId, caller: ADMIN});
 
     _assertSpokeDebt(
       spoke1,
@@ -319,13 +355,25 @@ contract SpokeAccrueLiquidityFeeTest is Base {
 
     _mockInterestRateBps(address(irStrategy), rate);
 
-    SpokeActions.supplyCollateral(spoke1, reserveId, alice, supplyAmount, alice);
-    SpokeActions.borrow(spoke1, reserveId, alice, borrowAmount, alice);
+    SpokeActions.supplyCollateral({
+      spoke: spoke1,
+      reserveId: reserveId,
+      caller: alice,
+      amount: supplyAmount,
+      onBehalfOf: alice
+    });
+    SpokeActions.borrow({
+      spoke: spoke1,
+      reserveId: reserveId,
+      caller: alice,
+      amount: borrowAmount,
+      onBehalfOf: alice
+    });
 
     assertEq(_getUserRpStored(spoke1, alice), expectedRp);
 
     skip(365 days);
-    HubActions.mintFeeShares(hub1, assetId, ADMIN);
+    HubActions.mintFeeShares({hub: hub1, assetId: assetId, caller: ADMIN});
 
     _assertSpokeDebt(
       spoke1,
@@ -360,7 +408,7 @@ contract SpokeAccrueLiquidityFeeTest is Base {
     expectedTreasuryFees = expectedDrawnDebtAccrual.percentMulUp(liquidityFee);
 
     skip(365 days);
-    HubActions.mintFeeShares(hub1, assetId, ADMIN);
+    HubActions.mintFeeShares({hub: hub1, assetId: assetId, caller: ADMIN});
 
     _assertSpokeDebt(
       spoke1,
@@ -381,7 +429,13 @@ contract SpokeAccrueLiquidityFeeTest is Base {
 
     vm.recordLogs();
     // Bob supplies 1 share to trigger interest accrual with new liquidity fee
-    SpokeActions.supply(spoke1, reserveId, bob, _minimumAssetsPerAddedShare(hub1, assetId), bob);
+    SpokeActions.supply({
+      spoke: spoke1,
+      reserveId: reserveId,
+      caller: bob,
+      amount: _minimumAssetsPerAddedShare(hub1, assetId),
+      onBehalfOf: bob
+    });
     _assertEventNotEmitted(IHub.MintFeeShares.selector);
 
     vm.recordLogs();
@@ -441,14 +495,32 @@ contract SpokeAccrueLiquidityFeeTest is Base {
 
     _mockInterestRateBps(address(irStrategy), rate);
 
-    SpokeActions.supplyCollateral(spoke1, reserveId, alice, supplyAmount, alice);
-    SpokeActions.supplyCollateral(spoke1, reserveId2, alice, supplyAmount2, alice);
-    SpokeActions.borrow(spoke1, reserveId, alice, borrowAmount, alice);
+    SpokeActions.supplyCollateral({
+      spoke: spoke1,
+      reserveId: reserveId,
+      caller: alice,
+      amount: supplyAmount,
+      onBehalfOf: alice
+    });
+    SpokeActions.supplyCollateral({
+      spoke: spoke1,
+      reserveId: reserveId2,
+      caller: alice,
+      amount: supplyAmount2,
+      onBehalfOf: alice
+    });
+    SpokeActions.borrow({
+      spoke: spoke1,
+      reserveId: reserveId,
+      caller: alice,
+      amount: borrowAmount,
+      onBehalfOf: alice
+    });
 
     assertEq(_getUserRpStored(spoke1, alice), expectedRp);
 
     skip(365 days);
-    HubActions.mintFeeShares(hub1, assetId, ADMIN);
+    HubActions.mintFeeShares({hub: hub1, assetId: assetId, caller: ADMIN});
 
     _assertSpokeDebt(
       spoke1,
@@ -468,7 +540,7 @@ contract SpokeAccrueLiquidityFeeTest is Base {
     spoke1.setUsingAsCollateral(reserveId, false, alice);
     assertEq(_getUserRpStored(spoke1, alice), 50_00);
 
-    HubActions.mintFeeShares(hub1, assetId, ADMIN);
+    HubActions.mintFeeShares({hub: hub1, assetId: assetId, caller: ADMIN});
 
     // no change in treasury fees
     _assertSpokeDebt(
@@ -508,11 +580,23 @@ contract SpokeAccrueLiquidityFeeTest is Base {
     );
     _mockInterestRateBps(address(irStrategy), rate);
 
-    SpokeActions.supplyCollateral(spoke1, reserveId, alice, supplyAmount, alice);
-    SpokeActions.borrow(spoke1, reserveId, alice, borrowAmount, alice);
+    SpokeActions.supplyCollateral({
+      spoke: spoke1,
+      reserveId: reserveId,
+      caller: alice,
+      amount: supplyAmount,
+      onBehalfOf: alice
+    });
+    SpokeActions.borrow({
+      spoke: spoke1,
+      reserveId: reserveId,
+      caller: alice,
+      amount: borrowAmount,
+      onBehalfOf: alice
+    });
 
     skip(365 days);
-    HubActions.mintFeeShares(hub1, assetId, ADMIN);
+    HubActions.mintFeeShares({hub: hub1, assetId: assetId, caller: ADMIN});
 
     _assertSpokeDebt(
       spoke1,

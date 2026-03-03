@@ -48,8 +48,20 @@ contract LiquidationLogicLiquidateDebtTest is LiquidationLogicBaseTest {
     // Add liquidity, remove liquidity, refresh premium and skip time to accrue both drawn and premium debt
     address tempUser = _makeUser();
     deal(address(asset), tempUser, MAX_SUPPLY_AMOUNT);
-    HubActions.add(hub, assetId, address(spoke), MAX_SUPPLY_AMOUNT, tempUser);
-    HubActions.draw(hub, assetId, address(spoke), tempUser, MAX_SUPPLY_AMOUNT);
+    HubActions.add({
+      hub: hub,
+      assetId: assetId,
+      caller: address(spoke),
+      amount: MAX_SUPPLY_AMOUNT,
+      user: tempUser
+    });
+    HubActions.draw({
+      hub: hub,
+      assetId: assetId,
+      caller: address(spoke),
+      to: tempUser,
+      amount: MAX_SUPPLY_AMOUNT
+    });
     vm.startPrank(address(spoke));
     hub.refreshPremium(
       assetId,
@@ -71,7 +83,12 @@ contract LiquidationLogicLiquidateDebtTest is LiquidationLogicBaseTest {
 
     // Mint tokens to liquidator and approve spoke
     deal(address(asset), liquidator, spokeDrawnOwed + spokePremiumOwed);
-    SpokeActions.approve(spoke, address(asset), liquidator, spokeDrawnOwed + spokePremiumOwed);
+    SpokeActions.approve({
+      spoke: spoke,
+      underlying: address(asset),
+      owner: liquidator,
+      amount: spokeDrawnOwed + spokePremiumOwed
+    });
   }
 
   function test_liquidateDebt_fuzz(uint256) public {
@@ -188,7 +205,12 @@ contract LiquidationLogicLiquidateDebtTest is LiquidationLogicBaseTest {
     uint256 drawnIndex = hub.getAssetDrawnIndex(assetId);
 
     uint256 amountToRestore = drawnShares.rayMulUp(drawnIndex) + premiumDebtRay.fromRayUp();
-    SpokeActions.approve(spoke, address(asset), liquidator, amountToRestore - 1);
+    SpokeActions.approve({
+      spoke: spoke,
+      underlying: address(asset),
+      owner: liquidator,
+      amount: amountToRestore - 1
+    });
 
     vm.expectRevert();
     liquidationLogicWrapper.liquidateDebt(

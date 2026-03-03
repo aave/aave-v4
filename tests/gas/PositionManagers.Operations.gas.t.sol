@@ -77,7 +77,13 @@ contract GiverPositionManager_Gas_Tests is Base {
 
   function test_supplyOnBehalfOf() public {
     uint256 amount = 100e18;
-    SpokeActions.supply(spoke1, _daiReserveId(spoke1), alice, amount, alice);
+    SpokeActions.supply({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      caller: alice,
+      amount: amount,
+      onBehalfOf: alice
+    });
 
     vm.prank(bob);
     positionManager.supplyOnBehalfOf(address(spoke1), _daiReserveId(spoke1), amount, alice);
@@ -90,10 +96,34 @@ contract GiverPositionManager_Gas_Tests is Base {
     uint256 borrowAmount = 100e18;
     uint256 repayAmount = 50e18;
 
-    SpokeActions.supplyCollateral(spoke1, _daiReserveId(spoke1), alice, aliceSupplyAmount, alice);
-    SpokeActions.supply(spoke1, _daiReserveId(spoke1), bob, bobSupplyAmount, bob);
-    SpokeActions.borrow(spoke1, _daiReserveId(spoke1), alice, borrowAmount, alice);
-    SpokeActions.repay(spoke1, _daiReserveId(spoke1), alice, 1e18, alice);
+    SpokeActions.supplyCollateral({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      caller: alice,
+      amount: aliceSupplyAmount,
+      onBehalfOf: alice
+    });
+    SpokeActions.supply({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      caller: bob,
+      amount: bobSupplyAmount,
+      onBehalfOf: bob
+    });
+    SpokeActions.borrow({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      caller: alice,
+      amount: borrowAmount,
+      onBehalfOf: alice
+    });
+    SpokeActions.repay({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      caller: alice,
+      amount: 1e18,
+      onBehalfOf: alice
+    });
 
     vm.prank(bob);
     positionManager.repayOnBehalfOf(address(spoke1), _daiReserveId(spoke1), repayAmount, alice);
@@ -128,8 +158,20 @@ contract TakerPositionManager_Gas_Tests is Base {
     vm.prank(alice);
     positionManager.approveWithdraw(address(spoke1), _daiReserveId(spoke1), bob, UINT256_MAX);
 
-    SpokeActions.supply(spoke1, _daiReserveId(spoke1), alice, MAX_SUPPLY_AMOUNT_DAI, alice);
-    SpokeActions.withdraw(spoke1, _daiReserveId(spoke1), alice, amount, alice);
+    SpokeActions.supply({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      caller: alice,
+      amount: MAX_SUPPLY_AMOUNT_DAI,
+      onBehalfOf: alice
+    });
+    SpokeActions.withdraw({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      caller: alice,
+      amount: amount,
+      onBehalfOf: alice
+    });
 
     vm.prank(bob);
     positionManager.withdrawOnBehalfOf(address(spoke1), _daiReserveId(spoke1), amount, alice);
@@ -150,8 +192,20 @@ contract TakerPositionManager_Gas_Tests is Base {
     vm.prank(alice);
     positionManager.approveBorrow(address(spoke1), _daiReserveId(spoke1), bob, borrowAmount);
 
-    SpokeActions.supplyCollateral(spoke1, _daiReserveId(spoke1), alice, aliceSupplyAmount, alice);
-    SpokeActions.supplyCollateral(spoke1, _daiReserveId(spoke1), bob, bobSupplyAmount, bob);
+    SpokeActions.supplyCollateral({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      caller: alice,
+      amount: aliceSupplyAmount,
+      onBehalfOf: alice
+    });
+    SpokeActions.supplyCollateral({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      caller: bob,
+      amount: bobSupplyAmount,
+      onBehalfOf: bob
+    });
 
     vm.prank(bob);
     positionManager.borrowOnBehalfOf(address(spoke1), _daiReserveId(spoke1), borrowAmount, alice);
@@ -354,8 +408,20 @@ contract ConfigPositionManager_Gas_Tests is Base {
     vm.prank(alice);
     positionManager.setGlobalPermission(address(spoke1), bob, true);
 
-    SpokeActions.supplyCollateral(spoke1, _daiReserveId(spoke1), alice, 100e18, alice);
-    SpokeActions.borrow(spoke1, _daiReserveId(spoke1), alice, 75e18, alice);
+    SpokeActions.supplyCollateral({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      caller: alice,
+      amount: 100e18,
+      onBehalfOf: alice
+    });
+    SpokeActions.borrow({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      caller: alice,
+      amount: 75e18,
+      onBehalfOf: alice
+    });
 
     vm.prank(bob);
     positionManager.updateUserRiskPremiumOnBehalfOf(address(spoke1), alice);

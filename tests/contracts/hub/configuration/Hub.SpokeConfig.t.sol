@@ -71,7 +71,13 @@ contract HubSpokeConfigTest is Base {
     _updateSpokeHalted(hub1, usdxAssetId, address(spoke1), false);
     _updateSpokeActive(hub1, usdxAssetId, address(spoke1), true);
 
-    HubActions.add(hub1, usdxAssetId, address(spoke1), 1, alice);
+    HubActions.add({
+      hub: hub1,
+      assetId: usdxAssetId,
+      caller: address(spoke1),
+      amount: 1,
+      user: alice
+    });
 
     // set spoke to inactive / not halted; reverts
     _updateSpokeHalted(hub1, usdxAssetId, address(spoke1), false);
@@ -83,7 +89,13 @@ contract HubSpokeConfigTest is Base {
   }
 
   function test_remove_active_halted_scenarios() public {
-    HubActions.add(hub1, usdxAssetId, address(spoke1), 100, alice);
+    HubActions.add({
+      hub: hub1,
+      assetId: usdxAssetId,
+      caller: address(spoke1),
+      amount: 100,
+      user: alice
+    });
 
     // set spoke to active / halted; reverts
     _updateSpokeHalted(hub1, usdxAssetId, address(spoke1), true);
@@ -105,7 +117,13 @@ contract HubSpokeConfigTest is Base {
     _updateSpokeHalted(hub1, usdxAssetId, address(spoke1), false);
     _updateSpokeActive(hub1, usdxAssetId, address(spoke1), true);
 
-    HubActions.remove(hub1, usdxAssetId, address(spoke1), 1, alice);
+    HubActions.remove({
+      hub: hub1,
+      assetId: usdxAssetId,
+      caller: address(spoke1),
+      amount: 1,
+      to: alice
+    });
 
     // set spoke to inactive / not halted; reverts
     _updateSpokeHalted(hub1, usdxAssetId, address(spoke1), false);
@@ -137,7 +155,13 @@ contract HubSpokeConfigTest is Base {
     _updateSpokeHalted(hub1, usdxAssetId, address(spoke1), false);
     _updateSpokeActive(hub1, usdxAssetId, address(spoke1), true);
 
-    HubActions.draw(hub1, usdxAssetId, address(spoke1), alice, 1);
+    HubActions.draw({
+      hub: hub1,
+      assetId: usdxAssetId,
+      caller: address(spoke1),
+      to: alice,
+      amount: 1
+    });
 
     // set spoke to inactive / not halted; reverts
     _updateSpokeHalted(hub1, usdxAssetId, address(spoke1), false);
@@ -149,7 +173,13 @@ contract HubSpokeConfigTest is Base {
   }
 
   function test_restore_active_halted_scenarios() public {
-    HubActions.draw(hub1, usdxAssetId, address(spoke1), alice, 100);
+    HubActions.draw({
+      hub: hub1,
+      assetId: usdxAssetId,
+      caller: address(spoke1),
+      to: alice,
+      amount: 100
+    });
 
     // set spoke to active / halted; reverts
     _updateSpokeHalted(hub1, usdxAssetId, address(spoke1), true);
@@ -171,7 +201,13 @@ contract HubSpokeConfigTest is Base {
     _updateSpokeHalted(hub1, usdxAssetId, address(spoke1), false);
     _updateSpokeActive(hub1, usdxAssetId, address(spoke1), true);
 
-    HubActions.restoreDrawn(hub1, usdxAssetId, address(spoke1), 1, alice);
+    HubActions.restoreDrawn({
+      hub: hub1,
+      assetId: usdxAssetId,
+      caller: address(spoke1),
+      drawnAmount: 1,
+      restorer: alice
+    });
 
     // set spoke to inactive / not halted; reverts
     _updateSpokeHalted(hub1, usdxAssetId, address(spoke1), false);
@@ -231,7 +267,13 @@ contract HubSpokeConfigTest is Base {
 
     // create reported deficit on spoke1
     _createReportedDeficit(hub1, coveredSpoke, usdxAssetId);
-    HubActions.add(hub1, usdxAssetId, callerSpoke, 1e18, alice);
+    HubActions.add({
+      hub: hub1,
+      assetId: usdxAssetId,
+      caller: callerSpoke,
+      amount: 1e18,
+      user: alice
+    });
 
     // covered spoke status does not matter
     _updateSpokeHalted(hub1, usdxAssetId, coveredSpoke, true);
@@ -303,7 +345,13 @@ contract HubSpokeConfigTest is Base {
 
   function test_payFeeShares_active_halted_scenarios() public {
     address feeReceiver = _getFeeReceiver(hub1, usdxAssetId);
-    HubActions.add(hub1, usdxAssetId, address(spoke1), 1e18, alice);
+    HubActions.add({
+      hub: hub1,
+      assetId: usdxAssetId,
+      caller: address(spoke1),
+      amount: 1e18,
+      user: alice
+    });
 
     // set fee receiver to inactive / halted; does not matter
     _updateSpokeHalted(hub1, usdxAssetId, feeReceiver, true);
@@ -348,7 +396,7 @@ contract HubSpokeConfigTest is Base {
   ) public {
     address sender = address(spoke1);
     address receiver = address(spoke2);
-    HubActions.add(hub1, usdxAssetId, sender, 1e18, alice);
+    HubActions.add({hub: hub1, assetId: usdxAssetId, caller: sender, amount: 1e18, user: alice});
 
     // set sender
     _updateSpokeHalted(hub1, usdxAssetId, sender, senderPaused);
@@ -367,21 +415,27 @@ contract HubSpokeConfigTest is Base {
   }
 
   function _accrueLiquidityFees(IHub hub, ISpoke spoke, uint256 assetId) internal {
-    HubActions.add(hub, wbtcAssetId, address(spoke), 1e18, alice);
-    HubActions.draw(hub, assetId, address(spoke), alice, 1e18);
+    HubActions.add({
+      hub: hub,
+      assetId: wbtcAssetId,
+      caller: address(spoke),
+      amount: 1e18,
+      user: alice
+    });
+    HubActions.draw({hub: hub, assetId: assetId, caller: address(spoke), to: alice, amount: 1e18});
 
     skip(365 days);
-    HubActions.add(hub, assetId, address(spoke), 1e18, alice);
+    HubActions.add({hub: hub, assetId: assetId, caller: address(spoke), amount: 1e18, user: alice});
 
     assertGt(hub.getAsset(assetId).realizedFees, 0);
   }
 
   function _createReportedDeficit(IHub hub, address spoke, uint256 assetId) internal {
-    HubActions.add(hub, wbtcAssetId, spoke, 1e18, alice);
-    HubActions.draw(hub, assetId, spoke, alice, 1e18);
+    HubActions.add({hub: hub, assetId: wbtcAssetId, caller: spoke, amount: 1e18, user: alice});
+    HubActions.draw({hub: hub, assetId: assetId, caller: spoke, to: alice, amount: 1e18});
 
     skip(365 days);
-    HubActions.add(hub, assetId, spoke, 1e18, alice);
+    HubActions.add({hub: hub, assetId: assetId, caller: spoke, amount: 1e18, user: alice});
 
     vm.prank(spoke);
     hub.reportDeficit(assetId, 1e18, ZERO_PREMIUM_DELTA);

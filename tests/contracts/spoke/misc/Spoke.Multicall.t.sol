@@ -66,8 +66,20 @@ contract SpokeMulticall is Base {
     deal(address(tokenList.dai), bob, MAX_SUPPLY_AMOUNT * 2);
 
     // Bob supplies usdz and borrows half of it
-    SpokeActions.supplyCollateral(spoke2, _usdzReserveId(spoke2), bob, MAX_SUPPLY_AMOUNT, bob);
-    SpokeActions.borrow(spoke2, _usdzReserveId(spoke2), bob, 1000e18, bob);
+    SpokeActions.supplyCollateral({
+      spoke: spoke2,
+      reserveId: _usdzReserveId(spoke2),
+      caller: bob,
+      amount: MAX_SUPPLY_AMOUNT,
+      onBehalfOf: bob
+    });
+    SpokeActions.borrow({
+      spoke: spoke2,
+      reserveId: _usdzReserveId(spoke2),
+      caller: bob,
+      amount: 1000e18,
+      onBehalfOf: bob
+    });
 
     // Check bob's premium drawn shares as proxy for user rp
     uint256 bobpremiumSharesBefore = spoke2

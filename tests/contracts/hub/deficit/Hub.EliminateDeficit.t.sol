@@ -100,13 +100,16 @@ contract HubEliminateDeficitTest is Base {
     uint256 clearedDeficitRay = eliminateDeficitRay.min(_deficitAmountRay);
     uint256 clearedDeficit = clearedDeficitRay.fromRayUp();
 
-    HubActions.add(
-      hub1,
-      _assetId,
-      _callerSpoke,
-      hub1.previewAddByShares(_assetId, hub1.previewRemoveByAssets(_assetId, clearedDeficit)),
-      alice
-    );
+    HubActions.add({
+      hub: hub1,
+      assetId: _assetId,
+      caller: _callerSpoke,
+      amount: hub1.previewAddByShares(
+        _assetId,
+        hub1.previewRemoveByAssets(_assetId, clearedDeficit)
+      ),
+      user: alice
+    });
     assertGe(hub1.getSpokeAddedAssets(_assetId, _callerSpoke), clearedDeficit);
 
     uint256 expectedRemoveShares = hub1.previewRemoveByAssets(_assetId, clearedDeficit);
@@ -146,7 +149,7 @@ contract HubEliminateDeficitTest is Base {
   function _createDeficit(uint256 assetId, address spoke, uint256 amountRay) internal {
     _mockInterestRateBps(address(irStrategy), 100_00);
     uint256 amount = amountRay.fromRayUp();
-    HubActions.add(hub1, assetId, spoke, amount, alice);
+    HubActions.add({hub: hub1, assetId: assetId, caller: spoke, amount: amount, user: alice});
     _drawLiquidity(hub1, assetId, amount, true, true, spoke);
 
     (uint256 spokePremiumShares, int256 spokePremiumOffsetRay) = hub1.getSpokePremiumData(

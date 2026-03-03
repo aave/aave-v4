@@ -37,7 +37,7 @@ contract TokenizationSpokeWithSigTest is TokenizationSpokeBaseTest {
     );
     p.nonce = _burnRandomNoncesAtKey(vault, p.depositor);
     bytes memory signature = _sign(alicePk, _getTypedDataHash(vault, p));
-    SpokeActions.approve(vault, alice, p.assets);
+    SpokeActions.approve({vault: vault, owner: alice, amount: p.assets});
 
     uint256 shares = IHub(vault.hub()).previewAddByAssets(vault.assetId(), p.assets);
 
@@ -60,7 +60,7 @@ contract TokenizationSpokeWithSigTest is TokenizationSpokeBaseTest {
     );
     p.nonce = _burnRandomNoncesAtKey(vault, p.depositor);
     bytes memory signature = _sign(alicePk, _getTypedDataHash(vault, p));
-    SpokeActions.approve(vault, alice, p.shares);
+    SpokeActions.approve({vault: vault, owner: alice, amount: p.shares});
 
     uint256 assets = IHub(vault.hub()).previewAddByShares(vault.assetId(), p.shares);
 
@@ -83,7 +83,7 @@ contract TokenizationSpokeWithSigTest is TokenizationSpokeBaseTest {
     );
     p.nonce = _burnRandomNoncesAtKey(vault, p.owner);
     bytes memory signature = _sign(alicePk, _getTypedDataHash(vault, p));
-    SpokeActions.approve(vault, alice, p.assets);
+    SpokeActions.approve({vault: vault, owner: alice, amount: p.assets});
     vm.prank(alice);
     vault.deposit(p.assets, alice);
 
@@ -108,7 +108,7 @@ contract TokenizationSpokeWithSigTest is TokenizationSpokeBaseTest {
     );
     p.nonce = _burnRandomNoncesAtKey(vault, p.owner);
     bytes memory signature = _sign(alicePk, _getTypedDataHash(vault, p));
-    SpokeActions.approve(vault, alice, p.shares);
+    SpokeActions.approve({vault: vault, owner: alice, amount: p.shares});
     vm.prank(alice);
     vault.mint(p.shares, alice);
 

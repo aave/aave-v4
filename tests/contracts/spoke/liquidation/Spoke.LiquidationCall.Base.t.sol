@@ -136,7 +136,12 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
       );
     }
     _deal(spoke, debtReserveId, liquidator, debtToCover.percentMulUp(101_00));
-    SpokeActions.approve(spoke, debtReserveId, liquidator, debtToCover.percentMulUp(101_00));
+    SpokeActions.approve({
+      spoke: spoke,
+      reserveId: debtReserveId,
+      owner: liquidator,
+      amount: debtToCover.percentMulUp(101_00)
+    });
 
     return debtToCover;
   }

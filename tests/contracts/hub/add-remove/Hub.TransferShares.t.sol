@@ -17,7 +17,13 @@ contract HubTransferSharesTest is Base {
     moveAmount = bound(moveAmount, 1, supplyAmount);
 
     // supply from spoke1
-    HubActions.add(hub1, daiAssetId, address(spoke1), supplyAmount, bob);
+    HubActions.add({
+      hub: hub1,
+      assetId: daiAssetId,
+      caller: address(spoke1),
+      amount: supplyAmount,
+      user: bob
+    });
 
     uint256 suppliedShares = hub1.getSpokeAddedShares(daiAssetId, address(spoke1));
     uint256 assetSuppliedShares = hub1.getAddedShares(daiAssetId);
@@ -45,7 +51,13 @@ contract HubTransferSharesTest is Base {
     supplyAmount = bound(supplyAmount, 1, MAX_SUPPLY_AMOUNT - 1);
 
     // supply from spoke1
-    HubActions.add(hub1, daiAssetId, address(spoke1), supplyAmount, bob);
+    HubActions.add({
+      hub: hub1,
+      assetId: daiAssetId,
+      caller: address(spoke1),
+      amount: supplyAmount,
+      user: bob
+    });
 
     uint256 suppliedShares = hub1.getSpokeAddedShares(daiAssetId, address(spoke1));
     assertEq(suppliedShares, hub1.previewRemoveByShares(daiAssetId, supplyAmount));
@@ -64,7 +76,13 @@ contract HubTransferSharesTest is Base {
 
   function test_transferShares_revertsWith_SpokeNotActive() public {
     uint256 supplyAmount = 1000e18;
-    HubActions.add(hub1, daiAssetId, address(spoke1), supplyAmount, bob);
+    HubActions.add({
+      hub: hub1,
+      assetId: daiAssetId,
+      caller: address(spoke1),
+      amount: supplyAmount,
+      user: bob
+    });
 
     // deactivate spoke1
     IHub.SpokeConfig memory spokeConfig = hub1.getSpokeConfig(daiAssetId, address(spoke1));
@@ -84,7 +102,13 @@ contract HubTransferSharesTest is Base {
 
   function test_transferShares_revertsWith_SpokeHalted() public {
     uint256 supplyAmount = 1000e18;
-    HubActions.add(hub1, daiAssetId, address(spoke1), supplyAmount, bob);
+    HubActions.add({
+      hub: hub1,
+      assetId: daiAssetId,
+      caller: address(spoke1),
+      amount: supplyAmount,
+      user: bob
+    });
 
     // halt spoke1
     _updateSpokeHalted(hub1, daiAssetId, address(spoke1), true);
@@ -102,7 +126,13 @@ contract HubTransferSharesTest is Base {
     uint40 newSupplyCap = 1000;
 
     uint256 supplyAmount = newSupplyCap * 10 ** tokenList.dai.decimals() + 1;
-    HubActions.add(hub1, daiAssetId, address(spoke1), supplyAmount, bob);
+    HubActions.add({
+      hub: hub1,
+      assetId: daiAssetId,
+      caller: address(spoke1),
+      amount: supplyAmount,
+      user: bob
+    });
 
     uint256 suppliedShares = hub1.getSpokeAddedShares(daiAssetId, address(spoke1));
     assertEq(suppliedShares, hub1.previewRemoveByShares(daiAssetId, supplyAmount));

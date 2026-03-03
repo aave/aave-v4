@@ -50,7 +50,12 @@ contract SpokeLiquidationCallScenariosTest is SpokeLiquidationCallBaseTest {
 
     for (uint256 reserveId = 0; reserveId < spoke.getReserveCount(); reserveId++) {
       _deal(spoke, reserveId, liquidator, MAX_SUPPLY_AMOUNT);
-      SpokeActions.approve(spoke, reserveId, liquidator, MAX_SUPPLY_AMOUNT);
+      SpokeActions.approve({
+        spoke: spoke,
+        reserveId: reserveId,
+        owner: liquidator,
+        amount: MAX_SUPPLY_AMOUNT
+      });
     }
   }
 
@@ -719,7 +724,13 @@ contract SpokeLiquidationCallScenariosTest is SpokeLiquidationCallBaseTest {
     _increaseCollateralSupply(spoke, collateralReserveId, 10e18, user);
     // borrow usdx as peripheral debt asset not directly involved in liquidation
     _openSupplyPosition(spoke, _usdxReserveId(spoke), 100e6);
-    SpokeActions.borrow(spoke, _usdxReserveId(spoke), user, 100e6, user);
+    SpokeActions.borrow({
+      spoke: spoke,
+      reserveId: _usdxReserveId(spoke),
+      caller: user,
+      amount: 100e6,
+      onBehalfOf: user
+    });
     _makeUserLiquidatable(spoke, user, debtReserveId, 0.95e18);
 
     // set spoke halted
@@ -745,7 +756,13 @@ contract SpokeLiquidationCallScenariosTest is SpokeLiquidationCallBaseTest {
     _increaseCollateralSupply(spoke, collateralReserveId, 10e18, user);
     // borrow usdx as peripheral debt asset not directly involved in liquidation
     _openSupplyPosition(spoke, _usdxReserveId(spoke), 100e6);
-    SpokeActions.borrow(spoke, _usdxReserveId(spoke), user, 100e6, user);
+    SpokeActions.borrow({
+      spoke: spoke,
+      reserveId: _usdxReserveId(spoke),
+      caller: user,
+      amount: 100e6,
+      onBehalfOf: user
+    });
     // make user unhealthy to result in deficit
     _makeUserLiquidatable(spoke, user, debtReserveId, 0.5e18);
 

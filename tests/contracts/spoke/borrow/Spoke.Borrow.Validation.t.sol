@@ -101,10 +101,22 @@ contract SpokeBorrowValidationTest is Base {
     uint256 borrowAmount = vm.randomUint(daiAmount + 1, MAX_SUPPLY_AMOUNT);
 
     // Bob supply weth
-    SpokeActions.supply(spoke1, wethReserveId, bob, wethAmount, bob);
+    SpokeActions.supply({
+      spoke: spoke1,
+      reserveId: wethReserveId,
+      caller: bob,
+      amount: wethAmount,
+      onBehalfOf: bob
+    });
 
     // Alice supply dai
-    SpokeActions.supply(spoke1, daiReserveId, alice, daiAmount, alice);
+    SpokeActions.supply({
+      spoke: spoke1,
+      reserveId: daiReserveId,
+      caller: alice,
+      amount: daiAmount,
+      onBehalfOf: alice
+    });
 
     // Bob draw more than supplied dai amount
     vm.expectRevert(abi.encodeWithSelector(IHub.InsufficientLiquidity.selector, daiAmount));
@@ -157,25 +169,55 @@ contract SpokeBorrowValidationTest is Base {
     assertEq(hub1.getSpoke(daiAssetId, address(spoke1)).drawCap, drawCap);
 
     // Bob supply weth collateral
-    SpokeActions.supplyCollateral(spoke1, wethReserveId, bob, wethSupplyAmount, bob);
+    SpokeActions.supplyCollateral({
+      spoke: spoke1,
+      reserveId: wethReserveId,
+      caller: bob,
+      amount: wethSupplyAmount,
+      onBehalfOf: bob
+    });
 
     // Alice supply dai
-    SpokeActions.supply(spoke1, daiReserveId, alice, daiAmount, alice);
+    SpokeActions.supply({
+      spoke: spoke1,
+      reserveId: daiReserveId,
+      caller: alice,
+      amount: daiAmount,
+      onBehalfOf: alice
+    });
 
     // Bob draw dai
-    SpokeActions.borrow(spoke1, daiReserveId, bob, drawAmount, bob);
+    SpokeActions.borrow({
+      spoke: spoke1,
+      reserveId: daiReserveId,
+      caller: bob,
+      amount: drawAmount,
+      onBehalfOf: bob
+    });
 
     skip(skipTime);
     vm.assume(spoke1.getReserveTotalDebt(daiReserveId) > drawCap);
 
     // Additional supply to accrue interest
-    SpokeActions.supply(spoke1, daiReserveId, bob, 1e18, bob);
+    SpokeActions.supply({
+      spoke: spoke1,
+      reserveId: daiReserveId,
+      caller: bob,
+      amount: 1e18,
+      onBehalfOf: bob
+    });
 
     // Bob should be able to borrow 1 dai
     assertGt(_getUserHealthFactor(spoke1, bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
 
     vm.expectRevert(abi.encodeWithSelector(IHub.DrawCapExceeded.selector, drawCap));
-    SpokeActions.borrow(spoke1, daiReserveId, bob, 1, bob);
+    SpokeActions.borrow({
+      spoke: spoke1,
+      reserveId: daiReserveId,
+      caller: bob,
+      amount: 1,
+      onBehalfOf: bob
+    });
   }
 
   function test_borrow_revertsWith_MaximumUserReservesExceeded() public {
@@ -185,14 +227,32 @@ contract SpokeBorrowValidationTest is Base {
     assertGt(spoke1.getReserveCount(), maxUserReservesLimit, 'More reserves than limit');
 
     for (uint256 i = 0; i < maxUserReservesLimit; ++i) {
-      SpokeActions.supplyCollateral(spoke1, i, bob, MAX_SUPPLY_AMOUNT, bob);
-      SpokeActions.borrow(spoke1, i, bob, 1e18, bob);
+      SpokeActions.supplyCollateral({
+        spoke: spoke1,
+        reserveId: i,
+        caller: bob,
+        amount: MAX_SUPPLY_AMOUNT,
+        onBehalfOf: bob
+      });
+      SpokeActions.borrow({
+        spoke: spoke1,
+        reserveId: i,
+        caller: bob,
+        amount: 1e18,
+        onBehalfOf: bob
+      });
     }
     ISpoke.UserAccountData memory accountData = spoke1.getUserAccountData(bob);
     assertEq(accountData.borrowCount, maxUserReservesLimit, 'Bob has reached the borrow limit');
 
     // Ensure the next reserve has supply
-    SpokeActions.supply(spoke1, maxUserReservesLimit, bob, MAX_SUPPLY_AMOUNT, bob);
+    SpokeActions.supply({
+      spoke: spoke1,
+      reserveId: maxUserReservesLimit,
+      caller: bob,
+      amount: MAX_SUPPLY_AMOUNT,
+      onBehalfOf: bob
+    });
 
     // Bob tries to borrow from the last reserve - should revert due to limit
     vm.expectRevert(ISpoke.MaximumUserReservesExceeded.selector);
@@ -209,22 +269,52 @@ contract SpokeBorrowValidationTest is Base {
 
     uint256 borrowAmount = 1e18;
     for (uint256 i = 0; i < maxUserReservesLimit; ++i) {
-      SpokeActions.supplyCollateral(spoke1, i, bob, MAX_SUPPLY_AMOUNT, bob);
-      SpokeActions.borrow(spoke1, i, bob, borrowAmount, bob);
+      SpokeActions.supplyCollateral({
+        spoke: spoke1,
+        reserveId: i,
+        caller: bob,
+        amount: MAX_SUPPLY_AMOUNT,
+        onBehalfOf: bob
+      });
+      SpokeActions.borrow({
+        spoke: spoke1,
+        reserveId: i,
+        caller: bob,
+        amount: borrowAmount,
+        onBehalfOf: bob
+      });
     }
 
     ISpoke.UserAccountData memory accountData = spoke1.getUserAccountData(bob);
     assertEq(accountData.borrowCount, maxUserReservesLimit, 'Bob has reached the borrow limit');
 
-    SpokeActions.repay(spoke1, 0, bob, type(uint256).max, bob);
+    SpokeActions.repay({
+      spoke: spoke1,
+      reserveId: 0,
+      caller: bob,
+      amount: type(uint256).max,
+      onBehalfOf: bob
+    });
 
     accountData = spoke1.getUserAccountData(bob);
     assertEq(accountData.borrowCount, maxUserReservesLimit - 1, 'Bob has repaid one reserve');
 
     // Ensure the next reserve has supply
-    SpokeActions.supply(spoke1, maxUserReservesLimit, bob, MAX_SUPPLY_AMOUNT, bob);
+    SpokeActions.supply({
+      spoke: spoke1,
+      reserveId: maxUserReservesLimit,
+      caller: bob,
+      amount: MAX_SUPPLY_AMOUNT,
+      onBehalfOf: bob
+    });
 
-    SpokeActions.borrow(spoke1, maxUserReservesLimit, bob, borrowAmount, bob);
+    SpokeActions.borrow({
+      spoke: spoke1,
+      reserveId: maxUserReservesLimit,
+      caller: bob,
+      amount: borrowAmount,
+      onBehalfOf: bob
+    });
 
     accountData = spoke1.getUserAccountData(bob);
     assertEq(accountData.borrowCount, maxUserReservesLimit, 'Bob has reached the borrow limit');
@@ -237,8 +327,20 @@ contract SpokeBorrowValidationTest is Base {
     uint256 reservesToBorrow = spoke1.getReserveCount();
 
     for (uint256 i = 0; i < reservesToBorrow; ++i) {
-      SpokeActions.supplyCollateral(spoke1, i, bob, MAX_SUPPLY_AMOUNT, bob);
-      SpokeActions.borrow(spoke1, i, bob, 1e18, bob);
+      SpokeActions.supplyCollateral({
+        spoke: spoke1,
+        reserveId: i,
+        caller: bob,
+        amount: MAX_SUPPLY_AMOUNT,
+        onBehalfOf: bob
+      });
+      SpokeActions.borrow({
+        spoke: spoke1,
+        reserveId: i,
+        caller: bob,
+        amount: 1e18,
+        onBehalfOf: bob
+      });
     }
 
     ISpoke.UserAccountData memory accountData = spoke1.getUserAccountData(bob);

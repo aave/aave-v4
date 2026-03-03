@@ -89,8 +89,20 @@ contract HubRemoveTest is Base {
       user: alice
     });
 
-    HubActions.remove(hub1, assetId, address(spoke1), amount, alice);
-    HubActions.remove(hub1, assetId, address(spoke2), amount2, alice);
+    HubActions.remove({
+      hub: hub1,
+      assetId: assetId,
+      caller: address(spoke1),
+      amount: amount,
+      to: alice
+    });
+    HubActions.remove({
+      hub: hub1,
+      assetId: assetId,
+      caller: address(spoke2),
+      amount: amount2,
+      to: alice
+    });
 
     AssetPosition memory assetData = _getAssetPosition(hub1, assetId);
     SpokePosition memory spokePosition1 = _getSpokePosition(spoke1, _daiReserveId);
@@ -173,10 +185,22 @@ contract HubRemoveTest is Base {
 
     uint256 aliceBalanceBefore = underlying.balanceOf(alice);
     uint256 spoke1Amount = hub1.getSpokeAddedAssets(assetId, address(spoke1));
-    HubActions.remove(hub1, assetId, address(spoke1), spoke1Amount, alice);
+    HubActions.remove({
+      hub: hub1,
+      assetId: assetId,
+      caller: address(spoke1),
+      amount: spoke1Amount,
+      to: alice
+    });
 
     uint256 spoke2Amount = hub1.getSpokeAddedAssets(assetId, address(spoke2));
-    HubActions.remove(hub1, assetId, address(spoke2), spoke2Amount, alice);
+    HubActions.remove({
+      hub: hub1,
+      assetId: assetId,
+      caller: address(spoke2),
+      amount: spoke2Amount,
+      to: alice
+    });
 
     AssetPosition memory assetData = _getAssetPosition(hub1, assetId);
     SpokePosition memory spokePosition1 = _getSpokePosition(spoke1, _daiReserveId);

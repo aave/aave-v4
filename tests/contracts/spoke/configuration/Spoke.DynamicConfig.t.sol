@@ -386,9 +386,27 @@ contract SpokeDynamicConfigTest is Base {
   function test_offboardReserve_existing_borrows_remain_unaffected() public {
     _openSupplyPosition(spoke1, _wethReserveId(spoke1), 3e18);
 
-    SpokeActions.supplyCollateral(spoke1, _usdxReserveId(spoke1), alice, 2600e6, alice);
-    SpokeActions.supplyCollateral(spoke1, _usdxReserveId(spoke1), bob, 2600e6, bob);
-    SpokeActions.borrow(spoke1, _wethReserveId(spoke1), alice, 1e18, alice);
+    SpokeActions.supplyCollateral({
+      spoke: spoke1,
+      reserveId: _usdxReserveId(spoke1),
+      caller: alice,
+      amount: 2600e6,
+      onBehalfOf: alice
+    });
+    SpokeActions.supplyCollateral({
+      spoke: spoke1,
+      reserveId: _usdxReserveId(spoke1),
+      caller: bob,
+      amount: 2600e6,
+      onBehalfOf: bob
+    });
+    SpokeActions.borrow({
+      spoke: spoke1,
+      reserveId: _wethReserveId(spoke1),
+      caller: alice,
+      amount: 1e18,
+      onBehalfOf: alice
+    });
 
     // offboard usdx
     _updateCollateralFactor(spoke1, _usdxReserveId(spoke1), 0);
@@ -398,15 +416,39 @@ contract SpokeDynamicConfigTest is Base {
     assertGt(_getUserHealthFactor(spoke1, alice), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
     // bob cannot borrow after collateral is disabled
     vm.expectRevert(ISpoke.HealthFactorBelowThreshold.selector);
-    SpokeActions.borrow(spoke1, _wethReserveId(spoke1), bob, 1e18, bob);
+    SpokeActions.borrow({
+      spoke: spoke1,
+      reserveId: _wethReserveId(spoke1),
+      caller: bob,
+      amount: 1e18,
+      onBehalfOf: bob
+    });
 
     // new user: carol; cannot borrow with usdx as collateral
-    SpokeActions.supplyCollateral(spoke1, _usdxReserveId(spoke1), carol, 2600e6, carol);
+    SpokeActions.supplyCollateral({
+      spoke: spoke1,
+      reserveId: _usdxReserveId(spoke1),
+      caller: carol,
+      amount: 2600e6,
+      onBehalfOf: carol
+    });
     vm.expectRevert(ISpoke.HealthFactorBelowThreshold.selector);
-    SpokeActions.borrow(spoke1, _wethReserveId(spoke1), carol, 1e18, carol);
+    SpokeActions.borrow({
+      spoke: spoke1,
+      reserveId: _wethReserveId(spoke1),
+      caller: carol,
+      amount: 1e18,
+      onBehalfOf: carol
+    });
 
     // alice cannot borrow more with usdx as collateral
     vm.expectRevert(ISpoke.HealthFactorBelowThreshold.selector);
-    SpokeActions.borrow(spoke1, _wethReserveId(spoke1), alice, 1, alice);
+    SpokeActions.borrow({
+      spoke: spoke1,
+      reserveId: _wethReserveId(spoke1),
+      caller: alice,
+      amount: 1,
+      onBehalfOf: alice
+    });
   }
 }

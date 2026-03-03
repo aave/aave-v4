@@ -21,16 +21,28 @@ contract SpokeRepayEdgeCaseTest is Base {
     );
 
     // Bob supply weth as collateral
-    SpokeActions.supplyCollateral(spoke1, _wethReserveId(spoke1), bob, wethSupplyAmount, bob);
+    SpokeActions.supplyCollateral({
+      spoke: spoke1,
+      reserveId: _wethReserveId(spoke1),
+      caller: bob,
+      amount: wethSupplyAmount,
+      onBehalfOf: bob
+    });
     // Alice supply dai such that usage ratio after bob borrows is ~45%, borrow rate ~7.5%
-    SpokeActions.supply(
-      spoke1,
-      _daiReserveId(spoke1),
-      alice,
-      daiBorrowAmount.percentDivDown(45_00),
-      alice
-    );
-    SpokeActions.borrow(spoke1, _daiReserveId(spoke1), bob, daiBorrowAmount, bob);
+    SpokeActions.supply({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      caller: alice,
+      amount: daiBorrowAmount.percentDivDown(45_00),
+      onBehalfOf: alice
+    });
+    SpokeActions.borrow({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      caller: bob,
+      amount: daiBorrowAmount,
+      onBehalfOf: bob
+    });
     skip(skipTime); // initial increase in index, no time passes for subsequent checks
 
     DebtData memory bobDebt = _getUserDebt(spoke1, bob, _daiReserveId(spoke1));
@@ -94,7 +106,13 @@ contract SpokeRepayEdgeCaseTest is Base {
     addExRateBefore = _getAddExRate(hub1, daiAssetId);
     debtExRateBefore = _getDebtExRate(hub1, daiAssetId);
 
-    SpokeActions.repay(spoke1, _daiReserveId(spoke1), bob, daiRepayAmount, bob);
+    SpokeActions.repay({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      caller: bob,
+      amount: daiRepayAmount,
+      onBehalfOf: bob
+    });
 
     _checkSupplyRateIncreasing(
       addExRateBefore,
@@ -110,7 +128,13 @@ contract SpokeRepayEdgeCaseTest is Base {
     addExRateBefore = _getAddExRate(hub1, daiAssetId);
     debtExRateBefore = _getDebtExRate(hub1, daiAssetId);
 
-    SpokeActions.repay(spoke1, _daiReserveId(spoke1), bob, UINT256_MAX, bob);
+    SpokeActions.repay({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      caller: bob,
+      amount: UINT256_MAX,
+      onBehalfOf: bob
+    });
 
     _checkSupplyRateIncreasing(
       addExRateBefore,
@@ -132,9 +156,27 @@ contract SpokeRepayEdgeCaseTest is Base {
     _updateLiquidityFee(hub1, daiAssetId, 0);
 
     // enough coll
-    SpokeActions.supplyCollateral(spoke1, _wethReserveId(spoke1), alice, 1e18, alice);
-    SpokeActions.supplyCollateral(spoke1, _wethReserveId(spoke1), bob, 1e18, bob);
-    SpokeActions.supplyCollateral(spoke1, _wethReserveId(spoke1), carol, 1e18, carol);
+    SpokeActions.supplyCollateral({
+      spoke: spoke1,
+      reserveId: _wethReserveId(spoke1),
+      caller: alice,
+      amount: 1e18,
+      onBehalfOf: alice
+    });
+    SpokeActions.supplyCollateral({
+      spoke: spoke1,
+      reserveId: _wethReserveId(spoke1),
+      caller: bob,
+      amount: 1e18,
+      onBehalfOf: bob
+    });
+    SpokeActions.supplyCollateral({
+      spoke: spoke1,
+      reserveId: _wethReserveId(spoke1),
+      caller: carol,
+      amount: 1e18,
+      onBehalfOf: carol
+    });
 
     _openSupplyPosition(spoke1, _daiReserveId(spoke1), 20e18);
     // carol borrows to inflate ex rate
@@ -162,7 +204,13 @@ contract SpokeRepayEdgeCaseTest is Base {
     addExRateBefore = _getAddExRate(hub1, daiAssetId);
 
     // alice repays full
-    SpokeActions.repay(spoke1, _daiReserveId(spoke1), alice, UINT256_MAX, alice);
+    SpokeActions.repay({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      caller: alice,
+      amount: UINT256_MAX,
+      onBehalfOf: alice
+    });
 
     _checkSupplyRateIncreasing(
       addExRateBefore,
@@ -179,9 +227,27 @@ contract SpokeRepayEdgeCaseTest is Base {
     _updateLiquidityFee(hub1, daiAssetId, 0);
 
     // enough coll
-    SpokeActions.supplyCollateral(spoke1, _wethReserveId(spoke1), alice, 1e18, alice);
-    SpokeActions.supplyCollateral(spoke1, _wethReserveId(spoke1), bob, 1e18, bob);
-    SpokeActions.supplyCollateral(spoke1, _wethReserveId(spoke1), carol, 1e18, carol);
+    SpokeActions.supplyCollateral({
+      spoke: spoke1,
+      reserveId: _wethReserveId(spoke1),
+      caller: alice,
+      amount: 1e18,
+      onBehalfOf: alice
+    });
+    SpokeActions.supplyCollateral({
+      spoke: spoke1,
+      reserveId: _wethReserveId(spoke1),
+      caller: bob,
+      amount: 1e18,
+      onBehalfOf: bob
+    });
+    SpokeActions.supplyCollateral({
+      spoke: spoke1,
+      reserveId: _wethReserveId(spoke1),
+      caller: carol,
+      amount: 1e18,
+      onBehalfOf: carol
+    });
 
     _openSupplyPosition(spoke1, _daiReserveId(spoke1), 20e18);
     vm.prank(carol);
@@ -210,7 +276,13 @@ contract SpokeRepayEdgeCaseTest is Base {
     skip(1);
 
     // alice repays full
-    SpokeActions.repay(spoke1, _daiReserveId(spoke1), alice, UINT256_MAX, alice);
+    SpokeActions.repay({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      caller: alice,
+      amount: UINT256_MAX,
+      onBehalfOf: alice
+    });
 
     exchangeRateAfter = hub1.previewRemoveByShares(daiAssetId, MAX_SUPPLY_AMOUNT);
     assertGt(exchangeRateAfter, exchangeRateBefore, 'supply rate decreased');
@@ -226,13 +298,31 @@ contract SpokeRepayEdgeCaseTest is Base {
     uint256 daiBorrowAmount = 100e18;
 
     // Bob supplies WETH as collateral
-    SpokeActions.supplyCollateral(spoke1, _wethReserveId(spoke1), bob, wethSupplyAmount, bob);
+    SpokeActions.supplyCollateral({
+      spoke: spoke1,
+      reserveId: _wethReserveId(spoke1),
+      caller: bob,
+      amount: wethSupplyAmount,
+      onBehalfOf: bob
+    });
 
     // Alice supplies DAI
-    SpokeActions.supply(spoke1, _daiReserveId(spoke1), alice, daiSupplyAmount, alice);
+    SpokeActions.supply({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      caller: alice,
+      amount: daiSupplyAmount,
+      onBehalfOf: alice
+    });
 
     // Bob borrows DAI
-    SpokeActions.borrow(spoke1, _daiReserveId(spoke1), bob, daiBorrowAmount, bob);
+    SpokeActions.borrow({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      caller: bob,
+      amount: daiBorrowAmount,
+      onBehalfOf: bob
+    });
 
     DebtData memory bobDaiDebtBefore = _getUserDebt(spoke1, bob, _daiReserveId(spoke1));
     assertEq(bobDaiDebtBefore.totalDebt, daiBorrowAmount, 'Initial bob dai debt');
@@ -286,13 +376,31 @@ contract SpokeRepayEdgeCaseTest is Base {
     uint256 daiBorrowAmount = 100;
 
     // Bob supplies WETH as collateral
-    SpokeActions.supplyCollateral(spoke1, _wethReserveId(spoke1), bob, wethSupplyAmount, bob);
+    SpokeActions.supplyCollateral({
+      spoke: spoke1,
+      reserveId: _wethReserveId(spoke1),
+      caller: bob,
+      amount: wethSupplyAmount,
+      onBehalfOf: bob
+    });
 
     // Alice supplies DAI
-    SpokeActions.supply(spoke1, _daiReserveId(spoke1), alice, daiSupplyAmount, alice);
+    SpokeActions.supply({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      caller: alice,
+      amount: daiSupplyAmount,
+      onBehalfOf: alice
+    });
 
     // Bob borrows DAI
-    SpokeActions.borrow(spoke1, _daiReserveId(spoke1), bob, daiBorrowAmount, bob);
+    SpokeActions.borrow({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      caller: bob,
+      amount: daiBorrowAmount,
+      onBehalfOf: bob
+    });
 
     assertEq(
       spoke1.getUserTotalDebt(_daiReserveId(spoke1), bob),
@@ -374,13 +482,31 @@ contract SpokeRepayEdgeCaseTest is Base {
     uint256 daiBorrowAmount = daiSupplyAmount / 2;
 
     // Bob supply weth
-    SpokeActions.supplyCollateral(spoke1, _wethReserveId(spoke1), bob, wethSupplyAmount, bob);
+    SpokeActions.supplyCollateral({
+      spoke: spoke1,
+      reserveId: _wethReserveId(spoke1),
+      caller: bob,
+      amount: wethSupplyAmount,
+      onBehalfOf: bob
+    });
 
     // Alice supply dai
-    SpokeActions.supply(spoke1, _daiReserveId(spoke1), alice, daiSupplyAmount, alice);
+    SpokeActions.supply({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      caller: alice,
+      amount: daiSupplyAmount,
+      onBehalfOf: alice
+    });
 
     // Bob borrow dai
-    SpokeActions.borrow(spoke1, _daiReserveId(spoke1), bob, daiBorrowAmount, bob);
+    SpokeActions.borrow({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      caller: bob,
+      amount: daiBorrowAmount,
+      onBehalfOf: bob
+    });
 
     assertEq(
       spoke1.getUserTotalDebt(_daiReserveId(spoke1), bob),
@@ -402,7 +528,13 @@ contract SpokeRepayEdgeCaseTest is Base {
     assertGt(bobDaiBefore.totalDebt, daiBorrowAmount, 'bob dai debt before');
 
     // Bob repays premium
-    SpokeActions.repay(spoke1, _daiReserveId(spoke1), bob, bobDaiBefore.premiumDebt, bob);
+    SpokeActions.repay({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      caller: bob,
+      amount: bobDaiBefore.premiumDebt,
+      onBehalfOf: bob
+    });
 
     bobDaiBefore = _getUserDebt(spoke1, bob, _daiReserveId(spoke1));
     // Premium debt can be off by 1 due to rounding
@@ -479,13 +611,31 @@ contract SpokeRepayEdgeCaseTest is Base {
     uint256 daiBorrowAmount = daiSupplyAmount / 2;
 
     // Bob supply weth
-    SpokeActions.supplyCollateral(spoke1, _wethReserveId(spoke1), bob, wethSupplyAmount, bob);
+    SpokeActions.supplyCollateral({
+      spoke: spoke1,
+      reserveId: _wethReserveId(spoke1),
+      caller: bob,
+      amount: wethSupplyAmount,
+      onBehalfOf: bob
+    });
 
     // Alice supply dai
-    SpokeActions.supply(spoke1, _daiReserveId(spoke1), alice, daiSupplyAmount, alice);
+    SpokeActions.supply({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      caller: alice,
+      amount: daiSupplyAmount,
+      onBehalfOf: alice
+    });
 
     // Bob borrow dai
-    SpokeActions.borrow(spoke1, _daiReserveId(spoke1), bob, daiBorrowAmount, bob);
+    SpokeActions.borrow({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      caller: bob,
+      amount: daiBorrowAmount,
+      onBehalfOf: bob
+    });
 
     assertEq(
       spoke1.getUserTotalDebt(_daiReserveId(spoke1), bob),

@@ -24,16 +24,34 @@ contract HubRefreshPremiumTest is Base {
   }
 
   function _createDrawnSharesAndPremiumData() internal {
-    SpokeActions.supplyCollateral(spoke1, _wbtcReserveId(spoke1), bob, MAX_SUPPLY_AMOUNT_WBTC, bob);
+    SpokeActions.supplyCollateral({
+      spoke: spoke1,
+      reserveId: _wbtcReserveId(spoke1),
+      caller: bob,
+      amount: MAX_SUPPLY_AMOUNT_WBTC,
+      onBehalfOf: bob
+    });
 
     uint256 amount1 = vm.randomUint(1, MAX_SUPPLY_AMOUNT_DAI / 2);
     uint256 amount2 = vm.randomUint(1, MAX_SUPPLY_AMOUNT_DAI - amount1);
 
     // create drawn shares and premium data
     _addLiquidity(hub1, daiAssetId, MAX_SUPPLY_AMOUNT_DAI);
-    SpokeActions.borrow(spoke1, _daiReserveId(spoke1), bob, amount1, bob);
+    SpokeActions.borrow({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      caller: bob,
+      amount: amount1,
+      onBehalfOf: bob
+    });
     skip(322 days);
-    SpokeActions.borrow(spoke1, _daiReserveId(spoke1), bob, amount2, bob);
+    SpokeActions.borrow({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      caller: bob,
+      amount: amount2,
+      onBehalfOf: bob
+    });
     skip(322 days);
   }
 
@@ -230,8 +248,20 @@ contract HubRefreshPremiumTest is Base {
         address(spoke1),
         MAX_RISK_PREMIUM_THRESHOLD
       );
-      SpokeActions.supplyCollateral(spoke1, _daiReserveId(spoke1), bob, borrowAmount * 2, bob);
-      SpokeActions.borrow(spoke1, _daiReserveId(spoke1), bob, borrowAmount, bob);
+      SpokeActions.supplyCollateral({
+        spoke: spoke1,
+        reserveId: _daiReserveId(spoke1),
+        caller: bob,
+        amount: borrowAmount * 2,
+        onBehalfOf: bob
+      });
+      SpokeActions.borrow({
+        spoke: spoke1,
+        reserveId: _daiReserveId(spoke1),
+        caller: bob,
+        amount: borrowAmount,
+        onBehalfOf: bob
+      });
     }
 
     uint24 riskPremiumThreshold = vm.randomUint(0, MAX_RISK_PREMIUM_THRESHOLD - 1).toUint24();
@@ -293,8 +323,20 @@ contract HubRefreshPremiumTest is Base {
 
   function test_refreshPremium_negativeDeltas(uint256 sharesDeltaPos) public {
     uint256 assetId = daiAssetId;
-    SpokeActions.supplyCollateral(spoke1, _daiReserveId(spoke1), bob, 10000e18, bob);
-    SpokeActions.borrow(spoke1, _daiReserveId(spoke1), bob, 5000e18, bob);
+    SpokeActions.supplyCollateral({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      caller: bob,
+      amount: 10000e18,
+      onBehalfOf: bob
+    });
+    SpokeActions.borrow({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      caller: bob,
+      amount: 5000e18,
+      onBehalfOf: bob
+    });
 
     IHub.Asset memory asset = hub1.getAsset(assetId);
     PremiumDataLocal memory premiumDataBefore = _loadAssetPremiumData(hub1, assetId);
@@ -328,11 +370,29 @@ contract HubRefreshPremiumTest is Base {
 
   function test_refreshPremium_negativeDeltas_withAccrual(uint256 sharesDeltaPos) public {
     uint256 assetId = daiAssetId;
-    SpokeActions.supplyCollateral(spoke1, _daiReserveId(spoke1), bob, 10000e18, bob);
-    SpokeActions.borrow(spoke1, _daiReserveId(spoke1), bob, 5000e18, bob);
+    SpokeActions.supplyCollateral({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      caller: bob,
+      amount: 10000e18,
+      onBehalfOf: bob
+    });
+    SpokeActions.borrow({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      caller: bob,
+      amount: 5000e18,
+      onBehalfOf: bob
+    });
 
     skip(322 days);
-    SpokeActions.borrow(spoke1, _daiReserveId(spoke1), bob, 1e18, bob);
+    SpokeActions.borrow({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      caller: bob,
+      amount: 1e18,
+      onBehalfOf: bob
+    });
 
     IHub.Asset memory asset = hub1.getAsset(assetId);
     PremiumDataLocal memory premiumDataBefore = _loadAssetPremiumData(hub1, assetId);
@@ -378,8 +438,20 @@ contract HubRefreshPremiumTest is Base {
 
     borrowAmount = bound(borrowAmount, 1, MAX_SUPPLY_AMOUNT / 2);
 
-    SpokeActions.supplyCollateral(spoke1, _daiReserveId(spoke1), bob, MAX_SUPPLY_AMOUNT, bob);
-    SpokeActions.borrow(spoke1, _daiReserveId(spoke1), bob, borrowAmount, bob);
+    SpokeActions.supplyCollateral({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      caller: bob,
+      amount: MAX_SUPPLY_AMOUNT,
+      onBehalfOf: bob
+    });
+    SpokeActions.borrow({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      caller: bob,
+      amount: borrowAmount,
+      onBehalfOf: bob
+    });
     skip(skipTime);
 
     IHub.Asset memory asset = hub1.getAsset(assetId);
@@ -447,10 +519,34 @@ contract HubRefreshPremiumTest is Base {
 
   function test_refreshPremium_spokePremiumUpdateIsContained() public {
     uint256 assetId = daiAssetId;
-    SpokeActions.supplyCollateral(spoke1, _daiReserveId(spoke1), bob, MAX_SUPPLY_AMOUNT, bob);
-    SpokeActions.borrow(spoke1, _daiReserveId(spoke1), bob, 5000e18, bob);
-    SpokeActions.supplyCollateral(spoke2, _daiReserveId(spoke2), alice, 10000e18, alice);
-    SpokeActions.borrow(spoke2, _daiReserveId(spoke2), alice, 5000e18, alice);
+    SpokeActions.supplyCollateral({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      caller: bob,
+      amount: MAX_SUPPLY_AMOUNT,
+      onBehalfOf: bob
+    });
+    SpokeActions.borrow({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      caller: bob,
+      amount: 5000e18,
+      onBehalfOf: bob
+    });
+    SpokeActions.supplyCollateral({
+      spoke: spoke2,
+      reserveId: _daiReserveId(spoke2),
+      caller: alice,
+      amount: 10000e18,
+      onBehalfOf: alice
+    });
+    SpokeActions.borrow({
+      spoke: spoke2,
+      reserveId: _daiReserveId(spoke2),
+      caller: alice,
+      amount: 5000e18,
+      onBehalfOf: alice
+    });
 
     skip(322 days);
 

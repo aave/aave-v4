@@ -18,26 +18,50 @@ contract SpokeReserveConfigTest is Base {
     _updateReservePausedFlag(spoke1, daiReserveId, true);
     _updateReserveFrozenFlag(spoke1, daiReserveId, true);
     vm.expectRevert(ISpoke.ReservePaused.selector);
-    SpokeActions.supply(spoke1, daiReserveId, bob, amount, bob);
+    SpokeActions.supply({
+      spoke: spoke1,
+      reserveId: daiReserveId,
+      caller: bob,
+      amount: amount,
+      onBehalfOf: bob
+    });
 
     // not paused / frozen; reverts
     _updateReservePausedFlag(spoke1, daiReserveId, false);
     _updateReserveFrozenFlag(spoke1, daiReserveId, true);
     vm.expectRevert(ISpoke.ReserveFrozen.selector);
-    SpokeActions.supply(spoke1, daiReserveId, bob, amount, bob);
+    SpokeActions.supply({
+      spoke: spoke1,
+      reserveId: daiReserveId,
+      caller: bob,
+      amount: amount,
+      onBehalfOf: bob
+    });
 
     // paused / not frozen; reverts
     _updateReservePausedFlag(spoke1, daiReserveId, true);
     _updateReserveFrozenFlag(spoke1, daiReserveId, false);
     vm.expectRevert(ISpoke.ReservePaused.selector);
-    SpokeActions.supply(spoke1, daiReserveId, bob, amount, bob);
+    SpokeActions.supply({
+      spoke: spoke1,
+      reserveId: daiReserveId,
+      caller: bob,
+      amount: amount,
+      onBehalfOf: bob
+    });
 
     // not paused / not frozen; succeeds
     _updateReservePausedFlag(spoke1, daiReserveId, false);
     _updateReserveFrozenFlag(spoke1, daiReserveId, false);
     _deal(spoke1, daiReserveId, bob, amount);
-    SpokeActions.approve(spoke1, daiReserveId, bob, amount);
-    SpokeActions.supply(spoke1, daiReserveId, bob, amount, bob);
+    SpokeActions.approve({spoke: spoke1, reserveId: daiReserveId, owner: bob, amount: amount});
+    SpokeActions.supply({
+      spoke: spoke1,
+      reserveId: daiReserveId,
+      caller: bob,
+      amount: amount,
+      onBehalfOf: bob
+    });
   }
 
   function test_withdraw_paused_scenarios() public {
@@ -47,8 +71,19 @@ contract SpokeReserveConfigTest is Base {
 
     // ensure user can withdraw
     _deal(spoke1, daiReserveId, bob, supplyAmount);
-    SpokeActions.approve(spoke1, daiReserveId, bob, supplyAmount);
-    SpokeActions.supplyCollateral(spoke1, daiReserveId, bob, supplyAmount, bob);
+    SpokeActions.approve({
+      spoke: spoke1,
+      reserveId: daiReserveId,
+      owner: bob,
+      amount: supplyAmount
+    });
+    SpokeActions.supplyCollateral({
+      spoke: spoke1,
+      reserveId: daiReserveId,
+      caller: bob,
+      amount: supplyAmount,
+      onBehalfOf: bob
+    });
 
     // frozen does not matter
     _updateReserveFrozenFlag(spoke1, daiReserveId, true);
@@ -56,11 +91,23 @@ contract SpokeReserveConfigTest is Base {
     // paused; reverts
     _updateReservePausedFlag(spoke1, daiReserveId, true);
     vm.expectRevert(ISpoke.ReservePaused.selector);
-    SpokeActions.withdraw(spoke1, daiReserveId, bob, withdrawAmount, bob);
+    SpokeActions.withdraw({
+      spoke: spoke1,
+      reserveId: daiReserveId,
+      caller: bob,
+      amount: withdrawAmount,
+      onBehalfOf: bob
+    });
 
     // unpaused; succeeds
     _updateReservePausedFlag(spoke1, daiReserveId, false);
-    SpokeActions.withdraw(spoke1, daiReserveId, bob, withdrawAmount, bob);
+    SpokeActions.withdraw({
+      spoke: spoke1,
+      reserveId: daiReserveId,
+      caller: bob,
+      amount: withdrawAmount,
+      onBehalfOf: bob
+    });
   }
 
   function test_borrow_fuzz_borrowable_paused_frozen_scenarios(
@@ -83,7 +130,13 @@ contract SpokeReserveConfigTest is Base {
     } else if (!borrowable) {
       vm.expectRevert(ISpoke.ReserveNotBorrowable.selector);
     }
-    SpokeActions.borrow(spoke1, daiReserveId, bob, amount, bob);
+    SpokeActions.borrow({
+      spoke: spoke1,
+      reserveId: daiReserveId,
+      caller: bob,
+      amount: amount,
+      onBehalfOf: bob
+    });
   }
 
   function test_repay_fuzz_paused_scenarios(bool frozen) public {
@@ -96,26 +149,66 @@ contract SpokeReserveConfigTest is Base {
     uint256 borrowAmount = 100e18;
 
     _deal(spoke1, wethReserveId, bob, wethCollateral);
-    SpokeActions.approve(spoke1, wethReserveId, bob, wethCollateral);
-    SpokeActions.supplyCollateral(spoke1, wethReserveId, bob, wethCollateral, bob);
+    SpokeActions.approve({
+      spoke: spoke1,
+      reserveId: wethReserveId,
+      owner: bob,
+      amount: wethCollateral
+    });
+    SpokeActions.supplyCollateral({
+      spoke: spoke1,
+      reserveId: wethReserveId,
+      caller: bob,
+      amount: wethCollateral,
+      onBehalfOf: bob
+    });
 
     _deal(spoke1, daiReserveId, alice, daiLiquidity);
-    SpokeActions.approve(spoke1, daiReserveId, alice, daiLiquidity);
-    SpokeActions.supply(spoke1, daiReserveId, alice, daiLiquidity, alice);
+    SpokeActions.approve({
+      spoke: spoke1,
+      reserveId: daiReserveId,
+      owner: alice,
+      amount: daiLiquidity
+    });
+    SpokeActions.supply({
+      spoke: spoke1,
+      reserveId: daiReserveId,
+      caller: alice,
+      amount: daiLiquidity,
+      onBehalfOf: alice
+    });
 
-    SpokeActions.borrow(spoke1, daiReserveId, bob, borrowAmount, bob);
-    SpokeActions.approve(spoke1, daiReserveId, bob, UINT256_MAX);
+    SpokeActions.borrow({
+      spoke: spoke1,
+      reserveId: daiReserveId,
+      caller: bob,
+      amount: borrowAmount,
+      onBehalfOf: bob
+    });
+    SpokeActions.approve({spoke: spoke1, reserveId: daiReserveId, owner: bob, amount: UINT256_MAX});
 
     _updateReserveFrozenFlag(spoke1, daiReserveId, frozen);
 
     // paused; reverts
     _updateReservePausedFlag(spoke1, daiReserveId, true);
     vm.expectRevert(ISpoke.ReservePaused.selector);
-    SpokeActions.repay(spoke1, daiReserveId, bob, borrowAmount, bob);
+    SpokeActions.repay({
+      spoke: spoke1,
+      reserveId: daiReserveId,
+      caller: bob,
+      amount: borrowAmount,
+      onBehalfOf: bob
+    });
 
     // unpaused; succeeds
     _updateReservePausedFlag(spoke1, daiReserveId, false);
-    SpokeActions.repay(spoke1, daiReserveId, bob, borrowAmount, bob);
+    SpokeActions.repay({
+      spoke: spoke1,
+      reserveId: daiReserveId,
+      caller: bob,
+      amount: borrowAmount,
+      onBehalfOf: bob
+    });
   }
 
   function test_setUsingAsCollateral_fuzz_paused_frozen_scenarios(bool frozen) public {
@@ -126,21 +219,45 @@ contract SpokeReserveConfigTest is Base {
     // paused; reverts
     _updateReservePausedFlag(spoke1, daiReserveId, true);
     vm.expectRevert(ISpoke.ReservePaused.selector);
-    SpokeActions.setUsingAsCollateral(spoke1, daiReserveId, alice, true, alice);
+    SpokeActions.setUsingAsCollateral({
+      spoke: spoke1,
+      reserveId: daiReserveId,
+      caller: alice,
+      usingAsCollateral: true,
+      onBehalfOf: alice
+    });
 
     _updateReserveFrozenFlag(spoke1, daiReserveId, false);
     _updateReservePausedFlag(spoke1, daiReserveId, false);
 
     // alice enables collateral
-    SpokeActions.setUsingAsCollateral(spoke1, daiReserveId, alice, true, alice);
+    SpokeActions.setUsingAsCollateral({
+      spoke: spoke1,
+      reserveId: daiReserveId,
+      caller: alice,
+      usingAsCollateral: true,
+      onBehalfOf: alice
+    });
     assertTrue(_isUsingAsCollateral(spoke1, daiReserveId, alice), 'alice using as collateral');
 
     // frozen: disallow when enabling, allow when disabling
     _updateReserveFrozenFlag(spoke1, daiReserveId, true);
     vm.expectRevert(ISpoke.ReserveFrozen.selector);
-    SpokeActions.setUsingAsCollateral(spoke1, daiReserveId, bob, true, bob);
+    SpokeActions.setUsingAsCollateral({
+      spoke: spoke1,
+      reserveId: daiReserveId,
+      caller: bob,
+      usingAsCollateral: true,
+      onBehalfOf: bob
+    });
 
-    SpokeActions.setUsingAsCollateral(spoke1, daiReserveId, alice, false, alice);
+    SpokeActions.setUsingAsCollateral({
+      spoke: spoke1,
+      reserveId: daiReserveId,
+      caller: alice,
+      usingAsCollateral: false,
+      onBehalfOf: alice
+    });
     assertFalse(_isUsingAsCollateral(spoke1, daiReserveId, alice));
   }
 }

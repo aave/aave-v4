@@ -80,16 +80,22 @@ contract SpokeBorrowTest is Base {
     );
 
     // Bob supply weth collateral
-    SpokeActions.supplyCollateral(
-      spoke1,
-      state.wethReserveId,
-      bob,
-      state.wethBob.supplyAmount,
-      bob
-    );
+    SpokeActions.supplyCollateral({
+      spoke: spoke1,
+      reserveId: state.wethReserveId,
+      caller: bob,
+      amount: state.wethBob.supplyAmount,
+      onBehalfOf: bob
+    });
 
     // Alice supply dai
-    SpokeActions.supply(spoke1, state.daiReserveId, alice, state.daiAlice.supplyAmount, alice);
+    SpokeActions.supply({
+      spoke: spoke1,
+      reserveId: state.daiReserveId,
+      caller: alice,
+      amount: state.daiAlice.supplyAmount,
+      onBehalfOf: alice
+    });
 
     state.daiBob.userBalanceBefore = tokenList.dai.balanceOf(bob);
     state.wethBob.userBalanceBefore = tokenList.weth.balanceOf(bob);
@@ -227,16 +233,22 @@ contract SpokeBorrowTest is Base {
     state.wethReserveId = _wethReserveId(spoke1);
 
     // Bob supply weth
-    SpokeActions.supplyCollateral(
-      spoke1,
-      state.wethReserveId,
-      bob,
-      state.wethBob.supplyAmount,
-      bob
-    );
+    SpokeActions.supplyCollateral({
+      spoke: spoke1,
+      reserveId: state.wethReserveId,
+      caller: bob,
+      amount: state.wethBob.supplyAmount,
+      onBehalfOf: bob
+    });
 
     // Alice supply dai
-    SpokeActions.supply(spoke1, state.daiReserveId, alice, state.daiAlice.supplyAmount, alice);
+    SpokeActions.supply({
+      spoke: spoke1,
+      reserveId: state.daiReserveId,
+      caller: alice,
+      amount: state.daiAlice.supplyAmount,
+      onBehalfOf: alice
+    });
 
     // should be 0 because no realized premium yet
     state.daiBob.premiumDebtRayBefore = _calculatePremiumDebtRay(spoke1, state.daiReserveId, bob);

@@ -73,10 +73,34 @@ contract SpokeRepayScenarioTest is Base {
     }
 
     // Derl supplies needed assets
-    SpokeActions.supply(spoke1, _daiReserveId(spoke1), derl, totalDaiNeeded, derl);
-    SpokeActions.supply(spoke1, _wethReserveId(spoke1), derl, totalWethNeeded, derl);
-    SpokeActions.supply(spoke1, _usdxReserveId(spoke1), derl, totalUsdxNeeded, derl);
-    SpokeActions.supply(spoke1, _wbtcReserveId(spoke1), derl, totalWbtcNeeded, derl);
+    SpokeActions.supply({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      caller: derl,
+      amount: totalDaiNeeded,
+      onBehalfOf: derl
+    });
+    SpokeActions.supply({
+      spoke: spoke1,
+      reserveId: _wethReserveId(spoke1),
+      caller: derl,
+      amount: totalWethNeeded,
+      onBehalfOf: derl
+    });
+    SpokeActions.supply({
+      spoke: spoke1,
+      reserveId: _usdxReserveId(spoke1),
+      caller: derl,
+      amount: totalUsdxNeeded,
+      onBehalfOf: derl
+    });
+    SpokeActions.supply({
+      spoke: spoke1,
+      reserveId: _wbtcReserveId(spoke1),
+      caller: derl,
+      amount: totalWbtcNeeded,
+      onBehalfOf: derl
+    });
 
     // Each user supplies collateral and borrows
     for (uint256 i = 0; i < usersInfo.length; i++) {
@@ -125,65 +149,65 @@ contract SpokeRepayScenarioTest is Base {
       // Supply weth and wbtc as collateral
       if (wethCollateralNeeded > 0) {
         deal(address(tokenList.weth), user, wethCollateralNeeded);
-        SpokeActions.supplyCollateral(
-          spoke1,
-          _wethReserveId(spoke1),
-          user,
-          wethCollateralNeeded,
-          user
-        );
+        SpokeActions.supplyCollateral({
+          spoke: spoke1,
+          reserveId: _wethReserveId(spoke1),
+          caller: user,
+          amount: wethCollateralNeeded,
+          onBehalfOf: user
+        });
       }
 
       if (wbtcCollateralNeeded > 0) {
         deal(address(tokenList.wbtc), user, wbtcCollateralNeeded);
-        SpokeActions.supplyCollateral(
-          spoke1,
-          _wbtcReserveId(spoke1),
-          user,
-          wbtcCollateralNeeded,
-          user
-        );
+        SpokeActions.supplyCollateral({
+          spoke: spoke1,
+          reserveId: _wbtcReserveId(spoke1),
+          caller: user,
+          amount: wbtcCollateralNeeded,
+          onBehalfOf: user
+        });
       }
 
       // Borrow assets based on fuzzed amounts
       if (usersInfo[i].daiInfo.borrowAmount > 0) {
-        SpokeActions.borrow(
-          spoke1,
-          _daiReserveId(spoke1),
-          user,
-          usersInfo[i].daiInfo.borrowAmount,
-          user
-        );
+        SpokeActions.borrow({
+          spoke: spoke1,
+          reserveId: _daiReserveId(spoke1),
+          caller: user,
+          amount: usersInfo[i].daiInfo.borrowAmount,
+          onBehalfOf: user
+        });
       }
 
       if (usersInfo[i].wethInfo.borrowAmount > 0) {
-        SpokeActions.borrow(
-          spoke1,
-          _wethReserveId(spoke1),
-          user,
-          usersInfo[i].wethInfo.borrowAmount,
-          user
-        );
+        SpokeActions.borrow({
+          spoke: spoke1,
+          reserveId: _wethReserveId(spoke1),
+          caller: user,
+          amount: usersInfo[i].wethInfo.borrowAmount,
+          onBehalfOf: user
+        });
       }
 
       if (usersInfo[i].usdxInfo.borrowAmount > 0) {
-        SpokeActions.borrow(
-          spoke1,
-          _usdxReserveId(spoke1),
-          user,
-          usersInfo[i].usdxInfo.borrowAmount,
-          user
-        );
+        SpokeActions.borrow({
+          spoke: spoke1,
+          reserveId: _usdxReserveId(spoke1),
+          caller: user,
+          amount: usersInfo[i].usdxInfo.borrowAmount,
+          onBehalfOf: user
+        });
       }
 
       if (usersInfo[i].wbtcInfo.borrowAmount > 0) {
-        SpokeActions.borrow(
-          spoke1,
-          _wbtcReserveId(spoke1),
-          user,
-          usersInfo[i].wbtcInfo.borrowAmount,
-          user
-        );
+        SpokeActions.borrow({
+          spoke: spoke1,
+          reserveId: _wbtcReserveId(spoke1),
+          caller: user,
+          amount: usersInfo[i].wbtcInfo.borrowAmount,
+          onBehalfOf: user
+        });
       }
 
       // Store supply positions before time skipping
@@ -452,10 +476,34 @@ contract SpokeRepayScenarioTest is Base {
     }
 
     // Derl supplies needed assets
-    SpokeActions.supply(spoke1, _daiReserveId(spoke1), derl, totalDaiNeeded, derl);
-    SpokeActions.supply(spoke1, _wethReserveId(spoke1), derl, totalWethNeeded, derl);
-    SpokeActions.supply(spoke1, _usdxReserveId(spoke1), derl, totalUsdxNeeded, derl);
-    SpokeActions.supply(spoke1, _wbtcReserveId(spoke1), derl, totalWbtcNeeded, derl);
+    SpokeActions.supply({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      caller: derl,
+      amount: totalDaiNeeded,
+      onBehalfOf: derl
+    });
+    SpokeActions.supply({
+      spoke: spoke1,
+      reserveId: _wethReserveId(spoke1),
+      caller: derl,
+      amount: totalWethNeeded,
+      onBehalfOf: derl
+    });
+    SpokeActions.supply({
+      spoke: spoke1,
+      reserveId: _usdxReserveId(spoke1),
+      caller: derl,
+      amount: totalUsdxNeeded,
+      onBehalfOf: derl
+    });
+    SpokeActions.supply({
+      spoke: spoke1,
+      reserveId: _wbtcReserveId(spoke1),
+      caller: derl,
+      amount: totalWbtcNeeded,
+      onBehalfOf: derl
+    });
 
     // Each user supplies collateral and borrows
     for (uint256 i = 0; i < usersInfo.length; i++) {
@@ -504,65 +552,65 @@ contract SpokeRepayScenarioTest is Base {
       // Supply weth and wbtc as collateral
       if (wethCollateralNeeded > 0) {
         deal(address(tokenList.weth), user, wethCollateralNeeded);
-        SpokeActions.supplyCollateral(
-          spoke1,
-          _wethReserveId(spoke1),
-          user,
-          wethCollateralNeeded,
-          user
-        );
+        SpokeActions.supplyCollateral({
+          spoke: spoke1,
+          reserveId: _wethReserveId(spoke1),
+          caller: user,
+          amount: wethCollateralNeeded,
+          onBehalfOf: user
+        });
       }
 
       if (wbtcCollateralNeeded > 0) {
         deal(address(tokenList.wbtc), user, wbtcCollateralNeeded);
-        SpokeActions.supplyCollateral(
-          spoke1,
-          _wbtcReserveId(spoke1),
-          user,
-          wbtcCollateralNeeded,
-          user
-        );
+        SpokeActions.supplyCollateral({
+          spoke: spoke1,
+          reserveId: _wbtcReserveId(spoke1),
+          caller: user,
+          amount: wbtcCollateralNeeded,
+          onBehalfOf: user
+        });
       }
 
       // Borrow assets based on fuzzed amounts
       if (usersInfo[i].daiInfo.borrowAmount > 0) {
-        SpokeActions.borrow(
-          spoke1,
-          _daiReserveId(spoke1),
-          user,
-          usersInfo[i].daiInfo.borrowAmount,
-          user
-        );
+        SpokeActions.borrow({
+          spoke: spoke1,
+          reserveId: _daiReserveId(spoke1),
+          caller: user,
+          amount: usersInfo[i].daiInfo.borrowAmount,
+          onBehalfOf: user
+        });
       }
 
       if (usersInfo[i].wethInfo.borrowAmount > 0) {
-        SpokeActions.borrow(
-          spoke1,
-          _wethReserveId(spoke1),
-          user,
-          usersInfo[i].wethInfo.borrowAmount,
-          user
-        );
+        SpokeActions.borrow({
+          spoke: spoke1,
+          reserveId: _wethReserveId(spoke1),
+          caller: user,
+          amount: usersInfo[i].wethInfo.borrowAmount,
+          onBehalfOf: user
+        });
       }
 
       if (usersInfo[i].usdxInfo.borrowAmount > 0) {
-        SpokeActions.borrow(
-          spoke1,
-          _usdxReserveId(spoke1),
-          user,
-          usersInfo[i].usdxInfo.borrowAmount,
-          user
-        );
+        SpokeActions.borrow({
+          spoke: spoke1,
+          reserveId: _usdxReserveId(spoke1),
+          caller: user,
+          amount: usersInfo[i].usdxInfo.borrowAmount,
+          onBehalfOf: user
+        });
       }
 
       if (usersInfo[i].wbtcInfo.borrowAmount > 0) {
-        SpokeActions.borrow(
-          spoke1,
-          _wbtcReserveId(spoke1),
-          user,
-          usersInfo[i].wbtcInfo.borrowAmount,
-          user
-        );
+        SpokeActions.borrow({
+          spoke: spoke1,
+          reserveId: _wbtcReserveId(spoke1),
+          caller: user,
+          amount: usersInfo[i].wbtcInfo.borrowAmount,
+          onBehalfOf: user
+        });
       }
 
       // Store supply positions before time skipping
@@ -826,7 +874,13 @@ contract SpokeRepayScenarioTest is Base {
     uint256 totalDaiNeeded = bobInfo.borrowAmount + aliceInfo.borrowAmount + carolInfo.borrowAmount;
 
     // Derl supplies needed DAI
-    SpokeActions.supply(spoke1, _daiReserveId(spoke1), derl, totalDaiNeeded, derl);
+    SpokeActions.supply({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      caller: derl,
+      amount: totalDaiNeeded,
+      onBehalfOf: derl
+    });
 
     // Each user supplies needed collateral and borrows
     for (uint256 i = 0; i < usersInfo.length; i++) {
@@ -842,18 +896,24 @@ contract SpokeRepayScenarioTest is Base {
 
       // Supply WETH as collateral
       deal(address(tokenList.weth), user, wethCollateralNeeded);
-      SpokeActions.supplyCollateral(
-        spoke1,
-        _wethReserveId(spoke1),
-        user,
-        wethCollateralNeeded,
-        user
-      );
+      SpokeActions.supplyCollateral({
+        spoke: spoke1,
+        reserveId: _wethReserveId(spoke1),
+        caller: user,
+        amount: wethCollateralNeeded,
+        onBehalfOf: user
+      });
 
       usersInfo[i].suppliedShares = spoke1.getUserSuppliedShares(_wethReserveId(spoke1), user);
 
       // Borrow DAI based on fuzzed amounts
-      SpokeActions.borrow(spoke1, _daiReserveId(spoke1), user, usersInfo[i].borrowAmount, user);
+      SpokeActions.borrow({
+        spoke: spoke1,
+        reserveId: _daiReserveId(spoke1),
+        caller: user,
+        amount: usersInfo[i].borrowAmount,
+        onBehalfOf: user
+      });
 
       // Verify initial borrowing state
       uint256 totalDaiDebt = spoke1.getUserTotalDebt(_daiReserveId(spoke1), user);
@@ -941,7 +1001,13 @@ contract SpokeRepayScenarioTest is Base {
     uint256 totalDaiNeeded = bobInfo.borrowAmount + aliceInfo.borrowAmount;
 
     // Derl supplies needed DAI
-    SpokeActions.supply(spoke1, _daiReserveId(spoke1), derl, totalDaiNeeded, derl);
+    SpokeActions.supply({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      caller: derl,
+      amount: totalDaiNeeded,
+      onBehalfOf: derl
+    });
 
     // Each user supplies needed collateral and borrows
     for (uint256 i = 0; i < usersInfo.length; i++) {
@@ -957,18 +1023,24 @@ contract SpokeRepayScenarioTest is Base {
 
       // Supply WETH as collateral
       deal(address(tokenList.weth), user, wethCollateralNeeded);
-      SpokeActions.supplyCollateral(
-        spoke1,
-        _wethReserveId(spoke1),
-        user,
-        wethCollateralNeeded,
-        user
-      );
+      SpokeActions.supplyCollateral({
+        spoke: spoke1,
+        reserveId: _wethReserveId(spoke1),
+        caller: user,
+        amount: wethCollateralNeeded,
+        onBehalfOf: user
+      });
 
       usersInfo[i].suppliedShares = spoke1.getUserSuppliedShares(_wethReserveId(spoke1), user);
 
       // Borrow DAI based on fuzzed amounts
-      SpokeActions.borrow(spoke1, _daiReserveId(spoke1), user, usersInfo[i].borrowAmount, user);
+      SpokeActions.borrow({
+        spoke: spoke1,
+        reserveId: _daiReserveId(spoke1),
+        caller: user,
+        amount: usersInfo[i].borrowAmount,
+        onBehalfOf: user
+      });
 
       // Verify initial borrowing state
       uint256 totalDaiDebt = spoke1.getUserTotalDebt(_daiReserveId(spoke1), user);
@@ -1057,19 +1129,31 @@ contract SpokeRepayScenarioTest is Base {
         _daiReserveId(spoke1),
         action1.borrowAmount
       ) + 1;
-    SpokeActions.supplyCollateral(spoke1, _wethReserveId(spoke1), bob, action1.supplyAmount, bob);
+    SpokeActions.supplyCollateral({
+      spoke: spoke1,
+      reserveId: _wethReserveId(spoke1),
+      caller: bob,
+      amount: action1.supplyAmount,
+      onBehalfOf: bob
+    });
 
     // Alice supply dai
-    SpokeActions.supply(
-      spoke1,
-      _daiReserveId(spoke1),
-      alice,
-      action1.borrowAmount + action2.borrowAmount,
-      alice
-    );
+    SpokeActions.supply({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      caller: alice,
+      amount: action1.borrowAmount + action2.borrowAmount,
+      onBehalfOf: alice
+    });
 
     // Bob borrow dai
-    SpokeActions.borrow(spoke1, _daiReserveId(spoke1), bob, action1.borrowAmount, bob);
+    SpokeActions.borrow({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      caller: bob,
+      amount: action1.borrowAmount,
+      onBehalfOf: bob
+    });
 
     assertEq(_getUserInfo(spoke1, bob, _daiReserveId(spoke1)).suppliedShares, 0);
     assertEq(
@@ -1157,7 +1241,13 @@ contract SpokeRepayScenarioTest is Base {
         ? 0
         : totalCollateral - action1.supplyAmount;
       if (action2.supplyAmount > 0) {
-        SpokeActions.supply(spoke1, _wethReserveId(spoke1), bob, action2.supplyAmount, bob);
+        SpokeActions.supply({
+          spoke: spoke1,
+          reserveId: _wethReserveId(spoke1),
+          caller: bob,
+          amount: action2.supplyAmount,
+          onBehalfOf: bob
+        });
       }
     }
 
@@ -1165,7 +1255,13 @@ contract SpokeRepayScenarioTest is Base {
 
     // Bob borrows more dai
     uint256 debtBeforeSecondBorrow = spoke1.getUserTotalDebt(_daiReserveId(spoke1), bob);
-    SpokeActions.borrow(spoke1, _daiReserveId(spoke1), bob, action2.borrowAmount, bob);
+    SpokeActions.borrow({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      caller: bob,
+      amount: action2.borrowAmount,
+      onBehalfOf: bob
+    });
 
     assertApproxEqAbs(
       spoke1.getUserTotalDebt(_daiReserveId(spoke1), bob),
@@ -1256,13 +1352,31 @@ contract SpokeRepayScenarioTest is Base {
     uint256 daiBorrowAmount = daiSupplyAmount / 2;
 
     // Bob supplies WETH as collateral
-    SpokeActions.supplyCollateral(spoke1, _wethReserveId(spoke1), bob, wethSupplyAmount, bob);
+    SpokeActions.supplyCollateral({
+      spoke: spoke1,
+      reserveId: _wethReserveId(spoke1),
+      caller: bob,
+      amount: wethSupplyAmount,
+      onBehalfOf: bob
+    });
 
     // Alice supplies DAI
-    SpokeActions.supply(spoke1, _daiReserveId(spoke1), alice, daiSupplyAmount, alice);
+    SpokeActions.supply({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      caller: alice,
+      amount: daiSupplyAmount,
+      onBehalfOf: alice
+    });
 
     // Bob borrows DAI
-    SpokeActions.borrow(spoke1, _daiReserveId(spoke1), bob, daiBorrowAmount, bob);
+    SpokeActions.borrow({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      caller: bob,
+      amount: daiBorrowAmount,
+      onBehalfOf: bob
+    });
 
     assertEq(_getUserInfo(spoke1, bob, _daiReserveId(spoke1)).suppliedShares, 0);
     assertEq(
@@ -1423,9 +1537,21 @@ contract SpokeRepayScenarioTest is Base {
 
     // Set up initial state of the vault by having derl borrow
     uint256 supplyAmount = _calcMinimumCollAmount(spoke1, reserveId, reserveId, userBorrowing);
-    SpokeActions.supplyCollateral(spoke1, reserveId, derl, supplyAmount, derl);
+    SpokeActions.supplyCollateral({
+      spoke: spoke1,
+      reserveId: reserveId,
+      caller: derl,
+      amount: supplyAmount,
+      onBehalfOf: derl
+    });
     if (userBorrowing > 0) {
-      SpokeActions.borrow(spoke1, reserveId, derl, userBorrowing, derl);
+      SpokeActions.borrow({
+        spoke: spoke1,
+        reserveId: reserveId,
+        caller: derl,
+        amount: userBorrowing,
+        onBehalfOf: derl
+      });
     }
 
     skip(skipTime);
@@ -1439,7 +1565,13 @@ contract SpokeRepayScenarioTest is Base {
     deal(address(underlying), caller, supplyAmount);
     vm.prank(caller);
     underlying.approve(address(spoke1), supplyAmount);
-    SpokeActions.supplyCollateral(spoke1, reserveId, caller, supplyAmount, caller);
+    SpokeActions.supplyCollateral({
+      spoke: spoke1,
+      reserveId: reserveId,
+      caller: caller,
+      amount: supplyAmount,
+      onBehalfOf: caller
+    });
 
     // Borrow
     uint256 shares1 = hub1.previewRestoreByAssets(reserve.assetId, assets);
@@ -1478,9 +1610,21 @@ contract SpokeRepayScenarioTest is Base {
 
     // Set up initial state of the vault by having derl borrow
     uint256 supplyAmount = _calcMinimumCollAmount(spoke1, reserveId, reserveId, userBorrowing);
-    SpokeActions.supplyCollateral(spoke1, reserveId, derl, supplyAmount, derl);
+    SpokeActions.supplyCollateral({
+      spoke: spoke1,
+      reserveId: reserveId,
+      caller: derl,
+      amount: supplyAmount,
+      onBehalfOf: derl
+    });
     if (userBorrowing > 0) {
-      SpokeActions.borrow(spoke1, reserveId, derl, userBorrowing, derl);
+      SpokeActions.borrow({
+        spoke: spoke1,
+        reserveId: reserveId,
+        caller: derl,
+        amount: userBorrowing,
+        onBehalfOf: derl
+      });
     }
 
     skip(skipTime);
@@ -1494,8 +1638,20 @@ contract SpokeRepayScenarioTest is Base {
     deal(address(underlying), caller, supplyAmount);
     vm.prank(caller);
     underlying.approve(address(spoke1), supplyAmount);
-    SpokeActions.supplyCollateral(spoke1, reserveId, caller, supplyAmount, caller);
-    SpokeActions.borrow(spoke1, reserveId, caller, callerStartingDebt, caller);
+    SpokeActions.supplyCollateral({
+      spoke: spoke1,
+      reserveId: reserveId,
+      caller: caller,
+      amount: supplyAmount,
+      onBehalfOf: caller
+    });
+    SpokeActions.borrow({
+      spoke: spoke1,
+      reserveId: reserveId,
+      caller: caller,
+      amount: callerStartingDebt,
+      onBehalfOf: caller
+    });
 
     // Repay
     uint256 shares1 = hub1.previewRestoreByAssets(reserve.assetId, assets);

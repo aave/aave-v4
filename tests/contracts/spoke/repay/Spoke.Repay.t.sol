@@ -24,9 +24,27 @@ contract SpokeRepayTest is Base {
     uint256 daiRepayAmount = daiSupplyAmount / 4;
     uint256 approvalAmount = daiRepayAmount - 1;
 
-    SpokeActions.supplyCollateral(spoke1, _wethReserveId(spoke1), bob, wethSupplyAmount, bob);
-    SpokeActions.supply(spoke1, _daiReserveId(spoke1), alice, daiSupplyAmount, alice);
-    SpokeActions.borrow(spoke1, _daiReserveId(spoke1), bob, daiBorrowAmount, bob);
+    SpokeActions.supplyCollateral({
+      spoke: spoke1,
+      reserveId: _wethReserveId(spoke1),
+      caller: bob,
+      amount: wethSupplyAmount,
+      onBehalfOf: bob
+    });
+    SpokeActions.supply({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      caller: alice,
+      amount: daiSupplyAmount,
+      onBehalfOf: alice
+    });
+    SpokeActions.borrow({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      caller: bob,
+      amount: daiBorrowAmount,
+      onBehalfOf: bob
+    });
 
     vm.startPrank(bob);
     tokenList.dai.approve(address(spoke1), approvalAmount);
@@ -48,9 +66,27 @@ contract SpokeRepayTest is Base {
     uint256 daiBorrowAmount = daiSupplyAmount / 2;
     daiRepayAmount = bound(daiRepayAmount, 1, daiBorrowAmount);
 
-    SpokeActions.supplyCollateral(spoke1, _wethReserveId(spoke1), bob, wethSupplyAmount, bob);
-    SpokeActions.supply(spoke1, _daiReserveId(spoke1), alice, daiSupplyAmount, alice);
-    SpokeActions.borrow(spoke1, _daiReserveId(spoke1), bob, daiBorrowAmount, bob);
+    SpokeActions.supplyCollateral({
+      spoke: spoke1,
+      reserveId: _wethReserveId(spoke1),
+      caller: bob,
+      amount: wethSupplyAmount,
+      onBehalfOf: bob
+    });
+    SpokeActions.supply({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      caller: alice,
+      amount: daiSupplyAmount,
+      onBehalfOf: alice
+    });
+    SpokeActions.borrow({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      caller: bob,
+      amount: daiBorrowAmount,
+      onBehalfOf: bob
+    });
 
     vm.startPrank(bob);
     tokenList.dai.transfer(alice, tokenList.dai.balanceOf(bob)); // make bob have insufficient balance
@@ -115,13 +151,31 @@ contract SpokeRepayTest is Base {
     uint256 daiRepayAmount = daiSupplyAmount / 4;
 
     // Bob supply weth
-    SpokeActions.supplyCollateral(spoke1, _wethReserveId(spoke1), bob, wethSupplyAmount, bob);
+    SpokeActions.supplyCollateral({
+      spoke: spoke1,
+      reserveId: _wethReserveId(spoke1),
+      caller: bob,
+      amount: wethSupplyAmount,
+      onBehalfOf: bob
+    });
 
     // Alice supply dai
-    SpokeActions.supply(spoke1, _daiReserveId(spoke1), alice, daiSupplyAmount, alice);
+    SpokeActions.supply({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      caller: alice,
+      amount: daiSupplyAmount,
+      onBehalfOf: alice
+    });
 
     // Bob borrow dai
-    SpokeActions.borrow(spoke1, _daiReserveId(spoke1), bob, daiBorrowAmount, bob);
+    SpokeActions.borrow({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      caller: bob,
+      amount: daiBorrowAmount,
+      onBehalfOf: bob
+    });
 
     assertEq(
       spoke1.getUserTotalDebt(_daiReserveId(spoke1), bob),
@@ -203,16 +257,34 @@ contract SpokeRepayTest is Base {
 
   function test_repay_all_with_accruals() public {
     uint256 supplyAmount = 5000e18;
-    SpokeActions.supplyCollateral(spoke1, _daiReserveId(spoke1), bob, supplyAmount, bob);
+    SpokeActions.supplyCollateral({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      caller: bob,
+      amount: supplyAmount,
+      onBehalfOf: bob
+    });
 
     uint256 borrowAmount = 1000e18;
-    SpokeActions.borrow(spoke1, _daiReserveId(spoke1), bob, borrowAmount, bob);
+    SpokeActions.borrow({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      caller: bob,
+      amount: borrowAmount,
+      onBehalfOf: bob
+    });
 
     skip(365 days);
     spoke1.getUserDebt(_daiReserveId(spoke1), bob);
 
     _assertRefreshPremiumNotCalled(hub1);
-    SpokeActions.repay(spoke1, _daiReserveId(spoke1), bob, borrowAmount, bob);
+    SpokeActions.repay({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      caller: bob,
+      amount: borrowAmount,
+      onBehalfOf: bob
+    });
 
     skip(365 days);
 
@@ -220,7 +292,13 @@ contract SpokeRepayTest is Base {
     assertGt(pos.drawnShares, 0, 'user drawnShares after repay');
     assertGt(hub1.previewRestoreByShares(daiAssetId, pos.drawnShares), 0, 'user baseDrawnAssets');
 
-    SpokeActions.repay(spoke1, _daiReserveId(spoke1), bob, UINT256_MAX, bob);
+    SpokeActions.repay({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      caller: bob,
+      amount: UINT256_MAX,
+      onBehalfOf: bob
+    });
 
     pos = spoke1.getUserPosition(_daiReserveId(spoke1), bob);
     assertEq(pos.drawnShares, 0, 'user drawnShares after full repay');
@@ -242,13 +320,31 @@ contract SpokeRepayTest is Base {
     uint256 daiRepayAmount = daiSupplyAmount / 4;
 
     // Bob supply weth
-    SpokeActions.supplyCollateral(spoke1, _wethReserveId(spoke1), bob, wethSupplyAmount, bob);
+    SpokeActions.supplyCollateral({
+      spoke: spoke1,
+      reserveId: _wethReserveId(spoke1),
+      caller: bob,
+      amount: wethSupplyAmount,
+      onBehalfOf: bob
+    });
 
     // Alice supply dai
-    SpokeActions.supply(spoke1, _daiReserveId(spoke1), alice, daiSupplyAmount, alice);
+    SpokeActions.supply({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      caller: alice,
+      amount: daiSupplyAmount,
+      onBehalfOf: alice
+    });
 
     // Bob borrow dai
-    SpokeActions.borrow(spoke1, _daiReserveId(spoke1), bob, daiBorrowAmount, bob);
+    SpokeActions.borrow({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      caller: bob,
+      amount: daiBorrowAmount,
+      onBehalfOf: bob
+    });
 
     uint256 bobWethBalanceBefore = tokenList.weth.balanceOf(bob);
 
@@ -328,13 +424,31 @@ contract SpokeRepayTest is Base {
     uint256 daiBorrowAmount = daiSupplyAmount / 2;
 
     // Bob supply weth
-    SpokeActions.supplyCollateral(spoke1, _wethReserveId(spoke1), bob, wethSupplyAmount, bob);
+    SpokeActions.supplyCollateral({
+      spoke: spoke1,
+      reserveId: _wethReserveId(spoke1),
+      caller: bob,
+      amount: wethSupplyAmount,
+      onBehalfOf: bob
+    });
 
     // Alice supply dai
-    SpokeActions.supply(spoke1, _daiReserveId(spoke1), alice, daiSupplyAmount, alice);
+    SpokeActions.supply({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      caller: alice,
+      amount: daiSupplyAmount,
+      onBehalfOf: alice
+    });
 
     // Bob borrow dai
-    SpokeActions.borrow(spoke1, _daiReserveId(spoke1), bob, daiBorrowAmount, bob);
+    SpokeActions.borrow({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      caller: bob,
+      amount: daiBorrowAmount,
+      onBehalfOf: bob
+    });
 
     assertEq(
       spoke1.getUserTotalDebt(_daiReserveId(spoke1), bob),
@@ -432,13 +546,31 @@ contract SpokeRepayTest is Base {
     skipTime = bound(skipTime, 1, MAX_SKIP_TIME).toUint40();
 
     // Bob supply weth as collateral
-    SpokeActions.supplyCollateral(spoke1, _wethReserveId(spoke1), bob, wethSupplyAmount, bob);
+    SpokeActions.supplyCollateral({
+      spoke: spoke1,
+      reserveId: _wethReserveId(spoke1),
+      caller: bob,
+      amount: wethSupplyAmount,
+      onBehalfOf: bob
+    });
 
     // Alice supply dai for Bob to borrow
-    SpokeActions.supply(spoke1, _daiReserveId(spoke1), alice, daiBorrowAmount, alice);
+    SpokeActions.supply({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      caller: alice,
+      amount: daiBorrowAmount,
+      onBehalfOf: alice
+    });
 
     // Bob borrow dai
-    SpokeActions.borrow(spoke1, _daiReserveId(spoke1), bob, daiBorrowAmount, bob);
+    SpokeActions.borrow({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      caller: bob,
+      amount: daiBorrowAmount,
+      onBehalfOf: bob
+    });
 
     assertEq(
       spoke1.getUserTotalDebt(_daiReserveId(spoke1), bob),
@@ -518,13 +650,31 @@ contract SpokeRepayTest is Base {
     uint256 daiBorrowAmount = daiSupplyAmount / 2;
 
     // Bob supplies WETH as collateral
-    SpokeActions.supplyCollateral(spoke1, _wethReserveId(spoke1), bob, wethSupplyAmount, bob);
+    SpokeActions.supplyCollateral({
+      spoke: spoke1,
+      reserveId: _wethReserveId(spoke1),
+      caller: bob,
+      amount: wethSupplyAmount,
+      onBehalfOf: bob
+    });
 
     // Alice supplies DAI
-    SpokeActions.supply(spoke1, _daiReserveId(spoke1), alice, daiSupplyAmount, alice);
+    SpokeActions.supply({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      caller: alice,
+      amount: daiSupplyAmount,
+      onBehalfOf: alice
+    });
 
     // Bob borrows DAI
-    SpokeActions.borrow(spoke1, _daiReserveId(spoke1), bob, daiBorrowAmount, bob);
+    SpokeActions.borrow({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      caller: bob,
+      amount: daiBorrowAmount,
+      onBehalfOf: bob
+    });
 
     assertEq(
       spoke1.getUserTotalDebt(_daiReserveId(spoke1), bob),
@@ -610,13 +760,31 @@ contract SpokeRepayTest is Base {
     );
 
     // Bob supply weth
-    SpokeActions.supplyCollateral(spoke1, _wethReserveId(spoke1), bob, wethSupplyAmount, bob);
+    SpokeActions.supplyCollateral({
+      spoke: spoke1,
+      reserveId: _wethReserveId(spoke1),
+      caller: bob,
+      amount: wethSupplyAmount,
+      onBehalfOf: bob
+    });
 
     // Alice supply dai
-    SpokeActions.supply(spoke1, _daiReserveId(spoke1), alice, daiBorrowAmount, alice);
+    SpokeActions.supply({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      caller: alice,
+      amount: daiBorrowAmount,
+      onBehalfOf: alice
+    });
 
     // Bob borrow dai
-    SpokeActions.borrow(spoke1, _daiReserveId(spoke1), bob, daiBorrowAmount, bob);
+    SpokeActions.borrow({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      caller: bob,
+      amount: daiBorrowAmount,
+      onBehalfOf: bob
+    });
 
     assertEq(
       spoke1.getUserTotalDebt(_daiReserveId(spoke1), bob),
@@ -714,13 +882,31 @@ contract SpokeRepayTest is Base {
     );
 
     // Bob supply weth
-    SpokeActions.supplyCollateral(spoke1, _wethReserveId(spoke1), bob, wethSupplyAmount, bob);
+    SpokeActions.supplyCollateral({
+      spoke: spoke1,
+      reserveId: _wethReserveId(spoke1),
+      caller: bob,
+      amount: wethSupplyAmount,
+      onBehalfOf: bob
+    });
 
     // Alice supply dai
-    SpokeActions.supply(spoke1, _daiReserveId(spoke1), alice, daiBorrowAmount, alice);
+    SpokeActions.supply({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      caller: alice,
+      amount: daiBorrowAmount,
+      onBehalfOf: alice
+    });
 
     // Bob borrow dai
-    SpokeActions.borrow(spoke1, _daiReserveId(spoke1), bob, daiBorrowAmount, bob);
+    SpokeActions.borrow({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      caller: bob,
+      amount: daiBorrowAmount,
+      onBehalfOf: bob
+    });
 
     assertEq(
       spoke1.getUserTotalDebt(_daiReserveId(spoke1), bob),
@@ -832,13 +1018,31 @@ contract SpokeRepayTest is Base {
     );
 
     // Bob supply weth
-    SpokeActions.supplyCollateral(spoke1, _wethReserveId(spoke1), bob, wethSupplyAmount, bob);
+    SpokeActions.supplyCollateral({
+      spoke: spoke1,
+      reserveId: _wethReserveId(spoke1),
+      caller: bob,
+      amount: wethSupplyAmount,
+      onBehalfOf: bob
+    });
 
     // Alice supply dai
-    SpokeActions.supply(spoke1, _daiReserveId(spoke1), alice, daiBorrowAmount, alice);
+    SpokeActions.supply({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      caller: alice,
+      amount: daiBorrowAmount,
+      onBehalfOf: alice
+    });
 
     // Bob borrow dai
-    SpokeActions.borrow(spoke1, _daiReserveId(spoke1), bob, daiBorrowAmount, bob);
+    SpokeActions.borrow({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      caller: bob,
+      amount: daiBorrowAmount,
+      onBehalfOf: bob
+    });
 
     assertEq(_getUserInfo(spoke1, bob, _daiReserveId(spoke1)).suppliedShares, 0);
     assertEq(
@@ -953,13 +1157,31 @@ contract SpokeRepayTest is Base {
     );
 
     // Bob supply weth
-    SpokeActions.supplyCollateral(spoke1, _wethReserveId(spoke1), bob, wethSupplyAmount, bob);
+    SpokeActions.supplyCollateral({
+      spoke: spoke1,
+      reserveId: _wethReserveId(spoke1),
+      caller: bob,
+      amount: wethSupplyAmount,
+      onBehalfOf: bob
+    });
 
     // Alice supply dai
-    SpokeActions.supply(spoke1, _daiReserveId(spoke1), alice, daiBorrowAmount, alice);
+    SpokeActions.supply({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      caller: alice,
+      amount: daiBorrowAmount,
+      onBehalfOf: alice
+    });
 
     // Bob borrow dai
-    SpokeActions.borrow(spoke1, _daiReserveId(spoke1), bob, daiBorrowAmount, bob);
+    SpokeActions.borrow({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      caller: bob,
+      amount: daiBorrowAmount,
+      onBehalfOf: bob
+    });
 
     assertEq(_getUserInfo(spoke1, bob, _daiReserveId(spoke1)).suppliedShares, 0);
     assertEq(
@@ -1074,13 +1296,31 @@ contract SpokeRepayTest is Base {
     );
 
     // Bob supply weth
-    SpokeActions.supplyCollateral(spoke1, _wethReserveId(spoke1), bob, wethSupplyAmount, bob);
+    SpokeActions.supplyCollateral({
+      spoke: spoke1,
+      reserveId: _wethReserveId(spoke1),
+      caller: bob,
+      amount: wethSupplyAmount,
+      onBehalfOf: bob
+    });
 
     // Alice supply dai
-    SpokeActions.supply(spoke1, _daiReserveId(spoke1), alice, daiBorrowAmount, alice);
+    SpokeActions.supply({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      caller: alice,
+      amount: daiBorrowAmount,
+      onBehalfOf: alice
+    });
 
     // Bob borrow dai
-    SpokeActions.borrow(spoke1, _daiReserveId(spoke1), bob, daiBorrowAmount, bob);
+    SpokeActions.borrow({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      caller: bob,
+      amount: daiBorrowAmount,
+      onBehalfOf: bob
+    });
 
     assertEq(_getUserInfo(spoke1, bob, _daiReserveId(spoke1)).suppliedShares, 0);
     assertEq(
@@ -1103,7 +1343,13 @@ contract SpokeRepayTest is Base {
     // Bob repays premium first if any
     if (bobDaiBefore.premiumDebt > 0) {
       deal(address(tokenList.dai), bob, bobDaiBefore.premiumDebt);
-      SpokeActions.repay(spoke1, _daiReserveId(spoke1), bob, bobDaiBefore.premiumDebt, bob);
+      SpokeActions.repay({
+        spoke: spoke1,
+        reserveId: _daiReserveId(spoke1),
+        caller: bob,
+        amount: bobDaiBefore.premiumDebt,
+        onBehalfOf: bob
+      });
     }
 
     bobDaiBefore = _getUserDebt(spoke1, bob, _daiReserveId(spoke1));
@@ -1206,13 +1452,31 @@ contract SpokeRepayTest is Base {
     );
 
     // Bob supply weth
-    SpokeActions.supplyCollateral(spoke1, _wethReserveId(spoke1), bob, wethSupplyAmount, bob);
+    SpokeActions.supplyCollateral({
+      spoke: spoke1,
+      reserveId: _wethReserveId(spoke1),
+      caller: bob,
+      amount: wethSupplyAmount,
+      onBehalfOf: bob
+    });
 
     // Alice supply dai
-    SpokeActions.supply(spoke1, _daiReserveId(spoke1), alice, daiBorrowAmount, alice);
+    SpokeActions.supply({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      caller: alice,
+      amount: daiBorrowAmount,
+      onBehalfOf: alice
+    });
 
     // Bob borrow dai
-    SpokeActions.borrow(spoke1, _daiReserveId(spoke1), bob, daiBorrowAmount, bob);
+    SpokeActions.borrow({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      caller: bob,
+      amount: daiBorrowAmount,
+      onBehalfOf: bob
+    });
 
     assertEq(_getUserInfo(spoke1, bob, _daiReserveId(spoke1)).suppliedShares, 0);
     assertEq(
@@ -1381,22 +1645,82 @@ contract SpokeRepayTest is Base {
 
       // Bob supply weth and wbtc
       deal(address(tokenList.weth), bob, wethSupplyAmount);
-      SpokeActions.supplyCollateral(spoke1, _wethReserveId(spoke1), bob, wethSupplyAmount, bob);
+      SpokeActions.supplyCollateral({
+        spoke: spoke1,
+        reserveId: _wethReserveId(spoke1),
+        caller: bob,
+        amount: wethSupplyAmount,
+        onBehalfOf: bob
+      });
       deal(address(tokenList.wbtc), bob, wbtcSupplyAmount);
-      SpokeActions.supplyCollateral(spoke1, _wbtcReserveId(spoke1), bob, wbtcSupplyAmount, bob);
+      SpokeActions.supplyCollateral({
+        spoke: spoke1,
+        reserveId: _wbtcReserveId(spoke1),
+        caller: bob,
+        amount: wbtcSupplyAmount,
+        onBehalfOf: bob
+      });
     }
 
     // Alice supply liquidity
-    SpokeActions.supply(spoke1, _daiReserveId(spoke1), alice, daiInfo.borrowAmount, alice);
-    SpokeActions.supply(spoke1, _wethReserveId(spoke1), alice, wethInfo.borrowAmount, alice);
-    SpokeActions.supply(spoke1, _usdxReserveId(spoke1), alice, usdxInfo.borrowAmount, alice);
-    SpokeActions.supply(spoke1, _wbtcReserveId(spoke1), alice, wbtcInfo.borrowAmount, alice);
+    SpokeActions.supply({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      caller: alice,
+      amount: daiInfo.borrowAmount,
+      onBehalfOf: alice
+    });
+    SpokeActions.supply({
+      spoke: spoke1,
+      reserveId: _wethReserveId(spoke1),
+      caller: alice,
+      amount: wethInfo.borrowAmount,
+      onBehalfOf: alice
+    });
+    SpokeActions.supply({
+      spoke: spoke1,
+      reserveId: _usdxReserveId(spoke1),
+      caller: alice,
+      amount: usdxInfo.borrowAmount,
+      onBehalfOf: alice
+    });
+    SpokeActions.supply({
+      spoke: spoke1,
+      reserveId: _wbtcReserveId(spoke1),
+      caller: alice,
+      amount: wbtcInfo.borrowAmount,
+      onBehalfOf: alice
+    });
 
     // Bob borrows
-    SpokeActions.borrow(spoke1, _daiReserveId(spoke1), bob, daiInfo.borrowAmount, bob);
-    SpokeActions.borrow(spoke1, _wethReserveId(spoke1), bob, wethInfo.borrowAmount, bob);
-    SpokeActions.borrow(spoke1, _usdxReserveId(spoke1), bob, usdxInfo.borrowAmount, bob);
-    SpokeActions.borrow(spoke1, _wbtcReserveId(spoke1), bob, wbtcInfo.borrowAmount, bob);
+    SpokeActions.borrow({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      caller: bob,
+      amount: daiInfo.borrowAmount,
+      onBehalfOf: bob
+    });
+    SpokeActions.borrow({
+      spoke: spoke1,
+      reserveId: _wethReserveId(spoke1),
+      caller: bob,
+      amount: wethInfo.borrowAmount,
+      onBehalfOf: bob
+    });
+    SpokeActions.borrow({
+      spoke: spoke1,
+      reserveId: _usdxReserveId(spoke1),
+      caller: bob,
+      amount: usdxInfo.borrowAmount,
+      onBehalfOf: bob
+    });
+    SpokeActions.borrow({
+      spoke: spoke1,
+      reserveId: _wbtcReserveId(spoke1),
+      caller: bob,
+      amount: wbtcInfo.borrowAmount,
+      onBehalfOf: bob
+    });
 
     daiInfo.posBefore = _getUserInfo(spoke1, bob, _daiReserveId(spoke1));
     wethInfo.posBefore = _getUserInfo(spoke1, bob, _wethReserveId(spoke1));
@@ -1430,7 +1754,13 @@ contract SpokeRepayTest is Base {
         daiInfo.repayAmount
       );
       deal(address(tokenList.dai), bob, daiInfo.repayAmount);
-      SpokeActions.repay(spoke1, _daiReserveId(spoke1), bob, daiInfo.repayAmount, bob);
+      SpokeActions.repay({
+        spoke: spoke1,
+        reserveId: _daiReserveId(spoke1),
+        caller: bob,
+        amount: daiInfo.repayAmount,
+        onBehalfOf: bob
+      });
     }
     DebtData memory bobDaiAfter = _getUserDebt(spoke1, bob, _daiReserveId(spoke1));
 
@@ -1446,7 +1776,13 @@ contract SpokeRepayTest is Base {
         wethInfo.repayAmount
       );
       deal(address(tokenList.weth), bob, wethInfo.repayAmount);
-      SpokeActions.repay(spoke1, _wethReserveId(spoke1), bob, wethInfo.repayAmount, bob);
+      SpokeActions.repay({
+        spoke: spoke1,
+        reserveId: _wethReserveId(spoke1),
+        caller: bob,
+        amount: wethInfo.repayAmount,
+        onBehalfOf: bob
+      });
     }
     DebtData memory bobWethAfter = _getUserDebt(spoke1, bob, _wethReserveId(spoke1));
 
@@ -1462,7 +1798,13 @@ contract SpokeRepayTest is Base {
         wbtcInfo.repayAmount
       );
       deal(address(tokenList.wbtc), bob, wbtcInfo.repayAmount);
-      SpokeActions.repay(spoke1, _wbtcReserveId(spoke1), bob, wbtcInfo.repayAmount, bob);
+      SpokeActions.repay({
+        spoke: spoke1,
+        reserveId: _wbtcReserveId(spoke1),
+        caller: bob,
+        amount: wbtcInfo.repayAmount,
+        onBehalfOf: bob
+      });
     }
     DebtData memory bobWbtcAfter = _getUserDebt(spoke1, bob, _wbtcReserveId(spoke1));
 
@@ -1478,7 +1820,13 @@ contract SpokeRepayTest is Base {
         usdxInfo.repayAmount
       );
       deal(address(tokenList.usdx), bob, usdxInfo.repayAmount);
-      SpokeActions.repay(spoke1, _usdxReserveId(spoke1), bob, usdxInfo.repayAmount, bob);
+      SpokeActions.repay({
+        spoke: spoke1,
+        reserveId: _usdxReserveId(spoke1),
+        caller: bob,
+        amount: usdxInfo.repayAmount,
+        onBehalfOf: bob
+      });
     }
     DebtData memory bobUsdxAfter = _getUserDebt(spoke1, bob, _usdxReserveId(spoke1));
 
@@ -1594,15 +1942,33 @@ contract SpokeRepayTest is Base {
     uint256 bobDaiBalanceBefore = tokenList.dai.balanceOf(bob);
 
     // Bob supply weth
-    SpokeActions.supplyCollateral(spoke1, _wethReserveId(spoke1), bob, wethSupplyAmount, bob);
+    SpokeActions.supplyCollateral({
+      spoke: spoke1,
+      reserveId: _wethReserveId(spoke1),
+      caller: bob,
+      amount: wethSupplyAmount,
+      onBehalfOf: bob
+    });
 
     // Alice supply dai such that usage ratio after bob borrows is ~45%, borrow rate ~7.5%
-    SpokeActions.supply(spoke1, _daiReserveId(spoke1), alice, borrowAmount, alice);
+    SpokeActions.supply({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      caller: alice,
+      amount: borrowAmount,
+      onBehalfOf: alice
+    });
 
     uint256 expectedDrawnShares = hub1.previewRestoreByAssets(daiAssetId, borrowAmount);
 
     // Bob borrow dai
-    SpokeActions.borrow(spoke1, _daiReserveId(spoke1), bob, borrowAmount, bob);
+    SpokeActions.borrow({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      caller: bob,
+      amount: borrowAmount,
+      onBehalfOf: bob
+    });
 
     ISpoke.UserPosition memory bobDaiDataBefore = _getUserInfo(spoke1, bob, _daiReserveId(spoke1));
     assertEq(bobDaiDataBefore.drawnShares, expectedDrawnShares, 'bob drawn shares');

@@ -33,9 +33,24 @@ contract SpokeLiquidationCallDustTest is SpokeLiquidationCallBaseTest {
     _deal(_spoke, _daiReserveId(_spoke), liquidator, 1e30);
     _deal(_spoke, _usdyReserveId(_spoke), liquidator, 1e30);
 
-    SpokeActions.approve(_spoke, _usdxReserveId(_spoke), liquidator, type(uint256).max);
-    SpokeActions.approve(_spoke, _daiReserveId(_spoke), liquidator, type(uint256).max);
-    SpokeActions.approve(_spoke, _usdyReserveId(_spoke), liquidator, type(uint256).max);
+    SpokeActions.approve({
+      spoke: _spoke,
+      reserveId: _usdxReserveId(_spoke),
+      owner: liquidator,
+      amount: type(uint256).max
+    });
+    SpokeActions.approve({
+      spoke: _spoke,
+      reserveId: _daiReserveId(_spoke),
+      owner: liquidator,
+      amount: type(uint256).max
+    });
+    SpokeActions.approve({
+      spoke: _spoke,
+      reserveId: _usdyReserveId(_spoke),
+      owner: liquidator,
+      amount: type(uint256).max
+    });
 
     _updateCollateralFactor(_spoke, _daiReserveId(_spoke), 90_00);
     _updateCollateralFactor(_spoke, _usdxReserveId(_spoke), 99_99);

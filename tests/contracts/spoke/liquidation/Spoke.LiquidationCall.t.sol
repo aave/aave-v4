@@ -69,7 +69,13 @@ abstract contract SpokeLiquidationCallHelperTest is SpokeLiquidationCallBaseTest
     // user enables more collaterals, but still has deficit given that only one collateral is supplied
     for (uint256 reserveId = 0; reserveId < spoke.getReserveCount(); reserveId++) {
       if (vm.randomBool()) {
-        SpokeActions.setUsingAsCollateral(spoke, reserveId, user, true, user);
+        SpokeActions.setUsingAsCollateral({
+          spoke: spoke,
+          reserveId: reserveId,
+          caller: user,
+          usingAsCollateral: true,
+          onBehalfOf: user
+        });
       }
     }
   }

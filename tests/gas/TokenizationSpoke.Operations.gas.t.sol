@@ -18,7 +18,7 @@ contract TokenizationSpokeOperations_Gas_Tests is Base {
     daiVault = _deployTokenizationSpoke(hub1, daiAssetId, SHARE_NAME, SHARE_SYMBOL, ADMIN);
     _registerTokenizationSpoke(hub1, daiAssetId, daiVault, ADMIN);
 
-    SpokeActions.approve(daiVault, alice, 2100e18);
+    SpokeActions.approve({vault: daiVault, owner: alice, amount: 2100e18});
     vm.startPrank(alice);
     daiVault.deposit(100e18, alice);
     daiVault.useNonce(nonceKey);
@@ -98,7 +98,7 @@ contract TokenizationSpokeOperations_Gas_Tests is Base {
       deadline: vm.getBlockTimestamp()
     });
     bytes memory signature = _sign(alicePk, _getVaultTypedDataHash(p));
-    SpokeActions.approve(daiVault, alice, p.assets);
+    SpokeActions.approve({vault: daiVault, owner: alice, amount: p.assets});
 
     daiVault.depositWithSig(p, signature);
     vm.snapshotGasLastCall(NAMESPACE, 'depositWithSig');
@@ -113,7 +113,7 @@ contract TokenizationSpokeOperations_Gas_Tests is Base {
       deadline: vm.getBlockTimestamp()
     });
     bytes memory signature = _sign(alicePk, _getVaultTypedDataHash(p));
-    SpokeActions.approve(daiVault, alice, p.shares);
+    SpokeActions.approve({vault: daiVault, owner: alice, amount: p.shares});
 
     daiVault.mintWithSig(p, signature);
     vm.snapshotGasLastCall(NAMESPACE, 'mintWithSig');
@@ -128,7 +128,7 @@ contract TokenizationSpokeOperations_Gas_Tests is Base {
       deadline: vm.getBlockTimestamp()
     });
     bytes memory signature = _sign(alicePk, _getVaultTypedDataHash(p));
-    SpokeActions.approve(daiVault, alice, p.assets);
+    SpokeActions.approve({vault: daiVault, owner: alice, amount: p.assets});
     vm.prank(alice);
     daiVault.deposit(p.assets, alice);
 
@@ -145,7 +145,7 @@ contract TokenizationSpokeOperations_Gas_Tests is Base {
       deadline: vm.getBlockTimestamp()
     });
     bytes memory signature = _sign(alicePk, _getVaultTypedDataHash(p));
-    SpokeActions.approve(daiVault, alice, p.shares);
+    SpokeActions.approve({vault: daiVault, owner: alice, amount: p.shares});
     vm.prank(alice);
     daiVault.mint(p.shares, alice);
 

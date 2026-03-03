@@ -28,7 +28,13 @@ contract NativeTokenGateway_Gas_Tests is Base {
 
   function test_supplyNative() public {
     uint256 amount = 100e18;
-    SpokeActions.supply(spoke1, _wethReserveId(spoke1), bob, amount, bob);
+    SpokeActions.supply({
+      spoke: spoke1,
+      reserveId: _wethReserveId(spoke1),
+      caller: bob,
+      amount: amount,
+      onBehalfOf: bob
+    });
 
     vm.prank(bob);
     nativeTokenGateway.supplyNative{value: amount}(address(spoke1), _wethReserveId(spoke1), amount);
@@ -37,7 +43,13 @@ contract NativeTokenGateway_Gas_Tests is Base {
 
   function test_supplyAndCollateralNative() public {
     uint256 amount = 100e18;
-    SpokeActions.supply(spoke1, _wethReserveId(spoke1), bob, amount, bob);
+    SpokeActions.supply({
+      spoke: spoke1,
+      reserveId: _wethReserveId(spoke1),
+      caller: bob,
+      amount: amount,
+      onBehalfOf: bob
+    });
 
     vm.prank(bob);
     nativeTokenGateway.supplyAsCollateralNative{value: amount}(
@@ -50,8 +62,20 @@ contract NativeTokenGateway_Gas_Tests is Base {
 
   function test_withdrawNative() public {
     uint256 amount = 100e18;
-    SpokeActions.supply(spoke1, _wethReserveId(spoke1), bob, MAX_SUPPLY_AMOUNT_WETH, bob);
-    SpokeActions.withdraw(spoke1, _wethReserveId(spoke1), bob, amount, bob);
+    SpokeActions.supply({
+      spoke: spoke1,
+      reserveId: _wethReserveId(spoke1),
+      caller: bob,
+      amount: MAX_SUPPLY_AMOUNT_WETH,
+      onBehalfOf: bob
+    });
+    SpokeActions.withdraw({
+      spoke: spoke1,
+      reserveId: _wethReserveId(spoke1),
+      caller: bob,
+      amount: amount,
+      onBehalfOf: bob
+    });
 
     vm.prank(bob);
     nativeTokenGateway.withdrawNative(address(spoke1), _wethReserveId(spoke1), amount);
@@ -67,9 +91,27 @@ contract NativeTokenGateway_Gas_Tests is Base {
     uint256 bobSupplyAmount = 100000e18;
     uint256 borrowAmount = 5e18;
 
-    SpokeActions.supplyCollateral(spoke1, _daiReserveId(spoke1), bob, bobSupplyAmount, bob);
-    SpokeActions.supply(spoke1, _wethReserveId(spoke1), alice, aliceSupplyAmount, alice);
-    SpokeActions.borrow(spoke1, _wethReserveId(spoke1), bob, 1e18, bob);
+    SpokeActions.supplyCollateral({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      caller: bob,
+      amount: bobSupplyAmount,
+      onBehalfOf: bob
+    });
+    SpokeActions.supply({
+      spoke: spoke1,
+      reserveId: _wethReserveId(spoke1),
+      caller: alice,
+      amount: aliceSupplyAmount,
+      onBehalfOf: alice
+    });
+    SpokeActions.borrow({
+      spoke: spoke1,
+      reserveId: _wethReserveId(spoke1),
+      caller: bob,
+      amount: 1e18,
+      onBehalfOf: bob
+    });
 
     vm.prank(bob);
     nativeTokenGateway.borrowNative(address(spoke1), _wethReserveId(spoke1), borrowAmount);
@@ -82,10 +124,34 @@ contract NativeTokenGateway_Gas_Tests is Base {
     uint256 borrowAmount = 10e18;
     uint256 repayAmount = 5e18;
 
-    SpokeActions.supplyCollateral(spoke1, _daiReserveId(spoke1), bob, bobSupplyAmount, bob);
-    SpokeActions.supply(spoke1, _wethReserveId(spoke1), alice, aliceSupplyAmount, alice);
-    SpokeActions.borrow(spoke1, _wethReserveId(spoke1), bob, borrowAmount, bob);
-    SpokeActions.repay(spoke1, _wethReserveId(spoke1), bob, 1e18, bob);
+    SpokeActions.supplyCollateral({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      caller: bob,
+      amount: bobSupplyAmount,
+      onBehalfOf: bob
+    });
+    SpokeActions.supply({
+      spoke: spoke1,
+      reserveId: _wethReserveId(spoke1),
+      caller: alice,
+      amount: aliceSupplyAmount,
+      onBehalfOf: alice
+    });
+    SpokeActions.borrow({
+      spoke: spoke1,
+      reserveId: _wethReserveId(spoke1),
+      caller: bob,
+      amount: borrowAmount,
+      onBehalfOf: bob
+    });
+    SpokeActions.repay({
+      spoke: spoke1,
+      reserveId: _wethReserveId(spoke1),
+      caller: bob,
+      amount: 1e18,
+      onBehalfOf: bob
+    });
 
     vm.prank(bob);
     nativeTokenGateway.repayNative{value: repayAmount}(
@@ -128,8 +194,20 @@ contract SignatureGateway_Gas_Tests is Base {
       deadline: vm.getBlockTimestamp()
     });
     bytes memory signature = _sign(alicePk, _getGatewayTypedDataHash(p));
-    SpokeActions.approve(spoke1, p.reserveId, alice, address(gateway), p.amount);
-    SpokeActions.supply(spoke1, p.reserveId, alice, p.amount, alice);
+    SpokeActions.approve({
+      spoke: spoke1,
+      reserveId: p.reserveId,
+      owner: alice,
+      spender: address(gateway),
+      amount: p.amount
+    });
+    SpokeActions.supply({
+      spoke: spoke1,
+      reserveId: p.reserveId,
+      caller: alice,
+      amount: p.amount,
+      onBehalfOf: alice
+    });
 
     gateway.supplyWithSig(p, signature);
     vm.snapshotGasLastCall(NAMESPACE, 'supplyWithSig');
@@ -146,8 +224,20 @@ contract SignatureGateway_Gas_Tests is Base {
     });
     bytes memory signature = _sign(alicePk, _getGatewayTypedDataHash(p));
 
-    SpokeActions.supply(spoke1, p.reserveId, alice, 200e18, alice);
-    SpokeActions.withdraw(spoke1, p.reserveId, alice, 100e18, alice);
+    SpokeActions.supply({
+      spoke: spoke1,
+      reserveId: p.reserveId,
+      caller: alice,
+      amount: 200e18,
+      onBehalfOf: alice
+    });
+    SpokeActions.withdraw({
+      spoke: spoke1,
+      reserveId: p.reserveId,
+      caller: alice,
+      amount: 100e18,
+      onBehalfOf: alice
+    });
 
     gateway.withdrawWithSig(p, signature);
     vm.snapshotGasLastCall(NAMESPACE, 'withdrawWithSig');
@@ -162,8 +252,20 @@ contract SignatureGateway_Gas_Tests is Base {
       nonce: gateway.nonces(alice, nonceKey),
       deadline: vm.getBlockTimestamp()
     });
-    SpokeActions.supplyCollateral(spoke1, p.reserveId, alice, p.amount * 4, alice);
-    SpokeActions.borrow(spoke1, p.reserveId, alice, p.amount, alice);
+    SpokeActions.supplyCollateral({
+      spoke: spoke1,
+      reserveId: p.reserveId,
+      caller: alice,
+      amount: p.amount * 4,
+      onBehalfOf: alice
+    });
+    SpokeActions.borrow({
+      spoke: spoke1,
+      reserveId: p.reserveId,
+      caller: alice,
+      amount: p.amount,
+      onBehalfOf: alice
+    });
     bytes memory signature = _sign(alicePk, _getGatewayTypedDataHash(p));
 
     gateway.borrowWithSig(p, signature);
@@ -179,10 +281,34 @@ contract SignatureGateway_Gas_Tests is Base {
       nonce: gateway.nonces(alice, nonceKey),
       deadline: vm.getBlockTimestamp()
     });
-    SpokeActions.supplyCollateral(spoke1, p.reserveId, alice, p.amount * 10, alice);
-    SpokeActions.borrow(spoke1, p.reserveId, alice, p.amount * 3, alice);
-    SpokeActions.approve(spoke1, p.reserveId, alice, address(gateway), p.amount * 2);
-    SpokeActions.repay(spoke1, p.reserveId, alice, p.amount, alice);
+    SpokeActions.supplyCollateral({
+      spoke: spoke1,
+      reserveId: p.reserveId,
+      caller: alice,
+      amount: p.amount * 10,
+      onBehalfOf: alice
+    });
+    SpokeActions.borrow({
+      spoke: spoke1,
+      reserveId: p.reserveId,
+      caller: alice,
+      amount: p.amount * 3,
+      onBehalfOf: alice
+    });
+    SpokeActions.approve({
+      spoke: spoke1,
+      reserveId: p.reserveId,
+      owner: alice,
+      spender: address(gateway),
+      amount: p.amount * 2
+    });
+    SpokeActions.repay({
+      spoke: spoke1,
+      reserveId: p.reserveId,
+      caller: alice,
+      amount: p.amount,
+      onBehalfOf: alice
+    });
     bytes memory signature = _sign(alicePk, _getGatewayTypedDataHash(p));
 
     gateway.repayWithSig(p, signature);
@@ -198,7 +324,13 @@ contract SignatureGateway_Gas_Tests is Base {
       nonce: gateway.nonces(alice, nonceKey),
       deadline: vm.getBlockTimestamp()
     });
-    SpokeActions.supply(spoke1, p.reserveId, alice, 1e18, alice);
+    SpokeActions.supply({
+      spoke: spoke1,
+      reserveId: p.reserveId,
+      caller: alice,
+      amount: 1e18,
+      onBehalfOf: alice
+    });
     bytes memory signature = _sign(alicePk, _getGatewayTypedDataHash(p));
 
     gateway.setUsingAsCollateralWithSig(p, signature);

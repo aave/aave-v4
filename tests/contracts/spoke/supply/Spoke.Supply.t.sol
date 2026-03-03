@@ -634,14 +634,38 @@ contract SpokeSupplyTest is Base {
       _daiReserveId(spoke1),
       amount
     );
-    SpokeActions.supply(spoke1, _daiReserveId(spoke1), bob, amount, bob);
-    SpokeActions.supplyCollateral(spoke1, _wethReserveId(spoke1), bob, wethSupplyAmount, bob); // bob collateral
-    SpokeActions.borrow(spoke1, _daiReserveId(spoke1), bob, amount, bob); // introduce debt
+    SpokeActions.supply({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      caller: bob,
+      amount: amount,
+      onBehalfOf: bob
+    });
+    SpokeActions.supplyCollateral({
+      spoke: spoke1,
+      reserveId: _wethReserveId(spoke1),
+      caller: bob,
+      amount: wethSupplyAmount,
+      onBehalfOf: bob
+    }); // bob collateral
+    SpokeActions.borrow({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      caller: bob,
+      amount: amount,
+      onBehalfOf: bob
+    }); // introduce debt
 
     uint256 supplyExchangeRatio = hub1.previewRemoveByShares(daiAssetId, MAX_SUPPLY_AMOUNT);
     uint256 debtExchangeRatio = hub1.previewRestoreByShares(daiAssetId, MAX_SUPPLY_AMOUNT);
 
-    SpokeActions.supply(spoke1, _daiReserveId(spoke1), alice, amount, alice);
+    SpokeActions.supply({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      caller: alice,
+      amount: amount,
+      onBehalfOf: alice
+    });
 
     assertGe(hub1.previewRemoveByShares(daiAssetId, MAX_SUPPLY_AMOUNT), supplyExchangeRatio);
     assertGe(hub1.previewRestoreByShares(daiAssetId, MAX_SUPPLY_AMOUNT), debtExchangeRatio);
@@ -655,7 +679,13 @@ contract SpokeSupplyTest is Base {
       supplyExchangeRatio = hub1.previewRemoveByShares(daiAssetId, MAX_SUPPLY_AMOUNT);
       debtExchangeRatio = hub1.previewRestoreByShares(daiAssetId, MAX_SUPPLY_AMOUNT);
 
-      SpokeActions.supply(spoke1, _daiReserveId(spoke1), alice, amount, alice);
+      SpokeActions.supply({
+        spoke: spoke1,
+        reserveId: _daiReserveId(spoke1),
+        caller: alice,
+        amount: amount,
+        onBehalfOf: alice
+      });
 
       assertGe(hub1.previewRemoveByShares(daiAssetId, MAX_SUPPLY_AMOUNT), supplyExchangeRatio);
       assertGe(hub1.previewRestoreByShares(daiAssetId, MAX_SUPPLY_AMOUNT), debtExchangeRatio);
@@ -667,12 +697,36 @@ contract SpokeSupplyTest is Base {
     _openSupplyPosition(spoke1, _usdxReserveId(spoke1), MAX_SUPPLY_AMOUNT);
     _openSupplyPosition(spoke1, _daiReserveId(spoke1), MAX_SUPPLY_AMOUNT);
 
-    SpokeActions.supplyCollateral(spoke1, _daiReserveId(spoke1), bob, 50_000e18, bob); // bob dai collateral, $50k
-    SpokeActions.supplyCollateral(spoke1, _wethReserveId(spoke1), bob, 1e18, bob); // bob weth collateral, $2k
+    SpokeActions.supplyCollateral({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      caller: bob,
+      amount: 50_000e18,
+      onBehalfOf: bob
+    }); // bob dai collateral, $50k
+    SpokeActions.supplyCollateral({
+      spoke: spoke1,
+      reserveId: _wethReserveId(spoke1),
+      caller: bob,
+      amount: 1e18,
+      onBehalfOf: bob
+    }); // bob weth collateral, $2k
 
     // bob borrows 2 assets
-    SpokeActions.borrow(spoke1, _usdxReserveId(spoke1), bob, 10_000e6, bob); // bob borrows usdx, $5k
-    SpokeActions.borrow(spoke1, _daiReserveId(spoke1), bob, 10_000e18, bob); // bob borrows dai, $10k
+    SpokeActions.borrow({
+      spoke: spoke1,
+      reserveId: _usdxReserveId(spoke1),
+      caller: bob,
+      amount: 10_000e6,
+      onBehalfOf: bob
+    }); // bob borrows usdx, $5k
+    SpokeActions.borrow({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      caller: bob,
+      amount: 10_000e18,
+      onBehalfOf: bob
+    }); // bob borrows dai, $10k
 
     uint256 initialRP = _getUserRiskPremium(spoke1, bob);
     assertEq(initialRP, _calculateExpectedUserRP(spoke1, bob));
@@ -683,7 +737,13 @@ contract SpokeSupplyTest is Base {
     );
     // bob does another supply action of the lower collateral risk reserve
     // risk premium should not be refreshed
-    SpokeActions.supplyCollateral(spoke1, _wethReserveId(spoke1), bob, 10_000e18, bob);
+    SpokeActions.supplyCollateral({
+      spoke: spoke1,
+      reserveId: _wethReserveId(spoke1),
+      caller: bob,
+      amount: 10_000e18,
+      onBehalfOf: bob
+    });
 
     // on-the-fly RP calc does not match initial value
     assertNotEq(_getUserRiskPremium(spoke1, bob), initialRP);

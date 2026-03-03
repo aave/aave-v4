@@ -371,18 +371,18 @@ contract HubConfiguratorTest is Base {
     );
 
     // Withdraw fees from the old treasury spoke
-    SpokeActions.withdraw(
-      ISpoke(address(treasurySpoke)),
-      daiAssetId,
-      TREASURY_ADMIN,
-      fees,
-      address(treasurySpoke)
-    );
+    SpokeActions.withdraw({
+      spoke: ISpoke(address(treasurySpoke)),
+      reserveId: daiAssetId,
+      caller: TREASURY_ADMIN,
+      amount: fees,
+      onBehalfOf: address(treasurySpoke)
+    });
     assertEq(treasurySpoke.getSuppliedAmount(daiAssetId), 0, 'old treasury spoke should be empty');
 
     // Accrue more fees, this time to new fee receiver
     skip(365 days);
-    HubActions.mintFeeShares(hub1, daiAssetId, ADMIN);
+    HubActions.mintFeeShares({hub: hub1, assetId: daiAssetId, caller: ADMIN});
 
     assertGt(
       newTreasurySpoke.getSuppliedAmount(daiAssetId),
@@ -413,7 +413,7 @@ contract HubConfiguratorTest is Base {
       100e18,
       365 days
     );
-    HubActions.mintFeeShares(hub1, daiAssetId, ADMIN);
+    HubActions.mintFeeShares({hub: hub1, assetId: daiAssetId, caller: ADMIN});
 
     assertGe(treasurySpoke.getSuppliedShares(daiAssetId), 0);
     uint256 feeShares = treasurySpoke.getSuppliedShares(daiAssetId);
@@ -437,20 +437,20 @@ contract HubConfiguratorTest is Base {
     );
 
     // Withdraw half the fee shares from the old treasury spoke
-    SpokeActions.withdraw(
-      ISpoke(address(treasurySpoke)),
-      daiAssetId,
-      TREASURY_ADMIN,
-      hub1.previewRemoveByShares(daiAssetId, feeShares / 2),
-      address(treasurySpoke)
-    );
+    SpokeActions.withdraw({
+      spoke: ISpoke(address(treasurySpoke)),
+      reserveId: daiAssetId,
+      caller: TREASURY_ADMIN,
+      amount: hub1.previewRemoveByShares(daiAssetId, feeShares / 2),
+      onBehalfOf: address(treasurySpoke)
+    });
 
     // Get the remaining fee shares
     feeShares = treasurySpoke.getSuppliedShares(daiAssetId);
 
     // Accrue more fees, this time to new fee receiver
     skip(365 days);
-    HubActions.mintFeeShares(hub1, daiAssetId, ADMIN);
+    HubActions.mintFeeShares({hub: hub1, assetId: daiAssetId, caller: ADMIN});
 
     // Check that new fee receiver is getting the fees, and not old treasury spoke
     assertGt(
@@ -465,13 +465,13 @@ contract HubConfiguratorTest is Base {
     );
 
     // Now withdraw remaining fee shares from old treasury spoke
-    SpokeActions.withdraw(
-      ISpoke(address(treasurySpoke)),
-      daiAssetId,
-      TREASURY_ADMIN,
-      UINT256_MAX,
-      address(treasurySpoke)
-    );
+    SpokeActions.withdraw({
+      spoke: ISpoke(address(treasurySpoke)),
+      reserveId: daiAssetId,
+      caller: TREASURY_ADMIN,
+      amount: UINT256_MAX,
+      onBehalfOf: address(treasurySpoke)
+    });
     assertEq(treasurySpoke.getSuppliedShares(daiAssetId), 0, 'old fee receiver should be empty');
   }
 

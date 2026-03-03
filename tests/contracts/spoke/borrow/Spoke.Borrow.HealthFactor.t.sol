@@ -19,10 +19,22 @@ contract SpokeBorrowHealthFactorTest is Base {
     });
 
     // Bob supply weth
-    SpokeActions.supplyCollateral(spoke1, wethReserveId, bob, wethSupplyAmount, bob);
+    SpokeActions.supplyCollateral({
+      spoke: spoke1,
+      reserveId: wethReserveId,
+      caller: bob,
+      amount: wethSupplyAmount,
+      onBehalfOf: bob
+    });
 
     // Alice supply dai
-    SpokeActions.supply(spoke1, daiReserveId, alice, maxDebtAmount * 2, alice); // supply enough buffer for multiple borrows
+    SpokeActions.supply({
+      spoke: spoke1,
+      reserveId: daiReserveId,
+      caller: alice,
+      amount: maxDebtAmount * 2,
+      onBehalfOf: alice
+    }); // supply enough buffer for multiple borrows
 
     // Bob draw max allowed debt amt of dai reserve liquidity
     vm.prank(bob);
@@ -51,10 +63,22 @@ contract SpokeBorrowHealthFactorTest is Base {
     });
 
     // Bob supply weth
-    SpokeActions.supplyCollateral(spoke1, wethReserveId, bob, wethSupplyAmount, bob);
+    SpokeActions.supplyCollateral({
+      spoke: spoke1,
+      reserveId: wethReserveId,
+      caller: bob,
+      amount: wethSupplyAmount,
+      onBehalfOf: bob
+    });
 
     // Alice supply dai
-    SpokeActions.supply(spoke1, daiReserveId, alice, maxDebtAmount * 2, alice); // supply enough buffer for multiple borrows
+    SpokeActions.supply({
+      spoke: spoke1,
+      reserveId: daiReserveId,
+      caller: alice,
+      amount: maxDebtAmount * 2,
+      onBehalfOf: alice
+    }); // supply enough buffer for multiple borrows
 
     // Bob draw max allowed debt amt of dai reserve liquidity
     vm.prank(bob);
@@ -94,10 +118,22 @@ contract SpokeBorrowHealthFactorTest is Base {
     vm.assume(maxDebtAmount < MAX_SUPPLY_AMOUNT / 2 && maxDebtAmount > 0);
 
     // Bob supply weth
-    SpokeActions.supplyCollateral(spoke1, wethReserveId, bob, wethSupplyAmount, bob);
+    SpokeActions.supplyCollateral({
+      spoke: spoke1,
+      reserveId: wethReserveId,
+      caller: bob,
+      amount: wethSupplyAmount,
+      onBehalfOf: bob
+    });
 
     // Alice supply dai
-    SpokeActions.supply(spoke1, daiReserveId, alice, maxDebtAmount * 2, alice); // supply enough buffer for multiple borrows
+    SpokeActions.supply({
+      spoke: spoke1,
+      reserveId: daiReserveId,
+      caller: alice,
+      amount: maxDebtAmount * 2,
+      onBehalfOf: alice
+    }); // supply enough buffer for multiple borrows
 
     // Bob draw max allowed debt amt of dai reserve liquidity
     vm.prank(bob);
@@ -140,18 +176,30 @@ contract SpokeBorrowHealthFactorTest is Base {
     });
 
     // Bob supply weth
-    SpokeActions.supplyCollateral(
-      spoke1,
-      wethReserveId,
-      bob,
-      wethCollAmountDai + wethCollAmountUsdx,
-      bob
-    );
+    SpokeActions.supplyCollateral({
+      spoke: spoke1,
+      reserveId: wethReserveId,
+      caller: bob,
+      amount: wethCollAmountDai + wethCollAmountUsdx,
+      onBehalfOf: bob
+    });
 
     // Alice supply dai
-    SpokeActions.supply(spoke1, daiReserveId, alice, daiDebtAmount * 2, alice); // supply enough buffer for multiple borrows
+    SpokeActions.supply({
+      spoke: spoke1,
+      reserveId: daiReserveId,
+      caller: alice,
+      amount: daiDebtAmount * 2,
+      onBehalfOf: alice
+    }); // supply enough buffer for multiple borrows
     // Alice supply usdx
-    SpokeActions.supply(spoke1, usdxReserveId, alice, usdxDebtAmount * 2, alice); // supply enough buffer for multiple borrows
+    SpokeActions.supply({
+      spoke: spoke1,
+      reserveId: usdxReserveId,
+      caller: alice,
+      amount: usdxDebtAmount * 2,
+      onBehalfOf: alice
+    }); // supply enough buffer for multiple borrows
 
     // Bob draw max allowed debt amt of dai/usdx reserve liquidity
     vm.prank(bob);
@@ -201,18 +249,30 @@ contract SpokeBorrowHealthFactorTest is Base {
     });
 
     // Bob supply weth
-    SpokeActions.supplyCollateral(
-      spoke1,
-      wethReserveId,
-      bob,
-      wethCollAmountDai + wethCollAmountUsdx,
-      bob
-    );
+    SpokeActions.supplyCollateral({
+      spoke: spoke1,
+      reserveId: wethReserveId,
+      caller: bob,
+      amount: wethCollAmountDai + wethCollAmountUsdx,
+      onBehalfOf: bob
+    });
 
     // Alice supply dai
-    SpokeActions.supply(spoke1, daiReserveId, alice, daiDebtAmount * 2, alice); // supply enough buffer for multiple borrows
+    SpokeActions.supply({
+      spoke: spoke1,
+      reserveId: daiReserveId,
+      caller: alice,
+      amount: daiDebtAmount * 2,
+      onBehalfOf: alice
+    }); // supply enough buffer for multiple borrows
     // Alice supply usdx
-    SpokeActions.supply(spoke1, usdxReserveId, alice, usdxDebtAmount * 2, alice); // supply enough buffer for multiple borrows
+    SpokeActions.supply({
+      spoke: spoke1,
+      reserveId: usdxReserveId,
+      caller: alice,
+      amount: usdxDebtAmount * 2,
+      onBehalfOf: alice
+    }); // supply enough buffer for multiple borrows
 
     // Bob draw max allowed debt amt of dai/usdx reserve liquidity
     vm.prank(bob);
@@ -265,12 +325,30 @@ contract SpokeBorrowHealthFactorTest is Base {
       });
 
     // Bob supply weth
-    SpokeActions.supplyCollateral(spoke1, wethReserveId, bob, wethCollAmount, bob);
+    SpokeActions.supplyCollateral({
+      spoke: spoke1,
+      reserveId: wethReserveId,
+      caller: bob,
+      amount: wethCollAmount,
+      onBehalfOf: bob
+    });
 
     // Alice supply dai
-    SpokeActions.supply(spoke1, daiReserveId, alice, daiDebtAmount * 2, alice); // supply enough buffer for multiple borrows
+    SpokeActions.supply({
+      spoke: spoke1,
+      reserveId: daiReserveId,
+      caller: alice,
+      amount: daiDebtAmount * 2,
+      onBehalfOf: alice
+    }); // supply enough buffer for multiple borrows
     // Alice supply usdx
-    SpokeActions.supply(spoke1, usdxReserveId, alice, usdxDebtAmount * 2, alice); // supply enough buffer for multiple borrows
+    SpokeActions.supply({
+      spoke: spoke1,
+      reserveId: usdxReserveId,
+      caller: alice,
+      amount: usdxDebtAmount * 2,
+      onBehalfOf: alice
+    }); // supply enough buffer for multiple borrows
 
     // Bob draw max allowed debt amt of dai/usdx reserve liquidity
     vm.prank(bob);
@@ -330,18 +408,30 @@ contract SpokeBorrowHealthFactorTest is Base {
     vm.assume(usdxDebtAmount < MAX_SUPPLY_AMOUNT / 2 && usdxDebtAmount > 0);
 
     // Bob supply weth
-    SpokeActions.supplyCollateral(
-      spoke1,
-      wethReserveId,
-      bob,
-      wethCollForDai + wethCollForUsdx,
-      bob
-    );
+    SpokeActions.supplyCollateral({
+      spoke: spoke1,
+      reserveId: wethReserveId,
+      caller: bob,
+      amount: wethCollForDai + wethCollForUsdx,
+      onBehalfOf: bob
+    });
 
     // Alice supply dai
-    SpokeActions.supply(spoke1, daiReserveId, alice, daiDebtAmount * 2, alice); // supply enough buffer for multiple borrows
+    SpokeActions.supply({
+      spoke: spoke1,
+      reserveId: daiReserveId,
+      caller: alice,
+      amount: daiDebtAmount * 2,
+      onBehalfOf: alice
+    }); // supply enough buffer for multiple borrows
     // Alice supply usdx
-    SpokeActions.supply(spoke1, usdxReserveId, alice, usdxDebtAmount * 2, alice); // supply enough buffer for multiple borrows
+    SpokeActions.supply({
+      spoke: spoke1,
+      reserveId: usdxReserveId,
+      caller: alice,
+      amount: usdxDebtAmount * 2,
+      onBehalfOf: alice
+    }); // supply enough buffer for multiple borrows
 
     // Bob draw max allowed debt amt of dai/usdx reserve liquidity
     vm.prank(bob);
@@ -380,10 +470,22 @@ contract SpokeBorrowHealthFactorTest is Base {
     });
 
     // Bob supply weth
-    SpokeActions.supplyCollateral(spoke1, wethReserveId, bob, wethSupplyAmount, bob);
+    SpokeActions.supplyCollateral({
+      spoke: spoke1,
+      reserveId: wethReserveId,
+      caller: bob,
+      amount: wethSupplyAmount,
+      onBehalfOf: bob
+    });
 
     // Alice supply dai
-    SpokeActions.supply(spoke1, daiReserveId, alice, maxDebtAmount * 2, alice); // supply enough buffer for multiple borrows
+    SpokeActions.supply({
+      spoke: spoke1,
+      reserveId: daiReserveId,
+      caller: alice,
+      amount: maxDebtAmount * 2,
+      onBehalfOf: alice
+    }); // supply enough buffer for multiple borrows
 
     // Bob draw max allowed debt amt of dai reserve liquidity
     vm.prank(bob);
@@ -424,10 +526,22 @@ contract SpokeBorrowHealthFactorTest is Base {
     vm.assume(maxDebtAmount < MAX_SUPPLY_AMOUNT / 2 && maxDebtAmount > 0);
 
     // Bob supply weth
-    SpokeActions.supplyCollateral(spoke1, wethReserveId, bob, wethSupplyAmount, bob);
+    SpokeActions.supplyCollateral({
+      spoke: spoke1,
+      reserveId: wethReserveId,
+      caller: bob,
+      amount: wethSupplyAmount,
+      onBehalfOf: bob
+    });
 
     // Alice supply dai
-    SpokeActions.supply(spoke1, daiReserveId, alice, maxDebtAmount * 2, alice); // supply enough buffer for multiple borrows
+    SpokeActions.supply({
+      spoke: spoke1,
+      reserveId: daiReserveId,
+      caller: alice,
+      amount: maxDebtAmount * 2,
+      onBehalfOf: alice
+    }); // supply enough buffer for multiple borrows
 
     // Bob draw max allowed debt amt of dai reserve liquidity
     vm.prank(bob);
@@ -469,19 +583,31 @@ contract SpokeBorrowHealthFactorTest is Base {
     });
 
     // Bob supply weth collateral
-    SpokeActions.supplyCollateral(spoke1, wethReserveId, bob, wethCollAmount, bob);
+    SpokeActions.supplyCollateral({
+      spoke: spoke1,
+      reserveId: wethReserveId,
+      caller: bob,
+      amount: wethCollAmount,
+      onBehalfOf: bob
+    });
 
     // Bob supply dai collateral
-    SpokeActions.supplyCollateral(spoke1, daiReserveId, bob, daiCollAmount, bob);
+    SpokeActions.supplyCollateral({
+      spoke: spoke1,
+      reserveId: daiReserveId,
+      caller: bob,
+      amount: daiCollAmount,
+      onBehalfOf: bob
+    });
 
     // Alice supply usdx
-    SpokeActions.supply(
-      spoke1,
-      usdxReserveId,
-      alice,
-      (usdxDebtAmountWeth + usdxDebtAmountDai) * 2,
-      alice
-    ); // supply enough buffer for multiple borrows
+    SpokeActions.supply({
+      spoke: spoke1,
+      reserveId: usdxReserveId,
+      caller: alice,
+      amount: (usdxDebtAmountWeth + usdxDebtAmountDai) * 2,
+      onBehalfOf: alice
+    }); // supply enough buffer for multiple borrows
 
     // Bob draw max allowed usdx debt
     vm.prank(bob);
@@ -527,19 +653,31 @@ contract SpokeBorrowHealthFactorTest is Base {
     vm.assume(daiCollAmount < MAX_SUPPLY_AMOUNT && daiCollAmount > 0);
 
     // Bob supply weth collateral
-    SpokeActions.supplyCollateral(spoke1, wethReserveId, bob, wethCollAmount, bob);
+    SpokeActions.supplyCollateral({
+      spoke: spoke1,
+      reserveId: wethReserveId,
+      caller: bob,
+      amount: wethCollAmount,
+      onBehalfOf: bob
+    });
 
     // Bob supply dai collateral
-    SpokeActions.supplyCollateral(spoke1, daiReserveId, bob, daiCollAmount, bob);
+    SpokeActions.supplyCollateral({
+      spoke: spoke1,
+      reserveId: daiReserveId,
+      caller: bob,
+      amount: daiCollAmount,
+      onBehalfOf: bob
+    });
 
     // Alice supply usdx
-    SpokeActions.supply(
-      spoke1,
-      usdxReserveId,
-      alice,
-      (usdxDebtAmountWeth + usdxDebtAmountDai) + 1,
-      alice
-    ); // supply enough buffer for multiple borrows
+    SpokeActions.supply({
+      spoke: spoke1,
+      reserveId: usdxReserveId,
+      caller: alice,
+      amount: (usdxDebtAmountWeth + usdxDebtAmountDai) + 1,
+      onBehalfOf: alice
+    }); // supply enough buffer for multiple borrows
 
     // Bob draw max allowed usdx debt
     vm.prank(bob);
@@ -581,19 +719,31 @@ contract SpokeBorrowHealthFactorTest is Base {
     });
 
     // Bob supply weth collateral
-    SpokeActions.supplyCollateral(spoke1, wethReserveId, bob, wethCollAmount, bob);
+    SpokeActions.supplyCollateral({
+      spoke: spoke1,
+      reserveId: wethReserveId,
+      caller: bob,
+      amount: wethCollAmount,
+      onBehalfOf: bob
+    });
 
     // Bob supply dai collateral
-    SpokeActions.supplyCollateral(spoke1, daiReserveId, bob, daiCollAmount, bob);
+    SpokeActions.supplyCollateral({
+      spoke: spoke1,
+      reserveId: daiReserveId,
+      caller: bob,
+      amount: daiCollAmount,
+      onBehalfOf: bob
+    });
 
     // Alice supply usdx
-    SpokeActions.supply(
-      spoke1,
-      usdxReserveId,
-      alice,
-      (usdxDebtAmountWeth + usdxDebtAmountDai) * 2,
-      alice
-    ); // supply enough buffer for multiple borrows
+    SpokeActions.supply({
+      spoke: spoke1,
+      reserveId: usdxReserveId,
+      caller: alice,
+      amount: (usdxDebtAmountWeth + usdxDebtAmountDai) * 2,
+      onBehalfOf: alice
+    }); // supply enough buffer for multiple borrows
 
     // Bob draw max allowed usdx debt
     vm.prank(bob);
@@ -647,13 +797,31 @@ contract SpokeBorrowHealthFactorTest is Base {
     vm.assume(daiCollAmount < MAX_SUPPLY_AMOUNT && daiCollAmount > 0);
 
     // Bob supply weth collateral
-    SpokeActions.supplyCollateral(spoke1, wethReserveId, bob, wethCollAmount, bob);
+    SpokeActions.supplyCollateral({
+      spoke: spoke1,
+      reserveId: wethReserveId,
+      caller: bob,
+      amount: wethCollAmount,
+      onBehalfOf: bob
+    });
 
     // Bob supply dai collateral
-    SpokeActions.supplyCollateral(spoke1, daiReserveId, bob, daiCollAmount, bob);
+    SpokeActions.supplyCollateral({
+      spoke: spoke1,
+      reserveId: daiReserveId,
+      caller: bob,
+      amount: daiCollAmount,
+      onBehalfOf: bob
+    });
 
     // Alice supply usdx
-    SpokeActions.supply(spoke1, usdxReserveId, alice, MAX_SUPPLY_AMOUNT, alice); // supply enough buffer for multiple borrows
+    SpokeActions.supply({
+      spoke: spoke1,
+      reserveId: usdxReserveId,
+      caller: alice,
+      amount: MAX_SUPPLY_AMOUNT,
+      onBehalfOf: alice
+    }); // supply enough buffer for multiple borrows
 
     // Bob draw max allowed usdx debt
     vm.prank(bob);
@@ -702,19 +870,31 @@ contract SpokeBorrowHealthFactorTest is Base {
     });
 
     // Bob supply weth collateral
-    SpokeActions.supplyCollateral(spoke1, wethReserveId, bob, wethCollAmount, bob);
+    SpokeActions.supplyCollateral({
+      spoke: spoke1,
+      reserveId: wethReserveId,
+      caller: bob,
+      amount: wethCollAmount,
+      onBehalfOf: bob
+    });
 
     // Bob supply dai collateral
-    SpokeActions.supplyCollateral(spoke1, daiReserveId, bob, daiCollAmount, bob);
+    SpokeActions.supplyCollateral({
+      spoke: spoke1,
+      reserveId: daiReserveId,
+      caller: bob,
+      amount: daiCollAmount,
+      onBehalfOf: bob
+    });
 
     // Alice supply usdx
-    SpokeActions.supply(
-      spoke1,
-      usdxReserveId,
-      alice,
-      (usdxDebtAmountWeth + usdxDebtAmountDai) * 2,
-      alice
-    ); // supply enough buffer for multiple borrows
+    SpokeActions.supply({
+      spoke: spoke1,
+      reserveId: usdxReserveId,
+      caller: alice,
+      amount: (usdxDebtAmountWeth + usdxDebtAmountDai) * 2,
+      onBehalfOf: alice
+    }); // supply enough buffer for multiple borrows
 
     // Bob draw max allowed usdx debt
     vm.prank(bob);
@@ -769,13 +949,31 @@ contract SpokeBorrowHealthFactorTest is Base {
     vm.assume(daiCollAmount < MAX_SUPPLY_AMOUNT && daiCollAmount > 0);
 
     // Bob supply weth collateral
-    SpokeActions.supplyCollateral(spoke1, wethReserveId, bob, wethCollAmount, bob);
+    SpokeActions.supplyCollateral({
+      spoke: spoke1,
+      reserveId: wethReserveId,
+      caller: bob,
+      amount: wethCollAmount,
+      onBehalfOf: bob
+    });
 
     // Bob supply dai collateral
-    SpokeActions.supplyCollateral(spoke1, daiReserveId, bob, daiCollAmount, bob);
+    SpokeActions.supplyCollateral({
+      spoke: spoke1,
+      reserveId: daiReserveId,
+      caller: bob,
+      amount: daiCollAmount,
+      onBehalfOf: bob
+    });
 
     // Alice supply usdx
-    SpokeActions.supply(spoke1, usdxReserveId, alice, MAX_SUPPLY_AMOUNT, alice); // supply enough buffer for multiple borrows
+    SpokeActions.supply({
+      spoke: spoke1,
+      reserveId: usdxReserveId,
+      caller: alice,
+      amount: MAX_SUPPLY_AMOUNT,
+      onBehalfOf: alice
+    }); // supply enough buffer for multiple borrows
 
     // Bob draw max allowed usdx debt
     vm.prank(bob);
@@ -823,19 +1021,31 @@ contract SpokeBorrowHealthFactorTest is Base {
     });
 
     // Bob supply weth collateral
-    SpokeActions.supplyCollateral(spoke1, wethReserveId, bob, wethCollAmount, bob);
+    SpokeActions.supplyCollateral({
+      spoke: spoke1,
+      reserveId: wethReserveId,
+      caller: bob,
+      amount: wethCollAmount,
+      onBehalfOf: bob
+    });
 
     // Bob supply dai collateral
-    SpokeActions.supplyCollateral(spoke1, daiReserveId, bob, daiCollAmount, bob);
+    SpokeActions.supplyCollateral({
+      spoke: spoke1,
+      reserveId: daiReserveId,
+      caller: bob,
+      amount: daiCollAmount,
+      onBehalfOf: bob
+    });
 
     // Alice supply usdx
-    SpokeActions.supply(
-      spoke1,
-      usdxReserveId,
-      alice,
-      (usdxDebtAmountWeth + usdxDebtAmountDai) * 2,
-      alice
-    ); // supply enough buffer for multiple borrows
+    SpokeActions.supply({
+      spoke: spoke1,
+      reserveId: usdxReserveId,
+      caller: alice,
+      amount: (usdxDebtAmountWeth + usdxDebtAmountDai) * 2,
+      onBehalfOf: alice
+    }); // supply enough buffer for multiple borrows
 
     // Bob draw max allowed usdx debt
     vm.prank(bob);
@@ -890,12 +1100,30 @@ contract SpokeBorrowHealthFactorTest is Base {
     vm.assume(daiCollAmount < MAX_SUPPLY_AMOUNT && daiCollAmount > 0);
 
     // Bob supply weth collateral
-    SpokeActions.supplyCollateral(spoke1, wethReserveId, bob, wethCollAmount, bob);
+    SpokeActions.supplyCollateral({
+      spoke: spoke1,
+      reserveId: wethReserveId,
+      caller: bob,
+      amount: wethCollAmount,
+      onBehalfOf: bob
+    });
     // Bob supply dai collateral
-    SpokeActions.supplyCollateral(spoke1, daiReserveId, bob, daiCollAmount, bob);
+    SpokeActions.supplyCollateral({
+      spoke: spoke1,
+      reserveId: daiReserveId,
+      caller: bob,
+      amount: daiCollAmount,
+      onBehalfOf: bob
+    });
 
     // Alice supply usdx
-    SpokeActions.supply(spoke1, usdxReserveId, alice, MAX_SUPPLY_AMOUNT, alice); // supply enough buffer for multiple borrows
+    SpokeActions.supply({
+      spoke: spoke1,
+      reserveId: usdxReserveId,
+      caller: alice,
+      amount: MAX_SUPPLY_AMOUNT,
+      onBehalfOf: alice
+    }); // supply enough buffer for multiple borrows
 
     // Bob draw max allowed usdx debt
     vm.prank(bob);

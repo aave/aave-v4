@@ -89,7 +89,7 @@ contract TokenizationSpokeInsufficientAllowanceTest is TokenizationSpokeBaseTest
   function _setArbitraryAllowance() internal returns (uint256, uint256) {
     uint256 amount = vm.randomUint(1, MAX_SUPPLY_AMOUNT);
     uint256 allowance = vm.randomUint(0, amount - 1);
-    SpokeActions.approve(vault, alice, allowance);
+    SpokeActions.approve({vault: vault, owner: alice, amount: allowance});
 
     return (amount, allowance);
   }

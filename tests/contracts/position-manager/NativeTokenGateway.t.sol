@@ -449,8 +449,20 @@ contract NativeTokenGatewayTest is Base {
     vm.prank(bob);
     spoke1.setUserPositionManager(address(nativeTokenGateway), true);
 
-    SpokeActions.supplyCollateral(spoke1, _daiReserveId(spoke1), bob, bobSupplyAmount, bob);
-    SpokeActions.supply(spoke1, _wethReserveId(spoke1), alice, aliceSupplyAmount, alice);
+    SpokeActions.supplyCollateral({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      caller: bob,
+      amount: bobSupplyAmount,
+      onBehalfOf: bob
+    });
+    SpokeActions.supply({
+      spoke: spoke1,
+      reserveId: _wethReserveId(spoke1),
+      caller: alice,
+      amount: aliceSupplyAmount,
+      onBehalfOf: alice
+    });
 
     uint256 prevUserBalance = bob.balance;
     uint256 prevHubBalance = tokenList.weth.balanceOf(address(hub1));
@@ -562,9 +574,27 @@ contract NativeTokenGatewayTest is Base {
     vm.prank(bob);
     spoke1.setUserPositionManager(address(nativeTokenGateway), true);
 
-    SpokeActions.supplyCollateral(spoke1, _daiReserveId(spoke1), bob, bobSupplyAmount, bob);
-    SpokeActions.supply(spoke1, _wethReserveId(spoke1), alice, aliceSupplyAmount, alice);
-    SpokeActions.borrow(spoke1, _wethReserveId(spoke1), bob, borrowAmount, bob);
+    SpokeActions.supplyCollateral({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      caller: bob,
+      amount: bobSupplyAmount,
+      onBehalfOf: bob
+    });
+    SpokeActions.supply({
+      spoke: spoke1,
+      reserveId: _wethReserveId(spoke1),
+      caller: alice,
+      amount: aliceSupplyAmount,
+      onBehalfOf: alice
+    });
+    SpokeActions.borrow({
+      spoke: spoke1,
+      reserveId: _wethReserveId(spoke1),
+      caller: bob,
+      amount: borrowAmount,
+      onBehalfOf: bob
+    });
 
     uint256 prevUserBalance = bob.balance;
     uint256 prevHubBalance = tokenList.weth.balanceOf(address(hub1));
@@ -622,9 +652,27 @@ contract NativeTokenGatewayTest is Base {
     vm.prank(bob);
     spoke1.setUserPositionManager(address(nativeTokenGateway), true);
 
-    SpokeActions.supplyCollateral(spoke1, _daiReserveId(spoke1), bob, 100000e18, bob);
-    SpokeActions.supply(spoke1, _wethReserveId(spoke1), alice, 10e18, alice);
-    SpokeActions.borrow(spoke1, _wethReserveId(spoke1), bob, borrowAmount, bob);
+    SpokeActions.supplyCollateral({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      caller: bob,
+      amount: 100000e18,
+      onBehalfOf: bob
+    });
+    SpokeActions.supply({
+      spoke: spoke1,
+      reserveId: _wethReserveId(spoke1),
+      caller: alice,
+      amount: 10e18,
+      onBehalfOf: alice
+    });
+    SpokeActions.borrow({
+      spoke: spoke1,
+      reserveId: _wethReserveId(spoke1),
+      caller: bob,
+      amount: borrowAmount,
+      onBehalfOf: bob
+    });
 
     skip(elapsedTime);
 
@@ -697,9 +745,27 @@ contract NativeTokenGatewayTest is Base {
     vm.prank(bob);
     spoke1.setUserPositionManager(address(nativeTokenGateway), true);
 
-    SpokeActions.supplyCollateral(spoke1, _daiReserveId(spoke1), bob, bobSupplyAmount, bob);
-    SpokeActions.supply(spoke1, _wethReserveId(spoke1), alice, aliceSupplyAmount, alice);
-    SpokeActions.borrow(spoke1, _wethReserveId(spoke1), bob, borrowAmount, bob);
+    SpokeActions.supplyCollateral({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      caller: bob,
+      amount: bobSupplyAmount,
+      onBehalfOf: bob
+    });
+    SpokeActions.supply({
+      spoke: spoke1,
+      reserveId: _wethReserveId(spoke1),
+      caller: alice,
+      amount: aliceSupplyAmount,
+      onBehalfOf: alice
+    });
+    SpokeActions.borrow({
+      spoke: spoke1,
+      reserveId: _wethReserveId(spoke1),
+      caller: bob,
+      amount: borrowAmount,
+      onBehalfOf: bob
+    });
 
     skip(322 days);
 

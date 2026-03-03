@@ -68,7 +68,7 @@ contract TokenizationSpokeEdgeTest is TokenizationSpokeBaseTest {
     address depositor = alice;
     uint256 assets = vm.randomUint(1, MAX_SUPPLY_AMOUNT);
     asset.mint(depositor, assets);
-    SpokeActions.approve(vault, depositor, assets);
+    SpokeActions.approve({vault: vault, owner: depositor, amount: assets});
 
     uint256 alicePreDepositBal = asset.balanceOf(depositor);
 
@@ -98,7 +98,7 @@ contract TokenizationSpokeEdgeTest is TokenizationSpokeBaseTest {
     uint256 shares = vm.randomUint(1, MAX_SUPPLY_AMOUNT);
     uint256 expectedAssets = IHub(vault.hub()).previewAddByShares(vault.assetId(), shares);
     asset.mint(depositor, expectedAssets);
-    SpokeActions.approve(vault, depositor, expectedAssets);
+    SpokeActions.approve({vault: vault, owner: depositor, amount: expectedAssets});
 
     uint256 alicePreDepositBal = asset.balanceOf(depositor);
 
@@ -205,7 +205,7 @@ contract TokenizationSpokeEdgeTest is TokenizationSpokeBaseTest {
   function test_withdrawZero_revertsWith_InvalidAmount() public {
     uint256 assets = 1e18;
     asset.mint(alice, assets);
-    SpokeActions.approve(vault, alice, assets);
+    SpokeActions.approve({vault: vault, owner: alice, amount: assets});
     vm.prank(alice);
     vault.deposit(assets, alice);
 
@@ -217,7 +217,7 @@ contract TokenizationSpokeEdgeTest is TokenizationSpokeBaseTest {
   function test_redeemZero_revertsWith_InvalidAmount() public {
     uint256 assets = 1e18;
     asset.mint(alice, assets);
-    SpokeActions.approve(vault, alice, assets);
+    SpokeActions.approve({vault: vault, owner: alice, amount: assets});
     vm.prank(alice);
     vault.deposit(assets, alice);
 
@@ -283,7 +283,7 @@ contract TokenizationSpokeEdgeTest is TokenizationSpokeBaseTest {
   function test_withdraw_revertsWith_ERC20InsufficientBalance() public {
     uint256 depositAssets = 1e18;
     asset.mint(alice, depositAssets);
-    SpokeActions.approve(vault, alice, depositAssets);
+    SpokeActions.approve({vault: vault, owner: alice, amount: depositAssets});
     vm.prank(alice);
     vault.deposit(depositAssets, alice);
 
@@ -306,7 +306,7 @@ contract TokenizationSpokeEdgeTest is TokenizationSpokeBaseTest {
   function test_redeem_revertsWith_ERC20InsufficientBalance_on_InsufficientShares() public {
     uint256 depositAssets = 1e18;
     asset.mint(alice, depositAssets);
-    SpokeActions.approve(vault, alice, depositAssets);
+    SpokeActions.approve({vault: vault, owner: alice, amount: depositAssets});
     vm.prank(alice);
     uint256 shares = vault.deposit(depositAssets, alice);
 
@@ -327,7 +327,7 @@ contract TokenizationSpokeEdgeTest is TokenizationSpokeBaseTest {
   function test_withdraw_revertsWith_ERC20InsufficientAllowance_callerNotOwner() public {
     uint256 depositAssets = 1e18;
     asset.mint(alice, depositAssets);
-    SpokeActions.approve(vault, alice, depositAssets);
+    SpokeActions.approve({vault: vault, owner: alice, amount: depositAssets});
     vm.prank(alice);
     vault.deposit(depositAssets, alice);
 
@@ -342,7 +342,7 @@ contract TokenizationSpokeEdgeTest is TokenizationSpokeBaseTest {
   function test_redeem_revertsWith_ERC20InsufficientAllowance_callerNotOwner() public {
     uint256 depositAssets = 1e18;
     asset.mint(alice, depositAssets);
-    SpokeActions.approve(vault, alice, depositAssets);
+    SpokeActions.approve({vault: vault, owner: alice, amount: depositAssets});
     vm.prank(alice);
     uint256 shares = vault.deposit(depositAssets, alice);
 

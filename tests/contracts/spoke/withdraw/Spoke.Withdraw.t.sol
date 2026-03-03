@@ -463,7 +463,13 @@ contract SpokeWithdrawTest is Base {
 
     // repay all debt with interest
     uint256 repayAmount = spoke1.getUserTotalDebt(state.reserveId, alice);
-    SpokeActions.repay(spoke1, state.reserveId, alice, repayAmount, alice);
+    SpokeActions.repay({
+      spoke: spoke1,
+      reserveId: state.reserveId,
+      caller: alice,
+      amount: repayAmount,
+      onBehalfOf: alice
+    });
 
     state.withdrawAmount = hub1.getSpokeAddedAssets(daiAssetId, address(spoke1));
 
@@ -613,7 +619,13 @@ contract SpokeWithdrawTest is Base {
     assertEq(state.alicePremiumDebt, 0, 'alice has no premium contribution to exchange rate');
 
     // alice repays all with interest
-    SpokeActions.repay(spoke1, state.reserveId, alice, repayAmount, alice);
+    SpokeActions.repay({
+      spoke: spoke1,
+      reserveId: state.reserveId,
+      caller: alice,
+      amount: repayAmount,
+      onBehalfOf: alice
+    });
 
     assertEq(hub1.getAsset(wbtcAssetId).realizedFees, state.expectedFeeAmount, 'realized fees');
 
@@ -722,7 +734,13 @@ contract SpokeWithdrawTest is Base {
 
     // repay all debt with interest
     uint256 repayAmount = spoke1.getUserTotalDebt(state.reserveId, alice);
-    SpokeActions.repay(spoke1, state.reserveId, alice, repayAmount, alice);
+    SpokeActions.repay({
+      spoke: spoke1,
+      reserveId: state.reserveId,
+      caller: alice,
+      amount: repayAmount,
+      onBehalfOf: alice
+    });
 
     assertEq(hub1.getAsset(daiAssetId).realizedFees, state.expectedFeeAmount, 'realized fees');
 
@@ -866,7 +884,13 @@ contract SpokeWithdrawTest is Base {
     // ensure interest has accrued
     vm.assume(repayAmount > state.borrowAmount);
 
-    SpokeActions.repay(spoke1, state.reserveId, alice, repayAmount, alice);
+    SpokeActions.repay({
+      spoke: spoke1,
+      reserveId: state.reserveId,
+      caller: alice,
+      amount: repayAmount,
+      onBehalfOf: alice
+    });
 
     assertEq(hub1.getAsset(assetId).realizedFees, state.expectedFeeAmount, 'realized fees');
 
@@ -968,15 +992,45 @@ contract SpokeWithdrawTest is Base {
       _daiReserveId(spoke1),
       amount
     );
-    SpokeActions.supply(spoke1, _daiReserveId(spoke1), bob, amount, bob);
-    SpokeActions.supplyCollateral(spoke1, _wethReserveId(spoke1), bob, wethSupplyAmount, bob); // bob collateral
-    SpokeActions.borrow(spoke1, _daiReserveId(spoke1), bob, amount / 2, bob); // introduce debt
-    SpokeActions.supply(spoke1, _daiReserveId(spoke1), alice, amount, alice); // alice supply
+    SpokeActions.supply({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      caller: bob,
+      amount: amount,
+      onBehalfOf: bob
+    });
+    SpokeActions.supplyCollateral({
+      spoke: spoke1,
+      reserveId: _wethReserveId(spoke1),
+      caller: bob,
+      amount: wethSupplyAmount,
+      onBehalfOf: bob
+    }); // bob collateral
+    SpokeActions.borrow({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      caller: bob,
+      amount: amount / 2,
+      onBehalfOf: bob
+    }); // introduce debt
+    SpokeActions.supply({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      caller: alice,
+      amount: amount,
+      onBehalfOf: alice
+    }); // alice supply
 
     uint256 supplyExchangeRatio = hub1.previewRemoveByShares(daiAssetId, MAX_SUPPLY_AMOUNT);
     uint256 debtExchangeRatio = hub1.previewRestoreByShares(daiAssetId, MAX_SUPPLY_AMOUNT);
 
-    SpokeActions.withdraw(spoke1, _daiReserveId(spoke1), alice, amount / 2, alice);
+    SpokeActions.withdraw({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      caller: alice,
+      amount: amount / 2,
+      onBehalfOf: alice
+    });
 
     assertGe(hub1.previewRemoveByShares(daiAssetId, MAX_SUPPLY_AMOUNT), supplyExchangeRatio);
     assertGe(hub1.previewRestoreByShares(daiAssetId, MAX_SUPPLY_AMOUNT), debtExchangeRatio);
@@ -989,7 +1043,13 @@ contract SpokeWithdrawTest is Base {
     supplyExchangeRatio = hub1.previewRemoveByShares(daiAssetId, MAX_SUPPLY_AMOUNT);
     debtExchangeRatio = hub1.previewRestoreByShares(daiAssetId, MAX_SUPPLY_AMOUNT);
 
-    SpokeActions.withdraw(spoke1, _daiReserveId(spoke1), alice, amount / 2, alice);
+    SpokeActions.withdraw({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      caller: alice,
+      amount: amount / 2,
+      onBehalfOf: alice
+    });
 
     assertGe(hub1.previewRemoveByShares(daiAssetId, MAX_SUPPLY_AMOUNT), supplyExchangeRatio);
     assertGe(hub1.previewRestoreByShares(daiAssetId, MAX_SUPPLY_AMOUNT), debtExchangeRatio);

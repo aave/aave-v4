@@ -118,7 +118,13 @@ contract SpokeSetUsingAsCollateralTest is Base {
     uint256 bobRp = _getUserRpStored(spoke1, bob);
 
     vm.recordLogs();
-    SpokeActions.setUsingAsCollateral(spoke1, daiReserveId, bob, false, bob);
+    SpokeActions.setUsingAsCollateral({
+      spoke: spoke1,
+      reserveId: daiReserveId,
+      caller: bob,
+      usingAsCollateral: false,
+      onBehalfOf: bob
+    });
     _assertEventNotEmitted(ISpoke.SetUsingAsCollateral.selector);
 
     assertFalse(_isUsingAsCollateral(spoke1, daiReserveId, bob));
@@ -126,7 +132,13 @@ contract SpokeSetUsingAsCollateralTest is Base {
     assertEq(_getUserDynConfigKeys(spoke1, bob), bobDynConfig);
 
     // Bob can change dai collateral status to true
-    SpokeActions.setUsingAsCollateral(spoke1, daiReserveId, bob, true, bob);
+    SpokeActions.setUsingAsCollateral({
+      spoke: spoke1,
+      reserveId: daiReserveId,
+      caller: bob,
+      usingAsCollateral: true,
+      onBehalfOf: bob
+    });
     assertTrue(_isUsingAsCollateral(spoke1, daiReserveId, bob), 'bob using as collateral');
 
     // slight update in collateral factor so user is subject to dynamic risk config refresh
@@ -143,7 +155,13 @@ contract SpokeSetUsingAsCollateralTest is Base {
     bobRp = _getUserRpStored(spoke1, bob);
 
     vm.recordLogs();
-    SpokeActions.setUsingAsCollateral(spoke1, daiReserveId, bob, true, bob);
+    SpokeActions.setUsingAsCollateral({
+      spoke: spoke1,
+      reserveId: daiReserveId,
+      caller: bob,
+      usingAsCollateral: true,
+      onBehalfOf: bob
+    });
     _assertEventsNotEmitted(
       ISpoke.SetUsingAsCollateral.selector,
       ISpoke.RefreshSingleUserDynamicConfig.selector,
@@ -163,7 +181,13 @@ contract SpokeSetUsingAsCollateralTest is Base {
 
     // Bob supply dai into spoke1
     deal(address(tokenList.dai), bob, daiAmount);
-    SpokeActions.supply(spoke1, daiReserveId, bob, daiAmount, bob);
+    SpokeActions.supply({
+      spoke: spoke1,
+      reserveId: daiReserveId,
+      caller: bob,
+      amount: daiAmount,
+      onBehalfOf: bob
+    });
 
     vm.prank(bob);
     vm.expectEmit(address(spoke1));
@@ -184,7 +208,13 @@ contract SpokeSetUsingAsCollateralTest is Base {
     assertGt(spoke1.getReserveCount(), maxUserReservesLimit, 'More reserves than limit');
 
     for (uint256 i = 0; i < maxUserReservesLimit; ++i) {
-      SpokeActions.supplyCollateral(spoke1, i, bob, 1e18, bob);
+      SpokeActions.supplyCollateral({
+        spoke: spoke1,
+        reserveId: i,
+        caller: bob,
+        amount: 1e18,
+        onBehalfOf: bob
+      });
     }
     ISpoke.UserAccountData memory accountData = spoke1.getUserAccountData(bob);
     assertEq(
@@ -206,7 +236,13 @@ contract SpokeSetUsingAsCollateralTest is Base {
     assertGt(spoke1.getReserveCount(), maxUserReservesLimit, 'More reserves than limit');
 
     for (uint256 i = 0; i < maxUserReservesLimit; ++i) {
-      SpokeActions.supplyCollateral(spoke1, i, bob, 1e18, bob);
+      SpokeActions.supplyCollateral({
+        spoke: spoke1,
+        reserveId: i,
+        caller: bob,
+        amount: 1e18,
+        onBehalfOf: bob
+      });
     }
 
     ISpoke.UserAccountData memory accountData = spoke1.getUserAccountData(bob);
@@ -216,7 +252,13 @@ contract SpokeSetUsingAsCollateralTest is Base {
       'Bob has reached the collateral limit'
     );
 
-    SpokeActions.setUsingAsCollateral(spoke1, 0, bob, false, bob);
+    SpokeActions.setUsingAsCollateral({
+      spoke: spoke1,
+      reserveId: 0,
+      caller: bob,
+      usingAsCollateral: false,
+      onBehalfOf: bob
+    });
 
     accountData = spoke1.getUserAccountData(bob);
     assertEq(
@@ -225,7 +267,13 @@ contract SpokeSetUsingAsCollateralTest is Base {
       'Bob has disabled one collateral'
     );
 
-    SpokeActions.supplyCollateral(spoke1, maxUserReservesLimit, bob, 1e18, bob);
+    SpokeActions.supplyCollateral({
+      spoke: spoke1,
+      reserveId: maxUserReservesLimit,
+      caller: bob,
+      amount: 1e18,
+      onBehalfOf: bob
+    });
 
     accountData = spoke1.getUserAccountData(bob);
     assertEq(
@@ -242,7 +290,13 @@ contract SpokeSetUsingAsCollateralTest is Base {
     uint256 collateralsToEnable = spoke1.getReserveCount();
 
     for (uint256 i = 0; i < collateralsToEnable; ++i) {
-      SpokeActions.supplyCollateral(spoke1, i, bob, 1e18, bob);
+      SpokeActions.supplyCollateral({
+        spoke: spoke1,
+        reserveId: i,
+        caller: bob,
+        amount: 1e18,
+        onBehalfOf: bob
+      });
     }
 
     ISpoke.UserAccountData memory accountData = spoke1.getUserAccountData(bob);

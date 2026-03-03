@@ -37,11 +37,23 @@ contract SpokeAccrueLiquidityFeeEdgeCasesTest is Base {
     uint256 supplyAmount = _calcMinimumCollAmount(spoke1, reserveId, reserveId, borrowAmount);
     _mockInterestRateBps(address(irStrategy), rate);
 
-    SpokeActions.supplyCollateral(spoke1, reserveId, alice, supplyAmount, alice);
-    SpokeActions.borrow(spoke1, reserveId, alice, borrowAmount, alice);
+    SpokeActions.supplyCollateral({
+      spoke: spoke1,
+      reserveId: reserveId,
+      caller: alice,
+      amount: supplyAmount,
+      onBehalfOf: alice
+    });
+    SpokeActions.borrow({
+      spoke: spoke1,
+      reserveId: reserveId,
+      caller: alice,
+      amount: borrowAmount,
+      onBehalfOf: alice
+    });
 
     skip(skipTime);
-    HubActions.mintFeeShares(hub1, assetId, ADMIN);
+    HubActions.mintFeeShares({hub: hub1, assetId: assetId, caller: ADMIN});
 
     (, uint256 premiumDebt) = spoke1.getUserDebt(reserveId, alice);
     assertGt(premiumDebt, 0);
@@ -87,14 +99,38 @@ contract SpokeAccrueLiquidityFeeEdgeCasesTest is Base {
     uint256 supplyAmount2 = _calcMinimumCollAmount(spoke1, reserveId, reserveId, borrowAmount2);
     _mockInterestRateBps(address(irStrategy), rate);
 
-    SpokeActions.supplyCollateral(spoke1, reserveId, alice, supplyAmount, alice);
-    SpokeActions.borrow(spoke1, reserveId, alice, borrowAmount, alice);
+    SpokeActions.supplyCollateral({
+      spoke: spoke1,
+      reserveId: reserveId,
+      caller: alice,
+      amount: supplyAmount,
+      onBehalfOf: alice
+    });
+    SpokeActions.borrow({
+      spoke: spoke1,
+      reserveId: reserveId,
+      caller: alice,
+      amount: borrowAmount,
+      onBehalfOf: alice
+    });
 
-    SpokeActions.supplyCollateral(spoke1, reserveId, bob, supplyAmount2, bob);
-    SpokeActions.borrow(spoke1, reserveId, bob, borrowAmount2, bob);
+    SpokeActions.supplyCollateral({
+      spoke: spoke1,
+      reserveId: reserveId,
+      caller: bob,
+      amount: supplyAmount2,
+      onBehalfOf: bob
+    });
+    SpokeActions.borrow({
+      spoke: spoke1,
+      reserveId: reserveId,
+      caller: bob,
+      amount: borrowAmount2,
+      onBehalfOf: bob
+    });
 
     skip(skipTime);
-    HubActions.mintFeeShares(hub1, assetId, ADMIN);
+    HubActions.mintFeeShares({hub: hub1, assetId: assetId, caller: ADMIN});
 
     assertApproxEqAbs(
       spoke1.getUserSuppliedAssets(reserveId, alice),
@@ -145,7 +181,13 @@ contract SpokeAccrueLiquidityFeeEdgeCasesTest is Base {
     for (uint256 i; i < count; ++i) {
       address user = _makeUser(i); // deterministic operation
       uint256 totalOwedAfter = hub1.getAssetTotalOwed(assetId);
-      SpokeActions.repay(spoke1, reserveId, user, 1, user); // accrue interest & realize premium
+      SpokeActions.repay({
+        spoke: spoke1,
+        reserveId: reserveId,
+        caller: user,
+        amount: 1,
+        onBehalfOf: user
+      }); // accrue interest & realize premium
       assertApproxEqAbs(totalOwedAfter, hub1.getAssetTotalOwed(assetId), 1);
 
       feesAccrued += totalOwedAfter - totalOwedBefore;
@@ -190,7 +232,13 @@ contract SpokeAccrueLiquidityFeeEdgeCasesTest is Base {
       ISpoke spoke = spokes[i % spokes.length]; // deterministic operation
       uint256 reserveId = _reserveId(spoke, assetId);
       uint256 totalOwedAfter = hub1.getAssetTotalOwed(assetId);
-      SpokeActions.repay(spoke, reserveId, user, 1, user); // accrue interest & realize premium
+      SpokeActions.repay({
+        spoke: spoke,
+        reserveId: reserveId,
+        caller: user,
+        amount: 1,
+        onBehalfOf: user
+      }); // accrue interest & realize premium
       assertApproxEqAbs(totalOwedAfter, hub1.getAssetTotalOwed(assetId), 1);
 
       feesAccrued += totalOwedAfter - totalOwedBefore;

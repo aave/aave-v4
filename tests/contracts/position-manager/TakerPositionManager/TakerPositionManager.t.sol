@@ -453,8 +453,20 @@ contract TakerPositionManagerTest is TakerPositionManagerBaseTest {
     borrowAmount = bound(borrowAmount, 1, bobSupplyAmount);
     approveBorrowAmount = bound(approveBorrowAmount, borrowAmount, borrowAmount * 10);
 
-    SpokeActions.supplyCollateral(spoke1, _daiReserveId(spoke1), alice, aliceSupplyAmount, alice);
-    SpokeActions.supplyCollateral(spoke1, _daiReserveId(spoke1), bob, bobSupplyAmount, bob);
+    SpokeActions.supplyCollateral({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      caller: alice,
+      amount: aliceSupplyAmount,
+      onBehalfOf: alice
+    });
+    SpokeActions.supplyCollateral({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      caller: bob,
+      amount: bobSupplyAmount,
+      onBehalfOf: bob
+    });
 
     vm.prank(alice);
     positionManager.approveBorrow(address(spoke1), _daiReserveId(spoke1), bob, approveBorrowAmount);
@@ -511,8 +523,20 @@ contract TakerPositionManagerTest is TakerPositionManagerBaseTest {
     uint256 bobSupplyAmount = 1000e18;
     borrowAmount = bound(borrowAmount, 1, bobSupplyAmount);
 
-    SpokeActions.supplyCollateral(spoke1, _daiReserveId(spoke1), alice, aliceSupplyAmount, alice);
-    SpokeActions.supplyCollateral(spoke1, _daiReserveId(spoke1), bob, bobSupplyAmount, bob);
+    SpokeActions.supplyCollateral({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      caller: alice,
+      amount: aliceSupplyAmount,
+      onBehalfOf: alice
+    });
+    SpokeActions.supplyCollateral({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      caller: bob,
+      amount: bobSupplyAmount,
+      onBehalfOf: bob
+    });
 
     vm.prank(alice);
     positionManager.approveBorrow(address(spoke1), _daiReserveId(spoke1), bob, type(uint256).max);
@@ -564,8 +588,20 @@ contract TakerPositionManagerTest is TakerPositionManagerBaseTest {
   ) public {
     uint256 borrowAmount = 100e18;
     approveBorrowAmount = bound(approveBorrowAmount, 1, borrowAmount - 1);
-    SpokeActions.supplyCollateral(spoke1, _daiReserveId(spoke1), alice, borrowAmount, alice);
-    SpokeActions.supplyCollateral(spoke1, _daiReserveId(spoke1), bob, borrowAmount, bob);
+    SpokeActions.supplyCollateral({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      caller: alice,
+      amount: borrowAmount,
+      onBehalfOf: alice
+    });
+    SpokeActions.supplyCollateral({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      caller: bob,
+      amount: borrowAmount,
+      onBehalfOf: bob
+    });
 
     vm.prank(alice);
     positionManager.approveBorrow(address(spoke1), _daiReserveId(spoke1), bob, approveBorrowAmount);

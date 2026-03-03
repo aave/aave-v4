@@ -46,7 +46,7 @@ abstract contract SetupHelpers is CheckedActions, ConfigHelpers, MockHelpers {
     uint256 initialLiq = hub.getAssetLiquidity(assetId);
 
     _deal(spoke, reserveId, user, amount);
-    SpokeActions.approve(spoke, reserveId, user, UINT256_MAX);
+    SpokeActions.approve({spoke: spoke, reserveId: reserveId, owner: user, amount: UINT256_MAX});
 
     _checkedSupplyCollateral(
       CheckedSupplyCollateralParams({
@@ -72,7 +72,13 @@ abstract contract SetupHelpers is CheckedActions, ConfigHelpers, MockHelpers {
       reserveId,
       _max(_hub(spoke, reserveId).previewAddByShares(_reserveAssetId(spoke, reserveId), 1), amount)
     );
-    SpokeActions.borrow(spoke, reserveId, user, amount, user);
+    SpokeActions.borrow({
+      spoke: spoke,
+      reserveId: reserveId,
+      caller: user,
+      amount: amount,
+      onBehalfOf: user
+    });
   }
 
   /// @dev Opens a debt position for a random user, using same asset as collateral and borrow
@@ -94,7 +100,12 @@ abstract contract SetupHelpers is CheckedActions, ConfigHelpers, MockHelpers {
     });
 
     _deal(spoke, reserveId, tempUser, supplyAmount);
-    SpokeActions.approve(spoke, reserveId, tempUser, UINT256_MAX);
+    SpokeActions.approve({
+      spoke: spoke,
+      reserveId: reserveId,
+      owner: tempUser,
+      amount: UINT256_MAX
+    });
 
     SpokeActions.supplyCollateral({
       spoke: spoke,
@@ -147,9 +158,26 @@ abstract contract SetupHelpers is CheckedActions, ConfigHelpers, MockHelpers {
       borrowAmount
     ) * 5;
     _deal(spoke, collateralReserveId, user, supplyAmount);
-    SpokeActions.approve(spoke, collateralReserveId, user, UINT256_MAX);
-    SpokeActions.supplyCollateral(spoke, collateralReserveId, user, supplyAmount, user);
-    SpokeActions.borrow(spoke, debtReserveId, user, borrowAmount, user);
+    SpokeActions.approve({
+      spoke: spoke,
+      reserveId: collateralReserveId,
+      owner: user,
+      amount: UINT256_MAX
+    });
+    SpokeActions.supplyCollateral({
+      spoke: spoke,
+      reserveId: collateralReserveId,
+      caller: user,
+      amount: supplyAmount,
+      onBehalfOf: user
+    });
+    SpokeActions.borrow({
+      spoke: spoke,
+      reserveId: debtReserveId,
+      caller: user,
+      amount: borrowAmount,
+      onBehalfOf: user
+    });
   }
 
   /// @dev Borrow to be at a certain health factor
@@ -185,7 +213,13 @@ abstract contract SetupHelpers is CheckedActions, ConfigHelpers, MockHelpers {
   ) internal returns (ISpoke.UserAccountData memory) {
     uint256 requiredDebtAmount = _getRequiredDebtAmountForHf(spoke, user, reserveId, desiredHf);
     require(requiredDebtAmount <= MAX_SUPPLY_AMOUNT, 'required debt amount too high');
-    SpokeActions.borrow(spoke, reserveId, user, requiredDebtAmount, user);
+    SpokeActions.borrow({
+      spoke: spoke,
+      reserveId: reserveId,
+      caller: user,
+      amount: requiredDebtAmount,
+      onBehalfOf: user
+    });
     ISpoke.UserAccountData memory userAccountData = spoke.getUserAccountData(user);
 
     _mockReservePriceByPercent(spoke, collateralReserveId, pricePercentage, spokeAdmin);

@@ -491,8 +491,20 @@ contract ConfigPositionManagerTest is Base {
     vm.prank(alice);
     positionManager.setCanUpdateUserRiskPremiumPermission(address(spoke1), bob, true);
 
-    SpokeActions.supplyCollateral(spoke1, _daiReserveId(spoke1), alice, 100e18, alice);
-    SpokeActions.borrow(spoke1, _daiReserveId(spoke1), alice, 75e18, alice);
+    SpokeActions.supplyCollateral({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      caller: alice,
+      amount: 100e18,
+      onBehalfOf: alice
+    });
+    SpokeActions.borrow({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      caller: alice,
+      amount: 75e18,
+      onBehalfOf: alice
+    });
 
     vm.expectEmit(address(spoke1));
     emit ISpoke.UpdateUserRiskPremium(alice, _calculateExpectedUserRP(spoke1, alice));
@@ -504,8 +516,20 @@ contract ConfigPositionManagerTest is Base {
     vm.prank(alice);
     positionManager.setGlobalPermission(address(spoke1), bob, true);
 
-    SpokeActions.supplyCollateral(spoke1, _daiReserveId(spoke1), alice, 100e18, alice);
-    SpokeActions.borrow(spoke1, _daiReserveId(spoke1), alice, 75e18, alice);
+    SpokeActions.supplyCollateral({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      caller: alice,
+      amount: 100e18,
+      onBehalfOf: alice
+    });
+    SpokeActions.borrow({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      caller: alice,
+      amount: 75e18,
+      onBehalfOf: alice
+    });
 
     vm.expectEmit(address(spoke1));
     emit ISpoke.UpdateUserRiskPremium(alice, _calculateExpectedUserRP(spoke1, alice));

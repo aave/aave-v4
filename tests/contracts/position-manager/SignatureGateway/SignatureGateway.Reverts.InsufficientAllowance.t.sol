@@ -45,8 +45,20 @@ contract SignatureGateway_InsufficientAllowance_Test is SignatureGatewayBaseTest
   }
 
   function test_repayWithSig_revertsWith_ERC20InsufficientAllowance() public {
-    SpokeActions.supplyCollateral(spoke1, _daiReserveId(spoke1), alice, 1000e18, alice);
-    SpokeActions.borrow(spoke1, _daiReserveId(spoke1), alice, 100e18, alice);
+    SpokeActions.supplyCollateral({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      caller: alice,
+      amount: 1000e18,
+      onBehalfOf: alice
+    });
+    SpokeActions.borrow({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      caller: alice,
+      amount: 100e18,
+      onBehalfOf: alice
+    });
 
     uint256 deadline = _warpBeforeRandomDeadline();
 

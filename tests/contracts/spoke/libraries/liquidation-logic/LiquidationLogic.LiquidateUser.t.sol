@@ -113,30 +113,30 @@ contract LiquidationLogicLiquidateUserTest is LiquidationLogicBaseTest {
     // Collateral hub: Add liquidity
     address tempUser = _makeUser();
     deal(address(tokenList.usdx), tempUser, MAX_SUPPLY_AMOUNT);
-    HubActions.add(
-      hub1,
-      usdxAssetId,
-      address(liquidationLogicWrapper),
-      MAX_SUPPLY_AMOUNT,
-      tempUser
-    );
+    HubActions.add({
+      hub: hub1,
+      assetId: usdxAssetId,
+      caller: address(liquidationLogicWrapper),
+      amount: MAX_SUPPLY_AMOUNT,
+      user: tempUser
+    });
 
     // Debt hub: Add liquidity, remove liquidity, refresh premium and skip time to accrue both drawn and premium debt
     deal(address(tokenList.weth), tempUser, MAX_SUPPLY_AMOUNT);
-    HubActions.add(
-      debtReserveHub,
-      wethAssetId,
-      address(liquidationLogicWrapper),
-      MAX_SUPPLY_AMOUNT,
-      tempUser
-    );
-    HubActions.draw(
-      debtReserveHub,
-      wethAssetId,
-      address(liquidationLogicWrapper),
-      tempUser,
-      MAX_SUPPLY_AMOUNT
-    );
+    HubActions.add({
+      hub: debtReserveHub,
+      assetId: wethAssetId,
+      caller: address(liquidationLogicWrapper),
+      amount: MAX_SUPPLY_AMOUNT,
+      user: tempUser
+    });
+    HubActions.draw({
+      hub: debtReserveHub,
+      assetId: wethAssetId,
+      caller: address(liquidationLogicWrapper),
+      to: tempUser,
+      amount: MAX_SUPPLY_AMOUNT
+    });
     vm.startPrank(address(liquidationLogicWrapper));
     debtReserveHub.refreshPremium(
       wethAssetId,
@@ -161,12 +161,12 @@ contract LiquidationLogicLiquidateUserTest is LiquidationLogicBaseTest {
 
     // Mint tokens to liquidator and approve spoke
     deal(address(tokenList.weth), params.liquidator, spokeDrawnOwed + spokePremiumOwed);
-    SpokeActions.approve(
-      ISpoke(address(liquidationLogicWrapper)),
-      address(tokenList.weth),
-      params.liquidator,
-      spokeDrawnOwed + spokePremiumOwed
-    );
+    SpokeActions.approve({
+      spoke: ISpoke(address(liquidationLogicWrapper)),
+      underlying: address(tokenList.weth),
+      owner: params.liquidator,
+      amount: spokeDrawnOwed + spokePremiumOwed
+    });
   }
 
   function test_liquidateUser() public {

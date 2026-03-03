@@ -104,7 +104,13 @@ abstract contract SetupHelpers is MathHelpers {
     uint256 skipTime,
     address spoke
   ) internal {
-    HubActions.draw(hub, assetId, spoke, vm.randomAddress(), amount);
+    HubActions.draw({
+      hub: hub,
+      assetId: assetId,
+      caller: spoke,
+      to: vm.randomAddress(),
+      amount: amount
+    });
     int256 oldPremiumOffsetRay = _calculatePremiumAssetsRay(hub, assetId, amount).toInt256();
 
     if (withPremium) {

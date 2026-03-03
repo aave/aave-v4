@@ -48,13 +48,13 @@ contract TreasurySpokeTest is Base {
 
   function test_supply(uint256 amount) public {
     amount = bound(amount, 1, MAX_SUPPLY_AMOUNT);
-    SpokeActions.supply(
-      _treasurySpoke(),
-      daiAssetId,
-      TREASURY_ADMIN,
-      amount,
-      address(treasurySpoke)
-    );
+    SpokeActions.supply({
+      spoke: _treasurySpoke(),
+      reserveId: daiAssetId,
+      caller: TREASURY_ADMIN,
+      amount: amount,
+      onBehalfOf: address(treasurySpoke)
+    });
 
     assertEq(treasurySpoke.getSuppliedAmount(daiAssetId), amount);
   }
@@ -65,13 +65,13 @@ contract TreasurySpokeTest is Base {
 
     _updateLiquidityFee(hub1, daiAssetId, 0);
 
-    SpokeActions.supply(
-      _treasurySpoke(),
-      daiAssetId,
-      TREASURY_ADMIN,
-      amount,
-      address(treasurySpoke)
-    );
+    SpokeActions.supply({
+      spoke: _treasurySpoke(),
+      reserveId: daiAssetId,
+      caller: TREASURY_ADMIN,
+      amount: amount,
+      onBehalfOf: address(treasurySpoke)
+    });
     assertEq(treasurySpoke.getSuppliedAmount(daiAssetId), amount);
 
     uint256 suppliedSharesBefore = treasurySpoke.getSuppliedShares(daiAssetId);
@@ -86,13 +86,13 @@ contract TreasurySpokeTest is Base {
     uint256 interest = treasurySpoke.getSuppliedAmount(daiAssetId) - suppliedAssetsBefore;
     vm.assume(interest > 0); // assume only cases where the initial amount generates interest
 
-    SpokeActions.withdraw(
-      _treasurySpoke(),
-      daiAssetId,
-      TREASURY_ADMIN,
-      amount + interest,
-      address(treasurySpoke)
-    );
+    SpokeActions.withdraw({
+      spoke: _treasurySpoke(),
+      reserveId: daiAssetId,
+      caller: TREASURY_ADMIN,
+      amount: amount + interest,
+      onBehalfOf: address(treasurySpoke)
+    });
   }
 
   /// treasury does not supply but earn fees
@@ -108,7 +108,7 @@ contract TreasurySpokeTest is Base {
     assertEq(hub1.getAsset(daiAssetId).realizedFees, 0, 'fees'); // fees not yet accrued
 
     uint256 expectedFeeAmount = _calcUnrealizedFees(hub1, daiAssetId);
-    HubActions.mintFeeShares(hub1, daiAssetId, ADMIN);
+    HubActions.mintFeeShares({hub: hub1, assetId: daiAssetId, caller: ADMIN});
 
     assertEq(hub1.getAsset(daiAssetId).realizedFees, 0, 'realized fees after minting');
     assertGe(
@@ -116,26 +116,26 @@ contract TreasurySpokeTest is Base {
       hub1.previewAddByAssets(daiAssetId, expectedFeeAmount)
     );
 
-    SpokeActions.withdraw(
-      _treasurySpoke(),
-      daiAssetId,
-      TREASURY_ADMIN,
-      UINT256_MAX,
-      address(treasurySpoke)
-    );
+    SpokeActions.withdraw({
+      spoke: _treasurySpoke(),
+      reserveId: daiAssetId,
+      caller: TREASURY_ADMIN,
+      amount: UINT256_MAX,
+      onBehalfOf: address(treasurySpoke)
+    });
   }
 
   /// treasury supplies to earn interest and fees
   function test_withdraw_fuzz_amount_interestAndFees(uint256 amount) public {
     amount = bound(amount, 1, MAX_SUPPLY_AMOUNT);
 
-    SpokeActions.supply(
-      _treasurySpoke(),
-      daiAssetId,
-      TREASURY_ADMIN,
-      amount,
-      address(treasurySpoke)
-    );
+    SpokeActions.supply({
+      spoke: _treasurySpoke(),
+      reserveId: daiAssetId,
+      caller: TREASURY_ADMIN,
+      amount: amount,
+      onBehalfOf: address(treasurySpoke)
+    });
     assertEq(treasurySpoke.getSuppliedAmount(daiAssetId), amount);
 
     uint256 suppliedSharesBefore = treasurySpoke.getSuppliedShares(daiAssetId);
@@ -149,13 +149,13 @@ contract TreasurySpokeTest is Base {
     assertGe(treasurySpoke.getSuppliedShares(daiAssetId), suppliedSharesBefore);
     uint256 interestAndFees = treasurySpoke.getSuppliedAmount(daiAssetId) - suppliedAssetsBefore;
 
-    SpokeActions.withdraw(
-      _treasurySpoke(),
-      daiAssetId,
-      TREASURY_ADMIN,
-      amount + interestAndFees,
-      address(treasurySpoke)
-    );
+    SpokeActions.withdraw({
+      spoke: _treasurySpoke(),
+      reserveId: daiAssetId,
+      caller: TREASURY_ADMIN,
+      amount: amount + interestAndFees,
+      onBehalfOf: address(treasurySpoke)
+    });
   }
 
   function test_transfer_revertsWith_Unauthorized(address caller) public {
@@ -224,7 +224,7 @@ contract TreasurySpokeTest is Base {
 
     uint256 expectedFeeAmount = _calcUnrealizedFees(hub1, assetId);
 
-    HubActions.mintFeeShares(hub1, assetId, ADMIN);
+    HubActions.mintFeeShares({hub: hub1, assetId: assetId, caller: ADMIN});
     uint256 fees = treasurySpoke.getSuppliedAmount(assetId);
 
     assertEq(fees, expectedFeeAmount, 'supplied amount of fees');
@@ -247,14 +247,20 @@ contract TreasurySpokeTest is Base {
       uint256 balanceBefore = asset.balanceOf(TREASURY_ADMIN);
 
       deal(address(asset), tempUser, UINT256_MAX);
-      SpokeActions.repay(spoke1, reserveId, tempUser, UINT256_MAX, tempUser);
-      SpokeActions.withdraw(
-        _treasurySpoke(),
-        assetId,
-        TREASURY_ADMIN,
-        fees,
-        address(treasurySpoke)
-      );
+      SpokeActions.repay({
+        spoke: spoke1,
+        reserveId: reserveId,
+        caller: tempUser,
+        amount: UINT256_MAX,
+        onBehalfOf: tempUser
+      });
+      SpokeActions.withdraw({
+        spoke: _treasurySpoke(),
+        reserveId: assetId,
+        caller: TREASURY_ADMIN,
+        amount: fees,
+        onBehalfOf: address(treasurySpoke)
+      });
 
       assertEq(balanceBefore + fees, asset.balanceOf(TREASURY_ADMIN), 'Treasury admin balance');
       assertEq(

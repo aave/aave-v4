@@ -160,7 +160,7 @@ abstract contract SetupHelpers is SpokeHelpers {
     address admin,
     address treasuryAdmin
   ) internal {
-    HubActions.mintFeeShares(hub, assetId, admin);
+    HubActions.mintFeeShares({hub: hub, assetId: assetId, caller: admin});
     uint256 fees = hub.getSpokeAddedAssets(assetId, address(treasurySpoke));
 
     if (amount > fees) {
