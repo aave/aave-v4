@@ -796,6 +796,7 @@ library LiquidationLogic {
   function _calculateDebtToTargetHealthFactor(
     CalculateDebtToTargetHealthFactorParams memory params
   ) internal pure returns (uint256) {
+    // rounding direction has no effect on the result, as there is no precision loss in this calculation.
     uint256 liquidationPenalty = params.liquidationBonus.bpsToWad().percentMulUp(
       params.collateralFactor
     );
