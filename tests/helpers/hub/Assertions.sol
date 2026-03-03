@@ -20,8 +20,6 @@ abstract contract Assertions is QueryHelpers {
   using PercentageMath for uint256;
   using SafeCast for *;
 
-  // --- Hub state assertions ---
-
   function _assertHubLiquidity(IHub targetHub, uint256 assetId, string memory label) internal view {
     IHub.Asset memory asset = targetHub.getAsset(assetId);
     uint256 currentHubBalance = IERC20(asset.underlying).balanceOf(address(targetHub));
@@ -57,8 +55,6 @@ abstract contract Assertions is QueryHelpers {
   function _assertRefreshPremiumNotCalled(IHub hub) internal {
     vm.expectCall(address(hub), abi.encodeWithSelector(IHubBase.refreshPremium.selector), 0);
   }
-
-  // --- assertEq overloads for Hub types ---
 
   function assertEq(IHubBase.PremiumDelta memory a, IHubBase.PremiumDelta memory b) internal pure {
     assertEq(a.sharesDelta, b.sharesDelta, 'sharesDelta');

@@ -9,8 +9,6 @@ import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 /// @title SetupHelpers
 /// @notice Data builders for SignatureGateway tests.
 abstract contract SetupHelpers is SpokeHelpers {
-  // --- Data builders ---
-
   function _supplyData(
     ISignatureGateway gateway,
     ISpoke spoke,

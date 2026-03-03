@@ -13,7 +13,9 @@ library SpokeActions {
 
   Vm internal constant vm = Vm(address(uint160(uint256(keccak256('hevm cheat code')))));
 
-  // --- Core user actions ---
+  ///////////////////////////////////////////////////////////////////////////////////////////////
+  //                                  CORE USER ACTIONS                                        //
+  ///////////////////////////////////////////////////////////////////////////////////////////////
 
   function setUsingAsCollateral(
     ISpoke spoke,
@@ -94,7 +96,9 @@ library SpokeActions {
     spoke.liquidationCall(collateralReserveId, debtReserveId, user, debtToCover, receiveShares);
   }
 
-  // --- Config actions ---
+  ///////////////////////////////////////////////////////////////////////////////////////////////
+  //                                  CONFIG ACTIONS                                          //
+  ///////////////////////////////////////////////////////////////////////////////////////////////
 
   function updateReserveConfig(
     ISpoke spoke,
@@ -127,7 +131,9 @@ library SpokeActions {
     spoke.updateDynamicReserveConfig(reserveId, key, config);
   }
 
-  // --- Approval / transfer helpers ---
+  ///////////////////////////////////////////////////////////////////////////////////////////////
+  //                                  TOKEN HELPERS                                            //
+  ///////////////////////////////////////////////////////////////////////////////////////////////
 
   function approve(ISpoke spoke, uint256 reserveId, address owner, uint256 amount) internal {
     address underlying = spoke.getReserve(reserveId).underlying;

@@ -24,11 +24,11 @@ abstract contract MathHelpers is QueryHelpers {
   using SafeCast for *;
   using KeyValueList for KeyValueList.List;
 
-  // --- Constants ---
-
   uint256 internal constant MAX_SUPPLY_ASSET_UNITS = MAX_SUPPLY_AMOUNT / 1e18;
 
-  // --- Value conversion helpers ---
+  ///////////////////////////////////////////////////////////////////////////////////////////////
+  //                                  CONVERSIONS & DEBT MATH                                  //
+  ///////////////////////////////////////////////////////////////////////////////////////////////
 
   function _convertAmountToValue(
     ISpoke spoke,
@@ -66,8 +66,6 @@ abstract contract MathHelpers is QueryHelpers {
       _convertValueToAmount(spoke, toReserveId, _convertAmountToValue(spoke, reserveId, amount));
   }
 
-  // --- Premium debt and supply helpers ---
-
   function _calculatePremiumDebtRay(
     ISpoke spoke,
     uint256 reserveId,
@@ -100,8 +98,6 @@ abstract contract MathHelpers is QueryHelpers {
   ) internal view returns (uint256) {
     return MAX_SUPPLY_ASSET_UNITS * 10 ** spoke.getReserve(reserveId).decimals;
   }
-
-  // --- Pure math helpers ---
 
   function _calculateRestoreAmounts(
     uint256 restoreAmount,
@@ -139,7 +135,9 @@ abstract contract MathHelpers is QueryHelpers {
       );
   }
 
-  // --- Complex state queries ---
+  ///////////////////////////////////////////////////////////////////////////////////////////////
+  //                                   POSITION CALCULATIONS                                   //
+  ///////////////////////////////////////////////////////////////////////////////////////////////
 
   function _getUserAccountData(
     ISpoke spoke,
@@ -166,8 +164,6 @@ abstract contract MathHelpers is QueryHelpers {
 
     return userAccountData;
   }
-
-  // --- Premium delta calculations ---
 
   function _getExpectedPremiumDelta(
     ISpoke spoke,
@@ -231,8 +227,6 @@ abstract contract MathHelpers is QueryHelpers {
         });
     }
   }
-
-  // --- Collateral / debt amount calculations ---
 
   function _calcMinimumCollAmount(
     ISpoke spoke,
@@ -299,8 +293,6 @@ abstract contract MathHelpers is QueryHelpers {
     return maxDebt > 1 ? maxDebt - 1 : maxDebt;
   }
 
-  // --- Health factor calculations ---
-
   function _getRequiredDebtAmountForHf(
     ISpoke spoke,
     address user,
@@ -329,7 +321,9 @@ abstract contract MathHelpers is QueryHelpers {
     return targetTotalDebtValue - userAccountData.totalDebtValueRay / WadRayMath.RAY;
   }
 
-  // --- Risk premium calculation ---
+  ///////////////////////////////////////////////////////////////////////////////////////////////
+  //                                 RISK PREMIUM CALCULATION                                  //
+  ///////////////////////////////////////////////////////////////////////////////////////////////
 
   struct CalculateRiskPremiumLocal {
     uint256 reserveCount;
@@ -430,7 +424,9 @@ abstract contract MathHelpers is QueryHelpers {
     return _divUp(vars.riskPremium, vars.utilizedSupply);
   }
 
-  // --- Aggregate queries ---
+  ///////////////////////////////////////////////////////////////////////////////////////////////
+  //                                    BOUNDS & UTILITIES                                     //
+  ///////////////////////////////////////////////////////////////////////////////////////////////
 
   function _spokeMaxBorrowRate(ISpoke spoke) internal view returns (uint32) {
     uint32 maxBorrowRate;
@@ -447,8 +443,6 @@ abstract contract MathHelpers is QueryHelpers {
     }
     return maxBorrowRate;
   }
-
-  // --- Bounds / random utilities ---
 
   function _maxLiquidationBonusUpperBound(
     ISpoke spoke,

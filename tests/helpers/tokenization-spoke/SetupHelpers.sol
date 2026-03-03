@@ -15,7 +15,9 @@ import {EIP712Types} from 'tests/helpers/mocks/EIP712Types.sol';
 /// @title SetupHelpers
 /// @notice Deploy, register, data-builder, and scenario-setup utilities for tokenization spoke tests.
 abstract contract SetupHelpers is SpokeHelpers {
-  // --- Deploy & register ---
+  ///////////////////////////////////////////////////////////////////////////////////////////////
+  //                                  DEPLOY & REGISTER                                        //
+  ///////////////////////////////////////////////////////////////////////////////////////////////
 
   function _deployTokenizationSpoke(
     IHub hub,
@@ -67,7 +69,9 @@ abstract contract SetupHelpers is SpokeHelpers {
     hub.addSpoke(assetId, address(tokenizationSpoke), config);
   }
 
-  // --- Data builders ---
+  ///////////////////////////////////////////////////////////////////////////////////////////////
+  //                                  DATA BUILDERS                                            //
+  ///////////////////////////////////////////////////////////////////////////////////////////////
 
   function _depositData(
     ITokenizationSpoke vault,
@@ -144,7 +148,9 @@ abstract contract SetupHelpers is SpokeHelpers {
       });
   }
 
-  // --- Fee helpers ---
+  ///////////////////////////////////////////////////////////////////////////////////////////////
+  //                                  SETUP HELPERS                                            //
+  ///////////////////////////////////////////////////////////////////////////////////////////////
 
   function _withdrawLiquidityFees(
     IHub hub,
@@ -166,8 +172,6 @@ abstract contract SetupHelpers is SpokeHelpers {
     vm.prank(treasuryAdmin);
     treasurySpoke.withdraw(assetId, amount, address(treasurySpoke));
   }
-
-  // --- Yield simulation ---
 
   function _simulateYield(
     ITokenizationSpoke vault,

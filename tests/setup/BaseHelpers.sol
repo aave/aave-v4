@@ -12,7 +12,9 @@ import {SpokeActions} from 'tests/helpers/spoke/SpokeActions.sol';
 /// @notice Aggregates hub and spoke helpers and adds cross-layer assertion helpers.
 ///         Provides convenience overloads that default admin and threshold arguments.
 abstract contract BaseHelpers is BaseState {
-  // --- Reserve ID lookups (use spokeInfo state from BaseState) ---
+  ///////////////////////////////////////////////////////////////////////////////////////////////
+  //                                   RESERVE ID LOOKUPS                                     //
+  ///////////////////////////////////////////////////////////////////////////////////////////////
 
   function _usdxReserveId(ISpoke spoke) internal view returns (uint256) {
     return spokeInfo[spoke].usdx.reserveId;
@@ -48,7 +50,9 @@ abstract contract BaseHelpers is BaseState {
       });
   }
 
-  // --- Cross-layer assertions ---
+  ///////////////////////////////////////////////////////////////////////////////////////////////
+  //                                   CROSS-LAYER ASSERTIONS                                 //
+  ///////////////////////////////////////////////////////////////////////////////////////////////
 
   function _checkSupplyRateIncreasing(
     uint256 oldRate,
@@ -77,7 +81,9 @@ abstract contract BaseHelpers is BaseState {
     assertEq(a.premium, b.premium, 'premium');
   }
 
-  // --- Hub math overloads (default hub1) ---
+  ///////////////////////////////////////////////////////////////////////////////////////////////
+  //                                   SETUP OVERLOADS                                         //
+  ///////////////////////////////////////////////////////////////////////////////////////////////
 
   function _calculateExactRestoreAmount(
     uint256 drawn,
@@ -87,8 +93,6 @@ abstract contract BaseHelpers is BaseState {
   ) internal view returns (uint256, uint256) {
     return _calculateExactRestoreAmount(hub1, assetId, drawn, premium, restoreAmount);
   }
-
-  // --- Hub setup overloads (default HUB_ADMIN + MAX_ALLOWED_COLLATERAL_RISK) ---
 
   function _addLiquidity(IHub hub, uint256 assetId, uint256 amount) public {
     _addLiquidity(hub, assetId, amount, HUB_ADMIN, MAX_ALLOWED_COLLATERAL_RISK);
@@ -116,8 +120,6 @@ abstract contract BaseHelpers is BaseState {
     );
   }
 
-  // --- Hub mock overloads (default HUB_ADMIN + MAX_ALLOWED_COLLATERAL_RISK) ---
-
   function _mockSupplySharePrice(
     IHub hub,
     uint256 assetId,
@@ -139,8 +141,6 @@ abstract contract BaseHelpers is BaseState {
   function _setConstantInterestRateBps(IHub hub, uint256 assetId, uint32 interestRateBps) internal {
     _setConstantInterestRateBps(hub, assetId, interestRateBps, HUB_ADMIN);
   }
-
-  // --- Hub config overloads (default HUB_ADMIN) ---
 
   function _updateLiquidityFee(IHub hub, uint256 assetId, uint256 liquidityFee) internal {
     _updateLiquidityFee(hub, assetId, liquidityFee, HUB_ADMIN);
@@ -183,8 +183,6 @@ abstract contract BaseHelpers is BaseState {
     _grantDeficitEliminatorRole(hub, target, ADMIN);
   }
 
-  // --- Spoke setup overloads (default SPOKE_ADMIN) ---
-
   function _openDebtPosition(
     ISpoke spoke,
     uint256 reserveId,
@@ -214,8 +212,6 @@ abstract contract BaseHelpers is BaseState {
       );
   }
 
-  // --- Spoke mock overloads (default SPOKE_ADMIN) ---
-
   function _mockReservePrice(ISpoke spoke, uint256 reserveId, uint256 price) internal {
     _mockReservePrice(spoke, reserveId, price, SPOKE_ADMIN);
   }
@@ -227,8 +223,6 @@ abstract contract BaseHelpers is BaseState {
   ) internal {
     _mockReservePriceByPercent(spoke, reserveId, percentage, SPOKE_ADMIN);
   }
-
-  // --- Spoke config overloads (default SPOKE_ADMIN) ---
 
   function _updateReserveFrozenFlag(ISpoke spoke, uint256 reserveId, bool newFrozenFlag) internal {
     _updateReserveFrozenFlag(spoke, reserveId, newFrozenFlag, SPOKE_ADMIN);

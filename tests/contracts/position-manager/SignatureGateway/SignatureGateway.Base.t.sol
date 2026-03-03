@@ -17,8 +17,6 @@ contract SignatureGatewayBaseTest is Base, SignatureGatewayHelpers {
     gateway.registerSpoke(address(spoke1), true);
   }
 
-  // --- Convenience overloads (bind gateway) ---
-
   function _supplyData(
     ISpoke spoke,
     address user,

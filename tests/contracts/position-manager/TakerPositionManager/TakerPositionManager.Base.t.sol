@@ -24,8 +24,6 @@ contract TakerPositionManagerBaseTest is Base, TakerPositionManagerHelpers {
     positionManager.registerSpoke(address(spoke1), true);
   }
 
-  // --- Convenience overloads (bind positionManager + spoke1) ---
-
   function _withdrawPermitData(
     address spender,
     address onBehalfOf,

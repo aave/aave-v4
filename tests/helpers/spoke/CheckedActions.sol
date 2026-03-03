@@ -12,8 +12,6 @@ import {MathHelpers} from 'tests/helpers/spoke/MathHelpers.sol';
 /// @notice Composite helpers that encapsulate setup-act-assert for common operations.
 /// Each helper snapshots state, executes the action, and asserts basic invariants.
 abstract contract CheckedActions is MathHelpers {
-  // --- Params / result structs ---
-
   struct CheckedSupplyParams {
     ISpoke spoke;
     uint256 reserveId;
@@ -99,8 +97,6 @@ abstract contract CheckedActions is MathHelpers {
     uint256 amount;
     address onBehalfOf;
   }
-
-  // --- Checked action helpers ---
 
   function _checkedSupply(
     CheckedSupplyParams memory params

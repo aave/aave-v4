@@ -21,7 +21,9 @@ abstract contract MathHelpers is QueryHelpers {
   using SafeCast for *;
   using SharesMath for uint256;
 
-  // --- Premium calculations (pure) ---
+  ///////////////////////////////////////////////////////////////////////////////////////////////
+  //                                   PREMIUM CALCULATIONS                                    //
+  ///////////////////////////////////////////////////////////////////////////////////////////////
 
   function _getExpectedPremiumDelta(
     uint256 drawnIndex,
@@ -64,66 +66,6 @@ abstract contract MathHelpers is QueryHelpers {
   ) internal pure returns (uint256) {
     return premiumShares * drawnIndex;
   }
-
-  // --- Debt and interest calculations ---
-
-  function _calculateDebtAssetsToRestore(
-    uint256 drawnSharesToLiquidate,
-    uint256 premiumDebtRayToLiquidate,
-    uint256 drawnIndex
-  ) internal pure returns (uint256) {
-    return drawnSharesToLiquidate.rayMulUp(drawnIndex) + premiumDebtRayToLiquidate.fromRayUp();
-  }
-
-  function _calculateExpectedDrawnIndex(
-    uint256 initialDrawnIndex,
-    uint96 borrowRate,
-    uint40 startTime
-  ) internal view returns (uint256) {
-    return initialDrawnIndex.rayMulUp(MathUtils.calculateLinearInterest(borrowRate, startTime));
-  }
-
-  function _calculateExpectedDebt(
-    uint256 initialDrawnShares,
-    uint256 initialDrawnIndex,
-    uint96 borrowRate,
-    uint40 startTime
-  ) internal view returns (uint256 newDrawnIndex, uint256 newDrawnDebt) {
-    newDrawnIndex = _calculateExpectedDrawnIndex(initialDrawnIndex, borrowRate, startTime);
-    newDrawnDebt = initialDrawnShares.rayMulUp(newDrawnIndex);
-  }
-
-  function _calculateExpectedDrawnDebt(
-    uint256 initialDebt,
-    uint96 borrowRate,
-    uint40 startTime
-  ) internal view returns (uint256) {
-    return MathUtils.calculateLinearInterest(borrowRate, startTime).rayMulUp(initialDebt);
-  }
-
-  // --- Fee calculations ---
-
-  function _calculateExpectedFeesAmount(
-    uint256 initialDrawnShares,
-    uint256 initialPremiumShares,
-    uint256 liquidityFee,
-    uint256 indexDelta
-  ) internal pure returns (uint256 feesAmount) {
-    return
-      indexDelta.rayMulUp(initialDrawnShares + initialPremiumShares).percentMulDown(liquidityFee);
-  }
-
-  function _calculateEffectiveAddedAssets(
-    uint256 assetsAmount,
-    uint256 totalAddedAssets,
-    uint256 totalAddedShares
-  ) internal pure returns (uint256) {
-    uint256 sharesAmount = assetsAmount.toSharesDown(totalAddedAssets, totalAddedShares);
-    return
-      sharesAmount.toAssetsDown(totalAddedAssets + assetsAmount, totalAddedShares + sharesAmount);
-  }
-
-  // --- Premium calculations (require IHub) ---
 
   function _calculatePremiumDebtRay(
     IHub hub,
@@ -172,7 +114,85 @@ abstract contract MathHelpers is QueryHelpers {
       });
   }
 
-  // --- Fee and interest queries ---
+  ///////////////////////////////////////////////////////////////////////////////////////////////
+  //                                   DEBT CALCULATIONS                                       //
+  ///////////////////////////////////////////////////////////////////////////////////////////////
+
+  function _calculateDebtAssetsToRestore(
+    uint256 drawnSharesToLiquidate,
+    uint256 premiumDebtRayToLiquidate,
+    uint256 drawnIndex
+  ) internal pure returns (uint256) {
+    return drawnSharesToLiquidate.rayMulUp(drawnIndex) + premiumDebtRayToLiquidate.fromRayUp();
+  }
+
+  function _calculateExpectedDrawnIndex(
+    uint256 initialDrawnIndex,
+    uint96 borrowRate,
+    uint40 startTime
+  ) internal view returns (uint256) {
+    return initialDrawnIndex.rayMulUp(MathUtils.calculateLinearInterest(borrowRate, startTime));
+  }
+
+  function _calculateExpectedDebt(
+    uint256 initialDrawnShares,
+    uint256 initialDrawnIndex,
+    uint96 borrowRate,
+    uint40 startTime
+  ) internal view returns (uint256 newDrawnIndex, uint256 newDrawnDebt) {
+    newDrawnIndex = _calculateExpectedDrawnIndex(initialDrawnIndex, borrowRate, startTime);
+    newDrawnDebt = initialDrawnShares.rayMulUp(newDrawnIndex);
+  }
+
+  function _calculateExpectedDrawnDebt(
+    uint256 initialDebt,
+    uint96 borrowRate,
+    uint40 startTime
+  ) internal view returns (uint256) {
+    return MathUtils.calculateLinearInterest(borrowRate, startTime).rayMulUp(initialDebt);
+  }
+
+  function _calculateExactRestoreAmount(
+    IHub hub,
+    uint256 assetId,
+    uint256 drawn,
+    uint256 premium,
+    uint256 restoreAmount
+  ) internal view returns (uint256, uint256) {
+    if (restoreAmount <= premium) {
+      return (0, restoreAmount);
+    }
+    uint256 drawnRestored = _min(drawn, restoreAmount - premium);
+    drawnRestored = hub.previewRestoreByShares(
+      assetId,
+      hub.previewRestoreByAssets(assetId, drawnRestored)
+    );
+    return (drawnRestored, premium);
+  }
+
+  ///////////////////////////////////////////////////////////////////////////////////////////////
+  //                                   FEE CALCULATIONS                                        //
+  ///////////////////////////////////////////////////////////////////////////////////////////////
+
+  function _calculateExpectedFeesAmount(
+    uint256 initialDrawnShares,
+    uint256 initialPremiumShares,
+    uint256 liquidityFee,
+    uint256 indexDelta
+  ) internal pure returns (uint256 feesAmount) {
+    return
+      indexDelta.rayMulUp(initialDrawnShares + initialPremiumShares).percentMulDown(liquidityFee);
+  }
+
+  function _calculateEffectiveAddedAssets(
+    uint256 assetsAmount,
+    uint256 totalAddedAssets,
+    uint256 totalAddedShares
+  ) internal pure returns (uint256) {
+    uint256 sharesAmount = assetsAmount.toSharesDown(totalAddedAssets, totalAddedShares);
+    return
+      sharesAmount.toAssetsDown(totalAddedAssets + assetsAmount, totalAddedShares + sharesAmount);
+  }
 
   function _calcUnrealizedFees(IHub hub, uint256 assetId) internal view returns (uint256) {
     IHub.Asset memory asset = hub.getAsset(assetId);
@@ -206,25 +226,5 @@ abstract contract MathHelpers is QueryHelpers {
       hub.getAddedAssets(assetId) +
       hub.getAsset(assetId).realizedFees +
       _calcUnrealizedFees(hub, assetId);
-  }
-
-  // --- Restore calculations ---
-
-  function _calculateExactRestoreAmount(
-    IHub hub,
-    uint256 assetId,
-    uint256 drawn,
-    uint256 premium,
-    uint256 restoreAmount
-  ) internal view returns (uint256, uint256) {
-    if (restoreAmount <= premium) {
-      return (0, restoreAmount);
-    }
-    uint256 drawnRestored = _min(drawn, restoreAmount - premium);
-    drawnRestored = hub.previewRestoreByShares(
-      assetId,
-      hub.previewRestoreByAssets(assetId, drawnRestored)
-    );
-    return (drawnRestored, premium);
   }
 }

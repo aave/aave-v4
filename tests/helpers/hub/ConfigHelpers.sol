@@ -13,8 +13,6 @@ import {Assertions} from 'tests/helpers/hub/Assertions.sol';
 abstract contract ConfigHelpers is Assertions {
   using SafeCast for *;
 
-  // --- Asset config updates ---
-
   function _updateAssetReinvestmentController(
     IHub hub,
     uint256 assetId,
@@ -43,8 +41,6 @@ abstract contract ConfigHelpers is Assertions {
 
     assertEq(hub.getAssetConfig(assetId), config);
   }
-
-  // --- Spoke config updates ---
 
   function _updateSpokeHalted(
     IHub hub,
@@ -120,8 +116,6 @@ abstract contract ConfigHelpers is Assertions {
 
     assertEq(hub.getSpokeConfig(assetId, spoke), spokeConfig);
   }
-
-  // --- Role management ---
 
   function _grantDeficitEliminatorRole(
     IHub hub,

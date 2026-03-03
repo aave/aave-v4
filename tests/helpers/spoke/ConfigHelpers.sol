@@ -11,7 +11,9 @@ import {Assertions} from 'tests/helpers/spoke/Assertions.sol';
 abstract contract ConfigHelpers is Assertions {
   using SafeCast for *;
 
-  // --- Reserve flag updates ---
+  ///////////////////////////////////////////////////////////////////////////////////////////////
+  //                                      RESERVE CONFIG                                       //
+  ///////////////////////////////////////////////////////////////////////////////////////////////
 
   function _updateReserveFrozenFlag(
     ISpoke spoke,
@@ -57,8 +59,6 @@ abstract contract ConfigHelpers is Assertions {
     assertEq(spoke.getReserveConfig(reserveId), config);
   }
 
-  // --- Collateral risk updates ---
-
   function _updateCollateralRisk(
     ISpoke spoke,
     uint256 reserveId,
@@ -73,8 +73,6 @@ abstract contract ConfigHelpers is Assertions {
     assertEq(spoke.getReserveConfig(reserveId), config);
   }
 
-  // --- Liquidation config updates ---
-
   function _updateLiquidationConfig(
     ISpoke spoke,
     ISpoke.LiquidationConfig memory config,
@@ -86,7 +84,9 @@ abstract contract ConfigHelpers is Assertions {
     assertEq(spoke.getLiquidationConfig(), config);
   }
 
-  // --- Dynamic reserve config updates ---
+  ///////////////////////////////////////////////////////////////////////////////////////////////
+  //                                  DYNAMIC RESERVE CONFIG                                   //
+  ///////////////////////////////////////////////////////////////////////////////////////////////
 
   function _updateMaxLiquidationBonus(
     ISpoke spoke,

@@ -25,7 +25,9 @@ abstract contract SetupHelpers is CheckedActions, ConfigHelpers, MockHelpers {
   using WadRayMath for *;
   using PercentageMath for uint256;
 
-  // --- Position openers ---
+  ///////////////////////////////////////////////////////////////////////////////////////////////
+  //                                  ACTIONS HELPERS                                         //
+  ///////////////////////////////////////////////////////////////////////////////////////////////
 
   /// @dev Opens a supply position for a random user
   function _openSupplyPosition(ISpoke spoke, uint256 reserveId, uint256 amount) public {
@@ -150,77 +152,67 @@ abstract contract SetupHelpers is CheckedActions, ConfigHelpers, MockHelpers {
     SpokeActions.borrow(spoke, debtReserveId, user, borrowAmount, user);
   }
 
-  // --- Token / approval helpers ---
-
-  function _deal(ISpoke spoke, uint256 reserveId, address user, uint256 amount) internal {
-    IERC20 underlying = _getAssetUnderlyingByReserveId(spoke, reserveId);
-    if (underlying.balanceOf(user) < amount) {
-      deal(address(underlying), user, amount);
-    }
-  }
-
-  function _approveAllUnderlying(ISpoke spoke, address owner, address spender) internal {
-    for (uint256 reserveId; reserveId < spoke.getReserveCount(); ++reserveId) {
-      address underlying_ = spoke.getReserve(reserveId).underlying;
-      vm.prank(owner);
-      IERC20(underlying_).approve(spender, UINT256_MAX);
-    }
-  }
-
-  // --- Index / interest rate helpers ---
-
-  // increase share conversion index on given reserve
-  /// @return supply amount of collateral asset
-  /// @return supply shares of collateral asset
-  /// @return borrow amount of borrowed asset
-  /// @return supply shares of borrowed asset
-  /// @return supply amount of borrowed asset
-  function _increaseReserveIndex(
+  /// @dev Borrow to be at a certain health factor
+  function _borrowToBeAtHf(
     ISpoke spoke,
+    address user,
+    uint256 reserveId,
+    uint256 desiredHf
+  ) internal returns (uint256, uint256) {
+    uint256 requiredDebtAmount = _getRequiredDebtAmountForHf(spoke, user, reserveId, desiredHf);
+    require(
+      0 < requiredDebtAmount && requiredDebtAmount <= MAX_SUPPLY_AMOUNT,
+      'required debt amount 0 or too high'
+    );
+
+    _borrowWithoutHfCheck(spoke, user, reserveId, requiredDebtAmount);
+
+    uint256 finalHf = _getUserHealthFactor(spoke, user);
+    assertApproxEqAbs(finalHf, desiredHf, 0.001e18);
+
+    return (finalHf, requiredDebtAmount);
+  }
+
+  /// @dev Borrow to become liquidatable due to price change of asset.
+  function _borrowToBeLiquidatableWithPriceChange(
+    ISpoke spoke,
+    address user,
     uint256 reserveId,
     uint256 collateralReserveId,
-    address collateralSupplier,
-    address borrowSupplier
-  ) internal returns (uint256, uint256, uint256, uint256, uint256) {
-    SupplyBorrowLocal memory state;
+    uint256 desiredHf,
+    uint256 pricePercentage,
+    address spokeAdmin
+  ) internal returns (ISpoke.UserAccountData memory) {
+    uint256 requiredDebtAmount = _getRequiredDebtAmountForHf(spoke, user, reserveId, desiredHf);
+    require(requiredDebtAmount <= MAX_SUPPLY_AMOUNT, 'required debt amount too high');
+    SpokeActions.borrow(spoke, reserveId, user, requiredDebtAmount, user);
+    ISpoke.UserAccountData memory userAccountData = spoke.getUserAccountData(user);
 
-    ReserveSetupParams memory collateral;
-    collateral.reserveId = collateralReserveId;
-    collateral.supplyAmount = 1_000e18;
-    collateral.supplier = collateralSupplier;
+    _mockReservePriceByPercent(spoke, collateralReserveId, pricePercentage, spokeAdmin);
+    assertLt(_getUserHealthFactor(spoke, user), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
 
-    ReserveSetupParams memory borrow;
-    borrow.reserveId = reserveId;
-    borrow.supplier = borrowSupplier;
-    borrow.borrower = collateralSupplier;
-    borrow.supplyAmount = 100e18;
-    borrow.borrowAmount = borrow.supplyAmount / 2;
+    return userAccountData;
+  }
 
-    IHub hub = _hub(spoke, borrow.reserveId);
-    (state.borrowReserveAssetId, ) = _getAssetByReserveId(spoke, borrow.reserveId);
-    (state.collateralSupplyShares, state.borrowSupplyShares) = _executeSpokeSupplyAndBorrow({
-      spoke: spoke,
-      collateral: collateral,
-      borrow: borrow,
-      rate: 0,
-      isMockRate: false,
-      skipTime: 365 days,
-      interestRateStrategy: address(0)
-    });
+  /// @dev Helper function to borrow without health factor check
+  function _borrowWithoutHfCheck(
+    ISpoke spoke,
+    address user,
+    uint256 reserveId,
+    uint256 debtAmount
+  ) internal {
+    address mockSpoke = address(new MockSpoke(spoke.ORACLE(), MAX_ALLOWED_USER_RESERVES_LIMIT));
 
-    // index has increased, ie now the shares are less than the amount
-    assertGt(
-      borrow.supplyAmount,
-      hub.previewAddByAssets(state.borrowReserveAssetId, borrow.supplyAmount)
-    );
+    address implementation = _getImplementationAddress(address(spoke));
 
-    return (
-      collateral.supplyAmount,
-      state.collateralSupplyShares,
-      borrow.borrowAmount,
-      state.borrowSupplyShares,
-      borrow.supplyAmount
-    );
+    vm.prank(_getProxyAdminAddress(address(spoke)));
+    ITransparentUpgradeableProxy(address(spoke)).upgradeToAndCall(address(mockSpoke), '');
+
+    vm.prank(user);
+    MockSpoke(address(spoke)).borrowWithoutHfCheck(reserveId, debtAmount, user);
+
+    vm.prank(_getProxyAdminAddress(address(spoke)));
+    ITransparentUpgradeableProxy(address(spoke)).upgradeToAndCall(implementation, '');
   }
 
   // supply collateral asset, borrow asset, skip time to increase index on borrow asset
@@ -287,8 +279,6 @@ abstract contract SetupHelpers is CheckedActions, ConfigHelpers, MockHelpers {
     return (collResult.shares, supplyResult.shares);
   }
 
-  // --- Repay helpers ---
-
   function _repayAll(ISpoke spoke, uint256 reserveId, address[] memory users) internal {
     IHub hub = _hub(spoke, reserveId);
     uint256 assetId = spoke.getReserve(reserveId).assetId;
@@ -320,72 +310,59 @@ abstract contract SetupHelpers is CheckedActions, ConfigHelpers, MockHelpers {
     );
   }
 
-  // --- Health factor manipulation ---
-
-  /// @dev Borrow to be at a certain health factor
-  function _borrowToBeAtHf(
+  // increase share conversion index on given reserve
+  /// @return supply amount of collateral asset
+  /// @return supply shares of collateral asset
+  /// @return borrow amount of borrowed asset
+  /// @return supply shares of borrowed asset
+  /// @return supply amount of borrowed asset
+  function _increaseReserveIndex(
     ISpoke spoke,
-    address user,
-    uint256 reserveId,
-    uint256 desiredHf
-  ) internal returns (uint256, uint256) {
-    uint256 requiredDebtAmount = _getRequiredDebtAmountForHf(spoke, user, reserveId, desiredHf);
-    require(
-      0 < requiredDebtAmount && requiredDebtAmount <= MAX_SUPPLY_AMOUNT,
-      'required debt amount 0 or too high'
-    );
-
-    _borrowWithoutHfCheck(spoke, user, reserveId, requiredDebtAmount);
-
-    uint256 finalHf = _getUserHealthFactor(spoke, user);
-    assertApproxEqAbs(finalHf, desiredHf, 0.001e18);
-
-    return (finalHf, requiredDebtAmount);
-  }
-
-  /// @dev Borrow to become liquidatable due to price change of asset.
-  function _borrowToBeLiquidatableWithPriceChange(
-    ISpoke spoke,
-    address user,
     uint256 reserveId,
     uint256 collateralReserveId,
-    uint256 desiredHf,
-    uint256 pricePercentage,
-    address spokeAdmin
-  ) internal returns (ISpoke.UserAccountData memory) {
-    uint256 requiredDebtAmount = _getRequiredDebtAmountForHf(spoke, user, reserveId, desiredHf);
-    require(requiredDebtAmount <= MAX_SUPPLY_AMOUNT, 'required debt amount too high');
-    SpokeActions.borrow(spoke, reserveId, user, requiredDebtAmount, user);
-    ISpoke.UserAccountData memory userAccountData = spoke.getUserAccountData(user);
+    address collateralSupplier,
+    address borrowSupplier
+  ) internal returns (uint256, uint256, uint256, uint256, uint256) {
+    SupplyBorrowLocal memory state;
 
-    _mockReservePriceByPercent(spoke, collateralReserveId, pricePercentage, spokeAdmin);
-    assertLt(_getUserHealthFactor(spoke, user), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
+    ReserveSetupParams memory collateral;
+    collateral.reserveId = collateralReserveId;
+    collateral.supplyAmount = 1_000e18;
+    collateral.supplier = collateralSupplier;
 
-    return userAccountData;
+    ReserveSetupParams memory borrow;
+    borrow.reserveId = reserveId;
+    borrow.supplier = borrowSupplier;
+    borrow.borrower = collateralSupplier;
+    borrow.supplyAmount = 100e18;
+    borrow.borrowAmount = borrow.supplyAmount / 2;
+
+    IHub hub = _hub(spoke, borrow.reserveId);
+    (state.borrowReserveAssetId, ) = _getAssetByReserveId(spoke, borrow.reserveId);
+    (state.collateralSupplyShares, state.borrowSupplyShares) = _executeSpokeSupplyAndBorrow({
+      spoke: spoke,
+      collateral: collateral,
+      borrow: borrow,
+      rate: 0,
+      isMockRate: false,
+      skipTime: 365 days,
+      interestRateStrategy: address(0)
+    });
+
+    // index has increased, ie now the shares are less than the amount
+    assertGt(
+      borrow.supplyAmount,
+      hub.previewAddByAssets(state.borrowReserveAssetId, borrow.supplyAmount)
+    );
+
+    return (
+      collateral.supplyAmount,
+      state.collateralSupplyShares,
+      borrow.borrowAmount,
+      state.borrowSupplyShares,
+      borrow.supplyAmount
+    );
   }
-
-  /// @dev Helper function to borrow without health factor check
-  function _borrowWithoutHfCheck(
-    ISpoke spoke,
-    address user,
-    uint256 reserveId,
-    uint256 debtAmount
-  ) internal {
-    address mockSpoke = address(new MockSpoke(spoke.ORACLE(), MAX_ALLOWED_USER_RESERVES_LIMIT));
-
-    address implementation = _getImplementationAddress(address(spoke));
-
-    vm.prank(_getProxyAdminAddress(address(spoke)));
-    ITransparentUpgradeableProxy(address(spoke)).upgradeToAndCall(address(mockSpoke), '');
-
-    vm.prank(user);
-    MockSpoke(address(spoke)).borrowWithoutHfCheck(reserveId, debtAmount, user);
-
-    vm.prank(_getProxyAdminAddress(address(spoke)));
-    ITransparentUpgradeableProxy(address(spoke)).upgradeToAndCall(implementation, '');
-  }
-
-  // --- Spoke deployment / upgrade helpers ---
 
   /// @dev Helper to etch spoke's implementation with a new maxUserReservesLimit
   function _updateMaxUserReservesLimit(ISpoke spoke, uint16 newLimit) internal {
@@ -393,6 +370,10 @@ abstract contract SetupHelpers is CheckedActions, ConfigHelpers, MockHelpers {
     ISpokeInstance newImpl = DeployUtils.deploySpokeImplementation(spoke.ORACLE(), newLimit);
     vm.etch(currentImpl, address(newImpl).code);
   }
+
+  ///////////////////////////////////////////////////////////////////////////////////////////////
+  //                                  DEPLOYMENT HELPERS                                       //
+  ///////////////////////////////////////////////////////////////////////////////////////////////
 
   function _deploySpokeWithOracle(
     address proxyAdminOwner,
@@ -435,7 +416,28 @@ abstract contract SetupHelpers is CheckedActions, ConfigHelpers, MockHelpers {
     return (spoke, oracle);
   }
 
-  // --- Random utilities ---
+  ///////////////////////////////////////////////////////////////////////////////////////////////
+  //                                        TOKEN HELPERS                                      //
+  ///////////////////////////////////////////////////////////////////////////////////////////////
+
+  function _deal(ISpoke spoke, uint256 reserveId, address user, uint256 amount) internal {
+    IERC20 underlying = _getAssetUnderlyingByReserveId(spoke, reserveId);
+    if (underlying.balanceOf(user) < amount) {
+      deal(address(underlying), user, amount);
+    }
+  }
+
+  function _approveAllUnderlying(ISpoke spoke, address owner, address spender) internal {
+    for (uint256 reserveId; reserveId < spoke.getReserveCount(); ++reserveId) {
+      address underlying_ = spoke.getReserve(reserveId).underlying;
+      vm.prank(owner);
+      IERC20(underlying_).approve(spender, UINT256_MAX);
+    }
+  }
+
+  ///////////////////////////////////////////////////////////////////////////////////////////////
+  //                                  RANDOM UTILITIES                                        //
+  ///////////////////////////////////////////////////////////////////////////////////////////////
 
   function _randomReserveId(ISpoke spoke) internal returns (uint256) {
     return vm.randomUint(0, spoke.getReserveCount() - 1);

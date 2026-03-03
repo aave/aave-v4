@@ -20,8 +20,6 @@ abstract contract MockHelpers is CommonHelpers, Constants {
   using WadRayMath for *;
   using PercentageMath for uint256;
 
-  // --- Interest rate mocking ---
-
   function _mockInterestRateBps(address interestRateStrategy, uint256 interestRateBps) internal {
     vm.mockCall(
       interestRateStrategy,
@@ -76,8 +74,6 @@ abstract contract MockHelpers is CommonHelpers, Constants {
     );
   }
 
-  // --- Supply share price mocking ---
-
   function _mockSupplySharePrice(
     IHub hub,
     uint256 assetId,
@@ -122,8 +118,6 @@ abstract contract MockHelpers is CommonHelpers, Constants {
     );
     assertEq(hub.getAddedShares(assetId), addedShares, '_mockSupplySharePrice: addedShares');
   }
-
-  // --- Interest rate strategy setup ---
 
   function _setConstantInterestRateBps(
     IHub hub,

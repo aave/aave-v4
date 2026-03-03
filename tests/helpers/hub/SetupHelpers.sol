@@ -13,8 +13,6 @@ import {HubActions} from 'tests/helpers/hub/HubActions.sol';
 abstract contract SetupHelpers is MathHelpers {
   using SafeCast for *;
 
-  // --- Liquidity operations ---
-
   /// @dev mocks rate, addSpoke (addUser) adds asset, drawSpoke (drawUser) draws asset, skips time
   function _addAndDrawLiquidity(
     IHub hub,
@@ -183,8 +181,6 @@ abstract contract SetupHelpers is MathHelpers {
     assertEq(hub.getAssetLiquidity(assetId), initialLiq + amount);
   }
 
-  // --- Snapshot builders ---
-
   function _snapshotHub(IHub hub, uint256 assetId) internal view returns (HubSnapshot memory snap) {
     snap.liquidity = hub.getAssetLiquidity(assetId);
     snap.addedAssets = hub.getAddedAssets(assetId);
@@ -192,8 +188,6 @@ abstract contract SetupHelpers is MathHelpers {
     (snap.drawnAssets, ) = hub.getAssetOwed(assetId);
     snap.drawnShares = hub.getAsset(assetId).drawnShares;
   }
-
-  // --- Random asset ID generators ---
 
   function _randomAssetId(IHub hub) internal returns (uint256) {
     return vm.randomUint(0, hub.getAssetCount() - 1);

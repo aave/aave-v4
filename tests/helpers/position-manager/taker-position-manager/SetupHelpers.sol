@@ -9,8 +9,6 @@ import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 /// @title SetupHelpers
 /// @notice Data builders for TakerPositionManager tests.
 abstract contract SetupHelpers is SpokeHelpers {
-  // --- Data builders ---
-
   function _withdrawPermitData(
     ITakerPositionManager positionManager,
     ISpoke spoke,

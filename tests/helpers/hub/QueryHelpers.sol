@@ -16,7 +16,9 @@ abstract contract QueryHelpers is CommonHelpers, Constants, Types {
 
   uint256 internal constant MAX_SUPPLY_AMOUNT = 1e30;
 
-  // --- Asset queries ---
+  ///////////////////////////////////////////////////////////////////////////////////////////////
+  //                                   ASSET QUERIES                                           //
+  ///////////////////////////////////////////////////////////////////////////////////////////////
 
   function _getAssetDrawnDebt(IHub hub, uint256 assetId) internal view returns (uint256) {
     (uint256 drawn, ) = hub.getAssetOwed(assetId);
@@ -31,7 +33,9 @@ abstract contract QueryHelpers is CommonHelpers, Constants, Types {
     return hub.getAssetConfig(assetId).feeReceiver;
   }
 
-  // --- Share/asset conversion queries ---
+  ///////////////////////////////////////////////////////////////////////////////////////////////
+  //                                       CONVERSION QUERIES                                  //
+  ///////////////////////////////////////////////////////////////////////////////////////////////
 
   function _minimumAssetsPerAddedShare(IHub hub, uint256 assetId) internal view returns (uint256) {
     return hub.previewAddByShares(assetId, 1);
@@ -49,14 +53,10 @@ abstract contract QueryHelpers is CommonHelpers, Constants, Types {
     return hub.previewRestoreByShares(assetId, MAX_SUPPLY_AMOUNT);
   }
 
-  // --- Interest helpers ---
-
   function _calculateBurntInterest(IHub hub, uint256 assetId) internal view returns (uint256) {
     return
       hub.getAddedAssets(assetId) - hub.previewRemoveByShares(assetId, hub.getAddedShares(assetId));
   }
-
-  // --- Snapshot builders ---
 
   function _getAssetPosition(
     IHub hub,

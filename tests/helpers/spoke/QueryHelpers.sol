@@ -19,7 +19,9 @@ import {TestnetERC20} from 'tests/helpers/mocks/TestnetERC20.sol';
 abstract contract QueryHelpers is HubHelpers, Constants, Types {
   using SafeCast for *;
 
-  // --- Reserve accessors ---
+  ///////////////////////////////////////////////////////////////////////////////////////////////
+  //                                      RESERVE QUERIES                                      //
+  ///////////////////////////////////////////////////////////////////////////////////////////////
 
   function _underlying(ISpoke spoke, uint256 reserveId) internal view returns (TestnetERC20) {
     return TestnetERC20(spoke.getReserve(reserveId).underlying);
@@ -33,7 +35,182 @@ abstract contract QueryHelpers is HubHelpers, Constants, Types {
     return spoke.getReserve(reserveId).assetId;
   }
 
-  // --- User queries ---
+  function _reserveId(ISpoke spoke, uint256 assetId) internal view returns (uint256) {
+    for (uint256 id; id < spoke.getReserveCount(); ++id) {
+      if (spoke.getReserve(id).assetId == assetId) {
+        return id;
+      }
+    }
+    revert('not found');
+  }
+
+  /// @dev Returns the id of the reserve corresponding to the given Liquidity Hub asset id
+  function _getReserveIdByAssetId(
+    ISpoke spoke,
+    IHub hub,
+    uint256 assetId
+  ) internal view returns (uint256) {
+    for (uint256 reserveId; reserveId < spoke.getReserveCount(); ++reserveId) {
+      ISpoke.Reserve memory reserve = spoke.getReserve(reserveId);
+      if (address(hub) == address(reserve.hub) && assetId == reserve.assetId) {
+        return reserveId;
+      }
+    }
+    revert('not found');
+  }
+
+  function _getAssetByReserveId(
+    ISpoke spoke,
+    uint256 reserveId
+  ) internal view returns (uint256, IERC20) {
+    ISpoke.Reserve memory reserve = spoke.getReserve(reserveId);
+    (address underlying, ) = reserve.hub.getAssetUnderlyingAndDecimals(reserve.assetId);
+    return (reserve.assetId, IERC20(underlying));
+  }
+
+  function _getAssetUnderlyingByReserveId(
+    ISpoke spoke,
+    uint256 reserveId
+  ) internal view returns (IERC20) {
+    ISpoke.Reserve memory reserve = spoke.getReserve(reserveId);
+    (address underlying, ) = reserve.hub.getAssetUnderlyingAndDecimals(reserve.assetId);
+    return IERC20(underlying);
+  }
+
+  function _getLatestDynamicReserveConfig(
+    ISpoke spoke,
+    uint256 reserveId
+  ) internal view returns (ISpoke.DynamicReserveConfig memory) {
+    return spoke.getDynamicReserveConfig(reserveId, spoke.getReserve(reserveId).dynamicConfigKey);
+  }
+
+  function _getTargetHealthFactor(ISpoke spoke) internal view returns (uint128) {
+    return spoke.getLiquidationConfig().targetHealthFactor;
+  }
+
+  function _getCollateralRisk(ISpoke spoke, uint256 reserveId) internal view returns (uint24) {
+    return spoke.getReserveConfig(reserveId).collateralRisk;
+  }
+
+  function _getCollateralFactor(ISpoke spoke, uint256 reserveId) internal view returns (uint16) {
+    return _getLatestDynamicReserveConfig(spoke, reserveId).collateralFactor;
+  }
+
+  function _getCollateralFactor(
+    ISpoke spoke,
+    uint256 reserveId,
+    address user
+  ) internal view returns (uint16) {
+    uint32 dynamicConfigKey = spoke.getUserPosition(reserveId, user).dynamicConfigKey;
+    return spoke.getDynamicReserveConfig(reserveId, dynamicConfigKey).collateralFactor;
+  }
+
+  function _getCollateralFactor(
+    ISpoke spoke,
+    function(ISpoke) internal view returns (uint256) reserveId
+  ) internal view returns (uint16) {
+    return _getLatestDynamicReserveConfig(spoke, reserveId(spoke)).collateralFactor;
+  }
+
+  function _getLiquidationFee(
+    ISpoke spoke,
+    uint256 reserveId,
+    address user
+  ) internal view returns (uint16) {
+    uint32 dynamicConfigKey = spoke.getUserPosition(reserveId, user).dynamicConfigKey;
+    return spoke.getDynamicReserveConfig(reserveId, dynamicConfigKey).liquidationFee;
+  }
+
+  function _getTokenBalances(
+    IERC20 token,
+    address spoke,
+    address hub
+  ) internal view returns (TokenBalances memory) {
+    return TokenBalances({spokeBalance: token.balanceOf(spoke), hubBalance: token.balanceOf(hub)});
+  }
+
+  function _hasRole(
+    IAccessManager authority,
+    uint64 role,
+    address account
+  ) internal view returns (bool) {
+    (bool hasRole, ) = authority.hasRole(role, account);
+    return hasRole;
+  }
+
+  function _reserveDrawnIndex(ISpoke spoke, uint256 reserveId) internal view returns (uint256) {
+    return _hub(spoke, reserveId).getAssetDrawnIndex(_reserveAssetId(spoke, reserveId));
+  }
+
+  function _getFeeReceiver(ISpoke spoke, uint256 reserveId) internal view returns (address) {
+    return _getFeeReceiver(_hub(spoke, reserveId), spoke.getReserve(reserveId).assetId);
+  }
+
+  function _spokeMaxCollateralRisk(ISpoke spoke) internal view returns (uint24) {
+    uint24 maxCollateralRisk;
+    for (uint256 reserveId; reserveId < spoke.getReserveCount(); ++reserveId) {
+      uint24 collateralRisk = _getCollateralRisk(spoke, reserveId);
+      if (collateralRisk > maxCollateralRisk) {
+        maxCollateralRisk = collateralRisk;
+      }
+    }
+    return maxCollateralRisk;
+  }
+
+  function _getSpokeDynConfigKeys(
+    ISpoke spoke
+  ) internal view returns (DynamicConfigEntry[] memory) {
+    uint256 reserveCount = spoke.getReserveCount();
+    DynamicConfigEntry[] memory configs = new DynamicConfigEntry[](reserveCount);
+    for (uint256 reserveId; reserveId < reserveCount; ++reserveId) {
+      configs[reserveId] = DynamicConfigEntry(spoke.getReserve(reserveId).dynamicConfigKey, true);
+    }
+    return configs;
+  }
+
+  // returns reserveId => User(DynamicConfigKey, usingAsCollateral) map.
+  function _getUserDynConfigKeys(
+    ISpoke spoke,
+    address user
+  ) internal view returns (DynamicConfigEntry[] memory) {
+    uint256 reserveCount = spoke.getReserveCount();
+    DynamicConfigEntry[] memory configs = new DynamicConfigEntry[](reserveCount);
+    for (uint256 reserveId; reserveId < reserveCount; ++reserveId) {
+      configs[reserveId] = _getUserDynConfigKeys(spoke, user, reserveId);
+    }
+    return configs;
+  }
+
+  function _getUserDynConfig(
+    ISpoke spoke,
+    address user,
+    uint256 reserveId
+  ) internal view returns (ISpoke.DynamicReserveConfig memory) {
+    return
+      spoke.getDynamicReserveConfig(
+        reserveId,
+        spoke.getUserPosition(reserveId, user).dynamicConfigKey
+      );
+  }
+
+  // deref and return current UserDynamicReserveConfig for a specific reserveId on user position.
+  function _getUserDynConfigKeys(
+    ISpoke spoke,
+    address user,
+    uint256 reserveId
+  ) internal view returns (DynamicConfigEntry memory) {
+    ISpoke.UserPosition memory pos = spoke.getUserPosition(reserveId, user);
+    return DynamicConfigEntry(pos.dynamicConfigKey, _isUsingAsCollateral(spoke, reserveId, user));
+  }
+
+  function _nextDynamicConfigKey(ISpoke spoke, uint256 reserveId) internal view returns (uint32) {
+    uint32 dynamicConfigKey = spoke.getReserve(reserveId).dynamicConfigKey;
+    return (dynamicConfigKey + 1) % type(uint32).max;
+  }
+
+  ///////////////////////////////////////////////////////////////////////////////////////////////
+  //                                       USER QUERIES                                        //
+  ///////////////////////////////////////////////////////////////////////////////////////////////
 
   function _getUserInfo(
     ISpoke spoke,
@@ -108,188 +285,9 @@ abstract contract QueryHelpers is HubHelpers, Constants, Types {
     return healthFactor >= HEALTH_FACTOR_LIQUIDATION_THRESHOLD;
   }
 
-  // --- Reserve config queries ---
-
-  function _getLatestDynamicReserveConfig(
-    ISpoke spoke,
-    uint256 reserveId
-  ) internal view returns (ISpoke.DynamicReserveConfig memory) {
-    return spoke.getDynamicReserveConfig(reserveId, spoke.getReserve(reserveId).dynamicConfigKey);
-  }
-
-  function _getAssetByReserveId(
-    ISpoke spoke,
-    uint256 reserveId
-  ) internal view returns (uint256, IERC20) {
-    ISpoke.Reserve memory reserve = spoke.getReserve(reserveId);
-    (address underlying, ) = reserve.hub.getAssetUnderlyingAndDecimals(reserve.assetId);
-    return (reserve.assetId, IERC20(underlying));
-  }
-
-  function _getAssetUnderlyingByReserveId(
-    ISpoke spoke,
-    uint256 reserveId
-  ) internal view returns (IERC20) {
-    ISpoke.Reserve memory reserve = spoke.getReserve(reserveId);
-    (address underlying, ) = reserve.hub.getAssetUnderlyingAndDecimals(reserve.assetId);
-    return IERC20(underlying);
-  }
-
-  function _getTargetHealthFactor(ISpoke spoke) internal view returns (uint128) {
-    return spoke.getLiquidationConfig().targetHealthFactor;
-  }
-
-  function _getCollateralRisk(ISpoke spoke, uint256 reserveId) internal view returns (uint24) {
-    return spoke.getReserveConfig(reserveId).collateralRisk;
-  }
-
-  function _getCollateralFactor(ISpoke spoke, uint256 reserveId) internal view returns (uint16) {
-    return _getLatestDynamicReserveConfig(spoke, reserveId).collateralFactor;
-  }
-
-  function _getCollateralFactor(
-    ISpoke spoke,
-    uint256 reserveId,
-    address user
-  ) internal view returns (uint16) {
-    uint32 dynamicConfigKey = spoke.getUserPosition(reserveId, user).dynamicConfigKey;
-    return spoke.getDynamicReserveConfig(reserveId, dynamicConfigKey).collateralFactor;
-  }
-
-  function _getCollateralFactor(
-    ISpoke spoke,
-    function(ISpoke) internal view returns (uint256) reserveId
-  ) internal view returns (uint16) {
-    return _getLatestDynamicReserveConfig(spoke, reserveId(spoke)).collateralFactor;
-  }
-
-  function _getLiquidationFee(
-    ISpoke spoke,
-    uint256 reserveId,
-    address user
-  ) internal view returns (uint16) {
-    uint32 dynamicConfigKey = spoke.getUserPosition(reserveId, user).dynamicConfigKey;
-    return spoke.getDynamicReserveConfig(reserveId, dynamicConfigKey).liquidationFee;
-  }
-
-  function _getTokenBalances(
-    IERC20 token,
-    address spoke,
-    address hub
-  ) internal view returns (TokenBalances memory) {
-    return TokenBalances({spokeBalance: token.balanceOf(spoke), hubBalance: token.balanceOf(hub)});
-  }
-
-  function _hasRole(
-    IAccessManager authority,
-    uint64 role,
-    address account
-  ) internal view returns (bool) {
-    (bool hasRole, ) = authority.hasRole(role, account);
-    return hasRole;
-  }
-
-  function _reserveDrawnIndex(ISpoke spoke, uint256 reserveId) internal view returns (uint256) {
-    return _hub(spoke, reserveId).getAssetDrawnIndex(_reserveAssetId(spoke, reserveId));
-  }
-
-  function _getFeeReceiver(ISpoke spoke, uint256 reserveId) internal view returns (address) {
-    return _getFeeReceiver(_hub(spoke, reserveId), spoke.getReserve(reserveId).assetId);
-  }
-
-  // --- Aggregate queries ---
-
-  function _spokeMaxCollateralRisk(ISpoke spoke) internal view returns (uint24) {
-    uint24 maxCollateralRisk;
-    for (uint256 reserveId; reserveId < spoke.getReserveCount(); ++reserveId) {
-      uint24 collateralRisk = _getCollateralRisk(spoke, reserveId);
-      if (collateralRisk > maxCollateralRisk) {
-        maxCollateralRisk = collateralRisk;
-      }
-    }
-    return maxCollateralRisk;
-  }
-
-  // --- Dynamic config queries ---
-
-  function _getSpokeDynConfigKeys(
-    ISpoke spoke
-  ) internal view returns (DynamicConfigEntry[] memory) {
-    uint256 reserveCount = spoke.getReserveCount();
-    DynamicConfigEntry[] memory configs = new DynamicConfigEntry[](reserveCount);
-    for (uint256 reserveId; reserveId < reserveCount; ++reserveId) {
-      configs[reserveId] = DynamicConfigEntry(spoke.getReserve(reserveId).dynamicConfigKey, true);
-    }
-    return configs;
-  }
-
-  // returns reserveId => User(DynamicConfigKey, usingAsCollateral) map.
-  function _getUserDynConfigKeys(
-    ISpoke spoke,
-    address user
-  ) internal view returns (DynamicConfigEntry[] memory) {
-    uint256 reserveCount = spoke.getReserveCount();
-    DynamicConfigEntry[] memory configs = new DynamicConfigEntry[](reserveCount);
-    for (uint256 reserveId; reserveId < reserveCount; ++reserveId) {
-      configs[reserveId] = _getUserDynConfigKeys(spoke, user, reserveId);
-    }
-    return configs;
-  }
-
-  function _getUserDynConfig(
-    ISpoke spoke,
-    address user,
-    uint256 reserveId
-  ) internal view returns (ISpoke.DynamicReserveConfig memory) {
-    return
-      spoke.getDynamicReserveConfig(
-        reserveId,
-        spoke.getUserPosition(reserveId, user).dynamicConfigKey
-      );
-  }
-
-  // deref and return current UserDynamicReserveConfig for a specific reserveId on user position.
-  function _getUserDynConfigKeys(
-    ISpoke spoke,
-    address user,
-    uint256 reserveId
-  ) internal view returns (DynamicConfigEntry memory) {
-    ISpoke.UserPosition memory pos = spoke.getUserPosition(reserveId, user);
-    return DynamicConfigEntry(pos.dynamicConfigKey, _isUsingAsCollateral(spoke, reserveId, user));
-  }
-
-  function _nextDynamicConfigKey(ISpoke spoke, uint256 reserveId) internal view returns (uint32) {
-    uint32 dynamicConfigKey = spoke.getReserve(reserveId).dynamicConfigKey;
-    return (dynamicConfigKey + 1) % type(uint32).max;
-  }
-
-  // --- Reserve ID lookups ---
-
-  function _reserveId(ISpoke spoke, uint256 assetId) internal view returns (uint256) {
-    for (uint256 id; id < spoke.getReserveCount(); ++id) {
-      if (spoke.getReserve(id).assetId == assetId) {
-        return id;
-      }
-    }
-    revert('not found');
-  }
-
-  /// @dev Returns the id of the reserve corresponding to the given Liquidity Hub asset id
-  function _getReserveIdByAssetId(
-    ISpoke spoke,
-    IHub hub,
-    uint256 assetId
-  ) internal view returns (uint256) {
-    for (uint256 reserveId; reserveId < spoke.getReserveCount(); ++reserveId) {
-      ISpoke.Reserve memory reserve = spoke.getReserve(reserveId);
-      if (address(hub) == address(reserve.hub) && assetId == reserve.assetId) {
-        return reserveId;
-      }
-    }
-    revert('not found');
-  }
-
-  // --- Spoke position builders ---
+  ///////////////////////////////////////////////////////////////////////////////////////////////
+  //                                     SNAPSHOT BUILDERS                                     //
+  ///////////////////////////////////////////////////////////////////////////////////////////////
 
   function _getSpokePosition(
     ISpoke spoke,
@@ -319,8 +317,6 @@ abstract contract QueryHelpers is HubHelpers, Constants, Types {
         premium: premium
       });
   }
-
-  // --- Snapshot builders ---
 
   function _snapshotUser(
     ISpoke spoke,

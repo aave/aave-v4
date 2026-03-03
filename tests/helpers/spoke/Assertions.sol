@@ -19,7 +19,9 @@ abstract contract Assertions is QueryHelpers {
   using SafeCast for *;
   using PercentageMath for uint256;
 
-  // --- Position / struct comparison assertions ---
+  ///////////////////////////////////////////////////////////////////////////////////////////////
+  //                                     STATE ASSERTIONS                                      //
+  ///////////////////////////////////////////////////////////////////////////////////////////////
 
   function _assertUserPositionApprox(
     ISpoke.UserPosition memory userPos,
@@ -73,8 +75,6 @@ abstract contract Assertions is QueryHelpers {
     );
   }
 
-  // --- Risk premium assertions ---
-
   function _assertUserRpUnchanged(ISpoke spoke, address user) internal view {
     uint256 riskPremiumPreview = spoke.getUserAccountData(user).riskPremium;
     uint256 riskPremiumStored = _getUserRpStored(spoke, user);
@@ -97,8 +97,6 @@ abstract contract Assertions is QueryHelpers {
       'user risk premium expected mismatch without notify'
     );
   }
-
-  // --- Composite position and debt assertions ---
 
   function _assertUserPositionAndDebt(
     ISpoke spoke,
@@ -199,8 +197,6 @@ abstract contract Assertions is QueryHelpers {
       string.concat('reserve vs sum users total debt ', label)
     );
   }
-
-  // --- Individual-level assertions ---
 
   function _assertUserDebt(
     ISpoke spoke,
@@ -383,8 +379,6 @@ abstract contract Assertions is QueryHelpers {
     );
   }
 
-  // --- Composite multi-level assertions ---
-
   function _assertOnlyOneUserSupply(
     ISpoke spoke,
     uint256 reserveId,
@@ -464,7 +458,9 @@ abstract contract Assertions is QueryHelpers {
     );
   }
 
-  // --- Event / misc assertions ---
+  ///////////////////////////////////////////////////////////////////////////////////////////////
+  //                                    ASSERTEQ OVERLOADS                                     //
+  ///////////////////////////////////////////////////////////////////////////////////////////////
 
   function _assertDynamicConfigRefreshEventsNotEmitted() internal {
     _assertEventsNotEmitted(
@@ -482,8 +478,6 @@ abstract contract Assertions is QueryHelpers {
     assertEq(underlying.allowance({owner: user, spender: entity}), 0);
     assertEq(underlying.allowance({owner: entity, spender: vm.randomAddress()}), 0);
   }
-
-  // --- Custom assertEq overloads ---
 
   function assertEq(
     ISpoke.LiquidationConfig memory a,
