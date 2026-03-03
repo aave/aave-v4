@@ -610,24 +610,21 @@ library LiquidationLogic {
       })
     );
 
-    bool leavesCollateralDust;
-    if (collateralSharesToLiquidate < params.suppliedShares) {
+    // debt is fully liquidated if and only if all drawn shares are liquidated
+    if (
+      collateralSharesToLiquidate < params.suppliedShares &&
+      drawnSharesToLiquidate < params.drawnShares
+    ) {
       uint256 collateralRemaining = params.collateralReserveHub.previewRemoveByShares(
         params.collateralReserveAssetId,
         params.suppliedShares.uncheckedSub(collateralSharesToLiquidate)
       );
-      leavesCollateralDust =
-        collateralRemaining.toValue({
-          decimals: params.collateralAssetDecimals,
-          price: params.collateralAssetPrice
-        }) < DUST_LIQUIDATION_THRESHOLD;
-    }
-
-    // debt is fully liquidated if and only if all drawn shares are liquidated
-    if (
-      collateralSharesToLiquidate > params.suppliedShares ||
-      (leavesCollateralDust && drawnSharesToLiquidate < params.drawnShares)
-    ) {
+      bool leavesCollateralDust = collateralRemaining.toValue({
+        decimals: params.collateralAssetDecimals,
+        price: params.collateralAssetPrice
+      }) < DUST_LIQUIDATION_THRESHOLD;
+      require(!leavesCollateralDust, ISpoke.MustNotLeaveDust());
+    } else if (collateralSharesToLiquidate > params.suppliedShares) {
       collateralSharesToLiquidate = params.suppliedShares;
 
       // - `debtRayToLiquidate` is decreased if `collateralSharesToLiquidate > params.suppliedShares` (if so, debt dust could remain).
@@ -655,29 +652,6 @@ library LiquidationLogic {
         drawnSharesToLiquidate = (debtRayToLiquidate - premiumDebtRayToLiquidate).divUp(
           params.drawnIndex
         );
-
-        // `drawnSharesToLiquidate` may exceed `params.drawnShares` due to rounding.
-        if (drawnSharesToLiquidate > params.drawnShares) {
-          drawnSharesToLiquidate = params.drawnShares;
-
-          // `collateralSharesToLiquidate` may exceed `params.suppliedShares` due to rounding.
-          // If this happens, simply cap `collateralSharesToLiquidate` to `params.suppliedShares` since
-          // debt to liquidate would be the same (it is already calculated based on `params.suppliedShares`).
-          collateralSharesToLiquidate = _calculateCollateralToLiquidate(
-            CalculateCollateralToLiquidateParams({
-              collateralReserveHub: params.collateralReserveHub,
-              collateralReserveAssetId: params.collateralReserveAssetId,
-              collateralAssetUnit: collateralAssetUnit,
-              collateralAssetPrice: params.collateralAssetPrice,
-              drawnSharesToLiquidate: drawnSharesToLiquidate,
-              premiumDebtRayToLiquidate: premiumDebtRayToLiquidate,
-              drawnIndex: params.drawnIndex,
-              debtAssetUnit: debtAssetUnit,
-              debtAssetPrice: params.debtAssetPrice,
-              liquidationBonus: liquidationBonus
-            })
-          ).min(params.suppliedShares);
-        }
       }
     }
 

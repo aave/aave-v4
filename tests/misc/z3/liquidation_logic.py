@@ -86,28 +86,7 @@ collateralSharesToLiquidate = previewAddByAssets(
 )
 
 # Enforce recalculation of debt to liquidate
-leavesCollateralDust = And(
-    collateralSharesToLiquidate < suppliedShares,
-    toValue(
-        previewRemoveByShares(
-            suppliedShares - collateralSharesToLiquidate,
-            totalAddedAssets,
-            addedShares,
-        ),
-        collateralAssetDecimals,
-        collateralAssetPrice,
-    )
-    < DUST_LIQUIDATION_THRESHOLD,
-)
-s.add(
-    Or(
-        collateralSharesToLiquidate > suppliedShares,
-        And(
-            leavesCollateralDust,
-            drawnSharesToLiquidate < drawnShares,
-        ),
-    ),
-)
+s.add(collateralSharesToLiquidate > suppliedShares)
 
 # Recalculate debt to liquidate
 debtRayToLiquidate = mulDivUp(
@@ -122,26 +101,8 @@ recalculatedDrawnSharesToLiquidate = divUp(
     debtRayToLiquidate - premiumDebtRay, drawnIndex
 )
 
-proveSatisfiable(
+proveValid(
     s,
     "Recalculated drawnSharesToLiquidate can exceed user's drawn shares",
-    recalculatedDrawnSharesToLiquidate > drawnShares,
-)
-
-# Enforce recalculation of collateralSharesToLiquidate
-s.add(recalculatedDrawnSharesToLiquidate > drawnShares)
-recalculatedCollateralSharesToLiquidate = previewAddByAssets(
-    mulDivDown(
-        drawnShares * drawnIndex + premiumDebtRay,
-        debtAssetPrice * collateralAssetUnit * liquidationBonus,
-        debtAssetUnit * collateralAssetPrice * PERCENTAGE_FACTOR * RAY,
-    ),
-    totalAddedAssets,
-    addedShares,
-)
-
-proveSatisfiable(
-    s,
-    "Recalculated collateralSharesToLiquidate can exceed user's supplied shares",
-    recalculatedCollateralSharesToLiquidate > suppliedShares,
+    recalculatedDrawnSharesToLiquidate <= drawnShares,
 )
