@@ -44,7 +44,7 @@ contract AaveOracleTest is Base {
     vm.prank(deployer);
     oracle = new AaveOracle(_oracleDecimals, _description);
 
-    assertEq(oracle.SPOKE(), address(0));
+    assertEq(oracle.spoke(), address(0));
     test_DECIMALS();
     test_description();
   }
@@ -53,7 +53,7 @@ contract AaveOracleTest is Base {
     decimals = bound(decimals, 0, 18).toUint8();
     oracle = new AaveOracle(decimals, _description);
 
-    assertEq(oracle.SPOKE(), address(0));
+    assertEq(oracle.spoke(), address(0));
     assertEq(oracle.DECIMALS(), decimals);
     test_description();
   }
@@ -104,7 +104,7 @@ contract AaveOracleTest is Base {
     oracle.setSpoke(address(newSpoke));
     vm.stopPrank();
 
-    assertEq(oracle.SPOKE(), address(newSpoke));
+    assertEq(oracle.spoke(), address(newSpoke));
   }
 
   function test_setReserveSource_revertsWith_OnlySpoke() public {

@@ -2517,7 +2517,7 @@ abstract contract Base is Test {
     vm.stopPrank();
 
     assertEq(spoke.ORACLE(), address(oracle));
-    assertEq(oracle.SPOKE(), address(spoke));
+    assertEq(oracle.spoke(), address(spoke));
 
     return (spoke, oracle);
   }

@@ -12,7 +12,7 @@ interface IPriceOracle {
 
   /// @notice Returns the address of the spoke.
   /// @return The address of the spoke.
-  function SPOKE() external view returns (address);
+  function spoke() external view returns (address);
 
   /// @notice Returns the number of decimals used to return prices.
   /// @return The number of decimals.

@@ -21,7 +21,7 @@ contract AaveOracle is IAaveOracle {
   string public DESCRIPTION;
 
   /// @inheritdoc IPriceOracle
-  address public SPOKE;
+  address public spoke;
 
   mapping(uint256 reserveId => AggregatorV3Interface) internal _sources;
 
@@ -36,18 +36,18 @@ contract AaveOracle is IAaveOracle {
   }
 
   /// @inheritdoc IAaveOracle
-  function setSpoke(address spoke) external {
+  function setSpoke(address newSpoke) external {
     require(msg.sender == DEPLOYER, OnlyDeployer());
-    require(spoke != address(0), InvalidAddress());
-    require(SPOKE == address(0), SpokeAlreadySet());
-    require(ISpoke(spoke).ORACLE() == address(this), OracleMismatch());
-    SPOKE = spoke;
-    emit SetSpoke(spoke);
+    require(newSpoke != address(0), InvalidAddress());
+    require(spoke == address(0), SpokeAlreadySet());
+    require(ISpoke(newSpoke).ORACLE() == address(this), OracleMismatch());
+    spoke = newSpoke;
+    emit SetSpoke(newSpoke);
   }
 
   /// @inheritdoc IAaveOracle
   function setReserveSource(uint256 reserveId, address source) external {
-    require(msg.sender == SPOKE, OnlySpoke());
+    require(msg.sender == spoke, OnlySpoke());
     AggregatorV3Interface targetSource = AggregatorV3Interface(source);
     require(targetSource.decimals() == DECIMALS, InvalidSourceDecimals(reserveId));
     _sources[reserveId] = targetSource;
