@@ -2,8 +2,8 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity 0.8.28;
 
-import {IPriceFeed} from 'src/spoke/interfaces/IPriceFeed.sol';
 import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
+import {IPriceFeed} from 'src/spoke/interfaces/IPriceFeed.sol';
 
 /// @title UnitPriceFeed contract
 /// @author Aave Labs
@@ -15,6 +15,7 @@ contract UnitPriceFeed is IPriceFeed {
   /// @inheritdoc IPriceFeed
   uint8 public immutable decimals;
 
+  /// @notice The number of units used to represent the price.
   int256 public immutable units;
 
   /// @inheritdoc IPriceFeed
