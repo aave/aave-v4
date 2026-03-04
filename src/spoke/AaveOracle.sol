@@ -14,14 +14,14 @@ contract AaveOracle is IAaveOracle {
   /// @inheritdoc IPriceOracle
   uint8 public immutable DECIMALS;
 
+  /// @dev The address of the deployer.
+  address private immutable DEPLOYER;
+
   /// @inheritdoc IAaveOracle
   string public DESCRIPTION;
 
   /// @inheritdoc IPriceOracle
   address public SPOKE;
-
-  /// @dev The address of the deployer.
-  address private immutable DEPLOYER;
 
   mapping(uint256 reserveId => AggregatorV3Interface) internal _sources;
 
