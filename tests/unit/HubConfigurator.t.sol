@@ -929,15 +929,15 @@ contract HubConfiguratorTest is HubBase {
   }
 
   function test_updateSpokeAddCap() public {
-    uint40 newSupplyCap = 100;
+    uint40 newAddCap = 100;
     IHub.SpokeConfig memory expectedSpokeConfig = hub1.getSpokeConfig(_assetId, spoke);
-    expectedSpokeConfig.addCap = newSupplyCap;
+    expectedSpokeConfig.addCap = newAddCap;
     vm.expectCall(
       address(hub1),
       abi.encodeCall(IHub.updateSpokeConfig, (_assetId, spoke, expectedSpokeConfig))
     );
     vm.prank(HUB_CONFIGURATOR);
-    hubConfigurator.updateSpokeAddCap(address(hub1), _assetId, spoke, newSupplyCap);
+    hubConfigurator.updateSpokeAddCap(address(hub1), _assetId, spoke, newAddCap);
     assertEq(hub1.getSpokeConfig(_assetId, spoke), expectedSpokeConfig);
   }
 
@@ -1002,17 +1002,17 @@ contract HubConfiguratorTest is HubBase {
   }
 
   function test_updateSpokeCaps() public {
-    uint40 newSupplyCap = 100;
+    uint40 newAddCap = 100;
     uint40 newDrawCap = 200;
     IHub.SpokeConfig memory expectedSpokeConfig = hub1.getSpokeConfig(_assetId, spoke);
-    expectedSpokeConfig.addCap = newSupplyCap;
+    expectedSpokeConfig.addCap = newAddCap;
     expectedSpokeConfig.drawCap = newDrawCap;
     vm.expectCall(
       address(hub1),
       abi.encodeCall(IHub.updateSpokeConfig, (_assetId, spoke, expectedSpokeConfig))
     );
     vm.prank(HUB_CONFIGURATOR);
-    hubConfigurator.updateSpokeCaps(address(hub1), _assetId, spoke, newSupplyCap, newDrawCap);
+    hubConfigurator.updateSpokeCaps(address(hub1), _assetId, spoke, newAddCap, newDrawCap);
     assertEq(hub1.getSpokeConfig(_assetId, spoke), expectedSpokeConfig);
   }
 
