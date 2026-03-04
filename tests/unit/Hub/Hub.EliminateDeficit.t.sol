@@ -123,7 +123,11 @@ contract HubEliminateDeficitTest is HubBase {
       clearedDeficitRay
     );
     vm.prank(_callerSpoke);
-    (uint256 removedShares, uint256 deficitEliminated) = hub1.eliminateDeficit(_assetId, eliminateDeficitRay, _coveredSpoke);
+    (uint256 removedShares, uint256 deficitEliminated) = hub1.eliminateDeficit(
+      _assetId,
+      eliminateDeficitRay,
+      _coveredSpoke
+    );
 
     assertEq(removedShares, expectedRemoveShares);
     assertEq(deficitEliminated, clearedDeficit);
