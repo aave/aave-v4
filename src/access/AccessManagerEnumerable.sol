@@ -20,7 +20,7 @@ contract AccessManagerEnumerable is AccessManager, IAccessManagerEnumerable {
 
   /// @dev Set of all admin role identifiers.
   /// @dev `ADMIN_ROLE` is not part of this set.
-  /// @dev The roles tracked in this set are never removed, even if they have no members or administrated roles.
+  /// @dev The roles tracked in this set are never removed, even if they have no members or managed roles.
   EnumerableSet.UintSet private _adminRolesSet;
 
   /// @dev Map of role identifiers to their respective member sets.
