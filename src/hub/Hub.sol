@@ -912,8 +912,8 @@ contract Hub is IHub, AccessManaged {
     require(deficitAmountRay > 0, InvalidAmount());
   }
 
-  function _validatePayFeeShares(SpokeData storage spoke, uint256 feeShares) internal view {
-    require(spoke.active, SpokeNotActive());
+  function _validatePayFeeShares(SpokeData storage callerSpoke, uint256 feeShares) internal view {
+    require(callerSpoke.active, SpokeNotActive());
     require(feeShares > 0, InvalidShares());
   }
 
