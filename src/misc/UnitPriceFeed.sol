@@ -12,11 +12,11 @@ import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
 contract UnitPriceFeed is AggregatorV3Interface {
   using SafeCast for uint256;
 
-  /// @inheritdoc AggregatorV3Interface
-  string public description;
-
   uint8 private immutable DECIMALS;
   int256 private immutable UNITS;
+
+  /// @inheritdoc AggregatorV3Interface
+  string public description;
 
   /// @dev Constructor.
   /// @param decimals_ The number of decimals used to represent the unit price.
