@@ -12,8 +12,8 @@ contract TokenizationSpokeInstance is TokenizationSpoke {
 
   /// @dev Constructor.
   /// @param hub_ The address of the hub.
-  /// @param assetId_ The identifier of the asset.
-  constructor(address hub_, uint256 assetId_) TokenizationSpoke(hub_, assetId_) {
+  /// @param underlying_ The address of the asset.
+  constructor(address hub_, address underlying_) TokenizationSpoke(hub_, underlying_) {
     _disableInitializers();
   }
 
