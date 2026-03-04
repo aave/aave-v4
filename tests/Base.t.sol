@@ -3295,10 +3295,12 @@ abstract contract Base is Test {
       });
 
       bytes memory encodedIrData = abi.encode(
-        uint16(90_00), // optimalUsageRatio 90.00%
-        uint32(5_00), // baseVariableBorrowRate 5.00%
-        uint32(5_00), // variableRateSlope1 5.00%
-        uint32(5_00) // variableRateSlope2 5.00%
+        IAssetInterestRateStrategy.InterestRateData({
+          optimalUsageRatio: 90_00, // 90.00%
+          baseVariableBorrowRate: 5_00, // 5.00%
+          variableRateSlope1: 5_00, // 5.00%
+          variableRateSlope2: 5_00 // 5.00%
+        })
       );
 
       // Add asset to hub
