@@ -2,12 +2,12 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import {IPositionManagerBase} from 'src/position-manager/interfaces/IPositionManagerBase.sol';
+import {IPositionManagerIntentBase} from 'src/position-manager/interfaces/IPositionManagerIntentBase.sol';
 
 /// @title ISignatureGateway
 /// @author Aave Labs
 /// @notice Minimal interface for protocol actions involving signed intents.
-interface ISignatureGateway is IPositionManagerBase {
+interface ISignatureGateway is IPositionManagerIntentBase {
   /// @notice Intent data to supply assets to a reserve.
   /// @param spoke The address of the registered spoke.
   /// @param reserveId The identifier of the reserve.

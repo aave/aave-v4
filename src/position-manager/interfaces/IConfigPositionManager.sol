@@ -2,14 +2,14 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import {IPositionManagerBase} from 'src/position-manager/interfaces/IPositionManagerBase.sol';
+import {IPositionManagerIntentBase} from 'src/position-manager/interfaces/IPositionManagerIntentBase.sol';
 
 type ConfigPermissions is uint8;
 
 /// @title IConfigPositionManager
 /// @author Aave Labs
 /// @notice Interface for position manager handling user configuration actions on behalf of an user.
-interface IConfigPositionManager is IPositionManagerBase {
+interface IConfigPositionManager is IPositionManagerIntentBase {
   /// @notice Struct to hold the config permission values.
   /// @dev canSetUsingAsCollateral Whether the delegatee can set using as collateral on behalf of the user.
   /// @dev canUpdateUserRiskPremium Whether the delegatee can update user risk premium on behalf of the user.

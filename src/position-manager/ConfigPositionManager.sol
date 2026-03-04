@@ -8,12 +8,12 @@ import {
   IConfigPositionManager,
   ConfigPermissions
 } from 'src/position-manager/interfaces/IConfigPositionManager.sol';
-import {PositionManagerBase} from 'src/position-manager/PositionManagerBase.sol';
+import {PositionManagerIntentBase} from 'src/position-manager/PositionManagerIntentBase.sol';
 
 /// @title ConfigPositionManager
 /// @author Aave Labs
 /// @notice Position manager to handle position configuration actions on behalf of users.
-contract ConfigPositionManager is IConfigPositionManager, PositionManagerBase {
+contract ConfigPositionManager is IConfigPositionManager, PositionManagerIntentBase {
   using ConfigPermissionsMap for ConfigPermissions;
 
   /// @dev Map of configuration permissions based on the spoke, delegator and delegatee.
@@ -22,7 +22,7 @@ contract ConfigPositionManager is IConfigPositionManager, PositionManagerBase {
 
   /// @dev Constructor.
   /// @param initialOwner_ The address of the initial owner.
-  constructor(address initialOwner_) PositionManagerBase(initialOwner_) {}
+  constructor(address initialOwner_) PositionManagerIntentBase(initialOwner_) {}
 
   /// @inheritdoc IConfigPositionManager
   function setGlobalPermission(
