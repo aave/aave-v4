@@ -310,11 +310,12 @@ interface IHub is IHubBase, IAccessManaged {
   /// @param amount The amount of deficit to eliminate.
   /// @param spoke The spoke for which the deficit is eliminated.
   /// @return The amount of shares removed.
+  /// @return The amount of deficit eliminated, expressed in asset units.
   function eliminateDeficit(
     uint256 assetId,
     uint256 amount,
     address spoke
-  ) external returns (uint256);
+  ) external returns (uint256, uint256);
 
   /// @notice Allows a spoke to transfer its supplied shares of an asset to another spoke.
   /// @dev Only callable by spokes.

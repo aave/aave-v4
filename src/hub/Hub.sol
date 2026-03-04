@@ -353,7 +353,7 @@ contract Hub is IHub, AccessManaged {
     uint256 assetId,
     uint256 amount,
     address spoke
-  ) external restricted returns (uint256) {
+  ) external restricted returns (uint256, uint256) {
     Asset storage asset = _assets[assetId];
     SpokeData storage callerSpoke = _spokes[assetId][msg.sender];
     SpokeData storage coveredSpoke = _spokes[assetId][spoke];
@@ -363,7 +363,8 @@ contract Hub is IHub, AccessManaged {
     uint256 deficitAmountRay = (amount < deficitRay.fromRayUp()) ? amount.toRay() : deficitRay;
     _validateEliminateDeficit(callerSpoke, deficitAmountRay);
 
-    uint120 shares = asset.toAddedSharesUp(deficitAmountRay.fromRayUp()).toUint120();
+    uint256 deficitEliminated = deficitAmountRay.fromRayUp();
+    uint120 shares = asset.toAddedSharesUp(deficitEliminated).toUint120();
     asset.addedShares -= shares;
     callerSpoke.addedShares -= shares;
     asset.deficitRay -= deficitAmountRay.toUint200();
@@ -373,7 +374,7 @@ contract Hub is IHub, AccessManaged {
 
     emit EliminateDeficit(assetId, msg.sender, spoke, shares, deficitAmountRay);
 
-    return shares;
+    return (shares, deficitEliminated);
   }
 
   /// @inheritdoc IHubBase
