@@ -3,7 +3,9 @@
 pragma solidity 0.8.28;
 
 import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
+import {InterestRateDataMap} from 'src/hub/libraries/InterestRateDataMap.sol';
 import {
+  PackedInterestRateData,
   IAssetInterestRateStrategy,
   IBasicInterestRateStrategy
 } from 'src/hub/interfaces/IAssetInterestRateStrategy.sol';
@@ -14,6 +16,7 @@ import {
 /// @dev Strategies are Hub-specific, due to the usage of asset identifier as index of the `_interestRateData` mapping.
 contract AssetInterestRateStrategy is IAssetInterestRateStrategy {
   using WadRayMath for *;
+  using InterestRateDataMap for *;
 
   /// @inheritdoc IAssetInterestRateStrategy
   uint256 public constant MAX_BORROW_RATE = 1000_00;
@@ -28,7 +31,7 @@ contract AssetInterestRateStrategy is IAssetInterestRateStrategy {
   address public immutable HUB;
 
   /// @dev Map of asset identifiers to their interest rate data.
-  mapping(uint256 assetId => InterestRateData) internal _interestRateData;
+  mapping(uint256 assetId => PackedInterestRateData) internal _interestRateData;
 
   /// @dev Constructor.
   /// @param hub_ The address of the associated Hub.
@@ -43,6 +46,7 @@ contract AssetInterestRateStrategy is IAssetInterestRateStrategy {
   function setInterestRateData(uint256 assetId, bytes calldata data) external {
     require(HUB == msg.sender, OnlyHub());
     InterestRateData memory rateData = abi.decode(data, (InterestRateData));
+
     require(
       MIN_OPTIMAL_RATIO <= rateData.optimalUsageRatio &&
         rateData.optimalUsageRatio <= MAX_OPTIMAL_RATIO,
@@ -55,7 +59,7 @@ contract AssetInterestRateStrategy is IAssetInterestRateStrategy {
       InvalidMaxRate()
     );
 
-    _interestRateData[assetId] = rateData;
+    _interestRateData[assetId] = rateData.pack();
 
     emit UpdateRateData(
       HUB,
@@ -69,35 +73,36 @@ contract AssetInterestRateStrategy is IAssetInterestRateStrategy {
 
   /// @inheritdoc IAssetInterestRateStrategy
   function getInterestRateData(uint256 assetId) external view returns (InterestRateData memory) {
-    return _interestRateData[assetId];
+    return _interestRateData[assetId].toStruct();
   }
 
   /// @inheritdoc IAssetInterestRateStrategy
   function getOptimalUsageRatio(uint256 assetId) external view returns (uint256) {
-    return _interestRateData[assetId].optimalUsageRatio;
+    return _interestRateData[assetId].optimalUsageRatio();
   }
 
   /// @inheritdoc IAssetInterestRateStrategy
   function getBaseVariableBorrowRate(uint256 assetId) external view returns (uint256) {
-    return _interestRateData[assetId].baseVariableBorrowRate;
+    return _interestRateData[assetId].baseVariableBorrowRate();
   }
 
   /// @inheritdoc IAssetInterestRateStrategy
   function getVariableRateSlope1(uint256 assetId) external view returns (uint256) {
-    return _interestRateData[assetId].variableRateSlope1;
+    return _interestRateData[assetId].variableRateSlope1();
   }
 
   /// @inheritdoc IAssetInterestRateStrategy
   function getVariableRateSlope2(uint256 assetId) external view returns (uint256) {
-    return _interestRateData[assetId].variableRateSlope2;
+    return _interestRateData[assetId].variableRateSlope2();
   }
 
   /// @inheritdoc IAssetInterestRateStrategy
   function getMaxVariableBorrowRate(uint256 assetId) external view returns (uint256) {
+    PackedInterestRateData rateData = _interestRateData[assetId];
     return
-      _interestRateData[assetId].baseVariableBorrowRate +
-      _interestRateData[assetId].variableRateSlope1 +
-      _interestRateData[assetId].variableRateSlope2;
+      rateData.baseVariableBorrowRate() +
+      rateData.variableRateSlope1() +
+      rateData.variableRateSlope2();
   }
 
   /// @inheritdoc IBasicInterestRateStrategy
@@ -108,28 +113,28 @@ contract AssetInterestRateStrategy is IAssetInterestRateStrategy {
     uint256 /* deficit */,
     uint256 swept
   ) external view returns (uint256) {
-    InterestRateData memory rateData = _interestRateData[assetId];
-    require(rateData.optimalUsageRatio > 0, InterestRateDataNotSet(assetId));
+    PackedInterestRateData rateData = _interestRateData[assetId];
+    require(rateData.optimalUsageRatio() > 0, InterestRateDataNotSet(assetId));
 
-    uint256 currentVariableBorrowRateRay = rateData.baseVariableBorrowRate.bpsToRay();
+    uint256 currentVariableBorrowRateRay = rateData.baseVariableBorrowRate().bpsToRay();
     if (drawn == 0) {
       return currentVariableBorrowRateRay;
     }
 
     uint256 usageRatioRay = drawn.rayDivUp(liquidity + drawn + swept);
-    uint256 optimalUsageRatioRay = rateData.optimalUsageRatio.bpsToRay();
+    uint256 optimalUsageRatioRay = rateData.optimalUsageRatio().bpsToRay();
 
     if (usageRatioRay <= optimalUsageRatioRay) {
       currentVariableBorrowRateRay += rateData
-        .variableRateSlope1
+        .variableRateSlope1()
         .bpsToRay()
         .rayMulUp(usageRatioRay)
         .rayDivUp(optimalUsageRatioRay);
     } else {
       currentVariableBorrowRateRay +=
-        rateData.variableRateSlope1.bpsToRay() +
+        rateData.variableRateSlope1().bpsToRay() +
         rateData
-          .variableRateSlope2
+          .variableRateSlope2()
           .bpsToRay()
           .rayMulUp(usageRatioRay - optimalUsageRatioRay)
           .rayDivUp(WadRayMath.RAY - optimalUsageRatioRay);

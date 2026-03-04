@@ -56,6 +56,8 @@ import {
   IAssetInterestRateStrategy,
   IBasicInterestRateStrategy
 } from 'src/hub/AssetInterestRateStrategy.sol';
+import {PackedInterestRateData} from 'src/hub/interfaces/IAssetInterestRateStrategy.sol';
+import {InterestRateDataMap} from 'src/hub/libraries/InterestRateDataMap.sol';
 
 // spoke
 import {ISpoke, ISpokeBase} from 'src/spoke/interfaces/ISpoke.sol';
@@ -128,6 +130,7 @@ abstract contract Base is Test {
   using SharesMath for uint256;
   using PercentageMath for uint256;
   using SafeCast for *;
+  using InterestRateDataMap for PackedInterestRateData;
   using MathUtils for uint256;
   using ReserveFlagsMap for ReserveFlags;
 
@@ -3292,12 +3295,10 @@ abstract contract Base is Test {
       });
 
       bytes memory encodedIrData = abi.encode(
-        IAssetInterestRateStrategy.InterestRateData({
-          optimalUsageRatio: 90_00, // 90.00%
-          baseVariableBorrowRate: 5_00, // 5.00%
-          variableRateSlope1: 5_00, // 5.00%
-          variableRateSlope2: 5_00 // 5.00%
-        })
+        uint16(90_00), // optimalUsageRatio 90.00%
+        uint32(5_00), // baseVariableBorrowRate 5.00%
+        uint32(5_00), // variableRateSlope1 5.00%
+        uint32(5_00) // variableRateSlope2 5.00%
       );
 
       // Add asset to hub

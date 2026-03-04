@@ -4,6 +4,14 @@ pragma solidity ^0.8.0;
 
 import {IBasicInterestRateStrategy} from 'src/hub/interfaces/IBasicInterestRateStrategy.sol';
 
+/// @notice Holds the interest rate data for a given asset, packed into a uint256.
+/// @dev Bit layout:
+///   [0..15]   optimalUsageRatio (uint16) - in BPS
+///   [16..47]  baseVariableBorrowRate (uint32) - in BPS
+///   [48..79]  variableRateSlope1 (uint32) - in BPS
+///   [80..111] variableRateSlope2 (uint32) - in BPS
+type PackedInterestRateData is uint256;
+
 /// @title IAssetInterestRateStrategy
 /// @author Aave Labs
 /// @notice Interface of the kink-based asset interest rate strategy.
