@@ -69,5 +69,5 @@ interface IAaveOracle is IPriceOracle {
 
   /// @notice Returns the description of the oracle.
   /// @return The description of the oracle.
-  function DESCRIPTION() external view returns (string memory);
+  function description() external view returns (string memory);
 }

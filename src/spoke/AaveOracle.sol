@@ -12,16 +12,16 @@ import {IAaveOracle, IPriceOracle} from 'src/spoke/interfaces/IAaveOracle.sol';
 /// @dev Oracles are spoke-specific, due to the usage of reserve id as index of the `_sources` mapping.
 contract AaveOracle is IAaveOracle {
   /// @inheritdoc IPriceOracle
-  uint8 public immutable DECIMALS;
+  uint8 public immutable decimals;
 
   /// @inheritdoc IAaveOracle
-  string public DESCRIPTION;
+  string public description;
 
   /// @inheritdoc IPriceOracle
-  address public SPOKE;
+  address public spoke;
 
   /// @dev The address of the deployer.
-  address private immutable DEPLOYER;
+  address private immutable _deployer;
 
   mapping(uint256 reserveId => IPriceFeed) internal _sources;
 
@@ -30,26 +30,26 @@ contract AaveOracle is IAaveOracle {
   /// @param decimals_ The number of decimals for the oracle.
   /// @param description_ The description of the oracle.
   constructor(uint8 decimals_, string memory description_) {
-    DEPLOYER = msg.sender;
-    DECIMALS = decimals_;
-    DESCRIPTION = description_;
+    _deployer = msg.sender;
+    decimals = decimals_;
+    description = description_;
   }
 
   /// @inheritdoc IAaveOracle
-  function setSpoke(address spoke) external {
-    require(msg.sender == DEPLOYER, OnlyDeployer());
-    require(spoke != address(0), InvalidAddress());
-    require(SPOKE == address(0), SpokeAlreadySet());
-    require(ISpoke(spoke).ORACLE() == address(this), OracleMismatch());
-    SPOKE = spoke;
-    emit SetSpoke(spoke);
+  function setSpoke(address spoke_) external {
+    require(msg.sender == _deployer, OnlyDeployer());
+    require(spoke_ != address(0), InvalidAddress());
+    require(spoke == address(0), SpokeAlreadySet());
+    require(ISpoke(spoke_).ORACLE() == address(this), OracleMismatch());
+    spoke = spoke_;
+    emit SetSpoke(spoke_);
   }
 
   /// @inheritdoc IAaveOracle
   function setReserveSource(uint256 reserveId, address source) external {
-    require(msg.sender == SPOKE, OnlySpoke());
+    require(msg.sender == spoke, OnlySpoke());
     IPriceFeed targetSource = IPriceFeed(source);
-    require(targetSource.decimals() == DECIMALS, InvalidSourceDecimals(reserveId));
+    require(targetSource.decimals() == decimals, InvalidSourceDecimals(reserveId));
     _sources[reserveId] = targetSource;
     _getSourcePrice(reserveId);
     emit UpdateReserveSource(reserveId, source);

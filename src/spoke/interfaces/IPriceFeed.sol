@@ -7,14 +7,11 @@ pragma solidity ^0.8.0;
 /// @notice Defines the minimal functions needed to work with the AaveOracle contract.
 interface IPriceFeed {
   /// @notice Returns the description of the feed.
-  /// @return string description
   function description() external view returns (string memory);
 
   /// @notice Returns the number of decimals used to represent the price.
-  /// @return The number of decimals.
   function decimals() external view returns (uint8);
 
   /// @notice Returns the latest price answer.
-  /// @return The latest price.
   function latestAnswer() external view returns (int256);
 }

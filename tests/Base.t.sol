@@ -2517,7 +2517,7 @@ abstract contract Base is Test {
     vm.stopPrank();
 
     assertEq(spoke.ORACLE(), address(oracle));
-    assertEq(oracle.SPOKE(), address(spoke));
+    assertEq(oracle.spoke(), address(spoke));
 
     return (spoke, oracle);
   }
@@ -2886,7 +2886,9 @@ abstract contract Base is Test {
   function _mockReservePrice(ISpoke spoke, uint256 reserveId, uint256 price) internal {
     require(price > 0, 'mockReservePrice: price must be positive');
     AaveOracle oracle = AaveOracle(spoke.ORACLE());
-    address mockPriceFeed = address(new MockPriceFeed(oracle.DECIMALS(), int256(price)));
+    address mockPriceFeed = address(
+      new MockPriceFeed(oracle.decimals(), oracle.description(), price)
+    );
     vm.prank(address(ADMIN));
     spoke.updateReservePriceSource(reserveId, mockPriceFeed);
   }
@@ -2903,7 +2905,7 @@ abstract contract Base is Test {
 
   function _deployMockPriceFeed(ISpoke spoke, uint256 price) internal returns (address) {
     AaveOracle oracle = AaveOracle(spoke.ORACLE());
-    return address(new MockPriceFeed(oracle.DECIMALS(), int256(price)));
+    return address(new MockPriceFeed(oracle.decimals(), oracle.description(), price));
   }
 
   function _assertBorrowRateSynced(
