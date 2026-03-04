@@ -736,7 +736,7 @@ library LiquidationLogic {
   function _calculateDebtToLiquidate(
     CalculateDebtToLiquidateParams memory params
   ) internal pure returns (uint256, uint256) {
-    uint256 debtRayToTarget = _calculateDebtToTargetHealthFactor(
+    uint256 debtRayToTarget = _calculateDebtToTargetHealthFactorRay(
       CalculateDebtToTargetHealthFactorParams({
         totalDebtValueRay: params.totalDebtValueRay,
         debtAssetUnit: params.debtAssetUnit,
@@ -793,7 +793,7 @@ library LiquidationLogic {
 
   /// @notice Calculates the amount of debt needed to be liquidated to restore a position to the target health factor.
   /// @return The amount of debt needed to be liquidated to restore user to the target health factor, expressed in units of debt asset and scaled by RAY.
-  function _calculateDebtToTargetHealthFactor(
+  function _calculateDebtToTargetHealthFactorRay(
     CalculateDebtToTargetHealthFactorParams memory params
   ) internal pure returns (uint256) {
     uint256 liquidationPenalty = params.liquidationBonus.bpsToWad().percentMulUp(

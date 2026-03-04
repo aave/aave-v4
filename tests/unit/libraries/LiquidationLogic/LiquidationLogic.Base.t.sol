@@ -143,7 +143,7 @@ contract LiquidationLogicBaseTest is SpokeBase {
       ).rayDivDown(params.drawnIndex)
     );
 
-    uint256 debtRayToTarget = liquidationLogicWrapper.calculateDebtToTargetHealthFactor(
+    uint256 debtRayToTarget = liquidationLogicWrapper.calculateDebtToTargetHealthFactorRay(
       _getDebtToTargetHealthFactorParams(params)
     );
 

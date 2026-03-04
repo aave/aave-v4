@@ -80,7 +80,7 @@ contract SpokeLiquidationCallDustTest is SpokeLiquidationCallBaseTest {
     });
     _borrowToBeAtHf(_spoke, alice, _usdxReserveId(_spoke), 0.9999e18);
 
-    uint256 debtRayToTarget = liquidationLogicWrapper.calculateDebtToTargetHealthFactor(
+    uint256 debtRayToTarget = liquidationLogicWrapper.calculateDebtToTargetHealthFactorRay(
       _getCalculateDebtToTargetHealthFactorParams(
         _spoke,
         _daiReserveId(_spoke),
@@ -155,7 +155,7 @@ contract SpokeLiquidationCallDustTest is SpokeLiquidationCallBaseTest {
 
     uint256 debtToCover = 1800e6;
 
-    uint256 debtToTarget = liquidationLogicWrapper.calculateDebtToTargetHealthFactor(
+    uint256 debtToTarget = liquidationLogicWrapper.calculateDebtToTargetHealthFactorRay(
       _getCalculateDebtToTargetHealthFactorParams(
         _spoke,
         _daiReserveId(_spoke),
@@ -228,7 +228,7 @@ contract SpokeLiquidationCallDustTest is SpokeLiquidationCallBaseTest {
 
     uint256 debtToCover = 1200e6; // $1200, enough to liquidate whole coll reserve
 
-    uint256 debtToTarget = liquidationLogicWrapper.calculateDebtToTargetHealthFactor(
+    uint256 debtToTarget = liquidationLogicWrapper.calculateDebtToTargetHealthFactorRay(
       _getCalculateDebtToTargetHealthFactorParams(
         _spoke,
         _daiReserveId(_spoke),
@@ -300,7 +300,7 @@ contract SpokeLiquidationCallDustTest is SpokeLiquidationCallBaseTest {
 
     uint256 debtToCover = 1200e6; // $1200, enough to liquidate whole coll reserve
 
-    uint256 debtToTarget = liquidationLogicWrapper.calculateDebtToTargetHealthFactor(
+    uint256 debtToTarget = liquidationLogicWrapper.calculateDebtToTargetHealthFactorRay(
       _getCalculateDebtToTargetHealthFactorParams(
         _spoke,
         _daiReserveId(_spoke),
@@ -343,7 +343,7 @@ contract SpokeLiquidationCallDustTest is SpokeLiquidationCallBaseTest {
       _convertAmountToValue(
         spoke,
         debtReserveId,
-        liquidationLogicWrapper.calculateDebtToTargetHealthFactor(
+        liquidationLogicWrapper.calculateDebtToTargetHealthFactorRay(
           _getCalculateDebtToTargetHealthFactorParams(
             spoke,
             collateralReserveId,
