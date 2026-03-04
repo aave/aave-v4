@@ -6,11 +6,13 @@ import {
   PackedInterestRateData,
   IAssetInterestRateStrategy
 } from 'src/hub/interfaces/IAssetInterestRateStrategy.sol';
+import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
 
 /// @title InterestRateDataMap Library
 /// @author Aave Labs
 /// @notice Implements the bitmap logic to pack/unpack PackedInterestRateData fields into a uint256.
 library InterestRateDataMap {
+  using SafeCast for uint256;
   /// @dev Mask for the `optimalUsageRatio` field (uint16).
   uint256 internal constant OPTIMAL_USAGE_RATIO_MASK = 0xFFFF;
   /// @dev Mask for the `baseVariableBorrowRate` field (uint32).
@@ -116,7 +118,7 @@ library InterestRateDataMap {
   ) internal pure returns (PackedInterestRateData) {
     return
       PackedInterestRateData.wrap(
-        _setField(data, OPTIMAL_USAGE_RATIO_MASK, OPTIMAL_USAGE_RATIO_OFFSET, value)
+        _setField(data, OPTIMAL_USAGE_RATIO_MASK, OPTIMAL_USAGE_RATIO_OFFSET, value.toUint16())
       );
   }
 
@@ -130,7 +132,12 @@ library InterestRateDataMap {
   ) internal pure returns (PackedInterestRateData) {
     return
       PackedInterestRateData.wrap(
-        _setField(data, BASE_VARIABLE_BORROW_RATE_MASK, BASE_VARIABLE_BORROW_RATE_OFFSET, value)
+        _setField(
+          data,
+          BASE_VARIABLE_BORROW_RATE_MASK,
+          BASE_VARIABLE_BORROW_RATE_OFFSET,
+          value.toUint32()
+        )
       );
   }
 
@@ -144,7 +151,7 @@ library InterestRateDataMap {
   ) internal pure returns (PackedInterestRateData) {
     return
       PackedInterestRateData.wrap(
-        _setField(data, VARIABLE_RATE_SLOPE1_MASK, VARIABLE_RATE_SLOPE1_OFFSET, value)
+        _setField(data, VARIABLE_RATE_SLOPE1_MASK, VARIABLE_RATE_SLOPE1_OFFSET, value.toUint32())
       );
   }
 
@@ -158,7 +165,7 @@ library InterestRateDataMap {
   ) internal pure returns (PackedInterestRateData) {
     return
       PackedInterestRateData.wrap(
-        _setField(data, VARIABLE_RATE_SLOPE2_MASK, VARIABLE_RATE_SLOPE2_OFFSET, value)
+        _setField(data, VARIABLE_RATE_SLOPE2_MASK, VARIABLE_RATE_SLOPE2_OFFSET, value.toUint32())
       );
   }
 

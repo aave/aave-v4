@@ -3,6 +3,7 @@
 pragma solidity ^0.8.0;
 
 import {Test} from 'forge-std/Test.sol';
+import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
 import {PackedInterestRateData} from 'src/hub/interfaces/IAssetInterestRateStrategy.sol';
 import {InterestRateDataMapWrapper} from 'tests/mocks/InterestRateDataMapWrapper.sol';
 
@@ -163,6 +164,42 @@ contract InterestRateDataMapTests is Test {
 
     assertEq(w.variableRateSlope2(data), newValue);
     assertEq(PackedInterestRateData.unwrap(data), expectedRaw);
+  }
+
+  function test_setOptimalUsageRatio_reverts_on_overflow() public {
+    PackedInterestRateData data;
+    uint256 overflowValue = uint256(type(uint16).max) + 1;
+    vm.expectRevert(
+      abi.encodeWithSelector(SafeCast.SafeCastOverflowedUintDowncast.selector, 16, overflowValue)
+    );
+    w.setOptimalUsageRatio(data, overflowValue);
+  }
+
+  function test_setBaseVariableBorrowRate_reverts_on_overflow() public {
+    PackedInterestRateData data;
+    uint256 overflowValue = uint256(type(uint32).max) + 1;
+    vm.expectRevert(
+      abi.encodeWithSelector(SafeCast.SafeCastOverflowedUintDowncast.selector, 32, overflowValue)
+    );
+    w.setBaseVariableBorrowRate(data, overflowValue);
+  }
+
+  function test_setVariableRateSlope1_reverts_on_overflow() public {
+    PackedInterestRateData data;
+    uint256 overflowValue = uint256(type(uint32).max) + 1;
+    vm.expectRevert(
+      abi.encodeWithSelector(SafeCast.SafeCastOverflowedUintDowncast.selector, 32, overflowValue)
+    );
+    w.setVariableRateSlope1(data, overflowValue);
+  }
+
+  function test_setVariableRateSlope2_reverts_on_overflow() public {
+    PackedInterestRateData data;
+    uint256 overflowValue = uint256(type(uint32).max) + 1;
+    vm.expectRevert(
+      abi.encodeWithSelector(SafeCast.SafeCastOverflowedUintDowncast.selector, 32, overflowValue)
+    );
+    w.setVariableRateSlope2(data, overflowValue);
   }
 
   /// @dev Sanitizes raw packed value by masking out irrelevant bits.
