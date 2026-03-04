@@ -207,14 +207,14 @@ contract AccessManagerEnumerable is AccessManager, IAccessManagerEnumerable {
     uint32 grantDelay,
     uint32 executionDelay
   ) internal override returns (bool) {
-    bool granted = super._grantRole(roleId, account, grantDelay, executionDelay);
+    bool newMember = super._grantRole(roleId, account, grantDelay, executionDelay);
 
-    if (granted) {
+    if (newMember) {
       _trackRole(roleId);
-      _trackRoleMember(roleId, account, granted);
+      _trackRoleMember(roleId, account, newMember);
     }
 
-    return granted;
+    return newMember;
   }
 
   /// @dev Overrides AccessManager `_revokeRole` function to track removed role members.
