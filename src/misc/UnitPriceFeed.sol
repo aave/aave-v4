@@ -15,7 +15,6 @@ contract UnitPriceFeed is IPriceFeed {
   /// @inheritdoc IPriceFeed
   uint8 public immutable decimals;
 
-  /// @inheritdoc IPriceFeed
   int256 public immutable units;
 
   /// @inheritdoc IPriceFeed
