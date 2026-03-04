@@ -35,6 +35,70 @@ interface IConfigPositionManager is IPositionManagerIntentBase {
   /// @notice Thrown when the delegatee of a function was not given permission by the user.
   error DelegateeNotAllowed();
 
+  /// @notice Structured parameters for global permission permit intent.
+  /// @param spoke The address of the spoke.
+  /// @param delegator The address of the delegator.
+  /// @param delegatee The address of the delegatee.
+  /// @param permission The new permission status.
+  /// @param nonce The key-prefixed nonce for the signature.
+  /// @param deadline The deadline for the intent.
+  struct SetGlobalPermissionPermit {
+    address spoke;
+    address delegator;
+    address delegatee;
+    bool permission;
+    uint256 nonce;
+    uint256 deadline;
+  }
+
+  /// @notice Structured parameters for using as collateral permission permit intent.
+  /// @param spoke The address of the spoke.
+  /// @param delegator The address of the delegator.
+  /// @param delegatee The address of the delegatee.
+  /// @param permission The new permission status.
+  /// @param nonce The key-prefixed nonce for the signature.
+  /// @param deadline The deadline for the intent.
+  struct SetCanUpdateUsingAsCollateralPermissionPermit {
+    address spoke;
+    address delegator;
+    address delegatee;
+    bool permission;
+    uint256 nonce;
+    uint256 deadline;
+  }
+
+  /// @notice Structured parameters for user risk premium permission permit intent.
+  /// @param spoke The address of the spoke.
+  /// @param delegator The address of the delegator.
+  /// @param delegatee The address of the delegatee.
+  /// @param permission The new permission status.
+  /// @param nonce The key-prefixed nonce for the signature.
+  /// @param deadline The deadline for the intent.
+  struct SetCanUpdateUserRiskPremiumPermissionPermit {
+    address spoke;
+    address delegator;
+    address delegatee;
+    bool permission;
+    uint256 nonce;
+    uint256 deadline;
+  }
+
+  /// @notice Structured parameters for user dynamic config permission permit intent.
+  /// @param spoke The address of the spoke.
+  /// @param delegator The address of the delegator.
+  /// @param delegatee The address of the delegatee.
+  /// @param permission The new permission status.
+  /// @param nonce The key-prefixed nonce for the signature.
+  /// @param deadline The deadline for the intent.
+  struct SetCanUpdateUserDynamicConfigPermissionPermit {
+    address spoke;
+    address delegator;
+    address delegatee;
+    bool permission;
+    uint256 nonce;
+    uint256 deadline;
+  }
+
   /// @notice Sets the global permission for a delegatee.
   /// @param spoke The address of the spoke.
   /// @param delegatee The address of the delegatee.
@@ -69,6 +133,42 @@ interface IConfigPositionManager is IPositionManagerIntentBase {
     address spoke,
     address delegatee,
     bool permission
+  ) external;
+
+  /// @notice Sets the global permission for a delegatee using an EIP712-typed intent.
+  /// @dev Uses keyed-nonces where for each key's namespace nonce is consumed sequentially.
+  /// @param params The structured SetGlobalPermissionPermit parameters.
+  /// @param signature The EIP712-compliant signature bytes.
+  function setGlobalPermissionWithSig(
+    SetGlobalPermissionPermit calldata params,
+    bytes calldata signature
+  ) external;
+
+  /// @notice Sets the using as collateral permission for a delegatee using an EIP712-typed intent.
+  /// @dev Uses keyed-nonces where for each key's namespace nonce is consumed sequentially.
+  /// @param params The structured SetCanUpdateUsingAsCollateralPermissionPermit parameters.
+  /// @param signature The EIP712-compliant signature bytes.
+  function setCanUpdateUsingAsCollateralPermissionWithSig(
+    SetCanUpdateUsingAsCollateralPermissionPermit calldata params,
+    bytes calldata signature
+  ) external;
+
+  /// @notice Sets the user risk premium permission for a delegatee using an EIP712-typed intent.
+  /// @dev Uses keyed-nonces where for each key's namespace nonce is consumed sequentially.
+  /// @param params The structured SetCanUpdateUserRiskPremiumPermissionPermit parameters.
+  /// @param signature The EIP712-compliant signature bytes.
+  function setCanUpdateUserRiskPremiumPermissionWithSig(
+    SetCanUpdateUserRiskPremiumPermissionPermit calldata params,
+    bytes calldata signature
+  ) external;
+
+  /// @notice Sets the user dynamic config permission for a delegatee using an EIP712-typed intent.
+  /// @dev Uses keyed-nonces where for each key's namespace nonce is consumed sequentially.
+  /// @param params The structured SetCanUpdateUserDynamicConfigPermissionPermit parameters.
+  /// @param signature The EIP712-compliant signature bytes.
+  function setCanUpdateUserDynamicConfigPermissionWithSig(
+    SetCanUpdateUserDynamicConfigPermissionPermit calldata params,
+    bytes calldata signature
   ) external;
 
   /// @notice Renounces the global permission given by the delegator.
@@ -129,4 +229,25 @@ interface IConfigPositionManager is IPositionManagerIntentBase {
     address delegatee,
     address onBehalfOf
   ) external view returns (ConfigPermissionValues memory);
+
+  /// @notice Returns the type hash for the SetGlobalPermissionPermit intent.
+  function SET_GLOBAL_PERMISSION_PERMIT_TYPEHASH() external view returns (bytes32);
+
+  /// @notice Returns the type hash for the SetCanUpdateUsingAsCollateralPermissionPermit intent.
+  function SET_CAN_UPDATE_USING_AS_COLLATERAL_PERMISSION_PERMIT_TYPEHASH()
+    external
+    view
+    returns (bytes32);
+
+  /// @notice Returns the type hash for the SetCanUpdateUserRiskPremiumPermissionPermit intent.
+  function SET_CAN_UPDATE_USER_RISK_PREMIUM_PERMISSION_PERMIT_TYPEHASH()
+    external
+    view
+    returns (bytes32);
+
+  /// @notice Returns the type hash for the SetCanUpdateUserDynamicConfigPermissionPermit intent.
+  function SET_CAN_UPDATE_USER_DYNAMIC_CONFIG_PERMISSION_PERMIT_TYPEHASH()
+    external
+    view
+    returns (bytes32);
 }

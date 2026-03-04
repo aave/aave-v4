@@ -3,6 +3,7 @@
 pragma solidity 0.8.28;
 
 import {ConfigPermissionsMap} from 'src/position-manager/libraries/ConfigPermissionsMap.sol';
+import {EIP712Hash} from 'src/position-manager/libraries/EIP712Hash.sol';
 import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 import {
   IConfigPositionManager,
@@ -15,6 +16,23 @@ import {PositionManagerIntentBase} from 'src/position-manager/PositionManagerInt
 /// @notice Position manager to handle position configuration actions on behalf of users.
 contract ConfigPositionManager is IConfigPositionManager, PositionManagerIntentBase {
   using ConfigPermissionsMap for ConfigPermissions;
+  using EIP712Hash for *;
+
+  /// @inheritdoc IConfigPositionManager
+  bytes32 public constant SET_GLOBAL_PERMISSION_PERMIT_TYPEHASH =
+    EIP712Hash.SET_GLOBAL_PERMISSION_PERMIT_TYPEHASH;
+
+  /// @inheritdoc IConfigPositionManager
+  bytes32 public constant SET_CAN_UPDATE_USING_AS_COLLATERAL_PERMISSION_PERMIT_TYPEHASH =
+    EIP712Hash.SET_CAN_UPDATE_USING_AS_COLLATERAL_PERMISSION_PERMIT_TYPEHASH;
+
+  /// @inheritdoc IConfigPositionManager
+  bytes32 public constant SET_CAN_UPDATE_USER_RISK_PREMIUM_PERMISSION_PERMIT_TYPEHASH =
+    EIP712Hash.SET_CAN_UPDATE_USER_RISK_PREMIUM_PERMISSION_PERMIT_TYPEHASH;
+
+  /// @inheritdoc IConfigPositionManager
+  bytes32 public constant SET_CAN_UPDATE_USER_DYNAMIC_CONFIG_PERMISSION_PERMIT_TYPEHASH =
+    EIP712Hash.SET_CAN_UPDATE_USER_DYNAMIC_CONFIG_PERMISSION_PERMIT_TYPEHASH;
 
   /// @dev Map of configuration permissions based on the spoke, delegator and delegatee.
   mapping(address spoke => mapping(address delegator => mapping(address delegatee => ConfigPermissions)))
@@ -30,18 +48,11 @@ contract ConfigPositionManager is IConfigPositionManager, PositionManagerIntentB
     address delegatee,
     bool permission
   ) external onlyRegisteredSpoke(spoke) {
-    ConfigPermissions oldPermissions = _getPermissions({
-      spoke: spoke,
-      delegator: msg.sender,
-      delegatee: delegatee
-    });
-    ConfigPermissions newPermissions = ConfigPermissionsMap.setFullPermissions(permission);
-    _updatePermissions({
+    _setGlobalPermission({
       spoke: spoke,
       delegator: msg.sender,
       delegatee: delegatee,
-      oldPermissions: oldPermissions,
-      newPermissions: newPermissions
+      permission: permission
     });
   }
 
@@ -51,18 +62,11 @@ contract ConfigPositionManager is IConfigPositionManager, PositionManagerIntentB
     address delegatee,
     bool permission
   ) external onlyRegisteredSpoke(spoke) {
-    ConfigPermissions oldPermissions = _getPermissions({
-      spoke: spoke,
-      delegator: msg.sender,
-      delegatee: delegatee
-    });
-    ConfigPermissions newPermissions = oldPermissions.setCanSetUsingAsCollateral(permission);
-    _updatePermissions({
+    _setCanUpdateUsingAsCollateralPermission({
       spoke: spoke,
       delegator: msg.sender,
       delegatee: delegatee,
-      oldPermissions: oldPermissions,
-      newPermissions: newPermissions
+      permission: permission
     });
   }
 
@@ -72,18 +76,11 @@ contract ConfigPositionManager is IConfigPositionManager, PositionManagerIntentB
     address delegatee,
     bool permission
   ) external onlyRegisteredSpoke(spoke) {
-    ConfigPermissions oldPermissions = _getPermissions({
-      spoke: spoke,
-      delegator: msg.sender,
-      delegatee: delegatee
-    });
-    ConfigPermissions newPermissions = oldPermissions.setCanUpdateUserRiskPremium(permission);
-    _updatePermissions({
+    _setCanUpdateUserRiskPremiumPermission({
       spoke: spoke,
       delegator: msg.sender,
       delegatee: delegatee,
-      oldPermissions: oldPermissions,
-      newPermissions: newPermissions
+      permission: permission
     });
   }
 
@@ -93,18 +90,91 @@ contract ConfigPositionManager is IConfigPositionManager, PositionManagerIntentB
     address delegatee,
     bool permission
   ) external onlyRegisteredSpoke(spoke) {
-    ConfigPermissions oldPermissions = _getPermissions({
-      spoke: spoke,
-      delegator: msg.sender,
-      delegatee: delegatee
-    });
-    ConfigPermissions newPermissions = oldPermissions.setCanUpdateUserDynamicConfig(permission);
-    _updatePermissions({
+    _setCanUpdateUserDynamicConfigPermission({
       spoke: spoke,
       delegator: msg.sender,
       delegatee: delegatee,
-      oldPermissions: oldPermissions,
-      newPermissions: newPermissions
+      permission: permission
+    });
+  }
+
+  /// @inheritdoc IConfigPositionManager
+  function setGlobalPermissionWithSig(
+    SetGlobalPermissionPermit calldata params,
+    bytes calldata signature
+  ) external onlyRegisteredSpoke(params.spoke) {
+    _verifyAndConsumeIntent({
+      signer: params.delegator,
+      intentHash: params.hash(),
+      nonce: params.nonce,
+      deadline: params.deadline,
+      signature: signature
+    });
+    _setGlobalPermission({
+      spoke: params.spoke,
+      delegator: params.delegator,
+      delegatee: params.delegatee,
+      permission: params.permission
+    });
+  }
+
+  /// @inheritdoc IConfigPositionManager
+  function setCanUpdateUsingAsCollateralPermissionWithSig(
+    SetCanUpdateUsingAsCollateralPermissionPermit calldata params,
+    bytes calldata signature
+  ) external onlyRegisteredSpoke(params.spoke) {
+    _verifyAndConsumeIntent({
+      signer: params.delegator,
+      intentHash: params.hash(),
+      nonce: params.nonce,
+      deadline: params.deadline,
+      signature: signature
+    });
+    _setCanUpdateUsingAsCollateralPermission({
+      spoke: params.spoke,
+      delegator: params.delegator,
+      delegatee: params.delegatee,
+      permission: params.permission
+    });
+  }
+
+  /// @inheritdoc IConfigPositionManager
+  function setCanUpdateUserRiskPremiumPermissionWithSig(
+    SetCanUpdateUserRiskPremiumPermissionPermit calldata params,
+    bytes calldata signature
+  ) external onlyRegisteredSpoke(params.spoke) {
+    _verifyAndConsumeIntent({
+      signer: params.delegator,
+      intentHash: params.hash(),
+      nonce: params.nonce,
+      deadline: params.deadline,
+      signature: signature
+    });
+    _setCanUpdateUserRiskPremiumPermission({
+      spoke: params.spoke,
+      delegator: params.delegator,
+      delegatee: params.delegatee,
+      permission: params.permission
+    });
+  }
+
+  /// @inheritdoc IConfigPositionManager
+  function setCanUpdateUserDynamicConfigPermissionWithSig(
+    SetCanUpdateUserDynamicConfigPermissionPermit calldata params,
+    bytes calldata signature
+  ) external onlyRegisteredSpoke(params.spoke) {
+    _verifyAndConsumeIntent({
+      signer: params.delegator,
+      intentHash: params.hash(),
+      nonce: params.nonce,
+      deadline: params.deadline,
+      signature: signature
+    });
+    _setCanUpdateUserDynamicConfigPermission({
+      spoke: params.spoke,
+      delegator: params.delegator,
+      delegatee: params.delegatee,
+      permission: params.permission
     });
   }
 
@@ -243,6 +313,110 @@ contract ConfigPositionManager is IConfigPositionManager, PositionManagerIntentB
         .getConfigPermissionValues();
   }
 
+  /// @dev Sets the global permission for a delegatee on behalf of a delegator.
+  /// @param spoke The address of the spoke.
+  /// @param delegator The address of the delegator.
+  /// @param delegatee The address of the delegatee.
+  /// @param permission The new permission status.
+  function _setGlobalPermission(
+    address spoke,
+    address delegator,
+    address delegatee,
+    bool permission
+  ) internal {
+    ConfigPermissions oldPermissions = _getPermissions({
+      spoke: spoke,
+      delegator: delegator,
+      delegatee: delegatee
+    });
+    ConfigPermissions newPermissions = ConfigPermissionsMap.setFullPermissions(permission);
+    _updatePermissions({
+      spoke: spoke,
+      delegator: delegator,
+      delegatee: delegatee,
+      oldPermissions: oldPermissions,
+      newPermissions: newPermissions
+    });
+  }
+
+  /// @dev Sets the using as collateral permission for a delegatee on behalf of a delegator.
+  /// @param spoke The address of the spoke.
+  /// @param delegator The address of the delegator.
+  /// @param delegatee The address of the delegatee.
+  /// @param permission The new permission status.
+  function _setCanUpdateUsingAsCollateralPermission(
+    address spoke,
+    address delegator,
+    address delegatee,
+    bool permission
+  ) internal {
+    ConfigPermissions oldPermissions = _getPermissions({
+      spoke: spoke,
+      delegator: delegator,
+      delegatee: delegatee
+    });
+    ConfigPermissions newPermissions = oldPermissions.setCanSetUsingAsCollateral(permission);
+    _updatePermissions({
+      spoke: spoke,
+      delegator: delegator,
+      delegatee: delegatee,
+      oldPermissions: oldPermissions,
+      newPermissions: newPermissions
+    });
+  }
+
+  /// @dev Sets the user risk premium permission for a delegatee on behalf of a delegator.
+  /// @param spoke The address of the spoke.
+  /// @param delegator The address of the delegator.
+  /// @param delegatee The address of the delegatee.
+  /// @param permission The new permission status.
+  function _setCanUpdateUserRiskPremiumPermission(
+    address spoke,
+    address delegator,
+    address delegatee,
+    bool permission
+  ) internal {
+    ConfigPermissions oldPermissions = _getPermissions({
+      spoke: spoke,
+      delegator: delegator,
+      delegatee: delegatee
+    });
+    ConfigPermissions newPermissions = oldPermissions.setCanUpdateUserRiskPremium(permission);
+    _updatePermissions({
+      spoke: spoke,
+      delegator: delegator,
+      delegatee: delegatee,
+      oldPermissions: oldPermissions,
+      newPermissions: newPermissions
+    });
+  }
+
+  /// @dev Sets the user dynamic config permission for a delegatee on behalf of a delegator.
+  /// @param spoke The address of the spoke.
+  /// @param delegator The address of the delegator.
+  /// @param delegatee The address of the delegatee.
+  /// @param permission The new permission status.
+  function _setCanUpdateUserDynamicConfigPermission(
+    address spoke,
+    address delegator,
+    address delegatee,
+    bool permission
+  ) internal {
+    ConfigPermissions oldPermissions = _getPermissions({
+      spoke: spoke,
+      delegator: delegator,
+      delegatee: delegatee
+    });
+    ConfigPermissions newPermissions = oldPermissions.setCanUpdateUserDynamicConfig(permission);
+    _updatePermissions({
+      spoke: spoke,
+      delegator: delegator,
+      delegatee: delegatee,
+      oldPermissions: oldPermissions,
+      newPermissions: newPermissions
+    });
+  }
+
   /// @dev Does not update if the new permissions are equal to the old permissions.
   function _updatePermissions(
     address spoke,
@@ -258,6 +432,11 @@ contract ConfigPositionManager is IConfigPositionManager, PositionManagerIntentB
     emit ConfigPermissionsUpdated(spoke, delegator, delegatee, newPermissions);
   }
 
+  /// @dev Returns the config permissions for a delegatee on behalf of a delegator.
+  /// @param spoke The address of the spoke.
+  /// @param delegator The address of the delegator.
+  /// @param delegatee The address of the delegatee.
+  /// @return The ConfigPermissions for the delegatee on behalf of the delegator.
   function _getPermissions(
     address spoke,
     address delegator,

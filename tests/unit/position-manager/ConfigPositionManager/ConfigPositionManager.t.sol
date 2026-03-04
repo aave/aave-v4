@@ -2,33 +2,10 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import 'tests/unit/Spoke/SpokeBase.t.sol';
+import 'tests/unit/position-manager/ConfigPositionManager/ConfigPositionManager.Base.t.sol';
 
-contract ConfigPositionManagerTest is SpokeBase {
+contract ConfigPositionManagerTest is ConfigPositionManagerBaseTest {
   using ConfigPermissionsMap for ConfigPermissions;
-
-  ConfigPositionManager public positionManager;
-  TestReturnValues public returnValues;
-
-  ConfigPermissions emptyPermissions;
-
-  function setUp() public virtual override {
-    super.setUp();
-
-    positionManager = new ConfigPositionManager(address(ADMIN));
-
-    emptyPermissions = ConfigPermissions.wrap(0);
-
-    vm.prank(SPOKE_ADMIN);
-    spoke1.updatePositionManager(address(positionManager), true);
-
-    vm.prank(alice);
-    spoke1.setUserPositionManager(address(positionManager), true);
-
-    vm.prank(ADMIN);
-    positionManager.registerSpoke(address(spoke1), true);
-  }
-
   function test_setGlobalPermission() public {
     IConfigPositionManager.ConfigPermissionValues memory permissions = positionManager
       .getConfigPermissions(address(spoke1), bob, alice);
@@ -588,35 +565,5 @@ contract ConfigPositionManagerTest is SpokeBase {
     assertTrue(permissions.canSetUsingAsCollateral);
     assertTrue(permissions.canUpdateUserRiskPremium);
     assertTrue(permissions.canUpdateUserDynamicConfig);
-  }
-
-  function _canUpdateUsingAsCollateral(
-    address spoke,
-    address delegator,
-    address delegatee
-  ) internal view returns (bool) {
-    IConfigPositionManager.ConfigPermissionValues memory permissions = positionManager
-      .getConfigPermissions(spoke, delegator, delegatee);
-    return permissions.canSetUsingAsCollateral;
-  }
-
-  function _canUpdateUserRiskPremium(
-    address spoke,
-    address delegator,
-    address delegatee
-  ) internal view returns (bool) {
-    IConfigPositionManager.ConfigPermissionValues memory permissions = positionManager
-      .getConfigPermissions(spoke, delegator, delegatee);
-    return permissions.canUpdateUserRiskPremium;
-  }
-
-  function _canUpdateUserDynamicConfig(
-    address spoke,
-    address delegator,
-    address delegatee
-  ) internal view returns (bool) {
-    IConfigPositionManager.ConfigPermissionValues memory permissions = positionManager
-      .getConfigPermissions(spoke, delegator, delegatee);
-    return permissions.canUpdateUserDynamicConfig;
   }
 }
