@@ -11,7 +11,7 @@ contract TokenizationSpokeInstance is TokenizationSpoke {
   uint64 public constant SPOKE_REVISION = 1;
 
   /// @dev Constructor.
-  /// @param hub_ The address of the hub.
+  /// @param hub_ The address of the associated Hub.
   /// @param underlying_ The address of the underlying asset to be tokenized.
   constructor(address hub_, address underlying_) TokenizationSpoke(hub_, underlying_) {
     _disableInitializers();

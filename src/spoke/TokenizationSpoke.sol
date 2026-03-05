@@ -45,7 +45,7 @@ abstract contract TokenizationSpoke is ITokenizationSpoke, ERC20Upgradeable, Int
 
   /// @dev Constructor.
   /// @param hub_ The address of the associated Hub contract.
-  /// @param underlying_ The registered address of the underlying token to be tokenized.
+  /// @param underlying_ The address of the underlying asset to be tokenized by this spoke.
   constructor(address hub_, address underlying_) {
     HUB = IHub(hub_);
     ASSET_ID = HUB.getAssetId(underlying_); // reverts if invalid
