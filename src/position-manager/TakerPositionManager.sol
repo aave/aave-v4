@@ -176,7 +176,10 @@ contract TakerPositionManager is ITakerPositionManager, PositionManagerBase {
       amount: amount
     });
 
-    uint256 sharesBefore = ISpokeBase(spoke).getUserSuppliedShares(reserveId, onBehalfOf);
+    uint256 sharesBefore;
+    if (currentAllowance != type(uint256).max) {
+      sharesBefore = ISpokeBase(spoke).getUserSuppliedShares(reserveId, onBehalfOf);
+    }
 
     (uint256 withdrawnShares, uint256 withdrawnAmount) = ISpokeBase(spoke).withdraw({
       reserveId: reserveId,
@@ -189,19 +192,21 @@ contract TakerPositionManager is ITakerPositionManager, PositionManagerBase {
     // position value can differ slightly from the input `amount`. To handle this, the allowance
     // consumption is based on the before/after delta of `previewAddByShares`, and capped at
     // `currentAllowance` to prevent underflow from rounding.
-    uint256 sharesAfter = ISpokeBase(spoke).getUserSuppliedShares(reserveId, onBehalfOf);
-    uint256 newAllowance = _deductAllowance({
-      currentAllowance: currentAllowance,
-      correctedAmount: reserve.hub.previewAddByShares(reserve.assetId, sharesBefore) -
-        reserve.hub.previewAddByShares(reserve.assetId, sharesAfter)
-    });
-    _updateWithdrawAllowance({
-      spoke: spoke,
-      reserveId: reserveId,
-      owner: onBehalfOf,
-      spender: msg.sender,
-      newAllowance: newAllowance
-    });
+    if (currentAllowance != type(uint256).max) {
+      uint256 sharesAfter = ISpokeBase(spoke).getUserSuppliedShares(reserveId, onBehalfOf);
+      uint256 newAllowance = _deductAllowance({
+        currentAllowance: currentAllowance,
+        correctedAmount: reserve.hub.previewAddByShares(reserve.assetId, sharesBefore) -
+          reserve.hub.previewAddByShares(reserve.assetId, sharesAfter)
+      });
+      _updateWithdrawAllowance({
+        spoke: spoke,
+        reserveId: reserveId,
+        owner: onBehalfOf,
+        spender: msg.sender,
+        newAllowance: newAllowance
+      });
+    }
     IERC20(reserve.underlying).safeTransfer(msg.sender, withdrawnAmount);
 
     return (withdrawnShares, withdrawnAmount);
@@ -223,7 +228,10 @@ contract TakerPositionManager is ITakerPositionManager, PositionManagerBase {
       amount: amount
     });
 
-    uint256 drawnSharesBefore = ISpoke(spoke).getUserPosition(reserveId, onBehalfOf).drawnShares;
+    uint256 drawnSharesBefore;
+    if (currentAllowance != type(uint256).max) {
+      drawnSharesBefore = ISpoke(spoke).getUserPosition(reserveId, onBehalfOf).drawnShares;
+    }
 
     (uint256 borrowedShares, uint256 borrowedAmount) = ISpokeBase(spoke).borrow({
       reserveId: reserveId,
@@ -236,19 +244,21 @@ contract TakerPositionManager is ITakerPositionManager, PositionManagerBase {
     // the input `amount`. To handle this, the allowance consumption is based on the before/after
     // delta of `previewRestoreByShares`, and capped at `currentAllowance` to prevent underflow
     // from rounding.
-    uint256 drawnSharesAfter = ISpoke(spoke).getUserPosition(reserveId, onBehalfOf).drawnShares;
-    uint256 newAllowance = _deductAllowance({
-      currentAllowance: currentAllowance,
-      correctedAmount: reserve.hub.previewRestoreByShares(reserve.assetId, drawnSharesAfter) -
-        reserve.hub.previewRestoreByShares(reserve.assetId, drawnSharesBefore)
-    });
-    _updateBorrowAllowance({
-      spoke: spoke,
-      reserveId: reserveId,
-      owner: onBehalfOf,
-      spender: msg.sender,
-      newAllowance: newAllowance
-    });
+    if (currentAllowance != type(uint256).max) {
+      uint256 drawnSharesAfter = ISpoke(spoke).getUserPosition(reserveId, onBehalfOf).drawnShares;
+      uint256 newAllowance = _deductAllowance({
+        currentAllowance: currentAllowance,
+        correctedAmount: reserve.hub.previewRestoreByShares(reserve.assetId, drawnSharesAfter) -
+          reserve.hub.previewRestoreByShares(reserve.assetId, drawnSharesBefore)
+      });
+      _updateBorrowAllowance({
+        spoke: spoke,
+        reserveId: reserveId,
+        owner: onBehalfOf,
+        spender: msg.sender,
+        newAllowance: newAllowance
+      });
+    }
     IERC20(reserve.underlying).safeTransfer(msg.sender, borrowedAmount);
 
     return (borrowedShares, borrowedAmount);
