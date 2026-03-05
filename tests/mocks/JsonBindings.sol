@@ -37,7 +37,6 @@ interface Vm {
 }
 
 library JsonBindings {
-  bool public constant IS_TEST = true;
   Vm constant vm = Vm(address(uint160(uint256(keccak256('hevm cheat code')))));
 
   // prettier-ignore
