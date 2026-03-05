@@ -23,6 +23,7 @@ contract AaveOracle is IAaveOracle {
   /// @dev The address of the deployer.
   address private immutable _deployer;
 
+  /// @dev Map of reserve identifiers to their price feed.
   mapping(uint256 reserveId => IPriceFeed) internal _sources;
 
   /// @dev Constructor.
