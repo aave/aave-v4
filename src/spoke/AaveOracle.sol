@@ -11,8 +11,8 @@ import {IAaveOracle, IPriceOracle} from 'src/spoke/interfaces/IAaveOracle.sol';
 /// @notice Provides reserve prices.
 /// @dev Oracles are spoke-specific, due to the usage of reserve id as index of the `_sources` mapping.
 contract AaveOracle is IAaveOracle {
-  /// @inheritdoc IPriceOracle
-  uint8 public immutable decimals;
+  /// @notice The number of decimals for the oracle.
+  uint8 public immutable DECIMALS;
 
   /// @inheritdoc IAaveOracle
   string public description;
@@ -21,7 +21,7 @@ contract AaveOracle is IAaveOracle {
   address public spoke;
 
   /// @dev The address of the deployer.
-  address private immutable _deployer;
+  address private immutable _DEPLOYER;
 
   /// @dev Map of reserve identifiers to their price feed.
   mapping(uint256 reserveId => IPriceFeed) internal _sources;
@@ -31,14 +31,14 @@ contract AaveOracle is IAaveOracle {
   /// @param decimals_ The number of decimals for the oracle.
   /// @param description_ The description of the oracle.
   constructor(uint8 decimals_, string memory description_) {
-    _deployer = msg.sender;
-    decimals = decimals_;
+    _DEPLOYER = msg.sender;
+    DECIMALS = decimals_;
     description = description_;
   }
 
   /// @inheritdoc IAaveOracle
   function setSpoke(address spoke_) external {
-    require(msg.sender == _deployer, OnlyDeployer());
+    require(msg.sender == _DEPLOYER, OnlyDeployer());
     require(spoke_ != address(0), InvalidAddress());
     require(spoke == address(0), SpokeAlreadySet());
     require(ISpoke(spoke_).ORACLE() == address(this), OracleMismatch());
@@ -50,10 +50,15 @@ contract AaveOracle is IAaveOracle {
   function setReserveSource(uint256 reserveId, address source) external {
     require(msg.sender == spoke, OnlySpoke());
     IPriceFeed targetSource = IPriceFeed(source);
-    require(targetSource.decimals() == decimals, InvalidSourceDecimals(reserveId));
+    require(targetSource.decimals() == DECIMALS, InvalidSourceDecimals(reserveId));
     _sources[reserveId] = targetSource;
     _getSourcePrice(reserveId);
     emit UpdateReserveSource(reserveId, source);
+  }
+
+  /// @inheritdoc IPriceOracle
+  function decimals() external view returns (uint8) {
+    return DECIMALS;
   }
 
   /// @inheritdoc IPriceOracle
