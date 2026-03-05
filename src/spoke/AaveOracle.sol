@@ -15,7 +15,7 @@ contract AaveOracle is IAaveOracle {
   uint8 public immutable DECIMALS;
 
   /// @dev The address of the deployer.
-  address private immutable DEPLOYER;
+  address public immutable DEPLOYER;
 
   /// @inheritdoc IAaveOracle
   string public DESCRIPTION;

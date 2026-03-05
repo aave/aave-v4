@@ -309,7 +309,7 @@ interface IHub is IHubBase, IAccessManaged {
   /// @param assetId The identifier of the asset.
   /// @param amount The amount of deficit to eliminate.
   /// @param spoke The spoke for which the deficit is eliminated.
-  /// @return The amount of shares removed.
+  /// @return The amount of drawn shares removed.
   /// @return The amount of deficit eliminated, expressed in asset units.
   function eliminateDeficit(
     uint256 assetId,
