@@ -3,8 +3,8 @@
 pragma solidity 0.8.28;
 
 import {SafeERC20, IERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
-import {MathUtils} from 'src/libraries/math/MathUtils.sol';
 import {EIP712Hash} from 'src/position-manager/libraries/EIP712Hash.sol';
+import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 import {ISpokeBase} from 'src/spoke/interfaces/ISpokeBase.sol';
 import {ITakerPositionManager} from 'src/position-manager/interfaces/ITakerPositionManager.sol';
 import {PositionManagerBase} from 'src/position-manager/PositionManagerBase.sol';
@@ -14,7 +14,6 @@ import {PositionManagerBase} from 'src/position-manager/PositionManagerBase.sol'
 /// @notice Position manager to handle withdraw permit and borrow permit actions on behalf of users.
 contract TakerPositionManager is ITakerPositionManager, PositionManagerBase {
   using SafeERC20 for IERC20;
-  using MathUtils for uint256;
   using EIP712Hash for *;
 
   /// @inheritdoc ITakerPositionManager
@@ -85,7 +84,7 @@ contract TakerPositionManager is ITakerPositionManager, PositionManagerBase {
       reserveId: reserveId,
       owner: msg.sender,
       spender: spender,
-      newCreditDelegation: amount
+      newAllowance: amount
     });
   }
 
@@ -107,7 +106,7 @@ contract TakerPositionManager is ITakerPositionManager, PositionManagerBase {
       reserveId: params.reserveId,
       owner: params.owner,
       spender: params.spender,
-      newCreditDelegation: params.amount
+      newAllowance: params.amount
     });
   }
 
@@ -157,7 +156,7 @@ contract TakerPositionManager is ITakerPositionManager, PositionManagerBase {
       reserveId: reserveId,
       owner: owner,
       spender: msg.sender,
-      newCreditDelegation: 0
+      newAllowance: 0
     });
   }
 
@@ -168,8 +167,8 @@ contract TakerPositionManager is ITakerPositionManager, PositionManagerBase {
     uint256 amount,
     address onBehalfOf
   ) external onlyRegisteredSpoke(spoke) returns (uint256, uint256) {
-    IERC20 asset = IERC20(_getReserveUnderlying(spoke, reserveId));
-    _spendWithdrawAllowance({
+    ISpoke.Reserve memory reserve = ISpoke(spoke).getReserve(reserveId);
+    uint256 currentAllowance = _checkWithdrawAllowance({
       spoke: spoke,
       reserveId: reserveId,
       owner: onBehalfOf,
@@ -177,12 +176,33 @@ contract TakerPositionManager is ITakerPositionManager, PositionManagerBase {
       amount: amount
     });
 
-    (uint256 withdrawnShares, uint256 withdrawnAmount) = ISpokeBase(spoke).withdraw(
-      reserveId,
-      amount,
-      onBehalfOf
-    );
-    asset.safeTransfer(msg.sender, withdrawnAmount);
+    uint256 sharesBefore = ISpokeBase(spoke).getUserSuppliedShares(reserveId, onBehalfOf);
+
+    (uint256 withdrawnShares, uint256 withdrawnAmount) = ISpokeBase(spoke).withdraw({
+      reserveId: reserveId,
+      amount: amount,
+      onBehalfOf: onBehalfOf
+    });
+
+    // Simply decreasing the allowance by the input `amount` is not ideal for shares-based
+    // positions. Due to rounding in supply-side SharesMath, the actual decrease in the user's
+    // position value can differ slightly from the input `amount`. To handle this, the allowance
+    // consumption is based on the before/after delta of `previewAddByShares`, and capped at
+    // `currentAllowance` to prevent underflow from rounding.
+    uint256 sharesAfter = ISpokeBase(spoke).getUserSuppliedShares(reserveId, onBehalfOf);
+    uint256 newAllowance = _deductAllowance({
+      currentAllowance: currentAllowance,
+      correctedAmount: reserve.hub.previewAddByShares(reserve.assetId, sharesBefore) -
+        reserve.hub.previewAddByShares(reserve.assetId, sharesAfter)
+    });
+    _updateWithdrawAllowance({
+      spoke: spoke,
+      reserveId: reserveId,
+      owner: onBehalfOf,
+      spender: msg.sender,
+      newAllowance: newAllowance
+    });
+    IERC20(reserve.underlying).safeTransfer(msg.sender, withdrawnAmount);
 
     return (withdrawnShares, withdrawnAmount);
   }
@@ -194,8 +214,8 @@ contract TakerPositionManager is ITakerPositionManager, PositionManagerBase {
     uint256 amount,
     address onBehalfOf
   ) external onlyRegisteredSpoke(spoke) returns (uint256, uint256) {
-    IERC20 asset = IERC20(_getReserveUnderlying(spoke, reserveId));
-    _spendBorrowAllowance({
+    ISpoke.Reserve memory reserve = ISpoke(spoke).getReserve(reserveId);
+    uint256 currentAllowance = _checkBorrowAllowance({
       spoke: spoke,
       reserveId: reserveId,
       owner: onBehalfOf,
@@ -203,12 +223,33 @@ contract TakerPositionManager is ITakerPositionManager, PositionManagerBase {
       amount: amount
     });
 
-    (uint256 borrowedShares, uint256 borrowedAmount) = ISpokeBase(spoke).borrow(
-      reserveId,
-      amount,
-      onBehalfOf
-    );
-    asset.safeTransfer(msg.sender, borrowedAmount);
+    uint256 drawnSharesBefore = ISpoke(spoke).getUserPosition(reserveId, onBehalfOf).drawnShares;
+
+    (uint256 borrowedShares, uint256 borrowedAmount) = ISpokeBase(spoke).borrow({
+      reserveId: reserveId,
+      amount: amount,
+      onBehalfOf: onBehalfOf
+    });
+
+    // Simply decreasing the allowance by the input `amount` is not ideal for shares-based
+    // debt. Due to rounding, the actual increase in the user's debt can differ slightly from
+    // the input `amount`. To handle this, the allowance consumption is based on the before/after
+    // delta of `previewRestoreByShares`, and capped at `currentAllowance` to prevent underflow
+    // from rounding.
+    uint256 drawnSharesAfter = ISpoke(spoke).getUserPosition(reserveId, onBehalfOf).drawnShares;
+    uint256 newAllowance = _deductAllowance({
+      currentAllowance: currentAllowance,
+      correctedAmount: reserve.hub.previewRestoreByShares(reserve.assetId, drawnSharesAfter) -
+        reserve.hub.previewRestoreByShares(reserve.assetId, drawnSharesBefore)
+    });
+    _updateBorrowAllowance({
+      spoke: spoke,
+      reserveId: reserveId,
+      owner: onBehalfOf,
+      spender: msg.sender,
+      newAllowance: newAllowance
+    });
+    IERC20(reserve.underlying).safeTransfer(msg.sender, borrowedAmount);
 
     return (borrowedShares, borrowedAmount);
   }
@@ -269,60 +310,54 @@ contract TakerPositionManager is ITakerPositionManager, PositionManagerBase {
     uint256 reserveId,
     address owner,
     address spender,
-    uint256 newCreditDelegation
+    uint256 newAllowance
   ) internal {
-    _borrowAllowances[spoke][reserveId][owner][spender] = newCreditDelegation;
-    emit BorrowApproval(spoke, reserveId, owner, spender, newCreditDelegation);
+    _borrowAllowances[spoke][reserveId][owner][spender] = newAllowance;
+    emit BorrowApproval(spoke, reserveId, owner, spender, newAllowance);
   }
 
-  function _spendWithdrawAllowance(
+  function _checkWithdrawAllowance(
     address spoke,
     uint256 reserveId,
     address owner,
     address spender,
     uint256 amount
-  ) internal {
-    uint256 currentAllowance = _getWithdrawAllowance({
+  ) internal view returns (uint256 currentAllowance) {
+    currentAllowance = _getWithdrawAllowance({
       spoke: spoke,
       reserveId: reserveId,
       owner: owner,
       spender: spender
     });
     require(currentAllowance >= amount, InsufficientWithdrawAllowance(currentAllowance, amount));
-    if (currentAllowance != type(uint256).max) {
-      _updateWithdrawAllowance({
-        spoke: spoke,
-        reserveId: reserveId,
-        owner: owner,
-        spender: spender,
-        newAllowance: currentAllowance.uncheckedSub(amount)
-      });
-    }
   }
 
-  function _spendBorrowAllowance(
+  function _checkBorrowAllowance(
     address spoke,
     uint256 reserveId,
     address owner,
     address spender,
     uint256 amount
-  ) internal {
-    uint256 currentAllowance = _getBorrowAllowance({
+  ) internal view returns (uint256 currentAllowance) {
+    currentAllowance = _getBorrowAllowance({
       spoke: spoke,
       reserveId: reserveId,
       owner: owner,
       spender: spender
     });
     require(currentAllowance >= amount, InsufficientBorrowAllowance(currentAllowance, amount));
-    if (currentAllowance != type(uint256).max) {
-      _updateBorrowAllowance({
-        spoke: spoke,
-        reserveId: reserveId,
-        owner: owner,
-        spender: spender,
-        newCreditDelegation: currentAllowance.uncheckedSub(amount)
-      });
-    }
+  }
+
+  /// @dev Deducts the corrected amount from the given allowance.
+  /// `correctedAmount` may exceed `currentAllowance` by a rounding delta;
+  /// consumption is capped at `currentAllowance` to prevent underflow.
+  function _deductAllowance(
+    uint256 currentAllowance,
+    uint256 correctedAmount
+  ) internal pure returns (uint256 newAllowance) {
+    if (currentAllowance == type(uint256).max) return type(uint256).max;
+    uint256 consumption = currentAllowance >= correctedAmount ? correctedAmount : currentAllowance;
+    return currentAllowance - consumption;
   }
 
   function _multicallEnabled() internal pure override returns (bool) {

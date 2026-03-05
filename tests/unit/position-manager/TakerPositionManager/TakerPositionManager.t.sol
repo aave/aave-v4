@@ -332,6 +332,13 @@ contract TakerPositionManagerTest is TakerPositionManagerBaseTest {
     assertEq(returnValues.amount, expectedWithdrawAmount);
     assertEq(returnValues.shares, expectedSupplyShares);
 
+    // The corrected withdraw amount is the position value delta: previewAddByShares(sharesBefore)
+    // - previewAddByShares(sharesAfter). For a full withdrawal (sharesAfter == 0), this equals
+    // previewAddByShares(sharesBefore). The allowance is deducted by min(correctedAmount, currentAllowance).
+    uint256 sharesBefore = expectedSupplyShares; // all shares withdrawn
+    uint256 correctedWithdrawAmount = hub1.previewAddByShares(daiAssetId, sharesBefore);
+    uint256 expectedAllowance = supplyAmount * 10 - correctedWithdrawAmount;
+
     assertEq(tokenList.dai.balanceOf(alice), userBalanceBefore);
     assertEq(tokenList.dai.balanceOf(bob), callerBalanceBefore + expectedWithdrawAmount);
     assertEq(spoke1.getUserSuppliedAssets(_daiReserveId(spoke1), alice), 0);
@@ -340,7 +347,7 @@ contract TakerPositionManagerTest is TakerPositionManagerBaseTest {
     assertEq(tokenList.dai.allowance(address(positionManager), address(hub1)), 0);
     assertEq(
       positionManager.withdrawAllowance(address(spoke1), _daiReserveId(spoke1), alice, bob),
-      0
+      expectedAllowance
     );
   }
 
