@@ -61,7 +61,7 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
     amounts = _ensureSufficientCollateral(spoke2, amounts);
     TestAmount[] memory testAmounts = _parseTestInputs(amounts);
 
-    // Bob supplies amounts on spoke 2, then we deploy remainder of liquidity up to respective supply caps
+    // Bob supplies amounts on spoke 2, then we deploy remainder of liquidity up to respective add caps
     for (uint256 i = 0; i < 4; ++i) {
       if (testAmounts[i].supplyAmount > 0) {
         Utils.supplyCollateral(
