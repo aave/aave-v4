@@ -24,18 +24,21 @@ The Aave V4 architecture follows a modular **hub-and-spoke design** that separat
 ```
 aave-v4/
 ├── src/                          # Main source code
+│   ├── access/                   # Access control contracts
+│   ├── dependencies/             # Dependencies (Chainlink, OpenZeppelin, etc.)
 │   ├── hub/                      # Hub contracts and interfaces
-│   ├── spoke/                    # Spoke contracts and interfaces
-│   ├── position-manager/         # Position Managers, including gateway contracts
+│   ├── interfaces/               # Shared interfaces
 │   ├── libraries/                # Shared libraries (math, types)
-│   ├── utils/                    # Utility contracts (Multicall, etc.)
-│   └── dependencies/             # Dependencies (Chainlink, OpenZeppelin, etc.)
+│   ├── misc/                     # Miscellaneous contracts
+│   ├── position-manager/         # Position Managers, including gateway contracts
+│   ├── spoke/                    # Spoke contracts and interfaces
+│   └── utils/                    # Utility contracts (Multicall, etc.)
 ├── tests/                        # Test suite
-│   ├── unit/                     # Unit tests
+│   ├── contracts/                # Contract tests (hub, spoke, tokenization, etc.)
 │   ├── gas/                      # Gas snapshot tests
-│   ├── invariant/                # Invariant tests
+│   ├── helpers/                  # Test helpers and mocks
 │   ├── misc/                     # Symbolic tests, prototype development
-│   └── Base.t.sol                # Base test setup
+│   └── setup/                    # Base test setup and fixtures
 ├── scripts/                      # Deployment scripts
 ├── snapshots/                    # Gas snapshots
 └── lib/                          # Foundry dependencies
