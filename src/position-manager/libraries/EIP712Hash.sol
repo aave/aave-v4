@@ -3,6 +3,7 @@
 pragma solidity ^0.8.20;
 
 import {ISignatureGateway} from 'src/position-manager/interfaces/ISignatureGateway.sol';
+import {ITakerPositionManager} from 'src/position-manager/interfaces/ITakerPositionManager.sol';
 
 /// @title EIP712Hash library
 /// @author Aave Labs
@@ -35,6 +36,14 @@ library EIP712Hash {
   bytes32 public constant UPDATE_USER_DYNAMIC_CONFIG_TYPEHASH =
     // keccak256('UpdateUserDynamicConfig(address spoke,address onBehalfOf,uint256 nonce,uint256 deadline)')
     0x4a168dd8b32d260d07d6f0be832e23035a65a47f788675b0b02270c68b987886;
+
+  bytes32 public constant WITHDRAW_PERMIT_TYPEHASH =
+    // keccak256('WithdrawPermit(address spoke,uint256 reserveId,address owner,address spender,uint256 amount,uint256 nonce,uint256 deadline)')
+    0x9e6642fd4c06a4c1a5e201f1e41c6b7892fcf06859c796b054c510b80e2a0a3f;
+
+  bytes32 public constant BORROW_PERMIT_TYPEHASH =
+    // keccak256('BorrowPermit(address spoke,uint256 reserveId,address owner,address spender,uint256 amount,uint256 nonce,uint256 deadline)')
+    0x14236ea048da65ffb52a9b32a2c840f24ab374cc31f65faeb7877d22ceca144e;
 
   function hash(ISignatureGateway.Supply calldata params) internal pure returns (bytes32) {
     return
@@ -137,6 +146,42 @@ library EIP712Hash {
           UPDATE_USER_DYNAMIC_CONFIG_TYPEHASH,
           params.spoke,
           params.onBehalfOf,
+          params.nonce,
+          params.deadline
+        )
+      );
+  }
+
+  function hash(
+    ITakerPositionManager.WithdrawPermit calldata params
+  ) internal pure returns (bytes32) {
+    return
+      keccak256(
+        abi.encode(
+          WITHDRAW_PERMIT_TYPEHASH,
+          params.spoke,
+          params.reserveId,
+          params.owner,
+          params.spender,
+          params.amount,
+          params.nonce,
+          params.deadline
+        )
+      );
+  }
+
+  function hash(
+    ITakerPositionManager.BorrowPermit calldata params
+  ) internal pure returns (bytes32) {
+    return
+      keccak256(
+        abi.encode(
+          BORROW_PERMIT_TYPEHASH,
+          params.spoke,
+          params.reserveId,
+          params.owner,
+          params.spender,
+          params.amount,
           params.nonce,
           params.deadline
         )

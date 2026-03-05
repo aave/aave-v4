@@ -2,7 +2,7 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import 'tests/unit/misc/SignatureGateway/SignatureGateway.Base.t.sol';
+import 'tests/unit/position-manager/SignatureGateway/SignatureGateway.Base.t.sol';
 
 contract SignatureGateway_SpokeNotRegistered_Test is SignatureGatewayBaseTest {
   function setUp() public virtual override {
@@ -25,7 +25,7 @@ contract SignatureGateway_SpokeNotRegistered_Test is SignatureGatewayBaseTest {
   ) public {
     bytes memory signature = vm.randomBytes(32);
 
-    vm.expectRevert(IGatewayBase.SpokeNotRegistered.selector);
+    vm.expectRevert(IPositionManagerBase.SpokeNotRegistered.selector);
     vm.prank(vm.randomAddress());
     gateway.supplyWithSig(p, signature);
   }
@@ -35,7 +35,7 @@ contract SignatureGateway_SpokeNotRegistered_Test is SignatureGatewayBaseTest {
   ) public {
     bytes memory signature = vm.randomBytes(32);
 
-    vm.expectRevert(IGatewayBase.SpokeNotRegistered.selector);
+    vm.expectRevert(IPositionManagerBase.SpokeNotRegistered.selector);
     vm.prank(vm.randomAddress());
     gateway.withdrawWithSig(p, signature);
   }
@@ -45,7 +45,7 @@ contract SignatureGateway_SpokeNotRegistered_Test is SignatureGatewayBaseTest {
   ) public {
     bytes memory signature = vm.randomBytes(32);
 
-    vm.expectRevert(IGatewayBase.SpokeNotRegistered.selector);
+    vm.expectRevert(IPositionManagerBase.SpokeNotRegistered.selector);
     vm.prank(vm.randomAddress());
     gateway.borrowWithSig(p, signature);
   }
@@ -55,7 +55,7 @@ contract SignatureGateway_SpokeNotRegistered_Test is SignatureGatewayBaseTest {
   ) public {
     bytes memory signature = vm.randomBytes(32);
 
-    vm.expectRevert(IGatewayBase.SpokeNotRegistered.selector);
+    vm.expectRevert(IPositionManagerBase.SpokeNotRegistered.selector);
     vm.prank(vm.randomAddress());
     gateway.repayWithSig(p, signature);
   }
@@ -65,7 +65,7 @@ contract SignatureGateway_SpokeNotRegistered_Test is SignatureGatewayBaseTest {
   ) public {
     bytes memory signature = vm.randomBytes(32);
 
-    vm.expectRevert(IGatewayBase.SpokeNotRegistered.selector);
+    vm.expectRevert(IPositionManagerBase.SpokeNotRegistered.selector);
     vm.prank(vm.randomAddress());
     gateway.setUsingAsCollateralWithSig(p, signature);
   }
@@ -76,7 +76,7 @@ contract SignatureGateway_SpokeNotRegistered_Test is SignatureGatewayBaseTest {
     bytes memory signature = vm.randomBytes(32);
 
     vm.expectRevert(
-      abi.encodeWithSelector(IGatewayBase.SpokeNotRegistered.selector, address(gateway))
+      abi.encodeWithSelector(IPositionManagerBase.SpokeNotRegistered.selector, address(gateway))
     );
     vm.prank(vm.randomAddress());
     gateway.updateUserRiskPremiumWithSig(p, signature);
@@ -88,7 +88,7 @@ contract SignatureGateway_SpokeNotRegistered_Test is SignatureGatewayBaseTest {
     bytes memory signature = vm.randomBytes(32);
 
     vm.expectRevert(
-      abi.encodeWithSelector(IGatewayBase.SpokeNotRegistered.selector, address(gateway))
+      abi.encodeWithSelector(IPositionManagerBase.SpokeNotRegistered.selector, address(gateway))
     );
     vm.prank(vm.randomAddress());
     gateway.updateUserDynamicConfigWithSig(p, signature);

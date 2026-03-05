@@ -906,7 +906,7 @@ abstract contract Spoke is
     return _reserves[reserveId].assetId == assetId && address(_reserves[reserveId].hub) == hub;
   }
 
-  /// @notice Returns whether `manager` is active & approved positionManager for `user`.
+  /// @notice Returns whether `manager` is active and approved positionManager for `user`.
   function _isPositionManager(address user, address manager) internal view returns (bool) {
     if (user == manager) return true;
     PositionManagerConfig storage config = _positionManager[manager];

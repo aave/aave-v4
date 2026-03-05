@@ -2,7 +2,7 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import 'tests/unit/misc/SignatureGateway/SignatureGateway.Base.t.sol';
+import 'tests/unit/position-manager/SignatureGateway/SignatureGateway.Base.t.sol';
 
 contract SignatureGatewayTest is SignatureGatewayBaseTest {
   using SafeCast for *;
@@ -43,10 +43,10 @@ contract SignatureGatewayTest is SignatureGatewayBaseTest {
   }
 
   function test_renouncePositionManagerRole() public {
-    address who = vm.randomAddress();
-    vm.expectCall(address(spoke1), abi.encodeCall(ISpoke.renouncePositionManagerRole, (who)));
+    address user = vm.randomAddress();
+    vm.expectCall(address(spoke1), abi.encodeCall(ISpoke.renouncePositionManagerRole, (user)));
     vm.prank(ADMIN);
-    gateway.renouncePositionManagerRole(address(spoke1), who);
+    gateway.renouncePositionManagerRole(address(spoke1), user);
   }
 
   function test_supplyWithSig() public {
@@ -261,6 +261,121 @@ contract SignatureGatewayTest is SignatureGatewayBaseTest {
     });
 
     _assertNonceIncrement(ISignatureGateway(address(spoke1)), alice, p.nonce); // note: nonce consumed on spoke
+    _assertGatewayHasNoBalanceOrAllowance(spoke1, gateway, alice);
+    _assertGatewayHasNoActivePosition(spoke1, gateway);
+  }
+
+  function test_multicall() public {
+    uint256 deadline = _warpBeforeRandomDeadline();
+    uint256 reserveId = _daiReserveId(spoke1);
+
+    ISignatureGateway.Supply memory p = _supplyData(spoke1, alice, deadline);
+    p.reserveId = reserveId;
+    p.nonce = _burnRandomNoncesAtKey(gateway, p.onBehalfOf);
+    bytes memory signature = _sign(alicePk, _getTypedDataHash(gateway, p));
+    Utils.approve(spoke1, p.reserveId, alice, address(gateway), p.amount);
+
+    uint256 expectedShares = _hub(spoke1, reserveId).previewAddByAssets(
+      _reserveAssetId(spoke1, reserveId),
+      p.amount
+    );
+
+    ISignatureGateway.SetUsingAsCollateral memory p2 = _setAsCollateralData(
+      spoke1,
+      alice,
+      deadline
+    );
+    p2.nonce = _getNextNoncePacked(p.nonce);
+    p2.reserveId = reserveId;
+    bytes memory signature2 = _sign(alicePk, _getTypedDataHash(gateway, p2));
+
+    bytes[] memory calls = new bytes[](2);
+    calls[0] = abi.encodeCall(gateway.supplyWithSig, (p, signature));
+    calls[1] = abi.encodeCall(gateway.setUsingAsCollateralWithSig, (p2, signature2));
+
+    bytes[] memory res = gateway.multicall(calls);
+
+    (uint256 returnedShares, uint256 returnedAmount) = abi.decode(res[0], (uint256, uint256));
+    assertEq(returnedShares, expectedShares);
+    assertEq(returnedAmount, p.amount);
+    assertEq(res[1].length, 0); // setUsingAsCollateralWithSig has no return values
+
+    _assertNonceIncrement(gateway, alice, p2.nonce);
+    _assertGatewayHasNoBalanceOrAllowance(spoke1, gateway, alice);
+    _assertGatewayHasNoActivePosition(spoke1, gateway);
+  }
+
+  /// @dev We expect the multicall to revert due to the supplyWithSig() call being invalid because it was executed before the multicall.
+  function test_multicall_atomicity_on_revert() public {
+    uint256 deadline = _warpBeforeRandomDeadline();
+    uint256 reserveId = _daiReserveId(spoke1);
+
+    ISignatureGateway.Supply memory p1 = _supplyData(spoke1, alice, deadline);
+    p1.reserveId = reserveId;
+    p1.nonce = _burnRandomNoncesAtKey(gateway, p1.onBehalfOf);
+    bytes memory sig1 = _sign(alicePk, _getTypedDataHash(gateway, p1));
+    Utils.approve(spoke1, p1.reserveId, alice, address(gateway), p1.amount);
+
+    ISignatureGateway.SetUsingAsCollateral memory p2 = _setAsCollateralData(
+      spoke1,
+      alice,
+      deadline
+    );
+    p2.reserveId = reserveId;
+    p2.nonce = _getNextNoncePacked(p1.nonce);
+    bytes memory sig2 = _sign(alicePk, _getTypedDataHash(gateway, p2));
+
+    bytes[] memory calls = new bytes[](2);
+    calls[0] = abi.encodeCall(gateway.supplyWithSig, (p1, sig1));
+    calls[1] = abi.encodeCall(gateway.setUsingAsCollateralWithSig, (p2, sig2));
+
+    vm.prank(vm.randomAddress());
+    gateway.supplyWithSig(p1, sig1);
+
+    uint256 balanceBefore = _underlying(spoke1, reserveId).balanceOf(alice);
+
+    vm.expectRevert(
+      abi.encodeWithSelector(INoncesKeyed.InvalidAccountNonce.selector, alice, p2.nonce)
+    );
+    gateway.multicall(calls);
+
+    assertEq(_underlying(spoke1, reserveId).balanceOf(alice), balanceBefore);
+    _assertGatewayHasNoActivePosition(spoke1, gateway);
+  }
+
+  /// @dev We expect the multicall not to revert, even if the call permitReserveUnderlying() is invalid, due to the use of try/catch.
+  function test_multicall_no_atomicity_with_trycatch() public {
+    uint256 deadline = _warpBeforeRandomDeadline();
+    uint256 reserveId = _daiReserveId(spoke1);
+
+    ISignatureGateway.Supply memory p = _supplyData(spoke1, alice, deadline);
+    p.reserveId = reserveId;
+    p.nonce = _burnRandomNoncesAtKey(gateway, p.onBehalfOf);
+    bytes memory signature = _sign(alicePk, _getTypedDataHash(gateway, p));
+    Utils.approve(spoke1, p.reserveId, alice, address(gateway), p.amount);
+
+    uint256 expectedShares = _hub(spoke1, reserveId).previewAddByAssets(
+      _reserveAssetId(spoke1, reserveId),
+      p.amount
+    );
+
+    bytes[] memory calls = new bytes[](2);
+    calls[0] = abi.encodeCall(
+      gateway.permitReserveUnderlying,
+      (address(spoke1), reserveId, alice, 100e18, deadline, uint8(0), bytes32(0), bytes32(0))
+    );
+    calls[1] = abi.encodeCall(gateway.supplyWithSig, (p, signature));
+
+    bytes[] memory res = gateway.multicall(calls);
+
+    assertEq(res[0].length, 0);
+    (uint256 returnedShares, uint256 returnedAmount) = abi.decode(res[1], (uint256, uint256));
+    assertEq(returnedShares, expectedShares);
+    assertEq(returnedAmount, p.amount);
+
+    assertEq(_underlying(spoke1, reserveId).allowance(alice, address(gateway)), 0);
+
+    _assertNonceIncrement(gateway, alice, p.nonce);
     _assertGatewayHasNoBalanceOrAllowance(spoke1, gateway, alice);
     _assertGatewayHasNoActivePosition(spoke1, gateway);
   }
