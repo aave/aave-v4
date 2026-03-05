@@ -15,10 +15,12 @@ contract AccessManagerEnumerable is AccessManager, IAccessManagerEnumerable {
 
   /// @dev Set of all role identifiers.
   /// @dev `PUBLIC_ROLE` and `ADMIN_ROLE` are not part of this set.
+  /// @dev The roles tracked in this set are never removed, even if they have no members or assigned selectors.
   EnumerableSet.UintSet private _rolesSet;
 
   /// @dev Set of all admin role identifiers.
   /// @dev `ADMIN_ROLE` is not part of this set.
+  /// @dev The roles tracked in this set are never removed, even if they have no members or managed roles.
   EnumerableSet.UintSet private _adminRolesSet;
 
   /// @dev Map of role identifiers to their respective member sets.
@@ -236,12 +238,13 @@ contract AccessManagerEnumerable is AccessManager, IAccessManagerEnumerable {
   ) internal override {
     super._setTargetFunctionRole(target, selector, roleId);
 
+    _trackRole(roleId);
     _trackRoleTargetSelector(roleId, target, selector);
   }
 
   /// @dev Tracks all role identifiers when a new role is created.
   function _trackRole(uint64 roleId) internal {
-    if (roleId == ADMIN_ROLE) {
+    if (roleId == ADMIN_ROLE || roleId == PUBLIC_ROLE) {
       return;
     }
 

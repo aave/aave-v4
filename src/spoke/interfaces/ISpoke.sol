@@ -445,6 +445,9 @@ interface ISpoke is ISpokeBase, IAccessManaged, IIntentConsumer, IExtSload, IMul
   /// @param onBehalfOf The address of the user on whose behalf the permit is being used.
   /// @param value The amount of the underlying asset to permit.
   /// @param deadline The deadline for the permit.
+  /// @param permitV The v parameter of the permit signature.
+  /// @param permitR The r parameter of the permit signature.
+  /// @param permitS The s parameter of the permit signature.
   function permitReserve(
     uint256 reserveId,
     address onBehalfOf,

@@ -24,7 +24,7 @@ contract SpokeMultipleHubSiloedBorrowingTest is SpokeMultipleHubBase {
 
   /* @dev Adds asset B to the new hub and new spoke with 100k draw cap.
    * Adds Asset A to the canonical hub and canonical spoke with no restrictions.
-   * Relists Asset A from the canonical hub on the new spoke, with supply cap 500k, 0 borrow cap.
+   * Relists Asset A from the canonical hub on the new spoke, with add cap 500k, 0 borrow cap.
    * SUMMARY:
    * New Spoke: AssetA, canonical hub supplyable up to 500k; Asset B, new hub borrowable up to 100k.
    * Canonical Spoke: Asset A, no restrictions.
@@ -107,7 +107,7 @@ contract SpokeMultipleHubSiloedBorrowingTest is SpokeMultipleHubBase {
       dynReserveConfig
     );
 
-    // Link canonical hub and new spoke for asset A, 500k supply cap, 0 borrow cap
+    // Link canonical hub and new spoke for asset A, 500k add cap, 0 borrow cap
     hub1.addSpoke(
       siloedVars.assetAId,
       address(newSpoke),
@@ -166,7 +166,7 @@ contract SpokeMultipleHubSiloedBorrowingTest is SpokeMultipleHubBase {
       'total supplied amount of asset A on canonical hub'
     );
 
-    // Bob cannot supply past his currently supplied amount due to supply cap
+    // Bob cannot supply past his currently supplied amount due to add cap
     vm.expectRevert(abi.encodeWithSelector(IHub.AddCapExceeded.selector, siloedVars.assetAAddCap));
     Utils.supply(newSpoke, siloedVars.reserveAIdNewSpoke, bob, 1e18, bob);
 
