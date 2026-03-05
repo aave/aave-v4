@@ -130,7 +130,7 @@ contract SpokeOperations_Gas_Tests is Base {
     spoke.repay(reserveId.dai, 200e18, alice);
     vm.snapshotGasLastCall(NAMESPACE, 'repay: partial');
 
-    spoke.repay(reserveId.dai, type(uint256).max, alice);
+    spoke.repay(reserveId.dai, UINT256_MAX, alice);
     vm.snapshotGasLastCall(NAMESPACE, 'repay: full');
     vm.stopPrank();
   }

@@ -2,9 +2,10 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
+import 'tests/helpers/tokenization-spoke/TokenizationSpokeHelpers.sol';
 import 'tests/setup/Base.t.sol';
 
-contract TokenizationSpokeBaseTest is Base {
+contract TokenizationSpokeBaseTest is Base, TokenizationSpokeHelpers {
   ITokenizationSpoke public daiVault;
   string public constant SHARE_NAME = 'Core Hub DAI';
   string public constant SHARE_SYMBOL = 'chDAI';

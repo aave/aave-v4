@@ -15,12 +15,11 @@ import {ITreasurySpoke} from 'src/spoke/TreasurySpoke.sol';
 import {CommonHelpers} from 'tests/helpers/commons/CommonHelpers.sol';
 import {HubHelpers} from 'tests/helpers/hub/HubHelpers.sol';
 import {SpokeHelpers} from 'tests/helpers/spoke/SpokeHelpers.sol';
-import {TokenizationSpokeHelpers} from 'tests/helpers/tokenization-spoke/TokenizationSpokeHelpers.sol';
 import {TestnetERC20} from 'tests/helpers/mocks/TestnetERC20.sol';
 
 /// @title BaseState
 /// @notice Shared state variables, constants, and low-level helpers for the Aave V4 test suite.
-abstract contract BaseState is HubHelpers, SpokeHelpers, TokenizationSpokeHelpers {
+abstract contract BaseState is HubHelpers, SpokeHelpers {
   using WadRayMath for *;
   using PercentageMath for uint256;
   using SafeCast for *;

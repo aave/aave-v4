@@ -563,7 +563,7 @@ contract SpokeWithdrawTest is Base {
     params.rate = bound(params.rate, 1, MAX_BORROW_RATE);
     params.skipTime = bound(params.skipTime, 0, MAX_SKIP_TIME);
 
-    _mockInterestRateBps(address(irStrategy), params.rate);
+    _mockInterestRateBps({interestRateStrategy: address(irStrategy), interestRateBps: params.rate});
 
     // don't borrow the collateral asset
     vm.assume(params.reserveId != _wbtcReserveId(spoke1));
@@ -838,7 +838,7 @@ contract SpokeWithdrawTest is Base {
     params.rate = bound(params.rate, 1, MAX_BORROW_RATE);
     params.skipTime = bound(params.skipTime, 0, MAX_SKIP_TIME);
 
-    _mockInterestRateBps(address(irStrategy), params.rate);
+    _mockInterestRateBps({interestRateStrategy: address(irStrategy), interestRateBps: params.rate});
 
     vm.assume(params.reserveId != _wbtcReserveId(spoke1)); // wbtc used as collateral
 

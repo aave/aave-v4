@@ -340,7 +340,7 @@ contract HubDrawTest is Base {
 
     _updateDrawCap(hub1, daiAssetId, address(spoke1), drawCap);
 
-    _mockInterestRateBps(address(irStrategy), rate);
+    _mockInterestRateBps({interestRateStrategy: address(irStrategy), interestRateBps: rate});
     _addAndDrawLiquidity({
       hub: hub1,
       assetId: daiAssetId,

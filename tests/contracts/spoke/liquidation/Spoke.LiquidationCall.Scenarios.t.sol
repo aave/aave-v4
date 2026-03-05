@@ -77,7 +77,7 @@ contract SpokeLiquidationCallScenariosTest is SpokeLiquidationCallBaseTest {
     );
     vm.expectRevert(ReentrancyGuardTransient.ReentrancyGuardReentrantCall.selector);
     vm.prank(liquidator);
-    spoke.liquidationCall(collateralReserveId, debtReserveId, user, type(uint256).max, false);
+    spoke.liquidationCall(collateralReserveId, debtReserveId, user, UINT256_MAX, false);
   }
 
   function test_liquidationCall_revertsWith_ReentrancyGuardReentrantCall_hubRestore() public {
@@ -98,7 +98,7 @@ contract SpokeLiquidationCallScenariosTest is SpokeLiquidationCallBaseTest {
     );
     vm.expectRevert(ReentrancyGuardTransient.ReentrancyGuardReentrantCall.selector);
     vm.prank(liquidator);
-    spoke.liquidationCall(collateralReserveId, debtReserveId, user, type(uint256).max, false);
+    spoke.liquidationCall(collateralReserveId, debtReserveId, user, UINT256_MAX, false);
   }
 
   function test_liquidationCall_revertsWith_ReentrancyGuardReentrantCall_hubRefreshPremium()
@@ -121,7 +121,7 @@ contract SpokeLiquidationCallScenariosTest is SpokeLiquidationCallBaseTest {
     );
     vm.expectRevert(ReentrancyGuardTransient.ReentrancyGuardReentrantCall.selector);
     vm.prank(liquidator);
-    spoke.liquidationCall(collateralReserveId, debtReserveId, user, type(uint256).max, false);
+    spoke.liquidationCall(collateralReserveId, debtReserveId, user, UINT256_MAX, false);
   }
 
   function test_liquidationCall_revertsWith_ReentrancyGuardReentrantCall_hubReportDeficit() public {
@@ -142,7 +142,7 @@ contract SpokeLiquidationCallScenariosTest is SpokeLiquidationCallBaseTest {
     );
     vm.expectRevert(ReentrancyGuardTransient.ReentrancyGuardReentrantCall.selector);
     vm.prank(liquidator);
-    spoke.liquidationCall(collateralReserveId, debtReserveId, user, type(uint256).max, false);
+    spoke.liquidationCall(collateralReserveId, debtReserveId, user, UINT256_MAX, false);
   }
 
   // User is solvent, but health factor decreases after liquidation due to high liquidation bonus.
@@ -353,8 +353,8 @@ contract SpokeLiquidationCallScenariosTest is SpokeLiquidationCallBaseTest {
     _updateMaxLiquidationBonus(spoke, _wethReserveId(spoke), 100_00);
 
     // The collateral has a price 100 times higher than the debt
-    _mockReservePrice(spoke, _wethReserveId(spoke), 100e8);
-    _mockReservePrice(spoke, _daiReserveId(spoke), 1e8);
+    _mockReservePrice({spoke: spoke, reserveId: _wethReserveId(spoke), price: 100e8});
+    _mockReservePrice({spoke: spoke, reserveId: _daiReserveId(spoke), price: 1e8});
 
     // Collateral: 1 wei of WETH
     _increaseCollateralSupply(spoke, _wethReserveId(spoke), 1, user);
@@ -364,7 +364,7 @@ contract SpokeLiquidationCallScenariosTest is SpokeLiquidationCallBaseTest {
     _increaseReserveDebt(spoke, _daiReserveId(spoke), 79, user);
 
     // Decrease WETH price by 10% to make user unhealthy
-    _mockReservePriceByPercent(spoke, _wethReserveId(spoke), 90_00);
+    _mockReservePriceByPercent({spoke: spoke, reserveId: _wethReserveId(spoke), percentage: 90_00});
 
     // User is liquidatable
     ISpoke.UserAccountData memory userAccountData = spoke.getUserAccountData(user);
@@ -380,7 +380,7 @@ contract SpokeLiquidationCallScenariosTest is SpokeLiquidationCallBaseTest {
         collateralReserveId: _wethReserveId(spoke),
         debtReserveId: _daiReserveId(spoke),
         user: user,
-        debtToCover: type(uint256).max,
+        debtToCover: UINT256_MAX,
         liquidator: liquidator,
         isSolvent: true,
         receiveShares: false
@@ -417,7 +417,7 @@ contract SpokeLiquidationCallScenariosTest is SpokeLiquidationCallBaseTest {
         collateralReserveId: collateralReserveId,
         debtReserveId: debtReserveId,
         user: user,
-        debtToCover: type(uint256).max,
+        debtToCover: UINT256_MAX,
         liquidator: liquidator,
         isSolvent: true,
         receiveShares: receiveShares
@@ -432,11 +432,17 @@ contract SpokeLiquidationCallScenariosTest is SpokeLiquidationCallBaseTest {
     _updateMaxLiquidationBonus(spoke, _wethReserveId(spoke), 100_00);
 
     // Supply share price: 1.25
-    _mockSupplySharePrice(hub1, wethAssetId, 12_500.25e6, 10_000e6, address(spoke1));
+    _mockSupplySharePrice({
+      hub: hub1,
+      assetId: wethAssetId,
+      totalAddedAssets: 12_500.25e6,
+      addedShares: 10_000e6,
+      spoke: address(spoke1)
+    });
 
     // The collateral and debt have the same price
-    _mockReservePrice(spoke, _wethReserveId(spoke), 1e8);
-    _mockReservePrice(spoke, _daiReserveId(spoke), 1e8);
+    _mockReservePrice({spoke: spoke, reserveId: _wethReserveId(spoke), price: 1e8});
+    _mockReservePrice({spoke: spoke, reserveId: _daiReserveId(spoke), price: 1e8});
 
     // Update WETH collateral factor to 80%
     _updateCollateralFactor(spoke, _wethReserveId(spoke), 80_00);
@@ -445,7 +451,7 @@ contract SpokeLiquidationCallScenariosTest is SpokeLiquidationCallBaseTest {
     _increaseCollateralSupply(spoke, _wethReserveId(spoke), 3, user);
 
     // Mock interest rate to 10%
-    _mockInterestRateBps(address(irStrategy), 10_00);
+    _mockInterestRateBps({interestRateStrategy: address(irStrategy), interestRateBps: 10_00});
 
     // Borrow: 1 wei of DAI
     _increaseReserveDebt(spoke, _daiReserveId(spoke), 1, user);
@@ -455,7 +461,7 @@ contract SpokeLiquidationCallScenariosTest is SpokeLiquidationCallBaseTest {
     assertEq(hub1.getAssetDrawnIndex(daiAssetId), 1.1e27);
 
     // Increase DAI price by 101%
-    _mockReservePriceByPercent(spoke, _daiReserveId(spoke), 201_00);
+    _mockReservePriceByPercent({spoke: spoke, reserveId: _daiReserveId(spoke), percentage: 201_00});
 
     // User is fully liquidatable
     ISpoke.UserAccountData memory userAccountData = spoke.getUserAccountData(user);
@@ -487,7 +493,7 @@ contract SpokeLiquidationCallScenariosTest is SpokeLiquidationCallBaseTest {
         collateralReserveId: _wethReserveId(spoke),
         debtReserveId: _daiReserveId(spoke),
         user: user,
-        debtToCover: type(uint256).max,
+        debtToCover: UINT256_MAX,
         liquidator: liquidator,
         isSolvent: true,
         receiveShares: false
@@ -532,9 +538,9 @@ contract SpokeLiquidationCallScenariosTest is SpokeLiquidationCallBaseTest {
     _updateTargetHealthFactor(spoke, 1e18);
 
     // mock prices such that dust is not created
-    _mockReservePrice(spoke, _usdxReserveId(spoke), 1000e14);
-    _mockReservePrice(spoke, _wbtcReserveId(spoke), 500e17);
-    _mockReservePrice(spoke, _usdyReserveId(spoke), 1000e27);
+    _mockReservePrice({spoke: spoke, reserveId: _usdxReserveId(spoke), price: 1000e14});
+    _mockReservePrice({spoke: spoke, reserveId: _wbtcReserveId(spoke), price: 500e17});
+    _mockReservePrice({spoke: spoke, reserveId: _usdyReserveId(spoke), price: 1000e27});
 
     // collateral configs
     _updateMaxLiquidationBonus(spoke, _usdxReserveId(spoke), 100_00);
@@ -545,7 +551,7 @@ contract SpokeLiquidationCallScenariosTest is SpokeLiquidationCallBaseTest {
     _updateCollateralRisk(spoke, _wbtcReserveId(spoke), 0);
 
     // mock interest rate
-    _mockInterestRateBps(address(irStrategy), 50_00);
+    _mockInterestRateBps({interestRateStrategy: address(irStrategy), interestRateBps: 50_00});
 
     // User collaterals: 20 wei of USDX, 3 wei of WBTC
     // User debt: 1 wei of USDY
@@ -586,7 +592,7 @@ contract SpokeLiquidationCallScenariosTest is SpokeLiquidationCallBaseTest {
       collateralReserveId: _usdxReserveId(spoke),
       debtReserveId: _usdyReserveId(spoke),
       user: user,
-      debtToCover: type(uint256).max,
+      debtToCover: UINT256_MAX,
       receiveShares: false
     });
 
@@ -611,7 +617,7 @@ contract SpokeLiquidationCallScenariosTest is SpokeLiquidationCallBaseTest {
       collateralReserveId: _wbtcReserveId(spoke),
       debtReserveId: _usdyReserveId(spoke),
       user: user,
-      debtToCover: type(uint256).max,
+      debtToCover: UINT256_MAX,
       receiveShares: false
     });
   }
@@ -623,9 +629,9 @@ contract SpokeLiquidationCallScenariosTest is SpokeLiquidationCallBaseTest {
     _updateTargetHealthFactor(spoke, 1e18);
 
     // mock prices such that dust is not created
-    _mockReservePrice(spoke, _usdxReserveId(spoke), 1000e14);
-    _mockReservePrice(spoke, _wbtcReserveId(spoke), 500e17);
-    _mockReservePrice(spoke, _usdyReserveId(spoke), 1000e27);
+    _mockReservePrice({spoke: spoke, reserveId: _usdxReserveId(spoke), price: 1000e14});
+    _mockReservePrice({spoke: spoke, reserveId: _wbtcReserveId(spoke), price: 500e17});
+    _mockReservePrice({spoke: spoke, reserveId: _usdyReserveId(spoke), price: 1000e27});
 
     // collateral configs
     _updateMaxLiquidationBonus(spoke, _usdxReserveId(spoke), 100_00);
@@ -636,7 +642,7 @@ contract SpokeLiquidationCallScenariosTest is SpokeLiquidationCallBaseTest {
     _updateCollateralRisk(spoke, _wbtcReserveId(spoke), 50_00);
 
     // set interest rate
-    _mockInterestRateBps(address(irStrategy), 60_00);
+    _mockInterestRateBps({interestRateStrategy: address(irStrategy), interestRateBps: 60_00});
     address randomUser = makeAddr('randomUser');
 
     // Skip 1 year to increase drawn index to 1.6
@@ -646,7 +652,7 @@ contract SpokeLiquidationCallScenariosTest is SpokeLiquidationCallBaseTest {
     assertEq(hub1.getAssetDrawnIndex(usdyAssetId), 1.6e27);
 
     // set interest rate
-    _mockInterestRateBps(address(irStrategy), 56_25);
+    _mockInterestRateBps({interestRateStrategy: address(irStrategy), interestRateBps: 56_25});
 
     // User collaterals: 40 wei of USDX, 5 wei of WBTC
     // User debt: 2 wei of USDY
@@ -687,7 +693,7 @@ contract SpokeLiquidationCallScenariosTest is SpokeLiquidationCallBaseTest {
       collateralReserveId: _usdxReserveId(spoke),
       debtReserveId: _usdyReserveId(spoke),
       user: user,
-      debtToCover: type(uint256).max,
+      debtToCover: UINT256_MAX,
       receiveShares: false
     });
 
@@ -711,7 +717,7 @@ contract SpokeLiquidationCallScenariosTest is SpokeLiquidationCallBaseTest {
       collateralReserveId: _wbtcReserveId(spoke),
       debtReserveId: _usdyReserveId(spoke),
       user: user,
-      debtToCover: type(uint256).max,
+      debtToCover: UINT256_MAX,
       receiveShares: false
     });
   }
@@ -745,7 +751,7 @@ contract SpokeLiquidationCallScenariosTest is SpokeLiquidationCallBaseTest {
     );
 
     vm.prank(liquidator);
-    spoke.liquidationCall(collateralReserveId, debtReserveId, user, type(uint256).max, false);
+    spoke.liquidationCall(collateralReserveId, debtReserveId, user, UINT256_MAX, false);
   }
 
   /// @dev a halted peripheral asset won't block a liquidation with deficit
@@ -778,6 +784,6 @@ contract SpokeLiquidationCallScenariosTest is SpokeLiquidationCallBaseTest {
     );
 
     vm.prank(liquidator);
-    spoke.liquidationCall(collateralReserveId, debtReserveId, user, type(uint256).max, false);
+    spoke.liquidationCall(collateralReserveId, debtReserveId, user, UINT256_MAX, false);
   }
 }

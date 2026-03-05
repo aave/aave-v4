@@ -46,7 +46,13 @@ contract LiquidationLogicCollateralToLiquidateTest is LiquidationLogicBaseTest {
     // debt to collateral = 4.9 * 1000 / 0.98 = 5000
     // collateral with bonus = 5000 * 105% = 5250
     // collateral shares to liquidate = 5250 / 1.25 = 4200
-    _mockSupplySharePrice(hub1, usdxAssetId, 12_500.25e6, 10_000e6, address(spoke1));
+    _mockSupplySharePrice({
+      hub: hub1,
+      assetId: usdxAssetId,
+      totalAddedAssets: 12_500.25e6,
+      addedShares: 10_000e6,
+      spoke: address(spoke1)
+    });
     vm.expectCall(
       address(hub1),
       abi.encodeWithSelector(IHubBase.previewAddByAssets.selector, usdxAssetId, 5250e6),

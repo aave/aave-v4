@@ -165,7 +165,7 @@ contract SpokeWithdrawScenarioTest is Base {
       (params.aliceAmount + params.bobAmount) / 2
     ); // some buffer on available borrowable liquidity
     params.rate = bound(params.rate, 1, MAX_BORROW_RATE);
-    _mockInterestRateBps(address(irStrategy), params.rate);
+    _mockInterestRateBps({interestRateStrategy: address(irStrategy), interestRateBps: params.rate});
 
     MultiUserTestState memory state;
     (state.assetId, state.underlying) = _getAssetByReserveId(spoke1, params.reserveId);
@@ -419,7 +419,13 @@ contract SpokeWithdrawScenarioTest is Base {
     SharesAndAmount memory returnValues1;
     uint256 shares1 = hub1.previewAddByAssets(reserve.assetId, assets);
     vm.expectEmit(address(spoke1));
-    emit ISpokeBase.Supply(reserveId, caller, caller, shares1, assets);
+    emit ISpokeBase.Supply({
+      reserveId: reserveId,
+      caller: caller,
+      user: caller,
+      suppliedShares: shares1,
+      suppliedAmount: assets
+    });
     vm.prank(caller);
     (returnValues1.shares, returnValues1.amount) = spoke1.supply(reserveId, assets, caller);
 
@@ -427,7 +433,13 @@ contract SpokeWithdrawScenarioTest is Base {
     SharesAndAmount memory returnValues2;
     uint256 shares2 = hub1.previewAddByAssets(reserve.assetId, assets);
     vm.expectEmit(address(spoke1));
-    emit ISpokeBase.Withdraw(reserveId, caller, caller, shares2, assets);
+    emit ISpokeBase.Withdraw({
+      reserveId: reserveId,
+      caller: caller,
+      user: caller,
+      withdrawnShares: shares2,
+      withdrawnAmount: assets
+    });
     vm.prank(caller);
     (returnValues2.shares, returnValues2.amount) = spoke1.withdraw(reserveId, assets, caller);
 
@@ -489,7 +501,13 @@ contract SpokeWithdrawScenarioTest is Base {
     SharesAndAmount memory returnValues1;
     uint256 shares1 = hub1.previewAddByAssets(reserve.assetId, assets);
     vm.expectEmit(address(spoke1));
-    emit ISpokeBase.Withdraw(reserveId, caller, caller, shares1, assets);
+    emit ISpokeBase.Withdraw({
+      reserveId: reserveId,
+      caller: caller,
+      user: caller,
+      withdrawnShares: shares1,
+      withdrawnAmount: assets
+    });
     vm.prank(caller);
     (returnValues1.shares, returnValues1.amount) = spoke1.withdraw(reserveId, assets, caller);
 
@@ -497,7 +515,13 @@ contract SpokeWithdrawScenarioTest is Base {
     SharesAndAmount memory returnValues2;
     uint256 shares2 = hub1.previewAddByAssets(reserve.assetId, assets);
     vm.expectEmit(address(spoke1));
-    emit ISpokeBase.Supply(reserveId, caller, caller, shares2, assets);
+    emit ISpokeBase.Supply({
+      reserveId: reserveId,
+      caller: caller,
+      user: caller,
+      suppliedShares: shares2,
+      suppliedAmount: assets
+    });
     vm.prank(caller);
     (returnValues2.shares, returnValues2.amount) = spoke1.supply(reserveId, assets, caller);
 

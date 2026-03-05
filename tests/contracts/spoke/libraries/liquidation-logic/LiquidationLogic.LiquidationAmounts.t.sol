@@ -181,13 +181,13 @@ contract LiquidationLogicLiquidationAmountsTest is LiquidationLogicBaseTest {
     // collateral shares to liquidator = 4800 - 80 = 4720
     IHub collateralReserveHub = hub1;
     uint256 collateralAssetId = vm.randomUint(0, collateralReserveHub.getAssetCount() - 1);
-    _mockSupplySharePrice(
-      collateralReserveHub,
-      collateralAssetId,
-      12_500.25e6,
-      10_000e6,
-      address(spoke1)
-    );
+    _mockSupplySharePrice({
+      hub: collateralReserveHub,
+      assetId: collateralAssetId,
+      totalAddedAssets: 12_500.25e6,
+      addedShares: 10_000e6,
+      spoke: address(spoke1)
+    });
 
     LiquidationLogic.LiquidationAmounts memory liquidationAmounts = liquidationLogicWrapper
       .calculateLiquidationAmounts(
@@ -241,13 +241,13 @@ contract LiquidationLogicLiquidationAmountsTest is LiquidationLogicBaseTest {
     // collateral shares to liquidator = 4500 - 75 = 4425
     IHub collateralReserveHub = hub1;
     uint256 collateralAssetId = vm.randomUint(0, collateralReserveHub.getAssetCount() - 1);
-    _mockSupplySharePrice(
-      collateralReserveHub,
-      collateralAssetId,
-      12500.25e6,
-      10_000e6,
-      address(spoke1)
-    );
+    _mockSupplySharePrice({
+      hub: collateralReserveHub,
+      assetId: collateralAssetId,
+      totalAddedAssets: 12500.25e6,
+      addedShares: 10_000e6,
+      spoke: address(spoke1)
+    });
 
     LiquidationLogic.LiquidationAmounts memory liquidationAmounts = liquidationLogicWrapper
       .calculateLiquidationAmounts(

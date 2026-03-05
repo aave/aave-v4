@@ -194,9 +194,8 @@ contract MathUtilsTest is Base {
   }
 
   function test_mulDivDown_RevertOnOverflow() external {
-    uint256 max = type(uint256).max;
     vm.expectRevert();
-    MathUtils.mulDivDown(max, 2, 1); // max * 2 will overflow
+    MathUtils.mulDivDown(UINT256_MAX, 2, 1); // max * 2 will overflow
   }
 
   function test_fuzz_mulDivDown(uint256 a, uint256 b, uint256 c) external {
@@ -234,9 +233,8 @@ contract MathUtilsTest is Base {
   }
 
   function test_mulDivUp_RevertOnOverflow() external {
-    uint256 max = type(uint256).max;
     vm.expectRevert();
-    MathUtils.mulDivUp(max, 2, 1); // max * 2 will overflow
+    MathUtils.mulDivUp(UINT256_MAX, 2, 1); // max * 2 will overflow
   }
 
   function test_fuzz_mulDivUp(uint256 a, uint256 b, uint256 c) external {

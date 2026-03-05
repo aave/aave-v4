@@ -35,7 +35,7 @@ contract SpokeAccrueLiquidityFeeEdgeCasesTest is Base {
     _updateLiquidityFee(hub1, assetId, MAX_LIQUIDITY_FEE);
 
     uint256 supplyAmount = _calcMinimumCollAmount(spoke1, reserveId, reserveId, borrowAmount);
-    _mockInterestRateBps(address(irStrategy), rate);
+    _mockInterestRateBps({interestRateStrategy: address(irStrategy), interestRateBps: rate});
 
     SpokeActions.supplyCollateral({
       spoke: spoke1,
@@ -97,7 +97,7 @@ contract SpokeAccrueLiquidityFeeEdgeCasesTest is Base {
 
     uint256 supplyAmount = _calcMinimumCollAmount(spoke1, reserveId, reserveId, borrowAmount);
     uint256 supplyAmount2 = _calcMinimumCollAmount(spoke1, reserveId, reserveId, borrowAmount2);
-    _mockInterestRateBps(address(irStrategy), rate);
+    _mockInterestRateBps({interestRateStrategy: address(irStrategy), interestRateBps: rate});
 
     SpokeActions.supplyCollateral({
       spoke: spoke1,

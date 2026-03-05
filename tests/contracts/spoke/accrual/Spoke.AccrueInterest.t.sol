@@ -770,15 +770,15 @@ contract SpokeAccrueInterestTest is Base {
     if (amounts.daiBorrowAmount > 0) {
       IHub.Asset memory asset = hub1.getAsset(daiAssetId);
       uint256 daiBorrowShares = hub1.previewDrawByAssets(daiAssetId, amounts.daiBorrowAmount);
-      _mockInterestRateRay(
-        address(irStrategy),
-        rates.daiBaseBorrowRate,
-        daiAssetId,
-        asset.liquidity - amounts.daiBorrowAmount,
-        hub1.previewRestoreByShares(daiAssetId, asset.drawnShares + daiBorrowShares),
-        0,
-        0
-      );
+      _mockInterestRateRay({
+        interestRateStrategy: address(irStrategy),
+        interestRateRay: rates.daiBaseBorrowRate,
+        assetId: daiAssetId,
+        liquidity: asset.liquidity - amounts.daiBorrowAmount,
+        drawn: hub1.previewRestoreByShares(daiAssetId, asset.drawnShares + daiBorrowShares),
+        deficit: 0,
+        swept: 0
+      });
       SpokeActions.borrow({
         spoke: spoke1,
         reserveId: _daiReserveId(spoke1),
@@ -792,15 +792,15 @@ contract SpokeAccrueInterestTest is Base {
     if (amounts.wethBorrowAmount > 0) {
       IHub.Asset memory asset = hub1.getAsset(wethAssetId);
       uint256 wethBorrowShares = hub1.previewDrawByAssets(wethAssetId, amounts.wethBorrowAmount);
-      _mockInterestRateRay(
-        address(irStrategy),
-        rates.wethBaseBorrowRate,
-        wethAssetId,
-        asset.liquidity - amounts.wethBorrowAmount,
-        hub1.previewRestoreByShares(wethAssetId, asset.drawnShares + wethBorrowShares),
-        0,
-        0
-      );
+      _mockInterestRateRay({
+        interestRateStrategy: address(irStrategy),
+        interestRateRay: rates.wethBaseBorrowRate,
+        assetId: wethAssetId,
+        liquidity: asset.liquidity - amounts.wethBorrowAmount,
+        drawn: hub1.previewRestoreByShares(wethAssetId, asset.drawnShares + wethBorrowShares),
+        deficit: 0,
+        swept: 0
+      });
       SpokeActions.borrow({
         spoke: spoke1,
         reserveId: _wethReserveId(spoke1),
@@ -814,15 +814,15 @@ contract SpokeAccrueInterestTest is Base {
     if (amounts.usdxBorrowAmount > 0) {
       IHub.Asset memory asset = hub1.getAsset(usdxAssetId);
       uint256 usdxBorrowShares = hub1.previewDrawByAssets(usdxAssetId, amounts.usdxBorrowAmount);
-      _mockInterestRateRay(
-        address(irStrategy),
-        rates.usdxBaseBorrowRate,
-        usdxAssetId,
-        asset.liquidity - amounts.usdxBorrowAmount,
-        hub1.previewRestoreByShares(usdxAssetId, asset.drawnShares + usdxBorrowShares),
-        0,
-        0
-      );
+      _mockInterestRateRay({
+        interestRateStrategy: address(irStrategy),
+        interestRateRay: rates.usdxBaseBorrowRate,
+        assetId: usdxAssetId,
+        liquidity: asset.liquidity - amounts.usdxBorrowAmount,
+        drawn: hub1.previewRestoreByShares(usdxAssetId, asset.drawnShares + usdxBorrowShares),
+        deficit: 0,
+        swept: 0
+      });
       SpokeActions.borrow({
         spoke: spoke1,
         reserveId: _usdxReserveId(spoke1),
@@ -836,15 +836,15 @@ contract SpokeAccrueInterestTest is Base {
     if (amounts.wbtcBorrowAmount > 0) {
       IHub.Asset memory asset = hub1.getAsset(wbtcAssetId);
       uint256 wbtcBorrowShares = hub1.previewDrawByAssets(wbtcAssetId, amounts.wbtcBorrowAmount);
-      _mockInterestRateRay(
-        address(irStrategy),
-        rates.wbtcBaseBorrowRate,
-        wbtcAssetId,
-        asset.liquidity - amounts.wbtcBorrowAmount,
-        hub1.previewRestoreByShares(wbtcAssetId, asset.drawnShares + wbtcBorrowShares),
-        0,
-        0
-      );
+      _mockInterestRateRay({
+        interestRateStrategy: address(irStrategy),
+        interestRateRay: rates.wbtcBaseBorrowRate,
+        assetId: wbtcAssetId,
+        liquidity: asset.liquidity - amounts.wbtcBorrowAmount,
+        drawn: hub1.previewRestoreByShares(wbtcAssetId, asset.drawnShares + wbtcBorrowShares),
+        deficit: 0,
+        swept: 0
+      });
       SpokeActions.borrow({
         spoke: spoke1,
         reserveId: _wbtcReserveId(spoke1),

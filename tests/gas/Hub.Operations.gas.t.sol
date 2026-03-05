@@ -283,7 +283,7 @@ contract HubOperations_Gas_Tests is Base {
       spoke1,
       alice,
       _daiReserveId(spoke1),
-      type(uint256).max
+      UINT256_MAX
     );
 
     _grantDeficitEliminatorRole(hub1, address(spoke1));

@@ -578,7 +578,7 @@ contract HubConfiguratorTest is Base {
 
     IHub.AssetConfig memory expectedConfig = hub1.getAssetConfig(_assetId);
     expectedConfig.irStrategy = interestRateStrategy;
-    _mockInterestRateBps(interestRateStrategy, 5_00);
+    _mockInterestRateBps({interestRateStrategy: interestRateStrategy, interestRateBps: 5_00});
 
     vm.expectCall(
       address(hub1),

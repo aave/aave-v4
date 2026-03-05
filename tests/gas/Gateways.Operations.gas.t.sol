@@ -2,6 +2,7 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
+import 'tests/helpers/position-manager/signature-gateway/SignatureGatewayHelpers.sol';
 import 'tests/setup/Base.t.sol';
 
 /// forge-config: default.isolate = true
@@ -164,7 +165,7 @@ contract NativeTokenGateway_Gas_Tests is Base {
 }
 
 /// forge-config: default.isolate = true
-contract SignatureGateway_Gas_Tests is Base {
+contract SignatureGateway_Gas_Tests is Base, SignatureGatewayHelpers {
   string internal NAMESPACE = 'SignatureGateway.Operations';
   uint192 internal nonceKey = 0;
 
@@ -193,7 +194,7 @@ contract SignatureGateway_Gas_Tests is Base {
       nonce: gateway.nonces(alice, nonceKey),
       deadline: vm.getBlockTimestamp()
     });
-    bytes memory signature = _sign(alicePk, _getGatewayTypedDataHash(p));
+    bytes memory signature = _sign(alicePk, _getTypedDataHash(gateway, p));
     SpokeActions.approve({
       spoke: spoke1,
       reserveId: p.reserveId,
@@ -222,7 +223,7 @@ contract SignatureGateway_Gas_Tests is Base {
       nonce: gateway.nonces(alice, nonceKey),
       deadline: vm.getBlockTimestamp()
     });
-    bytes memory signature = _sign(alicePk, _getGatewayTypedDataHash(p));
+    bytes memory signature = _sign(alicePk, _getTypedDataHash(gateway, p));
 
     SpokeActions.supply({
       spoke: spoke1,
@@ -266,7 +267,7 @@ contract SignatureGateway_Gas_Tests is Base {
       amount: p.amount,
       onBehalfOf: alice
     });
-    bytes memory signature = _sign(alicePk, _getGatewayTypedDataHash(p));
+    bytes memory signature = _sign(alicePk, _getTypedDataHash(gateway, p));
 
     gateway.borrowWithSig(p, signature);
     vm.snapshotGasLastCall(NAMESPACE, 'borrowWithSig');
@@ -309,7 +310,7 @@ contract SignatureGateway_Gas_Tests is Base {
       amount: p.amount,
       onBehalfOf: alice
     });
-    bytes memory signature = _sign(alicePk, _getGatewayTypedDataHash(p));
+    bytes memory signature = _sign(alicePk, _getTypedDataHash(gateway, p));
 
     gateway.repayWithSig(p, signature);
     vm.snapshotGasLastCall(NAMESPACE, 'repayWithSig');
@@ -331,7 +332,7 @@ contract SignatureGateway_Gas_Tests is Base {
       amount: 1e18,
       onBehalfOf: alice
     });
-    bytes memory signature = _sign(alicePk, _getGatewayTypedDataHash(p));
+    bytes memory signature = _sign(alicePk, _getTypedDataHash(gateway, p));
 
     gateway.setUsingAsCollateralWithSig(p, signature);
     vm.snapshotGasLastCall(NAMESPACE, 'setUsingAsCollateralWithSig');
@@ -344,7 +345,7 @@ contract SignatureGateway_Gas_Tests is Base {
       nonce: gateway.nonces(alice, nonceKey),
       deadline: vm.getBlockTimestamp()
     });
-    bytes memory signature = _sign(alicePk, _getGatewayTypedDataHash(p));
+    bytes memory signature = _sign(alicePk, _getTypedDataHash(gateway, p));
 
     vm.prank(alice);
     spoke1.updateUserRiskPremium(alice);
@@ -360,7 +361,7 @@ contract SignatureGateway_Gas_Tests is Base {
       nonce: gateway.nonces(alice, nonceKey),
       deadline: vm.getBlockTimestamp()
     });
-    bytes memory signature = _sign(alicePk, _getGatewayTypedDataHash(p));
+    bytes memory signature = _sign(alicePk, _getTypedDataHash(gateway, p));
 
     vm.prank(alice);
     spoke1.updateUserDynamicConfig(alice);
@@ -394,54 +395,5 @@ contract SignatureGateway_Gas_Tests is Base {
       signature: signature
     });
     vm.snapshotGasLastCall(NAMESPACE, 'setSelfAsUserPositionManagerWithSig');
-  }
-
-  // ── Signature helpers (inlined from SignatureGatewayBaseTest) ──
-
-  function _getGatewayTypedDataHash(
-    ISignatureGateway.Supply memory _params
-  ) internal view returns (bytes32) {
-    return _gatewayTypedDataHash(vm.eip712HashStruct('Supply', abi.encode(_params)));
-  }
-
-  function _getGatewayTypedDataHash(
-    ISignatureGateway.Withdraw memory _params
-  ) internal view returns (bytes32) {
-    return _gatewayTypedDataHash(vm.eip712HashStruct('Withdraw', abi.encode(_params)));
-  }
-
-  function _getGatewayTypedDataHash(
-    ISignatureGateway.Borrow memory _params
-  ) internal view returns (bytes32) {
-    return _gatewayTypedDataHash(vm.eip712HashStruct('Borrow', abi.encode(_params)));
-  }
-
-  function _getGatewayTypedDataHash(
-    ISignatureGateway.Repay memory _params
-  ) internal view returns (bytes32) {
-    return _gatewayTypedDataHash(vm.eip712HashStruct('Repay', abi.encode(_params)));
-  }
-
-  function _getGatewayTypedDataHash(
-    ISignatureGateway.SetUsingAsCollateral memory _params
-  ) internal view returns (bytes32) {
-    return _gatewayTypedDataHash(vm.eip712HashStruct('SetUsingAsCollateral', abi.encode(_params)));
-  }
-
-  function _getGatewayTypedDataHash(
-    ISignatureGateway.UpdateUserRiskPremium memory _params
-  ) internal view returns (bytes32) {
-    return _gatewayTypedDataHash(vm.eip712HashStruct('UpdateUserRiskPremium', abi.encode(_params)));
-  }
-
-  function _getGatewayTypedDataHash(
-    ISignatureGateway.UpdateUserDynamicConfig memory _params
-  ) internal view returns (bytes32) {
-    return
-      _gatewayTypedDataHash(vm.eip712HashStruct('UpdateUserDynamicConfig', abi.encode(_params)));
-  }
-
-  function _gatewayTypedDataHash(bytes32 typeHash) internal view returns (bytes32) {
-    return keccak256(abi.encodePacked('\x19\x01', gateway.DOMAIN_SEPARATOR(), typeHash));
   }
 }

@@ -150,7 +150,7 @@ contract SpokeRepayEdgeCaseTest is Base {
 
   function test_repay_supply_ex_rate_decr() public {
     // inflate ex rate to 1.5
-    _mockInterestRateBps(address(irStrategy), 50_00);
+    _mockInterestRateBps({interestRateStrategy: address(irStrategy), interestRateBps: 50_00});
     _updateCollateralRisk(spoke1, _daiReserveId(spoke1), 0);
     _updateCollateralRisk(spoke1, _wethReserveId(spoke1), 0);
     _updateLiquidityFee(hub1, daiAssetId, 0);
@@ -221,7 +221,7 @@ contract SpokeRepayEdgeCaseTest is Base {
 
   function test_repay_supply_ex_rate_decr_skip_time() public {
     // inflate ex rate to 1.5
-    _mockInterestRateBps(address(irStrategy), 50_00);
+    _mockInterestRateBps({interestRateStrategy: address(irStrategy), interestRateBps: 50_00});
     _updateCollateralRisk(spoke1, _daiReserveId(spoke1), 0);
     _updateCollateralRisk(spoke1, _wethReserveId(spoke1), 0);
     _updateLiquidityFee(hub1, daiAssetId, 0);
@@ -361,7 +361,7 @@ contract SpokeRepayEdgeCaseTest is Base {
     assertEq(r.baseRestored, 0);
     assertEq(r.premiumRestored, 0);
 
-    // debt remains unchanged & is donated (premium was already 0)
+    // debt remains unchanged & repay amount is donated (premium was already 0)
     assertEq(_getUserDebt(spoke1, bob, _daiReserveId(spoke1)), bobDaiDebtBefore);
   }
 

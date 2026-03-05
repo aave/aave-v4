@@ -78,9 +78,19 @@ contract HubMintFeeSharesTest is Base {
 
     // after mintFeeShares, the fee shares should be the amount of the fees
     vm.expectEmit(address(hub1));
-    emit IHub.MintFeeShares(daiAssetId, feeReceiver, expectedMintedShares, expectedMintedAssets);
+    emit IHub.MintFeeShares({
+      assetId: daiAssetId,
+      feeReceiver: feeReceiver,
+      shares: expectedMintedShares,
+      assets: expectedMintedAssets
+    });
     vm.expectEmit(address(hub1));
-    emit IHub.UpdateAsset(daiAssetId, hub1.getAssetDrawnIndex(daiAssetId), mockRate, 0);
+    emit IHub.UpdateAsset({
+      assetId: daiAssetId,
+      drawnIndex: hub1.getAssetDrawnIndex(daiAssetId),
+      drawnRate: mockRate,
+      accruedFees: 0
+    });
 
     uint256 addedSharesBefore = hub1.getAddedShares(daiAssetId);
     uint256 sharePriceBefore = hub1.previewAddByShares(daiAssetId, 1e18);
@@ -112,7 +122,12 @@ contract HubMintFeeSharesTest is Base {
     _updateSpokeActive(hub1, daiAssetId, _getFeeReceiver(hub1, daiAssetId), false);
 
     vm.expectEmit(address(hub1));
-    emit IHub.UpdateAsset(daiAssetId, asset.drawnIndex, asset.drawnRate, 0);
+    emit IHub.UpdateAsset({
+      assetId: daiAssetId,
+      drawnIndex: asset.drawnIndex,
+      drawnRate: asset.drawnRate,
+      accruedFees: 0
+    });
 
     vm.recordLogs();
     HubActions.mintFeeShares({hub: hub1, assetId: daiAssetId, caller: ADMIN});
@@ -122,7 +137,7 @@ contract HubMintFeeSharesTest is Base {
 
   function test_mintFeeShares_noShares() public {
     _updateLiquidityFee(hub1, daiAssetId, 0);
-    _mockInterestRateRay(address(irStrategy), 2);
+    _mockInterestRateRay({interestRateStrategy: address(irStrategy), interestRateRay: 2});
 
     // Create debt to build up fees on the existing treasury spoke
     _addAndDrawLiquidity({
@@ -140,7 +155,7 @@ contract HubMintFeeSharesTest is Base {
     // drawn index is 1.0000...002
     assertEq(hub1.getAssetDrawnIndex(daiAssetId), 1e27 + 2);
 
-    _mockInterestRateRay(address(irStrategy), 1e27 - 3);
+    _mockInterestRateRay({interestRateStrategy: address(irStrategy), interestRateRay: 1e27 - 3});
     _updateLiquidityFee(hub1, daiAssetId, PercentageMath.PERCENTAGE_FACTOR);
 
     // mint fee shares just to accrue (liquidity fee is 0, so no fees are minted)

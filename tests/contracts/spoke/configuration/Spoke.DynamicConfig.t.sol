@@ -87,7 +87,7 @@ contract SpokeDynamicConfigTest is Base {
   }
 
   function test_addDynamicReserveConfig_revertsWith_ReserveNotListed() public {
-    uint256 invalidReserveId = vm.randomUint(spoke1.getReserveCount(), type(uint256).max);
+    uint256 invalidReserveId = vm.randomUint(spoke1.getReserveCount(), UINT256_MAX);
     ISpoke.DynamicReserveConfig memory dynConf;
 
     vm.expectRevert(ISpoke.ReserveNotListed.selector, address(spoke1));
@@ -212,7 +212,7 @@ contract SpokeDynamicConfigTest is Base {
   }
 
   function test_updateDynamicReserveConfig_revertsWith_ReserveNotListed() public {
-    uint256 invalidReserveId = vm.randomUint(spoke1.getReserveCount(), type(uint256).max);
+    uint256 invalidReserveId = vm.randomUint(spoke1.getReserveCount(), UINT256_MAX);
     ISpoke.DynamicReserveConfig memory dynConf;
 
     vm.expectRevert(ISpoke.ReserveNotListed.selector);

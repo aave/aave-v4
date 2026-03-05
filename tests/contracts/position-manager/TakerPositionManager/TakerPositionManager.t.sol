@@ -208,7 +208,7 @@ contract TakerPositionManagerTest is TakerPositionManagerBaseTest {
     uint256 expectedSupplyShares = hub1.previewAddByAssets(daiAssetId, supplyAmount);
 
     vm.prank(alice);
-    positionManager.approveWithdraw(address(spoke1), _daiReserveId(spoke1), bob, type(uint256).max);
+    positionManager.approveWithdraw(address(spoke1), _daiReserveId(spoke1), bob, UINT256_MAX);
 
     uint256 userBalanceBefore = tokenList.dai.balanceOf(alice);
     uint256 callerBalanceBefore = tokenList.dai.balanceOf(bob);
@@ -229,7 +229,7 @@ contract TakerPositionManagerTest is TakerPositionManagerBaseTest {
     (returnValues.shares, returnValues.amount) = positionManager.withdrawOnBehalfOf(
       address(spoke1),
       _daiReserveId(spoke1),
-      type(uint256).max,
+      UINT256_MAX,
       alice
     );
     vm.getRecordedLogs();
@@ -246,7 +246,7 @@ contract TakerPositionManagerTest is TakerPositionManagerBaseTest {
     assertEq(tokenList.dai.allowance(address(positionManager), address(hub1)), 0);
     assertEq(
       positionManager.withdrawAllowance(address(spoke1), _daiReserveId(spoke1), alice, bob),
-      type(uint256).max
+      UINT256_MAX
     );
   }
 
@@ -539,7 +539,7 @@ contract TakerPositionManagerTest is TakerPositionManagerBaseTest {
     });
 
     vm.prank(alice);
-    positionManager.approveBorrow(address(spoke1), _daiReserveId(spoke1), bob, type(uint256).max);
+    positionManager.approveBorrow(address(spoke1), _daiReserveId(spoke1), bob, UINT256_MAX);
 
     uint256 userBalanceBefore = tokenList.dai.balanceOf(alice);
     uint256 callerBalanceBefore = tokenList.dai.balanceOf(bob);
@@ -579,7 +579,7 @@ contract TakerPositionManagerTest is TakerPositionManagerBaseTest {
     assertEq(tokenList.dai.allowance(address(positionManager), address(hub1)), 0);
     assertEq(
       positionManager.borrowAllowance(address(spoke1), _daiReserveId(spoke1), alice, bob),
-      type(uint256).max
+      UINT256_MAX
     );
   }
 

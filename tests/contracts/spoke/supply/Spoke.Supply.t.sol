@@ -113,7 +113,13 @@ contract SpokeSupplyTest is Base {
 
     uint256 expectedShares = hub1.previewAddByAssets(daiAssetId, amount);
     vm.expectEmit(address(spoke1));
-    emit ISpokeBase.Supply(_daiReserveId(spoke1), bob, bob, expectedShares, amount);
+    emit ISpokeBase.Supply({
+      reserveId: _daiReserveId(spoke1),
+      caller: bob,
+      user: bob,
+      suppliedShares: expectedShares,
+      suppliedAmount: amount
+    });
     CheckedSupplyResult memory r = _checkedSupply(
       CheckedSupplyParams({
         spoke: spoke1,
@@ -192,7 +198,13 @@ contract SpokeSupplyTest is Base {
 
     uint256 expectedShares = hub1.previewAddByAssets(daiAssetId, amount);
     vm.expectEmit(address(spoke1));
-    emit ISpokeBase.Supply(_daiReserveId(spoke1), bob, bob, expectedShares, amount);
+    emit ISpokeBase.Supply({
+      reserveId: _daiReserveId(spoke1),
+      caller: bob,
+      user: bob,
+      suppliedShares: expectedShares,
+      suppliedAmount: amount
+    });
     CheckedSupplyResult memory r = _checkedSupply(
       CheckedSupplyParams({
         spoke: spoke1,
@@ -272,7 +284,13 @@ contract SpokeSupplyTest is Base {
     deal(address(tokenList.dai), carol, amount);
 
     vm.expectEmit(address(spoke1));
-    emit ISpokeBase.Supply(_daiReserveId(spoke1), carol, carol, expectedShares, amount);
+    emit ISpokeBase.Supply({
+      reserveId: _daiReserveId(spoke1),
+      caller: carol,
+      user: carol,
+      suppliedShares: expectedShares,
+      suppliedAmount: amount
+    });
     _assertRefreshPremiumNotCalled(hub1);
     CheckedSupplyResult memory r = _checkedSupply(
       CheckedSupplyParams({
@@ -393,7 +411,13 @@ contract SpokeSupplyTest is Base {
     IHub.SpokeData memory spokeDataBefore = hub1.getSpoke(state.assetId, address(spoke1));
 
     vm.expectEmit(address(spoke1));
-    emit ISpokeBase.Supply(reserveId, carol, carol, state.expectedShares, amount);
+    emit ISpokeBase.Supply({
+      reserveId: reserveId,
+      caller: carol,
+      user: carol,
+      suppliedShares: state.expectedShares,
+      suppliedAmount: amount
+    });
     _assertRefreshPremiumNotCalled(hub1);
     CheckedSupplyResult memory r = _checkedSupply(
       CheckedSupplyParams({
@@ -464,7 +488,13 @@ contract SpokeSupplyTest is Base {
     deal(address(tokenList.dai), carol, amount);
 
     vm.expectEmit(address(spoke1));
-    emit ISpokeBase.Supply(_daiReserveId(spoke1), carol, carol, expectedShares, amount);
+    emit ISpokeBase.Supply({
+      reserveId: _daiReserveId(spoke1),
+      caller: carol,
+      user: carol,
+      suppliedShares: expectedShares,
+      suppliedAmount: amount
+    });
     _assertRefreshPremiumNotCalled(hub1);
     CheckedSupplyResult memory r = _checkedSupply(
       CheckedSupplyParams({
@@ -572,7 +602,13 @@ contract SpokeSupplyTest is Base {
     deal(address(underlying), carol, amount);
 
     vm.expectEmit(address(spoke1));
-    emit ISpokeBase.Supply(reserveId, carol, carol, expectedShares, amount);
+    emit ISpokeBase.Supply({
+      reserveId: reserveId,
+      caller: carol,
+      user: carol,
+      suppliedShares: expectedShares,
+      suppliedAmount: amount
+    });
     _assertRefreshPremiumNotCalled(hub1);
     CheckedSupplyResult memory r = _checkedSupply(
       CheckedSupplyParams({

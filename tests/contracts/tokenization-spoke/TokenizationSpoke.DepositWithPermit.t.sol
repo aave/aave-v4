@@ -19,7 +19,7 @@ contract TokenizationSpokeDepositWithPermitTest is TokenizationSpokeBaseTest {
     address receiver = vm.randomAddress();
     address spender = address(vault);
     uint256 maxAssets = vault.maxDeposit(receiver);
-    uint256 value = maxAssets == type(uint256).max
+    uint256 value = maxAssets == UINT256_MAX
       ? vm.randomUint(1, MAX_SUPPLY_AMOUNT)
       : vm.randomUint(1, maxAssets);
     uint256 deadline = vm.randomUint();
@@ -46,7 +46,7 @@ contract TokenizationSpokeDepositWithPermitTest is TokenizationSpokeBaseTest {
     address owner = vm.randomAddress();
     address receiver = vm.randomAddress();
     uint256 maxAssets = vault.maxDeposit(receiver);
-    uint256 assets = maxAssets == type(uint256).max
+    uint256 assets = maxAssets == UINT256_MAX
       ? vm.randomUint(1, MAX_SUPPLY_AMOUNT)
       : vm.randomUint(1, maxAssets);
 
@@ -69,7 +69,7 @@ contract TokenizationSpokeDepositWithPermitTest is TokenizationSpokeBaseTest {
     (address user, uint256 userPk) = makeAddrAndKey('user');
     address receiver = vm.randomAddress();
     uint256 maxAssets = vault.maxDeposit(receiver);
-    uint256 assets = maxAssets == type(uint256).max
+    uint256 assets = maxAssets == UINT256_MAX
       ? vm.randomUint(1, MAX_SUPPLY_AMOUNT)
       : vm.randomUint(1, maxAssets);
 
@@ -92,7 +92,7 @@ contract TokenizationSpokeDepositWithPermitTest is TokenizationSpokeBaseTest {
     emit IERC20.Approval(user, address(vault), params.value);
 
     vm.expectEmit(address(vault));
-    emit IERC4626.Deposit(user, receiver, assets, expectedShares);
+    emit IERC4626.Deposit({sender: user, owner: receiver, assets: assets, shares: expectedShares});
 
     vm.prank(user);
     uint256 shares = vault.depositWithPermit(assets, receiver, params.deadline, v, r, s);
@@ -106,7 +106,7 @@ contract TokenizationSpokeDepositWithPermitTest is TokenizationSpokeBaseTest {
     address user = vm.randomAddress();
     address receiver = vm.randomAddress();
     uint256 maxAssets = vault.maxDeposit(receiver);
-    uint256 assets = maxAssets == type(uint256).max
+    uint256 assets = maxAssets == UINT256_MAX
       ? vm.randomUint(1, MAX_SUPPLY_AMOUNT)
       : vm.randomUint(1, maxAssets);
 

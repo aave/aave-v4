@@ -191,7 +191,12 @@ contract SpokeSetUsingAsCollateralTest is Base {
 
     vm.prank(bob);
     vm.expectEmit(address(spoke1));
-    emit ISpoke.SetUsingAsCollateral(daiReserveId, bob, bob, usingAsCollateral);
+    emit ISpoke.SetUsingAsCollateral({
+      reserveId: daiReserveId,
+      caller: bob,
+      user: bob,
+      usingAsCollateral: usingAsCollateral
+    });
     spoke1.setUsingAsCollateral(daiReserveId, usingAsCollateral, bob);
 
     assertEq(

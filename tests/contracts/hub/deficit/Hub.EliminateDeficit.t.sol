@@ -96,7 +96,7 @@ contract HubEliminateDeficitTest is Base {
     _createDeficit(_assetId, _coveredSpoke, _deficitAmountRay);
     _createDeficit(_assetId, _otherSpoke, deficitAmountRay2);
 
-    uint256 eliminateDeficitRay = vm.randomUint(1, type(uint256).max);
+    uint256 eliminateDeficitRay = vm.randomUint(1, UINT256_MAX);
     uint256 clearedDeficitRay = eliminateDeficitRay.min(_deficitAmountRay);
     uint256 clearedDeficit = clearedDeficitRay.fromRayUp();
 
@@ -147,7 +147,7 @@ contract HubEliminateDeficitTest is Base {
   }
 
   function _createDeficit(uint256 assetId, address spoke, uint256 amountRay) internal {
-    _mockInterestRateBps(address(irStrategy), 100_00);
+    _mockInterestRateBps({interestRateStrategy: address(irStrategy), interestRateBps: 100_00});
     uint256 amount = amountRay.fromRayUp();
     HubActions.add({hub: hub1, assetId: assetId, caller: spoke, amount: amount, user: alice});
     _drawLiquidity(hub1, assetId, amount, true, true, spoke);

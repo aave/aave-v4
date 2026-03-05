@@ -42,7 +42,12 @@ contract TokenizationSpokeWithSigTest is TokenizationSpokeBaseTest {
     uint256 shares = IHub(vault.hub()).previewAddByAssets(vault.assetId(), p.assets);
 
     vm.expectEmit(address(vault));
-    emit IERC4626.Deposit(p.depositor, p.receiver, p.assets, shares);
+    emit IERC4626.Deposit({
+      sender: p.depositor,
+      owner: p.receiver,
+      assets: p.assets,
+      shares: shares
+    });
 
     vm.prank(vm.randomAddress());
     uint256 returnShares = vault.depositWithSig(p, signature);
@@ -65,7 +70,12 @@ contract TokenizationSpokeWithSigTest is TokenizationSpokeBaseTest {
     uint256 assets = IHub(vault.hub()).previewAddByShares(vault.assetId(), p.shares);
 
     vm.expectEmit(address(vault));
-    emit IERC4626.Deposit(p.depositor, p.receiver, p.shares, assets);
+    emit IERC4626.Deposit({
+      sender: p.depositor,
+      owner: p.receiver,
+      assets: p.shares,
+      shares: assets
+    });
 
     vm.prank(vm.randomAddress());
     uint256 returnAssets = vault.mintWithSig(p, signature);
@@ -90,7 +100,13 @@ contract TokenizationSpokeWithSigTest is TokenizationSpokeBaseTest {
     uint256 shares = IHub(vault.hub()).previewAddByAssets(vault.assetId(), p.assets);
 
     vm.expectEmit(address(vault));
-    emit IERC4626.Withdraw(p.owner, p.receiver, p.owner, p.assets, shares);
+    emit IERC4626.Withdraw({
+      sender: p.owner,
+      receiver: p.receiver,
+      owner: p.owner,
+      assets: p.assets,
+      shares: shares
+    });
 
     vm.prank(vm.randomAddress());
     uint256 returnShares = vault.withdrawWithSig(p, signature);
@@ -115,7 +131,13 @@ contract TokenizationSpokeWithSigTest is TokenizationSpokeBaseTest {
     uint256 assets = IHub(vault.hub()).previewAddByShares(vault.assetId(), p.shares);
 
     vm.expectEmit(address(vault));
-    emit IERC4626.Withdraw(p.owner, p.receiver, p.owner, p.shares, assets);
+    emit IERC4626.Withdraw({
+      sender: p.owner,
+      receiver: p.receiver,
+      owner: p.owner,
+      assets: p.shares,
+      shares: assets
+    });
 
     vm.prank(vm.randomAddress());
     uint256 returnAssets = vault.redeemWithSig(p, signature);

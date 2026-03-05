@@ -222,7 +222,7 @@ contract SpokeAccrueLiquidityFeeTest is Base {
     uint256 expectedPremiumDebt = 50e18; // 10% of 500 (premium on drawn debt)
     uint256 expectedTreasuryFees = 27.5e18; // 5% of 550 (liquidity fee on drawn debt)
 
-    _mockInterestRateBps(address(irStrategy), rate);
+    _mockInterestRateBps({interestRateStrategy: address(irStrategy), interestRateBps: rate});
 
     SpokeActions.supplyCollateral({
       spoke: spoke1,
@@ -353,7 +353,7 @@ contract SpokeAccrueLiquidityFeeTest is Base {
       liquidityFee
     );
 
-    _mockInterestRateBps(address(irStrategy), rate);
+    _mockInterestRateBps({interestRateStrategy: address(irStrategy), interestRateBps: rate});
 
     SpokeActions.supplyCollateral({
       spoke: spoke1,
@@ -493,7 +493,7 @@ contract SpokeAccrueLiquidityFeeTest is Base {
       liquidityFee
     );
 
-    _mockInterestRateBps(address(irStrategy), rate);
+    _mockInterestRateBps({interestRateStrategy: address(irStrategy), interestRateBps: rate});
 
     SpokeActions.supplyCollateral({
       spoke: spoke1,
@@ -578,7 +578,7 @@ contract SpokeAccrueLiquidityFeeTest is Base {
     uint256 expectedTreasuryFees = (expectedDrawnDebtAccrual + expectedPremiumDebt).percentMulUp(
       liquidityFee
     );
-    _mockInterestRateBps(address(irStrategy), rate);
+    _mockInterestRateBps({interestRateStrategy: address(irStrategy), interestRateBps: rate});
 
     SpokeActions.supplyCollateral({
       spoke: spoke1,

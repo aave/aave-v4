@@ -27,7 +27,12 @@ contract TokenizationSpokeTest is TokenizationSpokeBaseTest {
     vm.expectEmit(address(vault));
     emit IERC20.Transfer(address(0), depositor, expectedShares);
     vm.expectEmit(address(vault));
-    emit IERC4626.Deposit(depositor, depositor, assets, expectedShares);
+    emit IERC4626.Deposit({
+      sender: depositor,
+      owner: depositor,
+      assets: assets,
+      shares: expectedShares
+    });
 
     vm.prank(depositor);
     uint256 shares = vault.deposit(assets, depositor);
@@ -56,7 +61,12 @@ contract TokenizationSpokeTest is TokenizationSpokeBaseTest {
     vm.expectEmit(address(vault));
     emit IERC20.Transfer(address(0), receiver, expectedShares);
     vm.expectEmit(address(vault));
-    emit IERC4626.Deposit(depositor, receiver, assets, expectedShares);
+    emit IERC4626.Deposit({
+      sender: depositor,
+      owner: receiver,
+      assets: assets,
+      shares: expectedShares
+    });
 
     vm.prank(depositor);
     uint256 shares = vault.deposit(assets, receiver);
@@ -81,7 +91,12 @@ contract TokenizationSpokeTest is TokenizationSpokeBaseTest {
     vm.expectEmit(address(vault));
     emit IERC20.Transfer(address(0), depositor, shares);
     vm.expectEmit(address(vault));
-    emit IERC4626.Deposit(depositor, depositor, expectedAssets, shares);
+    emit IERC4626.Deposit({
+      sender: depositor,
+      owner: depositor,
+      assets: expectedAssets,
+      shares: shares
+    });
 
     vm.prank(depositor);
     uint256 assets = vault.mint(shares, depositor);
@@ -109,7 +124,12 @@ contract TokenizationSpokeTest is TokenizationSpokeBaseTest {
     vm.expectEmit(address(vault));
     emit IERC20.Transfer(address(0), receiver, shares);
     vm.expectEmit(address(vault));
-    emit IERC4626.Deposit(depositor, receiver, expectedAssets, shares);
+    emit IERC4626.Deposit({
+      sender: depositor,
+      owner: receiver,
+      assets: expectedAssets,
+      shares: shares
+    });
 
     vm.prank(depositor);
     uint256 assets = vault.mint(shares, receiver);
@@ -143,7 +163,13 @@ contract TokenizationSpokeTest is TokenizationSpokeBaseTest {
     vm.expectEmit(address(vault));
     emit IERC20.Transfer(owner, address(0), expectedShares);
     vm.expectEmit(address(vault));
-    emit IERC4626.Withdraw(owner, owner, owner, withdrawAssets, expectedShares);
+    emit IERC4626.Withdraw({
+      sender: owner,
+      receiver: owner,
+      owner: owner,
+      assets: withdrawAssets,
+      shares: expectedShares
+    });
 
     vm.prank(owner);
     uint256 shares = vault.withdraw(withdrawAssets, owner, owner);
@@ -182,7 +208,13 @@ contract TokenizationSpokeTest is TokenizationSpokeBaseTest {
     vm.expectEmit(address(vault));
     emit IERC20.Transfer(owner, address(0), expectedShares);
     vm.expectEmit(address(vault));
-    emit IERC4626.Withdraw(caller, receiver, owner, withdrawAssets, expectedShares);
+    emit IERC4626.Withdraw({
+      sender: caller,
+      receiver: receiver,
+      owner: owner,
+      assets: withdrawAssets,
+      shares: expectedShares
+    });
 
     vm.prank(caller);
     uint256 shares = vault.withdraw(withdrawAssets, receiver, owner);
@@ -215,7 +247,13 @@ contract TokenizationSpokeTest is TokenizationSpokeBaseTest {
     vm.expectEmit(address(vault));
     emit IERC20.Transfer(owner, address(0), redeemShares);
     vm.expectEmit(address(vault));
-    emit IERC4626.Withdraw(owner, owner, owner, expectedAssets, redeemShares);
+    emit IERC4626.Withdraw({
+      sender: owner,
+      receiver: owner,
+      owner: owner,
+      assets: expectedAssets,
+      shares: redeemShares
+    });
 
     vm.prank(owner);
     uint256 assets = vault.redeem(redeemShares, owner, owner);
@@ -252,7 +290,13 @@ contract TokenizationSpokeTest is TokenizationSpokeBaseTest {
     vm.expectEmit(address(vault));
     emit IERC20.Transfer(owner, address(0), redeemShares);
     vm.expectEmit(address(vault));
-    emit IERC4626.Withdraw(caller, receiver, owner, expectedAssets, redeemShares);
+    emit IERC4626.Withdraw({
+      sender: caller,
+      receiver: receiver,
+      owner: owner,
+      assets: expectedAssets,
+      shares: redeemShares
+    });
 
     vm.prank(caller);
     uint256 assets = vault.redeem(redeemShares, receiver, owner);

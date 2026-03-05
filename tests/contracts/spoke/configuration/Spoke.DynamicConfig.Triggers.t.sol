@@ -131,7 +131,7 @@ contract SpokeDynamicConfigTriggersTest is Base {
     // position is still healthy
     assertGe(_getUserHealthFactor(spoke1, alice), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
 
-    _mockReservePrice(spoke1, _usdxReserveId(spoke1), 0.5e8); // make position partially liquidatable
+    _mockReservePrice({spoke: spoke1, reserveId: _usdxReserveId(spoke1), price: 0.5e8}); // make position partially liquidatable
     assertLe(_getUserHealthFactor(spoke1, alice), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
 
     vm.prank(bob);

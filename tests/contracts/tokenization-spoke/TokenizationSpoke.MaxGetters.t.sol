@@ -106,11 +106,11 @@ contract TokenizationSpokeMaxGettersAddCapMaxTest is TokenizationSpokeMaxGetters
   }
 
   function test_maxDeposit_returnsMaxUint() public view {
-    assertEq(vault.maxDeposit(alice), type(uint256).max);
+    assertEq(vault.maxDeposit(alice), UINT256_MAX);
   }
 
   function test_maxMint_returnsMaxUint() public view {
-    assertEq(vault.maxMint(alice), type(uint256).max);
+    assertEq(vault.maxMint(alice), UINT256_MAX);
   }
 }
 

@@ -21,7 +21,7 @@ contract WadRayMathDifferentialTest is Test {
 
   function test_fuzz_wadMul(uint256 a, uint256 b) public {
     // overflow case
-    if (!(b == 0 || !(a > type(uint256).max / b))) {
+    if (!(b == 0 || !(a > UINT256_MAX / b))) {
       vm.expectRevert();
       w.wadMulDown(a, b);
       vm.expectRevert();
@@ -33,7 +33,7 @@ contract WadRayMathDifferentialTest is Test {
   }
 
   function test_fuzz_wadDiv(uint256 a, uint256 b) public {
-    if (b == 0 || (a > type(uint256).max / w.WAD())) {
+    if (b == 0 || (a > UINT256_MAX / w.WAD())) {
       vm.expectRevert();
       w.wadDivDown(a, b);
       vm.expectRevert();
@@ -48,7 +48,7 @@ contract WadRayMathDifferentialTest is Test {
 
   function test_fuzz_rayMul(uint256 a, uint256 b) public {
     // overflow case
-    if (!(b == 0 || !(a > type(uint256).max / b))) {
+    if (!(b == 0 || !(a > UINT256_MAX / b))) {
       vm.expectRevert();
       w.rayMulDown(a, b);
       vm.expectRevert();
@@ -60,7 +60,7 @@ contract WadRayMathDifferentialTest is Test {
   }
 
   function test_fuzz_rayDiv(uint256 a, uint256 b) public {
-    if (b == 0 || (a > type(uint256).max / w.RAY())) {
+    if (b == 0 || (a > UINT256_MAX / w.RAY())) {
       vm.expectRevert();
       w.rayDivDown(a, b);
       vm.expectRevert();
@@ -184,9 +184,7 @@ contract WadRayMathDifferentialTest is Test {
   function test_fromRayUp_fuzz(uint256 a) public view {
     assertEq(
       w.fromRayUp(a),
-      (a <= type(uint256).max - w.RAY() + 1)
-        ? (a + (w.RAY() - 1)) / w.RAY()
-        : type(uint256).max / w.RAY() + 1
+      (a <= UINT256_MAX - w.RAY() + 1) ? (a + (w.RAY() - 1)) / w.RAY() : UINT256_MAX / w.RAY() + 1
     );
   }
 
@@ -227,7 +225,7 @@ contract WadRayMathDifferentialTest is Test {
     bool safetyCheck;
     unchecked {
       b = a * (w.WAD() / w.PERCENTAGE_FACTOR());
-      safetyCheck = (a == 0 || type(uint256).max / a >= w.WAD() / w.PERCENTAGE_FACTOR());
+      safetyCheck = (a == 0 || UINT256_MAX / a >= w.WAD() / w.PERCENTAGE_FACTOR());
     }
     if (!safetyCheck) {
       vm.expectRevert();
@@ -242,7 +240,7 @@ contract WadRayMathDifferentialTest is Test {
     bool safetyCheck;
     unchecked {
       b = a * (w.RAY() / w.PERCENTAGE_FACTOR());
-      safetyCheck = (a == 0 || type(uint256).max / a >= w.RAY() / w.PERCENTAGE_FACTOR());
+      safetyCheck = (a == 0 || UINT256_MAX / a >= w.RAY() / w.PERCENTAGE_FACTOR());
     }
     if (!safetyCheck) {
       vm.expectRevert();
@@ -255,7 +253,7 @@ contract WadRayMathDifferentialTest is Test {
   function test_roundRayUp_fuzz(uint256 a) public {
     if (a % w.RAY() == 0) {
       assertEq(w.roundRayUp(a), a);
-    } else if (a <= (type(uint256).max / w.RAY()) * w.RAY()) {
+    } else if (a <= (UINT256_MAX / w.RAY()) * w.RAY()) {
       assertEq(w.roundRayUp(a), ((a - 1) / w.RAY() + 1) * w.RAY()); // a == 0 enters the first if block
     } else {
       vm.expectRevert();
@@ -264,7 +262,7 @@ contract WadRayMathDifferentialTest is Test {
   }
 
   function test_roundRayUp_overflow() public {
-    uint256 maxA = (type(uint256).max / w.RAY()) * w.RAY();
+    uint256 maxA = (UINT256_MAX / w.RAY()) * w.RAY();
     test_roundRayUp_fuzz(maxA);
     test_roundRayUp_fuzz(maxA + 1);
   }

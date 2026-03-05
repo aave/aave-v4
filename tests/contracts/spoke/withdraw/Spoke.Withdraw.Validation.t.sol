@@ -111,7 +111,7 @@ contract SpokeWithdrawValidationTest is Base {
     rate = bound(rate, 1, MAX_BORROW_RATE);
     skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
 
-    _mockInterestRateBps(address(irStrategy), rate);
+    _mockInterestRateBps({interestRateStrategy: address(irStrategy), interestRateBps: rate});
 
     // Alice supply
     SpokeActions.supplyCollateral({

@@ -148,10 +148,8 @@ contract LiquidationLogicBaseTest is Base {
     );
 
     uint256 debtRayToLiquidate = debtRayToTarget.min(
-      _max(
-        _min(type(uint256).max / WadRayMath.RAY, params.debtToCover.toRay()),
-        params.drawnIndex
-      ) - params.drawnIndex // debtToCover acts as an upperbound
+      _max(_min(UINT256_MAX / WadRayMath.RAY, params.debtToCover.toRay()), params.drawnIndex) -
+        params.drawnIndex // debtToCover acts as an upperbound
     );
     uint256 debtRay = vm.randomUint(
       debtRayToLiquidate + 1,
@@ -222,13 +220,13 @@ contract LiquidationLogicBaseTest is Base {
         MAX_SUPPLY_PRICE * (hubAddedShares + SharesMath.VIRTUAL_SHARES) - SharesMath.VIRTUAL_ASSETS
       )
     );
-    _mockSupplySharePrice(
-      IHub(address(params.collateralReserveHub)),
-      params.collateralReserveAssetId,
-      hubAddedAssets,
-      hubAddedShares,
-      address(spoke1)
-    );
+    _mockSupplySharePrice({
+      hub: IHub(address(params.collateralReserveHub)),
+      assetId: params.collateralReserveAssetId,
+      totalAddedAssets: hubAddedAssets,
+      addedShares: hubAddedShares,
+      spoke: address(spoke1)
+    });
 
     return params;
   }
@@ -290,13 +288,13 @@ contract LiquidationLogicBaseTest is Base {
       0,
       IHub(address(params.collateralReserveHub)).getAssetCount() - 1
     );
-    _mockSupplySharePrice(
-      IHub(address(params.collateralReserveHub)),
-      params.collateralReserveAssetId,
-      hubAddedAssets,
-      hubAddedShares,
-      address(spoke1)
-    );
+    _mockSupplySharePrice({
+      hub: IHub(address(params.collateralReserveHub)),
+      assetId: params.collateralReserveAssetId,
+      totalAddedAssets: hubAddedAssets,
+      addedShares: hubAddedShares,
+      spoke: address(spoke1)
+    });
 
     return params;
   }

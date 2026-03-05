@@ -62,7 +62,7 @@ contract SpokeConfigTest is Base {
   }
 
   function test_updateReservePriceSource_revertsWith_ReserveNotListed() public {
-    uint256 reserveId = vm.randomUint(spoke1.getReserveCount(), type(uint256).max);
+    uint256 reserveId = vm.randomUint(spoke1.getReserveCount(), UINT256_MAX);
     vm.expectRevert(ISpoke.ReserveNotListed.selector);
     vm.prank(SPOKE_ADMIN);
     spoke1.updateReservePriceSource(reserveId, vm.randomAddress());
@@ -130,7 +130,7 @@ contract SpokeConfigTest is Base {
   }
 
   function test_updateReserveConfig_revertsWith_ReserveNotListed() public {
-    uint256 reserveId = vm.randomUint(spoke1.getReserveCount() + 1, type(uint256).max);
+    uint256 reserveId = vm.randomUint(spoke1.getReserveCount() + 1, UINT256_MAX);
     ISpoke.ReserveConfig memory config;
 
     vm.expectRevert(ISpoke.ReserveNotListed.selector);

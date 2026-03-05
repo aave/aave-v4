@@ -152,27 +152,6 @@ abstract contract SetupHelpers is SpokeHelpers {
   //                                  SETUP HELPERS                                            //
   ///////////////////////////////////////////////////////////////////////////////////////////////
 
-  function _withdrawLiquidityFees(
-    IHub hub,
-    uint256 assetId,
-    uint256 amount,
-    ITreasurySpoke treasurySpoke,
-    address admin,
-    address treasuryAdmin
-  ) internal {
-    HubActions.mintFeeShares({hub: hub, assetId: assetId, caller: admin});
-    uint256 fees = hub.getSpokeAddedAssets(assetId, address(treasurySpoke));
-
-    if (amount > fees) {
-      amount = fees;
-    }
-    if (amount == 0) {
-      return; // nothing to withdraw
-    }
-    vm.prank(treasuryAdmin);
-    treasurySpoke.withdraw(assetId, amount, address(treasurySpoke));
-  }
-
   function _simulateYield(
     ITokenizationSpoke vault,
     uint256 amount,

@@ -416,7 +416,7 @@ contract HubAccrueInterestTest is Base {
     assertEq(_getAssetDrawnDebt(hub1, daiAssetId), expectedDrawnDebt1, 'drawn');
 
     // Say borrow rate changes
-    _mockInterestRateBps(address(irStrategy), borrowRate);
+    _mockInterestRateBps({interestRateStrategy: address(irStrategy), interestRateBps: borrowRate});
     // Make an action to cache this new borrow rate
     HubActions.add({
       hub: hub1,

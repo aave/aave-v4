@@ -343,7 +343,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
         Math.Rounding.Floor
       );
     } else {
-      expectedUserAccountData.healthFactor = type(uint256).max;
+      expectedUserAccountData.healthFactor = UINT256_MAX;
     }
 
     if (expectedUserAccountData.totalCollateralValue != 0) {

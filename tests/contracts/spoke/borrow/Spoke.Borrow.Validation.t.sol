@@ -292,7 +292,7 @@ contract SpokeBorrowValidationTest is Base {
       spoke: spoke1,
       reserveId: 0,
       caller: bob,
-      amount: type(uint256).max,
+      amount: UINT256_MAX,
       onBehalfOf: bob
     });
 

@@ -2,10 +2,11 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
+import 'tests/helpers/tokenization-spoke/TokenizationSpokeHelpers.sol';
 import 'tests/setup/Base.t.sol';
 
 /// forge-config: default.isolate = true
-contract TokenizationSpokeOperations_Gas_Tests is Base {
+contract TokenizationSpokeOperations_Gas_Tests is Base, TokenizationSpokeHelpers {
   string internal constant NAMESPACE = 'TokenizationSpoke.Operations';
   ITokenizationSpoke internal daiVault;
   uint192 internal nonceKey = 100;
@@ -97,7 +98,7 @@ contract TokenizationSpokeOperations_Gas_Tests is Base {
       nonce: daiVault.nonces(alice, nonceKey),
       deadline: vm.getBlockTimestamp()
     });
-    bytes memory signature = _sign(alicePk, _getVaultTypedDataHash(p));
+    bytes memory signature = _sign(alicePk, _getTypedDataHash(daiVault, p));
     SpokeActions.approve({vault: daiVault, owner: alice, amount: p.assets});
 
     daiVault.depositWithSig(p, signature);
@@ -112,7 +113,7 @@ contract TokenizationSpokeOperations_Gas_Tests is Base {
       nonce: daiVault.nonces(alice, nonceKey),
       deadline: vm.getBlockTimestamp()
     });
-    bytes memory signature = _sign(alicePk, _getVaultTypedDataHash(p));
+    bytes memory signature = _sign(alicePk, _getTypedDataHash(daiVault, p));
     SpokeActions.approve({vault: daiVault, owner: alice, amount: p.shares});
 
     daiVault.mintWithSig(p, signature);
@@ -127,7 +128,7 @@ contract TokenizationSpokeOperations_Gas_Tests is Base {
       nonce: daiVault.nonces(alice, nonceKey),
       deadline: vm.getBlockTimestamp()
     });
-    bytes memory signature = _sign(alicePk, _getVaultTypedDataHash(p));
+    bytes memory signature = _sign(alicePk, _getTypedDataHash(daiVault, p));
     SpokeActions.approve({vault: daiVault, owner: alice, amount: p.assets});
     vm.prank(alice);
     daiVault.deposit(p.assets, alice);
@@ -144,7 +145,7 @@ contract TokenizationSpokeOperations_Gas_Tests is Base {
       nonce: daiVault.nonces(alice, nonceKey),
       deadline: vm.getBlockTimestamp()
     });
-    bytes memory signature = _sign(alicePk, _getVaultTypedDataHash(p));
+    bytes memory signature = _sign(alicePk, _getTypedDataHash(daiVault, p));
     SpokeActions.approve({vault: daiVault, owner: alice, amount: p.shares});
     vm.prank(alice);
     daiVault.mint(p.shares, alice);
@@ -161,7 +162,7 @@ contract TokenizationSpokeOperations_Gas_Tests is Base {
       nonce: daiVault.nonces(alice),
       deadline: vm.getBlockTimestamp()
     });
-    (uint8 v, bytes32 r, bytes32 s) = vm.sign(alicePk, _getVaultTypedDataHash(p));
+    (uint8 v, bytes32 r, bytes32 s) = vm.sign(alicePk, _getTypedDataHash(daiVault, p));
 
     vm.expectEmit(address(daiVault));
     emit IERC20.Approval(p.owner, p.spender, p.value);
@@ -170,41 +171,5 @@ contract TokenizationSpokeOperations_Gas_Tests is Base {
     vm.snapshotGasLastCall(NAMESPACE, 'permit');
 
     assertEq(daiVault.allowance(p.owner, p.spender), p.value);
-  }
-
-  // ── Signature helpers (inlined from TokenizationSpokeBaseTest) ──
-
-  function _getVaultTypedDataHash(
-    ITokenizationSpoke.TokenizedDeposit memory params
-  ) internal view returns (bytes32) {
-    return _vaultTypedDataHash(vm.eip712HashStruct('TokenizedDeposit', abi.encode(params)));
-  }
-
-  function _getVaultTypedDataHash(
-    ITokenizationSpoke.TokenizedMint memory params
-  ) internal view returns (bytes32) {
-    return _vaultTypedDataHash(vm.eip712HashStruct('TokenizedMint', abi.encode(params)));
-  }
-
-  function _getVaultTypedDataHash(
-    ITokenizationSpoke.TokenizedWithdraw memory params
-  ) internal view returns (bytes32) {
-    return _vaultTypedDataHash(vm.eip712HashStruct('TokenizedWithdraw', abi.encode(params)));
-  }
-
-  function _getVaultTypedDataHash(
-    ITokenizationSpoke.TokenizedRedeem memory params
-  ) internal view returns (bytes32) {
-    return _vaultTypedDataHash(vm.eip712HashStruct('TokenizedRedeem', abi.encode(params)));
-  }
-
-  function _getVaultTypedDataHash(
-    EIP712Types.Permit memory params
-  ) internal view returns (bytes32) {
-    return _vaultTypedDataHash(vm.eip712HashStruct('Permit', abi.encode(params)));
-  }
-
-  function _vaultTypedDataHash(bytes32 typeHash) internal view returns (bytes32) {
-    return keccak256(abi.encodePacked('\x19\x01', daiVault.DOMAIN_SEPARATOR(), typeHash));
   }
 }

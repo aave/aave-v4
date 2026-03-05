@@ -251,7 +251,7 @@ contract SpokeRiskPremiumTest is Base {
     );
 
     // Change the price of usdz via mock call
-    _mockReservePrice(spoke2, _usdzReserveId(spoke2), 100000e8);
+    _mockReservePrice({spoke: spoke2, reserveId: _usdzReserveId(spoke2), price: 100000e8});
 
     // Check that debt has outgrown collateral
     uint256 collateralValue = _convertAmountToValue(
@@ -1054,7 +1054,7 @@ contract SpokeRiskPremiumTest is Base {
     );
 
     // Now change the price of usdx
-    _mockReservePrice(spoke2, _usdxReserveId(spoke2), newUsdxPrice);
+    _mockReservePrice({spoke: spoke2, reserveId: _usdxReserveId(spoke2), price: newUsdxPrice});
 
     assertEq(
       _getUserRiskPremium(spoke2, bob),
@@ -1287,10 +1287,10 @@ contract SpokeRiskPremiumTest is Base {
     }
 
     // Update prices
-    _mockReservePrice(spoke2, _daiReserveId(spoke2), daiInfo.price);
-    _mockReservePrice(spoke2, _wethReserveId(spoke2), wethInfo.price);
-    _mockReservePrice(spoke2, _usdxReserveId(spoke2), usdxInfo.price);
-    _mockReservePrice(spoke2, _wbtcReserveId(spoke2), wbtcInfo.price);
+    _mockReservePrice({spoke: spoke2, reserveId: _daiReserveId(spoke2), price: daiInfo.price});
+    _mockReservePrice({spoke: spoke2, reserveId: _wethReserveId(spoke2), price: wethInfo.price});
+    _mockReservePrice({spoke: spoke2, reserveId: _usdxReserveId(spoke2), price: usdxInfo.price});
+    _mockReservePrice({spoke: spoke2, reserveId: _wbtcReserveId(spoke2), price: wbtcInfo.price});
 
     // Update reserves' collateral risk
     _updateCollateralRisk(spoke2, _daiReserveId(spoke2), daiInfo.collateralRisk);

@@ -78,12 +78,12 @@ contract SpokeMultipleHubTest is Base {
 
     // Approvals
     vm.startPrank(alice);
-    tokenList.dai.approve(address(hub2), type(uint256).max);
-    tokenList.dai.approve(address(hub3), type(uint256).max);
+    tokenList.dai.approve(address(hub2), UINT256_MAX);
+    tokenList.dai.approve(address(hub3), UINT256_MAX);
 
     vm.startPrank(bob);
-    tokenList.dai.approve(address(hub2), type(uint256).max);
-    tokenList.dai.approve(address(hub3), type(uint256).max);
+    tokenList.dai.approve(address(hub2), UINT256_MAX);
+    tokenList.dai.approve(address(hub3), UINT256_MAX);
     vm.stopPrank();
   }
 

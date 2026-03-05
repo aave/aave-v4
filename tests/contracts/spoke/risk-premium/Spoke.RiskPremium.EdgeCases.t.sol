@@ -871,7 +871,7 @@ contract SpokeRiskPremiumEdgeCasesTest is Base {
     );
 
     // Now change the price of dai
-    _mockReservePrice(spoke2, _daiReserveId(spoke2), newPrice);
+    _mockReservePrice({spoke: spoke2, reserveId: _daiReserveId(spoke2), price: newPrice});
 
     // Now risk premium should equal collateral risk of dai since debt is fully covered by it
     assertGe(

@@ -38,15 +38,20 @@ contract SpokeMulticall is Base {
     calls[1] = abi.encodeCall(ISpoke.setUsingAsCollateral, (daiReserveId, true, bob));
 
     vm.expectEmit(address(spoke1));
-    emit ISpokeBase.Supply(
-      daiReserveId,
-      bob,
-      bob,
-      hub1.previewAddByAssets(daiAssetId, supplyAmount),
-      supplyAmount
-    );
+    emit ISpokeBase.Supply({
+      reserveId: daiReserveId,
+      caller: bob,
+      user: bob,
+      suppliedShares: hub1.previewAddByAssets(daiAssetId, supplyAmount),
+      suppliedAmount: supplyAmount
+    });
     vm.expectEmit(address(spoke1));
-    emit ISpoke.SetUsingAsCollateral(daiReserveId, bob, bob, true);
+    emit ISpoke.SetUsingAsCollateral({
+      reserveId: daiReserveId,
+      caller: bob,
+      user: bob,
+      usingAsCollateral: true
+    });
 
     // Execute the multicall
     vm.prank(bob);
@@ -93,15 +98,20 @@ contract SpokeMulticall is Base {
     calls[2] = abi.encodeCall(ISpoke.updateUserRiskPremium, (bob));
 
     vm.expectEmit(address(spoke2));
-    emit ISpokeBase.Supply(
-      _daiReserveId(spoke2),
-      bob,
-      bob,
-      hub1.previewAddByAssets(daiAssetId, MAX_SUPPLY_AMOUNT),
-      MAX_SUPPLY_AMOUNT
-    );
+    emit ISpokeBase.Supply({
+      reserveId: _daiReserveId(spoke2),
+      caller: bob,
+      user: bob,
+      suppliedShares: hub1.previewAddByAssets(daiAssetId, MAX_SUPPLY_AMOUNT),
+      suppliedAmount: MAX_SUPPLY_AMOUNT
+    });
     vm.expectEmit(address(spoke2));
-    emit ISpoke.SetUsingAsCollateral(_daiReserveId(spoke2), bob, bob, true);
+    emit ISpoke.SetUsingAsCollateral({
+      reserveId: _daiReserveId(spoke2),
+      caller: bob,
+      user: bob,
+      usingAsCollateral: true
+    });
     vm.expectEmit(address(spoke2));
     emit ISpoke.UpdateUserRiskPremium(bob, _getCollateralRisk(spoke2, _daiReserveId(spoke2)));
 

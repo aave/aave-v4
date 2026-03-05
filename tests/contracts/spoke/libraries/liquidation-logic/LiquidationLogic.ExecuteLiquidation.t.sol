@@ -29,15 +29,18 @@ contract LiquidationLogicExecuteLiquidationTest is LiquidationLogicBaseTest {
   function setUp() public override {
     super.setUp();
     IHub collateralReserveHub = hub1;
-    _mockSupplySharePrice(
-      collateralReserveHub,
-      usdxAssetId,
-      12_500.25e6,
-      10_000e6,
-      address(spoke1)
-    );
+    _mockSupplySharePrice({
+      hub: collateralReserveHub,
+      assetId: usdxAssetId,
+      totalAddedAssets: 12_500.25e6,
+      addedShares: 10_000e6,
+      spoke: address(spoke1)
+    });
     (IHub debtReserveHub, ) = hub2Fixture();
-    _mockInterestRateBps(debtReserveHub.getAsset(wethAssetId).irStrategy, 5_00);
+    _mockInterestRateBps({
+      interestRateStrategy: debtReserveHub.getAsset(wethAssetId).irStrategy,
+      interestRateBps: 5_00
+    });
 
     // Mock params
     usdxReserveId = _usdxReserveId(spoke1);

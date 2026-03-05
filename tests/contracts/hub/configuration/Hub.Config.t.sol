@@ -297,7 +297,10 @@ contract HubConfigTest is Base {
     address underlying = address(new TestnetERC20('USDA', 'USDA', MIN_ALLOWED_UNDERLYING_DECIMALS));
 
     uint256 drawnRateRay = uint256(type(uint96).max) + 1;
-    _mockInterestRateRay(address(irStrategy), drawnRateRay);
+    _mockInterestRateRay({
+      interestRateStrategy: address(irStrategy),
+      interestRateRay: drawnRateRay
+    });
     vm.expectRevert(
       abi.encodeWithSelector(SafeCast.SafeCastOverflowedUintDowncast.selector, 96, drawnRateRay),
       address(hub1)
@@ -518,7 +521,7 @@ contract HubConfigTest is Base {
   function test_updateAssetConfig_fuzz(uint256 assetId, IHub.AssetConfig memory newConfig) public {
     assetId = bound(assetId, 0, hub1.getAssetCount() - 1);
     _assumeValidAssetConfig(newConfig);
-    _mockInterestRateBps(newConfig.irStrategy, 5_00);
+    _mockInterestRateBps({interestRateStrategy: newConfig.irStrategy, interestRateBps: 5_00});
     vm.mockCall(
       newConfig.irStrategy,
       abi.encodeCall(IBasicInterestRateStrategy.setInterestRateData, (assetId, encodedIrData)),
@@ -884,7 +887,10 @@ contract HubConfigTest is Base {
     rewind(365 days);
 
     AssetInterestRateStrategy newIrStrategy = new AssetInterestRateStrategy(address(hub1));
-    _mockInterestRateRay(address(newIrStrategy), hub1.getAssetDrawnRate(assetId) * 10);
+    _mockInterestRateRay({
+      interestRateStrategy: address(newIrStrategy),
+      interestRateRay: hub1.getAssetDrawnRate(assetId) * 10
+    });
     IHub.AssetConfig memory config = hub1.getAssetConfig(assetId);
     config.irStrategy = address(newIrStrategy);
 

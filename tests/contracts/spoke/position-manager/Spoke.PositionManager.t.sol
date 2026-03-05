@@ -66,13 +66,13 @@ contract SpokePositionManagerTest is Base {
     vm.expectEmit(address(tokenList.usdx));
     emit IERC20.Transfer(address(POSITION_MANAGER), address(hub1), amount);
     vm.expectEmit(address(spoke1));
-    emit ISpokeBase.Supply(
-      reserveId,
-      POSITION_MANAGER,
-      alice,
-      hub1.previewAddByAssets(usdxAssetId, amount),
-      amount
-    );
+    emit ISpokeBase.Supply({
+      reserveId: reserveId,
+      caller: POSITION_MANAGER,
+      user: alice,
+      suppliedShares: hub1.previewAddByAssets(usdxAssetId, amount),
+      suppliedAmount: amount
+    });
     SpokeActions.supply({
       spoke: spoke1,
       reserveId: reserveId,
@@ -125,13 +125,13 @@ contract SpokePositionManagerTest is Base {
     vm.expectEmit(address(tokenList.usdx));
     emit IERC20.Transfer(address(hub1), address(POSITION_MANAGER), amount);
     vm.expectEmit(address(spoke1));
-    emit ISpokeBase.Withdraw(
-      reserveId,
-      POSITION_MANAGER,
-      alice,
-      hub1.previewRemoveByAssets(usdxAssetId, amount),
-      amount
-    );
+    emit ISpokeBase.Withdraw({
+      reserveId: reserveId,
+      caller: POSITION_MANAGER,
+      user: alice,
+      withdrawnShares: hub1.previewRemoveByAssets(usdxAssetId, amount),
+      withdrawnAmount: amount
+    });
     SpokeActions.withdraw({
       spoke: spoke1,
       reserveId: reserveId,
@@ -183,13 +183,13 @@ contract SpokePositionManagerTest is Base {
     vm.expectEmit(address(tokenList.usdx));
     emit IERC20.Transfer(address(hub1), address(POSITION_MANAGER), amount);
     vm.expectEmit(address(spoke1));
-    emit ISpokeBase.Borrow(
-      reserveId,
-      POSITION_MANAGER,
-      alice,
-      hub1.previewRestoreByAssets(usdxAssetId, amount),
-      amount
-    );
+    emit ISpokeBase.Borrow({
+      reserveId: reserveId,
+      caller: POSITION_MANAGER,
+      user: alice,
+      drawnShares: hub1.previewRestoreByAssets(usdxAssetId, amount),
+      drawnAmount: amount
+    });
     SpokeActions.borrow({
       spoke: spoke1,
       reserveId: reserveId,
@@ -284,7 +284,7 @@ contract SpokePositionManagerTest is Base {
       spoke: spoke1,
       reserveId: reserveId,
       caller: POSITION_MANAGER,
-      amount: type(uint256).max,
+      amount: UINT256_MAX,
       onBehalfOf: alice
     });
     assertEq(spoke1.getUserPosition(reserveId, POSITION_MANAGER), posBefore);
@@ -322,7 +322,12 @@ contract SpokePositionManagerTest is Base {
     _approvePositionManager(alice);
 
     vm.expectEmit(address(spoke1));
-    emit ISpoke.SetUsingAsCollateral(reserveId, POSITION_MANAGER, alice, usingAsCollateral);
+    emit ISpoke.SetUsingAsCollateral({
+      reserveId: reserveId,
+      caller: POSITION_MANAGER,
+      user: alice,
+      usingAsCollateral: usingAsCollateral
+    });
     SpokeActions.setUsingAsCollateral({
       spoke: spoke1,
       reserveId: reserveId,

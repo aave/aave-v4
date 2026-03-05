@@ -6,7 +6,8 @@ import {BaseState} from 'tests/setup/BaseState.sol';
 import {IERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
 import {ISpoke, ISpokeBase} from 'src/spoke/interfaces/ISpoke.sol';
 import {IHub} from 'src/hub/interfaces/IHub.sol';
-import {SpokeActions} from 'tests/helpers/spoke/SpokeActions.sol';
+import {ITreasurySpoke} from 'src/spoke/interfaces/ITreasurySpoke.sol';
+import {HubActions} from 'tests/helpers/hub/HubActions.sol';
 
 /// @title BaseHelpers
 /// @notice Aggregates hub and spoke helpers and adds cross-layer assertion helpers.
@@ -79,6 +80,31 @@ abstract contract BaseHelpers is BaseState {
     assertEq(a.premiumShares, b.premiumShares, 'premiumShares');
     assertEq(a.premiumOffsetRay, b.premiumOffsetRay, 'premiumOffsetRay');
     assertEq(a.premium, b.premium, 'premium');
+  }
+
+  ///////////////////////////////////////////////////////////////////////////////////////////////
+  //                                        SETUP HELPERS                                      //
+  ///////////////////////////////////////////////////////////////////////////////////////////////
+
+  function _withdrawLiquidityFees(
+    IHub hub,
+    uint256 assetId,
+    uint256 amount,
+    ITreasurySpoke treasurySpoke,
+    address admin,
+    address treasuryAdmin
+  ) internal {
+    HubActions.mintFeeShares({hub: hub, assetId: assetId, caller: admin});
+    uint256 fees = hub.getSpokeAddedAssets(assetId, address(treasurySpoke));
+
+    if (amount > fees) {
+      amount = fees;
+    }
+    if (amount == 0) {
+      return; // nothing to withdraw
+    }
+    vm.prank(treasuryAdmin);
+    treasurySpoke.withdraw(assetId, amount, address(treasurySpoke));
   }
 
   ///////////////////////////////////////////////////////////////////////////////////////////////
