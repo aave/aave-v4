@@ -47,7 +47,7 @@ interface INativeTokenGateway is IPositionManagerBase {
   /// @param reserveId The identifier of the reserve for the wrapped asset.
   /// @param amount Amount to withdraw and unwrap.
   /// @return The amount of shares withdrawn.
-  /// @return The amount of assets withdrawn.
+  /// @return The amount of assets withdrawn. May be less than `amount` if the user has insufficient supply.
   function withdrawNative(
     address spoke,
     uint256 reserveId,
