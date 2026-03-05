@@ -99,15 +99,15 @@ contract HubTransferSharesTest is HubBase {
   }
 
   function test_transferShares_revertsWith_AddCapExceeded() public {
-    uint40 newSupplyCap = 1000;
+    uint40 newAddCap = 1000;
 
-    uint256 supplyAmount = newSupplyCap * 10 ** tokenList.dai.decimals() + 1;
+    uint256 supplyAmount = newAddCap * 10 ** tokenList.dai.decimals() + 1;
     Utils.add(hub1, daiAssetId, address(spoke1), supplyAmount, bob);
 
     uint256 suppliedShares = hub1.getSpokeAddedShares(daiAssetId, address(spoke1));
     assertEq(suppliedShares, hub1.previewRemoveByShares(daiAssetId, supplyAmount));
 
-    _updateAddCap(daiAssetId, address(spoke2), newSupplyCap);
+    _updateAddCap(daiAssetId, address(spoke2), newAddCap);
 
     // attempting transfer of supplied shares exceeding cap on spoke2
     assertLt(
@@ -115,7 +115,7 @@ contract HubTransferSharesTest is HubBase {
       hub1.previewRemoveByShares(daiAssetId, supplyAmount)
     );
 
-    vm.expectRevert(abi.encodeWithSelector(IHub.AddCapExceeded.selector, newSupplyCap));
+    vm.expectRevert(abi.encodeWithSelector(IHub.AddCapExceeded.selector, newAddCap));
     vm.prank(address(spoke1));
     hub1.transferShares(daiAssetId, suppliedShares, address(spoke2));
   }

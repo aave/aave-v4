@@ -10,7 +10,7 @@ import {IIntentConsumer} from 'src/interfaces/IIntentConsumer.sol';
 /// @title IntentConsumer
 /// @author Aave Labs
 /// @notice Base contract to consume EIP712-signed intents with keyed-nonces.
-/// @dev The `_domainNameAndVersion() `function must be implemented to specify the EIP712 domain name and version.
+/// @dev The `_domainNameAndVersion()` function must be implemented to specify the EIP712 domain name and version.
 /// @dev Implements ERC-5267 with `address(this)` as verifyingContract and no custom extensions or optional EIP-712 salt.
 abstract contract IntentConsumer is IIntentConsumer, NoncesKeyed, EIP712 {
   /// @inheritdoc IIntentConsumer

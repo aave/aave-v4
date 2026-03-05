@@ -48,7 +48,7 @@ interface IAssetInterestRateStrategy is IBasicInterestRateStrategy {
   /// @notice Thrown when slope 2 (after kink point) is less than slope 1 (before kink point).
   error Slope2MustBeGteSlope1();
 
-  /// @notice Thrown when the optimal usage ratio is less than `MIN_OPTIMAL_POINT` or greater than `MAX_OPTIMAL_POINT`.
+  /// @notice Thrown when the optimal usage ratio is less than `MIN_OPTIMAL_RATIO` or greater than `MAX_OPTIMAL_RATIO`.
   error InvalidOptimalUsageRatio();
 
   /// @notice Returns the full InterestRateData struct for the given asset.
