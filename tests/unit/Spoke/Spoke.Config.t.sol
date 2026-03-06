@@ -215,7 +215,7 @@ contract SpokeConfigTest is SpokeBase {
   }
 
   function test_addReserve_revertsWith_InvalidAddress_hub() public {
-    (ISpoke newSpoke, ) = _deploySpokeWithOracle(ADMIN, address(accessManager), 'New Spoke (USD)');
+    (ISpoke newSpoke, ) = _deploySpokeWithOracle(ADMIN, address(accessManager));
 
     ISpoke.ReserveConfig memory newReserveConfig;
     ISpoke.DynamicReserveConfig memory newDynReserveConfig;
@@ -232,7 +232,7 @@ contract SpokeConfigTest is SpokeBase {
   }
 
   function test_addReserve_revertsWith_InvalidAddress_oracle() public {
-    (ISpoke newSpoke, ) = _deploySpokeWithOracle(ADMIN, address(accessManager), 'New Spoke (USD)');
+    (ISpoke newSpoke, ) = _deploySpokeWithOracle(ADMIN, address(accessManager));
 
     ISpoke.ReserveConfig memory newReserveConfig = _getDefaultReserveConfig(10_00);
     ISpoke.DynamicReserveConfig memory newDynReserveConfig = ISpoke.DynamicReserveConfig({

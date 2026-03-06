@@ -66,8 +66,4 @@ interface IAaveOracle is IPriceOracle {
   /// @param reserveId The identifier of the reserve.
   /// @return source The price feed source of the reserve.
   function getReserveSource(uint256 reserveId) external view returns (address);
-
-  /// @notice Returns the description of the oracle.
-  /// @return The description of the oracle.
-  function description() external view returns (string memory);
 }

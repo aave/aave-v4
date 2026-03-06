@@ -340,9 +340,9 @@ abstract contract Base is Test {
     accessManager = IAccessManager(address(new AccessManagerEnumerable(ADMIN)));
     hub1 = DeployUtils.deployHub(address(accessManager));
     irStrategy = new AssetInterestRateStrategy(address(hub1));
-    (spoke1, oracle1) = _deploySpokeWithOracle(ADMIN, address(accessManager), 'Spoke 1 (USD)');
-    (spoke2, oracle2) = _deploySpokeWithOracle(ADMIN, address(accessManager), 'Spoke 2 (USD)');
-    (spoke3, oracle3) = _deploySpokeWithOracle(ADMIN, address(accessManager), 'Spoke 3 (USD)');
+    (spoke1, oracle1) = _deploySpokeWithOracle(ADMIN, address(accessManager));
+    (spoke2, oracle2) = _deploySpokeWithOracle(ADMIN, address(accessManager));
+    (spoke3, oracle3) = _deploySpokeWithOracle(ADMIN, address(accessManager));
     treasurySpoke = ITreasurySpoke(new TreasurySpoke(TREASURY_ADMIN, address(hub1)));
     vm.stopPrank();
 
@@ -2482,14 +2482,12 @@ abstract contract Base is Test {
 
   function _deploySpokeWithOracle(
     address proxyAdminOwner,
-    address _accessManager,
-    string memory _oracleDesc
+    address _accessManager
   ) internal pausePrank returns (ISpoke, IAaveOracle) {
     return
       _deploySpokeWithOracle(
         proxyAdminOwner,
         _accessManager,
-        _oracleDesc,
         Constants.MAX_ALLOWED_USER_RESERVES_LIMIT
       );
   }
@@ -2497,13 +2495,12 @@ abstract contract Base is Test {
   function _deploySpokeWithOracle(
     address proxyAdminOwner,
     address _accessManager,
-    string memory _oracleDesc,
     uint16 maxUserReservesLimit
   ) internal pausePrank returns (ISpoke, IAaveOracle) {
     address deployer = makeAddr('deployer');
 
     vm.startPrank(deployer);
-    IAaveOracle oracle = new AaveOracle(8, _oracleDesc);
+    IAaveOracle oracle = new AaveOracle(8);
 
     ISpoke spoke = DeployUtils.deploySpoke(
       address(oracle),
@@ -2885,9 +2882,7 @@ abstract contract Base is Test {
   function _mockReservePrice(ISpoke spoke, uint256 reserveId, uint256 price) internal {
     require(price > 0, 'mockReservePrice: price must be positive');
     AaveOracle oracle = AaveOracle(spoke.ORACLE());
-    address mockPriceFeed = address(
-      new MockPriceFeed(oracle.decimals(), oracle.description(), price)
-    );
+    address mockPriceFeed = address(new MockPriceFeed(oracle.decimals(), 'mock', price));
     vm.prank(address(ADMIN));
     spoke.updateReservePriceSource(reserveId, mockPriceFeed);
   }
@@ -2904,7 +2899,7 @@ abstract contract Base is Test {
 
   function _deployMockPriceFeed(ISpoke spoke, uint256 price) internal returns (address) {
     AaveOracle oracle = AaveOracle(spoke.ORACLE());
-    return address(new MockPriceFeed(oracle.decimals(), oracle.description(), price));
+    return address(new MockPriceFeed(oracle.decimals(), 'mock', price));
   }
 
   function _assertBorrowRateSynced(
