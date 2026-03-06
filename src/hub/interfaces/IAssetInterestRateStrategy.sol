@@ -20,9 +20,9 @@ interface IAssetInterestRateStrategy is IBasicInterestRateStrategy {
     uint32 rateGrowthAfterOptimal;
   }
 
-  /// @notice Emitted when new interest rate data is set for an asset.
+  /// @notice Emitted when new interest rate data is updated for an asset.
   /// @param hub The address of the associated Hub.
-  /// @param assetId Identifier of the asset that has new interest rate data set.
+  /// @param assetId The identifier of the asset whose interest rate data is updated.
   /// @param optimalUsageRatio The optimal usage ratio, in BPS.
   /// @param baseRate The base rate, in BPS.
   /// @param rateGrowthBeforeOptimal The rate growth before the optimal usage ratio, in BPS.
