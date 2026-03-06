@@ -44,10 +44,7 @@ contract SpokeMultipleHubBase is SpokeBase {
 
     // New hub and spoke
     newHub = DeployUtils.deployHub(address(accessManager), hex'02');
-    (newSpoke, newOracle) = _deploySpokeWithOracle(
-      ADMIN,
-      address(accessManager)
-    );
+    (newSpoke, newOracle) = _deploySpokeWithOracle(ADMIN, address(accessManager));
     newIrStrategy = new AssetInterestRateStrategy(address(newHub));
 
     assetA = new TestnetERC20('Asset A', 'A', 18);
