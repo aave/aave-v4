@@ -1138,13 +1138,12 @@ contract HubConfiguratorTest is HubBase {
   }
 
   function test_updateRateData() public {
-    IAssetInterestRateStrategy.RateData memory newIrData = IAssetInterestRateStrategy
-      .RateData({
-        optimalUsageRatio: 90_00, // 90.00%
-        baseRate: 5_00, // 5.00%
-        rateGrowthBeforeOptimal: 5_00, // 5.00%
-        rateGrowthAfterOptimal: 5_00 // 5.00%
-      });
+    IAssetInterestRateStrategy.RateData memory newIrData = IAssetInterestRateStrategy.RateData({
+      optimalUsageRatio: 90_00, // 90.00%
+      baseRate: 5_00, // 5.00%
+      rateGrowthBeforeOptimal: 5_00, // 5.00%
+      rateGrowthAfterOptimal: 5_00 // 5.00%
+    });
 
     vm.expectCall(
       address(hub1),

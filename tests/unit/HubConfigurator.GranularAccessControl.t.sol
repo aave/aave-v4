@@ -120,10 +120,7 @@ contract HubConfiguratorGranularAccessControlTest is HubBase {
       )
     );
     assetManagerCalldata.push(
-      abi.encodeCall(
-        IHubConfigurator.updateRateData,
-        (address(hub1), assetId, encodedIrData)
-      )
+      abi.encodeCall(IHubConfigurator.updateRateData, (address(hub1), assetId, encodedIrData))
     );
     assetManagerCalldata.push(
       abi.encodeCall(IHubConfigurator.resetAssetCaps, (address(hub1), assetId))

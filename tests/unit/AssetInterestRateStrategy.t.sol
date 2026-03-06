@@ -60,7 +60,10 @@ contract AssetInterestRateStrategyTest is Base {
   }
 
   function test_getRateGrowthBeforeOptimal() public view {
-    assertEq(rateStrategy.getRateGrowthBeforeOptimal(mockAssetId), rateData.rateGrowthBeforeOptimal);
+    assertEq(
+      rateStrategy.getRateGrowthBeforeOptimal(mockAssetId),
+      rateData.rateGrowthBeforeOptimal
+    );
   }
 
   function test_getRateGrowthAfterOptimal() public view {
@@ -100,7 +103,9 @@ contract AssetInterestRateStrategyTest is Base {
       rateData.rateGrowthBeforeOptimal
     );
     encodedRateData = abi.encode(rateData);
-    vm.expectRevert(IAssetInterestRateStrategy.GrowthAfterOptimalMustBeGteGrowthBeforeOptimal.selector);
+    vm.expectRevert(
+      IAssetInterestRateStrategy.GrowthAfterOptimalMustBeGteGrowthBeforeOptimal.selector
+    );
     vm.prank(address(hub1));
     rateStrategy.setRateData(mockAssetId, encodedRateData);
   }
@@ -155,10 +160,7 @@ contract AssetInterestRateStrategyTest is Base {
   function test_calculateInterestRate_revertsWith_RateDataNotSet() public {
     uint256 mockAssetId2 = uint256(keccak256('mockAssetId2'));
     vm.expectRevert(
-      abi.encodeWithSelector(
-        IBasicInterestRateStrategy.RateDataNotSet.selector,
-        mockAssetId2
-      )
+      abi.encodeWithSelector(IBasicInterestRateStrategy.RateDataNotSet.selector, mockAssetId2)
     );
     rateStrategy.calculateInterestRate({
       assetId: mockAssetId2,

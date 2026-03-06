@@ -295,11 +295,7 @@ contract HubConfigurator is AccessManaged, IHubConfigurator {
   }
 
   /// @inheritdoc IHubConfigurator
-  function updateRateData(
-    address hub,
-    uint256 assetId,
-    bytes calldata irData
-  ) external restricted {
+  function updateRateData(address hub, uint256 assetId, bytes calldata irData) external restricted {
     IHub(hub).setRateData(assetId, irData);
   }
 

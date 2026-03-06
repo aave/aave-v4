@@ -307,10 +307,7 @@ contract HubConfigTest is HubBase {
       reinvestmentController: address(0)
     });
 
-    (, uint32 baseRate, , ) = abi.decode(
-      encodedIrData,
-      (uint32, uint32, uint32, uint32)
-    );
+    (, uint32 baseRate, , ) = abi.decode(encodedIrData, (uint32, uint32, uint32, uint32));
 
     // feeReceiver risk premium threshold defaults to 0
     IHub.SpokeConfig memory expectedSpokeConfig = IHub.SpokeConfig({

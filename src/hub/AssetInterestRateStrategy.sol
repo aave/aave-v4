@@ -48,7 +48,10 @@ contract AssetInterestRateStrategy is IAssetInterestRateStrategy {
         rateData.optimalUsageRatio <= MAX_OPTIMAL_RATIO,
       InvalidOptimalUsageRatio()
     );
-    require(rateData.rateGrowthBeforeOptimal <= rateData.rateGrowthAfterOptimal, GrowthAfterOptimalMustBeGteGrowthBeforeOptimal());
+    require(
+      rateData.rateGrowthBeforeOptimal <= rateData.rateGrowthAfterOptimal,
+      GrowthAfterOptimalMustBeGteGrowthBeforeOptimal()
+    );
     require(
       rateData.baseRate + rateData.rateGrowthBeforeOptimal + rateData.rateGrowthAfterOptimal <=
         MAX_RATE,
