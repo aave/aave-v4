@@ -10,17 +10,20 @@ import {IAccessManager} from 'src/dependencies/openzeppelin/IAccessManager.sol';
 interface IAccessManagerEnumerable is IAccessManager {
   /// @notice Returns the identifier of the role at a specified index.
   /// @dev `PUBLIC_ROLE` and `ADMIN_ROLE` are not accessible via any index.
+  /// @dev Roles with no assigned members are also accessible.
   /// @param index The index in the role list.
   /// @return The identifier of the role.
   function getRole(uint256 index) external view returns (uint64);
 
   /// @notice Returns the total number of existing roles.
   /// @dev `PUBLIC_ROLE` and `ADMIN_ROLE` are not included in the role count.
+  /// @dev Roles with no assigned members are also taken into account.
   /// @return The number of roles.
   function getRoleCount() external view returns (uint256);
 
   /// @notice Returns the list of role identifiers between the specified indexes.
   /// @dev `PUBLIC_ROLE` and `ADMIN_ROLE` are not accessible via any index.
+  /// @dev Roles with no assigned members are also accessible.
   /// @param start The starting index for the role list.
   /// @param end The ending index for the role list.
   /// @return The list of role identifiers.
@@ -28,17 +31,20 @@ interface IAccessManagerEnumerable is IAccessManager {
 
   /// @notice Returns the identifier of the admin role at a specified index.
   /// @dev `ADMIN_ROLE` is not accessible via any index.
+  /// @dev Admin roles with no assigned members or managed roles are also accessible.
   /// @param index The index in the admin role list.
   /// @return The identifier of the admin role.
   function getAdminRole(uint256 index) external view returns (uint64);
 
   /// @notice Returns the total number of existing admin roles.
   /// @dev `ADMIN_ROLE` is not included in the admin role count.
+  /// @dev Admin roles with no assigned members or managed roles are also taken into account.
   /// @return The number of admin roles.
   function getAdminRoleCount() external view returns (uint256);
 
   /// @notice Returns the list of admin role identifiers between the specified indexes.
   /// @dev `ADMIN_ROLE` is not accessible via any index.
+  /// @dev Admin roles with no assigned members or managed roles are also accessible.
   /// @param start The starting index for the admin role list.
   /// @param end The ending index for the admin role list.
   /// @return The list of admin role identifiers.
