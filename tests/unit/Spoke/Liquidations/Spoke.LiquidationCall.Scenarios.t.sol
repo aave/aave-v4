@@ -62,7 +62,7 @@ contract SpokeLiquidationCallScenariosTest is SpokeLiquidationCallBaseTest {
 
     MockReentrantCaller reentrantCaller = new MockReentrantCaller(
       address(spoke),
-      ISpokeBase.liquidationCall.selector
+      ISpoke.liquidationCall.selector
     );
 
     vm.mockFunction(
@@ -83,7 +83,7 @@ contract SpokeLiquidationCallScenariosTest is SpokeLiquidationCallBaseTest {
 
     MockReentrantCaller reentrantCaller = new MockReentrantCaller(
       address(spoke),
-      ISpokeBase.liquidationCall.selector
+      ISpoke.liquidationCall.selector
     );
 
     vm.mockFunction(
@@ -106,7 +106,7 @@ contract SpokeLiquidationCallScenariosTest is SpokeLiquidationCallBaseTest {
 
     MockReentrantCaller reentrantCaller = new MockReentrantCaller(
       address(spoke),
-      ISpokeBase.liquidationCall.selector
+      ISpoke.liquidationCall.selector
     );
 
     vm.mockFunction(
@@ -127,7 +127,7 @@ contract SpokeLiquidationCallScenariosTest is SpokeLiquidationCallBaseTest {
 
     MockReentrantCaller reentrantCaller = new MockReentrantCaller(
       address(spoke),
-      ISpokeBase.liquidationCall.selector
+      ISpoke.liquidationCall.selector
     );
 
     vm.mockFunction(
@@ -468,7 +468,8 @@ contract SpokeLiquidationCallScenariosTest is SpokeLiquidationCallBaseTest {
     );
     assertEq(userDebtPositionBefore.drawnShares, 1, 'User should have 1 drawn share of DAI');
     assertEq(
-      userDebtPositionBefore.premiumShares * 1.1e27 -
+      userDebtPositionBefore.premiumShares *
+        1.1e27 -
         userDebtPositionBefore.premiumOffsetRay.toUint256(),
       0.1e27,
       'User should have 0.1 premium'

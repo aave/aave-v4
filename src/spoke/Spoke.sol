@@ -8,7 +8,9 @@ import {Math} from 'src/dependencies/openzeppelin/Math.sol';
 import {IERC20Permit} from 'src/dependencies/openzeppelin/IERC20Permit.sol';
 import {ReentrancyGuardTransient} from 'src/dependencies/openzeppelin/ReentrancyGuardTransient.sol';
 import {Math} from 'src/dependencies/openzeppelin/Math.sol';
-import {AccessManagedUpgradeable} from 'src/dependencies/openzeppelin-upgradeable/AccessManagedUpgradeable.sol';
+import {
+  AccessManagedUpgradeable
+} from 'src/dependencies/openzeppelin-upgradeable/AccessManagedUpgradeable.sol';
 import {MathUtils} from 'src/libraries/math/MathUtils.sol';
 import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
 import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
@@ -24,7 +26,7 @@ import {Multicall} from 'src/utils/Multicall.sol';
 import {ExtSload} from 'src/utils/ExtSload.sol';
 import {IAaveOracle} from 'src/spoke/interfaces/IAaveOracle.sol';
 import {IHubBase} from 'src/hub/interfaces/IHubBase.sol';
-import {ISpokeBase, ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
+import {ISpoke, ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 import {SpokeStorage} from 'src/spoke/SpokeStorage.sol';
 
 /// @title Spoke
@@ -222,7 +224,7 @@ abstract contract Spoke is
     emit UpdatePositionManager(positionManager, active);
   }
 
-  /// @inheritdoc ISpokeBase
+  /// @inheritdoc ISpoke
   function supply(
     uint256 reserveId,
     uint256 amount,
@@ -241,7 +243,7 @@ abstract contract Spoke is
     return (suppliedShares, amount);
   }
 
-  /// @inheritdoc ISpokeBase
+  /// @inheritdoc ISpoke
   function withdraw(
     uint256 reserveId,
     uint256 amount,
@@ -271,7 +273,7 @@ abstract contract Spoke is
     return (withdrawnShares, withdrawnAmount);
   }
 
-  /// @inheritdoc ISpokeBase
+  /// @inheritdoc ISpoke
   function borrow(
     uint256 reserveId,
     uint256 amount,
@@ -302,7 +304,7 @@ abstract contract Spoke is
     return (drawnShares, amount);
   }
 
-  /// @inheritdoc ISpokeBase
+  /// @inheritdoc ISpoke
   function repay(
     uint256 reserveId,
     uint256 amount,
@@ -344,7 +346,7 @@ abstract contract Spoke is
     return (restoredShares, totalDebtRestored);
   }
 
-  /// @inheritdoc ISpokeBase
+  /// @inheritdoc ISpoke
   function liquidationCall(
     uint256 collateralReserveId,
     uint256 debtReserveId,
@@ -502,25 +504,25 @@ abstract contract Spoke is
     return _reserveCount;
   }
 
-  /// @inheritdoc ISpokeBase
+  /// @inheritdoc ISpoke
   function getReserveSuppliedAssets(uint256 reserveId) external view returns (uint256) {
     Reserve storage reserve = _reserves.get(reserveId);
     return reserve.hub.getSpokeAddedAssets(reserve.assetId, address(this));
   }
 
-  /// @inheritdoc ISpokeBase
+  /// @inheritdoc ISpoke
   function getReserveSuppliedShares(uint256 reserveId) external view returns (uint256) {
     Reserve storage reserve = _reserves.get(reserveId);
     return reserve.hub.getSpokeAddedShares(reserve.assetId, address(this));
   }
 
-  /// @inheritdoc ISpokeBase
+  /// @inheritdoc ISpoke
   function getReserveDebt(uint256 reserveId) external view returns (uint256, uint256) {
     Reserve storage reserve = _reserves.get(reserveId);
     return reserve.hub.getSpokeOwed(reserve.assetId, address(this));
   }
 
-  /// @inheritdoc ISpokeBase
+  /// @inheritdoc ISpoke
   function getReserveTotalDebt(uint256 reserveId) external view returns (uint256) {
     Reserve storage reserve = _reserves.get(reserveId);
     return reserve.hub.getSpokeTotalOwed(reserve.assetId, address(this));
@@ -570,7 +572,7 @@ abstract contract Spoke is
     return (positionStatus.isUsingAsCollateral(reserveId), positionStatus.isBorrowing(reserveId));
   }
 
-  /// @inheritdoc ISpokeBase
+  /// @inheritdoc ISpoke
   function getUserSuppliedAssets(uint256 reserveId, address user) external view returns (uint256) {
     Reserve storage reserve = _reserves.get(reserveId);
     return
@@ -580,13 +582,13 @@ abstract contract Spoke is
       );
   }
 
-  /// @inheritdoc ISpokeBase
+  /// @inheritdoc ISpoke
   function getUserSuppliedShares(uint256 reserveId, address user) external view returns (uint256) {
     _reserves.get(reserveId);
     return _userPositions[user][reserveId].suppliedShares;
   }
 
-  /// @inheritdoc ISpokeBase
+  /// @inheritdoc ISpoke
   function getUserDebt(uint256 reserveId, address user) external view returns (uint256, uint256) {
     Reserve storage reserve = _reserves.get(reserveId);
     UserPosition storage userPosition = _userPositions[user][reserveId];
@@ -597,7 +599,7 @@ abstract contract Spoke is
     return (drawnDebt, premiumDebtRay.fromRayUp());
   }
 
-  /// @inheritdoc ISpokeBase
+  /// @inheritdoc ISpoke
   function getUserTotalDebt(uint256 reserveId, address user) external view returns (uint256) {
     Reserve storage reserve = _reserves.get(reserveId);
     UserPosition storage userPosition = _userPositions[user][reserveId];
@@ -608,7 +610,7 @@ abstract contract Spoke is
     return (drawnDebt + premiumDebtRay.fromRayUp());
   }
 
-  /// @inheritdoc ISpokeBase
+  /// @inheritdoc ISpoke
   function getUserPremiumDebtRay(uint256 reserveId, address user) external view returns (uint256) {
     Reserve storage reserve = _reserves.get(reserveId);
     UserPosition storage userPosition = _userPositions[user][reserveId];
@@ -757,7 +759,8 @@ abstract contract Spoke is
           reserve.hub,
           reserve.assetId
         );
-        uint256 debtRay = debtComponents.drawnShares * debtComponents.drawnIndex +
+        uint256 debtRay = debtComponents.drawnShares *
+          debtComponents.drawnIndex +
           debtComponents.premiumDebtRay;
         accountData.totalDebtValueRay += debtRay.toValue({
           decimals: assetDecimals,
@@ -783,7 +786,8 @@ abstract contract Spoke is
 
     if (accountData.totalCollateralValue > 0) {
       accountData.avgCollateralFactor =
-        accountData.avgCollateralFactor.bpsToWad() / accountData.totalCollateralValue;
+        accountData.avgCollateralFactor.bpsToWad() /
+        accountData.totalCollateralValue;
     }
 
     // sort by collateral risk in ASC, collateral value in DESC
@@ -924,7 +928,7 @@ abstract contract Spoke is
       config.collateralFactor < PercentageMath.PERCENTAGE_FACTOR &&
         config.maxLiquidationBonus >= PercentageMath.PERCENTAGE_FACTOR &&
         config.maxLiquidationBonus.percentMulUp(config.collateralFactor) <
-          PercentageMath.PERCENTAGE_FACTOR,
+        PercentageMath.PERCENTAGE_FACTOR,
       InvalidCollateralFactorAndMaxLiquidationBonus()
     );
     require(config.liquidationFee <= PercentageMath.PERCENTAGE_FACTOR, InvalidLiquidationFee());

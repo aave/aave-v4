@@ -277,7 +277,8 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
           drawnIndex
         );
         totalAddedAssets += liquidationMetadata.debtAssetsToLiquidate;
-        uint256 aggregatedOwedRayBefore = asset.drawnShares * drawnIndex +
+        uint256 aggregatedOwedRayBefore = asset.drawnShares *
+          drawnIndex +
           premiumDebtRay +
           asset.deficitRay;
         totalAddedAssets -= (aggregatedOwedRayBefore.fromRayUp() -
@@ -300,7 +301,8 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
       );
       expectedUserAccountData.totalCollateralValue += userSuppliedValue;
       expectedUserAccountData.avgCollateralFactor +=
-        _getCollateralFactor(params.spoke, reserveId, params.user) * userSuppliedValue;
+        _getCollateralFactor(params.spoke, reserveId, params.user) *
+        userSuppliedValue;
     }
 
     for (
@@ -354,7 +356,8 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
     for (uint256 i = 0; i < list.length() && remainingDebtToCover > 0; i++) {
       (uint256 collateralRisk, uint256 collateralValue) = list.get(i);
       expectedUserAccountData.riskPremium +=
-        collateralRisk * _min(collateralValue, remainingDebtToCover);
+        collateralRisk *
+        _min(collateralValue, remainingDebtToCover);
       remainingDebtToCover -= _min(collateralValue, remainingDebtToCover);
     }
 
@@ -419,7 +422,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
     }
 
     vm.expectEmit(address(params.spoke));
-    emit ISpokeBase.LiquidationCall({
+    emit ISpoke.LiquidationCall({
       collateralReserveId: params.collateralReserveId,
       debtReserveId: params.debtReserveId,
       user: params.user,
@@ -725,7 +728,8 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
         collateralSharesToLiquidate: liquidationAmounts.collateralSharesToLiquidate,
         collateralSharesToLiquidator: liquidationAmounts.collateralSharesToLiquidator,
         debtAssetsToLiquidate: debtAssetsToLiquidate,
-        debtRayToLiquidate: liquidationAmounts.drawnSharesToLiquidate * drawnIndex +
+        debtRayToLiquidate: liquidationAmounts.drawnSharesToLiquidate *
+          drawnIndex +
           liquidationAmounts.premiumDebtRayToLiquidate,
         drawnSharesToLiquidate: liquidationAmounts.drawnSharesToLiquidate,
         premiumDebtRayToLiquidate: liquidationAmounts.premiumDebtRayToLiquidate,
@@ -755,7 +759,8 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
     uint256 debtValueRayRepaid = _convertAmountToValue(
       params.spoke,
       params.debtReserveId,
-      liquidationAmounts.drawnSharesToLiquidate * drawnIndex +
+      liquidationAmounts.drawnSharesToLiquidate *
+        drawnIndex +
         liquidationAmounts.premiumDebtRayToLiquidate
     );
 

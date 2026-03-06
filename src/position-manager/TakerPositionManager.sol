@@ -5,7 +5,7 @@ pragma solidity 0.8.28;
 import {SafeERC20, IERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
 import {MathUtils} from 'src/libraries/math/MathUtils.sol';
 import {EIP712Hash} from 'src/position-manager/libraries/EIP712Hash.sol';
-import {ISpokeBase} from 'src/spoke/interfaces/ISpokeBase.sol';
+import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 import {ITakerPositionManager} from 'src/position-manager/interfaces/ITakerPositionManager.sol';
 import {PositionManagerBase} from 'src/position-manager/PositionManagerBase.sol';
 
@@ -177,7 +177,7 @@ contract TakerPositionManager is ITakerPositionManager, PositionManagerBase {
       amount: amount
     });
 
-    (uint256 withdrawnShares, uint256 withdrawnAmount) = ISpokeBase(spoke).withdraw(
+    (uint256 withdrawnShares, uint256 withdrawnAmount) = ISpoke(spoke).withdraw(
       reserveId,
       amount,
       onBehalfOf
@@ -203,7 +203,7 @@ contract TakerPositionManager is ITakerPositionManager, PositionManagerBase {
       amount: amount
     });
 
-    (uint256 borrowedShares, uint256 borrowedAmount) = ISpokeBase(spoke).borrow(
+    (uint256 borrowedShares, uint256 borrowedAmount) = ISpoke(spoke).borrow(
       reserveId,
       amount,
       onBehalfOf

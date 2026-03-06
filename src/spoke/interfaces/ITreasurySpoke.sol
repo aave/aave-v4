@@ -3,12 +3,11 @@
 pragma solidity ^0.8.0;
 
 import {IHubBase} from 'src/hub/interfaces/IHubBase.sol';
-import {ISpokeBase} from 'src/spoke/interfaces/ISpokeBase.sol';
 
 /// @title ITreasurySpoke
 /// @author Aave Labs
 /// @notice Interface for the TreasurySpoke.
-interface ITreasurySpoke is ISpokeBase {
+interface ITreasurySpoke {
   /// @notice Thrown when an unsupported action is attempted.
   error UnsupportedAction();
 

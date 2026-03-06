@@ -56,7 +56,7 @@ import {
 } from 'src/hub/AssetInterestRateStrategy.sol';
 
 // spoke
-import {ISpoke, ISpokeBase} from 'src/spoke/interfaces/ISpoke.sol';
+import {ISpoke, ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 import {TreasurySpoke, ITreasurySpoke} from 'src/spoke/TreasurySpoke.sol';
 import {IPriceOracle} from 'src/spoke/interfaces/IPriceOracle.sol';
 import {IPriceFeed} from 'src/spoke/interfaces/IPriceFeed.sol';
