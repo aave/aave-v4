@@ -16,7 +16,7 @@ contract AssetInterestRateStrategy is IAssetInterestRateStrategy {
   using WadRayMath for *;
 
   /// @inheritdoc IAssetInterestRateStrategy
-  uint256 public constant MAX_BORROW_RATE = 1000_00;
+  uint256 public constant MAX_ALLOWED_BORROW_RATE = 1000_00;
 
   /// @inheritdoc IAssetInterestRateStrategy
   uint256 public constant MIN_OPTIMAL_RATIO = 1_00;
@@ -53,8 +53,8 @@ contract AssetInterestRateStrategy is IAssetInterestRateStrategy {
       GrowthAfterOptimalMustBeGteGrowthBeforeOptimal()
     );
     require(
-      rateData.baseRate + rateData.rateGrowthBeforeOptimal + rateData.rateGrowthAfterOptimal <=
-        MAX_BORROW_RATE,
+      rateData.baseBorrowRate + rateData.rateGrowthBeforeOptimal + rateData.rateGrowthAfterOptimal <=
+        MAX_ALLOWED_BORROW_RATE,
       InvalidMaxBorrowRate()
     );
 
@@ -64,7 +64,7 @@ contract AssetInterestRateStrategy is IAssetInterestRateStrategy {
       HUB,
       assetId,
       rateData.optimalUsageRatio,
-      rateData.baseRate,
+      rateData.baseBorrowRate,
       rateData.rateGrowthBeforeOptimal,
       rateData.rateGrowthAfterOptimal
     );
@@ -82,7 +82,7 @@ contract AssetInterestRateStrategy is IAssetInterestRateStrategy {
 
   /// @inheritdoc IAssetInterestRateStrategy
   function getBaseBorrowRate(uint256 assetId) external view returns (uint256) {
-    return _interestRateData[assetId].baseRate;
+    return _interestRateData[assetId].baseBorrowRate;
   }
 
   /// @inheritdoc IAssetInterestRateStrategy
@@ -98,7 +98,7 @@ contract AssetInterestRateStrategy is IAssetInterestRateStrategy {
   /// @inheritdoc IAssetInterestRateStrategy
   function getMaxBorrowRate(uint256 assetId) external view returns (uint256) {
     return
-      _interestRateData[assetId].baseRate +
+      _interestRateData[assetId].baseBorrowRate +
       _interestRateData[assetId].rateGrowthBeforeOptimal +
       _interestRateData[assetId].rateGrowthAfterOptimal;
   }
@@ -114,7 +114,7 @@ contract AssetInterestRateStrategy is IAssetInterestRateStrategy {
     RateData memory rateData = _interestRateData[assetId];
     require(rateData.optimalUsageRatio > 0, RateDataNotSet(assetId));
 
-    uint256 currentRateRay = rateData.baseRate.bpsToRay();
+    uint256 currentRateRay = rateData.baseBorrowRate.bpsToRay();
     if (drawn == 0) {
       return currentRateRay;
     }

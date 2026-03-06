@@ -24,7 +24,7 @@ contract SpokeAccrueLiquidityFeeEdgeCasesTest is SpokeBase {
     uint256 skipTime,
     uint256 rate
   ) public {
-    rate = bound(rate, 1, MAX_BORROW_RATE);
+    rate = bound(rate, 1, Constants.MAX_ALLOWED_BORROW_RATE);
     skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
 
     reserveId = bound(reserveId, 0, spoke1.getReserveCount() - 1);
@@ -74,7 +74,7 @@ contract SpokeAccrueLiquidityFeeEdgeCasesTest is SpokeBase {
     uint256 skipTime,
     uint256 rate
   ) public {
-    rate = bound(rate, 1, MAX_BORROW_RATE);
+    rate = bound(rate, 1, Constants.MAX_ALLOWED_BORROW_RATE);
     skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
     reserveId = bound(reserveId, 0, spoke1.getReserveCount() - 1);
     uint256 assetId = spoke1.getReserve(reserveId).assetId;

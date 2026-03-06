@@ -155,10 +155,6 @@ abstract contract Base is Test {
   uint256 internal constant MAX_SUPPLY_PRICE = 100;
   uint256 internal constant MIN_DRAWN_INDEX = WadRayMath.RAY;
   uint256 internal constant MAX_DRAWN_INDEX = 100 * WadRayMath.RAY;
-  uint24 internal constant MIN_BORROW_RATE = 0;
-  uint256 internal constant MAX_BORROW_RATE = 1000_00; // matches AssetInterestRateStrategy
-  uint256 internal constant MIN_OPTIMAL_RATIO = 1_00; // 1.00% in BPS, matches AssetInterestRateStrategy
-  uint256 internal constant MAX_OPTIMAL_RATIO = 99_00; // 99.00% in BPS, matches AssetInterestRateStrategy
   uint256 internal constant MAX_SKIP_TIME = 10_000 days;
   uint32 internal constant MIN_LIQUIDATION_BONUS = uint32(PercentageMath.PERCENTAGE_FACTOR); // 100% == 0% bonus
   uint32 internal constant MAX_LIQUIDATION_BONUS = 150_00; // 50% bonus
@@ -603,7 +599,7 @@ abstract contract Base is Test {
     bytes memory encodedIrData = abi.encode(
       IAssetInterestRateStrategy.RateData({
         optimalUsageRatio: 90_00, // 90.00%
-        baseRate: 5_00, // 5.00%
+        baseBorrowRate: 5_00, // 5.00%
         rateGrowthBeforeOptimal: 5_00, // 5.00%
         rateGrowthAfterOptimal: 5_00 // 5.00%
       })
@@ -984,7 +980,7 @@ abstract contract Base is Test {
     bytes memory encodedIrData = abi.encode(
       IAssetInterestRateStrategy.RateData({
         optimalUsageRatio: 90_00, // 90.00%
-        baseRate: 5_00, // 5.00%
+        baseBorrowRate: 5_00, // 5.00%
         rateGrowthBeforeOptimal: 5_00, // 5.00%
         rateGrowthAfterOptimal: 5_00 // 5.00%
       })
@@ -1050,7 +1046,7 @@ abstract contract Base is Test {
     bytes memory encodedIrData = abi.encode(
       IAssetInterestRateStrategy.RateData({
         optimalUsageRatio: 90_00, // 90.00%
-        baseRate: 5_00, // 5.00%
+        baseBorrowRate: 5_00, // 5.00%
         rateGrowthBeforeOptimal: 5_00, // 5.00%
         rateGrowthAfterOptimal: 5_00 // 5.00%
       })
@@ -2641,7 +2637,7 @@ abstract contract Base is Test {
     IAssetInterestRateStrategy.RateData memory b
   ) internal pure {
     assertEq(a.optimalUsageRatio, b.optimalUsageRatio, 'optimalUsageRatio');
-    assertEq(a.baseRate, b.baseRate, 'baseRate');
+    assertEq(a.baseBorrowRate, b.baseBorrowRate, 'baseBorrowRate');
     assertEq(a.rateGrowthBeforeOptimal, b.rateGrowthBeforeOptimal, 'rateGrowthBeforeOptimal');
     assertEq(a.rateGrowthAfterOptimal, b.rateGrowthAfterOptimal, 'rateGrowthAfterOptimal');
     assertEq(abi.encode(a), abi.encode(b));
@@ -2785,7 +2781,7 @@ abstract contract Base is Test {
       abi.encode(
         IAssetInterestRateStrategy.RateData({
           optimalUsageRatio: 90_00,
-          baseRate: interestRateBps,
+          baseBorrowRate: interestRateBps,
           rateGrowthBeforeOptimal: 0,
           rateGrowthAfterOptimal: 0
         })
@@ -3294,7 +3290,7 @@ abstract contract Base is Test {
       bytes memory encodedIrData = abi.encode(
         IAssetInterestRateStrategy.RateData({
           optimalUsageRatio: 90_00, // 90.00%
-          baseRate: 5_00, // 5.00%
+          baseBorrowRate: 5_00, // 5.00%
           rateGrowthBeforeOptimal: 5_00, // 5.00%
           rateGrowthAfterOptimal: 5_00 // 5.00%
         })

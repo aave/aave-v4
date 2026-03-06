@@ -25,7 +25,7 @@ contract HubAccessTest is HubBase {
     bytes memory encodedIrData = abi.encode(
       IAssetInterestRateStrategy.RateData({
         optimalUsageRatio: 90_00, // 90.00%
-        baseRate: 5_00, // 5.00%
+        baseBorrowRate: 5_00, // 5.00%
         rateGrowthBeforeOptimal: 5_00, // 5.00%
         rateGrowthAfterOptimal: 5_00 // 5.00%
       })
@@ -83,7 +83,7 @@ contract HubAccessTest is HubBase {
     bytes memory encodedIrData = abi.encode(
       IAssetInterestRateStrategy.RateData({
         optimalUsageRatio: 50_00, // 50.00% in BPS
-        baseRate: 100_00, // 100.00% in BPS
+        baseBorrowRate: 100_00, // 100.00% in BPS
         rateGrowthBeforeOptimal: 200_00, // 200.00% in BPS
         rateGrowthAfterOptimal: 300_00 // 300.00% in BPS
       })
@@ -115,7 +115,7 @@ contract HubAccessTest is HubBase {
     bytes memory encodedIrData = abi.encode(
       IAssetInterestRateStrategy.RateData({
         optimalUsageRatio: 50_00, // 50.00% in BPS
-        baseRate: 100_00, // 100.00% in BPS
+        baseBorrowRate: 100_00, // 100.00% in BPS
         rateGrowthBeforeOptimal: 200_00, // 200.00% in BPS
         rateGrowthAfterOptimal: 300_00 // 300.00% in BPS
       })
@@ -158,7 +158,7 @@ contract HubAccessTest is HubBase {
     bytes memory encodedIrData = abi.encode(
       IAssetInterestRateStrategy.RateData({
         optimalUsageRatio: 50_00, // 50.00% in BPS
-        baseRate: 100_00, // 100.00% in BPS
+        baseBorrowRate: 100_00, // 100.00% in BPS
         rateGrowthBeforeOptimal: 200_00, // 200.00% in BPS
         rateGrowthAfterOptimal: 300_00 // 300.00% in BPS
       })

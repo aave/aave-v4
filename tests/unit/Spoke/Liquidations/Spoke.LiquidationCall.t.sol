@@ -57,7 +57,9 @@ abstract contract SpokeLiquidationCallHelperTest is SpokeLiquidationCallBaseTest
       _setConstantInterestRateBps(
         _hub(spoke, i),
         _reserveAssetId(spoke, i),
-        vm.randomUint(MIN_BORROW_RATE, MAX_BORROW_RATE).toUint32()
+        vm
+          .randomUint(Constants.MIN_ALLOWED_BORROW_RATE, Constants.MAX_ALLOWED_BORROW_RATE)
+          .toUint32()
       );
     }
 
@@ -526,7 +528,7 @@ contract SpokeLiquidationCallTest_Premium is SpokeLiquidationCallHelperTest {
     _setConstantInterestRateBps(
       _hub(spoke, debtReserveId),
       _reserveAssetId(spoke, debtReserveId),
-      vm.randomUint(1, MAX_BORROW_RATE).toUint32()
+      vm.randomUint(1, Constants.MAX_ALLOWED_BORROW_RATE).toUint32()
     );
     _increaseCollateralSupply(
       spoke,

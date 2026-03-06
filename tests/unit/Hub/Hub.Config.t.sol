@@ -16,7 +16,7 @@ contract HubConfigTest is HubBase {
     encodedIrData = abi.encode(
       IAssetInterestRateStrategy.RateData({
         optimalUsageRatio: 90_00, // 90.00%
-        baseRate: 5_00, // 5.00%
+        baseBorrowRate: 5_00, // 5.00%
         rateGrowthBeforeOptimal: 5_00, // 5.00%
         rateGrowthAfterOptimal: 5_00 // 5.00%
       })
@@ -307,7 +307,7 @@ contract HubConfigTest is HubBase {
       reinvestmentController: address(0)
     });
 
-    (, uint32 baseRate, , ) = abi.decode(encodedIrData, (uint32, uint32, uint32, uint32));
+    (, uint32 baseBorrowRate, , ) = abi.decode(encodedIrData, (uint32, uint32, uint32, uint32));
 
     // feeReceiver risk premium threshold defaults to 0
     IHub.SpokeConfig memory expectedSpokeConfig = IHub.SpokeConfig({
@@ -327,7 +327,7 @@ contract HubConfigTest is HubBase {
     vm.expectEmit(address(hub1));
     emit IHub.UpdateAssetConfig(expectedAssetId, expectedConfig);
     vm.expectEmit(address(hub1));
-    emit IHub.UpdateAsset(expectedAssetId, WadRayMath.RAY, baseRate.bpsToRay(), 0);
+    emit IHub.UpdateAsset(expectedAssetId, WadRayMath.RAY, baseBorrowRate.bpsToRay(), 0);
 
     uint256 assetId = Utils.addAsset(
       hub1,

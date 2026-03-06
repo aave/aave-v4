@@ -10,12 +10,12 @@ import {IBasicInterestRateStrategy} from 'src/hub/interfaces/IBasicInterestRateS
 interface IAssetInterestRateStrategy is IBasicInterestRateStrategy {
   /// @notice Holds the interest rate data for a given asset.
   /// @dev optimalUsageRatio The optimal usage ratio, in BPS. Maximum and minimum values are defined by `MAX_OPTIMAL_RATIO` and `MIN_OPTIMAL_RATIO`.
-  /// @dev baseRate The base rate, in BPS.
+  /// @dev baseBorrowRate The base rate, in BPS.
   /// @dev rateGrowthBeforeOptimal The rate growth before the optimal usage ratio, in BPS.
   /// @dev rateGrowthAfterOptimal The rate growth after the optimal usage ratio, in BPS.
   struct RateData {
     uint16 optimalUsageRatio;
-    uint32 baseRate;
+    uint32 baseBorrowRate;
     uint32 rateGrowthBeforeOptimal;
     uint32 rateGrowthAfterOptimal;
   }
@@ -24,14 +24,14 @@ interface IAssetInterestRateStrategy is IBasicInterestRateStrategy {
   /// @param hub The address of the associated Hub.
   /// @param assetId The identifier of the asset whose interest rate data is updated.
   /// @param optimalUsageRatio The optimal usage ratio, in BPS.
-  /// @param baseRate The base rate, in BPS.
+  /// @param baseBorrowRate The base rate, in BPS.
   /// @param rateGrowthBeforeOptimal The rate growth before the optimal usage ratio, in BPS.
   /// @param rateGrowthAfterOptimal The rate growth after the optimal usage ratio, in BPS.
   event UpdateRateData(
     address indexed hub,
     uint256 indexed assetId,
     uint256 optimalUsageRatio,
-    uint256 baseRate,
+    uint256 baseBorrowRate,
     uint256 rateGrowthBeforeOptimal,
     uint256 rateGrowthAfterOptimal
   );
@@ -42,7 +42,7 @@ interface IAssetInterestRateStrategy is IBasicInterestRateStrategy {
   /// @notice Thrown when the caller is not the Hub.
   error OnlyHub();
 
-  /// @notice Thrown when the max possible rate is greater than `MAX_BORROW_RATE`.
+  /// @notice Thrown when the max possible rate is greater than `MAX_ALLOWED_BORROW_RATE`.
   error InvalidMaxBorrowRate();
 
   /// @notice Thrown when growth after optimal is less than growth before optimal.
@@ -83,9 +83,9 @@ interface IAssetInterestRateStrategy is IBasicInterestRateStrategy {
   /// @return The maximum borrow rate, in BPS.
   function getMaxBorrowRate(uint256 assetId) external view returns (uint256);
 
-  /// @notice Returns the maximum value achievable for the borrow rate.
+  /// @notice Returns the maximum allowed value for a borrow rate.
   /// @return The maximum borrow rate, in BPS.
-  function MAX_BORROW_RATE() external view returns (uint256);
+  function MAX_ALLOWED_BORROW_RATE() external view returns (uint256);
 
   /// @notice Returns the minimum optimal usage ratio.
   /// @return The minimum optimal usage ratio, in BPS.

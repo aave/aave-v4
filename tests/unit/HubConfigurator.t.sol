@@ -27,7 +27,7 @@ contract HubConfiguratorTest is HubBase {
     _encodedIrData = abi.encode(
       IAssetInterestRateStrategy.RateData({
         optimalUsageRatio: 90_00, // 90.00%
-        baseRate: 5_00, // 5.00%
+        baseBorrowRate: 5_00, // 5.00%
         rateGrowthBeforeOptimal: 5_00, // 5.00%
         rateGrowthAfterOptimal: 5_00 // 5.00%
       })
@@ -174,7 +174,7 @@ contract HubConfiguratorTest is HubBase {
     address feeReceiver,
     uint256 liquidityFee,
     uint16 optimalUsageRatio,
-    uint32 baseRate,
+    uint32 baseBorrowRate,
     uint32 rateGrowthBeforeOptimal,
     uint32 rateGrowthAfterOptimal
   ) public {
@@ -186,16 +186,16 @@ contract HubConfiguratorTest is HubBase {
       Constants.MIN_ALLOWED_UNDERLYING_DECIMALS,
       Constants.MAX_ALLOWED_UNDERLYING_DECIMALS
     ).toUint8();
-    optimalUsageRatio = bound(optimalUsageRatio, MIN_OPTIMAL_RATIO, MAX_OPTIMAL_RATIO).toUint16();
+    optimalUsageRatio = bound(optimalUsageRatio, Constants.MIN_OPTIMAL_RATIO, Constants.MAX_OPTIMAL_RATIO).toUint16();
     liquidityFee = bound(liquidityFee, 0, PercentageMath.PERCENTAGE_FACTOR);
 
-    baseRate = bound(baseRate, 0, MAX_BORROW_RATE / 3).toUint32();
-    uint32 remainingAfterBase = MAX_BORROW_RATE.toUint32() - baseRate;
+    baseBorrowRate = bound(baseBorrowRate, 0, Constants.MAX_ALLOWED_BORROW_RATE / 3).toUint32();
+    uint32 remainingAfterBase = Constants.MAX_ALLOWED_BORROW_RATE.toUint32() - baseBorrowRate;
     rateGrowthBeforeOptimal = bound(rateGrowthBeforeOptimal, 0, remainingAfterBase / 2).toUint32();
     rateGrowthAfterOptimal = bound(
       rateGrowthAfterOptimal,
       rateGrowthBeforeOptimal,
-      MAX_BORROW_RATE - baseRate - rateGrowthBeforeOptimal
+      Constants.MAX_ALLOWED_BORROW_RATE - baseBorrowRate - rateGrowthBeforeOptimal
     ).toUint32();
 
     uint256 expectedAssetId = hub1.getAssetCount();
@@ -204,7 +204,7 @@ contract HubConfiguratorTest is HubBase {
     _encodedIrData = abi.encode(
       IAssetInterestRateStrategy.RateData({
         optimalUsageRatio: optimalUsageRatio,
-        baseRate: baseRate,
+        baseBorrowRate: baseBorrowRate,
         rateGrowthBeforeOptimal: rateGrowthBeforeOptimal,
         rateGrowthAfterOptimal: rateGrowthAfterOptimal
       })
@@ -1140,7 +1140,7 @@ contract HubConfiguratorTest is HubBase {
   function test_updateRateData() public {
     IAssetInterestRateStrategy.RateData memory newIrData = IAssetInterestRateStrategy.RateData({
       optimalUsageRatio: 90_00, // 90.00%
-      baseRate: 5_00, // 5.00%
+      baseBorrowRate: 5_00, // 5.00%
       rateGrowthBeforeOptimal: 5_00, // 5.00%
       rateGrowthAfterOptimal: 5_00 // 5.00%
     });

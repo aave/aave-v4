@@ -78,7 +78,7 @@ contract HubConfiguratorGranularAccessControlTest is HubBase {
     encodedIrData = abi.encode(
       IAssetInterestRateStrategy.RateData({
         optimalUsageRatio: 90_00,
-        baseRate: 5_00,
+        baseBorrowRate: 5_00,
         rateGrowthBeforeOptimal: 5_00,
         rateGrowthAfterOptimal: 5_00
       })

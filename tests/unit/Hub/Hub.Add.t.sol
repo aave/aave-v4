@@ -27,7 +27,7 @@ contract HubAddTest is HubBase {
     bytes memory encodedIrData = abi.encode(
       IAssetInterestRateStrategy.RateData({
         optimalUsageRatio: 90_00, // 90.00%
-        baseRate: 5_00, // 5.00%
+        baseBorrowRate: 5_00, // 5.00%
         rateGrowthBeforeOptimal: 5_00, // 5.00%
         rateGrowthAfterOptimal: 5_00 // 5.00%
       })

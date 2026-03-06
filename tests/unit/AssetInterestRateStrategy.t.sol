@@ -20,7 +20,7 @@ contract AssetInterestRateStrategyTest is Base {
 
     rateData = IAssetInterestRateStrategy.RateData({
       optimalUsageRatio: 80_00, // 80.00%
-      baseRate: 2_00, // 2_00%
+      baseBorrowRate: 2_00, // 2_00%
       rateGrowthBeforeOptimal: 4_00, // 4.00%
       rateGrowthAfterOptimal: 75_00 // 75.00%
     });
@@ -36,7 +36,7 @@ contract AssetInterestRateStrategyTest is Base {
   }
 
   function test_maxBorrowRate() public view {
-    assertEq(rateStrategy.MAX_BORROW_RATE(), 1000_00);
+    assertEq(rateStrategy.MAX_ALLOWED_BORROW_RATE(), Constants.MAX_ALLOWED_BORROW_RATE);
   }
 
   function test_minOptimalRatio() public view {
@@ -56,7 +56,7 @@ contract AssetInterestRateStrategyTest is Base {
   }
 
   function test_getBaseBorrowRate() public view {
-    assertEq(rateStrategy.getBaseBorrowRate(mockAssetId), rateData.baseRate);
+    assertEq(rateStrategy.getBaseBorrowRate(mockAssetId), rateData.baseBorrowRate);
   }
 
   function test_getRateGrowthBeforeOptimal() public view {
@@ -73,7 +73,7 @@ contract AssetInterestRateStrategyTest is Base {
   function test_getMaxBorrowRate() public view {
     assertEq(
       rateStrategy.getMaxBorrowRate(mockAssetId),
-      rateData.baseRate + rateData.rateGrowthBeforeOptimal + rateData.rateGrowthAfterOptimal
+      rateData.baseBorrowRate + rateData.rateGrowthBeforeOptimal + rateData.rateGrowthAfterOptimal
     );
   }
 
@@ -111,8 +111,9 @@ contract AssetInterestRateStrategyTest is Base {
   }
 
   function test_setRateData_revertsWith_InvalidMaxBorrowRate() public {
-    rateData.baseRate = rateData.rateGrowthBeforeOptimal = rateData.rateGrowthAfterOptimal =
-      rateStrategy.MAX_BORROW_RATE().toUint32() / 3 +
+    rateData.baseBorrowRate = rateData.rateGrowthBeforeOptimal = rateData.rateGrowthAfterOptimal =
+      rateStrategy.MAX_ALLOWED_BORROW_RATE().toUint32() /
+      3 +
       1;
     encodedRateData = abi.encode(rateData);
     vm.expectRevert(IAssetInterestRateStrategy.InvalidMaxBorrowRate.selector);
@@ -130,7 +131,7 @@ contract AssetInterestRateStrategyTest is Base {
   function test_setRateData() public {
     rateData = IAssetInterestRateStrategy.RateData({
       optimalUsageRatio: 60_00, // 60.00%
-      baseRate: 4_00, // 4_00%
+      baseBorrowRate: 4_00, // 4_00%
       rateGrowthBeforeOptimal: 2_00, // 2.00%
       rateGrowthAfterOptimal: 30_00 // 30.00%
     });
@@ -141,7 +142,7 @@ contract AssetInterestRateStrategyTest is Base {
       address(hub1),
       mockAssetId,
       rateData.optimalUsageRatio,
-      rateData.baseRate,
+      rateData.baseBorrowRate,
       rateData.rateGrowthBeforeOptimal,
       rateData.rateGrowthAfterOptimal
     );
@@ -182,7 +183,7 @@ contract AssetInterestRateStrategyTest is Base {
       swept: 0
     });
 
-    assertEq(variableBorrowRate, rateData.baseRate.bpsToRay());
+    assertEq(variableBorrowRate, rateData.baseBorrowRate.bpsToRay());
   }
 
   function test_calculateInterestRate_ZeroDebtZeroLiquidity() public view {
@@ -207,7 +208,7 @@ contract AssetInterestRateStrategyTest is Base {
       swept: swept
     });
 
-    uint256 expectedVariableRate = rateData.baseRate.bpsToRay() +
+    uint256 expectedVariableRate = rateData.baseBorrowRate.bpsToRay() +
       rateData.rateGrowthBeforeOptimal.bpsToRay().rayMulUp(utilizationRatioRay).rayDivUp(
         rateData.optimalUsageRatio.bpsToRay()
       );
@@ -242,7 +243,7 @@ contract AssetInterestRateStrategyTest is Base {
       swept: swept
     });
 
-    uint256 expectedVariableRate = rateData.baseRate.bpsToRay() +
+    uint256 expectedVariableRate = rateData.baseBorrowRate.bpsToRay() +
       rateData.rateGrowthBeforeOptimal.bpsToRay() +
       rateData
         .rateGrowthAfterOptimal

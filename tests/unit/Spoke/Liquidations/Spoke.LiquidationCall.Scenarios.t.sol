@@ -155,7 +155,7 @@ contract SpokeLiquidationCallScenariosTest is SpokeLiquidationCallBaseTest {
       abi.encode(
         IAssetInterestRateStrategy.RateData({
           optimalUsageRatio: 90_00,
-          baseRate: 3_00,
+          baseBorrowRate: 3_00,
           rateGrowthBeforeOptimal: 0,
           rateGrowthAfterOptimal: 0
         })
@@ -257,7 +257,7 @@ contract SpokeLiquidationCallScenariosTest is SpokeLiquidationCallBaseTest {
       abi.encode(
         IAssetInterestRateStrategy.RateData({
           optimalUsageRatio: 90_00,
-          baseRate: 3_00,
+          baseBorrowRate: 3_00,
           rateGrowthBeforeOptimal: 0,
           rateGrowthAfterOptimal: 0
         })
