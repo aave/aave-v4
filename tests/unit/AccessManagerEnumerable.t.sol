@@ -292,7 +292,7 @@ contract AccessManagerEnumerableTest is Test {
     uint64 newRole1 = 111;
     uint64 newRole2 = 222;
     uint64 newRole3 = 333;
-    assertEq(accessManagerEnumerable.getAdminRoleCount(), 0);
+    assertEq(accessManagerEnumerable.getRoleCount(), 0);
 
     vm.startPrank(ADMIN);
     accessManagerEnumerable.setRoleGuardian(newRole1, GUARDIAN_ROLE_1);
@@ -534,6 +534,8 @@ contract AccessManagerEnumerableTest is Test {
     selectors[1] = selector2;
     selectors[2] = selector3;
 
+    assertEq(accessManagerEnumerable.getRoleCount(), 0);
+
     vm.startPrank(ADMIN);
     accessManagerEnumerable.labelRole(roleId, 'test_role');
 
@@ -564,6 +566,12 @@ contract AccessManagerEnumerableTest is Test {
     );
     assertEq(roleTargets.length, 1);
     assertEq(roleTargets[0], target);
+
+    uint64[] memory roleList = accessManagerEnumerable.getRoles(0, 1);
+    assertEq(accessManagerEnumerable.getRoleCount(), 1);
+    assertEq(roleList.length, 1);
+    assertEq(roleList[0], roleId);
+    assertEq(accessManagerEnumerable.getRole(0), roleId);
   }
 
   function test_setTargetFunctionRole_withReplace() public {
@@ -580,6 +588,8 @@ contract AccessManagerEnumerableTest is Test {
     selectors[2] = selector3;
     bytes4[] memory updatedSelectors = new bytes4[](1);
     updatedSelectors[0] = selector2;
+
+    assertEq(accessManagerEnumerable.getRoleCount(), 0);
 
     vm.startPrank(ADMIN);
     accessManagerEnumerable.labelRole(roleId, 'test_role');
@@ -649,6 +659,14 @@ contract AccessManagerEnumerableTest is Test {
     );
     assertEq(roleTargets.length, 1);
     assertEq(roleTargets[0], target);
+
+    uint64[] memory roleList = accessManagerEnumerable.getRoles(0, 2);
+    assertEq(accessManagerEnumerable.getRoleCount(), 2);
+    assertEq(roleList.length, 2);
+    assertEq(roleList[0], roleId);
+    assertEq(roleList[1], roleId2);
+    assertEq(accessManagerEnumerable.getRole(0), roleId);
+    assertEq(accessManagerEnumerable.getRole(1), roleId2);
   }
 
   function test_setTargetFunctionRole_multipleTargets() public {
@@ -670,6 +688,8 @@ contract AccessManagerEnumerableTest is Test {
     selectors[1] = selector2;
     selectors[2] = selector3;
 
+    assertEq(accessManagerEnumerable.getRoleCount(), 0);
+
     vm.startPrank(ADMIN);
     accessManagerEnumerable.setTargetFunctionRole(target1, selectors, roleId);
     accessManagerEnumerable.setTargetFunctionRole(target2, selectors, roleId);
@@ -689,6 +709,12 @@ contract AccessManagerEnumerableTest is Test {
     assertEq(roleTargets[0], target1);
     assertEq(roleTargets[1], target2);
     assertEq(roleTargets[2], target3);
+
+    uint64[] memory roleList = accessManagerEnumerable.getRoles(0, 1);
+    assertEq(accessManagerEnumerable.getRoleCount(), 1);
+    assertEq(roleList.length, 1);
+    assertEq(roleList[0], roleId);
+    assertEq(accessManagerEnumerable.getRole(0), roleId);
   }
 
   function test_setTargetFunctionRole_removeTarget() public {
@@ -744,6 +770,14 @@ contract AccessManagerEnumerableTest is Test {
     assertEq(roleTargets.length, 2);
     assertEq(roleTargets[0], target1);
     assertEq(roleTargets[1], target3);
+
+    uint64[] memory roleList = accessManagerEnumerable.getRoles(0, 2);
+    assertEq(accessManagerEnumerable.getRoleCount(), 2);
+    assertEq(roleList.length, 2);
+    assertEq(roleList[0], roleId);
+    assertEq(roleList[1], otherRoleId);
+    assertEq(accessManagerEnumerable.getRole(0), roleId);
+    assertEq(accessManagerEnumerable.getRole(1), otherRoleId);
   }
 
   function test_setTargetFunctionRole_skipAddToAdminRole() public {
@@ -759,6 +793,23 @@ contract AccessManagerEnumerableTest is Test {
 
     // should not track selectors for ADMIN_ROLE
     assertEq(accessManagerEnumerable.getRoleTargetSelectorCount(roleId, target), 0);
+    assertEq(accessManagerEnumerable.getRoleCount(), 0);
+  }
+
+  function test_setTargetFunctionRole_skipAddPublicRole() public {
+    uint64 roleId = accessManagerEnumerable.PUBLIC_ROLE();
+    address target = makeAddr('target');
+    bytes4 selector = bytes4(keccak256('function()'));
+
+    bytes4[] memory selectors = new bytes4[](1);
+    selectors[0] = selector;
+
+    vm.prank(ADMIN);
+    accessManagerEnumerable.setTargetFunctionRole(target, selectors, roleId);
+
+    // should track selectors for PUBLIC_ROLE but not track PUBLIC_ROLE itself
+    assertEq(accessManagerEnumerable.getRoleTargetSelectorCount(roleId, target), 1);
+    assertEq(accessManagerEnumerable.getRoleCount(), 0);
   }
 
   function test_getRoleMembers_fuzz(uint256 startIndex, uint256 endIndex) public {

@@ -10,7 +10,7 @@ contract SpokeUpgradeableTest is SpokeBase {
 
   function setUp() public override {
     super.setUp();
-    vm.mockCall(oracle, abi.encodeCall(IPriceOracle.DECIMALS, ()), abi.encode(8));
+    vm.mockCall(oracle, abi.encodeCall(IPriceOracle.decimals, ()), abi.encode(8));
   }
 
   function test_implementation_constructor_fuzz(uint64 revision) public {
