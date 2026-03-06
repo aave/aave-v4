@@ -121,6 +121,7 @@ interface ISpoke is ISpokeBase, IAccessManaged, IIntentConsumer, IExtSload, IMul
   }
 
   /// @notice User account data describing a user position and its health.
+  /// @dev A unit of "Value" is a WAD-scaled, oracle-price-denominated unit (typically USD), computed as `amount * price * 10^(18 - decimals)`.
   /// @dev riskPremium The risk premium of the user position, expressed in BPS.
   /// @dev avgCollateralFactor The weighted average collateral factor of the user position, expressed in WAD.
   /// @dev healthFactor The health factor of the user position, expressed in WAD. 1e18 represents a health factor of 1.00.
@@ -556,5 +557,6 @@ interface ISpoke is ISpokeBase, IAccessManaged, IIntentConsumer, IExtSload, IMul
   function ORACLE() external view returns (address);
 
   /// @notice Returns the maximum allowed number of collateral and borrow reserves per user (each counted separately).
+  /// @dev A value of `type(uint16).max` means the limit is disabled and users can have unlimited positions.
   function MAX_USER_RESERVES_LIMIT() external view returns (uint16);
 }
