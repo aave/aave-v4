@@ -329,7 +329,7 @@ contract HubDrawTest is HubBase {
   ) public {
     drawCap = bound(drawCap, 1, MAX_SUPPLY_AMOUNT / 10 ** tokenList.dai.decimals()).toUint40();
     uint256 daiAmount = drawCap * 10 ** tokenList.dai.decimals() - 1;
-    rate = bound(rate, 1, MAX_BORROW_RATE);
+    rate = bound(rate, 1, MAX_RATE);
     skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
 
     updateDrawCap(hub1, daiAssetId, address(spoke1), drawCap);

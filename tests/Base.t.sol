@@ -155,8 +155,8 @@ abstract contract Base is Test {
   uint256 internal constant MAX_SUPPLY_PRICE = 100;
   uint256 internal constant MIN_DRAWN_INDEX = WadRayMath.RAY;
   uint256 internal constant MAX_DRAWN_INDEX = 100 * WadRayMath.RAY;
-  uint24 internal constant MIN_BORROW_RATE = 0;
-  uint256 internal constant MAX_BORROW_RATE = 1000_00; // matches AssetInterestRateStrategy
+  uint24 internal constant MIN_RATE = 0;
+  uint256 internal constant MAX_RATE = 1000_00; // matches AssetInterestRateStrategy
   uint256 internal constant MIN_OPTIMAL_RATIO = 1_00; // 1.00% in BPS, matches AssetInterestRateStrategy
   uint256 internal constant MAX_OPTIMAL_RATIO = 99_00; // 99.00% in BPS, matches AssetInterestRateStrategy
   uint256 internal constant MAX_SKIP_TIME = 10_000 days;
@@ -400,7 +400,7 @@ abstract contract Base is Test {
       selectors[1] = IHub.updateAssetConfig.selector;
       selectors[2] = IHub.addSpoke.selector;
       selectors[3] = IHub.updateSpokeConfig.selector;
-      selectors[4] = IHub.setInterestRateData.selector;
+      selectors[4] = IHub.setRateData.selector;
       selectors[5] = IHub.mintFeeShares.selector;
       manager.setTargetFunctionRole(address(targetHub), selectors, Roles.HUB_ADMIN_ROLE);
     }
@@ -444,7 +444,7 @@ abstract contract Base is Test {
     selectors[16] = IHubConfigurator.deactivateSpoke.selector;
     selectors[17] = IHubConfigurator.haltSpoke.selector;
     selectors[18] = IHubConfigurator.resetSpokeCaps.selector;
-    selectors[19] = IHubConfigurator.updateInterestRateData.selector;
+    selectors[19] = IHubConfigurator.updateRateData.selector;
     selectors[20] = IHubConfigurator.addAsset.selector;
     selectors[21] = IHubConfigurator.addAssetWithDecimals.selector;
     IAccessManager(manager).setTargetFunctionRole(
@@ -601,11 +601,11 @@ abstract contract Base is Test {
     });
 
     bytes memory encodedIrData = abi.encode(
-      IAssetInterestRateStrategy.InterestRateData({
+      IAssetInterestRateStrategy.RateData({
         optimalUsageRatio: 90_00, // 90.00%
-        baseVariableBorrowRate: 5_00, // 5.00%
-        variableRateSlope1: 5_00, // 5.00%
-        variableRateSlope2: 5_00 // 5.00%
+        baseRate: 5_00, // 5.00%
+        rateGrowthBeforeOptimal: 5_00, // 5.00%
+        rateGrowthAfterOptimal: 5_00 // 5.00%
       })
     );
 
@@ -982,11 +982,11 @@ abstract contract Base is Test {
 
     // Configure IR Strategy for hub 2
     bytes memory encodedIrData = abi.encode(
-      IAssetInterestRateStrategy.InterestRateData({
+      IAssetInterestRateStrategy.RateData({
         optimalUsageRatio: 90_00, // 90.00%
-        baseVariableBorrowRate: 5_00, // 5.00%
-        variableRateSlope1: 5_00, // 5.00%
-        variableRateSlope2: 5_00 // 5.00%
+        baseRate: 5_00, // 5.00%
+        rateGrowthBeforeOptimal: 5_00, // 5.00%
+        rateGrowthAfterOptimal: 5_00 // 5.00%
       })
     );
 
@@ -1048,11 +1048,11 @@ abstract contract Base is Test {
 
     // Configure IR Strategy for hub 3
     bytes memory encodedIrData = abi.encode(
-      IAssetInterestRateStrategy.InterestRateData({
+      IAssetInterestRateStrategy.RateData({
         optimalUsageRatio: 90_00, // 90.00%
-        baseVariableBorrowRate: 5_00, // 5.00%
-        variableRateSlope1: 5_00, // 5.00%
-        variableRateSlope2: 5_00 // 5.00%
+        baseRate: 5_00, // 5.00%
+        rateGrowthBeforeOptimal: 5_00, // 5.00%
+        rateGrowthAfterOptimal: 5_00 // 5.00%
       })
     );
 
@@ -2637,13 +2637,13 @@ abstract contract Base is Test {
   }
 
   function assertEq(
-    IAssetInterestRateStrategy.InterestRateData memory a,
-    IAssetInterestRateStrategy.InterestRateData memory b
+    IAssetInterestRateStrategy.RateData memory a,
+    IAssetInterestRateStrategy.RateData memory b
   ) internal pure {
     assertEq(a.optimalUsageRatio, b.optimalUsageRatio, 'optimalUsageRatio');
-    assertEq(a.baseVariableBorrowRate, b.baseVariableBorrowRate, 'baseVariableBorrowRate');
-    assertEq(a.variableRateSlope1, b.variableRateSlope1, 'variableRateSlope1');
-    assertEq(a.variableRateSlope2, b.variableRateSlope2, 'variableRateSlope2');
+    assertEq(a.baseRate, b.baseRate, 'baseRate');
+    assertEq(a.rateGrowthBeforeOptimal, b.rateGrowthBeforeOptimal, 'rateGrowthBeforeOptimal');
+    assertEq(a.rateGrowthAfterOptimal, b.rateGrowthAfterOptimal, 'rateGrowthAfterOptimal');
     assertEq(abi.encode(a), abi.encode(b));
   }
 
@@ -2780,14 +2780,14 @@ abstract contract Base is Test {
 
   function _setConstantInterestRateBps(IHub hub, uint256 assetId, uint32 interestRateBps) internal {
     vm.prank(HUB_ADMIN);
-    hub.setInterestRateData(
+    hub.setRateData(
       assetId,
       abi.encode(
-        IAssetInterestRateStrategy.InterestRateData({
+        IAssetInterestRateStrategy.RateData({
           optimalUsageRatio: 90_00,
-          baseVariableBorrowRate: interestRateBps,
-          variableRateSlope1: 0,
-          variableRateSlope2: 0
+          baseRate: interestRateBps,
+          rateGrowthBeforeOptimal: 0,
+          rateGrowthAfterOptimal: 0
         })
       )
     );
@@ -3292,11 +3292,11 @@ abstract contract Base is Test {
       });
 
       bytes memory encodedIrData = abi.encode(
-        IAssetInterestRateStrategy.InterestRateData({
+        IAssetInterestRateStrategy.RateData({
           optimalUsageRatio: 90_00, // 90.00%
-          baseVariableBorrowRate: 5_00, // 5.00%
-          variableRateSlope1: 5_00, // 5.00%
-          variableRateSlope2: 5_00 // 5.00%
+          baseRate: 5_00, // 5.00%
+          rateGrowthBeforeOptimal: 5_00, // 5.00%
+          rateGrowthAfterOptimal: 5_00 // 5.00%
         })
       );
 

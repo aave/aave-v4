@@ -20,12 +20,12 @@ contract SpokeMultipleHubBase is SpokeBase {
       maxLiquidationBonus: 100_00, // 100.00%
       liquidationFee: 0 // 0.00%
     });
-  IAssetInterestRateStrategy.InterestRateData internal irData =
-    IAssetInterestRateStrategy.InterestRateData({
+  IAssetInterestRateStrategy.RateData internal irData =
+    IAssetInterestRateStrategy.RateData({
       optimalUsageRatio: 90_00, // 90.00%
-      baseVariableBorrowRate: 5_00, // 5.00%
-      variableRateSlope1: 5_00, // 5.00%
-      variableRateSlope2: 5_00 // 5.00%
+      baseRate: 5_00, // 5.00%
+      rateGrowthBeforeOptimal: 5_00, // 5.00%
+      rateGrowthAfterOptimal: 5_00 // 5.00%
     });
   bytes internal encodedIrData = abi.encode(irData);
 

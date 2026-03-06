@@ -14,11 +14,11 @@ contract HubConfigTest is HubBase {
   function setUp() public virtual override {
     super.setUp();
     encodedIrData = abi.encode(
-      IAssetInterestRateStrategy.InterestRateData({
+      IAssetInterestRateStrategy.RateData({
         optimalUsageRatio: 90_00, // 90.00%
-        baseVariableBorrowRate: 5_00, // 5.00%
-        variableRateSlope1: 5_00, // 5.00%
-        variableRateSlope2: 5_00 // 5.00%
+        baseRate: 5_00, // 5.00%
+        rateGrowthBeforeOptimal: 5_00, // 5.00%
+        rateGrowthAfterOptimal: 5_00 // 5.00%
       })
     );
   }
@@ -307,7 +307,7 @@ contract HubConfigTest is HubBase {
       reinvestmentController: address(0)
     });
 
-    (, uint32 baseVariableBorrowRate, , ) = abi.decode(
+    (, uint32 baseRate, , ) = abi.decode(
       encodedIrData,
       (uint32, uint32, uint32, uint32)
     );
@@ -330,7 +330,7 @@ contract HubConfigTest is HubBase {
     vm.expectEmit(address(hub1));
     emit IHub.UpdateAssetConfig(expectedAssetId, expectedConfig);
     vm.expectEmit(address(hub1));
-    emit IHub.UpdateAsset(expectedAssetId, WadRayMath.RAY, baseVariableBorrowRate.bpsToRay(), 0);
+    emit IHub.UpdateAsset(expectedAssetId, WadRayMath.RAY, baseRate.bpsToRay(), 0);
 
     uint256 assetId = Utils.addAsset(
       hub1,
@@ -431,7 +431,7 @@ contract HubConfigTest is HubBase {
 
     vm.mockCall(
       newConfig.irStrategy,
-      abi.encodeCall(IBasicInterestRateStrategy.setInterestRateData, (assetId, encodedIrData)),
+      abi.encodeCall(IBasicInterestRateStrategy.setRateData, (assetId, encodedIrData)),
       new bytes(0)
     );
     vm.mockCallRevert(
@@ -445,7 +445,7 @@ contract HubConfigTest is HubBase {
     hub1.updateAssetConfig(assetId, newConfig, encodedIrData);
   }
 
-  function test_updateAssetConfig_fuzz_revertsWith_setInterestRateDataReverts(
+  function test_updateAssetConfig_fuzz_revertsWith_setRateDataReverts(
     uint256 assetId,
     IHub.AssetConfig memory newConfig
   ) public {
@@ -456,7 +456,7 @@ contract HubConfigTest is HubBase {
 
     vm.mockCallRevert(
       newConfig.irStrategy,
-      abi.encodeCall(IBasicInterestRateStrategy.setInterestRateData, (assetId, encodedIrData)),
+      abi.encodeCall(IBasicInterestRateStrategy.setRateData, (assetId, encodedIrData)),
       'custom revert'
     );
 
@@ -471,7 +471,7 @@ contract HubConfigTest is HubBase {
     _mockInterestRateBps(newConfig.irStrategy, 5_00);
     vm.mockCall(
       newConfig.irStrategy,
-      abi.encodeCall(IBasicInterestRateStrategy.setInterestRateData, (assetId, encodedIrData)),
+      abi.encodeCall(IBasicInterestRateStrategy.setRateData, (assetId, encodedIrData)),
       new bytes(0)
     );
 
@@ -540,12 +540,12 @@ contract HubConfigTest is HubBase {
     vm.expectEmit(address(hub1));
     emit IHub.UpdateAssetConfig(assetId, newConfig);
 
-    // if ir strategy is new, expect an emit of setInterestRateData
+    // if ir strategy is new, expect an emit of setRateData
     bool isNewIrStrategy = newConfig.irStrategy != hub1.getAsset(assetId).irStrategy;
     if (isNewIrStrategy) {
       vm.expectCall(
         newConfig.irStrategy,
-        abi.encodeCall(IBasicInterestRateStrategy.setInterestRateData, (assetId, encodedIrData))
+        abi.encodeCall(IBasicInterestRateStrategy.setRateData, (assetId, encodedIrData))
       );
     }
 
@@ -810,7 +810,7 @@ contract HubConfigTest is HubBase {
 
     vm.expectCall(
       address(newIrStrategy),
-      abi.encodeCall(IBasicInterestRateStrategy.setInterestRateData, (assetId, encodedIrData)),
+      abi.encodeCall(IBasicInterestRateStrategy.setRateData, (assetId, encodedIrData)),
       1
     );
     Utils.updateAssetConfig(hub1, ADMIN, assetId, config, encodedIrData);

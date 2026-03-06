@@ -83,7 +83,7 @@ contract Hub is IHub, AccessManaged {
     uint256 assetId = _assetCount++;
     _underlyingToAssetId[underlying] = assetId;
 
-    IBasicInterestRateStrategy(irStrategy).setInterestRateData(assetId, irData);
+    IBasicInterestRateStrategy(irStrategy).setRateData(assetId, irData);
     uint256 drawnRate = IBasicInterestRateStrategy(irStrategy).calculateInterestRate({
       assetId: assetId,
       liquidity: 0,
@@ -163,7 +163,7 @@ contract Hub is IHub, AccessManaged {
 
     if (config.irStrategy != asset.irStrategy) {
       asset.irStrategy = config.irStrategy;
-      IBasicInterestRateStrategy(config.irStrategy).setInterestRateData(assetId, irData);
+      IBasicInterestRateStrategy(config.irStrategy).setRateData(assetId, irData);
     } else {
       require(irData.length == 0, InvalidInterestRateStrategy());
     }
@@ -197,11 +197,11 @@ contract Hub is IHub, AccessManaged {
   }
 
   /// @inheritdoc IHub
-  function setInterestRateData(uint256 assetId, bytes calldata irData) external restricted {
+  function setRateData(uint256 assetId, bytes calldata irData) external restricted {
     require(assetId < _assetCount, AssetNotListed());
     Asset storage asset = _assets[assetId];
     asset.accrue();
-    IBasicInterestRateStrategy(asset.irStrategy).setInterestRateData(assetId, irData);
+    IBasicInterestRateStrategy(asset.irStrategy).setRateData(assetId, irData);
     asset.updateDrawnRate(assetId);
   }
 

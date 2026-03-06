@@ -302,7 +302,7 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
       onBehalfOf: bob
     });
 
-    // usage ratio is ~45%, which is ~half to the kink point of 90%
+    // usage ratio is ~45%, which is ~half to the optimal point of 90%
     // borrow rate ~= base borrow rate (5%) + slope1 (5%) / 2
     assertApproxEqAbs(hub1.getAsset(wethAssetId).drawnRate, uint256(7_50).bpsToRay(), 1e18);
 

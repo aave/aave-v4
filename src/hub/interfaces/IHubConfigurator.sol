@@ -216,5 +216,5 @@ interface IHubConfigurator {
   /// @param hub The address of the Hub.
   /// @param assetId The identifier of the asset.
   /// @param irData The interest rate data to apply to the given asset, encoded in bytes.
-  function updateInterestRateData(address hub, uint256 assetId, bytes calldata irData) external;
+  function updateRateData(address hub, uint256 assetId, bytes calldata irData) external;
 }

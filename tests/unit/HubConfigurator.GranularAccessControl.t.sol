@@ -49,7 +49,7 @@ contract HubConfiguratorGranularAccessControlTest is HubBase {
     assetSelectors[4] = IHubConfigurator.updateFeeConfig.selector;
     assetSelectors[5] = IHubConfigurator.updateInterestRateStrategy.selector;
     assetSelectors[6] = IHubConfigurator.updateReinvestmentController.selector;
-    assetSelectors[7] = IHubConfigurator.updateInterestRateData.selector;
+    assetSelectors[7] = IHubConfigurator.updateRateData.selector;
     assetSelectors[8] = IHubConfigurator.resetAssetCaps.selector;
     assetSelectors[9] = IHubConfigurator.deactivateAsset.selector;
     assetSelectors[10] = IHubConfigurator.haltAsset.selector;
@@ -76,11 +76,11 @@ contract HubConfiguratorGranularAccessControlTest is HubBase {
     assetId = daiAssetId;
     spokeAddr = address(spoke1);
     encodedIrData = abi.encode(
-      IAssetInterestRateStrategy.InterestRateData({
+      IAssetInterestRateStrategy.RateData({
         optimalUsageRatio: 90_00,
-        baseVariableBorrowRate: 5_00,
-        variableRateSlope1: 5_00,
-        variableRateSlope2: 5_00
+        baseRate: 5_00,
+        rateGrowthBeforeOptimal: 5_00,
+        rateGrowthAfterOptimal: 5_00
       })
     );
 
@@ -121,7 +121,7 @@ contract HubConfiguratorGranularAccessControlTest is HubBase {
     );
     assetManagerCalldata.push(
       abi.encodeCall(
-        IHubConfigurator.updateInterestRateData,
+        IHubConfigurator.updateRateData,
         (address(hub1), assetId, encodedIrData)
       )
     );

@@ -108,7 +108,7 @@ contract SpokeWithdrawValidationTest is SpokeBase {
     reserveId = bound(reserveId, 0, spokeInfo[spoke1].MAX_ALLOWED_ASSET_ID);
     supplyAmount = bound(supplyAmount, 2, MAX_SUPPLY_AMOUNT);
     borrowAmount = bound(borrowAmount, 1, supplyAmount / 2); // ensure it is within Collateral Factor
-    rate = bound(rate, 1, MAX_BORROW_RATE);
+    rate = bound(rate, 1, MAX_RATE);
     skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
 
     _mockInterestRateBps(rate);

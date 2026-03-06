@@ -1068,16 +1068,16 @@ contract SpokeAccrueInterestTest is SpokeBase {
 
   function _bound(Rates memory rates) internal view returns (Rates memory) {
     rates.daiBaseBorrowRate = _bpsToRay(
-      bound(rates.daiBaseBorrowRate, 1, irStrategy.MAX_BORROW_RATE())
+      bound(rates.daiBaseBorrowRate, 1, irStrategy.MAX_RATE())
     ).toUint96();
     rates.wethBaseBorrowRate = _bpsToRay(
-      bound(rates.wethBaseBorrowRate, 1, irStrategy.MAX_BORROW_RATE())
+      bound(rates.wethBaseBorrowRate, 1, irStrategy.MAX_RATE())
     ).toUint96();
     rates.usdxBaseBorrowRate = _bpsToRay(
-      bound(rates.usdxBaseBorrowRate, 1, irStrategy.MAX_BORROW_RATE())
+      bound(rates.usdxBaseBorrowRate, 1, irStrategy.MAX_RATE())
     ).toUint96();
     rates.wbtcBaseBorrowRate = _bpsToRay(
-      bound(rates.wbtcBaseBorrowRate, 1, irStrategy.MAX_BORROW_RATE())
+      bound(rates.wbtcBaseBorrowRate, 1, irStrategy.MAX_RATE())
     ).toUint96();
 
     return rates;
