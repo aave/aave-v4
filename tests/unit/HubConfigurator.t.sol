@@ -186,7 +186,11 @@ contract HubConfiguratorTest is HubBase {
       Constants.MIN_ALLOWED_UNDERLYING_DECIMALS,
       Constants.MAX_ALLOWED_UNDERLYING_DECIMALS
     ).toUint8();
-    optimalUsageRatio = bound(optimalUsageRatio, Constants.MIN_OPTIMAL_RATIO, Constants.MAX_OPTIMAL_RATIO).toUint16();
+    optimalUsageRatio = bound(
+      optimalUsageRatio,
+      Constants.MIN_OPTIMAL_RATIO,
+      Constants.MAX_OPTIMAL_RATIO
+    ).toUint16();
     liquidityFee = bound(liquidityFee, 0, PercentageMath.PERCENTAGE_FACTOR);
 
     baseBorrowRate = bound(baseBorrowRate, 0, Constants.MAX_ALLOWED_BORROW_RATE / 3).toUint32();
