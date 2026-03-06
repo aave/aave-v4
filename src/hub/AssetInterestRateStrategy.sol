@@ -16,7 +16,7 @@ contract AssetInterestRateStrategy is IAssetInterestRateStrategy {
   using WadRayMath for *;
 
   /// @inheritdoc IAssetInterestRateStrategy
-  uint256 public constant MAX_RATE = 1000_00;
+  uint256 public constant MAX_BORROW_RATE = 1000_00;
 
   /// @inheritdoc IAssetInterestRateStrategy
   uint256 public constant MIN_OPTIMAL_RATIO = 1_00;
@@ -54,8 +54,8 @@ contract AssetInterestRateStrategy is IAssetInterestRateStrategy {
     );
     require(
       rateData.baseRate + rateData.rateGrowthBeforeOptimal + rateData.rateGrowthAfterOptimal <=
-        MAX_RATE,
-      InvalidMaxRate()
+        MAX_BORROW_RATE,
+      InvalidMaxBorrowRate()
     );
 
     _interestRateData[assetId] = rateData;
@@ -81,7 +81,7 @@ contract AssetInterestRateStrategy is IAssetInterestRateStrategy {
   }
 
   /// @inheritdoc IAssetInterestRateStrategy
-  function getBaseRate(uint256 assetId) external view returns (uint256) {
+  function getBaseBorrowRate(uint256 assetId) external view returns (uint256) {
     return _interestRateData[assetId].baseRate;
   }
 
@@ -96,7 +96,7 @@ contract AssetInterestRateStrategy is IAssetInterestRateStrategy {
   }
 
   /// @inheritdoc IAssetInterestRateStrategy
-  function getMaxRate(uint256 assetId) external view returns (uint256) {
+  function getMaxBorrowRate(uint256 assetId) external view returns (uint256) {
     return
       _interestRateData[assetId].baseRate +
       _interestRateData[assetId].rateGrowthBeforeOptimal +

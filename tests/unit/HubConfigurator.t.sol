@@ -189,13 +189,13 @@ contract HubConfiguratorTest is HubBase {
     optimalUsageRatio = bound(optimalUsageRatio, MIN_OPTIMAL_RATIO, MAX_OPTIMAL_RATIO).toUint16();
     liquidityFee = bound(liquidityFee, 0, PercentageMath.PERCENTAGE_FACTOR);
 
-    baseRate = bound(baseRate, 0, MAX_RATE / 3).toUint32();
-    uint32 remainingAfterBase = MAX_RATE.toUint32() - baseRate;
+    baseRate = bound(baseRate, 0, MAX_BORROW_RATE / 3).toUint32();
+    uint32 remainingAfterBase = MAX_BORROW_RATE.toUint32() - baseRate;
     rateGrowthBeforeOptimal = bound(rateGrowthBeforeOptimal, 0, remainingAfterBase / 2).toUint32();
     rateGrowthAfterOptimal = bound(
       rateGrowthAfterOptimal,
       rateGrowthBeforeOptimal,
-      MAX_RATE - baseRate - rateGrowthBeforeOptimal
+      MAX_BORROW_RATE - baseRate - rateGrowthBeforeOptimal
     ).toUint32();
 
     uint256 expectedAssetId = hub1.getAssetCount();

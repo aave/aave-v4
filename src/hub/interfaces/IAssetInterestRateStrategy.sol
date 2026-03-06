@@ -42,8 +42,8 @@ interface IAssetInterestRateStrategy is IBasicInterestRateStrategy {
   /// @notice Thrown when the caller is not the Hub.
   error OnlyHub();
 
-  /// @notice Thrown when the max possible rate is greater than `MAX_RATE`.
-  error InvalidMaxRate();
+  /// @notice Thrown when the max possible rate is greater than `MAX_BORROW_RATE`.
+  error InvalidMaxBorrowRate();
 
   /// @notice Thrown when growth after optimal is less than growth before optimal.
   error GrowthAfterOptimalMustBeGteGrowthBeforeOptimal();
@@ -61,10 +61,10 @@ interface IAssetInterestRateStrategy is IBasicInterestRateStrategy {
   /// @return The optimal usage ratio, in BPS.
   function getOptimalUsageRatio(uint256 assetId) external view returns (uint256);
 
-  /// @notice Returns the base rate.
-  /// @param assetId The identifier of the asset for which to get the base rate.
-  /// @return The base rate, in BPS.
-  function getBaseRate(uint256 assetId) external view returns (uint256);
+  /// @notice Returns the base borrow rate.
+  /// @param assetId The identifier of the asset for which to get the base borrow rate.
+  /// @return The base borrow rate, in BPS.
+  function getBaseBorrowRate(uint256 assetId) external view returns (uint256);
 
   /// @notice Returns the rate growth before the optimal usage ratio.
   /// @dev Applicable when usage ratio > 0 and <= OPTIMAL_USAGE_RATIO.
@@ -78,14 +78,14 @@ interface IAssetInterestRateStrategy is IBasicInterestRateStrategy {
   /// @return The rate growth, in BPS.
   function getRateGrowthAfterOptimal(uint256 assetId) external view returns (uint256);
 
-  /// @notice Returns the maximum rate.
-  /// @param assetId The identifier of the asset for which to get the maximum rate.
-  /// @return The maximum rate, in BPS.
-  function getMaxRate(uint256 assetId) external view returns (uint256);
+  /// @notice Returns the maximum borrow rate.
+  /// @param assetId The identifier of the asset for which to get the maximum borrow rate.
+  /// @return The maximum borrow rate, in BPS.
+  function getMaxBorrowRate(uint256 assetId) external view returns (uint256);
 
-  /// @notice Returns the maximum value achievable for the rate.
-  /// @return The maximum rate, in BPS.
-  function MAX_RATE() external view returns (uint256);
+  /// @notice Returns the maximum value achievable for the borrow rate.
+  /// @return The maximum borrow rate, in BPS.
+  function MAX_BORROW_RATE() external view returns (uint256);
 
   /// @notice Returns the minimum optimal usage ratio.
   /// @return The minimum optimal usage ratio, in BPS.

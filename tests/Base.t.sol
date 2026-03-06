@@ -155,8 +155,8 @@ abstract contract Base is Test {
   uint256 internal constant MAX_SUPPLY_PRICE = 100;
   uint256 internal constant MIN_DRAWN_INDEX = WadRayMath.RAY;
   uint256 internal constant MAX_DRAWN_INDEX = 100 * WadRayMath.RAY;
-  uint24 internal constant MIN_RATE = 0;
-  uint256 internal constant MAX_RATE = 1000_00; // matches AssetInterestRateStrategy
+  uint24 internal constant MIN_BORROW_RATE = 0;
+  uint256 internal constant MAX_BORROW_RATE = 1000_00; // matches AssetInterestRateStrategy
   uint256 internal constant MIN_OPTIMAL_RATIO = 1_00; // 1.00% in BPS, matches AssetInterestRateStrategy
   uint256 internal constant MAX_OPTIMAL_RATIO = 99_00; // 99.00% in BPS, matches AssetInterestRateStrategy
   uint256 internal constant MAX_SKIP_TIME = 10_000 days;

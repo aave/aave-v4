@@ -36,7 +36,7 @@ contract AssetInterestRateStrategyTest is Base {
   }
 
   function test_maxBorrowRate() public view {
-    assertEq(rateStrategy.MAX_RATE(), 1000_00);
+    assertEq(rateStrategy.MAX_BORROW_RATE(), 1000_00);
   }
 
   function test_minOptimalRatio() public view {
@@ -55,8 +55,8 @@ contract AssetInterestRateStrategyTest is Base {
     assertEq(rateStrategy.getOptimalUsageRatio(mockAssetId), rateData.optimalUsageRatio);
   }
 
-  function test_getBaseRate() public view {
-    assertEq(rateStrategy.getBaseRate(mockAssetId), rateData.baseRate);
+  function test_getBaseBorrowRate() public view {
+    assertEq(rateStrategy.getBaseBorrowRate(mockAssetId), rateData.baseRate);
   }
 
   function test_getRateGrowthBeforeOptimal() public view {
@@ -70,9 +70,9 @@ contract AssetInterestRateStrategyTest is Base {
     assertEq(rateStrategy.getRateGrowthAfterOptimal(mockAssetId), rateData.rateGrowthAfterOptimal);
   }
 
-  function test_getMaxRate() public view {
+  function test_getMaxBorrowRate() public view {
     assertEq(
-      rateStrategy.getMaxRate(mockAssetId),
+      rateStrategy.getMaxBorrowRate(mockAssetId),
       rateData.baseRate + rateData.rateGrowthBeforeOptimal + rateData.rateGrowthAfterOptimal
     );
   }
@@ -110,12 +110,12 @@ contract AssetInterestRateStrategyTest is Base {
     rateStrategy.setRateData(mockAssetId, encodedRateData);
   }
 
-  function test_setRateData_revertsWith_InvalidMaxRate() public {
+  function test_setRateData_revertsWith_InvalidMaxBorrowRate() public {
     rateData.baseRate = rateData.rateGrowthBeforeOptimal = rateData.rateGrowthAfterOptimal =
-      rateStrategy.MAX_RATE().toUint32() / 3 +
+      rateStrategy.MAX_BORROW_RATE().toUint32() / 3 +
       1;
     encodedRateData = abi.encode(rateData);
-    vm.expectRevert(IAssetInterestRateStrategy.InvalidMaxRate.selector);
+    vm.expectRevert(IAssetInterestRateStrategy.InvalidMaxBorrowRate.selector);
     vm.prank(address(hub1));
     rateStrategy.setRateData(mockAssetId, encodedRateData);
   }
@@ -151,10 +151,10 @@ contract AssetInterestRateStrategyTest is Base {
 
     test_getRateData();
     test_getOptimalUsageRatio();
-    test_getBaseRate();
+    test_getBaseBorrowRate();
     test_getRateGrowthBeforeOptimal();
     test_getRateGrowthAfterOptimal();
-    test_getMaxRate();
+    test_getMaxBorrowRate();
   }
 
   function test_calculateInterestRate_revertsWith_RateDataNotSet() public {

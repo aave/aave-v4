@@ -572,7 +572,7 @@ contract SpokeWithdrawTest is SpokeBase {
       _calculateMaxSupplyAmount(spoke1, params.reserveId)
     );
     params.borrowAmount = bound(params.borrowAmount, 1, params.borrowReserveSupplyAmount / 2);
-    params.rate = bound(params.rate, 1, MAX_RATE);
+    params.rate = bound(params.rate, 1, MAX_BORROW_RATE);
     params.skipTime = bound(params.skipTime, 0, MAX_SKIP_TIME);
 
     _mockInterestRateBps(params.rate);
@@ -855,7 +855,7 @@ contract SpokeWithdrawTest is SpokeBase {
       _calculateMaxSupplyAmount(spoke1, params.reserveId)
     );
     params.borrowAmount = bound(params.borrowAmount, 1, params.borrowReserveSupplyAmount / 2);
-    params.rate = bound(params.rate, 1, MAX_RATE);
+    params.rate = bound(params.rate, 1, MAX_BORROW_RATE);
     params.skipTime = bound(params.skipTime, 0, MAX_SKIP_TIME);
 
     _mockInterestRateBps(params.rate);
