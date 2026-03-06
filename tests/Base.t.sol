@@ -101,7 +101,7 @@ import {
 // test
 import {Constants} from 'tests/Constants.sol';
 import {DeployUtils} from 'tests/DeployUtils.sol';
-import {Create1Utils} from 'tests/Create1Utils.sol';
+import {Create2Utils} from 'tests/Create2Utils.sol';
 import {Utils} from 'tests/Utils.sol';
 
 // mocks

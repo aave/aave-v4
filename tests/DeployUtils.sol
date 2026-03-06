@@ -7,7 +7,6 @@ import {TransparentUpgradeableProxy} from 'src/dependencies/openzeppelin/Transpa
 import {IHub} from 'src/hub/interfaces/IHub.sol';
 import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 import {ISpokeInstance} from 'tests/mocks/ISpokeInstance.sol';
-import {Create1Utils} from 'tests/Create1Utils.sol';
 import {Create2Utils} from 'tests/Create2Utils.sol';
 
 library DeployUtils {
@@ -17,10 +16,8 @@ library DeployUtils {
     address oracle,
     uint16 maxUserReservesLimit
   ) internal returns (ISpokeInstance) {
-    return
-      ISpokeInstance(
-        Create1Utils.create1Deploy(_getSpokeInstanceInitCode(oracle, maxUserReservesLimit))
-      );
+    bytes32 salt = keccak256(abi.encode(oracle, maxUserReservesLimit));
+    return deploySpokeImplementation(oracle, maxUserReservesLimit, salt);
   }
 
   function deploySpokeImplementation(
@@ -41,14 +38,8 @@ library DeployUtils {
     address proxyAdminOwner,
     bytes memory initData
   ) internal returns (ISpoke) {
-    return
-      ISpoke(
-        proxify(
-          address(deploySpokeImplementation(oracle, maxUserReservesLimit)),
-          proxyAdminOwner,
-          initData
-        )
-      );
+    bytes32 salt = keccak256(abi.encode(oracle, maxUserReservesLimit));
+    return deploySpoke(oracle, maxUserReservesLimit, proxyAdminOwner, salt, initData);
   }
 
   function deploySpoke(
@@ -80,7 +71,7 @@ library DeployUtils {
   }
 
   function deployHub(address authority) internal returns (IHub) {
-    return IHub(Create1Utils.create1Deploy(_getHubInitCode(authority)));
+    return IHub(vm.deployCode('src/hub/Hub.sol:Hub', abi.encode(authority)));
   }
 
   function deployHub(address authority, bytes32 salt) internal returns (IHub hub) {
