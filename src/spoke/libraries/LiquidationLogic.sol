@@ -620,7 +620,8 @@ library LiquidationLogic {
         collateralRemaining.toValue({
           decimals: params.collateralAssetDecimals,
           price: params.collateralAssetPrice
-        }) < DUST_LIQUIDATION_THRESHOLD;
+        }) <
+        DUST_LIQUIDATION_THRESHOLD;
     }
 
     // debt is fully liquidated if and only if all drawn shares are liquidated
@@ -708,7 +709,8 @@ library LiquidationLogic {
   function _calculateCollateralToLiquidate(
     CalculateCollateralToLiquidateParams memory params
   ) internal view returns (uint256) {
-    uint256 debtRayToLiquidate = params.drawnSharesToLiquidate * params.drawnIndex +
+    uint256 debtRayToLiquidate = params.drawnSharesToLiquidate *
+      params.drawnIndex +
       params.premiumDebtRayToLiquidate;
 
     uint256 collateralToLiquidate = Math.mulDiv(
@@ -730,7 +732,8 @@ library LiquidationLogic {
   }
 
   /// @notice Calculates the amount of drawn shares and premium debt that should be liquidated.
-  /// @dev Returned values ensure that total assets required to liquidate will not exceed `params.debtToCover`.
+  /// @dev Returned values do not exceed `params.debtToCover`, except in the dust liquidation scenario
+  /// where the remaining debt would be below `DUST_LIQUIDATION_THRESHOLD`, in which case all debt must be liquidated.
   /// @return The amount of drawn shares to liquidate. Does not exceed `params.drawnShares`.
   /// @return The amount of premium debt to liquidate. Does not exceed `params.premiumDebtRay`.
   function _calculateDebtToLiquidate(
@@ -773,14 +776,15 @@ library LiquidationLogic {
       drawnSharesToLiquidate = drawnSharesToTarget.min(drawnSharesToCover).min(params.drawnShares);
     }
 
-    uint256 debtRayRemaining = (params.drawnShares - drawnSharesToLiquidate) * params.drawnIndex +
+    uint256 debtRayRemaining = (params.drawnShares - drawnSharesToLiquidate) *
+      params.drawnIndex +
       params.premiumDebtRay -
       premiumDebtRayToLiquidate;
 
     // debt is fully liquidated if and only if all drawn shares are liquidated (premium debt is always liquidated first)
     bool leavesDebtDust = (drawnSharesToLiquidate < params.drawnShares) &&
       debtRayRemaining.toValue({decimals: params.debtAssetDecimals, price: params.debtAssetPrice}) <
-        DUST_LIQUIDATION_THRESHOLD.toRay();
+      DUST_LIQUIDATION_THRESHOLD.toRay();
 
     if (leavesDebtDust) {
       // target health factor is bypassed to prevent leaving dust
