@@ -319,7 +319,7 @@ contract Hub is IHub, AccessManaged {
     return drawnShares;
   }
 
-  /// @inheritdoc IHubBase
+  /// @inheritdoc IHub
   function reportDeficit(
     uint256 assetId,
     uint256 drawnAmount,
@@ -577,7 +577,7 @@ contract Hub is IHub, AccessManaged {
     return _assets[assetId].liquidity;
   }
 
-  /// @inheritdoc IHubBase
+  /// @inheritdoc IHub
   function getAssetDeficitRay(uint256 assetId) external view returns (uint256) {
     return _assets[assetId].deficitRay;
   }
@@ -666,7 +666,7 @@ contract Hub is IHub, AccessManaged {
     return (spokeData.premiumShares, spokeData.premiumOffsetRay);
   }
 
-  /// @inheritdoc IHubBase
+  /// @inheritdoc IHub
   function getSpokeDeficitRay(uint256 assetId, address spoke) external view returns (uint256) {
     return _spokes[assetId][spoke].deficitRay;
   }

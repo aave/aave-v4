@@ -158,6 +158,20 @@ interface IHub is IHubBase, IAccessManaged {
   /// @param amount The amount reclaimed.
   event Reclaim(uint256 indexed assetId, address indexed reinvestmentController, uint256 amount);
 
+  /// @notice Emitted on the `reportDeficit` action.
+  /// @param assetId The identifier of the asset.
+  /// @param spoke The address of the spoke.
+  /// @param drawnShares The amount of drawn shares reported as deficit.
+  /// @param premiumDelta The premium delta data struct.
+  /// @param deficitAmountRay The amount of deficit reported, expressed in asset units and scaled by RAY.
+  event ReportDeficit(
+    uint256 indexed assetId,
+    address indexed spoke,
+    uint256 drawnShares,
+    PremiumDelta premiumDelta,
+    uint256 deficitAmountRay
+  );
+
   /// @notice Emitted when a deficit is eliminated.
   /// @param assetId The identifier of the asset.
   /// @param callerSpoke The spoke that eliminated the deficit using its supplied shares.
@@ -304,6 +318,18 @@ interface IHub is IHubBase, IAccessManaged {
   /// @return The amount of shares minted.
   function mintFeeShares(uint256 assetId) external returns (uint256);
 
+  /// @notice Reports deficit.
+  /// @dev Only callable by active spokes.
+  /// @param assetId The identifier of the asset.
+  /// @param drawnAmount The drawn amount to report as deficit.
+  /// @param premiumDelta The premium delta to apply which signals premium deficit.
+  /// @return The amount of drawn shares reported as deficit.
+  function reportDeficit(
+    uint256 assetId,
+    uint256 drawnAmount,
+    PremiumDelta calldata premiumDelta
+  ) external returns (uint256);
+
   /// @notice Eliminates deficit by removing supplied shares of caller spoke.
   /// @dev Only callable by active and authorized spokes.
   /// @param assetId The identifier of the asset.
@@ -379,6 +405,11 @@ interface IHub is IHubBase, IAccessManaged {
   /// @return The current drawn rate of the asset.
   function getAssetDrawnRate(uint256 assetId) external view returns (uint256);
 
+  /// @notice Returns the amount of deficit with full precision of the specified asset.
+  /// @param assetId The identifier of the asset.
+  /// @return The amount of deficit, expressed in asset units and scaled by RAY.
+  function getAssetDeficitRay(uint256 assetId) external view returns (uint256);
+
   /// @notice Returns the number of spokes listed for the specified asset.
   /// @param assetId The identifier of the asset.
   /// @return The number of spokes.
@@ -410,6 +441,12 @@ interface IHub is IHubBase, IAccessManaged {
     uint256 assetId,
     address spoke
   ) external view returns (SpokeConfig memory);
+
+  /// @notice Returns the amount of a given spoke's deficit with full precision for the specified asset.
+  /// @param assetId The identifier of the asset.
+  /// @param spoke The address of the spoke.
+  /// @return The amount of deficit, expressed in asset units and scaled by RAY.
+  function getSpokeDeficitRay(uint256 assetId, address spoke) external view returns (uint256);
 
   /// @notice Returns the maximum allowed number of decimals for the underlying asset.
   /// @return The maximum number of decimals (inclusive).
