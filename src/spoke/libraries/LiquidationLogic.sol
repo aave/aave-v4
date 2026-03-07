@@ -275,7 +275,7 @@ library LiquidationLogic {
     ) {
       ISpoke.UserPosition storage userPosition = userPositions[user][reserveId];
       ISpoke.Reserve storage reserve = reserves[reserveId];
-      IHubBase hub = reserve.hub;
+      IHub hub = IHub(address(reserve.hub));
       uint256 assetId = reserve.assetId;
 
       UserPositionUtils.DebtComponents memory debtComponents = userPosition.getDebtComponents(
@@ -289,7 +289,7 @@ library LiquidationLogic {
         restoredPremiumRay: debtComponents.premiumDebtRay
       });
 
-      IHub(address(hub)).reportDeficit(
+      hub.reportDeficit(
         assetId,
         debtComponents.drawnShares.rayMulUp(debtComponents.drawnIndex),
         premiumDelta
