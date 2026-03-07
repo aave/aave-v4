@@ -9,5 +9,9 @@
   "setGlobalPermission": "49748",
   "setUsingAsCollateralOnBehalfOf": "72503",
   "updateUserDynamicConfigOnBehalfOf": "50433",
+<<<<<<< HEAD
   "updateUserRiskPremiumOnBehalfOf": "130113"
+=======
+  "updateUserRiskPremiumOnBehalfOf": "131907"
+>>>>>>> main
 }

@@ -33,7 +33,7 @@ contract SpokeSetUserPositionManagersWithSigTest is SpokeBase {
   }
 
   function test_eip712Domain() public {
-    (ISpoke spoke, ) = _deploySpokeWithOracle(vm.randomAddress(), vm.randomAddress(), '');
+    (ISpoke spoke, ) = _deploySpokeWithOracle(vm.randomAddress(), vm.randomAddress());
     (
       bytes1 fields,
       string memory name,
@@ -54,7 +54,7 @@ contract SpokeSetUserPositionManagersWithSigTest is SpokeBase {
   }
 
   function test_DOMAIN_SEPARATOR() public {
-    (ISpoke spoke, ) = _deploySpokeWithOracle(vm.randomAddress(), vm.randomAddress(), '');
+    (ISpoke spoke, ) = _deploySpokeWithOracle(vm.randomAddress(), vm.randomAddress());
     bytes32 expectedDomainSeparator = keccak256(
       abi.encode(
         keccak256(

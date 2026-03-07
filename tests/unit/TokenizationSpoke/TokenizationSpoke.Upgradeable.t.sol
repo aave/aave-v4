@@ -168,7 +168,7 @@ contract TokenizationSpokeUpgradeableTest is TokenizationSpokeBaseTest {
   ) internal returns (TokenizationSpokeInstance) {
     return
       TokenizationSpokeInstance(
-        address(new MockTokenizationSpokeInstance(revision, address(hub1), daiAssetId))
+        address(new MockTokenizationSpokeInstance(revision, address(hub1), address(tokenList.dai)))
       );
   }
 }
