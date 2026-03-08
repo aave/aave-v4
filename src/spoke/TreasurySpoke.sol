@@ -59,12 +59,12 @@ contract TreasurySpoke is ITreasurySpoke, Ownable2Step {
   }
 
   /// @inheritdoc ITreasurySpoke
-  function getSuppliedAmount(address hub, uint256 assetId) external view returns (uint256) {
+  function getSpokeSuppliedAssets(address hub, uint256 assetId) external view returns (uint256) {
     return IHubBase(hub).getSpokeAddedAssets(assetId, address(this));
   }
 
   /// @inheritdoc ITreasurySpoke
-  function getSuppliedShares(address hub, uint256 assetId) external view returns (uint256) {
+  function getSpokeSuppliedShares(address hub, uint256 assetId) external view returns (uint256) {
     return IHubBase(hub).getSpokeAddedShares(assetId, address(this));
   }
 }

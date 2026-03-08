@@ -11,7 +11,7 @@ interface ITreasurySpoke {
 
   /// @notice Supplies a specified amount of the underlying asset to a given reserve.
   /// @dev The Spoke pulls the underlying asset from the caller, so prior approval is required.
-  /// @param hub The address of the Hub contract.
+  /// @param hub The address of the Hub.
   /// @param assetId The identifier of the asset.
   /// @param amount The amount of asset to supply.
   /// @param onBehalfOf Unused parameter for this spoke.
@@ -26,7 +26,7 @@ interface ITreasurySpoke {
 
   /// @notice Withdraws a specified amount of underlying asset from the given reserve.
   /// @dev Providing an amount greater than the maximum withdrawable value signals a full withdrawal.
-  /// @param hub The address of the Hub contract.
+  /// @param hub The address of the Hub.
   /// @param assetId The identifier of the asset.
   /// @param amount The amount of asset to withdraw.
   /// @param onBehalfOf Unused parameter for this spoke.
@@ -46,15 +46,15 @@ interface ITreasurySpoke {
   function transfer(address token, address to, uint256 amount) external;
 
   /// @notice Returns the amount of assets supplied.
-  /// @param hub The address of the Hub contract.
+  /// @param hub The address of the Hub.
   /// @param assetId The identifier of the asset.
   /// @return The amount of assets supplied.
-  function getSuppliedAmount(address hub, uint256 assetId) external view returns (uint256);
+  function getSpokeSuppliedAssets(address hub, uint256 assetId) external view returns (uint256);
 
   /// @notice Returns the amount of shares supplied.
   /// @dev Shares are denominated relative to the supply side.
-  /// @param hub The address of the Hub contract.
+  /// @param hub The address of the Hub.
   /// @param assetId The identifier of the asset.
   /// @return The amount of shares supplied.
-  function getSuppliedShares(address hub, uint256 assetId) external view returns (uint256);
+  function getSpokeSuppliedShares(address hub, uint256 assetId) external view returns (uint256);
 }

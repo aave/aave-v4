@@ -367,7 +367,7 @@ contract HubConfiguratorTest is HubBase {
       365 days
     );
 
-    assertGe(treasurySpoke.getSuppliedShares(address(hub1), daiAssetId), 0);
+    assertGe(treasurySpoke.getSpokeSuppliedShares(address(hub1), daiAssetId), 0);
 
     // Change the fee receiver
     TreasurySpoke newTreasurySpoke = new TreasurySpoke(HUB_ADMIN);
@@ -385,12 +385,12 @@ contract HubConfiguratorTest is HubBase {
     );
 
     // Withdraw fees from the old treasury spoke
-    uint256 fees = treasurySpoke.getSuppliedAmount(address(hub1), daiAssetId);
+    uint256 fees = treasurySpoke.getSpokeSuppliedAssets(address(hub1), daiAssetId);
     vm.prank(TREASURY_ADMIN);
     treasurySpoke.withdraw(address(hub1), daiAssetId, fees, address(TREASURY_ADMIN));
 
     assertEq(
-      treasurySpoke.getSuppliedAmount(address(hub1), daiAssetId),
+      treasurySpoke.getSpokeSuppliedAssets(address(hub1), daiAssetId),
       0,
       'old treasury spoke should be empty'
     );
@@ -400,12 +400,12 @@ contract HubConfiguratorTest is HubBase {
     Utils.mintFeeShares(hub1, daiAssetId, ADMIN);
 
     assertGt(
-      newTreasurySpoke.getSuppliedAmount(address(hub1), daiAssetId),
+      newTreasurySpoke.getSpokeSuppliedAssets(address(hub1), daiAssetId),
       0,
       'new fee receiver should have accrued fees'
     );
     assertEq(
-      treasurySpoke.getSuppliedAmount(address(hub1), daiAssetId),
+      treasurySpoke.getSpokeSuppliedAssets(address(hub1), daiAssetId),
       0,
       'old fee receiver should be empty'
     );
@@ -434,8 +434,8 @@ contract HubConfiguratorTest is HubBase {
     );
     Utils.mintFeeShares(hub1, daiAssetId, ADMIN);
 
-    assertGe(treasurySpoke.getSuppliedShares(address(hub1), daiAssetId), 0);
-    uint256 feeShares = treasurySpoke.getSuppliedShares(address(hub1), daiAssetId);
+    assertGe(treasurySpoke.getSpokeSuppliedShares(address(hub1), daiAssetId), 0);
+    uint256 feeShares = treasurySpoke.getSpokeSuppliedShares(address(hub1), daiAssetId);
 
     // Change the fee receiver
     TreasurySpoke newTreasurySpoke = new TreasurySpoke(HUB_ADMIN);
@@ -466,7 +466,7 @@ contract HubConfiguratorTest is HubBase {
     vm.stopPrank();
 
     // Get the remaining fee shares
-    feeShares = treasurySpoke.getSuppliedShares(address(hub1), daiAssetId);
+    feeShares = treasurySpoke.getSpokeSuppliedShares(address(hub1), daiAssetId);
 
     // Accrue more fees, this time to new fee receiver
     skip(365 days);
@@ -474,12 +474,12 @@ contract HubConfiguratorTest is HubBase {
 
     // Check that new fee receiver is getting the fees, and not old treasury spoke
     assertGt(
-      newTreasurySpoke.getSuppliedAmount(address(hub1), daiAssetId),
+      newTreasurySpoke.getSpokeSuppliedAssets(address(hub1), daiAssetId),
       0,
       'new fee receiver should have accrued fees'
     );
     assertEq(
-      treasurySpoke.getSuppliedShares(address(hub1), daiAssetId),
+      treasurySpoke.getSpokeSuppliedShares(address(hub1), daiAssetId),
       feeShares,
       'old fee receiver should still have same share amount'
     );
@@ -488,7 +488,7 @@ contract HubConfiguratorTest is HubBase {
     vm.prank(TREASURY_ADMIN);
     treasurySpoke.withdraw(address(hub1), daiAssetId, UINT256_MAX, address(TREASURY_ADMIN));
     assertEq(
-      treasurySpoke.getSuppliedShares(address(hub1), daiAssetId),
+      treasurySpoke.getSpokeSuppliedShares(address(hub1), daiAssetId),
       0,
       'old fee receiver should be empty'
     );
