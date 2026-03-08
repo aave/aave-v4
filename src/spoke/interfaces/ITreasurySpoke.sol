@@ -45,13 +45,13 @@ interface ITreasurySpoke {
   /// @param amount The amount of tokens to transfer.
   function transfer(address token, address to, uint256 amount) external;
 
-  /// @notice Returns the amount of assets supplied.
+  /// @notice Returns the amount of assets supplied by this spoke.
   /// @param hub The address of the Hub.
   /// @param assetId The identifier of the asset.
   /// @return The amount of assets supplied.
   function getSpokeSuppliedAssets(address hub, uint256 assetId) external view returns (uint256);
 
-  /// @notice Returns the amount of shares supplied.
+  /// @notice Returns the amount of shares supplied by this spoke.
   /// @dev Shares are denominated relative to the supply side.
   /// @param hub The address of the Hub.
   /// @param assetId The identifier of the asset.
