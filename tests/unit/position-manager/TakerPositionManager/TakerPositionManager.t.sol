@@ -311,6 +311,7 @@ contract TakerPositionManagerTest is TakerPositionManagerBaseTest {
     uint256 userBalanceBefore = tokenList.dai.balanceOf(alice);
     uint256 callerBalanceBefore = tokenList.dai.balanceOf(bob);
     uint256 hubBalanceBefore = tokenList.dai.balanceOf(address(hub1));
+    uint256 suppliedAssetsBefore = spoke1.getUserSuppliedAssets(_daiReserveId(spoke1), alice);
 
     assertEq(spoke1.getUserSuppliedShares(_daiReserveId(spoke1), alice), expectedSupplyShares);
 
@@ -322,6 +323,7 @@ contract TakerPositionManagerTest is TakerPositionManagerBaseTest {
       expectedSupplyShares,
       expectedWithdrawAmount
     );
+    vm.recordLogs();
     vm.prank(bob);
     (returnValues.shares, returnValues.amount) = positionManager.withdrawOnBehalfOf(
       address(spoke1),
@@ -333,12 +335,17 @@ contract TakerPositionManagerTest is TakerPositionManagerBaseTest {
     assertEq(returnValues.amount, expectedWithdrawAmount);
     assertEq(returnValues.shares, expectedSupplyShares);
 
-    // The corrected withdraw amount is the position value delta: previewAddByShares(sharesBefore)
-    // - previewAddByShares(sharesAfter). For a full withdrawal (sharesAfter == 0), this equals
-    // previewAddByShares(sharesBefore). The allowance is deducted by min(correctedAmount, currentAllowance).
-    uint256 sharesBefore = expectedSupplyShares;
-    uint256 correctedWithdrawAmount = hub1.previewAddByShares(daiAssetId, sharesBefore);
+    uint256 correctedWithdrawAmount = suppliedAssetsBefore -
+      spoke1.getUserSuppliedAssets(_daiReserveId(spoke1), alice);
     uint256 expectedAllowance = supplyAmount * 10 - correctedWithdrawAmount;
+
+    _assertWithdrawApprovalEmitted(
+      address(spoke1),
+      _daiReserveId(spoke1),
+      alice,
+      bob,
+      expectedAllowance
+    );
 
     assertEq(tokenList.dai.balanceOf(alice), userBalanceBefore);
     assertEq(tokenList.dai.balanceOf(bob), callerBalanceBefore + expectedWithdrawAmount);
@@ -472,11 +479,8 @@ contract TakerPositionManagerTest is TakerPositionManagerBaseTest {
     uint256 hubBalanceBefore = tokenList.dai.balanceOf(address(hub1));
 
     uint256 expectedBorrowShares = hub1.previewDrawByAssets(daiAssetId, borrowAmount);
-    uint256 correctedBorrowAmount = hub1.previewRestoreByShares(daiAssetId, expectedBorrowShares);
-    uint256 expectedBorrowAllowance;
-    if (approveBorrowAmount >= correctedBorrowAmount) {
-      expectedBorrowAllowance = approveBorrowAmount - correctedBorrowAmount;
-    }
+
+    (uint256 drawnAssetsBefore, ) = spoke1.getUserDebt(_daiReserveId(spoke1), alice);
 
     vm.expectEmit(address(spoke1));
     emit ISpokeBase.Borrow(
@@ -486,14 +490,7 @@ contract TakerPositionManagerTest is TakerPositionManagerBaseTest {
       expectedBorrowShares,
       borrowAmount
     );
-    vm.expectEmit(address(positionManager));
-    emit ITakerPositionManager.BorrowApproval(
-      address(spoke1),
-      _daiReserveId(spoke1),
-      alice,
-      bob,
-      expectedBorrowAllowance
-    );
+    vm.recordLogs();
     vm.prank(bob);
     (returnValues.shares, returnValues.amount) = positionManager.borrowOnBehalfOf(
       address(spoke1),
@@ -505,6 +502,20 @@ contract TakerPositionManagerTest is TakerPositionManagerBaseTest {
     (uint256 userDrawnDebt, uint256 userPremiumDebt) = spoke1.getUserDebt(
       _daiReserveId(spoke1),
       alice
+    );
+
+    uint256 correctedBorrowAmount = userDrawnDebt - drawnAssetsBefore;
+    uint256 expectedBorrowAllowance;
+    if (approveBorrowAmount >= correctedBorrowAmount) {
+      expectedBorrowAllowance = approveBorrowAmount - correctedBorrowAmount;
+    }
+
+    _assertBorrowApprovalEmitted(
+      address(spoke1),
+      _daiReserveId(spoke1),
+      alice,
+      bob,
+      expectedBorrowAllowance
     );
 
     assertEq(returnValues.amount, borrowAmount);
@@ -610,6 +621,56 @@ contract TakerPositionManagerTest is TakerPositionManagerBaseTest {
     vm.expectRevert(IPositionManagerBase.SpokeNotRegistered.selector);
     vm.prank(bob);
     positionManager.borrowOnBehalfOf(address(spoke2), 1, 100e18, alice);
+  }
+
+  function _assertWithdrawApprovalEmitted(
+    address spoke,
+    uint256 reserveId,
+    address owner,
+    address spender,
+    uint256 amount
+  ) internal {
+    Vm.Log[] memory entries = vm.getRecordedLogs();
+    bytes32 sig = ITakerPositionManager.WithdrawApproval.selector;
+    for (uint256 i; i < entries.length; ++i) {
+      if (
+        entries[i].topics[0] == sig &&
+        entries[i].topics[1] == bytes32(uint256(uint160(spoke))) &&
+        entries[i].topics[2] == bytes32(reserveId) &&
+        entries[i].topics[3] == bytes32(uint256(uint160(owner)))
+      ) {
+        (address logSpender, uint256 logAmount) = abi.decode(entries[i].data, (address, uint256));
+        assertEq(logSpender, spender);
+        assertEq(logAmount, amount);
+        return;
+      }
+    }
+    revert('WithdrawApproval event not emitted');
+  }
+
+  function _assertBorrowApprovalEmitted(
+    address spoke,
+    uint256 reserveId,
+    address owner,
+    address spender,
+    uint256 amount
+  ) internal {
+    Vm.Log[] memory entries = vm.getRecordedLogs();
+    bytes32 sig = ITakerPositionManager.BorrowApproval.selector;
+    for (uint256 i; i < entries.length; ++i) {
+      if (
+        entries[i].topics[0] == sig &&
+        entries[i].topics[1] == bytes32(uint256(uint160(spoke))) &&
+        entries[i].topics[2] == bytes32(reserveId) &&
+        entries[i].topics[3] == bytes32(uint256(uint160(owner)))
+      ) {
+        (address logSpender, uint256 logAmount) = abi.decode(entries[i].data, (address, uint256));
+        assertEq(logSpender, spender);
+        assertEq(logAmount, amount);
+        return;
+      }
+    }
+    revert('BorrowApproval event not emitted');
   }
 
   function test_multicall() public {
