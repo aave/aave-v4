@@ -196,7 +196,7 @@ contract TakerPositionManager is ITakerPositionManager, PositionManagerBase {
       uint256 sharesAfter = ISpokeBase(spoke).getUserSuppliedShares(reserveId, onBehalfOf);
       uint256 newAllowance = _deductAllowance({
         currentAllowance: currentAllowance,
-        correctedAmount: reserve.hub.previewAddByShares(reserve.assetId, sharesBefore) -
+        amount: reserve.hub.previewAddByShares(reserve.assetId, sharesBefore) -
           reserve.hub.previewAddByShares(reserve.assetId, sharesAfter)
       });
       _updateWithdrawAllowance({
@@ -248,7 +248,7 @@ contract TakerPositionManager is ITakerPositionManager, PositionManagerBase {
       uint256 drawnSharesAfter = ISpoke(spoke).getUserPosition(reserveId, onBehalfOf).drawnShares;
       uint256 newAllowance = _deductAllowance({
         currentAllowance: currentAllowance,
-        correctedAmount: reserve.hub.previewRestoreByShares(reserve.assetId, drawnSharesAfter) -
+        amount: reserve.hub.previewRestoreByShares(reserve.assetId, drawnSharesAfter) -
           reserve.hub.previewRestoreByShares(reserve.assetId, drawnSharesBefore)
       });
       _updateBorrowAllowance({
@@ -359,15 +359,13 @@ contract TakerPositionManager is ITakerPositionManager, PositionManagerBase {
   }
 
   /// @dev Deducts the corrected amount from the given allowance.
-  /// `correctedAmount` may exceed `currentAllowance` by a rounding delta;
+  /// `amount` may exceed `currentAllowance` by a rounding delta;
   /// consumption is capped at `currentAllowance` to prevent underflow.
   function _deductAllowance(
     uint256 currentAllowance,
-    uint256 correctedAmount
+    uint256 amount
   ) internal pure returns (uint256 newAllowance) {
-    if (currentAllowance == type(uint256).max) return type(uint256).max;
-    uint256 consumption = currentAllowance >= correctedAmount ? correctedAmount : currentAllowance;
-    return currentAllowance - consumption;
+    return currentAllowance > amount ? currentAllowance - amount : 0;
   }
 
   function _multicallEnabled() internal pure override returns (bool) {
