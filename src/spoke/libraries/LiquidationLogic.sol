@@ -13,7 +13,6 @@ import {PositionStatusMap} from 'src/spoke/libraries/PositionStatusMap.sol';
 import {UserPositionUtils} from 'src/spoke/libraries/UserPositionUtils.sol';
 import {ReserveFlags, ReserveFlagsMap} from 'src/spoke/libraries/ReserveFlagsMap.sol';
 import {IHubBase} from 'src/hub/interfaces/IHubBase.sol';
-import {IHub} from 'src/hub/interfaces/IHub.sol';
 import {IAaveOracle} from 'src/spoke/interfaces/IAaveOracle.sol';
 import {ISpoke, ISpokeBase} from 'src/spoke/interfaces/ISpoke.sol';
 
@@ -275,7 +274,7 @@ library LiquidationLogic {
     ) {
       ISpoke.UserPosition storage userPosition = userPositions[user][reserveId];
       ISpoke.Reserve storage reserve = reserves[reserveId];
-      IHub hub = IHub(address(reserve.hub));
+      IHubBase hub = reserve.hub;
       uint256 assetId = reserve.assetId;
 
       UserPositionUtils.DebtComponents memory debtComponents = userPosition.getDebtComponents(

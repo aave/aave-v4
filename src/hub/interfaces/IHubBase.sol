@@ -58,6 +58,20 @@ interface IHubBase {
     uint256 premiumAmount
   );
 
+  /// @notice Emitted on the `reportDeficit` action.
+  /// @param assetId The identifier of the asset.
+  /// @param spoke The address of the spoke.
+  /// @param drawnShares The amount of drawn shares reported as deficit.
+  /// @param premiumDelta The premium delta data struct.
+  /// @param deficitAmountRay The amount of deficit reported, expressed in asset units and scaled by RAY.
+  event ReportDeficit(
+    uint256 indexed assetId,
+    address indexed spoke,
+    uint256 drawnShares,
+    PremiumDelta premiumDelta,
+    uint256 deficitAmountRay
+  );
+
   /// @notice Emitted on the `refreshPremium` action.
   /// @param assetId The identifier of the asset.
   /// @param spoke The address of the spoke.
@@ -111,6 +125,18 @@ interface IHubBase {
   /// @param premiumDelta The premium delta to apply which signals premium repayment.
   /// @return The amount of drawn shares restored.
   function restore(
+    uint256 assetId,
+    uint256 drawnAmount,
+    PremiumDelta calldata premiumDelta
+  ) external returns (uint256);
+
+  /// @notice Reports deficit.
+  /// @dev Only callable by active spokes.
+  /// @param assetId The identifier of the asset.
+  /// @param drawnAmount The drawn amount to report as deficit.
+  /// @param premiumDelta The premium delta to apply which signals premium deficit.
+  /// @return The amount of drawn shares reported as deficit.
+  function reportDeficit(
     uint256 assetId,
     uint256 drawnAmount,
     PremiumDelta calldata premiumDelta

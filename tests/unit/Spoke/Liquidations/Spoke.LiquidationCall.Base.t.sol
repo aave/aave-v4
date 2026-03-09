@@ -525,7 +525,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
 
             vm.expectCall(
               address(targetHub),
-              abi.encodeCall(IHub.reportDeficit, (assetId, userReserveDrawnDebt, premiumDelta)),
+              abi.encodeCall(IHubBase.reportDeficit, (assetId, userReserveDrawnDebt, premiumDelta)),
               1
             );
             vm.expectEmit(address(params.spoke));
@@ -538,7 +538,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
           } else {
             vm.expectCall(
               address(targetHub),
-              abi.encodeWithSelector(IHub.reportDeficit.selector, assetId),
+              abi.encodeWithSelector(IHubBase.reportDeficit.selector, assetId),
               0
             );
 

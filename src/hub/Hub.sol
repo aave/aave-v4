@@ -319,7 +319,7 @@ contract Hub is IHub, AccessManaged {
     return drawnShares;
   }
 
-  /// @inheritdoc IHub
+  /// @inheritdoc IHubBase
   function reportDeficit(
     uint256 assetId,
     uint256 drawnAmount,

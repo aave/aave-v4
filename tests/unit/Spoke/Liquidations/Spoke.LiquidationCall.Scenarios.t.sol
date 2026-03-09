@@ -133,7 +133,7 @@ contract SpokeLiquidationCallScenariosTest is SpokeLiquidationCallBaseTest {
     vm.mockFunction(
       address(_hub(spoke, debtReserveId)),
       address(reentrantCaller),
-      abi.encodeWithSelector(IHub.reportDeficit.selector)
+      abi.encodeWithSelector(IHubBase.reportDeficit.selector)
     );
     vm.expectRevert(ReentrancyGuardTransient.ReentrancyGuardReentrantCall.selector);
     vm.prank(liquidator);
@@ -755,7 +755,7 @@ contract SpokeLiquidationCallScenariosTest is SpokeLiquidationCallBaseTest {
 
     _openSupplyPosition(spoke, collateralReserveId, MAX_SUPPLY_AMOUNT);
 
-    vm.expectCall(address(hub), abi.encodeWithSelector(IHub.reportDeficit.selector, usdxAssetId));
+    vm.expectCall(address(hub), abi.encodeWithSelector(IHubBase.reportDeficit.selector, usdxAssetId));
 
     vm.prank(liquidator);
     spoke.liquidationCall(collateralReserveId, debtReserveId, user, type(uint256).max, false);
