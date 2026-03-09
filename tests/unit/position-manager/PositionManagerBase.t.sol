@@ -188,7 +188,7 @@ contract PositionManagerBaseTest is SpokeBase {
     assertFalse(positionManager.isSpokeRegistered(newSpoke));
 
     vm.expectEmit(address(positionManager));
-    emit IPositionManagerBase.SpokeRegistered(newSpoke, true);
+    emit IPositionManagerBase.SpokeRegisteration(newSpoke, true);
     vm.prank(ADMIN);
     positionManager.registerSpoke(newSpoke, true);
 
@@ -199,14 +199,14 @@ contract PositionManagerBaseTest is SpokeBase {
     assertFalse(positionManager.isSpokeRegistered(address(spoke1)));
 
     vm.expectEmit(address(positionManager));
-    emit IPositionManagerBase.SpokeRegistered(address(spoke1), true);
+    emit IPositionManagerBase.SpokeRegisteration(address(spoke1), true);
     vm.prank(ADMIN);
     positionManager.registerSpoke(address(spoke1), true);
 
     assertTrue(positionManager.isSpokeRegistered(address(spoke1)));
 
     vm.expectEmit(address(positionManager));
-    emit IPositionManagerBase.SpokeRegistered(address(spoke1), false);
+    emit IPositionManagerBase.SpokeRegisteration(address(spoke1), false);
     vm.prank(ADMIN);
     positionManager.registerSpoke(address(spoke1), false);
 
