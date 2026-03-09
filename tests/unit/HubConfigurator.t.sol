@@ -370,7 +370,16 @@ contract HubConfiguratorTest is HubBase {
     assertGe(treasurySpoke.getSpokeSuppliedShares(address(hub1), daiAssetId), 0);
 
     // Change the fee receiver
-    TreasurySpoke newTreasurySpoke = new TreasurySpoke(HUB_ADMIN);
+    TreasurySpokeInstance newTreasurySpokeImpl = new TreasurySpokeInstance();
+    ITreasurySpoke newTreasurySpoke = ITreasurySpoke(
+      address(
+        new TransparentUpgradeableProxy(
+          address(newTreasurySpokeImpl),
+          ADMIN,
+          abi.encodeCall(TreasurySpokeInstance.initialize, (HUB_ADMIN))
+        )
+      )
+    );
     vm.prank(HUB_CONFIGURATOR);
     hubConfigurator.updateFeeReceiver(address(hub1), daiAssetId, address(newTreasurySpoke));
 
@@ -438,7 +447,16 @@ contract HubConfiguratorTest is HubBase {
     uint256 feeShares = treasurySpoke.getSpokeSuppliedShares(address(hub1), daiAssetId);
 
     // Change the fee receiver
-    TreasurySpoke newTreasurySpoke = new TreasurySpoke(HUB_ADMIN);
+    TreasurySpokeInstance newTreasurySpokeImpl2 = new TreasurySpokeInstance();
+    ITreasurySpoke newTreasurySpoke = ITreasurySpoke(
+      address(
+        new TransparentUpgradeableProxy(
+          address(newTreasurySpokeImpl2),
+          ADMIN,
+          abi.encodeCall(TreasurySpokeInstance.initialize, (HUB_ADMIN))
+        )
+      )
+    );
     vm.prank(HUB_CONFIGURATOR);
     hubConfigurator.updateFeeReceiver(address(hub1), daiAssetId, address(newTreasurySpoke));
 

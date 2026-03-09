@@ -49,8 +49,15 @@ contract TreasurySpokeTest is SpokeBase {
   }
 
   function test_deploy_reverts_on_invalid_params() public {
-    vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableInvalidOwner.selector, address(0)));
-    new TreasurySpoke(address(0));
+    TreasurySpokeInstance impl = new TreasurySpokeInstance();
+    vm.expectRevert(
+      abi.encodeWithSelector(OwnableUpgradeable.OwnableInvalidOwner.selector, address(0))
+    );
+    new TransparentUpgradeableProxy(
+      address(impl),
+      ADMIN,
+      abi.encodeCall(TreasurySpokeInstance.initialize, (address(0)))
+    );
   }
 
   function test_initial_state() public view {

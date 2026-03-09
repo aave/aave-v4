@@ -39,7 +39,16 @@ contract SpokeMultipleHubBase is SpokeBase {
     // Canonical hub and spoke
     hub1 = DeployUtils.deployHub(address(accessManager), hex'01');
     (spoke1, oracle1) = _deploySpokeWithOracle(ADMIN, address(accessManager));
-    treasurySpoke = new TreasurySpoke(ADMIN);
+    TreasurySpokeInstance treasurySpokeImpl = new TreasurySpokeInstance();
+    treasurySpoke = ITreasurySpoke(
+      address(
+        new TransparentUpgradeableProxy(
+          address(treasurySpokeImpl),
+          ADMIN,
+          abi.encodeCall(TreasurySpokeInstance.initialize, (ADMIN))
+        )
+      )
+    );
     irStrategy = new AssetInterestRateStrategy(address(hub1));
 
     // New hub and spoke

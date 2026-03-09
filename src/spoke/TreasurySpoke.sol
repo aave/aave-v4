@@ -2,7 +2,7 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity 0.8.28;
 
-import {Ownable2Step, Ownable} from 'src/dependencies/openzeppelin/Ownable2Step.sol';
+import {Ownable2StepUpgradeable} from 'src/dependencies/openzeppelin-upgradeable/Ownable2StepUpgradeable.sol';
 import {SafeERC20, IERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
 import {MathUtils} from 'src/libraries/math/MathUtils.sol';
 import {IHubBase} from 'src/hub/interfaces/IHubBase.sol';
@@ -14,12 +14,11 @@ import {ITreasurySpoke} from 'src/spoke/interfaces/ITreasurySpoke.sol';
 /// @notice Spoke contract used as a treasury where accumulated fees are treated as supplied assets.
 /// @dev Dedicated to a single user, controlled exclusively by the owner.
 /// @dev Allows withdraw to claim fees and supply to invest back into the corresponding hub via this dedicated spoke.
-contract TreasurySpoke is ITreasurySpoke, Ownable2Step {
+abstract contract TreasurySpoke is ITreasurySpoke, Ownable2StepUpgradeable {
   using SafeERC20 for IERC20;
 
-  /// @dev Constructor.
-  /// @param owner_ The address of the owner.
-  constructor(address owner_) Ownable(owner_) {}
+  /// @dev To be overridden by the inheriting TreasurySpoke instance contract.
+  function initialize(address owner) external virtual;
 
   /// @inheritdoc ITreasurySpoke
   function supply(
