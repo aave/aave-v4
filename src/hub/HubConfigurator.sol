@@ -205,7 +205,7 @@ contract HubConfigurator is AccessManaged, IHubConfigurator {
   }
 
   /// @inheritdoc IHubConfigurator
-  function updateSpokeSupplyCap(
+  function updateSpokeAddCap(
     address hub,
     uint256 assetId,
     address spoke,

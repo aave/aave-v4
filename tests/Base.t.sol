@@ -10,7 +10,6 @@ import {Vm, VmSafe} from 'forge-std/Vm.sol';
 import {console2 as console} from 'forge-std/console2.sol';
 
 // dependencies
-import {AggregatorV3Interface} from 'src/dependencies/chainlink/AggregatorV3Interface.sol';
 import {
   TransparentUpgradeableProxy,
   ITransparentUpgradeableProxy
@@ -43,7 +42,6 @@ import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
 import {Roles} from 'src/libraries/types/Roles.sol';
 import {Rescuable, IRescuable} from 'src/utils/Rescuable.sol';
 import {NoncesKeyed, INoncesKeyed} from 'src/utils/NoncesKeyed.sol';
-import {UnitPriceFeed} from 'src/misc/UnitPriceFeed.sol';
 import {IntentConsumer, IIntentConsumer} from 'src/utils/IntentConsumer.sol';
 import {AccessManagerEnumerable} from 'src/access/AccessManagerEnumerable.sol';
 
@@ -61,6 +59,7 @@ import {
 import {ISpoke, ISpokeBase} from 'src/spoke/interfaces/ISpoke.sol';
 import {TreasurySpoke, ITreasurySpoke} from 'src/spoke/TreasurySpoke.sol';
 import {IPriceOracle} from 'src/spoke/interfaces/IPriceOracle.sol';
+import {IPriceFeed} from 'src/spoke/interfaces/IPriceFeed.sol';
 import {AaveOracle} from 'src/spoke/AaveOracle.sol';
 import {IAaveOracle} from 'src/spoke/interfaces/IAaveOracle.sol';
 import {SpokeConfigurator, ISpokeConfigurator} from 'src/spoke/SpokeConfigurator.sol';
@@ -341,9 +340,9 @@ abstract contract Base is Test {
     accessManager = IAccessManager(address(new AccessManagerEnumerable(ADMIN)));
     hub1 = DeployUtils.deployHub(address(accessManager));
     irStrategy = new AssetInterestRateStrategy(address(hub1));
-    (spoke1, oracle1) = _deploySpokeWithOracle(ADMIN, address(accessManager), 'Spoke 1 (USD)');
-    (spoke2, oracle2) = _deploySpokeWithOracle(ADMIN, address(accessManager), 'Spoke 2 (USD)');
-    (spoke3, oracle3) = _deploySpokeWithOracle(ADMIN, address(accessManager), 'Spoke 3 (USD)');
+    (spoke1, oracle1) = _deploySpokeWithOracle(ADMIN, address(accessManager));
+    (spoke2, oracle2) = _deploySpokeWithOracle(ADMIN, address(accessManager));
+    (spoke3, oracle3) = _deploySpokeWithOracle(ADMIN, address(accessManager));
     treasurySpoke = ITreasurySpoke(new TreasurySpoke(TREASURY_ADMIN, address(hub1)));
     vm.stopPrank();
 
@@ -437,7 +436,7 @@ abstract contract Base is Test {
     selectors[9] = IHubConfigurator.addSpokeToAssets.selector;
     selectors[10] = IHubConfigurator.updateSpokeActive.selector;
     selectors[11] = IHubConfigurator.updateSpokeHalted.selector;
-    selectors[12] = IHubConfigurator.updateSpokeSupplyCap.selector;
+    selectors[12] = IHubConfigurator.updateSpokeAddCap.selector;
     selectors[13] = IHubConfigurator.updateSpokeDrawCap.selector;
     selectors[14] = IHubConfigurator.updateSpokeRiskPremiumThreshold.selector;
     selectors[15] = IHubConfigurator.updateSpokeCaps.selector;
@@ -2483,14 +2482,12 @@ abstract contract Base is Test {
 
   function _deploySpokeWithOracle(
     address proxyAdminOwner,
-    address _accessManager,
-    string memory _oracleDesc
+    address _accessManager
   ) internal pausePrank returns (ISpoke, IAaveOracle) {
     return
       _deploySpokeWithOracle(
         proxyAdminOwner,
         _accessManager,
-        _oracleDesc,
         Constants.MAX_ALLOWED_USER_RESERVES_LIMIT
       );
   }
@@ -2498,13 +2495,12 @@ abstract contract Base is Test {
   function _deploySpokeWithOracle(
     address proxyAdminOwner,
     address _accessManager,
-    string memory _oracleDesc,
     uint16 maxUserReservesLimit
   ) internal pausePrank returns (ISpoke, IAaveOracle) {
     address deployer = makeAddr('deployer');
 
     vm.startPrank(deployer);
-    IAaveOracle oracle = new AaveOracle(8, _oracleDesc);
+    IAaveOracle oracle = new AaveOracle(8);
 
     ISpoke spoke = DeployUtils.deploySpoke(
       address(oracle),
@@ -2517,19 +2513,21 @@ abstract contract Base is Test {
     vm.stopPrank();
 
     assertEq(spoke.ORACLE(), address(oracle));
-    assertEq(oracle.SPOKE(), address(spoke));
+    assertEq(oracle.spoke(), address(spoke));
 
     return (spoke, oracle);
   }
 
   function _deployTokenizationSpoke(
     IHub hub,
-    uint256 assetId,
+    address underlying,
     string memory shareName,
     string memory shareSymbol,
     address proxyAdminOwner
   ) internal pausePrank returns (ITokenizationSpoke) {
-    address tokenizationSpokeImpl = address(new TokenizationSpokeInstance(address(hub), assetId));
+    address tokenizationSpokeImpl = address(
+      new TokenizationSpokeInstance(address(hub), underlying)
+    );
     ITokenizationSpoke tokenizationSpoke = ITokenizationSpoke(
       DeployUtils.proxify(
         tokenizationSpokeImpl,
@@ -2886,9 +2884,7 @@ abstract contract Base is Test {
   function _mockReservePrice(ISpoke spoke, uint256 reserveId, uint256 price) internal {
     require(price > 0, 'mockReservePrice: price must be positive');
     AaveOracle oracle = AaveOracle(spoke.ORACLE());
-    address mockPriceFeed = address(
-      new MockPriceFeed(oracle.DECIMALS(), oracle.DESCRIPTION(), price)
-    );
+    address mockPriceFeed = address(new MockPriceFeed(oracle.decimals(), 'mock', price));
     vm.prank(address(ADMIN));
     spoke.updateReservePriceSource(reserveId, mockPriceFeed);
   }
@@ -2905,7 +2901,7 @@ abstract contract Base is Test {
 
   function _deployMockPriceFeed(ISpoke spoke, uint256 price) internal returns (address) {
     AaveOracle oracle = AaveOracle(spoke.ORACLE());
-    return address(new MockPriceFeed(oracle.DECIMALS(), oracle.DESCRIPTION(), price));
+    return address(new MockPriceFeed(oracle.decimals(), 'mock', price));
   }
 
   function _assertBorrowRateSynced(

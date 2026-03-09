@@ -2,7 +2,7 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity 0.8.28;
 
-import {AggregatorV3Interface} from 'src/dependencies/chainlink/AggregatorV3Interface.sol';
+import {IPriceFeed} from 'src/spoke/interfaces/IPriceFeed.sol';
 import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 import {IAaveOracle, IPriceOracle} from 'src/spoke/interfaces/IAaveOracle.sol';
 
@@ -12,47 +12,48 @@ import {IAaveOracle, IPriceOracle} from 'src/spoke/interfaces/IAaveOracle.sol';
 /// @dev Oracles are spoke-specific, due to the usage of reserve id as index of the `_sources` mapping.
 contract AaveOracle is IAaveOracle {
   /// @inheritdoc IPriceOracle
-  uint8 public immutable DECIMALS;
+  address public spoke;
 
-  /// @inheritdoc IAaveOracle
-  string public DESCRIPTION;
-
-  /// @inheritdoc IPriceOracle
-  address public SPOKE;
+  /// @dev The number of decimals for the oracle.
+  uint8 private immutable DECIMALS;
 
   /// @dev The address of the deployer.
   address private immutable DEPLOYER;
 
-  mapping(uint256 reserveId => AggregatorV3Interface) internal _sources;
+  /// @dev Map of reserve identifiers to their price feed.
+  mapping(uint256 reserveId => IPriceFeed) internal _sources;
 
   /// @dev Constructor.
   /// @dev `decimals` must match the spoke's decimals for compatibility.
   /// @param decimals_ The number of decimals for the oracle.
-  /// @param description_ The description of the oracle.
-  constructor(uint8 decimals_, string memory description_) {
+  constructor(uint8 decimals_) {
     DEPLOYER = msg.sender;
     DECIMALS = decimals_;
-    DESCRIPTION = description_;
   }
 
   /// @inheritdoc IAaveOracle
-  function setSpoke(address spoke) external {
+  function setSpoke(address spoke_) external {
     require(msg.sender == DEPLOYER, OnlyDeployer());
-    require(spoke != address(0), InvalidAddress());
-    require(SPOKE == address(0), SpokeAlreadySet());
-    require(ISpoke(spoke).ORACLE() == address(this), OracleMismatch());
-    SPOKE = spoke;
-    emit SetSpoke(spoke);
+    require(spoke_ != address(0), InvalidAddress());
+    require(spoke == address(0), SpokeAlreadySet());
+    require(ISpoke(spoke_).ORACLE() == address(this), OracleMismatch());
+    spoke = spoke_;
+    emit SetSpoke(spoke_);
   }
 
   /// @inheritdoc IAaveOracle
   function setReserveSource(uint256 reserveId, address source) external {
-    require(msg.sender == SPOKE, OnlySpoke());
-    AggregatorV3Interface targetSource = AggregatorV3Interface(source);
+    require(msg.sender == spoke, OnlySpoke());
+    IPriceFeed targetSource = IPriceFeed(source);
     require(targetSource.decimals() == DECIMALS, InvalidSourceDecimals(reserveId));
     _sources[reserveId] = targetSource;
     _getSourcePrice(reserveId);
     emit UpdateReserveSource(reserveId, source);
+  }
+
+  /// @inheritdoc IPriceOracle
+  function decimals() external view returns (uint8) {
+    return DECIMALS;
   }
 
   /// @inheritdoc IPriceOracle
@@ -78,10 +79,10 @@ contract AaveOracle is IAaveOracle {
 
   /// @dev Price of zero will revert with `InvalidPrice`.
   function _getSourcePrice(uint256 reserveId) internal view returns (uint256) {
-    AggregatorV3Interface source = _sources[reserveId];
+    IPriceFeed source = _sources[reserveId];
     require(address(source) != address(0), InvalidSource(reserveId));
 
-    (, int256 price, , , ) = source.latestRoundData();
+    int256 price = source.latestAnswer();
     require(price > 0, InvalidPrice(reserveId));
 
     return uint256(price);
