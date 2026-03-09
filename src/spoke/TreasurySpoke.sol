@@ -6,7 +6,6 @@ import {Ownable2StepUpgradeable} from 'src/dependencies/openzeppelin-upgradeable
 import {SafeERC20, IERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
 import {MathUtils} from 'src/libraries/math/MathUtils.sol';
 import {IHubBase} from 'src/hub/interfaces/IHubBase.sol';
-import {IHub} from 'src/hub/interfaces/IHub.sol';
 import {ITreasurySpoke} from 'src/spoke/interfaces/ITreasurySpoke.sol';
 
 /// @title TreasurySpoke
@@ -27,8 +26,8 @@ abstract contract TreasurySpoke is ITreasurySpoke, Ownable2StepUpgradeable {
     uint256 amount,
     address
   ) external onlyOwner returns (uint256, uint256) {
-    IHub hubContract = IHub(hub);
-    address underlying = hubContract.getAsset(assetId).underlying;
+    IHubBase hubContract = IHubBase(hub);
+    (address underlying, ) = hubContract.getAssetUnderlyingAndDecimals(assetId);
     IERC20(underlying).safeTransferFrom(msg.sender, hub, amount);
     uint256 shares = hubContract.add(assetId, amount);
 
