@@ -296,7 +296,7 @@ interface IHub is IHubBase, IAccessManaged {
   /// @notice Updates the interest rate strategy for a specified asset.
   /// @param assetId The identifier of the asset.
   /// @param irData The interest rate data to apply to the given asset, encoded in bytes.
-  function setRateData(uint256 assetId, bytes calldata irData) external;
+  function setInterestRateData(uint256 assetId, bytes calldata irData) external;
 
   /// @notice Mints shares to the fee receiver from accrued fees.
   /// @dev No op when fees are worth less than one share.

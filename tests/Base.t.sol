@@ -395,7 +395,7 @@ abstract contract Base is Test {
       selectors[1] = IHub.updateAssetConfig.selector;
       selectors[2] = IHub.addSpoke.selector;
       selectors[3] = IHub.updateSpokeConfig.selector;
-      selectors[4] = IHub.setRateData.selector;
+      selectors[4] = IHub.setInterestRateData.selector;
       selectors[5] = IHub.mintFeeShares.selector;
       manager.setTargetFunctionRole(address(targetHub), selectors, Roles.HUB_ADMIN_ROLE);
     }
@@ -439,7 +439,7 @@ abstract contract Base is Test {
     selectors[16] = IHubConfigurator.deactivateSpoke.selector;
     selectors[17] = IHubConfigurator.haltSpoke.selector;
     selectors[18] = IHubConfigurator.resetSpokeCaps.selector;
-    selectors[19] = IHubConfigurator.updateRateData.selector;
+    selectors[19] = IHubConfigurator.updateInterestRateData.selector;
     selectors[20] = IHubConfigurator.addAsset.selector;
     selectors[21] = IHubConfigurator.addAssetWithDecimals.selector;
     IAccessManager(manager).setTargetFunctionRole(
@@ -596,7 +596,7 @@ abstract contract Base is Test {
     });
 
     bytes memory encodedIrData = abi.encode(
-      IAssetInterestRateStrategy.RateData({
+      IAssetInterestRateStrategy.InterestRateData({
         optimalUsageRatio: 90_00, // 90.00%
         baseBorrowRate: 5_00, // 5.00%
         rateGrowthBeforeOptimal: 5_00, // 5.00%
@@ -977,7 +977,7 @@ abstract contract Base is Test {
 
     // Configure IR Strategy for hub 2
     bytes memory encodedIrData = abi.encode(
-      IAssetInterestRateStrategy.RateData({
+      IAssetInterestRateStrategy.InterestRateData({
         optimalUsageRatio: 90_00, // 90.00%
         baseBorrowRate: 5_00, // 5.00%
         rateGrowthBeforeOptimal: 5_00, // 5.00%
@@ -1043,7 +1043,7 @@ abstract contract Base is Test {
 
     // Configure IR Strategy for hub 3
     bytes memory encodedIrData = abi.encode(
-      IAssetInterestRateStrategy.RateData({
+      IAssetInterestRateStrategy.InterestRateData({
         optimalUsageRatio: 90_00, // 90.00%
         baseBorrowRate: 5_00, // 5.00%
         rateGrowthBeforeOptimal: 5_00, // 5.00%
@@ -2631,8 +2631,8 @@ abstract contract Base is Test {
   }
 
   function assertEq(
-    IAssetInterestRateStrategy.RateData memory a,
-    IAssetInterestRateStrategy.RateData memory b
+    IAssetInterestRateStrategy.InterestRateData memory a,
+    IAssetInterestRateStrategy.InterestRateData memory b
   ) internal pure {
     assertEq(a.optimalUsageRatio, b.optimalUsageRatio, 'optimalUsageRatio');
     assertEq(a.baseBorrowRate, b.baseBorrowRate, 'baseBorrowRate');
@@ -2774,10 +2774,10 @@ abstract contract Base is Test {
 
   function _setConstantInterestRateBps(IHub hub, uint256 assetId, uint32 interestRateBps) internal {
     vm.prank(HUB_ADMIN);
-    hub.setRateData(
+    hub.setInterestRateData(
       assetId,
       abi.encode(
-        IAssetInterestRateStrategy.RateData({
+        IAssetInterestRateStrategy.InterestRateData({
           optimalUsageRatio: 90_00,
           baseBorrowRate: interestRateBps,
           rateGrowthBeforeOptimal: 0,
@@ -3284,7 +3284,7 @@ abstract contract Base is Test {
       });
 
       bytes memory encodedIrData = abi.encode(
-        IAssetInterestRateStrategy.RateData({
+        IAssetInterestRateStrategy.InterestRateData({
           optimalUsageRatio: 90_00, // 90.00%
           baseBorrowRate: 5_00, // 5.00%
           rateGrowthBeforeOptimal: 5_00, // 5.00%

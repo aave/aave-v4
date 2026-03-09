@@ -11,14 +11,14 @@ contract AssetInterestRateStrategyTest is Base {
   uint256 mockAssetId = uint256(keccak256('mockAssetId'));
 
   IAssetInterestRateStrategy public rateStrategy;
-  IAssetInterestRateStrategy.RateData public rateData;
+  IAssetInterestRateStrategy.InterestRateData public rateData;
   bytes public encodedRateData;
 
   function setUp() public override {
     deployFixtures();
     rateStrategy = new AssetInterestRateStrategy(address(hub1));
 
-    rateData = IAssetInterestRateStrategy.RateData({
+    rateData = IAssetInterestRateStrategy.InterestRateData({
       optimalUsageRatio: 80_00, // 80.00%
       baseBorrowRate: 2_00, // 2_00%
       rateGrowthBeforeOptimal: 4_00, // 4.00%
@@ -27,7 +27,7 @@ contract AssetInterestRateStrategyTest is Base {
     encodedRateData = abi.encode(rateData);
 
     vm.prank(address(hub1));
-    rateStrategy.setRateData(mockAssetId, encodedRateData);
+    rateStrategy.setInterestRateData(mockAssetId, encodedRateData);
   }
 
   function test_deploy_revertsWith_InvalidAddress() public {
@@ -47,8 +47,8 @@ contract AssetInterestRateStrategyTest is Base {
     assertEq(rateStrategy.MAX_OPTIMAL_RATIO(), 99_00);
   }
 
-  function test_getRateData() public view {
-    assertEq(rateStrategy.getRateData(mockAssetId), rateData);
+  function test_getInterestRateData() public view {
+    assertEq(rateStrategy.getInterestRateData(mockAssetId), rateData);
   }
 
   function test_getOptimalUsageRatio() public view {
@@ -77,13 +77,13 @@ contract AssetInterestRateStrategyTest is Base {
     );
   }
 
-  function test_setRateData_revertsWith_OnlyHub() public {
+  function test_setInterestRateData_revertsWith_OnlyHub() public {
     vm.expectRevert(IAssetInterestRateStrategy.OnlyHub.selector);
     vm.prank(makeAddr('randomCaller'));
-    rateStrategy.setRateData(mockAssetId, encodedRateData);
+    rateStrategy.setInterestRateData(mockAssetId, encodedRateData);
   }
 
-  function test_setRateData_revertsWith_InvalidOptimalUsageRatio() public {
+  function test_setInterestRateData_revertsWith_InvalidOptimalUsageRatio() public {
     uint16[] memory invalidOptimalUsageRatios = new uint16[](2);
     invalidOptimalUsageRatios[0] = rateStrategy.MIN_OPTIMAL_RATIO().toUint16() - 1;
     invalidOptimalUsageRatios[1] = rateStrategy.MAX_OPTIMAL_RATIO().toUint16() + 1;
@@ -93,11 +93,11 @@ contract AssetInterestRateStrategyTest is Base {
       encodedRateData = abi.encode(rateData);
       vm.expectRevert(IAssetInterestRateStrategy.InvalidOptimalUsageRatio.selector);
       vm.prank(address(hub1));
-      rateStrategy.setRateData(mockAssetId, encodedRateData);
+      rateStrategy.setInterestRateData(mockAssetId, encodedRateData);
     }
   }
 
-  function test_setRateData_revertsWith_GrowthAfterOptimalMustBeGteGrowthBeforeOptimal() public {
+  function test_setInterestRateData_revertsWith_GrowthAfterOptimalMustBeGteGrowthBeforeOptimal() public {
     (rateData.rateGrowthBeforeOptimal, rateData.rateGrowthAfterOptimal) = (
       rateData.rateGrowthAfterOptimal,
       rateData.rateGrowthBeforeOptimal
@@ -107,28 +107,28 @@ contract AssetInterestRateStrategyTest is Base {
       IAssetInterestRateStrategy.GrowthAfterOptimalMustBeGteGrowthBeforeOptimal.selector
     );
     vm.prank(address(hub1));
-    rateStrategy.setRateData(mockAssetId, encodedRateData);
+    rateStrategy.setInterestRateData(mockAssetId, encodedRateData);
   }
 
-  function test_setRateData_revertsWith_InvalidMaxBorrowRate() public {
+  function test_setInterestRateData_revertsWith_InvalidMaxBorrowRate() public {
     rateData.baseBorrowRate = rateData.rateGrowthBeforeOptimal = rateData.rateGrowthAfterOptimal =
       rateStrategy.MAX_ALLOWED_BORROW_RATE().toUint32() / 3 +
       1;
     encodedRateData = abi.encode(rateData);
     vm.expectRevert(IAssetInterestRateStrategy.InvalidMaxBorrowRate.selector);
     vm.prank(address(hub1));
-    rateStrategy.setRateData(mockAssetId, encodedRateData);
+    rateStrategy.setInterestRateData(mockAssetId, encodedRateData);
   }
 
-  function test_setRateData_revertsWith_InvalidRateData() public {
+  function test_setInterestRateData_revertsWith_InvalidRateData() public {
     encodedRateData = abi.encode('invalid');
     vm.expectRevert();
     vm.prank(address(hub1));
-    rateStrategy.setRateData(mockAssetId, encodedRateData);
+    rateStrategy.setInterestRateData(mockAssetId, encodedRateData);
   }
 
-  function test_setRateData() public {
-    rateData = IAssetInterestRateStrategy.RateData({
+  function test_setInterestRateData() public {
+    rateData = IAssetInterestRateStrategy.InterestRateData({
       optimalUsageRatio: 60_00, // 60.00%
       baseBorrowRate: 4_00, // 4_00%
       rateGrowthBeforeOptimal: 2_00, // 2.00%
@@ -137,7 +137,7 @@ contract AssetInterestRateStrategyTest is Base {
     encodedRateData = abi.encode(rateData);
 
     vm.expectEmit(address(rateStrategy));
-    emit IAssetInterestRateStrategy.UpdateRateData(
+    emit IAssetInterestRateStrategy.UpdateInterestRateData(
       address(hub1),
       mockAssetId,
       rateData.optimalUsageRatio,
@@ -147,9 +147,9 @@ contract AssetInterestRateStrategyTest is Base {
     );
 
     vm.prank(address(hub1));
-    rateStrategy.setRateData(mockAssetId, encodedRateData);
+    rateStrategy.setInterestRateData(mockAssetId, encodedRateData);
 
-    test_getRateData();
+    test_getInterestRateData();
     test_getOptimalUsageRatio();
     test_getBaseBorrowRate();
     test_getRateGrowthBeforeOptimal();
@@ -157,10 +157,10 @@ contract AssetInterestRateStrategyTest is Base {
     test_getMaxBorrowRate();
   }
 
-  function test_calculateInterestRate_revertsWith_RateDataNotSet() public {
+  function test_calculateInterestRate_revertsWith_InterestRateDataNotSet() public {
     uint256 mockAssetId2 = uint256(keccak256('mockAssetId2'));
     vm.expectRevert(
-      abi.encodeWithSelector(IBasicInterestRateStrategy.RateDataNotSet.selector, mockAssetId2)
+      abi.encodeWithSelector(IBasicInterestRateStrategy.InterestRateDataNotSet.selector, mockAssetId2)
     );
     rateStrategy.calculateInterestRate({
       assetId: mockAssetId2,

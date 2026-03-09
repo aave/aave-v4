@@ -28,7 +28,7 @@ contract AssetInterestRateStrategy is IAssetInterestRateStrategy {
   address public immutable HUB;
 
   /// @dev Map of asset identifiers to their interest rate data.
-  mapping(uint256 assetId => RateData) internal _interestRateData;
+  mapping(uint256 assetId => InterestRateData) internal _interestRateData;
 
   /// @dev Constructor.
   /// @param hub_ The address of the associated Hub.
@@ -40,9 +40,9 @@ contract AssetInterestRateStrategy is IAssetInterestRateStrategy {
   /// @notice Sets the interest rate parameters for a specified asset.
   /// @param assetId The identifier of the asset.
   /// @param data The encoded parameters containing BPS data used to configure the interest rate of the asset.
-  function setRateData(uint256 assetId, bytes calldata data) external {
+  function setInterestRateData(uint256 assetId, bytes calldata data) external {
     require(HUB == msg.sender, OnlyHub());
-    RateData memory rateData = abi.decode(data, (RateData));
+    InterestRateData memory rateData = abi.decode(data, (InterestRateData));
     require(
       MIN_OPTIMAL_RATIO <= rateData.optimalUsageRatio &&
         rateData.optimalUsageRatio <= MAX_OPTIMAL_RATIO,
@@ -62,7 +62,7 @@ contract AssetInterestRateStrategy is IAssetInterestRateStrategy {
 
     _interestRateData[assetId] = rateData;
 
-    emit UpdateRateData(
+    emit UpdateInterestRateData(
       HUB,
       assetId,
       rateData.optimalUsageRatio,
@@ -73,7 +73,7 @@ contract AssetInterestRateStrategy is IAssetInterestRateStrategy {
   }
 
   /// @inheritdoc IAssetInterestRateStrategy
-  function getRateData(uint256 assetId) external view returns (RateData memory) {
+  function getInterestRateData(uint256 assetId) external view returns (InterestRateData memory) {
     return _interestRateData[assetId];
   }
 
@@ -113,25 +113,25 @@ contract AssetInterestRateStrategy is IAssetInterestRateStrategy {
     uint256 /* deficit */,
     uint256 swept
   ) external view returns (uint256) {
-    RateData memory rateData = _interestRateData[assetId];
-    require(rateData.optimalUsageRatio > 0, RateDataNotSet(assetId));
+    InterestRateData memory rateData = _interestRateData[assetId];
+    require(rateData.optimalUsageRatio > 0, InterestRateDataNotSet(assetId));
 
-    uint256 currentRateRay = rateData.baseBorrowRate.bpsToRay();
+    uint256 currentBorrowRateRay = rateData.baseBorrowRate.bpsToRay();
     if (drawn == 0) {
-      return currentRateRay;
+      return currentBorrowRateRay;
     }
 
     uint256 usageRatioRay = drawn.rayDivUp(liquidity + drawn + swept);
     uint256 optimalUsageRatioRay = rateData.optimalUsageRatio.bpsToRay();
 
     if (usageRatioRay <= optimalUsageRatioRay) {
-      currentRateRay += rateData
+      currentBorrowRateRay += rateData
         .rateGrowthBeforeOptimal
         .bpsToRay()
         .rayMulUp(usageRatioRay)
         .rayDivUp(optimalUsageRatioRay);
     } else {
-      currentRateRay +=
+      currentBorrowRateRay +=
         rateData.rateGrowthBeforeOptimal.bpsToRay() +
         rateData
           .rateGrowthAfterOptimal
@@ -140,6 +140,6 @@ contract AssetInterestRateStrategy is IAssetInterestRateStrategy {
           .rayDivUp(WadRayMath.RAY - optimalUsageRatioRay);
     }
 
-    return currentRateRay;
+    return currentBorrowRateRay;
   }
 }

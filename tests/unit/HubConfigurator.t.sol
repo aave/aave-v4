@@ -25,7 +25,7 @@ contract HubConfiguratorTest is HubBase {
 
     _assetId = daiAssetId;
     _encodedIrData = abi.encode(
-      IAssetInterestRateStrategy.RateData({
+      IAssetInterestRateStrategy.InterestRateData({
         optimalUsageRatio: 90_00, // 90.00%
         baseBorrowRate: 5_00, // 5.00%
         rateGrowthBeforeOptimal: 5_00, // 5.00%
@@ -206,7 +206,7 @@ contract HubConfiguratorTest is HubBase {
     address interestRateStrategy = address(new AssetInterestRateStrategy(address(hub1)));
 
     _encodedIrData = abi.encode(
-      IAssetInterestRateStrategy.RateData({
+      IAssetInterestRateStrategy.InterestRateData({
         optimalUsageRatio: optimalUsageRatio,
         baseBorrowRate: baseBorrowRate,
         rateGrowthBeforeOptimal: rateGrowthBeforeOptimal,
@@ -1133,16 +1133,16 @@ contract HubConfiguratorTest is HubBase {
     }
   }
 
-  function test_updateRateData_revertsWith_AccessManagedUnauthorized() public {
+  function test_updateInterestRateData_revertsWith_AccessManagedUnauthorized() public {
     vm.expectRevert(
       abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, alice)
     );
     vm.prank(alice);
-    hubConfigurator.updateRateData(address(hub1), _assetId, vm.randomBytes(32));
+    hubConfigurator.updateInterestRateData(address(hub1), _assetId, vm.randomBytes(32));
   }
 
-  function test_updateRateData() public {
-    IAssetInterestRateStrategy.RateData memory newIrData = IAssetInterestRateStrategy.RateData({
+  function test_updateInterestRateData() public {
+    IAssetInterestRateStrategy.InterestRateData memory newIrData = IAssetInterestRateStrategy.InterestRateData({
       optimalUsageRatio: 90_00, // 90.00%
       baseBorrowRate: 5_00, // 5.00%
       rateGrowthBeforeOptimal: 5_00, // 5.00%
@@ -1151,12 +1151,12 @@ contract HubConfiguratorTest is HubBase {
 
     vm.expectCall(
       address(hub1),
-      abi.encodeCall(IHub.setRateData, (_assetId, abi.encode(newIrData)))
+      abi.encodeCall(IHub.setInterestRateData, (_assetId, abi.encode(newIrData)))
     );
     vm.prank(HUB_CONFIGURATOR);
-    hubConfigurator.updateRateData(address(hub1), _assetId, abi.encode(newIrData));
+    hubConfigurator.updateInterestRateData(address(hub1), _assetId, abi.encode(newIrData));
 
-    assertEq(irStrategy.getRateData(_assetId), newIrData);
+    assertEq(irStrategy.getInterestRateData(_assetId), newIrData);
   }
 
   function _addAsset(

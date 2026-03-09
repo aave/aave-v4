@@ -150,10 +150,10 @@ contract SpokeLiquidationCallScenariosTest is SpokeLiquidationCallBaseTest {
     // Borrow rates:
     //   - DAI: 3%
     vm.prank(address(hub1));
-    irStrategy.setRateData(
+    irStrategy.setInterestRateData(
       _daiReserveId(spoke),
       abi.encode(
-        IAssetInterestRateStrategy.RateData({
+        IAssetInterestRateStrategy.InterestRateData({
           optimalUsageRatio: 90_00,
           baseBorrowRate: 3_00,
           rateGrowthBeforeOptimal: 0,
@@ -252,10 +252,10 @@ contract SpokeLiquidationCallScenariosTest is SpokeLiquidationCallBaseTest {
     // Borrow rates:
     //   - DAI: 3%
     vm.prank(address(hub1));
-    irStrategy.setRateData(
+    irStrategy.setInterestRateData(
       _daiReserveId(spoke),
       abi.encode(
-        IAssetInterestRateStrategy.RateData({
+        IAssetInterestRateStrategy.InterestRateData({
           optimalUsageRatio: 90_00,
           baseBorrowRate: 3_00,
           rateGrowthBeforeOptimal: 0,

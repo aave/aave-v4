@@ -295,8 +295,8 @@ contract HubConfigurator is AccessManaged, IHubConfigurator {
   }
 
   /// @inheritdoc IHubConfigurator
-  function updateRateData(address hub, uint256 assetId, bytes calldata irData) external restricted {
-    IHub(hub).setRateData(assetId, irData);
+  function updateInterestRateData(address hub, uint256 assetId, bytes calldata irData) external restricted {
+    IHub(hub).setInterestRateData(assetId, irData);
   }
 
   /// @dev Updates spoke caps without changing the active flag.

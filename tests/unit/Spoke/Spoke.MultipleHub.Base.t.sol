@@ -20,8 +20,8 @@ contract SpokeMultipleHubBase is SpokeBase {
       maxLiquidationBonus: 100_00, // 100.00%
       liquidationFee: 0 // 0.00%
     });
-  IAssetInterestRateStrategy.RateData internal irData =
-    IAssetInterestRateStrategy.RateData({
+  IAssetInterestRateStrategy.InterestRateData internal irData =
+    IAssetInterestRateStrategy.InterestRateData({
       optimalUsageRatio: 90_00, // 90.00%
       baseBorrowRate: 5_00, // 5.00%
       rateGrowthBeforeOptimal: 5_00, // 5.00%
