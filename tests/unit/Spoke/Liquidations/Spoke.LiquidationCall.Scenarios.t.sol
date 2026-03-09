@@ -756,7 +756,7 @@ contract SpokeLiquidationCallScenariosTest is SpokeLiquidationCallBaseTest {
     _openSupplyPosition(spoke, collateralReserveId, MAX_SUPPLY_AMOUNT);
 
     vm.expectCall(
-      address(hub), 
+      address(hub),
       abi.encodeWithSelector(IHubBase.reportDeficit.selector, usdxAssetId)
     );
 
