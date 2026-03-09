@@ -58,6 +58,12 @@ interface IHubBase {
     uint256 premiumAmount
   );
 
+  /// @notice Emitted on the `refreshPremium` action.
+  /// @param assetId The identifier of the asset.
+  /// @param spoke The address of the spoke.
+  /// @param premiumDelta The premium delta data struct.
+  event RefreshPremium(uint256 indexed assetId, address indexed spoke, PremiumDelta premiumDelta);
+
   /// @notice Emitted on the `reportDeficit` action.
   /// @param assetId The identifier of the asset.
   /// @param spoke The address of the spoke.
@@ -71,12 +77,6 @@ interface IHubBase {
     PremiumDelta premiumDelta,
     uint256 deficitAmountRay
   );
-
-  /// @notice Emitted on the `refreshPremium` action.
-  /// @param assetId The identifier of the asset.
-  /// @param spoke The address of the spoke.
-  /// @param premiumDelta The premium delta data struct.
-  event RefreshPremium(uint256 indexed assetId, address indexed spoke, PremiumDelta premiumDelta);
 
   /// @notice Emitted on the `transferShares` action.
   /// @param assetId The identifier of the asset.
