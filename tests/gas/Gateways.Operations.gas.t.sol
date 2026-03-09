@@ -3,7 +3,7 @@
 pragma solidity ^0.8.0;
 
 import 'tests/Base.t.sol';
-import 'tests/unit/misc/SignatureGateway/SignatureGateway.Base.t.sol';
+import 'tests/unit/position-manager/SignatureGateway/SignatureGateway.Base.t.sol';
 
 /// forge-config: default.isolate = true
 contract NativeTokenGateway_Gas_Tests is Base {

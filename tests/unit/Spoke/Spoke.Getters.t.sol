@@ -16,7 +16,7 @@ contract SpokeGettersTest is SpokeBase {
     super.setUp();
 
     // Deploy new spoke without setting the liquidation config
-    (spoke, ) = _deploySpokeWithOracle(ADMIN, address(accessManager), 'New Spoke (USD)');
+    (spoke, ) = _deploySpokeWithOracle(ADMIN, address(accessManager));
     setUpRoles(hub1, spoke, accessManager);
 
     IHub.SpokeConfig memory spokeConfig = IHub.SpokeConfig({

@@ -2,7 +2,7 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import 'tests/unit/misc/SignatureGateway/SignatureGateway.Base.t.sol';
+import 'tests/unit/position-manager/SignatureGateway/SignatureGateway.Base.t.sol';
 
 contract SignatureGateway_InsufficientAllowance_Test is SignatureGatewayBaseTest {
   function setUp() public virtual override {

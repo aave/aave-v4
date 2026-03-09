@@ -88,6 +88,26 @@ library EIP712Types {
     uint256 deadline;
   }
 
+  struct WithdrawPermit {
+    address spoke;
+    uint256 reserveId;
+    address owner;
+    address spender;
+    uint256 amount;
+    uint256 nonce;
+    uint256 deadline;
+  }
+
+  struct BorrowPermit {
+    address spoke;
+    uint256 reserveId;
+    address owner;
+    address spender;
+    uint256 amount;
+    uint256 nonce;
+    uint256 deadline;
+  }
+
   /// @dev TokenizationSpoke Intents
   struct TokenizedDeposit {
     address depositor;

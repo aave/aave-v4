@@ -14,6 +14,7 @@ A unified liquidity layer and modular architecture that enhances capital efficie
 ## Documentation
 
 - [Aave V4 Overview](./docs/overview.md)
+- [Aave V4 Docs](https://aave.com/docs/aave-v4)
 
 ## Architecture
 
@@ -144,6 +145,14 @@ Snapshot files generated:
 
 ## Security
 
-- **Audit Reports**: [TBD]
-- **Security Policy**: [TBD]
-- **Bug Bounty**: [TBD]
+### Audit Reports
+
+You can find all audit reports under the audits folder
+
+- [2026-02-05 - Aave V4 - Blackthorn](./audits/2026-02-05_Aave-V4_Blackthorn.pdf)
+- [2026-02-10 - Aave V4 - TrailOfBits](./audits/2026-02-10_Aave-V4_TrailOfBits.pdf)
+- [2026-02-19 - Aave V4 - ChainSecurity](./audits/2026-02-19_Aave-V4_ChainSecurity.pdf)
+
+### Bug Bounty
+
+Further details will be made available soon.
