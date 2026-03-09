@@ -46,8 +46,6 @@ contract ConfigPositionManagerPermitTest is ConfigPositionManagerBaseTest {
     assertEq(instance.DOMAIN_SEPARATOR(), expectedDomainSeparator);
   }
 
-  // --- SetGlobalPermissionPermit ---
-
   function test_setGlobalPermissionPermit_typeHash() public view {
     assertEq(
       positionManager.SET_GLOBAL_PERMISSION_PERMIT_TYPEHASH(),
@@ -67,29 +65,33 @@ contract ConfigPositionManagerPermitTest is ConfigPositionManagerBaseTest {
     IConfigPositionManager.SetGlobalPermissionPermit memory p = _setGlobalPermissionPermitData(
       delegatee,
       alice,
-      true,
+      permission,
       _warpBeforeRandomDeadline()
     );
     p.nonce = _burnRandomNoncesAtKey(positionManager, alice);
     bytes memory signature = _sign(alicePk, _getTypedDataHash(positionManager, p));
 
-    ConfigPermissions expectedPermissions = ConfigPermissionsMap.setFullPermissions(true);
+    ConfigPermissions expectedPermissions = emptyPermissions;
 
-    vm.expectEmit(address(positionManager));
-    emit IConfigPositionManager.ConfigPermissionsUpdated(
-      address(spoke1),
-      alice,
-      delegatee,
-      expectedPermissions
-    );
+    if (permission) {
+      expectedPermissions = ConfigPermissionsMap.setFullPermissions(permission);
+      vm.expectEmit(address(positionManager));
+      emit IConfigPositionManager.ConfigPermissionsUpdated(
+        address(spoke1),
+        alice,
+        delegatee,
+        expectedPermissions
+      );
+    }
+
     vm.prank(vm.randomAddress());
     positionManager.setGlobalPermissionWithSig(p, signature);
 
     IConfigPositionManager.ConfigPermissionValues memory permissions = positionManager
       .getConfigPermissions(address(spoke1), delegatee, alice);
-    assertTrue(permissions.canSetUsingAsCollateral);
-    assertTrue(permissions.canUpdateUserRiskPremium);
-    assertTrue(permissions.canUpdateUserDynamicConfig);
+    assertEq(permissions.canSetUsingAsCollateral, permission);
+    assertEq(permissions.canUpdateUserRiskPremium, permission);
+    assertEq(permissions.canUpdateUserDynamicConfig, permission);
   }
 
   function test_setGlobalPermissionWithSig_revertsWith_InvalidSignature_dueTo_ExpiredDeadline()
@@ -163,8 +165,6 @@ contract ConfigPositionManagerPermitTest is ConfigPositionManagerBaseTest {
     vm.prank(alice);
     positionManager.setGlobalPermissionWithSig(p, signature);
   }
-
-  // --- SetCanUpdateUsingAsCollateralPermissionPermit ---
 
   function test_setCanUpdateUsingAsCollateralPermissionPermit_typeHash() public view {
     assertEq(
@@ -281,8 +281,6 @@ contract ConfigPositionManagerPermitTest is ConfigPositionManagerBaseTest {
     positionManager.setCanUpdateUsingAsCollateralPermissionWithSig(p, signature);
   }
 
-  // --- SetCanUpdateUserRiskPremiumPermissionPermit ---
-
   function test_setCanUpdateUserRiskPremiumPermissionPermit_typeHash() public view {
     assertEq(
       positionManager.SET_CAN_UPDATE_USER_RISK_PREMIUM_PERMISSION_PERMIT_TYPEHASH(),
@@ -397,8 +395,6 @@ contract ConfigPositionManagerPermitTest is ConfigPositionManagerBaseTest {
     vm.prank(alice);
     positionManager.setCanUpdateUserRiskPremiumPermissionWithSig(p, signature);
   }
-
-  // --- SetCanUpdateUserDynamicConfigPermissionPermit ---
 
   function test_setCanUpdateUserDynamicConfigPermissionPermit_typeHash() public view {
     assertEq(

@@ -8,7 +8,7 @@ import {PositionManagerBase} from 'src/position-manager/PositionManagerBase.sol'
 
 /// @title PositionManagerIntentBase
 /// @author Aave Labs
-/// @notice Extension of PositionManagerBase to verify and consume intents
+/// @notice Extension of PositionManagerBase powered with intents consumption functionality.
 /// @dev This extension is needed for all Position Manager using EIP-712 signatures to verify and consume intents.
 abstract contract PositionManagerIntentBase is
   IPositionManagerIntentBase,
