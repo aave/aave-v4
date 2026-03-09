@@ -744,10 +744,11 @@ contract SpokeLiquidationCallScenariosTest is SpokeLiquidationCallBaseTest {
       'Option 1: Fee receiver WETH balance before'
     );
 
+    uint256 snapshot = vm.snapshotState();
+
     // Option 1: 1 liquidation of 36 debt
     //   - Collateral siezed: 36 * 1.05 / 0.9 = 42 WETH
     //   - Bonus is 2 WETH: 1 WETH to liquidator, 1 WETH to treasury
-    uint256 snapshot = vm.snapshot();
     vm.prank(liquidator);
     spoke.liquidationCall({
       collateralReserveId: _wethReserveId(spoke),
@@ -772,7 +773,7 @@ contract SpokeLiquidationCallScenariosTest is SpokeLiquidationCallBaseTest {
       1,
       'Option 1: Fee receiver WETH balance after'
     );
-    vm.revertTo(snapshot);
+    vm.revertToState(snapshot);
 
     // Option 2: 2 liquidations of 18 debt
     //   - Collateral siezed: 18 * 1.05 / 0.9 = 21 WETH
@@ -781,7 +782,6 @@ contract SpokeLiquidationCallScenariosTest is SpokeLiquidationCallBaseTest {
     //   - Collateral siezed: 42 WETH
     //   - Debt siezed: 36 WETH
     //   - Bonus is 2 WETH: 0 WETH to liquidator, 2 WETH to treasury
-    snapshot = vm.snapshot();
     for (uint256 i = 0; i < 2; i++) {
       vm.prank(liquidator);
       spoke.liquidationCall({
@@ -808,7 +808,7 @@ contract SpokeLiquidationCallScenariosTest is SpokeLiquidationCallBaseTest {
       2,
       'Option 2: Fee receiver WETH balance after'
     );
-    vm.revertTo(snapshot);
+    vm.revertToState(snapshot);
   }
 
   /// @dev a halted peripheral asset won't block a liquidation
