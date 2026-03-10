@@ -367,7 +367,7 @@ contract HubAccrueInterestTest is Base {
     IHub.Asset memory asset = hub1.getAsset(daiAssetId);
     uint256 currentDrawnIndex = hub1.getAssetDrawnIndex(daiAssetId);
     uint256 currentDrawn = uint256(asset.drawnShares).rayMulUp(currentDrawnIndex);
-    uint256 expectedRate = IBasicDrawnRateStrategy(asset.drawnRateStrategy).calculateDrawnRate({
+    uint256 expectedRate = IBasicInterestRateStrategy(asset.drawnRateStrategy).calculateDrawnRate({
       assetId: daiAssetId,
       liquidity: asset.liquidity,
       drawn: currentDrawn,

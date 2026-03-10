@@ -23,7 +23,7 @@ contract HubAccessTest is HubBase {
     });
 
     bytes memory encodedIrData = abi.encode(
-      IAssetDrawnRateStrategy.DrawnRateData({
+      IAssetInterestRateStrategy.DrawnRateData({
         optimalUsageRatio: 90_00, // 90.00%
         baseDrawnRate: 5_00, // 5.00%
         rateGrowthBeforeOptimal: 5_00, // 5.00%
@@ -93,7 +93,7 @@ contract HubAccessTest is HubBase {
 
   function test_setDrawnRateData_access() public {
     bytes memory encodedIrData = abi.encode(
-      IAssetDrawnRateStrategy.DrawnRateData({
+      IAssetInterestRateStrategy.DrawnRateData({
         optimalUsageRatio: 50_00, // 50.00% in BPS
         baseDrawnRate: 100_00, // 100.00% in BPS
         rateGrowthBeforeOptimal: 200_00, // 200.00% in BPS
@@ -102,7 +102,7 @@ contract HubAccessTest is HubBase {
     );
 
     // Only Hub can set drawn rates
-    vm.expectRevert(abi.encodeWithSelector(IAssetDrawnRateStrategy.OnlyHub.selector));
+    vm.expectRevert(abi.encodeWithSelector(IAssetInterestRateStrategy.OnlyHub.selector));
     drawnRateStrategy.setDrawnRateData(daiAssetId, encodedIrData);
 
     // Hub can set drawn rates
@@ -125,7 +125,7 @@ contract HubAccessTest is HubBase {
   /// @dev Test showcasing ability to change role responsibility for a function selector.
   function test_change_role_responsibility() public {
     bytes memory encodedIrData = abi.encode(
-      IAssetDrawnRateStrategy.DrawnRateData({
+      IAssetInterestRateStrategy.DrawnRateData({
         optimalUsageRatio: 50_00, // 50.00% in BPS
         baseDrawnRate: 100_00, // 100.00% in BPS
         rateGrowthBeforeOptimal: 200_00, // 200.00% in BPS
@@ -168,7 +168,7 @@ contract HubAccessTest is HubBase {
   /// @dev Test showcasing ability to migrate role responsibility for a function selector.
   function test_migrate_role_responsibility() public {
     bytes memory encodedIrData = abi.encode(
-      IAssetDrawnRateStrategy.DrawnRateData({
+      IAssetInterestRateStrategy.DrawnRateData({
         optimalUsageRatio: 50_00, // 50.00% in BPS
         baseDrawnRate: 100_00, // 100.00% in BPS
         rateGrowthBeforeOptimal: 200_00, // 200.00% in BPS

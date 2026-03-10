@@ -4,21 +4,21 @@ pragma solidity ^0.8.0;
 
 import 'tests/Base.t.sol';
 
-contract AssetDrawnRateStrategyTest is Base {
+contract AssetInterestRateStrategyTest is Base {
   using WadRayMath for *;
   using SafeCast for uint256;
 
   uint256 mockAssetId = uint256(keccak256('mockAssetId'));
 
-  IAssetDrawnRateStrategy public rateStrategy;
-  IAssetDrawnRateStrategy.DrawnRateData public rateData;
+  IAssetInterestRateStrategy public rateStrategy;
+  IAssetInterestRateStrategy.DrawnRateData public rateData;
   bytes public encodedRateData;
 
   function setUp() public override {
     deployFixtures();
-    rateStrategy = new AssetDrawnRateStrategy(address(hub1));
+    rateStrategy = new AssetInterestRateStrategy(address(hub1));
 
-    rateData = IAssetDrawnRateStrategy.DrawnRateData({
+    rateData = IAssetInterestRateStrategy.DrawnRateData({
       optimalUsageRatio: 80_00, // 80.00%
       baseDrawnRate: 2_00, // 2_00%
       rateGrowthBeforeOptimal: 4_00, // 4.00%
@@ -31,8 +31,8 @@ contract AssetDrawnRateStrategyTest is Base {
   }
 
   function test_deploy_revertsWith_InvalidAddress() public {
-    vm.expectRevert(IAssetDrawnRateStrategy.InvalidAddress.selector);
-    new AssetDrawnRateStrategy(address(0));
+    vm.expectRevert(IAssetInterestRateStrategy.InvalidAddress.selector);
+    new AssetInterestRateStrategy(address(0));
   }
 
   function test_maxDrawnRate() public view {
@@ -78,7 +78,7 @@ contract AssetDrawnRateStrategyTest is Base {
   }
 
   function test_setDrawnRateData_revertsWith_OnlyHub() public {
-    vm.expectRevert(IAssetDrawnRateStrategy.OnlyHub.selector);
+    vm.expectRevert(IAssetInterestRateStrategy.OnlyHub.selector);
     vm.prank(makeAddr('randomCaller'));
     rateStrategy.setDrawnRateData(mockAssetId, encodedRateData);
   }
@@ -91,7 +91,7 @@ contract AssetDrawnRateStrategyTest is Base {
     for (uint256 i; i < invalidOptimalUsageRatios.length; i++) {
       rateData.optimalUsageRatio = invalidOptimalUsageRatios[i];
       encodedRateData = abi.encode(rateData);
-      vm.expectRevert(IAssetDrawnRateStrategy.InvalidOptimalUsageRatio.selector);
+      vm.expectRevert(IAssetInterestRateStrategy.InvalidOptimalUsageRatio.selector);
       vm.prank(address(hub1));
       rateStrategy.setDrawnRateData(mockAssetId, encodedRateData);
     }
@@ -106,7 +106,7 @@ contract AssetDrawnRateStrategyTest is Base {
     );
     encodedRateData = abi.encode(rateData);
     vm.expectRevert(
-      IAssetDrawnRateStrategy.GrowthAfterOptimalMustBeGteGrowthBeforeOptimal.selector
+      IAssetInterestRateStrategy.GrowthAfterOptimalMustBeGteGrowthBeforeOptimal.selector
     );
     vm.prank(address(hub1));
     rateStrategy.setDrawnRateData(mockAssetId, encodedRateData);
@@ -117,7 +117,7 @@ contract AssetDrawnRateStrategyTest is Base {
       rateStrategy.MAX_ALLOWED_DRAWN_RATE().toUint32() / 3 +
       1;
     encodedRateData = abi.encode(rateData);
-    vm.expectRevert(IAssetDrawnRateStrategy.InvalidMaxDrawnRate.selector);
+    vm.expectRevert(IAssetInterestRateStrategy.InvalidMaxDrawnRate.selector);
     vm.prank(address(hub1));
     rateStrategy.setDrawnRateData(mockAssetId, encodedRateData);
   }
@@ -130,7 +130,7 @@ contract AssetDrawnRateStrategyTest is Base {
   }
 
   function test_setDrawnRateData() public {
-    rateData = IAssetDrawnRateStrategy.DrawnRateData({
+    rateData = IAssetInterestRateStrategy.DrawnRateData({
       optimalUsageRatio: 60_00, // 60.00%
       baseDrawnRate: 4_00, // 4_00%
       rateGrowthBeforeOptimal: 2_00, // 2.00%
@@ -139,7 +139,7 @@ contract AssetDrawnRateStrategyTest is Base {
     encodedRateData = abi.encode(rateData);
 
     vm.expectEmit(address(rateStrategy));
-    emit IAssetDrawnRateStrategy.UpdateDrawnRateData(
+    emit IAssetInterestRateStrategy.UpdateDrawnRateData(
       address(hub1),
       mockAssetId,
       rateData.optimalUsageRatio,
@@ -162,7 +162,7 @@ contract AssetDrawnRateStrategyTest is Base {
   function test_calculateDrawnRate_revertsWith_DrawnRateDataNotSet() public {
     uint256 mockAssetId2 = uint256(keccak256('mockAssetId2'));
     vm.expectRevert(
-      abi.encodeWithSelector(IBasicDrawnRateStrategy.DrawnRateDataNotSet.selector, mockAssetId2)
+      abi.encodeWithSelector(IBasicInterestRateStrategy.DrawnRateDataNotSet.selector, mockAssetId2)
     );
     rateStrategy.calculateDrawnRate({
       assetId: mockAssetId2,

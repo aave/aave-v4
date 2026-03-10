@@ -12,7 +12,7 @@ import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
 import {AssetLogic} from 'src/hub/libraries/AssetLogic.sol';
 import {SharesMath} from 'src/hub/libraries/SharesMath.sol';
 import {Premium} from 'src/hub/libraries/Premium.sol';
-import {IBasicDrawnRateStrategy} from 'src/hub/interfaces/IBasicDrawnRateStrategy.sol';
+import {IBasicInterestRateStrategy} from 'src/hub/interfaces/IBasicInterestRateStrategy.sol';
 import {IHubBase, IHub} from 'src/hub/interfaces/IHub.sol';
 
 /// @title Hub
@@ -83,8 +83,8 @@ contract Hub is IHub, AccessManaged {
     uint256 assetId = _assetCount++;
     _underlyingToAssetId[underlying] = assetId;
 
-    IBasicDrawnRateStrategy(drawnRateStrategy).setDrawnRateData(assetId, drawnRateData);
-    uint256 drawnRate = IBasicDrawnRateStrategy(drawnRateStrategy).calculateDrawnRate({
+    IBasicInterestRateStrategy(drawnRateStrategy).setDrawnRateData(assetId, drawnRateData);
+    uint256 drawnRate = IBasicInterestRateStrategy(drawnRateStrategy).calculateDrawnRate({
       assetId: assetId,
       liquidity: 0,
       drawn: 0,
@@ -166,7 +166,7 @@ contract Hub is IHub, AccessManaged {
 
     if (config.drawnRateStrategy != asset.drawnRateStrategy) {
       asset.drawnRateStrategy = config.drawnRateStrategy;
-      IBasicDrawnRateStrategy(config.drawnRateStrategy).setDrawnRateData(assetId, drawnRateData);
+      IBasicInterestRateStrategy(config.drawnRateStrategy).setDrawnRateData(assetId, drawnRateData);
     } else {
       require(drawnRateData.length == 0, InvalidDrawnRateStrategy());
     }
@@ -204,7 +204,7 @@ contract Hub is IHub, AccessManaged {
     require(assetId < _assetCount, AssetNotListed());
     Asset storage asset = _assets[assetId];
     asset.accrue();
-    IBasicDrawnRateStrategy(asset.drawnRateStrategy).setDrawnRateData(assetId, drawnRateData);
+    IBasicInterestRateStrategy(asset.drawnRateStrategy).setDrawnRateData(assetId, drawnRateData);
     asset.updateDrawnRate(assetId);
   }
 

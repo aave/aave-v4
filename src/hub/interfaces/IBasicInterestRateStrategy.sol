@@ -2,10 +2,10 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-/// @title IBasicDrawnRateStrategy
+/// @title IBasicInterestRateStrategy
 /// @author Aave Labs
-/// @notice Basic interface for any rate strategy.
-interface IBasicDrawnRateStrategy {
+/// @notice Basic interface for any interest rate strategy.
+interface IBasicInterestRateStrategy {
   /// @notice Thrown when the drawn rate data is not set for the asset.
   /// @param assetId The identifier of the asset with no drawn rate data set.
   error DrawnRateDataNotSet(uint256 assetId);
@@ -21,7 +21,7 @@ interface IBasicDrawnRateStrategy {
   /// @param drawn The current drawn amount of the asset.
   /// @param deficit The current deficit of the asset.
   /// @param swept The current swept (reinvested) amount of the asset.
-  /// @return The drawn rate expressed in RAY.
+  /// @return The drawn rate, expressed in RAY.
   function calculateDrawnRate(
     uint256 assetId,
     uint256 liquidity,

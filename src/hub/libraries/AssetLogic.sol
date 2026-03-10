@@ -8,7 +8,7 @@ import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
 import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
 import {SharesMath} from 'src/hub/libraries/SharesMath.sol';
 import {Premium} from 'src/hub/libraries/Premium.sol';
-import {IBasicDrawnRateStrategy} from 'src/hub/interfaces/IBasicDrawnRateStrategy.sol';
+import {IBasicInterestRateStrategy} from 'src/hub/interfaces/IBasicInterestRateStrategy.sol';
 import {IHub} from 'src/hub/interfaces/IHub.sol';
 
 /// @title AssetLogic library
@@ -174,7 +174,7 @@ library AssetLogic {
     uint256 drawnIndex
   ) internal view returns (uint256) {
     return
-      IBasicDrawnRateStrategy(asset.drawnRateStrategy).calculateDrawnRate({
+      IBasicInterestRateStrategy(asset.drawnRateStrategy).calculateDrawnRate({
         assetId: assetId,
         liquidity: asset.liquidity,
         drawn: asset.drawn(drawnIndex),

@@ -50,10 +50,10 @@ import {HubConfigurator, IHubConfigurator} from 'src/hub/HubConfigurator.sol';
 import {IHub, IHubBase} from 'src/hub/interfaces/IHub.sol';
 import {SharesMath} from 'src/hub/libraries/SharesMath.sol';
 import {
-  AssetDrawnRateStrategy,
-  IAssetDrawnRateStrategy,
-  IBasicDrawnRateStrategy
-} from 'src/hub/AssetDrawnRateStrategy.sol';
+  AssetInterestRateStrategy,
+  IAssetInterestRateStrategy,
+  IBasicInterestRateStrategy
+} from 'src/hub/AssetInterestRateStrategy.sol';
 
 // spoke
 import {ISpoke, ISpokeBase} from 'src/spoke/interfaces/ISpoke.sol';
@@ -177,7 +177,7 @@ abstract contract Base is Test {
   ISpoke internal spoke1;
   ISpoke internal spoke2;
   ISpoke internal spoke3;
-  AssetDrawnRateStrategy internal drawnRateStrategy;
+  AssetInterestRateStrategy internal drawnRateStrategy;
   IAccessManager internal accessManager;
 
   string internal constant ALICE = 'alice';
@@ -335,7 +335,7 @@ abstract contract Base is Test {
     vm.startPrank(ADMIN);
     accessManager = IAccessManager(address(new AccessManagerEnumerable(ADMIN)));
     hub1 = DeployUtils.deployHub(address(accessManager));
-    drawnRateStrategy = new AssetDrawnRateStrategy(address(hub1));
+    drawnRateStrategy = new AssetInterestRateStrategy(address(hub1));
     (spoke1, oracle1) = _deploySpokeWithOracle(ADMIN, address(accessManager));
     (spoke2, oracle2) = _deploySpokeWithOracle(ADMIN, address(accessManager));
     (spoke3, oracle3) = _deploySpokeWithOracle(ADMIN, address(accessManager));
@@ -596,7 +596,7 @@ abstract contract Base is Test {
     });
 
     bytes memory encodedIrData = abi.encode(
-      IAssetDrawnRateStrategy.DrawnRateData({
+      IAssetInterestRateStrategy.DrawnRateData({
         optimalUsageRatio: 90_00, // 90.00%
         baseDrawnRate: 5_00, // 5.00%
         rateGrowthBeforeOptimal: 5_00, // 5.00%
@@ -969,15 +969,15 @@ abstract contract Base is Test {
    * 2: DAI
    * 3: WBTC
    */
-  function hub2Fixture() internal returns (IHub, AssetDrawnRateStrategy) {
+  function hub2Fixture() internal returns (IHub, AssetInterestRateStrategy) {
     IAccessManager accessManager2 = IAccessManager(address(new AccessManagerEnumerable(ADMIN)));
     IHub hub2 = DeployUtils.deployHub(address(accessManager2));
     vm.label(address(hub2), 'Hub2');
-    AssetDrawnRateStrategy hub2IrStrategy = new AssetDrawnRateStrategy(address(hub2));
+    AssetInterestRateStrategy hub2IrStrategy = new AssetInterestRateStrategy(address(hub2));
 
     // Configure IR Strategy for hub 2
     bytes memory encodedIrData = abi.encode(
-      IAssetDrawnRateStrategy.DrawnRateData({
+      IAssetInterestRateStrategy.DrawnRateData({
         optimalUsageRatio: 90_00, // 90.00%
         baseDrawnRate: 5_00, // 5.00%
         rateGrowthBeforeOptimal: 5_00, // 5.00%
@@ -1036,14 +1036,14 @@ abstract contract Base is Test {
    * 2: WBTC
    * 3: WETH
    */
-  function hub3Fixture() internal returns (IHub, AssetDrawnRateStrategy) {
+  function hub3Fixture() internal returns (IHub, AssetInterestRateStrategy) {
     IAccessManager accessManager3 = IAccessManager(address(new AccessManagerEnumerable(ADMIN)));
     IHub hub3 = DeployUtils.deployHub(address(accessManager3));
-    AssetDrawnRateStrategy hub3IrStrategy = new AssetDrawnRateStrategy(address(hub3));
+    AssetInterestRateStrategy hub3IrStrategy = new AssetInterestRateStrategy(address(hub3));
 
     // Configure IR Strategy for hub 3
     bytes memory encodedIrData = abi.encode(
-      IAssetDrawnRateStrategy.DrawnRateData({
+      IAssetInterestRateStrategy.DrawnRateData({
         optimalUsageRatio: 90_00, // 90.00%
         baseDrawnRate: 5_00, // 5.00%
         rateGrowthBeforeOptimal: 5_00, // 5.00%
@@ -2631,8 +2631,8 @@ abstract contract Base is Test {
   }
 
   function assertEq(
-    IAssetDrawnRateStrategy.DrawnRateData memory a,
-    IAssetDrawnRateStrategy.DrawnRateData memory b
+    IAssetInterestRateStrategy.DrawnRateData memory a,
+    IAssetInterestRateStrategy.DrawnRateData memory b
   ) internal pure {
     assertEq(a.optimalUsageRatio, b.optimalUsageRatio, 'optimalUsageRatio');
     assertEq(a.baseDrawnRate, b.baseDrawnRate, 'baseDrawnRate');
@@ -2777,7 +2777,7 @@ abstract contract Base is Test {
     hub.setDrawnRateData(
       assetId,
       abi.encode(
-        IAssetDrawnRateStrategy.DrawnRateData({
+        IAssetInterestRateStrategy.DrawnRateData({
           optimalUsageRatio: 90_00,
           baseDrawnRate: drawnRateBps,
           rateGrowthBeforeOptimal: 0,
@@ -2794,7 +2794,7 @@ abstract contract Base is Test {
   function _mockDrawnRateBps(address drawnRateStrategy, uint256 drawnRateBps) internal {
     vm.mockCall(
       drawnRateStrategy,
-      IBasicDrawnRateStrategy.calculateDrawnRate.selector,
+      IBasicInterestRateStrategy.calculateDrawnRate.selector,
       abi.encode(drawnRateBps.bpsToRay())
     );
   }
@@ -2830,7 +2830,7 @@ abstract contract Base is Test {
     vm.mockCall(
       drawnRateStrategy,
       abi.encodeCall(
-        IBasicDrawnRateStrategy.calculateDrawnRate,
+        IBasicInterestRateStrategy.calculateDrawnRate,
         (assetId, liquidity, drawn, deficit, swept)
       ),
       abi.encode(drawnRateBps.bpsToRay())
@@ -2844,7 +2844,7 @@ abstract contract Base is Test {
   function _mockDrawnRateRay(address drawnRateStrategy, uint256 drawnRateRay) internal {
     vm.mockCall(
       drawnRateStrategy,
-      IBasicDrawnRateStrategy.calculateDrawnRate.selector,
+      IBasicInterestRateStrategy.calculateDrawnRate.selector,
       abi.encode(drawnRateRay)
     );
   }
@@ -2870,7 +2870,7 @@ abstract contract Base is Test {
     vm.mockCall(
       drawnRateStrategy,
       abi.encodeCall(
-        IBasicDrawnRateStrategy.calculateDrawnRate,
+        IBasicInterestRateStrategy.calculateDrawnRate,
         (assetId, liquidity, drawn, deficit, swept)
       ),
       abi.encode(drawnRateRay)
@@ -2910,7 +2910,7 @@ abstract contract Base is Test {
 
     vm.assertEq(
       asset.drawnRate,
-      IBasicDrawnRateStrategy(asset.drawnRateStrategy).calculateDrawnRate(
+      IBasicInterestRateStrategy(asset.drawnRateStrategy).calculateDrawnRate(
         assetId,
         asset.liquidity,
         drawn,
@@ -3284,7 +3284,7 @@ abstract contract Base is Test {
       });
 
       bytes memory encodedIrData = abi.encode(
-        IAssetDrawnRateStrategy.DrawnRateData({
+        IAssetInterestRateStrategy.DrawnRateData({
           optimalUsageRatio: 90_00, // 90.00%
           baseDrawnRate: 5_00, // 5.00%
           rateGrowthBeforeOptimal: 5_00, // 5.00%

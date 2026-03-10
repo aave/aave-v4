@@ -115,7 +115,7 @@ contract SpokeMulticall is SpokeBase {
 
     // Add usda
     bytes memory encodedIrData = abi.encode(
-      IAssetDrawnRateStrategy.DrawnRateData({
+      IAssetInterestRateStrategy.DrawnRateData({
         optimalUsageRatio: 90_00, // 90.00%
         baseDrawnRate: 5_00, // 5.00%
         rateGrowthBeforeOptimal: 5_00, // 5.00%

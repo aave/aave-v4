@@ -76,7 +76,7 @@ contract HubConfiguratorGranularAccessControlTest is HubBase {
     assetId = daiAssetId;
     spokeAddr = address(spoke1);
     encodedIrData = abi.encode(
-      IAssetDrawnRateStrategy.DrawnRateData({
+      IAssetInterestRateStrategy.DrawnRateData({
         optimalUsageRatio: 90_00,
         baseDrawnRate: 5_00,
         rateGrowthBeforeOptimal: 5_00,
@@ -91,7 +91,7 @@ contract HubConfiguratorGranularAccessControlTest is HubBase {
 
   function _buildAssetManagerCalldata() internal {
     address newFeeReceiver = makeAddr('NEW_FEE_RECEIVER');
-    address newIrStrategy = address(new AssetDrawnRateStrategy(address(hub1)));
+    address newIrStrategy = address(new AssetInterestRateStrategy(address(hub1)));
     address newController = makeAddr('NEW_REINVESTMENT_CONTROLLER');
 
     // Note: Skipping addAsset overloads as they require more complex setup

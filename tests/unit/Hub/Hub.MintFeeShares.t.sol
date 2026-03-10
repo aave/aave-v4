@@ -64,7 +64,7 @@ contract HubMintFeeSharesTest is HubBase {
 
     IHub.Asset memory asset = hub1.getAsset(daiAssetId);
     bytes memory irCalldata = abi.encodeCall(
-      IBasicDrawnRateStrategy.calculateDrawnRate,
+      IBasicInterestRateStrategy.calculateDrawnRate,
       (
         daiAssetId,
         asset.liquidity,

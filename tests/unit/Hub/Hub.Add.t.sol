@@ -25,7 +25,7 @@ contract HubAddTest is HubBase {
       riskPremiumThreshold: Constants.MAX_ALLOWED_COLLATERAL_RISK
     });
     bytes memory encodedIrData = abi.encode(
-      IAssetDrawnRateStrategy.DrawnRateData({
+      IAssetInterestRateStrategy.DrawnRateData({
         optimalUsageRatio: 90_00, // 90.00%
         baseDrawnRate: 5_00, // 5.00%
         rateGrowthBeforeOptimal: 5_00, // 5.00%
@@ -257,7 +257,7 @@ contract HubAddTest is HubBase {
     vm.expectCall(
       address(drawnRateStrategy),
       abi.encodeCall(
-        IBasicDrawnRateStrategy.calculateDrawnRate,
+        IBasicInterestRateStrategy.calculateDrawnRate,
         (assetId, liquidityBefore + amount, drawnBefore, 0, 0)
       )
     );
@@ -505,7 +505,7 @@ contract HubAddTest is HubBase {
     vm.expectCall(
       address(drawnRateStrategy),
       abi.encodeCall(
-        IBasicDrawnRateStrategy.calculateDrawnRate,
+        IBasicInterestRateStrategy.calculateDrawnRate,
         (daiAssetId, liquidityBefore + addAmount, drawnBefore, 0, 0)
       )
     );

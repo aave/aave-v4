@@ -25,7 +25,7 @@ contract HubConfiguratorTest is HubBase {
 
     _assetId = daiAssetId;
     _encodedIrData = abi.encode(
-      IAssetDrawnRateStrategy.DrawnRateData({
+      IAssetInterestRateStrategy.DrawnRateData({
         optimalUsageRatio: 90_00, // 90.00%
         baseDrawnRate: 5_00, // 5.00%
         rateGrowthBeforeOptimal: 5_00, // 5.00%
@@ -151,7 +151,7 @@ contract HubConfiguratorTest is HubBase {
       )
     );
     address feeReceiver = makeAddr('newFeeReceiver');
-    address drawnRateStrategy = address(new AssetDrawnRateStrategy(address(hub1)));
+    address drawnRateStrategy = address(new AssetInterestRateStrategy(address(hub1)));
     uint256 liquidityFee = vm.randomUint(PercentageMath.PERCENTAGE_FACTOR + 1, type(uint16).max);
 
     vm.expectRevert(IHub.InvalidLiquidityFee.selector, address(hub1));
@@ -203,10 +203,10 @@ contract HubConfiguratorTest is HubBase {
     ).toUint32();
 
     uint256 expectedAssetId = hub1.getAssetCount();
-    address drawnRateStrategy = address(new AssetDrawnRateStrategy(address(hub1)));
+    address drawnRateStrategy = address(new AssetInterestRateStrategy(address(hub1)));
 
     _encodedIrData = abi.encode(
-      IAssetDrawnRateStrategy.DrawnRateData({
+      IAssetInterestRateStrategy.DrawnRateData({
         optimalUsageRatio: optimalUsageRatio,
         baseDrawnRate: baseDrawnRate,
         rateGrowthBeforeOptimal: rateGrowthBeforeOptimal,
@@ -1142,12 +1142,13 @@ contract HubConfiguratorTest is HubBase {
   }
 
   function test_updateDrawnRateData() public {
-    IAssetDrawnRateStrategy.DrawnRateData memory newIrData = IAssetDrawnRateStrategy.DrawnRateData({
-      optimalUsageRatio: 90_00, // 90.00%
-      baseDrawnRate: 5_00, // 5.00%
-      rateGrowthBeforeOptimal: 5_00, // 5.00%
-      rateGrowthAfterOptimal: 5_00 // 5.00%
-    });
+    IAssetInterestRateStrategy.DrawnRateData memory newIrData = IAssetInterestRateStrategy
+      .DrawnRateData({
+        optimalUsageRatio: 90_00, // 90.00%
+        baseDrawnRate: 5_00, // 5.00%
+        rateGrowthBeforeOptimal: 5_00, // 5.00%
+        rateGrowthAfterOptimal: 5_00 // 5.00%
+      });
 
     vm.expectCall(
       address(hub1),

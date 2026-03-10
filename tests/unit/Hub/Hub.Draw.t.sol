@@ -24,7 +24,7 @@ contract HubDrawTest is HubBase {
     vm.expectCall(
       address(drawnRateStrategy),
       abi.encodeCall(
-        IBasicDrawnRateStrategy.calculateDrawnRate,
+        IBasicInterestRateStrategy.calculateDrawnRate,
         (
           assetId,
           assetBefore.liquidity - assetBefore.swept - amount,
@@ -39,7 +39,7 @@ contract HubDrawTest is HubBase {
     emit IHub.UpdateAsset(
       assetId,
       hub1.getAssetDrawnIndex(assetId),
-      IBasicDrawnRateStrategy(drawnRateStrategy).calculateDrawnRate({
+      IBasicInterestRateStrategy(drawnRateStrategy).calculateDrawnRate({
         assetId: assetId,
         liquidity: assetBefore.liquidity - assetBefore.swept - amount,
         drawn: hub1.previewRestoreByShares(assetId, assetBefore.drawnShares + shares),
@@ -110,7 +110,7 @@ contract HubDrawTest is HubBase {
     vm.expectCall(
       address(drawnRateStrategy),
       abi.encodeCall(
-        IBasicDrawnRateStrategy.calculateDrawnRate,
+        IBasicInterestRateStrategy.calculateDrawnRate,
         (
           assetId,
           assetBefore.liquidity - assetBefore.swept - amount,
@@ -125,7 +125,7 @@ contract HubDrawTest is HubBase {
     emit IHub.UpdateAsset(
       assetId,
       hub1.getAssetDrawnIndex(assetId),
-      IBasicDrawnRateStrategy(drawnRateStrategy).calculateDrawnRate({
+      IBasicInterestRateStrategy(drawnRateStrategy).calculateDrawnRate({
         assetId: assetId,
         liquidity: assetBefore.liquidity - assetBefore.swept - amount,
         drawn: hub1.previewRestoreByShares(assetId, assetBefore.drawnShares + shares),

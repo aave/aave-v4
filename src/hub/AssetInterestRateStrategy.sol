@@ -4,27 +4,27 @@ pragma solidity 0.8.28;
 
 import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
 import {
-  IAssetDrawnRateStrategy,
-  IBasicDrawnRateStrategy
-} from 'src/hub/interfaces/IAssetDrawnRateStrategy.sol';
+  IAssetInterestRateStrategy,
+  IBasicInterestRateStrategy
+} from 'src/hub/interfaces/IAssetInterestRateStrategy.sol';
 
-/// @title AssetDrawnRateStrategy
+/// @title AssetInterestRateStrategy
 /// @author Aave Labs
 /// @notice Manages the optimal-usage-based drawn rate strategy for an asset.
 /// @dev Strategies are Hub-specific, due to the usage of asset identifier as index of the `_drawnRateData` mapping.
-contract AssetDrawnRateStrategy is IAssetDrawnRateStrategy {
+contract AssetInterestRateStrategy is IAssetInterestRateStrategy {
   using WadRayMath for *;
 
-  /// @inheritdoc IAssetDrawnRateStrategy
+  /// @inheritdoc IAssetInterestRateStrategy
   uint256 public constant MAX_ALLOWED_DRAWN_RATE = 1000_00;
 
-  /// @inheritdoc IAssetDrawnRateStrategy
+  /// @inheritdoc IAssetInterestRateStrategy
   uint256 public constant MIN_OPTIMAL_RATIO = 1_00;
 
-  /// @inheritdoc IAssetDrawnRateStrategy
+  /// @inheritdoc IAssetInterestRateStrategy
   uint256 public constant MAX_OPTIMAL_RATIO = 99_00;
 
-  /// @inheritdoc IAssetDrawnRateStrategy
+  /// @inheritdoc IAssetInterestRateStrategy
   address public immutable HUB;
 
   /// @dev Map of asset identifiers to their drawn rate data.
@@ -70,32 +70,32 @@ contract AssetDrawnRateStrategy is IAssetDrawnRateStrategy {
     );
   }
 
-  /// @inheritdoc IAssetDrawnRateStrategy
+  /// @inheritdoc IAssetInterestRateStrategy
   function getDrawnRateData(uint256 assetId) external view returns (DrawnRateData memory) {
     return _drawnRateData[assetId];
   }
 
-  /// @inheritdoc IAssetDrawnRateStrategy
+  /// @inheritdoc IAssetInterestRateStrategy
   function getOptimalUsageRatio(uint256 assetId) external view returns (uint256) {
     return _drawnRateData[assetId].optimalUsageRatio;
   }
 
-  /// @inheritdoc IAssetDrawnRateStrategy
+  /// @inheritdoc IAssetInterestRateStrategy
   function getBaseDrawnRate(uint256 assetId) external view returns (uint256) {
     return _drawnRateData[assetId].baseDrawnRate;
   }
 
-  /// @inheritdoc IAssetDrawnRateStrategy
+  /// @inheritdoc IAssetInterestRateStrategy
   function getRateGrowthBeforeOptimal(uint256 assetId) external view returns (uint256) {
     return _drawnRateData[assetId].rateGrowthBeforeOptimal;
   }
 
-  /// @inheritdoc IAssetDrawnRateStrategy
+  /// @inheritdoc IAssetInterestRateStrategy
   function getRateGrowthAfterOptimal(uint256 assetId) external view returns (uint256) {
     return _drawnRateData[assetId].rateGrowthAfterOptimal;
   }
 
-  /// @inheritdoc IAssetDrawnRateStrategy
+  /// @inheritdoc IAssetInterestRateStrategy
   function getMaxDrawnRate(uint256 assetId) external view returns (uint256) {
     return
       _drawnRateData[assetId].baseDrawnRate +
@@ -103,7 +103,7 @@ contract AssetDrawnRateStrategy is IAssetDrawnRateStrategy {
       _drawnRateData[assetId].rateGrowthAfterOptimal;
   }
 
-  /// @inheritdoc IBasicDrawnRateStrategy
+  /// @inheritdoc IBasicInterestRateStrategy
   function calculateDrawnRate(
     uint256 assetId,
     uint256 liquidity,

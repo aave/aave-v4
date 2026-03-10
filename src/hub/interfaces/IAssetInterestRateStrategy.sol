@@ -2,12 +2,12 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import {IBasicDrawnRateStrategy} from 'src/hub/interfaces/IBasicDrawnRateStrategy.sol';
+import {IBasicInterestRateStrategy} from 'src/hub/interfaces/IBasicInterestRateStrategy.sol';
 
-/// @title IAssetDrawnRateStrategy
+/// @title IAssetInterestRateStrategy
 /// @author Aave Labs
-/// @notice Interface of the optimal-usage-based asset drawn rate strategy.
-interface IAssetDrawnRateStrategy is IBasicDrawnRateStrategy {
+/// @notice Interface of the optimal-usage-based asset interest rate strategy.
+interface IAssetInterestRateStrategy is IBasicInterestRateStrategy {
   /// @notice Holds the drawn rate data for a given asset.
   /// @dev optimalUsageRatio The optimal usage ratio, in BPS. Maximum and minimum values are defined by `MAX_OPTIMAL_RATIO` and `MIN_OPTIMAL_RATIO`.
   /// @dev baseDrawnRate The base drawn rate, in BPS.

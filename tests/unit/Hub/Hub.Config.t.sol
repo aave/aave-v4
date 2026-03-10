@@ -14,7 +14,7 @@ contract HubConfigTest is HubBase {
   function setUp() public virtual override {
     super.setUp();
     encodedIrData = abi.encode(
-      IAssetDrawnRateStrategy.DrawnRateData({
+      IAssetInterestRateStrategy.DrawnRateData({
         optimalUsageRatio: 90_00, // 90.00%
         baseDrawnRate: 5_00, // 5.00%
         rateGrowthBeforeOptimal: 5_00, // 5.00%
@@ -298,7 +298,7 @@ contract HubConfigTest is HubBase {
     ).toUint8();
 
     uint256 expectedAssetId = hub1.getAssetCount();
-    address drawnRateStrategy = address(new AssetDrawnRateStrategy(address(hub1)));
+    address drawnRateStrategy = address(new AssetInterestRateStrategy(address(hub1)));
 
     IHub.AssetConfig memory expectedConfig = IHub.AssetConfig({
       feeReceiver: feeReceiver,
@@ -352,7 +352,7 @@ contract HubConfigTest is HubBase {
   function test_isUnderlyingListed() public {
     address underlying = address(new TestnetERC20('USDA', 'USDA', 18));
     address feeReceiver = makeAddr('feeReceiver');
-    address drawnRateStrategy = address(new AssetDrawnRateStrategy(address(hub1)));
+    address drawnRateStrategy = address(new AssetInterestRateStrategy(address(hub1)));
 
     assertFalse(hub1.isUnderlyingListed(underlying));
 
@@ -428,12 +428,12 @@ contract HubConfigTest is HubBase {
 
     vm.mockCall(
       newConfig.drawnRateStrategy,
-      abi.encodeCall(IBasicDrawnRateStrategy.setDrawnRateData, (assetId, encodedIrData)),
+      abi.encodeCall(IBasicInterestRateStrategy.setDrawnRateData, (assetId, encodedIrData)),
       new bytes(0)
     );
     vm.mockCallRevert(
       newConfig.drawnRateStrategy,
-      IBasicDrawnRateStrategy.calculateDrawnRate.selector,
+      IBasicInterestRateStrategy.calculateDrawnRate.selector,
       'custom revert'
     );
 
@@ -453,7 +453,7 @@ contract HubConfigTest is HubBase {
 
     vm.mockCallRevert(
       newConfig.drawnRateStrategy,
-      abi.encodeCall(IBasicDrawnRateStrategy.setDrawnRateData, (assetId, encodedIrData)),
+      abi.encodeCall(IBasicInterestRateStrategy.setDrawnRateData, (assetId, encodedIrData)),
       'custom revert'
     );
 
@@ -468,7 +468,7 @@ contract HubConfigTest is HubBase {
     _mockDrawnRateBps(newConfig.drawnRateStrategy, 5_00);
     vm.mockCall(
       newConfig.drawnRateStrategy,
-      abi.encodeCall(IBasicDrawnRateStrategy.setDrawnRateData, (assetId, encodedIrData)),
+      abi.encodeCall(IBasicInterestRateStrategy.setDrawnRateData, (assetId, encodedIrData)),
       new bytes(0)
     );
 
@@ -525,7 +525,7 @@ contract HubConfigTest is HubBase {
     emit IHub.UpdateAsset(
       assetId,
       hub1.getAssetDrawnIndex(assetId),
-      IBasicDrawnRateStrategy(drawnRateStrategy).calculateDrawnRate({
+      IBasicInterestRateStrategy(drawnRateStrategy).calculateDrawnRate({
         assetId: assetId,
         liquidity: liquidity,
         drawn: drawn,
@@ -542,7 +542,7 @@ contract HubConfigTest is HubBase {
     if (isNewIrStrategy) {
       vm.expectCall(
         newConfig.drawnRateStrategy,
-        abi.encodeCall(IBasicDrawnRateStrategy.setDrawnRateData, (assetId, encodedIrData))
+        abi.encodeCall(IBasicInterestRateStrategy.setDrawnRateData, (assetId, encodedIrData))
       );
     }
 
@@ -800,14 +800,14 @@ contract HubConfigTest is HubBase {
     uint256 futureFees = _getExpectedFeeReceiverAddedAssets(hub1, assetId);
     rewind(365 days);
 
-    AssetDrawnRateStrategy newIrStrategy = new AssetDrawnRateStrategy(address(hub1));
+    AssetInterestRateStrategy newIrStrategy = new AssetInterestRateStrategy(address(hub1));
     _mockDrawnRateRay(address(newIrStrategy), hub1.getAssetDrawnRate(assetId) * 10);
     IHub.AssetConfig memory config = hub1.getAssetConfig(assetId);
     config.drawnRateStrategy = address(newIrStrategy);
 
     vm.expectCall(
       address(newIrStrategy),
-      abi.encodeCall(IBasicDrawnRateStrategy.setDrawnRateData, (assetId, encodedIrData)),
+      abi.encodeCall(IBasicInterestRateStrategy.setDrawnRateData, (assetId, encodedIrData)),
       1
     );
     Utils.updateAssetConfig(hub1, ADMIN, assetId, config, encodedIrData);
