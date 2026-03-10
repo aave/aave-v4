@@ -43,11 +43,12 @@ interface INativeTokenGateway is IPositionManagerBase {
 
   /// @notice Withdraws the wrapped asset from a specified registered `spoke` and unwraps it back to the native asset.
   /// @dev Contract must be an active and approved user position manager of the caller.
+  /// @dev May be less than `amount` if the user has insufficient supply.
   /// @param spoke The address of the registered `spoke`.
   /// @param reserveId The identifier of the reserve for the wrapped asset.
   /// @param amount Amount to withdraw and unwrap.
   /// @return The amount of shares withdrawn.
-  /// @return The amount of assets withdrawn. May be less than `amount` if the user has insufficient supply.
+  /// @return The amount of assets withdrawn.
   function withdrawNative(
     address spoke,
     uint256 reserveId,
