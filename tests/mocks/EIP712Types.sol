@@ -118,7 +118,7 @@ library EIP712Types {
     uint256 deadline;
   }
 
-  struct SetCanUpdateUsingAsCollateralPermissionPermit {
+  struct SetCanSetUsingAsCollateralPermissionPermit {
     address spoke;
     address delegator;
     address delegatee;

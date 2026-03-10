@@ -66,7 +66,7 @@ library JsonBindings {
   // prettier-ignore
   string constant schema_SetGlobalPermissionPermit = "SetGlobalPermissionPermit(address spoke,address delegator,address delegatee,bool permission,uint256 nonce,uint256 deadline)";
   // prettier-ignore
-  string constant schema_SetCanUpdateUsingAsCollateralPermissionPermit = "SetCanUpdateUsingAsCollateralPermissionPermit(address spoke,address delegator,address delegatee,bool permission,uint256 nonce,uint256 deadline)";
+  string constant schema_SetCanSetUsingAsCollateralPermissionPermit = "SetCanSetUsingAsCollateralPermissionPermit(address spoke,address delegator,address delegatee,bool permission,uint256 nonce,uint256 deadline)";
   // prettier-ignore
   string constant schema_SetCanUpdateUserRiskPremiumPermissionPermit = "SetCanUpdateUserRiskPremiumPermissionPermit(address spoke,address delegator,address delegatee,bool permission,uint256 nonce,uint256 deadline)";
   // prettier-ignore
@@ -549,17 +549,17 @@ library JsonBindings {
   }
 
   function serialize(
-    EIP712Types.SetCanUpdateUsingAsCollateralPermissionPermit memory value
+    EIP712Types.SetCanSetUsingAsCollateralPermissionPermit memory value
   ) internal pure returns (string memory) {
     return
       vm.serializeJsonType(
-        schema_SetCanUpdateUsingAsCollateralPermissionPermit,
+        schema_SetCanSetUsingAsCollateralPermissionPermit,
         abi.encode(value)
       );
   }
 
   function serialize(
-    EIP712Types.SetCanUpdateUsingAsCollateralPermissionPermit memory value,
+    EIP712Types.SetCanSetUsingAsCollateralPermissionPermit memory value,
     string memory objectKey,
     string memory valueKey
   ) internal returns (string memory) {
@@ -567,40 +567,40 @@ library JsonBindings {
       vm.serializeJsonType(
         objectKey,
         valueKey,
-        schema_SetCanUpdateUsingAsCollateralPermissionPermit,
+        schema_SetCanSetUsingAsCollateralPermissionPermit,
         abi.encode(value)
       );
   }
 
-  function deserializeSetCanUpdateUsingAsCollateralPermissionPermit(
+  function deserializeSetCanSetUsingAsCollateralPermissionPermit(
     string memory json
-  ) public pure returns (EIP712Types.SetCanUpdateUsingAsCollateralPermissionPermit memory) {
+  ) public pure returns (EIP712Types.SetCanSetUsingAsCollateralPermissionPermit memory) {
     return
       abi.decode(
-        vm.parseJsonType(json, schema_SetCanUpdateUsingAsCollateralPermissionPermit),
-        (EIP712Types.SetCanUpdateUsingAsCollateralPermissionPermit)
+        vm.parseJsonType(json, schema_SetCanSetUsingAsCollateralPermissionPermit),
+        (EIP712Types.SetCanSetUsingAsCollateralPermissionPermit)
       );
   }
 
-  function deserializeSetCanUpdateUsingAsCollateralPermissionPermit(
+  function deserializeSetCanSetUsingAsCollateralPermissionPermit(
     string memory json,
     string memory path
-  ) public pure returns (EIP712Types.SetCanUpdateUsingAsCollateralPermissionPermit memory) {
+  ) public pure returns (EIP712Types.SetCanSetUsingAsCollateralPermissionPermit memory) {
     return
       abi.decode(
-        vm.parseJsonType(json, path, schema_SetCanUpdateUsingAsCollateralPermissionPermit),
-        (EIP712Types.SetCanUpdateUsingAsCollateralPermissionPermit)
+        vm.parseJsonType(json, path, schema_SetCanSetUsingAsCollateralPermissionPermit),
+        (EIP712Types.SetCanSetUsingAsCollateralPermissionPermit)
       );
   }
 
-  function deserializeSetCanUpdateUsingAsCollateralPermissionPermitArray(
+  function deserializeSetCanSetUsingAsCollateralPermissionPermitArray(
     string memory json,
     string memory path
-  ) public pure returns (EIP712Types.SetCanUpdateUsingAsCollateralPermissionPermit[] memory) {
+  ) public pure returns (EIP712Types.SetCanSetUsingAsCollateralPermissionPermit[] memory) {
     return
       abi.decode(
-        vm.parseJsonTypeArray(json, path, schema_SetCanUpdateUsingAsCollateralPermissionPermit),
-        (EIP712Types.SetCanUpdateUsingAsCollateralPermissionPermit[])
+        vm.parseJsonTypeArray(json, path, schema_SetCanSetUsingAsCollateralPermissionPermit),
+        (EIP712Types.SetCanSetUsingAsCollateralPermissionPermit[])
       );
   }
 

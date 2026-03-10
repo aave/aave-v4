@@ -58,7 +58,7 @@ interface IConfigPositionManager is IPositionManagerIntentBase {
   /// @param permission The new permission status.
   /// @param nonce The key-prefixed nonce for the signature.
   /// @param deadline The deadline for the intent.
-  struct SetCanUpdateUsingAsCollateralPermissionPermit {
+  struct SetCanSetUsingAsCollateralPermissionPermit {
     address spoke;
     address delegator;
     address delegatee;
@@ -109,7 +109,7 @@ interface IConfigPositionManager is IPositionManagerIntentBase {
   /// @param spoke The address of the spoke.
   /// @param delegatee The address of the delegatee.
   /// @param permission The new permission status.
-  function setCanUpdateUsingAsCollateralPermission(
+  function setCanSetUsingAsCollateralPermission(
     address spoke,
     address delegatee,
     bool permission
@@ -146,10 +146,10 @@ interface IConfigPositionManager is IPositionManagerIntentBase {
 
   /// @notice Sets the using as collateral permission for a delegatee using an EIP712-typed intent.
   /// @dev Uses keyed-nonces where for each key's namespace nonce is consumed sequentially.
-  /// @param params The structured SetCanUpdateUsingAsCollateralPermissionPermit parameters.
+  /// @param params The structured SetCanSetUsingAsCollateralPermissionPermit parameters.
   /// @param signature The EIP712-compliant signature bytes.
-  function setCanUpdateUsingAsCollateralPermissionWithSig(
-    SetCanUpdateUsingAsCollateralPermissionPermit calldata params,
+  function setCanSetUsingAsCollateralPermissionWithSig(
+    SetCanSetUsingAsCollateralPermissionPermit calldata params,
     bytes calldata signature
   ) external;
 
@@ -233,8 +233,8 @@ interface IConfigPositionManager is IPositionManagerIntentBase {
   /// @notice Returns the type hash for the SetGlobalPermissionPermit intent.
   function SET_GLOBAL_PERMISSION_PERMIT_TYPEHASH() external view returns (bytes32);
 
-  /// @notice Returns the type hash for the SetCanUpdateUsingAsCollateralPermissionPermit intent.
-  function SET_CAN_UPDATE_USING_AS_COLLATERAL_PERMISSION_PERMIT_TYPEHASH()
+  /// @notice Returns the type hash for the SetCanSetUsingAsCollateralPermissionPermit intent.
+  function SET_CAN_SET_USING_AS_COLLATERAL_PERMISSION_PERMIT_TYPEHASH()
     external
     view
     returns (bytes32);

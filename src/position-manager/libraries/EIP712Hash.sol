@@ -50,9 +50,9 @@ library EIP712Hash {
     // keccak256('SetGlobalPermissionPermit(address spoke,address delegator,address delegatee,bool permission,uint256 nonce,uint256 deadline)')
     0x468edc8a22a4686863c6b8a79342e76c578e93ea7d28606606acd95e2ffc4d53;
 
-  bytes32 public constant SET_CAN_UPDATE_USING_AS_COLLATERAL_PERMISSION_PERMIT_TYPEHASH =
-    // keccak256('SetCanUpdateUsingAsCollateralPermissionPermit(address spoke,address delegator,address delegatee,bool permission,uint256 nonce,uint256 deadline)')
-    0x093888c76550e34c519e936f5383524a0af55eca26375e83da70334ef4491b62;
+  bytes32 public constant SET_CAN_SET_USING_AS_COLLATERAL_PERMISSION_PERMIT_TYPEHASH =
+    // keccak256('SetCanSetUsingAsCollateralPermissionPermit(address spoke,address delegator,address delegatee,bool permission,uint256 nonce,uint256 deadline)')
+    0x26244f8fd59210a303a35d34ec9efc9cdb15e142b8093aa0a97b185d8533f1db;
 
   bytes32 public constant SET_CAN_UPDATE_USER_RISK_PREMIUM_PERMISSION_PERMIT_TYPEHASH =
     // keccak256('SetCanUpdateUserRiskPremiumPermissionPermit(address spoke,address delegator,address delegatee,bool permission,uint256 nonce,uint256 deadline)')
@@ -223,12 +223,12 @@ library EIP712Hash {
   }
 
   function hash(
-    IConfigPositionManager.SetCanUpdateUsingAsCollateralPermissionPermit calldata params
+    IConfigPositionManager.SetCanSetUsingAsCollateralPermissionPermit calldata params
   ) internal pure returns (bytes32) {
     return
       keccak256(
         abi.encode(
-          SET_CAN_UPDATE_USING_AS_COLLATERAL_PERMISSION_PERMIT_TYPEHASH,
+          SET_CAN_SET_USING_AS_COLLATERAL_PERMISSION_PERMIT_TYPEHASH,
           params.spoke,
           params.delegator,
           params.delegatee,

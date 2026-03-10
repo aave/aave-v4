@@ -107,7 +107,7 @@ contract ConfigPositionManagerTest is ConfigPositionManagerBaseTest {
 
   function test_setGlobalPermission_removePreviousPermissions() public {
     vm.prank(alice);
-    positionManager.setCanUpdateUsingAsCollateralPermission(address(spoke1), bob, true);
+    positionManager.setCanSetUsingAsCollateralPermission(address(spoke1), bob, true);
     vm.prank(alice);
     positionManager.setCanUpdateUserDynamicConfigPermission(address(spoke1), bob, true);
 
@@ -141,7 +141,7 @@ contract ConfigPositionManagerTest is ConfigPositionManagerBaseTest {
     positionManager.setGlobalPermission(address(spoke2), bob, true);
   }
 
-  function test_setCanUpdateUsingAsCollateralPermission() public {
+  function test_setCanSetUsingAsCollateralPermission() public {
     assertFalse(_canUpdateUsingAsCollateral(address(spoke1), bob, alice));
     ConfigPermissions newPermissions = emptyPermissions.setCanSetUsingAsCollateral(true);
 
@@ -153,14 +153,14 @@ contract ConfigPositionManagerTest is ConfigPositionManagerBaseTest {
       newPermissions
     );
     vm.prank(alice);
-    positionManager.setCanUpdateUsingAsCollateralPermission(address(spoke1), bob, true);
+    positionManager.setCanSetUsingAsCollateralPermission(address(spoke1), bob, true);
 
     assertTrue(_canUpdateUsingAsCollateral(address(spoke1), bob, alice));
   }
 
-  function test_setCanUpdateUsingAsCollateralPermission_remove() public {
+  function test_setCanSetUsingAsCollateralPermission_remove() public {
     vm.prank(alice);
-    positionManager.setCanUpdateUsingAsCollateralPermission(address(spoke1), bob, true);
+    positionManager.setCanSetUsingAsCollateralPermission(address(spoke1), bob, true);
     assertTrue(_canUpdateUsingAsCollateral(address(spoke1), bob, alice));
 
     ConfigPermissions newPermissions;
@@ -173,15 +173,15 @@ contract ConfigPositionManagerTest is ConfigPositionManagerBaseTest {
       newPermissions
     );
     vm.prank(alice);
-    positionManager.setCanUpdateUsingAsCollateralPermission(address(spoke1), bob, false);
+    positionManager.setCanSetUsingAsCollateralPermission(address(spoke1), bob, false);
 
     assertFalse(_canUpdateUsingAsCollateral(address(spoke1), bob, alice));
   }
 
-  function test_setCanUpdateUsingAsCollateralPermission_revertsWith_SpokeNotRegistered() public {
+  function test_setCanSetUsingAsCollateralPermission_revertsWith_SpokeNotRegistered() public {
     vm.expectRevert(IPositionManagerBase.SpokeNotRegistered.selector);
     vm.prank(alice);
-    positionManager.setCanUpdateUsingAsCollateralPermission(address(spoke2), bob, true);
+    positionManager.setCanSetUsingAsCollateralPermission(address(spoke2), bob, true);
   }
 
   function test_setCanUpdateUserRiskPremiumPermission() public {
@@ -306,7 +306,7 @@ contract ConfigPositionManagerTest is ConfigPositionManagerBaseTest {
 
   function test_renounceCanUpdateUsingAsCollateralPermission() public {
     vm.prank(alice);
-    positionManager.setCanUpdateUsingAsCollateralPermission(address(spoke1), bob, true);
+    positionManager.setCanSetUsingAsCollateralPermission(address(spoke1), bob, true);
 
     assertTrue(_canUpdateUsingAsCollateral(address(spoke1), bob, alice));
 
@@ -396,7 +396,7 @@ contract ConfigPositionManagerTest is ConfigPositionManagerBaseTest {
     reserveId = bound(reserveId, 1, spoke1.getReserveCount() - 1);
 
     vm.prank(alice);
-    positionManager.setCanUpdateUsingAsCollateralPermission(address(spoke1), bob, true);
+    positionManager.setCanSetUsingAsCollateralPermission(address(spoke1), bob, true);
 
     vm.prank(alice);
     spoke1.setUsingAsCollateral(reserveId, !useAsCollateral, alice);

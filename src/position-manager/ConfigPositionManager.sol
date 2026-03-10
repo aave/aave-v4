@@ -23,8 +23,8 @@ contract ConfigPositionManager is IConfigPositionManager, PositionManagerIntentB
     EIP712Hash.SET_GLOBAL_PERMISSION_PERMIT_TYPEHASH;
 
   /// @inheritdoc IConfigPositionManager
-  bytes32 public constant SET_CAN_UPDATE_USING_AS_COLLATERAL_PERMISSION_PERMIT_TYPEHASH =
-    EIP712Hash.SET_CAN_UPDATE_USING_AS_COLLATERAL_PERMISSION_PERMIT_TYPEHASH;
+  bytes32 public constant SET_CAN_SET_USING_AS_COLLATERAL_PERMISSION_PERMIT_TYPEHASH =
+    EIP712Hash.SET_CAN_SET_USING_AS_COLLATERAL_PERMISSION_PERMIT_TYPEHASH;
 
   /// @inheritdoc IConfigPositionManager
   bytes32 public constant SET_CAN_UPDATE_USER_RISK_PREMIUM_PERMISSION_PERMIT_TYPEHASH =
@@ -57,12 +57,12 @@ contract ConfigPositionManager is IConfigPositionManager, PositionManagerIntentB
   }
 
   /// @inheritdoc IConfigPositionManager
-  function setCanUpdateUsingAsCollateralPermission(
+  function setCanSetUsingAsCollateralPermission(
     address spoke,
     address delegatee,
     bool permission
   ) external onlyRegisteredSpoke(spoke) {
-    _setCanUpdateUsingAsCollateralPermission({
+    _setCanSetUsingAsCollateralPermission({
       spoke: spoke,
       delegator: msg.sender,
       delegatee: delegatee,
@@ -119,8 +119,8 @@ contract ConfigPositionManager is IConfigPositionManager, PositionManagerIntentB
   }
 
   /// @inheritdoc IConfigPositionManager
-  function setCanUpdateUsingAsCollateralPermissionWithSig(
-    SetCanUpdateUsingAsCollateralPermissionPermit calldata params,
+  function setCanSetUsingAsCollateralPermissionWithSig(
+    SetCanSetUsingAsCollateralPermissionPermit calldata params,
     bytes calldata signature
   ) external onlyRegisteredSpoke(params.spoke) {
     _verifyAndConsumeIntent({
@@ -130,7 +130,7 @@ contract ConfigPositionManager is IConfigPositionManager, PositionManagerIntentB
       deadline: params.deadline,
       signature: signature
     });
-    _setCanUpdateUsingAsCollateralPermission({
+    _setCanSetUsingAsCollateralPermission({
       spoke: params.spoke,
       delegator: params.delegator,
       delegatee: params.delegatee,
@@ -344,7 +344,7 @@ contract ConfigPositionManager is IConfigPositionManager, PositionManagerIntentB
   /// @param delegator The address of the delegator.
   /// @param delegatee The address of the delegatee.
   /// @param permission The new permission status.
-  function _setCanUpdateUsingAsCollateralPermission(
+  function _setCanSetUsingAsCollateralPermission(
     address spoke,
     address delegator,
     address delegatee,

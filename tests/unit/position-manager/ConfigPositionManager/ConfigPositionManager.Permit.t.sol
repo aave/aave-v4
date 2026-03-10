@@ -166,27 +166,27 @@ contract ConfigPositionManagerPermitTest is ConfigPositionManagerBaseTest {
     positionManager.setGlobalPermissionWithSig(p, signature);
   }
 
-  function test_setCanUpdateUsingAsCollateralPermissionPermit_typeHash() public view {
+  function test_setCanSetUsingAsCollateralPermissionPermit_typeHash() public view {
     assertEq(
-      positionManager.SET_CAN_UPDATE_USING_AS_COLLATERAL_PERMISSION_PERMIT_TYPEHASH(),
-      vm.eip712HashType('SetCanUpdateUsingAsCollateralPermissionPermit')
+      positionManager.SET_CAN_SET_USING_AS_COLLATERAL_PERMISSION_PERMIT_TYPEHASH(),
+      vm.eip712HashType('SetCanSetUsingAsCollateralPermissionPermit')
     );
     assertEq(
-      positionManager.SET_CAN_UPDATE_USING_AS_COLLATERAL_PERMISSION_PERMIT_TYPEHASH(),
+      positionManager.SET_CAN_SET_USING_AS_COLLATERAL_PERMISSION_PERMIT_TYPEHASH(),
       keccak256(
-        'SetCanUpdateUsingAsCollateralPermissionPermit(address spoke,address delegator,address delegatee,bool permission,uint256 nonce,uint256 deadline)'
+        'SetCanSetUsingAsCollateralPermissionPermit(address spoke,address delegator,address delegatee,bool permission,uint256 nonce,uint256 deadline)'
       )
     );
   }
 
-  function test_setCanUpdateUsingAsCollateralPermissionWithSig_fuzz(
+  function test_setCanSetUsingAsCollateralPermissionWithSig_fuzz(
     address delegatee,
     bool permission
   ) public {
     vm.assume(delegatee != address(0));
 
-    IConfigPositionManager.SetCanUpdateUsingAsCollateralPermissionPermit
-      memory p = _setCanUpdateUsingAsCollateralPermissionPermitData(
+    IConfigPositionManager.SetCanSetUsingAsCollateralPermissionPermit
+      memory p = _setCanSetUsingAsCollateralPermissionPermitData(
         delegatee,
         alice,
         permission,
@@ -196,16 +196,16 @@ contract ConfigPositionManagerPermitTest is ConfigPositionManagerBaseTest {
     bytes memory signature = _sign(alicePk, _getTypedDataHash(positionManager, p));
 
     vm.prank(vm.randomAddress());
-    positionManager.setCanUpdateUsingAsCollateralPermissionWithSig(p, signature);
+    positionManager.setCanSetUsingAsCollateralPermissionWithSig(p, signature);
 
     assertEq(_canUpdateUsingAsCollateral(address(spoke1), delegatee, alice), permission);
   }
 
-  function test_setCanUpdateUsingAsCollateralPermissionWithSig_revertsWith_InvalidSignature_dueTo_ExpiredDeadline()
+  function test_setCanSetUsingAsCollateralPermissionWithSig_revertsWith_InvalidSignature_dueTo_ExpiredDeadline()
     public
   {
-    IConfigPositionManager.SetCanUpdateUsingAsCollateralPermissionPermit
-      memory p = _setCanUpdateUsingAsCollateralPermissionPermitData(
+    IConfigPositionManager.SetCanSetUsingAsCollateralPermissionPermit
+      memory p = _setCanSetUsingAsCollateralPermissionPermitData(
         vm.randomAddress(),
         alice,
         true,
@@ -215,18 +215,18 @@ contract ConfigPositionManagerPermitTest is ConfigPositionManagerBaseTest {
 
     vm.expectRevert(IIntentConsumer.InvalidSignature.selector);
     vm.prank(vm.randomAddress());
-    positionManager.setCanUpdateUsingAsCollateralPermissionWithSig(p, signature);
+    positionManager.setCanSetUsingAsCollateralPermissionWithSig(p, signature);
   }
 
-  function test_setCanUpdateUsingAsCollateralPermissionWithSig_revertsWith_InvalidSignature_dueTo_InvalidSigner()
+  function test_setCanSetUsingAsCollateralPermissionWithSig_revertsWith_InvalidSignature_dueTo_InvalidSigner()
     public
   {
     (address randomUser, uint256 randomUserPk) = makeAddrAndKey(string(vm.randomBytes(32)));
     address delegator = vm.randomAddress();
     while (delegator == randomUser) delegator = vm.randomAddress();
 
-    IConfigPositionManager.SetCanUpdateUsingAsCollateralPermissionPermit
-      memory p = _setCanUpdateUsingAsCollateralPermissionPermitData(
+    IConfigPositionManager.SetCanSetUsingAsCollateralPermissionPermit
+      memory p = _setCanSetUsingAsCollateralPermissionPermitData(
         randomUser,
         delegator,
         true,
@@ -236,14 +236,14 @@ contract ConfigPositionManagerPermitTest is ConfigPositionManagerBaseTest {
 
     vm.expectRevert(IIntentConsumer.InvalidSignature.selector);
     vm.prank(vm.randomAddress());
-    positionManager.setCanUpdateUsingAsCollateralPermissionWithSig(p, signature);
+    positionManager.setCanSetUsingAsCollateralPermissionWithSig(p, signature);
   }
 
-  function test_setCanUpdateUsingAsCollateralPermissionWithSig_revertsWith_InvalidAccountNonce(
+  function test_setCanSetUsingAsCollateralPermissionWithSig_revertsWith_InvalidAccountNonce(
     bytes32
   ) public {
-    IConfigPositionManager.SetCanUpdateUsingAsCollateralPermissionPermit
-      memory p = _setCanUpdateUsingAsCollateralPermissionPermitData(
+    IConfigPositionManager.SetCanSetUsingAsCollateralPermissionPermit
+      memory p = _setCanSetUsingAsCollateralPermissionPermitData(
         vm.randomAddress(),
         alice,
         true,
@@ -259,14 +259,14 @@ contract ConfigPositionManagerPermitTest is ConfigPositionManagerBaseTest {
       abi.encodeWithSelector(INoncesKeyed.InvalidAccountNonce.selector, p.delegator, currentNonce)
     );
     vm.prank(vm.randomAddress());
-    positionManager.setCanUpdateUsingAsCollateralPermissionWithSig(p, signature);
+    positionManager.setCanSetUsingAsCollateralPermissionWithSig(p, signature);
   }
 
-  function test_setCanUpdateUsingAsCollateralPermissionWithSig_revertsWith_SpokeNotRegistered()
+  function test_setCanSetUsingAsCollateralPermissionWithSig_revertsWith_SpokeNotRegistered()
     public
   {
-    IConfigPositionManager.SetCanUpdateUsingAsCollateralPermissionPermit
-      memory p = _setCanUpdateUsingAsCollateralPermissionPermitData(
+    IConfigPositionManager.SetCanSetUsingAsCollateralPermissionPermit
+      memory p = _setCanSetUsingAsCollateralPermissionPermitData(
         bob,
         alice,
         true,
@@ -278,7 +278,7 @@ contract ConfigPositionManagerPermitTest is ConfigPositionManagerBaseTest {
 
     vm.expectRevert(IPositionManagerBase.SpokeNotRegistered.selector);
     vm.prank(alice);
-    positionManager.setCanUpdateUsingAsCollateralPermissionWithSig(p, signature);
+    positionManager.setCanSetUsingAsCollateralPermissionWithSig(p, signature);
   }
 
   function test_setCanUpdateUserRiskPremiumPermissionPermit_typeHash() public view {

@@ -46,14 +46,14 @@ contract ConfigPositionManagerBaseTest is SpokeBase {
       });
   }
 
-  function _setCanUpdateUsingAsCollateralPermissionPermitData(
+  function _setCanSetUsingAsCollateralPermissionPermitData(
     address delegatee,
     address delegator,
     bool permission,
     uint256 deadline
-  ) internal returns (IConfigPositionManager.SetCanUpdateUsingAsCollateralPermissionPermit memory) {
+  ) internal returns (IConfigPositionManager.SetCanSetUsingAsCollateralPermissionPermit memory) {
     return
-      IConfigPositionManager.SetCanUpdateUsingAsCollateralPermissionPermit({
+      IConfigPositionManager.SetCanSetUsingAsCollateralPermissionPermit({
         spoke: address(spoke1),
         delegator: delegator,
         delegatee: delegatee,
@@ -110,12 +110,12 @@ contract ConfigPositionManagerBaseTest is SpokeBase {
 
   function _getTypedDataHash(
     IConfigPositionManager _positionManager,
-    IConfigPositionManager.SetCanUpdateUsingAsCollateralPermissionPermit memory _params
+    IConfigPositionManager.SetCanSetUsingAsCollateralPermissionPermit memory _params
   ) internal view returns (bytes32) {
     return
       _typedDataHash(
         _positionManager,
-        vm.eip712HashStruct('SetCanUpdateUsingAsCollateralPermissionPermit', abi.encode(_params))
+        vm.eip712HashStruct('SetCanSetUsingAsCollateralPermissionPermit', abi.encode(_params))
       );
   }
 
