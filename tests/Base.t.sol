@@ -50,10 +50,10 @@ import {HubConfigurator, IHubConfigurator} from 'src/hub/HubConfigurator.sol';
 import {IHub, IHubBase} from 'src/hub/interfaces/IHub.sol';
 import {SharesMath} from 'src/hub/libraries/SharesMath.sol';
 import {
-  AssetInterestRateStrategy,
-  IAssetInterestRateStrategy,
-  IBasicInterestRateStrategy
-} from 'src/hub/AssetInterestRateStrategy.sol';
+  AssetDrawnRateStrategy,
+  IAssetDrawnRateStrategy,
+  IBasicDrawnRateStrategy
+} from 'src/hub/AssetDrawnRateStrategy.sol';
 
 // spoke
 import {ISpoke, ISpokeBase} from 'src/spoke/interfaces/ISpoke.sol';
@@ -177,7 +177,7 @@ abstract contract Base is Test {
   ISpoke internal spoke1;
   ISpoke internal spoke2;
   ISpoke internal spoke3;
-  AssetInterestRateStrategy internal irStrategy;
+  AssetDrawnRateStrategy internal drawnRateStrategy;
   IAccessManager internal accessManager;
 
   string internal constant ALICE = 'alice';
@@ -335,7 +335,7 @@ abstract contract Base is Test {
     vm.startPrank(ADMIN);
     accessManager = IAccessManager(address(new AccessManagerEnumerable(ADMIN)));
     hub1 = DeployUtils.deployHub(address(accessManager));
-    irStrategy = new AssetInterestRateStrategy(address(hub1));
+    drawnRateStrategy = new AssetDrawnRateStrategy(address(hub1));
     (spoke1, oracle1) = _deploySpokeWithOracle(ADMIN, address(accessManager));
     (spoke2, oracle2) = _deploySpokeWithOracle(ADMIN, address(accessManager));
     (spoke3, oracle3) = _deploySpokeWithOracle(ADMIN, address(accessManager));
@@ -395,7 +395,7 @@ abstract contract Base is Test {
       selectors[1] = IHub.updateAssetConfig.selector;
       selectors[2] = IHub.addSpoke.selector;
       selectors[3] = IHub.updateSpokeConfig.selector;
-      selectors[4] = IHub.setInterestRateData.selector;
+      selectors[4] = IHub.setDrawnRateData.selector;
       selectors[5] = IHub.mintFeeShares.selector;
       manager.setTargetFunctionRole(address(targetHub), selectors, Roles.HUB_ADMIN_ROLE);
     }
@@ -423,7 +423,7 @@ abstract contract Base is Test {
     selectors[0] = IHubConfigurator.updateLiquidityFee.selector;
     selectors[1] = IHubConfigurator.updateFeeReceiver.selector;
     selectors[2] = IHubConfigurator.updateFeeConfig.selector;
-    selectors[3] = IHubConfigurator.updateInterestRateStrategy.selector;
+    selectors[3] = IHubConfigurator.updateDrawnRateStrategy.selector;
     selectors[4] = IHubConfigurator.updateReinvestmentController.selector;
     selectors[5] = IHubConfigurator.resetAssetCaps.selector;
     selectors[6] = IHubConfigurator.deactivateAsset.selector;
@@ -439,7 +439,7 @@ abstract contract Base is Test {
     selectors[16] = IHubConfigurator.deactivateSpoke.selector;
     selectors[17] = IHubConfigurator.haltSpoke.selector;
     selectors[18] = IHubConfigurator.resetSpokeCaps.selector;
-    selectors[19] = IHubConfigurator.updateInterestRateData.selector;
+    selectors[19] = IHubConfigurator.updateDrawnRateData.selector;
     selectors[20] = IHubConfigurator.addAsset.selector;
     selectors[21] = IHubConfigurator.addAssetWithDecimals.selector;
     IAccessManager(manager).setTargetFunctionRole(
@@ -596,9 +596,9 @@ abstract contract Base is Test {
     });
 
     bytes memory encodedIrData = abi.encode(
-      IAssetInterestRateStrategy.InterestRateData({
+      IAssetDrawnRateStrategy.DrawnRateData({
         optimalUsageRatio: 90_00, // 90.00%
-        baseBorrowRate: 5_00, // 5.00%
+        baseDrawnRate: 5_00, // 5.00%
         rateGrowthBeforeOptimal: 5_00, // 5.00%
         rateGrowthAfterOptimal: 5_00 // 5.00%
       })
@@ -611,7 +611,7 @@ abstract contract Base is Test {
       address(tokenList.weth),
       tokenList.weth.decimals(),
       address(treasurySpoke),
-      address(irStrategy),
+      address(drawnRateStrategy),
       encodedIrData
     );
     hub1.updateAssetConfig(
@@ -619,7 +619,7 @@ abstract contract Base is Test {
       IHub.AssetConfig({
         liquidityFee: 10_00,
         feeReceiver: address(treasurySpoke),
-        irStrategy: address(irStrategy),
+        drawnRateStrategy: address(drawnRateStrategy),
         reinvestmentController: address(0)
       }),
       new bytes(0)
@@ -629,7 +629,7 @@ abstract contract Base is Test {
       address(tokenList.usdx),
       tokenList.usdx.decimals(),
       address(treasurySpoke),
-      address(irStrategy),
+      address(drawnRateStrategy),
       encodedIrData
     );
     hub1.updateAssetConfig(
@@ -637,7 +637,7 @@ abstract contract Base is Test {
       IHub.AssetConfig({
         liquidityFee: 5_00,
         feeReceiver: address(treasurySpoke),
-        irStrategy: address(irStrategy),
+        drawnRateStrategy: address(drawnRateStrategy),
         reinvestmentController: address(0)
       }),
       new bytes(0)
@@ -647,7 +647,7 @@ abstract contract Base is Test {
       address(tokenList.dai),
       tokenList.dai.decimals(),
       address(treasurySpoke),
-      address(irStrategy),
+      address(drawnRateStrategy),
       encodedIrData
     );
     hub1.updateAssetConfig(
@@ -655,7 +655,7 @@ abstract contract Base is Test {
       IHub.AssetConfig({
         liquidityFee: 5_00,
         feeReceiver: address(treasurySpoke),
-        irStrategy: address(irStrategy),
+        drawnRateStrategy: address(drawnRateStrategy),
         reinvestmentController: address(0)
       }),
       new bytes(0)
@@ -665,7 +665,7 @@ abstract contract Base is Test {
       address(tokenList.wbtc),
       tokenList.wbtc.decimals(),
       address(treasurySpoke),
-      address(irStrategy),
+      address(drawnRateStrategy),
       encodedIrData
     );
     hub1.updateAssetConfig(
@@ -673,7 +673,7 @@ abstract contract Base is Test {
       IHub.AssetConfig({
         liquidityFee: 10_00,
         feeReceiver: address(treasurySpoke),
-        irStrategy: address(irStrategy),
+        drawnRateStrategy: address(drawnRateStrategy),
         reinvestmentController: address(0)
       }),
       new bytes(0)
@@ -683,7 +683,7 @@ abstract contract Base is Test {
       address(tokenList.usdy),
       tokenList.usdy.decimals(),
       address(treasurySpoke),
-      address(irStrategy),
+      address(drawnRateStrategy),
       encodedIrData
     );
     hub1.updateAssetConfig(
@@ -691,7 +691,7 @@ abstract contract Base is Test {
       IHub.AssetConfig({
         liquidityFee: 10_00,
         feeReceiver: address(treasurySpoke),
-        irStrategy: address(irStrategy),
+        drawnRateStrategy: address(drawnRateStrategy),
         reinvestmentController: address(0)
       }),
       new bytes(0)
@@ -701,7 +701,7 @@ abstract contract Base is Test {
       address(tokenList.usdz),
       tokenList.usdz.decimals(),
       address(treasurySpoke),
-      address(irStrategy),
+      address(drawnRateStrategy),
       encodedIrData
     );
     hub1.updateAssetConfig(
@@ -709,7 +709,7 @@ abstract contract Base is Test {
       IHub.AssetConfig({
         liquidityFee: 5_00,
         feeReceiver: address(treasurySpoke),
-        irStrategy: address(irStrategy),
+        drawnRateStrategy: address(drawnRateStrategy),
         reinvestmentController: address(0)
       }),
       new bytes(0)
@@ -969,17 +969,17 @@ abstract contract Base is Test {
    * 2: DAI
    * 3: WBTC
    */
-  function hub2Fixture() internal returns (IHub, AssetInterestRateStrategy) {
+  function hub2Fixture() internal returns (IHub, AssetDrawnRateStrategy) {
     IAccessManager accessManager2 = IAccessManager(address(new AccessManagerEnumerable(ADMIN)));
     IHub hub2 = DeployUtils.deployHub(address(accessManager2));
     vm.label(address(hub2), 'Hub2');
-    AssetInterestRateStrategy hub2IrStrategy = new AssetInterestRateStrategy(address(hub2));
+    AssetDrawnRateStrategy hub2IrStrategy = new AssetDrawnRateStrategy(address(hub2));
 
     // Configure IR Strategy for hub 2
     bytes memory encodedIrData = abi.encode(
-      IAssetInterestRateStrategy.InterestRateData({
+      IAssetDrawnRateStrategy.DrawnRateData({
         optimalUsageRatio: 90_00, // 90.00%
-        baseBorrowRate: 5_00, // 5.00%
+        baseDrawnRate: 5_00, // 5.00%
         rateGrowthBeforeOptimal: 5_00, // 5.00%
         rateGrowthAfterOptimal: 5_00 // 5.00%
       })
@@ -1036,16 +1036,16 @@ abstract contract Base is Test {
    * 2: WBTC
    * 3: WETH
    */
-  function hub3Fixture() internal returns (IHub, AssetInterestRateStrategy) {
+  function hub3Fixture() internal returns (IHub, AssetDrawnRateStrategy) {
     IAccessManager accessManager3 = IAccessManager(address(new AccessManagerEnumerable(ADMIN)));
     IHub hub3 = DeployUtils.deployHub(address(accessManager3));
-    AssetInterestRateStrategy hub3IrStrategy = new AssetInterestRateStrategy(address(hub3));
+    AssetDrawnRateStrategy hub3IrStrategy = new AssetDrawnRateStrategy(address(hub3));
 
     // Configure IR Strategy for hub 3
     bytes memory encodedIrData = abi.encode(
-      IAssetInterestRateStrategy.InterestRateData({
+      IAssetDrawnRateStrategy.DrawnRateData({
         optimalUsageRatio: 90_00, // 90.00%
-        baseBorrowRate: 5_00, // 5.00%
+        baseDrawnRate: 5_00, // 5.00%
         rateGrowthBeforeOptimal: 5_00, // 5.00%
         rateGrowthAfterOptimal: 5_00 // 5.00%
       })
@@ -2216,30 +2216,30 @@ abstract contract Base is Test {
   /// @dev Calculate expected debt index based on input params
   function _calculateExpectedDrawnIndex(
     uint256 initialDrawnIndex,
-    uint96 borrowRate,
+    uint96 drawnRate,
     uint40 startTime
   ) internal view returns (uint256) {
-    return initialDrawnIndex.rayMulUp(MathUtils.calculateLinearInterest(borrowRate, startTime));
+    return initialDrawnIndex.rayMulUp(MathUtils.calculateLinearInterest(drawnRate, startTime));
   }
 
   /// @dev Calculate expected debt index and drawn debt based on input params
   function calculateExpectedDebt(
     uint256 initialDrawnShares,
     uint256 initialDrawnIndex,
-    uint96 borrowRate,
+    uint96 drawnRate,
     uint40 startTime
   ) internal view returns (uint256 newDrawnIndex, uint256 newDrawnDebt) {
-    newDrawnIndex = _calculateExpectedDrawnIndex(initialDrawnIndex, borrowRate, startTime);
+    newDrawnIndex = _calculateExpectedDrawnIndex(initialDrawnIndex, drawnRate, startTime);
     newDrawnDebt = initialDrawnShares.rayMulUp(newDrawnIndex);
   }
 
-  /// @dev Calculate expected drawn debt based on specified borrow rate
+  /// @dev Calculate expected drawn debt based on specified drawn rate
   function _calculateExpectedDrawnDebt(
     uint256 initialDebt,
-    uint96 borrowRate,
+    uint96 drawnRate,
     uint40 startTime
   ) internal view returns (uint256) {
-    return MathUtils.calculateLinearInterest(borrowRate, startTime).rayMulUp(initialDebt);
+    return MathUtils.calculateLinearInterest(drawnRate, startTime).rayMulUp(initialDebt);
   }
 
   /// @dev Calculate expected premium debt based on change in drawn debt and user rp
@@ -2444,20 +2444,20 @@ abstract contract Base is Test {
     return maxCollateralRisk;
   }
 
-  function _spokeMaxBorrowRate(ISpoke spoke) internal view returns (uint32) {
-    uint32 maxBorrowRate;
+  function _spokeMaxDrawnRate(ISpoke spoke) internal view returns (uint32) {
+    uint32 maxDrawnRate;
     for (uint256 reserveId; reserveId < spoke.getReserveCount(); ++reserveId) {
-      uint32 borrowRate = (
+      uint32 drawnRate = (
         _hub(spoke, reserveId).getAssetDrawnRate(_reserveAssetId(spoke, reserveId)).mulDivUp(
           PercentageMath.PERCENTAGE_FACTOR,
           WadRayMath.RAY
         )
       ).toUint32();
-      if (borrowRate > maxBorrowRate) {
-        maxBorrowRate = borrowRate;
+      if (drawnRate > maxDrawnRate) {
+        maxDrawnRate = drawnRate;
       }
     }
-    return maxBorrowRate;
+    return maxDrawnRate;
   }
 
   function _underlying(ISpoke spoke, uint256 reserveId) internal view returns (TestnetERC20) {
@@ -2587,7 +2587,7 @@ abstract contract Base is Test {
   function assertEq(IHub.AssetConfig memory a, IHub.AssetConfig memory b) internal pure {
     assertEq(a.feeReceiver, b.feeReceiver, 'feeReceiver');
     assertEq(a.liquidityFee, b.liquidityFee, 'liquidityFee');
-    assertEq(a.irStrategy, b.irStrategy, 'irStrategy');
+    assertEq(a.drawnRateStrategy, b.drawnRateStrategy, 'drawnRateStrategy');
     assertEq(a.reinvestmentController, b.reinvestmentController, 'reinvestmentController');
     assertEq(abi.encode(a), abi.encode(b));
   }
@@ -2631,11 +2631,11 @@ abstract contract Base is Test {
   }
 
   function assertEq(
-    IAssetInterestRateStrategy.InterestRateData memory a,
-    IAssetInterestRateStrategy.InterestRateData memory b
+    IAssetDrawnRateStrategy.DrawnRateData memory a,
+    IAssetDrawnRateStrategy.DrawnRateData memory b
   ) internal pure {
     assertEq(a.optimalUsageRatio, b.optimalUsageRatio, 'optimalUsageRatio');
-    assertEq(a.baseBorrowRate, b.baseBorrowRate, 'baseBorrowRate');
+    assertEq(a.baseDrawnRate, b.baseDrawnRate, 'baseDrawnRate');
     assertEq(a.rateGrowthBeforeOptimal, b.rateGrowthBeforeOptimal, 'rateGrowthBeforeOptimal');
     assertEq(a.rateGrowthAfterOptimal, b.rateGrowthAfterOptimal, 'rateGrowthAfterOptimal');
     assertEq(abi.encode(a), abi.encode(b));
@@ -2772,14 +2772,14 @@ abstract contract Base is Test {
     assertEq(hub.getAddedShares(assetId), addedShares, '_mockSupplySharePrice: addedShares');
   }
 
-  function _setConstantInterestRateBps(IHub hub, uint256 assetId, uint32 interestRateBps) internal {
+  function _setConstantDrawnRateBps(IHub hub, uint256 assetId, uint32 drawnRateBps) internal {
     vm.prank(HUB_ADMIN);
-    hub.setInterestRateData(
+    hub.setDrawnRateData(
       assetId,
       abi.encode(
-        IAssetInterestRateStrategy.InterestRateData({
+        IAssetDrawnRateStrategy.DrawnRateData({
           optimalUsageRatio: 90_00,
-          baseBorrowRate: interestRateBps,
+          baseDrawnRate: drawnRateBps,
           rateGrowthBeforeOptimal: 0,
           rateGrowthAfterOptimal: 0
         })
@@ -2787,29 +2787,29 @@ abstract contract Base is Test {
     );
   }
 
-  function _mockInterestRateBps(uint256 interestRateBps) internal {
-    _mockInterestRateBps(address(irStrategy), interestRateBps);
+  function _mockDrawnRateBps(uint256 drawnRateBps) internal {
+    _mockDrawnRateBps(address(drawnRateStrategy), drawnRateBps);
   }
 
-  function _mockInterestRateBps(address interestRateStrategy, uint256 interestRateBps) internal {
+  function _mockDrawnRateBps(address drawnRateStrategy, uint256 drawnRateBps) internal {
     vm.mockCall(
-      interestRateStrategy,
-      IBasicInterestRateStrategy.calculateInterestRate.selector,
-      abi.encode(interestRateBps.bpsToRay())
+      drawnRateStrategy,
+      IBasicDrawnRateStrategy.calculateDrawnRate.selector,
+      abi.encode(drawnRateBps.bpsToRay())
     );
   }
 
-  function _mockInterestRateBps(
-    uint256 interestRateBps,
+  function _mockDrawnRateBps(
+    uint256 drawnRateBps,
     uint256 assetId,
     uint256 liquidity,
     uint256 drawn,
     uint256 deficit,
     uint256 swept
   ) internal {
-    _mockInterestRateBps(
-      address(irStrategy),
-      interestRateBps,
+    _mockDrawnRateBps(
+      address(drawnRateStrategy),
+      drawnRateBps,
       assetId,
       liquidity,
       drawn,
@@ -2818,9 +2818,9 @@ abstract contract Base is Test {
     );
   }
 
-  function _mockInterestRateBps(
-    address interestRateStrategy,
-    uint256 interestRateBps,
+  function _mockDrawnRateBps(
+    address drawnRateStrategy,
+    uint256 drawnRateBps,
     uint256 assetId,
     uint256 liquidity,
     uint256 drawn,
@@ -2828,39 +2828,39 @@ abstract contract Base is Test {
     uint256 swept
   ) internal {
     vm.mockCall(
-      interestRateStrategy,
+      drawnRateStrategy,
       abi.encodeCall(
-        IBasicInterestRateStrategy.calculateInterestRate,
+        IBasicDrawnRateStrategy.calculateDrawnRate,
         (assetId, liquidity, drawn, deficit, swept)
       ),
-      abi.encode(interestRateBps.bpsToRay())
+      abi.encode(drawnRateBps.bpsToRay())
     );
   }
 
-  function _mockInterestRateRay(uint256 interestRateRay) internal {
-    _mockInterestRateRay(address(irStrategy), interestRateRay);
+  function _mockDrawnRateRay(uint256 drawnRateRay) internal {
+    _mockDrawnRateRay(address(drawnRateStrategy), drawnRateRay);
   }
 
-  function _mockInterestRateRay(address interestRateStrategy, uint256 interestRateRay) internal {
+  function _mockDrawnRateRay(address drawnRateStrategy, uint256 drawnRateRay) internal {
     vm.mockCall(
-      interestRateStrategy,
-      IBasicInterestRateStrategy.calculateInterestRate.selector,
-      abi.encode(interestRateRay)
+      drawnRateStrategy,
+      IBasicDrawnRateStrategy.calculateDrawnRate.selector,
+      abi.encode(drawnRateRay)
     );
   }
 
-  function _mockInterestRateRay(
-    uint256 interestRateRay,
+  function _mockDrawnRateRay(
+    uint256 drawnRateRay,
     uint256 assetId,
     uint256 liquidity,
     uint256 drawn
   ) internal {
-    _mockInterestRateRay(address(irStrategy), interestRateRay, assetId, liquidity, drawn, 0, 0);
+    _mockDrawnRateRay(address(drawnRateStrategy), drawnRateRay, assetId, liquidity, drawn, 0, 0);
   }
 
-  function _mockInterestRateRay(
-    address interestRateStrategy,
-    uint256 interestRateRay,
+  function _mockDrawnRateRay(
+    address drawnRateStrategy,
+    uint256 drawnRateRay,
     uint256 assetId,
     uint256 liquidity,
     uint256 drawn,
@@ -2868,12 +2868,12 @@ abstract contract Base is Test {
     uint256 swept
   ) internal {
     vm.mockCall(
-      interestRateStrategy,
+      drawnRateStrategy,
       abi.encodeCall(
-        IBasicInterestRateStrategy.calculateInterestRate,
+        IBasicDrawnRateStrategy.calculateDrawnRate,
         (assetId, liquidity, drawn, deficit, swept)
       ),
-      abi.encode(interestRateRay)
+      abi.encode(drawnRateRay)
     );
   }
 
@@ -2900,7 +2900,7 @@ abstract contract Base is Test {
     return address(new MockPriceFeed(oracle.decimals(), 'mock', price));
   }
 
-  function _assertBorrowRateSynced(
+  function _assertDrawnRateSynced(
     IHub targetHub,
     uint256 assetId,
     string memory operation
@@ -2910,14 +2910,14 @@ abstract contract Base is Test {
 
     vm.assertEq(
       asset.drawnRate,
-      IBasicInterestRateStrategy(asset.irStrategy).calculateInterestRate(
+      IBasicDrawnRateStrategy(asset.drawnRateStrategy).calculateDrawnRate(
         assetId,
         asset.liquidity,
         drawn,
         asset.deficitRay,
         asset.swept
       ),
-      string.concat('base borrow rate after ', operation)
+      string.concat('base drawn rate after ', operation)
     );
   }
 
@@ -3284,9 +3284,9 @@ abstract contract Base is Test {
       });
 
       bytes memory encodedIrData = abi.encode(
-        IAssetInterestRateStrategy.InterestRateData({
+        IAssetDrawnRateStrategy.DrawnRateData({
           optimalUsageRatio: 90_00, // 90.00%
-          baseBorrowRate: 5_00, // 5.00%
+          baseDrawnRate: 5_00, // 5.00%
           rateGrowthBeforeOptimal: 5_00, // 5.00%
           rateGrowthAfterOptimal: 5_00 // 5.00%
         })
@@ -3298,7 +3298,7 @@ abstract contract Base is Test {
         address(newToken),
         18,
         address(treasurySpoke),
-        address(irStrategy),
+        address(drawnRateStrategy),
         encodedIrData
       );
       hub.updateAssetConfig(
@@ -3306,7 +3306,7 @@ abstract contract Base is Test {
         IHub.AssetConfig({
           liquidityFee: 10_00,
           feeReceiver: address(treasurySpoke),
-          irStrategy: address(irStrategy),
+          drawnRateStrategy: address(drawnRateStrategy),
           reinvestmentController: address(0)
         }),
         new bytes(0)

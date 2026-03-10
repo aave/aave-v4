@@ -20,9 +20,9 @@ library Constants {
   uint256 public constant MAX_ALLOWED_ASSET_ID = type(uint16).max;
   uint16 public constant MAX_ALLOWED_USER_RESERVES_LIMIT = type(uint16).max;
 
-  /// @dev AssetInterestRateStrategy Constants
-  uint256 internal constant MAX_ALLOWED_BORROW_RATE = 1000_00; // 1000.00% in BPS
-  uint256 internal constant MIN_ALLOWED_BORROW_RATE = 0; // not defined in AssetInterestRateStrategy
+  /// @dev AssetDrawnRateStrategy Constants
+  uint256 internal constant MAX_ALLOWED_DRAWN_RATE = 1000_00; // 1000.00% in BPS
+  uint256 internal constant MIN_ALLOWED_DRAWN_RATE = 0; // not defined in AssetDrawnRateStrategy
   uint256 internal constant MIN_OPTIMAL_RATIO = 1_00; // 1.00% in BPS
   uint256 internal constant MAX_OPTIMAL_RATIO = 99_00; // 99.00% in BPS
 }

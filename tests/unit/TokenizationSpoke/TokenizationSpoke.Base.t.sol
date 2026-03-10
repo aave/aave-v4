@@ -155,7 +155,7 @@ contract TokenizationSpokeBaseTest is Base {
     asset.mint(address(hub), amount);
     vm.startPrank(address(spoke2));
     hub.add(assetId, amount);
-    _mockInterestRateBps(100_00);
+    _mockDrawnRateBps(100_00);
     hub.draw(assetId, amount, address(spoke2));
     skip(365 days);
     asset.mint(address(hub), amount);

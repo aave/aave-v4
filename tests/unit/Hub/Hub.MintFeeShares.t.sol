@@ -64,7 +64,7 @@ contract HubMintFeeSharesTest is HubBase {
 
     IHub.Asset memory asset = hub1.getAsset(daiAssetId);
     bytes memory irCalldata = abi.encodeCall(
-      IBasicInterestRateStrategy.calculateInterestRate,
+      IBasicDrawnRateStrategy.calculateDrawnRate,
       (
         daiAssetId,
         asset.liquidity,
@@ -74,7 +74,7 @@ contract HubMintFeeSharesTest is HubBase {
       )
     );
     uint256 mockRate = 0.3e27;
-    vm.mockCall(address(irStrategy), irCalldata, abi.encode(mockRate));
+    vm.mockCall(address(drawnRateStrategy), irCalldata, abi.encode(mockRate));
 
     // after mintFeeShares, the fee shares should be the amount of the fees
     vm.expectEmit(address(hub1));
@@ -85,7 +85,7 @@ contract HubMintFeeSharesTest is HubBase {
     uint256 addedSharesBefore = hub1.getAddedShares(daiAssetId);
     uint256 sharePriceBefore = hub1.previewAddByShares(daiAssetId, 1e18);
 
-    vm.expectCall(address(irStrategy), irCalldata);
+    vm.expectCall(address(drawnRateStrategy), irCalldata);
     uint256 mintedShares = Utils.mintFeeShares(hub1, daiAssetId, ADMIN);
 
     assertEq(mintedShares, expectedMintedShares, 'minted shares');
@@ -118,7 +118,7 @@ contract HubMintFeeSharesTest is HubBase {
 
   function test_mintFeeShares_noShares() public {
     updateLiquidityFee(hub1, daiAssetId, 0);
-    _mockInterestRateRay(2);
+    _mockDrawnRateRay(2);
 
     // Create debt to build up fees on the existing treasury spoke
     _addAndDrawLiquidity({
@@ -136,7 +136,7 @@ contract HubMintFeeSharesTest is HubBase {
     // drawn index is 1.0000...002
     assertEq(hub1.getAssetDrawnIndex(daiAssetId), 1e27 + 2);
 
-    _mockInterestRateRay(1e27 - 3);
+    _mockDrawnRateRay(1e27 - 3);
     updateLiquidityFee(hub1, daiAssetId, PercentageMath.PERCENTAGE_FACTOR);
 
     // mint fee shares just to accrue (liquidity fee is 0, so no fees are minted)

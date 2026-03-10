@@ -12,7 +12,7 @@ import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
 import {AssetLogic} from 'src/hub/libraries/AssetLogic.sol';
 import {SharesMath} from 'src/hub/libraries/SharesMath.sol';
 import {Premium} from 'src/hub/libraries/Premium.sol';
-import {IBasicInterestRateStrategy} from 'src/hub/interfaces/IBasicInterestRateStrategy.sol';
+import {IBasicDrawnRateStrategy} from 'src/hub/interfaces/IBasicDrawnRateStrategy.sol';
 import {IHubBase, IHub} from 'src/hub/interfaces/IHub.sol';
 
 /// @title Hub
@@ -67,11 +67,11 @@ contract Hub is IHub, AccessManaged {
     address underlying,
     uint8 decimals,
     address feeReceiver,
-    address irStrategy,
-    bytes calldata irData
+    address drawnRateStrategy,
+    bytes calldata drawnRateData
   ) external restricted returns (uint256) {
     require(
-      underlying != address(0) && feeReceiver != address(0) && irStrategy != address(0),
+      underlying != address(0) && feeReceiver != address(0) && drawnRateStrategy != address(0),
       InvalidAddress()
     );
     require(
@@ -83,8 +83,8 @@ contract Hub is IHub, AccessManaged {
     uint256 assetId = _assetCount++;
     _underlyingToAssetId[underlying] = assetId;
 
-    IBasicInterestRateStrategy(irStrategy).setInterestRateData(assetId, irData);
-    uint256 drawnRate = IBasicInterestRateStrategy(irStrategy).calculateInterestRate({
+    IBasicDrawnRateStrategy(drawnRateStrategy).setDrawnRateData(assetId, drawnRateData);
+    uint256 drawnRate = IBasicDrawnRateStrategy(drawnRateStrategy).calculateDrawnRate({
       assetId: assetId,
       liquidity: 0,
       drawn: 0,
@@ -107,7 +107,7 @@ contract Hub is IHub, AccessManaged {
       lastUpdateTimestamp: lastUpdateTimestamp.toUint40(),
       decimals: decimals,
       drawnRate: drawnRate.toUint96(),
-      irStrategy: irStrategy,
+      drawnRateStrategy: drawnRateStrategy,
       realizedFees: 0,
       reinvestmentController: address(0),
       feeReceiver: feeReceiver,
@@ -121,7 +121,7 @@ contract Hub is IHub, AccessManaged {
       AssetConfig({
         feeReceiver: feeReceiver,
         liquidityFee: 0,
-        irStrategy: irStrategy,
+        drawnRateStrategy: drawnRateStrategy,
         reinvestmentController: address(0)
       })
     );
@@ -134,14 +134,17 @@ contract Hub is IHub, AccessManaged {
   function updateAssetConfig(
     uint256 assetId,
     AssetConfig calldata config,
-    bytes calldata irData
+    bytes calldata drawnRateData
   ) external restricted {
     require(assetId < _assetCount, AssetNotListed());
     Asset storage asset = _assets[assetId];
     asset.accrue();
 
     require(config.liquidityFee <= PercentageMath.PERCENTAGE_FACTOR, InvalidLiquidityFee());
-    require(config.feeReceiver != address(0) && config.irStrategy != address(0), InvalidAddress());
+    require(
+      config.feeReceiver != address(0) && config.drawnRateStrategy != address(0),
+      InvalidAddress()
+    );
     require(
       config.reinvestmentController != address(0) || asset.swept == 0,
       InvalidReinvestmentController()
@@ -161,11 +164,11 @@ contract Hub is IHub, AccessManaged {
       _addFeeReceiver(assetId, config.feeReceiver);
     }
 
-    if (config.irStrategy != asset.irStrategy) {
-      asset.irStrategy = config.irStrategy;
-      IBasicInterestRateStrategy(config.irStrategy).setInterestRateData(assetId, irData);
+    if (config.drawnRateStrategy != asset.drawnRateStrategy) {
+      asset.drawnRateStrategy = config.drawnRateStrategy;
+      IBasicDrawnRateStrategy(config.drawnRateStrategy).setDrawnRateData(assetId, drawnRateData);
     } else {
-      require(irData.length == 0, InvalidInterestRateStrategy());
+      require(drawnRateData.length == 0, InvalidDrawnRateStrategy());
     }
 
     asset.updateDrawnRate(assetId);
@@ -197,11 +200,11 @@ contract Hub is IHub, AccessManaged {
   }
 
   /// @inheritdoc IHub
-  function setInterestRateData(uint256 assetId, bytes calldata irData) external restricted {
+  function setDrawnRateData(uint256 assetId, bytes calldata drawnRateData) external restricted {
     require(assetId < _assetCount, AssetNotListed());
     Asset storage asset = _assets[assetId];
     asset.accrue();
-    IBasicInterestRateStrategy(asset.irStrategy).setInterestRateData(assetId, irData);
+    IBasicDrawnRateStrategy(asset.drawnRateStrategy).setDrawnRateData(assetId, drawnRateData);
     asset.updateDrawnRate(assetId);
   }
 
@@ -594,7 +597,7 @@ contract Hub is IHub, AccessManaged {
       AssetConfig({
         feeReceiver: asset.feeReceiver,
         liquidityFee: asset.liquidityFee,
-        irStrategy: asset.irStrategy,
+        drawnRateStrategy: asset.drawnRateStrategy,
         reinvestmentController: asset.reinvestmentController
       });
   }

@@ -9,7 +9,7 @@ contract SpokeMultipleHubBase is SpokeBase {
   IHub internal newHub;
   IAaveOracle internal newOracle;
   ISpoke internal newSpoke;
-  IAssetInterestRateStrategy internal newIrStrategy;
+  IAssetDrawnRateStrategy internal newIrStrategy;
 
   TestnetERC20 internal assetA;
   TestnetERC20 internal assetB;
@@ -20,14 +20,14 @@ contract SpokeMultipleHubBase is SpokeBase {
       maxLiquidationBonus: 100_00, // 100.00%
       liquidationFee: 0 // 0.00%
     });
-  IAssetInterestRateStrategy.InterestRateData internal irData =
-    IAssetInterestRateStrategy.InterestRateData({
+  IAssetDrawnRateStrategy.DrawnRateData internal drawnRateData =
+    IAssetDrawnRateStrategy.DrawnRateData({
       optimalUsageRatio: 90_00, // 90.00%
-      baseBorrowRate: 5_00, // 5.00%
+      baseDrawnRate: 5_00, // 5.00%
       rateGrowthBeforeOptimal: 5_00, // 5.00%
       rateGrowthAfterOptimal: 5_00 // 5.00%
     });
-  bytes internal encodedIrData = abi.encode(irData);
+  bytes internal encodedIrData = abi.encode(drawnRateData);
 
   function setUp() public virtual override {
     deployFixtures();
@@ -40,12 +40,12 @@ contract SpokeMultipleHubBase is SpokeBase {
     hub1 = DeployUtils.deployHub(address(accessManager), hex'01');
     (spoke1, oracle1) = _deploySpokeWithOracle(ADMIN, address(accessManager));
     treasurySpoke = new TreasurySpoke(ADMIN, address(hub1));
-    irStrategy = new AssetInterestRateStrategy(address(hub1));
+    drawnRateStrategy = new AssetDrawnRateStrategy(address(hub1));
 
     // New hub and spoke
     newHub = DeployUtils.deployHub(address(accessManager), hex'02');
     (newSpoke, newOracle) = _deploySpokeWithOracle(ADMIN, address(accessManager));
-    newIrStrategy = new AssetInterestRateStrategy(address(newHub));
+    newIrStrategy = new AssetDrawnRateStrategy(address(newHub));
 
     assetA = new TestnetERC20('Asset A', 'A', 18);
     assetB = new TestnetERC20('Asset B', 'B', 18);

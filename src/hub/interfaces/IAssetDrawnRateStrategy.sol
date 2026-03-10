@@ -2,36 +2,36 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import {IBasicInterestRateStrategy} from 'src/hub/interfaces/IBasicInterestRateStrategy.sol';
+import {IBasicDrawnRateStrategy} from 'src/hub/interfaces/IBasicDrawnRateStrategy.sol';
 
-/// @title IAssetInterestRateStrategy
+/// @title IAssetDrawnRateStrategy
 /// @author Aave Labs
-/// @notice Interface of the optimal-usage-based asset interest rate strategy.
-interface IAssetInterestRateStrategy is IBasicInterestRateStrategy {
-  /// @notice Holds the interest rate data for a given asset.
+/// @notice Interface of the optimal-usage-based asset drawn rate strategy.
+interface IAssetDrawnRateStrategy is IBasicDrawnRateStrategy {
+  /// @notice Holds the drawn rate data for a given asset.
   /// @dev optimalUsageRatio The optimal usage ratio, in BPS. Maximum and minimum values are defined by `MAX_OPTIMAL_RATIO` and `MIN_OPTIMAL_RATIO`.
-  /// @dev baseBorrowRate The base borrow rate, in BPS.
+  /// @dev baseDrawnRate The base drawn rate, in BPS.
   /// @dev rateGrowthBeforeOptimal The rate growth before the optimal usage ratio, in BPS.
   /// @dev rateGrowthAfterOptimal The rate growth after the optimal usage ratio, in BPS.
-  struct InterestRateData {
+  struct DrawnRateData {
     uint16 optimalUsageRatio;
-    uint32 baseBorrowRate;
+    uint32 baseDrawnRate;
     uint32 rateGrowthBeforeOptimal;
     uint32 rateGrowthAfterOptimal;
   }
 
-  /// @notice Emitted when interest rate data is updated for an asset.
+  /// @notice Emitted when drawn rate data is updated for an asset.
   /// @param hub The address of the associated Hub.
-  /// @param assetId The identifier of the asset whose interest rate data is updated.
+  /// @param assetId The identifier of the asset whose drawn rate data is updated.
   /// @param optimalUsageRatio The optimal usage ratio, in BPS.
-  /// @param baseBorrowRate The base borrow rate, in BPS.
+  /// @param baseDrawnRate The base drawn rate, in BPS.
   /// @param rateGrowthBeforeOptimal The rate growth before the optimal usage ratio, in BPS.
   /// @param rateGrowthAfterOptimal The rate growth after the optimal usage ratio, in BPS.
-  event UpdateInterestRateData(
+  event UpdateDrawnRateData(
     address indexed hub,
     uint256 indexed assetId,
     uint256 optimalUsageRatio,
-    uint256 baseBorrowRate,
+    uint256 baseDrawnRate,
     uint256 rateGrowthBeforeOptimal,
     uint256 rateGrowthAfterOptimal
   );
@@ -42,8 +42,8 @@ interface IAssetInterestRateStrategy is IBasicInterestRateStrategy {
   /// @notice Thrown when the caller is not the Hub.
   error OnlyHub();
 
-  /// @notice Thrown when the max possible rate is greater than `MAX_ALLOWED_BORROW_RATE`.
-  error InvalidMaxBorrowRate();
+  /// @notice Thrown when the max possible rate is greater than `MAX_ALLOWED_DRAWN_RATE`.
+  error InvalidMaxDrawnRate();
 
   /// @notice Thrown when growth after optimal is less than growth before optimal.
   error GrowthAfterOptimalMustBeGteGrowthBeforeOptimal();
@@ -51,20 +51,20 @@ interface IAssetInterestRateStrategy is IBasicInterestRateStrategy {
   /// @notice Thrown when the optimal usage ratio is less than `MIN_OPTIMAL_RATIO` or greater than `MAX_OPTIMAL_RATIO`.
   error InvalidOptimalUsageRatio();
 
-  /// @notice Returns the full InterestRateData struct for the given asset.
+  /// @notice Returns the full DrawnRateData struct for the given asset.
   /// @param assetId The identifier of the asset for which to get the data.
-  /// @return The InterestRateData struct for the given asset, all in BPS.
-  function getInterestRateData(uint256 assetId) external view returns (InterestRateData memory);
+  /// @return The DrawnRateData struct for the given asset, all in BPS.
+  function getDrawnRateData(uint256 assetId) external view returns (DrawnRateData memory);
 
   /// @notice Returns the optimal usage rate for the given asset.
   /// @param assetId The identifier of the asset for which to get the optimal usage ratio.
   /// @return The optimal usage ratio, in BPS.
   function getOptimalUsageRatio(uint256 assetId) external view returns (uint256);
 
-  /// @notice Returns the base borrow rate.
-  /// @param assetId The identifier of the asset for which to get the base borrow rate.
-  /// @return The base borrow rate, in BPS.
-  function getBaseBorrowRate(uint256 assetId) external view returns (uint256);
+  /// @notice Returns the base drawn rate.
+  /// @param assetId The identifier of the asset for which to get the base drawn rate.
+  /// @return The base drawn rate, in BPS.
+  function getBaseDrawnRate(uint256 assetId) external view returns (uint256);
 
   /// @notice Returns the rate growth before the optimal usage ratio.
   /// @dev Applicable when usage ratio > 0 and <= OPTIMAL_USAGE_RATIO.
@@ -78,14 +78,14 @@ interface IAssetInterestRateStrategy is IBasicInterestRateStrategy {
   /// @return The rate growth, in BPS.
   function getRateGrowthAfterOptimal(uint256 assetId) external view returns (uint256);
 
-  /// @notice Returns the maximum borrow rate.
-  /// @param assetId The identifier of the asset for which to get the maximum borrow rate.
-  /// @return The maximum borrow rate, in BPS.
-  function getMaxBorrowRate(uint256 assetId) external view returns (uint256);
+  /// @notice Returns the maximum drawn rate.
+  /// @param assetId The identifier of the asset for which to get the maximum drawn rate.
+  /// @return The maximum drawn rate, in BPS.
+  function getMaxDrawnRate(uint256 assetId) external view returns (uint256);
 
-  /// @notice Returns the maximum allowed value for a borrow rate.
-  /// @return The maximum borrow rate, in BPS.
-  function MAX_ALLOWED_BORROW_RATE() external view returns (uint256);
+  /// @notice Returns the maximum allowed value for a drawn rate.
+  /// @return The maximum drawn rate, in BPS.
+  function MAX_ALLOWED_DRAWN_RATE() external view returns (uint256);
 
   /// @notice Returns the minimum optimal usage ratio.
   /// @return The minimum optimal usage ratio, in BPS.

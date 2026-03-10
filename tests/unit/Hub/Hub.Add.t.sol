@@ -25,9 +25,9 @@ contract HubAddTest is HubBase {
       riskPremiumThreshold: Constants.MAX_ALLOWED_COLLATERAL_RISK
     });
     bytes memory encodedIrData = abi.encode(
-      IAssetInterestRateStrategy.InterestRateData({
+      IAssetDrawnRateStrategy.DrawnRateData({
         optimalUsageRatio: 90_00, // 90.00%
-        baseBorrowRate: 5_00, // 5.00%
+        baseDrawnRate: 5_00, // 5.00%
         rateGrowthBeforeOptimal: 5_00, // 5.00%
         rateGrowthAfterOptimal: 5_00 // 5.00%
       })
@@ -37,7 +37,7 @@ contract HubAddTest is HubBase {
       address(usda),
       Constants.MIN_ALLOWED_UNDERLYING_DECIMALS,
       address(treasurySpoke),
-      address(irStrategy),
+      address(drawnRateStrategy),
       encodedIrData
     );
     hub1.updateAssetConfig(
@@ -45,7 +45,7 @@ contract HubAddTest is HubBase {
       IHub.AssetConfig({
         liquidityFee: 5_00,
         feeReceiver: address(treasurySpoke),
-        irStrategy: address(irStrategy),
+        drawnRateStrategy: address(drawnRateStrategy),
         reinvestmentController: address(0)
       }),
       new bytes(0)
@@ -205,7 +205,7 @@ contract HubAddTest is HubBase {
     uint256 totalAddedAssets = hub1.getAddedAssets(minDecimalAssetId);
     uint256 totalAddedShares = hub1.getAddedShares(minDecimalAssetId);
 
-    // Depending on the borrow rate, this may not be true
+    // Depending on the drawn rate, this may not be true
     // It can be adjusted by changing the amount of assets passed to _addLiquidity and _drawLiquidity
     assertEq(
       uint256(1).toAssetsDown(totalAddedAssets, totalAddedShares).toSharesDown(
@@ -255,9 +255,9 @@ contract HubAddTest is HubBase {
     (uint256 drawnBefore, ) = hub1.getAssetOwed(assetId);
     uint256 liquidityBefore = hub1.getAssetLiquidity(assetId);
     vm.expectCall(
-      address(irStrategy),
+      address(drawnRateStrategy),
       abi.encodeCall(
-        IBasicInterestRateStrategy.calculateInterestRate,
+        IBasicDrawnRateStrategy.calculateDrawnRate,
         (assetId, liquidityBefore + amount, drawnBefore, 0, 0)
       )
     );
@@ -298,7 +298,7 @@ contract HubAddTest is HubBase {
     );
     (uint256 drawnAfter, ) = hub1.getAssetOwed(assetId);
     assertEq(drawnAfter, drawnBefore, 'hub drawn debt after');
-    _assertBorrowRateSynced(hub1, assetId, 'hub1.add');
+    _assertDrawnRateSynced(hub1, assetId, 'hub1.add');
     _assertHubLiquidity(hub1, assetId, 'hub1.add');
     // token balance
     assertEq(underlying.balanceOf(address(spoke1)), 0, 'spoke token balance post-add');
@@ -503,9 +503,9 @@ contract HubAddTest is HubBase {
     (uint256 drawnBefore, ) = hub1.getAssetOwed(daiAssetId);
     uint256 liquidityBefore = hub1.getAssetLiquidity(daiAssetId);
     vm.expectCall(
-      address(irStrategy),
+      address(drawnRateStrategy),
       abi.encodeCall(
-        IBasicInterestRateStrategy.calculateInterestRate,
+        IBasicDrawnRateStrategy.calculateDrawnRate,
         (daiAssetId, liquidityBefore + addAmount, drawnBefore, 0, 0)
       )
     );
@@ -546,7 +546,7 @@ contract HubAddTest is HubBase {
     );
     (uint256 drawnAfter, ) = hub1.getAssetOwed(daiAssetId);
     assertEq(drawnAfter, drawnBefore, 'hub drawn debt after');
-    _assertBorrowRateSynced(hub1, daiAssetId, 'hub1.add');
+    _assertDrawnRateSynced(hub1, daiAssetId, 'hub1.add');
     _assertHubLiquidity(hub1, daiAssetId, 'hub1.add');
   }
 

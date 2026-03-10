@@ -115,15 +115,21 @@ contract SpokeMulticall is SpokeBase {
 
     // Add usda
     bytes memory encodedIrData = abi.encode(
-      IAssetInterestRateStrategy.InterestRateData({
+      IAssetDrawnRateStrategy.DrawnRateData({
         optimalUsageRatio: 90_00, // 90.00%
-        baseBorrowRate: 5_00, // 5.00%
+        baseDrawnRate: 5_00, // 5.00%
         rateGrowthBeforeOptimal: 5_00, // 5.00%
         rateGrowthAfterOptimal: 5_00 // 5.00%
       })
     );
     vm.prank(HUB_ADMIN);
-    hub1.addAsset(address(usda), 18, address(treasurySpoke), address(irStrategy), encodedIrData);
+    hub1.addAsset(
+      address(usda),
+      18,
+      address(treasurySpoke),
+      address(drawnRateStrategy),
+      encodedIrData
+    );
     uint256 usdaAssetId = hub1.getAssetCount() - 1;
 
     Reserve memory usdzReserveExpected;

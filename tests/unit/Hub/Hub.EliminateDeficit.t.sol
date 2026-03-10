@@ -140,11 +140,11 @@ contract HubEliminateDeficitTest is HubBase {
       _deficitAmountRay - clearedDeficitRay
     );
     assertGe(getAddExRate(_assetId), addExRate);
-    _assertBorrowRateSynced(hub1, _assetId, 'eliminateDeficit');
+    _assertDrawnRateSynced(hub1, _assetId, 'eliminateDeficit');
   }
 
   function _createDeficit(uint256 assetId, address spoke, uint256 amountRay) internal {
-    _mockInterestRateBps(100_00);
+    _mockDrawnRateBps(100_00);
     uint256 amount = amountRay.fromRayUp();
     Utils.add(hub1, assetId, spoke, amount, alice);
     _drawLiquidity(assetId, amount, true, true, spoke);
