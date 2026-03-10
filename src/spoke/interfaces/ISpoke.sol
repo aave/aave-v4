@@ -560,6 +560,6 @@ interface ISpoke is ISpokeBase, IAccessManaged, IIntentConsumer, IExtSload, IMul
   function ORACLE() external view returns (address);
 
   /// @notice Returns the maximum allowed number of collateral and borrow reserves per user (each counted separately).
-  /// @dev A value of `type(uint16).max` means the limit is disabled and users can have unlimited positions.
+  /// @dev A sentinel value of `type(uint16).max` signifies that the limit is disabled and users can have unlimited supply/borrow positions.
   function MAX_USER_RESERVES_LIMIT() external view returns (uint16);
 }
