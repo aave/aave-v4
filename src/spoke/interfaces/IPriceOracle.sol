@@ -7,10 +7,10 @@ pragma solidity ^0.8.0;
 /// @notice Basic interface for any price oracle.
 /// @dev All prices must use the same number of decimals as the oracle and should be returned in the same currency.
 interface IPriceOracle {
-  /// @dev Reverts if the caller is not the spoke.
+  /// @dev Reverts if the caller is not the Spoke.
   error OnlySpoke();
 
-  /// @notice Returns the address of the spoke.
+  /// @notice Returns the address of the Spoke.
   function spoke() external view returns (address);
 
   /// @notice Returns the number of decimals used to return prices.

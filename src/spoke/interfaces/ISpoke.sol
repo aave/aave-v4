@@ -139,7 +139,7 @@ interface ISpoke is ISpokeBase, IAccessManaged, IIntentConsumer, IExtSload, IMul
     uint256 borrowCount;
   }
 
-  /// @notice Emitted upon setting the immutable variables on the spoke.
+  /// @notice Emitted upon setting the immutable variables on the Spoke.
   /// @param oracle The address of the oracle.
   /// @param maxUserReservesLimit The max user reserves limit.
   event SetSpokeImmutables(address indexed oracle, uint16 maxUserReservesLimit);
@@ -337,10 +337,10 @@ interface ISpoke is ISpokeBase, IAccessManaged, IIntentConsumer, IExtSload, IMul
   /// @param config The new liquidation config.
   function updateLiquidationConfig(LiquidationConfig calldata config) external;
 
-  /// @notice Adds a new reserve to the spoke.
-  /// @dev Allowed even if the spoke has not yet been added to the Hub.
+  /// @notice Adds a new reserve to the Spoke.
+  /// @dev Allowed even if the Spoke has not yet been added to the Hub.
   /// @dev Allowed even if the `active` flag is `false`.
-  /// @dev Allowed even if the spoke has been added but the `addCap` is zero.
+  /// @dev Allowed even if the Spoke has been added but the `addCap` is zero.
   /// @param hub The address of the Hub where the asset is listed.
   /// @param assetId The identifier of the asset in the Hub.
   /// @param priceSource The address of the price source for the asset.
@@ -462,11 +462,11 @@ interface ISpoke is ISpokeBase, IAccessManaged, IIntentConsumer, IExtSload, IMul
   /// @notice Returns the liquidation config struct.
   function getLiquidationConfig() external view returns (LiquidationConfig memory);
 
-  /// @notice Returns the number of listed reserves on the spoke.
+  /// @notice Returns the number of listed reserves on the Spoke.
   /// @dev Count includes reserves that are not currently active.
   function getReserveCount() external view returns (uint256);
 
-  /// @notice Returns the reserve identifier for a given assetId in a Hub.
+  /// @notice Returns the reserve identifier for a given assetId in the Hub.
   /// @dev It reverts if no reserve is associated with the given assetId.
   /// @param hub The address of the Hub.
   /// @param assetId The identifier of the asset on the Hub.

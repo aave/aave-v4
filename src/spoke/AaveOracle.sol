@@ -24,7 +24,7 @@ contract AaveOracle is IAaveOracle {
   mapping(uint256 reserveId => IPriceFeed) internal _sources;
 
   /// @dev Constructor.
-  /// @dev `decimals` must match the spoke's decimals for compatibility.
+  /// @dev `decimals` must match the Spoke's decimals for compatibility.
   /// @param decimals_ The number of decimals for the oracle.
   constructor(uint8 decimals_) {
     DEPLOYER = msg.sender;

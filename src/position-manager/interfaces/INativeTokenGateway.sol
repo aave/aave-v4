@@ -7,7 +7,7 @@ import {IPositionManagerBase} from 'src/position-manager/interfaces/IPositionMan
 /// @title INativeTokenGateway
 /// @author Aave Labs
 /// @notice Abstracts actions to the protocol involving the native token.
-/// @dev Must be set as `PositionManager` on the spoke for the user.
+/// @dev Must be set as `PositionManager` on the Spoke for the user.
 interface INativeTokenGateway is IPositionManagerBase {
   /// @notice Thrown when the underlying asset is not the wrapped native asset.
   error NotNativeWrappedAsset();
