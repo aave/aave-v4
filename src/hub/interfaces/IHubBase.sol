@@ -90,7 +90,7 @@ interface IHubBase {
     uint256 shares
   );
 
-  /// @notice Add asset on behalf of user.
+  /// @notice Adds assets on behalf of a user.
   /// @dev Only callable by active spokes.
   /// @dev Underlying assets must be transferred to the Hub before invocation.
   /// @dev Extra underlying liquidity retained in the Hub can be skimmed by any Spoke through this action.
@@ -99,7 +99,7 @@ interface IHubBase {
   /// @return The amount of shares added.
   function add(uint256 assetId, uint256 amount) external returns (uint256);
 
-  /// @notice Remove added asset on behalf of user.
+  /// @notice Removes added assets on behalf of a user.
   /// @dev Only callable by active spokes.
   /// @param assetId The identifier of the asset.
   /// @param amount The amount of asset liquidity to remove.
@@ -107,7 +107,7 @@ interface IHubBase {
   /// @return The amount of shares removed.
   function remove(uint256 assetId, uint256 amount, address to) external returns (uint256);
 
-  /// @notice Draw assets on behalf of user.
+  /// @notice Draws assets on behalf of a user.
   /// @dev Only callable by active spokes.
   /// @param assetId The identifier of the asset.
   /// @param amount The amount of assets to draw.
@@ -115,7 +115,7 @@ interface IHubBase {
   /// @return The amount of drawn shares.
   function draw(uint256 assetId, uint256 amount, address to) external returns (uint256);
 
-  /// @notice Restore assets on behalf of user.
+  /// @notice Restores assets on behalf of a user.
   /// @dev Only callable by active spokes.
   /// @dev Interest is always paid off first from premium, then from drawn.
   /// @dev Underlying assets must be transferred to the Hub before invocation.

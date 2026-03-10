@@ -332,7 +332,7 @@ interface IHub is IHubBase, IAccessManaged {
   /// @notice Reclaims an amount of liquidity of the corresponding asset from the configured reinvestment controller.
   /// @dev The controller can only reclaim up to swept amount. All accrued interest is distributed offchain.
   /// @dev Underlying assets must be transferred to the Hub before invocation.
-  /// @dev Extra untracked underlying liquidity in the Hub can be skimmed into the Hub's liquidity accounting by the reinvestment controller through this action.
+  /// @dev Extra untracked underlying liquidity in the Hub can be skimmed into the Hub's liquidity accounting through this action.
   /// @param assetId The identifier of the asset.
   /// @param amount The amount to reclaim.
   function reclaim(uint256 assetId, uint256 amount) external;
@@ -348,7 +348,6 @@ interface IHub is IHubBase, IAccessManaged {
   /// @return The `assetId` of the underlying asset.
   function getAssetId(address underlying) external view returns (uint256);
 
-  /// @notice Returns the number of listed assets.
   function getAssetCount() external view returns (uint256);
 
   /// @notice Returns information regarding the specified asset.
@@ -380,7 +379,6 @@ interface IHub is IHubBase, IAccessManaged {
 
   /// @notice Returns the number of spokes listed for the specified asset.
   /// @param assetId The identifier of the asset.
-  /// @return The number of listed spokes.
   function getSpokeCount(uint256 assetId) external view returns (uint256);
 
   /// @notice Returns whether the Spoke is listed for the specified asset.

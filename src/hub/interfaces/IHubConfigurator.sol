@@ -113,7 +113,7 @@ interface IHubConfigurator {
   /// @param assetId The identifier of the asset.
   function haltAsset(address hub, uint256 assetId) external;
 
-  /// @notice Register the Spoke for the specified asset on a specified Hub.
+  /// @notice Registers the Spoke for the specified asset on a specified Hub.
   /// @param hub The address of the Hub.
   /// @param spoke The address of the Spoke.
   /// @param assetId The identifier of the asset to register the Spoke for.
