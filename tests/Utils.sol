@@ -5,7 +5,7 @@ pragma solidity ^0.8.0;
 import {Vm} from 'forge-std/Vm.sol';
 import {SafeERC20, IERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
 import {IHub, IHubBase} from 'src/hub/interfaces/IHub.sol';
-import {ISpoke, ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
+import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 import {ITokenizationSpoke} from 'src/spoke/interfaces/ITokenizationSpoke.sol';
 
 library Utils {
