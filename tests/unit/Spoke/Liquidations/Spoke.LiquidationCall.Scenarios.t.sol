@@ -711,6 +711,106 @@ contract SpokeLiquidationCallScenariosTest is SpokeLiquidationCallBaseTest {
     });
   }
 
+  // Liquidators are not incentivized to split liquidations and grief the treasury.
+  function test_liquidationCall_scenario8() public {
+    // Liquidation fee: 50%
+    _updateLiquidationFee(spoke, _wethReserveId(spoke), 50_00);
+
+    // mock prices such that dust is not created
+    // WETH and DAI have the same price
+    _mockReservePrice(spoke, _wethReserveId(spoke), 1000e25);
+    _mockReservePrice(spoke, _daiReserveId(spoke), 1000e25);
+
+    // Collateral: 100 wei of WETH
+    _increaseCollateralSupply(spoke, _wethReserveId(spoke), 100, user);
+
+    // Borrow: 80 wei of DAI (collateral factor of WETH is 80%)
+    _increaseReserveDebt(spoke, _daiReserveId(spoke), 80, user);
+
+    // Decrease WETH price by 10%
+    _mockReservePriceByPercent(spoke, _wethReserveId(spoke), 90_00);
+
+    // User is liquidatable
+    ISpoke.UserAccountData memory userAccountData = spoke.getUserAccountData(user);
+    assertLe(userAccountData.healthFactor, 1e18, 'User should be unhealthy');
+
+    // Debt to target: roundUp(80 * (1.05 - 0.9) / (1.05 - 0.8 * 1.05)) = 58
+
+    uint256 liquidatorCollateralBalanceBefore = tokenList.weth.balanceOf(liquidator);
+    address feeReceiver = _getFeeReceiver(spoke, _wethReserveId(spoke));
+    assertEq(
+      hub1.getSpokeAddedShares(wethAssetId, feeReceiver),
+      0,
+      'Option 1: Fee receiver WETH balance before'
+    );
+
+    uint256 snapshot = vm.snapshotState();
+
+    // Option 1: 1 liquidation of 36 debt
+    //   - Collateral siezed: 36 * 1.05 / 0.9 = 42 WETH
+    //   - Bonus is 2 WETH: 1 WETH to liquidator, 1 WETH to treasury
+    vm.prank(liquidator);
+    spoke.liquidationCall({
+      collateralReserveId: _wethReserveId(spoke),
+      debtReserveId: _daiReserveId(spoke),
+      user: user,
+      debtToCover: 36,
+      receiveShares: false
+    });
+    assertEq(
+      spoke.getUserSuppliedAssets(_wethReserveId(spoke), user),
+      58,
+      'Option 1: User collateral after'
+    );
+    assertEq(spoke.getUserTotalDebt(_daiReserveId(spoke), user), 44, 'Option 1: User debt after');
+    assertEq(
+      tokenList.weth.balanceOf(liquidator) - liquidatorCollateralBalanceBefore,
+      41,
+      'Option 1: Liquidator WETH balance delta'
+    );
+    assertEq(
+      hub1.getSpokeAddedAssets(wethAssetId, feeReceiver),
+      1,
+      'Option 1: Fee receiver WETH balance after'
+    );
+    vm.revertToState(snapshot);
+
+    // Option 2: 2 liquidations of 18 debt
+    //   - Collateral siezed: 18 * 1.05 / 0.9 = 21 WETH
+    //   - Bonus is 1 WETH: 0 WETH to liquidator, 1 WETH to treasury
+    // Overall, after 2 liquidations:
+    //   - Collateral siezed: 42 WETH
+    //   - Debt siezed: 36 WETH
+    //   - Bonus is 2 WETH: 0 WETH to liquidator, 2 WETH to treasury
+    for (uint256 i = 0; i < 2; i++) {
+      vm.prank(liquidator);
+      spoke.liquidationCall({
+        collateralReserveId: _wethReserveId(spoke),
+        debtReserveId: _daiReserveId(spoke),
+        user: user,
+        debtToCover: 18,
+        receiveShares: false
+      });
+    }
+    assertEq(
+      spoke.getUserSuppliedAssets(_wethReserveId(spoke), user),
+      58,
+      'Option 2: User collateral after'
+    );
+    assertEq(spoke.getUserTotalDebt(_daiReserveId(spoke), user), 44, 'Option 2: User debt after');
+    assertEq(
+      tokenList.weth.balanceOf(liquidator) - liquidatorCollateralBalanceBefore,
+      40,
+      'Option 2: Liquidator WETH balance delta'
+    );
+    assertEq(
+      hub1.getSpokeAddedAssets(wethAssetId, feeReceiver),
+      2,
+      'Option 2: Fee receiver WETH balance after'
+    );
+    vm.revertToState(snapshot);
+  }
+
   /// @dev a halted peripheral asset won't block a liquidation
   function test_scenario_halted_asset() public {
     uint256 collateralReserveId = _wethReserveId(spoke);

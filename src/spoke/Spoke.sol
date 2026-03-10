@@ -97,7 +97,7 @@ abstract contract Spoke is
   /// @param oracle_ The address of the AaveOracle contract.
   /// @param maxUserReservesLimit_ The maximum number of collateral and borrow reserves a user can have.
   constructor(address oracle_, uint16 maxUserReservesLimit_) {
-    require(IAaveOracle(oracle_).DECIMALS() == ORACLE_DECIMALS, InvalidOracleDecimals());
+    require(IAaveOracle(oracle_).decimals() == ORACLE_DECIMALS, InvalidOracleDecimals());
     require(maxUserReservesLimit_ > 0, InvalidMaxUserReservesLimit());
     ORACLE = oracle_;
     MAX_USER_RESERVES_LIMIT = maxUserReservesLimit_;

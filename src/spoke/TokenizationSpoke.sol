@@ -45,11 +45,10 @@ abstract contract TokenizationSpoke is ITokenizationSpoke, ERC20Upgradeable, Int
 
   /// @dev Constructor.
   /// @param hub_ The address of the associated Hub contract.
-  /// @param assetId_ The registered identifier of the asset to be tokenized by this spoke.
-  constructor(address hub_, uint256 assetId_) {
-    require(assetId_ < IHub(hub_).getAssetCount());
+  /// @param underlying_ The address of the underlying asset to be tokenized by this spoke.
+  constructor(address hub_, address underlying_) {
     HUB = IHub(hub_);
-    ASSET_ID = assetId_;
+    ASSET_ID = HUB.getAssetId(underlying_); // reverts if invalid
     (ASSET, DECIMALS) = HUB.getAssetUnderlyingAndDecimals(ASSET_ID);
     ASSET_UNITS = MathUtils.uncheckedExp(10, DECIMALS);
     MAX_ALLOWED_SPOKE_CAP = HUB.MAX_ALLOWED_SPOKE_CAP();
