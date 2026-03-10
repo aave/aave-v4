@@ -367,7 +367,7 @@ contract HubConfiguratorTest is HubBase {
       365 days
     );
 
-    assertGe(treasurySpoke.getSpokeSuppliedShares(address(hub1), daiAssetId), 0);
+    assertGe(hub1.getSpokeAddedShares(daiAssetId, address(treasurySpoke)), 0);
 
     // Change the fee receiver
     TreasurySpokeInstance newTreasurySpokeImpl = new TreasurySpokeInstance();
@@ -394,12 +394,12 @@ contract HubConfiguratorTest is HubBase {
     );
 
     // Withdraw fees from the old treasury spoke
-    uint256 fees = treasurySpoke.getSpokeSuppliedAssets(address(hub1), daiAssetId);
-    vm.prank(TREASURY_ADMIN);
-    treasurySpoke.withdraw(address(hub1), daiAssetId, fees, address(TREASURY_ADMIN));
+    uint256 fees = hub1.getSpokeAddedAssets(daiAssetId, address(treasurySpoke));
+    vm.prank(address(treasurySpoke));
+    hub1.remove(daiAssetId, fees, TREASURY_ADMIN);
 
     assertEq(
-      treasurySpoke.getSpokeSuppliedAssets(address(hub1), daiAssetId),
+      hub1.getSpokeAddedAssets(daiAssetId, address(treasurySpoke)),
       0,
       'old treasury spoke should be empty'
     );
@@ -409,12 +409,12 @@ contract HubConfiguratorTest is HubBase {
     Utils.mintFeeShares(hub1, daiAssetId, ADMIN);
 
     assertGt(
-      newTreasurySpoke.getSpokeSuppliedAssets(address(hub1), daiAssetId),
+      hub1.getSpokeAddedAssets(daiAssetId, address(newTreasurySpoke)),
       0,
       'new fee receiver should have accrued fees'
     );
     assertEq(
-      treasurySpoke.getSpokeSuppliedAssets(address(hub1), daiAssetId),
+      hub1.getSpokeAddedAssets(daiAssetId, address(treasurySpoke)),
       0,
       'old fee receiver should be empty'
     );
@@ -443,8 +443,8 @@ contract HubConfiguratorTest is HubBase {
     );
     Utils.mintFeeShares(hub1, daiAssetId, ADMIN);
 
-    assertGe(treasurySpoke.getSpokeSuppliedShares(address(hub1), daiAssetId), 0);
-    uint256 feeShares = treasurySpoke.getSpokeSuppliedShares(address(hub1), daiAssetId);
+    assertGe(hub1.getSpokeAddedShares(daiAssetId, address(treasurySpoke)), 0);
+    uint256 feeShares = hub1.getSpokeAddedShares(daiAssetId, address(treasurySpoke));
 
     // Change the fee receiver
     TreasurySpokeInstance newTreasurySpokeImpl2 = new TreasurySpokeInstance();
@@ -474,17 +474,12 @@ contract HubConfiguratorTest is HubBase {
     );
 
     // Withdraw half the fee shares from the old treasury spoke
-    vm.startPrank(TREASURY_ADMIN);
-    treasurySpoke.withdraw(
-      address(hub1),
-      daiAssetId,
-      hub1.previewRemoveByShares(daiAssetId, feeShares / 2),
-      address(TREASURY_ADMIN)
-    );
+    vm.startPrank(address(treasurySpoke));
+    hub1.remove(daiAssetId, hub1.previewRemoveByShares(daiAssetId, feeShares / 2), TREASURY_ADMIN);
     vm.stopPrank();
 
     // Get the remaining fee shares
-    feeShares = treasurySpoke.getSpokeSuppliedShares(address(hub1), daiAssetId);
+    feeShares = hub1.getSpokeAddedShares(daiAssetId, address(treasurySpoke));
 
     // Accrue more fees, this time to new fee receiver
     skip(365 days);
@@ -492,21 +487,26 @@ contract HubConfiguratorTest is HubBase {
 
     // Check that new fee receiver is getting the fees, and not old treasury spoke
     assertGt(
-      newTreasurySpoke.getSpokeSuppliedAssets(address(hub1), daiAssetId),
+      hub1.getSpokeAddedAssets(daiAssetId, address(newTreasurySpoke)),
       0,
       'new fee receiver should have accrued fees'
     );
     assertEq(
-      treasurySpoke.getSpokeSuppliedShares(address(hub1), daiAssetId),
+      hub1.getSpokeAddedShares(daiAssetId, address(treasurySpoke)),
       feeShares,
       'old fee receiver should still have same share amount'
     );
 
     // Now withdraw remaining fee shares from old treasury spoke
-    vm.prank(TREASURY_ADMIN);
-    treasurySpoke.withdraw(address(hub1), daiAssetId, UINT256_MAX, address(TREASURY_ADMIN));
+    vm.startPrank(address(treasurySpoke));
+    hub1.remove(
+      daiAssetId,
+      hub1.getSpokeAddedAssets(daiAssetId, address(treasurySpoke)),
+      TREASURY_ADMIN
+    );
+    vm.stopPrank();
     assertEq(
-      treasurySpoke.getSpokeSuppliedShares(address(hub1), daiAssetId),
+      hub1.getSpokeAddedShares(daiAssetId, address(treasurySpoke)),
       0,
       'old fee receiver should be empty'
     );

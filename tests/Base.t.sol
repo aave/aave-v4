@@ -2366,8 +2366,9 @@ abstract contract Base is Test {
     if (amount == 0) {
       return; // nothing to withdraw
     }
+    (address underlying, ) = hub.getAssetUnderlyingAndDecimals(assetId);
     vm.prank(TREASURY_ADMIN);
-    treasurySpoke.withdraw(address(hub), assetId, amount, address(treasurySpoke));
+    treasurySpoke.withdraw(address(hub), underlying, amount);
   }
 
   function _assumeValidSupplier(address user) internal view {

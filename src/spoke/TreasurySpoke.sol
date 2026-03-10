@@ -12,7 +12,7 @@ import {ITreasurySpoke} from 'src/spoke/interfaces/ITreasurySpoke.sol';
 /// @author Aave Labs
 /// @notice Spoke contract used as a treasury where accumulated fees are treated as supplied assets.
 /// @dev Dedicated to a single user, controlled exclusively by the owner.
-/// @dev Allows withdraw to claim fees and supply to invest back into the corresponding hub via this dedicated spoke.
+/// @dev Allows withdraw to claim fees and supply to invest back into any Hub asset.
 abstract contract TreasurySpoke is ITreasurySpoke, Ownable2StepUpgradeable {
   using SafeERC20 for IERC20;
 
@@ -22,33 +22,31 @@ abstract contract TreasurySpoke is ITreasurySpoke, Ownable2StepUpgradeable {
   /// @inheritdoc ITreasurySpoke
   function supply(
     address hub,
-    uint256 assetId,
-    uint256 amount,
-    address
-  ) external onlyOwner returns (uint256, uint256) {
+    address underlying,
+    uint256 amount
+  ) external onlyOwner returns (uint256) {
     IHubBase hubContract = IHubBase(hub);
-    (address underlying, ) = hubContract.getAssetUnderlyingAndDecimals(assetId);
+    uint256 assetId = hubContract.getAssetId(underlying);
     IERC20(underlying).safeTransferFrom(msg.sender, hub, amount);
-    uint256 shares = hubContract.add(assetId, amount);
 
-    return (shares, amount);
+    return hubContract.add(assetId, amount);
   }
 
   /// @inheritdoc ITreasurySpoke
   function withdraw(
     address hub,
-    uint256 assetId,
-    uint256 amount,
-    address
-  ) external onlyOwner returns (uint256, uint256) {
+    address underlying,
+    uint256 amount
+  ) external onlyOwner returns (uint256) {
+    IHubBase hubContract = IHubBase(hub);
+    uint256 assetId = hubContract.getAssetId(underlying);
     // if amount to withdraw is greater than total supplied, withdraw all supplied assets
     uint256 withdrawnAmount = MathUtils.min(
       amount,
-      IHubBase(hub).getSpokeAddedAssets(assetId, address(this))
+      hubContract.getSpokeAddedAssets(assetId, address(this))
     );
-    uint256 withdrawnShares = IHubBase(hub).remove(assetId, withdrawnAmount, msg.sender);
 
-    return (withdrawnShares, withdrawnAmount);
+    return hubContract.remove(assetId, withdrawnAmount, msg.sender);
   }
 
   /// @inheritdoc ITreasurySpoke
@@ -57,12 +55,12 @@ abstract contract TreasurySpoke is ITreasurySpoke, Ownable2StepUpgradeable {
   }
 
   /// @inheritdoc ITreasurySpoke
-  function getSpokeSuppliedAssets(address hub, uint256 assetId) external view returns (uint256) {
+  function getSuppliedAssets(address hub, uint256 assetId) external view returns (uint256) {
     return IHubBase(hub).getSpokeAddedAssets(assetId, address(this));
   }
 
   /// @inheritdoc ITreasurySpoke
-  function getSpokeSuppliedShares(address hub, uint256 assetId) external view returns (uint256) {
+  function getSuppliedShares(address hub, uint256 assetId) external view returns (uint256) {
     return IHubBase(hub).getSpokeAddedShares(assetId, address(this));
   }
 }

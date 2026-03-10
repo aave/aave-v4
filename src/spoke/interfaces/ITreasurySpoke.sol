@@ -6,38 +6,21 @@ pragma solidity ^0.8.0;
 /// @author Aave Labs
 /// @notice Interface for the TreasurySpoke.
 interface ITreasurySpoke {
-  /// @notice Thrown when the given address is invalid.
-  error InvalidAddress();
-
   /// @notice Supplies a specified amount of the underlying asset to a given reserve.
   /// @dev The Spoke pulls the underlying asset from the caller, so prior approval is required.
   /// @param hub The address of the Hub.
-  /// @param assetId The identifier of the asset.
+  /// @param underlying The address of the underlying asset.
   /// @param amount The amount of asset to supply.
-  /// @param onBehalfOf Unused parameter for this spoke.
   /// @return The amount of shares supplied.
-  /// @return The amount of assets supplied.
-  function supply(
-    address hub,
-    uint256 assetId,
-    uint256 amount,
-    address onBehalfOf
-  ) external returns (uint256, uint256);
+  function supply(address hub, address underlying, uint256 amount) external returns (uint256);
 
   /// @notice Withdraws a specified amount of underlying asset from the given reserve.
   /// @dev Providing an amount greater than the maximum withdrawable value signals a full withdrawal.
   /// @param hub The address of the Hub.
-  /// @param assetId The identifier of the asset.
+  /// @param underlying The address of the underlying asset.
   /// @param amount The amount of asset to withdraw.
-  /// @param onBehalfOf Unused parameter for this spoke.
   /// @return The amount of shares withdrawn.
-  /// @return The amount of assets withdrawn.
-  function withdraw(
-    address hub,
-    uint256 assetId,
-    uint256 amount,
-    address onBehalfOf
-  ) external returns (uint256, uint256);
+  function withdraw(address hub, address underlying, uint256 amount) external returns (uint256);
 
   /// @notice Transfers a specified amount of ERC20 tokens from this contract.
   /// @param token The address of the ERC20 token to transfer.
@@ -49,12 +32,12 @@ interface ITreasurySpoke {
   /// @param hub The address of the Hub.
   /// @param assetId The identifier of the asset.
   /// @return The amount of assets supplied.
-  function getSpokeSuppliedAssets(address hub, uint256 assetId) external view returns (uint256);
+  function getSuppliedAssets(address hub, uint256 assetId) external view returns (uint256);
 
   /// @notice Returns the amount of shares supplied by this spoke.
   /// @dev Shares are denominated relative to the supply side.
   /// @param hub The address of the Hub.
   /// @param assetId The identifier of the asset.
   /// @return The amount of shares supplied.
-  function getSpokeSuppliedShares(address hub, uint256 assetId) external view returns (uint256);
+  function getSuppliedShares(address hub, uint256 assetId) external view returns (uint256);
 }

@@ -465,7 +465,7 @@ contract Hub is IHub, AccessManaged {
     return _assets[_underlyingToAssetId[underlying]].underlying == underlying;
   }
 
-  /// @inheritdoc IHub
+  /// @inheritdoc IHubBase
   function getAssetId(address underlying) external view returns (uint256) {
     require(isUnderlyingListed(underlying), AssetNotListed());
     return _underlyingToAssetId[underlying];
