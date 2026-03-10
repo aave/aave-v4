@@ -47,9 +47,9 @@ contract HubConfiguratorGranularAccessControlTest is HubBase {
     assetSelectors[2] = IHubConfigurator.updateLiquidityFee.selector;
     assetSelectors[3] = IHubConfigurator.updateFeeReceiver.selector;
     assetSelectors[4] = IHubConfigurator.updateFeeConfig.selector;
-    assetSelectors[5] = IHubConfigurator.updateDrawnRateStrategy.selector;
+    assetSelectors[5] = IHubConfigurator.updateInterestRateStrategy.selector;
     assetSelectors[6] = IHubConfigurator.updateReinvestmentController.selector;
-    assetSelectors[7] = IHubConfigurator.updateDrawnRateData.selector;
+    assetSelectors[7] = IHubConfigurator.updateInterestRateData.selector;
     assetSelectors[8] = IHubConfigurator.resetAssetCaps.selector;
     assetSelectors[9] = IHubConfigurator.deactivateAsset.selector;
     assetSelectors[10] = IHubConfigurator.haltAsset.selector;
@@ -76,7 +76,7 @@ contract HubConfiguratorGranularAccessControlTest is HubBase {
     assetId = daiAssetId;
     spokeAddr = address(spoke1);
     encodedIrData = abi.encode(
-      IAssetInterestRateStrategy.DrawnRateData({
+      IAssetInterestRateStrategy.InterestRateData({
         optimalUsageRatio: 90_00,
         baseDrawnRate: 5_00,
         rateGrowthBeforeOptimal: 5_00,
@@ -109,7 +109,7 @@ contract HubConfiguratorGranularAccessControlTest is HubBase {
     );
     assetManagerCalldata.push(
       abi.encodeCall(
-        IHubConfigurator.updateDrawnRateStrategy,
+        IHubConfigurator.updateInterestRateStrategy,
         (address(hub1), assetId, newIrStrategy, encodedIrData)
       )
     );
@@ -120,7 +120,7 @@ contract HubConfiguratorGranularAccessControlTest is HubBase {
       )
     );
     assetManagerCalldata.push(
-      abi.encodeCall(IHubConfigurator.updateDrawnRateData, (address(hub1), assetId, encodedIrData))
+      abi.encodeCall(IHubConfigurator.updateInterestRateData, (address(hub1), assetId, encodedIrData))
     );
     assetManagerCalldata.push(
       abi.encodeCall(IHubConfigurator.resetAssetCaps, (address(hub1), assetId))

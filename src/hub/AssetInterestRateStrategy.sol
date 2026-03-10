@@ -87,32 +87,32 @@ contract AssetInterestRateStrategy is IAssetInterestRateStrategy {
 
   /// @inheritdoc IAssetInterestRateStrategy
   function getRateGrowthBeforeOptimal(uint256 assetId) external view returns (uint256) {
-    return _drawnRateData[assetId].rateGrowthBeforeOptimal;
+    return _interestRateData[assetId].rateGrowthBeforeOptimal;
   }
 
   /// @inheritdoc IAssetInterestRateStrategy
   function getRateGrowthAfterOptimal(uint256 assetId) external view returns (uint256) {
-    return _drawnRateData[assetId].rateGrowthAfterOptimal;
+    return _interestRateData[assetId].rateGrowthAfterOptimal;
   }
 
   /// @inheritdoc IAssetInterestRateStrategy
   function getMaxDrawnRate(uint256 assetId) external view returns (uint256) {
     return
-      _drawnRateData[assetId].baseDrawnRate +
-      _drawnRateData[assetId].rateGrowthBeforeOptimal +
-      _drawnRateData[assetId].rateGrowthAfterOptimal;
+      _interestRateData[assetId].baseDrawnRate +
+      _interestRateData[assetId].rateGrowthBeforeOptimal +
+      _interestRateData[assetId].rateGrowthAfterOptimal;
   }
 
   /// @inheritdoc IBasicInterestRateStrategy
-  function calculateDrawnRate(
+  function calculateInterestRate(
     uint256 assetId,
     uint256 liquidity,
     uint256 drawn,
     uint256 /* deficit */,
     uint256 swept
   ) external view returns (uint256) {
-    DrawnRateData memory rateData = _drawnRateData[assetId];
-    require(rateData.optimalUsageRatio > 0, DrawnRateDataNotSet(assetId));
+    InterestRateData memory rateData = _interestRateData[assetId];
+    require(rateData.optimalUsageRatio > 0, InterestRateDataNotSet(assetId));
 
     uint256 currentDrawnRateRay = rateData.baseDrawnRate.bpsToRay();
     if (drawn == 0) {

@@ -177,7 +177,7 @@ abstract contract Base is Test {
   ISpoke internal spoke1;
   ISpoke internal spoke2;
   ISpoke internal spoke3;
-  AssetInterestRateStrategy internal drawnRateStrategy;
+  AssetInterestRateStrategy internal irStrategy;
   IAccessManager internal accessManager;
 
   string internal constant ALICE = 'alice';
@@ -335,7 +335,7 @@ abstract contract Base is Test {
     vm.startPrank(ADMIN);
     accessManager = IAccessManager(address(new AccessManagerEnumerable(ADMIN)));
     hub1 = DeployUtils.deployHub(address(accessManager));
-    drawnRateStrategy = new AssetInterestRateStrategy(address(hub1));
+    irStrategy = new AssetInterestRateStrategy(address(hub1));
     (spoke1, oracle1) = _deploySpokeWithOracle(ADMIN, address(accessManager));
     (spoke2, oracle2) = _deploySpokeWithOracle(ADMIN, address(accessManager));
     (spoke3, oracle3) = _deploySpokeWithOracle(ADMIN, address(accessManager));
@@ -395,7 +395,7 @@ abstract contract Base is Test {
       selectors[1] = IHub.updateAssetConfig.selector;
       selectors[2] = IHub.addSpoke.selector;
       selectors[3] = IHub.updateSpokeConfig.selector;
-      selectors[4] = IHub.setDrawnRateData.selector;
+      selectors[4] = IHub.setInterestRateData.selector;
       selectors[5] = IHub.mintFeeShares.selector;
       manager.setTargetFunctionRole(address(targetHub), selectors, Roles.HUB_ADMIN_ROLE);
     }
@@ -423,7 +423,7 @@ abstract contract Base is Test {
     selectors[0] = IHubConfigurator.updateLiquidityFee.selector;
     selectors[1] = IHubConfigurator.updateFeeReceiver.selector;
     selectors[2] = IHubConfigurator.updateFeeConfig.selector;
-    selectors[3] = IHubConfigurator.updateDrawnRateStrategy.selector;
+    selectors[3] = IHubConfigurator.updateInterestRateStrategy.selector;
     selectors[4] = IHubConfigurator.updateReinvestmentController.selector;
     selectors[5] = IHubConfigurator.resetAssetCaps.selector;
     selectors[6] = IHubConfigurator.deactivateAsset.selector;
@@ -439,7 +439,7 @@ abstract contract Base is Test {
     selectors[16] = IHubConfigurator.deactivateSpoke.selector;
     selectors[17] = IHubConfigurator.haltSpoke.selector;
     selectors[18] = IHubConfigurator.resetSpokeCaps.selector;
-    selectors[19] = IHubConfigurator.updateDrawnRateData.selector;
+    selectors[19] = IHubConfigurator.updateInterestRateData.selector;
     selectors[20] = IHubConfigurator.addAsset.selector;
     selectors[21] = IHubConfigurator.addAssetWithDecimals.selector;
     IAccessManager(manager).setTargetFunctionRole(
@@ -596,7 +596,7 @@ abstract contract Base is Test {
     });
 
     bytes memory encodedIrData = abi.encode(
-      IAssetInterestRateStrategy.DrawnRateData({
+      IAssetInterestRateStrategy.InterestRateData({
         optimalUsageRatio: 90_00, // 90.00%
         baseDrawnRate: 5_00, // 5.00%
         rateGrowthBeforeOptimal: 5_00, // 5.00%
@@ -611,7 +611,7 @@ abstract contract Base is Test {
       address(tokenList.weth),
       tokenList.weth.decimals(),
       address(treasurySpoke),
-      address(drawnRateStrategy),
+      address(irStrategy),
       encodedIrData
     );
     hub1.updateAssetConfig(
@@ -619,7 +619,7 @@ abstract contract Base is Test {
       IHub.AssetConfig({
         liquidityFee: 10_00,
         feeReceiver: address(treasurySpoke),
-        drawnRateStrategy: address(drawnRateStrategy),
+        irStrategy: address(irStrategy),
         reinvestmentController: address(0)
       }),
       new bytes(0)
@@ -629,7 +629,7 @@ abstract contract Base is Test {
       address(tokenList.usdx),
       tokenList.usdx.decimals(),
       address(treasurySpoke),
-      address(drawnRateStrategy),
+      address(irStrategy),
       encodedIrData
     );
     hub1.updateAssetConfig(
@@ -637,7 +637,7 @@ abstract contract Base is Test {
       IHub.AssetConfig({
         liquidityFee: 5_00,
         feeReceiver: address(treasurySpoke),
-        drawnRateStrategy: address(drawnRateStrategy),
+        irStrategy: address(irStrategy),
         reinvestmentController: address(0)
       }),
       new bytes(0)
@@ -647,7 +647,7 @@ abstract contract Base is Test {
       address(tokenList.dai),
       tokenList.dai.decimals(),
       address(treasurySpoke),
-      address(drawnRateStrategy),
+      address(irStrategy),
       encodedIrData
     );
     hub1.updateAssetConfig(
@@ -655,7 +655,7 @@ abstract contract Base is Test {
       IHub.AssetConfig({
         liquidityFee: 5_00,
         feeReceiver: address(treasurySpoke),
-        drawnRateStrategy: address(drawnRateStrategy),
+        irStrategy: address(irStrategy),
         reinvestmentController: address(0)
       }),
       new bytes(0)
@@ -665,7 +665,7 @@ abstract contract Base is Test {
       address(tokenList.wbtc),
       tokenList.wbtc.decimals(),
       address(treasurySpoke),
-      address(drawnRateStrategy),
+      address(irStrategy),
       encodedIrData
     );
     hub1.updateAssetConfig(
@@ -673,7 +673,7 @@ abstract contract Base is Test {
       IHub.AssetConfig({
         liquidityFee: 10_00,
         feeReceiver: address(treasurySpoke),
-        drawnRateStrategy: address(drawnRateStrategy),
+        irStrategy: address(irStrategy),
         reinvestmentController: address(0)
       }),
       new bytes(0)
@@ -683,7 +683,7 @@ abstract contract Base is Test {
       address(tokenList.usdy),
       tokenList.usdy.decimals(),
       address(treasurySpoke),
-      address(drawnRateStrategy),
+      address(irStrategy),
       encodedIrData
     );
     hub1.updateAssetConfig(
@@ -691,7 +691,7 @@ abstract contract Base is Test {
       IHub.AssetConfig({
         liquidityFee: 10_00,
         feeReceiver: address(treasurySpoke),
-        drawnRateStrategy: address(drawnRateStrategy),
+        irStrategy: address(irStrategy),
         reinvestmentController: address(0)
       }),
       new bytes(0)
@@ -701,7 +701,7 @@ abstract contract Base is Test {
       address(tokenList.usdz),
       tokenList.usdz.decimals(),
       address(treasurySpoke),
-      address(drawnRateStrategy),
+      address(irStrategy),
       encodedIrData
     );
     hub1.updateAssetConfig(
@@ -709,7 +709,7 @@ abstract contract Base is Test {
       IHub.AssetConfig({
         liquidityFee: 5_00,
         feeReceiver: address(treasurySpoke),
-        drawnRateStrategy: address(drawnRateStrategy),
+        irStrategy: address(irStrategy),
         reinvestmentController: address(0)
       }),
       new bytes(0)
@@ -977,7 +977,7 @@ abstract contract Base is Test {
 
     // Configure IR Strategy for hub 2
     bytes memory encodedIrData = abi.encode(
-      IAssetInterestRateStrategy.DrawnRateData({
+      IAssetInterestRateStrategy.InterestRateData({
         optimalUsageRatio: 90_00, // 90.00%
         baseDrawnRate: 5_00, // 5.00%
         rateGrowthBeforeOptimal: 5_00, // 5.00%
@@ -1043,7 +1043,7 @@ abstract contract Base is Test {
 
     // Configure IR Strategy for hub 3
     bytes memory encodedIrData = abi.encode(
-      IAssetInterestRateStrategy.DrawnRateData({
+      IAssetInterestRateStrategy.InterestRateData({
         optimalUsageRatio: 90_00, // 90.00%
         baseDrawnRate: 5_00, // 5.00%
         rateGrowthBeforeOptimal: 5_00, // 5.00%
@@ -2587,7 +2587,7 @@ abstract contract Base is Test {
   function assertEq(IHub.AssetConfig memory a, IHub.AssetConfig memory b) internal pure {
     assertEq(a.feeReceiver, b.feeReceiver, 'feeReceiver');
     assertEq(a.liquidityFee, b.liquidityFee, 'liquidityFee');
-    assertEq(a.drawnRateStrategy, b.drawnRateStrategy, 'drawnRateStrategy');
+    assertEq(a.irStrategy, b.irStrategy, 'irStrategy');
     assertEq(a.reinvestmentController, b.reinvestmentController, 'reinvestmentController');
     assertEq(abi.encode(a), abi.encode(b));
   }
@@ -2631,8 +2631,8 @@ abstract contract Base is Test {
   }
 
   function assertEq(
-    IAssetInterestRateStrategy.DrawnRateData memory a,
-    IAssetInterestRateStrategy.DrawnRateData memory b
+    IAssetInterestRateStrategy.InterestRateData memory a,
+    IAssetInterestRateStrategy.InterestRateData memory b
   ) internal pure {
     assertEq(a.optimalUsageRatio, b.optimalUsageRatio, 'optimalUsageRatio');
     assertEq(a.baseDrawnRate, b.baseDrawnRate, 'baseDrawnRate');
@@ -2774,10 +2774,10 @@ abstract contract Base is Test {
 
   function _setConstantDrawnRateBps(IHub hub, uint256 assetId, uint32 drawnRateBps) internal {
     vm.prank(HUB_ADMIN);
-    hub.setDrawnRateData(
+    hub.setInterestRateData(
       assetId,
       abi.encode(
-        IAssetInterestRateStrategy.DrawnRateData({
+        IAssetInterestRateStrategy.InterestRateData({
           optimalUsageRatio: 90_00,
           baseDrawnRate: drawnRateBps,
           rateGrowthBeforeOptimal: 0,
@@ -2788,13 +2788,13 @@ abstract contract Base is Test {
   }
 
   function _mockDrawnRateBps(uint256 drawnRateBps) internal {
-    _mockDrawnRateBps(address(drawnRateStrategy), drawnRateBps);
+    _mockDrawnRateBps(address(irStrategy), drawnRateBps);
   }
 
-  function _mockDrawnRateBps(address drawnRateStrategy, uint256 drawnRateBps) internal {
+  function _mockDrawnRateBps(address irStrategy, uint256 drawnRateBps) internal {
     vm.mockCall(
-      drawnRateStrategy,
-      IBasicInterestRateStrategy.calculateDrawnRate.selector,
+      irStrategy,
+      IBasicInterestRateStrategy.calculateInterestRate.selector,
       abi.encode(drawnRateBps.bpsToRay())
     );
   }
@@ -2808,7 +2808,7 @@ abstract contract Base is Test {
     uint256 swept
   ) internal {
     _mockDrawnRateBps(
-      address(drawnRateStrategy),
+      address(irStrategy),
       drawnRateBps,
       assetId,
       liquidity,
@@ -2819,7 +2819,7 @@ abstract contract Base is Test {
   }
 
   function _mockDrawnRateBps(
-    address drawnRateStrategy,
+    address irStrategy,
     uint256 drawnRateBps,
     uint256 assetId,
     uint256 liquidity,
@@ -2828,9 +2828,9 @@ abstract contract Base is Test {
     uint256 swept
   ) internal {
     vm.mockCall(
-      drawnRateStrategy,
+      irStrategy,
       abi.encodeCall(
-        IBasicInterestRateStrategy.calculateDrawnRate,
+        IBasicInterestRateStrategy.calculateInterestRate,
         (assetId, liquidity, drawn, deficit, swept)
       ),
       abi.encode(drawnRateBps.bpsToRay())
@@ -2838,13 +2838,13 @@ abstract contract Base is Test {
   }
 
   function _mockDrawnRateRay(uint256 drawnRateRay) internal {
-    _mockDrawnRateRay(address(drawnRateStrategy), drawnRateRay);
+    _mockDrawnRateRay(address(irStrategy), drawnRateRay);
   }
 
-  function _mockDrawnRateRay(address drawnRateStrategy, uint256 drawnRateRay) internal {
+  function _mockDrawnRateRay(address irStrategy, uint256 drawnRateRay) internal {
     vm.mockCall(
-      drawnRateStrategy,
-      IBasicInterestRateStrategy.calculateDrawnRate.selector,
+      irStrategy,
+      IBasicInterestRateStrategy.calculateInterestRate.selector,
       abi.encode(drawnRateRay)
     );
   }
@@ -2855,11 +2855,11 @@ abstract contract Base is Test {
     uint256 liquidity,
     uint256 drawn
   ) internal {
-    _mockDrawnRateRay(address(drawnRateStrategy), drawnRateRay, assetId, liquidity, drawn, 0, 0);
+    _mockDrawnRateRay(address(irStrategy), drawnRateRay, assetId, liquidity, drawn, 0, 0);
   }
 
   function _mockDrawnRateRay(
-    address drawnRateStrategy,
+    address irStrategy,
     uint256 drawnRateRay,
     uint256 assetId,
     uint256 liquidity,
@@ -2868,9 +2868,9 @@ abstract contract Base is Test {
     uint256 swept
   ) internal {
     vm.mockCall(
-      drawnRateStrategy,
+      irStrategy,
       abi.encodeCall(
-        IBasicInterestRateStrategy.calculateDrawnRate,
+        IBasicInterestRateStrategy.calculateInterestRate,
         (assetId, liquidity, drawn, deficit, swept)
       ),
       abi.encode(drawnRateRay)
@@ -2910,7 +2910,7 @@ abstract contract Base is Test {
 
     vm.assertEq(
       asset.drawnRate,
-      IBasicInterestRateStrategy(asset.drawnRateStrategy).calculateDrawnRate(
+      IBasicInterestRateStrategy(asset.irStrategy).calculateInterestRate(
         assetId,
         asset.liquidity,
         drawn,
@@ -3284,7 +3284,7 @@ abstract contract Base is Test {
       });
 
       bytes memory encodedIrData = abi.encode(
-        IAssetInterestRateStrategy.DrawnRateData({
+        IAssetInterestRateStrategy.InterestRateData({
           optimalUsageRatio: 90_00, // 90.00%
           baseDrawnRate: 5_00, // 5.00%
           rateGrowthBeforeOptimal: 5_00, // 5.00%
@@ -3298,7 +3298,7 @@ abstract contract Base is Test {
         address(newToken),
         18,
         address(treasurySpoke),
-        address(drawnRateStrategy),
+        address(irStrategy),
         encodedIrData
       );
       hub.updateAssetConfig(
@@ -3306,7 +3306,7 @@ abstract contract Base is Test {
         IHub.AssetConfig({
           liquidityFee: 10_00,
           feeReceiver: address(treasurySpoke),
-          drawnRateStrategy: address(drawnRateStrategy),
+          irStrategy: address(irStrategy),
           reinvestmentController: address(0)
         }),
         new bytes(0)

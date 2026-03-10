@@ -136,7 +136,7 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
     // withdraw any treasury fees
     _withdrawLiquidityFees(hub1, assetId, UINT256_MAX);
 
-    // todo: _updateCollateralRisk, updateLiquidityFee or updateDrawnRateStrategy needs reserve update?
+    // todo: _updateCollateralRisk, updateLiquidityFee or updateInterestRateStrategy needs reserve update?
 
     // Time passes
     skip(skipTime);

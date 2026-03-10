@@ -25,7 +25,7 @@ contract HubConfiguratorTest is HubBase {
 
     _assetId = daiAssetId;
     _encodedIrData = abi.encode(
-      IAssetInterestRateStrategy.DrawnRateData({
+      IAssetInterestRateStrategy.InterestRateData({
         optimalUsageRatio: 90_00, // 90.00%
         baseDrawnRate: 5_00, // 5.00%
         rateGrowthBeforeOptimal: 5_00, // 5.00%
@@ -54,7 +54,7 @@ contract HubConfiguratorTest is HubBase {
         .toUint8(),
       feeReceiver: vm.randomAddress(),
       liquidityFee: vm.randomUint(),
-      drawnRateStrategy: vm.randomAddress(),
+      irStrategy: vm.randomAddress(),
       encodedIrData: _encodedIrData
     });
   }
@@ -68,7 +68,7 @@ contract HubConfiguratorTest is HubBase {
       decimals: 10,
       feeReceiver: vm.randomAddress(),
       liquidityFee: vm.randomUint(),
-      drawnRateStrategy: vm.randomAddress(),
+      irStrategy: vm.randomAddress(),
       encodedIrData: abi.encode('invalid')
     });
   }
@@ -79,11 +79,11 @@ contract HubConfiguratorTest is HubBase {
     uint8 decimals,
     address feeReceiver,
     uint256 liquidityFee,
-    address drawnRateStrategy
+    address irStrategy
   ) public {
     assumeUnusedAddress(underlying);
     assumeNotZeroAddress(feeReceiver);
-    assumeNotZeroAddress(drawnRateStrategy);
+    assumeNotZeroAddress(irStrategy);
 
     decimals = bound(decimals, Constants.MAX_ALLOWED_UNDERLYING_DECIMALS + 1, type(uint8).max)
       .toUint8();
@@ -97,7 +97,7 @@ contract HubConfiguratorTest is HubBase {
       decimals,
       feeReceiver,
       liquidityFee,
-      drawnRateStrategy,
+      irStrategy,
       _encodedIrData
     );
   }
@@ -110,7 +110,7 @@ contract HubConfiguratorTest is HubBase {
       )
     );
     address feeReceiver = makeAddr('newFeeReceiver');
-    address drawnRateStrategy = makeAddr('newIrStrategy');
+    address irStrategy = makeAddr('newIrStrategy');
     uint256 liquidityFee = vm.randomUint(0, PercentageMath.PERCENTAGE_FACTOR);
 
     vm.expectRevert(IHub.InvalidAddress.selector, address(hub1));
@@ -121,12 +121,12 @@ contract HubConfiguratorTest is HubBase {
       decimals,
       feeReceiver,
       liquidityFee,
-      drawnRateStrategy,
+      irStrategy,
       _encodedIrData
     );
   }
 
-  function test_addAsset_revertsWith_InvalidAddress_drawnRateStrategy() public {
+  function test_addAsset_revertsWith_InvalidAddress_irStrategy() public {
     address underlying = makeAddr('newUnderlying');
     uint8 decimals = uint8(
       vm.randomUint(
@@ -151,7 +151,7 @@ contract HubConfiguratorTest is HubBase {
       )
     );
     address feeReceiver = makeAddr('newFeeReceiver');
-    address drawnRateStrategy = address(new AssetInterestRateStrategy(address(hub1)));
+    address irStrategy = address(new AssetInterestRateStrategy(address(hub1)));
     uint256 liquidityFee = vm.randomUint(PercentageMath.PERCENTAGE_FACTOR + 1, type(uint16).max);
 
     vm.expectRevert(IHub.InvalidLiquidityFee.selector, address(hub1));
@@ -162,7 +162,7 @@ contract HubConfiguratorTest is HubBase {
       decimals,
       feeReceiver,
       liquidityFee,
-      drawnRateStrategy,
+      irStrategy,
       _encodedIrData
     );
   }
@@ -203,10 +203,10 @@ contract HubConfiguratorTest is HubBase {
     ).toUint32();
 
     uint256 expectedAssetId = hub1.getAssetCount();
-    address drawnRateStrategy = address(new AssetInterestRateStrategy(address(hub1)));
+    address irStrategy = address(new AssetInterestRateStrategy(address(hub1)));
 
     _encodedIrData = abi.encode(
-      IAssetInterestRateStrategy.DrawnRateData({
+      IAssetInterestRateStrategy.InterestRateData({
         optimalUsageRatio: optimalUsageRatio,
         baseDrawnRate: baseDrawnRate,
         rateGrowthBeforeOptimal: rateGrowthBeforeOptimal,
@@ -217,7 +217,7 @@ contract HubConfiguratorTest is HubBase {
     IHub.AssetConfig memory expectedConfig = IHub.AssetConfig({
       liquidityFee: liquidityFee.toUint16(),
       feeReceiver: feeReceiver,
-      drawnRateStrategy: drawnRateStrategy,
+      irStrategy: irStrategy,
       reinvestmentController: address(0)
     });
     IHub.SpokeConfig memory expectedSpokeConfig = IHub.SpokeConfig({
@@ -232,7 +232,7 @@ contract HubConfiguratorTest is HubBase {
       address(hub1),
       abi.encodeCall(
         IHub.addAsset,
-        (underlying, decimals, feeReceiver, drawnRateStrategy, _encodedIrData)
+        (underlying, decimals, feeReceiver, irStrategy, _encodedIrData)
       )
     );
 
@@ -248,7 +248,7 @@ contract HubConfiguratorTest is HubBase {
       decimals,
       feeReceiver,
       liquidityFee,
-      drawnRateStrategy,
+      irStrategy,
       _encodedIrData
     );
 
@@ -577,7 +577,7 @@ contract HubConfiguratorTest is HubBase {
     test_updateFeeConfig_fuzz(0, 0, makeAddr('newFeeReceiver2'));
   }
 
-  function test_updateDrawnRateStrategy_fuzz_revertsWith_AccessManagedUnauthorized(
+  function test_updateInterestRateStrategy_fuzz_revertsWith_AccessManagedUnauthorized(
     address caller
   ) public {
     vm.assume(caller != HUB_CONFIGURATOR);
@@ -585,7 +585,7 @@ contract HubConfiguratorTest is HubBase {
       abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, caller)
     );
     vm.prank(caller);
-    hubConfigurator.updateDrawnRateStrategy(
+    hubConfigurator.updateInterestRateStrategy(
       address(hub1),
       vm.randomUint(),
       vm.randomAddress(),
@@ -593,12 +593,12 @@ contract HubConfiguratorTest is HubBase {
     );
   }
 
-  function test_updateDrawnRateStrategy() public {
-    address drawnRateStrategy = makeAddr('newDrawnRateStrategy');
+  function test_updateInterestRateStrategy() public {
+    address irStrategy = makeAddr('newDrawnRateStrategy');
 
     IHub.AssetConfig memory expectedConfig = hub1.getAssetConfig(_assetId);
-    expectedConfig.drawnRateStrategy = drawnRateStrategy;
-    _mockDrawnRateBps(drawnRateStrategy, 5_00);
+    expectedConfig.irStrategy = irStrategy;
+    _mockDrawnRateBps(irStrategy, 5_00);
 
     vm.expectCall(
       address(hub1),
@@ -606,45 +606,45 @@ contract HubConfiguratorTest is HubBase {
     );
 
     vm.prank(HUB_CONFIGURATOR);
-    hubConfigurator.updateDrawnRateStrategy(
+    hubConfigurator.updateInterestRateStrategy(
       address(hub1),
       _assetId,
-      drawnRateStrategy,
+      irStrategy,
       _encodedIrData
     );
 
     assertEq(hub1.getAssetConfig(_assetId), expectedConfig);
   }
 
-  function test_updateDrawnRateStrategy_revertsWith_InvalidAddress_drawnRateStrategy() public {
+  function test_updateInterestRateStrategy_revertsWith_InvalidAddress_irStrategy() public {
     _assetId = vm.randomUint(0, hub1.getAssetCount() - 1);
 
     vm.expectRevert(IHub.InvalidAddress.selector, address(hub1));
     vm.prank(HUB_CONFIGURATOR);
-    hubConfigurator.updateDrawnRateStrategy(address(hub1), _assetId, address(0), _encodedIrData);
+    hubConfigurator.updateInterestRateStrategy(address(hub1), _assetId, address(0), _encodedIrData);
   }
 
-  function test_updateDrawnRateStrategy_revertsWith_DrawnRateStrategyReverts() public {
+  function test_updateInterestRateStrategy_revertsWith_DrawnRateStrategyReverts() public {
     _assetId = vm.randomUint(0, hub1.getAssetCount() - 1);
-    address drawnRateStrategy = makeAddr('newDrawnRateStrategy');
+    address irStrategy = makeAddr('newDrawnRateStrategy');
 
     vm.expectRevert();
     vm.prank(HUB_CONFIGURATOR);
-    hubConfigurator.updateDrawnRateStrategy(
+    hubConfigurator.updateInterestRateStrategy(
       address(hub1),
       _assetId,
-      drawnRateStrategy,
+      irStrategy,
       _encodedIrData
     );
   }
 
-  function test_updateDrawnRateStrategy_revertsWith_InvalidDrawnRateStrategy() public {
-    vm.expectRevert(IHub.InvalidDrawnRateStrategy.selector, address(hub1));
+  function test_updateInterestRateStrategy_revertsWith_InvalidInterestRateStrategy() public {
+    vm.expectRevert(IHub.InvalidInterestRateStrategy.selector, address(hub1));
     vm.prank(HUB_CONFIGURATOR);
-    hubConfigurator.updateDrawnRateStrategy(
+    hubConfigurator.updateInterestRateStrategy(
       address(hub1),
       _assetId,
-      address(drawnRateStrategy),
+      address(irStrategy),
       _encodedIrData
     );
   }
@@ -1133,17 +1133,17 @@ contract HubConfiguratorTest is HubBase {
     }
   }
 
-  function test_updateDrawnRateData_revertsWith_AccessManagedUnauthorized() public {
+  function test_updateInterestRateData_revertsWith_AccessManagedUnauthorized() public {
     vm.expectRevert(
       abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, alice)
     );
     vm.prank(alice);
-    hubConfigurator.updateDrawnRateData(address(hub1), _assetId, vm.randomBytes(32));
+    hubConfigurator.updateInterestRateData(address(hub1), _assetId, vm.randomBytes(32));
   }
 
-  function test_updateDrawnRateData() public {
-    IAssetInterestRateStrategy.DrawnRateData memory newIrData = IAssetInterestRateStrategy
-      .DrawnRateData({
+  function test_updateInterestRateData() public {
+    IAssetInterestRateStrategy.InterestRateData memory newIrData = IAssetInterestRateStrategy
+      .InterestRateData({
         optimalUsageRatio: 90_00, // 90.00%
         baseDrawnRate: 5_00, // 5.00%
         rateGrowthBeforeOptimal: 5_00, // 5.00%
@@ -1152,12 +1152,12 @@ contract HubConfiguratorTest is HubBase {
 
     vm.expectCall(
       address(hub1),
-      abi.encodeCall(IHub.setDrawnRateData, (_assetId, abi.encode(newIrData)))
+      abi.encodeCall(IHub.setInterestRateData, (_assetId, abi.encode(newIrData)))
     );
     vm.prank(HUB_CONFIGURATOR);
-    hubConfigurator.updateDrawnRateData(address(hub1), _assetId, abi.encode(newIrData));
+    hubConfigurator.updateInterestRateData(address(hub1), _assetId, abi.encode(newIrData));
 
-    assertEq(drawnRateStrategy.getDrawnRateData(_assetId), newIrData);
+    assertEq(irStrategy.getInterestRateData(_assetId), newIrData);
   }
 
   function _addAsset(
@@ -1166,7 +1166,7 @@ contract HubConfiguratorTest is HubBase {
     uint8 decimals,
     address feeReceiver,
     uint256 liquidityFee,
-    address drawnRateStrategy,
+    address irStrategy,
     bytes memory encodedIrData
   ) internal returns (uint256) {
     if (fetchErc20Decimals) {
@@ -1177,7 +1177,7 @@ contract HubConfiguratorTest is HubBase {
           underlying,
           feeReceiver,
           liquidityFee,
-          drawnRateStrategy,
+          irStrategy,
           encodedIrData
         );
     } else {
@@ -1188,7 +1188,7 @@ contract HubConfiguratorTest is HubBase {
           decimals,
           feeReceiver,
           liquidityFee,
-          drawnRateStrategy,
+          irStrategy,
           encodedIrData
         );
     }

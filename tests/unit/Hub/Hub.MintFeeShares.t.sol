@@ -64,7 +64,7 @@ contract HubMintFeeSharesTest is HubBase {
 
     IHub.Asset memory asset = hub1.getAsset(daiAssetId);
     bytes memory irCalldata = abi.encodeCall(
-      IBasicInterestRateStrategy.calculateDrawnRate,
+      IBasicInterestRateStrategy.calculateInterestRate,
       (
         daiAssetId,
         asset.liquidity,
@@ -74,7 +74,7 @@ contract HubMintFeeSharesTest is HubBase {
       )
     );
     uint256 mockRate = 0.3e27;
-    vm.mockCall(address(drawnRateStrategy), irCalldata, abi.encode(mockRate));
+    vm.mockCall(address(irStrategy), irCalldata, abi.encode(mockRate));
 
     // after mintFeeShares, the fee shares should be the amount of the fees
     vm.expectEmit(address(hub1));
@@ -85,7 +85,7 @@ contract HubMintFeeSharesTest is HubBase {
     uint256 addedSharesBefore = hub1.getAddedShares(daiAssetId);
     uint256 sharePriceBefore = hub1.previewAddByShares(daiAssetId, 1e18);
 
-    vm.expectCall(address(drawnRateStrategy), irCalldata);
+    vm.expectCall(address(irStrategy), irCalldata);
     uint256 mintedShares = Utils.mintFeeShares(hub1, daiAssetId, ADMIN);
 
     assertEq(mintedShares, expectedMintedShares, 'minted shares');

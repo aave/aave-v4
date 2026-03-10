@@ -108,7 +108,7 @@ contract HubSweepTest is HubBase {
     _assertHubLiquidity(hub1, daiAssetId, 'sweep');
     (uint256 drawn, ) = hub1.getAssetOwed(daiAssetId);
     assertEq(
-      IBasicInterestRateStrategy(hub1.getAsset(daiAssetId).drawnRateStrategy).calculateDrawnRate({
+      IBasicInterestRateStrategy(hub1.getAsset(daiAssetId).irStrategy).calculateInterestRate({
         assetId: daiAssetId,
         liquidity: supplyAmount - drawAmount - swept,
         drawn: drawn,

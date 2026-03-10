@@ -25,16 +25,16 @@ contract HubConfigurator is AccessManaged, IHubConfigurator {
     address underlying,
     address feeReceiver,
     uint256 liquidityFee,
-    address drawnRateStrategy,
-    bytes calldata drawnRateData
+    address irStrategy,
+    bytes calldata irData
   ) external restricted returns (uint256) {
     IHub targetHub = IHub(hub);
     uint256 assetId = targetHub.addAsset(
       underlying,
       IERC20Metadata(underlying).decimals(),
       feeReceiver,
-      drawnRateStrategy,
-      drawnRateData
+      irStrategy,
+      irData
     );
     _updateLiquidityFee(targetHub, assetId, liquidityFee);
     return assetId;
@@ -47,17 +47,11 @@ contract HubConfigurator is AccessManaged, IHubConfigurator {
     uint8 decimals,
     address feeReceiver,
     uint256 liquidityFee,
-    address drawnRateStrategy,
-    bytes calldata drawnRateData
+    address irStrategy,
+    bytes calldata irData
   ) external restricted returns (uint256) {
     IHub targetHub = IHub(hub);
-    uint256 assetId = targetHub.addAsset(
-      underlying,
-      decimals,
-      feeReceiver,
-      drawnRateStrategy,
-      drawnRateData
-    );
+    uint256 assetId = targetHub.addAsset(underlying, decimals, feeReceiver, irStrategy, irData);
     _updateLiquidityFee(targetHub, assetId, liquidityFee);
     return assetId;
   }
@@ -98,16 +92,16 @@ contract HubConfigurator is AccessManaged, IHubConfigurator {
   }
 
   /// @inheritdoc IHubConfigurator
-  function updateDrawnRateStrategy(
+  function updateInterestRateStrategy(
     address hub,
     uint256 assetId,
-    address drawnRateStrategy,
-    bytes calldata drawnRateData
+    address irStrategy,
+    bytes calldata irData
   ) external restricted {
     IHub targetHub = IHub(hub);
     IHub.AssetConfig memory config = targetHub.getAssetConfig(assetId);
-    config.drawnRateStrategy = drawnRateStrategy;
-    targetHub.updateAssetConfig(assetId, config, drawnRateData);
+    config.irStrategy = irStrategy;
+    targetHub.updateAssetConfig(assetId, config, irData);
   }
 
   /// @inheritdoc IHubConfigurator
@@ -301,12 +295,12 @@ contract HubConfigurator is AccessManaged, IHubConfigurator {
   }
 
   /// @inheritdoc IHubConfigurator
-  function updateDrawnRateData(
+  function updateInterestRateData(
     address hub,
     uint256 assetId,
-    bytes calldata drawnRateData
+    bytes calldata irData
   ) external restricted {
-    IHub(hub).setDrawnRateData(assetId, drawnRateData);
+    IHub(hub).setInterestRateData(assetId, irData);
   }
 
   /// @dev Updates spoke caps without changing the active flag.

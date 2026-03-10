@@ -18,16 +18,16 @@ interface IHubConfigurator {
   /// @param underlying The address of the underlying asset.
   /// @param feeReceiver The address of the fee receiver Spoke.
   /// @param liquidityFee The liquidity fee of the asset, in BPS.
-  /// @param drawnRateStrategy The address of the drawn rate strategy contract.
-  /// @param drawnRateData The drawn rate data to apply to the given asset, encoded in bytes.
+  /// @param irStrategy The address of the interest rate strategy contract.
+  /// @param irData The interest rate data to apply to the given asset, encoded in bytes.
   /// @return The unique identifier of the added asset.
   function addAsset(
     address hub,
     address underlying,
     address feeReceiver,
     uint256 liquidityFee,
-    address drawnRateStrategy,
-    bytes calldata drawnRateData
+    address irStrategy,
+    bytes calldata irData
   ) external returns (uint256);
 
   /// @notice Adds a new asset to a specified Hub with explicit decimals.
@@ -37,8 +37,8 @@ interface IHubConfigurator {
   /// @param decimals The number of decimals of the asset.
   /// @param feeReceiver The address of the fee receiver Spoke.
   /// @param liquidityFee The liquidity fee of the asset, in BPS.
-  /// @param drawnRateStrategy The address of the drawn rate strategy contract.
-  /// @param drawnRateData The drawn rate data to apply to the given asset, encoded in bytes.
+  /// @param irStrategy The address of the interest rate strategy contract.
+  /// @param irData The interest rate data to apply to the given asset, encoded in bytes.
   /// @return The unique identifier of the added asset.
   function addAssetWithDecimals(
     address hub,
@@ -46,8 +46,8 @@ interface IHubConfigurator {
     uint8 decimals,
     address feeReceiver,
     uint256 liquidityFee,
-    address drawnRateStrategy,
-    bytes calldata drawnRateData
+    address irStrategy,
+    bytes calldata irData
   ) external returns (uint256);
 
   /// @notice Updates the liquidity fee of an asset on a specified Hub.
@@ -76,16 +76,16 @@ interface IHubConfigurator {
     address feeReceiver
   ) external;
 
-  /// @notice Updates the drawn rate strategy of an asset on a specified Hub.
+  /// @notice Updates the interest rate strategy of an asset on a specified Hub.
   /// @param hub The address of the Hub.
   /// @param assetId The identifier of the asset.
-  /// @param drawnRateStrategy The new drawn rate strategy.
-  /// @param drawnRateData The drawn rate data to apply to the given asset, encoded in bytes.
-  function updateDrawnRateStrategy(
+  /// @param irStrategy The new interest rate strategy.
+  /// @param irData The interest rate data to apply to the given asset, encoded in bytes.
+  function updateInterestRateStrategy(
     address hub,
     uint256 assetId,
-    address drawnRateStrategy,
-    bytes calldata drawnRateData
+    address irStrategy,
+    bytes calldata irData
   ) external;
 
   /// @notice Updates the reinvestment controller of an asset on a specified Hub.
@@ -212,9 +212,9 @@ interface IHubConfigurator {
   /// @param spoke The address of the Spoke.
   function resetSpokeCaps(address hub, address spoke) external;
 
-  /// @notice Updates the drawn rate data for an asset.
+  /// @notice Updates the interest rate data for an asset.
   /// @param hub The address of the Hub.
   /// @param assetId The identifier of the asset.
-  /// @param drawnRateData The drawn rate data to apply to the given asset, encoded in bytes.
-  function updateDrawnRateData(address hub, uint256 assetId, bytes calldata drawnRateData) external;
+  /// @param irData The interest rate data to apply to the given asset, encoded in bytes.
+  function updateInterestRateData(address hub, uint256 assetId, bytes calldata irData) external;
 }

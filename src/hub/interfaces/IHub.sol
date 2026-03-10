@@ -23,7 +23,7 @@ interface IHub is IHubBase, IAccessManaged {
   /// @dev drawnRate The rate at which drawn assets grow, expressed in RAY.
   /// @dev lastUpdateTimestamp The timestamp of the last accrual.
   /// @dev underlying The address of the underlying asset.
-  /// @dev drawnRateStrategy The address of the drawn rate strategy.
+  /// @dev irStrategy The address of the interest rate strategy.
   /// @dev reinvestmentController The address of the reinvestment controller.
   /// @dev feeReceiver The address of the fee receiver spoke.
   /// @dev deficitRay The amount of outstanding bad debt across all spokes, expressed in asset units and scaled by RAY.
@@ -47,7 +47,7 @@ interface IHub is IHubBase, IAccessManaged {
     //
     address underlying;
     //
-    address drawnRateStrategy;
+    address irStrategy;
     //
     address reinvestmentController;
     //
@@ -60,7 +60,7 @@ interface IHub is IHubBase, IAccessManaged {
   struct AssetConfig {
     address feeReceiver;
     uint16 liquidityFee;
-    address drawnRateStrategy;
+    address irStrategy;
     address reinvestmentController;
   }
 
@@ -246,9 +246,9 @@ interface IHub is IHubBase, IAccessManaged {
   /// @notice Thrown when the asset decimals exceed the maximum allowed decimals.
   error InvalidAssetDecimals();
 
-  /// @notice Thrown if the drawn rate strategy or data are invalid when updating an asset configuration.
-  /// @dev The `drawnRateData` must be empty if the drawn rate strategy is not updated.
-  error InvalidDrawnRateStrategy();
+  /// @notice Thrown if the interest rate strategy or data are invalid when updating an asset configuration.
+  /// @dev The `irData` must be empty if the interest rate strategy is not updated.
+  error InvalidInterestRateStrategy();
 
   /// @notice Adds a new asset to the Hub.
   /// @dev The same underlying asset address cannot be added as an asset multiple times.
@@ -256,28 +256,28 @@ interface IHub is IHubBase, IAccessManaged {
   /// @param underlying The address of the underlying asset.
   /// @param decimals The number of decimals of `underlying`.
   /// @param feeReceiver The address of the fee receiver spoke.
-  /// @param drawnRateStrategy The address of the drawn rate strategy contract.
-  /// @param drawnRateData The drawn rate data to apply to the given asset encoded in bytes.
+  /// @param irStrategy The address of the interest rate strategy contract.
+  /// @param irData The interest rate data to apply to the given asset encoded in bytes.
   /// @return The unique identifier of the added asset.
   function addAsset(
     address underlying,
     uint8 decimals,
     address feeReceiver,
-    address drawnRateStrategy,
-    bytes calldata drawnRateData
+    address irStrategy,
+    bytes calldata irData
   ) external returns (uint256);
 
   /// @notice Updates the configuration of an asset.
   /// @dev If the fee receiver is updated, adds it as a new spoke with maximum add cap and zero draw cap, and sets old fee receiver caps to zero.
   /// @dev If the fee receiver is updated, accrued fees are minted as shares before the update if their value exceeds one share.
-  /// @dev If the drawn rate strategy is updated, it is configured with `drawnRateData`. Otherwise, `drawnRateData` must be empty.
+  /// @dev If the interest rate strategy is updated, it is configured with `irData`. Otherwise, `irData` must be empty.
   /// @param assetId The identifier of the asset.
   /// @param config The new configuration for the asset.
-  /// @param drawnRateData The drawn rate data to apply to the given asset, encoded in bytes.
+  /// @param irData The interest rate data to apply to the given asset, encoded in bytes.
   function updateAssetConfig(
     uint256 assetId,
     AssetConfig calldata config,
-    bytes calldata drawnRateData
+    bytes calldata irData
   ) external;
 
   /// @notice Registers a new spoke for a specific asset in the Hub.
@@ -293,10 +293,10 @@ interface IHub is IHubBase, IAccessManaged {
   /// @param config The new configuration for the spoke.
   function updateSpokeConfig(uint256 assetId, address spoke, SpokeConfig calldata config) external;
 
-  /// @notice Updates the drawn rate strategy for a specified asset.
+  /// @notice Updates the interest rate strategy for a specified asset.
   /// @param assetId The identifier of the asset.
-  /// @param drawnRateData The drawn rate data to apply to the given asset, encoded in bytes.
-  function setDrawnRateData(uint256 assetId, bytes calldata drawnRateData) external;
+  /// @param irData The interest rate data to apply to the given asset, encoded in bytes.
+  function setInterestRateData(uint256 assetId, bytes calldata irData) external;
 
   /// @notice Mints shares to the fee receiver from accrued fees.
   /// @dev No op when fees are worth less than one share.

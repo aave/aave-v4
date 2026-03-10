@@ -166,7 +166,7 @@ library AssetLogic {
   }
 
   /// @notice Calculates the drawn rate of a specified asset using the specified drawn index.
-  /// @dev Premium debt is not used in the drawn rate calculation.
+  /// @dev Premium debt is not used in the interest rate calculation.
   /// @dev Imprecision from downscaling `deficitRay` does not accumulate.
   function getDrawnRate(
     IHub.Asset storage asset,
@@ -174,7 +174,7 @@ library AssetLogic {
     uint256 drawnIndex
   ) internal view returns (uint256) {
     return
-      IBasicInterestRateStrategy(asset.drawnRateStrategy).calculateDrawnRate({
+      IBasicInterestRateStrategy(asset.irStrategy).calculateInterestRate({
         assetId: assetId,
         liquidity: asset.liquidity,
         drawn: asset.drawn(drawnIndex),

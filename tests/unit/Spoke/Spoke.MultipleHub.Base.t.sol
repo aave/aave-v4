@@ -20,14 +20,14 @@ contract SpokeMultipleHubBase is SpokeBase {
       maxLiquidationBonus: 100_00, // 100.00%
       liquidationFee: 0 // 0.00%
     });
-  IAssetInterestRateStrategy.DrawnRateData internal drawnRateData =
-    IAssetInterestRateStrategy.DrawnRateData({
+  IAssetInterestRateStrategy.InterestRateData internal irData =
+    IAssetInterestRateStrategy.InterestRateData({
       optimalUsageRatio: 90_00, // 90.00%
       baseDrawnRate: 5_00, // 5.00%
       rateGrowthBeforeOptimal: 5_00, // 5.00%
       rateGrowthAfterOptimal: 5_00 // 5.00%
     });
-  bytes internal encodedIrData = abi.encode(drawnRateData);
+  bytes internal encodedIrData = abi.encode(irData);
 
   function setUp() public virtual override {
     deployFixtures();
@@ -40,7 +40,7 @@ contract SpokeMultipleHubBase is SpokeBase {
     hub1 = DeployUtils.deployHub(address(accessManager), hex'01');
     (spoke1, oracle1) = _deploySpokeWithOracle(ADMIN, address(accessManager));
     treasurySpoke = new TreasurySpoke(ADMIN, address(hub1));
-    drawnRateStrategy = new AssetInterestRateStrategy(address(hub1));
+    irStrategy = new AssetInterestRateStrategy(address(hub1));
 
     // New hub and spoke
     newHub = DeployUtils.deployHub(address(accessManager), hex'02');

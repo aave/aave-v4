@@ -67,11 +67,11 @@ contract Hub is IHub, AccessManaged {
     address underlying,
     uint8 decimals,
     address feeReceiver,
-    address drawnRateStrategy,
-    bytes calldata drawnRateData
+    address irStrategy,
+    bytes calldata irData
   ) external restricted returns (uint256) {
     require(
-      underlying != address(0) && feeReceiver != address(0) && drawnRateStrategy != address(0),
+      underlying != address(0) && feeReceiver != address(0) && irStrategy != address(0),
       InvalidAddress()
     );
     require(
@@ -83,8 +83,8 @@ contract Hub is IHub, AccessManaged {
     uint256 assetId = _assetCount++;
     _underlyingToAssetId[underlying] = assetId;
 
-    IBasicInterestRateStrategy(drawnRateStrategy).setDrawnRateData(assetId, drawnRateData);
-    uint256 drawnRate = IBasicInterestRateStrategy(drawnRateStrategy).calculateDrawnRate({
+    IBasicInterestRateStrategy(irStrategy).setInterestRateData(assetId, irData);
+    uint256 drawnRate = IBasicInterestRateStrategy(irStrategy).calculateInterestRate({
       assetId: assetId,
       liquidity: 0,
       drawn: 0,
@@ -107,7 +107,7 @@ contract Hub is IHub, AccessManaged {
       lastUpdateTimestamp: lastUpdateTimestamp.toUint40(),
       decimals: decimals,
       drawnRate: drawnRate.toUint96(),
-      drawnRateStrategy: drawnRateStrategy,
+      irStrategy: irStrategy,
       realizedFees: 0,
       reinvestmentController: address(0),
       feeReceiver: feeReceiver,
@@ -121,7 +121,7 @@ contract Hub is IHub, AccessManaged {
       AssetConfig({
         feeReceiver: feeReceiver,
         liquidityFee: 0,
-        drawnRateStrategy: drawnRateStrategy,
+        irStrategy: irStrategy,
         reinvestmentController: address(0)
       })
     );
@@ -134,17 +134,14 @@ contract Hub is IHub, AccessManaged {
   function updateAssetConfig(
     uint256 assetId,
     AssetConfig calldata config,
-    bytes calldata drawnRateData
+    bytes calldata irData
   ) external restricted {
     require(assetId < _assetCount, AssetNotListed());
     Asset storage asset = _assets[assetId];
     asset.accrue();
 
     require(config.liquidityFee <= PercentageMath.PERCENTAGE_FACTOR, InvalidLiquidityFee());
-    require(
-      config.feeReceiver != address(0) && config.drawnRateStrategy != address(0),
-      InvalidAddress()
-    );
+    require(config.feeReceiver != address(0) && config.irStrategy != address(0), InvalidAddress());
     require(
       config.reinvestmentController != address(0) || asset.swept == 0,
       InvalidReinvestmentController()
@@ -164,11 +161,11 @@ contract Hub is IHub, AccessManaged {
       _addFeeReceiver(assetId, config.feeReceiver);
     }
 
-    if (config.drawnRateStrategy != asset.drawnRateStrategy) {
-      asset.drawnRateStrategy = config.drawnRateStrategy;
-      IBasicInterestRateStrategy(config.drawnRateStrategy).setDrawnRateData(assetId, drawnRateData);
+    if (config.irStrategy != asset.irStrategy) {
+      asset.irStrategy = config.irStrategy;
+      IBasicInterestRateStrategy(config.irStrategy).setInterestRateData(assetId, irData);
     } else {
-      require(drawnRateData.length == 0, InvalidDrawnRateStrategy());
+      require(irData.length == 0, InvalidInterestRateStrategy());
     }
 
     asset.updateDrawnRate(assetId);
@@ -200,11 +197,11 @@ contract Hub is IHub, AccessManaged {
   }
 
   /// @inheritdoc IHub
-  function setDrawnRateData(uint256 assetId, bytes calldata drawnRateData) external restricted {
+  function setInterestRateData(uint256 assetId, bytes calldata irData) external restricted {
     require(assetId < _assetCount, AssetNotListed());
     Asset storage asset = _assets[assetId];
     asset.accrue();
-    IBasicInterestRateStrategy(asset.drawnRateStrategy).setDrawnRateData(assetId, drawnRateData);
+    IBasicInterestRateStrategy(asset.irStrategy).setInterestRateData(assetId, irData);
     asset.updateDrawnRate(assetId);
   }
 
@@ -597,7 +594,7 @@ contract Hub is IHub, AccessManaged {
       AssetConfig({
         feeReceiver: asset.feeReceiver,
         liquidityFee: asset.liquidityFee,
-        drawnRateStrategy: asset.drawnRateStrategy,
+        irStrategy: asset.irStrategy,
         reinvestmentController: asset.reinvestmentController
       });
   }

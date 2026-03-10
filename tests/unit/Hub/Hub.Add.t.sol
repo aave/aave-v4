@@ -25,7 +25,7 @@ contract HubAddTest is HubBase {
       riskPremiumThreshold: Constants.MAX_ALLOWED_COLLATERAL_RISK
     });
     bytes memory encodedIrData = abi.encode(
-      IAssetInterestRateStrategy.DrawnRateData({
+      IAssetInterestRateStrategy.InterestRateData({
         optimalUsageRatio: 90_00, // 90.00%
         baseDrawnRate: 5_00, // 5.00%
         rateGrowthBeforeOptimal: 5_00, // 5.00%
@@ -37,7 +37,7 @@ contract HubAddTest is HubBase {
       address(usda),
       Constants.MIN_ALLOWED_UNDERLYING_DECIMALS,
       address(treasurySpoke),
-      address(drawnRateStrategy),
+      address(irStrategy),
       encodedIrData
     );
     hub1.updateAssetConfig(
@@ -45,7 +45,7 @@ contract HubAddTest is HubBase {
       IHub.AssetConfig({
         liquidityFee: 5_00,
         feeReceiver: address(treasurySpoke),
-        drawnRateStrategy: address(drawnRateStrategy),
+        irStrategy: address(irStrategy),
         reinvestmentController: address(0)
       }),
       new bytes(0)
@@ -255,9 +255,9 @@ contract HubAddTest is HubBase {
     (uint256 drawnBefore, ) = hub1.getAssetOwed(assetId);
     uint256 liquidityBefore = hub1.getAssetLiquidity(assetId);
     vm.expectCall(
-      address(drawnRateStrategy),
+      address(irStrategy),
       abi.encodeCall(
-        IBasicInterestRateStrategy.calculateDrawnRate,
+        IBasicInterestRateStrategy.calculateInterestRate,
         (assetId, liquidityBefore + amount, drawnBefore, 0, 0)
       )
     );
@@ -503,9 +503,9 @@ contract HubAddTest is HubBase {
     (uint256 drawnBefore, ) = hub1.getAssetOwed(daiAssetId);
     uint256 liquidityBefore = hub1.getAssetLiquidity(daiAssetId);
     vm.expectCall(
-      address(drawnRateStrategy),
+      address(irStrategy),
       abi.encodeCall(
-        IBasicInterestRateStrategy.calculateDrawnRate,
+        IBasicInterestRateStrategy.calculateInterestRate,
         (daiAssetId, liquidityBefore + addAmount, drawnBefore, 0, 0)
       )
     );

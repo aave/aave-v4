@@ -11,7 +11,7 @@ contract HubAccessTest is HubBase {
     IHub.AssetConfig memory assetConfig = IHub.AssetConfig({
       feeReceiver: address(treasurySpoke),
       liquidityFee: 0,
-      drawnRateStrategy: address(drawnRateStrategy),
+      irStrategy: address(irStrategy),
       reinvestmentController: address(0)
     });
     IHub.SpokeConfig memory spokeConfig = IHub.SpokeConfig({
@@ -23,7 +23,7 @@ contract HubAccessTest is HubBase {
     });
 
     bytes memory encodedIrData = abi.encode(
-      IAssetInterestRateStrategy.DrawnRateData({
+      IAssetInterestRateStrategy.InterestRateData({
         optimalUsageRatio: 90_00, // 90.00%
         baseDrawnRate: 5_00, // 5.00%
         rateGrowthBeforeOptimal: 5_00, // 5.00%
@@ -39,7 +39,7 @@ contract HubAccessTest is HubBase {
       address(tokenA),
       18,
       address(treasurySpoke),
-      address(drawnRateStrategy),
+      address(irStrategy),
       encodedIrData
     );
 
@@ -49,7 +49,7 @@ contract HubAccessTest is HubBase {
       address(tokenA),
       18,
       address(treasurySpoke),
-      address(drawnRateStrategy),
+      address(irStrategy),
       encodedIrData
     );
     uint256 assetAId = hub1.getAssetCount() - 1; // Asset A Id
@@ -91,9 +91,9 @@ contract HubAccessTest is HubBase {
     hub1.eliminateDeficit(daiAssetId, 1000, address(spoke1));
   }
 
-  function test_setDrawnRateData_access() public {
+  function test_setInterestRateData_access() public {
     bytes memory encodedIrData = abi.encode(
-      IAssetInterestRateStrategy.DrawnRateData({
+      IAssetInterestRateStrategy.InterestRateData({
         optimalUsageRatio: 50_00, // 50.00% in BPS
         baseDrawnRate: 100_00, // 100.00% in BPS
         rateGrowthBeforeOptimal: 200_00, // 200.00% in BPS
@@ -103,29 +103,29 @@ contract HubAccessTest is HubBase {
 
     // Only Hub can set drawn rates
     vm.expectRevert(abi.encodeWithSelector(IAssetInterestRateStrategy.OnlyHub.selector));
-    drawnRateStrategy.setDrawnRateData(daiAssetId, encodedIrData);
+    irStrategy.setInterestRateData(daiAssetId, encodedIrData);
 
     // Hub can set drawn rates
     vm.prank(address(hub1));
-    drawnRateStrategy.setDrawnRateData(daiAssetId, encodedIrData);
+    irStrategy.setInterestRateData(daiAssetId, encodedIrData);
 
     // Only Hub Admin can call function on hub to set drawn rates
     vm.expectRevert(
       abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, address(this))
     );
-    hub1.setDrawnRateData(daiAssetId, encodedIrData);
+    hub1.setInterestRateData(daiAssetId, encodedIrData);
 
     // Hub Admin can call function on hub to set drawn rates
     vm.prank(HUB_ADMIN);
-    hub1.setDrawnRateData(daiAssetId, encodedIrData);
+    hub1.setInterestRateData(daiAssetId, encodedIrData);
 
-    _assertDrawnRateSynced(hub1, daiAssetId, 'setDrawnRateData');
+    _assertDrawnRateSynced(hub1, daiAssetId, 'setInterestRateData');
   }
 
   /// @dev Test showcasing ability to change role responsibility for a function selector.
   function test_change_role_responsibility() public {
     bytes memory encodedIrData = abi.encode(
-      IAssetInterestRateStrategy.DrawnRateData({
+      IAssetInterestRateStrategy.InterestRateData({
         optimalUsageRatio: 50_00, // 50.00% in BPS
         baseDrawnRate: 100_00, // 100.00% in BPS
         rateGrowthBeforeOptimal: 200_00, // 200.00% in BPS
@@ -135,7 +135,7 @@ contract HubAccessTest is HubBase {
 
     // Change the role responsible for setting drawn rate data on the hub
     bytes4[] memory hubSelectors = new bytes4[](1);
-    hubSelectors[0] = IHub.setDrawnRateData.selector;
+    hubSelectors[0] = IHub.setInterestRateData.selector;
     vm.prank(ADMIN);
     accessManager.setTargetFunctionRole(address(hub1), hubSelectors, Roles.DEFAULT_ADMIN_ROLE);
 
@@ -144,11 +144,11 @@ contract HubAccessTest is HubBase {
       abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, HUB_ADMIN)
     );
     vm.prank(HUB_ADMIN);
-    hub1.setDrawnRateData(daiAssetId, encodedIrData);
+    hub1.setInterestRateData(daiAssetId, encodedIrData);
 
     // The new role (DEFAULT_ADMIN_ROLE) should have access
     vm.prank(ADMIN);
-    hub1.setDrawnRateData(daiAssetId, encodedIrData);
+    hub1.setInterestRateData(daiAssetId, encodedIrData);
 
     // HUB_ADMIN can still access the other hub functions for which it has permissions
     vm.prank(HUB_ADMIN);
@@ -168,7 +168,7 @@ contract HubAccessTest is HubBase {
   /// @dev Test showcasing ability to migrate role responsibility for a function selector.
   function test_migrate_role_responsibility() public {
     bytes memory encodedIrData = abi.encode(
-      IAssetInterestRateStrategy.DrawnRateData({
+      IAssetInterestRateStrategy.InterestRateData({
         optimalUsageRatio: 50_00, // 50.00% in BPS
         baseDrawnRate: 100_00, // 100.00% in BPS
         rateGrowthBeforeOptimal: 200_00, // 200.00% in BPS
@@ -185,16 +185,16 @@ contract HubAccessTest is HubBase {
     vm.stopPrank();
 
     vm.prank(alice);
-    hub1.setDrawnRateData(daiAssetId, encodedIrData);
+    hub1.setInterestRateData(daiAssetId, encodedIrData);
     vm.prank(bob);
-    hub1.setDrawnRateData(daiAssetId, encodedIrData);
+    hub1.setInterestRateData(daiAssetId, encodedIrData);
     vm.prank(carol);
-    hub1.setDrawnRateData(daiAssetId, encodedIrData);
+    hub1.setInterestRateData(daiAssetId, encodedIrData);
 
     // Now, we change the role responsible for setting drawn rate data to SET_DRAWN_RATE role.
     uint64 SET_DRAWN_RATE_ROLE = 4;
     bytes4[] memory hubSelectors = new bytes4[](1);
-    hubSelectors[0] = IHub.setDrawnRateData.selector;
+    hubSelectors[0] = IHub.setInterestRateData.selector;
     vm.prank(ADMIN);
     accessManager.setTargetFunctionRole(address(hub1), hubSelectors, SET_DRAWN_RATE_ROLE);
 
@@ -203,15 +203,15 @@ contract HubAccessTest is HubBase {
       abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, alice)
     );
     vm.prank(alice);
-    hub1.setDrawnRateData(daiAssetId, encodedIrData);
+    hub1.setInterestRateData(daiAssetId, encodedIrData);
     vm.expectRevert(abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, bob));
     vm.prank(bob);
-    hub1.setDrawnRateData(daiAssetId, encodedIrData);
+    hub1.setInterestRateData(daiAssetId, encodedIrData);
     vm.expectRevert(
       abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, carol)
     );
     vm.prank(carol);
-    hub1.setDrawnRateData(daiAssetId, encodedIrData);
+    hub1.setInterestRateData(daiAssetId, encodedIrData);
 
     // Now, we grant SET_DRAWN_RATE role to Alice, Bob, and Carol with 0 delay
     vm.startPrank(ADMIN);
@@ -222,11 +222,11 @@ contract HubAccessTest is HubBase {
 
     // Alice, Bob, and Carol should now be able to set drawn rate data.
     vm.prank(alice);
-    hub1.setDrawnRateData(daiAssetId, encodedIrData);
+    hub1.setInterestRateData(daiAssetId, encodedIrData);
     vm.prank(bob);
-    hub1.setDrawnRateData(daiAssetId, encodedIrData);
+    hub1.setInterestRateData(daiAssetId, encodedIrData);
     vm.prank(carol);
-    hub1.setDrawnRateData(daiAssetId, encodedIrData);
+    hub1.setInterestRateData(daiAssetId, encodedIrData);
 
     // Alice, Bob, and Carol currently have both HUB_ADMIN and SET_DRAWN_RATE roles.
     IAccessManager accessManager = IAccessManager(hub1.authority());
@@ -250,13 +250,13 @@ contract HubAccessTest is HubBase {
     assertFalse(_hasRole(accessManager, Roles.HUB_ADMIN_ROLE, bob));
     assertFalse(_hasRole(accessManager, Roles.HUB_ADMIN_ROLE, carol));
 
-    // Can still call setDrawnRateData since they have SET_DRAWN_RATE role.
+    // Can still call setInterestRateData since they have SET_DRAWN_RATE role.
     vm.prank(alice);
-    hub1.setDrawnRateData(daiAssetId, encodedIrData);
+    hub1.setInterestRateData(daiAssetId, encodedIrData);
     vm.prank(bob);
-    hub1.setDrawnRateData(daiAssetId, encodedIrData);
+    hub1.setInterestRateData(daiAssetId, encodedIrData);
     vm.prank(carol);
-    hub1.setDrawnRateData(daiAssetId, encodedIrData);
+    hub1.setInterestRateData(daiAssetId, encodedIrData);
   }
 
   /// @dev Test showcasing authority contract can be accessed via hub contract.
@@ -269,7 +269,7 @@ contract HubAccessTest is HubBase {
     IHub.AssetConfig memory assetConfig = IHub.AssetConfig({
       feeReceiver: address(treasurySpoke),
       liquidityFee: 0,
-      drawnRateStrategy: address(drawnRateStrategy),
+      irStrategy: address(irStrategy),
       reinvestmentController: address(0)
     });
     IHub.SpokeConfig memory spokeConfig = IHub.SpokeConfig({
