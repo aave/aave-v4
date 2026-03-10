@@ -97,24 +97,10 @@ contract AssetInterestRateStrategyTest is Base {
     }
   }
 
-  function test_setInterestRateData_revertsWith_GrowthAfterOptimalMustBeGteGrowthBeforeOptimal()
-    public
-  {
-    (rateData.rateGrowthBeforeOptimal, rateData.rateGrowthAfterOptimal) = (
-      rateData.rateGrowthAfterOptimal,
-      rateData.rateGrowthBeforeOptimal
-    );
-    encodedRateData = abi.encode(rateData);
-    vm.expectRevert(
-      IAssetInterestRateStrategy.GrowthAfterOptimalMustBeGteGrowthBeforeOptimal.selector
-    );
-    vm.prank(address(hub1));
-    rateStrategy.setInterestRateData(mockAssetId, encodedRateData);
-  }
-
   function test_setInterestRateData_revertsWith_InvalidMaxDrawnRate() public {
     rateData.baseDrawnRate = rateData.rateGrowthBeforeOptimal = rateData.rateGrowthAfterOptimal =
-      rateStrategy.MAX_ALLOWED_DRAWN_RATE().toUint32() / 3 +
+      rateStrategy.MAX_ALLOWED_DRAWN_RATE().toUint32() /
+      3 +
       1;
     encodedRateData = abi.encode(rateData);
     vm.expectRevert(IAssetInterestRateStrategy.InvalidMaxDrawnRate.selector);
