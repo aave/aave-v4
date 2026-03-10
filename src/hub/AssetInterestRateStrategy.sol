@@ -27,7 +27,7 @@ contract AssetInterestRateStrategy is IAssetInterestRateStrategy {
   /// @inheritdoc IAssetInterestRateStrategy
   address public immutable HUB;
 
-  /// @dev Map of asset identifiers to their drawn rate data.
+  /// @dev Map of asset identifiers to their interest rate data.
   mapping(uint256 assetId => InterestRateData) internal _interestRateData;
 
   /// @dev Constructor.
@@ -39,7 +39,7 @@ contract AssetInterestRateStrategy is IAssetInterestRateStrategy {
 
   /// @notice Sets the interest rate parameters for a specified asset.
   /// @param assetId The identifier of the asset.
-  /// @param data The encoded parameters containing BPS data used to configure the drawn rate of the asset.
+  /// @param data The encoded parameters containing BPS data used to configure the interest rate of the asset.
   function setInterestRateData(uint256 assetId, bytes calldata data) external {
     require(HUB == msg.sender, OnlyHub());
     InterestRateData memory rateData = abi.decode(data, (InterestRateData));
