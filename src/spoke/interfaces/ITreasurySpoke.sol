@@ -12,7 +12,12 @@ interface ITreasurySpoke {
   /// @param underlying The address of the underlying asset.
   /// @param amount The amount of asset to supply.
   /// @return The amount of shares supplied.
-  function supply(address hub, address underlying, uint256 amount) external returns (uint256);
+  /// @return The amount of assets supplied.
+  function supply(
+    address hub,
+    address underlying,
+    uint256 amount
+  ) external returns (uint256, uint256);
 
   /// @notice Withdraws a specified amount of underlying asset from the specified Hub.
   /// @dev Providing an amount greater than the maximum withdrawable value signals a full withdrawal.
@@ -20,7 +25,12 @@ interface ITreasurySpoke {
   /// @param underlying The address of the underlying asset.
   /// @param amount The amount of asset to withdraw.
   /// @return The amount of shares withdrawn.
-  function withdraw(address hub, address underlying, uint256 amount) external returns (uint256);
+  /// @return The amount of assets withdrawn.
+  function withdraw(
+    address hub,
+    address underlying,
+    uint256 amount
+  ) external returns (uint256, uint256);
 
   /// @notice Transfers a specified amount of ERC20 tokens from this contract.
   /// @param token The address of the ERC20 token to transfer.

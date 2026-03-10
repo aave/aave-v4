@@ -372,12 +372,10 @@ contract HubConfiguratorTest is HubBase {
     // Change the fee receiver
     TreasurySpokeInstance newTreasurySpokeImpl = new TreasurySpokeInstance();
     ITreasurySpoke newTreasurySpoke = ITreasurySpoke(
-      address(
-        new TransparentUpgradeableProxy(
-          address(newTreasurySpokeImpl),
-          ADMIN,
-          abi.encodeCall(TreasurySpokeInstance.initialize, (HUB_ADMIN))
-        )
+      DeployUtils.proxify(
+        address(newTreasurySpokeImpl),
+        ADMIN,
+        abi.encodeCall(TreasurySpokeInstance.initialize, (HUB_ADMIN))
       )
     );
     vm.prank(HUB_CONFIGURATOR);
@@ -449,12 +447,10 @@ contract HubConfiguratorTest is HubBase {
     // Change the fee receiver
     TreasurySpokeInstance newTreasurySpokeImpl2 = new TreasurySpokeInstance();
     ITreasurySpoke newTreasurySpoke = ITreasurySpoke(
-      address(
-        new TransparentUpgradeableProxy(
-          address(newTreasurySpokeImpl2),
-          ADMIN,
-          abi.encodeCall(TreasurySpokeInstance.initialize, (HUB_ADMIN))
-        )
+      DeployUtils.proxify(
+        address(newTreasurySpokeImpl2),
+        ADMIN,
+        abi.encodeCall(TreasurySpokeInstance.initialize, (HUB_ADMIN))
       )
     );
     vm.prank(HUB_CONFIGURATOR);

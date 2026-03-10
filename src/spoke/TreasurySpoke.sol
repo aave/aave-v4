@@ -24,12 +24,13 @@ abstract contract TreasurySpoke is ITreasurySpoke, Ownable2StepUpgradeable {
     address hub,
     address underlying,
     uint256 amount
-  ) external onlyOwner returns (uint256) {
-    IHubBase hubContract = IHubBase(hub);
-    uint256 assetId = hubContract.getAssetId(underlying);
+  ) external onlyOwner returns (uint256, uint256) {
+    IHubBase targetHub = IHubBase(hub);
+    uint256 assetId = targetHub.getAssetId(underlying);
     IERC20(underlying).safeTransferFrom(msg.sender, hub, amount);
+    uint256 shares = targetHub.add(assetId, amount);
 
-    return hubContract.add(assetId, amount);
+    return (shares, amount);
   }
 
   /// @inheritdoc ITreasurySpoke
@@ -37,16 +38,17 @@ abstract contract TreasurySpoke is ITreasurySpoke, Ownable2StepUpgradeable {
     address hub,
     address underlying,
     uint256 amount
-  ) external onlyOwner returns (uint256) {
-    IHubBase hubContract = IHubBase(hub);
-    uint256 assetId = hubContract.getAssetId(underlying);
+  ) external onlyOwner returns (uint256, uint256) {
+    IHubBase targetHub = IHubBase(hub);
+    uint256 assetId = targetHub.getAssetId(underlying);
     // if amount to withdraw is greater than total supplied, withdraw all supplied assets
     uint256 withdrawnAmount = MathUtils.min(
       amount,
-      hubContract.getSpokeAddedAssets(assetId, address(this))
+      targetHub.getSpokeAddedAssets(assetId, address(this))
     );
+    uint256 withdrawnShares = targetHub.remove(assetId, withdrawnAmount, msg.sender);
 
-    return hubContract.remove(assetId, withdrawnAmount, msg.sender);
+    return (withdrawnShares, withdrawnAmount);
   }
 
   /// @inheritdoc ITreasurySpoke
@@ -56,15 +58,15 @@ abstract contract TreasurySpoke is ITreasurySpoke, Ownable2StepUpgradeable {
 
   /// @inheritdoc ITreasurySpoke
   function getSuppliedAssets(address hub, address underlying) external view returns (uint256) {
-    IHubBase hubContract = IHubBase(hub);
-    uint256 assetId = hubContract.getAssetId(underlying);
-    return hubContract.getSpokeAddedAssets(assetId, address(this));
+    IHubBase targetHub = IHubBase(hub);
+    uint256 assetId = targetHub.getAssetId(underlying);
+    return targetHub.getSpokeAddedAssets(assetId, address(this));
   }
 
   /// @inheritdoc ITreasurySpoke
   function getSuppliedShares(address hub, address underlying) external view returns (uint256) {
-    IHubBase hubContract = IHubBase(hub);
-    uint256 assetId = hubContract.getAssetId(underlying);
-    return hubContract.getSpokeAddedShares(assetId, address(this));
+    IHubBase targetHub = IHubBase(hub);
+    uint256 assetId = targetHub.getAssetId(underlying);
+    return targetHub.getSpokeAddedShares(assetId, address(this));
   }
 }

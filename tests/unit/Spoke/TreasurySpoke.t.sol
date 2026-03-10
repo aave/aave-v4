@@ -53,7 +53,7 @@ contract TreasurySpokeTest is SpokeBase {
     vm.expectRevert(
       abi.encodeWithSelector(OwnableUpgradeable.OwnableInvalidOwner.selector, address(0))
     );
-    new TransparentUpgradeableProxy(
+    DeployUtils.proxify(
       address(impl),
       ADMIN,
       abi.encodeCall(TreasurySpokeInstance.initialize, (address(0)))

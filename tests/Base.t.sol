@@ -348,12 +348,10 @@ abstract contract Base is Test {
     (spoke3, oracle3) = _deploySpokeWithOracle(ADMIN, address(accessManager));
     TreasurySpokeInstance treasurySpokeImpl = new TreasurySpokeInstance();
     treasurySpoke = ITreasurySpoke(
-      address(
-        new TransparentUpgradeableProxy(
-          address(treasurySpokeImpl),
-          ADMIN,
-          abi.encodeCall(TreasurySpokeInstance.initialize, (TREASURY_ADMIN))
-        )
+      DeployUtils.proxify(
+        address(treasurySpokeImpl),
+        ADMIN,
+        abi.encodeCall(TreasurySpokeInstance.initialize, (TREASURY_ADMIN))
       )
     );
     vm.stopPrank();
