@@ -923,34 +923,21 @@ contract AccessManagerEnumerableTest is Test {
     assertEq(accessManagerEnumerable.getLabelRole('EMERGENCY_ADMIN'), roleId2);
   }
 
-  function test_labelRole_relabel() public {
+  function test_labelRole_revertsForAlreadyLabeledRole() public {
     uint64 roleId = 1;
 
     vm.startPrank(ADMIN);
     accessManagerEnumerable.setRoleAdmin(roleId, ADMIN_ROLE);
-    accessManagerEnumerable.labelRole(roleId, 'OLD_LABEL');
-
-    assertEq(accessManagerEnumerable.getRoleLabelCount(), 1);
-    assertEq(accessManagerEnumerable.getRoleLabel(roleId), 'OLD_LABEL');
-    assertEq(accessManagerEnumerable.getLabelRole('OLD_LABEL'), roleId);
-
-    // re-label the same role
-    accessManagerEnumerable.labelRole(roleId, 'NEW_LABEL');
-    vm.stopPrank();
-
-    assertEq(accessManagerEnumerable.getRoleLabelCount(), 1);
-    assertEq(accessManagerEnumerable.getRoleLabelAt(0), 'NEW_LABEL');
-
-    assertEq(accessManagerEnumerable.getRoleLabel(roleId), 'NEW_LABEL');
-    assertEq(accessManagerEnumerable.getLabelRole('NEW_LABEL'), roleId);
+    accessManagerEnumerable.labelRole(roleId, 'FIRST_LABEL');
 
     vm.expectRevert(
       abi.encodeWithSelector(
-        IAccessManagerEnumerable.AccessManagerUnregisteredLabel.selector,
-        'OLD_LABEL'
+        IAccessManagerEnumerable.AccessManagerRoleAlreadyLabeled.selector,
+        roleId
       )
     );
-    accessManagerEnumerable.getLabelRole('OLD_LABEL');
+    accessManagerEnumerable.labelRole(roleId, 'SECOND_LABEL');
+    vm.stopPrank();
   }
 
   function test_getRoleLabel_revertsForUnlabeledRole() public {
@@ -980,6 +967,39 @@ contract AccessManagerEnumerableTest is Test {
       )
     );
     accessManagerEnumerable.getLabelRole('NONEXISTENT');
+  }
+
+  function test_labelRole_revertsForDuplicateLabel() public {
+    uint64 roleId1 = 1;
+    uint64 roleId2 = 2;
+
+    vm.startPrank(ADMIN);
+    accessManagerEnumerable.setRoleAdmin(roleId1, ADMIN_ROLE);
+    accessManagerEnumerable.setRoleAdmin(roleId2, ADMIN_ROLE);
+    accessManagerEnumerable.labelRole(roleId1, 'SHARED_LABEL');
+
+    vm.expectRevert(
+      abi.encodeWithSelector(
+        IAccessManagerEnumerable.AccessManagerLabelAlreadyUsed.selector,
+        'SHARED_LABEL',
+        roleId1
+      )
+    );
+    accessManagerEnumerable.labelRole(roleId2, 'SHARED_LABEL');
+    vm.stopPrank();
+  }
+
+  function test_labelRole_revertsForEmptyLabel() public {
+    uint64 roleId = 1;
+
+    vm.startPrank(ADMIN);
+    accessManagerEnumerable.setRoleAdmin(roleId, ADMIN_ROLE);
+
+    vm.expectRevert(
+      abi.encodeWithSelector(IAccessManagerEnumerable.AccessManagerEmptyLabel.selector)
+    );
+    accessManagerEnumerable.labelRole(roleId, '');
+    vm.stopPrank();
   }
 
   function _getRandomAdminRoleId() internal returns (uint64) {

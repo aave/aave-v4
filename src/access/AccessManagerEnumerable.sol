@@ -224,6 +224,9 @@ contract AccessManagerEnumerable is AccessManager, IAccessManagerEnumerable {
 
   /// @dev Overrides AccessManager `labelRole` function to track role labels.
   /// @dev Reverts if the role is not already tracked in `_rolesSet`.
+  /// @dev Reverts if the role has already been labeled.
+  /// @dev Reverts if the label is empty.
+  /// @dev Reverts if the label is already assigned to another role.
   function labelRole(
     uint64 roleId,
     string calldata label
@@ -231,13 +234,12 @@ contract AccessManagerEnumerable is AccessManager, IAccessManagerEnumerable {
     super.labelRole(roleId, label);
 
     require(_rolesSet.contains(uint256(roleId)), AccessManagerUnlabeledRole(roleId));
-
-    // Remove old label if exists
-    string memory oldLabel = _roleLabel[roleId];
-    if (bytes(oldLabel).length > 0) {
-      _roleLabelsSet.remove(oldLabel);
-      delete _labelToRole[oldLabel];
-    }
+    require(bytes(label).length > 0, AccessManagerEmptyLabel());
+    require(bytes(_roleLabel[roleId]).length == 0, AccessManagerRoleAlreadyLabeled(roleId));
+    require(
+      !_roleLabelsSet.contains(label),
+      AccessManagerLabelAlreadyUsed(label, _labelToRole[label])
+    );
 
     _roleLabelsSet.add(label);
     _roleLabel[roleId] = label;

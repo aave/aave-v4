@@ -14,6 +14,15 @@ interface IAccessManagerEnumerable is IAccessManager {
   /// @notice The label is not registered to any role.
   error AccessManagerUnregisteredLabel(string label);
 
+  /// @notice The label is already assigned to a different role.
+  error AccessManagerLabelAlreadyUsed(string label, uint64 roleId);
+
+  /// @notice The role has already been labeled.
+  error AccessManagerRoleAlreadyLabeled(uint64 roleId);
+
+  /// @notice The label string is empty.
+  error AccessManagerEmptyLabel();
+
   /// @notice Returns the identifier of the role at a specified index.
   /// @dev `PUBLIC_ROLE` and `ADMIN_ROLE` are not accessible via any index.
   /// @dev Roles with no assigned members are also accessible.
