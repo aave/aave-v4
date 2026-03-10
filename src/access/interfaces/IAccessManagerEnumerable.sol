@@ -8,6 +8,12 @@ import {IAccessManager} from 'src/dependencies/openzeppelin/IAccessManager.sol';
 /// @author Aave Labs
 /// @notice Interface for AccessManagerEnumerable extension.
 interface IAccessManagerEnumerable is IAccessManager {
+  /// @notice The role has not been labeled.
+  error AccessManagerUnlabeledRole(uint64 roleId);
+
+  /// @notice The label is not registered to any role.
+  error AccessManagerUnregisteredLabel(string label);
+
   /// @notice Returns the identifier of the role at a specified index.
   /// @dev `PUBLIC_ROLE` and `ADMIN_ROLE` are not accessible via any index.
   /// @dev Roles with no assigned members are also accessible.
@@ -157,4 +163,31 @@ interface IAccessManagerEnumerable is IAccessManager {
     uint256 start,
     uint256 end
   ) external view returns (bytes4[] memory);
+
+  /// @notice Returns the label at a specified index.
+  /// @param index The index in the labeled role list.
+  /// @return The label at the index.
+  function getRoleLabelAt(uint256 index) external view returns (string memory);
+
+  /// @notice Returns the total number of role labels.
+  /// @return The number of role labels.
+  function getRoleLabelCount() external view returns (uint256);
+
+  /// @notice Returns the list of role labels between the specified indexes.
+  /// @param start The starting index for the labeled role list.
+  /// @param end The ending index for the labeled role list.
+  /// @return The list of role labels.
+  function getRoleLabels(uint256 start, uint256 end) external view returns (string[] memory);
+
+  /// @notice Returns the label of a specified role.
+  /// @dev Reverts with `AccessManagerUnlabeledRole` if the role has not been labeled.
+  /// @param roleId The identifier of the role.
+  /// @return The label of the role.
+  function getRoleLabel(uint64 roleId) external view returns (string memory);
+
+  /// @notice Returns the role identifier for a given label.
+  /// @dev Reverts with `AccessManagerUnregisteredLabel` if the label is not registered to any role.
+  /// @param label The label string.
+  /// @return The identifier of the role.
+  function getLabelRole(string calldata label) external view returns (uint64);
 }

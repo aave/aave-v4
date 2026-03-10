@@ -4,7 +4,10 @@ pragma solidity ^0.8.0;
 
 import {Test} from 'forge-std/Test.sol';
 import {EnumerableSet} from 'src/dependencies/openzeppelin/EnumerableSet.sol';
-import {AccessManagerEnumerable} from 'src/access/AccessManagerEnumerable.sol';
+import {
+  AccessManagerEnumerable,
+  IAccessManagerEnumerable
+} from 'src/access/AccessManagerEnumerable.sol';
 
 contract AccessManagerEnumerableTest is Test {
   using EnumerableSet for EnumerableSet.AddressSet;
@@ -39,6 +42,7 @@ contract AccessManagerEnumerableTest is Test {
     address user2 = makeAddr('user2');
 
     vm.startPrank(ADMIN);
+    accessManagerEnumerable.setRoleAdmin(roleId, ADMIN_ROLE);
     accessManagerEnumerable.labelRole(roleId, 'test_role');
     accessManagerEnumerable.setGrantDelay(roleId, 0);
 
@@ -86,6 +90,7 @@ contract AccessManagerEnumerableTest is Test {
     );
 
     vm.startPrank(ADMIN);
+    accessManagerEnumerable.setRoleAdmin(roleId, ADMIN_ROLE);
     accessManagerEnumerable.labelRole(roleId, 'test_role');
     accessManagerEnumerable.setGrantDelay(roleId, 0);
 
@@ -430,6 +435,7 @@ contract AccessManagerEnumerableTest is Test {
     address user3 = makeAddr('user3');
 
     vm.startPrank(ADMIN);
+    accessManagerEnumerable.setRoleAdmin(roleId, ADMIN_ROLE);
     accessManagerEnumerable.labelRole(roleId, 'test_role');
     accessManagerEnumerable.setGrantDelay(roleId, 0);
     accessManagerEnumerable.grantRole(roleId, user1, 0);
@@ -461,6 +467,7 @@ contract AccessManagerEnumerableTest is Test {
     address user3 = makeAddr('user3');
 
     vm.startPrank(ADMIN);
+    accessManagerEnumerable.setRoleAdmin(roleId, ADMIN_ROLE);
     accessManagerEnumerable.labelRole(roleId, 'test_role');
     accessManagerEnumerable.setGrantDelay(roleId, 0);
     accessManagerEnumerable.grantRole(roleId, user1, 0);
@@ -537,6 +544,7 @@ contract AccessManagerEnumerableTest is Test {
     assertEq(accessManagerEnumerable.getRoleCount(), 0);
 
     vm.startPrank(ADMIN);
+    accessManagerEnumerable.setRoleAdmin(roleId, ADMIN_ROLE);
     accessManagerEnumerable.labelRole(roleId, 'test_role');
 
     accessManagerEnumerable.setTargetFunctionRole(target, selectors, roleId);
@@ -592,6 +600,8 @@ contract AccessManagerEnumerableTest is Test {
     assertEq(accessManagerEnumerable.getRoleCount(), 0);
 
     vm.startPrank(ADMIN);
+    accessManagerEnumerable.setRoleAdmin(roleId, ADMIN_ROLE);
+    accessManagerEnumerable.setRoleAdmin(roleId2, ADMIN_ROLE);
     accessManagerEnumerable.labelRole(roleId, 'test_role');
     accessManagerEnumerable.labelRole(roleId2, 'test_role_2');
 
@@ -818,6 +828,7 @@ contract AccessManagerEnumerableTest is Test {
     uint64 roleId = 1;
 
     vm.startPrank(ADMIN);
+    accessManagerEnumerable.setRoleAdmin(roleId, ADMIN_ROLE);
     accessManagerEnumerable.labelRole(roleId, 'test_role');
     accessManagerEnumerable.setGrantDelay(roleId, 0);
 
@@ -854,6 +865,7 @@ contract AccessManagerEnumerableTest is Test {
     }
 
     vm.startPrank(ADMIN);
+    accessManagerEnumerable.setRoleAdmin(roleId, ADMIN_ROLE);
     accessManagerEnumerable.labelRole(roleId, 'test_role');
 
     accessManagerEnumerable.setTargetFunctionRole(target, selectors, roleId);
@@ -879,6 +891,95 @@ contract AccessManagerEnumerableTest is Test {
     );
     assertEq(roleTargets.length, 1);
     assertEq(roleTargets[0], target);
+  }
+
+  function test_labelRole_trackLabels() public {
+    uint64 roleId1 = 1;
+    uint64 roleId2 = 2;
+
+    assertEq(accessManagerEnumerable.getRoleLabelCount(), 0);
+
+    vm.startPrank(ADMIN);
+    accessManagerEnumerable.setRoleAdmin(roleId1, ADMIN_ROLE);
+    accessManagerEnumerable.setRoleAdmin(roleId2, ADMIN_ROLE);
+    accessManagerEnumerable.labelRole(roleId1, 'POOL_ADMIN');
+    accessManagerEnumerable.labelRole(roleId2, 'EMERGENCY_ADMIN');
+    vm.stopPrank();
+
+    assertEq(accessManagerEnumerable.getRoleLabelCount(), 2);
+
+    assertEq(accessManagerEnumerable.getRoleLabelAt(0), 'POOL_ADMIN');
+    assertEq(accessManagerEnumerable.getRoleLabelAt(1), 'EMERGENCY_ADMIN');
+
+    string[] memory labels = accessManagerEnumerable.getRoleLabels(0, 2);
+    assertEq(labels.length, 2);
+    assertEq(labels[0], 'POOL_ADMIN');
+    assertEq(labels[1], 'EMERGENCY_ADMIN');
+
+    assertEq(accessManagerEnumerable.getRoleLabel(roleId1), 'POOL_ADMIN');
+    assertEq(accessManagerEnumerable.getRoleLabel(roleId2), 'EMERGENCY_ADMIN');
+
+    assertEq(accessManagerEnumerable.getLabelRole('POOL_ADMIN'), roleId1);
+    assertEq(accessManagerEnumerable.getLabelRole('EMERGENCY_ADMIN'), roleId2);
+  }
+
+  function test_labelRole_relabel() public {
+    uint64 roleId = 1;
+
+    vm.startPrank(ADMIN);
+    accessManagerEnumerable.setRoleAdmin(roleId, ADMIN_ROLE);
+    accessManagerEnumerable.labelRole(roleId, 'OLD_LABEL');
+
+    assertEq(accessManagerEnumerable.getRoleLabelCount(), 1);
+    assertEq(accessManagerEnumerable.getRoleLabel(roleId), 'OLD_LABEL');
+    assertEq(accessManagerEnumerable.getLabelRole('OLD_LABEL'), roleId);
+
+    // re-label the same role
+    accessManagerEnumerable.labelRole(roleId, 'NEW_LABEL');
+    vm.stopPrank();
+
+    assertEq(accessManagerEnumerable.getRoleLabelCount(), 1);
+    assertEq(accessManagerEnumerable.getRoleLabelAt(0), 'NEW_LABEL');
+
+    assertEq(accessManagerEnumerable.getRoleLabel(roleId), 'NEW_LABEL');
+    assertEq(accessManagerEnumerable.getLabelRole('NEW_LABEL'), roleId);
+
+    vm.expectRevert(
+      abi.encodeWithSelector(
+        IAccessManagerEnumerable.AccessManagerUnregisteredLabel.selector,
+        'OLD_LABEL'
+      )
+    );
+    accessManagerEnumerable.getLabelRole('OLD_LABEL');
+  }
+
+  function test_getRoleLabel_revertsForUnlabeledRole() public {
+    uint64 roleId = 99;
+
+    vm.expectRevert(
+      abi.encodeWithSelector(IAccessManagerEnumerable.AccessManagerUnlabeledRole.selector, roleId)
+    );
+    accessManagerEnumerable.getRoleLabel(roleId);
+  }
+
+  function test_labelRole_revertsForUntrackedRole() public {
+    uint64 roleId = 99;
+
+    vm.prank(ADMIN);
+    vm.expectRevert(
+      abi.encodeWithSelector(IAccessManagerEnumerable.AccessManagerUnlabeledRole.selector, roleId)
+    );
+    accessManagerEnumerable.labelRole(roleId, 'SOME_LABEL');
+  }
+
+  function test_getLabelRole_revertsForUnregisteredLabel() public {
+    vm.expectRevert(
+      abi.encodeWithSelector(
+        IAccessManagerEnumerable.AccessManagerUnregisteredLabel.selector,
+        'NONEXISTENT'
+      )
+    );
+    accessManagerEnumerable.getLabelRole('NONEXISTENT');
   }
 
   function _getRandomAdminRoleId() internal returns (uint64) {

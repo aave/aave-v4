@@ -4,6 +4,7 @@ pragma solidity 0.8.28;
 
 import {AccessManager} from 'src/dependencies/openzeppelin/AccessManager.sol';
 import {EnumerableSet} from 'src/dependencies/openzeppelin/EnumerableSet.sol';
+import {IAccessManager} from 'src/dependencies/openzeppelin/IAccessManager.sol';
 import {IAccessManagerEnumerable} from 'src/access/interfaces/IAccessManagerEnumerable.sol';
 
 /// @title AccessManagerEnumerable
@@ -43,6 +44,15 @@ contract AccessManagerEnumerable is AccessManager, IAccessManagerEnumerable {
   /// @dev Function selectors assigned to `ADMIN_ROLE` are not included.
   mapping(uint64 roleId => mapping(address target => EnumerableSet.Bytes32Set))
     private _roleToTargetToSelectorSet;
+
+  /// @dev Set of all role labels.
+  EnumerableSet.StringSet private _roleLabelsSet;
+
+  /// @dev Map of role identifiers to their labels.
+  mapping(uint64 roleId => string label) private _roleLabel;
+
+  /// @dev Map of labels to their role identifiers.
+  mapping(string label => uint64 roleId) private _labelToRole;
 
   /// @dev Constructor.
   /// @param initialAdmin_ The address of the initial admin.
@@ -183,6 +193,55 @@ contract AccessManagerEnumerable is AccessManager, IAccessManagerEnumerable {
       targetFunctionSelectors := targetFunctions
     }
     return targetFunctionSelectors;
+  }
+
+  /// @inheritdoc IAccessManagerEnumerable
+  function getRoleLabelAt(uint256 index) external view returns (string memory) {
+    return _roleLabelsSet.at(index);
+  }
+
+  /// @inheritdoc IAccessManagerEnumerable
+  function getRoleLabelCount() external view returns (uint256) {
+    return _roleLabelsSet.length();
+  }
+
+  /// @inheritdoc IAccessManagerEnumerable
+  function getRoleLabels(uint256 start, uint256 end) external view returns (string[] memory) {
+    return _roleLabelsSet.values(start, end);
+  }
+
+  /// @inheritdoc IAccessManagerEnumerable
+  function getRoleLabel(uint64 roleId) external view returns (string memory) {
+    require(_roleLabelsSet.contains(_roleLabel[roleId]), AccessManagerUnlabeledRole(roleId));
+    return _roleLabel[roleId];
+  }
+
+  /// @inheritdoc IAccessManagerEnumerable
+  function getLabelRole(string calldata label) external view returns (uint64) {
+    require(_roleLabelsSet.contains(label), AccessManagerUnregisteredLabel(label));
+    return _labelToRole[label];
+  }
+
+  /// @dev Overrides AccessManager `labelRole` function to track role labels.
+  /// @dev Reverts if the role is not already tracked in `_rolesSet`.
+  function labelRole(
+    uint64 roleId,
+    string calldata label
+  ) public override(AccessManager, IAccessManager) {
+    super.labelRole(roleId, label);
+
+    require(_rolesSet.contains(uint256(roleId)), AccessManagerUnlabeledRole(roleId));
+
+    // Remove old label if exists
+    string memory oldLabel = _roleLabel[roleId];
+    if (bytes(oldLabel).length > 0) {
+      _roleLabelsSet.remove(oldLabel);
+      delete _labelToRole[oldLabel];
+    }
+
+    _roleLabelsSet.add(label);
+    _roleLabel[roleId] = label;
+    _labelToRole[label] = roleId;
   }
 
   /// @dev Overrides AccessManager `_setRoleAdmin` function to track admin roles.
