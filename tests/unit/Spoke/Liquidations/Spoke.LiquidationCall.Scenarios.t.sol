@@ -147,7 +147,7 @@ contract SpokeLiquidationCallScenariosTest is SpokeLiquidationCallBaseTest {
     // A high liquidation bonus will be applied
     _updateMaxLiquidationBonus(spoke, _wethReserveId(spoke), 124_00);
 
-    // Borrow rates:
+    // Drawn rates:
     //   - DAI: 3%
     vm.prank(address(hub1));
     drawnRateStrategy.setDrawnRateData(
@@ -249,7 +249,7 @@ contract SpokeLiquidationCallScenariosTest is SpokeLiquidationCallBaseTest {
     _updateMaxLiquidationBonus(spoke, _wethReserveId(spoke), 103_00);
     _updateCollateralFactor(spoke, _wethReserveId(spoke), 97_00);
 
-    // Borrow rates:
+    // Drawn rates:
     //   - DAI: 3%
     vm.prank(address(hub1));
     drawnRateStrategy.setDrawnRateData(
@@ -468,7 +468,8 @@ contract SpokeLiquidationCallScenariosTest is SpokeLiquidationCallBaseTest {
     );
     assertEq(userDebtPositionBefore.drawnShares, 1, 'User should have 1 drawn share of DAI');
     assertEq(
-      userDebtPositionBefore.premiumShares * 1.1e27 -
+      userDebtPositionBefore.premiumShares *
+        1.1e27 -
         userDebtPositionBefore.premiumOffsetRay.toUint256(),
       0.1e27,
       'User should have 0.1 premium'
