@@ -6,7 +6,7 @@ pragma solidity ^0.8.0;
 /// @author Aave Labs
 /// @notice Interface for the TreasurySpoke.
 interface ITreasurySpoke {
-  /// @notice Supplies a specified amount of the underlying asset to a given reserve.
+  /// @notice Supplies a specified amount of the underlying asset to the specified Hub.
   /// @dev The Spoke pulls the underlying asset from the caller, so prior approval is required.
   /// @param hub The address of the Hub.
   /// @param underlying The address of the underlying asset.
@@ -14,7 +14,7 @@ interface ITreasurySpoke {
   /// @return The amount of shares supplied.
   function supply(address hub, address underlying, uint256 amount) external returns (uint256);
 
-  /// @notice Withdraws a specified amount of underlying asset from the given reserve.
+  /// @notice Withdraws a specified amount of underlying asset from the specified Hub.
   /// @dev Providing an amount greater than the maximum withdrawable value signals a full withdrawal.
   /// @param hub The address of the Hub.
   /// @param underlying The address of the underlying asset.
@@ -30,14 +30,14 @@ interface ITreasurySpoke {
 
   /// @notice Returns the amount of assets supplied by this spoke.
   /// @param hub The address of the Hub.
-  /// @param assetId The identifier of the asset.
+  /// @param underlying The address of the underlying asset.
   /// @return The amount of assets supplied.
-  function getSuppliedAssets(address hub, uint256 assetId) external view returns (uint256);
+  function getSuppliedAssets(address hub, address underlying) external view returns (uint256);
 
   /// @notice Returns the amount of shares supplied by this spoke.
   /// @dev Shares are denominated relative to the supply side.
   /// @param hub The address of the Hub.
-  /// @param assetId The identifier of the asset.
+  /// @param underlying The address of the underlying asset.
   /// @return The amount of shares supplied.
-  function getSuppliedShares(address hub, uint256 assetId) external view returns (uint256);
+  function getSuppliedShares(address hub, address underlying) external view returns (uint256);
 }

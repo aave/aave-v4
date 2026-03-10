@@ -55,12 +55,14 @@ abstract contract TreasurySpoke is ITreasurySpoke, Ownable2StepUpgradeable {
   }
 
   /// @inheritdoc ITreasurySpoke
-  function getSuppliedAssets(address hub, uint256 assetId) external view returns (uint256) {
+  function getSuppliedAssets(address hub, address underlying) external view returns (uint256) {
+    uint256 assetId = IHubBase(hub).getAssetId(underlying);
     return IHubBase(hub).getSpokeAddedAssets(assetId, address(this));
   }
 
   /// @inheritdoc ITreasurySpoke
-  function getSuppliedShares(address hub, uint256 assetId) external view returns (uint256) {
+  function getSuppliedShares(address hub, address underlying) external view returns (uint256) {
+    uint256 assetId = IHubBase(hub).getAssetId(underlying);
     return IHubBase(hub).getSpokeAddedShares(assetId, address(this));
   }
 }
