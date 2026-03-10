@@ -24,7 +24,7 @@ contract SpokeAccrueLiquidityFeeEdgeCasesTest is SpokeBase {
     uint256 skipTime,
     uint256 rate
   ) public {
-    rate = bound(rate, 1, MAX_BORROW_RATE);
+    rate = bound(rate, 1, Constants.MAX_ALLOWED_DRAWN_RATE);
     skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
 
     reserveId = bound(reserveId, 0, spoke1.getReserveCount() - 1);
@@ -35,7 +35,7 @@ contract SpokeAccrueLiquidityFeeEdgeCasesTest is SpokeBase {
     updateLiquidityFee(hub1, assetId, MAX_LIQUIDITY_FEE);
 
     uint256 supplyAmount = _calcMinimumCollAmount(spoke1, reserveId, reserveId, borrowAmount);
-    _mockInterestRateBps(rate);
+    _mockDrawnRateBps(rate);
 
     Utils.supplyCollateral(spoke1, reserveId, alice, supplyAmount, alice);
     Utils.borrow(spoke1, reserveId, alice, borrowAmount, alice);
@@ -74,7 +74,7 @@ contract SpokeAccrueLiquidityFeeEdgeCasesTest is SpokeBase {
     uint256 skipTime,
     uint256 rate
   ) public {
-    rate = bound(rate, 1, MAX_BORROW_RATE);
+    rate = bound(rate, 1, Constants.MAX_ALLOWED_DRAWN_RATE);
     skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
     reserveId = bound(reserveId, 0, spoke1.getReserveCount() - 1);
     uint256 assetId = spoke1.getReserve(reserveId).assetId;
@@ -85,7 +85,7 @@ contract SpokeAccrueLiquidityFeeEdgeCasesTest is SpokeBase {
 
     uint256 supplyAmount = _calcMinimumCollAmount(spoke1, reserveId, reserveId, borrowAmount);
     uint256 supplyAmount2 = _calcMinimumCollAmount(spoke1, reserveId, reserveId, borrowAmount2);
-    _mockInterestRateBps(rate);
+    _mockDrawnRateBps(rate);
 
     Utils.supplyCollateral(spoke1, reserveId, alice, supplyAmount, alice);
     Utils.borrow(spoke1, reserveId, alice, borrowAmount, alice);

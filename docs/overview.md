@@ -201,7 +201,7 @@ Aave V4 includes a Reinvestment Module that provides the infrastructure to alloc
 The Reinvestment Module offers an optional tool to support capital efficiency when deemed appropriate by the Governor. Key characteristics include:
 
 - **Governance‑Controlled**: The Governor manages all funds allocated to reinvestment strategies. Decisions on strategy selection, risk parameters, and operational guidelines are exclusively governance responsibilities.
-- **Interest Rate Neutral**: Swept liquidity remains part of the usage ratio denominator, so sweeping funds to external strategies does not affect the borrow rate experienced by users.
+- **Interest Rate Neutral**: Swept liquidity remains part of the usage ratio denominator, so sweeping funds to external strategies does not affect the drawn rate experienced by users.
 - **Opt‑In for Users**: Participation in reinvestment is not compulsory. Reinvestment is enabled at the Hub level on a per-asset basis; users choose whether to interact with a reinvestment-enabled asset by supplying to a spoke Reserve that is connected to that Hub asset. Users who prefer not to participate can supply to spoke Reserves linked to Hub assets without an active reinvestment controller.
 - **Enhanced Yields**: By deploying otherwise idle liquidity into external strategies, opt‑in liquidity providers can earn incremental returns on top of borrower interest.
 - **Risk Allocation**: Losses arising from reinvestment strategies are absorbed by the Governor, who defines the coverage method, shielding liquidity providers from direct strategy‑specific risk exposure.

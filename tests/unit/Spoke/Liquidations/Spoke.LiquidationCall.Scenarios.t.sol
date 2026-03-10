@@ -147,7 +147,7 @@ contract SpokeLiquidationCallScenariosTest is SpokeLiquidationCallBaseTest {
     // A high liquidation bonus will be applied
     _updateMaxLiquidationBonus(spoke, _wethReserveId(spoke), 124_00);
 
-    // Borrow rates:
+    // Drawn rates:
     //   - DAI: 3%
     vm.prank(address(hub1));
     irStrategy.setInterestRateData(
@@ -155,9 +155,9 @@ contract SpokeLiquidationCallScenariosTest is SpokeLiquidationCallBaseTest {
       abi.encode(
         IAssetInterestRateStrategy.InterestRateData({
           optimalUsageRatio: 90_00,
-          baseVariableBorrowRate: 3_00,
-          variableRateSlope1: 0,
-          variableRateSlope2: 0
+          baseDrawnRate: 3_00,
+          rateGrowthBeforeOptimal: 0,
+          rateGrowthAfterOptimal: 0
         })
       )
     );
@@ -249,7 +249,7 @@ contract SpokeLiquidationCallScenariosTest is SpokeLiquidationCallBaseTest {
     _updateMaxLiquidationBonus(spoke, _wethReserveId(spoke), 103_00);
     _updateCollateralFactor(spoke, _wethReserveId(spoke), 97_00);
 
-    // Borrow rates:
+    // Drawn rates:
     //   - DAI: 3%
     vm.prank(address(hub1));
     irStrategy.setInterestRateData(
@@ -257,9 +257,9 @@ contract SpokeLiquidationCallScenariosTest is SpokeLiquidationCallBaseTest {
       abi.encode(
         IAssetInterestRateStrategy.InterestRateData({
           optimalUsageRatio: 90_00,
-          baseVariableBorrowRate: 3_00,
-          variableRateSlope1: 0,
-          variableRateSlope2: 0
+          baseDrawnRate: 3_00,
+          rateGrowthBeforeOptimal: 0,
+          rateGrowthAfterOptimal: 0
         })
       )
     );
@@ -439,8 +439,8 @@ contract SpokeLiquidationCallScenariosTest is SpokeLiquidationCallBaseTest {
     // Collateral: 3 wei of USDX -> 2 share = 2.5 USDX
     _increaseCollateralSupply(spoke, _wethReserveId(spoke), 3, user);
 
-    // Mock interest rate to 10%
-    _mockInterestRateBps(10_00);
+    // Mock drawn rate to 10%
+    _mockDrawnRateBps(10_00);
 
     // Borrow: 1 wei of DAI
     _increaseReserveDebt(spoke, _daiReserveId(spoke), 1, user);
@@ -539,8 +539,8 @@ contract SpokeLiquidationCallScenariosTest is SpokeLiquidationCallBaseTest {
     _updateCollateralRisk(spoke, _usdxReserveId(spoke), 0);
     _updateCollateralRisk(spoke, _wbtcReserveId(spoke), 0);
 
-    // mock interest rate
-    _mockInterestRateBps(50_00);
+    // mock drawn rate
+    _mockDrawnRateBps(50_00);
 
     // User collaterals: 20 wei of USDX, 3 wei of WBTC
     // User debt: 1 wei of USDY
@@ -630,8 +630,8 @@ contract SpokeLiquidationCallScenariosTest is SpokeLiquidationCallBaseTest {
     _updateCollateralRisk(spoke, _usdxReserveId(spoke), 50_00);
     _updateCollateralRisk(spoke, _wbtcReserveId(spoke), 50_00);
 
-    // set interest rate
-    _mockInterestRateBps(60_00);
+    // set drawn rate
+    _mockDrawnRateBps(60_00);
     address randomUser = makeAddr('randomUser');
 
     // Skip 1 year to increase drawn index to 1.6
@@ -640,8 +640,8 @@ contract SpokeLiquidationCallScenariosTest is SpokeLiquidationCallBaseTest {
     skip(365 days);
     assertEq(hub1.getAssetDrawnIndex(usdyAssetId), 1.6e27);
 
-    // set interest rate
-    _mockInterestRateBps(56_25);
+    // set drawn rate
+    _mockDrawnRateBps(56_25);
 
     // User collaterals: 40 wei of USDX, 5 wei of WBTC
     // User debt: 2 wei of USDY

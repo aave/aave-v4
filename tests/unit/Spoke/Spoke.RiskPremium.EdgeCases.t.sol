@@ -302,8 +302,8 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
       onBehalfOf: bob
     });
 
-    // usage ratio is ~45%, which is ~half to the kink point of 90%
-    // borrow rate ~= base borrow rate (5%) + slope1 (5%) / 2
+    // usage ratio is ~45%, which is ~half to the optimal point of 90%
+    // drawn rate ~= base drawn rate (5%) + slope1 (5%) / 2
     assertApproxEqAbs(hub1.getAsset(wethAssetId).drawnRate, uint256(7_50).bpsToRay(), 1e18);
 
     // Alice supplies collateral in order to borrow
@@ -321,7 +321,7 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
       onBehalfOf: alice
     });
 
-    // Alice borrows all dai to push the dai interest rate to max rate
+    // Alice borrows all dai to push the dai drawn rate to max rate
     // This way Bob earns more interest on his dai supplies than the interest accrued on his weth borrow
     Utils.borrow({
       spoke: spoke2,
@@ -338,7 +338,7 @@ contract SpokeRiskPremiumEdgeCasesTest is SpokeBase {
       onBehalfOf: alice
     });
 
-    // usage ratio is 100%, borrow rate is max
+    // usage ratio is 100%, drawn rate is max
     assertEq(hub1.getAsset(daiAssetId).drawnRate, uint256(15_00).bpsToRay());
 
     // Bob's current risk premium should be greater than or equal collateral risk of dai, since debt is not fully covered by it (and due to rounding)

@@ -466,12 +466,6 @@ contract Hub is IHub, AccessManaged {
   }
 
   /// @inheritdoc IHub
-  function getAssetId(address underlying) external view returns (uint256) {
-    require(isUnderlyingListed(underlying), AssetNotListed());
-    return _underlyingToAssetId[underlying];
-  }
-
-  /// @inheritdoc IHub
   function getAssetCount() external view returns (uint256) {
     return _assetCount;
   }
@@ -514,6 +508,12 @@ contract Hub is IHub, AccessManaged {
   /// @inheritdoc IHubBase
   function previewRestoreByShares(uint256 assetId, uint256 shares) external view returns (uint256) {
     return _assets[assetId].toDrawnAssetsUp(shares);
+  }
+
+  /// @inheritdoc IHubBase
+  function getAssetId(address underlying) external view returns (uint256) {
+    require(isUnderlyingListed(underlying), AssetNotListed());
+    return _underlyingToAssetId[underlying];
   }
 
   /// @inheritdoc IHubBase

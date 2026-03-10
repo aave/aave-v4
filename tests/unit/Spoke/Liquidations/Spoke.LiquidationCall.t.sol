@@ -54,10 +54,10 @@ abstract contract SpokeLiquidationCallHelperTest is SpokeLiquidationCallBaseTest
         i,
         vm.randomUint(MIN_COLLATERAL_RISK_BPS, MAX_COLLATERAL_RISK_BPS).toUint24()
       );
-      _setConstantInterestRateBps(
+      _setConstantDrawnRateBps(
         _hub(spoke, i),
         _reserveAssetId(spoke, i),
-        vm.randomUint(MIN_BORROW_RATE, MAX_BORROW_RATE).toUint32()
+        vm.randomUint(Constants.MIN_ALLOWED_DRAWN_RATE, Constants.MAX_ALLOWED_DRAWN_RATE).toUint32()
       );
     }
 
@@ -294,9 +294,9 @@ abstract contract SpokeLiquidationCallHelperTest is SpokeLiquidationCallBaseTest
 
     // buffer
     maxBorrowValue /= 2;
-    // account for borrow rate and time
+    // account for drawn rate and time
     maxBorrowValue = maxBorrowValue.percentDivDown(
-      PercentageMath.PERCENTAGE_FACTOR + (_spokeMaxBorrowRate(spoke) * skipTime) / 365 days
+      PercentageMath.PERCENTAGE_FACTOR + (_spokeMaxDrawnRate(spoke) * skipTime) / 365 days
     );
     // account for premium debt
     maxBorrowValue = maxBorrowValue.percentDivDown(
@@ -312,7 +312,7 @@ abstract contract SpokeLiquidationCallHelperTest is SpokeLiquidationCallBaseTest
     uint256 suppliableValue = (
       _convertAmountToValue(spoke, debtReserveId, _calculateMaxSupplyAmount(spoke, debtReserveId))
     ).percentDivDown(
-        10 * PercentageMath.PERCENTAGE_FACTOR + (_spokeMaxBorrowRate(spoke) * skipTime) / 365 days
+        10 * PercentageMath.PERCENTAGE_FACTOR + (_spokeMaxDrawnRate(spoke) * skipTime) / 365 days
       ) - baseAmountValue;
 
     uint256 count = vm.randomUint(1, spoke.getReserveCount() * 2);
@@ -335,7 +335,7 @@ abstract contract SpokeLiquidationCallHelperTest is SpokeLiquidationCallBaseTest
 
   function _processAdditionalDebtReserves() internal {
     uint256 count = vm.randomUint(1, spoke.getReserveCount() * 2);
-    // accounts for borrow share price increase due to time skip (and borrow interest rate)
+    // accounts for borrow share price increase due to time skip (and borrow drawn rate)
     // ensures user is healthy enough to borrow
     uint256 borrowableValue = _calculateMaxHealthyBorrowValue(user);
     for (uint256 i = 0; i < count; i++) {
@@ -523,10 +523,10 @@ contract SpokeLiquidationCallTest_Premium is SpokeLiquidationCallHelperTest {
       collateralReserveId,
       vm.randomUint(1, MAX_COLLATERAL_RISK_BPS).toUint24()
     );
-    _setConstantInterestRateBps(
+    _setConstantDrawnRateBps(
       _hub(spoke, debtReserveId),
       _reserveAssetId(spoke, debtReserveId),
-      vm.randomUint(1, MAX_BORROW_RATE).toUint32()
+      vm.randomUint(1, Constants.MAX_ALLOWED_DRAWN_RATE).toUint32()
     );
     _increaseCollateralSupply(
       spoke,

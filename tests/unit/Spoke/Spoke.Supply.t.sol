@@ -357,7 +357,7 @@ contract SpokeSupplyTest is SpokeBase {
     uint256 skipTime
   ) public {
     amount = bound(amount, 1, MAX_SUPPLY_AMOUNT);
-    rate = bound(rate, 1, MAX_BORROW_RATE);
+    rate = bound(rate, 1, Constants.MAX_ALLOWED_DRAWN_RATE);
     reserveId = bound(reserveId, 0, spokeInfo[spoke1].MAX_ALLOWED_ASSET_ID);
     skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
 
@@ -536,7 +536,7 @@ contract SpokeSupplyTest is SpokeBase {
     uint256 skipTime
   ) public {
     amount = bound(amount, 1, MAX_SUPPLY_AMOUNT);
-    rate = bound(rate, 1, MAX_BORROW_RATE);
+    rate = bound(rate, 1, Constants.MAX_ALLOWED_DRAWN_RATE);
     reserveId = bound(reserveId, 0, spokeInfo[spoke1].MAX_ALLOWED_ASSET_ID);
     skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
 
