@@ -310,7 +310,7 @@ library LiquidationLogic {
   /// @param healthFactor The health factor.
   /// @param maxLiquidationBonus The max liquidation bonus.
   /// @return The liquidation bonus.
-  function getLiquidationBonus(
+  function calculateLiquidationBonus(
     uint256 healthFactorForMaxBonus,
     uint256 liquidationBonusFactor,
     uint256 healthFactor,
@@ -567,7 +567,7 @@ library LiquidationLogic {
     uint256 collateralAssetUnit = MathUtils.uncheckedExp(10, params.collateralAssetDecimals);
     uint256 debtAssetUnit = MathUtils.uncheckedExp(10, params.debtAssetDecimals);
 
-    uint256 liquidationBonus = getLiquidationBonus({
+    uint256 liquidationBonus = calculateLiquidationBonus({
       healthFactorForMaxBonus: params.healthFactorForMaxBonus,
       liquidationBonusFactor: params.liquidationBonusFactor,
       healthFactor: params.healthFactor,

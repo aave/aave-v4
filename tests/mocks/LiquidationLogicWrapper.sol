@@ -216,14 +216,14 @@ contract LiquidationLogicWrapper {
     return LiquidationLogic._calculateLiquidationAmounts(params);
   }
 
-  function getLiquidationBonus(
+  function calculateLiquidationBonus(
     uint256 healthFactorForMaxBonus,
     uint256 liquidationBonusFactor,
     uint256 healthFactor,
     uint256 maxLiquidationBonus
   ) public pure returns (uint256) {
     return
-      LiquidationLogic.getLiquidationBonus(
+      LiquidationLogic.calculateLiquidationBonus(
         healthFactorForMaxBonus,
         liquidationBonusFactor,
         healthFactor,

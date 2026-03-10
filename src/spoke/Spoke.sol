@@ -644,7 +644,7 @@ abstract contract Spoke is
   ) external view returns (uint256) {
     _reserves.get(reserveId);
     return
-      LiquidationLogic.getLiquidationBonus({
+      LiquidationLogic.calculateLiquidationBonus({
         healthFactorForMaxBonus: _liquidationConfig.healthFactorForMaxBonus,
         liquidationBonusFactor: _liquidationConfig.liquidationBonusFactor,
         healthFactor: healthFactor,

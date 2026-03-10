@@ -130,7 +130,7 @@ interface IHubBase {
     PremiumDelta calldata premiumDelta
   ) external returns (uint256);
 
-  /// @notice Reports deficit, inclusive of drawn and premium assets.
+  /// @notice Reports an owed amount as deficit.
   /// @dev Only callable by active spokes.
   /// @param assetId The identifier of the asset.
   /// @param drawnAmount The drawn amount to report as deficit.

@@ -131,7 +131,7 @@ contract SpokeGettersTest is SpokeBase {
 
     assertEq(
       liqBonus,
-      LiquidationLogic.getLiquidationBonus({
+      LiquidationLogic.calculateLiquidationBonus({
         healthFactorForMaxBonus: 0,
         liquidationBonusFactor: 0,
         healthFactor: healthFactor,
@@ -174,7 +174,7 @@ contract SpokeGettersTest is SpokeBase {
 
     assertEq(
       spoke.getLiquidationBonus(reserveId, bob, healthFactor),
-      LiquidationLogic.getLiquidationBonus({
+      LiquidationLogic.calculateLiquidationBonus({
         healthFactorForMaxBonus: healthFactorForMaxBonus,
         liquidationBonusFactor: liquidationBonusFactor,
         healthFactor: healthFactor,
