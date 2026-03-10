@@ -305,11 +305,11 @@ library LiquidationLogic {
 
   /// @notice Calculates the liquidation bonus at a given health factor.
   /// @dev Liquidation Bonus is expressed as a BPS value greater than `PercentageMath.PERCENTAGE_FACTOR`.
-  /// @param healthFactorForMaxBonus The health factor for max bonus.
-  /// @param liquidationBonusFactor The liquidation bonus factor.
-  /// @param healthFactor The health factor.
-  /// @param maxLiquidationBonus The max liquidation bonus.
-  /// @return The liquidation bonus.
+  /// @param healthFactorForMaxBonus The health factor for max bonus, expressed in WAD.
+  /// @param liquidationBonusFactor The liquidation bonus factor, expressed in BPS.
+  /// @param healthFactor The health factor, expressed in WAD.
+  /// @param maxLiquidationBonus The max liquidation bonus, expressed in BPS.
+  /// @return The liquidation bonus, expressed in BPS.
   function calculateLiquidationBonus(
     uint256 healthFactorForMaxBonus,
     uint256 liquidationBonusFactor,
