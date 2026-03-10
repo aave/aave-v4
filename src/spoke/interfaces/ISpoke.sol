@@ -139,7 +139,7 @@ interface ISpoke is ISpokeBase, IAccessManaged, IIntentConsumer, IExtSload, IMul
     uint256 borrowCount;
   }
 
-  /// @notice Emitted to signal the immutable variables on the Spoke.
+  /// @notice Emitted when the immutable variables of the Spoke are set.
   /// @param oracle The address of the oracle.
   /// @param maxUserReservesLimit The max user reserves limit.
   event SetSpokeImmutables(address indexed oracle, uint16 maxUserReservesLimit);
