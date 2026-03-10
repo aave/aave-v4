@@ -526,12 +526,13 @@ interface ISpoke is ISpokeBase, IAccessManaged, IIntentConsumer, IExtSload, IMul
   /// @return The risk premium of the user from the last position update, expressed in BPS.
   function getUserLastRiskPremium(address user) external view returns (uint256);
 
-  /// @notice Returns the liquidation bonus for a given health factor, based on the user's current dynamic configuration.
+  /// @notice Calculates the liquidation bonus for a given health factor, based on the user's current dynamic configuration.
   /// @dev It reverts if the reserve associated with the given reserve identifier is not listed.
   /// @param reserveId The identifier of the reserve.
   /// @param user The address of the user.
-  /// @param healthFactor The health factor of the user.
-  function getLiquidationBonus(
+  /// @param healthFactor The health factor of the user, expressed in WAD.
+  /// @return The liquidation bonus for the user, expressed in BPS.
+  function calculateLiquidationBonus(
     uint256 reserveId,
     address user,
     uint256 healthFactor
