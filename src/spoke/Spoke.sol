@@ -637,7 +637,7 @@ abstract contract Spoke is
   }
 
   /// @inheritdoc ISpoke
-  function getLiquidationBonus(
+  function calculateLiquidationBonus(
     uint256 reserveId,
     address user,
     uint256 healthFactor

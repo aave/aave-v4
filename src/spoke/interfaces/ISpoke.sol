@@ -530,7 +530,7 @@ interface ISpoke is ISpokeBase, IAccessManaged, IIntentConsumer, IExtSload, IMul
   /// @param reserveId The identifier of the reserve.
   /// @param user The address of the user.
   /// @param healthFactor The health factor of the user.
-  function getLiquidationBonus(
+  function calculateLiquidationBonus(
     uint256 reserveId,
     address user,
     uint256 healthFactor

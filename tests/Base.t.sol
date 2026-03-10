@@ -2679,7 +2679,7 @@ abstract contract Base is Test {
     address user,
     uint256 healthFactor
   ) internal view returns (uint256) {
-    return spoke.getLiquidationBonus(reserveId, user, healthFactor);
+    return spoke.calculateLiquidationBonus(reserveId, user, healthFactor);
   }
 
   /**

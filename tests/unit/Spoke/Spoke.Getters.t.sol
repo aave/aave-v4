@@ -105,19 +105,19 @@ contract SpokeGettersTest is SpokeBase {
     vm.stopPrank();
   }
 
-  function test_getLiquidationBonus_notConfigured() public {
+  function test_calculateLiquidationBonus_notConfigured() public {
     uint256 reserveId = _daiReserveId(spoke);
     uint256 healthFactor = WadRayMath.WAD;
-    test_getLiquidationBonus_fuzz_notConfigured(reserveId, healthFactor);
+    test_calculateLiquidationBonus_fuzz_notConfigured(reserveId, healthFactor);
   }
 
-  function test_getLiquidationBonus_fuzz_notConfigured(
+  function test_calculateLiquidationBonus_fuzz_notConfigured(
     uint256 reserveId,
     uint256 healthFactor
   ) public {
     reserveId = bound(reserveId, 0, spoke.getReserveCount() - 1);
     healthFactor = bound(healthFactor, 0, HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
-    uint256 liqBonus = spoke.getLiquidationBonus(reserveId, bob, healthFactor);
+    uint256 liqBonus = spoke.calculateLiquidationBonus(reserveId, bob, healthFactor);
 
     _config = spoke.getLiquidationConfig();
     assertEq(
@@ -141,13 +141,13 @@ contract SpokeGettersTest is SpokeBase {
     );
   }
 
-  function test_getLiquidationBonus_configured() public {
+  function test_calculateLiquidationBonus_configured() public {
     uint256 reserveId = _daiReserveId(spoke);
     uint256 healthFactor = WadRayMath.WAD;
-    test_getLiquidationBonus_fuzz_configured(reserveId, healthFactor, 40_00, 0.9e18);
+    test_calculateLiquidationBonus_fuzz_configured(reserveId, healthFactor, 40_00, 0.9e18);
   }
 
-  function test_getLiquidationBonus_fuzz_configured(
+  function test_calculateLiquidationBonus_fuzz_configured(
     uint256 reserveId,
     uint256 healthFactor,
     uint16 liquidationBonusFactor,
@@ -173,7 +173,7 @@ contract SpokeGettersTest is SpokeBase {
     _config = spoke.getLiquidationConfig();
 
     assertEq(
-      spoke.getLiquidationBonus(reserveId, bob, healthFactor),
+      spoke.calculateLiquidationBonus(reserveId, bob, healthFactor),
       LiquidationLogic.calculateLiquidationBonus({
         healthFactorForMaxBonus: healthFactorForMaxBonus,
         liquidationBonusFactor: liquidationBonusFactor,
