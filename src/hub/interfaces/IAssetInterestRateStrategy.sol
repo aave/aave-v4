@@ -8,26 +8,26 @@ import {IBasicInterestRateStrategy} from 'src/hub/interfaces/IBasicInterestRateS
 /// @author Aave Labs
 /// @notice Interface of the optimal-usage-based asset interest rate strategy.
 interface IAssetInterestRateStrategy is IBasicInterestRateStrategy {
-  /// @notice Holds the drawn rate data for a given asset.
+  /// @notice Holds the interest rate data for a given asset.
   /// @dev optimalUsageRatio The optimal usage ratio, in BPS. Maximum and minimum values are defined by `MAX_OPTIMAL_RATIO` and `MIN_OPTIMAL_RATIO`.
   /// @dev baseDrawnRate The base drawn rate, in BPS.
   /// @dev rateGrowthBeforeOptimal The rate growth before the optimal usage ratio, in BPS.
   /// @dev rateGrowthAfterOptimal The rate growth after the optimal usage ratio, in BPS.
-  struct DrawnRateData {
+  struct InterestRateData {
     uint16 optimalUsageRatio;
     uint32 baseDrawnRate;
     uint32 rateGrowthBeforeOptimal;
     uint32 rateGrowthAfterOptimal;
   }
 
-  /// @notice Emitted when drawn rate data is updated for an asset.
+  /// @notice Emitted when interest rate data is updated for an asset.
   /// @param hub The address of the associated Hub.
-  /// @param assetId The identifier of the asset whose drawn rate data is updated.
+  /// @param assetId The identifier of the asset whose interest rate data is updated.
   /// @param optimalUsageRatio The optimal usage ratio, in BPS.
   /// @param baseDrawnRate The base drawn rate, in BPS.
   /// @param rateGrowthBeforeOptimal The rate growth before the optimal usage ratio, in BPS.
   /// @param rateGrowthAfterOptimal The rate growth after the optimal usage ratio, in BPS.
-  event UpdateDrawnRateData(
+  event UpdateInterestRateData(
     address indexed hub,
     uint256 indexed assetId,
     uint256 optimalUsageRatio,
@@ -51,10 +51,10 @@ interface IAssetInterestRateStrategy is IBasicInterestRateStrategy {
   /// @notice Thrown when the optimal usage ratio is less than `MIN_OPTIMAL_RATIO` or greater than `MAX_OPTIMAL_RATIO`.
   error InvalidOptimalUsageRatio();
 
-  /// @notice Returns the full DrawnRateData struct for the given asset.
+  /// @notice Returns the full InterestRateData struct for the given asset.
   /// @param assetId The identifier of the asset for which to get the data.
-  /// @return The DrawnRateData struct for the given asset, all in BPS.
-  function getDrawnRateData(uint256 assetId) external view returns (DrawnRateData memory);
+  /// @return The InterestRateData struct for the given asset, all in BPS.
+  function getInterestRateData(uint256 assetId) external view returns (InterestRateData memory);
 
   /// @notice Returns the optimal usage rate for the given asset.
   /// @param assetId The identifier of the asset for which to get the optimal usage ratio.

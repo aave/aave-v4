@@ -10,8 +10,8 @@ import {
 
 /// @title AssetInterestRateStrategy
 /// @author Aave Labs
-/// @notice Manages the optimal-usage-based drawn rate strategy for an asset.
-/// @dev Strategies are Hub-specific, due to the usage of asset identifier as index of the `_drawnRateData` mapping.
+/// @notice Manages the optimal-usage-based drawn interest rate strategy for an asset.
+/// @dev Strategies are Hub-specific, due to the usage of asset identifier as index of the `_interestRateData` mapping.
 contract AssetInterestRateStrategy is IAssetInterestRateStrategy {
   using WadRayMath for *;
 
@@ -28,7 +28,7 @@ contract AssetInterestRateStrategy is IAssetInterestRateStrategy {
   address public immutable HUB;
 
   /// @dev Map of asset identifiers to their drawn rate data.
-  mapping(uint256 assetId => DrawnRateData) internal _drawnRateData;
+  mapping(uint256 assetId => InterestRateData) internal _interestRateData;
 
   /// @dev Constructor.
   /// @param hub_ The address of the associated Hub.
@@ -37,12 +37,12 @@ contract AssetInterestRateStrategy is IAssetInterestRateStrategy {
     HUB = hub_;
   }
 
-  /// @notice Sets the drawn rate parameters for a specified asset.
+  /// @notice Sets the interest rate parameters for a specified asset.
   /// @param assetId The identifier of the asset.
   /// @param data The encoded parameters containing BPS data used to configure the drawn rate of the asset.
-  function setDrawnRateData(uint256 assetId, bytes calldata data) external {
+  function setInterestRateData(uint256 assetId, bytes calldata data) external {
     require(HUB == msg.sender, OnlyHub());
-    DrawnRateData memory rateData = abi.decode(data, (DrawnRateData));
+    InterestRateData memory rateData = abi.decode(data, (InterestRateData));
     require(
       MIN_OPTIMAL_RATIO <= rateData.optimalUsageRatio &&
         rateData.optimalUsageRatio <= MAX_OPTIMAL_RATIO,
@@ -58,9 +58,9 @@ contract AssetInterestRateStrategy is IAssetInterestRateStrategy {
       InvalidMaxDrawnRate()
     );
 
-    _drawnRateData[assetId] = rateData;
+    _interestRateData[assetId] = rateData;
 
-    emit UpdateDrawnRateData(
+    emit UpdateInterestRateData(
       HUB,
       assetId,
       rateData.optimalUsageRatio,
@@ -71,18 +71,18 @@ contract AssetInterestRateStrategy is IAssetInterestRateStrategy {
   }
 
   /// @inheritdoc IAssetInterestRateStrategy
-  function getDrawnRateData(uint256 assetId) external view returns (DrawnRateData memory) {
-    return _drawnRateData[assetId];
+  function getInterestRateData(uint256 assetId) external view returns (InterestRateData memory) {
+    return _interestRateData[assetId];
   }
 
   /// @inheritdoc IAssetInterestRateStrategy
   function getOptimalUsageRatio(uint256 assetId) external view returns (uint256) {
-    return _drawnRateData[assetId].optimalUsageRatio;
+    return _interestRateData[assetId].optimalUsageRatio;
   }
 
   /// @inheritdoc IAssetInterestRateStrategy
   function getBaseDrawnRate(uint256 assetId) external view returns (uint256) {
-    return _drawnRateData[assetId].baseDrawnRate;
+    return _interestRateData[assetId].baseDrawnRate;
   }
 
   /// @inheritdoc IAssetInterestRateStrategy
