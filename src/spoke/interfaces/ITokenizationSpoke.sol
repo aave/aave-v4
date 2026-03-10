@@ -9,7 +9,7 @@ import {IIntentConsumer} from 'src/interfaces/IIntentConsumer.sol';
 /// @title ITokenizationSpoke
 /// @author Aave Labs
 interface ITokenizationSpoke is IERC4626, IERC2612, IIntentConsumer {
-  /// @notice Intent data to deposit assets into the Tokenization Spoke.
+  /// @notice Intent data to deposit assets into the TokenizationSpoke.
   /// @param depositor The address of the user depositing assets.
   /// @param assets The amount of assets to deposit.
   /// @param receiver The address that will receive the minted shares.
@@ -23,7 +23,7 @@ interface ITokenizationSpoke is IERC4626, IERC2612, IIntentConsumer {
     uint256 deadline;
   }
 
-  /// @notice Intent data to mint shares from the Tokenization Spoke.
+  /// @notice Intent data to mint shares from the TokenizationSpoke.
   /// @param depositor The address of the user depositing assets.
   /// @param shares The amount of shares to mint.
   /// @param receiver The address that will receive the minted shares.
@@ -37,7 +37,7 @@ interface ITokenizationSpoke is IERC4626, IERC2612, IIntentConsumer {
     uint256 deadline;
   }
 
-  /// @notice Intent data to withdraw assets from the Tokenization Spoke.
+  /// @notice Intent data to withdraw assets from the TokenizationSpoke.
   /// @param owner The address of the user withdrawing assets.
   /// @param assets The amount of assets to withdraw.
   /// @param receiver The address that will receive the withdrawn assets.
@@ -51,7 +51,7 @@ interface ITokenizationSpoke is IERC4626, IERC2612, IIntentConsumer {
     uint256 deadline;
   }
 
-  /// @notice Intent data to redeem shares from the Tokenization Spoke.
+  /// @notice Intent data to redeem shares from the TokenizationSpoke.
   /// @param owner The address of the user redeeming shares.
   /// @param shares The amount of shares to redeem.
   /// @param receiver The address that will receive the redeemed assets.
@@ -65,7 +65,7 @@ interface ITokenizationSpoke is IERC4626, IERC2612, IIntentConsumer {
     uint256 deadline;
   }
 
-  /// @notice Deposits assets into the Tokenization Spoke with a signature.
+  /// @notice Deposits assets into the TokenizationSpoke with a signature.
   /// @dev Uses keyed-nonces where for each key's namespace nonce is consumed sequentially.
   /// @param params The parameters for the deposit.
   /// @param signature The EIP712-typed signed bytes for the deposit.
@@ -75,7 +75,7 @@ interface ITokenizationSpoke is IERC4626, IERC2612, IIntentConsumer {
     bytes calldata signature
   ) external returns (uint256);
 
-  /// @notice Mints shares of the Tokenization Spoke with a signature.
+  /// @notice Mints shares of the TokenizationSpoke with a signature.
   /// @dev Uses keyed-nonces where for each key's namespace nonce is consumed sequentially.
   /// @param params The parameters for the mint.
   /// @param signature The EIP712-typed signed bytes for the mint.
@@ -85,7 +85,7 @@ interface ITokenizationSpoke is IERC4626, IERC2612, IIntentConsumer {
     bytes calldata signature
   ) external returns (uint256);
 
-  /// @notice Withdraws assets from the Tokenization Spoke with a signature.
+  /// @notice Withdraws assets from the TokenizationSpoke with a signature.
   /// @dev Uses keyed-nonces where for each key's namespace nonce is consumed sequentially.
   /// @param params The parameters for the withdraw.
   /// @param signature The EIP712-typed signed bytes for the withdraw.
@@ -95,7 +95,7 @@ interface ITokenizationSpoke is IERC4626, IERC2612, IIntentConsumer {
     bytes calldata signature
   ) external returns (uint256);
 
-  /// @notice Redeems shares from the Tokenization Spoke with a signature.
+  /// @notice Redeems shares from the TokenizationSpoke with a signature.
   /// @dev Uses keyed-nonces where for each key's namespace nonce is consumed sequentially.
   /// @param params The parameters for the redeem.
   /// @param signature The EIP712-typed signed bytes for the redeem.
