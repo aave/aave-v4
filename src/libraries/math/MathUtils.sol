@@ -13,11 +13,11 @@ library MathUtils {
   /// @dev Ignoring leap years
   uint256 internal constant SECONDS_PER_YEAR = 365 days;
 
-  /// @notice Calculates the interest accumulated using a linear drawn rate formula.
+  /// @notice Calculates the interest accumulated using a linear interest rate formula.
   /// @dev Reverts if `lastUpdateTimestamp` is greater than `block.timestamp`.
-  /// @param rate The drawn rate in RAY units.
-  /// @param lastUpdateTimestamp The timestamp to calculate drawn rate from.
-  /// @return result The drawn rate linearly accumulated during the time delta in RAY units.
+  /// @param rate The interest rate in RAY units.
+  /// @param lastUpdateTimestamp The timestamp to calculate interest rate from.
+  /// @return result The interest rate linearly accumulated during the time delta in RAY units.
   function calculateLinearInterest(
     uint96 rate,
     uint40 lastUpdateTimestamp

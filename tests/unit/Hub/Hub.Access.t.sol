@@ -179,12 +179,12 @@ contract HubAccessTest is HubBase {
     vm.prank(carol);
     hub1.setInterestRateData(daiAssetId, encodedIrData);
 
-    // Now, we change the role responsible for setting drawn rate data to SET_DRAWN_RATE role.
-    uint64 SET_DRAWN_RATE_ROLE = 4;
+    // Now, we change the role responsible for setting drawn rate data to SET_INTEREST_RATE role.
+    uint64 SET_INTEREST_RATE_ROLE = 4;
     bytes4[] memory hubSelectors = new bytes4[](1);
     hubSelectors[0] = IHub.setInterestRateData.selector;
     vm.prank(ADMIN);
-    accessManager.setTargetFunctionRole(address(hub1), hubSelectors, SET_DRAWN_RATE_ROLE);
+    accessManager.setTargetFunctionRole(address(hub1), hubSelectors, SET_INTEREST_RATE_ROLE);
 
     // Alice, Bob, and Carol should no longer have access to set drawn rate data.
     vm.expectRevert(
@@ -201,14 +201,14 @@ contract HubAccessTest is HubBase {
     vm.prank(carol);
     hub1.setInterestRateData(daiAssetId, encodedIrData);
 
-    // Now, we grant SET_DRAWN_RATE role to Alice, Bob, and Carol with 0 delay
+    // Now, we grant SET_INTEREST_RATE role to Alice, Bob, and Carol with 0 delay
     vm.startPrank(ADMIN);
-    accessManager.grantRole(SET_DRAWN_RATE_ROLE, alice, 0);
-    accessManager.grantRole(SET_DRAWN_RATE_ROLE, bob, 0);
-    accessManager.grantRole(SET_DRAWN_RATE_ROLE, carol, 0);
+    accessManager.grantRole(SET_INTEREST_RATE_ROLE, alice, 0);
+    accessManager.grantRole(SET_INTEREST_RATE_ROLE, bob, 0);
+    accessManager.grantRole(SET_INTEREST_RATE_ROLE, carol, 0);
     vm.stopPrank();
 
-    // Alice, Bob, and Carol should now be able to set drawn rate data.
+    // Alice, Bob, and Carol should now be able to set interest rate data.
     vm.prank(alice);
     hub1.setInterestRateData(daiAssetId, encodedIrData);
     vm.prank(bob);
@@ -216,15 +216,15 @@ contract HubAccessTest is HubBase {
     vm.prank(carol);
     hub1.setInterestRateData(daiAssetId, encodedIrData);
 
-    // Alice, Bob, and Carol currently have both HUB_ADMIN and SET_DRAWN_RATE roles.
+    // Alice, Bob, and Carol currently have both HUB_ADMIN and SET_INTEREST_RATE roles.
     IAccessManager accessManager = IAccessManager(hub1.authority());
     assertTrue(_hasRole(accessManager, Roles.HUB_ADMIN_ROLE, alice));
     assertTrue(_hasRole(accessManager, Roles.HUB_ADMIN_ROLE, bob));
     assertTrue(_hasRole(accessManager, Roles.HUB_ADMIN_ROLE, carol));
 
-    assertTrue(_hasRole(accessManager, SET_DRAWN_RATE_ROLE, alice));
-    assertTrue(_hasRole(accessManager, SET_DRAWN_RATE_ROLE, bob));
-    assertTrue(_hasRole(accessManager, SET_DRAWN_RATE_ROLE, carol));
+    assertTrue(_hasRole(accessManager, SET_INTEREST_RATE_ROLE, alice));
+    assertTrue(_hasRole(accessManager, SET_INTEREST_RATE_ROLE, bob));
+    assertTrue(_hasRole(accessManager, SET_INTEREST_RATE_ROLE, carol));
 
     // We can remove HUB_ADMIN role from Alice, Bob, and Carol.
     vm.startPrank(ADMIN);
@@ -238,7 +238,7 @@ contract HubAccessTest is HubBase {
     assertFalse(_hasRole(accessManager, Roles.HUB_ADMIN_ROLE, bob));
     assertFalse(_hasRole(accessManager, Roles.HUB_ADMIN_ROLE, carol));
 
-    // Can still call setInterestRateData since they have SET_DRAWN_RATE role.
+    // Can still call setInterestRateData since they have SET_INTEREST_RATE role.
     vm.prank(alice);
     hub1.setInterestRateData(daiAssetId, encodedIrData);
     vm.prank(bob);
