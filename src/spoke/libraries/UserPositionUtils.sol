@@ -106,7 +106,7 @@ library UserPositionUtils {
     return (amount - premiumDebt, premiumDebtRay);
   }
 
-  /// @notice Calculates the user's debt by querying the latest drawn index from the Hub.
+  /// @notice Calculates the user's debt based on the latest drawn index of the Hub asset.
   /// @param userPosition The user position.
   /// @param hub The address of the Hub.
   /// @param assetId The identifier of the asset.
@@ -120,7 +120,7 @@ library UserPositionUtils {
     return userPosition.getDebt(hub.getAssetDrawnIndex(assetId));
   }
 
-  /// @notice Calculates the user's debt at a given drawn index.
+  /// @notice Calculates the user's debt based on the specified drawn index of the Hub asset.
   /// @param userPosition The user position.
   /// @param drawnIndex The drawn index of the reserve, expressed in RAY.
   /// @return The user's drawn debt, expressed in asset units.

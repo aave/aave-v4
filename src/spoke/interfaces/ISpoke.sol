@@ -466,7 +466,7 @@ interface ISpoke is ISpokeBase, IAccessManaged, IIntentConsumer, IExtSload, IMul
   /// @dev Count includes reserves that are not currently active.
   function getReserveCount() external view returns (uint256);
 
-  /// @notice Returns the reserve identifier for a given assetId in the Hub.
+  /// @notice Returns the reserve identifier for a given asset in the Hub.
   /// @dev It reverts if no reserve is associated with the given assetId.
   /// @param hub The address of the Hub.
   /// @param assetId The identifier of the asset on the Hub.
@@ -560,6 +560,5 @@ interface ISpoke is ISpokeBase, IAccessManaged, IIntentConsumer, IExtSload, IMul
   function ORACLE() external view returns (address);
 
   /// @notice Returns the maximum allowed number of collateral and borrow reserves per user (each counted separately).
-  /// @dev A sentinel value of `type(uint16).max` signifies that the limit is disabled.
   function MAX_USER_RESERVES_LIMIT() external view returns (uint16);
 }
