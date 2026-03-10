@@ -620,8 +620,7 @@ library LiquidationLogic {
         collateralRemaining.toValue({
           decimals: params.collateralAssetDecimals,
           price: params.collateralAssetPrice
-        }) <
-        DUST_LIQUIDATION_THRESHOLD;
+        }) < DUST_LIQUIDATION_THRESHOLD;
     }
 
     // debt is fully liquidated if and only if all drawn shares are liquidated
@@ -709,8 +708,7 @@ library LiquidationLogic {
   function _calculateCollateralToLiquidate(
     CalculateCollateralToLiquidateParams memory params
   ) internal view returns (uint256) {
-    uint256 debtRayToLiquidate = params.drawnSharesToLiquidate *
-      params.drawnIndex +
+    uint256 debtRayToLiquidate = params.drawnSharesToLiquidate * params.drawnIndex +
       params.premiumDebtRayToLiquidate;
 
     uint256 collateralToLiquidate = Math.mulDiv(
@@ -775,15 +773,14 @@ library LiquidationLogic {
       drawnSharesToLiquidate = drawnSharesToTarget.min(drawnSharesToCover).min(params.drawnShares);
     }
 
-    uint256 debtRayRemaining = (params.drawnShares - drawnSharesToLiquidate) *
-      params.drawnIndex +
+    uint256 debtRayRemaining = (params.drawnShares - drawnSharesToLiquidate) * params.drawnIndex +
       params.premiumDebtRay -
       premiumDebtRayToLiquidate;
 
     // debt is fully liquidated if and only if all drawn shares are liquidated (premium debt is always liquidated first)
     bool leavesDebtDust = (drawnSharesToLiquidate < params.drawnShares) &&
       debtRayRemaining.toValue({decimals: params.debtAssetDecimals, price: params.debtAssetPrice}) <
-      DUST_LIQUIDATION_THRESHOLD.toRay();
+        DUST_LIQUIDATION_THRESHOLD.toRay();
 
     if (leavesDebtDust) {
       // target health factor is bypassed to prevent leaving dust
