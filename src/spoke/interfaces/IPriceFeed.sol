@@ -13,6 +13,6 @@ interface IPriceFeed {
   function description() external view returns (string memory);
 
   /// @notice Returns the latest price answer.
-  /// @return The latest price answer, expressed in the same currency as the feed.
+  /// @return The latest price answer, with `decimals` precision.
   function latestAnswer() external view returns (int256);
 }
