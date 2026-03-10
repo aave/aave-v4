@@ -637,14 +637,14 @@ abstract contract Spoke is
   }
 
   /// @inheritdoc ISpoke
-  function calculateLiquidationBonus(
+  function getLiquidationBonus(
     uint256 reserveId,
     address user,
     uint256 healthFactor
   ) external view returns (uint256) {
     _reserves.get(reserveId);
     return
-      LiquidationLogic.calculateLiquidationBonus({
+      LiquidationLogic.getLiquidationBonus({
         healthFactorForMaxBonus: _liquidationConfig.healthFactorForMaxBonus,
         liquidationBonusFactor: _liquidationConfig.liquidationBonusFactor,
         healthFactor: healthFactor,

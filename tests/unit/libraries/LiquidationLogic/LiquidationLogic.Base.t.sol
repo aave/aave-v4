@@ -334,7 +334,7 @@ contract LiquidationLogicBaseTest is SpokeBase {
   function _getCalculateDebtToLiquidateParams(
     LiquidationLogic.CalculateLiquidationAmountsParams memory params
   ) internal pure returns (LiquidationLogic.CalculateDebtToLiquidateParams memory) {
-    uint256 liquidationBonus = LiquidationLogic.calculateLiquidationBonus({
+    uint256 liquidationBonus = LiquidationLogic.getLiquidationBonus({
       healthFactorForMaxBonus: params.healthFactorForMaxBonus,
       liquidationBonusFactor: params.liquidationBonusFactor,
       healthFactor: params.healthFactor,

@@ -324,7 +324,7 @@ contract Hub is IHub, AccessManaged {
     uint256 assetId,
     uint256 drawnAmount,
     PremiumDelta calldata premiumDelta
-  ) external returns (uint256) {
+  ) external returns (uint256, uint256) {
     Asset storage asset = _assets[assetId];
     SpokeData storage spoke = _spokes[assetId][msg.sender];
 
@@ -345,7 +345,7 @@ contract Hub is IHub, AccessManaged {
 
     emit ReportDeficit(assetId, msg.sender, drawnShares, premiumDelta, deficitAmountRay);
 
-    return drawnShares;
+    return (drawnShares, deficitAmountRay.fromRayUp());
   }
 
   /// @inheritdoc IHub

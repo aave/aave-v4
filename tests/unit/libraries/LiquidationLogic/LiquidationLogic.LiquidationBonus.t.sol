@@ -9,7 +9,7 @@ contract LiquidationLogicLiquidationBonusTest is LiquidationLogicBaseTest {
   using SafeCast for uint256;
 
   function test_calculateLiquidationBonus_MinBonusDueToRounding() public view {
-    uint256 liquidationBonus = liquidationLogicWrapper.calculateLiquidationBonus({
+    uint256 liquidationBonus = liquidationLogicWrapper.getLiquidationBonus({
       healthFactorForMaxBonus: 0.8e18,
       liquidationBonusFactor: 50_00,
       healthFactor: 1e18 - 1,
@@ -19,7 +19,7 @@ contract LiquidationLogicLiquidationBonusTest is LiquidationLogicBaseTest {
   }
 
   function test_calculateLiquidationBonus_PartialBonus() public view {
-    uint256 liquidationBonus = liquidationLogicWrapper.calculateLiquidationBonus({
+    uint256 liquidationBonus = liquidationLogicWrapper.getLiquidationBonus({
       healthFactorForMaxBonus: 0.8e18,
       liquidationBonusFactor: 50_00,
       healthFactor: 0.96e18,
@@ -41,7 +41,7 @@ contract LiquidationLogicLiquidationBonusTest is LiquidationLogicBaseTest {
       maxLiquidationBonus
     );
     healthFactor = bound(healthFactor, 0, healthFactorForMaxBonus);
-    uint256 liquidationBonus = liquidationLogicWrapper.calculateLiquidationBonus({
+    uint256 liquidationBonus = liquidationLogicWrapper.getLiquidationBonus({
       healthFactorForMaxBonus: healthFactorForMaxBonus,
       liquidationBonusFactor: liquidationBonusFactor,
       healthFactor: healthFactor,
@@ -49,7 +49,7 @@ contract LiquidationLogicLiquidationBonusTest is LiquidationLogicBaseTest {
     });
     assertEq(liquidationBonus, maxLiquidationBonus);
     healthFactor = healthFactorForMaxBonus;
-    liquidationBonus = liquidationLogicWrapper.calculateLiquidationBonus({
+    liquidationBonus = liquidationLogicWrapper.getLiquidationBonus({
       healthFactorForMaxBonus: healthFactorForMaxBonus,
       liquidationBonusFactor: liquidationBonusFactor,
       healthFactor: healthFactor,
@@ -71,7 +71,7 @@ contract LiquidationLogicLiquidationBonusTest is LiquidationLogicBaseTest {
       maxLiquidationBonus
     );
     liquidationBonusFactor = PercentageMath.PERCENTAGE_FACTOR;
-    uint256 liquidationBonus = liquidationLogicWrapper.calculateLiquidationBonus({
+    uint256 liquidationBonus = liquidationLogicWrapper.getLiquidationBonus({
       healthFactorForMaxBonus: healthFactorForMaxBonus,
       liquidationBonusFactor: liquidationBonusFactor,
       healthFactor: healthFactor,

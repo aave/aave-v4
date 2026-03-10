@@ -310,7 +310,7 @@ library LiquidationLogic {
   /// @param healthFactor The health factor.
   /// @param maxLiquidationBonus The max liquidation bonus.
   /// @return The liquidation bonus.
-  function calculateLiquidationBonus(
+  function getLiquidationBonus(
     uint256 healthFactorForMaxBonus,
     uint256 liquidationBonusFactor,
     uint256 healthFactor,
@@ -567,7 +567,7 @@ library LiquidationLogic {
     uint256 collateralAssetUnit = MathUtils.uncheckedExp(10, params.collateralAssetDecimals);
     uint256 debtAssetUnit = MathUtils.uncheckedExp(10, params.debtAssetDecimals);
 
-    uint256 liquidationBonus = calculateLiquidationBonus({
+    uint256 liquidationBonus = getLiquidationBonus({
       healthFactorForMaxBonus: params.healthFactorForMaxBonus,
       liquidationBonusFactor: params.liquidationBonusFactor,
       healthFactor: params.healthFactor,
@@ -736,7 +736,7 @@ library LiquidationLogic {
   function _calculateDebtToLiquidate(
     CalculateDebtToLiquidateParams memory params
   ) internal pure returns (uint256, uint256) {
-    uint256 debtRayToTarget = _calculateDebtToTargetHealthFactorRay(
+    uint256 debtRayToTarget = _calculateDebtToTargetHealthFactor(
       CalculateDebtToTargetHealthFactorParams({
         totalDebtValueRay: params.totalDebtValueRay,
         debtAssetUnit: params.debtAssetUnit,
@@ -793,7 +793,7 @@ library LiquidationLogic {
 
   /// @notice Calculates the amount of debt needed to be liquidated to restore a position to the target health factor.
   /// @return The amount of debt needed to be liquidated to restore user to the target health factor, expressed in units of debt asset and scaled by RAY.
-  function _calculateDebtToTargetHealthFactorRay(
+  function _calculateDebtToTargetHealthFactor(
     CalculateDebtToTargetHealthFactorParams memory params
   ) internal pure returns (uint256) {
     // rounding direction has no effect on the result, as there is no precision loss in this calculation.

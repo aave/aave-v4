@@ -17,7 +17,6 @@ contract HubConfigurator is AccessManaged, IHubConfigurator {
 
   /// @dev Constructor.
   /// @param authority_ The address of the authority contract which manages permissions.
-  /// @notice Reverts if the authority is the zero address.
   constructor(address authority_) AccessManaged(authority_) {
     require(authority_ != address(0), InvalidAddress());
   }

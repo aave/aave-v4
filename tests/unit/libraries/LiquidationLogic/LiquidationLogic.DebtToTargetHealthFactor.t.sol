@@ -17,14 +17,14 @@ contract LiquidationLogicDebtToTargetHealthFactorTest is LiquidationLogicBaseTes
   }
 
   /// function does not revert when input is bounded properly
-  function test_calculateDebtToTargetHealthFactorRay_fuzz_NoRevert(
+  function test_calculateDebtToTargetHealthFactor_fuzz_NoRevert(
     LiquidationLogic.CalculateDebtToTargetHealthFactorParams memory params
   ) public {
     liquidationLogicWrapper.calculateDebtToTargetHealthFactorRay(_bound(params));
   }
 
   /// if debtAssetPrice == 0, then function reverts (should not happen in practice)
-  function test_calculateDebtToTargetHealthFactorRay_fuzz_revertsWith_DivisionByZero_ZeroAssetPrice(
+  function test_calculateDebtToTargetHealthFactor_fuzz_revertsWith_DivisionByZero_ZeroAssetPrice(
     LiquidationLogic.CalculateDebtToTargetHealthFactorParams memory params
   ) public {
     params = _bound(params);
@@ -34,7 +34,7 @@ contract LiquidationLogicDebtToTargetHealthFactorTest is LiquidationLogicBaseTes
   }
 
   /// if health factor == target health factor, then result is 0
-  function test_calculateDebtToTargetHealthFactorRay_HealthFactorEqualsTargetHealthFactor(
+  function test_calculateDebtToTargetHealthFactor_HealthFactorEqualsTargetHealthFactor(
     LiquidationLogic.CalculateDebtToTargetHealthFactorParams memory params
   ) public {
     params = _bound(params);
@@ -43,7 +43,7 @@ contract LiquidationLogicDebtToTargetHealthFactorTest is LiquidationLogicBaseTes
   }
 
   /// if target health factor is less than health factor, then function reverts (should not happen in practice)
-  function test_calculateDebtToTargetHealthFactorRay_revertsWith_ArithmeticError_TargetHealthFactorLessThanHealthFactor(
+  function test_calculateDebtToTargetHealthFactor_revertsWith_ArithmeticError_TargetHealthFactorLessThanHealthFactor(
     LiquidationLogic.CalculateDebtToTargetHealthFactorParams memory params
   ) public {
     params = _bound(params);
@@ -52,7 +52,7 @@ contract LiquidationLogicDebtToTargetHealthFactorTest is LiquidationLogicBaseTes
     liquidationLogicWrapper.calculateDebtToTargetHealthFactorRay(params);
   }
 
-  function test_calculateDebtToTargetHealthFactorRay_UnitPrice() public view {
+  function test_calculateDebtToTargetHealthFactor_UnitPrice() public view {
     for (uint256 i = 0; i < assetUnitList.length; i++) {
       uint256 assetUnit = assetUnitList[i];
       uint256 debtToTarget = liquidationLogicWrapper.calculateDebtToTargetHealthFactorRay(
@@ -73,7 +73,7 @@ contract LiquidationLogicDebtToTargetHealthFactorTest is LiquidationLogicBaseTes
     }
   }
 
-  function test_calculateDebtToTargetHealthFactorRay_NoPrecisionLoss() public view {
+  function test_calculateDebtToTargetHealthFactor_NoPrecisionLoss() public view {
     for (uint256 i = 0; i < assetUnitList.length; i++) {
       uint256 assetUnit = assetUnitList[i];
       uint256 debtToTarget = liquidationLogicWrapper.calculateDebtToTargetHealthFactorRay(
@@ -94,7 +94,7 @@ contract LiquidationLogicDebtToTargetHealthFactorTest is LiquidationLogicBaseTes
     }
   }
 
-  function test_calculateDebtToTargetHealthFactorRay_PrecisionLoss() public view {
+  function test_calculateDebtToTargetHealthFactor_PrecisionLoss() public view {
     LiquidationLogic.CalculateDebtToTargetHealthFactorParams memory params = LiquidationLogic
       .CalculateDebtToTargetHealthFactorParams({
         totalDebtValueRay: 10_000e26 * WadRayMath.RAY,

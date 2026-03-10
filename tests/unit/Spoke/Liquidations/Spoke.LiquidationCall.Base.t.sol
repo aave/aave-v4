@@ -110,7 +110,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
     try liquidationLogicWrapper.calculateLiquidationAmounts(params) returns (
       LiquidationLogic.LiquidationAmounts memory
     ) {} catch {
-      uint256 liquidationBonus = spoke.calculateLiquidationBonus(
+      uint256 liquidationBonus = spoke.getLiquidationBonus(
         collateralReserveId,
         user,
         spoke.getUserAccountData(user).healthFactor
@@ -158,7 +158,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
             spoke.getUserPosition(collateralReserveId, user).dynamicConfigKey
           )
           .collateralFactor,
-        liquidationBonus: spoke.calculateLiquidationBonus(
+        liquidationBonus: spoke.getLiquidationBonus(
           collateralReserveId,
           user,
           userAccountData.healthFactor
@@ -686,7 +686,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
         )
       );
 
-    uint256 liquidationBonus = params.spoke.calculateLiquidationBonus(
+    uint256 liquidationBonus = params.spoke.getLiquidationBonus(
       params.collateralReserveId,
       params.user,
       userAccountDataBefore.healthFactor

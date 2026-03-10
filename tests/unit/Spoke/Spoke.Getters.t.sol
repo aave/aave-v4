@@ -117,7 +117,7 @@ contract SpokeGettersTest is SpokeBase {
   ) public {
     reserveId = bound(reserveId, 0, spoke.getReserveCount() - 1);
     healthFactor = bound(healthFactor, 0, HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
-    uint256 liqBonus = spoke.calculateLiquidationBonus(reserveId, bob, healthFactor);
+    uint256 liqBonus = spoke.getLiquidationBonus(reserveId, bob, healthFactor);
 
     _config = spoke.getLiquidationConfig();
     assertEq(
@@ -131,7 +131,7 @@ contract SpokeGettersTest is SpokeBase {
 
     assertEq(
       liqBonus,
-      LiquidationLogic.calculateLiquidationBonus({
+      LiquidationLogic.getLiquidationBonus({
         healthFactorForMaxBonus: 0,
         liquidationBonusFactor: 0,
         healthFactor: healthFactor,
@@ -173,8 +173,8 @@ contract SpokeGettersTest is SpokeBase {
     _config = spoke.getLiquidationConfig();
 
     assertEq(
-      spoke.calculateLiquidationBonus(reserveId, bob, healthFactor),
-      LiquidationLogic.calculateLiquidationBonus({
+      spoke.getLiquidationBonus(reserveId, bob, healthFactor),
+      LiquidationLogic.getLiquidationBonus({
         healthFactorForMaxBonus: healthFactorForMaxBonus,
         liquidationBonusFactor: liquidationBonusFactor,
         healthFactor: healthFactor,
