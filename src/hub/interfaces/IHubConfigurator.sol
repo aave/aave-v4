@@ -17,7 +17,7 @@ interface IHubConfigurator {
   /// @param hub The address of the Hub.
   /// @param underlying The address of the underlying asset.
   /// @param feeReceiver The address of the fee receiver Spoke.
-  /// @param liquidityFee The liquidity fee of the asset, in BPS.
+  /// @param liquidityFee The liquidity fee of the asset, expressed in BPS.
   /// @param irStrategy The address of the interest rate strategy contract.
   /// @param irData The interest rate data to apply to the given asset, encoded in bytes.
   /// @return The unique identifier of the added asset.
@@ -36,7 +36,7 @@ interface IHubConfigurator {
   /// @param underlying The address of the underlying asset.
   /// @param decimals The number of decimals of the asset.
   /// @param feeReceiver The address of the fee receiver Spoke.
-  /// @param liquidityFee The liquidity fee of the asset, in BPS.
+  /// @param liquidityFee The liquidity fee of the asset, expressed in BPS.
   /// @param irStrategy The address of the interest rate strategy contract.
   /// @param irData The interest rate data to apply to the given asset, encoded in bytes.
   /// @return The unique identifier of the added asset.
