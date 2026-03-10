@@ -164,14 +164,13 @@ interface IAccessManagerEnumerable is IAccessManager {
     uint256 end
   ) external view returns (bytes4[] memory);
 
+  /// @notice Returns the total number of role labels.
+  function getRoleLabelCount() external view returns (uint256);
+
   /// @notice Returns the label at a specified index.
   /// @param index The index in the labeled role list.
   /// @return The label at the index.
   function getRoleLabelAt(uint256 index) external view returns (string memory);
-
-  /// @notice Returns the total number of role labels.
-  /// @return The number of role labels.
-  function getRoleLabelCount() external view returns (uint256);
 
   /// @notice Returns the list of role labels between the specified indexes.
   /// @param start The starting index for the labeled role list.
