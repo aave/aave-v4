@@ -532,7 +532,7 @@ interface ISpoke is ISpokeBase, IAccessManaged, IIntentConsumer, IExtSload, IMul
   /// @param user The address of the user.
   /// @param healthFactor The health factor of the user, expressed in WAD.
   /// @return The liquidation bonus for the user, expressed in BPS.
-  function calculateLiquidationBonus(
+  function getLiquidationBonus(
     uint256 reserveId,
     address user,
     uint256 healthFactor
