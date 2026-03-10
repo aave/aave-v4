@@ -192,7 +192,7 @@ contract TakerPositionManager is ITakerPositionManager, PositionManagerBase {
     // Simply decreasing the allowance by the input `amount` is not ideal for shares-based
     // positions. Due to rounding in supply-side SharesMath, the actual decrease in the user's
     // position value can differ slightly from the input `amount`. To handle this, the allowance
-    // consumption is based on the before/after delta of `previewAddByShares`, and capped at
+    // consumption is based on the before/after delta of `getUserSuppliedAssets`, and capped at
     // `currentAllowance` to prevent underflow from rounding.
     if (currentAllowance != type(uint256).max) {
       uint256 suppliedAssetsAfter = ISpokeBase(spoke).getUserSuppliedAssets(reserveId, onBehalfOf);
@@ -242,7 +242,7 @@ contract TakerPositionManager is ITakerPositionManager, PositionManagerBase {
     // Simply decreasing the allowance by the input `amount` is not ideal for shares-based
     // debt. Due to rounding, the actual increase in the user's debt can differ slightly from
     // the input `amount`. To handle this, the allowance consumption is based on the before/after
-    // delta of `previewRestoreByShares`, and capped at `currentAllowance` to prevent underflow
+    // delta of `getUserDrawnDebt.drawnAssets`, and capped at `currentAllowance` to prevent underflow
     // from rounding.
     if (currentAllowance != type(uint256).max) {
       // We only need drawnAssets to calculate the corrected amount, so it's sufficient to check the position
