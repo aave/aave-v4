@@ -23,7 +23,7 @@ contract SpokeMultipleHubBase is SpokeBase {
   IAssetInterestRateStrategy.InterestRateData internal irData =
     IAssetInterestRateStrategy.InterestRateData({
       optimalUsageRatio: 90_00, // 90.00%
-      baseBorrowRate: 5_00, // 5.00%
+      baseDrawnRate: 5_00, // 5.00%
       rateGrowthBeforeOptimal: 5_00, // 5.00%
       rateGrowthAfterOptimal: 5_00 // 5.00%
     });

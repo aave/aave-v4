@@ -1690,7 +1690,7 @@ contract SpokeRepayTest is SpokeBase {
     // Bob supply weth
     Utils.supplyCollateral(spoke1, _wethReserveId(spoke1), bob, wethSupplyAmount, bob);
 
-    // Alice supply dai such that usage ratio after bob borrows is ~45%, borrow rate ~7.5%
+    // Alice supply dai such that usage ratio after bob borrows is ~45%, drawn rate ~7.5%
     Utils.supply(spoke1, _daiReserveId(spoke1), alice, borrowAmount, alice);
 
     uint256 expectedDrawnShares = hub1.previewRestoreByAssets(daiAssetId, borrowAmount);

@@ -10,13 +10,13 @@ import {
 
 /// @title AssetInterestRateStrategy
 /// @author Aave Labs
-/// @notice Manages the optimal-usage-based interest rate strategy for an asset.
+/// @notice Manages the optimal-usage-based drawn interest rate strategy for an asset.
 /// @dev Strategies are Hub-specific, due to the usage of asset identifier as index of the `_interestRateData` mapping.
 contract AssetInterestRateStrategy is IAssetInterestRateStrategy {
   using WadRayMath for *;
 
   /// @inheritdoc IAssetInterestRateStrategy
-  uint256 public constant MAX_ALLOWED_BORROW_RATE = 1000_00;
+  uint256 public constant MAX_ALLOWED_DRAWN_RATE = 1000_00;
 
   /// @inheritdoc IAssetInterestRateStrategy
   uint256 public constant MIN_OPTIMAL_RATIO = 1_00;
@@ -27,7 +27,7 @@ contract AssetInterestRateStrategy is IAssetInterestRateStrategy {
   /// @inheritdoc IAssetInterestRateStrategy
   address public immutable HUB;
 
-  /// @dev Map of asset identifiers to their interest rate data.
+  /// @dev Map of asset identifiers to their drawn rate data.
   mapping(uint256 assetId => InterestRateData) internal _interestRateData;
 
   /// @dev Constructor.
@@ -39,7 +39,7 @@ contract AssetInterestRateStrategy is IAssetInterestRateStrategy {
 
   /// @notice Sets the interest rate parameters for a specified asset.
   /// @param assetId The identifier of the asset.
-  /// @param data The encoded parameters containing BPS data used to configure the interest rate of the asset.
+  /// @param data The encoded parameters containing BPS data used to configure the drawn rate of the asset.
   function setInterestRateData(uint256 assetId, bytes calldata data) external {
     require(HUB == msg.sender, OnlyHub());
     InterestRateData memory rateData = abi.decode(data, (InterestRateData));
@@ -53,11 +53,9 @@ contract AssetInterestRateStrategy is IAssetInterestRateStrategy {
       GrowthAfterOptimalMustBeGteGrowthBeforeOptimal()
     );
     require(
-      rateData.baseBorrowRate +
-        rateData.rateGrowthBeforeOptimal +
-        rateData.rateGrowthAfterOptimal <=
-        MAX_ALLOWED_BORROW_RATE,
-      InvalidMaxBorrowRate()
+      rateData.baseDrawnRate + rateData.rateGrowthBeforeOptimal + rateData.rateGrowthAfterOptimal <=
+        MAX_ALLOWED_DRAWN_RATE,
+      InvalidMaxDrawnRate()
     );
 
     _interestRateData[assetId] = rateData;
@@ -66,7 +64,7 @@ contract AssetInterestRateStrategy is IAssetInterestRateStrategy {
       HUB,
       assetId,
       rateData.optimalUsageRatio,
-      rateData.baseBorrowRate,
+      rateData.baseDrawnRate,
       rateData.rateGrowthBeforeOptimal,
       rateData.rateGrowthAfterOptimal
     );
@@ -83,8 +81,8 @@ contract AssetInterestRateStrategy is IAssetInterestRateStrategy {
   }
 
   /// @inheritdoc IAssetInterestRateStrategy
-  function getBaseBorrowRate(uint256 assetId) external view returns (uint256) {
-    return _interestRateData[assetId].baseBorrowRate;
+  function getBaseDrawnRate(uint256 assetId) external view returns (uint256) {
+    return _interestRateData[assetId].baseDrawnRate;
   }
 
   /// @inheritdoc IAssetInterestRateStrategy
@@ -98,9 +96,9 @@ contract AssetInterestRateStrategy is IAssetInterestRateStrategy {
   }
 
   /// @inheritdoc IAssetInterestRateStrategy
-  function getMaxBorrowRate(uint256 assetId) external view returns (uint256) {
+  function getMaxDrawnRate(uint256 assetId) external view returns (uint256) {
     return
-      _interestRateData[assetId].baseBorrowRate +
+      _interestRateData[assetId].baseDrawnRate +
       _interestRateData[assetId].rateGrowthBeforeOptimal +
       _interestRateData[assetId].rateGrowthAfterOptimal;
   }
@@ -116,22 +114,22 @@ contract AssetInterestRateStrategy is IAssetInterestRateStrategy {
     InterestRateData memory rateData = _interestRateData[assetId];
     require(rateData.optimalUsageRatio > 0, InterestRateDataNotSet(assetId));
 
-    uint256 currentBorrowRateRay = rateData.baseBorrowRate.bpsToRay();
+    uint256 currentDrawnRateRay = rateData.baseDrawnRate.bpsToRay();
     if (drawn == 0) {
-      return currentBorrowRateRay;
+      return currentDrawnRateRay;
     }
 
     uint256 usageRatioRay = drawn.rayDivUp(liquidity + drawn + swept);
     uint256 optimalUsageRatioRay = rateData.optimalUsageRatio.bpsToRay();
 
     if (usageRatioRay <= optimalUsageRatioRay) {
-      currentBorrowRateRay += rateData
+      currentDrawnRateRay += rateData
         .rateGrowthBeforeOptimal
         .bpsToRay()
         .rayMulUp(usageRatioRay)
         .rayDivUp(optimalUsageRatioRay);
     } else {
-      currentBorrowRateRay +=
+      currentDrawnRateRay +=
         rateData.rateGrowthBeforeOptimal.bpsToRay() +
         rateData
           .rateGrowthAfterOptimal
@@ -140,6 +138,6 @@ contract AssetInterestRateStrategy is IAssetInterestRateStrategy {
           .rayDivUp(WadRayMath.RAY - optimalUsageRatioRay);
     }
 
-    return currentBorrowRateRay;
+    return currentDrawnRateRay;
   }
 }
