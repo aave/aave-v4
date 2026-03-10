@@ -33,6 +33,7 @@ import {WETH9} from 'src/dependencies/weth/WETH9.sol';
 import {LibBit} from 'src/dependencies/solady/LibBit.sol';
 
 import {Initializable} from 'src/dependencies/openzeppelin-upgradeable/Initializable.sol';
+import {OwnableUpgradeable} from 'src/dependencies/openzeppelin-upgradeable/OwnableUpgradeable.sol';
 import {IERC1967} from 'src/dependencies/openzeppelin/IERC1967.sol';
 
 // shared
@@ -58,6 +59,7 @@ import {
 // spoke
 import {ISpoke, ISpokeBase} from 'src/spoke/interfaces/ISpoke.sol';
 import {TreasurySpoke, ITreasurySpoke} from 'src/spoke/TreasurySpoke.sol';
+import {TreasurySpokeInstance} from 'src/spoke/instances/TreasurySpokeInstance.sol';
 import {IPriceOracle} from 'src/spoke/interfaces/IPriceOracle.sol';
 import {IPriceFeed} from 'src/spoke/interfaces/IPriceFeed.sol';
 import {AaveOracle} from 'src/spoke/AaveOracle.sol';
@@ -115,6 +117,7 @@ import {MockNoncesKeyed} from 'tests/mocks/MockNoncesKeyed.sol';
 import {MockSpoke} from 'tests/mocks/MockSpoke.sol';
 import {MockERC1271Wallet} from 'tests/mocks/MockERC1271Wallet.sol';
 import {MockSpokeInstance} from 'tests/mocks/MockSpokeInstance.sol';
+import {MockTreasurySpokeInstance} from 'tests/mocks/MockTreasurySpokeInstance.sol';
 import {MockSkimSpoke} from 'tests/mocks/MockSkimSpoke.sol';
 import {MockReentrantCaller} from 'tests/mocks/MockReentrantCaller.sol';
 import {ISpokeInstance} from 'tests/mocks/ISpokeInstance.sol';
@@ -339,7 +342,14 @@ abstract contract Base is Test {
     (spoke1, oracle1) = _deploySpokeWithOracle(ADMIN, address(accessManager));
     (spoke2, oracle2) = _deploySpokeWithOracle(ADMIN, address(accessManager));
     (spoke3, oracle3) = _deploySpokeWithOracle(ADMIN, address(accessManager));
-    treasurySpoke = ITreasurySpoke(new TreasurySpoke(TREASURY_ADMIN, address(hub1)));
+    TreasurySpokeInstance treasurySpokeImpl = new TreasurySpokeInstance();
+    treasurySpoke = ITreasurySpoke(
+      DeployUtils.proxify(
+        address(treasurySpokeImpl),
+        ADMIN,
+        abi.encodeCall(TreasurySpokeInstance.initialize, (TREASURY_ADMIN))
+      )
+    );
     vm.stopPrank();
 
     vm.label(address(spoke1), 'spoke1');
@@ -2350,8 +2360,9 @@ abstract contract Base is Test {
     if (amount == 0) {
       return; // nothing to withdraw
     }
+    (address underlying, ) = hub.getAssetUnderlyingAndDecimals(assetId);
     vm.prank(TREASURY_ADMIN);
-    treasurySpoke.withdraw(assetId, amount, address(treasurySpoke));
+    treasurySpoke.withdraw(address(hub), underlying, amount);
   }
 
   function _assumeValidSupplier(address user) internal view {

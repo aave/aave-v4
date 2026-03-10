@@ -10,7 +10,7 @@ import {
 
 /// @title AssetInterestRateStrategy
 /// @author Aave Labs
-/// @notice Manages the optimal-usage-based drawn interest rate strategy for an asset.
+/// @notice Manages the optimal-usage-based interest rate strategy for an asset.
 /// @dev Strategies are Hub-specific, due to the usage of asset identifier as index of the `_interestRateData` mapping.
 contract AssetInterestRateStrategy is IAssetInterestRateStrategy {
   using WadRayMath for *;

@@ -211,6 +211,12 @@ interface IHubBase {
   /// @return The amount of assets converted from shares amount.
   function previewRestoreByShares(uint256 assetId, uint256 shares) external view returns (uint256);
 
+  /// @notice Returns the asset identifier for the specified underlying asset.
+  /// @dev Reverts with `AssetNotListed` if the underlying is not listed.
+  /// @param underlying The address of the underlying asset.
+  /// @return The `assetId` of the underlying asset.
+  function getAssetId(address underlying) external view returns (uint256);
+
   /// @notice Returns the underlying address and decimals of the specified asset.
   /// @param assetId The identifier of the asset.
   /// @return The underlying address of the asset.
