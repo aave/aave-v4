@@ -2807,15 +2807,7 @@ abstract contract Base is Test {
     uint256 deficit,
     uint256 swept
   ) internal {
-    _mockDrawnRateBps(
-      address(irStrategy),
-      drawnRateBps,
-      assetId,
-      liquidity,
-      drawn,
-      deficit,
-      swept
-    );
+    _mockDrawnRateBps(address(irStrategy), drawnRateBps, assetId, liquidity, drawn, deficit, swept);
   }
 
   function _mockDrawnRateBps(

@@ -115,15 +115,7 @@ contract HubConfiguratorTest is HubBase {
 
     vm.expectRevert(IHub.InvalidAddress.selector, address(hub1));
     vm.prank(HUB_CONFIGURATOR);
-    _addAsset(
-      true,
-      address(0),
-      decimals,
-      feeReceiver,
-      liquidityFee,
-      irStrategy,
-      _encodedIrData
-    );
+    _addAsset(true, address(0), decimals, feeReceiver, liquidityFee, irStrategy, _encodedIrData);
   }
 
   function test_addAsset_revertsWith_InvalidAddress_irStrategy() public {
@@ -156,15 +148,7 @@ contract HubConfiguratorTest is HubBase {
 
     vm.expectRevert(IHub.InvalidLiquidityFee.selector, address(hub1));
     vm.prank(HUB_CONFIGURATOR);
-    _addAsset(
-      false,
-      underlying,
-      decimals,
-      feeReceiver,
-      liquidityFee,
-      irStrategy,
-      _encodedIrData
-    );
+    _addAsset(false, underlying, decimals, feeReceiver, liquidityFee, irStrategy, _encodedIrData);
   }
 
   function test_addAsset_fuzz(
@@ -230,10 +214,7 @@ contract HubConfiguratorTest is HubBase {
 
     vm.expectCall(
       address(hub1),
-      abi.encodeCall(
-        IHub.addAsset,
-        (underlying, decimals, feeReceiver, irStrategy, _encodedIrData)
-      )
+      abi.encodeCall(IHub.addAsset, (underlying, decimals, feeReceiver, irStrategy, _encodedIrData))
     );
 
     vm.expectCall(
@@ -606,12 +587,7 @@ contract HubConfiguratorTest is HubBase {
     );
 
     vm.prank(HUB_CONFIGURATOR);
-    hubConfigurator.updateInterestRateStrategy(
-      address(hub1),
-      _assetId,
-      irStrategy,
-      _encodedIrData
-    );
+    hubConfigurator.updateInterestRateStrategy(address(hub1), _assetId, irStrategy, _encodedIrData);
 
     assertEq(hub1.getAssetConfig(_assetId), expectedConfig);
   }
@@ -630,12 +606,7 @@ contract HubConfiguratorTest is HubBase {
 
     vm.expectRevert();
     vm.prank(HUB_CONFIGURATOR);
-    hubConfigurator.updateInterestRateStrategy(
-      address(hub1),
-      _assetId,
-      irStrategy,
-      _encodedIrData
-    );
+    hubConfigurator.updateInterestRateStrategy(address(hub1), _assetId, irStrategy, _encodedIrData);
   }
 
   function test_updateInterestRateStrategy_revertsWith_InvalidInterestRateStrategy() public {

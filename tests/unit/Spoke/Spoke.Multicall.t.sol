@@ -123,13 +123,7 @@ contract SpokeMulticall is SpokeBase {
       })
     );
     vm.prank(HUB_ADMIN);
-    hub1.addAsset(
-      address(usda),
-      18,
-      address(treasurySpoke),
-      address(irStrategy),
-      encodedIrData
-    );
+    hub1.addAsset(address(usda), 18, address(treasurySpoke), address(irStrategy), encodedIrData);
     uint256 usdaAssetId = hub1.getAssetCount() - 1;
 
     Reserve memory usdzReserveExpected;

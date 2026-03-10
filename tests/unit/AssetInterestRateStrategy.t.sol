@@ -162,7 +162,10 @@ contract AssetInterestRateStrategyTest is Base {
   function test_calculateInterestRate_revertsWith_InterestRateDataNotSet() public {
     uint256 mockAssetId2 = uint256(keccak256('mockAssetId2'));
     vm.expectRevert(
-      abi.encodeWithSelector(IBasicInterestRateStrategy.InterestRateDataNotSet.selector, mockAssetId2)
+      abi.encodeWithSelector(
+        IBasicInterestRateStrategy.InterestRateDataNotSet.selector,
+        mockAssetId2
+      )
     );
     rateStrategy.calculateInterestRate({
       assetId: mockAssetId2,

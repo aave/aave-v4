@@ -118,15 +118,7 @@ contract HubConfigTest is HubBase {
       .toUint8();
 
     vm.expectRevert(IHub.InvalidAssetDecimals.selector, address(hub1));
-    Utils.addAsset(
-      hub1,
-      ADMIN,
-      underlying,
-      decimals,
-      feeReceiver,
-      irStrategy,
-      encodedIrData
-    );
+    Utils.addAsset(hub1, ADMIN, underlying, decimals, feeReceiver, irStrategy, encodedIrData);
   }
 
   function test_addAsset_fuzz_revertsWith_InvalidAssetDecimals_tooLow(
@@ -142,15 +134,7 @@ contract HubConfigTest is HubBase {
     decimals = bound(decimals, 0, Constants.MIN_ALLOWED_UNDERLYING_DECIMALS - 1).toUint8();
 
     vm.expectRevert(IHub.InvalidAssetDecimals.selector, address(hub1));
-    Utils.addAsset(
-      hub1,
-      ADMIN,
-      underlying,
-      decimals,
-      feeReceiver,
-      irStrategy,
-      encodedIrData
-    );
+    Utils.addAsset(hub1, ADMIN, underlying, decimals, feeReceiver, irStrategy, encodedIrData);
   }
 
   function test_addAsset_fuzz_revertsWith_InvalidAddress_underlying(
@@ -159,15 +143,7 @@ contract HubConfigTest is HubBase {
     address irStrategy
   ) public {
     vm.expectRevert(IHub.InvalidAddress.selector, address(hub1));
-    Utils.addAsset(
-      hub1,
-      ADMIN,
-      address(0),
-      decimals,
-      feeReceiver,
-      irStrategy,
-      encodedIrData
-    );
+    Utils.addAsset(hub1, ADMIN, address(0), decimals, feeReceiver, irStrategy, encodedIrData);
   }
 
   function test_addAsset_fuzz_revertsWith_InvalidAddress_feeReceiver(

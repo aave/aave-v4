@@ -35,23 +35,11 @@ contract HubAccessTest is HubBase {
     vm.expectRevert(
       abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, address(this))
     );
-    hub1.addAsset(
-      address(tokenA),
-      18,
-      address(treasurySpoke),
-      address(irStrategy),
-      encodedIrData
-    );
+    hub1.addAsset(address(tokenA), 18, address(treasurySpoke), address(irStrategy), encodedIrData);
 
     // Hub Admin can add assets to the hub
     vm.prank(HUB_ADMIN);
-    hub1.addAsset(
-      address(tokenA),
-      18,
-      address(treasurySpoke),
-      address(irStrategy),
-      encodedIrData
-    );
+    hub1.addAsset(address(tokenA), 18, address(treasurySpoke), address(irStrategy), encodedIrData);
     uint256 assetAId = hub1.getAssetCount() - 1; // Asset A Id
 
     // Only Hub Admin can update asset config
