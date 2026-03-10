@@ -42,6 +42,46 @@ def rayMulDown(a, b):
     return (a * b) / RAY
 
 
+def rayDivUp(a, b):
+    return (a * RAY + b - 1) / b
+
+
+def rayDivDown(a, b):
+    return (a * RAY) / b
+
+
+def toDrawnSharesUp(assets, drawnIndex):
+    return rayDivUp(assets, drawnIndex)
+
+
+def toDrawnSharesDown(assets, drawnIndex):
+    return rayDivDown(assets, drawnIndex)
+
+
+def toDrawnAssetsUp(shares, drawnIndex):
+    return rayMulUp(shares, drawnIndex)
+
+
+def toDrawnAssetsDown(shares, drawnIndex):
+    return rayMulDown(shares, drawnIndex)
+
+
+def previewDrawByAssets(assets, drawnIndex):
+    return toDrawnSharesUp(assets, drawnIndex)
+
+
+def previewDrawByShares(shares, drawnIndex):
+    return toDrawnAssetsDown(shares, drawnIndex)
+
+
+def previewRestoreByAssets(assets, drawnIndex):
+    return toDrawnSharesDown(assets, drawnIndex)
+
+
+def previewRestoreByShares(shares, drawnIndex):
+    return toDrawnAssetsUp(shares, drawnIndex)
+
+
 def fromRayDown(a):
     return a / RAY
 

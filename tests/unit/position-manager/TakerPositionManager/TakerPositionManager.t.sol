@@ -480,7 +480,7 @@ contract TakerPositionManagerTest is TakerPositionManagerBaseTest {
 
     uint256 expectedBorrowShares = hub1.previewDrawByAssets(daiAssetId, borrowAmount);
 
-    (uint256 drawnAssetsBefore, ) = spoke1.getUserDebt(_daiReserveId(spoke1), alice);
+    uint256 totalDebtBefore = spoke1.getUserTotalDebt(_daiReserveId(spoke1), alice);
 
     vm.expectEmit(address(spoke1));
     emit ISpokeBase.Borrow(
@@ -499,12 +499,9 @@ contract TakerPositionManagerTest is TakerPositionManagerBaseTest {
       alice
     );
 
-    (uint256 userDrawnDebt, uint256 userPremiumDebt) = spoke1.getUserDebt(
-      _daiReserveId(spoke1),
-      alice
-    );
+    uint256 totalDebtAfter = spoke1.getUserTotalDebt(_daiReserveId(spoke1), alice);
 
-    uint256 correctedBorrowAmount = userDrawnDebt - drawnAssetsBefore;
+    uint256 correctedBorrowAmount = totalDebtAfter - totalDebtBefore;
     uint256 expectedBorrowAllowance;
     if (approveBorrowAmount >= correctedBorrowAmount) {
       expectedBorrowAllowance = approveBorrowAmount - correctedBorrowAmount;
@@ -521,11 +518,69 @@ contract TakerPositionManagerTest is TakerPositionManagerBaseTest {
     assertEq(returnValues.amount, borrowAmount);
     assertEq(returnValues.shares, expectedBorrowShares);
 
-    assertEq(userDrawnDebt + userPremiumDebt, borrowAmount);
+    assertEq(spoke1.getUserTotalDebt(_daiReserveId(spoke1), alice), borrowAmount);
     assertEq(tokenList.dai.balanceOf(address(hub1)), hubBalanceBefore - borrowAmount);
     assertEq(tokenList.dai.balanceOf(address(alice)), userBalanceBefore);
     assertEq(tokenList.dai.balanceOf(address(bob)), callerBalanceBefore + borrowAmount);
     assertEq(tokenList.dai.allowance(address(positionManager), address(hub1)), 0);
+    assertEq(
+      positionManager.borrowAllowance(address(spoke1), _daiReserveId(spoke1), alice, bob),
+      expectedBorrowAllowance
+    );
+  }
+
+  function test_borrowOnBehalfOf_fuzz_withInterest(
+    uint256 supplyAmount,
+    uint256 initialBorrowAmount,
+    uint256 borrowAmount
+  ) public {
+    supplyAmount = bound(supplyAmount, 2, mintAmount_DAI / 2);
+    initialBorrowAmount = bound(initialBorrowAmount, 1, supplyAmount / 2);
+
+    Utils.supplyCollateral(spoke1, _daiReserveId(spoke1), alice, supplyAmount, alice);
+    Utils.supplyCollateral(spoke1, _daiReserveId(spoke1), bob, supplyAmount, bob);
+
+    Utils.borrow(spoke1, _daiReserveId(spoke1), bob, initialBorrowAmount, bob);
+
+    skip(322 days);
+
+    uint256 availableLiquidity = tokenList.dai.balanceOf(address(hub1));
+    uint256 maxBorrow = spoke1.getUserSuppliedAssets(_daiReserveId(spoke1), alice) / 10;
+    if (availableLiquidity / 2 < maxBorrow) maxBorrow = availableLiquidity / 2;
+    vm.assume(maxBorrow > 0);
+    borrowAmount = bound(borrowAmount, 1, maxBorrow);
+
+    vm.prank(alice);
+    positionManager.approveBorrow(address(spoke1), _daiReserveId(spoke1), bob, borrowAmount * 10);
+
+    uint256 totalDebtBefore = spoke1.getUserTotalDebt(_daiReserveId(spoke1), alice);
+    uint256 userBalanceBefore = tokenList.dai.balanceOf(alice);
+    uint256 callerBalanceBefore = tokenList.dai.balanceOf(bob);
+
+    vm.recordLogs();
+    vm.prank(bob);
+    (returnValues.shares, returnValues.amount) = positionManager.borrowOnBehalfOf(
+      address(spoke1),
+      _daiReserveId(spoke1),
+      borrowAmount,
+      alice
+    );
+
+    uint256 totalDebtAfter = spoke1.getUserTotalDebt(_daiReserveId(spoke1), alice);
+    uint256 correctedBorrowAmount = totalDebtAfter - totalDebtBefore;
+    uint256 expectedBorrowAllowance = borrowAmount * 10 - correctedBorrowAmount;
+
+    _assertBorrowApprovalEmitted(
+      address(spoke1),
+      _daiReserveId(spoke1),
+      alice,
+      bob,
+      expectedBorrowAllowance
+    );
+
+    assertEq(returnValues.amount, borrowAmount);
+    assertEq(tokenList.dai.balanceOf(alice), userBalanceBefore);
+    assertEq(tokenList.dai.balanceOf(bob), callerBalanceBefore + borrowAmount);
     assertEq(
       positionManager.borrowAllowance(address(spoke1), _daiReserveId(spoke1), alice, bob),
       expectedBorrowAllowance
