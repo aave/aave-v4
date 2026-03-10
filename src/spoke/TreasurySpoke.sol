@@ -27,7 +27,6 @@ abstract contract TreasurySpoke is ITreasurySpoke, Ownable2StepUpgradeable {
   ) external onlyOwner returns (uint256, uint256) {
     IHubBase targetHub = IHubBase(hub);
     uint256 assetId = targetHub.getAssetId(underlying);
-    IERC20(underlying).safeTransferFrom(msg.sender, hub, amount);
     uint256 shares = targetHub.add(assetId, amount);
 
     return (shares, amount);
