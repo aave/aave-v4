@@ -31,7 +31,7 @@ contract LiquidationLogicExecuteLiquidationTest is LiquidationLogicBaseTest {
     IHub collateralReserveHub = hub1;
     _mockSupplySharePrice(collateralReserveHub, usdxAssetId, 12_500.25e6, 10_000e6);
     (IHub debtReserveHub, ) = hub2Fixture();
-    _mockInterestRateBps(debtReserveHub.getAsset(wethAssetId).irStrategy, 5_00);
+    _mockDrawnRateBps(debtReserveHub.getAsset(wethAssetId).irStrategy, 5_00);
 
     // Mock params
     usdxReserveId = _usdxReserveId(spoke1);
