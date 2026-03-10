@@ -550,7 +550,6 @@ interface ISpoke is ISpokeBase, IAccessManaged, IIntentConsumer, IExtSload, IMul
   function isPositionManager(address user, address positionManager) external view returns (bool);
 
   /// @notice Returns the address of the external `LiquidationLogic` library.
-  /// @return The address of the library.
   function getLiquidationLogic() external pure returns (address);
 
   /// @notice Returns the type hash for the SetUserPositionManagers intent.

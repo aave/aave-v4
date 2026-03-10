@@ -349,7 +349,6 @@ interface IHub is IHubBase, IAccessManaged {
   function getAssetId(address underlying) external view returns (uint256);
 
   /// @notice Returns the number of listed assets.
-  /// @return The number of listed assets.
   function getAssetCount() external view returns (uint256);
 
   /// @notice Returns information regarding the specified asset.
@@ -381,7 +380,7 @@ interface IHub is IHubBase, IAccessManaged {
 
   /// @notice Returns the number of spokes listed for the specified asset.
   /// @param assetId The identifier of the asset.
-  /// @return The number of spokes.
+  /// @return The number of listed spokes.
   function getSpokeCount(uint256 assetId) external view returns (uint256);
 
   /// @notice Returns whether the spoke is listed for the specified asset.

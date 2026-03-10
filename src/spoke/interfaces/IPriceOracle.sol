@@ -11,11 +11,9 @@ interface IPriceOracle {
   error OnlySpoke();
 
   /// @notice Returns the address of the spoke.
-  /// @return The address of the spoke.
   function spoke() external view returns (address);
 
   /// @notice Returns the number of decimals used to return prices.
-  /// @return The number of decimals.
   function decimals() external view returns (uint8);
 
   /// @notice Returns the reserve price with `decimals` precision.

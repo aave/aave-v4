@@ -63,6 +63,5 @@ interface ITreasurySpoke is ISpokeBase {
   function getSuppliedShares(uint256 reserveId) external view returns (uint256);
 
   /// @notice Returns the interface of the associated Hub.
-  /// @return The HubBase interface.
   function HUB() external view returns (IHubBase);
 }
