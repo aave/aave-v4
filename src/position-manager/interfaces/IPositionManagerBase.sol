@@ -11,7 +11,7 @@ import {IRescuable} from 'src/interfaces/IRescuable.sol';
 /// @dev This base interface is not mandatory for position managers, it only provides optional convenience methods.
 interface IPositionManagerBase is IRescuable, IMulticall {
   /// @notice Emitted when a spoke's registration status is updated.
-  event SpokeRegisteration(address indexed spoke, bool registered);
+  event SpokeRegistration(address indexed spoke, bool registered);
 
   /// @notice Thrown when the specified address is invalid.
   error InvalidAddress();
