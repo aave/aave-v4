@@ -65,7 +65,7 @@ interface ITokenizationSpoke is IERC4626, IERC2612, IIntentConsumer {
     uint256 deadline;
   }
 
-  /// @notice Emitted to signal the immutable variables on the Tokenization Spoke.
+  /// @notice Emitted when the immutable variables of the TokenizationSpoke are set.
   /// @param hub The address of the Hub.
   /// @param assetId The identifier of the asset.
   event SetTokenizationSpokeImmutables(address indexed hub, uint256 indexed assetId);
