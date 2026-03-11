@@ -45,9 +45,6 @@ interface IAssetInterestRateStrategy is IBasicInterestRateStrategy {
   /// @notice Thrown when the max possible rate is greater than `MAX_ALLOWED_DRAWN_RATE`.
   error InvalidMaxDrawnRate();
 
-  /// @notice Thrown when growth after optimal is less than growth before optimal.
-  error GrowthAfterOptimalMustBeGteGrowthBeforeOptimal();
-
   /// @notice Thrown when the optimal usage ratio is less than `MIN_OPTIMAL_RATIO` or greater than `MAX_OPTIMAL_RATIO`.
   error InvalidOptimalUsageRatio();
 

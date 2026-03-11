@@ -25,12 +25,16 @@ abstract contract TreasurySpoke is ITreasurySpoke, Ownable2StepUpgradeable {
     address underlying,
     uint256 amount
   ) external onlyOwner returns (uint256, uint256) {
-    IHubBase targetHub = IHubBase(hub);
-    uint256 assetId = targetHub.getAssetId(underlying);
-    IERC20(underlying).safeTransferFrom(msg.sender, hub, amount);
-    uint256 shares = targetHub.add(assetId, amount);
+    return _supply({hub: hub, underlying: underlying, amount: amount, skim: false});
+  }
 
-    return (shares, amount);
+  /// @inheritdoc ITreasurySpoke
+  function supplySkimmed(
+    address hub,
+    address underlying,
+    uint256 amount
+  ) external onlyOwner returns (uint256, uint256) {
+    return _supply({hub: hub, underlying: underlying, amount: amount, skim: true});
   }
 
   /// @inheritdoc ITreasurySpoke
@@ -68,5 +72,24 @@ abstract contract TreasurySpoke is ITreasurySpoke, Ownable2StepUpgradeable {
     IHubBase targetHub = IHubBase(hub);
     uint256 assetId = targetHub.getAssetId(underlying);
     return targetHub.getSpokeAddedShares(assetId, address(this));
+  }
+
+  /// @dev Common Supply workflow. When `skim` is true, it avoids pulling tokens from the caller and intends
+  /// to skim or claim existing untracked liquidity on the `hub`.
+  function _supply(
+    address hub,
+    address underlying,
+    uint256 amount,
+    bool skim
+  ) internal returns (uint256, uint256) {
+    IHubBase targetHub = IHubBase(hub);
+    uint256 assetId = targetHub.getAssetId(underlying);
+
+    if (!skim) {
+      IERC20(underlying).safeTransferFrom(msg.sender, hub, amount);
+    }
+    uint256 shares = targetHub.add(assetId, amount);
+
+    return (shares, amount);
   }
 }
