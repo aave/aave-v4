@@ -57,7 +57,7 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
 
     TestReturnValues memory returnValues;
     vm.expectEmit(address(spoke1));
-    emit ISpokeBase.Repay(
+    emit ISpoke.Repay(
       _daiReserveId(spoke1),
       bob,
       bob,
@@ -370,7 +370,7 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
     TestReturnValues memory returnValues;
     vm.expectEmit(address(spoke1));
     // 0 drawn shares restored
-    emit ISpokeBase.Repay(_daiReserveId(spoke1), bob, bob, 0, repayAmount, expectedPremiumDelta);
+    emit ISpoke.Repay(_daiReserveId(spoke1), bob, bob, 0, repayAmount, expectedPremiumDelta);
     vm.prank(bob);
     (returnValues.shares, returnValues.amount) = spoke1.repay(
       _daiReserveId(spoke1),
@@ -492,7 +492,7 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
       );
 
       vm.expectEmit(address(spoke1));
-      emit ISpokeBase.Repay(
+      emit ISpoke.Repay(
         _daiReserveId(spoke1),
         bob,
         bob,
@@ -604,7 +604,7 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
 
     TestReturnValues memory returnValues;
     vm.expectEmit(address(spoke1));
-    emit ISpokeBase.Repay(
+    emit ISpoke.Repay(
       _daiReserveId(spoke1),
       bob,
       bob,

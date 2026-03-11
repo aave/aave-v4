@@ -178,7 +178,7 @@ contract HubBase is Base {
 
     deal(hub1.getAsset(assetId).underlying, alice, amount * 2);
     Utils.supplyCollateral(ISpoke(spoke), reserveId, alice, amount * 2, alice);
-    Utils.borrow(ISpokeBase(spoke), reserveId, alice, amount, alice);
+    Utils.borrow(ISpoke(spoke), reserveId, alice, amount, alice);
 
     skip(skipTime);
 

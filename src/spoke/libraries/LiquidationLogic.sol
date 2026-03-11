@@ -14,7 +14,7 @@ import {UserPositionUtils} from 'src/spoke/libraries/UserPositionUtils.sol';
 import {ReserveFlags, ReserveFlagsMap} from 'src/spoke/libraries/ReserveFlagsMap.sol';
 import {IHubBase} from 'src/hub/interfaces/IHubBase.sol';
 import {IAaveOracle} from 'src/spoke/interfaces/IAaveOracle.sol';
-import {ISpoke, ISpokeBase} from 'src/spoke/interfaces/ISpoke.sol';
+import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 
 /// @title LiquidationLogic library
 /// @author Aave Labs
@@ -423,7 +423,7 @@ library LiquidationLogic {
       })
     );
 
-    emit ISpokeBase.LiquidationCall({
+    emit ISpoke.LiquidationCall({
       collateralReserveId: params.collateralReserveId,
       debtReserveId: params.debtReserveId,
       user: params.user,

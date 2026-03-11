@@ -40,7 +40,7 @@ contract GiverPositionManagerTest is SpokeBase {
     uint256 callerSuppliedAmountBefore = spoke1.getUserSuppliedAssets(_daiReserveId(spoke1), bob);
 
     vm.expectEmit(address(spoke1));
-    emit ISpokeBase.Supply(
+    emit ISpoke.Supply(
       _daiReserveId(spoke1),
       address(positionManager),
       alice,
@@ -125,7 +125,7 @@ contract GiverPositionManagerTest is SpokeBase {
     );
 
     vm.expectEmit(address(spoke1));
-    emit ISpokeBase.Repay(
+    emit ISpoke.Repay(
       _daiReserveId(spoke1),
       address(positionManager),
       alice,
@@ -192,7 +192,7 @@ contract GiverPositionManagerTest is SpokeBase {
       );
       uint256 repaidAmount = _min(userDrawnDebt + userPremiumDebt, repayAmount);
       vm.expectEmit(address(spoke1));
-      emit ISpokeBase.Repay(
+      emit ISpoke.Repay(
         _daiReserveId(spoke1),
         address(positionManager),
         alice,
@@ -275,7 +275,7 @@ contract GiverPositionManagerTest is SpokeBase {
     );
 
     vm.expectEmit(address(spoke1));
-    emit ISpokeBase.Repay(
+    emit ISpoke.Repay(
       _daiReserveId(spoke1),
       address(positionManager),
       alice,
