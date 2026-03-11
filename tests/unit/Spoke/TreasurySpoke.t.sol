@@ -99,14 +99,6 @@ contract TreasurySpokeTest is SpokeBase {
     treasurySpoke.withdraw(address(hub1), address(tokenList.dai), 1);
   }
 
-  function test_withdrawSkimmed_revertsWith_Unauthorized(address caller) public {
-    vm.assume(caller != TREASURY_ADMIN);
-
-    vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, caller));
-    vm.prank(caller);
-    treasurySpoke.withdrawSkimmed(address(hub1), address(tokenList.dai), 1);
-  }
-
   function test_supply(uint256 amount) public {
     amount = bound(amount, 1, MAX_SUPPLY_AMOUNT);
     vm.prank(TREASURY_ADMIN);
@@ -161,48 +153,6 @@ contract TreasurySpokeTest is SpokeBase {
     treasurySpoke.withdraw(address(hub1), address(tokenList.dai), amount + interest);
   }
 
-  /// treasury supplies to earn interest, withdrawSkimmed keeps funds on spoke
-  function test_withdrawSkimmed_fuzz_amount_interestOnly(uint256 amount) public {
-    amount = bound(amount, 1, MAX_SUPPLY_AMOUNT);
-
-    updateLiquidityFee(hub1, daiAssetId, 0);
-
-    vm.prank(TREASURY_ADMIN);
-    treasurySpoke.supply(address(hub1), address(tokenList.dai), amount);
-    assertEq(treasurySpoke.getSuppliedAssets(address(hub1), address(tokenList.dai)), amount);
-
-    uint256 suppliedSharesBefore = treasurySpoke.getSuppliedShares(
-      address(hub1),
-      address(tokenList.dai)
-    );
-    uint256 suppliedAssetsBefore = treasurySpoke.getSuppliedAssets(
-      address(hub1),
-      address(tokenList.dai)
-    );
-
-    // create debt
-    _openDebtPosition(spoke1, getReserveIdByAssetId(spoke1, hub1, daiAssetId), 100e18, true);
-
-    skip(365 days);
-
-    assertEq(
-      suppliedSharesBefore,
-      treasurySpoke.getSuppliedShares(address(hub1), address(tokenList.dai))
-    );
-    uint256 interest = treasurySpoke.getSuppliedAssets(address(hub1), address(tokenList.dai)) -
-      suppliedAssetsBefore;
-    vm.assume(interest > 0);
-
-    uint256 spokeBalanceBefore = tokenList.dai.balanceOf(address(treasurySpoke));
-    vm.prank(TREASURY_ADMIN);
-    treasurySpoke.withdrawSkimmed(address(hub1), address(tokenList.dai), amount + interest);
-
-    assertEq(
-      tokenList.dai.balanceOf(address(treasurySpoke)),
-      spokeBalanceBefore + amount + interest
-    );
-  }
-
   /// treasury does not supply but earn fees
   function test_withdraw_fuzz_amount_feesOnly(uint256 amount) public {
     amount = bound(amount, 1, MAX_SUPPLY_AMOUNT);
@@ -226,34 +176,6 @@ contract TreasurySpokeTest is SpokeBase {
 
     vm.prank(TREASURY_ADMIN);
     treasurySpoke.withdraw(address(hub1), address(tokenList.dai), UINT256_MAX);
-  }
-
-  /// treasury does not supply but earn fees, withdrawSkimmed keeps funds on spoke
-  function test_withdrawSkimmed_fuzz_amount_feesOnly(uint256 amount) public {
-    amount = bound(amount, 1, MAX_SUPPLY_AMOUNT);
-
-    assertEq(treasurySpoke.getSuppliedShares(address(hub1), address(tokenList.dai)), 0);
-
-    // create debt
-    _openDebtPosition(spoke1, getReserveIdByAssetId(spoke1, hub1, daiAssetId), 100e18, true);
-
-    skip(365 days);
-    assertEq(hub1.getAsset(daiAssetId).realizedFees, 0, 'fees');
-
-    uint256 expectedFeeAmount = _calcUnrealizedFees(hub1, daiAssetId);
-    Utils.mintFeeShares(hub1, daiAssetId, ADMIN);
-
-    assertEq(hub1.getAsset(daiAssetId).realizedFees, 0, 'realized fees after minting');
-    assertGe(
-      treasurySpoke.getSuppliedShares(address(hub1), address(tokenList.dai)),
-      hub1.previewAddByAssets(daiAssetId, expectedFeeAmount)
-    );
-
-    uint256 spokeBalanceBefore = tokenList.dai.balanceOf(address(treasurySpoke));
-    vm.prank(TREASURY_ADMIN);
-    treasurySpoke.withdrawSkimmed(address(hub1), address(tokenList.dai), UINT256_MAX);
-
-    assertGt(tokenList.dai.balanceOf(address(treasurySpoke)), spokeBalanceBefore);
   }
 
   /// treasury supplies to earn interest and fees
@@ -289,39 +211,6 @@ contract TreasurySpokeTest is SpokeBase {
 
     vm.prank(TREASURY_ADMIN);
     treasurySpoke.withdraw(address(hub1), address(tokenList.dai), amount + interestAndFees);
-  }
-
-  /// treasury supplies to earn interest and fees, withdrawSkimmed keeps funds on spoke
-  function test_withdrawSkimmed_fuzz_amount_interestAndFees(uint256 amount) public {
-    amount = bound(amount, 1, MAX_SUPPLY_AMOUNT);
-
-    vm.prank(TREASURY_ADMIN);
-    treasurySpoke.supply(address(hub1), address(tokenList.dai), amount);
-    assertEq(treasurySpoke.getSuppliedAssets(address(hub1), address(tokenList.dai)), amount);
-
-    uint256 suppliedAssetsBefore = treasurySpoke.getSuppliedAssets(
-      address(hub1),
-      address(tokenList.dai)
-    );
-
-    // create debt
-    _openDebtPosition(spoke1, getReserveIdByAssetId(spoke1, hub1, daiAssetId), 100e18, true);
-
-    skip(365 days);
-
-    uint256 interestAndFees = treasurySpoke.getSuppliedAssets(
-      address(hub1),
-      address(tokenList.dai)
-    ) - suppliedAssetsBefore;
-
-    uint256 spokeBalanceBefore = tokenList.dai.balanceOf(address(treasurySpoke));
-    vm.prank(TREASURY_ADMIN);
-    treasurySpoke.withdrawSkimmed(address(hub1), address(tokenList.dai), amount + interestAndFees);
-
-    assertEq(
-      tokenList.dai.balanceOf(address(treasurySpoke)),
-      spokeBalanceBefore + amount + interestAndFees
-    );
   }
 
   function test_transfer_revertsWith_Unauthorized(address caller) public {
@@ -426,36 +315,6 @@ contract TreasurySpokeTest is SpokeBase {
     assertEq(treasurySpoke.getSuppliedAssets(address(hub2), address(tokenList.dai)), 0);
   }
 
-  function test_withdrawSkimmed_multiHub_sameAsset(uint256 amount) public {
-    amount = bound(amount, 2, MAX_SUPPLY_AMOUNT / 2);
-
-    // Supply first
-    vm.startPrank(TREASURY_ADMIN);
-    treasurySpoke.supply(address(hub1), address(tokenList.dai), amount);
-    treasurySpoke.supply(address(hub2), address(tokenList.dai), amount);
-    vm.stopPrank();
-
-    // WithdrawSkimmed from Hub 1
-    vm.prank(TREASURY_ADMIN);
-    treasurySpoke.withdrawSkimmed(address(hub1), address(tokenList.dai), amount / 2);
-
-    assertEq(
-      treasurySpoke.getSuppliedAssets(address(hub1), address(tokenList.dai)),
-      amount - amount / 2
-    );
-    assertEq(treasurySpoke.getSuppliedAssets(address(hub2), address(tokenList.dai)), amount);
-
-    // WithdrawSkimmed from Hub 2
-    vm.prank(TREASURY_ADMIN);
-    treasurySpoke.withdrawSkimmed(address(hub2), address(tokenList.dai), amount);
-
-    assertEq(
-      treasurySpoke.getSuppliedAssets(address(hub1), address(tokenList.dai)),
-      amount - amount / 2
-    );
-    assertEq(treasurySpoke.getSuppliedAssets(address(hub2), address(tokenList.dai)), 0);
-  }
-
   function test_supply_multiHub_differentAsset(uint256 amount, uint256 amount2) public {
     amount = bound(amount, 1, MAX_SUPPLY_AMOUNT);
     amount2 = bound(amount2, 1, MAX_SUPPLY_AMOUNT);
@@ -521,37 +380,6 @@ contract TreasurySpokeTest is SpokeBase {
     assertEq(treasurySpoke.getSuppliedAssets(address(hub2), address(tokenList.usdx)), 0);
   }
 
-  function test_withdrawSkimmed_multiHub_differentAsset(uint256 amount, uint256 amount2) public {
-    amount = bound(amount, 2, MAX_SUPPLY_AMOUNT);
-    amount2 = bound(amount2, 2, MAX_SUPPLY_AMOUNT);
-
-    // Supply first
-    vm.startPrank(TREASURY_ADMIN);
-    treasurySpoke.supply(address(hub1), address(tokenList.dai), amount);
-    treasurySpoke.supply(address(hub2), address(tokenList.usdx), amount2);
-    vm.stopPrank();
-
-    // WithdrawSkimmed DAI from Hub 1
-    vm.prank(TREASURY_ADMIN);
-    treasurySpoke.withdrawSkimmed(address(hub1), address(tokenList.dai), amount / 2);
-
-    assertEq(
-      treasurySpoke.getSuppliedAssets(address(hub1), address(tokenList.dai)),
-      amount - amount / 2
-    );
-    assertEq(treasurySpoke.getSuppliedAssets(address(hub2), address(tokenList.usdx)), amount2);
-
-    // WithdrawSkimmed USDX from Hub 2
-    vm.prank(TREASURY_ADMIN);
-    treasurySpoke.withdrawSkimmed(address(hub2), address(tokenList.usdx), amount2);
-
-    assertEq(
-      treasurySpoke.getSuppliedAssets(address(hub1), address(tokenList.dai)),
-      amount - amount / 2
-    );
-    assertEq(treasurySpoke.getSuppliedAssets(address(hub2), address(tokenList.usdx)), 0);
-  }
-
   function test_withdraw_maxLiquidityFee() public {
     test_withdraw_fuzz_maxLiquidityFee(_daiReserveId(spoke1), 1000e18, 340 days);
   }
@@ -609,62 +437,6 @@ contract TreasurySpokeTest is SpokeBase {
       treasurySpoke.withdraw(address(hub), underlying, fees);
 
       assertEq(balanceBefore + fees, asset.balanceOf(TREASURY_ADMIN), 'Treasury admin balance');
-      assertEq(
-        0,
-        hub.getSpokeAddedAssets(assetId, address(treasurySpoke)),
-        'treasury spoke remaining supplied amount'
-      );
-    }
-  }
-
-  function test_withdrawSkimmed_maxLiquidityFee() public {
-    test_withdrawSkimmed_fuzz_maxLiquidityFee(_daiReserveId(spoke1), 1000e18, 340 days);
-  }
-
-  function test_withdrawSkimmed_fuzz_maxLiquidityFee(
-    uint256 reserveId,
-    uint256 amount,
-    uint256 skipTime
-  ) public {
-    reserveId = bound(reserveId, 0, spoke1.getReserveCount() - 1);
-    IHub hub = IHub(address(spoke1.getReserve(reserveId).hub));
-
-    amount = bound(amount, 1, _calculateMaxSupplyAmount(spoke1, reserveId));
-    skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
-
-    uint256 assetId = spoke1.getReserve(reserveId).assetId;
-    (address underlying, ) = hub.getAssetUnderlyingAndDecimals(assetId);
-    updateLiquidityFee(hub, spoke1.getReserve(reserveId).assetId, 100_00);
-
-    assertEq(treasurySpoke.getSuppliedShares(address(hub), underlying), 0);
-
-    // create debt
-    address tempUser = _openDebtPosition(spoke1, reserveId, amount, true);
-
-    skip(skipTime);
-    assertEq(hub.getAsset(assetId).realizedFees, 0, 'fees');
-
-    uint256 expectedFeeAmount = _calcUnrealizedFees(hub, assetId);
-    Utils.mintFeeShares(hub, assetId, ADMIN);
-    uint256 fees = treasurySpoke.getSuppliedAssets(address(hub), underlying);
-
-    assertEq(fees, expectedFeeAmount, 'supplied amount of fees');
-    assertEq(hub.getAsset(assetId).realizedFees, 0, 'realized fees after minting');
-
-    if (fees > 0) {
-      IERC20 asset = getAssetUnderlyingByReserveId(spoke1, reserveId);
-      uint256 spokeBalanceBefore = asset.balanceOf(address(treasurySpoke));
-
-      deal(address(asset), tempUser, UINT256_MAX);
-      Utils.repay(spoke1, reserveId, tempUser, UINT256_MAX, tempUser);
-      vm.prank(TREASURY_ADMIN);
-      treasurySpoke.withdrawSkimmed(address(hub), underlying, fees);
-
-      assertEq(
-        spokeBalanceBefore + fees,
-        asset.balanceOf(address(treasurySpoke)),
-        'Treasury spoke balance'
-      );
       assertEq(
         0,
         hub.getSpokeAddedAssets(assetId, address(treasurySpoke)),

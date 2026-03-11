@@ -25,7 +25,7 @@ abstract contract TreasurySpoke is ITreasurySpoke, Ownable2StepUpgradeable {
     address underlying,
     uint256 amount
   ) external onlyOwner returns (uint256, uint256) {
-    return _supply(hub, underlying, amount, true);
+    return _supply({hub: hub, underlying: underlying, amount: amount, skim: false});
   }
 
   /// @inheritdoc ITreasurySpoke
@@ -34,7 +34,7 @@ abstract contract TreasurySpoke is ITreasurySpoke, Ownable2StepUpgradeable {
     address underlying,
     uint256 amount
   ) external onlyOwner returns (uint256, uint256) {
-    return _supply(hub, underlying, amount, false);
+    return _supply({hub: hub, underlying: underlying, amount: amount, skim: true});
   }
 
   /// @inheritdoc ITreasurySpoke
@@ -43,16 +43,16 @@ abstract contract TreasurySpoke is ITreasurySpoke, Ownable2StepUpgradeable {
     address underlying,
     uint256 amount
   ) external onlyOwner returns (uint256, uint256) {
-    return _withdraw(hub, underlying, amount, true);
-  }
+    IHubBase targetHub = IHubBase(hub);
+    uint256 assetId = targetHub.getAssetId(underlying);
+    // if amount to withdraw is greater than total supplied, withdraw all supplied assets
+    uint256 withdrawnAmount = MathUtils.min(
+      amount,
+      targetHub.getSpokeAddedAssets(assetId, address(this))
+    );
+    uint256 withdrawnShares = targetHub.remove(assetId, withdrawnAmount, msg.sender);
 
-  /// @inheritdoc ITreasurySpoke
-  function withdrawSkimmed(
-    address hub,
-    address underlying,
-    uint256 amount
-  ) external onlyOwner returns (uint256, uint256) {
-    return _withdraw(hub, underlying, amount, false);
+    return (withdrawnShares, withdrawnAmount);
   }
 
   /// @inheritdoc ITreasurySpoke
@@ -74,42 +74,22 @@ abstract contract TreasurySpoke is ITreasurySpoke, Ownable2StepUpgradeable {
     return targetHub.getSpokeAddedShares(assetId, address(this));
   }
 
-  /// @dev Shared supply logic. If `transferFromCaller` is true, transfers the underlying asset from
-  /// the caller to the Hub before supplying.
+  /// @dev Common Supply workflow. When `skim` is true, it avoids pulling tokens from the caller and intends
+  /// to skim or claim existing untracked liquidity on the `hub`.
   function _supply(
     address hub,
     address underlying,
     uint256 amount,
-    bool transferFromCaller
+    bool skim
   ) internal returns (uint256, uint256) {
     IHubBase targetHub = IHubBase(hub);
-    if (transferFromCaller) {
+    uint256 assetId = targetHub.getAssetId(underlying);
+
+    if (!skim) {
       IERC20(underlying).safeTransferFrom(msg.sender, hub, amount);
     }
-    uint256 assetId = targetHub.getAssetId(underlying);
     uint256 shares = targetHub.add(assetId, amount);
 
     return (shares, amount);
-  }
-
-  /// @dev Shared withdraw logic. If `transferToCaller` is true, sends the withdrawn funds to the
-  /// caller. Otherwise, funds remain on this contract.
-  function _withdraw(
-    address hub,
-    address underlying,
-    uint256 amount,
-    bool transferToCaller
-  ) internal returns (uint256, uint256) {
-    IHubBase targetHub = IHubBase(hub);
-    uint256 assetId = targetHub.getAssetId(underlying);
-    // if amount to withdraw is greater than total supplied, withdraw all supplied assets
-    uint256 withdrawnAmount = MathUtils.min(
-      amount,
-      targetHub.getSpokeAddedAssets(assetId, address(this))
-    );
-    address recipient = transferToCaller ? msg.sender : address(this);
-    uint256 withdrawnShares = targetHub.remove(assetId, withdrawnAmount, recipient);
-
-    return (withdrawnShares, withdrawnAmount);
   }
 }
