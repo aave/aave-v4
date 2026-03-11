@@ -401,7 +401,7 @@ contract Hub is IHub, AccessManaged {
 
     asset.accrue();
     _validatePayFeeShares(callerSpoke, shares);
-    _transferShares(callerSpoke, receiverSpoke, shares);
+    _transferShares({sender: callerSpoke, receiver: receiverSpoke, shares: shares});
     asset.updateDrawnRate(assetId);
 
     emit TransferShares(assetId, msg.sender, feeReceiver, shares);
@@ -415,7 +415,7 @@ contract Hub is IHub, AccessManaged {
 
     asset.accrue();
     _validateTransferShares(asset, callerSpoke, receiverSpoke, shares);
-    _transferShares(callerSpoke, receiverSpoke, shares);
+    _transferShares({sender: callerSpoke, receiver: receiverSpoke, shares: shares});
     asset.updateDrawnRate(assetId);
 
     emit TransferShares(assetId, msg.sender, toSpoke, shares);
