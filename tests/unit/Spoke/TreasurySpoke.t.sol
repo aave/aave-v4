@@ -76,7 +76,7 @@ contract TreasurySpokeTest is SpokeBase {
   }
 
   function test_supply_revertsWith_Unauthorized(address caller) public {
-    vm.assume(caller != TREASURY_ADMIN);
+    vm.assume(caller != TREASURY_ADMIN && caller != _getProxyAdminAddress(address(treasurySpoke)));
 
     vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, caller));
     vm.prank(caller);
@@ -92,7 +92,7 @@ contract TreasurySpokeTest is SpokeBase {
   }
 
   function test_withdraw_revertsWith_Unauthorized(address caller) public {
-    vm.assume(caller != TREASURY_ADMIN);
+    vm.assume(caller != TREASURY_ADMIN && caller != _getProxyAdminAddress(address(treasurySpoke)));
 
     vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, caller));
     vm.prank(caller);
@@ -325,7 +325,7 @@ contract TreasurySpokeTest is SpokeBase {
   }
 
   function test_transfer_revertsWith_Unauthorized(address caller) public {
-    vm.assume(caller != TREASURY_ADMIN);
+    vm.assume(caller != TREASURY_ADMIN && caller != _getProxyAdminAddress(address(treasurySpoke)));
     vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, caller));
     vm.prank(caller);
     treasurySpoke.transfer(vm.randomAddress(), vm.randomAddress(), 1);
