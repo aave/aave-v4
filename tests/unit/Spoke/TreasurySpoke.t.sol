@@ -93,6 +93,19 @@ contract TreasurySpokeTest is SpokeBase {
     treasurySpoke.supplySkimmed(address(hub1), address(tokenList.dai), 1);
   }
 
+  function test_supplySkimmed_revertsWith_InsufficientTransferred(uint256 amount) public {
+    amount = bound(amount, 1, MAX_SUPPLY_AMOUNT);
+    uint256 transferAmount = vm.randomUint(0, amount - 1);
+
+    vm.startPrank(TREASURY_ADMIN);
+    if (transferAmount > 0) tokenList.dai.transfer(address(hub1), transferAmount);
+    vm.expectRevert(
+      abi.encodeWithSelector(IHub.InsufficientTransferred.selector, amount - transferAmount)
+    );
+    treasurySpoke.supplySkimmed(address(hub1), address(tokenList.dai), amount);
+    vm.stopPrank();
+  }
+
   function test_withdraw_revertsWith_OwnableUnauthorizedAccount() public {
     address caller = vm.randomAddress();
     while (caller == TREASURY_ADMIN || caller == ADMIN) caller = vm.randomAddress();
