@@ -37,8 +37,7 @@ s.add(withdrawnShares <= userSuppliedShares)
 
 userSuppliedBefore = previewRemoveByShares(userSuppliedShares, totalAddedAssets, totalAddedShares)
 
-roundTripShares = previewAddByAssets(withdrawAmount, totalAddedAssets, totalAddedShares)
-methodC = previewAddByShares(roundTripShares, totalAddedAssets, totalAddedShares)
+methodC = previewRemoveByShares(previewRemoveByAssets(withdrawAmount, totalAddedAssets, totalAddedShares), totalAddedAssets, totalAddedShares)
 
 # After withdraw, totals change:
 afterTotalAddedAssets = totalAddedAssets - withdrawAmount
@@ -56,4 +55,4 @@ proveValid(s, "C >= withdrawAmount", methodC >= withdrawAmount)
 
 # Divergence from B (source of truth)
 proveValid(s, "A - B <= 2", methodA - methodB <= 2)
-proveValid(s, "B - C <= 2", methodB - methodC <= 2)
+proveValid(s, "B - C <= 1", methodB - methodC <= 1)

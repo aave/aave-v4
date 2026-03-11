@@ -182,18 +182,18 @@ contract TakerPositionManager is ITakerPositionManager, PositionManagerBase {
       suppliedAssetsBefore = ISpoke(spoke).getUserSuppliedAssets(reserveId, onBehalfOf);
     }
 
-    (uint256 withdrawnShares, uint256 withdrawnAmount) = ISpoke(spoke).withdraw({
-      reserveId: reserveId,
-      amount: amount,
-      onBehalfOf: onBehalfOf
-    });
+    (uint256 withdrawnShares, uint256 withdrawnAmount) = ISpoke(spoke).withdraw(
+      reserveId,
+      amount,
+      onBehalfOf
+    );
 
     if (currentAllowance != type(uint256).max) {
       // Simply decreasing the allowance by the input `amount` is not ideal for shares-based
       // positions. Due to rounding in Hub conversions, the actual decrease in the user's
       // position value can differ slightly from the input `amount`.
       // To handle this, the allowance consumption is based on a corrected amount, and capped at
-      // `currentAllowance` to prevent underflow from rounding, , given that `amount` was already checked against the allowance.
+      // `currentAllowance` to prevent underflow from rounding, given that `amount` was already checked against the allowance.
       // The corrected amount (`suppliedAssetsBefore` - `suppliedAssetsAfter`) is calculated as the before/after
       // delta of `getUserSuppliedAssets`, which reflects the actual change in the user's position value.
       uint256 suppliedAssetsAfter = ISpoke(spoke).getUserSuppliedAssets(reserveId, onBehalfOf);
@@ -231,18 +231,18 @@ contract TakerPositionManager is ITakerPositionManager, PositionManagerBase {
       borrowedAssetsBefore = ISpoke(spoke).getUserTotalDebt(reserveId, onBehalfOf);
     }
 
-    (uint256 borrowedShares, uint256 borrowedAmount) = ISpoke(spoke).borrow({
-      reserveId: reserveId,
-      amount: amount,
-      onBehalfOf: onBehalfOf
-    });
+    (uint256 borrowedShares, uint256 borrowedAmount) = ISpoke(spoke).borrow(
+      reserveId,
+      amount,
+      onBehalfOf
+    );
 
     if (currentAllowance != type(uint256).max) {
       // Simply decreasing the allowance by the input `amount` is not ideal for shares-based
       // debt. Due to rounding in Hub conversions, the actual increase in the user's debt can differ slightly from
       // the input `amount`.
       // To handle this, the allowance consumption is based on a corrected amount, and capped at
-      // `currentAllowance` to prevent underflow from rounding, , given that `amount` was already checked against the allowance.
+      // `currentAllowance` to prevent underflow from rounding, given that `amount` was already checked against the allowance.
       // The corrected amount (`borrowedAssetsAfter` - `borrowedAssetsBefore`) is calculated as the before/after
       // delta of `getUserTotalDebt`, which reflects the actual change in the user's debt.
       uint256 borrowedAssetsAfter = ISpoke(spoke).getUserTotalDebt(reserveId, onBehalfOf);
