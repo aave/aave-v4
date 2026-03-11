@@ -75,16 +75,18 @@ contract TreasurySpokeTest is SpokeBase {
     assertEq(Ownable2Step(address(treasurySpoke)).pendingOwner(), address(0));
   }
 
-  function test_supply_revertsWith_Unauthorized(address caller) public {
-    vm.assume(caller != TREASURY_ADMIN);
+  function test_supply_revertsWith_OwnableUnauthorizedAccount() public {
+    address caller = vm.randomAddress();
+    while (caller == TREASURY_ADMIN || caller == ADMIN) caller = vm.randomAddress();
 
     vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, caller));
     vm.prank(caller);
     treasurySpoke.supply(address(hub1), address(tokenList.dai), 1);
   }
 
-  function test_withdraw_revertsWith_Unauthorized(address caller) public {
-    vm.assume(caller != TREASURY_ADMIN);
+  function test_withdraw_revertsWith_OwnableUnauthorizedAccount() public {
+    address caller = vm.randomAddress();
+    while (caller == TREASURY_ADMIN || caller == ADMIN) caller = vm.randomAddress();
 
     vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, caller));
     vm.prank(caller);
@@ -195,8 +197,10 @@ contract TreasurySpokeTest is SpokeBase {
     treasurySpoke.withdraw(address(hub1), address(tokenList.dai), amount + interestAndFees);
   }
 
-  function test_transfer_revertsWith_Unauthorized(address caller) public {
-    vm.assume(caller != TREASURY_ADMIN);
+  function test_transfer_revertsWith_OwnableUnauthorizedAccount() public {
+    address caller = vm.randomAddress();
+    while (caller == TREASURY_ADMIN || caller == ADMIN) caller = vm.randomAddress();
+
     vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, caller));
     vm.prank(caller);
     treasurySpoke.transfer(vm.randomAddress(), vm.randomAddress(), 1);
