@@ -34,7 +34,7 @@ abstract contract PositionManagerBase is IPositionManagerBase, Ownable2Step, Res
   function registerSpoke(address spoke, bool registered) external onlyOwner {
     require(spoke != address(0), InvalidAddress());
     _registeredSpokes[spoke] = registered;
-    emit SpokeRegistration(spoke, registered);
+    emit RegisterSpoke(spoke, registered);
   }
 
   /// @inheritdoc IPositionManagerBase

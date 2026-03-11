@@ -34,7 +34,7 @@ contract ConfigPositionManager is IConfigPositionManager, PositionManagerIntentB
   bytes32 public constant SET_CAN_UPDATE_USER_DYNAMIC_CONFIG_PERMISSION_PERMIT_TYPEHASH =
     EIP712Hash.SET_CAN_UPDATE_USER_DYNAMIC_CONFIG_PERMISSION_PERMIT_TYPEHASH;
 
-  /// @dev Map of configuration permissions based on the spoke, delegator and delegatee.
+  /// @dev Map of configuration permissions based on the Spoke, delegator and delegatee.
   mapping(address spoke => mapping(address delegator => mapping(address delegatee => ConfigPermissions)))
     private _config;
 
@@ -314,7 +314,7 @@ contract ConfigPositionManager is IConfigPositionManager, PositionManagerIntentB
   }
 
   /// @dev Sets the global permission for a delegatee on behalf of a delegator.
-  /// @param spoke The address of the spoke.
+  /// @param spoke The address of the Spoke.
   /// @param delegator The address of the delegator.
   /// @param delegatee The address of the delegatee.
   /// @param permission The new permission status.
@@ -340,7 +340,7 @@ contract ConfigPositionManager is IConfigPositionManager, PositionManagerIntentB
   }
 
   /// @dev Sets the using as collateral permission for a delegatee on behalf of a delegator.
-  /// @param spoke The address of the spoke.
+  /// @param spoke The address of the Spoke.
   /// @param delegator The address of the delegator.
   /// @param delegatee The address of the delegatee.
   /// @param permission The new permission status.
@@ -366,7 +366,7 @@ contract ConfigPositionManager is IConfigPositionManager, PositionManagerIntentB
   }
 
   /// @dev Sets the user risk premium permission for a delegatee on behalf of a delegator.
-  /// @param spoke The address of the spoke.
+  /// @param spoke The address of the Spoke.
   /// @param delegator The address of the delegator.
   /// @param delegatee The address of the delegatee.
   /// @param permission The new permission status.
@@ -392,7 +392,7 @@ contract ConfigPositionManager is IConfigPositionManager, PositionManagerIntentB
   }
 
   /// @dev Sets the user dynamic config permission for a delegatee on behalf of a delegator.
-  /// @param spoke The address of the spoke.
+  /// @param spoke The address of the Spoke.
   /// @param delegator The address of the delegator.
   /// @param delegatee The address of the delegatee.
   /// @param permission The new permission status.
@@ -433,7 +433,7 @@ contract ConfigPositionManager is IConfigPositionManager, PositionManagerIntentB
   }
 
   /// @dev Returns the config permissions for a delegatee on behalf of a delegator.
-  /// @param spoke The address of the spoke.
+  /// @param spoke The address of the Spoke.
   /// @param delegator The address of the delegator.
   /// @param delegatee The address of the delegatee.
   /// @return The ConfigPermissions for the delegatee on behalf of the delegator.

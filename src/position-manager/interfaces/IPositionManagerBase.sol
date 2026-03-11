@@ -10,8 +10,8 @@ import {IRescuable} from 'src/interfaces/IRescuable.sol';
 /// @notice Base interface for position managers.
 /// @dev This base interface is not mandatory for position managers, it only provides optional convenience methods.
 interface IPositionManagerBase is IRescuable, IMulticall {
-  /// @notice Emitted when a spoke's registration status is updated.
-  event SpokeRegistration(address indexed spoke, bool registered);
+  /// @notice Emitted when a Spoke's registration status is updated.
+  event RegisterSpoke(address indexed spoke, bool registered);
 
   /// @notice Thrown when the specified address is invalid.
   error InvalidAddress();
@@ -49,7 +49,7 @@ interface IPositionManagerBase is IRescuable, IMulticall {
   /// @dev The given data is passed to the underlying asset for the signature to be verified.
   /// @dev Uses keyed-nonces where for each key's namespace nonce is consumed sequentially.
   /// @dev Spender is this position manager contract.
-  /// @param spoke The address of the spoke.
+  /// @param spoke The address of the Spoke.
   /// @param reserveId The identifier of the reserve.
   /// @param onBehalfOf The address of the user on whose behalf the permit is being used.
   /// @param value The amount of the underlying asset to permit.
@@ -77,6 +77,6 @@ interface IPositionManagerBase is IRescuable, IMulticall {
 
   /// @notice Returns whether the specified spoke is registered.
   /// @param spoke The address of the `spoke`.
-  /// @return `true` if the spoke is registered, `false` otherwise.
+  /// @return `true` if the Spoke is registered, `false` otherwise.
   function isSpokeRegistered(address spoke) external view returns (bool);
 }
