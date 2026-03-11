@@ -419,10 +419,10 @@ interface ISpoke is IAccessManaged, IIntentConsumer, IExtSload, IMulticall {
   /// @param config The new liquidation config.
   function updateLiquidationConfig(LiquidationConfig calldata config) external;
 
-  /// @notice Adds a new reserve to the spoke.
-  /// @dev Allowed even if the spoke has not yet been added to the Hub.
+  /// @notice Adds a new reserve to the Spoke.
+  /// @dev Allowed even if the Spoke has not yet been added to the Hub.
   /// @dev Allowed even if the `active` flag is `false`.
-  /// @dev Allowed even if the spoke has been added but the `addCap` is zero.
+  /// @dev Allowed even if the Spoke has been added but the `addCap` is zero.
   /// @param hub The address of the Hub where the asset is listed.
   /// @param assetId The identifier of the asset in the Hub.
   /// @param priceSource The address of the price source for the asset.
@@ -622,7 +622,7 @@ interface ISpoke is IAccessManaged, IIntentConsumer, IExtSload, IMulticall {
   /// @notice Returns the liquidation config struct.
   function getLiquidationConfig() external view returns (LiquidationConfig memory);
 
-  /// @notice Returns the number of listed reserves on the spoke.
+  /// @notice Returns the number of listed reserves on the Spoke.
   /// @dev Count includes reserves that are not currently active.
   function getReserveCount() external view returns (uint256);
 
@@ -652,8 +652,8 @@ interface ISpoke is IAccessManaged, IIntentConsumer, IExtSload, IMulticall {
   /// @return The total debt amount.
   function getReserveTotalDebt(uint256 reserveId) external view returns (uint256);
 
-  /// @notice Returns the reserve identifier for a given assetId in a Hub.
-  /// @dev It reverts if no reserve is associated with the given assetId.
+  /// @notice Returns the reserve identifier for a given asset in a Hub.
+  /// @dev It reverts if no reserve is associated with the given asset identifier.
   /// @param hub The address of the Hub.
   /// @param assetId The identifier of the asset on the Hub.
   /// @return The identifier of the reserve.
@@ -754,7 +754,8 @@ interface ISpoke is IAccessManaged, IIntentConsumer, IExtSload, IMulticall {
   /// @dev It reverts if the reserve associated with the given reserve identifier is not listed.
   /// @param reserveId The identifier of the reserve.
   /// @param user The address of the user.
-  /// @param healthFactor The health factor of the user.
+  /// @param healthFactor The health factor of the user, expressed in WAD.
+  /// @return The liquidation bonus for the user, expressed in BPS.
   function getLiquidationBonus(
     uint256 reserveId,
     address user,
@@ -773,7 +774,6 @@ interface ISpoke is IAccessManaged, IIntentConsumer, IExtSload, IMulticall {
   function isPositionManager(address user, address positionManager) external view returns (bool);
 
   /// @notice Returns the address of the external `LiquidationLogic` library.
-  /// @return The address of the library.
   function getLiquidationLogic() external pure returns (address);
 
   /// @notice Returns the type hash for the SetUserPositionManagers intent.

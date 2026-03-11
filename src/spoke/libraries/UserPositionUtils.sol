@@ -106,6 +106,10 @@ library UserPositionUtils {
     return (amount - premiumDebt, premiumDebtRay);
   }
 
+  /// @notice Calculates the user's debt based on the latest drawn index of the Hub asset.
+  /// @param userPosition The user position.
+  /// @param hub The address of the Hub.
+  /// @param assetId The identifier of the asset.
   /// @return The user's drawn debt, expressed in asset units.
   /// @return The user's premium debt, expressed in asset units and scaled by RAY.
   function getDebt(
@@ -116,6 +120,9 @@ library UserPositionUtils {
     return userPosition.getDebt(hub.getAssetDrawnIndex(assetId));
   }
 
+  /// @notice Calculates the user's debt based on the specified drawn index of the Hub asset.
+  /// @param userPosition The user position.
+  /// @param drawnIndex The drawn index of the reserve, expressed in RAY.
   /// @return The user's drawn debt, expressed in asset units.
   /// @return The user's premium debt, expressed in asset units and scaled by RAY.
   function getDebt(
@@ -126,7 +133,7 @@ library UserPositionUtils {
     return (userPosition.drawnShares.rayMulUp(drawnIndex), premiumDebtRay);
   }
 
-  /// @return The debt components of the user position.
+  /// @notice Calculates the debt components of the user position.
   function getDebtComponents(
     ISpoke.UserPosition storage userPosition,
     IHubBase hub,
