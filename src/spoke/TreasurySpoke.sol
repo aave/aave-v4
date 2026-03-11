@@ -25,11 +25,16 @@ abstract contract TreasurySpoke is ITreasurySpoke, Ownable2StepUpgradeable {
     address underlying,
     uint256 amount
   ) external onlyOwner returns (uint256, uint256) {
-    IHubBase targetHub = IHubBase(hub);
-    uint256 assetId = targetHub.getAssetId(underlying);
-    uint256 shares = targetHub.add(assetId, amount);
+    return _supply(hub, underlying, amount, true);
+  }
 
-    return (shares, amount);
+  /// @inheritdoc ITreasurySpoke
+  function supplySkimmed(
+    address hub,
+    address underlying,
+    uint256 amount
+  ) external onlyOwner returns (uint256, uint256) {
+    return _supply(hub, underlying, amount, false);
   }
 
   /// @inheritdoc ITreasurySpoke
@@ -67,5 +72,23 @@ abstract contract TreasurySpoke is ITreasurySpoke, Ownable2StepUpgradeable {
     IHubBase targetHub = IHubBase(hub);
     uint256 assetId = targetHub.getAssetId(underlying);
     return targetHub.getSpokeAddedShares(assetId, address(this));
+  }
+
+  /// @dev Shared supply logic. If `transferFromCaller` is true, transfers the underlying asset from
+  /// the caller to the Hub before supplying.
+  function _supply(
+    address hub,
+    address underlying,
+    uint256 amount,
+    bool transferFromCaller
+  ) internal returns (uint256, uint256) {
+    IHubBase targetHub = IHubBase(hub);
+    if (transferFromCaller) {
+      IERC20(underlying).safeTransferFrom(msg.sender, hub, amount);
+    }
+    uint256 assetId = targetHub.getAssetId(underlying);
+    uint256 shares = targetHub.add(assetId, amount);
+
+    return (shares, amount);
   }
 }

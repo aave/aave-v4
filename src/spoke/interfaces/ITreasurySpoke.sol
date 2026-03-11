@@ -7,13 +7,26 @@ pragma solidity ^0.8.0;
 /// @notice Interface for the TreasurySpoke.
 interface ITreasurySpoke {
   /// @notice Supplies a specified amount of the underlying asset to the specified Hub.
-  /// @dev The underlying asset must already be transferred to the Hub before calling.
+  /// @dev The Spoke pulls the underlying asset from the caller, so prior approval is required.
   /// @param hub The address of the Hub.
   /// @param underlying The address of the underlying asset.
   /// @param amount The amount of asset to supply.
   /// @return The amount of shares supplied.
   /// @return The amount of assets supplied.
   function supply(
+    address hub,
+    address underlying,
+    uint256 amount
+  ) external returns (uint256, uint256);
+
+  /// @notice Supplies a specified amount of the underlying asset to the specified Hub.
+  /// @dev The underlying asset must already be transferred to the Hub before calling.
+  /// @param hub The address of the Hub.
+  /// @param underlying The address of the underlying asset.
+  /// @param amount The amount of asset to supply.
+  /// @return The amount of shares supplied.
+  /// @return The amount of assets supplied.
+  function supplySkimmed(
     address hub,
     address underlying,
     uint256 amount

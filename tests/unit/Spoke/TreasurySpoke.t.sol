@@ -83,6 +83,14 @@ contract TreasurySpokeTest is SpokeBase {
     treasurySpoke.supply(address(hub1), address(tokenList.dai), 1);
   }
 
+  function test_supplySkimmed_revertsWith_Unauthorized(address caller) public {
+    vm.assume(caller != TREASURY_ADMIN);
+
+    vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, caller));
+    vm.prank(caller);
+    treasurySpoke.supplySkimmed(address(hub1), address(tokenList.dai), 1);
+  }
+
   function test_withdraw_revertsWith_Unauthorized(address caller) public {
     vm.assume(caller != TREASURY_ADMIN);
 
@@ -93,9 +101,17 @@ contract TreasurySpokeTest is SpokeBase {
 
   function test_supply(uint256 amount) public {
     amount = bound(amount, 1, MAX_SUPPLY_AMOUNT);
+    vm.prank(TREASURY_ADMIN);
+    treasurySpoke.supply(address(hub1), address(tokenList.dai), amount);
+
+    assertEq(treasurySpoke.getSuppliedAssets(address(hub1), address(tokenList.dai)), amount);
+  }
+
+  function test_supplySkimmed(uint256 amount) public {
+    amount = bound(amount, 1, MAX_SUPPLY_AMOUNT);
     vm.startPrank(TREASURY_ADMIN);
     tokenList.dai.transfer(address(hub1), amount);
-    treasurySpoke.supply(address(hub1), address(tokenList.dai), amount);
+    treasurySpoke.supplySkimmed(address(hub1), address(tokenList.dai), amount);
     vm.stopPrank();
 
     assertEq(treasurySpoke.getSuppliedAssets(address(hub1), address(tokenList.dai)), amount);
@@ -107,10 +123,8 @@ contract TreasurySpokeTest is SpokeBase {
 
     updateLiquidityFee(hub1, daiAssetId, 0);
 
-    vm.startPrank(TREASURY_ADMIN);
-    tokenList.dai.transfer(address(hub1), amount);
+    vm.prank(TREASURY_ADMIN);
     treasurySpoke.supply(address(hub1), address(tokenList.dai), amount);
-    vm.stopPrank();
     assertEq(treasurySpoke.getSuppliedAssets(address(hub1), address(tokenList.dai)), amount);
 
     uint256 suppliedSharesBefore = treasurySpoke.getSuppliedShares(
@@ -168,10 +182,8 @@ contract TreasurySpokeTest is SpokeBase {
   function test_withdraw_fuzz_amount_interestAndFees(uint256 amount) public {
     amount = bound(amount, 1, MAX_SUPPLY_AMOUNT);
 
-    vm.startPrank(TREASURY_ADMIN);
-    tokenList.dai.transfer(address(hub1), amount);
+    vm.prank(TREASURY_ADMIN);
     treasurySpoke.supply(address(hub1), address(tokenList.dai), amount);
-    vm.stopPrank();
     assertEq(treasurySpoke.getSuppliedAssets(address(hub1), address(tokenList.dai)), amount);
 
     uint256 suppliedSharesBefore = treasurySpoke.getSuppliedShares(
@@ -246,12 +258,27 @@ contract TreasurySpokeTest is SpokeBase {
 
     // Supply to Hub 1 (DAI)
     vm.startPrank(TREASURY_ADMIN);
-    tokenList.dai.transfer(address(hub1), amount);
     treasurySpoke.supply(address(hub1), address(tokenList.dai), amount);
 
     // Supply to Hub 2 (DAI)
-    tokenList.dai.transfer(address(hub2), amount);
     treasurySpoke.supply(address(hub2), address(tokenList.dai), amount);
+    vm.stopPrank();
+
+    assertEq(treasurySpoke.getSuppliedAssets(address(hub1), address(tokenList.dai)), amount);
+    assertEq(treasurySpoke.getSuppliedAssets(address(hub2), address(tokenList.dai)), amount);
+  }
+
+  function test_supplySkimmed_multiHub_sameAsset(uint256 amount) public {
+    amount = bound(amount, 1, MAX_SUPPLY_AMOUNT / 2);
+
+    // Supply to Hub 1 (DAI)
+    vm.startPrank(TREASURY_ADMIN);
+    tokenList.dai.transfer(address(hub1), amount);
+    treasurySpoke.supplySkimmed(address(hub1), address(tokenList.dai), amount);
+
+    // Supply to Hub 2 (DAI)
+    tokenList.dai.transfer(address(hub2), amount);
+    treasurySpoke.supplySkimmed(address(hub2), address(tokenList.dai), amount);
     vm.stopPrank();
 
     assertEq(treasurySpoke.getSuppliedAssets(address(hub1), address(tokenList.dai)), amount);
@@ -263,8 +290,6 @@ contract TreasurySpokeTest is SpokeBase {
 
     // Supply first
     vm.startPrank(TREASURY_ADMIN);
-    tokenList.dai.transfer(address(hub1), amount);
-    tokenList.dai.transfer(address(hub2), amount);
     treasurySpoke.supply(address(hub1), address(tokenList.dai), amount);
     treasurySpoke.supply(address(hub2), address(tokenList.dai), amount);
     vm.stopPrank();
@@ -296,12 +321,28 @@ contract TreasurySpokeTest is SpokeBase {
 
     // Supply DAI to Hub 1
     vm.startPrank(TREASURY_ADMIN);
-    tokenList.dai.transfer(address(hub1), amount);
     treasurySpoke.supply(address(hub1), address(tokenList.dai), amount);
 
     // Supply USDX to Hub 2
-    tokenList.usdx.transfer(address(hub2), amount2);
     treasurySpoke.supply(address(hub2), address(tokenList.usdx), amount2);
+    vm.stopPrank();
+
+    assertEq(treasurySpoke.getSuppliedAssets(address(hub1), address(tokenList.dai)), amount);
+    assertEq(treasurySpoke.getSuppliedAssets(address(hub2), address(tokenList.usdx)), amount2);
+  }
+
+  function test_supplySkimmed_multiHub_differentAsset(uint256 amount, uint256 amount2) public {
+    amount = bound(amount, 1, MAX_SUPPLY_AMOUNT);
+    amount2 = bound(amount2, 1, MAX_SUPPLY_AMOUNT);
+
+    // Supply DAI to Hub 1
+    vm.startPrank(TREASURY_ADMIN);
+    tokenList.dai.transfer(address(hub1), amount);
+    treasurySpoke.supplySkimmed(address(hub1), address(tokenList.dai), amount);
+
+    // Supply USDX to Hub 2
+    tokenList.usdx.transfer(address(hub2), amount2);
+    treasurySpoke.supplySkimmed(address(hub2), address(tokenList.usdx), amount2);
     vm.stopPrank();
 
     assertEq(treasurySpoke.getSuppliedAssets(address(hub1), address(tokenList.dai)), amount);
@@ -314,8 +355,6 @@ contract TreasurySpokeTest is SpokeBase {
 
     // Supply first
     vm.startPrank(TREASURY_ADMIN);
-    tokenList.dai.transfer(address(hub1), amount);
-    tokenList.usdx.transfer(address(hub2), amount2);
     treasurySpoke.supply(address(hub1), address(tokenList.dai), amount);
     treasurySpoke.supply(address(hub2), address(tokenList.usdx), amount2);
     vm.stopPrank();
