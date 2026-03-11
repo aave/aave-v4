@@ -396,12 +396,12 @@ contract Hub is IHub, AccessManaged {
   function payFeeShares(uint256 assetId, uint256 shares) external {
     Asset storage asset = _assets[assetId];
     address feeReceiver = _assets[assetId].feeReceiver;
-    SpokeData storage receiver = _spokes[assetId][feeReceiver];
-    SpokeData storage sender = _spokes[assetId][msg.sender];
+    SpokeData storage receiverSpoke = _spokes[assetId][feeReceiver];
+    SpokeData storage callerSpoke = _spokes[assetId][msg.sender];
 
     asset.accrue();
-    _validatePayFeeShares(sender, shares);
-    _transferShares(sender, receiver, shares);
+    _validatePayFeeShares(callerSpoke, shares);
+    _transferShares(callerSpoke, receiverSpoke, shares);
     asset.updateDrawnRate(assetId);
 
     emit TransferShares(assetId, msg.sender, feeReceiver, shares);
@@ -410,12 +410,12 @@ contract Hub is IHub, AccessManaged {
   /// @inheritdoc IHub
   function transferShares(uint256 assetId, uint256 shares, address toSpoke) external {
     Asset storage asset = _assets[assetId];
-    SpokeData storage sender = _spokes[assetId][msg.sender];
-    SpokeData storage receiver = _spokes[assetId][toSpoke];
+    SpokeData storage callerSpoke = _spokes[assetId][msg.sender];
+    SpokeData storage receiverSpoke = _spokes[assetId][toSpoke];
 
     asset.accrue();
-    _validateTransferShares(asset, sender, receiver, shares);
-    _transferShares(sender, receiver, shares);
+    _validateTransferShares(asset, callerSpoke, receiverSpoke, shares);
+    _transferShares(callerSpoke, receiverSpoke, shares);
     asset.updateDrawnRate(assetId);
 
     emit TransferShares(assetId, msg.sender, toSpoke, shares);
@@ -920,18 +920,18 @@ contract Hub is IHub, AccessManaged {
 
   function _validateTransferShares(
     Asset storage asset,
-    SpokeData storage sender,
-    SpokeData storage receiver,
+    SpokeData storage callerSpoke,
+    SpokeData storage receiverSpoke,
     uint256 shares
   ) internal view {
-    require(sender.active && receiver.active, SpokeNotActive());
-    require(!sender.halted && !receiver.halted, SpokeHalted());
+    require(callerSpoke.active && receiverSpoke.active, SpokeNotActive());
+    require(!callerSpoke.halted && !receiverSpoke.halted, SpokeHalted());
     require(shares > 0, InvalidShares());
-    uint256 addCap = receiver.addCap;
+    uint256 addCap = receiverSpoke.addCap;
     require(
       addCap == MAX_ALLOWED_SPOKE_CAP ||
         addCap * MathUtils.uncheckedExp(10, asset.decimals) >=
-          asset.toAddedAssetsUp(receiver.addedShares + shares),
+          asset.toAddedAssetsUp(receiverSpoke.addedShares + shares),
       AddCapExceeded(addCap)
     );
   }
