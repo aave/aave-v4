@@ -290,8 +290,8 @@ abstract contract TokenizationSpoke is ITokenizationSpoke, ERC20Upgradeable, Int
   /// @inheritdoc IERC4626
   function maxWithdraw(address owner) public view returns (uint256) {
     uint256 maxRemovableAssets = _maxRemovableAssets();
-    uint256 balance = convertToAssets(balanceOf(owner));
-    return balance.min(maxRemovableAssets);
+    uint256 assetBalance = convertToAssets(balanceOf(owner));
+    return assetBalance.min(maxRemovableAssets);
   }
 
   /// @inheritdoc IERC4626

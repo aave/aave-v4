@@ -62,9 +62,10 @@ contract HubEliminateDeficitTest is HubBase {
     uint256
   ) public {
     _createDeficit(_assetId, _coveredSpoke, _deficitAmountRay);
+    uint256 deficitToEliminate = vm.randomUint(_deficitAmountRay, UINT256_MAX).fromRayUp();
     vm.expectRevert(stdError.arithmeticError);
     vm.prank(_callerSpoke);
-    hub1.eliminateDeficit(_assetId, vm.randomUint(_deficitAmountRay, UINT256_MAX), _coveredSpoke);
+    hub1.eliminateDeficit(_assetId, deficitToEliminate, _coveredSpoke);
   }
 
   function test_eliminateDeficit_fuzz_revertsWith_AccessManagedUnauthorized(address caller) public {
@@ -97,6 +98,7 @@ contract HubEliminateDeficitTest is HubBase {
     _createDeficit(_assetId, _otherSpoke, deficitAmountRay2);
 
     uint256 eliminateDeficitRay = vm.randomUint(1, type(uint256).max);
+    uint256 eliminateDeficit = eliminateDeficitRay.fromRayUp();
     uint256 clearedDeficitRay = eliminateDeficitRay.min(_deficitAmountRay);
     uint256 clearedDeficit = clearedDeficitRay.fromRayUp();
 
@@ -123,9 +125,14 @@ contract HubEliminateDeficitTest is HubBase {
       clearedDeficitRay
     );
     vm.prank(_callerSpoke);
-    uint256 removedShares = hub1.eliminateDeficit(_assetId, eliminateDeficitRay, _coveredSpoke);
+    (uint256 removedShares, uint256 deficitEliminated) = hub1.eliminateDeficit(
+      _assetId,
+      eliminateDeficit,
+      _coveredSpoke
+    );
 
     assertEq(removedShares, expectedRemoveShares);
+    assertEq(deficitEliminated, clearedDeficit);
     assertEq(
       hub1.getAssetDeficitRay(_assetId),
       deficitAmountRay2 + _deficitAmountRay - clearedDeficitRay

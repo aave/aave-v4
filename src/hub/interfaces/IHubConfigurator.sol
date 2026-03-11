@@ -8,7 +8,10 @@ import {IHub} from 'src/hub/interfaces/IHub.sol';
 /// @author Aave Labs
 /// @notice Interface for HubConfigurator.
 interface IHubConfigurator {
-  /// @notice Thrown when the list of assets and Spoke configs are not the same length in `addSpokeToAssets`.
+  /// @notice Thrown when an address parameter is the zero address.
+  error InvalidAddress();
+
+  /// @notice Thrown when the list of assets and spoke configs are not the same length in `addSpokeToAssets`.
   error MismatchedConfigs();
 
   /// @notice Adds a new asset to a specified Hub.

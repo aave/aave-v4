@@ -11,14 +11,14 @@ import {IAaveOracle, IPriceOracle} from 'src/spoke/interfaces/IAaveOracle.sol';
 /// @notice Provides reserve prices.
 /// @dev Oracles are spoke-specific, due to the usage of reserve id as index of the `_sources` mapping.
 contract AaveOracle is IAaveOracle {
-  /// @inheritdoc IPriceOracle
-  address public spoke;
-
   /// @dev The number of decimals for the oracle.
   uint8 private immutable DECIMALS;
 
   /// @dev The address of the deployer.
   address private immutable DEPLOYER;
+
+  /// @inheritdoc IPriceOracle
+  address public spoke;
 
   /// @dev Map of reserve identifiers to their price feed.
   mapping(uint256 reserveId => IPriceFeed) internal _sources;

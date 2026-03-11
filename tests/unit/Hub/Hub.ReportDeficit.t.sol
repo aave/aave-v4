@@ -231,7 +231,14 @@ contract HubReportDeficitTest is HubBase {
         totalDeficitRay
       );
       vm.prank(address(spoke1));
-      hub1.reportDeficit(usdxAssetId, baseAmount, premiumDelta);
+      (uint256 returnedDrawnShares, uint256 returnedDeficitAmount) = hub1.reportDeficit(
+        usdxAssetId,
+        baseAmount,
+        premiumDelta
+      );
+
+      assertEq(returnedDrawnShares, drawnShares, 'returned drawn shares');
+      assertEq(returnedDeficitAmount, totalDeficitRay.fromRayUp(), 'returned deficit amount');
 
       (params.drawnAfter, ) = hub1.getAssetOwed(usdxAssetId);
       params.premiumRayAfter = hub1.getAssetPremiumRay(usdxAssetId);

@@ -130,17 +130,18 @@ interface IHubBase {
     PremiumDelta calldata premiumDelta
   ) external returns (uint256);
 
-  /// @notice Reports deficit.
+  /// @notice Reports an owed amount by the caller Spoke as a deficit.
   /// @dev Only callable by active spokes.
   /// @param assetId The identifier of the asset.
   /// @param drawnAmount The drawn amount to report as deficit.
   /// @param premiumDelta The premium delta to apply which signals premium deficit.
   /// @return The amount of drawn shares reported as deficit.
+  /// @return The amount of deficit reported, expressed in asset units.
   function reportDeficit(
     uint256 assetId,
     uint256 drawnAmount,
     PremiumDelta calldata premiumDelta
-  ) external returns (uint256);
+  ) external returns (uint256, uint256);
 
   /// @notice Refreshes premium accounting.
   /// @dev Only callable by active spokes.
