@@ -121,7 +121,7 @@ contract ConfigPositionManagerPermitTest is ConfigPositionManagerBaseTest {
       randomUser,
       delegator,
       true,
-      _warpAfterRandomDeadline()
+      _warpBeforeRandomDeadline()
     );
     bytes memory signature = _sign(randomUserPk, _getTypedDataHash(positionManager, p));
 
@@ -230,7 +230,7 @@ contract ConfigPositionManagerPermitTest is ConfigPositionManagerBaseTest {
         randomUser,
         delegator,
         true,
-        _warpAfterRandomDeadline()
+        _warpBeforeRandomDeadline()
       );
     bytes memory signature = _sign(randomUserPk, _getTypedDataHash(positionManager, p));
 
@@ -345,7 +345,7 @@ contract ConfigPositionManagerPermitTest is ConfigPositionManagerBaseTest {
         randomUser,
         delegator,
         true,
-        _warpAfterRandomDeadline()
+        _warpBeforeRandomDeadline()
       );
     bytes memory signature = _sign(randomUserPk, _getTypedDataHash(positionManager, p));
 
@@ -460,7 +460,7 @@ contract ConfigPositionManagerPermitTest is ConfigPositionManagerBaseTest {
         randomUser,
         delegator,
         true,
-        _warpAfterRandomDeadline()
+        _warpBeforeRandomDeadline()
       );
     bytes memory signature = _sign(randomUserPk, _getTypedDataHash(positionManager, p));
 
