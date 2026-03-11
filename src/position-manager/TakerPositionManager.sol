@@ -227,9 +227,9 @@ contract TakerPositionManager is ITakerPositionManager, PositionManagerBase {
       amount: amount
     });
 
-    uint256 drawnAssetsBefore;
+    uint256 borrowedAssetsBefore;
     if (currentAllowance != type(uint256).max) {
-      drawnAssetsBefore = ISpoke(spoke).getUserTotalDebt(reserveId, onBehalfOf);
+      borrowedAssetsBefore = ISpoke(spoke).getUserTotalDebt(reserveId, onBehalfOf);
     }
 
     (uint256 borrowedShares, uint256 borrowedAmount) = ISpoke(spoke).borrow({
@@ -244,16 +244,16 @@ contract TakerPositionManager is ITakerPositionManager, PositionManagerBase {
     // delta of `getUserTotalDebt`, and capped at `currentAllowance` to prevent underflow
     // from rounding.
     if (currentAllowance != type(uint256).max) {
-      uint256 drawnAssetsAfter = ISpoke(spoke).getUserTotalDebt(reserveId, onBehalfOf);
+      uint256 borrowedAssetsAfter = ISpoke(spoke).getUserTotalDebt(reserveId, onBehalfOf);
       /// Deducts the corrected amount from the given allowance.
-      /// the correctedAmount (`drawnAssetsAfter` - `drawnAssetsBefore`) may exceed `currentAllowance` by a rounding delta;
+      /// the correctedAmount (`borrowedAssetsAfter` - `borrowedAssetsBefore`) may exceed `currentAllowance` by a rounding delta;
       /// consumption is capped at `currentAllowance` to prevent underflow.
       _updateBorrowAllowance({
         spoke: spoke,
         reserveId: reserveId,
         owner: onBehalfOf,
         spender: msg.sender,
-        newAllowance: currentAllowance.zeroFloorSub(drawnAssetsAfter - drawnAssetsBefore)
+        newAllowance: currentAllowance.zeroFloorSub(borrowedAssetsAfter - borrowedAssetsBefore)
       });
     }
     underlying.safeTransfer(msg.sender, borrowedAmount);
