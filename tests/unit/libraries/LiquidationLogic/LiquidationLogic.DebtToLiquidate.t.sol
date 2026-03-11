@@ -15,7 +15,7 @@ contract LiquidationLogicDebtToLiquidateTest is LiquidationLogicBaseTest {
   ) public {
     params = _bound(params);
 
-    uint256 debtRayToTarget = liquidationLogicWrapper.calculateDebtToTargetHealthFactorRay(
+    uint256 debtRayToTarget = liquidationLogicWrapper.calculateDebtToTargetHealthFactor(
       _getDebtToTargetHealthFactorParams(params)
     );
     uint256 rawPremiumDebtRayToLiquidate = debtRayToTarget.fromRayUp().toRay().min(
@@ -80,7 +80,7 @@ contract LiquidationLogicDebtToLiquidateTest is LiquidationLogicBaseTest {
       LiquidationLogic.DUST_LIQUIDATION_THRESHOLD.fromWadDown() * params.debtAssetUnit,
       MAX_ASSET_PRICE
     );
-    uint256 debtRayToTarget = liquidationLogicWrapper.calculateDebtToTargetHealthFactorRay(
+    uint256 debtRayToTarget = liquidationLogicWrapper.calculateDebtToTargetHealthFactor(
       _getDebtToTargetHealthFactorParams(params)
     );
 

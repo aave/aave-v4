@@ -237,7 +237,7 @@ contract LiquidationLogicWrapper {
     LiquidationLogic._validateLiquidationCall(params);
   }
 
-  function calculateDebtToTargetHealthFactorRay(
+  function calculateDebtToTargetHealthFactor(
     LiquidationLogic.CalculateDebtToTargetHealthFactorParams memory params
   ) public pure returns (uint256) {
     return LiquidationLogic._calculateDebtToTargetHealthFactor(params);

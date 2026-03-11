@@ -666,7 +666,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
     CheckedLiquidationCallParams memory params,
     ISpoke.UserAccountData memory userAccountDataBefore
   ) internal virtual returns (LiquidationMetadata memory) {
-    uint256 debtRayToTarget = liquidationLogicWrapper.calculateDebtToTargetHealthFactorRay(
+    uint256 debtRayToTarget = liquidationLogicWrapper.calculateDebtToTargetHealthFactor(
       _getCalculateDebtToTargetHealthFactorParams(
         params.spoke,
         params.collateralReserveId,

@@ -105,13 +105,13 @@ contract SpokeGettersTest is SpokeBase {
     vm.stopPrank();
   }
 
-  function test_calculateLiquidationBonus_notConfigured() public {
+  function test_getLiquidationBonus_notConfigured() public {
     uint256 reserveId = _daiReserveId(spoke);
     uint256 healthFactor = WadRayMath.WAD;
-    test_calculateLiquidationBonus_fuzz_notConfigured(reserveId, healthFactor);
+    test_getLiquidationBonus_fuzz_notConfigured(reserveId, healthFactor);
   }
 
-  function test_calculateLiquidationBonus_fuzz_notConfigured(
+  function test_getLiquidationBonus_fuzz_notConfigured(
     uint256 reserveId,
     uint256 healthFactor
   ) public {
@@ -141,13 +141,13 @@ contract SpokeGettersTest is SpokeBase {
     );
   }
 
-  function test_calculateLiquidationBonus_configured() public {
+  function test_getLiquidationBonus_configured() public {
     uint256 reserveId = _daiReserveId(spoke);
     uint256 healthFactor = WadRayMath.WAD;
-    test_calculateLiquidationBonus_fuzz_configured(reserveId, healthFactor, 40_00, 0.9e18);
+    test_getLiquidationBonus_fuzz_configured(reserveId, healthFactor, 40_00, 0.9e18);
   }
 
-  function test_calculateLiquidationBonus_fuzz_configured(
+  function test_getLiquidationBonus_fuzz_configured(
     uint256 reserveId,
     uint256 healthFactor,
     uint16 liquidationBonusFactor,

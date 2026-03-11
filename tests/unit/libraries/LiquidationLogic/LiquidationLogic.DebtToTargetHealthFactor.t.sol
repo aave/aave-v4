@@ -20,7 +20,7 @@ contract LiquidationLogicDebtToTargetHealthFactorTest is LiquidationLogicBaseTes
   function test_calculateDebtToTargetHealthFactor_fuzz_NoRevert(
     LiquidationLogic.CalculateDebtToTargetHealthFactorParams memory params
   ) public {
-    liquidationLogicWrapper.calculateDebtToTargetHealthFactorRay(_bound(params));
+    liquidationLogicWrapper.calculateDebtToTargetHealthFactor(_bound(params));
   }
 
   /// if debtAssetPrice == 0, then function reverts (should not happen in practice)
@@ -30,7 +30,7 @@ contract LiquidationLogicDebtToTargetHealthFactorTest is LiquidationLogicBaseTes
     params = _bound(params);
     params.debtAssetPrice = 0;
     vm.expectRevert(); // MathUtils reverts with no data if division by zero
-    liquidationLogicWrapper.calculateDebtToTargetHealthFactorRay(params);
+    liquidationLogicWrapper.calculateDebtToTargetHealthFactor(params);
   }
 
   /// if health factor == target health factor, then result is 0
@@ -39,7 +39,7 @@ contract LiquidationLogicDebtToTargetHealthFactorTest is LiquidationLogicBaseTes
   ) public {
     params = _bound(params);
     params.healthFactor = params.targetHealthFactor;
-    assertEq(liquidationLogicWrapper.calculateDebtToTargetHealthFactorRay(params), 0);
+    assertEq(liquidationLogicWrapper.calculateDebtToTargetHealthFactor(params), 0);
   }
 
   /// if target health factor is less than health factor, then function reverts (should not happen in practice)
@@ -49,13 +49,13 @@ contract LiquidationLogicDebtToTargetHealthFactorTest is LiquidationLogicBaseTes
     params = _bound(params);
     params.healthFactor = params.targetHealthFactor + 1;
     vm.expectRevert(stdError.arithmeticError);
-    liquidationLogicWrapper.calculateDebtToTargetHealthFactorRay(params);
+    liquidationLogicWrapper.calculateDebtToTargetHealthFactor(params);
   }
 
   function test_calculateDebtToTargetHealthFactor_UnitPrice() public view {
     for (uint256 i = 0; i < assetUnitList.length; i++) {
       uint256 assetUnit = assetUnitList[i];
-      uint256 debtToTarget = liquidationLogicWrapper.calculateDebtToTargetHealthFactorRay(
+      uint256 debtToTarget = liquidationLogicWrapper.calculateDebtToTargetHealthFactor(
         LiquidationLogic.CalculateDebtToTargetHealthFactorParams({
           totalDebtValueRay: 10_000e26 * WadRayMath.RAY,
           debtAssetPrice: 1e8,
@@ -76,7 +76,7 @@ contract LiquidationLogicDebtToTargetHealthFactorTest is LiquidationLogicBaseTes
   function test_calculateDebtToTargetHealthFactor_NoPrecisionLoss() public view {
     for (uint256 i = 0; i < assetUnitList.length; i++) {
       uint256 assetUnit = assetUnitList[i];
-      uint256 debtToTarget = liquidationLogicWrapper.calculateDebtToTargetHealthFactorRay(
+      uint256 debtToTarget = liquidationLogicWrapper.calculateDebtToTargetHealthFactor(
         LiquidationLogic.CalculateDebtToTargetHealthFactorParams({
           totalDebtValueRay: 10_000e26 * WadRayMath.RAY,
           debtAssetUnit: assetUnit,
@@ -105,15 +105,15 @@ contract LiquidationLogicDebtToTargetHealthFactorTest is LiquidationLogicBaseTes
         healthFactor: 0.8e18,
         targetHealthFactor: 1e18
       });
-    uint256 debtToTarget = liquidationLogicWrapper.calculateDebtToTargetHealthFactorRay(params);
+    uint256 debtToTarget = liquidationLogicWrapper.calculateDebtToTargetHealthFactor(params);
     assertEq(debtToTarget, 24.024024024024024024024024025e27);
 
     params.debtAssetUnit = 1e6;
-    debtToTarget = liquidationLogicWrapper.calculateDebtToTargetHealthFactorRay(params);
+    debtToTarget = liquidationLogicWrapper.calculateDebtToTargetHealthFactor(params);
     assertEq(debtToTarget, 24.024024024024024024024024024024025e33);
 
     params.debtAssetUnit = 1e18;
-    debtToTarget = liquidationLogicWrapper.calculateDebtToTargetHealthFactorRay(params);
+    debtToTarget = liquidationLogicWrapper.calculateDebtToTargetHealthFactor(params);
     assertEq(debtToTarget, 24.024024024024024024024024024024024024024024025e45);
   }
 }
