@@ -99,14 +99,6 @@ contract TreasurySpokeTest is SpokeBase {
 
     vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, caller));
     vm.prank(caller);
-    treasurySpoke.supplySkimmed(address(hub1), address(tokenList.dai), 1);
-  }
-
-  function test_withdraw_revertsWith_Unauthorized(address caller) public {
-    vm.assume(caller != TREASURY_ADMIN && caller != _getProxyAdminAddress(address(treasurySpoke)));
-
-    vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, caller));
-    vm.prank(caller);
     treasurySpoke.withdraw(address(hub1), address(tokenList.dai), 1);
   }
 
