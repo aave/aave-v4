@@ -189,7 +189,7 @@ contract TakerPositionManager is ITakerPositionManager, PositionManagerBase {
     });
 
     // Simply decreasing the allowance by the input `amount` is not ideal for shares-based
-    // positions. Due to rounding in supply-side SharesMath, the actual decrease in the user's
+    // positions. Due to rounding in Hub conversions, the actual decrease in the user's
     // position value can differ slightly from the input `amount`. To handle this, the allowance
     // consumption is based on the before/after delta of `getUserSuppliedAssets`, and capped at
     // `currentAllowance` to prevent underflow from rounding.

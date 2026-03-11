@@ -90,7 +90,7 @@ contract TakerPositionManagerTest is TakerPositionManagerBaseTest {
     uint256 expectedAllowance = amount >= correctedAmount ? amount - correctedAmount : 0;
 
     vm.expectEmit(address(spoke1));
-    emit ISpokeBase.Withdraw(
+    emit ISpoke.Withdraw(
       _daiReserveId(spoke1),
       address(positionManager),
       alice,

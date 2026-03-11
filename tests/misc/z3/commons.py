@@ -50,38 +50,6 @@ def rayDivDown(a, b):
     return (a * RAY) / b
 
 
-def toDrawnSharesUp(assets, drawnIndex):
-    return rayDivUp(assets, drawnIndex)
-
-
-def toDrawnSharesDown(assets, drawnIndex):
-    return rayDivDown(assets, drawnIndex)
-
-
-def toDrawnAssetsUp(shares, drawnIndex):
-    return rayMulUp(shares, drawnIndex)
-
-
-def toDrawnAssetsDown(shares, drawnIndex):
-    return rayMulDown(shares, drawnIndex)
-
-
-def previewDrawByAssets(assets, drawnIndex):
-    return toDrawnSharesUp(assets, drawnIndex)
-
-
-def previewDrawByShares(shares, drawnIndex):
-    return toDrawnAssetsDown(shares, drawnIndex)
-
-
-def previewRestoreByAssets(assets, drawnIndex):
-    return toDrawnSharesDown(assets, drawnIndex)
-
-
-def previewRestoreByShares(shares, drawnIndex):
-    return toDrawnAssetsUp(shares, drawnIndex)
-
-
 def fromRayDown(a):
     return a / RAY
 
@@ -123,6 +91,22 @@ def toAddedAssetsUp(shares, totalAddedAssets, addedShares):
     )
 
 
+def toDrawnSharesUp(assets, drawnIndex):
+    return rayDivUp(assets, drawnIndex)
+
+
+def toDrawnSharesDown(assets, drawnIndex):
+    return rayDivDown(assets, drawnIndex)
+
+
+def toDrawnAssetsUp(shares, drawnIndex):
+    return rayMulUp(shares, drawnIndex)
+
+
+def toDrawnAssetsDown(shares, drawnIndex):
+    return rayMulDown(shares, drawnIndex)
+
+
 def previewAddByAssets(assets, totalAddedAssets, addedShares):
     return toAddedSharesDown(assets, totalAddedAssets, addedShares)
 
@@ -137,6 +121,22 @@ def previewRemoveByAssets(assets, totalAddedAssets, addedShares):
 
 def previewRemoveByShares(shares, totalAddedAssets, addedShares):
     return toAddedAssetsDown(shares, totalAddedAssets, addedShares)
+
+
+def previewDrawByAssets(assets, drawnIndex):
+    return toDrawnSharesUp(assets, drawnIndex)
+
+
+def previewDrawByShares(shares, drawnIndex):
+    return toDrawnAssetsDown(shares, drawnIndex)
+
+
+def previewRestoreByAssets(assets, drawnIndex):
+    return toDrawnSharesDown(assets, drawnIndex)
+
+
+def previewRestoreByShares(shares, drawnIndex):
+    return toDrawnAssetsUp(shares, drawnIndex)
 
 
 # Assumes the asset uses at most 18 decimals.

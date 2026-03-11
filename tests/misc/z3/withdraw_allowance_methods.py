@@ -29,7 +29,7 @@ s.add(withdrawAmount <= totalAddedAssets)
 withdrawnShares = toAddedSharesUp(withdrawAmount, totalAddedAssets, totalAddedShares)
 s.add(withdrawnShares <= userShares)
 
-userSuppliedBefore = toAddedAssetsUp(userShares, totalAddedAssets, totalAddedShares)
+userSuppliedBefore = previewRemoveByShares(userShares, totalAddedAssets, totalAddedShares)
 
 roundTripShares = toAddedSharesDown(withdrawAmount, totalAddedAssets, totalAddedShares)
 methodC = toAddedAssetsUp(roundTripShares, totalAddedAssets, totalAddedShares)
@@ -40,7 +40,7 @@ afterTotalAddedShares = totalAddedShares - withdrawnShares
 
 methodA = toAddedAssetsUp(withdrawnShares, afterTotalAddedAssets, afterTotalAddedShares)
 
-userSuppliedAfter = toAddedAssetsUp(userShares - withdrawnShares, afterTotalAddedAssets, afterTotalAddedShares)
+userSuppliedAfter = previewRemoveByShares(userShares - withdrawnShares, afterTotalAddedAssets, afterTotalAddedShares)
 methodB = userSuppliedBefore - userSuppliedAfter
 
 # Safety (all methods >= actual withdrawn amount)
