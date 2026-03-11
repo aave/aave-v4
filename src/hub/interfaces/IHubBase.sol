@@ -93,13 +93,13 @@ interface IHubBase {
   /// @notice Adds assets on behalf of a user.
   /// @dev Only callable by active spokes.
   /// @dev Underlying assets must be transferred to the Hub before invocation.
-  /// @dev Extra underlying liquidity retained in the Hub can be skimmed by any Spoke through this action.
+  /// @dev Extra untracked underlying liquidity in the Hub can be skimmed into the Hub's liquidity accounting through this action.
   /// @param assetId The identifier of the asset.
   /// @param amount The amount of asset liquidity to add.
   /// @return The amount of shares added.
   function add(uint256 assetId, uint256 amount) external returns (uint256);
 
-  /// @notice Removes added assets on behalf of a user.
+  /// @notice Removes assets on behalf of a user.
   /// @dev Only callable by active spokes.
   /// @param assetId The identifier of the asset.
   /// @param amount The amount of asset liquidity to remove.
@@ -119,7 +119,7 @@ interface IHubBase {
   /// @dev Only callable by active spokes.
   /// @dev Interest is always paid off first from premium, then from drawn.
   /// @dev Underlying assets must be transferred to the Hub before invocation.
-  /// @dev Extra underlying liquidity retained in the Hub can be skimmed by any Spoke through this action.
+  /// @dev Extra untracked underlying liquidity in the Hub can be skimmed into the Hub's liquidity accounting through this action.
   /// @param assetId The identifier of the asset.
   /// @param drawnAmount The drawn amount to restore.
   /// @param premiumDelta The premium delta to apply which signals premium repayment.
@@ -157,7 +157,7 @@ interface IHubBase {
 
   /// @notice Converts the specified amount of assets to shares upon an `add` action.
   /// @dev Rounds down to the nearest shares amount.
-  /// @dev Defaults to a 1:1 exchange rate for all `assetId`s due to an equal number of virtual assets and shares.
+  /// @dev Defaults to a 1:1 exchange rate.
   /// @param assetId The identifier of the asset.
   /// @param assets The amount of assets to convert to shares amount.
   /// @return The amount of shares converted from assets amount.
@@ -165,7 +165,7 @@ interface IHubBase {
 
   /// @notice Converts the specified shares amount to assets amount added upon an `add` action.
   /// @dev Rounds up to the nearest assets amount.
-  /// @dev Defaults to a 1:1 exchange rate for all `assetId`s due to an equal number of virtual assets and shares.
+  /// @dev Defaults to a 1:1 exchange rate.
   /// @param assetId The identifier of the asset.
   /// @param shares The amount of shares to convert to assets amount.
   /// @return The amount of assets converted from shares amount.
@@ -173,7 +173,7 @@ interface IHubBase {
 
   /// @notice Converts the specified amount of assets to shares amount removed upon a `remove` action.
   /// @dev Rounds up to the nearest shares amount.
-  /// @dev Defaults to a 1:1 exchange rate for all `assetId`s due to an equal number of virtual assets and shares.
+  /// @dev Defaults to a 1:1 exchange rate.
   /// @param assetId The identifier of the asset.
   /// @param assets The amount of assets to convert to shares amount.
   /// @return The amount of shares converted from assets amount.
@@ -181,7 +181,7 @@ interface IHubBase {
 
   /// @notice Converts the specified amount of shares to assets amount removed upon a `remove` action.
   /// @dev Rounds down to the nearest assets amount.
-  /// @dev Defaults to a 1:1 exchange rate for all `assetId`s due to an equal number of virtual assets and shares.
+  /// @dev Defaults to a 1:1 exchange rate.
   /// @param assetId The identifier of the asset.
   /// @param shares The amount of shares to convert to assets amount.
   /// @return The amount of assets converted from shares amount.
@@ -219,7 +219,6 @@ interface IHubBase {
   /// @notice Returns the asset identifier for the specified underlying asset.
   /// @dev Reverts with `AssetNotListed` if the underlying is not listed.
   /// @param underlying The address of the underlying asset.
-  /// @return The `assetId` of the underlying asset.
   function getAssetId(address underlying) external view returns (uint256);
 
   /// @notice Returns the underlying address and decimals of the specified asset.

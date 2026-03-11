@@ -121,7 +121,6 @@ interface ISpoke is ISpokeBase, IAccessManaged, IIntentConsumer, IExtSload, IMul
   }
 
   /// @notice User account data describing a user position and its health.
-  /// @dev A unit of "Value" is a WAD normalised token amount scaled by oracle price-denominated decimals (8).
   /// @dev riskPremium The risk premium of the user position, expressed in BPS.
   /// @dev avgCollateralFactor The weighted average collateral factor of the user position, expressed in WAD.
   /// @dev healthFactor The health factor of the user position, expressed in WAD. 1e18 represents a health factor of 1.00.
@@ -526,7 +525,7 @@ interface ISpoke is ISpokeBase, IAccessManaged, IIntentConsumer, IExtSload, IMul
   /// @return The risk premium of the user from the last position update, expressed in BPS.
   function getUserLastRiskPremium(address user) external view returns (uint256);
 
-  /// @notice Calculates the liquidation bonus for a given health factor, based on the user's current dynamic configuration.
+  /// @notice Returns the liquidation bonus for a given health factor, based on the user's current dynamic configuration.
   /// @dev It reverts if the reserve associated with the given reserve identifier is not listed.
   /// @param reserveId The identifier of the reserve.
   /// @param user The address of the user.

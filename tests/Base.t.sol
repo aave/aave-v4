@@ -2802,9 +2802,9 @@ abstract contract Base is Test {
     _mockDrawnRateBps(address(irStrategy), drawnRateBps);
   }
 
-  function _mockDrawnRateBps(address irStrategy, uint256 drawnRateBps) internal {
+  function _mockDrawnRateBps(address irStrat, uint256 drawnRateBps) internal {
     vm.mockCall(
-      irStrategy,
+      irStrat,
       IBasicInterestRateStrategy.calculateInterestRate.selector,
       abi.encode(drawnRateBps.bpsToRay())
     );
@@ -2822,7 +2822,7 @@ abstract contract Base is Test {
   }
 
   function _mockDrawnRateBps(
-    address irStrategy,
+    address irStrat,
     uint256 drawnRateBps,
     uint256 assetId,
     uint256 liquidity,
@@ -2831,7 +2831,7 @@ abstract contract Base is Test {
     uint256 swept
   ) internal {
     vm.mockCall(
-      irStrategy,
+      irStrat,
       abi.encodeCall(
         IBasicInterestRateStrategy.calculateInterestRate,
         (assetId, liquidity, drawn, deficit, swept)
@@ -2844,9 +2844,9 @@ abstract contract Base is Test {
     _mockDrawnRateRay(address(irStrategy), drawnRateRay);
   }
 
-  function _mockDrawnRateRay(address irStrategy, uint256 drawnRateRay) internal {
+  function _mockDrawnRateRay(address irStrat, uint256 drawnRateRay) internal {
     vm.mockCall(
-      irStrategy,
+      irStrat,
       IBasicInterestRateStrategy.calculateInterestRate.selector,
       abi.encode(drawnRateRay)
     );
@@ -2862,7 +2862,7 @@ abstract contract Base is Test {
   }
 
   function _mockDrawnRateRay(
-    address irStrategy,
+    address irStrat,
     uint256 drawnRateRay,
     uint256 assetId,
     uint256 liquidity,
@@ -2871,7 +2871,7 @@ abstract contract Base is Test {
     uint256 swept
   ) internal {
     vm.mockCall(
-      irStrategy,
+      irStrat,
       abi.encodeCall(
         IBasicInterestRateStrategy.calculateInterestRate,
         (assetId, liquidity, drawn, deficit, swept)
