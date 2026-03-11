@@ -17,9 +17,6 @@ interface IAccessManagerEnumerable is IAccessManager {
   /// @notice The label is already assigned to a different role.
   error AccessManagerLabelAlreadyUsed(string label, uint64 roleId);
 
-  /// @notice The role has already been labeled.
-  error AccessManagerRoleAlreadyLabeled(uint64 roleId);
-
   /// @notice The label string is empty.
   error AccessManagerEmptyLabel();
 

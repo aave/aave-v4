@@ -923,21 +923,46 @@ contract AccessManagerEnumerableTest is Test {
     assertEq(accessManagerEnumerable.getLabelRole('EMERGENCY_ADMIN'), roleId2);
   }
 
-  function test_labelRole_revertsForAlreadyLabeledRole() public {
+  function test_labelRole_relabel() public {
     uint64 roleId = 1;
 
     vm.startPrank(ADMIN);
     accessManagerEnumerable.setRoleAdmin(roleId, ADMIN_ROLE);
-    accessManagerEnumerable.labelRole(roleId, 'FIRST_LABEL');
+    accessManagerEnumerable.labelRole(roleId, 'OLD_LABEL');
+
+    assertEq(accessManagerEnumerable.getRoleLabelCount(), 1);
+    assertEq(accessManagerEnumerable.getRoleLabel(roleId), 'OLD_LABEL');
+    assertEq(accessManagerEnumerable.getLabelRole('OLD_LABEL'), roleId);
+
+    accessManagerEnumerable.labelRole(roleId, 'NEW_LABEL');
+    vm.stopPrank();
+
+    assertEq(accessManagerEnumerable.getRoleLabelCount(), 1);
+    assertEq(accessManagerEnumerable.getRoleLabelAt(0), 'NEW_LABEL');
+    assertEq(accessManagerEnumerable.getRoleLabel(roleId), 'NEW_LABEL');
+    assertEq(accessManagerEnumerable.getLabelRole('NEW_LABEL'), roleId);
 
     vm.expectRevert(
       abi.encodeWithSelector(
-        IAccessManagerEnumerable.AccessManagerRoleAlreadyLabeled.selector,
-        roleId
+        IAccessManagerEnumerable.AccessManagerUnregisteredLabel.selector,
+        'OLD_LABEL'
       )
     );
-    accessManagerEnumerable.labelRole(roleId, 'SECOND_LABEL');
+    accessManagerEnumerable.getLabelRole('OLD_LABEL');
+  }
+
+  function test_labelRole_relabelSameLabel() public {
+    uint64 roleId = 1;
+
+    vm.startPrank(ADMIN);
+    accessManagerEnumerable.setRoleAdmin(roleId, ADMIN_ROLE);
+    accessManagerEnumerable.labelRole(roleId, 'SAME_LABEL');
+    accessManagerEnumerable.labelRole(roleId, 'SAME_LABEL');
     vm.stopPrank();
+
+    assertEq(accessManagerEnumerable.getRoleLabelCount(), 1);
+    assertEq(accessManagerEnumerable.getRoleLabel(roleId), 'SAME_LABEL');
+    assertEq(accessManagerEnumerable.getLabelRole('SAME_LABEL'), roleId);
   }
 
   function test_getRoleLabel_revertsForUnlabeledRole() public {
