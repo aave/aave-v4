@@ -3,7 +3,7 @@
 # the user's supplied assets — suitable for decreasing the taker withdraw allowance.
 #
 # Method A: toAddedAssetsUp(withdrawnShares)               — ceil conversion of burned shares
-# Method B: toAddedAssetsUp(before) - toAddedAssetsUp(after) — delta of ceil asset views
+# Method B: previewRemoveByShares(before) - previewRemoveByShares(after) — delta of floor asset views
 #           using updated totals after the withdraw (accounts for share price change)
 # Method C: toAddedAssetsUp(toAddedSharesDown(amount))     — round-trip of the input amount
 #
@@ -15,32 +15,38 @@ from commons import *
 s = Solver()
 s.set("timeout", 300000)  # 5min per check
 
-totalAddedAssets = Int("totalAddedAssets")
 totalAddedShares = Int("totalAddedShares")
-userShares = Int("userShares")
+s.add(0 <= totalAddedShares, totalAddedShares <= MAX_SUPPLY_AMOUNT)
+totalAddedAssets = Int("totalAddedAssets")
+s.add(
+    (totalAddedShares + VIRTUAL_SHARES) <= (totalAddedAssets + VIRTUAL_ASSETS),
+    (totalAddedAssets + VIRTUAL_ASSETS)
+    <= MAX_SUPPLY_PRICE * (totalAddedShares + VIRTUAL_SHARES),
+)
+userSuppliedShares = Int("userSuppliedShares")
 withdrawAmount = Int("withdrawAmount")
 
 s.add(0 <= totalAddedAssets, totalAddedAssets <= 10**30)
 s.add(0 <= totalAddedShares, totalAddedShares <= 10**30)
-s.add(0 <= userShares, userShares <= totalAddedShares)
+s.add(0 <= userSuppliedShares, userSuppliedShares <= totalAddedShares)
 s.add(1 <= withdrawAmount, withdrawAmount <= 10**30)
 s.add(withdrawAmount <= totalAddedAssets)
 
 withdrawnShares = toAddedSharesUp(withdrawAmount, totalAddedAssets, totalAddedShares)
-s.add(withdrawnShares <= userShares)
+s.add(withdrawnShares <= userSuppliedShares)
 
-userSuppliedBefore = previewRemoveByShares(userShares, totalAddedAssets, totalAddedShares)
+userSuppliedBefore = previewRemoveByShares(userSuppliedShares, totalAddedAssets, totalAddedShares)
 
-roundTripShares = toAddedSharesDown(withdrawAmount, totalAddedAssets, totalAddedShares)
-methodC = toAddedAssetsUp(roundTripShares, totalAddedAssets, totalAddedShares)
+roundTripShares = previewAddByAssets(withdrawAmount, totalAddedAssets, totalAddedShares)
+methodC = previewAddByShares(roundTripShares, totalAddedAssets, totalAddedShares)
 
 # After withdraw, totals change:
 afterTotalAddedAssets = totalAddedAssets - withdrawAmount
 afterTotalAddedShares = totalAddedShares - withdrawnShares
 
-methodA = toAddedAssetsUp(withdrawnShares, afterTotalAddedAssets, afterTotalAddedShares)
+methodA = previewAddByShares(withdrawnShares, afterTotalAddedAssets, afterTotalAddedShares)
 
-userSuppliedAfter = previewRemoveByShares(userShares - withdrawnShares, afterTotalAddedAssets, afterTotalAddedShares)
+userSuppliedAfter = previewRemoveByShares(userSuppliedShares - withdrawnShares, afterTotalAddedAssets, afterTotalAddedShares)
 methodB = userSuppliedBefore - userSuppliedAfter
 
 # Safety (all methods >= actual withdrawn amount)

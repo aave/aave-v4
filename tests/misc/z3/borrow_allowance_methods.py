@@ -8,7 +8,7 @@
 #
 # Method A: rayMulUp(borrowedShares, drawnIndex)
 #           — direct round-trip of borrowed shares back to assets
-# Method B: rayMulUp(userShares + borrowedShares, drawnIndex) - rayMulUp(userShares, drawnIndex)
+# Method B: rayMulUp(userDrawnShares + borrowedShares, drawnIndex) - rayMulUp(userDrawnShares, drawnIndex)
 #           — before/after delta of user drawn debt
 #
 # Both methods should always be >= borrowAmount (safety).
@@ -19,11 +19,11 @@ s = Solver()
 s.set("timeout", 300000)  # 5min per check
 
 drawnIndex = Int("drawnIndex")
-userShares = Int("userShares")
+userDrawnShares = Int("userDrawnShares")
 borrowAmount = Int("borrowAmount")
 
 s.add(MIN_DRAWN_INDEX <= drawnIndex, drawnIndex <= MAX_DRAWN_INDEX)
-s.add(0 <= userShares, userShares <= 10**30)
+s.add(0 <= userDrawnShares, userDrawnShares <= 10**30)
 s.add(1 <= borrowAmount, borrowAmount <= 10**30)
 
 
@@ -33,8 +33,8 @@ borrowedShares = toDrawnSharesUp(borrowAmount, drawnIndex)
 methodA = toDrawnAssetsUp(borrowedShares, drawnIndex)
 
 # Method B: before/after delta
-userDebtBefore = toDrawnAssetsUp(userShares, drawnIndex)
-userDebtAfter = toDrawnAssetsUp(userShares + borrowedShares, drawnIndex)
+userDebtBefore = toDrawnAssetsUp(userDrawnShares, drawnIndex)
+userDebtAfter = toDrawnAssetsUp(userDrawnShares + borrowedShares, drawnIndex)
 methodB = userDebtAfter - userDebtBefore
 
 # Safety (both methods >= actual borrow amount)
