@@ -3,7 +3,7 @@
 pragma solidity 0.8.28;
 
 import {SafeERC20, IERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
-import {ISpokeBase} from 'src/spoke/interfaces/ISpokeBase.sol';
+import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 import {IGiverPositionManager} from 'src/position-manager/interfaces/IGiverPositionManager.sol';
 import {PositionManagerBase} from 'src/position-manager/PositionManagerBase.sol';
 
@@ -27,7 +27,7 @@ contract GiverPositionManager is IGiverPositionManager, PositionManagerBase {
     IERC20 underlying = IERC20(_getReserveUnderlying(spoke, reserveId));
     underlying.safeTransferFrom(msg.sender, address(this), amount);
     underlying.forceApprove(spoke, amount);
-    return ISpokeBase(spoke).supply(reserveId, amount, onBehalfOf);
+    return ISpoke(spoke).supply(reserveId, amount, onBehalfOf);
   }
 
   /// @inheritdoc IGiverPositionManager
@@ -40,12 +40,12 @@ contract GiverPositionManager is IGiverPositionManager, PositionManagerBase {
     require(amount != type(uint256).max, RepayOnBehalfMaxUintNotAllowed());
     IERC20 underlying = IERC20(_getReserveUnderlying(spoke, reserveId));
 
-    uint256 userTotalDebt = ISpokeBase(spoke).getUserTotalDebt(reserveId, onBehalfOf);
+    uint256 userTotalDebt = ISpoke(spoke).getUserTotalDebt(reserveId, onBehalfOf);
     uint256 repayAmount = amount > userTotalDebt ? userTotalDebt : amount;
 
     underlying.safeTransferFrom(msg.sender, address(this), repayAmount);
     underlying.forceApprove(spoke, repayAmount);
-    return ISpokeBase(spoke).repay(reserveId, repayAmount, onBehalfOf);
+    return ISpoke(spoke).repay(reserveId, repayAmount, onBehalfOf);
   }
 
   function _multicallEnabled() internal pure override returns (bool) {

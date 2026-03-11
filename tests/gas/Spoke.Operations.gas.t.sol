@@ -229,7 +229,7 @@ contract SpokeOperations_Gas_Tests is SpokeBase {
     spoke.supply(reserveId.wbtc, 1e18, bob);
 
     bytes[] memory calls = new bytes[](2);
-    calls[0] = abi.encodeCall(ISpokeBase.supply, (reserveId.dai, 1000e18, bob));
+    calls[0] = abi.encodeCall(ISpoke.supply, (reserveId.dai, 1000e18, bob));
     calls[1] = abi.encodeCall(ISpoke.setUsingAsCollateral, (reserveId.dai, true, bob));
 
     spoke.multicall(calls);
@@ -249,7 +249,7 @@ contract SpokeOperations_Gas_Tests is SpokeBase {
       ISpoke.permitReserve,
       (reserveId.dai, permit.owner, permit.value, permit.deadline, v, r, s)
     );
-    calls[1] = abi.encodeCall(ISpokeBase.supply, (reserveId.dai, permit.value, permit.owner));
+    calls[1] = abi.encodeCall(ISpoke.supply, (reserveId.dai, permit.value, permit.owner));
     spoke.multicall(calls);
     vm.snapshotGasLastCall(NAMESPACE, 'permitReserve + supply (multicall)');
 
@@ -269,7 +269,7 @@ contract SpokeOperations_Gas_Tests is SpokeBase {
       ISpoke.permitReserve,
       (reserveId.usdx, permit.owner, permit.value, permit.deadline, v, r, s)
     );
-    calls[1] = abi.encodeCall(ISpokeBase.repay, (reserveId.usdx, permit.value, permit.owner));
+    calls[1] = abi.encodeCall(ISpoke.repay, (reserveId.usdx, permit.value, permit.owner));
     spoke.multicall(calls);
     vm.snapshotGasLastCall(NAMESPACE, 'permitReserve + repay (multicall)');
 
@@ -288,7 +288,7 @@ contract SpokeOperations_Gas_Tests is SpokeBase {
       ISpoke.permitReserve,
       (reserveId.wbtc, permit.owner, permit.value, permit.deadline, v, r, s)
     );
-    calls[1] = abi.encodeCall(ISpokeBase.supply, (reserveId.wbtc, permit.value, permit.owner));
+    calls[1] = abi.encodeCall(ISpoke.supply, (reserveId.wbtc, permit.value, permit.owner));
     calls[2] = abi.encodeCall(ISpoke.setUsingAsCollateral, (reserveId.wbtc, true, permit.owner));
     spoke.multicall(calls);
     vm.snapshotGasLastCall(NAMESPACE, 'permitReserve + supply + enable collateral (multicall)');
