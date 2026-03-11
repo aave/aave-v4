@@ -160,7 +160,7 @@ interface IHub is IHubBase, IAccessManaged {
 
   /// @notice Emitted when a deficit is eliminated.
   /// @param assetId The identifier of the asset.
-  /// @param callerSpoke The spoke that eliminated the deficit using its supplied shares.
+  /// @param callerSpoke The spoke that eliminated the deficit using its added shares.
   /// @param coveredSpoke The spoke for which the deficit was eliminated.
   /// @param shares The amount of shares removed.
   /// @param deficitAmountRay The amount of deficit eliminated, expressed in asset units and scaled by RAY.
@@ -304,19 +304,20 @@ interface IHub is IHubBase, IAccessManaged {
   /// @return The amount of shares minted.
   function mintFeeShares(uint256 assetId) external returns (uint256);
 
-  /// @notice Eliminates deficit by removing supplied shares of caller spoke.
+  /// @notice Eliminates deficit by removing added shares of caller spoke.
   /// @dev Only callable by active and authorized spokes.
   /// @param assetId The identifier of the asset.
   /// @param amount The amount of deficit to eliminate.
   /// @param spoke The spoke for which the deficit is eliminated.
-  /// @return The amount of shares removed.
+  /// @return The amount of added shares removed.
+  /// @return The amount of deficit eliminated, expressed in asset units.
   function eliminateDeficit(
     uint256 assetId,
     uint256 amount,
     address spoke
-  ) external returns (uint256);
+  ) external returns (uint256, uint256);
 
-  /// @notice Allows a spoke to transfer its supplied shares of an asset to another spoke.
+  /// @notice Allows a spoke to transfer its added shares of an asset to another spoke.
   /// @dev Only callable by spokes.
   /// @param assetId The identifier of the asset.
   /// @param shares The amount of shares to move.
@@ -341,12 +342,6 @@ interface IHub is IHubBase, IAccessManaged {
   /// @param underlying The address of the underlying asset.
   /// @return True if the underlying asset is listed.
   function isUnderlyingListed(address underlying) external view returns (bool);
-
-  /// @notice Returns the asset identifier for the specified underlying asset.
-  /// @dev Reverts with `AssetNotListed` if the underlying is not listed.
-  /// @param underlying The address of the underlying asset.
-  /// @return The `assetId` of the underlying asset.
-  function getAssetId(address underlying) external view returns (uint256);
 
   /// @notice Returns the number of listed assets.
   /// @return The number of listed assets.

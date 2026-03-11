@@ -430,7 +430,7 @@ contract LiquidationLogicLiquidationAmountsTest is LiquidationLogicBaseTest {
   ) internal pure returns (uint256) {
     uint256 bonusCollateralShares = collateralSharesToLiquidate -
       collateralSharesToLiquidate.percentDivUp(liquidationBonus);
-    return collateralSharesToLiquidate - bonusCollateralShares.percentMulDown(liquidationFee);
+    return collateralSharesToLiquidate - bonusCollateralShares.percentMulUp(liquidationFee);
   }
 
   function assertApproxEqAbs(

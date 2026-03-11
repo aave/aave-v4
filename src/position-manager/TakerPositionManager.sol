@@ -6,7 +6,6 @@ import {SafeERC20, IERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
 import {EIP712Hash} from 'src/position-manager/libraries/EIP712Hash.sol';
 import {MathUtils} from 'src/libraries/math/MathUtils.sol';
 import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
-import {ISpokeBase} from 'src/spoke/interfaces/ISpokeBase.sol';
 import {ITakerPositionManager} from 'src/position-manager/interfaces/ITakerPositionManager.sol';
 import {PositionManagerBase} from 'src/position-manager/PositionManagerBase.sol';
 
@@ -180,10 +179,10 @@ contract TakerPositionManager is ITakerPositionManager, PositionManagerBase {
 
     uint256 suppliedAssetsBefore;
     if (currentAllowance != type(uint256).max) {
-      suppliedAssetsBefore = ISpokeBase(spoke).getUserSuppliedAssets(reserveId, onBehalfOf);
+      suppliedAssetsBefore = ISpoke(spoke).getUserSuppliedAssets(reserveId, onBehalfOf);
     }
 
-    (uint256 withdrawnShares, uint256 withdrawnAmount) = ISpokeBase(spoke).withdraw({
+    (uint256 withdrawnShares, uint256 withdrawnAmount) = ISpoke(spoke).withdraw({
       reserveId: reserveId,
       amount: amount,
       onBehalfOf: onBehalfOf
@@ -195,7 +194,7 @@ contract TakerPositionManager is ITakerPositionManager, PositionManagerBase {
     // consumption is based on the before/after delta of `getUserSuppliedAssets`, and capped at
     // `currentAllowance` to prevent underflow from rounding.
     if (currentAllowance != type(uint256).max) {
-      uint256 suppliedAssetsAfter = ISpokeBase(spoke).getUserSuppliedAssets(reserveId, onBehalfOf);
+      uint256 suppliedAssetsAfter = ISpoke(spoke).getUserSuppliedAssets(reserveId, onBehalfOf);
       /// Deducts the corrected amount from the given allowance.
       /// the correctedAmount (`suppliedAssetsBefore` - `suppliedAssetsAfter`) may exceed `currentAllowance` by a rounding delta;
       /// consumption is capped at `currentAllowance` to prevent underflow.
@@ -233,7 +232,7 @@ contract TakerPositionManager is ITakerPositionManager, PositionManagerBase {
       drawnAssetsBefore = ISpoke(spoke).getUserTotalDebt(reserveId, onBehalfOf);
     }
 
-    (uint256 borrowedShares, uint256 borrowedAmount) = ISpokeBase(spoke).borrow({
+    (uint256 borrowedShares, uint256 borrowedAmount) = ISpoke(spoke).borrow({
       reserveId: reserveId,
       amount: amount,
       onBehalfOf: onBehalfOf

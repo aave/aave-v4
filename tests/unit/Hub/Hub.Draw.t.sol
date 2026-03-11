@@ -78,7 +78,7 @@ contract HubDrawTest is HubBase {
       assetBefore.drawnShares + shares,
       'drawnShares after draw'
     );
-    _assertBorrowRateSynced(hub1, assetId, 'hub1.draw');
+    _assertDrawnRateSynced(hub1, assetId, 'hub1.draw');
     _assertHubLiquidity(hub1, assetId, 'hub1.draw');
     // spoke
     (drawn, premium) = hub1.getSpokeOwed(assetId, address(spoke1));
@@ -96,7 +96,7 @@ contract HubDrawTest is HubBase {
     );
   }
 
-  function test_draw_fuzz_IncreasedBorrowRate(uint256 assetId, uint256 amount) public {
+  function test_draw_fuzz_IncreasedDrawnRate(uint256 assetId, uint256 amount) public {
     assetId = bound(assetId, 0, hub1.getAssetCount() - 3); // Exclude usdy & usdz
     amount = bound(amount, 1, MAX_SUPPLY_AMOUNT / 10);
 
@@ -154,7 +154,7 @@ contract HubDrawTest is HubBase {
     );
     assertGe(hub1.previewDrawByShares(assetId, drawnShares), amount);
 
-    _assertBorrowRateSynced(hub1, assetId, 'hub1.draw');
+    _assertDrawnRateSynced(hub1, assetId, 'hub1.draw');
     _assertHubLiquidity(hub1, assetId, 'hub1.draw');
   }
 
@@ -329,12 +329,12 @@ contract HubDrawTest is HubBase {
   ) public {
     drawCap = bound(drawCap, 1, MAX_SUPPLY_AMOUNT / 10 ** tokenList.dai.decimals()).toUint40();
     uint256 daiAmount = drawCap * 10 ** tokenList.dai.decimals() - 1;
-    rate = bound(rate, 1, MAX_BORROW_RATE);
+    rate = bound(rate, 1, Constants.MAX_ALLOWED_DRAWN_RATE);
     skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
 
     updateDrawCap(hub1, daiAssetId, address(spoke1), drawCap);
 
-    _mockInterestRateBps(rate);
+    _mockDrawnRateBps(rate);
     _addAndDrawLiquidity({
       hub: hub1,
       assetId: daiAssetId,

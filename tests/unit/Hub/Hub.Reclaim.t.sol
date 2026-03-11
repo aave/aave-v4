@@ -132,7 +132,7 @@ contract HubReclaimTest is HubBase {
 
     assertEq(hub1.getAssetSwept(daiAssetId), sweptAfterSweep - reclaimAmount);
     assertEq(hub1.getAssetLiquidity(daiAssetId), liquidityAfterSweep + reclaimAmount);
-    _assertBorrowRateSynced(hub1, daiAssetId, 'reclaim');
+    _assertDrawnRateSynced(hub1, daiAssetId, 'reclaim');
     _assertHubLiquidity(hub1, daiAssetId, 'reclaim');
   }
 

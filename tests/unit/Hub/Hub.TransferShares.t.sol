@@ -31,7 +31,7 @@ contract HubTransferSharesTest is HubBase {
     vm.prank(address(spoke1));
     hub1.transferShares(daiAssetId, moveAmount, address(spoke2));
 
-    _assertBorrowRateSynced(hub1, daiAssetId, 'transferShares');
+    _assertDrawnRateSynced(hub1, daiAssetId, 'transferShares');
     _assertHubLiquidity(hub1, daiAssetId, 'transferShares');
     assertEq(hub1.getSpokeAddedShares(daiAssetId, address(spoke1)), suppliedShares - moveAmount);
     assertEq(hub1.getSpokeAddedShares(daiAssetId, address(spoke2)), moveAmount);

@@ -165,7 +165,7 @@ contract TakerPositionManagerTest is TakerPositionManagerBaseTest {
     }
 
     vm.expectEmit(address(spoke1));
-    emit ISpokeBase.Withdraw(
+    emit ISpoke.Withdraw(
       _daiReserveId(spoke1),
       address(positionManager),
       alice,
@@ -227,7 +227,7 @@ contract TakerPositionManagerTest is TakerPositionManagerBaseTest {
     assertEq(spoke1.getUserSuppliedShares(_daiReserveId(spoke1), alice), expectedSupplyShares);
 
     vm.expectEmit(address(spoke1));
-    emit ISpokeBase.Withdraw(
+    emit ISpoke.Withdraw(
       _daiReserveId(spoke1),
       address(positionManager),
       alice,
@@ -316,7 +316,7 @@ contract TakerPositionManagerTest is TakerPositionManagerBaseTest {
     assertEq(spoke1.getUserSuppliedShares(_daiReserveId(spoke1), alice), expectedSupplyShares);
 
     vm.expectEmit(address(spoke1));
-    emit ISpokeBase.Withdraw(
+    emit ISpoke.Withdraw(
       _daiReserveId(spoke1),
       address(positionManager),
       alice,
@@ -483,7 +483,7 @@ contract TakerPositionManagerTest is TakerPositionManagerBaseTest {
     uint256 totalDebtBefore = spoke1.getUserTotalDebt(_daiReserveId(spoke1), alice);
 
     vm.expectEmit(address(spoke1));
-    emit ISpokeBase.Borrow(
+    emit ISpoke.Borrow(
       _daiReserveId(spoke1),
       address(positionManager),
       alice,
@@ -603,7 +603,7 @@ contract TakerPositionManagerTest is TakerPositionManagerBaseTest {
     uint256 hubBalanceBefore = tokenList.dai.balanceOf(address(hub1));
 
     vm.expectEmit(address(spoke1));
-    emit ISpokeBase.Borrow(
+    emit ISpoke.Borrow(
       _daiReserveId(spoke1),
       address(positionManager),
       alice,

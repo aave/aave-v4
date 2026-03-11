@@ -24,6 +24,8 @@ contract TokenizationSpokeInstance is TokenizationSpoke {
     string memory shareName,
     string memory shareSymbol
   ) external override reinitializer(SPOKE_REVISION) {
+    emit SetTokenizationSpokeImmutables(address(HUB), ASSET_ID);
+
     __TokenizationSpoke_init(shareName, shareSymbol);
   }
 }

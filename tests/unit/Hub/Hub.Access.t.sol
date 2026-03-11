@@ -25,9 +25,9 @@ contract HubAccessTest is HubBase {
     bytes memory encodedIrData = abi.encode(
       IAssetInterestRateStrategy.InterestRateData({
         optimalUsageRatio: 90_00, // 90.00%
-        baseVariableBorrowRate: 5_00, // 5.00%
-        variableRateSlope1: 5_00, // 5.00%
-        variableRateSlope2: 5_00 // 5.00%
+        baseDrawnRate: 5_00, // 5.00%
+        rateGrowthBeforeOptimal: 5_00, // 5.00%
+        rateGrowthAfterOptimal: 5_00 // 5.00%
       })
     );
 
@@ -83,31 +83,31 @@ contract HubAccessTest is HubBase {
     bytes memory encodedIrData = abi.encode(
       IAssetInterestRateStrategy.InterestRateData({
         optimalUsageRatio: 50_00, // 50.00% in BPS
-        baseVariableBorrowRate: 100_00, // 100.00% in BPS
-        variableRateSlope1: 200_00, // 200.00% in BPS
-        variableRateSlope2: 300_00 // 300.00% in BPS
+        baseDrawnRate: 100_00, // 100.00% in BPS
+        rateGrowthBeforeOptimal: 200_00, // 200.00% in BPS
+        rateGrowthAfterOptimal: 300_00 // 300.00% in BPS
       })
     );
 
-    // Only Hub can set interest rates
+    // Only Hub can set drawn rates
     vm.expectRevert(abi.encodeWithSelector(IAssetInterestRateStrategy.OnlyHub.selector));
     irStrategy.setInterestRateData(daiAssetId, encodedIrData);
 
-    // Hub can set interest rates
+    // Hub can set drawn rates
     vm.prank(address(hub1));
     irStrategy.setInterestRateData(daiAssetId, encodedIrData);
 
-    // Only Hub Admin can call function on hub to set interest rates
+    // Only Hub Admin can call function on hub to set drawn rates
     vm.expectRevert(
       abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, address(this))
     );
     hub1.setInterestRateData(daiAssetId, encodedIrData);
 
-    // Hub Admin can call function on hub to set interest rates
+    // Hub Admin can call function on hub to set drawn rates
     vm.prank(HUB_ADMIN);
     hub1.setInterestRateData(daiAssetId, encodedIrData);
 
-    _assertBorrowRateSynced(hub1, daiAssetId, 'setInterestRateData');
+    _assertDrawnRateSynced(hub1, daiAssetId, 'setInterestRateData');
   }
 
   /// @dev Test showcasing ability to change role responsibility for a function selector.
@@ -115,13 +115,13 @@ contract HubAccessTest is HubBase {
     bytes memory encodedIrData = abi.encode(
       IAssetInterestRateStrategy.InterestRateData({
         optimalUsageRatio: 50_00, // 50.00% in BPS
-        baseVariableBorrowRate: 100_00, // 100.00% in BPS
-        variableRateSlope1: 200_00, // 200.00% in BPS
-        variableRateSlope2: 300_00 // 300.00% in BPS
+        baseDrawnRate: 100_00, // 100.00% in BPS
+        rateGrowthBeforeOptimal: 200_00, // 200.00% in BPS
+        rateGrowthAfterOptimal: 300_00 // 300.00% in BPS
       })
     );
 
-    // Change the role responsible for setting interest rate data on the hub
+    // Change the role responsible for setting drawn rate data on the hub
     bytes4[] memory hubSelectors = new bytes4[](1);
     hubSelectors[0] = IHub.setInterestRateData.selector;
     vm.prank(ADMIN);
@@ -158,13 +158,13 @@ contract HubAccessTest is HubBase {
     bytes memory encodedIrData = abi.encode(
       IAssetInterestRateStrategy.InterestRateData({
         optimalUsageRatio: 50_00, // 50.00% in BPS
-        baseVariableBorrowRate: 100_00, // 100.00% in BPS
-        variableRateSlope1: 200_00, // 200.00% in BPS
-        variableRateSlope2: 300_00 // 300.00% in BPS
+        baseDrawnRate: 100_00, // 100.00% in BPS
+        rateGrowthBeforeOptimal: 200_00, // 200.00% in BPS
+        rateGrowthAfterOptimal: 300_00 // 300.00% in BPS
       })
     );
 
-    // Say addresses Alice, Bob, and Carol all have the HUB_ADMIN role, allowing them to set interest rate data.
+    // Say addresses Alice, Bob, and Carol all have the HUB_ADMIN role, allowing them to set drawn rate data.
     // Grant roles with 0 delay
     vm.startPrank(ADMIN);
     accessManager.grantRole(Roles.HUB_ADMIN_ROLE, alice, 0);
@@ -179,14 +179,14 @@ contract HubAccessTest is HubBase {
     vm.prank(carol);
     hub1.setInterestRateData(daiAssetId, encodedIrData);
 
-    // Now, we change the role responsible for setting interest rate data to SET_INTEREST_RATE role.
+    // Now, we change the role responsible for setting drawn rate data to SET_INTEREST_RATE role.
     uint64 SET_INTEREST_RATE_ROLE = 4;
     bytes4[] memory hubSelectors = new bytes4[](1);
     hubSelectors[0] = IHub.setInterestRateData.selector;
     vm.prank(ADMIN);
     accessManager.setTargetFunctionRole(address(hub1), hubSelectors, SET_INTEREST_RATE_ROLE);
 
-    // Alice, Bob, and Carol should no longer have access to set interest rate data.
+    // Alice, Bob, and Carol should no longer have access to set drawn rate data.
     vm.expectRevert(
       abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, alice)
     );
