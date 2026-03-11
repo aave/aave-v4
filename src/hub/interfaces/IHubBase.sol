@@ -130,7 +130,7 @@ interface IHubBase {
     PremiumDelta calldata premiumDelta
   ) external returns (uint256);
 
-  /// @notice Reports an owed amount as deficit.
+  /// @notice Reports an owed amount by the caller Spoke as a deficit.
   /// @dev Only callable by active spokes.
   /// @param assetId The identifier of the asset.
   /// @param drawnAmount The drawn amount to report as deficit.
