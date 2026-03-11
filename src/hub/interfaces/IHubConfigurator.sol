@@ -16,7 +16,7 @@ interface IHubConfigurator {
 
   /// @notice Adds a new asset to a specified Hub.
   /// @dev Retrieves the decimals of the underlying asset from its ERC20 contract.
-  /// @dev The fee receiver is automatically added as a spoke with maximum caps.
+  /// @dev The fee receiver is automatically added as a Spoke with maximum caps.
   /// @param hub The address of the Hub.
   /// @param underlying The address of the underlying asset.
   /// @param feeReceiver The address of the fee receiver Spoke.
@@ -34,7 +34,7 @@ interface IHubConfigurator {
   ) external returns (uint256);
 
   /// @notice Adds a new asset to a specified Hub with explicit decimals.
-  /// @dev The fee receiver is automatically added as a spoke with maximum caps.
+  /// @dev The fee receiver is automatically added as a Spoke with maximum caps.
   /// @param hub The address of the Hub.
   /// @param underlying The address of the underlying asset.
   /// @param decimals The number of decimals of the asset.
@@ -200,17 +200,17 @@ interface IHubConfigurator {
     uint256 drawCap
   ) external;
 
-  /// @notice Deactivates all assets of a spoke on a specified Hub by setting the active flag to false.
+  /// @notice Deactivates all assets of a Spoke on a specified Hub by setting the active flag to false.
   /// @param hub The address of the Hub.
   /// @param spoke The address of the Spoke.
   function deactivateSpoke(address hub, address spoke) external;
 
-  /// @notice Halts all assets of a spoke on a specified Hub by setting the halted flag to true.
+  /// @notice Halts all assets of a Spoke on a specified Hub by setting the halted flag to true.
   /// @param hub The address of the Hub.
   /// @param spoke The address of the Spoke.
   function haltSpoke(address hub, address spoke) external;
 
-  /// @notice Resets draw cap and add cap to zero for a spoke on a specified Hub.
+  /// @notice Resets draw cap and add cap to zero for a Spoke on a specified Hub.
   /// @param hub The address of the Hub.
   /// @param spoke The address of the Spoke.
   function resetSpokeCaps(address hub, address spoke) external;
