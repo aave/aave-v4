@@ -730,7 +730,7 @@ library LiquidationLogic {
   }
 
   /// @notice Calculates the amount of drawn shares and premium debt that should be liquidated.
-  /// @dev Returned values do not exceed `params.debtToCover`, except when all remaining debt must be repaid due to remaining dust.
+  /// @dev Returned values do not exceed `params.debtToCover`, except when all debt must be repaid due to remaining dust.
   /// @return The amount of drawn shares to liquidate. Does not exceed `params.drawnShares`.
   /// @return The amount of premium debt to liquidate. Does not exceed `params.premiumDebtRay`.
   function _calculateDebtToLiquidate(
