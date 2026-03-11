@@ -150,7 +150,7 @@ interface IHubBase {
   function refreshPremium(uint256 assetId, PremiumDelta calldata premiumDelta) external;
 
   /// @notice Transfers an amount of added shares of the caller Spoke to the fee receiver Spoke.
-  /// @dev It can be used to execute one-time payments to the fee receiver Spoke (e.g., liquidation fees)
+  /// @dev It can be used to execute one-time payments to the fee receiver Spoke (e.g., liquidation fees).
   /// @dev Only callable by active spokes.
   /// @param assetId The identifier of the asset.
   /// @param shares The amount of shares to pay to feeReceiver.
