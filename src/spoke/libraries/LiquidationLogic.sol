@@ -14,7 +14,7 @@ import {UserPositionUtils} from 'src/spoke/libraries/UserPositionUtils.sol';
 import {ReserveFlags, ReserveFlagsMap} from 'src/spoke/libraries/ReserveFlagsMap.sol';
 import {IHubBase} from 'src/hub/interfaces/IHubBase.sol';
 import {IAaveOracle} from 'src/spoke/interfaces/IAaveOracle.sol';
-import {ISpoke, ISpokeBase} from 'src/spoke/interfaces/ISpoke.sol';
+import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 
 /// @title LiquidationLogic library
 /// @author Aave Labs
@@ -423,7 +423,7 @@ library LiquidationLogic {
       })
     );
 
-    emit ISpokeBase.LiquidationCall({
+    emit ISpoke.LiquidationCall({
       collateralReserveId: params.collateralReserveId,
       debtReserveId: params.debtReserveId,
       user: params.user,
@@ -467,7 +467,7 @@ library LiquidationLogic {
         liquidatorPosition.suppliedShares += params.sharesToLiquidator.toUint120();
       } else {
         uint256 amountToLiquidator = amountRemoved;
-        if (params.sharesToLiquidator != params.sharesToLiquidate) {
+        if (params.sharesToLiquidator < params.sharesToLiquidate) {
           amountToLiquidator = params.hub.previewRemoveByShares(
             params.assetId,
             params.sharesToLiquidator
@@ -689,7 +689,7 @@ library LiquidationLogic {
     );
 
     uint256 collateralSharesToLiquidator = collateralSharesToLiquidate -
-      collateralSharesToLiquidate.mulDivDown(
+      collateralSharesToLiquidate.mulDivUp(
         params.liquidationFee * (liquidationBonus - PercentageMath.PERCENTAGE_FACTOR),
         liquidationBonus * PercentageMath.PERCENTAGE_FACTOR
       );
@@ -796,6 +796,7 @@ library LiquidationLogic {
   function _calculateDebtToTargetHealthFactor(
     CalculateDebtToTargetHealthFactorParams memory params
   ) internal pure returns (uint256) {
+    // rounding direction has no effect on the result, as there is no precision loss in this calculation.
     uint256 liquidationPenalty = params.liquidationBonus.bpsToWad().percentMulUp(
       params.collateralFactor
     );

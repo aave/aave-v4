@@ -92,7 +92,7 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
       address(assetB),
       assetB.decimals(),
       address(treasurySpoke),
-      address(irStrategy), // Use the main hub's interest rate strategy
+      address(irStrategy), // Use the main hub's drawn rate strategy
       encodedIrData
     );
 

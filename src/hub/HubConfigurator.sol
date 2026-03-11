@@ -17,7 +17,9 @@ contract HubConfigurator is AccessManaged, IHubConfigurator {
 
   /// @dev Constructor.
   /// @param authority_ The address of the authority contract which manages permissions.
-  constructor(address authority_) AccessManaged(authority_) {}
+  constructor(address authority_) AccessManaged(authority_) {
+    require(authority_ != address(0), InvalidAddress());
+  }
 
   /// @inheritdoc IHubConfigurator
   function addAsset(
