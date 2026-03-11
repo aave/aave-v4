@@ -25,12 +25,16 @@ abstract contract TreasurySpoke is ITreasurySpoke, Ownable2StepUpgradeable {
     address underlying,
     uint256 amount
   ) external onlyOwner returns (uint256, uint256) {
-    IHubBase targetHub = IHubBase(hub);
-    uint256 assetId = targetHub.getAssetId(underlying);
-    IERC20(underlying).safeTransferFrom(msg.sender, hub, amount);
-    uint256 shares = targetHub.add(assetId, amount);
+    return _supply(hub, underlying, amount, true);
+  }
 
-    return (shares, amount);
+  /// @inheritdoc ITreasurySpoke
+  function supplySkimmed(
+    address hub,
+    address underlying,
+    uint256 amount
+  ) external onlyOwner returns (uint256, uint256) {
+    return _supply(hub, underlying, amount, false);
   }
 
   /// @inheritdoc ITreasurySpoke
@@ -39,16 +43,16 @@ abstract contract TreasurySpoke is ITreasurySpoke, Ownable2StepUpgradeable {
     address underlying,
     uint256 amount
   ) external onlyOwner returns (uint256, uint256) {
-    IHubBase targetHub = IHubBase(hub);
-    uint256 assetId = targetHub.getAssetId(underlying);
-    // if amount to withdraw is greater than total supplied, withdraw all supplied assets
-    uint256 withdrawnAmount = MathUtils.min(
-      amount,
-      targetHub.getSpokeAddedAssets(assetId, address(this))
-    );
-    uint256 withdrawnShares = targetHub.remove(assetId, withdrawnAmount, msg.sender);
+    return _withdraw(hub, underlying, amount, true);
+  }
 
-    return (withdrawnShares, withdrawnAmount);
+  /// @inheritdoc ITreasurySpoke
+  function withdrawSkimmed(
+    address hub,
+    address underlying,
+    uint256 amount
+  ) external onlyOwner returns (uint256, uint256) {
+    return _withdraw(hub, underlying, amount, false);
   }
 
   /// @inheritdoc ITreasurySpoke
@@ -68,5 +72,44 @@ abstract contract TreasurySpoke is ITreasurySpoke, Ownable2StepUpgradeable {
     IHubBase targetHub = IHubBase(hub);
     uint256 assetId = targetHub.getAssetId(underlying);
     return targetHub.getSpokeAddedShares(assetId, address(this));
+  }
+
+  /// @dev Shared supply logic. If `transferFromCaller` is true, transfers the underlying asset from
+  /// the caller to the Hub before supplying.
+  function _supply(
+    address hub,
+    address underlying,
+    uint256 amount,
+    bool transferFromCaller
+  ) internal returns (uint256, uint256) {
+    IHubBase targetHub = IHubBase(hub);
+    if (transferFromCaller) {
+      IERC20(underlying).safeTransferFrom(msg.sender, hub, amount);
+    }
+    uint256 assetId = targetHub.getAssetId(underlying);
+    uint256 shares = targetHub.add(assetId, amount);
+
+    return (shares, amount);
+  }
+
+  /// @dev Shared withdraw logic. If `transferToCaller` is true, sends the withdrawn funds to the
+  /// caller. Otherwise, funds remain on this contract.
+  function _withdraw(
+    address hub,
+    address underlying,
+    uint256 amount,
+    bool transferToCaller
+  ) internal returns (uint256, uint256) {
+    IHubBase targetHub = IHubBase(hub);
+    uint256 assetId = targetHub.getAssetId(underlying);
+    // if amount to withdraw is greater than total supplied, withdraw all supplied assets
+    uint256 withdrawnAmount = MathUtils.min(
+      amount,
+      targetHub.getSpokeAddedAssets(assetId, address(this))
+    );
+    address recipient = transferToCaller ? msg.sender : address(this);
+    uint256 withdrawnShares = targetHub.remove(assetId, withdrawnAmount, recipient);
+
+    return (withdrawnShares, withdrawnAmount);
   }
 }
