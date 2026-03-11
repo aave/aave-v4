@@ -85,14 +85,13 @@ interface IAssetInterestRateStrategy is IBasicInterestRateStrategy {
   function MAX_ALLOWED_DRAWN_RATE() external view returns (uint256);
 
   /// @notice Returns the minimum optimal usage ratio.
-  /// @return The minimum optimal usage ratio, in BPS.
+  /// @return The minimum optimal usage ratio, expressed in BPS.
   function MIN_OPTIMAL_RATIO() external view returns (uint256);
 
   /// @notice Returns the maximum optimal usage ratio.
-  /// @return The maximum optimal usage ratio, in BPS.
+  /// @return The maximum optimal usage ratio, expressed in BPS.
   function MAX_OPTIMAL_RATIO() external view returns (uint256);
 
-  /// @notice Returns the associated address of the Hub.
-  /// @return The address of the Hub.
+  /// @notice Returns the address of the Hub.
   function HUB() external view returns (address);
 }

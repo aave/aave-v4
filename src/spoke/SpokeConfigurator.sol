@@ -9,8 +9,8 @@ import {ISpokeConfigurator} from 'src/spoke/interfaces/ISpokeConfigurator.sol';
 
 /// @title SpokeConfigurator
 /// @author Aave Labs
-/// @notice Handles administrative functions on the spoke.
-/// @dev Must be granted permission by the spoke.
+/// @notice Handles administrative functions on the Spoke.
+/// @dev Must be granted permission by the Spoke.
 contract SpokeConfigurator is AccessManaged, ISpokeConfigurator {
   using SafeCast for uint256;
 
