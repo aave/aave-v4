@@ -16,7 +16,7 @@ import {PositionManagerBase} from 'src/position-manager/PositionManagerBase.sol'
 contract ConfigPositionManager is IConfigPositionManager, PositionManagerBase {
   using ConfigPermissionsMap for ConfigPermissions;
 
-  /// @dev Map of configuration permissions based on the spoke, delegator and delegatee.
+  /// @dev Map of configuration permissions based on the Spoke, delegator and delegatee.
   mapping(address spoke => mapping(address delegator => mapping(address delegatee => ConfigPermissions)))
     private _config;
 

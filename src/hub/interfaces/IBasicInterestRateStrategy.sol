@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 
 /// @title IBasicInterestRateStrategy
 /// @author Aave Labs
-/// @notice Basic interface for any rate strategy.
+/// @notice Basic interface for any interest rate strategy.
 interface IBasicInterestRateStrategy {
   /// @notice Thrown when the interest rate data is not set for the asset.
   /// @param assetId The identifier of the asset with no interest rate data set.
@@ -21,7 +21,7 @@ interface IBasicInterestRateStrategy {
   /// @param drawn The current drawn amount of the asset.
   /// @param deficit The current deficit of the asset.
   /// @param swept The current swept (reinvested) amount of the asset.
-  /// @return The interest rate expressed in RAY.
+  /// @return The interest rate, expressed in RAY.
   function calculateInterestRate(
     uint256 assetId,
     uint256 liquidity,

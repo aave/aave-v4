@@ -14,7 +14,7 @@ import {UserPositionUtils} from 'src/spoke/libraries/UserPositionUtils.sol';
 import {ReserveFlags, ReserveFlagsMap} from 'src/spoke/libraries/ReserveFlagsMap.sol';
 import {IHubBase} from 'src/hub/interfaces/IHubBase.sol';
 import {IAaveOracle} from 'src/spoke/interfaces/IAaveOracle.sol';
-import {ISpoke, ISpokeBase} from 'src/spoke/interfaces/ISpoke.sol';
+import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 
 /// @title LiquidationLogic library
 /// @author Aave Labs
@@ -305,11 +305,11 @@ library LiquidationLogic {
 
   /// @notice Calculates the liquidation bonus at a given health factor.
   /// @dev Liquidation Bonus is expressed as a BPS value greater than `PercentageMath.PERCENTAGE_FACTOR`.
-  /// @param healthFactorForMaxBonus The health factor for max bonus.
-  /// @param liquidationBonusFactor The liquidation bonus factor.
-  /// @param healthFactor The health factor.
-  /// @param maxLiquidationBonus The max liquidation bonus.
-  /// @return The liquidation bonus.
+  /// @param healthFactorForMaxBonus The health factor for max bonus, expressed in WAD.
+  /// @param liquidationBonusFactor The liquidation bonus factor, expressed in BPS.
+  /// @param healthFactor The health factor, expressed in WAD.
+  /// @param maxLiquidationBonus The max liquidation bonus, expressed in BPS.
+  /// @return The liquidation bonus, expressed in BPS.
   function calculateLiquidationBonus(
     uint256 healthFactorForMaxBonus,
     uint256 liquidationBonusFactor,
@@ -423,7 +423,7 @@ library LiquidationLogic {
       })
     );
 
-    emit ISpokeBase.LiquidationCall({
+    emit ISpoke.LiquidationCall({
       collateralReserveId: params.collateralReserveId,
       debtReserveId: params.debtReserveId,
       user: params.user,
@@ -730,7 +730,7 @@ library LiquidationLogic {
   }
 
   /// @notice Calculates the amount of drawn shares and premium debt that should be liquidated.
-  /// @dev Returned values ensure that total assets required to liquidate will not exceed `params.debtToCover`.
+  /// @dev Returned values do not exceed `params.debtToCover`, except when all debt must be repaid due to remaining dust.
   /// @return The amount of drawn shares to liquidate. Does not exceed `params.drawnShares`.
   /// @return The amount of premium debt to liquidate. Does not exceed `params.premiumDebtRay`.
   function _calculateDebtToLiquidate(

@@ -21,7 +21,7 @@ interface IConfigPositionManager is IPositionManagerBase {
   }
 
   /// @notice Emitted when a global config permission is updated.
-  /// @param spoke The address of the spoke.
+  /// @param spoke The address of the Spoke.
   /// @param delegator The address of the delegator.
   /// @param delegatee The address of the delegatee.
   /// @param permissions The new config permissions.
@@ -36,13 +36,13 @@ interface IConfigPositionManager is IPositionManagerBase {
   error DelegateeNotAllowed();
 
   /// @notice Sets the global permission for a delegatee.
-  /// @param spoke The address of the spoke.
+  /// @param spoke The address of the Spoke.
   /// @param delegatee The address of the delegatee.
   /// @param permission The new permission status.
   function setGlobalPermission(address spoke, address delegatee, bool permission) external;
 
   /// @notice Sets the using as collateral permission for a delegatee.
-  /// @param spoke The address of the spoke.
+  /// @param spoke The address of the Spoke.
   /// @param delegatee The address of the delegatee.
   /// @param permission The new permission status.
   function setCanUpdateUsingAsCollateralPermission(
@@ -52,7 +52,7 @@ interface IConfigPositionManager is IPositionManagerBase {
   ) external;
 
   /// @notice Sets the user risk premium permission for a delegatee.
-  /// @param spoke The address of the spoke.
+  /// @param spoke The address of the Spoke.
   /// @param delegatee The address of the delegatee.
   /// @param permission The new permission status.
   function setCanUpdateUserRiskPremiumPermission(
@@ -62,7 +62,7 @@ interface IConfigPositionManager is IPositionManagerBase {
   ) external;
 
   /// @notice Sets the user dynamic config permission for a delegatee.
-  /// @param spoke The address of the spoke.
+  /// @param spoke The address of the Spoke.
   /// @param delegatee The address of the delegatee.
   /// @param permission The new permission status.
   function setCanUpdateUserDynamicConfigPermission(
@@ -72,29 +72,29 @@ interface IConfigPositionManager is IPositionManagerBase {
   ) external;
 
   /// @notice Renounces the global permission given by the delegator.
-  /// @param spoke The address of the spoke.
+  /// @param spoke The address of the Spoke.
   /// @param delegator The address of the delegator.
   function renounceGlobalPermission(address spoke, address delegator) external;
 
   /// @notice Renounces the using as collateral permission given by the delegator.
-  /// @param spoke The address of the spoke.
+  /// @param spoke The address of the Spoke.
   /// @param delegator The address of the delegator.
   function renounceCanUpdateUsingAsCollateralPermission(address spoke, address delegator) external;
 
   /// @notice Renounces the user risk premium permission given by the delegator.
-  /// @param spoke The address of the spoke.
+  /// @param spoke The address of the Spoke.
   /// @param delegator The address of the delegator.
   function renounceCanUpdateUserRiskPremiumPermission(address spoke, address delegator) external;
 
   /// @notice Renounces the user dynamic config permission given by the delegator.
-  /// @param spoke The address of the spoke.
+  /// @param spoke The address of the Spoke.
   /// @param delegator The address of the delegator.
   function renounceCanUpdateUserDynamicConfigPermission(address spoke, address delegator) external;
 
   /// @notice Sets the using as collateral status on behalf of a user for a specified reserve.
   /// @dev The `msg.sender` must be the delegatee to perform this action on behalf of the user.
   /// @dev Contract must be an active and approved user position manager of `onBehalfOf`.
-  /// @param spoke The address of the spoke.
+  /// @param spoke The address of the Spoke.
   /// @param reserveId The id of the reserve.
   /// @param usingAsCollateral The new using as collateral status.
   /// @param onBehalfOf The address of the user.
@@ -108,19 +108,19 @@ interface IConfigPositionManager is IPositionManagerBase {
   /// @notice Updates the user risk premium on behalf of a user.
   /// @dev The `msg.sender` must be the delegatee to perform this action on behalf of the user.
   /// @dev Contract must be an active and approved user position manager of `onBehalfOf`.
-  /// @param spoke The address of the spoke.
+  /// @param spoke The address of the Spoke.
   /// @param onBehalfOf The address of the user.
   function updateUserRiskPremiumOnBehalfOf(address spoke, address onBehalfOf) external;
 
   /// @notice Updates the user dynamic config on behalf of a user.
   /// @dev The `msg.sender` must be the delegatee to perform this action on behalf of the user.
   /// @dev Contract must be an active and approved user position manager of `onBehalfOf`.
-  /// @param spoke The address of the spoke.
+  /// @param spoke The address of the Spoke.
   /// @param onBehalfOf The address of the user.
   function updateUserDynamicConfigOnBehalfOf(address spoke, address onBehalfOf) external;
 
   /// @notice Returns the config permissions for a delegatee on behalf of a user.
-  /// @param spoke The address of the spoke.
+  /// @param spoke The address of the Spoke.
   /// @param delegatee The address of the delegatee.
   /// @param onBehalfOf The address of the user.
   /// @return The ConfigPermissionValues for the delegatee on behalf of the user.

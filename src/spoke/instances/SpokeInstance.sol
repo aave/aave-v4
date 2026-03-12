@@ -11,7 +11,7 @@ contract SpokeInstance is Spoke {
   uint64 public constant SPOKE_REVISION = 1;
 
   /// @dev Constructor.
-  /// @dev During upgrade, must ensure that the new oracle is supporting existing assets on the spoke and the replaced oracle.
+  /// @dev During upgrade, must ensure that the new oracle is supporting existing assets on the Spoke and the replaced oracle.
   /// @param oracle_ The address of the oracle.
   /// @param maxUserReservesLimit_ The maximum number of collateral and borrow reserves a user can have.
   constructor(address oracle_, uint16 maxUserReservesLimit_) Spoke(oracle_, maxUserReservesLimit_) {

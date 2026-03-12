@@ -9,7 +9,7 @@ import {IPositionManagerBase} from 'src/position-manager/interfaces/IPositionMan
 /// @notice Interface for position manager handling withdraw permit and borrow permit actions on behalf of users.
 interface ITakerPositionManager is IPositionManagerBase {
   /// @notice Structured parameters for withdraw permit intent.
-  /// @param spoke The address of the spoke.
+  /// @param spoke The address of the Spoke.
   /// @param reserveId The identifier of the reserve.
   /// @param owner The address of the owner.
   /// @param spender The address of the spender.
@@ -27,7 +27,7 @@ interface ITakerPositionManager is IPositionManagerBase {
   }
 
   /// @notice Structured parameters for borrow permit intent.
-  /// @param spoke The address of the spoke.
+  /// @param spoke The address of the Spoke.
   /// @param reserveId The identifier of the reserve.
   /// @param owner The address of the owner.
   /// @param spender The address of the spender.
@@ -45,7 +45,7 @@ interface ITakerPositionManager is IPositionManagerBase {
   }
 
   /// @notice Emitted when owner approves spender to withdraw amount for reserveId on their behalf.
-  /// @param spoke The address of the spoke.
+  /// @param spoke The address of the Spoke.
   /// @param reserveId The identifier of the reserve.
   /// @param owner The address of the owner.
   /// @param spender The address of the spender.
@@ -59,7 +59,7 @@ interface ITakerPositionManager is IPositionManagerBase {
   );
 
   /// @notice Emitted when owner approves spender to borrow amount from reserveId on their behalf.
-  /// @param spoke The address of the spoke.
+  /// @param spoke The address of the Spoke.
   /// @param reserveId The identifier of the reserve.
   /// @param owner The address of the owner.
   /// @param spender The address of the spender.
@@ -80,7 +80,7 @@ interface ITakerPositionManager is IPositionManagerBase {
 
   /// @notice Approves a spender to withdraw assets from the specified reserve.
   /// @dev Using `type(uint256).max` as the amount results in an infinite approval, so the allowance is never decreased.
-  /// @param spoke The address of the spoke.
+  /// @param spoke The address of the Spoke.
   /// @param reserveId The identifier of the reserve.
   /// @param spender The address of the spender to receive the allowance.
   /// @param amount The amount of allowance.
@@ -103,7 +103,7 @@ interface ITakerPositionManager is IPositionManagerBase {
 
   /// @notice Approves a borrow allowance for a spender.
   /// @dev Using `type(uint256).max` as the amount results in an infinite approval, so the allowance is never decreased.
-  /// @param spoke The address of the spoke.
+  /// @param spoke The address of the Spoke.
   /// @param reserveId The identifier of the reserve.
   /// @param spender The address of the spender to receive the allowance.
   /// @param amount The amount of allowance.
@@ -122,13 +122,13 @@ interface ITakerPositionManager is IPositionManagerBase {
   function approveBorrowWithSig(BorrowPermit calldata params, bytes calldata signature) external;
 
   /// @notice Renounces the withdraw allowance given by the owner.
-  /// @param spoke The address of the spoke.
+  /// @param spoke The address of the Spoke.
   /// @param reserveId The identifier of the reserve.
   /// @param owner The address of the owner.
   function renounceWithdrawAllowance(address spoke, uint256 reserveId, address owner) external;
 
   /// @notice Renounces the borrow allowance given by the owner.
-  /// @param spoke The address of the spoke.
+  /// @param spoke The address of the Spoke.
   /// @param reserveId The identifier of the reserve.
   /// @param owner The address of the owner.
   function renounceBorrowAllowance(address spoke, uint256 reserveId, address owner) external;
@@ -137,7 +137,7 @@ interface ITakerPositionManager is IPositionManagerBase {
   /// @dev The caller must have sufficient withdraw allowance from `onBehalfOf`.
   /// @dev The caller receives the withdrawn assets.
   /// @dev Contract must be an active and approved user position manager of `onBehalfOf`.
-  /// @param spoke The address of the spoke.
+  /// @param spoke The address of the Spoke.
   /// @param reserveId The identifier of the reserve.
   /// @param amount The amount to withdraw.
   /// @param onBehalfOf The address of the user to withdraw on behalf of.
@@ -154,7 +154,7 @@ interface ITakerPositionManager is IPositionManagerBase {
   /// @dev The caller must have sufficient borrow allowance from `onBehalfOf`.
   /// @dev The caller receives the borrowed assets.
   /// @dev Contract must be an active and approved user position manager of `onBehalfOf`.
-  /// @param spoke The address of the spoke.
+  /// @param spoke The address of the Spoke.
   /// @param reserveId The identifier of the reserve.
   /// @param amount The amount to borrow.
   /// @param onBehalfOf The address of the user to borrow on behalf of.
@@ -168,7 +168,7 @@ interface ITakerPositionManager is IPositionManagerBase {
   ) external returns (uint256, uint256);
 
   /// @notice Returns the withdraw allowance for a spender on behalf of an owner.
-  /// @param spoke The address of the spoke.
+  /// @param spoke The address of the Spoke.
   /// @param reserveId The identifier of the reserve.
   /// @param owner The address of the owner.
   /// @param spender The address of the spender.
@@ -181,7 +181,7 @@ interface ITakerPositionManager is IPositionManagerBase {
   ) external view returns (uint256);
 
   /// @notice Returns the credit delegation allowance for a spender on behalf of an owner.
-  /// @param spoke The address of the spoke.
+  /// @param spoke The address of the Spoke.
   /// @param reserveId The identifier of the reserve.
   /// @param owner The address of the owner.
   /// @param spender The address of the spender.

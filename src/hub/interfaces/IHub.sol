@@ -72,8 +72,8 @@ interface IHub is IHubBase, IAccessManaged {
   /// @dev addCap The maximum amount that can be added by a spoke, expressed in whole assets (not scaled by decimals). A value of `MAX_ALLOWED_SPOKE_CAP` indicates no cap.
   /// @dev drawCap The maximum amount that can be drawn by a spoke, expressed in whole assets (not scaled by decimals). A value of `MAX_ALLOWED_SPOKE_CAP` indicates no cap.
   /// @dev riskPremiumThreshold The maximum ratio of premium to drawn shares a spoke can have, expressed in BPS. A value of `MAX_RISK_PREMIUM_THRESHOLD` indicates no threshold.
-  /// @dev active True if the spoke is allowed to perform any action.
-  /// @dev halted True if the spoke is prevented from performing actions that instantly update liquidity.
+  /// @dev active True if the Spoke is allowed to perform any action.
+  /// @dev halted True if the Spoke is prevented from performing actions that instantly update liquidity.
   /// @dev deficitRay The deficit reported by a spoke for a given asset, expressed in asset units and scaled by RAY.
   struct SpokeData {
     uint120 drawnShares;
@@ -125,12 +125,12 @@ interface IHub is IHubBase, IAccessManaged {
 
   /// @notice Emitted when a spoke is added.
   /// @param assetId The identifier of the asset.
-  /// @param spoke The address of the spoke.
+  /// @param spoke The address of the Spoke.
   event AddSpoke(uint256 indexed assetId, address indexed spoke);
 
   /// @notice Emitted when a spoke configuration is updated.
   /// @param assetId The identifier of the asset.
-  /// @param spoke The address of the spoke.
+  /// @param spoke The address of the Spoke.
   /// @param config The new spoke configuration struct.
   event UpdateSpokeConfig(uint256 indexed assetId, address indexed spoke, SpokeConfig config);
 
@@ -160,7 +160,7 @@ interface IHub is IHubBase, IAccessManaged {
 
   /// @notice Emitted when a deficit is eliminated.
   /// @param assetId The identifier of the asset.
-  /// @param callerSpoke The spoke that eliminated the deficit using its supplied shares.
+  /// @param callerSpoke The spoke that eliminated the deficit using its added shares.
   /// @param coveredSpoke The spoke for which the deficit was eliminated.
   /// @param shares The amount of shares removed.
   /// @param deficitAmountRay The amount of deficit eliminated, expressed in asset units and scaled by RAY.
@@ -283,14 +283,14 @@ interface IHub is IHubBase, IAccessManaged {
   /// @notice Registers a new spoke for a specific asset in the Hub.
   /// @dev Reverts with `SpokeAlreadyListed` if spoke is already listed.
   /// @param assetId The identifier of the asset.
-  /// @param spoke The address of the spoke to add.
-  /// @param params The configuration parameters for the spoke.
+  /// @param spoke The address of the Spoke to add.
+  /// @param params The configuration parameters for the Spoke.
   function addSpoke(uint256 assetId, address spoke, SpokeConfig calldata params) external;
 
   /// @notice Updates the configuration of a spoke for a specific asset.
   /// @param assetId The identifier of the asset.
-  /// @param spoke The address of the spoke to update.
-  /// @param config The new configuration for the spoke.
+  /// @param spoke The address of the Spoke to update.
+  /// @param config The new configuration for the Spoke.
   function updateSpokeConfig(uint256 assetId, address spoke, SpokeConfig calldata config) external;
 
   /// @notice Updates the interest rate strategy for a specified asset.
@@ -304,19 +304,20 @@ interface IHub is IHubBase, IAccessManaged {
   /// @return The amount of shares minted.
   function mintFeeShares(uint256 assetId) external returns (uint256);
 
-  /// @notice Eliminates deficit by removing supplied shares of caller spoke.
+  /// @notice Eliminates deficit by removing added shares of caller spoke.
   /// @dev Only callable by active and authorized spokes.
   /// @param assetId The identifier of the asset.
   /// @param amount The amount of deficit to eliminate.
   /// @param spoke The spoke for which the deficit is eliminated.
-  /// @return The amount of shares removed.
+  /// @return The amount of added shares removed.
+  /// @return The amount of deficit eliminated, expressed in asset units.
   function eliminateDeficit(
     uint256 assetId,
     uint256 amount,
     address spoke
-  ) external returns (uint256);
+  ) external returns (uint256, uint256);
 
-  /// @notice Allows a spoke to transfer its supplied shares of an asset to another spoke.
+  /// @notice Allows a spoke to transfer its added shares of an asset to another spoke.
   /// @dev Only callable by spokes.
   /// @param assetId The identifier of the asset.
   /// @param shares The amount of shares to move.
@@ -332,7 +333,7 @@ interface IHub is IHubBase, IAccessManaged {
   /// @notice Reclaims an amount of liquidity of the corresponding asset from the configured reinvestment controller.
   /// @dev The controller can only reclaim up to swept amount. All accrued interest is distributed offchain.
   /// @dev Underlying assets must be transferred to the Hub before invocation.
-  /// @dev Extra underlying liquidity retained in the Hub can be skimmed by the investment controller through this action.
+  /// @dev Extra untracked underlying liquidity in the Hub can be skimmed into the Hub's liquidity accounting through this action.
   /// @param assetId The identifier of the asset.
   /// @param amount The amount to reclaim.
   function reclaim(uint256 assetId, uint256 amount) external;
@@ -342,14 +343,7 @@ interface IHub is IHubBase, IAccessManaged {
   /// @return True if the underlying asset is listed.
   function isUnderlyingListed(address underlying) external view returns (bool);
 
-  /// @notice Returns the asset identifier for the specified underlying asset.
-  /// @dev Reverts with `AssetNotListed` if the underlying is not listed.
-  /// @param underlying The address of the underlying asset.
-  /// @return The `assetId` of the underlying asset.
-  function getAssetId(address underlying) external view returns (uint256);
-
   /// @notice Returns the number of listed assets.
-  /// @return The number of listed assets.
   function getAssetCount() external view returns (uint256);
 
   /// @notice Returns information regarding the specified asset.
@@ -381,30 +375,29 @@ interface IHub is IHubBase, IAccessManaged {
 
   /// @notice Returns the number of spokes listed for the specified asset.
   /// @param assetId The identifier of the asset.
-  /// @return The number of spokes.
   function getSpokeCount(uint256 assetId) external view returns (uint256);
 
-  /// @notice Returns whether the spoke is listed for the specified asset.
+  /// @notice Returns whether the Spoke is listed for the specified asset.
   /// @param assetId The identifier of the asset.
-  /// @param spoke The address of the spoke.
-  /// @return True if the spoke is listed.
+  /// @param spoke The address of the Spoke.
+  /// @return True if the Spoke is listed.
   function isSpokeListed(uint256 assetId, address spoke) external view returns (bool);
 
-  /// @notice Returns the address of the spoke for an asset at the given index.
+  /// @notice Returns the address of the Spoke for an asset at the given index.
   /// @param assetId The identifier of the asset.
-  /// @param index The index of the spoke.
-  /// @return The address of the spoke.
+  /// @param index The index of the Spoke.
+  /// @return The address of the Spoke.
   function getSpokeAddress(uint256 assetId, uint256 index) external view returns (address);
 
-  /// @notice Returns the spoke data struct.
+  /// @notice Returns the Spoke data struct.
   /// @param assetId The identifier of the asset.
-  /// @param spoke The address of the spoke.
+  /// @param spoke The address of the Spoke.
   /// @return The spoke data struct.
   function getSpoke(uint256 assetId, address spoke) external view returns (SpokeData memory);
 
-  /// @notice Returns the spoke configuration struct.
+  /// @notice Returns the Spoke configuration struct.
   /// @param assetId The identifier of the asset.
-  /// @param spoke The address of the spoke.
+  /// @param spoke The address of the Spoke.
   /// @return The spoke configuration struct.
   function getSpokeConfig(
     uint256 assetId,

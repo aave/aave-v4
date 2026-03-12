@@ -5,7 +5,7 @@ pragma solidity 0.8.28;
 import {SafeERC20, IERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
 import {MathUtils} from 'src/libraries/math/MathUtils.sol';
 import {EIP712Hash} from 'src/position-manager/libraries/EIP712Hash.sol';
-import {ISpokeBase} from 'src/spoke/interfaces/ISpokeBase.sol';
+import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 import {ITakerPositionManager} from 'src/position-manager/interfaces/ITakerPositionManager.sol';
 import {PositionManagerBase} from 'src/position-manager/PositionManagerBase.sol';
 
@@ -23,11 +23,11 @@ contract TakerPositionManager is ITakerPositionManager, PositionManagerBase {
   /// @inheritdoc ITakerPositionManager
   bytes32 public constant BORROW_PERMIT_TYPEHASH = EIP712Hash.BORROW_PERMIT_TYPEHASH;
 
-  /// @dev Map of withdraw allowances based on the spoke, reserveId, owner and spender.
+  /// @dev Map of withdraw allowances based on the Spoke, reserveId, owner and spender.
   mapping(address spoke => mapping(uint256 reserveId => mapping(address owner => mapping(address spender => uint256 amount))))
     private _withdrawAllowances;
 
-  /// @dev Map of borrow allowances based on the spoke, reserveId, owner and spender.
+  /// @dev Map of borrow allowances based on the Spoke, reserveId, owner and spender.
   mapping(address spoke => mapping(uint256 reserveId => mapping(address owner => mapping(address spender => uint256 amount))))
     private _borrowAllowances;
 
@@ -177,7 +177,7 @@ contract TakerPositionManager is ITakerPositionManager, PositionManagerBase {
       amount: amount
     });
 
-    (uint256 withdrawnShares, uint256 withdrawnAmount) = ISpokeBase(spoke).withdraw(
+    (uint256 withdrawnShares, uint256 withdrawnAmount) = ISpoke(spoke).withdraw(
       reserveId,
       amount,
       onBehalfOf
@@ -203,7 +203,7 @@ contract TakerPositionManager is ITakerPositionManager, PositionManagerBase {
       amount: amount
     });
 
-    (uint256 borrowedShares, uint256 borrowedAmount) = ISpokeBase(spoke).borrow(
+    (uint256 borrowedShares, uint256 borrowedAmount) = ISpoke(spoke).borrow(
       reserveId,
       amount,
       onBehalfOf

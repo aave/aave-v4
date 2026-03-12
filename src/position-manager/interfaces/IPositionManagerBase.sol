@@ -50,7 +50,7 @@ interface IPositionManagerBase is IIntentConsumer, IRescuable, IMulticall {
   /// @dev The given data is passed to the underlying asset for the signature to be verified.
   /// @dev Uses keyed-nonces where for each key's namespace nonce is consumed sequentially.
   /// @dev Spender is this position manager contract.
-  /// @param spoke The address of the spoke.
+  /// @param spoke The address of the Spoke.
   /// @param reserveId The identifier of the reserve.
   /// @param onBehalfOf The address of the user on whose behalf the permit is being used.
   /// @param value The amount of the underlying asset to permit.
@@ -71,13 +71,13 @@ interface IPositionManagerBase is IIntentConsumer, IRescuable, IMulticall {
   /// @param user The address of the user to renounce the position manager role for.
   function renouncePositionManagerRole(address spoke, address user) external;
 
-  /// @notice Register or deregister a spoke.
+  /// @notice Registers or deregisters a spoke.
   /// @param spoke The address of the Spoke.
   /// @param registered `true` to register, `false` to deregister.
   function registerSpoke(address spoke, bool registered) external;
 
   /// @notice Returns whether the specified spoke is registered.
   /// @param spoke The address of the `spoke`.
-  /// @return `true` if the spoke is registered, `false` otherwise.
+  /// @return `true` if the Spoke is registered, `false` otherwise.
   function isSpokeRegistered(address spoke) external view returns (bool);
 }

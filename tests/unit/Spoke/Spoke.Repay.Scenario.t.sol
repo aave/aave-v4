@@ -1002,7 +1002,7 @@ contract SpokeRepayScenarioTest is SpokeBase {
       vm.expectRevert(IHub.InvalidAmount.selector);
     } else {
       vm.expectEmit(address(spoke1));
-      emit ISpokeBase.Repay(
+      emit ISpoke.Repay(
         _daiReserveId(spoke1),
         bob,
         bob,
@@ -1110,7 +1110,7 @@ contract SpokeRepayScenarioTest is SpokeBase {
       vm.expectRevert(IHub.InvalidAmount.selector);
     } else {
       vm.expectEmit(address(spoke1));
-      emit ISpokeBase.Repay(
+      emit ISpoke.Repay(
         _daiReserveId(spoke1),
         bob,
         bob,
@@ -1209,7 +1209,7 @@ contract SpokeRepayScenarioTest is SpokeBase {
 
     // Partial repay
     vm.expectEmit(address(spoke1));
-    emit ISpokeBase.Repay(
+    emit ISpoke.Repay(
       _daiReserveId(spoke1),
       bob,
       bob,
@@ -1273,7 +1273,7 @@ contract SpokeRepayScenarioTest is SpokeBase {
 
     // Full repay
     vm.expectEmit(address(spoke1));
-    emit ISpokeBase.Repay(
+    emit ISpoke.Repay(
       _daiReserveId(spoke1),
       bob,
       bob,

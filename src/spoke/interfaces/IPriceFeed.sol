@@ -12,6 +12,6 @@ interface IPriceFeed {
   /// @notice Returns the description of the feed.
   function description() external view returns (string memory);
 
-  /// @notice Returns the latest price answer.
+  /// @notice Returns the latest price answer, expressed with `decimals` precision.
   function latestAnswer() external view returns (int256);
 }

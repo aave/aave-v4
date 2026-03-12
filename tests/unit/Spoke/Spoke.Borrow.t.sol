@@ -17,7 +17,7 @@ contract SpokeBorrowTest is SpokeBase {
 
     MockReentrantCaller reentrantCaller = new MockReentrantCaller(
       address(spoke1),
-      ISpokeBase.borrow.selector
+      ISpoke.borrow.selector
     );
 
     vm.mockFunction(
@@ -42,7 +42,7 @@ contract SpokeBorrowTest is SpokeBase {
 
     MockReentrantCaller reentrantCaller = new MockReentrantCaller(
       address(spoke1),
-      ISpokeBase.borrow.selector
+      ISpoke.borrow.selector
     );
 
     vm.mockFunction(
@@ -138,7 +138,7 @@ contract SpokeBorrowTest is SpokeBase {
     // Bob draw all dai reserve liquidity
     TestReturnValues memory returnValues;
     vm.expectEmit(address(spoke1));
-    emit ISpokeBase.Borrow(state.daiReserveId, bob, bob, expectedShares, state.daiBob.borrowAmount);
+    emit ISpoke.Borrow(state.daiReserveId, bob, bob, expectedShares, state.daiBob.borrowAmount);
     vm.prank(bob);
     (returnValues.shares, returnValues.amount) = spoke1.borrow(
       state.daiReserveId,
@@ -293,7 +293,7 @@ contract SpokeBorrowTest is SpokeBase {
     // Bob draw dai
     TestReturnValues memory returnValues;
     vm.expectEmit(address(spoke1));
-    emit ISpokeBase.Borrow(state.daiReserveId, bob, bob, expectedShares, state.daiBob.borrowAmount);
+    emit ISpoke.Borrow(state.daiReserveId, bob, bob, expectedShares, state.daiBob.borrowAmount);
     vm.prank(bob);
     (returnValues.shares, returnValues.amount) = spoke1.borrow(
       state.daiReserveId,
