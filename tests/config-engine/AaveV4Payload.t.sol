@@ -281,29 +281,37 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
   function test_execute_hubSpokeToAssetsAdditions() public {
     IAaveV4ConfigEngine.SpokeToAssetsAddition[]
       memory additions = new IAaveV4ConfigEngine.SpokeToAssetsAddition[](1);
-    address[] memory underlyings = new address[](1);
-    underlyings[0] = UNDERLYING;
-    IHub.SpokeConfig[] memory configs = new IHub.SpokeConfig[](1);
-    configs[0] = IHub.SpokeConfig({
-      addCap: 1000,
-      drawCap: 500,
-      riskPremiumThreshold: 100,
-      active: true,
-      halted: false
+    IAaveV4ConfigEngine.SpokeAssetConfig[]
+      memory assets = new IAaveV4ConfigEngine.SpokeAssetConfig[](1);
+    assets[0] = IAaveV4ConfigEngine.SpokeAssetConfig({
+      underlying: UNDERLYING,
+      config: IHub.SpokeConfig({
+        addCap: 1000,
+        drawCap: 500,
+        riskPremiumThreshold: 100,
+        active: true,
+        halted: false
+      })
     });
     additions[0] = IAaveV4ConfigEngine.SpokeToAssetsAddition({
       hubConfigurator: IHubConfigurator(address(mockHubConfigurator)),
       hub: address(mockHub),
       spoke: SPOKE,
-      underlyings: underlyings,
-      configs: configs
+      assets: assets
     });
     payload.setHubSpokeToAssetsAdditions(additions);
 
     uint256[] memory assetIds = new uint256[](1);
     assetIds[0] = ASSET_ID;
+    IHub.SpokeConfig[] memory expectedConfigs = new IHub.SpokeConfig[](1);
+    expectedConfigs[0] = assets[0].config;
     vm.expectEmit(address(mockHubConfigurator));
-    emit MockHubConfigurator.AddSpokeToAssetsCalled(address(mockHub), SPOKE, assetIds, configs);
+    emit MockHubConfigurator.AddSpokeToAssetsCalled(
+      address(mockHub),
+      SPOKE,
+      assetIds,
+      expectedConfigs
+    );
 
     payload.execute();
   }

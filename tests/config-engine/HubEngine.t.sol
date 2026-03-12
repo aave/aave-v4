@@ -660,24 +660,27 @@ contract HubEngineTest is BaseConfigEngineTest {
     address underlying2 = makeAddr('UNDERLYING2');
     mockHub.setAssetId(underlying2, 2);
 
-    address[] memory underlyings = new address[](2);
-    underlyings[0] = UNDERLYING;
-    underlyings[1] = underlying2;
-
-    IHub.SpokeConfig[] memory configs = new IHub.SpokeConfig[](2);
-    configs[0] = IHub.SpokeConfig({
-      addCap: 1000,
-      drawCap: 500,
-      riskPremiumThreshold: 100,
-      active: true,
-      halted: false
+    IAaveV4ConfigEngine.SpokeAssetConfig[]
+      memory assets = new IAaveV4ConfigEngine.SpokeAssetConfig[](2);
+    assets[0] = IAaveV4ConfigEngine.SpokeAssetConfig({
+      underlying: UNDERLYING,
+      config: IHub.SpokeConfig({
+        addCap: 1000,
+        drawCap: 500,
+        riskPremiumThreshold: 100,
+        active: true,
+        halted: false
+      })
     });
-    configs[1] = IHub.SpokeConfig({
-      addCap: 2000,
-      drawCap: 1000,
-      riskPremiumThreshold: 200,
-      active: true,
-      halted: false
+    assets[1] = IAaveV4ConfigEngine.SpokeAssetConfig({
+      underlying: underlying2,
+      config: IHub.SpokeConfig({
+        addCap: 2000,
+        drawCap: 1000,
+        riskPremiumThreshold: 200,
+        active: true,
+        halted: false
+      })
     });
 
     IAaveV4ConfigEngine.SpokeToAssetsAddition memory addition = IAaveV4ConfigEngine
@@ -685,36 +688,40 @@ contract HubEngineTest is BaseConfigEngineTest {
         hubConfigurator: IHubConfigurator(address(mockHubConfigurator)),
         hub: address(mockHub),
         spoke: SPOKE,
-        underlyings: underlyings,
-        configs: configs
+        assets: assets
       });
 
     uint256[] memory expectedAssetIds = new uint256[](2);
     expectedAssetIds[0] = 1;
     expectedAssetIds[1] = 2;
 
+    IHub.SpokeConfig[] memory expectedConfigs = new IHub.SpokeConfig[](2);
+    expectedConfigs[0] = assets[0].config;
+    expectedConfigs[1] = assets[1].config;
+
     vm.expectEmit(address(mockHubConfigurator));
     emit MockHubConfigurator.AddSpokeToAssetsCalled(
       address(mockHub),
       SPOKE,
       expectedAssetIds,
-      configs
+      expectedConfigs
     );
 
     engine.executeHubSpokeToAssetsAdditions(_toSpokeToAssetsAdditionArray(addition));
   }
 
   function testFuzz_executeHubSpokeToAssetsAdditions(uint40 addCap, uint40 drawCap) public {
-    address[] memory underlyings = new address[](1);
-    underlyings[0] = UNDERLYING;
-
-    IHub.SpokeConfig[] memory configs = new IHub.SpokeConfig[](1);
-    configs[0] = IHub.SpokeConfig({
-      addCap: addCap,
-      drawCap: drawCap,
-      riskPremiumThreshold: 100,
-      active: true,
-      halted: false
+    IAaveV4ConfigEngine.SpokeAssetConfig[]
+      memory assets = new IAaveV4ConfigEngine.SpokeAssetConfig[](1);
+    assets[0] = IAaveV4ConfigEngine.SpokeAssetConfig({
+      underlying: UNDERLYING,
+      config: IHub.SpokeConfig({
+        addCap: addCap,
+        drawCap: drawCap,
+        riskPremiumThreshold: 100,
+        active: true,
+        halted: false
+      })
     });
 
     IAaveV4ConfigEngine.SpokeToAssetsAddition memory addition = IAaveV4ConfigEngine
@@ -722,19 +729,21 @@ contract HubEngineTest is BaseConfigEngineTest {
         hubConfigurator: IHubConfigurator(address(mockHubConfigurator)),
         hub: address(mockHub),
         spoke: SPOKE,
-        underlyings: underlyings,
-        configs: configs
+        assets: assets
       });
 
     uint256[] memory expectedAssetIds = new uint256[](1);
     expectedAssetIds[0] = ASSET_ID;
+
+    IHub.SpokeConfig[] memory expectedConfigs = new IHub.SpokeConfig[](1);
+    expectedConfigs[0] = assets[0].config;
 
     vm.expectEmit(address(mockHubConfigurator));
     emit MockHubConfigurator.AddSpokeToAssetsCalled(
       address(mockHub),
       SPOKE,
       expectedAssetIds,
-      configs
+      expectedConfigs
     );
 
     engine.executeHubSpokeToAssetsAdditions(_toSpokeToAssetsAdditionArray(addition));
@@ -743,16 +752,17 @@ contract HubEngineTest is BaseConfigEngineTest {
   function test_executeHubSpokeToAssetsAdditions_revert() public {
     mockHubConfigurator.setShouldRevert(IHubConfigurator.addSpokeToAssets.selector, true);
 
-    address[] memory underlyings = new address[](1);
-    underlyings[0] = UNDERLYING;
-
-    IHub.SpokeConfig[] memory configs = new IHub.SpokeConfig[](1);
-    configs[0] = IHub.SpokeConfig({
-      addCap: 1000,
-      drawCap: 500,
-      riskPremiumThreshold: 100,
-      active: true,
-      halted: false
+    IAaveV4ConfigEngine.SpokeAssetConfig[]
+      memory assets = new IAaveV4ConfigEngine.SpokeAssetConfig[](1);
+    assets[0] = IAaveV4ConfigEngine.SpokeAssetConfig({
+      underlying: UNDERLYING,
+      config: IHub.SpokeConfig({
+        addCap: 1000,
+        drawCap: 500,
+        riskPremiumThreshold: 100,
+        active: true,
+        halted: false
+      })
     });
 
     IAaveV4ConfigEngine.SpokeToAssetsAddition memory addition = IAaveV4ConfigEngine
@@ -760,8 +770,7 @@ contract HubEngineTest is BaseConfigEngineTest {
         hubConfigurator: IHubConfigurator(address(mockHubConfigurator)),
         hub: address(mockHub),
         spoke: SPOKE,
-        underlyings: underlyings,
-        configs: configs
+        assets: assets
       });
 
     vm.expectRevert(MockHubConfigurator.AddSpokeToAssetsReverted.selector);

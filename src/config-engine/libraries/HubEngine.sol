@@ -119,16 +119,18 @@ library HubEngine {
   ) external {
     uint256 length = additions.length;
     for (uint256 i; i < length; ++i) {
-      uint256 underlyingsLength = additions[i].underlyings.length;
-      uint256[] memory assetIds = new uint256[](underlyingsLength);
-      for (uint256 j; j < underlyingsLength; ++j) {
-        assetIds[j] = IHubBase(additions[i].hub).getAssetId(additions[i].underlyings[j]);
+      uint256 assetsLength = additions[i].assets.length;
+      uint256[] memory assetIds = new uint256[](assetsLength);
+      IHub.SpokeConfig[] memory configs = new IHub.SpokeConfig[](assetsLength);
+      for (uint256 j; j < assetsLength; ++j) {
+        assetIds[j] = IHubBase(additions[i].hub).getAssetId(additions[i].assets[j].underlying);
+        configs[j] = additions[i].assets[j].config;
       }
       additions[i].hubConfigurator.addSpokeToAssets(
         additions[i].hub,
         additions[i].spoke,
         assetIds,
-        additions[i].configs
+        configs
       );
     }
   }

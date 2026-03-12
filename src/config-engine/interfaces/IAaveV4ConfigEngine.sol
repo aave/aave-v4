@@ -57,18 +57,24 @@ interface IAaveV4ConfigEngine {
     address reinvestmentController;
   }
 
+  /// @notice Pairs an underlying asset address with its Spoke configuration.
+  /// @dev underlying The address of the underlying asset.
+  /// @dev config The Spoke configuration for the asset.
+  struct SpokeAssetConfig {
+    address underlying;
+    IHub.SpokeConfig config;
+  }
+
   /// @notice Parameters for registering a Spoke for multiple assets on a Hub.
   /// @dev hubConfigurator The HubConfigurator to use for this action.
   /// @dev hub The address of the Hub.
   /// @dev spoke The address of the Spoke.
-  /// @dev underlyings The list of underlying asset addresses to register the Spoke for.
-  /// @dev configs The list of Spoke configurations to register.
+  /// @dev assets The list of underlying assets with their Spoke configurations.
   struct SpokeToAssetsAddition {
     IHubConfigurator hubConfigurator;
     address hub;
     address spoke;
-    address[] underlyings;
-    IHub.SpokeConfig[] configs;
+    SpokeAssetConfig[] assets;
   }
 
   /// @notice Parameters for updating Spoke config (caps, risk premium threshold, status) on a Hub.
