@@ -42,7 +42,6 @@ contract AccessManagerEnumerableTest is Test {
     address user2 = makeAddr('user2');
 
     vm.startPrank(ADMIN);
-    accessManagerEnumerable.setRoleAdmin(roleId, ADMIN_ROLE);
     accessManagerEnumerable.labelRole(roleId, 'test_role');
     accessManagerEnumerable.setGrantDelay(roleId, 0);
 
@@ -90,7 +89,6 @@ contract AccessManagerEnumerableTest is Test {
     );
 
     vm.startPrank(ADMIN);
-    accessManagerEnumerable.setRoleAdmin(roleId, ADMIN_ROLE);
     accessManagerEnumerable.labelRole(roleId, 'test_role');
     accessManagerEnumerable.setGrantDelay(roleId, 0);
 
@@ -435,7 +433,6 @@ contract AccessManagerEnumerableTest is Test {
     address user3 = makeAddr('user3');
 
     vm.startPrank(ADMIN);
-    accessManagerEnumerable.setRoleAdmin(roleId, ADMIN_ROLE);
     accessManagerEnumerable.labelRole(roleId, 'test_role');
     accessManagerEnumerable.setGrantDelay(roleId, 0);
     accessManagerEnumerable.grantRole(roleId, user1, 0);
@@ -467,7 +464,6 @@ contract AccessManagerEnumerableTest is Test {
     address user3 = makeAddr('user3');
 
     vm.startPrank(ADMIN);
-    accessManagerEnumerable.setRoleAdmin(roleId, ADMIN_ROLE);
     accessManagerEnumerable.labelRole(roleId, 'test_role');
     accessManagerEnumerable.setGrantDelay(roleId, 0);
     accessManagerEnumerable.grantRole(roleId, user1, 0);
@@ -544,7 +540,6 @@ contract AccessManagerEnumerableTest is Test {
     assertEq(accessManagerEnumerable.getRoleCount(), 0);
 
     vm.startPrank(ADMIN);
-    accessManagerEnumerable.setRoleAdmin(roleId, ADMIN_ROLE);
     accessManagerEnumerable.labelRole(roleId, 'test_role');
 
     accessManagerEnumerable.setTargetFunctionRole(target, selectors, roleId);
@@ -600,8 +595,6 @@ contract AccessManagerEnumerableTest is Test {
     assertEq(accessManagerEnumerable.getRoleCount(), 0);
 
     vm.startPrank(ADMIN);
-    accessManagerEnumerable.setRoleAdmin(roleId, ADMIN_ROLE);
-    accessManagerEnumerable.setRoleAdmin(roleId2, ADMIN_ROLE);
     accessManagerEnumerable.labelRole(roleId, 'test_role');
     accessManagerEnumerable.labelRole(roleId2, 'test_role_2');
 
@@ -828,7 +821,6 @@ contract AccessManagerEnumerableTest is Test {
     uint64 roleId = 1;
 
     vm.startPrank(ADMIN);
-    accessManagerEnumerable.setRoleAdmin(roleId, ADMIN_ROLE);
     accessManagerEnumerable.labelRole(roleId, 'test_role');
     accessManagerEnumerable.setGrantDelay(roleId, 0);
 
@@ -865,7 +857,6 @@ contract AccessManagerEnumerableTest is Test {
     }
 
     vm.startPrank(ADMIN);
-    accessManagerEnumerable.setRoleAdmin(roleId, ADMIN_ROLE);
     accessManagerEnumerable.labelRole(roleId, 'test_role');
 
     accessManagerEnumerable.setTargetFunctionRole(target, selectors, roleId);
