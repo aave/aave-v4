@@ -5,6 +5,7 @@ pragma solidity ^0.8.0;
 import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
 import {EngineFlags} from 'src/config-engine/libraries/EngineFlags.sol';
 
+import {IHubBase} from 'src/hub/interfaces/IHubBase.sol';
 import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 
 import {IAaveV4ConfigEngine} from 'src/config-engine/interfaces/IAaveV4ConfigEngine.sol';
@@ -22,10 +23,11 @@ library SpokeEngine {
   ) external {
     uint256 length = listings.length;
     for (uint256 i; i < length; ++i) {
+      uint256 assetId = IHubBase(listings[i].hub).getAssetId(listings[i].underlying);
       listings[i].spokeConfigurator.addReserve(
         listings[i].spoke,
         listings[i].hub,
-        listings[i].assetId,
+        assetId,
         listings[i].priceSource,
         listings[i].config,
         listings[i].dynamicConfig
@@ -40,45 +42,51 @@ library SpokeEngine {
   ) external {
     uint256 length = updates.length;
     for (uint256 i; i < length; ++i) {
+      uint256 reserveId = _resolveReserveId(
+        updates[i].spoke,
+        updates[i].hub,
+        updates[i].underlying
+      );
+
       if (updates[i].priceSource != EngineFlags.KEEP_CURRENT_ADDRESS) {
         updates[i].spokeConfigurator.updateReservePriceSource(
           updates[i].spoke,
-          updates[i].reserveId,
+          reserveId,
           updates[i].priceSource
         );
       }
       if (updates[i].collateralRisk != EngineFlags.KEEP_CURRENT) {
         updates[i].spokeConfigurator.updateCollateralRisk(
           updates[i].spoke,
-          updates[i].reserveId,
+          reserveId,
           updates[i].collateralRisk
         );
       }
       if (updates[i].paused != EngineFlags.KEEP_CURRENT) {
         updates[i].spokeConfigurator.updatePaused(
           updates[i].spoke,
-          updates[i].reserveId,
+          reserveId,
           EngineFlags.toBool(updates[i].paused)
         );
       }
       if (updates[i].frozen != EngineFlags.KEEP_CURRENT) {
         updates[i].spokeConfigurator.updateFrozen(
           updates[i].spoke,
-          updates[i].reserveId,
+          reserveId,
           EngineFlags.toBool(updates[i].frozen)
         );
       }
       if (updates[i].borrowable != EngineFlags.KEEP_CURRENT) {
         updates[i].spokeConfigurator.updateBorrowable(
           updates[i].spoke,
-          updates[i].reserveId,
+          reserveId,
           EngineFlags.toBool(updates[i].borrowable)
         );
       }
       if (updates[i].receiveSharesEnabled != EngineFlags.KEEP_CURRENT) {
         updates[i].spokeConfigurator.updateReceiveSharesEnabled(
           updates[i].spoke,
-          updates[i].reserveId,
+          reserveId,
           EngineFlags.toBool(updates[i].receiveSharesEnabled)
         );
       }
@@ -138,9 +146,14 @@ library SpokeEngine {
   ) external {
     uint256 length = additions.length;
     for (uint256 i; i < length; ++i) {
+      uint256 reserveId = _resolveReserveId(
+        additions[i].spoke,
+        additions[i].hub,
+        additions[i].underlying
+      );
       additions[i].spokeConfigurator.addDynamicReserveConfig(
         additions[i].spoke,
-        additions[i].reserveId,
+        reserveId,
         additions[i].dynamicConfig
       );
     }
@@ -155,10 +168,15 @@ library SpokeEngine {
   ) external {
     uint256 length = updates.length;
     for (uint256 i; i < length; ++i) {
+      uint256 reserveId = _resolveReserveId(
+        updates[i].spoke,
+        updates[i].hub,
+        updates[i].underlying
+      );
       bool anyUpdated;
 
       ISpoke.DynamicReserveConfig memory current = ISpoke(updates[i].spoke).getDynamicReserveConfig(
-        updates[i].reserveId,
+        reserveId,
         updates[i].dynamicConfigKey.toUint32()
       );
 
@@ -179,7 +197,7 @@ library SpokeEngine {
 
       updates[i].spokeConfigurator.updateDynamicReserveConfig(
         updates[i].spoke,
-        updates[i].reserveId,
+        reserveId,
         updates[i].dynamicConfigKey.toUint32(),
         current
       );
@@ -221,5 +239,15 @@ library SpokeEngine {
         updates[i].active
       );
     }
+  }
+
+  /// @dev Resolves the reserve ID from spoke, hub, and underlying addresses.
+  function _resolveReserveId(
+    address spoke,
+    address hub,
+    address underlying
+  ) private view returns (uint256) {
+    uint256 assetId = IHubBase(hub).getAssetId(underlying);
+    return ISpoke(spoke).getReserveId(hub, assetId);
   }
 }

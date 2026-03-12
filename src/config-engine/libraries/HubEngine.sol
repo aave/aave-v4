@@ -5,6 +5,10 @@ pragma solidity ^0.8.0;
 import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
 import {EngineFlags} from 'src/config-engine/libraries/EngineFlags.sol';
 
+import {IHubBase} from 'src/hub/interfaces/IHubBase.sol';
+import {IHub} from 'src/hub/interfaces/IHub.sol';
+import {IAssetInterestRateStrategy} from 'src/hub/interfaces/IAssetInterestRateStrategy.sol';
+
 import {IAaveV4ConfigEngine} from 'src/config-engine/interfaces/IAaveV4ConfigEngine.sol';
 
 /// @title HubEngine
@@ -18,6 +22,7 @@ library HubEngine {
   function executeHubAssetListings(IAaveV4ConfigEngine.AssetListing[] calldata listings) external {
     uint256 length = listings.length;
     for (uint256 i; i < length; ++i) {
+      bytes memory irData = abi.encode(listings[i].irData);
       if (listings[i].decimals == 0) {
         listings[i].hubConfigurator.addAsset(
           listings[i].hub,
@@ -25,7 +30,7 @@ library HubEngine {
           listings[i].feeReceiver,
           listings[i].liquidityFee,
           listings[i].irStrategy,
-          listings[i].irData
+          irData
         );
       } else {
         listings[i].hubConfigurator.addAssetWithDecimals(
@@ -35,7 +40,7 @@ library HubEngine {
           listings[i].feeReceiver,
           listings[i].liquidityFee,
           listings[i].irStrategy,
-          listings[i].irData
+          irData
         );
       }
     }
@@ -44,7 +49,8 @@ library HubEngine {
   /// @notice Updates asset config (fee, interest rate, reinvestment) for assets on Hubs.
   /// @dev Dispatches to the appropriate HubConfigurator methods based on sentinel values:
   ///   Fee: both set → updateFeeConfig; only fee → updateLiquidityFee; only receiver → updateFeeReceiver.
-  ///   IR: strategy set → updateInterestRateStrategy; strategy kept + irData → updateInterestRateData.
+  ///   IR: strategy set → updateInterestRateStrategy; strategy kept + non-sentinel irData fields →
+  ///   read-modify-write via updateInterestRateData.
   ///   Reinvestment: address set → updateReinvestmentController.
   /// @param updates The asset config updates to execute.
   function executeHubAssetConfigUpdates(
@@ -52,26 +58,28 @@ library HubEngine {
   ) external {
     uint256 length = updates.length;
     for (uint256 i; i < length; ++i) {
+      uint256 assetId = IHubBase(updates[i].hub).getAssetId(updates[i].underlying);
+
       bool updateFee = updates[i].liquidityFee != EngineFlags.KEEP_CURRENT;
       bool updateReceiver = updates[i].feeReceiver != EngineFlags.KEEP_CURRENT_ADDRESS;
 
       if (updateFee && updateReceiver) {
         updates[i].hubConfigurator.updateFeeConfig(
           updates[i].hub,
-          updates[i].assetId,
+          assetId,
           updates[i].liquidityFee,
           updates[i].feeReceiver
         );
       } else if (updateFee) {
         updates[i].hubConfigurator.updateLiquidityFee(
           updates[i].hub,
-          updates[i].assetId,
+          assetId,
           updates[i].liquidityFee
         );
       } else if (updateReceiver) {
         updates[i].hubConfigurator.updateFeeReceiver(
           updates[i].hub,
-          updates[i].assetId,
+          assetId,
           updates[i].feeReceiver
         );
       }
@@ -79,22 +87,25 @@ library HubEngine {
       if (updates[i].irStrategy != EngineFlags.KEEP_CURRENT_ADDRESS) {
         updates[i].hubConfigurator.updateInterestRateStrategy(
           updates[i].hub,
-          updates[i].assetId,
+          assetId,
           updates[i].irStrategy,
-          updates[i].irData
+          abi.encode(updates[i].irData)
         );
-      } else if (updates[i].irData.length > 0) {
-        updates[i].hubConfigurator.updateInterestRateData(
+      } else {
+        bytes memory mergedIrData = _mergeInterestRateData(
           updates[i].hub,
-          updates[i].assetId,
+          assetId,
           updates[i].irData
         );
+        if (mergedIrData.length > 0) {
+          updates[i].hubConfigurator.updateInterestRateData(updates[i].hub, assetId, mergedIrData);
+        }
       }
 
       if (updates[i].reinvestmentController != EngineFlags.KEEP_CURRENT_ADDRESS) {
         updates[i].hubConfigurator.updateReinvestmentController(
           updates[i].hub,
-          updates[i].assetId,
+          assetId,
           updates[i].reinvestmentController
         );
       }
@@ -108,10 +119,15 @@ library HubEngine {
   ) external {
     uint256 length = additions.length;
     for (uint256 i; i < length; ++i) {
+      uint256 underlyingsLength = additions[i].underlyings.length;
+      uint256[] memory assetIds = new uint256[](underlyingsLength);
+      for (uint256 j; j < underlyingsLength; ++j) {
+        assetIds[j] = IHubBase(additions[i].hub).getAssetId(additions[i].underlyings[j]);
+      }
       additions[i].hubConfigurator.addSpokeToAssets(
         additions[i].hub,
         additions[i].spoke,
-        additions[i].assetIds,
+        assetIds,
         additions[i].configs
       );
     }
@@ -128,13 +144,15 @@ library HubEngine {
   ) external {
     uint256 length = updates.length;
     for (uint256 i; i < length; ++i) {
+      uint256 assetId = IHubBase(updates[i].hub).getAssetId(updates[i].underlying);
+
       bool updateAdd = updates[i].addCap != EngineFlags.KEEP_CURRENT;
       bool updateDraw = updates[i].drawCap != EngineFlags.KEEP_CURRENT;
 
       if (updateAdd && updateDraw) {
         updates[i].hubConfigurator.updateSpokeCaps(
           updates[i].hub,
-          updates[i].assetId,
+          assetId,
           updates[i].spoke,
           updates[i].addCap,
           updates[i].drawCap
@@ -142,14 +160,14 @@ library HubEngine {
       } else if (updateAdd) {
         updates[i].hubConfigurator.updateSpokeAddCap(
           updates[i].hub,
-          updates[i].assetId,
+          assetId,
           updates[i].spoke,
           updates[i].addCap
         );
       } else if (updateDraw) {
         updates[i].hubConfigurator.updateSpokeDrawCap(
           updates[i].hub,
-          updates[i].assetId,
+          assetId,
           updates[i].spoke,
           updates[i].drawCap
         );
@@ -158,7 +176,7 @@ library HubEngine {
       if (updates[i].riskPremiumThreshold != EngineFlags.KEEP_CURRENT) {
         updates[i].hubConfigurator.updateSpokeRiskPremiumThreshold(
           updates[i].hub,
-          updates[i].assetId,
+          assetId,
           updates[i].spoke,
           updates[i].riskPremiumThreshold
         );
@@ -167,7 +185,7 @@ library HubEngine {
       if (updates[i].active != EngineFlags.KEEP_CURRENT) {
         updates[i].hubConfigurator.updateSpokeActive(
           updates[i].hub,
-          updates[i].assetId,
+          assetId,
           updates[i].spoke,
           EngineFlags.toBool(updates[i].active)
         );
@@ -175,7 +193,7 @@ library HubEngine {
       if (updates[i].halted != EngineFlags.KEEP_CURRENT) {
         updates[i].hubConfigurator.updateSpokeHalted(
           updates[i].hub,
-          updates[i].assetId,
+          assetId,
           updates[i].spoke,
           EngineFlags.toBool(updates[i].halted)
         );
@@ -188,7 +206,8 @@ library HubEngine {
   function executeHubAssetHalts(IAaveV4ConfigEngine.AssetHalt[] calldata halts) external {
     uint256 length = halts.length;
     for (uint256 i; i < length; ++i) {
-      halts[i].hubConfigurator.haltAsset(halts[i].hub, halts[i].assetId);
+      uint256 assetId = IHubBase(halts[i].hub).getAssetId(halts[i].underlying);
+      halts[i].hubConfigurator.haltAsset(halts[i].hub, assetId);
     }
   }
 
@@ -199,10 +218,8 @@ library HubEngine {
   ) external {
     uint256 length = deactivations.length;
     for (uint256 i; i < length; ++i) {
-      deactivations[i].hubConfigurator.deactivateAsset(
-        deactivations[i].hub,
-        deactivations[i].assetId
-      );
+      uint256 assetId = IHubBase(deactivations[i].hub).getAssetId(deactivations[i].underlying);
+      deactivations[i].hubConfigurator.deactivateAsset(deactivations[i].hub, assetId);
     }
   }
 
@@ -213,7 +230,8 @@ library HubEngine {
   ) external {
     uint256 length = resets.length;
     for (uint256 i; i < length; ++i) {
-      resets[i].hubConfigurator.resetAssetCaps(resets[i].hub, resets[i].assetId);
+      uint256 assetId = IHubBase(resets[i].hub).getAssetId(resets[i].underlying);
+      resets[i].hubConfigurator.resetAssetCaps(resets[i].hub, assetId);
     }
   }
 
@@ -249,5 +267,35 @@ library HubEngine {
     for (uint256 i; i < length; ++i) {
       resets[i].hubConfigurator.resetSpokeCaps(resets[i].hub, resets[i].spoke);
     }
+  }
+
+  /// @dev Merges non-sentinel fields from irData into the current on-chain IR data.
+  ///   Returns empty bytes if all fields are sentinel (no update needed).
+  function _mergeInterestRateData(
+    address hub,
+    uint256 assetId,
+    IAssetInterestRateStrategy.InterestRateData calldata irData
+  ) private view returns (bytes memory) {
+    bool anyUpdated;
+
+    bool updateOptimal = irData.optimalUsageRatio != EngineFlags.KEEP_CURRENT_UINT16;
+    bool updateBase = irData.baseDrawnRate != EngineFlags.KEEP_CURRENT_UINT32;
+    bool updateBefore = irData.rateGrowthBeforeOptimal != EngineFlags.KEEP_CURRENT_UINT32;
+    bool updateAfter = irData.rateGrowthAfterOptimal != EngineFlags.KEEP_CURRENT_UINT32;
+
+    anyUpdated = updateOptimal || updateBase || updateBefore || updateAfter;
+    if (!anyUpdated) return '';
+
+    address irStrategy = IHub(hub).getAssetConfig(assetId).irStrategy;
+    IAssetInterestRateStrategy.InterestRateData memory current = IAssetInterestRateStrategy(
+      irStrategy
+    ).getInterestRateData(assetId);
+
+    if (updateOptimal) current.optimalUsageRatio = irData.optimalUsageRatio;
+    if (updateBase) current.baseDrawnRate = irData.baseDrawnRate;
+    if (updateBefore) current.rateGrowthBeforeOptimal = irData.rateGrowthBeforeOptimal;
+    if (updateAfter) current.rateGrowthAfterOptimal = irData.rateGrowthAfterOptimal;
+
+    return abi.encode(current);
   }
 }

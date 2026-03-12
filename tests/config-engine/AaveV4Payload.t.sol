@@ -10,6 +10,7 @@ import {IHub} from 'src/hub/interfaces/IHub.sol';
 import {IHubConfigurator} from 'src/hub/interfaces/IHubConfigurator.sol';
 import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 import {ISpokeConfigurator} from 'src/spoke/interfaces/ISpokeConfigurator.sol';
+import {IAssetInterestRateStrategy} from 'src/hub/interfaces/IAssetInterestRateStrategy.sol';
 
 import {Roles} from 'src/libraries/types/Roles.sol';
 
@@ -23,6 +24,7 @@ import {MockHubConfigurator} from 'tests/mocks/config-engine/MockHubConfigurator
 import {MockSpokeConfigurator} from 'tests/mocks/config-engine/MockSpokeConfigurator.sol';
 import {MockAccessManager} from 'tests/mocks/config-engine/MockAccessManager.sol';
 import {MockPositionManager} from 'tests/mocks/config-engine/MockPositionManager.sol';
+import {MockHub} from 'tests/mocks/config-engine/MockHub.sol';
 
 contract AaveV4PayloadTest is BaseConfigEngineTest {
   AaveV4PayloadWrapper public payload;
@@ -49,13 +51,13 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
     IAaveV4ConfigEngine.AssetHalt[] memory halts = new IAaveV4ConfigEngine.AssetHalt[](1);
     halts[0] = IAaveV4ConfigEngine.AssetHalt({
       hubConfigurator: IHubConfigurator(address(mockHubConfigurator)),
-      hub: HUB,
-      assetId: ASSET_ID
+      hub: address(mockHub),
+      underlying: UNDERLYING
     });
     payload.setHubAssetHalts(halts);
 
     vm.expectEmit(address(mockHubConfigurator));
-    emit MockHubConfigurator.HaltAssetCalled(HUB, ASSET_ID);
+    emit MockHubConfigurator.HaltAssetCalled(address(mockHub), ASSET_ID);
 
     payload.execute();
   }
@@ -97,8 +99,8 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
     IAaveV4ConfigEngine.AssetHalt[] memory halts = new IAaveV4ConfigEngine.AssetHalt[](1);
     halts[0] = IAaveV4ConfigEngine.AssetHalt({
       hubConfigurator: IHubConfigurator(address(mockHubConfigurator)),
-      hub: HUB,
-      assetId: ASSET_ID
+      hub: address(mockHub),
+      underlying: UNDERLYING
     });
     payload.setHubAssetHalts(halts);
 
@@ -124,7 +126,7 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
 
     // Expect all 3 events
     vm.expectEmit(address(mockHubConfigurator));
-    emit MockHubConfigurator.HaltAssetCalled(HUB, ASSET_ID);
+    emit MockHubConfigurator.HaltAssetCalled(address(mockHub), ASSET_ID);
 
     vm.expectEmit(address(mockSpokeConfigurator));
     emit MockSpokeConfigurator.PauseAllReservesCalled(SPOKE);
@@ -140,8 +142,8 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
     IAaveV4ConfigEngine.AssetHalt[] memory halts = new IAaveV4ConfigEngine.AssetHalt[](1);
     halts[0] = IAaveV4ConfigEngine.AssetHalt({
       hubConfigurator: IHubConfigurator(address(mockHubConfigurator)),
-      hub: HUB,
-      assetId: ASSET_ID
+      hub: address(mockHub),
+      underlying: UNDERLYING
     });
     payload.setHubAssetHalts(halts);
 
@@ -166,8 +168,8 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
     IAaveV4ConfigEngine.AssetHalt[] memory halts = new IAaveV4ConfigEngine.AssetHalt[](1);
     halts[0] = IAaveV4ConfigEngine.AssetHalt({
       hubConfigurator: IHubConfigurator(address(mockHubConfigurator)),
-      hub: HUB,
-      assetId: ASSET_ID
+      hub: address(mockHub),
+      underlying: UNDERLYING
     });
     payload.setHubAssetHalts(halts);
 
@@ -188,12 +190,12 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
 
     vm.expectEmit(address(mockHubConfigurator));
     emit MockHubConfigurator.AddAssetCalled(
-      HUB,
+      address(mockHub),
       UNDERLYING,
       FEE_RECEIVER,
       LIQUIDITY_FEE,
       IR_STRATEGY,
-      IR_DATA
+      abi.encode(IR_DATA)
     );
 
     payload.execute();
@@ -204,18 +206,23 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
       memory updates = new IAaveV4ConfigEngine.AssetConfigUpdate[](1);
     updates[0] = IAaveV4ConfigEngine.AssetConfigUpdate({
       hubConfigurator: IHubConfigurator(address(mockHubConfigurator)),
-      hub: HUB,
-      assetId: ASSET_ID,
+      hub: address(mockHub),
+      underlying: UNDERLYING,
       liquidityFee: LIQUIDITY_FEE,
       feeReceiver: FEE_RECEIVER,
       irStrategy: EngineFlags.KEEP_CURRENT_ADDRESS,
-      irData: '',
+      irData: _keepCurrentIrData(),
       reinvestmentController: EngineFlags.KEEP_CURRENT_ADDRESS
     });
     payload.setHubAssetConfigUpdates(updates);
 
     vm.expectEmit(address(mockHubConfigurator));
-    emit MockHubConfigurator.UpdateFeeConfigCalled(HUB, ASSET_ID, LIQUIDITY_FEE, FEE_RECEIVER);
+    emit MockHubConfigurator.UpdateFeeConfigCalled(
+      address(mockHub),
+      ASSET_ID,
+      LIQUIDITY_FEE,
+      FEE_RECEIVER
+    );
 
     payload.execute();
   }
@@ -225,8 +232,8 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
       memory updates = new IAaveV4ConfigEngine.AssetConfigUpdate[](1);
     updates[0] = IAaveV4ConfigEngine.AssetConfigUpdate({
       hubConfigurator: IHubConfigurator(address(mockHubConfigurator)),
-      hub: HUB,
-      assetId: ASSET_ID,
+      hub: address(mockHub),
+      underlying: UNDERLYING,
       liquidityFee: EngineFlags.KEEP_CURRENT,
       feeReceiver: EngineFlags.KEEP_CURRENT_ADDRESS,
       irStrategy: IR_STRATEGY,
@@ -236,7 +243,12 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
     payload.setHubAssetConfigUpdates(updates);
 
     vm.expectEmit(address(mockHubConfigurator));
-    emit MockHubConfigurator.UpdateInterestRateStrategyCalled(HUB, ASSET_ID, IR_STRATEGY, IR_DATA);
+    emit MockHubConfigurator.UpdateInterestRateStrategyCalled(
+      address(mockHub),
+      ASSET_ID,
+      IR_STRATEGY,
+      abi.encode(IR_DATA)
+    );
 
     payload.execute();
   }
@@ -246,19 +258,19 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
       memory updates = new IAaveV4ConfigEngine.AssetConfigUpdate[](1);
     updates[0] = IAaveV4ConfigEngine.AssetConfigUpdate({
       hubConfigurator: IHubConfigurator(address(mockHubConfigurator)),
-      hub: HUB,
-      assetId: ASSET_ID,
+      hub: address(mockHub),
+      underlying: UNDERLYING,
       liquidityFee: EngineFlags.KEEP_CURRENT,
       feeReceiver: EngineFlags.KEEP_CURRENT_ADDRESS,
       irStrategy: EngineFlags.KEEP_CURRENT_ADDRESS,
-      irData: '',
+      irData: _keepCurrentIrData(),
       reinvestmentController: REINVESTMENT_CONTROLLER
     });
     payload.setHubAssetConfigUpdates(updates);
 
     vm.expectEmit(address(mockHubConfigurator));
     emit MockHubConfigurator.UpdateReinvestmentControllerCalled(
-      HUB,
+      address(mockHub),
       ASSET_ID,
       REINVESTMENT_CONTROLLER
     );
@@ -269,8 +281,8 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
   function test_execute_hubSpokeToAssetsAdditions() public {
     IAaveV4ConfigEngine.SpokeToAssetsAddition[]
       memory additions = new IAaveV4ConfigEngine.SpokeToAssetsAddition[](1);
-    uint256[] memory assetIds = new uint256[](1);
-    assetIds[0] = ASSET_ID;
+    address[] memory underlyings = new address[](1);
+    underlyings[0] = UNDERLYING;
     IHub.SpokeConfig[] memory configs = new IHub.SpokeConfig[](1);
     configs[0] = IHub.SpokeConfig({
       addCap: 1000,
@@ -281,15 +293,17 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
     });
     additions[0] = IAaveV4ConfigEngine.SpokeToAssetsAddition({
       hubConfigurator: IHubConfigurator(address(mockHubConfigurator)),
-      hub: HUB,
+      hub: address(mockHub),
       spoke: SPOKE,
-      assetIds: assetIds,
+      underlyings: underlyings,
       configs: configs
     });
     payload.setHubSpokeToAssetsAdditions(additions);
 
+    uint256[] memory assetIds = new uint256[](1);
+    assetIds[0] = ASSET_ID;
     vm.expectEmit(address(mockHubConfigurator));
-    emit MockHubConfigurator.AddSpokeToAssetsCalled(HUB, SPOKE, assetIds, configs);
+    emit MockHubConfigurator.AddSpokeToAssetsCalled(address(mockHub), SPOKE, assetIds, configs);
 
     payload.execute();
   }
@@ -299,8 +313,8 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
       memory updates = new IAaveV4ConfigEngine.SpokeConfigUpdate[](1);
     updates[0] = IAaveV4ConfigEngine.SpokeConfigUpdate({
       hubConfigurator: IHubConfigurator(address(mockHubConfigurator)),
-      hub: HUB,
-      assetId: ASSET_ID,
+      hub: address(mockHub),
+      underlying: UNDERLYING,
       spoke: SPOKE,
       addCap: 1000,
       drawCap: 500,
@@ -311,7 +325,7 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
     payload.setHubSpokeConfigUpdates(updates);
 
     vm.expectEmit(address(mockHubConfigurator));
-    emit MockHubConfigurator.UpdateSpokeCapsCalled(HUB, ASSET_ID, SPOKE, 1000, 500);
+    emit MockHubConfigurator.UpdateSpokeCapsCalled(address(mockHub), ASSET_ID, SPOKE, 1000, 500);
 
     payload.execute();
   }
@@ -321,8 +335,8 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
       memory updates = new IAaveV4ConfigEngine.SpokeConfigUpdate[](1);
     updates[0] = IAaveV4ConfigEngine.SpokeConfigUpdate({
       hubConfigurator: IHubConfigurator(address(mockHubConfigurator)),
-      hub: HUB,
-      assetId: ASSET_ID,
+      hub: address(mockHub),
+      underlying: UNDERLYING,
       spoke: SPOKE,
       addCap: EngineFlags.KEEP_CURRENT,
       drawCap: EngineFlags.KEEP_CURRENT,
@@ -333,7 +347,12 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
     payload.setHubSpokeConfigUpdates(updates);
 
     vm.expectEmit(address(mockHubConfigurator));
-    emit MockHubConfigurator.UpdateSpokeRiskPremiumThresholdCalled(HUB, ASSET_ID, SPOKE, 200);
+    emit MockHubConfigurator.UpdateSpokeRiskPremiumThresholdCalled(
+      address(mockHub),
+      ASSET_ID,
+      SPOKE,
+      200
+    );
 
     payload.execute();
   }
@@ -343,8 +362,8 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
       memory updates = new IAaveV4ConfigEngine.SpokeConfigUpdate[](1);
     updates[0] = IAaveV4ConfigEngine.SpokeConfigUpdate({
       hubConfigurator: IHubConfigurator(address(mockHubConfigurator)),
-      hub: HUB,
-      assetId: ASSET_ID,
+      hub: address(mockHub),
+      underlying: UNDERLYING,
       spoke: SPOKE,
       addCap: EngineFlags.KEEP_CURRENT,
       drawCap: EngineFlags.KEEP_CURRENT,
@@ -355,9 +374,9 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
     payload.setHubSpokeConfigUpdates(updates);
 
     vm.expectEmit(address(mockHubConfigurator));
-    emit MockHubConfigurator.UpdateSpokeActiveCalled(HUB, ASSET_ID, SPOKE, true);
+    emit MockHubConfigurator.UpdateSpokeActiveCalled(address(mockHub), ASSET_ID, SPOKE, true);
     vm.expectEmit(address(mockHubConfigurator));
-    emit MockHubConfigurator.UpdateSpokeHaltedCalled(HUB, ASSET_ID, SPOKE, false);
+    emit MockHubConfigurator.UpdateSpokeHaltedCalled(address(mockHub), ASSET_ID, SPOKE, false);
 
     payload.execute();
   }
@@ -367,13 +386,13 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
       memory deactivations = new IAaveV4ConfigEngine.AssetDeactivation[](1);
     deactivations[0] = IAaveV4ConfigEngine.AssetDeactivation({
       hubConfigurator: IHubConfigurator(address(mockHubConfigurator)),
-      hub: HUB,
-      assetId: ASSET_ID
+      hub: address(mockHub),
+      underlying: UNDERLYING
     });
     payload.setHubAssetDeactivations(deactivations);
 
     vm.expectEmit(address(mockHubConfigurator));
-    emit MockHubConfigurator.DeactivateAssetCalled(HUB, ASSET_ID);
+    emit MockHubConfigurator.DeactivateAssetCalled(address(mockHub), ASSET_ID);
 
     payload.execute();
   }
@@ -384,13 +403,13 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
     );
     resets[0] = IAaveV4ConfigEngine.AssetCapsReset({
       hubConfigurator: IHubConfigurator(address(mockHubConfigurator)),
-      hub: HUB,
-      assetId: ASSET_ID
+      hub: address(mockHub),
+      underlying: UNDERLYING
     });
     payload.setHubAssetCapsResets(resets);
 
     vm.expectEmit(address(mockHubConfigurator));
-    emit MockHubConfigurator.ResetAssetCapsCalled(HUB, ASSET_ID);
+    emit MockHubConfigurator.ResetAssetCapsCalled(address(mockHub), ASSET_ID);
 
     payload.execute();
   }
@@ -399,13 +418,13 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
     IAaveV4ConfigEngine.SpokeHalt[] memory halts = new IAaveV4ConfigEngine.SpokeHalt[](1);
     halts[0] = IAaveV4ConfigEngine.SpokeHalt({
       hubConfigurator: IHubConfigurator(address(mockHubConfigurator)),
-      hub: HUB,
+      hub: address(mockHub),
       spoke: SPOKE
     });
     payload.setHubSpokeHalts(halts);
 
     vm.expectEmit(address(mockHubConfigurator));
-    emit MockHubConfigurator.HaltSpokeCalled(HUB, SPOKE);
+    emit MockHubConfigurator.HaltSpokeCalled(address(mockHub), SPOKE);
 
     payload.execute();
   }
@@ -415,13 +434,13 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
       memory deactivations = new IAaveV4ConfigEngine.SpokeDeactivation[](1);
     deactivations[0] = IAaveV4ConfigEngine.SpokeDeactivation({
       hubConfigurator: IHubConfigurator(address(mockHubConfigurator)),
-      hub: HUB,
+      hub: address(mockHub),
       spoke: SPOKE
     });
     payload.setHubSpokeDeactivations(deactivations);
 
     vm.expectEmit(address(mockHubConfigurator));
-    emit MockHubConfigurator.DeactivateSpokeCalled(HUB, SPOKE);
+    emit MockHubConfigurator.DeactivateSpokeCalled(address(mockHub), SPOKE);
 
     payload.execute();
   }
@@ -432,13 +451,13 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
     );
     resets[0] = IAaveV4ConfigEngine.SpokeCapsReset({
       hubConfigurator: IHubConfigurator(address(mockHubConfigurator)),
-      hub: HUB,
+      hub: address(mockHub),
       spoke: SPOKE
     });
     payload.setHubSpokeCapsResets(resets);
 
     vm.expectEmit(address(mockHubConfigurator));
-    emit MockHubConfigurator.ResetSpokeCapsCalled(HUB, SPOKE);
+    emit MockHubConfigurator.ResetSpokeCapsCalled(address(mockHub), SPOKE);
 
     payload.execute();
   }
@@ -450,8 +469,8 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
     listings[0] = IAaveV4ConfigEngine.ReserveListing({
       spokeConfigurator: ISpokeConfigurator(address(mockSpokeConfigurator)),
       spoke: SPOKE,
-      hub: HUB,
-      assetId: ASSET_ID,
+      hub: address(mockHub),
+      underlying: UNDERLYING,
       priceSource: PRICE_SOURCE,
       config: ISpoke.ReserveConfig({
         collateralRisk: 5000,
@@ -471,7 +490,7 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
     vm.expectEmit(address(mockSpokeConfigurator));
     emit MockSpokeConfigurator.AddReserveCalled(
       SPOKE,
-      HUB,
+      address(mockHub),
       ASSET_ID,
       PRICE_SOURCE,
       5000,
@@ -494,17 +513,29 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
     payload.setSpokeReserveConfigUpdates(updates);
 
     vm.expectEmit(address(mockSpokeConfigurator));
-    emit MockSpokeConfigurator.UpdateReservePriceSourceCalled(SPOKE, RESERVE_ID, PRICE_SOURCE);
+    emit MockSpokeConfigurator.UpdateReservePriceSourceCalled(
+      address(mockSpokeReader),
+      RESERVE_ID,
+      PRICE_SOURCE
+    );
     vm.expectEmit(address(mockSpokeConfigurator));
-    emit MockSpokeConfigurator.UpdateCollateralRiskCalled(SPOKE, RESERVE_ID, 5000);
+    emit MockSpokeConfigurator.UpdateCollateralRiskCalled(
+      address(mockSpokeReader),
+      RESERVE_ID,
+      5000
+    );
     vm.expectEmit(address(mockSpokeConfigurator));
-    emit MockSpokeConfigurator.UpdatePausedCalled(SPOKE, RESERVE_ID, false);
+    emit MockSpokeConfigurator.UpdatePausedCalled(address(mockSpokeReader), RESERVE_ID, false);
     vm.expectEmit(address(mockSpokeConfigurator));
-    emit MockSpokeConfigurator.UpdateFrozenCalled(SPOKE, RESERVE_ID, false);
+    emit MockSpokeConfigurator.UpdateFrozenCalled(address(mockSpokeReader), RESERVE_ID, false);
     vm.expectEmit(address(mockSpokeConfigurator));
-    emit MockSpokeConfigurator.UpdateBorrowableCalled(SPOKE, RESERVE_ID, true);
+    emit MockSpokeConfigurator.UpdateBorrowableCalled(address(mockSpokeReader), RESERVE_ID, true);
     vm.expectEmit(address(mockSpokeConfigurator));
-    emit MockSpokeConfigurator.UpdateReceiveSharesEnabledCalled(SPOKE, RESERVE_ID, true);
+    emit MockSpokeConfigurator.UpdateReceiveSharesEnabledCalled(
+      address(mockSpokeReader),
+      RESERVE_ID,
+      true
+    );
 
     payload.execute();
   }
@@ -514,8 +545,9 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
       memory updates = new IAaveV4ConfigEngine.ReserveConfigUpdate[](1);
     updates[0] = IAaveV4ConfigEngine.ReserveConfigUpdate({
       spokeConfigurator: ISpokeConfigurator(address(mockSpokeConfigurator)),
-      spoke: SPOKE,
-      reserveId: RESERVE_ID,
+      spoke: address(mockSpokeReader),
+      hub: address(mockHub),
+      underlying: UNDERLYING,
       priceSource: PRICE_SOURCE,
       collateralRisk: EngineFlags.KEEP_CURRENT,
       paused: EngineFlags.KEEP_CURRENT,
@@ -526,7 +558,11 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
     payload.setSpokeReserveConfigUpdates(updates);
 
     vm.expectEmit(address(mockSpokeConfigurator));
-    emit MockSpokeConfigurator.UpdateReservePriceSourceCalled(SPOKE, RESERVE_ID, PRICE_SOURCE);
+    emit MockSpokeConfigurator.UpdateReservePriceSourceCalled(
+      address(mockSpokeReader),
+      RESERVE_ID,
+      PRICE_SOURCE
+    );
 
     payload.execute();
   }
@@ -553,8 +589,9 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
       memory additions = new IAaveV4ConfigEngine.DynamicReserveConfigAddition[](1);
     additions[0] = IAaveV4ConfigEngine.DynamicReserveConfigAddition({
       spokeConfigurator: ISpokeConfigurator(address(mockSpokeConfigurator)),
-      spoke: SPOKE,
-      reserveId: RESERVE_ID,
+      spoke: address(mockSpokeReader),
+      hub: address(mockHub),
+      underlying: UNDERLYING,
       dynamicConfig: ISpoke.DynamicReserveConfig({
         collateralFactor: 8000,
         maxLiquidationBonus: 10500,
@@ -564,7 +601,13 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
     payload.setSpokeDynamicReserveConfigAdditions(additions);
 
     vm.expectEmit(address(mockSpokeConfigurator));
-    emit MockSpokeConfigurator.AddDynamicReserveConfigCalled(SPOKE, RESERVE_ID, 8000, 10500, 1000);
+    emit MockSpokeConfigurator.AddDynamicReserveConfigCalled(
+      address(mockSpokeReader),
+      RESERVE_ID,
+      8000,
+      10500,
+      1000
+    );
 
     payload.execute();
   }
@@ -719,37 +762,39 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
 
     vm.expectEmit(address(mockHubConfigurator));
     emit MockHubConfigurator.AddAssetWithDecimalsCalled(
-      HUB,
+      address(mockHub),
       UNDERLYING,
       18,
       FEE_RECEIVER,
       LIQUIDITY_FEE,
       IR_STRATEGY,
-      IR_DATA
+      abi.encode(IR_DATA)
     );
 
     payload.execute();
   }
 
   function test_execute_hubAssetHalts_multiElement() public {
-    address hub2 = address(0x1002);
+    address underlying2 = makeAddr('UNDERLYING2');
+    MockHub mockHub2 = new MockHub();
+    mockHub2.setAssetId(underlying2, ASSET_ID + 1);
     IAaveV4ConfigEngine.AssetHalt[] memory halts = new IAaveV4ConfigEngine.AssetHalt[](2);
     halts[0] = IAaveV4ConfigEngine.AssetHalt({
       hubConfigurator: IHubConfigurator(address(mockHubConfigurator)),
-      hub: HUB,
-      assetId: ASSET_ID
+      hub: address(mockHub),
+      underlying: UNDERLYING
     });
     halts[1] = IAaveV4ConfigEngine.AssetHalt({
       hubConfigurator: IHubConfigurator(address(mockHubConfigurator)),
-      hub: hub2,
-      assetId: ASSET_ID + 1
+      hub: address(mockHub2),
+      underlying: underlying2
     });
     payload.setHubAssetHalts(halts);
 
     vm.expectEmit(address(mockHubConfigurator));
-    emit MockHubConfigurator.HaltAssetCalled(HUB, ASSET_ID);
+    emit MockHubConfigurator.HaltAssetCalled(address(mockHub), ASSET_ID);
     vm.expectEmit(address(mockHubConfigurator));
-    emit MockHubConfigurator.HaltAssetCalled(hub2, ASSET_ID + 1);
+    emit MockHubConfigurator.HaltAssetCalled(address(mockHub2), ASSET_ID + 1);
 
     payload.execute();
   }

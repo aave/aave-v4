@@ -17,6 +17,8 @@ library EngineFlags {
   uint64 internal constant KEEP_CURRENT_UINT64 = type(uint64).max - 1;
   /// @dev Sentinel value to keep the current uint32 value.
   uint32 internal constant KEEP_CURRENT_UINT32 = type(uint32).max - 1;
+  /// @dev Sentinel value to keep the current uint16 value.
+  uint16 internal constant KEEP_CURRENT_UINT16 = type(uint16).max - 1;
 
   /// @dev Convenience constant representing an enabled boolean flag (1).
   uint256 internal constant ENABLED = 1;

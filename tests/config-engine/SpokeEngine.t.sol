@@ -17,22 +17,34 @@ contract SpokeEngineTest is BaseConfigEngineTest {
     IAaveV4ConfigEngine.ReserveConfigUpdate memory update = _defaultReserveConfigUpdate();
 
     vm.expectEmit(address(mockSpokeConfigurator));
-    emit MockSpokeConfigurator.UpdateReservePriceSourceCalled(SPOKE, RESERVE_ID, PRICE_SOURCE);
+    emit MockSpokeConfigurator.UpdateReservePriceSourceCalled(
+      address(mockSpokeReader),
+      RESERVE_ID,
+      PRICE_SOURCE
+    );
 
     vm.expectEmit(address(mockSpokeConfigurator));
-    emit MockSpokeConfigurator.UpdateCollateralRiskCalled(SPOKE, RESERVE_ID, 5000);
+    emit MockSpokeConfigurator.UpdateCollateralRiskCalled(
+      address(mockSpokeReader),
+      RESERVE_ID,
+      5000
+    );
 
     vm.expectEmit(address(mockSpokeConfigurator));
-    emit MockSpokeConfigurator.UpdatePausedCalled(SPOKE, RESERVE_ID, false);
+    emit MockSpokeConfigurator.UpdatePausedCalled(address(mockSpokeReader), RESERVE_ID, false);
 
     vm.expectEmit(address(mockSpokeConfigurator));
-    emit MockSpokeConfigurator.UpdateFrozenCalled(SPOKE, RESERVE_ID, false);
+    emit MockSpokeConfigurator.UpdateFrozenCalled(address(mockSpokeReader), RESERVE_ID, false);
 
     vm.expectEmit(address(mockSpokeConfigurator));
-    emit MockSpokeConfigurator.UpdateBorrowableCalled(SPOKE, RESERVE_ID, true);
+    emit MockSpokeConfigurator.UpdateBorrowableCalled(address(mockSpokeReader), RESERVE_ID, true);
 
     vm.expectEmit(address(mockSpokeConfigurator));
-    emit MockSpokeConfigurator.UpdateReceiveSharesEnabledCalled(SPOKE, RESERVE_ID, true);
+    emit MockSpokeConfigurator.UpdateReceiveSharesEnabledCalled(
+      address(mockSpokeReader),
+      RESERVE_ID,
+      true
+    );
 
     engine.executeSpokeReserveConfigUpdates(_toReserveConfigUpdateArray(update));
   }
@@ -41,8 +53,9 @@ contract SpokeEngineTest is BaseConfigEngineTest {
     IAaveV4ConfigEngine.ReserveConfigUpdate memory update = IAaveV4ConfigEngine
       .ReserveConfigUpdate({
         spokeConfigurator: ISpokeConfigurator(address(mockSpokeConfigurator)),
-        spoke: SPOKE,
-        reserveId: RESERVE_ID,
+        spoke: address(mockSpokeReader),
+        hub: address(mockHub),
+        underlying: UNDERLYING,
         priceSource: EngineFlags.KEEP_CURRENT_ADDRESS,
         collateralRisk: EngineFlags.KEEP_CURRENT,
         paused: EngineFlags.KEEP_CURRENT,
@@ -60,8 +73,9 @@ contract SpokeEngineTest is BaseConfigEngineTest {
     IAaveV4ConfigEngine.ReserveConfigUpdate memory update = IAaveV4ConfigEngine
       .ReserveConfigUpdate({
         spokeConfigurator: ISpokeConfigurator(address(mockSpokeConfigurator)),
-        spoke: SPOKE,
-        reserveId: RESERVE_ID,
+        spoke: address(mockSpokeReader),
+        hub: address(mockHub),
+        underlying: UNDERLYING,
         priceSource: EngineFlags.KEEP_CURRENT_ADDRESS,
         collateralRisk: 7500,
         paused: EngineFlags.KEEP_CURRENT,
@@ -71,7 +85,11 @@ contract SpokeEngineTest is BaseConfigEngineTest {
       });
 
     vm.expectEmit(address(mockSpokeConfigurator));
-    emit MockSpokeConfigurator.UpdateCollateralRiskCalled(SPOKE, RESERVE_ID, 7500);
+    emit MockSpokeConfigurator.UpdateCollateralRiskCalled(
+      address(mockSpokeReader),
+      RESERVE_ID,
+      7500
+    );
 
     vm.recordLogs();
     engine.executeSpokeReserveConfigUpdates(_toReserveConfigUpdateArray(update));
@@ -82,8 +100,9 @@ contract SpokeEngineTest is BaseConfigEngineTest {
     IAaveV4ConfigEngine.ReserveConfigUpdate memory update = IAaveV4ConfigEngine
       .ReserveConfigUpdate({
         spokeConfigurator: ISpokeConfigurator(address(mockSpokeConfigurator)),
-        spoke: SPOKE,
-        reserveId: RESERVE_ID,
+        spoke: address(mockSpokeReader),
+        hub: address(mockHub),
+        underlying: UNDERLYING,
         priceSource: PRICE_SOURCE,
         collateralRisk: EngineFlags.KEEP_CURRENT,
         paused: EngineFlags.KEEP_CURRENT,
@@ -93,7 +112,11 @@ contract SpokeEngineTest is BaseConfigEngineTest {
       });
 
     vm.expectEmit(address(mockSpokeConfigurator));
-    emit MockSpokeConfigurator.UpdateReservePriceSourceCalled(SPOKE, RESERVE_ID, PRICE_SOURCE);
+    emit MockSpokeConfigurator.UpdateReservePriceSourceCalled(
+      address(mockSpokeReader),
+      RESERVE_ID,
+      PRICE_SOURCE
+    );
 
     vm.recordLogs();
     engine.executeSpokeReserveConfigUpdates(_toReserveConfigUpdateArray(update));
@@ -104,8 +127,9 @@ contract SpokeEngineTest is BaseConfigEngineTest {
     IAaveV4ConfigEngine.ReserveConfigUpdate memory update = IAaveV4ConfigEngine
       .ReserveConfigUpdate({
         spokeConfigurator: ISpokeConfigurator(address(mockSpokeConfigurator)),
-        spoke: SPOKE,
-        reserveId: RESERVE_ID,
+        spoke: address(mockSpokeReader),
+        hub: address(mockHub),
+        underlying: UNDERLYING,
         priceSource: EngineFlags.KEEP_CURRENT_ADDRESS,
         collateralRisk: 5000,
         paused: EngineFlags.KEEP_CURRENT,
@@ -115,7 +139,11 @@ contract SpokeEngineTest is BaseConfigEngineTest {
       });
 
     vm.expectEmit(address(mockSpokeConfigurator));
-    emit MockSpokeConfigurator.UpdateCollateralRiskCalled(SPOKE, RESERVE_ID, 5000);
+    emit MockSpokeConfigurator.UpdateCollateralRiskCalled(
+      address(mockSpokeReader),
+      RESERVE_ID,
+      5000
+    );
 
     vm.recordLogs();
     engine.executeSpokeReserveConfigUpdates(_toReserveConfigUpdateArray(update));
@@ -132,8 +160,9 @@ contract SpokeEngineTest is BaseConfigEngineTest {
     IAaveV4ConfigEngine.ReserveConfigUpdate memory update = IAaveV4ConfigEngine
       .ReserveConfigUpdate({
         spokeConfigurator: ISpokeConfigurator(address(mockSpokeConfigurator)),
-        spoke: SPOKE,
-        reserveId: RESERVE_ID,
+        spoke: address(mockSpokeReader),
+        hub: address(mockHub),
+        underlying: UNDERLYING,
         priceSource: PRICE_SOURCE,
         collateralRisk: EngineFlags.KEEP_CURRENT,
         paused: EngineFlags.KEEP_CURRENT,
@@ -164,8 +193,9 @@ contract SpokeEngineTest is BaseConfigEngineTest {
     IAaveV4ConfigEngine.ReserveConfigUpdate memory update = IAaveV4ConfigEngine
       .ReserveConfigUpdate({
         spokeConfigurator: ISpokeConfigurator(address(mockSpokeConfigurator)),
-        spoke: SPOKE,
-        reserveId: RESERVE_ID,
+        spoke: address(mockSpokeReader),
+        hub: address(mockHub),
+        underlying: UNDERLYING,
         priceSource: priceSource_,
         collateralRisk: collateralRisk,
         paused: paused,
@@ -175,23 +205,35 @@ contract SpokeEngineTest is BaseConfigEngineTest {
       });
 
     vm.expectEmit(address(mockSpokeConfigurator));
-    emit MockSpokeConfigurator.UpdateReservePriceSourceCalled(SPOKE, RESERVE_ID, priceSource_);
+    emit MockSpokeConfigurator.UpdateReservePriceSourceCalled(
+      address(mockSpokeReader),
+      RESERVE_ID,
+      priceSource_
+    );
 
     vm.expectEmit(address(mockSpokeConfigurator));
-    emit MockSpokeConfigurator.UpdateCollateralRiskCalled(SPOKE, RESERVE_ID, collateralRisk);
+    emit MockSpokeConfigurator.UpdateCollateralRiskCalled(
+      address(mockSpokeReader),
+      RESERVE_ID,
+      collateralRisk
+    );
 
     vm.expectEmit(address(mockSpokeConfigurator));
-    emit MockSpokeConfigurator.UpdatePausedCalled(SPOKE, RESERVE_ID, paused_);
+    emit MockSpokeConfigurator.UpdatePausedCalled(address(mockSpokeReader), RESERVE_ID, paused_);
 
     vm.expectEmit(address(mockSpokeConfigurator));
-    emit MockSpokeConfigurator.UpdateFrozenCalled(SPOKE, RESERVE_ID, frozen_);
+    emit MockSpokeConfigurator.UpdateFrozenCalled(address(mockSpokeReader), RESERVE_ID, frozen_);
 
     vm.expectEmit(address(mockSpokeConfigurator));
-    emit MockSpokeConfigurator.UpdateBorrowableCalled(SPOKE, RESERVE_ID, borrowable_);
+    emit MockSpokeConfigurator.UpdateBorrowableCalled(
+      address(mockSpokeReader),
+      RESERVE_ID,
+      borrowable_
+    );
 
     vm.expectEmit(address(mockSpokeConfigurator));
     emit MockSpokeConfigurator.UpdateReceiveSharesEnabledCalled(
-      SPOKE,
+      address(mockSpokeReader),
       RESERVE_ID,
       receiveSharesEnabled_
     );
@@ -379,7 +421,8 @@ contract SpokeEngineTest is BaseConfigEngineTest {
       .DynamicReserveConfigUpdate({
         spokeConfigurator: ISpokeConfigurator(address(mockSpokeConfigurator)),
         spoke: address(mockSpokeReader),
-        reserveId: RESERVE_ID,
+        hub: address(mockHub),
+        underlying: UNDERLYING,
         dynamicConfigKey: DYNAMIC_CONFIG_KEY,
         collateralFactor: EngineFlags.KEEP_CURRENT,
         maxLiquidationBonus: EngineFlags.KEEP_CURRENT,
@@ -398,7 +441,8 @@ contract SpokeEngineTest is BaseConfigEngineTest {
       .DynamicReserveConfigUpdate({
         spokeConfigurator: ISpokeConfigurator(address(mockSpokeConfigurator)),
         spoke: address(mockSpokeReader),
-        reserveId: RESERVE_ID,
+        hub: address(mockHub),
+        underlying: UNDERLYING,
         dynamicConfigKey: DYNAMIC_CONFIG_KEY,
         collateralFactor: 9000,
         maxLiquidationBonus: EngineFlags.KEEP_CURRENT,
@@ -449,7 +493,7 @@ contract SpokeEngineTest is BaseConfigEngineTest {
     vm.expectEmit(address(mockSpokeConfigurator));
     emit MockSpokeConfigurator.AddReserveCalled(
       SPOKE,
-      HUB,
+      address(mockHub),
       ASSET_ID,
       PRICE_SOURCE,
       5000,
@@ -478,8 +522,8 @@ contract SpokeEngineTest is BaseConfigEngineTest {
     IAaveV4ConfigEngine.ReserveListing memory listing = IAaveV4ConfigEngine.ReserveListing({
       spokeConfigurator: ISpokeConfigurator(address(mockSpokeConfigurator)),
       spoke: SPOKE,
-      hub: HUB,
-      assetId: ASSET_ID,
+      hub: address(mockHub),
+      underlying: UNDERLYING,
       priceSource: PRICE_SOURCE,
       config: ISpoke.ReserveConfig({
         collateralRisk: collateralRisk,
@@ -498,7 +542,7 @@ contract SpokeEngineTest is BaseConfigEngineTest {
     vm.expectEmit(address(mockSpokeConfigurator));
     emit MockSpokeConfigurator.AddReserveCalled(
       SPOKE,
-      HUB,
+      address(mockHub),
       ASSET_ID,
       PRICE_SOURCE,
       collateralRisk,
@@ -528,7 +572,13 @@ contract SpokeEngineTest is BaseConfigEngineTest {
       memory addition = _defaultDynamicReserveConfigAddition();
 
     vm.expectEmit(address(mockSpokeConfigurator));
-    emit MockSpokeConfigurator.AddDynamicReserveConfigCalled(SPOKE, RESERVE_ID, 8000, 10500, 200);
+    emit MockSpokeConfigurator.AddDynamicReserveConfigCalled(
+      address(mockSpokeReader),
+      RESERVE_ID,
+      8000,
+      10500,
+      200
+    );
 
     engine.executeSpokeDynamicReserveConfigAdditions(
       _toDynamicReserveConfigAdditionArray(addition)
@@ -543,8 +593,9 @@ contract SpokeEngineTest is BaseConfigEngineTest {
     IAaveV4ConfigEngine.DynamicReserveConfigAddition memory addition = IAaveV4ConfigEngine
       .DynamicReserveConfigAddition({
         spokeConfigurator: ISpokeConfigurator(address(mockSpokeConfigurator)),
-        spoke: SPOKE,
-        reserveId: RESERVE_ID,
+        spoke: address(mockSpokeReader),
+        hub: address(mockHub),
+        underlying: UNDERLYING,
         dynamicConfig: ISpoke.DynamicReserveConfig({
           collateralFactor: collateralFactor,
           maxLiquidationBonus: maxLiquidationBonus,
@@ -554,7 +605,7 @@ contract SpokeEngineTest is BaseConfigEngineTest {
 
     vm.expectEmit(address(mockSpokeConfigurator));
     emit MockSpokeConfigurator.AddDynamicReserveConfigCalled(
-      SPOKE,
+      address(mockSpokeReader),
       RESERVE_ID,
       collateralFactor,
       maxLiquidationBonus,

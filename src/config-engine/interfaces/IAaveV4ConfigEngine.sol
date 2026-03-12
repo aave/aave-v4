@@ -6,6 +6,7 @@ import {IHubConfigurator} from 'src/hub/interfaces/IHubConfigurator.sol';
 import {ISpokeConfigurator} from 'src/spoke/interfaces/ISpokeConfigurator.sol';
 import {IHub} from 'src/hub/interfaces/IHub.sol';
 import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
+import {IAssetInterestRateStrategy} from 'src/hub/interfaces/IAssetInterestRateStrategy.sol';
 
 /// @title IAaveV4ConfigEngine
 /// @author Aave Labs
@@ -22,7 +23,7 @@ interface IAaveV4ConfigEngine {
   /// @dev feeReceiver The address of the fee receiver Spoke.
   /// @dev liquidityFee The liquidity fee of the asset, in BPS.
   /// @dev irStrategy The address of the interest rate strategy contract.
-  /// @dev irData The interest rate data to apply to the given asset, encoded in bytes.
+  /// @dev irData The interest rate data to apply to the given asset.
   struct AssetListing {
     IHubConfigurator hubConfigurator;
     address hub;
@@ -31,27 +32,28 @@ interface IAaveV4ConfigEngine {
     address feeReceiver;
     uint256 liquidityFee;
     address irStrategy;
-    bytes irData;
+    IAssetInterestRateStrategy.InterestRateData irData;
   }
 
   /// @notice Parameters for updating asset config (fee, interest rate, reinvestment) on a Hub.
   /// @dev hubConfigurator The HubConfigurator to use for this action.
   /// @dev hub The address of the Hub.
-  /// @dev assetId The identifier of the asset.
+  /// @dev underlying The address of the underlying asset.
   /// @dev liquidityFee The new liquidity fee (KEEP_CURRENT to skip).
   /// @dev feeReceiver The new fee receiver (KEEP_CURRENT_ADDRESS to skip).
   /// @dev irStrategy The new interest rate strategy (KEEP_CURRENT_ADDRESS to skip strategy update).
   /// @dev irData The interest rate data. If irStrategy != KEEP_CURRENT_ADDRESS, calls updateInterestRateStrategy.
-  ///   Otherwise if irData.length > 0, calls updateInterestRateData.
+  ///   Otherwise individual fields use KEEP_CURRENT_UINT16/KEEP_CURRENT_UINT32 sentinels;
+  ///   non-sentinel fields trigger a read-modify-write via updateInterestRateData.
   /// @dev reinvestmentController The new reinvestment controller (KEEP_CURRENT_ADDRESS to skip).
   struct AssetConfigUpdate {
     IHubConfigurator hubConfigurator;
     address hub;
-    uint256 assetId;
+    address underlying;
     uint256 liquidityFee;
     address feeReceiver;
     address irStrategy;
-    bytes irData;
+    IAssetInterestRateStrategy.InterestRateData irData;
     address reinvestmentController;
   }
 
@@ -59,20 +61,20 @@ interface IAaveV4ConfigEngine {
   /// @dev hubConfigurator The HubConfigurator to use for this action.
   /// @dev hub The address of the Hub.
   /// @dev spoke The address of the Spoke.
-  /// @dev assetIds The list of asset identifiers to register the Spoke for.
+  /// @dev underlyings The list of underlying asset addresses to register the Spoke for.
   /// @dev configs The list of Spoke configurations to register.
   struct SpokeToAssetsAddition {
     IHubConfigurator hubConfigurator;
     address hub;
     address spoke;
-    uint256[] assetIds;
+    address[] underlyings;
     IHub.SpokeConfig[] configs;
   }
 
   /// @notice Parameters for updating Spoke config (caps, risk premium threshold, status) on a Hub.
   /// @dev hubConfigurator The HubConfigurator to use for this action.
   /// @dev hub The address of the Hub.
-  /// @dev assetId The identifier of the asset.
+  /// @dev underlying The address of the underlying asset.
   /// @dev spoke The address of the Spoke.
   /// @dev addCap The new add cap (KEEP_CURRENT to skip).
   /// @dev drawCap The new draw cap (KEEP_CURRENT to skip).
@@ -82,7 +84,7 @@ interface IAaveV4ConfigEngine {
   struct SpokeConfigUpdate {
     IHubConfigurator hubConfigurator;
     address hub;
-    uint256 assetId;
+    address underlying;
     address spoke;
     uint256 addCap;
     uint256 drawCap;
@@ -94,31 +96,31 @@ interface IAaveV4ConfigEngine {
   /// @notice Parameters for halting an asset on a Hub.
   /// @dev hubConfigurator The HubConfigurator to use for this action.
   /// @dev hub The address of the Hub.
-  /// @dev assetId The identifier of the asset.
+  /// @dev underlying The address of the underlying asset.
   struct AssetHalt {
     IHubConfigurator hubConfigurator;
     address hub;
-    uint256 assetId;
+    address underlying;
   }
 
   /// @notice Parameters for deactivating an asset on a Hub.
   /// @dev hubConfigurator The HubConfigurator to use for this action.
   /// @dev hub The address of the Hub.
-  /// @dev assetId The identifier of the asset.
+  /// @dev underlying The address of the underlying asset.
   struct AssetDeactivation {
     IHubConfigurator hubConfigurator;
     address hub;
-    uint256 assetId;
+    address underlying;
   }
 
   /// @notice Parameters for resetting asset caps on a Hub to 0.
   /// @dev hubConfigurator The HubConfigurator to use for this action.
   /// @dev hub The address of the Hub.
-  /// @dev assetId The identifier of the asset.
+  /// @dev underlying The address of the underlying asset.
   struct AssetCapsReset {
     IHubConfigurator hubConfigurator;
     address hub;
-    uint256 assetId;
+    address underlying;
   }
 
   /// @notice Parameters for halting a Spoke on a Hub.
@@ -155,7 +157,7 @@ interface IAaveV4ConfigEngine {
   /// @dev spokeConfigurator The SpokeConfigurator to use for this action.
   /// @dev spoke The address of the Spoke.
   /// @dev hub The address of the Hub.
-  /// @dev assetId The identifier of the asset.
+  /// @dev underlying The address of the underlying asset.
   /// @dev priceSource The address of the price source.
   /// @dev config The configuration of the reserve.
   /// @dev dynamicConfig The dynamic configuration of the reserve.
@@ -163,7 +165,7 @@ interface IAaveV4ConfigEngine {
     ISpokeConfigurator spokeConfigurator;
     address spoke;
     address hub;
-    uint256 assetId;
+    address underlying;
     address priceSource;
     ISpoke.ReserveConfig config;
     ISpoke.DynamicReserveConfig dynamicConfig;
@@ -172,7 +174,8 @@ interface IAaveV4ConfigEngine {
   /// @notice Parameters for updating reserve config on a Spoke.
   /// @dev spokeConfigurator The SpokeConfigurator to use for this action.
   /// @dev spoke The address of the Spoke.
-  /// @dev reserveId The identifier of the reserve.
+  /// @dev hub The address of the Hub.
+  /// @dev underlying The address of the underlying asset.
   /// @dev priceSource The new price source address (KEEP_CURRENT_ADDRESS to skip).
   /// @dev collateralRisk New collateral risk (KEEP_CURRENT to skip).
   /// @dev paused New paused flag (0=false, 1=true, KEEP_CURRENT=skip).
@@ -182,7 +185,8 @@ interface IAaveV4ConfigEngine {
   struct ReserveConfigUpdate {
     ISpokeConfigurator spokeConfigurator;
     address spoke;
-    uint256 reserveId;
+    address hub;
+    address underlying;
     address priceSource;
     uint256 collateralRisk;
     uint256 paused;
@@ -208,19 +212,22 @@ interface IAaveV4ConfigEngine {
   /// @notice Parameters for adding a dynamic reserve config on a Spoke.
   /// @dev spokeConfigurator The SpokeConfigurator to use for this action.
   /// @dev spoke The address of the Spoke.
-  /// @dev reserveId The identifier of the reserve.
+  /// @dev hub The address of the Hub.
+  /// @dev underlying The address of the underlying asset.
   /// @dev dynamicConfig The new dynamic config.
   struct DynamicReserveConfigAddition {
     ISpokeConfigurator spokeConfigurator;
     address spoke;
-    uint256 reserveId;
+    address hub;
+    address underlying;
     ISpoke.DynamicReserveConfig dynamicConfig;
   }
 
   /// @notice Parameters for updating a dynamic reserve config on a Spoke.
   /// @dev spokeConfigurator The SpokeConfigurator to use for this action.
   /// @dev spoke The address of the Spoke.
-  /// @dev reserveId The identifier of the reserve.
+  /// @dev hub The address of the Hub.
+  /// @dev underlying The address of the underlying asset.
   /// @dev dynamicConfigKey The key of the dynamic config to update.
   /// @dev collateralFactor New collateral factor (KEEP_CURRENT to skip).
   /// @dev maxLiquidationBonus New max liquidation bonus (KEEP_CURRENT to skip).
@@ -228,7 +235,8 @@ interface IAaveV4ConfigEngine {
   struct DynamicReserveConfigUpdate {
     ISpokeConfigurator spokeConfigurator;
     address spoke;
-    uint256 reserveId;
+    address hub;
+    address underlying;
     uint256 dynamicConfigKey;
     uint256 collateralFactor;
     uint256 maxLiquidationBonus;

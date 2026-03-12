@@ -8,6 +8,7 @@ import {IHub} from 'src/hub/interfaces/IHub.sol';
 import {IHubConfigurator} from 'src/hub/interfaces/IHubConfigurator.sol';
 import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 import {ISpokeConfigurator} from 'src/spoke/interfaces/ISpokeConfigurator.sol';
+import {IAssetInterestRateStrategy} from 'src/hub/interfaces/IAssetInterestRateStrategy.sol';
 
 import {AaveV4ConfigEngine} from 'src/config-engine/AaveV4ConfigEngine.sol';
 import {IAaveV4ConfigEngine} from 'src/config-engine/interfaces/IAaveV4ConfigEngine.sol';
@@ -19,6 +20,8 @@ import {MockSpokeConfigurator} from 'tests/mocks/config-engine/MockSpokeConfigur
 import {MockAccessManager} from 'tests/mocks/config-engine/MockAccessManager.sol';
 import {MockSpokeReader} from 'tests/mocks/config-engine/MockSpokeReader.sol';
 import {MockPositionManager} from 'tests/mocks/config-engine/MockPositionManager.sol';
+import {MockHub} from 'tests/mocks/config-engine/MockHub.sol';
+import {MockInterestRateStrategy} from 'tests/mocks/config-engine/MockInterestRateStrategy.sol';
 
 abstract contract BaseConfigEngineTest is Test {
   uint256 constant ASSET_ID = 1;
@@ -26,9 +29,15 @@ abstract contract BaseConfigEngineTest is Test {
   uint256 constant LIQUIDITY_FEE = 500;
   uint256 constant DYNAMIC_CONFIG_KEY = 3;
   uint256 constant RESCUE_AMOUNT = 1000e18;
-  bytes constant IR_DATA = hex'deadbeef';
 
-  address internal HUB = makeAddr('HUB');
+  IAssetInterestRateStrategy.InterestRateData internal IR_DATA =
+    IAssetInterestRateStrategy.InterestRateData({
+      optimalUsageRatio: 8000,
+      baseDrawnRate: 100,
+      rateGrowthBeforeOptimal: 400,
+      rateGrowthAfterOptimal: 6000
+    });
+
   address internal SPOKE = makeAddr('SPOKE');
   address internal UNDERLYING = makeAddr('UNDERLYING');
   address internal FEE_RECEIVER = makeAddr('FEE_RECEIVER');
@@ -48,6 +57,8 @@ abstract contract BaseConfigEngineTest is Test {
   MockAccessManager public mockAccessManager;
   MockSpokeReader public mockSpokeReader;
   MockPositionManager public mockPositionManager;
+  MockHub public mockHub;
+  MockInterestRateStrategy public mockIrStrategy;
 
   function setUp() public virtual {
     engine = new AaveV4ConfigEngine();
@@ -56,6 +67,23 @@ abstract contract BaseConfigEngineTest is Test {
     mockAccessManager = new MockAccessManager();
     mockSpokeReader = new MockSpokeReader();
     mockPositionManager = new MockPositionManager();
+    mockHub = new MockHub();
+    mockIrStrategy = new MockInterestRateStrategy();
+
+    // Set up default underlying → assetId mapping
+    mockHub.setAssetId(UNDERLYING, ASSET_ID);
+    // Set up default asset config with IR strategy
+    mockHub.setAssetConfig(
+      ASSET_ID,
+      IHub.AssetConfig({
+        feeReceiver: FEE_RECEIVER,
+        liquidityFee: uint16(LIQUIDITY_FEE),
+        irStrategy: address(mockIrStrategy),
+        reinvestmentController: REINVESTMENT_CONTROLLER
+      })
+    );
+    // Set up default reserve ID mapping
+    mockSpokeReader.setReserveId(address(mockHub), ASSET_ID, RESERVE_ID);
   }
 
   /// Default AssetListing (decimals=0 -> addAsset branch)
@@ -63,7 +91,7 @@ abstract contract BaseConfigEngineTest is Test {
     return
       IAaveV4ConfigEngine.AssetListing({
         hubConfigurator: IHubConfigurator(address(mockHubConfigurator)),
-        hub: HUB,
+        hub: address(mockHub),
         underlying: UNDERLYING,
         decimals: 0,
         feeReceiver: FEE_RECEIVER,
@@ -82,8 +110,8 @@ abstract contract BaseConfigEngineTest is Test {
     return
       IAaveV4ConfigEngine.AssetConfigUpdate({
         hubConfigurator: IHubConfigurator(address(mockHubConfigurator)),
-        hub: HUB,
-        assetId: ASSET_ID,
+        hub: address(mockHub),
+        underlying: UNDERLYING,
         liquidityFee: LIQUIDITY_FEE,
         feeReceiver: FEE_RECEIVER,
         irStrategy: IR_STRATEGY,
@@ -101,8 +129,8 @@ abstract contract BaseConfigEngineTest is Test {
     return
       IAaveV4ConfigEngine.SpokeConfigUpdate({
         hubConfigurator: IHubConfigurator(address(mockHubConfigurator)),
-        hub: HUB,
-        assetId: ASSET_ID,
+        hub: address(mockHub),
+        underlying: UNDERLYING,
         spoke: SPOKE,
         addCap: 1000,
         drawCap: 500,
@@ -121,8 +149,9 @@ abstract contract BaseConfigEngineTest is Test {
     return
       IAaveV4ConfigEngine.ReserveConfigUpdate({
         spokeConfigurator: ISpokeConfigurator(address(mockSpokeConfigurator)),
-        spoke: SPOKE,
-        reserveId: RESERVE_ID,
+        spoke: address(mockSpokeReader),
+        hub: address(mockHub),
+        underlying: UNDERLYING,
         priceSource: PRICE_SOURCE,
         collateralRisk: 5000,
         paused: EngineFlags.DISABLED,
@@ -158,7 +187,8 @@ abstract contract BaseConfigEngineTest is Test {
       IAaveV4ConfigEngine.DynamicReserveConfigUpdate({
         spokeConfigurator: ISpokeConfigurator(address(mockSpokeConfigurator)),
         spoke: address(mockSpokeReader),
-        reserveId: RESERVE_ID,
+        hub: address(mockHub),
+        underlying: UNDERLYING,
         dynamicConfigKey: DYNAMIC_CONFIG_KEY,
         collateralFactor: 8000,
         maxLiquidationBonus: 10500,
@@ -329,8 +359,8 @@ abstract contract BaseConfigEngineTest is Test {
       IAaveV4ConfigEngine.ReserveListing({
         spokeConfigurator: ISpokeConfigurator(address(mockSpokeConfigurator)),
         spoke: SPOKE,
-        hub: HUB,
-        assetId: ASSET_ID,
+        hub: address(mockHub),
+        underlying: UNDERLYING,
         priceSource: PRICE_SOURCE,
         config: ISpoke.ReserveConfig({
           collateralRisk: 5000,
@@ -355,8 +385,9 @@ abstract contract BaseConfigEngineTest is Test {
     return
       IAaveV4ConfigEngine.DynamicReserveConfigAddition({
         spokeConfigurator: ISpokeConfigurator(address(mockSpokeConfigurator)),
-        spoke: SPOKE,
-        reserveId: RESERVE_ID,
+        spoke: address(mockSpokeReader),
+        hub: address(mockHub),
+        underlying: UNDERLYING,
         dynamicConfig: ISpoke.DynamicReserveConfig({
           collateralFactor: 8000,
           maxLiquidationBonus: 10500,
@@ -430,5 +461,19 @@ abstract contract BaseConfigEngineTest is Test {
         liquidationFee: liquidationFee
       })
     );
+  }
+
+  function _keepCurrentIrData()
+    internal
+    pure
+    returns (IAssetInterestRateStrategy.InterestRateData memory)
+  {
+    return
+      IAssetInterestRateStrategy.InterestRateData({
+        optimalUsageRatio: EngineFlags.KEEP_CURRENT_UINT16,
+        baseDrawnRate: EngineFlags.KEEP_CURRENT_UINT32,
+        rateGrowthBeforeOptimal: EngineFlags.KEEP_CURRENT_UINT32,
+        rateGrowthAfterOptimal: EngineFlags.KEEP_CURRENT_UINT32
+      });
   }
 }
