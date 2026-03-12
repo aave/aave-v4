@@ -2,9 +2,8 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity 0.8.28;
 
-import {AccessManager} from 'src/dependencies/openzeppelin/AccessManager.sol';
+import {AccessManager, IAccessManager} from 'src/dependencies/openzeppelin/AccessManager.sol';
 import {EnumerableSet} from 'src/dependencies/openzeppelin/EnumerableSet.sol';
-import {IAccessManager} from 'src/dependencies/openzeppelin/IAccessManager.sol';
 import {IAccessManagerEnumerable} from 'src/access/interfaces/IAccessManagerEnumerable.sol';
 
 /// @title AccessManagerEnumerable
