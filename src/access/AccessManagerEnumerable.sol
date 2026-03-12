@@ -46,10 +46,10 @@ contract AccessManagerEnumerable is AccessManager, IAccessManagerEnumerable {
     private _roleToTargetToSelectorSet;
 
   /// @dev Set of all role labels.
-  EnumerableSet.StringSet private _roleLabelsSet;
+  EnumerableSet.StringSet private _roleToLabelsSet;
 
   /// @dev Map of role identifiers to their labels.
-  mapping(uint64 roleId => string label) private _roleLabel;
+  mapping(uint64 roleId => string label) private _roleToLabel;
 
   /// @dev Map of labels to their role identifiers.
   mapping(string label => uint64 roleId) private _labelToRole;
@@ -57,6 +57,15 @@ contract AccessManagerEnumerable is AccessManager, IAccessManagerEnumerable {
   /// @dev Constructor.
   /// @param initialAdmin_ The address of the initial admin.
   constructor(address initialAdmin_) AccessManager(initialAdmin_) {}
+
+  /// @inheritdoc IAccessManager
+  function labelRole(
+    uint64 roleId,
+    string calldata label
+  ) public override(AccessManager, IAccessManager) {
+    super.labelRole(roleId, label);
+    _trackRoleLabel(roleId, label);
+  }
 
   /// @inheritdoc IAccessManagerEnumerable
   function getRole(uint256 index) external view returns (uint64) {
@@ -197,60 +206,29 @@ contract AccessManagerEnumerable is AccessManager, IAccessManagerEnumerable {
 
   /// @inheritdoc IAccessManagerEnumerable
   function getRoleLabelAt(uint256 index) external view returns (string memory) {
-    return _roleLabelsSet.at(index);
+    return _roleToLabelsSet.at(index);
   }
 
   /// @inheritdoc IAccessManagerEnumerable
   function getRoleLabelCount() external view returns (uint256) {
-    return _roleLabelsSet.length();
+    return _roleToLabelsSet.length();
   }
 
   /// @inheritdoc IAccessManagerEnumerable
   function getRoleLabels(uint256 start, uint256 end) external view returns (string[] memory) {
-    return _roleLabelsSet.values(start, end);
+    return _roleToLabelsSet.values(start, end);
   }
 
   /// @inheritdoc IAccessManagerEnumerable
   function getRoleLabel(uint64 roleId) external view returns (string memory) {
-    require(_roleLabelsSet.contains(_roleLabel[roleId]), AccessManagerUnlabeledRole(roleId));
-    return _roleLabel[roleId];
+    require(_roleToLabelsSet.contains(_roleToLabel[roleId]), AccessManagerUnlabeledRole(roleId));
+    return _roleToLabel[roleId];
   }
 
   /// @inheritdoc IAccessManagerEnumerable
   function getLabelRole(string calldata label) external view returns (uint64) {
-    require(_roleLabelsSet.contains(label), AccessManagerUnregisteredLabel(label));
+    require(_roleToLabelsSet.contains(label), AccessManagerUnregisteredLabel(label));
     return _labelToRole[label];
-  }
-
-  /// @dev Overrides AccessManager `labelRole` function to track role labels.
-  /// @dev Reverts if the role is not already tracked in `_rolesSet`.
-  /// @dev Reverts if the label is empty.
-  /// @dev Reverts if the label is already assigned to another role.
-  function labelRole(
-    uint64 roleId,
-    string calldata label
-  ) public override(AccessManager, IAccessManager) {
-    super.labelRole(roleId, label);
-
-    require(_rolesSet.contains(uint256(roleId)), AccessManagerUnlabeledRole(roleId));
-    require(bytes(label).length > 0, AccessManagerEmptyLabel());
-
-    // Remove old label from set and both mappings
-    string memory oldLabel = _roleLabel[roleId];
-    if (bytes(oldLabel).length > 0) {
-      _roleLabelsSet.remove(oldLabel);
-      delete _labelToRole[oldLabel];
-      delete _roleLabel[roleId];
-    }
-
-    require(
-      !_roleLabelsSet.contains(label),
-      AccessManagerLabelAlreadyUsed(label, _labelToRole[label])
-    );
-
-    _roleLabelsSet.add(label);
-    _roleLabel[roleId] = label;
-    _labelToRole[label] = roleId;
   }
 
   /// @dev Overrides AccessManager `_setRoleAdmin` function to track admin roles.
@@ -342,6 +320,38 @@ contract AccessManagerEnumerable is AccessManager, IAccessManagerEnumerable {
     } else {
       _roleMemberSet[roleId].remove(account);
     }
+  }
+
+  /// @dev Tracks role labels when a label is set or removed.
+  /// @dev Passing a non-empty label assigns it to the role and tracks the role if not already tracked.
+  /// @dev Passing an empty label removes the existing label; reverts if the role has no label.
+  /// @dev Reverts if the role already has a label and a non-empty label is passed. To relabel a role,
+  /// first remove the existing label by calling `labelRole(roleId, "")`, then set the new label.
+  /// @dev Reverts if the label is already assigned to another role.
+  function _trackRoleLabel(uint64 roleId, string calldata label) internal {
+    string memory oldLabel = _roleToLabel[roleId];
+    bool hasOldLabel = bytes(oldLabel).length > 0;
+
+    if (bytes(label).length == 0) {
+      require(hasOldLabel, AccessManagerUnlabeledRole(roleId));
+      _roleToLabelsSet.remove(oldLabel);
+      delete _labelToRole[oldLabel];
+      delete _roleToLabel[roleId];
+      return;
+    }
+
+    require(!hasOldLabel, AccessManagerRoleAlreadyLabeled(roleId));
+
+    _trackRole(roleId);
+
+    require(
+      !_roleToLabelsSet.contains(label),
+      AccessManagerLabelAlreadyUsed(label, _labelToRole[label])
+    );
+
+    _roleToLabelsSet.add(label);
+    _roleToLabel[roleId] = label;
+    _labelToRole[label] = roleId;
   }
 
   /// @dev Tracks all targets where a selector was assigned to a role and selectors.
