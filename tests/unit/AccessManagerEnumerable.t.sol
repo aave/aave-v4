@@ -1051,6 +1051,26 @@ contract AccessManagerEnumerableTest is Test {
     vm.stopPrank();
   }
 
+  function test_labelRole_revertsForAlreadyLabeledRole_evenIfLabelAlsoUsed() public {
+    uint64 roleId1 = 1;
+    uint64 roleId2 = 2;
+
+    vm.startPrank(ADMIN);
+    accessManagerEnumerable.labelRole(roleId1, 'LABEL_A');
+    accessManagerEnumerable.labelRole(roleId2, 'LABEL_B');
+
+    // Both conditions true: roleId2 already labeled AND 'LABEL_A' already used.
+    // Should revert with AccessManagerRoleAlreadyLabeled (checked first).
+    vm.expectRevert(
+      abi.encodeWithSelector(
+        IAccessManagerEnumerable.AccessManagerRoleAlreadyLabeled.selector,
+        roleId2
+      )
+    );
+    accessManagerEnumerable.labelRole(roleId2, 'LABEL_A');
+    vm.stopPrank();
+  }
+
   function test_labelRole_removeLabel() public {
     uint64 roleId = 1;
 

@@ -322,6 +322,7 @@ contract AccessManagerEnumerable is AccessManager, IAccessManagerEnumerable {
   }
 
   /// @dev Tracks role labels when a label is set or removed.
+  /// @dev PUBLIC_ROLE and ADMIN_ROLE are locked and not labelled.
   /// @dev Passing a non-empty label assigns it to the role and tracks the role if not already tracked.
   /// @dev Passing an empty label removes the existing label; reverts if the role has no label.
   /// @dev Reverts if the role already has a label and a non-empty label is passed. To relabel a role,
@@ -339,11 +340,11 @@ contract AccessManagerEnumerable is AccessManager, IAccessManagerEnumerable {
       return;
     }
 
+    require(!hasOldLabel, AccessManagerRoleAlreadyLabeled(roleId));
     require(
       !_roleToLabelsSet.contains(label),
       AccessManagerLabelAlreadyUsed(label, _labelToRole[label])
     );
-    require(!hasOldLabel, AccessManagerRoleAlreadyLabeled(roleId));
 
     _trackRole(roleId);
     _roleToLabelsSet.add(label);
