@@ -15,6 +15,16 @@ import {IAssetInterestRateStrategy} from 'src/hub/interfaces/IAssetInterestRateS
 /// All numeric fields in config structs use uint256 so that type(uint256).max can serve as
 /// the universal KEEP_CURRENT sentinel. Boolean fields use uint256 (0=false, 1=true, KEEP_CURRENT=skip).
 interface IAaveV4ConfigEngine {
+  /// @notice Parameters for tokenization of an asset on a Hub when listing the asset.
+  /// @dev addCap The add cap for the TokenizationSpoke (0 means no tokenization).
+  /// @dev name The name for the TokenizationSpoke.
+  /// @dev symbol The symbol for the TokenizationSpoke.
+  struct TokenizationConfig {
+    uint256 addCap;
+    string name;
+    string symbol;
+  }
+
   /// @notice Parameters for listing a new asset on a Hub.
   /// @dev hubConfigurator The HubConfigurator to use for this action.
   /// @dev hub The address of the Hub.
@@ -24,6 +34,7 @@ interface IAaveV4ConfigEngine {
   /// @dev liquidityFee The liquidity fee of the asset, in BPS.
   /// @dev irStrategy The address of the interest rate strategy contract.
   /// @dev irData The interest rate data to apply to the given asset.
+  /// @dev tokenization The tokenization configuration for the asset.
   struct AssetListing {
     IHubConfigurator hubConfigurator;
     address hub;
@@ -33,6 +44,7 @@ interface IAaveV4ConfigEngine {
     uint256 liquidityFee;
     address irStrategy;
     IAssetInterestRateStrategy.InterestRateData irData;
+    TokenizationConfig tokenization;
   }
 
   /// @notice Parameters for updating asset config (fee, interest rate, reinvestment) on a Hub.

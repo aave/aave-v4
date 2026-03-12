@@ -9,8 +9,12 @@ import {IHubConfigurator} from 'src/hub/interfaces/IHubConfigurator.sol';
 import {IAaveV4ConfigEngine} from 'src/config-engine/interfaces/IAaveV4ConfigEngine.sol';
 
 import {EngineFlags} from 'src/config-engine/libraries/EngineFlags.sol';
+import {HubEngine} from 'src/config-engine/libraries/HubEngine.sol';
+import {TokenizationSpokeDeployer} from 'src/config-engine/libraries/TokenizationSpokeDeployer.sol';
 
 import {MockHubConfigurator} from 'tests/mocks/config-engine/MockHubConfigurator.sol';
+
+import {Create2Utils} from 'tests/Create2Utils.sol';
 
 contract HubEngineTest is BaseConfigEngineTest {
   function test_executeHubAssetListings_decimalsZero() public {
@@ -986,5 +990,95 @@ contract HubEngineTest is BaseConfigEngineTest {
 
     vm.expectRevert(MockHubConfigurator.ResetSpokeCapsReverted.selector);
     engine.executeHubSpokeCapsResets(_toSpokeCapsResetArray(reset));
+  }
+
+  function test_executeHubAssetListings_withTokenization() public {
+    IAaveV4ConfigEngine.AssetListing memory listing = _defaultAssetListing();
+    listing.tokenization = IAaveV4ConfigEngine.TokenizationConfig({
+      addCap: 1000,
+      name: 'Tokenized USDC',
+      symbol: 'tUSDC'
+    });
+
+    vm.expectEmit(address(mockHubConfigurator));
+    emit MockHubConfigurator.AddAssetCalled(
+      address(mockHub),
+      UNDERLYING,
+      FEE_RECEIVER,
+      LIQUIDITY_FEE,
+      IR_STRATEGY,
+      abi.encode(IR_DATA)
+    );
+
+    engine.executeHubAssetListings(_toAssetListingArray(listing));
+  }
+
+  function test_executeHubAssetListings_noTokenization() public {
+    IAaveV4ConfigEngine.AssetListing memory listing = _defaultAssetListing();
+
+    vm.recordLogs();
+    engine.executeHubAssetListings(_toAssetListingArray(listing));
+
+    // Only AddAssetCalled should have been emitted, no AddSpokeCalled
+    assertEq(vm.getRecordedLogs().length, 1);
+  }
+
+  function test_executeHubAssetListings_tokenization_deterministicAddress() public {
+    IAaveV4ConfigEngine.AssetListing memory listing = _defaultAssetListing();
+    listing.tokenization = IAaveV4ConfigEngine.TokenizationConfig({
+      addCap: 1000,
+      name: 'Tokenized USDC',
+      symbol: 'tUSDC'
+    });
+
+    Create2Utils.loadCreate2Factory();
+
+    address predictedProxy = TokenizationSpokeDeployer.computeProxyAddress(
+      address(mockHub),
+      UNDERLYING,
+      'Tokenized USDC',
+      'tUSDC',
+      address(this)
+    );
+
+    vm.expectEmit(address(mockHubConfigurator));
+    emit MockHubConfigurator.AddSpokeCalled(
+      address(mockHub),
+      predictedProxy,
+      ASSET_ID,
+      IHub.SpokeConfig({
+        addCap: 1000,
+        drawCap: 0,
+        riskPremiumThreshold: 0,
+        active: true,
+        halted: false
+      })
+    );
+
+    engine.executeHubAssetListings(_toAssetListingArray(listing));
+  }
+
+  function test_executeHubAssetListings_tokenization_revert_emptyName() public {
+    IAaveV4ConfigEngine.AssetListing memory listing = _defaultAssetListing();
+    listing.tokenization = IAaveV4ConfigEngine.TokenizationConfig({
+      addCap: 1000,
+      name: '',
+      symbol: 'tUSDC'
+    });
+
+    vm.expectRevert(HubEngine.InvalidTokenizationConfig.selector);
+    engine.executeHubAssetListings(_toAssetListingArray(listing));
+  }
+
+  function test_executeHubAssetListings_tokenization_revert_emptySymbol() public {
+    IAaveV4ConfigEngine.AssetListing memory listing = _defaultAssetListing();
+    listing.tokenization = IAaveV4ConfigEngine.TokenizationConfig({
+      addCap: 1000,
+      name: 'Tokenized USDC',
+      symbol: ''
+    });
+
+    vm.expectRevert(HubEngine.InvalidTokenizationConfig.selector);
+    engine.executeHubAssetListings(_toAssetListingArray(listing));
   }
 }

@@ -22,17 +22,17 @@ The four groups, and the virtual functions in each, are listed below.
 
 #### Hub actions (`_executeHubActions`)
 
-| Function                      | Struct                  | Purpose                                                      |
-| ----------------------------- | ----------------------- | ------------------------------------------------------------ |
-| `hubAssetListings()`          | `AssetListing`          | List a new asset on a Hub                                    |
-| `hubAssetConfigUpdates()`     | `AssetConfigUpdate`     | Update fee config, IR strategy/data, reinvestment controller |
-| `hubSpokeToAssetsAdditions()` | `SpokeToAssetsAddition` | Register a Spoke for multiple assets                         |
-| `hubSpokeConfigUpdates()`     | `SpokeConfigUpdate`     | Update Spoke caps, risk premium threshold, active/halted     |
-| `hubAssetHalts()`             | `AssetHalt`             | Halt an asset                                                |
-| `hubAssetDeactivations()`     | `AssetDeactivation`     | Deactivate an asset                                          |
-| `hubAssetCapsResets()`        | `AssetCapsReset`        | Reset asset caps                                             |
-| `hubSpokeDeactivations()`     | `SpokeDeactivation`     | Deactivate a Spoke                                           |
-| `hubSpokeCapsResets()`        | `SpokeCapsReset`        | Reset Spoke caps                                             |
+| Function                      | Struct                  | Purpose                                                                                           |
+| ----------------------------- | ----------------------- | ------------------------------------------------------------------------------------------------- |
+| `hubAssetListings()`          | `AssetListing`          | List a new asset on a Hub. Optionally deploys a TokenizationSpoke when `tokenization.addCap > 0`. |
+| `hubAssetConfigUpdates()`     | `AssetConfigUpdate`     | Update fee config, IR strategy/data, reinvestment controller                                      |
+| `hubSpokeToAssetsAdditions()` | `SpokeToAssetsAddition` | Register a Spoke for multiple assets                                                              |
+| `hubSpokeConfigUpdates()`     | `SpokeConfigUpdate`     | Update Spoke caps, risk premium threshold, active/halted                                          |
+| `hubAssetHalts()`             | `AssetHalt`             | Halt an asset                                                                                     |
+| `hubAssetDeactivations()`     | `AssetDeactivation`     | Deactivate an asset                                                                               |
+| `hubAssetCapsResets()`        | `AssetCapsReset`        | Reset asset caps                                                                                  |
+| `hubSpokeDeactivations()`     | `SpokeDeactivation`     | Deactivate a Spoke                                                                                |
+| `hubSpokeCapsResets()`        | `SpokeCapsReset`        | Reset Spoke caps                                                                                  |
 
 #### Spoke actions (`_executeSpokeActions`)
 
@@ -56,10 +56,10 @@ The four groups, and the virtual functions in each, are listed below.
 
 #### PositionManager actions (`_executePositionManagerActions`)
 
-| Function                              | Struct                            | Purpose                                   |
-| ------------------------------------- | --------------------------------- | ----------------------------------------- |
-| `positionManagerSpokeRegistrations()` | `SpokeRegistration`               | Register/deregister a Spoke               |
-| `positionManagerRoleRenouncements()`  | `PositionManagerRoleRenouncement` | Renounce a PositionManager role           |
+| Function                              | Struct                            | Purpose                         |
+| ------------------------------------- | --------------------------------- | ------------------------------- |
+| `positionManagerSpokeRegistrations()` | `SpokeRegistration`               | Register/deregister a Spoke     |
+| `positionManagerRoleRenouncements()`  | `PositionManagerRoleRenouncement` | Renounce a PositionManager role |
 
 ## Internal aspects to consider
 

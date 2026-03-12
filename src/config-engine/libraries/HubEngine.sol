@@ -4,6 +4,7 @@ pragma solidity ^0.8.0;
 
 import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
 import {EngineFlags} from 'src/config-engine/libraries/EngineFlags.sol';
+import {TokenizationSpokeDeployer} from 'src/config-engine/libraries/TokenizationSpokeDeployer.sol';
 
 import {IHubBase} from 'src/hub/interfaces/IHubBase.sol';
 import {IHub} from 'src/hub/interfaces/IHub.sol';
@@ -17,7 +18,12 @@ import {IAaveV4ConfigEngine} from 'src/config-engine/interfaces/IAaveV4ConfigEng
 library HubEngine {
   using SafeCast for uint256;
 
+  /// @notice Thrown when tokenization is requested but the name or symbol is empty.
+  error InvalidTokenizationConfig();
+
   /// @notice Lists new assets on Hubs via the HubConfigurator.
+  /// @dev When `tokenization.addCap > 0`, also deploys a TokenizationSpoke (impl + proxy) via
+  ///   CREATE2 and registers it on the Hub for the listed asset.
   /// @param listings The asset listings to execute.
   function executeHubAssetListings(IAaveV4ConfigEngine.AssetListing[] calldata listings) external {
     uint256 length = listings.length;
@@ -42,6 +48,10 @@ library HubEngine {
           listings[i].irStrategy,
           irData
         );
+      }
+
+      if (listings[i].tokenization.addCap > 0) {
+        _deployAndRegisterTokenizationSpoke(listings[i]);
       }
     }
   }
@@ -260,6 +270,39 @@ library HubEngine {
     for (uint256 i; i < length; ++i) {
       resets[i].hubConfigurator.resetSpokeCaps(resets[i].hub, resets[i].spoke);
     }
+  }
+
+  /// @dev Deploys a TokenizationSpoke (impl + proxy) via CREATE2 and registers it on the Hub.
+  function _deployAndRegisterTokenizationSpoke(
+    IAaveV4ConfigEngine.AssetListing calldata listing
+  ) private {
+    if (
+      bytes(listing.tokenization.name).length == 0 || bytes(listing.tokenization.symbol).length == 0
+    ) {
+      revert InvalidTokenizationConfig();
+    }
+
+    address proxy = TokenizationSpokeDeployer.deploy(
+      listing.hub,
+      listing.underlying,
+      listing.tokenization.name,
+      listing.tokenization.symbol
+    );
+
+    uint256 assetId = IHubBase(listing.hub).getAssetId(listing.underlying);
+
+    listing.hubConfigurator.addSpoke(
+      listing.hub,
+      proxy,
+      assetId,
+      IHub.SpokeConfig({
+        addCap: uint40(listing.tokenization.addCap),
+        drawCap: 0,
+        riskPremiumThreshold: 0,
+        active: true,
+        halted: false
+      })
+    );
   }
 
   /// @dev Merges non-sentinel fields from irData into the current on-chain IR data.

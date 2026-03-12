@@ -23,6 +23,8 @@ import {MockPositionManager} from 'tests/mocks/config-engine/MockPositionManager
 import {MockHub} from 'tests/mocks/config-engine/MockHub.sol';
 import {MockInterestRateStrategy} from 'tests/mocks/config-engine/MockInterestRateStrategy.sol';
 
+import {Create2Utils} from 'tests/Create2Utils.sol';
+
 abstract contract BaseConfigEngineTest is Test {
   uint256 constant ASSET_ID = 1;
   uint256 constant RESERVE_ID = 2;
@@ -57,6 +59,7 @@ abstract contract BaseConfigEngineTest is Test {
   MockInterestRateStrategy public mockIrStrategy;
 
   function setUp() public virtual {
+    Create2Utils.loadCreate2Factory();
     engine = new AaveV4ConfigEngine();
     mockHubConfigurator = new MockHubConfigurator();
     mockSpokeConfigurator = new MockSpokeConfigurator();
@@ -68,6 +71,10 @@ abstract contract BaseConfigEngineTest is Test {
 
     // Set up default underlying → assetId mapping
     mockHub.setAssetId(UNDERLYING, ASSET_ID);
+    // Set up default asset underlying/decimals (needed by TokenizationSpoke constructor)
+    mockHub.setAssetUnderlyingAndDecimals(ASSET_ID, UNDERLYING, 18);
+    // Set up default max allowed spoke cap
+    mockHub.setMaxAllowedSpokeCap(type(uint40).max);
     // Set up default asset config with IR strategy
     mockHub.setAssetConfig(
       ASSET_ID,
@@ -93,7 +100,8 @@ abstract contract BaseConfigEngineTest is Test {
         feeReceiver: FEE_RECEIVER,
         liquidityFee: LIQUIDITY_FEE,
         irStrategy: IR_STRATEGY,
-        irData: IR_DATA
+        irData: IR_DATA,
+        tokenization: IAaveV4ConfigEngine.TokenizationConfig({addCap: 0, name: '', symbol: ''})
       });
   }
 
