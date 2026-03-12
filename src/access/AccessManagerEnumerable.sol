@@ -340,15 +340,13 @@ contract AccessManagerEnumerable is AccessManager, IAccessManagerEnumerable {
       return;
     }
 
-    require(!hasOldLabel, AccessManagerRoleAlreadyLabeled(roleId));
-
-    _trackRole(roleId);
-
     require(
       !_roleToLabelsSet.contains(label),
       AccessManagerLabelAlreadyUsed(label, _labelToRole[label])
     );
+    require(!hasOldLabel, AccessManagerRoleAlreadyLabeled(roleId));
 
+    _trackRole(roleId);
     _roleToLabelsSet.add(label);
     _roleToLabel[roleId] = label;
     _labelToRole[label] = roleId;
