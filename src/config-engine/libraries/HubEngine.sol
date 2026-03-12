@@ -296,7 +296,7 @@ library HubEngine {
       proxy,
       assetId,
       IHub.SpokeConfig({
-        addCap: uint40(listing.tokenization.addCap),
+        addCap: listing.tokenization.addCap.toUint40(),
         drawCap: 0,
         riskPremiumThreshold: 0,
         active: true,
