@@ -9,53 +9,60 @@ contract MetadataLogger is Logger {
   constructor(string memory outputPath_) Logger(outputPath_) {}
 
   function writeJsonReportMarket(OrchestrationReports.FullDeploymentReport memory report) public {
-    _write('Salt', report.salt);
-    _write('AccessManager', report.authorityBatchReport.accessManager);
-    _write('HubConfigurator', report.configuratorBatchReport.hubConfigurator);
-    _write('SpokeConfigurator', report.configuratorBatchReport.spokeConfigurator);
-    _write('TreasurySpoke', report.treasurySpokeBatchReport.treasurySpoke);
+    _write('salt', report.salt);
+    _write('accessManager', report.authorityBatchReport.accessManager);
+    _write('hubConfigurator', report.configuratorBatchReport.hubConfigurator);
+    _write('spokeConfigurator', report.configuratorBatchReport.spokeConfigurator);
+    _write('treasurySpoke', report.treasurySpokeBatchReport.treasurySpoke);
 
-    for (uint256 i; i < report.hubBatchReports.length; i++) {
-      Logger.AddressEntry[] memory hubEntries = new Logger.AddressEntry[](2);
-      hubEntries[0] = Logger.AddressEntry({
-        label: 'Hub',
+    // Group hubs by property type
+    uint256 hubLen = report.hubBatchReports.length;
+    Logger.AddressEntry[] memory hubEntries = new Logger.AddressEntry[](hubLen);
+    Logger.AddressEntry[] memory irEntries = new Logger.AddressEntry[](hubLen);
+    for (uint256 i; i < hubLen; i++) {
+      hubEntries[i] = Logger.AddressEntry({
+        label: report.hubBatchReports[i].label,
         value: report.hubBatchReports[i].report.hub
       });
-      hubEntries[1] = Logger.AddressEntry({
-        label: 'InterestRateStrategy',
+      irEntries[i] = Logger.AddressEntry({
+        label: report.hubBatchReports[i].label,
         value: report.hubBatchReports[i].report.irStrategy
       });
-      _writeGroup(report.hubBatchReports[i].label, hubEntries);
     }
+    _writeGroup('hub', hubEntries);
+    _writeGroup('irStrategy', irEntries);
 
-    for (uint256 i; i < report.spokeInstanceBatchReports.length; i++) {
-      Logger.AddressEntry[] memory spokeInstanceEntries = new Logger.AddressEntry[](3);
-      spokeInstanceEntries[0] = Logger.AddressEntry({
-        label: 'SpokeInstance Proxy',
+    // Group spokes by property type
+    uint256 spokeLen = report.spokeInstanceBatchReports.length;
+    Logger.AddressEntry[] memory spokeEntries = new Logger.AddressEntry[](spokeLen);
+    Logger.AddressEntry[] memory oracleEntries = new Logger.AddressEntry[](spokeLen);
+    for (uint256 i; i < spokeLen; i++) {
+      spokeEntries[i] = Logger.AddressEntry({
+        label: report.spokeInstanceBatchReports[i].label,
         value: report.spokeInstanceBatchReports[i].report.spokeProxy
       });
-      spokeInstanceEntries[1] = Logger.AddressEntry({
-        label: 'SpokeInstance Implementation',
-        value: report.spokeInstanceBatchReports[i].report.spokeImplementation
-      });
-      spokeInstanceEntries[2] = Logger.AddressEntry({
-        label: 'AaveOracle',
+      oracleEntries[i] = Logger.AddressEntry({
+        label: report.spokeInstanceBatchReports[i].label,
         value: report.spokeInstanceBatchReports[i].report.aaveOracle
       });
-      _writeGroup(report.spokeInstanceBatchReports[i].label, spokeInstanceEntries);
     }
+    _writeGroup('spoke', spokeEntries);
+    _writeGroup('oracle', oracleEntries);
 
     if (report.gatewaysBatchReport.signatureGateway != address(0)) {
-      _write('SignatureGateway', report.gatewaysBatchReport.signatureGateway);
+      _write('signatureGateway', report.gatewaysBatchReport.signatureGateway);
     }
     if (report.gatewaysBatchReport.nativeGateway != address(0)) {
-      _write('NativeTokenGateway', report.gatewaysBatchReport.nativeGateway);
+      _write('nativeTokenGateway', report.gatewaysBatchReport.nativeGateway);
     }
     if (report.positionManagerBatchReport.giverPositionManager != address(0)) {
-      _write('GiverPositionManager', report.positionManagerBatchReport.giverPositionManager);
+      _write('giverPositionManager', report.positionManagerBatchReport.giverPositionManager);
     }
     if (report.positionManagerBatchReport.takerPositionManager != address(0)) {
-      _write('TakerPositionManager', report.positionManagerBatchReport.takerPositionManager);
+      _write('takerPositionManager', report.positionManagerBatchReport.takerPositionManager);
+    }
+    if (report.positionManagerBatchReport.configPositionManager != address(0)) {
+      _write('configPositionManager', report.positionManagerBatchReport.configPositionManager);
     }
   }
 }
