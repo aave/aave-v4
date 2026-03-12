@@ -56,7 +56,14 @@ contract Logger {
     string memory appendedMetadata = withTimestamp ? string.concat(_getTimestamp(), '-') : '';
     vm.writeJson(
       _json,
-      string.concat(_outputPath, appendedMetadata, vm.toString(block.chainid), '-', fileName)
+      string.concat(
+        _outputPath,
+        appendedMetadata,
+        vm.toString(block.chainid),
+        '-',
+        fileName,
+        '.json'
+      )
     );
   }
 
