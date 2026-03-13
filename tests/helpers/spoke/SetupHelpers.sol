@@ -411,28 +411,20 @@ abstract contract SetupHelpers is CheckedActions, ConfigHelpers, MockHelpers {
 
   function _deploySpokeWithOracle(
     address proxyAdminOwner,
-    address _accessManager,
-    string memory _oracleDesc
+    address _accessManager
   ) internal pausePrank returns (ISpoke, IAaveOracle) {
-    return
-      _deploySpokeWithOracle(
-        proxyAdminOwner,
-        _accessManager,
-        _oracleDesc,
-        MAX_ALLOWED_USER_RESERVES_LIMIT
-      );
+    return _deploySpokeWithOracle(proxyAdminOwner, _accessManager, MAX_ALLOWED_USER_RESERVES_LIMIT);
   }
 
   function _deploySpokeWithOracle(
     address proxyAdminOwner,
     address _accessManager,
-    string memory _oracleDesc,
     uint16 maxUserReservesLimit
   ) internal pausePrank returns (ISpoke, IAaveOracle) {
     address deployer = makeAddr('deployer');
 
     vm.startPrank(deployer);
-    IAaveOracle oracle = new AaveOracle(8, _oracleDesc);
+    IAaveOracle oracle = new AaveOracle(8);
 
     ISpoke spoke = DeployUtils.deploySpoke(
       address(oracle),
@@ -445,7 +437,7 @@ abstract contract SetupHelpers is CheckedActions, ConfigHelpers, MockHelpers {
     vm.stopPrank();
 
     assertEq(spoke.ORACLE(), address(oracle));
-    assertEq(oracle.SPOKE(), address(spoke));
+    assertEq(oracle.spoke(), address(spoke));
 
     return (spoke, oracle);
   }

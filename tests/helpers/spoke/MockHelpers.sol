@@ -25,9 +25,7 @@ abstract contract MockHelpers is CommonHelpers {
   ) internal {
     require(price > 0, 'mockReservePrice: price must be positive');
     AaveOracle oracle = AaveOracle(spoke.ORACLE());
-    address mockPriceFeed = address(
-      new MockPriceFeed(oracle.DECIMALS(), oracle.DESCRIPTION(), price)
-    );
+    address mockPriceFeed = address(new MockPriceFeed(oracle.decimals(), 'mock price feed', price));
     vm.prank(admin);
     spoke.updateReservePriceSource(reserveId, mockPriceFeed);
   }
@@ -45,7 +43,7 @@ abstract contract MockHelpers is CommonHelpers {
 
   function _deployMockPriceFeed(ISpoke spoke, uint256 price) internal returns (address) {
     AaveOracle oracle = AaveOracle(spoke.ORACLE());
-    return address(new MockPriceFeed(oracle.DECIMALS(), oracle.DESCRIPTION(), price));
+    return address(new MockPriceFeed(oracle.decimals(), 'mock price feed', price));
   }
 
   function _mockDecimals(address underlying, uint8 decimals) internal {
