@@ -14,6 +14,7 @@ A unified liquidity layer and modular architecture that enhances capital efficie
 ## Documentation
 
 - [Aave V4 Overview](./docs/overview.md)
+- [Aave V4 Docs](https://aave.com/docs/aave-v4)
 
 ## Architecture
 
