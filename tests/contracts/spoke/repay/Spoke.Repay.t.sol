@@ -124,7 +124,7 @@ contract SpokeRepayTest is Base {
 
     MockReentrantCaller reentrantCaller = new MockReentrantCaller(
       address(spoke1),
-      ISpokeBase.repay.selector
+      ISpoke.repay.selector
     );
     vm.mockFunction(
       address(_hub(spoke1, _daiReserveId(spoke1))),
@@ -209,7 +209,7 @@ contract SpokeRepayTest is Base {
 
     // Bob repays half of principal debt
     vm.expectEmit(address(spoke1));
-    emit ISpokeBase.Repay(
+    emit ISpoke.Repay(
       _daiReserveId(spoke1),
       bob,
       bob,
@@ -374,7 +374,7 @@ contract SpokeRepayTest is Base {
 
     // Bob repays half of principal debt
     vm.expectEmit(address(spoke1));
-    emit ISpokeBase.Repay(
+    emit ISpoke.Repay(
       _daiReserveId(spoke1),
       bob,
       bob,
@@ -489,7 +489,7 @@ contract SpokeRepayTest is Base {
     );
 
     vm.expectEmit(address(spoke1));
-    emit ISpokeBase.Repay(
+    emit ISpoke.Repay(
       _daiReserveId(spoke1),
       bob,
       bob,
@@ -599,7 +599,7 @@ contract SpokeRepayTest is Base {
     );
 
     vm.expectEmit(address(spoke1));
-    emit ISpokeBase.Repay(_daiReserveId(spoke1), bob, bob, 0, daiRepayAmount, expectedPremiumDelta);
+    emit ISpoke.Repay(_daiReserveId(spoke1), bob, bob, 0, daiRepayAmount, expectedPremiumDelta);
     _assertRefreshPremiumNotCalled(hub1);
 
     CheckedRepayResult memory r = _checkedRepay(
@@ -699,7 +699,7 @@ contract SpokeRepayTest is Base {
     );
 
     vm.expectEmit(address(spoke1));
-    emit ISpokeBase.Repay(
+    emit ISpoke.Repay(
       _daiReserveId(spoke1),
       bob,
       bob,
@@ -818,7 +818,7 @@ contract SpokeRepayTest is Base {
         daiRepayAmount
       );
       vm.expectEmit(address(spoke1));
-      emit ISpokeBase.Repay(
+      emit ISpoke.Repay(
         _daiReserveId(spoke1),
         bob,
         bob,
@@ -944,7 +944,7 @@ contract SpokeRepayTest is Base {
         daiRepayAmount
       );
       vm.expectEmit(address(spoke1));
-      emit ISpokeBase.Repay(
+      emit ISpoke.Repay(
         _daiReserveId(spoke1),
         bob,
         bob,
@@ -1092,7 +1092,7 @@ contract SpokeRepayTest is Base {
         daiRepayAmount
       );
       vm.expectEmit(address(spoke1));
-      emit ISpokeBase.Repay(
+      emit ISpoke.Repay(
         _daiReserveId(spoke1),
         bob,
         bob,
@@ -1225,14 +1225,7 @@ contract SpokeRepayTest is Base {
         daiRepayAmount
       );
       vm.expectEmit(address(spoke1));
-      emit ISpokeBase.Repay(
-        _daiReserveId(spoke1),
-        bob,
-        bob,
-        0,
-        daiRepayAmount,
-        expectedPremiumDelta
-      );
+      emit ISpoke.Repay(_daiReserveId(spoke1), bob, bob, 0, daiRepayAmount, expectedPremiumDelta);
     }
     _assertRefreshPremiumNotCalled(hub1);
 
@@ -1382,7 +1375,7 @@ contract SpokeRepayTest is Base {
         daiRepayAmount
       );
       vm.expectEmit(address(spoke1));
-      emit ISpokeBase.Repay(
+      emit ISpoke.Repay(
         _daiReserveId(spoke1),
         bob,
         bob,
@@ -1530,7 +1523,7 @@ contract SpokeRepayTest is Base {
         daiRepayAmount
       );
       vm.expectEmit(address(spoke1));
-      emit ISpokeBase.Repay(
+      emit ISpoke.Repay(
         _daiReserveId(spoke1),
         bob,
         bob,
@@ -2005,7 +1998,7 @@ contract SpokeRepayTest is Base {
     );
 
     vm.expectEmit(address(spoke1));
-    emit ISpokeBase.Repay(
+    emit ISpoke.Repay(
       _daiReserveId(spoke1),
       bob,
       bob,

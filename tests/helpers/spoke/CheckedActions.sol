@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 
 import {IERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
 import {IHub} from 'src/hub/interfaces/IHub.sol';
-import {ISpoke, ISpokeBase} from 'src/spoke/interfaces/ISpoke.sol';
+import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 import {SpokeActions} from 'tests/helpers/spoke/SpokeActions.sol';
 import {MathHelpers} from 'tests/helpers/spoke/MathHelpers.sol';
 

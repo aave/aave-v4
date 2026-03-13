@@ -66,7 +66,7 @@ contract SpokePositionManagerTest is Base {
     vm.expectEmit(address(tokenList.usdx));
     emit IERC20.Transfer(address(POSITION_MANAGER), address(hub1), amount);
     vm.expectEmit(address(spoke1));
-    emit ISpokeBase.Supply({
+    emit ISpoke.Supply({
       reserveId: reserveId,
       caller: POSITION_MANAGER,
       user: alice,
@@ -125,7 +125,7 @@ contract SpokePositionManagerTest is Base {
     vm.expectEmit(address(tokenList.usdx));
     emit IERC20.Transfer(address(hub1), address(POSITION_MANAGER), amount);
     vm.expectEmit(address(spoke1));
-    emit ISpokeBase.Withdraw({
+    emit ISpoke.Withdraw({
       reserveId: reserveId,
       caller: POSITION_MANAGER,
       user: alice,
@@ -183,7 +183,7 @@ contract SpokePositionManagerTest is Base {
     vm.expectEmit(address(tokenList.usdx));
     emit IERC20.Transfer(address(hub1), address(POSITION_MANAGER), amount);
     vm.expectEmit(address(spoke1));
-    emit ISpokeBase.Borrow({
+    emit ISpoke.Borrow({
       reserveId: reserveId,
       caller: POSITION_MANAGER,
       user: alice,
@@ -258,7 +258,7 @@ contract SpokePositionManagerTest is Base {
     vm.expectEmit(address(tokenList.usdx));
     emit IERC20.Transfer(address(POSITION_MANAGER), address(hub1), repayAmount);
     vm.expectEmit(address(spoke1));
-    emit ISpokeBase.Repay(
+    emit ISpoke.Repay(
       reserveId,
       POSITION_MANAGER,
       alice,

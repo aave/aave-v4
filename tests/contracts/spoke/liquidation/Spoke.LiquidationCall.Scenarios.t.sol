@@ -67,7 +67,7 @@ contract SpokeLiquidationCallScenariosTest is SpokeLiquidationCallBaseTest {
 
     MockReentrantCaller reentrantCaller = new MockReentrantCaller(
       address(spoke),
-      ISpokeBase.liquidationCall.selector
+      ISpoke.liquidationCall.selector
     );
 
     vm.mockFunction(
@@ -88,7 +88,7 @@ contract SpokeLiquidationCallScenariosTest is SpokeLiquidationCallBaseTest {
 
     MockReentrantCaller reentrantCaller = new MockReentrantCaller(
       address(spoke),
-      ISpokeBase.liquidationCall.selector
+      ISpoke.liquidationCall.selector
     );
 
     vm.mockFunction(
@@ -111,7 +111,7 @@ contract SpokeLiquidationCallScenariosTest is SpokeLiquidationCallBaseTest {
 
     MockReentrantCaller reentrantCaller = new MockReentrantCaller(
       address(spoke),
-      ISpokeBase.liquidationCall.selector
+      ISpoke.liquidationCall.selector
     );
 
     vm.mockFunction(
@@ -132,7 +132,7 @@ contract SpokeLiquidationCallScenariosTest is SpokeLiquidationCallBaseTest {
 
     MockReentrantCaller reentrantCaller = new MockReentrantCaller(
       address(spoke),
-      ISpokeBase.liquidationCall.selector
+      ISpoke.liquidationCall.selector
     );
 
     vm.mockFunction(

@@ -68,7 +68,7 @@ contract SignatureGatewayTest is SignatureGatewayBaseTest {
 
     SharesAndAmount memory returnValues;
     vm.expectEmit(address(spoke1));
-    emit ISpokeBase.Supply(p.reserveId, address(gateway), alice, shares, p.amount);
+    emit ISpoke.Supply(p.reserveId, address(gateway), alice, shares, p.amount);
 
     vm.prank(vm.randomAddress());
     (returnValues.shares, returnValues.amount) = gateway.supplyWithSig(p, signature);
@@ -100,7 +100,7 @@ contract SignatureGatewayTest is SignatureGatewayBaseTest {
     );
     SharesAndAmount memory returnValues;
     vm.expectEmit(address(spoke1));
-    emit ISpokeBase.Withdraw(p.reserveId, address(gateway), alice, shares, p.amount);
+    emit ISpoke.Withdraw(p.reserveId, address(gateway), alice, shares, p.amount);
 
     vm.prank(vm.randomAddress());
     (returnValues.shares, returnValues.amount) = gateway.withdrawWithSig(p, signature);
@@ -133,7 +133,7 @@ contract SignatureGatewayTest is SignatureGatewayBaseTest {
     );
     SharesAndAmount memory returnValues;
     vm.expectEmit(address(spoke1));
-    emit ISpokeBase.Borrow(p.reserveId, address(gateway), alice, shares, p.amount);
+    emit ISpoke.Borrow(p.reserveId, address(gateway), alice, shares, p.amount);
 
     vm.prank(vm.randomAddress());
     (returnValues.shares, returnValues.amount) = gateway.borrowWithSig(p, signature);
@@ -186,7 +186,7 @@ contract SignatureGatewayTest is SignatureGatewayBaseTest {
     );
     SharesAndAmount memory returnValues;
     vm.expectEmit(address(spoke1));
-    emit ISpokeBase.Repay(
+    emit ISpoke.Repay(
       p.reserveId,
       address(gateway),
       alice,

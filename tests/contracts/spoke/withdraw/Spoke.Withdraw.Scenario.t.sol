@@ -419,7 +419,7 @@ contract SpokeWithdrawScenarioTest is Base {
     SharesAndAmount memory returnValues1;
     uint256 shares1 = hub1.previewAddByAssets(reserve.assetId, assets);
     vm.expectEmit(address(spoke1));
-    emit ISpokeBase.Supply({
+    emit ISpoke.Supply({
       reserveId: reserveId,
       caller: caller,
       user: caller,
@@ -433,7 +433,7 @@ contract SpokeWithdrawScenarioTest is Base {
     SharesAndAmount memory returnValues2;
     uint256 shares2 = hub1.previewAddByAssets(reserve.assetId, assets);
     vm.expectEmit(address(spoke1));
-    emit ISpokeBase.Withdraw({
+    emit ISpoke.Withdraw({
       reserveId: reserveId,
       caller: caller,
       user: caller,
@@ -501,7 +501,7 @@ contract SpokeWithdrawScenarioTest is Base {
     SharesAndAmount memory returnValues1;
     uint256 shares1 = hub1.previewAddByAssets(reserve.assetId, assets);
     vm.expectEmit(address(spoke1));
-    emit ISpokeBase.Withdraw({
+    emit ISpoke.Withdraw({
       reserveId: reserveId,
       caller: caller,
       user: caller,
@@ -515,7 +515,7 @@ contract SpokeWithdrawScenarioTest is Base {
     SharesAndAmount memory returnValues2;
     uint256 shares2 = hub1.previewAddByAssets(reserve.assetId, assets);
     vm.expectEmit(address(spoke1));
-    emit ISpokeBase.Supply({
+    emit ISpoke.Supply({
       reserveId: reserveId,
       caller: caller,
       user: caller,

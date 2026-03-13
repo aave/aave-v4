@@ -90,7 +90,7 @@ contract SpokeSupplyTest is Base {
 
     MockReentrantCaller reentrantCaller = new MockReentrantCaller(
       address(spoke1),
-      ISpokeBase.supply.selector
+      ISpoke.supply.selector
     );
 
     vm.mockFunction(
@@ -113,7 +113,7 @@ contract SpokeSupplyTest is Base {
 
     uint256 expectedShares = hub1.previewAddByAssets(daiAssetId, amount);
     vm.expectEmit(address(spoke1));
-    emit ISpokeBase.Supply({
+    emit ISpoke.Supply({
       reserveId: _daiReserveId(spoke1),
       caller: bob,
       user: bob,
@@ -198,7 +198,7 @@ contract SpokeSupplyTest is Base {
 
     uint256 expectedShares = hub1.previewAddByAssets(daiAssetId, amount);
     vm.expectEmit(address(spoke1));
-    emit ISpokeBase.Supply({
+    emit ISpoke.Supply({
       reserveId: _daiReserveId(spoke1),
       caller: bob,
       user: bob,
@@ -284,7 +284,7 @@ contract SpokeSupplyTest is Base {
     deal(address(tokenList.dai), carol, amount);
 
     vm.expectEmit(address(spoke1));
-    emit ISpokeBase.Supply({
+    emit ISpoke.Supply({
       reserveId: _daiReserveId(spoke1),
       caller: carol,
       user: carol,
@@ -411,7 +411,7 @@ contract SpokeSupplyTest is Base {
     IHub.SpokeData memory spokeDataBefore = hub1.getSpoke(state.assetId, address(spoke1));
 
     vm.expectEmit(address(spoke1));
-    emit ISpokeBase.Supply({
+    emit ISpoke.Supply({
       reserveId: reserveId,
       caller: carol,
       user: carol,
@@ -488,7 +488,7 @@ contract SpokeSupplyTest is Base {
     deal(address(tokenList.dai), carol, amount);
 
     vm.expectEmit(address(spoke1));
-    emit ISpokeBase.Supply({
+    emit ISpoke.Supply({
       reserveId: _daiReserveId(spoke1),
       caller: carol,
       user: carol,
@@ -602,7 +602,7 @@ contract SpokeSupplyTest is Base {
     deal(address(underlying), carol, amount);
 
     vm.expectEmit(address(spoke1));
-    emit ISpokeBase.Supply({
+    emit ISpoke.Supply({
       reserveId: reserveId,
       caller: carol,
       user: carol,

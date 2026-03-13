@@ -8,7 +8,7 @@ import {ITransparentUpgradeableProxy} from 'src/dependencies/openzeppelin/Transp
 import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
 import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
 import {IHub} from 'src/hub/interfaces/IHub.sol';
-import {ISpoke, ISpokeBase} from 'src/spoke/interfaces/ISpoke.sol';
+import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 import {IAaveOracle} from 'src/spoke/interfaces/IAaveOracle.sol';
 import {AaveOracle} from 'src/spoke/AaveOracle.sol';
 import {DeployUtils} from 'tests/helpers/deploy/DeployUtils.sol';
