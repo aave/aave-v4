@@ -18,21 +18,21 @@ interface IHubBase {
 
   /// @notice Emitted on the `add` action.
   /// @param assetId The identifier of the asset.
-  /// @param spoke The address of the spoke.
+  /// @param spoke The address of the Spoke.
   /// @param shares The amount of shares added.
   /// @param amount The amount of assets added.
   event Add(uint256 indexed assetId, address indexed spoke, uint256 shares, uint256 amount);
 
   /// @notice Emitted on the `remove` action.
   /// @param assetId The identifier of the asset.
-  /// @param spoke The address of the spoke.
+  /// @param spoke The address of the Spoke.
   /// @param shares The amount of shares removed.
   /// @param amount The amount of assets removed.
   event Remove(uint256 indexed assetId, address indexed spoke, uint256 shares, uint256 amount);
 
   /// @notice Emitted on the `draw` action.
   /// @param assetId The identifier of the asset.
-  /// @param spoke The address of the spoke.
+  /// @param spoke The address of the Spoke.
   /// @param drawnShares The amount of drawn shares.
   /// @param drawnAmount The amount of drawn assets.
   event Draw(
@@ -44,7 +44,7 @@ interface IHubBase {
 
   /// @notice Emitted on the `restore` action.
   /// @param assetId The identifier of the asset.
-  /// @param spoke The address of the spoke.
+  /// @param spoke The address of the Spoke.
   /// @param drawnShares The amount of drawn shares.
   /// @param premiumDelta The premium delta data struct.
   /// @param drawnAmount The amount of drawn assets restored.
@@ -60,13 +60,13 @@ interface IHubBase {
 
   /// @notice Emitted on the `refreshPremium` action.
   /// @param assetId The identifier of the asset.
-  /// @param spoke The address of the spoke.
+  /// @param spoke The address of the Spoke.
   /// @param premiumDelta The premium delta data struct.
   event RefreshPremium(uint256 indexed assetId, address indexed spoke, PremiumDelta premiumDelta);
 
   /// @notice Emitted on the `reportDeficit` action.
   /// @param assetId The identifier of the asset.
-  /// @param spoke The address of the spoke.
+  /// @param spoke The address of the Spoke.
   /// @param drawnShares The amount of drawn shares reported as deficit.
   /// @param premiumDelta The premium delta data struct.
   /// @param deficitAmountRay The amount of deficit reported, expressed in asset units and scaled by RAY.
@@ -90,16 +90,16 @@ interface IHubBase {
     uint256 shares
   );
 
-  /// @notice Add asset on behalf of user.
+  /// @notice Adds assets on behalf of a user.
   /// @dev Only callable by active spokes.
   /// @dev Underlying assets must be transferred to the Hub before invocation.
-  /// @dev Extra underlying liquidity retained in the Hub can be skimmed by any Spoke through this action.
+  /// @dev Extra untracked underlying liquidity in the Hub can be skimmed into the Hub's liquidity accounting through this action.
   /// @param assetId The identifier of the asset.
   /// @param amount The amount of asset liquidity to add.
   /// @return The amount of shares added.
   function add(uint256 assetId, uint256 amount) external returns (uint256);
 
-  /// @notice Remove added asset on behalf of user.
+  /// @notice Removes assets on behalf of a user.
   /// @dev Only callable by active spokes.
   /// @param assetId The identifier of the asset.
   /// @param amount The amount of asset liquidity to remove.
@@ -107,7 +107,7 @@ interface IHubBase {
   /// @return The amount of shares removed.
   function remove(uint256 assetId, uint256 amount, address to) external returns (uint256);
 
-  /// @notice Draw assets on behalf of user.
+  /// @notice Draws assets on behalf of a user.
   /// @dev Only callable by active spokes.
   /// @param assetId The identifier of the asset.
   /// @param amount The amount of assets to draw.
@@ -115,11 +115,11 @@ interface IHubBase {
   /// @return The amount of drawn shares.
   function draw(uint256 assetId, uint256 amount, address to) external returns (uint256);
 
-  /// @notice Restore assets on behalf of user.
+  /// @notice Restores assets on behalf of a user.
   /// @dev Only callable by active spokes.
   /// @dev Interest is always paid off first from premium, then from drawn.
   /// @dev Underlying assets must be transferred to the Hub before invocation.
-  /// @dev Extra underlying liquidity retained in the Hub can be skimmed by any Spoke through this action.
+  /// @dev Extra untracked underlying liquidity in the Hub can be skimmed into the Hub's liquidity accounting through this action.
   /// @param assetId The identifier of the asset.
   /// @param drawnAmount The drawn amount to restore.
   /// @param premiumDelta The premium delta to apply which signals premium repayment.
@@ -150,14 +150,16 @@ interface IHubBase {
   /// @param premiumDelta The change in premium.
   function refreshPremium(uint256 assetId, PremiumDelta calldata premiumDelta) external;
 
-  /// @notice Transfers `shares` amount of existing `addedShares` of caller spoke to `feeReceiver`.
-  /// @dev Only callable by active spokes. Utilized to pay liquidation fee.
+  /// @notice Transfers an amount of added shares of the caller Spoke to the fee receiver Spoke.
+  /// @dev It can be used to execute one-time payments to the fee receiver Spoke (e.g., liquidation fees).
+  /// @dev Only callable by active spokes.
   /// @param assetId The identifier of the asset.
   /// @param shares The amount of shares to pay to feeReceiver.
   function payFeeShares(uint256 assetId, uint256 shares) external;
 
   /// @notice Converts the specified amount of assets to shares upon an `add` action.
   /// @dev Rounds down to the nearest shares amount.
+  /// @dev Defaults to a 1:1 exchange rate.
   /// @param assetId The identifier of the asset.
   /// @param assets The amount of assets to convert to shares amount.
   /// @return The amount of shares converted from assets amount.
@@ -165,6 +167,7 @@ interface IHubBase {
 
   /// @notice Converts the specified shares amount to assets amount added upon an `add` action.
   /// @dev Rounds up to the nearest assets amount.
+  /// @dev Defaults to a 1:1 exchange rate.
   /// @param assetId The identifier of the asset.
   /// @param shares The amount of shares to convert to assets amount.
   /// @return The amount of assets converted from shares amount.
@@ -172,6 +175,7 @@ interface IHubBase {
 
   /// @notice Converts the specified amount of assets to shares amount removed upon a `remove` action.
   /// @dev Rounds up to the nearest shares amount.
+  /// @dev Defaults to a 1:1 exchange rate.
   /// @param assetId The identifier of the asset.
   /// @param assets The amount of assets to convert to shares amount.
   /// @return The amount of shares converted from assets amount.
@@ -179,6 +183,7 @@ interface IHubBase {
 
   /// @notice Converts the specified amount of shares to assets amount removed upon a `remove` action.
   /// @dev Rounds down to the nearest assets amount.
+  /// @dev Defaults to a 1:1 exchange rate.
   /// @param assetId The identifier of the asset.
   /// @param shares The amount of shares to convert to assets amount.
   /// @return The amount of assets converted from shares amount.
@@ -215,7 +220,6 @@ interface IHubBase {
   /// @notice Returns the asset identifier for the specified underlying asset.
   /// @dev Reverts with `AssetNotListed` if the underlying is not listed.
   /// @param underlying The address of the underlying asset.
-  /// @return The `assetId` of the underlying asset.
   function getAssetId(address underlying) external view returns (uint256);
 
   /// @notice Returns the underlying address and decimals of the specified asset.
@@ -279,45 +283,45 @@ interface IHubBase {
   /// @notice Returns the total amount of the specified assets added to the Hub by the specified spoke.
   /// @dev If spoke is `asset.feeReceiver`, includes converted `unrealizedFeeShares` in return value.
   /// @param assetId The identifier of the asset.
-  /// @param spoke The address of the spoke.
+  /// @param spoke The address of the Spoke.
   /// @return The amount of added assets.
   function getSpokeAddedAssets(uint256 assetId, address spoke) external view returns (uint256);
 
   /// @notice Returns the total amount of shares of the specified asset added to the Hub by the specified spoke.
   /// @dev If spoke is `asset.feeReceiver`, includes `unrealizedFeeShares` in return value.
   /// @param assetId The identifier of the asset.
-  /// @param spoke The address of the spoke.
+  /// @param spoke The address of the Spoke.
   /// @return The amount of added shares.
   function getSpokeAddedShares(uint256 assetId, address spoke) external view returns (uint256);
 
   /// @notice Returns the amount of the specified assets owed to the Hub by the specified spoke.
   /// @param assetId The identifier of the asset.
-  /// @param spoke The address of the spoke.
+  /// @param spoke The address of the Spoke.
   /// @return The amount of owed drawn assets.
   /// @return The amount of owed premium assets.
   function getSpokeOwed(uint256 assetId, address spoke) external view returns (uint256, uint256);
 
   /// @notice Returns the total amount of the specified asset owed to the Hub by the specified spoke.
   /// @param assetId The identifier of the asset.
-  /// @param spoke The address of the spoke.
+  /// @param spoke The address of the Spoke.
   /// @return The total amount of the asset owed.
   function getSpokeTotalOwed(uint256 assetId, address spoke) external view returns (uint256);
 
   /// @notice Returns the amount of owed premium with full precision for specified asset and spoke.
   /// @param assetId The identifier of the asset.
-  /// @param spoke The address of the spoke.
+  /// @param spoke The address of the Spoke.
   /// @return The amount of owed premium assets, expressed in asset units and scaled by RAY.
   function getSpokePremiumRay(uint256 assetId, address spoke) external view returns (uint256);
 
   /// @notice Returns the amount of drawn shares of the specified asset by the specified spoke.
   /// @param assetId The identifier of the asset.
-  /// @param spoke The address of the spoke.
+  /// @param spoke The address of the Spoke.
   /// @return The amount of drawn shares.
   function getSpokeDrawnShares(uint256 assetId, address spoke) external view returns (uint256);
 
   /// @notice Returns the information regarding premium shares of the specified asset for the specified spoke.
   /// @param assetId The identifier of the asset.
-  /// @param spoke The address of the spoke.
+  /// @param spoke The address of the Spoke.
   /// @return The amount of premium shares.
   /// @return The premium offset, expressed in asset units and scaled by RAY.
   function getSpokePremiumData(
@@ -327,7 +331,7 @@ interface IHubBase {
 
   /// @notice Returns the amount of a given spoke's deficit with full precision for the specified asset.
   /// @param assetId The identifier of the asset.
-  /// @param spoke The address of the spoke.
+  /// @param spoke The address of the Spoke.
   /// @return The amount of deficit, expressed in asset units and scaled by RAY.
   function getSpokeDeficitRay(uint256 assetId, address spoke) external view returns (uint256);
 }

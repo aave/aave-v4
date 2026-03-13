@@ -23,11 +23,11 @@ contract TakerPositionManager is ITakerPositionManager, PositionManagerBase {
   /// @inheritdoc ITakerPositionManager
   bytes32 public constant BORROW_PERMIT_TYPEHASH = EIP712Hash.BORROW_PERMIT_TYPEHASH;
 
-  /// @dev Map of withdraw allowances based on the spoke, reserveId, owner and spender.
+  /// @dev Map of withdraw allowances based on the Spoke, reserveId, owner and spender.
   mapping(address spoke => mapping(uint256 reserveId => mapping(address owner => mapping(address spender => uint256 amount))))
     private _withdrawAllowances;
 
-  /// @dev Map of borrow allowances based on the spoke, reserveId, owner and spender.
+  /// @dev Map of borrow allowances based on the Spoke, reserveId, owner and spender.
   mapping(address spoke => mapping(uint256 reserveId => mapping(address owner => mapping(address spender => uint256 amount))))
     private _borrowAllowances;
 

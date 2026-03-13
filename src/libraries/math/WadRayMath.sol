@@ -13,7 +13,7 @@ library WadRayMath {
 
   /// @notice Multiplies two WAD numbers, rounding down.
   /// @dev Reverts if intermediate multiplication overflows.
-  /// @return c = floor(a * b / WAD) in WAD units.
+  /// @return c = floor(a * b / WAD), expressed in WAD.
   function wadMulDown(uint256 a, uint256 b) internal pure returns (uint256 c) {
     assembly ('memory-safe') {
       // to avoid overflow, a <= type(uint256).max / b
@@ -27,7 +27,7 @@ library WadRayMath {
 
   /// @notice Multiplies two WAD numbers, rounding up.
   /// @dev Reverts if intermediate multiplication overflows.
-  /// @return c = ceil(a * b / WAD) in WAD units.
+  /// @return c = ceil(a * b / WAD), expressed in WAD.
   function wadMulUp(uint256 a, uint256 b) internal pure returns (uint256 c) {
     assembly ('memory-safe') {
       // to avoid overflow, a <= type(uint256).max / b
@@ -42,7 +42,7 @@ library WadRayMath {
 
   /// @notice Divides two WAD numbers, rounding down.
   /// @dev Reverts if division by zero or intermediate multiplication overflows.
-  /// @return c = floor(a * WAD / b) in WAD units.
+  /// @return c = floor(a * WAD / b), expressed in WAD.
   function wadDivDown(uint256 a, uint256 b) internal pure returns (uint256 c) {
     assembly ('memory-safe') {
       // to avoid overflow, a <= type(uint256).max / WAD
@@ -56,7 +56,7 @@ library WadRayMath {
 
   /// @notice Divides two WAD numbers, rounding up.
   /// @dev Reverts if division by zero or intermediate multiplication overflows.
-  /// @return c = ceil(a * WAD / b) in WAD units.
+  /// @return c = ceil(a * WAD / b), expressed in WAD.
   function wadDivUp(uint256 a, uint256 b) internal pure returns (uint256 c) {
     assembly ('memory-safe') {
       // to avoid overflow, a <= type(uint256).max / WAD
@@ -71,7 +71,7 @@ library WadRayMath {
 
   /// @notice Multiplies two RAY numbers, rounding down.
   /// @dev Reverts if intermediate multiplication overflows.
-  /// @return c = floor(a * b / RAY) in RAY units.
+  /// @return c = floor(a * b / RAY), expressed in RAY.
   function rayMulDown(uint256 a, uint256 b) internal pure returns (uint256 c) {
     assembly ('memory-safe') {
       // to avoid overflow, a <= type(uint256).max / b
@@ -85,7 +85,7 @@ library WadRayMath {
 
   /// @notice Multiplies two RAY numbers, rounding up.
   /// @dev Reverts if intermediate multiplication overflows.
-  /// @return c = ceil(a * b / RAY) in RAY units.
+  /// @return c = ceil(a * b / RAY), expressed in RAY.
   function rayMulUp(uint256 a, uint256 b) internal pure returns (uint256 c) {
     assembly ('memory-safe') {
       // to avoid overflow, a <= type(uint256).max / b
@@ -100,7 +100,7 @@ library WadRayMath {
 
   /// @notice Divides two RAY numbers, rounding down.
   /// @dev Reverts if division by zero or intermediate multiplication overflows.
-  /// @return c = floor(a * RAY / b) in RAY units.
+  /// @return c = floor(a * RAY / b), expressed in RAY.
   function rayDivDown(uint256 a, uint256 b) internal pure returns (uint256 c) {
     assembly ('memory-safe') {
       // to avoid overflow, a <= type(uint256).max / RAY
@@ -114,7 +114,7 @@ library WadRayMath {
 
   /// @notice Divides two RAY numbers, rounding up.
   /// @dev Reverts if division by zero or intermediate multiplication overflows.
-  /// @return c = ceil(a * RAY / b) in RAY units.
+  /// @return c = ceil(a * RAY / b), expressed in RAY.
   function rayDivUp(uint256 a, uint256 b) internal pure returns (uint256 c) {
     assembly ('memory-safe') {
       // to avoid overflow, a <= type(uint256).max / RAY
@@ -129,7 +129,7 @@ library WadRayMath {
 
   /// @notice Casts value to WAD, adding 18 digits of precision.
   /// @dev Reverts if intermediate multiplication overflows.
-  /// @return b = a * WAD in WAD units.
+  /// @return b = a * WAD, expressed in WAD.
   function toWad(uint256 a) internal pure returns (uint256 b) {
     assembly ('memory-safe') {
       b := mul(a, WAD)
@@ -143,7 +143,7 @@ library WadRayMath {
 
   /// @notice Casts value to RAY, adding 27 digits of precision.
   /// @dev Reverts if intermediate multiplication overflows.
-  /// @return b = a * RAY in RAY units.
+  /// @return b = a * RAY, expressed in RAY.
   function toRay(uint256 a) internal pure returns (uint256 b) {
     assembly ('memory-safe') {
       b := mul(a, RAY)
@@ -174,7 +174,7 @@ library WadRayMath {
 
   /// @notice Converts value from basis points to WAD.
   /// @dev Reverts if result overflows.
-  /// @return b = a * (WAD / PERCENTAGE_FACTOR), expressed in WAD units.
+  /// @return b = a * (WAD / PERCENTAGE_FACTOR), expressed in WAD.
   function bpsToWad(uint256 a) internal pure returns (uint256 b) {
     assembly ('memory-safe') {
       let factor := div(WAD, PERCENTAGE_FACTOR)
@@ -188,7 +188,7 @@ library WadRayMath {
 
   /// @notice Converts value from basis points to RAY.
   /// @dev Reverts if result overflows.
-  /// @return b = a * (RAY / PERCENTAGE_FACTOR), expressed in RAY units.
+  /// @return b = a * (RAY / PERCENTAGE_FACTOR), expressed in RAY.
   function bpsToRay(uint256 a) internal pure returns (uint256 b) {
     assembly ('memory-safe') {
       let factor := div(RAY, PERCENTAGE_FACTOR)

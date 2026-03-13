@@ -7,7 +7,7 @@ import {IPositionManagerBase} from 'src/position-manager/interfaces/IPositionMan
 /// @title INativeTokenGateway
 /// @author Aave Labs
 /// @notice Abstracts actions to the protocol involving the native token.
-/// @dev Must be set as `PositionManager` on the spoke for the user.
+/// @dev Must be set as `PositionManager` on the Spoke for the user.
 interface INativeTokenGateway is IPositionManagerBase {
   /// @notice Thrown when the underlying asset is not the wrapped native asset.
   error NotNativeWrappedAsset();
@@ -43,6 +43,7 @@ interface INativeTokenGateway is IPositionManagerBase {
 
   /// @notice Withdraws the wrapped asset from a specified registered `spoke` and unwraps it back to the native asset.
   /// @dev Contract must be an active and approved user position manager of the caller.
+  /// @dev The withdrawn amount may be lower than requested if the user has insufficient supplied assets.
   /// @param spoke The address of the registered `spoke`.
   /// @param reserveId The identifier of the reserve for the wrapped asset.
   /// @param amount Amount to withdraw and unwrap.

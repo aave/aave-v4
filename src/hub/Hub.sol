@@ -800,7 +800,7 @@ contract Hub is IHub, AccessManaged {
     return shares;
   }
 
-  /// @dev Returns the spoke's drawn amount for a specified asset.
+  /// @dev Returns the Spoke's drawn amount for a specified asset.
   function _getSpokeDrawn(
     Asset storage asset,
     SpokeData storage spoke
@@ -808,7 +808,7 @@ contract Hub is IHub, AccessManaged {
     return asset.toDrawnAssetsUp(spoke.drawnShares);
   }
 
-  /// @dev Returns the spoke's premium amount for a specified asset.
+  /// @dev Returns the Spoke's premium amount for a specified asset.
   function _getSpokePremium(
     Asset storage asset,
     SpokeData storage spoke
@@ -816,7 +816,7 @@ contract Hub is IHub, AccessManaged {
     return _getSpokePremiumRay(asset, spoke).fromRayUp();
   }
 
-  /// @dev Returns the spoke's premium amount with full precision for a specified asset.
+  /// @dev Returns the Spoke's premium amount with full precision for a specified asset.
   function _getSpokePremiumRay(
     Asset storage asset,
     SpokeData storage spoke
@@ -854,7 +854,7 @@ contract Hub is IHub, AccessManaged {
     require(!spoke.halted, SpokeHalted());
   }
 
-  /// @dev The draw cap is enforced against the spoke's total owed, including any reported deficit.
+  /// @dev The draw cap is enforced against the Spoke's total owed, including any reported deficit.
   /// @dev Spoke with maximum cap have unlimited draw capacity.
   function _validateDraw(
     Asset storage asset,

@@ -13,7 +13,7 @@ interface IGiverPositionManager is IPositionManagerBase {
 
   /// @notice Executes a supply on behalf of a user.
   /// @dev Contract must be an active and approved user position manager of `onBehalfOf`.
-  /// @param spoke The address of the spoke.
+  /// @param spoke The address of the Spoke.
   /// @param reserveId The identifier of the reserve.
   /// @param amount The amount to supply.
   /// @param onBehalfOf The address of the user to supply on behalf of.
@@ -30,7 +30,7 @@ interface IGiverPositionManager is IPositionManagerBase {
   /// @dev If the amount exceeds the user's current debt, the entire debt is repaid.
   /// @dev Using `type(uint256).max` to repay the full debt is not allowed with this method.
   /// @dev Contract must be an active and approved user position manager of `onBehalfOf`.
-  /// @param spoke The address of the spoke.
+  /// @param spoke The address of the Spoke.
   /// @param reserveId The identifier of the reserve.
   /// @param amount The amount to repay.
   /// @param onBehalfOf The address of the user to repay on behalf of.
