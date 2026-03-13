@@ -19,6 +19,19 @@ interface ITreasurySpoke {
     uint256 amount
   ) external returns (uint256, uint256);
 
+  /// @notice Supplies a specified amount of the underlying asset to the specified Hub.
+  /// @dev The underlying asset must already be transferred to the Hub before calling.
+  /// @param hub The address of the Hub.
+  /// @param underlying The address of the underlying asset.
+  /// @param amount The amount of asset to supply.
+  /// @return The amount of shares supplied.
+  /// @return The amount of assets supplied.
+  function supplySkimmed(
+    address hub,
+    address underlying,
+    uint256 amount
+  ) external returns (uint256, uint256);
+
   /// @notice Withdraws a specified amount of underlying asset from the specified Hub.
   /// @dev Providing an amount greater than the maximum withdrawable value signals a full withdrawal.
   /// @param hub The address of the Hub.
