@@ -2,34 +2,56 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
+import {VmSafe} from 'forge-std/Vm.sol';
 import {Test} from 'forge-std/Test.sol';
 
+import {IAccessManager} from 'src/dependencies/openzeppelin/IAccessManager.sol';
 import {IHub} from 'src/hub/interfaces/IHub.sol';
 import {IHubConfigurator} from 'src/hub/interfaces/IHubConfigurator.sol';
 import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 import {ISpokeConfigurator} from 'src/spoke/interfaces/ISpokeConfigurator.sol';
+import {IAaveOracle} from 'src/spoke/interfaces/IAaveOracle.sol';
 import {IAssetInterestRateStrategy} from 'src/hub/interfaces/IAssetInterestRateStrategy.sol';
+
+import {AccessManagerEnumerable} from 'src/access/AccessManagerEnumerable.sol';
+import {HubConfigurator} from 'src/hub/HubConfigurator.sol';
+import {SpokeConfigurator} from 'src/spoke/SpokeConfigurator.sol';
+import {AssetInterestRateStrategy} from 'src/hub/AssetInterestRateStrategy.sol';
+import {AaveOracle} from 'src/spoke/AaveOracle.sol';
+import {Roles} from 'src/libraries/types/Roles.sol';
 
 import {AaveV4ConfigEngine} from 'src/config-engine/AaveV4ConfigEngine.sol';
 import {IAaveV4ConfigEngine} from 'src/config-engine/interfaces/IAaveV4ConfigEngine.sol';
-
 import {EngineFlags} from 'src/config-engine/libraries/EngineFlags.sol';
 
-import {MockHubConfigurator} from 'tests/mocks/config-engine/MockHubConfigurator.sol';
-import {MockSpokeConfigurator} from 'tests/mocks/config-engine/MockSpokeConfigurator.sol';
-import {MockAccessManager} from 'tests/mocks/config-engine/MockAccessManager.sol';
-import {MockSpokeReader} from 'tests/mocks/config-engine/MockSpokeReader.sol';
-import {MockPositionManager} from 'tests/mocks/config-engine/MockPositionManager.sol';
-import {MockHub} from 'tests/mocks/config-engine/MockHub.sol';
-import {MockInterestRateStrategy} from 'tests/mocks/config-engine/MockInterestRateStrategy.sol';
+import {WETH9} from 'src/dependencies/weth/WETH9.sol';
+import {TestnetERC20} from 'tests/mocks/TestnetERC20.sol';
+import {MockPriceFeed} from 'tests/mocks/MockPriceFeed.sol';
+import {PositionManagerBaseWrapper} from 'tests/mocks/PositionManagerBaseWrapper.sol';
+import {ISpokeInstance} from 'tests/mocks/ISpokeInstance.sol';
 
+import {DeployUtils} from 'tests/DeployUtils.sol';
 import {Create2Utils} from 'tests/Create2Utils.sol';
 
 abstract contract BaseConfigEngineTest is Test {
-  uint256 constant ASSET_ID = 1;
-  uint256 constant RESERVE_ID = 2;
+  uint256 constant NUM_HUBS = 2;
+  uint256 constant NUM_SPOKES = 3;
+  uint256 constant NUM_TOKENS = 4;
+
+  uint256 constant TOKEN_WETH = 0;
+  uint256 constant TOKEN_USDX = 1;
+  uint256 constant TOKEN_DAI = 2;
+  uint256 constant TOKEN_WBTC = 3;
+
+  struct TokenInfo {
+    address token;
+    address priceFeed;
+    uint8 decimals;
+  }
+
   uint256 constant LIQUIDITY_FEE = 500;
-  uint256 constant DYNAMIC_CONFIG_KEY = 3;
+  uint256 constant DYNAMIC_CONFIG_KEY = 0;
+
   IAssetInterestRateStrategy.InterestRateData internal IR_DATA =
     IAssetInterestRateStrategy.InterestRateData({
       optimalUsageRatio: 8000,
@@ -38,74 +60,365 @@ abstract contract BaseConfigEngineTest is Test {
       rateGrowthAfterOptimal: 6000
     });
 
-  address internal SPOKE = makeAddr('SPOKE');
-  address internal UNDERLYING = makeAddr('UNDERLYING');
+  address internal ADMIN = makeAddr('ADMIN');
   address internal FEE_RECEIVER = makeAddr('FEE_RECEIVER');
-  address internal IR_STRATEGY = makeAddr('IR_STRATEGY');
-  address internal PRICE_SOURCE = makeAddr('PRICE_SOURCE');
+  address internal REINVESTMENT_CONTROLLER = makeAddr('REINVESTMENT_CONTROLLER');
   address internal ACCOUNT = makeAddr('ACCOUNT');
   address internal TARGET = makeAddr('TARGET');
-  address internal POSITION_MANAGER = makeAddr('POSITION_MANAGER');
-  address internal REINVESTMENT_CONTROLLER = makeAddr('REINVESTMENT_CONTROLLER');
   address internal USER = makeAddr('USER');
 
   AaveV4ConfigEngine public engine;
-  MockHubConfigurator public mockHubConfigurator;
-  MockSpokeConfigurator public mockSpokeConfigurator;
-  MockAccessManager public mockAccessManager;
-  MockSpokeReader public mockSpokeReader;
-  MockPositionManager public mockPositionManager;
-  MockHub public mockHub;
-  MockInterestRateStrategy public mockIrStrategy;
+  AccessManagerEnumerable public accessManager;
+  HubConfigurator public hubConfigurator;
+  SpokeConfigurator public spokeConfigurator;
+  PositionManagerBaseWrapper public positionManager;
+
+  IHub[NUM_HUBS] public hubs;
+  AssetInterestRateStrategy[NUM_HUBS] public irStrategies;
+
+  ISpoke[NUM_SPOKES] public spokes;
+  IAaveOracle[NUM_SPOKES] public oracles;
+
+  WETH9 public weth;
+  TestnetERC20 public usdx;
+  TestnetERC20 public dai;
+  TestnetERC20 public wbtc;
+  TestnetERC20 public newToken;
+
+  MockPriceFeed public priceFeedWeth;
+  MockPriceFeed public priceFeedUsdx;
+  MockPriceFeed public priceFeedDai;
+  MockPriceFeed public priceFeedWbtc;
+  MockPriceFeed public priceFeedNew;
+
+  TokenInfo[NUM_TOKENS] internal tokenList;
+
+  uint256[NUM_TOKENS][NUM_HUBS] public assetIds;
+
+  uint256[NUM_TOKENS][NUM_SPOKES] public reserveIds;
 
   function setUp() public virtual {
     Create2Utils.loadCreate2Factory();
-    engine = new AaveV4ConfigEngine();
-    mockHubConfigurator = new MockHubConfigurator();
-    mockSpokeConfigurator = new MockSpokeConfigurator();
-    mockAccessManager = new MockAccessManager();
-    mockSpokeReader = new MockSpokeReader();
-    mockPositionManager = new MockPositionManager();
-    mockHub = new MockHub();
-    mockIrStrategy = new MockInterestRateStrategy();
 
-    // Set up default underlying → assetId mapping
-    mockHub.setAssetId(UNDERLYING, ASSET_ID);
-    // Set up default asset underlying/decimals (needed by TokenizationSpoke constructor)
-    mockHub.setAssetUnderlyingAndDecimals(ASSET_ID, UNDERLYING, 18);
-    // Set up default max allowed spoke cap
-    mockHub.setMaxAllowedSpokeCap(type(uint40).max);
-    // Set up default asset config with IR strategy
-    mockHub.setAssetConfig(
-      ASSET_ID,
-      IHub.AssetConfig({
-        feeReceiver: FEE_RECEIVER,
-        liquidityFee: uint16(LIQUIDITY_FEE),
-        irStrategy: address(mockIrStrategy),
-        reinvestmentController: REINVESTMENT_CONTROLLER
-      })
-    );
-    // Set up default reserve ID mapping
-    mockSpokeReader.setReserveId(address(mockHub), ASSET_ID, RESERVE_ID);
+    vm.startPrank(ADMIN);
+    accessManager = new AccessManagerEnumerable(ADMIN);
+    engine = new AaveV4ConfigEngine();
+    vm.stopPrank();
+
+    vm.startPrank(ADMIN);
+    hubs[0] = DeployUtils.deployHub(address(accessManager));
+    hubs[1] = DeployUtils.deployHub(address(accessManager), bytes32(uint256(1)));
+    irStrategies[0] = new AssetInterestRateStrategy(address(hubs[0]));
+    irStrategies[1] = new AssetInterestRateStrategy(address(hubs[1]));
+    vm.stopPrank();
+
+    for (uint256 i; i < NUM_SPOKES; ++i) {
+      (spokes[i], oracles[i]) = _deploySpokeWithOracle(ADMIN, address(accessManager));
+    }
+
+    vm.startPrank(ADMIN);
+    hubConfigurator = new HubConfigurator(address(accessManager));
+    spokeConfigurator = new SpokeConfigurator(address(accessManager));
+    positionManager = new PositionManagerBaseWrapper(address(engine));
+    vm.stopPrank();
+
+    weth = new WETH9();
+    usdx = new TestnetERC20('USDX', 'USDX', 6);
+    dai = new TestnetERC20('DAI', 'DAI', 18);
+    wbtc = new TestnetERC20('WBTC', 'WBTC', 8);
+    newToken = new TestnetERC20('NEW', 'NEW', 18);
+
+    priceFeedWeth = new MockPriceFeed(8, 'ETH/USD', 2000e8);
+    priceFeedUsdx = new MockPriceFeed(8, 'USDX/USD', 1e8);
+    priceFeedDai = new MockPriceFeed(8, 'DAI/USD', 1e8);
+    priceFeedWbtc = new MockPriceFeed(8, 'WBTC/USD', 40000e8);
+    priceFeedNew = new MockPriceFeed(8, 'NEW/USD', 100e8);
+
+    tokenList[TOKEN_WETH] = TokenInfo(address(weth), address(priceFeedWeth), 18);
+    tokenList[TOKEN_USDX] = TokenInfo(address(usdx), address(priceFeedUsdx), 6);
+    tokenList[TOKEN_DAI] = TokenInfo(address(dai), address(priceFeedDai), 18);
+    tokenList[TOKEN_WBTC] = TokenInfo(address(wbtc), address(priceFeedWbtc), 8);
+
+    _setupRoles();
+
+    vm.label(address(hubs[0]), 'hub1');
+    vm.label(address(hubs[1]), 'hub2');
+    vm.label(address(spokes[0]), 'spoke1');
+    vm.label(address(spokes[1]), 'spoke2');
+    vm.label(address(spokes[2]), 'spoke3');
   }
 
-  /// Default AssetListing (decimals=0 -> addAsset branch)
+  function hub1() internal view returns (IHub) {
+    return hubs[0];
+  }
+  function hub2() internal view returns (IHub) {
+    return hubs[1];
+  }
+  function spoke1() internal view returns (ISpoke) {
+    return spokes[0];
+  }
+  function spoke2() internal view returns (ISpoke) {
+    return spokes[1];
+  }
+  function spoke3() internal view returns (ISpoke) {
+    return spokes[2];
+  }
+  function irStrategy1() internal view returns (AssetInterestRateStrategy) {
+    return irStrategies[0];
+  }
+  function irStrategy2() internal view returns (AssetInterestRateStrategy) {
+    return irStrategies[1];
+  }
+
+  function _deploySpokeWithOracle(
+    address proxyAdminOwner,
+    address _accessManager
+  ) internal returns (ISpoke, IAaveOracle) {
+    (VmSafe.CallerMode callerMode, address msgSender, address txOrigin) = vm.readCallers();
+    if (callerMode == VmSafe.CallerMode.RecurrentPrank) vm.stopPrank();
+
+    address deployer = makeAddr('deployer');
+    vm.startPrank(deployer);
+
+    IAaveOracle oracle = new AaveOracle(8);
+    ISpoke spoke = DeployUtils.deploySpoke(
+      address(oracle),
+      type(uint16).max,
+      proxyAdminOwner,
+      abi.encodeCall(ISpokeInstance.initialize, (_accessManager))
+    );
+    oracle.setSpoke(address(spoke));
+    vm.stopPrank();
+
+    if (callerMode == VmSafe.CallerMode.RecurrentPrank) vm.startPrank(msgSender, txOrigin);
+
+    return (spoke, oracle);
+  }
+
+  function _setupRoles() internal {
+    vm.startPrank(ADMIN);
+
+    accessManager.grantRole(Roles.HUB_CONFIGURATOR_ROLE, address(engine), 0);
+    accessManager.grantRole(Roles.SPOKE_CONFIGURATOR_ROLE, address(engine), 0);
+    accessManager.grantRole(Roles.DEFAULT_ADMIN_ROLE, address(engine), 0);
+
+    accessManager.grantRole(Roles.HUB_ADMIN_ROLE, address(hubConfigurator), 0);
+
+    accessManager.grantRole(Roles.SPOKE_ADMIN_ROLE, address(spokeConfigurator), 0);
+
+    accessManager.grantRole(Roles.HUB_ADMIN_ROLE, ADMIN, 0);
+    accessManager.grantRole(Roles.SPOKE_ADMIN_ROLE, ADMIN, 0);
+
+    for (uint256 i; i < NUM_HUBS; ++i) {
+      bytes4[] memory hubSelectors = new bytes4[](6);
+      hubSelectors[0] = IHub.addAsset.selector;
+      hubSelectors[1] = IHub.updateAssetConfig.selector;
+      hubSelectors[2] = IHub.addSpoke.selector;
+      hubSelectors[3] = IHub.updateSpokeConfig.selector;
+      hubSelectors[4] = IHub.setInterestRateData.selector;
+      hubSelectors[5] = IHub.mintFeeShares.selector;
+      accessManager.setTargetFunctionRole(address(hubs[i]), hubSelectors, Roles.HUB_ADMIN_ROLE);
+    }
+
+    for (uint256 i; i < NUM_SPOKES; ++i) {
+      bytes4[] memory spokeSelectors = new bytes4[](7);
+      spokeSelectors[0] = ISpoke.updateLiquidationConfig.selector;
+      spokeSelectors[1] = ISpoke.addReserve.selector;
+      spokeSelectors[2] = ISpoke.updateReserveConfig.selector;
+      spokeSelectors[3] = ISpoke.updateDynamicReserveConfig.selector;
+      spokeSelectors[4] = ISpoke.addDynamicReserveConfig.selector;
+      spokeSelectors[5] = ISpoke.updatePositionManager.selector;
+      spokeSelectors[6] = ISpoke.updateReservePriceSource.selector;
+      accessManager.setTargetFunctionRole(
+        address(spokes[i]),
+        spokeSelectors,
+        Roles.SPOKE_ADMIN_ROLE
+      );
+    }
+
+    _setUpHubConfiguratorRoles(address(hubConfigurator), address(accessManager));
+
+    _setUpSpokeConfiguratorRoles(address(spokeConfigurator), address(accessManager));
+
+    vm.stopPrank();
+  }
+
+  function _setUpHubConfiguratorRoles(address _hubConfigurator, address manager) internal {
+    bytes4[] memory selectors = new bytes4[](22);
+    selectors[0] = IHubConfigurator.updateLiquidityFee.selector;
+    selectors[1] = IHubConfigurator.updateFeeReceiver.selector;
+    selectors[2] = IHubConfigurator.updateFeeConfig.selector;
+    selectors[3] = IHubConfigurator.updateInterestRateStrategy.selector;
+    selectors[4] = IHubConfigurator.updateReinvestmentController.selector;
+    selectors[5] = IHubConfigurator.resetAssetCaps.selector;
+    selectors[6] = IHubConfigurator.deactivateAsset.selector;
+    selectors[7] = IHubConfigurator.haltAsset.selector;
+    selectors[8] = IHubConfigurator.addSpoke.selector;
+    selectors[9] = IHubConfigurator.addSpokeToAssets.selector;
+    selectors[10] = IHubConfigurator.updateSpokeActive.selector;
+    selectors[11] = IHubConfigurator.updateSpokeHalted.selector;
+    selectors[12] = IHubConfigurator.updateSpokeAddCap.selector;
+    selectors[13] = IHubConfigurator.updateSpokeDrawCap.selector;
+    selectors[14] = IHubConfigurator.updateSpokeRiskPremiumThreshold.selector;
+    selectors[15] = IHubConfigurator.updateSpokeCaps.selector;
+    selectors[16] = IHubConfigurator.deactivateSpoke.selector;
+    selectors[17] = IHubConfigurator.haltSpoke.selector;
+    selectors[18] = IHubConfigurator.resetSpokeCaps.selector;
+    selectors[19] = IHubConfigurator.updateInterestRateData.selector;
+    selectors[20] = IHubConfigurator.addAsset.selector;
+    selectors[21] = IHubConfigurator.addAssetWithDecimals.selector;
+    IAccessManager(manager).setTargetFunctionRole(
+      _hubConfigurator,
+      selectors,
+      Roles.HUB_CONFIGURATOR_ROLE
+    );
+  }
+
+  function _setUpSpokeConfiguratorRoles(address _spokeConfigurator, address manager) internal {
+    bytes4[] memory selectors = new bytes4[](24);
+    selectors[0] = ISpokeConfigurator.updateReservePriceSource.selector;
+    selectors[1] = ISpokeConfigurator.updateLiquidationTargetHealthFactor.selector;
+    selectors[2] = ISpokeConfigurator.updateHealthFactorForMaxBonus.selector;
+    selectors[3] = ISpokeConfigurator.updateLiquidationBonusFactor.selector;
+    selectors[4] = ISpokeConfigurator.updateLiquidationConfig.selector;
+    selectors[5] = ISpokeConfigurator.addReserve.selector;
+    selectors[6] = ISpokeConfigurator.updatePaused.selector;
+    selectors[7] = ISpokeConfigurator.updateFrozen.selector;
+    selectors[8] = ISpokeConfigurator.updateBorrowable.selector;
+    selectors[9] = ISpokeConfigurator.updateReceiveSharesEnabled.selector;
+    selectors[10] = ISpokeConfigurator.updateCollateralRisk.selector;
+    selectors[11] = ISpokeConfigurator.addCollateralFactor.selector;
+    selectors[12] = ISpokeConfigurator.updateCollateralFactor.selector;
+    selectors[13] = ISpokeConfigurator.addMaxLiquidationBonus.selector;
+    selectors[14] = ISpokeConfigurator.updateMaxLiquidationBonus.selector;
+    selectors[15] = ISpokeConfigurator.addLiquidationFee.selector;
+    selectors[16] = ISpokeConfigurator.updateLiquidationFee.selector;
+    selectors[17] = ISpokeConfigurator.addDynamicReserveConfig.selector;
+    selectors[18] = ISpokeConfigurator.updateDynamicReserveConfig.selector;
+    selectors[19] = ISpokeConfigurator.pauseAllReserves.selector;
+    selectors[20] = ISpokeConfigurator.freezeAllReserves.selector;
+    selectors[21] = ISpokeConfigurator.pauseReserve.selector;
+    selectors[22] = ISpokeConfigurator.freezeReserve.selector;
+    selectors[23] = ISpokeConfigurator.updatePositionManager.selector;
+    IAccessManager(manager).setTargetFunctionRole(
+      _spokeConfigurator,
+      selectors,
+      Roles.SPOKE_CONFIGURATOR_ROLE
+    );
+  }
+
+  function _seedAsset(
+    IHub hub,
+    AssetInterestRateStrategy strategy,
+    address token,
+    uint8 decimals
+  ) internal returns (uint256 assetId) {
+    vm.prank(ADMIN);
+    assetId = hub.addAsset(token, decimals, FEE_RECEIVER, address(strategy), abi.encode(IR_DATA));
+  }
+
+  function _seedSpokeOnAsset(IHub hub, uint256 assetId, ISpoke spoke) internal {
+    IHub.SpokeConfig memory config = IHub.SpokeConfig({
+      addCap: type(uint40).max,
+      drawCap: type(uint40).max,
+      riskPremiumThreshold: 100_00,
+      active: true,
+      halted: false
+    });
+    vm.prank(ADMIN);
+    hub.addSpoke(assetId, address(spoke), config);
+  }
+
+  function _seedReserve(
+    ISpoke spoke,
+    IHub hub,
+    uint256 assetId,
+    address priceSource
+  ) internal returns (uint256 reserveId) {
+    ISpoke.ReserveConfig memory config = ISpoke.ReserveConfig({
+      collateralRisk: 15_00,
+      paused: false,
+      frozen: false,
+      borrowable: true,
+      receiveSharesEnabled: true
+    });
+    ISpoke.DynamicReserveConfig memory dynConfig = ISpoke.DynamicReserveConfig({
+      collateralFactor: 80_00,
+      maxLiquidationBonus: 105_00,
+      liquidationFee: 10_00
+    });
+    vm.prank(ADMIN);
+    reserveId = spoke.addReserve(address(hub), assetId, priceSource, config, dynConfig);
+  }
+
+  function getAssetId(uint256 hubIdx, uint256 tokenIdx) internal view returns (uint256) {
+    return assetIds[hubIdx][tokenIdx];
+  }
+
+  function getReserveId(uint256 spokeIdx, uint256 tokenIdx) internal view returns (uint256) {
+    return reserveIds[spokeIdx][tokenIdx];
+  }
+
+  function _seedFullEnvironment() internal {
+    for (uint256 h; h < NUM_HUBS; ++h) {
+      for (uint256 t; t < NUM_TOKENS; ++t) {
+        assetIds[h][t] = _seedAsset(
+          hubs[h],
+          irStrategies[h],
+          tokenList[t].token,
+          tokenList[t].decimals
+        );
+      }
+    }
+
+    for (uint256 h; h < NUM_HUBS; ++h) {
+      for (uint256 t; t < NUM_TOKENS; ++t) {
+        for (uint256 s; s < NUM_SPOKES; ++s) {
+          _seedSpokeOnAsset(hubs[h], assetIds[h][t], spokes[s]);
+        }
+      }
+    }
+
+    for (uint256 s; s < NUM_SPOKES; ++s) {
+      for (uint256 t; t < NUM_TOKENS; ++t) {
+        address pf = _deployMockPriceFeed(spokes[s], tokenList[t].priceFeed);
+        reserveIds[s][t] = _seedReserve(spokes[s], hubs[0], assetIds[0][t], pf);
+      }
+    }
+
+    for (uint256 s; s < NUM_SPOKES; ++s) {
+      vm.prank(ADMIN);
+      spokes[s].updateLiquidationConfig(
+        ISpoke.LiquidationConfig({
+          targetHealthFactor: 1.05e18,
+          healthFactorForMaxBonus: 0.95e18,
+          liquidationBonusFactor: 10000
+        })
+      );
+    }
+  }
+
+  function _deployMockPriceFeed(ISpoke spoke, address baseFeed) internal returns (address) {
+    AaveOracle oracle = AaveOracle(spoke.ORACLE());
+    int256 price = MockPriceFeed(baseFeed).latestAnswer();
+    return address(new MockPriceFeed(oracle.decimals(), 'mock', uint256(price)));
+  }
+
   function _defaultAssetListing() internal view returns (IAaveV4ConfigEngine.AssetListing memory) {
     return
       IAaveV4ConfigEngine.AssetListing({
-        hubConfigurator: IHubConfigurator(address(mockHubConfigurator)),
-        hub: address(mockHub),
-        underlying: UNDERLYING,
+        hubConfigurator: IHubConfigurator(address(hubConfigurator)),
+        hub: address(hubs[0]),
+        underlying: address(weth),
         decimals: 0,
         feeReceiver: FEE_RECEIVER,
         liquidityFee: LIQUIDITY_FEE,
-        irStrategy: IR_STRATEGY,
+        irStrategy: address(irStrategies[0]),
         irData: IR_DATA,
         tokenization: IAaveV4ConfigEngine.TokenizationSpokeConfig({addCap: 0, name: '', symbol: ''})
       });
   }
 
-  /// Default AssetConfigUpdate (all fields set)
   function _defaultAssetConfigUpdate()
     internal
     view
@@ -113,18 +426,17 @@ abstract contract BaseConfigEngineTest is Test {
   {
     return
       IAaveV4ConfigEngine.AssetConfigUpdate({
-        hubConfigurator: IHubConfigurator(address(mockHubConfigurator)),
-        hub: address(mockHub),
-        underlying: UNDERLYING,
+        hubConfigurator: IHubConfigurator(address(hubConfigurator)),
+        hub: address(hubs[0]),
+        underlying: address(weth),
         liquidityFee: LIQUIDITY_FEE,
         feeReceiver: FEE_RECEIVER,
-        irStrategy: IR_STRATEGY,
+        irStrategy: address(irStrategies[0]),
         irData: IR_DATA,
         reinvestmentController: REINVESTMENT_CONTROLLER
       });
   }
 
-  /// Default SpokeConfigUpdate (all fields set)
   function _defaultSpokeConfigUpdate()
     internal
     view
@@ -132,10 +444,10 @@ abstract contract BaseConfigEngineTest is Test {
   {
     return
       IAaveV4ConfigEngine.SpokeConfigUpdate({
-        hubConfigurator: IHubConfigurator(address(mockHubConfigurator)),
-        hub: address(mockHub),
-        underlying: UNDERLYING,
-        spoke: SPOKE,
+        hubConfigurator: IHubConfigurator(address(hubConfigurator)),
+        hub: address(hubs[0]),
+        underlying: address(weth),
+        spoke: address(spokes[0]),
         addCap: 1000,
         drawCap: 500,
         riskPremiumThreshold: 100,
@@ -144,7 +456,6 @@ abstract contract BaseConfigEngineTest is Test {
       });
   }
 
-  /// Default ReserveConfigUpdate (all fields set)
   function _defaultReserveConfigUpdate()
     internal
     view
@@ -152,11 +463,11 @@ abstract contract BaseConfigEngineTest is Test {
   {
     return
       IAaveV4ConfigEngine.ReserveConfigUpdate({
-        spokeConfigurator: ISpokeConfigurator(address(mockSpokeConfigurator)),
-        spoke: address(mockSpokeReader),
-        hub: address(mockHub),
-        underlying: UNDERLYING,
-        priceSource: PRICE_SOURCE,
+        spokeConfigurator: ISpokeConfigurator(address(spokeConfigurator)),
+        spoke: address(spokes[0]),
+        hub: address(hubs[0]),
+        underlying: address(weth),
+        priceSource: address(priceFeedWeth),
         collateralRisk: 5000,
         paused: EngineFlags.DISABLED,
         frozen: EngineFlags.DISABLED,
@@ -165,7 +476,6 @@ abstract contract BaseConfigEngineTest is Test {
       });
   }
 
-  /// Default LiquidationConfigUpdate (all fields set)
   function _defaultLiquidationConfigUpdate()
     internal
     view
@@ -173,15 +483,14 @@ abstract contract BaseConfigEngineTest is Test {
   {
     return
       IAaveV4ConfigEngine.LiquidationConfigUpdate({
-        spokeConfigurator: ISpokeConfigurator(address(mockSpokeConfigurator)),
-        spoke: SPOKE,
+        spokeConfigurator: ISpokeConfigurator(address(spokeConfigurator)),
+        spoke: address(spokes[0]),
         targetHealthFactor: 1.05e18,
         healthFactorForMaxBonus: 0.95e18,
         liquidationBonusFactor: 10000
       });
   }
 
-  /// Default DynamicReserveConfigUpdate (all fields set)
   function _defaultDynamicReserveConfigUpdate()
     internal
     view
@@ -189,14 +498,74 @@ abstract contract BaseConfigEngineTest is Test {
   {
     return
       IAaveV4ConfigEngine.DynamicReserveConfigUpdate({
-        spokeConfigurator: ISpokeConfigurator(address(mockSpokeConfigurator)),
-        spoke: address(mockSpokeReader),
-        hub: address(mockHub),
-        underlying: UNDERLYING,
+        spokeConfigurator: ISpokeConfigurator(address(spokeConfigurator)),
+        spoke: address(spokes[0]),
+        hub: address(hubs[0]),
+        underlying: address(weth),
         dynamicConfigKey: DYNAMIC_CONFIG_KEY,
         collateralFactor: 8000,
         maxLiquidationBonus: 10500,
         liquidationFee: 1000
+      });
+  }
+
+  function _defaultReserveListing()
+    internal
+    view
+    returns (IAaveV4ConfigEngine.ReserveListing memory)
+  {
+    return
+      IAaveV4ConfigEngine.ReserveListing({
+        spokeConfigurator: ISpokeConfigurator(address(spokeConfigurator)),
+        spoke: address(spokes[0]),
+        hub: address(hubs[0]),
+        underlying: address(weth),
+        priceSource: address(priceFeedWeth),
+        config: ISpoke.ReserveConfig({
+          collateralRisk: 5000,
+          paused: false,
+          frozen: false,
+          borrowable: true,
+          receiveSharesEnabled: true
+        }),
+        dynamicConfig: ISpoke.DynamicReserveConfig({
+          collateralFactor: 8000,
+          maxLiquidationBonus: 10500,
+          liquidationFee: 200
+        })
+      });
+  }
+
+  function _defaultDynamicReserveConfigAddition()
+    internal
+    view
+    returns (IAaveV4ConfigEngine.DynamicReserveConfigAddition memory)
+  {
+    return
+      IAaveV4ConfigEngine.DynamicReserveConfigAddition({
+        spokeConfigurator: ISpokeConfigurator(address(spokeConfigurator)),
+        spoke: address(spokes[0]),
+        hub: address(hubs[0]),
+        underlying: address(weth),
+        dynamicConfig: ISpoke.DynamicReserveConfig({
+          collateralFactor: 8000,
+          maxLiquidationBonus: 10500,
+          liquidationFee: 200
+        })
+      });
+  }
+
+  function _defaultPositionManagerUpdate()
+    internal
+    view
+    returns (IAaveV4ConfigEngine.PositionManagerUpdate memory)
+  {
+    return
+      IAaveV4ConfigEngine.PositionManagerUpdate({
+        spokeConfigurator: ISpokeConfigurator(address(spokeConfigurator)),
+        spoke: address(spokes[0]),
+        positionManager: address(positionManager),
+        active: true
       });
   }
 
@@ -333,66 +702,6 @@ abstract contract BaseConfigEngineTest is Test {
     arr[0] = item;
   }
 
-  function _defaultReserveListing()
-    internal
-    view
-    returns (IAaveV4ConfigEngine.ReserveListing memory)
-  {
-    return
-      IAaveV4ConfigEngine.ReserveListing({
-        spokeConfigurator: ISpokeConfigurator(address(mockSpokeConfigurator)),
-        spoke: SPOKE,
-        hub: address(mockHub),
-        underlying: UNDERLYING,
-        priceSource: PRICE_SOURCE,
-        config: ISpoke.ReserveConfig({
-          collateralRisk: 5000,
-          paused: false,
-          frozen: false,
-          borrowable: true,
-          receiveSharesEnabled: true
-        }),
-        dynamicConfig: ISpoke.DynamicReserveConfig({
-          collateralFactor: 8000,
-          maxLiquidationBonus: 10500,
-          liquidationFee: 200
-        })
-      });
-  }
-
-  function _defaultDynamicReserveConfigAddition()
-    internal
-    view
-    returns (IAaveV4ConfigEngine.DynamicReserveConfigAddition memory)
-  {
-    return
-      IAaveV4ConfigEngine.DynamicReserveConfigAddition({
-        spokeConfigurator: ISpokeConfigurator(address(mockSpokeConfigurator)),
-        spoke: address(mockSpokeReader),
-        hub: address(mockHub),
-        underlying: UNDERLYING,
-        dynamicConfig: ISpoke.DynamicReserveConfig({
-          collateralFactor: 8000,
-          maxLiquidationBonus: 10500,
-          liquidationFee: 200
-        })
-      });
-  }
-
-  function _defaultPositionManagerUpdate()
-    internal
-    view
-    returns (IAaveV4ConfigEngine.PositionManagerUpdate memory)
-  {
-    return
-      IAaveV4ConfigEngine.PositionManagerUpdate({
-        spokeConfigurator: ISpokeConfigurator(address(mockSpokeConfigurator)),
-        spoke: SPOKE,
-        positionManager: POSITION_MANAGER,
-        active: true
-      });
-  }
-
   function _toSpokeRegistrationArray(
     IAaveV4ConfigEngine.SpokeRegistration memory item
   ) internal pure returns (IAaveV4ConfigEngine.SpokeRegistration[] memory arr) {
@@ -405,22 +714,6 @@ abstract contract BaseConfigEngineTest is Test {
   ) internal pure returns (IAaveV4ConfigEngine.PositionManagerRoleRenouncement[] memory arr) {
     arr = new IAaveV4ConfigEngine.PositionManagerRoleRenouncement[](1);
     arr[0] = item;
-  }
-
-  function _setupDynamicReserveConfig(
-    uint16 collateralFactor,
-    uint32 maxLiquidationBonus,
-    uint16 liquidationFee
-  ) internal {
-    mockSpokeReader.setDynamicReserveConfig(
-      RESERVE_ID,
-      uint32(DYNAMIC_CONFIG_KEY),
-      ISpoke.DynamicReserveConfig({
-        collateralFactor: collateralFactor,
-        maxLiquidationBonus: maxLiquidationBonus,
-        liquidationFee: liquidationFee
-      })
-    );
   }
 
   function _keepCurrentIrData()

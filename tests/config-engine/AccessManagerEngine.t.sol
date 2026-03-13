@@ -9,41 +9,68 @@ import {IAccessManager} from 'src/dependencies/openzeppelin/IAccessManager.sol';
 import {IAaveV4ConfigEngine} from 'src/config-engine/interfaces/IAaveV4ConfigEngine.sol';
 import {EngineFlags} from 'src/config-engine/libraries/EngineFlags.sol';
 
-import {MockAccessManager} from 'tests/mocks/config-engine/MockAccessManager.sol';
-
 contract AccessManagerEngineTest is BaseConfigEngineTest {
+  // Defult Roles :
+  uint64 constant DEFAULT_ADMIN_ROLE = 0;
+  uint64 constant PUBLIC_ROLE = type(uint64).max;
+
+  uint64 constant TEST_ROLE_ID = 5;
+  uint64 constant TEST_ROLE_ID_2 = 6;
+  uint64 constant TEST_ADMIN_ROLE_ID = 1;
+  uint64 constant TEST_GUARDIAN_ROLE_ID = 2;
+  uint32 constant TEST_GRANT_DELAY = 3600;
+  uint32 constant TEST_EXEC_DELAY_SHORT = 100;
+  uint32 constant TEST_EXEC_DELAY_LONG = 200;
+  uint32 constant TEST_ADMIN_DELAY = 7200;
+
+  bytes4 constant TEST_SELECTOR_1 = bytes4(0xaabbccdd);
+  bytes4 constant TEST_SELECTOR_2 = bytes4(0x11223344);
+
   function test_executeRoleMemberships_grant_concrete() public {
-    IAaveV4ConfigEngine.RoleMembership[] memory memberships = _toRoleMembershipArray(
-      IAaveV4ConfigEngine.RoleMembership({
-        authority: address(mockAccessManager),
-        roleId: 5,
-        account: ACCOUNT,
-        granted: true,
-        executionDelay: 100
-      })
+    engine.executeRoleMemberships(
+      _toRoleMembershipArray(
+        IAaveV4ConfigEngine.RoleMembership({
+          authority: address(accessManager),
+          roleId: TEST_ROLE_ID,
+          account: ACCOUNT,
+          granted: true,
+          executionDelay: TEST_EXEC_DELAY_SHORT
+        })
+      )
     );
 
-    vm.expectEmit(address(mockAccessManager));
-    emit MockAccessManager.GrantRoleCalled(5, ACCOUNT, 100);
-
-    engine.executeRoleMemberships(memberships);
+    (bool isMember, uint32 delay) = accessManager.hasRole(TEST_ROLE_ID, ACCOUNT);
+    assertTrue(isMember);
+    assertEq(delay, TEST_EXEC_DELAY_SHORT);
   }
 
   function test_executeRoleMemberships_revoke_concrete() public {
-    IAaveV4ConfigEngine.RoleMembership[] memory memberships = _toRoleMembershipArray(
-      IAaveV4ConfigEngine.RoleMembership({
-        authority: address(mockAccessManager),
-        roleId: 5,
-        account: ACCOUNT,
-        granted: false,
-        executionDelay: 0
-      })
+    engine.executeRoleMemberships(
+      _toRoleMembershipArray(
+        IAaveV4ConfigEngine.RoleMembership({
+          authority: address(accessManager),
+          roleId: TEST_ROLE_ID,
+          account: ACCOUNT,
+          granted: true,
+          executionDelay: 0
+        })
+      )
     );
 
-    vm.expectEmit(address(mockAccessManager));
-    emit MockAccessManager.RevokeRoleCalled(5, ACCOUNT);
+    engine.executeRoleMemberships(
+      _toRoleMembershipArray(
+        IAaveV4ConfigEngine.RoleMembership({
+          authority: address(accessManager),
+          roleId: TEST_ROLE_ID,
+          account: ACCOUNT,
+          granted: false,
+          executionDelay: 0
+        })
+      )
+    );
 
-    engine.executeRoleMemberships(memberships);
+    (bool isMember, ) = accessManager.hasRole(TEST_ROLE_ID, ACCOUNT);
+    assertFalse(isMember);
   }
 
   function test_executeRoleMemberships_grant_fuzz(
@@ -51,184 +78,210 @@ contract AccessManagerEngineTest is BaseConfigEngineTest {
     address account,
     uint32 executionDelay
   ) public {
-    IAaveV4ConfigEngine.RoleMembership[] memory memberships = _toRoleMembershipArray(
-      IAaveV4ConfigEngine.RoleMembership({
-        authority: address(mockAccessManager),
-        roleId: roleId,
-        account: account,
-        granted: true,
-        executionDelay: executionDelay
-      })
+    vm.assume(roleId != DEFAULT_ADMIN_ROLE); // DEFAULT_ADMIN_ROLE is locked
+    vm.assume(roleId != PUBLIC_ROLE); // PUBLIC_ROLE is locked
+
+    engine.executeRoleMemberships(
+      _toRoleMembershipArray(
+        IAaveV4ConfigEngine.RoleMembership({
+          authority: address(accessManager),
+          roleId: roleId,
+          account: account,
+          granted: true,
+          executionDelay: executionDelay
+        })
+      )
     );
 
-    vm.expectEmit(address(mockAccessManager));
-    emit MockAccessManager.GrantRoleCalled(roleId, account, executionDelay);
-
-    engine.executeRoleMemberships(memberships);
+    (bool isMember, uint32 delay) = accessManager.hasRole(roleId, account);
+    assertTrue(isMember);
+    assertEq(delay, executionDelay);
   }
 
   function test_executeRoleMemberships_revoke_fuzz(uint64 roleId, address account) public {
-    IAaveV4ConfigEngine.RoleMembership[] memory memberships = _toRoleMembershipArray(
-      IAaveV4ConfigEngine.RoleMembership({
-        authority: address(mockAccessManager),
-        roleId: roleId,
-        account: account,
-        granted: false,
-        executionDelay: 0
-      })
+    vm.assume(roleId != DEFAULT_ADMIN_ROLE); // DEFAULT_ADMIN_ROLE is locked
+    vm.assume(roleId != PUBLIC_ROLE); // PUBLIC_ROLE is locked
+
+    engine.executeRoleMemberships(
+      _toRoleMembershipArray(
+        IAaveV4ConfigEngine.RoleMembership({
+          authority: address(accessManager),
+          roleId: roleId,
+          account: account,
+          granted: true,
+          executionDelay: 0
+        })
+      )
     );
 
-    vm.expectEmit(address(mockAccessManager));
-    emit MockAccessManager.RevokeRoleCalled(roleId, account);
+    engine.executeRoleMemberships(
+      _toRoleMembershipArray(
+        IAaveV4ConfigEngine.RoleMembership({
+          authority: address(accessManager),
+          roleId: roleId,
+          account: account,
+          granted: false,
+          executionDelay: 0
+        })
+      )
+    );
 
-    engine.executeRoleMemberships(memberships);
+    (bool isMember, ) = accessManager.hasRole(roleId, account);
+    assertFalse(isMember);
   }
 
   function test_executeRoleMemberships_grant_revert() public {
-    mockAccessManager.setShouldRevert(IAccessManager.grantRole.selector, true);
+    vm.prank(ADMIN);
+    accessManager.revokeRole(DEFAULT_ADMIN_ROLE, address(engine));
 
-    IAaveV4ConfigEngine.RoleMembership[] memory memberships = _toRoleMembershipArray(
-      IAaveV4ConfigEngine.RoleMembership({
-        authority: address(mockAccessManager),
-        roleId: 5,
-        account: ACCOUNT,
-        granted: true,
-        executionDelay: 100
-      })
+    vm.expectRevert(
+      abi.encodeWithSelector(
+        IAccessManager.AccessManagerUnauthorizedAccount.selector,
+        address(engine),
+        DEFAULT_ADMIN_ROLE
+      )
     );
-
-    vm.expectRevert(MockAccessManager.GrantRoleReverted.selector);
-    engine.executeRoleMemberships(memberships);
+    engine.executeRoleMemberships(
+      _toRoleMembershipArray(
+        IAaveV4ConfigEngine.RoleMembership({
+          authority: address(accessManager),
+          roleId: TEST_ROLE_ID,
+          account: ACCOUNT,
+          granted: true,
+          executionDelay: TEST_EXEC_DELAY_SHORT
+        })
+      )
+    );
   }
 
   function test_executeRoleMemberships_revoke_revert() public {
-    mockAccessManager.setShouldRevert(IAccessManager.revokeRole.selector, true);
+    vm.prank(ADMIN);
+    accessManager.revokeRole(DEFAULT_ADMIN_ROLE, address(engine));
 
-    IAaveV4ConfigEngine.RoleMembership[] memory memberships = _toRoleMembershipArray(
-      IAaveV4ConfigEngine.RoleMembership({
-        authority: address(mockAccessManager),
-        roleId: 5,
-        account: ACCOUNT,
-        granted: false,
-        executionDelay: 0
-      })
+    vm.expectRevert(
+      abi.encodeWithSelector(
+        IAccessManager.AccessManagerUnauthorizedAccount.selector,
+        address(engine),
+        DEFAULT_ADMIN_ROLE
+      )
     );
-
-    vm.expectRevert(MockAccessManager.RevokeRoleReverted.selector);
-    engine.executeRoleMemberships(memberships);
+    engine.executeRoleMemberships(
+      _toRoleMembershipArray(
+        IAaveV4ConfigEngine.RoleMembership({
+          authority: address(accessManager),
+          roleId: TEST_ROLE_ID,
+          account: ACCOUNT,
+          granted: false,
+          executionDelay: 0
+        })
+      )
+    );
   }
 
   function test_executeRoleUpdates_allFields() public {
-    IAaveV4ConfigEngine.RoleUpdate[] memory updates = _toRoleUpdateArray(
-      IAaveV4ConfigEngine.RoleUpdate({
-        authority: address(mockAccessManager),
-        roleId: 5,
-        admin: 1,
-        guardian: 2,
-        grantDelay: 3600,
-        label: 'FEE_UPDATER'
-      })
+    engine.executeRoleUpdates(
+      _toRoleUpdateArray(
+        IAaveV4ConfigEngine.RoleUpdate({
+          authority: address(accessManager),
+          roleId: TEST_ROLE_ID,
+          admin: TEST_ADMIN_ROLE_ID,
+          guardian: TEST_GUARDIAN_ROLE_ID,
+          grantDelay: TEST_GRANT_DELAY,
+          label: 'FEE_UPDATER'
+        })
+      )
     );
 
-    vm.expectEmit(address(mockAccessManager));
-    emit MockAccessManager.SetRoleAdminCalled(5, 1);
-    vm.expectEmit(address(mockAccessManager));
-    emit MockAccessManager.SetRoleGuardianCalled(5, 2);
-    vm.expectEmit(address(mockAccessManager));
-    emit MockAccessManager.SetGrantDelayCalled(5, 3600);
-    vm.expectEmit(address(mockAccessManager));
-    emit MockAccessManager.LabelRoleCalled(5, 'FEE_UPDATER');
-
-    engine.executeRoleUpdates(updates);
+    assertEq(accessManager.getRoleAdmin(TEST_ROLE_ID), TEST_ADMIN_ROLE_ID);
+    assertEq(accessManager.getRoleGuardian(TEST_ROLE_ID), TEST_GUARDIAN_ROLE_ID);
+    vm.warp(block.timestamp + 5 days);
+    assertEq(accessManager.getRoleGrantDelay(TEST_ROLE_ID), TEST_GRANT_DELAY);
   }
 
   function test_executeRoleUpdates_adminOnly() public {
-    IAaveV4ConfigEngine.RoleUpdate[] memory updates = _toRoleUpdateArray(
-      IAaveV4ConfigEngine.RoleUpdate({
-        authority: address(mockAccessManager),
-        roleId: 5,
-        admin: 1,
-        guardian: EngineFlags.KEEP_CURRENT_UINT64,
-        grantDelay: EngineFlags.KEEP_CURRENT_UINT32,
-        label: ''
-      })
+    engine.executeRoleUpdates(
+      _toRoleUpdateArray(
+        IAaveV4ConfigEngine.RoleUpdate({
+          authority: address(accessManager),
+          roleId: TEST_ROLE_ID,
+          admin: TEST_ADMIN_ROLE_ID,
+          guardian: EngineFlags.KEEP_CURRENT_UINT64,
+          grantDelay: EngineFlags.KEEP_CURRENT_UINT32,
+          label: ''
+        })
+      )
     );
 
-    vm.expectEmit(address(mockAccessManager));
-    emit MockAccessManager.SetRoleAdminCalled(5, 1);
-
-    engine.executeRoleUpdates(updates);
+    assertEq(accessManager.getRoleAdmin(TEST_ROLE_ID), TEST_ADMIN_ROLE_ID);
   }
 
   function test_executeRoleUpdates_guardianOnly() public {
-    IAaveV4ConfigEngine.RoleUpdate[] memory updates = _toRoleUpdateArray(
-      IAaveV4ConfigEngine.RoleUpdate({
-        authority: address(mockAccessManager),
-        roleId: 5,
-        admin: EngineFlags.KEEP_CURRENT_UINT64,
-        guardian: 2,
-        grantDelay: EngineFlags.KEEP_CURRENT_UINT32,
-        label: ''
-      })
+    engine.executeRoleUpdates(
+      _toRoleUpdateArray(
+        IAaveV4ConfigEngine.RoleUpdate({
+          authority: address(accessManager),
+          roleId: TEST_ROLE_ID,
+          admin: EngineFlags.KEEP_CURRENT_UINT64,
+          guardian: TEST_GUARDIAN_ROLE_ID,
+          grantDelay: EngineFlags.KEEP_CURRENT_UINT32,
+          label: ''
+        })
+      )
     );
 
-    vm.expectEmit(address(mockAccessManager));
-    emit MockAccessManager.SetRoleGuardianCalled(5, 2);
-
-    engine.executeRoleUpdates(updates);
+    assertEq(accessManager.getRoleGuardian(TEST_ROLE_ID), TEST_GUARDIAN_ROLE_ID);
   }
 
   function test_executeRoleUpdates_grantDelayOnly() public {
-    IAaveV4ConfigEngine.RoleUpdate[] memory updates = _toRoleUpdateArray(
-      IAaveV4ConfigEngine.RoleUpdate({
-        authority: address(mockAccessManager),
-        roleId: 5,
-        admin: EngineFlags.KEEP_CURRENT_UINT64,
-        guardian: EngineFlags.KEEP_CURRENT_UINT64,
-        grantDelay: 3600,
-        label: ''
-      })
+    engine.executeRoleUpdates(
+      _toRoleUpdateArray(
+        IAaveV4ConfigEngine.RoleUpdate({
+          authority: address(accessManager),
+          roleId: TEST_ROLE_ID,
+          admin: EngineFlags.KEEP_CURRENT_UINT64,
+          guardian: EngineFlags.KEEP_CURRENT_UINT64,
+          grantDelay: TEST_GRANT_DELAY,
+          label: ''
+        })
+      )
     );
 
-    vm.expectEmit(address(mockAccessManager));
-    emit MockAccessManager.SetGrantDelayCalled(5, 3600);
-
-    engine.executeRoleUpdates(updates);
+    vm.warp(block.timestamp + 5 days);
+    assertEq(accessManager.getRoleGrantDelay(TEST_ROLE_ID), TEST_GRANT_DELAY);
   }
 
   function test_executeRoleUpdates_labelOnly() public {
-    IAaveV4ConfigEngine.RoleUpdate[] memory updates = _toRoleUpdateArray(
-      IAaveV4ConfigEngine.RoleUpdate({
-        authority: address(mockAccessManager),
-        roleId: 5,
-        admin: EngineFlags.KEEP_CURRENT_UINT64,
-        guardian: EngineFlags.KEEP_CURRENT_UINT64,
-        grantDelay: EngineFlags.KEEP_CURRENT_UINT32,
-        label: 'FEE_UPDATER'
-      })
+    vm.expectEmit(address(accessManager));
+    emit IAccessManager.RoleLabel(TEST_ROLE_ID, 'FEE_UPDATER');
+
+    engine.executeRoleUpdates(
+      _toRoleUpdateArray(
+        IAaveV4ConfigEngine.RoleUpdate({
+          authority: address(accessManager),
+          roleId: TEST_ROLE_ID,
+          admin: EngineFlags.KEEP_CURRENT_UINT64,
+          guardian: EngineFlags.KEEP_CURRENT_UINT64,
+          grantDelay: EngineFlags.KEEP_CURRENT_UINT32,
+          label: 'FEE_UPDATER'
+        })
+      )
     );
-
-    vm.expectEmit(address(mockAccessManager));
-    emit MockAccessManager.LabelRoleCalled(5, 'FEE_UPDATER');
-
-    engine.executeRoleUpdates(updates);
   }
 
   function test_executeRoleUpdates_noneChanged() public {
-    IAaveV4ConfigEngine.RoleUpdate[] memory updates = _toRoleUpdateArray(
-      IAaveV4ConfigEngine.RoleUpdate({
-        authority: address(mockAccessManager),
-        roleId: 5,
-        admin: EngineFlags.KEEP_CURRENT_UINT64,
-        guardian: EngineFlags.KEEP_CURRENT_UINT64,
-        grantDelay: EngineFlags.KEEP_CURRENT_UINT32,
-        label: ''
-      })
-    );
-
-    // No events expected — all fields are sentinels/empty
     vm.recordLogs();
-    engine.executeRoleUpdates(updates);
+    engine.executeRoleUpdates(
+      _toRoleUpdateArray(
+        IAaveV4ConfigEngine.RoleUpdate({
+          authority: address(accessManager),
+          roleId: TEST_ROLE_ID,
+          admin: EngineFlags.KEEP_CURRENT_UINT64,
+          guardian: EngineFlags.KEEP_CURRENT_UINT64,
+          grantDelay: EngineFlags.KEEP_CURRENT_UINT32,
+          label: ''
+        })
+      )
+    );
     assertEq(vm.getRecordedLogs().length, 0);
   }
 
@@ -238,127 +291,74 @@ contract AccessManagerEngineTest is BaseConfigEngineTest {
     uint64 guardian,
     uint32 grantDelay
   ) public {
-    // Use non-sentinel values so all 4 calls are made
+    vm.assume(roleId != 0); // DEFAULT_ADMIN_ROLE is locked
+    vm.assume(roleId != type(uint64).max); // PUBLIC_ROLE is locked
     vm.assume(admin != EngineFlags.KEEP_CURRENT_UINT64);
     vm.assume(guardian != EngineFlags.KEEP_CURRENT_UINT64);
     vm.assume(grantDelay != EngineFlags.KEEP_CURRENT_UINT32);
 
-    string memory label = 'FUZZ_LABEL';
-
-    IAaveV4ConfigEngine.RoleUpdate[] memory updates = _toRoleUpdateArray(
-      IAaveV4ConfigEngine.RoleUpdate({
-        authority: address(mockAccessManager),
-        roleId: roleId,
-        admin: admin,
-        guardian: guardian,
-        grantDelay: grantDelay,
-        label: label
-      })
+    engine.executeRoleUpdates(
+      _toRoleUpdateArray(
+        IAaveV4ConfigEngine.RoleUpdate({
+          authority: address(accessManager),
+          roleId: roleId,
+          admin: admin,
+          guardian: guardian,
+          grantDelay: grantDelay,
+          label: 'FUZZ_LABEL'
+        })
+      )
     );
 
-    vm.expectEmit(address(mockAccessManager));
-    emit MockAccessManager.SetRoleAdminCalled(roleId, admin);
-    vm.expectEmit(address(mockAccessManager));
-    emit MockAccessManager.SetRoleGuardianCalled(roleId, guardian);
-    vm.expectEmit(address(mockAccessManager));
-    emit MockAccessManager.SetGrantDelayCalled(roleId, grantDelay);
-    vm.expectEmit(address(mockAccessManager));
-    emit MockAccessManager.LabelRoleCalled(roleId, label);
-
-    engine.executeRoleUpdates(updates);
+    assertEq(accessManager.getRoleAdmin(roleId), admin);
+    assertEq(accessManager.getRoleGuardian(roleId), guardian);
+    vm.warp(block.timestamp + 5 days);
+    assertEq(accessManager.getRoleGrantDelay(roleId), grantDelay);
   }
 
   function test_executeRoleUpdates_revert_admin() public {
-    mockAccessManager.setShouldRevert(IAccessManager.setRoleAdmin.selector, true);
+    vm.prank(ADMIN);
+    accessManager.revokeRole(DEFAULT_ADMIN_ROLE, address(engine));
 
-    IAaveV4ConfigEngine.RoleUpdate[] memory updates = _toRoleUpdateArray(
-      IAaveV4ConfigEngine.RoleUpdate({
-        authority: address(mockAccessManager),
-        roleId: 5,
-        admin: 1,
-        guardian: EngineFlags.KEEP_CURRENT_UINT64,
-        grantDelay: EngineFlags.KEEP_CURRENT_UINT32,
-        label: ''
-      })
+    vm.expectRevert(
+      abi.encodeWithSelector(
+        IAccessManager.AccessManagerUnauthorizedAccount.selector,
+        address(engine),
+        DEFAULT_ADMIN_ROLE
+      )
     );
-
-    vm.expectRevert(MockAccessManager.SetRoleAdminReverted.selector);
-    engine.executeRoleUpdates(updates);
-  }
-
-  function test_executeRoleUpdates_revert_guardian() public {
-    mockAccessManager.setShouldRevert(IAccessManager.setRoleGuardian.selector, true);
-
-    IAaveV4ConfigEngine.RoleUpdate[] memory updates = _toRoleUpdateArray(
-      IAaveV4ConfigEngine.RoleUpdate({
-        authority: address(mockAccessManager),
-        roleId: 5,
-        admin: EngineFlags.KEEP_CURRENT_UINT64,
-        guardian: 2,
-        grantDelay: EngineFlags.KEEP_CURRENT_UINT32,
-        label: ''
-      })
+    engine.executeRoleUpdates(
+      _toRoleUpdateArray(
+        IAaveV4ConfigEngine.RoleUpdate({
+          authority: address(accessManager),
+          roleId: TEST_ROLE_ID,
+          admin: TEST_ADMIN_ROLE_ID,
+          guardian: EngineFlags.KEEP_CURRENT_UINT64,
+          grantDelay: EngineFlags.KEEP_CURRENT_UINT32,
+          label: ''
+        })
+      )
     );
-
-    vm.expectRevert(MockAccessManager.SetRoleGuardianReverted.selector);
-    engine.executeRoleUpdates(updates);
-  }
-
-  function test_executeRoleUpdates_revert_grantDelay() public {
-    mockAccessManager.setShouldRevert(IAccessManager.setGrantDelay.selector, true);
-
-    IAaveV4ConfigEngine.RoleUpdate[] memory updates = _toRoleUpdateArray(
-      IAaveV4ConfigEngine.RoleUpdate({
-        authority: address(mockAccessManager),
-        roleId: 5,
-        admin: EngineFlags.KEEP_CURRENT_UINT64,
-        guardian: EngineFlags.KEEP_CURRENT_UINT64,
-        grantDelay: 3600,
-        label: ''
-      })
-    );
-
-    vm.expectRevert(MockAccessManager.SetGrantDelayReverted.selector);
-    engine.executeRoleUpdates(updates);
-  }
-
-  function test_executeRoleUpdates_revert_label() public {
-    mockAccessManager.setShouldRevert(IAccessManager.labelRole.selector, true);
-
-    IAaveV4ConfigEngine.RoleUpdate[] memory updates = _toRoleUpdateArray(
-      IAaveV4ConfigEngine.RoleUpdate({
-        authority: address(mockAccessManager),
-        roleId: 5,
-        admin: EngineFlags.KEEP_CURRENT_UINT64,
-        guardian: EngineFlags.KEEP_CURRENT_UINT64,
-        grantDelay: EngineFlags.KEEP_CURRENT_UINT32,
-        label: 'FEE_UPDATER'
-      })
-    );
-
-    vm.expectRevert(MockAccessManager.LabelRoleReverted.selector);
-    engine.executeRoleUpdates(updates);
   }
 
   function test_executeTargetFunctionRoleUpdates_concrete() public {
     bytes4[] memory selectors = new bytes4[](2);
-    selectors[0] = bytes4(0xaabbccdd);
-    selectors[1] = bytes4(0x11223344);
+    selectors[0] = TEST_SELECTOR_1;
+    selectors[1] = TEST_SELECTOR_2;
 
-    IAaveV4ConfigEngine.TargetFunctionRoleUpdate[]
-      memory updates = _toTargetFunctionRoleUpdateArray(
+    engine.executeTargetFunctionRoleUpdates(
+      _toTargetFunctionRoleUpdateArray(
         IAaveV4ConfigEngine.TargetFunctionRoleUpdate({
-          authority: address(mockAccessManager),
+          authority: address(accessManager),
           target: TARGET,
           selectors: selectors,
-          roleId: 5
+          roleId: TEST_ROLE_ID
         })
-      );
+      )
+    );
 
-    vm.expectEmit(address(mockAccessManager));
-    emit MockAccessManager.SetTargetFunctionRoleCalled(TARGET, selectors, 5);
-
-    engine.executeTargetFunctionRoleUpdates(updates);
+    assertEq(accessManager.getTargetFunctionRole(TARGET, selectors[0]), TEST_ROLE_ID);
+    assertEq(accessManager.getTargetFunctionRole(TARGET, selectors[1]), TEST_ROLE_ID);
   }
 
   function test_executeTargetFunctionRoleUpdates_fuzz(
@@ -369,84 +369,124 @@ contract AccessManagerEngineTest is BaseConfigEngineTest {
     bytes4[] memory selectors = new bytes4[](1);
     selectors[0] = selector1;
 
-    IAaveV4ConfigEngine.TargetFunctionRoleUpdate[]
-      memory updates = _toTargetFunctionRoleUpdateArray(
+    engine.executeTargetFunctionRoleUpdates(
+      _toTargetFunctionRoleUpdateArray(
         IAaveV4ConfigEngine.TargetFunctionRoleUpdate({
-          authority: address(mockAccessManager),
+          authority: address(accessManager),
           target: target,
           selectors: selectors,
           roleId: roleId
         })
-      );
+      )
+    );
 
-    vm.expectEmit(address(mockAccessManager));
-    emit MockAccessManager.SetTargetFunctionRoleCalled(target, selectors, roleId);
-
-    engine.executeTargetFunctionRoleUpdates(updates);
+    assertEq(accessManager.getTargetFunctionRole(target, selector1), roleId);
   }
 
   function test_executeTargetFunctionRoleUpdates_revert() public {
-    mockAccessManager.setShouldRevert(IAccessManager.setTargetFunctionRole.selector, true);
+    vm.prank(ADMIN);
+    accessManager.revokeRole(DEFAULT_ADMIN_ROLE, address(engine));
 
     bytes4[] memory selectors = new bytes4[](1);
-    selectors[0] = bytes4(0xaabbccdd);
+    selectors[0] = TEST_SELECTOR_1;
 
-    IAaveV4ConfigEngine.TargetFunctionRoleUpdate[]
-      memory updates = _toTargetFunctionRoleUpdateArray(
+    vm.expectRevert(
+      abi.encodeWithSelector(
+        IAccessManager.AccessManagerUnauthorizedAccount.selector,
+        address(engine),
+        DEFAULT_ADMIN_ROLE
+      )
+    );
+    engine.executeTargetFunctionRoleUpdates(
+      _toTargetFunctionRoleUpdateArray(
         IAaveV4ConfigEngine.TargetFunctionRoleUpdate({
-          authority: address(mockAccessManager),
+          authority: address(accessManager),
           target: TARGET,
           selectors: selectors,
-          roleId: 5
+          roleId: TEST_ROLE_ID
         })
-      );
-
-    vm.expectRevert(MockAccessManager.SetTargetFunctionRoleReverted.selector);
-    engine.executeTargetFunctionRoleUpdates(updates);
+      )
+    );
   }
 
   function test_executeTargetAdminDelayUpdates_concrete() public {
-    IAaveV4ConfigEngine.TargetAdminDelayUpdate[] memory updates = _toTargetAdminDelayUpdateArray(
-      IAaveV4ConfigEngine.TargetAdminDelayUpdate({
-        authority: address(mockAccessManager),
-        target: TARGET,
-        newDelay: 7200
-      })
+    engine.executeTargetAdminDelayUpdates(
+      _toTargetAdminDelayUpdateArray(
+        IAaveV4ConfigEngine.TargetAdminDelayUpdate({
+          authority: address(accessManager),
+          target: TARGET,
+          newDelay: TEST_ADMIN_DELAY
+        })
+      )
     );
 
-    vm.expectEmit(address(mockAccessManager));
-    emit MockAccessManager.SetTargetAdminDelayCalled(TARGET, 7200);
-
-    engine.executeTargetAdminDelayUpdates(updates);
+    vm.warp(block.timestamp + 5 days);
+    assertEq(accessManager.getTargetAdminDelay(TARGET), TEST_ADMIN_DELAY);
   }
 
   function test_executeTargetAdminDelayUpdates_fuzz(address target, uint32 newDelay) public {
-    IAaveV4ConfigEngine.TargetAdminDelayUpdate[] memory updates = _toTargetAdminDelayUpdateArray(
-      IAaveV4ConfigEngine.TargetAdminDelayUpdate({
-        authority: address(mockAccessManager),
-        target: target,
-        newDelay: newDelay
-      })
+    engine.executeTargetAdminDelayUpdates(
+      _toTargetAdminDelayUpdateArray(
+        IAaveV4ConfigEngine.TargetAdminDelayUpdate({
+          authority: address(accessManager),
+          target: target,
+          newDelay: newDelay
+        })
+      )
     );
 
-    vm.expectEmit(address(mockAccessManager));
-    emit MockAccessManager.SetTargetAdminDelayCalled(target, newDelay);
-
-    engine.executeTargetAdminDelayUpdates(updates);
+    vm.warp(block.timestamp + 5 days);
+    assertEq(accessManager.getTargetAdminDelay(target), newDelay);
   }
 
   function test_executeTargetAdminDelayUpdates_revert() public {
-    mockAccessManager.setShouldRevert(IAccessManager.setTargetAdminDelay.selector, true);
+    vm.prank(ADMIN);
+    accessManager.revokeRole(DEFAULT_ADMIN_ROLE, address(engine));
 
-    IAaveV4ConfigEngine.TargetAdminDelayUpdate[] memory updates = _toTargetAdminDelayUpdateArray(
-      IAaveV4ConfigEngine.TargetAdminDelayUpdate({
-        authority: address(mockAccessManager),
-        target: TARGET,
-        newDelay: 7200
-      })
+    vm.expectRevert(
+      abi.encodeWithSelector(
+        IAccessManager.AccessManagerUnauthorizedAccount.selector,
+        address(engine),
+        DEFAULT_ADMIN_ROLE
+      )
     );
+    engine.executeTargetAdminDelayUpdates(
+      _toTargetAdminDelayUpdateArray(
+        IAaveV4ConfigEngine.TargetAdminDelayUpdate({
+          authority: address(accessManager),
+          target: TARGET,
+          newDelay: TEST_ADMIN_DELAY
+        })
+      )
+    );
+  }
 
-    vm.expectRevert(MockAccessManager.SetTargetAdminDelayReverted.selector);
-    engine.executeTargetAdminDelayUpdates(updates);
+  function test_executeRoleMemberships_multipleMemberships() public {
+    IAaveV4ConfigEngine.RoleMembership[]
+      memory memberships = new IAaveV4ConfigEngine.RoleMembership[](2);
+    memberships[0] = IAaveV4ConfigEngine.RoleMembership({
+      authority: address(accessManager),
+      roleId: TEST_ROLE_ID,
+      account: ACCOUNT,
+      granted: true,
+      executionDelay: TEST_EXEC_DELAY_SHORT
+    });
+    memberships[1] = IAaveV4ConfigEngine.RoleMembership({
+      authority: address(accessManager),
+      roleId: TEST_ROLE_ID_2,
+      account: USER,
+      granted: true,
+      executionDelay: TEST_EXEC_DELAY_LONG
+    });
+
+    engine.executeRoleMemberships(memberships);
+
+    (bool isMember1, uint32 delay1) = accessManager.hasRole(TEST_ROLE_ID, ACCOUNT);
+    assertTrue(isMember1);
+    assertEq(delay1, TEST_EXEC_DELAY_SHORT);
+
+    (bool isMember2, uint32 delay2) = accessManager.hasRole(TEST_ROLE_ID_2, USER);
+    assertTrue(isMember2);
+    assertEq(delay2, TEST_EXEC_DELAY_LONG);
   }
 }

@@ -4,108 +4,139 @@ pragma solidity ^0.8.0;
 
 import {BaseConfigEngineTest} from 'tests/config-engine/BaseConfigEngine.t.sol';
 
+import {Ownable} from 'src/dependencies/openzeppelin/Ownable.sol';
 import {IPositionManagerBase} from 'src/position-manager/interfaces/IPositionManagerBase.sol';
 import {IAaveV4ConfigEngine} from 'src/config-engine/interfaces/IAaveV4ConfigEngine.sol';
 
-import {MockPositionManager} from 'tests/mocks/config-engine/MockPositionManager.sol';
+import {PositionManagerBaseWrapper} from 'tests/mocks/PositionManagerBaseWrapper.sol';
 
 contract PositionManagerEngineTest is BaseConfigEngineTest {
-  function test_executePositionManagerSpokeRegistrations_concrete() public {
-    IAaveV4ConfigEngine.SpokeRegistration[] memory regs = _toSpokeRegistrationArray(
-      IAaveV4ConfigEngine.SpokeRegistration({
-        positionManager: address(mockPositionManager),
-        spoke: SPOKE,
-        registered: true
-      })
-    );
-
-    vm.expectEmit(address(mockPositionManager));
-    emit MockPositionManager.RegisterSpokeCalled(SPOKE, true);
-
-    engine.executePositionManagerSpokeRegistrations(regs);
+  function setUp() public override {
+    super.setUp();
+    _seedFullEnvironment();
   }
 
-  function test_executePositionManagerSpokeRegistrations_fuzz(
-    address spoke,
-    bool registered
-  ) public {
-    IAaveV4ConfigEngine.SpokeRegistration[] memory regs = _toSpokeRegistrationArray(
-      IAaveV4ConfigEngine.SpokeRegistration({
-        positionManager: address(mockPositionManager),
-        spoke: spoke,
-        registered: registered
-      })
+  function test_executePositionManagerSpokeRegistrations_concrete() public {
+    engine.executePositionManagerSpokeRegistrations(
+      _toSpokeRegistrationArray(
+        IAaveV4ConfigEngine.SpokeRegistration({
+          positionManager: address(positionManager),
+          spoke: address(spokes[0]),
+          registered: true
+        })
+      )
     );
 
-    vm.expectEmit(address(mockPositionManager));
-    emit MockPositionManager.RegisterSpokeCalled(spoke, registered);
+    assertTrue(positionManager.isSpokeRegistered(address(spokes[0])));
+  }
 
-    engine.executePositionManagerSpokeRegistrations(regs);
+  function test_executePositionManagerSpokeRegistrations_deregister() public {
+    engine.executePositionManagerSpokeRegistrations(
+      _toSpokeRegistrationArray(
+        IAaveV4ConfigEngine.SpokeRegistration({
+          positionManager: address(positionManager),
+          spoke: address(spokes[0]),
+          registered: true
+        })
+      )
+    );
+    assertTrue(positionManager.isSpokeRegistered(address(spokes[0])));
+
+    engine.executePositionManagerSpokeRegistrations(
+      _toSpokeRegistrationArray(
+        IAaveV4ConfigEngine.SpokeRegistration({
+          positionManager: address(positionManager),
+          spoke: address(spokes[0]),
+          registered: false
+        })
+      )
+    );
+    assertFalse(positionManager.isSpokeRegistered(address(spokes[0])));
+  }
+
+  function test_executePositionManagerSpokeRegistrations_fuzz(bool registered) public {
+    engine.executePositionManagerSpokeRegistrations(
+      _toSpokeRegistrationArray(
+        IAaveV4ConfigEngine.SpokeRegistration({
+          positionManager: address(positionManager),
+          spoke: address(spokes[0]),
+          registered: registered
+        })
+      )
+    );
+
+    assertEq(positionManager.isSpokeRegistered(address(spokes[0])), registered);
   }
 
   function test_executePositionManagerSpokeRegistrations_revert() public {
-    mockPositionManager.setShouldRevert(IPositionManagerBase.registerSpoke.selector, true);
+    PositionManagerBaseWrapper otherPm = new PositionManagerBaseWrapper(address(0xdead));
 
-    IAaveV4ConfigEngine.SpokeRegistration[] memory regs = _toSpokeRegistrationArray(
-      IAaveV4ConfigEngine.SpokeRegistration({
-        positionManager: address(mockPositionManager),
-        spoke: SPOKE,
-        registered: true
-      })
+    vm.expectRevert(
+      abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, address(engine))
     );
-
-    vm.expectRevert(MockPositionManager.RegisterSpokeReverted.selector);
-    engine.executePositionManagerSpokeRegistrations(regs);
+    engine.executePositionManagerSpokeRegistrations(
+      _toSpokeRegistrationArray(
+        IAaveV4ConfigEngine.SpokeRegistration({
+          positionManager: address(otherPm),
+          spoke: address(spokes[0]),
+          registered: true
+        })
+      )
+    );
   }
 
   function test_executePositionManagerRoleRenouncements_concrete() public {
-    IAaveV4ConfigEngine.PositionManagerRoleRenouncement[]
-      memory renouncements = _toPositionManagerRoleRenouncementArray(
+    engine.executePositionManagerSpokeRegistrations(
+      _toSpokeRegistrationArray(
+        IAaveV4ConfigEngine.SpokeRegistration({
+          positionManager: address(positionManager),
+          spoke: address(spokes[0]),
+          registered: true
+        })
+      )
+    );
+
+    engine.executeSpokePositionManagerUpdates(
+      _toPositionManagerUpdateArray(
+        IAaveV4ConfigEngine.PositionManagerUpdate({
+          spokeConfigurator: spokeConfigurator,
+          spoke: address(spokes[0]),
+          positionManager: address(positionManager),
+          active: true
+        })
+      )
+    );
+
+    vm.prank(USER);
+    spokes[0].setUserPositionManager(address(positionManager), true);
+
+    engine.executePositionManagerRoleRenouncements(
+      _toPositionManagerRoleRenouncementArray(
         IAaveV4ConfigEngine.PositionManagerRoleRenouncement({
-          positionManager: address(mockPositionManager),
-          spoke: SPOKE,
+          positionManager: address(positionManager),
+          spoke: address(spokes[0]),
           user: USER
         })
-      );
+      )
+    );
 
-    vm.expectEmit(address(mockPositionManager));
-    emit MockPositionManager.RenouncePositionManagerRoleCalled(SPOKE, USER);
-
-    engine.executePositionManagerRoleRenouncements(renouncements);
-  }
-
-  function test_executePositionManagerRoleRenouncements_fuzz(address spoke, address user) public {
-    IAaveV4ConfigEngine.PositionManagerRoleRenouncement[]
-      memory renouncements = _toPositionManagerRoleRenouncementArray(
-        IAaveV4ConfigEngine.PositionManagerRoleRenouncement({
-          positionManager: address(mockPositionManager),
-          spoke: spoke,
-          user: user
-        })
-      );
-
-    vm.expectEmit(address(mockPositionManager));
-    emit MockPositionManager.RenouncePositionManagerRoleCalled(spoke, user);
-
-    engine.executePositionManagerRoleRenouncements(renouncements);
+    assertFalse(spokes[0].isPositionManager(USER, address(positionManager)));
   }
 
   function test_executePositionManagerRoleRenouncements_revert() public {
-    mockPositionManager.setShouldRevert(
-      IPositionManagerBase.renouncePositionManagerRole.selector,
-      true
-    );
+    PositionManagerBaseWrapper otherPm = new PositionManagerBaseWrapper(address(0xdead));
 
-    IAaveV4ConfigEngine.PositionManagerRoleRenouncement[]
-      memory renouncements = _toPositionManagerRoleRenouncementArray(
+    vm.expectRevert(
+      abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, address(engine))
+    );
+    engine.executePositionManagerRoleRenouncements(
+      _toPositionManagerRoleRenouncementArray(
         IAaveV4ConfigEngine.PositionManagerRoleRenouncement({
-          positionManager: address(mockPositionManager),
-          spoke: SPOKE,
+          positionManager: address(otherPm),
+          spoke: address(spokes[0]),
           user: USER
         })
-      );
-
-    vm.expectRevert(MockPositionManager.RenouncePositionManagerRoleReverted.selector);
-    engine.executePositionManagerRoleRenouncements(renouncements);
+      )
+    );
   }
 }
