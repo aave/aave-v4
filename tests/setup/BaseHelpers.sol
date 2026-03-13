@@ -103,8 +103,9 @@ abstract contract BaseHelpers is BaseState {
     if (amount == 0) {
       return; // nothing to withdraw
     }
+    (address underlying, ) = hub.getAssetUnderlyingAndDecimals(assetId);
     vm.prank(treasuryAdmin);
-    treasurySpoke.withdraw(assetId, amount, address(treasurySpoke));
+    treasurySpoke.withdraw(address(hub), underlying, amount);
   }
 
   ///////////////////////////////////////////////////////////////////////////////////////////////
