@@ -361,7 +361,7 @@ contract SpokeSupplyTest is Base {
     uint256 skipTime
   ) public {
     amount = bound(amount, 1, MAX_SUPPLY_AMOUNT);
-    rate = bound(rate, 1, MAX_BORROW_RATE);
+    rate = bound(rate, 1, MAX_ALLOWED_DRAWN_RATE);
     reserveId = bound(reserveId, 0, spoke1.getReserveCount() - 1);
     vm.assume(reserveId != _wethReserveId(spoke1)); // weth is used as collateral
     skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
@@ -397,7 +397,7 @@ contract SpokeSupplyTest is Base {
       rate: rate,
       isMockRate: true,
       skipTime: skipTime,
-      interestRateStrategy: address(irStrategy)
+      irStrategy: address(irStrategy)
     });
 
     SupplyFuzzLocal memory state;
@@ -551,7 +551,7 @@ contract SpokeSupplyTest is Base {
     uint256 skipTime
   ) public {
     amount = bound(amount, 1, MAX_SUPPLY_AMOUNT);
-    rate = bound(rate, 1, MAX_BORROW_RATE);
+    rate = bound(rate, 1, MAX_ALLOWED_DRAWN_RATE);
     reserveId = bound(reserveId, 0, spoke1.getReserveCount() - 1);
     vm.assume(reserveId != _wethReserveId(spoke1)); // weth is used as collateral
     skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
@@ -586,7 +586,7 @@ contract SpokeSupplyTest is Base {
       rate: rate,
       isMockRate: true,
       skipTime: skipTime,
-      interestRateStrategy: address(irStrategy)
+      irStrategy: address(irStrategy)
     });
 
     uint256 assetId = spoke1.getReserve(reserveId).assetId;

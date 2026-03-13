@@ -22,10 +22,10 @@ contract SpokeAccrueInterestTest is Base {
   }
 
   struct Rates {
-    uint96 daiBaseBorrowRate;
-    uint96 wethBaseBorrowRate;
-    uint96 usdxBaseBorrowRate;
-    uint96 wbtcBaseBorrowRate;
+    uint96 daiBaseDrawnRate;
+    uint96 wethBaseDrawnRate;
+    uint96 usdxBaseDrawnRate;
+    uint96 wbtcBaseDrawnRate;
   }
 
   function setUp() public override {
@@ -396,17 +396,17 @@ contract SpokeAccrueInterestTest is Base {
     uint256 bobRp = _getUserRiskPremium(spoke1, bob);
     assertEq(bobRp, _calculateExpectedUserRP(spoke1, bob), 'user risk premium Before');
 
-    // Store base borrow rates
+    // Store base drawn rates
     Rates memory rates;
-    rates.daiBaseBorrowRate = hub1.getAssetDrawnRate(daiAssetId).toUint96();
-    rates.wethBaseBorrowRate = hub1.getAssetDrawnRate(wethAssetId).toUint96();
-    rates.usdxBaseBorrowRate = hub1.getAssetDrawnRate(usdxAssetId).toUint96();
-    rates.wbtcBaseBorrowRate = hub1.getAssetDrawnRate(wbtcAssetId).toUint96();
+    rates.daiBaseDrawnRate = hub1.getAssetDrawnRate(daiAssetId).toUint96();
+    rates.wethBaseDrawnRate = hub1.getAssetDrawnRate(wethAssetId).toUint96();
+    rates.usdxBaseDrawnRate = hub1.getAssetDrawnRate(usdxAssetId).toUint96();
+    rates.wbtcBaseDrawnRate = hub1.getAssetDrawnRate(wbtcAssetId).toUint96();
 
     // Check bob's drawn debt, premium debt, and supplied amounts for all assets at user, reserve, spoke, and asset level
     uint256 drawnDebt = _calculateExpectedDrawnDebt(
       amounts.daiBorrowAmount,
-      rates.daiBaseBorrowRate,
+      rates.daiBaseDrawnRate,
       startTime
     );
     _assertOnlyOneUserDebt(spoke1, _daiReserveId(spoke1), bob, drawnDebt, 0, 'dai before accrual');
@@ -423,7 +423,7 @@ contract SpokeAccrueInterestTest is Base {
 
     drawnDebt = _calculateExpectedDrawnDebt(
       amounts.wethBorrowAmount,
-      rates.wethBaseBorrowRate,
+      rates.wethBaseDrawnRate,
       startTime
     );
     _assertOnlyOneUserDebt(
@@ -447,7 +447,7 @@ contract SpokeAccrueInterestTest is Base {
 
     drawnDebt = _calculateExpectedDrawnDebt(
       amounts.usdxBorrowAmount,
-      rates.usdxBaseBorrowRate,
+      rates.usdxBaseDrawnRate,
       startTime
     );
     _assertOnlyOneUserDebt(
@@ -471,7 +471,7 @@ contract SpokeAccrueInterestTest is Base {
 
     drawnDebt = _calculateExpectedDrawnDebt(
       amounts.wbtcBorrowAmount,
-      rates.wbtcBaseBorrowRate,
+      rates.wbtcBaseDrawnRate,
       startTime
     );
     _assertOnlyOneUserDebt(
@@ -499,7 +499,7 @@ contract SpokeAccrueInterestTest is Base {
     // Check bob's drawn debt, premium debt, and supplied amounts for all assets at user, reserve, spoke, and asset level
     drawnDebt = _calculateExpectedDrawnDebt(
       amounts.daiBorrowAmount,
-      rates.daiBaseBorrowRate,
+      rates.daiBaseDrawnRate,
       startTime
     );
     uint256 expectedPremiumDebt = _calculateExpectedPremiumDebt(
@@ -546,7 +546,7 @@ contract SpokeAccrueInterestTest is Base {
 
     drawnDebt = _calculateExpectedDrawnDebt(
       amounts.wethBorrowAmount,
-      rates.wethBaseBorrowRate,
+      rates.wethBaseDrawnRate,
       startTime
     );
     expectedPremiumDebt = _calculateExpectedPremiumDebt(amounts.wethBorrowAmount, drawnDebt, bobRp);
@@ -590,7 +590,7 @@ contract SpokeAccrueInterestTest is Base {
 
     drawnDebt = _calculateExpectedDrawnDebt(
       amounts.usdxBorrowAmount,
-      rates.usdxBaseBorrowRate,
+      rates.usdxBaseDrawnRate,
       startTime
     );
     expectedPremiumDebt = _calculateExpectedPremiumDebt(amounts.usdxBorrowAmount, drawnDebt, bobRp);
@@ -634,7 +634,7 @@ contract SpokeAccrueInterestTest is Base {
 
     drawnDebt = _calculateExpectedDrawnDebt(
       amounts.wbtcBorrowAmount,
-      rates.wbtcBaseBorrowRate,
+      rates.wbtcBaseDrawnRate,
       startTime
     );
     expectedPremiumDebt = _calculateExpectedPremiumDebt(amounts.wbtcBorrowAmount, drawnDebt, bobRp);
@@ -770,9 +770,9 @@ contract SpokeAccrueInterestTest is Base {
     if (amounts.daiBorrowAmount > 0) {
       IHub.Asset memory asset = hub1.getAsset(daiAssetId);
       uint256 daiBorrowShares = hub1.previewDrawByAssets(daiAssetId, amounts.daiBorrowAmount);
-      _mockInterestRateRay({
-        interestRateStrategy: address(irStrategy),
-        interestRateRay: rates.daiBaseBorrowRate,
+      _mockDrawnRateRay({
+        irStrategy: address(irStrategy),
+        drawnRateRay: rates.daiBaseDrawnRate,
         assetId: daiAssetId,
         liquidity: asset.liquidity - amounts.daiBorrowAmount,
         drawn: hub1.previewRestoreByShares(daiAssetId, asset.drawnShares + daiBorrowShares),
@@ -792,9 +792,9 @@ contract SpokeAccrueInterestTest is Base {
     if (amounts.wethBorrowAmount > 0) {
       IHub.Asset memory asset = hub1.getAsset(wethAssetId);
       uint256 wethBorrowShares = hub1.previewDrawByAssets(wethAssetId, amounts.wethBorrowAmount);
-      _mockInterestRateRay({
-        interestRateStrategy: address(irStrategy),
-        interestRateRay: rates.wethBaseBorrowRate,
+      _mockDrawnRateRay({
+        irStrategy: address(irStrategy),
+        drawnRateRay: rates.wethBaseDrawnRate,
         assetId: wethAssetId,
         liquidity: asset.liquidity - amounts.wethBorrowAmount,
         drawn: hub1.previewRestoreByShares(wethAssetId, asset.drawnShares + wethBorrowShares),
@@ -814,9 +814,9 @@ contract SpokeAccrueInterestTest is Base {
     if (amounts.usdxBorrowAmount > 0) {
       IHub.Asset memory asset = hub1.getAsset(usdxAssetId);
       uint256 usdxBorrowShares = hub1.previewDrawByAssets(usdxAssetId, amounts.usdxBorrowAmount);
-      _mockInterestRateRay({
-        interestRateStrategy: address(irStrategy),
-        interestRateRay: rates.usdxBaseBorrowRate,
+      _mockDrawnRateRay({
+        irStrategy: address(irStrategy),
+        drawnRateRay: rates.usdxBaseDrawnRate,
         assetId: usdxAssetId,
         liquidity: asset.liquidity - amounts.usdxBorrowAmount,
         drawn: hub1.previewRestoreByShares(usdxAssetId, asset.drawnShares + usdxBorrowShares),
@@ -836,9 +836,9 @@ contract SpokeAccrueInterestTest is Base {
     if (amounts.wbtcBorrowAmount > 0) {
       IHub.Asset memory asset = hub1.getAsset(wbtcAssetId);
       uint256 wbtcBorrowShares = hub1.previewDrawByAssets(wbtcAssetId, amounts.wbtcBorrowAmount);
-      _mockInterestRateRay({
-        interestRateStrategy: address(irStrategy),
-        interestRateRay: rates.wbtcBaseBorrowRate,
+      _mockDrawnRateRay({
+        irStrategy: address(irStrategy),
+        drawnRateRay: rates.wbtcBaseDrawnRate,
         assetId: wbtcAssetId,
         liquidity: asset.liquidity - amounts.wbtcBorrowAmount,
         drawn: hub1.previewRestoreByShares(wbtcAssetId, asset.drawnShares + wbtcBorrowShares),
@@ -861,7 +861,7 @@ contract SpokeAccrueInterestTest is Base {
     // Check bob's drawn debt, premium debt, and supplied amounts for all assets at user, reserve, spoke, and asset level
     uint256 drawnDebt = _calculateExpectedDrawnDebt(
       amounts.daiBorrowAmount,
-      rates.daiBaseBorrowRate,
+      rates.daiBaseDrawnRate,
       startTime
     );
     _assertOnlyOneUserDebt(spoke1, _daiReserveId(spoke1), bob, drawnDebt, 0, 'dai before accrual');
@@ -878,7 +878,7 @@ contract SpokeAccrueInterestTest is Base {
 
     drawnDebt = _calculateExpectedDrawnDebt(
       amounts.wethBorrowAmount,
-      rates.wethBaseBorrowRate,
+      rates.wethBaseDrawnRate,
       startTime
     );
     _assertOnlyOneUserDebt(
@@ -902,7 +902,7 @@ contract SpokeAccrueInterestTest is Base {
 
     drawnDebt = _calculateExpectedDrawnDebt(
       amounts.usdxBorrowAmount,
-      rates.usdxBaseBorrowRate,
+      rates.usdxBaseDrawnRate,
       startTime
     );
     _assertOnlyOneUserDebt(
@@ -926,7 +926,7 @@ contract SpokeAccrueInterestTest is Base {
 
     drawnDebt = _calculateExpectedDrawnDebt(
       amounts.wbtcBorrowAmount,
-      rates.wbtcBaseBorrowRate,
+      rates.wbtcBaseDrawnRate,
       startTime
     );
     _assertOnlyOneUserDebt(
@@ -955,7 +955,7 @@ contract SpokeAccrueInterestTest is Base {
     ISpoke.UserPosition memory bobPosition = spoke1.getUserPosition(_daiReserveId(spoke1), bob);
     drawnDebt = _calculateExpectedDrawnDebt(
       amounts.daiBorrowAmount,
-      rates.daiBaseBorrowRate,
+      rates.daiBaseDrawnRate,
       startTime
     );
     uint256 expectedpremiumShares = bobPosition.drawnShares.percentMulUp(bobRp);
@@ -1005,7 +1005,7 @@ contract SpokeAccrueInterestTest is Base {
     bobPosition = spoke1.getUserPosition(_wethReserveId(spoke1), bob);
     drawnDebt = _calculateExpectedDrawnDebt(
       amounts.wethBorrowAmount,
-      rates.wethBaseBorrowRate,
+      rates.wethBaseDrawnRate,
       startTime
     );
     expectedpremiumShares = bobPosition.drawnShares.percentMulUp(bobRp);
@@ -1056,7 +1056,7 @@ contract SpokeAccrueInterestTest is Base {
     bobPosition = spoke1.getUserPosition(_usdxReserveId(spoke1), bob);
     drawnDebt = _calculateExpectedDrawnDebt(
       amounts.usdxBorrowAmount,
-      rates.usdxBaseBorrowRate,
+      rates.usdxBaseDrawnRate,
       startTime
     );
     expectedpremiumShares = bobPosition.drawnShares.percentMulUp(bobRp);
@@ -1107,7 +1107,7 @@ contract SpokeAccrueInterestTest is Base {
     bobPosition = spoke1.getUserPosition(_wbtcReserveId(spoke1), bob);
     drawnDebt = _calculateExpectedDrawnDebt(
       amounts.wbtcBorrowAmount,
-      rates.wbtcBaseBorrowRate,
+      rates.wbtcBaseDrawnRate,
       startTime
     );
     expectedpremiumShares = bobPosition.drawnShares.percentMulUp(bobRp);
@@ -1170,18 +1170,14 @@ contract SpokeAccrueInterestTest is Base {
   }
 
   function _bound(Rates memory rates) internal view returns (Rates memory) {
-    rates.daiBaseBorrowRate = _bpsToRay(
-      bound(rates.daiBaseBorrowRate, 1, irStrategy.MAX_BORROW_RATE())
-    ).toUint96();
-    rates.wethBaseBorrowRate = _bpsToRay(
-      bound(rates.wethBaseBorrowRate, 1, irStrategy.MAX_BORROW_RATE())
-    ).toUint96();
-    rates.usdxBaseBorrowRate = _bpsToRay(
-      bound(rates.usdxBaseBorrowRate, 1, irStrategy.MAX_BORROW_RATE())
-    ).toUint96();
-    rates.wbtcBaseBorrowRate = _bpsToRay(
-      bound(rates.wbtcBaseBorrowRate, 1, irStrategy.MAX_BORROW_RATE())
-    ).toUint96();
+    rates.daiBaseDrawnRate = _bpsToRay(bound(rates.daiBaseDrawnRate, 1, MAX_ALLOWED_DRAWN_RATE))
+      .toUint96();
+    rates.wethBaseDrawnRate = _bpsToRay(bound(rates.wethBaseDrawnRate, 1, MAX_ALLOWED_DRAWN_RATE))
+      .toUint96();
+    rates.usdxBaseDrawnRate = _bpsToRay(bound(rates.usdxBaseDrawnRate, 1, MAX_ALLOWED_DRAWN_RATE))
+      .toUint96();
+    rates.wbtcBaseDrawnRate = _bpsToRay(bound(rates.wbtcBaseDrawnRate, 1, MAX_ALLOWED_DRAWN_RATE))
+      .toUint96();
 
     return rates;
   }

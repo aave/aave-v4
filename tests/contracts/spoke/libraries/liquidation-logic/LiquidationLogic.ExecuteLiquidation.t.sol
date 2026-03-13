@@ -37,9 +37,9 @@ contract LiquidationLogicExecuteLiquidationTest is LiquidationLogicBaseTest {
       spoke: address(spoke1)
     });
     (IHub debtReserveHub, ) = hub2Fixture();
-    _mockInterestRateBps({
-      interestRateStrategy: debtReserveHub.getAsset(wethAssetId).irStrategy,
-      interestRateBps: 5_00
+    _mockDrawnRateBps({
+      irStrategy: debtReserveHub.getAsset(wethAssetId).irStrategy,
+      drawnRateBps: 5_00
     });
 
     // Mock params

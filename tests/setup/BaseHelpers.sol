@@ -164,8 +164,8 @@ abstract contract BaseHelpers is BaseState {
     );
   }
 
-  function _setConstantInterestRateBps(IHub hub, uint256 assetId, uint32 interestRateBps) internal {
-    _setConstantInterestRateBps(hub, assetId, interestRateBps, HUB_ADMIN);
+  function _setConstantDrawnRateBps(IHub hub, uint256 assetId, uint32 drawnRateBps) internal {
+    _setConstantDrawnRateBps(hub, assetId, drawnRateBps, HUB_ADMIN);
   }
 
   function _updateLiquidityFee(IHub hub, uint256 assetId, uint256 liquidityFee) internal {

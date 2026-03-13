@@ -10,8 +10,9 @@ abstract contract Constants {
   uint256 internal constant MIN_DRAWN_INDEX = 1e27;
   uint256 public constant VIRTUAL_ASSETS = 1e6;
   uint256 public constant VIRTUAL_SHARES = 1e6;
-  uint24 internal constant MIN_BORROW_RATE = 0;
-  uint256 internal constant MAX_BORROW_RATE = 1000_00;
-  uint256 internal constant MIN_OPTIMAL_RATIO = 1_00;
-  uint256 internal constant MAX_OPTIMAL_RATIO = 99_00;
+  /// @dev AssetInterestRateStrategy Constants
+  uint256 internal constant MAX_ALLOWED_DRAWN_RATE = 1000_00; // 1000.00% in BPS
+  uint256 internal constant MIN_ALLOWED_DRAWN_RATE = 0; // not defined in AssetInterestRateStrategy
+  uint256 internal constant MIN_OPTIMAL_RATIO = 1_00; // 1.00% in BPS
+  uint256 internal constant MAX_OPTIMAL_RATIO = 99_00; // 99.00% in BPS
 }

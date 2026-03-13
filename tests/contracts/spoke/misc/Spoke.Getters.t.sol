@@ -265,7 +265,7 @@ contract SpokeGettersTest is Base {
 
   function test_premiumRayGetters() public {
     // 2 user, single spoke
-    _mockInterestRateBps({interestRateStrategy: address(irStrategy), interestRateBps: 25_00});
+    _mockDrawnRateBps({irStrategy: address(irStrategy), drawnRateBps: 25_00});
     SpokeActions.approve({
       spoke: spoke,
       reserveId: _daiReserveId(spoke),

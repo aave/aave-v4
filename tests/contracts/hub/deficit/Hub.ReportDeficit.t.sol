@@ -293,7 +293,7 @@ contract HubReportDeficitTest is Base {
         params.supplyExchangeRateBefore,
         'supply exchange rate should increase'
       );
-      _assertBorrowRateSynced(hub1, usdxAssetId, 'reportDeficit');
+      _assertDrawnRateSynced(hub1, usdxAssetId, 'reportDeficit');
     }
   }
 }

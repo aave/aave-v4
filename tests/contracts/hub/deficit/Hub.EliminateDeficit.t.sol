@@ -143,11 +143,11 @@ contract HubEliminateDeficitTest is Base {
       _deficitAmountRay - clearedDeficitRay
     );
     assertGe(_getAddExRate(hub1, _assetId), addExRate);
-    _assertBorrowRateSynced(hub1, _assetId, 'eliminateDeficit');
+    _assertDrawnRateSynced(hub1, _assetId, 'eliminateDeficit');
   }
 
   function _createDeficit(uint256 assetId, address spoke, uint256 amountRay) internal {
-    _mockInterestRateBps({interestRateStrategy: address(irStrategy), interestRateBps: 100_00});
+    _mockDrawnRateBps({irStrategy: address(irStrategy), drawnRateBps: 100_00});
     uint256 amount = amountRay.fromRayUp();
     HubActions.add({hub: hub1, assetId: assetId, caller: spoke, amount: amount, user: alice});
     _drawLiquidity(hub1, assetId, amount, true, true, spoke);

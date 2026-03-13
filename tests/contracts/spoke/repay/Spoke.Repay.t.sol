@@ -1950,7 +1950,7 @@ contract SpokeRepayTest is Base {
       onBehalfOf: bob
     });
 
-    // Alice supply dai such that usage ratio after bob borrows is ~45%, borrow rate ~7.5%
+    // Alice supply dai such that usage ratio after bob borrows is ~45%, drawn rate ~7.5%
     SpokeActions.supply({
       spoke: spoke1,
       reserveId: _daiReserveId(spoke1),

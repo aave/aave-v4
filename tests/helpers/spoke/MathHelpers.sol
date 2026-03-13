@@ -428,20 +428,20 @@ abstract contract MathHelpers is QueryHelpers {
   //                                    BOUNDS & UTILITIES                                     //
   ///////////////////////////////////////////////////////////////////////////////////////////////
 
-  function _spokeMaxBorrowRate(ISpoke spoke) internal view returns (uint32) {
-    uint32 maxBorrowRate;
+  function _spokeMaxDrawnRate(ISpoke spoke) internal view returns (uint32) {
+    uint32 maxDrawnRate;
     for (uint256 reserveId; reserveId < spoke.getReserveCount(); ++reserveId) {
-      uint32 borrowRate = (
+      uint32 drawnRate = (
         _hub(spoke, reserveId).getAssetDrawnRate(_reserveAssetId(spoke, reserveId)).mulDivUp(
           PercentageMath.PERCENTAGE_FACTOR,
           WadRayMath.RAY
         )
       ).toUint32();
-      if (borrowRate > maxBorrowRate) {
-        maxBorrowRate = borrowRate;
+      if (drawnRate > maxDrawnRate) {
+        maxDrawnRate = drawnRate;
       }
     }
-    return maxBorrowRate;
+    return maxDrawnRate;
   }
 
   function _maxLiquidationBonusUpperBound(

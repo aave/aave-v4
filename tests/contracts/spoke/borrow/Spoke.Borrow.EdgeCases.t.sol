@@ -44,7 +44,7 @@ contract SpokeBorrowEdgeCasesTest is Base {
       rate: 0,
       isMockRate: false,
       skipTime: 365 days * 100,
-      interestRateStrategy: address(irStrategy)
+      irStrategy: address(irStrategy)
     });
 
     uint256 amount1 = 8;
@@ -156,7 +156,7 @@ contract SpokeBorrowEdgeCasesTest is Base {
       rate: 0,
       isMockRate: false,
       skipTime: skipTime,
-      interestRateStrategy: address(irStrategy)
+      irStrategy: address(irStrategy)
     });
 
     (uint256 drawnDebt, ) = hub1.getAssetOwed(daiAssetId);
@@ -350,7 +350,7 @@ contract SpokeBorrowEdgeCasesTest is Base {
       rate: 0,
       isMockRate: false,
       skipTime: skipTime,
-      interestRateStrategy: address(irStrategy)
+      irStrategy: address(irStrategy)
     });
 
     (uint256 drawnDebt, ) = hub1.getAssetOwed(daiAssetId);

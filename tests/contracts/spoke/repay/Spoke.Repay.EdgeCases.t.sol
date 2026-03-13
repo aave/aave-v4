@@ -28,7 +28,7 @@ contract SpokeRepayEdgeCaseTest is Base {
       amount: wethSupplyAmount,
       onBehalfOf: bob
     });
-    // Alice supply dai such that usage ratio after bob borrows is ~45%, borrow rate ~7.5%
+    // Alice supply dai such that usage ratio after bob borrows is ~45%, drawn rate ~7.5%
     SpokeActions.supply({
       spoke: spoke1,
       reserveId: _daiReserveId(spoke1),
@@ -150,7 +150,7 @@ contract SpokeRepayEdgeCaseTest is Base {
 
   function test_repay_supply_ex_rate_decr() public {
     // inflate ex rate to 1.5
-    _mockInterestRateBps({interestRateStrategy: address(irStrategy), interestRateBps: 50_00});
+    _mockDrawnRateBps({irStrategy: address(irStrategy), drawnRateBps: 50_00});
     _updateCollateralRisk(spoke1, _daiReserveId(spoke1), 0);
     _updateCollateralRisk(spoke1, _wethReserveId(spoke1), 0);
     _updateLiquidityFee(hub1, daiAssetId, 0);
@@ -221,7 +221,7 @@ contract SpokeRepayEdgeCaseTest is Base {
 
   function test_repay_supply_ex_rate_decr_skip_time() public {
     // inflate ex rate to 1.5
-    _mockInterestRateBps({interestRateStrategy: address(irStrategy), interestRateBps: 50_00});
+    _mockDrawnRateBps({irStrategy: address(irStrategy), drawnRateBps: 50_00});
     _updateCollateralRisk(spoke1, _daiReserveId(spoke1), 0);
     _updateCollateralRisk(spoke1, _wethReserveId(spoke1), 0);
     _updateLiquidityFee(hub1, daiAssetId, 0);

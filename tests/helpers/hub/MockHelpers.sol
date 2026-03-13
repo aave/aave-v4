@@ -20,17 +20,17 @@ abstract contract MockHelpers is CommonHelpers, Constants {
   using WadRayMath for *;
   using PercentageMath for uint256;
 
-  function _mockInterestRateBps(address interestRateStrategy, uint256 interestRateBps) internal {
+  function _mockDrawnRateBps(address irStrategy, uint256 drawnRateBps) internal {
     vm.mockCall(
-      interestRateStrategy,
+      irStrategy,
       IBasicInterestRateStrategy.calculateInterestRate.selector,
-      abi.encode(_bpsToRay(interestRateBps))
+      abi.encode(_bpsToRay(drawnRateBps))
     );
   }
 
-  function _mockInterestRateBps(
-    address interestRateStrategy,
-    uint256 interestRateBps,
+  function _mockDrawnRateBps(
+    address irStrategy,
+    uint256 drawnRateBps,
     uint256 assetId,
     uint256 liquidity,
     uint256 drawn,
@@ -38,26 +38,26 @@ abstract contract MockHelpers is CommonHelpers, Constants {
     uint256 swept
   ) internal {
     vm.mockCall(
-      interestRateStrategy,
+      irStrategy,
       abi.encodeCall(
         IBasicInterestRateStrategy.calculateInterestRate,
         (assetId, liquidity, drawn, deficit, swept)
       ),
-      abi.encode(_bpsToRay(interestRateBps))
+      abi.encode(_bpsToRay(drawnRateBps))
     );
   }
 
-  function _mockInterestRateRay(address interestRateStrategy, uint256 interestRateRay) internal {
+  function _mockDrawnRateRay(address irStrategy, uint256 drawnRateRay) internal {
     vm.mockCall(
-      interestRateStrategy,
+      irStrategy,
       IBasicInterestRateStrategy.calculateInterestRate.selector,
-      abi.encode(interestRateRay)
+      abi.encode(drawnRateRay)
     );
   }
 
-  function _mockInterestRateRay(
-    address interestRateStrategy,
-    uint256 interestRateRay,
+  function _mockDrawnRateRay(
+    address irStrategy,
+    uint256 drawnRateRay,
     uint256 assetId,
     uint256 liquidity,
     uint256 drawn,
@@ -65,12 +65,12 @@ abstract contract MockHelpers is CommonHelpers, Constants {
     uint256 swept
   ) internal {
     vm.mockCall(
-      interestRateStrategy,
+      irStrategy,
       abi.encodeCall(
         IBasicInterestRateStrategy.calculateInterestRate,
         (assetId, liquidity, drawn, deficit, swept)
       ),
-      abi.encode(interestRateRay)
+      abi.encode(drawnRateRay)
     );
   }
 
@@ -119,10 +119,10 @@ abstract contract MockHelpers is CommonHelpers, Constants {
     assertEq(hub.getAddedShares(assetId), addedShares, '_mockSupplySharePrice: addedShares');
   }
 
-  function _setConstantInterestRateBps(
+  function _setConstantDrawnRateBps(
     IHub hub,
     uint256 assetId,
-    uint32 interestRateBps,
+    uint32 drawnRateBps,
     address hubAdmin
   ) internal {
     vm.prank(hubAdmin);
@@ -131,9 +131,9 @@ abstract contract MockHelpers is CommonHelpers, Constants {
       abi.encode(
         IAssetInterestRateStrategy.InterestRateData({
           optimalUsageRatio: 90_00,
-          baseVariableBorrowRate: interestRateBps,
-          variableRateSlope1: 0,
-          variableRateSlope2: 0
+          baseDrawnRate: drawnRateBps,
+          rateGrowthBeforeOptimal: 0,
+          rateGrowthAfterOptimal: 0
         })
       )
     );

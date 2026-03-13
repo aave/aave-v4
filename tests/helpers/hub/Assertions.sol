@@ -30,7 +30,7 @@ abstract contract Assertions is QueryHelpers {
     );
   }
 
-  function _assertBorrowRateSynced(
+  function _assertDrawnRateSynced(
     IHub targetHub,
     uint256 assetId,
     string memory operation
@@ -47,7 +47,7 @@ abstract contract Assertions is QueryHelpers {
         asset.deficitRay,
         asset.swept
       ),
-      string.concat('base borrow rate after ', operation)
+      string.concat('base drawn rate after ', operation)
     );
   }
 

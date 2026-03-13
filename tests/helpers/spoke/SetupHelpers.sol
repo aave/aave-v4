@@ -259,10 +259,10 @@ abstract contract SetupHelpers is CheckedActions, ConfigHelpers, MockHelpers {
     uint256 rate,
     bool isMockRate,
     uint256 skipTime,
-    address interestRateStrategy
+    address irStrategy
   ) internal returns (uint256, uint256) {
     if (isMockRate) {
-      _mockInterestRateBps(interestRateStrategy, rate);
+      _mockDrawnRateBps(irStrategy, rate);
     }
 
     // supply collateral asset
@@ -380,7 +380,7 @@ abstract contract SetupHelpers is CheckedActions, ConfigHelpers, MockHelpers {
       rate: 0,
       isMockRate: false,
       skipTime: 365 days,
-      interestRateStrategy: address(0)
+      irStrategy: address(0)
     });
 
     // index has increased, ie now the shares are less than the amount

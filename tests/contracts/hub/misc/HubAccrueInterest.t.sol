@@ -346,14 +346,14 @@ contract HubAccrueInterestTest is Base {
     assertEq(_getAssetDrawnDebt(hub1, daiAssetId), expectedDrawnDebt, 'drawn');
   }
 
-  /// accrue interest on any borrow amount after a borrow rate change and any time has passed
+  /// accrue interest on any borrow amount after a drawn rate change and any time has passed
   function test_accrueInterest_fuzz_BorrowAmountRateAndElapsed(
     uint256 borrowAmount,
-    uint256 borrowRate,
+    uint256 drawnRate,
     uint40 elapsed
   ) public {
     borrowAmount = bound(borrowAmount, 1, MAX_SUPPLY_AMOUNT / 2);
-    borrowRate = bound(borrowRate, 0, MAX_BORROW_RATE);
+    drawnRate = bound(drawnRate, 0, MAX_ALLOWED_DRAWN_RATE);
     elapsed = bound(elapsed, 1, MAX_SKIP_TIME / 3).toUint40();
     uint256 initialDrawnIndex = WadRayMath.RAY;
     uint256 addAmount2 = 1000e18;
@@ -416,7 +416,7 @@ contract HubAccrueInterestTest is Base {
     assertEq(_getAssetDrawnDebt(hub1, daiAssetId), expectedDrawnDebt1, 'drawn');
 
     // Say borrow rate changes
-    _mockInterestRateBps({interestRateStrategy: address(irStrategy), interestRateBps: borrowRate});
+    _mockDrawnRateBps({irStrategy: address(irStrategy), drawnRateBps: drawnRate});
     // Make an action to cache this new borrow rate
     HubActions.add({
       hub: hub1,

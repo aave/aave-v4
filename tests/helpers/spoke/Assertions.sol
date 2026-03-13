@@ -553,9 +553,9 @@ abstract contract Assertions is QueryHelpers {
     IAssetInterestRateStrategy.InterestRateData memory b
   ) internal pure {
     assertEq(a.optimalUsageRatio, b.optimalUsageRatio, 'optimalUsageRatio');
-    assertEq(a.baseVariableBorrowRate, b.baseVariableBorrowRate, 'baseVariableBorrowRate');
-    assertEq(a.variableRateSlope1, b.variableRateSlope1, 'variableRateSlope1');
-    assertEq(a.variableRateSlope2, b.variableRateSlope2, 'variableRateSlope2');
+    assertEq(a.baseDrawnRate, b.baseDrawnRate, 'baseDrawnRate');
+    assertEq(a.rateGrowthBeforeOptimal, b.rateGrowthBeforeOptimal, 'rateGrowthBeforeOptimal');
+    assertEq(a.rateGrowthAfterOptimal, b.rateGrowthAfterOptimal, 'rateGrowthAfterOptimal');
     assertEq(abi.encode(a), abi.encode(b));
   }
 

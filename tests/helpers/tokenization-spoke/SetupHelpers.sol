@@ -167,7 +167,7 @@ abstract contract SetupHelpers is SpokeHelpers {
     asset.mint(address(hub), amount);
     vm.startPrank(spoke);
     hub.add(assetId, amount);
-    _mockInterestRateBps(irStrategy_, 100_00);
+    _mockDrawnRateBps(irStrategy_, 100_00);
     hub.draw(assetId, amount, spoke);
     skip(365 days);
     asset.mint(address(hub), amount);

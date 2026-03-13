@@ -560,10 +560,10 @@ contract SpokeWithdrawTest is Base {
       _calculateMaxSupplyAmount(spoke1, params.reserveId)
     );
     params.borrowAmount = bound(params.borrowAmount, 1, params.borrowReserveSupplyAmount / 2);
-    params.rate = bound(params.rate, 1, MAX_BORROW_RATE);
+    params.rate = bound(params.rate, 1, MAX_ALLOWED_DRAWN_RATE);
     params.skipTime = bound(params.skipTime, 0, MAX_SKIP_TIME);
 
-    _mockInterestRateBps({interestRateStrategy: address(irStrategy), interestRateBps: params.rate});
+    _mockDrawnRateBps({irStrategy: address(irStrategy), drawnRateBps: params.rate});
 
     // don't borrow the collateral asset
     vm.assume(params.reserveId != _wbtcReserveId(spoke1));
@@ -605,7 +605,7 @@ contract SpokeWithdrawTest is Base {
       rate: state.rate,
       isMockRate: true,
       skipTime: params.skipTime,
-      interestRateStrategy: address(irStrategy)
+      irStrategy: address(irStrategy)
     });
 
     state.expectedFeeAmount = _calcUnrealizedFees(hub1, wbtcAssetId);
@@ -835,10 +835,10 @@ contract SpokeWithdrawTest is Base {
       _calculateMaxSupplyAmount(spoke1, params.reserveId)
     );
     params.borrowAmount = bound(params.borrowAmount, 1, params.borrowReserveSupplyAmount / 2);
-    params.rate = bound(params.rate, 1, MAX_BORROW_RATE);
+    params.rate = bound(params.rate, 1, MAX_ALLOWED_DRAWN_RATE);
     params.skipTime = bound(params.skipTime, 0, MAX_SKIP_TIME);
 
-    _mockInterestRateBps({interestRateStrategy: address(irStrategy), interestRateBps: params.rate});
+    _mockDrawnRateBps({irStrategy: address(irStrategy), drawnRateBps: params.rate});
 
     vm.assume(params.reserveId != _wbtcReserveId(spoke1)); // wbtc used as collateral
 
@@ -872,7 +872,7 @@ contract SpokeWithdrawTest is Base {
       rate: state.rate,
       isMockRate: true,
       skipTime: params.skipTime,
-      interestRateStrategy: address(irStrategy)
+      irStrategy: address(irStrategy)
     });
 
     state.expectedFeeAmount = _calcUnrealizedFees(hub1, assetId);

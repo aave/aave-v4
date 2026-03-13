@@ -128,28 +128,28 @@ abstract contract MathHelpers is QueryHelpers {
 
   function _calculateExpectedDrawnIndex(
     uint256 initialDrawnIndex,
-    uint96 borrowRate,
+    uint96 drawnRate,
     uint40 startTime
   ) internal view returns (uint256) {
-    return initialDrawnIndex.rayMulUp(MathUtils.calculateLinearInterest(borrowRate, startTime));
+    return initialDrawnIndex.rayMulUp(MathUtils.calculateLinearInterest(drawnRate, startTime));
   }
 
   function _calculateExpectedDebt(
     uint256 initialDrawnShares,
     uint256 initialDrawnIndex,
-    uint96 borrowRate,
+    uint96 drawnRate,
     uint40 startTime
   ) internal view returns (uint256 newDrawnIndex, uint256 newDrawnDebt) {
-    newDrawnIndex = _calculateExpectedDrawnIndex(initialDrawnIndex, borrowRate, startTime);
+    newDrawnIndex = _calculateExpectedDrawnIndex(initialDrawnIndex, drawnRate, startTime);
     newDrawnDebt = initialDrawnShares.rayMulUp(newDrawnIndex);
   }
 
   function _calculateExpectedDrawnDebt(
     uint256 initialDebt,
-    uint96 borrowRate,
+    uint96 drawnRate,
     uint40 startTime
   ) internal view returns (uint256) {
-    return MathUtils.calculateLinearInterest(borrowRate, startTime).rayMulUp(initialDebt);
+    return MathUtils.calculateLinearInterest(drawnRate, startTime).rayMulUp(initialDebt);
   }
 
   function _calculateExactRestoreAmount(

@@ -108,7 +108,7 @@ contract SpokeRiskPremiumScenarioTest is Base {
     _updateMaxLiquidationBonus(spoke1, reservesIds.usdx, 100_00);
     _updateCollateralFactor(spoke1, reservesIds.usdx, 99_99);
 
-    // supply twice the amount that alice borrows, usage ratio ~45%, borrow rate ~7.5%
+    // supply twice the amount that alice borrows, usage ratio ~45%, drawn rate ~7.5%
     SpokeActions.supply({
       spoke: spoke1,
       reserveId: reservesIds.dai,

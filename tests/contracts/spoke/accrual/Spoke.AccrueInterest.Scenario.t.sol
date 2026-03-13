@@ -32,7 +32,7 @@ contract SpokeAccrueInterestScenarioTest is Base {
   }
 
   struct TestValues {
-    uint96 baseBorrowRate;
+    uint96 baseDrawnRate;
     uint256 index;
     uint256 baseShares;
     uint40 timestamp;
@@ -99,17 +99,17 @@ contract SpokeAccrueInterestScenarioTest is Base {
     uint256 bobRp = _getUserRiskPremium(spoke2, bob);
     assertEq(bobRp, _calculateExpectedUserRP(spoke2, bob), 'user risk premium Before');
 
-    // Store base borrow rates
+    // Store base drawn rates
     TestValues[] memory values = new TestValues[](4);
     for (uint256 i = 0; i < 4; ++i) {
-      values[i].baseBorrowRate = hub1.getAsset(testAmounts[i].assetId).drawnRate.toUint96();
+      values[i].baseDrawnRate = hub1.getAsset(testAmounts[i].assetId).drawnRate.toUint96();
     }
 
     // Check bob's drawn debt, premium debt, and supplied amounts for all assets at user, reserve, spoke, and asset level
     for (uint256 i = 0; i < 4; ++i) {
       uint256 drawnDebt = _calculateExpectedDrawnDebt(
         testAmounts[i].borrowAmount,
-        values[i].baseBorrowRate,
+        values[i].baseDrawnRate,
         startTime
       );
       _assertProtocolSupplyAndDebt({
@@ -130,7 +130,7 @@ contract SpokeAccrueInterestScenarioTest is Base {
     for (uint256 i = 0; i < 4; ++i) {
       uint256 drawnDebt = _calculateExpectedDrawnDebt(
         testAmounts[i].borrowAmount,
-        values[i].baseBorrowRate,
+        values[i].baseDrawnRate,
         startTime
       );
       uint256 expectedPremiumDebt = _calculateExpectedPremiumDebt(
@@ -185,7 +185,7 @@ contract SpokeAccrueInterestScenarioTest is Base {
       // Update amounts for second accrual checks
       for (uint256 i = 0; i < 4; ++i) {
         (testAmounts[i].borrowAmount, ) = spoke2.getUserDebt(testAmounts[i].reserveId, bob);
-        values[i].baseBorrowRate = hub1.getAsset(testAmounts[i].assetId).drawnRate.toUint96();
+        values[i].baseDrawnRate = hub1.getAsset(testAmounts[i].assetId).drawnRate.toUint96();
         values[i].index = hub1.getAssetDrawnIndex(testAmounts[i].assetId).toUint120();
         values[i].timestamp = hub1.getAsset(testAmounts[i].assetId).lastUpdateTimestamp;
         values[i].baseShares = spoke2.getUserPosition(testAmounts[i].reserveId, bob).drawnShares;
@@ -242,7 +242,7 @@ contract SpokeAccrueInterestScenarioTest is Base {
         }
         values[i].index = _calculateExpectedDrawnIndex(
           values[i].timestamp == 1 ? testAmounts[i].originalIndex : values[i].index, // If reserve never updated, use original index
-          values[i].baseBorrowRate,
+          values[i].baseDrawnRate,
           values[i].timestamp
         );
         ISpoke.UserPosition memory bobPosition = spoke2.getUserPosition(

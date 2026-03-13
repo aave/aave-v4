@@ -97,11 +97,11 @@ library HubActions {
     address underlying,
     uint8 decimals,
     address feeReceiver,
-    address interestRateStrategy,
+    address irStrategy,
     bytes memory encodedIrData
   ) internal returns (uint256) {
     vm.prank(hubAdmin);
-    return hub.addAsset(underlying, decimals, feeReceiver, interestRateStrategy, encodedIrData);
+    return hub.addAsset(underlying, decimals, feeReceiver, irStrategy, encodedIrData);
   }
 
   function updateAssetConfig(
