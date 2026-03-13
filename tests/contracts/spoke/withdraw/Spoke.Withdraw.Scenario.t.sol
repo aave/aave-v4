@@ -394,7 +394,7 @@ contract SpokeWithdrawScenarioTest is Base {
   ) public {
     _assumeValidSupplier(caller);
     reserveId = bound(reserveId, 0, spoke1.getReserveCount() - 1);
-    protocolStartingBalance = bound(protocolStartingBalance, 1, MAX_SUPPLY_AMOUNT - 1); // Allow some buffer from supply cap
+    protocolStartingBalance = bound(protocolStartingBalance, 1, MAX_SUPPLY_AMOUNT - 1); // Allow some buffer from add cap
     assets = bound(assets, 1, MAX_SUPPLY_AMOUNT - protocolStartingBalance);
 
     // Set up initial state of the vault by having derl supply some starting balance
@@ -461,7 +461,7 @@ contract SpokeWithdrawScenarioTest is Base {
   ) public {
     _assumeValidSupplier(caller);
     reserveId = bound(reserveId, 0, spoke1.getReserveCount() - 1);
-    protocolStartingBalance = bound(protocolStartingBalance, 1, MAX_SUPPLY_AMOUNT - 1); // Allow some buffer from supply cap
+    protocolStartingBalance = bound(protocolStartingBalance, 1, MAX_SUPPLY_AMOUNT - 1); // Allow some buffer from add cap
     assets = bound(assets, 1, MAX_SUPPLY_AMOUNT - protocolStartingBalance);
     // Caller starting balance must be at least the amount they will withdraw during test
     callerStartingBalance = bound(

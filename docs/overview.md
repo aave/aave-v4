@@ -40,11 +40,11 @@ flowchart TD
 
 Spokes are individual modules that can connect to one or more Hubs. They route user actions (supply/withdraw and borrow/repay) to the appropriate Hub based on reserve configuration and available caps. Whenever liquidity is restored on the Hub, Spokes have to pay a base interest (determined by an interest rate strategy at the Hub level) and a Risk Premium (determined by the collateral composition of the user that triggered the action).
 
-A Hub can have an unspecified number of Spokes, each one contributing to the total outstanding debt and to the interest generated. The Hub manages the basic accounting (total liquidity vs available), the interest rates, and the draw and supply caps, among other parameters.
+A Hub can have an unspecified number of Spokes, each one contributing to the total outstanding debt and to the interest generated. The Hub manages the basic accounting (total liquidity vs available), the interest rates, and the draw and add caps, among other parameters.
 
 ## Hub
 
-The Hub is immutable and serves as the central coordinator for liquidity management in Aave V4. The design allows for multiple Hubs to exist, with each Hub maintaining oversight of its own set of Spokes. Each Hub sets the supply/borrow caps for its Spokes and enforces crucial accounting invariants. The design objective was to make the Hub as simple as possible.
+The Hub is immutable and serves as the central coordinator for liquidity management in Aave V4. The design allows for multiple Hubs to exist, with each Hub maintaining oversight of its own set of Spokes. Each Hub sets the add/draw caps for its Spokes and enforces crucial accounting invariants. The design objective was to make the Hub as simple as possible.
 
 The key aspects of the Hub include:
 
