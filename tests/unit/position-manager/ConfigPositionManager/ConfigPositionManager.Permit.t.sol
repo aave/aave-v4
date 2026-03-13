@@ -76,7 +76,7 @@ contract ConfigPositionManagerPermitTest is ConfigPositionManagerBaseTest {
     if (permission) {
       expectedPermissions = ConfigPermissionsMap.setFullPermissions(permission);
       vm.expectEmit(address(positionManager));
-      emit IConfigPositionManager.ConfigPermissionsUpdated(
+      emit IConfigPositionManager.UpdateConfigPermissions(
         address(spoke1),
         alice,
         delegatee,

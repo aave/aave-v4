@@ -20,21 +20,6 @@ interface IConfigPositionManager is IPositionManagerIntentBase {
     bool canUpdateUserDynamicConfig;
   }
 
-  /// @notice Emitted when a global config permission is updated.
-  /// @param spoke The address of the Spoke.
-  /// @param delegator The address of the delegator.
-  /// @param delegatee The address of the delegatee.
-  /// @param permissions The new config permissions.
-  event ConfigPermissionsUpdated(
-    address indexed spoke,
-    address indexed delegator,
-    address indexed delegatee,
-    ConfigPermissions permissions
-  );
-
-  /// @notice Thrown when the delegatee of a function was not given permission by the user.
-  error DelegateeNotAllowed();
-
   /// @notice Structured parameters for global permission permit intent.
   /// @dev spoke The address of the Spoke.
   /// @dev delegator The address of the delegator.
@@ -98,6 +83,21 @@ interface IConfigPositionManager is IPositionManagerIntentBase {
     uint256 nonce;
     uint256 deadline;
   }
+
+  /// @notice Emitted when a global config permission is updated.
+  /// @param spoke The address of the Spoke.
+  /// @param delegator The address of the delegator.
+  /// @param delegatee The address of the delegatee.
+  /// @param permissions The new config permissions.
+  event UpdateConfigPermissions(
+    address indexed spoke,
+    address indexed delegator,
+    address indexed delegatee,
+    ConfigPermissions permissions
+  );
+
+  /// @notice Thrown when the delegatee of a function was not given permission by the user.
+  error DelegateeNotAllowed();
 
   /// @notice Sets the global permission for a delegatee.
   /// @param spoke The address of the Spoke.

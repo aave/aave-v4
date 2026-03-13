@@ -429,7 +429,7 @@ contract ConfigPositionManager is IConfigPositionManager, PositionManagerIntentB
       return;
     }
     _config[spoke][delegator][delegatee] = newPermissions;
-    emit ConfigPermissionsUpdated(spoke, delegator, delegatee, newPermissions);
+    emit UpdateConfigPermissions(spoke, delegator, delegatee, newPermissions);
   }
 
   /// @dev Returns the config permissions for a delegatee on behalf of a delegator.

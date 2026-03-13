@@ -19,7 +19,7 @@ contract ConfigPositionManagerTest is ConfigPositionManagerBaseTest {
       .setCanUpdateUserDynamicConfig(true);
 
     vm.expectEmit(address(positionManager));
-    emit IConfigPositionManager.ConfigPermissionsUpdated(
+    emit IConfigPositionManager.UpdateConfigPermissions(
       address(spoke1),
       alice,
       bob,
@@ -47,7 +47,7 @@ contract ConfigPositionManagerTest is ConfigPositionManagerBaseTest {
       .setCanUpdateUserDynamicConfig(true);
 
     vm.expectEmit(address(positionManager));
-    emit IConfigPositionManager.ConfigPermissionsUpdated(
+    emit IConfigPositionManager.UpdateConfigPermissions(
       address(spoke1),
       alice,
       bob,
@@ -62,7 +62,7 @@ contract ConfigPositionManagerTest is ConfigPositionManagerBaseTest {
     assertTrue(permissions.canUpdateUserDynamicConfig);
 
     vm.expectEmit(address(positionManager));
-    emit IConfigPositionManager.ConfigPermissionsUpdated(
+    emit IConfigPositionManager.UpdateConfigPermissions(
       address(spoke1),
       alice,
       bob,
@@ -90,7 +90,7 @@ contract ConfigPositionManagerTest is ConfigPositionManagerBaseTest {
     ConfigPermissions newPermissions;
 
     vm.expectEmit(address(positionManager));
-    emit IConfigPositionManager.ConfigPermissionsUpdated(
+    emit IConfigPositionManager.UpdateConfigPermissions(
       address(spoke1),
       alice,
       bob,
@@ -120,7 +120,7 @@ contract ConfigPositionManagerTest is ConfigPositionManagerBaseTest {
     ConfigPermissions newPermissions;
 
     vm.expectEmit(address(positionManager));
-    emit IConfigPositionManager.ConfigPermissionsUpdated(
+    emit IConfigPositionManager.UpdateConfigPermissions(
       address(spoke1),
       alice,
       bob,
@@ -146,7 +146,7 @@ contract ConfigPositionManagerTest is ConfigPositionManagerBaseTest {
     ConfigPermissions newPermissions = emptyPermissions.setCanSetUsingAsCollateral(true);
 
     vm.expectEmit(address(positionManager));
-    emit IConfigPositionManager.ConfigPermissionsUpdated(
+    emit IConfigPositionManager.UpdateConfigPermissions(
       address(spoke1),
       alice,
       bob,
@@ -166,7 +166,7 @@ contract ConfigPositionManagerTest is ConfigPositionManagerBaseTest {
     ConfigPermissions newPermissions;
 
     vm.expectEmit(address(positionManager));
-    emit IConfigPositionManager.ConfigPermissionsUpdated(
+    emit IConfigPositionManager.UpdateConfigPermissions(
       address(spoke1),
       alice,
       bob,
@@ -189,7 +189,7 @@ contract ConfigPositionManagerTest is ConfigPositionManagerBaseTest {
     ConfigPermissions newPermissions = emptyPermissions.setCanUpdateUserRiskPremium(true);
 
     vm.expectEmit(address(positionManager));
-    emit IConfigPositionManager.ConfigPermissionsUpdated(
+    emit IConfigPositionManager.UpdateConfigPermissions(
       address(spoke1),
       alice,
       bob,
@@ -209,7 +209,7 @@ contract ConfigPositionManagerTest is ConfigPositionManagerBaseTest {
     ConfigPermissions newPermissions;
 
     vm.expectEmit(address(positionManager));
-    emit IConfigPositionManager.ConfigPermissionsUpdated(
+    emit IConfigPositionManager.UpdateConfigPermissions(
       address(spoke1),
       alice,
       bob,
@@ -232,7 +232,7 @@ contract ConfigPositionManagerTest is ConfigPositionManagerBaseTest {
     ConfigPermissions newPermissions = emptyPermissions.setCanUpdateUserDynamicConfig(true);
 
     vm.expectEmit(address(positionManager));
-    emit IConfigPositionManager.ConfigPermissionsUpdated(
+    emit IConfigPositionManager.UpdateConfigPermissions(
       address(spoke1),
       alice,
       bob,
@@ -252,7 +252,7 @@ contract ConfigPositionManagerTest is ConfigPositionManagerBaseTest {
     ConfigPermissions newPermissions;
 
     vm.expectEmit(address(positionManager));
-    emit IConfigPositionManager.ConfigPermissionsUpdated(
+    emit IConfigPositionManager.UpdateConfigPermissions(
       address(spoke1),
       alice,
       bob,
@@ -283,7 +283,7 @@ contract ConfigPositionManagerTest is ConfigPositionManagerBaseTest {
     ConfigPermissions newPermissions;
 
     vm.expectEmit(address(positionManager));
-    emit IConfigPositionManager.ConfigPermissionsUpdated(
+    emit IConfigPositionManager.UpdateConfigPermissions(
       address(spoke1),
       alice,
       bob,
@@ -313,7 +313,7 @@ contract ConfigPositionManagerTest is ConfigPositionManagerBaseTest {
     ConfigPermissions newPermissions;
 
     vm.expectEmit(address(positionManager));
-    emit IConfigPositionManager.ConfigPermissionsUpdated(
+    emit IConfigPositionManager.UpdateConfigPermissions(
       address(spoke1),
       alice,
       bob,
@@ -342,7 +342,7 @@ contract ConfigPositionManagerTest is ConfigPositionManagerBaseTest {
     ConfigPermissions newPermissions;
 
     vm.expectEmit(address(positionManager));
-    emit IConfigPositionManager.ConfigPermissionsUpdated(
+    emit IConfigPositionManager.UpdateConfigPermissions(
       address(spoke1),
       alice,
       bob,
@@ -369,7 +369,7 @@ contract ConfigPositionManagerTest is ConfigPositionManagerBaseTest {
     ConfigPermissions newPermissions;
 
     vm.expectEmit(address(positionManager));
-    emit IConfigPositionManager.ConfigPermissionsUpdated(
+    emit IConfigPositionManager.UpdateConfigPermissions(
       address(spoke1),
       alice,
       bob,
