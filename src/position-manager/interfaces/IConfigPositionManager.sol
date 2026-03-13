@@ -36,12 +36,12 @@ interface IConfigPositionManager is IPositionManagerIntentBase {
   error DelegateeNotAllowed();
 
   /// @notice Structured parameters for global permission permit intent.
-  /// @param spoke The address of the Spoke.
-  /// @param delegator The address of the delegator.
-  /// @param delegatee The address of the delegatee.
-  /// @param permission The new permission status.
-  /// @param nonce The key-prefixed nonce for the signature.
-  /// @param deadline The deadline for the intent.
+  /// @dev spoke The address of the Spoke.
+  /// @dev delegator The address of the delegator.
+  /// @dev delegatee The address of the delegatee.
+  /// @dev permission The new permission status.
+  /// @dev nonce The key-prefixed nonce for the signature.
+  /// @dev deadline The deadline for the intent.
   struct SetGlobalPermissionPermit {
     address spoke;
     address delegator;
@@ -52,12 +52,12 @@ interface IConfigPositionManager is IPositionManagerIntentBase {
   }
 
   /// @notice Structured parameters for using as collateral permission permit intent.
-  /// @param spoke The address of the Spoke.
-  /// @param delegator The address of the delegator.
-  /// @param delegatee The address of the delegatee.
-  /// @param permission The new permission status.
-  /// @param nonce The key-prefixed nonce for the signature.
-  /// @param deadline The deadline for the intent.
+  /// @dev spoke The address of the Spoke.
+  /// @dev delegator The address of the delegator.
+  /// @dev delegatee The address of the delegatee.
+  /// @dev permission The new permission status.
+  /// @dev nonce The key-prefixed nonce for the signature.
+  /// @dev deadline The deadline for the intent.
   struct SetCanSetUsingAsCollateralPermissionPermit {
     address spoke;
     address delegator;
@@ -68,12 +68,12 @@ interface IConfigPositionManager is IPositionManagerIntentBase {
   }
 
   /// @notice Structured parameters for user risk premium permission permit intent.
-  /// @param spoke The address of the Spoke.
-  /// @param delegator The address of the delegator.
-  /// @param delegatee The address of the delegatee.
-  /// @param permission The new permission status.
-  /// @param nonce The key-prefixed nonce for the signature.
-  /// @param deadline The deadline for the intent.
+  /// @dev spoke The address of the Spoke.
+  /// @dev delegator The address of the delegator.
+  /// @dev delegatee The address of the delegatee.
+  /// @dev permission The new permission status.
+  /// @dev nonce The key-prefixed nonce for the signature.
+  /// @dev deadline The deadline for the intent.
   struct SetCanUpdateUserRiskPremiumPermissionPermit {
     address spoke;
     address delegator;
@@ -84,12 +84,12 @@ interface IConfigPositionManager is IPositionManagerIntentBase {
   }
 
   /// @notice Structured parameters for user dynamic config permission permit intent.
-  /// @param spoke The address of the Spoke.
-  /// @param delegator The address of the delegator.
-  /// @param delegatee The address of the delegatee.
-  /// @param permission The new permission status.
-  /// @param nonce The key-prefixed nonce for the signature.
-  /// @param deadline The deadline for the intent.
+  /// @dev spoke The address of the Spoke.
+  /// @dev delegator The address of the delegator.
+  /// @dev delegatee The address of the delegatee.
+  /// @dev permission The new permission status.
+  /// @dev nonce The key-prefixed nonce for the signature.
+  /// @dev deadline The deadline for the intent.
   struct SetCanUpdateUserDynamicConfigPermissionPermit {
     address spoke;
     address delegator;
