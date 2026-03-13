@@ -170,6 +170,10 @@ abstract contract BaseConfigEngineTest is Test {
     return irStrategies[1];
   }
 
+  function _assertExactEventCount(uint256 expectedCount) internal {
+    assertEq(vm.getRecordedLogs().length, expectedCount);
+  }
+
   function _deploySpokeWithOracle(
     address proxyAdminOwner,
     address _accessManager
@@ -408,12 +412,12 @@ abstract contract BaseConfigEngineTest is Test {
     return
       IAaveV4ConfigEngine.AssetListing({
         hubConfigurator: IHubConfigurator(address(hubConfigurator)),
-        hub: address(hubs[0]),
+        hub: address(hub1()),
         underlying: address(weth),
         decimals: 0,
         feeReceiver: FEE_RECEIVER,
         liquidityFee: LIQUIDITY_FEE,
-        irStrategy: address(irStrategies[0]),
+        irStrategy: address(irStrategy1()),
         irData: IR_DATA,
         tokenization: IAaveV4ConfigEngine.TokenizationSpokeConfig({addCap: 0, name: '', symbol: ''})
       });
@@ -427,11 +431,11 @@ abstract contract BaseConfigEngineTest is Test {
     return
       IAaveV4ConfigEngine.AssetConfigUpdate({
         hubConfigurator: IHubConfigurator(address(hubConfigurator)),
-        hub: address(hubs[0]),
+        hub: address(hub1()),
         underlying: address(weth),
         liquidityFee: LIQUIDITY_FEE,
         feeReceiver: FEE_RECEIVER,
-        irStrategy: address(irStrategies[0]),
+        irStrategy: address(irStrategy1()),
         irData: IR_DATA,
         reinvestmentController: REINVESTMENT_CONTROLLER
       });
@@ -445,9 +449,9 @@ abstract contract BaseConfigEngineTest is Test {
     return
       IAaveV4ConfigEngine.SpokeConfigUpdate({
         hubConfigurator: IHubConfigurator(address(hubConfigurator)),
-        hub: address(hubs[0]),
+        hub: address(hub1()),
         underlying: address(weth),
-        spoke: address(spokes[0]),
+        spoke: address(spoke1()),
         addCap: 1000,
         drawCap: 500,
         riskPremiumThreshold: 100,
@@ -464,8 +468,8 @@ abstract contract BaseConfigEngineTest is Test {
     return
       IAaveV4ConfigEngine.ReserveConfigUpdate({
         spokeConfigurator: ISpokeConfigurator(address(spokeConfigurator)),
-        spoke: address(spokes[0]),
-        hub: address(hubs[0]),
+        spoke: address(spoke1()),
+        hub: address(hub1()),
         underlying: address(weth),
         priceSource: address(priceFeedWeth),
         collateralRisk: 5000,
@@ -484,7 +488,7 @@ abstract contract BaseConfigEngineTest is Test {
     return
       IAaveV4ConfigEngine.LiquidationConfigUpdate({
         spokeConfigurator: ISpokeConfigurator(address(spokeConfigurator)),
-        spoke: address(spokes[0]),
+        spoke: address(spoke1()),
         targetHealthFactor: 1.05e18,
         healthFactorForMaxBonus: 0.95e18,
         liquidationBonusFactor: 10000
@@ -499,8 +503,8 @@ abstract contract BaseConfigEngineTest is Test {
     return
       IAaveV4ConfigEngine.DynamicReserveConfigUpdate({
         spokeConfigurator: ISpokeConfigurator(address(spokeConfigurator)),
-        spoke: address(spokes[0]),
-        hub: address(hubs[0]),
+        spoke: address(spoke1()),
+        hub: address(hub1()),
         underlying: address(weth),
         dynamicConfigKey: DYNAMIC_CONFIG_KEY,
         collateralFactor: 8000,
@@ -517,8 +521,8 @@ abstract contract BaseConfigEngineTest is Test {
     return
       IAaveV4ConfigEngine.ReserveListing({
         spokeConfigurator: ISpokeConfigurator(address(spokeConfigurator)),
-        spoke: address(spokes[0]),
-        hub: address(hubs[0]),
+        spoke: address(spoke1()),
+        hub: address(hub1()),
         underlying: address(weth),
         priceSource: address(priceFeedWeth),
         config: ISpoke.ReserveConfig({
@@ -544,8 +548,8 @@ abstract contract BaseConfigEngineTest is Test {
     return
       IAaveV4ConfigEngine.DynamicReserveConfigAddition({
         spokeConfigurator: ISpokeConfigurator(address(spokeConfigurator)),
-        spoke: address(spokes[0]),
-        hub: address(hubs[0]),
+        spoke: address(spoke1()),
+        hub: address(hub1()),
         underlying: address(weth),
         dynamicConfig: ISpoke.DynamicReserveConfig({
           collateralFactor: 8000,
@@ -563,7 +567,7 @@ abstract contract BaseConfigEngineTest is Test {
     return
       IAaveV4ConfigEngine.PositionManagerUpdate({
         spokeConfigurator: ISpokeConfigurator(address(spokeConfigurator)),
-        spoke: address(spokes[0]),
+        spoke: address(spoke1()),
         positionManager: address(positionManager),
         active: true
       });

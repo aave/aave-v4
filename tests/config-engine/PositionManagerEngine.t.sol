@@ -4,6 +4,7 @@ pragma solidity ^0.8.0;
 
 import {BaseConfigEngineTest} from 'tests/config-engine/BaseConfigEngine.t.sol';
 
+import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 import {Ownable} from 'src/dependencies/openzeppelin/Ownable.sol';
 import {IPositionManagerBase} from 'src/position-manager/interfaces/IPositionManagerBase.sol';
 import {IAaveV4ConfigEngine} from 'src/config-engine/interfaces/IAaveV4ConfigEngine.sol';
@@ -17,17 +18,25 @@ contract PositionManagerEngineTest is BaseConfigEngineTest {
   }
 
   function test_executePositionManagerSpokeRegistrations_concrete() public {
+    vm.expectCall(
+      address(positionManager),
+      abi.encodeCall(IPositionManagerBase.registerSpoke, (address(spoke1()), true))
+    );
+
+    vm.expectEmit(true, false, false, true, address(positionManager));
+    emit IPositionManagerBase.SpokeRegistered(address(spoke1()), true);
+
     engine.executePositionManagerSpokeRegistrations(
       _toSpokeRegistrationArray(
         IAaveV4ConfigEngine.SpokeRegistration({
           positionManager: address(positionManager),
-          spoke: address(spokes[0]),
+          spoke: address(spoke1()),
           registered: true
         })
       )
     );
 
-    assertTrue(positionManager.isSpokeRegistered(address(spokes[0])));
+    assertTrue(positionManager.isSpokeRegistered(address(spoke1())));
   }
 
   function test_executePositionManagerSpokeRegistrations_deregister() public {
@@ -35,37 +44,40 @@ contract PositionManagerEngineTest is BaseConfigEngineTest {
       _toSpokeRegistrationArray(
         IAaveV4ConfigEngine.SpokeRegistration({
           positionManager: address(positionManager),
-          spoke: address(spokes[0]),
+          spoke: address(spoke1()),
           registered: true
         })
       )
     );
-    assertTrue(positionManager.isSpokeRegistered(address(spokes[0])));
+    assertTrue(positionManager.isSpokeRegistered(address(spoke1())));
+
+    vm.expectEmit(true, false, false, true, address(positionManager));
+    emit IPositionManagerBase.SpokeRegistered(address(spoke1()), false);
 
     engine.executePositionManagerSpokeRegistrations(
       _toSpokeRegistrationArray(
         IAaveV4ConfigEngine.SpokeRegistration({
           positionManager: address(positionManager),
-          spoke: address(spokes[0]),
+          spoke: address(spoke1()),
           registered: false
         })
       )
     );
-    assertFalse(positionManager.isSpokeRegistered(address(spokes[0])));
+    assertFalse(positionManager.isSpokeRegistered(address(spoke1())));
   }
 
-  function test_executePositionManagerSpokeRegistrations_fuzz(bool registered) public {
+  function test_fuzz_executePositionManagerSpokeRegistrations_concrete(bool registered) public {
     engine.executePositionManagerSpokeRegistrations(
       _toSpokeRegistrationArray(
         IAaveV4ConfigEngine.SpokeRegistration({
           positionManager: address(positionManager),
-          spoke: address(spokes[0]),
+          spoke: address(spoke1()),
           registered: registered
         })
       )
     );
 
-    assertEq(positionManager.isSpokeRegistered(address(spokes[0])), registered);
+    assertEq(positionManager.isSpokeRegistered(address(spoke1())), registered);
   }
 
   function test_executePositionManagerSpokeRegistrations_revert() public {
@@ -78,7 +90,7 @@ contract PositionManagerEngineTest is BaseConfigEngineTest {
       _toSpokeRegistrationArray(
         IAaveV4ConfigEngine.SpokeRegistration({
           positionManager: address(otherPm),
-          spoke: address(spokes[0]),
+          spoke: address(spoke1()),
           registered: true
         })
       )
@@ -90,7 +102,7 @@ contract PositionManagerEngineTest is BaseConfigEngineTest {
       _toSpokeRegistrationArray(
         IAaveV4ConfigEngine.SpokeRegistration({
           positionManager: address(positionManager),
-          spoke: address(spokes[0]),
+          spoke: address(spoke1()),
           registered: true
         })
       )
@@ -100,7 +112,7 @@ contract PositionManagerEngineTest is BaseConfigEngineTest {
       _toPositionManagerUpdateArray(
         IAaveV4ConfigEngine.PositionManagerUpdate({
           spokeConfigurator: spokeConfigurator,
-          spoke: address(spokes[0]),
+          spoke: address(spoke1()),
           positionManager: address(positionManager),
           active: true
         })
@@ -108,19 +120,27 @@ contract PositionManagerEngineTest is BaseConfigEngineTest {
     );
 
     vm.prank(USER);
-    spokes[0].setUserPositionManager(address(positionManager), true);
+    spoke1().setUserPositionManager(address(positionManager), true);
+
+    vm.expectCall(
+      address(positionManager),
+      abi.encodeCall(IPositionManagerBase.renouncePositionManagerRole, (address(spoke1()), USER))
+    );
+
+    vm.expectEmit(true, true, false, true, address(spoke1()));
+    emit ISpoke.SetUserPositionManager(USER, address(positionManager), false);
 
     engine.executePositionManagerRoleRenouncements(
       _toPositionManagerRoleRenouncementArray(
         IAaveV4ConfigEngine.PositionManagerRoleRenouncement({
           positionManager: address(positionManager),
-          spoke: address(spokes[0]),
+          spoke: address(spoke1()),
           user: USER
         })
       )
     );
 
-    assertFalse(spokes[0].isPositionManager(USER, address(positionManager)));
+    assertFalse(spoke1().isPositionManager(USER, address(positionManager)));
   }
 
   function test_executePositionManagerRoleRenouncements_revert() public {
@@ -133,7 +153,7 @@ contract PositionManagerEngineTest is BaseConfigEngineTest {
       _toPositionManagerRoleRenouncementArray(
         IAaveV4ConfigEngine.PositionManagerRoleRenouncement({
           positionManager: address(otherPm),
-          spoke: address(spokes[0]),
+          spoke: address(spoke1()),
           user: USER
         })
       )

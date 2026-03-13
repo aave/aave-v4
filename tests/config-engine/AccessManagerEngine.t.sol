@@ -10,7 +10,7 @@ import {IAaveV4ConfigEngine} from 'src/config-engine/interfaces/IAaveV4ConfigEng
 import {EngineFlags} from 'src/config-engine/libraries/EngineFlags.sol';
 
 contract AccessManagerEngineTest is BaseConfigEngineTest {
-  // Defult Roles :
+  // Default Roles :
   uint64 constant DEFAULT_ADMIN_ROLE = 0;
   uint64 constant PUBLIC_ROLE = type(uint64).max;
 
@@ -26,7 +26,24 @@ contract AccessManagerEngineTest is BaseConfigEngineTest {
   bytes4 constant TEST_SELECTOR_1 = bytes4(0xaabbccdd);
   bytes4 constant TEST_SELECTOR_2 = bytes4(0x11223344);
 
+  function _assertRoleConfig(
+    uint64 roleId,
+    uint64 expectedAdmin,
+    uint64 expectedGuardian
+  ) internal view {
+    assertEq(accessManager.getRoleAdmin(roleId), expectedAdmin);
+    assertEq(accessManager.getRoleGuardian(roleId), expectedGuardian);
+  }
+
   function test_executeRoleMemberships_grant_concrete() public {
+    vm.expectCall(
+      address(accessManager),
+      abi.encodeCall(IAccessManager.grantRole, (TEST_ROLE_ID, ACCOUNT, TEST_EXEC_DELAY_SHORT))
+    );
+
+    vm.expectEmit(true, true, false, false, address(accessManager));
+    emit IAccessManager.RoleGranted(TEST_ROLE_ID, ACCOUNT, TEST_EXEC_DELAY_SHORT, 0, true);
+
     engine.executeRoleMemberships(
       _toRoleMembershipArray(
         IAaveV4ConfigEngine.RoleMembership({
@@ -44,36 +61,7 @@ contract AccessManagerEngineTest is BaseConfigEngineTest {
     assertEq(delay, TEST_EXEC_DELAY_SHORT);
   }
 
-  function test_executeRoleMemberships_revoke_concrete() public {
-    engine.executeRoleMemberships(
-      _toRoleMembershipArray(
-        IAaveV4ConfigEngine.RoleMembership({
-          authority: address(accessManager),
-          roleId: TEST_ROLE_ID,
-          account: ACCOUNT,
-          granted: true,
-          executionDelay: 0
-        })
-      )
-    );
-
-    engine.executeRoleMemberships(
-      _toRoleMembershipArray(
-        IAaveV4ConfigEngine.RoleMembership({
-          authority: address(accessManager),
-          roleId: TEST_ROLE_ID,
-          account: ACCOUNT,
-          granted: false,
-          executionDelay: 0
-        })
-      )
-    );
-
-    (bool isMember, ) = accessManager.hasRole(TEST_ROLE_ID, ACCOUNT);
-    assertFalse(isMember);
-  }
-
-  function test_executeRoleMemberships_grant_fuzz(
+  function test_fuzz_executeRoleMemberships_grant_concrete(
     uint64 roleId,
     address account,
     uint32 executionDelay
@@ -98,7 +86,44 @@ contract AccessManagerEngineTest is BaseConfigEngineTest {
     assertEq(delay, executionDelay);
   }
 
-  function test_executeRoleMemberships_revoke_fuzz(uint64 roleId, address account) public {
+  function test_executeRoleMemberships_revoke_concrete() public {
+    engine.executeRoleMemberships(
+      _toRoleMembershipArray(
+        IAaveV4ConfigEngine.RoleMembership({
+          authority: address(accessManager),
+          roleId: TEST_ROLE_ID,
+          account: ACCOUNT,
+          granted: true,
+          executionDelay: 0
+        })
+      )
+    );
+
+    vm.expectCall(
+      address(accessManager),
+      abi.encodeCall(IAccessManager.revokeRole, (TEST_ROLE_ID, ACCOUNT))
+    );
+
+    vm.expectEmit(true, true, false, false, address(accessManager));
+    emit IAccessManager.RoleRevoked(TEST_ROLE_ID, ACCOUNT);
+
+    engine.executeRoleMemberships(
+      _toRoleMembershipArray(
+        IAaveV4ConfigEngine.RoleMembership({
+          authority: address(accessManager),
+          roleId: TEST_ROLE_ID,
+          account: ACCOUNT,
+          granted: false,
+          executionDelay: 0
+        })
+      )
+    );
+
+    (bool isMember, ) = accessManager.hasRole(TEST_ROLE_ID, ACCOUNT);
+    assertFalse(isMember);
+  }
+
+  function test_fuzz_executeRoleMemberships_revoke_concrete(uint64 roleId, address account) public {
     vm.assume(roleId != DEFAULT_ADMIN_ROLE); // DEFAULT_ADMIN_ROLE is locked
     vm.assume(roleId != PUBLIC_ROLE); // PUBLIC_ROLE is locked
 
@@ -179,6 +204,18 @@ contract AccessManagerEngineTest is BaseConfigEngineTest {
   }
 
   function test_executeRoleUpdates_allFields() public {
+    vm.expectEmit(true, true, false, false, address(accessManager));
+    emit IAccessManager.RoleAdminChanged(TEST_ROLE_ID, TEST_ADMIN_ROLE_ID);
+
+    vm.expectEmit(true, true, false, false, address(accessManager));
+    emit IAccessManager.RoleGuardianChanged(TEST_ROLE_ID, TEST_GUARDIAN_ROLE_ID);
+
+    vm.expectEmit(true, false, false, false, address(accessManager));
+    emit IAccessManager.RoleGrantDelayChanged(TEST_ROLE_ID, TEST_GRANT_DELAY, 0);
+
+    vm.expectEmit(true, false, false, false, address(accessManager));
+    emit IAccessManager.RoleLabel(TEST_ROLE_ID, 'FEE_UPDATER');
+
     engine.executeRoleUpdates(
       _toRoleUpdateArray(
         IAaveV4ConfigEngine.RoleUpdate({
@@ -199,6 +236,12 @@ contract AccessManagerEngineTest is BaseConfigEngineTest {
   }
 
   function test_executeRoleUpdates_adminOnly() public {
+    uint64 guardianBefore = accessManager.getRoleGuardian(TEST_ROLE_ID);
+
+    vm.expectCall(
+      address(accessManager),
+      abi.encodeCall(IAccessManager.setRoleAdmin, (TEST_ROLE_ID, TEST_ADMIN_ROLE_ID))
+    );
     engine.executeRoleUpdates(
       _toRoleUpdateArray(
         IAaveV4ConfigEngine.RoleUpdate({
@@ -213,9 +256,16 @@ contract AccessManagerEngineTest is BaseConfigEngineTest {
     );
 
     assertEq(accessManager.getRoleAdmin(TEST_ROLE_ID), TEST_ADMIN_ROLE_ID);
+    assertEq(accessManager.getRoleGuardian(TEST_ROLE_ID), guardianBefore);
   }
 
   function test_executeRoleUpdates_guardianOnly() public {
+    uint64 adminBefore = accessManager.getRoleAdmin(TEST_ROLE_ID);
+
+    vm.expectCall(
+      address(accessManager),
+      abi.encodeCall(IAccessManager.setRoleGuardian, (TEST_ROLE_ID, TEST_GUARDIAN_ROLE_ID))
+    );
     engine.executeRoleUpdates(
       _toRoleUpdateArray(
         IAaveV4ConfigEngine.RoleUpdate({
@@ -230,9 +280,17 @@ contract AccessManagerEngineTest is BaseConfigEngineTest {
     );
 
     assertEq(accessManager.getRoleGuardian(TEST_ROLE_ID), TEST_GUARDIAN_ROLE_ID);
+    assertEq(accessManager.getRoleAdmin(TEST_ROLE_ID), adminBefore);
   }
 
   function test_executeRoleUpdates_grantDelayOnly() public {
+    uint64 adminBefore = accessManager.getRoleAdmin(TEST_ROLE_ID);
+    uint64 guardianBefore = accessManager.getRoleGuardian(TEST_ROLE_ID);
+
+    vm.expectCall(
+      address(accessManager),
+      abi.encodeCall(IAccessManager.setGrantDelay, (TEST_ROLE_ID, TEST_GRANT_DELAY))
+    );
     engine.executeRoleUpdates(
       _toRoleUpdateArray(
         IAaveV4ConfigEngine.RoleUpdate({
@@ -248,6 +306,7 @@ contract AccessManagerEngineTest is BaseConfigEngineTest {
 
     vm.warp(block.timestamp + 5 days);
     assertEq(accessManager.getRoleGrantDelay(TEST_ROLE_ID), TEST_GRANT_DELAY);
+    _assertRoleConfig(TEST_ROLE_ID, adminBefore, guardianBefore);
   }
 
   function test_executeRoleUpdates_labelOnly() public {
@@ -285,7 +344,7 @@ contract AccessManagerEngineTest is BaseConfigEngineTest {
     assertEq(vm.getRecordedLogs().length, 0);
   }
 
-  function test_executeRoleUpdates_fuzz(
+  function test_fuzz_executeRoleUpdates_allFields(
     uint64 roleId,
     uint64 admin,
     uint64 guardian,
@@ -346,6 +405,17 @@ contract AccessManagerEngineTest is BaseConfigEngineTest {
     selectors[0] = TEST_SELECTOR_1;
     selectors[1] = TEST_SELECTOR_2;
 
+    vm.expectCall(
+      address(accessManager),
+      abi.encodeCall(IAccessManager.setTargetFunctionRole, (TARGET, selectors, TEST_ROLE_ID))
+    );
+
+    vm.expectEmit(true, true, false, false, address(accessManager));
+    emit IAccessManager.TargetFunctionRoleUpdated(TARGET, TEST_SELECTOR_1, TEST_ROLE_ID);
+
+    vm.expectEmit(true, true, false, false, address(accessManager));
+    emit IAccessManager.TargetFunctionRoleUpdated(TARGET, TEST_SELECTOR_2, TEST_ROLE_ID);
+
     engine.executeTargetFunctionRoleUpdates(
       _toTargetFunctionRoleUpdateArray(
         IAaveV4ConfigEngine.TargetFunctionRoleUpdate({
@@ -361,7 +431,7 @@ contract AccessManagerEngineTest is BaseConfigEngineTest {
     assertEq(accessManager.getTargetFunctionRole(TARGET, selectors[1]), TEST_ROLE_ID);
   }
 
-  function test_executeTargetFunctionRoleUpdates_fuzz(
+  function test_fuzz_executeTargetFunctionRoleUpdates_concrete(
     address target,
     bytes4 selector1,
     uint64 roleId
@@ -410,6 +480,14 @@ contract AccessManagerEngineTest is BaseConfigEngineTest {
   }
 
   function test_executeTargetAdminDelayUpdates_concrete() public {
+    vm.expectCall(
+      address(accessManager),
+      abi.encodeCall(IAccessManager.setTargetAdminDelay, (TARGET, TEST_ADMIN_DELAY))
+    );
+
+    vm.expectEmit(true, false, false, false, address(accessManager));
+    emit IAccessManager.TargetAdminDelayUpdated(TARGET, TEST_ADMIN_DELAY, 0);
+
     engine.executeTargetAdminDelayUpdates(
       _toTargetAdminDelayUpdateArray(
         IAaveV4ConfigEngine.TargetAdminDelayUpdate({
@@ -424,7 +502,10 @@ contract AccessManagerEngineTest is BaseConfigEngineTest {
     assertEq(accessManager.getTargetAdminDelay(TARGET), TEST_ADMIN_DELAY);
   }
 
-  function test_executeTargetAdminDelayUpdates_fuzz(address target, uint32 newDelay) public {
+  function test_fuzz_executeTargetAdminDelayUpdates_concrete(
+    address target,
+    uint32 newDelay
+  ) public {
     engine.executeTargetAdminDelayUpdates(
       _toTargetAdminDelayUpdateArray(
         IAaveV4ConfigEngine.TargetAdminDelayUpdate({

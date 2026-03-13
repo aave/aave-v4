@@ -12,7 +12,7 @@ contract AccessManagerEnumerableTest is Test {
 
   address internal ADMIN = makeAddr('ADMIN');
 
-  // Defult Roles :
+  // Default Roles :
   uint64 constant ADMIN_ROLE = 0;
 
   // Custom Roles :
