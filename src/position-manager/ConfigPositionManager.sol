@@ -425,6 +425,7 @@ contract ConfigPositionManager is IConfigPositionManager, PositionManagerIntentB
     ConfigPermissions oldPermissions,
     ConfigPermissions newPermissions
   ) internal {
+    require(delegatee != address(0), InvalidAddress());
     if (oldPermissions.eq(newPermissions)) {
       return;
     }
