@@ -12,7 +12,13 @@ contract TokenizationSpokeBaseTest is Base, TokenizationSpokeHelpers {
 
   function setUp() public virtual override {
     super.setUp();
-    daiVault = _deployTokenizationSpoke(hub1, daiAssetId, SHARE_NAME, SHARE_SYMBOL, ADMIN);
+    daiVault = _deployTokenizationSpoke(
+      hub1,
+      address(tokenList.dai),
+      SHARE_NAME,
+      SHARE_SYMBOL,
+      ADMIN
+    );
     _registerTokenizationSpoke(hub1, daiAssetId, daiVault, ADMIN);
   }
 

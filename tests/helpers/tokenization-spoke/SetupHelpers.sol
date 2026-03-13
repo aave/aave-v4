@@ -21,12 +21,14 @@ abstract contract SetupHelpers is SpokeHelpers {
 
   function _deployTokenizationSpoke(
     IHub hub,
-    uint256 assetId,
+    address underlying,
     string memory shareName,
     string memory shareSymbol,
     address proxyAdminOwner
   ) internal pausePrank returns (ITokenizationSpoke) {
-    address tokenizationSpokeImpl = address(new TokenizationSpokeInstance(address(hub), assetId));
+    address tokenizationSpokeImpl = address(
+      new TokenizationSpokeInstance(address(hub), underlying)
+    );
     ITokenizationSpoke tokenizationSpoke = ITokenizationSpoke(
       DeployUtils.proxify(
         tokenizationSpokeImpl,
