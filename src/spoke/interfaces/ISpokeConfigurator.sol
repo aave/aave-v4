@@ -8,6 +8,9 @@ import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 /// @author Aave Labs
 /// @notice Interface for the SpokeConfigurator.
 interface ISpokeConfigurator {
+  /// @notice Thrown when an address parameter is the zero address.
+  error InvalidAddress();
+
   /// @notice Updates the price source of a reserve.
   /// @dev The price source must implement IPriceFeed.
   /// @param spoke The address of the Spoke.
