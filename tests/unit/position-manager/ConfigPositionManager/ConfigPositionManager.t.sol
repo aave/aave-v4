@@ -566,4 +566,34 @@ contract ConfigPositionManagerTest is ConfigPositionManagerBaseTest {
     assertTrue(permissions.canUpdateUserRiskPremium);
     assertTrue(permissions.canUpdateUserDynamicConfig);
   }
+
+  function test_setGlobalPermission_revertsWith_InvalidAddress_zeroDelegatee() public {
+    vm.expectRevert(IPositionManagerBase.InvalidAddress.selector);
+    vm.prank(alice);
+    positionManager.setGlobalPermission(address(spoke1), address(0), true);
+  }
+
+  function test_setCanSetUsingAsCollateralPermission_revertsWith_InvalidAddress_zeroDelegatee()
+    public
+  {
+    vm.expectRevert(IPositionManagerBase.InvalidAddress.selector);
+    vm.prank(alice);
+    positionManager.setCanSetUsingAsCollateralPermission(address(spoke1), address(0), true);
+  }
+
+  function test_setCanUpdateUserRiskPremiumPermission_revertsWith_InvalidAddress_zeroDelegatee()
+    public
+  {
+    vm.expectRevert(IPositionManagerBase.InvalidAddress.selector);
+    vm.prank(alice);
+    positionManager.setCanUpdateUserRiskPremiumPermission(address(spoke1), address(0), true);
+  }
+
+  function test_setCanUpdateUserDynamicConfigPermission_revertsWith_InvalidAddress_zeroDelegatee()
+    public
+  {
+    vm.expectRevert(IPositionManagerBase.InvalidAddress.selector);
+    vm.prank(alice);
+    positionManager.setCanUpdateUserDynamicConfigPermission(address(spoke1), address(0), true);
+  }
 }
