@@ -207,6 +207,66 @@ contract SpokeUpgradeableTest is SpokeBase {
     );
   }
 
+  function test_proxy_accessManager_ownershipRole() public {
+    address proxyAdmin1 = makeAddr('proxyAdmin1');
+    address proxyAdmin2 = makeAddr('proxyAdmin2');
+
+    uint64 initialRevision = 1;
+    ISpokeInstance spokeImpl = _deployMockSpokeInstance(initialRevision);
+    ITransparentUpgradeableProxy spokeProxy = ITransparentUpgradeableProxy(
+      address(
+        new TransparentUpgradeableProxy(
+          address(spokeImpl),
+          address(accessManager),
+          abi.encodeCall(ISpokeInstance.initialize, address(accessManager))
+        )
+      )
+    );
+
+    ProxyAdmin proxyAdmin = ProxyAdmin(_getProxyAdminAddress(address(spokeProxy)));
+
+    vm.startPrank(ADMIN);
+    accessManager.labelRole(Roles.PROXY_ADMIN_ROLE, 'PROXY_ADMIN_ROLE');
+    accessManager.setGrantDelay(Roles.PROXY_ADMIN_ROLE, 0);
+
+    accessManager.grantRole(Roles.PROXY_ADMIN_ROLE, proxyAdmin1, 0);
+    accessManager.grantRole(Roles.PROXY_ADMIN_ROLE, proxyAdmin2, 0);
+
+    bytes4[] memory selectors = new bytes4[](1);
+    selectors[0] = ProxyAdmin.upgradeAndCall.selector;
+    accessManager.setTargetFunctionRole(address(proxyAdmin), selectors, Roles.PROXY_ADMIN_ROLE);
+    vm.stopPrank();
+
+    ISpokeInstance spokeImpl2 = _deployMockSpokeInstance(initialRevision + 1);
+    ISpokeInstance spokeImpl3 = _deployMockSpokeInstance(initialRevision + 2);
+
+    vm.prank(proxyAdmin1);
+    accessManager.execute(
+      address(proxyAdmin),
+      abi.encodeWithSelector(
+        ProxyAdmin.upgradeAndCall.selector,
+        spokeProxy,
+        address(spokeImpl2),
+        _getInitializeCalldata(address(accessManager))
+      )
+    );
+
+    assertEq(_getImplementationAddress(address(spokeProxy)), address(spokeImpl2));
+
+    vm.prank(proxyAdmin2);
+    accessManager.execute(
+      address(proxyAdmin),
+      abi.encodeWithSelector(
+        ProxyAdmin.upgradeAndCall.selector,
+        spokeProxy,
+        address(spokeImpl3),
+        _getInitializeCalldata(address(accessManager))
+      )
+    );
+
+    assertEq(_getImplementationAddress(address(spokeProxy)), address(spokeImpl3));
+  }
+
   function _getInitializeCalldata(address manager) internal pure returns (bytes memory) {
     return abi.encodeCall(ISpokeInstance.initialize, manager);
   }
