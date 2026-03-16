@@ -2,25 +2,7 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import {VmSafe} from 'forge-std/Vm.sol';
-
-import {BaseConfigEngineTest} from 'tests/config-engine/BaseConfigEngine.t.sol';
-
-import {IHub} from 'src/hub/interfaces/IHub.sol';
-import {IHubConfigurator} from 'src/hub/interfaces/IHubConfigurator.sol';
-import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
-import {ISpokeConfigurator} from 'src/spoke/interfaces/ISpokeConfigurator.sol';
-import {IAssetInterestRateStrategy} from 'src/hub/interfaces/IAssetInterestRateStrategy.sol';
-
-import {Roles} from 'src/libraries/types/Roles.sol';
-
-import {IAaveV4ConfigEngine} from 'src/config-engine/interfaces/IAaveV4ConfigEngine.sol';
-import {AaveV4ConfigEngine} from 'src/config-engine/AaveV4ConfigEngine.sol';
-import {AaveV4Payload} from 'src/config-engine/AaveV4Payload.sol';
-import {EngineFlags} from 'src/config-engine/libraries/EngineFlags.sol';
-
-import {AaveV4PayloadWrapper} from 'tests/mocks/config-engine/AaveV4PayloadWrapper.sol';
-import {PositionManagerBaseWrapper} from 'tests/mocks/PositionManagerBaseWrapper.sol';
+import 'tests/config-engine/BaseConfigEngine.t.sol';
 
 contract AaveV4PayloadTest is BaseConfigEngineTest {
   AaveV4PayloadWrapper public payload;
@@ -58,7 +40,7 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
   function test_execute_hubAction_delegatesCorrectly() public {
     IAaveV4ConfigEngine.AssetHalt[] memory halts = new IAaveV4ConfigEngine.AssetHalt[](1);
     halts[0] = IAaveV4ConfigEngine.AssetHalt({
-      hubConfigurator: IHubConfigurator(address(hubConfigurator)),
+      hubConfigurator: hubConfigurator,
       hub: address(hub1()),
       underlying: address(weth)
     });
@@ -66,7 +48,10 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
 
     payload.execute();
 
-    IHub.SpokeConfig memory spokeConfig = hub1().getSpokeConfig(assetIds[0][0], address(spoke1()));
+    IHub.SpokeConfig memory spokeConfig = hub1().getSpokeConfig(
+      _getAssetId(0, 0),
+      address(spoke1())
+    );
     assertTrue(spokeConfig.halted);
   }
 
@@ -74,7 +59,7 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
     IAaveV4ConfigEngine.PositionManagerUpdate[]
       memory updates = new IAaveV4ConfigEngine.PositionManagerUpdate[](1);
     updates[0] = IAaveV4ConfigEngine.PositionManagerUpdate({
-      spokeConfigurator: ISpokeConfigurator(address(spokeConfigurator)),
+      spokeConfigurator: spokeConfigurator,
       spoke: address(spoke1()),
       positionManager: address(payloadPositionManager),
       active: true
@@ -108,7 +93,7 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
   function test_execute_multipleActions_allExecuted() public {
     IAaveV4ConfigEngine.AssetHalt[] memory halts = new IAaveV4ConfigEngine.AssetHalt[](1);
     halts[0] = IAaveV4ConfigEngine.AssetHalt({
-      hubConfigurator: IHubConfigurator(address(hubConfigurator)),
+      hubConfigurator: hubConfigurator,
       hub: address(hub1()),
       underlying: address(weth)
     });
@@ -117,7 +102,7 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
     IAaveV4ConfigEngine.PositionManagerUpdate[]
       memory pmUpdates = new IAaveV4ConfigEngine.PositionManagerUpdate[](1);
     pmUpdates[0] = IAaveV4ConfigEngine.PositionManagerUpdate({
-      spokeConfigurator: ISpokeConfigurator(address(spokeConfigurator)),
+      spokeConfigurator: spokeConfigurator,
       spoke: address(spoke1()),
       positionManager: address(payloadPositionManager),
       active: true
@@ -137,7 +122,10 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
 
     payload.execute();
 
-    IHub.SpokeConfig memory spokeConfig = hub1().getSpokeConfig(assetIds[0][0], address(spoke1()));
+    IHub.SpokeConfig memory spokeConfig = hub1().getSpokeConfig(
+      _getAssetId(0, 0),
+      address(spoke1())
+    );
     assertTrue(spokeConfig.halted);
 
     assertTrue(spoke1().isPositionManagerActive(address(payloadPositionManager)));
@@ -146,10 +134,28 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
     assertTrue(isMember);
   }
 
+  function test_execute_multipleActions_revertsIfOneInvalid() public {
+    IAaveV4ConfigEngine.AssetHalt[] memory halts = new IAaveV4ConfigEngine.AssetHalt[](1);
+    halts[0] = IAaveV4ConfigEngine.AssetHalt({
+      hubConfigurator: hubConfigurator,
+      hub: address(hub1()),
+      underlying: address(weth)
+    });
+    payload.setHubAssetHalts(halts);
+
+    IAaveV4ConfigEngine.AssetListing[] memory listings = new IAaveV4ConfigEngine.AssetListing[](1);
+    listings[0] = _defaultAssetListing();
+    listings[0].underlying = address(weth);
+    payload.setHubAssetListings(listings);
+
+    vm.expectRevert(abi.encodeWithSelector(IHub.UnderlyingAlreadyListed.selector));
+    payload.execute();
+  }
+
   function test_execute_emptyArraysSkipped() public {
     IAaveV4ConfigEngine.AssetHalt[] memory halts = new IAaveV4ConfigEngine.AssetHalt[](1);
     halts[0] = IAaveV4ConfigEngine.AssetHalt({
-      hubConfigurator: IHubConfigurator(address(hubConfigurator)),
+      hubConfigurator: hubConfigurator,
       hub: address(hub1()),
       underlying: address(weth)
     });
@@ -157,13 +163,16 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
 
     payload.execute();
 
-    IHub.SpokeConfig memory spokeConfig = hub1().getSpokeConfig(assetIds[0][0], address(spoke1()));
+    IHub.SpokeConfig memory spokeConfig = hub1().getSpokeConfig(
+      _getAssetId(0, 0),
+      address(spoke1())
+    );
     assertTrue(spokeConfig.halted);
     assertTrue(payload.preExecuteCalled());
     assertTrue(payload.postExecuteCalled());
   }
 
-  function test_execute_revert_propagatesFromEngine() public {
+  function test_execute_revertsWith_UnderlyingAlreadyListed_propagatesFromEngine() public {
     IAaveV4ConfigEngine.AssetListing[] memory listings = new IAaveV4ConfigEngine.AssetListing[](1);
     listings[0] = _defaultAssetListing();
     listings[0].underlying = address(weth);
@@ -184,23 +193,24 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
     payload.setHubAssetListings(listings);
 
     uint256 assetCountBefore = hub1().getAssetCount();
+    uint256 expectedAssetId = assetCountBefore;
     payload.execute();
 
     assertEq(hub1().getAssetCount(), assetCountBefore + 1);
-    IHub.AssetConfig memory config = hub1().getAssetConfig(assetCountBefore);
+    IHub.AssetConfig memory config = hub1().getAssetConfig(expectedAssetId);
     assertEq(config.feeReceiver, FEE_RECEIVER);
   }
 
   function test_execute_hubAssetConfigUpdates_feeOnly() public {
-    uint256 assetId = assetIds[0][0];
+    uint256 assetId = _getAssetId(0, 0);
 
     IAaveV4ConfigEngine.AssetConfigUpdate[]
       memory updates = new IAaveV4ConfigEngine.AssetConfigUpdate[](1);
     updates[0] = IAaveV4ConfigEngine.AssetConfigUpdate({
-      hubConfigurator: IHubConfigurator(address(hubConfigurator)),
+      hubConfigurator: hubConfigurator,
       hub: address(hub1()),
       underlying: address(weth),
-      liquidityFee: 800,
+      liquidityFee: 8_00,
       feeReceiver: ACCOUNT,
       irStrategy: EngineFlags.KEEP_CURRENT_ADDRESS,
       irData: _keepCurrentIrData(),
@@ -211,25 +221,25 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
     payload.execute();
 
     IHub.AssetConfig memory config = hub1().getAssetConfig(assetId);
-    assertEq(config.liquidityFee, 800);
+    assertEq(config.liquidityFee, 8_00);
     assertEq(config.feeReceiver, ACCOUNT);
   }
 
   function test_execute_hubAssetConfigUpdates_interestRateOnly() public {
-    uint256 assetId = assetIds[0][0];
+    uint256 assetId = _getAssetId(0, 0);
 
     IAssetInterestRateStrategy.InterestRateData memory newIrData = IAssetInterestRateStrategy
       .InterestRateData({
-        optimalUsageRatio: 9500,
-        baseDrawnRate: 300,
-        rateGrowthBeforeOptimal: 600,
-        rateGrowthAfterOptimal: 8000
+        optimalUsageRatio: 95_00,
+        baseDrawnRate: 3_00,
+        rateGrowthBeforeOptimal: 6_00,
+        rateGrowthAfterOptimal: 80_00
       });
 
     IAaveV4ConfigEngine.AssetConfigUpdate[]
       memory updates = new IAaveV4ConfigEngine.AssetConfigUpdate[](1);
     updates[0] = IAaveV4ConfigEngine.AssetConfigUpdate({
-      hubConfigurator: IHubConfigurator(address(hubConfigurator)),
+      hubConfigurator: hubConfigurator,
       hub: address(hub1()),
       underlying: address(weth),
       liquidityFee: EngineFlags.KEEP_CURRENT,
@@ -244,17 +254,17 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
 
     IAssetInterestRateStrategy.InterestRateData memory storedIrData = irStrategy1()
       .getInterestRateData(assetId);
-    assertEq(storedIrData.optimalUsageRatio, 9500);
-    assertEq(storedIrData.baseDrawnRate, 300);
+    assertEq(storedIrData.optimalUsageRatio, 95_00);
+    assertEq(storedIrData.baseDrawnRate, 3_00);
   }
 
   function test_execute_hubAssetConfigUpdates_reinvestmentOnly() public {
-    uint256 assetId = assetIds[0][0];
+    uint256 assetId = _getAssetId(0, 0);
 
     IAaveV4ConfigEngine.AssetConfigUpdate[]
       memory updates = new IAaveV4ConfigEngine.AssetConfigUpdate[](1);
     updates[0] = IAaveV4ConfigEngine.AssetConfigUpdate({
-      hubConfigurator: IHubConfigurator(address(hubConfigurator)),
+      hubConfigurator: hubConfigurator,
       hub: address(hub1()),
       underlying: address(weth),
       liquidityFee: EngineFlags.KEEP_CURRENT,
@@ -272,14 +282,14 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
   }
 
   function test_fuzz_execute_hubAssetConfigUpdates_feeOnly(uint256 liquidityFee) public {
-    liquidityFee = bound(liquidityFee, 0, 10_000);
-    uint256 assetId = assetIds[0][0];
+    liquidityFee = bound(liquidityFee, 0, 100_00);
+    uint256 assetId = _getAssetId(0, 0);
     IHub.AssetConfig memory configBefore = hub1().getAssetConfig(assetId);
 
     IAaveV4ConfigEngine.AssetConfigUpdate[]
       memory updates = new IAaveV4ConfigEngine.AssetConfigUpdate[](1);
     updates[0] = IAaveV4ConfigEngine.AssetConfigUpdate({
-      hubConfigurator: IHubConfigurator(address(hubConfigurator)),
+      hubConfigurator: hubConfigurator,
       hub: address(hub1()),
       underlying: address(weth),
       liquidityFee: liquidityFee,
@@ -297,6 +307,80 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
     assertEq(configAfter.feeReceiver, configBefore.feeReceiver);
     assertEq(configAfter.irStrategy, configBefore.irStrategy);
     assertEq(configAfter.reinvestmentController, configBefore.reinvestmentController);
+  }
+
+  function test_execute_hubAssetConfigUpdates_twoAssets_feeOnly() public {
+    uint256 wethAssetId = _getAssetId(0, TOKEN_WETH);
+    uint256 usdxAssetId = _getAssetId(0, TOKEN_USDX);
+
+    IAaveV4ConfigEngine.AssetConfigUpdate[]
+      memory updates = new IAaveV4ConfigEngine.AssetConfigUpdate[](2);
+    updates[0] = IAaveV4ConfigEngine.AssetConfigUpdate({
+      hubConfigurator: hubConfigurator,
+      hub: address(hub1()),
+      underlying: address(weth),
+      liquidityFee: 8_00,
+      feeReceiver: EngineFlags.KEEP_CURRENT_ADDRESS,
+      irStrategy: EngineFlags.KEEP_CURRENT_ADDRESS,
+      irData: _keepCurrentIrData(),
+      reinvestmentController: EngineFlags.KEEP_CURRENT_ADDRESS
+    });
+    updates[1] = IAaveV4ConfigEngine.AssetConfigUpdate({
+      hubConfigurator: hubConfigurator,
+      hub: address(hub1()),
+      underlying: address(usdx),
+      liquidityFee: 10_00,
+      feeReceiver: EngineFlags.KEEP_CURRENT_ADDRESS,
+      irStrategy: EngineFlags.KEEP_CURRENT_ADDRESS,
+      irData: _keepCurrentIrData(),
+      reinvestmentController: EngineFlags.KEEP_CURRENT_ADDRESS
+    });
+    payload.setHubAssetConfigUpdates(updates);
+
+    payload.execute();
+
+    IHub.AssetConfig memory wethConfig = hub1().getAssetConfig(wethAssetId);
+    assertEq(wethConfig.liquidityFee, 8_00);
+
+    IHub.AssetConfig memory usdxConfig = hub1().getAssetConfig(usdxAssetId);
+    assertEq(usdxConfig.liquidityFee, 10_00);
+  }
+
+  function test_execute_hubAssetConfigUpdates_twoAssets_mixedFields() public {
+    uint256 wethAssetId = _getAssetId(0, TOKEN_WETH);
+    uint256 usdxAssetId = _getAssetId(0, TOKEN_USDX);
+
+    IAaveV4ConfigEngine.AssetConfigUpdate[]
+      memory updates = new IAaveV4ConfigEngine.AssetConfigUpdate[](2);
+    updates[0] = IAaveV4ConfigEngine.AssetConfigUpdate({
+      hubConfigurator: hubConfigurator,
+      hub: address(hub1()),
+      underlying: address(weth),
+      liquidityFee: 8_00,
+      feeReceiver: EngineFlags.KEEP_CURRENT_ADDRESS,
+      irStrategy: EngineFlags.KEEP_CURRENT_ADDRESS,
+      irData: _keepCurrentIrData(),
+      reinvestmentController: EngineFlags.KEEP_CURRENT_ADDRESS
+    });
+    updates[1] = IAaveV4ConfigEngine.AssetConfigUpdate({
+      hubConfigurator: hubConfigurator,
+      hub: address(hub1()),
+      underlying: address(usdx),
+      liquidityFee: EngineFlags.KEEP_CURRENT,
+      feeReceiver: EngineFlags.KEEP_CURRENT_ADDRESS,
+      irStrategy: EngineFlags.KEEP_CURRENT_ADDRESS,
+      irData: _keepCurrentIrData(),
+      reinvestmentController: REINVESTMENT_CONTROLLER
+    });
+    payload.setHubAssetConfigUpdates(updates);
+
+    payload.execute();
+
+    IHub.AssetConfig memory wethConfig = hub1().getAssetConfig(wethAssetId);
+    assertEq(wethConfig.liquidityFee, 8_00);
+
+    IHub.AssetConfig memory usdxConfig = hub1().getAssetConfig(usdxAssetId);
+    assertEq(usdxConfig.reinvestmentController, REINVESTMENT_CONTROLLER);
   }
 
   function test_execute_hubSpokeToAssetsAdditions() public {
@@ -329,7 +413,7 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
       })
     });
     additions[0] = IAaveV4ConfigEngine.SpokeToAssetsAddition({
-      hubConfigurator: IHubConfigurator(address(hubConfigurator)),
+      hubConfigurator: hubConfigurator,
       hub: address(hub1()),
       spoke: address(newSpoke),
       assets: assets
@@ -338,7 +422,10 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
 
     payload.execute();
 
-    IHub.SpokeConfig memory spokeConfig = hub1().getSpokeConfig(assetIds[0][0], address(newSpoke));
+    IHub.SpokeConfig memory spokeConfig = hub1().getSpokeConfig(
+      _getAssetId(0, 0),
+      address(newSpoke)
+    );
     assertEq(spokeConfig.addCap, 1000);
     assertTrue(spokeConfig.active);
   }
@@ -347,7 +434,7 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
     IAaveV4ConfigEngine.SpokeConfigUpdate[]
       memory updates = new IAaveV4ConfigEngine.SpokeConfigUpdate[](1);
     updates[0] = IAaveV4ConfigEngine.SpokeConfigUpdate({
-      hubConfigurator: IHubConfigurator(address(hubConfigurator)),
+      hubConfigurator: hubConfigurator,
       hub: address(hub1()),
       underlying: address(weth),
       spoke: address(spoke1()),
@@ -359,18 +446,29 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
     });
     payload.setHubSpokeConfigUpdates(updates);
 
+    IHub.SpokeConfig memory spokeConfigBefore = hub1().getSpokeConfig(
+      _getAssetId(0, 0),
+      address(spoke1())
+    );
+
     payload.execute();
 
-    IHub.SpokeConfig memory spokeConfig = hub1().getSpokeConfig(assetIds[0][0], address(spoke1()));
+    IHub.SpokeConfig memory spokeConfig = hub1().getSpokeConfig(
+      _getAssetId(0, 0),
+      address(spoke1())
+    );
     assertEq(spokeConfig.addCap, 1000);
     assertEq(spokeConfig.drawCap, 500);
+    assertEq(spokeConfig.riskPremiumThreshold, spokeConfigBefore.riskPremiumThreshold);
+    assertEq(spokeConfig.active, spokeConfigBefore.active);
+    assertEq(spokeConfig.halted, spokeConfigBefore.halted);
   }
 
   function test_execute_hubSpokeConfigUpdates_riskPremiumThresholdOnly() public {
     IAaveV4ConfigEngine.SpokeConfigUpdate[]
       memory updates = new IAaveV4ConfigEngine.SpokeConfigUpdate[](1);
     updates[0] = IAaveV4ConfigEngine.SpokeConfigUpdate({
-      hubConfigurator: IHubConfigurator(address(hubConfigurator)),
+      hubConfigurator: hubConfigurator,
       hub: address(hub1()),
       underlying: address(weth),
       spoke: address(spoke1()),
@@ -382,17 +480,29 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
     });
     payload.setHubSpokeConfigUpdates(updates);
 
+    IHub.SpokeConfig memory spokeConfigBefore = hub1().getSpokeConfig(
+      _getAssetId(0, 0),
+      address(spoke1())
+    );
+
     payload.execute();
 
-    IHub.SpokeConfig memory spokeConfig = hub1().getSpokeConfig(assetIds[0][0], address(spoke1()));
+    IHub.SpokeConfig memory spokeConfig = hub1().getSpokeConfig(
+      _getAssetId(0, 0),
+      address(spoke1())
+    );
     assertEq(spokeConfig.riskPremiumThreshold, 200);
+    assertEq(spokeConfig.addCap, spokeConfigBefore.addCap);
+    assertEq(spokeConfig.drawCap, spokeConfigBefore.drawCap);
+    assertEq(spokeConfig.active, spokeConfigBefore.active);
+    assertEq(spokeConfig.halted, spokeConfigBefore.halted);
   }
 
   function test_execute_hubSpokeConfigUpdates_statusOnly() public {
     IAaveV4ConfigEngine.SpokeConfigUpdate[]
       memory updates = new IAaveV4ConfigEngine.SpokeConfigUpdate[](1);
     updates[0] = IAaveV4ConfigEngine.SpokeConfigUpdate({
-      hubConfigurator: IHubConfigurator(address(hubConfigurator)),
+      hubConfigurator: hubConfigurator,
       hub: address(hub1()),
       underlying: address(weth),
       spoke: address(spoke1()),
@@ -404,11 +514,22 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
     });
     payload.setHubSpokeConfigUpdates(updates);
 
+    IHub.SpokeConfig memory spokeConfigBefore = hub1().getSpokeConfig(
+      _getAssetId(0, 0),
+      address(spoke1())
+    );
+
     payload.execute();
 
-    IHub.SpokeConfig memory spokeConfig = hub1().getSpokeConfig(assetIds[0][0], address(spoke1()));
+    IHub.SpokeConfig memory spokeConfig = hub1().getSpokeConfig(
+      _getAssetId(0, 0),
+      address(spoke1())
+    );
     assertTrue(spokeConfig.active);
     assertFalse(spokeConfig.halted);
+    assertEq(spokeConfig.addCap, spokeConfigBefore.addCap);
+    assertEq(spokeConfig.drawCap, spokeConfigBefore.drawCap);
+    assertEq(spokeConfig.riskPremiumThreshold, spokeConfigBefore.riskPremiumThreshold);
   }
 
   function test_fuzz_execute_hubSpokeConfigUpdates_capsOnly(
@@ -421,7 +542,7 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
     IAaveV4ConfigEngine.SpokeConfigUpdate[]
       memory updates = new IAaveV4ConfigEngine.SpokeConfigUpdate[](1);
     updates[0] = IAaveV4ConfigEngine.SpokeConfigUpdate({
-      hubConfigurator: IHubConfigurator(address(hubConfigurator)),
+      hubConfigurator: hubConfigurator,
       hub: address(hub1()),
       underlying: address(weth),
       spoke: address(spoke1()),
@@ -433,22 +554,33 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
     });
     payload.setHubSpokeConfigUpdates(updates);
 
+    IHub.SpokeConfig memory spokeConfigBefore = hub1().getSpokeConfig(
+      _getAssetId(0, 0),
+      address(spoke1())
+    );
+
     payload.execute();
 
-    IHub.SpokeConfig memory spokeConfig = hub1().getSpokeConfig(assetIds[0][0], address(spoke1()));
+    IHub.SpokeConfig memory spokeConfig = hub1().getSpokeConfig(
+      _getAssetId(0, 0),
+      address(spoke1())
+    );
     assertEq(spokeConfig.addCap, addCap);
     assertEq(spokeConfig.drawCap, drawCap);
+    assertEq(spokeConfig.riskPremiumThreshold, spokeConfigBefore.riskPremiumThreshold);
+    assertEq(spokeConfig.active, spokeConfigBefore.active);
+    assertEq(spokeConfig.halted, spokeConfigBefore.halted);
   }
 
   function test_execute_hubAssetHalts_multiElement() public {
     IAaveV4ConfigEngine.AssetHalt[] memory halts = new IAaveV4ConfigEngine.AssetHalt[](2);
     halts[0] = IAaveV4ConfigEngine.AssetHalt({
-      hubConfigurator: IHubConfigurator(address(hubConfigurator)),
+      hubConfigurator: hubConfigurator,
       hub: address(hub1()),
       underlying: address(weth)
     });
     halts[1] = IAaveV4ConfigEngine.AssetHalt({
-      hubConfigurator: IHubConfigurator(address(hubConfigurator)),
+      hubConfigurator: hubConfigurator,
       hub: address(hub2()),
       underlying: address(weth)
     });
@@ -456,17 +588,23 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
 
     payload.execute();
 
-    IHub.SpokeConfig memory spokeConfig1 = hub1().getSpokeConfig(assetIds[0][0], address(spoke1()));
+    IHub.SpokeConfig memory spokeConfig1 = hub1().getSpokeConfig(
+      _getAssetId(0, 0),
+      address(spoke1())
+    );
     assertTrue(spokeConfig1.halted);
 
-    IHub.SpokeConfig memory spokeConfig2 = hub2().getSpokeConfig(assetIds[1][0], address(spoke1()));
+    IHub.SpokeConfig memory spokeConfig2 = hub2().getSpokeConfig(
+      _getAssetId(1, 0),
+      address(spoke1())
+    );
     assertTrue(spokeConfig2.halted);
   }
 
   function test_execute_hubAssetDeactivations() public {
     IAaveV4ConfigEngine.AssetHalt[] memory halts = new IAaveV4ConfigEngine.AssetHalt[](1);
     halts[0] = IAaveV4ConfigEngine.AssetHalt({
-      hubConfigurator: IHubConfigurator(address(hubConfigurator)),
+      hubConfigurator: hubConfigurator,
       hub: address(hub1()),
       underlying: address(weth)
     });
@@ -480,7 +618,7 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
     IAaveV4ConfigEngine.AssetDeactivation[]
       memory deactivations = new IAaveV4ConfigEngine.AssetDeactivation[](1);
     deactivations[0] = IAaveV4ConfigEngine.AssetDeactivation({
-      hubConfigurator: IHubConfigurator(address(hubConfigurator)),
+      hubConfigurator: hubConfigurator,
       hub: address(hub1()),
       underlying: address(weth)
     });
@@ -488,7 +626,10 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
 
     payload.execute();
 
-    IHub.SpokeConfig memory spokeConfig = hub1().getSpokeConfig(assetIds[0][0], address(spoke1()));
+    IHub.SpokeConfig memory spokeConfig = hub1().getSpokeConfig(
+      _getAssetId(0, 0),
+      address(spoke1())
+    );
     assertFalse(spokeConfig.active);
   }
 
@@ -497,7 +638,7 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
       1
     );
     resets[0] = IAaveV4ConfigEngine.AssetCapsReset({
-      hubConfigurator: IHubConfigurator(address(hubConfigurator)),
+      hubConfigurator: hubConfigurator,
       hub: address(hub1()),
       underlying: address(weth)
     });
@@ -505,7 +646,10 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
 
     payload.execute();
 
-    IHub.SpokeConfig memory spokeConfig = hub1().getSpokeConfig(assetIds[0][0], address(spoke1()));
+    IHub.SpokeConfig memory spokeConfig = hub1().getSpokeConfig(
+      _getAssetId(0, 0),
+      address(spoke1())
+    );
     assertEq(spokeConfig.addCap, 0);
     assertEq(spokeConfig.drawCap, 0);
   }
@@ -520,22 +664,22 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
       1
     );
     listings[0] = IAaveV4ConfigEngine.ReserveListing({
-      spokeConfigurator: ISpokeConfigurator(address(spokeConfigurator)),
+      spokeConfigurator: spokeConfigurator,
       spoke: address(spoke1()),
       hub: address(hub1()),
       underlying: address(newToken),
       priceSource: newPriceFeed,
       config: ISpoke.ReserveConfig({
-        collateralRisk: 5000,
+        collateralRisk: 50_00,
         paused: false,
         frozen: false,
         borrowable: true,
         receiveSharesEnabled: true
       }),
       dynamicConfig: ISpoke.DynamicReserveConfig({
-        collateralFactor: 8000,
-        maxLiquidationBonus: 10500,
-        liquidationFee: 1000
+        collateralFactor: 80_00,
+        maxLiquidationBonus: 105_00,
+        liquidationFee: 10_00
       })
     });
     payload.setSpokeReserveListings(listings);
@@ -550,13 +694,13 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
     IAaveV4ConfigEngine.ReserveConfigUpdate[]
       memory updates = new IAaveV4ConfigEngine.ReserveConfigUpdate[](1);
     updates[0] = _defaultReserveConfigUpdate();
-    updates[0].collateralRisk = 7500;
+    updates[0].collateralRisk = 75_00;
     payload.setSpokeReserveConfigUpdates(updates);
 
     payload.execute();
 
-    ISpoke.ReserveConfig memory config = spoke1().getReserveConfig(reserveIds[0][0]);
-    assertEq(config.collateralRisk, 7500);
+    ISpoke.ReserveConfig memory config = spoke1().getReserveConfig(_getReserveId(0, 0));
+    assertEq(config.collateralRisk, 75_00);
   }
 
   function test_fuzz_execute_spokeReserveConfigUpdates(uint256 collateralRisk) public {
@@ -575,7 +719,7 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
 
     payload.execute();
 
-    ISpoke.ReserveConfig memory config = spoke1().getReserveConfig(reserveIds[0][0]);
+    ISpoke.ReserveConfig memory config = spoke1().getReserveConfig(_getReserveId(0, 0));
     assertEq(config.collateralRisk, collateralRisk);
   }
 
@@ -598,7 +742,7 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
     IAaveV4ConfigEngine.LiquidationConfigUpdate[]
       memory updates = new IAaveV4ConfigEngine.LiquidationConfigUpdate[](1);
     updates[0] = IAaveV4ConfigEngine.LiquidationConfigUpdate({
-      spokeConfigurator: ISpokeConfigurator(address(spokeConfigurator)),
+      spokeConfigurator: spokeConfigurator,
       spoke: address(spoke1()),
       targetHealthFactor: targetHealthFactor,
       healthFactorForMaxBonus: EngineFlags.KEEP_CURRENT,
@@ -620,7 +764,7 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
 
     payload.execute();
 
-    uint256 reserveId = reserveIds[0][0];
+    uint256 reserveId = _getReserveId(0, 0);
     ISpoke.DynamicReserveConfig memory dynConfig = spoke1().getDynamicReserveConfig(reserveId, 1);
     assertEq(dynConfig.collateralFactor, additions[0].dynamicConfig.collateralFactor);
     assertEq(dynConfig.maxLiquidationBonus, additions[0].dynamicConfig.maxLiquidationBonus);
@@ -631,21 +775,21 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
     IAaveV4ConfigEngine.DynamicReserveConfigUpdate[]
       memory updates = new IAaveV4ConfigEngine.DynamicReserveConfigUpdate[](1);
     updates[0] = _defaultDynamicReserveConfigUpdate();
-    updates[0].collateralFactor = 9000;
-    updates[0].maxLiquidationBonus = 11000;
-    updates[0].liquidationFee = 500;
+    updates[0].collateralFactor = 90_00;
+    updates[0].maxLiquidationBonus = 110_00;
+    updates[0].liquidationFee = 5_00;
     payload.setSpokeDynamicReserveConfigUpdates(updates);
 
     payload.execute();
 
-    uint256 reserveId = reserveIds[0][0];
+    uint256 reserveId = _getReserveId(0, 0);
     ISpoke.DynamicReserveConfig memory dynConfig = spoke1().getDynamicReserveConfig(
       reserveId,
       uint32(DYNAMIC_CONFIG_KEY)
     );
-    assertEq(dynConfig.collateralFactor, 9000);
-    assertEq(dynConfig.maxLiquidationBonus, 11000);
-    assertEq(dynConfig.liquidationFee, 500);
+    assertEq(dynConfig.collateralFactor, 90_00);
+    assertEq(dynConfig.maxLiquidationBonus, 110_00);
+    assertEq(dynConfig.liquidationFee, 5_00);
   }
 
   function test_fuzz_execute_spokeDynamicReserveConfigUpdates(
@@ -671,7 +815,7 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
 
     payload.execute();
 
-    uint256 reserveId = reserveIds[0][0];
+    uint256 reserveId = _getReserveId(0, 0);
     ISpoke.DynamicReserveConfig memory dynConfig = spoke1().getDynamicReserveConfig(
       reserveId,
       uint32(DYNAMIC_CONFIG_KEY)
@@ -685,7 +829,7 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
     IAaveV4ConfigEngine.PositionManagerUpdate[]
       memory updates = new IAaveV4ConfigEngine.PositionManagerUpdate[](1);
     updates[0] = IAaveV4ConfigEngine.PositionManagerUpdate({
-      spokeConfigurator: ISpokeConfigurator(address(spokeConfigurator)),
+      spokeConfigurator: spokeConfigurator,
       spoke: address(spoke1()),
       positionManager: address(payloadPositionManager),
       active: true
@@ -773,7 +917,7 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
     payload.execute();
 
     assertEq(
-      accessManager.getTargetFunctionRole(TARGET, bytes4(0xdeadbeef)),
+      accessManager.getTargetFunctionRole(TARGET, selectors[0]),
       Roles.HUB_CONFIGURATOR_ROLE
     );
   }
@@ -798,7 +942,7 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
     IAaveV4ConfigEngine.SpokeDeactivation[]
       memory deactivations = new IAaveV4ConfigEngine.SpokeDeactivation[](1);
     deactivations[0] = IAaveV4ConfigEngine.SpokeDeactivation({
-      hubConfigurator: IHubConfigurator(address(hubConfigurator)),
+      hubConfigurator: hubConfigurator,
       hub: address(hub1()),
       spoke: address(spoke1())
     });
@@ -806,7 +950,10 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
 
     payload.execute();
 
-    IHub.SpokeConfig memory spokeConfig = hub1().getSpokeConfig(assetIds[0][0], address(spoke1()));
+    IHub.SpokeConfig memory spokeConfig = hub1().getSpokeConfig(
+      _getAssetId(0, 0),
+      address(spoke1())
+    );
     assertFalse(spokeConfig.active);
   }
 
@@ -815,7 +962,7 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
       1
     );
     resets[0] = IAaveV4ConfigEngine.SpokeCapsReset({
-      hubConfigurator: IHubConfigurator(address(hubConfigurator)),
+      hubConfigurator: hubConfigurator,
       hub: address(hub1()),
       spoke: address(spoke1())
     });
@@ -823,7 +970,10 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
 
     payload.execute();
 
-    IHub.SpokeConfig memory spokeConfig = hub1().getSpokeConfig(assetIds[0][0], address(spoke1()));
+    IHub.SpokeConfig memory spokeConfig = hub1().getSpokeConfig(
+      _getAssetId(0, 0),
+      address(spoke1())
+    );
     assertEq(spokeConfig.addCap, 0);
     assertEq(spokeConfig.drawCap, 0);
   }
@@ -862,10 +1012,11 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
   }
 
   function test_execute_positionManagerRoleRenouncements() public {
+    PositionManagerBaseWrapper freshPm = new PositionManagerBaseWrapper(address(payload));
     IAaveV4ConfigEngine.SpokeRegistration[]
       memory regs = new IAaveV4ConfigEngine.SpokeRegistration[](1);
     regs[0] = IAaveV4ConfigEngine.SpokeRegistration({
-      positionManager: address(payloadPositionManager),
+      positionManager: address(freshPm),
       spoke: address(spoke1()),
       registered: true
     });
@@ -874,25 +1025,17 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
     IAaveV4ConfigEngine.PositionManagerUpdate[]
       memory pmUpdates = new IAaveV4ConfigEngine.PositionManagerUpdate[](1);
     pmUpdates[0] = IAaveV4ConfigEngine.PositionManagerUpdate({
-      spokeConfigurator: ISpokeConfigurator(address(spokeConfigurator)),
+      spokeConfigurator: spokeConfigurator,
       spoke: address(spoke1()),
-      positionManager: address(payloadPositionManager),
+      positionManager: address(freshPm),
       active: true
     });
     payload.setSpokePositionManagerUpdates(pmUpdates);
     payload.execute();
 
     vm.prank(USER);
-    spoke1().setUserPositionManager(address(payloadPositionManager), true);
-    assertTrue(spoke1().isPositionManager(USER, address(payloadPositionManager)));
-
-    payload = new AaveV4PayloadWrapper(IAaveV4ConfigEngine(address(engine)));
-    vm.startPrank(ADMIN);
-    accessManager.grantRole(Roles.HUB_CONFIGURATOR_ROLE, address(payload), 0);
-    accessManager.grantRole(Roles.SPOKE_CONFIGURATOR_ROLE, address(payload), 0);
-    accessManager.grantRole(Roles.DEFAULT_ADMIN_ROLE, address(payload), 0);
-    vm.stopPrank();
-    PositionManagerBaseWrapper freshPm = new PositionManagerBaseWrapper(address(payload));
+    spoke1().setUserPositionManager(address(freshPm), true);
+    assertTrue(spoke1().isPositionManager(USER, address(freshPm)));
 
     IAaveV4ConfigEngine.PositionManagerRoleRenouncement[]
       memory renouncements = new IAaveV4ConfigEngine.PositionManagerRoleRenouncement[](1);

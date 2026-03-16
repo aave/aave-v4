@@ -2,16 +2,7 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import {BaseConfigEngineTest} from 'tests/config-engine/BaseConfigEngine.t.sol';
-
-import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
-import {ISpokeConfigurator} from 'src/spoke/interfaces/ISpokeConfigurator.sol';
-import {IAaveV4ConfigEngine} from 'src/config-engine/interfaces/IAaveV4ConfigEngine.sol';
-
-import {EngineFlags} from 'src/config-engine/libraries/EngineFlags.sol';
-
-import {MockPriceFeed} from 'tests/mocks/MockPriceFeed.sol';
-import {Roles} from 'src/libraries/types/Roles.sol';
+import 'tests/config-engine/BaseConfigEngine.t.sol';
 
 contract SpokeEngineTest is BaseConfigEngineTest {
   function setUp() public override {
@@ -50,14 +41,14 @@ contract SpokeEngineTest is BaseConfigEngineTest {
   }
 
   function test_executeSpokeReserveConfigUpdates_allSet() public {
-    uint256 reserveId = reserveIds[0][0];
+    uint256 reserveId = _getReserveId(0, 0);
 
     IAaveV4ConfigEngine.ReserveConfigUpdate memory update = _defaultReserveConfigUpdate();
 
     engine.executeSpokeReserveConfigUpdates(_toReserveConfigUpdateArray(update));
 
     ISpoke.ReserveConfig memory config = spoke1().getReserveConfig(reserveId);
-    assertEq(config.collateralRisk, 5000);
+    assertEq(config.collateralRisk, 50_00);
     assertFalse(config.paused);
     assertFalse(config.frozen);
     assertTrue(config.borrowable);
@@ -65,12 +56,12 @@ contract SpokeEngineTest is BaseConfigEngineTest {
   }
 
   function test_executeSpokeReserveConfigUpdates_allKeepCurrent() public {
-    uint256 reserveId = reserveIds[0][0];
-    ISpoke.ReserveConfig memory before_ = spoke1().getReserveConfig(reserveId);
+    uint256 reserveId = _getReserveId(0, 0);
+    ISpoke.ReserveConfig memory reserveConfigBefore = spoke1().getReserveConfig(reserveId);
 
     IAaveV4ConfigEngine.ReserveConfigUpdate memory update = IAaveV4ConfigEngine
       .ReserveConfigUpdate({
-        spokeConfigurator: ISpokeConfigurator(address(spokeConfigurator)),
+        spokeConfigurator: spokeConfigurator,
         spoke: address(spoke1()),
         hub: address(hub1()),
         underlying: address(weth),
@@ -84,26 +75,26 @@ contract SpokeEngineTest is BaseConfigEngineTest {
 
     engine.executeSpokeReserveConfigUpdates(_toReserveConfigUpdateArray(update));
 
-    ISpoke.ReserveConfig memory after_ = spoke1().getReserveConfig(reserveId);
-    assertEq(after_.collateralRisk, before_.collateralRisk);
-    assertEq(after_.paused, before_.paused);
-    assertEq(after_.frozen, before_.frozen);
-    assertEq(after_.borrowable, before_.borrowable);
-    assertEq(after_.receiveSharesEnabled, before_.receiveSharesEnabled);
+    ISpoke.ReserveConfig memory reserveConfigAfter = spoke1().getReserveConfig(reserveId);
+    assertEq(reserveConfigAfter.collateralRisk, reserveConfigBefore.collateralRisk);
+    assertEq(reserveConfigAfter.paused, reserveConfigBefore.paused);
+    assertEq(reserveConfigAfter.frozen, reserveConfigBefore.frozen);
+    assertEq(reserveConfigAfter.borrowable, reserveConfigBefore.borrowable);
+    assertEq(reserveConfigAfter.receiveSharesEnabled, reserveConfigBefore.receiveSharesEnabled);
   }
 
   function test_executeSpokeReserveConfigUpdates_onlyCollateralRisk() public {
-    uint256 reserveId = reserveIds[0][0];
-    ISpoke.ReserveConfig memory before_ = spoke1().getReserveConfig(reserveId);
+    uint256 reserveId = _getReserveId(0, 0);
+    ISpoke.ReserveConfig memory reserveConfigBefore = spoke1().getReserveConfig(reserveId);
 
     IAaveV4ConfigEngine.ReserveConfigUpdate memory update = IAaveV4ConfigEngine
       .ReserveConfigUpdate({
-        spokeConfigurator: ISpokeConfigurator(address(spokeConfigurator)),
+        spokeConfigurator: spokeConfigurator,
         spoke: address(spoke1()),
         hub: address(hub1()),
         underlying: address(weth),
         priceSource: EngineFlags.KEEP_CURRENT_ADDRESS,
-        collateralRisk: 7500,
+        collateralRisk: 75_00,
         paused: EngineFlags.KEEP_CURRENT,
         frozen: EngineFlags.KEEP_CURRENT,
         borrowable: EngineFlags.KEEP_CURRENT,
@@ -112,28 +103,28 @@ contract SpokeEngineTest is BaseConfigEngineTest {
 
     vm.expectCall(
       address(spokeConfigurator),
-      abi.encodeCall(ISpokeConfigurator.updateCollateralRisk, (address(spoke1()), reserveId, 7500))
+      abi.encodeCall(ISpokeConfigurator.updateCollateralRisk, (address(spoke1()), reserveId, 75_00))
     );
     engine.executeSpokeReserveConfigUpdates(_toReserveConfigUpdateArray(update));
 
     ISpoke.ReserveConfig memory config = spoke1().getReserveConfig(reserveId);
-    assertEq(config.collateralRisk, 7500);
-    assertEq(config.paused, before_.paused);
-    assertEq(config.frozen, before_.frozen);
-    assertEq(config.borrowable, before_.borrowable);
-    assertEq(config.receiveSharesEnabled, before_.receiveSharesEnabled);
+    assertEq(config.collateralRisk, 75_00);
+    assertEq(config.paused, reserveConfigBefore.paused);
+    assertEq(config.frozen, reserveConfigBefore.frozen);
+    assertEq(config.borrowable, reserveConfigBefore.borrowable);
+    assertEq(config.receiveSharesEnabled, reserveConfigBefore.receiveSharesEnabled);
   }
 
   function test_fuzz_executeSpokeReserveConfigUpdates_onlyCollateralRisk(
     uint256 collateralRisk
   ) public {
     collateralRisk = bound(collateralRisk, 0, 100_000);
-    uint256 reserveId = reserveIds[0][0];
-    ISpoke.ReserveConfig memory before_ = spoke1().getReserveConfig(reserveId);
+    uint256 reserveId = _getReserveId(0, 0);
+    ISpoke.ReserveConfig memory reserveConfigBefore = spoke1().getReserveConfig(reserveId);
 
     IAaveV4ConfigEngine.ReserveConfigUpdate memory update = IAaveV4ConfigEngine
       .ReserveConfigUpdate({
-        spokeConfigurator: ISpokeConfigurator(address(spokeConfigurator)),
+        spokeConfigurator: spokeConfigurator,
         spoke: address(spoke1()),
         hub: address(hub1()),
         underlying: address(weth),
@@ -147,12 +138,12 @@ contract SpokeEngineTest is BaseConfigEngineTest {
 
     engine.executeSpokeReserveConfigUpdates(_toReserveConfigUpdateArray(update));
 
-    ISpoke.ReserveConfig memory after_ = spoke1().getReserveConfig(reserveId);
-    assertEq(after_.collateralRisk, collateralRisk);
-    assertEq(after_.paused, before_.paused);
-    assertEq(after_.frozen, before_.frozen);
-    assertEq(after_.borrowable, before_.borrowable);
-    assertEq(after_.receiveSharesEnabled, before_.receiveSharesEnabled);
+    ISpoke.ReserveConfig memory reserveConfigAfter = spoke1().getReserveConfig(reserveId);
+    assertEq(reserveConfigAfter.collateralRisk, collateralRisk);
+    assertEq(reserveConfigAfter.paused, reserveConfigBefore.paused);
+    assertEq(reserveConfigAfter.frozen, reserveConfigBefore.frozen);
+    assertEq(reserveConfigAfter.borrowable, reserveConfigBefore.borrowable);
+    assertEq(reserveConfigAfter.receiveSharesEnabled, reserveConfigBefore.receiveSharesEnabled);
   }
 
   function test_executeSpokeReserveConfigUpdates_onlyPriceSource() public {
@@ -160,7 +151,7 @@ contract SpokeEngineTest is BaseConfigEngineTest {
 
     IAaveV4ConfigEngine.ReserveConfigUpdate memory update = IAaveV4ConfigEngine
       .ReserveConfigUpdate({
-        spokeConfigurator: ISpokeConfigurator(address(spokeConfigurator)),
+        spokeConfigurator: spokeConfigurator,
         spoke: address(spoke1()),
         hub: address(hub1()),
         underlying: address(weth),
@@ -172,7 +163,7 @@ contract SpokeEngineTest is BaseConfigEngineTest {
         receiveSharesEnabled: EngineFlags.KEEP_CURRENT
       });
 
-    uint256 reserveId = reserveIds[0][0];
+    uint256 reserveId = _getReserveId(0, 0);
     vm.expectCall(
       address(spokeConfigurator),
       abi.encodeCall(
@@ -190,12 +181,12 @@ contract SpokeEngineTest is BaseConfigEngineTest {
     IAaveV4ConfigEngine.LiquidationConfigUpdate memory update = _defaultLiquidationConfigUpdate();
     update.targetHealthFactor = 1.10e18;
     update.healthFactorForMaxBonus = 0.90e18;
-    update.liquidationBonusFactor = 9000;
+    update.liquidationBonusFactor = 90_00;
 
     ISpoke.LiquidationConfig memory expectedConfig = ISpoke.LiquidationConfig({
       targetHealthFactor: uint128(1.10e18),
       healthFactorForMaxBonus: uint64(0.90e18),
-      liquidationBonusFactor: 9000
+      liquidationBonusFactor: 90_00
     });
 
     vm.expectCall(
@@ -206,7 +197,7 @@ contract SpokeEngineTest is BaseConfigEngineTest {
       )
     );
 
-    vm.expectEmit(false, false, false, true, address(spoke1()));
+    vm.expectEmit(address(spoke1()));
     emit ISpoke.UpdateLiquidationConfig(expectedConfig);
 
     engine.executeSpokeLiquidationConfigUpdates(_toLiquidationConfigUpdateArray(update));
@@ -215,37 +206,37 @@ contract SpokeEngineTest is BaseConfigEngineTest {
   }
 
   function test_fuzz_executeSpokeLiquidationConfigUpdates_allSet(
-    uint256 thf,
-    uint256 hfmb,
-    uint256 lbf
+    uint256 targetHealthFactor,
+    uint256 healthFactorForMaxBonus,
+    uint256 liquidationBonusFactor
   ) public {
-    thf = bound(thf, 1e18, type(uint128).max);
-    hfmb = bound(hfmb, 1, 1e18 - 1);
-    lbf = bound(lbf, 0, 10_000);
+    targetHealthFactor = bound(targetHealthFactor, 1e18, type(uint128).max);
+    healthFactorForMaxBonus = bound(healthFactorForMaxBonus, 1, 1e18 - 1);
+    liquidationBonusFactor = bound(liquidationBonusFactor, 0, 10_000);
 
     IAaveV4ConfigEngine.LiquidationConfigUpdate memory update = IAaveV4ConfigEngine
       .LiquidationConfigUpdate({
-        spokeConfigurator: ISpokeConfigurator(address(spokeConfigurator)),
+        spokeConfigurator: spokeConfigurator,
         spoke: address(spoke1()),
-        targetHealthFactor: thf,
-        healthFactorForMaxBonus: hfmb,
-        liquidationBonusFactor: lbf
+        targetHealthFactor: targetHealthFactor,
+        healthFactorForMaxBonus: healthFactorForMaxBonus,
+        liquidationBonusFactor: liquidationBonusFactor
       });
 
     engine.executeSpokeLiquidationConfigUpdates(_toLiquidationConfigUpdateArray(update));
 
-    ISpoke.LiquidationConfig memory after_ = spoke1().getLiquidationConfig();
-    assertEq(after_.targetHealthFactor, uint128(thf));
-    assertEq(after_.healthFactorForMaxBonus, uint64(hfmb));
-    assertEq(after_.liquidationBonusFactor, lbf);
+    ISpoke.LiquidationConfig memory liqConfigAfter = spoke1().getLiquidationConfig();
+    assertEq(liqConfigAfter.targetHealthFactor, uint128(targetHealthFactor));
+    assertEq(liqConfigAfter.healthFactorForMaxBonus, uint64(healthFactorForMaxBonus));
+    assertEq(liqConfigAfter.liquidationBonusFactor, liquidationBonusFactor);
   }
 
   function test_executeSpokeLiquidationConfigUpdates_targetOnly() public {
-    ISpoke.LiquidationConfig memory before_ = spoke1().getLiquidationConfig();
+    ISpoke.LiquidationConfig memory liqConfigBefore = spoke1().getLiquidationConfig();
 
     IAaveV4ConfigEngine.LiquidationConfigUpdate memory update = IAaveV4ConfigEngine
       .LiquidationConfigUpdate({
-        spokeConfigurator: ISpokeConfigurator(address(spokeConfigurator)),
+        spokeConfigurator: spokeConfigurator,
         spoke: address(spoke1()),
         targetHealthFactor: 1.15e18,
         healthFactorForMaxBonus: EngineFlags.KEEP_CURRENT,
@@ -261,39 +252,41 @@ contract SpokeEngineTest is BaseConfigEngineTest {
     );
     engine.executeSpokeLiquidationConfigUpdates(_toLiquidationConfigUpdateArray(update));
 
-    ISpoke.LiquidationConfig memory after_ = spoke1().getLiquidationConfig();
-    assertEq(after_.targetHealthFactor, uint128(1.15e18));
-    assertEq(after_.healthFactorForMaxBonus, before_.healthFactorForMaxBonus);
-    assertEq(after_.liquidationBonusFactor, before_.liquidationBonusFactor);
+    ISpoke.LiquidationConfig memory liqConfigAfter = spoke1().getLiquidationConfig();
+    assertEq(liqConfigAfter.targetHealthFactor, uint128(1.15e18));
+    assertEq(liqConfigAfter.healthFactorForMaxBonus, liqConfigBefore.healthFactorForMaxBonus);
+    assertEq(liqConfigAfter.liquidationBonusFactor, liqConfigBefore.liquidationBonusFactor);
   }
 
-  function test_fuzz_executeSpokeLiquidationConfigUpdates_targetOnly(uint256 thf) public {
-    thf = bound(thf, 1e18, type(uint128).max);
-    ISpoke.LiquidationConfig memory before_ = spoke1().getLiquidationConfig();
+  function test_fuzz_executeSpokeLiquidationConfigUpdates_targetOnly(
+    uint256 targetHealthFactor
+  ) public {
+    targetHealthFactor = bound(targetHealthFactor, 1e18, type(uint128).max);
+    ISpoke.LiquidationConfig memory liqConfigBefore = spoke1().getLiquidationConfig();
 
     IAaveV4ConfigEngine.LiquidationConfigUpdate memory update = IAaveV4ConfigEngine
       .LiquidationConfigUpdate({
-        spokeConfigurator: ISpokeConfigurator(address(spokeConfigurator)),
+        spokeConfigurator: spokeConfigurator,
         spoke: address(spoke1()),
-        targetHealthFactor: thf,
+        targetHealthFactor: targetHealthFactor,
         healthFactorForMaxBonus: EngineFlags.KEEP_CURRENT,
         liquidationBonusFactor: EngineFlags.KEEP_CURRENT
       });
 
     engine.executeSpokeLiquidationConfigUpdates(_toLiquidationConfigUpdateArray(update));
 
-    ISpoke.LiquidationConfig memory after_ = spoke1().getLiquidationConfig();
-    assertEq(after_.targetHealthFactor, uint128(thf));
-    assertEq(after_.healthFactorForMaxBonus, before_.healthFactorForMaxBonus);
-    assertEq(after_.liquidationBonusFactor, before_.liquidationBonusFactor);
+    ISpoke.LiquidationConfig memory liqConfigAfter = spoke1().getLiquidationConfig();
+    assertEq(liqConfigAfter.targetHealthFactor, uint128(targetHealthFactor));
+    assertEq(liqConfigAfter.healthFactorForMaxBonus, liqConfigBefore.healthFactorForMaxBonus);
+    assertEq(liqConfigAfter.liquidationBonusFactor, liqConfigBefore.liquidationBonusFactor);
   }
 
   function test_executeSpokeLiquidationConfigUpdates_maxBonusOnly() public {
-    ISpoke.LiquidationConfig memory before_ = spoke1().getLiquidationConfig();
+    ISpoke.LiquidationConfig memory liqConfigBefore = spoke1().getLiquidationConfig();
 
     IAaveV4ConfigEngine.LiquidationConfigUpdate memory update = IAaveV4ConfigEngine
       .LiquidationConfigUpdate({
-        spokeConfigurator: ISpokeConfigurator(address(spokeConfigurator)),
+        spokeConfigurator: spokeConfigurator,
         spoke: address(spoke1()),
         targetHealthFactor: EngineFlags.KEEP_CURRENT,
         healthFactorForMaxBonus: 0.85e18,
@@ -306,84 +299,88 @@ contract SpokeEngineTest is BaseConfigEngineTest {
     );
     engine.executeSpokeLiquidationConfigUpdates(_toLiquidationConfigUpdateArray(update));
 
-    ISpoke.LiquidationConfig memory after_ = spoke1().getLiquidationConfig();
-    assertEq(after_.targetHealthFactor, before_.targetHealthFactor);
-    assertEq(after_.healthFactorForMaxBonus, uint64(0.85e18));
-    assertEq(after_.liquidationBonusFactor, before_.liquidationBonusFactor);
+    ISpoke.LiquidationConfig memory liqConfigAfter = spoke1().getLiquidationConfig();
+    assertEq(liqConfigAfter.targetHealthFactor, liqConfigBefore.targetHealthFactor);
+    assertEq(liqConfigAfter.healthFactorForMaxBonus, uint64(0.85e18));
+    assertEq(liqConfigAfter.liquidationBonusFactor, liqConfigBefore.liquidationBonusFactor);
   }
 
-  function test_fuzz_executeSpokeLiquidationConfigUpdates_maxBonusOnly(uint256 hfmb) public {
-    hfmb = bound(hfmb, 1, 1e18 - 1);
-    ISpoke.LiquidationConfig memory before_ = spoke1().getLiquidationConfig();
+  function test_fuzz_executeSpokeLiquidationConfigUpdates_maxBonusOnly(
+    uint256 healthFactorForMaxBonus
+  ) public {
+    healthFactorForMaxBonus = bound(healthFactorForMaxBonus, 1, 1e18 - 1);
+    ISpoke.LiquidationConfig memory liqConfigBefore = spoke1().getLiquidationConfig();
 
     IAaveV4ConfigEngine.LiquidationConfigUpdate memory update = IAaveV4ConfigEngine
       .LiquidationConfigUpdate({
-        spokeConfigurator: ISpokeConfigurator(address(spokeConfigurator)),
+        spokeConfigurator: spokeConfigurator,
         spoke: address(spoke1()),
         targetHealthFactor: EngineFlags.KEEP_CURRENT,
-        healthFactorForMaxBonus: hfmb,
+        healthFactorForMaxBonus: healthFactorForMaxBonus,
         liquidationBonusFactor: EngineFlags.KEEP_CURRENT
       });
 
     engine.executeSpokeLiquidationConfigUpdates(_toLiquidationConfigUpdateArray(update));
 
-    ISpoke.LiquidationConfig memory after_ = spoke1().getLiquidationConfig();
-    assertEq(after_.targetHealthFactor, before_.targetHealthFactor);
-    assertEq(after_.healthFactorForMaxBonus, uint64(hfmb));
-    assertEq(after_.liquidationBonusFactor, before_.liquidationBonusFactor);
+    ISpoke.LiquidationConfig memory liqConfigAfter = spoke1().getLiquidationConfig();
+    assertEq(liqConfigAfter.targetHealthFactor, liqConfigBefore.targetHealthFactor);
+    assertEq(liqConfigAfter.healthFactorForMaxBonus, uint64(healthFactorForMaxBonus));
+    assertEq(liqConfigAfter.liquidationBonusFactor, liqConfigBefore.liquidationBonusFactor);
   }
 
   function test_executeSpokeLiquidationConfigUpdates_bonusFactorOnly() public {
-    ISpoke.LiquidationConfig memory before_ = spoke1().getLiquidationConfig();
+    ISpoke.LiquidationConfig memory liqConfigBefore = spoke1().getLiquidationConfig();
 
     IAaveV4ConfigEngine.LiquidationConfigUpdate memory update = IAaveV4ConfigEngine
       .LiquidationConfigUpdate({
-        spokeConfigurator: ISpokeConfigurator(address(spokeConfigurator)),
+        spokeConfigurator: spokeConfigurator,
         spoke: address(spoke1()),
         targetHealthFactor: EngineFlags.KEEP_CURRENT,
         healthFactorForMaxBonus: EngineFlags.KEEP_CURRENT,
-        liquidationBonusFactor: 8000
+        liquidationBonusFactor: 80_00
       });
 
     vm.expectCall(
       address(spokeConfigurator),
-      abi.encodeCall(ISpokeConfigurator.updateLiquidationBonusFactor, (address(spoke1()), 8000))
+      abi.encodeCall(ISpokeConfigurator.updateLiquidationBonusFactor, (address(spoke1()), 80_00))
     );
     engine.executeSpokeLiquidationConfigUpdates(_toLiquidationConfigUpdateArray(update));
 
-    ISpoke.LiquidationConfig memory after_ = spoke1().getLiquidationConfig();
-    assertEq(after_.targetHealthFactor, before_.targetHealthFactor);
-    assertEq(after_.healthFactorForMaxBonus, before_.healthFactorForMaxBonus);
-    assertEq(after_.liquidationBonusFactor, 8000);
+    ISpoke.LiquidationConfig memory liqConfigAfter = spoke1().getLiquidationConfig();
+    assertEq(liqConfigAfter.targetHealthFactor, liqConfigBefore.targetHealthFactor);
+    assertEq(liqConfigAfter.healthFactorForMaxBonus, liqConfigBefore.healthFactorForMaxBonus);
+    assertEq(liqConfigAfter.liquidationBonusFactor, 80_00);
   }
 
-  function test_fuzz_executeSpokeLiquidationConfigUpdates_bonusFactorOnly(uint256 lbf) public {
-    lbf = bound(lbf, 0, 10_000);
-    ISpoke.LiquidationConfig memory before_ = spoke1().getLiquidationConfig();
+  function test_fuzz_executeSpokeLiquidationConfigUpdates_bonusFactorOnly(
+    uint256 liquidationBonusFactor
+  ) public {
+    liquidationBonusFactor = bound(liquidationBonusFactor, 0, 10_000);
+    ISpoke.LiquidationConfig memory liqConfigBefore = spoke1().getLiquidationConfig();
 
     IAaveV4ConfigEngine.LiquidationConfigUpdate memory update = IAaveV4ConfigEngine
       .LiquidationConfigUpdate({
-        spokeConfigurator: ISpokeConfigurator(address(spokeConfigurator)),
+        spokeConfigurator: spokeConfigurator,
         spoke: address(spoke1()),
         targetHealthFactor: EngineFlags.KEEP_CURRENT,
         healthFactorForMaxBonus: EngineFlags.KEEP_CURRENT,
-        liquidationBonusFactor: lbf
+        liquidationBonusFactor: liquidationBonusFactor
       });
 
     engine.executeSpokeLiquidationConfigUpdates(_toLiquidationConfigUpdateArray(update));
 
-    ISpoke.LiquidationConfig memory after_ = spoke1().getLiquidationConfig();
-    assertEq(after_.targetHealthFactor, before_.targetHealthFactor);
-    assertEq(after_.healthFactorForMaxBonus, before_.healthFactorForMaxBonus);
-    assertEq(after_.liquidationBonusFactor, lbf);
+    ISpoke.LiquidationConfig memory liqConfigAfter = spoke1().getLiquidationConfig();
+    assertEq(liqConfigAfter.targetHealthFactor, liqConfigBefore.targetHealthFactor);
+    assertEq(liqConfigAfter.healthFactorForMaxBonus, liqConfigBefore.healthFactorForMaxBonus);
+    assertEq(liqConfigAfter.liquidationBonusFactor, liquidationBonusFactor);
   }
 
   function test_executeSpokeLiquidationConfigUpdates_noneSet() public {
-    ISpoke.LiquidationConfig memory before_ = spoke1().getLiquidationConfig();
+    ISpoke.LiquidationConfig memory liqConfigBefore = spoke1().getLiquidationConfig();
 
     IAaveV4ConfigEngine.LiquidationConfigUpdate memory update = IAaveV4ConfigEngine
       .LiquidationConfigUpdate({
-        spokeConfigurator: ISpokeConfigurator(address(spokeConfigurator)),
+        spokeConfigurator: spokeConfigurator,
         spoke: address(spoke1()),
         targetHealthFactor: EngineFlags.KEEP_CURRENT,
         healthFactorForMaxBonus: EngineFlags.KEEP_CURRENT,
@@ -394,25 +391,25 @@ contract SpokeEngineTest is BaseConfigEngineTest {
     engine.executeSpokeLiquidationConfigUpdates(_toLiquidationConfigUpdateArray(update));
     _assertExactEventCount(0);
 
-    ISpoke.LiquidationConfig memory after_ = spoke1().getLiquidationConfig();
-    assertEq(after_.targetHealthFactor, before_.targetHealthFactor);
-    assertEq(after_.healthFactorForMaxBonus, before_.healthFactorForMaxBonus);
-    assertEq(after_.liquidationBonusFactor, before_.liquidationBonusFactor);
+    ISpoke.LiquidationConfig memory liqConfigAfter = spoke1().getLiquidationConfig();
+    assertEq(liqConfigAfter.targetHealthFactor, liqConfigBefore.targetHealthFactor);
+    assertEq(liqConfigAfter.healthFactorForMaxBonus, liqConfigBefore.healthFactorForMaxBonus);
+    assertEq(liqConfigAfter.liquidationBonusFactor, liqConfigBefore.liquidationBonusFactor);
   }
 
   function test_executeSpokeDynamicReserveConfigUpdates_allUpdated() public {
-    uint256 reserveId = reserveIds[0][0];
+    uint256 reserveId = _getReserveId(0, 0);
 
     IAaveV4ConfigEngine.DynamicReserveConfigUpdate
       memory update = _defaultDynamicReserveConfigUpdate();
-    update.collateralFactor = 9000;
-    update.maxLiquidationBonus = 11000;
-    update.liquidationFee = 500;
+    update.collateralFactor = 90_00;
+    update.maxLiquidationBonus = 110_00;
+    update.liquidationFee = 5_00;
 
     ISpoke.DynamicReserveConfig memory expectedDynConfig = ISpoke.DynamicReserveConfig({
-      collateralFactor: 9000,
-      maxLiquidationBonus: 11000,
-      liquidationFee: 500
+      collateralFactor: 90_00,
+      maxLiquidationBonus: 110_00,
+      liquidationFee: 5_00
     });
 
     vm.expectCall(
@@ -423,7 +420,7 @@ contract SpokeEngineTest is BaseConfigEngineTest {
       )
     );
 
-    vm.expectEmit(true, true, false, true, address(spoke1()));
+    vm.expectEmit(address(spoke1()));
     emit ISpoke.UpdateDynamicReserveConfig(
       reserveId,
       uint32(DYNAMIC_CONFIG_KEY),
@@ -436,15 +433,15 @@ contract SpokeEngineTest is BaseConfigEngineTest {
   }
 
   function test_executeSpokeDynamicReserveConfigUpdates_allKeepCurrent() public {
-    uint256 reserveId = reserveIds[0][0];
-    ISpoke.DynamicReserveConfig memory before_ = spoke1().getDynamicReserveConfig(
+    uint256 reserveId = _getReserveId(0, 0);
+    ISpoke.DynamicReserveConfig memory dynConfigBefore = spoke1().getDynamicReserveConfig(
       reserveId,
       uint32(DYNAMIC_CONFIG_KEY)
     );
 
     IAaveV4ConfigEngine.DynamicReserveConfigUpdate memory update = IAaveV4ConfigEngine
       .DynamicReserveConfigUpdate({
-        spokeConfigurator: ISpokeConfigurator(address(spokeConfigurator)),
+        spokeConfigurator: spokeConfigurator,
         spoke: address(spoke1()),
         hub: address(hub1()),
         underlying: address(weth),
@@ -458,52 +455,52 @@ contract SpokeEngineTest is BaseConfigEngineTest {
     engine.executeSpokeDynamicReserveConfigUpdates(_toDynamicReserveConfigUpdateArray(update));
     _assertExactEventCount(0);
 
-    _assertDynamicReserveConfig(reserveId, uint32(DYNAMIC_CONFIG_KEY), before_);
+    _assertDynamicReserveConfig(reserveId, uint32(DYNAMIC_CONFIG_KEY), dynConfigBefore);
   }
 
   function test_executeSpokeDynamicReserveConfigUpdates_partialUpdate() public {
-    uint256 reserveId = reserveIds[0][0];
-    ISpoke.DynamicReserveConfig memory before_ = spoke1().getDynamicReserveConfig(
+    uint256 reserveId = _getReserveId(0, 0);
+    ISpoke.DynamicReserveConfig memory dynConfigBefore = spoke1().getDynamicReserveConfig(
       reserveId,
       uint32(DYNAMIC_CONFIG_KEY)
     );
 
     IAaveV4ConfigEngine.DynamicReserveConfigUpdate memory update = IAaveV4ConfigEngine
       .DynamicReserveConfigUpdate({
-        spokeConfigurator: ISpokeConfigurator(address(spokeConfigurator)),
+        spokeConfigurator: spokeConfigurator,
         spoke: address(spoke1()),
         hub: address(hub1()),
         underlying: address(weth),
         dynamicConfigKey: DYNAMIC_CONFIG_KEY,
-        collateralFactor: 9000,
+        collateralFactor: 90_00,
         maxLiquidationBonus: EngineFlags.KEEP_CURRENT,
-        liquidationFee: 500
+        liquidationFee: 5_00
       });
 
     engine.executeSpokeDynamicReserveConfigUpdates(_toDynamicReserveConfigUpdateArray(update));
 
-    ISpoke.DynamicReserveConfig memory after_ = spoke1().getDynamicReserveConfig(
+    ISpoke.DynamicReserveConfig memory dynConfigAfter = spoke1().getDynamicReserveConfig(
       reserveId,
       uint32(DYNAMIC_CONFIG_KEY)
     );
-    assertEq(after_.collateralFactor, 9000);
-    assertEq(after_.maxLiquidationBonus, before_.maxLiquidationBonus);
-    assertEq(after_.liquidationFee, 500);
+    assertEq(dynConfigAfter.collateralFactor, 90_00);
+    assertEq(dynConfigAfter.maxLiquidationBonus, dynConfigBefore.maxLiquidationBonus);
+    assertEq(dynConfigAfter.liquidationFee, 5_00);
   }
 
   function test_fuzz_executeSpokeDynamicReserveConfigUpdates_liquidationFee(
     uint256 liquidationFee
   ) public {
     liquidationFee = bound(liquidationFee, 0, 10_000);
-    uint256 reserveId = reserveIds[0][0];
-    ISpoke.DynamicReserveConfig memory before_ = spoke1().getDynamicReserveConfig(
+    uint256 reserveId = _getReserveId(0, 0);
+    ISpoke.DynamicReserveConfig memory dynConfigBefore = spoke1().getDynamicReserveConfig(
       reserveId,
       uint32(DYNAMIC_CONFIG_KEY)
     );
 
     IAaveV4ConfigEngine.DynamicReserveConfigUpdate memory update = IAaveV4ConfigEngine
       .DynamicReserveConfigUpdate({
-        spokeConfigurator: ISpokeConfigurator(address(spokeConfigurator)),
+        spokeConfigurator: spokeConfigurator,
         spoke: address(spoke1()),
         hub: address(hub1()),
         underlying: address(weth),
@@ -515,29 +512,29 @@ contract SpokeEngineTest is BaseConfigEngineTest {
 
     engine.executeSpokeDynamicReserveConfigUpdates(_toDynamicReserveConfigUpdateArray(update));
 
-    ISpoke.DynamicReserveConfig memory after_ = spoke1().getDynamicReserveConfig(
+    ISpoke.DynamicReserveConfig memory dynConfigAfter = spoke1().getDynamicReserveConfig(
       reserveId,
       uint32(DYNAMIC_CONFIG_KEY)
     );
-    assertEq(after_.liquidationFee, liquidationFee);
-    assertEq(after_.collateralFactor, before_.collateralFactor);
-    assertEq(after_.maxLiquidationBonus, before_.maxLiquidationBonus);
+    assertEq(dynConfigAfter.liquidationFee, liquidationFee);
+    assertEq(dynConfigAfter.collateralFactor, dynConfigBefore.collateralFactor);
+    assertEq(dynConfigAfter.maxLiquidationBonus, dynConfigBefore.maxLiquidationBonus);
   }
 
   function test_fuzz_executeSpokeDynamicReserveConfigUpdates_collateralFactor(
     uint256 collateralFactor
   ) public {
-    uint256 reserveId = reserveIds[0][0];
-    ISpoke.DynamicReserveConfig memory before_ = spoke1().getDynamicReserveConfig(
+    uint256 reserveId = _getReserveId(0, 0);
+    ISpoke.DynamicReserveConfig memory dynConfigBefore = spoke1().getDynamicReserveConfig(
       reserveId,
       uint32(DYNAMIC_CONFIG_KEY)
     );
-    uint256 maxCf = (10_000 * 10_000 - 10_000) / before_.maxLiquidationBonus;
+    uint256 maxCf = (10_000 * 10_000 - 10_000) / dynConfigBefore.maxLiquidationBonus;
     collateralFactor = bound(collateralFactor, 1, maxCf);
 
     IAaveV4ConfigEngine.DynamicReserveConfigUpdate memory update = IAaveV4ConfigEngine
       .DynamicReserveConfigUpdate({
-        spokeConfigurator: ISpokeConfigurator(address(spokeConfigurator)),
+        spokeConfigurator: spokeConfigurator,
         spoke: address(spoke1()),
         hub: address(hub1()),
         underlying: address(weth),
@@ -549,29 +546,29 @@ contract SpokeEngineTest is BaseConfigEngineTest {
 
     engine.executeSpokeDynamicReserveConfigUpdates(_toDynamicReserveConfigUpdateArray(update));
 
-    ISpoke.DynamicReserveConfig memory after_ = spoke1().getDynamicReserveConfig(
+    ISpoke.DynamicReserveConfig memory dynConfigAfter = spoke1().getDynamicReserveConfig(
       reserveId,
       uint32(DYNAMIC_CONFIG_KEY)
     );
-    assertEq(after_.collateralFactor, collateralFactor);
-    assertEq(after_.maxLiquidationBonus, before_.maxLiquidationBonus);
-    assertEq(after_.liquidationFee, before_.liquidationFee);
+    assertEq(dynConfigAfter.collateralFactor, collateralFactor);
+    assertEq(dynConfigAfter.maxLiquidationBonus, dynConfigBefore.maxLiquidationBonus);
+    assertEq(dynConfigAfter.liquidationFee, dynConfigBefore.liquidationFee);
   }
 
   function test_fuzz_executeSpokeDynamicReserveConfigUpdates_maxLiquidationBonus(
     uint256 mlb
   ) public {
-    uint256 reserveId = reserveIds[0][0];
-    ISpoke.DynamicReserveConfig memory before_ = spoke1().getDynamicReserveConfig(
+    uint256 reserveId = _getReserveId(0, 0);
+    ISpoke.DynamicReserveConfig memory dynConfigBefore = spoke1().getDynamicReserveConfig(
       reserveId,
       uint32(DYNAMIC_CONFIG_KEY)
     );
-    uint256 maxMlb = (10_000 * 10_000 - 10_000) / before_.collateralFactor;
+    uint256 maxMlb = (10_000 * 10_000 - 10_000) / dynConfigBefore.collateralFactor;
     mlb = bound(mlb, 10_000, maxMlb);
 
     IAaveV4ConfigEngine.DynamicReserveConfigUpdate memory update = IAaveV4ConfigEngine
       .DynamicReserveConfigUpdate({
-        spokeConfigurator: ISpokeConfigurator(address(spokeConfigurator)),
+        spokeConfigurator: spokeConfigurator,
         spoke: address(spoke1()),
         hub: address(hub1()),
         underlying: address(weth),
@@ -583,16 +580,35 @@ contract SpokeEngineTest is BaseConfigEngineTest {
 
     engine.executeSpokeDynamicReserveConfigUpdates(_toDynamicReserveConfigUpdateArray(update));
 
-    ISpoke.DynamicReserveConfig memory after_ = spoke1().getDynamicReserveConfig(
+    ISpoke.DynamicReserveConfig memory dynConfigAfter = spoke1().getDynamicReserveConfig(
       reserveId,
       uint32(DYNAMIC_CONFIG_KEY)
     );
-    assertEq(after_.maxLiquidationBonus, mlb);
-    assertEq(after_.collateralFactor, before_.collateralFactor);
-    assertEq(after_.liquidationFee, before_.liquidationFee);
+    assertEq(dynConfigAfter.maxLiquidationBonus, mlb);
+    assertEq(dynConfigAfter.collateralFactor, dynConfigBefore.collateralFactor);
+    assertEq(dynConfigAfter.liquidationFee, dynConfigBefore.liquidationFee);
   }
 
-  function test_executeSpokeReserveListings_concrete() public {
+  function test_executeSpokeDynamicReserveConfigAdditions_revert_invalidCollateralFactorAndMaxLiquidationBonus()
+    public
+  {
+    IAaveV4ConfigEngine.DynamicReserveConfigAddition
+      memory addition = _defaultDynamicReserveConfigAddition();
+    addition.dynamicConfig = ISpoke.DynamicReserveConfig({
+      collateralFactor: 99_00,
+      maxLiquidationBonus: 105_00,
+      liquidationFee: 2_00
+    });
+
+    vm.expectRevert(
+      abi.encodeWithSelector(ISpoke.InvalidCollateralFactorAndMaxLiquidationBonus.selector)
+    );
+    engine.executeSpokeDynamicReserveConfigAdditions(
+      _toDynamicReserveConfigAdditionArray(addition)
+    );
+  }
+
+  function test_executeSpokeReserveListings() public {
     uint256 newAssetId = _seedAsset(hub1(), irStrategy1(), address(newToken), 18);
     _seedSpokeOnAsset(hub1(), newAssetId, spoke1());
 
@@ -601,22 +617,22 @@ contract SpokeEngineTest is BaseConfigEngineTest {
     uint256 reserveCountBefore = spoke1().getReserveCount();
 
     IAaveV4ConfigEngine.ReserveListing memory listing = IAaveV4ConfigEngine.ReserveListing({
-      spokeConfigurator: ISpokeConfigurator(address(spokeConfigurator)),
+      spokeConfigurator: spokeConfigurator,
       spoke: address(spoke1()),
       hub: address(hub1()),
       underlying: address(newToken),
       priceSource: newPriceFeed,
       config: ISpoke.ReserveConfig({
-        collateralRisk: 5000,
+        collateralRisk: 50_00,
         paused: false,
         frozen: false,
         borrowable: true,
         receiveSharesEnabled: true
       }),
       dynamicConfig: ISpoke.DynamicReserveConfig({
-        collateralFactor: 8000,
-        maxLiquidationBonus: 10500,
-        liquidationFee: 200
+        collateralFactor: 80_00,
+        maxLiquidationBonus: 105_00,
+        liquidationFee: 2_00
       })
     });
 
@@ -625,12 +641,12 @@ contract SpokeEngineTest is BaseConfigEngineTest {
     assertEq(spoke1().getReserveCount(), reserveCountBefore + 1);
     uint256 newReserveId = reserveCountBefore;
     ISpoke.ReserveConfig memory config = spoke1().getReserveConfig(newReserveId);
-    assertEq(config.collateralRisk, 5000);
+    assertEq(config.collateralRisk, 50_00);
     assertTrue(config.borrowable);
   }
 
-  function test_executeSpokeDynamicReserveConfigAdditions_concrete() public {
-    uint256 reserveId = reserveIds[0][0];
+  function test_executeSpokeDynamicReserveConfigAdditions() public {
+    uint256 reserveId = _getReserveId(0, 0);
 
     IAaveV4ConfigEngine.DynamicReserveConfigAddition
       memory addition = _defaultDynamicReserveConfigAddition();
@@ -643,12 +659,12 @@ contract SpokeEngineTest is BaseConfigEngineTest {
       reserveId,
       1 // second key (first is key 0 from seeding)
     );
-    assertEq(dynConfig.collateralFactor, 8000);
-    assertEq(dynConfig.maxLiquidationBonus, 10500);
-    assertEq(dynConfig.liquidationFee, 200);
+    assertEq(dynConfig.collateralFactor, 80_00);
+    assertEq(dynConfig.maxLiquidationBonus, 105_00);
+    assertEq(dynConfig.liquidationFee, 2_00);
   }
 
-  function test_executeSpokePositionManagerUpdates_concrete() public {
+  function test_executeSpokePositionManagerUpdates() public {
     IAaveV4ConfigEngine.PositionManagerUpdate memory update = _defaultPositionManagerUpdate();
 
     vm.expectCall(
@@ -659,7 +675,7 @@ contract SpokeEngineTest is BaseConfigEngineTest {
       )
     );
 
-    vm.expectEmit(true, false, false, true, address(spoke1()));
+    vm.expectEmit(address(spoke1()));
     emit ISpoke.UpdatePositionManager(address(positionManager), true);
 
     engine.executeSpokePositionManagerUpdates(_toPositionManagerUpdateArray(update));
@@ -675,7 +691,7 @@ contract SpokeEngineTest is BaseConfigEngineTest {
 
     IAaveV4ConfigEngine.PositionManagerUpdate memory update = IAaveV4ConfigEngine
       .PositionManagerUpdate({
-        spokeConfigurator: ISpokeConfigurator(address(spokeConfigurator)),
+        spokeConfigurator: spokeConfigurator,
         spoke: address(spoke1()),
         positionManager: address(positionManager),
         active: false
@@ -691,12 +707,12 @@ contract SpokeEngineTest is BaseConfigEngineTest {
       memory updates = new IAaveV4ConfigEngine.ReserveConfigUpdate[](2);
 
     updates[0] = IAaveV4ConfigEngine.ReserveConfigUpdate({
-      spokeConfigurator: ISpokeConfigurator(address(spokeConfigurator)),
+      spokeConfigurator: spokeConfigurator,
       spoke: address(spoke1()),
       hub: address(hub1()),
       underlying: address(weth),
       priceSource: EngineFlags.KEEP_CURRENT_ADDRESS,
-      collateralRisk: 7000,
+      collateralRisk: 70_00,
       paused: EngineFlags.KEEP_CURRENT,
       frozen: EngineFlags.KEEP_CURRENT,
       borrowable: EngineFlags.KEEP_CURRENT,
@@ -704,12 +720,12 @@ contract SpokeEngineTest is BaseConfigEngineTest {
     });
 
     updates[1] = IAaveV4ConfigEngine.ReserveConfigUpdate({
-      spokeConfigurator: ISpokeConfigurator(address(spokeConfigurator)),
+      spokeConfigurator: spokeConfigurator,
       spoke: address(spoke2()),
       hub: address(hub1()),
       underlying: address(weth),
       priceSource: EngineFlags.KEEP_CURRENT_ADDRESS,
-      collateralRisk: 8000,
+      collateralRisk: 80_00,
       paused: EngineFlags.KEEP_CURRENT,
       frozen: EngineFlags.KEEP_CURRENT,
       borrowable: EngineFlags.KEEP_CURRENT,
@@ -718,11 +734,11 @@ contract SpokeEngineTest is BaseConfigEngineTest {
 
     engine.executeSpokeReserveConfigUpdates(updates);
 
-    ISpoke.ReserveConfig memory config1 = spoke1().getReserveConfig(reserveIds[0][0]);
-    assertEq(config1.collateralRisk, 7000);
+    ISpoke.ReserveConfig memory config1 = spoke1().getReserveConfig(_getReserveId(0, 0));
+    assertEq(config1.collateralRisk, 70_00);
 
-    ISpoke.ReserveConfig memory config2 = spoke2().getReserveConfig(reserveIds[1][0]);
-    assertEq(config2.collateralRisk, 8000);
+    ISpoke.ReserveConfig memory config2 = spoke2().getReserveConfig(_getReserveId(1, 0));
+    assertEq(config2.collateralRisk, 80_00);
   }
 
   function test_executeSpokeLiquidationConfigUpdates_multipleSpokes() public {
@@ -730,7 +746,7 @@ contract SpokeEngineTest is BaseConfigEngineTest {
       memory updates = new IAaveV4ConfigEngine.LiquidationConfigUpdate[](2);
 
     updates[0] = IAaveV4ConfigEngine.LiquidationConfigUpdate({
-      spokeConfigurator: ISpokeConfigurator(address(spokeConfigurator)),
+      spokeConfigurator: spokeConfigurator,
       spoke: address(spoke1()),
       targetHealthFactor: 1.20e18,
       healthFactorForMaxBonus: EngineFlags.KEEP_CURRENT,
@@ -738,7 +754,7 @@ contract SpokeEngineTest is BaseConfigEngineTest {
     });
 
     updates[1] = IAaveV4ConfigEngine.LiquidationConfigUpdate({
-      spokeConfigurator: ISpokeConfigurator(address(spokeConfigurator)),
+      spokeConfigurator: spokeConfigurator,
       spoke: address(spoke2()),
       targetHealthFactor: 1.30e18,
       healthFactorForMaxBonus: EngineFlags.KEEP_CURRENT,

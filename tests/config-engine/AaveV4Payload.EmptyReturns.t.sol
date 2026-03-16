@@ -2,10 +2,7 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import {BaseConfigEngineTest} from 'tests/config-engine/BaseConfigEngine.t.sol';
-
-import {IAaveV4ConfigEngine} from 'src/config-engine/interfaces/IAaveV4ConfigEngine.sol';
-import {AaveV4Payload} from 'src/config-engine/AaveV4Payload.sol';
+import 'tests/config-engine/BaseConfigEngine.t.sol';
 
 /// @dev Minimal concrete payload that does NOT override any virtual methods.
 ///   Calling execute() on this exercises every base virtual method returning empty arrays,

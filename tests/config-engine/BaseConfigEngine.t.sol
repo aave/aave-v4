@@ -12,20 +12,29 @@ import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 import {ISpokeConfigurator} from 'src/spoke/interfaces/ISpokeConfigurator.sol';
 import {IAaveOracle} from 'src/spoke/interfaces/IAaveOracle.sol';
 import {IAssetInterestRateStrategy} from 'src/hub/interfaces/IAssetInterestRateStrategy.sol';
+import {IPositionManagerBase} from 'src/position-manager/interfaces/IPositionManagerBase.sol';
 
 import {AccessManagerEnumerable} from 'src/access/AccessManagerEnumerable.sol';
 import {HubConfigurator} from 'src/hub/HubConfigurator.sol';
 import {SpokeConfigurator} from 'src/spoke/SpokeConfigurator.sol';
 import {AssetInterestRateStrategy} from 'src/hub/AssetInterestRateStrategy.sol';
 import {AaveOracle} from 'src/spoke/AaveOracle.sol';
+import {Ownable} from 'src/dependencies/openzeppelin/Ownable.sol';
 import {Roles} from 'src/libraries/types/Roles.sol';
 
+import {AaveV4Payload} from 'src/config-engine/AaveV4Payload.sol';
 import {AaveV4ConfigEngine} from 'src/config-engine/AaveV4ConfigEngine.sol';
 import {IAaveV4ConfigEngine} from 'src/config-engine/interfaces/IAaveV4ConfigEngine.sol';
 import {EngineFlags} from 'src/config-engine/libraries/EngineFlags.sol';
+import {AccessManagerEngine} from 'src/config-engine/libraries/AccessManagerEngine.sol';
+import {HubEngine} from 'src/config-engine/libraries/HubEngine.sol';
+import {SpokeEngine} from 'src/config-engine/libraries/SpokeEngine.sol';
+import {PositionManagerEngine} from 'src/config-engine/libraries/PositionManagerEngine.sol';
+import {TokenizationSpokeDeployer} from 'src/config-engine/libraries/TokenizationSpokeDeployer.sol';
 
 import {WETH9} from 'src/dependencies/weth/WETH9.sol';
 import {TestnetERC20} from 'tests/mocks/TestnetERC20.sol';
+import {AaveV4PayloadWrapper} from 'tests/mocks/config-engine/AaveV4PayloadWrapper.sol';
 import {MockPriceFeed} from 'tests/mocks/MockPriceFeed.sol';
 import {PositionManagerBaseWrapper} from 'tests/mocks/PositionManagerBaseWrapper.sol';
 import {ISpokeInstance} from 'tests/mocks/ISpokeInstance.sol';
@@ -49,15 +58,15 @@ abstract contract BaseConfigEngineTest is Test {
     uint8 decimals;
   }
 
-  uint256 constant LIQUIDITY_FEE = 500;
+  uint256 constant LIQUIDITY_FEE = 5_00;
   uint256 constant DYNAMIC_CONFIG_KEY = 0;
 
   IAssetInterestRateStrategy.InterestRateData internal IR_DATA =
     IAssetInterestRateStrategy.InterestRateData({
-      optimalUsageRatio: 8000,
-      baseDrawnRate: 100,
-      rateGrowthBeforeOptimal: 400,
-      rateGrowthAfterOptimal: 6000
+      optimalUsageRatio: 80_00,
+      baseDrawnRate: 1_00,
+      rateGrowthBeforeOptimal: 4_00,
+      rateGrowthAfterOptimal: 60_00
     });
 
   address internal ADMIN = makeAddr('ADMIN');
@@ -69,8 +78,8 @@ abstract contract BaseConfigEngineTest is Test {
 
   AaveV4ConfigEngine public engine;
   AccessManagerEnumerable public accessManager;
-  HubConfigurator public hubConfigurator;
-  SpokeConfigurator public spokeConfigurator;
+  IHubConfigurator public hubConfigurator;
+  ISpokeConfigurator public spokeConfigurator;
   PositionManagerBaseWrapper public positionManager;
 
   IHub[NUM_HUBS] public hubs;
@@ -148,25 +157,25 @@ abstract contract BaseConfigEngineTest is Test {
     vm.label(address(spokes[2]), 'spoke3');
   }
 
-  function hub1() internal view returns (IHub) {
+  function hub1() public view returns (IHub) {
     return hubs[0];
   }
-  function hub2() internal view returns (IHub) {
+  function hub2() public view returns (IHub) {
     return hubs[1];
   }
-  function spoke1() internal view returns (ISpoke) {
+  function spoke1() public view returns (ISpoke) {
     return spokes[0];
   }
-  function spoke2() internal view returns (ISpoke) {
+  function spoke2() public view returns (ISpoke) {
     return spokes[1];
   }
-  function spoke3() internal view returns (ISpoke) {
+  function spoke3() public view returns (ISpoke) {
     return spokes[2];
   }
-  function irStrategy1() internal view returns (AssetInterestRateStrategy) {
+  function irStrategy1() public view returns (AssetInterestRateStrategy) {
     return irStrategies[0];
   }
-  function irStrategy2() internal view returns (AssetInterestRateStrategy) {
+  function irStrategy2() public view returns (AssetInterestRateStrategy) {
     return irStrategies[1];
   }
 
@@ -355,11 +364,11 @@ abstract contract BaseConfigEngineTest is Test {
     reserveId = spoke.addReserve(address(hub), assetId, priceSource, config, dynConfig);
   }
 
-  function getAssetId(uint256 hubIdx, uint256 tokenIdx) internal view returns (uint256) {
+  function _getAssetId(uint256 hubIdx, uint256 tokenIdx) internal view returns (uint256) {
     return assetIds[hubIdx][tokenIdx];
   }
 
-  function getReserveId(uint256 spokeIdx, uint256 tokenIdx) internal view returns (uint256) {
+  function _getReserveId(uint256 spokeIdx, uint256 tokenIdx) internal view returns (uint256) {
     return reserveIds[spokeIdx][tokenIdx];
   }
 
@@ -396,7 +405,7 @@ abstract contract BaseConfigEngineTest is Test {
         ISpoke.LiquidationConfig({
           targetHealthFactor: 1.05e18,
           healthFactorForMaxBonus: 0.95e18,
-          liquidationBonusFactor: 10000
+          liquidationBonusFactor: 100_00
         })
       );
     }
@@ -411,7 +420,7 @@ abstract contract BaseConfigEngineTest is Test {
   function _defaultAssetListing() internal view returns (IAaveV4ConfigEngine.AssetListing memory) {
     return
       IAaveV4ConfigEngine.AssetListing({
-        hubConfigurator: IHubConfigurator(address(hubConfigurator)),
+        hubConfigurator: hubConfigurator,
         hub: address(hub1()),
         underlying: address(weth),
         decimals: 0,
@@ -430,7 +439,7 @@ abstract contract BaseConfigEngineTest is Test {
   {
     return
       IAaveV4ConfigEngine.AssetConfigUpdate({
-        hubConfigurator: IHubConfigurator(address(hubConfigurator)),
+        hubConfigurator: hubConfigurator,
         hub: address(hub1()),
         underlying: address(weth),
         liquidityFee: LIQUIDITY_FEE,
@@ -448,7 +457,7 @@ abstract contract BaseConfigEngineTest is Test {
   {
     return
       IAaveV4ConfigEngine.SpokeConfigUpdate({
-        hubConfigurator: IHubConfigurator(address(hubConfigurator)),
+        hubConfigurator: hubConfigurator,
         hub: address(hub1()),
         underlying: address(weth),
         spoke: address(spoke1()),
@@ -467,12 +476,12 @@ abstract contract BaseConfigEngineTest is Test {
   {
     return
       IAaveV4ConfigEngine.ReserveConfigUpdate({
-        spokeConfigurator: ISpokeConfigurator(address(spokeConfigurator)),
+        spokeConfigurator: spokeConfigurator,
         spoke: address(spoke1()),
         hub: address(hub1()),
         underlying: address(weth),
         priceSource: address(priceFeedWeth),
-        collateralRisk: 5000,
+        collateralRisk: 50_00,
         paused: EngineFlags.DISABLED,
         frozen: EngineFlags.DISABLED,
         borrowable: EngineFlags.ENABLED,
@@ -487,11 +496,11 @@ abstract contract BaseConfigEngineTest is Test {
   {
     return
       IAaveV4ConfigEngine.LiquidationConfigUpdate({
-        spokeConfigurator: ISpokeConfigurator(address(spokeConfigurator)),
+        spokeConfigurator: spokeConfigurator,
         spoke: address(spoke1()),
         targetHealthFactor: 1.05e18,
         healthFactorForMaxBonus: 0.95e18,
-        liquidationBonusFactor: 10000
+        liquidationBonusFactor: 100_00
       });
   }
 
@@ -502,14 +511,14 @@ abstract contract BaseConfigEngineTest is Test {
   {
     return
       IAaveV4ConfigEngine.DynamicReserveConfigUpdate({
-        spokeConfigurator: ISpokeConfigurator(address(spokeConfigurator)),
+        spokeConfigurator: spokeConfigurator,
         spoke: address(spoke1()),
         hub: address(hub1()),
         underlying: address(weth),
         dynamicConfigKey: DYNAMIC_CONFIG_KEY,
-        collateralFactor: 8000,
-        maxLiquidationBonus: 10500,
-        liquidationFee: 1000
+        collateralFactor: 80_00,
+        maxLiquidationBonus: 105_00,
+        liquidationFee: 10_00
       });
   }
 
@@ -520,22 +529,22 @@ abstract contract BaseConfigEngineTest is Test {
   {
     return
       IAaveV4ConfigEngine.ReserveListing({
-        spokeConfigurator: ISpokeConfigurator(address(spokeConfigurator)),
+        spokeConfigurator: spokeConfigurator,
         spoke: address(spoke1()),
         hub: address(hub1()),
         underlying: address(weth),
         priceSource: address(priceFeedWeth),
         config: ISpoke.ReserveConfig({
-          collateralRisk: 5000,
+          collateralRisk: 50_00,
           paused: false,
           frozen: false,
           borrowable: true,
           receiveSharesEnabled: true
         }),
         dynamicConfig: ISpoke.DynamicReserveConfig({
-          collateralFactor: 8000,
-          maxLiquidationBonus: 10500,
-          liquidationFee: 200
+          collateralFactor: 80_00,
+          maxLiquidationBonus: 105_00,
+          liquidationFee: 2_00
         })
       });
   }
@@ -547,14 +556,14 @@ abstract contract BaseConfigEngineTest is Test {
   {
     return
       IAaveV4ConfigEngine.DynamicReserveConfigAddition({
-        spokeConfigurator: ISpokeConfigurator(address(spokeConfigurator)),
+        spokeConfigurator: spokeConfigurator,
         spoke: address(spoke1()),
         hub: address(hub1()),
         underlying: address(weth),
         dynamicConfig: ISpoke.DynamicReserveConfig({
-          collateralFactor: 8000,
-          maxLiquidationBonus: 10500,
-          liquidationFee: 200
+          collateralFactor: 80_00,
+          maxLiquidationBonus: 105_00,
+          liquidationFee: 2_00
         })
       });
   }
@@ -566,11 +575,25 @@ abstract contract BaseConfigEngineTest is Test {
   {
     return
       IAaveV4ConfigEngine.PositionManagerUpdate({
-        spokeConfigurator: ISpokeConfigurator(address(spokeConfigurator)),
+        spokeConfigurator: spokeConfigurator,
         spoke: address(spoke1()),
         positionManager: address(positionManager),
         active: true
       });
+  }
+
+  function _assertSpokeConfig(
+    IHub hub,
+    uint256 assetId,
+    address spoke,
+    IHub.SpokeConfig memory expected
+  ) internal view {
+    IHub.SpokeConfig memory actual = hub.getSpokeConfig(assetId, spoke);
+    assertEq(actual.addCap, expected.addCap);
+    assertEq(actual.drawCap, expected.drawCap);
+    assertEq(actual.riskPremiumThreshold, expected.riskPremiumThreshold);
+    assertEq(actual.active, expected.active);
+    assertEq(actual.halted, expected.halted);
   }
 
   function _toAssetConfigUpdateArray(

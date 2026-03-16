@@ -2,21 +2,7 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import {BaseConfigEngineTest} from 'tests/config-engine/BaseConfigEngine.t.sol';
-
-import {IHub} from 'src/hub/interfaces/IHub.sol';
-import {IHubConfigurator} from 'src/hub/interfaces/IHubConfigurator.sol';
-import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
-import {IAssetInterestRateStrategy} from 'src/hub/interfaces/IAssetInterestRateStrategy.sol';
-import {AssetInterestRateStrategy} from 'src/hub/AssetInterestRateStrategy.sol';
-import {IAaveV4ConfigEngine} from 'src/config-engine/interfaces/IAaveV4ConfigEngine.sol';
-import {Roles} from 'src/libraries/types/Roles.sol';
-
-import {EngineFlags} from 'src/config-engine/libraries/EngineFlags.sol';
-import {HubEngine} from 'src/config-engine/libraries/HubEngine.sol';
-import {TokenizationSpokeDeployer} from 'src/config-engine/libraries/TokenizationSpokeDeployer.sol';
-
-import {Create2Utils} from 'tests/Create2Utils.sol';
+import 'tests/config-engine/BaseConfigEngine.t.sol';
 
 contract HubEngineTest is BaseConfigEngineTest {
   function setUp() public override {
@@ -30,20 +16,6 @@ contract HubEngineTest is BaseConfigEngineTest {
     assertEq(actual.feeReceiver, expected.feeReceiver);
     assertEq(actual.irStrategy, expected.irStrategy);
     assertEq(actual.reinvestmentController, expected.reinvestmentController);
-  }
-
-  function _assertSpokeConfig(
-    IHub hub,
-    uint256 assetId,
-    address spoke,
-    IHub.SpokeConfig memory expected
-  ) internal view {
-    IHub.SpokeConfig memory actual = hub.getSpokeConfig(assetId, spoke);
-    assertEq(actual.addCap, expected.addCap);
-    assertEq(actual.drawCap, expected.drawCap);
-    assertEq(actual.riskPremiumThreshold, expected.riskPremiumThreshold);
-    assertEq(actual.active, expected.active);
-    assertEq(actual.halted, expected.halted);
   }
 
   function test_executeHubAssetListings_decimalsZero() public {
@@ -84,11 +56,11 @@ contract HubEngineTest is BaseConfigEngineTest {
   }
 
   function test_executeHubAssetConfigUpdates_feeBoth() public {
-    uint256 assetId = assetIds[0][0];
+    uint256 assetId = _getAssetId(0, 0);
     IHub.AssetConfig memory configBefore = hub1().getAssetConfig(assetId);
 
     IAaveV4ConfigEngine.AssetConfigUpdate memory update = _defaultAssetConfigUpdate();
-    update.liquidityFee = 700;
+    update.liquidityFee = 7_00;
     update.feeReceiver = ACCOUNT;
     update.irStrategy = EngineFlags.KEEP_CURRENT_ADDRESS;
     update.irData = _keepCurrentIrData();
@@ -96,23 +68,23 @@ contract HubEngineTest is BaseConfigEngineTest {
 
     vm.expectCall(
       address(hubConfigurator),
-      abi.encodeCall(IHubConfigurator.updateFeeConfig, (address(hub1()), assetId, 700, ACCOUNT))
+      abi.encodeCall(IHubConfigurator.updateFeeConfig, (address(hub1()), assetId, 7_00, ACCOUNT))
     );
     engine.executeHubAssetConfigUpdates(_toAssetConfigUpdateArray(update));
 
     IHub.AssetConfig memory configAfter = hub1().getAssetConfig(assetId);
-    assertEq(configAfter.liquidityFee, 700);
+    assertEq(configAfter.liquidityFee, 7_00);
     assertEq(configAfter.feeReceiver, ACCOUNT);
     assertEq(configAfter.irStrategy, configBefore.irStrategy);
     assertEq(configAfter.reinvestmentController, configBefore.reinvestmentController);
   }
 
   function test_executeHubAssetConfigUpdates_feeOnly() public {
-    uint256 assetId = assetIds[0][0];
+    uint256 assetId = _getAssetId(0, 0);
     IHub.AssetConfig memory configBefore = hub1().getAssetConfig(assetId);
 
     IAaveV4ConfigEngine.AssetConfigUpdate memory update = _defaultAssetConfigUpdate();
-    update.liquidityFee = 900;
+    update.liquidityFee = 9_00;
     update.feeReceiver = EngineFlags.KEEP_CURRENT_ADDRESS;
     update.irStrategy = EngineFlags.KEEP_CURRENT_ADDRESS;
     update.irData = _keepCurrentIrData();
@@ -120,18 +92,18 @@ contract HubEngineTest is BaseConfigEngineTest {
 
     vm.expectCall(
       address(hubConfigurator),
-      abi.encodeCall(IHubConfigurator.updateLiquidityFee, (address(hub1()), assetId, 900))
+      abi.encodeCall(IHubConfigurator.updateLiquidityFee, (address(hub1()), assetId, 9_00))
     );
     engine.executeHubAssetConfigUpdates(_toAssetConfigUpdateArray(update));
 
     IHub.AssetConfig memory configAfter = hub1().getAssetConfig(assetId);
-    assertEq(configAfter.liquidityFee, 900);
+    assertEq(configAfter.liquidityFee, 9_00);
     assertEq(configAfter.feeReceiver, configBefore.feeReceiver);
   }
 
   function test_fuzz_executeHubAssetConfigUpdates_feeOnly(uint256 liquidityFee) public {
     liquidityFee = bound(liquidityFee, 0, 10_000);
-    uint256 assetId = assetIds[0][0];
+    uint256 assetId = _getAssetId(0, 0);
     IHub.AssetConfig memory configBefore = hub1().getAssetConfig(assetId);
 
     IAaveV4ConfigEngine.AssetConfigUpdate memory update = _defaultAssetConfigUpdate();
@@ -151,7 +123,7 @@ contract HubEngineTest is BaseConfigEngineTest {
   }
 
   function test_executeHubAssetConfigUpdates_receiverOnly() public {
-    uint256 assetId = assetIds[0][0];
+    uint256 assetId = _getAssetId(0, 0);
     IHub.AssetConfig memory configBefore = hub1().getAssetConfig(assetId);
 
     IAaveV4ConfigEngine.AssetConfigUpdate memory update = _defaultAssetConfigUpdate();
@@ -173,7 +145,7 @@ contract HubEngineTest is BaseConfigEngineTest {
   }
 
   function test_executeHubAssetConfigUpdates_feeNeither() public {
-    uint256 assetId = assetIds[0][0];
+    uint256 assetId = _getAssetId(0, 0);
     IHub.AssetConfig memory configBefore = hub1().getAssetConfig(assetId);
 
     IAaveV4ConfigEngine.AssetConfigUpdate memory update = _defaultAssetConfigUpdate();
@@ -193,7 +165,7 @@ contract HubEngineTest is BaseConfigEngineTest {
   }
 
   function test_executeHubAssetConfigUpdates_strategyChange() public {
-    uint256 assetId = assetIds[0][0];
+    uint256 assetId = _getAssetId(0, 0);
 
     AssetInterestRateStrategy newStrategy = new AssetInterestRateStrategy(address(hub1()));
 
@@ -217,14 +189,14 @@ contract HubEngineTest is BaseConfigEngineTest {
   }
 
   function test_executeHubAssetConfigUpdates_irDataOnly() public {
-    uint256 assetId = assetIds[0][0];
+    uint256 assetId = _getAssetId(0, 0);
 
     IAssetInterestRateStrategy.InterestRateData memory newIrData = IAssetInterestRateStrategy
       .InterestRateData({
-        optimalUsageRatio: 9000,
-        baseDrawnRate: 200,
-        rateGrowthBeforeOptimal: 500,
-        rateGrowthAfterOptimal: 7000
+        optimalUsageRatio: 90_00,
+        baseDrawnRate: 2_00,
+        rateGrowthBeforeOptimal: 5_00,
+        rateGrowthAfterOptimal: 70_00
       });
 
     IAaveV4ConfigEngine.AssetConfigUpdate memory update = _defaultAssetConfigUpdate();
@@ -245,14 +217,14 @@ contract HubEngineTest is BaseConfigEngineTest {
 
     IAssetInterestRateStrategy.InterestRateData memory storedIrData = irStrategy1()
       .getInterestRateData(assetId);
-    assertEq(storedIrData.optimalUsageRatio, 9000);
-    assertEq(storedIrData.baseDrawnRate, 200);
-    assertEq(storedIrData.rateGrowthBeforeOptimal, 500);
-    assertEq(storedIrData.rateGrowthAfterOptimal, 7000);
+    assertEq(storedIrData.optimalUsageRatio, 90_00);
+    assertEq(storedIrData.baseDrawnRate, 2_00);
+    assertEq(storedIrData.rateGrowthBeforeOptimal, 5_00);
+    assertEq(storedIrData.rateGrowthAfterOptimal, 70_00);
   }
 
   function test_executeHubAssetConfigUpdates_irNoOp() public {
-    uint256 assetId = assetIds[0][0];
+    uint256 assetId = _getAssetId(0, 0);
     IAssetInterestRateStrategy.InterestRateData memory irBefore = irStrategy1().getInterestRateData(
       assetId
     );
@@ -274,7 +246,7 @@ contract HubEngineTest is BaseConfigEngineTest {
   }
 
   function test_executeHubAssetConfigUpdates_reinvestmentController() public {
-    uint256 assetId = assetIds[0][0];
+    uint256 assetId = _getAssetId(0, 0);
 
     IAaveV4ConfigEngine.AssetConfigUpdate memory update = _defaultAssetConfigUpdate();
     update.reinvestmentController = REINVESTMENT_CONTROLLER;
@@ -297,12 +269,12 @@ contract HubEngineTest is BaseConfigEngineTest {
   }
 
   function test_executeHubAssetConfigUpdates_allFields() public {
-    uint256 assetId = assetIds[0][0];
+    uint256 assetId = _getAssetId(0, 0);
 
     AssetInterestRateStrategy newStrategy = new AssetInterestRateStrategy(address(hub1()));
 
     IAaveV4ConfigEngine.AssetConfigUpdate memory update = _defaultAssetConfigUpdate();
-    update.liquidityFee = 800;
+    update.liquidityFee = 8_00;
     update.feeReceiver = ACCOUNT;
     update.irStrategy = address(newStrategy);
     update.reinvestmentController = REINVESTMENT_CONTROLLER;
@@ -310,15 +282,15 @@ contract HubEngineTest is BaseConfigEngineTest {
     engine.executeHubAssetConfigUpdates(_toAssetConfigUpdateArray(update));
 
     IHub.AssetConfig memory configAfter = hub1().getAssetConfig(assetId);
-    assertEq(configAfter.liquidityFee, 800);
+    assertEq(configAfter.liquidityFee, 8_00);
     assertEq(configAfter.feeReceiver, ACCOUNT);
     assertEq(configAfter.reinvestmentController, REINVESTMENT_CONTROLLER);
     assertEq(configAfter.irStrategy, address(newStrategy));
   }
 
   function test_executeHubSpokeConfigUpdates_capsBoth() public {
-    uint256 assetId = assetIds[0][0];
-    IHub.SpokeConfig memory before_ = hub1().getSpokeConfig(assetId, address(spoke1()));
+    uint256 assetId = _getAssetId(0, 0);
+    IHub.SpokeConfig memory spokeConfigBefore = hub1().getSpokeConfig(assetId, address(spoke1()));
 
     IAaveV4ConfigEngine.SpokeConfigUpdate memory update = _defaultSpokeConfigUpdate();
     update.addCap = 1000;
@@ -335,34 +307,34 @@ contract HubEngineTest is BaseConfigEngineTest {
       )
     );
 
-    vm.expectEmit(true, true, false, true, address(hub1()));
+    vm.expectEmit(address(hub1()));
     emit IHub.UpdateSpokeConfig(
       assetId,
       address(spoke1()),
       IHub.SpokeConfig({
         addCap: 1000,
         drawCap: 500,
-        riskPremiumThreshold: before_.riskPremiumThreshold,
-        active: before_.active,
-        halted: before_.halted
+        riskPremiumThreshold: spokeConfigBefore.riskPremiumThreshold,
+        active: spokeConfigBefore.active,
+        halted: spokeConfigBefore.halted
       })
     );
 
     engine.executeHubSpokeConfigUpdates(_toSpokeConfigUpdateArray(update));
 
-    IHub.SpokeConfig memory after_ = hub1().getSpokeConfig(assetId, address(spoke1()));
-    assertEq(after_.addCap, 1000);
-    assertEq(after_.drawCap, 500);
-    assertEq(after_.riskPremiumThreshold, before_.riskPremiumThreshold);
-    assertEq(after_.active, before_.active);
-    assertEq(after_.halted, before_.halted);
+    IHub.SpokeConfig memory spokeConfigAfter = hub1().getSpokeConfig(assetId, address(spoke1()));
+    assertEq(spokeConfigAfter.addCap, 1000);
+    assertEq(spokeConfigAfter.drawCap, 500);
+    assertEq(spokeConfigAfter.riskPremiumThreshold, spokeConfigBefore.riskPremiumThreshold);
+    assertEq(spokeConfigAfter.active, spokeConfigBefore.active);
+    assertEq(spokeConfigAfter.halted, spokeConfigBefore.halted);
   }
 
   function test_fuzz_executeHubSpokeConfigUpdates_capsBoth(uint256 addCap, uint256 drawCap) public {
     addCap = bound(addCap, 0, type(uint40).max);
     drawCap = bound(drawCap, 0, type(uint40).max);
-    uint256 assetId = assetIds[0][0];
-    IHub.SpokeConfig memory before_ = hub1().getSpokeConfig(assetId, address(spoke1()));
+    uint256 assetId = _getAssetId(0, 0);
+    IHub.SpokeConfig memory spokeConfigBefore = hub1().getSpokeConfig(assetId, address(spoke1()));
 
     IAaveV4ConfigEngine.SpokeConfigUpdate memory update = _defaultSpokeConfigUpdate();
     update.addCap = addCap;
@@ -373,17 +345,17 @@ contract HubEngineTest is BaseConfigEngineTest {
 
     engine.executeHubSpokeConfigUpdates(_toSpokeConfigUpdateArray(update));
 
-    IHub.SpokeConfig memory after_ = hub1().getSpokeConfig(assetId, address(spoke1()));
-    assertEq(after_.addCap, addCap);
-    assertEq(after_.drawCap, drawCap);
-    assertEq(after_.riskPremiumThreshold, before_.riskPremiumThreshold);
-    assertEq(after_.active, before_.active);
-    assertEq(after_.halted, before_.halted);
+    IHub.SpokeConfig memory spokeConfigAfter = hub1().getSpokeConfig(assetId, address(spoke1()));
+    assertEq(spokeConfigAfter.addCap, addCap);
+    assertEq(spokeConfigAfter.drawCap, drawCap);
+    assertEq(spokeConfigAfter.riskPremiumThreshold, spokeConfigBefore.riskPremiumThreshold);
+    assertEq(spokeConfigAfter.active, spokeConfigBefore.active);
+    assertEq(spokeConfigAfter.halted, spokeConfigBefore.halted);
   }
 
   function test_executeHubSpokeConfigUpdates_addCapOnly() public {
-    uint256 assetId = assetIds[0][0];
-    IHub.SpokeConfig memory before_ = hub1().getSpokeConfig(assetId, address(spoke1()));
+    uint256 assetId = _getAssetId(0, 0);
+    IHub.SpokeConfig memory spokeConfigBefore = hub1().getSpokeConfig(assetId, address(spoke1()));
 
     IAaveV4ConfigEngine.SpokeConfigUpdate memory update = _defaultSpokeConfigUpdate();
     update.addCap = 2000;
@@ -401,15 +373,15 @@ contract HubEngineTest is BaseConfigEngineTest {
     );
     engine.executeHubSpokeConfigUpdates(_toSpokeConfigUpdateArray(update));
 
-    IHub.SpokeConfig memory after_ = hub1().getSpokeConfig(assetId, address(spoke1()));
-    assertEq(after_.addCap, 2000);
-    assertEq(after_.drawCap, before_.drawCap);
+    IHub.SpokeConfig memory spokeConfigAfter = hub1().getSpokeConfig(assetId, address(spoke1()));
+    assertEq(spokeConfigAfter.addCap, 2000);
+    assertEq(spokeConfigAfter.drawCap, spokeConfigBefore.drawCap);
   }
 
   function test_fuzz_executeHubSpokeConfigUpdates_addCap(uint256 addCap) public {
     addCap = bound(addCap, 0, type(uint40).max);
-    uint256 assetId = assetIds[0][0];
-    IHub.SpokeConfig memory before_ = hub1().getSpokeConfig(assetId, address(spoke1()));
+    uint256 assetId = _getAssetId(0, 0);
+    IHub.SpokeConfig memory spokeConfigBefore = hub1().getSpokeConfig(assetId, address(spoke1()));
 
     IAaveV4ConfigEngine.SpokeConfigUpdate memory update = _defaultSpokeConfigUpdate();
     update.addCap = addCap;
@@ -420,17 +392,17 @@ contract HubEngineTest is BaseConfigEngineTest {
 
     engine.executeHubSpokeConfigUpdates(_toSpokeConfigUpdateArray(update));
 
-    IHub.SpokeConfig memory after_ = hub1().getSpokeConfig(assetId, address(spoke1()));
-    assertEq(after_.addCap, addCap);
-    assertEq(after_.drawCap, before_.drawCap);
-    assertEq(after_.riskPremiumThreshold, before_.riskPremiumThreshold);
-    assertEq(after_.active, before_.active);
-    assertEq(after_.halted, before_.halted);
+    IHub.SpokeConfig memory spokeConfigAfter = hub1().getSpokeConfig(assetId, address(spoke1()));
+    assertEq(spokeConfigAfter.addCap, addCap);
+    assertEq(spokeConfigAfter.drawCap, spokeConfigBefore.drawCap);
+    assertEq(spokeConfigAfter.riskPremiumThreshold, spokeConfigBefore.riskPremiumThreshold);
+    assertEq(spokeConfigAfter.active, spokeConfigBefore.active);
+    assertEq(spokeConfigAfter.halted, spokeConfigBefore.halted);
   }
 
   function test_executeHubSpokeConfigUpdates_drawCapOnly() public {
-    uint256 assetId = assetIds[0][0];
-    IHub.SpokeConfig memory before_ = hub1().getSpokeConfig(assetId, address(spoke1()));
+    uint256 assetId = _getAssetId(0, 0);
+    IHub.SpokeConfig memory spokeConfigBefore = hub1().getSpokeConfig(assetId, address(spoke1()));
 
     IAaveV4ConfigEngine.SpokeConfigUpdate memory update = _defaultSpokeConfigUpdate();
     update.addCap = EngineFlags.KEEP_CURRENT;
@@ -448,15 +420,15 @@ contract HubEngineTest is BaseConfigEngineTest {
     );
     engine.executeHubSpokeConfigUpdates(_toSpokeConfigUpdateArray(update));
 
-    IHub.SpokeConfig memory after_ = hub1().getSpokeConfig(assetId, address(spoke1()));
-    assertEq(after_.drawCap, 300);
-    assertEq(after_.addCap, before_.addCap);
+    IHub.SpokeConfig memory spokeConfigAfter = hub1().getSpokeConfig(assetId, address(spoke1()));
+    assertEq(spokeConfigAfter.drawCap, 300);
+    assertEq(spokeConfigAfter.addCap, spokeConfigBefore.addCap);
   }
 
   function test_fuzz_executeHubSpokeConfigUpdates_drawCap(uint256 drawCap) public {
     drawCap = bound(drawCap, 0, type(uint40).max);
-    uint256 assetId = assetIds[0][0];
-    IHub.SpokeConfig memory before_ = hub1().getSpokeConfig(assetId, address(spoke1()));
+    uint256 assetId = _getAssetId(0, 0);
+    IHub.SpokeConfig memory spokeConfigBefore = hub1().getSpokeConfig(assetId, address(spoke1()));
 
     IAaveV4ConfigEngine.SpokeConfigUpdate memory update = _defaultSpokeConfigUpdate();
     update.addCap = EngineFlags.KEEP_CURRENT;
@@ -467,17 +439,17 @@ contract HubEngineTest is BaseConfigEngineTest {
 
     engine.executeHubSpokeConfigUpdates(_toSpokeConfigUpdateArray(update));
 
-    IHub.SpokeConfig memory after_ = hub1().getSpokeConfig(assetId, address(spoke1()));
-    assertEq(after_.drawCap, drawCap);
-    assertEq(after_.addCap, before_.addCap);
-    assertEq(after_.riskPremiumThreshold, before_.riskPremiumThreshold);
-    assertEq(after_.active, before_.active);
-    assertEq(after_.halted, before_.halted);
+    IHub.SpokeConfig memory spokeConfigAfter = hub1().getSpokeConfig(assetId, address(spoke1()));
+    assertEq(spokeConfigAfter.drawCap, drawCap);
+    assertEq(spokeConfigAfter.addCap, spokeConfigBefore.addCap);
+    assertEq(spokeConfigAfter.riskPremiumThreshold, spokeConfigBefore.riskPremiumThreshold);
+    assertEq(spokeConfigAfter.active, spokeConfigBefore.active);
+    assertEq(spokeConfigAfter.halted, spokeConfigBefore.halted);
   }
 
   function test_executeHubSpokeConfigUpdates_capsNeither() public {
-    uint256 assetId = assetIds[0][0];
-    IHub.SpokeConfig memory before_ = hub1().getSpokeConfig(assetId, address(spoke1()));
+    uint256 assetId = _getAssetId(0, 0);
+    IHub.SpokeConfig memory spokeConfigBefore = hub1().getSpokeConfig(assetId, address(spoke1()));
 
     IAaveV4ConfigEngine.SpokeConfigUpdate memory update = _defaultSpokeConfigUpdate();
     update.addCap = EngineFlags.KEEP_CURRENT;
@@ -490,13 +462,13 @@ contract HubEngineTest is BaseConfigEngineTest {
     engine.executeHubSpokeConfigUpdates(_toSpokeConfigUpdateArray(update));
     _assertExactEventCount(0);
 
-    IHub.SpokeConfig memory after_ = hub1().getSpokeConfig(assetId, address(spoke1()));
-    assertEq(after_.addCap, before_.addCap);
-    assertEq(after_.drawCap, before_.drawCap);
+    IHub.SpokeConfig memory spokeConfigAfter = hub1().getSpokeConfig(assetId, address(spoke1()));
+    assertEq(spokeConfigAfter.addCap, spokeConfigBefore.addCap);
+    assertEq(spokeConfigAfter.drawCap, spokeConfigBefore.drawCap);
   }
 
   function test_executeHubSpokeConfigUpdates_statusBoth() public {
-    uint256 assetId = assetIds[0][0];
+    uint256 assetId = _getAssetId(0, 0);
 
     IAaveV4ConfigEngine.SpokeConfigUpdate memory update = _defaultSpokeConfigUpdate();
     update.addCap = EngineFlags.KEEP_CURRENT;
@@ -507,13 +479,13 @@ contract HubEngineTest is BaseConfigEngineTest {
 
     engine.executeHubSpokeConfigUpdates(_toSpokeConfigUpdateArray(update));
 
-    IHub.SpokeConfig memory after_ = hub1().getSpokeConfig(assetId, address(spoke1()));
-    assertTrue(after_.active);
-    assertFalse(after_.halted);
+    IHub.SpokeConfig memory spokeConfigAfter = hub1().getSpokeConfig(assetId, address(spoke1()));
+    assertTrue(spokeConfigAfter.active);
+    assertFalse(spokeConfigAfter.halted);
   }
 
   function test_executeHubSpokeConfigUpdates_haltedOnly() public {
-    uint256 assetId = assetIds[0][0];
+    uint256 assetId = _getAssetId(0, 0);
 
     IAaveV4ConfigEngine.SpokeConfigUpdate memory update = _defaultSpokeConfigUpdate();
     update.active = EngineFlags.KEEP_CURRENT;
@@ -531,12 +503,12 @@ contract HubEngineTest is BaseConfigEngineTest {
     );
     engine.executeHubSpokeConfigUpdates(_toSpokeConfigUpdateArray(update));
 
-    IHub.SpokeConfig memory after_ = hub1().getSpokeConfig(assetId, address(spoke1()));
-    assertTrue(after_.halted);
+    IHub.SpokeConfig memory spokeConfigAfter = hub1().getSpokeConfig(assetId, address(spoke1()));
+    assertTrue(spokeConfigAfter.halted);
   }
 
   function test_executeHubSpokeConfigUpdates_riskPremiumThreshold() public {
-    uint256 assetId = assetIds[0][0];
+    uint256 assetId = _getAssetId(0, 0);
 
     IAaveV4ConfigEngine.SpokeConfigUpdate memory update = _defaultSpokeConfigUpdate();
     update.riskPremiumThreshold = 300;
@@ -554,16 +526,16 @@ contract HubEngineTest is BaseConfigEngineTest {
     );
     engine.executeHubSpokeConfigUpdates(_toSpokeConfigUpdateArray(update));
 
-    IHub.SpokeConfig memory after_ = hub1().getSpokeConfig(assetId, address(spoke1()));
-    assertEq(after_.riskPremiumThreshold, 300);
+    IHub.SpokeConfig memory spokeConfigAfter = hub1().getSpokeConfig(assetId, address(spoke1()));
+    assertEq(spokeConfigAfter.riskPremiumThreshold, 300);
   }
 
   function test_fuzz_executeHubSpokeConfigUpdates_riskPremiumThreshold(
     uint256 riskPremiumThreshold
   ) public {
     riskPremiumThreshold = bound(riskPremiumThreshold, 0, type(uint24).max);
-    uint256 assetId = assetIds[0][0];
-    IHub.SpokeConfig memory before_ = hub1().getSpokeConfig(assetId, address(spoke1()));
+    uint256 assetId = _getAssetId(0, 0);
+    IHub.SpokeConfig memory spokeConfigBefore = hub1().getSpokeConfig(assetId, address(spoke1()));
 
     IAaveV4ConfigEngine.SpokeConfigUpdate memory update = _defaultSpokeConfigUpdate();
     update.riskPremiumThreshold = riskPremiumThreshold;
@@ -574,16 +546,16 @@ contract HubEngineTest is BaseConfigEngineTest {
 
     engine.executeHubSpokeConfigUpdates(_toSpokeConfigUpdateArray(update));
 
-    IHub.SpokeConfig memory after_ = hub1().getSpokeConfig(assetId, address(spoke1()));
-    assertEq(after_.riskPremiumThreshold, riskPremiumThreshold);
-    assertEq(after_.addCap, before_.addCap);
-    assertEq(after_.drawCap, before_.drawCap);
-    assertEq(after_.active, before_.active);
-    assertEq(after_.halted, before_.halted);
+    IHub.SpokeConfig memory spokeConfigAfter = hub1().getSpokeConfig(assetId, address(spoke1()));
+    assertEq(spokeConfigAfter.riskPremiumThreshold, riskPremiumThreshold);
+    assertEq(spokeConfigAfter.addCap, spokeConfigBefore.addCap);
+    assertEq(spokeConfigAfter.drawCap, spokeConfigBefore.drawCap);
+    assertEq(spokeConfigAfter.active, spokeConfigBefore.active);
+    assertEq(spokeConfigAfter.halted, spokeConfigBefore.halted);
   }
 
   function test_executeHubSpokeConfigUpdates_allFields() public {
-    uint256 assetId = assetIds[0][0];
+    uint256 assetId = _getAssetId(0, 0);
 
     IAaveV4ConfigEngine.SpokeConfigUpdate memory update = _defaultSpokeConfigUpdate();
     update.addCap = 1000;
@@ -594,12 +566,12 @@ contract HubEngineTest is BaseConfigEngineTest {
 
     engine.executeHubSpokeConfigUpdates(_toSpokeConfigUpdateArray(update));
 
-    IHub.SpokeConfig memory after_ = hub1().getSpokeConfig(assetId, address(spoke1()));
-    assertEq(after_.addCap, 1000);
-    assertEq(after_.drawCap, 500);
-    assertEq(after_.riskPremiumThreshold, 100);
-    assertTrue(after_.active);
-    assertFalse(after_.halted);
+    IHub.SpokeConfig memory spokeConfigAfter = hub1().getSpokeConfig(assetId, address(spoke1()));
+    assertEq(spokeConfigAfter.addCap, 1000);
+    assertEq(spokeConfigAfter.drawCap, 500);
+    assertEq(spokeConfigAfter.riskPremiumThreshold, 100);
+    assertTrue(spokeConfigAfter.active);
+    assertFalse(spokeConfigAfter.halted);
   }
 
   function test_executeHubSpokeToAssetsAdditions() public {
@@ -642,7 +614,7 @@ contract HubEngineTest is BaseConfigEngineTest {
 
     IAaveV4ConfigEngine.SpokeToAssetsAddition memory addition = IAaveV4ConfigEngine
       .SpokeToAssetsAddition({
-        hubConfigurator: IHubConfigurator(address(hubConfigurator)),
+        hubConfigurator: hubConfigurator,
         hub: address(hub1()),
         spoke: address(newSpoke),
         assets: assets
@@ -650,26 +622,35 @@ contract HubEngineTest is BaseConfigEngineTest {
 
     engine.executeHubSpokeToAssetsAdditions(_toSpokeToAssetsAdditionArray(addition));
 
-    IHub.SpokeConfig memory wethConfig = hub1().getSpokeConfig(assetIds[0][0], address(newSpoke));
+    IHub.SpokeConfig memory wethConfig = hub1().getSpokeConfig(
+      _getAssetId(0, 0),
+      address(newSpoke)
+    );
     assertEq(wethConfig.addCap, 1000);
     assertEq(wethConfig.drawCap, 500);
     assertTrue(wethConfig.active);
 
-    IHub.SpokeConfig memory usdxConfig = hub1().getSpokeConfig(assetIds[0][1], address(newSpoke));
+    IHub.SpokeConfig memory usdxConfig = hub1().getSpokeConfig(
+      _getAssetId(0, 1),
+      address(newSpoke)
+    );
     assertEq(usdxConfig.addCap, 2000);
     assertEq(usdxConfig.drawCap, 1000);
   }
 
   function test_executeHubAssetHalts() public {
     IAaveV4ConfigEngine.AssetHalt memory halt = IAaveV4ConfigEngine.AssetHalt({
-      hubConfigurator: IHubConfigurator(address(hubConfigurator)),
+      hubConfigurator: hubConfigurator,
       hub: address(hub1()),
       underlying: address(weth)
     });
 
     engine.executeHubAssetHalts(_toAssetHaltArray(halt));
 
-    IHub.SpokeConfig memory spokeConfig = hub1().getSpokeConfig(assetIds[0][0], address(spoke1()));
+    IHub.SpokeConfig memory spokeConfig = hub1().getSpokeConfig(
+      _getAssetId(0, 0),
+      address(spoke1())
+    );
     assertTrue(spokeConfig.halted);
   }
 
@@ -677,7 +658,7 @@ contract HubEngineTest is BaseConfigEngineTest {
     engine.executeHubAssetHalts(
       _toAssetHaltArray(
         IAaveV4ConfigEngine.AssetHalt({
-          hubConfigurator: IHubConfigurator(address(hubConfigurator)),
+          hubConfigurator: hubConfigurator,
           hub: address(hub1()),
           underlying: address(weth)
         })
@@ -686,20 +667,23 @@ contract HubEngineTest is BaseConfigEngineTest {
 
     IAaveV4ConfigEngine.AssetDeactivation memory deactivation = IAaveV4ConfigEngine
       .AssetDeactivation({
-        hubConfigurator: IHubConfigurator(address(hubConfigurator)),
+        hubConfigurator: hubConfigurator,
         hub: address(hub1()),
         underlying: address(weth)
       });
 
     engine.executeHubAssetDeactivations(_toAssetDeactivationArray(deactivation));
 
-    IHub.SpokeConfig memory spokeConfig = hub1().getSpokeConfig(assetIds[0][0], address(spoke1()));
+    IHub.SpokeConfig memory spokeConfig = hub1().getSpokeConfig(
+      _getAssetId(0, 0),
+      address(spoke1())
+    );
     assertFalse(spokeConfig.active);
   }
 
   function test_executeHubAssetCapsResets() public {
     IAaveV4ConfigEngine.AssetCapsReset memory reset = IAaveV4ConfigEngine.AssetCapsReset({
-      hubConfigurator: IHubConfigurator(address(hubConfigurator)),
+      hubConfigurator: hubConfigurator,
       hub: address(hub1()),
       underlying: address(weth)
     });
@@ -708,7 +692,7 @@ contract HubEngineTest is BaseConfigEngineTest {
 
     for (uint256 s; s < NUM_SPOKES; ++s) {
       IHub.SpokeConfig memory spokeConfig = hub1().getSpokeConfig(
-        assetIds[0][0],
+        _getAssetId(0, 0),
         address(spokes[s])
       );
       assertEq(spokeConfig.addCap, 0);
@@ -719,27 +703,30 @@ contract HubEngineTest is BaseConfigEngineTest {
   function test_executeHubSpokeDeactivations() public {
     vm.prank(ADMIN);
     hub1().updateSpokeConfig(
-      assetIds[0][0],
+      _getAssetId(0, 0),
       address(spoke1()),
       IHub.SpokeConfig({addCap: 0, drawCap: 0, riskPremiumThreshold: 0, active: true, halted: true})
     );
 
     IAaveV4ConfigEngine.SpokeDeactivation memory deactivation = IAaveV4ConfigEngine
       .SpokeDeactivation({
-        hubConfigurator: IHubConfigurator(address(hubConfigurator)),
+        hubConfigurator: hubConfigurator,
         hub: address(hub1()),
         spoke: address(spoke1())
       });
 
     engine.executeHubSpokeDeactivations(_toSpokeDeactivationArray(deactivation));
 
-    IHub.SpokeConfig memory spokeConfig = hub1().getSpokeConfig(assetIds[0][0], address(spoke1()));
+    IHub.SpokeConfig memory spokeConfig = hub1().getSpokeConfig(
+      _getAssetId(0, 0),
+      address(spoke1())
+    );
     assertFalse(spokeConfig.active);
   }
 
   function test_executeHubSpokeCapsResets() public {
     IAaveV4ConfigEngine.SpokeCapsReset memory reset = IAaveV4ConfigEngine.SpokeCapsReset({
-      hubConfigurator: IHubConfigurator(address(hubConfigurator)),
+      hubConfigurator: hubConfigurator,
       hub: address(hub1()),
       spoke: address(spoke1())
     });
@@ -748,7 +735,7 @@ contract HubEngineTest is BaseConfigEngineTest {
 
     for (uint256 t; t < NUM_TOKENS; ++t) {
       IHub.SpokeConfig memory spokeConfig = hub1().getSpokeConfig(
-        assetIds[0][t],
+        _getAssetId(0, t),
         address(spoke1())
       );
       assertEq(spokeConfig.addCap, 0);
@@ -875,12 +862,38 @@ contract HubEngineTest is BaseConfigEngineTest {
     assertNotEq(predicted, address(0));
   }
 
+  function test_executeHubSpokeToAssetsAdditions_revert_spokeAlreadyListed() public {
+    IAaveV4ConfigEngine.SpokeAssetConfig[]
+      memory assets = new IAaveV4ConfigEngine.SpokeAssetConfig[](1);
+    assets[0] = IAaveV4ConfigEngine.SpokeAssetConfig({
+      underlying: address(weth),
+      config: IHub.SpokeConfig({
+        addCap: 1000,
+        drawCap: 500,
+        riskPremiumThreshold: 100,
+        active: true,
+        halted: false
+      })
+    });
+
+    IAaveV4ConfigEngine.SpokeToAssetsAddition memory addition = IAaveV4ConfigEngine
+      .SpokeToAssetsAddition({
+        hubConfigurator: hubConfigurator,
+        hub: address(hub1()),
+        spoke: address(spoke1()),
+        assets: assets
+      });
+
+    vm.expectRevert(abi.encodeWithSelector(IHub.SpokeAlreadyListed.selector));
+    engine.executeHubSpokeToAssetsAdditions(_toSpokeToAssetsAdditionArray(addition));
+  }
+
   function test_executeHubSpokeConfigUpdates_multipleHubs() public {
     IAaveV4ConfigEngine.SpokeConfigUpdate[]
       memory updates = new IAaveV4ConfigEngine.SpokeConfigUpdate[](2);
 
     updates[0] = IAaveV4ConfigEngine.SpokeConfigUpdate({
-      hubConfigurator: IHubConfigurator(address(hubConfigurator)),
+      hubConfigurator: hubConfigurator,
       hub: address(hub1()),
       underlying: address(weth),
       spoke: address(spoke1()),
@@ -892,7 +905,7 @@ contract HubEngineTest is BaseConfigEngineTest {
     });
 
     updates[1] = IAaveV4ConfigEngine.SpokeConfigUpdate({
-      hubConfigurator: IHubConfigurator(address(hubConfigurator)),
+      hubConfigurator: hubConfigurator,
       hub: address(hub2()),
       underlying: address(weth),
       spoke: address(spoke1()),
@@ -905,10 +918,10 @@ contract HubEngineTest is BaseConfigEngineTest {
 
     engine.executeHubSpokeConfigUpdates(updates);
 
-    IHub.SpokeConfig memory config1 = hub1().getSpokeConfig(assetIds[0][0], address(spoke1()));
+    IHub.SpokeConfig memory config1 = hub1().getSpokeConfig(_getAssetId(0, 0), address(spoke1()));
     assertEq(config1.addCap, 1111);
 
-    IHub.SpokeConfig memory config2 = hub2().getSpokeConfig(assetIds[1][0], address(spoke1()));
+    IHub.SpokeConfig memory config2 = hub2().getSpokeConfig(_getAssetId(1, 0), address(spoke1()));
     assertEq(config2.addCap, 2222);
   }
 }

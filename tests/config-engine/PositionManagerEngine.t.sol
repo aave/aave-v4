@@ -2,14 +2,7 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import {BaseConfigEngineTest} from 'tests/config-engine/BaseConfigEngine.t.sol';
-
-import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
-import {Ownable} from 'src/dependencies/openzeppelin/Ownable.sol';
-import {IPositionManagerBase} from 'src/position-manager/interfaces/IPositionManagerBase.sol';
-import {IAaveV4ConfigEngine} from 'src/config-engine/interfaces/IAaveV4ConfigEngine.sol';
-
-import {PositionManagerBaseWrapper} from 'tests/mocks/PositionManagerBaseWrapper.sol';
+import 'tests/config-engine/BaseConfigEngine.t.sol';
 
 contract PositionManagerEngineTest is BaseConfigEngineTest {
   function setUp() public override {
@@ -17,13 +10,13 @@ contract PositionManagerEngineTest is BaseConfigEngineTest {
     _seedFullEnvironment();
   }
 
-  function test_executePositionManagerSpokeRegistrations_concrete() public {
+  function test_executePositionManagerSpokeRegistrations() public {
     vm.expectCall(
       address(positionManager),
       abi.encodeCall(IPositionManagerBase.registerSpoke, (address(spoke1()), true))
     );
 
-    vm.expectEmit(true, false, false, true, address(positionManager));
+    vm.expectEmit(address(positionManager));
     emit IPositionManagerBase.SpokeRegistered(address(spoke1()), true);
 
     engine.executePositionManagerSpokeRegistrations(
@@ -51,7 +44,7 @@ contract PositionManagerEngineTest is BaseConfigEngineTest {
     );
     assertTrue(positionManager.isSpokeRegistered(address(spoke1())));
 
-    vm.expectEmit(true, false, false, true, address(positionManager));
+    vm.expectEmit(address(positionManager));
     emit IPositionManagerBase.SpokeRegistered(address(spoke1()), false);
 
     engine.executePositionManagerSpokeRegistrations(
@@ -66,7 +59,7 @@ contract PositionManagerEngineTest is BaseConfigEngineTest {
     assertFalse(positionManager.isSpokeRegistered(address(spoke1())));
   }
 
-  function test_fuzz_executePositionManagerSpokeRegistrations_concrete(bool registered) public {
+  function test_fuzz_executePositionManagerSpokeRegistrations(bool registered) public {
     engine.executePositionManagerSpokeRegistrations(
       _toSpokeRegistrationArray(
         IAaveV4ConfigEngine.SpokeRegistration({
@@ -97,7 +90,7 @@ contract PositionManagerEngineTest is BaseConfigEngineTest {
     );
   }
 
-  function test_executePositionManagerRoleRenouncements_concrete() public {
+  function test_executePositionManagerRoleRenouncements() public {
     engine.executePositionManagerSpokeRegistrations(
       _toSpokeRegistrationArray(
         IAaveV4ConfigEngine.SpokeRegistration({
@@ -127,7 +120,7 @@ contract PositionManagerEngineTest is BaseConfigEngineTest {
       abi.encodeCall(IPositionManagerBase.renouncePositionManagerRole, (address(spoke1()), USER))
     );
 
-    vm.expectEmit(true, true, false, true, address(spoke1()));
+    vm.expectEmit(address(spoke1()));
     emit ISpoke.SetUserPositionManager(USER, address(positionManager), false);
 
     engine.executePositionManagerRoleRenouncements(
