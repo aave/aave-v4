@@ -4,6 +4,7 @@ test = 'tests'
 out = 'out'
 libs = ['lib']
 fs_permissions = [{ access = "read", path = "tests/mocks/JsonBindings.sol" }]
+skip = ["tests/mocks/JsonBindings.sol"]
 solc_version = "0.8.28"
 evm_version = "cancun"
 optimizer = true

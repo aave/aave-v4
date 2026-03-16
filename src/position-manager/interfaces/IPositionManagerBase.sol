@@ -2,17 +2,16 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import {IIntentConsumer} from 'src/interfaces/IIntentConsumer.sol';
 import {IMulticall} from 'src/interfaces/IMulticall.sol';
 import {IRescuable} from 'src/interfaces/IRescuable.sol';
 
 /// @title IPositionManagerBase
 /// @author Aave Labs
 /// @notice Base interface for position managers.
-/// @dev This base interface is not mandatory for position managers, it only provides optional convenience methods for position managers.
-interface IPositionManagerBase is IIntentConsumer, IRescuable, IMulticall {
-  /// @notice Emitted when a spoke is registered or deregistered.
-  event SpokeRegistered(address indexed spoke, bool registered);
+/// @dev This base interface is not mandatory for position managers, it only provides optional convenience methods.
+interface IPositionManagerBase is IRescuable, IMulticall {
+  /// @notice Emitted when a Spoke's registration status is updated.
+  event RegisterSpoke(address indexed spoke, bool registered);
 
   /// @notice Thrown when the specified address is invalid.
   error InvalidAddress();
