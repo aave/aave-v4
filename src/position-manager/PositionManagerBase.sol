@@ -5,7 +5,6 @@ pragma solidity 0.8.28;
 import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
 import {IERC20Permit} from 'src/dependencies/openzeppelin/IERC20Permit.sol';
 import {Ownable2Step, Ownable} from 'src/dependencies/openzeppelin/Ownable2Step.sol';
-import {IntentConsumer} from 'src/utils/IntentConsumer.sol';
 import {IMulticall, Multicall} from 'src/utils/Multicall.sol';
 import {Rescuable} from 'src/utils/Rescuable.sol';
 import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
@@ -17,13 +16,7 @@ import {IPositionManagerBase} from 'src/position-manager/interfaces/IPositionMan
 /// @dev This base contract is not mandatory for position managers, it only implements optional convenience methods for position managers.
 /// @dev Contract must be an active and approved user position manager in order to execute spoke actions on a user's behalf.
 /// @dev The `_multicallEnabled()` function must be implemented to specify whether multicall is enabled.
-abstract contract PositionManagerBase is
-  IPositionManagerBase,
-  Ownable2Step,
-  IntentConsumer,
-  Rescuable,
-  Multicall
-{
+abstract contract PositionManagerBase is IPositionManagerBase, Ownable2Step, Rescuable, Multicall {
   /// @dev Map of registered spokes.
   mapping(address spoke => bool registered) internal _registeredSpokes;
 
@@ -41,7 +34,7 @@ abstract contract PositionManagerBase is
   function registerSpoke(address spoke, bool registered) external onlyOwner {
     require(spoke != address(0), InvalidAddress());
     _registeredSpokes[spoke] = registered;
-    emit SpokeRegistered(spoke, registered);
+    emit RegisterSpoke(spoke, registered);
   }
 
   /// @inheritdoc IPositionManagerBase

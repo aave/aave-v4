@@ -7,12 +7,12 @@ import {MathUtils} from 'src/libraries/math/MathUtils.sol';
 import {EIP712Hash} from 'src/position-manager/libraries/EIP712Hash.sol';
 import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 import {ITakerPositionManager} from 'src/position-manager/interfaces/ITakerPositionManager.sol';
-import {PositionManagerBase} from 'src/position-manager/PositionManagerBase.sol';
+import {PositionManagerIntentBase} from 'src/position-manager/PositionManagerIntentBase.sol';
 
 /// @title TakerPositionManager
 /// @author Aave Labs
 /// @notice Position manager to handle withdraw permit and borrow permit actions on behalf of users.
-contract TakerPositionManager is ITakerPositionManager, PositionManagerBase {
+contract TakerPositionManager is ITakerPositionManager, PositionManagerIntentBase {
   using SafeERC20 for IERC20;
   using MathUtils for uint256;
   using EIP712Hash for *;
@@ -33,7 +33,7 @@ contract TakerPositionManager is ITakerPositionManager, PositionManagerBase {
 
   /// @dev Constructor.
   /// @param initialOwner_ The address of the initial owner.
-  constructor(address initialOwner_) PositionManagerBase(initialOwner_) {}
+  constructor(address initialOwner_) PositionManagerIntentBase(initialOwner_) {}
 
   /// @inheritdoc ITakerPositionManager
   function approveWithdraw(

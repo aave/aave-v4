@@ -14,8 +14,4 @@ contract PositionManagerNoMulticall is PositionManagerBase {
   function _multicallEnabled() internal pure override returns (bool) {
     return false;
   }
-
-  function _domainNameAndVersion() internal pure override returns (string memory, string memory) {
-    return ('PositionManagerNoMulticall', '1');
-  }
 }

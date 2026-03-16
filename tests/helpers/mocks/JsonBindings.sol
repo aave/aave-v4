@@ -64,6 +64,14 @@ library JsonBindings {
   // prettier-ignore
   string constant schema_BorrowPermit = "BorrowPermit(address spoke,uint256 reserveId,address owner,address spender,uint256 amount,uint256 nonce,uint256 deadline)";
   // prettier-ignore
+  string constant schema_SetGlobalPermissionPermit = "SetGlobalPermissionPermit(address spoke,address delegator,address delegatee,bool permission,uint256 nonce,uint256 deadline)";
+  // prettier-ignore
+  string constant schema_SetCanSetUsingAsCollateralPermissionPermit = "SetCanSetUsingAsCollateralPermissionPermit(address spoke,address delegator,address delegatee,bool permission,uint256 nonce,uint256 deadline)";
+  // prettier-ignore
+  string constant schema_SetCanUpdateUserRiskPremiumPermissionPermit = "SetCanUpdateUserRiskPremiumPermissionPermit(address spoke,address delegator,address delegatee,bool permission,uint256 nonce,uint256 deadline)";
+  // prettier-ignore
+  string constant schema_SetCanUpdateUserDynamicConfigPermissionPermit = "SetCanUpdateUserDynamicConfigPermissionPermit(address spoke,address delegator,address delegatee,bool permission,uint256 nonce,uint256 deadline)";
+  // prettier-ignore
   string constant schema_TokenizedDeposit = "TokenizedDeposit(address depositor,uint256 assets,address receiver,uint256 nonce,uint256 deadline)";
   // prettier-ignore
   string constant schema_TokenizedMint = "TokenizedMint(address depositor,uint256 shares,address receiver,uint256 nonce,uint256 deadline)";
@@ -485,6 +493,226 @@ library JsonBindings {
       abi.decode(
         vm.parseJsonTypeArray(json, path, schema_BorrowPermit),
         (EIP712Types.BorrowPermit[])
+      );
+  }
+
+  function serialize(
+    EIP712Types.SetGlobalPermissionPermit memory value
+  ) internal pure returns (string memory) {
+    return vm.serializeJsonType(schema_SetGlobalPermissionPermit, abi.encode(value));
+  }
+
+  function serialize(
+    EIP712Types.SetGlobalPermissionPermit memory value,
+    string memory objectKey,
+    string memory valueKey
+  ) internal returns (string memory) {
+    return
+      vm.serializeJsonType(
+        objectKey,
+        valueKey,
+        schema_SetGlobalPermissionPermit,
+        abi.encode(value)
+      );
+  }
+
+  function deserializeSetGlobalPermissionPermit(
+    string memory json
+  ) public pure returns (EIP712Types.SetGlobalPermissionPermit memory) {
+    return
+      abi.decode(
+        vm.parseJsonType(json, schema_SetGlobalPermissionPermit),
+        (EIP712Types.SetGlobalPermissionPermit)
+      );
+  }
+
+  function deserializeSetGlobalPermissionPermit(
+    string memory json,
+    string memory path
+  ) public pure returns (EIP712Types.SetGlobalPermissionPermit memory) {
+    return
+      abi.decode(
+        vm.parseJsonType(json, path, schema_SetGlobalPermissionPermit),
+        (EIP712Types.SetGlobalPermissionPermit)
+      );
+  }
+
+  function deserializeSetGlobalPermissionPermitArray(
+    string memory json,
+    string memory path
+  ) public pure returns (EIP712Types.SetGlobalPermissionPermit[] memory) {
+    return
+      abi.decode(
+        vm.parseJsonTypeArray(json, path, schema_SetGlobalPermissionPermit),
+        (EIP712Types.SetGlobalPermissionPermit[])
+      );
+  }
+
+  function serialize(
+    EIP712Types.SetCanSetUsingAsCollateralPermissionPermit memory value
+  ) internal pure returns (string memory) {
+    return
+      vm.serializeJsonType(
+        schema_SetCanSetUsingAsCollateralPermissionPermit,
+        abi.encode(value)
+      );
+  }
+
+  function serialize(
+    EIP712Types.SetCanSetUsingAsCollateralPermissionPermit memory value,
+    string memory objectKey,
+    string memory valueKey
+  ) internal returns (string memory) {
+    return
+      vm.serializeJsonType(
+        objectKey,
+        valueKey,
+        schema_SetCanSetUsingAsCollateralPermissionPermit,
+        abi.encode(value)
+      );
+  }
+
+  function deserializeSetCanSetUsingAsCollateralPermissionPermit(
+    string memory json
+  ) public pure returns (EIP712Types.SetCanSetUsingAsCollateralPermissionPermit memory) {
+    return
+      abi.decode(
+        vm.parseJsonType(json, schema_SetCanSetUsingAsCollateralPermissionPermit),
+        (EIP712Types.SetCanSetUsingAsCollateralPermissionPermit)
+      );
+  }
+
+  function deserializeSetCanSetUsingAsCollateralPermissionPermit(
+    string memory json,
+    string memory path
+  ) public pure returns (EIP712Types.SetCanSetUsingAsCollateralPermissionPermit memory) {
+    return
+      abi.decode(
+        vm.parseJsonType(json, path, schema_SetCanSetUsingAsCollateralPermissionPermit),
+        (EIP712Types.SetCanSetUsingAsCollateralPermissionPermit)
+      );
+  }
+
+  function deserializeSetCanSetUsingAsCollateralPermissionPermitArray(
+    string memory json,
+    string memory path
+  ) public pure returns (EIP712Types.SetCanSetUsingAsCollateralPermissionPermit[] memory) {
+    return
+      abi.decode(
+        vm.parseJsonTypeArray(json, path, schema_SetCanSetUsingAsCollateralPermissionPermit),
+        (EIP712Types.SetCanSetUsingAsCollateralPermissionPermit[])
+      );
+  }
+
+  function serialize(
+    EIP712Types.SetCanUpdateUserRiskPremiumPermissionPermit memory value
+  ) internal pure returns (string memory) {
+    return
+      vm.serializeJsonType(
+        schema_SetCanUpdateUserRiskPremiumPermissionPermit,
+        abi.encode(value)
+      );
+  }
+
+  function serialize(
+    EIP712Types.SetCanUpdateUserRiskPremiumPermissionPermit memory value,
+    string memory objectKey,
+    string memory valueKey
+  ) internal returns (string memory) {
+    return
+      vm.serializeJsonType(
+        objectKey,
+        valueKey,
+        schema_SetCanUpdateUserRiskPremiumPermissionPermit,
+        abi.encode(value)
+      );
+  }
+
+  function deserializeSetCanUpdateUserRiskPremiumPermissionPermit(
+    string memory json
+  ) public pure returns (EIP712Types.SetCanUpdateUserRiskPremiumPermissionPermit memory) {
+    return
+      abi.decode(
+        vm.parseJsonType(json, schema_SetCanUpdateUserRiskPremiumPermissionPermit),
+        (EIP712Types.SetCanUpdateUserRiskPremiumPermissionPermit)
+      );
+  }
+
+  function deserializeSetCanUpdateUserRiskPremiumPermissionPermit(
+    string memory json,
+    string memory path
+  ) public pure returns (EIP712Types.SetCanUpdateUserRiskPremiumPermissionPermit memory) {
+    return
+      abi.decode(
+        vm.parseJsonType(json, path, schema_SetCanUpdateUserRiskPremiumPermissionPermit),
+        (EIP712Types.SetCanUpdateUserRiskPremiumPermissionPermit)
+      );
+  }
+
+  function deserializeSetCanUpdateUserRiskPremiumPermissionPermitArray(
+    string memory json,
+    string memory path
+  ) public pure returns (EIP712Types.SetCanUpdateUserRiskPremiumPermissionPermit[] memory) {
+    return
+      abi.decode(
+        vm.parseJsonTypeArray(json, path, schema_SetCanUpdateUserRiskPremiumPermissionPermit),
+        (EIP712Types.SetCanUpdateUserRiskPremiumPermissionPermit[])
+      );
+  }
+
+  function serialize(
+    EIP712Types.SetCanUpdateUserDynamicConfigPermissionPermit memory value
+  ) internal pure returns (string memory) {
+    return
+      vm.serializeJsonType(
+        schema_SetCanUpdateUserDynamicConfigPermissionPermit,
+        abi.encode(value)
+      );
+  }
+
+  function serialize(
+    EIP712Types.SetCanUpdateUserDynamicConfigPermissionPermit memory value,
+    string memory objectKey,
+    string memory valueKey
+  ) internal returns (string memory) {
+    return
+      vm.serializeJsonType(
+        objectKey,
+        valueKey,
+        schema_SetCanUpdateUserDynamicConfigPermissionPermit,
+        abi.encode(value)
+      );
+  }
+
+  function deserializeSetCanUpdateUserDynamicConfigPermissionPermit(
+    string memory json
+  ) public pure returns (EIP712Types.SetCanUpdateUserDynamicConfigPermissionPermit memory) {
+    return
+      abi.decode(
+        vm.parseJsonType(json, schema_SetCanUpdateUserDynamicConfigPermissionPermit),
+        (EIP712Types.SetCanUpdateUserDynamicConfigPermissionPermit)
+      );
+  }
+
+  function deserializeSetCanUpdateUserDynamicConfigPermissionPermit(
+    string memory json,
+    string memory path
+  ) public pure returns (EIP712Types.SetCanUpdateUserDynamicConfigPermissionPermit memory) {
+    return
+      abi.decode(
+        vm.parseJsonType(json, path, schema_SetCanUpdateUserDynamicConfigPermissionPermit),
+        (EIP712Types.SetCanUpdateUserDynamicConfigPermissionPermit)
+      );
+  }
+
+  function deserializeSetCanUpdateUserDynamicConfigPermissionPermitArray(
+    string memory json,
+    string memory path
+  ) public pure returns (EIP712Types.SetCanUpdateUserDynamicConfigPermissionPermit[] memory) {
+    return
+      abi.decode(
+        vm.parseJsonTypeArray(json, path, schema_SetCanUpdateUserDynamicConfigPermissionPermit),
+        (EIP712Types.SetCanUpdateUserDynamicConfigPermissionPermit[])
       );
   }
 

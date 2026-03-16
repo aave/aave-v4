@@ -336,10 +336,10 @@ contract ConfigPositionManager_Gas_Tests is Base {
     vm.snapshotGasLastCall(NAMESPACE, 'setGlobalPermission');
   }
 
-  function test_setCanUpdateUsingAsCollateralPermission() public {
+  function test_setCanSetUsingAsCollateralPermission() public {
     vm.prank(alice);
-    positionManager.setCanUpdateUsingAsCollateralPermission(address(spoke1), bob, true);
-    vm.snapshotGasLastCall(NAMESPACE, 'setCanUpdateUsingAsCollateralPermission');
+    positionManager.setCanSetUsingAsCollateralPermission(address(spoke1), bob, true);
+    vm.snapshotGasLastCall(NAMESPACE, 'setCanSetUsingAsCollateralPermission');
   }
 
   function test_setCanUpdateUserRiskPremiumPermission() public {
@@ -365,7 +365,7 @@ contract ConfigPositionManager_Gas_Tests is Base {
 
   function test_renounceCanUpdateUsingAsCollateralPermission() public {
     vm.prank(alice);
-    positionManager.setCanUpdateUsingAsCollateralPermission(address(spoke1), bob, true);
+    positionManager.setCanSetUsingAsCollateralPermission(address(spoke1), bob, true);
 
     vm.prank(bob);
     positionManager.renounceCanUpdateUsingAsCollateralPermission(address(spoke1), alice);

@@ -2,12 +2,12 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import {IPositionManagerBase} from 'src/position-manager/interfaces/IPositionManagerBase.sol';
+import {IPositionManagerIntentBase} from 'src/position-manager/interfaces/IPositionManagerIntentBase.sol';
 
 /// @title ITakerPositionManager
 /// @author Aave Labs
 /// @notice Interface for position manager handling withdraw permit and borrow permit actions on behalf of users.
-interface ITakerPositionManager is IPositionManagerBase {
+interface ITakerPositionManager is IPositionManagerIntentBase {
   /// @notice Structured parameters for withdraw permit intent.
   /// @param spoke The address of the Spoke.
   /// @param reserveId The identifier of the reserve.

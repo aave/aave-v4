@@ -2,6 +2,7 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.20;
 
+import {IConfigPositionManager} from 'src/position-manager/interfaces/IConfigPositionManager.sol';
 import {ISignatureGateway} from 'src/position-manager/interfaces/ISignatureGateway.sol';
 import {ITakerPositionManager} from 'src/position-manager/interfaces/ITakerPositionManager.sol';
 
@@ -44,6 +45,22 @@ library EIP712Hash {
   bytes32 public constant BORROW_PERMIT_TYPEHASH =
     // keccak256('BorrowPermit(address spoke,uint256 reserveId,address owner,address spender,uint256 amount,uint256 nonce,uint256 deadline)')
     0x14236ea048da65ffb52a9b32a2c840f24ab374cc31f65faeb7877d22ceca144e;
+
+  bytes32 public constant SET_GLOBAL_PERMISSION_PERMIT_TYPEHASH =
+    // keccak256('SetGlobalPermissionPermit(address spoke,address delegator,address delegatee,bool permission,uint256 nonce,uint256 deadline)')
+    0x468edc8a22a4686863c6b8a79342e76c578e93ea7d28606606acd95e2ffc4d53;
+
+  bytes32 public constant SET_CAN_SET_USING_AS_COLLATERAL_PERMISSION_PERMIT_TYPEHASH =
+    // keccak256('SetCanSetUsingAsCollateralPermissionPermit(address spoke,address delegator,address delegatee,bool permission,uint256 nonce,uint256 deadline)')
+    0x26244f8fd59210a303a35d34ec9efc9cdb15e142b8093aa0a97b185d8533f1db;
+
+  bytes32 public constant SET_CAN_UPDATE_USER_RISK_PREMIUM_PERMISSION_PERMIT_TYPEHASH =
+    // keccak256('SetCanUpdateUserRiskPremiumPermissionPermit(address spoke,address delegator,address delegatee,bool permission,uint256 nonce,uint256 deadline)')
+    0xce16a7f069cf522ce3ad86420662e3bd8d13dc7883379dfe72865440fc6e4434;
+
+  bytes32 public constant SET_CAN_UPDATE_USER_DYNAMIC_CONFIG_PERMISSION_PERMIT_TYPEHASH =
+    // keccak256('SetCanUpdateUserDynamicConfigPermissionPermit(address spoke,address delegator,address delegatee,bool permission,uint256 nonce,uint256 deadline)')
+    0xa00e492b4ed483e810de8f2015cc1603a01e1245be610157d5bcb7c64974c053;
 
   function hash(ISignatureGateway.Supply calldata params) internal pure returns (bytes32) {
     return
@@ -182,6 +199,74 @@ library EIP712Hash {
           params.owner,
           params.spender,
           params.amount,
+          params.nonce,
+          params.deadline
+        )
+      );
+  }
+
+  function hash(
+    IConfigPositionManager.SetGlobalPermissionPermit calldata params
+  ) internal pure returns (bytes32) {
+    return
+      keccak256(
+        abi.encode(
+          SET_GLOBAL_PERMISSION_PERMIT_TYPEHASH,
+          params.spoke,
+          params.delegator,
+          params.delegatee,
+          params.permission,
+          params.nonce,
+          params.deadline
+        )
+      );
+  }
+
+  function hash(
+    IConfigPositionManager.SetCanSetUsingAsCollateralPermissionPermit calldata params
+  ) internal pure returns (bytes32) {
+    return
+      keccak256(
+        abi.encode(
+          SET_CAN_SET_USING_AS_COLLATERAL_PERMISSION_PERMIT_TYPEHASH,
+          params.spoke,
+          params.delegator,
+          params.delegatee,
+          params.permission,
+          params.nonce,
+          params.deadline
+        )
+      );
+  }
+
+  function hash(
+    IConfigPositionManager.SetCanUpdateUserRiskPremiumPermissionPermit calldata params
+  ) internal pure returns (bytes32) {
+    return
+      keccak256(
+        abi.encode(
+          SET_CAN_UPDATE_USER_RISK_PREMIUM_PERMISSION_PERMIT_TYPEHASH,
+          params.spoke,
+          params.delegator,
+          params.delegatee,
+          params.permission,
+          params.nonce,
+          params.deadline
+        )
+      );
+  }
+
+  function hash(
+    IConfigPositionManager.SetCanUpdateUserDynamicConfigPermissionPermit calldata params
+  ) internal pure returns (bytes32) {
+    return
+      keccak256(
+        abi.encode(
+          SET_CAN_UPDATE_USER_DYNAMIC_CONFIG_PERMISSION_PERMIT_TYPEHASH,
+          params.spoke,
+          params.delegator,
+          params.delegatee,
+          params.permission,
           params.nonce,
           params.deadline
         )
