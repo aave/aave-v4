@@ -3,8 +3,8 @@
 pragma solidity 0.8.28;
 
 import {SafeERC20, IERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
-import {EIP712Hash} from 'src/position-manager/libraries/EIP712Hash.sol';
 import {MathUtils} from 'src/libraries/math/MathUtils.sol';
+import {EIP712Hash} from 'src/position-manager/libraries/EIP712Hash.sol';
 import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 import {ITakerPositionManager} from 'src/position-manager/interfaces/ITakerPositionManager.sol';
 import {PositionManagerIntentBase} from 'src/position-manager/PositionManagerIntentBase.sol';
@@ -14,8 +14,8 @@ import {PositionManagerIntentBase} from 'src/position-manager/PositionManagerInt
 /// @notice Position manager to handle withdraw permit and borrow permit actions on behalf of users.
 contract TakerPositionManager is ITakerPositionManager, PositionManagerIntentBase {
   using SafeERC20 for IERC20;
-  using EIP712Hash for *;
   using MathUtils for uint256;
+  using EIP712Hash for *;
 
   /// @inheritdoc ITakerPositionManager
   bytes32 public constant WITHDRAW_PERMIT_TYPEHASH = EIP712Hash.WITHDRAW_PERMIT_TYPEHASH;
