@@ -46,23 +46,23 @@ contract ConfigPositionManagerPermitTest is ConfigPositionManagerBaseTest {
     assertEq(instance.DOMAIN_SEPARATOR(), expectedDomainSeparator);
   }
 
-  function test_setGlobalPermissionPermit_typeHash() public view {
+  function test_setFullPermissionPermit_typeHash() public view {
     assertEq(
-      positionManager.SET_GLOBAL_PERMISSION_PERMIT_TYPEHASH(),
-      vm.eip712HashType('SetGlobalPermissionPermit')
+      positionManager.SET_FULL_PERMISSION_PERMIT_TYPEHASH(),
+      vm.eip712HashType('SetFullPermissionPermit')
     );
     assertEq(
-      positionManager.SET_GLOBAL_PERMISSION_PERMIT_TYPEHASH(),
+      positionManager.SET_FULL_PERMISSION_PERMIT_TYPEHASH(),
       keccak256(
-        'SetGlobalPermissionPermit(address spoke,address delegator,address delegatee,bool permission,uint256 nonce,uint256 deadline)'
+        'SetFullPermissionPermit(address spoke,address delegator,address delegatee,bool status,uint256 nonce,uint256 deadline)'
       )
     );
   }
 
-  function test_setGlobalPermissionWithSig_fuzz(address delegatee, bool permission) public {
+  function test_setFullPermissionWithSig_fuzz(address delegatee, bool permission) public {
     vm.assume(delegatee != address(0));
 
-    IConfigPositionManager.SetGlobalPermissionPermit memory p = _setGlobalPermissionPermitData(
+    IConfigPositionManager.SetFullPermissionPermit memory p = _setFullPermissionPermitData(
       delegatee,
       alice,
       permission,
@@ -80,12 +80,13 @@ contract ConfigPositionManagerPermitTest is ConfigPositionManagerBaseTest {
         address(spoke1),
         alice,
         delegatee,
+        emptyPermissions,
         expectedPermissions
       );
     }
 
     vm.prank(vm.randomAddress());
-    positionManager.setGlobalPermissionWithSig(p, signature);
+    positionManager.setFullPermissionWithSig(p, signature);
 
     IConfigPositionManager.ConfigPermissionValues memory permissions = positionManager
       .getConfigPermissions(address(spoke1), delegatee, alice);
@@ -94,10 +95,10 @@ contract ConfigPositionManagerPermitTest is ConfigPositionManagerBaseTest {
     assertEq(permissions.canUpdateUserDynamicConfig, permission);
   }
 
-  function test_setGlobalPermissionWithSig_revertsWith_InvalidSignature_dueTo_ExpiredDeadline()
+  function test_setFullPermissionWithSig_revertsWith_InvalidSignature_dueTo_ExpiredDeadline()
     public
   {
-    IConfigPositionManager.SetGlobalPermissionPermit memory p = _setGlobalPermissionPermitData(
+    IConfigPositionManager.SetFullPermissionPermit memory p = _setFullPermissionPermitData(
       vm.randomAddress(),
       alice,
       true,
@@ -107,17 +108,15 @@ contract ConfigPositionManagerPermitTest is ConfigPositionManagerBaseTest {
 
     vm.expectRevert(IIntentConsumer.InvalidSignature.selector);
     vm.prank(vm.randomAddress());
-    positionManager.setGlobalPermissionWithSig(p, signature);
+    positionManager.setFullPermissionWithSig(p, signature);
   }
 
-  function test_setGlobalPermissionWithSig_revertsWith_InvalidSignature_dueTo_InvalidSigner()
-    public
-  {
+  function test_setFullPermissionWithSig_revertsWith_InvalidSignature_dueTo_InvalidSigner() public {
     (address randomUser, uint256 randomUserPk) = makeAddrAndKey(string(vm.randomBytes(32)));
     address delegator = vm.randomAddress();
     while (delegator == randomUser) delegator = vm.randomAddress();
 
-    IConfigPositionManager.SetGlobalPermissionPermit memory p = _setGlobalPermissionPermitData(
+    IConfigPositionManager.SetFullPermissionPermit memory p = _setFullPermissionPermitData(
       randomUser,
       delegator,
       true,
@@ -127,11 +126,11 @@ contract ConfigPositionManagerPermitTest is ConfigPositionManagerBaseTest {
 
     vm.expectRevert(IIntentConsumer.InvalidSignature.selector);
     vm.prank(vm.randomAddress());
-    positionManager.setGlobalPermissionWithSig(p, signature);
+    positionManager.setFullPermissionWithSig(p, signature);
   }
 
-  function test_setGlobalPermissionWithSig_revertsWith_InvalidAccountNonce(bytes32) public {
-    IConfigPositionManager.SetGlobalPermissionPermit memory p = _setGlobalPermissionPermitData(
+  function test_setFullPermissionWithSig_revertsWith_InvalidAccountNonce(bytes32) public {
+    IConfigPositionManager.SetFullPermissionPermit memory p = _setFullPermissionPermitData(
       vm.randomAddress(),
       alice,
       true,
@@ -147,11 +146,11 @@ contract ConfigPositionManagerPermitTest is ConfigPositionManagerBaseTest {
       abi.encodeWithSelector(INoncesKeyed.InvalidAccountNonce.selector, p.delegator, currentNonce)
     );
     vm.prank(vm.randomAddress());
-    positionManager.setGlobalPermissionWithSig(p, signature);
+    positionManager.setFullPermissionWithSig(p, signature);
   }
 
-  function test_setGlobalPermissionWithSig_revertsWith_SpokeNotRegistered() public {
-    IConfigPositionManager.SetGlobalPermissionPermit memory p = _setGlobalPermissionPermitData(
+  function test_setFullPermissionWithSig_revertsWith_SpokeNotRegistered() public {
+    IConfigPositionManager.SetFullPermissionPermit memory p = _setFullPermissionPermitData(
       bob,
       alice,
       true,
@@ -163,7 +162,7 @@ contract ConfigPositionManagerPermitTest is ConfigPositionManagerBaseTest {
 
     vm.expectRevert(IPositionManagerBase.SpokeNotRegistered.selector);
     vm.prank(alice);
-    positionManager.setGlobalPermissionWithSig(p, signature);
+    positionManager.setFullPermissionWithSig(p, signature);
   }
 
   function test_setCanSetUsingAsCollateralPermissionPermit_typeHash() public view {
@@ -174,7 +173,7 @@ contract ConfigPositionManagerPermitTest is ConfigPositionManagerBaseTest {
     assertEq(
       positionManager.SET_CAN_SET_USING_AS_COLLATERAL_PERMISSION_PERMIT_TYPEHASH(),
       keccak256(
-        'SetCanSetUsingAsCollateralPermissionPermit(address spoke,address delegator,address delegatee,bool permission,uint256 nonce,uint256 deadline)'
+        'SetCanSetUsingAsCollateralPermissionPermit(address spoke,address delegator,address delegatee,bool status,uint256 nonce,uint256 deadline)'
       )
     );
   }
@@ -289,7 +288,7 @@ contract ConfigPositionManagerPermitTest is ConfigPositionManagerBaseTest {
     assertEq(
       positionManager.SET_CAN_UPDATE_USER_RISK_PREMIUM_PERMISSION_PERMIT_TYPEHASH(),
       keccak256(
-        'SetCanUpdateUserRiskPremiumPermissionPermit(address spoke,address delegator,address delegatee,bool permission,uint256 nonce,uint256 deadline)'
+        'SetCanUpdateUserRiskPremiumPermissionPermit(address spoke,address delegator,address delegatee,bool status,uint256 nonce,uint256 deadline)'
       )
     );
   }
@@ -404,7 +403,7 @@ contract ConfigPositionManagerPermitTest is ConfigPositionManagerBaseTest {
     assertEq(
       positionManager.SET_CAN_UPDATE_USER_DYNAMIC_CONFIG_PERMISSION_PERMIT_TYPEHASH(),
       keccak256(
-        'SetCanUpdateUserDynamicConfigPermissionPermit(address spoke,address delegator,address delegatee,bool permission,uint256 nonce,uint256 deadline)'
+        'SetCanUpdateUserDynamicConfigPermissionPermit(address spoke,address delegator,address delegatee,bool status,uint256 nonce,uint256 deadline)'
       )
     );
   }
