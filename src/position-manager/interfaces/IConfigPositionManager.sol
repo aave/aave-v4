@@ -72,7 +72,7 @@ interface IConfigPositionManager is IPositionManagerIntentBase {
   /// @dev spoke The address of the Spoke.
   /// @dev delegator The address of the delegator.
   /// @dev delegatee The address of the delegatee.
-  /// @dev permission The new permission status.
+  /// @dev status The new permission status.
   /// @dev nonce The key-prefixed nonce for the signature.
   /// @dev deadline The deadline for the intent.
   struct SetCanUpdateUserDynamicConfigPermissionPermit {
@@ -135,7 +135,7 @@ interface IConfigPositionManager is IPositionManagerIntentBase {
   /// @notice Thrown when the delegatee of a function was not given permission by the user.
   error DelegateeNotAllowed();
 
-  /// @notice Sets the global permission for a delegatee.
+  /// @notice Sets the full permission for a delegatee.
   /// @param spoke The address of the Spoke.
   /// @param delegatee The address of the delegatee.
   /// @param status The new permission status.
@@ -171,7 +171,7 @@ interface IConfigPositionManager is IPositionManagerIntentBase {
     bool status
   ) external;
 
-  /// @notice Sets the global permission for a delegatee using an EIP712-typed intent.
+  /// @notice Sets the full permission for a delegatee using an EIP712-typed intent.
   /// @dev Uses keyed-nonces where for each key's namespace nonce is consumed sequentially.
   /// @param params The structured SetFullPermissionPermit parameters.
   /// @param signature The EIP712-compliant signature bytes.
