@@ -74,7 +74,14 @@ contract HubRestoreTest is Base {
   function test_restore_revertsWith_SurplusPremiumRayRestored() public {
     uint256 drawAmount = 100e18;
     _addLiquidity(hub1, daiAssetId, drawAmount);
-    _drawLiquidity(hub1, daiAssetId, drawAmount, true, true, address(spoke1));
+    _drawLiquidity({
+      hub: hub1,
+      assetId: daiAssetId,
+      amount: drawAmount,
+      withPremium: true,
+      skipTime: true,
+      spoke: address(spoke1)
+    });
 
     (uint256 drawn, uint256 premium) = hub1.getSpokeOwed(daiAssetId, address(spoke1));
     assertGt(drawn, 0);

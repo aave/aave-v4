@@ -406,7 +406,11 @@ contract SpokeConfiguratorGranularAccessControlTest is Base {
     address newPM = makeAddr('NEW_POSITION_MANAGER');
 
     vm.prank(POSITION_MANAGER_ADMIN);
-    spokeConfigurator.updatePositionManager(spokeAddr, newPM, true);
+    spokeConfigurator.updatePositionManager({
+      spoke: spokeAddr,
+      positionManager: newPM,
+      active: true
+    });
 
     assertTrue(spoke.isPositionManagerActive(newPM));
   }

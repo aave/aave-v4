@@ -139,7 +139,13 @@ contract SpokeOperations_Gas_Tests is Base {
     _liquidationSetup(85_00);
 
     vm.startPrank(bob);
-    spoke.liquidationCall(reserveId.usdx, reserveId.dai, alice, 100_000e18, false);
+    spoke.liquidationCall({
+      collateralReserveId: reserveId.usdx,
+      debtReserveId: reserveId.dai,
+      user: alice,
+      debtToCover: 100_000e18,
+      receiveShares: false
+    });
     vm.snapshotGasLastCall(NAMESPACE, 'liquidationCall: partial');
     vm.stopPrank();
   }
@@ -148,7 +154,13 @@ contract SpokeOperations_Gas_Tests is Base {
     _liquidationSetup(85_00);
 
     vm.startPrank(bob);
-    spoke.liquidationCall(reserveId.usdx, reserveId.dai, alice, UINT256_MAX, false);
+    spoke.liquidationCall({
+      collateralReserveId: reserveId.usdx,
+      debtReserveId: reserveId.dai,
+      user: alice,
+      debtToCover: UINT256_MAX,
+      receiveShares: false
+    });
     vm.snapshotGasLastCall(NAMESPACE, 'liquidationCall: full');
 
     vm.stopPrank();
@@ -158,7 +170,13 @@ contract SpokeOperations_Gas_Tests is Base {
     _liquidationSetup(85_00);
 
     vm.startPrank(bob);
-    spoke.liquidationCall(reserveId.usdx, reserveId.dai, alice, 100_000e18, true);
+    spoke.liquidationCall({
+      collateralReserveId: reserveId.usdx,
+      debtReserveId: reserveId.dai,
+      user: alice,
+      debtToCover: 100_000e18,
+      receiveShares: true
+    });
     vm.snapshotGasLastCall(NAMESPACE, 'liquidationCall (receiveShares): partial');
 
     vm.stopPrank();
@@ -168,7 +186,13 @@ contract SpokeOperations_Gas_Tests is Base {
     _liquidationSetup(85_00);
 
     vm.startPrank(bob);
-    spoke.liquidationCall(reserveId.usdx, reserveId.dai, alice, UINT256_MAX, true);
+    spoke.liquidationCall({
+      collateralReserveId: reserveId.usdx,
+      debtReserveId: reserveId.dai,
+      user: alice,
+      debtToCover: UINT256_MAX,
+      receiveShares: true
+    });
     vm.snapshotGasLastCall(NAMESPACE, 'liquidationCall (receiveShares): full');
 
     vm.stopPrank();
@@ -178,7 +202,13 @@ contract SpokeOperations_Gas_Tests is Base {
     _liquidationSetup(45_00);
 
     vm.startPrank(bob);
-    spoke.liquidationCall(reserveId.usdx, reserveId.dai, alice, UINT256_MAX, false);
+    spoke.liquidationCall({
+      collateralReserveId: reserveId.usdx,
+      debtReserveId: reserveId.dai,
+      user: alice,
+      debtToCover: UINT256_MAX,
+      receiveShares: false
+    });
     vm.snapshotGasLastCall(NAMESPACE, 'liquidationCall (reportDeficit): full');
 
     vm.stopPrank();
@@ -300,7 +330,7 @@ contract SpokeOperations_Gas_Tests is Base {
     (address user, uint256 userPk) = makeAddrAndKey('user');
     address positionManager = makeAddr('positionManager');
     vm.prank(SPOKE_ADMIN);
-    spoke.updatePositionManager(positionManager, true);
+    spoke.updatePositionManager({positionManager: positionManager, active: true});
 
     uint192 nonceKey = 100;
     vm.prank(user);

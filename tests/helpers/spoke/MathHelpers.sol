@@ -308,7 +308,11 @@ abstract contract MathHelpers is QueryHelpers {
     address user,
     uint256 desiredHf
   ) internal returns (uint256 requiredDebtValue) {
-    ISpoke.UserAccountData memory userAccountData = _getUserAccountData(spoke, user, true);
+    ISpoke.UserAccountData memory userAccountData = _getUserAccountData({
+      spoke: spoke,
+      user: user,
+      refreshConfig: true
+    });
     uint256 totalAdjustedCollateralValue = userAccountData.totalCollateralValue.wadMulDown(
       userAccountData.avgCollateralFactor
     );
@@ -340,7 +344,7 @@ abstract contract MathHelpers is QueryHelpers {
   }
 
   function _calculateExpectedUserRP(ISpoke spoke, address user) internal view returns (uint256) {
-    return _calculateExpectedUserRP(spoke, user, false);
+    return _calculateExpectedUserRP({spoke: spoke, user: user, refreshDynamicConfig: false});
   }
 
   function _calculateExpectedUserRP(

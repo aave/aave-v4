@@ -157,7 +157,14 @@ contract HubEliminateDeficitTest is Base {
     _mockDrawnRateBps({irStrategy: address(irStrategy), drawnRateBps: 100_00});
     uint256 amount = amountRay.fromRayUp();
     HubActions.add({hub: hub1, assetId: assetId, caller: spoke, amount: amount, user: alice});
-    _drawLiquidity(hub1, assetId, amount, true, true, spoke);
+    _drawLiquidity({
+      hub: hub1,
+      assetId: assetId,
+      amount: amount,
+      withPremium: true,
+      skipTime: true,
+      spoke: spoke
+    });
 
     (uint256 spokePremiumShares, int256 spokePremiumOffsetRay) = hub1.getSpokePremiumData(
       assetId,

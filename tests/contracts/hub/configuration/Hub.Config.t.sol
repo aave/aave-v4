@@ -635,7 +635,7 @@ contract HubConfigTest is Base {
 
     uint256 amount = 1000e18;
     _addLiquidity(hub1, assetId, amount);
-    _drawLiquidity(hub1, assetId, amount, true);
+    _drawLiquidity({hub: hub1, assetId: assetId, amount: amount, premium: true});
 
     skip(365 days);
 
@@ -712,7 +712,7 @@ contract HubConfigTest is Base {
 
     uint256 amount = 1000e18;
     _addLiquidity(hub1, assetId, amount);
-    _drawLiquidity(hub1, assetId, amount, true);
+    _drawLiquidity({hub: hub1, assetId: assetId, amount: amount, premium: true});
     skip(365 days);
 
     _updateSpokeActive(hub1, assetId, _getFeeReceiver(hub1, assetId), false);
@@ -735,7 +735,7 @@ contract HubConfigTest is Base {
 
     uint256 amount = 1000e18;
     _addLiquidity(hub1, assetId, amount);
-    _drawLiquidity(hub1, assetId, amount, true);
+    _drawLiquidity({hub: hub1, assetId: assetId, amount: amount, premium: true});
     skip(365 days);
 
     HubActions.mintFeeShares({hub: hub1, assetId: assetId, caller: ADMIN});
@@ -827,7 +827,7 @@ contract HubConfigTest is Base {
 
     uint256 amount = 1000e18;
     _addLiquidity(hub1, assetId, amount);
-    _drawLiquidity(hub1, assetId, amount, true);
+    _drawLiquidity({hub: hub1, assetId: assetId, amount: amount, premium: true});
 
     IHub.AssetConfig memory config = hub1.getAssetConfig(assetId);
     uint256 expectedFeeReceiverAddedAssets = _getExpectedFeeReceiverAddedAssets(hub1, assetId);
@@ -854,7 +854,7 @@ contract HubConfigTest is Base {
 
     uint256 amount = 1000e18;
     _addLiquidity(hub1, assetId, amount);
-    _drawLiquidity(hub1, assetId, amount, true);
+    _drawLiquidity({hub: hub1, assetId: assetId, amount: amount, premium: true});
 
     config.liquidityFee = liquidityFee;
     config.feeReceiver = makeAddr('feeReceiver');
@@ -871,7 +871,7 @@ contract HubConfigTest is Base {
 
     uint256 amount = 1000e18;
     _addLiquidity(hub1, assetId, amount);
-    _drawLiquidity(hub1, assetId, amount, true);
+    _drawLiquidity({hub: hub1, assetId: assetId, amount: amount, premium: true});
 
     uint256 expectedFeeReceiverAddedAssets = _getExpectedFeeReceiverAddedAssets(hub1, assetId);
     assertTrue(expectedFeeReceiverAddedAssets > 0, 'no fees');

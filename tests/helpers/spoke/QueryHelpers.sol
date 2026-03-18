@@ -163,7 +163,10 @@ abstract contract QueryHelpers is HubHelpers, Constants, Types {
     uint256 reserveCount = spoke.getReserveCount();
     DynamicConfigEntry[] memory configs = new DynamicConfigEntry[](reserveCount);
     for (uint256 reserveId; reserveId < reserveCount; ++reserveId) {
-      configs[reserveId] = DynamicConfigEntry(spoke.getReserve(reserveId).dynamicConfigKey, true);
+      configs[reserveId] = DynamicConfigEntry({
+        key: spoke.getReserve(reserveId).dynamicConfigKey,
+        enabled: true
+      });
     }
     return configs;
   }

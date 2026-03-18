@@ -214,7 +214,7 @@ contract HubAddTest is Base {
   // add succeeds if cap is reached but not exceeded
   function test_add_AddCapReachedButNotExceeded_rounding() public {
     _addLiquidity(hub1, minDecimalAssetId, 100e18);
-    _drawLiquidity(hub1, minDecimalAssetId, 45e18, true);
+    _drawLiquidity({hub: hub1, assetId: minDecimalAssetId, amount: 45e18, premium: true});
 
     uint256 totalAddedAssets = hub1.getAddedAssets(minDecimalAssetId);
     uint256 totalAddedShares = hub1.getAddedShares(minDecimalAssetId);
@@ -568,7 +568,7 @@ contract HubAddTest is Base {
   function test_add_with_increased_index_with_premium() public {
     uint256 daiAmount = 100e18;
     _addLiquidity(hub1, daiAssetId, daiAmount);
-    _drawLiquidity(hub1, daiAssetId, daiAmount, true);
+    _drawLiquidity({hub: hub1, assetId: daiAssetId, amount: daiAmount, premium: true});
     assertLt(hub1.previewAddByAssets(daiAssetId, daiAmount), daiAmount); // index increased, exch rate > 1
 
     uint256 addAmount = 10e18;

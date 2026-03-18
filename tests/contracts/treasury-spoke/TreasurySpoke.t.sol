@@ -421,7 +421,12 @@ contract TreasurySpokeTest is Base {
     assertEq(treasurySpoke.getSuppliedShares(address(hub), underlying), 0);
 
     // create debt
-    address tempUser = _openDebtPosition(spoke1, reserveId, amount, true);
+    address tempUser = _openDebtPosition({
+      spoke: spoke1,
+      reserveId: reserveId,
+      amount: amount,
+      withPremium: true
+    });
 
     skip(skipTime);
     assertEq(hub.getAsset(assetId).realizedFees, 0, 'fees'); // fees not yet accrued
@@ -479,8 +484,13 @@ contract TreasurySpokeTest is Base {
     _updateLiquidityFee(hub2, assetId, 100_00);
 
     // create debt on both hubs via spoke1
-    _openDebtPosition(spoke1, reserveId, amount, true);
-    _openDebtPosition(spoke1, hub2DaiReserveId, amount, true);
+    _openDebtPosition({spoke: spoke1, reserveId: reserveId, amount: amount, withPremium: true});
+    _openDebtPosition({
+      spoke: spoke1,
+      reserveId: hub2DaiReserveId,
+      amount: amount,
+      withPremium: true
+    });
 
     skip(skipTime);
 

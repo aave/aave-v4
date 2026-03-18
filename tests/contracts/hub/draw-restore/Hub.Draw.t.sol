@@ -107,7 +107,7 @@ contract HubDrawTest is Base {
     amount = bound(amount, 1, MAX_SUPPLY_AMOUNT / 10);
 
     _addLiquidity(hub1, assetId, amount * 2);
-    _drawLiquidity(hub1, assetId, amount, true);
+    _drawLiquidity({hub: hub1, assetId: assetId, amount: amount, premium: true});
     skip(365 days);
 
     uint256 shares = hub1.previewDrawByAssets(assetId, amount);

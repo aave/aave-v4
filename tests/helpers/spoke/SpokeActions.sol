@@ -47,7 +47,13 @@ library SpokeActions {
     address onBehalfOf
   ) internal {
     supply(spoke, reserveId, caller, amount, onBehalfOf);
-    setUsingAsCollateral(spoke, reserveId, caller, true, onBehalfOf);
+    setUsingAsCollateral({
+      spoke: spoke,
+      reserveId: reserveId,
+      caller: caller,
+      usingAsCollateral: true,
+      onBehalfOf: onBehalfOf
+    });
   }
 
   function withdraw(

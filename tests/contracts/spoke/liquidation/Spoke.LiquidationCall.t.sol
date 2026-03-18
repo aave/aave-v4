@@ -145,7 +145,13 @@ abstract contract SpokeLiquidationCallHelperTest is SpokeLiquidationCallBaseTest
       user
     );
 
-    _testLiquidationCall(collateralReserveId, debtReserveId, debtToCover, true, receiveShares);
+    _testLiquidationCall({
+      collateralReserveId: collateralReserveId,
+      debtReserveId: debtReserveId,
+      debtToCover: debtToCover,
+      isSolvent: true,
+      receiveShares: receiveShares
+    });
   }
 
   function test_liquidationCall_fuzz_OneCollateral_OneDebt_UserInsolvent(
@@ -164,7 +170,13 @@ abstract contract SpokeLiquidationCallHelperTest is SpokeLiquidationCallBaseTest
       user
     );
 
-    _testLiquidationCall(collateralReserveId, debtReserveId, debtToCover, false, receiveShares);
+    _testLiquidationCall({
+      collateralReserveId: collateralReserveId,
+      debtReserveId: debtReserveId,
+      debtToCover: debtToCover,
+      isSolvent: false,
+      receiveShares: receiveShares
+    });
   }
 
   function test_liquidationCall_fuzz_ManyCollaterals_OneDebt_UserSolvent(
@@ -185,7 +197,13 @@ abstract contract SpokeLiquidationCallHelperTest is SpokeLiquidationCallBaseTest
 
     _processAdditionalCollateralReserves(debtReserveId);
 
-    _testLiquidationCall(collateralReserveId, debtReserveId, debtToCover, true, receiveShares);
+    _testLiquidationCall({
+      collateralReserveId: collateralReserveId,
+      debtReserveId: debtReserveId,
+      debtToCover: debtToCover,
+      isSolvent: true,
+      receiveShares: receiveShares
+    });
   }
 
   function test_liquidationCall_fuzz_ManyCollaterals_OneDebt_UserInsolvent(
@@ -206,7 +224,13 @@ abstract contract SpokeLiquidationCallHelperTest is SpokeLiquidationCallBaseTest
 
     _processAdditionalCollateralReserves(debtReserveId);
 
-    _testLiquidationCall(collateralReserveId, debtReserveId, debtToCover, false, receiveShares);
+    _testLiquidationCall({
+      collateralReserveId: collateralReserveId,
+      debtReserveId: debtReserveId,
+      debtToCover: debtToCover,
+      isSolvent: false,
+      receiveShares: receiveShares
+    });
   }
 
   function test_liquidationCall_fuzz_OneCollateral_ManyDebts_UserSolvent(
@@ -227,7 +251,13 @@ abstract contract SpokeLiquidationCallHelperTest is SpokeLiquidationCallBaseTest
 
     _processAdditionalDebtReserves();
 
-    _testLiquidationCall(collateralReserveId, debtReserveId, debtToCover, true, receiveShares);
+    _testLiquidationCall({
+      collateralReserveId: collateralReserveId,
+      debtReserveId: debtReserveId,
+      debtToCover: debtToCover,
+      isSolvent: true,
+      receiveShares: receiveShares
+    });
   }
 
   function test_liquidationCall_fuzz_OneCollateral_ManyDebts_UserInsolvent(
@@ -248,7 +278,13 @@ abstract contract SpokeLiquidationCallHelperTest is SpokeLiquidationCallBaseTest
 
     _processAdditionalDebtReserves();
 
-    _testLiquidationCall(collateralReserveId, debtReserveId, debtToCover, false, receiveShares);
+    _testLiquidationCall({
+      collateralReserveId: collateralReserveId,
+      debtReserveId: debtReserveId,
+      debtToCover: debtToCover,
+      isSolvent: false,
+      receiveShares: receiveShares
+    });
   }
 
   function test_liquidationCall_fuzz_ManyCollaterals_ManyDebts_UserSolvent(
@@ -270,7 +306,13 @@ abstract contract SpokeLiquidationCallHelperTest is SpokeLiquidationCallBaseTest
     _processAdditionalCollateralReserves(debtReserveId);
     _processAdditionalDebtReserves();
 
-    _testLiquidationCall(collateralReserveId, debtReserveId, debtToCover, true, receiveShares);
+    _testLiquidationCall({
+      collateralReserveId: collateralReserveId,
+      debtReserveId: debtReserveId,
+      debtToCover: debtToCover,
+      isSolvent: true,
+      receiveShares: receiveShares
+    });
   }
 
   function test_liquidationCall_fuzz_ManyCollaterals_ManyDebts_UserInsolvent(
@@ -292,7 +334,13 @@ abstract contract SpokeLiquidationCallHelperTest is SpokeLiquidationCallBaseTest
     _processAdditionalCollateralReserves(debtReserveId);
     _processAdditionalDebtReserves();
 
-    _testLiquidationCall(collateralReserveId, debtReserveId, debtToCover, false, receiveShares);
+    _testLiquidationCall({
+      collateralReserveId: collateralReserveId,
+      debtReserveId: debtReserveId,
+      debtToCover: debtToCover,
+      isSolvent: false,
+      receiveShares: receiveShares
+    });
   }
 
   // calculates the max borrow amount that ensures user will be healthy after skipping time as well

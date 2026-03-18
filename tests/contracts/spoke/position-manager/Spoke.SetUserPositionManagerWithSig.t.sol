@@ -13,7 +13,7 @@ contract SpokeSetUserPositionManagersWithSigTest is Base {
   function setUp() public override {
     super.setUp();
     vm.prank(SPOKE_ADMIN);
-    spoke1.updatePositionManager(POSITION_MANAGER, true);
+    spoke1.updatePositionManager({positionManager: POSITION_MANAGER, active: true});
   }
 
   function test_useNonce_monotonic(bytes32) public {
@@ -132,7 +132,7 @@ contract SpokeSetUserPositionManagersWithSigTest is Base {
     vm.label(user, 'user');
     address positionManager = vm.randomAddress();
     vm.prank(SPOKE_ADMIN);
-    spoke1.updatePositionManager(positionManager, true);
+    spoke1.updatePositionManager({positionManager: positionManager, active: true});
     uint256 deadline = _warpBeforeRandomDeadline(MAX_SKIP_TIME);
 
     uint192 nonceKey = _randomNonceKey();
@@ -268,7 +268,7 @@ contract SpokeSetUserPositionManagersWithSigTest is Base {
     address maliciousManager = makeAddr('maliciousManager');
     MockERC1271Wallet smartWallet = new MockERC1271Wallet(alice);
     vm.prank(SPOKE_ADMIN);
-    spoke1.updatePositionManager(maliciousManager, true);
+    spoke1.updatePositionManager({positionManager: maliciousManager, active: true});
     uint256 deadline = _warpAfterRandomDeadline(MAX_SKIP_TIME);
 
     ISpoke.SetUserPositionManagers memory params = _setUserPositionManagerData(
@@ -336,7 +336,7 @@ contract SpokeSetUserPositionManagersWithSigTest is Base {
     vm.label(address(smartWallet), 'smartWallet');
     address positionManager = vm.randomAddress();
     vm.prank(SPOKE_ADMIN);
-    spoke1.updatePositionManager(positionManager, true);
+    spoke1.updatePositionManager({positionManager: positionManager, active: true});
     uint256 deadline = _warpBeforeRandomDeadline(MAX_SKIP_TIME);
 
     ISpoke.SetUserPositionManagers memory params = _setUserPositionManagerData(

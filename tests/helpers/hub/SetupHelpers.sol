@@ -81,7 +81,15 @@ abstract contract SetupHelpers is MathHelpers {
     address hubAdmin,
     uint24 riskPremiumThreshold
   ) internal {
-    _drawLiquidityViaTempSpoke(hub, assetId, amount, premium, true, hubAdmin, riskPremiumThreshold);
+    _drawLiquidityViaTempSpoke({
+      hub: hub,
+      assetId: assetId,
+      amount: amount,
+      withPremium: premium,
+      skipTime: true,
+      hubAdmin: hubAdmin,
+      riskPremiumThreshold: riskPremiumThreshold
+    });
   }
 
   function _drawLiquidity(

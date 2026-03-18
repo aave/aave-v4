@@ -77,7 +77,13 @@ contract SpokeLiquidationCallScenariosTest is SpokeLiquidationCallBaseTest {
     );
     vm.expectRevert(ReentrancyGuardTransient.ReentrancyGuardReentrantCall.selector);
     vm.prank(liquidator);
-    spoke.liquidationCall(collateralReserveId, debtReserveId, user, UINT256_MAX, false);
+    spoke.liquidationCall({
+      collateralReserveId: collateralReserveId,
+      debtReserveId: debtReserveId,
+      user: user,
+      debtToCover: UINT256_MAX,
+      receiveShares: false
+    });
   }
 
   function test_liquidationCall_revertsWith_ReentrancyGuardReentrantCall_hubRestore() public {
@@ -98,7 +104,13 @@ contract SpokeLiquidationCallScenariosTest is SpokeLiquidationCallBaseTest {
     );
     vm.expectRevert(ReentrancyGuardTransient.ReentrancyGuardReentrantCall.selector);
     vm.prank(liquidator);
-    spoke.liquidationCall(collateralReserveId, debtReserveId, user, UINT256_MAX, false);
+    spoke.liquidationCall({
+      collateralReserveId: collateralReserveId,
+      debtReserveId: debtReserveId,
+      user: user,
+      debtToCover: UINT256_MAX,
+      receiveShares: false
+    });
   }
 
   function test_liquidationCall_revertsWith_ReentrancyGuardReentrantCall_hubRefreshPremium()
@@ -121,7 +133,13 @@ contract SpokeLiquidationCallScenariosTest is SpokeLiquidationCallBaseTest {
     );
     vm.expectRevert(ReentrancyGuardTransient.ReentrancyGuardReentrantCall.selector);
     vm.prank(liquidator);
-    spoke.liquidationCall(collateralReserveId, debtReserveId, user, UINT256_MAX, false);
+    spoke.liquidationCall({
+      collateralReserveId: collateralReserveId,
+      debtReserveId: debtReserveId,
+      user: user,
+      debtToCover: UINT256_MAX,
+      receiveShares: false
+    });
   }
 
   function test_liquidationCall_revertsWith_ReentrancyGuardReentrantCall_hubReportDeficit() public {
@@ -142,7 +160,13 @@ contract SpokeLiquidationCallScenariosTest is SpokeLiquidationCallBaseTest {
     );
     vm.expectRevert(ReentrancyGuardTransient.ReentrancyGuardReentrantCall.selector);
     vm.prank(liquidator);
-    spoke.liquidationCall(collateralReserveId, debtReserveId, user, UINT256_MAX, false);
+    spoke.liquidationCall({
+      collateralReserveId: collateralReserveId,
+      debtReserveId: debtReserveId,
+      user: user,
+      debtToCover: UINT256_MAX,
+      receiveShares: false
+    });
   }
 
   // User is solvent, but health factor decreases after liquidation due to high liquidation bonus.
@@ -851,7 +875,13 @@ contract SpokeLiquidationCallScenariosTest is SpokeLiquidationCallBaseTest {
     );
 
     vm.prank(liquidator);
-    spoke.liquidationCall(collateralReserveId, debtReserveId, user, UINT256_MAX, false);
+    spoke.liquidationCall({
+      collateralReserveId: collateralReserveId,
+      debtReserveId: debtReserveId,
+      user: user,
+      debtToCover: UINT256_MAX,
+      receiveShares: false
+    });
   }
 
   /// @dev a halted peripheral asset won't block a liquidation with deficit
@@ -884,6 +914,12 @@ contract SpokeLiquidationCallScenariosTest is SpokeLiquidationCallBaseTest {
     );
 
     vm.prank(liquidator);
-    spoke.liquidationCall(collateralReserveId, debtReserveId, user, UINT256_MAX, false);
+    spoke.liquidationCall({
+      collateralReserveId: collateralReserveId,
+      debtReserveId: debtReserveId,
+      user: user,
+      debtToCover: UINT256_MAX,
+      receiveShares: false
+    });
   }
 }

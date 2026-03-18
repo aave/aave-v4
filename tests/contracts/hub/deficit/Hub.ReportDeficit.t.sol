@@ -107,7 +107,14 @@ contract HubReportDeficitTest is Base {
     drawnAmount = bound(drawnAmount, 1, MAX_SUPPLY_AMOUNT_USDX);
 
     // draw usdx liquidity to be restored
-    _drawLiquidity(hub1, usdxAssetId, drawnAmount, true, true, address(spoke1));
+    _drawLiquidity({
+      hub: hub1,
+      assetId: usdxAssetId,
+      amount: drawnAmount,
+      withPremium: true,
+      skipTime: true,
+      spoke: address(spoke1)
+    });
 
     (uint256 drawn, uint256 premium) = hub1.getSpokeOwed(usdxAssetId, address(spoke1));
     assertGt(drawn, 0);

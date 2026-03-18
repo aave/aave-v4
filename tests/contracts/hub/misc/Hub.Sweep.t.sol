@@ -94,7 +94,13 @@ contract HubSweepTest is Base {
     _updateAssetReinvestmentController(hub1, daiAssetId, reinvestmentController);
 
     _addLiquidity(hub1, daiAssetId, supplyAmount);
-    _drawLiquidityViaTempSpoke(hub1, daiAssetId, drawAmount, false, false);
+    _drawLiquidityViaTempSpoke({
+      hub: hub1,
+      assetId: daiAssetId,
+      amount: drawAmount,
+      withPremium: false,
+      skipTime: false
+    });
     uint256 swept = vm.randomUint(1, supplyAmount - drawAmount);
 
     uint256 drawnRate = hub1.getAssetDrawnRate(daiAssetId);
