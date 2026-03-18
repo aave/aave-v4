@@ -7,9 +7,9 @@ import 'tests/setup/Base.t.sol';
 contract SpokeUtilsTest is Base {
   SpokeUtilsWrapper internal w;
 
-  ISpoke.Reserve reserve0;
-  ISpoke.Reserve reserve1;
-  ISpoke.Reserve reserve2;
+  ISpoke.Reserve internal reserve0;
+  ISpoke.Reserve internal reserve1;
+  ISpoke.Reserve internal reserve2;
 
   function setUp() public virtual override {
     super.setUp();

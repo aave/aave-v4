@@ -9,8 +9,8 @@ contract SpokeLiquidationCallDustTest is SpokeLiquidationCallBaseTest {
   using PercentageMath for uint256;
   using SafeCast for *;
 
-  ISpoke _spoke;
-  address liquidator = makeAddr('liquidator');
+  ISpoke public _spoke;
+  address public liquidator = makeAddr('liquidator');
 
   function setUp() public virtual override {
     super.setUp();

@@ -19,15 +19,15 @@ contract AccessManagerEnumerableTest is Test {
   uint64 constant NEW_ADMIN_ROLE = 1;
   uint64 constant NEW_ADMIN_ROLE_2 = 2;
   uint64 constant GUARDIAN_ADMIN_ROLE = 3;
-  uint64 constant GUARDIAN_ROLE_1 = 111111111;
-  uint64 constant GUARDIAN_ROLE_2 = 222222222;
+  uint64 constant GUARDIAN_ROLE_1 = 111_111_111;
+  uint64 constant GUARDIAN_ROLE_2 = 222_222_222;
 
   AccessManagerEnumerable internal accessManagerEnumerable;
 
-  EnumerableSet.AddressSet members;
-  EnumerableSet.UintSet internalRoles;
-  EnumerableSet.UintSet internalAdminRoles;
-  mapping(uint64 => EnumerableSet.UintSet) internalAdminOfRoles;
+  EnumerableSet.AddressSet internal members;
+  EnumerableSet.UintSet internal internalRoles;
+  EnumerableSet.UintSet internal internalAdminRoles;
+  mapping(uint64 => EnumerableSet.UintSet) internal internalAdminOfRoles;
 
   function setUp() public virtual {
     accessManagerEnumerable = new AccessManagerEnumerable(ADMIN);

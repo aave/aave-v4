@@ -9,12 +9,12 @@ abstract contract SpokeLiquidationCallHelperTest is SpokeLiquidationCallBaseTest
   using SafeCast for uint256;
   using PercentageMath for uint256;
 
-  ISpoke spoke;
-  address user = makeAddr('user');
-  address liquidator = makeAddr('liquidator');
+  ISpoke public spoke;
+  address public user = makeAddr('user');
+  address public liquidator = makeAddr('liquidator');
 
-  uint256 skipTime;
-  uint256 baseAmountValue;
+  uint256 public skipTime;
+  uint256 public baseAmountValue;
 
   function setUp() public override {
     super.setUp();

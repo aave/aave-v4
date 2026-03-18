@@ -369,7 +369,7 @@ contract PositionStatusMapTest is Base {
   }
 
   function test_next_continuous() public {
-    uint256 reserveCount = 10000;
+    uint256 reserveCount = 10_000;
     for (uint256 i; i < reserveCount; i++) {
       p.setBorrowing(i, vm.randomBool());
       p.setUsingAsCollateral(i, vm.randomBool());
@@ -400,7 +400,7 @@ contract PositionStatusMapTest is Base {
   }
 
   function test_nextBorrowing_continuous() public {
-    uint256 reserveCount = 10000;
+    uint256 reserveCount = 10_000;
     for (uint256 i; i < reserveCount; i++) {
       p.setBorrowing(i, vm.randomBool());
       p.setUsingAsCollateral(i, vm.randomBool());
@@ -423,7 +423,7 @@ contract PositionStatusMapTest is Base {
   }
 
   function test_nextCollateral_continuous() public {
-    uint256 reserveCount = 10000;
+    uint256 reserveCount = 10_000;
     for (uint256 i; i < reserveCount; i++) {
       p.setBorrowing(i, vm.randomBool());
       p.setUsingAsCollateral(i, vm.randomBool());

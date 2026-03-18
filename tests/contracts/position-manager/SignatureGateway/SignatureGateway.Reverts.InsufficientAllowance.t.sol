@@ -18,7 +18,7 @@ contract SignatureGateway_InsufficientAllowance_Test is SignatureGatewayBaseTest
   }
 
   function test_supplyWithSig_revertsWith_ERC20InsufficientAllowance() public {
-    uint256 deadline = _warpBeforeRandomDeadline();
+    uint256 deadline = _warpBeforeRandomDeadline(MAX_SKIP_TIME);
 
     ISignatureGateway.Supply memory p = _supplyData(spoke1, alice, deadline);
     bytes memory signature = _sign(alicePk, _getTypedDataHash(gateway, p));
@@ -60,7 +60,7 @@ contract SignatureGateway_InsufficientAllowance_Test is SignatureGatewayBaseTest
       onBehalfOf: alice
     });
 
-    uint256 deadline = _warpBeforeRandomDeadline();
+    uint256 deadline = _warpBeforeRandomDeadline(MAX_SKIP_TIME);
 
     ISignatureGateway.Repay memory p = _repayData(spoke1, alice, deadline);
     p.reserveId = _daiReserveId(spoke1);

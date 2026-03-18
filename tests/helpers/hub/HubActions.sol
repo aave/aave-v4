@@ -23,8 +23,15 @@ library HubActions {
     address user
   ) internal returns (uint256) {
     IHub ihub = IHub(address(hub));
-    approve(ihub, assetId, caller, user, amount);
-    transferFrom(ihub, assetId, caller, user, address(hub), amount);
+    approve({hub: ihub, assetId: assetId, caller: caller, owner: user, amount: amount});
+    transferFrom({
+      hub: ihub,
+      assetId: assetId,
+      caller: caller,
+      from: user,
+      to: address(hub),
+      amount: amount
+    });
     vm.prank(caller);
     return hub.add(assetId, amount);
   }
@@ -59,8 +66,15 @@ library HubActions {
     address restorer
   ) internal returns (uint256) {
     IHub ihub = IHub(address(hub));
-    approve(ihub, assetId, caller, restorer, drawnAmount);
-    transferFrom(ihub, assetId, caller, restorer, address(hub), drawnAmount);
+    approve({hub: ihub, assetId: assetId, caller: caller, owner: restorer, amount: drawnAmount});
+    transferFrom({
+      hub: ihub,
+      assetId: assetId,
+      caller: caller,
+      from: restorer,
+      to: address(hub),
+      amount: drawnAmount
+    });
     vm.prank(caller);
     return hub.restore(assetId, drawnAmount, IHubBase.PremiumDelta(0, 0, 0));
   }
@@ -132,7 +146,12 @@ library HubActions {
     uint256 amount
   ) internal {
     /// @dev caller is always a spoke
-    _approve(IERC20(hub.getAsset(assetId).underlying), owner, caller, amount);
+    _approve({
+      underlying: IERC20(hub.getAsset(assetId).underlying),
+      owner: owner,
+      spender: caller,
+      amount: amount
+    });
   }
 
   function transferFrom(
@@ -143,7 +162,13 @@ library HubActions {
     address to,
     uint256 amount
   ) internal {
-    _transferFrom(IERC20(hub.getAsset(assetId).underlying), caller, from, to, amount);
+    _transferFrom({
+      underlying: IERC20(hub.getAsset(assetId).underlying),
+      caller: caller,
+      from: from,
+      to: to,
+      amount: amount
+    });
   }
 
   function _approve(IERC20 underlying, address owner, address spender, uint256 amount) private {

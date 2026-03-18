@@ -137,11 +137,21 @@ library SpokeActions {
 
   function approve(ISpoke spoke, uint256 reserveId, address owner, uint256 amount) internal {
     address underlying = spoke.getReserve(reserveId).underlying;
-    _approve(IERC20(underlying), owner, address(spoke), amount);
+    _approve({
+      underlying: IERC20(underlying),
+      owner: owner,
+      spender: address(spoke),
+      amount: amount
+    });
   }
 
   function approve(ISpoke spoke, address underlying, address owner, uint256 amount) internal {
-    _approve(IERC20(underlying), owner, address(spoke), amount);
+    _approve({
+      underlying: IERC20(underlying),
+      owner: owner,
+      spender: address(spoke),
+      amount: amount
+    });
   }
 
   function approve(
@@ -161,7 +171,12 @@ library SpokeActions {
   }
 
   function approve(ITokenizationSpoke vault, address owner, uint256 amount) internal {
-    _approve(IERC20(vault.asset()), owner, address(vault), amount);
+    _approve({
+      underlying: IERC20(vault.asset()),
+      owner: owner,
+      spender: address(vault),
+      amount: amount
+    });
   }
 
   function transferFrom(
@@ -172,7 +187,13 @@ library SpokeActions {
     address to,
     uint256 amount
   ) internal {
-    _transferFrom(IERC20(spoke.getReserve(reserveId).underlying), caller, from, to, amount);
+    _transferFrom({
+      underlying: IERC20(spoke.getReserve(reserveId).underlying),
+      caller: caller,
+      from: from,
+      to: to,
+      amount: amount
+    });
   }
 
   function _approve(IERC20 underlying, address owner, address spender, uint256 amount) private {

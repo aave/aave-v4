@@ -64,6 +64,8 @@ abstract contract BaseState is HubHelpers, SpokeHelpers {
     uint256 wbtc;
   }
 
+  uint256 public constant MAX_SKIP_TIME = 10_000 days;
+
   uint256 internal MAX_SUPPLY_AMOUNT_USDX;
   uint256 internal MAX_SUPPLY_AMOUNT_DAI;
   uint256 internal MAX_SUPPLY_AMOUNT_WBTC;

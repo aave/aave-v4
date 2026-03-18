@@ -14,7 +14,11 @@ contract SignatureGateway_Unauthorized_PositionManagerNotActive_Test is Signatur
   }
 
   function test_supplyWithSig_revertsWith_Unauthorized() public {
-    ISignatureGateway.Supply memory p = _supplyData(spoke1, alice, _warpBeforeRandomDeadline());
+    ISignatureGateway.Supply memory p = _supplyData(
+      spoke1,
+      alice,
+      _warpBeforeRandomDeadline(MAX_SKIP_TIME)
+    );
     bytes memory signature = _sign(alicePk, _getTypedDataHash(gateway, p));
 
     vm.expectRevert(ISpoke.Unauthorized.selector);
@@ -23,7 +27,11 @@ contract SignatureGateway_Unauthorized_PositionManagerNotActive_Test is Signatur
   }
 
   function test_withdrawWithSig_revertsWith_Unauthorized() public {
-    ISignatureGateway.Withdraw memory p = _withdrawData(spoke1, alice, _warpBeforeRandomDeadline());
+    ISignatureGateway.Withdraw memory p = _withdrawData(
+      spoke1,
+      alice,
+      _warpBeforeRandomDeadline(MAX_SKIP_TIME)
+    );
     bytes memory signature = _sign(alicePk, _getTypedDataHash(gateway, p));
 
     vm.expectRevert(ISpoke.Unauthorized.selector);
@@ -32,7 +40,11 @@ contract SignatureGateway_Unauthorized_PositionManagerNotActive_Test is Signatur
   }
 
   function test_borrowWithSig_revertsWith_Unauthorized() public {
-    ISignatureGateway.Borrow memory p = _borrowData(spoke1, alice, _warpBeforeRandomDeadline());
+    ISignatureGateway.Borrow memory p = _borrowData(
+      spoke1,
+      alice,
+      _warpBeforeRandomDeadline(MAX_SKIP_TIME)
+    );
     bytes memory signature = _sign(alicePk, _getTypedDataHash(gateway, p));
 
     vm.expectRevert(ISpoke.Unauthorized.selector);
@@ -41,7 +53,11 @@ contract SignatureGateway_Unauthorized_PositionManagerNotActive_Test is Signatur
   }
 
   function test_repayWithSig_revertsWith_Unauthorized() public {
-    ISignatureGateway.Repay memory p = _repayData(spoke1, alice, _warpBeforeRandomDeadline());
+    ISignatureGateway.Repay memory p = _repayData(
+      spoke1,
+      alice,
+      _warpBeforeRandomDeadline(MAX_SKIP_TIME)
+    );
     bytes memory signature = _sign(alicePk, _getTypedDataHash(gateway, p));
 
     vm.expectRevert(ISpoke.Unauthorized.selector);
@@ -50,7 +66,7 @@ contract SignatureGateway_Unauthorized_PositionManagerNotActive_Test is Signatur
   }
 
   function test_setUsingAsCollateralWithSig_revertsWith_Unauthorized() public {
-    uint256 deadline = _warpBeforeRandomDeadline();
+    uint256 deadline = _warpBeforeRandomDeadline(MAX_SKIP_TIME);
     ISignatureGateway.SetUsingAsCollateral memory p = _setAsCollateralData(spoke1, alice, deadline);
     bytes memory signature = _sign(alicePk, _getTypedDataHash(gateway, p));
 
@@ -63,7 +79,7 @@ contract SignatureGateway_Unauthorized_PositionManagerNotActive_Test is Signatur
     ISignatureGateway.UpdateUserRiskPremium memory p = _updateRiskPremiumData(
       spoke1,
       alice,
-      _warpBeforeRandomDeadline()
+      _warpBeforeRandomDeadline(MAX_SKIP_TIME)
     );
     bytes memory signature = _sign(alicePk, _getTypedDataHash(gateway, p));
 
@@ -78,7 +94,7 @@ contract SignatureGateway_Unauthorized_PositionManagerNotActive_Test is Signatur
     ISignatureGateway.UpdateUserDynamicConfig memory p = _updateDynamicConfigData(
       spoke1,
       alice,
-      _warpBeforeRandomDeadline()
+      _warpBeforeRandomDeadline(MAX_SKIP_TIME)
     );
     bytes memory signature = _sign(alicePk, _getTypedDataHash(gateway, p));
 

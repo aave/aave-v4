@@ -12,15 +12,15 @@ contract HubConfiguratorGranularAccessControlTest is Base {
   uint64 constant SPOKE_MANAGER_ROLE = 101;
 
   // Role holders
-  address ASSET_MANAGER = makeAddr('ASSET_MANAGER');
-  address SPOKE_MANAGER = makeAddr('SPOKE_MANAGER');
+  address public ASSET_MANAGER = makeAddr('ASSET_MANAGER');
+  address public SPOKE_MANAGER = makeAddr('SPOKE_MANAGER');
 
-  HubConfigurator hubConfigurator;
-  IAccessManager manager;
+  HubConfigurator public hubConfigurator;
+  IAccessManager public manager;
 
-  uint256 assetId;
-  address spokeAddr;
-  bytes encodedIrData;
+  uint256 public assetId;
+  address public spokeAddr;
+  bytes public encodedIrData;
 
   // Arrays storing calldata for each role's functions
   bytes[] internal assetManagerCalldata;

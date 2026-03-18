@@ -9,8 +9,8 @@ contract LiquidationLogicExecuteLiquidationTest is LiquidationLogicBaseTest {
   using WadRayMath for uint256;
   using ReserveFlagsMap for ReserveFlags;
 
-  uint256 usdxReserveId;
-  uint256 wethReserveId;
+  uint256 public usdxReserveId;
+  uint256 public wethReserveId;
 
   LiquidationLogic.ExecuteLiquidationParams params;
 

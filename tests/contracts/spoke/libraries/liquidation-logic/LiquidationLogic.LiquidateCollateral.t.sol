@@ -7,19 +7,19 @@ import 'tests/contracts/spoke/libraries/liquidation-logic/LiquidationLogic.Base.
 contract LiquidationLogicLiquidateCollateralTest is LiquidationLogicBaseTest {
   using SafeCast for uint256;
 
-  address borrower;
-  address liquidator;
+  address public borrower;
+  address public liquidator;
 
-  IHub hub;
-  ISpoke spoke;
-  IERC20 asset;
-  uint256 assetId;
-  uint256 userSuppliedShares;
-  uint256 reserveId;
+  IHub public hub;
+  ISpoke public spoke;
+  IERC20 public asset;
+  uint256 public assetId;
+  uint256 public userSuppliedShares;
+  uint256 public reserveId;
 
-  ISpoke.UserPosition initialUserPosition;
-  ISpoke.UserPosition initialLiquidatorPosition;
-  IHub.SpokeData initialTreasurySpokeData;
+  ISpoke.UserPosition public initialUserPosition;
+  ISpoke.UserPosition public initialLiquidatorPosition;
+  IHub.SpokeData public initialTreasurySpokeData;
 
   function setUp() public override {
     LiquidationLogicBaseTest.setUp();

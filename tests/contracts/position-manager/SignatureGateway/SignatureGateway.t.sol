@@ -50,7 +50,11 @@ contract SignatureGatewayTest is SignatureGatewayBaseTest {
   }
 
   function test_supplyWithSig() public {
-    ISignatureGateway.Supply memory p = _supplyData(spoke1, alice, _warpBeforeRandomDeadline());
+    ISignatureGateway.Supply memory p = _supplyData(
+      spoke1,
+      alice,
+      _warpBeforeRandomDeadline(MAX_SKIP_TIME)
+    );
     p.nonce = _burnRandomNoncesAtKey(gateway, p.onBehalfOf);
     bytes memory signature = _sign(alicePk, _getTypedDataHash(gateway, p));
     SpokeActions.approve({
@@ -82,7 +86,11 @@ contract SignatureGatewayTest is SignatureGatewayBaseTest {
   }
 
   function test_withdrawWithSig() public {
-    ISignatureGateway.Withdraw memory p = _withdrawData(spoke1, alice, _warpBeforeRandomDeadline());
+    ISignatureGateway.Withdraw memory p = _withdrawData(
+      spoke1,
+      alice,
+      _warpBeforeRandomDeadline(MAX_SKIP_TIME)
+    );
     p.nonce = _burnRandomNoncesAtKey(gateway, p.onBehalfOf);
     bytes memory signature = _sign(alicePk, _getTypedDataHash(gateway, p));
 
@@ -114,7 +122,11 @@ contract SignatureGatewayTest is SignatureGatewayBaseTest {
   }
 
   function test_borrowWithSig() public {
-    ISignatureGateway.Borrow memory p = _borrowData(spoke1, alice, _warpBeforeRandomDeadline());
+    ISignatureGateway.Borrow memory p = _borrowData(
+      spoke1,
+      alice,
+      _warpBeforeRandomDeadline(MAX_SKIP_TIME)
+    );
     p.nonce = _burnRandomNoncesAtKey(gateway, p.onBehalfOf);
     p.reserveId = _daiReserveId(spoke1);
     p.amount = 1e18;
@@ -147,7 +159,11 @@ contract SignatureGatewayTest is SignatureGatewayBaseTest {
   }
 
   function test_repayWithSig() public {
-    ISignatureGateway.Repay memory p = _repayData(spoke1, alice, _warpBeforeRandomDeadline());
+    ISignatureGateway.Repay memory p = _repayData(
+      spoke1,
+      alice,
+      _warpBeforeRandomDeadline(MAX_SKIP_TIME)
+    );
     p.nonce = _burnRandomNoncesAtKey(gateway, p.onBehalfOf);
     p.reserveId = _daiReserveId(spoke1);
     p.amount = 1e18;
@@ -207,7 +223,7 @@ contract SignatureGatewayTest is SignatureGatewayBaseTest {
   }
 
   function test_setUsingAsCollateralWithSig() public {
-    uint256 deadline = _warpBeforeRandomDeadline();
+    uint256 deadline = _warpBeforeRandomDeadline(MAX_SKIP_TIME);
     ISignatureGateway.SetUsingAsCollateral memory p = _setAsCollateralData(spoke1, alice, deadline);
     p.nonce = _burnRandomNoncesAtKey(gateway, p.onBehalfOf);
     p.reserveId = _daiReserveId(spoke1);
@@ -234,7 +250,7 @@ contract SignatureGatewayTest is SignatureGatewayBaseTest {
   }
 
   function test_updateUserRiskPremiumWithSig() public {
-    uint256 deadline = _warpBeforeRandomDeadline();
+    uint256 deadline = _warpBeforeRandomDeadline(MAX_SKIP_TIME);
     ISignatureGateway.UpdateUserRiskPremium memory p = _updateRiskPremiumData(
       spoke1,
       alice,
@@ -273,7 +289,7 @@ contract SignatureGatewayTest is SignatureGatewayBaseTest {
     ISignatureGateway.UpdateUserDynamicConfig memory p = _updateDynamicConfigData(
       spoke1,
       alice,
-      _warpBeforeRandomDeadline()
+      _warpBeforeRandomDeadline(MAX_SKIP_TIME)
     );
     p.nonce = _burnRandomNoncesAtKey(gateway, alice);
     bytes memory signature = _sign(alicePk, _getTypedDataHash(gateway, p));
@@ -297,7 +313,7 @@ contract SignatureGatewayTest is SignatureGatewayBaseTest {
       updates: updates,
       onBehalfOf: alice,
       nonce: spoke1.nonces(address(alice), _randomNonceKey()), // note: this typed sig is forwarded to spoke
-      deadline: _warpBeforeRandomDeadline()
+      deadline: _warpBeforeRandomDeadline(MAX_SKIP_TIME)
     });
     bytes memory signature = _sign(alicePk, _getTypedDataHash(spoke1, p));
 
@@ -320,7 +336,7 @@ contract SignatureGatewayTest is SignatureGatewayBaseTest {
   }
 
   function test_multicall() public {
-    uint256 deadline = _warpBeforeRandomDeadline();
+    uint256 deadline = _warpBeforeRandomDeadline(MAX_SKIP_TIME);
     uint256 reserveId = _daiReserveId(spoke1);
 
     ISignatureGateway.Supply memory p = _supplyData(spoke1, alice, deadline);
@@ -367,7 +383,7 @@ contract SignatureGatewayTest is SignatureGatewayBaseTest {
 
   /// @dev We expect the multicall to revert due to the supplyWithSig() call being invalid because it was executed before the multicall.
   function test_multicall_atomicity_on_revert() public {
-    uint256 deadline = _warpBeforeRandomDeadline();
+    uint256 deadline = _warpBeforeRandomDeadline(MAX_SKIP_TIME);
     uint256 reserveId = _daiReserveId(spoke1);
 
     ISignatureGateway.Supply memory p1 = _supplyData(spoke1, alice, deadline);
@@ -411,7 +427,7 @@ contract SignatureGatewayTest is SignatureGatewayBaseTest {
 
   /// @dev We expect the multicall not to revert, even if the call permitReserveUnderlying() is invalid, due to the use of try/catch.
   function test_multicall_no_atomicity_with_trycatch() public {
-    uint256 deadline = _warpBeforeRandomDeadline();
+    uint256 deadline = _warpBeforeRandomDeadline(MAX_SKIP_TIME);
     uint256 reserveId = _daiReserveId(spoke1);
 
     ISignatureGateway.Supply memory p = _supplyData(spoke1, alice, deadline);

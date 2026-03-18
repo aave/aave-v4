@@ -195,6 +195,29 @@ abstract contract SetupHelpers is MathHelpers {
     snap.drawnShares = hub.getAsset(assetId).drawnShares;
   }
 
+  function _getAssetPosition(
+    IHub hub,
+    uint256 assetId
+  ) internal view returns (AssetPosition memory) {
+    IHub.Asset memory assetData = hub.getAsset(assetId);
+    (uint256 drawn, uint256 premium) = hub.getAssetOwed(assetId);
+    return
+      AssetPosition({
+        assetId: assetId,
+        liquidity: assetData.liquidity,
+        addedShares: assetData.addedShares,
+        addedAmount: hub.getAddedAssets(assetId) - _calculateBurntInterest(hub, assetId),
+        drawnShares: assetData.drawnShares,
+        drawn: drawn,
+        premiumShares: assetData.premiumShares,
+        premiumOffsetRay: assetData.premiumOffsetRay,
+        premium: premium,
+        lastUpdateTimestamp: assetData.lastUpdateTimestamp.toUint40(),
+        drawnIndex: assetData.drawnIndex,
+        drawnRate: assetData.drawnRate
+      });
+  }
+
   function _randomAssetId(IHub hub) internal returns (uint256) {
     return vm.randomUint(0, hub.getAssetCount() - 1);
   }

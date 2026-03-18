@@ -22,16 +22,16 @@ contract KeyValueListTest is Test {
     list = wrapper.add(list, 5, 45e6, 2.5e50);
     list = wrapper.add(list, 6, 45e6, 10);
 
-    list = wrapper.add(list, 7, type(uint32).max - 1, 10000000000);
+    list = wrapper.add(list, 7, type(uint32).max - 1, 10_000_000_000);
 
     vm.expectRevert(KeyValueList.MaxDataSizeExceeded.selector);
-    wrapper.add(list, 8, type(uint32).max, 10000000000);
+    wrapper.add(list, 8, type(uint32).max, 10_000_000_000);
 
     vm.expectRevert(KeyValueList.MaxDataSizeExceeded.selector);
-    wrapper.add(list, 8, 45e8, 10000000000);
+    wrapper.add(list, 8, 45e8, 10_000_000_000);
 
     vm.expectRevert(KeyValueList.MaxDataSizeExceeded.selector);
-    wrapper.add(list, 8, 75e9, 10000000000);
+    wrapper.add(list, 8, 75e9, 10_000_000_000);
 
     vm.expectRevert(KeyValueList.MaxDataSizeExceeded.selector);
     wrapper.add(list, 9, 5e6, 2.696e67);
@@ -72,7 +72,7 @@ contract KeyValueListTest is Test {
     assertEq(returnedValue, 10);
     (returnedKey, returnedValue) = list.get(7);
     assertEq(returnedKey, type(uint32).max - 1);
-    assertEq(returnedValue, 10000000000);
+    assertEq(returnedValue, 10_000_000_000);
     (returnedKey, returnedValue) = list.get(8);
     assertEq(returnedKey, 0);
     assertEq(returnedValue, 0);

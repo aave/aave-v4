@@ -13,16 +13,16 @@ contract SpokeConfiguratorGranularAccessControlTest is Base {
   uint64 constant POSITION_MANAGER_ADMIN_ROLE = 104;
 
   // Role holders
-  address RESERVE_MANAGER = makeAddr('RESERVE_MANAGER');
-  address LIQUIDATION_CONFIG_MANAGER = makeAddr('LIQUIDATION_CONFIG_MANAGER');
-  address POSITION_MANAGER_ADMIN = makeAddr('POSITION_MANAGER_ADMIN');
+  address public RESERVE_MANAGER = makeAddr('RESERVE_MANAGER');
+  address public LIQUIDATION_CONFIG_MANAGER = makeAddr('LIQUIDATION_CONFIG_MANAGER');
+  address public POSITION_MANAGER_ADMIN = makeAddr('POSITION_MANAGER_ADMIN');
 
-  SpokeConfigurator spokeConfigurator;
-  IAccessManager manager;
+  SpokeConfigurator public spokeConfigurator;
+  IAccessManager public manager;
 
-  address spokeAddr;
-  ISpoke spoke;
-  uint256 reserveId;
+  address public spokeAddr;
+  ISpoke public spoke;
+  uint256 public reserveId;
 
   // Arrays storing calldata for each role's functions
   bytes[] internal reserveManagerCalldata;

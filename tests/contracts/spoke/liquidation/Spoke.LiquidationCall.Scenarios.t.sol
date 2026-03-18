@@ -7,10 +7,10 @@ import 'tests/contracts/spoke/liquidation/Spoke.LiquidationCall.Base.t.sol';
 contract SpokeLiquidationCallScenariosTest is SpokeLiquidationCallBaseTest {
   using SafeCast for *;
 
-  address user = makeAddr('user');
-  address liquidator = makeAddr('liquidator');
+  address public user = makeAddr('user');
+  address public liquidator = makeAddr('liquidator');
 
-  ISpoke spoke;
+  ISpoke public spoke;
 
   function setUp() public virtual override {
     super.setUp();

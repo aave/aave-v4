@@ -13,7 +13,7 @@ contract HubConfiguratorTest is Base {
   bytes internal _encodedIrData;
 
   address[4] public spokeAddresses;
-  address spoke;
+  address public spoke;
 
   mapping(address => uint24) public riskPremiumThresholdsPerSpoke; // spoke address => risk premium threshold
   mapping(uint256 => uint24) public riskPremiumThresholdsPerAsset; // assetId => risk premium threshold

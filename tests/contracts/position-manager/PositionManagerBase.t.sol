@@ -49,7 +49,7 @@ contract PositionManagerBaseTest is Base {
       onBehalfOf: alice,
       updates: updates,
       nonce: spoke1.nonces(address(alice), _randomNonceKey()), // note: this typed sig is forwarded to spoke1
-      deadline: _warpBeforeRandomDeadline()
+      deadline: _warpBeforeRandomDeadline(MAX_SKIP_TIME)
     });
     bytes memory signature = _sign(alicePk, _getTypedDataHash(spoke1, p));
 
@@ -160,7 +160,7 @@ contract PositionManagerBaseTest is Base {
       owner: user,
       spender: address(positionManager),
       value: 100e18,
-      deadline: _warpBeforeRandomDeadline(),
+      deadline: _warpBeforeRandomDeadline(MAX_SKIP_TIME),
       nonce: token.nonces(user)
     });
 

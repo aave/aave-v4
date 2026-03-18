@@ -8,7 +8,7 @@ contract AssetInterestRateStrategyTest is Base {
   using WadRayMath for *;
   using SafeCast for uint256;
 
-  uint256 mockAssetId = uint256(keccak256('mockAssetId'));
+  uint256 public mockAssetId = uint256(keccak256('mockAssetId'));
 
   IAssetInterestRateStrategy public rateStrategy;
   IAssetInterestRateStrategy.InterestRateData public rateData;

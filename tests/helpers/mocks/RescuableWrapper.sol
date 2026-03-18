@@ -5,7 +5,7 @@ pragma solidity ^0.8.0;
 import {Rescuable} from 'src/utils/Rescuable.sol';
 
 contract RescuableWrapper is Rescuable {
-  address admin;
+  address public admin;
 
   constructor(address admin_) {
     admin = admin_;

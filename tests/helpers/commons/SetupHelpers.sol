@@ -38,35 +38,4 @@ abstract contract SetupHelpers is Test {
     while (addr == omit) addr = vm.randomAddress();
     return addr;
   }
-
-  function _assertEventNotEmitted(bytes32 eventSignature) internal {
-    VmSafe.Log[] memory entries = vm.getRecordedLogs();
-    for (uint256 i; i < entries.length; i++) {
-      assertNotEq(entries[i].topics[0], eventSignature);
-    }
-    vm.recordLogs();
-  }
-
-  function _assertEventsNotEmitted(bytes32 event1Sig, bytes32 event2Sig) internal {
-    VmSafe.Log[] memory entries = vm.getRecordedLogs();
-    for (uint256 i; i < entries.length; i++) {
-      assertNotEq(entries[i].topics[0], event1Sig);
-      assertNotEq(entries[i].topics[0], event2Sig);
-    }
-    vm.recordLogs();
-  }
-
-  function _assertEventsNotEmitted(
-    bytes32 event1Sig,
-    bytes32 event2Sig,
-    bytes32 event3Sig
-  ) internal {
-    VmSafe.Log[] memory entries = vm.getRecordedLogs();
-    for (uint256 i; i < entries.length; i++) {
-      assertNotEq(entries[i].topics[0], event1Sig);
-      assertNotEq(entries[i].topics[0], event2Sig);
-      assertNotEq(entries[i].topics[0], event3Sig);
-    }
-    vm.recordLogs();
-  }
 }

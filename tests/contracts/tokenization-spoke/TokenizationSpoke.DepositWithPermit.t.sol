@@ -80,7 +80,7 @@ contract TokenizationSpokeDepositWithPermitTest is TokenizationSpokeBaseTest {
       owner: user,
       spender: address(vault),
       value: assets,
-      deadline: _warpBeforeRandomDeadline(),
+      deadline: _warpBeforeRandomDeadline(MAX_SKIP_TIME),
       nonce: asset.nonces(user)
     });
 

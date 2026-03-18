@@ -97,7 +97,7 @@ contract SpokeSetUserPositionManagersWithSigTest is Base {
   function test_setUserPositionManagersWithSig_revertsWith_InvalidSignature_dueTo_ExpiredDeadline()
     public
   {
-    uint256 deadline = _warpAfterRandomDeadline();
+    uint256 deadline = _warpAfterRandomDeadline(MAX_SKIP_TIME);
 
     ISpoke.SetUserPositionManagers memory params = _setUserPositionManagerData(alice, deadline);
     bytes32 digest = _getTypedDataHash(spoke1, params);
@@ -115,7 +115,7 @@ contract SpokeSetUserPositionManagersWithSigTest is Base {
   {
     (address randomUser, uint256 randomUserPk) = makeAddrAndKey(string(vm.randomBytes(32)));
     vm.assume(randomUser != alice);
-    uint256 deadline = _warpAfterRandomDeadline();
+    uint256 deadline = _warpAfterRandomDeadline(MAX_SKIP_TIME);
 
     ISpoke.SetUserPositionManagers memory params = _setUserPositionManagerData(alice, deadline);
     bytes32 digest = _getTypedDataHash(spoke1, params);
@@ -133,7 +133,7 @@ contract SpokeSetUserPositionManagersWithSigTest is Base {
     address positionManager = vm.randomAddress();
     vm.prank(SPOKE_ADMIN);
     spoke1.updatePositionManager(positionManager, true);
-    uint256 deadline = _warpBeforeRandomDeadline();
+    uint256 deadline = _warpBeforeRandomDeadline(MAX_SKIP_TIME);
 
     uint192 nonceKey = _randomNonceKey();
     ISpoke.SetUserPositionManagers memory params = _setUserPositionManagerData(user, deadline);
@@ -158,7 +158,7 @@ contract SpokeSetUserPositionManagersWithSigTest is Base {
   function test_setUserPositionManagersWithSig() public {
     (address user, uint256 userPk) = makeAddrAndKey(string(vm.randomBytes(32)));
     vm.label(user, 'user');
-    uint256 deadline = _warpBeforeRandomDeadline();
+    uint256 deadline = _warpBeforeRandomDeadline(MAX_SKIP_TIME);
     ISpoke.SetUserPositionManagers memory params = _setUserPositionManagerData(user, deadline);
     params.nonce = _burnRandomNoncesAtKey(spoke1, params.onBehalfOf);
 
@@ -186,7 +186,7 @@ contract SpokeSetUserPositionManagersWithSigTest is Base {
   function test_setUserPositionManagersWithSig_zero_updates() public {
     (address user, uint256 userPk) = makeAddrAndKey(string(vm.randomBytes(32)));
     vm.label(user, 'user');
-    uint256 deadline = _warpBeforeRandomDeadline();
+    uint256 deadline = _warpBeforeRandomDeadline(MAX_SKIP_TIME);
     ISpoke.SetUserPositionManagers memory params = _setUserPositionManagerData(user, deadline);
     params.updates = new ISpoke.PositionManagerUpdate[](0);
     params.nonce = _burnRandomNoncesAtKey(spoke1, params.onBehalfOf);
@@ -211,7 +211,7 @@ contract SpokeSetUserPositionManagersWithSigTest is Base {
     vm.setArbitraryStorage(address(spoke1)); // arbitrary nonce, position manager active state
     (address user, uint256 userPk) = makeAddrAndKey(string(vm.randomBytes(32)));
     vm.label(user, 'user');
-    uint256 deadline = _warpBeforeRandomDeadline();
+    uint256 deadline = _warpBeforeRandomDeadline(MAX_SKIP_TIME);
     ISpoke.SetUserPositionManagers memory params = _setUserPositionManagerData(user, deadline);
     params.updates = updates;
 
@@ -247,7 +247,7 @@ contract SpokeSetUserPositionManagersWithSigTest is Base {
     MockERC1271Wallet smartWallet = new MockERC1271Wallet(alice);
     ISpoke.SetUserPositionManagers memory params = _setUserPositionManagerData(
       address(smartWallet),
-      _warpAfterRandomDeadline()
+      _warpAfterRandomDeadline(MAX_SKIP_TIME)
     );
     bytes32 digest = _getTypedDataHash(spoke1, params);
 
@@ -269,7 +269,7 @@ contract SpokeSetUserPositionManagersWithSigTest is Base {
     MockERC1271Wallet smartWallet = new MockERC1271Wallet(alice);
     vm.prank(SPOKE_ADMIN);
     spoke1.updatePositionManager(maliciousManager, true);
-    uint256 deadline = _warpAfterRandomDeadline();
+    uint256 deadline = _warpAfterRandomDeadline(MAX_SKIP_TIME);
 
     ISpoke.SetUserPositionManagers memory params = _setUserPositionManagerData(
       address(smartWallet),
@@ -300,7 +300,7 @@ contract SpokeSetUserPositionManagersWithSigTest is Base {
     bytes32
   ) public {
     MockERC1271Wallet smartWallet = new MockERC1271Wallet(alice);
-    uint256 deadline = _warpBeforeRandomDeadline();
+    uint256 deadline = _warpBeforeRandomDeadline(MAX_SKIP_TIME);
 
     uint192 nonceKey = _randomNonceKey();
     ISpoke.SetUserPositionManagers memory params = _setUserPositionManagerData(
@@ -337,7 +337,7 @@ contract SpokeSetUserPositionManagersWithSigTest is Base {
     address positionManager = vm.randomAddress();
     vm.prank(SPOKE_ADMIN);
     spoke1.updatePositionManager(positionManager, true);
-    uint256 deadline = _warpBeforeRandomDeadline();
+    uint256 deadline = _warpBeforeRandomDeadline(MAX_SKIP_TIME);
 
     ISpoke.SetUserPositionManagers memory params = _setUserPositionManagerData(
       address(smartWallet),

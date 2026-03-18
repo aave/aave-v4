@@ -44,7 +44,7 @@ contract TokenizationSpokeInsufficientAllowanceTest is TokenizationSpokeBaseTest
 
   function test_depositWithSig_revertsWith_ERC20InsufficientAllowance() public {
     (uint256 amount, uint256 allowance) = _setArbitraryAllowance();
-    uint256 deadline = _warpBeforeRandomDeadline();
+    uint256 deadline = _warpBeforeRandomDeadline(MAX_SKIP_TIME);
 
     ITokenizationSpoke.TokenizedDeposit memory p = _depositData(vault, alice, deadline);
     p.assets = amount;
@@ -65,7 +65,7 @@ contract TokenizationSpokeInsufficientAllowanceTest is TokenizationSpokeBaseTest
 
   function test_mintWithSig_revertsWith_ERC20InsufficientAllowance() public {
     (uint256 amount, uint256 allowance) = _setArbitraryAllowance();
-    uint256 deadline = _warpBeforeRandomDeadline();
+    uint256 deadline = _warpBeforeRandomDeadline(MAX_SKIP_TIME);
 
     ITokenizationSpoke.TokenizedMint memory p = _mintData(vault, alice, deadline);
     p.shares = vault.previewMint(amount);

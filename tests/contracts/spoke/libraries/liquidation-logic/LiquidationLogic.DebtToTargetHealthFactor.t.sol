@@ -7,7 +7,7 @@ import 'tests/contracts/spoke/libraries/liquidation-logic/LiquidationLogic.Base.
 contract LiquidationLogicDebtToTargetHealthFactorTest is LiquidationLogicBaseTest {
   using MathUtils for uint256;
 
-  uint256[] assetUnitList;
+  uint256[] public assetUnitList;
 
   function setUp() public override {
     super.setUp();

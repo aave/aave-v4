@@ -426,7 +426,7 @@ contract HubRestoreTest is Base {
   }
 
   function test_restore_tooMuchDrawn_revertsWith_SurplusDrawnRestored() public {
-    uint256 skipTime = 20000 days;
+    uint256 skipTime = 20_000 days;
     uint256 drawAmount = 999e18;
 
     HubActions.add({

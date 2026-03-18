@@ -22,7 +22,7 @@ contract HubAddTest is Base {
     uint256 aliceBalance;
   }
 
-  uint256 minDecimalAssetId;
+  uint256 public minDecimalAssetId;
 
   function setUp() public override {
     super.setUp();

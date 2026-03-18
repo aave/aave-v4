@@ -75,7 +75,7 @@ contract SignatureGatewaySetSelfAsUserPositionManagerTest is SignatureGatewayBas
       onBehalfOf: alice,
       updates: updates,
       nonce: spoke1.nonces(alice, nonceKey), // note: this typed sig is forwarded to spoke
-      deadline: _warpBeforeRandomDeadline()
+      deadline: _warpBeforeRandomDeadline(MAX_SKIP_TIME)
     });
     bytes memory signature = _sign(alicePk, _getTypedDataHash(spoke1, p));
 

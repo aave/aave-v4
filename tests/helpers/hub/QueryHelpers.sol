@@ -16,10 +16,6 @@ abstract contract QueryHelpers is CommonHelpers, Constants, Types {
 
   uint256 internal constant MAX_SUPPLY_AMOUNT = 1e30;
 
-  ///////////////////////////////////////////////////////////////////////////////////////////////
-  //                                   ASSET QUERIES                                           //
-  ///////////////////////////////////////////////////////////////////////////////////////////////
-
   function _getAssetDrawnDebt(IHub hub, uint256 assetId) internal view returns (uint256) {
     (uint256 drawn, ) = hub.getAssetOwed(assetId);
     return drawn;
@@ -32,10 +28,6 @@ abstract contract QueryHelpers is CommonHelpers, Constants, Types {
   function _getFeeReceiver(IHub hub, uint256 assetId) internal view returns (address) {
     return hub.getAssetConfig(assetId).feeReceiver;
   }
-
-  ///////////////////////////////////////////////////////////////////////////////////////////////
-  //                                       CONVERSION QUERIES                                  //
-  ///////////////////////////////////////////////////////////////////////////////////////////////
 
   function _minimumAssetsPerAddedShare(IHub hub, uint256 assetId) internal view returns (uint256) {
     return hub.previewAddByShares(assetId, 1);
@@ -51,33 +43,5 @@ abstract contract QueryHelpers is CommonHelpers, Constants, Types {
 
   function _getDebtExRate(IHub hub, uint256 assetId) internal view returns (uint256) {
     return hub.previewRestoreByShares(assetId, MAX_SUPPLY_AMOUNT);
-  }
-
-  function _calculateBurntInterest(IHub hub, uint256 assetId) internal view returns (uint256) {
-    return
-      hub.getAddedAssets(assetId) - hub.previewRemoveByShares(assetId, hub.getAddedShares(assetId));
-  }
-
-  function _getAssetPosition(
-    IHub hub,
-    uint256 assetId
-  ) internal view returns (AssetPosition memory) {
-    IHub.Asset memory assetData = hub.getAsset(assetId);
-    (uint256 drawn, uint256 premium) = hub.getAssetOwed(assetId);
-    return
-      AssetPosition({
-        assetId: assetId,
-        liquidity: assetData.liquidity,
-        addedShares: assetData.addedShares,
-        addedAmount: hub.getAddedAssets(assetId) - _calculateBurntInterest(hub, assetId),
-        drawnShares: assetData.drawnShares,
-        drawn: drawn,
-        premiumShares: assetData.premiumShares,
-        premiumOffsetRay: assetData.premiumOffsetRay,
-        premium: premium,
-        lastUpdateTimestamp: assetData.lastUpdateTimestamp.toUint40(),
-        drawnIndex: assetData.drawnIndex,
-        drawnRate: assetData.drawnRate
-      });
   }
 }

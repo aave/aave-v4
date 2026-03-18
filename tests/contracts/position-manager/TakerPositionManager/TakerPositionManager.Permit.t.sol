@@ -78,7 +78,7 @@ contract TakerPositionManagerPermitTest is TakerPositionManagerBaseTest {
     ITakerPositionManager.WithdrawPermit memory p = _withdrawPermitData(
       spender,
       alice,
-      _warpBeforeRandomDeadline()
+      _warpBeforeRandomDeadline(MAX_SKIP_TIME)
     );
     p.amount = amount;
     p.reserveId = reserveId;
@@ -97,7 +97,7 @@ contract TakerPositionManagerPermitTest is TakerPositionManagerBaseTest {
     ITakerPositionManager.WithdrawPermit memory p = _withdrawPermitData(
       vm.randomAddress(),
       alice,
-      _warpAfterRandomDeadline()
+      _warpAfterRandomDeadline(MAX_SKIP_TIME)
     );
     bytes memory signature = _sign(alicePk, _getTypedDataHash(positionManager, p));
 
@@ -114,7 +114,7 @@ contract TakerPositionManagerPermitTest is TakerPositionManagerBaseTest {
     ITakerPositionManager.WithdrawPermit memory p = _withdrawPermitData(
       randomUser,
       onBehalfOf,
-      _warpAfterRandomDeadline()
+      _warpAfterRandomDeadline(MAX_SKIP_TIME)
     );
     bytes memory signature = _sign(randomUserPk, _getTypedDataHash(positionManager, p));
 
@@ -127,7 +127,7 @@ contract TakerPositionManagerPermitTest is TakerPositionManagerBaseTest {
     ITakerPositionManager.WithdrawPermit memory p = _withdrawPermitData(
       vm.randomAddress(),
       alice,
-      _warpBeforeRandomDeadline()
+      _warpBeforeRandomDeadline(MAX_SKIP_TIME)
     );
     uint192 nonceKey = _randomNonceKey();
     uint256 currentNonce = _burnRandomNoncesAtKey(positionManager, p.owner, nonceKey);
@@ -146,7 +146,7 @@ contract TakerPositionManagerPermitTest is TakerPositionManagerBaseTest {
     ITakerPositionManager.WithdrawPermit memory p = _withdrawPermitData(
       bob,
       alice,
-      _warpBeforeRandomDeadline()
+      _warpBeforeRandomDeadline(MAX_SKIP_TIME)
     );
     p.spoke = address(spoke2);
     p.nonce = _burnRandomNoncesAtKey(positionManager, alice);
@@ -169,7 +169,7 @@ contract TakerPositionManagerPermitTest is TakerPositionManagerBaseTest {
     ITakerPositionManager.BorrowPermit memory p = _approveBorrowData(
       spender,
       alice,
-      _warpBeforeRandomDeadline()
+      _warpBeforeRandomDeadline(MAX_SKIP_TIME)
     );
     p.amount = amount;
     p.reserveId = reserveId;
@@ -188,7 +188,7 @@ contract TakerPositionManagerPermitTest is TakerPositionManagerBaseTest {
     ITakerPositionManager.BorrowPermit memory p = _approveBorrowData(
       vm.randomAddress(),
       alice,
-      _warpAfterRandomDeadline()
+      _warpAfterRandomDeadline(MAX_SKIP_TIME)
     );
     bytes memory signature = _sign(alicePk, _getTypedDataHash(positionManager, p));
 
@@ -205,7 +205,7 @@ contract TakerPositionManagerPermitTest is TakerPositionManagerBaseTest {
     ITakerPositionManager.BorrowPermit memory p = _approveBorrowData(
       randomUser,
       onBehalfOf,
-      _warpAfterRandomDeadline()
+      _warpAfterRandomDeadline(MAX_SKIP_TIME)
     );
     bytes memory signature = _sign(randomUserPk, _getTypedDataHash(positionManager, p));
 
@@ -218,7 +218,7 @@ contract TakerPositionManagerPermitTest is TakerPositionManagerBaseTest {
     ITakerPositionManager.BorrowPermit memory p = _approveBorrowData(
       vm.randomAddress(),
       alice,
-      _warpBeforeRandomDeadline()
+      _warpBeforeRandomDeadline(MAX_SKIP_TIME)
     );
     uint192 nonceKey = _randomNonceKey();
     uint256 currentNonce = _burnRandomNoncesAtKey(positionManager, p.owner, nonceKey);
@@ -237,7 +237,7 @@ contract TakerPositionManagerPermitTest is TakerPositionManagerBaseTest {
     ITakerPositionManager.BorrowPermit memory p = _approveBorrowData(
       bob,
       alice,
-      _warpBeforeRandomDeadline()
+      _warpBeforeRandomDeadline(MAX_SKIP_TIME)
     );
     p.spoke = address(spoke2);
     p.nonce = _burnRandomNoncesAtKey(positionManager, alice);

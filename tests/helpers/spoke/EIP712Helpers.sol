@@ -14,8 +14,6 @@ import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
 abstract contract EIP712Helpers is Test {
   using SafeCast for *;
 
-  uint256 internal constant MAX_SKIP_TIME = 10_000 days;
-
   ///////////////////////////////////////////////////////////////////////////////////////////////
   //                                     SIGNING HELPERS                                       //
   ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -53,14 +51,14 @@ abstract contract EIP712Helpers is Test {
     return abi.encodePacked(r, s, v);
   }
 
-  function _warpAfterRandomDeadline() internal returns (uint256) {
-    uint256 deadline = vm.randomUint(0, MAX_SKIP_TIME - 1);
-    vm.warp(vm.randomUint(deadline + 1, MAX_SKIP_TIME));
+  function _warpAfterRandomDeadline(uint256 maxSkipTime) internal returns (uint256) {
+    uint256 deadline = vm.randomUint(0, maxSkipTime - 1);
+    vm.warp(vm.randomUint(deadline + 1, maxSkipTime));
     return deadline;
   }
 
-  function _warpBeforeRandomDeadline() internal returns (uint256) {
-    uint256 deadline = vm.randomUint(1, MAX_SKIP_TIME);
+  function _warpBeforeRandomDeadline(uint256 maxSkipTime) internal returns (uint256) {
+    uint256 deadline = vm.randomUint(1, maxSkipTime);
     vm.warp(vm.randomUint(0, deadline - 1));
     return deadline;
   }

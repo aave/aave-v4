@@ -9,10 +9,10 @@ contract LiquidationLogicLiquidateUserTest is LiquidationLogicBaseTest {
   using WadRayMath for uint256;
   using ReserveFlagsMap for ReserveFlags;
 
-  uint256 usdxReserveId;
-  uint256 wethReserveId;
-  IHub collateralReserveHub;
-  IHub debtReserveHub;
+  uint256 public usdxReserveId;
+  uint256 public wethReserveId;
+  IHub public collateralReserveHub;
+  IHub public debtReserveHub;
   LiquidationLogic.LiquidateUserParams params;
 
   // drawn index is 1.05, supply share price is 1.25

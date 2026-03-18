@@ -151,12 +151,12 @@ abstract contract SetupHelpers is CheckedActions, ConfigHelpers, MockHelpers {
     uint256 debtReserveId,
     uint256 borrowAmount
   ) internal {
-    uint256 supplyAmount = _calcMinimumCollAmount(
-      spoke,
-      collateralReserveId,
-      debtReserveId,
-      borrowAmount
-    ) * 5;
+    uint256 supplyAmount = _calcMinimumCollAmount({
+      spoke: spoke,
+      collReserveId: collateralReserveId,
+      debtReserveId: debtReserveId,
+      debtAmount: borrowAmount
+    }) * 5;
     _deal(spoke, collateralReserveId, user, supplyAmount);
     SpokeActions.approve({
       spoke: spoke,

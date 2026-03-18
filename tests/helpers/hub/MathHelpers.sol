@@ -227,4 +227,9 @@ abstract contract MathHelpers is QueryHelpers {
       hub.getAsset(assetId).realizedFees +
       _calcUnrealizedFees(hub, assetId);
   }
+
+  function _calculateBurntInterest(IHub hub, uint256 assetId) internal view returns (uint256) {
+    return
+      hub.getAddedAssets(assetId) - hub.previewRemoveByShares(assetId, hub.getAddedShares(assetId));
+  }
 }
