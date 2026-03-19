@@ -11,7 +11,7 @@ import {PositionManagerIntentBase} from 'src/position-manager/PositionManagerInt
 
 /// @title TakerPositionManager
 /// @author Aave Labs
-/// @notice Position manager to handle withdraw permit and borrow permit actions on behalf of users.
+/// @notice Position manager to handle withdraw and borrow actions on behalf of users.
 contract TakerPositionManager is ITakerPositionManager, PositionManagerIntentBase {
   using SafeERC20 for IERC20;
   using MathUtils for uint256;
@@ -85,7 +85,7 @@ contract TakerPositionManager is ITakerPositionManager, PositionManagerIntentBas
       reserveId: reserveId,
       owner: msg.sender,
       spender: spender,
-      newCreditDelegation: amount
+      newAllowance: amount
     });
   }
 
@@ -107,7 +107,7 @@ contract TakerPositionManager is ITakerPositionManager, PositionManagerIntentBas
       reserveId: params.reserveId,
       owner: params.owner,
       spender: params.spender,
-      newCreditDelegation: params.amount
+      newAllowance: params.amount
     });
   }
 
@@ -157,7 +157,7 @@ contract TakerPositionManager is ITakerPositionManager, PositionManagerIntentBas
       reserveId: reserveId,
       owner: owner,
       spender: msg.sender,
-      newCreditDelegation: 0
+      newAllowance: 0
     });
   }
 
@@ -168,21 +168,44 @@ contract TakerPositionManager is ITakerPositionManager, PositionManagerIntentBas
     uint256 amount,
     address onBehalfOf
   ) external onlyRegisteredSpoke(spoke) returns (uint256, uint256) {
-    IERC20 asset = IERC20(_getReserveUnderlying(spoke, reserveId));
-    _spendWithdrawAllowance({
+    IERC20 underlying = IERC20(_getReserveUnderlying(spoke, reserveId));
+    uint256 currentAllowance = _getWithdrawAllowance({
       spoke: spoke,
       reserveId: reserveId,
       owner: onBehalfOf,
-      spender: msg.sender,
-      amount: amount
+      spender: msg.sender
     });
+    require(currentAllowance >= amount, InsufficientWithdrawAllowance(currentAllowance, amount));
+
+    uint256 suppliedAssetsBefore;
+    if (currentAllowance != type(uint256).max) {
+      suppliedAssetsBefore = ISpoke(spoke).getUserSuppliedAssets(reserveId, onBehalfOf);
+    }
 
     (uint256 withdrawnShares, uint256 withdrawnAmount) = ISpoke(spoke).withdraw(
       reserveId,
       amount,
       onBehalfOf
     );
-    asset.safeTransfer(msg.sender, withdrawnAmount);
+
+    if (currentAllowance != type(uint256).max) {
+      // Simply decreasing the allowance by the input `amount` is not ideal for shares-based
+      // positions. Due to rounding in Hub conversions, the actual decrease in the user's
+      // position value can differ slightly from the input `amount`.
+      // To handle this, the allowance consumption is based on a corrected amount, and capped at
+      // `currentAllowance` to prevent underflow from rounding, given that `amount` was already checked against the allowance.
+      // The corrected amount (`suppliedAssetsBefore` - `suppliedAssetsAfter`) is calculated as the before/after
+      // delta of `getUserSuppliedAssets`, which reflects the actual change in the user's position value.
+      uint256 suppliedAssetsAfter = ISpoke(spoke).getUserSuppliedAssets(reserveId, onBehalfOf);
+      _updateWithdrawAllowance({
+        spoke: spoke,
+        reserveId: reserveId,
+        owner: onBehalfOf,
+        spender: msg.sender,
+        newAllowance: currentAllowance.zeroFloorSub(suppliedAssetsBefore - suppliedAssetsAfter)
+      });
+    }
+    underlying.safeTransfer(msg.sender, withdrawnAmount);
 
     return (withdrawnShares, withdrawnAmount);
   }
@@ -194,21 +217,44 @@ contract TakerPositionManager is ITakerPositionManager, PositionManagerIntentBas
     uint256 amount,
     address onBehalfOf
   ) external onlyRegisteredSpoke(spoke) returns (uint256, uint256) {
-    IERC20 asset = IERC20(_getReserveUnderlying(spoke, reserveId));
-    _spendBorrowAllowance({
+    IERC20 underlying = IERC20(_getReserveUnderlying(spoke, reserveId));
+    uint256 currentAllowance = _getBorrowAllowance({
       spoke: spoke,
       reserveId: reserveId,
       owner: onBehalfOf,
-      spender: msg.sender,
-      amount: amount
+      spender: msg.sender
     });
+    require(currentAllowance >= amount, InsufficientBorrowAllowance(currentAllowance, amount));
+
+    uint256 borrowedAssetsBefore;
+    if (currentAllowance != type(uint256).max) {
+      borrowedAssetsBefore = ISpoke(spoke).getUserTotalDebt(reserveId, onBehalfOf);
+    }
 
     (uint256 borrowedShares, uint256 borrowedAmount) = ISpoke(spoke).borrow(
       reserveId,
       amount,
       onBehalfOf
     );
-    asset.safeTransfer(msg.sender, borrowedAmount);
+
+    if (currentAllowance != type(uint256).max) {
+      // Simply decreasing the allowance by the input `amount` is not ideal for shares-based
+      // debt. Due to rounding in Hub conversions, the actual increase in the user's debt can differ slightly from
+      // the input `amount`.
+      // To handle this, the allowance consumption is based on a corrected amount, and capped at
+      // `currentAllowance` to prevent underflow from rounding, given that `amount` was already checked against the allowance.
+      // The corrected amount (`borrowedAssetsAfter` - `borrowedAssetsBefore`) is calculated as the before/after
+      // delta of `getUserTotalDebt`, which reflects the actual change in the user's debt.
+      uint256 borrowedAssetsAfter = ISpoke(spoke).getUserTotalDebt(reserveId, onBehalfOf);
+      _updateBorrowAllowance({
+        spoke: spoke,
+        reserveId: reserveId,
+        owner: onBehalfOf,
+        spender: msg.sender,
+        newAllowance: currentAllowance.zeroFloorSub(borrowedAssetsAfter - borrowedAssetsBefore)
+      });
+    }
+    underlying.safeTransfer(msg.sender, borrowedAmount);
 
     return (borrowedShares, borrowedAmount);
   }
@@ -269,60 +315,10 @@ contract TakerPositionManager is ITakerPositionManager, PositionManagerIntentBas
     uint256 reserveId,
     address owner,
     address spender,
-    uint256 newCreditDelegation
+    uint256 newAllowance
   ) internal {
-    _borrowAllowances[spoke][reserveId][owner][spender] = newCreditDelegation;
-    emit BorrowApproval(spoke, reserveId, owner, spender, newCreditDelegation);
-  }
-
-  function _spendWithdrawAllowance(
-    address spoke,
-    uint256 reserveId,
-    address owner,
-    address spender,
-    uint256 amount
-  ) internal {
-    uint256 currentAllowance = _getWithdrawAllowance({
-      spoke: spoke,
-      reserveId: reserveId,
-      owner: owner,
-      spender: spender
-    });
-    require(currentAllowance >= amount, InsufficientWithdrawAllowance(currentAllowance, amount));
-    if (currentAllowance != type(uint256).max) {
-      _updateWithdrawAllowance({
-        spoke: spoke,
-        reserveId: reserveId,
-        owner: owner,
-        spender: spender,
-        newAllowance: currentAllowance.uncheckedSub(amount)
-      });
-    }
-  }
-
-  function _spendBorrowAllowance(
-    address spoke,
-    uint256 reserveId,
-    address owner,
-    address spender,
-    uint256 amount
-  ) internal {
-    uint256 currentAllowance = _getBorrowAllowance({
-      spoke: spoke,
-      reserveId: reserveId,
-      owner: owner,
-      spender: spender
-    });
-    require(currentAllowance >= amount, InsufficientBorrowAllowance(currentAllowance, amount));
-    if (currentAllowance != type(uint256).max) {
-      _updateBorrowAllowance({
-        spoke: spoke,
-        reserveId: reserveId,
-        owner: owner,
-        spender: spender,
-        newCreditDelegation: currentAllowance.uncheckedSub(amount)
-      });
-    }
+    _borrowAllowances[spoke][reserveId][owner][spender] = newAllowance;
+    emit BorrowApproval(spoke, reserveId, owner, spender, newAllowance);
   }
 
   function _multicallEnabled() internal pure override returns (bool) {

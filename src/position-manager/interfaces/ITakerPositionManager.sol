@@ -180,12 +180,12 @@ interface ITakerPositionManager is IPositionManagerIntentBase {
     address spender
   ) external view returns (uint256);
 
-  /// @notice Returns the credit delegation allowance for a spender on behalf of an owner.
+  /// @notice Returns the borrow allowance for a spender on behalf of an owner.
   /// @param spoke The address of the Spoke.
   /// @param reserveId The identifier of the reserve.
   /// @param owner The address of the owner.
   /// @param spender The address of the spender.
-  /// @return The amount of credit delegation allowance.
+  /// @return The amount of borrow allowance.
   function borrowAllowance(
     address spoke,
     uint256 reserveId,
