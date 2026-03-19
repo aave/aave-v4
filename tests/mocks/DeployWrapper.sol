@@ -22,7 +22,7 @@ contract DeployWrapper {
       address(DeployUtils.deploySpoke(oracle, maxUserReservesLimit, proxyAdminOwner, initData));
   }
 
-  function deployHub(address authority) external returns (address) {
-    return address(DeployUtils.deployHub(authority));
+  function deployHub(address authority, address proxyAdminOwner) external returns (address) {
+    return address(DeployUtils.deployHub({authority: authority, proxyAdminOwner: proxyAdminOwner}));
   }
 }

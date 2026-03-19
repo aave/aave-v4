@@ -21,7 +21,7 @@ additional_compiler_profiles = [
 ]
 
 compilation_restrictions = [
-  { paths = "src/hub/Hub.sol", optimizer = true, via_ir = true, optimizer_runs = 22_300 },
+  { paths = "src/hub/instances/HubInstance.sol", optimizer = true, via_ir = true, optimizer_runs = 22_300 },
   { paths = "src/spoke/instances/SpokeInstance.sol", optimizer = true, via_ir = true, optimizer_runs = 750 },
   { paths = "tests/**", optimizer = true, via_ir = false, optimizer_runs = 444444444444 },
 ]
