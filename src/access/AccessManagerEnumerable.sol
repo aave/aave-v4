@@ -203,6 +203,11 @@ contract AccessManagerEnumerable is AccessManager, IAccessManagerEnumerable {
   }
 
   /// @inheritdoc IAccessManagerEnumerable
+  function getRoleOfTargetSelector(address target, bytes4 selector) external view returns (uint64) {
+    return _targetToSelectorToRole[target][selector];
+  }
+
+  /// @inheritdoc IAccessManagerEnumerable
   function getRoleLabel(uint256 index) external view returns (string memory) {
     return _labelsSet.at(index);
   }
@@ -233,11 +238,6 @@ contract AccessManagerEnumerable is AccessManager, IAccessManagerEnumerable {
   function getRoleOfLabel(string calldata label) external view returns (uint64) {
     require(_labelsSet.contains(label), AccessManagerUnregisteredLabel(label));
     return _labelToRole[label];
-  }
-
-  /// @inheritdoc IAccessManagerEnumerable
-  function getRoleOfTargetSelector(address target, bytes4 selector) external view returns (uint64) {
-    return _targetToSelectorToRole[target][selector];
   }
 
   /// @inheritdoc IAccessManagerEnumerable
