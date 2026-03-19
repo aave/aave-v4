@@ -2,8 +2,8 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity 0.8.28;
 
+import {AccessManagedUpgradeable} from 'src/dependencies/openzeppelin-upgradeable/AccessManagedUpgradeable.sol';
 import {EnumerableSet} from 'src/dependencies/openzeppelin/EnumerableSet.sol';
-import {AccessManaged} from 'src/dependencies/openzeppelin/AccessManaged.sol';
 import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
 import {SafeERC20, IERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
 import {MathUtils} from 'src/libraries/math/MathUtils.sol';
@@ -14,11 +14,12 @@ import {SharesMath} from 'src/hub/libraries/SharesMath.sol';
 import {Premium} from 'src/hub/libraries/Premium.sol';
 import {IBasicInterestRateStrategy} from 'src/hub/interfaces/IBasicInterestRateStrategy.sol';
 import {IHubBase, IHub} from 'src/hub/interfaces/IHub.sol';
+import {HubStorage} from 'src/hub/HubStorage.sol';
 
 /// @title Hub
 /// @author Aave Labs
 /// @notice A liquidity hub that manages assets and spokes.
-contract Hub is IHub, AccessManaged {
+abstract contract Hub is IHub, HubStorage, AccessManagedUpgradeable {
   using EnumerableSet for EnumerableSet.AddressSet;
   using SafeCast for *;
   using SafeERC20 for IERC20;
@@ -40,27 +41,8 @@ contract Hub is IHub, AccessManaged {
   /// @inheritdoc IHub
   uint24 public constant MAX_RISK_PREMIUM_THRESHOLD = type(uint24).max;
 
-  /// @dev Number of assets listed in the Hub.
-  uint256 internal _assetCount;
-
-  /// @dev Map of asset identifiers to Asset data.
-  mapping(uint256 assetId => Asset) internal _assets;
-
-  /// @dev Map of asset identifiers and spoke addresses to Spoke data.
-  mapping(uint256 assetId => mapping(address spoke => SpokeData)) internal _spokes;
-
-  /// @dev Map of asset identifiers to set of spoke addresses.
-  mapping(uint256 assetId => EnumerableSet.AddressSet) internal _assetToSpokes;
-
-  /// @dev Map of underlying addresses to asset identifiers.
-  mapping(address underlying => uint256 assetId) internal _underlyingToAssetId;
-
-  /// @dev Constructor.
-  /// @dev The authority contract must implement the `AccessManaged` interface for access control.
-  /// @param authority_ The address of the authority contract which manages permissions.
-  constructor(address authority_) AccessManaged(authority_) {
-    require(authority_ != address(0), InvalidAddress());
-  }
+  /// @dev To be overridden by the inheriting Hub instance contract.
+  function initialize(address authority) external virtual;
 
   /// @inheritdoc IHub
   function addAsset(
