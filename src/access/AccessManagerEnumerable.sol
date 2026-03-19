@@ -246,17 +246,6 @@ contract AccessManagerEnumerable is AccessManager, IAccessManagerEnumerable {
     return _labelToRole[label];
   }
 
-  /// @inheritdoc IAccessManagerEnumerable
-  function getRoleLabelOfTargetSelector(
-    address target,
-    bytes4 selector
-  ) external view returns (string memory) {
-    uint64 roleId = _targetToSelectorToRole[target][selector];
-    string memory label = _roleToLabel[roleId];
-    require(_labelsSet.contains(label), AccessManagerUnlabeledRole(roleId));
-    return label;
-  }
-
   /// @dev Overrides AccessManager `_setRoleAdmin` function to track admin roles.
   function _setRoleAdmin(uint64 roleId, uint64 admin) internal override {
     uint64 oldAdmin = getRoleAdmin(roleId);
