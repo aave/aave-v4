@@ -120,6 +120,8 @@ import {MockSpokeInstance} from 'tests/mocks/MockSpokeInstance.sol';
 import {MockTreasurySpokeInstance} from 'tests/mocks/MockTreasurySpokeInstance.sol';
 import {MockSkimSpoke} from 'tests/mocks/MockSkimSpoke.sol';
 import {MockReentrantCaller} from 'tests/mocks/MockReentrantCaller.sol';
+import {MockHubInstance} from 'tests/mocks/MockHubInstance.sol';
+import {IHubInstance} from 'tests/mocks/IHubInstance.sol';
 import {ISpokeInstance} from 'tests/mocks/ISpokeInstance.sol';
 import {DeployWrapper} from 'tests/mocks/DeployWrapper.sol';
 import {SpokeUtilsWrapper} from 'tests/mocks/SpokeUtilsWrapper.sol';
@@ -337,7 +339,7 @@ abstract contract Base is Test {
   function deployFixtures() internal virtual {
     vm.startPrank(ADMIN);
     accessManager = IAccessManager(address(new AccessManagerEnumerable(ADMIN)));
-    hub1 = DeployUtils.deployHub(address(accessManager));
+    hub1 = DeployUtils.deployHub({authority: address(accessManager), proxyAdminOwner: ADMIN});
     irStrategy = new AssetInterestRateStrategy(address(hub1));
     (spoke1, oracle1) = _deploySpokeWithOracle(ADMIN, address(accessManager));
     (spoke2, oracle2) = _deploySpokeWithOracle(ADMIN, address(accessManager));
@@ -981,7 +983,7 @@ abstract contract Base is Test {
    */
   function hub2Fixture() internal returns (IHub, AssetInterestRateStrategy) {
     IAccessManager accessManager2 = IAccessManager(address(new AccessManagerEnumerable(ADMIN)));
-    IHub hub2 = DeployUtils.deployHub(address(accessManager2));
+    IHub hub2 = DeployUtils.deployHub({authority: address(accessManager2), proxyAdminOwner: ADMIN});
     vm.label(address(hub2), 'Hub2');
     AssetInterestRateStrategy hub2IrStrategy = new AssetInterestRateStrategy(address(hub2));
 
@@ -1048,7 +1050,7 @@ abstract contract Base is Test {
    */
   function hub3Fixture() internal returns (IHub, AssetInterestRateStrategy) {
     IAccessManager accessManager3 = IAccessManager(address(new AccessManagerEnumerable(ADMIN)));
-    IHub hub3 = DeployUtils.deployHub(address(accessManager3));
+    IHub hub3 = DeployUtils.deployHub({authority: address(accessManager3), proxyAdminOwner: ADMIN});
     AssetInterestRateStrategy hub3IrStrategy = new AssetInterestRateStrategy(address(hub3));
 
     // Configure IR Strategy for hub 3
@@ -2372,6 +2374,7 @@ abstract contract Base is Test {
         user != address(spoke1) &&
         user != address(spoke2) &&
         user != address(spoke3) &&
+        user != _getProxyAdminAddress(address(hub1)) &&
         user != _getProxyAdminAddress(address(spoke1)) &&
         user != _getProxyAdminAddress(address(spoke2)) &&
         user != _getProxyAdminAddress(address(spoke3))
@@ -2738,7 +2741,7 @@ abstract contract Base is Test {
 
   // @dev Requires no previously added assets
   // @dev Update _assetsSlot below if it changes
-  //   Run: forge inspect Hub storage-layout
+  //   Run: forge inspect HubInstance storage-layout
   // @dev Update _addedSharesOffset below if it changes
   //   Have a look at IHub.Asset struct
   function _mockSupplySharePrice(
@@ -2770,7 +2773,7 @@ abstract contract Base is Test {
     });
     assertEq(hub.getAddedAssets(assetId), totalAddedAssets, '_mockSupplySharePrice: addedAssets');
 
-    uint256 _assetsSlot = 2;
+    uint256 _assetsSlot = 1;
     uint256 _addedSharesOffset = 1;
     vm.store(
       address(hub),
