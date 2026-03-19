@@ -169,7 +169,7 @@ interface IAccessManagerEnumerable is IAccessManager {
     uint256 end
   ) external view returns (bytes4[] memory);
 
-  /// @notice Returns the role identifier for a given function selector.
+  /// @notice Returns the role identifier for the specified function selector.
   /// @param target The address of the target contract.
   /// @param selector The function selector.
   /// @return The identifier of the role.
@@ -190,7 +190,7 @@ interface IAccessManagerEnumerable is IAccessManager {
   /// @return The list of role labels.
   function getRoleLabels(uint256 start, uint256 end) external view returns (string[] memory);
 
-  /// @notice Returns whether the given label is assigned to a tracked role.
+  /// @notice Returns whether the specified label is assigned to any tracked role.
   /// @param label The label string.
   function isLabelAssigned(string calldata label) external view returns (bool);
 
@@ -206,7 +206,7 @@ interface IAccessManagerEnumerable is IAccessManager {
   /// @return The label of the role.
   function getLabelOfRole(uint64 roleId) external view returns (string memory);
 
-  /// @notice Returns the role identifier for a given label.
+  /// @notice Returns the role identifier for the specified label.
   /// @dev Reverts with `AccessManagerUnregisteredLabel` if the label is not assigned to any role.
   /// @param label The label string.
   /// @return The identifier of the role.
