@@ -219,7 +219,9 @@ contract AccessManagerEnumerable is AccessManager, IAccessManagerEnumerable {
 
   /// @inheritdoc IAccessManagerEnumerable
   function getLabelOfRole(uint64 roleId) external view returns (string memory) {
-    return _roleToLabel[roleId];
+    string memory label = _roleToLabel[roleId];
+    require(_labelsSet.contains(label), AccessManagerUnlabeledRole(roleId));
+    return label;
   }
 
   /// @inheritdoc IAccessManagerEnumerable
@@ -238,7 +240,10 @@ contract AccessManagerEnumerable is AccessManager, IAccessManagerEnumerable {
     address target,
     bytes4 selector
   ) external view returns (string memory) {
-    return _roleToLabel[_targetToSelectorToRole[target][selector]];
+    uint64 roleId = _targetToSelectorToRole[target][selector];
+    string memory label = _roleToLabel[roleId];
+    require(_labelsSet.contains(label), AccessManagerUnlabeledRole(roleId));
+    return label;
   }
 
   /// @dev Overrides AccessManager `_setRoleAdmin` function to track admin roles.

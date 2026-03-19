@@ -188,6 +188,7 @@ interface IAccessManagerEnumerable is IAccessManager {
 
   /// @notice Returns the label of a specified role.
   /// @dev `PUBLIC_ROLE` and `ADMIN_ROLE` cannot be labeled, and are not accessible via this function.
+  /// @dev Reverts with `AccessManagerUnlabeledRole` if the role has no registered label.
   /// @param roleId The identifier of the role.
   /// @return The label of the role.
   function getLabelOfRole(uint64 roleId) external view returns (string memory);
@@ -205,11 +206,11 @@ interface IAccessManagerEnumerable is IAccessManager {
   function getRoleOfTargetSelector(address target, bytes4 selector) external view returns (uint64);
 
   /// @notice Returns the label of a specified function selector via the role it is associated with.
-  /// @dev Returns an empty string if the selector has not been assigned to any role or if it's assigned
-  /// to `PUBLIC_ROLE` or `ADMIN_ROLE`.
+  /// @dev `PUBLIC_ROLE` and `ADMIN_ROLE` cannot be labeled, and its corresponding selectors are not accessible via this function.
+  /// @dev Reverts with `AccessManagerUnlabeledRole` if the selector is not assigned to a labeled role.
   /// @param target The address of the target contract.
   /// @param selector The function selector.
-  /// @return The label of the role, or an empty string if unassigned.
+  /// @return The label of the role.
   function getRoleLabelOfTargetSelector(
     address target,
     bytes4 selector

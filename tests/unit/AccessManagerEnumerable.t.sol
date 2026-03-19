@@ -996,10 +996,13 @@ contract AccessManagerEnumerableTest is Test {
     accessManagerEnumerable.labelRole(roleId, '');
   }
 
-  function test_getLabelOfRole_returnsEmptyStringForUnlabeledRole() public {
+  function test_getLabelOfRole_revertsForUnlabeledRole() public {
     uint64 roleId = 99;
 
-    assertEq(accessManagerEnumerable.getLabelOfRole(roleId), '');
+    vm.expectRevert(
+      abi.encodeWithSelector(IAccessManagerEnumerable.AccessManagerUnlabeledRole.selector, roleId)
+    );
+    accessManagerEnumerable.getLabelOfRole(roleId);
   }
 
   function test_labelRole_tracksUntrackedRole() public {
@@ -1113,7 +1116,10 @@ contract AccessManagerEnumerableTest is Test {
 
     assertEq(accessManagerEnumerable.getRoleLabelCount(), 0);
 
-    assertEq(accessManagerEnumerable.getLabelOfRole(roleId), '');
+    vm.expectRevert(
+      abi.encodeWithSelector(IAccessManagerEnumerable.AccessManagerUnlabeledRole.selector, roleId)
+    );
+    accessManagerEnumerable.getLabelOfRole(roleId);
 
     vm.expectRevert(
       abi.encodeWithSelector(
@@ -1229,7 +1235,7 @@ contract AccessManagerEnumerableTest is Test {
     assertEq(accessManagerEnumerable.getRoleLabelOfTargetSelector(target, selector), 'NEW_LABEL');
   }
 
-  function test_getRoleLabelOfTargetSelector_returnsEmptyStringForUnlabeledRole() public {
+  function test_getRoleLabelOfTargetSelector_revertsForUnlabeledRole() public {
     uint64 roleId = 1;
     address target = makeAddr('target');
     bytes4 selector = bytes4(keccak256('function()'));
@@ -1240,7 +1246,63 @@ contract AccessManagerEnumerableTest is Test {
     vm.prank(ADMIN);
     accessManagerEnumerable.setTargetFunctionRole(target, selectors, roleId);
 
-    assertEq(accessManagerEnumerable.getRoleLabelOfTargetSelector(target, selector), '');
+    vm.expectRevert(
+      abi.encodeWithSelector(IAccessManagerEnumerable.AccessManagerUnlabeledRole.selector, roleId)
+    );
+    accessManagerEnumerable.getRoleLabelOfTargetSelector(target, selector);
+  }
+
+  function test_getLabelOfRole_revertsForAdminRole() public {
+    vm.expectRevert(
+      abi.encodeWithSelector(
+        IAccessManagerEnumerable.AccessManagerUnlabeledRole.selector,
+        ADMIN_ROLE
+      )
+    );
+    accessManagerEnumerable.getLabelOfRole(ADMIN_ROLE);
+  }
+
+  function test_getRoleLabelOfTargetSelector_revertsForUnassignedSelector() public {
+    address target = makeAddr('target');
+    bytes4 selector = bytes4(keccak256('unassigned()'));
+    vm.expectRevert(
+      abi.encodeWithSelector(
+        IAccessManagerEnumerable.AccessManagerUnlabeledRole.selector,
+        ADMIN_ROLE
+      )
+    );
+    accessManagerEnumerable.getRoleLabelOfTargetSelector(target, selector);
+  }
+
+  function test_getLabelOfRole_revertsForPublicRole() public {
+    uint64 publicRole = type(uint64).max;
+    vm.expectRevert(
+      abi.encodeWithSelector(
+        IAccessManagerEnumerable.AccessManagerUnlabeledRole.selector,
+        publicRole
+      )
+    );
+    accessManagerEnumerable.getLabelOfRole(publicRole);
+  }
+
+  function test_getRoleLabelOfTargetSelector_revertsForPublicRoleSelector() public {
+    address target = makeAddr('target');
+    bytes4 selector = bytes4(keccak256('publicFunc()'));
+    uint64 publicRole = type(uint64).max;
+
+    bytes4[] memory selectors = new bytes4[](1);
+    selectors[0] = selector;
+
+    vm.prank(ADMIN);
+    accessManagerEnumerable.setTargetFunctionRole(target, selectors, publicRole);
+
+    vm.expectRevert(
+      abi.encodeWithSelector(
+        IAccessManagerEnumerable.AccessManagerUnlabeledRole.selector,
+        publicRole
+      )
+    );
+    accessManagerEnumerable.getRoleLabelOfTargetSelector(target, selector);
   }
 
   function _getRandomAdminRoleId() internal returns (uint64) {
