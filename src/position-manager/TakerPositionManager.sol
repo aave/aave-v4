@@ -169,13 +169,13 @@ contract TakerPositionManager is ITakerPositionManager, PositionManagerIntentBas
     address onBehalfOf
   ) external onlyRegisteredSpoke(spoke) returns (uint256, uint256) {
     IERC20 underlying = IERC20(_getReserveUnderlying(spoke, reserveId));
-    uint256 currentAllowance = _checkWithdrawAllowance({
+    uint256 currentAllowance = _getWithdrawAllowance({
       spoke: spoke,
       reserveId: reserveId,
       owner: onBehalfOf,
-      spender: msg.sender,
-      amount: amount
+      spender: msg.sender
     });
+    require(currentAllowance >= amount, InsufficientWithdrawAllowance(currentAllowance, amount));
 
     uint256 suppliedAssetsBefore;
     if (currentAllowance != type(uint256).max) {
@@ -218,13 +218,13 @@ contract TakerPositionManager is ITakerPositionManager, PositionManagerIntentBas
     address onBehalfOf
   ) external onlyRegisteredSpoke(spoke) returns (uint256, uint256) {
     IERC20 underlying = IERC20(_getReserveUnderlying(spoke, reserveId));
-    uint256 currentAllowance = _checkBorrowAllowance({
+    uint256 currentAllowance = _getBorrowAllowance({
       spoke: spoke,
       reserveId: reserveId,
       owner: onBehalfOf,
-      spender: msg.sender,
-      amount: amount
+      spender: msg.sender
     });
+    require(currentAllowance >= amount, InsufficientBorrowAllowance(currentAllowance, amount));
 
     uint256 borrowedAssetsBefore;
     if (currentAllowance != type(uint256).max) {
@@ -319,38 +319,6 @@ contract TakerPositionManager is ITakerPositionManager, PositionManagerIntentBas
   ) internal {
     _borrowAllowances[spoke][reserveId][owner][spender] = newAllowance;
     emit BorrowApproval(spoke, reserveId, owner, spender, newAllowance);
-  }
-
-  function _checkWithdrawAllowance(
-    address spoke,
-    uint256 reserveId,
-    address owner,
-    address spender,
-    uint256 amount
-  ) internal view returns (uint256 currentAllowance) {
-    currentAllowance = _getWithdrawAllowance({
-      spoke: spoke,
-      reserveId: reserveId,
-      owner: owner,
-      spender: spender
-    });
-    require(currentAllowance >= amount, InsufficientWithdrawAllowance(currentAllowance, amount));
-  }
-
-  function _checkBorrowAllowance(
-    address spoke,
-    uint256 reserveId,
-    address owner,
-    address spender,
-    uint256 amount
-  ) internal view returns (uint256 currentAllowance) {
-    currentAllowance = _getBorrowAllowance({
-      spoke: spoke,
-      reserveId: reserveId,
-      owner: owner,
-      spender: spender
-    });
-    require(currentAllowance >= amount, InsufficientBorrowAllowance(currentAllowance, amount));
   }
 
   function _multicallEnabled() internal pure override returns (bool) {

@@ -25,11 +25,8 @@ s.add(
 )
 userSuppliedShares = Int("userSuppliedShares")
 withdrawAmount = Int("withdrawAmount")
-
-s.add(0 <= totalAddedAssets, totalAddedAssets <= 10**30)
-s.add(0 <= totalAddedShares, totalAddedShares <= 10**30)
 s.add(0 <= userSuppliedShares, userSuppliedShares <= totalAddedShares)
-s.add(1 <= withdrawAmount, withdrawAmount <= 10**30)
+s.add(1 <= withdrawAmount, withdrawAmount <= MAX_SUPPLY_AMOUNT)
 s.add(withdrawAmount <= totalAddedAssets)
 
 withdrawnShares = toAddedSharesUp(withdrawAmount, totalAddedAssets, totalAddedShares)

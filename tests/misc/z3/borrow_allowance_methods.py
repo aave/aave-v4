@@ -23,8 +23,8 @@ userDrawnShares = Int("userDrawnShares")
 borrowAmount = Int("borrowAmount")
 
 s.add(MIN_DRAWN_INDEX <= drawnIndex, drawnIndex <= MAX_DRAWN_INDEX)
-s.add(0 <= userDrawnShares, userDrawnShares <= 10**30)
-s.add(1 <= borrowAmount, borrowAmount <= 10**30)
+s.add(0 <= userDrawnShares, userDrawnShares <= MAX_SUPPLY_AMOUNT)
+s.add(1 <= borrowAmount, borrowAmount <= MAX_SUPPLY_AMOUNT)
 
 
 borrowedShares = toDrawnSharesUp(borrowAmount, drawnIndex)
