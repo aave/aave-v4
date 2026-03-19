@@ -11,7 +11,7 @@ import {PositionManagerIntentBase} from 'src/position-manager/PositionManagerInt
 
 /// @title TakerPositionManager
 /// @author Aave Labs
-/// @notice Position manager to handle withdraw permit and borrow permit actions on behalf of users.
+/// @notice Position manager to handle withdraw and borrow actions on behalf of users.
 contract TakerPositionManager is ITakerPositionManager, PositionManagerIntentBase {
   using SafeERC20 for IERC20;
   using MathUtils for uint256;
