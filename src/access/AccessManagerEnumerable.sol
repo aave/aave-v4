@@ -24,7 +24,6 @@ contract AccessManagerEnumerable is AccessManager, IAccessManagerEnumerable {
   EnumerableSet.UintSet private _adminRolesSet;
 
   /// @dev Set of all role labels.
-  /// @dev `PUBLIC_ROLE` and `ADMIN_ROLE` are not part of this set.
   EnumerableSet.StringSet private _labelsSet;
 
   /// @dev Map of role identifiers to their respective member sets.
@@ -48,10 +47,10 @@ contract AccessManagerEnumerable is AccessManager, IAccessManagerEnumerable {
   mapping(uint64 roleId => mapping(address target => EnumerableSet.Bytes32Set))
     private _roleToTargetToSelectorSet;
 
-  /// @dev Map of role identifiers to their labels.
+  /// @dev Map of role identifiers to their assigned labels.
   mapping(uint64 roleId => string label) private _roleToLabel;
 
-  /// @dev Map of labels to their role identifiers.
+  /// @dev Map of labels to their assigned role identifiers.
   mapping(string label => uint64 roleId) private _labelToRole;
 
   /// @dev Constructor.
@@ -221,9 +220,7 @@ contract AccessManagerEnumerable is AccessManager, IAccessManagerEnumerable {
 
   /// @inheritdoc IAccessManagerEnumerable
   function getLabelOfRole(uint64 roleId) external view returns (string memory) {
-    string memory label = _roleToLabel[roleId];
-    require(_labelsSet.contains(label), AccessManagerUnlabeledRole(roleId));
-    return label;
+    return _roleToLabel[roleId];
   }
 
   /// @inheritdoc IAccessManagerEnumerable
@@ -233,21 +230,16 @@ contract AccessManagerEnumerable is AccessManager, IAccessManagerEnumerable {
   }
 
   /// @inheritdoc IAccessManagerEnumerable
-  function getRoleOfSelector(address target, bytes4 selector) external view returns (uint64) {
+  function getRoleOfTargetSelector(address target, bytes4 selector) external view returns (uint64) {
     return _targetToSelectorToRole[target][selector];
   }
 
   /// @inheritdoc IAccessManagerEnumerable
-  function getLabelOfSelector(
+  function getRoleLabelOfTargetSelector(
     address target,
     bytes4 selector
   ) external view returns (string memory) {
-    string memory label = _roleToLabel[_targetToSelectorToRole[target][selector]];
-    require(
-      _labelsSet.contains(label),
-      AccessManagerUnlabeledRole(_targetToSelectorToRole[target][selector])
-    );
-    return label;
+    return _roleToLabel[_targetToSelectorToRole[target][selector]];
   }
 
   /// @dev Overrides AccessManager `_setRoleAdmin` function to track admin roles.
@@ -342,7 +334,6 @@ contract AccessManagerEnumerable is AccessManager, IAccessManagerEnumerable {
   }
 
   /// @dev Tracks labels assigned to roles.
-  /// @dev Labels cannot be assigned to `PUBLIC_ROLE` or `ADMIN_ROLE`.
   /// @dev To remove an existing label, pass an empty string as label.
   /// @dev To relabel a role, first remove the existing label, then set the new label.
   /// @dev Reverts if the label is already assigned to another role.
