@@ -6,7 +6,7 @@ import 'tests/unit/position-manager/ConfigPositionManager/ConfigPositionManager.
 
 contract ConfigPositionManagerTest is ConfigPositionManagerBaseTest {
   using ConfigPermissionsMap for ConfigPermissions;
-  function test_setFullPermission() public {
+  function test_setGlobalPermission() public {
     IConfigPositionManager.ConfigPermissionValues memory permissions = positionManager
       .getConfigPermissions(address(spoke1), bob, alice);
     assertFalse(permissions.canSetUsingAsCollateral);
@@ -27,7 +27,7 @@ contract ConfigPositionManagerTest is ConfigPositionManagerBaseTest {
       newPermissions
     );
     vm.prank(alice);
-    positionManager.setFullPermission(address(spoke1), bob, true);
+    positionManager.setGlobalPermission(address(spoke1), bob, true);
 
     permissions = positionManager.getConfigPermissions(address(spoke1), bob, alice);
     assertTrue(permissions.canSetUsingAsCollateral);
@@ -35,7 +35,7 @@ contract ConfigPositionManagerTest is ConfigPositionManagerBaseTest {
     assertTrue(permissions.canUpdateUserDynamicConfig);
   }
 
-  function test_setFullPermission_setThenRemove() public {
+  function test_setGlobalPermission_setThenRemove() public {
     IConfigPositionManager.ConfigPermissionValues memory permissions = positionManager
       .getConfigPermissions(address(spoke1), bob, alice);
     assertFalse(permissions.canSetUsingAsCollateral);
@@ -56,7 +56,7 @@ contract ConfigPositionManagerTest is ConfigPositionManagerBaseTest {
       newPermissions
     );
     vm.prank(alice);
-    positionManager.setFullPermission(address(spoke1), bob, true);
+    positionManager.setGlobalPermission(address(spoke1), bob, true);
 
     permissions = positionManager.getConfigPermissions(address(spoke1), bob, alice);
     assertTrue(permissions.canSetUsingAsCollateral);
@@ -72,7 +72,7 @@ contract ConfigPositionManagerTest is ConfigPositionManagerBaseTest {
       emptyPermissions
     );
     vm.prank(alice);
-    positionManager.setFullPermission(address(spoke1), bob, false);
+    positionManager.setGlobalPermission(address(spoke1), bob, false);
 
     permissions = positionManager.getConfigPermissions(address(spoke1), bob, alice);
     assertFalse(permissions.canSetUsingAsCollateral);
@@ -80,9 +80,9 @@ contract ConfigPositionManagerTest is ConfigPositionManagerBaseTest {
     assertFalse(permissions.canUpdateUserDynamicConfig);
   }
 
-  function test_setFullPermission_removeAllPermissions() public {
+  function test_setGlobalPermission_removeAllPermissions() public {
     vm.prank(alice);
-    positionManager.setFullPermission(address(spoke1), bob, true);
+    positionManager.setGlobalPermission(address(spoke1), bob, true);
 
     IConfigPositionManager.ConfigPermissionValues memory permissions = positionManager
       .getConfigPermissions(address(spoke1), bob, alice);
@@ -90,7 +90,7 @@ contract ConfigPositionManagerTest is ConfigPositionManagerBaseTest {
     assertTrue(permissions.canUpdateUserRiskPremium);
     assertTrue(permissions.canUpdateUserDynamicConfig);
 
-    ConfigPermissions fullPermissions = ConfigPermissionsMap.setFullPermissions(true);
+    ConfigPermissions globalPermissions = ConfigPermissionsMap.setGlobalPermissions(true);
     ConfigPermissions newPermissions;
 
     vm.expectEmit(address(positionManager));
@@ -98,11 +98,11 @@ contract ConfigPositionManagerTest is ConfigPositionManagerBaseTest {
       address(spoke1),
       alice,
       bob,
-      fullPermissions,
+      globalPermissions,
       newPermissions
     );
     vm.prank(alice);
-    positionManager.setFullPermission(address(spoke1), bob, false);
+    positionManager.setGlobalPermission(address(spoke1), bob, false);
 
     permissions = positionManager.getConfigPermissions(address(spoke1), bob, alice);
     assertFalse(permissions.canSetUsingAsCollateral);
@@ -110,7 +110,7 @@ contract ConfigPositionManagerTest is ConfigPositionManagerBaseTest {
     assertFalse(permissions.canUpdateUserDynamicConfig);
   }
 
-  function test_setFullPermission_removePreviousPermissions() public {
+  function test_setGlobalPermission_removePreviousPermissions() public {
     vm.prank(alice);
     positionManager.setCanSetUsingAsCollateralPermission(address(spoke1), bob, true);
     vm.prank(alice);
@@ -136,7 +136,7 @@ contract ConfigPositionManagerTest is ConfigPositionManagerBaseTest {
       newPermissions
     );
     vm.prank(alice);
-    positionManager.setFullPermission(address(spoke1), bob, false);
+    positionManager.setGlobalPermission(address(spoke1), bob, false);
 
     permissions = positionManager.getConfigPermissions(address(spoke1), bob, alice);
     assertFalse(permissions.canSetUsingAsCollateral);
@@ -144,10 +144,10 @@ contract ConfigPositionManagerTest is ConfigPositionManagerBaseTest {
     assertFalse(permissions.canUpdateUserDynamicConfig);
   }
 
-  function test_setFullPermission_revertsWith_SpokeNotRegistered() public {
+  function test_setGlobalPermission_revertsWith_SpokeNotRegistered() public {
     vm.expectRevert(IPositionManagerBase.SpokeNotRegistered.selector);
     vm.prank(alice);
-    positionManager.setFullPermission(address(spoke2), bob, true);
+    positionManager.setGlobalPermission(address(spoke2), bob, true);
   }
 
   function test_setCanSetUsingAsCollateralPermission() public {
@@ -290,7 +290,7 @@ contract ConfigPositionManagerTest is ConfigPositionManagerBaseTest {
 
   function test_renounceGlobalPermission() public {
     vm.prank(alice);
-    positionManager.setFullPermission(address(spoke1), bob, true);
+    positionManager.setGlobalPermission(address(spoke1), bob, true);
 
     IConfigPositionManager.ConfigPermissionValues memory permissions = positionManager
       .getConfigPermissions(address(spoke1), bob, alice);
@@ -298,7 +298,7 @@ contract ConfigPositionManagerTest is ConfigPositionManagerBaseTest {
     assertTrue(permissions.canUpdateUserRiskPremium);
     assertTrue(permissions.canUpdateUserDynamicConfig);
 
-    ConfigPermissions fullPermissions = ConfigPermissionsMap.setFullPermissions(true);
+    ConfigPermissions globalPermissions = ConfigPermissionsMap.setGlobalPermissions(true);
     ConfigPermissions newPermissions;
 
     vm.expectEmit(address(positionManager));
@@ -306,7 +306,7 @@ contract ConfigPositionManagerTest is ConfigPositionManagerBaseTest {
       address(spoke1),
       alice,
       bob,
-      fullPermissions,
+      globalPermissions,
       newPermissions
     );
     vm.prank(bob);
@@ -459,7 +459,7 @@ contract ConfigPositionManagerTest is ConfigPositionManagerBaseTest {
     reserveId = bound(reserveId, 1, spoke1.getReserveCount() - 1);
 
     vm.prank(alice);
-    positionManager.setFullPermission(address(spoke1), bob, true);
+    positionManager.setGlobalPermission(address(spoke1), bob, true);
 
     vm.prank(alice);
     spoke1.setUsingAsCollateral(reserveId, !useAsCollateral, alice);
@@ -523,7 +523,7 @@ contract ConfigPositionManagerTest is ConfigPositionManagerBaseTest {
 
   function test_updateUserRiskPremiumOnBehalfOf_withGlobalPermission() public {
     vm.prank(alice);
-    positionManager.setFullPermission(address(spoke1), bob, true);
+    positionManager.setGlobalPermission(address(spoke1), bob, true);
 
     Utils.supplyCollateral(spoke1, _daiReserveId(spoke1), alice, 100e18, alice);
     Utils.borrow(spoke1, _daiReserveId(spoke1), alice, 75e18, alice);
@@ -562,7 +562,7 @@ contract ConfigPositionManagerTest is ConfigPositionManagerBaseTest {
 
   function test_updateUserDynamicConfigOnBehalfOf_withGlobalPermission() public {
     vm.prank(alice);
-    positionManager.setFullPermission(address(spoke1), bob, true);
+    positionManager.setGlobalPermission(address(spoke1), bob, true);
 
     vm.expectEmit(address(spoke1));
     emit ISpoke.RefreshAllUserDynamicConfig(alice);
@@ -587,13 +587,13 @@ contract ConfigPositionManagerTest is ConfigPositionManagerBaseTest {
   function test_multicall() public {
     bytes[] memory calls = new bytes[](2);
     calls[0] = abi.encodeWithSignature(
-      'setFullPermission(address,address,bool)',
+      'setGlobalPermission(address,address,bool)',
       address(spoke1),
       bob,
       true
     );
     calls[1] = abi.encodeWithSignature(
-      'setFullPermission(address,address,bool)',
+      'setGlobalPermission(address,address,bool)',
       address(spoke1),
       carol,
       true
@@ -617,10 +617,10 @@ contract ConfigPositionManagerTest is ConfigPositionManagerBaseTest {
     assertTrue(permissions.canUpdateUserDynamicConfig);
   }
 
-  function test_setFullPermission_revertsWith_InvalidAddress_zeroDelegatee() public {
+  function test_setGlobalPermission_revertsWith_InvalidAddress_zeroDelegatee() public {
     vm.expectRevert(IPositionManagerBase.InvalidAddress.selector);
     vm.prank(alice);
-    positionManager.setFullPermission(address(spoke1), address(0), true);
+    positionManager.setGlobalPermission(address(spoke1), address(0), true);
   }
 
   function test_setCanSetUsingAsCollateralPermission_revertsWith_InvalidAddress_zeroDelegatee()

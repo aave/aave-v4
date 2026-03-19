@@ -64,7 +64,7 @@ library JsonBindings {
   // prettier-ignore
   string constant schema_BorrowPermit = "BorrowPermit(address spoke,uint256 reserveId,address owner,address spender,uint256 amount,uint256 nonce,uint256 deadline)";
   // prettier-ignore
-  string constant schema_SetFullPermissionPermit = "SetFullPermissionPermit(address spoke,address delegator,address delegatee,bool status,uint256 nonce,uint256 deadline)";
+  string constant schema_SetGlobalPermissionPermit = "SetGlobalPermissionPermit(address spoke,address delegator,address delegatee,bool status,uint256 nonce,uint256 deadline)";
   // prettier-ignore
   string constant schema_SetCanSetUsingAsCollateralPermissionPermit = "SetCanSetUsingAsCollateralPermissionPermit(address spoke,address delegator,address delegatee,bool status,uint256 nonce,uint256 deadline)";
   // prettier-ignore
@@ -497,13 +497,13 @@ library JsonBindings {
   }
 
   function serialize(
-    EIP712Types.SetFullPermissionPermit memory value
+    EIP712Types.SetGlobalPermissionPermit memory value
   ) internal pure returns (string memory) {
-    return vm.serializeJsonType(schema_SetFullPermissionPermit, abi.encode(value));
+    return vm.serializeJsonType(schema_SetGlobalPermissionPermit, abi.encode(value));
   }
 
   function serialize(
-    EIP712Types.SetFullPermissionPermit memory value,
+    EIP712Types.SetGlobalPermissionPermit memory value,
     string memory objectKey,
     string memory valueKey
   ) internal returns (string memory) {
@@ -511,40 +511,40 @@ library JsonBindings {
       vm.serializeJsonType(
         objectKey,
         valueKey,
-        schema_SetFullPermissionPermit,
+        schema_SetGlobalPermissionPermit,
         abi.encode(value)
       );
   }
 
-  function deserializeSetFullPermissionPermit(
+  function deserializeSetGlobalPermissionPermit(
     string memory json
-  ) public pure returns (EIP712Types.SetFullPermissionPermit memory) {
+  ) public pure returns (EIP712Types.SetGlobalPermissionPermit memory) {
     return
       abi.decode(
-        vm.parseJsonType(json, schema_SetFullPermissionPermit),
-        (EIP712Types.SetFullPermissionPermit)
+        vm.parseJsonType(json, schema_SetGlobalPermissionPermit),
+        (EIP712Types.SetGlobalPermissionPermit)
       );
   }
 
-  function deserializeSetFullPermissionPermit(
+  function deserializeSetGlobalPermissionPermit(
     string memory json,
     string memory path
-  ) public pure returns (EIP712Types.SetFullPermissionPermit memory) {
+  ) public pure returns (EIP712Types.SetGlobalPermissionPermit memory) {
     return
       abi.decode(
-        vm.parseJsonType(json, path, schema_SetFullPermissionPermit),
-        (EIP712Types.SetFullPermissionPermit)
+        vm.parseJsonType(json, path, schema_SetGlobalPermissionPermit),
+        (EIP712Types.SetGlobalPermissionPermit)
       );
   }
 
-  function deserializeSetFullPermissionPermitArray(
+  function deserializeSetGlobalPermissionPermitArray(
     string memory json,
     string memory path
-  ) public pure returns (EIP712Types.SetFullPermissionPermit[] memory) {
+  ) public pure returns (EIP712Types.SetGlobalPermissionPermit[] memory) {
     return
       abi.decode(
-        vm.parseJsonTypeArray(json, path, schema_SetFullPermissionPermit),
-        (EIP712Types.SetFullPermissionPermit[])
+        vm.parseJsonTypeArray(json, path, schema_SetGlobalPermissionPermit),
+        (EIP712Types.SetGlobalPermissionPermit[])
       );
   }
 

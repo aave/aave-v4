@@ -109,7 +109,7 @@ library EIP712Types {
   }
 
   /// @dev ConfigPositionManager Intents
-  struct SetFullPermissionPermit {
+  struct SetGlobalPermissionPermit {
     address spoke;
     address delegator;
     address delegatee;

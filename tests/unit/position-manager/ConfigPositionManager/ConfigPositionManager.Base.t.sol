@@ -29,14 +29,14 @@ contract ConfigPositionManagerBaseTest is SpokeBase {
     positionManager.registerSpoke(address(spoke1), true);
   }
 
-  function _setFullPermissionPermitData(
+  function _setGlobalPermissionPermitData(
     address delegatee,
     address delegator,
     bool status,
     uint256 deadline
-  ) internal returns (IConfigPositionManager.SetFullPermissionPermit memory) {
+  ) internal returns (IConfigPositionManager.SetGlobalPermissionPermit memory) {
     return
-      IConfigPositionManager.SetFullPermissionPermit({
+      IConfigPositionManager.SetGlobalPermissionPermit({
         spoke: address(spoke1),
         delegator: delegator,
         delegatee: delegatee,
@@ -99,12 +99,12 @@ contract ConfigPositionManagerBaseTest is SpokeBase {
 
   function _getTypedDataHash(
     IConfigPositionManager _positionManager,
-    IConfigPositionManager.SetFullPermissionPermit memory _params
+    IConfigPositionManager.SetGlobalPermissionPermit memory _params
   ) internal view returns (bytes32) {
     return
       _typedDataHash(
         _positionManager,
-        vm.eip712HashStruct('SetFullPermissionPermit', abi.encode(_params))
+        vm.eip712HashStruct('SetGlobalPermissionPermit', abi.encode(_params))
       );
   }
 

@@ -19,8 +19,8 @@ contract ConfigPositionManager is IConfigPositionManager, PositionManagerIntentB
   using EIP712Hash for *;
 
   /// @inheritdoc IConfigPositionManager
-  bytes32 public constant SET_FULL_PERMISSION_PERMIT_TYPEHASH =
-    EIP712Hash.SET_FULL_PERMISSION_PERMIT_TYPEHASH;
+  bytes32 public constant SET_GLOBAL_PERMISSION_PERMIT_TYPEHASH =
+    EIP712Hash.SET_GLOBAL_PERMISSION_PERMIT_TYPEHASH;
 
   /// @inheritdoc IConfigPositionManager
   bytes32 public constant SET_CAN_SET_USING_AS_COLLATERAL_PERMISSION_PERMIT_TYPEHASH =
@@ -43,12 +43,17 @@ contract ConfigPositionManager is IConfigPositionManager, PositionManagerIntentB
   constructor(address initialOwner_) PositionManagerIntentBase(initialOwner_) {}
 
   /// @inheritdoc IConfigPositionManager
-  function setFullPermission(
+  function setGlobalPermission(
     address spoke,
     address delegatee,
     bool status
   ) external onlyRegisteredSpoke(spoke) {
-    _setFullPermission({spoke: spoke, delegator: msg.sender, delegatee: delegatee, status: status});
+    _setGlobalPermission({
+      spoke: spoke,
+      delegator: msg.sender,
+      delegatee: delegatee,
+      status: status
+    });
   }
 
   /// @inheritdoc IConfigPositionManager
@@ -94,8 +99,8 @@ contract ConfigPositionManager is IConfigPositionManager, PositionManagerIntentB
   }
 
   /// @inheritdoc IConfigPositionManager
-  function setFullPermissionWithSig(
-    SetFullPermissionPermit calldata params,
+  function setGlobalPermissionWithSig(
+    SetGlobalPermissionPermit calldata params,
     bytes calldata signature
   ) external onlyRegisteredSpoke(params.spoke) {
     _verifyAndConsumeIntent({
@@ -105,7 +110,7 @@ contract ConfigPositionManager is IConfigPositionManager, PositionManagerIntentB
       deadline: params.deadline,
       signature: signature
     });
-    _setFullPermission({
+    _setGlobalPermission({
       spoke: params.spoke,
       delegator: params.delegator,
       delegatee: params.delegatee,
@@ -183,7 +188,7 @@ contract ConfigPositionManager is IConfigPositionManager, PositionManagerIntentB
       delegator: delegator,
       delegatee: msg.sender
     });
-    ConfigPermissions newPermissions = ConfigPermissionsMap.setFullPermissions(false);
+    ConfigPermissions newPermissions = ConfigPermissionsMap.setGlobalPermissions(false);
     _updatePermissions({
       spoke: spoke,
       delegator: delegator,
@@ -325,7 +330,7 @@ contract ConfigPositionManager is IConfigPositionManager, PositionManagerIntentB
   /// @param delegator The address of the delegator.
   /// @param delegatee The address of the delegatee.
   /// @param status The new permission status.
-  function _setFullPermission(
+  function _setGlobalPermission(
     address spoke,
     address delegator,
     address delegatee,
@@ -336,7 +341,7 @@ contract ConfigPositionManager is IConfigPositionManager, PositionManagerIntentB
       delegator: delegator,
       delegatee: delegatee
     });
-    ConfigPermissions newPermissions = ConfigPermissionsMap.setFullPermissions(status);
+    ConfigPermissions newPermissions = ConfigPermissionsMap.setGlobalPermissions(status);
     _updatePermissions({
       spoke: spoke,
       delegator: delegator,

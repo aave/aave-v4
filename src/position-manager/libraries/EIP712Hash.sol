@@ -46,9 +46,9 @@ library EIP712Hash {
     // keccak256('BorrowPermit(address spoke,uint256 reserveId,address owner,address spender,uint256 amount,uint256 nonce,uint256 deadline)')
     0x14236ea048da65ffb52a9b32a2c840f24ab374cc31f65faeb7877d22ceca144e;
 
-  bytes32 public constant SET_FULL_PERMISSION_PERMIT_TYPEHASH =
-    // keccak256('SetFullPermissionPermit(address spoke,address delegator,address delegatee,bool status,uint256 nonce,uint256 deadline)')
-    0xa92c044d81f0ad7a2208f14b524f51d585563d9075b9119eda918ca69103144e;
+  bytes32 public constant SET_GLOBAL_PERMISSION_PERMIT_TYPEHASH =
+    // keccak256('SetGlobalPermissionPermit(address spoke,address delegator,address delegatee,bool status,uint256 nonce,uint256 deadline)')
+    0x299f4d5a5eae147b6a362cf3fa36b918afed95d6cc1674d468aa1ba1f75f9313;
 
   bytes32 public constant SET_CAN_SET_USING_AS_COLLATERAL_PERMISSION_PERMIT_TYPEHASH =
     // keccak256('SetCanSetUsingAsCollateralPermissionPermit(address spoke,address delegator,address delegatee,bool status,uint256 nonce,uint256 deadline)')
@@ -206,12 +206,12 @@ library EIP712Hash {
   }
 
   function hash(
-    IConfigPositionManager.SetFullPermissionPermit calldata params
+    IConfigPositionManager.SetGlobalPermissionPermit calldata params
   ) internal pure returns (bytes32) {
     return
       keccak256(
         abi.encode(
-          SET_FULL_PERMISSION_PERMIT_TYPEHASH,
+          SET_GLOBAL_PERMISSION_PERMIT_TYPEHASH,
           params.spoke,
           params.delegator,
           params.delegatee,

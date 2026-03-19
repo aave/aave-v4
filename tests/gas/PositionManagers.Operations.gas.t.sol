@@ -276,10 +276,10 @@ contract ConfigPositionManager_Gas_Tests is SpokeBase {
     spoke1.setUserPositionManager(address(positionManager), true);
   }
 
-  function test_setFullPermission() public {
+  function test_setGlobalPermission() public {
     vm.prank(alice);
-    positionManager.setFullPermission(address(spoke1), bob, true);
-    vm.snapshotGasLastCall(NAMESPACE, 'setFullPermission');
+    positionManager.setGlobalPermission(address(spoke1), bob, true);
+    vm.snapshotGasLastCall(NAMESPACE, 'setGlobalPermission');
   }
 
   function test_setCanSetUsingAsCollateralPermission() public {
@@ -302,7 +302,7 @@ contract ConfigPositionManager_Gas_Tests is SpokeBase {
 
   function test_renounceGlobalPermission() public {
     vm.prank(alice);
-    positionManager.setFullPermission(address(spoke1), bob, true);
+    positionManager.setGlobalPermission(address(spoke1), bob, true);
 
     vm.prank(bob);
     positionManager.renounceGlobalPermission(address(spoke1), alice);
@@ -338,7 +338,7 @@ contract ConfigPositionManager_Gas_Tests is SpokeBase {
 
   function test_setUsingAsCollateralOnBehalfOf_fuzz_withGlobalPermission() public {
     vm.prank(alice);
-    positionManager.setFullPermission(address(spoke1), bob, true);
+    positionManager.setGlobalPermission(address(spoke1), bob, true);
 
     vm.prank(bob);
     positionManager.setUsingAsCollateralOnBehalfOf(
@@ -352,7 +352,7 @@ contract ConfigPositionManager_Gas_Tests is SpokeBase {
 
   function test_updateUserRiskPremiumOnBehalfOf_withGlobalPermission() public {
     vm.prank(alice);
-    positionManager.setFullPermission(address(spoke1), bob, true);
+    positionManager.setGlobalPermission(address(spoke1), bob, true);
 
     Utils.supplyCollateral(spoke1, _daiReserveId(spoke1), alice, 100e18, alice);
     Utils.borrow(spoke1, _daiReserveId(spoke1), alice, 75e18, alice);
@@ -364,7 +364,7 @@ contract ConfigPositionManager_Gas_Tests is SpokeBase {
 
   function test_updateUserDynamicConfigOnBehalfOf_withGlobalPermission() public {
     vm.prank(alice);
-    positionManager.setFullPermission(address(spoke1), bob, true);
+    positionManager.setGlobalPermission(address(spoke1), bob, true);
 
     vm.prank(bob);
     positionManager.updateUserDynamicConfigOnBehalfOf(address(spoke1), alice);

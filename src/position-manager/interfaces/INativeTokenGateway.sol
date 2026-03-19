@@ -28,7 +28,7 @@ interface INativeTokenGateway is IPositionManagerBase {
     uint256 amount
   ) external payable returns (uint256, uint256);
 
-  /// @notice Wraps the native asset,supplies to a specified registered Spoke and sets it as collateral.
+  /// @notice Wraps the native asset, supplies to a specified registered Spoke and sets it as collateral.
   /// @dev Contract must be an active and approved user position manager of the caller.
   /// @param spoke The address of the registered Spoke.
   /// @param reserveId The identifier of the reserve for the wrapped asset.

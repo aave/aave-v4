@@ -27,7 +27,7 @@ interface IConfigPositionManager is IPositionManagerIntentBase {
   /// @dev status The new status of the permission.
   /// @dev nonce The key-prefixed nonce for the signature.
   /// @dev deadline The deadline for the intent.
-  struct SetFullPermissionPermit {
+  struct SetGlobalPermissionPermit {
     address spoke;
     address delegator;
     address delegatee;
@@ -135,11 +135,11 @@ interface IConfigPositionManager is IPositionManagerIntentBase {
   /// @notice Thrown when the delegatee of a function was not given permission by the user.
   error DelegateeNotAllowed();
 
-  /// @notice Sets the full permission for a delegatee.
+  /// @notice Sets the global permission for a delegatee.
   /// @param spoke The address of the Spoke.
   /// @param delegatee The address of the delegatee.
   /// @param status The new permission status.
-  function setFullPermission(address spoke, address delegatee, bool status) external;
+  function setGlobalPermission(address spoke, address delegatee, bool status) external;
 
   /// @notice Sets the using as collateral permission for a delegatee.
   /// @param spoke The address of the Spoke.
@@ -171,12 +171,12 @@ interface IConfigPositionManager is IPositionManagerIntentBase {
     bool status
   ) external;
 
-  /// @notice Sets the full permission for a delegatee using an EIP712-typed intent.
+  /// @notice Sets the global permission for a delegatee using an EIP712-typed intent.
   /// @dev Uses keyed-nonces where for each key's namespace nonce is consumed sequentially.
-  /// @param params The structured SetFullPermissionPermit parameters.
+  /// @param params The structured SetGlobalPermissionPermit parameters.
   /// @param signature The EIP712-compliant signature bytes.
-  function setFullPermissionWithSig(
-    SetFullPermissionPermit calldata params,
+  function setGlobalPermissionWithSig(
+    SetGlobalPermissionPermit calldata params,
     bytes calldata signature
   ) external;
 
@@ -266,8 +266,8 @@ interface IConfigPositionManager is IPositionManagerIntentBase {
     address onBehalfOf
   ) external view returns (ConfigPermissionValues memory);
 
-  /// @notice Returns the type hash for the SetFullPermissionPermit intent.
-  function SET_FULL_PERMISSION_PERMIT_TYPEHASH() external view returns (bytes32);
+  /// @notice Returns the type hash for the SetGlobalPermissionPermit intent.
+  function SET_GLOBAL_PERMISSION_PERMIT_TYPEHASH() external view returns (bytes32);
 
   /// @notice Returns the type hash for the SetCanSetUsingAsCollateralPermissionPermit intent.
   function SET_CAN_SET_USING_AS_COLLATERAL_PERMISSION_PERMIT_TYPEHASH()
