@@ -365,8 +365,8 @@ contract AccessManagerEnumerable is AccessManager, IAccessManagerEnumerable {
 
     _trackRole(roleId);
     _labelsSet.add(label);
-    _roleToLabel[roleId] = label;
     _labelToRole[label] = roleId;
+    _roleToLabel[roleId] = label;
   }
 
   /// @dev Tracks all targets where a selector was assigned to a role and selectors.
