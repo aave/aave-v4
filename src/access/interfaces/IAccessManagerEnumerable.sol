@@ -199,4 +199,20 @@ interface IAccessManagerEnumerable is IAccessManager {
   /// @param label The label string.
   /// @return The identifier of the role.
   function getRoleOfLabel(string calldata label) external view returns (uint64);
+
+  /// @notice Returns the role identifier for a given function selector.
+  /// @param target The address of the target contract.
+  /// @param selector The function selector.
+  /// @return The identifier of the role.
+  function getRoleOfSelector(address target, bytes4 selector) external view returns (uint64);
+
+  /// @notice Returns the label of a specified function selector via the role it is associated with.
+  /// @dev Reverts with `AccessManagerUnlabeledRole` if the role has not been labeled.
+  /// @param target The address of the target contract.
+  /// @param selector The function selector.
+  /// @return The label of the role.
+  function getLabelOfSelector(
+    address target,
+    bytes4 selector
+  ) external view returns (string memory);
 }

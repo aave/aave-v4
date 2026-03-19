@@ -560,6 +560,10 @@ contract AccessManagerEnumerableTest is Test {
     assertEq(roleSelectors[1], selector2);
     assertEq(roleSelectors[2], selector3);
 
+    assertEq(accessManagerEnumerable.getRoleOfSelector(target, selector1), roleId);
+    assertEq(accessManagerEnumerable.getRoleOfSelector(target, selector2), roleId);
+    assertEq(accessManagerEnumerable.getRoleOfSelector(target, selector3), roleId);
+
     assertEq(accessManagerEnumerable.getRoleTargetCount(roleId), 1);
     assertEq(accessManagerEnumerable.getRoleTarget(roleId, 0), target);
     address[] memory roleTargets = accessManagerEnumerable.getRoleTargets(
@@ -627,6 +631,10 @@ contract AccessManagerEnumerableTest is Test {
 
     accessManagerEnumerable.setTargetFunctionRole(target, updatedSelectors, roleId2);
     vm.stopPrank();
+
+    assertEq(accessManagerEnumerable.getRoleOfSelector(target, selector1), roleId);
+    assertEq(accessManagerEnumerable.getRoleOfSelector(target, selector2), roleId2);
+    assertEq(accessManagerEnumerable.getRoleOfSelector(target, selector3), roleId);
 
     assertEq(accessManagerEnumerable.getRoleTargetSelectorCount(roleId, target), 2);
     assertEq(accessManagerEnumerable.getRoleTargetSelectorCount(roleId2, target), 1);
@@ -699,6 +707,12 @@ contract AccessManagerEnumerableTest is Test {
     accessManagerEnumerable.setTargetFunctionRole(target3, selectors, roleId);
     vm.stopPrank();
 
+    for (uint256 i = 0; i < 3; i++) {
+      assertEq(accessManagerEnumerable.getRoleOfSelector(targets[i], selector1), roleId);
+      assertEq(accessManagerEnumerable.getRoleOfSelector(targets[i], selector2), roleId);
+      assertEq(accessManagerEnumerable.getRoleOfSelector(targets[i], selector3), roleId);
+    }
+
     assertEq(accessManagerEnumerable.getRoleTargetCount(roleId), 3);
     assertEq(accessManagerEnumerable.getRoleTarget(roleId, 0), target1);
     assertEq(accessManagerEnumerable.getRoleTarget(roleId, 1), target2);
@@ -762,6 +776,13 @@ contract AccessManagerEnumerableTest is Test {
     accessManagerEnumerable.setTargetFunctionRole(target2, selectors, otherRoleId);
     vm.stopPrank();
 
+    assertEq(accessManagerEnumerable.getRoleOfSelector(target1, selector1), roleId);
+    assertEq(accessManagerEnumerable.getRoleOfSelector(target1, selector2), roleId);
+    assertEq(accessManagerEnumerable.getRoleOfSelector(target2, selector1), otherRoleId);
+    assertEq(accessManagerEnumerable.getRoleOfSelector(target2, selector2), otherRoleId);
+    assertEq(accessManagerEnumerable.getRoleOfSelector(target3, selector1), roleId);
+    assertEq(accessManagerEnumerable.getRoleOfSelector(target3, selector2), roleId);
+
     assertEq(accessManagerEnumerable.getRoleTargetCount(roleId), 2);
     assertEq(accessManagerEnumerable.getRoleTarget(roleId, 0), target1);
     assertEq(accessManagerEnumerable.getRoleTarget(roleId, 1), target3);
@@ -794,6 +815,8 @@ contract AccessManagerEnumerableTest is Test {
     vm.prank(ADMIN);
     accessManagerEnumerable.setTargetFunctionRole(target, selectors, roleId);
 
+    assertEq(accessManagerEnumerable.getRoleOfSelector(target, selector), roleId);
+
     // should not track selectors for ADMIN_ROLE
     assertEq(accessManagerEnumerable.getRoleTargetSelectorCount(roleId, target), 0);
     assertEq(accessManagerEnumerable.getRoleCount(), 0);
@@ -809,6 +832,8 @@ contract AccessManagerEnumerableTest is Test {
 
     vm.prank(ADMIN);
     accessManagerEnumerable.setTargetFunctionRole(target, selectors, roleId);
+
+    assertEq(accessManagerEnumerable.getRoleOfSelector(target, selector), roleId);
 
     // should track selectors for PUBLIC_ROLE but not track PUBLIC_ROLE itself
     assertEq(accessManagerEnumerable.getRoleTargetSelectorCount(roleId, target), 1);
@@ -871,6 +896,10 @@ contract AccessManagerEnumerableTest is Test {
     assertEq(roleSelectors.length, endIndex - startIndex);
     for (uint256 i = startIndex; i < endIndex; i++) {
       assertEq(roleSelectors[i - startIndex], selectors[i]);
+    }
+
+    for (uint256 i = 0; i < 15; i++) {
+      assertEq(accessManagerEnumerable.getRoleOfSelector(target, selectors[i]), roleId);
     }
 
     assertEq(accessManagerEnumerable.getRoleTargetCount(roleId), 1);
@@ -941,7 +970,7 @@ contract AccessManagerEnumerableTest is Test {
     accessManagerEnumerable.getRoleOfLabel('OLD_LABEL');
   }
 
-  function test_labelRole_revertsForAlreadyLabeledRole() public {
+  function test_labelRole_revertsWithAlreadyLabeledRole() public {
     uint64 roleId = 1;
 
     vm.startPrank(ADMIN);
@@ -957,7 +986,7 @@ contract AccessManagerEnumerableTest is Test {
     vm.stopPrank();
   }
 
-  function test_labelRole_revertsRemoveLabelOnUnlabeledRole() public {
+  function test_labelRole_removeLabelOnUnlabeledRole_revertsWithUnlabeledRole() public {
     uint64 roleId = 1;
 
     vm.prank(ADMIN);
@@ -967,7 +996,7 @@ contract AccessManagerEnumerableTest is Test {
     accessManagerEnumerable.labelRole(roleId, '');
   }
 
-  function test_getRoleLabel_revertsForUnlabeledRole() public {
+  function test_getRoleLabel_revertsWithUnlabeledRole() public {
     uint64 roleId = 99;
 
     vm.expectRevert(
@@ -1023,7 +1052,7 @@ contract AccessManagerEnumerableTest is Test {
     vm.stopPrank();
   }
 
-  function test_getLabelRole_revertsForUnregisteredLabel() public {
+  function test_getLabelRole_revertsWithUnregisteredLabel() public {
     vm.expectRevert(
       abi.encodeWithSelector(
         IAccessManagerEnumerable.AccessManagerUnregisteredLabel.selector,
@@ -1033,7 +1062,7 @@ contract AccessManagerEnumerableTest is Test {
     accessManagerEnumerable.getRoleOfLabel('NONEXISTENT');
   }
 
-  function test_labelRole_revertsForDuplicateLabel() public {
+  function test_labelRole_revertsWithDuplicateLabel() public {
     uint64 roleId1 = 1;
     uint64 roleId2 = 2;
 
@@ -1051,7 +1080,7 @@ contract AccessManagerEnumerableTest is Test {
     vm.stopPrank();
   }
 
-  function test_labelRole_revertsForAlreadyLabeledRole_evenIfLabelAlsoUsed() public {
+  function test_labelRole_revertsWithAlreadyLabeledRole_evenIfLabelAlsoUsed() public {
     uint64 roleId1 = 1;
     uint64 roleId2 = 2;
 
@@ -1099,6 +1128,109 @@ contract AccessManagerEnumerableTest is Test {
       )
     );
     accessManagerEnumerable.getRoleOfLabel('MY_LABEL');
+  }
+
+  function test_getRoleOfSelector() public {
+    uint64 roleId1 = 1;
+    uint64 roleId2 = 2;
+    address target = makeAddr('target');
+    bytes4 selector1 = bytes4(keccak256('functionOne()'));
+    bytes4 selector2 = bytes4(keccak256('functionTwo()'));
+    bytes4 selectorUnassigned = bytes4(keccak256('functionUnassigned()'));
+
+    bytes4[] memory selectors1 = new bytes4[](1);
+    selectors1[0] = selector1;
+    bytes4[] memory selectors2 = new bytes4[](1);
+    selectors2[0] = selector2;
+
+    vm.startPrank(ADMIN);
+    accessManagerEnumerable.setTargetFunctionRole(target, selectors1, roleId1);
+    accessManagerEnumerable.setTargetFunctionRole(target, selectors2, roleId2);
+    vm.stopPrank();
+
+    assertEq(accessManagerEnumerable.getRoleOfSelector(target, selector1), roleId1);
+    assertEq(accessManagerEnumerable.getRoleOfSelector(target, selector2), roleId2);
+    assertEq(accessManagerEnumerable.getRoleOfSelector(target, selectorUnassigned), ADMIN_ROLE);
+  }
+
+  function test_getLabelOfSelector() public {
+    uint64 roleId1 = 1;
+    uint64 roleId2 = 2;
+    address target = makeAddr('target');
+    bytes4 selector1 = bytes4(keccak256('functionOne()'));
+    bytes4 selector2 = bytes4(keccak256('functionTwo()'));
+
+    bytes4[] memory selectors1 = new bytes4[](1);
+    selectors1[0] = selector1;
+    bytes4[] memory selectors2 = new bytes4[](1);
+    selectors2[0] = selector2;
+
+    vm.startPrank(ADMIN);
+    accessManagerEnumerable.labelRole(roleId1, 'POOL_ADMIN');
+    accessManagerEnumerable.labelRole(roleId2, 'EMERGENCY_ADMIN');
+    accessManagerEnumerable.setTargetFunctionRole(target, selectors1, roleId1);
+    accessManagerEnumerable.setTargetFunctionRole(target, selectors2, roleId2);
+    vm.stopPrank();
+
+    assertEq(accessManagerEnumerable.getLabelOfSelector(target, selector1), 'POOL_ADMIN');
+    assertEq(accessManagerEnumerable.getLabelOfSelector(target, selector2), 'EMERGENCY_ADMIN');
+  }
+
+  function test_getRoleOfSelector_afterReassignment() public {
+    uint64 roleA = 1;
+    uint64 roleB = 2;
+    address target = makeAddr('target');
+    bytes4 selector = bytes4(keccak256('function()'));
+
+    bytes4[] memory selectors = new bytes4[](1);
+    selectors[0] = selector;
+
+    vm.startPrank(ADMIN);
+    accessManagerEnumerable.setTargetFunctionRole(target, selectors, roleA);
+    assertEq(accessManagerEnumerable.getRoleOfSelector(target, selector), roleA);
+
+    accessManagerEnumerable.setTargetFunctionRole(target, selectors, roleB);
+    vm.stopPrank();
+
+    assertEq(accessManagerEnumerable.getRoleOfSelector(target, selector), roleB);
+  }
+
+  function test_getLabelOfSelector_afterRelabel() public {
+    uint64 roleId = 1;
+    address target = makeAddr('target');
+    bytes4 selector = bytes4(keccak256('function()'));
+
+    bytes4[] memory selectors = new bytes4[](1);
+    selectors[0] = selector;
+
+    vm.startPrank(ADMIN);
+    accessManagerEnumerable.labelRole(roleId, 'OLD_LABEL');
+    accessManagerEnumerable.setTargetFunctionRole(target, selectors, roleId);
+
+    assertEq(accessManagerEnumerable.getLabelOfSelector(target, selector), 'OLD_LABEL');
+
+    accessManagerEnumerable.labelRole(roleId, '');
+    accessManagerEnumerable.labelRole(roleId, 'NEW_LABEL');
+    vm.stopPrank();
+
+    assertEq(accessManagerEnumerable.getLabelOfSelector(target, selector), 'NEW_LABEL');
+  }
+
+  function test_getLabelOfSelector_revertsWithUnregisteredLabel() public {
+    uint64 roleId = 1;
+    address target = makeAddr('target');
+    bytes4 selector = bytes4(keccak256('function()'));
+
+    bytes4[] memory selectors = new bytes4[](1);
+    selectors[0] = selector;
+
+    vm.prank(ADMIN);
+    accessManagerEnumerable.setTargetFunctionRole(target, selectors, roleId);
+
+    vm.expectRevert(
+      abi.encodeWithSelector(IAccessManagerEnumerable.AccessManagerUnlabeledRole.selector, roleId)
+    );
+    accessManagerEnumerable.getLabelOfSelector(target, selector);
   }
 
   function _getRandomAdminRoleId() internal returns (uint64) {
