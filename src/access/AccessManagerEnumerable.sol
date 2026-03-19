@@ -229,6 +229,11 @@ contract AccessManagerEnumerable is AccessManager, IAccessManagerEnumerable {
   }
 
   /// @inheritdoc IAccessManagerEnumerable
+  function isRoleLabeled(uint64 roleId) external view returns (bool) {
+    return bytes(_roleToLabel[roleId]).length > 0;
+  }
+
+  /// @inheritdoc IAccessManagerEnumerable
   function getLabelOfRole(uint64 roleId) external view returns (string memory) {
     string memory label = _roleToLabel[roleId];
     require(_labelsSet.contains(label), AccessManagerUnlabeledRole(roleId));

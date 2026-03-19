@@ -1170,6 +1170,47 @@ contract AccessManagerEnumerableTest is Test {
     assertTrue(accessManagerEnumerable.labelExists('NEW_LABEL'));
   }
 
+  function test_isRoleLabeled() public {
+    uint64 roleId = 1;
+
+    assertFalse(accessManagerEnumerable.isRoleLabeled(roleId));
+
+    vm.prank(ADMIN);
+    accessManagerEnumerable.labelRole(roleId, 'POOL_ADMIN');
+
+    assertTrue(accessManagerEnumerable.isRoleLabeled(roleId));
+    assertFalse(accessManagerEnumerable.isRoleLabeled(99));
+  }
+
+  function test_isRoleLabeled_afterRemoval() public {
+    uint64 roleId = 1;
+
+    vm.startPrank(ADMIN);
+    accessManagerEnumerable.labelRole(roleId, 'MY_LABEL');
+    assertTrue(accessManagerEnumerable.isRoleLabeled(roleId));
+
+    accessManagerEnumerable.labelRole(roleId, '');
+    vm.stopPrank();
+
+    assertFalse(accessManagerEnumerable.isRoleLabeled(roleId));
+  }
+
+  function test_isRoleLabeled_afterRelabel() public {
+    uint64 roleId = 1;
+
+    vm.startPrank(ADMIN);
+    accessManagerEnumerable.labelRole(roleId, 'OLD_LABEL');
+    assertTrue(accessManagerEnumerable.isRoleLabeled(roleId));
+
+    accessManagerEnumerable.labelRole(roleId, '');
+    assertFalse(accessManagerEnumerable.isRoleLabeled(roleId));
+
+    accessManagerEnumerable.labelRole(roleId, 'NEW_LABEL');
+    vm.stopPrank();
+
+    assertTrue(accessManagerEnumerable.isRoleLabeled(roleId));
+  }
+
   function test_labelRole_onlyAuthorized_revertsWithUnauthorizedAccount() public {
     uint64 roleId = 1;
 
