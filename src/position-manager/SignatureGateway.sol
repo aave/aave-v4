@@ -10,7 +10,7 @@ import {PositionManagerIntentBase} from 'src/position-manager/PositionManagerInt
 
 /// @title SignatureGateway
 /// @author Aave Labs
-/// @notice Gateway to consume EIP-712 typed intents for spoke actions on behalf of a user.
+/// @notice Gateway to consume EIP-712 typed intents for Spoke actions on behalf of a user.
 /// @dev Uses keyed-nonces where each key's namespace nonce is consumed sequentially. Intents bundled through
 /// multicall can be executed independently in order of signed nonce & deadline; does not guarantee batch atomicity.
 contract SignatureGateway is ISignatureGateway, PositionManagerIntentBase {

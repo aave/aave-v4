@@ -206,6 +206,15 @@ contract TakerPositionManager is ITakerPositionManager, PositionManagerIntentBas
     }
     underlying.safeTransfer(msg.sender, withdrawnAmount);
 
+    emit WithdrawOnBehalfOf(
+      spoke,
+      msg.sender,
+      onBehalfOf,
+      reserveId,
+      withdrawnShares,
+      withdrawnAmount
+    );
+
     return (withdrawnShares, withdrawnAmount);
   }
 
@@ -254,6 +263,8 @@ contract TakerPositionManager is ITakerPositionManager, PositionManagerIntentBas
       });
     }
     underlying.safeTransfer(msg.sender, borrowedAmount);
+
+    emit BorrowOnBehalfOf(spoke, msg.sender, onBehalfOf, reserveId, borrowedShares, borrowedAmount);
 
     return (borrowedShares, borrowedAmount);
   }

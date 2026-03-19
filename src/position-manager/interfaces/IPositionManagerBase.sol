@@ -9,7 +9,7 @@ import {IRescuable} from 'src/interfaces/IRescuable.sol';
 /// @notice Base interface for position managers.
 /// @dev This base interface is not mandatory for position managers, it only provides optional convenience methods.
 interface IPositionManagerBase is IRescuable, IMulticall {
-  /// @notice Emitted when a Spoke's registration status is updated.
+  /// @notice Emitted when the Spoke's registration status is updated.
   event RegisterSpoke(address indexed spoke, bool registered);
 
   /// @notice Thrown when the specified address is invalid.
@@ -21,13 +21,13 @@ interface IPositionManagerBase is IRescuable, IMulticall {
   /// @notice Thrown when trying to call an unsupported action on this position manager.
   error UnsupportedAction();
 
-  /// @notice Thrown when the specified spoke is not registered.
+  /// @notice Thrown when the specified Spoke is not registered.
   error SpokeNotRegistered();
 
-  /// @notice Facilitates setting this position manager as user position manager on the specified registered `spoke`
+  /// @notice Facilitates setting this position manager as user position manager on the specified registered Spoke
   /// with a typed signature from `onBehalfOf`.
-  /// @dev The signature is consumed on the the specified registered `spoke`.
-  /// @dev The given data is passed to the `spoke` for the signature to be verified.
+  /// @dev The signature is consumed on the specified registered Spoke.
+  /// @dev The given data is passed to the Spoke for the signature to be verified.
   /// @dev Uses keyed-nonces where for each key's namespace nonce is consumed sequentially.
   /// @param spoke The address of the registered spoke.
   /// @param onBehalfOf The address of the user on whose behalf this position manager can act.
@@ -44,7 +44,7 @@ interface IPositionManagerBase is IRescuable, IMulticall {
     bytes calldata signature
   ) external;
 
-  /// @notice Facilitates consuming a permit for the given reserve's underlying asset on the specified registered `spoke`.
+  /// @notice Facilitates consuming a permit for the given reserve's underlying asset on the specified registered Spoke.
   /// @dev The given data is passed to the underlying asset for the signature to be verified.
   /// @dev Uses keyed-nonces where for each key's namespace nonce is consumed sequentially.
   /// @dev Spender is this position manager contract.
@@ -69,13 +69,13 @@ interface IPositionManagerBase is IRescuable, IMulticall {
   /// @param user The address of the user to renounce the position manager role for.
   function renouncePositionManagerRole(address spoke, address user) external;
 
-  /// @notice Registers or deregisters a spoke.
+  /// @notice Registers or deregisters the Spoke.
   /// @param spoke The address of the Spoke.
   /// @param registered `true` to register, `false` to deregister.
   function registerSpoke(address spoke, bool registered) external;
 
-  /// @notice Returns whether the specified spoke is registered.
-  /// @param spoke The address of the `spoke`.
+  /// @notice Returns whether the specified Spoke is registered.
+  /// @param spoke The address of the Spoke.
   /// @return `true` if the Spoke is registered, `false` otherwise.
   function isSpokeRegistered(address spoke) external view returns (bool);
 }

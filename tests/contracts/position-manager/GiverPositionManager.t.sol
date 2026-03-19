@@ -46,6 +46,15 @@ contract GiverPositionManagerTest is Base {
       hub1.previewAddByAssets(daiAssetId, amount),
       amount
     );
+    vm.expectEmit(address(positionManager));
+    emit IGiverPositionManager.SupplyOnBehalfOf(
+      address(spoke1),
+      bob,
+      alice,
+      _daiReserveId(spoke1),
+      hub1.previewAddByAssets(daiAssetId, amount),
+      amount
+    );
     vm.prank(bob);
     (returnValues.shares, returnValues.amount) = positionManager.supplyOnBehalfOf(
       address(spoke1),
@@ -90,8 +99,6 @@ contract GiverPositionManagerTest is Base {
   }
 
   function test_repayOnBehalfOf_fuzz(uint256 repayAmount) public {
-    uint256 aliceSupplyAmount = 1000e18;
-    uint256 bobSupplyAmount = 150e18;
     uint256 borrowAmount = 100e18;
     repayAmount = bound(repayAmount, 1, borrowAmount);
 
@@ -99,14 +106,14 @@ contract GiverPositionManagerTest is Base {
       spoke: spoke1,
       reserveId: _daiReserveId(spoke1),
       caller: alice,
-      amount: aliceSupplyAmount,
+      amount: 1000e18,
       onBehalfOf: alice
     });
     SpokeActions.supply({
       spoke: spoke1,
       reserveId: _daiReserveId(spoke1),
       caller: bob,
-      amount: bobSupplyAmount,
+      amount: 150e18,
       onBehalfOf: bob
     });
     SpokeActions.borrow({
@@ -134,21 +141,33 @@ contract GiverPositionManagerTest is Base {
       repayAmount,
       daiAssetId
     );
-    IHubBase.PremiumDelta memory expectedPremiumDelta = _getExpectedPremiumDeltaForRestore(
-      spoke1,
-      alice,
-      _daiReserveId(spoke1),
-      repayAmount
-    );
 
-    vm.expectEmit(address(spoke1));
-    emit ISpoke.Repay(
-      _daiReserveId(spoke1),
-      address(positionManager),
+    {
+      IHubBase.PremiumDelta memory expectedPremiumDelta = _getExpectedPremiumDeltaForRestore(
+        spoke1,
+        alice,
+        _daiReserveId(spoke1),
+        repayAmount
+      );
+
+      vm.expectEmit(address(spoke1));
+      emit ISpoke.Repay(
+        _daiReserveId(spoke1),
+        address(positionManager),
+        alice,
+        hub1.previewRestoreByAssets(daiAssetId, baseRestored),
+        repayAmount,
+        expectedPremiumDelta
+      );
+    }
+    vm.expectEmit(address(positionManager));
+    emit IGiverPositionManager.RepayOnBehalfOf(
+      address(spoke1),
+      bob,
       alice,
+      _daiReserveId(spoke1),
       hub1.previewRestoreByAssets(daiAssetId, baseRestored),
-      repayAmount,
-      expectedPremiumDelta
+      repayAmount
     );
     vm.prank(bob);
     (returnValues.shares, returnValues.amount) = positionManager.repayOnBehalfOf(
@@ -234,6 +253,15 @@ contract GiverPositionManagerTest is Base {
         hub1.previewRestoreByAssets(daiAssetId, baseRestored),
         repaidAmount,
         expectedPremiumDelta
+      );
+      vm.expectEmit(address(positionManager));
+      emit IGiverPositionManager.RepayOnBehalfOf(
+        address(spoke1),
+        bob,
+        alice,
+        _daiReserveId(spoke1),
+        hub1.previewRestoreByAssets(daiAssetId, baseRestored),
+        repaidAmount
       );
       vm.prank(bob);
       (returnValues.shares, returnValues.amount) = positionManager.repayOnBehalfOf(
@@ -335,6 +363,15 @@ contract GiverPositionManagerTest is Base {
       hub1.previewRestoreByAssets(daiAssetId, baseRestored),
       totalRepaid,
       expectedPremiumDelta
+    );
+    vm.expectEmit(address(positionManager));
+    emit IGiverPositionManager.RepayOnBehalfOf(
+      address(spoke1),
+      bob,
+      alice,
+      _daiReserveId(spoke1),
+      hub1.previewRestoreByAssets(daiAssetId, baseRestored),
+      totalRepaid
     );
     vm.prank(bob);
     (returnValues.shares, returnValues.amount) = positionManager.repayOnBehalfOf(

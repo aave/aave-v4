@@ -18,14 +18,14 @@ library ConfigPermissionsMap {
   uint8 internal constant CAN_UPDATE_USER_RISK_PREMIUM_MASK = 0x2;
   /// @dev Mask for the `canUpdateUserDynamicConfig` permission.
   uint8 internal constant CAN_UPDATE_USER_DYNAMIC_CONFIG_MASK = 0x4;
-  /// @dev Mask for the full permissions.
-  uint8 internal constant FULL_PERMISSIONS_MASK = 0x7;
+  /// @dev Mask for the global permissions.
+  uint8 internal constant GLOBAL_PERMISSIONS_MASK = 0x7;
 
   /// @notice Creates a ConfigPermissions with all permissions set to the given status.
   /// @param status The status for all permissions.
   /// @return The created ConfigPermissions.
-  function setFullPermissions(bool status) internal pure returns (ConfigPermissions) {
-    return ConfigPermissions.wrap(status ? FULL_PERMISSIONS_MASK : 0);
+  function setGlobalPermissions(bool status) internal pure returns (ConfigPermissions) {
+    return ConfigPermissions.wrap(status ? GLOBAL_PERMISSIONS_MASK : 0);
   }
 
   /// @notice Sets the new status for the `canSetUsingAsCollateral` permission.

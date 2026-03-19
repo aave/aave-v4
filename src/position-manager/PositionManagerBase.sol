@@ -86,7 +86,10 @@ abstract contract PositionManagerBase is IPositionManagerBase, Ownable2Step, Res
   }
 
   /// @inheritdoc IPositionManagerBase
-  function renouncePositionManagerRole(address spoke, address user) external onlyOwner {
+  function renouncePositionManagerRole(
+    address spoke,
+    address user
+  ) external onlyOwner onlyRegisteredSpoke(spoke) {
     ISpoke(spoke).renouncePositionManagerRole(user);
   }
 

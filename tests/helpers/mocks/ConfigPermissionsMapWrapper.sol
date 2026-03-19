@@ -10,8 +10,8 @@ import {IConfigPositionManager} from 'src/position-manager/interfaces/IConfigPos
 contract ConfigPermissionsMapWrapper {
   using ConfigPermissionsMap for ConfigPermissions;
 
-  function setFullPermissions(bool status) external pure returns (ConfigPermissions) {
-    return ConfigPermissionsMap.setFullPermissions(status);
+  function setGlobalPermissions(bool status) external pure returns (ConfigPermissions) {
+    return ConfigPermissionsMap.setGlobalPermissions(status);
   }
 
   function setCanSetUsingAsCollateral(
@@ -65,7 +65,7 @@ contract ConfigPermissionsMapWrapper {
     return ConfigPermissionsMap.CAN_UPDATE_USER_DYNAMIC_CONFIG_MASK;
   }
 
-  function FULL_PERMISSIONS_MASK() external pure returns (uint8) {
-    return ConfigPermissionsMap.FULL_PERMISSIONS_MASK;
+  function GLOBAL_PERMISSIONS_MASK() external pure returns (uint8) {
+    return ConfigPermissionsMap.GLOBAL_PERMISSIONS_MASK;
   }
 }

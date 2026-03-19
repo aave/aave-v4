@@ -112,7 +112,7 @@ library EIP712Types {
     address spoke;
     address delegator;
     address delegatee;
-    bool permission;
+    bool status;
     uint256 nonce;
     uint256 deadline;
   }
@@ -121,7 +121,7 @@ library EIP712Types {
     address spoke;
     address delegator;
     address delegatee;
-    bool permission;
+    bool status;
     uint256 nonce;
     uint256 deadline;
   }
@@ -130,7 +130,7 @@ library EIP712Types {
     address spoke;
     address delegator;
     address delegatee;
-    bool permission;
+    bool status;
     uint256 nonce;
     uint256 deadline;
   }
@@ -139,7 +139,7 @@ library EIP712Types {
     address spoke;
     address delegator;
     address delegatee;
-    bool permission;
+    bool status;
     uint256 nonce;
     uint256 deadline;
   }

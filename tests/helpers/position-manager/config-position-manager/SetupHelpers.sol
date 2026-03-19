@@ -13,7 +13,7 @@ abstract contract SetupHelpers is SpokeHelpers {
     ISpoke spoke,
     address delegatee,
     address delegator,
-    bool permission,
+    bool status,
     uint256 deadline
   ) internal returns (IConfigPositionManager.SetGlobalPermissionPermit memory) {
     return
@@ -21,7 +21,7 @@ abstract contract SetupHelpers is SpokeHelpers {
         spoke: address(spoke),
         delegator: delegator,
         delegatee: delegatee,
-        permission: permission,
+        status: status,
         nonce: positionManager.nonces(delegator, _randomNonceKey()),
         deadline: deadline
       });
@@ -32,7 +32,7 @@ abstract contract SetupHelpers is SpokeHelpers {
     ISpoke spoke,
     address delegatee,
     address delegator,
-    bool permission,
+    bool status,
     uint256 deadline
   ) internal returns (IConfigPositionManager.SetCanSetUsingAsCollateralPermissionPermit memory) {
     return
@@ -40,7 +40,7 @@ abstract contract SetupHelpers is SpokeHelpers {
         spoke: address(spoke),
         delegator: delegator,
         delegatee: delegatee,
-        permission: permission,
+        status: status,
         nonce: positionManager.nonces(delegator, _randomNonceKey()),
         deadline: deadline
       });
@@ -51,7 +51,7 @@ abstract contract SetupHelpers is SpokeHelpers {
     ISpoke spoke,
     address delegatee,
     address delegator,
-    bool permission,
+    bool status,
     uint256 deadline
   ) internal returns (IConfigPositionManager.SetCanUpdateUserRiskPremiumPermissionPermit memory) {
     return
@@ -59,7 +59,7 @@ abstract contract SetupHelpers is SpokeHelpers {
         spoke: address(spoke),
         delegator: delegator,
         delegatee: delegatee,
-        permission: permission,
+        status: status,
         nonce: positionManager.nonces(delegator, _randomNonceKey()),
         deadline: deadline
       });
@@ -70,7 +70,7 @@ abstract contract SetupHelpers is SpokeHelpers {
     ISpoke spoke,
     address delegatee,
     address delegator,
-    bool permission,
+    bool status,
     uint256 deadline
   ) internal returns (IConfigPositionManager.SetCanUpdateUserDynamicConfigPermissionPermit memory) {
     return
@@ -78,7 +78,7 @@ abstract contract SetupHelpers is SpokeHelpers {
         spoke: address(spoke),
         delegator: delegator,
         delegatee: delegatee,
-        permission: permission,
+        status: status,
         nonce: positionManager.nonces(delegator, _randomNonceKey()),
         deadline: deadline
       });

@@ -23,14 +23,14 @@ interface IConfigPositionManager is IPositionManagerIntentBase {
   /// @dev spoke The address of the Spoke.
   /// @dev delegator The address of the delegator.
   /// @dev delegatee The address of the delegatee.
-  /// @dev permission The new permission status.
+  /// @dev status The new status of the permission.
   /// @dev nonce The key-prefixed nonce for the signature.
   /// @dev deadline The deadline for the intent.
   struct SetGlobalPermissionPermit {
     address spoke;
     address delegator;
     address delegatee;
-    bool permission;
+    bool status;
     uint256 nonce;
     uint256 deadline;
   }
@@ -39,14 +39,14 @@ interface IConfigPositionManager is IPositionManagerIntentBase {
   /// @dev spoke The address of the Spoke.
   /// @dev delegator The address of the delegator.
   /// @dev delegatee The address of the delegatee.
-  /// @dev permission The new permission status.
+  /// @dev status The new status of the permission.
   /// @dev nonce The key-prefixed nonce for the signature.
   /// @dev deadline The deadline for the intent.
   struct SetCanSetUsingAsCollateralPermissionPermit {
     address spoke;
     address delegator;
     address delegatee;
-    bool permission;
+    bool status;
     uint256 nonce;
     uint256 deadline;
   }
@@ -55,14 +55,14 @@ interface IConfigPositionManager is IPositionManagerIntentBase {
   /// @dev spoke The address of the Spoke.
   /// @dev delegator The address of the delegator.
   /// @dev delegatee The address of the delegatee.
-  /// @dev permission The new permission status.
+  /// @dev status The new status of the permission.
   /// @dev nonce The key-prefixed nonce for the signature.
   /// @dev deadline The deadline for the intent.
   struct SetCanUpdateUserRiskPremiumPermissionPermit {
     address spoke;
     address delegator;
     address delegatee;
-    bool permission;
+    bool status;
     uint256 nonce;
     uint256 deadline;
   }
@@ -71,14 +71,14 @@ interface IConfigPositionManager is IPositionManagerIntentBase {
   /// @dev spoke The address of the Spoke.
   /// @dev delegator The address of the delegator.
   /// @dev delegatee The address of the delegatee.
-  /// @dev permission The new permission status.
+  /// @dev status The new status of the permission.
   /// @dev nonce The key-prefixed nonce for the signature.
   /// @dev deadline The deadline for the intent.
   struct SetCanUpdateUserDynamicConfigPermissionPermit {
     address spoke;
     address delegator;
     address delegatee;
-    bool permission;
+    bool status;
     uint256 nonce;
     uint256 deadline;
   }
@@ -87,12 +87,48 @@ interface IConfigPositionManager is IPositionManagerIntentBase {
   /// @param spoke The address of the Spoke.
   /// @param delegator The address of the delegator.
   /// @param delegatee The address of the delegatee.
-  /// @param permissions The new config permissions.
+  /// @param oldPermissions The old config permissions.
+  /// @param newPermissions The new config permissions.
   event UpdateConfigPermissions(
     address indexed spoke,
     address indexed delegator,
     address indexed delegatee,
-    ConfigPermissions permissions
+    ConfigPermissions oldPermissions,
+    ConfigPermissions newPermissions
+  );
+
+  /// @notice Emitted when setting using as collateral on behalf of a user.
+  /// @param spoke The address of the Spoke.
+  /// @param caller The transaction initiator.
+  /// @param onBehalfOf The owner of the position being modified.
+  /// @param reserveId The identifier of the reserve.
+  /// @param usingAsCollateral Whether the reserve is enabled or disabled as collateral.
+  event SetUsingAsCollateralOnBehalfOf(
+    address indexed spoke,
+    address indexed caller,
+    address indexed onBehalfOf,
+    uint256 reserveId,
+    bool usingAsCollateral
+  );
+
+  /// @notice Emitted when updating user risk premium on behalf of a user.
+  /// @param spoke The address of the Spoke.
+  /// @param caller The transaction initiator.
+  /// @param onBehalfOf The owner of the position being modified.
+  event UpdateUserRiskPremiumOnBehalfOf(
+    address indexed spoke,
+    address indexed caller,
+    address indexed onBehalfOf
+  );
+
+  /// @notice Emitted when updating dynamic config on behalf of a user.
+  /// @param spoke The address of the Spoke.
+  /// @param caller The transaction initiator.
+  /// @param onBehalfOf The owner of the position being modified.
+  event UpdateUserDynamicConfigOnBehalfOf(
+    address indexed spoke,
+    address indexed caller,
+    address indexed onBehalfOf
   );
 
   /// @notice Thrown when the delegatee of a function was not given permission by the user.
@@ -101,37 +137,37 @@ interface IConfigPositionManager is IPositionManagerIntentBase {
   /// @notice Sets the global permission for a delegatee.
   /// @param spoke The address of the Spoke.
   /// @param delegatee The address of the delegatee.
-  /// @param permission The new permission status.
-  function setGlobalPermission(address spoke, address delegatee, bool permission) external;
+  /// @param status The new permission status.
+  function setGlobalPermission(address spoke, address delegatee, bool status) external;
 
   /// @notice Sets the using as collateral permission for a delegatee.
   /// @param spoke The address of the Spoke.
   /// @param delegatee The address of the delegatee.
-  /// @param permission The new permission status.
+  /// @param status The new permission status.
   function setCanSetUsingAsCollateralPermission(
     address spoke,
     address delegatee,
-    bool permission
+    bool status
   ) external;
 
   /// @notice Sets the user risk premium permission for a delegatee.
   /// @param spoke The address of the Spoke.
   /// @param delegatee The address of the delegatee.
-  /// @param permission The new permission status.
+  /// @param status The new permission status.
   function setCanUpdateUserRiskPremiumPermission(
     address spoke,
     address delegatee,
-    bool permission
+    bool status
   ) external;
 
   /// @notice Sets the user dynamic config permission for a delegatee.
   /// @param spoke The address of the Spoke.
   /// @param delegatee The address of the delegatee.
-  /// @param permission The new permission status.
+  /// @param status The new permission status.
   function setCanUpdateUserDynamicConfigPermission(
     address spoke,
     address delegatee,
-    bool permission
+    bool status
   ) external;
 
   /// @notice Sets the global permission for a delegatee using an EIP712-typed intent.

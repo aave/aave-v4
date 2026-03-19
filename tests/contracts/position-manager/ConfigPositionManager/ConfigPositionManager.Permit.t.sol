@@ -53,7 +53,7 @@ contract ConfigPositionManagerPermitTest is ConfigPositionManagerBaseTest {
     assertEq(
       positionManager.SET_GLOBAL_PERMISSION_PERMIT_TYPEHASH(),
       keccak256(
-        'SetGlobalPermissionPermit(address spoke,address delegator,address delegatee,bool permission,uint256 nonce,uint256 deadline)'
+        'SetGlobalPermissionPermit(address spoke,address delegator,address delegatee,bool status,uint256 nonce,uint256 deadline)'
       )
     );
   }
@@ -73,12 +73,13 @@ contract ConfigPositionManagerPermitTest is ConfigPositionManagerBaseTest {
     ConfigPermissions expectedPermissions = emptyPermissions;
 
     if (permission) {
-      expectedPermissions = ConfigPermissionsMap.setFullPermissions(permission);
+      expectedPermissions = ConfigPermissionsMap.setGlobalPermissions(permission);
       vm.expectEmit(address(positionManager));
       emit IConfigPositionManager.UpdateConfigPermissions(
         address(spoke1),
         alice,
         delegatee,
+        emptyPermissions,
         expectedPermissions
       );
     }
@@ -173,7 +174,7 @@ contract ConfigPositionManagerPermitTest is ConfigPositionManagerBaseTest {
     assertEq(
       positionManager.SET_CAN_SET_USING_AS_COLLATERAL_PERMISSION_PERMIT_TYPEHASH(),
       keccak256(
-        'SetCanSetUsingAsCollateralPermissionPermit(address spoke,address delegator,address delegatee,bool permission,uint256 nonce,uint256 deadline)'
+        'SetCanSetUsingAsCollateralPermissionPermit(address spoke,address delegator,address delegatee,bool status,uint256 nonce,uint256 deadline)'
       )
     );
   }
@@ -288,7 +289,7 @@ contract ConfigPositionManagerPermitTest is ConfigPositionManagerBaseTest {
     assertEq(
       positionManager.SET_CAN_UPDATE_USER_RISK_PREMIUM_PERMISSION_PERMIT_TYPEHASH(),
       keccak256(
-        'SetCanUpdateUserRiskPremiumPermissionPermit(address spoke,address delegator,address delegatee,bool permission,uint256 nonce,uint256 deadline)'
+        'SetCanUpdateUserRiskPremiumPermissionPermit(address spoke,address delegator,address delegatee,bool status,uint256 nonce,uint256 deadline)'
       )
     );
   }
@@ -403,7 +404,7 @@ contract ConfigPositionManagerPermitTest is ConfigPositionManagerBaseTest {
     assertEq(
       positionManager.SET_CAN_UPDATE_USER_DYNAMIC_CONFIG_PERMISSION_PERMIT_TYPEHASH(),
       keccak256(
-        'SetCanUpdateUserDynamicConfigPermissionPermit(address spoke,address delegator,address delegatee,bool permission,uint256 nonce,uint256 deadline)'
+        'SetCanUpdateUserDynamicConfigPermissionPermit(address spoke,address delegator,address delegatee,bool status,uint256 nonce,uint256 deadline)'
       )
     );
   }

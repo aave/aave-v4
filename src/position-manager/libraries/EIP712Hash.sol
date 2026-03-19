@@ -46,20 +46,20 @@ library EIP712Hash {
     0x14236ea048da65ffb52a9b32a2c840f24ab374cc31f65faeb7877d22ceca144e;
 
   bytes32 public constant SET_GLOBAL_PERMISSION_PERMIT_TYPEHASH =
-    // keccak256('SetGlobalPermissionPermit(address spoke,address delegator,address delegatee,bool permission,uint256 nonce,uint256 deadline)')
-    0x468edc8a22a4686863c6b8a79342e76c578e93ea7d28606606acd95e2ffc4d53;
+    // keccak256('SetGlobalPermissionPermit(address spoke,address delegator,address delegatee,bool status,uint256 nonce,uint256 deadline)')
+    0x299f4d5a5eae147b6a362cf3fa36b918afed95d6cc1674d468aa1ba1f75f9313;
 
   bytes32 public constant SET_CAN_SET_USING_AS_COLLATERAL_PERMISSION_PERMIT_TYPEHASH =
-    // keccak256('SetCanSetUsingAsCollateralPermissionPermit(address spoke,address delegator,address delegatee,bool permission,uint256 nonce,uint256 deadline)')
-    0x26244f8fd59210a303a35d34ec9efc9cdb15e142b8093aa0a97b185d8533f1db;
+    // keccak256('SetCanSetUsingAsCollateralPermissionPermit(address spoke,address delegator,address delegatee,bool status,uint256 nonce,uint256 deadline)')
+    0xf91d20e8b46551cc1f73f5de65a9636c103bf0c6bdcf78bae18e7e31917bbd3a;
 
   bytes32 public constant SET_CAN_UPDATE_USER_RISK_PREMIUM_PERMISSION_PERMIT_TYPEHASH =
-    // keccak256('SetCanUpdateUserRiskPremiumPermissionPermit(address spoke,address delegator,address delegatee,bool permission,uint256 nonce,uint256 deadline)')
-    0xce16a7f069cf522ce3ad86420662e3bd8d13dc7883379dfe72865440fc6e4434;
+    // keccak256('SetCanUpdateUserRiskPremiumPermissionPermit(address spoke,address delegator,address delegatee,bool status,uint256 nonce,uint256 deadline)')
+    0xa9be2c91fce8dae5daef47eb13dddcc78011c3146f9e066896a58fa093b6fbe6;
 
   bytes32 public constant SET_CAN_UPDATE_USER_DYNAMIC_CONFIG_PERMISSION_PERMIT_TYPEHASH =
-    // keccak256('SetCanUpdateUserDynamicConfigPermissionPermit(address spoke,address delegator,address delegatee,bool permission,uint256 nonce,uint256 deadline)')
-    0xa00e492b4ed483e810de8f2015cc1603a01e1245be610157d5bcb7c64974c053;
+    // keccak256('SetCanUpdateUserDynamicConfigPermissionPermit(address spoke,address delegator,address delegatee,bool status,uint256 nonce,uint256 deadline)')
+    0x0e3c243284d61e86328d1f15e6b7e5a0f56e428e94005a97dc033c4a5809ac3f;
 
   function hash(ISignatureGateway.Supply calldata params) internal pure returns (bytes32) {
     return
@@ -214,7 +214,7 @@ library EIP712Hash {
           params.spoke,
           params.delegator,
           params.delegatee,
-          params.permission,
+          params.status,
           params.nonce,
           params.deadline
         )
@@ -231,7 +231,7 @@ library EIP712Hash {
           params.spoke,
           params.delegator,
           params.delegatee,
-          params.permission,
+          params.status,
           params.nonce,
           params.deadline
         )
@@ -248,7 +248,7 @@ library EIP712Hash {
           params.spoke,
           params.delegator,
           params.delegatee,
-          params.permission,
+          params.status,
           params.nonce,
           params.deadline
         )
@@ -265,7 +265,7 @@ library EIP712Hash {
           params.spoke,
           params.delegator,
           params.delegatee,
-          params.permission,
+          params.status,
           params.nonce,
           params.deadline
         )

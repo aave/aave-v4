@@ -3,9 +3,9 @@
   "approveBorrowWithSig": "65695",
   "approveWithdraw": "49822",
   "approveWithdrawWithSig": "65649",
-  "borrowOnBehalfOf": "329747",
+  "borrowOnBehalfOf": "332518",
   "renounceBorrowAllowance": "27935",
   "renounceWithdrawAllowance": "27989",
-  "withdrawOnBehalfOf: full": "125000",
-  "withdrawOnBehalfOf: partial": "136050"
+  "withdrawOnBehalfOf: full": "127209",
+  "withdrawOnBehalfOf: partial": "138811"
 }

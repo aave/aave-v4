@@ -65,13 +65,13 @@ library JsonBindings {
   // prettier-ignore
   string constant schema_BorrowPermit = "BorrowPermit(address spoke,uint256 reserveId,address owner,address spender,uint256 amount,uint256 nonce,uint256 deadline)";
   // prettier-ignore
-  string constant schema_SetGlobalPermissionPermit = "SetGlobalPermissionPermit(address spoke,address delegator,address delegatee,bool permission,uint256 nonce,uint256 deadline)";
+  string constant schema_SetGlobalPermissionPermit = "SetGlobalPermissionPermit(address spoke,address delegator,address delegatee,bool status,uint256 nonce,uint256 deadline)";
   // prettier-ignore
-  string constant schema_SetCanSetUsingAsCollateralPermissionPermit = "SetCanSetUsingAsCollateralPermissionPermit(address spoke,address delegator,address delegatee,bool permission,uint256 nonce,uint256 deadline)";
+  string constant schema_SetCanSetUsingAsCollateralPermissionPermit = "SetCanSetUsingAsCollateralPermissionPermit(address spoke,address delegator,address delegatee,bool status,uint256 nonce,uint256 deadline)";
   // prettier-ignore
-  string constant schema_SetCanUpdateUserRiskPremiumPermissionPermit = "SetCanUpdateUserRiskPremiumPermissionPermit(address spoke,address delegator,address delegatee,bool permission,uint256 nonce,uint256 deadline)";
+  string constant schema_SetCanUpdateUserRiskPremiumPermissionPermit = "SetCanUpdateUserRiskPremiumPermissionPermit(address spoke,address delegator,address delegatee,bool status,uint256 nonce,uint256 deadline)";
   // prettier-ignore
-  string constant schema_SetCanUpdateUserDynamicConfigPermissionPermit = "SetCanUpdateUserDynamicConfigPermissionPermit(address spoke,address delegator,address delegatee,bool permission,uint256 nonce,uint256 deadline)";
+  string constant schema_SetCanUpdateUserDynamicConfigPermissionPermit = "SetCanUpdateUserDynamicConfigPermissionPermit(address spoke,address delegator,address delegatee,bool status,uint256 nonce,uint256 deadline)";
   // prettier-ignore
   string constant schema_TokenizedDeposit = "TokenizedDeposit(address depositor,uint256 assets,address receiver,uint256 nonce,uint256 deadline)";
   // prettier-ignore
