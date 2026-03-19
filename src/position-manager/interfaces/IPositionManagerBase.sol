@@ -10,7 +10,7 @@ import {IRescuable} from 'src/interfaces/IRescuable.sol';
 /// @notice Base interface for position managers.
 /// @dev This base interface is not mandatory for position managers, it only provides optional convenience methods.
 interface IPositionManagerBase is IRescuable, IMulticall {
-  /// @notice Emitted when a Spoke's registration status is updated.
+  /// @notice Emitted when the Spoke's registration status is updated.
   event RegisterSpoke(address indexed spoke, bool registered);
 
   /// @notice Thrown when the specified address is invalid.
@@ -70,7 +70,7 @@ interface IPositionManagerBase is IRescuable, IMulticall {
   /// @param user The address of the user to renounce the position manager role for.
   function renouncePositionManagerRole(address spoke, address user) external;
 
-  /// @notice Registers or deregisters a Spoke.
+  /// @notice Registers or deregisters the Spoke.
   /// @param spoke The address of the Spoke.
   /// @param registered `true` to register, `false` to deregister.
   function registerSpoke(address spoke, bool registered) external;

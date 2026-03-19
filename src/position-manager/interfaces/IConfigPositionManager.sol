@@ -24,7 +24,7 @@ interface IConfigPositionManager is IPositionManagerIntentBase {
   /// @dev spoke The address of the Spoke.
   /// @dev delegator The address of the delegator.
   /// @dev delegatee The address of the delegatee.
-  /// @dev status The new permission status.
+  /// @dev status The new status of the permission.
   /// @dev nonce The key-prefixed nonce for the signature.
   /// @dev deadline The deadline for the intent.
   struct SetFullPermissionPermit {
@@ -40,7 +40,7 @@ interface IConfigPositionManager is IPositionManagerIntentBase {
   /// @dev spoke The address of the Spoke.
   /// @dev delegator The address of the delegator.
   /// @dev delegatee The address of the delegatee.
-  /// @dev status The new permission status.
+  /// @dev status The new status of the permission.
   /// @dev nonce The key-prefixed nonce for the signature.
   /// @dev deadline The deadline for the intent.
   struct SetCanSetUsingAsCollateralPermissionPermit {
@@ -56,7 +56,7 @@ interface IConfigPositionManager is IPositionManagerIntentBase {
   /// @dev spoke The address of the Spoke.
   /// @dev delegator The address of the delegator.
   /// @dev delegatee The address of the delegatee.
-  /// @dev status The new permission status.
+  /// @dev status The new status of the permission.
   /// @dev nonce The key-prefixed nonce for the signature.
   /// @dev deadline The deadline for the intent.
   struct SetCanUpdateUserRiskPremiumPermissionPermit {
@@ -72,7 +72,7 @@ interface IConfigPositionManager is IPositionManagerIntentBase {
   /// @dev spoke The address of the Spoke.
   /// @dev delegator The address of the delegator.
   /// @dev delegatee The address of the delegatee.
-  /// @dev status The new permission status.
+  /// @dev status The new status of the permission.
   /// @dev nonce The key-prefixed nonce for the signature.
   /// @dev deadline The deadline for the intent.
   struct SetCanUpdateUserDynamicConfigPermissionPermit {
@@ -102,7 +102,7 @@ interface IConfigPositionManager is IPositionManagerIntentBase {
   /// @param spoke The address of the Spoke.
   /// @param caller The transaction initiator.
   /// @param onBehalfOf The owner of the position being modified.
-  /// @param reserveId The reserve identifier of the underlying asset.
+  /// @param reserveId The identifier of the reserve.
   /// @param usingAsCollateral Whether the reserve is enabled or disabled as collateral.
   event SetUsingAsCollateralOnBehalfOf(
     address indexed spoke,
@@ -122,7 +122,7 @@ interface IConfigPositionManager is IPositionManagerIntentBase {
     address indexed onBehalfOf
   );
 
-  /// @notice Emitted when a user's dynamic config is updated on behalf of a user.
+  /// @notice Emitted when updating dynamic config on behalf of a user.
   /// @param spoke The address of the Spoke.
   /// @param caller The transaction initiator.
   /// @param onBehalfOf The owner of the position being modified.

@@ -12,7 +12,7 @@ interface IGiverPositionManager is IPositionManagerBase {
   /// @param spoke The address of the Spoke.
   /// @param caller The transaction initiator, and supplier of the underlying asset.
   /// @param onBehalfOf The owner of the modified position.
-  /// @param reserveId The reserve identifier of the underlying asset.
+  /// @param reserveId The identifier of the reserve.
   /// @param suppliedShares The amount of supply shares minted.
   /// @param suppliedAmount The amount of underlying asset supplied.
   event SupplyOnBehalfOf(
@@ -28,7 +28,7 @@ interface IGiverPositionManager is IPositionManagerBase {
   /// @param spoke The address of the Spoke.
   /// @param caller The transaction initiator who is repaying the underlying asset.
   /// @param onBehalfOf The owner of the position whose debt is being repaid.
-  /// @param reserveId The reserve identifier of the underlying asset.
+  /// @param reserveId The identifier of the reserve.
   /// @param repaidShares The amount of debt shares burned.
   /// @param repaidAmount The amount of underlying asset repaid.
   event RepayOnBehalfOf(

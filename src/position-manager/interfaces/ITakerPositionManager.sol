@@ -44,7 +44,7 @@ interface ITakerPositionManager is IPositionManagerIntentBase {
     uint256 deadline;
   }
 
-  /// @notice Emitted when owner approves spender to withdraw amount for reserveId on their behalf.
+  /// @notice Emitted when an owner grants an allowance to withdraw on their behalf.
   /// @param spoke The address of the Spoke.
   /// @param reserveId The identifier of the reserve.
   /// @param owner The address of the owner.
@@ -58,7 +58,7 @@ interface ITakerPositionManager is IPositionManagerIntentBase {
     uint256 amount
   );
 
-  /// @notice Emitted when owner approves spender to borrow amount from reserveId on their behalf.
+  /// @notice Emitted when an owner grants an allowance to borrow on their behalf.
   /// @param spoke The address of the Spoke.
   /// @param reserveId The identifier of the reserve.
   /// @param owner The address of the owner.
@@ -76,7 +76,7 @@ interface ITakerPositionManager is IPositionManagerIntentBase {
   /// @param spoke The address of the Spoke.
   /// @param caller The transaction initiator, and recipient of the underlying asset being withdrawn.
   /// @param onBehalfOf The owner of the modified position.
-  /// @param reserveId The reserve identifier of the underlying asset.
+  /// @param reserveId The identifier of the reserve.
   /// @param withdrawnShares The amount of supply shares burned.
   /// @param withdrawnAmount The amount of underlying asset withdrawn.
   event WithdrawOnBehalfOf(
@@ -92,7 +92,7 @@ interface ITakerPositionManager is IPositionManagerIntentBase {
   /// @param spoke The address of the Spoke.
   /// @param caller The transaction initiator, and recipient of the underlying asset being borrowed.
   /// @param onBehalfOf The owner of the position on which debt is generated.
-  /// @param reserveId The reserve identifier of the underlying asset.
+  /// @param reserveId The identifier of the reserve.
   /// @param drawnShares The amount of debt shares minted.
   /// @param drawnAmount The amount of underlying asset borrowed.
   event BorrowOnBehalfOf(
