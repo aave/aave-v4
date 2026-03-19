@@ -158,7 +158,7 @@ contract PositionManagerEIP712HashTest is Test {
     assertEq(params.hash(), expectedHash);
   }
 
-  function test_hash_creditDelegation_fuzz(
+  function test_hash_borrowPermit_fuzz(
     ITakerPositionManager.BorrowPermit calldata params
   ) public pure {
     bytes32 expectedHash = keccak256(abi.encode(EIP712Hash.BORROW_PERMIT_TYPEHASH, params));
