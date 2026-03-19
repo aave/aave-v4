@@ -27,7 +27,7 @@ interface IPositionManagerBase is IRescuable, IMulticall {
 
   /// @notice Facilitates setting this position manager as user position manager on the specified registered Spoke
   /// with a typed signature from `onBehalfOf`.
-  /// @dev The signature is consumed on the the specified registered Spoke.
+  /// @dev The signature is consumed on the specified registered Spoke.
   /// @dev The given data is passed to the Spoke for the signature to be verified.
   /// @dev Uses keyed-nonces where for each key's namespace nonce is consumed sequentially.
   /// @param spoke The address of the registered spoke.
