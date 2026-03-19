@@ -257,7 +257,7 @@ contract TakerPositionManager_Gas_Tests is Base {
     vm.snapshotGasLastCall(NAMESPACE, 'renounceWithdrawAllowance');
   }
 
-  function test_creditDelegation() public {
+  function test_approveBorrow() public {
     uint256 amount = 100e18;
 
     vm.prank(alice);
@@ -265,7 +265,7 @@ contract TakerPositionManager_Gas_Tests is Base {
     vm.snapshotGasLastCall(NAMESPACE, 'approveBorrow');
   }
 
-  function test_delegateCreditWithSig() public {
+  function test_approveBorrowWithSig() public {
     uint256 amount = 100e18;
 
     vm.prank(alice);
@@ -291,7 +291,7 @@ contract TakerPositionManager_Gas_Tests is Base {
     vm.snapshotGasLastCall(NAMESPACE, 'approveBorrowWithSig');
   }
 
-  function test_renounceCreditDelegation() public {
+  function test_renounceBorrowAllowance() public {
     uint256 amount = 100e18;
 
     vm.prank(alice);
