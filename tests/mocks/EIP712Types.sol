@@ -1,5 +1,4 @@
-// SPDX-License-Identifier: UNLICENSED
-// Copyright (c) 2025 Aave Labs
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
 /// @title EIP712Types library
@@ -113,7 +112,7 @@ library EIP712Types {
     address spoke;
     address delegator;
     address delegatee;
-    bool permission;
+    bool status;
     uint256 nonce;
     uint256 deadline;
   }
@@ -122,7 +121,7 @@ library EIP712Types {
     address spoke;
     address delegator;
     address delegatee;
-    bool permission;
+    bool status;
     uint256 nonce;
     uint256 deadline;
   }
@@ -131,7 +130,7 @@ library EIP712Types {
     address spoke;
     address delegator;
     address delegatee;
-    bool permission;
+    bool status;
     uint256 nonce;
     uint256 deadline;
   }
@@ -140,7 +139,7 @@ library EIP712Types {
     address spoke;
     address delegator;
     address delegatee;
-    bool permission;
+    bool status;
     uint256 nonce;
     uint256 deadline;
   }

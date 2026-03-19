@@ -1,5 +1,4 @@
-// SPDX-License-Identifier: UNLICENSED
-// Copyright (c) 2025 Aave Labs
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
 import {Test} from 'forge-std/Test.sol';
@@ -11,7 +10,7 @@ contract ConfigPermissionsTests is Test {
   uint8 internal constant CAN_SET_USING_AS_COLLATERAL_MASK = 0x1;
   uint8 internal constant CAN_UPDATE_USER_RISK_PREMIUM_MASK = 0x2;
   uint8 internal constant CAN_UPDATE_USER_DYNAMIC_CONFIG_MASK = 0x4;
-  uint8 internal constant FULL_PERMISSIONS_MASK = 0x7;
+  uint8 internal constant GLOBAL_PERMISSIONS_MASK = 0x7;
 
   ConfigPermissionsWrapper internal w;
 
@@ -23,13 +22,13 @@ contract ConfigPermissionsTests is Test {
     assertEq(w.CAN_SET_USING_AS_COLLATERAL_MASK(), CAN_SET_USING_AS_COLLATERAL_MASK);
     assertEq(w.CAN_UPDATE_USER_RISK_PREMIUM_MASK(), CAN_UPDATE_USER_RISK_PREMIUM_MASK);
     assertEq(w.CAN_UPDATE_USER_DYNAMIC_CONFIG_MASK(), CAN_UPDATE_USER_DYNAMIC_CONFIG_MASK);
-    assertEq(w.FULL_PERMISSIONS_MASK(), FULL_PERMISSIONS_MASK);
+    assertEq(w.GLOBAL_PERMISSIONS_MASK(), GLOBAL_PERMISSIONS_MASK);
   }
 
-  function test_setFullPermissions_fuzz(bool status) public view {
-    ConfigPermissions updatedPerms = w.setFullPermissions(status);
+  function test_setGlobalPermissions_fuzz(bool status) public view {
+    ConfigPermissions updatedPerms = w.setGlobalPermissions(status);
 
-    uint8 expected = status ? FULL_PERMISSIONS_MASK : 0;
+    uint8 expected = status ? GLOBAL_PERMISSIONS_MASK : 0;
     assertEq(uint8(ConfigPermissions.unwrap(updatedPerms)), expected);
     assertEq(w.canSetUsingAsCollateral(updatedPerms), status);
     assertEq(w.canUpdateUserRiskPremium(updatedPerms), status);
@@ -76,7 +75,7 @@ contract ConfigPermissionsTests is Test {
 
   /// @dev Sanitizes the raw permissions by masking out any irrelevant bits.
   function _sanitizePermissions(uint8 rawPermissions) internal pure returns (ConfigPermissions) {
-    uint8 sanitizedPermissions = rawPermissions & FULL_PERMISSIONS_MASK;
+    uint8 sanitizedPermissions = rawPermissions & GLOBAL_PERMISSIONS_MASK;
     return ConfigPermissions.wrap(sanitizedPermissions);
   }
 

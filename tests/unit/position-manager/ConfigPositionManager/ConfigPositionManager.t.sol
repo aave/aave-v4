@@ -1,5 +1,4 @@
-// SPDX-License-Identifier: UNLICENSED
-// Copyright (c) 2025 Aave Labs
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
 import 'tests/unit/position-manager/ConfigPositionManager/ConfigPositionManager.Base.t.sol';
@@ -23,6 +22,7 @@ contract ConfigPositionManagerTest is ConfigPositionManagerBaseTest {
       address(spoke1),
       alice,
       bob,
+      emptyPermissions,
       newPermissions
     );
     vm.prank(alice);
@@ -51,6 +51,7 @@ contract ConfigPositionManagerTest is ConfigPositionManagerBaseTest {
       address(spoke1),
       alice,
       bob,
+      emptyPermissions,
       newPermissions
     );
     vm.prank(alice);
@@ -66,6 +67,7 @@ contract ConfigPositionManagerTest is ConfigPositionManagerBaseTest {
       address(spoke1),
       alice,
       bob,
+      newPermissions,
       emptyPermissions
     );
     vm.prank(alice);
@@ -87,6 +89,7 @@ contract ConfigPositionManagerTest is ConfigPositionManagerBaseTest {
     assertTrue(permissions.canUpdateUserRiskPremium);
     assertTrue(permissions.canUpdateUserDynamicConfig);
 
+    ConfigPermissions globalPermissions = ConfigPermissionsMap.setGlobalPermissions(true);
     ConfigPermissions newPermissions;
 
     vm.expectEmit(address(positionManager));
@@ -94,6 +97,7 @@ contract ConfigPositionManagerTest is ConfigPositionManagerBaseTest {
       address(spoke1),
       alice,
       bob,
+      globalPermissions,
       newPermissions
     );
     vm.prank(alice);
@@ -117,6 +121,9 @@ contract ConfigPositionManagerTest is ConfigPositionManagerBaseTest {
     assertFalse(permissions.canUpdateUserRiskPremium);
     assertTrue(permissions.canUpdateUserDynamicConfig);
 
+    ConfigPermissions oldPermissions = emptyPermissions
+      .setCanSetUsingAsCollateral(true)
+      .setCanUpdateUserDynamicConfig(true);
     ConfigPermissions newPermissions;
 
     vm.expectEmit(address(positionManager));
@@ -124,6 +131,7 @@ contract ConfigPositionManagerTest is ConfigPositionManagerBaseTest {
       address(spoke1),
       alice,
       bob,
+      oldPermissions,
       newPermissions
     );
     vm.prank(alice);
@@ -150,6 +158,7 @@ contract ConfigPositionManagerTest is ConfigPositionManagerBaseTest {
       address(spoke1),
       alice,
       bob,
+      emptyPermissions,
       newPermissions
     );
     vm.prank(alice);
@@ -163,6 +172,7 @@ contract ConfigPositionManagerTest is ConfigPositionManagerBaseTest {
     positionManager.setCanSetUsingAsCollateralPermission(address(spoke1), bob, true);
     assertTrue(_canUpdateUsingAsCollateral(address(spoke1), bob, alice));
 
+    ConfigPermissions oldPermissions = emptyPermissions.setCanSetUsingAsCollateral(true);
     ConfigPermissions newPermissions;
 
     vm.expectEmit(address(positionManager));
@@ -170,6 +180,7 @@ contract ConfigPositionManagerTest is ConfigPositionManagerBaseTest {
       address(spoke1),
       alice,
       bob,
+      oldPermissions,
       newPermissions
     );
     vm.prank(alice);
@@ -193,6 +204,7 @@ contract ConfigPositionManagerTest is ConfigPositionManagerBaseTest {
       address(spoke1),
       alice,
       bob,
+      emptyPermissions,
       newPermissions
     );
     vm.prank(alice);
@@ -206,6 +218,7 @@ contract ConfigPositionManagerTest is ConfigPositionManagerBaseTest {
     positionManager.setCanUpdateUserRiskPremiumPermission(address(spoke1), bob, true);
     assertTrue(_canUpdateUserRiskPremium(address(spoke1), bob, alice));
 
+    ConfigPermissions oldPermissions = emptyPermissions.setCanUpdateUserRiskPremium(true);
     ConfigPermissions newPermissions;
 
     vm.expectEmit(address(positionManager));
@@ -213,6 +226,7 @@ contract ConfigPositionManagerTest is ConfigPositionManagerBaseTest {
       address(spoke1),
       alice,
       bob,
+      oldPermissions,
       newPermissions
     );
     vm.prank(alice);
@@ -236,6 +250,7 @@ contract ConfigPositionManagerTest is ConfigPositionManagerBaseTest {
       address(spoke1),
       alice,
       bob,
+      emptyPermissions,
       newPermissions
     );
     vm.prank(alice);
@@ -249,6 +264,7 @@ contract ConfigPositionManagerTest is ConfigPositionManagerBaseTest {
     positionManager.setCanUpdateUserDynamicConfigPermission(address(spoke1), bob, true);
     assertTrue(_canUpdateUserDynamicConfig(address(spoke1), bob, alice));
 
+    ConfigPermissions oldPermissions = emptyPermissions.setCanUpdateUserDynamicConfig(true);
     ConfigPermissions newPermissions;
 
     vm.expectEmit(address(positionManager));
@@ -256,6 +272,7 @@ contract ConfigPositionManagerTest is ConfigPositionManagerBaseTest {
       address(spoke1),
       alice,
       bob,
+      oldPermissions,
       newPermissions
     );
     vm.prank(alice);
@@ -280,6 +297,7 @@ contract ConfigPositionManagerTest is ConfigPositionManagerBaseTest {
     assertTrue(permissions.canUpdateUserRiskPremium);
     assertTrue(permissions.canUpdateUserDynamicConfig);
 
+    ConfigPermissions globalPermissions = ConfigPermissionsMap.setGlobalPermissions(true);
     ConfigPermissions newPermissions;
 
     vm.expectEmit(address(positionManager));
@@ -287,6 +305,7 @@ contract ConfigPositionManagerTest is ConfigPositionManagerBaseTest {
       address(spoke1),
       alice,
       bob,
+      globalPermissions,
       newPermissions
     );
     vm.prank(bob);
@@ -310,6 +329,7 @@ contract ConfigPositionManagerTest is ConfigPositionManagerBaseTest {
 
     assertTrue(_canUpdateUsingAsCollateral(address(spoke1), bob, alice));
 
+    ConfigPermissions oldPermissions = emptyPermissions.setCanSetUsingAsCollateral(true);
     ConfigPermissions newPermissions;
 
     vm.expectEmit(address(positionManager));
@@ -317,6 +337,7 @@ contract ConfigPositionManagerTest is ConfigPositionManagerBaseTest {
       address(spoke1),
       alice,
       bob,
+      oldPermissions,
       newPermissions
     );
     vm.prank(bob);
@@ -339,6 +360,7 @@ contract ConfigPositionManagerTest is ConfigPositionManagerBaseTest {
 
     assertTrue(_canUpdateUserRiskPremium(address(spoke1), bob, alice));
 
+    ConfigPermissions oldPermissions = emptyPermissions.setCanUpdateUserRiskPremium(true);
     ConfigPermissions newPermissions;
 
     vm.expectEmit(address(positionManager));
@@ -346,6 +368,7 @@ contract ConfigPositionManagerTest is ConfigPositionManagerBaseTest {
       address(spoke1),
       alice,
       bob,
+      oldPermissions,
       newPermissions
     );
     vm.prank(bob);
@@ -366,6 +389,7 @@ contract ConfigPositionManagerTest is ConfigPositionManagerBaseTest {
 
     assertTrue(_canUpdateUserDynamicConfig(address(spoke1), bob, alice));
 
+    ConfigPermissions oldPermissions = emptyPermissions.setCanUpdateUserDynamicConfig(true);
     ConfigPermissions newPermissions;
 
     vm.expectEmit(address(positionManager));
@@ -373,6 +397,7 @@ contract ConfigPositionManagerTest is ConfigPositionManagerBaseTest {
       address(spoke1),
       alice,
       bob,
+      oldPermissions,
       newPermissions
     );
     vm.prank(bob);
@@ -406,6 +431,14 @@ contract ConfigPositionManagerTest is ConfigPositionManagerBaseTest {
 
     vm.expectEmit(address(spoke1));
     emit ISpoke.SetUsingAsCollateral(reserveId, address(positionManager), alice, useAsCollateral);
+    vm.expectEmit(address(positionManager));
+    emit IConfigPositionManager.SetUsingAsCollateralOnBehalfOf(
+      address(spoke1),
+      bob,
+      alice,
+      reserveId,
+      useAsCollateral
+    );
     vm.prank(bob);
     positionManager.setUsingAsCollateralOnBehalfOf(
       address(spoke1),
@@ -435,6 +468,14 @@ contract ConfigPositionManagerTest is ConfigPositionManagerBaseTest {
 
     vm.expectEmit(address(spoke1));
     emit ISpoke.SetUsingAsCollateral(reserveId, address(positionManager), alice, useAsCollateral);
+    vm.expectEmit(address(positionManager));
+    emit IConfigPositionManager.SetUsingAsCollateralOnBehalfOf(
+      address(spoke1),
+      bob,
+      alice,
+      reserveId,
+      useAsCollateral
+    );
     vm.prank(bob);
     positionManager.setUsingAsCollateralOnBehalfOf(
       address(spoke1),
@@ -473,6 +514,8 @@ contract ConfigPositionManagerTest is ConfigPositionManagerBaseTest {
 
     vm.expectEmit(address(spoke1));
     emit ISpoke.UpdateUserRiskPremium(alice, _calculateExpectedUserRP(spoke1, alice));
+    vm.expectEmit(address(positionManager));
+    emit IConfigPositionManager.UpdateUserRiskPremiumOnBehalfOf(address(spoke1), bob, alice);
     vm.prank(bob);
     positionManager.updateUserRiskPremiumOnBehalfOf(address(spoke1), alice);
   }
@@ -486,6 +529,8 @@ contract ConfigPositionManagerTest is ConfigPositionManagerBaseTest {
 
     vm.expectEmit(address(spoke1));
     emit ISpoke.UpdateUserRiskPremium(alice, _calculateExpectedUserRP(spoke1, alice));
+    vm.expectEmit(address(positionManager));
+    emit IConfigPositionManager.UpdateUserRiskPremiumOnBehalfOf(address(spoke1), bob, alice);
     vm.prank(bob);
     positionManager.updateUserRiskPremiumOnBehalfOf(address(spoke1), alice);
   }
@@ -508,6 +553,8 @@ contract ConfigPositionManagerTest is ConfigPositionManagerBaseTest {
 
     vm.expectEmit(address(spoke1));
     emit ISpoke.RefreshAllUserDynamicConfig(alice);
+    vm.expectEmit(address(positionManager));
+    emit IConfigPositionManager.UpdateUserDynamicConfigOnBehalfOf(address(spoke1), bob, alice);
     vm.prank(bob);
     positionManager.updateUserDynamicConfigOnBehalfOf(address(spoke1), alice);
   }
@@ -518,6 +565,8 @@ contract ConfigPositionManagerTest is ConfigPositionManagerBaseTest {
 
     vm.expectEmit(address(spoke1));
     emit ISpoke.RefreshAllUserDynamicConfig(alice);
+    vm.expectEmit(address(positionManager));
+    emit IConfigPositionManager.UpdateUserDynamicConfigOnBehalfOf(address(spoke1), bob, alice);
     vm.prank(bob);
     positionManager.updateUserDynamicConfigOnBehalfOf(address(spoke1), alice);
   }

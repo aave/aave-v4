@@ -1,5 +1,4 @@
-// SPDX-License-Identifier: UNLICENSED
-// Copyright (c) 2025 Aave Labs
+// SPDX-License-Identifier: LicenseRef-BUSL
 pragma solidity 0.8.28;
 
 import {SafeERC20, IERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
@@ -25,9 +24,18 @@ contract GiverPositionManager is IGiverPositionManager, PositionManagerBase {
     address onBehalfOf
   ) external onlyRegisteredSpoke(spoke) returns (uint256, uint256) {
     IERC20 underlying = IERC20(_getReserveUnderlying(spoke, reserveId));
+
     underlying.safeTransferFrom(msg.sender, address(this), amount);
     underlying.forceApprove(spoke, amount);
-    return ISpoke(spoke).supply(reserveId, amount, onBehalfOf);
+    (uint256 suppliedShares, uint256 suppliedAmount) = ISpoke(spoke).supply(
+      reserveId,
+      amount,
+      onBehalfOf
+    );
+
+    emit SupplyOnBehalfOf(spoke, msg.sender, onBehalfOf, reserveId, suppliedShares, suppliedAmount);
+
+    return (suppliedShares, suppliedAmount);
   }
 
   /// @inheritdoc IGiverPositionManager
@@ -45,7 +53,16 @@ contract GiverPositionManager is IGiverPositionManager, PositionManagerBase {
 
     underlying.safeTransferFrom(msg.sender, address(this), repayAmount);
     underlying.forceApprove(spoke, repayAmount);
-    return ISpoke(spoke).repay(reserveId, repayAmount, onBehalfOf);
+
+    (uint256 repaidShares, uint256 repaidAmount) = ISpoke(spoke).repay(
+      reserveId,
+      repayAmount,
+      onBehalfOf
+    );
+
+    emit RepayOnBehalfOf(spoke, msg.sender, onBehalfOf, reserveId, repaidShares, repaidAmount);
+
+    return (repaidShares, repaidAmount);
   }
 
   function _multicallEnabled() internal pure override returns (bool) {

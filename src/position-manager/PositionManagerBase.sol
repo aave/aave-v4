@@ -1,5 +1,4 @@
-// SPDX-License-Identifier: UNLICENSED
-// Copyright (c) 2025 Aave Labs
+// SPDX-License-Identifier: LicenseRef-BUSL
 pragma solidity 0.8.28;
 
 import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
@@ -87,7 +86,10 @@ abstract contract PositionManagerBase is IPositionManagerBase, Ownable2Step, Res
   }
 
   /// @inheritdoc IPositionManagerBase
-  function renouncePositionManagerRole(address spoke, address user) external onlyOwner {
+  function renouncePositionManagerRole(
+    address spoke,
+    address user
+  ) external onlyOwner onlyRegisteredSpoke(spoke) {
     ISpoke(spoke).renouncePositionManagerRole(user);
   }
 

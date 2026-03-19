@@ -1,5 +1,4 @@
-// SPDX-License-Identifier: UNLICENSED
-// Copyright (c) 2025 Aave Labs
+// SPDX-License-Identifier: LicenseRef-BUSL
 pragma solidity 0.8.28;
 
 import {SafeERC20, IERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
@@ -11,7 +10,7 @@ import {PositionManagerIntentBase} from 'src/position-manager/PositionManagerInt
 
 /// @title SignatureGateway
 /// @author Aave Labs
-/// @notice Gateway to consume EIP-712 typed intents for spoke actions on behalf of a user.
+/// @notice Gateway to consume EIP-712 typed intents for Spoke actions on behalf of a user.
 /// @dev Uses keyed-nonces where each key's namespace nonce is consumed sequentially. Intents bundled through
 /// multicall can be executed independently in order of signed nonce & deadline; does not guarantee batch atomicity.
 contract SignatureGateway is ISignatureGateway, PositionManagerIntentBase {
