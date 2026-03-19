@@ -1,0 +1,87 @@
+Aave Protocol Contributor License Agreement
+
+Version 1.0
+
+**Preamble**
+
+The Aave Protocol is developed as open, composable financial infrastructure coordinated through onchain governance.
+
+**Agreement**
+
+By submitting a Contribution to the repository designated below (this **“Repository”**), you agree to be legally bound by the terms of this Contributor License Agreement (this **“Agreement”**). In consideration of your Contribution being accepted and incorporated into the Licensed Work, and the rights granted to you under the Repository License, you agree to the terms of this Agreement.
+
+**Definitions**
+
+**“Contribution”** means any code, documentation, or other original work of authorship that you submit to this Repository.
+
+**“Licensed Work”** means the software and materials in this Repository, including your Contribution and all other incorporated contributions.
+
+**“Repository”** means a repository designated as the official Aave Protocol codebase.
+
+**“Repository License”** means the license file or files applicable to this Repository as in effect from time to time.
+
+1. **Your Rights**
+
+You retain copyright ownership of your Contribution. Your license grant under this Agreement is non-exclusive, and does not prevent you from using your Contribution or licensing your Contribution to other parties.
+
+2. **License Grant**
+
+You hereby grant to all users of the Licensed Work a perpetual, worldwide, non-exclusive, royalty-free, irrevocable license to:
+
+- use, reproduce, modify, create derivative works of, publicly display, publicly perform, and distribute your Contribution;
+- incorporate your Contribution into the Licensed Work in the Repository;
+- sublicense your Contribution, solely as part of the Licensed Work in the Repository, under the Repository License.
+
+[Licensor] is an intended third-party beneficiary of this license grant and has independent rights to enforce and defend the Repository License as it applies to the Licensed Work.
+
+3. **Patent Grant**
+
+You hereby grant a perpetual, worldwide, non-exclusive, royalty-free, irrevocable (subject to the following sentence) patent license to make, have made, use, sell, offer for sale, import, and otherwise distribute the Licensed Work, limited to patent claims necessarily infringed by (i) your Contribution alone, or (ii) your Contribution in combination with the Licensed Work in the Repository. You may revoke your patent license with respect to any party that initiates patent litigation alleging that the Licensed Work infringes a patent.
+
+4. **License Terms Acknowledgment**
+
+You acknowledge and agree that:
+(a) the Aave Protocol is coordinated through token-based governance executed via smart contracts;
+(b) the Repository License may include use restrictions, including limitations on using the Licensed Work solely for testing purposes during defined periods; and
+(c) the Repository License may transition to an open-source license.
+You irrevocably consent to and waive any right to object to, revoke, or challenge the Repository License or successor thereto as applied to your Contribution.
+
+5. **Enforcement and Defense Authorization**
+
+You hereby authorize [Licensor] to enforce and defend the Repository License as it applies to the Licensed Work, including your Contribution.
+This authorization includes the right to:
+
+- assert, pursue, and defend claims arising from alleged violations of the Repository License
+- defend the Licensed Work and Contributions against claims of infringement, invalidity, or unenforceability
+- seek injunctive relief, damages, declaratory relief, and other remedies permitted by law
+- negotiate, grant, or deny waivers or commercial licenses
+
+For the limited purposes described in this Section 5, you appoint [Licensor] as your agent and attorney-in-fact with respect to enforcement and defense of the Repository License as it applies to the Licensed Work. This authorization is coupled with an interest and is irrevocable for so long as any version of the Licensed Work includes your Contribution.
+
+6. **Contributor Representations**
+
+You represent and warrant that:
+(a) you have the legal authority to enter into this Agreement;
+(b) your Contribution is your original work or you have sufficient rights to submit it under these terms;
+(c) your Contribution does not, to your knowledge, infringe third-party intellectual property rights; and
+(d) if your employer or another party has rights in your Contribution, all required permissions have been obtained or a separate corporate contributor agreement applies
+
+7. **Disclaimer and Limitation of Liability**
+
+YOUR CONTRIBUTION IS PROVIDED ON AN “AS IS” BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, NON-INFRINGEMENT, OR TITLE. TO THE MAXIMUM EXTENT PERMITTED BY APPLICABLE LAW, YOU SHALL NOT BE LIABLE FOR ANY DAMAGES ARISING OUT OF YOUR CONTRIBUTION OR THIS AGREEMENT.
+
+8. **General Terms**
+
+**Governing Law**. This Agreement is governed by the laws of Cayman Islands.
+
+**Severability**. If any provision of this Agreement is held unenforceable, that provision shall be severed to the minimum extent necessary and the remaining provisions remain in effect.
+
+**Amendment**. This Agreement may be amended, provided however, that any amendments apply only to Contributions submitted after the effective date of the amendment.
+
+**Entire Agreement**. This Agreement constitutes the complete and exclusive agreement regarding Contributions you submit to this Repository.
+
+**Acceptance**
+
+By submitting a pull request, commit, or other Contribution to this Repository, you confirm that:
+(a) you have read and understood this Agreement; and
+(b) you agree to be legally bound by its terms.
