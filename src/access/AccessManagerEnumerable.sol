@@ -224,7 +224,7 @@ contract AccessManagerEnumerable is AccessManager, IAccessManagerEnumerable {
   }
 
   /// @inheritdoc IAccessManagerEnumerable
-  function labelExists(string calldata label) external view returns (bool) {
+  function isLabelAssigned(string calldata label) external view returns (bool) {
     return _labelsSet.contains(label);
   }
 

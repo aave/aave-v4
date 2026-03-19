@@ -190,9 +190,9 @@ interface IAccessManagerEnumerable is IAccessManager {
   /// @return The list of role labels.
   function getRoleLabels(uint256 start, uint256 end) external view returns (string[] memory);
 
-  /// @notice Returns whether the given label is being tracked for a role.
+  /// @notice Returns whether the given label is assigned to a tracked role.
   /// @param label The label string.
-  function labelExists(string calldata label) external view returns (bool);
+  function isLabelAssigned(string calldata label) external view returns (bool);
 
   /// @notice Returns whether the given role has been labeled.
   /// @param roleId The identifier of the role.

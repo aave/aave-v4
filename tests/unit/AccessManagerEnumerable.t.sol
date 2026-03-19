@@ -1130,44 +1130,44 @@ contract AccessManagerEnumerableTest is Test {
     accessManagerEnumerable.getRoleOfLabel('MY_LABEL');
   }
 
-  function test_labelExists() public {
+  function test_isLabelAssigned() public {
     uint64 roleId = 1;
 
-    assertFalse(accessManagerEnumerable.labelExists('POOL_ADMIN'));
+    assertFalse(accessManagerEnumerable.isLabelAssigned('POOL_ADMIN'));
 
     vm.prank(ADMIN);
     accessManagerEnumerable.labelRole(roleId, 'POOL_ADMIN');
 
-    assertTrue(accessManagerEnumerable.labelExists('POOL_ADMIN'));
-    assertFalse(accessManagerEnumerable.labelExists('NONEXISTENT'));
+    assertTrue(accessManagerEnumerable.isLabelAssigned('POOL_ADMIN'));
+    assertFalse(accessManagerEnumerable.isLabelAssigned('NONEXISTENT'));
   }
 
-  function test_labelExists_afterRemoval() public {
+  function test_isLabelAssigned_afterRemoval() public {
     uint64 roleId = 1;
 
     vm.startPrank(ADMIN);
     accessManagerEnumerable.labelRole(roleId, 'MY_LABEL');
-    assertTrue(accessManagerEnumerable.labelExists('MY_LABEL'));
+    assertTrue(accessManagerEnumerable.isLabelAssigned('MY_LABEL'));
 
     accessManagerEnumerable.labelRole(roleId, '');
     vm.stopPrank();
 
-    assertFalse(accessManagerEnumerable.labelExists('MY_LABEL'));
+    assertFalse(accessManagerEnumerable.isLabelAssigned('MY_LABEL'));
   }
 
-  function test_labelExists_afterRelabel() public {
+  function test_isLabelAssigned_afterRelabel() public {
     uint64 roleId = 1;
 
     vm.startPrank(ADMIN);
     accessManagerEnumerable.labelRole(roleId, 'OLD_LABEL');
-    assertTrue(accessManagerEnumerable.labelExists('OLD_LABEL'));
+    assertTrue(accessManagerEnumerable.isLabelAssigned('OLD_LABEL'));
 
     accessManagerEnumerable.labelRole(roleId, '');
     accessManagerEnumerable.labelRole(roleId, 'NEW_LABEL');
     vm.stopPrank();
 
-    assertFalse(accessManagerEnumerable.labelExists('OLD_LABEL'));
-    assertTrue(accessManagerEnumerable.labelExists('NEW_LABEL'));
+    assertFalse(accessManagerEnumerable.isLabelAssigned('OLD_LABEL'));
+    assertTrue(accessManagerEnumerable.isLabelAssigned('NEW_LABEL'));
   }
 
   function test_isRoleLabeled() public {
