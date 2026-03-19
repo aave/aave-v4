@@ -74,6 +74,11 @@ abstract contract MockHelpers is CommonHelpers, Constants {
     );
   }
 
+  // @dev Requires no previously added assets
+  // @dev Update _assetsSlot below if it changes
+  //   Run: forge inspect HubInstance storage-layout
+  // @dev Update _addedSharesOffset below if it changes
+  //   Have a look at IHub.Asset struct
   function _mockSupplySharePrice(
     IHub hub,
     uint256 assetId,
@@ -106,7 +111,7 @@ abstract contract MockHelpers is CommonHelpers, Constants {
     });
     assertEq(hub.getAddedAssets(assetId), totalAddedAssets, '_mockSupplySharePrice: addedAssets');
 
-    uint256 _assetsSlot = 2;
+    uint256 _assetsSlot = 1;
     uint256 _addedSharesOffset = 1;
     vm.store(
       address(hub),

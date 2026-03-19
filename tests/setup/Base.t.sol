@@ -117,10 +117,12 @@ import {PositionManagerNoMulticall} from 'tests/helpers/mocks/PositionManagerNoM
 import {MockNoncesKeyed} from 'tests/helpers/mocks/MockNoncesKeyed.sol';
 import {MockSpoke} from 'tests/helpers/mocks/MockSpoke.sol';
 import {MockERC1271Wallet} from 'tests/helpers/mocks/MockERC1271Wallet.sol';
+import {MockHubInstance} from 'tests/helpers/mocks/MockHubInstance.sol';
 import {MockSpokeInstance} from 'tests/helpers/mocks/MockSpokeInstance.sol';
 import {MockTreasurySpokeInstance} from 'tests/helpers/mocks/MockTreasurySpokeInstance.sol';
 import {MockSkimSpoke} from 'tests/helpers/mocks/MockSkimSpoke.sol';
 import {MockReentrantCaller} from 'tests/helpers/mocks/MockReentrantCaller.sol';
+import {IHubInstance} from 'tests/helpers/mocks/IHubInstance.sol';
 import {ISpokeInstance} from 'tests/helpers/mocks/ISpokeInstance.sol';
 import {DeployWrapper} from 'tests/helpers/mocks/DeployWrapper.sol';
 import {SpokeUtilsWrapper} from 'tests/helpers/mocks/SpokeUtilsWrapper.sol';
@@ -142,7 +144,7 @@ abstract contract Base is BaseHelpers {
   function deployFixtures() internal virtual {
     vm.startPrank(ADMIN);
     accessManager = IAccessManager(address(new AccessManagerEnumerable(ADMIN)));
-    hub1 = DeployUtils.deployHub(address(accessManager));
+    hub1 = DeployUtils.deployHub({authority: address(accessManager), proxyAdminOwner: ADMIN});
     irStrategy = new AssetInterestRateStrategy(address(hub1));
     (spoke1, oracle1) = _deploySpokeWithOracle(ADMIN, address(accessManager));
     (spoke2, oracle2) = _deploySpokeWithOracle(ADMIN, address(accessManager));
@@ -758,7 +760,7 @@ abstract contract Base is BaseHelpers {
    */
   function hub2Fixture() internal returns (IHub, AssetInterestRateStrategy) {
     IAccessManager accessManager2 = IAccessManager(address(new AccessManagerEnumerable(ADMIN)));
-    IHub hub2 = DeployUtils.deployHub(address(accessManager2));
+    IHub hub2 = DeployUtils.deployHub({authority: address(accessManager2), proxyAdminOwner: ADMIN});
     vm.label(address(hub2), 'Hub2');
     AssetInterestRateStrategy hub2IrStrategy = new AssetInterestRateStrategy(address(hub2));
 
@@ -825,7 +827,7 @@ abstract contract Base is BaseHelpers {
    */
   function hub3Fixture() internal returns (IHub, AssetInterestRateStrategy) {
     IAccessManager accessManager3 = IAccessManager(address(new AccessManagerEnumerable(ADMIN)));
-    IHub hub3 = DeployUtils.deployHub(address(accessManager3));
+    IHub hub3 = DeployUtils.deployHub({authority: address(accessManager3), proxyAdminOwner: ADMIN});
     AssetInterestRateStrategy hub3IrStrategy = new AssetInterestRateStrategy(address(hub3));
 
     // Configure IR Strategy for hub 3

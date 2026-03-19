@@ -6,6 +6,7 @@ import {Vm} from 'forge-std/Vm.sol';
 import {TransparentUpgradeableProxy} from 'src/dependencies/openzeppelin/TransparentUpgradeableProxy.sol';
 import {IHub} from 'src/hub/interfaces/IHub.sol';
 import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
+import {IHubInstance} from 'tests/helpers/mocks/IHubInstance.sol';
 import {ISpokeInstance} from 'tests/helpers/mocks/ISpokeInstance.sol';
 import {Create2Utils} from 'tests/helpers/deploy/Create2Utils.sol';
 
@@ -47,13 +48,57 @@ library DeployUtils {
       );
   }
 
-  function deployHub(address authority) internal returns (IHub) {
-    return deployHub(authority, '');
+  function getDeterministicSpokeInstanceAddress(
+    address oracle,
+    uint16 maxUserReservesLimit
+  ) internal returns (address) {
+    return getDeterministicSpokeInstanceAddress(oracle, maxUserReservesLimit, '');
   }
 
-  function deployHub(address authority, bytes32 salt) internal returns (IHub hub) {
+  function getDeterministicSpokeInstanceAddress(
+    address oracle,
+    uint16 maxUserReservesLimit,
+    bytes32 salt
+  ) internal returns (address) {
+    bytes32 initCodeHash = keccak256(_getSpokeInstanceInitCode(oracle, maxUserReservesLimit));
+
     Create2Utils.loadCreate2Factory();
-    return IHub(Create2Utils.create2Deploy(salt, _getHubInitCode(authority)));
+    return Create2Utils.computeCreate2Address(salt, initCodeHash);
+  }
+
+  function deployHubImplementation() internal returns (IHubInstance) {
+    return deployHubImplementation('');
+  }
+
+  function deployHubImplementation(bytes32 salt) internal returns (IHubInstance) {
+    Create2Utils.loadCreate2Factory();
+    return IHubInstance(Create2Utils.create2Deploy(salt, _getHubInstanceInitCode()));
+  }
+
+  function deployHub(address authority, address proxyAdminOwner) internal returns (IHub) {
+    return
+      IHub(
+        proxify(
+          address(deployHubImplementation()),
+          proxyAdminOwner,
+          abi.encodeCall(IHubInstance.initialize, (authority))
+        )
+      );
+  }
+
+  function deployHub(
+    address authority,
+    address proxyAdminOwner,
+    bytes32 salt
+  ) internal returns (IHub) {
+    return
+      IHub(
+        proxify(
+          address(deployHubImplementation(salt)),
+          proxyAdminOwner,
+          abi.encodeCall(IHubInstance.initialize, (authority))
+        )
+      );
   }
 
   function proxify(
@@ -80,7 +125,7 @@ library DeployUtils {
       );
   }
 
-  function _getHubInitCode(address authority) internal view returns (bytes memory) {
-    return abi.encodePacked(vm.getCode('src/hub/Hub.sol:Hub'), abi.encode(authority));
+  function _getHubInstanceInitCode() internal view returns (bytes memory) {
+    return vm.getCode('src/hub/instances/HubInstance.sol:HubInstance');
   }
 }

@@ -138,6 +138,7 @@ abstract contract BaseState is HubHelpers, SpokeHelpers {
         user != address(spoke1) &&
         user != address(spoke2) &&
         user != address(spoke3) &&
+        user != _getProxyAdminAddress(address(hub1)) &&
         user != _getProxyAdminAddress(address(spoke1)) &&
         user != _getProxyAdminAddress(address(spoke2)) &&
         user != _getProxyAdminAddress(address(spoke3))

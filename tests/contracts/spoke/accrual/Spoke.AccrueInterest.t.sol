@@ -1169,7 +1169,7 @@ contract SpokeAccrueInterestTest is Base {
     return amounts;
   }
 
-  function _bound(Rates memory rates) internal view returns (Rates memory) {
+  function _bound(Rates memory rates) internal pure returns (Rates memory) {
     rates.daiBaseDrawnRate = _bpsToRay(bound(rates.daiBaseDrawnRate, 1, MAX_ALLOWED_DRAWN_RATE))
       .toUint96();
     rates.wethBaseDrawnRate = _bpsToRay(bound(rates.wethBaseDrawnRate, 1, MAX_ALLOWED_DRAWN_RATE))
