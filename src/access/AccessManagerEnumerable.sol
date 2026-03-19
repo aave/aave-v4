@@ -87,6 +87,11 @@ contract AccessManagerEnumerable is AccessManager, IAccessManagerEnumerable {
   }
 
   /// @inheritdoc IAccessManagerEnumerable
+  function isRole(uint64 roleId) external view returns (bool) {
+    return _rolesSet.contains(uint256(roleId));
+  }
+
+  /// @inheritdoc IAccessManagerEnumerable
   function getAdminRole(uint256 index) external view returns (uint64) {
     return uint64(_adminRolesSet.at(index));
   }
@@ -104,6 +109,11 @@ contract AccessManagerEnumerable is AccessManager, IAccessManagerEnumerable {
       adminRoles := listedAdminRoles
     }
     return adminRoles;
+  }
+
+  /// @inheritdoc IAccessManagerEnumerable
+  function isAdminRole(uint64 adminRoleId) external view returns (bool) {
+    return _adminRolesSet.contains(uint256(adminRoleId));
   }
 
   /// @inheritdoc IAccessManagerEnumerable

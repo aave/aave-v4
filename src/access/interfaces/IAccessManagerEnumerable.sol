@@ -40,6 +40,11 @@ interface IAccessManagerEnumerable is IAccessManager {
   /// @return The list of role identifiers.
   function getRoles(uint256 start, uint256 end) external view returns (uint64[] memory);
 
+  /// @notice Returns whether the specified role exists.
+  /// @dev `PUBLIC_ROLE` and `ADMIN_ROLE` are not taken into account.
+  /// @param roleId The identifier of the role.
+  function isRole(uint64 roleId) external view returns (bool);
+
   /// @notice Returns the identifier of the admin role at a specified index.
   /// @dev `ADMIN_ROLE` is not accessible via any index.
   /// @dev Admin roles with no assigned members or managed roles are also accessible.
@@ -60,6 +65,11 @@ interface IAccessManagerEnumerable is IAccessManager {
   /// @param end The ending index for the admin role list.
   /// @return The list of admin role identifiers.
   function getAdminRoles(uint256 start, uint256 end) external view returns (uint64[] memory);
+
+  /// @notice Returns whether the specified admin role exists.
+  /// @dev `ADMIN_ROLE` is not taken into account.
+  /// @param adminRoleId The identifier of the admin role.
+  function isAdminRole(uint64 adminRoleId) external view returns (bool);
 
   /// @notice Returns the address of the role member at a specified index.
   /// @param roleId The identifier of the role.
