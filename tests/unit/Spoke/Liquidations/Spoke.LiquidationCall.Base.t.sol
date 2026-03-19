@@ -61,6 +61,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
     bool fullDebtReserveLiquidated;
     bool hasDeficit;
   }
+
   struct ExpectEventsAndCallsParams {
     uint256 userDrawnDebt;
     uint256 userPremiumDebt;

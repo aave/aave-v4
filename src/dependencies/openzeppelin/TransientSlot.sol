@@ -31,153 +31,153 @@ pragma solidity ^0.8.24;
  * TIP: Consider using this library along with {SlotDerivation}.
  */
 library TransientSlot {
-  /**
-   * @dev UDVT that represents a slot holding an address.
-   */
-  type AddressSlot is bytes32;
+    /**
+     * @dev UDVT that represents a slot holding an address.
+     */
+    type AddressSlot is bytes32;
 
-  /**
-   * @dev Cast an arbitrary slot to a AddressSlot.
-   */
-  function asAddress(bytes32 slot) internal pure returns (AddressSlot) {
-    return AddressSlot.wrap(slot);
-  }
-
-  /**
-   * @dev UDVT that represents a slot holding a bool.
-   */
-  type BooleanSlot is bytes32;
-
-  /**
-   * @dev Cast an arbitrary slot to a BooleanSlot.
-   */
-  function asBoolean(bytes32 slot) internal pure returns (BooleanSlot) {
-    return BooleanSlot.wrap(slot);
-  }
-
-  /**
-   * @dev UDVT that represents a slot holding a bytes32.
-   */
-  type Bytes32Slot is bytes32;
-
-  /**
-   * @dev Cast an arbitrary slot to a Bytes32Slot.
-   */
-  function asBytes32(bytes32 slot) internal pure returns (Bytes32Slot) {
-    return Bytes32Slot.wrap(slot);
-  }
-
-  /**
-   * @dev UDVT that represents a slot holding a uint256.
-   */
-  type Uint256Slot is bytes32;
-
-  /**
-   * @dev Cast an arbitrary slot to a Uint256Slot.
-   */
-  function asUint256(bytes32 slot) internal pure returns (Uint256Slot) {
-    return Uint256Slot.wrap(slot);
-  }
-
-  /**
-   * @dev UDVT that represents a slot holding a int256.
-   */
-  type Int256Slot is bytes32;
-
-  /**
-   * @dev Cast an arbitrary slot to a Int256Slot.
-   */
-  function asInt256(bytes32 slot) internal pure returns (Int256Slot) {
-    return Int256Slot.wrap(slot);
-  }
-
-  /**
-   * @dev Load the value held at location `slot` in transient storage.
-   */
-  function tload(AddressSlot slot) internal view returns (address value) {
-    assembly ('memory-safe') {
-      value := tload(slot)
+    /**
+     * @dev Cast an arbitrary slot to a AddressSlot.
+     */
+    function asAddress(bytes32 slot) internal pure returns (AddressSlot) {
+        return AddressSlot.wrap(slot);
     }
-  }
 
-  /**
-   * @dev Store `value` at location `slot` in transient storage.
-   */
-  function tstore(AddressSlot slot, address value) internal {
-    assembly ('memory-safe') {
-      tstore(slot, value)
-    }
-  }
+    /**
+     * @dev UDVT that represents a slot holding a bool.
+     */
+    type BooleanSlot is bytes32;
 
-  /**
-   * @dev Load the value held at location `slot` in transient storage.
-   */
-  function tload(BooleanSlot slot) internal view returns (bool value) {
-    assembly ('memory-safe') {
-      value := tload(slot)
+    /**
+     * @dev Cast an arbitrary slot to a BooleanSlot.
+     */
+    function asBoolean(bytes32 slot) internal pure returns (BooleanSlot) {
+        return BooleanSlot.wrap(slot);
     }
-  }
 
-  /**
-   * @dev Store `value` at location `slot` in transient storage.
-   */
-  function tstore(BooleanSlot slot, bool value) internal {
-    assembly ('memory-safe') {
-      tstore(slot, value)
-    }
-  }
+    /**
+     * @dev UDVT that represents a slot holding a bytes32.
+     */
+    type Bytes32Slot is bytes32;
 
-  /**
-   * @dev Load the value held at location `slot` in transient storage.
-   */
-  function tload(Bytes32Slot slot) internal view returns (bytes32 value) {
-    assembly ('memory-safe') {
-      value := tload(slot)
+    /**
+     * @dev Cast an arbitrary slot to a Bytes32Slot.
+     */
+    function asBytes32(bytes32 slot) internal pure returns (Bytes32Slot) {
+        return Bytes32Slot.wrap(slot);
     }
-  }
 
-  /**
-   * @dev Store `value` at location `slot` in transient storage.
-   */
-  function tstore(Bytes32Slot slot, bytes32 value) internal {
-    assembly ('memory-safe') {
-      tstore(slot, value)
-    }
-  }
+    /**
+     * @dev UDVT that represents a slot holding a uint256.
+     */
+    type Uint256Slot is bytes32;
 
-  /**
-   * @dev Load the value held at location `slot` in transient storage.
-   */
-  function tload(Uint256Slot slot) internal view returns (uint256 value) {
-    assembly ('memory-safe') {
-      value := tload(slot)
+    /**
+     * @dev Cast an arbitrary slot to a Uint256Slot.
+     */
+    function asUint256(bytes32 slot) internal pure returns (Uint256Slot) {
+        return Uint256Slot.wrap(slot);
     }
-  }
 
-  /**
-   * @dev Store `value` at location `slot` in transient storage.
-   */
-  function tstore(Uint256Slot slot, uint256 value) internal {
-    assembly ('memory-safe') {
-      tstore(slot, value)
-    }
-  }
+    /**
+     * @dev UDVT that represents a slot holding a int256.
+     */
+    type Int256Slot is bytes32;
 
-  /**
-   * @dev Load the value held at location `slot` in transient storage.
-   */
-  function tload(Int256Slot slot) internal view returns (int256 value) {
-    assembly ('memory-safe') {
-      value := tload(slot)
+    /**
+     * @dev Cast an arbitrary slot to a Int256Slot.
+     */
+    function asInt256(bytes32 slot) internal pure returns (Int256Slot) {
+        return Int256Slot.wrap(slot);
     }
-  }
 
-  /**
-   * @dev Store `value` at location `slot` in transient storage.
-   */
-  function tstore(Int256Slot slot, int256 value) internal {
-    assembly ('memory-safe') {
-      tstore(slot, value)
+    /**
+     * @dev Load the value held at location `slot` in transient storage.
+     */
+    function tload(AddressSlot slot) internal view returns (address value) {
+        assembly ("memory-safe") {
+            value := tload(slot)
+        }
     }
-  }
+
+    /**
+     * @dev Store `value` at location `slot` in transient storage.
+     */
+    function tstore(AddressSlot slot, address value) internal {
+        assembly ("memory-safe") {
+            tstore(slot, value)
+        }
+    }
+
+    /**
+     * @dev Load the value held at location `slot` in transient storage.
+     */
+    function tload(BooleanSlot slot) internal view returns (bool value) {
+        assembly ("memory-safe") {
+            value := tload(slot)
+        }
+    }
+
+    /**
+     * @dev Store `value` at location `slot` in transient storage.
+     */
+    function tstore(BooleanSlot slot, bool value) internal {
+        assembly ("memory-safe") {
+            tstore(slot, value)
+        }
+    }
+
+    /**
+     * @dev Load the value held at location `slot` in transient storage.
+     */
+    function tload(Bytes32Slot slot) internal view returns (bytes32 value) {
+        assembly ("memory-safe") {
+            value := tload(slot)
+        }
+    }
+
+    /**
+     * @dev Store `value` at location `slot` in transient storage.
+     */
+    function tstore(Bytes32Slot slot, bytes32 value) internal {
+        assembly ("memory-safe") {
+            tstore(slot, value)
+        }
+    }
+
+    /**
+     * @dev Load the value held at location `slot` in transient storage.
+     */
+    function tload(Uint256Slot slot) internal view returns (uint256 value) {
+        assembly ("memory-safe") {
+            value := tload(slot)
+        }
+    }
+
+    /**
+     * @dev Store `value` at location `slot` in transient storage.
+     */
+    function tstore(Uint256Slot slot, uint256 value) internal {
+        assembly ("memory-safe") {
+            tstore(slot, value)
+        }
+    }
+
+    /**
+     * @dev Load the value held at location `slot` in transient storage.
+     */
+    function tload(Int256Slot slot) internal view returns (int256 value) {
+        assembly ("memory-safe") {
+            value := tload(slot)
+        }
+    }
+
+    /**
+     * @dev Store `value` at location `slot` in transient storage.
+     */
+    function tstore(Int256Slot slot, int256 value) internal {
+        assembly ("memory-safe") {
+            tstore(slot, value)
+        }
+    }
 }

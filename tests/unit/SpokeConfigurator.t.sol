@@ -656,7 +656,9 @@ contract SpokeConfiguratorTest is SpokeBase {
 
   function test_updateDynamicReserveConfig() public {
     uint256 count = vm.randomUint(1, 50);
-    for (uint256 i; i < count; ++i) test_addDynamicReserveConfig();
+    for (uint256 i; i < count; ++i) {
+      test_addDynamicReserveConfig();
+    }
     assertEq(spoke.getReserve(reserveId).dynamicConfigKey, count);
 
     ISpoke.DynamicReserveConfig memory newDynamicReserveConfig = ISpoke.DynamicReserveConfig({

@@ -32,112 +32,112 @@ pragma solidity ^0.8.20;
  * TIP: Consider using this library along with {SlotDerivation}.
  */
 library StorageSlot {
-  struct AddressSlot {
-    address value;
-  }
-
-  struct BooleanSlot {
-    bool value;
-  }
-
-  struct Bytes32Slot {
-    bytes32 value;
-  }
-
-  struct Uint256Slot {
-    uint256 value;
-  }
-
-  struct Int256Slot {
-    int256 value;
-  }
-
-  struct StringSlot {
-    string value;
-  }
-
-  struct BytesSlot {
-    bytes value;
-  }
-
-  /**
-   * @dev Returns an `AddressSlot` with member `value` located at `slot`.
-   */
-  function getAddressSlot(bytes32 slot) internal pure returns (AddressSlot storage r) {
-    assembly ('memory-safe') {
-      r.slot := slot
+    struct AddressSlot {
+        address value;
     }
-  }
 
-  /**
-   * @dev Returns a `BooleanSlot` with member `value` located at `slot`.
-   */
-  function getBooleanSlot(bytes32 slot) internal pure returns (BooleanSlot storage r) {
-    assembly ('memory-safe') {
-      r.slot := slot
+    struct BooleanSlot {
+        bool value;
     }
-  }
 
-  /**
-   * @dev Returns a `Bytes32Slot` with member `value` located at `slot`.
-   */
-  function getBytes32Slot(bytes32 slot) internal pure returns (Bytes32Slot storage r) {
-    assembly ('memory-safe') {
-      r.slot := slot
+    struct Bytes32Slot {
+        bytes32 value;
     }
-  }
 
-  /**
-   * @dev Returns a `Uint256Slot` with member `value` located at `slot`.
-   */
-  function getUint256Slot(bytes32 slot) internal pure returns (Uint256Slot storage r) {
-    assembly ('memory-safe') {
-      r.slot := slot
+    struct Uint256Slot {
+        uint256 value;
     }
-  }
 
-  /**
-   * @dev Returns a `Int256Slot` with member `value` located at `slot`.
-   */
-  function getInt256Slot(bytes32 slot) internal pure returns (Int256Slot storage r) {
-    assembly ('memory-safe') {
-      r.slot := slot
+    struct Int256Slot {
+        int256 value;
     }
-  }
 
-  /**
-   * @dev Returns a `StringSlot` with member `value` located at `slot`.
-   */
-  function getStringSlot(bytes32 slot) internal pure returns (StringSlot storage r) {
-    assembly ('memory-safe') {
-      r.slot := slot
+    struct StringSlot {
+        string value;
     }
-  }
 
-  /**
-   * @dev Returns an `StringSlot` representation of the string storage pointer `store`.
-   */
-  function getStringSlot(string storage store) internal pure returns (StringSlot storage r) {
-    assembly ('memory-safe') {
-      r.slot := store.slot
+    struct BytesSlot {
+        bytes value;
     }
-  }
 
-  /**
-   * @dev Returns a `BytesSlot` with member `value` located at `slot`.
-   */
-  function getBytesSlot(bytes32 slot) internal pure returns (BytesSlot storage r) {
-    assembly ('memory-safe') {
-      r.slot := slot
+    /**
+     * @dev Returns an `AddressSlot` with member `value` located at `slot`.
+     */
+    function getAddressSlot(bytes32 slot) internal pure returns (AddressSlot storage r) {
+        assembly ("memory-safe") {
+            r.slot := slot
+        }
     }
-  }
 
-  /**
-   * @dev Returns an `BytesSlot` representation of the bytes storage pointer `store`.
-   */
-  function getBytesSlot(bytes storage store) internal pure returns (BytesSlot storage r) {
-    assembly ('memory-safe') {
-      r.slot := store.slot
+    /**
+     * @dev Returns a `BooleanSlot` with member `value` located at `slot`.
+     */
+    function getBooleanSlot(bytes32 slot) internal pure returns (BooleanSlot storage r) {
+        assembly ("memory-safe") {
+            r.slot := slot
+        }
     }
-  }
+
+    /**
+     * @dev Returns a `Bytes32Slot` with member `value` located at `slot`.
+     */
+    function getBytes32Slot(bytes32 slot) internal pure returns (Bytes32Slot storage r) {
+        assembly ("memory-safe") {
+            r.slot := slot
+        }
+    }
+
+    /**
+     * @dev Returns a `Uint256Slot` with member `value` located at `slot`.
+     */
+    function getUint256Slot(bytes32 slot) internal pure returns (Uint256Slot storage r) {
+        assembly ("memory-safe") {
+            r.slot := slot
+        }
+    }
+
+    /**
+     * @dev Returns a `Int256Slot` with member `value` located at `slot`.
+     */
+    function getInt256Slot(bytes32 slot) internal pure returns (Int256Slot storage r) {
+        assembly ("memory-safe") {
+            r.slot := slot
+        }
+    }
+
+    /**
+     * @dev Returns a `StringSlot` with member `value` located at `slot`.
+     */
+    function getStringSlot(bytes32 slot) internal pure returns (StringSlot storage r) {
+        assembly ("memory-safe") {
+            r.slot := slot
+        }
+    }
+
+    /**
+     * @dev Returns an `StringSlot` representation of the string storage pointer `store`.
+     */
+    function getStringSlot(string storage store) internal pure returns (StringSlot storage r) {
+        assembly ("memory-safe") {
+            r.slot := store.slot
+        }
+    }
+
+    /**
+     * @dev Returns a `BytesSlot` with member `value` located at `slot`.
+     */
+    function getBytesSlot(bytes32 slot) internal pure returns (BytesSlot storage r) {
+        assembly ("memory-safe") {
+            r.slot := slot
+        }
+    }
+
+    /**
+     * @dev Returns an `BytesSlot` representation of the bytes storage pointer `store`.
+     */
+    function getBytesSlot(bytes storage store) internal pure returns (BytesSlot storage r) {
+        assembly ("memory-safe") {
+            r.slot := store.slot
+        }
+    }
 }

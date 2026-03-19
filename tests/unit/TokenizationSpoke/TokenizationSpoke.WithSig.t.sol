@@ -25,7 +25,9 @@ contract TokenizationSpokeWithSigTest is TokenizationSpokeBaseTest {
     vault.useNonce(nonceKey);
 
     // prettier-ignore
-    unchecked { ++nonce; }
+    unchecked {
+            ++nonce;
+        }
     assertEq(vault.nonces(user, nonceKey), _packNonce(nonceKey, nonce));
   }
 

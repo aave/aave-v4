@@ -3,8 +3,8 @@
 
 pragma solidity ^0.8.20;
 
-import {ContextUpgradeable} from './ContextUpgradeable.sol';
-import {Initializable} from './Initializable.sol';
+import {ContextUpgradeable} from "./ContextUpgradeable.sol";
+import {Initializable} from "./Initializable.sol";
 
 /**
  * @dev Contract module which provides a basic access control mechanism, where
@@ -19,102 +19,102 @@ import {Initializable} from './Initializable.sol';
  * the owner.
  */
 abstract contract OwnableUpgradeable is Initializable, ContextUpgradeable {
-  /// @custom:storage-location erc7201:openzeppelin.storage.Ownable
-  struct OwnableStorage {
-    address _owner;
-  }
-
-  // keccak256(abi.encode(uint256(keccak256("openzeppelin.storage.Ownable")) - 1)) & ~bytes32(uint256(0xff))
-  bytes32 private constant OwnableStorageLocation =
-    0x9016d09d72d40fdae2fd8ceac6b6234c7706214fd39c1cd1e609a0528c199300;
-
-  function _getOwnableStorage() private pure returns (OwnableStorage storage $) {
-    assembly {
-      $.slot := OwnableStorageLocation
+    /// @custom:storage-location erc7201:openzeppelin.storage.Ownable
+    struct OwnableStorage {
+        address _owner;
     }
-  }
 
-  /**
-   * @dev The caller account is not authorized to perform an operation.
-   */
-  error OwnableUnauthorizedAccount(address account);
+    // keccak256(abi.encode(uint256(keccak256("openzeppelin.storage.Ownable")) - 1)) & ~bytes32(uint256(0xff))
+    bytes32 private constant OwnableStorageLocation =
+        0x9016d09d72d40fdae2fd8ceac6b6234c7706214fd39c1cd1e609a0528c199300;
 
-  /**
-   * @dev The owner is not a valid owner account. (eg. `address(0)`)
-   */
-  error OwnableInvalidOwner(address owner);
-
-  event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
-
-  /**
-   * @dev Initializes the contract setting the address provided by the deployer as the initial owner.
-   */
-  function __Ownable_init(address initialOwner) internal onlyInitializing {
-    __Ownable_init_unchained(initialOwner);
-  }
-
-  function __Ownable_init_unchained(address initialOwner) internal onlyInitializing {
-    if (initialOwner == address(0)) {
-      revert OwnableInvalidOwner(address(0));
+    function _getOwnableStorage() private pure returns (OwnableStorage storage $) {
+        assembly {
+            $.slot := OwnableStorageLocation
+        }
     }
-    _transferOwnership(initialOwner);
-  }
 
-  /**
-   * @dev Throws if called by any account other than the owner.
-   */
-  modifier onlyOwner() {
-    _checkOwner();
-    _;
-  }
+    /**
+     * @dev The caller account is not authorized to perform an operation.
+     */
+    error OwnableUnauthorizedAccount(address account);
 
-  /**
-   * @dev Returns the address of the current owner.
-   */
-  function owner() public view virtual returns (address) {
-    OwnableStorage storage $ = _getOwnableStorage();
-    return $._owner;
-  }
+    /**
+     * @dev The owner is not a valid owner account. (eg. `address(0)`)
+     */
+    error OwnableInvalidOwner(address owner);
 
-  /**
-   * @dev Throws if the sender is not the owner.
-   */
-  function _checkOwner() internal view virtual {
-    if (owner() != _msgSender()) {
-      revert OwnableUnauthorizedAccount(_msgSender());
+    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+
+    /**
+     * @dev Initializes the contract setting the address provided by the deployer as the initial owner.
+     */
+    function __Ownable_init(address initialOwner) internal onlyInitializing {
+        __Ownable_init_unchained(initialOwner);
     }
-  }
 
-  /**
-   * @dev Leaves the contract without owner. It will not be possible to call
-   * `onlyOwner` functions. Can only be called by the current owner.
-   *
-   * NOTE: Renouncing ownership will leave the contract without an owner,
-   * thereby disabling any functionality that is only available to the owner.
-   */
-  function renounceOwnership() public virtual onlyOwner {
-    _transferOwnership(address(0));
-  }
-
-  /**
-   * @dev Transfers ownership of the contract to a new account (`newOwner`).
-   * Can only be called by the current owner.
-   */
-  function transferOwnership(address newOwner) public virtual onlyOwner {
-    if (newOwner == address(0)) {
-      revert OwnableInvalidOwner(address(0));
+    function __Ownable_init_unchained(address initialOwner) internal onlyInitializing {
+        if (initialOwner == address(0)) {
+            revert OwnableInvalidOwner(address(0));
+        }
+        _transferOwnership(initialOwner);
     }
-    _transferOwnership(newOwner);
-  }
 
-  /**
-   * @dev Transfers ownership of the contract to a new account (`newOwner`).
-   * Internal function without access restriction.
-   */
-  function _transferOwnership(address newOwner) internal virtual {
-    OwnableStorage storage $ = _getOwnableStorage();
-    address oldOwner = $._owner;
-    $._owner = newOwner;
-    emit OwnershipTransferred(oldOwner, newOwner);
-  }
+    /**
+     * @dev Throws if called by any account other than the owner.
+     */
+    modifier onlyOwner() {
+        _checkOwner();
+        _;
+    }
+
+    /**
+     * @dev Returns the address of the current owner.
+     */
+    function owner() public view virtual returns (address) {
+        OwnableStorage storage $ = _getOwnableStorage();
+        return $._owner;
+    }
+
+    /**
+     * @dev Throws if the sender is not the owner.
+     */
+    function _checkOwner() internal view virtual {
+        if (owner() != _msgSender()) {
+            revert OwnableUnauthorizedAccount(_msgSender());
+        }
+    }
+
+    /**
+     * @dev Leaves the contract without owner. It will not be possible to call
+     * `onlyOwner` functions. Can only be called by the current owner.
+     *
+     * NOTE: Renouncing ownership will leave the contract without an owner,
+     * thereby disabling any functionality that is only available to the owner.
+     */
+    function renounceOwnership() public virtual onlyOwner {
+        _transferOwnership(address(0));
+    }
+
+    /**
+     * @dev Transfers ownership of the contract to a new account (`newOwner`).
+     * Can only be called by the current owner.
+     */
+    function transferOwnership(address newOwner) public virtual onlyOwner {
+        if (newOwner == address(0)) {
+            revert OwnableInvalidOwner(address(0));
+        }
+        _transferOwnership(newOwner);
+    }
+
+    /**
+     * @dev Transfers ownership of the contract to a new account (`newOwner`).
+     * Internal function without access restriction.
+     */
+    function _transferOwnership(address newOwner) internal virtual {
+        OwnableStorage storage $ = _getOwnableStorage();
+        address oldOwner = $._owner;
+        $._owner = newOwner;
+        emit OwnershipTransferred(oldOwner, newOwner);
+    }
 }

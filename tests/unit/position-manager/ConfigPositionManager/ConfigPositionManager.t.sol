@@ -6,6 +6,7 @@ import 'tests/unit/position-manager/ConfigPositionManager/ConfigPositionManager.
 
 contract ConfigPositionManagerTest is ConfigPositionManagerBaseTest {
   using ConfigPermissionsMap for ConfigPermissions;
+
   function test_setGlobalPermission() public {
     IConfigPositionManager.ConfigPermissionValues memory permissions = positionManager
       .getConfigPermissions(address(spoke1), bob, alice);

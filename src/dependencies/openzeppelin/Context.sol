@@ -14,15 +14,15 @@ pragma solidity ^0.8.20;
  * This contract is only required for intermediate, library-like contracts.
  */
 abstract contract Context {
-  function _msgSender() internal view virtual returns (address) {
-    return msg.sender;
-  }
+    function _msgSender() internal view virtual returns (address) {
+        return msg.sender;
+    }
 
-  function _msgData() internal view virtual returns (bytes calldata) {
-    return msg.data;
-  }
+    function _msgData() internal view virtual returns (bytes calldata) {
+        return msg.data;
+    }
 
-  function _contextSuffixLength() internal view virtual returns (uint256) {
-    return 0;
-  }
+    function _contextSuffixLength() internal view virtual returns (uint256) {
+        return 0;
+    }
 }

@@ -27,7 +27,9 @@ contract SpokeSetUserPositionManagersWithSigTest is SpokeBase {
     spoke1.useNonce(nonceKey);
 
     // prettier-ignore
-    unchecked { ++nonce; }
+    unchecked {
+            ++nonce;
+        }
 
     assertEq(spoke1.nonces(user, nonceKey), _packNonce(nonceKey, nonce));
   }

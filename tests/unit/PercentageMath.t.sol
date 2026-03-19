@@ -48,11 +48,11 @@ contract PercentageMathTests is Test {
 
   function test_percentMul() public view {
     assertEq(w.percentMulDown(1e18, 50_00), 0.5e18);
-    assertEq(w.percentMulDown(14.2515e18, 74_42), 10.605966300000000000e18);
+    assertEq(w.percentMulDown(14.2515e18, 74_42), 10.6059663e18);
     assertEq(w.percentMulDown(9087312e27, 13_33), 1211338689600000000000000000000000);
 
     assertEq(w.percentMulUp(1e18, 50_00), 0.5e18);
-    assertEq(w.percentMulUp(14.2515e18, 74_42), 10.605966300000000000e18);
+    assertEq(w.percentMulUp(14.2515e18, 74_42), 10.6059663e18);
     assertEq(w.percentMulUp(9087312e27, 13_33), 1211338689600000000000000000000000);
   }
 

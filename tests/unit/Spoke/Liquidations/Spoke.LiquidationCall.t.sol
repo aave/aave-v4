@@ -22,7 +22,8 @@ abstract contract SpokeLiquidationCallHelperTest is SpokeLiquidationCallBaseTest
   }
 
   function _processAdditionalSetup(
-    uint256 /* collateralReserveId */,
+    uint256,
+    /* collateralReserveId */
     uint256 /* debtReserveId */
   ) internal virtual {
     skipTime = vm.randomUint(0, 10 * 365 days);
@@ -385,8 +386,10 @@ contract SpokeLiquidationCallTest_NoLiquidationBonus is SpokeLiquidationCallHelp
   }
 
   function _assertBeforeLiquidation(
-    CheckedLiquidationCallParams memory /* params */,
-    AccountsInfo memory /* accountsInfoBefore */,
+    CheckedLiquidationCallParams memory,
+    /* params */
+    AccountsInfo memory,
+    /* accountsInfoBefore */
     LiquidationMetadata memory liquidationMetadata
   ) internal view virtual override {
     assertEq(liquidationMetadata.liquidationBonus, 100_00, 'Liquidation bonus');
@@ -417,8 +420,10 @@ contract SpokeLiquidationCallTest_SmallLiquidationBonus is SpokeLiquidationCallH
   }
 
   function _assertBeforeLiquidation(
-    CheckedLiquidationCallParams memory /* params */,
-    AccountsInfo memory /* accountsInfoBefore */,
+    CheckedLiquidationCallParams memory,
+    /* params */
+    AccountsInfo memory,
+    /* accountsInfoBefore */
     LiquidationMetadata memory liquidationMetadata
   ) internal view virtual override {
     assertLe(
@@ -453,8 +458,10 @@ contract SpokeLiquidationCallTest_LargeLiquidationBonus is SpokeLiquidationCallH
   }
 
   function _assertBeforeLiquidation(
-    CheckedLiquidationCallParams memory /* params */,
-    AccountsInfo memory /* accountsInfoBefore */,
+    CheckedLiquidationCallParams memory,
+    /* params */
+    AccountsInfo memory,
+    /* accountsInfoBefore */
     LiquidationMetadata memory liquidationMetadata
   ) internal view virtual override {
     assertGe(
@@ -476,7 +483,8 @@ contract SpokeLiquidationCallTest_LiquidationFeeZero is SpokeLiquidationCallHelp
 
   function _assertBeforeLiquidation(
     CheckedLiquidationCallParams memory params,
-    AccountsInfo memory /* accountsInfoBefore */,
+    AccountsInfo memory,
+    /* accountsInfoBefore */
     LiquidationMetadata memory /* liquidationMetadata */
   ) internal view virtual override {
     assertEq(
@@ -500,7 +508,8 @@ contract SpokeLiquidationCallTest_NoPremium is SpokeLiquidationCallHelperTest {
 
   function _assertBeforeLiquidation(
     CheckedLiquidationCallParams memory params,
-    AccountsInfo memory /* accountsInfoBefore */,
+    AccountsInfo memory,
+    /* accountsInfoBefore */
     LiquidationMetadata memory /* liquidationMetadata */
   ) internal view virtual override {
     (, uint256 premiumDebt) = params.spoke.getUserDebt(params.debtReserveId, params.user);
@@ -545,7 +554,8 @@ contract SpokeLiquidationCallTest_Premium is SpokeLiquidationCallHelperTest {
 
   function _assertBeforeLiquidation(
     CheckedLiquidationCallParams memory params,
-    AccountsInfo memory /* accountsInfoBefore */,
+    AccountsInfo memory,
+    /* accountsInfoBefore */
     LiquidationMetadata memory /* liquidationMetadata */
   ) internal view virtual override {
     (, uint256 premiumDebt) = params.spoke.getUserDebt(params.debtReserveId, params.user);
@@ -564,7 +574,8 @@ contract SpokeLiquidationCallTest_NoTimeSkip is SpokeLiquidationCallHelperTest {
 
   function _assertBeforeLiquidation(
     CheckedLiquidationCallParams memory params,
-    AccountsInfo memory /* accountsInfoBefore */,
+    AccountsInfo memory,
+    /* accountsInfoBefore */
     LiquidationMetadata memory /* liquidationMetadata */
   ) internal view virtual override {
     uint256 reserveCount = params.spoke.getReserveCount();
@@ -588,7 +599,8 @@ contract SpokeLiquidationCallTest_TargetHealthFactorOne is SpokeLiquidationCallH
 
   function _assertBeforeLiquidation(
     CheckedLiquidationCallParams memory params,
-    AccountsInfo memory /* accountsInfoBefore */,
+    AccountsInfo memory,
+    /* accountsInfoBefore */
     LiquidationMetadata memory /* liquidationMetadata */
   ) internal view virtual override {
     assertEq(params.spoke.getLiquidationConfig().targetHealthFactor, 1e18, 'Target health factor');

@@ -104,7 +104,8 @@ contract AssetInterestRateStrategy is IAssetInterestRateStrategy {
     uint256 assetId,
     uint256 liquidity,
     uint256 drawn,
-    uint256 /* deficit */,
+    uint256,
+    /* deficit */
     uint256 swept
   ) external view returns (uint256) {
     InterestRateData memory rateData = _interestRateData[assetId];

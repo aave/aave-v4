@@ -3205,7 +3205,9 @@ abstract contract Base is Test {
   function _getNextNoncePacked(uint256 currentKeyNonce) internal pure returns (uint256) {
     (uint192 nonceKey, uint64 nonce) = _unpackNonce(currentKeyNonce);
     // prettier-ignore
-    unchecked { ++nonce; }
+    unchecked {
+            ++nonce;
+        }
     return _packNonce(nonceKey, nonce);
   }
 

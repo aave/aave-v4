@@ -291,7 +291,7 @@ contract SpokeLiquidationCallScenariosTest is SpokeLiquidationCallBaseTest {
     // Health Factor after half of year: ($3300 * 0.97 + $500 * 0.7 + $100 * 0.72) /$3657.0726 = ~0.99068
     assertApproxEqAbs(
       userAccountData.healthFactor,
-      0.990e18,
+      0.99e18,
       0.001e18,
       'pre liquidation: health factor after half of year'
     );

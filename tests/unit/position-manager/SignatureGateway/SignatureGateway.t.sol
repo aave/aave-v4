@@ -29,7 +29,9 @@ contract SignatureGatewayTest is SignatureGatewayBaseTest {
     gateway.useNonce(nonceKey);
 
     // prettier-ignore
-    unchecked { ++nonce; }
+    unchecked {
+            ++nonce;
+        }
     assertEq(gateway.nonces(user, nonceKey), _packNonce(nonceKey, nonce));
   }
 

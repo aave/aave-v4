@@ -69,7 +69,8 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
     uint96 baseRateUsdx;
   }
 
-  /** Spoke1 Init Config
+  /**
+   * Spoke1 Init Config
    * +-----------+------------+------------------+--------+----------+
    * | reserveId | collateral | collateralRisk | price  | decimals |
    * +-----------+------------+------------------+--------+----------+

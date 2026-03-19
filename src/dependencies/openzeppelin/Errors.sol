@@ -12,23 +12,23 @@ pragma solidity ^0.8.20;
  * _Available since v5.1._
  */
 library Errors {
-  /**
-   * @dev The ETH balance of the account is not enough to perform the operation.
-   */
-  error InsufficientBalance(uint256 balance, uint256 needed);
+    /**
+     * @dev The ETH balance of the account is not enough to perform the operation.
+     */
+    error InsufficientBalance(uint256 balance, uint256 needed);
 
-  /**
-   * @dev A call to an address target failed. The target may have reverted.
-   */
-  error FailedCall();
+    /**
+     * @dev A call to an address target failed. The target may have reverted.
+     */
+    error FailedCall();
 
-  /**
-   * @dev The deployment failed.
-   */
-  error FailedDeployment();
+    /**
+     * @dev The deployment failed.
+     */
+    error FailedDeployment();
 
-  /**
-   * @dev A necessary precompile is missing.
-   */
-  error MissingPrecompile(address);
+    /**
+     * @dev A necessary precompile is missing.
+     */
+    error MissingPrecompile(address);
 }
