@@ -20,6 +20,8 @@ Each reserve references its own Hub through `Reserve.hub`, so the collateral and
 
 ## Parameters and Configuration
 
+Liquidation behavior is controlled by Spoke-wide parameters stored in `LiquidationConfig` and per-reserve parameters stored in `DynamicReserveConfig`.
+
 | **Parameter**                | **Description**                                                                                                                                                                                                                                                                                                                                                                                                                                | **Constraints**                                                                                                                                                    |
 | ---------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `targetHealthFactor`         | Spoke-wide HF target (WAD) used to compute debt-to-target during liquidation. Actual post-liquidation HF can differ due to `debtToCover`, collateral exhaustion, dust-handling adjustments, and rounding effects.                                                                                                                                                                                                                              | Must be ≥ `HEALTH_FACTOR_LIQUIDATION_THRESHOLD`.                                                                                                                   |
@@ -46,6 +48,8 @@ Any address can call `liquidationCall` on a Spoke to initiate a liquidation. Sel
 Frozen reserves can be liquidated, but cannot be received as shares (see `receiveShares` validation). Paused reserves in the borrower's position that are not the specific collateral or debt target being liquidated do not block the call.
 
 ## Liquidation Process
+
+A liquidation executes in six sequential steps.
 
 1. **Compute account data**: The Spoke calculates the borrower's health factor, total debt value (RAY-scaled), total collateral value (counting reserves with `collateralFactor > 0`, `usingAsCollateral` enabled, and `suppliedShares > 0`), and the counts of active collateral and borrow reserves.
 
@@ -106,9 +110,11 @@ $$maxLB_i \times cf_i \le hfForMaxBonus, \quad \forall i$$
 
 then whenever the Dutch-auction interpolation region applies ($HF > hfForMaxBonus$), it holds that $lb_k \times cf_k \le hfForMaxBonus < HF_{beforeLiq}$, guaranteeing health factor improvement after every liquidation. When $HF \le hfForMaxBonus$, the full $maxLB_k$ applies uniformly regardless of health factor, so there is no incremental incentive to split. Under this condition, liquidation splits are never profitable.
 
-The Governor must verify this condition for every collateral across all active `DynamicReserveConfig` keys. Because `hfForMaxBonus` is Spoke-wide while `maxLiquidationBonus` and `collateralFactor` are per-reserve and per-config-key, changes to any of these values must be validated against the condition before they are applied.
+The Governor must verify this condition for every collateral across all active `DynamicReserveConfig` keys. Because `hfForMaxBonus` is spoke-wide while `maxLiquidationBonus` and `collateralFactor` are per-reserve and per-config-key, changes to any of these values must be validated against the condition before they are applied.
 
 ## Dust and Rounding
+
+Dust prevention and rounding direction are enforced independently within the liquidation flow.
 
 **Dust prevention**: The engine prevents leaving sub-threshold dust on either side unless the opposite side is fully exhausted. If remaining debt would be dust, liquidation is extended to full debt; if remaining collateral would be dust, liquidation is adjusted to fully consume collateral (or otherwise satisfy dust constraints). Calls that do not provide enough `debtToCover` for these dust-safe bounds revert with `MustNotLeaveDust`. Dust can still remain on one side when the other side is fully exhausted.
 
@@ -128,6 +134,8 @@ Both drawn debt and premium debt are settled in a single atomic operation. Premi
 If the liquidated collateral was lower-risk than the collateral remaining in the position, the borrower's effective risk premium increases after the liquidation, causing premium shares on the Hub to rise. If `riskPremiumThreshold` is set below the post-liquidation premium-to-drawn ratio, the post-liquidation `Hub.refreshPremium` call reverts with `InvalidPremiumChange`, causing the liquidation transaction to revert. The Governor must set `riskPremiumThreshold` with sufficient headroom to accommodate the premium increases that naturally arise when safer collateral is partially liquidated while riskier collateral remains.
 
 ## Deficit Reporting and Elimination
+
+Deficit arises when a liquidation fully exhausts the borrower's last active collateral reserve and debt remains. The Spoke reports it to the Hub; any authorized active Spoke can eliminate it.
 
 **Deficit condition**: After liquidating the target collateral reserve and repaying the target debt, the engine evaluates deficit via `_evaluateDeficit`. Deficit is signaled when the collateral position is fully emptied, `activeCollateralCount` was 1 (it was the borrower's only active collateral), and debt remains in at least one reserve (the target debt reserve or any other).
 
