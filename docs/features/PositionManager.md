@@ -24,7 +24,7 @@ None of the three gates alone is sufficient. Even if a Spoke has activated a Pos
 
 This design means Position Manager approvals are scoped to specific Spoke + Position Manager combinations. Approving a Position Manager on one Spoke grants no access on any other Spoke. There is no global Position Manager registry or cross-spoke approval propagation.
 
-**DAO / governance sunsetting.** Whoever controls the Spoke configurator role (typically the DAO via `AccessManaged` on `SpokeConfigurator`) can deactivate a Position Manager on a Spoke by calling `SpokeConfigurator.updatePositionManager`, which sets that address’s Spoke-side `active` flag to `false`. Delegated actions gated by `onlyPositionManager` then fail for that contract on that Spoke until governance reactivates it with `updatePositionManager`. This does not iterate users or delete approval bitmap entries; it removes gate (2) globally for that Spoke + Position Manager pair, so persisted user approvals are inert while the manager remains inactive.
+**Governor sunsetting.** Whoever controls the Spoke configurator role (typically the Governor via `AccessManaged` on `SpokeConfigurator`) can deactivate a Position Manager on a Spoke by calling `SpokeConfigurator.updatePositionManager`, which sets that address’s Spoke-side `active` flag to `false`. Delegated actions gated by `onlyPositionManager` then fail for that contract on that Spoke until governance reactivates it with `updatePositionManager`. This does not iterate users or delete approval bitmap entries; it removes gate (2) globally for that Spoke + Position Manager pair, so persisted user approvals are inert while the manager remains inactive.
 
 ## Signature-Based Approval Flows
 
