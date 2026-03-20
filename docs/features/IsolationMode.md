@@ -2,7 +2,7 @@
 
 ## Summary
 
-Isolation Mode enables new assets to be added to the protocol with contained risk by deploying them in a dedicated Spoke and Liquidity Hub pair separate from the canonical market. Users who supply an isolated collateral asset in this Spoke can only borrow assets configured as borrowable for that market, up to per-asset draw caps set by the Governor. Because the isolated market lives in its own Spoke, users continue to hold unrestricted positions in the Canonical Spoke and any other Spoke simultaneously.
+Isolation Mode enables new collateral assets to be added to the protocol with contained risk by deploying them in a dedicated Spoke and Liquidity Hub pair separate from the canonical market. Users who supply an isolated collateral asset in this Spoke can only borrow assets configured as borrowable for that market, up to per-asset draw caps set by the Governor. Because the isolated market lives in its own Spoke, users continue to hold unrestricted positions in the Canonical Spoke and any other Spoke simultaneously.
 
 Unlike Aave V3, which enforced a single aggregated borrow ceiling per isolated market and locked the borrower to one isolated collateral asset per account, Aave V4 assigns draw caps independently per asset and permits any number of assets to be configured as collateral within the isolated Spoke. The risk boundary is structural: it is scoped to the Spoke, not to the user's account.
 
@@ -34,7 +34,7 @@ Once the isolated LH has accumulated sufficient native USDC liquidity, the Gover
 
 The following are explicitly excluded from Isolation Mode as a configuration pattern:
 
-- **Account-level enforcement**: Isolation Mode is a Spoke-level pattern, not an account-level lock. The contracts do not prevent a user from holding positions in both the isolated Spoke and the Canonical Spoke simultaneously.
+- **Account-level enforcement**: Isolation Mode is a Spoke-level pattern, not an account-level lock. The contracts do not prevent a user from holding positions in the isolated Spoke, the Canonical Spoke, or any other spoke simultaneously.
 - **Cross-Spoke health factor aggregation**: Collateral and debt in the isolated Spoke are accounted independently. Health factors are not aggregated across Spokes.
 - **Stablecoin-only borrowable constraint**: There is no protocol-level rule restricting borrowable assets to stablecoins; that is a governance configuration choice.
 
