@@ -152,4 +152,110 @@ contract PositionManagerEngineTest is BaseConfigEngineTest {
       )
     );
   }
+
+  function test_executePositionManagerSpokeRegistrations_idempotent() public {
+    IAaveV4ConfigEngine.SpokeRegistration[] memory regs = _toSpokeRegistrationArray(
+      IAaveV4ConfigEngine.SpokeRegistration({
+        positionManager: address(positionManager),
+        spoke: address(spoke1()),
+        registered: true
+      })
+    );
+
+    vm.expectEmit(address(positionManager));
+    emit IPositionManagerBase.RegisterSpoke(address(spoke1()), true);
+    engine.executePositionManagerSpokeRegistrations(regs);
+    assertTrue(positionManager.isSpokeRegistered(address(spoke1())));
+
+    vm.expectEmit(address(positionManager));
+    emit IPositionManagerBase.RegisterSpoke(address(spoke1()), true);
+    engine.executePositionManagerSpokeRegistrations(regs);
+    assertTrue(positionManager.isSpokeRegistered(address(spoke1())));
+  }
+
+  function test_executePositionManagerRoleRenouncements_nonExistentApproval() public {
+    engine.executePositionManagerSpokeRegistrations(
+      _toSpokeRegistrationArray(
+        IAaveV4ConfigEngine.SpokeRegistration({
+          positionManager: address(positionManager),
+          spoke: address(spoke1()),
+          registered: true
+        })
+      )
+    );
+
+    engine.executeSpokePositionManagerUpdates(
+      _toPositionManagerUpdateArray(
+        IAaveV4ConfigEngine.PositionManagerUpdate({
+          spokeConfigurator: spokeConfigurator,
+          spoke: address(spoke1()),
+          positionManager: address(positionManager),
+          active: true
+        })
+      )
+    );
+
+    engine.executePositionManagerRoleRenouncements(
+      _toPositionManagerRoleRenouncementArray(
+        IAaveV4ConfigEngine.PositionManagerRoleRenouncement({
+          positionManager: address(positionManager),
+          spoke: address(spoke1()),
+          user: USER
+        })
+      )
+    );
+
+    assertFalse(spoke1().isPositionManager(USER, address(positionManager)));
+  }
+
+  function test_executePositionManagerSpokeRegistrations_batchMultipleSpokes() public {
+    IAaveV4ConfigEngine.SpokeRegistration[]
+      memory regs = new IAaveV4ConfigEngine.SpokeRegistration[](3);
+    regs[0] = IAaveV4ConfigEngine.SpokeRegistration({
+      positionManager: address(positionManager),
+      spoke: address(spoke1()),
+      registered: true
+    });
+    regs[1] = IAaveV4ConfigEngine.SpokeRegistration({
+      positionManager: address(positionManager),
+      spoke: address(spoke2()),
+      registered: true
+    });
+    regs[2] = IAaveV4ConfigEngine.SpokeRegistration({
+      positionManager: address(positionManager),
+      spoke: address(spoke3()),
+      registered: true
+    });
+
+    engine.executePositionManagerSpokeRegistrations(regs);
+
+    assertTrue(positionManager.isSpokeRegistered(address(spoke1())));
+    assertTrue(positionManager.isSpokeRegistered(address(spoke2())));
+    assertTrue(positionManager.isSpokeRegistered(address(spoke3())));
+  }
+
+  function test_executePositionManagerSpokeRegistrations_batchMultiplePositionManagers() public {
+    PositionManagerBaseWrapper pm1 = new PositionManagerBaseWrapper(address(engine));
+    PositionManagerBaseWrapper pm2 = new PositionManagerBaseWrapper(address(engine));
+
+    IAaveV4ConfigEngine.SpokeRegistration[]
+      memory regs = new IAaveV4ConfigEngine.SpokeRegistration[](2);
+    regs[0] = IAaveV4ConfigEngine.SpokeRegistration({
+      positionManager: address(pm1),
+      spoke: address(spoke1()),
+      registered: true
+    });
+    regs[1] = IAaveV4ConfigEngine.SpokeRegistration({
+      positionManager: address(pm2),
+      spoke: address(spoke2()),
+      registered: true
+    });
+
+    engine.executePositionManagerSpokeRegistrations(regs);
+
+    assertTrue(pm1.isSpokeRegistered(address(spoke1())));
+    assertFalse(pm1.isSpokeRegistered(address(spoke2())));
+    assertTrue(pm2.isSpokeRegistered(address(spoke2())));
+    assertFalse(pm2.isSpokeRegistered(address(spoke1())));
+  }
 }
