@@ -68,7 +68,7 @@ contract HubEliminateDeficitTest is HubBase {
   }
 
   function test_eliminateDeficit_fuzz_revertsWith_AccessManagedUnauthorized(address caller) public {
-    assumeNotProxyAdmin(caller, address(hub1));
+    _assumeNotProxyAdmin(caller, address(hub1));
     (bool immediate, uint32 delay) = IAccessManager(hub1.authority()).canCall(
       caller,
       address(hub1),

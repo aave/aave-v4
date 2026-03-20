@@ -238,7 +238,7 @@ contract SpokeDynamicConfigTriggersTest is SpokeBase {
   }
 
   function test_updateUserDynamicConfig_reverts_when_not_authorized(address caller) public {
-    assumeNotProxyAdmin(caller, address(spoke1));
+    _assumeNotProxyAdmin(caller, address(spoke1));
     vm.assume(
       caller != alice &&
         caller != POSITION_MANAGER &&

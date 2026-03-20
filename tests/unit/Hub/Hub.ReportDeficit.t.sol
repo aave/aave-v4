@@ -33,7 +33,7 @@ contract HubReportDeficitTest is HubBase {
   }
 
   function test_reportDeficit_revertsWith_SpokeNotActive(address caller) public {
-    assumeNotProxyAdmin(caller, address(hub1));
+    _assumeNotProxyAdmin(caller, address(hub1));
     vm.assume(!hub1.getSpoke(usdxAssetId, caller).active);
 
     vm.expectRevert(IHub.SpokeNotActive.selector);

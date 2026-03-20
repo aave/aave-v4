@@ -19,7 +19,7 @@ contract HubSweepTest is HubBase {
   }
 
   function test_sweep_revertsWith_OnlyReinvestmentController(address caller) public {
-    assumeNotProxyAdmin(caller, address(hub1));
+    _assumeNotProxyAdmin(caller, address(hub1));
     vm.assume(caller != reinvestmentController);
     updateAssetReinvestmentController(hub1, daiAssetId, reinvestmentController);
 

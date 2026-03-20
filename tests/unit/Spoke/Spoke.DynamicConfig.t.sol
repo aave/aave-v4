@@ -111,7 +111,7 @@ contract SpokeDynamicConfigTest is SpokeBase {
   function test_addDynamicReserveConfig_revertsWith_AccessManagedUnauthorized(
     address caller
   ) public {
-    assumeNotProxyAdmin(caller, address(spoke1));
+    _assumeNotProxyAdmin(caller, address(spoke1));
     vm.assume(caller != SPOKE_ADMIN && caller != ADMIN && caller != SPOKE_CONFIGURATOR);
     uint256 reserveId = _randomReserveId(spoke1);
     uint32 dynamicConfigKey = _randomInitializedConfigKey(spoke1, reserveId);
@@ -218,7 +218,7 @@ contract SpokeDynamicConfigTest is SpokeBase {
   function test_updateDynamicReserveConfig_revertsWith_AccessManagedUnauthorized(
     address caller
   ) public {
-    assumeNotProxyAdmin(caller, address(spoke1));
+    _assumeNotProxyAdmin(caller, address(spoke1));
     vm.assume(caller != SPOKE_ADMIN && caller != ADMIN && caller != SPOKE_CONFIGURATOR);
     uint256 reserveId = _randomReserveId(spoke1);
     uint32 dynamicConfigKey = _randomInitializedConfigKey(spoke1, reserveId);

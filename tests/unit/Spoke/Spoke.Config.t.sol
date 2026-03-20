@@ -49,7 +49,7 @@ contract SpokeConfigTest is SpokeBase {
   function test_updateReservePriceSource_revertsWith_AccessManagedUnauthorized(
     address caller
   ) public {
-    assumeNotProxyAdmin(caller, address(spoke1));
+    _assumeNotProxyAdmin(caller, address(spoke1));
     vm.assume(caller != SPOKE_ADMIN && caller != ADMIN && caller != SPOKE_CONFIGURATOR);
     vm.expectRevert(
       abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, caller)
