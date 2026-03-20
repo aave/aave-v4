@@ -53,7 +53,7 @@ contract SpokeConfigTest is SpokeBase {
       caller != SPOKE_ADMIN &&
         caller != ADMIN &&
         caller != SPOKE_CONFIGURATOR &&
-        caller != _getProxyAdminAddress(spoke1)
+        caller != _getProxyAdminAddress(address(spoke1))
     );
     vm.expectRevert(
       abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, caller)
