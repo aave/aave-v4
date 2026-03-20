@@ -4,15 +4,15 @@
 
 Siloed Borrowing constrains a Spoke so that only one designated asset is effectively borrowable, confining volatility or liquidity risk of that asset to the siloed market alone. A common configuration is exactly one reserve with `borrowable = true` and all others with `borrowable = false`; alternatively, non-target reserves can be made effectively non-borrowable via a zero `drawCap` on their `(assetId, spoke)` Hub config. Multiple collateral assets can be supplied through the Spoke, but a user's active collateral set is still bounded by `MAX_USER_RESERVES_LIMIT` when enabling reserves via `setUsingAsCollateral`. Borrow exposure is limited to the siloed asset subject to its draw cap on the Hub.
 
-Because the constraint is Spoke-level rather than account-level, a single wallet can hold siloed borrow positions in multiple siloed Spokes simultaneously, each confined to its own asset, while also maintaining non-siloed positions in the Canonical Spoke. Collateral and debt in each Spoke remain fully segregated.
+Because the constraint is spoke-level rather than account-level, a single wallet can hold siloed borrow positions in multiple siloed Spokes simultaneously, each confined to its own asset, while also maintaining non-siloed positions in other Spokes. Collateral and debt in each Spoke remain fully segregated.
 
 ## Relationship to the Hub/Spoke Architecture
 
-Siloed Borrowing is a reserve-level configuration. Each reserve carries a `borrowable` flag in `ReserveFlags`; the bit is defined by `ReserveFlagsMap.BORROWABLE_MASK` and read via `ReserveFlagsMap.borrowable()`. When `borrowable = false`, any borrow attempt against that reserve reverts with `ReserveNotBorrowable`. Configuring all reserves except one to `borrowable = false` makes that one reserve the sole drawable asset in the Spoke without requiring any additional contract logic.
+Siloed Borrowing is a reserve-level configuration. Each reserve carries a `borrowable` boolean in `ReserveConfig`. When `borrowable = false`, any borrow attempt against that reserve reverts with `ReserveNotBorrowable`. Configuring all reserves except one to `borrowable = false` makes that one reserve the sole drawable asset in the Spoke without requiring any additional contract logic.
 
-Each reserve in `ISpoke.Reserve` carries a `hub` field of type `IHubBase`, specifying which Hub the Spoke interacts with for that reserve. A siloed Spoke for asset C that references a second LH routes all operations to the Hub where C is listed. Supply and borrow flows use the same `hub` field: `reserve.hub.add` is called on supply and `reserve.hub.draw` on borrow, so each reserve references exactly one Hub for both operations.
+Each reserve in `ISpoke.Reserve` carries a `hub` field of type `IHubBase`, specifying which Hub the Spoke interacts with for that reserve. Supply and borrow flows use the same `hub` field: `reserve.hub.add` is called on supply and `reserve.hub.draw` on borrow, so each reserve references exactly one Hub for both operations.
 
-The draw ceiling is enforced at the Hub level by `SpokeData.drawCap`. When the siloed Spoke calls `Hub.draw`, the Hub verifies that the Spoke's total exposure for that asset—current drawn amount, accrued premium, any reported deficit, plus the new draw amount—does not exceed `drawCap`. Violation reverts with `DrawCapExceeded`. The cap is expressed in whole assets (not scaled by decimals), stored as `uint40`, and managed via `HubConfigurator.updateSpokeDrawCap`. Setting `drawCap` to `MAX_ALLOWED_SPOKE_CAP` removes the ceiling.
+The draw ceiling is enforced at the Hub level by `SpokeData.drawCap`. When the siloed Spoke calls `Hub.draw`, the Hub verifies that the sum of the Spoke's drawn amount, accrued premium, reported deficit, and the new draw amount does not exceed `drawCap`. Violation reverts with `DrawCapExceeded`. The cap is expressed in whole assets (not scaled by decimals), stored as `uint40`, and managed via `HubConfigurator.updateSpokeDrawCap`. Setting `drawCap` to `MAX_ALLOWED_SPOKE_CAP` removes the ceiling.
 
 ## Collateral Configuration
 
@@ -36,7 +36,7 @@ The following are explicitly excluded from Siloed Borrowing as a configuration p
 
 ## Key Differences from Aave V3
 
-**Account-level vs. Spoke-level siloing**: In Aave V3, `siloedBorrowing` is a reserve configuration, and enforcement is account-level at borrow time: if an account has debt in a siloed asset, it cannot borrow a different asset; if an account already has non-siloed debt, it cannot start borrowing a siloed asset. In Aave V4, the constraint is Spoke-level: the siloed Spoke enforces single-asset borrowing, but the same wallet maintains full flexibility in the Canonical Spoke and other Spokes.
+**Account-level vs. Spoke-level siloing**: In Aave V3, `siloedBorrowing` is a reserve configuration, and enforcement is account-level at borrow time: if an account has debt in a siloed asset, it cannot borrow a different asset; if an account already has non-siloed debt, it cannot start borrowing a siloed asset. In Aave V4, the constraint is spoke-level: the siloed Spoke enforces single-asset borrowing, but the same wallet maintains full flexibility in the Canonical Spoke and other Spokes.
 
 **Multiple simultaneous siloed positions**: In Aave V3, a single account can hold at most one siloed borrow position at any time. In Aave V4, a single wallet can hold siloed borrow positions in multiple siloed Spokes simultaneously, each confined to its own asset and Hub.
 
