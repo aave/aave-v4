@@ -111,12 +111,8 @@ contract SpokeDynamicConfigTest is SpokeBase {
   function test_addDynamicReserveConfig_revertsWith_AccessManagedUnauthorized(
     address caller
   ) public {
-    vm.assume(
-      caller != SPOKE_ADMIN &&
-        caller != ADMIN &&
-        caller != SPOKE_CONFIGURATOR &&
-        caller != _getProxyAdminAddress(address(spoke1))
-    );
+    assumeNotProxyAdmin(caller, address(spoke1));
+    vm.assume(caller != SPOKE_ADMIN && caller != ADMIN && caller != SPOKE_CONFIGURATOR);
     uint256 reserveId = _randomReserveId(spoke1);
     uint32 dynamicConfigKey = _randomInitializedConfigKey(spoke1, reserveId);
     ISpoke.DynamicReserveConfig memory dynConf = ISpoke.DynamicReserveConfig({
@@ -222,12 +218,8 @@ contract SpokeDynamicConfigTest is SpokeBase {
   function test_updateDynamicReserveConfig_revertsWith_AccessManagedUnauthorized(
     address caller
   ) public {
-    vm.assume(
-      caller != SPOKE_ADMIN &&
-        caller != ADMIN &&
-        caller != SPOKE_CONFIGURATOR &&
-        caller != _getProxyAdminAddress(address(spoke1))
-    );
+    assumeNotProxyAdmin(caller, address(spoke1));
+    vm.assume(caller != SPOKE_ADMIN && caller != ADMIN && caller != SPOKE_CONFIGURATOR);
     uint256 reserveId = _randomReserveId(spoke1);
     uint32 dynamicConfigKey = _randomInitializedConfigKey(spoke1, reserveId);
     ISpoke.DynamicReserveConfig memory dynConf = ISpoke.DynamicReserveConfig({
