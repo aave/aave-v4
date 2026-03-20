@@ -8,7 +8,7 @@ Canonical terminology for Aave V4. Terms appear in alphabetical order.
 
 **Collateral Factor:** Maximum percentage of collateral value that can be borrowed against a collateral asset.
 
-**Collateral Risk:** Additional risk parameter per asset, managed by the Governor. Introduces a charge on borrowers above the base risk-free borrow interest rate.
+**Collateral Risk:** Additional risk parameter per asset, managed by the Governor. Introduces a charge on borrowers above the base drawn interest rate.
 
 **Deficit:** Protocol accounting state in which a borrower has outstanding debt but no remaining collateral after a liquidation. Deficits are tracked per asset at the Hub level and can be eliminated by authorized active Spokes using their supplied shares.
 
@@ -18,25 +18,25 @@ Canonical terminology for Aave V4. Terms appear in alphabetical order.
 
 **Dynamic Risk Configuration:** Combination of Risk Configuration parameters that allows different users to be subscribed to different configurations.
 
-**Governor:** Entity authorized to manage Spokes, set risk parameters, configure caps, and execute emergency controls. In the Aave V4 deployment, this is the Aave DAO.
+**Governor:** Entity authorized to manage Spokes and Hubs, set risk parameters, configure caps, and execute emergency controls. In the Aave V4 deployment, this is the Aave DAO.
 
 **Health Factor (HF):** Ratio of a user's weighted collateral value (adjusted by Collateral Factor) to total outstanding debt. When HF drops below `HEALTH_FACTOR_LIQUIDATION_THRESHOLD`, the position becomes eligible for liquidation.
 
 **Hub:** Central store where all liquidity is held, to be drawn and restored by attached Spokes. No collateralization is enforced on the Spokes.
 
-**Isolation Mode:** Configuration pattern that deploys a dedicated Spoke and Liquidity Hub pair for a new or experimental asset with contained risk. Borrowable assets are restricted by the `borrowable` flag on each reserve; maximum borrow exposure is controlled per asset through `SpokeData.drawCap` at the Hub. Users retain unrestricted positions in other Spokes simultaneously.
+**Isolation Mode:** Configuration pattern that deploys a dedicated Spoke and Liquidity Hub pair for a new or experimental asset with contained risk. This asset is the only allowed collateral asset. Borrowable assets are restricted by the `borrowable` flag on each reserve; maximum borrow exposure is controlled per asset through `SpokeData.drawCap` at the Hub. Users retain unrestricted positions in other Spokes simultaneously.
 
 **Liquidation Bonus:** Collateral surplus awarded to a liquidator above the base currency value of the debt repaid. In Aave V4, the bonus follows a Dutch-auction formula that interpolates linearly between a governance-set minimum at `HEALTH_FACTOR_LIQUIDATION_THRESHOLD` and the per-collateral `maxLiquidationBonus` at `healthFactorForMaxBonus`. The net bonus after the protocol fee equals the effective collateral surplus received by the liquidator.
 
 **Liquidation Fee:** Protocol fee applied to the effective bonus portion of collateral seized during a liquidation. A fraction of the bonus collateral is transferred to the Hub fee receiver as shares via `Hub.payFeeShares`. Expressed in BPS as `liquidationFee` in `DynamicReserveConfig`.
 
-**PositionManager:** Authorized entity allowed to manage a user position.
+**Position Manager:** Authorized entity allowed to manage a user position after the user has granted explicit permissions to do so.
 
-**Premium Debt:** Extra debt of a position, determined by `premiumShares`, `premiumOffset`, and `realizedPremium`.
+**Premium Debt:** Extra debt of a position, corresponding to the user's collateral risk, determined by `premiumShares`, `premiumOffset`, and `realizedPremium`.
 
 **PremiumOffset:** In asset terms, the effective principal value at the time debt was taken, such that premium debt accrues only on interest earned on `premiumShares`.
 
-**PremiumShares:** Effective shares on which the base drawn rate is applied to accrue interest.
+**PremiumShares:** Effective shares on which the base drawn rate is applied to accrue interest. This helps account for the extra interest owed due to a user having riskier collateral.
 
 **RealizedPremium:** In asset terms, the completely non-interest-bearing portion of premium debt accumulated to date.
 
@@ -44,7 +44,7 @@ Canonical terminology for Aave V4. Terms appear in alphabetical order.
 
 **Reserve:** Per-asset accounting unit within a Spoke. Each reserve tracks supply and borrow state for a single asset, references its Liquidity Hub via `Reserve.hub`, and carries configuration for collateral eligibility, borrowability, interest parameters, and liquidation settings.
 
-**Risk Premium:** Weighted average of the Collateral Risk values of assets used by a user as collateral.
+**Risk Premium:** Weighted average of the Collateral Risk values of a user's collateral assets.
 
 **Siloed Borrowing:** Configuration pattern in which a single asset is designated as the sole borrowable reserve in a Spoke by setting `borrowable = false` on all other reserves. Borrow exposure and any resulting risk are confined to the siloed asset's Hub; other Spokes and markets are not affected.
 
