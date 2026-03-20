@@ -46,6 +46,22 @@ contract SpokeConfigTest is SpokeBase {
     deployer.deploySpokeImplementation(oracle, 0);
   }
 
+  function test_liquidationLogic_compiler_profile() public {
+    address lib = spoke1.getLiquidationLogic();
+    uint256 codeSize = lib.code.length;
+
+    // Default profile (via_ir=false): 12,519 bytes deployed
+    // Spoke profile (via_ir=true):     9,835 bytes deployed
+    emit log_named_uint('LiquidationLogic code size', codeSize);
+
+    // Expect spoke profile (via_ir=true) to match production
+    assertEq(
+      codeSize,
+      9835,
+      'LiquidationLogic should be compiled with spoke profile (via_ir=true)'
+    );
+  }
+
   function test_updateReservePriceSource_revertsWith_AccessManagedUnauthorized(
     address caller
   ) public {
@@ -402,22 +418,6 @@ contract SpokeConfigTest is SpokeBase {
     assetId = bound(assetId, hub1.getAssetCount(), UINT256_MAX);
     vm.expectRevert(ISpoke.ReserveNotListed.selector, address(spoke1));
     spoke1.getReserveId(address(hub1), assetId);
-  }
-
-  function test_liquidationLogic_compiler_profile() public {
-    address lib = spoke1.getLiquidationLogic();
-    uint256 codeSize = lib.code.length;
-
-    // Default profile (via_ir=false): 12,520 bytes deployed
-    // Spoke profile (via_ir=true):     9,836 bytes deployed
-    emit log_named_uint('LiquidationLogic code size', codeSize);
-
-    // Expect spoke profile (via_ir=true) to match production
-    assertEq(
-      codeSize,
-      9836,
-      'LiquidationLogic should be compiled with spoke profile (via_ir=true)'
-    );
   }
 
   function test_updateLiquidationConfig_targetHealthFactor() public {

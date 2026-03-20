@@ -12,6 +12,10 @@ import {Create2Utils} from 'tests/Create2Utils.sol';
 library DeployUtils {
   Vm internal constant vm = Vm(address(uint160(uint256(keccak256('hevm cheat code')))));
 
+  // keccak256('src/spoke/libraries/LiquidationLogic.sol:LiquidationLogic')[:34]
+  string internal constant LIQUIDATION_LOGIC_PLACEHOLDER =
+    '__$a48140799943db40fec4e369e92a011fa5$__';
+
   function deploySpokeImplementation(
     address oracle,
     uint16 maxUserReservesLimit
@@ -27,7 +31,10 @@ library DeployUtils {
     Create2Utils.loadCreate2Factory();
     return
       ISpokeInstance(
-        Create2Utils.create2Deploy(salt, _getSpokeInstanceInitCode(oracle, maxUserReservesLimit))
+        Create2Utils.create2Deploy(
+          salt,
+          _getSpokeInstanceInitCode(oracle, maxUserReservesLimit, salt)
+        )
       );
   }
 
@@ -59,9 +66,8 @@ library DeployUtils {
     uint16 maxUserReservesLimit,
     bytes32 salt
   ) internal returns (address) {
-    bytes32 initCodeHash = keccak256(_getSpokeInstanceInitCode(oracle, maxUserReservesLimit));
-
     Create2Utils.loadCreate2Factory();
+    bytes32 initCodeHash = keccak256(_getSpokeInstanceInitCode(oracle, maxUserReservesLimit, salt));
     return Create2Utils.computeCreate2Address(salt, initCodeHash);
   }
 
@@ -115,13 +121,24 @@ library DeployUtils {
 
   function _getSpokeInstanceInitCode(
     address oracle,
-    uint16 maxUserReservesLimit
-  ) internal view returns (bytes memory) {
-    return
-      abi.encodePacked(
-        vm.getCode('src/spoke/instances/SpokeInstance.sol:SpokeInstance'),
-        abi.encode(oracle, maxUserReservesLimit)
-      );
+    uint16 maxUserReservesLimit,
+    bytes32 salt
+  ) internal returns (bytes memory) {
+    bytes memory liquidationLogicInitCode = vm.parseJsonBytes(
+      vm.readFile('out/LiquidationLogic.sol/LiquidationLogic.spoke.json'),
+      '.bytecode.object'
+    );
+    address liquidationLogic = Create2Utils.create2Deploy(salt, liquidationLogicInitCode);
+
+    string memory spokeHex = vm.parseJsonString(
+      vm.readFile('out/SpokeInstance.sol/SpokeInstance.json'),
+      '.bytecode.object'
+    );
+
+    string memory addrHex = vm.replace(vm.toLowercase(vm.toString(liquidationLogic)), '0x', '');
+    string memory patchedHex = vm.replace(spokeHex, LIQUIDATION_LOGIC_PLACEHOLDER, addrHex);
+
+    return abi.encodePacked(vm.parseBytes(patchedHex), abi.encode(oracle, maxUserReservesLimit));
   }
 
   function _getHubInstanceInitCode() internal view returns (bytes memory) {
