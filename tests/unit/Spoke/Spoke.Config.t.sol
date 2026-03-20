@@ -404,6 +404,22 @@ contract SpokeConfigTest is SpokeBase {
     spoke1.getReserveId(address(hub1), assetId);
   }
 
+  function test_liquidationLogic_compiler_profile() public {
+    address lib = spoke1.getLiquidationLogic();
+    uint256 codeSize = lib.code.length;
+
+    // Default profile (via_ir=false): 12,520 bytes deployed
+    // Spoke profile (via_ir=true):     9,836 bytes deployed
+    emit log_named_uint('LiquidationLogic code size', codeSize);
+
+    // Expect spoke profile (via_ir=true) to match production
+    assertEq(
+      codeSize,
+      9836,
+      'LiquidationLogic should be compiled with spoke profile (via_ir=true)'
+    );
+  }
+
   function test_updateLiquidationConfig_targetHealthFactor() public {
     uint128 newTargetHealthFactor = HEALTH_FACTOR_LIQUIDATION_THRESHOLD + 1;
 
