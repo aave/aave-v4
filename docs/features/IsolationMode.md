@@ -34,13 +34,13 @@ Once the isolated LH has accumulated sufficient native USDC liquidity, the Gover
 
 The following are explicitly excluded from Isolation Mode as a configuration pattern:
 
-- **Account-level enforcement**: Isolation Mode is a Spoke-level pattern, not an account-level lock. The contracts do not prevent a user from holding positions in the isolated Spoke, the Canonical Spoke, or any other spoke simultaneously.
+- **Account-level enforcement**: Isolation Mode is a spoke-level pattern, not an account-level lock. The contracts do not prevent a user from holding positions in the isolated Spoke, the Canonical Spoke, or any other Spoke simultaneously.
 - **Cross-Spoke health factor aggregation**: Collateral and debt in the isolated Spoke are accounted independently. Health factors are not aggregated across Spokes.
 - **Stablecoin-only borrowable constraint**: There is no protocol-level rule restricting borrowable assets to stablecoins; that is a governance configuration choice.
 
 ## Key Differences from Aave V3
 
-**Spoke-scoped isolation**: In Aave V3, Isolation Mode applies at the account level. A user who supplies an isolated collateral asset cannot use any other asset as collateral in that account; if non-isolated collateral is already active, the isolated asset cannot be added until it is removed. In Aave V4, Isolation Mode is Spoke-scoped: the user is isolated within the isolated Spoke but can hold unrestricted positions in any other Spoke at the same time.
+**Spoke-scoped isolation**: In Aave V3, Isolation Mode applies at the account level. A user who supplies an isolated collateral asset cannot use any other asset as collateral in that account; if non-isolated collateral is already active, the isolated asset cannot be added until it is removed. In Aave V4, Isolation Mode is spoke-scoped: the user is isolated within the isolated Spoke but can hold unrestricted positions in any other Spoke at the same time.
 
 **Multiple isolated collaterals**: In Aave V3, only one isolated asset can serve as collateral per account. In Aave V4, any number of reserves in the isolated Spoke can be configured with a non-zero `collateralFactor`, making them eligible as collateral simultaneously.
 
