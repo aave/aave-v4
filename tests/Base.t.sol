@@ -325,10 +325,6 @@ abstract contract Base is Test {
     return address(uint160(uint256(slotData)));
   }
 
-  function _assumeNotProxyAdmin(address caller, address proxy) internal view {
-    vm.assume(caller != _getProxyAdminAddress(proxy));
-  }
-
   function _getImplementationAddress(address proxy) internal view returns (address) {
     bytes32 slotData = vm.load(proxy, IMPLEMENTATION_SLOT);
     return address(uint160(uint256(slotData)));

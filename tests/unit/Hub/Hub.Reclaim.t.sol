@@ -19,7 +19,8 @@ contract HubReclaimTest is HubBase {
   }
 
   function test_reclaim_revertsWith_OnlyReinvestmentController(address caller) public {
-    _assumeNotProxyAdmin(caller, address(hub1));
+    vm.assume(caller != _getProxyAdminAddress(address(hub1)));
+
     address reinvestmentController = makeAddr('reinvestmentController');
     vm.assume(caller != reinvestmentController);
     updateAssetReinvestmentController(hub1, daiAssetId, reinvestmentController);
