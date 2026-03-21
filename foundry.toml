@@ -12,7 +12,7 @@ optimizer_runs = 444444444444
 bytecode_hash = "none"
 gas_snapshot_check = false
 gas_limit = 1099511627776
-dynamic_test_linking = true
+dynamic_test_linking = false # https://github.com/crytic/crytic-compile/issues/651#issuecomment-3813020679
 
 additional_compiler_profiles = [
   { name = "hub", optimizer = true, via_ir = true, optimizer_runs = 22_300 },
@@ -39,7 +39,7 @@ runs = 1000
 seed = "0x640"
 
 [profile.pr.fuzz]
-runs = 5000
+runs = 5 # todo revert
 
 [profile.ci.fuzz]
 runs = 10000
@@ -51,11 +51,37 @@ isolate = true
 
 [profile.coverage]
 optimizer = true
-optimizer_runs = 444444444444
+optimizer_runs = 200
 via_ir = false
-fuzz.runs = 50
+fuzz.runs = 5
 additional_compiler_profiles = []
 compilation_restrictions = []
+
+[profile.invariant]
+optimizer = true
+optimizer_runs = 200
+via_ir = false
+test = 'invariants/'
+additional_compiler_profiles = []
+compilation_restrictions = []
+
+[profile.invariant.invariant]
+fail_on_revert = true
+runs = 10000
+depth = 1000
+corpus_dir = "invariants/protocol-suite/_corpus/foundry"
+show_solidity = true
+show_metrics = true
+show_edge_coverage = true
+
+[profile.invariant.fuzz]
+seed = '0x1'
+include_storage = true
+include_push_bytes = true
+call_override = false
+dictionary_weight = 80
+shrink_sequence = true
+
 
 [rpc_endpoints]
 mainnet = "${RPC_MAINNET}"

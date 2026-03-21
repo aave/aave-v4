@@ -1,0 +1,76 @@
+{
+  "fuzzing": {
+    "workers": 15,
+    "workerResetLimit": 50,
+    "timeout": 25000,
+    "testLimit": 0,
+    "callSequenceLength": 100,
+    "corpusDirectory": "invariants/hub-suite/_corpus/medusa",
+    "coverageEnabled": true,
+    "deploymentOrder": ["Tester"],
+    "targetContracts": ["Tester"],
+    "targetContractsBalances": [
+      "0xffffffffffffffffffffffffffffffffffffffffffffffffffff"
+    ],
+    "predeployedContracts": {},
+    "constructorArgs": {},
+    "deployerAddress": "0x30000",
+    "senderAddresses": ["0x10000", "0x20000", "0x30000"],
+    "blockNumberDelayMax": 60480,
+    "blockTimestampDelayMax": 604800,
+    "blockGasLimit": 12500000000,
+    "transactionGasLimit": 1250000000,
+    "testing": {
+      "stopOnFailedTest": false,
+      "stopOnFailedContractMatching": false,
+      "stopOnNoTests": true,
+      "testAllContracts": false,
+      "traceAll": false,
+      "assertionTesting": {
+        "enabled": true,
+        "testViewMethods": true,
+        "assertionModes": {
+          "failOnCompilerInsertedPanic": false,
+          "failOnAssertion": true,
+          "failOnArithmeticUnderflow": false,
+          "failOnDivideByZero": false,
+          "failOnEnumTypeConversionOutOfBounds": false,
+          "failOnIncorrectStorageAccess": false,
+          "failOnPopEmptyArray": false,
+          "failOnOutOfBoundsArrayAccess": false,
+          "failOnAllocateTooMuchMemory": false,
+          "failOnCallUninitializedVariable": false
+        }
+      },
+      "propertyTesting": {
+        "enabled": true,
+        "testPrefixes": ["fuzz_", "invariant_"]
+      },
+      "optimizationTesting": {
+        "enabled": false,
+        "testPrefixes": ["optimize_"]
+      },
+      "excludeFunctionSignatures": ["Tester.checkPostConditions()"]
+    },
+    "chainConfig": {
+      "codeSizeCheckDisabled": true,
+      "cheatCodes": {
+        "cheatCodesEnabled": true,
+        "enableFFI": false
+      }
+    }
+  },
+  "compilation": {
+    "platform": "crytic-compile",
+    "platformConfig": {
+      "target": "invariants/hub-suite/Tester.t.sol",
+      "solcVersion": "",
+      "exportDirectory": "",
+      "args": ["--solc-remaps", "forge-std/=../../../lib/forge-std/src/"]
+    }
+  },
+  "logging": {
+    "level": "info",
+    "logDirectory": ""
+  }
+}

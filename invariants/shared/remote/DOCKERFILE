@@ -1,0 +1,17 @@
+####################
+## FOUNDRY INSTALL
+####################
+FROM ghcr.io/foundry-rs/foundry:v0.3.0 AS builder-foundry
+
+RUN forge --version
+
+##################
+## RUNNER
+##################
+FROM trailofbits/echidna:latest AS run
+
+RUN apt-get update && apt-get install -y make && rm -rf /var/lib/apt/lists/*
+
+COPY --from=builder-foundry /usr/local/bin/forge /usr/local/bin/forge
+
+WORKDIR /app

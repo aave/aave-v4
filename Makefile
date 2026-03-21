@@ -29,3 +29,38 @@ coverage :
 	make coverage-clean
 	make coverage-report
 	make coverage-badge
+
+# Echidna
+echidna:
+	FOUNDRY_PROFILE=invariant echidna . --contract invariants/protocol-suite/Tester.t.sol:Tester --config ./invariants/protocol-suite/_config/echidna_config.yaml
+echidna-assert:
+	FOUNDRY_PROFILE=invariant echidna . --contract invariants/protocol-suite/Tester.t.sol:Tester --test-mode assertion --config ./invariants/protocol-suite/_config/echidna_config.yaml
+echidna-explore:
+	FOUNDRY_PROFILE=invariant echidna . --contract invariants/protocol-suite/Tester.t.sol:Tester --test-mode exploration --config ./invariants/protocol-suite/_config/echidna_config.yaml
+
+echidna-hub:
+	FOUNDRY_PROFILE=invariant echidna . --contract invariants/hub-suite/Tester.t.sol:Tester --config ./invariants/hub-suite/_config/echidna_config.yaml
+echidna-hub-assert:
+	FOUNDRY_PROFILE=invariant echidna . --contract invariants/hub-suite/Tester.t.sol:Tester --test-mode assertion --config ./invariants/hub-suite/_config/echidna_config.yaml
+echidna-hub-explore:
+	FOUNDRY_PROFILE=invariant echidna . --contract invariants/hub-suite/Tester.t.sol:Tester --test-mode exploration --config ./invariants/hub-suite/_config/echidna_config.yaml
+
+# Medusa
+medusa:
+	FOUNDRY_PROFILE=invariant medusa fuzz --config ./medusa.protocol.json
+medusa-hub:
+	FOUNDRY_PROFILE=invariant medusa fuzz --config ./medusa.hub.json
+
+foundry-invariants:
+	FOUNDRY_PROFILE=invariant forge test --mc TesterFoundry -vvv 
+
+# Results
+runes-echidna:
+	runes convert ./invariants/protocol-suite/_corpus/echidna/default/_data/corpus/reproducers --output ./invariants/protocol-suite/replays
+runes-medusa:
+	runes convert ./invariants/protocol-suite/_corpus/medusa/ --output ./invariants/protocol-suite/replays
+
+runes-echidna-hub:
+	runes convert ./invariants/hub-suite/_corpus/echidna/default/_data/corpus/reproducers --output ./invariants/hub-suite/replays
+runes-medusa-hub:
+	runes convert ./invariants/hub-suite/_corpus/medusa/ --output ./invariants/hub-suite/replays

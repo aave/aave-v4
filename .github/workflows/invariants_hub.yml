@@ -1,0 +1,96 @@
+name: Invariants-Hub
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+env:
+  FOUNDRY_PROFILE: invariant
+
+permissions:
+  contents: read
+
+# ! todo uncomment before merging
+# concurrency:
+#   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+#   cancel-in-progress: true
+
+jobs:
+  echidna:
+    name: Echidna (${{ matrix.mode }})
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        mode: [property, assertion, exploration]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Run Foundry setup
+        uses: bgd-labs/github-workflows/.github/actions/foundry-setup@main
+        with:
+          FOUNDRY_VERSION: nightly
+
+      - name: Run Forge Build
+        run: forge build --build-info
+
+      - name: Run Echidna ${{ matrix.mode }} Mode
+        uses: crytic/echidna-action@v2
+        with:
+          files: invariants/hub-suite/Tester.t.sol
+          contract: Tester
+          config: invariants/hub-suite/_config/echidna_config_ci.yaml
+          test-mode: ${{ matrix.mode }}
+
+      - name: Upload Echidna corpus
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: echidna-corpus-hub-${{ matrix.mode }}
+          path: corpus/
+
+  medusa:
+    name: Medusa
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Run Foundry setup
+        uses: bgd-labs/github-workflows/.github/actions/foundry-setup@main
+        with:
+          FOUNDRY_VERSION: nightly
+
+      - name: Run Forge Build
+        run: forge build --build-info
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: stable
+          cache: false
+
+      - name: Install slither-analyzer
+        run: pip install slither-analyzer
+
+      - name: Install Medusa
+        run: go install github.com/crytic/medusa@latest
+
+      - name: Run Medusa
+        run: medusa fuzz --config invariants/hub-suite/_config/medusa_config_ci.json
+
+      - name: Upload Medusa corpus
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: medusa-corpus-hub
+          path: corpus/

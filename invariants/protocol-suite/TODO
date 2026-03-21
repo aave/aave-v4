@@ -1,0 +1,46 @@
+# Replay Tests to Implement
+
+# INV_HUB_E
+## test_replay_3_add
+- Status: FAILING
+- Invariant: `INV_HUB_E`
+- Error: `hub.getAddedAssets and hub.previewRemoveByShares(hub.getAddedShares(assetId)) should match at any time, should not be off by more than 1 share worth of assets due to division precision loss`
+- Details: Left: 8, Right: 6, Max Delta: 1, Actual Delta: 2
+- Context: After supply/borrow with time delay, the addedAssets vs previewRemoveByShares diverges by more than the allowed 1 share precision loss
+
+## test_replay_5_donateUnderlyingToHub
+- Status: FAILING
+- Invariant: `INV_HUB_E`
+- Error: `hub.getAddedAssets and hub.previewRemoveByShares(hub.getAddedShares(assetId)) should match at any time, should not be off by more than 1 share worth of assets due to division precision loss`
+- Details: Left: 4, Right: 0, Max Delta: 1, Actual Delta: 4
+
+## test_replay_6_freezeAllReserves
+- Status: FAILING
+- Invariant: `INV_HUB_E`
+- Error: `hub.getAddedAssets and hub.previewRemoveByShares(hub.getAddedShares(assetId)) should match at any time, should not be off by more than 1 share worth of assets due to division precision loss`
+- Details: Left: 676, Right: 673, Max Delta: 1, Actual Delta: 3
+ 
+# GPOST_HUB_E
+## test_replay_7_repay
+- Status: FAILING
+- Invariant: `GPOST_HUB_E`
+- Error: `if addedAssets for a spoke & assetId increase, addedAssets <= addCap * precision (when cap != MAX)`
+- Details: 100000000000000000000000977 > 172000000000000000000 (exceeds cap)
+- Context: After repay, addedAssets exceeds the configured add cap
+- TODO: check if totalAssets increasing is expected behaviour on repayment due to round up on repay amount, before: 100000000000000000000000976, after: 100000000000000000000000977, 1 wei difference
+
+# GPOST_SP_LIQ_H
+## test_replay_7_updateUserRiskPremium
+- Status: FAILING
+- Invariant: `GPOST_SP_LIQ_H`
+- Error: `Only a supply, repay & liquidationCall can leave an account in an unhealthy state`
+- Details: 998420221169036334 < 1000000000000000000 (HF < 1e18)
+- Context: After updateUserRiskPremium, user's health factor drops below 1
+- TODO: check if updateUserRiskPremium should enforce any health factor constraints
+
+# INV_HUB_ERC4626_C
+## test_replay_9_eliminateDeficit (hub-suite)
+- Status: FAILING
+- Invariant: `INV_HUB_ERC4626_C`
+- Error: `Asset cannot have non-zero assets and zero shares in add side`
+- Context: During refreshPremium operation, asset ends up with non-zero assets but zero shares
