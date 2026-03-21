@@ -23,9 +23,9 @@ contract SpokeMultipleHubBase is SpokeBase {
   IAssetInterestRateStrategy.InterestRateData internal irData =
     IAssetInterestRateStrategy.InterestRateData({
       optimalUsageRatio: 90_00, // 90.00%
-      baseVariableBorrowRate: 5_00, // 5.00%
-      variableRateSlope1: 5_00, // 5.00%
-      variableRateSlope2: 5_00 // 5.00%
+      baseDrawnRate: 5_00, // 5.00%
+      rateGrowthBeforeOptimal: 5_00, // 5.00%
+      rateGrowthAfterOptimal: 5_00 // 5.00%
     });
   bytes internal encodedIrData = abi.encode(irData);
 
@@ -38,17 +38,20 @@ contract SpokeMultipleHubBase is SpokeBase {
     accessManager = IAccessManager(address(new AccessManagerEnumerable(ADMIN)));
     // Canonical hub and spoke
     hub1 = DeployUtils.deployHub(address(accessManager), hex'01');
-    (spoke1, oracle1) = _deploySpokeWithOracle(ADMIN, address(accessManager), 'Spoke 1 (USD)');
-    treasurySpoke = new TreasurySpoke(ADMIN, address(hub1));
+    (spoke1, oracle1) = _deploySpokeWithOracle(ADMIN, address(accessManager));
+    TreasurySpokeInstance treasurySpokeImpl = new TreasurySpokeInstance();
+    treasurySpoke = ITreasurySpoke(
+      DeployUtils.proxify(
+        address(treasurySpokeImpl),
+        ADMIN,
+        abi.encodeCall(TreasurySpokeInstance.initialize, (ADMIN))
+      )
+    );
     irStrategy = new AssetInterestRateStrategy(address(hub1));
 
     // New hub and spoke
     newHub = DeployUtils.deployHub(address(accessManager), hex'02');
-    (newSpoke, newOracle) = _deploySpokeWithOracle(
-      ADMIN,
-      address(accessManager),
-      'New Spoke (USD)'
-    );
+    (newSpoke, newOracle) = _deploySpokeWithOracle(ADMIN, address(accessManager));
     newIrStrategy = new AssetInterestRateStrategy(address(newHub));
 
     assetA = new TestnetERC20('Asset A', 'A', 18);

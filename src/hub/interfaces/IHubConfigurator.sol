@@ -8,16 +8,19 @@ import {IHub} from 'src/hub/interfaces/IHub.sol';
 /// @author Aave Labs
 /// @notice Interface for HubConfigurator.
 interface IHubConfigurator {
+  /// @notice Thrown when an address parameter is the zero address.
+  error InvalidAddress();
+
   /// @notice Thrown when the list of assets and spoke configs are not the same length in `addSpokeToAssets`.
   error MismatchedConfigs();
 
-  /// @notice Adds a new asset to a specified hub.
+  /// @notice Adds a new asset to a specified Hub.
   /// @dev Retrieves the decimals of the underlying asset from its ERC20 contract.
-  /// @dev The fee receiver is automatically added as a spoke with maximum caps.
+  /// @dev The fee receiver is automatically added as a Spoke with maximum caps.
   /// @param hub The address of the Hub.
   /// @param underlying The address of the underlying asset.
-  /// @param feeReceiver The address of the fee receiver spoke.
-  /// @param liquidityFee The liquidity fee of the asset, in BPS.
+  /// @param feeReceiver The address of the fee receiver Spoke.
+  /// @param liquidityFee The liquidity fee of the asset, expressed in BPS.
   /// @param irStrategy The address of the interest rate strategy contract.
   /// @param irData The interest rate data to apply to the given asset, encoded in bytes.
   /// @return The unique identifier of the added asset.
@@ -30,13 +33,13 @@ interface IHubConfigurator {
     bytes calldata irData
   ) external returns (uint256);
 
-  /// @notice Adds a new asset to a specified hub with explicit decimals.
-  /// @dev The fee receiver is automatically added as a spoke with maximum caps.
+  /// @notice Adds a new asset to a specified Hub with explicit decimals.
+  /// @dev The fee receiver is automatically added as a Spoke with maximum caps.
   /// @param hub The address of the Hub.
   /// @param underlying The address of the underlying asset.
   /// @param decimals The number of decimals of the asset.
-  /// @param feeReceiver The address of the fee receiver spoke.
-  /// @param liquidityFee The liquidity fee of the asset, in BPS.
+  /// @param feeReceiver The address of the fee receiver Spoke.
+  /// @param liquidityFee The liquidity fee of the asset, expressed in BPS.
   /// @param irStrategy The address of the interest rate strategy contract.
   /// @param irData The interest rate data to apply to the given asset, encoded in bytes.
   /// @return The unique identifier of the added asset.
@@ -50,7 +53,7 @@ interface IHubConfigurator {
     bytes calldata irData
   ) external returns (uint256);
 
-  /// @notice Updates the liquidity fee of an asset on a specified hub.
+  /// @notice Updates the liquidity fee of an asset on a specified Hub.
   /// @param hub The address of the Hub.
   /// @param assetId The identifier of the asset.
   /// @param liquidityFee The new liquidity fee.
@@ -63,7 +66,7 @@ interface IHubConfigurator {
   /// @param feeReceiver The new fee receiver.
   function updateFeeReceiver(address hub, uint256 assetId, address feeReceiver) external;
 
-  /// @notice Updates the liquidity fee and fee receiver of an asset on a specified hub.
+  /// @notice Updates the liquidity fee and fee receiver of an asset on a specified Hub.
   /// @dev The fee receiver cannot be zero.
   /// @param hub The address of the Hub.
   /// @param assetId The identifier of the asset.
@@ -76,7 +79,7 @@ interface IHubConfigurator {
     address feeReceiver
   ) external;
 
-  /// @notice Updates the interest rate strategy of an asset on a specified hub.
+  /// @notice Updates the interest rate strategy of an asset on a specified Hub.
   /// @param hub The address of the Hub.
   /// @param assetId The identifier of the asset.
   /// @param irStrategy The new interest rate strategy.
@@ -88,7 +91,7 @@ interface IHubConfigurator {
     bytes calldata irData
   ) external;
 
-  /// @notice Updates the reinvestment controller of an asset on a specified hub.
+  /// @notice Updates the reinvestment controller of an asset on a specified Hub.
   /// @param hub The address of the Hub.
   /// @param assetId The identifier of the asset.
   /// @param reinvestmentController The new reinvestment controller.
@@ -98,25 +101,25 @@ interface IHubConfigurator {
     address reinvestmentController
   ) external;
 
-  /// @notice Resets all spokes' add and draw caps to zero for an asset on a specified hub.
+  /// @notice Resets all Spokes' add and draw caps to zero for an asset on a specified Hub.
   /// @param hub The address of the Hub.
   /// @param assetId The identifier of the asset.
   function resetAssetCaps(address hub, uint256 assetId) external;
 
-  /// @notice Deactivates an asset on a specified hub.
+  /// @notice Deactivates an asset on a specified Hub.
   /// @param hub The address of the Hub.
   /// @param assetId The identifier of the asset.
   function deactivateAsset(address hub, uint256 assetId) external;
 
-  /// @notice Halts an asset on a specified hub.
+  /// @notice Halts an asset on a specified Hub.
   /// @param hub The address of the Hub.
   /// @param assetId The identifier of the asset.
   function haltAsset(address hub, uint256 assetId) external;
 
-  /// @notice Register the spoke for the specified asset on a hub.
+  /// @notice Registers the Spoke for the specified asset on a specified Hub.
   /// @param hub The address of the Hub.
   /// @param spoke The address of the Spoke.
-  /// @param assetId The identifier of the asset to register the spoke for.
+  /// @param assetId The identifier of the asset to register the Spoke for.
   /// @param config The Spoke configuration to register.
   function addSpoke(
     address hub,
@@ -125,11 +128,11 @@ interface IHubConfigurator {
     IHub.SpokeConfig calldata config
   ) external;
 
-  /// @notice Registers the same spoke for multiple assets on a specified hub, each with their own configuration.
+  /// @notice Registers the same Spoke for multiple assets on a specified Hub, each with their own configuration.
   /// @dev The i-th asset identifier in `assetIds` corresponds to the i-th configuration in `configs`.
   /// @param hub The address of the Hub.
   /// @param spoke The address of the Spoke.
-  /// @param assetIds The list of asset identifiers to register the spoke for.
+  /// @param assetIds The list of asset identifiers to register the Spoke for.
   /// @param configs The list of Spoke configurations to register.
   function addSpokeToAssets(
     address hub,
@@ -138,33 +141,28 @@ interface IHubConfigurator {
     IHub.SpokeConfig[] calldata configs
   ) external;
 
-  /// @notice Updates the active flag of an asset's spoke on a specified hub.
+  /// @notice Updates the active flag of an asset's Spoke on a specified Hub.
   /// @param hub The address of the Hub.
   /// @param assetId The identifier of the asset.
   /// @param spoke The address of the Spoke.
   /// @param active The new active flag.
   function updateSpokeActive(address hub, uint256 assetId, address spoke, bool active) external;
 
-  /// @notice Updates the halted flag of an asset's spoke on a specified hub.
+  /// @notice Updates the halted flag of an asset's Spoke on a specified Hub.
   /// @param hub The address of the Hub.
   /// @param assetId The identifier of the asset.
   /// @param spoke The address of the Spoke.
   /// @param halted The new halted flag.
   function updateSpokeHalted(address hub, uint256 assetId, address spoke, bool halted) external;
 
-  /// @notice Updates the supply cap of an asset's spoke on a specified hub.
+  /// @notice Updates the add cap of an asset's spoke on a specified hub.
   /// @param hub The address of the Hub.
   /// @param assetId The identifier of the asset.
   /// @param spoke The address of the Spoke.
-  /// @param addCap The new supply cap.
-  function updateSpokeSupplyCap(
-    address hub,
-    uint256 assetId,
-    address spoke,
-    uint256 addCap
-  ) external;
+  /// @param addCap The new add cap.
+  function updateSpokeAddCap(address hub, uint256 assetId, address spoke, uint256 addCap) external;
 
-  /// @notice Updates the draw cap of an asset's spoke on a specified hub.
+  /// @notice Updates the draw cap of an asset's Spoke on a specified Hub.
   /// @param hub The address of the Hub.
   /// @param assetId The identifier of the asset.
   /// @param spoke The address of the Spoke.
@@ -176,7 +174,7 @@ interface IHubConfigurator {
     uint256 drawCap
   ) external;
 
-  /// @notice Updates the risk premium threshold of an asset's spoke on a specified hub.
+  /// @notice Updates the risk premium threshold of an asset's Spoke on a specified Hub.
   /// @param hub The address of the Hub.
   /// @param assetId The identifier of the asset.
   /// @param spoke The address of the Spoke.
@@ -188,11 +186,11 @@ interface IHubConfigurator {
     uint256 riskPremiumThreshold
   ) external;
 
-  /// @notice Updates the caps of an asset's spoke on a specified hub.
+  /// @notice Updates the caps of an asset's Spoke on a specified Hub.
   /// @param hub The address of the Hub.
   /// @param assetId The identifier of the asset.
   /// @param spoke The address of the Spoke.
-  /// @param addCap The new supply cap.
+  /// @param addCap The new add cap.
   /// @param drawCap The new draw cap.
   function updateSpokeCaps(
     address hub,
@@ -202,17 +200,17 @@ interface IHubConfigurator {
     uint256 drawCap
   ) external;
 
-  /// @notice Deactivates all assets of a spoke on a specified hub by setting the active flag to false.
+  /// @notice Deactivates all assets of a Spoke on a specified Hub by setting the active flag to false.
   /// @param hub The address of the Hub.
   /// @param spoke The address of the Spoke.
   function deactivateSpoke(address hub, address spoke) external;
 
-  /// @notice Halts all assets of a spoke on a specified hub by setting the halted flag to true.
+  /// @notice Halts all assets of a Spoke on a specified Hub by setting the halted flag to true.
   /// @param hub The address of the Hub.
   /// @param spoke The address of the Spoke.
   function haltSpoke(address hub, address spoke) external;
 
-  /// @notice Resets draw cap and add cap to zero for a spoke on a specified hub.
+  /// @notice Resets draw cap and add cap to zero for a Spoke on a specified Hub.
   /// @param hub The address of the Hub.
   /// @param spoke The address of the Spoke.
   function resetSpokeCaps(address hub, address spoke) external;

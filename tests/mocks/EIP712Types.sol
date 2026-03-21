@@ -108,6 +108,43 @@ library EIP712Types {
     uint256 deadline;
   }
 
+  /// @dev ConfigPositionManager Intents
+  struct SetGlobalPermissionPermit {
+    address spoke;
+    address delegator;
+    address delegatee;
+    bool permission;
+    uint256 nonce;
+    uint256 deadline;
+  }
+
+  struct SetCanSetUsingAsCollateralPermissionPermit {
+    address spoke;
+    address delegator;
+    address delegatee;
+    bool permission;
+    uint256 nonce;
+    uint256 deadline;
+  }
+
+  struct SetCanUpdateUserRiskPremiumPermissionPermit {
+    address spoke;
+    address delegator;
+    address delegatee;
+    bool permission;
+    uint256 nonce;
+    uint256 deadline;
+  }
+
+  struct SetCanUpdateUserDynamicConfigPermissionPermit {
+    address spoke;
+    address delegator;
+    address delegatee;
+    bool permission;
+    uint256 nonce;
+    uint256 deadline;
+  }
+
   /// @dev TokenizationSpoke Intents
   struct TokenizedDeposit {
     address depositor;

@@ -324,7 +324,7 @@ contract Hub is IHub, AccessManaged {
     uint256 assetId,
     uint256 drawnAmount,
     PremiumDelta calldata premiumDelta
-  ) external returns (uint256) {
+  ) external returns (uint256, uint256) {
     Asset storage asset = _assets[assetId];
     SpokeData storage spoke = _spokes[assetId][msg.sender];
 
@@ -345,7 +345,7 @@ contract Hub is IHub, AccessManaged {
 
     emit ReportDeficit(assetId, msg.sender, drawnShares, premiumDelta, deficitAmountRay);
 
-    return drawnShares;
+    return (drawnShares, deficitAmountRay.fromRayUp());
   }
 
   /// @inheritdoc IHub
@@ -353,7 +353,7 @@ contract Hub is IHub, AccessManaged {
     uint256 assetId,
     uint256 amount,
     address spoke
-  ) external restricted returns (uint256) {
+  ) external restricted returns (uint256, uint256) {
     Asset storage asset = _assets[assetId];
     SpokeData storage callerSpoke = _spokes[assetId][msg.sender];
     SpokeData storage coveredSpoke = _spokes[assetId][spoke];
@@ -363,7 +363,8 @@ contract Hub is IHub, AccessManaged {
     uint256 deficitAmountRay = (amount < deficitRay.fromRayUp()) ? amount.toRay() : deficitRay;
     _validateEliminateDeficit(callerSpoke, deficitAmountRay);
 
-    uint120 shares = asset.toAddedSharesUp(deficitAmountRay.fromRayUp()).toUint120();
+    uint256 deficitToEliminate = deficitAmountRay.fromRayUp();
+    uint120 shares = asset.toAddedSharesUp(deficitToEliminate).toUint120();
     asset.addedShares -= shares;
     callerSpoke.addedShares -= shares;
     asset.deficitRay -= deficitAmountRay.toUint200();
@@ -373,7 +374,7 @@ contract Hub is IHub, AccessManaged {
 
     emit EliminateDeficit(assetId, msg.sender, spoke, shares, deficitAmountRay);
 
-    return shares;
+    return (shares, deficitToEliminate);
   }
 
   /// @inheritdoc IHubBase
@@ -395,12 +396,12 @@ contract Hub is IHub, AccessManaged {
   function payFeeShares(uint256 assetId, uint256 shares) external {
     Asset storage asset = _assets[assetId];
     address feeReceiver = _assets[assetId].feeReceiver;
-    SpokeData storage receiver = _spokes[assetId][feeReceiver];
-    SpokeData storage sender = _spokes[assetId][msg.sender];
+    SpokeData storage receiverSpoke = _spokes[assetId][feeReceiver];
+    SpokeData storage callerSpoke = _spokes[assetId][msg.sender];
 
     asset.accrue();
-    _validatePayFeeShares(sender, shares);
-    _transferShares(sender, receiver, shares);
+    _validatePayFeeShares(callerSpoke, shares);
+    _transferShares({sender: callerSpoke, receiver: receiverSpoke, shares: shares});
     asset.updateDrawnRate(assetId);
 
     emit TransferShares(assetId, msg.sender, feeReceiver, shares);
@@ -409,12 +410,12 @@ contract Hub is IHub, AccessManaged {
   /// @inheritdoc IHub
   function transferShares(uint256 assetId, uint256 shares, address toSpoke) external {
     Asset storage asset = _assets[assetId];
-    SpokeData storage sender = _spokes[assetId][msg.sender];
-    SpokeData storage receiver = _spokes[assetId][toSpoke];
+    SpokeData storage callerSpoke = _spokes[assetId][msg.sender];
+    SpokeData storage receiverSpoke = _spokes[assetId][toSpoke];
 
     asset.accrue();
-    _validateTransferShares(asset, sender, receiver, shares);
-    _transferShares(sender, receiver, shares);
+    _validateTransferShares(asset, callerSpoke, receiverSpoke, shares);
+    _transferShares({sender: callerSpoke, receiver: receiverSpoke, shares: shares});
     asset.updateDrawnRate(assetId);
 
     emit TransferShares(assetId, msg.sender, toSpoke, shares);
@@ -466,12 +467,6 @@ contract Hub is IHub, AccessManaged {
   }
 
   /// @inheritdoc IHub
-  function getAssetId(address underlying) external view returns (uint256) {
-    require(isUnderlyingListed(underlying), AssetNotListed());
-    return _underlyingToAssetId[underlying];
-  }
-
-  /// @inheritdoc IHub
   function getAssetCount() external view returns (uint256) {
     return _assetCount;
   }
@@ -514,6 +509,12 @@ contract Hub is IHub, AccessManaged {
   /// @inheritdoc IHubBase
   function previewRestoreByShares(uint256 assetId, uint256 shares) external view returns (uint256) {
     return _assets[assetId].toDrawnAssetsUp(shares);
+  }
+
+  /// @inheritdoc IHubBase
+  function getAssetId(address underlying) external view returns (uint256) {
+    require(isUnderlyingListed(underlying), AssetNotListed());
+    return _underlyingToAssetId[underlying];
   }
 
   /// @inheritdoc IHubBase
@@ -799,7 +800,7 @@ contract Hub is IHub, AccessManaged {
     return shares;
   }
 
-  /// @dev Returns the spoke's drawn amount for a specified asset.
+  /// @dev Returns the Spoke's drawn amount for a specified asset.
   function _getSpokeDrawn(
     Asset storage asset,
     SpokeData storage spoke
@@ -807,7 +808,7 @@ contract Hub is IHub, AccessManaged {
     return asset.toDrawnAssetsUp(spoke.drawnShares);
   }
 
-  /// @dev Returns the spoke's premium amount for a specified asset.
+  /// @dev Returns the Spoke's premium amount for a specified asset.
   function _getSpokePremium(
     Asset storage asset,
     SpokeData storage spoke
@@ -815,7 +816,7 @@ contract Hub is IHub, AccessManaged {
     return _getSpokePremiumRay(asset, spoke).fromRayUp();
   }
 
-  /// @dev Returns the spoke's premium amount with full precision for a specified asset.
+  /// @dev Returns the Spoke's premium amount with full precision for a specified asset.
   function _getSpokePremiumRay(
     Asset storage asset,
     SpokeData storage spoke
@@ -853,7 +854,7 @@ contract Hub is IHub, AccessManaged {
     require(!spoke.halted, SpokeHalted());
   }
 
-  /// @dev The draw cap is enforced against the spoke's total owed, including any reported deficit.
+  /// @dev The draw cap is enforced against the Spoke's total owed, including any reported deficit.
   /// @dev Spoke with maximum cap have unlimited draw capacity.
   function _validateDraw(
     Asset storage asset,
@@ -912,25 +913,25 @@ contract Hub is IHub, AccessManaged {
     require(deficitAmountRay > 0, InvalidAmount());
   }
 
-  function _validatePayFeeShares(SpokeData storage spoke, uint256 feeShares) internal view {
-    require(spoke.active, SpokeNotActive());
+  function _validatePayFeeShares(SpokeData storage callerSpoke, uint256 feeShares) internal view {
+    require(callerSpoke.active, SpokeNotActive());
     require(feeShares > 0, InvalidShares());
   }
 
   function _validateTransferShares(
     Asset storage asset,
-    SpokeData storage sender,
-    SpokeData storage receiver,
+    SpokeData storage callerSpoke,
+    SpokeData storage receiverSpoke,
     uint256 shares
   ) internal view {
-    require(sender.active && receiver.active, SpokeNotActive());
-    require(!sender.halted && !receiver.halted, SpokeHalted());
+    require(callerSpoke.active && receiverSpoke.active, SpokeNotActive());
+    require(!callerSpoke.halted && !receiverSpoke.halted, SpokeHalted());
     require(shares > 0, InvalidShares());
-    uint256 addCap = receiver.addCap;
+    uint256 addCap = receiverSpoke.addCap;
     require(
       addCap == MAX_ALLOWED_SPOKE_CAP ||
         addCap * MathUtils.uncheckedExp(10, asset.decimals) >=
-          asset.toAddedAssetsUp(receiver.addedShares + shares),
+          asset.toAddedAssetsUp(receiverSpoke.addedShares + shares),
       AddCapExceeded(addCap)
     );
   }

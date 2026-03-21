@@ -2,14 +2,14 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import {IPositionManagerBase} from 'src/position-manager/interfaces/IPositionManagerBase.sol';
+import {IPositionManagerIntentBase} from 'src/position-manager/interfaces/IPositionManagerIntentBase.sol';
 
 /// @title ISignatureGateway
 /// @author Aave Labs
 /// @notice Minimal interface for protocol actions involving signed intents.
-interface ISignatureGateway is IPositionManagerBase {
+interface ISignatureGateway is IPositionManagerIntentBase {
   /// @notice Intent data to supply assets to a reserve.
-  /// @param spoke The address of the registered spoke.
+  /// @param spoke The address of the registered `spoke`.
   /// @param reserveId The identifier of the reserve.
   /// @param amount The amount of assets to supply.
   /// @param onBehalfOf The address of the user on whose behalf the supply is performed.
@@ -25,7 +25,7 @@ interface ISignatureGateway is IPositionManagerBase {
   }
 
   /// @notice Intent data to withdraw assets from a reserve.
-  /// @param spoke The address of the registered spoke.
+  /// @param spoke The address of the registered `spoke`.
   /// @param reserveId The identifier of the reserve.
   /// @param amount The amount of assets to withdraw.
   /// @param onBehalfOf The address of the user on whose behalf the withdraw is performed.
@@ -41,7 +41,7 @@ interface ISignatureGateway is IPositionManagerBase {
   }
 
   /// @notice Intent data to borrow assets from a reserve.
-  /// @param spoke The address of the registered spoke.
+  /// @param spoke The address of the registered `spoke`.
   /// @param reserveId The identifier of the reserve.
   /// @param amount The amount of assets to borrow.
   /// @param onBehalfOf The address of the user on whose behalf the borrow is performed.
@@ -57,7 +57,7 @@ interface ISignatureGateway is IPositionManagerBase {
   }
 
   /// @notice Intent data to repay assets to a reserve.
-  /// @param spoke The address of the registered spoke.
+  /// @param spoke The address of the registered `spoke`.
   /// @param reserveId The identifier of the reserve.
   /// @param amount The amount of assets to repay.
   /// @param onBehalfOf The address of the user on whose behalf the repay is performed.
@@ -73,7 +73,7 @@ interface ISignatureGateway is IPositionManagerBase {
   }
 
   /// @notice Intent data to enable or disable a reserve as collateral.
-  /// @param spoke The address of the registered spoke.
+  /// @param spoke The address of the registered `spoke`.
   /// @param reserveId The identifier of the reserve.
   /// @param useAsCollateral True to enable the reserve as collateral, false to disable it.
   /// @param onBehalfOf The address of the user on whose behalf the action is performed.
@@ -89,7 +89,7 @@ interface ISignatureGateway is IPositionManagerBase {
   }
 
   /// @notice Intent data to update the risk premium of a user position.
-  /// @param spoke The address of the registered spoke.
+  /// @param spoke The address of the registered `spoke`.
   /// @param onBehalfOf The address of the user whose risk premium is being updated.
   /// @param nonce The key-prefixed nonce for the signature.
   /// @param deadline The deadline for the intent.
@@ -101,7 +101,7 @@ interface ISignatureGateway is IPositionManagerBase {
   }
 
   /// @notice Intent data to update the dynamic configuration of a user position.
-  /// @param spoke The address of the registered spoke.
+  /// @param spoke The address of the registered `spoke`.
   /// @param onBehalfOf The address of the user whose dynamic config is being updated.
   /// @param nonce The key-prefixed nonce for the signature.
   /// @param deadline The deadline for the intent.

@@ -16,7 +16,7 @@ contract SpokeGettersTest is SpokeBase {
     super.setUp();
 
     // Deploy new spoke without setting the liquidation config
-    (spoke, ) = _deploySpokeWithOracle(ADMIN, address(accessManager), 'New Spoke (USD)');
+    (spoke, ) = _deploySpokeWithOracle(ADMIN, address(accessManager));
     setUpRoles(hub1, spoke, accessManager);
 
     IHub.SpokeConfig memory spokeConfig = IHub.SpokeConfig({
@@ -259,7 +259,7 @@ contract SpokeGettersTest is SpokeBase {
 
   function test_premiumRayGetters() public {
     // 2 user, single spoke
-    _mockInterestRateBps(25_00);
+    _mockDrawnRateBps(25_00);
     Utils.approve(spoke, _daiReserveId(spoke), alice, 9_000e18);
     Utils.supplyCollateral(spoke, _daiReserveId(spoke), alice, 9_000e18, alice); // CR 20%
     Utils.approve(spoke, _usdxReserveId(spoke), bob, 18_000e18);

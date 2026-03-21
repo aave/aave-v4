@@ -12,7 +12,13 @@ contract TokenizationSpokeBaseTest is Base {
   function setUp() public virtual override {
     deployFixtures();
     initEnvironment();
-    daiVault = _deployTokenizationSpoke(hub1, daiAssetId, SHARE_NAME, SHARE_SYMBOL, ADMIN);
+    daiVault = _deployTokenizationSpoke(
+      hub1,
+      address(tokenList.dai),
+      SHARE_NAME,
+      SHARE_SYMBOL,
+      ADMIN
+    );
     _registerTokenizationSpoke(hub1, daiAssetId, daiVault);
   }
 
@@ -149,7 +155,7 @@ contract TokenizationSpokeBaseTest is Base {
     asset.mint(address(hub), amount);
     vm.startPrank(address(spoke2));
     hub.add(assetId, amount);
-    _mockInterestRateBps(100_00);
+    _mockDrawnRateBps(100_00);
     hub.draw(assetId, amount, address(spoke2));
     skip(365 days);
     asset.mint(address(hub), amount);

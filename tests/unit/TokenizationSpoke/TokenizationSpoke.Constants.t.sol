@@ -8,7 +8,7 @@ contract TokenizationSpokeConstantsTest is TokenizationSpokeBaseTest {
   function test_eip712Domain() public {
     ITokenizationSpoke instance = _deployTokenizationSpoke(
       hub1,
-      daiAssetId,
+      address(tokenList.dai),
       'Core Hub DAI',
       'chDAI',
       ADMIN
@@ -35,7 +35,7 @@ contract TokenizationSpokeConstantsTest is TokenizationSpokeBaseTest {
   function test_DOMAIN_SEPARATOR() public {
     ITokenizationSpoke instance = _deployTokenizationSpoke(
       hub1,
-      daiAssetId,
+      address(tokenList.dai),
       'Core Hub DAI',
       'chDAI',
       ADMIN
