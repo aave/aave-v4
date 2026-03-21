@@ -31,7 +31,7 @@ This deploys `LiquidationLogic` via CREATE2 and writes `FOUNDRY_LIBRARIES` to `.
 make deploy-contracts CHAIN=mainnet
 ```
 
-This runs `AaveV4DeployOrchestration.deployAaveV4()`, which deploys batches in order: AccessManager → Configurators → Configurator role setup → TreasurySpoke → Hubs → Spokes → Gateways → PositionManagers → role grants → DEFAULT_ADMIN transfer.
+This runs `AaveV4DeployOrchestration.deployAaveV4()`, which deploys batches in order: AccessManager → role labeling → Configurators → Configurator role setup → TreasurySpoke → Hubs → Spokes → Gateways → PositionManagers → role grants → DEFAULT_ADMIN transfer.
 
 ### TokenizationSpoke
 
@@ -94,6 +94,8 @@ src/deployments/
 
 Roles are namespaced by contract domain: Hub (100-199), HubConfigurator (200-299), Spoke (300-399), SpokeConfigurator (400-499). See `Roles.sol` NatSpec for the full role strategy and evolution guidelines.
 
+All roles are labeled on the `AccessManagerEnumerable` during deployment via `AaveV4AccessManagerRolesProcedure.labelAllRoles()`. Each role is labeled with its `Roles.sol` constant name (e.g., role 101 is labeled `"HUB_CONFIGURATOR_ROLE"`). Labels are queryable on-chain via `getLabelOfRole()` and `getRoleOfLabel()`.
+
 #### `AccessManager` Role
 
 | ID  | Name               | Granted To         | Notes                                                             |
@@ -151,6 +153,10 @@ AaveV4DeployBatchBase.s.sol                         (Foundry script entry point)
     |     |       new AaveV4AuthorityBatch(admin, salt)
     |     |         AaveV4AccessManagerEnumerableDeployProcedure._deployAccessManagerEnumerable()
     |     |           Create2Utils.create2Deploy() --> AccessManagerEnumerable
+    |     |
+    |     +-- _labelRoles()
+    |     |     AaveV4AccessManagerRolesProcedure.labelAllRoles()
+    |     |       AccessManager.labelRole()  (labels all roles with the associated Roles.sol constant names)
     |     |
     |     +-- _deployConfiguratorBatch()
     |     |     AaveV4DeployBase.deployConfiguratorBatch()

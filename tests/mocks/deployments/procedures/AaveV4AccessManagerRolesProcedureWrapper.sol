@@ -22,4 +22,8 @@ contract AaveV4AccessManagerRolesProcedureWrapper {
   function grantAccessManagerAdminRole(address accessManager, address admin) external {
     AaveV4AccessManagerRolesProcedure.grantAccessManagerAdminRole(accessManager, admin);
   }
+
+  function labelAllRoles(address accessManager) external {
+    AaveV4AccessManagerRolesProcedure.labelAllRoles(accessManager);
+  }
 }

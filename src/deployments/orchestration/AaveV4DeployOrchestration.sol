@@ -39,6 +39,10 @@ library AaveV4DeployOrchestration {
 
     address accessManager = report.authorityBatchReport.accessManager;
 
+    // Label all protocol roles
+    logger.logHeader1('labeling roles');
+    AaveV4AccessManagerRolesProcedure.labelAllRoles(accessManager);
+
     // Deploy Configurator Batch with AccessManager as authority
     report.configuratorBatchReport = _deployConfiguratorBatch({
       logger: logger,

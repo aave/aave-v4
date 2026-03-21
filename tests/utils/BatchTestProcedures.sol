@@ -131,6 +131,7 @@ contract BatchTestProcedures is Test, InputUtils, Create2TestHelper, WETHDeployP
       report.authorityBatchReport.accessManager
     );
     _checkAccessManagerRoles(accessManager, inputs);
+    _checkRoleLabels(accessManager);
     _checkSpokeRoles(accessManager, report, inputs);
     _checkHubRoles(accessManager, report, inputs);
     _checkConfiguratorBatchRoles(report, inputs);
@@ -453,6 +454,49 @@ contract BatchTestProcedures is Test, InputUtils, Create2TestHelper, WETHDeployP
       expectedAdmin
     );
     assertTrue(adminHasRole, 'access manager admin has default admin role');
+  }
+
+  function _checkRoleLabels(IAccessManagerEnumerable accessManager) internal view {
+    assertEq(accessManager.getRoleLabelCount(), 9, 'role label count');
+
+    // Hub roles
+    assertTrue(
+      accessManager.isRoleLabeled(Roles.HUB_DOMAIN_ADMIN_ROLE),
+      'HUB_DOMAIN_ADMIN labeled'
+    );
+    assertEq(accessManager.getLabelOfRole(Roles.HUB_DOMAIN_ADMIN_ROLE), 'HUB_DOMAIN_ADMIN_ROLE');
+    assertEq(accessManager.getLabelOfRole(Roles.HUB_CONFIGURATOR_ROLE), 'HUB_CONFIGURATOR_ROLE');
+    assertEq(accessManager.getLabelOfRole(Roles.HUB_FEE_MINTER_ROLE), 'HUB_FEE_MINTER_ROLE');
+    assertEq(
+      accessManager.getLabelOfRole(Roles.HUB_DEFICIT_ELIMINATOR_ROLE),
+      'HUB_DEFICIT_ELIMINATOR_ROLE'
+    );
+
+    // HubConfigurator roles
+    assertEq(
+      accessManager.getLabelOfRole(Roles.HUB_CONFIGURATOR_DOMAIN_ADMIN_ROLE),
+      'HUB_CONFIGURATOR_DOMAIN_ADMIN_ROLE'
+    );
+
+    // Spoke roles
+    assertEq(
+      accessManager.getLabelOfRole(Roles.SPOKE_DOMAIN_ADMIN_ROLE),
+      'SPOKE_DOMAIN_ADMIN_ROLE'
+    );
+    assertEq(
+      accessManager.getLabelOfRole(Roles.SPOKE_CONFIGURATOR_ROLE),
+      'SPOKE_CONFIGURATOR_ROLE'
+    );
+    assertEq(
+      accessManager.getLabelOfRole(Roles.SPOKE_USER_POSITION_UPDATER_ROLE),
+      'SPOKE_USER_POSITION_UPDATER_ROLE'
+    );
+
+    // SpokeConfigurator roles
+    assertEq(
+      accessManager.getLabelOfRole(Roles.SPOKE_CONFIGURATOR_DOMAIN_ADMIN_ROLE),
+      'SPOKE_CONFIGURATOR_DOMAIN_ADMIN_ROLE'
+    );
   }
 
   function _checkSpokeRoles(
