@@ -20,7 +20,7 @@ The deploy script constructs a `FullDeployInputs` struct (see `src/deployments/u
 ### 2. Pre-deploy LiquidationLogic (required for spokes)
 
 ```bash
-make deploy-precompile CHAIN=mainnet
+make deploy-precompile
 ```
 
 This deploys `LiquidationLogic` via CREATE2 and writes `FOUNDRY_LIBRARIES` to `.env` so Foundry can link `SpokeInstance` bytecode on the next compilation. See [LiquidationLogic Pre-deployment](#liquidationlogic-pre-deployment) for details.
@@ -28,7 +28,7 @@ This deploys `LiquidationLogic` via CREATE2 and writes `FOUNDRY_LIBRARIES` to `.
 ### 3. Deploy Remaining Contracts
 
 ```bash
-make deploy-contracts CHAIN=mainnet
+make deploy-contracts
 ```
 
 This runs `AaveV4DeployOrchestration.deployAaveV4()`, which deploys batches in order: AccessManager → role labeling → Configurators → Configurator role setup → TreasurySpoke → Hubs → Spokes → Gateways → PositionManagers → role grants → DEFAULT_ADMIN transfer.

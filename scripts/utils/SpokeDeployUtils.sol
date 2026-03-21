@@ -16,13 +16,13 @@ library SpokeDeployUtils {
 
   // ==================== Library Deployment ====================
 
-  /// @notice Deploys LiquidationLogic via CREATE2 with salt=0.
+  /// @notice Deploys LiquidationLogic via CREATE2.
   /// @dev The CREATE2 factory must already be deployed on the target chain.
-  ///      For Anvil, etch it beforehand (see scripts/deploy/AaveV4DeployBatchAnvil.s.sol).
+  /// @param salt The CREATE2 salt for deterministic deployment.
   /// @return The deployed library address.
-  function deployLiquidationLogic() internal returns (address) {
+  function deployLiquidationLogic(bytes32 salt) internal returns (address) {
     bytes memory bytecode = vm.getCode('src/spoke/libraries/LiquidationLogic.sol:LiquidationLogic');
-    return Create2Utils.create2Deploy(bytes32(0), bytecode);
+    return Create2Utils.create2Deploy(salt, bytecode);
   }
 
   /// @notice Returns the FOUNDRY_LIBRARIES-compatible string for library linking.
@@ -37,8 +37,9 @@ library SpokeDeployUtils {
   }
 
   /// @notice Deploys LiquidationLogic and appends FOUNDRY_LIBRARIES to .env.
-  function _deployAndWriteLibrariesConfig() internal {
-    address liquidationLogic = deployLiquidationLogic();
+  /// @param salt The CREATE2 salt for deterministic deployment.
+  function _deployAndWriteLibrariesConfig(bytes32 salt) internal {
+    address liquidationLogic = deployLiquidationLogic(salt);
 
     string memory librariesSolcString = getLibraryString(liquidationLogic);
 

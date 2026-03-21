@@ -62,7 +62,7 @@ abstract contract AaveV4DeployBatchBaseScript is Script, InputUtils {
     address deployer
   ) internal virtual returns (FullDeployInputs memory) {
     string memory message = ' is zero address';
-    string memory outcome = '; defaulting to deployer';
+    string memory outcome = string.concat('; defaulting to deployer [', vm.toString(deployer), ']');
 
     FullDeployInputs memory sanitizedInputs = inputs;
 

@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 
 import {Script} from 'forge-std/Script.sol';
 import {console2 as console} from 'forge-std/console2.sol';
-import {SpokeDeployUtils} from 'scripts/SpokeDeployUtils.sol';
+import {SpokeDeployUtils} from 'scripts/utils/SpokeDeployUtils.sol';
 
 /**
  * @dev Deploy LiquidationLogic library using CREATE2 and save the output
@@ -38,7 +38,7 @@ contract LibraryPreCompile is Script {
     }
 
     vm.startBroadcast();
-    SpokeDeployUtils._deployAndWriteLibrariesConfig();
+    SpokeDeployUtils._deployAndWriteLibrariesConfig(bytes32(0));
     vm.stopBroadcast();
 
     console.log('LibraryPreCompile: FOUNDRY_LIBRARIES set. Run the main deploy script.');
