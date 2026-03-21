@@ -1,11 +1,10 @@
-// SPDX-License-Identifier: UNLICENSED
-// Copyright (c) 2025 Aave Labs
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
 import {Vm} from 'forge-std/Vm.sol';
 import {SafeERC20, IERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
 import {IHub, IHubBase} from 'src/hub/interfaces/IHub.sol';
-import {ISpokeBase, ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
+import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 import {ITokenizationSpoke} from 'src/spoke/interfaces/ITokenizationSpoke.sol';
 
 library Utils {
@@ -92,11 +91,11 @@ library Utils {
     address underlying,
     uint8 decimals,
     address feeReceiver,
-    address interestRateStrategy,
+    address irStrategy,
     bytes memory encodedIrData
   ) internal returns (uint256) {
     vm.prank(hubAdmin);
-    return hub.addAsset(underlying, decimals, feeReceiver, interestRateStrategy, encodedIrData);
+    return hub.addAsset(underlying, decimals, feeReceiver, irStrategy, encodedIrData);
   }
 
   function updateAssetConfig(
@@ -123,7 +122,7 @@ library Utils {
   }
 
   function supply(
-    ISpokeBase spoke,
+    ISpoke spoke,
     uint256 reserveId,
     address caller,
     uint256 amount,
@@ -145,7 +144,7 @@ library Utils {
   }
 
   function withdraw(
-    ISpokeBase spoke,
+    ISpoke spoke,
     uint256 reserveId,
     address caller,
     uint256 amount,
@@ -156,7 +155,7 @@ library Utils {
   }
 
   function borrow(
-    ISpokeBase spoke,
+    ISpoke spoke,
     uint256 reserveId,
     address caller,
     uint256 amount,
@@ -167,7 +166,7 @@ library Utils {
   }
 
   function repay(
-    ISpokeBase spoke,
+    ISpoke spoke,
     uint256 reserveId,
     address caller,
     uint256 amount,

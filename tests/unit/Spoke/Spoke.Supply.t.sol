@@ -1,5 +1,4 @@
-// SPDX-License-Identifier: UNLICENSED
-// Copyright (c) 2025 Aave Labs
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
 import 'tests/unit/Spoke/SpokeBase.t.sol';
@@ -90,7 +89,7 @@ contract SpokeSupplyTest is SpokeBase {
 
     MockReentrantCaller reentrantCaller = new MockReentrantCaller(
       address(spoke1),
-      ISpokeBase.supply.selector
+      ISpoke.supply.selector
     );
 
     vm.mockFunction(
@@ -126,7 +125,7 @@ contract SpokeSupplyTest is SpokeBase {
     assertEq(bobData[stage].data.suppliedShares, 0);
     TestReturnValues memory returnValues;
     vm.expectEmit(address(spoke1));
-    emit ISpokeBase.Supply(
+    emit ISpoke.Supply(
       _daiReserveId(spoke1),
       bob,
       bob,
@@ -210,7 +209,7 @@ contract SpokeSupplyTest is SpokeBase {
 
     TestReturnValues memory returnValues;
     vm.expectEmit(address(spoke1));
-    emit ISpokeBase.Supply(
+    emit ISpoke.Supply(
       _daiReserveId(spoke1),
       bob,
       bob,
@@ -287,7 +286,7 @@ contract SpokeSupplyTest is SpokeBase {
 
     TestReturnValues memory returnValues;
     vm.expectEmit(address(spoke1));
-    emit ISpokeBase.Supply(_daiReserveId(spoke1), carol, carol, expectedShares, amount);
+    emit ISpoke.Supply(_daiReserveId(spoke1), carol, carol, expectedShares, amount);
     _assertRefreshPremiumNotCalled();
     vm.prank(carol);
     (returnValues.shares, returnValues.amount) = spoke1.supply(
@@ -357,7 +356,7 @@ contract SpokeSupplyTest is SpokeBase {
     uint256 skipTime
   ) public {
     amount = bound(amount, 1, MAX_SUPPLY_AMOUNT);
-    rate = bound(rate, 1, MAX_BORROW_RATE);
+    rate = bound(rate, 1, Constants.MAX_ALLOWED_DRAWN_RATE);
     reserveId = bound(reserveId, 0, spokeInfo[spoke1].MAX_ALLOWED_ASSET_ID);
     skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
 
@@ -407,7 +406,7 @@ contract SpokeSupplyTest is SpokeBase {
 
     TestReturnValues memory returnValues;
     vm.expectEmit(address(spoke1));
-    emit ISpokeBase.Supply(reserveId, carol, carol, expectedSuppliedShares, amount);
+    emit ISpoke.Supply(reserveId, carol, carol, expectedSuppliedShares, amount);
     _assertRefreshPremiumNotCalled();
     vm.prank(carol);
     (returnValues.shares, returnValues.amount) = spoke1.supply(reserveId, amount, carol);
@@ -481,7 +480,7 @@ contract SpokeSupplyTest is SpokeBase {
     TestReturnValues memory returnValues;
     vm.prank(carol);
     vm.expectEmit(address(spoke1));
-    emit ISpokeBase.Supply(_daiReserveId(spoke1), carol, carol, expectedShares, amount);
+    emit ISpoke.Supply(_daiReserveId(spoke1), carol, carol, expectedShares, amount);
     _assertRefreshPremiumNotCalled();
     (returnValues.shares, returnValues.amount) = spoke1.supply(
       _daiReserveId(spoke1),
@@ -536,7 +535,7 @@ contract SpokeSupplyTest is SpokeBase {
     uint256 skipTime
   ) public {
     amount = bound(amount, 1, MAX_SUPPLY_AMOUNT);
-    rate = bound(rate, 1, MAX_BORROW_RATE);
+    rate = bound(rate, 1, Constants.MAX_ALLOWED_DRAWN_RATE);
     reserveId = bound(reserveId, 0, spokeInfo[spoke1].MAX_ALLOWED_ASSET_ID);
     skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
 
@@ -583,7 +582,7 @@ contract SpokeSupplyTest is SpokeBase {
 
     TestReturnValues memory returnValues;
     vm.expectEmit(address(spoke1));
-    emit ISpokeBase.Supply(reserveId, carol, carol, expectedShares, amount);
+    emit ISpoke.Supply(reserveId, carol, carol, expectedShares, amount);
     _assertRefreshPremiumNotCalled();
     vm.prank(carol);
     (returnValues.shares, returnValues.amount) = spoke1.supply(reserveId, amount, carol);

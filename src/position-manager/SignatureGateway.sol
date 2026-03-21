@@ -1,5 +1,4 @@
-// SPDX-License-Identifier: UNLICENSED
-// Copyright (c) 2025 Aave Labs
+// SPDX-License-Identifier: LicenseRef-BUSL
 pragma solidity 0.8.28;
 
 import {SafeERC20, IERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
@@ -7,14 +6,14 @@ import {EIP712Hash} from 'src/position-manager/libraries/EIP712Hash.sol';
 import {MathUtils} from 'src/libraries/math/MathUtils.sol';
 import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 import {ISignatureGateway} from 'src/position-manager/interfaces/ISignatureGateway.sol';
-import {PositionManagerBase} from 'src/position-manager/PositionManagerBase.sol';
+import {PositionManagerIntentBase} from 'src/position-manager/PositionManagerIntentBase.sol';
 
 /// @title SignatureGateway
 /// @author Aave Labs
-/// @notice Gateway to consume EIP-712 typed intents for spoke actions on behalf of a user.
+/// @notice Gateway to consume EIP-712 typed intents for Spoke actions on behalf of a user.
 /// @dev Uses keyed-nonces where each key's namespace nonce is consumed sequentially. Intents bundled through
 /// multicall can be executed independently in order of signed nonce & deadline; does not guarantee batch atomicity.
-contract SignatureGateway is ISignatureGateway, PositionManagerBase {
+contract SignatureGateway is ISignatureGateway, PositionManagerIntentBase {
   using SafeERC20 for IERC20;
   using EIP712Hash for *;
 
@@ -44,7 +43,7 @@ contract SignatureGateway is ISignatureGateway, PositionManagerBase {
 
   /// @dev Constructor.
   /// @param initialOwner_ The address of the initial owner.
-  constructor(address initialOwner_) PositionManagerBase(initialOwner_) {}
+  constructor(address initialOwner_) PositionManagerIntentBase(initialOwner_) {}
 
   /// @inheritdoc ISignatureGateway
   function supplyWithSig(

@@ -1,5 +1,4 @@
-// SPDX-License-Identifier: UNLICENSED
-// Copyright (c) 2025 Aave Labs
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
 /// @title EIP712Types library
@@ -104,6 +103,43 @@ library EIP712Types {
     address owner;
     address spender;
     uint256 amount;
+    uint256 nonce;
+    uint256 deadline;
+  }
+
+  /// @dev ConfigPositionManager Intents
+  struct SetGlobalPermissionPermit {
+    address spoke;
+    address delegator;
+    address delegatee;
+    bool status;
+    uint256 nonce;
+    uint256 deadline;
+  }
+
+  struct SetCanSetUsingAsCollateralPermissionPermit {
+    address spoke;
+    address delegator;
+    address delegatee;
+    bool status;
+    uint256 nonce;
+    uint256 deadline;
+  }
+
+  struct SetCanUpdateUserRiskPremiumPermissionPermit {
+    address spoke;
+    address delegator;
+    address delegatee;
+    bool status;
+    uint256 nonce;
+    uint256 deadline;
+  }
+
+  struct SetCanUpdateUserDynamicConfigPermissionPermit {
+    address spoke;
+    address delegator;
+    address delegatee;
+    bool status;
     uint256 nonce;
     uint256 deadline;
   }
