@@ -542,6 +542,42 @@ contract SpokeBase is Base {
     _assertUserDebt(userDebt, expectedUserDebt, label);
   }
 
+  function _assertProtocolSupplyAndDebt(
+    ISpoke spoke,
+    uint256 reserveId,
+    address user,
+    string memory reserveName,
+    uint256 expectedUserSupply,
+    uint256 expectedReserveSupply,
+    uint256 expectedDrawnDebt,
+    uint256 expectedPremiumDebt,
+    string memory label
+  ) internal view {
+    _assertUserSupply(
+      spoke,
+      reserveId,
+      user,
+      expectedUserSupply,
+      string.concat(reserveName, label)
+    );
+    _assertReserveSupply(
+      spoke,
+      reserveId,
+      expectedReserveSupply,
+      string.concat(reserveName, label)
+    );
+    _assertSpokeSupply(spoke, reserveId, expectedReserveSupply, string.concat(reserveName, label));
+    _assertAssetSupply(spoke, reserveId, expectedReserveSupply, string.concat(reserveName, label));
+    _assertSingleUserProtocolDebt(
+      spoke,
+      reserveId,
+      user,
+      expectedDrawnDebt,
+      expectedPremiumDebt,
+      string.concat(reserveName, label)
+    );
+  }
+
   function _calcExpectedUserDebt(
     uint256 assetId,
     ISpoke.UserPosition memory userPos

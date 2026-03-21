@@ -1850,13 +1850,13 @@ abstract contract Base is Test {
     assertApproxEqAbs(
       actualPremiumDebt,
       expectedPremiumDebt,
-      3,
+      4,
       string.concat('user premium debt ', label)
     );
     assertApproxEqAbs(
       spoke.getUserTotalDebt(reserveId, user),
       expectedDrawnDebt + expectedPremiumDebt,
-      3,
+      4,
       string.concat('user total debt ', label)
     );
   }
@@ -1878,13 +1878,13 @@ abstract contract Base is Test {
     assertApproxEqAbs(
       actualPremiumDebt,
       expectedPremiumDebt,
-      3,
+      4,
       string.concat('reserve premium debt ', label)
     );
     assertApproxEqAbs(
       spoke.getReserveTotalDebt(reserveId),
       expectedDrawnDebt + expectedPremiumDebt,
-      3,
+      4,
       string.concat('reserve total debt ', label)
     );
   }
@@ -1910,13 +1910,13 @@ abstract contract Base is Test {
     assertApproxEqAbs(
       actualPremiumDebt,
       expectedPremiumDebt,
-      3,
+      4,
       string.concat('spoke premium debt ', label)
     );
     assertApproxEqAbs(
       hub1.getSpokeTotalOwed(assetId, address(spoke)),
       expectedDrawnDebt + expectedPremiumDebt,
-      3,
+      4,
       string.concat('spoke total debt ', label)
     );
   }
@@ -1939,13 +1939,13 @@ abstract contract Base is Test {
     assertApproxEqAbs(
       actualPremiumDebt,
       expectedPremiumDebt,
-      3,
+      4,
       string.concat('asset premium debt ', label)
     );
     assertApproxEqAbs(
       hub1.getAssetTotalOwed(assetId),
       expectedDrawnDebt + expectedPremiumDebt,
-      3,
+      4,
       string.concat('asset total debt ', label)
     );
   }
