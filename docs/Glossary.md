@@ -4,7 +4,7 @@ Canonical terminology for Aave V4. Terms appear in alphabetical order.
 
 ---
 
-**Base Drawn Rate:** Per-asset interest rate set at the Hub level, applied to all drawn debt for that asset. Determined by the Hub's interest rate strategy based on current utilization. The symbol $R_{sbase,i}$ refers to the base drawn rate for asset $i$.
+**Base Drawn Rate:** Per-asset interest rate set at the Hub level, applied to all drawn debt for that asset. Determined by the Hub's interest rate strategy, based on current utilization. The symbol $R_{sbase,i}$ refers to the base drawn rate for asset $i$.
 
 **Collateral Factor:** Maximum percentage of collateral value that can be borrowed against a collateral asset.
 
