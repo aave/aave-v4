@@ -232,6 +232,46 @@ contract AaveV4BatchDeploymentTest is BatchTestProcedures {
     checkedV4Deployment();
   }
 
+  function testAaveV4BatchDeployment_withDuplicateHubLabels_reverts() public {
+    _inputs.hubLabels = new string[](3);
+    _inputs.hubLabels[0] = 'core';
+    _inputs.hubLabels[1] = 'prime';
+    _inputs.hubLabels[2] = 'core';
+
+    vm.expectRevert('duplicate hub label: core');
+    this.checkedV4Deployment();
+  }
+
+  function testAaveV4BatchDeployment_withDuplicateHubLabels_adjacentPair_reverts() public {
+    _inputs.hubLabels = new string[](2);
+    _inputs.hubLabels[0] = 'core';
+    _inputs.hubLabels[1] = 'core';
+
+    vm.expectRevert('duplicate hub label: core');
+    this.checkedV4Deployment();
+  }
+
+  function testAaveV4BatchDeployment_withDuplicateSpokeLabels_reverts() public {
+    _inputs.spokeLabels = new string[](3);
+    _inputs.spokeLabels[0] = 'main';
+    _inputs.spokeLabels[1] = 'lrt';
+    _inputs.spokeLabels[2] = 'main';
+    _inputs.spokeMaxReservesLimits = _defaultSpokeMaxReservesLimits(3);
+
+    vm.expectRevert('duplicate spoke label: main');
+    this.checkedV4Deployment();
+  }
+
+  function testAaveV4BatchDeployment_withDuplicateSpokeLabels_adjacentPair_reverts() public {
+    _inputs.spokeLabels = new string[](2);
+    _inputs.spokeLabels[0] = 'main';
+    _inputs.spokeLabels[1] = 'main';
+    _inputs.spokeMaxReservesLimits = _defaultSpokeMaxReservesLimits(2);
+
+    vm.expectRevert('duplicate spoke label: main');
+    this.checkedV4Deployment();
+  }
+
   function testAaveV4BatchDeployment_withEmptySpokeMaxReservesLimits_usesDefaults() public {
     _inputs.spokeMaxReservesLimits = new uint16[](0);
     checkedV4Deployment();
