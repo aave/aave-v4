@@ -43,7 +43,7 @@ interface ITakerPositionManager is IPositionManagerIntentBase {
     uint256 deadline;
   }
 
-  /// @notice Emitted when an owner grants an allowance to withdraw on their behalf.
+  /// @notice Emitted when the withdraw allowance granted to a spender is updated.
   /// @param spoke The address of the Spoke.
   /// @param reserveId The identifier of the reserve.
   /// @param owner The address of the owner.
@@ -57,7 +57,7 @@ interface ITakerPositionManager is IPositionManagerIntentBase {
     uint256 amount
   );
 
-  /// @notice Emitted when an owner grants an allowance to borrow on their behalf.
+  /// @notice Emitted when the borrow allowance granted to a spender is updated.
   /// @param spoke The address of the Spoke.
   /// @param reserveId The identifier of the reserve.
   /// @param owner The address of the owner.
@@ -109,7 +109,7 @@ interface ITakerPositionManager is IPositionManagerIntentBase {
   /// @notice Thrown when the borrow allowance is insufficient.
   error InsufficientBorrowAllowance(uint256 allowance, uint256 required);
 
-  /// @notice Approves a spender to withdraw assets from the specified reserve.
+  /// @notice Approves a spender to withdraw assets from the specified reserve on behalf of the owner.
   /// @dev Using `type(uint256).max` as the amount results in an infinite approval, so the allowance is never decreased.
   /// @param spoke The address of the Spoke.
   /// @param reserveId The identifier of the reserve.
@@ -122,7 +122,7 @@ interface ITakerPositionManager is IPositionManagerIntentBase {
     uint256 amount
   ) external;
 
-  /// @notice Approves a spender to withdraw from the specified reserve using an EIP712-typed intent.
+  /// @notice Approves a spender to withdraw from the specified reserve on behalf of the owner using an EIP712-typed intent.
   /// @dev Uses keyed-nonces where for each key's namespace nonce is consumed sequentially.
   /// @dev Using `type(uint256).max` as the amount results in an infinite approval, so the allowance is never decreased.
   /// @param params The structured WithdrawPermit parameters.
@@ -132,7 +132,7 @@ interface ITakerPositionManager is IPositionManagerIntentBase {
     bytes calldata signature
   ) external;
 
-  /// @notice Approves a borrow allowance for a spender.
+  /// @notice Approves a spender to borrow assets from the specified reserve on behalf of the owner.
   /// @dev Using `type(uint256).max` as the amount results in an infinite approval, so the allowance is never decreased.
   /// @param spoke The address of the Spoke.
   /// @param reserveId The identifier of the reserve.
@@ -145,7 +145,7 @@ interface ITakerPositionManager is IPositionManagerIntentBase {
     uint256 amount
   ) external;
 
-  /// @notice Approves a spender to borrow from the specified reserve using an EIP712-typed intent.
+  /// @notice Approves a spender to borrow from the specified reserve on behalf of the owner using an EIP712-typed intent.
   /// @dev Uses keyed-nonces where for each key's namespace nonce is consumed sequentially.
   /// @dev Using `type(uint256).max` as the amount results in an infinite approval, so the allowance is never decreased.
   /// @param params The structured BorrowPermit parameters.
