@@ -317,7 +317,7 @@ contract TakerPositionManager is ITakerPositionManager, PositionManagerIntentBas
     uint256 newAllowance
   ) internal {
     _withdrawAllowances[spoke][reserveId][owner][spender] = newAllowance;
-    emit WithdrawApproval(spoke, reserveId, owner, spender, newAllowance);
+    emit WithdrawApproval(spoke, owner, spender, reserveId, newAllowance);
   }
 
   function _updateBorrowAllowance(
@@ -328,7 +328,7 @@ contract TakerPositionManager is ITakerPositionManager, PositionManagerIntentBas
     uint256 newAllowance
   ) internal {
     _borrowAllowances[spoke][reserveId][owner][spender] = newAllowance;
-    emit BorrowApproval(spoke, reserveId, owner, spender, newAllowance);
+    emit BorrowApproval(spoke, owner, spender, reserveId, newAllowance);
   }
 
   function _multicallEnabled() internal pure override returns (bool) {
