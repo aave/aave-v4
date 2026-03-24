@@ -53,4 +53,4 @@ Be respectful. Aggressive, disrespectful, or spam contributions will be removed 
 
 ## License
 
-Aave V4 source code is licensed under [BUSL](./licenses/BUSL_LICENSE). All contributions are licensed under the [Aave Protocol CLA](./licenses/CLA_LICENSE).
+Aave V4 source code is licensed under [BUSL](./LICENSE). All contributions are licensed under the [Aave Protocol CLA](./CLA_LICENSE).

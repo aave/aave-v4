@@ -45,7 +45,7 @@ You may not materially misrepresent affiliation with, or endorsement by, the Aav
 The Change Date is the earlier of:
 
 - 5 years after the deployment date of Aave V4 on Ethereum Mainnet
-- If specified, a date designated by Aave Protocol governance and recorded in the "changedate" text record at [designated address]
+- If specified, a date designated by Aave Protocol governance and recorded in the "changedate" text record at v4.aavedao.eth
 
 A Change Date set through governance takes precedence over the stated date above.
 
