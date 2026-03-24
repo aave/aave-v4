@@ -439,20 +439,17 @@ contract BatchTestProcedures is Test, InputUtils, Create2TestHelper, WETHDeployP
       ? inputs.accessManagerAdmin
       : _deployer;
     assertEq(
-      accessManager.getRoleMember(Roles.ACCESS_MANAGER_DEFAULT_ADMIN, 0),
+      accessManager.getRoleMember(Roles.ACCESS_MANAGER_ADMIN_ROLE, 0),
       expectedAdmin,
       'DefaultAdminRoleMember'
     );
     assertEq(
-      accessManager.getRoleMemberCount(Roles.ACCESS_MANAGER_DEFAULT_ADMIN),
+      accessManager.getRoleMemberCount(Roles.ACCESS_MANAGER_ADMIN_ROLE),
       1,
       'DefaultAdminRoleCount'
     );
 
-    (bool adminHasRole, ) = accessManager.hasRole(
-      Roles.ACCESS_MANAGER_DEFAULT_ADMIN,
-      expectedAdmin
-    );
+    (bool adminHasRole, ) = accessManager.hasRole(Roles.ACCESS_MANAGER_ADMIN_ROLE, expectedAdmin);
     assertTrue(adminHasRole, 'access manager admin has default admin role');
   }
 

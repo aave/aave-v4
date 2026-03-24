@@ -127,7 +127,7 @@ contract HubAccessTest is HubBase {
     accessManager.setTargetFunctionRole(
       address(hub1),
       hubSelectors,
-      Roles.ACCESS_MANAGER_DEFAULT_ADMIN
+      Roles.ACCESS_MANAGER_ADMIN_ROLE
     );
 
     // The old role (HUB_ADMIN) should no longer have access
@@ -285,7 +285,7 @@ contract HubAccessTest is HubBase {
       abi.encodeWithSelector(
         IAccessManager.AccessManagerUnauthorizedAccount.selector,
         address(this),
-        Roles.ACCESS_MANAGER_DEFAULT_ADMIN
+        Roles.ACCESS_MANAGER_ADMIN_ROLE
       )
     );
     authority.updateAuthority(address(hub1), address(newAuthority));

@@ -16,7 +16,7 @@ contract AaveV4AccessManagerRolesProcedureTest is ProceduresBase {
 
     _replaceDefaultAdminRole(newAdmin);
     (bool hasRole, uint32 executionDelay) = IAccessManagerEnumerable(accessManager).hasRole(
-      Roles.ACCESS_MANAGER_DEFAULT_ADMIN,
+      Roles.ACCESS_MANAGER_ADMIN_ROLE,
       newAdmin
     );
     assertTrue(hasRole);
@@ -41,7 +41,7 @@ contract AaveV4AccessManagerRolesProcedureTest is ProceduresBase {
 
     vm.prank(accessManagerAdmin);
     IAccessManager(accessManager).grantRole(
-      Roles.ACCESS_MANAGER_DEFAULT_ADMIN,
+      Roles.ACCESS_MANAGER_ADMIN_ROLE,
       address(aaveV4AccessManagerRolesProcedureWrapper),
       0
     );
@@ -57,7 +57,7 @@ contract AaveV4AccessManagerRolesProcedureTest is ProceduresBase {
     address newAdmin = makeAddr('newAdmin');
     vm.prank(accessManagerAdmin);
     IAccessManager(accessManager).grantRole(
-      Roles.ACCESS_MANAGER_DEFAULT_ADMIN,
+      Roles.ACCESS_MANAGER_ADMIN_ROLE,
       address(aaveV4AccessManagerRolesProcedureWrapper),
       0
     );
@@ -67,7 +67,7 @@ contract AaveV4AccessManagerRolesProcedureTest is ProceduresBase {
     });
 
     (bool hasRole, uint32 executionDelay) = IAccessManagerEnumerable(accessManager).hasRole(
-      Roles.ACCESS_MANAGER_DEFAULT_ADMIN,
+      Roles.ACCESS_MANAGER_ADMIN_ROLE,
       newAdmin
     );
     assertTrue(hasRole);
@@ -91,7 +91,7 @@ contract AaveV4AccessManagerRolesProcedureTest is ProceduresBase {
   function test_labelAllRoles() public {
     vm.prank(accessManagerAdmin);
     IAccessManager(accessManager).grantRole(
-      Roles.ACCESS_MANAGER_DEFAULT_ADMIN,
+      Roles.ACCESS_MANAGER_ADMIN_ROLE,
       address(aaveV4AccessManagerRolesProcedureWrapper),
       0
     );
@@ -212,7 +212,7 @@ contract AaveV4AccessManagerRolesProcedureTest is ProceduresBase {
   function _replaceDefaultAdminRole(address newAdmin) internal {
     vm.startPrank(accessManagerAdmin);
     IAccessManager(accessManager).grantRole(
-      Roles.ACCESS_MANAGER_DEFAULT_ADMIN,
+      Roles.ACCESS_MANAGER_ADMIN_ROLE,
       address(aaveV4AccessManagerRolesProcedureWrapper),
       0
     );

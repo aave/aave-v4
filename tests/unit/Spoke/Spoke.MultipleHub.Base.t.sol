@@ -73,7 +73,7 @@ contract SpokeMultipleHubBase is SpokeBase {
   function _setupMultiHubRoles(TestTypes.TestEnvReport memory report) internal {
     vm.startPrank(ADMIN);
     IAccessManager(report.accessManager).grantRole(
-      Roles.ACCESS_MANAGER_DEFAULT_ADMIN,
+      Roles.ACCESS_MANAGER_ADMIN_ROLE,
       address(this),
       0
     );
@@ -83,7 +83,7 @@ contract SpokeMultipleHubBase is SpokeBase {
     AaveV4TestOrchestration.grantRolesTestEnv(report, ADMIN, HUB_ADMIN, SPOKE_ADMIN);
 
     IAccessManager(report.accessManager).renounceRole(
-      Roles.ACCESS_MANAGER_DEFAULT_ADMIN,
+      Roles.ACCESS_MANAGER_ADMIN_ROLE,
       address(this)
     );
   }

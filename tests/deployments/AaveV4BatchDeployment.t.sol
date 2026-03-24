@@ -302,21 +302,21 @@ contract AaveV4BatchDeploymentTest is BatchTestProcedures {
     );
 
     // newAdmin has DEFAULT_ADMIN_ROLE
-    (bool newAdminHasRole, ) = accessManager.hasRole(Roles.ACCESS_MANAGER_DEFAULT_ADMIN, newAdmin);
+    (bool newAdminHasRole, ) = accessManager.hasRole(Roles.ACCESS_MANAGER_ADMIN_ROLE, newAdmin);
     assertTrue(newAdminHasRole, 'new admin should have DEFAULT_ADMIN_ROLE');
 
     // deployer no longer has DEFAULT_ADMIN_ROLE
-    (bool deployerHasRole, ) = accessManager.hasRole(Roles.ACCESS_MANAGER_DEFAULT_ADMIN, _deployer);
+    (bool deployerHasRole, ) = accessManager.hasRole(Roles.ACCESS_MANAGER_ADMIN_ROLE, _deployer);
     assertFalse(deployerHasRole, 'deployer should not have DEFAULT_ADMIN_ROLE after transfer');
 
     // exactly one admin
     assertEq(
-      accessManager.getRoleMemberCount(Roles.ACCESS_MANAGER_DEFAULT_ADMIN),
+      accessManager.getRoleMemberCount(Roles.ACCESS_MANAGER_ADMIN_ROLE),
       1,
       'should have exactly one DEFAULT_ADMIN'
     );
     assertEq(
-      accessManager.getRoleMember(Roles.ACCESS_MANAGER_DEFAULT_ADMIN, 0),
+      accessManager.getRoleMember(Roles.ACCESS_MANAGER_ADMIN_ROLE, 0),
       newAdmin,
       'sole admin should be newAdmin'
     );
@@ -337,10 +337,10 @@ contract AaveV4BatchDeploymentTest is BatchTestProcedures {
       report.authorityBatchReport.accessManager
     );
 
-    (bool deployerHasRole, ) = accessManager.hasRole(Roles.ACCESS_MANAGER_DEFAULT_ADMIN, _deployer);
+    (bool deployerHasRole, ) = accessManager.hasRole(Roles.ACCESS_MANAGER_ADMIN_ROLE, _deployer);
     assertTrue(deployerHasRole, 'deployer should retain DEFAULT_ADMIN_ROLE');
     assertEq(
-      accessManager.getRoleMemberCount(Roles.ACCESS_MANAGER_DEFAULT_ADMIN),
+      accessManager.getRoleMemberCount(Roles.ACCESS_MANAGER_ADMIN_ROLE),
       1,
       'should have exactly one DEFAULT_ADMIN'
     );

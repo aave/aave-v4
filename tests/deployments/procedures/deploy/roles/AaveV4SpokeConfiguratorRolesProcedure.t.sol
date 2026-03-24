@@ -94,7 +94,7 @@ contract AaveV4SpokeConfiguratorRolesProcedureTest is ProceduresBase {
 
   function _grantAdminToWrapper(address _wrapper) internal {
     vm.prank(accessManagerAdmin);
-    IAccessManager(accessManager).grantRole(Roles.ACCESS_MANAGER_DEFAULT_ADMIN, _wrapper, 0);
+    IAccessManager(accessManager).grantRole(Roles.ACCESS_MANAGER_ADMIN_ROLE, _wrapper, 0);
   }
 
   function test_getSpokeConfiguratorDomainAdminRoleSelectors() public view {

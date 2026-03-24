@@ -427,7 +427,7 @@ abstract contract Base is BatchTestProcedures {
     // temporary grant admin role to address(this) to execute setAndGrantRolesTestEnv from its context
     vm.startPrank(ADMIN);
     IAccessManager(report.accessManager).grantRole(
-      Roles.ACCESS_MANAGER_DEFAULT_ADMIN,
+      Roles.ACCESS_MANAGER_ADMIN_ROLE,
       address(this),
       0
     );
@@ -451,7 +451,7 @@ abstract contract Base is BatchTestProcedures {
     );
 
     IAccessManager(report.accessManager).renounceRole(
-      Roles.ACCESS_MANAGER_DEFAULT_ADMIN,
+      Roles.ACCESS_MANAGER_ADMIN_ROLE,
       address(this)
     );
   }
@@ -459,7 +459,7 @@ abstract contract Base is BatchTestProcedures {
   /// @dev Standalone role setup for a hub+spoke pair outside the main orchestration (e.g. upgrade tests).
   function setUpRoles(IHub targetHub, ISpoke spoke, IAccessManager manager) internal virtual {
     vm.startPrank(ADMIN);
-    manager.grantRole(Roles.ACCESS_MANAGER_DEFAULT_ADMIN, address(this), 0);
+    manager.grantRole(Roles.ACCESS_MANAGER_ADMIN_ROLE, address(this), 0);
     vm.stopPrank();
 
     AaveV4HubRolesProcedure.grantHubAllRoles(address(manager), ADMIN);
@@ -470,10 +470,7 @@ abstract contract Base is BatchTestProcedures {
     AaveV4SpokeRolesProcedure.grantSpokeAllRoles(address(manager), SPOKE_ADMIN);
     AaveV4SpokeRolesProcedure.setupSpokeAllRoles(address(manager), address(spoke));
 
-    IAccessManager(address(manager)).renounceRole(
-      Roles.ACCESS_MANAGER_DEFAULT_ADMIN,
-      address(this)
-    );
+    IAccessManager(address(manager)).renounceRole(Roles.ACCESS_MANAGER_ADMIN_ROLE, address(this));
   }
 
   function _initTokenList() internal {
@@ -1157,7 +1154,7 @@ abstract contract Base is BatchTestProcedures {
     }
 
     vm.startPrank(ADMIN);
-    accessManager.grantRole(Roles.ACCESS_MANAGER_DEFAULT_ADMIN, address(this), 0);
+    accessManager.grantRole(Roles.ACCESS_MANAGER_ADMIN_ROLE, address(this), 0);
     accessManager.grantRole(Roles.HUB_CONFIGURATOR_ROLE, address(this), 0);
 
     AaveV4TestOrchestration.setupHubRolesTestEnv(report, address(accessManager));
@@ -1166,7 +1163,7 @@ abstract contract Base is BatchTestProcedures {
     AaveV4TestOrchestration.configureHubsAssets(assetParams);
 
     // Renounce temporary roles
-    accessManager.renounceRole(Roles.ACCESS_MANAGER_DEFAULT_ADMIN, address(this));
+    accessManager.renounceRole(Roles.ACCESS_MANAGER_ADMIN_ROLE, address(this));
     accessManager.renounceRole(Roles.HUB_CONFIGURATOR_ROLE, address(this));
 
     return report;

@@ -17,7 +17,7 @@ contract AaveV4AuthorityBatchTest is BatchBaseTest {
     assertNotEq(report.accessManager, address(0));
 
     (bool hasRole, uint32 executionDelay) = IAccessManagerEnumerable(report.accessManager).hasRole(
-      Roles.ACCESS_MANAGER_DEFAULT_ADMIN,
+      Roles.ACCESS_MANAGER_ADMIN_ROLE,
       admin
     );
     assertTrue(hasRole);
@@ -33,8 +33,8 @@ contract AaveV4AuthorityBatchTest is BatchBaseTest {
     IAccessManagerEnumerable am = IAccessManagerEnumerable(
       aaveV4AuthorityBatch.getReport().accessManager
     );
-    assertEq(am.getRoleMemberCount(Roles.ACCESS_MANAGER_DEFAULT_ADMIN), 1);
-    assertEq(am.getRoleMember(Roles.ACCESS_MANAGER_DEFAULT_ADMIN, 0), admin);
+    assertEq(am.getRoleMemberCount(Roles.ACCESS_MANAGER_ADMIN_ROLE), 1);
+    assertEq(am.getRoleMember(Roles.ACCESS_MANAGER_ADMIN_ROLE, 0), admin);
   }
 
   function test_noOtherRolesInitialized() public view {
