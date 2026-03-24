@@ -147,7 +147,7 @@ Snapshot files generated:
 
 ### Audit Reports
 
-You can find all audit reports under [audits](./audits/) 
+You can find all audit reports under [audits](./audits/):
 
 - [2026-02-05 - Aave V4 - Blackthorn](./audits/2026-02-05_Aave-V4_Blackthorn.pdf)
 - [2026-02-10 - Aave V4 - TrailOfBits](./audits/2026-02-10_Aave-V4_TrailOfBits.pdf)
@@ -159,7 +159,7 @@ Further details will be made available soon.
 
 # License
 
-Aave V4 is licensed under the Business Source License, see [LICENSE](./BUSL_LICENSE). Each Solidity file in Aave V4 states the applicable license. As a customized license, BUSL uses the `LicenseRef-` prefix per [SPDX Spec v2.3, Annex E](https://spdx.github.io/spdx-spec/v2.3/using-SPDX-short-identifiers-in-source-files/).
+Aave V4 is licensed under the Business Source License, see [LICENSE](./LICENSE). Each Solidity file in Aave V4 states the applicable license. As a customized license, BUSL uses the `LicenseRef-` prefix per [SPDX Spec v2.3, Annex E](https://spdx.github.io/spdx-spec/v2.3/using-SPDX-short-identifiers-in-source-files/).
 
 # Contributing
 
