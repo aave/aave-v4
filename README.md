@@ -159,7 +159,7 @@ Further details will be made available soon.
 
 # License
 
-Aave V4 is licensed under the Business Source License, see [BUSL_LICENSE](./licenses/BUSL_LICENSE). Each Solidity file in Aave V4 states the applicable license.
+Aave V4 is licensed under the Business Source License, see [BUSL_LICENSE](./licenses/BUSL_LICENSE). Each Solidity file in Aave V4 states the applicable license. As a customized license, BUSL uses the `LicenseRef-` prefix pe [SPDX Spec v2.3, Annex E](https://spdx.github.io/spdx-spec/v2.3/using-SPDX-short-identifiers-in-source-files/).
 
 # Contributing
 
