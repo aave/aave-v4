@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: UNLICENSED
+// SPDX-License-Identifier: LicenseRef-BUSL
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 

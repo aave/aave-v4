@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: UNLICENSED
+// SPDX-License-Identifier: LicenseRef-BUSL
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
@@ -7,7 +7,7 @@ import {Roles} from 'src/deployments/utils/libraries/Roles.sol';
 import {RolesValidation} from 'src/deployments/utils/libraries/RolesValidation.sol';
 
 library AaveV4AccessManagerRolesProcedure {
-  /// @notice Labels all protocol roles on the AccessManager using their constant accessManageres.
+  /// @notice Labels all protocol roles on the AccessManager.
   function labelAllRoles(address accessManager) internal {
     RolesValidation.validateNonZeroAddress(accessManager);
     IAccessManager am = IAccessManager(accessManager);
