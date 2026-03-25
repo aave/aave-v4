@@ -862,4 +862,83 @@ contract SpokeLiquidationCallScenariosTest is SpokeLiquidationCallBaseTest {
     vm.prank(liquidator);
     spoke.liquidationCall(collateralReserveId, debtReserveId, user, type(uint256).max, false);
   }
+
+  // Tests that very large positions ($500B collateral, $400B debt per user) can be liquidated
+  // without arithmetic overflow. Three borrowers each deposit $500B USDY as collateral and borrow
+  // $400B in different debt assets (WBTC, USDX, DAI).
+  function test_liquidationCall_largeAmounts_noOverflow() public {
+    uint256 collateralReserveId = _usdyReserveId(spoke);
+
+    // Configure USDY as collateral
+    _updateCollateralFactor(spoke, collateralReserveId, 80_00);
+    _updateCollateralRisk(spoke, collateralReserveId, 5_00);
+    _updateMaxLiquidationBonus(spoke, collateralReserveId, 105_00);
+    _updateLiquidationFee(spoke, collateralReserveId, 10_00);
+
+    // $500B USDY collateral per user
+    uint256 collateralAmount = 500_000_000_000e18;
+
+    // Supply collateral for each borrower
+    _increaseCollateralSupply(spoke, collateralReserveId, collateralAmount, alice);
+    _increaseCollateralSupply(spoke, collateralReserveId, collateralAmount, bob);
+    _increaseCollateralSupply(spoke, collateralReserveId, collateralAmount, carol);
+
+    // Borrow $400B each in different debt assets
+    // alice: WBTC ($50K/token, 8 dec) -> 8M WBTC = $400B
+    uint256 aliceDebtReserveId = _wbtcReserveId(spoke);
+    _increaseReserveDebt(spoke, aliceDebtReserveId, 8_000_000e8, alice);
+
+    // bob: USDX ($1/token, 6 dec) -> 400B USDX = $400B
+    uint256 bobDebtReserveId = _usdxReserveId(spoke);
+    _increaseReserveDebt(spoke, bobDebtReserveId, 400_000_000_000e6, bob);
+
+    // carol: DAI ($1/token, 18 dec) -> 400B DAI = $400B
+    uint256 carolDebtReserveId = _daiReserveId(spoke);
+    _increaseReserveDebt(spoke, carolDebtReserveId, 400_000_000_000e18, carol);
+
+    // HF = $500B * 0.8 / $400B = 1.0 for each user
+    // Drop USDY (coll) price by 90%
+    _mockReservePriceByPercent({spoke: spoke, reserveId: collateralReserveId, percentage: 10_00});
+
+    // Verify all users are liquidatable
+    assertLt(spoke.getUserAccountData(alice).healthFactor, 1e18, 'alice should be liquidatable');
+    assertLt(spoke.getUserAccountData(bob).healthFactor, 1e18, 'bob should be liquidatable');
+    assertLt(spoke.getUserAccountData(carol).healthFactor, 1e18, 'carol should be liquidatable');
+
+    uint256 liquidatorBalanceBefore = tokenList.usdy.balanceOf(liquidator);
+
+    // Liquidate alice (USDY collateral, WBTC debt)
+    vm.startPrank(liquidator);
+    spoke.liquidationCall({
+      collateralReserveId: collateralReserveId,
+      debtReserveId: aliceDebtReserveId,
+      user: alice,
+      debtToCover: UINT256_MAX,
+      receiveShares: false
+    });
+    // Liquidate bob (USDY collateral, USDX debt)
+    spoke.liquidationCall({
+      collateralReserveId: collateralReserveId,
+      debtReserveId: bobDebtReserveId,
+      user: bob,
+      debtToCover: UINT256_MAX,
+      receiveShares: false
+    });
+    // Liquidate carol (USDY collateral, DAI debt)
+    spoke.liquidationCall({
+      collateralReserveId: collateralReserveId,
+      debtReserveId: carolDebtReserveId,
+      user: carol,
+      debtToCover: UINT256_MAX,
+      receiveShares: false
+    });
+    vm.stopPrank();
+
+    uint256 liquidatorBalanceAfter = tokenList.usdy.balanceOf(liquidator);
+    assertGt(
+      liquidatorBalanceAfter,
+      liquidatorBalanceBefore,
+      'liquidator should have received USDY collateral'
+    );
+  }
 }

@@ -2890,6 +2890,7 @@ abstract contract Base is Test {
     spoke.updateReservePriceSource(reserveId, mockPriceFeed);
   }
 
+  /// @dev Mock the reserve price. New price is `percentage` of the initial price.
   function _mockReservePriceByPercent(
     ISpoke spoke,
     uint256 reserveId,
