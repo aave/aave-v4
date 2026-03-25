@@ -47,6 +47,11 @@ contract MockSpoke is Spoke, Test {
     uint256 drawnShares = hub.draw(reserve.assetId, amount, msg.sender);
     userPosition.drawnShares += drawnShares.toUint120();
     if (!positionStatus.isBorrowing(reserveId)) {
+      require(
+        MAX_USER_RESERVES_LIMIT == MAX_ALLOWED_USER_RESERVES_LIMIT ||
+          positionStatus.borrowCount(_reserveCount) < MAX_USER_RESERVES_LIMIT,
+        MaximumUserReservesExceeded()
+      );
       positionStatus.setBorrowing(reserveId, true);
     }
 

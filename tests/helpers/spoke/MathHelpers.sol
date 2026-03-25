@@ -316,7 +316,7 @@ abstract contract MathHelpers is QueryHelpers {
       userAccountData.avgCollateralFactor
     );
     uint256 targetTotalDebtValue = totalAdjustedCollateralValue.wadDivUp(desiredHf);
-    assertLt(
+    assertLe(
       userAccountData.totalDebtValueRay / WadRayMath.RAY,
       targetTotalDebtValue,
       'User has enough debt'

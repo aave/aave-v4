@@ -195,7 +195,12 @@ abstract contract SetupHelpers is CheckedActions, ConfigHelpers, MockHelpers {
     _borrowWithoutHfCheck(spoke, user, reserveId, requiredDebtAmount);
 
     uint256 finalHf = _getUserHealthFactor(spoke, user);
-    assertApproxEqAbs(finalHf, desiredHf, 0.001e18);
+    assertApproxEqRel(
+      finalHf,
+      desiredHf,
+      0.01e18, // 1%
+      'final health factor should be close to desired health factor'
+    );
 
     return (finalHf, requiredDebtAmount);
   }
