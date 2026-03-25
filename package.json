@@ -1,6 +1,6 @@
 {
   "name": "aave-v4",
-  "version": "0.5.10",
+  "version": "0.5.11",
   "scripts": {
     "lint": "prettier . --check",
     "lint:fix": "prettier . --write",

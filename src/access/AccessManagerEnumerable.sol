@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: LicenseRef-BUSL
 pragma solidity 0.8.28;
 
-import {AccessManager} from 'src/dependencies/openzeppelin/AccessManager.sol';
+import {AccessManager, IAccessManager} from 'src/dependencies/openzeppelin/AccessManager.sol';
 import {EnumerableSet} from 'src/dependencies/openzeppelin/EnumerableSet.sol';
 import {IAccessManagerEnumerable} from 'src/access/interfaces/IAccessManagerEnumerable.sol';
 
@@ -9,18 +9,22 @@ import {IAccessManagerEnumerable} from 'src/access/interfaces/IAccessManagerEnum
 /// @author Aave Labs
 /// @notice Extension of AccessManager that tracks role members and their function selectors using EnumerableSet.
 /// @dev Roles, target contracts, and function selectors assigned to `ADMIN_ROLE` are excluded from tracking.
+/// @dev `ADMIN_ROLE` and `PUBLIC_ROLE` cannot be labeled.
 contract AccessManagerEnumerable is AccessManager, IAccessManagerEnumerable {
   using EnumerableSet for *;
 
   /// @dev Set of all role identifiers.
   /// @dev `PUBLIC_ROLE` and `ADMIN_ROLE` are not part of this set.
-  /// @dev The roles tracked in this set are never removed, even if they have no members or assigned selectors.
+  /// @dev The roles tracked in this set are never removed, even if they have no members, assigned selectors, or assigned labels.
   EnumerableSet.UintSet private _rolesSet;
 
   /// @dev Set of all admin role identifiers.
   /// @dev `ADMIN_ROLE` is not part of this set.
   /// @dev The roles tracked in this set are never removed, even if they have no members or managed roles.
   EnumerableSet.UintSet private _adminRolesSet;
+
+  /// @dev Set of all role labels.
+  EnumerableSet.StringSet private _labelsSet;
 
   /// @dev Map of role identifiers to their respective member sets.
   mapping(uint64 roleId => EnumerableSet.AddressSet) private _roleMemberSet;
@@ -43,9 +47,24 @@ contract AccessManagerEnumerable is AccessManager, IAccessManagerEnumerable {
   mapping(uint64 roleId => mapping(address target => EnumerableSet.Bytes32Set))
     private _roleToTargetToSelectorSet;
 
+  /// @dev Map of role identifiers to their assigned labels.
+  mapping(uint64 roleId => string label) private _roleToLabel;
+
+  /// @dev Map of labels to their assigned role identifiers.
+  mapping(string label => uint64 roleId) private _labelToRole;
+
   /// @dev Constructor.
   /// @param initialAdmin_ The address of the initial admin.
   constructor(address initialAdmin_) AccessManager(initialAdmin_) {}
+
+  /// @inheritdoc IAccessManager
+  function labelRole(
+    uint64 roleId,
+    string calldata label
+  ) public override(AccessManager, IAccessManager) {
+    super.labelRole(roleId, label);
+    _trackRoleLabel(roleId, label);
+  }
 
   /// @inheritdoc IAccessManagerEnumerable
   function getRole(uint256 index) external view returns (uint64) {
@@ -68,6 +87,11 @@ contract AccessManagerEnumerable is AccessManager, IAccessManagerEnumerable {
   }
 
   /// @inheritdoc IAccessManagerEnumerable
+  function isRole(uint64 roleId) external view returns (bool) {
+    return _rolesSet.contains(uint256(roleId));
+  }
+
+  /// @inheritdoc IAccessManagerEnumerable
   function getAdminRole(uint256 index) external view returns (uint64) {
     return uint64(_adminRolesSet.at(index));
   }
@@ -85,6 +109,11 @@ contract AccessManagerEnumerable is AccessManager, IAccessManagerEnumerable {
       adminRoles := listedAdminRoles
     }
     return adminRoles;
+  }
+
+  /// @inheritdoc IAccessManagerEnumerable
+  function isAdminRole(uint64 adminRoleId) external view returns (bool) {
+    return _adminRolesSet.contains(uint256(adminRoleId));
   }
 
   /// @inheritdoc IAccessManagerEnumerable
@@ -184,6 +213,49 @@ contract AccessManagerEnumerable is AccessManager, IAccessManagerEnumerable {
     return targetFunctionSelectors;
   }
 
+  /// @inheritdoc IAccessManagerEnumerable
+  function getRoleOfTargetSelector(address target, bytes4 selector) external view returns (uint64) {
+    return _targetToSelectorToRole[target][selector];
+  }
+
+  /// @inheritdoc IAccessManagerEnumerable
+  function getRoleLabel(uint256 index) external view returns (string memory) {
+    return _labelsSet.at(index);
+  }
+
+  /// @inheritdoc IAccessManagerEnumerable
+  function getRoleLabelCount() external view returns (uint256) {
+    return _labelsSet.length();
+  }
+
+  /// @inheritdoc IAccessManagerEnumerable
+  function getRoleLabels(uint256 start, uint256 end) external view returns (string[] memory) {
+    return _labelsSet.values(start, end);
+  }
+
+  /// @inheritdoc IAccessManagerEnumerable
+  function isLabelAssigned(string calldata label) external view returns (bool) {
+    return _labelsSet.contains(label);
+  }
+
+  /// @inheritdoc IAccessManagerEnumerable
+  function isRoleLabeled(uint64 roleId) external view returns (bool) {
+    return bytes(_roleToLabel[roleId]).length > 0;
+  }
+
+  /// @inheritdoc IAccessManagerEnumerable
+  function getLabelOfRole(uint64 roleId) external view returns (string memory) {
+    string memory label = _roleToLabel[roleId];
+    require(_labelsSet.contains(label), AccessManagerUnlabeledRole(roleId));
+    return label;
+  }
+
+  /// @inheritdoc IAccessManagerEnumerable
+  function getRoleOfLabel(string calldata label) external view returns (uint64) {
+    require(_labelsSet.contains(label), AccessManagerUnregisteredLabel(label));
+    return _labelToRole[label];
+  }
+
   /// @dev Overrides AccessManager `_setRoleAdmin` function to track admin roles.
   function _setRoleAdmin(uint64 roleId, uint64 admin) internal override {
     uint64 oldAdmin = getRoleAdmin(roleId);
@@ -273,6 +345,33 @@ contract AccessManagerEnumerable is AccessManager, IAccessManagerEnumerable {
     } else {
       _roleMemberSet[roleId].remove(account);
     }
+  }
+
+  /// @dev Tracks labels assigned to roles.
+  /// @dev To remove an existing label, pass an empty string as label.
+  /// @dev To relabel a role, first remove the existing label, then set the new label.
+  /// @dev Reverts if the label is already assigned to another role.
+  function _trackRoleLabel(uint64 roleId, string calldata label) internal {
+    string memory oldLabel = _roleToLabel[roleId];
+    bool hasOldLabel = bytes(oldLabel).length > 0;
+
+    // remove existing label
+    if (bytes(label).length == 0) {
+      require(hasOldLabel, AccessManagerUnlabeledRole(roleId));
+      _labelsSet.remove(oldLabel);
+      delete _labelToRole[oldLabel];
+      delete _roleToLabel[roleId];
+      return;
+    }
+
+    // set new label
+    require(!hasOldLabel, AccessManagerRoleAlreadyLabeled(roleId));
+    require(!_labelsSet.contains(label), AccessManagerLabelAlreadyUsed(label, _labelToRole[label]));
+
+    _trackRole(roleId);
+    _labelsSet.add(label);
+    _labelToRole[label] = roleId;
+    _roleToLabel[roleId] = label;
   }
 
   /// @dev Tracks all targets where a selector was assigned to a role and selectors.

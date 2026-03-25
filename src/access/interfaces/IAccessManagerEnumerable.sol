@@ -7,6 +7,18 @@ import {IAccessManager} from 'src/dependencies/openzeppelin/IAccessManager.sol';
 /// @author Aave Labs
 /// @notice Interface for AccessManagerEnumerable extension.
 interface IAccessManagerEnumerable is IAccessManager {
+  /// @notice Thrown when the role has not been labeled.
+  error AccessManagerUnlabeledRole(uint64 roleId);
+
+  /// @notice Thrown when the label is not assigned to any role.
+  error AccessManagerUnregisteredLabel(string label);
+
+  /// @notice Thrown when the role has already been labeled.
+  error AccessManagerRoleAlreadyLabeled(uint64 roleId);
+
+  /// @notice Thrown when the label is already assigned to a different role.
+  error AccessManagerLabelAlreadyUsed(string label, uint64 roleId);
+
   /// @notice Returns the identifier of the role at a specified index.
   /// @dev `PUBLIC_ROLE` and `ADMIN_ROLE` are not accessible via any index.
   /// @dev Roles with no assigned members are also accessible.
@@ -28,6 +40,11 @@ interface IAccessManagerEnumerable is IAccessManager {
   /// @return The list of role identifiers.
   function getRoles(uint256 start, uint256 end) external view returns (uint64[] memory);
 
+  /// @notice Returns whether the specified role exists.
+  /// @dev `PUBLIC_ROLE` and `ADMIN_ROLE` are not taken into account.
+  /// @param roleId The identifier of the role.
+  function isRole(uint64 roleId) external view returns (bool);
+
   /// @notice Returns the identifier of the admin role at a specified index.
   /// @dev `ADMIN_ROLE` is not accessible via any index.
   /// @dev Admin roles with no assigned members or managed roles are also accessible.
@@ -48,6 +65,11 @@ interface IAccessManagerEnumerable is IAccessManager {
   /// @param end The ending index for the admin role list.
   /// @return The list of admin role identifiers.
   function getAdminRoles(uint256 start, uint256 end) external view returns (uint64[] memory);
+
+  /// @notice Returns whether the specified admin role exists.
+  /// @dev `ADMIN_ROLE` is not taken into account.
+  /// @param adminRoleId The identifier of the admin role.
+  function isAdminRole(uint64 adminRoleId) external view returns (bool);
 
   /// @notice Returns the address of the role member at a specified index.
   /// @param roleId The identifier of the role.
@@ -156,4 +178,45 @@ interface IAccessManagerEnumerable is IAccessManager {
     uint256 start,
     uint256 end
   ) external view returns (bytes4[] memory);
+
+  /// @notice Returns the role identifier for the specified function selector.
+  /// @param target The address of the target contract.
+  /// @param selector The function selector.
+  /// @return The identifier of the role.
+  function getRoleOfTargetSelector(address target, bytes4 selector) external view returns (uint64);
+
+  /// @notice Returns the label at a specified index.
+  /// @param index The index in the labeled role list.
+  /// @return The label at the index.
+  function getRoleLabel(uint256 index) external view returns (string memory);
+
+  /// @notice Returns the total number of assigned role labels.
+  function getRoleLabelCount() external view returns (uint256);
+
+  /// @notice Returns the list of role labels between the specified indexes.
+  /// @param start The starting index for the labeled role list.
+  /// @param end The ending index for the labeled role list.
+  /// @return The list of role labels.
+  function getRoleLabels(uint256 start, uint256 end) external view returns (string[] memory);
+
+  /// @notice Returns whether the specified label is assigned to any tracked role.
+  /// @param label The label string.
+  function isLabelAssigned(string calldata label) external view returns (bool);
+
+  /// @notice Returns whether the given role has been labeled.
+  /// @param roleId The identifier of the role.
+  function isRoleLabeled(uint64 roleId) external view returns (bool);
+
+  /// @notice Returns the label of a specified role.
+  /// @dev `PUBLIC_ROLE` and `ADMIN_ROLE` cannot be labeled.
+  /// @dev Reverts with `AccessManagerUnlabeledRole` if the role has no assigned label.
+  /// @param roleId The identifier of the role.
+  /// @return The label of the role.
+  function getLabelOfRole(uint64 roleId) external view returns (string memory);
+
+  /// @notice Returns the role identifier for the specified label.
+  /// @dev Reverts with `AccessManagerUnregisteredLabel` if the label is not assigned to any role.
+  /// @param label The label string.
+  /// @return The identifier of the role.
+  function getRoleOfLabel(string calldata label) external view returns (uint64);
 }
