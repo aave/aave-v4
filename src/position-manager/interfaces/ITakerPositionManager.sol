@@ -6,6 +6,9 @@ import {IPositionManagerIntentBase} from 'src/position-manager/interfaces/IPosit
 /// @title ITakerPositionManager
 /// @author Aave Labs
 /// @notice Interface for position manager handling withdraw permit and borrow permit actions on behalf of users.
+/// @dev Allowances in the context of this TakerPositionManager represent how much the spender is allowed to impact
+/// the owner position (decreasing supplied amount for the withdraw action, increasing debt amount for the borrow action),
+/// and not the amount of assets that the psender will receive from the onBehalfOf action.
 interface ITakerPositionManager is IPositionManagerIntentBase {
   /// @notice Structured parameters for withdraw permit intent.
   /// @param spoke The address of the Spoke.
