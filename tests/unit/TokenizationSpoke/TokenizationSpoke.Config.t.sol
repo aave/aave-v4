@@ -43,14 +43,14 @@ contract TokenizationSpokeConfigTest is TokenizationSpokeBaseTest {
   }
 
   function test_configuration() public view {
-    ProxyAdmin proxyAdmin = ProxyAdmin(_getProxyAdminAddress(address(daiVault)));
+    ProxyAdmin proxyAdmin = ProxyAdmin(ProxyHelper.getProxyAdmin(address(daiVault)));
     assertEq(proxyAdmin.owner(), ADMIN);
     assertEq(proxyAdmin.UPGRADE_INTERFACE_VERSION(), '5.0.0');
     assertEq(
-      _getProxyInitializedVersion(address(daiVault)),
+      ProxyHelper.getProxyInitializedVersion(address(daiVault)),
       TokenizationSpokeInstance(address(daiVault)).SPOKE_REVISION()
     );
-    address implementation = _getImplementationAddress(address(daiVault));
-    assertEq(_getProxyInitializedVersion(implementation), type(uint64).max);
+    address implementation = ProxyHelper.getImplementation(address(daiVault));
+    assertEq(ProxyHelper.getProxyInitializedVersion(implementation), type(uint64).max);
   }
 }

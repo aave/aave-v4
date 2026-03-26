@@ -157,7 +157,7 @@ contract SpokeBase is Base {
 
   function setUp() public virtual override {
     super.setUp();
-    initEnvironment();
+    _initEnvironment();
   }
 
   /// @dev Opens a supply position for a random user
@@ -1146,15 +1146,15 @@ contract SpokeBase is Base {
       new MockSpoke(spoke.ORACLE(), Constants.MAX_ALLOWED_USER_RESERVES_LIMIT)
     );
 
-    address implementation = _getImplementationAddress(address(spoke));
+    address implementation = ProxyHelper.getImplementation(address(spoke));
 
-    vm.prank(_getProxyAdminAddress(address(spoke)));
+    vm.prank(ProxyHelper.getProxyAdmin(address(spoke)));
     ITransparentUpgradeableProxy(address(spoke)).upgradeToAndCall(address(mockSpoke), '');
 
     vm.prank(user);
     MockSpoke(address(spoke)).borrowWithoutHfCheck(reserveId, debtAmount, user);
 
-    vm.prank(_getProxyAdminAddress(address(spoke)));
+    vm.prank(ProxyHelper.getProxyAdmin(address(spoke)));
     ITransparentUpgradeableProxy(address(spoke)).upgradeToAndCall(implementation, '');
   }
 
@@ -1170,8 +1170,11 @@ contract SpokeBase is Base {
 
   /// @dev Helper to etch spoke's implementation with a new maxUserReservesLimit
   function _updateMaxUserReservesLimit(ISpoke spoke, uint16 newLimit) internal {
-    address currentImpl = _getImplementationAddress(address(spoke));
-    ISpokeInstance newImpl = DeployUtils.deploySpokeImplementation(spoke.ORACLE(), newLimit);
+    address currentImpl = ProxyHelper.getImplementation(address(spoke));
+    ISpokeInstance newImpl = AaveV4TestOrchestration.deploySpokeImplementation(
+      spoke.ORACLE(),
+      newLimit
+    );
     vm.etch(currentImpl, address(newImpl).code);
   }
 }

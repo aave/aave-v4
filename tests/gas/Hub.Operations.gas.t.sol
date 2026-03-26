@@ -1,17 +1,12 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import 'tests/Base.t.sol';
+import 'tests/gas/Base.gas.t.sol';
 
 /// forge-config: default.isolate = true
-contract HubOperations_Gas_Tests is Base {
+contract HubOperations_Gas_Tests is BaseGasTest {
   using SafeCast for *;
   using WadRayMath for uint256;
-
-  function setUp() public override {
-    deployFixtures();
-    initEnvironment();
-  }
 
   function test_add() public {
     vm.startPrank(address(spoke1));

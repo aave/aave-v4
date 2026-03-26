@@ -37,6 +37,7 @@ interface Vm {
   ) external returns (string memory json);
 }
 
+// solhint-disable quotes
 library JsonBindings {
   Vm constant vm = Vm(address(uint160(uint256(keccak256('hevm cheat code')))));
 

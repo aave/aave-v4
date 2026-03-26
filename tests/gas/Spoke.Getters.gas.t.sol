@@ -1,15 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import 'tests/Base.t.sol';
+import 'tests/gas/Base.gas.t.sol';
 
 /// forge-config: default.isolate = true
-contract SpokeGetters_Gas_Tests is Base {
-  function setUp() public override {
-    deployFixtures();
-    initEnvironment();
-  }
-
+contract SpokeGetters_Gas_Tests is BaseGasTest {
   function test_getUserAccountData() external {
     spoke1.getUserAccountData(alice);
     vm.snapshotGasLastCall('Spoke.Getters', 'getUserAccountData: supplies: 0, borrows: 0');

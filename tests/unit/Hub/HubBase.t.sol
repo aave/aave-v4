@@ -47,7 +47,7 @@ contract HubBase is Base {
 
   function setUp() public virtual override {
     super.setUp();
-    initEnvironment();
+    _initEnvironment();
   }
 
   function _updateAddCap(uint256 assetId, address spoke, uint40 newAddCap) internal {

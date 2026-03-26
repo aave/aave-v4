@@ -133,7 +133,7 @@ contract HubUpgradeableTest is HubBase {
   }
 
   function test_proxy_constructor_revertsWith_InvalidAddress() public {
-    IHubInstance hubImpl = DeployUtils.deployHubImplementation();
+    IHubInstance hubImpl = AaveV4TestOrchestration.deployHubImplementation();
     vm.expectRevert(IHub.InvalidAddress.selector);
     new TransparentUpgradeableProxy(
       address(hubImpl),
@@ -167,7 +167,7 @@ contract HubUpgradeableTest is HubBase {
   }
 
   function test_hub_revision_accessible() public {
-    IHubInstance hubImpl = DeployUtils.deployHubImplementation();
+    IHubInstance hubImpl = AaveV4TestOrchestration.deployHubImplementation();
     IHubInstance hubProxy = IHubInstance(address(_deployHubProxy(address(hubImpl))));
 
     assertEq(hubProxy.HUB_REVISION(), 1);
@@ -206,8 +206,8 @@ contract HubUpgradeableTest is HubBase {
     bytes4[] memory hubSelectors = new bytes4[](1);
     hubSelectors[0] = IHub.addAsset.selector;
     vm.startPrank(ADMIN);
-    accessManager.grantRole(Roles.HUB_ADMIN_ROLE, address(this), 0);
-    accessManager.setTargetFunctionRole(address(hub), hubSelectors, Roles.HUB_ADMIN_ROLE);
+    accessManager.grantRole(Roles.HUB_CONFIGURATOR_ROLE, address(this), 0);
+    accessManager.setTargetFunctionRole(address(hub), hubSelectors, Roles.HUB_CONFIGURATOR_ROLE);
     vm.stopPrank();
 
     assetId = hub.addAsset(underlying, 18, feeReceiver, address(irStrat), abi.encode(irDataLocal));

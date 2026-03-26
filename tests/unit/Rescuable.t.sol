@@ -8,7 +8,7 @@ contract RescuableTest is Base {
 
   function setUp() public virtual override {
     super.setUp();
-    initEnvironment();
+    _initEnvironment();
 
     rescuable = new RescuableWrapper(ADMIN);
   }

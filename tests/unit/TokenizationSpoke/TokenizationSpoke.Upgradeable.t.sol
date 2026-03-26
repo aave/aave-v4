@@ -16,7 +16,7 @@ contract TokenizationSpokeUpgradeableTest is TokenizationSpokeBaseTest {
 
     assertEq(address(vaultImpl), vaultImplAddress);
     assertEq(vaultImpl.SPOKE_REVISION(), revision);
-    assertEq(_getProxyInitializedVersion(vaultImplAddress), type(uint64).max);
+    assertEq(ProxyHelper.getProxyInitializedVersion(vaultImplAddress), type(uint64).max);
 
     vm.expectRevert(Initializable.InvalidInitialization.selector);
     vaultImpl.initialize(SHARE_NAME, SHARE_SYMBOL);
@@ -50,10 +50,10 @@ contract TokenizationSpokeUpgradeableTest is TokenizationSpokeBaseTest {
     );
 
     assertEq(address(vaultProxy), vaultProxyAddress);
-    assertEq(_getProxyAdminAddress(address(vaultProxy)), proxyAdminAddress);
-    assertEq(_getImplementationAddress(address(vaultProxy)), address(vaultImpl));
+    assertEq(ProxyHelper.getProxyAdmin(address(vaultProxy)), proxyAdminAddress);
+    assertEq(ProxyHelper.getImplementation(address(vaultProxy)), address(vaultImpl));
 
-    assertEq(_getProxyInitializedVersion(address(vaultProxy)), revision);
+    assertEq(ProxyHelper.getProxyInitializedVersion(address(vaultProxy)), revision);
     assertEq(vaultProxy.name(), SHARE_NAME);
     assertEq(vaultProxy.symbol(), SHARE_SYMBOL);
   }
@@ -83,7 +83,7 @@ contract TokenizationSpokeUpgradeableTest is TokenizationSpokeBaseTest {
     vm.expectEmit(address(vaultProxy));
     emit Initializable.Initialized(secondRevision);
     vm.recordLogs();
-    vm.prank(_getProxyAdminAddress(address(vaultProxy)));
+    vm.prank(ProxyHelper.getProxyAdmin(address(vaultProxy)));
     vaultProxy.upgradeToAndCall(
       address(vaultImpl2),
       _getInitializeCalldata(newShareName, newShareSymbol)
@@ -122,7 +122,7 @@ contract TokenizationSpokeUpgradeableTest is TokenizationSpokeBaseTest {
     );
 
     vm.expectRevert(Initializable.InvalidInitialization.selector);
-    vm.prank(_getProxyAdminAddress(address(vaultProxy)));
+    vm.prank(ProxyHelper.getProxyAdmin(address(vaultProxy)));
     vaultProxy.upgradeToAndCall(
       address(vaultImpl),
       _getInitializeCalldata(SHARE_NAME, SHARE_SYMBOL)
@@ -131,7 +131,7 @@ contract TokenizationSpokeUpgradeableTest is TokenizationSpokeBaseTest {
     uint64 secondRevision = uint64(vm.randomUint(0, initialRevision - 1));
     TokenizationSpokeInstance vaultImpl2 = _deployMockTokenizationSpokeInstance(secondRevision);
     vm.expectRevert(Initializable.InvalidInitialization.selector);
-    vm.prank(_getProxyAdminAddress(address(vaultProxy)));
+    vm.prank(ProxyHelper.getProxyAdmin(address(vaultProxy)));
     vaultProxy.upgradeToAndCall(
       address(vaultImpl2),
       _getInitializeCalldata(SHARE_NAME, SHARE_SYMBOL)

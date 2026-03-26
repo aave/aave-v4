@@ -9,8 +9,8 @@ contract TokenizationSpokeBaseTest is Base {
   string public constant SHARE_SYMBOL = 'chDAI';
 
   function setUp() public virtual override {
-    deployFixtures();
-    initEnvironment();
+    super.setUp();
+    _initEnvironment();
     daiVault = _deployTokenizationSpoke(
       hub1,
       address(tokenList.dai),

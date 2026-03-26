@@ -3,7 +3,12 @@ src = 'src'
 test = 'tests'
 out = 'out'
 libs = ['lib']
-fs_permissions = [{ access = "read", path = "tests/mocks/JsonBindings.sol" }]
+fs_permissions = [
+  { access = "read", path = "tests/mocks/JsonBindings.sol" },
+  { access = "read", path = "./config" },
+  { access = "read", path = "./out" },
+  { access = "read-write", path = "./output" }
+]
 skip = ["tests/mocks/JsonBindings.sol"]
 solc_version = "0.8.28"
 evm_version = "cancun"
@@ -49,6 +54,8 @@ gas_snapshot_check = true
 test = 'tests/gas'
 isolate = true
 
+[profile.anvil]
+
 [profile.coverage]
 optimizer = true
 optimizer_runs = 444444444444
@@ -71,6 +78,7 @@ zkevm = "${RPC_ZKEVM}"
 gnosis = "${RPC_GNOSIS}"
 bnb = "${RPC_BNB}"
 celo = "${RPC_CELO}"
+anvil = "http://127.0.0.1:8545"
 
 [etherscan]
 mainnet = { key = "${ETHERSCAN_API_KEY_MAINNET}", chainId = 1 }

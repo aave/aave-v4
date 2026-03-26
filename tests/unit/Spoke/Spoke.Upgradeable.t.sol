@@ -21,7 +21,7 @@ contract SpokeUpgradeableTest is SpokeBase {
 
     assertEq(address(spokeImpl), spokeImplAddress);
     assertEq(spokeImpl.SPOKE_REVISION(), revision);
-    assertEq(_getProxyInitializedVersion(spokeImplAddress), type(uint64).max);
+    assertEq(ProxyHelper.getProxyInitializedVersion(spokeImplAddress), type(uint64).max);
 
     vm.expectRevert(Initializable.InvalidInitialization.selector);
     spokeImpl.initialize(address(accessManager));
@@ -57,9 +57,8 @@ contract SpokeUpgradeableTest is SpokeBase {
     ISpoke spokeProxy = _deploySpokeProxy(address(spokeImpl));
 
     assertEq(address(spokeProxy), spokeProxyAddress);
-    assertEq(_getProxyAdminAddress(address(spokeProxy)), proxyAdminAddress);
-    assertEq(_getImplementationAddress(address(spokeProxy)), address(spokeImpl));
-
+    assertEq(ProxyHelper.getProxyAdmin(address(spokeProxy)), proxyAdminAddress);
+    assertEq(ProxyHelper.getImplementation(address(spokeProxy)), address(spokeImpl));
     assertEq(_getProxyInitializedVersion(address(spokeProxy)), revision);
     assertEq(IAccessManaged(address(spokeProxy)).authority(), address(accessManager));
     assertEq(spokeProxy.getLiquidationConfig(), expectedLiquidationConfig);
@@ -73,6 +72,7 @@ contract SpokeUpgradeableTest is SpokeBase {
     ISpoke spokeProxy = _deploySpokeProxy(address(spokeImpl));
 
     setUpRoles(hub1, spokeProxy, accessManager);
+
     uint128 targetHealthFactor = 1.05e18;
     _updateTargetHealthFactor(spokeProxy, targetHealthFactor);
 
@@ -82,7 +82,7 @@ contract SpokeUpgradeableTest is SpokeBase {
     vm.expectEmit(address(spokeProxy));
     emit IAccessManaged.AuthorityUpdated(address(accessManager));
     vm.recordLogs();
-    vm.prank(_getProxyAdminAddress(address(spokeProxy)));
+    vm.prank(ProxyHelper.getProxyAdmin(address(spokeProxy)));
     ITransparentUpgradeableProxy(address(spokeProxy)).upgradeToAndCall(
       address(spokeImpl2),
       _getInitializeCalldata(address(accessManager))
@@ -115,13 +115,13 @@ contract SpokeUpgradeableTest is SpokeBase {
     );
 
     vm.expectRevert(Initializable.InvalidInitialization.selector);
-    vm.prank(_getProxyAdminAddress(address(spokeProxy)));
+    vm.prank(ProxyHelper.getProxyAdmin(address(spokeProxy)));
     spokeProxy.upgradeToAndCall(address(spokeImpl), _getInitializeCalldata(address(accessManager)));
 
     uint64 secondRevision = uint64(vm.randomUint(0, initialRevision - 1));
     ISpokeInstance spokeImpl2 = _deployMockSpokeInstance(secondRevision);
     vm.expectRevert(Initializable.InvalidInitialization.selector);
-    vm.prank(_getProxyAdminAddress(address(spokeProxy)));
+    vm.prank(ProxyHelper.getProxyAdmin(address(spokeProxy)));
     spokeProxy.upgradeToAndCall(
       address(spokeImpl2),
       _getInitializeCalldata(address(accessManager))
@@ -129,7 +129,7 @@ contract SpokeUpgradeableTest is SpokeBase {
   }
 
   function test_proxy_constructor_revertsWith_InvalidAddress() public {
-    ISpokeInstance spokeImpl = DeployUtils.deploySpokeImplementation(
+    ISpokeInstance spokeImpl = AaveV4TestOrchestration.deploySpokeImplementation(
       oracle,
       Constants.MAX_ALLOWED_USER_RESERVES_LIMIT
     );
@@ -142,7 +142,7 @@ contract SpokeUpgradeableTest is SpokeBase {
   }
 
   function test_proxy_reinitialization_revertsWith_InvalidAddress() public {
-    ISpokeInstance spokeImpl = DeployUtils.deploySpokeImplementation(
+    ISpokeInstance spokeImpl = AaveV4TestOrchestration.deploySpokeImplementation(
       oracle,
       Constants.MAX_ALLOWED_USER_RESERVES_LIMIT
     );
@@ -152,12 +152,12 @@ contract SpokeUpgradeableTest is SpokeBase {
 
     ISpokeInstance spokeImpl2 = _deployMockSpokeInstance(2);
     vm.expectRevert(ISpoke.InvalidAddress.selector);
-    vm.prank(_getProxyAdminAddress(address(spokeProxy)));
+    vm.prank(ProxyHelper.getProxyAdmin(address(spokeProxy)));
     spokeProxy.upgradeToAndCall(address(spokeImpl2), _getInitializeCalldata(address(0)));
   }
 
   function test_proxy_reinitialization_revertsWith_CallerNotProxyAdmin() public {
-    ISpokeInstance spokeImpl = DeployUtils.deploySpokeImplementation(
+    ISpokeInstance spokeImpl = AaveV4TestOrchestration.deploySpokeImplementation(
       oracle,
       Constants.MAX_ALLOWED_USER_RESERVES_LIMIT
     );
@@ -199,7 +199,7 @@ contract SpokeUpgradeableTest is SpokeBase {
   }
 
   function test_spoke_revision_accessible() public {
-    ISpokeInstance spokeImpl = DeployUtils.deploySpokeImplementation(
+    ISpokeInstance spokeImpl = AaveV4TestOrchestration.deploySpokeImplementation(
       oracle,
       Constants.MAX_ALLOWED_USER_RESERVES_LIMIT
     );

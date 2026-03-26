@@ -561,19 +561,7 @@ contract HubEngineTest is BaseConfigEngineTest {
   }
 
   function test_executeHubSpokeToAssetsAdditions() public {
-    (ISpoke newSpoke, ) = _deploySpokeWithOracle(ADMIN, address(accessManager));
-
-    vm.startPrank(ADMIN);
-    bytes4[] memory spokeSelectors = new bytes4[](7);
-    spokeSelectors[0] = ISpoke.updateLiquidationConfig.selector;
-    spokeSelectors[1] = ISpoke.addReserve.selector;
-    spokeSelectors[2] = ISpoke.updateReserveConfig.selector;
-    spokeSelectors[3] = ISpoke.updateDynamicReserveConfig.selector;
-    spokeSelectors[4] = ISpoke.addDynamicReserveConfig.selector;
-    spokeSelectors[5] = ISpoke.updatePositionManager.selector;
-    spokeSelectors[6] = ISpoke.updateReservePriceSource.selector;
-    accessManager.setTargetFunctionRole(address(newSpoke), spokeSelectors, Roles.SPOKE_ADMIN_ROLE);
-    vm.stopPrank();
+    (ISpoke newSpoke, ) = _deployNewSpoke();
 
     IAaveV4ConfigEngine.SpokeAssetConfig[]
       memory assets = new IAaveV4ConfigEngine.SpokeAssetConfig[](2);

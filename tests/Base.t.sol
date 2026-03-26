@@ -28,7 +28,6 @@ import {AuthorityUtils} from 'src/dependencies/openzeppelin/AuthorityUtils.sol';
 import {Ownable2Step, Ownable} from 'src/dependencies/openzeppelin/Ownable2Step.sol';
 import {Math} from 'src/dependencies/openzeppelin/Math.sol';
 import {SlotDerivation} from 'src/dependencies/openzeppelin/SlotDerivation.sol';
-import {WETH9} from 'src/dependencies/weth/WETH9.sol';
 import {LibBit} from 'src/dependencies/solady/LibBit.sol';
 
 import {Initializable} from 'src/dependencies/openzeppelin-upgradeable/Initializable.sol';
@@ -39,7 +38,6 @@ import {IERC1967} from 'src/dependencies/openzeppelin/IERC1967.sol';
 import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
 import {MathUtils} from 'src/libraries/math/MathUtils.sol';
 import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
-import {Roles} from 'src/libraries/types/Roles.sol';
 import {Rescuable, IRescuable} from 'src/utils/Rescuable.sol';
 import {NoncesKeyed, INoncesKeyed} from 'src/utils/NoncesKeyed.sol';
 import {IntentConsumer, IIntentConsumer} from 'src/utils/IntentConsumer.sol';
@@ -69,6 +67,7 @@ import {PositionStatusMap} from 'src/spoke/libraries/PositionStatusMap.sol';
 import {ReserveFlags, ReserveFlagsMap} from 'src/spoke/libraries/ReserveFlagsMap.sol';
 import {LiquidationLogic} from 'src/spoke/libraries/LiquidationLogic.sol';
 import {KeyValueList} from 'src/spoke/libraries/KeyValueList.sol';
+import {ISpokeInstance} from 'src/deployments/utils/interfaces/ISpokeInstance.sol';
 
 // tokenization spoke
 import {TokenizationSpoke, ITokenizationSpoke} from 'src/spoke/TokenizationSpoke.sol';
@@ -100,9 +99,16 @@ import {
 
 // test
 import {Constants} from 'tests/Constants.sol';
-import {DeployUtils} from 'tests/DeployUtils.sol';
 import {Utils} from 'tests/Utils.sol';
+import {TestTypes} from 'tests/utils/TestTypes.sol';
 
+// orchestration
+import {ConfigData} from 'src/deployments/libraries/ConfigData.sol';
+import {OrchestrationReports} from 'src/deployments/libraries/OrchestrationReports.sol';
+import {AaveV4HubRolesProcedure} from 'src/deployments/procedures/roles/AaveV4HubRolesProcedure.sol';
+import {AaveV4SpokeRolesProcedure} from 'src/deployments/procedures/roles/AaveV4SpokeRolesProcedure.sol';
+import {AaveV4HubConfiguratorRolesProcedure} from 'src/deployments/procedures/roles/AaveV4HubConfiguratorRolesProcedure.sol';
+import {AaveV4SpokeConfiguratorRolesProcedure} from 'src/deployments/procedures/roles/AaveV4SpokeConfiguratorRolesProcedure.sol';
 // mocks
 import {EIP712Types} from 'tests/mocks/EIP712Types.sol';
 import {TestnetERC20} from 'tests/mocks/TestnetERC20.sol';
@@ -120,12 +126,14 @@ import {MockTreasurySpokeInstance} from 'tests/mocks/MockTreasurySpokeInstance.s
 import {MockSkimSpoke} from 'tests/mocks/MockSkimSpoke.sol';
 import {MockReentrantCaller} from 'tests/mocks/MockReentrantCaller.sol';
 import {MockHubInstance} from 'tests/mocks/MockHubInstance.sol';
-import {IHubInstance} from 'tests/mocks/IHubInstance.sol';
-import {ISpokeInstance} from 'tests/mocks/ISpokeInstance.sol';
-import {DeployWrapper} from 'tests/mocks/DeployWrapper.sol';
+import {IHubInstance} from 'src/deployments/utils/interfaces/IHubInstance.sol';
+import {AaveV4TestOrchestrationWrapper} from 'tests/mocks/AaveV4TestOrchestrationWrapper.sol';
 import {SpokeUtilsWrapper} from 'tests/mocks/SpokeUtilsWrapper.sol';
+import {BytecodeHelper} from 'src/deployments/utils/libraries/BytecodeHelper.sol';
 
-abstract contract Base is Test {
+import 'tests/utils/BatchTestProcedures.sol';
+
+abstract contract Base is BatchTestProcedures {
   using stdStorage for StdStorage;
   using WadRayMath for *;
   using SharesMath for uint256;
@@ -134,24 +142,11 @@ abstract contract Base is Test {
   using MathUtils for uint256;
   using ReserveFlagsMap for ReserveFlags;
 
-  bytes32 internal constant ERC1967_ADMIN_SLOT =
-    0xb53127684a568b3173ae13b9f8a6016e243e63b6e8ee1178d6a717850b5d6103;
-  bytes32 internal constant IMPLEMENTATION_SLOT =
-    0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc;
-  bytes32 internal constant INITIALIZABLE_SLOT =
-    0xf0c57e16840df040f15088dc2f81fe391c3923bec73e23a9662efc9c229c6a00;
-
   uint256 internal constant MAX_SUPPLY_AMOUNT = 1e30;
   uint256 internal constant MIN_TOKEN_DECIMALS_SUPPORTED = 6;
   uint256 internal constant MAX_TOKEN_DECIMALS_SUPPORTED = 18;
   uint256 internal constant MAX_SUPPLY_ASSET_UNITS =
     MAX_SUPPLY_AMOUNT / 10 ** MAX_TOKEN_DECIMALS_SUPPORTED;
-  uint256 internal MAX_SUPPLY_AMOUNT_USDX;
-  uint256 internal MAX_SUPPLY_AMOUNT_DAI;
-  uint256 internal MAX_SUPPLY_AMOUNT_WBTC;
-  uint256 internal MAX_SUPPLY_AMOUNT_WETH;
-  uint256 internal MAX_SUPPLY_AMOUNT_USDY;
-  uint256 internal MAX_SUPPLY_AMOUNT_USDZ;
   uint256 internal constant MAX_SUPPLY_IN_BASE_CURRENCY = 1e39;
   uint24 internal constant MIN_COLLATERAL_RISK_BPS = 0;
   uint24 internal constant MAX_COLLATERAL_RISK_BPS = 1000_00;
@@ -173,6 +168,19 @@ abstract contract Base is Test {
     PercentageMath.PERCENTAGE_FACTOR;
   IHubBase.PremiumDelta internal ZERO_PREMIUM_DELTA = ZERO_PREMIUM_DELTA;
 
+  bytes32 internal constant ERC1967_ADMIN_SLOT =
+    0xb53127684a568b3173ae13b9f8a6016e243e63b6e8ee1178d6a717850b5d6103;
+  bytes32 internal constant IMPLEMENTATION_SLOT =
+    0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc;
+  bytes32 internal constant INITIALIZABLE_SLOT =
+    0xf0c57e16840df040f15088dc2f81fe391c3923bec73e23a9662efc9c229c6a00;
+
+  IHub[] internal _hubs;
+  ISpoke[] internal _spokes;
+  IAaveOracle[] internal _oracles;
+  IAssetInterestRateStrategy[] internal _irStrategies;
+  IAccessManager[] internal _accessManagers;
+
   IAaveOracle internal oracle1;
   IAaveOracle internal oracle2;
   IAaveOracle internal oracle3;
@@ -181,8 +189,10 @@ abstract contract Base is Test {
   ISpoke internal spoke1;
   ISpoke internal spoke2;
   ISpoke internal spoke3;
-  AssetInterestRateStrategy internal irStrategy;
+  IAssetInterestRateStrategy internal irStrategy;
   IAccessManager internal accessManager;
+  IHubConfigurator internal hubConfigurator;
+  ISpokeConfigurator internal spokeConfigurator;
 
   string internal constant ALICE = 'alice';
   string internal constant BOB = 'bob';
@@ -206,10 +216,10 @@ abstract contract Base is Test {
   address internal TREASURY_ADMIN = makeAddr('TREASURY_ADMIN');
   address internal LIQUIDATOR = makeAddr('LIQUIDATOR');
   address internal POSITION_MANAGER = makeAddr('POSITION_MANAGER');
-  address internal HUB_CONFIGURATOR = makeAddr('HUB_CONFIGURATOR');
-  address internal SPOKE_CONFIGURATOR = makeAddr('SPOKE_CONFIGURATOR');
+  address internal HUB_CONFIGURATOR_ADMIN = makeAddr('HUB_CONFIGURATOR_ADMIN');
+  address internal SPOKE_CONFIGURATOR_ADMIN = makeAddr('SPOKE_CONFIGURATOR_ADMIN');
 
-  TokenList internal tokenList;
+  TestTypes.TokenList internal tokenList;
   uint256 internal wethAssetId = 0;
   uint256 internal usdxAssetId = 1;
   uint256 internal daiAssetId = 2;
@@ -224,6 +234,13 @@ abstract contract Base is Test {
   uint256 internal mintAmount_USDY = MAX_SUPPLY_AMOUNT;
   uint256 internal mintAmount_USDZ = MAX_SUPPLY_AMOUNT;
 
+  uint256 internal MAX_SUPPLY_AMOUNT_USDX;
+  uint256 internal MAX_SUPPLY_AMOUNT_DAI;
+  uint256 internal MAX_SUPPLY_AMOUNT_WBTC;
+  uint256 internal MAX_SUPPLY_AMOUNT_WETH;
+  uint256 internal MAX_SUPPLY_AMOUNT_USDY;
+  uint256 internal MAX_SUPPLY_AMOUNT_USDZ;
+
   Decimals internal _decimals = Decimals({usdx: 6, usdy: 18, dai: 18, wbtc: 8, weth: 18, usdz: 18});
 
   struct Decimals {
@@ -233,15 +250,6 @@ abstract contract Base is Test {
     uint8 usdy;
     uint8 weth;
     uint8 usdz;
-  }
-
-  struct TokenList {
-    WETH9 weth;
-    TestnetERC20 usdx;
-    TestnetERC20 dai;
-    TestnetERC20 wbtc;
-    TestnetERC20 usdy;
-    TestnetERC20 usdz;
   }
 
   struct SpokeInfo {
@@ -258,6 +266,13 @@ abstract contract Base is Test {
     uint256 reserveId;
     ISpoke.ReserveConfig reserveConfig;
     ISpoke.DynamicReserveConfig dynReserveConfig;
+  }
+
+  struct FixtureAssetList {
+    IERC20Metadata underlying;
+    uint16 liquidityFee;
+    address reinvestmentController;
+    bytes irData;
   }
 
   struct DrawnAccounting {
@@ -316,9 +331,13 @@ abstract contract Base is Test {
 
   mapping(ISpoke => SpokeInfo) internal spokeInfo;
 
-  function setUp() public virtual {
-    deployFixtures();
-  }
+  IAssetInterestRateStrategy.InterestRateData internal _defaultIrData =
+    IAssetInterestRateStrategy.InterestRateData({
+      optimalUsageRatio: 90_00, // 90.00%
+      baseDrawnRate: 5_00, // 5.00%
+      rateGrowthBeforeOptimal: 5_00, // 5.00%
+      rateGrowthAfterOptimal: 5_00 // 5.00%
+    });
 
   function _getProxyAdminAddress(address proxy) internal view returns (address) {
     bytes32 slotData = vm.load(proxy, ERC1967_ADMIN_SLOT);
@@ -335,194 +354,161 @@ abstract contract Base is Test {
     return uint64(uint256(slotData) & ((1 << 64) - 1));
   }
 
-  function deployFixtures() internal virtual {
+  function setUp() public virtual override {
+    _etchSetup();
+    _initTokenList();
+    _setupFixtures();
+  }
+
+  function _initEnvironment() internal {
+    _mintAndApproveTokenList();
+    _configureHubsAndSpokes();
+  }
+
+  function _setupFixtures() internal virtual {
+    TestTypes.TestEnvReport memory report = _deployFixtures({numHubs: 1, numSpokes: 3});
+    _setupFixturesRoles(report);
+
+    // todo rm when tests adapted to multiple hubs and spokes
+    hub1 = IHub(report.hubReports[0].hub);
+    irStrategy = IAssetInterestRateStrategy(report.hubReports[0].irStrategy);
+    treasurySpoke = ITreasurySpoke(report.treasurySpoke);
+    spoke1 = ISpoke(report.spokeReports[0].spoke);
+    spoke2 = ISpoke(report.spokeReports[1].spoke);
+    spoke3 = ISpoke(report.spokeReports[2].spoke);
+    oracle1 = IAaveOracle(report.spokeReports[0].aaveOracle);
+    oracle2 = IAaveOracle(report.spokeReports[1].aaveOracle);
+    oracle3 = IAaveOracle(report.spokeReports[2].aaveOracle);
+    accessManager = IAccessManager(report.accessManager);
+    hubConfigurator = IHubConfigurator(report.configuratorReport.hubConfigurator);
+    spokeConfigurator = ISpokeConfigurator(report.configuratorReport.spokeConfigurator);
+  }
+
+  function _deployFixtures(
+    uint256 numHubs,
+    uint256 numSpokes
+  ) internal virtual returns (TestTypes.TestEnvReport memory report) {
+    report = AaveV4TestOrchestration.deployTestEnv({
+      admin: ADMIN,
+      treasuryAdmin: TREASURY_ADMIN,
+      hubCount: numHubs,
+      spokeCount: numSpokes,
+      nativeWrapper: address(tokenList.weth),
+      hubBytecode: BytecodeHelper.getHubBytecode(),
+      spokeBytecode: BytecodeHelper.getSpokeBytecode(),
+      salt: bytes32(vm.randomBytes(32))
+    });
+    for (uint256 i; i < numHubs; ++i) {
+      _hubs.push(IHub(report.hubReports[i].hub));
+      _irStrategies.push(IAssetInterestRateStrategy(report.hubReports[i].irStrategy));
+
+      vm.label(report.hubReports[i].hub, string.concat('hub', string(abi.encode(i))));
+      vm.label(report.hubReports[i].irStrategy, string.concat('irStrategy', string(abi.encode(i))));
+    }
+    vm.label(report.treasurySpoke, 'treasurySpoke');
+
+    for (uint256 i; i < numSpokes; ++i) {
+      _spokes.push(ISpoke(report.spokeReports[i].spoke));
+      _oracles.push(IAaveOracle(report.spokeReports[i].aaveOracle));
+
+      vm.label(report.spokeReports[i].spoke, string.concat('spoke', string(abi.encode(i))));
+      vm.label(report.spokeReports[i].aaveOracle, string.concat('oracle', string(abi.encode(i))));
+    }
+
+    vm.label(report.configuratorReport.hubConfigurator, 'hubConfigurator');
+    vm.label(report.configuratorReport.spokeConfigurator, 'spokeConfigurator');
+
+    return report;
+  }
+
+  function _setupFixturesRoles(TestTypes.TestEnvReport memory report) internal virtual {
+    if (report.accessManager == address(0)) report.accessManager = address(accessManager);
+
+    // temporary grant admin role to address(this) to execute setAndGrantRolesTestEnv from its context
     vm.startPrank(ADMIN);
-    accessManager = IAccessManager(address(new AccessManagerEnumerable(ADMIN)));
-    hub1 = DeployUtils.deployHub({authority: address(accessManager), proxyAdminOwner: ADMIN});
-    irStrategy = new AssetInterestRateStrategy(address(hub1));
-    (spoke1, oracle1) = _deploySpokeWithOracle(ADMIN, address(accessManager));
-    (spoke2, oracle2) = _deploySpokeWithOracle(ADMIN, address(accessManager));
-    (spoke3, oracle3) = _deploySpokeWithOracle(ADMIN, address(accessManager));
-    TreasurySpokeInstance treasurySpokeImpl = new TreasurySpokeInstance();
-    treasurySpoke = ITreasurySpoke(
-      DeployUtils.proxify(
-        address(treasurySpokeImpl),
-        ADMIN,
-        abi.encodeCall(TreasurySpokeInstance.initialize, (TREASURY_ADMIN))
-      )
+    IAccessManager(report.accessManager).grantRole(
+      Roles.ACCESS_MANAGER_ADMIN_ROLE,
+      address(this),
+      0
     );
     vm.stopPrank();
 
-    vm.label(address(spoke1), 'spoke1');
-    vm.label(address(spoke2), 'spoke2');
-    vm.label(address(spoke3), 'spoke3');
+    AaveV4TestOrchestration.setRolesTestEnv(report);
+    AaveV4TestOrchestration.grantRolesTestEnv(report, ADMIN, HUB_ADMIN, SPOKE_ADMIN);
 
-    setUpRoles(hub1, spoke1, accessManager);
-    setUpRoles(hub1, spoke2, accessManager);
-    setUpRoles(hub1, spoke3, accessManager);
+    // Grant HubConfigurator granular roles to HUB_CONFIGURATOR_ADMIN so it can call
+    // HubConfigurator functions (deactivateAsset, resetAssetCaps, haltAsset, etc.)
+    AaveV4HubConfiguratorRolesProcedure.grantHubConfiguratorAllRoles(
+      report.accessManager,
+      HUB_CONFIGURATOR_ADMIN
+    );
+
+    // Grant SpokeConfigurator granular roles to SPOKE_CONFIGURATOR_ADMIN so it can call
+    // SpokeConfigurator functions (addReserve, updateMaxReserves, freezeReserve, etc.)
+    AaveV4SpokeConfiguratorRolesProcedure.grantSpokeConfiguratorAllRoles(
+      report.accessManager,
+      SPOKE_CONFIGURATOR_ADMIN
+    );
+
+    IAccessManager(report.accessManager).renounceRole(
+      Roles.ACCESS_MANAGER_ADMIN_ROLE,
+      address(this)
+    );
   }
 
+  /// @dev Standalone role setup for a hub+spoke pair outside the main orchestration (e.g. upgrade tests).
   function setUpRoles(IHub targetHub, ISpoke spoke, IAccessManager manager) internal virtual {
     vm.startPrank(ADMIN);
-    // Grant roles with 0 delay
-    manager.grantRole(Roles.HUB_ADMIN_ROLE, ADMIN, 0);
-    manager.grantRole(Roles.HUB_ADMIN_ROLE, HUB_ADMIN, 0);
-
-    manager.grantRole(Roles.SPOKE_ADMIN_ROLE, ADMIN, 0);
-    manager.grantRole(Roles.SPOKE_ADMIN_ROLE, SPOKE_ADMIN, 0);
-
-    manager.grantRole(Roles.USER_POSITION_UPDATER_ROLE, SPOKE_ADMIN, 0);
-    manager.grantRole(Roles.USER_POSITION_UPDATER_ROLE, USER_POSITION_UPDATER, 0);
-
-    manager.grantRole(Roles.HUB_CONFIGURATOR_ROLE, HUB_CONFIGURATOR, 0);
-    manager.grantRole(Roles.SPOKE_CONFIGURATOR_ROLE, SPOKE_CONFIGURATOR, 0);
-
-    manager.grantRole(Roles.DEFICIT_ELIMINATOR_ROLE, HUB_ADMIN, 0);
-    manager.grantRole(Roles.DEFICIT_ELIMINATOR_ROLE, DEFICIT_ELIMINATOR, 0);
-
-    // Grant responsibilities to roles
-    {
-      bytes4[] memory selectors = new bytes4[](7);
-      selectors[0] = ISpoke.updateLiquidationConfig.selector;
-      selectors[1] = ISpoke.addReserve.selector;
-      selectors[2] = ISpoke.updateReserveConfig.selector;
-      selectors[3] = ISpoke.updateDynamicReserveConfig.selector;
-      selectors[4] = ISpoke.addDynamicReserveConfig.selector;
-      selectors[5] = ISpoke.updatePositionManager.selector;
-      selectors[6] = ISpoke.updateReservePriceSource.selector;
-      manager.setTargetFunctionRole(address(spoke), selectors, Roles.SPOKE_ADMIN_ROLE);
-    }
-
-    {
-      bytes4[] memory selectors = new bytes4[](2);
-      selectors[0] = ISpoke.updateUserDynamicConfig.selector;
-      selectors[1] = ISpoke.updateUserRiskPremium.selector;
-      manager.setTargetFunctionRole(address(spoke), selectors, Roles.USER_POSITION_UPDATER_ROLE);
-    }
-
-    {
-      bytes4[] memory selectors = new bytes4[](6);
-      selectors[0] = IHub.addAsset.selector;
-      selectors[1] = IHub.updateAssetConfig.selector;
-      selectors[2] = IHub.addSpoke.selector;
-      selectors[3] = IHub.updateSpokeConfig.selector;
-      selectors[4] = IHub.setInterestRateData.selector;
-      selectors[5] = IHub.mintFeeShares.selector;
-      manager.setTargetFunctionRole(address(targetHub), selectors, Roles.HUB_ADMIN_ROLE);
-    }
-
-    {
-      bytes4[] memory selectors = new bytes4[](1);
-      selectors[0] = IHub.eliminateDeficit.selector;
-      manager.setTargetFunctionRole(address(targetHub), selectors, Roles.DEFICIT_ELIMINATOR_ROLE);
-    }
-
-    setUpHubConfiguratorRoles(HUB_CONFIGURATOR, address(manager));
-    setUpSpokeConfiguratorRoles(SPOKE_CONFIGURATOR, address(manager));
-
+    manager.grantRole(Roles.ACCESS_MANAGER_ADMIN_ROLE, address(this), 0);
     vm.stopPrank();
+
+    AaveV4HubRolesProcedure.grantHubAllRoles(address(manager), ADMIN);
+    AaveV4HubRolesProcedure.grantHubAllRoles(address(manager), HUB_ADMIN);
+    AaveV4HubRolesProcedure.setupHubAllRoles(address(manager), address(targetHub));
+
+    AaveV4SpokeRolesProcedure.grantSpokeAllRoles(address(manager), ADMIN);
+    AaveV4SpokeRolesProcedure.grantSpokeAllRoles(address(manager), SPOKE_ADMIN);
+    AaveV4SpokeRolesProcedure.setupSpokeAllRoles(address(manager), address(spoke));
+
+    IAccessManager(address(manager)).renounceRole(Roles.ACCESS_MANAGER_ADMIN_ROLE, address(this));
   }
 
-  function setUpHubConfiguratorRoles(address hubConfigurator, address manager) internal {
-    vm.startPrank(ADMIN);
+  function _initTokenList() internal {
+    TestTypes.TestTokenInput[] memory tokenInputs = new TestTypes.TestTokenInput[](5);
+    tokenInputs[0] = TestTypes.TestTokenInput({
+      name: 'USDX',
+      symbol: 'USDX',
+      decimals: _decimals.usdx
+    });
+    tokenInputs[1] = TestTypes.TestTokenInput({
+      name: 'DAI',
+      symbol: 'DAI',
+      decimals: _decimals.dai
+    });
+    tokenInputs[2] = TestTypes.TestTokenInput({
+      name: 'WBTC',
+      symbol: 'WBTC',
+      decimals: _decimals.wbtc
+    });
+    tokenInputs[3] = TestTypes.TestTokenInput({
+      name: 'USDY',
+      symbol: 'USDY',
+      decimals: _decimals.usdy
+    });
+    tokenInputs[4] = TestTypes.TestTokenInput({
+      name: 'USDZ',
+      symbol: 'USDZ',
+      decimals: _decimals.usdz
+    });
 
-    // Grant HUB_ADMIN_ROLE so the configurator can call hub functions
-    IAccessManager(manager).grantRole(Roles.HUB_ADMIN_ROLE, hubConfigurator, 0);
-
-    // Set up HubConfigurator function permissions - all functions callable by HUB_CONFIGURATOR_ROLE
-    bytes4[] memory selectors = new bytes4[](22);
-    selectors[0] = IHubConfigurator.updateLiquidityFee.selector;
-    selectors[1] = IHubConfigurator.updateFeeReceiver.selector;
-    selectors[2] = IHubConfigurator.updateFeeConfig.selector;
-    selectors[3] = IHubConfigurator.updateInterestRateStrategy.selector;
-    selectors[4] = IHubConfigurator.updateReinvestmentController.selector;
-    selectors[5] = IHubConfigurator.resetAssetCaps.selector;
-    selectors[6] = IHubConfigurator.deactivateAsset.selector;
-    selectors[7] = IHubConfigurator.haltAsset.selector;
-    selectors[8] = IHubConfigurator.addSpoke.selector;
-    selectors[9] = IHubConfigurator.addSpokeToAssets.selector;
-    selectors[10] = IHubConfigurator.updateSpokeActive.selector;
-    selectors[11] = IHubConfigurator.updateSpokeHalted.selector;
-    selectors[12] = IHubConfigurator.updateSpokeAddCap.selector;
-    selectors[13] = IHubConfigurator.updateSpokeDrawCap.selector;
-    selectors[14] = IHubConfigurator.updateSpokeRiskPremiumThreshold.selector;
-    selectors[15] = IHubConfigurator.updateSpokeCaps.selector;
-    selectors[16] = IHubConfigurator.deactivateSpoke.selector;
-    selectors[17] = IHubConfigurator.haltSpoke.selector;
-    selectors[18] = IHubConfigurator.resetSpokeCaps.selector;
-    selectors[19] = IHubConfigurator.updateInterestRateData.selector;
-    selectors[20] = IHubConfigurator.addAsset.selector;
-    selectors[21] = IHubConfigurator.addAssetWithDecimals.selector;
-    IAccessManager(manager).setTargetFunctionRole(
-      hubConfigurator,
-      selectors,
-      Roles.HUB_CONFIGURATOR_ROLE
-    );
-
-    vm.stopPrank();
-  }
-
-  function setUpSpokeConfiguratorRoles(address spokeConfigurator, address manager) internal {
-    vm.startPrank(ADMIN);
-
-    // Grant SPOKE_ADMIN_ROLE so the configurator can call spoke functions
-    IAccessManager(manager).grantRole(Roles.SPOKE_ADMIN_ROLE, spokeConfigurator, 0);
-
-    // Set up SpokeConfigurator function permissions - all functions callable by SPOKE_CONFIGURATOR_ROLE
-    bytes4[] memory selectors = new bytes4[](24);
-    selectors[0] = ISpokeConfigurator.updateReservePriceSource.selector;
-    selectors[1] = ISpokeConfigurator.updateLiquidationTargetHealthFactor.selector;
-    selectors[2] = ISpokeConfigurator.updateHealthFactorForMaxBonus.selector;
-    selectors[3] = ISpokeConfigurator.updateLiquidationBonusFactor.selector;
-    selectors[4] = ISpokeConfigurator.updateLiquidationConfig.selector;
-    selectors[5] = ISpokeConfigurator.addReserve.selector;
-    selectors[6] = ISpokeConfigurator.updatePaused.selector;
-    selectors[7] = ISpokeConfigurator.updateFrozen.selector;
-    selectors[8] = ISpokeConfigurator.updateBorrowable.selector;
-    selectors[9] = ISpokeConfigurator.updateReceiveSharesEnabled.selector;
-    selectors[10] = ISpokeConfigurator.updateCollateralRisk.selector;
-    selectors[11] = ISpokeConfigurator.addCollateralFactor.selector;
-    selectors[12] = ISpokeConfigurator.updateCollateralFactor.selector;
-    selectors[13] = ISpokeConfigurator.addMaxLiquidationBonus.selector;
-    selectors[14] = ISpokeConfigurator.updateMaxLiquidationBonus.selector;
-    selectors[15] = ISpokeConfigurator.addLiquidationFee.selector;
-    selectors[16] = ISpokeConfigurator.updateLiquidationFee.selector;
-    selectors[17] = ISpokeConfigurator.addDynamicReserveConfig.selector;
-    selectors[18] = ISpokeConfigurator.updateDynamicReserveConfig.selector;
-    selectors[19] = ISpokeConfigurator.pauseAllReserves.selector;
-    selectors[20] = ISpokeConfigurator.freezeAllReserves.selector;
-    selectors[21] = ISpokeConfigurator.pauseReserve.selector;
-    selectors[22] = ISpokeConfigurator.freezeReserve.selector;
-    selectors[23] = ISpokeConfigurator.updatePositionManager.selector;
-    IAccessManager(manager).setTargetFunctionRole(
-      spokeConfigurator,
-      selectors,
-      Roles.SPOKE_CONFIGURATOR_ROLE
-    );
-
-    vm.stopPrank();
-  }
-
-  function initEnvironment() internal {
-    deployMintAndApproveTokenList();
-    configureTokenList();
-  }
-
-  function deployMintAndApproveTokenList() internal {
-    tokenList = TokenList(
-      new WETH9(),
-      new TestnetERC20('USDX', 'USDX', _decimals.usdx),
-      new TestnetERC20('DAI', 'DAI', _decimals.dai),
-      new TestnetERC20('WBTC', 'WBTC', _decimals.wbtc),
-      new TestnetERC20('USDY', 'USDY', _decimals.usdy),
-      new TestnetERC20('USDZ', 'USDZ', _decimals.usdz)
-    );
+    tokenList = AaveV4TestOrchestration.deployTestTokens(tokenInputs);
 
     vm.label(address(tokenList.weth), 'WETH');
     vm.label(address(tokenList.usdx), 'USDX');
     vm.label(address(tokenList.dai), 'DAI');
     vm.label(address(tokenList.wbtc), 'WBTC');
     vm.label(address(tokenList.usdy), 'USDY');
+    vm.label(address(tokenList.usdz), 'USDZ');
 
     MAX_SUPPLY_AMOUNT_USDX = MAX_SUPPLY_ASSET_UNITS * 10 ** tokenList.usdx.decimals();
     MAX_SUPPLY_AMOUNT_WETH = MAX_SUPPLY_ASSET_UNITS * 10 ** tokenList.weth.decimals();
@@ -530,7 +516,9 @@ abstract contract Base is Test {
     MAX_SUPPLY_AMOUNT_WBTC = MAX_SUPPLY_ASSET_UNITS * 10 ** tokenList.wbtc.decimals();
     MAX_SUPPLY_AMOUNT_USDY = MAX_SUPPLY_ASSET_UNITS * 10 ** tokenList.usdy.decimals();
     MAX_SUPPLY_AMOUNT_USDZ = MAX_SUPPLY_ASSET_UNITS * 10 ** tokenList.usdz.decimals();
+  }
 
+  function _mintAndApproveTokenList() internal {
     address[7] memory users = [
       alice,
       bob,
@@ -539,13 +527,6 @@ abstract contract Base is Test {
       LIQUIDATOR,
       TREASURY_ADMIN,
       POSITION_MANAGER
-    ];
-
-    address[4] memory spokes = [
-      address(spoke1),
-      address(spoke2),
-      address(spoke3),
-      address(treasurySpoke)
     ];
 
     for (uint256 x; x < users.length; ++x) {
@@ -557,13 +538,23 @@ abstract contract Base is Test {
       deal(address(tokenList.weth), users[x], mintAmount_WETH);
 
       vm.startPrank(users[x]);
-      for (uint256 y; y < spokes.length; ++y) {
-        tokenList.weth.approve(spokes[y], UINT256_MAX);
-        tokenList.usdx.approve(spokes[y], UINT256_MAX);
-        tokenList.dai.approve(spokes[y], UINT256_MAX);
-        tokenList.wbtc.approve(spokes[y], UINT256_MAX);
-        tokenList.usdy.approve(spokes[y], UINT256_MAX);
-        tokenList.usdz.approve(spokes[y], UINT256_MAX);
+      for (uint256 y; y < _spokes.length; ++y) {
+        address spoke = address(_spokes[y]);
+        tokenList.weth.approve(spoke, UINT256_MAX);
+        tokenList.usdx.approve(spoke, UINT256_MAX);
+        tokenList.dai.approve(spoke, UINT256_MAX);
+        tokenList.wbtc.approve(spoke, UINT256_MAX);
+        tokenList.usdy.approve(spoke, UINT256_MAX);
+        tokenList.usdz.approve(spoke, UINT256_MAX);
+      }
+      {
+        address spoke = address(treasurySpoke);
+        tokenList.weth.approve(spoke, UINT256_MAX);
+        tokenList.usdx.approve(spoke, UINT256_MAX);
+        tokenList.dai.approve(spoke, UINT256_MAX);
+        tokenList.wbtc.approve(spoke, UINT256_MAX);
+        tokenList.usdy.approve(spoke, UINT256_MAX);
+        tokenList.usdz.approve(spoke, UINT256_MAX);
       }
       vm.stopPrank();
     }
@@ -597,7 +588,65 @@ abstract contract Base is Test {
     }
   }
 
-  function configureTokenList() internal {
+  function _configureHubsAndSpokes() internal {
+    vm.startPrank(ADMIN);
+    accessManager.grantRole(Roles.HUB_CONFIGURATOR_ROLE, address(this), 0);
+    accessManager.grantRole(Roles.SPOKE_CONFIGURATOR_ROLE, address(this), 0);
+    vm.stopPrank();
+
+    (
+      ConfigData.UpdateLiquidationConfigParams[] memory liquidationParams,
+      ConfigData.AddReserveParams[] memory reserveParams
+    ) = _getSpokeReserveParams();
+    AaveV4TestOrchestration.configureHubsAssets(_getAddAssetParams());
+    AaveV4TestOrchestration.configureHubsSpokes(_getAddSpokeParams());
+    TestTypes.SpokeReserveId[] memory spokeReserveIds = AaveV4TestOrchestration.configureSpokes(
+      liquidationParams,
+      reserveParams
+    );
+
+    _loadSpokeInfo(spokeReserveIds);
+
+    accessManager.renounceRole(Roles.HUB_CONFIGURATOR_ROLE, address(this));
+    accessManager.renounceRole(Roles.SPOKE_CONFIGURATOR_ROLE, address(this));
+  }
+
+  function _loadSpokeInfo(TestTypes.SpokeReserveId[] memory spokeReserveIds) internal {
+    // Persist reserveIds and configs into spokeInfo to mirror manual configureTokenList setup
+    for (uint256 i; i < spokeReserveIds.length; ++i) {
+      TestTypes.SpokeReserveId memory spokeReserveId = spokeReserveIds[i];
+      uint256 reserveId = spokeReserveId.reserveId;
+      ISpoke spoke = ISpoke(spokeReserveId.spoke);
+      uint256 assetId = spoke.getReserve(reserveId).assetId;
+
+      ReserveInfo storage info;
+      if (assetId == wethAssetId) {
+        info = spokeInfo[spoke].weth;
+      } else if (assetId == wbtcAssetId) {
+        info = spokeInfo[spoke].wbtc;
+      } else if (assetId == daiAssetId) {
+        info = spokeInfo[spoke].dai;
+      } else if (assetId == usdxAssetId) {
+        info = spokeInfo[spoke].usdx;
+      } else if (assetId == usdyAssetId) {
+        info = spokeInfo[spoke].usdy;
+      } else if (assetId == usdzAssetId) {
+        info = spokeInfo[spoke].usdz;
+      } else {
+        continue;
+      }
+
+      info.reserveId = reserveId;
+      info.reserveConfig = spoke.getReserveConfig(reserveId);
+      info.dynReserveConfig = _getLatestDynamicReserveConfig(spoke, reserveId);
+    }
+  }
+
+  function _getAddSpokeParams()
+    internal
+    view
+    returns (ConfigData.AddSpokeParams[] memory paramsList)
+  {
     IHub.SpokeConfig memory spokeConfig = IHub.SpokeConfig({
       active: true,
       halted: false,
@@ -605,373 +654,396 @@ abstract contract Base is Test {
       drawCap: Constants.MAX_ALLOWED_SPOKE_CAP,
       riskPremiumThreshold: Constants.MAX_ALLOWED_COLLATERAL_RISK
     });
+    paramsList = new ConfigData.AddSpokeParams[](15);
 
-    bytes memory encodedIrData = abi.encode(
-      IAssetInterestRateStrategy.InterestRateData({
-        optimalUsageRatio: 90_00, // 90.00%
-        baseDrawnRate: 5_00, // 5.00%
-        rateGrowthBeforeOptimal: 5_00, // 5.00%
-        rateGrowthAfterOptimal: 5_00 // 5.00%
-      })
-    );
+    // spoke1
+    paramsList[0] = ConfigData.AddSpokeParams({
+      spoke: address(spoke1),
+      hub: address(hub1),
+      assetId: wethAssetId,
+      config: spokeConfig
+    });
+    paramsList[1] = ConfigData.AddSpokeParams({
+      spoke: address(spoke1),
+      hub: address(hub1),
+      assetId: wbtcAssetId,
+      config: spokeConfig
+    });
+    paramsList[2] = ConfigData.AddSpokeParams({
+      spoke: address(spoke1),
+      hub: address(hub1),
+      assetId: daiAssetId,
+      config: spokeConfig
+    });
+    paramsList[3] = ConfigData.AddSpokeParams({
+      spoke: address(spoke1),
+      hub: address(hub1),
+      assetId: usdxAssetId,
+      config: spokeConfig
+    });
+    paramsList[4] = ConfigData.AddSpokeParams({
+      spoke: address(spoke1),
+      hub: address(hub1),
+      assetId: usdyAssetId,
+      config: spokeConfig
+    });
 
-    // Add all assets to the Hub
-    vm.startPrank(ADMIN);
-    // add WETH
-    hub1.addAsset(
-      address(tokenList.weth),
-      tokenList.weth.decimals(),
-      address(treasurySpoke),
-      address(irStrategy),
-      encodedIrData
-    );
-    hub1.updateAssetConfig(
-      wethAssetId,
-      IHub.AssetConfig({
-        liquidityFee: 10_00,
-        feeReceiver: address(treasurySpoke),
-        irStrategy: address(irStrategy),
-        reinvestmentController: address(0)
-      }),
-      new bytes(0)
-    );
-    // add USDX
-    hub1.addAsset(
-      address(tokenList.usdx),
-      tokenList.usdx.decimals(),
-      address(treasurySpoke),
-      address(irStrategy),
-      encodedIrData
-    );
-    hub1.updateAssetConfig(
-      usdxAssetId,
-      IHub.AssetConfig({
-        liquidityFee: 5_00,
-        feeReceiver: address(treasurySpoke),
-        irStrategy: address(irStrategy),
-        reinvestmentController: address(0)
-      }),
-      new bytes(0)
-    );
-    // add DAI
-    hub1.addAsset(
-      address(tokenList.dai),
-      tokenList.dai.decimals(),
-      address(treasurySpoke),
-      address(irStrategy),
-      encodedIrData
-    );
-    hub1.updateAssetConfig(
-      daiAssetId,
-      IHub.AssetConfig({
-        liquidityFee: 5_00,
-        feeReceiver: address(treasurySpoke),
-        irStrategy: address(irStrategy),
-        reinvestmentController: address(0)
-      }),
-      new bytes(0)
-    );
-    // add WBTC
-    hub1.addAsset(
-      address(tokenList.wbtc),
-      tokenList.wbtc.decimals(),
-      address(treasurySpoke),
-      address(irStrategy),
-      encodedIrData
-    );
-    hub1.updateAssetConfig(
-      wbtcAssetId,
-      IHub.AssetConfig({
-        liquidityFee: 10_00,
-        feeReceiver: address(treasurySpoke),
-        irStrategy: address(irStrategy),
-        reinvestmentController: address(0)
-      }),
-      new bytes(0)
-    );
-    // add USDY
-    hub1.addAsset(
-      address(tokenList.usdy),
-      tokenList.usdy.decimals(),
-      address(treasurySpoke),
-      address(irStrategy),
-      encodedIrData
-    );
-    hub1.updateAssetConfig(
-      usdyAssetId,
-      IHub.AssetConfig({
-        liquidityFee: 10_00,
-        feeReceiver: address(treasurySpoke),
-        irStrategy: address(irStrategy),
-        reinvestmentController: address(0)
-      }),
-      new bytes(0)
-    );
-    // add USDZ
-    hub1.addAsset(
-      address(tokenList.usdz),
-      tokenList.usdz.decimals(),
-      address(treasurySpoke),
-      address(irStrategy),
-      encodedIrData
-    );
-    hub1.updateAssetConfig(
-      hub1.getAssetCount() - 1,
-      IHub.AssetConfig({
-        liquidityFee: 5_00,
-        feeReceiver: address(treasurySpoke),
-        irStrategy: address(irStrategy),
-        reinvestmentController: address(0)
-      }),
-      new bytes(0)
-    );
+    // spoke2
+    paramsList[5] = ConfigData.AddSpokeParams({
+      spoke: address(spoke2),
+      hub: address(hub1),
+      assetId: wbtcAssetId,
+      config: spokeConfig
+    });
+    paramsList[6] = ConfigData.AddSpokeParams({
+      spoke: address(spoke2),
+      hub: address(hub1),
+      assetId: wethAssetId,
+      config: spokeConfig
+    });
+    paramsList[7] = ConfigData.AddSpokeParams({
+      spoke: address(spoke2),
+      hub: address(hub1),
+      assetId: daiAssetId,
+      config: spokeConfig
+    });
+    paramsList[8] = ConfigData.AddSpokeParams({
+      spoke: address(spoke2),
+      hub: address(hub1),
+      assetId: usdxAssetId,
+      config: spokeConfig
+    });
+    paramsList[9] = ConfigData.AddSpokeParams({
+      spoke: address(spoke2),
+      hub: address(hub1),
+      assetId: usdyAssetId,
+      config: spokeConfig
+    });
+    paramsList[10] = ConfigData.AddSpokeParams({
+      spoke: address(spoke2),
+      hub: address(hub1),
+      assetId: usdzAssetId,
+      config: spokeConfig
+    });
 
-    // Liquidation configs
-    spoke1.updateLiquidationConfig(
-      ISpoke.LiquidationConfig({
+    // spoke3
+    paramsList[11] = ConfigData.AddSpokeParams({
+      spoke: address(spoke3),
+      hub: address(hub1),
+      assetId: daiAssetId,
+      config: spokeConfig
+    });
+    paramsList[12] = ConfigData.AddSpokeParams({
+      spoke: address(spoke3),
+      hub: address(hub1),
+      assetId: usdxAssetId,
+      config: spokeConfig
+    });
+    paramsList[13] = ConfigData.AddSpokeParams({
+      spoke: address(spoke3),
+      hub: address(hub1),
+      assetId: wethAssetId,
+      config: spokeConfig
+    });
+    paramsList[14] = ConfigData.AddSpokeParams({
+      spoke: address(spoke3),
+      hub: address(hub1),
+      assetId: wbtcAssetId,
+      config: spokeConfig
+    });
+
+    return paramsList;
+  }
+
+  function _getSpokeReserveParams()
+    internal
+    returns (
+      ConfigData.UpdateLiquidationConfigParams[] memory,
+      ConfigData.AddReserveParams[] memory
+    )
+  {
+    ConfigData.UpdateLiquidationConfigParams[]
+      memory liquidationParams = new ConfigData.UpdateLiquidationConfigParams[](3);
+    liquidationParams[0] = ConfigData.UpdateLiquidationConfigParams({
+      spoke: address(spoke1),
+      config: ISpoke.LiquidationConfig({
         targetHealthFactor: 1.05e18,
         healthFactorForMaxBonus: 0.7e18,
         liquidationBonusFactor: 20_00
       })
-    );
-    spoke2.updateLiquidationConfig(
-      ISpoke.LiquidationConfig({
+    });
+    liquidationParams[1] = ConfigData.UpdateLiquidationConfigParams({
+      spoke: address(spoke2),
+      config: ISpoke.LiquidationConfig({
         targetHealthFactor: 1.04e18,
         healthFactorForMaxBonus: 0.8e18,
         liquidationBonusFactor: 15_00
       })
-    );
-    spoke3.updateLiquidationConfig(
-      ISpoke.LiquidationConfig({
+    });
+    liquidationParams[2] = ConfigData.UpdateLiquidationConfigParams({
+      spoke: address(spoke3),
+      config: ISpoke.LiquidationConfig({
         targetHealthFactor: 1.03e18,
         healthFactorForMaxBonus: 0.9e18,
         liquidationBonusFactor: 10_00
       })
-    );
-
-    // Spoke 1 reserve configs
-    spokeInfo[spoke1].weth.reserveConfig = _getDefaultReserveConfig(15_00);
-    spokeInfo[spoke1].weth.dynReserveConfig = ISpoke.DynamicReserveConfig({
-      collateralFactor: 80_00,
-      maxLiquidationBonus: 105_00,
-      liquidationFee: 10_00
-    });
-    spokeInfo[spoke1].wbtc.reserveConfig = _getDefaultReserveConfig(15_00);
-    spokeInfo[spoke1].wbtc.dynReserveConfig = ISpoke.DynamicReserveConfig({
-      collateralFactor: 75_00,
-      maxLiquidationBonus: 103_00,
-      liquidationFee: 15_00
-    });
-    spokeInfo[spoke1].dai.reserveConfig = _getDefaultReserveConfig(20_00);
-    spokeInfo[spoke1].dai.dynReserveConfig = ISpoke.DynamicReserveConfig({
-      collateralFactor: 78_00,
-      maxLiquidationBonus: 102_00,
-      liquidationFee: 10_00
-    });
-    spokeInfo[spoke1].usdx.reserveConfig = _getDefaultReserveConfig(50_00);
-    spokeInfo[spoke1].usdx.dynReserveConfig = ISpoke.DynamicReserveConfig({
-      collateralFactor: 78_00,
-      maxLiquidationBonus: 101_00,
-      liquidationFee: 12_00
-    });
-    spokeInfo[spoke1].usdy.reserveConfig = _getDefaultReserveConfig(50_00);
-    spokeInfo[spoke1].usdy.dynReserveConfig = ISpoke.DynamicReserveConfig({
-      collateralFactor: 78_00,
-      maxLiquidationBonus: 101_50,
-      liquidationFee: 15_00
     });
 
-    spokeInfo[spoke1].weth.reserveId = spoke1.addReserve(
-      address(hub1),
-      wethAssetId,
-      _deployMockPriceFeed(spoke1, 2000e8),
-      spokeInfo[spoke1].weth.reserveConfig,
-      spokeInfo[spoke1].weth.dynReserveConfig
-    );
-    spokeInfo[spoke1].wbtc.reserveId = spoke1.addReserve(
-      address(hub1),
-      wbtcAssetId,
-      _deployMockPriceFeed(spoke1, 50_000e8),
-      spokeInfo[spoke1].wbtc.reserveConfig,
-      spokeInfo[spoke1].wbtc.dynReserveConfig
-    );
-    spokeInfo[spoke1].dai.reserveId = spoke1.addReserve(
-      address(hub1),
-      daiAssetId,
-      _deployMockPriceFeed(spoke1, 1e8),
-      spokeInfo[spoke1].dai.reserveConfig,
-      spokeInfo[spoke1].dai.dynReserveConfig
-    );
-    spokeInfo[spoke1].usdx.reserveId = spoke1.addReserve(
-      address(hub1),
-      usdxAssetId,
-      _deployMockPriceFeed(spoke1, 1e8),
-      spokeInfo[spoke1].usdx.reserveConfig,
-      spokeInfo[spoke1].usdx.dynReserveConfig
-    );
-    spokeInfo[spoke1].usdy.reserveId = spoke1.addReserve(
-      address(hub1),
-      usdyAssetId,
-      _deployMockPriceFeed(spoke1, 1e8),
-      spokeInfo[spoke1].usdy.reserveConfig,
-      spokeInfo[spoke1].usdy.dynReserveConfig
-    );
-
-    hub1.addSpoke(wethAssetId, address(spoke1), spokeConfig);
-    hub1.addSpoke(wbtcAssetId, address(spoke1), spokeConfig);
-    hub1.addSpoke(daiAssetId, address(spoke1), spokeConfig);
-    hub1.addSpoke(usdxAssetId, address(spoke1), spokeConfig);
-    hub1.addSpoke(usdyAssetId, address(spoke1), spokeConfig);
-
-    // Spoke 2 reserve configs
-    spokeInfo[spoke2].wbtc.reserveConfig = _getDefaultReserveConfig(0);
-    spokeInfo[spoke2].wbtc.dynReserveConfig = ISpoke.DynamicReserveConfig({
-      collateralFactor: 80_00,
-      maxLiquidationBonus: 105_00,
-      liquidationFee: 10_00
+    ConfigData.AddReserveParams[] memory reserveParams = new ConfigData.AddReserveParams[](15);
+    // spoke1
+    reserveParams[0] = ConfigData.AddReserveParams({
+      spoke: address(spoke1),
+      hub: address(hub1),
+      assetId: wethAssetId,
+      priceSource: _deployMockPriceFeed(spoke1, 2000e8),
+      config: _getDefaultReserveConfig(15_00),
+      dynamicConfig: ISpoke.DynamicReserveConfig({
+        collateralFactor: 80_00,
+        maxLiquidationBonus: 105_00,
+        liquidationFee: 10_00
+      })
     });
-    spokeInfo[spoke2].weth.reserveConfig = _getDefaultReserveConfig(10_00);
-    spokeInfo[spoke2].weth.dynReserveConfig = ISpoke.DynamicReserveConfig({
-      collateralFactor: 76_00,
-      maxLiquidationBonus: 103_00,
-      liquidationFee: 15_00
+    reserveParams[1] = ConfigData.AddReserveParams({
+      spoke: address(spoke1),
+      hub: address(hub1),
+      assetId: wbtcAssetId,
+      priceSource: _deployMockPriceFeed(spoke1, 50_000e8),
+      config: _getDefaultReserveConfig(15_00),
+      dynamicConfig: ISpoke.DynamicReserveConfig({
+        collateralFactor: 75_00,
+        maxLiquidationBonus: 103_00,
+        liquidationFee: 15_00
+      })
     });
-    spokeInfo[spoke2].dai.reserveConfig = _getDefaultReserveConfig(20_00);
-    spokeInfo[spoke2].dai.dynReserveConfig = ISpoke.DynamicReserveConfig({
-      collateralFactor: 72_00,
-      maxLiquidationBonus: 102_00,
-      liquidationFee: 10_00
+    reserveParams[2] = ConfigData.AddReserveParams({
+      spoke: address(spoke1),
+      hub: address(hub1),
+      assetId: daiAssetId,
+      priceSource: _deployMockPriceFeed(spoke1, 1e8),
+      config: _getDefaultReserveConfig(20_00),
+      dynamicConfig: ISpoke.DynamicReserveConfig({
+        collateralFactor: 78_00,
+        maxLiquidationBonus: 102_00,
+        liquidationFee: 10_00
+      })
     });
-    spokeInfo[spoke2].usdx.reserveConfig = _getDefaultReserveConfig(50_00);
-    spokeInfo[spoke2].usdx.dynReserveConfig = ISpoke.DynamicReserveConfig({
-      collateralFactor: 72_00,
-      maxLiquidationBonus: 101_00,
-      liquidationFee: 12_00
+    reserveParams[3] = ConfigData.AddReserveParams({
+      spoke: address(spoke1),
+      hub: address(hub1),
+      assetId: usdxAssetId,
+      priceSource: _deployMockPriceFeed(spoke1, 1e8),
+      config: _getDefaultReserveConfig(50_00),
+      dynamicConfig: ISpoke.DynamicReserveConfig({
+        collateralFactor: 78_00,
+        maxLiquidationBonus: 101_00,
+        liquidationFee: 12_00
+      })
     });
-    spokeInfo[spoke2].usdy.reserveConfig = _getDefaultReserveConfig(50_00);
-    spokeInfo[spoke2].usdy.dynReserveConfig = ISpoke.DynamicReserveConfig({
-      collateralFactor: 72_00,
-      maxLiquidationBonus: 101_50,
-      liquidationFee: 15_00
-    });
-    spokeInfo[spoke2].usdz.reserveConfig = _getDefaultReserveConfig(100_00);
-    spokeInfo[spoke2].usdz.dynReserveConfig = ISpoke.DynamicReserveConfig({
-      collateralFactor: 70_00,
-      maxLiquidationBonus: 106_00,
-      liquidationFee: 10_00
+    reserveParams[4] = ConfigData.AddReserveParams({
+      spoke: address(spoke1),
+      hub: address(hub1),
+      assetId: usdyAssetId,
+      priceSource: _deployMockPriceFeed(spoke1, 1e8),
+      config: _getDefaultReserveConfig(50_00),
+      dynamicConfig: ISpoke.DynamicReserveConfig({
+        collateralFactor: 78_00,
+        maxLiquidationBonus: 101_50,
+        liquidationFee: 15_00
+      })
     });
 
-    spokeInfo[spoke2].wbtc.reserveId = spoke2.addReserve(
-      address(hub1),
-      wbtcAssetId,
-      _deployMockPriceFeed(spoke2, 50_000e8),
-      spokeInfo[spoke2].wbtc.reserveConfig,
-      spokeInfo[spoke2].wbtc.dynReserveConfig
-    );
-    spokeInfo[spoke2].weth.reserveId = spoke2.addReserve(
-      address(hub1),
-      wethAssetId,
-      _deployMockPriceFeed(spoke2, 2000e8),
-      spokeInfo[spoke2].weth.reserveConfig,
-      spokeInfo[spoke2].weth.dynReserveConfig
-    );
-    spokeInfo[spoke2].dai.reserveId = spoke2.addReserve(
-      address(hub1),
-      daiAssetId,
-      _deployMockPriceFeed(spoke2, 1e8),
-      spokeInfo[spoke2].dai.reserveConfig,
-      spokeInfo[spoke2].dai.dynReserveConfig
-    );
-    spokeInfo[spoke2].usdx.reserveId = spoke2.addReserve(
-      address(hub1),
-      usdxAssetId,
-      _deployMockPriceFeed(spoke2, 1e8),
-      spokeInfo[spoke2].usdx.reserveConfig,
-      spokeInfo[spoke2].usdx.dynReserveConfig
-    );
-    spokeInfo[spoke2].usdy.reserveId = spoke2.addReserve(
-      address(hub1),
-      usdyAssetId,
-      _deployMockPriceFeed(spoke2, 1e8),
-      spokeInfo[spoke2].usdy.reserveConfig,
-      spokeInfo[spoke2].usdy.dynReserveConfig
-    );
-    spokeInfo[spoke2].usdz.reserveId = spoke2.addReserve(
-      address(hub1),
-      usdzAssetId,
-      _deployMockPriceFeed(spoke2, 1e8),
-      spokeInfo[spoke2].usdz.reserveConfig,
-      spokeInfo[spoke2].usdz.dynReserveConfig
-    );
-
-    hub1.addSpoke(wbtcAssetId, address(spoke2), spokeConfig);
-    hub1.addSpoke(wethAssetId, address(spoke2), spokeConfig);
-    hub1.addSpoke(daiAssetId, address(spoke2), spokeConfig);
-    hub1.addSpoke(usdxAssetId, address(spoke2), spokeConfig);
-    hub1.addSpoke(usdyAssetId, address(spoke2), spokeConfig);
-    hub1.addSpoke(usdzAssetId, address(spoke2), spokeConfig);
-
-    // Spoke 3 reserve configs
-    spokeInfo[spoke3].dai.reserveConfig = _getDefaultReserveConfig(0);
-    spokeInfo[spoke3].dai.dynReserveConfig = ISpoke.DynamicReserveConfig({
-      collateralFactor: 75_00,
-      maxLiquidationBonus: 104_00,
-      liquidationFee: 11_00
+    // spoke2
+    reserveParams[5] = ConfigData.AddReserveParams({
+      spoke: address(spoke2),
+      hub: address(hub1),
+      assetId: wbtcAssetId,
+      priceSource: _deployMockPriceFeed(spoke2, 50_000e8),
+      config: _getDefaultReserveConfig(0),
+      dynamicConfig: ISpoke.DynamicReserveConfig({
+        collateralFactor: 80_00,
+        maxLiquidationBonus: 105_00,
+        liquidationFee: 10_00
+      })
     });
-    spokeInfo[spoke3].usdx.reserveConfig = _getDefaultReserveConfig(10_00);
-    spokeInfo[spoke3].usdx.dynReserveConfig = ISpoke.DynamicReserveConfig({
-      collateralFactor: 75_00,
-      maxLiquidationBonus: 103_00,
-      liquidationFee: 15_00
+    reserveParams[6] = ConfigData.AddReserveParams({
+      spoke: address(spoke2),
+      hub: address(hub1),
+      assetId: wethAssetId,
+      priceSource: _deployMockPriceFeed(spoke2, 2000e8),
+      config: _getDefaultReserveConfig(10_00),
+      dynamicConfig: ISpoke.DynamicReserveConfig({
+        collateralFactor: 76_00,
+        maxLiquidationBonus: 103_00,
+        liquidationFee: 15_00
+      })
     });
-    spokeInfo[spoke3].weth.reserveConfig = _getDefaultReserveConfig(20_00);
-    spokeInfo[spoke3].weth.dynReserveConfig = ISpoke.DynamicReserveConfig({
-      collateralFactor: 79_00,
-      maxLiquidationBonus: 102_00,
-      liquidationFee: 10_00
+    reserveParams[7] = ConfigData.AddReserveParams({
+      spoke: address(spoke2),
+      hub: address(hub1),
+      assetId: daiAssetId,
+      priceSource: _deployMockPriceFeed(spoke2, 1e8),
+      config: _getDefaultReserveConfig(20_00),
+      dynamicConfig: ISpoke.DynamicReserveConfig({
+        collateralFactor: 72_00,
+        maxLiquidationBonus: 102_00,
+        liquidationFee: 10_00
+      })
     });
-    spokeInfo[spoke3].wbtc.reserveConfig = _getDefaultReserveConfig(50_00);
-    spokeInfo[spoke3].wbtc.dynReserveConfig = ISpoke.DynamicReserveConfig({
-      collateralFactor: 77_00,
-      maxLiquidationBonus: 101_00,
-      liquidationFee: 12_00
+    reserveParams[8] = ConfigData.AddReserveParams({
+      spoke: address(spoke2),
+      hub: address(hub1),
+      assetId: usdxAssetId,
+      priceSource: _deployMockPriceFeed(spoke2, 1e8),
+      config: _getDefaultReserveConfig(50_00),
+      dynamicConfig: ISpoke.DynamicReserveConfig({
+        collateralFactor: 72_00,
+        maxLiquidationBonus: 101_00,
+        liquidationFee: 12_00
+      })
+    });
+    reserveParams[9] = ConfigData.AddReserveParams({
+      spoke: address(spoke2),
+      hub: address(hub1),
+      assetId: usdyAssetId,
+      priceSource: _deployMockPriceFeed(spoke2, 1e8),
+      config: _getDefaultReserveConfig(50_00),
+      dynamicConfig: ISpoke.DynamicReserveConfig({
+        collateralFactor: 72_00,
+        maxLiquidationBonus: 101_50,
+        liquidationFee: 15_00
+      })
+    });
+    reserveParams[10] = ConfigData.AddReserveParams({
+      spoke: address(spoke2),
+      hub: address(hub1),
+      assetId: usdzAssetId,
+      priceSource: _deployMockPriceFeed(spoke2, 1e8),
+      config: _getDefaultReserveConfig(100_00),
+      dynamicConfig: ISpoke.DynamicReserveConfig({
+        collateralFactor: 70_00,
+        maxLiquidationBonus: 106_00,
+        liquidationFee: 10_00
+      })
     });
 
-    spokeInfo[spoke3].dai.reserveId = spoke3.addReserve(
-      address(hub1),
-      daiAssetId,
-      _deployMockPriceFeed(spoke3, 1e8),
-      spokeInfo[spoke3].dai.reserveConfig,
-      spokeInfo[spoke3].dai.dynReserveConfig
-    );
-    spokeInfo[spoke3].usdx.reserveId = spoke3.addReserve(
-      address(hub1),
-      usdxAssetId,
-      _deployMockPriceFeed(spoke3, 1e8),
-      spokeInfo[spoke3].usdx.reserveConfig,
-      spokeInfo[spoke3].usdx.dynReserveConfig
-    );
-    spokeInfo[spoke3].weth.reserveId = spoke3.addReserve(
-      address(hub1),
-      wethAssetId,
-      _deployMockPriceFeed(spoke3, 2000e8),
-      spokeInfo[spoke3].weth.reserveConfig,
-      spokeInfo[spoke3].weth.dynReserveConfig
-    );
-    spokeInfo[spoke3].wbtc.reserveId = spoke3.addReserve(
-      address(hub1),
-      wbtcAssetId,
-      _deployMockPriceFeed(spoke3, 50_000e8),
-      spokeInfo[spoke3].wbtc.reserveConfig,
-      spokeInfo[spoke3].wbtc.dynReserveConfig
-    );
+    // spoke3
+    reserveParams[11] = ConfigData.AddReserveParams({
+      spoke: address(spoke3),
+      hub: address(hub1),
+      assetId: daiAssetId,
+      priceSource: _deployMockPriceFeed(spoke3, 1e8),
+      config: _getDefaultReserveConfig(0),
+      dynamicConfig: ISpoke.DynamicReserveConfig({
+        collateralFactor: 75_00,
+        maxLiquidationBonus: 104_00,
+        liquidationFee: 11_00
+      })
+    });
+    reserveParams[12] = ConfigData.AddReserveParams({
+      spoke: address(spoke3),
+      hub: address(hub1),
+      assetId: usdxAssetId,
+      priceSource: _deployMockPriceFeed(spoke3, 1e8),
+      config: _getDefaultReserveConfig(10_00),
+      dynamicConfig: ISpoke.DynamicReserveConfig({
+        collateralFactor: 75_00,
+        maxLiquidationBonus: 103_00,
+        liquidationFee: 15_00
+      })
+    });
+    reserveParams[13] = ConfigData.AddReserveParams({
+      spoke: address(spoke3),
+      hub: address(hub1),
+      assetId: wethAssetId,
+      priceSource: _deployMockPriceFeed(spoke3, 2000e8),
+      config: _getDefaultReserveConfig(20_00),
+      dynamicConfig: ISpoke.DynamicReserveConfig({
+        collateralFactor: 79_00,
+        maxLiquidationBonus: 102_00,
+        liquidationFee: 10_00
+      })
+    });
+    reserveParams[14] = ConfigData.AddReserveParams({
+      spoke: address(spoke3),
+      hub: address(hub1),
+      assetId: wbtcAssetId,
+      priceSource: _deployMockPriceFeed(spoke3, 50_000e8),
+      config: _getDefaultReserveConfig(50_00),
+      dynamicConfig: ISpoke.DynamicReserveConfig({
+        collateralFactor: 77_00,
+        maxLiquidationBonus: 101_00,
+        liquidationFee: 12_00
+      })
+    });
 
-    hub1.addSpoke(daiAssetId, address(spoke3), spokeConfig);
-    hub1.addSpoke(usdxAssetId, address(spoke3), spokeConfig);
-    hub1.addSpoke(wethAssetId, address(spoke3), spokeConfig);
-    hub1.addSpoke(wbtcAssetId, address(spoke3), spokeConfig);
+    return (liquidationParams, reserveParams);
+  }
 
-    vm.stopPrank();
+  function _getAddAssetParams() internal view returns (ConfigData.AddAssetParams[] memory) {
+    bytes memory encodedIrData = abi.encode(_defaultIrData);
+
+    ConfigData.AddAssetParams[] memory assetParams = new ConfigData.AddAssetParams[](6);
+    assetParams[0] = ConfigData.AddAssetParams({
+      hub: address(hub1),
+      underlying: address(tokenList.weth),
+      decimals: tokenList.weth.decimals(),
+      feeReceiver: address(treasurySpoke),
+      liquidityFee: 10_00,
+      irStrategy: address(irStrategy),
+      reinvestmentController: address(0),
+      irData: encodedIrData
+    });
+    assetParams[1] = ConfigData.AddAssetParams({
+      hub: address(hub1),
+      underlying: address(tokenList.usdx),
+      decimals: tokenList.usdx.decimals(),
+      feeReceiver: address(treasurySpoke),
+      liquidityFee: 5_00,
+      irStrategy: address(irStrategy),
+      reinvestmentController: address(0),
+      irData: encodedIrData
+    });
+    assetParams[2] = ConfigData.AddAssetParams({
+      hub: address(hub1),
+      underlying: address(tokenList.dai),
+      decimals: tokenList.dai.decimals(),
+      feeReceiver: address(treasurySpoke),
+      liquidityFee: 5_00,
+      irStrategy: address(irStrategy),
+      reinvestmentController: address(0),
+      irData: encodedIrData
+    });
+    assetParams[3] = ConfigData.AddAssetParams({
+      hub: address(hub1),
+      underlying: address(tokenList.wbtc),
+      decimals: tokenList.wbtc.decimals(),
+      feeReceiver: address(treasurySpoke),
+      liquidityFee: 10_00,
+      irStrategy: address(irStrategy),
+      reinvestmentController: address(0),
+      irData: encodedIrData
+    });
+    assetParams[4] = ConfigData.AddAssetParams({
+      hub: address(hub1),
+      underlying: address(tokenList.usdy),
+      decimals: tokenList.usdy.decimals(),
+      feeReceiver: address(treasurySpoke),
+      liquidityFee: 10_00,
+      irStrategy: address(irStrategy),
+      reinvestmentController: address(0),
+      irData: encodedIrData
+    });
+    assetParams[5] = ConfigData.AddAssetParams({
+      hub: address(hub1),
+      underlying: address(tokenList.usdz),
+      decimals: tokenList.usdz.decimals(),
+      feeReceiver: address(treasurySpoke),
+      liquidityFee: 5_00,
+      irStrategy: address(irStrategy),
+      reinvestmentController: address(0),
+      irData: encodedIrData
+    });
+    return assetParams;
   }
 
   /* @dev Configures Hub 2 with the following assetIds:
@@ -980,65 +1052,35 @@ abstract contract Base is Test {
    * 2: DAI
    * 3: WBTC
    */
-  function hub2Fixture() internal returns (IHub, AssetInterestRateStrategy) {
-    IAccessManager accessManager2 = IAccessManager(address(new AccessManagerEnumerable(ADMIN)));
-    IHub hub2 = DeployUtils.deployHub({authority: address(accessManager2), proxyAdminOwner: ADMIN});
-    vm.label(address(hub2), 'Hub2');
-    AssetInterestRateStrategy hub2IrStrategy = new AssetInterestRateStrategy(address(hub2));
+  function _hub2Fixture() internal returns (IHub, IAssetInterestRateStrategy) {
+    FixtureAssetList[] memory assetsList = new FixtureAssetList[](4);
+    assetsList[0] = FixtureAssetList({
+      underlying: IERC20Metadata(address(tokenList.weth)),
+      liquidityFee: 0,
+      reinvestmentController: address(0),
+      irData: abi.encode(_defaultIrData)
+    });
+    assetsList[1] = FixtureAssetList({
+      underlying: IERC20Metadata(address(tokenList.usdx)),
+      liquidityFee: 0,
+      reinvestmentController: address(0),
+      irData: abi.encode(_defaultIrData)
+    });
+    assetsList[2] = FixtureAssetList({
+      underlying: IERC20Metadata(address(tokenList.dai)),
+      liquidityFee: 0,
+      reinvestmentController: address(0),
+      irData: abi.encode(_defaultIrData)
+    });
+    assetsList[3] = FixtureAssetList({
+      underlying: IERC20Metadata(address(tokenList.wbtc)),
+      liquidityFee: 0,
+      reinvestmentController: address(0),
+      irData: abi.encode(_defaultIrData)
+    });
 
-    // Configure IR Strategy for hub 2
-    bytes memory encodedIrData = abi.encode(
-      IAssetInterestRateStrategy.InterestRateData({
-        optimalUsageRatio: 90_00, // 90.00%
-        baseDrawnRate: 5_00, // 5.00%
-        rateGrowthBeforeOptimal: 5_00, // 5.00%
-        rateGrowthAfterOptimal: 5_00 // 5.00%
-      })
-    );
-
-    vm.startPrank(ADMIN);
-
-    // Add assets to the second hub
-    // Add WETH
-    hub2.addAsset(
-      address(tokenList.weth),
-      tokenList.weth.decimals(),
-      address(treasurySpoke),
-      address(hub2IrStrategy),
-      encodedIrData
-    );
-
-    // Add USDX
-    hub2.addAsset(
-      address(tokenList.usdx),
-      tokenList.usdx.decimals(),
-      address(treasurySpoke),
-      address(hub2IrStrategy),
-      encodedIrData
-    );
-
-    // Add DAI
-    hub2.addAsset(
-      address(tokenList.dai),
-      tokenList.dai.decimals(),
-      address(treasurySpoke),
-      address(hub2IrStrategy),
-      encodedIrData
-    );
-
-    // Add WBTC
-    hub2.addAsset(
-      address(tokenList.wbtc),
-      tokenList.wbtc.decimals(),
-      address(treasurySpoke),
-      address(hub2IrStrategy),
-      encodedIrData
-    );
-    vm.stopPrank();
-
-    setUpRoles(hub2, spoke1, accessManager2);
-
-    return (hub2, hub2IrStrategy);
+    TestTypes.TestHubReport memory report = _addHubFixture('2', assetsList);
+    return (IHub(report.hub), IAssetInterestRateStrategy(report.irStrategy));
   }
 
   /* @dev Configures Hub 3 with the following assetIds:
@@ -1047,63 +1089,104 @@ abstract contract Base is Test {
    * 2: WBTC
    * 3: WETH
    */
-  function hub3Fixture() internal returns (IHub, AssetInterestRateStrategy) {
-    IAccessManager accessManager3 = IAccessManager(address(new AccessManagerEnumerable(ADMIN)));
-    IHub hub3 = DeployUtils.deployHub({authority: address(accessManager3), proxyAdminOwner: ADMIN});
-    AssetInterestRateStrategy hub3IrStrategy = new AssetInterestRateStrategy(address(hub3));
+  function _hub3Fixture() internal returns (IHub, IAssetInterestRateStrategy) {
+    FixtureAssetList[] memory assetsList = new FixtureAssetList[](4);
+    assetsList[0] = FixtureAssetList({
+      underlying: IERC20Metadata(address(tokenList.dai)),
+      liquidityFee: 0,
+      reinvestmentController: address(0),
+      irData: abi.encode(_defaultIrData)
+    });
+    assetsList[1] = FixtureAssetList({
+      underlying: IERC20Metadata(address(tokenList.usdx)),
+      liquidityFee: 0,
+      reinvestmentController: address(0),
+      irData: abi.encode(_defaultIrData)
+    });
+    assetsList[2] = FixtureAssetList({
+      underlying: IERC20Metadata(address(tokenList.wbtc)),
+      liquidityFee: 0,
+      reinvestmentController: address(0),
+      irData: abi.encode(_defaultIrData)
+    });
+    assetsList[3] = FixtureAssetList({
+      underlying: IERC20Metadata(address(tokenList.weth)),
+      liquidityFee: 0,
+      reinvestmentController: address(0),
+      irData: abi.encode(_defaultIrData)
+    });
 
-    // Configure IR Strategy for hub 3
-    bytes memory encodedIrData = abi.encode(
-      IAssetInterestRateStrategy.InterestRateData({
-        optimalUsageRatio: 90_00, // 90.00%
-        baseDrawnRate: 5_00, // 5.00%
-        rateGrowthBeforeOptimal: 5_00, // 5.00%
-        rateGrowthAfterOptimal: 5_00 // 5.00%
-      })
+    TestTypes.TestHubReport memory report = _addHubFixture('3', assetsList);
+    return (IHub(report.hub), IAssetInterestRateStrategy(report.irStrategy));
+  }
+
+  function _addHubFixture(
+    string memory label,
+    FixtureAssetList[] memory assetsList
+  ) internal returns (TestTypes.TestHubReport memory report) {
+    report = AaveV4TestOrchestration.deployTestHub(
+      ADMIN,
+      address(accessManager),
+      BytecodeHelper.getHubBytecode(),
+      label,
+      keccak256(abi.encodePacked(label))
     );
+    _hubs.push(IHub(report.hub));
+    _irStrategies.push(IAssetInterestRateStrategy(report.irStrategy));
+
+    vm.label(report.hub, string.concat('Hub', label));
+    vm.label(report.irStrategy, string.concat('IrStrategy', label));
+
+    ConfigData.AddAssetParams[] memory assetParams = new ConfigData.AddAssetParams[](
+      assetsList.length
+    );
+    for (uint256 i; i < assetsList.length; ++i) {
+      assetParams[i] = ConfigData.AddAssetParams({
+        hub: report.hub,
+        underlying: address(assetsList[i].underlying),
+        decimals: assetsList[i].underlying.decimals(),
+        feeReceiver: address(treasurySpoke),
+        liquidityFee: assetsList[i].liquidityFee,
+        irStrategy: report.irStrategy,
+        irData: assetsList[i].irData,
+        reinvestmentController: assetsList[i].reinvestmentController
+      });
+    }
 
     vm.startPrank(ADMIN);
-    // Add DAI
-    hub3.addAsset(
-      address(tokenList.dai),
-      tokenList.dai.decimals(),
-      address(treasurySpoke),
-      address(hub3IrStrategy),
-      encodedIrData
-    );
+    accessManager.grantRole(Roles.ACCESS_MANAGER_ADMIN_ROLE, address(this), 0);
+    accessManager.grantRole(Roles.HUB_CONFIGURATOR_ROLE, address(this), 0);
 
-    // Add USDX
-    hub3.addAsset(
-      address(tokenList.usdx),
-      tokenList.usdx.decimals(),
-      address(treasurySpoke),
-      address(hub3IrStrategy),
-      encodedIrData
-    );
-
-    // Add WBTC
-    hub3.addAsset(
-      address(tokenList.wbtc),
-      tokenList.wbtc.decimals(),
-      address(treasurySpoke),
-      address(hub3IrStrategy),
-      encodedIrData
-    );
-
-    // Add WETH
-    hub3.addAsset(
-      address(tokenList.weth),
-      tokenList.weth.decimals(),
-      address(treasurySpoke),
-      address(hub3IrStrategy),
-      encodedIrData
-    );
-
+    AaveV4TestOrchestration.setupHubRolesTestEnv(report, address(accessManager));
     vm.stopPrank();
 
-    setUpRoles(hub3, spoke1, accessManager3);
+    AaveV4TestOrchestration.configureHubsAssets(assetParams);
 
-    return (hub3, hub3IrStrategy);
+    // Renounce temporary roles
+    accessManager.renounceRole(Roles.ACCESS_MANAGER_ADMIN_ROLE, address(this));
+    accessManager.renounceRole(Roles.HUB_CONFIGURATOR_ROLE, address(this));
+
+    return report;
+  }
+
+  function _grantSpokeConfiguratorRole(ISpoke spoke, address configurator) internal {
+    vm.startPrank(ADMIN);
+    IAccessManager(spoke.authority()).grantRole(Roles.SPOKE_CONFIGURATOR_ROLE, configurator, 0);
+    vm.stopPrank();
+  }
+
+  function _grantHubAdminRole(IHub hub, address admin) internal {
+    vm.startPrank(ADMIN);
+    // hub admin consists of hub admin role and hub configurator role
+    IAccessManager(hub.authority()).grantRole(Roles.HUB_FEE_MINTER_ROLE, admin, 0);
+    IAccessManager(hub.authority()).grantRole(Roles.HUB_CONFIGURATOR_ROLE, admin, 0);
+    vm.stopPrank();
+  }
+
+  function _grantHubConfiguratorRole(IHub hub, address admin) internal {
+    vm.startPrank(ADMIN);
+    IAccessManager(hub.authority()).grantRole(Roles.HUB_CONFIGURATOR_ROLE, admin, 0);
+    vm.stopPrank();
   }
 
   function updateAssetFeeReceiver(
@@ -1453,13 +1536,13 @@ abstract contract Base is Test {
   function grantDeficitEliminatorRole(IHub hub, address target) internal pausePrank {
     IAccessManager manager = IAccessManager(hub.authority());
     vm.prank(ADMIN);
-    manager.grantRole(Roles.DEFICIT_ELIMINATOR_ROLE, target, 0);
+    manager.grantRole(Roles.HUB_DEFICIT_ELIMINATOR_ROLE, target, 0);
   }
 
   function revokeDeficitEliminatorRole(IHub hub, address target) internal pausePrank {
     IAccessManager manager = IAccessManager(hub.authority());
     vm.prank(ADMIN);
-    manager.revokeRole(Roles.DEFICIT_ELIMINATOR_ROLE, target);
+    manager.revokeRole(Roles.HUB_DEFICIT_ELIMINATOR_ROLE, target);
   }
 
   function getUserInfo(
@@ -2145,16 +2228,16 @@ abstract contract Base is Test {
       new MockSpoke(spoke.ORACLE(), Constants.MAX_ALLOWED_USER_RESERVES_LIMIT)
     );
 
-    address implementation = _getImplementationAddress(address(spoke));
+    address implementation = ProxyHelper.getImplementation(address(spoke));
 
-    vm.prank(_getProxyAdminAddress(address(spoke)));
+    vm.prank(ProxyHelper.getProxyAdmin(address(spoke)));
     ITransparentUpgradeableProxy(address(spoke)).upgradeToAndCall(address(mockSpoke), '');
 
     vm.prank(user);
     ISpoke.UserAccountData memory userAccountData = MockSpoke(address(spoke))
       .calculateUserAccountData(user, refreshConfig);
 
-    vm.prank(_getProxyAdminAddress(address(spoke)));
+    vm.prank(ProxyHelper.getProxyAdmin(address(spoke)));
     ITransparentUpgradeableProxy(address(spoke)).upgradeToAndCall(implementation, '');
 
     vm.revertToState(snapshot);
@@ -2373,10 +2456,10 @@ abstract contract Base is Test {
         user != address(spoke1) &&
         user != address(spoke2) &&
         user != address(spoke3) &&
-        user != _getProxyAdminAddress(address(hub1)) &&
-        user != _getProxyAdminAddress(address(spoke1)) &&
-        user != _getProxyAdminAddress(address(spoke2)) &&
-        user != _getProxyAdminAddress(address(spoke3))
+        user != ProxyHelper.getProxyAdmin(address(hub1)) &&
+        user != ProxyHelper.getProxyAdmin(address(spoke1)) &&
+        user != ProxyHelper.getProxyAdmin(address(spoke2)) &&
+        user != ProxyHelper.getProxyAdmin(address(spoke3))
     );
   }
 
@@ -2436,6 +2519,10 @@ abstract contract Base is Test {
 
   function _randomBps() internal returns (uint16) {
     return vm.randomUint(0, PercentageMath.PERCENTAGE_FACTOR).toUint16();
+  }
+
+  function _randomBps(uint256 maxBps) internal returns (uint16) {
+    return vm.randomUint(0, maxBps).toUint16();
   }
 
   function _hub(ISpoke spoke, uint256 reserveId) internal view returns (IHub) {
@@ -2503,28 +2590,17 @@ abstract contract Base is Test {
 
   function _deploySpokeWithOracle(
     address proxyAdminOwner,
-    address _accessManager,
+    address accessManager_,
     uint16 maxUserReservesLimit
   ) internal pausePrank returns (ISpoke, IAaveOracle) {
-    address deployer = makeAddr('deployer');
-
-    vm.startPrank(deployer);
-    IAaveOracle oracle = new AaveOracle(8);
-
-    ISpoke spoke = DeployUtils.deploySpoke(
-      address(oracle),
-      maxUserReservesLimit,
-      proxyAdminOwner,
-      abi.encodeCall(ISpokeInstance.initialize, (_accessManager))
-    );
-
-    oracle.setSpoke(address(spoke));
-    vm.stopPrank();
-
-    assertEq(spoke.ORACLE(), address(oracle));
-    assertEq(oracle.spoke(), address(spoke));
-
-    return (spoke, oracle);
+    TestTypes.TestSpokeReport memory report = AaveV4TestOrchestration.deployTestSpoke({
+      spokeProxyAdminOwner: proxyAdminOwner,
+      accessManager: accessManager_,
+      spokeBytecode: BytecodeHelper.getSpokeBytecode(),
+      maxUserReservesLimit: maxUserReservesLimit,
+      salt: keccak256(abi.encodePacked('spoke-', vm.randomBytes(32)))
+    });
+    return (ISpoke(report.spoke), IAaveOracle(report.aaveOracle));
   }
 
   function _deployTokenizationSpoke(
@@ -2534,17 +2610,17 @@ abstract contract Base is Test {
     string memory shareSymbol,
     address proxyAdminOwner
   ) internal pausePrank returns (ITokenizationSpoke) {
-    address tokenizationSpokeImpl = address(
-      new TokenizationSpokeInstance(address(hub), underlying)
-    );
-    ITokenizationSpoke tokenizationSpoke = ITokenizationSpoke(
-      DeployUtils.proxify(
-        tokenizationSpokeImpl,
-        proxyAdminOwner,
-        abi.encodeCall(TokenizationSpokeInstance.initialize, (shareName, shareSymbol))
-      )
-    );
-    return tokenizationSpoke;
+    return
+      ITokenizationSpoke(
+        AaveV4TestOrchestration.deployTestTokenizationSpoke({
+          hub: address(hub),
+          underlying: underlying,
+          spokeProxyAdminOwner: proxyAdminOwner,
+          shareName: shareName,
+          shareSymbol: shareSymbol,
+          salt: keccak256(abi.encodePacked('tokenization-spoke-', vm.randomBytes(32)))
+        })
+      );
   }
 
   function _registerTokenizationSpoke(

@@ -29,3 +29,18 @@ coverage :
 	make coverage-clean
 	make coverage-report
 	make coverage-badge
+
+# Deployment
+# Step 1:Pre-deploy LiquidationLogic library (required before deploying spokes)
+# `make deploy-precompile`
+deploy-precompile :;
+	FOUNDRY_PROFILE=${chain} forge clean && forge script scripts/LibraryPreCompile.s.sol \
+	--rpc-url ${chain} --account ${account} --ffi \
+	$(if ${dry},, --broadcast --verify) \
+
+# Step 2: Deploy contracts + grant roles to deployer
+# `make deploy-contracts`
+deploy-contracts :;
+	FOUNDRY_PROFILE=${chain} forge clean && forge script scripts/deploy/AaveV4DeployBatch.s.sol:AaveV4DeployBatchScript \
+	--rpc-url ${chain} --account ${account} --slow \
+	$(if ${dry},, --broadcast --verify) \

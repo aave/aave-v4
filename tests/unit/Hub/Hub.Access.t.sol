@@ -124,7 +124,11 @@ contract HubAccessTest is HubBase {
     bytes4[] memory hubSelectors = new bytes4[](1);
     hubSelectors[0] = IHub.setInterestRateData.selector;
     vm.prank(ADMIN);
-    accessManager.setTargetFunctionRole(address(hub1), hubSelectors, Roles.DEFAULT_ADMIN_ROLE);
+    accessManager.setTargetFunctionRole(
+      address(hub1),
+      hubSelectors,
+      Roles.ACCESS_MANAGER_ADMIN_ROLE
+    );
 
     // The old role (HUB_ADMIN) should no longer have access
     vm.expectRevert(
@@ -163,13 +167,10 @@ contract HubAccessTest is HubBase {
       })
     );
 
-    // Say addresses Alice, Bob, and Carol all have the HUB_ADMIN role, allowing them to set drawn rate data.
-    // Grant roles with 0 delay
-    vm.startPrank(ADMIN);
-    accessManager.grantRole(Roles.HUB_ADMIN_ROLE, alice, 0);
-    accessManager.grantRole(Roles.HUB_ADMIN_ROLE, bob, 0);
-    accessManager.grantRole(Roles.HUB_ADMIN_ROLE, carol, 0);
-    vm.stopPrank();
+    // Say addresses Alice, Bob, and Carol all have the HUB_ADMIN role, allowing them to set interest rate data.
+    _grantHubAdminRole(hub1, alice);
+    _grantHubAdminRole(hub1, bob);
+    _grantHubAdminRole(hub1, carol);
 
     vm.prank(alice);
     hub1.setInterestRateData(daiAssetId, encodedIrData);
@@ -178,8 +179,8 @@ contract HubAccessTest is HubBase {
     vm.prank(carol);
     hub1.setInterestRateData(daiAssetId, encodedIrData);
 
-    // Now, we change the role responsible for setting drawn rate data to SET_INTEREST_RATE role.
-    uint64 SET_INTEREST_RATE_ROLE = 4;
+    // Now, we change the role responsible for setting interest rate data to SET_INTEREST_RATE role.
+    uint64 SET_INTEREST_RATE_ROLE = 100;
     bytes4[] memory hubSelectors = new bytes4[](1);
     hubSelectors[0] = IHub.setInterestRateData.selector;
     vm.prank(ADMIN);
@@ -215,27 +216,27 @@ contract HubAccessTest is HubBase {
     vm.prank(carol);
     hub1.setInterestRateData(daiAssetId, encodedIrData);
 
-    // Alice, Bob, and Carol currently have both HUB_ADMIN and SET_INTEREST_RATE roles.
+    // Alice, Bob, and Carol currently have both HUB_CONFIGURATOR and SET_INTEREST_RATE roles.
     IAccessManager accessManager = IAccessManager(hub1.authority());
-    assertTrue(_hasRole(accessManager, Roles.HUB_ADMIN_ROLE, alice));
-    assertTrue(_hasRole(accessManager, Roles.HUB_ADMIN_ROLE, bob));
-    assertTrue(_hasRole(accessManager, Roles.HUB_ADMIN_ROLE, carol));
+    assertTrue(_hasRole(accessManager, Roles.HUB_CONFIGURATOR_ROLE, alice));
+    assertTrue(_hasRole(accessManager, Roles.HUB_CONFIGURATOR_ROLE, bob));
+    assertTrue(_hasRole(accessManager, Roles.HUB_CONFIGURATOR_ROLE, carol));
 
     assertTrue(_hasRole(accessManager, SET_INTEREST_RATE_ROLE, alice));
     assertTrue(_hasRole(accessManager, SET_INTEREST_RATE_ROLE, bob));
     assertTrue(_hasRole(accessManager, SET_INTEREST_RATE_ROLE, carol));
 
-    // We can remove HUB_ADMIN role from Alice, Bob, and Carol.
+    // We can remove HUB_CONFIGURATOR role from Alice, Bob, and Carol.
     vm.startPrank(ADMIN);
-    accessManager.revokeRole(Roles.HUB_ADMIN_ROLE, alice);
-    accessManager.revokeRole(Roles.HUB_ADMIN_ROLE, bob);
-    accessManager.revokeRole(Roles.HUB_ADMIN_ROLE, carol);
+    accessManager.revokeRole(Roles.HUB_CONFIGURATOR_ROLE, alice);
+    accessManager.revokeRole(Roles.HUB_CONFIGURATOR_ROLE, bob);
+    accessManager.revokeRole(Roles.HUB_CONFIGURATOR_ROLE, carol);
     vm.stopPrank();
 
-    // Alice, Bob, and Carol should no longer have HUB_ADMIN role.
-    assertFalse(_hasRole(accessManager, Roles.HUB_ADMIN_ROLE, alice));
-    assertFalse(_hasRole(accessManager, Roles.HUB_ADMIN_ROLE, bob));
-    assertFalse(_hasRole(accessManager, Roles.HUB_ADMIN_ROLE, carol));
+    // Alice, Bob, and Carol should no longer have HUB_CONFIGURATOR role.
+    assertFalse(_hasRole(accessManager, Roles.HUB_CONFIGURATOR_ROLE, alice));
+    assertFalse(_hasRole(accessManager, Roles.HUB_CONFIGURATOR_ROLE, bob));
+    assertFalse(_hasRole(accessManager, Roles.HUB_CONFIGURATOR_ROLE, carol));
 
     // Can still call setInterestRateData since they have SET_INTEREST_RATE role.
     vm.prank(alice);
@@ -273,10 +274,10 @@ contract HubAccessTest is HubBase {
 
     // Set up the role for hub admin to call update asset config
     vm.startPrank(NEW_ADMIN);
-    newAuthority.grantRole(Roles.HUB_ADMIN_ROLE, HUB_ADMIN, 0);
+    newAuthority.grantRole(Roles.HUB_CONFIGURATOR_ROLE, HUB_ADMIN, 0);
     bytes4[] memory selectors = new bytes4[](1);
     selectors[0] = IHub.updateAssetConfig.selector;
-    newAuthority.setTargetFunctionRole(address(hub1), selectors, Roles.HUB_ADMIN_ROLE);
+    newAuthority.setTargetFunctionRole(address(hub1), selectors, Roles.HUB_CONFIGURATOR_ROLE);
     vm.stopPrank();
 
     // Only Admin can change the authority contract
@@ -284,7 +285,7 @@ contract HubAccessTest is HubBase {
       abi.encodeWithSelector(
         IAccessManager.AccessManagerUnauthorizedAccount.selector,
         address(this),
-        Roles.DEFAULT_ADMIN_ROLE
+        Roles.ACCESS_MANAGER_ADMIN_ROLE
       )
     );
     authority.updateAuthority(address(hub1), address(newAuthority));
@@ -309,7 +310,7 @@ contract HubAccessTest is HubBase {
     // Now we also give the hub admin role capability to update spoke config on new authority
     selectors[0] = IHub.updateSpokeConfig.selector;
     vm.prank(NEW_ADMIN);
-    newAuthority.setTargetFunctionRole(address(hub1), selectors, Roles.HUB_ADMIN_ROLE);
+    newAuthority.setTargetFunctionRole(address(hub1), selectors, Roles.HUB_CONFIGURATOR_ROLE);
 
     // Hub admin can now call update spoke config on the hub after authority change
     vm.prank(HUB_ADMIN);

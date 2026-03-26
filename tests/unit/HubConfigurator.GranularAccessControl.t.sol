@@ -6,15 +6,14 @@ import 'tests/unit/Hub/HubBase.t.sol';
 contract HubConfiguratorGranularAccessControlTest is HubBase {
   using SafeCast for uint256;
 
-  // Granular role constants
-  uint64 constant ASSET_MANAGER_ROLE = 100;
-  uint64 constant SPOKE_MANAGER_ROLE = 101;
+  // Granular role constants (must not collide with Roles.sol IDs 0-113, 200-309)
+  uint64 constant ASSET_MANAGER_ROLE = 1000;
+  uint64 constant SPOKE_MANAGER_ROLE = 1001;
 
   // Role holders
   address ASSET_MANAGER = makeAddr('ASSET_MANAGER');
   address SPOKE_MANAGER = makeAddr('SPOKE_MANAGER');
 
-  HubConfigurator hubConfigurator;
   IAccessManager manager;
 
   uint256 assetId;
@@ -31,9 +30,9 @@ contract HubConfiguratorGranularAccessControlTest is HubBase {
     manager = IAccessManager(hub1.authority());
     hubConfigurator = new HubConfigurator(address(manager));
 
-    // Grant HUB_ADMIN_ROLE to hubConfigurator so it can call hub functions
+    // Grant HUB_CONFIGURATOR_ROLE to hubConfigurator so it can call hub functions
     vm.startPrank(ADMIN);
-    manager.grantRole(Roles.HUB_ADMIN_ROLE, address(hubConfigurator), 0);
+    manager.grantRole(Roles.HUB_CONFIGURATOR_ROLE, address(hubConfigurator), 0);
 
     // Grant granular roles to role holders
     manager.grantRole(ASSET_MANAGER_ROLE, ASSET_MANAGER, 0);
@@ -190,8 +189,7 @@ contract HubConfiguratorGranularAccessControlTest is HubBase {
   }
 
   function test_fuzz_unauthorized_cannotCall_assetManagerMethods(address caller) public {
-    vm.assume(caller != ASSET_MANAGER);
-    vm.assume(caller != address(0));
+    vm.assume(caller != ASSET_MANAGER && caller != address(0) && caller != address(manager));
 
     for (uint256 i = 0; i < assetManagerCalldata.length; ++i) {
       vm.prank(caller);
@@ -205,8 +203,7 @@ contract HubConfiguratorGranularAccessControlTest is HubBase {
   }
 
   function test_fuzz_unauthorized_cannotCall_spokeManagerMethods(address caller) public {
-    vm.assume(caller != SPOKE_MANAGER);
-    vm.assume(caller != address(0));
+    vm.assume(caller != SPOKE_MANAGER && caller != address(0) && caller != address(manager));
 
     for (uint256 i = 0; i < spokeManagerCalldata.length; ++i) {
       vm.prank(caller);

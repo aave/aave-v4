@@ -11,6 +11,8 @@ import {LiquidationLogic} from 'src/spoke/libraries/LiquidationLogic.sol';
 import {ReserveFlags, ReserveFlagsMap} from 'src/spoke/libraries/ReserveFlagsMap.sol';
 
 contract LiquidationLogicWrapper {
+  bool public IS_TEST = true;
+
   using SafeCast for *;
   using SafeERC20 for IERC20;
   using PositionStatusMap for ISpoke.PositionStatus;

@@ -30,7 +30,7 @@ contract LiquidationLogicLiquidateUserTest is LiquidationLogicBaseTest {
     super.setUp();
     collateralReserveHub = hub1;
     _mockSupplySharePrice(collateralReserveHub, usdxAssetId, 12_500.25e6, 10_000e6);
-    (debtReserveHub, ) = hub2Fixture();
+    (debtReserveHub, ) = _hub2Fixture();
     _mockDrawnRateBps(debtReserveHub.getAsset(wethAssetId).irStrategy, 5_00);
 
     // Mock params

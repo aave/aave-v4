@@ -24,3 +24,5 @@ report/
 
 .DS_Store
 .venv/
+
+output/

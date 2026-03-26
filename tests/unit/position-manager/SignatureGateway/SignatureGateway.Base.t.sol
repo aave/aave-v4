@@ -7,8 +7,7 @@ contract SignatureGatewayBaseTest is SpokeBase {
   ISignatureGateway public gateway;
 
   function setUp() public virtual override {
-    deployFixtures();
-    initEnvironment();
+    super.setUp();
     gateway = ISignatureGateway(new SignatureGateway(ADMIN));
 
     vm.prank(address(ADMIN));

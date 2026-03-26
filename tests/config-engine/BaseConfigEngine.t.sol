@@ -2,8 +2,9 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import {VmSafe} from 'forge-std/Vm.sol';
 import {Test} from 'forge-std/Test.sol';
+
+import {Ownable} from 'src/dependencies/openzeppelin/Ownable.sol';
 
 import {IAccessManager} from 'src/dependencies/openzeppelin/IAccessManager.sol';
 import {IHub} from 'src/hub/interfaces/IHub.sol';
@@ -14,13 +15,16 @@ import {IAaveOracle} from 'src/spoke/interfaces/IAaveOracle.sol';
 import {IAssetInterestRateStrategy} from 'src/hub/interfaces/IAssetInterestRateStrategy.sol';
 import {IPositionManagerBase} from 'src/position-manager/interfaces/IPositionManagerBase.sol';
 
-import {AccessManagerEnumerable} from 'src/access/AccessManagerEnumerable.sol';
-import {HubConfigurator} from 'src/hub/HubConfigurator.sol';
-import {SpokeConfigurator} from 'src/spoke/SpokeConfigurator.sol';
 import {AssetInterestRateStrategy} from 'src/hub/AssetInterestRateStrategy.sol';
-import {AaveOracle} from 'src/spoke/AaveOracle.sol';
-import {Ownable} from 'src/dependencies/openzeppelin/Ownable.sol';
-import {Roles} from 'src/libraries/types/Roles.sol';
+import {Roles} from 'src/deployments/utils/libraries/Roles.sol';
+import {BytecodeHelper} from 'src/deployments/utils/libraries/BytecodeHelper.sol';
+import {AaveV4HubConfiguratorRolesProcedure} from 'src/deployments/procedures/roles/AaveV4HubConfiguratorRolesProcedure.sol';
+import {AaveV4SpokeConfiguratorRolesProcedure} from 'src/deployments/procedures/roles/AaveV4SpokeConfiguratorRolesProcedure.sol';
+import {AaveV4SpokeRolesProcedure} from 'src/deployments/procedures/roles/AaveV4SpokeRolesProcedure.sol';
+
+import {AaveV4TestOrchestration} from 'tests/deployments/orchestration/AaveV4TestOrchestration.sol';
+import {TestTypes} from 'tests/utils/TestTypes.sol';
+import {Create2TestHelper} from 'tests/utils/Create2TestHelper.sol';
 
 import {AaveV4Payload} from 'src/config-engine/AaveV4Payload.sol';
 import {AaveV4ConfigEngine} from 'src/config-engine/AaveV4ConfigEngine.sol';
@@ -37,12 +41,8 @@ import {TestnetERC20} from 'tests/mocks/TestnetERC20.sol';
 import {AaveV4PayloadWrapper} from 'tests/mocks/config-engine/AaveV4PayloadWrapper.sol';
 import {MockPriceFeed} from 'tests/mocks/MockPriceFeed.sol';
 import {PositionManagerBaseWrapper} from 'tests/mocks/PositionManagerBaseWrapper.sol';
-import {ISpokeInstance} from 'tests/mocks/ISpokeInstance.sol';
 
-import {DeployUtils} from 'tests/DeployUtils.sol';
-import {Create2Utils} from 'tests/Create2Utils.sol';
-
-abstract contract BaseConfigEngineTest is Test {
+abstract contract BaseConfigEngineTest is Test, Create2TestHelper {
   uint256 constant NUM_HUBS = 2;
   uint256 constant NUM_SPOKES = 3;
   uint256 constant NUM_TOKENS = 4;
@@ -77,7 +77,7 @@ abstract contract BaseConfigEngineTest is Test {
   address internal USER = makeAddr('USER');
 
   AaveV4ConfigEngine public engine;
-  AccessManagerEnumerable public accessManager;
+  IAccessManager public accessManager;
   IHubConfigurator public hubConfigurator;
   ISpokeConfigurator public spokeConfigurator;
   PositionManagerBaseWrapper public positionManager;
@@ -107,29 +107,7 @@ abstract contract BaseConfigEngineTest is Test {
   uint256[NUM_TOKENS][NUM_SPOKES] public reserveIds;
 
   function setUp() public virtual {
-    Create2Utils.loadCreate2Factory();
-
-    vm.startPrank(ADMIN);
-    accessManager = new AccessManagerEnumerable(ADMIN);
-    engine = new AaveV4ConfigEngine();
-    vm.stopPrank();
-
-    vm.startPrank(ADMIN);
-    hubs[0] = DeployUtils.deployHub(address(accessManager), ADMIN);
-    hubs[1] = DeployUtils.deployHub(address(accessManager), ADMIN, bytes32(uint256(1)));
-    irStrategies[0] = new AssetInterestRateStrategy(address(hubs[0]));
-    irStrategies[1] = new AssetInterestRateStrategy(address(hubs[1]));
-    vm.stopPrank();
-
-    for (uint256 i; i < NUM_SPOKES; ++i) {
-      (spokes[i], oracles[i]) = _deploySpokeWithOracle(ADMIN, address(accessManager));
-    }
-
-    vm.startPrank(ADMIN);
-    hubConfigurator = new HubConfigurator(address(accessManager));
-    spokeConfigurator = new SpokeConfigurator(address(accessManager));
-    positionManager = new PositionManagerBaseWrapper(address(engine));
-    vm.stopPrank();
+    _etchCreate2Factory();
 
     weth = new WETH9();
     usdx = new TestnetERC20('USDX', 'USDX', 6);
@@ -148,7 +126,37 @@ abstract contract BaseConfigEngineTest is Test {
     tokenList[TOKEN_DAI] = TokenInfo(address(dai), address(priceFeedDai), 18);
     tokenList[TOKEN_WBTC] = TokenInfo(address(wbtc), address(priceFeedWbtc), 8);
 
-    _setupRoles();
+    vm.startPrank(ADMIN);
+    TestTypes.TestEnvReport memory report = AaveV4TestOrchestration.deployTestEnv({
+      admin: ADMIN,
+      treasuryAdmin: ADMIN,
+      hubCount: NUM_HUBS,
+      spokeCount: NUM_SPOKES,
+      nativeWrapper: address(weth),
+      hubBytecode: BytecodeHelper.getHubBytecode(),
+      spokeBytecode: BytecodeHelper.getSpokeBytecode(),
+      salt: bytes32(0)
+    });
+    vm.stopPrank();
+
+    accessManager = IAccessManager(report.accessManager);
+    hubConfigurator = IHubConfigurator(report.configuratorReport.hubConfigurator);
+    spokeConfigurator = ISpokeConfigurator(report.configuratorReport.spokeConfigurator);
+
+    hubs[0] = IHub(report.hubReports[0].hub);
+    hubs[1] = IHub(report.hubReports[1].hub);
+    irStrategies[0] = AssetInterestRateStrategy(report.hubReports[0].irStrategy);
+    irStrategies[1] = AssetInterestRateStrategy(report.hubReports[1].irStrategy);
+
+    for (uint256 i; i < NUM_SPOKES; ++i) {
+      spokes[i] = ISpoke(report.spokeReports[i].spoke);
+      oracles[i] = IAaveOracle(report.spokeReports[i].aaveOracle);
+    }
+
+    engine = new AaveV4ConfigEngine();
+    positionManager = new PositionManagerBaseWrapper(address(engine));
+
+    _setupRoles(report);
 
     vm.label(address(hubs[0]), 'hub1');
     vm.label(address(hubs[1]), 'hub2');
@@ -183,141 +191,39 @@ abstract contract BaseConfigEngineTest is Test {
     assertEq(vm.getRecordedLogs().length, expectedCount);
   }
 
-  function _deploySpokeWithOracle(
-    address proxyAdminOwner,
-    address _accessManager
-  ) internal returns (ISpoke, IAaveOracle) {
-    (VmSafe.CallerMode callerMode, address msgSender, address txOrigin) = vm.readCallers();
-    if (callerMode == VmSafe.CallerMode.RecurrentPrank) vm.stopPrank();
-
-    address deployer = makeAddr('deployer');
-    vm.startPrank(deployer);
-
-    IAaveOracle oracle = new AaveOracle(8);
-    ISpoke spoke = DeployUtils.deploySpoke(
-      address(oracle),
-      type(uint16).max,
-      proxyAdminOwner,
-      abi.encodeCall(ISpokeInstance.initialize, (_accessManager))
-    );
-    oracle.setSpoke(address(spoke));
-    vm.stopPrank();
-
-    if (callerMode == VmSafe.CallerMode.RecurrentPrank) vm.startPrank(msgSender, txOrigin);
-
-    return (spoke, oracle);
-  }
-
-  function _setupRoles() internal {
+  function _deployNewSpoke() internal returns (ISpoke, IAaveOracle) {
     vm.startPrank(ADMIN);
-
-    accessManager.grantRole(Roles.HUB_CONFIGURATOR_ROLE, address(engine), 0);
-    accessManager.grantRole(Roles.SPOKE_CONFIGURATOR_ROLE, address(engine), 0);
-    accessManager.grantRole(Roles.DEFAULT_ADMIN_ROLE, address(engine), 0);
-
-    accessManager.grantRole(Roles.HUB_ADMIN_ROLE, address(hubConfigurator), 0);
-
-    accessManager.grantRole(Roles.SPOKE_ADMIN_ROLE, address(spokeConfigurator), 0);
-
-    accessManager.grantRole(Roles.HUB_ADMIN_ROLE, ADMIN, 0);
-    accessManager.grantRole(Roles.SPOKE_ADMIN_ROLE, ADMIN, 0);
-
-    for (uint256 i; i < NUM_HUBS; ++i) {
-      bytes4[] memory hubSelectors = new bytes4[](6);
-      hubSelectors[0] = IHub.addAsset.selector;
-      hubSelectors[1] = IHub.updateAssetConfig.selector;
-      hubSelectors[2] = IHub.addSpoke.selector;
-      hubSelectors[3] = IHub.updateSpokeConfig.selector;
-      hubSelectors[4] = IHub.setInterestRateData.selector;
-      hubSelectors[5] = IHub.mintFeeShares.selector;
-      accessManager.setTargetFunctionRole(address(hubs[i]), hubSelectors, Roles.HUB_ADMIN_ROLE);
-    }
-
-    for (uint256 i; i < NUM_SPOKES; ++i) {
-      bytes4[] memory spokeSelectors = new bytes4[](7);
-      spokeSelectors[0] = ISpoke.updateLiquidationConfig.selector;
-      spokeSelectors[1] = ISpoke.addReserve.selector;
-      spokeSelectors[2] = ISpoke.updateReserveConfig.selector;
-      spokeSelectors[3] = ISpoke.updateDynamicReserveConfig.selector;
-      spokeSelectors[4] = ISpoke.addDynamicReserveConfig.selector;
-      spokeSelectors[5] = ISpoke.updatePositionManager.selector;
-      spokeSelectors[6] = ISpoke.updateReservePriceSource.selector;
-      accessManager.setTargetFunctionRole(
-        address(spokes[i]),
-        spokeSelectors,
-        Roles.SPOKE_ADMIN_ROLE
-      );
-    }
-
-    _setUpHubConfiguratorRoles(address(hubConfigurator), address(accessManager));
-
-    _setUpSpokeConfiguratorRoles(address(spokeConfigurator), address(accessManager));
-
+    TestTypes.TestSpokeReport memory report = AaveV4TestOrchestration.deployTestSpoke(
+      ADMIN,
+      address(accessManager),
+      BytecodeHelper.getSpokeBytecode(),
+      type(uint16).max,
+      keccak256(abi.encodePacked('new-spoke', gasleft()))
+    );
+    AaveV4SpokeRolesProcedure.setupSpokeAllRoles(address(accessManager), report.spoke);
     vm.stopPrank();
+    return (ISpoke(report.spoke), IAaveOracle(report.aaveOracle));
   }
 
-  function _setUpHubConfiguratorRoles(address _hubConfigurator, address manager) internal {
-    bytes4[] memory selectors = new bytes4[](22);
-    selectors[0] = IHubConfigurator.updateLiquidityFee.selector;
-    selectors[1] = IHubConfigurator.updateFeeReceiver.selector;
-    selectors[2] = IHubConfigurator.updateFeeConfig.selector;
-    selectors[3] = IHubConfigurator.updateInterestRateStrategy.selector;
-    selectors[4] = IHubConfigurator.updateReinvestmentController.selector;
-    selectors[5] = IHubConfigurator.resetAssetCaps.selector;
-    selectors[6] = IHubConfigurator.deactivateAsset.selector;
-    selectors[7] = IHubConfigurator.haltAsset.selector;
-    selectors[8] = IHubConfigurator.addSpoke.selector;
-    selectors[9] = IHubConfigurator.addSpokeToAssets.selector;
-    selectors[10] = IHubConfigurator.updateSpokeActive.selector;
-    selectors[11] = IHubConfigurator.updateSpokeHalted.selector;
-    selectors[12] = IHubConfigurator.updateSpokeAddCap.selector;
-    selectors[13] = IHubConfigurator.updateSpokeDrawCap.selector;
-    selectors[14] = IHubConfigurator.updateSpokeRiskPremiumThreshold.selector;
-    selectors[15] = IHubConfigurator.updateSpokeCaps.selector;
-    selectors[16] = IHubConfigurator.deactivateSpoke.selector;
-    selectors[17] = IHubConfigurator.haltSpoke.selector;
-    selectors[18] = IHubConfigurator.resetSpokeCaps.selector;
-    selectors[19] = IHubConfigurator.updateInterestRateData.selector;
-    selectors[20] = IHubConfigurator.addAsset.selector;
-    selectors[21] = IHubConfigurator.addAssetWithDecimals.selector;
-    IAccessManager(manager).setTargetFunctionRole(
-      _hubConfigurator,
-      selectors,
-      Roles.HUB_CONFIGURATOR_ROLE
-    );
-  }
+  function _setupRoles(TestTypes.TestEnvReport memory report) internal {
+    vm.startPrank(ADMIN);
+    accessManager.grantRole(Roles.ACCESS_MANAGER_ADMIN_ROLE, address(this), 0);
+    vm.stopPrank();
 
-  function _setUpSpokeConfiguratorRoles(address _spokeConfigurator, address manager) internal {
-    bytes4[] memory selectors = new bytes4[](24);
-    selectors[0] = ISpokeConfigurator.updateReservePriceSource.selector;
-    selectors[1] = ISpokeConfigurator.updateLiquidationTargetHealthFactor.selector;
-    selectors[2] = ISpokeConfigurator.updateHealthFactorForMaxBonus.selector;
-    selectors[3] = ISpokeConfigurator.updateLiquidationBonusFactor.selector;
-    selectors[4] = ISpokeConfigurator.updateLiquidationConfig.selector;
-    selectors[5] = ISpokeConfigurator.addReserve.selector;
-    selectors[6] = ISpokeConfigurator.updatePaused.selector;
-    selectors[7] = ISpokeConfigurator.updateFrozen.selector;
-    selectors[8] = ISpokeConfigurator.updateBorrowable.selector;
-    selectors[9] = ISpokeConfigurator.updateReceiveSharesEnabled.selector;
-    selectors[10] = ISpokeConfigurator.updateCollateralRisk.selector;
-    selectors[11] = ISpokeConfigurator.addCollateralFactor.selector;
-    selectors[12] = ISpokeConfigurator.updateCollateralFactor.selector;
-    selectors[13] = ISpokeConfigurator.addMaxLiquidationBonus.selector;
-    selectors[14] = ISpokeConfigurator.updateMaxLiquidationBonus.selector;
-    selectors[15] = ISpokeConfigurator.addLiquidationFee.selector;
-    selectors[16] = ISpokeConfigurator.updateLiquidationFee.selector;
-    selectors[17] = ISpokeConfigurator.addDynamicReserveConfig.selector;
-    selectors[18] = ISpokeConfigurator.updateDynamicReserveConfig.selector;
-    selectors[19] = ISpokeConfigurator.pauseAllReserves.selector;
-    selectors[20] = ISpokeConfigurator.freezeAllReserves.selector;
-    selectors[21] = ISpokeConfigurator.pauseReserve.selector;
-    selectors[22] = ISpokeConfigurator.freezeReserve.selector;
-    selectors[23] = ISpokeConfigurator.updatePositionManager.selector;
-    IAccessManager(manager).setTargetFunctionRole(
-      _spokeConfigurator,
-      selectors,
-      Roles.SPOKE_CONFIGURATOR_ROLE
+    AaveV4TestOrchestration.setRolesTestEnv(report);
+    AaveV4TestOrchestration.grantRolesTestEnv(report, ADMIN, ADMIN, ADMIN);
+
+    AaveV4HubConfiguratorRolesProcedure.grantHubConfiguratorAllRoles(
+      address(accessManager),
+      address(engine)
     );
+    AaveV4SpokeConfiguratorRolesProcedure.grantSpokeConfiguratorAllRoles(
+      address(accessManager),
+      address(engine)
+    );
+
+    accessManager.grantRole(Roles.ACCESS_MANAGER_ADMIN_ROLE, address(engine), 0);
+    accessManager.renounceRole(Roles.ACCESS_MANAGER_ADMIN_ROLE, address(this));
   }
 
   function _seedAsset(
@@ -412,7 +318,7 @@ abstract contract BaseConfigEngineTest is Test {
   }
 
   function _deployMockPriceFeed(ISpoke spoke, address baseFeed) internal returns (address) {
-    AaveOracle oracle = AaveOracle(spoke.ORACLE());
+    IAaveOracle oracle = IAaveOracle(spoke.ORACLE());
     int256 price = MockPriceFeed(baseFeed).latestAnswer();
     return address(new MockPriceFeed(oracle.decimals(), 'mock', uint256(price)));
   }
