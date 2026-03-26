@@ -1,5 +1,4 @@
-// SPDX-License-Identifier: UNLICENSED
-// Copyright (c) 2025 Aave Labs
+// SPDX-License-Identifier: LicenseRef-BUSL
 pragma solidity 0.8.28;
 
 import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
@@ -9,14 +8,16 @@ import {ISpokeConfigurator} from 'src/spoke/interfaces/ISpokeConfigurator.sol';
 
 /// @title SpokeConfigurator
 /// @author Aave Labs
-/// @notice Handles administrative functions on the spoke.
-/// @dev Must be granted permission by the spoke.
+/// @notice Handles administrative functions on the Spoke.
+/// @dev Must be granted permission by the Spoke.
 contract SpokeConfigurator is AccessManaged, ISpokeConfigurator {
   using SafeCast for uint256;
 
   /// @dev Constructor.
   /// @param authority_ The address of the authority contract which manages permissions.
-  constructor(address authority_) AccessManaged(authority_) {}
+  constructor(address authority_) AccessManaged(authority_) {
+    require(authority_ != address(0), InvalidAddress());
+  }
 
   /// @inheritdoc ISpokeConfigurator
   function updateReservePriceSource(
