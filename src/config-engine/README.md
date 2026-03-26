@@ -114,6 +114,7 @@ The `EngineFlags` library defines sentinel values for each width that needs a "s
 | `KEEP_CURRENT_ADDRESS` | `address` | `address(type(uint160).max)` |
 | `KEEP_CURRENT_UINT64`  | `uint64`  | `type(uint64).max - 64`      |
 | `KEEP_CURRENT_UINT32`  | `uint32`  | `type(uint32).max - 32`      |
+| `KEEP_CURRENT_UINT16`  | `uint16`  | `type(uint16).max - 16`      |
 
 When a struct field is set to its corresponding sentinel, the engine **skips** updating that field and leaves the on-chain value unchanged. This lets a single struct express partial updates — for example, changing the liquidity fee without touching the fee receiver or IR strategy.
 
