@@ -22,9 +22,11 @@ Authorization is a three-gate system. For a Position Manager contract to act on 
 
 None of the three gates alone is sufficient. Even if a Spoke has activated a Position Manager and a user has approved it, calls will still revert at the Position Manager if that Spoke has not been registered by the Position Manager owner. Conversely, a registered Spoke combined with a user approval is inert until the Spoke itself has activated the Position Manager. A user may approve a Position Manager while it is inactive or while the Spoke is unregistered; the approval is persisted but only becomes effective once all three conditions are met. One exception applies: a user is always their own implicit Position Manager. `_isPositionManager` short-circuits to `true` when `user == manager`, bypassing the Spoke-side `active` flag and user approval check (but not the Position Manager’s own `onlyRegisteredSpoke`, which is enforced at the Position Manager entry point before any Spoke call).
 
+These three conditions apply uniformly to all Position Managers described below.
+
 This design means Position Manager approvals are scoped to specific Spoke + Position Manager combinations. Approving a Position Manager on one Spoke grants no access on any other Spoke. There is no global Position Manager registry or cross-spoke approval propagation.
 
-**Governor sunsetting.** Whoever controls the Spoke configurator role (typically the Governor via `AccessManaged` on `SpokeConfigurator`) can deactivate a Position Manager on a Spoke by calling `SpokeConfigurator.updatePositionManager`, which sets that address’s Spoke-side `active` flag to `false`. Delegated actions gated by `onlyPositionManager` then fail for that contract on that Spoke until governance reactivates it with `updatePositionManager`. This does not iterate users or delete approval bitmap entries; it removes gate (2) globally for that Spoke + Position Manager pair, so persisted user approvals are inert while the manager remains inactive.
+**Governor sunsetting.** Whoever controls the Spoke configurator role (typically the Governor via `AccessManaged` on `SpokeConfigurator`) can deactivate a Position Manager on a Spoke by calling `SpokeConfigurator.updatePositionManager`, to set that address’s Spoke-side `active` flag to `false`. Delegated actions gated by `onlyPositionManager` then fail for that contract on that Spoke until governance reactivates it with `updatePositionManager`. This does not iterate users or delete approval bitmap entries; it removes gate (2) globally for that Spoke + Position Manager pair, so persisted user approvals are inert while the manager remains inactive.
 
 ## Signature-Based Approval Flows
 
@@ -71,7 +73,7 @@ The Spoke call is executed in a `try/catch`: if sig verification fails (expired 
 
 ## GiverPositionManager
 
-`GiverPositionManager` allows an integrator (the external caller of `GiverPositionManager`) to supply or repay on behalf of a user when (i) `GiverPositionManager` has allowlisted the target Spoke (`onlyRegisteredSpoke`), (ii) the Spoke has activated `GiverPositionManager` (`active=true`), and (iii) the user has approved `GiverPositionManager` on that Spoke. No additional per-user allowances are required because the caller (integrator) provides the funds. The inflow-only scope means the Position Manager can move assets into the protocol on a user’s behalf but cannot withdraw or borrow.
+`GiverPositionManager` allows an integrator (the external caller of `GiverPositionManager`) to supply or repay on behalf of a user, subject to the three-gate authorization described in Trust Model and Authorization. No additional per-user allowances are required because the caller (integrator) provides the funds. The inflow-only scope means the Position Manager can move assets into the protocol on a user’s behalf but cannot withdraw or borrow.
 
 The caller (integrator) provides the funds: `supplyOnBehalfOf` and `repayOnBehalfOf` transfer tokens from `msg.sender` to the Position Manager, which then forwards them to the Spoke. The user whose position is being acted on does not need to grant any ERC-20 approvals. `repayOnBehalfOf` rejects `type(uint256).max` as the amount to prevent ambiguity; the repay amount is capped at the user’s total debt.
 
@@ -81,7 +83,7 @@ The intended integrators are lending aggregators and automated repayment systems
 
 ## TakerPositionManager
 
-`TakerPositionManager` can execute `withdraw` and `borrow` on behalf of a user when (i) it has allowlisted the target Spoke (`onlyRegisteredSpoke`), (ii) the Spoke recognizes it as the user’s Position Manager (i.e., it is `active` on that Spoke and approved by the user), and (iii) the spender holds a sufficient allowance in `TakerPositionManager`. Assets from `withdrawOnBehalfOf` and `borrowOnBehalfOf` are transferred to `msg.sender` (the spender), not to the position owner. Allowances are scoped to specific `(Spoke, ReserveId, owner, spender)` tuples; granting allowance for one Reserve on one Spoke confers no authority over any other Reserve, Spoke, or spender. These allowances are an additional gate and do not replace spoke-level Position Manager authorization.
+`TakerPositionManager` can execute `withdraw` and `borrow` on behalf of a user, subject to the three-gate authorization described in Trust Model and Authorization, and additionally when the spender holds a sufficient allowance in `TakerPositionManager`. Assets from `withdrawOnBehalfOf` and `borrowOnBehalfOf` are transferred to `msg.sender` (the spender), not to the position owner. Allowances are scoped to specific `(Spoke, ReserveId, owner, spender)` tuples; granting allowance for one Reserve on one Spoke confers no authority over any other Reserve, Spoke, or spender. These allowances are an additional gate and do not replace spoke-level Position Manager authorization.
 
 **Allowance mechanics**
 
@@ -95,7 +97,7 @@ In Aave V3, two patterns covered outflow delegation: aToken allowances (ERC-20 `
 
 ## ConfigPositionManager
 
-`ConfigPositionManager` allows any address a user has granted config permissions to (a delegatee) to execute position configuration actions on that user's behalf. These config permissions are an additional gate and do not replace spoke-level Position Manager authorization: calls require (i) `ConfigPositionManager` to have allowlisted the target Spoke (`onlyRegisteredSpoke`), (ii) the Spoke to have activated `ConfigPositionManager` (`active=true`), and (iii) the user to have approved `ConfigPositionManager` on that Spoke. The in-scope operations are:
+`ConfigPositionManager` allows any address a user has granted config permissions to (a delegatee) to execute position configuration actions on that user's behalf, subject to the three-gate authorization described in Trust Model and Authorization. The in-scope operations are:
 
 - `setUsingAsCollateralOnBehalfOf`: toggle whether a specific Reserve is used as collateral in a user's position
 - `updateUserRiskPremiumOnBehalfOf`: update the user-level risk premium applied to a position
@@ -111,7 +113,12 @@ Permissions are granted per `(Spoke, delegator, delegatee)` triple using a bitma
 - `setCanUpdateUserRiskPremiumPermission`
 - `setCanUpdateUserDynamicConfigPermission`
 
-A convenience function `setGlobalPermission` sets or clears all three at once. Delegatees can renounce their own permissions via `renounceGlobalPermission`, `renounceCanUpdateUsingAsCollateralPermission`, `renounceCanUpdateUserRiskPremiumPermission`, and `renounceCanUpdateUserDynamicConfigPermission`.
+A convenience function `setGlobalPermission` sets or clears all three at once. Delegatees can renounce their own permissions:
+
+- `renounceGlobalPermission`
+- `renounceCanUpdateUsingAsCollateralPermission`
+- `renounceCanUpdateUserRiskPremiumPermission`
+- `renounceCanUpdateUserDynamicConfigPermission`
 
 ## Authorization Scope Summary
 
