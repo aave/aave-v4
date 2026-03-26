@@ -1036,7 +1036,7 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
 
     vm.startPrank(ADMIN);
     accessManager.grantRole(Roles.SPOKE_CONFIGURATOR_ROLE, address(freshPayload), 0);
-    accessManager.grantRole(Roles.DEFAULT_ADMIN_ROLE, address(freshPayload), 0);
+    accessManager.grantRole(Roles.ACCESS_MANAGER_ADMIN_ROLE, address(freshPayload), 0);
     vm.stopPrank();
 
     IAaveV4ConfigEngine.AssetHalt[] memory halts = new IAaveV4ConfigEngine.AssetHalt[](1);
@@ -1063,7 +1063,7 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
 
     vm.startPrank(ADMIN);
     accessManager.grantRole(Roles.HUB_CONFIGURATOR_ROLE, address(freshPayload), 0);
-    accessManager.grantRole(Roles.DEFAULT_ADMIN_ROLE, address(freshPayload), 0);
+    accessManager.grantRole(Roles.ACCESS_MANAGER_ADMIN_ROLE, address(freshPayload), 0);
     vm.stopPrank();
 
     IAaveV4ConfigEngine.ReserveConfigUpdate[]
@@ -1106,7 +1106,7 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
       abi.encodeWithSelector(
         IAccessManager.AccessManagerUnauthorizedAccount.selector,
         address(freshPayload),
-        Roles.DEFAULT_ADMIN_ROLE
+        Roles.ACCESS_MANAGER_ADMIN_ROLE
       )
     );
     freshPayload.execute();
@@ -1120,7 +1120,7 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
     vm.startPrank(ADMIN);
     accessManager.grantRole(Roles.HUB_CONFIGURATOR_ROLE, address(freshPayload), 0);
     accessManager.grantRole(Roles.SPOKE_CONFIGURATOR_ROLE, address(freshPayload), 0);
-    accessManager.grantRole(Roles.DEFAULT_ADMIN_ROLE, address(freshPayload), 0);
+    accessManager.grantRole(Roles.ACCESS_MANAGER_ADMIN_ROLE, address(freshPayload), 0);
     vm.stopPrank();
 
     PositionManagerBaseWrapper deadPm = new PositionManagerBaseWrapper(address(0xdead));
