@@ -52,6 +52,10 @@ contract AaveV4DeployAnvil is AaveV4DeployBatchBaseScript {
     });
   }
 
+  function _expectedChainId() internal pure override returns (uint256) {
+    return 31337;
+  }
+
   /// @dev Skip user prompt on anvil.
   function _executeUserPrompt() internal override {}
 }

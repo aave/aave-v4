@@ -59,9 +59,7 @@ abstract contract AaveV4DeployBatchBaseScript is Script, InputUtils {
   function _getDeployInputs() internal virtual returns (FullDeployInputs memory);
 
   /// @dev Override to return the expected chain ID for this script. Return 0 to skip validation.
-  function _expectedChainId() internal view virtual returns (uint256) {
-    return 1;
-  }
+  function _expectedChainId() internal view virtual returns (uint256);
 
   function _validateChainId() internal view virtual {
     uint256 expected = _expectedChainId();

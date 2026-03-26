@@ -9,10 +9,7 @@ import {Create2Utils} from 'src/deployments/utils/libraries/Create2Utils.sol';
 abstract contract AaveV4DeployEthereum is AaveV4DeployBatchBaseScript {
   constructor() AaveV4DeployBatchBaseScript('ethereum') {}
 
-  function _expectedChainId() internal pure override returns (uint256) {
+  function _expectedChainId() internal pure virtual override returns (uint256) {
     return 1;
   }
-
-  /// @dev Skip user prompt on Ethereum.
-  function _executeUserPrompt() internal override {}
 }
