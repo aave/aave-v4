@@ -8,7 +8,7 @@ The Governor retains the ability to force-migrate individual positions to the la
 
 ## Relationship to the Hub/Spoke Architecture
 
-Dynamic Risk Configuration is a spoke-level concern. The three parameters it versions (Collateral Factor (CF), Liquidation Bonus (LB), and Liquidation Fee (LF)) govern how a user's collateral contributes to their health factor and how liquidation economics are computed. The Hub is unaware of these parameters; it maintains interest rate accounting, liquidity caps, and deficit state only. Spokes apply dynamic configurations independently: the same underlying asset registered on two different Spokes carries independent configuration histories and independent `dynamicConfigKey` counters.
+Dynamic Risk Configuration is a spoke-level concern. The three parameters it encapsulates (Collateral Factor (CF), Liquidation Bonus (LB), and Liquidation Fee (LF)) govern how a user's collateral contributes to their health factor and how liquidation economics are computed. The Hub is unaware of these parameters; it maintains interest rate accounting, liquidity caps, and deficit state only. Spokes apply dynamic configurations independently: the same underlying asset registered on two different Spokes carries independent configuration histories and independent `dynamicConfigKey` counters.
 
 The implementation spans three contracts in `src/spoke/`:
 
@@ -53,7 +53,7 @@ Before storing, the Spoke validates three combined constraints under `InvalidCol
 
 The third constraint enforces that the liquidation penalty term derived from `maxLiquidationBonus` and `collateralFactor` remains strictly below 100%, which keeps downstream liquidation math well-defined. Additionally, `liquidationFee` must be at most `100_00` BPS; violations revert with `InvalidLiquidationFee`.
 
-A new configuration with `collateralFactor = 0` is valid under these constraints. It is used to represent a Reserve being offboarded: users who enable the Reserve as collateral after the new configuration is created receive a zero collateral factor and therefore no collateral credit. Positions that already hold a snapshot at a prior key with a non-zero collateral factor are unaffected.
+A new configuration with `collateralFactor = 0` is valid under these constraints. It is used to represent a Reserve being offboarded as collateral: users who enable the Reserve as collateral after the new configuration is created receive a zero collateral factor and therefore no collateral credit. Positions that already hold a snapshot at a prior key with a non-zero collateral factor are unaffected.
 
 **Updating existing configurations**
 
