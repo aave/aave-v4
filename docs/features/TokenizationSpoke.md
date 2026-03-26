@@ -20,7 +20,7 @@ Unlike `Spoke.supply`, which restricts `onBehalfOf` to approved Position Manager
 
 **Deposit flow**
 
-1. The caller approves the underlying ERC-20 to the TokenizationSpoke.
+1. The caller approves the underlying ERC-20 asset to the TokenizationSpoke.
 2. `deposit` transfers underlying directly from the caller to the Hub via `safeTransferFrom`. The TokenizationSpoke calls `Hub.add` to account for the deposited amount against its position.
 3. Shares are minted to `receiver`; ERC-4626 events are emitted.
 
@@ -54,7 +54,7 @@ The TokenizationSpoke carries no fee logic at the vault layer. There are no perf
 
 The TokenizationSpoke does not get deployed through the standard Spoke factory. Each instance is deployed and registered on the Hub with governor-authorized `SpokeConfig` (including `addCap`), the same pattern as adding any Spoke via `HubConfigurator.addSpoke`.
 
-The TVL ceiling for a TokenizationSpoke instance is controlled by the `addCap` field in `SpokeConfig` (type `uint40`). In practice it is commonly managed via governance-authorized calls to `HubConfigurator.updateSpokeAddCap`, but the source of truth is the Hub’s per-asset and per-spoke configuration (`Hub.updateSpokeConfig`). The cap is enforced by the Hub on every supply-add path (`deposit` and `mint`) when `Hub.add` is invoked. The Hub scales the configured cap to the asset’s decimals, values the Spoke’s existing position in underlying by converting its Hub shares with rounding up, adds the incoming amount, and reverts if that total would exceed the cap.
+The TVL ceiling for a TokenizationSpoke instance is controlled by the `addCap` field in `SpokeConfig` (type `uint40`). In practice it is commonly managed via governance-authorized calls to `HubConfigurator.updateSpokeAddCap`, but the source of truth is the Hub’s per-asset and per-spoke configuration (`Hub.updateSpokeConfig`). The cap is enforced by the Hub on every supply-add path (`deposit` and `mint`) when `Hub.add` is invoked. The Hub scales the configured cap to the asset’s decimals, values the Spoke’s existing position in underlying by converting its Hub shares (rounding up), adds the incoming amount, and reverts if that total would exceed the cap.
 
 ## Upgradeability
 
@@ -72,7 +72,7 @@ The following are explicitly excluded from the TokenizationSpoke:
 - **PositionManagers**: External Position Managers cannot be plugged in. `withSig` and permit cover the key meta-transaction use cases natively.
 - **Fees**: No performance or management fees at the vault layer.
 - **Multi-asset**: Each deployment handles exactly one underlying ERC-20.
-- **Factory deployment**: Must be deployed and registered manually with `addCap` governance setup.
+- **Factory deployment**: Unlike standard Spokes, the TokenizationSpoke is not deployed through a Spoke factory. Each instance must be deployed and registered manually with `addCap` governance setup.
 - **Rebalancing, strategies, or flashloans**: The contract has no strategy/rebalancing/flashloan logic. Its core state-changing interactions are with `Hub.add`/`Hub.remove`; aside from that, it only performs underlying-token transfer/permit calls required for vault flows.
 - **Collateral use**: Shares held in a TokenizationSpoke cannot serve as collateral in any spoke configuration.
 
