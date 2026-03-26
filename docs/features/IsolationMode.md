@@ -18,7 +18,7 @@ Each reserve on a Spoke references a specific Liquidity Hub through `Reserve.hub
 
 The collateral set in an isolated market is defined by which reserves on the Spoke carry a non-zero `collateralFactor` in their `DynamicReserveConfig`. A reserve with `collateralFactor > 0` contributes to a user's health factor when the user has activated it as collateral via `setUsingAsCollateral`. Any number of reserves can be configured this way within the isolated Spoke.
 
-The borrowable set is controlled by the `borrowable` flag in `ReserveConfig`. Reserves with `borrowable = false` reject borrow requests; the Spoke reverts with `ReserveNotBorrowable`. The Governor designates borrowable assets by setting `borrowable = true` on selected reserves. There is no protocol-level constraint limiting borrowable assets to stablecoins.
+The borrowable set is controlled by the `borrowable` flag in `ReserveConfig`. Reserves with `borrowable = false` reject borrow requests; the Spoke reverts with `ReserveNotBorrowable`. The Governor designates borrowable assets by setting `borrowable = true` on selected reserves.
 
 A draw cap on the Hub supplements the `borrowable` flag. The `borrowable` flag gates access at the Spoke level; the draw cap enforces an absolute ceiling on how much the Spoke may draw from a given Hub asset. Both constraints must be satisfied for a borrow to succeed.
 
@@ -36,7 +36,6 @@ The following are explicitly excluded from Isolation Mode as a configuration pat
 
 - **Account-level enforcement**: Isolation Mode is a spoke-level pattern, not an account-level lock. The contracts do not prevent a user from holding positions in the isolated Spoke, the Canonical Spoke, or any other Spoke simultaneously.
 - **Cross-Spoke health factor aggregation**: Collateral and debt in the isolated Spoke are accounted independently. Health factors are not aggregated across Spokes.
-- **Stablecoin-only borrowable constraint**: There is no protocol-level rule restricting borrowable assets to stablecoins; that is a governance configuration choice.
 
 ## Key Differences from Aave V3
 
