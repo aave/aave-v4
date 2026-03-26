@@ -1,5 +1,4 @@
-// SPDX-License-Identifier: UNLICENSED
-// Copyright (c) 2025 Aave Labs
+// SPDX-License-Identifier: LicenseRef-BUSL
 pragma solidity 0.8.28;
 
 import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
@@ -24,7 +23,7 @@ import {Multicall} from 'src/utils/Multicall.sol';
 import {ExtSload} from 'src/utils/ExtSload.sol';
 import {IAaveOracle} from 'src/spoke/interfaces/IAaveOracle.sol';
 import {IHubBase} from 'src/hub/interfaces/IHubBase.sol';
-import {ISpokeBase, ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
+import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 import {SpokeStorage} from 'src/spoke/SpokeStorage.sol';
 
 /// @title Spoke
@@ -97,7 +96,7 @@ abstract contract Spoke is
   /// @param oracle_ The address of the AaveOracle contract.
   /// @param maxUserReservesLimit_ The maximum number of collateral and borrow reserves a user can have.
   constructor(address oracle_, uint16 maxUserReservesLimit_) {
-    require(IAaveOracle(oracle_).DECIMALS() == ORACLE_DECIMALS, InvalidOracleDecimals());
+    require(IAaveOracle(oracle_).decimals() == ORACLE_DECIMALS, InvalidOracleDecimals());
     require(maxUserReservesLimit_ > 0, InvalidMaxUserReservesLimit());
     ORACLE = oracle_;
     MAX_USER_RESERVES_LIMIT = maxUserReservesLimit_;
@@ -222,7 +221,7 @@ abstract contract Spoke is
     emit UpdatePositionManager(positionManager, active);
   }
 
-  /// @inheritdoc ISpokeBase
+  /// @inheritdoc ISpoke
   function supply(
     uint256 reserveId,
     uint256 amount,
@@ -241,7 +240,7 @@ abstract contract Spoke is
     return (suppliedShares, amount);
   }
 
-  /// @inheritdoc ISpokeBase
+  /// @inheritdoc ISpoke
   function withdraw(
     uint256 reserveId,
     uint256 amount,
@@ -271,7 +270,7 @@ abstract contract Spoke is
     return (withdrawnShares, withdrawnAmount);
   }
 
-  /// @inheritdoc ISpokeBase
+  /// @inheritdoc ISpoke
   function borrow(
     uint256 reserveId,
     uint256 amount,
@@ -302,7 +301,7 @@ abstract contract Spoke is
     return (drawnShares, amount);
   }
 
-  /// @inheritdoc ISpokeBase
+  /// @inheritdoc ISpoke
   function repay(
     uint256 reserveId,
     uint256 amount,
@@ -344,7 +343,7 @@ abstract contract Spoke is
     return (restoredShares, totalDebtRestored);
   }
 
-  /// @inheritdoc ISpokeBase
+  /// @inheritdoc ISpoke
   function liquidationCall(
     uint256 collateralReserveId,
     uint256 debtReserveId,
@@ -502,25 +501,25 @@ abstract contract Spoke is
     return _reserveCount;
   }
 
-  /// @inheritdoc ISpokeBase
+  /// @inheritdoc ISpoke
   function getReserveSuppliedAssets(uint256 reserveId) external view returns (uint256) {
     Reserve storage reserve = _reserves.get(reserveId);
     return reserve.hub.getSpokeAddedAssets(reserve.assetId, address(this));
   }
 
-  /// @inheritdoc ISpokeBase
+  /// @inheritdoc ISpoke
   function getReserveSuppliedShares(uint256 reserveId) external view returns (uint256) {
     Reserve storage reserve = _reserves.get(reserveId);
     return reserve.hub.getSpokeAddedShares(reserve.assetId, address(this));
   }
 
-  /// @inheritdoc ISpokeBase
+  /// @inheritdoc ISpoke
   function getReserveDebt(uint256 reserveId) external view returns (uint256, uint256) {
     Reserve storage reserve = _reserves.get(reserveId);
     return reserve.hub.getSpokeOwed(reserve.assetId, address(this));
   }
 
-  /// @inheritdoc ISpokeBase
+  /// @inheritdoc ISpoke
   function getReserveTotalDebt(uint256 reserveId) external view returns (uint256) {
     Reserve storage reserve = _reserves.get(reserveId);
     return reserve.hub.getSpokeTotalOwed(reserve.assetId, address(this));
@@ -570,7 +569,7 @@ abstract contract Spoke is
     return (positionStatus.isUsingAsCollateral(reserveId), positionStatus.isBorrowing(reserveId));
   }
 
-  /// @inheritdoc ISpokeBase
+  /// @inheritdoc ISpoke
   function getUserSuppliedAssets(uint256 reserveId, address user) external view returns (uint256) {
     Reserve storage reserve = _reserves.get(reserveId);
     return
@@ -580,13 +579,13 @@ abstract contract Spoke is
       );
   }
 
-  /// @inheritdoc ISpokeBase
+  /// @inheritdoc ISpoke
   function getUserSuppliedShares(uint256 reserveId, address user) external view returns (uint256) {
     _reserves.get(reserveId);
     return _userPositions[user][reserveId].suppliedShares;
   }
 
-  /// @inheritdoc ISpokeBase
+  /// @inheritdoc ISpoke
   function getUserDebt(uint256 reserveId, address user) external view returns (uint256, uint256) {
     Reserve storage reserve = _reserves.get(reserveId);
     UserPosition storage userPosition = _userPositions[user][reserveId];
@@ -597,7 +596,7 @@ abstract contract Spoke is
     return (drawnDebt, premiumDebtRay.fromRayUp());
   }
 
-  /// @inheritdoc ISpokeBase
+  /// @inheritdoc ISpoke
   function getUserTotalDebt(uint256 reserveId, address user) external view returns (uint256) {
     Reserve storage reserve = _reserves.get(reserveId);
     UserPosition storage userPosition = _userPositions[user][reserveId];
@@ -608,7 +607,7 @@ abstract contract Spoke is
     return (drawnDebt + premiumDebtRay.fromRayUp());
   }
 
-  /// @inheritdoc ISpokeBase
+  /// @inheritdoc ISpoke
   function getUserPremiumDebtRay(uint256 reserveId, address user) external view returns (uint256) {
     Reserve storage reserve = _reserves.get(reserveId);
     UserPosition storage userPosition = _userPositions[user][reserveId];

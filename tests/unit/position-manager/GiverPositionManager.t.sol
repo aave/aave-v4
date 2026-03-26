@@ -1,5 +1,4 @@
-// SPDX-License-Identifier: UNLICENSED
-// Copyright (c) 2025 Aave Labs
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
 import 'tests/unit/Spoke/SpokeBase.t.sol';
@@ -40,10 +39,19 @@ contract GiverPositionManagerTest is SpokeBase {
     uint256 callerSuppliedAmountBefore = spoke1.getUserSuppliedAssets(_daiReserveId(spoke1), bob);
 
     vm.expectEmit(address(spoke1));
-    emit ISpokeBase.Supply(
+    emit ISpoke.Supply(
       _daiReserveId(spoke1),
       address(positionManager),
       alice,
+      hub1.previewAddByAssets(daiAssetId, amount),
+      amount
+    );
+    vm.expectEmit(address(positionManager));
+    emit IGiverPositionManager.SupplyOnBehalfOf(
+      address(spoke1),
+      bob,
+      alice,
+      _daiReserveId(spoke1),
       hub1.previewAddByAssets(daiAssetId, amount),
       amount
     );
@@ -91,13 +99,11 @@ contract GiverPositionManagerTest is SpokeBase {
   }
 
   function test_repayOnBehalfOf_fuzz(uint256 repayAmount) public {
-    uint256 aliceSupplyAmount = 1000e18;
-    uint256 bobSupplyAmount = 150e18;
     uint256 borrowAmount = 100e18;
     repayAmount = bound(repayAmount, 1, borrowAmount);
 
-    Utils.supplyCollateral(spoke1, _daiReserveId(spoke1), alice, aliceSupplyAmount, alice);
-    Utils.supply(spoke1, _daiReserveId(spoke1), bob, bobSupplyAmount, bob);
+    Utils.supplyCollateral(spoke1, _daiReserveId(spoke1), alice, 1000e18, alice);
+    Utils.supply(spoke1, _daiReserveId(spoke1), bob, 150e18, bob);
     Utils.borrow(spoke1, _daiReserveId(spoke1), alice, borrowAmount, alice);
 
     vm.prank(bob);
@@ -117,21 +123,33 @@ contract GiverPositionManagerTest is SpokeBase {
       repayAmount,
       daiAssetId
     );
-    IHubBase.PremiumDelta memory expectedPremiumDelta = _getExpectedPremiumDeltaForRestore(
-      spoke1,
-      alice,
-      _daiReserveId(spoke1),
-      repayAmount
-    );
 
-    vm.expectEmit(address(spoke1));
-    emit ISpokeBase.Repay(
-      _daiReserveId(spoke1),
-      address(positionManager),
+    {
+      IHubBase.PremiumDelta memory expectedPremiumDelta = _getExpectedPremiumDeltaForRestore(
+        spoke1,
+        alice,
+        _daiReserveId(spoke1),
+        repayAmount
+      );
+
+      vm.expectEmit(address(spoke1));
+      emit ISpoke.Repay(
+        _daiReserveId(spoke1),
+        address(positionManager),
+        alice,
+        hub1.previewRestoreByAssets(daiAssetId, baseRestored),
+        repayAmount,
+        expectedPremiumDelta
+      );
+    }
+    vm.expectEmit(address(positionManager));
+    emit IGiverPositionManager.RepayOnBehalfOf(
+      address(spoke1),
+      bob,
       alice,
+      _daiReserveId(spoke1),
       hub1.previewRestoreByAssets(daiAssetId, baseRestored),
-      repayAmount,
-      expectedPremiumDelta
+      repayAmount
     );
     vm.prank(bob);
     (returnValues.shares, returnValues.amount) = positionManager.repayOnBehalfOf(
@@ -192,13 +210,22 @@ contract GiverPositionManagerTest is SpokeBase {
       );
       uint256 repaidAmount = _min(userDrawnDebt + userPremiumDebt, repayAmount);
       vm.expectEmit(address(spoke1));
-      emit ISpokeBase.Repay(
+      emit ISpoke.Repay(
         _daiReserveId(spoke1),
         address(positionManager),
         alice,
         hub1.previewRestoreByAssets(daiAssetId, baseRestored),
         repaidAmount,
         expectedPremiumDelta
+      );
+      vm.expectEmit(address(positionManager));
+      emit IGiverPositionManager.RepayOnBehalfOf(
+        address(spoke1),
+        bob,
+        alice,
+        _daiReserveId(spoke1),
+        hub1.previewRestoreByAssets(daiAssetId, baseRestored),
+        repaidAmount
       );
       vm.prank(bob);
       (returnValues.shares, returnValues.amount) = positionManager.repayOnBehalfOf(
@@ -275,13 +302,22 @@ contract GiverPositionManagerTest is SpokeBase {
     );
 
     vm.expectEmit(address(spoke1));
-    emit ISpokeBase.Repay(
+    emit ISpoke.Repay(
       _daiReserveId(spoke1),
       address(positionManager),
       alice,
       hub1.previewRestoreByAssets(daiAssetId, baseRestored),
       totalRepaid,
       expectedPremiumDelta
+    );
+    vm.expectEmit(address(positionManager));
+    emit IGiverPositionManager.RepayOnBehalfOf(
+      address(spoke1),
+      bob,
+      alice,
+      _daiReserveId(spoke1),
+      hub1.previewRestoreByAssets(daiAssetId, baseRestored),
+      totalRepaid
     );
     vm.prank(bob);
     (returnValues.shares, returnValues.amount) = positionManager.repayOnBehalfOf(

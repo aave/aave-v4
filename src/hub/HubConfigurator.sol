@@ -1,5 +1,4 @@
-// SPDX-License-Identifier: UNLICENSED
-// Copyright (c) 2025 Aave Labs
+// SPDX-License-Identifier: LicenseRef-BUSL
 pragma solidity 0.8.28;
 
 import {IERC20Metadata} from 'src/dependencies/openzeppelin/IERC20Metadata.sol';
@@ -17,7 +16,9 @@ contract HubConfigurator is AccessManaged, IHubConfigurator {
 
   /// @dev Constructor.
   /// @param authority_ The address of the authority contract which manages permissions.
-  constructor(address authority_) AccessManaged(authority_) {}
+  constructor(address authority_) AccessManaged(authority_) {
+    require(authority_ != address(0), InvalidAddress());
+  }
 
   /// @inheritdoc IHubConfigurator
   function addAsset(
@@ -205,7 +206,7 @@ contract HubConfigurator is AccessManaged, IHubConfigurator {
   }
 
   /// @inheritdoc IHubConfigurator
-  function updateSpokeSupplyCap(
+  function updateSpokeAddCap(
     address hub,
     uint256 assetId,
     address spoke,

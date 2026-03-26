@@ -1,5 +1,4 @@
-// SPDX-License-Identifier: UNLICENSED
-// Copyright (c) 2025 Aave Labs
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
 import 'tests/unit/Hub/HubBase.t.sol';
@@ -20,6 +19,8 @@ contract HubReclaimTest is HubBase {
   }
 
   function test_reclaim_revertsWith_OnlyReinvestmentController(address caller) public {
+    vm.assume(caller != _getProxyAdminAddress(address(hub1)));
+
     address reinvestmentController = makeAddr('reinvestmentController');
     vm.assume(caller != reinvestmentController);
     updateAssetReinvestmentController(hub1, daiAssetId, reinvestmentController);
@@ -132,7 +133,7 @@ contract HubReclaimTest is HubBase {
 
     assertEq(hub1.getAssetSwept(daiAssetId), sweptAfterSweep - reclaimAmount);
     assertEq(hub1.getAssetLiquidity(daiAssetId), liquidityAfterSweep + reclaimAmount);
-    _assertBorrowRateSynced(hub1, daiAssetId, 'reclaim');
+    _assertDrawnRateSynced(hub1, daiAssetId, 'reclaim');
     _assertHubLiquidity(hub1, daiAssetId, 'reclaim');
   }
 

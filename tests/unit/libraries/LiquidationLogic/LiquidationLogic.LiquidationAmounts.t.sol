@@ -1,5 +1,4 @@
-// SPDX-License-Identifier: UNLICENSED
-// Copyright (c) 2025 Aave Labs
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
 import 'tests/unit/libraries/LiquidationLogic/LiquidationLogic.Base.t.sol';
@@ -430,7 +429,7 @@ contract LiquidationLogicLiquidationAmountsTest is LiquidationLogicBaseTest {
   ) internal pure returns (uint256) {
     uint256 bonusCollateralShares = collateralSharesToLiquidate -
       collateralSharesToLiquidate.percentDivUp(liquidationBonus);
-    return collateralSharesToLiquidate - bonusCollateralShares.percentMulDown(liquidationFee);
+    return collateralSharesToLiquidate - bonusCollateralShares.percentMulUp(liquidationFee);
   }
 
   function assertApproxEqAbs(

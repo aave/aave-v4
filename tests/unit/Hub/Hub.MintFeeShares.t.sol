@@ -1,5 +1,4 @@
-// SPDX-License-Identifier: UNLICENSED
-// Copyright (c) 2025 Aave Labs
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
 import 'tests/unit/Hub/HubBase.t.sol';
@@ -118,7 +117,7 @@ contract HubMintFeeSharesTest is HubBase {
 
   function test_mintFeeShares_noShares() public {
     updateLiquidityFee(hub1, daiAssetId, 0);
-    _mockInterestRateRay(2);
+    _mockDrawnRateRay(2);
 
     // Create debt to build up fees on the existing treasury spoke
     _addAndDrawLiquidity({
@@ -136,7 +135,7 @@ contract HubMintFeeSharesTest is HubBase {
     // drawn index is 1.0000...002
     assertEq(hub1.getAssetDrawnIndex(daiAssetId), 1e27 + 2);
 
-    _mockInterestRateRay(1e27 - 3);
+    _mockDrawnRateRay(1e27 - 3);
     updateLiquidityFee(hub1, daiAssetId, PercentageMath.PERCENTAGE_FACTOR);
 
     // mint fee shares just to accrue (liquidity fee is 0, so no fees are minted)
