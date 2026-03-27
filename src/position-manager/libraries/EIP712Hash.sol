@@ -1,8 +1,9 @@
-// SPDX-License-Identifier: UNLICENSED
-// Copyright (c) 2025 Aave Labs
+// SPDX-License-Identifier: LicenseRef-BUSL
 pragma solidity ^0.8.20;
 
+import {IConfigPositionManager} from 'src/position-manager/interfaces/IConfigPositionManager.sol';
 import {ISignatureGateway} from 'src/position-manager/interfaces/ISignatureGateway.sol';
+import {ITakerPositionManager} from 'src/position-manager/interfaces/ITakerPositionManager.sol';
 
 /// @title EIP712Hash library
 /// @author Aave Labs
@@ -35,6 +36,30 @@ library EIP712Hash {
   bytes32 public constant UPDATE_USER_DYNAMIC_CONFIG_TYPEHASH =
     // keccak256('UpdateUserDynamicConfig(address spoke,address onBehalfOf,uint256 nonce,uint256 deadline)')
     0x4a168dd8b32d260d07d6f0be832e23035a65a47f788675b0b02270c68b987886;
+
+  bytes32 public constant WITHDRAW_PERMIT_TYPEHASH =
+    // keccak256('WithdrawPermit(address spoke,uint256 reserveId,address owner,address spender,uint256 amount,uint256 nonce,uint256 deadline)')
+    0x9e6642fd4c06a4c1a5e201f1e41c6b7892fcf06859c796b054c510b80e2a0a3f;
+
+  bytes32 public constant BORROW_PERMIT_TYPEHASH =
+    // keccak256('BorrowPermit(address spoke,uint256 reserveId,address owner,address spender,uint256 amount,uint256 nonce,uint256 deadline)')
+    0x14236ea048da65ffb52a9b32a2c840f24ab374cc31f65faeb7877d22ceca144e;
+
+  bytes32 public constant SET_GLOBAL_PERMISSION_PERMIT_TYPEHASH =
+    // keccak256('SetGlobalPermissionPermit(address spoke,address delegator,address delegatee,bool status,uint256 nonce,uint256 deadline)')
+    0x299f4d5a5eae147b6a362cf3fa36b918afed95d6cc1674d468aa1ba1f75f9313;
+
+  bytes32 public constant SET_CAN_SET_USING_AS_COLLATERAL_PERMISSION_PERMIT_TYPEHASH =
+    // keccak256('SetCanSetUsingAsCollateralPermissionPermit(address spoke,address delegator,address delegatee,bool status,uint256 nonce,uint256 deadline)')
+    0xf91d20e8b46551cc1f73f5de65a9636c103bf0c6bdcf78bae18e7e31917bbd3a;
+
+  bytes32 public constant SET_CAN_UPDATE_USER_RISK_PREMIUM_PERMISSION_PERMIT_TYPEHASH =
+    // keccak256('SetCanUpdateUserRiskPremiumPermissionPermit(address spoke,address delegator,address delegatee,bool status,uint256 nonce,uint256 deadline)')
+    0xa9be2c91fce8dae5daef47eb13dddcc78011c3146f9e066896a58fa093b6fbe6;
+
+  bytes32 public constant SET_CAN_UPDATE_USER_DYNAMIC_CONFIG_PERMISSION_PERMIT_TYPEHASH =
+    // keccak256('SetCanUpdateUserDynamicConfigPermissionPermit(address spoke,address delegator,address delegatee,bool status,uint256 nonce,uint256 deadline)')
+    0x0e3c243284d61e86328d1f15e6b7e5a0f56e428e94005a97dc033c4a5809ac3f;
 
   function hash(ISignatureGateway.Supply calldata params) internal pure returns (bytes32) {
     return
@@ -137,6 +162,110 @@ library EIP712Hash {
           UPDATE_USER_DYNAMIC_CONFIG_TYPEHASH,
           params.spoke,
           params.onBehalfOf,
+          params.nonce,
+          params.deadline
+        )
+      );
+  }
+
+  function hash(
+    ITakerPositionManager.WithdrawPermit calldata params
+  ) internal pure returns (bytes32) {
+    return
+      keccak256(
+        abi.encode(
+          WITHDRAW_PERMIT_TYPEHASH,
+          params.spoke,
+          params.reserveId,
+          params.owner,
+          params.spender,
+          params.amount,
+          params.nonce,
+          params.deadline
+        )
+      );
+  }
+
+  function hash(
+    ITakerPositionManager.BorrowPermit calldata params
+  ) internal pure returns (bytes32) {
+    return
+      keccak256(
+        abi.encode(
+          BORROW_PERMIT_TYPEHASH,
+          params.spoke,
+          params.reserveId,
+          params.owner,
+          params.spender,
+          params.amount,
+          params.nonce,
+          params.deadline
+        )
+      );
+  }
+
+  function hash(
+    IConfigPositionManager.SetGlobalPermissionPermit calldata params
+  ) internal pure returns (bytes32) {
+    return
+      keccak256(
+        abi.encode(
+          SET_GLOBAL_PERMISSION_PERMIT_TYPEHASH,
+          params.spoke,
+          params.delegator,
+          params.delegatee,
+          params.status,
+          params.nonce,
+          params.deadline
+        )
+      );
+  }
+
+  function hash(
+    IConfigPositionManager.SetCanSetUsingAsCollateralPermissionPermit calldata params
+  ) internal pure returns (bytes32) {
+    return
+      keccak256(
+        abi.encode(
+          SET_CAN_SET_USING_AS_COLLATERAL_PERMISSION_PERMIT_TYPEHASH,
+          params.spoke,
+          params.delegator,
+          params.delegatee,
+          params.status,
+          params.nonce,
+          params.deadline
+        )
+      );
+  }
+
+  function hash(
+    IConfigPositionManager.SetCanUpdateUserRiskPremiumPermissionPermit calldata params
+  ) internal pure returns (bytes32) {
+    return
+      keccak256(
+        abi.encode(
+          SET_CAN_UPDATE_USER_RISK_PREMIUM_PERMISSION_PERMIT_TYPEHASH,
+          params.spoke,
+          params.delegator,
+          params.delegatee,
+          params.status,
+          params.nonce,
+          params.deadline
+        )
+      );
+  }
+
+  function hash(
+    IConfigPositionManager.SetCanUpdateUserDynamicConfigPermissionPermit calldata params
+  ) internal pure returns (bytes32) {
+    return
+      keccak256(
+        abi.encode(
+          SET_CAN_UPDATE_USER_DYNAMIC_CONFIG_PERMISSION_PERMIT_TYPEHASH,
+          params.spoke,
+          params.delegator,
+          params.delegatee,
+          params.status,
           params.nonce,
           params.deadline
         )

@@ -1,5 +1,4 @@
-// SPDX-License-Identifier: UNLICENSED
-// Copyright (c) 2025 Aave Labs
+// SPDX-License-Identifier: LicenseRef-BUSL
 pragma solidity 0.8.28;
 
 import {TokenizationSpoke} from 'src/spoke/TokenizationSpoke.sol';
@@ -11,9 +10,9 @@ contract TokenizationSpokeInstance is TokenizationSpoke {
   uint64 public constant SPOKE_REVISION = 1;
 
   /// @dev Constructor.
-  /// @param hub_ The address of the hub.
-  /// @param assetId_ The identifier of the asset.
-  constructor(address hub_, uint256 assetId_) TokenizationSpoke(hub_, assetId_) {
+  /// @param hub_ The address of the associated Hub.
+  /// @param underlying_ The address of the underlying asset to be tokenized.
+  constructor(address hub_, address underlying_) TokenizationSpoke(hub_, underlying_) {
     _disableInitializers();
   }
 
@@ -24,6 +23,8 @@ contract TokenizationSpokeInstance is TokenizationSpoke {
     string memory shareName,
     string memory shareSymbol
   ) external override reinitializer(SPOKE_REVISION) {
+    emit SetTokenizationSpokeImmutables(address(HUB), ASSET_ID);
+
     __TokenizationSpoke_init(shareName, shareSymbol);
   }
 }

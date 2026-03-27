@@ -1,5 +1,4 @@
-// SPDX-License-Identifier: UNLICENSED
-// Copyright (c) 2025 Aave Labs
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
 import 'tests/unit/Spoke/Spoke.MultipleHub.Base.t.sol';
@@ -92,7 +91,7 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
       address(assetB),
       assetB.decimals(),
       address(treasurySpoke),
-      address(irStrategy), // Use the main hub's interest rate strategy
+      address(irStrategy), // Use the main hub's drawn rate strategy
       encodedIrData
     );
 
@@ -182,7 +181,7 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
     );
 
     // Link main hub and new spoke for asset B
-    // 0 supply cap, 100k draw cap
+    // 0 add cap, 100k draw cap
     hub1.addSpoke(
       isolationVars.assetBIdMainHub,
       address(newSpoke),
@@ -226,7 +225,7 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
     vm.expectRevert(abi.encodeWithSelector(IHub.DrawCapExceeded.selector, 100_000));
     Utils.borrow(newSpoke, isolationVars.reserveBIdMainHub, bob, 1, bob);
 
-    // Bob cannot supply B to main hub via new spoke because supply cap is 0
+    // Bob cannot supply B to main hub via new spoke because add cap is 0
     vm.expectRevert(abi.encodeWithSelector(IHub.AddCapExceeded.selector, 0));
     Utils.supply(newSpoke, isolationVars.reserveBIdMainHub, bob, 1e18, bob);
 

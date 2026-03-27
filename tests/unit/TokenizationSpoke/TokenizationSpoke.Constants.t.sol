@@ -1,5 +1,4 @@
-// SPDX-License-Identifier: UNLICENSED
-// Copyright (c) 2025 Aave Labs
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
 import 'tests/unit/TokenizationSpoke/TokenizationSpoke.Base.t.sol';
@@ -8,7 +7,7 @@ contract TokenizationSpokeConstantsTest is TokenizationSpokeBaseTest {
   function test_eip712Domain() public {
     ITokenizationSpoke instance = _deployTokenizationSpoke(
       hub1,
-      daiAssetId,
+      address(tokenList.dai),
       'Core Hub DAI',
       'chDAI',
       ADMIN
@@ -35,7 +34,7 @@ contract TokenizationSpokeConstantsTest is TokenizationSpokeBaseTest {
   function test_DOMAIN_SEPARATOR() public {
     ITokenizationSpoke instance = _deployTokenizationSpoke(
       hub1,
-      daiAssetId,
+      address(tokenList.dai),
       'Core Hub DAI',
       'chDAI',
       ADMIN
