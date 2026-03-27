@@ -2,6 +2,7 @@
 pragma solidity ^0.8.0;
 
 import {BaseState} from 'tests/setup/BaseState.sol';
+import {Ownable} from 'src/dependencies/openzeppelin/Ownable.sol';
 import {IERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
 import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 import {IHub} from 'src/hub/interfaces/IHub.sol';
@@ -89,10 +90,11 @@ abstract contract BaseHelpers is BaseState {
     IHub hub,
     uint256 assetId,
     uint256 amount,
-    ITreasurySpoke treasurySpoke,
-    address admin,
-    address treasuryAdmin
+    address admin
   ) internal {
+    ITreasurySpoke treasurySpoke = ITreasurySpoke(_getFeeReceiver(hub, assetId));
+    address treasuryAdmin = Ownable(address(treasurySpoke)).owner();
+
     HubActions.mintFeeShares({hub: hub, assetId: assetId, caller: admin});
     uint256 fees = hub.getSpokeAddedAssets(assetId, address(treasurySpoke));
 
@@ -110,15 +112,6 @@ abstract contract BaseHelpers is BaseState {
   ///////////////////////////////////////////////////////////////////////////////////////////////
   //                                   SETUP OVERLOADS                                         //
   ///////////////////////////////////////////////////////////////////////////////////////////////
-
-  function _calculateExactRestoreAmount(
-    uint256 drawn,
-    uint256 premium,
-    uint256 restoreAmount,
-    uint256 assetId
-  ) internal view returns (uint256, uint256) {
-    return _calculateExactRestoreAmount(hub1, assetId, drawn, premium, restoreAmount);
-  }
 
   function _addLiquidity(IHub hub, uint256 assetId, uint256 amount) public {
     _addLiquidity(hub, assetId, amount, HUB_ADMIN, MAX_ALLOWED_COLLATERAL_RISK);

@@ -5,7 +5,7 @@ import {Roles} from 'src/libraries/types/Roles.sol';
 import {Test} from 'forge-std/Test.sol';
 
 contract RolesTest is Test {
-  function test_constants() public view {
+  function test_constants() public pure {
     assertEq(Roles.DEFAULT_ADMIN_ROLE, 0);
     assertEq(Roles.HUB_ADMIN_ROLE, 1);
     assertEq(Roles.SPOKE_ADMIN_ROLE, 2);

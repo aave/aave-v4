@@ -167,7 +167,7 @@ abstract contract Base is BaseHelpers {
     setUpRoles(hub1, spoke3, accessManager);
   }
 
-  function setUpRoles(IHub targetHub, ISpoke spoke, IAccessManager manager) internal virtual {
+  function setUpRoles(IHub hub, ISpoke spoke, IAccessManager manager) internal virtual {
     vm.startPrank(ADMIN);
     // Grant roles with 0 delay
     manager.grantRole(Roles.HUB_ADMIN_ROLE, ADMIN, 0);
@@ -213,13 +213,13 @@ abstract contract Base is BaseHelpers {
       selectors[3] = IHub.updateSpokeConfig.selector;
       selectors[4] = IHub.setInterestRateData.selector;
       selectors[5] = IHub.mintFeeShares.selector;
-      manager.setTargetFunctionRole(address(targetHub), selectors, Roles.HUB_ADMIN_ROLE);
+      manager.setTargetFunctionRole(address(hub), selectors, Roles.HUB_ADMIN_ROLE);
     }
 
     {
       bytes4[] memory selectors = new bytes4[](1);
       selectors[0] = IHub.eliminateDeficit.selector;
-      manager.setTargetFunctionRole(address(targetHub), selectors, Roles.DEFICIT_ELIMINATOR_ROLE);
+      manager.setTargetFunctionRole(address(hub), selectors, Roles.DEFICIT_ELIMINATOR_ROLE);
     }
 
     setUpHubConfiguratorRoles(HUB_CONFIGURATOR, address(manager));

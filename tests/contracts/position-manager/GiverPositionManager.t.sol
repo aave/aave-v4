@@ -136,10 +136,11 @@ contract GiverPositionManagerTest is Base {
       alice
     );
     (uint256 baseRestored, ) = _calculateExactRestoreAmount(
+      hub1,
+      daiAssetId,
       userDrawnDebt,
       userPremiumDebt,
-      repayAmount,
-      daiAssetId
+      repayAmount
     );
 
     {
@@ -231,10 +232,11 @@ contract GiverPositionManagerTest is Base {
       alice
     );
     (uint256 baseRestored, uint256 premiumRestored) = _calculateExactRestoreAmount(
+      hub1,
+      daiAssetId,
       userDrawnDebt,
       userPremiumDebt,
-      repayAmount,
-      daiAssetId
+      repayAmount
     );
 
     {
@@ -342,10 +344,11 @@ contract GiverPositionManagerTest is Base {
       alice
     );
     (uint256 baseRestored, uint256 premiumRestored) = _calculateExactRestoreAmount(
+      hub1,
+      daiAssetId,
       userDrawnDebt,
       userPremiumDebt,
-      repayAmount,
-      daiAssetId
+      repayAmount
     );
     uint256 totalRepaid = baseRestored + premiumRestored;
     IHubBase.PremiumDelta memory expectedPremiumDelta = _getExpectedPremiumDeltaForRestore(
