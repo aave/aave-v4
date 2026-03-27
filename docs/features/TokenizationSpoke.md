@@ -21,7 +21,7 @@ Unlike `Spoke.supply`, which restricts `onBehalfOf` to approved Position Manager
 **Deposit flow**
 
 1. The caller approves the underlying ERC-20 asset to the TokenizationSpoke.
-2. `deposit` transfers underlying directly from the caller to the Hub via `safeTransferFrom`. The TokenizationSpoke calls `Hub.add` to account for the deposited amount against its position.
+2. `deposit` transfers the input amount of underlying assets directly from the caller to the Hub via `safeTransferFrom`. The TokenizationSpoke calls `Hub.add` to account for the deposited amount against its position.
 3. Shares are minted to `receiver`; ERC-4626 events are emitted.
 
 **Mint flow**
