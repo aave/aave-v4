@@ -1,0 +1,453 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+import 'tests/contracts/tokenization-spoke/TokenizationSpoke.Base.t.sol';
+
+// Coverage Matrix for maxDeposit/maxMint/maxWithdraw/maxRedeem:
+// +---------------------------+----------------+----------------+----------------+----------------+
+// | Scenario                  | maxDeposit     | maxMint        | maxWithdraw    | maxRedeem      |
+// +---------------------------+----------------+----------------+----------------+----------------+
+// | active=false              | 0              | 0              | 0              | 0              |
+// | halted=true               | 0              | 0              | 0              | 0              |
+// | active=false & halted=true| 0              | 0              | 0              | 0              |
+// | addCap=0                  | 0              | 0              | n/a            | n/a            |
+// | addCap=MAX                | type(uint).max | type(uint).max | n/a            | n/a            |
+// | addCap=variable (empty)   | cap * units    | shares(cap)    | n/a            | n/a            |
+// | addCap=variable (partial) | remaining      | shares(rem)    | n/a            | n/a            |
+// | addCap exactly reached    | 0              | 0              | n/a            | n/a            |
+// | addCap exceeded by yield  | 0              | 0              | n/a            | n/a            |
+// | liquidity=0               | n/a            | n/a            | 0              | 0              |
+// | liquidity < balance       | n/a            | n/a            | liquidity      | shares(liq)    |
+// | liquidity >= balance      | n/a            | n/a            | balance        | shares(bal)    |
+// | owner has 0 shares        | n/a            | n/a            | 0              | 0              |
+// +---------------------------+----------------+----------------+----------------+----------------+
+// n/a = scenario does not affect this getter
+
+abstract contract TokenizationSpokeMaxGettersBaseTest is TokenizationSpokeBaseTest {
+  ITokenizationSpoke public vault;
+  TestnetERC20 public asset;
+  IHub public hub;
+  uint256 public assetId;
+
+  function setUp() public virtual override {
+    super.setUp();
+    vault = daiVault;
+    asset = TestnetERC20(vault.asset());
+    hub = IHub(vault.hub());
+    assetId = vault.assetId();
+  }
+}
+
+abstract contract TokenizationSpokeMaxGettersAllZeroTest is TokenizationSpokeMaxGettersBaseTest {
+  function test_maxDeposit_returnsZero() public view {
+    assertEq(vault.maxDeposit(alice), 0);
+  }
+
+  function test_maxMint_returnsZero() public view {
+    assertEq(vault.maxMint(alice), 0);
+  }
+
+  function test_maxWithdraw_returnsZero() public view {
+    assertEq(vault.maxWithdraw(alice), 0);
+  }
+
+  function test_maxRedeem_returnsZero() public view {
+    assertEq(vault.maxRedeem(alice), 0);
+  }
+}
+
+contract TokenizationSpokeMaxGettersNotActiveTest is TokenizationSpokeMaxGettersAllZeroTest {
+  function setUp() public override {
+    super.setUp();
+    _updateSpokeActive(hub, assetId, address(vault), false);
+  }
+}
+
+contract TokenizationSpokeMaxGettersHaltedTest is TokenizationSpokeMaxGettersAllZeroTest {
+  function setUp() public override {
+    super.setUp();
+    _updateSpokeHalted(hub, assetId, address(vault), true);
+  }
+}
+
+contract TokenizationSpokeMaxGettersNotActiveAndHaltedTest is
+  TokenizationSpokeMaxGettersAllZeroTest
+{
+  function setUp() public override {
+    super.setUp();
+    _updateSpokeActive(hub, assetId, address(vault), false);
+    _updateSpokeHalted(hub, assetId, address(vault), true);
+  }
+}
+
+contract TokenizationSpokeMaxGettersAddCapZeroTest is TokenizationSpokeMaxGettersBaseTest {
+  function setUp() public override {
+    super.setUp();
+    _updateAddCap(hub, assetId, address(vault), 0);
+  }
+
+  function test_maxDeposit_returnsZero() public view {
+    assertEq(vault.maxDeposit(alice), 0);
+  }
+
+  function test_maxMint_returnsZero() public view {
+    assertEq(vault.maxMint(alice), 0);
+  }
+}
+
+contract TokenizationSpokeMaxGettersAddCapMaxTest is TokenizationSpokeMaxGettersBaseTest {
+  function setUp() public override {
+    super.setUp();
+    uint256 depositAmount = 10e18;
+    asset.mint(alice, depositAmount);
+    SpokeActions.approve({vault: vault, owner: alice, amount: depositAmount});
+    vm.prank(alice);
+    vault.deposit(depositAmount, alice);
+  }
+
+  function test_maxDeposit_returnsMaxUint() public view {
+    assertEq(vault.maxDeposit(alice), UINT256_MAX);
+  }
+
+  function test_maxMint_returnsMaxUint() public view {
+    assertEq(vault.maxMint(alice), UINT256_MAX);
+  }
+}
+
+contract TokenizationSpokeMaxGettersAddCapVariableEmptyTest is TokenizationSpokeMaxGettersBaseTest {
+  using SafeCast for uint256;
+
+  uint40 public addCap;
+
+  function setUp() public override {
+    super.setUp();
+    addCap = vm.randomUint(1, 1000).toUint40();
+    _updateAddCap(hub, assetId, address(vault), addCap);
+  }
+
+  function test_maxDeposit_returnsCapTimesUnits() public view {
+    uint256 expected = uint256(addCap) * MathUtils.uncheckedExp(10, vault.decimals());
+    assertEq(vault.maxDeposit(alice), expected);
+  }
+
+  function test_maxMint_returnsSharesOfCap() public view {
+    uint256 capAssets = uint256(addCap) * MathUtils.uncheckedExp(10, vault.decimals());
+    uint256 expected = hub.previewAddByAssets(assetId, capAssets);
+    assertEq(vault.maxMint(alice), expected);
+  }
+}
+
+contract TokenizationSpokeMaxGettersAddCapVariablePartialTest is
+  TokenizationSpokeMaxGettersBaseTest
+{
+  using SafeCast for uint256;
+
+  uint40 public addCap;
+  uint256 public capWithDecimals;
+  uint256 public depositAmount;
+
+  function setUp() public override {
+    super.setUp();
+    addCap = vm.randomUint(100, 1000).toUint40();
+    _updateAddCap(hub, assetId, address(vault), addCap);
+
+    capWithDecimals = uint256(addCap) * MathUtils.uncheckedExp(10, vault.decimals());
+    depositAmount = capWithDecimals / 2;
+    asset.mint(alice, depositAmount);
+    SpokeActions.approve({vault: vault, owner: alice, amount: depositAmount});
+    vm.prank(alice);
+    vault.deposit(depositAmount, alice);
+  }
+
+  function test_maxDeposit_returnsRemaining() public view {
+    uint256 expected = capWithDecimals - vault.previewMint(vault.totalSupply());
+    assertEq(vault.maxDeposit(alice), expected);
+  }
+
+  function test_maxMint_returnsSharesOfRemaining() public view {
+    uint256 remaining = capWithDecimals - vault.previewMint(vault.totalSupply());
+    uint256 expected = hub.previewAddByAssets(assetId, remaining);
+    assertEq(vault.maxMint(alice), expected);
+  }
+}
+
+contract TokenizationSpokeMaxGettersAddCapExactlyReachedTest is
+  TokenizationSpokeMaxGettersBaseTest
+{
+  using SafeCast for uint256;
+
+  uint40 public addCap;
+  uint256 public capWithDecimals;
+
+  function setUp() public override {
+    super.setUp();
+    addCap = vm.randomUint(1, 1000).toUint40();
+    _updateAddCap(hub, assetId, address(vault), addCap);
+
+    capWithDecimals = uint256(addCap) * MathUtils.uncheckedExp(10, vault.decimals());
+    asset.mint(alice, capWithDecimals);
+    SpokeActions.approve({vault: vault, owner: alice, amount: capWithDecimals});
+    vm.prank(alice);
+    vault.deposit(capWithDecimals, alice);
+  }
+
+  function test_maxDeposit_returnsZero() public view {
+    assertEq(vault.maxDeposit(alice), 0);
+  }
+
+  function test_maxMint_returnsZero() public view {
+    assertEq(vault.maxMint(alice), 0);
+  }
+}
+
+contract TokenizationSpokeMaxGettersCapExceededByYieldTest is TokenizationSpokeMaxGettersBaseTest {
+  using SafeCast for uint256;
+
+  uint40 public addCap;
+  uint256 public capWithDecimals;
+
+  function setUp() public override {
+    super.setUp();
+    addCap = 10;
+    _updateAddCap(hub, assetId, address(vault), addCap);
+
+    capWithDecimals = uint256(addCap) * MathUtils.uncheckedExp(10, vault.decimals());
+    asset.mint(alice, capWithDecimals);
+    SpokeActions.approve({vault: vault, owner: alice, amount: capWithDecimals});
+    vm.prank(alice);
+    vault.deposit(capWithDecimals, alice);
+
+    _simulateYield(vault, capWithDecimals);
+
+    assertGt(vault.totalAssets(), capWithDecimals);
+  }
+
+  function test_maxDeposit_returnsZero() public view {
+    assertEq(vault.maxDeposit(alice), 0);
+  }
+
+  function test_maxMint_returnsZero() public view {
+    assertEq(vault.maxMint(alice), 0);
+  }
+}
+
+contract TokenizationSpokeMaxGettersZeroLiquidityTest is TokenizationSpokeMaxGettersBaseTest {
+  uint256 public depositAmount;
+
+  function setUp() public override {
+    super.setUp();
+    depositAmount = 10e18;
+    asset.mint(alice, depositAmount);
+    SpokeActions.approve({vault: vault, owner: alice, amount: depositAmount});
+    vm.prank(alice);
+    vault.deposit(depositAmount, alice);
+
+    // spoke2 needs to first add, then can draw
+    asset.mint(address(hub), depositAmount);
+    vm.startPrank(address(spoke2));
+    hub.add(assetId, depositAmount);
+    hub.draw(assetId, depositAmount * 2, address(spoke2));
+    vm.stopPrank();
+
+    assertEq(hub.getAssetLiquidity(assetId), 0);
+  }
+
+  function test_maxWithdraw_returnsZero() public view {
+    assertEq(vault.maxWithdraw(alice), 0);
+  }
+
+  function test_maxRedeem_returnsZero() public view {
+    assertEq(vault.maxRedeem(alice), 0);
+  }
+}
+
+contract TokenizationSpokeMaxGettersLiquidityLessThanBalanceTest is
+  TokenizationSpokeMaxGettersBaseTest
+{
+  using MathUtils for uint256;
+
+  uint256 public depositAmount;
+
+  function setUp() public override {
+    super.setUp();
+    depositAmount = 10e18;
+    asset.mint(alice, depositAmount);
+    SpokeActions.approve({vault: vault, owner: alice, amount: depositAmount});
+    vm.prank(alice);
+    vault.deposit(depositAmount, alice);
+
+    _simulateYield(vault, depositAmount);
+
+    uint256 drawnAmount = depositAmount / 2;
+    asset.mint(address(hub), drawnAmount);
+    vm.startPrank(address(spoke2));
+    hub.add(assetId, drawnAmount);
+    hub.draw(assetId, drawnAmount + depositAmount, address(spoke2));
+    vm.stopPrank();
+  }
+
+  function test_maxWithdraw_returnsLiquidity() public view {
+    uint256 liquidity = hub.getAssetLiquidity(assetId);
+    uint256 aliceBalance = vault.convertToAssets(vault.balanceOf(alice));
+    assertLt(liquidity, aliceBalance);
+
+    assertEq(vault.maxWithdraw(alice), liquidity);
+  }
+
+  function test_maxRedeem_returnsSharesOfLiquidity() public view {
+    uint256 liquidity = hub.getAssetLiquidity(assetId);
+    uint256 liquidityShares = vault.convertToShares(liquidity);
+    uint256 aliceShares = vault.balanceOf(alice);
+    assertLt(liquidityShares, aliceShares);
+
+    assertEq(vault.maxRedeem(alice), liquidityShares);
+  }
+}
+
+contract TokenizationSpokeMaxGettersLiquidityGreaterThanBalanceTest is
+  TokenizationSpokeMaxGettersBaseTest
+{
+  uint256 public depositAmount;
+
+  function setUp() public override {
+    super.setUp();
+    depositAmount = 10e18;
+    asset.mint(alice, depositAmount);
+    SpokeActions.approve({vault: vault, owner: alice, amount: depositAmount});
+    vm.prank(alice);
+    vault.deposit(depositAmount, alice);
+
+    uint256 extraLiquidity = 5e18;
+    asset.mint(bob, extraLiquidity);
+    SpokeActions.approve({vault: vault, owner: bob, amount: extraLiquidity});
+    vm.prank(bob);
+    vault.deposit(extraLiquidity, bob);
+  }
+
+  function test_maxWithdraw_returnsBalance() public view {
+    uint256 liquidity = hub.getAssetLiquidity(assetId);
+    uint256 aliceBalance = vault.convertToAssets(vault.balanceOf(alice));
+    assertGt(liquidity, aliceBalance);
+
+    assertEq(vault.maxWithdraw(alice), aliceBalance);
+  }
+
+  function test_maxRedeem_returnsSharesOfBalance() public view {
+    uint256 liquidity = hub.getAssetLiquidity(assetId);
+    uint256 aliceShares = vault.balanceOf(alice);
+    uint256 liquidityShares = vault.convertToShares(liquidity);
+    assertGt(liquidityShares, aliceShares);
+
+    assertEq(vault.maxRedeem(alice), aliceShares);
+  }
+}
+
+contract TokenizationSpokeMaxGettersOwnerZeroSharesTest is TokenizationSpokeMaxGettersBaseTest {
+  function setUp() public override {
+    super.setUp();
+    uint256 depositAmount = 10e18;
+    asset.mint(bob, depositAmount);
+    SpokeActions.approve({vault: vault, owner: bob, amount: depositAmount});
+    vm.prank(bob);
+    vault.deposit(depositAmount, bob);
+
+    assertEq(vault.balanceOf(alice), 0);
+    assertGt(hub.getAssetLiquidity(assetId), 0);
+  }
+
+  function test_maxWithdraw_returnsZero() public view {
+    assertEq(vault.maxWithdraw(alice), 0);
+  }
+
+  function test_maxRedeem_returnsZero() public view {
+    assertEq(vault.maxRedeem(alice), 0);
+  }
+}
+
+contract TokenizationSpokeMaxGettersExactBoundaryAfterYieldTest is
+  TokenizationSpokeMaxGettersBaseTest
+{
+  uint40 public addCap;
+  uint256 public capWithDecimals;
+
+  function setUp() public override {
+    super.setUp();
+    addCap = 100;
+    _updateAddCap(hub, assetId, address(vault), addCap);
+
+    capWithDecimals = uint256(addCap) * MathUtils.uncheckedExp(10, vault.decimals());
+    uint256 depositAmount = capWithDecimals / 2;
+    asset.mint(alice, depositAmount);
+    SpokeActions.approve({vault: vault, owner: alice, amount: depositAmount});
+    vm.prank(alice);
+    vault.deposit(depositAmount, alice);
+
+    _simulateYield(vault, depositAmount);
+    assertGt(vault.totalAssets(), depositAmount);
+  }
+
+  function test_maxDeposit_exactBoundary_succeeds() public {
+    uint256 max = vault.maxDeposit(bob);
+    assertGt(max, 0);
+
+    asset.mint(bob, max);
+    SpokeActions.approve({vault: vault, owner: bob, amount: max});
+    vm.prank(bob);
+    vault.deposit(max, bob);
+  }
+
+  function test_maxMint_exactBoundary_succeeds() public {
+    uint256 max = vault.maxMint(bob);
+    assertGt(max, 0);
+
+    uint256 assets = vault.previewMint(max);
+    asset.mint(bob, assets);
+    SpokeActions.approve({vault: vault, owner: bob, amount: assets});
+    vm.prank(bob);
+    vault.mint(max, bob);
+  }
+}
+
+contract TokenizationSpokeMaxGettersExactBoundaryLimitedLiquidityTest is
+  TokenizationSpokeMaxGettersBaseTest
+{
+  uint256 public depositAmount;
+
+  function setUp() public override {
+    super.setUp();
+    depositAmount = 10e18;
+    asset.mint(alice, depositAmount);
+    SpokeActions.approve({vault: vault, owner: alice, amount: depositAmount});
+    vm.prank(alice);
+    vault.deposit(depositAmount, alice);
+
+    _simulateYield(vault, depositAmount);
+
+    uint256 drawnAmount = depositAmount / 2;
+    asset.mint(address(hub), drawnAmount);
+    vm.startPrank(address(spoke2));
+    hub.add(assetId, drawnAmount);
+    hub.draw(assetId, drawnAmount + depositAmount, address(spoke2));
+    vm.stopPrank();
+
+    uint256 liquidity = hub.getAssetLiquidity(assetId);
+    uint256 aliceBalance = vault.convertToAssets(vault.balanceOf(alice));
+    assertLt(liquidity, aliceBalance);
+  }
+
+  function test_maxWithdraw_exactBoundary_limitedLiquidity_succeeds() public {
+    uint256 max = vault.maxWithdraw(alice);
+    assertGt(max, 0);
+
+    vm.prank(alice);
+    vault.withdraw(max, alice, alice);
+  }
+
+  function test_maxRedeem_exactBoundary_limitedLiquidity_succeeds() public {
+    uint256 max = vault.maxRedeem(alice);
+    assertGt(max, 0);
+
+    vm.prank(alice);
+    vault.redeem(max, alice, alice);
+  }
+}

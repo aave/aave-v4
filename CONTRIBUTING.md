@@ -2,7 +2,7 @@
 
 ## Contributor License Agreement (CLA)
 
-By submitting a pull request, commit, or any other contribution to this repository, you agree to be bound by the [Aave Protocol Contributor License Agreement](./licenses/CLA_LICENSE). In summary:
+By submitting a pull request, commit, or any other contribution to this repository, you agree to be bound by the [Aave Protocol Contributor License Agreement](./CLA_LICENSE). In summary:
 
 - You **retain copyright** over your contributions.
 - You grant a **perpetual, worldwide, royalty-free license** to use, reproduce, modify, and distribute your contribution as part of the Licensed Work.
@@ -10,7 +10,7 @@ By submitting a pull request, commit, or any other contribution to this reposito
 - You acknowledge that the repository license (BUSL) **may transition** to an open-source license, and you waive the right to object.
 - You authorize the Licensor to **enforce and defend** the repository license on your behalf.
 
-Please read the full [CLA_LICENSE](./licenses/CLA_LICENSE) before contributing.
+Please read the full [CLA_LICENSE](./CLA_LICENSE) before contributing.
 
 ## Ways to Contribute
 
@@ -53,4 +53,4 @@ Be respectful. Aggressive, disrespectful, or spam contributions will be removed 
 
 ## License
 
-Aave V4 source code is licensed under [BUSL](./licenses/BUSL_LICENSE). All contributions are licensed under the [Aave Protocol CLA](./licenses/CLA_LICENSE).
+Aave V4 source code is licensed under [LICENSE](./LICENSE). All contributions are licensed under the [Aave Protocol CLA](./CLA_LICENSE).

@@ -5,5 +5,5 @@ node_modules
 snapshots
 report
 src/dependencies
-tests/mocks/JsonBindings.sol
+JsonBindings.sol
 tests/misc/prototype

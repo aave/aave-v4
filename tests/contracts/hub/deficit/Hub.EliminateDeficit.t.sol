@@ -1,0 +1,191 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+import 'tests/setup/Base.t.sol';
+
+contract HubEliminateDeficitTest is Base {
+  using WadRayMath for *;
+  using MathUtils for *;
+  using SafeCast for uint256;
+
+  uint256 internal _assetId;
+  uint256 internal _deficitAmountRay;
+  address internal _callerSpoke;
+  address internal _coveredSpoke;
+  address internal _otherSpoke;
+
+  function setUp() public override {
+    super.setUp();
+    _assetId = usdxAssetId;
+    _deficitAmountRay = uint256(1000e6 * WadRayMath.RAY) / 3;
+    _callerSpoke = address(spoke2);
+    _coveredSpoke = address(spoke1);
+    _otherSpoke = address(spoke3);
+
+    _grantDeficitEliminatorRole(hub1, address(_callerSpoke));
+  }
+
+  function test_eliminateDeficit_revertsWith_InvalidAmount_ZeroAmountNoDeficit() public {
+    vm.expectRevert(IHub.InvalidAmount.selector);
+    vm.prank(_callerSpoke);
+    hub1.eliminateDeficit(_assetId, 0, _coveredSpoke);
+  }
+
+  function test_eliminateDeficit_revertsWith_InvalidAmount_ZeroAmountWithDeficit() public {
+    _createDeficit(_assetId, _coveredSpoke, _deficitAmountRay);
+    vm.expectRevert(IHub.InvalidAmount.selector);
+    vm.prank(_callerSpoke);
+    hub1.eliminateDeficit(_assetId, 0, _coveredSpoke);
+  }
+
+  function test_eliminateDeficit_revertsWith_SpokeNotActive_on_UnregisteredAsset() public {
+    _createDeficit(_assetId, _coveredSpoke, _deficitAmountRay);
+    assertEq(hub1.getSpokeDeficitRay(_assetId, _coveredSpoke), _deficitAmountRay);
+
+    uint256 invalidAssetId = vm.randomUint(hub1.getAssetCount() + 1, UINT256_MAX);
+
+    vm.expectRevert(IHub.SpokeNotActive.selector);
+    vm.prank(_callerSpoke);
+    hub1.eliminateDeficit(invalidAssetId, vm.randomUint(1, UINT256_MAX), vm.randomAddress());
+  }
+
+  function test_eliminateDeficit_revertsWith_InvalidAmount_on_UnregisteredCoveredSpoke() public {
+    // since amount is bounded to covered spoke deficit, deficit to be eliminated bounds to 0
+    vm.expectRevert(IHub.InvalidAmount.selector);
+    vm.prank(_callerSpoke);
+    hub1.eliminateDeficit(_assetId, vm.randomUint(1, UINT256_MAX), alice); // alice is not a spoke
+  }
+
+  // Caller spoke does not have funds
+  function test_eliminateDeficit_fuzz_revertsWith_ArithmeticUnderflow_CallerSpokeNoFunds(
+    uint256
+  ) public {
+    _createDeficit(_assetId, _coveredSpoke, _deficitAmountRay);
+    uint256 deficitToEliminate = vm.randomUint(_deficitAmountRay, UINT256_MAX).fromRayUp();
+    vm.expectRevert(stdError.arithmeticError);
+    vm.prank(_callerSpoke);
+    hub1.eliminateDeficit(_assetId, deficitToEliminate, _coveredSpoke);
+  }
+
+  function test_eliminateDeficit_fuzz_revertsWith_AccessManagedUnauthorized(address caller) public {
+    vm.assume(caller != _getProxyAdminAddress(address(hub1)));
+
+    (bool immediate, uint32 delay) = IAccessManager(hub1.authority()).canCall(
+      caller,
+      address(hub1),
+      IHub.eliminateDeficit.selector
+    );
+    vm.assume(!immediate || delay > 0);
+    vm.expectRevert(
+      abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, caller)
+    );
+    vm.prank(caller);
+    hub1.eliminateDeficit(_assetId, vm.randomUint(), _coveredSpoke);
+  }
+
+  function test_eliminateDeficit_revertsWith_callerSpokeNotActive() public {
+    address caller = address(spoke1);
+    _updateSpokeActive(hub1, _assetId, caller, false);
+    _grantDeficitEliminatorRole(hub1, caller);
+
+    vm.expectRevert(IHub.SpokeNotActive.selector);
+    vm.prank(caller);
+    hub1.eliminateDeficit(_assetId, vm.randomUint(), _coveredSpoke);
+  }
+
+  function test_eliminateDeficit(uint256) public {
+    uint256 deficitAmountRay2 = _deficitAmountRay / 2;
+    _createDeficit(_assetId, _coveredSpoke, _deficitAmountRay);
+    _createDeficit(_assetId, _otherSpoke, deficitAmountRay2);
+
+    uint256 eliminateDeficitRay = vm.randomUint(1, UINT256_MAX);
+    uint256 eliminateDeficit = eliminateDeficitRay.fromRayUp();
+    uint256 clearedDeficitRay = eliminateDeficitRay.min(_deficitAmountRay);
+    uint256 clearedDeficit = clearedDeficitRay.fromRayUp();
+
+    HubActions.add({
+      hub: hub1,
+      assetId: _assetId,
+      caller: _callerSpoke,
+      amount: hub1.previewAddByShares(
+        _assetId,
+        hub1.previewRemoveByAssets(_assetId, clearedDeficit)
+      ),
+      user: alice
+    });
+    assertGe(hub1.getSpokeAddedAssets(_assetId, _callerSpoke), clearedDeficit);
+
+    uint256 expectedRemoveShares = hub1.previewRemoveByAssets(_assetId, clearedDeficit);
+    uint256 spokeAddedShares = hub1.getSpokeAddedShares(_assetId, _callerSpoke);
+    uint256 assetSuppliedShares = hub1.getAddedShares(_assetId);
+    uint256 addExRate = _getAddExRate(hub1, _assetId);
+
+    vm.expectEmit(address(hub1));
+    emit IHub.EliminateDeficit(
+      _assetId,
+      _callerSpoke,
+      _coveredSpoke,
+      expectedRemoveShares,
+      clearedDeficitRay
+    );
+    vm.prank(_callerSpoke);
+    (uint256 removedShares, uint256 deficitEliminated) = hub1.eliminateDeficit(
+      _assetId,
+      eliminateDeficit,
+      _coveredSpoke
+    );
+
+    assertEq(removedShares, expectedRemoveShares);
+    assertEq(deficitEliminated, clearedDeficit);
+    assertEq(
+      hub1.getAssetDeficitRay(_assetId),
+      deficitAmountRay2 + _deficitAmountRay - clearedDeficitRay
+    );
+    assertEq(hub1.getAddedShares(_assetId), assetSuppliedShares - expectedRemoveShares);
+    assertEq(
+      hub1.getSpokeAddedShares(_assetId, _callerSpoke),
+      spokeAddedShares - expectedRemoveShares
+    );
+    assertEq(
+      hub1.getSpokeDeficitRay(_assetId, _coveredSpoke),
+      _deficitAmountRay - clearedDeficitRay
+    );
+    assertGe(_getAddExRate(hub1, _assetId), addExRate);
+    _assertDrawnRateSynced(hub1, _assetId, 'eliminateDeficit');
+  }
+
+  function _createDeficit(uint256 assetId, address spoke, uint256 amountRay) internal {
+    _mockDrawnRateBps({irStrategy: address(irStrategy), drawnRateBps: 100_00});
+    uint256 amount = amountRay.fromRayUp();
+    HubActions.add({hub: hub1, assetId: assetId, caller: spoke, amount: amount, user: alice});
+    _drawLiquidity({
+      hub: hub1,
+      assetId: assetId,
+      amount: amount,
+      withPremium: true,
+      skipTime: true,
+      spoke: spoke
+    });
+
+    (uint256 spokePremiumShares, int256 spokePremiumOffsetRay) = hub1.getSpokePremiumData(
+      assetId,
+      spoke
+    );
+    IHubBase.PremiumDelta memory premiumDelta = _getExpectedPremiumDelta({
+      hub: hub1,
+      assetId: assetId,
+      oldPremiumShares: spokePremiumShares,
+      oldPremiumOffsetRay: spokePremiumOffsetRay,
+      drawnShares: 0,
+      riskPremium: 0,
+      restoredPremiumRay: amountRay
+    });
+
+    uint256 deficitBeforeRay = hub1.getSpokeDeficitRay(assetId, spoke);
+
+    vm.prank(spoke);
+    hub1.reportDeficit(assetId, 0, premiumDelta);
+
+    assertEq(hub1.getSpokeDeficitRay(assetId, spoke), deficitBeforeRay + amountRay);
+  }
+}

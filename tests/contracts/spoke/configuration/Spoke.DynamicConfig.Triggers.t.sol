@@ -1,0 +1,518 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+import 'tests/setup/Base.t.sol';
+
+contract SpokeDynamicConfigTriggersTest is Base {
+  using PercentageMath for uint256;
+  using SafeCast for uint256;
+
+  function test_supply_does_not_trigger_dynamicConfigUpdate() public {
+    DynamicConfigEntry[] memory configs = _getUserDynConfigKeys(spoke1, alice);
+
+    uint256 maxLiquidationBonus = _getUserDynConfig(spoke1, alice, _daiReserveId(spoke1))
+      .maxLiquidationBonus;
+    uint256 supplyAmount = 1000e6;
+    uint256 collateralReserveId = _usdxReserveId(spoke1);
+    uint256 debtReserveId = _daiReserveId(spoke1);
+    uint256 collateralFactor = vm
+      .randomUint(0, _collateralFactorUpperBound(maxLiquidationBonus))
+      .toUint16();
+
+    SpokeActions.supplyCollateral({
+      spoke: spoke1,
+      reserveId: collateralReserveId,
+      caller: alice,
+      amount: supplyAmount,
+      onBehalfOf: alice
+    });
+    _updateCollateralFactor(spoke1, collateralReserveId, collateralFactor);
+
+    assertEq(_getUserDynConfigKeys(spoke1, alice), configs);
+
+    // compute max borrowable amount
+    uint256 borrowAmount = collateralFactor.percentMulDown(
+      _convertValueToAmount(
+        spoke1,
+        debtReserveId,
+        _convertAmountToValue(spoke1, collateralReserveId, supplyAmount)
+      )
+    );
+    _openSupplyPosition(spoke1, debtReserveId, borrowAmount);
+    SpokeActions.borrow({
+      spoke: spoke1,
+      reserveId: debtReserveId,
+      caller: alice,
+      amount: borrowAmount,
+      onBehalfOf: alice
+    });
+    configs = _getUserDynConfigKeys(spoke1, alice);
+    _updateCollateralFactor(
+      spoke1,
+      collateralReserveId,
+      vm.randomUint(0, _collateralFactorUpperBound(maxLiquidationBonus)).toUint16()
+    );
+
+    assertEq(_getUserDynConfigKeys(spoke1, alice), configs);
+
+    SpokeActions.supply({
+      spoke: spoke1,
+      reserveId: collateralReserveId,
+      caller: alice,
+      amount: supplyAmount,
+      onBehalfOf: alice
+    });
+
+    _assertDynamicConfigRefreshEventsNotEmitted();
+    // user config should not change
+    assertEq(_getUserDynConfigKeys(spoke1, alice), configs);
+    assertNotEq(_getSpokeDynConfigKeys(spoke1), configs);
+  }
+
+  function test_repay_does_not_trigger_dynamicConfigUpdate() public {
+    DynamicConfigEntry[] memory configs = _getUserDynConfigKeys(spoke1, alice);
+    SpokeActions.supplyCollateral({
+      spoke: spoke1,
+      reserveId: _usdxReserveId(spoke1),
+      caller: alice,
+      amount: 1000e6,
+      onBehalfOf: alice
+    });
+    _openSupplyPosition(spoke1, _daiReserveId(spoke1), 500e18);
+    SpokeActions.borrow({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      caller: alice,
+      amount: 500e18,
+      onBehalfOf: alice
+    });
+
+    configs = _getUserDynConfigKeys(spoke1, alice);
+    _updateCollateralFactor(spoke1, _usdxReserveId(spoke1), 90_10);
+    skip(322 days);
+    SpokeActions.repay({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      caller: alice,
+      amount: UINT256_MAX,
+      onBehalfOf: alice
+    });
+
+    _assertDynamicConfigRefreshEventsNotEmitted();
+    // user config should not change
+    assertEq(_getUserDynConfigKeys(spoke1, alice), configs);
+    assertNotEq(_getSpokeDynConfigKeys(spoke1), configs);
+  }
+
+  function test_liquidate_does_not_trigger_dynamicConfigUpdate() public {
+    DynamicConfigEntry[] memory configs = _getUserDynConfigKeys(spoke1, alice);
+
+    SpokeActions.supplyCollateral({
+      spoke: spoke1,
+      reserveId: _usdxReserveId(spoke1),
+      caller: alice,
+      amount: 1_000_000e6,
+      onBehalfOf: alice
+    });
+    _openSupplyPosition(spoke1, _daiReserveId(spoke1), 500_000e18);
+    SpokeActions.borrow({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      caller: alice,
+      amount: 500_000e18,
+      onBehalfOf: alice
+    });
+    configs = _getUserDynConfigKeys(spoke1, alice);
+    skip(322 days);
+
+    // usdx (user coll) is offboarded
+    _updateCollateralFactor(spoke1, _usdxReserveId(spoke1), 0);
+    // position is still healthy
+    assertGe(_getUserHealthFactor(spoke1, alice), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
+
+    _mockReservePrice({spoke: spoke1, reserveId: _usdxReserveId(spoke1), price: 0.5e8}); // make position partially liquidatable
+    assertLe(_getUserHealthFactor(spoke1, alice), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
+
+    vm.prank(bob);
+    spoke1.liquidationCall(_usdxReserveId(spoke1), _daiReserveId(spoke1), alice, 100_000e18, false);
+
+    _assertDynamicConfigRefreshEventsNotEmitted();
+    assertEq(_getUserDynConfigKeys(spoke1, alice), configs);
+    assertNotEq(_getSpokeDynConfigKeys(spoke1), configs);
+
+    skip(123 days);
+
+    _updateCollateralFactor(spoke1, _usdxReserveId(spoke1), 80_00);
+
+    vm.prank(bob);
+    spoke1.liquidationCall(
+      _usdxReserveId(spoke1),
+      _daiReserveId(spoke1),
+      alice,
+      UINT256_MAX,
+      false
+    );
+
+    _assertDynamicConfigRefreshEventsNotEmitted();
+    assertEq(_getUserDynConfigKeys(spoke1, alice), configs);
+    assertNotEq(_getSpokeDynConfigKeys(spoke1), configs);
+  }
+
+  function test_borrow_triggers_dynamicConfigUpdate() public {
+    DynamicConfigEntry[] memory configs = _getUserDynConfigKeys(spoke1, alice);
+
+    SpokeActions.supplyCollateral({
+      spoke: spoke1,
+      reserveId: _usdxReserveId(spoke1),
+      caller: alice,
+      amount: 1000e6,
+      onBehalfOf: alice
+    });
+    _openSupplyPosition(spoke1, _daiReserveId(spoke1), 600e18);
+    SpokeActions.borrow({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      caller: alice,
+      amount: 500e18,
+      onBehalfOf: alice
+    });
+    configs = _getUserDynConfigKeys(spoke1, alice);
+    skip(322 days);
+
+    _updateCollateralFactor(spoke1, _usdxReserveId(spoke1), 0);
+    vm.expectRevert(ISpoke.HealthFactorBelowThreshold.selector);
+    vm.prank(alice);
+    spoke1.borrow(_daiReserveId(spoke1), 100e18, alice);
+
+    uint256 maxLiquidationBonus = _getUserDynConfig(spoke1, alice, _daiReserveId(spoke1))
+      .maxLiquidationBonus;
+
+    _updateCollateralFactor(
+      spoke1,
+      _usdxReserveId(spoke1),
+      vm.randomUint(0, _collateralFactorUpperBound(maxLiquidationBonus)).toUint16()
+    );
+    configs = _getUserDynConfigKeys(spoke1, alice);
+    SpokeActions.supplyCollateral({
+      spoke: spoke1,
+      reserveId: _wethReserveId(spoke1),
+      caller: alice,
+      amount: 1e18,
+      onBehalfOf: alice
+    });
+
+    vm.expectEmit(address(spoke1));
+    emit ISpoke.RefreshAllUserDynamicConfig(alice);
+    SpokeActions.borrow({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      caller: alice,
+      amount: 100e18,
+      onBehalfOf: alice
+    });
+
+    assertNotEq(_getUserDynConfigKeys(spoke1, alice), configs);
+    assertEq(_getSpokeDynConfigKeys(spoke1), _getUserDynConfigKeys(spoke1, alice));
+  }
+
+  function test_withdraw_triggers_dynamicConfigUpdate() public {
+    DynamicConfigEntry[] memory configs = _getUserDynConfigKeys(spoke1, alice);
+
+    SpokeActions.supplyCollateral({
+      spoke: spoke1,
+      reserveId: _usdxReserveId(spoke1),
+      caller: alice,
+      amount: 1000e6,
+      onBehalfOf: alice
+    });
+    _openSupplyPosition(spoke1, _daiReserveId(spoke1), 600e18);
+    SpokeActions.borrow({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      caller: alice,
+      amount: 500e18,
+      onBehalfOf: alice
+    });
+    configs = _getUserDynConfigKeys(spoke1, alice);
+    skip(322 days);
+
+    _updateCollateralFactor(spoke1, _usdxReserveId(spoke1), 0);
+    vm.expectRevert(ISpoke.HealthFactorBelowThreshold.selector);
+    vm.prank(alice);
+    spoke1.withdraw(_usdxReserveId(spoke1), 500e6, alice);
+
+    _updateCollateralFactor(
+      spoke1,
+      _usdxReserveId(spoke1),
+      _randomCollateralFactor(spoke1, _usdxReserveId(spoke1))
+    );
+    configs = _getUserDynConfigKeys(spoke1, alice);
+    SpokeActions.supplyCollateral({
+      spoke: spoke1,
+      reserveId: _wethReserveId(spoke1),
+      caller: alice,
+      amount: 1e18,
+      onBehalfOf: alice
+    });
+
+    vm.expectEmit(address(spoke1));
+    emit ISpoke.RefreshAllUserDynamicConfig(alice);
+    SpokeActions.withdraw({
+      spoke: spoke1,
+      reserveId: _usdxReserveId(spoke1),
+      caller: alice,
+      amount: 500e6,
+      onBehalfOf: alice
+    });
+
+    assertNotEq(_getUserDynConfigKeys(spoke1, alice), configs);
+    assertEq(_getSpokeDynConfigKeys(spoke1), _getUserDynConfigKeys(spoke1, alice));
+  }
+
+  function test_usingAsCollateral_triggers_dynamicConfigUpdate() public {
+    DynamicConfigEntry[] memory configs = _getUserDynConfigKeys(spoke1, alice);
+
+    SpokeActions.supplyCollateral({
+      spoke: spoke1,
+      reserveId: _usdxReserveId(spoke1),
+      caller: alice,
+      amount: 1000e6,
+      onBehalfOf: alice
+    });
+    _openSupplyPosition(spoke1, _daiReserveId(spoke1), 600e18);
+    SpokeActions.borrow({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      caller: alice,
+      amount: 500e18,
+      onBehalfOf: alice
+    });
+    configs = _getUserDynConfigKeys(spoke1, alice);
+    skip(322 days);
+
+    _updateCollateralFactor(spoke1, _usdxReserveId(spoke1), 0);
+    vm.expectRevert(ISpoke.HealthFactorBelowThreshold.selector);
+    vm.prank(alice);
+    spoke1.setUsingAsCollateral(_usdxReserveId(spoke1), false, alice);
+
+    uint256 reserveId = _usdxReserveId(spoke1);
+    _updateCollateralFactor(spoke1, reserveId, _randomCollateralFactor(spoke1, reserveId));
+    configs = _getUserDynConfigKeys(spoke1, alice);
+    SpokeActions.supply({
+      spoke: spoke1,
+      reserveId: _wethReserveId(spoke1),
+      caller: alice,
+      amount: 1e18,
+      onBehalfOf: alice
+    });
+
+    // when enabling, only the relevant asset is refreshed
+    vm.expectEmit(address(spoke1));
+    emit ISpoke.RefreshSingleUserDynamicConfig(alice, _wethReserveId(spoke1));
+    vm.prank(alice);
+    spoke1.setUsingAsCollateral(_wethReserveId(spoke1), true, alice);
+
+    DynamicConfigEntry[] memory userConfig = _getUserDynConfigKeys(spoke1, alice);
+    DynamicConfigEntry[] memory spokeConfig = _getSpokeDynConfigKeys(spoke1);
+    // weth is refreshed but not all
+    assertEq(userConfig[_wethReserveId(spoke1)], spokeConfig[_wethReserveId(spoke1)]);
+    assertNotEq(abi.encode(userConfig), abi.encode(spokeConfig));
+
+    // when disabling all configs are refreshed
+    vm.expectEmit(address(spoke1));
+    emit ISpoke.RefreshAllUserDynamicConfig(alice);
+    vm.prank(alice);
+    spoke1.setUsingAsCollateral(_usdxReserveId(spoke1), false, alice);
+
+    assertNotEq(_getUserDynConfigKeys(spoke1, alice), configs);
+    assertEq(_getSpokeDynConfigKeys(spoke1), _getUserDynConfigKeys(spoke1, alice));
+  }
+
+  function test_updateUserDynamicConfig_triggers_dynamicConfigUpdate() public {
+    SpokeActions.supplyCollateral({
+      spoke: spoke1,
+      reserveId: _usdxReserveId(spoke1),
+      caller: alice,
+      amount: 1000e6,
+      onBehalfOf: alice
+    });
+    SpokeActions.supplyCollateral({
+      spoke: spoke1,
+      reserveId: _wethReserveId(spoke1),
+      caller: alice,
+      amount: 1e18,
+      onBehalfOf: alice
+    });
+
+    _updateCollateralFactor(spoke1, _usdxReserveId(spoke1), 95_00);
+    _updateCollateralFactor(spoke1, _wethReserveId(spoke1), 90_00);
+    DynamicConfigEntry[] memory configs = _getUserDynConfigKeys(spoke1, alice);
+
+    // no action yet, so user config should not change
+    assertEq(_getUserDynConfigKeys(spoke1, alice), configs);
+    assertNotEq(_getSpokeDynConfigKeys(spoke1), configs);
+
+    // manually trigger update
+    vm.expectEmit(address(spoke1));
+    emit ISpoke.RefreshAllUserDynamicConfig(alice);
+    vm.prank(alice);
+    spoke1.updateUserDynamicConfig(alice);
+
+    // user config should change
+    assertNotEq(_getUserDynConfigKeys(spoke1, alice), configs);
+    assertEq(_getSpokeDynConfigKeys(spoke1), _getUserDynConfigKeys(spoke1, alice));
+  }
+
+  function test_updateUserDynamicConfig_reverts_when_not_authorized(address caller) public {
+    vm.assume(
+      caller != alice &&
+        caller != POSITION_MANAGER &&
+        caller != SPOKE_ADMIN &&
+        caller != USER_POSITION_UPDATER &&
+        caller != _getProxyAdminAddress(address(spoke1))
+    );
+
+    SpokeActions.supplyCollateral({
+      spoke: spoke1,
+      reserveId: _usdxReserveId(spoke1),
+      caller: alice,
+      amount: 1000e6,
+      onBehalfOf: alice
+    });
+    SpokeActions.supplyCollateral({
+      spoke: spoke1,
+      reserveId: _wethReserveId(spoke1),
+      caller: alice,
+      amount: 1e18,
+      onBehalfOf: alice
+    });
+
+    _updateCollateralFactor(spoke1, _usdxReserveId(spoke1), 95_00);
+    _updateCollateralFactor(spoke1, _wethReserveId(spoke1), 90_00);
+    DynamicConfigEntry[] memory configs = _getUserDynConfigKeys(spoke1, alice);
+
+    // no action yet, so user config should not change
+    assertEq(_getUserDynConfigKeys(spoke1, alice), configs);
+    assertNotEq(_getSpokeDynConfigKeys(spoke1), configs);
+
+    // Caller other than alice, position manager or approved admin should not be able to update
+    vm.expectRevert(
+      abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, caller)
+    );
+    vm.prank(caller);
+    spoke1.updateUserDynamicConfig(alice);
+
+    assertFalse(spoke1.isPositionManager(alice, POSITION_MANAGER));
+    vm.expectRevert(
+      abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, POSITION_MANAGER)
+    );
+    vm.prank(POSITION_MANAGER);
+    spoke1.updateUserDynamicConfig(alice);
+
+    vm.prank(ADMIN);
+    spoke1.updatePositionManager({positionManager: POSITION_MANAGER, active: true});
+
+    vm.prank(alice);
+    spoke1.setUserPositionManager(POSITION_MANAGER, true);
+
+    _updateUserDynamicConfig({caller: alice, existingConfigs: configs});
+    _updateUserDynamicConfig({caller: POSITION_MANAGER, existingConfigs: configs});
+    _updateUserDynamicConfig({caller: SPOKE_ADMIN, existingConfigs: configs});
+    _updateUserDynamicConfig({caller: USER_POSITION_UPDATER, existingConfigs: configs});
+  }
+
+  function test_updateUserDynamicConfig_updatesRP() public {
+    // Supply 2 collaterals such that 1 exactly covers debt initially
+    SpokeActions.supplyCollateral({
+      spoke: spoke1,
+      reserveId: _usdxReserveId(spoke1),
+      caller: alice,
+      amount: 1000e6,
+      onBehalfOf: alice
+    });
+    SpokeActions.supplyCollateral({
+      spoke: spoke1,
+      reserveId: _wethReserveId(spoke1),
+      caller: alice,
+      amount: 1e18,
+      onBehalfOf: alice
+    });
+    _openSupplyPosition(spoke1, _daiReserveId(spoke1), 2000e18);
+
+    SpokeActions.borrow({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      caller: alice,
+      amount: 2000e18,
+      onBehalfOf: alice
+    });
+
+    // Alice's dai debt is exactly covered by her weth collateral
+    assertEq(
+      _convertAmountToValue(spoke1, _daiReserveId(spoke1), 2000e18),
+      _convertAmountToValue(spoke1, _wethReserveId(spoke1), 1e18),
+      'weth supply covers debt'
+    );
+
+    uint256 initialRP = _getUserRiskPremium(spoke1, alice);
+
+    skip(365 days);
+
+    // Change some dynamic config
+    _updateCollateralFactor(spoke1, _usdxReserveId(spoke1), 95_00);
+    _updateCollateralFactor(spoke1, _wethReserveId(spoke1), 90_00);
+
+    // Alice updates her dynamic config
+    DynamicConfigEntry[] memory configs = _getUserDynConfigKeys(spoke1, alice);
+    _updateUserDynamicConfig(alice, configs);
+
+    // Alice's Risk premium updated
+    uint256 newRP = _getUserRiskPremium(spoke1, alice);
+    assertNotEq(initialRP, newRP);
+  }
+
+  function test_updateUserDynamicConfig_doesHFCheck() public {
+    // Supply 1 collateral that is sufficient to cover debt
+    SpokeActions.supplyCollateral({
+      spoke: spoke1,
+      reserveId: _usdxReserveId(spoke1),
+      caller: alice,
+      amount: 1000e6,
+      onBehalfOf: alice
+    });
+    _openSupplyPosition(spoke1, _daiReserveId(spoke1), 500e18);
+    SpokeActions.borrow({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      caller: alice,
+      amount: 500e18,
+      onBehalfOf: alice
+    });
+
+    // Change CF such that alice's position is undercollateralized
+    _updateCollateralFactor(spoke1, _usdxReserveId(spoke1), 1);
+
+    // Alice cannot update her dynamic config due to HF check
+    vm.expectRevert(ISpoke.HealthFactorBelowThreshold.selector);
+    vm.prank(alice);
+    spoke1.updateUserDynamicConfig(alice);
+  }
+
+  function _updateUserDynamicConfig(
+    address caller,
+    DynamicConfigEntry[] memory existingConfigs
+  ) internal {
+    uint256 snapshotId = vm.snapshotState();
+
+    vm.expectEmit(address(spoke1));
+    emit ISpoke.RefreshAllUserDynamicConfig(alice);
+    vm.prank(caller);
+    spoke1.updateUserDynamicConfig(alice);
+
+    // user config should change
+    assertNotEq(_getUserDynConfigKeys(spoke1, alice), existingConfigs);
+    assertEq(_getSpokeDynConfigKeys(spoke1), _getUserDynConfigKeys(spoke1, alice));
+
+    vm.revertToState(snapshotId);
+  }
+}

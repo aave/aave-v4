@@ -25,18 +25,21 @@ The Aave V4 architecture follows a modular **hub-and-spoke design** that separat
 ```
 aave-v4/
 ├── src/                          # Main source code
+│   ├── access/                   # Access control contracts
+│   ├── dependencies/             # Dependencies (Chainlink, OpenZeppelin, etc.)
 │   ├── hub/                      # Hub contracts and interfaces
-│   ├── spoke/                    # Spoke contracts and interfaces
-│   ├── position-manager/         # Position Managers, including gateway contracts
+│   ├── interfaces/               # Shared interfaces
 │   ├── libraries/                # Shared libraries (math, types)
-│   ├── utils/                    # Utility contracts (Multicall, etc.)
-│   └── dependencies/             # Dependencies (Chainlink, OpenZeppelin, etc.)
+│   ├── misc/                     # Miscellaneous contracts
+│   ├── position-manager/         # Position Managers, including gateway contracts
+│   ├── spoke/                    # Spoke contracts and interfaces
+│   └── utils/                    # Utility contracts (Multicall, etc.)
 ├── tests/                        # Test suite
-│   ├── unit/                     # Unit tests
+│   ├── contracts/                # Contract tests (hub, spoke, tokenization, etc.)
 │   ├── gas/                      # Gas snapshot tests
-│   ├── invariant/                # Invariant tests
+│   ├── helpers/                  # Test helpers and mocks
 │   ├── misc/                     # Symbolic tests, prototype development
-│   └── Base.t.sol                # Base test setup
+│   └── setup/                    # Base test setup and fixtures
 ├── scripts/                      # Deployment scripts
 ├── snapshots/                    # Gas snapshots
 └── lib/                          # Foundry dependencies
@@ -147,7 +150,7 @@ Snapshot files generated:
 
 ### Audit Reports
 
-You can find all audit reports under the audits folder
+You can find all audit reports under [audits](./audits/):
 
 - [2026-02-05 - Aave V4 - Blackthorn](./audits/2026-02-05_Aave-V4_Blackthorn.pdf)
 - [2026-02-10 - Aave V4 - TrailOfBits](./audits/2026-02-10_Aave-V4_TrailOfBits.pdf)
@@ -159,8 +162,8 @@ Further details will be made available soon.
 
 # License
 
-Aave V4 is licensed under the Business Source License, see [BUSL_LICENSE](./licenses/BUSL_LICENSE). Each Solidity file in Aave V4 states the applicable license.
+Aave V4 is licensed under the Business Source License, see [LICENSE](./LICENSE). Each Solidity file in Aave V4 states the applicable license. As a customized license, BUSL uses the `LicenseRef-` prefix per [SPDX Spec v2.3, Annex E](https://spdx.github.io/spdx-spec/v2.3/using-SPDX-short-identifiers-in-source-files/).
 
 # Contributing
 
-Contributions are licensed under the Aave Protocol Contributor License Agreement, see [CLA_LICENSE](./licenses/CLA_LICENSE). See [CONTRIBUTING](./CONTRIBUTING.md) for further details and guidelines.
+Contributions are licensed under the Aave Protocol Contributor License Agreement, see [CLA_LICENSE](./CLA_LICENSE). See [CONTRIBUTING](./CONTRIBUTING.md) for further details and guidelines.

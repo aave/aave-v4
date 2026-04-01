@@ -1,0 +1,555 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+import 'tests/setup/Base.t.sol';
+
+contract SpokeConfigTest is Base {
+  using SafeCast for *;
+  using PercentageMath for uint256;
+
+  function test_spoke_deploy() public {
+    address oracle = makeAddr('AaveOracle');
+    vm.expectCall(oracle, abi.encodeCall(IPriceOracle.decimals, ()), 1);
+    vm.mockCall(oracle, abi.encodeCall(IPriceOracle.decimals, ()), abi.encode(8));
+    ISpoke instance = ISpoke(
+      address(DeployUtils.deploySpokeImplementation(oracle, MAX_ALLOWED_USER_RESERVES_LIMIT))
+    );
+    assertEq(instance.ORACLE(), oracle);
+    assertEq(instance.MAX_USER_RESERVES_LIMIT(), MAX_ALLOWED_USER_RESERVES_LIMIT);
+    assertNotEq(instance.getLiquidationLogic(), address(0));
+  }
+
+  function test_spoke_deploy_reverts_on_InvalidConstructorInput() public {
+    DeployWrapper deployer = new DeployWrapper();
+
+    vm.expectRevert();
+    deployer.deploySpokeImplementation(address(0), MAX_ALLOWED_USER_RESERVES_LIMIT);
+  }
+
+  function test_spoke_deploy_reverts_on_InvalidOracleDecimals() public {
+    DeployWrapper deployer = new DeployWrapper();
+    address oracle = makeAddr('AaveOracle');
+
+    vm.mockCall(oracle, abi.encodeCall(IPriceOracle.decimals, ()), abi.encode(7));
+    vm.expectRevert();
+    deployer.deploySpokeImplementation(oracle, MAX_ALLOWED_USER_RESERVES_LIMIT);
+  }
+
+  function test_spoke_deploy_reverts_on_InvalidMaxUserReservesLimit() public {
+    DeployWrapper deployer = new DeployWrapper();
+    address oracle = makeAddr('AaveOracle');
+
+    vm.mockCall(oracle, abi.encodeCall(IPriceOracle.decimals, ()), abi.encode(8));
+    vm.expectRevert();
+    deployer.deploySpokeImplementation(oracle, 0);
+  }
+
+  function test_updateReservePriceSource_revertsWith_AccessManagedUnauthorized(
+    address caller
+  ) public {
+    vm.assume(
+      caller != SPOKE_ADMIN &&
+        caller != ADMIN &&
+        caller != SPOKE_CONFIGURATOR &&
+        caller != _getProxyAdminAddress(address(spoke1))
+    );
+    vm.expectRevert(
+      abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, caller)
+    );
+    vm.prank(caller);
+    spoke1.updateReservePriceSource(0, address(0));
+  }
+
+  function test_updateReservePriceSource_revertsWith_ReserveNotListed() public {
+    uint256 reserveId = vm.randomUint(spoke1.getReserveCount(), UINT256_MAX);
+    vm.expectRevert(ISpoke.ReserveNotListed.selector);
+    vm.prank(SPOKE_ADMIN);
+    spoke1.updateReservePriceSource(reserveId, vm.randomAddress());
+  }
+
+  function test_updateReservePriceSource() public {
+    uint256 reserveId = 0;
+    address reserveSource = _deployMockPriceFeed(spoke1, 1e8);
+    vm.expectEmit(address(spoke1));
+    emit ISpoke.UpdateReservePriceSource(reserveId, reserveSource);
+    vm.expectCall(
+      address(oracle1),
+      abi.encodeCall(IAaveOracle.setReserveSource, (reserveId, reserveSource))
+    );
+    vm.prank(SPOKE_ADMIN);
+    spoke1.updateReservePriceSource(reserveId, reserveSource);
+  }
+
+  function test_updateReserveConfig() public {
+    uint256 daiReserveId = _daiReserveId(spoke1);
+    ISpoke.ReserveConfig memory config = spoke1.getReserveConfig(daiReserveId);
+
+    ISpoke.ReserveConfig memory newReserveConfig = ISpoke.ReserveConfig({
+      paused: !config.paused,
+      frozen: !config.frozen,
+      borrowable: !config.borrowable,
+      receiveSharesEnabled: !config.receiveSharesEnabled,
+      collateralRisk: config.collateralRisk + 1
+    });
+    vm.expectEmit(address(spoke1));
+    emit ISpoke.UpdateReserveConfig(daiReserveId, newReserveConfig);
+    vm.prank(SPOKE_ADMIN);
+    spoke1.updateReserveConfig(daiReserveId, newReserveConfig);
+
+    assertEq(spoke1.getReserveConfig(daiReserveId), newReserveConfig);
+  }
+
+  function test_updateReserveConfig_fuzz(ISpoke.ReserveConfig memory newReserveConfig) public {
+    newReserveConfig.collateralRisk = bound(
+      newReserveConfig.collateralRisk,
+      0,
+      MAX_ALLOWED_COLLATERAL_RISK
+    ).toUint24();
+
+    uint256 daiReserveId = _daiReserveId(spoke1);
+
+    vm.expectEmit(address(spoke1));
+    emit ISpoke.UpdateReserveConfig(daiReserveId, newReserveConfig);
+    vm.prank(SPOKE_ADMIN);
+    spoke1.updateReserveConfig(daiReserveId, newReserveConfig);
+
+    assertEq(spoke1.getReserveConfig(daiReserveId), newReserveConfig);
+  }
+
+  function test_updateReserveConfig_revertsWith_InvalidCollateralRisk() public {
+    uint256 reserveId = _randomReserveId(spoke1);
+    ISpoke.ReserveConfig memory config = spoke1.getReserveConfig(reserveId);
+    config.collateralRisk = vm
+      .randomUint(PercentageMath.PERCENTAGE_FACTOR * 10 + 1, type(uint24).max)
+      .toUint24();
+
+    vm.expectRevert(ISpoke.InvalidCollateralRisk.selector);
+    vm.prank(SPOKE_ADMIN);
+    spoke1.updateReserveConfig(reserveId, config);
+  }
+
+  function test_updateReserveConfig_revertsWith_ReserveNotListed() public {
+    uint256 reserveId = vm.randomUint(spoke1.getReserveCount() + 1, UINT256_MAX);
+    ISpoke.ReserveConfig memory config;
+
+    vm.expectRevert(ISpoke.ReserveNotListed.selector);
+    vm.prank(SPOKE_ADMIN);
+    spoke1.updateReserveConfig(reserveId, config);
+  }
+
+  function test_addReserve() public {
+    uint256 reserveId = spoke1.getReserveCount();
+    ISpoke.ReserveConfig memory newReserveConfig = _getDefaultReserveConfig(10_00);
+    ISpoke.DynamicReserveConfig memory newDynReserveConfig = ISpoke.DynamicReserveConfig({
+      collateralFactor: 10_00,
+      maxLiquidationBonus: 110_00,
+      liquidationFee: 10_00
+    });
+
+    address reserveSource = _deployMockPriceFeed(spoke1, 1e8);
+
+    vm.expectEmit(address(spoke1));
+    emit ISpoke.AddReserve(reserveId, usdzAssetId, address(hub1));
+    vm.expectEmit(address(spoke1));
+    emit ISpoke.UpdateReserveConfig(reserveId, newReserveConfig);
+    vm.expectEmit(address(spoke1));
+    emit ISpoke.AddDynamicReserveConfig({
+      reserveId: reserveId,
+      dynamicConfigKey: 0,
+      config: newDynReserveConfig
+    });
+
+    vm.prank(SPOKE_ADMIN);
+    spoke1.addReserve(
+      address(hub1),
+      usdzAssetId,
+      reserveSource,
+      newReserveConfig,
+      newDynReserveConfig
+    );
+
+    assertEq(spoke1.getReserveConfig(reserveId), newReserveConfig);
+    assertEq(_getLatestDynamicReserveConfig(spoke1, reserveId), newDynReserveConfig);
+    assertEq(spoke1.getReserveId(address(hub1), usdzAssetId), reserveId);
+  }
+
+  function test_addReserve_fuzz_revertsWith_AssetNotListed() public {
+    uint256 assetId = vm.randomUint(hub1.getAssetCount(), MAX_ALLOWED_ASSET_ID); // non-existing asset id
+
+    ISpoke.ReserveConfig memory newReserveConfig = _getDefaultReserveConfig(10_00);
+    ISpoke.DynamicReserveConfig memory newDynReserveConfig = ISpoke.DynamicReserveConfig({
+      collateralFactor: 10_00,
+      maxLiquidationBonus: 110_00,
+      liquidationFee: 0
+    });
+
+    address reserveSource = _deployMockPriceFeed(spoke1, 1e8);
+    vm.expectRevert(ISpoke.AssetNotListed.selector, address(spoke1));
+    vm.prank(SPOKE_ADMIN);
+    spoke1.addReserve(address(hub1), assetId, reserveSource, newReserveConfig, newDynReserveConfig);
+  }
+
+  function test_addReserve_revertsWith_InvalidUnderlyingDecimals() public {
+    uint256 assetId = usdzAssetId;
+    ISpoke.ReserveConfig memory newReserveConfig = _getDefaultReserveConfig(10_00);
+    ISpoke.DynamicReserveConfig memory newDynReserveConfig = ISpoke.DynamicReserveConfig({
+      collateralFactor: 10_00,
+      maxLiquidationBonus: 110_00,
+      liquidationFee: 10_00
+    });
+
+    address reserveSource = _deployMockPriceFeed(spoke1, 1e8);
+
+    vm.mockCall(
+      address(hub1),
+      abi.encodeCall(IHubBase.getAssetUnderlyingAndDecimals, (assetId)),
+      abi.encode(address(tokenList.dai), 19)
+    );
+
+    vm.expectRevert(ISpoke.InvalidAssetDecimals.selector, address(spoke1));
+    vm.prank(SPOKE_ADMIN);
+    spoke1.addReserve(address(hub1), assetId, reserveSource, newReserveConfig, newDynReserveConfig);
+  }
+
+  function test_addReserve_revertsWith_InvalidAddress_hub() public {
+    (ISpoke newSpoke, ) = _deploySpokeWithOracle(ADMIN, address(accessManager));
+
+    ISpoke.ReserveConfig memory newReserveConfig;
+    ISpoke.DynamicReserveConfig memory newDynReserveConfig;
+
+    vm.expectRevert(ISpoke.InvalidAddress.selector, address(newSpoke));
+    vm.prank(ADMIN);
+    newSpoke.addReserve(
+      address(0),
+      vm.randomUint(),
+      vm.randomAddress(),
+      newReserveConfig,
+      newDynReserveConfig
+    );
+  }
+
+  function test_addReserve_revertsWith_InvalidAddress_oracle() public {
+    (ISpoke newSpoke, ) = _deploySpokeWithOracle(ADMIN, address(accessManager));
+
+    ISpoke.ReserveConfig memory newReserveConfig = _getDefaultReserveConfig(10_00);
+    ISpoke.DynamicReserveConfig memory newDynReserveConfig = ISpoke.DynamicReserveConfig({
+      collateralFactor: 10_00,
+      maxLiquidationBonus: 110_00,
+      liquidationFee: 10_00
+    });
+
+    vm.expectRevert(ISpoke.InvalidAddress.selector, address(newSpoke));
+    vm.prank(ADMIN);
+    newSpoke.addReserve(
+      address(hub1),
+      wethAssetId,
+      address(0),
+      newReserveConfig,
+      newDynReserveConfig
+    );
+  }
+
+  function test_addReserve_revertsWith_ReserveExists() public {
+    ISpoke.ReserveConfig memory newReserveConfig = _getDefaultReserveConfig(10_00);
+    ISpoke.DynamicReserveConfig memory newDynReserveConfig = ISpoke.DynamicReserveConfig({
+      collateralFactor: 10_00,
+      maxLiquidationBonus: 110_00,
+      liquidationFee: 10_00
+    });
+
+    address reserveSource = _deployMockPriceFeed(spoke1, 1e8);
+
+    vm.prank(SPOKE_ADMIN);
+    spoke1.addReserve(
+      address(hub1),
+      usdzAssetId,
+      reserveSource,
+      newReserveConfig,
+      newDynReserveConfig
+    );
+
+    vm.expectRevert(ISpoke.ReserveExists.selector);
+    vm.prank(SPOKE_ADMIN);
+    spoke1.addReserve(
+      address(hub1),
+      usdzAssetId,
+      reserveSource,
+      newReserveConfig,
+      newDynReserveConfig
+    );
+  }
+
+  function test_addReserve_revertsWith_InvalidAssetId() public {
+    ISpoke.ReserveConfig memory newReserveConfig = _getDefaultReserveConfig(10_00);
+    ISpoke.DynamicReserveConfig memory newDynReserveConfig = ISpoke.DynamicReserveConfig({
+      collateralFactor: 10_00,
+      maxLiquidationBonus: 110_00,
+      liquidationFee: 10_00
+    });
+
+    vm.expectRevert(ISpoke.InvalidAssetId.selector, address(spoke1));
+    vm.prank(ADMIN);
+    spoke1.addReserve(
+      address(hub1),
+      MAX_ALLOWED_ASSET_ID + 1, // invalid assetId
+      address(0),
+      newReserveConfig,
+      newDynReserveConfig
+    );
+  }
+
+  function test_getReserveId_fuzz(uint256 reserveId) public view {
+    reserveId = bound(reserveId, 0, spoke1.getReserveCount() - 1);
+    uint256 assetId = spoke1.getReserve(reserveId).assetId;
+
+    uint256 returnedId = spoke1.getReserveId(address(hub1), assetId);
+    assertEq(returnedId, _getReserveIdByAssetId(spoke1, hub1, assetId));
+  }
+
+  function test_getReserveId_fuzz_multipleHubs(uint256 reserveId) public {
+    (IHub hub2, ) = hub2Fixture();
+    (IHub hub3, ) = hub3Fixture();
+
+    vm.startPrank(ADMIN);
+    spoke1.addReserve(
+      address(hub2),
+      0,
+      _deployMockPriceFeed(spoke1, 2000e8),
+      spokeInfo[spoke1].weth.reserveConfig,
+      spokeInfo[spoke1].weth.dynReserveConfig
+    );
+    spoke1.addReserve(
+      address(hub2),
+      1,
+      _deployMockPriceFeed(spoke1, 2000e8),
+      spokeInfo[spoke1].usdx.reserveConfig,
+      spokeInfo[spoke1].usdx.dynReserveConfig
+    );
+    spoke1.addReserve(
+      address(hub2),
+      2,
+      _deployMockPriceFeed(spoke1, 2000e8),
+      spokeInfo[spoke1].dai.reserveConfig,
+      spokeInfo[spoke1].dai.dynReserveConfig
+    );
+    spoke1.addReserve(
+      address(hub2),
+      3,
+      _deployMockPriceFeed(spoke1, 2000e8),
+      spokeInfo[spoke1].wbtc.reserveConfig,
+      spokeInfo[spoke1].wbtc.dynReserveConfig
+    );
+
+    spoke1.addReserve(
+      address(hub3),
+      0,
+      _deployMockPriceFeed(spoke1, 2000e8),
+      spokeInfo[spoke1].dai.reserveConfig,
+      spokeInfo[spoke1].dai.dynReserveConfig
+    );
+    spoke1.addReserve(
+      address(hub3),
+      1,
+      _deployMockPriceFeed(spoke1, 2000e8),
+      spokeInfo[spoke1].usdx.reserveConfig,
+      spokeInfo[spoke1].usdx.dynReserveConfig
+    );
+    spoke1.addReserve(
+      address(hub3),
+      2,
+      _deployMockPriceFeed(spoke1, 2000e8),
+      spokeInfo[spoke1].wbtc.reserveConfig,
+      spokeInfo[spoke1].wbtc.dynReserveConfig
+    );
+    spoke1.addReserve(
+      address(hub3),
+      3,
+      _deployMockPriceFeed(spoke1, 2000e8),
+      spokeInfo[spoke1].weth.reserveConfig,
+      spokeInfo[spoke1].weth.dynReserveConfig
+    );
+
+    IHub.SpokeConfig memory spokeConfig = IHub.SpokeConfig({
+      active: true,
+      halted: false,
+      addCap: MAX_ALLOWED_SPOKE_CAP,
+      drawCap: MAX_ALLOWED_SPOKE_CAP,
+      riskPremiumThreshold: MAX_ALLOWED_COLLATERAL_RISK
+    });
+
+    hub2.addSpoke(0, address(spoke1), spokeConfig);
+    hub2.addSpoke(1, address(spoke1), spokeConfig);
+    hub2.addSpoke(2, address(spoke1), spokeConfig);
+    hub2.addSpoke(3, address(spoke1), spokeConfig);
+
+    hub3.addSpoke(0, address(spoke1), spokeConfig);
+    hub3.addSpoke(1, address(spoke1), spokeConfig);
+    hub3.addSpoke(2, address(spoke1), spokeConfig);
+    hub3.addSpoke(3, address(spoke1), spokeConfig);
+    vm.stopPrank();
+
+    reserveId = bound(reserveId, 0, spoke1.getReserveCount() - 1);
+    uint256 assetId = spoke1.getReserve(reserveId).assetId;
+    address hub = address(spoke1.getReserve(reserveId).hub);
+
+    uint256 returnedId = spoke1.getReserveId(hub, assetId);
+    assertEq(returnedId, _getReserveIdByAssetId(spoke1, IHub(hub), assetId));
+  }
+
+  function test_getReserveId_fuzz_revertsWith_ReserveNotListed(uint256 assetId) public {
+    assetId = bound(assetId, hub1.getAssetCount(), UINT256_MAX);
+    vm.expectRevert(ISpoke.ReserveNotListed.selector, address(spoke1));
+    spoke1.getReserveId(address(hub1), assetId);
+  }
+
+  function test_updateLiquidationConfig_targetHealthFactor() public {
+    uint128 newTargetHealthFactor = HEALTH_FACTOR_LIQUIDATION_THRESHOLD + 1;
+
+    test_updateLiquidationConfig_fuzz_targetHealthFactor(newTargetHealthFactor);
+  }
+
+  function test_updateLiquidationConfig_fuzz_targetHealthFactor(
+    uint128 newTargetHealthFactor
+  ) public {
+    newTargetHealthFactor = bound(
+      newTargetHealthFactor,
+      HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
+      type(uint128).max
+    ).toUint128();
+
+    ISpoke.LiquidationConfig memory liquidationConfig;
+    liquidationConfig.targetHealthFactor = newTargetHealthFactor;
+
+    vm.expectEmit(address(spoke1));
+    emit ISpoke.UpdateLiquidationConfig(liquidationConfig);
+    vm.prank(SPOKE_ADMIN);
+    spoke1.updateLiquidationConfig(liquidationConfig);
+
+    assertEq(
+      spoke1.getLiquidationConfig().targetHealthFactor,
+      newTargetHealthFactor,
+      'wrong target health factor'
+    );
+  }
+
+  function test_updateLiquidationConfig_liqBonusConfig() public {
+    ISpoke.LiquidationConfig memory liquidationConfig = ISpoke.LiquidationConfig({
+      targetHealthFactor: HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
+      healthFactorForMaxBonus: 0.9e18,
+      liquidationBonusFactor: 10_00
+    });
+    test_updateLiquidationConfig_fuzz_liqBonusConfig(liquidationConfig);
+  }
+
+  function test_updateLiquidationConfig_fuzz_liqBonusConfig(
+    ISpoke.LiquidationConfig memory liquidationConfig
+  ) public {
+    liquidationConfig.healthFactorForMaxBonus = bound(
+      liquidationConfig.healthFactorForMaxBonus,
+      0,
+      HEALTH_FACTOR_LIQUIDATION_THRESHOLD - 1
+    ).toUint64();
+    liquidationConfig.liquidationBonusFactor = bound(
+      liquidationConfig.liquidationBonusFactor,
+      0,
+      MAX_LIQUIDATION_BONUS_FACTOR
+    ).toUint16();
+    liquidationConfig.targetHealthFactor = bound(
+      liquidationConfig.targetHealthFactor,
+      HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
+      type(uint128).max
+    ).toUint128();
+
+    vm.expectEmit(address(spoke1));
+    emit ISpoke.UpdateLiquidationConfig(liquidationConfig);
+    vm.prank(SPOKE_ADMIN);
+    spoke1.updateLiquidationConfig(liquidationConfig);
+
+    assertEq(
+      spoke1.getLiquidationConfig().healthFactorForMaxBonus,
+      liquidationConfig.healthFactorForMaxBonus,
+      'wrong healthFactorForMaxBonus'
+    );
+    assertEq(
+      spoke1.getLiquidationConfig().liquidationBonusFactor,
+      liquidationConfig.liquidationBonusFactor,
+      'wrong liquidationBonusFactor'
+    );
+  }
+
+  function test_updateLiquidationConfig_revertsWith_InvalidLiquidationConfig_healthFactorForMaxBonus()
+    public
+  {
+    ISpoke.LiquidationConfig memory liquidationConfig = ISpoke.LiquidationConfig({
+      targetHealthFactor: HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
+      healthFactorForMaxBonus: HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
+      liquidationBonusFactor: 10_00
+    });
+
+    test_updateLiquidationConfig_fuzz_revertsWith_InvalidLiquidationConfig_healthFactorForMaxBonus(
+      liquidationConfig
+    );
+  }
+
+  function test_updateLiquidationConfig_fuzz_revertsWith_InvalidLiquidationConfig_healthFactorForMaxBonus(
+    ISpoke.LiquidationConfig memory liquidationConfig
+  ) public {
+    liquidationConfig.healthFactorForMaxBonus = bound(
+      liquidationConfig.healthFactorForMaxBonus,
+      HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
+      type(uint64).max
+    ).toUint64();
+    liquidationConfig.liquidationBonusFactor = bound(
+      liquidationConfig.liquidationBonusFactor,
+      0,
+      MAX_LIQUIDATION_BONUS_FACTOR
+    ).toUint16();
+    liquidationConfig.targetHealthFactor = bound(
+      liquidationConfig.targetHealthFactor,
+      HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
+      type(uint128).max
+    ).toUint128(); // valid values
+
+    vm.expectRevert(ISpoke.InvalidLiquidationConfig.selector, address(spoke1));
+    vm.prank(SPOKE_ADMIN);
+    spoke1.updateLiquidationConfig(liquidationConfig);
+  }
+
+  function test_updateLiquidationConfig_revertsWith_InvalidLiquidationConfig_liquidationBonusFactor()
+    public
+  {
+    ISpoke.LiquidationConfig memory liquidationConfig = ISpoke.LiquidationConfig({
+      targetHealthFactor: HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
+      healthFactorForMaxBonus: 0.9e18,
+      liquidationBonusFactor: MAX_LIQUIDATION_BONUS_FACTOR + 1
+    });
+
+    test_updateLiquidationConfig_fuzz_revertsWith_InvalidLiquidationConfig_liquidationBonusFactor(
+      liquidationConfig
+    );
+  }
+
+  function test_updateLiquidationConfig_fuzz_revertsWith_InvalidLiquidationConfig_liquidationBonusFactor(
+    ISpoke.LiquidationConfig memory liquidationConfig
+  ) public {
+    liquidationConfig.healthFactorForMaxBonus = bound(
+      liquidationConfig.healthFactorForMaxBonus,
+      0,
+      HEALTH_FACTOR_LIQUIDATION_THRESHOLD
+    ).toUint64();
+    liquidationConfig.liquidationBonusFactor = bound(
+      liquidationConfig.liquidationBonusFactor,
+      MAX_LIQUIDATION_BONUS_FACTOR + 1,
+      type(uint16).max
+    ).toUint16();
+    liquidationConfig.targetHealthFactor = bound(
+      liquidationConfig.targetHealthFactor,
+      HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
+      type(uint128).max
+    ).toUint128(); // valid values
+
+    vm.expectRevert(ISpoke.InvalidLiquidationConfig.selector, address(spoke1));
+    vm.prank(SPOKE_ADMIN);
+    spoke1.updateLiquidationConfig(liquidationConfig);
+  }
+}
