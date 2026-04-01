@@ -1,0 +1,453 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+import 'tests/setup/Base.t.sol';
+
+contract SpokeDynamicConfigTest is Base {
+  using SafeCast for uint256;
+  using PercentageMath for uint256;
+  MockSpoke internal spoke;
+
+  function setUp() public override {
+    super.setUp();
+    spoke = MockSpoke(address(spoke1));
+    address mockSpokeImpl = address(
+      new MockSpoke(address(spoke.ORACLE()), MAX_ALLOWED_USER_RESERVES_LIMIT)
+    );
+    vm.etch(address(spoke1), mockSpokeImpl.code);
+  }
+
+  function test_addDynamicReserveConfig_revertsWith_InvalidCollateralFactorAndMaxLiquidationBonus_liquidationBonus()
+    public
+  {
+    uint256 reserveId = _randomReserveId(spoke1);
+    ISpoke.DynamicReserveConfig memory config = _getLatestDynamicReserveConfig(spoke1, reserveId);
+    config.maxLiquidationBonus = vm.randomUint(0, PercentageMath.PERCENTAGE_FACTOR - 1).toUint32();
+
+    vm.expectRevert(ISpoke.InvalidCollateralFactorAndMaxLiquidationBonus.selector, address(spoke1));
+    vm.prank(SPOKE_ADMIN);
+    spoke1.addDynamicReserveConfig(reserveId, config);
+  }
+
+  function test_addDynamicReserveConfig_fuzz_revertsWith_InvalidCollateralFactorAndMaxLiquidationBonus_incompatible(
+    uint16 collateralFactor,
+    uint32 liquidationBonus
+  ) public {
+    // Force config such that cf * lb > 100%
+    collateralFactor = bound(collateralFactor, 70_00, PercentageMath.PERCENTAGE_FACTOR).toUint16();
+    liquidationBonus = bound(
+      liquidationBonus,
+      PercentageMath.PERCENTAGE_FACTOR.percentDivUp(collateralFactor) + 1,
+      MAX_LIQUIDATION_BONUS
+    ).toUint32();
+
+    uint256 reserveId = _randomReserveId(spoke1);
+    ISpoke.DynamicReserveConfig memory config = _getLatestDynamicReserveConfig(spoke1, reserveId);
+    config.collateralFactor = collateralFactor;
+    config.maxLiquidationBonus = liquidationBonus;
+
+    vm.expectRevert(ISpoke.InvalidCollateralFactorAndMaxLiquidationBonus.selector, address(spoke1));
+    vm.prank(SPOKE_ADMIN);
+    spoke1.addDynamicReserveConfig(reserveId, config);
+  }
+
+  function test_addDynamicReserveConfig_revertsWith_InvalidLiquidationFee() public {
+    uint256 reserveId = _randomReserveId(spoke1);
+    ISpoke.DynamicReserveConfig memory config = _getLatestDynamicReserveConfig(spoke1, reserveId);
+    config.liquidationFee = vm
+      .randomUint(PercentageMath.PERCENTAGE_FACTOR + 1, type(uint16).max)
+      .toUint16();
+
+    vm.expectRevert(ISpoke.InvalidLiquidationFee.selector);
+    vm.prank(SPOKE_ADMIN);
+    spoke1.addDynamicReserveConfig(reserveId, config);
+  }
+
+  function test_addDynamicReserveConfig_revertsWith_InvalidCollateralFactorAndMaxLiquidationBonus_collateralFactor()
+    public
+  {
+    uint16 collateralFactor = vm
+      .randomUint(PercentageMath.PERCENTAGE_FACTOR, type(uint16).max)
+      .toUint16();
+
+    uint256 reserveId = _randomReserveId(spoke1);
+    ISpoke.DynamicReserveConfig memory config = _getLatestDynamicReserveConfig(spoke1, reserveId);
+    config.collateralFactor = collateralFactor;
+
+    vm.expectRevert(ISpoke.InvalidCollateralFactorAndMaxLiquidationBonus.selector, address(spoke1));
+    vm.prank(SPOKE_ADMIN);
+    spoke1.addDynamicReserveConfig(reserveId, config);
+
+    config.collateralFactor = PercentageMath.PERCENTAGE_FACTOR.toUint16();
+
+    vm.expectRevert(ISpoke.InvalidCollateralFactorAndMaxLiquidationBonus.selector, address(spoke1));
+    vm.prank(SPOKE_ADMIN);
+    spoke1.addDynamicReserveConfig(reserveId, config);
+  }
+
+  function test_addDynamicReserveConfig_revertsWith_ReserveNotListed() public {
+    uint256 invalidReserveId = vm.randomUint(spoke1.getReserveCount(), UINT256_MAX);
+    ISpoke.DynamicReserveConfig memory dynConf;
+
+    vm.expectRevert(ISpoke.ReserveNotListed.selector, address(spoke1));
+    vm.prank(SPOKE_ADMIN);
+    spoke1.addDynamicReserveConfig(invalidReserveId, dynConf);
+  }
+
+  function test_addDynamicReserveConfig_revertsWith_MaximumDynamicConfigKeyReached() public {
+    uint256 reserveId = _randomReserveId(spoke1);
+    ISpoke.DynamicReserveConfig memory dynConf = _getLatestDynamicReserveConfig(spoke1, reserveId);
+
+    MockSpoke(address(spoke1)).setReserveDynamicConfigKey(
+      reserveId,
+      uint32(MAX_ALLOWED_DYNAMIC_CONFIG_KEY)
+    );
+
+    vm.expectRevert(ISpoke.MaximumDynamicConfigKeyReached.selector, address(spoke1));
+    vm.prank(SPOKE_ADMIN);
+    spoke1.addDynamicReserveConfig(reserveId, dynConf);
+  }
+
+  function test_addDynamicReserveConfig_revertsWith_AccessManagedUnauthorized(
+    address caller
+  ) public {
+    vm.assume(
+      caller != SPOKE_ADMIN &&
+        caller != ADMIN &&
+        caller != SPOKE_CONFIGURATOR &&
+        caller != _getProxyAdminAddress(address(spoke1))
+    );
+    uint256 reserveId = _randomReserveId(spoke1);
+    uint32 dynamicConfigKey = _randomInitializedConfigKey(spoke1, reserveId);
+    ISpoke.DynamicReserveConfig memory dynConf = ISpoke.DynamicReserveConfig({
+      collateralFactor: 80_00,
+      maxLiquidationBonus: 100_00,
+      liquidationFee: 0
+    });
+
+    vm.expectRevert(
+      abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, caller)
+    );
+    vm.prank(caller);
+    spoke1.updateDynamicReserveConfig(reserveId, dynamicConfigKey, dynConf);
+  }
+
+  function test_updateDynamicReserveConfig_revertsWith_InvalidCollateralFactorAndMaxLiquidationBonus_liquidationBonus()
+    public
+  {
+    uint256 reserveId = _randomReserveId(spoke1);
+    uint32 dynamicConfigKey = _randomInitializedConfigKey(spoke1, reserveId);
+    ISpoke.DynamicReserveConfig memory config = _getLatestDynamicReserveConfig(spoke1, reserveId);
+    config.maxLiquidationBonus = vm.randomUint(0, PercentageMath.PERCENTAGE_FACTOR - 1).toUint32();
+
+    vm.expectRevert(ISpoke.InvalidCollateralFactorAndMaxLiquidationBonus.selector, address(spoke1));
+    vm.prank(SPOKE_ADMIN);
+    spoke1.updateDynamicReserveConfig(reserveId, dynamicConfigKey, config);
+  }
+
+  /// cannot set collateral factor for a historical config key to 0
+  function test_updateDynamicReserveConfig_revertsWith_InvalidCollateralFactor() public {
+    uint256 reserveId = _randomReserveId(spoke1);
+    uint32 dynamicConfigKey = _randomInitializedConfigKey(spoke1, reserveId);
+    ISpoke.DynamicReserveConfig memory config = _getLatestDynamicReserveConfig(spoke1, reserveId);
+    config.collateralFactor = 0;
+
+    vm.expectRevert(ISpoke.InvalidCollateralFactor.selector, address(spoke1));
+    vm.prank(SPOKE_ADMIN);
+    spoke1.updateDynamicReserveConfig(reserveId, dynamicConfigKey, config);
+  }
+
+  function test_updateDynamicReserveConfig_fuzz_revertsWith_InvalidCollateralFactorAndMaxLiquidationBonus(
+    uint16 collateralFactor,
+    uint32 liquidationBonus
+  ) public {
+    // Force config such that cf * lb > 100%
+    collateralFactor = bound(collateralFactor, 70_00, PercentageMath.PERCENTAGE_FACTOR).toUint16();
+    liquidationBonus = bound(
+      liquidationBonus,
+      PercentageMath.PERCENTAGE_FACTOR.percentDivUp(collateralFactor) + 1,
+      MAX_LIQUIDATION_BONUS
+    ).toUint32();
+
+    uint256 reserveId = _randomReserveId(spoke1);
+    uint32 dynamicConfigKey = _randomInitializedConfigKey(spoke1, reserveId);
+    ISpoke.DynamicReserveConfig memory config = _getLatestDynamicReserveConfig(spoke1, reserveId);
+    config.collateralFactor = collateralFactor;
+    config.maxLiquidationBonus = liquidationBonus;
+
+    vm.expectRevert(ISpoke.InvalidCollateralFactorAndMaxLiquidationBonus.selector, address(spoke1));
+    vm.prank(SPOKE_ADMIN);
+    spoke1.updateDynamicReserveConfig(reserveId, dynamicConfigKey, config);
+  }
+
+  function test_updateDynamicReserveConfig_revertsWith_InvalidLiquidationFee() public {
+    uint256 reserveId = _randomReserveId(spoke1);
+    uint32 dynamicConfigKey = _randomInitializedConfigKey(spoke1, reserveId);
+    ISpoke.DynamicReserveConfig memory config = _getLatestDynamicReserveConfig(spoke1, reserveId);
+    config.liquidationFee = vm
+      .randomUint(PercentageMath.PERCENTAGE_FACTOR + 1, type(uint16).max)
+      .toUint16();
+
+    vm.expectRevert(ISpoke.InvalidLiquidationFee.selector);
+    vm.prank(SPOKE_ADMIN);
+    spoke1.updateDynamicReserveConfig(reserveId, dynamicConfigKey, config);
+  }
+
+  function test_updateDynamicReserveConfig_revertsWith_InvalidCollateralFactorAndMaxLiquidationBonus_collateralFactor()
+    public
+  {
+    uint16 collateralFactor = vm
+      .randomUint(PercentageMath.PERCENTAGE_FACTOR + 1, type(uint16).max)
+      .toUint16();
+
+    uint256 reserveId = _randomReserveId(spoke1);
+    uint32 dynamicConfigKey = _randomInitializedConfigKey(spoke1, reserveId);
+    ISpoke.DynamicReserveConfig memory config = _getLatestDynamicReserveConfig(spoke1, reserveId);
+    config.collateralFactor = collateralFactor;
+
+    vm.expectRevert(ISpoke.InvalidCollateralFactorAndMaxLiquidationBonus.selector, address(spoke1));
+    vm.prank(SPOKE_ADMIN);
+    spoke1.updateDynamicReserveConfig(reserveId, dynamicConfigKey, config);
+  }
+
+  function test_updateDynamicReserveConfig_revertsWith_ReserveNotListed() public {
+    uint256 invalidReserveId = vm.randomUint(spoke1.getReserveCount(), UINT256_MAX);
+    ISpoke.DynamicReserveConfig memory dynConf;
+
+    vm.expectRevert(ISpoke.ReserveNotListed.selector);
+    vm.prank(SPOKE_ADMIN);
+    spoke1.updateDynamicReserveConfig(invalidReserveId, _randomConfigKey(), dynConf);
+  }
+
+  function test_updateDynamicReserveConfig_revertsWith_AccessManagedUnauthorized(
+    address caller
+  ) public {
+    vm.assume(
+      caller != SPOKE_ADMIN &&
+        caller != ADMIN &&
+        caller != SPOKE_CONFIGURATOR &&
+        caller != _getProxyAdminAddress(address(spoke1))
+    );
+    uint256 reserveId = _randomReserveId(spoke1);
+    uint32 dynamicConfigKey = _randomInitializedConfigKey(spoke1, reserveId);
+    ISpoke.DynamicReserveConfig memory dynConf = ISpoke.DynamicReserveConfig({
+      collateralFactor: 80_00,
+      maxLiquidationBonus: 100_00,
+      liquidationFee: 0
+    });
+
+    vm.expectRevert(
+      abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, caller)
+    );
+    vm.prank(caller);
+    spoke1.updateDynamicReserveConfig(reserveId, dynamicConfigKey, dynConf);
+  }
+
+  function test_updateDynamicReserveConfig_revertsWith_DynamicConfigKeyUninitialized() public {
+    uint256 reserveId = _randomReserveId(spoke1);
+    uint32 dynamicConfigKey = _randomUninitializedConfigKey(spoke1, reserveId);
+    ISpoke.DynamicReserveConfig memory dynConf = _getLatestDynamicReserveConfig(spoke1, reserveId);
+
+    vm.expectRevert(ISpoke.DynamicConfigKeyUninitialized.selector);
+    vm.prank(SPOKE_ADMIN);
+    spoke1.updateDynamicReserveConfig(reserveId, dynamicConfigKey, dynConf);
+  }
+
+  function test_addDynamicReserveConfig() public {
+    ISpoke.DynamicReserveConfig memory dynConf = ISpoke.DynamicReserveConfig({
+      collateralFactor: 20_00,
+      maxLiquidationBonus: 130_00,
+      liquidationFee: 15_00
+    });
+    uint256 reserveId = _randomReserveId(spoke1);
+    uint32 expectedConfigKey = _nextDynamicConfigKey(spoke1, reserveId);
+
+    vm.expectEmit(address(spoke1));
+    emit ISpoke.AddDynamicReserveConfig(reserveId, expectedConfigKey, dynConf);
+    vm.prank(SPOKE_ADMIN);
+    spoke1.addDynamicReserveConfig(reserveId, dynConf);
+
+    assertEq(_getLatestDynamicReserveConfig(spoke1, reserveId), dynConf);
+    assertEq(spoke1.getReserve(reserveId).dynamicConfigKey, expectedConfigKey);
+  }
+
+  function test_updateDynamicReserveConfig() public {
+    ISpoke.DynamicReserveConfig memory dynConf = ISpoke.DynamicReserveConfig({
+      collateralFactor: 20_00,
+      maxLiquidationBonus: 130_00,
+      liquidationFee: 15_00
+    });
+    uint256 reserveId = _randomReserveId(spoke1);
+    uint256 count = vm.randomUint(1, 50);
+    for (uint256 i; i < count; ++i) {
+      dynConf.liquidationFee = vm.randomUint(0, PercentageMath.PERCENTAGE_FACTOR).toUint16();
+      vm.prank(SPOKE_ADMIN);
+      spoke1.addDynamicReserveConfig(reserveId, dynConf);
+    }
+    assertEq(spoke1.getReserve(reserveId).dynamicConfigKey, count);
+
+    uint32 dynamicConfigKey = vm.randomUint(0, count).toUint32();
+    dynConf.liquidationFee = vm.randomUint(0, PercentageMath.PERCENTAGE_FACTOR).toUint16();
+
+    vm.expectEmit(address(spoke1));
+    emit ISpoke.UpdateDynamicReserveConfig(reserveId, dynamicConfigKey, dynConf);
+    vm.prank(SPOKE_ADMIN);
+    spoke1.updateDynamicReserveConfig(reserveId, dynamicConfigKey, dynConf);
+
+    assertEq(spoke1.getDynamicReserveConfig(reserveId, dynamicConfigKey), dynConf);
+
+    _assertHubLiquidity(hub1, reserveId, 'spoke1.updateDynamicReserveConfig');
+  }
+
+  // update each reserve's config key
+  function test_addDynamicReserveConfig_once() public {
+    test_addDynamicReserveConfig();
+    DynamicConfigEntry[] memory configs = _getSpokeDynConfigKeys(spoke1);
+
+    for (uint256 reserveId; reserveId < spoke1.getReserveCount(); ++reserveId) {
+      uint32 dynamicConfigKey = _nextDynamicConfigKey(spoke1, reserveId);
+
+      ISpoke.DynamicReserveConfig memory dynConf = _getLatestDynamicReserveConfig(
+        spoke1,
+        reserveId
+      );
+      dynConf.collateralFactor = _randomCollateralFactor(spoke1, reserveId);
+      vm.expectEmit(address(spoke1));
+      emit ISpoke.AddDynamicReserveConfig(reserveId, dynamicConfigKey, dynConf);
+      vm.prank(SPOKE_ADMIN);
+      spoke1.addDynamicReserveConfig(reserveId, dynConf);
+
+      configs[reserveId].key = dynamicConfigKey;
+      assertEq(_getSpokeDynConfigKeys(spoke1), configs);
+    }
+  }
+
+  // more realistic, update config keys in a random order
+  function test_fuzz_addDynamicReserveConfig_trailing_order(bytes32) public {
+    DynamicConfigEntry[] memory configs = _getSpokeDynConfigKeys(spoke1);
+    uint256 runs = vm.randomUint(1, 10); // [1,10] iterations each fuzz run
+
+    while (--runs != 0) {
+      uint256 reserveId = _randomReserveId(spoke1);
+      uint32 dynamicConfigKey = _nextDynamicConfigKey(spoke1, reserveId);
+
+      ISpoke.DynamicReserveConfig memory dynConf = _getLatestDynamicReserveConfig(
+        spoke1,
+        reserveId
+      );
+      dynConf.collateralFactor = vm.randomUint(0, PercentageMath.PERCENTAGE_FACTOR - 1).toUint16();
+      dynConf.maxLiquidationBonus = vm
+        .randomUint(MIN_LIQUIDATION_BONUS, _maxLiquidationBonusUpperBound(dynConf.collateralFactor))
+        .toUint32();
+
+      vm.expectEmit(address(spoke1));
+      emit ISpoke.AddDynamicReserveConfig(reserveId, dynamicConfigKey, dynConf);
+      vm.prank(SPOKE_ADMIN);
+      spoke1.addDynamicReserveConfig(reserveId, dynConf);
+
+      configs[reserveId].key = dynamicConfigKey;
+      assertEq(_getSpokeDynConfigKeys(spoke1), configs);
+    }
+  }
+
+  // update duplicated config values
+  function test_fuzz_addDynamicReserveConfig_spaced_dup_updates(bytes32) public {
+    DynamicConfigEntry[] memory configs = _getSpokeDynConfigKeys(spoke1);
+    uint256 runs = vm.randomUint(1, 10); // [1,10] iterations each fuzz run
+
+    while (--runs != 0) {
+      uint256 reserveId = _randomReserveId(spoke1);
+      uint32 dynamicConfigKey = _nextDynamicConfigKey(spoke1, reserveId);
+
+      ISpoke.DynamicReserveConfig memory dynConf = _getLatestDynamicReserveConfig(
+        spoke1,
+        reserveId
+      );
+      dynConf.collateralFactor = vm.randomUint() % 2 == 0
+        ? spoke1
+          .getDynamicReserveConfig(reserveId, vm.randomUint(0, dynamicConfigKey - 1).toUint32())
+          .collateralFactor
+        : _randomCollateralFactor(spoke1, reserveId);
+      dynConf.maxLiquidationBonus = vm
+        .randomUint(MIN_LIQUIDATION_BONUS, _maxLiquidationBonusUpperBound(dynConf.collateralFactor))
+        .toUint32();
+
+      vm.expectEmit(address(spoke1));
+      emit ISpoke.AddDynamicReserveConfig(reserveId, dynamicConfigKey, dynConf);
+      vm.prank(SPOKE_ADMIN);
+      spoke1.addDynamicReserveConfig(reserveId, dynConf);
+
+      configs[reserveId].key = dynamicConfigKey;
+      assertEq(_getSpokeDynConfigKeys(spoke1), configs);
+    }
+  }
+
+  function test_offboardReserve_existing_borrows_remain_unaffected() public {
+    _openSupplyPosition(spoke1, _wethReserveId(spoke1), 3e18);
+
+    SpokeActions.supplyCollateral({
+      spoke: spoke1,
+      reserveId: _usdxReserveId(spoke1),
+      caller: alice,
+      amount: 2600e6,
+      onBehalfOf: alice
+    });
+    SpokeActions.supplyCollateral({
+      spoke: spoke1,
+      reserveId: _usdxReserveId(spoke1),
+      caller: bob,
+      amount: 2600e6,
+      onBehalfOf: bob
+    });
+    SpokeActions.borrow({
+      spoke: spoke1,
+      reserveId: _wethReserveId(spoke1),
+      caller: alice,
+      amount: 1e18,
+      onBehalfOf: alice
+    });
+
+    // offboard usdx
+    _updateCollateralFactor(spoke1, _usdxReserveId(spoke1), 0);
+
+    // existing users: alice, bob
+    // alice still healthy
+    assertGt(_getUserHealthFactor(spoke1, alice), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
+    // bob cannot borrow after collateral is disabled
+    vm.expectRevert(ISpoke.HealthFactorBelowThreshold.selector);
+    SpokeActions.borrow({
+      spoke: spoke1,
+      reserveId: _wethReserveId(spoke1),
+      caller: bob,
+      amount: 1e18,
+      onBehalfOf: bob
+    });
+
+    // new user: carol; cannot borrow with usdx as collateral
+    SpokeActions.supplyCollateral({
+      spoke: spoke1,
+      reserveId: _usdxReserveId(spoke1),
+      caller: carol,
+      amount: 2600e6,
+      onBehalfOf: carol
+    });
+    vm.expectRevert(ISpoke.HealthFactorBelowThreshold.selector);
+    SpokeActions.borrow({
+      spoke: spoke1,
+      reserveId: _wethReserveId(spoke1),
+      caller: carol,
+      amount: 1e18,
+      onBehalfOf: carol
+    });
+
+    // alice cannot borrow more with usdx as collateral
+    vm.expectRevert(ISpoke.HealthFactorBelowThreshold.selector);
+    SpokeActions.borrow({
+      spoke: spoke1,
+      reserveId: _wethReserveId(spoke1),
+      caller: alice,
+      amount: 1,
+      onBehalfOf: alice
+    });
+  }
+}

@@ -1,0 +1,375 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+import 'tests/setup/Base.t.sol';
+
+contract SpokeGettersTest is Base {
+  using LiquidationLogic for ISpoke.LiquidationConfig;
+  using SafeCast for uint256;
+
+  ISpoke.LiquidationConfig internal _config;
+
+  ISpoke internal spoke;
+
+  function setUp() public virtual override {
+    super.setUp();
+
+    // Deploy new spoke without setting the liquidation config
+    (spoke, ) = _deploySpokeWithOracle(ADMIN, address(accessManager));
+    setUpRoles(hub1, spoke, accessManager);
+
+    IHub.SpokeConfig memory spokeConfig = IHub.SpokeConfig({
+      active: true,
+      halted: false,
+      addCap: MAX_ALLOWED_SPOKE_CAP,
+      drawCap: MAX_ALLOWED_SPOKE_CAP,
+      riskPremiumThreshold: MAX_ALLOWED_COLLATERAL_RISK
+    });
+
+    spokeInfo[spoke].weth.reserveConfig = _getDefaultReserveConfig(15_00);
+    spokeInfo[spoke].weth.dynReserveConfig = ISpoke.DynamicReserveConfig({
+      collateralFactor: 80_00,
+      maxLiquidationBonus: 105_00,
+      liquidationFee: 10_00
+    });
+    spokeInfo[spoke].wbtc.reserveConfig = _getDefaultReserveConfig(15_00);
+    spokeInfo[spoke].wbtc.dynReserveConfig = ISpoke.DynamicReserveConfig({
+      collateralFactor: 75_00,
+      maxLiquidationBonus: 103_00,
+      liquidationFee: 15_00
+    });
+    spokeInfo[spoke].dai.reserveConfig = _getDefaultReserveConfig(20_00);
+    spokeInfo[spoke].dai.dynReserveConfig = ISpoke.DynamicReserveConfig({
+      collateralFactor: 78_00,
+      maxLiquidationBonus: 102_00,
+      liquidationFee: 10_00
+    });
+    spokeInfo[spoke].usdx.reserveConfig = _getDefaultReserveConfig(50_00);
+    spokeInfo[spoke].usdx.dynReserveConfig = ISpoke.DynamicReserveConfig({
+      collateralFactor: 78_00,
+      maxLiquidationBonus: 101_00,
+      liquidationFee: 12_00
+    });
+    spokeInfo[spoke].usdy.reserveConfig = _getDefaultReserveConfig(20_00);
+    spokeInfo[spoke].usdy.dynReserveConfig = ISpoke.DynamicReserveConfig({
+      collateralFactor: 78_00,
+      maxLiquidationBonus: 101_50,
+      liquidationFee: 15_00
+    });
+
+    vm.startPrank(ADMIN);
+
+    spokeInfo[spoke].weth.reserveId = spoke.addReserve(
+      address(hub1),
+      wethAssetId,
+      _deployMockPriceFeed(spoke, 2000e8),
+      spokeInfo[spoke].weth.reserveConfig,
+      spokeInfo[spoke].weth.dynReserveConfig
+    );
+    spokeInfo[spoke].wbtc.reserveId = spoke.addReserve(
+      address(hub1),
+      wbtcAssetId,
+      _deployMockPriceFeed(spoke, 50_000e8),
+      spokeInfo[spoke].wbtc.reserveConfig,
+      spokeInfo[spoke].wbtc.dynReserveConfig
+    );
+    spokeInfo[spoke].dai.reserveId = spoke.addReserve(
+      address(hub1),
+      daiAssetId,
+      _deployMockPriceFeed(spoke, 1e8),
+      spokeInfo[spoke].dai.reserveConfig,
+      spokeInfo[spoke].dai.dynReserveConfig
+    );
+    spokeInfo[spoke].usdx.reserveId = spoke.addReserve(
+      address(hub1),
+      usdxAssetId,
+      _deployMockPriceFeed(spoke, 1e8),
+      spokeInfo[spoke].usdx.reserveConfig,
+      spokeInfo[spoke].usdx.dynReserveConfig
+    );
+    spokeInfo[spoke].usdy.reserveId = spoke.addReserve(
+      address(hub1),
+      usdyAssetId,
+      _deployMockPriceFeed(spoke, 1e8),
+      spokeInfo[spoke].usdy.reserveConfig,
+      spokeInfo[spoke].usdy.dynReserveConfig
+    );
+
+    hub1.addSpoke(wethAssetId, address(spoke), spokeConfig);
+    hub1.addSpoke(wbtcAssetId, address(spoke), spokeConfig);
+    hub1.addSpoke(daiAssetId, address(spoke), spokeConfig);
+    hub1.addSpoke(usdxAssetId, address(spoke), spokeConfig);
+    hub1.addSpoke(usdyAssetId, address(spoke), spokeConfig);
+
+    vm.stopPrank();
+  }
+
+  function test_getLiquidationBonus_notConfigured() public {
+    uint256 reserveId = _daiReserveId(spoke);
+    uint256 healthFactor = WadRayMath.WAD;
+    test_getLiquidationBonus_fuzz_notConfigured(reserveId, healthFactor);
+  }
+
+  function test_getLiquidationBonus_fuzz_notConfigured(
+    uint256 reserveId,
+    uint256 healthFactor
+  ) public {
+    reserveId = bound(reserveId, 0, spoke.getReserveCount() - 1);
+    healthFactor = bound(healthFactor, 0, HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
+    uint256 liqBonus = spoke.getLiquidationBonus(reserveId, bob, healthFactor);
+
+    _config = spoke.getLiquidationConfig();
+    assertEq(
+      _config,
+      ISpoke.LiquidationConfig({
+        targetHealthFactor: WadRayMath.WAD.toUint128(),
+        healthFactorForMaxBonus: 0,
+        liquidationBonusFactor: 0
+      })
+    );
+
+    assertEq(
+      liqBonus,
+      LiquidationLogic.calculateLiquidationBonus({
+        healthFactorForMaxBonus: 0,
+        liquidationBonusFactor: 0,
+        healthFactor: healthFactor,
+        maxLiquidationBonus: _getLatestDynamicReserveConfig(spoke, reserveId).maxLiquidationBonus
+      }),
+      'calc should match'
+    );
+  }
+
+  function test_getLiquidationBonus_configured() public {
+    uint256 reserveId = _daiReserveId(spoke);
+    uint256 healthFactor = WadRayMath.WAD;
+    test_getLiquidationBonus_fuzz_configured(reserveId, healthFactor, 40_00, 0.9e18);
+  }
+
+  function test_getLiquidationBonus_fuzz_configured(
+    uint256 reserveId,
+    uint256 healthFactor,
+    uint16 liquidationBonusFactor,
+    uint64 healthFactorForMaxBonus
+  ) public {
+    reserveId = bound(reserveId, 0, spoke.getReserveCount() - 1);
+    healthFactor = bound(healthFactor, 0, HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
+    liquidationBonusFactor = bound(liquidationBonusFactor, 0, PercentageMath.PERCENTAGE_FACTOR)
+      .toUint16();
+    healthFactorForMaxBonus = bound(
+      healthFactorForMaxBonus,
+      0,
+      HEALTH_FACTOR_LIQUIDATION_THRESHOLD - 1
+    ).toUint64();
+
+    ISpoke.LiquidationConfig memory config = ISpoke.LiquidationConfig({
+      targetHealthFactor: WadRayMath.WAD.toUint128(),
+      healthFactorForMaxBonus: healthFactorForMaxBonus,
+      liquidationBonusFactor: liquidationBonusFactor
+    });
+    vm.prank(SPOKE_ADMIN);
+    spoke.updateLiquidationConfig(config);
+    _config = spoke.getLiquidationConfig();
+
+    assertEq(
+      spoke.getLiquidationBonus(reserveId, bob, healthFactor),
+      LiquidationLogic.calculateLiquidationBonus({
+        healthFactorForMaxBonus: healthFactorForMaxBonus,
+        liquidationBonusFactor: liquidationBonusFactor,
+        healthFactor: healthFactor,
+        maxLiquidationBonus: _getLatestDynamicReserveConfig(spoke, reserveId).maxLiquidationBonus
+      }),
+      'calc should match'
+    );
+  }
+
+  /// @dev Basic user flow and check accounting getters working properly
+  function test_protocol_getters() public {
+    uint256 reserveId = _daiReserveId(spoke);
+    uint256 assetId = daiAssetId;
+    uint256 supplyAmount = 10_000e18;
+    vm.prank(alice);
+    tokenList.dai.approve(address(spoke), supplyAmount);
+    SpokeActions.supplyCollateral({
+      spoke: spoke,
+      reserveId: reserveId,
+      caller: alice,
+      amount: supplyAmount,
+      onBehalfOf: alice
+    });
+
+    // User debts
+    (uint256 drawn, uint256 premium) = spoke.getUserDebt(reserveId, alice);
+    assertEq(drawn, 0);
+    assertEq(premium, 0);
+
+    assertEq(spoke.getUserTotalDebt(reserveId, alice), 0);
+
+    // Reserve debts
+    (drawn, premium) = spoke.getReserveDebt(reserveId);
+    assertEq(drawn, 0);
+    assertEq(premium, 0);
+    assertEq(spoke.getReserveTotalDebt(reserveId), 0);
+
+    // User supply
+    assertEq(spoke.getUserSuppliedAssets(reserveId, alice), supplyAmount);
+    assertEq(
+      spoke.getUserSuppliedShares(reserveId, alice),
+      hub1.previewAddByAssets(assetId, supplyAmount)
+    );
+
+    // Reserve supply
+    assertEq(spoke.getReserveSuppliedAssets(reserveId), supplyAmount);
+    assertEq(
+      spoke.getReserveSuppliedShares(reserveId),
+      hub1.previewAddByAssets(assetId, supplyAmount)
+    );
+
+    // Spoke debts
+    (drawn, premium) = hub1.getSpokeOwed(assetId, address(spoke));
+    assertEq(drawn, 0);
+    assertEq(premium, 0);
+    assertEq(hub1.getSpokeTotalOwed(assetId, address(spoke)), 0);
+    assertEq(hub1.getSpokeDrawnShares(assetId, address(spoke)), 0);
+
+    (uint256 premiumShares, int256 premiumOffset) = hub1.getSpokePremiumData(
+      assetId,
+      address(spoke)
+    );
+    assertEq(premiumShares, 0);
+    assertEq(premiumOffset, 0);
+
+    // Asset debts
+    (drawn, premium) = hub1.getAssetOwed(assetId);
+    assertEq(drawn, 0);
+    assertEq(premium, 0);
+    assertEq(hub1.getAssetTotalOwed(assetId), 0);
+    assertEq(hub1.getAssetDrawnShares(assetId), 0);
+
+    (premiumShares, premiumOffset) = hub1.getAssetPremiumData(assetId);
+    assertEq(premiumShares, 0);
+    assertEq(premiumOffset, 0);
+
+    // Spoke supply
+    assertEq(hub1.getSpokeAddedAssets(assetId, address(spoke)), supplyAmount);
+    assertEq(
+      hub1.getSpokeAddedShares(assetId, address(spoke)),
+      hub1.previewAddByAssets(assetId, supplyAmount)
+    );
+
+    // Asset supply
+    assertEq(hub1.getAddedAssets(assetId), supplyAmount);
+    assertEq(hub1.getAddedShares(assetId), hub1.previewAddByAssets(assetId, supplyAmount));
+  }
+
+  function test_premiumRayGetters() public {
+    // 2 user, single spoke
+    _mockDrawnRateBps({irStrategy: address(irStrategy), drawnRateBps: 25_00});
+    SpokeActions.approve({
+      spoke: spoke,
+      reserveId: _daiReserveId(spoke),
+      owner: alice,
+      amount: 9_000e18
+    });
+    SpokeActions.supplyCollateral({
+      spoke: spoke,
+      reserveId: _daiReserveId(spoke),
+      caller: alice,
+      amount: 9_000e18,
+      onBehalfOf: alice
+    }); // CR 20%
+    SpokeActions.approve({
+      spoke: spoke,
+      reserveId: _usdxReserveId(spoke),
+      owner: bob,
+      amount: 18_000e18
+    });
+    SpokeActions.supplyCollateral({
+      spoke: spoke,
+      reserveId: _usdxReserveId(spoke),
+      caller: bob,
+      amount: 18_000e18,
+      onBehalfOf: bob
+    }); // CR 50%
+    _openSupplyPosition(spoke, _wethReserveId(spoke), 5e18); // liquidity provision
+    SpokeActions.borrow({
+      spoke: spoke,
+      reserveId: _wethReserveId(spoke),
+      caller: alice,
+      amount: 1e18,
+      onBehalfOf: alice
+    });
+    SpokeActions.borrow({
+      spoke: spoke,
+      reserveId: _wethReserveId(spoke),
+      caller: bob,
+      amount: 2e18,
+      onBehalfOf: bob
+    });
+    skip(365 days);
+
+    // check premium in ray across spoke and hub
+    uint256 assetDrawnIndex = hub1.getAssetDrawnIndex(wethAssetId);
+    uint256 alicePremiumDebtRay = spoke.getUserPremiumDebtRay(_wethReserveId(spoke), alice);
+    assertEq(alicePremiumDebtRay, 0.2e18 * (assetDrawnIndex - 1e27));
+    uint256 bobPremiumDebtRay = spoke.getUserPremiumDebtRay(_wethReserveId(spoke), bob);
+    assertEq(bobPremiumDebtRay, 1e18 * (assetDrawnIndex - 1e27));
+
+    uint256 spokePremiumDebtRay = hub1.getSpokePremiumRay(wethAssetId, address(spoke));
+    assertEq(spokePremiumDebtRay, alicePremiumDebtRay + bobPremiumDebtRay);
+
+    uint256 assetPremiumDebtRay = hub1.getAssetPremiumRay(wethAssetId);
+    assertEq(assetPremiumDebtRay, spokePremiumDebtRay);
+
+    // realize premium
+    vm.prank(alice);
+    spoke.updateUserRiskPremium(alice);
+    vm.prank(bob);
+    spoke.updateUserRiskPremium(bob);
+    // make sure getters are correct after realizing premium
+    assertEq(spoke.getUserPremiumDebtRay(_wethReserveId(spoke), alice), alicePremiumDebtRay);
+    assertEq(spoke.getUserPremiumDebtRay(_wethReserveId(spoke), bob), bobPremiumDebtRay);
+    assertEq(
+      hub1.getSpokePremiumRay(wethAssetId, address(spoke)),
+      alicePremiumDebtRay + bobPremiumDebtRay
+    );
+    assertEq(hub1.getAssetPremiumRay(wethAssetId), alicePremiumDebtRay + bobPremiumDebtRay);
+
+    // introduce another spoke
+    SpokeActions.approve({
+      spoke: spoke,
+      reserveId: _daiReserveId(spoke),
+      owner: carol,
+      amount: 1_000e18
+    });
+    SpokeActions.supplyCollateral({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      caller: carol,
+      amount: 1_000e18,
+      onBehalfOf: carol
+    });
+    SpokeActions.borrow({
+      spoke: spoke1,
+      reserveId: _wethReserveId(spoke),
+      caller: carol,
+      amount: 0.1e18,
+      onBehalfOf: carol
+    });
+
+    skip(365 days);
+
+    // check premium in ray is consistent across spoke and hub
+    spokePremiumDebtRay = hub1.getSpokePremiumRay(wethAssetId, address(spoke));
+    alicePremiumDebtRay = spoke.getUserPremiumDebtRay(_wethReserveId(spoke), alice);
+    bobPremiumDebtRay = spoke.getUserPremiumDebtRay(_wethReserveId(spoke), bob);
+    assertEq(spokePremiumDebtRay, alicePremiumDebtRay + bobPremiumDebtRay);
+
+    uint256 spoke1PremiumDebtRay = hub1.getSpokePremiumRay(wethAssetId, address(spoke1));
+    uint256 carolPremiumDebtRay = spoke1.getUserPremiumDebtRay(_wethReserveId(spoke1), carol);
+    assertEq(spoke1PremiumDebtRay, carolPremiumDebtRay);
+
+    assetPremiumDebtRay = hub1.getAssetPremiumRay(wethAssetId);
+    assertEq(assetPremiumDebtRay, spokePremiumDebtRay + spoke1PremiumDebtRay);
+  }
+}

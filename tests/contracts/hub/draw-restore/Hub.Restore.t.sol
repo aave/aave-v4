@@ -1,0 +1,1027 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+import 'tests/setup/Base.t.sol';
+
+contract HubRestoreTest is Base {
+  using SharesMath for uint256;
+  using WadRayMath for uint256;
+  using PercentageMath for uint256;
+  using SafeCast for *;
+
+  HubConfigurator public hubConfigurator;
+
+  function setUp() public override {
+    super.setUp();
+
+    // Set up a hub configurator to test resetting asset caps and pausing assets
+    hubConfigurator = new HubConfigurator(hub1.authority());
+    setUpHubConfiguratorRoles(address(hubConfigurator), hub1.authority());
+  }
+
+  function test_restore_revertsWith_SurplusDrawnRestored() public {
+    uint256 daiAmount = 100e18;
+    uint256 wethAmount = 10e18;
+
+    uint256 drawAmount = daiAmount / 2;
+
+    // spoke1 add weth
+    HubActions.add({
+      hub: hub1,
+      assetId: wethAssetId,
+      caller: address(spoke1),
+      amount: wethAmount,
+      user: alice
+    });
+
+    // spoke2 add dai
+    HubActions.add({
+      hub: hub1,
+      assetId: daiAssetId,
+      caller: address(spoke2),
+      amount: daiAmount,
+      user: bob
+    });
+
+    // spoke1 draw liquidity
+    HubActions.draw({
+      hub: hub1,
+      assetId: daiAssetId,
+      to: alice,
+      caller: address(spoke1),
+      amount: drawAmount
+    });
+
+    (uint256 drawn, uint256 premium) = hub1.getSpokeOwed(daiAssetId, address(spoke1));
+
+    IHubBase.PremiumDelta memory premiumDelta = _getExpectedPremiumDelta(
+      spoke1,
+      alice,
+      _daiReserveId(spoke1),
+      premium
+    );
+
+    vm.startPrank(address(spoke1));
+    tokenList.dai.transferFrom(alice, address(hub1), drawn + premium + 1);
+
+    // alice restore invalid amount > drawn
+    vm.expectRevert(abi.encodeWithSelector(IHub.SurplusDrawnRestored.selector, drawAmount));
+    hub1.restore(daiAssetId, drawn + 1, premiumDelta);
+    vm.stopPrank();
+  }
+
+  function test_restore_revertsWith_SurplusPremiumRayRestored() public {
+    uint256 drawAmount = 100e18;
+    _addLiquidity(hub1, daiAssetId, drawAmount);
+    _drawLiquidity({
+      hub: hub1,
+      assetId: daiAssetId,
+      amount: drawAmount,
+      withPremium: true,
+      skipTime: true,
+      spoke: address(spoke1)
+    });
+
+    (uint256 drawn, uint256 premium) = hub1.getSpokeOwed(daiAssetId, address(spoke1));
+    assertGt(drawn, 0);
+    assertGt(premium, 0);
+
+    IHub.SpokeData memory spokeData = hub1.getSpoke(daiAssetId, address(spoke1));
+    uint256 spokePremiumRay = _calculatePremiumDebtRay(
+      hub1,
+      daiAssetId,
+      spokeData.premiumShares,
+      spokeData.premiumOffsetRay
+    );
+
+    uint256 drawnRestored = vm.randomUint(0, drawn);
+    uint256 premiumRestoredRay = vm.randomUint(spokePremiumRay + 1, UINT256_MAX / 2);
+
+    // `_getExpectedPremiumDelta` underflows in this case
+    IHubBase.PremiumDelta memory premiumDelta = IHubBase.PremiumDelta({
+      sharesDelta: 0,
+      offsetRayDelta: premiumRestoredRay.toInt256(),
+      restoredPremiumRay: premiumRestoredRay
+    });
+
+    vm.expectRevert(
+      abi.encodeWithSelector(IHub.SurplusPremiumRayRestored.selector, spokePremiumRay)
+    );
+    vm.prank(address(spoke1));
+    hub1.restore(daiAssetId, drawnRestored, premiumDelta);
+  }
+
+  function test_restore_revertsWith_InvalidAmount_zero() public {
+    IHubBase.PremiumDelta memory premiumDelta = _getExpectedPremiumDelta(
+      spoke1,
+      alice,
+      _daiReserveId(spoke1),
+      0
+    );
+
+    vm.expectRevert(IHub.InvalidAmount.selector);
+    vm.prank(address(spoke1));
+    hub1.restore(daiAssetId, 0, premiumDelta);
+  }
+
+  function test_restore_revertsWith_SpokeNotActive_whenPaused() public {
+    vm.prank(HUB_CONFIGURATOR);
+    hubConfigurator.deactivateAsset(address(hub1), daiAssetId);
+
+    IHubBase.PremiumDelta memory premiumDelta = _getExpectedPremiumDelta(
+      spoke1,
+      alice,
+      _daiReserveId(spoke1),
+      0
+    );
+
+    vm.expectRevert(IHub.SpokeNotActive.selector);
+    vm.prank(address(spoke1));
+    hub1.restore(daiAssetId, 1, premiumDelta);
+  }
+
+  function test_restore_revertsWith_SpokeHalted() public {
+    _updateSpokeHalted(hub1, daiAssetId, address(spoke1), true);
+
+    IHubBase.PremiumDelta memory premiumDelta = _getExpectedPremiumDelta(
+      spoke1,
+      alice,
+      daiAssetId,
+      0
+    );
+
+    vm.expectRevert(IHub.SpokeHalted.selector);
+    vm.prank(address(spoke1));
+    hub1.restore(daiAssetId, 1, premiumDelta);
+  }
+
+  function test_restore_revertsWith_InsufficientTransferred() public {
+    uint256 daiAmount = 100e18;
+    uint256 drawAmount = daiAmount / 2;
+    _addAndDrawLiquidity({
+      hub: hub1,
+      assetId: daiAssetId,
+      addUser: bob,
+      addAmount: daiAmount,
+      addSpoke: address(spoke2),
+      drawUser: alice,
+      drawSpoke: address(spoke1),
+      drawAmount: drawAmount,
+      skipTime: 365 days
+    });
+    (uint256 drawn, uint256 premium) = hub1.getSpokeOwed(daiAssetId, address(spoke1));
+    uint256 restoreDrawnAmount = drawn / 2;
+
+    IHubBase.PremiumDelta memory premiumDelta = _getExpectedPremiumDelta(
+      spoke1,
+      alice,
+      daiAssetId,
+      premium
+    );
+
+    vm.startPrank(address(spoke1));
+    tokenList.dai.transferFrom(alice, address(hub1), restoreDrawnAmount / 2);
+
+    vm.expectRevert(
+      abi.encodeWithSelector(IHub.InsufficientTransferred.selector, restoreDrawnAmount / 2)
+    );
+    hub1.restore(daiAssetId, restoreDrawnAmount, premiumDelta);
+    vm.stopPrank();
+  }
+
+  /// @dev It's possible to restore even when asset caps are reset
+  function test_restore_when_asset_caps_reset() public {
+    uint256 daiAmount = 100e18;
+    uint256 drawAmount = daiAmount / 2;
+
+    // spoke2 add dai
+    HubActions.add({
+      hub: hub1,
+      assetId: daiAssetId,
+      amount: daiAmount,
+      user: bob,
+      caller: address(spoke2)
+    });
+
+    // spoke1 draw liquidity
+    HubActions.draw({
+      hub: hub1,
+      assetId: daiAssetId,
+      to: alice,
+      caller: address(spoke1),
+      amount: drawAmount
+    });
+
+    // Reset asset caps
+    vm.prank(HUB_CONFIGURATOR);
+    hubConfigurator.resetAssetCaps(address(hub1), daiAssetId);
+
+    (uint256 drawn, uint256 premium) = hub1.getSpokeOwed(daiAssetId, address(spoke1));
+    uint256 drawnRestored = drawn / 2;
+    uint256 restoreAmount = drawnRestored + premium;
+
+    // no premium accrued in the same block
+    assertEq(premium, 0);
+    uint256 drawnShares = hub1.previewRestoreByAssets(daiAssetId, drawnRestored);
+
+    IHubBase.PremiumDelta memory premiumDelta = _getExpectedPremiumDelta(
+      spoke1,
+      alice,
+      _daiReserveId(spoke1),
+      premium
+    );
+
+    vm.startPrank(address(spoke1));
+    tokenList.dai.transferFrom(alice, address(hub1), drawnRestored + premium);
+
+    vm.expectEmit(address(hub1));
+    emit IHubBase.Restore(
+      daiAssetId,
+      address(spoke1),
+      hub1.previewRestoreByAssets(daiAssetId, drawnRestored),
+      premiumDelta,
+      drawnRestored,
+      premium
+    );
+
+    uint256 restoredShares = hub1.restore(daiAssetId, drawnRestored, premiumDelta);
+    vm.stopPrank();
+
+    assertEq(restoredShares, drawnShares);
+    AssetPosition memory daiData = _getAssetPosition(hub1, daiAssetId);
+    // hub dai data
+    assertEq(daiData.addedAmount, daiAmount, 'hub dai total assets post-restore');
+    assertEq(
+      daiData.addedShares,
+      hub1.previewAddByAssets(daiAssetId, daiAmount),
+      'hub dai total shares post-restore'
+    );
+    assertEq(
+      daiData.liquidity,
+      daiAmount - drawAmount + restoreAmount,
+      'hub dai liquidity post-restore'
+    );
+    assertEq(daiData.drawn, drawAmount - restoreAmount, 'hub dai drawn post-restore');
+    assertEq(daiData.premium, 0, 'hub dai premium post-restore');
+    assertEq(
+      daiData.lastUpdateTimestamp,
+      vm.getBlockTimestamp(),
+      'hub dai lastUpdateTimestamp post-restore'
+    );
+    _assertHubLiquidity(hub1, daiAssetId, 'hub1.restore');
+    // spoke1 dai data
+    assertEq(
+      hub1.getSpokeAddedShares(daiAssetId, address(spoke1)),
+      0,
+      'spoke1 total dai shares post-restore'
+    );
+    (uint256 spoke1DaiDrawn, uint256 spoke1DaiPremium) = hub1.getSpokeOwed(
+      daiAssetId,
+      address(spoke1)
+    );
+    assertEq(spoke1DaiDrawn, daiData.drawn, 'spoke1 drawn dai post-restore');
+    assertEq(spoke1DaiPremium, daiData.premium, 'spoke1 dai premium post-restore');
+
+    // dai token balance
+    assertEq(
+      tokenList.dai.balanceOf(address(hub1)),
+      daiAmount - restoreAmount,
+      'hub dai final balance'
+    );
+    assertEq(
+      tokenList.dai.balanceOf(alice),
+      drawAmount - restoreAmount + MAX_SUPPLY_AMOUNT,
+      'alice dai final balance'
+    );
+    assertEq(tokenList.dai.balanceOf(bob), MAX_SUPPLY_AMOUNT - daiAmount, 'bob dai final balance');
+    assertEq(tokenList.dai.balanceOf(address(spoke1)), 0, 'spoke1 dai final balance');
+  }
+
+  function test_restore_revertsWith_SurplusDrawnRestored_with_interest() public {
+    uint256 daiAmount = 100e18;
+    uint256 drawAmount = daiAmount / 2;
+    uint256 skipTime = 365 days / 2;
+
+    test_restore_fuzz_revertsWith_SurplusDrawnRestored_with_interest(
+      daiAmount,
+      drawAmount,
+      skipTime
+    );
+  }
+
+  /// @dev Restore an amount greater than drawn, with drawn interest accrued (no premium).
+  function test_restore_fuzz_revertsWith_SurplusDrawnRestored_with_interest(
+    uint256 daiAmount,
+    uint256 drawAmount,
+    uint256 skipTime
+  ) public {
+    daiAmount = bound(daiAmount, 1, 1000e18); // max 1000 DAI
+    drawAmount = bound(drawAmount, 1, daiAmount); // within added dai amount
+    skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
+
+    // spoke2 add dai
+    HubActions.add({
+      hub: hub1,
+      assetId: daiAssetId,
+      caller: address(spoke2),
+      amount: daiAmount,
+      user: bob
+    });
+
+    // spoke1 draw half of dai reserve liquidity
+    HubActions.draw({
+      hub: hub1,
+      assetId: daiAssetId,
+      to: alice,
+      caller: address(spoke1),
+      amount: drawAmount
+    });
+
+    skip(skipTime);
+
+    (uint256 drawn, uint256 premium) = hub1.getSpokeOwed(daiAssetId, address(spoke1));
+    assertEq(premium, 0);
+
+    IHubBase.PremiumDelta memory premiumDelta = _getExpectedPremiumDelta(
+      spoke1,
+      alice,
+      _daiReserveId(spoke1),
+      premium
+    );
+
+    // alice restore invalid amount > drawn
+    vm.expectRevert(abi.encodeWithSelector(IHub.SurplusDrawnRestored.selector, drawn));
+    vm.prank(address(spoke1));
+    hub1.restore(daiAssetId, drawn + 1, premiumDelta);
+  }
+
+  function test_restore_revertsWith_SurplusDrawnRestored_with_interest_and_premium() public {
+    uint256 daiAmount = 100e18;
+    uint256 drawAmount = daiAmount / 2;
+    uint256 skipTime = 365 days;
+    uint256 premiumRestored = 1;
+
+    test_restore_fuzz_revertsWith_SurplusDrawnRestored_with_interest_and_premium(
+      daiAmount,
+      drawAmount,
+      skipTime,
+      premiumRestored
+    );
+  }
+
+  /// @dev Restore an amount greater than the drawn, with drawn interest and premium accrued.
+  function test_restore_fuzz_revertsWith_SurplusDrawnRestored_with_interest_and_premium(
+    uint256 daiAmount,
+    uint256 drawAmount,
+    uint256 skipTime,
+    uint256 premiumRestored
+  ) public {
+    daiAmount = bound(daiAmount, 1, 1000e18);
+    drawAmount = bound(drawAmount, 1, daiAmount);
+    skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
+
+    uint256 wethAmount = daiAmount; // to ensure enough collateralization
+
+    // spoke1 add weth
+    SpokeActions.supplyCollateral({
+      spoke: spoke1,
+      reserveId: _wethReserveId(spoke1),
+      caller: alice,
+      amount: wethAmount,
+      onBehalfOf: alice
+    });
+
+    // spoke2 add dai
+    SpokeActions.supplyCollateral({
+      spoke: spoke2,
+      reserveId: _daiReserveId(spoke2),
+      caller: bob,
+      amount: daiAmount,
+      onBehalfOf: bob
+    });
+
+    // spoke1 draw half of dai reserve liquidity
+    SpokeActions.borrow({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      onBehalfOf: alice,
+      amount: drawAmount,
+      caller: alice
+    });
+
+    skip(skipTime);
+
+    (uint256 drawn, uint256 premium) = hub1.getSpokeOwed(daiAssetId, address(spoke1));
+    assertGt(premium, 0);
+
+    premiumRestored = bound(premiumRestored, 1, premium);
+
+    IHubBase.PremiumDelta memory premiumDelta = _getExpectedPremiumDelta(
+      spoke1,
+      alice,
+      _daiReserveId(spoke1),
+      premiumRestored
+    );
+
+    // alice restore invalid drawn
+    vm.startPrank(address(spoke1));
+    tokenList.dai.transferFrom(alice, address(hub1), drawn + premiumRestored + 1);
+    vm.expectRevert(abi.encodeWithSelector(IHub.SurplusDrawnRestored.selector, drawn));
+    hub1.restore(daiAssetId, drawn + 1, premiumDelta);
+    vm.stopPrank();
+  }
+
+  function test_restore_tooMuchDrawn_revertsWith_SurplusDrawnRestored() public {
+    uint256 skipTime = 20_000 days;
+    uint256 drawAmount = 999e18;
+
+    HubActions.add({
+      hub: hub1,
+      assetId: daiAssetId,
+      caller: address(spoke1),
+      amount: drawAmount * 2,
+      user: alice
+    });
+
+    HubActions.draw({
+      hub: hub1,
+      assetId: daiAssetId,
+      caller: address(spoke1),
+      amount: drawAmount,
+      to: address(spoke1)
+    });
+
+    // skip to accrue interest
+    skip(skipTime);
+
+    uint256 drawn = hub1.getAssetTotalOwed(daiAssetId);
+
+    // We restore slightly more, but it rounds down to the correct number of shares
+    assertEq(
+      hub1.previewRestoreByAssets(daiAssetId, drawn),
+      hub1.previewRestoreByAssets(daiAssetId, drawn + 1)
+    );
+
+    IHubBase.PremiumDelta memory premiumDelta;
+    vm.expectRevert(abi.encodeWithSelector(IHub.SurplusDrawnRestored.selector, drawn));
+    vm.prank(address(spoke1));
+    hub1.restore(daiAssetId, drawn + 1, premiumDelta);
+  }
+
+  function test_restore_premiumDeltas_twoWeiIncrease_realizedDelta() public {
+    uint256 daiAmount = 100e18;
+    uint256 drawAmount = daiAmount / 2;
+
+    // spoke2 add dai
+    HubActions.add({
+      hub: hub1,
+      assetId: daiAssetId,
+      amount: daiAmount,
+      user: bob,
+      caller: address(spoke2)
+    });
+
+    // spoke1 draw liquidity
+    HubActions.draw({
+      hub: hub1,
+      assetId: daiAssetId,
+      to: alice,
+      caller: address(spoke1),
+      amount: drawAmount
+    });
+
+    (uint256 drawn, uint256 premium) = hub1.getSpokeOwed(daiAssetId, address(spoke1));
+    uint256 drawnRestored = drawn;
+
+    IHubBase.PremiumDelta memory premiumDelta = _getExpectedPremiumDelta(
+      spoke1,
+      alice,
+      _daiReserveId(spoke1),
+      premium
+    );
+
+    vm.startPrank(address(spoke1));
+    tokenList.dai.transferFrom(alice, address(hub1), drawnRestored + premium);
+
+    vm.expectEmit(address(hub1));
+    emit IHubBase.Restore(
+      daiAssetId,
+      address(spoke1),
+      hub1.previewRestoreByAssets(daiAssetId, drawnRestored),
+      premiumDelta,
+      drawnRestored,
+      premium
+    );
+
+    hub1.restore(daiAssetId, drawnRestored, premiumDelta);
+    vm.stopPrank();
+  }
+
+  function test_restore_revertsWith_InvalidPremiumChange_premiumIncrease() public {
+    uint256 daiAmount = 100e18;
+    uint256 drawAmount = daiAmount / 2;
+
+    // spoke2 add dai
+    HubActions.add({
+      hub: hub1,
+      assetId: daiAssetId,
+      amount: daiAmount,
+      user: bob,
+      caller: address(spoke2)
+    });
+
+    // spoke1 draw liquidity
+    HubActions.draw({
+      hub: hub1,
+      assetId: daiAssetId,
+      to: alice,
+      caller: address(spoke1),
+      amount: drawAmount
+    });
+
+    (uint256 drawn, uint256 premium) = hub1.getSpokeOwed(daiAssetId, address(spoke1));
+    uint256 drawnRestored = drawn;
+
+    IHubBase.PremiumDelta memory premiumDelta = _getExpectedPremiumDelta(
+      spoke1,
+      alice,
+      _daiReserveId(spoke1),
+      premium
+    );
+    premiumDelta.offsetRayDelta -= 1;
+
+    vm.startPrank(address(spoke1));
+    tokenList.dai.transferFrom(alice, address(hub1), drawnRestored + premium);
+
+    vm.expectRevert(IHub.InvalidPremiumChange.selector);
+    hub1.restore(daiAssetId, drawnRestored, premiumDelta);
+    vm.stopPrank();
+  }
+
+  function test_restore_revertsWith_underflow_offsetIncrease() public {
+    uint256 daiAmount = 100e18;
+    uint256 drawAmount = daiAmount / 2;
+
+    // spoke2 add dai
+    HubActions.add({
+      hub: hub1,
+      assetId: daiAssetId,
+      amount: daiAmount,
+      user: bob,
+      caller: address(spoke2)
+    });
+
+    // spoke1 draw liquidity
+    HubActions.draw({
+      hub: hub1,
+      assetId: daiAssetId,
+      to: alice,
+      caller: address(spoke1),
+      amount: drawAmount
+    });
+
+    skip(365 days);
+
+    (uint256 drawn, uint256 premium) = hub1.getSpokeOwed(daiAssetId, address(spoke1));
+    uint256 drawnRestored = drawn;
+
+    IHubBase.PremiumDelta memory premiumDelta = _getExpectedPremiumDelta(
+      spoke1,
+      alice,
+      _daiReserveId(spoke1),
+      premium
+    );
+    premiumDelta.offsetRayDelta += 1;
+
+    vm.startPrank(address(spoke1));
+    tokenList.dai.transferFrom(alice, address(hub1), drawnRestored + premium);
+
+    vm.expectRevert(abi.encodeWithSelector(SafeCast.SafeCastOverflowedIntToUint.selector, -1));
+    hub1.restore(daiAssetId, drawnRestored, premiumDelta);
+    vm.stopPrank();
+  }
+
+  function test_restore_one_share_delta_increase_revertsWith_InvalidPremiumChange() public {
+    uint256 daiAmount = 100e18;
+    uint256 drawAmount = daiAmount / 2;
+
+    // spoke2 add dai
+    HubActions.add({
+      hub: hub1,
+      assetId: daiAssetId,
+      amount: daiAmount,
+      user: bob,
+      caller: address(spoke2)
+    });
+
+    // spoke1 draw liquidity
+    HubActions.draw({
+      hub: hub1,
+      assetId: daiAssetId,
+      to: alice,
+      caller: address(spoke1),
+      amount: drawAmount
+    });
+
+    (uint256 drawn, uint256 premium) = hub1.getSpokeOwed(daiAssetId, address(spoke1));
+    uint256 drawnRestored = drawn;
+
+    IHubBase.PremiumDelta memory premiumDelta = _getExpectedPremiumDelta(
+      spoke1,
+      alice,
+      _daiReserveId(spoke1),
+      premium
+    );
+    premiumDelta.sharesDelta += 1.toInt256();
+
+    vm.expectRevert(IHub.InvalidPremiumChange.selector);
+    vm.prank(address(spoke1));
+    hub1.restore(daiAssetId, drawnRestored, premiumDelta);
+  }
+
+  function test_restore_revertsWith_InvalidPremiumChange_premiumSharesIncrease() public {
+    uint256 daiAmount = 100e18;
+    uint256 drawAmount = daiAmount / 2;
+
+    // spoke2 add dai
+    HubActions.add({
+      hub: hub1,
+      assetId: daiAssetId,
+      amount: daiAmount,
+      user: bob,
+      caller: address(spoke2)
+    });
+
+    // spoke1 draw liquidity
+    HubActions.draw({
+      hub: hub1,
+      assetId: daiAssetId,
+      to: alice,
+      caller: address(spoke1),
+      amount: drawAmount
+    });
+
+    (uint256 drawn, uint256 premium) = hub1.getSpokeOwed(daiAssetId, address(spoke1));
+    uint256 drawnRestored = drawn;
+
+    IHubBase.PremiumDelta memory premiumDelta = _getExpectedPremiumDelta(
+      spoke1,
+      alice,
+      _daiReserveId(spoke1),
+      premium
+    );
+    premiumDelta.sharesDelta += 3;
+
+    vm.startPrank(address(spoke1));
+    tokenList.dai.transferFrom(alice, address(hub1), drawnRestored + premium);
+
+    vm.expectRevert(IHub.InvalidPremiumChange.selector);
+    hub1.restore(daiAssetId, drawnRestored, premiumDelta);
+    vm.stopPrank();
+  }
+
+  /// @dev Restore partial amount of drawn after time has passed (no premium).
+  function test_restore_partial_drawn() public {
+    uint256 daiAmount = 100e18;
+    uint256 drawAmount = daiAmount / 2;
+    _addAndDrawLiquidity({
+      hub: hub1,
+      assetId: daiAssetId,
+      addUser: bob,
+      addAmount: daiAmount,
+      addSpoke: address(spoke2),
+      drawUser: alice,
+      drawSpoke: address(spoke1),
+      drawAmount: drawAmount,
+      skipTime: 365 days
+    });
+    (uint256 drawn, uint256 premium) = hub1.getSpokeOwed(daiAssetId, address(spoke1));
+    uint256 restoreDrawnAmount = drawn / 2;
+
+    // no premium accrued
+    assertEq(premium, 0);
+
+    IHubBase.PremiumDelta memory premiumDelta = _getExpectedPremiumDelta(
+      spoke1,
+      alice,
+      _daiReserveId(spoke1),
+      premium
+    );
+
+    vm.startPrank(address(spoke1));
+    tokenList.dai.transferFrom(alice, address(hub1), restoreDrawnAmount + premium);
+    hub1.restore(daiAssetId, restoreDrawnAmount, premiumDelta);
+    vm.stopPrank();
+
+    AssetPosition memory daiData = _getAssetPosition(hub1, daiAssetId);
+
+    // hub
+    assertApproxEqAbs(
+      hub1.getAddedAssets(daiAssetId),
+      hub1.getSpokeAddedAssets(daiAssetId, address(spoke2)) +
+        _calculateBurntInterest(hub1, daiAssetId),
+      1,
+      'hub dai total addedAmount'
+    );
+    assertApproxEqAbs(daiData.drawn, drawn - restoreDrawnAmount, 1, 'dai asset drawn');
+    assertEq(daiData.premium, 0, 'dai premium');
+    assertEq(daiData.liquidity, daiAmount - drawAmount + restoreDrawnAmount, 'hub dai liquidity');
+    assertEq(daiData.lastUpdateTimestamp, vm.getBlockTimestamp(), 'hub dai lastUpdateTimestamp');
+    _assertHubLiquidity(hub1, daiAssetId, 'hub1.restore');
+    // spoke1
+    assertEq(hub1.getSpokeAddedAssets(daiAssetId, address(spoke1)), 0, 'hub spoke1 addedAmount');
+    assertEq(hub1.getSpokeAddedShares(daiAssetId, address(spoke1)), 0, 'hub spoke1 addedShares');
+    (uint256 spoke1DaiDrawn, uint256 spoke1DaiPremium) = hub1.getSpokeOwed(
+      daiAssetId,
+      address(spoke1)
+    );
+    assertEq(spoke1DaiDrawn, daiData.drawn, 'hub spoke1 drawn');
+    assertEq(spoke1DaiPremium, daiData.premium, 'hub spoke1 premium');
+  }
+
+  /// @dev Restore partial amount of drawn in the same block as draw action.
+  function test_restore_partial_same_block() public {
+    uint256 daiAmount = 100e18;
+    uint256 drawAmount = daiAmount / 2;
+
+    // spoke2 add dai
+    HubActions.add({
+      hub: hub1,
+      assetId: daiAssetId,
+      amount: daiAmount,
+      user: bob,
+      caller: address(spoke2)
+    });
+
+    // spoke1 draw liquidity
+    HubActions.draw({
+      hub: hub1,
+      assetId: daiAssetId,
+      to: alice,
+      caller: address(spoke1),
+      amount: drawAmount
+    });
+
+    (uint256 drawn, uint256 premium) = hub1.getSpokeOwed(daiAssetId, address(spoke1));
+    uint256 drawnRestored = drawn / 2;
+    uint256 restoreAmount = drawnRestored + premium;
+
+    // no premium accrued in the same block
+    assertEq(premium, 0);
+
+    IHubBase.PremiumDelta memory premiumDelta = _getExpectedPremiumDelta(
+      spoke1,
+      alice,
+      _daiReserveId(spoke1),
+      premium
+    );
+
+    vm.startPrank(address(spoke1));
+    tokenList.dai.transferFrom(alice, address(hub1), drawnRestored + premium);
+
+    vm.expectEmit(address(hub1));
+    emit IHubBase.Restore(
+      daiAssetId,
+      address(spoke1),
+      hub1.previewRestoreByAssets(daiAssetId, drawnRestored),
+      premiumDelta,
+      drawnRestored,
+      premium
+    );
+
+    hub1.restore(daiAssetId, drawnRestored, premiumDelta);
+    vm.stopPrank();
+
+    AssetPosition memory daiData = _getAssetPosition(hub1, daiAssetId);
+
+    // hub dai data
+    assertEq(daiData.addedAmount, daiAmount, 'hub dai total assets post-restore');
+    assertEq(
+      daiData.addedShares,
+      hub1.previewAddByAssets(daiAssetId, daiAmount),
+      'hub dai total shares post-restore'
+    );
+    assertEq(
+      daiData.liquidity,
+      daiAmount - drawAmount + restoreAmount,
+      'hub dai liquidity post-restore'
+    );
+    assertEq(daiData.drawn, drawAmount - restoreAmount, 'hub dai drawn post-restore');
+    assertEq(daiData.premium, 0, 'hub dai premium post-restore');
+    assertEq(
+      daiData.lastUpdateTimestamp,
+      vm.getBlockTimestamp(),
+      'hub dai lastUpdateTimestamp post-restore'
+    );
+    _assertHubLiquidity(hub1, daiAssetId, 'hub1.restore');
+    // spoke1 dai data
+    assertEq(
+      hub1.getSpokeAddedShares(daiAssetId, address(spoke1)),
+      0,
+      'spoke1 total dai shares post-restore'
+    );
+    (uint256 spoke1DaiDrawn, uint256 spoke1DaiPremium) = hub1.getSpokeOwed(
+      daiAssetId,
+      address(spoke1)
+    );
+    assertEq(spoke1DaiDrawn, daiData.drawn, 'spoke1 drawn dai post-restore');
+    assertEq(spoke1DaiPremium, daiData.premium, 'spoke1 dai premium post-restore');
+
+    IERC20 dai = IERC20(hub1.getAsset(daiAssetId).underlying);
+
+    // dai token balance
+    assertEq(dai.balanceOf(address(hub1)), daiAmount - restoreAmount, 'hub dai final balance');
+    assertEq(
+      dai.balanceOf(alice),
+      drawAmount - restoreAmount + MAX_SUPPLY_AMOUNT,
+      'alice dai final balance'
+    );
+    assertEq(dai.balanceOf(bob), MAX_SUPPLY_AMOUNT - daiAmount, 'bob dai final balance');
+    assertEq(dai.balanceOf(address(spoke1)), 0, 'spoke1 dai final balance');
+  }
+
+  function test_restore_full_amount_with_interest() public {
+    uint256 daiAmount = 1000e18;
+    uint256 drawAmount = daiAmount / 2;
+    uint256 skipTime = 365 days;
+
+    test_restore_fuzz_full_amount_with_interest(daiAmount, drawAmount, skipTime);
+  }
+
+  /// @dev Restore full drawn amount after time has passed, with drawn interest accrued (no premium).
+  function test_restore_fuzz_full_amount_with_interest(
+    uint256 daiAmount,
+    uint256 drawAmount,
+    uint256 skipTime
+  ) public {
+    daiAmount = bound(daiAmount, 1, 1000e18); // max 1000 DAI
+    drawAmount = bound(drawAmount, 1, daiAmount); // within supplied dai amount
+    skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
+
+    // spoke2 add dai
+    SpokeActions.supplyCollateral({
+      spoke: spoke2,
+      reserveId: _daiReserveId(spoke2),
+      amount: daiAmount,
+      caller: bob,
+      onBehalfOf: bob
+    });
+
+    // spoke1 draw liquidity
+    HubActions.draw({
+      hub: hub1,
+      assetId: daiAssetId,
+      to: address(spoke1),
+      caller: address(spoke1),
+      amount: drawAmount
+    });
+
+    skip(skipTime);
+    (uint256 drawn, uint256 premium) = hub1.getSpokeOwed(daiAssetId, address(spoke1));
+
+    // no premium accrued
+    assertEq(premium, 0);
+
+    IHubBase.PremiumDelta memory premiumDelta = _getExpectedPremiumDelta(
+      spoke1,
+      alice,
+      _daiReserveId(spoke1),
+      premium
+    );
+
+    // spoke1 restore full drawn
+    vm.startPrank(address(spoke1));
+    tokenList.dai.transferFrom(alice, address(hub1), drawn + premium);
+    hub1.restore(daiAssetId, drawn, premiumDelta);
+    vm.stopPrank();
+
+    AssetPosition memory daiData = _getAssetPosition(hub1, daiAssetId);
+
+    // asset
+    assertEq(daiData.drawn, 0, 'asset drawn');
+    assertEq(daiData.premium, 0, 'asset premium');
+    _assertHubLiquidity(hub1, daiAssetId, 'hub1.restore');
+
+    // spoke
+    assertApproxEqAbs(
+      daiData.addedAmount,
+      hub1.getSpokeAddedAssets(daiAssetId, address(spoke2)),
+      1,
+      'spoke addedAmount'
+    );
+    assertApproxEqAbs(
+      daiData.addedShares,
+      hub1.getSpokeAddedShares(daiAssetId, address(spoke2)),
+      1,
+      'spoke addedShares'
+    );
+    (uint256 spoke1DaiDrawn, uint256 spoke1DaiPremium) = hub1.getSpokeOwed(
+      daiAssetId,
+      address(spoke1)
+    );
+    assertEq(spoke1DaiDrawn, 0, 'spoke1 drawn');
+    assertEq(spoke1DaiPremium, 0, 'spoke1 premium');
+  }
+
+  function test_restore_full_amount_with_interest_and_premium() public {
+    uint256 daiAmount = 100e18;
+    uint256 drawAmount = daiAmount / 2;
+    uint256 skipTime = 365 days;
+    uint256 premiumRestored = 1;
+
+    test_restore_fuzz_full_amount_with_interest_and_premium(
+      daiAmount,
+      drawAmount,
+      skipTime,
+      premiumRestored
+    );
+  }
+
+  /// @dev Restore full drawn amount after time has passed, with drawn interest and premium accrued.
+  function test_restore_fuzz_full_amount_with_interest_and_premium(
+    uint256 daiAmount,
+    uint256 drawAmount,
+    uint256 skipTime,
+    uint256 premiumRestored
+  ) public {
+    daiAmount = bound(daiAmount, 1, 1000e18); // max 1000 DAI
+    drawAmount = bound(drawAmount, 1, daiAmount); // within added dai amount
+    skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
+
+    uint256 wethAmount = daiAmount; // to ensure collateralization
+
+    // spoke1 add weth
+    SpokeActions.supplyCollateral({
+      spoke: spoke1,
+      reserveId: _wethReserveId(spoke1),
+      caller: alice,
+      amount: wethAmount,
+      onBehalfOf: alice
+    });
+
+    // spoke2 add dai
+    SpokeActions.supplyCollateral({
+      spoke: spoke2,
+      reserveId: _daiReserveId(spoke2),
+      caller: bob,
+      amount: daiAmount,
+      onBehalfOf: bob
+    });
+
+    // spoke1 draw liquidity
+    SpokeActions.borrow({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      caller: alice,
+      amount: drawAmount,
+      onBehalfOf: alice
+    });
+
+    skip(skipTime);
+
+    (uint256 drawn, uint256 premium) = hub1.getSpokeOwed(daiAssetId, address(spoke1));
+    assertGt(premium, 0);
+
+    premiumRestored = bound(premiumRestored, 1, premium);
+
+    IHubBase.PremiumDelta memory premiumDelta = _getExpectedPremiumDelta(
+      spoke1,
+      alice,
+      _daiReserveId(spoke1),
+      premiumRestored
+    );
+
+    // spoke1 restore full drawn
+    vm.startPrank(address(spoke1));
+    tokenList.dai.transferFrom(alice, address(hub1), drawn + premiumRestored);
+    hub1.restore(daiAssetId, drawn, premiumDelta);
+    vm.stopPrank();
+
+    AssetPosition memory daiData = _getAssetPosition(hub1, daiAssetId);
+
+    // asset
+    assertEq(daiData.drawn, 0, 'asset drawn');
+    assertApproxEqAbs(daiData.premium, premium - premiumRestored, 2, 'asset premium');
+    _assertHubLiquidity(hub1, daiAssetId, 'hub1.restore');
+
+    // spoke
+    assertApproxEqAbs(
+      daiData.addedAmount,
+      hub1.getSpokeAddedAssets(daiAssetId, address(spoke2)),
+      1,
+      'spoke addedAmount'
+    );
+    assertApproxEqAbs(
+      daiData.addedShares,
+      hub1.getSpokeAddedShares(daiAssetId, address(spoke2)),
+      1,
+      'spoke addedShares'
+    );
+    (uint256 spoke1DaiDrawn, uint256 spoke1DaiPremium) = hub1.getSpokeOwed(
+      daiAssetId,
+      address(spoke1)
+    );
+    assertEq(spoke1DaiDrawn, 0, 'spoke1 drawn');
+    assertApproxEqAbs(spoke1DaiPremium, premium - premiumRestored, 2, 'spoke1 premium');
+  }
+}

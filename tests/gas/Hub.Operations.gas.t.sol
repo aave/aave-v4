@@ -1,17 +1,12 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import 'tests/Base.t.sol';
+import 'tests/setup/Base.t.sol';
 
 /// forge-config: default.isolate = true
 contract HubOperations_Gas_Tests is Base {
   using SafeCast for *;
   using WadRayMath for uint256;
-
-  function setUp() public override {
-    deployFixtures();
-    initEnvironment();
-  }
 
   function test_add() public {
     vm.startPrank(address(spoke1));
@@ -198,8 +193,20 @@ contract HubOperations_Gas_Tests is Base {
       )
     });
 
-    Utils.supplyCollateral(spoke1, _daiReserveId(spoke1), alice, 1000e18, alice);
-    Utils.borrow(spoke1, _daiReserveId(spoke1), alice, 500e18, alice);
+    SpokeActions.supplyCollateral({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      caller: alice,
+      amount: 1000e18,
+      onBehalfOf: alice
+    });
+    SpokeActions.borrow({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      caller: alice,
+      amount: 500e18,
+      onBehalfOf: alice
+    });
 
     vm.prank(address(spoke1));
     hub1.refreshPremium(daiAssetId, premiumDelta);
@@ -220,12 +227,12 @@ contract HubOperations_Gas_Tests is Base {
 
     skip(100);
 
-    Utils.mintFeeShares(hub1, daiAssetId, ADMIN);
+    HubActions.mintFeeShares({hub: hub1, assetId: daiAssetId, caller: ADMIN});
     vm.snapshotGasLastCall('Hub.Operations', 'mintFeeShares');
   }
 
   function test_payFee_transferShares() public {
-    Utils.add({
+    HubActions.add({
       hub: hub1,
       assetId: daiAssetId,
       caller: address(spoke1),
@@ -253,7 +260,7 @@ contract HubOperations_Gas_Tests is Base {
   }
 
   function test_deficit() public {
-    Utils.add({
+    HubActions.add({
       hub: hub1,
       assetId: daiAssetId,
       caller: address(spoke1),
@@ -275,10 +282,10 @@ contract HubOperations_Gas_Tests is Base {
       spoke1,
       alice,
       _daiReserveId(spoke1),
-      type(uint256).max
+      UINT256_MAX
     );
 
-    grantDeficitEliminatorRole(hub1, address(spoke1));
+    _grantDeficitEliminatorRole(hub1, address(spoke1));
 
     vm.prank(address(spoke1));
     hub1.reportDeficit(daiAssetId, drawnDebt, premiumDelta);

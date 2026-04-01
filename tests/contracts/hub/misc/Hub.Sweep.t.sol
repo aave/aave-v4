@@ -1,0 +1,128 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+import 'tests/setup/Base.t.sol';
+
+contract HubSweepTest is Base {
+  address public reinvestmentController = makeAddr('reinvestmentController');
+
+  function test_sweep_revertsWith_AssetNotListed() public {
+    uint256 assetId = _randomInvalidAssetId(hub1);
+    vm.expectRevert(IHub.AssetNotListed.selector);
+    hub1.sweep(assetId, vm.randomUint());
+  }
+
+  function test_sweep_revertsWith_OnlyReinvestmentController_init() public {
+    assertEq(hub1.getAsset(daiAssetId).reinvestmentController, address(0));
+    vm.expectRevert(IHub.OnlyReinvestmentController.selector);
+    hub1.sweep(daiAssetId, vm.randomUint());
+  }
+
+  function test_sweep_revertsWith_OnlyReinvestmentController(address caller) public {
+    vm.assume(caller != reinvestmentController && caller != _getProxyAdminAddress(address(hub1)));
+    _updateAssetReinvestmentController(hub1, daiAssetId, reinvestmentController);
+
+    vm.expectRevert(IHub.OnlyReinvestmentController.selector);
+    vm.prank(caller);
+    hub1.sweep(daiAssetId, vm.randomUint());
+  }
+
+  function test_sweep_revertsWith_InvalidAmount() public {
+    assertEq(hub1.getAsset(daiAssetId).swept, 0);
+    _updateAssetReinvestmentController(hub1, daiAssetId, reinvestmentController);
+
+    vm.prank(reinvestmentController);
+    vm.expectRevert(IHub.InvalidAmount.selector);
+    hub1.sweep(daiAssetId, 0);
+  }
+
+  function test_sweep() public {
+    test_sweep_fuzz(1000e18, 1000e18);
+  }
+
+  function test_sweep_fuzz(uint256 supplyAmount, uint256 sweepAmount) public {
+    supplyAmount = bound(supplyAmount, 1, MAX_SUPPLY_AMOUNT);
+    sweepAmount = bound(sweepAmount, 1, supplyAmount);
+
+    _updateAssetReinvestmentController(hub1, daiAssetId, reinvestmentController);
+
+    _addLiquidity(hub1, daiAssetId, supplyAmount);
+
+    uint256 assetLiquidity = hub1.getAssetLiquidity(daiAssetId);
+
+    vm.expectEmit(address(tokenList.dai));
+    emit IERC20.Transfer(address(hub1), reinvestmentController, sweepAmount);
+
+    vm.expectEmit(address(hub1));
+    emit IHub.Sweep(daiAssetId, reinvestmentController, sweepAmount);
+
+    vm.prank(reinvestmentController);
+    hub1.sweep(daiAssetId, sweepAmount);
+
+    assertEq(hub1.getAssetSwept(daiAssetId), sweepAmount);
+    assertEq(hub1.getAssetLiquidity(daiAssetId), assetLiquidity - sweepAmount);
+    _assertDrawnRateSynced(hub1, daiAssetId, 'sweep');
+    _assertHubLiquidity(hub1, daiAssetId, 'sweep');
+  }
+
+  ///@dev swept amount is not withdrawable
+  function test_sweep_revertsWith_InsufficientLiquidity() public {
+    _updateAssetReinvestmentController(hub1, daiAssetId, reinvestmentController);
+
+    uint256 initialLiquidity = vm.randomUint(2, MAX_SUPPLY_AMOUNT);
+    uint256 swept = vm.randomUint(1, initialLiquidity);
+
+    vm.startPrank(address(spoke1));
+    tokenList.dai.transferFrom(bob, address(hub1), initialLiquidity);
+    hub1.add(daiAssetId, initialLiquidity);
+    vm.stopPrank();
+
+    vm.prank(reinvestmentController);
+    hub1.sweep(daiAssetId, swept);
+
+    vm.expectRevert(
+      abi.encodeWithSelector(IHub.InsufficientLiquidity.selector, initialLiquidity - swept)
+    );
+    vm.prank(address(spoke1));
+    hub1.remove(daiAssetId, initialLiquidity - swept + 1, alice);
+  }
+
+  function test_sweep_does_not_impact_utilization(uint256 supplyAmount, uint256 drawAmount) public {
+    supplyAmount = bound(supplyAmount, 2, MAX_SUPPLY_AMOUNT);
+    drawAmount = bound(drawAmount, 1, supplyAmount - 1);
+    _updateAssetReinvestmentController(hub1, daiAssetId, reinvestmentController);
+
+    _addLiquidity(hub1, daiAssetId, supplyAmount);
+    _drawLiquidityViaTempSpoke({
+      hub: hub1,
+      assetId: daiAssetId,
+      amount: drawAmount,
+      withPremium: false,
+      skipTime: false
+    });
+    uint256 swept = vm.randomUint(1, supplyAmount - drawAmount);
+
+    uint256 drawnRate = hub1.getAssetDrawnRate(daiAssetId);
+
+    vm.prank(reinvestmentController);
+    hub1.sweep(daiAssetId, swept);
+
+    assertEq(hub1.getAssetDrawnRate(daiAssetId), drawnRate, 'drawnRate');
+    assertEq(hub1.getAsset(daiAssetId).drawnRate, drawnRate, 'drawnRate');
+    _assertDrawnRateSynced(hub1, daiAssetId, 'swept');
+    _assertHubLiquidity(hub1, daiAssetId, 'sweep');
+    (uint256 drawn, ) = hub1.getAssetOwed(daiAssetId);
+    assertEq(
+      IBasicInterestRateStrategy(hub1.getAsset(daiAssetId).irStrategy).calculateInterestRate({
+        assetId: daiAssetId,
+        liquidity: supplyAmount - drawAmount - swept,
+        drawn: drawn,
+        deficit: vm.randomUint(), // ignored
+        swept: swept
+      }),
+      drawnRate
+    );
+    assertEq(hub1.getAssetLiquidity(daiAssetId), supplyAmount - drawAmount - swept);
+    assertEq(hub1.getAssetSwept(daiAssetId), swept);
+  }
+}

@@ -1,0 +1,241 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+import 'tests/setup/Base.t.sol';
+
+contract SpokeMultipleHubTest is Base {
+  IHub internal hub2;
+  IHub internal hub3;
+  AssetInterestRateStrategy internal hub2IrStrategy;
+  AssetInterestRateStrategy internal hub3IrStrategy;
+
+  uint256 internal daiHub2ReserveId;
+  uint256 internal daiHub3ReserveId;
+
+  uint256 internal hub3DaiAssetId = 0;
+
+  /* @dev Configures spoke1 to have 2 additional reserves:
+   * dai from hub 2
+   * dai from hub 3
+   */
+  function setUp() public virtual override {
+    super.setUp();
+
+    // Configure both hubs
+    (hub2, hub2IrStrategy) = hub2Fixture();
+    (hub3, hub3IrStrategy) = hub3Fixture();
+
+    vm.startPrank(ADMIN);
+    // Relist hub 2's dai on spoke1
+    ISpoke.ReserveConfig memory daiHub2Config = _getDefaultReserveConfig(20_00);
+    ISpoke.DynamicReserveConfig memory dynDaiHub2Config = ISpoke.DynamicReserveConfig({
+      collateralFactor: 78_00,
+      maxLiquidationBonus: 100_00,
+      liquidationFee: 0
+    });
+    daiHub2ReserveId = spoke1.addReserve(
+      address(hub2),
+      daiAssetId,
+      _deployMockPriceFeed(spoke1, 1e8),
+      daiHub2Config,
+      dynDaiHub2Config
+    );
+
+    // Relist hub 3's dai on spoke 1
+    ISpoke.ReserveConfig memory daiHub3Config = _getDefaultReserveConfig(20_00);
+    ISpoke.DynamicReserveConfig memory dynDaiHub3Config = ISpoke.DynamicReserveConfig({
+      collateralFactor: 78_00,
+      maxLiquidationBonus: 100_00,
+      liquidationFee: 0
+    });
+    daiHub3ReserveId = spoke1.addReserve(
+      address(hub3),
+      hub3DaiAssetId,
+      _deployMockPriceFeed(spoke1, 1e8),
+      daiHub3Config,
+      dynDaiHub3Config
+    );
+
+    IHub.SpokeConfig memory spokeConfig = IHub.SpokeConfig({
+      active: true,
+      halted: false,
+      addCap: MAX_ALLOWED_SPOKE_CAP,
+      drawCap: MAX_ALLOWED_SPOKE_CAP,
+      riskPremiumThreshold: MAX_ALLOWED_COLLATERAL_RISK
+    });
+
+    // Connect hub 2 and spoke 1 for dai
+    hub2.addSpoke(daiAssetId, address(spoke1), spokeConfig);
+
+    // Connect hub 3 and spoke 1 for dai
+    hub3.addSpoke(hub3DaiAssetId, address(spoke1), spokeConfig);
+
+    vm.stopPrank();
+
+    // Deal dai to Alice for supplying to 2 hubs
+    deal(address(tokenList.dai), alice, MAX_SUPPLY_AMOUNT * 2);
+
+    // Approvals
+    vm.startPrank(alice);
+    tokenList.dai.approve(address(hub2), UINT256_MAX);
+    tokenList.dai.approve(address(hub3), UINT256_MAX);
+
+    vm.startPrank(bob);
+    tokenList.dai.approve(address(hub2), UINT256_MAX);
+    tokenList.dai.approve(address(hub3), UINT256_MAX);
+    vm.stopPrank();
+  }
+
+  /// @dev Test showcasing dai may be borrowed from hub 2 and hub 1 via spoke 1
+  function test_borrow_secondHub() public {
+    uint256 hub1SupplyAmount = 100_000e18;
+    uint256 hub1BorrowAmount = 10_000e18;
+    uint256 hub2BorrowAmount = 30_000e18;
+    uint256 hub1RepayAmount = 2_000e18;
+    uint256 hub2RepayAmount = 5_000e18;
+
+    // Bob supplies dai to spoke 1 on hub 1
+    SpokeActions.supplyCollateral({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      caller: bob,
+      amount: hub1SupplyAmount,
+      onBehalfOf: bob
+    });
+    assertEq(spoke1.getUserSuppliedAssets(_daiReserveId(spoke1), bob), hub1SupplyAmount);
+    assertEq(hub1.getAddedAssets(daiAssetId), hub1SupplyAmount);
+
+    // Bob borrows dai from spoke 1, hub 1
+    SpokeActions.borrow({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      caller: bob,
+      amount: hub1BorrowAmount,
+      onBehalfOf: bob
+    });
+    assertEq(spoke1.getUserTotalDebt(_daiReserveId(spoke1), bob), hub1BorrowAmount);
+    assertEq(hub1.getAssetTotalOwed(daiAssetId), hub1BorrowAmount);
+
+    // Alice seeds liquidity for dai to hub 2 via spoke 1
+    SpokeActions.supply({
+      spoke: spoke1,
+      reserveId: daiHub2ReserveId,
+      caller: alice,
+      amount: MAX_SUPPLY_AMOUNT,
+      onBehalfOf: alice
+    });
+
+    // Bob can also borrow dai from hub 2 via spoke 1
+    SpokeActions.borrow({
+      spoke: spoke1,
+      reserveId: daiHub2ReserveId,
+      caller: bob,
+      amount: hub2BorrowAmount,
+      onBehalfOf: bob
+    });
+    assertEq(spoke1.getUserTotalDebt(daiHub2ReserveId, bob), hub2BorrowAmount);
+    assertEq(hub2.getAssetTotalOwed(daiAssetId), hub2BorrowAmount);
+
+    // Verify Dai is indeed the asset Bob is borrowing from both hubs
+    assertEq(
+      address(_getAssetUnderlyingByReserveId(spoke1, _daiReserveId(spoke1))),
+      address(tokenList.dai)
+    );
+    assertEq(
+      address(_getAssetUnderlyingByReserveId(spoke1, daiHub2ReserveId)),
+      address(tokenList.dai)
+    );
+
+    // Bob can partially repay both debt positions on hub 1 and hub 2
+    SpokeActions.repay({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      caller: bob,
+      amount: hub1RepayAmount,
+      onBehalfOf: bob
+    });
+    assertEq(
+      spoke1.getUserTotalDebt(_daiReserveId(spoke1), bob),
+      hub1BorrowAmount - hub1RepayAmount
+    );
+    assertEq(hub1.getAssetTotalOwed(daiAssetId), hub1BorrowAmount - hub1RepayAmount);
+
+    SpokeActions.repay({
+      spoke: spoke1,
+      reserveId: daiHub2ReserveId,
+      caller: bob,
+      amount: hub2RepayAmount,
+      onBehalfOf: bob
+    });
+    assertEq(spoke1.getUserTotalDebt(daiHub2ReserveId, bob), hub2BorrowAmount - hub2RepayAmount);
+    assertEq(hub2.getAssetTotalOwed(daiAssetId), hub2BorrowAmount - hub2RepayAmount);
+  }
+
+  /// @dev Test showcasing collateral on hub 3 can suffice for debt position on hub 1
+  function test_borrow_thirdHub() public {
+    uint256 hub1BorrowAmount = 50_000e18;
+    uint256 daiSupplyAmount = 100_000e18;
+
+    // Bob supply to spoke 1 on hub 1
+    SpokeActions.supplyCollateral({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      caller: bob,
+      amount: daiSupplyAmount,
+      onBehalfOf: bob
+    });
+    assertEq(spoke1.getUserSuppliedAssets(_daiReserveId(spoke1), bob), daiSupplyAmount);
+    assertEq(hub1.getAddedAssets(daiAssetId), daiSupplyAmount);
+
+    // Alice seeds liquidity for dai to hub 1
+    SpokeActions.supply({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      caller: alice,
+      amount: MAX_SUPPLY_AMOUNT - daiSupplyAmount,
+      onBehalfOf: alice
+    });
+
+    // Bob borrows dai from hub 1
+    SpokeActions.borrow({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      caller: bob,
+      amount: hub1BorrowAmount,
+      onBehalfOf: bob
+    });
+    assertEq(spoke1.getUserTotalDebt(_daiReserveId(spoke1), bob), hub1BorrowAmount);
+    assertEq(hub1.getAssetTotalOwed(daiAssetId), hub1BorrowAmount);
+
+    // Alice seeds liquidity for dai to hub 3
+    SpokeActions.supply({
+      spoke: spoke1,
+      reserveId: daiHub3ReserveId,
+      caller: alice,
+      amount: MAX_SUPPLY_AMOUNT - daiSupplyAmount,
+      onBehalfOf: alice
+    });
+
+    // Bob supplies collateral to hub 3
+    SpokeActions.supplyCollateral({
+      spoke: spoke1,
+      reserveId: daiHub3ReserveId,
+      caller: bob,
+      amount: daiSupplyAmount,
+      onBehalfOf: bob
+    });
+    assertEq(spoke1.getUserSuppliedAssets(daiHub3ReserveId, bob), daiSupplyAmount);
+    assertEq(hub3.getAddedAssets(hub3DaiAssetId), MAX_SUPPLY_AMOUNT);
+
+    // Since Bob has sufficient collateral on hub 3 to cover his debt position, he can withdraw from hub 1
+    SpokeActions.withdraw({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      caller: bob,
+      amount: daiSupplyAmount,
+      onBehalfOf: bob
+    });
+    assertEq(spoke1.getUserSuppliedAssets(_daiReserveId(spoke1), bob), 0);
+    assertEq(hub1.getAddedAssets(daiAssetId), MAX_SUPPLY_AMOUNT - daiSupplyAmount);
+  }
+}
