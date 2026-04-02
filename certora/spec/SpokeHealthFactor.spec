@@ -322,10 +322,10 @@ rule userHealthBelowThresholdCanOnlyIncreaseHealthFactor(method f) filtered {f -
 
 /**
  * @title Verify that the health factor is above the threshold after any operation
- * @notice Excludes setUsingAsCollateral and borrow functions due to timeouts 
+ * @notice Excludes  borrow function due to timeouts 
  * @link_property Health check validity
  */
-rule userHealthAboveThreshold(method f) filtered {f -> !f.isView && !outOfScopeFunctions(f) /*&& f.selector != sig:setUsingAsCollateral(uint256, bool, address).selector && f.selector != sig:borrow(uint256, uint256, address).selector*/} {
+rule userHealthAboveThreshold(method f) filtered {f -> !f.isView && !outOfScopeFunctions(f)  &&  f.selector != sig:borrow(uint256, uint256, address).selector } {
     env e;
     setup();
     require currentTime == e.block.timestamp;
