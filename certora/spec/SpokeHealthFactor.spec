@@ -5,7 +5,7 @@
  * The health factor is calculated as the total collateral value divided by the total debt value.
  *
  * To run this spec:
- * certoraRun certora/conf/SpokeHealthCheck_take2.conf
+ * certoraRun certora/conf/SpokeHealthFactor.conf
  */
 
 import "./SpokeBaseSummaries.spec";
@@ -18,9 +18,10 @@ using SpokeInstance as spoke;
 ////////////////////////////////////////////////////////////////////////////
 
 methods {
-    // Position status methods are imported from SymbolicPositionStatus.spec
+    // Represent activeCollateralCount and healthFactor only
     function Spoke._processUserAccountData(address user, bool refreshConfig) internal returns (ISpoke.UserAccountData memory) => processUserAccountDataCVL(user, refreshConfig);
 
+    // PositionStatus are safe assumed any value, beside setUsingAsCollateral, nextBorrowing and isUsingAsCollateral that are symbolically represented by a cvl function
     function _.setBorrowing(ISpoke.PositionStatus storage positionStatus, uint256 reserveId, bool borrowing) internal => NONDET;
 
     function _.setUsingAsCollateral(ISpoke.PositionStatus storage positionStatus, uint256 reserveId, bool usingAsCollateral) internal => setUsingAsCollateralCVL_updateTotals(reserveId, usingAsCollateral) expect void;
@@ -132,24 +133,47 @@ function processUserAccountDataCVL(address user, bool refreshConfig) returns (IS
     return userAccountData;
 }
 
+/**
+ * 
+ * suppliedShares * shareToAssetsRatio * price.
+ */
 function collateralIDValue(uint256 reserveId) returns (mathint) {
     uint256 assetId = spoke._reserves[reserveId].assetId;
     return spoke._userPositions[currentUser][reserveId].suppliedShares * shareToAssetsRatio[assetId][currentTime] * symbolicPrice(reserveId, currentTime);
 }
 
+/**
+ * 
+ * drawnShares * index + (premiumShares * index - premiumOffsetRay), all multiplied by price.
+ */
+function debtIDValue(uint256 reserveId) returns (mathint) {
+    uint256 assetId = spoke._reserves[reserveId].assetId;
+    mathint idx = indexOfAssetPerBlock[assetId][currentTime];
+
+    mathint drawnTerm = spoke._userPositions[currentUser][reserveId].drawnShares * idx;
+    mathint premiumTerm =
+        spoke._userPositions[currentUser][reserveId].premiumShares * idx
+        - spoke._userPositions[currentUser][reserveId].premiumOffsetRay;
+
+    return (drawnTerm + premiumTerm) * symbolicPrice(reserveId, currentTime);
+}
+
 function nextBorrowingCVL(uint256 startReserveId) returns (uint256) {
-    if (startReserveId > collateralReserveId_1 && collateralIDValue(collateralReserveId_1) > 0) {
-        return collateralReserveId_1;
+    if (startReserveId > debtReserveId_1 && debtIDValue(debtReserveId_1) > 0) {
+        return debtReserveId_1;
     }
-    if (startReserveId > collateralReserveId_2 && collateralIDValue(collateralReserveId_2) > 0) {
-        return collateralReserveId_2;
+    if (startReserveId > debtReserveId_2 && debtIDValue(debtReserveId_2) > 0) {
+        return debtReserveId_2;
     }
-    if (startReserveId > collateralReserveId_3 && collateralIDValue(collateralReserveId_3) > 0) {
-        return collateralReserveId_3;
+    if (startReserveId > debtReserveId_3 && debtIDValue(debtReserveId_3) > 0) {
+        return debtReserveId_3;
     }
     return max_uint256;
 }
 
+/**
+Based on the definition of validReserveId_singleUser in Spoke.spec, this function verifies that the reserveId is valid for the current user.
+*/
 function validReserveId_singleUser(uint256 reserveId) {
     require
     (reserveId < spoke._reserveCount =>
@@ -248,7 +272,7 @@ hook Sload int200 value _userPositions[KEY address user][KEY uint256 reserveId].
     require knownDebtReserveIds(reserveId);
     uint256 assetId = spoke._reserves[reserveId].assetId;
     require totalDebtValueGhost >=
-        (value * indexOfAssetPerBlock[assetId][currentTime] - value) * symbolicPrice(reserveId, currentTime);
+        (spoke._userPositions[currentUser][reserveId].premiumShares * indexOfAssetPerBlock[assetId][currentTime] - value) * symbolicPrice(reserveId, currentTime);
 }
 
 ////////////////////////////////////////////////////////////////////////////
@@ -288,7 +312,9 @@ rule userHealthBelowThresholdCanOnlyIncreaseHealthFactor(method f) filtered {f -
         bool usingAsCollateral;
         setUsingAsCollateral(e, reserveId, usingAsCollateral, currentUser);
     }
-    f(e, args);
+    else {
+        f(e, args);
+    }
 
     require totalCollateralValueGhost >= 0 && totalDebtValueGhost >= 0;
     assert healthFactorBefore <= ghostHealthFactor[totalCollateralValueGhost][totalDebtValueGhost];
@@ -299,15 +325,22 @@ rule userHealthBelowThresholdCanOnlyIncreaseHealthFactor(method f) filtered {f -
  * @notice Excludes setUsingAsCollateral and borrow functions due to timeouts 
  * @link_property Health check validity
  */
-rule userHealthAboveThreshold(method f) filtered {f -> !f.isView && !outOfScopeFunctions(f) && f.selector != sig:setUsingAsCollateral(uint256, bool, address).selector && f.selector != sig:borrow(uint256, uint256, address).selector} {
+rule userHealthAboveThreshold(method f) filtered {f -> !f.isView && !outOfScopeFunctions(f) /*&& f.selector != sig:setUsingAsCollateral(uint256, bool, address).selector && f.selector != sig:borrow(uint256, uint256, address).selector*/} {
     env e;
     setup();
     require currentTime == e.block.timestamp;
     require totalCollateralValueGhost >= 0 && totalDebtValueGhost >= 0;
     require ghostHealthFactor[totalCollateralValueGhost][totalDebtValueGhost] >= HEALTH_FACTOR_LIQUIDATION_THRESHOLD();
 
-    calldataarg args;
-    f(e, args);
+    if (f.selector == sig:setUsingAsCollateral(uint256, bool, address).selector) {
+        uint256 reserveId;
+        bool usingAsCollateral;
+        setUsingAsCollateral(e, reserveId, usingAsCollateral, currentUser);
+    }
+    else {
+        calldataarg args;
+        f(e, args);
+    }
 
     require totalCollateralValueGhost >= 0 && totalDebtValueGhost >= 0;
     assert ghostHealthFactor[totalCollateralValueGhost][totalDebtValueGhost] >= HEALTH_FACTOR_LIQUIDATION_THRESHOLD();
