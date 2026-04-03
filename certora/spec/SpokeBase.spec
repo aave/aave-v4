@@ -41,27 +41,28 @@ definition increaseCollateralOrReduceDebtFunctions(method f) returns bool =
 //                              FUNCTIONS                                 //
 ////////////////////////////////////////////////////////////////////////////
 
-function setup() {
-    require spoke._reserveCount < max_uint256; // safe assumption
-    //requireInvariant validReserveId();
-    require forall uint256 reserveId. forall address user.
+definition validReserveId_definition() returns bool =
+
+    forall uint256 reserveId. forall address user.
     // exists
-    (reserveId < spoke._reserveCount =>
+    ((reserveId < spoke._reserveCount =>
     // has underlying and hub
-    (spoke._reserves[reserveId].underlying != 0 && spoke._reserves[reserveId].hub != 0 && spoke._hubAssetIdToReserveId[spoke._reserves[reserveId].hub][spoke._reserves[reserveId].assetId] != 0)
+    (spoke._reserves[reserveId].underlying != 0 && spoke._reserves[reserveId].hub != 0 && spoke._hubAssetIdToReserveId[spoke._reserves[reserveId].hub][spoke._reserves[reserveId].assetId] == reserveId))
     &&
     // not exists
     (reserveId >= spoke._reserveCount => (
-    // no one borrowed or used as collateral
-    !isBorrowing[user][reserveId] && !isUsingAsCollateral[user][reserveId]
-    // no supplied or drawn shares
-    && spoke._userPositions[user][reserveId].suppliedShares == 0 && spoke._userPositions[user][reserveId].drawnShares == 0 &&
-    // no premium shares or offset
-    spoke._userPositions[user][reserveId].premiumShares == 0 && spoke._userPositions[user][reserveId].premiumOffsetRay == 0 &&
-
     // has no underlying, hub, assetId
-    spoke._reserves[reserveId].underlying == 0 && spoke._reserves[reserveId].assetId == 0 && spoke._reserves[reserveId].hub == 0 && spoke._reserves[reserveId].dynamicConfigKey == 0 && spoke._reserves[reserveId].flags == 0 && spoke._reserves[reserveId].collateralRisk == 0)));
+    spoke._reserves[reserveId].underlying == 0 && spoke._reserves[reserveId].assetId == 0 && spoke._reserves[reserveId].hub == 0 && spoke._reserves[reserveId].dynamicConfigKey == 0 && spoke._reserves[reserveId].flags == 0 && spoke._reserves[reserveId].collateralRisk == 0 && spoke._dynamicConfig[reserveId][0].collateralFactor == 0 &&
+    // no one borrowed or used as collateral, no supplied or drawn shares, no premium shares or offset
+    !isBorrowing[user][reserveId] && !isUsingAsCollateral[user][reserveId] &&
+    spoke._userPositions[user][reserveId].suppliedShares == 0 && spoke._userPositions[user][reserveId].drawnShares == 0 &&
+    spoke._userPositions[user][reserveId].premiumShares == 0 && spoke._userPositions[user][reserveId].premiumOffsetRay == 0)));
 
+function setup() {
+    require spoke._reserveCount < max_uint256; // safe assumption
+    //requireInvariant validReserveId();
+    require validReserveId_definition();
+    
     //requireInvariant isBorrowingIFFdrawnShares();
     require forall uint256 reserveId. forall address user.
     spoke._userPositions[user][reserveId].drawnShares > 0 <=> isBorrowing[user][reserveId];

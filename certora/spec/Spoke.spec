@@ -270,20 +270,7 @@ invariant drawnSharesZero(address user, uint256 reserveId)
  * @link_property valid state
  */
 invariant validReserveId()
-    forall uint256 reserveId. forall address user.
-    // exists
-    ((reserveId < spoke._reserveCount =>
-    // has underlying and hub
-    (spoke._reserves[reserveId].underlying != 0 && spoke._reserves[reserveId].hub != 0 && spoke._hubAssetIdToReserveId[spoke._reserves[reserveId].hub][spoke._reserves[reserveId].assetId] == reserveId))
-    &&
-    // not exists
-    (reserveId >= spoke._reserveCount => (
-    // has no underlying, hub, assetId
-    spoke._reserves[reserveId].underlying == 0 && spoke._reserves[reserveId].assetId == 0 && spoke._reserves[reserveId].hub == 0 && spoke._reserves[reserveId].dynamicConfigKey == 0 && spoke._reserves[reserveId].flags == 0 && spoke._reserves[reserveId].collateralRisk == 0 && spoke._dynamicConfig[reserveId][0].collateralFactor == 0 &&
-    // no one borrowed or used as collateral, no supplied or drawn shares, no premium shares or offset
-    !isBorrowing[user][reserveId] && !isUsingAsCollateral[user][reserveId] &&
-    spoke._userPositions[user][reserveId].suppliedShares == 0 && spoke._userPositions[user][reserveId].drawnShares == 0 &&
-    spoke._userPositions[user][reserveId].premiumShares == 0 && spoke._userPositions[user][reserveId].premiumOffsetRay == 0)))
+    validReserveId_definition()
     filtered {f -> !outOfScopeFunctions(f)}
 
 /**

@@ -89,5 +89,7 @@ jobs:
           solc-versions: 0.8.28
           job-name: "Verified Rules"
           certora-key: ${{ secrets.CERTORAKEY }}
+          gh-review: failure # Only post GH review if one or more rules fail
+          gh-review-jobs: failed # (optional) All successful jobs are hidden in a dropdown
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
