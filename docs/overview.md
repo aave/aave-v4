@@ -38,16 +38,17 @@ flowchart TD
   class LP,BR,S1,S2,S3,HUB box;
 ```
 
-Spokes are individual modules that can connect to one or more Hubs. They route user actions (`supply`,`withdraw`, `borrow` and `repay`) to the appropriate Hub based on reserve configuration and available caps. Whenever liquidity is restored on the Hub, the Spoke accrues a base interest (determined by an interest rate strategy at the Hub level) and a premium debt based on the Risk Premium (determined by the collateral composition of the user that triggered the action).
+Spokes are individual modules that can connect to one or more Hubs. They route user actions (`supply`,`withdraw`, `borrow` and `repay`) to the appropriate Hub based on reserve configuration and available caps. Whenever liquidity is drawn from the Hub, the Spoke accrues a base interest (determined by an interest rate strategy at the Hub level) and a premium debt based on the Risk Premium (determined by the collateral composition of the user that triggered the action).
 
 A Hub can have an unspecified number of Spokes, each one contributing to the total outstanding debt and to the interest generated. The Hub manages the basic accounting (total liquidity vs available), the interest rates, and the spoke-specific add and draw caps, among other parameters.
 
 ## Hub
 
-The Hub is upgradeable and serves as the central coordinator for liquidity management in Aave V4. The design allows for multiple Hubs to exist, with each Hub maintaining oversight of its own set of Spokes. Each Hub sets the add/draw caps for its Spokes and enforces crucial accounting invariants. The design objective was to make the Hub as simple as possible.
+The Hub is upgradeable and serves as the central coordinator for liquidity management in Aave V4, architected to be as simple as possible. The design allows for multiple Hubs to exist, with each Hub maintaining oversight of its own set of Spokes. Each Hub sets the add/draw caps for its Spokes and enforces crucial accounting invariants.
 
 The key aspects of the Hub include:
 
+- Registering and listing assets supported by the protocol.
 - Maintaining a registry of authorized Spokes for each supported asset.
 - Spoke-specific configurations including:
   - Liquidity caps to limit Spoke drawing and adding
@@ -138,6 +139,8 @@ $RP_u = f(CR_0, C_{u,0}, P_0) = CR_0$
 
 $RP_u = f(CR_i, C_{u, i}, P_i) = \frac{CR_0C_{u,0}P_0 + CR_1C_{u,1}P_1}{C_{u,0}P_0+C_{u,1}P_1}$
 
+> **Note:** If the user's total collateral value is insufficient to cover all outstanding debt (e.g., in a deficit scenario), the algorithm terminates early once all collateral has been allocated. The Risk Premium is computed using only the collateral value available, and the remaining uncovered debt is ignored in the calculation.
+
 ## Premium Offset
 
 Operationally, the premium is implemented via additional virtual debt shares (“premium shares”) that increase interest accrual but are never repayable principal. We separate this component from principal interest by tracking a premium offset in asset units. At borrow time, the offset is set so that, in asset terms, it exactly equals the value of the premium shares. As time elapses, interest accrues on the premium shares causing their asset value to exceed the offset; the excess is the premium. Premium shares are recorded in share units. The premium offset is recorded in asset units.
@@ -153,7 +156,7 @@ The refresh mechanism preserves the total premium debt while updating the premiu
 - The user's previously accrued premium debt remains unchanged
 - Future premium accrual reflects the updated Risk Premium
 
-Actions that trigger a premium refresh include events that can change $RP_u$, such as `setUsingAsCollateral` when disabling collateral, `withdraw` when withdrawing collateral, `borrow` when increasing debt, `liquidationCall` (non-deficit path), and explicit `updateUserRiskPremium` updates (user-initiated or permissioned by the Governor). In these flows, `refreshPremium` updates premium shares and the offset so the total premium debt stays constant, while future accrual reflects the new Risk Premium.
+Actions that trigger a premium refresh include events that can change $RP_u$, such as `setUsingAsCollateral` when disabling collateral, `withdraw` when withdrawing collateral, `borrow` operations, `liquidationCall` (non-deficit path), and explicit `updateUserRiskPremium` updates (user-initiated or permissioned by the Governor). In these flows, `refreshPremium` updates premium shares and the offset so the total premium debt stays constant, while future accrual reflects the new Risk Premium.
 
 # Interest Accrual
 
@@ -184,7 +187,7 @@ $ΔD_{u,ibase} = R_{sbase,i}D_{u,ibase}$
 
 ## Premium Debt
 
-Premium Debt is the portion of a user’s debt that represents the additional interest accumulated due to the quality of user’s collateral assets (i.e., their Risk Premium on top of the base drawn rate).
+Premium Debt is the portion of a user’s debt that represents the additional interest accumulated due to the quality of the user’s collateral assets (i.e., their Risk Premium on top of the base drawn rate).
 
 $D_{u,premium}$ is a running total of the extra interest accrued on user u
 
@@ -202,8 +205,8 @@ The Reinvestment Module offers an optional tool to support capital efficiency wh
 
 - **Governance‑Controlled**: The Governor manages all funds allocated to reinvestment strategies. Decisions on strategy selection, risk parameters, and operational guidelines are exclusively governance responsibilities.
 - **Interest Rate Neutral**: Swept liquidity remains part of the usage ratio denominator, so sweeping funds to external strategies does not affect the drawn rate experienced by users.
-- **Opt‑In for Users**: Participation in reinvestment is not compulsory. Reinvestment is enabled at the Hub level on a per-asset basis; users choose whether to interact with a reinvestment-enabled asset by supplying to a spoke Reserve that is connected to that Hub asset. Since the reinvestment controller is a governance-controlled parameter that can be activated at any time. It is the Governor's responsibility to properly communicate any planned activation and its timeframe in advance, giving existing suppliers the opportunity to withdraw their funds if they wish to opt out.
-- **New Yield Opportunities**: By deploying otherwise idle liquidity into external strategies, opt‑in liquidity providers can potentially earn incremental returns on top of borrower interest.
+- **Opt‑In for Users**: Participation in reinvestment is not compulsory. Reinvestment is enabled at the Hub level on a per-asset basis; users choose whether to interact with a reinvestment-enabled asset by supplying to a spoke Reserve that is connected to that Hub asset. Since the reinvestment controller is a governance-controlled parameter that can be activated at any time, it is the Governor's responsibility to properly communicate any planned activation and its timeframe in advance. This gives existing suppliers the opportunity to withdraw their funds if they wish to opt out.
+- **New Yield Opportunities**: By deploying otherwise idle liquidity into external strategies, liquidity providers opting in can potentially earn incremental returns on top of borrower interest.
 - **Risk Allocation**: Losses arising from reinvestment strategies are absorbed by the Governor, who defines the coverage method, shielding liquidity providers from direct strategy‑specific risk exposure.
 - **Optional by Design**: The module can remain disabled without affecting core supply and borrow functionality. When inactive, all liquidity stays in the Hub.
 
@@ -227,11 +230,11 @@ Dynamic configuration keys allow parameter updates without affecting existing op
 
 Dynamic configuration extends the reserve model with a per‑reserve mapping that holds every historic configuration key, referenced by a `dynamicConfigKey`. Collateralization parameters now reside inside the dynamic mapping rather than the static reserve record; this set comprises the Collateral Factor (CF), the Maximum Liquidation Bonus (LB) and the Liquidation Fee (LF).
 
-Each Reserve stores the latest `dynamicConfigKey`, which represents the current up-to-date risk configuration. In contrast, every user position retains a snapshot of the active `dynamicConfigKey` corresponding to the configuration in effect at the time of its last risk-increasing event. This snapshot is refreshed across all assets of a user position only when the user performs an action which elevates the risk posed to the system, such as disabling an asset as collateral, withdrawing, or borrowing. When a user designates a new asset as collateral, only the `dynamicConfigKey` snapshot of the asset in play is refreshed.
+Each Reserve stores the latest `dynamicConfigKey`, which represents the current up-to-date risk configuration. In contrast, every user position retains a snapshot of the active `dynamicConfigKey` corresponding to the configuration in effect at the time of its last risk-increasing event. This snapshot is refreshed across all assets of a user position only when the user performs an action which elevates the risk posed to the system, such as disabling an asset as collateral, withdrawing collateral, or borrowing. When a user designates a new asset as collateral, only the `dynamicConfigKey` snapshot of the asset in play is refreshed.
 
 ### Automatic Rebinding and Hard Safety Guard
 
-When a user attempts a health‑decreasing action, the engine checks the latest configuration for each collateral in the position. If the position remains sustainable under this configuration, the engine rebinds the snapshot to this latest key and allows the action to proceed. However, if the latest configuration would leave the position under‑collateralized, the engine blocks the action by reverting.
+When a user attempts a health‑decreasing action, the engine tentatively applies the action and then evaluates the resulting position against the latest dynamic configuration for each collateral. If the position is healthy after both the action and the configuration update, the engine rebinds the snapshot to the latest key and commits the action. However, if the resulting position would be under‑collateralized with the latest configuration, the engine reverts the entire action.
 
 ### Feature Notes
 
@@ -241,12 +244,13 @@ The architecture of dynamic configuration comes with several practical constrain
 2. For a given user position, the snapshot updates to the latest key on:
    1. `setUsingAsCollateral` updates a single Reserve when enabling and all Reserves when disabling
    2. `borrow`
-   3. `withdraw`
-3. The snapshot does **not** update on actions that reduce risk exposure of the system:
+   3. `withdraw` when the withdrawn Reserve had been set as collateral
+3. The snapshot does **not** update on actions that do not increase the risk exposure of the system:
    1. `supply`
    2. `repay`
    3. `liquidationCall` as liquidations will always improve the health of a user position
    4. `updateUserRiskPremium`
+   5. `withdraw` when the withdrawn Reserve had **not** been set as collateral
 4. Dynamic Risk Configurations can be adjusted by the Governor utilizing the following methods:
    1. `addDynamicReserveConfig` creates a new risk configuration and increments the latest `dynamicConfigKey`. User positions created or subsequently updated bind to this latest `dynamicConfigKey`.
    2. `updateDynamicReserveConfig` updates a prior configuration, affecting existing positions bound to that `dynamicConfigKey`.
@@ -259,9 +263,9 @@ Aave V4 introduces a redesigned liquidation mechanism that replaces the fixed cl
 
 ## Key Differences from Aave V3
 
-- **Target Health Factor vs Close Factor:** In Aave V3, the default close factor is 50% (with a 100% close factor when HF < 0.95 or when liquidation amounts are under a given base currency threshold). Liquidators would typically repay half of a borrower’s debt and seize half of their collateral. Aave V4 removes the default close‑factor: the maximum a liquidator can repay (in situations that do not result in dust collateral or debt remaining) is the amount needed to bring the borrower back to the `TargetHealthFactor` determined by the Governor.
-- **Dynamic Dust Handling during Liquidations**: Both Aave V3 and Aave V4 revert when the remaining amount is below a hard‑coded threshold, while dynamically adjusting the maximum debt that can be liquidated and, if the liquidator opts to fully repay, allow full repayment to prevent dust. However, Aave V4 allows more flexibility because of removing the close-factor and facilitating the liquidation steps required to bring the position back to the target HF. Dust may still remain if either the collateral or debt Reserve is fully liquidated.
-- **Dutch‑Auction Style Liquidation Bonus:** Aave V3 applies a static liquidation bonus that does not depend on the borrower’s health factor. Aave V4 introduces a variable liquidation bonus that increases linearly as the health factor decreases. Governance can specify two spoke‑wide parameters that shape the liquidation bonus: `healthFactorForMaxBonus` and `liquidationBonusFactor`.
+- **Target Health Factor vs Close Factor:** In Aave V3, the default close factor is 50% (with a 100% close factor when HF < 0.95 or when liquidation amounts are under a given base currency threshold). Liquidators would typically repay half of a borrower’s debt and seize a corresponding amount of their collateral. Aave V4 removes the default close factor: the maximum a liquidator can repay (in situations that do not result in dust collateral or debt remaining) is the amount needed to bring the borrower back to the `TargetHealthFactor` determined by the Governor.
+- **Dynamic Dust Handling during Liquidations**: Similar to Aave V3, Aave V4 uses a dust threshold of $1,000 to prevent residual positions that are uneconomical to liquidate. If the remaining debt or collateral post-liquidation falls below this threshold, the protocol expands the liquidation to fully exhaust the smaller side, or reverts if the liquidator's intended `debtToCover` is insufficient. However, whereas Aave V3's close factor is a hard constraint, Aave V4 allows more flexibility by selectively bypassing the target HF enforcement in order to prevent dust accumulation.
+- **Dutch‑Auction Style Liquidation Bonus:** Aave V3 applies a static liquidation bonus that does not depend on the borrower’s health factor. Aave V4 introduces a variable liquidation bonus that increases linearly as the health factor decreases. Governance can specify two spoke‑wide parameters that determine the liquidation bonus calculation: `healthFactorForMaxBonus` and `liquidationBonusFactor`.
 
 ## Parameters and Configuration
 
