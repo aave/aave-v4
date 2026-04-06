@@ -1,0 +1,37 @@
+docs/features/PositionManager.md
+  d09ed80416bb7e69 29
+  8a9c24443c200204 9,57,60
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.5",
+  "base_commit_sha": "a15546ee2c49dc9ac4969b86638f4066e7aeb7b7",
+  "prompts": {
+    "8a9c24443c200204": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "8c0dd6ba-3993-4da1-b2bd-7d3ab99fc99f",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "CanonicalJP",
+      "messages": [],
+      "total_additions": 6,
+      "total_deletions": 6,
+      "accepted_lines": 3,
+      "overriden_lines": 3
+    },
+    "d09ed80416bb7e69": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "b7fdab33-df78-4ca4-9e24-4d75f45e5e46",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "CanonicalJP",
+      "messages": [],
+      "total_additions": 8,
+      "total_deletions": 8,
+      "accepted_lines": 1,
+      "overriden_lines": 0
+    }
+  }
+}
