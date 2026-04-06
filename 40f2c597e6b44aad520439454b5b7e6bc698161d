@@ -1,0 +1,108 @@
+src/deployments/utils/interfaces/IHubInstance.sol
+  7b925b73115efc5c 6-8
+src/deployments/procedures/deploy/position-manager/AaveV4GiverPositionManagerDeployProcedure.sol
+  7b925b73115efc5c 8-10,12-14
+src/deployments/procedures/deploy/position-manager/AaveV4NativeTokenGatewayDeployProcedure.sol
+  7b925b73115efc5c 8-10,12-16
+src/deployments/orchestration/AaveV4DeployBase.sol
+  7b925b73115efc5c 17,19,21-22,33-35,52,67-69,88-92,114-115,129-133,154-158
+src/deployments/batches/AaveV4ConfiguratorBatch.sol
+  7b925b73115efc5c 8-10,37
+src/deployments/utils/libraries/InputUtils.sol
+  7b925b73115efc5c 4-6,49-51
+scripts/deploy/examples/AaveV4DeployAnvil.s.sol
+  7b925b73115efc5c 8-9
+src/deployments/procedures/deploy/hub/AaveV4HubDeployProcedure.sol
+  7b925b73115efc5c 8-10,12-17
+src/deployments/utils/libraries/Create2Utils.sol
+  7b925b73115efc5c 8,20-22,37-40
+src/deployments/batches/AaveV4TreasurySpokeBatch.sol
+  7b925b73115efc5c 7-9,18
+src/deployments/utils/MetadataLogger.sol
+  7b925b73115efc5c 7-9
+src/deployments/procedures/deploy/hub/AaveV4InterestRateStrategyDeployProcedure.sol
+  7b925b73115efc5c 8-9,14
+src/deployments/procedures/roles/AaveV4AccessManagerRolesProcedure.sol
+  7b925b73115efc5c 8-10,13,18-19,24-25,30-33
+src/deployments/batches/AaveV4GatewayBatch.sol
+  7b925b73115efc5c 8-10,44
+src/deployments/utils/libraries/RolesValidation.sol
+  7b925b73115efc5c 4-6,8
+src/deployments/batches/AaveV4TokenizationSpokeBatch.sol
+  7b925b73115efc5c 8-10,40
+src/deployments/batches/AaveV4SpokeInstanceBatch.sol
+  7b925b73115efc5c 10-12,45
+src/deployments/procedures/deploy/spoke/AaveV4AaveOracleDeployProcedure.sol
+  7b925b73115efc5c 6-8,12
+src/deployments/procedures/deploy/spoke/AaveV4TokenizationSpokeDeployProcedure.sol
+  7b925b73115efc5c 12,14,16-22
+src/deployments/procedures/deploy/AaveV4AccessManagerEnumerableDeployProcedure.sol
+  7b925b73115efc5c 8-9
+src/deployments/utils/Logger.sol
+  7b925b73115efc5c 8-10
+src/deployments/procedures/AaveV4DeployProcedureBase.sol
+  7b925b73115efc5c 6-7
+src/deployments/procedures/deploy/spoke/AaveV4SpokeConfiguratorDeployProcedure.sol
+  7b925b73115efc5c 7-8,12-13
+src/deployments/orchestration/AaveV4DeployOrchestration.sol
+  7b925b73115efc5c 27-28
+tests/setup/Base.t.sol
+  5cbfca345ded2e91 102
+src/deployments/procedures/deploy/position-manager/AaveV4SignatureGatewayDeployProcedure.sol
+  7b925b73115efc5c 8-10,12-14
+src/deployments/utils/interfaces/ISpokeInstance.sol
+  7b925b73115efc5c 6-8
+src/deployments/libraries/BatchReports.sol
+  7b925b73115efc5c 5,21,29-31,34,38,43-44,50-52,59-60,63
+src/deployments/procedures/deploy/spoke/AaveV4SpokeDeployProcedure.sol
+  7b925b73115efc5c 8-10,12-19,46-50
+tests/utils/ConfigData.sol
+  5cbfca345ded2e91 1-84
+src/deployments/batches/AaveV4AuthorityBatch.sol
+  7b925b73115efc5c 9
+src/deployments/batches/AaveV4HubInstanceBatch.sol
+  7b925b73115efc5c 8-10,38
+src/deployments/procedures/deploy/hub/AaveV4HubConfiguratorDeployProcedure.sol
+  7b925b73115efc5c 8-10,12-14
+src/deployments/libraries/OrchestrationReports.sol
+  7b925b73115efc5c 6-8,10-11,17-18,24-31
+src/deployments/batches/AaveV4PositionManagerBatch.sol
+  7b925b73115efc5c 9-11,27
+src/deployments/procedures/deploy/position-manager/AaveV4ConfigPositionManagerDeployProcedure.sol
+  7b925b73115efc5c 8-10,12-14
+src/deployments/utils/interfaces/ITokenizationSpokeInstance.sol
+  7b925b73115efc5c 6-8
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.22",
+  "base_commit_sha": "40f2c597e6b44aad520439454b5b7e6bc698161d",
+  "prompts": {
+    "5cbfca345ded2e91": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "377efc66-accf-43de-9c46-02021b98e86c",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "YBM <31329384+yan-man@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 85,
+      "total_deletions": 1,
+      "accepted_lines": 85,
+      "overriden_lines": 0
+    },
+    "7b925b73115efc5c": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "9a6fd40f-1619-440a-9ae6-15d11edae335",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "YBM <31329384+yan-man@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 554,
+      "total_deletions": 161,
+      "accepted_lines": 410,
+      "overriden_lines": 49
+    }
+  }
+}

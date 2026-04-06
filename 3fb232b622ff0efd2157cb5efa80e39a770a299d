@@ -1,0 +1,31 @@
+tests/deployments/utils/Logger.t.sol
+  5cbfca345ded2e91 1-106,108,112-114,117-118
+tests/deployments/fork/PostDeploymentVerificationBase.t.sol
+  5cbfca345ded2e91 28-30,107-132,163
+tests/deployments/fork/PostDeploymentVerificationTest.t.sol
+  5cbfca345ded2e91 15,184-185,187,190-192,196-197,201-218,222,224,226-233,235-236,242,245,284
+src/deployments/utils/Logger.sol
+  5cbfca345ded2e91 71-75
+tests/deployments/utils/MetadataLogger.t.sol
+  5cbfca345ded2e91 1-59,64-246
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.3",
+  "base_commit_sha": "3fb232b622ff0efd2157cb5efa80e39a770a299d",
+  "prompts": {
+    "5cbfca345ded2e91": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "377efc66-accf-43de-9c46-02021b98e86c",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "YBM",
+      "messages": [],
+      "total_additions": 500,
+      "total_deletions": 32,
+      "accepted_lines": 467,
+      "overriden_lines": 10
+    }
+  }
+}

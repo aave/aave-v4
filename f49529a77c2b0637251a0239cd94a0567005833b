@@ -1,0 +1,23 @@
+.github/workflows/minimize-certora-comments.yml
+  b9de9c4f23cf0b21 20-25,27-34,36
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.22",
+  "base_commit_sha": "f49529a77c2b0637251a0239cd94a0567005833b",
+  "prompts": {
+    "b9de9c4f23cf0b21": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "20be5a7b-a17f-4d9b-ba5f-9aa411647a53",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "YBM <31329384+yan-man@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 28,
+      "total_deletions": 22,
+      "accepted_lines": 15,
+      "overriden_lines": 0
+    }
+  }
+}

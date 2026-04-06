@@ -1,0 +1,39 @@
+tests/deployments/AaveV4BatchDeployment.t.sol
+  5cbfca345ded2e91 10,356,391,427
+scripts/deploy/examples/AaveV4DeployAnvil.s.sol
+  5cbfca345ded2e91 5,24
+tests/deployments/fork/PostDeploymentVerificationBase.t.sol
+  5cbfca345ded2e91 5,28
+tests/utils/BatchTestProcedures.sol
+  5cbfca345ded2e91 18,37,39,80,89,114,127,142-143,192,278,358,435,501,510,578,633,642,687,695,758,782,810,837
+src/deployments/utils/libraries/InputUtils.sol
+  5cbfca345ded2e91 1-56
+tests/scripts/AaveV4DeployBatchBaseScript.t.sol
+  5cbfca345ded2e91 6
+tests/deployments/fork/PostDeploymentVerificationAnvil.t.sol
+  5cbfca345ded2e91 6,29-30
+src/deployments/orchestration/AaveV4DeployOrchestration.sol
+  5cbfca345ded2e91 13,64-65
+scripts/deploy/AaveV4DeployBatchBase.s.sol
+  5cbfca345ded2e91 5,71,79
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.22",
+  "base_commit_sha": "0dc4bc2c735da225fcb669f9f254607c43f94a83",
+  "prompts": {
+    "5cbfca345ded2e91": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "377efc66-accf-43de-9c46-02021b98e86c",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "YBM <31329384+yan-man@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 98,
+      "overriden_lines": 0
+    }
+  }
+}
