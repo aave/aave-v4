@@ -2,7 +2,7 @@
 
 ## Summary
 
-Dynamic Risk Configuration is a spoke-level versioning mechanism that isolates collateralization parameters into per-Reserve configuration entries, each identified by a sequentially incrementing `dynamicConfigKey`. When governance updates collateralization parameters for a Reserve, the Spoke typically appends a new configuration entry rather than replacing the existing one (though governance can also update an existing key in place via `updateDynamicReserveConfig`). User positions retain a snapshot of the `dynamicConfigKey` active at the time of their last risk-bearing action. Parameter updates therefore do not immediately affect open positions; existing positions continue to evaluate under their snapshotted configuration until the user performs a risk-increasing action, at which point the Spoke rebinds the snapshot to the latest key. If the rebinding leaves the position under-collateralized, the action reverts.
+Dynamic Risk Configuration is a spoke-level versioning mechanism (where each version is a snapshot of collateralization parameters) that isolates those parameters into per-Reserve configuration entries, each identified by a sequentially incrementing `dynamicConfigKey`. When governance updates collateralization parameters for a Reserve, the Spoke typically appends a new configuration entry rather than replacing the existing one (though governance can also update an existing key in place via `updateDynamicReserveConfig`). User positions retain a snapshot of the `dynamicConfigKey` active at the time of their last risk-bearing action. Parameter updates therefore do not immediately affect open positions; existing positions continue to evaluate under their snapshotted configuration until the user performs a risk-increasing action, at which point the Spoke rebinds the snapshot to the latest key. If the rebinding leaves the position under-collateralized, the action reverts.
 
 The Governor retains the ability to force-migrate individual positions to the latest configuration via `updateUserDynamicConfig`. This mechanism is the primary tool for proactively managing risk when market conditions change between user interactions.
 
@@ -14,7 +14,7 @@ The implementation spans three contracts in `src/spoke/`:
 
 - `Spoke.sol`: exposes `addDynamicReserveConfig`, `updateDynamicReserveConfig`, and `updateUserDynamicConfig`, and implements all internal snapshot refresh logic.
 - `SpokeStorage.sol`: declares the `_dynamicConfig` mapping and stores `_reserves` / `_userPositions` (whose `dynamicConfigKey` fields are defined in `ISpoke`).
-- `SpokeConfigurator.sol`: provides access-controlled convenience functions for common single-parameter updates that delegate to the above entry points on the target Spoke.
+- `SpokeConfigurator.sol`: provides access-controlled convenience functions for common parameter updates that delegate to the above entry points on the target Spoke.
 
 ## Configuration Data Model
 
@@ -39,7 +39,7 @@ The maximum permitted `dynamicConfigKey` is `type(uint32).max` (approximately 4.
 
 ## Configuration Lifecycle
 
-Configuration entries are created by appending a new key or updated by modifying an existing one. Both operations apply the same structural validation before committing state.
+Configuration entries are created by appending a new key or updated by modifying an existing one. The two operations share most structural validation, but differ in one respect: `updateDynamicReserveConfig` disallows `collateralFactor = 0`, whereas `addDynamicReserveConfig` permits it (allowing a Reserve to be added as non-collateral from the start).
 
 **Adding new configurations**
 
@@ -48,7 +48,7 @@ Configuration entries are created by appending a new key or updated by modifying
 Before storing, the Spoke validates three combined constraints under `InvalidCollateralFactorAndMaxLiquidationBonus`:
 
 - `collateralFactor` must be strictly less than `100_00` BPS.
-- `maxLiquidationBonus` must be at least `100_00` BPS.
+- `maxLiquidationBonus` must be greater than or equal to `100_00` BPS.
 - `percentMulUp(maxLiquidationBonus, collateralFactor)` must be strictly less than `100_00` BPS.
 
 The third constraint enforces that the liquidation penalty term derived from `maxLiquidationBonus` and `collateralFactor` remains strictly below 100%, which keeps downstream liquidation math well-defined. Additionally, `liquidationFee` must be at most `100_00` BPS; violations revert with `InvalidLiquidationFee`.
@@ -59,7 +59,7 @@ A new configuration with `collateralFactor = 0` is valid under these constraints
 
 `updateDynamicReserveConfig` modifies an existing configuration entry in place at a specified `dynamicConfigKey`. It applies the same structural validation as `addDynamicReserveConfig`, with two additional checks: the target key must reference a previously initialized entry, and the `collateralFactor` in the updated configuration must be strictly greater than zero.
 
-The guard against setting `collateralFactor = 0` on a historical key is enforced in validation with `InvalidCollateralFactor`. If a historical key were allowed to carry a zero collateral factor, all positions currently snapshotted at that key would lose collateral credit for that Reserve in health factor calculations. Additionally, liquidations read the borrower’s snapshotted dynamic configuration for the collateral reserve and require `collateralFactor > 0`; therefore that reserve could not be seized as liquidation collateral while bound to a zero-CF key. If it is the only collateral supporting outstanding debt, liquidation could be blocked until the key is updated back to `>0` or the position is migrated to a key with `collateralFactor > 0`.
+The guard against setting `collateralFactor = 0` on a historical key is enforced in validation with `InvalidCollateralFactor`. If a historical key were altered to carry a zero collateral factor, all positions currently snapshotted at that key would lose collateral credit for that Reserve in health factor calculations. Additionally, liquidations read the borrower’s snapshotted dynamic configuration for the collateral reserve and require `collateralFactor > 0`; therefore that reserve could not be seized as liquidation collateral while bound to a zero-CF key. If it is the only collateral supporting outstanding debt, liquidation could be blocked until the key is updated back to `>0` or the position is migrated to a key with `collateralFactor > 0`.
 
 Updating an uninitialized key reverts with `DynamicConfigKeyUninitialized`, detected by checking that the stored `maxLiquidationBonus` is nonzero (all valid stored configurations carry a `maxLiquidationBonus` of at least `100_00`).
 
@@ -152,8 +152,8 @@ The following are explicitly excluded from the Dynamic Risk Configuration system
 
 ## Key Differences from Aave V3
 
-**Single global configuration per asset**: In V3, each asset carries exactly one risk configuration record. A governance update to Loan to Value, Liquidation Threshold, or Liquidation Bonus takes effect immediately for every open position borrowing against that asset. There is no mechanism to stage or scope the change to new positions only.
+**Single global configuration per asset**: In Aave V3, each asset carries exactly one risk configuration record. A governance update to Loan to Value, Liquidation Threshold, or Liquidation Bonus takes effect immediately for every open position borrowing against that asset. There is no mechanism to stage or scope the change to new positions only.
 
-**Immediate liquidation exposure from parameter changes**: Because V3 applies updates globally, reducing the Liquidation Threshold for a widely used asset can bring a large number of positions below the liquidation threshold simultaneously. Governance must either accept this risk or execute parameter changes in small increments across multiple proposals, increasing operational overhead.
+**Immediate liquidation exposure from parameter changes**: Because Aave V3 applies updates globally, reducing the Liquidation Threshold for a widely used asset can bring a large number of positions below the liquidation threshold simultaneously. Governance must either accept this risk or execute parameter changes in small increments across multiple proposals, increasing operational overhead.
 
-**V4 versioned configurations**: Aave V4 maintains a per-Reserve configuration history keyed by a monotonically incrementing `uint32`. Parameter updates create new entries; existing positions retain their snapshot keys until the user performs a risk-increasing action. This gives users the opportunity to adjust their positions before being subject to new parameters, and limits the immediate liquidation surface to positions that voluntarily take on new risk after the update is published.
+**Aave V4 versioned configurations**: Aave V4 maintains a per-Reserve configuration history keyed by a monotonically incrementing `uint32`. Parameter updates create new entries; existing positions retain their snapshot keys until the user performs a risk-increasing action. This gives users the opportunity to adjust their positions before being subject to new parameters, and limits the immediate liquidation surface to positions that voluntarily take on new risk after the update is published.
