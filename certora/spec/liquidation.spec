@@ -1,0 +1,1 @@
+suppliedCollateralCount > 1 => no defecit ( no collateral and debt) 
