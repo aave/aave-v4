@@ -59,11 +59,10 @@ The key aspects of the Hub include:
 - Managing interest rate strategy per asset, defining the optimal usage ratio, base drawn rate, and rate slopes, among other parameters.
 - Managing the access controls for the Governor entity authorized to execute emergency controls, the authorized entity which can call `mintFeeShares`, and general access controls via the `AccessManager` authority.
 - Setting the liquidity fee per asset, determining the share of interest revenue retained by the protocol.
-- Enforcing accounting invariants:
-  1. Total borrowed shares == sum of Spoke debt shares
-  2. Hub added assets amount >= sum of Spoke added assets amount (converted from shares)
-  3. Hub added shares == sum of Spoke added shares
-  4. Supply share price and drawn index cannot decrease (remains constant or increases)
+- Enforcing accounting and solvency invariants:
+  1. Hub level aggregate fields == sum across all per-Spoke fields (`addedShares`, `drawnShares`, `premiumShares`, `premiumOffsetRay`, `deficitRay`)
+  2. Supply share price and drawn index cannot decrease (remains constant or increases)
+  3. Hub's actual token balance for a given asset is always >= internally tracked available liquidity (`asset.liquidity`)
 
 ## Spokes
 
@@ -80,6 +79,9 @@ Users interact with the Spokes, which then interact directly with the Hubs. The 
 - Employing reentrancy guards for extra protection against reentrancy attacks, even though the Hub, Interest Rate Strategy, and Price Feeds are trusted and Aave V4 does not support tokens with callbacks.
 - Enforcing position constraints through a configurable `MAX_USER_RESERVES_LIMIT` which limits the number of collateral Reserves and the number of borrow Reserves a user can have (each counted separately).
 - Configuring and enforcing per-reserve liquidation parameters at the Spoke level.
+- Enforcing position safety invariants:
+  1. Users without collateral cannot assume debt
+  2. No user action can worsen their position's health factor below the liquidation threshold
 
 # Risk Premium
 
