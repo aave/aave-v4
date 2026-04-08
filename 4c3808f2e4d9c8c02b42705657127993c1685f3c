@@ -1,0 +1,21 @@
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.5",
+  "base_commit_sha": "4c3808f2e4d9c8c02b42705657127993c1685f3c",
+  "prompts": {
+    "a3338f3454cd45c1": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "a8ebcc88-799c-477c-a1ca-1f0406acd6f2",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "CanonicalJP",
+      "messages": [],
+      "total_additions": 1,
+      "total_deletions": 1,
+      "accepted_lines": 0,
+      "overriden_lines": 1
+    }
+  }
+}
