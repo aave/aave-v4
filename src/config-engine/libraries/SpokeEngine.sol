@@ -92,8 +92,8 @@ library SpokeEngine {
 
   /// @notice Updates liquidation config on Spokes.
   /// @dev If all three fields (targetHealthFactor, healthFactorForMaxBonus, liquidationBonusFactor)
-  ///   are set, calls updateLiquidationConfig with the full struct. Otherwise, each non-KEEP_CURRENT
-  ///   field is updated individually via its dedicated setter. If no field is set, the update is skipped.
+  /// are set, calls updateLiquidationConfig with the full struct. Otherwise, each non-KEEP_CURRENT
+  /// field is updated individually via its dedicated setter. If no field is set, the update is skipped.
   /// @param updates The liquidation config updates to execute.
   function executeSpokeLiquidationConfigUpdates(
     IAaveV4ConfigEngine.LiquidationConfigUpdate[] calldata updates

@@ -52,8 +52,8 @@ interface IAaveV4ConfigEngine {
   /// @dev feeReceiver The new fee receiver (KEEP_CURRENT_ADDRESS to skip).
   /// @dev irStrategy The new interest rate strategy (KEEP_CURRENT_ADDRESS to skip strategy update).
   /// @dev irData The interest rate data. If irStrategy != KEEP_CURRENT_ADDRESS, calls updateInterestRateStrategy.
-  ///   Otherwise individual fields use KEEP_CURRENT_UINT16/KEEP_CURRENT_UINT32 sentinels;
-  ///   non-sentinel fields trigger a read-modify-write via updateInterestRateData.
+  /// Otherwise individual fields use KEEP_CURRENT_UINT16/KEEP_CURRENT_UINT32 sentinels;
+  /// non-sentinel fields trigger a read-modify-write via updateInterestRateData.
   /// @dev reinvestmentController The new reinvestment controller (KEEP_CURRENT_ADDRESS to skip).
   struct AssetConfigUpdate {
     IHubConfigurator hubConfigurator;

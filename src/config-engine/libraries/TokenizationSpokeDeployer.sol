@@ -8,7 +8,7 @@ import {TokenizationSpokeInstance} from 'src/spoke/instances/TokenizationSpokeIn
 /// @title TokenizationSpokeDeployer
 /// @author Aave Labs
 /// @notice Library for deterministic CREATE2 deployment and address pre-computation of TokenizationSpoke proxies
-///   using the Safe Singleton Factory.
+/// using the Safe Singleton Factory.
 library TokenizationSpokeDeployer {
   /// @notice Deploys a TokenizationSpokeInstance implementation and TransparentUpgradeableProxy via CREATE2
   /// through the Safe Singleton Factory.

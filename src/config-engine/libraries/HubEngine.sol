@@ -16,7 +16,7 @@ library HubEngine {
   using SafeCast for uint256;
 
   /// @dev Thrown when replacing an IR strategy but one or more irData fields still carry a
-  ///   KEEP_CURRENT sentinel. All fields must be explicitly set when the strategy changes.
+  /// KEEP_CURRENT sentinel. All fields must be explicitly set when the strategy changes.
   error InvalidIrDataWithNewStrategy();
 
   /// @notice Lists new assets on Hubs via the HubConfigurator.
@@ -250,7 +250,7 @@ library HubEngine {
   }
 
   /// @dev Merges non-sentinel fields from irData into the current on-chain IR data.
-  ///   Returns empty bytes if all fields are sentinel (no update needed).
+  /// Returns empty bytes if all fields are sentinel (no update needed).
   function _mergeInterestRateData(
     address hub,
     uint256 assetId,

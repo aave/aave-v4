@@ -36,7 +36,7 @@ library AaveV4AccessManagerRolesProcedure {
   }
 
   /// @notice Replaces the default admin by granting the role to a new address and revoking it from the old one.
-  ///   The adminToRemove must be the current default admin, otherwise the procedure will revert.
+  /// The adminToRemove must be the current default admin, otherwise the procedure will revert.
   /// @param accessManager The address of the AccessManager contract.
   /// @param adminToAdd The address to grant the default admin role to.
   /// @param adminToRemove The address to revoke the default admin role from.

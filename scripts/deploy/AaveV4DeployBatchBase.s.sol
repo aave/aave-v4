@@ -130,7 +130,10 @@ abstract contract AaveV4DeployBatchBaseScript is Script {
       // These three admin addresses are still required at deploy time so they default to the deployer
       // ACCESS_MANAGER_ADMIN_ROLE is also retained by the deployer
       _logWarning('roles: deferred (not granted during deployment)');
+      _logWarning(string.concat('treasury spoke owner', message, outcome));
       sanitizedInputs.treasurySpokeOwner = deployer;
+
+      _logWarning(string.concat('proxy admin owner', message, outcome));
       sanitizedInputs.proxyAdminOwner = deployer;
     }
     if (inputs.gatewayOwner == address(0)) {
