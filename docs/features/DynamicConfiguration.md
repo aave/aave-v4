@@ -4,7 +4,7 @@
 
 Dynamic Risk Configuration is a spoke-level versioning mechanism (where each version is a snapshot of collateralization parameters) that isolates those parameters into per-Reserve configuration entries, each identified by a sequentially incrementing `dynamicConfigKey`. When governance updates collateralization parameters for a Reserve, the Spoke typically appends a new configuration entry rather than replacing the existing one (though governance can also update an existing key in place via `updateDynamicReserveConfig`). User positions retain a snapshot of the `dynamicConfigKey` active at the time of their last risk-bearing action. Parameter updates therefore do not immediately affect open positions; existing positions continue to evaluate under their snapshotted configuration until the user performs a risk-increasing action, at which point the Spoke rebinds the snapshot to the latest key. If the rebinding leaves the position under-collateralized, the action reverts.
 
-The Governor retains the ability to force-migrate individual positions to the latest configuration via `updateUserDynamicConfig`. This mechanism is the primary tool for proactively managing risk when market conditions change between user interactions.
+The Governor retains the ability to force-migrate individual positions to the latest configuration via `updateUserDynamicConfig`. This mechanism is intended for emergency scenarios where extreme market conditions could negatively impact the protocol, allowing governance to proactively manage risk when waiting for natural user interactions is not viable.
 
 ## Relationship to the Hub/Spoke Architecture
 
