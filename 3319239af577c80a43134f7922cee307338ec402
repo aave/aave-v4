@@ -1,0 +1,23 @@
+docs/features/DynamicConfiguration.md
+  e6056d62eb713d04 7
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.5",
+  "base_commit_sha": "3319239af577c80a43134f7922cee307338ec402",
+  "prompts": {
+    "e6056d62eb713d04": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "6072a8ee-a39e-4d75-8ba2-d365bf1c7e1f",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "CanonicalJP",
+      "messages": [],
+      "total_additions": 1,
+      "total_deletions": 1,
+      "accepted_lines": 1,
+      "overriden_lines": 0
+    }
+  }
+}
