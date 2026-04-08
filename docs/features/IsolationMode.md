@@ -2,7 +2,7 @@
 
 ## Summary
 
-Isolation Mode enables new collateral assets to be added to the protocol with contained risk by registering them in a dedicated Spoke and Hub pair separate from the canonical market. Users who supply an isolated collateral asset in this Spoke can only borrow assets configured as borrowable for that market, up to per-asset draw caps set by the Governor. Because the isolated market lives in its own Spoke, users continue to hold unrestricted positions in the Canonical Spoke and any other Spoke simultaneously.
+Isolation Mode enables new collateral assets to be added to the protocol with contained risk by registering them in a dedicated Spoke and Hub pair separate from the canonical market. Users who supply an isolated collateral asset in this Spoke can only borrow assets configured as borrowable for that market, up to per-asset draw caps set by the Governor. Because the isolated market lives in its own Spoke, users can continue to hold unrestricted positions in the Canonical Spoke and any other Spoke simultaneously.
 
 Unlike Aave V3, which enforced a single aggregated borrow ceiling per isolated market and locked the borrower to one isolated collateral asset per account, Aave V4 assigns draw caps independently per asset and permits any number of assets to be configured as collateral within the isolated Spoke. The risk boundary is structural: it is scoped to the Spoke, not to the user's account.
 
@@ -45,6 +45,6 @@ The following are explicitly excluded from Isolation Mode as a configuration pat
 
 **Per-asset draw caps**: Aave V3 enforces a single aggregated borrow ceiling shared across all borrowable assets in the isolated market. A 10,000 USD cap shared among USDC, USDT, and GHO allows a single asset to consume the entire budget, blocking all others. Aave V4 assigns draw caps independently per asset: a 3,000 USDC draw cap, 3,000 USDT draw cap, and 4,000 GHO draw cap each enforce a distinct limit so no single asset crowds out the rest.
 
-**Unrestricted borrowable assets**: In Aave V3, Isolation Mode restricts borrowing to a governance-approved list of assets. In Aave V4, any asset can be marked `borrowable = true` in the isolated Spoke; the Governor defines the composition without a stablecoin-only constraint.
+**Unrestricted borrowable assets**: In Aave V3, Isolation Mode restricts borrowing to a governance-approved list of stablecoins. In Aave V4, any asset can be marked `borrowable = true` in the isolated Spoke; the Governor defines the composition without a stablecoin-only constraint.
 
 **Bootstrapped liquidity**: In Aave V3, an isolated market cannot draw liquidity from the canonical market. In Aave V4, a Reserve in the isolated Spoke can reference the Canonical Hub directly through `Reserve.hub` and draw from it under a draw cap, enabling the isolated market to operate while native liquidity grows.
