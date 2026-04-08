@@ -103,6 +103,7 @@ On success, a `RefreshAllUserDynamicConfig` event is emitted. If the rebinding l
 
 - `supply`
 - `repay`
+- `withdraw` (only when the withdrawn Reserve has `usingAsCollateral` disabled)
 - `updateUserRiskPremium`
 - `liquidationCall`
 
@@ -116,9 +117,9 @@ When any action triggers a full snapshot refresh, the Spoke applies the followin
 2. Recompute the health factor using the newly bound configurations.
 3. If `healthFactor < HEALTH_FACTOR_LIQUIDATION_THRESHOLD`, revert with `HealthFactorBelowThreshold`.
 
-This guard prevents a user from taking a risk-increasing action while pinned to a configuration that, after rebinding, would leave the position under-collateralized. The rebind is unconditional; but if the transaction reverts due to the health factor check, the user's position remains unchanged.
+This guard prevents a user from taking a risk-increasing action while pinned to a configuration that, after rebinding, would leave the position under-collateralized. The rebind is unconditional, but if the transaction reverts due to the health factor check, the user's position remains unchanged.
 
-A position that is healthy under its current snapshot keys but under-collateralized under the latest Reserve configuration is effectively blocked from further risk-increasing actions until the user either repays debt, adds collateral via `supply`, or the Governor adjusts the latest configuration to one under which the position remains solvent.
+A position that is healthy under its current snapshot keys, but under-collateralized under the latest Reserve configuration is effectively blocked from further risk-increasing actions until the user either repays debt, adds collateral via `supply`, or the Governor adjusts the latest configuration to one under which the position remains solvent.
 
 ## Governance Intervention
 
