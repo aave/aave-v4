@@ -1,5 +1,4 @@
-// SPDX-License-Identifier: UNLICENSED
-// Copyright (c) 2025 Aave Labs
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
 import 'tests/unit/Spoke/SpokeBase.t.sol';
@@ -79,7 +78,7 @@ contract SpokeRepayTest is SpokeBase {
 
     MockReentrantCaller reentrantCaller = new MockReentrantCaller(
       address(spoke1),
-      ISpokeBase.repay.selector
+      ISpoke.repay.selector
     );
     vm.mockFunction(
       address(_hub(spoke1, _daiReserveId(spoke1))),
@@ -155,7 +154,7 @@ contract SpokeRepayTest is SpokeBase {
     // Bob repays half of principal debt
     TestReturnValues memory returnValues;
     vm.expectEmit(address(spoke1));
-    emit ISpokeBase.Repay(
+    emit ISpoke.Repay(
       _daiReserveId(spoke1),
       bob,
       bob,
@@ -284,7 +283,7 @@ contract SpokeRepayTest is SpokeBase {
     // Bob repays half of principal debt
     TestReturnValues memory returnValues;
     vm.expectEmit(address(spoke1));
-    emit ISpokeBase.Repay(
+    emit ISpoke.Repay(
       _daiReserveId(spoke1),
       bob,
       bob,
@@ -392,7 +391,7 @@ contract SpokeRepayTest is SpokeBase {
 
     TestReturnValues memory returnValues;
     vm.expectEmit(address(spoke1));
-    emit ISpokeBase.Repay(
+    emit ISpoke.Repay(
       _daiReserveId(spoke1),
       bob,
       bob,
@@ -506,7 +505,7 @@ contract SpokeRepayTest is SpokeBase {
 
     TestReturnValues memory returnValues;
     vm.expectEmit(address(spoke1));
-    emit ISpokeBase.Repay(_daiReserveId(spoke1), bob, bob, 0, daiRepayAmount, expectedPremiumDelta);
+    emit ISpoke.Repay(_daiReserveId(spoke1), bob, bob, 0, daiRepayAmount, expectedPremiumDelta);
     _assertRefreshPremiumNotCalled();
     vm.prank(bob);
     (returnValues.shares, returnValues.amount) = spoke1.repay(
@@ -605,7 +604,7 @@ contract SpokeRepayTest is SpokeBase {
     TestReturnValues memory returnValues;
 
     vm.expectEmit(address(spoke1));
-    emit ISpokeBase.Repay(
+    emit ISpoke.Repay(
       _daiReserveId(spoke1),
       bob,
       bob,
@@ -724,7 +723,7 @@ contract SpokeRepayTest is SpokeBase {
 
       // Bob repays
       vm.expectEmit(address(spoke1));
-      emit ISpokeBase.Repay(
+      emit ISpoke.Repay(
         _daiReserveId(spoke1),
         bob,
         bob,
@@ -848,7 +847,7 @@ contract SpokeRepayTest is SpokeBase {
         daiRepayAmount
       );
       vm.expectEmit(address(spoke1));
-      emit ISpokeBase.Repay(
+      emit ISpoke.Repay(
         _daiReserveId(spoke1),
         bob,
         bob,
@@ -984,7 +983,7 @@ contract SpokeRepayTest is SpokeBase {
         vm.expectRevert(IHub.InvalidAmount.selector);
       } else {
         vm.expectEmit(address(spoke1));
-        emit ISpokeBase.Repay(
+        emit ISpoke.Repay(
           _daiReserveId(spoke1),
           bob,
           bob,
@@ -1106,14 +1105,7 @@ contract SpokeRepayTest is SpokeBase {
       );
       deal(address(tokenList.dai), bob, daiRepayAmount);
       vm.expectEmit(address(spoke1));
-      emit ISpokeBase.Repay(
-        _daiReserveId(spoke1),
-        bob,
-        bob,
-        0,
-        daiRepayAmount,
-        expectedPremiumDelta
-      );
+      emit ISpoke.Repay(_daiReserveId(spoke1), bob, bob, 0, daiRepayAmount, expectedPremiumDelta);
     }
     _assertRefreshPremiumNotCalled();
     vm.prank(bob);
@@ -1237,7 +1229,7 @@ contract SpokeRepayTest is SpokeBase {
       );
 
       vm.expectEmit(address(spoke1));
-      emit ISpokeBase.Repay(
+      emit ISpoke.Repay(
         _daiReserveId(spoke1),
         bob,
         bob,
@@ -1362,7 +1354,7 @@ contract SpokeRepayTest is SpokeBase {
         vm.expectRevert(IHub.InvalidAmount.selector);
       } else {
         vm.expectEmit(address(spoke1));
-        emit ISpokeBase.Repay(
+        emit ISpoke.Repay(
           _daiReserveId(spoke1),
           bob,
           bob,
@@ -1690,7 +1682,7 @@ contract SpokeRepayTest is SpokeBase {
     // Bob supply weth
     Utils.supplyCollateral(spoke1, _wethReserveId(spoke1), bob, wethSupplyAmount, bob);
 
-    // Alice supply dai such that usage ratio after bob borrows is ~45%, borrow rate ~7.5%
+    // Alice supply dai such that usage ratio after bob borrows is ~45%, drawn rate ~7.5%
     Utils.supply(spoke1, _daiReserveId(spoke1), alice, borrowAmount, alice);
 
     uint256 expectedDrawnShares = hub1.previewRestoreByAssets(daiAssetId, borrowAmount);
@@ -1739,7 +1731,7 @@ contract SpokeRepayTest is SpokeBase {
 
     TestReturnValues memory returnValues;
     vm.expectEmit(address(spoke1));
-    emit ISpokeBase.Repay(
+    emit ISpoke.Repay(
       _daiReserveId(spoke1),
       bob,
       bob,

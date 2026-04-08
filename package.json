@@ -1,6 +1,6 @@
 {
   "name": "aave-v4",
-  "version": "0.5.9",
+  "version": "0.5.11",
   "scripts": {
     "lint": "prettier . --check",
     "lint:fix": "prettier . --write",
@@ -11,7 +11,7 @@
   },
   "keywords": [],
   "author": "Aave Labs",
-  "license": "UNLICENSED",
+  "license": "LicenseRef-BUSL",
   "bugs": {
     "url": "https://github.com/aave/aave-v4/issues"
   },

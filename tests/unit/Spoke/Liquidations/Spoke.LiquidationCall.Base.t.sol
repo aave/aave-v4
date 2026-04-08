@@ -1,5 +1,4 @@
-// SPDX-License-Identifier: UNLICENSED
-// Copyright (c) 2025 Aave Labs
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
 import 'tests/unit/libraries/LiquidationLogic/LiquidationLogic.Base.t.sol';
@@ -419,7 +418,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
     }
 
     vm.expectEmit(address(params.spoke));
-    emit ISpokeBase.LiquidationCall({
+    emit ISpoke.LiquidationCall({
       collateralReserveId: params.collateralReserveId,
       debtReserveId: params.debtReserveId,
       user: params.user,

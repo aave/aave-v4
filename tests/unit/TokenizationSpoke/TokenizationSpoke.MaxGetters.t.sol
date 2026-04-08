@@ -1,4 +1,4 @@
-// Copyright (c) 2025 Aave Labs
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
 import 'tests/unit/TokenizationSpoke/TokenizationSpoke.Base.t.sol';

@@ -1,5 +1,4 @@
-// SPDX-License-Identifier: UNLICENSED
-// Copyright (c) 2025 Aave Labs
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
 import 'tests/unit/Spoke/SpokeBase.t.sol';
@@ -149,8 +148,8 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
       1,
       (params.aliceAmount + params.bobAmount) / 2
     ); // some buffer on available borrowable liquidity
-    params.rate = bound(params.rate, 1, MAX_BORROW_RATE);
-    _mockInterestRateBps(params.rate);
+    params.rate = bound(params.rate, 1, Constants.MAX_ALLOWED_DRAWN_RATE);
+    _mockDrawnRateBps(params.rate);
 
     MultiUserTestState memory state;
     (state.assetId, state.underlying) = getAssetByReserveId(spoke1, params.reserveId);
@@ -373,7 +372,7 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
   ) public {
     _assumeValidSupplier(caller);
     reserveId = bound(reserveId, 0, spoke1.getReserveCount() - 1);
-    protocolStartingBalance = bound(protocolStartingBalance, 1, MAX_SUPPLY_AMOUNT - 1); // Allow some buffer from supply cap
+    protocolStartingBalance = bound(protocolStartingBalance, 1, MAX_SUPPLY_AMOUNT - 1); // Allow some buffer from add cap
     assets = bound(assets, 1, MAX_SUPPLY_AMOUNT - protocolStartingBalance);
 
     // Set up initial state of the vault by having derl supply some starting balance
@@ -398,7 +397,7 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
     TestReturnValues memory returnValues1;
     uint256 shares1 = hub1.previewAddByAssets(reserve.assetId, assets);
     vm.expectEmit(address(spoke1));
-    emit ISpokeBase.Supply(reserveId, caller, caller, shares1, assets);
+    emit ISpoke.Supply(reserveId, caller, caller, shares1, assets);
     vm.prank(caller);
     (returnValues1.shares, returnValues1.amount) = spoke1.supply(reserveId, assets, caller);
 
@@ -406,7 +405,7 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
     TestReturnValues memory returnValues2;
     uint256 shares2 = hub1.previewAddByAssets(reserve.assetId, assets);
     vm.expectEmit(address(spoke1));
-    emit ISpokeBase.Withdraw(reserveId, caller, caller, shares2, assets);
+    emit ISpoke.Withdraw(reserveId, caller, caller, shares2, assets);
     vm.prank(caller);
     (returnValues2.shares, returnValues2.amount) = spoke1.withdraw(reserveId, assets, caller);
 
@@ -428,7 +427,7 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
   ) public {
     _assumeValidSupplier(caller);
     reserveId = bound(reserveId, 0, spoke1.getReserveCount() - 1);
-    protocolStartingBalance = bound(protocolStartingBalance, 1, MAX_SUPPLY_AMOUNT - 1); // Allow some buffer from supply cap
+    protocolStartingBalance = bound(protocolStartingBalance, 1, MAX_SUPPLY_AMOUNT - 1); // Allow some buffer from add cap
     assets = bound(assets, 1, MAX_SUPPLY_AMOUNT - protocolStartingBalance);
     // Caller starting balance must be at least the amount they will withdraw during test
     callerStartingBalance = bound(
@@ -468,7 +467,7 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
     TestReturnValues memory returnValues1;
     uint256 shares1 = hub1.previewAddByAssets(reserve.assetId, assets);
     vm.expectEmit(address(spoke1));
-    emit ISpokeBase.Withdraw(reserveId, caller, caller, shares1, assets);
+    emit ISpoke.Withdraw(reserveId, caller, caller, shares1, assets);
     vm.prank(caller);
     (returnValues1.shares, returnValues1.amount) = spoke1.withdraw(reserveId, assets, caller);
 
@@ -476,7 +475,7 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
     TestReturnValues memory returnValues2;
     uint256 shares2 = hub1.previewAddByAssets(reserve.assetId, assets);
     vm.expectEmit(address(spoke1));
-    emit ISpokeBase.Supply(reserveId, caller, caller, shares2, assets);
+    emit ISpoke.Supply(reserveId, caller, caller, shares2, assets);
     vm.prank(caller);
     (returnValues2.shares, returnValues2.amount) = spoke1.supply(reserveId, assets, caller);
 
