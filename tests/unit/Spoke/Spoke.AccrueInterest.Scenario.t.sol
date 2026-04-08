@@ -1,5 +1,4 @@
-// SPDX-License-Identifier: UNLICENSED
-// Copyright (c) 2025 Aave Labs
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
 import 'tests/unit/Spoke/SpokeBase.t.sol';
@@ -32,7 +31,7 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
   }
 
   struct TestValues {
-    uint96 baseBorrowRate;
+    uint96 baseDrawnRate;
     uint256 index;
     uint256 baseShares;
     uint40 timestamp;
@@ -61,7 +60,7 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
     amounts = _ensureSufficientCollateral(spoke2, amounts);
     TestAmount[] memory testAmounts = _parseTestInputs(amounts);
 
-    // Bob supplies amounts on spoke 2, then we deploy remainder of liquidity up to respective supply caps
+    // Bob supplies amounts on spoke 2, then we deploy remainder of liquidity up to respective add caps
     for (uint256 i = 0; i < 4; ++i) {
       if (testAmounts[i].supplyAmount > 0) {
         Utils.supplyCollateral(
@@ -93,17 +92,17 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
     uint256 bobRp = _getUserRiskPremium(spoke2, bob);
     assertEq(bobRp, _calculateExpectedUserRP(spoke2, bob), 'user risk premium Before');
 
-    // Store base borrow rates
+    // Store base drawn rates
     TestValues[] memory values = new TestValues[](4);
     for (uint256 i = 0; i < 4; ++i) {
-      values[i].baseBorrowRate = hub1.getAsset(testAmounts[i].assetId).drawnRate.toUint96();
+      values[i].baseDrawnRate = hub1.getAsset(testAmounts[i].assetId).drawnRate.toUint96();
     }
 
     // Check bob's drawn debt, premium debt, and supplied amounts for all assets at user, reserve, spoke, and asset level
     for (uint256 i = 0; i < 4; ++i) {
       uint256 drawnDebt = _calculateExpectedDrawnDebt(
         testAmounts[i].borrowAmount,
-        values[i].baseBorrowRate,
+        values[i].baseDrawnRate,
         startTime
       );
       _assertProtocolSupplyAndDebt({
@@ -124,7 +123,7 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
     for (uint256 i = 0; i < 4; ++i) {
       uint256 drawnDebt = _calculateExpectedDrawnDebt(
         testAmounts[i].borrowAmount,
-        values[i].baseBorrowRate,
+        values[i].baseDrawnRate,
         startTime
       );
       uint256 expectedPremiumDebt = _calculateExpectedPremiumDebt(
@@ -167,7 +166,7 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
       // Update amounts for second accrual checks
       for (uint256 i = 0; i < 4; ++i) {
         (testAmounts[i].borrowAmount, ) = spoke2.getUserDebt(testAmounts[i].reserveId, bob);
-        values[i].baseBorrowRate = hub1.getAsset(testAmounts[i].assetId).drawnRate.toUint96();
+        values[i].baseDrawnRate = hub1.getAsset(testAmounts[i].assetId).drawnRate.toUint96();
         values[i].index = hub1.getAssetDrawnIndex(testAmounts[i].assetId).toUint120();
         values[i].timestamp = hub1.getAsset(testAmounts[i].assetId).lastUpdateTimestamp;
         values[i].baseShares = spoke2.getUserPosition(testAmounts[i].reserveId, bob).drawnShares;
@@ -224,7 +223,7 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
         }
         values[i].index = _calculateExpectedDrawnIndex(
           values[i].timestamp == 1 ? testAmounts[i].originalIndex : values[i].index, // If reserve never updated, use original index
-          values[i].baseBorrowRate,
+          values[i].baseDrawnRate,
           values[i].timestamp
         );
         ISpoke.UserPosition memory bobPosition = spoke2.getUserPosition(

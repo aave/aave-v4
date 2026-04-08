@@ -1,5 +1,4 @@
-// SPDX-License-Identifier: UNLICENSED
-// Copyright (c) 2025 Aave Labs
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
 import {TokenizationSpoke} from 'src/spoke/TokenizationSpoke.sol';
@@ -14,13 +13,13 @@ contract MockTokenizationSpokeInstance is TokenizationSpoke {
    * @dev It sets the vault spoke revision and disables the initializers.
    * @param spokeRevision_ The revision of the vault spoke contract.
    * @param hub_ The address of the hub.
-   * @param assetId_ The ID of the asset.
+   * @param underlying_ The address of the asset.
    */
   constructor(
     uint64 spokeRevision_,
     address hub_,
-    uint256 assetId_
-  ) TokenizationSpoke(hub_, assetId_) {
+    address underlying_
+  ) TokenizationSpoke(hub_, underlying_) {
     SPOKE_REVISION = spokeRevision_;
     _disableInitializers();
   }
@@ -30,6 +29,7 @@ contract MockTokenizationSpokeInstance is TokenizationSpoke {
     string memory shareName,
     string memory shareSymbol
   ) external override reinitializer(SPOKE_REVISION) {
+    emit SetTokenizationSpokeImmutables(address(HUB), ASSET_ID);
     __TokenizationSpoke_init(shareName, shareSymbol);
   }
 }

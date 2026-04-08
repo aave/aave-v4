@@ -1,5 +1,4 @@
-// SPDX-License-Identifier: UNLICENSED
-// Copyright (c) 2025 Aave Labs
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
 import 'tests/unit/Spoke/SpokeBase.t.sol';
@@ -47,7 +46,7 @@ contract SpokeWithdrawTest is SpokeBase {
 
     MockReentrantCaller reentrantCaller = new MockReentrantCaller(
       address(spoke1),
-      ISpokeBase.withdraw.selector
+      ISpoke.withdraw.selector
     );
 
     vm.mockFunction(
@@ -79,7 +78,7 @@ contract SpokeWithdrawTest is SpokeBase {
 
     MockReentrantCaller reentrantCaller = new MockReentrantCaller(
       address(spoke1),
-      ISpokeBase.withdraw.selector
+      ISpoke.withdraw.selector
     );
 
     vm.mockFunction(
@@ -144,7 +143,7 @@ contract SpokeWithdrawTest is SpokeBase {
     // Bob withdraws immediately in the same block
     TestReturnValues memory returnValues;
     vm.expectEmit(address(spoke1));
-    emit ISpokeBase.Withdraw(_daiReserveId(spoke1), bob, bob, expectedSupplyShares, amount);
+    emit ISpoke.Withdraw(_daiReserveId(spoke1), bob, bob, expectedSupplyShares, amount);
     vm.prank(bob);
     (returnValues.shares, returnValues.amount) = spoke1.withdraw(
       _daiReserveId(spoke1),
@@ -572,10 +571,10 @@ contract SpokeWithdrawTest is SpokeBase {
       _calculateMaxSupplyAmount(spoke1, params.reserveId)
     );
     params.borrowAmount = bound(params.borrowAmount, 1, params.borrowReserveSupplyAmount / 2);
-    params.rate = bound(params.rate, 1, MAX_BORROW_RATE);
+    params.rate = bound(params.rate, 1, Constants.MAX_ALLOWED_DRAWN_RATE);
     params.skipTime = bound(params.skipTime, 0, MAX_SKIP_TIME);
 
-    _mockInterestRateBps(params.rate);
+    _mockDrawnRateBps(params.rate);
 
     // don't borrow the collateral asset
     vm.assume(params.reserveId != _wbtcReserveId(spoke1));
@@ -855,10 +854,10 @@ contract SpokeWithdrawTest is SpokeBase {
       _calculateMaxSupplyAmount(spoke1, params.reserveId)
     );
     params.borrowAmount = bound(params.borrowAmount, 1, params.borrowReserveSupplyAmount / 2);
-    params.rate = bound(params.rate, 1, MAX_BORROW_RATE);
+    params.rate = bound(params.rate, 1, Constants.MAX_ALLOWED_DRAWN_RATE);
     params.skipTime = bound(params.skipTime, 0, MAX_SKIP_TIME);
 
-    _mockInterestRateBps(params.rate);
+    _mockDrawnRateBps(params.rate);
 
     vm.assume(params.reserveId != _wbtcReserveId(spoke1)); // wbtc used as collateral
 

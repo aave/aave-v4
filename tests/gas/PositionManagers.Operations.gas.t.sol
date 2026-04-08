@@ -1,5 +1,4 @@
-// SPDX-License-Identifier: UNLICENSED
-// Copyright (c) 2025 Aave Labs
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
 import 'tests/unit/Spoke/SpokeBase.t.sol';
@@ -203,7 +202,7 @@ contract TakerPositionManager_Gas_Tests is SpokeBase {
     vm.snapshotGasLastCall(NAMESPACE, 'renounceWithdrawAllowance');
   }
 
-  function test_creditDelegation() public {
+  function test_approveBorrow() public {
     uint256 amount = 100e18;
 
     vm.prank(alice);
@@ -211,7 +210,7 @@ contract TakerPositionManager_Gas_Tests is SpokeBase {
     vm.snapshotGasLastCall(NAMESPACE, 'approveBorrow');
   }
 
-  function test_delegateCreditWithSig() public {
+  function test_approveBorrowWithSig() public {
     uint256 amount = 100e18;
 
     vm.prank(alice);
@@ -237,7 +236,7 @@ contract TakerPositionManager_Gas_Tests is SpokeBase {
     vm.snapshotGasLastCall(NAMESPACE, 'approveBorrowWithSig');
   }
 
-  function test_renounceCreditDelegation() public {
+  function test_renounceBorrowAllowance() public {
     uint256 amount = 100e18;
 
     vm.prank(alice);
@@ -282,10 +281,10 @@ contract ConfigPositionManager_Gas_Tests is SpokeBase {
     vm.snapshotGasLastCall(NAMESPACE, 'setGlobalPermission');
   }
 
-  function test_setCanUpdateUsingAsCollateralPermission() public {
+  function test_setCanSetUsingAsCollateralPermission() public {
     vm.prank(alice);
-    positionManager.setCanUpdateUsingAsCollateralPermission(address(spoke1), bob, true);
-    vm.snapshotGasLastCall(NAMESPACE, 'setCanUpdateUsingAsCollateralPermission');
+    positionManager.setCanSetUsingAsCollateralPermission(address(spoke1), bob, true);
+    vm.snapshotGasLastCall(NAMESPACE, 'setCanSetUsingAsCollateralPermission');
   }
 
   function test_setCanUpdateUserRiskPremiumPermission() public {
@@ -311,7 +310,7 @@ contract ConfigPositionManager_Gas_Tests is SpokeBase {
 
   function test_renounceCanUpdateUsingAsCollateralPermission() public {
     vm.prank(alice);
-    positionManager.setCanUpdateUsingAsCollateralPermission(address(spoke1), bob, true);
+    positionManager.setCanSetUsingAsCollateralPermission(address(spoke1), bob, true);
 
     vm.prank(bob);
     positionManager.renounceCanUpdateUsingAsCollateralPermission(address(spoke1), alice);

@@ -1,5 +1,4 @@
-// SPDX-License-Identifier: UNLICENSED
-// Copyright (c) 2025 Aave Labs
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
 import {Test} from 'forge-std/Test.sol';
@@ -158,7 +157,7 @@ contract PositionManagerEIP712HashTest is Test {
     assertEq(params.hash(), expectedHash);
   }
 
-  function test_hash_creditDelegation_fuzz(
+  function test_hash_borrowPermit_fuzz(
     ITakerPositionManager.BorrowPermit calldata params
   ) public pure {
     bytes32 expectedHash = keccak256(abi.encode(EIP712Hash.BORROW_PERMIT_TYPEHASH, params));

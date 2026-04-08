@@ -1,5 +1,4 @@
-// SPDX-License-Identifier: UNLICENSED
-// Copyright (c) 2025 Aave Labs
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
 import 'tests/unit/Spoke/SpokeBase.t.sol';
@@ -200,13 +199,13 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
 
     uint256 borrowAmount = 1000e18;
     uint256 supplyAmount = _calcMinimumCollAmount(spoke1, reserveId, reserveId, borrowAmount);
-    uint256 rate = 50_00; // 50.00% base borrow rate
+    uint256 rate = 50_00; // 50.00% base drawn rate
     uint256 expectedDrawnDebtAccrual = 500e18; // 50% of 1000 (drawn debt accrual)
     uint256 expectedDrawnDebt = borrowAmount + expectedDrawnDebtAccrual;
     uint256 expectedPremiumDebt = 50e18; // 10% of 500 (premium on drawn debt)
     uint256 expectedTreasuryFees = 27.5e18; // 5% of 550 (liquidity fee on drawn debt)
 
-    _mockInterestRateBps(rate);
+    _mockDrawnRateBps(rate);
 
     Utils.supplyCollateral(spoke1, reserveId, alice, supplyAmount, alice);
     Utils.borrow(spoke1, reserveId, alice, borrowAmount, alice);
@@ -311,7 +310,7 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
 
     uint256 borrowAmount = 1000e18;
     uint256 supplyAmount = _calcMinimumCollAmount(spoke1, reserveId, reserveId, borrowAmount);
-    uint256 rate = 50_00; // 50.00% base borrow rate
+    uint256 rate = 50_00; // 50.00% base drawn rate
     uint256 expectedDrawnDebtAccrual = borrowAmount.percentMulUp(rate);
     uint256 expectedDrawnDebt = borrowAmount + expectedDrawnDebtAccrual;
     uint256 expectedPremiumDebt = expectedDrawnDebtAccrual.percentMulUp(expectedRp);
@@ -319,7 +318,7 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
       liquidityFee
     );
 
-    _mockInterestRateBps(rate);
+    _mockDrawnRateBps(rate);
 
     Utils.supplyCollateral(spoke1, reserveId, alice, supplyAmount, alice);
     Utils.borrow(spoke1, reserveId, alice, borrowAmount, alice);
@@ -433,7 +432,7 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
     // supply way more than needed to cover borrow amount
     uint256 supplyAmount = _calcMinimumCollAmount(spoke1, reserveId, reserveId, borrowAmount) * 2;
     uint256 supplyAmount2 = _calcMinimumCollAmount(spoke1, reserveId2, reserveId, borrowAmount) * 2;
-    uint256 rate = 50_00; // 50.00% base borrow rate
+    uint256 rate = 50_00; // 50.00% base drawn rate
     uint256 expectedDrawnDebtAccrual = borrowAmount.percentMulUp(rate);
     uint256 expectedDrawnDebt = borrowAmount + expectedDrawnDebtAccrual;
     uint256 expectedPremiumDebt = expectedDrawnDebtAccrual.percentMulUp(expectedRp);
@@ -441,7 +440,7 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
       liquidityFee
     );
 
-    _mockInterestRateBps(rate);
+    _mockDrawnRateBps(rate);
 
     Utils.supplyCollateral(spoke1, reserveId, alice, supplyAmount, alice);
     Utils.supplyCollateral(spoke1, reserveId2, alice, supplyAmount2, alice);
@@ -499,7 +498,7 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
 
     uint256 borrowAmount = 1000e18;
     uint256 supplyAmount = _calcMinimumCollAmount(spoke1, reserveId, reserveId, borrowAmount);
-    uint256 rate = 50_00; // 50.00% base borrow rate
+    uint256 rate = 50_00; // 50.00% base drawn rate
     uint256 expectedDrawnDebtAccrual = borrowAmount.percentMulUp(rate);
     uint256 expectedDrawnDebt = borrowAmount + expectedDrawnDebtAccrual;
     uint256 expectedPremiumDebt = expectedDrawnDebtAccrual.percentMulUp(
@@ -508,7 +507,7 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
     uint256 expectedTreasuryFees = (expectedDrawnDebtAccrual + expectedPremiumDebt).percentMulUp(
       liquidityFee
     );
-    _mockInterestRateBps(rate);
+    _mockDrawnRateBps(rate);
 
     Utils.supplyCollateral(spoke1, reserveId, alice, supplyAmount, alice);
     Utils.borrow(spoke1, reserveId, alice, borrowAmount, alice);

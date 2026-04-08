@@ -1,5 +1,4 @@
-// SPDX-License-Identifier: UNLICENSED
-// Copyright (c) 2025 Aave Labs
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
 import 'tests/unit/Spoke/SpokeBase.t.sol';
@@ -54,7 +53,7 @@ contract NativeTokenGatewayTest is SpokeBase {
     assertEq(prevUserSuppliedAmount, 0);
 
     vm.expectEmit(address(spoke1));
-    emit ISpokeBase.Supply(
+    emit ISpoke.Supply(
       _wethReserveId(spoke1),
       address(nativeTokenGateway),
       bob,
@@ -95,7 +94,7 @@ contract NativeTokenGatewayTest is SpokeBase {
     vm.mockFunction(
       address(spoke1),
       address(reentrantCaller),
-      abi.encodeWithSelector(ISpokeBase.supply.selector)
+      abi.encodeWithSelector(ISpoke.supply.selector)
     );
     vm.expectRevert(ReentrancyGuardTransient.ReentrancyGuardReentrantCall.selector);
     vm.prank(bob);
@@ -178,7 +177,7 @@ contract NativeTokenGatewayTest is SpokeBase {
     assertEq(prevUserSuppliedAmount, 0);
 
     vm.expectEmit(address(spoke1));
-    emit ISpokeBase.Supply(
+    emit ISpoke.Supply(
       _wethReserveId(spoke1),
       address(nativeTokenGateway),
       bob,
@@ -230,7 +229,7 @@ contract NativeTokenGatewayTest is SpokeBase {
     assertEq(spoke1.getUserSuppliedShares(_wethReserveId(spoke1), bob), expectedSupplyShares);
 
     vm.expectEmit(address(spoke1));
-    emit ISpokeBase.Withdraw(
+    emit ISpoke.Withdraw(
       _wethReserveId(spoke1),
       address(nativeTokenGateway),
       bob,
@@ -277,7 +276,7 @@ contract NativeTokenGatewayTest is SpokeBase {
     assertEq(spoke1.getUserSuppliedShares(_wethReserveId(spoke1), bob), expectedSupplyShares);
 
     vm.expectEmit(address(spoke1));
-    emit ISpokeBase.Withdraw(
+    emit ISpoke.Withdraw(
       _wethReserveId(spoke1),
       address(nativeTokenGateway),
       bob,
@@ -349,7 +348,7 @@ contract NativeTokenGatewayTest is SpokeBase {
     assertEq(spoke1.getUserSuppliedShares(_wethReserveId(spoke1), bob), expectedSupplyShares);
 
     vm.expectEmit(address(spoke1));
-    emit ISpokeBase.Withdraw(
+    emit ISpoke.Withdraw(
       _wethReserveId(spoke1),
       address(nativeTokenGateway),
       bob,
@@ -385,7 +384,7 @@ contract NativeTokenGatewayTest is SpokeBase {
     vm.mockFunction(
       address(spoke1),
       address(reentrantCaller),
-      abi.encodeWithSelector(ISpokeBase.withdraw.selector)
+      abi.encodeWithSelector(ISpoke.withdraw.selector)
     );
     vm.expectRevert(ReentrancyGuardTransient.ReentrancyGuardReentrantCall.selector);
     vm.prank(bob);
@@ -456,7 +455,7 @@ contract NativeTokenGatewayTest is SpokeBase {
     uint256 prevHubBalance = tokenList.weth.balanceOf(address(hub1));
 
     vm.expectEmit(address(spoke1));
-    emit ISpokeBase.Borrow(
+    emit ISpoke.Borrow(
       _wethReserveId(spoke1),
       address(nativeTokenGateway),
       bob,
@@ -497,7 +496,7 @@ contract NativeTokenGatewayTest is SpokeBase {
     vm.mockFunction(
       address(spoke1),
       address(reentrantCaller),
-      abi.encodeWithSelector(ISpokeBase.borrow.selector)
+      abi.encodeWithSelector(ISpoke.borrow.selector)
     );
     vm.expectRevert(ReentrancyGuardTransient.ReentrancyGuardReentrantCall.selector);
     vm.prank(bob);
@@ -587,7 +586,7 @@ contract NativeTokenGatewayTest is SpokeBase {
     );
 
     vm.expectEmit(address(spoke1));
-    emit ISpokeBase.Repay(
+    emit ISpoke.Repay(
       _wethReserveId(spoke1),
       address(nativeTokenGateway),
       bob,
@@ -650,7 +649,7 @@ contract NativeTokenGatewayTest is SpokeBase {
       );
       uint256 repaidAmount = _min(userDrawnDebt + userPremiumDebt, repayAmount);
       vm.expectEmit(address(spoke1));
-      emit ISpokeBase.Repay(
+      emit ISpoke.Repay(
         _wethReserveId(spoke1),
         address(nativeTokenGateway),
         bob,
@@ -723,7 +722,7 @@ contract NativeTokenGatewayTest is SpokeBase {
     );
 
     vm.expectEmit(address(spoke1));
-    emit ISpokeBase.Repay(
+    emit ISpoke.Repay(
       _wethReserveId(spoke1),
       address(nativeTokenGateway),
       bob,
@@ -762,7 +761,7 @@ contract NativeTokenGatewayTest is SpokeBase {
     vm.mockFunction(
       address(spoke1),
       address(reentrantCaller),
-      abi.encodeWithSelector(ISpokeBase.repay.selector)
+      abi.encodeWithSelector(ISpoke.repay.selector)
     );
     vm.expectRevert(ReentrancyGuardTransient.ReentrancyGuardReentrantCall.selector);
     vm.prank(bob);

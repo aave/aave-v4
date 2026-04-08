@@ -1,5 +1,4 @@
-// SPDX-License-Identifier: UNLICENSED
-// Copyright (c) 2025 Aave Labs
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
 import 'tests/unit/Spoke/SpokeBase.t.sol';
@@ -103,7 +102,7 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
     _updateMaxLiquidationBonus(spoke1, reservesIds.usdx, 100_00);
     _updateCollateralFactor(spoke1, reservesIds.usdx, 99_99);
 
-    // supply twice the amount that alice borrows, usage ratio ~45%, borrow rate ~7.5%
+    // supply twice the amount that alice borrows, usage ratio ~45%, drawn rate ~7.5%
     Utils.supply(spoke1, reservesIds.dai, bob, vars.daiBorrowAmount.percentDivDown(45_00), bob);
 
     Utils.supplyCollateral(spoke1, reservesIds.usdx, alice, vars.usdxSupplyAmount, alice);

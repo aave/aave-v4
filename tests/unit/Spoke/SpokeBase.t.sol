@@ -1,5 +1,4 @@
-// SPDX-License-Identifier: UNLICENSED
-// Copyright (c) 2025 Aave Labs
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
 import 'tests/Base.t.sol';
@@ -351,7 +350,7 @@ contract SpokeBase is Base {
   ) internal returns (uint256, uint256) {
     SupplyBorrowLocal memory state;
     if (isMockRate) {
-      _mockInterestRateBps(rate);
+      _mockDrawnRateBps(rate);
     }
     (state.collateralReserveAssetId, ) = getAssetByReserveId(spoke, collateral.reserveId);
     (state.borrowReserveAssetId, ) = getAssetByReserveId(spoke, borrow.reserveId);

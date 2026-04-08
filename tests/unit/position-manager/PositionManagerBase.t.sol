@@ -1,5 +1,4 @@
-// SPDX-License-Identifier: UNLICENSED
-// Copyright (c) 2025 Aave Labs
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
 import 'tests/unit/Spoke/SpokeBase.t.sol';
@@ -188,7 +187,7 @@ contract PositionManagerBaseTest is SpokeBase {
     assertFalse(positionManager.isSpokeRegistered(newSpoke));
 
     vm.expectEmit(address(positionManager));
-    emit IPositionManagerBase.SpokeRegistered(newSpoke, true);
+    emit IPositionManagerBase.RegisterSpoke(newSpoke, true);
     vm.prank(ADMIN);
     positionManager.registerSpoke(newSpoke, true);
 
@@ -199,14 +198,14 @@ contract PositionManagerBaseTest is SpokeBase {
     assertFalse(positionManager.isSpokeRegistered(address(spoke1)));
 
     vm.expectEmit(address(positionManager));
-    emit IPositionManagerBase.SpokeRegistered(address(spoke1), true);
+    emit IPositionManagerBase.RegisterSpoke(address(spoke1), true);
     vm.prank(ADMIN);
     positionManager.registerSpoke(address(spoke1), true);
 
     assertTrue(positionManager.isSpokeRegistered(address(spoke1)));
 
     vm.expectEmit(address(positionManager));
-    emit IPositionManagerBase.SpokeRegistered(address(spoke1), false);
+    emit IPositionManagerBase.RegisterSpoke(address(spoke1), false);
     vm.prank(ADMIN);
     positionManager.registerSpoke(address(spoke1), false);
 
@@ -214,9 +213,11 @@ contract PositionManagerBaseTest is SpokeBase {
   }
 
   function test_registerSpoke_revertsWith_OwnableUnauthorizedAccount() public {
-    address user = vm.randomAddress();
-    vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, user));
-    vm.prank(user);
+    address caller = vm.randomAddress();
+    while (caller == ADMIN) caller = vm.randomAddress();
+
+    vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, caller));
+    vm.prank(caller);
     positionManager.registerSpoke(address(spoke1), true);
   }
 
@@ -280,15 +281,16 @@ contract PositionManagerBaseTest is SpokeBase {
   }
 
   function test_renouncePositionManagerRole_revertsWith_OwnableUnauthorizedAccount() public {
-    address user = vm.randomAddress();
+    address caller = vm.randomAddress();
+    while (caller == ADMIN) caller = vm.randomAddress();
 
-    vm.prank(user);
+    vm.prank(caller);
     spoke1.setUserPositionManager(address(positionManager), true);
     vm.prank(ADMIN);
     positionManager.registerSpoke(address(spoke1), true);
 
-    vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, user));
-    vm.prank(user);
-    positionManager.renouncePositionManagerRole(address(spoke1), user);
+    vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, caller));
+    vm.prank(caller);
+    positionManager.renouncePositionManagerRole(address(spoke1), caller);
   }
 }
