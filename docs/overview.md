@@ -2,7 +2,7 @@
 
 Aave V4 introduces an architectural redesign centered around the Hub, enabling protocol flexibility and capital efficiency. This innovative architecture allows the Governor (e.g., the Aave DAO) to dynamically manage Spokes, adding new borrowing capabilities and removing outdated ones without requiring costly liquidity migrations.
 
-The protocol implements sophisticated risk management through its Risk Premiums system, where each asset receives a specific risk factor (called Collateral Risk) ranging from 0 to `1000_00` (BPS) based on the asset's implied volatility, market conditions, liquidity, risk, etc. Base drawn rates are determined purely by utilisation, while risk premium rates are adjusted according to collateral risk profiles, from low‑risk pristine‑quality assets (such as ETH) to higher‑risk collateral, scaling borrowing costs proportionally.
+The protocol implements sophisticated risk management through its Risk Premium system, where each asset receives a specific risk factor (called Collateral Risk) ranging from `0` to `1000_00` (BPS) based on the asset's implied volatility, market conditions, liquidity, risk, etc. Base drawn rates are determined purely by utilisation, while risk premium rates are adjusted according to collateral risk profiles, from low‑risk pristine‑quality assets (such as ETH) to higher‑risk collateral, scaling borrowing costs proportionally.
 
 By providing preferential rates for stronger collateral and optimizing capital efficiency, Aave V4 creates a more robust lending environment that accurately prices risk and rewards. Consequently, the protocol attracts higher-quality collateral, while offering improved yields for suppliers and lower fees for borrowers utilizing safer collateral assets.
 
@@ -87,7 +87,7 @@ The debt interest of each user is directly impacted by the quality of the assets
 
 ## Collateral Risk
 
-The Collateral Risk $CR_i$ is specified by the quality of the asset $i$, which is a BPS value, ranging from 0 to `1000_00`. A value of 0 means highest quality and risk-free, while a value of `1000_00` signifies the lowest quality and maximum risk possible for a collateral.
+The Collateral Risk $CR_i$ is specified by the quality of the asset $i$, which is a BPS value, ranging from `0` to `1000_00`. A value of 0 means highest quality and risk-free, while a value of `1000_00` signifies the lowest quality and maximum risk possible for a collateral.
 
 This parameter is configurable and part of the Spoke's risk parameters. This means the same asset can have a different Collateral Risk value across Spokes.
 
@@ -139,7 +139,7 @@ $RP_u = f(CR_0, C_{u,0}, P_0) = CR_0$
 
 $RP_u = f(CR_i, C_{u, i}, P_i) = \frac{CR_0C_{u,0}P_0 + CR_1C_{u,1}P_1}{C_{u,0}P_0+C_{u,1}P_1}$
 
-> **Note:** If the user's total collateral value is insufficient to cover all outstanding debt (e.g., in a deficit scenario), the algorithm terminates early once all collateral has been allocated. The Risk Premium is computed using only the collateral value available, and the remaining uncovered debt is ignored in the calculation.
+> **Note:** If the user's total collateral value is insufficient to cover all outstanding debt (e.g., in a deficit scenario), the algorithm terminates early once all collateral has been exhausted. The Risk Premium is computed using only the collateral value available, and the remaining uncovered debt is ignored in the calculation.
 
 ## Premium Offset
 
@@ -214,7 +214,7 @@ The reinvestment infrastructure enables the protocol to optimize capital efficie
 
 # Dynamic Risk Configuration
 
-One of the major risk‑side limitations of Aave V3 lies in its single, global risk configuration per asset. This design creates significant governance overhead and potential user harm through unexpected liquidations, as any parameter change, in particular lowering the liquidation threshold, immediately affects every open position.
+One of the major risk‑side limitations of Aave V3 lies in its single, global risk configuration per asset. This design creates significant governance overhead and potential user friction through unexpected liquidations, as any parameter change, in particular lowering the liquidation threshold, immediately affects every open position.
 
 Aave V4 makes it possible for multiple risk configurations to exist side‑by‑side. Whenever the Governor adjusts collateralization parameters (currently the Collateral Factor (CF), Max Liquidation Bonus (LB) or Liquidation Fee (LF)), the protocol adds a new configuration instead of replacing the old one. Earlier configurations continue to govern positions opened under them while updated parameters apply to new positions. In particular cases where there could be a negative impact to the protocol, the Governor may decide to trigger an authorized update of existing positions to the latest parameters.
 
@@ -264,7 +264,7 @@ Aave V4 introduces a redesigned liquidation mechanism that replaces the fixed cl
 ## Key Differences from Aave V3
 
 - **Target Health Factor vs Close Factor:** In Aave V3, the default close factor is 50% (with a 100% close factor when HF < 0.95 or when liquidation amounts are under a given base currency threshold). Liquidators would typically repay half of a borrower’s debt and seize a corresponding amount of their collateral. Aave V4 removes the default close factor: the maximum a liquidator can repay (in situations that do not result in dust collateral or debt remaining) is the amount needed to bring the borrower back to the `TargetHealthFactor` determined by the Governor.
-- **Dynamic Dust Handling during Liquidations**: Similar to Aave V3, Aave V4 uses a dust threshold of `$1_000` to prevent residual positions that are uneconomical to liquidate. If the remaining debt or collateral post-liquidation falls below this threshold, the protocol expands the liquidation to fully exhaust the smaller side, or reverts if the liquidator's intended `debtToCover` is insufficient. However, whereas Aave V3's close factor is a hard constraint, Aave V4 allows more flexibility by selectively bypassing the target HF enforcement in order to prevent dust accumulation.
+- **Dynamic Dust Handling during Liquidations**: Similar to Aave V3, Aave V4 uses a dust threshold of `$1_000` to prevent residual positions that are uneconomical to liquidate. If the remaining debt or collateral post-liquidation were to fall below this threshold, the protocol expands the liquidation to fully exhaust the smaller side, or reverts if the liquidator's intended `debtToCover` is insufficient. However, whereas Aave V3's close factor is a hard constraint, Aave V4 allows more flexibility by selectively bypassing the target HF enforcement in order to prevent dust accumulation.
 - **Dutch‑Auction Style Liquidation Bonus:** Aave V3 applies a static liquidation bonus that does not depend on the borrower’s health factor. Aave V4 introduces a variable liquidation bonus that increases linearly as the health factor decreases. Governance can specify two spoke‑wide parameters that determine the liquidation bonus calculation: `healthFactorForMaxBonus` and `liquidationBonusFactor`.
 
 ## Parameters and Configuration
@@ -289,7 +289,7 @@ The following high‑level steps outline the Aave V4 liquidation flow:
 3. **Handle Dust Debt:** If the borrower’s remaining debt after a standard liquidation would be below the `DUST_LIQUIDATION_THRESHOLD`, and the liquidator intends to fully repay the debt, the protocol increases the allowable debt that can be liquidated, so that the entire debt can be covered. However, dust may still remain if the liquidator targets debt equal to the full amount of the collateral Reserve $C_i$ being seized (i.e., $Δ C_i = C_i$), then a residual debt $D_{dust} > 0$ can remain when there are multiple collateral Reserves ($N_{coll} > 1$). If there is a single collateral Reserve ($N_{coll} = 1$), the residual, along with any other existing debt across all Reserves, is recorded as a protocol deficit.
 4. **Calculate Collateral to Seize and Handle Collateral Dust**: Convert the debt to be repaid into the collateral asset’s value and apply the liquidation bonus for this specific liquidation. By this point the bonus is fixed (not variable during execution) based on the position’s HF at the start of liquidation and the Reserve’s `maxLiquidationBonus`. The formula in this step just computes that liquidation bonus and the resulting collateral to transfer. If the chosen collateral is not sufficient, all of that collateral is seized and the repaid debt is recomputed. Lastly, collateral dust is accounted for.
 5. **Apply Debt Repayment & Transfer Collateral**: Reduce the borrower’s debt amount by the repaid amount. Transfer the corresponding collateral to the liquidator with the liquidation bonus applied, minus the protocol fee (as in Aave V3). If `receiveSharesEnabled` is true for the collateral Reserve and the Reserve is not frozen, the liquidator can opt to receive added shares directly instead of underlying assets by setting the `receiveShares` parameter to true. Added shares accrue yield in the Hub, providing a more capital-efficient liquidation mechanism. The fee portion is sent to the protocol/fee receiver via the Hub as shares, accrues yield there, and the shares are assigned directly via Hub accounting.
-6. **Emit Events and Update State:** A `LiquidationCall` event is emitted containing details of the liquidation. The borrower’s and Reserve’s interest indices are updated. If the borrower still has debt outstanding and no remaining collateral, the system will record a protocol deficit. Reporting deficit is allowed even when the reporting Spoke is halted (as long as it’s active).
+6. **Emit Events and Update State:** A `LiquidationCall` event is emitted containing details of the liquidation. The borrower’s and Reserve’s debt amounts are updated. If the borrower still has debt outstanding and no remaining collateral, the system will record a protocol deficit. Reporting deficit is allowed even when the reporting Spoke is halted (as long as it’s active).
 
 ## Dust and Rounding Considerations
 
@@ -333,6 +333,6 @@ $$
 
 where
 
-- $HF\_LIQ\_THRESHOLD$: configured as a spoke-wide constant. Represents the health factor threshold under which the user becomes liquidatable. Equals 1.
+- $HF\_LIQ\_THRESHOLD$: a spoke-wide constant. Represents the health factor threshold under which the user becomes liquidatable. Equals 1.
 - $hf_{beforeLiq}$: per user. Represents the user’s health factor before liquidation.
 - $hfForMaxBonus$: per Spoke. Represents the health factor threshold under which the protocol awards the maximum liquidation bonus.
