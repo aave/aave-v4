@@ -1,5 +1,4 @@
-// SPDX-License-Identifier: UNLICENSED
-// Copyright (c) 2025 Aave Labs
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
 import 'tests/unit/Hub/HubBase.t.sol';
@@ -34,7 +33,9 @@ contract HubReportDeficitTest is HubBase {
   }
 
   function test_reportDeficit_revertsWith_SpokeNotActive(address caller) public {
-    vm.assume(!hub1.getSpoke(usdxAssetId, caller).active);
+    vm.assume(
+      !hub1.getSpoke(usdxAssetId, caller).active && caller != _getProxyAdminAddress(address(hub1))
+    );
 
     vm.expectRevert(IHub.SpokeNotActive.selector);
 
@@ -231,7 +232,14 @@ contract HubReportDeficitTest is HubBase {
         totalDeficitRay
       );
       vm.prank(address(spoke1));
-      hub1.reportDeficit(usdxAssetId, baseAmount, premiumDelta);
+      (uint256 returnedDrawnShares, uint256 returnedDeficitAmount) = hub1.reportDeficit(
+        usdxAssetId,
+        baseAmount,
+        premiumDelta
+      );
+
+      assertEq(returnedDrawnShares, drawnShares, 'returned drawn shares');
+      assertEq(returnedDeficitAmount, totalDeficitRay.fromRayUp(), 'returned deficit amount');
 
       (params.drawnAfter, ) = hub1.getAssetOwed(usdxAssetId);
       params.premiumRayAfter = hub1.getAssetPremiumRay(usdxAssetId);
@@ -271,7 +279,7 @@ contract HubReportDeficitTest is HubBase {
         params.supplyExchangeRateBefore,
         'supply exchange rate should increase'
       );
-      _assertBorrowRateSynced(hub1, usdxAssetId, 'reportDeficit');
+      _assertDrawnRateSynced(hub1, usdxAssetId, 'reportDeficit');
     }
   }
 }

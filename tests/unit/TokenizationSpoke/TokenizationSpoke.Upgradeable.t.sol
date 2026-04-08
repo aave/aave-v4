@@ -1,5 +1,4 @@
-// SPDX-License-Identifier: UNLICENSED
-// Copyright (c) 2025 Aave Labs
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
 import 'tests/unit/TokenizationSpoke/TokenizationSpoke.Base.t.sol';
@@ -32,6 +31,8 @@ contract TokenizationSpokeUpgradeableTest is TokenizationSpokeBaseTest {
 
     vm.expectEmit(vaultProxyAddress);
     emit IERC1967.Upgraded(address(vaultImpl));
+    vm.expectEmit(vaultProxyAddress);
+    emit ITokenizationSpoke.SetTokenizationSpokeImmutables(address(hub1), daiAssetId);
     vm.expectEmit(vaultProxyAddress);
     emit Initializable.Initialized(revision);
     vm.expectEmit(proxyAdminAddress);
@@ -77,6 +78,8 @@ contract TokenizationSpokeUpgradeableTest is TokenizationSpokeBaseTest {
 
     string memory newShareName = 'New Share Name';
     string memory newShareSymbol = 'New Share Symbol';
+    vm.expectEmit(address(vaultProxy));
+    emit ITokenizationSpoke.SetTokenizationSpokeImmutables(address(hub1), daiAssetId);
     vm.expectEmit(address(vaultProxy));
     emit Initializable.Initialized(secondRevision);
     vm.recordLogs();
@@ -168,7 +171,7 @@ contract TokenizationSpokeUpgradeableTest is TokenizationSpokeBaseTest {
   ) internal returns (TokenizationSpokeInstance) {
     return
       TokenizationSpokeInstance(
-        address(new MockTokenizationSpokeInstance(revision, address(hub1), daiAssetId))
+        address(new MockTokenizationSpokeInstance(revision, address(hub1), address(tokenList.dai)))
       );
   }
 }

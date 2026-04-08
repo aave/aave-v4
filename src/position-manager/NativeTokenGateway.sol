@@ -1,5 +1,4 @@
-// SPDX-License-Identifier: UNLICENSED
-// Copyright (c) 2025 Aave Labs
+// SPDX-License-Identifier: LicenseRef-BUSL
 pragma solidity 0.8.28;
 
 import {ReentrancyGuardTransient} from 'src/dependencies/openzeppelin/ReentrancyGuardTransient.sol';
@@ -164,9 +163,5 @@ contract NativeTokenGateway is INativeTokenGateway, PositionManagerBase, Reentra
   /// @dev Multicall is disabled to prevent msg.value reuse across delegatecalls.
   function _multicallEnabled() internal pure override returns (bool) {
     return false;
-  }
-
-  function _domainNameAndVersion() internal pure override returns (string memory, string memory) {
-    return ('NativeTokenGateway', '1');
   }
 }

@@ -14,6 +14,7 @@ A unified liquidity layer and modular architecture that enhances capital efficie
 ## Documentation
 
 - [Aave V4 Overview](./docs/overview.md)
+- [Aave V4 Docs](https://aave.com/docs/aave-v4)
 
 ## Architecture
 
@@ -155,3 +156,11 @@ You can find all audit reports under the audits folder
 ### Bug Bounty
 
 Further details will be made available soon.
+
+# License
+
+Aave V4 is licensed under the Business Source License, see [BUSL_LICENSE](./licenses/BUSL_LICENSE). Each Solidity file in Aave V4 states the applicable license.
+
+# Contributing
+
+Contributions are licensed under the Aave Protocol Contributor License Agreement, see [CLA_LICENSE](./licenses/CLA_LICENSE). See [CONTRIBUTING](./CONTRIBUTING.md) for further details and guidelines.

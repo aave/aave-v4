@@ -1,5 +1,4 @@
-// SPDX-License-Identifier: UNLICENSED
-// Copyright (c) 2025 Aave Labs
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
 import 'tests/unit/Hub/HubBase.t.sol';
@@ -98,7 +97,7 @@ contract HubSkimTest is HubBase {
       liquidityBefore + amount + donationAmount,
       'hub available liquidity after'
     );
-    _assertBorrowRateSynced(hub1, assetId, 'hub1.skimAdd');
+    _assertDrawnRateSynced(hub1, assetId, 'hub1.skimAdd');
     _assertHubLiquidity(hub1, assetId, 'hub1.skimAdd');
     // token balance
     assertEq(
@@ -173,7 +172,7 @@ contract HubSkimTest is HubBase {
       liquidityBefore + amount + donationAmount,
       'hub available liquidity after'
     );
-    _assertBorrowRateSynced(hub1, assetId, 'hub1.skimAdd');
+    _assertDrawnRateSynced(hub1, assetId, 'hub1.skimAdd');
     _assertHubLiquidity(hub1, assetId, 'hub1.skimAdd');
     // token balance
     assertEq(
@@ -245,7 +244,7 @@ contract HubSkimTest is HubBase {
       liquidityBefore + amount,
       'hub available liquidity after'
     );
-    _assertBorrowRateSynced(hub1, assetId, 'hub1.skimAdd');
+    _assertDrawnRateSynced(hub1, assetId, 'hub1.skimAdd');
     _assertHubLiquidity(hub1, assetId, 'hub1.skimAdd');
     // token balance
     assertEq(underlying.balanceOf(address(hub1)), amount, 'hub token balance post-add');
@@ -307,7 +306,7 @@ contract HubSkimTest is HubBase {
       liquidityBefore + donationAmount,
       'hub available liquidity after'
     );
-    _assertBorrowRateSynced(hub1, assetId, 'hub1.skimRestore');
+    _assertDrawnRateSynced(hub1, assetId, 'hub1.skimRestore');
     _assertHubLiquidity(hub1, assetId, 'hub1.skimRestore');
     // token balance
     assertEq(

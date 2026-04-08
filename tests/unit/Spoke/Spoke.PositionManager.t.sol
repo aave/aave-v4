@@ -1,5 +1,4 @@
-// SPDX-License-Identifier: UNLICENSED
-// Copyright (c) 2025 Aave Labs
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
 import 'tests/unit/Spoke/SpokeBase.t.sol';
@@ -66,7 +65,7 @@ contract SpokePositionManagerTest is SpokeBase {
     vm.expectEmit(address(tokenList.usdx));
     emit IERC20.Transfer(address(POSITION_MANAGER), address(hub1), amount);
     vm.expectEmit(address(spoke1));
-    emit ISpokeBase.Supply(
+    emit ISpoke.Supply(
       reserveId,
       POSITION_MANAGER,
       alice,
@@ -101,7 +100,7 @@ contract SpokePositionManagerTest is SpokeBase {
     vm.expectEmit(address(tokenList.usdx));
     emit IERC20.Transfer(address(hub1), address(POSITION_MANAGER), amount);
     vm.expectEmit(address(spoke1));
-    emit ISpokeBase.Withdraw(
+    emit ISpoke.Withdraw(
       reserveId,
       POSITION_MANAGER,
       alice,
@@ -135,7 +134,7 @@ contract SpokePositionManagerTest is SpokeBase {
     vm.expectEmit(address(tokenList.usdx));
     emit IERC20.Transfer(address(hub1), address(POSITION_MANAGER), amount);
     vm.expectEmit(address(spoke1));
-    emit ISpokeBase.Borrow(
+    emit ISpoke.Borrow(
       reserveId,
       POSITION_MANAGER,
       alice,
@@ -180,7 +179,7 @@ contract SpokePositionManagerTest is SpokeBase {
     vm.expectEmit(address(tokenList.usdx));
     emit IERC20.Transfer(address(POSITION_MANAGER), address(hub1), repayAmount);
     vm.expectEmit(address(spoke1));
-    emit ISpokeBase.Repay(
+    emit ISpoke.Repay(
       reserveId,
       POSITION_MANAGER,
       alice,

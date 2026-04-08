@@ -1,5 +1,4 @@
-// SPDX-License-Identifier: UNLICENSED
-// Copyright (c) 2025 Aave Labs
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
 import 'tests/unit/Spoke/SpokeBase.t.sol';
@@ -10,8 +9,8 @@ contract SpokeConfigTest is SpokeBase {
 
   function test_spoke_deploy() public {
     address oracle = makeAddr('AaveOracle');
-    vm.expectCall(oracle, abi.encodeCall(IPriceOracle.DECIMALS, ()), 1);
-    vm.mockCall(oracle, abi.encodeCall(IPriceOracle.DECIMALS, ()), abi.encode(8));
+    vm.expectCall(oracle, abi.encodeCall(IPriceOracle.decimals, ()), 1);
+    vm.mockCall(oracle, abi.encodeCall(IPriceOracle.decimals, ()), abi.encode(8));
     ISpoke instance = ISpoke(
       address(
         DeployUtils.deploySpokeImplementation(oracle, Constants.MAX_ALLOWED_USER_RESERVES_LIMIT)
@@ -33,7 +32,7 @@ contract SpokeConfigTest is SpokeBase {
     DeployWrapper deployer = new DeployWrapper();
     address oracle = makeAddr('AaveOracle');
 
-    vm.mockCall(oracle, abi.encodeCall(IPriceOracle.DECIMALS, ()), abi.encode(7));
+    vm.mockCall(oracle, abi.encodeCall(IPriceOracle.decimals, ()), abi.encode(7));
     vm.expectRevert();
     deployer.deploySpokeImplementation(oracle, Constants.MAX_ALLOWED_USER_RESERVES_LIMIT);
   }
@@ -42,7 +41,7 @@ contract SpokeConfigTest is SpokeBase {
     DeployWrapper deployer = new DeployWrapper();
     address oracle = makeAddr('AaveOracle');
 
-    vm.mockCall(oracle, abi.encodeCall(IPriceOracle.DECIMALS, ()), abi.encode(8));
+    vm.mockCall(oracle, abi.encodeCall(IPriceOracle.decimals, ()), abi.encode(8));
     vm.expectRevert();
     deployer.deploySpokeImplementation(oracle, 0);
   }
@@ -215,7 +214,7 @@ contract SpokeConfigTest is SpokeBase {
   }
 
   function test_addReserve_revertsWith_InvalidAddress_hub() public {
-    (ISpoke newSpoke, ) = _deploySpokeWithOracle(ADMIN, address(accessManager), 'New Spoke (USD)');
+    (ISpoke newSpoke, ) = _deploySpokeWithOracle(ADMIN, address(accessManager));
 
     ISpoke.ReserveConfig memory newReserveConfig;
     ISpoke.DynamicReserveConfig memory newDynReserveConfig;
@@ -232,7 +231,7 @@ contract SpokeConfigTest is SpokeBase {
   }
 
   function test_addReserve_revertsWith_InvalidAddress_oracle() public {
-    (ISpoke newSpoke, ) = _deploySpokeWithOracle(ADMIN, address(accessManager), 'New Spoke (USD)');
+    (ISpoke newSpoke, ) = _deploySpokeWithOracle(ADMIN, address(accessManager));
 
     ISpoke.ReserveConfig memory newReserveConfig = _getDefaultReserveConfig(10_00);
     ISpoke.DynamicReserveConfig memory newDynReserveConfig = ISpoke.DynamicReserveConfig({
