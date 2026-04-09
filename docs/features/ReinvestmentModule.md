@@ -59,7 +59,7 @@ Swept liquidity is also included in `totalAddedAssets`, the quantity against whi
 
 ## Yield Accounting
 
-Interest accrued by external strategies on swept funds is not tracked onchain by the Hub. The Hub records no interest accrual against `asset.swept`. Per the interface specification, all interest earned on swept liquidity is distributed off-chain.
+Interest accrued by external strategies on swept funds is not tracked onchain by the Hub. The Hub records no interest accrual against `asset.swept`. Per the interface specification, all interest earned on swept liquidity is distributed offchain.
 
 The controller may only reclaim up to the amount currently recorded in `asset.swept`. Attempting to reclaim more than `asset.swept` causes an arithmetic underflow and reverts. Yield earned by external strategies above the swept principal cannot be returned to the Hub through `reclaim`; any such surplus must be distributed directly from the controller itself. The controller is responsible for the full yield distribution lifecycle.
 
@@ -78,7 +78,7 @@ The `getAssetSwept` view function returns the current outstanding swept amount f
 The following are explicitly excluded from the Reinvestment Module:
 
 - **Per-account yield compounding**: Yields earned externally are not attributed to individual supply positions and do not flow back into hub share pricing or interest rate accounting.
-- **On-chain sweep caps**: The Hub enforces no maximum sweep amount per call or in aggregate. Cap logic is delegated to the controller contract.
+- **Onchain sweep caps**: The Hub enforces no maximum sweep amount per call or in aggregate. Cap logic is delegated to the controller contract.
 - **Multi-controller per asset**: One `reinvestmentController` address is registered per asset. Routing across multiple external strategies requires a single controller contract that aggregates them internally.
 - **Deficit reporting for external losses**: If the controller suffers a loss and cannot reclaim the full swept amount, the Hub provides no mechanism to record the shortfall as a protocol deficit. This risk is not absorbed by the Hub's bad debt accounting.
-- **Strategy implementation**: The Hub exposes only `sweep` and `reclaim`. Strategy selection, yield distribution, off-chain legal structure, investment caps, and risk parameters are governance decisions external to the Hub contract.
+- **Strategy implementation**: The Hub exposes only `sweep` and `reclaim`. Strategy selection, yield distribution, offchain legal structure, investment caps, and risk parameters are governance decisions external to the Hub contract.

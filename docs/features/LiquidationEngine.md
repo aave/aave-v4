@@ -2,7 +2,7 @@
 
 ## Summary
 
-The Liquidation Engine determines when and how under-collateralized positions are closed in Aave V4. It replaces the fixed close-factor logic of Aave V3 with a target-health-factor approach: liquidation sizing is target-health-factor-driven, but the final repaid amount is also constrained by `debtToCover`, dust-prevention adjustments, and collateral availability, preventing the over-liquidation inherent in V3's 50% close factor. A Dutch-auction-style variable bonus incentivizes timely intervention by increasing linearly as the borrower's health factor falls. Dust-prevention logic, rounding rules designed to neutralize griefing, and a deficit-reporting path cover the edge cases that arise from rounding effects and partial liquidations.
+The Liquidation Engine determines when and how under-collateralized positions are closed in Aave V4. It replaces the fixed close-factor logic of Aave V3 with a target-health-factor approach: liquidation sizing is target-health-factor-driven, but the final repaid amount is also constrained by `debtToCover`, dust-prevention adjustments, and collateral availability, preventing the over-liquidation inherent in Aave V3's 50% close factor. A Dutch-auction-style variable bonus incentivizes timely intervention by increasing linearly as the borrower's health factor falls. Dust-prevention logic, rounding rules designed to neutralize griefing, and a deficit-reporting path cover the edge cases that arise from rounding effects and partial liquidations.
 
 The engine operates on both drawn debt (principal borrowed from the Hub) and premium debt (additional interest from the user's risk premium). It settles collateral to the liquidator either as underlying assets or, when `receiveSharesEnabled` is active and the liquidator opts in, as Hub-added shares.
 
@@ -16,7 +16,7 @@ Within the library, execution can involve up to three Hub interactions, dependin
 2. `Hub.payFeeShares` on the collateral Hub: if fee shares are non-zero, the protocol fee portion is transferred to the fee receiver as shares.
 3. `Hub.restore` on the debt Hub: the liquidator's repayment is pulled via `safeTransferFrom` and credited, retiring drawn and premium shares.
 
-Each reserve references its own Hub through `Reserve.hub`, so the collateral and debt reserves in a single liquidation can reference different Hubs. Spoke-wide liquidation parameters (`targetHealthFactor`, `healthFactorForMaxBonus`, `liquidationBonusFactor`) are stored in `LiquidationConfig`. Per-reserve parameters (`maxLiquidationBonus`, `liquidationFee`) are stored in `DynamicReserveConfig`, allowing different collateral assets within the same Spoke to carry different bonus ceilings and fee rates.
+Each Reserve references its own Hub through `Reserve.hub`, so the collateral and debt Reserves in a single liquidation can reference different Hubs. Spoke-wide liquidation parameters (`targetHealthFactor`, `healthFactorForMaxBonus`, `liquidationBonusFactor`) are stored in `LiquidationConfig`. Per-reserve parameters (`maxLiquidationBonus`, `liquidationFee`) are stored in `DynamicReserveConfig`, allowing different collateral assets within the same Spoke to carry different bonus ceilings and fee rates.
 
 ## Parameters and Configuration
 
@@ -30,7 +30,7 @@ Liquidation behavior is controlled by Spoke-wide parameters stored in `Liquidati
 | `healthFactorForMaxBonus`    | Spoke-wide HF threshold below which the maximum bonus applies, expressed in WAD.                                                                                                                                                                                                                                                                                                                                                               | Must be < `HEALTH_FACTOR_LIQUIDATION_THRESHOLD`.                                                                                                                   |
 | `liquidationBonusFactor`     | Spoke-wide percentage applied to the effective bonus (the part of `maxLiquidationBonus` above 100%) to compute the minimum bonus at `HEALTH_FACTOR_LIQUIDATION_THRESHOLD`. Formula: `minLB = (maxLB - 100%) × lbFactor + 100%`. Expressed in BPS.                                                                                                                                                                                              | Must be ≤ `100_00`.                                                                                                                                                |
 | `liquidationFee`             | Per-collateral protocol fee expressed as a percentage of the effective bonus (the collateral bonus above 100%), in BPS. Fee shares are transferred to the Hub fee receiver via `Hub.payFeeShares`.                                                                                                                                                                                                                                             | Must be ≤ `100_00`.                                                                                                                                                |
-| `receiveSharesEnabled`       | Per-reserve flag. When `true` and the reserve is not frozen, liquidators can opt to receive collateral as Hub-added shares instead of underlying assets by passing `receiveShares = true` to `liquidationCall`.                                                                                                                                                                                                                                | `true` or `false`.                                                                                                                                                 |
+| `receiveSharesEnabled`       | Per-reserve flag. When `true` and the Reserve is not frozen, liquidators can opt to receive collateral as Hub-added shares instead of underlying assets by passing `receiveShares = true` to `liquidationCall`.                                                                                                                                                                                                                                | `true` or `false`.                                                                                                                                                 |
 | `riskPremiumThreshold`       | Per-Spoke, per-asset Hub parameter limiting the maximum ratio of premium shares to drawn shares a Spoke can hold, expressed in BPS. If configured too strictly, premium share increases that arise when safer collateral is liquidated can cause the post-liquidation `Hub.refreshPremium` call to revert with `InvalidPremiumChange`, reverting the liquidation transaction. A value of `MAX_RISK_PREMIUM_THRESHOLD` disables the constraint. | Configured via `HubConfigurator.updateSpokeRiskPremiumThreshold`.                                                                                                  |
 
 ## Eligibility and Validation
@@ -38,20 +38,20 @@ Liquidation behavior is controlled by Spoke-wide parameters stored in `Liquidati
 Any address can call `liquidationCall` on a Spoke to initiate a liquidation. Self-liquidation reverts with `SelfLiquidation`. Before computing amounts, the engine validates:
 
 - `debtToCover` is non-zero; otherwise reverts with `InvalidDebtToCover`.
-- Neither the collateral reserve nor the debt reserve is paused; violation reverts with `ReservePaused`. (Frozen reserves, unlike paused ones, can be liquidated.)
-- The borrower holds supply in the target collateral reserve; otherwise reverts with `ReserveNotSupplied`.
-- The borrower holds active drawn shares in the target debt reserve; otherwise reverts with `ReserveNotBorrowed`.
+- Neither the collateral Reserve nor the debt Reserve is paused; violation reverts with `ReservePaused`. (Frozen Reserves, unlike paused ones, can be liquidated.)
+- The borrower holds supply in the target collateral Reserve; otherwise reverts with `ReserveNotSupplied`.
+- The borrower holds active drawn shares in the target debt Reserve; otherwise reverts with `ReserveNotBorrowed`.
 - The borrower's health factor is strictly below `HEALTH_FACTOR_LIQUIDATION_THRESHOLD`; otherwise reverts with `HealthFactorNotBelowThreshold`.
-- The collateral reserve has `collateralFactor > 0` and the borrower has `usingAsCollateral` enabled for it; otherwise reverts with `ReserveNotEnabledAsCollateral`.
-- If the liquidator passes `receiveShares = true`, the collateral reserve must not be frozen and must have `receiveSharesEnabled = true`; otherwise reverts with `CannotReceiveShares`.
+- The collateral Reserve has `collateralFactor > 0` and the borrower has `usingAsCollateral` enabled for it; otherwise reverts with `ReserveNotEnabledAsCollateral`.
+- If the liquidator passes `receiveShares = true`, the collateral Reserve must not be frozen and must have `receiveSharesEnabled = true`; otherwise reverts with `CannotReceiveShares`.
 
-Frozen reserves can be liquidated, but cannot be received as shares (see `receiveShares` validation). Paused reserves in the borrower's position that are not the specific collateral or debt target being liquidated do not block the call.
+Frozen Reserves can be liquidated, but cannot be received as shares (see `receiveShares` validation). Paused Reserves in the borrower's position that are not the specific collateral or debt target being liquidated do not block the call.
 
 ## Liquidation Process
 
 A liquidation executes in six sequential steps.
 
-1. **Compute account data**: The Spoke calculates the borrower's health factor, total debt value (RAY-scaled), total collateral value (counting reserves with `collateralFactor > 0`, `usingAsCollateral` enabled, and `suppliedShares > 0`), and the counts of active collateral and borrow reserves.
+1. **Compute account data**: The Spoke calculates the borrower's health factor, total debt value (RAY-scaled), total collateral value (counting Reserves with `collateralFactor > 0`, `usingAsCollateral` enabled, and `suppliedShares > 0`), and the counts of active collateral and borrow Reserves.
 
 2. **Compute debt to liquidate**: The engine determines how much debt must be repaid to restore the borrower to `targetHealthFactor`, using the following formula derived from the health factor definition and the liquidation bonus:
 
@@ -64,13 +64,13 @@ $$l = \frac{D \cdot (THF - HF)}{THF - lb \cdot cf}$$
 - $lb$ is the liquidation bonus from the Dutch-auction formula
 - $cf$ is the collateral factor of the collateral being seized
 
-3. **Adjust for dust**: If the debt remaining after a standard liquidation falls below `DUST_LIQUIDATION_THRESHOLD`, the engine extends `maxDebtToLiquidate` to cover the full debt position in the target reserve. The liquidator's `debtToCover` input must be large enough to cover the extended amount; otherwise the transaction reverts with `MustNotLeaveDust`. Debt dust may still remain if the collateral reserve is fully exhausted before the debt is fully covered.
+3. **Adjust for dust**: If the debt remaining after a standard liquidation falls below `DUST_LIQUIDATION_THRESHOLD`, the engine extends `maxDebtToLiquidate` to cover the full debt position in the target Reserve. The liquidator's `debtToCover` input must be large enough to cover the extended amount; otherwise the transaction reverts with `MustNotLeaveDust`. Debt dust may still remain if the collateral Reserve is fully exhausted before the debt is fully covered.
 
-4. **Compute collateral to seize**: The debt to liquidate is converted into collateral units at the current oracle price and scaled by the liquidation bonus. If the computed collateral exceeds available supply, all remaining collateral is seized and debt-to-liquidate is recomputed downward from available collateral. Separately, if remaining collateral would fall below `DUST_LIQUIDATION_THRESHOLD` and drawn shares would remain in the target debt reserve after liquidation, all collateral is seized and debt-to-liquidate is increased to fully consume the collateral (potentially bypassing the target health factor). The liquidator's `debtToCover` must be large enough to cover this increased amount; otherwise the transaction reverts with `MustNotLeaveDust`.
+4. **Compute collateral to seize**: The debt to liquidate is converted into collateral units at the current oracle price and scaled by the liquidation bonus. If the computed collateral exceeds available supply, all remaining collateral is seized and debt-to-liquidate is recomputed downward from available collateral. Separately, if remaining collateral would fall below `DUST_LIQUIDATION_THRESHOLD` and drawn shares would remain in the target debt Reserve after liquidation, all collateral is seized and debt-to-liquidate is increased to fully consume the collateral (potentially bypassing the target health factor). The liquidator's `debtToCover` must be large enough to cover this increased amount; otherwise the transaction reverts with `MustNotLeaveDust`.
 
 5. **Settle collateral and repay debt**: Collateral shares are deducted from the borrower. The net collateral goes to the liquidator via `Hub.remove` (underlying assets) or is credited directly as added shares in the liquidator's Spoke position (`receiveShares = true` path). Fee shares (the `liquidationFee` fraction of the effective bonus) are sent to the fee receiver via `Hub.payFeeShares`. Finally, the liquidator's repayment is pulled via `safeTransferFrom` to the debt Hub, which credits the position via `Hub.restore`.
 
-6. **Evaluate deficit**: The engine calls `_evaluateDeficit` after execution. If the collateral position is fully emptied, it was the borrower's only active collateral, and debt still remains in any reserve, the Spoke invokes `notifyReportDeficit`. This iterates all remaining debt reserves, calls `Hub.reportDeficit` for each, zeroes drawn and premium shares, and resets the borrower's risk premium to zero. A `ReportDeficit` event is emitted per reserve and `UpdateUserRiskPremium` is emitted with value zero.
+6. **Evaluate deficit**: The engine calls `_evaluateDeficit` after execution. If the collateral position is fully emptied, it was the borrower's only active collateral, and debt still remains in any Reserve, the Spoke invokes `notifyReportDeficit`. This iterates all remaining debt Reserves, calls `Hub.reportDeficit` for each, zeroes drawn and premium shares, and resets the borrower's risk premium to zero. A `ReportDeficit` event is emitted per Reserve and `UpdateUserRiskPremium` is emitted with value zero.
 
 ## Dutch-Auction Style Liquidation Bonus
 
@@ -78,7 +78,7 @@ The liquidation bonus varies linearly with the borrower's health factor. Once a 
 
 $$minLB = (maxLB - 100\%) \times lbFactor + 100\%$$
 
-- $maxLB$ is `maxLiquidationBonus` for the collateral reserve, as a ratio (e.g., 1.05 for `105_00`)
+- $maxLB$ is `maxLiquidationBonus` for the collateral Reserve, as a ratio (e.g., 1.05 for `105_00`)
 - $lbFactor$ is `liquidationBonusFactor` for the Spoke, as a ratio (e.g., 0.80 for `80_00`)
 
 For a liquidatable position, the bonus is:
@@ -125,6 +125,8 @@ Dust prevention and rounding direction are enforced independently within the liq
 
 This asymmetry means very small positions (a few cents in value) may become unprofitable to liquidate even at zero gas cost. A cleanup liquidator mechanism should be considered for such positions.
 
+**Zero-collateral liquidations**: Because collateral is computed from debt-to-liquidate using floor division, it is possible for a liquidation to repay a non-zero amount of debt yet yield zero collateral shares. This does not cause a revert regardless of whether `receiveShares` is `true` or `false`: the `Hub.remove` path transfers zero underlying, and the share-credit path adds zero shares to the liquidator's position. The liquidator pays for debt repayment and receives nothing in return. This can occur with very small debt amounts where the debt-to-collateral conversion rounds down to zero.
+
 **Two-wei premium effect and rounding asymmetry**: Premium accounting updates during `Hub.restore` can leave up to two wei of instantaneous premium debt due to premium-share/premium-offset rounding. Additionally, the systematic rounding asymmetry (collateral rounds down against liquidator, debt rounds up against liquidator) causes post-liquidation HF to typically exceed `targetHealthFactor` slightly rather than equaling it. HF remains below target when the computed debt-to-target cannot be fully achieved due to liquidation bounds (for example insufficient `debtToCover`, collateral exhaustion, or target debt-reserve exhaustion). Dust-prevention overrides can move post-liquidation HF further away from the exact target and may worsen it when `lb * cf > HF_before`.
 
 ## Premium Debt in Liquidations
@@ -135,13 +137,13 @@ If the liquidated collateral was lower-risk than the collateral remaining in the
 
 ## Deficit Reporting and Elimination
 
-Deficit arises when a liquidation fully exhausts the borrower's last active collateral reserve and debt remains. The Spoke reports it to the Hub; any authorized active Spoke can eliminate it.
+Deficit arises when a liquidation fully exhausts the borrower's last active collateral Reserve and debt remains. The Spoke reports it to the Hub; any authorized active Spoke can eliminate it.
 
-**Deficit condition**: After liquidating the target collateral reserve and repaying the target debt, the engine evaluates deficit via `_evaluateDeficit`. Deficit is signaled when the collateral position is fully emptied, `activeCollateralCount` was 1 (it was the borrower's only active collateral), and debt remains in at least one reserve (the target debt reserve or any other).
+**Deficit condition**: After liquidating the target collateral Reserve and repaying the target debt, the engine evaluates deficit via `_evaluateDeficit`. Deficit is signaled when the collateral position is fully emptied, `activeCollateralCount` was 1 (it was the borrower's only active collateral), and debt remains in at least one Reserve (the target debt Reserve or any other).
 
-**Reporting**: `notifyReportDeficit` iterates all of the borrower's remaining debt reserves, calls `Hub.reportDeficit` for each outstanding debt position, applies the corresponding premium delta to clear premium accounting, zeroes drawn and premium shares, and clears the borrow flag per reserve. The borrower's risk premium is reset to zero. Deficit reporting proceeds even when the Spoke is halted, as long as it remains active.
+**Reporting**: `notifyReportDeficit` iterates all of the borrower's remaining debt Reserves, calls `Hub.reportDeficit` for each outstanding debt position, applies the corresponding premium delta to clear premium accounting, zeroes drawn and premium shares, and clears the borrow flag per Reserve. The borrower's risk premium is reset to zero. Deficit reporting proceeds even when the Spoke is halted, as long as it remains active.
 
-**Griefing via dust collateral**: Deficit is only triggered when `activeCollateralCount == 1` and the target collateral position is fully emptied. A borrower can prevent deficit reporting by maintaining a dust supply in a second collateral reserve, keeping `activeCollateralCount > 1`. This blocks protocol recovery from bad debt. Possible mitigations include enforcing minimum collateral thresholds or extending deficit logic to treat collateral below a value threshold (e.g. `DUST_LIQUIDATION_THRESHOLD`) as inactive for deficit evaluation.
+**Griefing via dust collateral**: Deficit is only triggered when `activeCollateralCount == 1` and the target collateral position is fully emptied. A borrower can prevent deficit reporting by maintaining a dust supply in a second collateral Reserve, keeping `activeCollateralCount > 1`. This blocks protocol recovery from bad debt. Possible mitigations include enforcing minimum collateral thresholds or extending deficit logic to treat collateral below a value threshold (e.g. `DUST_LIQUIDATION_THRESHOLD`) as inactive for deficit evaluation.
 
 **Elimination**: Any authorized active Spoke can call `Hub.eliminateDeficit` to use its own added shares to cover another Spoke's reported deficit for a given asset. The calling Spoke must hold sufficient added shares. Deficit elimination is permitted even when the eliminating Spoke is halted.
 
@@ -150,17 +152,17 @@ Deficit arises when a liquidation fully exhausts the borrower's last active coll
 The following are explicitly excluded from the Liquidation Engine:
 
 - **Cross-Spoke liquidations**: Each `liquidationCall` operates entirely within a single Spoke. A borrower's positions in other Spokes are not affected and cannot be targeted in the same call.
-- **Multi-reserve batch liquidation**: A single `liquidationCall` targets exactly one collateral reserve and one debt reserve. Liquidating multiple debt or collateral reserves requires separate calls.
+- **Multi-reserve batch liquidation**: A single `liquidationCall` targets exactly one collateral Reserve and one debt Reserve. Liquidating multiple debt or collateral Reserves requires separate calls.
 - **Flash-loan integration**: The Liquidation Engine provides no native flash-loan or callback mechanism for liquidators. External flash-loan providers operate independently.
 
 ## Key Differences from Aave V3
 
-**Target Health Factor vs. Close Factor**: In Aave V3, the default close factor is 50%, rising to 100% when the borrower's HF falls below 0.95 or the position falls below a base currency threshold. Aave V4 removes the default close factor entirely: liquidation sizing is target-health-factor-driven, but the final repaid amount is also constrained by `debtToCover`, dust-prevention adjustments, and collateral availability, preventing the systematic over-liquidation of V3 while maintaining protocol safety.
+**Target Health Factor vs. Close Factor**: In Aave V3, the default close factor is 50%, rising to 100% when the borrower's HF falls below 0.95 or the position falls below a base currency threshold. Aave V4 removes the default close factor entirely: liquidation sizing is target-health-factor-driven, but the final repaid amount is also constrained by `debtToCover`, dust-prevention adjustments, and collateral availability, preventing the systematic over-liquidation of Aave V3 while maintaining protocol safety.
 
 **Variable Liquidation Bonus**: Aave V3 applies a static per-reserve bonus regardless of health factor. Aave V4 introduces the Dutch-auction bonus: it varies linearly with health factor. When HF ≤ `healthFactorForMaxBonus`, the liquidator receives the maximum bonus. When HF is between `healthFactorForMaxBonus` and `HEALTH_FACTOR_LIQUIDATION_THRESHOLD`, the bonus interpolates linearly from maximum to minimum. Lower health factors earn higher bonuses, incentivizing faster intervention as a position deteriorates.
 
-**Dynamic Dust Handling**: Aave V3 reverts when remaining collateral or debt falls below a dust threshold with no cleanup path. Aave V4 dynamically extends the maximum liquidatable amounts to prevent both debt and collateral dust, while dust may still remain on either reserve when the counterpart reserve is fully exhausted first.
+**Dynamic Dust Handling**: Aave V3 reverts when remaining collateral or debt falls below a dust threshold with no cleanup path. Aave V4 dynamically extends the maximum liquidatable amounts to prevent both debt and collateral dust, while dust may still remain on either Reserve when the counterpart Reserve is fully exhausted first.
 
-**Share-based Collateral Settlement**: Aave V3 always transfers underlying assets to liquidators. Aave V4 introduces the `receiveShares` path: when `receiveSharesEnabled` is true and the reserve is not frozen, liquidators can receive Hub-added shares directly, accruing yield without an asset transfer. This enables capital-efficient liquidation in low-liquidity environments.
+**Share-based Collateral Settlement**: Aave V3 always transfers underlying assets to liquidators. Aave V4 introduces the `receiveShares` path: when `receiveSharesEnabled` is true and the Reserve is not frozen, liquidators can receive Hub-added shares directly, accruing yield without an asset transfer. This enables capital-efficient liquidation in low-liquidity environments.
 
 **Premium Debt Settlement**: Aave V3 liquidations operate solely on principal drawn debt. Aave V4 liquidations simultaneously settle drawn debt and the associated premium debt, repaying the premium obligation atomically alongside the principal.
