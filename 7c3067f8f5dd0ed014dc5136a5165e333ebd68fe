@@ -1,0 +1,21 @@
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.8",
+  "base_commit_sha": "7c3067f8f5dd0ed014dc5136a5165e333ebd68fe",
+  "prompts": {
+    "063a59d353f6aeb1": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "341ef6ae-eb2a-4345-b8fc-50af6cd24546",
+        "model": "default"
+      },
+      "human_author": "YBM",
+      "messages": [],
+      "total_additions": 35,
+      "total_deletions": 0,
+      "accepted_lines": 0,
+      "overriden_lines": 0
+    }
+  }
+}
