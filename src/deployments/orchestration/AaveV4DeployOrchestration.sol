@@ -457,6 +457,16 @@ library AaveV4DeployOrchestration {
       admin: report.configuratorBatchReport.hubConfigurator
     });
 
+    logger.logHeader1(
+      'granting HUB_FEE_MINTER_ROLE to',
+      report.feeSharesMinterBatchReport.feeSharesMinter
+    );
+    AaveV4HubRolesProcedure.grantHubRole({
+      accessManager: accessManager,
+      role: Roles.HUB_FEE_MINTER_ROLE,
+      admin: report.feeSharesMinterBatchReport.feeSharesMinter
+    });
+
     logger.logHeader1('granting HubConfigurator Admin roles to', hubConfiguratorAdmin);
     AaveV4HubConfiguratorRolesProcedure.grantHubConfiguratorAllRoles({
       accessManager: accessManager,

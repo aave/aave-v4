@@ -2,8 +2,6 @@
 pragma solidity ^0.8.0;
 
 import 'tests/setup/Base.t.sol';
-import {FeeSharesMinter} from 'src/utils/FeeSharesMinter.sol';
-import {IFeeSharesMinter} from 'src/utils/IFeeSharesMinter.sol';
 
 contract FeeSharesMinterTest is Base {
   using SafeCast for uint256;
@@ -26,7 +24,7 @@ contract FeeSharesMinterTest is Base {
   }
 
   function test_fuzz_setConfig(uint16 minAccruedFeesPercent) public {
-    minAccruedFeesPercent = bound(minAccruedFeesPercent, 0, PercentageMath.PERCENTAGE_FACTOR)
+    minAccruedFeesPercent = bound(minAccruedFeesPercent, 1, PercentageMath.PERCENTAGE_FACTOR)
       .toUint16();
 
     vm.expectEmit(address(minter));
@@ -117,7 +115,7 @@ contract FeeSharesMinterTest is Base {
     addAmount = bound(addAmount, 2, MAX_SUPPLY_AMOUNT);
     drawAmount = bound(drawAmount, 1, addAmount / 2);
     skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
-    minAccruedFeesPercent = bound(minAccruedFeesPercent, 0, PercentageMath.PERCENTAGE_FACTOR)
+    minAccruedFeesPercent = bound(minAccruedFeesPercent, 1, PercentageMath.PERCENTAGE_FACTOR)
       .toUint16();
 
     vm.prank(ADMIN);
@@ -150,9 +148,38 @@ contract FeeSharesMinterTest is Base {
     }
   }
 
+  function test_checkUpkeep_returnsFalse_unconfiguredPair() public {
+    _addAndDrawLiquidity({
+      hub: hub1,
+      assetId: daiAssetId,
+      addUser: bob,
+      addSpoke: address(spoke1),
+      addAmount: 1000e18,
+      drawUser: bob,
+      drawSpoke: address(spoke1),
+      drawAmount: 900e18,
+      skipTime: 365 days
+    });
+
+    uint256 fees = hub1.getAssetAccruedFees(daiAssetId);
+    assertGt(fees, 0);
+    assertGt(hub1.previewAddByAssets(daiAssetId, fees), 0);
+    assertEq(minter.getConfig(address(hub1), daiAssetId), 0);
+
+    bytes memory checkData = abi.encode(address(hub1), daiAssetId);
+    (bool upkeepNeeded, ) = minter.checkUpkeep(checkData);
+    assertFalse(upkeepNeeded, 'checkUpkeep should return false for unconfigured pair');
+  }
+
+  function test_setConfig_revertsWith_InvalidConfig_zero() public {
+    vm.prank(ADMIN);
+    vm.expectRevert(IFeeSharesMinter.InvalidConfig.selector);
+    minter.setConfig(address(hub1), daiAssetId, 0);
+  }
+
   function test_performUpkeep_revertsWith_ConditionsNotMet_noFees() public {
     vm.prank(ADMIN);
-    minter.setConfig(address(hub1), daiAssetId, 0);
+    minter.setConfig(address(hub1), daiAssetId, 1);
 
     HubActions.add({
       hub: hub1,
@@ -175,7 +202,7 @@ contract FeeSharesMinterTest is Base {
 
   function test_performUpkeep_revertsWith_ConditionsNotMet_noAddedAssets() public {
     vm.prank(ADMIN);
-    minter.setConfig(address(hub1), daiAssetId, 0);
+    minter.setConfig(address(hub1), daiAssetId, 1);
 
     assertEq(hub1.getAddedAssets(daiAssetId), 0, 'Total added assets should be zero');
 
@@ -227,7 +254,7 @@ contract FeeSharesMinterTest is Base {
 
   function test_performUpkeep_revertsWith_ConditionsNotMet_MinShareNotMet_nonzeroFees() public {
     vm.prank(ADMIN);
-    minter.setConfig(address(hub1), daiAssetId, 0);
+    minter.setConfig(address(hub1), daiAssetId, 1);
 
     // Inflate exchange rate
     _addAndDrawLiquidity({

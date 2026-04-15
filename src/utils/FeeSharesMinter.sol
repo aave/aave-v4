@@ -23,7 +23,10 @@ contract FeeSharesMinter is IFeeSharesMinter, Ownable2Step, Rescuable {
     uint256 assetId,
     uint16 minAccruedFeesPercent
   ) external onlyOwner {
-    require(minAccruedFeesPercent <= PercentageMath.PERCENTAGE_FACTOR, InvalidConfig());
+    require(
+      minAccruedFeesPercent > 0 && minAccruedFeesPercent <= PercentageMath.PERCENTAGE_FACTOR,
+      InvalidConfig()
+    );
     _minAccruedFeesPercent[hub][assetId] = minAccruedFeesPercent;
     emit ConfigUpdated(hub, assetId, minAccruedFeesPercent);
   }
@@ -64,6 +67,9 @@ contract FeeSharesMinter is IFeeSharesMinter, Ownable2Step, Rescuable {
   /// @return True if conditions are met, false otherwise.
   function _checkUpkeep(address hub, uint256 assetId) internal view virtual returns (bool) {
     uint16 minAccruedFeesPercent = _minAccruedFeesPercent[hub][assetId];
+    if (minAccruedFeesPercent == 0) {
+      return false;
+    }
 
     IHub hubContract = IHub(hub);
     uint256 accruedFees = hubContract.getAssetAccruedFees(assetId);

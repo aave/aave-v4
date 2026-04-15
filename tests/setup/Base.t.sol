@@ -55,6 +55,9 @@ import {
   IBasicInterestRateStrategy
 } from 'src/hub/AssetInterestRateStrategy.sol';
 
+// fee minter
+import {FeeSharesMinter, IFeeSharesMinter} from 'src/utils/FeeSharesMinter.sol';
+
 // spoke
 import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 import {TreasurySpoke, ITreasurySpoke} from 'src/spoke/TreasurySpoke.sol';

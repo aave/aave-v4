@@ -32,7 +32,7 @@ This deploys `LiquidationLogic` via CREATE2 and writes `FOUNDRY_LIBRARIES` to `.
 make deploy-contracts
 ```
 
-This runs `AaveV4DeployOrchestration.deployAaveV4()`, which deploys batches in order: AccessManager → role labeling → Configurators → Configurator role setup → TreasurySpoke → Hubs → Spokes → Gateways → PositionManagers → role grants → DEFAULT_ADMIN transfer.
+This runs `AaveV4DeployOrchestration.deployAaveV4()`, which deploys batches in order: AccessManager → role labeling → Configurators → Configurator role setup → TreasurySpoke → FeeSharesMinter → Hubs → Spokes → Gateways → PositionManagers → role grants → DEFAULT_ADMIN transfer.
 
 ### TokenizationSpoke
 
@@ -66,6 +66,7 @@ src/deployments/
     AaveV4AuthorityBatch        AccessManagerEnumerable
     AaveV4ConfiguratorBatch     HubConfigurator, SpokeConfigurator
     AaveV4TreasurySpokeBatch    TreasurySpoke (single instance, proxy + impl)
+    AaveV4FeeSharesMinterBatch  FeeSharesMinter (single instance for all hubs)
     AaveV4HubInstanceBatch      HubInstance (proxy + impl), InterestRateStrategy
     AaveV4SpokeInstanceBatch    SpokeInstance (proxy + impl), AaveOracle
     AaveV4GatewayBatch          NativeTokenGateway, SignatureGateway
@@ -130,7 +131,7 @@ See `Roles.sol` NatSpec for the full role strategy and evolution guidelines. All
 | --- | --------------------------- | ---------------------------------- | ----------------------------------------------------------------------------- |
 | 100 | HUB_DOMAIN_ADMIN_ROLE       | hubAdmin                           | (reserved for future use)                                                     |
 | 101 | HUB_CONFIGURATOR_ROLE       | hubAdmin, HubConfigurator contract | addAsset, updateAssetConfig, addSpoke, updateSpokeConfig, setInterestRateData |
-| 102 | HUB_FEE_MINTER_ROLE         | hubAdmin                           | mintFeeShares                                                                 |
+| 102 | HUB_FEE_MINTER_ROLE         | hubAdmin, FeeSharesMinter contract | mintFeeShares                                                                 |
 | 103 | HUB_DEFICIT_ELIMINATOR_ROLE | hubAdmin                           | eliminateDeficit                                                              |
 
 #### `HubConfigurator` Roles
@@ -201,6 +202,11 @@ AaveV4DeployBatchBase.s.sol                         (Foundry script entry point)
     |     |       new AaveV4TreasurySpokeBatch(owner, salt)
     |     |         Create2Utils.create2Deploy() --> TreasurySpoke
     |     |
+    |     +-- _deployFeeSharesMinterBatch()
+    |     |     AaveV4DeployBase.deployFeeSharesMinterBatch()
+    |     |       new AaveV4FeeSharesMinterBatch(owner, salt)
+    |     |         Create2Utils.create2Deploy() --> FeeSharesMinter
+    |     |
     |     +-- InputUtils.validateUniqueLabels()      revert on duplicate hub or spoke labels
     |     |
     |     +-- _deployHubs(hubLabels)                for each hub label:
@@ -241,6 +247,7 @@ AaveV4DeployBatchBase.s.sol                         (Foundry script entry point)
     |     |     _grantHubRoles()                    (if hubLabels.length > 0)
     |     |       AaveV4HubRolesProcedure.grantHubAllRoles()         hubAdmin gets roles 101-103
     |     |       AaveV4HubRolesProcedure.grantHubRole()             HubConfigurator gets role 101
+    |     |       AaveV4HubRolesProcedure.grantHubRole()             FeeSharesMinter gets role 102
     |     |       AaveV4HubConfiguratorRolesProcedure.grantHubConfiguratorAllRoles()
     |     |                                                          hubConfiguratorAdmin gets role 200
     |     |     _grantSpokeRoles()                  (if spokeLabels.length > 0)

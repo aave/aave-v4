@@ -644,13 +644,18 @@ contract BatchTestProcedures is Test, Create2TestHelper, WETHDeployProcedure {
     if (inputs.hubLabels.length > 0 && inputs.grantRoles) {
       assertEq(
         accessManager.getRoleMemberCount(Roles.HUB_FEE_MINTER_ROLE),
-        1,
+        2,
         'HubFeeMinterRoleCount'
       );
       assertEq(
         accessManager.getRoleMember(Roles.HUB_FEE_MINTER_ROLE, 0),
         inputs.hubAdmin,
         'HubFeeMinterRole member - hub admin'
+      );
+      assertEq(
+        accessManager.getRoleMember(Roles.HUB_FEE_MINTER_ROLE, 1),
+        report.feeSharesMinterBatchReport.feeSharesMinter,
+        'HubFeeMinterRole member - fee shares minter'
       );
     } else {
       assertEq(
@@ -679,6 +684,18 @@ contract BatchTestProcedures is Test, Create2TestHelper, WETHDeployProcedure {
         );
         assertEq(allowed, inputs.grantRoles ? true : false, 'HubFeeMinterRole allowed');
         assertEq(delay, 0, 'HubFeeMinterRole delay');
+
+        (bool minterAllowed, uint32 minterDelay) = accessManager.canCall(
+          report.feeSharesMinterBatchReport.feeSharesMinter,
+          report.hubInstanceBatchReports[i].report.hubProxy,
+          _hubFeeMinterRoleSelectors[j]
+        );
+        assertEq(
+          minterAllowed,
+          inputs.grantRoles ? true : false,
+          'HubFeeMinterRole allowed - fee shares minter'
+        );
+        assertEq(minterDelay, 0, 'HubFeeMinterRole delay - fee shares minter');
       }
     }
   }

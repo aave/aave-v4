@@ -22,7 +22,7 @@ interface IFeeSharesMinter is AutomationCompatibleInterface {
   /// @notice Sets the minimum accrued fees percent for a specific asset.
   /// @param hub The address of the hub.
   /// @param assetId The identifier of the asset.
-  /// @param minAccruedFeesPercent Minimum ratio of accrued fees to total added assets, in BPS.
+  /// @param minAccruedFeesPercent Minimum ratio of accrued fees to total added assets, in BPS. Must be greater than zero.
   function setConfig(address hub, uint256 assetId, uint16 minAccruedFeesPercent) external;
 
   /// @notice Chainlink Automation on-chain execution entry point.
