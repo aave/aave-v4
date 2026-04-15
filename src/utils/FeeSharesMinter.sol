@@ -53,7 +53,7 @@ contract FeeSharesMinter is IFeeSharesMinter, Ownable2Step, Rescuable {
   }
 
   /// @dev Internal function to execute fee share minting.
-  /// @param hub The address of the hub.
+  /// @param hub The address of the Hub.
   /// @param assetId The identifier of the asset.
   function _performUpkeep(address hub, uint256 assetId) internal virtual {
     require(_checkUpkeep(hub, assetId), ConditionsNotMet());
@@ -62,7 +62,7 @@ contract FeeSharesMinter is IFeeSharesMinter, Ownable2Step, Rescuable {
   }
 
   /// @dev Internal function to check execution conditions.
-  /// @param hub The address of the hub.
+  /// @param hub The address of the Hub.
   /// @param assetId The identifier of the asset.
   /// @return True if conditions are met, false otherwise.
   function _checkUpkeep(address hub, uint256 assetId) internal view virtual returns (bool) {

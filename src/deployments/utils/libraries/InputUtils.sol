@@ -8,7 +8,7 @@ library InputUtils {
   /// @dev accessManagerAdmin The default admin of the access manager. Only used when grantRoles is true.
   /// @dev proxyAdminOwner The owner of the Hub and Spoke ProxyAdmin contracts. Required at deploy time (constructor arg).
   ///      When grantRoles is `false`, defaults to the deployer; ownership can be transferred post-deployment.
-  /// @dev hubAdmin The admin of the hub. Only used when grantRoles is true.
+  /// @dev hubAdmin The admin of the Hub. Only used when grantRoles is true.
   /// @dev hubConfiguratorAdmin The admin granted all hub configurator roles. Only used when grantRoles is true.
   /// @dev treasurySpokeOwner The owner of the TreasurySpoke (Ownable). Required at deploy time (constructor arg).
   ///      When grantRoles is `false`, defaults to the deployer; ownership can be transferred post-deployment.

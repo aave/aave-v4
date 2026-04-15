@@ -397,7 +397,7 @@ library AaveV4DeployOrchestration {
     return report;
   }
 
-  /// @dev Setup roles for the hub and spoke configurators.
+  /// @dev Setup roles for the Hub and spoke configurators.
   function _setupConfiguratorRoles(
     Logger logger,
     OrchestrationReports.FullDeploymentReport memory report
