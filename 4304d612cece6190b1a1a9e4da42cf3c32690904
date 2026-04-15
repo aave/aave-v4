@@ -1,0 +1,31 @@
+src/deployments/orchestration/AaveV4DeployOrchestration.sol
+  a31732cfe5817720 460-469
+tests/utils/BatchTestProcedures.sol
+  a31732cfe5817720 647,655-658,687-698
+src/utils/FeeSharesMinter.sol
+  a31732cfe5817720 26-29,70-72
+src/deployments/README.md
+  a31732cfe5817720 35,69,134,205-209,250
+tests/contracts/utils/FeeSharesMinter.t.sol
+  a31732cfe5817720 27,118,151-174,176,178-179,182,205,257
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.8",
+  "base_commit_sha": "4304d612cece6190b1a1a9e4da42cf3c32690904",
+  "prompts": {
+    "a31732cfe5817720": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "12deb287-c533-4ebe-975f-f606d8ec2215",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "YBM",
+      "messages": [],
+      "total_additions": 102,
+      "total_deletions": 43,
+      "accepted_lines": 86,
+      "overriden_lines": 1
+    }
+  }
+}
