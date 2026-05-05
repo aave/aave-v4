@@ -1,5 +1,8 @@
 # Aave V4
 
+[![Tests-PR](https://github.com/aave/aave-v4/actions/workflows/tests-pr.yml/badge.svg)](https://github.com/aave/aave-v4/actions/workflows/tests-pr.yml)
+[![Tests-Merge](https://github.com/aave/aave-v4/actions/workflows/tests-merge.yml/badge.svg)](https://github.com/aave/aave-v4/actions/workflows/tests-merge.yml)
+
 A unified liquidity layer and modular architecture that enhances capital efficiency, scalability, and risk management.
 
 ## Table of Contents
