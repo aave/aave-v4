@@ -1,0 +1,37 @@
+src/addresses-provider/V4AddressesProviderStorage.sol
+  s_ac9d5715f256b6::t_85f045062b9b51 1-23
+src/addresses-provider/interfaces/IV4AddressesProvider.sol
+  s_ac9d5715f256b6::t_8d45c8c92b4e44 1-162
+tests/helpers/mocks/MockV4AddressesProviderInstance.sol
+  s_ac9d5715f256b6::t_85f045062b9b51 4
+  s_ac9d5715f256b6::t_4f62b98fb09c03 1-3,5-26
+tests/contracts/addresses-provider/V4AddressesProvider.t.sol
+  s_ac9d5715f256b6::t_85f045062b9b51 1-626
+tests/contracts/addresses-provider/V4AddressesProvider.Upgradeable.t.sol
+  s_ac9d5715f256b6::t_85f045062b9b51 1-150
+src/addresses-provider/instances/V4AddressesProviderInstance.sol
+  s_ac9d5715f256b6::t_85f045062b9b51 1-23
+src/addresses-provider/V4AddressesProvider.sol
+  s_ac9d5715f256b6::t_85f045062b9b51 1-166
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.6",
+  "base_commit_sha": "a57e24a6089a57c54e7cf4a53bd68c6a63d89c73",
+  "prompts": {},
+  "humans": {
+    "h_0f977de3f043fc": {
+      "author": "Alexandru Niculae <43644109+avniculae@users.noreply.github.com>"
+    }
+  },
+  "sessions": {
+    "s_ac9d5715f256b6": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "71b6486e-09c5-4a7d-a9e9-ccab3d378f32",
+        "model": "claude-fable-5"
+      },
+      "human_author": "Alexandru Niculae <43644109+avniculae@users.noreply.github.com>"
+    }
+  }
+}
