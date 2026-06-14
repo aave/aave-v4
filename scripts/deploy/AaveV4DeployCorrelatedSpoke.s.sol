@@ -10,11 +10,14 @@ import {BatchReports} from 'src/deployments/libraries/BatchReports.sol';
 import {BytecodeHelper} from 'src/deployments/utils/libraries/BytecodeHelper.sol';
 import {DeployConstants} from 'src/deployments/utils/libraries/DeployConstants.sol';
 
-/// Usage (make sure FOUNDRY_LIBRARIES is populated in .env with LiquidationLibrary address):
-///   FOUNDRY_PROFILE=mainnet forge clean && forge script \
-///     scripts/deploy/AaveV4DeployUSDGCorrelatedSpoke.s.sol:AaveV4DeployUSDGCorrelatedSpoke \
-///     --rpc-url mainnet --account <acct> --slow (--broadcast --verify)
-abstract contract AaveV4DeployUSDGCorrelatedSpokeBase is Script {
+/// @title AaveV4DeployCorrelatedSpokeBase
+/// @author Aave Labs
+/// @notice Generic base script to deploy a standalone Spoke instance (proxy + implementation + AaveOracle)
+///         intended for a correlated-asset market. Concrete scripts override the deploy inputs, the
+///         expected chain id and the deployment name for a specific market.
+/// @dev Requires FOUNDRY_LIBRARIES to be populated in .env with the LiquidationLogic library address, as
+///      SpokeInstance depends on it.
+abstract contract AaveV4DeployCorrelatedSpokeBase is Script {
   struct SpokeDeployInputs {
     address proxyAdminOwner;
     address authority;
@@ -23,11 +26,16 @@ abstract contract AaveV4DeployUSDGCorrelatedSpokeBase is Script {
     bytes32 salt;
   }
 
+  /// @dev Override to provide the market-specific deploy inputs.
   function _getDeployInputs(
     address deployer
   ) internal view virtual returns (SpokeDeployInputs memory);
 
+  /// @dev Override to return the expected chain id for this deployment.
   function _expectedChainId() internal view virtual returns (uint256);
+
+  /// @dev Override to return a human-readable name for this spoke deployment (used in logs).
+  function _deploymentName() internal view virtual returns (string memory);
 
   function run() external virtual returns (BatchReports.SpokeInstanceBatchReport memory report) {
     require(block.chainid == _expectedChainId(), 'chain id mismatch');
@@ -59,8 +67,8 @@ abstract contract AaveV4DeployUSDGCorrelatedSpokeBase is Script {
     address deployer,
     SpokeDeployInputs memory inputs,
     BatchReports.SpokeInstanceBatchReport memory report
-  ) internal pure {
-    console.log('USDG Correlated Spoke deployment complete');
+  ) internal view {
+    console.log(string.concat(_deploymentName(), ' deployment complete'));
     console.log('  deployer               :', deployer);
     console.log('  authority              :', inputs.authority);
     console.log('  proxyAdminOwner        :', inputs.proxyAdminOwner);
@@ -72,7 +80,14 @@ abstract contract AaveV4DeployUSDGCorrelatedSpokeBase is Script {
   }
 }
 
-contract AaveV4DeployUSDGCorrelatedSpoke is AaveV4DeployUSDGCorrelatedSpokeBase {
+/// @title AaveV4DeployUSDGCorrelatedSpoke
+/// @author Aave Labs
+/// @notice Deploys the USDG correlated-asset Spoke on Ethereum mainnet.
+/// @dev Usage (make sure FOUNDRY_LIBRARIES is populated in .env with the LiquidationLogic address):
+///   forge clean && forge script \
+///     scripts/deploy/AaveV4DeployCorrelatedSpoke.s.sol:AaveV4DeployUSDGCorrelatedSpoke \
+///     --rpc-url mainnet --account <acct> --slow (--broadcast --verify)
+contract AaveV4DeployUSDGCorrelatedSpoke is AaveV4DeployCorrelatedSpokeBase {
   uint256 internal constant _ETHEREUM_CHAIN_ID = 1;
 
   // AaveV4Ethereum.ACCESS_MANAGER
@@ -108,5 +123,9 @@ contract AaveV4DeployUSDGCorrelatedSpoke is AaveV4DeployUSDGCorrelatedSpokeBase 
 
   function _expectedChainId() internal pure override returns (uint256) {
     return _ETHEREUM_CHAIN_ID;
+  }
+
+  function _deploymentName() internal pure override returns (string memory) {
+    return 'USDG Correlated Spoke';
   }
 }
