@@ -1,0 +1,26 @@
+src/addresses-provider/V4AddressesProvider.sol
+  s_ac9d5715f256b6::t_3ee0fc2d58bb4f 36-37,44,49,54,59,63-72,79-80,89-90,94-95,99-100,104-109,113-114,118-123,127-128,132-133,137-142,146-147,151-196,200-201,208,217,221,224,229-251
+src/addresses-provider/interfaces/IV4AddressesProvider.sol
+  s_ac9d5715f256b6::t_785d9a9b4c3c10 233,237
+  s_ac9d5715f256b6::t_9f2f3cd8f87722 10,14,62,69,76,83,90,101,108-126,130-141,146,148-194,199,208,217,226
+src/addresses-provider/V4AddressesProviderStorage.sol
+  s_ac9d5715f256b6::t_d701a09e9772e0 21-23,25
+tests/contracts/addresses-provider/V4AddressesProvider.t.sol
+  s_ac9d5715f256b6::t_7360a897a29755 29-32,60,64,68,72,77,97,107-110,114-115,118,124,127,131,152,170-176,178-179,181-183,185-187,207-208,216-232,241,268-273,277,329,343-349,353-355,375,395,420,465,479,499,514,555,598,664-665,673-764
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.7",
+  "base_commit_sha": "c012fac5d9084b8436e6cd2269fbcd65dcf01bde",
+  "prompts": {},
+  "sessions": {
+    "s_ac9d5715f256b6": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "71b6486e-09c5-4a7d-a9e9-ccab3d378f32",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Alexandru Niculae <43644109+avniculae@users.noreply.github.com>"
+    }
+  }
+}
