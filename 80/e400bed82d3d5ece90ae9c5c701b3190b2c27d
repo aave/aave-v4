@@ -1,0 +1,48 @@
+src/config-engine/libraries/HubEngine.sol
+  s_ac9d5715f256b6::t_7f0f0115e2b617 22-26
+  s_ac9d5715f256b6::t_425ae8cb65a28e 36
+  s_ac9d5715f256b6::t_5e51e1a94f27ee 225-241,243,245-246,252,275-282
+  s_ac9d5715f256b6::t_cb46bffd450d5f 30,45-46
+src/config-engine/interfaces/IAaveV4ConfigEngine.sol
+  s_ac9d5715f256b6::t_94ad6efe1824ae 182-185
+  s_ac9d5715f256b6::t_043c70fc696179 37-43,53-57
+  s_ac9d5715f256b6::t_d7524a4aafe98f 194-196
+  s_ac9d5715f256b6::t_35b503a9887964 9
+tests/config-engine/AddressesProviderRegistration.t.sol
+  s_ac9d5715f256b6::t_c7f91f75f8a7f3 84,86
+  s_ac9d5715f256b6::t_3a20ff705e74ae 189-190,197
+  s_ac9d5715f256b6::t_8cab3d7ddbdeef 1-53,55-83,85,87-120,122-159,161-188,191-196,198-222
+  s_ac9d5715f256b6::t_016eb4de3fc0e8 121,160
+  s_ac9d5715f256b6::t_d3c75387d9bd00 54
+src/config-engine/libraries/SpokeEngine.sol
+  s_ac9d5715f256b6::t_6bde6a6bf5fe08 16-19,21,37
+  s_ac9d5715f256b6::t_ede33b826013f2 235-240,242-251
+  s_ac9d5715f256b6::t_8b5320e3bcb0fb 29,38
+  s_ac9d5715f256b6::t_102d30a7c3e1a1 241
+tests/config-engine/BaseConfigEngine.t.sol
+  s_ac9d5715f256b6::t_3a6bb9d424963a 31
+  s_ac9d5715f256b6::t_e13d992cd9b2a0 336-340
+  s_ac9d5715f256b6::t_37f3fac844eab8 341-345
+  s_ac9d5715f256b6::t_6e697c608a7de4 476-479
+tests/config-engine/AaveV4Payload.t.sol
+  s_ac9d5715f256b6::t_e1a12300456108 671-674
+tests/config-engine/SpokeEngine.t.sol
+  s_ac9d5715f256b6::t_b4f218a359d22e 635-638
+  s_ac9d5715f256b6::t_ac8af13d477bdc 931-934,944-947
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.7",
+  "base_commit_sha": "80e400bed82d3d5ece90ae9c5c701b3190b2c27d",
+  "prompts": {},
+  "sessions": {
+    "s_ac9d5715f256b6": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "71b6486e-09c5-4a7d-a9e9-ccab3d378f32",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Alexandru Niculae <43644109+avniculae@users.noreply.github.com>"
+    }
+  }
+}
