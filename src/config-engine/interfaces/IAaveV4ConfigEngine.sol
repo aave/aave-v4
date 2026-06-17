@@ -6,6 +6,7 @@ import {ISpokeConfigurator} from 'src/spoke/interfaces/ISpokeConfigurator.sol';
 import {IHub} from 'src/hub/interfaces/IHub.sol';
 import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 import {IAssetInterestRateStrategy} from 'src/hub/interfaces/IAssetInterestRateStrategy.sol';
+import {IV4AddressesProvider} from 'src/addresses-provider/interfaces/IV4AddressesProvider.sol';
 
 /// @title IAaveV4ConfigEngine
 /// @author Aave Labs
@@ -33,6 +34,13 @@ interface IAaveV4ConfigEngine {
   /// @dev irStrategy The address of the interest rate strategy contract.
   /// @dev irData The interest rate data to apply to the given asset.
   /// @dev tokenization The tokenization configuration for the asset.
+  /// @dev addressesProvider The V4AddressesProvider used for the registrations below (skipped if unset).
+  /// @dev registerHub Whether to register the Hub on the addressesProvider; only allowed when the
+  /// listed asset is the Hub's first (asset id 0), reverts otherwise.
+  /// @dev hubName The name to register the Hub under (as a canonical Hub).
+  /// @dev registerTokenizationSpoke Whether to register the deployed TokenizationSpoke on the
+  /// addressesProvider; only allowed when a TokenizationSpoke is deployed for this listing.
+  /// @dev tokenizationSpokeName The name to register the TokenizationSpoke under.
   struct AssetListing {
     IHubConfigurator hubConfigurator;
     address hub;
@@ -42,6 +50,11 @@ interface IAaveV4ConfigEngine {
     address irStrategy;
     IAssetInterestRateStrategy.InterestRateData irData;
     TokenizationSpokeConfig tokenization;
+    IV4AddressesProvider addressesProvider;
+    bool registerHub;
+    string hubName;
+    bool registerTokenizationSpoke;
+    string tokenizationSpokeName;
   }
 
   /// @notice Parameters for updating asset config (fee, interest rate, reinvestment) on a Hub.
@@ -166,6 +179,10 @@ interface IAaveV4ConfigEngine {
   /// @dev priceSource The address of the price source.
   /// @dev config The configuration of the reserve.
   /// @dev dynamicConfig The dynamic configuration of the reserve.
+  /// @dev addressesProvider The V4AddressesProvider used for the registration below (skipped if unset).
+  /// @dev registerSpoke Whether to register the Spoke on the addressesProvider; only allowed when the
+  /// listed reserve is the Spoke's first (reserve id 0), reverts otherwise.
+  /// @dev spokeName The name to register the Spoke under (as a canonical Spoke).
   struct ReserveListing {
     ISpokeConfigurator spokeConfigurator;
     address spoke;
@@ -174,6 +191,9 @@ interface IAaveV4ConfigEngine {
     address priceSource;
     ISpoke.ReserveConfig config;
     ISpoke.DynamicReserveConfig dynamicConfig;
+    IV4AddressesProvider addressesProvider;
+    bool registerSpoke;
+    string spokeName;
   }
 
   /// @notice Parameters for updating reserve config on a Spoke.

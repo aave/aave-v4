@@ -19,15 +19,21 @@ library HubEngine {
   /// KEEP_CURRENT sentinel. All fields must be explicitly set when the strategy changes.
   error InvalidIrDataWithNewStrategy();
 
+  /// @dev Thrown when an addresses provider registration is requested for a listing that does not
+  /// support it: registering a Hub when the listed asset is not the Hub's first (asset id != 0),
+  /// registering a TokenizationSpoke that was not deployed, or no addresses provider supplied.
+  error InvalidAddressesProviderRegistration();
+
   /// @notice Lists new assets on Hubs via the HubConfigurator.
   /// @dev When `tokenization.name` & `tokenization.symbol` are defined, also deploys a TokenizationSpoke (impl + proxy) via
   /// CREATE2 and registers it on the Hub for the listed asset.
+  /// @dev Optionally registers the Hub and/or the deployed TokenizationSpoke on the AddressesProvider.
   /// @param listings The asset listings to execute.
   function executeHubAssetListings(IAaveV4ConfigEngine.AssetListing[] calldata listings) external {
     uint256 length = listings.length;
     for (uint256 i; i < length; ++i) {
       bytes memory irData = abi.encode(listings[i].irData);
-      listings[i].hubConfigurator.addAsset(
+      uint256 assetId = listings[i].hubConfigurator.addAsset(
         listings[i].hub,
         listings[i].underlying,
         listings[i].feeReceiver,
@@ -36,7 +42,8 @@ library HubEngine {
         irData
       );
 
-      _deployAndRegisterTokenizationSpoke(listings[i]);
+      _registerHub(listings[i], assetId);
+      _deployAndRegisterTokenizationSpoke(listings[i], assetId);
     }
   }
 
@@ -215,14 +222,34 @@ library HubEngine {
     }
   }
 
+  /// @dev Registers the Hub on the AddressesProvider when requested.
+  /// @dev Only allowed when the listed asset is the Hub's first (asset id 0), to avoid registering an
+  /// already-configured Hub; reverts otherwise.
+  function _registerHub(
+    IAaveV4ConfigEngine.AssetListing calldata listing,
+    uint256 assetId
+  ) private {
+    if (!listing.registerHub) {
+      return;
+    }
+    require(
+      assetId == 0 && address(listing.addressesProvider) != address(0),
+      InvalidAddressesProviderRegistration()
+    );
+    listing.addressesProvider.setCanonicalHub(listing.hubName, listing.hub);
+  }
+
   /// @dev Deploys a TokenizationSpoke (impl + proxy) via CREATE2 and registers it on the Hub.
+  /// @dev Optionally registers the deployed TokenizationSpoke on the AddressesProvider.
   function _deployAndRegisterTokenizationSpoke(
-    IAaveV4ConfigEngine.AssetListing calldata listing
+    IAaveV4ConfigEngine.AssetListing calldata listing,
+    uint256 assetId
   ) private {
     // if not name and/or symbol given, we assume there is no intention to deploy a TokenizationSpoke, so we skip deployment and registration
     if (
       bytes(listing.tokenization.name).length == 0 || bytes(listing.tokenization.symbol).length == 0
     ) {
+      require(!listing.registerTokenizationSpoke, InvalidAddressesProviderRegistration());
       return;
     }
 
@@ -232,8 +259,6 @@ library HubEngine {
       listing.tokenization.name,
       listing.tokenization.symbol
     );
-
-    uint256 assetId = IHubBase(listing.hub).getAssetId(listing.underlying);
 
     listing.hubConfigurator.addSpoke(
       listing.hub,
@@ -247,6 +272,14 @@ library HubEngine {
         halted: false
       })
     );
+
+    if (listing.registerTokenizationSpoke) {
+      require(
+        address(listing.addressesProvider) != address(0),
+        InvalidAddressesProviderRegistration()
+      );
+      listing.addressesProvider.setTokenizationSpoke(listing.tokenizationSpokeName, proxy);
+    }
   }
 
   /// @dev Merges non-sentinel fields from irData into the current on-chain IR data.

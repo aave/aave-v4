@@ -668,7 +668,10 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
         collateralFactor: 80_00,
         maxLiquidationBonus: 105_00,
         liquidationFee: 10_00
-      })
+      }),
+      addressesProvider: IV4AddressesProvider(address(0)),
+      registerSpoke: false,
+      spokeName: ''
     });
     payload.setSpokeReserveListings(listings);
 

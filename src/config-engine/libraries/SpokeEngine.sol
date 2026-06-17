@@ -13,7 +13,12 @@ import {IAaveV4ConfigEngine} from 'src/config-engine/interfaces/IAaveV4ConfigEng
 library SpokeEngine {
   using SafeCast for uint256;
 
+  /// @dev Thrown when a canonical Spoke registration is requested for a listing that does not support
+  /// it: the listed reserve is not the Spoke's first (reserve id != 0), or no addresses provider supplied.
+  error InvalidAddressesProviderRegistration();
+
   /// @notice Lists new reserves on Spokes.
+  /// @dev Optionally registers the Spoke on the AddressesProvider.
   /// @param listings The reserve listings to execute.
   function executeSpokeReserveListings(
     IAaveV4ConfigEngine.ReserveListing[] calldata listings
@@ -21,7 +26,7 @@ library SpokeEngine {
     uint256 length = listings.length;
     for (uint256 i; i < length; ++i) {
       uint256 assetId = IHubBase(listings[i].hub).getAssetId(listings[i].underlying);
-      listings[i].spokeConfigurator.addReserve(
+      uint256 reserveId = listings[i].spokeConfigurator.addReserve(
         listings[i].spoke,
         listings[i].hub,
         assetId,
@@ -29,6 +34,8 @@ library SpokeEngine {
         listings[i].config,
         listings[i].dynamicConfig
       );
+
+      _registerSpoke(listings[i], reserveId);
     }
   }
 
@@ -224,5 +231,22 @@ library SpokeEngine {
   ) private view returns (uint256) {
     uint256 assetId = IHubBase(hub).getAssetId(underlying);
     return ISpoke(spoke).getReserveId(hub, assetId);
+  }
+
+  /// @dev Registers the Spoke on the AddressesProvider when requested.
+  /// @dev Only allowed when the listed reserve is the Spoke's first (reserve id 0), to avoid
+  /// registering an already-configured Spoke; reverts otherwise.
+  function _registerSpoke(
+    IAaveV4ConfigEngine.ReserveListing calldata listing,
+    uint256 reserveId
+  ) private {
+    if (!listing.registerSpoke) {
+      return;
+    }
+    require(
+      reserveId == 0 && address(listing.addressesProvider) != address(0),
+      InvalidAddressesProviderRegistration()
+    );
+    listing.addressesProvider.setCanonicalSpoke(listing.spokeName, listing.spoke);
   }
 }
