@@ -240,13 +240,16 @@ library SpokeEngine {
     IAaveV4ConfigEngine.ReserveListing calldata listing,
     uint256 reserveId
   ) private {
-    if (!listing.registerSpoke) {
+    if (!listing.spokeRegistration.register) {
       return;
     }
     require(
-      reserveId == 0 && address(listing.addressesProvider) != address(0),
+      reserveId == 0 && address(listing.spokeRegistration.addressesProvider) != address(0),
       InvalidAddressesProviderRegistration()
     );
-    listing.addressesProvider.setCanonicalSpoke(listing.spokeName, listing.spoke);
+    listing.spokeRegistration.addressesProvider.setCanonicalSpoke(
+      listing.spokeRegistration.name,
+      listing.spoke
+    );
   }
 }

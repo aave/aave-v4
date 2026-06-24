@@ -18,6 +18,18 @@ contract AddressesProviderRegistrationTest is BaseConfigEngineTest {
     provider = _deployAddressesProvider(address(engine));
   }
 
+  function _registration(
+    IV4AddressesProvider addressesProvider,
+    string memory name
+  ) internal pure returns (IAaveV4ConfigEngine.AddressesProviderRegistration memory) {
+    return
+      IAaveV4ConfigEngine.AddressesProviderRegistration({
+        addressesProvider: addressesProvider,
+        register: true,
+        name: name
+      });
+  }
+
   function _deployAddressesProvider(address owner) internal returns (IV4AddressesProvider) {
     return
       IV4AddressesProvider(
@@ -36,9 +48,7 @@ contract AddressesProviderRegistrationTest is BaseConfigEngineTest {
   function test_executeHubAssetListings_registersHub() public {
     IAaveV4ConfigEngine.AssetListing memory listing = _defaultAssetListing();
     listing.underlying = address(weth);
-    listing.addressesProvider = provider;
-    listing.registerHub = true;
-    listing.hubName = 'CORE';
+    listing.hubRegistration = _registration(provider, 'CORE');
 
     engine.executeHubAssetListings(_toAssetListingArray(listing));
 
@@ -54,9 +64,7 @@ contract AddressesProviderRegistrationTest is BaseConfigEngineTest {
     // usdx becomes asset id 1 on hub1, so registering the hub during its listing is rejected
     IAaveV4ConfigEngine.AssetListing memory second = _defaultAssetListing();
     second.underlying = address(usdx);
-    second.addressesProvider = provider;
-    second.registerHub = true;
-    second.hubName = 'CORE';
+    second.hubRegistration = _registration(provider, 'CORE');
 
     vm.expectRevert(HubEngine.InvalidAddressesProviderRegistration.selector);
     engine.executeHubAssetListings(_toAssetListingArray(second));
@@ -65,9 +73,7 @@ contract AddressesProviderRegistrationTest is BaseConfigEngineTest {
   function test_executeHubAssetListings_registerHub_revertsWhenNoProvider() public {
     IAaveV4ConfigEngine.AssetListing memory listing = _defaultAssetListing();
     listing.underlying = address(weth);
-    listing.registerHub = true;
-    listing.hubName = 'CORE';
-    // addressesProvider left as address(0)
+    listing.hubRegistration = _registration(IV4AddressesProvider(address(0)), 'CORE');
 
     vm.expectRevert(HubEngine.InvalidAddressesProviderRegistration.selector);
     engine.executeHubAssetListings(_toAssetListingArray(listing));
@@ -76,9 +82,7 @@ contract AddressesProviderRegistrationTest is BaseConfigEngineTest {
   function test_executeHubAssetListings_registerHub_revertsWhenAlreadyRegistered() public {
     IAaveV4ConfigEngine.AssetListing memory listing = _defaultAssetListing();
     listing.underlying = address(weth);
-    listing.addressesProvider = provider;
-    listing.registerHub = true;
-    listing.hubName = 'CORE';
+    listing.hubRegistration = _registration(provider, 'CORE');
     engine.executeHubAssetListings(_toAssetListingArray(listing));
 
     // listing on another fresh hub (asset id 0) but reusing the same name reverts in the provider
@@ -86,9 +90,7 @@ contract AddressesProviderRegistrationTest is BaseConfigEngineTest {
     second.hub = address(hub2());
     second.underlying = address(weth);
     second.irStrategy = address(irStrategy2());
-    second.addressesProvider = provider;
-    second.registerHub = true;
-    second.hubName = 'CORE';
+    second.hubRegistration = _registration(provider, 'CORE');
 
     vm.expectRevert(
       abi.encodeWithSelector(
@@ -109,9 +111,7 @@ contract AddressesProviderRegistrationTest is BaseConfigEngineTest {
       name: 'Aave WETH',
       symbol: 'aWETH'
     });
-    listing.addressesProvider = provider;
-    listing.registerTokenizationSpoke = true;
-    listing.tokenizationSpokeName = 'CORE_WETH';
+    listing.tokenizationSpokeRegistration = _registration(provider, 'CORE_WETH');
 
     address expectedProxy = TokenizationSpokeDeployer.computeProxyAddress(
       address(hub1()),
@@ -130,9 +130,7 @@ contract AddressesProviderRegistrationTest is BaseConfigEngineTest {
     IAaveV4ConfigEngine.AssetListing memory listing = _defaultAssetListing();
     listing.underlying = address(weth);
     // no tokenization name/symbol => no TokenizationSpoke deployed
-    listing.addressesProvider = provider;
-    listing.registerTokenizationSpoke = true;
-    listing.tokenizationSpokeName = 'CORE_WETH';
+    listing.tokenizationSpokeRegistration = _registration(provider, 'CORE_WETH');
 
     vm.expectRevert(HubEngine.InvalidAddressesProviderRegistration.selector);
     engine.executeHubAssetListings(_toAssetListingArray(listing));
@@ -146,11 +144,8 @@ contract AddressesProviderRegistrationTest is BaseConfigEngineTest {
       name: 'Aave WETH',
       symbol: 'aWETH'
     });
-    listing.addressesProvider = provider;
-    listing.registerHub = true;
-    listing.hubName = 'CORE';
-    listing.registerTokenizationSpoke = true;
-    listing.tokenizationSpokeName = 'CORE_WETH';
+    listing.hubRegistration = _registration(provider, 'CORE');
+    listing.tokenizationSpokeRegistration = _registration(provider, 'CORE_WETH');
 
     address expectedProxy = TokenizationSpokeDeployer.computeProxyAddress(
       address(hub1()),
@@ -175,9 +170,7 @@ contract AddressesProviderRegistrationTest is BaseConfigEngineTest {
     IAaveV4ConfigEngine.ReserveListing memory listing = _defaultReserveListing();
     listing.underlying = address(weth);
     listing.priceSource = priceSource;
-    listing.addressesProvider = provider;
-    listing.registerSpoke = true;
-    listing.spokeName = 'MAIN';
+    listing.spokeRegistration = _registration(provider, 'MAIN');
 
     engine.executeSpokeReserveListings(_toReserveListingArray(listing));
 
@@ -198,9 +191,7 @@ contract AddressesProviderRegistrationTest is BaseConfigEngineTest {
     IAaveV4ConfigEngine.ReserveListing memory second = _defaultReserveListing();
     second.underlying = address(usdx);
     second.priceSource = _deployMockPriceFeed(spoke1(), tokenList[TOKEN_USDX].priceFeed);
-    second.addressesProvider = provider;
-    second.registerSpoke = true;
-    second.spokeName = 'MAIN';
+    second.spokeRegistration = _registration(provider, 'MAIN');
 
     vm.expectRevert(SpokeEngine.InvalidAddressesProviderRegistration.selector);
     engine.executeSpokeReserveListings(_toReserveListingArray(second));
@@ -212,9 +203,7 @@ contract AddressesProviderRegistrationTest is BaseConfigEngineTest {
     IAaveV4ConfigEngine.ReserveListing memory listing = _defaultReserveListing();
     listing.underlying = address(weth);
     listing.priceSource = _deployMockPriceFeed(spoke1(), tokenList[TOKEN_WETH].priceFeed);
-    listing.registerSpoke = true;
-    listing.spokeName = 'MAIN';
-    // addressesProvider left as address(0)
+    listing.spokeRegistration = _registration(IV4AddressesProvider(address(0)), 'MAIN');
 
     vm.expectRevert(SpokeEngine.InvalidAddressesProviderRegistration.selector);
     engine.executeSpokeReserveListings(_toReserveListingArray(listing));

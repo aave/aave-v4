@@ -338,11 +338,16 @@ abstract contract BaseConfigEngineTest is Test, Create2TestHelper {
           name: '',
           symbol: ''
         }),
-        addressesProvider: IV4AddressesProvider(address(0)),
-        registerHub: false,
-        hubName: '',
-        registerTokenizationSpoke: false,
-        tokenizationSpokeName: ''
+        hubRegistration: IAaveV4ConfigEngine.AddressesProviderRegistration({
+          addressesProvider: IV4AddressesProvider(address(0)),
+          register: false,
+          name: ''
+        }),
+        tokenizationSpokeRegistration: IAaveV4ConfigEngine.AddressesProviderRegistration({
+          addressesProvider: IV4AddressesProvider(address(0)),
+          register: false,
+          name: ''
+        })
       });
   }
 
@@ -474,9 +479,11 @@ abstract contract BaseConfigEngineTest is Test, Create2TestHelper {
         priceSource: address(priceFeedWeth),
         config: _defaultReserveConfig(),
         dynamicConfig: _defaultDynamicReserveConfig(),
-        addressesProvider: IV4AddressesProvider(address(0)),
-        registerSpoke: false,
-        spokeName: ''
+        spokeRegistration: IAaveV4ConfigEngine.AddressesProviderRegistration({
+          addressesProvider: IV4AddressesProvider(address(0)),
+          register: false,
+          name: ''
+        })
       });
   }
 

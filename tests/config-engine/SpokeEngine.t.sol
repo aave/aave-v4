@@ -633,9 +633,11 @@ contract SpokeEngineTest is BaseConfigEngineTest {
         maxLiquidationBonus: 105_00,
         liquidationFee: 2_00
       }),
-      addressesProvider: IV4AddressesProvider(address(0)),
-      registerSpoke: false,
-      spokeName: ''
+      spokeRegistration: IAaveV4ConfigEngine.AddressesProviderRegistration({
+        addressesProvider: IV4AddressesProvider(address(0)),
+        register: false,
+        name: ''
+      })
     });
 
     engine.executeSpokeReserveListings(_toReserveListingArray(listing));
@@ -929,9 +931,11 @@ contract SpokeEngineTest is BaseConfigEngineTest {
       priceSource: priceFeedA,
       config: _defaultReserveConfig(),
       dynamicConfig: _defaultDynamicReserveConfig(),
-      addressesProvider: IV4AddressesProvider(address(0)),
-      registerSpoke: false,
-      spokeName: ''
+      spokeRegistration: IAaveV4ConfigEngine.AddressesProviderRegistration({
+        addressesProvider: IV4AddressesProvider(address(0)),
+        register: false,
+        name: ''
+      })
     });
 
     listings[1] = IAaveV4ConfigEngine.ReserveListing({
@@ -942,9 +946,11 @@ contract SpokeEngineTest is BaseConfigEngineTest {
       priceSource: priceFeedB,
       config: _defaultReserveConfig(),
       dynamicConfig: _defaultDynamicReserveConfig(),
-      addressesProvider: IV4AddressesProvider(address(0)),
-      registerSpoke: false,
-      spokeName: ''
+      spokeRegistration: IAaveV4ConfigEngine.AddressesProviderRegistration({
+        addressesProvider: IV4AddressesProvider(address(0)),
+        register: false,
+        name: ''
+      })
     });
 
     engine.executeSpokeReserveListings(listings);

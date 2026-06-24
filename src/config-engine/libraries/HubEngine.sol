@@ -229,14 +229,17 @@ library HubEngine {
     IAaveV4ConfigEngine.AssetListing calldata listing,
     uint256 assetId
   ) private {
-    if (!listing.registerHub) {
+    if (!listing.hubRegistration.register) {
       return;
     }
     require(
-      assetId == 0 && address(listing.addressesProvider) != address(0),
+      assetId == 0 && address(listing.hubRegistration.addressesProvider) != address(0),
       InvalidAddressesProviderRegistration()
     );
-    listing.addressesProvider.setCanonicalHub(listing.hubName, listing.hub);
+    listing.hubRegistration.addressesProvider.setCanonicalHub(
+      listing.hubRegistration.name,
+      listing.hub
+    );
   }
 
   /// @dev Deploys a TokenizationSpoke (impl + proxy) via CREATE2 and registers it on the Hub.
@@ -249,7 +252,10 @@ library HubEngine {
     if (
       bytes(listing.tokenization.name).length == 0 || bytes(listing.tokenization.symbol).length == 0
     ) {
-      require(!listing.registerTokenizationSpoke, InvalidAddressesProviderRegistration());
+      require(
+        !listing.tokenizationSpokeRegistration.register,
+        InvalidAddressesProviderRegistration()
+      );
       return;
     }
 
@@ -273,12 +279,15 @@ library HubEngine {
       })
     );
 
-    if (listing.registerTokenizationSpoke) {
+    if (listing.tokenizationSpokeRegistration.register) {
       require(
-        address(listing.addressesProvider) != address(0),
+        address(listing.tokenizationSpokeRegistration.addressesProvider) != address(0),
         InvalidAddressesProviderRegistration()
       );
-      listing.addressesProvider.setTokenizationSpoke(listing.tokenizationSpokeName, proxy);
+      listing.tokenizationSpokeRegistration.addressesProvider.setTokenizationSpoke(
+        listing.tokenizationSpokeRegistration.name,
+        proxy
+      );
     }
   }
 

@@ -669,9 +669,11 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
         maxLiquidationBonus: 105_00,
         liquidationFee: 10_00
       }),
-      addressesProvider: IV4AddressesProvider(address(0)),
-      registerSpoke: false,
-      spokeName: ''
+      spokeRegistration: IAaveV4ConfigEngine.AddressesProviderRegistration({
+        addressesProvider: IV4AddressesProvider(address(0)),
+        register: false,
+        name: ''
+      })
     });
     payload.setSpokeReserveListings(listings);
 
