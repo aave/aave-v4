@@ -1,0 +1,36 @@
+src/config-engine/interfaces/IAaveV4ConfigEngine.sol
+  s_ac9d5715f256b6::t_95b014004d4302 187-188,197
+  s_ac9d5715f256b6::t_97135c6061e936 28-38,48-51,61-62
+tests/config-engine/AaveV4Payload.t.sol
+  s_ac9d5715f256b6::t_d07b09396c74ce 672-676
+tests/config-engine/AddressesProviderRegistration.t.sol
+  s_ac9d5715f256b6::t_2e6ee3a44ccee8 22-32
+  s_ac9d5715f256b6::t_68386bde6b4a2d 21,51,67,76,85,93,114,133,147-148,173,194,206
+tests/config-engine/BaseConfigEngine.t.sol
+  s_ac9d5715f256b6::t_d07b09396c74ce 341-350,482-486
+tests/config-engine/SpokeEngine.t.sol
+  s_ac9d5715f256b6::t_d07b09396c74ce 636-640,934-938,949-953
+src/config-engine/libraries/HubEngine.sol
+  s_ac9d5715f256b6::t_de66bfb95a64bc 282,284,287-290
+  s_ac9d5715f256b6::t_cd75ef7b6798ae 255-258
+  s_ac9d5715f256b6::t_ae48d809edc3b7 232,236
+  s_ac9d5715f256b6::t_d07b09396c74ce 239-242
+src/config-engine/libraries/SpokeEngine.sol
+  s_ac9d5715f256b6::t_fa33a28283bfb7 243,247,250-253
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.13",
+  "base_commit_sha": "8e0bf2aa8e1d106d1c630e55d2d3c22b3d557fe2",
+  "prompts": {},
+  "sessions": {
+    "s_ac9d5715f256b6": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "71b6486e-09c5-4a7d-a9e9-ccab3d378f32",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": null
+    }
+  }
+}
