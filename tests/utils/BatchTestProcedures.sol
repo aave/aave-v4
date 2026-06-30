@@ -162,6 +162,9 @@ contract BatchTestProcedures is Test, Create2TestHelper, WETHDeployProcedure {
     inputs.positionManagerOwner = inputs.positionManagerOwner != address(0)
       ? inputs.positionManagerOwner
       : _deployer;
+    inputs.tokenizationSpokeBeaconOwner = inputs.tokenizationSpokeBeaconOwner != address(0)
+      ? inputs.tokenizationSpokeBeaconOwner
+      : _deployer;
 
     // Sync parallel arrays with spokeLabels length
     inputs.hubLabels = _hubLabels;
@@ -171,6 +174,7 @@ contract BatchTestProcedures is Test, Create2TestHelper, WETHDeployProcedure {
     inputs.deployNativeTokenGateway = true;
     inputs.deploySignatureGateway = true;
     inputs.deployPositionManagers = true;
+    inputs.deployTokenizationSpokeBeacon = true;
 
     return inputs;
   }
@@ -229,6 +233,30 @@ contract BatchTestProcedures is Test, Create2TestHelper, WETHDeployProcedure {
         report.positionManagerBatchReport.configPositionManager,
         address(0),
         'Zero ConfigPositionManager'
+      );
+    }
+
+    if (inputs.deployTokenizationSpokeBeacon) {
+      assertNotEq(
+        report.tokenizationSpokeBeaconBatchReport.tokenizationSpokeBeacon,
+        address(0),
+        'TokenizationSpokeBeacon'
+      );
+      assertNotEq(
+        report.tokenizationSpokeBeaconBatchReport.tokenizationSpokeImplementation,
+        address(0),
+        'TokenizationSpokeImplementation'
+      );
+    } else {
+      assertEq(
+        report.tokenizationSpokeBeaconBatchReport.tokenizationSpokeBeacon,
+        address(0),
+        'Zero TokenizationSpokeBeacon'
+      );
+      assertEq(
+        report.tokenizationSpokeBeaconBatchReport.tokenizationSpokeImplementation,
+        address(0),
+        'Zero TokenizationSpokeImplementation'
       );
     }
 
@@ -850,6 +878,13 @@ contract BatchTestProcedures is Test, Create2TestHelper, WETHDeployProcedure {
         Ownable(report.positionManagerBatchReport.configPositionManager).owner(),
         inputs.positionManagerOwner,
         'ConfigPositionManager owner'
+      );
+    }
+    if (inputs.deployTokenizationSpokeBeacon) {
+      assertEq(
+        Ownable(report.tokenizationSpokeBeaconBatchReport.tokenizationSpokeBeacon).owner(),
+        inputs.tokenizationSpokeBeaconOwner,
+        'TokenizationSpokeBeacon owner'
       );
     }
   }

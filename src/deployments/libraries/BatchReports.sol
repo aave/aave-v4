@@ -64,7 +64,9 @@ library BatchReports {
   }
 
   /// @dev tokenizationSpokeProxy The deployed TokenizationSpoke beacon proxy contract address.
+  /// @dev tokenizationSpokeBeacon The UpgradeableBeacon the deployed proxy points to.
   struct TokenizationSpokeBatchReport {
     address tokenizationSpokeProxy;
+    address tokenizationSpokeBeacon;
   }
 }

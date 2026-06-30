@@ -32,13 +32,13 @@ This deploys `LiquidationLogic` via CREATE2 and writes `FOUNDRY_LIBRARIES` to `.
 make deploy-contracts
 ```
 
-This runs `AaveV4DeployOrchestration.deployAaveV4()`, which deploys batches in order: AccessManager → role labeling → Configurators → Configurator role setup → TreasurySpoke → Hubs → Spokes → Gateways → PositionManagers → role grants → DEFAULT_ADMIN transfer.
+This runs `AaveV4DeployOrchestration.deployAaveV4()`, which deploys batches in order: AccessManager → role labeling → Configurators → Configurator role setup → TreasurySpoke → Hubs → Spokes → Gateways → PositionManagers → TokenizationSpoke beacon → role grants → DEFAULT_ADMIN transfer.
 
 ### TokenizationSpoke
 
-`TokenizationSpoke` is **not** deployed by the orchestration, because it requires an asset to already be listed on a Hub and Spoke.
+`TokenizationSpoke` uses a **beacon proxy** pattern: a single shared implementation and `UpgradeableBeacon` are deployed once, and every per-asset `TokenizationSpoke` is a `BeaconProxy` pointing to that beacon.
 
-`TokenizationSpoke` uses a **beacon proxy** pattern: a single shared implementation and `UpgradeableBeacon` are deployed once (via `AaveV4TokenizationSpokeBeaconBatch`), and every per-asset `TokenizationSpoke` is a `BeaconProxy` pointing to that beacon (via `AaveV4TokenizationSpokeBatch`). Because the implementation is generic, the Hub and tokenized asset details are passed to `initialize` rather than baked into the implementation bytecode, so all assets reuse the same implementation. The beacon owner controls upgrades for every `TokenizationSpoke` at once. Each `TokenizationSpoke` proxy should be deployed separately after asset listing, one per asset.
+The shared implementation + beacon (`AaveV4TokenizationSpokeBeaconBatch`) are deployed by the orchestration when the `deployTokenizationSpokeBeacon` input is set, and their addresses are written to the deployment JSON as `tokenizationSpokeImplementation` and `tokenizationSpokeBeacon`. Each per-asset `TokenizationSpoke` proxy (`AaveV4TokenizationSpokeBatch`) is **not** deployed by the orchestration — it requires an asset to already be listed on a Hub, so it is deployed separately after asset listing (one per asset), pointing at the shared beacon.
 
 ### LiquidationLogic Pre-deployment
 
@@ -238,6 +238,12 @@ AaveV4DeployBatchBase.s.sol                         (Foundry script entry point)
     |     |         Create2Utils.create2Deploy() --> GiverPositionManager
     |     |         Create2Utils.create2Deploy() --> TakerPositionManager
     |     |         Create2Utils.create2Deploy() --> ConfigPositionManager
+    |     |
+    |     +-- _deployTokenizationSpokeBeaconBatch()  (if deployTokenizationSpokeBeacon)
+    |     |     AaveV4DeployBase.deployTokenizationSpokeBeaconBatch()
+    |     |       new AaveV4TokenizationSpokeBeaconBatch(beaconOwner, salt)
+    |     |         Create2Utils.create2Deploy() --> TokenizationSpokeInstance (shared impl)
+    |     |         Create2Utils.create2Deploy() --> UpgradeableBeacon
     |     |
     |     +-- grantRoles (if grantRoles == true)
     |     |     _grantHubRoles()                    (if hubLabels.length > 0)

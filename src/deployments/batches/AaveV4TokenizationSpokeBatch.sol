@@ -3,7 +3,6 @@ pragma solidity ^0.8.0;
 
 import {BatchReports} from 'src/deployments/libraries/BatchReports.sol';
 import {AaveV4TokenizationSpokeDeployProcedure} from 'src/deployments/procedures/deploy/spoke/AaveV4TokenizationSpokeDeployProcedure.sol';
-import {ITokenizationSpoke} from 'src/spoke/interfaces/ITokenizationSpoke.sol';
 
 /// @title AaveV4TokenizationSpokeBatch
 /// @author Aave Labs
@@ -36,7 +35,8 @@ contract AaveV4TokenizationSpokeBatch is AaveV4TokenizationSpokeDeployProcedure 
     });
 
     _report = BatchReports.TokenizationSpokeBatchReport({
-      tokenizationSpokeProxy: tokenizationSpokeProxy
+      tokenizationSpokeProxy: tokenizationSpokeProxy,
+      tokenizationSpokeBeacon: beacon_
     });
   }
 

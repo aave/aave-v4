@@ -17,10 +17,12 @@ contract AaveV4BatchDeploymentTest is BatchTestProcedures {
       spokeConfiguratorAdmin: makeAddr('spokeConfiguratorAdmin'),
       gatewayOwner: makeAddr('gatewayOwner'),
       positionManagerOwner: makeAddr('positionManagerOwner'),
+      tokenizationSpokeBeaconOwner: makeAddr('tokenizationSpokeBeaconOwner'),
       nativeWrapper: _weth9,
       deployNativeTokenGateway: true,
       deploySignatureGateway: true,
       deployPositionManagers: true,
+      deployTokenizationSpokeBeacon: true,
       grantRoles: true,
       hubLabels: _hubLabels,
       spokeLabels: _spokeLabels,
@@ -231,6 +233,28 @@ contract AaveV4BatchDeploymentTest is BatchTestProcedures {
 
   function testAaveV4BatchDeployment_withoutPositionManagers() public {
     _inputs.deployPositionManagers = false;
+    checkedV4Deployment();
+  }
+
+  function testAaveV4BatchDeployment_withoutTokenizationSpokeBeacon() public {
+    _inputs.deployTokenizationSpokeBeacon = false;
+    checkedV4Deployment();
+  }
+
+  function testAaveV4BatchDeployment_withZeroTokenizationSpokeBeaconOwner_withBeacon_reverts()
+    public
+  {
+    _inputs.tokenizationSpokeBeaconOwner = address(0);
+    _inputs.deployTokenizationSpokeBeacon = true;
+
+    vm.expectRevert('invalid beacon owner');
+    this.checkedV4Deployment();
+  }
+
+  function testAaveV4BatchDeployment_withZeroTokenizationSpokeBeaconOwner_withoutBeacon() public {
+    _inputs.tokenizationSpokeBeaconOwner = address(0);
+    _inputs.deployTokenizationSpokeBeacon = false;
+
     checkedV4Deployment();
   }
 
@@ -453,7 +477,8 @@ contract AaveV4BatchDeploymentTest is BatchTestProcedures {
   ///      5. Spokes (proxyAdminOwner)
   ///      6. Gateways (gatewayOwner, nativeWrapper)
   ///      7. PositionManagers (positionManagerOwner)
-  ///      8. Roles (hubAdmin, hubConfiguratorAdmin, spokeAdmin, spokeConfiguratorAdmin, accessManagerAdmin)
+  ///      8. TokenizationSpoke beacon (tokenizationSpokeBeaconOwner)
+  ///      9. Roles (hubAdmin, hubConfiguratorAdmin, spokeAdmin, spokeConfiguratorAdmin, accessManagerAdmin)
   function _getExpectedError()
     internal
     view
@@ -490,6 +515,13 @@ contract AaveV4BatchDeploymentTest is BatchTestProcedures {
     // 5. position managers require owner when deployed
     if (_inputs.deployPositionManagers && _inputs.positionManagerOwner == address(0)) {
       return (true, bytes('invalid owner'));
+    }
+
+    // 6. tokenization spoke beacon requires owner when deployed
+    if (
+      _inputs.deployTokenizationSpokeBeacon && _inputs.tokenizationSpokeBeaconOwner == address(0)
+    ) {
+      return (true, bytes('invalid beacon owner'));
     }
 
     if (_inputs.grantRoles) {

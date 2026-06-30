@@ -92,6 +92,7 @@ abstract contract AaveV4DeployBatchBaseScript is Script {
     _logNativeTokenGateway(inputs);
     _logSignatureGateway(inputs);
     _logPositionManagers(inputs);
+    _logTokenizationSpokeBeacon(inputs);
     _logRoles(inputs);
     _appendSummary('--------------------------------------------------');
 
@@ -143,6 +144,10 @@ abstract contract AaveV4DeployBatchBaseScript is Script {
     if (inputs.positionManagerOwner == address(0)) {
       _logWarning(string.concat('position manager owner', message, outcome));
       sanitizedInputs.positionManagerOwner = deployer;
+    }
+    if (inputs.deployTokenizationSpokeBeacon && inputs.tokenizationSpokeBeaconOwner == address(0)) {
+      _logWarning(string.concat('tokenization spoke beacon owner', message, outcome));
+      sanitizedInputs.tokenizationSpokeBeaconOwner = deployer;
     }
     if (inputs.salt == bytes32(0)) {
       _logWarning('salt is zero');
@@ -196,6 +201,14 @@ abstract contract AaveV4DeployBatchBaseScript is Script {
       _appendSummary('positionManagers (giver/taker/config) will be deployed');
     } else {
       _appendSummary('positionManagers: skipped (deployPositionManagers is false)');
+    }
+  }
+
+  function _logTokenizationSpokeBeacon(InputUtils.FullDeployInputs memory inputs) internal {
+    if (inputs.deployTokenizationSpokeBeacon) {
+      _appendSummary('tokenizationSpoke beacon + implementation will be deployed');
+    } else {
+      _appendSummary('tokenizationSpoke beacon: skipped (deployTokenizationSpokeBeacon is false)');
     }
   }
 

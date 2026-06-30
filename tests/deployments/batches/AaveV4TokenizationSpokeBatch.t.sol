@@ -86,9 +86,11 @@ contract AaveV4TokenizationSpokeBatchTest is BatchBaseTest {
 
   function test_getReport() public view {
     assertNotEq(report.tokenizationSpokeProxy, address(0));
+    assertEq(report.tokenizationSpokeBeacon, beacon);
   }
 
   function test_tokenizationSpokeBeacon() public view {
+    assertEq(report.tokenizationSpokeBeacon, beacon);
     assertEq(ProxyHelper.getBeacon(report.tokenizationSpokeProxy), beacon);
   }
 
