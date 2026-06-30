@@ -34,6 +34,8 @@ import {HubEngine} from 'src/config-engine/libraries/HubEngine.sol';
 import {SpokeEngine} from 'src/config-engine/libraries/SpokeEngine.sol';
 import {PositionManagerEngine} from 'src/config-engine/libraries/PositionManagerEngine.sol';
 import {TokenizationSpokeDeployer} from 'src/config-engine/libraries/TokenizationSpokeDeployer.sol';
+import {TokenizationSpokeInstance} from 'src/spoke/instances/TokenizationSpokeInstance.sol';
+import {UpgradeableBeacon} from 'src/dependencies/openzeppelin/UpgradeableBeacon.sol';
 
 import {WETH9} from 'src/dependencies/weth/WETH9.sol';
 import {TestnetERC20} from 'tests/helpers/mocks/TestnetERC20.sol';
@@ -99,6 +101,8 @@ abstract contract BaseConfigEngineTest is Test, Create2TestHelper {
   MockPriceFeed internal priceFeedWbtc;
   MockPriceFeed internal priceFeedNew;
 
+  address internal tokenizationBeacon;
+
   TokenInfo[NUM_TOKENS] internal tokenList;
 
   uint256[NUM_TOKENS][NUM_HUBS] internal assetIds;
@@ -154,6 +158,11 @@ abstract contract BaseConfigEngineTest is Test, Create2TestHelper {
 
     engine = new AaveV4ConfigEngine();
     positionManager = new PositionManagerBaseWrapper(address(engine));
+
+    // Deploy the shared TokenizationSpoke implementation and beacon used by tokenization listings.
+    tokenizationBeacon = address(
+      new UpgradeableBeacon(address(new TokenizationSpokeInstance()), ADMIN)
+    );
 
     _setupRoles(report);
 
@@ -332,7 +341,12 @@ abstract contract BaseConfigEngineTest is Test, Create2TestHelper {
         liquidityFee: LIQUIDITY_FEE,
         irStrategy: address(irStrategy1()),
         irData: IR_DATA,
-        tokenization: IAaveV4ConfigEngine.TokenizationSpokeConfig({addCap: 0, name: '', symbol: ''})
+        tokenization: IAaveV4ConfigEngine.TokenizationSpokeConfig({
+          beacon: tokenizationBeacon,
+          addCap: 0,
+          name: '',
+          symbol: ''
+        })
       });
   }
 

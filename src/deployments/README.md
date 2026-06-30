@@ -36,7 +36,9 @@ This runs `AaveV4DeployOrchestration.deployAaveV4()`, which deploys batches in o
 
 ### TokenizationSpoke
 
-`TokenizationSpoke` is **not** deployed by the orchestration, because it requires an asset to already be listed on a Hub and Spoke. Each `TokenizationSpoke` instance should be deployed separately after asset listing, one per asset.
+`TokenizationSpoke` is **not** deployed by the orchestration, because it requires an asset to already be listed on a Hub and Spoke.
+
+`TokenizationSpoke` uses a **beacon proxy** pattern: a single shared implementation and `UpgradeableBeacon` are deployed once (via `AaveV4TokenizationSpokeBeaconBatch`), and every per-asset `TokenizationSpoke` is a `BeaconProxy` pointing to that beacon (via `AaveV4TokenizationSpokeBatch`). Because the implementation is generic, the Hub and tokenized asset details are passed to `initialize` rather than baked into the implementation bytecode, so all assets reuse the same implementation. The beacon owner controls upgrades for every `TokenizationSpoke` at once. Each `TokenizationSpoke` proxy should be deployed separately after asset listing, one per asset.
 
 ### LiquidationLogic Pre-deployment
 

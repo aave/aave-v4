@@ -2,6 +2,7 @@
 pragma solidity ^0.8.20;
 
 import {TransparentUpgradeableProxy} from 'src/dependencies/openzeppelin/TransparentUpgradeableProxy.sol';
+import {BeaconProxy} from 'src/dependencies/openzeppelin/BeaconProxy.sol';
 
 /// @title Create2Utils Library
 /// @author Aave Labs
@@ -51,6 +52,23 @@ library Create2Utils {
           type(TransparentUpgradeableProxy).creationCode,
           abi.encode(logic, initialOwner, data)
         )
+      );
+  }
+
+  /// @notice Deploys a BeaconProxy via CREATE2.
+  /// @param salt The CREATE2 salt.
+  /// @param beacon The beacon contract address that determines the implementation.
+  /// @param data The initializer calldata.
+  /// @return The deployed proxy address.
+  function beaconProxify(
+    bytes32 salt,
+    address beacon,
+    bytes memory data
+  ) internal returns (address) {
+    return
+      create2Deploy(
+        salt,
+        abi.encodePacked(type(BeaconProxy).creationCode, abi.encode(beacon, data))
       );
   }
 

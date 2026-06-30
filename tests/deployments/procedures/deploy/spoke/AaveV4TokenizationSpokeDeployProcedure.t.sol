@@ -2,10 +2,12 @@
 pragma solidity ^0.8.0;
 
 import 'tests/deployments/procedures/ProceduresBase.t.sol';
+import {AaveV4TokenizationSpokeBeaconBatch} from 'src/deployments/batches/AaveV4TokenizationSpokeBeaconBatch.sol';
 
 contract AaveV4TokenizationSpokeDeployProcedureTest is ProceduresBase {
   AaveV4TokenizationSpokeDeployProcedureWrapper public wrapper;
   address public deployedHub;
+  address public beacon;
   uint256 public assetId;
   address public underlying;
   string public shareName = 'Test Vault Share';
@@ -15,7 +17,12 @@ contract AaveV4TokenizationSpokeDeployProcedureTest is ProceduresBase {
     super.setUp();
     wrapper = new AaveV4TokenizationSpokeDeployProcedureWrapper();
 
-    // TokenizationSpokeInstance constructor requires hub
+    // Deploy the shared TokenizationSpoke implementation and beacon
+    beacon = new AaveV4TokenizationSpokeBeaconBatch(owner, salt)
+      .getReport()
+      .tokenizationSpokeBeacon;
+
+    // Hub for the asset listing
     AaveV4HubInstanceBatch hubInstanceBatch = new AaveV4HubInstanceBatch({
       proxyAdminOwner_: admin,
       authority_: accessManager,
@@ -54,78 +61,70 @@ contract AaveV4TokenizationSpokeDeployProcedureTest is ProceduresBase {
     });
   }
 
-  function test_deployUpgradeableTokenizationSpokeInstance() public {
-    (address tokenizationSpokeProxy, address tokenizationSpokeImplementation) = wrapper
-      .deployUpgradeableTokenizationSpokeInstance(
-        deployedHub,
-        underlying,
-        owner,
-        shareName,
-        shareSymbol,
-        salt
-      );
-    assertNotEq(tokenizationSpokeProxy, address(0));
-    assertNotEq(tokenizationSpokeImplementation, address(0));
-    assertEq(Ownable(ProxyHelper.getProxyAdmin(tokenizationSpokeProxy)).owner(), owner);
-    assertEq(
-      ProxyHelper.getImplementation(tokenizationSpokeProxy),
-      tokenizationSpokeImplementation
+  function test_deployTokenizationSpokeInstance() public {
+    address tokenizationSpokeProxy = wrapper.deployTokenizationSpokeInstance(
+      beacon,
+      deployedHub,
+      underlying,
+      shareName,
+      shareSymbol,
+      salt
     );
+    assertNotEq(tokenizationSpokeProxy, address(0));
+    assertEq(ProxyHelper.getBeacon(tokenizationSpokeProxy), beacon);
     assertEq(ITokenizationSpoke(tokenizationSpokeProxy).hub(), deployedHub);
     assertEq(ITokenizationSpoke(tokenizationSpokeProxy).assetId(), assetId);
     assertEq(ITokenizationSpoke(tokenizationSpokeProxy).asset(), underlying);
   }
 
-  function test_deployUpgradeableTokenizationSpokeInstance_reverts() public {
-    vm.expectRevert('invalid hub');
-    wrapper.deployUpgradeableTokenizationSpokeInstance({
-      hub: address(0),
+  function test_deployTokenizationSpokeInstance_reverts() public {
+    vm.expectRevert('invalid beacon');
+    wrapper.deployTokenizationSpokeInstance({
+      beacon: address(0),
+      hub: deployedHub,
       underlying: underlying,
-      proxyAdminOwner: owner,
       shareName: shareName,
       shareSymbol: shareSymbol,
       salt: salt
     });
 
-    vm.expectRevert('invalid proxy admin owner');
-    wrapper.deployUpgradeableTokenizationSpokeInstance({
-      hub: deployedHub,
+    vm.expectRevert('invalid hub');
+    wrapper.deployTokenizationSpokeInstance({
+      beacon: beacon,
+      hub: address(0),
       underlying: underlying,
-      proxyAdminOwner: address(0),
       shareName: shareName,
       shareSymbol: shareSymbol,
-      salt: keccak256('zeroAdminSalt')
+      salt: keccak256('zeroHubSalt')
     });
 
     vm.expectRevert('invalid share name');
-    wrapper.deployUpgradeableTokenizationSpokeInstance({
+    wrapper.deployTokenizationSpokeInstance({
+      beacon: beacon,
       hub: deployedHub,
       underlying: underlying,
-      proxyAdminOwner: owner,
       shareName: '',
       shareSymbol: shareSymbol,
       salt: keccak256('emptyNameSalt')
     });
 
     vm.expectRevert('invalid share symbol');
-    wrapper.deployUpgradeableTokenizationSpokeInstance({
+    wrapper.deployTokenizationSpokeInstance({
+      beacon: beacon,
       hub: deployedHub,
       underlying: underlying,
-      proxyAdminOwner: owner,
       shareName: shareName,
       shareSymbol: '',
       salt: keccak256('emptySymbolSalt')
     });
   }
 
-  function test_deployUpgradeableTokenizationSpokeInstance_revertsWith_failedCreate2FactoryCall()
-    public
-  {
+  function test_deployTokenizationSpokeInstance_revertsWith_failedCreate2FactoryCall() public {
     vm.expectRevert(Create2Utils.FailedCreate2FactoryCall.selector);
-    wrapper.deployUpgradeableTokenizationSpokeInstance({
+    wrapper.deployTokenizationSpokeInstance({
+      beacon: beacon,
       hub: deployedHub,
       underlying: makeAddr('nonExistentUnderlying'),
-      proxyAdminOwner: owner,
       shareName: shareName,
       shareSymbol: shareSymbol,
       salt: keccak256('salt')

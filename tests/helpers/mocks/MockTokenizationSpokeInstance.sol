@@ -12,24 +12,21 @@ contract MockTokenizationSpokeInstance is TokenizationSpoke {
    * @dev Constructor.
    * @dev It sets the vault spoke revision and disables the initializers.
    * @param spokeRevision_ The revision of the vault spoke contract.
-   * @param hub_ The address of the hub.
-   * @param underlying_ The address of the asset.
    */
-  constructor(
-    uint64 spokeRevision_,
-    address hub_,
-    address underlying_
-  ) TokenizationSpoke(hub_, underlying_) {
+  constructor(uint64 spokeRevision_) {
     SPOKE_REVISION = spokeRevision_;
     _disableInitializers();
   }
 
   /// @inheritdoc TokenizationSpoke
   function initialize(
+    address hub_,
+    address underlying_,
     string memory shareName,
     string memory shareSymbol
   ) external override reinitializer(SPOKE_REVISION) {
-    emit SetTokenizationSpokeImmutables(address(HUB), ASSET_ID);
-    __TokenizationSpoke_init(shareName, shareSymbol);
+    __TokenizationSpoke_init(hub_, underlying_, shareName, shareSymbol);
+
+    emit SetTokenizationSpokeImmutables(address(_hub), _assetId);
   }
 }

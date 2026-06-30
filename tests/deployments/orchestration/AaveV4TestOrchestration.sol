@@ -29,6 +29,7 @@ import {ISpokeInstance} from 'src/deployments/utils/interfaces/ISpokeInstance.so
 import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 import {Create2Utils} from 'src/deployments/utils/libraries/Create2Utils.sol';
 import {TransparentUpgradeableProxy} from 'src/dependencies/openzeppelin/TransparentUpgradeableProxy.sol';
+import {BeaconProxy} from 'src/dependencies/openzeppelin/BeaconProxy.sol';
 
 library AaveV4TestOrchestration {
   bool public constant IS_TEST = true;
@@ -178,16 +179,22 @@ library AaveV4TestOrchestration {
   function deployTestTokenizationSpoke(
     address hub,
     address underlying,
-    address proxyAdminOwner,
+    address beaconOwner,
     string memory shareName,
     string memory shareSymbol,
     bytes32 salt
   ) external returns (address tokenizationSpokeProxy) {
+    address beacon = AaveV4DeployBase
+      .deployTokenizationSpokeBeaconBatch({
+        beaconOwner: beaconOwner,
+        salt: keccak256(abi.encodePacked(salt, 'beacon'))
+      })
+      .tokenizationSpokeBeacon;
     BatchReports.TokenizationSpokeBatchReport memory report = AaveV4DeployBase
       .deployTokenizationSpokeBatch({
+        beacon: beacon,
         hub: hub,
         underlying: underlying,
-        proxyAdminOwner: proxyAdminOwner,
         shareName: shareName,
         shareSymbol: shareSymbol,
         salt: salt
@@ -462,5 +469,9 @@ library AaveV4TestOrchestration {
     bytes memory initData
   ) internal returns (address) {
     return address(new TransparentUpgradeableProxy(impl, proxyAdminOwner, initData));
+  }
+
+  function beaconProxify(address beacon, bytes memory initData) internal returns (address) {
+    return address(new BeaconProxy(beacon, initData));
   }
 }
