@@ -48,29 +48,29 @@ interface ITakerPositionManager is IPositionManagerIntentBase {
 
   /// @notice Emitted when the withdraw allowance granted to a spender is updated.
   /// @param spoke The address of the Spoke.
+  /// @param reserveId The identifier of the reserve.
   /// @param owner The address of the owner.
   /// @param spender The address of the spender.
-  /// @param reserveId The identifier of the reserve.
   /// @param amount The amount of allowance.
   event WithdrawApproval(
     address indexed spoke,
+    uint256 indexed reserveId,
     address indexed owner,
-    address indexed spender,
-    uint256 reserveId,
+    address spender,
     uint256 amount
   );
 
   /// @notice Emitted when the borrow allowance granted to a spender is updated.
   /// @param spoke The address of the Spoke.
+  /// @param reserveId The identifier of the reserve.
   /// @param owner The address of the owner.
   /// @param spender The address of the spender.
-  /// @param reserveId The identifier of the reserve.
   /// @param amount The amount of allowance.
   event BorrowApproval(
     address indexed spoke,
+    uint256 indexed reserveId,
     address indexed owner,
-    address indexed spender,
-    uint256 reserveId,
+    address spender,
     uint256 amount
   );
 
