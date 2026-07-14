@@ -361,7 +361,8 @@ abstract contract Spoke is
       debtToCover: debtToCover,
       userAccountData: userAccountData,
       liquidator: msg.sender,
-      receiveShares: receiveShares
+      receiveShares: receiveShares,
+      checkHealthFactor: true
     });
 
     bool isUserInDeficit = LiquidationLogic.liquidateUser({
@@ -384,6 +385,62 @@ abstract contract Spoke is
     } else {
       uint256 newRiskPremium = _calculateUserAccountData(user).riskPremium;
       _notifyRiskPremiumUpdate(user, newRiskPremium);
+    }
+  }
+
+  /// @inheritdoc ISpoke
+  function multiLiquidationCall(
+    address user,
+    LiquidationCallInput[] calldata inputs
+  ) external nonReentrant {
+    require(inputs.length > 0, EmptyLiquidationCallInputs());
+
+    LiquidationConfig memory liquidationConfig = _liquidationConfig;
+    UserAccountData memory userAccountData = _calculateUserAccountData(user);
+
+    bool isUserInDeficit;
+    for (uint256 i = 0; i < inputs.length; ++i) {
+      isUserInDeficit = LiquidationLogic.liquidateUser({
+        reserves: _reserves,
+        userPositions: _userPositions,
+        positionStatus: _positionStatus,
+        dynamicConfig: _dynamicConfig,
+        params: LiquidationLogic.LiquidateUserParams({
+          collateralReserveId: inputs[i].collateralReserveId,
+          debtReserveId: inputs[i].debtReserveId,
+          liquidationConfig: liquidationConfig,
+          oracle: ORACLE,
+          user: user,
+          debtToCover: inputs[i].debtToCover,
+          userAccountData: userAccountData,
+          liquidator: msg.sender,
+          receiveShares: inputs[i].receiveShares,
+          checkHealthFactor: i == 0
+        })
+      });
+      if (isUserInDeficit) {
+        break;
+      }
+
+      // stopping at the target health factor also stops on full debt repayment (health factor is
+      // type(uint256).max) and keeps the debt-to-target calculation of later inputs from underflowing
+      userAccountData = _calculateUserAccountData(user);
+      if (userAccountData.healthFactor >= liquidationConfig.targetHealthFactor) {
+        break;
+      }
+    }
+
+    if (isUserInDeficit) {
+      // report deficit for all debt reserves, including the reserve being repaid
+      LiquidationLogic.notifyReportDeficit(
+        _reserves,
+        _userPositions,
+        _positionStatus,
+        _reserveCount,
+        user
+      );
+    } else {
+      _notifyRiskPremiumUpdate(user, userAccountData.riskPremium);
     }
   }
 

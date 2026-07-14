@@ -39,6 +39,7 @@ library LiquidationLogic {
     ISpoke.UserAccountData userAccountData;
     address liquidator;
     bool receiveShares;
+    bool checkHealthFactor;
   }
 
   struct ExecuteLiquidationParams {
@@ -64,6 +65,7 @@ library LiquidationLogic {
     uint256 borrowCount;
     address liquidator;
     bool receiveShares;
+    bool checkHealthFactor;
   }
 
   struct LiquidateCollateralParams {
@@ -109,6 +111,7 @@ library LiquidationLogic {
     bool isUsingAsCollateral;
     uint256 healthFactor;
     bool receiveShares;
+    bool checkHealthFactor;
   }
 
   struct CalculateDebtToTargetHealthFactorParams {
@@ -230,7 +233,8 @@ library LiquidationLogic {
       activeCollateralCount: params.userAccountData.activeCollateralCount,
       borrowCount: params.userAccountData.borrowCount,
       liquidator: params.liquidator,
-      receiveShares: params.receiveShares
+      receiveShares: params.receiveShares,
+      checkHealthFactor: params.checkHealthFactor
     });
 
     ISpoke.UserPosition storage debtUserPosition = userPositions[params.user][params.debtReserveId];
@@ -304,6 +308,8 @@ library LiquidationLogic {
 
   /// @notice Calculates the liquidation bonus at a given health factor.
   /// @dev Liquidation Bonus is expressed as a BPS value greater than `PercentageMath.PERCENTAGE_FACTOR`.
+  /// @dev At health factors of 1.0 or above (reachable within `multiLiquidationCall`), the bonus is
+  /// the minimum liquidation bonus, the continuous limit of the interpolation at a health factor of 1.0.
   /// @param healthFactorForMaxBonus The health factor for max bonus, expressed in WAD.
   /// @param liquidationBonusFactor The liquidation bonus factor, expressed in BPS.
   /// @param healthFactor The health factor, expressed in WAD.
@@ -321,6 +327,10 @@ library LiquidationLogic {
 
     uint256 minLiquidationBonus = (maxLiquidationBonus - PercentageMath.PERCENTAGE_FACTOR)
       .percentMulDown(liquidationBonusFactor) + PercentageMath.PERCENTAGE_FACTOR;
+
+    if (healthFactor >= HEALTH_FACTOR_LIQUIDATION_THRESHOLD) {
+      return minLiquidationBonus;
+    }
 
     // linear interpolation between min and max
     // denominator cannot be zero as healthFactorForMaxBonus is always < HEALTH_FACTOR_LIQUIDATION_THRESHOLD
@@ -364,7 +374,8 @@ library LiquidationLogic {
         collateralFactor: params.collateralDynConfig.collateralFactor,
         isUsingAsCollateral: userPositionStatus.isUsingAsCollateral(params.collateralReserveId),
         healthFactor: params.healthFactor,
-        receiveShares: params.receiveShares
+        receiveShares: params.receiveShares,
+        checkHealthFactor: params.checkHealthFactor
       })
     );
 
@@ -541,8 +552,9 @@ library LiquidationLogic {
     // user has active debt if and only if user has drawn shares (premium debt is always repaid first,
     // and can only be created when drawn shares exist)
     require(params.drawnShares > 0, ISpoke.ReserveNotBorrowed());
+    // within `multiLiquidationCall` only the first input carries the health factor check
     require(
-      params.healthFactor < HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
+      !params.checkHealthFactor || params.healthFactor < HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
       ISpoke.HealthFactorNotBelowThreshold()
     );
     require(
@@ -735,7 +747,7 @@ library LiquidationLogic {
   function _calculateDebtToLiquidate(
     CalculateDebtToLiquidateParams memory params
   ) internal pure returns (uint256, uint256) {
-    uint256 debtRayToTarget = _calculateDebtToTargetHealthFactor(
+    uint256 debtRayToTarget = calculateDebtToTargetHealthFactor(
       CalculateDebtToTargetHealthFactorParams({
         totalDebtValueRay: params.totalDebtValueRay,
         debtAssetUnit: params.debtAssetUnit,
@@ -791,8 +803,11 @@ library LiquidationLogic {
   }
 
   /// @notice Calculates the amount of debt needed to be liquidated to restore a position to the target health factor.
+  /// @dev Exposed for external integrations. The result is converted from value to asset units using
+  /// `params.debtAssetUnit` and `params.debtAssetPrice`; passing the unit and price of another asset
+  /// yields the equivalent amount expressed in that asset instead.
   /// @return The amount of debt needed to be liquidated to restore user to the target health factor, expressed in units of debt asset and scaled by RAY.
-  function _calculateDebtToTargetHealthFactor(
+  function calculateDebtToTargetHealthFactor(
     CalculateDebtToTargetHealthFactorParams memory params
   ) internal pure returns (uint256) {
     // rounding direction has no effect on the result, as there is no precision loss in this calculation.
