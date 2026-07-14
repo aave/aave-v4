@@ -1,0 +1,51 @@
+snapshots/ConfigPositionManager.Operations.json
+  s_8b8ed63d4bd550::t_a522e90ab938e2 10
+snapshots/GiverPositionManager.Operations.json
+  s_8b8ed63d4bd550::t_cd65ebb4dae9b4 2
+snapshots/NativeTokenGateway.Operations.json
+  s_8b8ed63d4bd550::t_e9a3eaf00ab058 2-3
+snapshots/PositionManagerBase.Operations.json
+  s_8b8ed63d4bd550::t_3b23310e429f19 2
+snapshots/SignatureGateway.Operations.json
+  s_8b8ed63d4bd550::t_bf2131e727e113 2-4,6,8-9
+snapshots/Spoke.Getters.json
+  s_8b8ed63d4bd550::t_ed0b61aca57d1f 2-6
+snapshots/Spoke.Operations.ZeroRiskPremium.json
+  s_8b8ed63d4bd550::t_332f955f187b9d 2-13,16
+snapshots/Spoke.Operations.json
+  s_8b8ed63d4bd550::t_0434804cf46267 2-13,16
+snapshots/TakerPositionManager.Operations.json
+  s_8b8ed63d4bd550::t_9e1e2c2278e194 6
+src/spoke/Spoke.sol
+  s_8b8ed63d4bd550::t_cb1977eff815ad 364-365,391-446
+src/spoke/interfaces/ISpoke.sol
+  s_8b8ed63d4bd550::t_e85c50d8104aec 89-100,420-422,572-581
+src/spoke/libraries/LiquidationLogic.sol
+  s_8b8ed63d4bd550::t_7d9857d6f61db5 42,68,114,236-237,311-312,331-334,377-378,555,557,750,806-808,810
+tests/contracts/spoke/libraries/liquidation-logic/LiquidationLogic.ExecuteLiquidation.t.sol
+  s_8b8ed63d4bd550::t_2fd0d868f2f94f 77-78
+tests/contracts/spoke/libraries/liquidation-logic/LiquidationLogic.LiquidateUser.t.sol
+  s_8b8ed63d4bd550::t_aadc5e128491ff 69-70
+tests/contracts/spoke/libraries/liquidation-logic/LiquidationLogic.ValidateLiquidationCall.t.sol
+  s_8b8ed63d4bd550::t_fbf638eebe0c06 27-28
+tests/helpers/mocks/LiquidationLogicWrapper.sol
+  s_8b8ed63d4bd550::t_4007bf1a5df96a 244
+tests/contracts/spoke/liquidation/Spoke.MultiLiquidationCall.t.sol
+  s_8b8ed63d4bd550::t_0b81bf47bbb526 1-324
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.14",
+  "base_commit_sha": "74a6898470f3777116d8f49db7fc29486744c3b2",
+  "prompts": {},
+  "sessions": {
+    "s_8b8ed63d4bd550": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "badec474-4a1f-4ce1-9f7d-c557c414d757",
+        "model": "claude-fable-5"
+      },
+      "human_author": "Alexandru Niculae <43644109+avniculae@users.noreply.github.com>"
+    }
+  }
+}
