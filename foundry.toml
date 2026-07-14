@@ -8,7 +8,7 @@ skip = ["tests/mocks/JsonBindings.sol"]
 solc_version = "0.8.28"
 evm_version = "cancun"
 optimizer = true
-optimizer_runs = 444444444444
+optimizer_runs = 44444444
 bytecode_hash = "none"
 gas_snapshot_check = false
 gas_limit = 1099511627776
@@ -17,13 +17,13 @@ dynamic_test_linking = true
 additional_compiler_profiles = [
   { name = "hub", optimizer = true, via_ir = true, optimizer_runs = 22_300 },
   { name = "spoke", optimizer = true, via_ir = true, optimizer_runs = 750 },
-  { name = "tests", optimizer = true, via_ir = false, optimizer_runs = 444444444444 },
+  { name = "tests", optimizer = true, via_ir = false, optimizer_runs = 44444444 },
 ]
 
 compilation_restrictions = [
   { paths = "src/hub/instances/HubInstance.sol", optimizer = true, via_ir = true, optimizer_runs = 22_300 },
   { paths = "src/spoke/instances/SpokeInstance.sol", optimizer = true, via_ir = true, optimizer_runs = 750 },
-  { paths = "tests/**", optimizer = true, via_ir = false, optimizer_runs = 444444444444 },
+  { paths = "tests/**", optimizer = true, via_ir = false, optimizer_runs = 44444444 },
 ]
 
 [bind_json]
@@ -51,7 +51,7 @@ isolate = true
 
 [profile.coverage]
 optimizer = true
-optimizer_runs = 444444444444
+optimizer_runs = 44444444
 via_ir = false
 fuzz.runs = 50
 additional_compiler_profiles = []

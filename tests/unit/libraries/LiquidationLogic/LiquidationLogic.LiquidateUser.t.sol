@@ -57,7 +57,8 @@ contract LiquidationLogicLiquidateUserTest is LiquidationLogicBaseTest {
         avgCollateralFactor: 0 // not used
       }),
       liquidator: makeAddr('liquidator'),
-      receiveShares: false
+      receiveShares: false,
+      checkHealthFactor: true
     });
 
     // Mock storage

@@ -65,7 +65,8 @@ contract LiquidationLogicExecuteLiquidationTest is LiquidationLogicBaseTest {
       activeCollateralCount: 1,
       borrowCount: 1,
       liquidator: makeAddr('liquidator'),
-      receiveShares: false
+      receiveShares: false,
+      checkHealthFactor: true
     });
 
     // Mock storage

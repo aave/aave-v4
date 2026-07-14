@@ -86,6 +86,18 @@ interface ISpoke is IAccessManaged, IIntentConsumer, IExtSload, IMulticall {
     uint16 liquidationBonusFactor;
   }
 
+  /// @notice Input for a single liquidation within `multiLiquidationCall`.
+  /// @dev collateralReserveId The reserveId of the underlying asset used as collateral by the liquidated user.
+  /// @dev debtReserveId The reserveId of the underlying asset borrowed by the liquidated user.
+  /// @dev debtToCover The desired amount of debt to cover.
+  /// @dev receiveShares True to receive collateral in supplied shares, false to receive in underlying assets.
+  struct LiquidationCallInput {
+    uint256 collateralReserveId;
+    uint256 debtReserveId;
+    uint256 debtToCover;
+    bool receiveShares;
+  }
+
   /// @notice User position data per reserve.
   /// @dev drawnShares The drawn shares of the user position.
   /// @dev premiumShares The premium shares of the user position.
@@ -405,6 +417,9 @@ interface ISpoke is IAccessManaged, IIntentConsumer, IExtSload, IMulticall {
   /// @notice Thrown when a debt to cover input is zero.
   error InvalidDebtToCover();
 
+  /// @notice Thrown when a multi liquidation call is attempted with no inputs.
+  error EmptyLiquidationCallInputs();
+
   /// @notice Thrown when the liquidator tries to receive shares for a collateral reserve that is frozen or is not enabled to receive shares.
   error CannotReceiveShares();
 
@@ -553,6 +568,16 @@ interface ISpoke is IAccessManaged, IIntentConsumer, IExtSload, IMulticall {
     uint256 debtToCover,
     bool receiveShares
   ) external;
+
+  /// @notice Liquidates a user position across multiple collateral and debt reserve pairs.
+  /// @dev The health factor requirement is validated once for the whole batch: the position must be
+  /// unhealthy when the batch starts, and subsequent inputs execute even if a previous one restored
+  /// the health factor to 1.0 or above. The batch stops early once the health factor reaches the
+  /// target health factor (full debt repayment included) or when a liquidation results in deficit.
+  /// @dev The Spoke pulls underlying repaid debt assets from caller (Liquidator), hence it needs prior approval.
+  /// @param user The address of the user to liquidate.
+  /// @param inputs The liquidation inputs, executed in order.
+  function multiLiquidationCall(address user, LiquidationCallInput[] calldata inputs) external;
 
   /// @notice Allows suppliers to enable/disable a specific supplied reserve as collateral.
   /// @dev It reverts if the reserve associated with the given reserve identifier is not listed.

@@ -24,7 +24,8 @@ contract LiquidationLogicValidateLiquidationCallTest is LiquidationLogicBaseTest
       collateralFactor: 75_00,
       isUsingAsCollateral: true,
       healthFactor: 0.8e18,
-      receiveShares: false
+      receiveShares: false,
+      checkHealthFactor: true
     });
     liquidationLogicWrapper.setBorrower(params.user);
     liquidationLogicWrapper.setLiquidator(params.liquidator);
