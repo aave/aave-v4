@@ -332,7 +332,12 @@ abstract contract BaseConfigEngineTest is Test, Create2TestHelper {
         liquidityFee: LIQUIDITY_FEE,
         irStrategy: address(irStrategy1()),
         irData: IR_DATA,
-        tokenization: IAaveV4ConfigEngine.TokenizationSpokeConfig({addCap: 0, name: '', symbol: ''})
+        tokenization: IAaveV4ConfigEngine.TokenizationSpokeConfig({
+          addCap: 0,
+          proxyAdminOwner: address(0),
+          name: '',
+          symbol: ''
+        })
       });
   }
 

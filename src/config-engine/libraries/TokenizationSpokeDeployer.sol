@@ -10,20 +10,29 @@ import {TokenizationSpokeInstance} from 'src/spoke/instances/TokenizationSpokeIn
 /// @notice Library for deterministic CREATE2 deployment and address pre-computation of TokenizationSpoke proxies
 /// using the Safe Singleton Factory.
 library TokenizationSpokeDeployer {
+  /// @dev Thrown when the proxy admin owner is the zero address.
+  error InvalidProxyAdminOwner();
+
   /// @notice Deploys a TokenizationSpokeInstance implementation and TransparentUpgradeableProxy via CREATE2
   /// through the Safe Singleton Factory.
-  /// @dev The proxy admin owner is set to `msg.sender`.
+  /// @dev The proxy admin owner must be passed explicitly. Never derive it from `msg.sender`: under the
+  /// governance delegatecall chain (PayloadsController → Executor → payload → engine) `msg.sender`
+  /// resolves to the PayloadsController, which cannot exercise ownership.
   /// @param hub The address of the Hub.
   /// @param underlying The address of the underlying asset.
   /// @param name The ERC20 name for the TokenizationSpoke share token.
   /// @param symbol The ERC20 symbol for the TokenizationSpoke share token.
+  /// @param proxyAdminOwner The initial owner of the ProxyAdmin.
   /// @return proxy The address of the deployed proxy.
   function deploy(
     address hub,
     address underlying,
     string calldata name,
-    string calldata symbol
+    string calldata symbol,
+    address proxyAdminOwner
   ) external returns (address proxy) {
+    require(proxyAdminOwner != address(0), InvalidProxyAdminOwner());
+
     bytes32 implSalt = _computeImplementationSalt(hub, underlying, name, symbol);
     bytes memory implCreationCode = abi.encodePacked(
       type(TokenizationSpokeInstance).creationCode,
@@ -35,7 +44,7 @@ library TokenizationSpokeDeployer {
     bytes memory initData = abi.encodeCall(TokenizationSpokeInstance.initialize, (name, symbol));
     bytes memory proxyCreationCode = abi.encodePacked(
       type(TransparentUpgradeableProxy).creationCode,
-      abi.encode(impl, msg.sender, initData)
+      abi.encode(impl, proxyAdminOwner, initData)
     );
     proxy = Create2Utils.create2Deploy(proxySalt, proxyCreationCode);
   }
@@ -60,7 +69,7 @@ library TokenizationSpokeDeployer {
   /// @param underlying The address of the underlying asset.
   /// @param name The ERC20 name for the TokenizationSpoke share token.
   /// @param symbol The ERC20 symbol for the TokenizationSpoke share token.
-  /// @param proxyAdminOwner The initial owner of the ProxyAdmin (msg.sender in `deploy`).
+  /// @param proxyAdminOwner The initial owner of the ProxyAdmin.
   /// @return The predicted proxy address.
   function computeProxyAddress(
     address hub,
