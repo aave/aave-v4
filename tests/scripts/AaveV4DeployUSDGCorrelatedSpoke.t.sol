@@ -10,7 +10,7 @@ import {IPriceOracle} from 'src/spoke/interfaces/IPriceOracle.sol';
 import {BatchReports} from 'src/deployments/libraries/BatchReports.sol';
 import {DeployConstants} from 'src/deployments/utils/libraries/DeployConstants.sol';
 
-import {AaveV4DeployUSDGCorrelatedSpoke} from 'scripts/deploy/AaveV4DeployUSDGCorrelatedSpoke.s.sol';
+import {AaveV4DeployUSDGCorrelatedSpoke} from 'scripts/deploy/AaveV4DeployCorrelatedSpoke.s.sol';
 
 contract AaveV4DeployUSDGCorrelatedSpokeTest is Test {
   AaveV4DeployUSDGCorrelatedSpoke internal _script;
