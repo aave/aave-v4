@@ -404,19 +404,22 @@ abstract contract AaveV4Payload {
   }
 
   /// @notice Executes all Position Manager configuration actions via delegatecall to the engine.
+  /// @dev Role renouncements run before Spoke registrations: renouncing requires the Spoke to
+  /// still be registered on the position manager, so a payload can renounce and deregister the
+  /// same Spoke in one batch.
   function _executePositionManagerActions() internal {
-    IAaveV4ConfigEngine.SpokeRegistration[] memory spokeRegs = positionManagerSpokeRegistrations();
-    if (spokeRegs.length > 0) {
-      _delegateCallEngine(
-        abi.encodeCall(IAaveV4ConfigEngine.executePositionManagerSpokeRegistrations, (spokeRegs))
-      );
-    }
-
     IAaveV4ConfigEngine.PositionManagerRoleRenouncement[]
       memory renouncements = positionManagerRoleRenouncements();
     if (renouncements.length > 0) {
       _delegateCallEngine(
         abi.encodeCall(IAaveV4ConfigEngine.executePositionManagerRoleRenouncements, (renouncements))
+      );
+    }
+
+    IAaveV4ConfigEngine.SpokeRegistration[] memory spokeRegs = positionManagerSpokeRegistrations();
+    if (spokeRegs.length > 0) {
+      _delegateCallEngine(
+        abi.encodeCall(IAaveV4ConfigEngine.executePositionManagerSpokeRegistrations, (spokeRegs))
       );
     }
   }

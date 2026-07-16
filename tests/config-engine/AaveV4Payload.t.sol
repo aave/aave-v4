@@ -1026,6 +1026,52 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
     assertFalse(spoke1().isPositionManager(USER, address(freshPm)));
   }
 
+  function test_execute_positionManagerDeregistrationWithRenouncement() public {
+    PositionManagerBaseWrapper freshPm = new PositionManagerBaseWrapper(address(payload));
+    IAaveV4ConfigEngine.SpokeRegistration[]
+      memory regs = new IAaveV4ConfigEngine.SpokeRegistration[](1);
+    regs[0] = IAaveV4ConfigEngine.SpokeRegistration({
+      positionManager: address(freshPm),
+      spoke: address(spoke1()),
+      registered: true
+    });
+    payload.setPositionManagerSpokeRegistrations(regs);
+
+    IAaveV4ConfigEngine.PositionManagerUpdate[]
+      memory pmUpdates = new IAaveV4ConfigEngine.PositionManagerUpdate[](1);
+    pmUpdates[0] = IAaveV4ConfigEngine.PositionManagerUpdate({
+      spokeConfigurator: spokeConfigurator,
+      spoke: address(spoke1()),
+      positionManager: address(freshPm),
+      active: true
+    });
+    payload.setSpokePositionManagerUpdates(pmUpdates);
+    payload.execute();
+
+    vm.prank(USER);
+    spoke1().setUserPositionManager(address(freshPm), true);
+    assertTrue(spoke1().isPositionManager(USER, address(freshPm)));
+
+    // single payload winding down the position manager: renounce USER's role and deregister the Spoke
+    regs[0].registered = false;
+    payload.setPositionManagerSpokeRegistrations(regs);
+    payload.setSpokePositionManagerUpdates(new IAaveV4ConfigEngine.PositionManagerUpdate[](0));
+
+    IAaveV4ConfigEngine.PositionManagerRoleRenouncement[]
+      memory renouncements = new IAaveV4ConfigEngine.PositionManagerRoleRenouncement[](1);
+    renouncements[0] = IAaveV4ConfigEngine.PositionManagerRoleRenouncement({
+      positionManager: address(freshPm),
+      spoke: address(spoke1()),
+      user: USER
+    });
+    payload.setPositionManagerRoleRenouncements(renouncements);
+
+    payload.execute();
+
+    assertFalse(spoke1().isPositionManager(USER, address(freshPm)));
+    assertFalse(freshPm.isSpokeRegistered(address(spoke1())));
+  }
+
   // --- Unauthorized execute tests ---
 
   function test_execute_reverts_hubAction_withoutHubConfiguratorRole() public {
