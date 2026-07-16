@@ -1,0 +1,22 @@
+tests/config-engine/AaveV4Payload.t.sol
+  s_066c5b122888dc::t_3c45f0dd179a13 1029-1074
+src/config-engine/AaveV4Payload.sol
+  s_066c5b122888dc::t_dd1839a1392e3d 407-409,418-422
+  s_066c5b122888dc::t_948e71301389f5 423-424
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.14",
+  "base_commit_sha": "accb3c26296babd5e6f3f9e43d93c00c6c37e399",
+  "prompts": {},
+  "sessions": {
+    "s_066c5b122888dc": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "8f06fd84-89aa-44fd-a3b5-0cd3ad9f6d2e",
+        "model": "claude-fable-5"
+      },
+      "human_author": "Alexandru Niculae <43644109+avniculae@users.noreply.github.com>"
+    }
+  }
+}
