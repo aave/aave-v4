@@ -100,8 +100,11 @@ When `execute()` is called, actions run in the following fixed order:
    5. Dynamic reserve config updates
    6. Position manager updates
 5. **PositionManager actions** (in order):
-   1. Spoke registrations
-   2. Role renouncements
+   1. Role renouncements
+   2. Spoke registrations
+
+   Renouncements run first because renouncing requires the Spoke to still be registered on the position manager — this allows renouncing and deregistering the same Spoke in one payload.
+
 6. `_postExecute()`
 
 ### The `KEEP_CURRENT` sentinel pattern
@@ -129,7 +132,7 @@ Several engine functions inspect which fields differ from `KEEP_CURRENT` and cho
 - **Reserve config** (`SpokeEngine.executeSpokeReserveConfigUpdates`) — each flag (priceSource, collateralRisk, paused, frozen, borrowable, receiveSharesEnabled) is updated individually only when it differs from `KEEP_CURRENT` / `KEEP_CURRENT_ADDRESS`.
 - **Liquidation config** (`SpokeEngine.executeSpokeLiquidationConfigUpdates`) — calls `updateLiquidationConfig` when all three fields change, otherwise updates each field individually.
 - **Dynamic reserve config** (`SpokeEngine.executeSpokeDynamicReserveConfigUpdates`) — reads the current on-chain config, patches only the non-sentinel fields, and writes back the merged result. If nothing changed, the external call is skipped entirely.
-- **Role update** (`AccessManagerEngine.executeRoleUpdates`) — a single `RoleUpdate` struct can update any combination of admin (`uint64`), guardian (`uint64`), grant delay (`uint32`), and label (`string`). Fields set to their type-max sentinel (`KEEP_CURRENT_UINT64` / `KEEP_CURRENT_UINT32`) or empty string are skipped.
+- **Role update** (`AccessManagerEngine.executeRoleUpdates`) — a single `RoleUpdate` struct can update any combination of admin (`uint64`), guardian (`uint64`), grant delay (`uint32`), and label (`string`). Fields set to their type-max sentinel (`KEEP_CURRENT_UINT64` / `KEEP_CURRENT_UINT32`) or empty string are skipped. An already-labeled role is cleared before relabeling (required by the AccessManagerEnumerable label tracking); clearing a label without setting a new one is not expressible through the engine and requires a direct `labelRole` call.
 
 ### Delegatecall architecture
 

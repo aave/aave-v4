@@ -308,7 +308,8 @@ interface IAaveV4ConfigEngine {
   /// @dev admin The new admin role identifier (KEEP_CURRENT_UINT64 to skip).
   /// @dev guardian The new guardian role identifier (KEEP_CURRENT_UINT64 to skip).
   /// @dev grantDelay The new grant delay (KEEP_CURRENT_UINT32 to skip).
-  /// @dev label The label string (empty string to skip).
+  /// @dev label The label string (empty string to skip). An already-labeled role is cleared before
+  /// relabeling. Clearing a label without setting a new one requires a direct `labelRole` call.
   struct RoleUpdate {
     address authority;
     uint64 roleId;

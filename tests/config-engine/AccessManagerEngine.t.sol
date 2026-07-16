@@ -3,6 +3,8 @@ pragma solidity ^0.8.0;
 
 import 'tests/config-engine/BaseConfigEngine.t.sol';
 
+import {IAccessManagerEnumerable} from 'src/access/interfaces/IAccessManagerEnumerable.sol';
+
 contract AccessManagerEngineTest is BaseConfigEngineTest {
   // Default Roles :
   uint64 constant DEFAULT_ADMIN_ROLE = 0;
@@ -319,6 +321,41 @@ contract AccessManagerEngineTest is BaseConfigEngineTest {
         })
       )
     );
+  }
+
+  function test_executeRoleUpdates_relabel() public {
+    engine.executeRoleUpdates(_toRoleUpdateArray(_labelOnlyUpdate('FEE_UPDATER')));
+
+    engine.executeRoleUpdates(_toRoleUpdateArray(_labelOnlyUpdate('RISK_UPDATER')));
+
+    IAccessManagerEnumerable enumerable = IAccessManagerEnumerable(address(accessManager));
+    assertEq(enumerable.getLabelOfRole(TEST_ROLE_ID), 'RISK_UPDATER');
+    assertTrue(enumerable.isLabelAssigned('RISK_UPDATER'));
+    assertFalse(enumerable.isLabelAssigned('FEE_UPDATER'));
+  }
+
+  function test_executeRoleUpdates_relabel_sameLabel() public {
+    engine.executeRoleUpdates(_toRoleUpdateArray(_labelOnlyUpdate('FEE_UPDATER')));
+
+    engine.executeRoleUpdates(_toRoleUpdateArray(_labelOnlyUpdate('FEE_UPDATER')));
+
+    IAccessManagerEnumerable enumerable = IAccessManagerEnumerable(address(accessManager));
+    assertEq(enumerable.getLabelOfRole(TEST_ROLE_ID), 'FEE_UPDATER');
+    assertTrue(enumerable.isLabelAssigned('FEE_UPDATER'));
+  }
+
+  function _labelOnlyUpdate(
+    string memory label
+  ) internal view returns (IAaveV4ConfigEngine.RoleUpdate memory) {
+    return
+      IAaveV4ConfigEngine.RoleUpdate({
+        authority: address(accessManager),
+        roleId: TEST_ROLE_ID,
+        admin: EngineFlags.KEEP_CURRENT_UINT64,
+        guardian: EngineFlags.KEEP_CURRENT_UINT64,
+        grantDelay: EngineFlags.KEEP_CURRENT_UINT32,
+        label: label
+      });
   }
 
   function test_executeRoleUpdates_noneChanged() public {
