@@ -1021,8 +1021,13 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
     });
     payload.setPositionManagerRoleRenouncements(renouncements);
 
+    vm.expectEmit(address(spoke1()));
+    emit ISpoke.SetUserPositionManager(USER, address(freshPm), false);
     payload.execute();
 
+    // the position manager is still active on the Spoke, so isPositionManager being false
+    // proves the approval itself was cleared
+    assertTrue(spoke1().isPositionManagerActive(address(freshPm)));
     assertFalse(spoke1().isPositionManager(USER, address(freshPm)));
   }
 
@@ -1066,8 +1071,13 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
     });
     payload.setPositionManagerRoleRenouncements(renouncements);
 
+    vm.expectEmit(address(spoke1()));
+    emit ISpoke.SetUserPositionManager(USER, address(freshPm), false);
     payload.execute();
 
+    // the position manager is still active on the Spoke, so isPositionManager being false
+    // proves the approval itself was cleared
+    assertTrue(spoke1().isPositionManagerActive(address(freshPm)));
     assertFalse(spoke1().isPositionManager(USER, address(freshPm)));
     assertFalse(freshPm.isSpokeRegistered(address(spoke1())));
   }
