@@ -1,0 +1,21 @@
+scripts/deploy/AaveV4DeployTokenizationSpoke.s.sol
+  s_066c5b122888dc::t_3c1a609eb8c45e 106
+tests/scripts/AaveV4DeployPaxosTokenizationSpokes.t.sol
+  s_066c5b122888dc::t_ac882d8ddd3158 24
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.14",
+  "base_commit_sha": "3279cc45f711a9a65fe2a5c2b8cb4057b9264273",
+  "prompts": {},
+  "sessions": {
+    "s_066c5b122888dc": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "8f06fd84-89aa-44fd-a3b5-0cd3ad9f6d2e",
+        "model": "claude-fable-5"
+      },
+      "human_author": "Alexandru Niculae <43644109+avniculae@users.noreply.github.com>"
+    }
+  }
+}
