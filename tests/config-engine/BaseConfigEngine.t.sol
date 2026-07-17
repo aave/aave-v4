@@ -38,6 +38,7 @@ import {TokenizationSpokeDeployer} from 'src/config-engine/libraries/Tokenizatio
 import {WETH9} from 'src/dependencies/weth/WETH9.sol';
 import {TestnetERC20} from 'tests/helpers/mocks/TestnetERC20.sol';
 import {AaveV4PayloadWrapper} from 'tests/helpers/mocks/config-engine/AaveV4PayloadWrapper.sol';
+import {MockGovernanceExecutor} from 'tests/helpers/mocks/config-engine/MockGovernanceExecutor.sol';
 import {MockPriceFeed} from 'tests/helpers/mocks/MockPriceFeed.sol';
 import {PositionManagerBaseWrapper} from 'tests/helpers/mocks/PositionManagerBaseWrapper.sol';
 
@@ -74,7 +75,9 @@ abstract contract BaseConfigEngineTest is Test, Create2TestHelper {
   address internal ACCOUNT = makeAddr('ACCOUNT');
   address internal TARGET = makeAddr('TARGET');
   address internal USER = makeAddr('USER');
+  address internal PAYLOADS_CONTROLLER = makeAddr('PAYLOADS_CONTROLLER');
 
+  MockGovernanceExecutor internal executor;
   AaveV4ConfigEngine internal engine;
   IAccessManager internal accessManager;
   IHubConfigurator internal hubConfigurator;
@@ -152,7 +155,8 @@ abstract contract BaseConfigEngineTest is Test, Create2TestHelper {
       oracles[i] = IAaveOracle(report.spokeReports[i].aaveOracle);
     }
 
-    engine = new AaveV4ConfigEngine();
+    executor = new MockGovernanceExecutor(PAYLOADS_CONTROLLER);
+    engine = new AaveV4ConfigEngine(address(executor));
     positionManager = new PositionManagerBaseWrapper(address(engine));
 
     _setupRoles(report);
@@ -332,12 +336,7 @@ abstract contract BaseConfigEngineTest is Test, Create2TestHelper {
         liquidityFee: LIQUIDITY_FEE,
         irStrategy: address(irStrategy1()),
         irData: IR_DATA,
-        tokenization: IAaveV4ConfigEngine.TokenizationSpokeConfig({
-          addCap: 0,
-          proxyAdminOwner: address(0),
-          name: '',
-          symbol: ''
-        })
+        tokenization: IAaveV4ConfigEngine.TokenizationSpokeConfig({addCap: 0, name: '', symbol: ''})
       });
   }
 

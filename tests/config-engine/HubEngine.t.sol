@@ -6,8 +6,6 @@ import {Create2Utils} from 'src/deployments/utils/libraries/Create2Utils.sol';
 import {ProxyHelper} from 'tests/utils/ProxyHelper.sol';
 
 contract HubEngineTest is BaseConfigEngineTest {
-  address internal PROXY_ADMIN_OWNER = makeAddr('PROXY_ADMIN_OWNER');
-
   function setUp() public override {
     super.setUp();
     _seedFullEnvironment();
@@ -762,7 +760,6 @@ contract HubEngineTest is BaseConfigEngineTest {
     listing.underlying = address(newToken);
     listing.tokenization = IAaveV4ConfigEngine.TokenizationSpokeConfig({
       addCap: 1000,
-      proxyAdminOwner: PROXY_ADMIN_OWNER,
       name: 'Tokenized NEW',
       symbol: 'tNEW'
     });
@@ -778,7 +775,7 @@ contract HubEngineTest is BaseConfigEngineTest {
       address(newToken),
       'Tokenized NEW',
       'tNEW',
-      PROXY_ADMIN_OWNER
+      engine.EXECUTOR()
     );
 
     IHub.SpokeConfig memory tsConfig = hub1().getSpokeConfig(assetCountBefore, predictedProxy);
@@ -787,8 +784,8 @@ contract HubEngineTest is BaseConfigEngineTest {
 
     assertEq(
       Ownable(ProxyHelper.getProxyAdmin(predictedProxy)).owner(),
-      PROXY_ADMIN_OWNER,
-      'TokenizationSpoke ProxyAdmin owner should be the owner declared in the listing'
+      engine.EXECUTOR(),
+      'TokenizationSpoke ProxyAdmin owner should be the engine Executor'
     );
   }
 
@@ -797,9 +794,23 @@ contract HubEngineTest is BaseConfigEngineTest {
     listing.underlying = address(newToken);
 
     uint256 assetCountBefore = hub1().getAssetCount();
+    uint256 expectedAssetId = assetCountBefore;
     engine.executeHubAssetListings(_toAssetListingArray(listing));
 
     assertEq(hub1().getAssetCount(), assetCountBefore + 1);
+
+    // the skip path must not deploy or register a TokenizationSpoke: only the fee receiver spoke exists
+    assertEq(hub1().getSpokeCount(expectedAssetId), 1);
+
+    address predictedProxy = TokenizationSpokeDeployer.computeProxyAddress(
+      address(hub1()),
+      address(newToken),
+      '',
+      '',
+      engine.EXECUTOR()
+    );
+    assertFalse(hub1().isSpokeListed(expectedAssetId, predictedProxy));
+    assertEq(predictedProxy.code.length, 0);
   }
 
   function test_executeHubAssetListings_tokenization_deterministicAddress() public {
@@ -807,7 +818,6 @@ contract HubEngineTest is BaseConfigEngineTest {
     listing.underlying = address(newToken);
     listing.tokenization = IAaveV4ConfigEngine.TokenizationSpokeConfig({
       addCap: 1000,
-      proxyAdminOwner: PROXY_ADMIN_OWNER,
       name: 'Tokenized NEW',
       symbol: 'tNEW'
     });
@@ -817,7 +827,7 @@ contract HubEngineTest is BaseConfigEngineTest {
       address(newToken),
       'Tokenized NEW',
       'tNEW',
-      PROXY_ADMIN_OWNER
+      engine.EXECUTOR()
     );
 
     uint256 assetCountBefore = hub1().getAssetCount();
@@ -832,7 +842,6 @@ contract HubEngineTest is BaseConfigEngineTest {
     listing.underlying = address(newToken);
     listing.tokenization = IAaveV4ConfigEngine.TokenizationSpokeConfig({
       addCap: 1000,
-      proxyAdminOwner: PROXY_ADMIN_OWNER,
       name: '',
       symbol: 'tNEW'
     });
@@ -846,23 +855,8 @@ contract HubEngineTest is BaseConfigEngineTest {
     listing.underlying = address(newToken);
     listing.tokenization = IAaveV4ConfigEngine.TokenizationSpokeConfig({
       addCap: 1000,
-      proxyAdminOwner: PROXY_ADMIN_OWNER,
       name: 'Tokenized NEW',
       symbol: ''
-    });
-
-    vm.expectRevert(HubEngine.InvalidTokenizationSpokeConfig.selector);
-    engine.executeHubAssetListings(_toAssetListingArray(listing));
-  }
-
-  function test_executeHubAssetListings_tokenization_revertsOnZeroProxyAdminOwner() public {
-    IAaveV4ConfigEngine.AssetListing memory listing = _defaultAssetListing();
-    listing.underlying = address(newToken);
-    listing.tokenization = IAaveV4ConfigEngine.TokenizationSpokeConfig({
-      addCap: 1000,
-      proxyAdminOwner: address(0),
-      name: 'Tokenized NEW',
-      symbol: 'tNEW'
     });
 
     vm.expectRevert(HubEngine.InvalidTokenizationSpokeConfig.selector);
@@ -874,21 +868,6 @@ contract HubEngineTest is BaseConfigEngineTest {
     listing.underlying = address(newToken);
     listing.tokenization = IAaveV4ConfigEngine.TokenizationSpokeConfig({
       addCap: 1000,
-      proxyAdminOwner: address(0),
-      name: '',
-      symbol: ''
-    });
-
-    vm.expectRevert(HubEngine.InvalidTokenizationSpokeConfig.selector);
-    engine.executeHubAssetListings(_toAssetListingArray(listing));
-  }
-
-  function test_executeHubAssetListings_tokenization_revertsOnProxyAdminOwnerOnly() public {
-    IAaveV4ConfigEngine.AssetListing memory listing = _defaultAssetListing();
-    listing.underlying = address(newToken);
-    listing.tokenization = IAaveV4ConfigEngine.TokenizationSpokeConfig({
-      addCap: 0,
-      proxyAdminOwner: PROXY_ADMIN_OWNER,
       name: '',
       symbol: ''
     });
@@ -902,7 +881,6 @@ contract HubEngineTest is BaseConfigEngineTest {
     listing.underlying = address(newToken);
     listing.tokenization = IAaveV4ConfigEngine.TokenizationSpokeConfig({
       addCap: 0,
-      proxyAdminOwner: PROXY_ADMIN_OWNER,
       name: 'Tokenized NEW',
       symbol: 'tNEW'
     });
@@ -915,13 +893,13 @@ contract HubEngineTest is BaseConfigEngineTest {
       address(newToken),
       'Tokenized NEW',
       'tNEW',
-      PROXY_ADMIN_OWNER
+      engine.EXECUTOR()
     );
 
     IHub.SpokeConfig memory tsConfig = hub1().getSpokeConfig(assetCountBefore, predictedProxy);
     assertEq(tsConfig.addCap, 0);
     assertTrue(tsConfig.active);
-    assertEq(Ownable(ProxyHelper.getProxyAdmin(predictedProxy)).owner(), PROXY_ADMIN_OWNER);
+    assertEq(Ownable(ProxyHelper.getProxyAdmin(predictedProxy)).owner(), engine.EXECUTOR());
   }
 
   function test_executeHubAssetListings_multipleHubs() public {
@@ -1151,7 +1129,6 @@ contract HubEngineTest is BaseConfigEngineTest {
     listing.underlying = address(newToken);
     listing.tokenization = IAaveV4ConfigEngine.TokenizationSpokeConfig({
       addCap: 1000,
-      proxyAdminOwner: PROXY_ADMIN_OWNER,
       name: 'Tokenized NEW',
       symbol: 'tNEW'
     });

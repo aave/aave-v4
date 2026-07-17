@@ -22,17 +22,17 @@ The four groups, and the virtual functions in each, are listed below.
 
 #### Hub actions (`_executeHubActions`)
 
-| Function                      | Struct                  | Purpose                                                                                                                                                    |
-| ----------------------------- | ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `hubAssetListings()`          | `AssetListing`          | List a new asset on a Hub. Optionally deploys a TokenizationSpoke if `tokenization` is set (`name`, `symbol` and `proxyAdminOwner` are then all required). |
-| `hubAssetConfigUpdates()`     | `AssetConfigUpdate`     | Update fee config, IR strategy/data, reinvestment controller                                                                                               |
-| `hubSpokeToAssetsAdditions()` | `SpokeToAssetsAddition` | Register a Spoke for multiple assets                                                                                                                       |
-| `hubSpokeConfigUpdates()`     | `SpokeConfigUpdate`     | Update Spoke caps, risk premium threshold, active/halted                                                                                                   |
-| `hubAssetHalts()`             | `AssetHalt`             | Halt an asset                                                                                                                                              |
-| `hubAssetDeactivations()`     | `AssetDeactivation`     | Deactivate an asset                                                                                                                                        |
-| `hubAssetCapsResets()`        | `AssetCapsReset`        | Reset asset caps                                                                                                                                           |
-| `hubSpokeDeactivations()`     | `SpokeDeactivation`     | Deactivate a Spoke                                                                                                                                         |
-| `hubSpokeCapsResets()`        | `SpokeCapsReset`        | Reset Spoke caps                                                                                                                                           |
+| Function                      | Struct                  | Purpose                                                                                                                                  |
+| ----------------------------- | ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| `hubAssetListings()`          | `AssetListing`          | List a new asset on a Hub. Optionally deploys a TokenizationSpoke if `tokenization` is set (`name` and `symbol` are then both required). |
+| `hubAssetConfigUpdates()`     | `AssetConfigUpdate`     | Update fee config, IR strategy/data, reinvestment controller                                                                             |
+| `hubSpokeToAssetsAdditions()` | `SpokeToAssetsAddition` | Register a Spoke for multiple assets                                                                                                     |
+| `hubSpokeConfigUpdates()`     | `SpokeConfigUpdate`     | Update Spoke caps, risk premium threshold, active/halted                                                                                 |
+| `hubAssetHalts()`             | `AssetHalt`             | Halt an asset                                                                                                                            |
+| `hubAssetDeactivations()`     | `AssetDeactivation`     | Deactivate an asset                                                                                                                      |
+| `hubAssetCapsResets()`        | `AssetCapsReset`        | Reset asset caps                                                                                                                         |
+| `hubSpokeDeactivations()`     | `SpokeDeactivation`     | Deactivate a Spoke                                                                                                                       |
+| `hubSpokeCapsResets()`        | `SpokeCapsReset`        | Reset Spoke caps                                                                                                                         |
 
 #### Spoke actions (`_executeSpokeActions`)
 
@@ -153,7 +153,7 @@ When a payload calls `execute()`, `AaveV4Payload` delegate-calls into `AaveV4Con
 In production the payload itself executes via delegatecall: the PayloadsController **calls** `Executor.executeTransaction`, which **delegatecalls** `payload.execute()`. Since `msg.sender` is preserved across delegatecall, for all engine code:
 
 - `address(this)` is the **Executor** — this is the identity holding permissions, and the address external calls originate from.
-- `msg.sender` is the **PayloadsController** — it must never be used, for ownership, permissions, or anything else. Deriving an owner from `msg.sender` is how the Paxos deployment shipped TokenizationSpoke ProxyAdmins owned by the PayloadsController; any address a deployment or configuration needs (e.g. `TokenizationSpokeConfig.proxyAdminOwner`) must be passed explicitly in the action structs.
+- `msg.sender` is the **PayloadsController** — it must never be used, for ownership, permissions, or anything else. Deriving an owner from `msg.sender` is how the Paxos deployment shipped TokenizationSpoke ProxyAdmins owned by the PayloadsController; instead `AaveV4ConfigEngine` is bound to its governance Executor at deploy time via the `EXECUTOR` immutable and uses it as the TokenizationSpoke ProxyAdmin owner.
 - Payload storage is not readable during execution — action data must live in immutables, constants, or literals returned by the overridden virtual functions.
 
 Tests for engine actions must replicate this topology (see `tests/config-engine/GovernanceTopology.t.sol`); calling the engine directly from a test contract produces a different `msg.sender` and can hide context-dependent bugs.

@@ -14,7 +14,10 @@ contract MockGovernanceExecutor {
     OWNER = owner;
   }
 
-  function executeTransaction(address target, bytes memory data) external returns (bytes memory) {
+  function executeTransaction(
+    address target,
+    bytes memory data
+  ) external payable returns (bytes memory) {
     require(msg.sender == OWNER, OnlyOwner());
     (bool success, bytes memory resultData) = target.delegatecall(data);
     require(success, FailedActionExecution());

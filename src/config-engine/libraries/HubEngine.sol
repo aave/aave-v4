@@ -20,14 +20,18 @@ library HubEngine {
   error InvalidIrDataWithNewStrategy();
 
   /// @dev Thrown when a tokenization config is partially set. Either all fields are unset (no
-  /// TokenizationSpoke) or `name`, `symbol` and `proxyAdminOwner` must all be provided.
+  /// TokenizationSpoke) or both `name` and `symbol` must be provided.
   error InvalidTokenizationSpokeConfig();
 
   /// @notice Lists new assets on Hubs via the HubConfigurator.
   /// @dev When `tokenization` is set, also deploys a TokenizationSpoke (impl + proxy) via
   /// CREATE2 and registers it on the Hub for the listed asset.
   /// @param listings The asset listings to execute.
-  function executeHubAssetListings(IAaveV4ConfigEngine.AssetListing[] calldata listings) external {
+  /// @param proxyAdminOwner The owner to set on the ProxyAdmin of any deployed TokenizationSpoke.
+  function executeHubAssetListings(
+    IAaveV4ConfigEngine.AssetListing[] calldata listings,
+    address proxyAdminOwner
+  ) external {
     uint256 length = listings.length;
     for (uint256 i; i < length; ++i) {
       bytes memory irData = abi.encode(listings[i].irData);
@@ -40,7 +44,7 @@ library HubEngine {
         irData
       );
 
-      _deployAndRegisterTokenizationSpoke(listings[i]);
+      _deployAndRegisterTokenizationSpoke(listings[i], proxyAdminOwner);
     }
   }
 
@@ -223,25 +227,25 @@ library HubEngine {
   /// Skipped only when the tokenization config is fully unset; a partially set config reverts
   /// instead of being silently ignored.
   function _deployAndRegisterTokenizationSpoke(
-    IAaveV4ConfigEngine.AssetListing calldata listing
+    IAaveV4ConfigEngine.AssetListing calldata listing,
+    address proxyAdminOwner
   ) private {
     IAaveV4ConfigEngine.TokenizationSpokeConfig calldata tokenization = listing.tokenization;
 
     bool hasName = bytes(tokenization.name).length > 0;
     bool hasSymbol = bytes(tokenization.symbol).length > 0;
-    bool hasProxyAdminOwner = tokenization.proxyAdminOwner != address(0);
 
-    if (!hasName && !hasSymbol && !hasProxyAdminOwner && tokenization.addCap == 0) {
+    if (!hasName && !hasSymbol && tokenization.addCap == 0) {
       return;
     }
-    require(hasName && hasSymbol && hasProxyAdminOwner, InvalidTokenizationSpokeConfig());
+    require(hasName && hasSymbol, InvalidTokenizationSpokeConfig());
 
     address proxy = TokenizationSpokeDeployer.deploy({
       hub: listing.hub,
       underlying: listing.underlying,
       name: tokenization.name,
       symbol: tokenization.symbol,
-      proxyAdminOwner: tokenization.proxyAdminOwner
+      proxyAdminOwner: proxyAdminOwner
     });
 
     uint256 assetId = IHubBase(listing.hub).getAssetId(listing.underlying);
