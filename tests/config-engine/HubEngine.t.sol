@@ -760,6 +760,7 @@ contract HubEngineTest is BaseConfigEngineTest {
     listing.underlying = address(newToken);
     listing.tokenization = IAaveV4ConfigEngine.TokenizationSpokeConfig({
       addCap: 1000,
+      proxyAdminOwner: PROXY_ADMIN_OWNER,
       name: 'Tokenized NEW',
       symbol: 'tNEW'
     });
@@ -775,7 +776,7 @@ contract HubEngineTest is BaseConfigEngineTest {
       address(newToken),
       'Tokenized NEW',
       'tNEW',
-      engine.EXECUTOR()
+      PROXY_ADMIN_OWNER
     );
 
     IHub.SpokeConfig memory tsConfig = hub1().getSpokeConfig(assetCountBefore, predictedProxy);
@@ -784,8 +785,8 @@ contract HubEngineTest is BaseConfigEngineTest {
 
     assertEq(
       Ownable(ProxyHelper.getProxyAdmin(predictedProxy)).owner(),
-      engine.EXECUTOR(),
-      'TokenizationSpoke ProxyAdmin owner should be the engine Executor'
+      PROXY_ADMIN_OWNER,
+      'TokenizationSpoke ProxyAdmin owner should be the declared proxyAdminOwner'
     );
   }
 
@@ -807,7 +808,7 @@ contract HubEngineTest is BaseConfigEngineTest {
       address(newToken),
       '',
       '',
-      engine.EXECUTOR()
+      PROXY_ADMIN_OWNER
     );
     assertFalse(hub1().isSpokeListed(expectedAssetId, predictedProxy));
     assertEq(predictedProxy.code.length, 0);
@@ -818,6 +819,7 @@ contract HubEngineTest is BaseConfigEngineTest {
     listing.underlying = address(newToken);
     listing.tokenization = IAaveV4ConfigEngine.TokenizationSpokeConfig({
       addCap: 1000,
+      proxyAdminOwner: PROXY_ADMIN_OWNER,
       name: 'Tokenized NEW',
       symbol: 'tNEW'
     });
@@ -827,7 +829,7 @@ contract HubEngineTest is BaseConfigEngineTest {
       address(newToken),
       'Tokenized NEW',
       'tNEW',
-      engine.EXECUTOR()
+      PROXY_ADMIN_OWNER
     );
 
     uint256 assetCountBefore = hub1().getAssetCount();
@@ -842,6 +844,7 @@ contract HubEngineTest is BaseConfigEngineTest {
     listing.underlying = address(newToken);
     listing.tokenization = IAaveV4ConfigEngine.TokenizationSpokeConfig({
       addCap: 1000,
+      proxyAdminOwner: PROXY_ADMIN_OWNER,
       name: '',
       symbol: 'tNEW'
     });
@@ -855,6 +858,7 @@ contract HubEngineTest is BaseConfigEngineTest {
     listing.underlying = address(newToken);
     listing.tokenization = IAaveV4ConfigEngine.TokenizationSpokeConfig({
       addCap: 1000,
+      proxyAdminOwner: PROXY_ADMIN_OWNER,
       name: 'Tokenized NEW',
       symbol: ''
     });
@@ -868,6 +872,35 @@ contract HubEngineTest is BaseConfigEngineTest {
     listing.underlying = address(newToken);
     listing.tokenization = IAaveV4ConfigEngine.TokenizationSpokeConfig({
       addCap: 1000,
+      proxyAdminOwner: address(0),
+      name: '',
+      symbol: ''
+    });
+
+    vm.expectRevert(HubEngine.InvalidTokenizationSpokeConfig.selector);
+    engine.executeHubAssetListings(_toAssetListingArray(listing));
+  }
+
+  function test_executeHubAssetListings_tokenization_revertsOnZeroProxyAdminOwner() public {
+    IAaveV4ConfigEngine.AssetListing memory listing = _defaultAssetListing();
+    listing.underlying = address(newToken);
+    listing.tokenization = IAaveV4ConfigEngine.TokenizationSpokeConfig({
+      addCap: 1000,
+      proxyAdminOwner: address(0),
+      name: 'Tokenized NEW',
+      symbol: 'tNEW'
+    });
+
+    vm.expectRevert(HubEngine.InvalidTokenizationSpokeConfig.selector);
+    engine.executeHubAssetListings(_toAssetListingArray(listing));
+  }
+
+  function test_executeHubAssetListings_tokenization_revertsOnProxyAdminOwnerOnly() public {
+    IAaveV4ConfigEngine.AssetListing memory listing = _defaultAssetListing();
+    listing.underlying = address(newToken);
+    listing.tokenization = IAaveV4ConfigEngine.TokenizationSpokeConfig({
+      addCap: 0,
+      proxyAdminOwner: PROXY_ADMIN_OWNER,
       name: '',
       symbol: ''
     });
@@ -881,6 +914,7 @@ contract HubEngineTest is BaseConfigEngineTest {
     listing.underlying = address(newToken);
     listing.tokenization = IAaveV4ConfigEngine.TokenizationSpokeConfig({
       addCap: 0,
+      proxyAdminOwner: PROXY_ADMIN_OWNER,
       name: 'Tokenized NEW',
       symbol: 'tNEW'
     });
@@ -893,13 +927,13 @@ contract HubEngineTest is BaseConfigEngineTest {
       address(newToken),
       'Tokenized NEW',
       'tNEW',
-      engine.EXECUTOR()
+      PROXY_ADMIN_OWNER
     );
 
     IHub.SpokeConfig memory tsConfig = hub1().getSpokeConfig(assetCountBefore, predictedProxy);
     assertEq(tsConfig.addCap, 0);
     assertTrue(tsConfig.active);
-    assertEq(Ownable(ProxyHelper.getProxyAdmin(predictedProxy)).owner(), engine.EXECUTOR());
+    assertEq(Ownable(ProxyHelper.getProxyAdmin(predictedProxy)).owner(), PROXY_ADMIN_OWNER);
   }
 
   function test_executeHubAssetListings_multipleHubs() public {
@@ -1129,6 +1163,7 @@ contract HubEngineTest is BaseConfigEngineTest {
     listing.underlying = address(newToken);
     listing.tokenization = IAaveV4ConfigEngine.TokenizationSpokeConfig({
       addCap: 1000,
+      proxyAdminOwner: PROXY_ADMIN_OWNER,
       name: 'Tokenized NEW',
       symbol: 'tNEW'
     });

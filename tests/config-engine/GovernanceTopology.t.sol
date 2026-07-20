@@ -22,7 +22,8 @@ contract ConfigEngineGovernanceTopologyTest is BaseConfigEngineTest {
       hub: address(hub1()),
       underlying: address(newToken),
       feeReceiver: FEE_RECEIVER,
-      irStrategy: address(irStrategy1())
+      irStrategy: address(irStrategy1()),
+      proxyAdminOwner: PROXY_ADMIN_OWNER
     });
 
     // in production the Executor, not the payload or the engine, holds the configurator permissions
@@ -53,8 +54,8 @@ contract ConfigEngineGovernanceTopologyTest is BaseConfigEngineTest {
     );
     assertEq(
       proxyAdminOwner,
-      address(executor),
-      'TokenizationSpoke ProxyAdmin owner should be the engine Executor'
+      PROXY_ADMIN_OWNER,
+      'TokenizationSpoke ProxyAdmin owner should be the declared proxyAdminOwner'
     );
   }
 
@@ -65,7 +66,7 @@ contract ConfigEngineGovernanceTopologyTest is BaseConfigEngineTest {
       address(newToken),
       'Tokenized NEW',
       'tNEW',
-      address(executor)
+      PROXY_ADMIN_OWNER
     );
 
     _executePayload(address(payload));

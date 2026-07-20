@@ -12,21 +12,9 @@ import {IAaveV4ConfigEngine} from 'src/config-engine/interfaces/IAaveV4ConfigEng
 /// @notice Implementation of IAaveV4ConfigEngine. Delegates to external library contracts for
 /// each action category. Invoked via delegatecall from payload contracts.
 contract AaveV4ConfigEngine is IAaveV4ConfigEngine {
-  /// @notice The governance Executor set as the owner of TokenizationSpoke ProxyAdmins deployed by this engine.
-  address public immutable EXECUTOR;
-
-  /// @dev Thrown when the executor address is zero.
-  error InvalidExecutor();
-
-  /// @param executor The governance Executor to set as the TokenizationSpoke ProxyAdmin owner.
-  constructor(address executor) {
-    require(executor != address(0), InvalidExecutor());
-    EXECUTOR = executor;
-  }
-
   /// @inheritdoc IAaveV4ConfigEngine
   function executeHubAssetListings(AssetListing[] calldata listings) external {
-    HubEngine.executeHubAssetListings(listings, EXECUTOR);
+    HubEngine.executeHubAssetListings(listings);
   }
 
   /// @inheritdoc IAaveV4ConfigEngine

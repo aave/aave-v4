@@ -14,6 +14,7 @@ contract TokenizationListingPayload is AaveV4Payload {
   address internal immutable UNDERLYING;
   address internal immutable FEE_RECEIVER;
   address internal immutable IR_STRATEGY;
+  address internal immutable PROXY_ADMIN_OWNER;
 
   constructor(
     IAaveV4ConfigEngine configEngine,
@@ -21,13 +22,15 @@ contract TokenizationListingPayload is AaveV4Payload {
     address hub,
     address underlying,
     address feeReceiver,
-    address irStrategy
+    address irStrategy,
+    address proxyAdminOwner
   ) AaveV4Payload(configEngine) {
     HUB_CONFIGURATOR = hubConfigurator;
     HUB = hub;
     UNDERLYING = underlying;
     FEE_RECEIVER = feeReceiver;
     IR_STRATEGY = irStrategy;
+    PROXY_ADMIN_OWNER = proxyAdminOwner;
   }
 
   function hubAssetListings()
@@ -52,6 +55,7 @@ contract TokenizationListingPayload is AaveV4Payload {
       }),
       tokenization: IAaveV4ConfigEngine.TokenizationSpokeConfig({
         addCap: 1000,
+        proxyAdminOwner: PROXY_ADMIN_OWNER,
         name: 'Tokenized NEW',
         symbol: 'tNEW'
       })

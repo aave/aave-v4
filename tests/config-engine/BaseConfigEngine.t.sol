@@ -76,6 +76,7 @@ abstract contract BaseConfigEngineTest is Test, Create2TestHelper {
   address internal TARGET = makeAddr('TARGET');
   address internal USER = makeAddr('USER');
   address internal PAYLOADS_CONTROLLER = makeAddr('PAYLOADS_CONTROLLER');
+  address internal PROXY_ADMIN_OWNER = makeAddr('PROXY_ADMIN_OWNER');
 
   MockGovernanceExecutor internal executor;
   AaveV4ConfigEngine internal engine;
@@ -156,7 +157,7 @@ abstract contract BaseConfigEngineTest is Test, Create2TestHelper {
     }
 
     executor = new MockGovernanceExecutor(PAYLOADS_CONTROLLER);
-    engine = new AaveV4ConfigEngine(address(executor));
+    engine = new AaveV4ConfigEngine();
     positionManager = new PositionManagerBaseWrapper(address(engine));
 
     _setupRoles(report);
@@ -336,7 +337,12 @@ abstract contract BaseConfigEngineTest is Test, Create2TestHelper {
         liquidityFee: LIQUIDITY_FEE,
         irStrategy: address(irStrategy1()),
         irData: IR_DATA,
-        tokenization: IAaveV4ConfigEngine.TokenizationSpokeConfig({addCap: 0, name: '', symbol: ''})
+        tokenization: IAaveV4ConfigEngine.TokenizationSpokeConfig({
+          addCap: 0,
+          proxyAdminOwner: address(0),
+          name: '',
+          symbol: ''
+        })
       });
   }
 
