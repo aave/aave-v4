@@ -36,6 +36,7 @@ library AaveV4DeployOrchestration {
   ) internal returns (OrchestrationReports.FullDeploymentReport memory report) {
     bytes32 salt = _deriveSalt({deployer: deployer, salt: deployInputs.salt});
     report.salt = deployInputs.salt;
+    address hub;
 
     // Deploy Access Batch
     // initialize with deployer as access manager admin
@@ -67,7 +68,8 @@ library AaveV4DeployOrchestration {
     report.treasurySpokeBatchReport = _deployTreasurySpokeBatch({
       logger: logger,
       treasurySpokeOwner: deployInputs.treasurySpokeOwner,
-      salt: salt
+      salt: salt,
+      hub: hub
     });
 
     // Validate label uniqueness (duplicate labels produce identical CREATE2 salts)
@@ -331,10 +333,11 @@ library AaveV4DeployOrchestration {
   function _deployTreasurySpokeBatch(
     Logger logger,
     address treasurySpokeOwner,
-    bytes32 salt
+    bytes32 salt,
+    address hub
   ) internal returns (BatchReports.TreasurySpokeBatchReport memory report) {
     logger.logHeader1('deploying TreasurySpokeBatch');
-    report = AaveV4DeployBase.deployTreasurySpokeBatch({owner: treasurySpokeOwner, salt: salt});
+    report = AaveV4DeployBase.deployTreasurySpokeBatch({owner: treasurySpokeOwner, salt: salt, hub: hub});
     logger.log('TreasurySpoke', report.treasurySpoke);
     logger.logNewLine();
     return report;

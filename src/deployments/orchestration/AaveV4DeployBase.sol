@@ -49,14 +49,17 @@ library AaveV4DeployBase {
   /// @notice Deploys the Treasury Spoke batch containing the TreasurySpoke proxy.
   /// @param owner The owner of the TreasurySpoke.
   /// @param salt The CREATE2 salt for deterministic deployment.
+  /// @param hub The hub connected with Treasury Spoke.
   /// @return The Treasury Spoke batch report.
   function deployTreasurySpokeBatch(
     address owner,
-    bytes32 salt
+    bytes32 salt,
+    address hub
   ) internal returns (BatchReports.TreasurySpokeBatchReport memory) {
     AaveV4TreasurySpokeBatch treasurySpokeBatch = new AaveV4TreasurySpokeBatch({
       owner_: owner,
-      salt_: salt
+      salt_: salt,
+      hub_: hub
     });
     return treasurySpokeBatch.getReport();
   }

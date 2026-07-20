@@ -46,6 +46,7 @@ contract BatchTestProcedures is Test, Create2TestHelper, WETHDeployProcedure {
   bytes4[] internal _hubFeeMinterRoleSelectors;
   bytes4[] internal _hubConfiguratorRoleSelectors;
   address internal _deployer = makeAddr('deployer');
+  address internal TreasurySpokeHub;
   // Skip native wrapper check when nativeWrapper address is not available (e.g. post-deployment JSON report)
   bool internal _skipNativeWrapperCheck;
 

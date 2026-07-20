@@ -127,7 +127,7 @@ contract TreasurySpokeUpgradeableTest is Base {
   }
 
   function test_proxy_constructor_revertsWith_InvalidAddress() public {
-    TreasurySpokeInstance impl = new TreasurySpokeInstance();
+    TreasurySpokeInstance impl = new TreasurySpokeInstance(TreasurySpokeHub);
     vm.expectRevert(
       abi.encodeWithSelector(OwnableUpgradeable.OwnableInvalidOwner.selector, address(0))
     );
@@ -139,7 +139,7 @@ contract TreasurySpokeUpgradeableTest is Base {
   }
 
   function test_proxy_reinitialization_revertsWith_CallerNotProxyAdmin() public {
-    TreasurySpokeInstance impl = new TreasurySpokeInstance();
+    TreasurySpokeInstance impl = new TreasurySpokeInstance(TreasurySpokeHub);
     ITransparentUpgradeableProxy proxy = ITransparentUpgradeableProxy(
       AaveV4TestOrchestration.proxify(
         address(impl),
@@ -148,7 +148,7 @@ contract TreasurySpokeUpgradeableTest is Base {
       )
     );
 
-    TreasurySpokeInstance impl2 = new TreasurySpokeInstance();
+    TreasurySpokeInstance impl2 = new TreasurySpokeInstance(TreasurySpokeHub);
     vm.expectRevert();
     vm.prank(_makeUser());
     proxy.upgradeToAndCall(
@@ -160,6 +160,6 @@ contract TreasurySpokeUpgradeableTest is Base {
   function _deployMockTreasurySpokeInstance(
     uint64 revision
   ) internal returns (MockTreasurySpokeInstance) {
-    return new MockTreasurySpokeInstance(revision);
+    return new MockTreasurySpokeInstance(revision, TreasurySpokeHub);
   }
 }

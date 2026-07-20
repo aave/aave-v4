@@ -74,6 +74,7 @@ abstract contract BaseConfigEngineTest is Test, Create2TestHelper {
   address internal ACCOUNT = makeAddr('ACCOUNT');
   address internal TARGET = makeAddr('TARGET');
   address internal USER = makeAddr('USER');
+  address internal TREASURY_SPOKE_HUB;
 
   AaveV4ConfigEngine internal engine;
   IAccessManager internal accessManager;
@@ -129,6 +130,7 @@ abstract contract BaseConfigEngineTest is Test, Create2TestHelper {
     TestTypes.TestEnvReport memory report = AaveV4TestOrchestration.deployTestEnv({
       admin: ADMIN,
       treasuryAdmin: ADMIN,
+      hub: TREASURY_SPOKE_HUB,
       hubCount: NUM_HUBS,
       spokeCount: NUM_SPOKES,
       nativeWrapper: address(weth),

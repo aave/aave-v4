@@ -13,7 +13,14 @@ import {ITreasurySpoke} from 'src/spoke/interfaces/ITreasurySpoke.sol';
 /// @dev Dedicated to a single user, controlled exclusively by the owner.
 /// @dev Allows withdraw to claim fees and supply to invest back into any Hub asset.
 abstract contract TreasurySpoke is ITreasurySpoke, Ownable2StepUpgradeable {
+  /// @notice The hub of treasury spoke, each treasury spoke must be connected with a hub
+  address public immutable HUB;
+
   using SafeERC20 for IERC20;
+
+  constructor(address _hub) {
+    HUB = _hub;
+  }
 
   /// @dev To be overridden by the inheriting TreasurySpoke instance contract.
   function initialize(address owner) external virtual;
