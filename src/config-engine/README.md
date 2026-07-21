@@ -8,7 +8,7 @@ The `AaveV4ConfigEngine` is a helper smart contract to abstract best practices w
 
 Based on experience reviewing governance payloads for Aave V3, the config engine provides a type-safe, composable interface that covers the most common administrative operations: Hub configuration, Spoke configuration, AccessManager role management, and PositionManager administration.
 
-The engine itself is **stateless** — it never stores data of its own. Payloads invoke it via `delegatecall`, so every external call the engine makes executes in the governance executor's context (`address(this)`) and with the executor's permissions. See [Execution context](#execution-context) for the full topology — in particular, `msg.sender` is the PayloadsController and must never be used.
+The engine itself is **stateless** — it never stores data of its own. Payloads invoke it via `delegatecall`, so every external call the engine makes executes in the governance executor's context and with the executor's permissions. See [Execution context](#execution-context) for the full topology.
 
 ## How to use the engine?
 
@@ -100,10 +100,10 @@ When `execute()` is called, actions run in the following fixed order:
    5. Dynamic reserve config updates
    6. Position manager updates
 5. **PositionManager actions** (in order):
-   1. Role renouncements
+   1. Spoke PositionManager Role renouncements
    2. Spoke registrations
 
-   Renouncements run first because renouncing requires the Spoke to still be registered on the position manager — this allows renouncing and deregistering the same Spoke in one payload.
+   Spoke PositionManager role renouncements run first because renouncing requires the Spoke to still be registered on the position manager — this allows renouncing and deregistering the same Spoke in one payload.
 
 6. `_postExecute()`
 

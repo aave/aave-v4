@@ -15,8 +15,7 @@ library TokenizationSpokeDeployer {
 
   /// @notice Deploys a TokenizationSpokeInstance implementation and TransparentUpgradeableProxy via CREATE2
   /// through the Safe Singleton Factory.
-  /// @dev The proxy admin owner must be passed explicitly, never derived from the execution
-  /// context (e.g. `msg.sender`, which resolves to the PayloadsController under governance).
+  /// @dev The proxy admin owner must be passed explicitly, never derived from execution context.
   /// @param hub The address of the Hub.
   /// @param underlying The address of the underlying asset.
   /// @param name The ERC20 name for the TokenizationSpoke share token.
