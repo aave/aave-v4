@@ -82,5 +82,15 @@ contract MetadataLogger is Logger {
     if (report.positionManagerBatchReport.configPositionManager != address(0)) {
       _write('configPositionManager', report.positionManagerBatchReport.configPositionManager);
     }
+    if (report.tokenizationSpokeBeaconBatchReport.tokenizationSpokeBeacon != address(0)) {
+      _write(
+        'tokenizationSpokeBeacon',
+        report.tokenizationSpokeBeaconBatchReport.tokenizationSpokeBeacon
+      );
+      _write(
+        'tokenizationSpokeImplementation',
+        report.tokenizationSpokeBeaconBatchReport.tokenizationSpokeImplementation
+      );
+    }
   }
 }

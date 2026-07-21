@@ -22,17 +22,17 @@ The four groups, and the virtual functions in each, are listed below.
 
 #### Hub actions (`_executeHubActions`)
 
-| Function                      | Struct                  | Purpose                                                                                               |
-| ----------------------------- | ----------------------- | ----------------------------------------------------------------------------------------------------- |
-| `hubAssetListings()`          | `AssetListing`          | List a new asset on a Hub. Optionally deploys a TokenizationSpoke if `symbol` `and name` are defined. |
-| `hubAssetConfigUpdates()`     | `AssetConfigUpdate`     | Update fee config, IR strategy/data, reinvestment controller                                          |
-| `hubSpokeToAssetsAdditions()` | `SpokeToAssetsAddition` | Register a Spoke for multiple assets                                                                  |
-| `hubSpokeConfigUpdates()`     | `SpokeConfigUpdate`     | Update Spoke caps, risk premium threshold, active/halted                                              |
-| `hubAssetHalts()`             | `AssetHalt`             | Halt an asset                                                                                         |
-| `hubAssetDeactivations()`     | `AssetDeactivation`     | Deactivate an asset                                                                                   |
-| `hubAssetCapsResets()`        | `AssetCapsReset`        | Reset asset caps                                                                                      |
-| `hubSpokeDeactivations()`     | `SpokeDeactivation`     | Deactivate a Spoke                                                                                    |
-| `hubSpokeCapsResets()`        | `SpokeCapsReset`        | Reset Spoke caps                                                                                      |
+| Function                      | Struct                  | Purpose                                                                                                                                                |
+| ----------------------------- | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `hubAssetListings()`          | `AssetListing`          | List a new asset on a Hub. Optionally deploys a TokenizationSpoke beacon proxy (pointing to `tokenization.beacon`) if `symbol` `and name` are defined. |
+| `hubAssetConfigUpdates()`     | `AssetConfigUpdate`     | Update fee config, IR strategy/data, reinvestment controller                                                                                           |
+| `hubSpokeToAssetsAdditions()` | `SpokeToAssetsAddition` | Register a Spoke for multiple assets                                                                                                                   |
+| `hubSpokeConfigUpdates()`     | `SpokeConfigUpdate`     | Update Spoke caps, risk premium threshold, active/halted                                                                                               |
+| `hubAssetHalts()`             | `AssetHalt`             | Halt an asset                                                                                                                                          |
+| `hubAssetDeactivations()`     | `AssetDeactivation`     | Deactivate an asset                                                                                                                                    |
+| `hubAssetCapsResets()`        | `AssetCapsReset`        | Reset asset caps                                                                                                                                       |
+| `hubSpokeDeactivations()`     | `SpokeDeactivation`     | Deactivate a Spoke                                                                                                                                     |
+| `hubSpokeCapsResets()`        | `SpokeCapsReset`        | Reset Spoke caps                                                                                                                                       |
 
 #### Spoke actions (`_executeSpokeActions`)
 

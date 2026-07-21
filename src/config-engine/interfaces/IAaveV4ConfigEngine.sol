@@ -15,10 +15,12 @@ import {IAssetInterestRateStrategy} from 'src/hub/interfaces/IAssetInterestRateS
 /// the universal KEEP_CURRENT sentinel. Boolean fields use uint256 (0=false, 1=true, KEEP_CURRENT=skip).
 interface IAaveV4ConfigEngine {
   /// @notice Parameters for tokenization of an asset on a Hub when listing the asset.
+  /// @dev beacon The shared TokenizationSpoke beacon the deployed proxy points to.
   /// @dev addCap The add cap for the TokenizationSpoke (0 means no tokenization).
   /// @dev name The name for the TokenizationSpoke.
   /// @dev symbol The symbol for the TokenizationSpoke.
   struct TokenizationSpokeConfig {
+    address beacon;
     uint256 addCap;
     string name;
     string symbol;

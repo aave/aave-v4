@@ -20,7 +20,7 @@ contract TokenizationSpokeOperations_Gas_Tests is Base, TokenizationSpokeHelpers
       underlying: address(tokenList.dai),
       shareName: SHARE_NAME,
       shareSymbol: SHARE_SYMBOL,
-      proxyAdminOwner: ADMIN
+      beaconOwner: ADMIN
     });
     _registerTokenizationSpoke({
       hub: hub1,

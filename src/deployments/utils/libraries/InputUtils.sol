@@ -16,10 +16,13 @@ library InputUtils {
   /// @dev spokeConfiguratorAdmin The admin granted all spoke configurator roles. Only used when grantRoles is true.
   /// @dev gatewayOwner The owner of the native token and signature gateways.
   /// @dev positionManagerOwner The owner of the position manager contracts (giver/taker/config).
+  /// @dev tokenizationSpokeBeaconOwner The owner of the shared TokenizationSpoke beacon (upgrade authority).
+  ///      Only used when deployTokenizationSpokeBeacon is true.
   /// @dev nativeWrapper The address of the native wrapper (required when deployNativeTokenGateway is true).
   /// @dev deployNativeTokenGateway Whether to deploy the NativeTokenGateway.
   /// @dev deploySignatureGateway Whether to deploy the SignatureGateway.
   /// @dev deployPositionManagers Whether to deploy the position manager batch (giver/taker/config).
+  /// @dev deployTokenizationSpokeBeacon Whether to deploy the shared TokenizationSpoke implementation and beacon.
   /// @dev grantRoles Whether to grant roles during deployment. When `false`, only deploy-time ownership
   ///      addresses (proxyAdminOwner, treasurySpokeOwner) are set, defaulting
   ///      to the deployer. The deployer also retains the AccessManager ACCESS_MANAGER_ADMIN_ROLE.
@@ -38,10 +41,12 @@ library InputUtils {
     address spokeConfiguratorAdmin;
     address gatewayOwner;
     address positionManagerOwner;
+    address tokenizationSpokeBeaconOwner;
     address nativeWrapper;
     bool deployNativeTokenGateway;
     bool deploySignatureGateway;
     bool deployPositionManagers;
+    bool deployTokenizationSpokeBeacon;
     bool grantRoles;
     string[] hubLabels;
     string[] spokeLabels;

@@ -8,6 +8,7 @@ import {IHub, IHubBase} from 'src/hub/interfaces/IHub.sol';
 import {ITreasurySpoke} from 'src/spoke/TreasurySpoke.sol';
 import {ITokenizationSpoke} from 'src/spoke/TokenizationSpoke.sol';
 import {TokenizationSpokeInstance} from 'src/spoke/instances/TokenizationSpokeInstance.sol';
+import {UpgradeableBeacon} from 'src/dependencies/openzeppelin/UpgradeableBeacon.sol';
 import {TestnetERC20} from 'tests/helpers/mocks/TestnetERC20.sol';
 import {EIP712Types} from 'tests/helpers/mocks/EIP712Types.sol';
 
@@ -18,24 +19,41 @@ abstract contract SetupHelpers is SpokeHelpers {
   //                                  DEPLOY & REGISTER                                        //
   ///////////////////////////////////////////////////////////////////////////////////////////////
 
+  function _deployTokenizationSpokeBeacon(
+    address beaconOwner
+  ) internal pausePrank returns (address beacon) {
+    address tokenizationSpokeImpl = address(new TokenizationSpokeInstance());
+    return address(new UpgradeableBeacon(tokenizationSpokeImpl, beaconOwner));
+  }
+
   function _deployTokenizationSpoke(
     IHub hub,
     address underlying,
     string memory shareName,
     string memory shareSymbol,
-    address proxyAdminOwner
+    address beaconOwner
+  ) internal returns (ITokenizationSpoke) {
+    address beacon = _deployTokenizationSpokeBeacon(beaconOwner);
+    return _deployTokenizationSpoke(beacon, hub, underlying, shareName, shareSymbol);
+  }
+
+  function _deployTokenizationSpoke(
+    address beacon,
+    IHub hub,
+    address underlying,
+    string memory shareName,
+    string memory shareSymbol
   ) internal pausePrank returns (ITokenizationSpoke) {
-    address tokenizationSpokeImpl = address(
-      new TokenizationSpokeInstance(address(hub), underlying)
-    );
-    ITokenizationSpoke tokenizationSpoke = ITokenizationSpoke(
-      AaveV4TestOrchestration.proxify(
-        tokenizationSpokeImpl,
-        proxyAdminOwner,
-        abi.encodeCall(TokenizationSpokeInstance.initialize, (shareName, shareSymbol))
-      )
-    );
-    return tokenizationSpoke;
+    return
+      ITokenizationSpoke(
+        AaveV4TestOrchestration.beaconProxify(
+          beacon,
+          abi.encodeCall(
+            TokenizationSpokeInstance.initialize,
+            (address(hub), underlying, shareName, shareSymbol)
+          )
+        )
+      );
   }
 
   function _registerTokenizationSpoke(

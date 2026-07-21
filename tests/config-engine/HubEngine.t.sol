@@ -758,6 +758,7 @@ contract HubEngineTest is BaseConfigEngineTest {
     IAaveV4ConfigEngine.AssetListing memory listing = _defaultAssetListing();
     listing.underlying = address(newToken);
     listing.tokenization = IAaveV4ConfigEngine.TokenizationSpokeConfig({
+      beacon: tokenizationBeacon,
       addCap: 1000,
       name: 'Tokenized NEW',
       symbol: 'tNEW'
@@ -770,11 +771,11 @@ contract HubEngineTest is BaseConfigEngineTest {
     assertEq(config.feeReceiver, FEE_RECEIVER);
 
     address predictedProxy = TokenizationSpokeDeployer.computeProxyAddress(
+      tokenizationBeacon,
       address(hub1()),
       address(newToken),
       'Tokenized NEW',
-      'tNEW',
-      address(this)
+      'tNEW'
     );
 
     IHub.SpokeConfig memory tsConfig = hub1().getSpokeConfig(assetCountBefore, predictedProxy);
@@ -796,17 +797,18 @@ contract HubEngineTest is BaseConfigEngineTest {
     IAaveV4ConfigEngine.AssetListing memory listing = _defaultAssetListing();
     listing.underlying = address(newToken);
     listing.tokenization = IAaveV4ConfigEngine.TokenizationSpokeConfig({
+      beacon: tokenizationBeacon,
       addCap: 1000,
       name: 'Tokenized NEW',
       symbol: 'tNEW'
     });
 
     address predictedProxy = TokenizationSpokeDeployer.computeProxyAddress(
+      tokenizationBeacon,
       address(hub1()),
       address(newToken),
       'Tokenized NEW',
-      'tNEW',
-      address(this)
+      'tNEW'
     );
 
     uint256 assetCountBefore = hub1().getAssetCount();
@@ -820,6 +822,7 @@ contract HubEngineTest is BaseConfigEngineTest {
     IAaveV4ConfigEngine.AssetListing memory listing = _defaultAssetListing();
     listing.underlying = address(newToken);
     listing.tokenization = IAaveV4ConfigEngine.TokenizationSpokeConfig({
+      beacon: tokenizationBeacon,
       addCap: 1000,
       name: '',
       symbol: 'tNEW'
@@ -834,11 +837,11 @@ contract HubEngineTest is BaseConfigEngineTest {
     assertEq(hub1().getSpokeCount(expectedAssetId), 1);
 
     address predictedProxy = TokenizationSpokeDeployer.computeProxyAddress(
+      tokenizationBeacon,
       address(hub1()),
       address(newToken),
       '',
-      'tNEW',
-      address(this)
+      'tNEW'
     );
     assertFalse(hub1().isSpokeListed(expectedAssetId, predictedProxy));
     assertEq(predictedProxy.code.length, 0);
@@ -848,6 +851,7 @@ contract HubEngineTest is BaseConfigEngineTest {
     IAaveV4ConfigEngine.AssetListing memory listing = _defaultAssetListing();
     listing.underlying = address(newToken);
     listing.tokenization = IAaveV4ConfigEngine.TokenizationSpokeConfig({
+      beacon: tokenizationBeacon,
       addCap: 1000,
       name: 'Tokenized NEW',
       symbol: ''
@@ -862,11 +866,11 @@ contract HubEngineTest is BaseConfigEngineTest {
     assertEq(hub1().getSpokeCount(expectedAssetId), 1);
 
     address predictedProxy = TokenizationSpokeDeployer.computeProxyAddress(
+      tokenizationBeacon,
       address(hub1()),
       address(newToken),
       'Tokenized NEW',
-      '',
-      address(this)
+      ''
     );
     assertFalse(hub1().isSpokeListed(expectedAssetId, predictedProxy));
     assertEq(predictedProxy.code.length, 0);
@@ -893,8 +897,9 @@ contract HubEngineTest is BaseConfigEngineTest {
     assertEq(hub2().getAssetCount(), hub2CountBefore + 1);
   }
 
-  function test_computeImplementationAddress() public view {
-    address predicted = TokenizationSpokeDeployer.computeImplementationAddress(
+  function test_computeProxyAddress() public view {
+    address predicted = TokenizationSpokeDeployer.computeProxyAddress(
+      tokenizationBeacon,
       address(hub1()),
       address(newToken),
       'Tokenized NEW',
@@ -1087,6 +1092,7 @@ contract HubEngineTest is BaseConfigEngineTest {
     IAaveV4ConfigEngine.AssetListing memory listing = _defaultAssetListing();
     listing.underlying = address(newToken);
     listing.tokenization = IAaveV4ConfigEngine.TokenizationSpokeConfig({
+      beacon: tokenizationBeacon,
       addCap: 1000,
       name: 'Tokenized NEW',
       symbol: 'tNEW'

@@ -10,6 +10,7 @@ import {AaveV4HubInstanceBatch} from 'src/deployments/batches/AaveV4HubInstanceB
 import {AaveV4PositionManagerBatch} from 'src/deployments/batches/AaveV4PositionManagerBatch.sol';
 import {AaveV4SpokeInstanceBatch} from 'src/deployments/batches/AaveV4SpokeInstanceBatch.sol';
 import {AaveV4TokenizationSpokeBatch} from 'src/deployments/batches/AaveV4TokenizationSpokeBatch.sol';
+import {AaveV4TokenizationSpokeBeaconBatch} from 'src/deployments/batches/AaveV4TokenizationSpokeBeaconBatch.sol';
 import {AaveV4TreasurySpokeBatch} from 'src/deployments/batches/AaveV4TreasurySpokeBatch.sol';
 
 /// @title AaveV4DeployBase Library
@@ -148,26 +149,41 @@ library AaveV4DeployBase {
     return gatewayBatch.getReport();
   }
 
-  /// @notice Deploys the Tokenization Spoke batch containing the TokenizationSpoke proxy and implementation.
+  /// @notice Deploys the Tokenization Spoke beacon batch containing the shared implementation and beacon.
+  /// @param beaconOwner The owner of the beacon, able to upgrade the shared implementation.
+  /// @param salt The CREATE2 salt for deterministic deployment.
+  /// @return The Tokenization Spoke beacon batch report.
+  function deployTokenizationSpokeBeaconBatch(
+    address beaconOwner,
+    bytes32 salt
+  ) internal returns (BatchReports.TokenizationSpokeBeaconBatchReport memory) {
+    AaveV4TokenizationSpokeBeaconBatch tokenizationSpokeBeaconBatch = new AaveV4TokenizationSpokeBeaconBatch({
+        beaconOwner_: beaconOwner,
+        salt_: salt
+      });
+    return tokenizationSpokeBeaconBatch.getReport();
+  }
+
+  /// @notice Deploys the Tokenization Spoke batch containing the TokenizationSpoke beacon proxy.
+  /// @param beacon The address of the shared TokenizationSpoke beacon.
   /// @param hub The address of the Hub the tokenization spoke connects to.
   /// @param underlying The address of the underlying asset to tokenize.
-  /// @param proxyAdminOwner The owner of the proxy admin.
   /// @param shareName The name of the share token.
   /// @param shareSymbol The symbol of the share token.
   /// @param salt The CREATE2 salt for deterministic deployment.
   /// @return The Tokenization Spoke batch report.
   function deployTokenizationSpokeBatch(
+    address beacon,
     address hub,
     address underlying,
-    address proxyAdminOwner,
     string memory shareName,
     string memory shareSymbol,
     bytes32 salt
   ) internal returns (BatchReports.TokenizationSpokeBatchReport memory) {
     AaveV4TokenizationSpokeBatch tokenizationSpokeBatch = new AaveV4TokenizationSpokeBatch({
+      beacon_: beacon,
       hub_: hub,
       underlying_: underlying,
-      proxyAdminOwner_: proxyAdminOwner,
       shareName_: shareName,
       shareSymbol_: shareSymbol,
       salt_: salt

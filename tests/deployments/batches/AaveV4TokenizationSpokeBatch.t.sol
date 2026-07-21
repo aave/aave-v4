@@ -4,11 +4,14 @@ pragma solidity ^0.8.0;
 import 'tests/deployments/batches/BatchBase.t.sol';
 
 contract AaveV4TokenizationSpokeBatchTest is BatchBaseTest {
+  AaveV4TokenizationSpokeBeaconBatch public tokenizationSpokeBeaconBatch;
   AaveV4TokenizationSpokeBatch public tokenizationSpokeBatch;
+  BatchReports.TokenizationSpokeBeaconBatchReport public beaconReport;
   BatchReports.TokenizationSpokeBatchReport public report;
 
   address public hub;
   address public irStrategy;
+  address public beacon;
   uint256 public assetId;
   address public underlying;
   string public shareName = 'Core Hub DAI';
@@ -55,11 +58,16 @@ contract AaveV4TokenizationSpokeBatchTest is BatchBaseTest {
     });
     vm.stopPrank();
 
+    // Deploy the shared TokenizationSpoke implementation and beacon
+    tokenizationSpokeBeaconBatch = new AaveV4TokenizationSpokeBeaconBatch(admin, salt);
+    beaconReport = tokenizationSpokeBeaconBatch.getReport();
+    beacon = beaconReport.tokenizationSpokeBeacon;
+
     // Deploy the TokenizationSpoke batch
     tokenizationSpokeBatch = new AaveV4TokenizationSpokeBatch(
+      beacon,
       hub,
       underlying,
-      admin,
       shareName,
       shareSymbol,
       salt
@@ -67,9 +75,23 @@ contract AaveV4TokenizationSpokeBatchTest is BatchBaseTest {
     report = tokenizationSpokeBatch.getReport();
   }
 
+  function test_getBeaconReport() public view {
+    assertNotEq(beaconReport.tokenizationSpokeBeacon, address(0));
+    assertNotEq(beaconReport.tokenizationSpokeImplementation, address(0));
+    assertEq(
+      ProxyHelper.getImplementation(beaconReport.tokenizationSpokeImplementation),
+      address(0)
+    );
+  }
+
   function test_getReport() public view {
     assertNotEq(report.tokenizationSpokeProxy, address(0));
-    assertNotEq(report.tokenizationSpokeImplementation, address(0));
+    assertEq(report.tokenizationSpokeBeacon, beacon);
+  }
+
+  function test_tokenizationSpokeBeacon() public view {
+    assertEq(report.tokenizationSpokeBeacon, beacon);
+    assertEq(ProxyHelper.getBeacon(report.tokenizationSpokeProxy), beacon);
   }
 
   function test_tokenizationSpokeHub() public view {
@@ -84,29 +106,41 @@ contract AaveV4TokenizationSpokeBatchTest is BatchBaseTest {
     assertEq(ITokenizationSpoke(report.tokenizationSpokeProxy).asset(), underlying);
   }
 
-  function test_revert_zeroHub() public {
-    vm.expectRevert('invalid hub');
-    new AaveV4TokenizationSpokeBatch(address(0), underlying, admin, shareName, shareSymbol, salt);
+  function test_revert_zeroBeaconOwner() public {
+    vm.expectRevert('invalid beacon owner');
+    new AaveV4TokenizationSpokeBeaconBatch(address(0), keccak256('zeroBeaconOwnerSalt'));
   }
 
-  function test_revert_zeroProxyAdminOwner() public {
-    vm.expectRevert('invalid proxy admin owner');
+  function test_revert_zeroBeacon() public {
+    vm.expectRevert('invalid beacon');
     new AaveV4TokenizationSpokeBatch(
+      address(0),
       hub,
       underlying,
-      address(0),
       shareName,
       shareSymbol,
-      keccak256('zeroAdminSalt')
+      keccak256('zeroBeaconSalt')
+    );
+  }
+
+  function test_revert_zeroHub() public {
+    vm.expectRevert('invalid hub');
+    new AaveV4TokenizationSpokeBatch(
+      beacon,
+      address(0),
+      underlying,
+      shareName,
+      shareSymbol,
+      keccak256('zeroHubSalt')
     );
   }
 
   function test_revert_emptyShareName() public {
     vm.expectRevert('invalid share name');
     new AaveV4TokenizationSpokeBatch(
+      beacon,
       hub,
       underlying,
-      admin,
       '',
       shareSymbol,
       keccak256('emptyNameSalt')
@@ -116,9 +150,9 @@ contract AaveV4TokenizationSpokeBatchTest is BatchBaseTest {
   function test_revert_emptyShareSymbol() public {
     vm.expectRevert('invalid share symbol');
     new AaveV4TokenizationSpokeBatch(
+      beacon,
       hub,
       underlying,
-      admin,
       shareName,
       '',
       keccak256('emptySymbolSalt')
@@ -128,9 +162,9 @@ contract AaveV4TokenizationSpokeBatchTest is BatchBaseTest {
   function test_revert_invalidUnderlying() public {
     vm.expectRevert();
     new AaveV4TokenizationSpokeBatch(
+      beacon,
       hub,
       makeAddr('nonExistentUnderlying'),
-      admin,
       shareName,
       shareSymbol,
       keccak256('invalidAssetSalt')
@@ -139,9 +173,9 @@ contract AaveV4TokenizationSpokeBatchTest is BatchBaseTest {
 
   function test_differentSaltProducesDifferentAddress() public {
     AaveV4TokenizationSpokeBatch newBatch = new AaveV4TokenizationSpokeBatch(
+      beacon,
       hub,
       underlying,
-      admin,
       shareName,
       shareSymbol,
       keccak256('differentSalt')

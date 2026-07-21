@@ -28,6 +28,7 @@ library OrchestrationReports {
   /// @dev hubInstanceBatchReports Per-hub deployment reports.
   /// @dev gatewaysBatchReport Gateway deployment report.
   /// @dev positionManagerBatchReport PositionManager deployment report.
+  /// @dev tokenizationSpokeBeaconBatchReport TokenizationSpoke shared implementation + beacon deployment report.
   /// @dev salt The salt used to derive deterministic contract addresses.
   struct FullDeploymentReport {
     BatchReports.AuthorityBatchReport authorityBatchReport;
@@ -37,6 +38,7 @@ library OrchestrationReports {
     HubDeploymentReport[] hubInstanceBatchReports;
     BatchReports.GatewaysBatchReport gatewaysBatchReport;
     BatchReports.PositionManagerBatchReport positionManagerBatchReport;
+    BatchReports.TokenizationSpokeBeaconBatchReport tokenizationSpokeBeaconBatchReport;
     bytes32 salt;
   }
 }

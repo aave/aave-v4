@@ -227,6 +227,7 @@ library HubEngine {
     }
 
     address proxy = TokenizationSpokeDeployer.deploy(
+      listing.tokenization.beacon,
       listing.hub,
       listing.underlying,
       listing.tokenization.name,

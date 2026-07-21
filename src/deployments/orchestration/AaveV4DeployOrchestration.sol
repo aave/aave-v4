@@ -114,6 +114,15 @@ library AaveV4DeployOrchestration {
       });
     }
 
+    // Deploy TokenizationSpoke shared implementation + beacon if flag is enabled
+    if (deployInputs.deployTokenizationSpokeBeacon) {
+      report.tokenizationSpokeBeaconBatchReport = _deployTokenizationSpokeBeaconBatch({
+        logger: logger,
+        beaconOwner: deployInputs.tokenizationSpokeBeaconOwner,
+        salt: salt
+      });
+    }
+
     // Set Roles if needed
     if (deployInputs.grantRoles) {
       if (deployInputs.hubLabels.length > 0) {
@@ -375,6 +384,21 @@ library AaveV4DeployOrchestration {
     logger.logDetail('GiverPositionManager', report.giverPositionManager);
     logger.logDetail('TakerPositionManager', report.takerPositionManager);
     logger.logDetail('ConfigPositionManager', report.configPositionManager);
+    return report;
+  }
+
+  function _deployTokenizationSpokeBeaconBatch(
+    Logger logger,
+    address beaconOwner,
+    bytes32 salt
+  ) internal returns (BatchReports.TokenizationSpokeBeaconBatchReport memory report) {
+    logger.logHeader1('deploying TokenizationSpokeBeaconBatch');
+    report = AaveV4DeployBase.deployTokenizationSpokeBeaconBatch({
+      beaconOwner: beaconOwner,
+      salt: salt
+    });
+    logger.logDetail('TokenizationSpokeImplementation', report.tokenizationSpokeImplementation);
+    logger.logDetail('TokenizationSpokeBeacon', report.tokenizationSpokeBeacon);
     return report;
   }
 

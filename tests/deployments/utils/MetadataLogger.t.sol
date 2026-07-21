@@ -45,6 +45,13 @@ contract MetadataLoggerTest is Test {
     report.positionManagerBatchReport.giverPositionManager = makeAddr('giverPM');
     report.positionManagerBatchReport.takerPositionManager = makeAddr('takerPM');
     report.positionManagerBatchReport.configPositionManager = makeAddr('configPM');
+
+    report.tokenizationSpokeBeaconBatchReport.tokenizationSpokeBeacon = makeAddr(
+      'tokenizationSpokeBeacon'
+    );
+    report.tokenizationSpokeBeaconBatchReport.tokenizationSpokeImplementation = makeAddr(
+      'tokenizationSpokeImpl'
+    );
   }
 
   function test_writeJsonReportMarket_fullReport() public {
@@ -132,6 +139,29 @@ contract MetadataLoggerTest is Test {
       vm.parseJsonAddress(json, '$.configPositionManager'),
       report.positionManagerBatchReport.configPositionManager
     );
+
+    // TokenizationSpoke beacon + implementation
+    assertEq(
+      vm.parseJsonAddress(json, '$.tokenizationSpokeBeacon'),
+      report.tokenizationSpokeBeaconBatchReport.tokenizationSpokeBeacon
+    );
+    assertEq(
+      vm.parseJsonAddress(json, '$.tokenizationSpokeImplementation'),
+      report.tokenizationSpokeBeaconBatchReport.tokenizationSpokeImplementation
+    );
+  }
+
+  function test_writeJsonReportMarket_noTokenizationSpokeBeacon() public {
+    MetadataLogger logger = new MetadataLogger(OUTPUT_DIR);
+    OrchestrationReports.FullDeploymentReport memory report = _fullReport();
+    report.tokenizationSpokeBeaconBatchReport.tokenizationSpokeBeacon = address(0);
+    report.tokenizationSpokeBeaconBatchReport.tokenizationSpokeImplementation = address(0);
+
+    logger.writeJsonReportMarket(report);
+    string memory json = logger.getJson();
+
+    assertFalse(vm.keyExistsJson(json, '$.tokenizationSpokeBeacon'));
+    assertFalse(vm.keyExistsJson(json, '$.tokenizationSpokeImplementation'));
   }
 
   function test_writeJsonReportMarket_noGateways() public {
@@ -175,6 +205,8 @@ contract MetadataLoggerTest is Test {
     report.positionManagerBatchReport.giverPositionManager = address(0);
     report.positionManagerBatchReport.takerPositionManager = address(0);
     report.positionManagerBatchReport.configPositionManager = address(0);
+    report.tokenizationSpokeBeaconBatchReport.tokenizationSpokeBeacon = address(0);
+    report.tokenizationSpokeBeaconBatchReport.tokenizationSpokeImplementation = address(0);
 
     logger.writeJsonReportMarket(report);
     string memory json = logger.getJson();
@@ -185,6 +217,8 @@ contract MetadataLoggerTest is Test {
     assertFalse(vm.keyExistsJson(json, '$.giverPositionManager'));
     assertFalse(vm.keyExistsJson(json, '$.takerPositionManager'));
     assertFalse(vm.keyExistsJson(json, '$.configPositionManager'));
+    assertFalse(vm.keyExistsJson(json, '$.tokenizationSpokeBeacon'));
+    assertFalse(vm.keyExistsJson(json, '$.tokenizationSpokeImplementation'));
 
     // Core fields present
     assertEq(

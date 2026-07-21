@@ -2,23 +2,45 @@
 pragma solidity ^0.8.0;
 
 import 'tests/contracts/tokenization-spoke/TokenizationSpoke.Base.t.sol';
+import {BeaconProxy} from 'src/dependencies/openzeppelin/BeaconProxy.sol';
+import {UpgradeableBeacon} from 'src/dependencies/openzeppelin/UpgradeableBeacon.sol';
 
 contract TokenizationSpokeConfigTest is TokenizationSpokeBaseTest {
-  function test_constructor_reverts_when_invalid_setup() public {
+  function test_initialize_reverts_when_invalid_setup() public {
+    address beacon = _deployTokenizationSpokeBeacon(ADMIN);
+
     address invalidUnderlying = vm.randomAddress();
     while (hub1.isUnderlyingListed(invalidUnderlying)) invalidUnderlying = vm.randomAddress();
 
     vm.expectRevert(IHub.AssetNotListed.selector);
-    new TokenizationSpokeInstance(address(hub1), invalidUnderlying);
+    new BeaconProxy(
+      beacon,
+      abi.encodeCall(
+        TokenizationSpokeInstance.initialize,
+        (address(hub1), invalidUnderlying, SHARE_NAME, SHARE_SYMBOL)
+      )
+    );
 
     vm.expectRevert();
-    new TokenizationSpokeInstance(address(0), vm.randomAddress());
+    new BeaconProxy(
+      beacon,
+      abi.encodeCall(
+        TokenizationSpokeInstance.initialize,
+        (address(0), vm.randomAddress(), SHARE_NAME, SHARE_SYMBOL)
+      )
+    );
   }
 
-  function test_constructor_asset_correctly_set() public {
+  function test_initialize_asset_correctly_set() public {
     uint256 assetId = vm.randomUint(0, hub1.getAssetCount() - 1);
     address underlying = hub1.getAsset(assetId).underlying;
-    TokenizationSpokeInstance instance = new TokenizationSpokeInstance(address(hub1), underlying);
+    ITokenizationSpoke instance = _deployTokenizationSpoke(
+      hub1,
+      underlying,
+      SHARE_NAME,
+      SHARE_SYMBOL,
+      ADMIN
+    );
     assertEq(instance.hub(), address(hub1));
     assertEq(instance.assetId(), assetId);
     assertEq(instance.asset(), underlying);
@@ -43,14 +65,13 @@ contract TokenizationSpokeConfigTest is TokenizationSpokeBaseTest {
   }
 
   function test_configuration() public view {
-    ProxyAdmin proxyAdmin = ProxyAdmin(ProxyHelper.getProxyAdmin(address(daiVault)));
-    assertEq(proxyAdmin.owner(), ADMIN);
-    assertEq(proxyAdmin.UPGRADE_INTERFACE_VERSION(), '5.0.0');
+    UpgradeableBeacon beacon = UpgradeableBeacon(ProxyHelper.getBeacon(address(daiVault)));
+    assertEq(beacon.owner(), ADMIN);
     assertEq(
       ProxyHelper.getProxyInitializedVersion(address(daiVault)),
       TokenizationSpokeInstance(address(daiVault)).SPOKE_REVISION()
     );
-    address implementation = ProxyHelper.getImplementation(address(daiVault));
+    address implementation = beacon.implementation();
     assertEq(ProxyHelper.getProxyInitializedVersion(implementation), type(uint64).max);
   }
 }
