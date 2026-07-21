@@ -17,10 +17,10 @@ interface IAaveV4ConfigEngine {
   /// @notice Parameters for tokenization of an asset on a Hub when listing the asset.
   /// @dev Tokenization is skipped only when all fields are unset. Otherwise `name`, `symbol` and
   /// `proxyAdminOwner` are all required; a partially set config reverts.
-  /// @dev addCap The add cap for the TokenizationSpoke.
-  /// @dev proxyAdminOwner The owner to set on the ProxyAdmin of the deployed TokenizationSpoke.
-  /// @dev name The name for the TokenizationSpoke.
-  /// @dev symbol The symbol for the TokenizationSpoke.
+  /// @dev addCap The add cap for the TokenizationSpoke, unset value : 0.
+  /// @dev proxyAdminOwner The owner to set on the ProxyAdmin of the deployed TokenizationSpoke, unset value : address(0).
+  /// @dev name The name for the TokenizationSpoke, unset value : ''.
+  /// @dev symbol The symbol for the TokenizationSpoke, unset value : ''.
   struct TokenizationSpokeConfig {
     uint256 addCap;
     address proxyAdminOwner;
@@ -308,8 +308,7 @@ interface IAaveV4ConfigEngine {
   /// @dev admin The new admin role identifier (KEEP_CURRENT_UINT64 to skip).
   /// @dev guardian The new guardian role identifier (KEEP_CURRENT_UINT64 to skip).
   /// @dev grantDelay The new grant delay (KEEP_CURRENT_UINT32 to skip).
-  /// @dev label The label string (empty string to skip). An already-labeled role is cleared before
-  /// relabeling. Clearing a label without setting a new one requires a direct `labelRole` call.
+  /// @dev label The label string (empty string to skip).
   struct RoleUpdate {
     address authority;
     uint64 roleId;
@@ -424,6 +423,8 @@ interface IAaveV4ConfigEngine {
   function executeRoleMemberships(RoleMembership[] calldata memberships) external;
 
   /// @notice Updates role configuration (admin, guardian, grant delay, label) via AccessManager.
+  /// @dev An already-labeled role is cleared before relabeling.
+  /// Clearing a label without setting a new one requires a direct `labelRole` call.
   /// @param updates The role updates to execute.
   function executeRoleUpdates(RoleUpdate[] calldata updates) external;
 
