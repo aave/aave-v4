@@ -106,11 +106,9 @@ interface IV4AddressesProvider {
   function getAddressEntry(bytes32 id) external view returns (AddressEntry memory);
 
   /// @notice Returns the number of tags with at least one registered entry.
-  /// @return The number of tags.
   function getTagCount() external view returns (uint256);
 
   /// @notice Returns all tags with at least one registered entry.
-  /// @return The list of tags.
   function getTags() external view returns (string[] memory);
 
   /// @notice Returns a slice of the tags with at least one registered entry.
@@ -202,6 +200,12 @@ interface IV4AddressesProvider {
   /// @return The list of canonical Hub addresses.
   function getCanonicalHubs() external view returns (address[] memory);
 
+  /// @notice Returns a slice of the addresses of the registered canonical Hubs.
+  /// @param start The start index of the slice.
+  /// @param end The end index of the slice, capped to the number of entries.
+  /// @return The list of canonical Hub addresses in the slice.
+  function getCanonicalHubs(uint256 start, uint256 end) external view returns (address[] memory);
+
   /// @notice Returns the canonical Spoke associated with a name.
   /// @param name The name of the Spoke.
   /// @return The address of the Spoke, the zero address if none is registered.
@@ -210,6 +214,12 @@ interface IV4AddressesProvider {
   /// @notice Returns the addresses of all registered canonical Spokes.
   /// @return The list of canonical Spoke addresses.
   function getCanonicalSpokes() external view returns (address[] memory);
+
+  /// @notice Returns a slice of the addresses of the registered canonical Spokes.
+  /// @param start The start index of the slice.
+  /// @param end The end index of the slice, capped to the number of entries.
+  /// @return The list of canonical Spoke addresses in the slice.
+  function getCanonicalSpokes(uint256 start, uint256 end) external view returns (address[] memory);
 
   /// @notice Returns the tokenization Spoke associated with a name.
   /// @param name The name of the Spoke.
@@ -220,6 +230,15 @@ interface IV4AddressesProvider {
   /// @return The list of tokenization Spoke addresses.
   function getTokenizationSpokes() external view returns (address[] memory);
 
+  /// @notice Returns a slice of the addresses of the registered tokenization Spokes.
+  /// @param start The start index of the slice.
+  /// @param end The end index of the slice, capped to the number of entries.
+  /// @return The list of tokenization Spoke addresses in the slice.
+  function getTokenizationSpokes(
+    uint256 start,
+    uint256 end
+  ) external view returns (address[] memory);
+
   /// @notice Returns the treasury Spoke associated with a name.
   /// @param name The name of the Spoke.
   /// @return The address of the Spoke, the zero address if none is registered.
@@ -228,6 +247,12 @@ interface IV4AddressesProvider {
   /// @notice Returns the addresses of all registered treasury Spokes.
   /// @return The list of treasury Spoke addresses.
   function getTreasurySpokes() external view returns (address[] memory);
+
+  /// @notice Returns a slice of the addresses of the registered treasury Spokes.
+  /// @param start The start index of the slice.
+  /// @param end The end index of the slice, capped to the number of entries.
+  /// @return The list of treasury Spoke addresses in the slice.
+  function getTreasurySpokes(uint256 start, uint256 end) external view returns (address[] memory);
 
   /// @notice Returns the identifier of the entry associated with a name and tag.
   /// @dev The identifier is the hash of the ABI-encoded name and tag.

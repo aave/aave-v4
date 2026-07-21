@@ -740,6 +740,53 @@ contract V4AddressesProviderTest is Test {
     assertEq(last[0], primeHub);
   }
 
+  function test_getCanonicalHubs_bounded() public {
+    address coreHub = makeAddr('CORE_HUB');
+    address plusHub = makeAddr('PLUS_HUB');
+    address primeHub = makeAddr('PRIME_HUB');
+
+    vm.startPrank(OWNER);
+    provider.setCanonicalHub('CORE', coreHub);
+    provider.setCanonicalHub('PLUS', plusHub);
+    provider.setCanonicalHub('PRIME', primeHub);
+    vm.stopPrank();
+
+    address[] memory firstTwo = provider.getCanonicalHubs(0, 2);
+    assertEq(firstTwo.length, 2);
+    assertEq(firstTwo[0], coreHub);
+    assertEq(firstTwo[1], plusHub);
+
+    address[] memory last = provider.getCanonicalHubs(2, 100);
+    assertEq(last.length, 1);
+    assertEq(last[0], primeHub);
+  }
+
+  function test_getSpokes_bounded() public {
+    address mainSpoke = makeAddr('MAIN_SPOKE');
+    address extraSpoke = makeAddr('EXTRA_SPOKE');
+    address tokenizationSpoke = makeAddr('TOKENIZATION_SPOKE');
+    address treasurySpoke = makeAddr('TREASURY_SPOKE');
+
+    vm.startPrank(OWNER);
+    provider.setCanonicalSpoke('MAIN', mainSpoke);
+    provider.setCanonicalSpoke('EXTRA', extraSpoke);
+    provider.setTokenizationSpoke('CORE_WETH', tokenizationSpoke);
+    provider.setTreasurySpoke('MAIN', treasurySpoke);
+    vm.stopPrank();
+
+    address[] memory canonicalSpokes = provider.getCanonicalSpokes(1, 100);
+    assertEq(canonicalSpokes.length, 1);
+    assertEq(canonicalSpokes[0], extraSpoke);
+
+    address[] memory tokenizationSpokes = provider.getTokenizationSpokes(0, 100);
+    assertEq(tokenizationSpokes.length, 1);
+    assertEq(tokenizationSpokes[0], tokenizationSpoke);
+
+    address[] memory treasurySpokes = provider.getTreasurySpokes(0, 100);
+    assertEq(treasurySpokes.length, 1);
+    assertEq(treasurySpokes[0], treasurySpoke);
+  }
+
   function test_getAddressIds_bounded() public {
     address shared = makeAddr('SHARED');
 

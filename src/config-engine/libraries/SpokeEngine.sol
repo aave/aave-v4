@@ -3,6 +3,7 @@ pragma solidity ^0.8.0;
 
 import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
 import {EngineFlags} from 'src/config-engine/libraries/EngineFlags.sol';
+import {EngineUtils} from 'src/config-engine/libraries/EngineUtils.sol';
 import {IHubBase} from 'src/hub/interfaces/IHubBase.sol';
 import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 import {IAaveV4ConfigEngine} from 'src/config-engine/interfaces/IAaveV4ConfigEngine.sol';
@@ -14,7 +15,8 @@ library SpokeEngine {
   using SafeCast for uint256;
 
   /// @dev Thrown when a canonical Spoke registration is requested for a listing that does not support
-  /// it: the listed reserve is not the Spoke's first (reserve id != 0), or no addresses provider supplied.
+  /// it: the listed reserve is not the Spoke's first (reserve id != 0), or the registration fields are
+  /// inconsistent with the `register` flag.
   error InvalidAddressesProviderRegistration();
 
   /// @notice Lists new reserves on Spokes.
@@ -240,13 +242,14 @@ library SpokeEngine {
     IAaveV4ConfigEngine.ReserveListing calldata listing,
     uint256 reserveId
   ) private {
+    require(
+      EngineUtils.isConsistentRegistration(listing.spokeRegistration),
+      InvalidAddressesProviderRegistration()
+    );
     if (!listing.spokeRegistration.register) {
       return;
     }
-    require(
-      reserveId == 0 && address(listing.spokeRegistration.addressesProvider) != address(0),
-      InvalidAddressesProviderRegistration()
-    );
+    require(reserveId == 0, InvalidAddressesProviderRegistration());
     listing.spokeRegistration.addressesProvider.setCanonicalSpoke(
       listing.spokeRegistration.name,
       listing.spoke

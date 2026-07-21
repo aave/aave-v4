@@ -27,6 +27,7 @@ interface IAaveV4ConfigEngine {
 
   /// @notice Optional registration of a listed Hub or Spoke on the V4AddressesProvider.
   /// @dev Left unset (the default), `register` is false and the registration is skipped.
+  /// @dev All fields must be set when `register` is true, and left unset when false; reverts otherwise.
   /// @dev addressesProvider The V4AddressesProvider to register the entry on.
   /// @dev register Whether to register the entry on the addressesProvider.
   /// @dev name The name to register the entry under.

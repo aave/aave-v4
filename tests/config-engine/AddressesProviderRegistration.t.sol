@@ -79,6 +79,24 @@ contract AddressesProviderRegistrationTest is BaseConfigEngineTest {
     engine.executeHubAssetListings(_toAssetListingArray(listing));
   }
 
+  function test_executeHubAssetListings_registerHub_revertsWhenNoName() public {
+    IAaveV4ConfigEngine.AssetListing memory listing = _defaultAssetListing();
+    listing.underlying = address(weth);
+    listing.hubRegistration = _registration(provider, '');
+
+    vm.expectRevert(HubEngine.InvalidAddressesProviderRegistration.selector);
+    engine.executeHubAssetListings(_toAssetListingArray(listing));
+  }
+
+  function test_executeHubAssetListings_registerHub_revertsWhenFieldsSetWithoutRegister() public {
+    IAaveV4ConfigEngine.AssetListing memory listing = _defaultAssetListing();
+    listing.underlying = address(weth);
+    listing.hubRegistration.name = 'CORE';
+
+    vm.expectRevert(HubEngine.InvalidAddressesProviderRegistration.selector);
+    engine.executeHubAssetListings(_toAssetListingArray(listing));
+  }
+
   function test_executeHubAssetListings_registerHub_revertsWhenAlreadyRegistered() public {
     IAaveV4ConfigEngine.AssetListing memory listing = _defaultAssetListing();
     listing.underlying = address(weth);
@@ -131,6 +149,17 @@ contract AddressesProviderRegistrationTest is BaseConfigEngineTest {
     listing.underlying = address(weth);
     // no tokenization name/symbol => no TokenizationSpoke deployed
     listing.tokenizationSpokeRegistration = _registration(provider, 'CORE_WETH');
+
+    vm.expectRevert(HubEngine.InvalidAddressesProviderRegistration.selector);
+    engine.executeHubAssetListings(_toAssetListingArray(listing));
+  }
+
+  function test_executeHubAssetListings_registerTokenizationSpoke_revertsWhenFieldsSetWithoutRegister()
+    public
+  {
+    IAaveV4ConfigEngine.AssetListing memory listing = _defaultAssetListing();
+    listing.underlying = address(weth);
+    listing.tokenizationSpokeRegistration.name = 'CORE_WETH';
 
     vm.expectRevert(HubEngine.InvalidAddressesProviderRegistration.selector);
     engine.executeHubAssetListings(_toAssetListingArray(listing));
@@ -204,6 +233,32 @@ contract AddressesProviderRegistrationTest is BaseConfigEngineTest {
     listing.underlying = address(weth);
     listing.priceSource = _deployMockPriceFeed(spoke1(), tokenList[TOKEN_WETH].priceFeed);
     listing.spokeRegistration = _registration(IV4AddressesProvider(address(0)), 'MAIN');
+
+    vm.expectRevert(SpokeEngine.InvalidAddressesProviderRegistration.selector);
+    engine.executeSpokeReserveListings(_toReserveListingArray(listing));
+  }
+
+  function test_executeSpokeReserveListings_registerSpoke_revertsWhenNoName() public {
+    _seedAsset(hub1(), irStrategy1(), address(weth), 18);
+
+    IAaveV4ConfigEngine.ReserveListing memory listing = _defaultReserveListing();
+    listing.underlying = address(weth);
+    listing.priceSource = _deployMockPriceFeed(spoke1(), tokenList[TOKEN_WETH].priceFeed);
+    listing.spokeRegistration = _registration(provider, '');
+
+    vm.expectRevert(SpokeEngine.InvalidAddressesProviderRegistration.selector);
+    engine.executeSpokeReserveListings(_toReserveListingArray(listing));
+  }
+
+  function test_executeSpokeReserveListings_registerSpoke_revertsWhenFieldsSetWithoutRegister()
+    public
+  {
+    _seedAsset(hub1(), irStrategy1(), address(weth), 18);
+
+    IAaveV4ConfigEngine.ReserveListing memory listing = _defaultReserveListing();
+    listing.underlying = address(weth);
+    listing.priceSource = _deployMockPriceFeed(spoke1(), tokenList[TOKEN_WETH].priceFeed);
+    listing.spokeRegistration.name = 'MAIN';
 
     vm.expectRevert(SpokeEngine.InvalidAddressesProviderRegistration.selector);
     engine.executeSpokeReserveListings(_toReserveListingArray(listing));

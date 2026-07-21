@@ -167,6 +167,11 @@ abstract contract V4AddressesProvider is
   }
 
   /// @inheritdoc IV4AddressesProvider
+  function getCanonicalHubs(uint256 start, uint256 end) external view returns (address[] memory) {
+    return _toAddresses(_taggedIds[CANONICAL_HUB_TAG].values(start, end));
+  }
+
+  /// @inheritdoc IV4AddressesProvider
   function getCanonicalSpoke(string calldata name) external view returns (address) {
     return _getAddress({name: name, tag: CANONICAL_SPOKE_TAG});
   }
@@ -174,6 +179,11 @@ abstract contract V4AddressesProvider is
   /// @inheritdoc IV4AddressesProvider
   function getCanonicalSpokes() external view returns (address[] memory) {
     return _toAddresses(_taggedIds[CANONICAL_SPOKE_TAG].values());
+  }
+
+  /// @inheritdoc IV4AddressesProvider
+  function getCanonicalSpokes(uint256 start, uint256 end) external view returns (address[] memory) {
+    return _toAddresses(_taggedIds[CANONICAL_SPOKE_TAG].values(start, end));
   }
 
   /// @inheritdoc IV4AddressesProvider
@@ -187,6 +197,14 @@ abstract contract V4AddressesProvider is
   }
 
   /// @inheritdoc IV4AddressesProvider
+  function getTokenizationSpokes(
+    uint256 start,
+    uint256 end
+  ) external view returns (address[] memory) {
+    return _toAddresses(_taggedIds[TOKENIZATION_SPOKE_TAG].values(start, end));
+  }
+
+  /// @inheritdoc IV4AddressesProvider
   function getTreasurySpoke(string calldata name) external view returns (address) {
     return _getAddress({name: name, tag: TREASURY_SPOKE_TAG});
   }
@@ -194,6 +212,11 @@ abstract contract V4AddressesProvider is
   /// @inheritdoc IV4AddressesProvider
   function getTreasurySpokes() external view returns (address[] memory) {
     return _toAddresses(_taggedIds[TREASURY_SPOKE_TAG].values());
+  }
+
+  /// @inheritdoc IV4AddressesProvider
+  function getTreasurySpokes(uint256 start, uint256 end) external view returns (address[] memory) {
+    return _toAddresses(_taggedIds[TREASURY_SPOKE_TAG].values(start, end));
   }
 
   /// @inheritdoc IV4AddressesProvider

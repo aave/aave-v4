@@ -3,6 +3,7 @@ pragma solidity ^0.8.0;
 
 import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
 import {EngineFlags} from 'src/config-engine/libraries/EngineFlags.sol';
+import {EngineUtils} from 'src/config-engine/libraries/EngineUtils.sol';
 import {TokenizationSpokeDeployer} from 'src/config-engine/libraries/TokenizationSpokeDeployer.sol';
 import {IHubBase} from 'src/hub/interfaces/IHubBase.sol';
 import {IHub} from 'src/hub/interfaces/IHub.sol';
@@ -21,7 +22,8 @@ library HubEngine {
 
   /// @dev Thrown when an addresses provider registration is requested for a listing that does not
   /// support it: registering a Hub when the listed asset is not the Hub's first (asset id != 0),
-  /// registering a TokenizationSpoke that was not deployed, or no addresses provider supplied.
+  /// registering a TokenizationSpoke that was not deployed, or the registration fields are
+  /// inconsistent with the `register` flag.
   error InvalidAddressesProviderRegistration();
 
   /// @notice Lists new assets on Hubs via the HubConfigurator.
@@ -229,13 +231,14 @@ library HubEngine {
     IAaveV4ConfigEngine.AssetListing calldata listing,
     uint256 assetId
   ) private {
+    require(
+      EngineUtils.isConsistentRegistration(listing.hubRegistration),
+      InvalidAddressesProviderRegistration()
+    );
     if (!listing.hubRegistration.register) {
       return;
     }
-    require(
-      assetId == 0 && address(listing.hubRegistration.addressesProvider) != address(0),
-      InvalidAddressesProviderRegistration()
-    );
+    require(assetId == 0, InvalidAddressesProviderRegistration());
     listing.hubRegistration.addressesProvider.setCanonicalHub(
       listing.hubRegistration.name,
       listing.hub
@@ -248,6 +251,10 @@ library HubEngine {
     IAaveV4ConfigEngine.AssetListing calldata listing,
     uint256 assetId
   ) private {
+    require(
+      EngineUtils.isConsistentRegistration(listing.tokenizationSpokeRegistration),
+      InvalidAddressesProviderRegistration()
+    );
     // if not name and/or symbol given, we assume there is no intention to deploy a TokenizationSpoke, so we skip deployment and registration
     if (
       bytes(listing.tokenization.name).length == 0 || bytes(listing.tokenization.symbol).length == 0
@@ -280,10 +287,6 @@ library HubEngine {
     );
 
     if (listing.tokenizationSpokeRegistration.register) {
-      require(
-        address(listing.tokenizationSpokeRegistration.addressesProvider) != address(0),
-        InvalidAddressesProviderRegistration()
-      );
       listing.tokenizationSpokeRegistration.addressesProvider.setTokenizationSpoke(
         listing.tokenizationSpokeRegistration.name,
         proxy
