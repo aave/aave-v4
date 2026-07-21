@@ -162,6 +162,24 @@ library WadRayMath {
     }
   }
 
+  /// @notice Removes WAD precision from a given value, rounding up.
+  /// @return b = ceil(a / WAD).
+  function dewadifyUp(uint256 a) internal pure returns (uint256 b) {
+    return wadMulUp(a, 1);
+  }
+
+  /// @notice Converts a RAY value to basis points, rounding down.
+  /// @return b = floor(a * PERCENTAGE_FACTOR / RAY).
+  function rayToBpsDown(uint256 a) internal pure returns (uint256 b) {
+    return rayMulDown(a, PERCENTAGE_FACTOR);
+  }
+
+  /// @notice Converts a RAY value to basis points, rounding up.
+  /// @return b = ceil(a * PERCENTAGE_FACTOR / RAY).
+  function rayToBpsUp(uint256 a) internal pure returns (uint256 b) {
+    return rayMulUp(a, PERCENTAGE_FACTOR);
+  }
+
   /// @notice Removes RAY precision from a given value, rounding up.
   /// @return b = ceil(a / RAY).
   function fromRayUp(uint256 a) internal pure returns (uint256 b) {
