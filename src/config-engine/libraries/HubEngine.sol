@@ -24,7 +24,7 @@ library HubEngine {
   error InvalidTokenizationSpokeConfig();
 
   /// @notice Lists new assets on Hubs via the HubConfigurator.
-  /// @dev When `tokenization` is set, also deploys a TokenizationSpoke (impl + proxy) via
+  /// @dev When tokenization data is set, also deploys a TokenizationSpoke (impl + proxy) via
   /// CREATE2 and registers it on the Hub for the listed asset.
   /// @param listings The asset listings to execute.
   function executeHubAssetListings(IAaveV4ConfigEngine.AssetListing[] calldata listings) external {
