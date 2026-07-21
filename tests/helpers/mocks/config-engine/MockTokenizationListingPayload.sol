@@ -8,7 +8,7 @@ import {IAssetInterestRateStrategy} from 'src/hub/interfaces/IAssetInterestRateS
 
 /// @dev Production-style payload: all action data lives in immutables or literals. `execute()`
 /// runs via delegatecall inside the Executor, so payload storage is not readable at execution time.
-contract TokenizationListingPayload is AaveV4Payload {
+contract MockTokenizationListingPayload is AaveV4Payload {
   IHubConfigurator internal immutable HUB_CONFIGURATOR;
   address internal immutable HUB;
   address internal immutable UNDERLYING;

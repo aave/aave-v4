@@ -5,18 +5,18 @@ import 'tests/config-engine/BaseConfigEngine.t.sol';
 
 import {ProxyHelper} from 'tests/utils/ProxyHelper.sol';
 import {MockGovernanceExecutor} from 'tests/helpers/mocks/config-engine/MockGovernanceExecutor.sol';
-import {TokenizationListingPayload} from 'tests/helpers/mocks/config-engine/TokenizationListingPayload.sol';
+import {MockTokenizationListingPayload} from 'tests/helpers/mocks/config-engine/MockTokenizationListingPayload.sol';
 
 /// @dev Executes engine payloads through the real governance topology
 /// (PayloadsController → Executor → delegatecall payload → delegatecall engine), where
 /// `msg.sender` is the PayloadsController and `address(this)` is the Executor.
 contract ConfigEngineGovernanceTopologyTest is BaseConfigEngineTest {
-  TokenizationListingPayload internal payload;
+  MockTokenizationListingPayload internal payload;
 
   function setUp() public override {
     super.setUp();
 
-    payload = new TokenizationListingPayload({
+    payload = new MockTokenizationListingPayload({
       configEngine: IAaveV4ConfigEngine(address(engine)),
       hubConfigurator: hubConfigurator,
       hub: address(hub1()),
