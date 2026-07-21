@@ -1082,6 +1082,34 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
     assertFalse(freshPm.isSpokeRegistered(address(spoke1())));
   }
 
+  function test_execute_positionManagerRegistrationWithRenouncement_reverts() public {
+    PositionManagerBaseWrapper freshPm = new PositionManagerBaseWrapper(address(payload));
+
+    // single payload bundling the Spoke registration and the role renouncement.
+    // renouncements run before registrations, so the renounce executes while the
+    // Spoke is not yet registered and reverts.
+    IAaveV4ConfigEngine.SpokeRegistration[]
+      memory regs = new IAaveV4ConfigEngine.SpokeRegistration[](1);
+    regs[0] = IAaveV4ConfigEngine.SpokeRegistration({
+      positionManager: address(freshPm),
+      spoke: address(spoke1()),
+      registered: true
+    });
+    payload.setPositionManagerSpokeRegistrations(regs);
+
+    IAaveV4ConfigEngine.PositionManagerRoleRenouncement[]
+      memory renouncements = new IAaveV4ConfigEngine.PositionManagerRoleRenouncement[](1);
+    renouncements[0] = IAaveV4ConfigEngine.PositionManagerRoleRenouncement({
+      positionManager: address(freshPm),
+      spoke: address(spoke1()),
+      user: USER
+    });
+    payload.setPositionManagerRoleRenouncements(renouncements);
+
+    vm.expectRevert(IPositionManagerBase.SpokeNotRegistered.selector);
+    payload.execute();
+  }
+
   // --- Unauthorized execute tests ---
 
   function test_execute_reverts_hubAction_withoutHubConfiguratorRole() public {

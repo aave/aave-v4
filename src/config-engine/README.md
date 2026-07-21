@@ -152,8 +152,8 @@ When a payload calls `execute()`, `AaveV4Payload` delegate-calls into `AaveV4Con
 
 In production the payload itself executes via delegatecall: the PayloadsController **calls** `Executor.executeTransaction`, which **delegatecalls** `payload.execute()`. Since `msg.sender` is preserved across delegatecall, for all engine code:
 
-- `address(this)` is the **Executor** — this is the identity holding permissions, and the address external calls originate from.
-- `msg.sender` is the **PayloadsController** — it must never be used, for ownership, permissions, or anything else. Deriving an owner from `msg.sender` is how the Paxos deployment shipped TokenizationSpoke ProxyAdmins owned by the PayloadsController; any address a deployment or configuration needs (e.g. `TokenizationSpokeConfig.proxyAdminOwner`) must be passed explicitly in the action structs.
-- Payload storage is not readable during execution — action data must live in immutables, constants, or literals returned by the overridden virtual functions.
+- `address(this)` is the **Executor**. It is the identity holding permissions, and the address external calls originate from.
+- `msg.sender` is the **PayloadsController**. It must never be used, for ownership, permissions, or anything else. Deriving an owner from `msg.sender` is bad practice: any address a deployment or configuration needs (e.g. `TokenizationSpokeConfig.proxyAdminOwner`) must be passed explicitly in the action structs.
+- Payload storage is not readable during execution: action data must live in immutables, constants, or literals returned by the overridden virtual functions.
 
 Tests for engine actions must replicate this topology (see `tests/config-engine/GovernanceTopology.t.sol`); calling the engine directly from a test contract produces a different `msg.sender` and can hide context-dependent bugs.

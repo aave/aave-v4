@@ -17,10 +17,10 @@ interface IAaveV4ConfigEngine {
   /// @notice Parameters for tokenization of an asset on a Hub when listing the asset.
   /// @dev Tokenization is skipped only when all fields are unset. Otherwise `name`, `symbol` and
   /// `proxyAdminOwner` are all required; a partially set config reverts.
-  /// @dev addCap The add cap for the TokenizationSpoke, unset value : 0.
-  /// @dev proxyAdminOwner The owner to set on the ProxyAdmin of the deployed TokenizationSpoke, unset value : address(0).
-  /// @dev name The name for the TokenizationSpoke, unset value : ''.
-  /// @dev symbol The symbol for the TokenizationSpoke, unset value : ''.
+  /// @dev addCap The add cap for the TokenizationSpoke.
+  /// @dev proxyAdminOwner The owner to set on the ProxyAdmin of the deployed TokenizationSpoke (address(0) when unset).
+  /// @dev name The name for the TokenizationSpoke ('' when unset).
+  /// @dev symbol The symbol for the TokenizationSpoke ('' when unset).
   struct TokenizationSpokeConfig {
     uint256 addCap;
     address proxyAdminOwner;
