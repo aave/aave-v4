@@ -3,7 +3,6 @@ pragma solidity ^0.8.0;
 
 import {EngineFlags} from 'src/config-engine/libraries/EngineFlags.sol';
 import {IAccessManager} from 'src/dependencies/openzeppelin/IAccessManager.sol';
-import {IAccessManagerEnumerable} from 'src/access/interfaces/IAccessManagerEnumerable.sol';
 import {IAaveV4ConfigEngine} from 'src/config-engine/interfaces/IAaveV4ConfigEngine.sol';
 
 /// @title AccessManagerEngine
@@ -33,8 +32,8 @@ library AccessManagerEngine {
   }
 
   /// @notice Updates role configuration (admin, guardian, grant delay, label) via AccessManager.
-  /// @dev An already-labeled role is cleared before relabeling, as required by the
-  /// AccessManagerEnumerable label tracking.
+  /// @dev When labelUpdate is true, the existing label is cleared before relabeling, as required by
+  /// the AccessManagerEnumerable label tracking.
   /// @param updates The role updates to execute.
   function executeRoleUpdates(IAaveV4ConfigEngine.RoleUpdate[] calldata updates) external {
     uint256 length = updates.length;
@@ -50,7 +49,7 @@ library AccessManagerEngine {
         authority.setGrantDelay(updates[i].roleId, updates[i].grantDelay);
       }
       if (bytes(updates[i].label).length > 0) {
-        if (IAccessManagerEnumerable(updates[i].authority).isRoleLabeled(updates[i].roleId)) {
+        if (updates[i].labelUpdate) {
           authority.labelRole(updates[i].roleId, '');
         }
         authority.labelRole(updates[i].roleId, updates[i].label);

@@ -876,7 +876,8 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
       admin: Roles.HUB_CONFIGURATOR_ROLE,
       guardian: Roles.HUB_DEFICIT_ELIMINATOR_ROLE,
       grantDelay: 3600,
-      label: 'FEE_UPDATER'
+      label: 'FEE_UPDATER',
+      labelUpdate: false
     });
     payload.setAccessManagerRoleUpdates(updates);
 

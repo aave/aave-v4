@@ -309,6 +309,7 @@ interface IAaveV4ConfigEngine {
   /// @dev guardian The new guardian role identifier (KEEP_CURRENT_UINT64 to skip).
   /// @dev grantDelay The new grant delay (KEEP_CURRENT_UINT32 to skip).
   /// @dev label The label string (empty string to skip).
+  /// @dev labelUpdate Must be true to relabel an already-labeled role (clears the existing label first).
   struct RoleUpdate {
     address authority;
     uint64 roleId;
@@ -316,6 +317,7 @@ interface IAaveV4ConfigEngine {
     uint64 guardian;
     uint32 grantDelay;
     string label;
+    bool labelUpdate;
   }
 
   /// @notice Parameters for setting target function roles via AccessManager.
@@ -423,7 +425,8 @@ interface IAaveV4ConfigEngine {
   function executeRoleMemberships(RoleMembership[] calldata memberships) external;
 
   /// @notice Updates role configuration (admin, guardian, grant delay, label) via AccessManager.
-  /// @dev An already-labeled role is cleared before relabeling.
+  /// @dev Set labelUpdate to true to relabel an already-labeled role (the existing label is cleared
+  /// first); labeling an already-labeled role with labelUpdate false reverts.
   /// Clearing a label without setting a new one requires a direct `labelRole` call.
   /// @param updates The role updates to execute.
   function executeRoleUpdates(RoleUpdate[] calldata updates) external;

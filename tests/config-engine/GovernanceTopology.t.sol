@@ -7,7 +7,7 @@ import {ProxyHelper} from 'tests/utils/ProxyHelper.sol';
 import {MockGovernanceExecutor} from 'tests/helpers/mocks/config-engine/MockGovernanceExecutor.sol';
 import {MockTokenizationListingPayload} from 'tests/helpers/mocks/config-engine/MockTokenizationListingPayload.sol';
 
-/// @dev Executes engine payloads through the real governance topology,
+/// @dev Validates that payload execution flow through the correct governance topology,
 /// respecting the correct order of calls and delegatecalls between each contract
 /// (PayloadsController → Executor → delegatecall payload → delegatecall engine), where
 /// `msg.sender` is the PayloadsController and `address(this)` is the Executor.
