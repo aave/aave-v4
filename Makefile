@@ -6,8 +6,19 @@
 update:; forge update
 
 # Build & test
-build  :; forge build --sizes
-test   :; forge test -vvv
+build-simple :; forge build
+build-simple-sizes :; forge build --sizes
+test-simple :; forge test -vvv
+generate :; forge script scripts/utils/GenerateBytecodeScript.s.sol
+build :
+	make build-simple
+	make generate
+build-sizes :
+	make build-simple-sizes
+	make generate
+test :
+	make build
+	make test-simple
 
 # Utilities
 download :; cast etherscan-source --chain ${chain} -d src/etherscan/${chain}_${address} ${address}
@@ -16,7 +27,10 @@ git-diff :
 	@npx prettier ${before} ${after} --write
 	@printf '%s\n%s\n%s\n' "\`\`\`diff" "$$(git diff --no-index --diff-algorithm=patience --ignore-space-at-eol ${before} ${after})" "\`\`\`" > diffs/${out}.md
 
-gas-report :; forge test --mp 'tests/gas/**'
+gas-report :
+	make build
+	make test-gas-report
+test-gas-report :; forge test --mp 'tests/gas/**'
 
 # Coverage
 coverage-base :; FOUNDRY_PROFILE=coverage forge coverage --report lcov --no-match-coverage "(scripts|tests|deployments|mocks)"

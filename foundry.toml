@@ -7,6 +7,7 @@ fs_permissions = [
   { access = "read", path = "tests/helpers/mocks/JsonBindings.sol" },
   { access = "read", path = "./config" },
   { access = "read", path = "./out" },
+  { access = "read-write", path = "./tests/bin" },
   { access = "read-write", path = "./output" }
 ]
 skip = ["tests/helpers/mocks/JsonBindings.sol"]
