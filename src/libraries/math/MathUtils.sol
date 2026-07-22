@@ -45,10 +45,20 @@ library MathUtils {
   }
 
   /// @notice Returns the sum of an unsigned and signed integer.
-  /// @dev Reverts on underflow.
-  function add(uint256 a, int256 b) internal pure returns (uint256) {
-    if (b >= 0) return a + uint256(b);
-    return a - uint256(-b);
+  /// @dev Reverts with an arithmetic panic (0x11) on overflow or underflow.
+  function add(uint256 a, int256 b) internal pure returns (uint256 c) {
+    assembly ('memory-safe') {
+      // `add` wraps modulo 2**256, so reinterpreting `b` as its two's-complement
+      // word yields the correct result for both signs when it fits in a uint256.
+      c := add(a, b)
+      // Overflow (b >= 0) leaves `c < a`; underflow (b < 0) leaves `c >= a`.
+      // Either case is invalid, i.e. exactly when `(c < a) != (b < 0)`.
+      if xor(lt(c, a), slt(b, 0)) {
+        mstore(0x00, 0x4e487b71) // `Panic(uint256)` selector.
+        mstore(0x20, 0x11) // Arithmetic overflow/underflow panic code.
+        revert(0x1c, 0x24)
+      }
+    }
   }
 
   /// @notice Returns the sum of two unsigned integers.

@@ -92,6 +92,39 @@ contract MathUtilsTest is Base {
     }
   }
 
+  function test_fuzz_add(uint256 a, int256 b) public {
+    // Reference: full-range model, including `type(int256).min`.
+    if (b >= 0) {
+      if (a > UINT256_MAX - uint256(b)) {
+        vm.expectRevert(stdError.arithmeticError);
+        MathUtils.add(a, b);
+      } else {
+        assertEq(MathUtils.add(a, b), a + uint256(b));
+      }
+    } else {
+      // `-b` overflows for `type(int256).min`; derive `|b|` without negating.
+      uint256 magnitude = uint256(~b) + 1;
+      if (a < magnitude) {
+        vm.expectRevert(stdError.arithmeticError);
+        MathUtils.add(a, b);
+      } else {
+        assertEq(MathUtils.add(a, b), a - magnitude);
+      }
+    }
+  }
+
+  function test_add_int256_min_edge() public {
+    uint256 magnitude = uint256(type(int256).max) + 1; // 2**255
+
+    // Below the magnitude underflows and reverts.
+    vm.expectRevert(stdError.arithmeticError);
+    MathUtils.add(magnitude - 1, type(int256).min);
+
+    // At or above, `a + type(int256).min == a - 2**255` fits in a uint256.
+    assertEq(MathUtils.add(magnitude, type(int256).min), 0);
+    assertEq(MathUtils.add(UINT256_MAX, type(int256).min), UINT256_MAX - magnitude);
+  }
+
   function test_add_edge_cases() public {
     assertEq(MathUtils.add(100, 0), 100);
     assertEq(MathUtils.add(0, 50), 50);
