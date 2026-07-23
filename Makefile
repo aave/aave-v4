@@ -44,3 +44,41 @@ deploy-contracts :;
 	FOUNDRY_PROFILE=${chain} forge clean && forge script scripts/deploy/AaveV4DeployBatch.s.sol:AaveV4DeployBatchScript \
 	--rpc-url ${chain} --account ${account} --slow \
 	$(if ${dry},, --broadcast --verify) \
+
+# ether.fi Cash Aave V4 launch (OP Mainnet, whitelabel - Safe-administered)
+# Deploy the instance itself (hub/spoke/etc., admins = Owner Safe). Requires deploy-precompile first.
+# `make etherfi-deploy-instance account=<keystore>` (set dry=1 to simulate)
+etherfi-deploy-instance :;
+	forge script scripts/etherfi/DeployEtherfiCashInstance.s.sol:DeployEtherfiCashInstanceScript \
+	--rpc-url optimism --account ${account} --slow \
+	$(if ${dry},, --broadcast --verify) \
+
+# One-command pipeline: validate -> fork dress rehearsal (deploy + Safe-context execute + verify) -> stop
+# `make etherfi-rehearse`
+etherfi-rehearse :;
+	./scripts/etherfi/launch.sh rehearse
+
+# Same pipeline, then real payload deploy + Safe tx + launch spec after a confirmation prompt
+# `make etherfi-launch account=<keystore>`
+etherfi-launch :;
+	account=${account} ./scripts/etherfi/launch.sh broadcast
+
+# Read-only preflight of every pinned address
+# `make etherfi-validate`
+etherfi-validate :;
+	forge script scripts/etherfi/ValidateEtherfiCashLaunch.s.sol:ValidateEtherfiCashLaunchScript --rpc-url optimism
+
+# Read-only field-by-field check of live hub/spoke state + operator roles vs the payload spec
+# `make etherfi-verify`
+etherfi-verify :;
+	forge script scripts/etherfi/VerifyEtherfiCashLive.s.sol:VerifyEtherfiCashLiveScript --sig 'verify()' --rpc-url optimism
+
+# Regenerate the Owner-Safe launch transaction JSON for an already-deployed payload
+# `make etherfi-safe-tx PAYLOAD=0x...`
+etherfi-safe-tx :;
+	forge script scripts/etherfi/GenerateEtherfiCashSafeTx.s.sol:GenerateEtherfiCashSafeTxScript --sig 'generate()' --rpc-url optimism
+
+# Regenerate the launch spec document from the payload specs
+# `make etherfi-launch-spec PAYLOAD=0x...`
+etherfi-launch-spec :;
+	forge script scripts/etherfi/GenerateEtherfiCashLaunchSpec.s.sol:GenerateEtherfiCashLaunchSpecScript --sig 'generate()' --rpc-url optimism
