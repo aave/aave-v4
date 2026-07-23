@@ -129,3 +129,55 @@ contract AaveV4DeployUSDGCorrelatedSpoke is AaveV4DeployCorrelatedSpokeBase {
     return 'USDG Correlated Spoke';
   }
 }
+
+/// @title AaveV4DeployMapleCorrelatedSpoke
+/// @author Aave Labs
+/// @notice Deploys the Maple correlated-asset Spoke (syrupUSDG collateral against USDG) on the Global
+///         Dollar Hub, Ethereum mainnet. Reserve, price source, cap and interest rate configuration are
+///         performed separately by the Protocol Security Council after deployment.
+/// @dev Usage (make sure FOUNDRY_LIBRARIES is populated in .env with the LiquidationLogic address):
+///   forge clean && forge script \
+///     scripts/deploy/AaveV4DeployCorrelatedSpoke.s.sol:AaveV4DeployMapleCorrelatedSpoke \
+///     --rpc-url mainnet --account <acct> --slow (--broadcast --verify)
+contract AaveV4DeployMapleCorrelatedSpoke is AaveV4DeployCorrelatedSpokeBase {
+  uint256 internal constant _ETHEREUM_CHAIN_ID = 1;
+
+  // AaveV4Ethereum.ACCESS_MANAGER
+  // https://github.com/aave-dao/aave-address-book/blob/c48a741a10b94202f738d52a09e9c9a8bf18a67d/src/AaveV4Ethereum.sol#L8
+  address public constant ACCESS_MANAGER = 0x08aE3BE30958cDd1847ec58fFfd4C451a87fDF01;
+  // Protocol Security Council
+  // https://etherscan.io/address/0x187AAE17d4931310B3fc75743e7F16Bdc9eD77e9
+  address public constant PROTOCOL_SECURITY_COUNCIL = 0x187AAE17d4931310B3fc75743e7F16Bdc9eD77e9;
+
+  uint256 internal constant _VERSION = 1;
+  string internal constant _SPOKE_LABEL = 'MAPLE_CORRELATED_SPOKE';
+
+  function spokeSalt(address deployer) public view returns (bytes32) {
+    bytes32 userSalt = keccak256(
+      bytes(string.concat('chain ', vm.toString(block.chainid), '_version ', vm.toString(_VERSION)))
+    );
+    bytes32 rootSalt = AaveV4DeployOrchestration._deriveSalt(deployer, userSalt);
+    return AaveV4DeployOrchestration._deriveChildSalt(rootSalt, 'spoke', _SPOKE_LABEL);
+  }
+
+  function _getDeployInputs(
+    address deployer
+  ) internal view override returns (SpokeDeployInputs memory) {
+    return
+      SpokeDeployInputs({
+        proxyAdminOwner: PROTOCOL_SECURITY_COUNCIL,
+        authority: ACCESS_MANAGER,
+        oracleDecimals: DeployConstants.ORACLE_DECIMALS,
+        maxUserReservesLimit: DeployConstants.MAX_ALLOWED_USER_RESERVES_LIMIT,
+        salt: spokeSalt(deployer)
+      });
+  }
+
+  function _expectedChainId() internal pure override returns (uint256) {
+    return _ETHEREUM_CHAIN_ID;
+  }
+
+  function _deploymentName() internal pure override returns (string memory) {
+    return 'Maple Correlated Spoke';
+  }
+}
