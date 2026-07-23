@@ -42,7 +42,7 @@ contract GiverPositionManagerTest is Base {
     emit ISpoke.Supply(
       _daiReserveId(spoke1),
       address(positionManager),
-      alice,
+      _getPositionId(alice),
       hub1.previewAddByAssets(daiAssetId, amount),
       amount
     );
@@ -155,7 +155,7 @@ contract GiverPositionManagerTest is Base {
       emit ISpoke.Repay(
         _daiReserveId(spoke1),
         address(positionManager),
-        alice,
+        _getPositionId(alice),
         hub1.previewRestoreByAssets(daiAssetId, baseRestored),
         repayAmount,
         expectedPremiumDelta
@@ -251,7 +251,7 @@ contract GiverPositionManagerTest is Base {
       emit ISpoke.Repay(
         _daiReserveId(spoke1),
         address(positionManager),
-        alice,
+        _getPositionId(alice),
         hub1.previewRestoreByAssets(daiAssetId, baseRestored),
         repaidAmount,
         expectedPremiumDelta
@@ -362,7 +362,7 @@ contract GiverPositionManagerTest is Base {
     emit ISpoke.Repay(
       _daiReserveId(spoke1),
       address(positionManager),
-      alice,
+      _getPositionId(alice),
       hub1.previewRestoreByAssets(daiAssetId, baseRestored),
       totalRepaid,
       expectedPremiumDelta

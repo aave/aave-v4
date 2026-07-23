@@ -82,7 +82,7 @@ contract SpokeSetUsingAsCollateralTest is Base {
 
     MockReentrantCaller reentrantCaller = new MockReentrantCaller(
       address(spoke1),
-      ISpoke.setUsingAsCollateral.selector
+      bytes4(keccak256('setUsingAsCollateral(uint256,bool,address)'))
     );
 
     // reentrant hub.refreshPremium call
@@ -193,7 +193,7 @@ contract SpokeSetUsingAsCollateralTest is Base {
     emit ISpoke.SetUsingAsCollateral({
       reserveId: daiReserveId,
       caller: bob,
-      user: bob,
+      positionId: _getPositionId(bob),
       usingAsCollateral: usingAsCollateral
     });
     spoke1.setUsingAsCollateral(daiReserveId, usingAsCollateral, bob);

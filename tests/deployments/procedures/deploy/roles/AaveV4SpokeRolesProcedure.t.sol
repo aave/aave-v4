@@ -103,7 +103,7 @@ contract AaveV4SpokeRolesProcedureTest is ProceduresBase {
     assertEq(
       IAccessManager(accessManager).getTargetFunctionRole(
         spoke,
-        ISpoke.updateUserDynamicConfig.selector
+        bytes4(keccak256('updateUserDynamicConfig(address)'))
       ),
       Roles.SPOKE_USER_POSITION_UPDATER_ROLE
     );
@@ -121,9 +121,11 @@ contract AaveV4SpokeRolesProcedureTest is ProceduresBase {
   function test_getSpokePositionUpdaterRoleSelectors() public view {
     bytes4[] memory selectors = aaveV4SpokeRolesProcedureWrapper
       .getSpokePositionUpdaterRoleSelectors();
-    assertEq(selectors.length, 2);
-    assertEq(selectors[0], ISpoke.updateUserDynamicConfig.selector);
-    assertEq(selectors[1], ISpoke.updateUserRiskPremium.selector);
+    assertEq(selectors.length, 4);
+    assertEq(selectors[0], bytes4(keccak256('updateUserDynamicConfig(address)')));
+    assertEq(selectors[1], bytes4(keccak256('updateUserDynamicConfig(address,bytes32)')));
+    assertEq(selectors[2], bytes4(keccak256('updateUserRiskPremium(address)')));
+    assertEq(selectors[3], bytes4(keccak256('updateUserRiskPremium(address,bytes32)')));
   }
 
   function test_getSpokeConfiguratorRoleSelectors() public view {

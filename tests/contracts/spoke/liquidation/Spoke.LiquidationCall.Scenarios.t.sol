@@ -66,7 +66,7 @@ contract SpokeLiquidationCallScenariosTest is SpokeLiquidationCallBaseTest {
 
     MockReentrantCaller reentrantCaller = new MockReentrantCaller(
       address(spoke),
-      ISpoke.liquidationCall.selector
+      bytes4(keccak256('liquidationCall(uint256,uint256,address,uint256,bool)'))
     );
 
     vm.mockFunction(
@@ -93,7 +93,7 @@ contract SpokeLiquidationCallScenariosTest is SpokeLiquidationCallBaseTest {
 
     MockReentrantCaller reentrantCaller = new MockReentrantCaller(
       address(spoke),
-      ISpoke.liquidationCall.selector
+      bytes4(keccak256('liquidationCall(uint256,uint256,address,uint256,bool)'))
     );
 
     vm.mockFunction(
@@ -122,7 +122,7 @@ contract SpokeLiquidationCallScenariosTest is SpokeLiquidationCallBaseTest {
 
     MockReentrantCaller reentrantCaller = new MockReentrantCaller(
       address(spoke),
-      ISpoke.liquidationCall.selector
+      bytes4(keccak256('liquidationCall(uint256,uint256,address,uint256,bool)'))
     );
 
     vm.mockFunction(
@@ -149,7 +149,7 @@ contract SpokeLiquidationCallScenariosTest is SpokeLiquidationCallBaseTest {
 
     MockReentrantCaller reentrantCaller = new MockReentrantCaller(
       address(spoke),
-      ISpoke.liquidationCall.selector
+      bytes4(keccak256('liquidationCall(uint256,uint256,address,uint256,bool)'))
     );
 
     vm.mockFunction(

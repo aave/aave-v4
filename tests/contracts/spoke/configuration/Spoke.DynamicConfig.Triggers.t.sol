@@ -202,7 +202,7 @@ contract SpokeDynamicConfigTriggersTest is Base {
     });
 
     vm.expectEmit(address(spoke1));
-    emit ISpoke.RefreshAllUserDynamicConfig(alice);
+    emit ISpoke.RefreshAllUserDynamicConfig(_getPositionId(alice));
     SpokeActions.borrow({
       spoke: spoke1,
       reserveId: _daiReserveId(spoke1),
@@ -256,7 +256,7 @@ contract SpokeDynamicConfigTriggersTest is Base {
     });
 
     vm.expectEmit(address(spoke1));
-    emit ISpoke.RefreshAllUserDynamicConfig(alice);
+    emit ISpoke.RefreshAllUserDynamicConfig(_getPositionId(alice));
     SpokeActions.withdraw({
       spoke: spoke1,
       reserveId: _usdxReserveId(spoke1),
@@ -308,7 +308,7 @@ contract SpokeDynamicConfigTriggersTest is Base {
 
     // when enabling, only the relevant asset is refreshed
     vm.expectEmit(address(spoke1));
-    emit ISpoke.RefreshSingleUserDynamicConfig(alice, _wethReserveId(spoke1));
+    emit ISpoke.RefreshSingleUserDynamicConfig(_getPositionId(alice), _wethReserveId(spoke1));
     vm.prank(alice);
     spoke1.setUsingAsCollateral(_wethReserveId(spoke1), true, alice);
 
@@ -320,7 +320,7 @@ contract SpokeDynamicConfigTriggersTest is Base {
 
     // when disabling all configs are refreshed
     vm.expectEmit(address(spoke1));
-    emit ISpoke.RefreshAllUserDynamicConfig(alice);
+    emit ISpoke.RefreshAllUserDynamicConfig(_getPositionId(alice));
     vm.prank(alice);
     spoke1.setUsingAsCollateral(_usdxReserveId(spoke1), false, alice);
 
@@ -354,7 +354,7 @@ contract SpokeDynamicConfigTriggersTest is Base {
 
     // manually trigger update
     vm.expectEmit(address(spoke1));
-    emit ISpoke.RefreshAllUserDynamicConfig(alice);
+    emit ISpoke.RefreshAllUserDynamicConfig(_getPositionId(alice));
     vm.prank(alice);
     spoke1.updateUserDynamicConfig(alice);
 
@@ -504,7 +504,7 @@ contract SpokeDynamicConfigTriggersTest is Base {
     uint256 snapshotId = vm.snapshotState();
 
     vm.expectEmit(address(spoke1));
-    emit ISpoke.RefreshAllUserDynamicConfig(alice);
+    emit ISpoke.RefreshAllUserDynamicConfig(_getPositionId(alice));
     vm.prank(caller);
     spoke1.updateUserDynamicConfig(alice);
 

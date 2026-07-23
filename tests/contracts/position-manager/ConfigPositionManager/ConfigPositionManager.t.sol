@@ -431,7 +431,12 @@ contract ConfigPositionManagerTest is ConfigPositionManagerBaseTest {
     assertEq(isCollateral, !useAsCollateral);
 
     vm.expectEmit(address(spoke1));
-    emit ISpoke.SetUsingAsCollateral(reserveId, address(positionManager), alice, useAsCollateral);
+    emit ISpoke.SetUsingAsCollateral(
+      reserveId,
+      address(positionManager),
+      _getPositionId(alice),
+      useAsCollateral
+    );
     vm.expectEmit(address(positionManager));
     emit IConfigPositionManager.SetUsingAsCollateralOnBehalfOf(
       address(spoke1),
@@ -468,7 +473,12 @@ contract ConfigPositionManagerTest is ConfigPositionManagerBaseTest {
     assertEq(isCollateral, !useAsCollateral);
 
     vm.expectEmit(address(spoke1));
-    emit ISpoke.SetUsingAsCollateral(reserveId, address(positionManager), alice, useAsCollateral);
+    emit ISpoke.SetUsingAsCollateral(
+      reserveId,
+      address(positionManager),
+      _getPositionId(alice),
+      useAsCollateral
+    );
     vm.expectEmit(address(positionManager));
     emit IConfigPositionManager.SetUsingAsCollateralOnBehalfOf(
       address(spoke1),
@@ -559,7 +569,10 @@ contract ConfigPositionManagerTest is ConfigPositionManagerBaseTest {
     });
 
     vm.expectEmit(address(spoke1));
-    emit ISpoke.UpdateUserRiskPremium(alice, _calculateExpectedUserRP(spoke1, alice));
+    emit ISpoke.UpdateUserRiskPremium(
+      _getPositionId(alice),
+      _calculateExpectedUserRP(spoke1, alice)
+    );
     vm.expectEmit(address(positionManager));
     emit IConfigPositionManager.UpdateUserRiskPremiumOnBehalfOf(address(spoke1), bob, alice);
     vm.prank(bob);
@@ -586,7 +599,10 @@ contract ConfigPositionManagerTest is ConfigPositionManagerBaseTest {
     });
 
     vm.expectEmit(address(spoke1));
-    emit ISpoke.UpdateUserRiskPremium(alice, _calculateExpectedUserRP(spoke1, alice));
+    emit ISpoke.UpdateUserRiskPremium(
+      _getPositionId(alice),
+      _calculateExpectedUserRP(spoke1, alice)
+    );
     vm.expectEmit(address(positionManager));
     emit IConfigPositionManager.UpdateUserRiskPremiumOnBehalfOf(address(spoke1), bob, alice);
     vm.prank(bob);
@@ -610,7 +626,7 @@ contract ConfigPositionManagerTest is ConfigPositionManagerBaseTest {
     positionManager.setCanUpdateUserDynamicConfigPermission(address(spoke1), bob, true);
 
     vm.expectEmit(address(spoke1));
-    emit ISpoke.RefreshAllUserDynamicConfig(alice);
+    emit ISpoke.RefreshAllUserDynamicConfig(_getPositionId(alice));
     vm.expectEmit(address(positionManager));
     emit IConfigPositionManager.UpdateUserDynamicConfigOnBehalfOf(address(spoke1), bob, alice);
     vm.prank(bob);
@@ -622,7 +638,7 @@ contract ConfigPositionManagerTest is ConfigPositionManagerBaseTest {
     positionManager.setGlobalPermission(address(spoke1), bob, true);
 
     vm.expectEmit(address(spoke1));
-    emit ISpoke.RefreshAllUserDynamicConfig(alice);
+    emit ISpoke.RefreshAllUserDynamicConfig(_getPositionId(alice));
     vm.expectEmit(address(positionManager));
     emit IConfigPositionManager.UpdateUserDynamicConfigOnBehalfOf(address(spoke1), bob, alice);
     vm.prank(bob);

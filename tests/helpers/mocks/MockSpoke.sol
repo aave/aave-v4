@@ -39,12 +39,12 @@ contract MockSpoke is Spoke, Test {
     address onBehalfOf
   ) external nonReentrant onlyPositionManager(onBehalfOf) returns (uint256, uint256) {
     Reserve storage reserve = _reserves.get(reserveId);
-    UserPosition storage userPosition = _userPositions[onBehalfOf][reserveId];
-    PositionStatus storage positionStatus = _positionStatus[onBehalfOf];
+    bytes32 positionId = _getPositionIdentifier(onBehalfOf, USER_POSITION_DEFAULT_SALT);
+    UserPosition storage userPosition = _userPositions[positionId][reserveId];
+    PositionStatus storage positionStatus = _positionStatus[positionId];
     _validateBorrow(reserve.flags);
-    IHubBase hub = reserve.hub;
 
-    uint256 drawnShares = hub.draw(reserve.assetId, amount, msg.sender);
+    uint256 drawnShares = reserve.hub.draw(reserve.assetId, amount, msg.sender);
     userPosition.drawnShares += drawnShares.toUint120();
     if (!positionStatus.isBorrowing(reserveId)) {
       require(
@@ -55,35 +55,35 @@ contract MockSpoke is Spoke, Test {
       positionStatus.setBorrowing(reserveId, true);
     }
 
-    uint256 newRiskPremium = _processUserAccountData({user: onBehalfOf, refreshConfig: true})
-      .riskPremium;
-    emit RefreshAllUserDynamicConfig(onBehalfOf);
-    _notifyRiskPremiumUpdate(onBehalfOf, newRiskPremium);
+    _refreshAllDynamicConfig(positionId);
+    uint256 newRiskPremium = _calculateUserAccountData(positionId).riskPremium;
+    _notifyRiskPremiumUpdate(positionId, newRiskPremium);
 
-    emit Borrow(reserveId, msg.sender, onBehalfOf, drawnShares, amount);
+    emit Borrow(reserveId, msg.sender, positionId, drawnShares, amount);
 
     return (drawnShares, amount);
   }
 
   // Mock the user account data
   function mockStorage(address user, AccountDataInfo memory info) external {
-    PositionStatus storage positionStatus = _positionStatus[user];
+    bytes32 positionId = _getPositionIdentifier(user, USER_POSITION_DEFAULT_SALT);
+    PositionStatus storage positionStatus = _positionStatus[positionId];
     for (uint256 i = 0; i < info.collateralReserveIds.length; i++) {
       positionStatus.setUsingAsCollateral(info.collateralReserveIds[i], true);
       Reserve storage reserve = _reserves[info.collateralReserveIds[i]];
-      _userPositions[user][info.collateralReserveIds[i]].suppliedShares = reserve
+      _userPositions[positionId][info.collateralReserveIds[i]].suppliedShares = reserve
         .hub
         .previewAddByAssets(reserve.assetId, info.collateralAmounts[i])
         .toUint120();
 
-      _userPositions[user][info.collateralReserveIds[i]].dynamicConfigKey = info
+      _userPositions[positionId][info.collateralReserveIds[i]].dynamicConfigKey = info
         .collateralDynamicConfigKeys[i]
         .toUint32();
     }
 
     for (uint256 i = 0; i < info.suppliedAssetsReserveIds.length; i++) {
       Reserve storage reserve = _reserves[info.suppliedAssetsReserveIds[i]];
-      _userPositions[user][info.suppliedAssetsReserveIds[i]].suppliedShares = reserve
+      _userPositions[positionId][info.suppliedAssetsReserveIds[i]].suppliedShares = reserve
         .hub
         .previewAddByAssets(reserve.assetId, info.suppliedAssetsAmounts[i])
         .toUint120();
@@ -92,18 +92,18 @@ contract MockSpoke is Spoke, Test {
     for (uint256 i = 0; i < info.debtReserveIds.length; i++) {
       positionStatus.setBorrowing(info.debtReserveIds[i], true);
       Reserve storage reserve = _reserves[info.debtReserveIds[i]];
-      _userPositions[user][info.debtReserveIds[i]].drawnShares = reserve
+      _userPositions[positionId][info.debtReserveIds[i]].drawnShares = reserve
         .hub
         .previewDrawByAssets(reserve.assetId, info.drawnDebtAmounts[i])
         .toUint120();
-      _userPositions[user][info.debtReserveIds[i]].premiumShares = vm
+      _userPositions[positionId][info.debtReserveIds[i]].premiumShares = vm
         .randomUint(
           reserve.hub.previewRemoveByAssets(reserve.assetId, info.accruedPremiumAmounts[i]),
           100e18
         )
         .toUint120();
-      _userPositions[user][info.debtReserveIds[i]].premiumOffsetRay =
-        (_userPositions[user][info.debtReserveIds[i]].premiumShares *
+      _userPositions[positionId][info.debtReserveIds[i]].premiumOffsetRay =
+        (_userPositions[positionId][info.debtReserveIds[i]].premiumShares *
           reserve.hub.getAssetDrawnIndex(reserve.assetId)).toInt256().toInt200() -
         (info.accruedPremiumAmounts[i] * WadRayMath.RAY).toInt256().toInt200() -
         (info.realizedPremiumAmountsRay[i]).toInt256().toInt200();
@@ -115,11 +115,15 @@ contract MockSpoke is Spoke, Test {
     address user,
     bool refreshConfig
   ) external returns (UserAccountData memory) {
-    return _processUserAccountData(user, refreshConfig);
+    bytes32 positionId = _getPositionIdentifier(user, USER_POSITION_DEFAULT_SALT);
+    if (refreshConfig) {
+      _refreshAllDynamicConfig(positionId);
+    }
+    return _calculateUserAccountData(positionId);
   }
 
   function getRiskPremium(address user) external view returns (uint24) {
-    return _positionStatus[user].riskPremium;
+    return _positionStatus[_getPositionIdentifier(user, USER_POSITION_DEFAULT_SALT)].riskPremium;
   }
 
   function setReserveDynamicConfigKey(uint256 reserveId, uint32 configKey) external {

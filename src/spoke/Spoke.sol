@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: LicenseRef-BUSL
 pragma solidity 0.8.28;
 
+import {Hashes} from 'src/dependencies/openzeppelin/Hashes.sol';
 import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
 import {SafeERC20, IERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
 import {Math} from 'src/dependencies/openzeppelin/Math.sol';
 import {IERC20Permit} from 'src/dependencies/openzeppelin/IERC20Permit.sol';
 import {ReentrancyGuardTransient} from 'src/dependencies/openzeppelin/ReentrancyGuardTransient.sol';
-import {Math} from 'src/dependencies/openzeppelin/Math.sol';
 import {AccessManagedUpgradeable} from 'src/dependencies/openzeppelin-upgradeable/AccessManagedUpgradeable.sol';
 import {MathUtils} from 'src/libraries/math/MathUtils.sol';
 import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
@@ -15,6 +15,7 @@ import {SpokeUtils} from 'src/spoke/libraries/SpokeUtils.sol';
 import {EIP712Hash} from 'src/spoke/libraries/EIP712Hash.sol';
 import {KeyValueList} from 'src/spoke/libraries/KeyValueList.sol';
 import {LiquidationLogic} from 'src/spoke/libraries/LiquidationLogic.sol';
+import {UserAccountDataLogic} from 'src/spoke/libraries/UserAccountDataLogic.sol';
 import {PositionStatusMap} from 'src/spoke/libraries/PositionStatusMap.sol';
 import {ReserveFlags, ReserveFlagsMap} from 'src/spoke/libraries/ReserveFlagsMap.sol';
 import {UserPositionUtils} from 'src/spoke/libraries/UserPositionUtils.sol';
@@ -85,6 +86,8 @@ abstract contract Spoke is
   /// @dev Worth 1000 USD, expressed in units of Value. 1e26 represents 1 USD.
   uint256 internal constant DUST_LIQUIDATION_THRESHOLD =
     LiquidationLogic.DUST_LIQUIDATION_THRESHOLD;
+
+  bytes32 internal constant USER_POSITION_DEFAULT_SALT = bytes32(0);
 
   /// @notice Modifier that checks if the caller is an approved positionManager for `onBehalfOf`.
   modifier onlyPositionManager(address onBehalfOf) {
@@ -227,17 +230,17 @@ abstract contract Spoke is
     uint256 amount,
     address onBehalfOf
   ) external nonReentrant onlyPositionManager(onBehalfOf) returns (uint256, uint256) {
-    Reserve storage reserve = _reserves.get(reserveId);
-    UserPosition storage userPosition = _userPositions[onBehalfOf][reserveId];
-    _validateSupply(reserve.flags);
+    return _supply(reserveId, amount, onBehalfOf, USER_POSITION_DEFAULT_SALT);
+  }
 
-    IERC20(reserve.underlying).safeTransferFrom(msg.sender, address(reserve.hub), amount);
-    uint256 suppliedShares = reserve.hub.add(reserve.assetId, amount);
-    userPosition.suppliedShares += suppliedShares.toUint120();
-
-    emit Supply(reserveId, msg.sender, onBehalfOf, suppliedShares, amount);
-
-    return (suppliedShares, amount);
+  /// @inheritdoc ISpoke
+  function supply(
+    uint256 reserveId,
+    uint256 amount,
+    address onBehalfOf,
+    bytes32 positionSalt
+  ) external nonReentrant onlyPositionManager(onBehalfOf) returns (uint256, uint256) {
+    return _supply(reserveId, amount, onBehalfOf, positionSalt);
   }
 
   /// @inheritdoc ISpoke
@@ -246,28 +249,17 @@ abstract contract Spoke is
     uint256 amount,
     address onBehalfOf
   ) external nonReentrant onlyPositionManager(onBehalfOf) returns (uint256, uint256) {
-    Reserve storage reserve = _reserves.get(reserveId);
-    UserPosition storage userPosition = _userPositions[onBehalfOf][reserveId];
-    _validateWithdraw(reserve.flags);
-    IHubBase hub = reserve.hub;
-    uint256 assetId = reserve.assetId;
+    return _withdraw(reserveId, amount, onBehalfOf, USER_POSITION_DEFAULT_SALT);
+  }
 
-    uint256 withdrawnAmount = MathUtils.min(
-      amount,
-      hub.previewRemoveByShares(assetId, userPosition.suppliedShares)
-    );
-    uint256 withdrawnShares = hub.remove(assetId, withdrawnAmount, msg.sender);
-
-    userPosition.suppliedShares -= withdrawnShares.toUint120();
-
-    if (_positionStatus[onBehalfOf].isUsingAsCollateral(reserveId)) {
-      uint256 newRiskPremium = _refreshAndValidateUserAccountData(onBehalfOf).riskPremium;
-      _notifyRiskPremiumUpdate(onBehalfOf, newRiskPremium);
-    }
-
-    emit Withdraw(reserveId, msg.sender, onBehalfOf, withdrawnShares, withdrawnAmount);
-
-    return (withdrawnShares, withdrawnAmount);
+  /// @inheritdoc ISpoke
+  function withdraw(
+    uint256 reserveId,
+    uint256 amount,
+    address onBehalfOf,
+    bytes32 positionSalt
+  ) external nonReentrant onlyPositionManager(onBehalfOf) returns (uint256, uint256) {
+    return _withdraw(reserveId, amount, onBehalfOf, positionSalt);
   }
 
   /// @inheritdoc ISpoke
@@ -276,29 +268,17 @@ abstract contract Spoke is
     uint256 amount,
     address onBehalfOf
   ) external nonReentrant onlyPositionManager(onBehalfOf) returns (uint256, uint256) {
-    Reserve storage reserve = _reserves.get(reserveId);
-    UserPosition storage userPosition = _userPositions[onBehalfOf][reserveId];
-    PositionStatus storage positionStatus = _positionStatus[onBehalfOf];
-    _validateBorrow(reserve.flags);
-    IHubBase hub = reserve.hub;
+    return _borrow(reserveId, amount, onBehalfOf, USER_POSITION_DEFAULT_SALT);
+  }
 
-    uint256 drawnShares = hub.draw(reserve.assetId, amount, msg.sender);
-    userPosition.drawnShares += drawnShares.toUint120();
-    if (!positionStatus.isBorrowing(reserveId)) {
-      require(
-        MAX_USER_RESERVES_LIMIT == MAX_ALLOWED_USER_RESERVES_LIMIT ||
-          positionStatus.borrowCount(_reserveCount) < MAX_USER_RESERVES_LIMIT,
-        MaximumUserReservesExceeded()
-      );
-      positionStatus.setBorrowing(reserveId, true);
-    }
-
-    uint256 newRiskPremium = _refreshAndValidateUserAccountData(onBehalfOf).riskPremium;
-    _notifyRiskPremiumUpdate(onBehalfOf, newRiskPremium);
-
-    emit Borrow(reserveId, msg.sender, onBehalfOf, drawnShares, amount);
-
-    return (drawnShares, amount);
+  /// @inheritdoc ISpoke
+  function borrow(
+    uint256 reserveId,
+    uint256 amount,
+    address onBehalfOf,
+    bytes32 positionSalt
+  ) external nonReentrant onlyPositionManager(onBehalfOf) returns (uint256, uint256) {
+    return _borrow(reserveId, amount, onBehalfOf, positionSalt);
   }
 
   /// @inheritdoc ISpoke
@@ -307,40 +287,17 @@ abstract contract Spoke is
     uint256 amount,
     address onBehalfOf
   ) external nonReentrant onlyPositionManager(onBehalfOf) returns (uint256, uint256) {
-    Reserve storage reserve = _reserves.get(reserveId);
-    UserPosition storage userPosition = _userPositions[onBehalfOf][reserveId];
-    _validateRepay(reserve.flags);
+    return _repay(reserveId, amount, onBehalfOf, USER_POSITION_DEFAULT_SALT);
+  }
 
-    uint256 drawnIndex = reserve.hub.getAssetDrawnIndex(reserve.assetId);
-    (uint256 drawnDebtRestored, uint256 premiumDebtRayRestored) = userPosition
-      .calculateRestoreAmount(drawnIndex, amount);
-    uint256 restoredShares = drawnDebtRestored.rayDivDown(drawnIndex);
-
-    IHubBase.PremiumDelta memory premiumDelta = userPosition.calculatePremiumDelta({
-      drawnSharesTaken: restoredShares,
-      drawnIndex: drawnIndex,
-      riskPremium: _positionStatus[onBehalfOf].riskPremium,
-      restoredPremiumRay: premiumDebtRayRestored
-    });
-
-    uint256 totalDebtRestored = drawnDebtRestored + premiumDebtRayRestored.fromRayUp();
-    IERC20(reserve.underlying).safeTransferFrom(
-      msg.sender,
-      address(reserve.hub),
-      totalDebtRestored
-    );
-    reserve.hub.restore(reserve.assetId, drawnDebtRestored, premiumDelta);
-
-    userPosition.applyPremiumDelta(premiumDelta);
-    userPosition.drawnShares -= restoredShares.toUint120();
-    if (userPosition.drawnShares == 0) {
-      PositionStatus storage positionStatus = _positionStatus[onBehalfOf];
-      positionStatus.setBorrowing(reserveId, false);
-    }
-
-    emit Repay(reserveId, msg.sender, onBehalfOf, restoredShares, totalDebtRestored, premiumDelta);
-
-    return (restoredShares, totalDebtRestored);
+  /// @inheritdoc ISpoke
+  function repay(
+    uint256 reserveId,
+    uint256 amount,
+    address onBehalfOf,
+    bytes32 positionSalt
+  ) external nonReentrant onlyPositionManager(onBehalfOf) returns (uint256, uint256) {
+    return _repay(reserveId, amount, onBehalfOf, positionSalt);
   }
 
   /// @inheritdoc ISpoke
@@ -351,40 +308,36 @@ abstract contract Spoke is
     uint256 debtToCover,
     bool receiveShares
   ) external nonReentrant {
-    UserAccountData memory userAccountData = _calculateUserAccountData(user);
-    LiquidationLogic.LiquidateUserParams memory params = LiquidationLogic.LiquidateUserParams({
-      collateralReserveId: collateralReserveId,
-      debtReserveId: debtReserveId,
-      liquidationConfig: _liquidationConfig,
-      oracle: ORACLE,
-      user: user,
-      debtToCover: debtToCover,
-      userAccountData: userAccountData,
-      liquidator: msg.sender,
-      receiveShares: receiveShares
-    });
+    _liquidationCall(
+      collateralReserveId,
+      debtReserveId,
+      user,
+      USER_POSITION_DEFAULT_SALT,
+      USER_POSITION_DEFAULT_SALT,
+      debtToCover,
+      receiveShares
+    );
+  }
 
-    bool isUserInDeficit = LiquidationLogic.liquidateUser({
-      reserves: _reserves,
-      userPositions: _userPositions,
-      positionStatus: _positionStatus,
-      dynamicConfig: _dynamicConfig,
-      params: params
-    });
-
-    if (isUserInDeficit) {
-      // report deficit for all debt reserves, including the reserve being repaid
-      LiquidationLogic.notifyReportDeficit(
-        _reserves,
-        _userPositions,
-        _positionStatus,
-        _reserveCount,
-        user
-      );
-    } else {
-      uint256 newRiskPremium = _calculateUserAccountData(user).riskPremium;
-      _notifyRiskPremiumUpdate(user, newRiskPremium);
-    }
+  /// @inheritdoc ISpoke
+  function liquidationCall(
+    uint256 collateralReserveId,
+    uint256 debtReserveId,
+    address user,
+    bytes32 positionSalt,
+    bytes32 liquidatorPositionSalt,
+    uint256 debtToCover,
+    bool receiveShares
+  ) external nonReentrant {
+    _liquidationCall(
+      collateralReserveId,
+      debtReserveId,
+      user,
+      positionSalt,
+      liquidatorPositionSalt,
+      debtToCover,
+      receiveShares
+    );
   }
 
   /// @inheritdoc ISpoke
@@ -393,40 +346,37 @@ abstract contract Spoke is
     bool usingAsCollateral,
     address onBehalfOf
   ) external nonReentrant onlyPositionManager(onBehalfOf) {
-    Reserve storage reserve = _reserves.get(reserveId);
-    PositionStatus storage positionStatus = _positionStatus[onBehalfOf];
-    if (positionStatus.isUsingAsCollateral(reserveId) == usingAsCollateral) {
-      return;
-    }
-    _validateSetUsingAsCollateral(positionStatus, reserve.flags, usingAsCollateral);
-    positionStatus.setUsingAsCollateral(reserveId, usingAsCollateral);
+    _setUsingAsCollateral(reserveId, usingAsCollateral, onBehalfOf, USER_POSITION_DEFAULT_SALT);
+  }
 
-    if (usingAsCollateral) {
-      _refreshDynamicConfig(onBehalfOf, reserveId);
-    } else {
-      uint256 newRiskPremium = _refreshAndValidateUserAccountData(onBehalfOf).riskPremium;
-      _notifyRiskPremiumUpdate(onBehalfOf, newRiskPremium);
-    }
-
-    emit SetUsingAsCollateral(reserveId, msg.sender, onBehalfOf, usingAsCollateral);
+  /// @inheritdoc ISpoke
+  function setUsingAsCollateral(
+    uint256 reserveId,
+    bool usingAsCollateral,
+    address onBehalfOf,
+    bytes32 positionSalt
+  ) external nonReentrant onlyPositionManager(onBehalfOf) {
+    _setUsingAsCollateral(reserveId, usingAsCollateral, onBehalfOf, positionSalt);
   }
 
   /// @inheritdoc ISpoke
   function updateUserRiskPremium(address onBehalfOf) external nonReentrant {
-    if (!_isPositionManager({user: onBehalfOf, manager: msg.sender})) {
-      _checkCanCall(msg.sender, msg.data);
-    }
-    uint256 newRiskPremium = _calculateUserAccountData(onBehalfOf).riskPremium;
-    _notifyRiskPremiumUpdate(onBehalfOf, newRiskPremium);
+    _updateUserRiskPremium(onBehalfOf, USER_POSITION_DEFAULT_SALT);
+  }
+
+  /// @inheritdoc ISpoke
+  function updateUserRiskPremium(address onBehalfOf, bytes32 positionSalt) external nonReentrant {
+    _updateUserRiskPremium(onBehalfOf, positionSalt);
   }
 
   /// @inheritdoc ISpoke
   function updateUserDynamicConfig(address onBehalfOf) external nonReentrant {
-    if (!_isPositionManager({user: onBehalfOf, manager: msg.sender})) {
-      _checkCanCall(msg.sender, msg.data);
-    }
-    uint256 newRiskPremium = _refreshAndValidateUserAccountData(onBehalfOf).riskPremium;
-    _notifyRiskPremiumUpdate(onBehalfOf, newRiskPremium);
+    _updateUserDynamicConfig(onBehalfOf, USER_POSITION_DEFAULT_SALT);
+  }
+
+  /// @inheritdoc ISpoke
+  function updateUserDynamicConfig(address onBehalfOf, bytes32 positionSalt) external nonReentrant {
+    _updateUserDynamicConfig(onBehalfOf, positionSalt);
   }
 
   /// @inheritdoc ISpoke
@@ -565,7 +515,22 @@ abstract contract Spoke is
     address user
   ) external view returns (bool, bool) {
     _reserves.get(reserveId);
-    PositionStatus storage positionStatus = _positionStatus[user];
+    PositionStatus storage positionStatus = _positionStatus[
+      _getPositionIdentifier(user, USER_POSITION_DEFAULT_SALT)
+    ];
+    return (positionStatus.isUsingAsCollateral(reserveId), positionStatus.isBorrowing(reserveId));
+  }
+
+  /// @inheritdoc ISpoke
+  function getUserReserveStatus(
+    uint256 reserveId,
+    address user,
+    bytes32 positionSalt
+  ) external view returns (bool, bool) {
+    _reserves.get(reserveId);
+    PositionStatus storage positionStatus = _positionStatus[
+      _getPositionIdentifier(user, positionSalt)
+    ];
     return (positionStatus.isUsingAsCollateral(reserveId), positionStatus.isBorrowing(reserveId));
   }
 
@@ -575,20 +540,66 @@ abstract contract Spoke is
     return
       reserve.hub.previewRemoveByShares(
         reserve.assetId,
-        _userPositions[user][reserveId].suppliedShares
+        _userPositions[_getPositionIdentifier(user, USER_POSITION_DEFAULT_SALT)][reserveId]
+          .suppliedShares
+      );
+  }
+
+  /// @inheritdoc ISpoke
+  function getUserSuppliedAssets(
+    uint256 reserveId,
+    address user,
+    bytes32 positionSalt
+  ) external view returns (uint256) {
+    Reserve storage reserve = _reserves.get(reserveId);
+    return
+      reserve.hub.previewRemoveByShares(
+        reserve.assetId,
+        _userPositions[_getPositionIdentifier(user, positionSalt)][reserveId].suppliedShares
       );
   }
 
   /// @inheritdoc ISpoke
   function getUserSuppliedShares(uint256 reserveId, address user) external view returns (uint256) {
     _reserves.get(reserveId);
-    return _userPositions[user][reserveId].suppliedShares;
+    return
+      _userPositions[_getPositionIdentifier(user, USER_POSITION_DEFAULT_SALT)][reserveId]
+        .suppliedShares;
+  }
+
+  /// @inheritdoc ISpoke
+  function getUserSuppliedShares(
+    uint256 reserveId,
+    address user,
+    bytes32 positionSalt
+  ) external view returns (uint256) {
+    _reserves.get(reserveId);
+    return _userPositions[_getPositionIdentifier(user, positionSalt)][reserveId].suppliedShares;
   }
 
   /// @inheritdoc ISpoke
   function getUserDebt(uint256 reserveId, address user) external view returns (uint256, uint256) {
     Reserve storage reserve = _reserves.get(reserveId);
-    UserPosition storage userPosition = _userPositions[user][reserveId];
+    UserPosition storage userPosition = _userPositions[
+      _getPositionIdentifier(user, USER_POSITION_DEFAULT_SALT)
+    ][reserveId];
+    (uint256 drawnDebt, uint256 premiumDebtRay) = userPosition.getDebt(
+      reserve.hub,
+      reserve.assetId
+    );
+    return (drawnDebt, premiumDebtRay.fromRayUp());
+  }
+
+  /// @inheritdoc ISpoke
+  function getUserDebt(
+    uint256 reserveId,
+    address user,
+    bytes32 positionSalt
+  ) external view returns (uint256, uint256) {
+    Reserve storage reserve = _reserves.get(reserveId);
+    UserPosition storage userPosition = _userPositions[_getPositionIdentifier(user, positionSalt)][
+      reserveId
+    ];
     (uint256 drawnDebt, uint256 premiumDebtRay) = userPosition.getDebt(
       reserve.hub,
       reserve.assetId
@@ -599,7 +610,26 @@ abstract contract Spoke is
   /// @inheritdoc ISpoke
   function getUserTotalDebt(uint256 reserveId, address user) external view returns (uint256) {
     Reserve storage reserve = _reserves.get(reserveId);
-    UserPosition storage userPosition = _userPositions[user][reserveId];
+    UserPosition storage userPosition = _userPositions[
+      _getPositionIdentifier(user, USER_POSITION_DEFAULT_SALT)
+    ][reserveId];
+    (uint256 drawnDebt, uint256 premiumDebtRay) = userPosition.getDebt(
+      reserve.hub,
+      reserve.assetId
+    );
+    return (drawnDebt + premiumDebtRay.fromRayUp());
+  }
+
+  /// @inheritdoc ISpoke
+  function getUserTotalDebt(
+    uint256 reserveId,
+    address user,
+    bytes32 positionSalt
+  ) external view returns (uint256) {
+    Reserve storage reserve = _reserves.get(reserveId);
+    UserPosition storage userPosition = _userPositions[_getPositionIdentifier(user, positionSalt)][
+      reserveId
+    ];
     (uint256 drawnDebt, uint256 premiumDebtRay) = userPosition.getDebt(
       reserve.hub,
       reserve.assetId
@@ -610,7 +640,23 @@ abstract contract Spoke is
   /// @inheritdoc ISpoke
   function getUserPremiumDebtRay(uint256 reserveId, address user) external view returns (uint256) {
     Reserve storage reserve = _reserves.get(reserveId);
-    UserPosition storage userPosition = _userPositions[user][reserveId];
+    UserPosition storage userPosition = _userPositions[
+      _getPositionIdentifier(user, USER_POSITION_DEFAULT_SALT)
+    ][reserveId];
+    (, uint256 premiumDebtRay) = userPosition.getDebt(reserve.hub, reserve.assetId);
+    return premiumDebtRay;
+  }
+
+  /// @inheritdoc ISpoke
+  function getUserPremiumDebtRay(
+    uint256 reserveId,
+    address user,
+    bytes32 positionSalt
+  ) external view returns (uint256) {
+    Reserve storage reserve = _reserves.get(reserveId);
+    UserPosition storage userPosition = _userPositions[_getPositionIdentifier(user, positionSalt)][
+      reserveId
+    ];
     (, uint256 premiumDebtRay) = userPosition.getDebt(reserve.hub, reserve.assetId);
     return premiumDebtRay;
   }
@@ -621,18 +667,65 @@ abstract contract Spoke is
     address user
   ) external view returns (UserPosition memory) {
     _reserves.get(reserveId);
-    return _userPositions[user][reserveId];
+    return _userPositions[_getPositionIdentifier(user, USER_POSITION_DEFAULT_SALT)][reserveId];
+  }
+
+  /// @inheritdoc ISpoke
+  function getUserPosition(
+    uint256 reserveId,
+    address user,
+    bytes32 positionSalt
+  ) external view returns (UserPosition memory) {
+    _reserves.get(reserveId);
+    return _userPositions[_getPositionIdentifier(user, positionSalt)][reserveId];
   }
 
   /// @inheritdoc ISpoke
   function getUserLastRiskPremium(address user) external view returns (uint256) {
-    return _positionStatus[user].riskPremium;
+    return _positionStatus[_getPositionIdentifier(user, USER_POSITION_DEFAULT_SALT)].riskPremium;
+  }
+
+  /// @inheritdoc ISpoke
+  function getUserLastRiskPremium(
+    address user,
+    bytes32 positionSalt
+  ) external view returns (uint256) {
+    return _positionStatus[_getPositionIdentifier(user, positionSalt)].riskPremium;
   }
 
   /// @inheritdoc ISpoke
   function getUserAccountData(address user) external view returns (UserAccountData memory) {
-    // SAFETY: function does not modify state when `refreshConfig` is false.
-    return _castToView(_processUserAccountData)(user, false);
+    return
+      UserAccountDataLogic.processUserAccountData({
+        reserves: _reserves,
+        userPositions: _userPositions,
+        positionStatus: _positionStatus,
+        dynamicConfig: _dynamicConfig,
+        params: UserAccountDataLogic.ProcessUserAccountDataParams({
+          oracle: IAaveOracle(ORACLE),
+          reserveCount: _reserveCount,
+          positionId: _getPositionIdentifier(user, USER_POSITION_DEFAULT_SALT)
+        })
+      });
+  }
+
+  /// @inheritdoc ISpoke
+  function getUserAccountData(
+    address user,
+    bytes32 positionSalt
+  ) external view returns (UserAccountData memory) {
+    return
+      UserAccountDataLogic.processUserAccountData({
+        reserves: _reserves,
+        userPositions: _userPositions,
+        positionStatus: _positionStatus,
+        dynamicConfig: _dynamicConfig,
+        params: UserAccountDataLogic.ProcessUserAccountDataParams({
+          oracle: IAaveOracle(ORACLE),
+          reserveCount: _reserveCount,
+          positionId: _getPositionIdentifier(user, positionSalt)
+        })
+      });
   }
 
   /// @inheritdoc ISpoke
@@ -648,7 +741,27 @@ abstract contract Spoke is
         liquidationBonusFactor: _liquidationConfig.liquidationBonusFactor,
         healthFactor: healthFactor,
         maxLiquidationBonus: _dynamicConfig[reserveId][
-          _userPositions[user][reserveId].dynamicConfigKey
+          _userPositions[_getPositionIdentifier(user, USER_POSITION_DEFAULT_SALT)][reserveId]
+            .dynamicConfigKey
+        ].maxLiquidationBonus
+      });
+  }
+
+  /// @inheritdoc ISpoke
+  function getLiquidationBonus(
+    uint256 reserveId,
+    address user,
+    bytes32 positionSalt,
+    uint256 healthFactor
+  ) external view returns (uint256) {
+    _reserves.get(reserveId);
+    return
+      LiquidationLogic.calculateLiquidationBonus({
+        healthFactorForMaxBonus: _liquidationConfig.healthFactorForMaxBonus,
+        liquidationBonusFactor: _liquidationConfig.liquidationBonusFactor,
+        healthFactor: healthFactor,
+        maxLiquidationBonus: _dynamicConfig[reserveId][
+          _userPositions[_getPositionIdentifier(user, positionSalt)][reserveId].dynamicConfigKey
         ].maxLiquidationBonus
       });
   }
@@ -674,6 +787,231 @@ abstract contract Spoke is
     emit UpdateReservePriceSource(reserveId, priceSource);
   }
 
+  function _supply(
+    uint256 reserveId,
+    uint256 amount,
+    address onBehalfOf,
+    bytes32 positionSalt
+  ) internal returns (uint256, uint256) {
+    Reserve storage reserve = _reserves.get(reserveId);
+    bytes32 positionId = _getPositionIdentifier(onBehalfOf, positionSalt);
+    UserPosition storage userPosition = _userPositions[positionId][reserveId];
+    _validateSupply(reserve.flags);
+
+    IERC20(reserve.underlying).safeTransferFrom(msg.sender, address(reserve.hub), amount);
+    uint256 suppliedShares = reserve.hub.add(reserve.assetId, amount);
+    userPosition.suppliedShares += suppliedShares.toUint120();
+
+    emit Supply(reserveId, msg.sender, positionId, suppliedShares, amount);
+
+    return (suppliedShares, amount);
+  }
+
+  function _withdraw(
+    uint256 reserveId,
+    uint256 amount,
+    address onBehalfOf,
+    bytes32 positionSalt
+  ) internal returns (uint256, uint256) {
+    Reserve storage reserve = _reserves.get(reserveId);
+    bytes32 positionId = _getPositionIdentifier(onBehalfOf, positionSalt);
+    UserPosition storage userPosition = _userPositions[positionId][reserveId];
+    _validateWithdraw(reserve.flags);
+    IHubBase hub = reserve.hub;
+    uint256 assetId = reserve.assetId;
+
+    uint256 withdrawnAmount = MathUtils.min(
+      amount,
+      hub.previewRemoveByShares(assetId, userPosition.suppliedShares)
+    );
+    uint256 withdrawnShares = hub.remove(assetId, withdrawnAmount, msg.sender);
+
+    userPosition.suppliedShares -= withdrawnShares.toUint120();
+
+    if (_positionStatus[positionId].isUsingAsCollateral(reserveId)) {
+      _notifyRiskPremiumUpdate(
+        positionId,
+        _refreshAndValidateUserAccountData(positionId).riskPremium
+      );
+    }
+
+    emit Withdraw(reserveId, msg.sender, positionId, withdrawnShares, withdrawnAmount);
+
+    return (withdrawnShares, withdrawnAmount);
+  }
+
+  function _borrow(
+    uint256 reserveId,
+    uint256 amount,
+    address onBehalfOf,
+    bytes32 positionSalt
+  ) internal returns (uint256, uint256) {
+    Reserve storage reserve = _reserves.get(reserveId);
+    bytes32 positionId = _getPositionIdentifier(onBehalfOf, positionSalt);
+    UserPosition storage userPosition = _userPositions[positionId][reserveId];
+    PositionStatus storage positionStatus = _positionStatus[positionId];
+    _validateBorrow(reserve.flags);
+
+    uint256 drawnShares = reserve.hub.draw(reserve.assetId, amount, msg.sender);
+    userPosition.drawnShares += drawnShares.toUint120();
+    if (!positionStatus.isBorrowing(reserveId)) {
+      require(
+        MAX_USER_RESERVES_LIMIT == MAX_ALLOWED_USER_RESERVES_LIMIT ||
+          positionStatus.borrowCount(_reserveCount) < MAX_USER_RESERVES_LIMIT,
+        MaximumUserReservesExceeded()
+      );
+      positionStatus.setBorrowing(reserveId, true);
+    }
+
+    _notifyRiskPremiumUpdate(
+      positionId,
+      _refreshAndValidateUserAccountData(positionId).riskPremium
+    );
+
+    emit Borrow(reserveId, msg.sender, positionId, drawnShares, amount);
+
+    return (drawnShares, amount);
+  }
+
+  function _repay(
+    uint256 reserveId,
+    uint256 amount,
+    address onBehalfOf,
+    bytes32 positionSalt
+  ) internal returns (uint256, uint256) {
+    Reserve storage reserve = _reserves.get(reserveId);
+    bytes32 positionId = _getPositionIdentifier(onBehalfOf, positionSalt);
+    UserPosition storage userPosition = _userPositions[positionId][reserveId];
+    _validateRepay(reserve.flags);
+
+    uint256 restoredShares;
+    uint256 totalDebtRestored;
+    IHubBase.PremiumDelta memory premiumDelta;
+    {
+      uint256 drawnIndex = reserve.hub.getAssetDrawnIndex(reserve.assetId);
+      (uint256 drawnDebtRestored, uint256 premiumDebtRayRestored) = userPosition
+        .calculateRestoreAmount(drawnIndex, amount);
+      restoredShares = drawnDebtRestored.rayDivDown(drawnIndex);
+
+      premiumDelta = userPosition.calculatePremiumDelta({
+        drawnSharesTaken: restoredShares,
+        drawnIndex: drawnIndex,
+        riskPremium: _positionStatus[positionId].riskPremium,
+        restoredPremiumRay: premiumDebtRayRestored
+      });
+
+      totalDebtRestored = drawnDebtRestored + premiumDebtRayRestored.fromRayUp();
+      IERC20(reserve.underlying).safeTransferFrom(
+        msg.sender,
+        address(reserve.hub),
+        totalDebtRestored
+      );
+      reserve.hub.restore(reserve.assetId, drawnDebtRestored, premiumDelta);
+    }
+
+    userPosition.applyPremiumDelta(premiumDelta);
+    userPosition.drawnShares -= restoredShares.toUint120();
+    if (userPosition.drawnShares == 0) {
+      _positionStatus[positionId].setBorrowing(reserveId, false);
+    }
+
+    emit Repay(reserveId, msg.sender, positionId, restoredShares, totalDebtRestored, premiumDelta);
+
+    return (restoredShares, totalDebtRestored);
+  }
+
+  function _liquidationCall(
+    uint256 collateralReserveId,
+    uint256 debtReserveId,
+    address user,
+    bytes32 positionSalt,
+    bytes32 liquidatorSalt,
+    uint256 debtToCover,
+    bool receiveShares
+  ) internal {
+    bytes32 positionId = _getPositionIdentifier(user, positionSalt);
+    bytes32 liquidatorPositionId = _getPositionIdentifier(msg.sender, liquidatorSalt);
+    UserAccountData memory userAccountData = _calculateUserAccountData(positionId);
+    LiquidationLogic.LiquidateUserParams memory params = LiquidationLogic.LiquidateUserParams({
+      collateralReserveId: collateralReserveId,
+      debtReserveId: debtReserveId,
+      liquidationConfig: _liquidationConfig,
+      oracle: ORACLE,
+      user: user,
+      positionId: positionId,
+      debtToCover: debtToCover,
+      userAccountData: userAccountData,
+      liquidator: msg.sender,
+      liquidatorPositionId: liquidatorPositionId,
+      receiveShares: receiveShares
+    });
+
+    bool isUserInDeficit = LiquidationLogic.liquidateUser({
+      reserves: _reserves,
+      userPositions: _userPositions,
+      positionStatus: _positionStatus,
+      dynamicConfig: _dynamicConfig,
+      params: params
+    });
+
+    if (isUserInDeficit) {
+      // report deficit for all debt reserves, including the reserve being repaid
+      LiquidationLogic.notifyReportDeficit(
+        _reserves,
+        _userPositions,
+        _positionStatus,
+        _reserveCount,
+        positionId
+      );
+    } else {
+      uint256 newRiskPremium = _calculateUserAccountData(positionId).riskPremium;
+      _notifyRiskPremiumUpdate(positionId, newRiskPremium);
+    }
+  }
+
+  function _setUsingAsCollateral(
+    uint256 reserveId,
+    bool usingAsCollateral,
+    address onBehalfOf,
+    bytes32 positionSalt
+  ) internal {
+    Reserve storage reserve = _reserves.get(reserveId);
+    bytes32 positionId = _getPositionIdentifier(onBehalfOf, positionSalt);
+    PositionStatus storage positionStatus = _positionStatus[positionId];
+    if (positionStatus.isUsingAsCollateral(reserveId) == usingAsCollateral) {
+      return;
+    }
+    _validateSetUsingAsCollateral(positionStatus, reserve.flags, usingAsCollateral);
+    positionStatus.setUsingAsCollateral(reserveId, usingAsCollateral);
+
+    if (usingAsCollateral) {
+      _refreshDynamicConfig(positionId, reserveId);
+    } else {
+      uint256 newRiskPremium = _refreshAndValidateUserAccountData(positionId).riskPremium;
+      _notifyRiskPremiumUpdate(positionId, newRiskPremium);
+    }
+
+    emit SetUsingAsCollateral(reserveId, msg.sender, positionId, usingAsCollateral);
+  }
+
+  function _updateUserRiskPremium(address onBehalfOf, bytes32 positionSalt) internal {
+    if (!_isPositionManager({user: onBehalfOf, manager: msg.sender})) {
+      _checkCanCall(msg.sender, msg.data);
+    }
+    bytes32 positionId = _getPositionIdentifier(onBehalfOf, positionSalt);
+    uint256 newRiskPremium = _calculateUserAccountData(positionId).riskPremium;
+    _notifyRiskPremiumUpdate(positionId, newRiskPremium);
+  }
+
+  function _updateUserDynamicConfig(address onBehalfOf, bytes32 positionSalt) internal {
+    if (!_isPositionManager({user: onBehalfOf, manager: msg.sender})) {
+      _checkCanCall(msg.sender, msg.data);
+    }
+    bytes32 positionId = _getPositionIdentifier(onBehalfOf, positionSalt);
+    uint256 newRiskPremium = _refreshAndValidateUserAccountData(positionId).riskPremium;
+    _notifyRiskPremiumUpdate(positionId, newRiskPremium);
+  }
+
   function _setUserPositionManager(address positionManager, address user, bool approve) internal {
     PositionManagerConfig storage config = _positionManager[positionManager];
     config.approval[user] = approve;
@@ -684,10 +1022,20 @@ abstract contract Spoke is
   /// @dev It refreshes the dynamic config before calculation.
   /// @dev It checks that the health factor is above the liquidation threshold.
   function _refreshAndValidateUserAccountData(
-    address user
+    bytes32 positionId
   ) internal returns (UserAccountData memory) {
-    UserAccountData memory accountData = _processUserAccountData(user, true);
-    emit RefreshAllUserDynamicConfig(user);
+    _refreshAllDynamicConfig(positionId);
+    UserAccountData memory accountData = UserAccountDataLogic.processUserAccountData({
+      reserves: _reserves,
+      userPositions: _userPositions,
+      positionStatus: _positionStatus,
+      dynamicConfig: _dynamicConfig,
+      params: UserAccountDataLogic.ProcessUserAccountDataParams({
+        oracle: IAaveOracle(ORACLE),
+        reserveCount: _reserveCount,
+        positionId: positionId
+      })
+    });
     require(
       accountData.healthFactor >= HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
       HealthFactorBelowThreshold()
@@ -696,131 +1044,43 @@ abstract contract Spoke is
   }
 
   /// @notice Calculates the user account data with the current user dynamic config.
-  function _calculateUserAccountData(address user) internal returns (UserAccountData memory) {
-    return _processUserAccountData(user, false); // does not modify state
+  function _calculateUserAccountData(
+    bytes32 positionId
+  ) internal view returns (UserAccountData memory) {
+    return
+      UserAccountDataLogic.processUserAccountData({
+        reserves: _reserves,
+        userPositions: _userPositions,
+        positionStatus: _positionStatus,
+        dynamicConfig: _dynamicConfig,
+        params: UserAccountDataLogic.ProcessUserAccountDataParams({
+          oracle: IAaveOracle(ORACLE),
+          reserveCount: _reserveCount,
+          positionId: positionId
+        })
+      });
   }
 
-  /// @notice Process the user account data and updates dynamic config of the user if `refreshConfig` is true.
-  /// @dev Collateral is rounded against the user, while debt is calculated with full precision.
-  /// @dev If user has no debt, it returns health factor of `type(uint256).max` and risk premium of 0.
-  function _processUserAccountData(
-    address user,
-    bool refreshConfig
-  ) internal returns (UserAccountData memory accountData) {
-    PositionStatus storage positionStatus = _positionStatus[user];
+  function _refreshAllDynamicConfig(bytes32 positionId) internal {
+    PositionStatus storage positionStatus = _positionStatus[positionId];
 
     uint256 reserveId = _reserveCount;
-    KeyValueList.List memory collateralInfo = KeyValueList.init(
-      positionStatus.collateralCount(reserveId)
-    );
-    bool borrowing;
-    bool collateral;
-    while (true) {
-      (reserveId, borrowing, collateral) = positionStatus.next(reserveId);
-      if (reserveId == PositionStatusMap.NOT_FOUND) break;
-
-      UserPosition storage userPosition = _userPositions[user][reserveId];
-      Reserve storage reserve = _reserves[reserveId];
-
-      uint256 assetPrice = IAaveOracle(ORACLE).getReservePrice(reserveId);
-      uint256 assetDecimals = reserve.decimals;
-
-      if (collateral) {
-        uint256 collateralFactor = _dynamicConfig[reserveId][
-          refreshConfig
-            ? (userPosition.dynamicConfigKey = reserve.dynamicConfigKey)
-            : userPosition.dynamicConfigKey
-        ].collateralFactor;
-        if (collateralFactor > 0) {
-          uint256 suppliedShares = userPosition.suppliedShares;
-          if (suppliedShares > 0) {
-            // cannot round down to zero
-            uint256 userCollateralValue = reserve
-              .hub
-              .previewRemoveByShares(reserve.assetId, suppliedShares)
-              .toValue({decimals: assetDecimals, price: assetPrice});
-            accountData.totalCollateralValue += userCollateralValue;
-            collateralInfo.add(
-              accountData.activeCollateralCount,
-              reserve.collateralRisk,
-              userCollateralValue
-            );
-            accountData.avgCollateralFactor += collateralFactor * userCollateralValue;
-            accountData.activeCollateralCount = accountData.activeCollateralCount.uncheckedAdd(1);
-          }
-        }
-      }
-
-      if (borrowing) {
-        UserPositionUtils.DebtComponents memory debtComponents = userPosition.getDebtComponents(
-          reserve.hub,
-          reserve.assetId
-        );
-        uint256 debtRay = debtComponents.drawnShares * debtComponents.drawnIndex +
-          debtComponents.premiumDebtRay;
-        accountData.totalDebtValueRay += debtRay.toValue({
-          decimals: assetDecimals,
-          price: assetPrice
-        });
-        accountData.borrowCount = accountData.borrowCount.uncheckedAdd(1);
-      }
+    while ((reserveId = positionStatus.nextCollateral(reserveId)) != PositionStatusMap.NOT_FOUND) {
+      _userPositions[positionId][reserveId].dynamicConfigKey = _reserves[reserveId]
+        .dynamicConfigKey;
     }
-
-    if (accountData.totalDebtValueRay > 0) {
-      // at this point, `avgCollateralFactor` is the total collateral value weighted by collateral factors,
-      // expressed in units of Value and scaled by BPS. We convert it from BPS to WAD, since this will
-      // ultimately define the scaling factor of the health factor.
-      accountData.healthFactor = Math.mulDiv(
-        accountData.avgCollateralFactor.bpsToWad(),
-        WadRayMath.RAY,
-        accountData.totalDebtValueRay,
-        Math.Rounding.Floor
-      );
-    } else {
-      accountData.healthFactor = type(uint256).max;
-    }
-
-    if (accountData.totalCollateralValue > 0) {
-      accountData.avgCollateralFactor =
-        accountData.avgCollateralFactor.bpsToWad() / accountData.totalCollateralValue;
-    }
-
-    // sort by collateral risk in ASC, collateral value in DESC
-    collateralInfo.sortByKey();
-
-    // runs until either the collateral or debt is exhausted
-    uint256 totalDebtValue = accountData.totalDebtValueRay.fromRayUp();
-    uint256 debtValueLeftToCover = totalDebtValue;
-
-    for (uint256 index = 0; index < collateralInfo.length(); ++index) {
-      if (debtValueLeftToCover == 0) {
-        break;
-      }
-
-      (uint256 collateralRisk, uint256 userCollateralValue) = collateralInfo.uncheckedAt(index);
-      userCollateralValue = userCollateralValue.min(debtValueLeftToCover);
-      accountData.riskPremium += userCollateralValue * collateralRisk;
-      debtValueLeftToCover = debtValueLeftToCover.uncheckedSub(userCollateralValue);
-    }
-
-    if (debtValueLeftToCover < totalDebtValue) {
-      accountData.riskPremium = accountData.riskPremium.divUp(
-        totalDebtValue.uncheckedSub(debtValueLeftToCover)
-      );
-    }
-
-    return accountData;
+    emit RefreshAllUserDynamicConfig(positionId);
   }
 
-  function _refreshDynamicConfig(address user, uint256 reserveId) internal {
-    _userPositions[user][reserveId].dynamicConfigKey = _reserves[reserveId].dynamicConfigKey;
-    emit RefreshSingleUserDynamicConfig(user, reserveId);
+  function _refreshDynamicConfig(bytes32 positionId, uint256 reserveId) internal {
+    _userPositions[positionId][reserveId].dynamicConfigKey = _reserves[reserveId].dynamicConfigKey;
+    emit RefreshSingleUserDynamicConfig(positionId, reserveId);
   }
 
   /// @notice Refreshes premium for borrowed reserves of `user` with `newRiskPremium`.
   /// @dev Skips the refresh if the user risk premium remains zero.
-  function _notifyRiskPremiumUpdate(address user, uint256 newRiskPremium) internal {
-    PositionStatus storage positionStatus = _positionStatus[user];
+  function _notifyRiskPremiumUpdate(bytes32 positionId, uint256 newRiskPremium) internal {
+    PositionStatus storage positionStatus = _positionStatus[positionId];
     if (newRiskPremium == 0 && positionStatus.riskPremium == 0) {
       return;
     }
@@ -828,7 +1088,7 @@ abstract contract Spoke is
 
     uint256 reserveId = _reserveCount;
     while ((reserveId = positionStatus.nextBorrowing(reserveId)) != PositionStatusMap.NOT_FOUND) {
-      UserPosition storage userPosition = _userPositions[user][reserveId];
+      UserPosition storage userPosition = _userPositions[positionId][reserveId];
       Reserve storage reserve = _reserves[reserveId];
       uint256 assetId = reserve.assetId;
       IHubBase hub = reserve.hub;
@@ -842,10 +1102,10 @@ abstract contract Spoke is
 
       hub.refreshPremium(assetId, premiumDelta);
       userPosition.applyPremiumDelta(premiumDelta);
-      emit RefreshPremiumDebt(reserveId, user, premiumDelta);
+      emit RefreshPremiumDebt(reserveId, positionId, premiumDelta);
     }
 
-    emit UpdateUserRiskPremium(user, newRiskPremium);
+    emit UpdateUserRiskPremium(positionId, newRiskPremium);
   }
 
   /// @dev CollateralFactor of historical config keys cannot be 0, which allows liquidations to proceed.
@@ -929,19 +1189,17 @@ abstract contract Spoke is
     require(config.liquidationFee <= PercentageMath.PERCENTAGE_FACTOR, InvalidLiquidationFee());
   }
 
-  function _domainNameAndVersion() internal pure override returns (string memory, string memory) {
-    return ('Spoke', '1');
+  function _getPositionIdentifier(address user, bytes32 salt) internal pure returns (bytes32) {
+    // The default salt maps to the legacy address-keyed storage slot, so positions
+    // created before the position-nonces upgrade remain accessible. The chance of a non-default,
+    // keccak-derived identifier colliding with such a value is negligible (~2^-96).
+    return
+      salt == USER_POSITION_DEFAULT_SALT
+        ? bytes32(uint256(uint160(user)))
+        : Hashes.efficientKeccak256(bytes32(uint256(uint160(user))), salt);
   }
 
-  function _castToView(
-    function(address, bool) internal returns (UserAccountData memory) fnIn
-  )
-    internal
-    pure
-    returns (function(address, bool) internal view returns (UserAccountData memory) fnOut)
-  {
-    assembly ('memory-safe') {
-      fnOut := fnIn
-    }
+  function _domainNameAndVersion() internal pure override returns (string memory, string memory) {
+    return ('Spoke', '1');
   }
 }

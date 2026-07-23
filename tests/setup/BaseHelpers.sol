@@ -2,6 +2,7 @@
 pragma solidity ^0.8.0;
 
 import {BaseState} from 'tests/setup/BaseState.sol';
+import {Hashes} from 'src/dependencies/openzeppelin/Hashes.sol';
 import {Ownable} from 'src/dependencies/openzeppelin/Ownable.sol';
 import {IERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
 import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
@@ -49,6 +50,19 @@ abstract contract BaseHelpers is BaseState {
         usdx: _usdxReserveId(spoke),
         wbtc: _wbtcReserveId(spoke)
       });
+  }
+
+  /// @dev Default position identifier for `user` (salt = bytes32(0)), matching Spoke._getPositionIdentifier.
+  function _getPositionId(address user) internal pure returns (bytes32) {
+    return _getPositionId(user, bytes32(0));
+  }
+
+  /// @dev Position identifier for `user` under `salt`, matching Spoke._getPositionIdentifier.
+  function _getPositionId(address user, bytes32 salt) internal pure returns (bytes32) {
+    return
+      salt == bytes32(0)
+        ? bytes32(uint256(uint160(user)))
+        : Hashes.efficientKeccak256(bytes32(uint256(uint160(user))), salt);
   }
 
   ///////////////////////////////////////////////////////////////////////////////////////////////

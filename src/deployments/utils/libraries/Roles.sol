@@ -121,9 +121,13 @@ library Roles {
 
   /// @notice Returns the function selectors associated with the Spoke Position Updater role.
   function getSpokePositionUpdaterRoleSelectors() internal pure returns (bytes4[] memory) {
-    bytes4[] memory selectors = new bytes4[](2);
-    selectors[0] = ISpoke.updateUserDynamicConfig.selector;
-    selectors[1] = ISpoke.updateUserRiskPremium.selector;
+    bytes4[] memory selectors = new bytes4[](4);
+    // `updateUserDynamicConfig` and `updateUserRiskPremium` are overloaded, so their selectors are
+    // referenced by explicit signature to gate both the default and salted position variants.
+    selectors[0] = bytes4(keccak256('updateUserDynamicConfig(address)'));
+    selectors[1] = bytes4(keccak256('updateUserDynamicConfig(address,bytes32)'));
+    selectors[2] = bytes4(keccak256('updateUserRiskPremium(address)'));
+    selectors[3] = bytes4(keccak256('updateUserRiskPremium(address,bytes32)'));
     return selectors;
   }
 

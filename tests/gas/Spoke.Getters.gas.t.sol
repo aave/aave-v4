@@ -71,4 +71,40 @@ contract SpokeGetters_Gas_Tests is Base {
     vm.snapshotGasLastCall('Spoke.Getters', 'getUserAccountData: supplies: 2, borrows: 2');
     vm.stopPrank();
   }
+
+  function test_getUserAccountData_positionSalt_oneSupplies() external {
+    bytes32 salt = keccak256('position-salt');
+    vm.startPrank(alice);
+    spoke1.supply(_daiReserveId(spoke1), 1000e18, alice, salt);
+    spoke1.setUsingAsCollateral(_daiReserveId(spoke1), true, alice, salt);
+
+    spoke1.getUserAccountData(alice, salt);
+    vm.snapshotGasLastCall(
+      'Spoke.Getters',
+      'getUserAccountData (positionSalt): supplies: 1, borrows: 0'
+    );
+    vm.stopPrank();
+  }
+
+  function test_getUserAccountData_positionSalt_twoSupplies_oneBorrows() external {
+    bytes32 salt = keccak256('position-salt');
+    vm.prank(bob);
+    spoke1.supply(_usdxReserveId(spoke1), 1000e6, bob);
+
+    vm.startPrank(alice);
+    spoke1.supply(_daiReserveId(spoke1), 1000e18, alice, salt);
+    spoke1.setUsingAsCollateral(_daiReserveId(spoke1), true, alice, salt);
+
+    spoke1.supply(_wethReserveId(spoke1), 1000e18, alice, salt);
+    spoke1.setUsingAsCollateral(_wethReserveId(spoke1), true, alice, salt);
+
+    spoke1.borrow(_usdxReserveId(spoke1), 800e6, alice, salt);
+
+    spoke1.getUserAccountData(alice, salt);
+    vm.snapshotGasLastCall(
+      'Spoke.Getters',
+      'getUserAccountData (positionSalt): supplies: 2, borrows: 1'
+    );
+    vm.stopPrank();
+  }
 }

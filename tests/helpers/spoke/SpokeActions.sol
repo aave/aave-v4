@@ -27,6 +27,18 @@ library SpokeActions {
     spoke.setUsingAsCollateral(reserveId, usingAsCollateral, onBehalfOf);
   }
 
+  function setUsingAsCollateral(
+    ISpoke spoke,
+    uint256 reserveId,
+    address caller,
+    bool usingAsCollateral,
+    address onBehalfOf,
+    bytes32 positionSalt
+  ) internal {
+    vm.prank(caller);
+    spoke.setUsingAsCollateral(reserveId, usingAsCollateral, onBehalfOf, positionSalt);
+  }
+
   function supply(
     ISpoke spoke,
     uint256 reserveId,
@@ -36,6 +48,18 @@ library SpokeActions {
   ) internal {
     vm.prank(caller);
     spoke.supply(reserveId, amount, onBehalfOf);
+  }
+
+  function supply(
+    ISpoke spoke,
+    uint256 reserveId,
+    address caller,
+    uint256 amount,
+    address onBehalfOf,
+    bytes32 positionSalt
+  ) internal {
+    vm.prank(caller);
+    spoke.supply(reserveId, amount, onBehalfOf, positionSalt);
   }
 
   function supplyCollateral(
@@ -55,6 +79,25 @@ library SpokeActions {
     });
   }
 
+  function supplyCollateral(
+    ISpoke spoke,
+    uint256 reserveId,
+    address caller,
+    uint256 amount,
+    address onBehalfOf,
+    bytes32 positionSalt
+  ) internal {
+    supply(spoke, reserveId, caller, amount, onBehalfOf, positionSalt);
+    setUsingAsCollateral({
+      spoke: spoke,
+      reserveId: reserveId,
+      caller: caller,
+      usingAsCollateral: true,
+      onBehalfOf: onBehalfOf,
+      positionSalt: positionSalt
+    });
+  }
+
   function withdraw(
     ISpoke spoke,
     uint256 reserveId,
@@ -64,6 +107,18 @@ library SpokeActions {
   ) internal {
     vm.prank(caller);
     spoke.withdraw(reserveId, amount, onBehalfOf);
+  }
+
+  function withdraw(
+    ISpoke spoke,
+    uint256 reserveId,
+    address caller,
+    uint256 amount,
+    address onBehalfOf,
+    bytes32 positionSalt
+  ) internal {
+    vm.prank(caller);
+    spoke.withdraw(reserveId, amount, onBehalfOf, positionSalt);
   }
 
   function borrow(
@@ -77,6 +132,18 @@ library SpokeActions {
     spoke.borrow(reserveId, amount, onBehalfOf);
   }
 
+  function borrow(
+    ISpoke spoke,
+    uint256 reserveId,
+    address caller,
+    uint256 amount,
+    address onBehalfOf,
+    bytes32 positionSalt
+  ) internal {
+    vm.prank(caller);
+    spoke.borrow(reserveId, amount, onBehalfOf, positionSalt);
+  }
+
   function repay(
     ISpoke spoke,
     uint256 reserveId,
@@ -86,6 +153,18 @@ library SpokeActions {
   ) internal {
     vm.prank(caller);
     spoke.repay(reserveId, amount, onBehalfOf);
+  }
+
+  function repay(
+    ISpoke spoke,
+    uint256 reserveId,
+    address caller,
+    uint256 amount,
+    address onBehalfOf,
+    bytes32 positionSalt
+  ) internal {
+    vm.prank(caller);
+    spoke.repay(reserveId, amount, onBehalfOf, positionSalt);
   }
 
   function liquidationCall(
@@ -99,6 +178,29 @@ library SpokeActions {
   ) internal {
     vm.prank(caller);
     spoke.liquidationCall(collateralReserveId, debtReserveId, user, debtToCover, receiveShares);
+  }
+
+  function liquidationCall(
+    ISpoke spoke,
+    uint256 collateralReserveId,
+    uint256 debtReserveId,
+    address user,
+    bytes32 positionSalt,
+    bytes32 liquidatorPositionSalt,
+    uint256 debtToCover,
+    bool receiveShares,
+    address caller
+  ) internal {
+    vm.prank(caller);
+    spoke.liquidationCall(
+      collateralReserveId,
+      debtReserveId,
+      user,
+      positionSalt,
+      liquidatorPositionSalt,
+      debtToCover,
+      receiveShares
+    );
   }
 
   ///////////////////////////////////////////////////////////////////////////////////////////////

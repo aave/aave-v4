@@ -68,6 +68,7 @@ contract LiquidationLogicExecuteLiquidationTest is LiquidationLogicBaseTest {
       }),
       oracle: address(oracle1),
       user: makeAddr('user'),
+      positionId: _getPositionId(makeAddr('user')),
       debtToCover: 3e18,
       healthFactor: 0.8e18,
       totalDebtValueRay: 10_000e26 * WadRayMath.RAY,

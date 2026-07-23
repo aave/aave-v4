@@ -50,6 +50,7 @@ contract LiquidationLogicLiquidateUserTest is LiquidationLogicBaseTest {
       debtReserveId: wethReserveId,
       oracle: address(oracle1),
       user: makeAddr('user'),
+      positionId: _getPositionId(makeAddr('user')),
       liquidationConfig: ISpoke.LiquidationConfig({
         targetHealthFactor: 1e18,
         healthFactorForMaxBonus: 0.8e18,
@@ -66,6 +67,7 @@ contract LiquidationLogicLiquidateUserTest is LiquidationLogicBaseTest {
         avgCollateralFactor: 0 // not used
       }),
       liquidator: makeAddr('liquidator'),
+      liquidatorPositionId: _getPositionId(makeAddr('liquidator')),
       receiveShares: false
     });
 

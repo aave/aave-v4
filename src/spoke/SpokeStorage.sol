@@ -25,11 +25,11 @@ abstract contract SpokeStorage {
   mapping(uint256 reserveId => mapping(uint32 dynamicConfigKey => ISpoke.DynamicReserveConfig))
     internal _dynamicConfig;
 
-  /// @dev Map of user addresses to their position status.
-  mapping(address user => ISpoke.PositionStatus) internal _positionStatus;
+  /// @dev Map of position identifiers to their position status.
+  mapping(bytes32 positionId => ISpoke.PositionStatus) internal _positionStatus;
 
-  /// @dev Map of user addresses and reserve identifiers to user positions.
-  mapping(address user => mapping(uint256 reserveId => ISpoke.UserPosition))
+  /// @dev Map of position identifiers and reserve identifiers to user positions.
+  mapping(bytes32 positionId => mapping(uint256 reserveId => ISpoke.UserPosition))
     internal _userPositions;
 
   /// @dev Map of position manager addresses to their configuration data.

@@ -421,7 +421,7 @@ contract SpokeWithdrawScenarioTest is Base {
     emit ISpoke.Supply({
       reserveId: reserveId,
       caller: caller,
-      user: caller,
+      positionId: _getPositionId(caller),
       suppliedShares: shares1,
       suppliedAmount: assets
     });
@@ -435,7 +435,7 @@ contract SpokeWithdrawScenarioTest is Base {
     emit ISpoke.Withdraw({
       reserveId: reserveId,
       caller: caller,
-      user: caller,
+      positionId: _getPositionId(caller),
       withdrawnShares: shares2,
       withdrawnAmount: assets
     });
@@ -503,7 +503,7 @@ contract SpokeWithdrawScenarioTest is Base {
     emit ISpoke.Withdraw({
       reserveId: reserveId,
       caller: caller,
-      user: caller,
+      positionId: _getPositionId(caller),
       withdrawnShares: shares1,
       withdrawnAmount: assets
     });
@@ -517,7 +517,7 @@ contract SpokeWithdrawScenarioTest is Base {
     emit ISpoke.Supply({
       reserveId: reserveId,
       caller: caller,
-      user: caller,
+      positionId: _getPositionId(caller),
       suppliedShares: shares2,
       suppliedAmount: assets
     });

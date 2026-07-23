@@ -150,7 +150,7 @@ contract SpokeUpgradeableTest is Base {
       address(_deploySpokeProxy(address(spokeImpl)))
     );
 
-    ISpokeInstance spokeImpl2 = _deployMockSpokeInstance(2);
+    ISpokeInstance spokeImpl2 = _deployMockSpokeInstance(3);
     vm.expectRevert(ISpoke.InvalidAddress.selector);
     vm.prank(ProxyHelper.getProxyAdmin(address(spokeProxy)));
     spokeProxy.upgradeToAndCall(address(spokeImpl2), _getInitializeCalldata(address(0)));
@@ -205,7 +205,7 @@ contract SpokeUpgradeableTest is Base {
     );
     ISpokeInstance spokeProxy = ISpokeInstance(address(_deploySpokeProxy(address(spokeImpl))));
 
-    assertEq(spokeProxy.SPOKE_REVISION(), 1);
+    assertEq(spokeProxy.SPOKE_REVISION(), 2);
   }
 
   function _deploySpokeProxy(address spokeImpl) internal returns (ISpoke) {

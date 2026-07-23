@@ -89,7 +89,7 @@ contract SpokeSupplyTest is Base {
 
     MockReentrantCaller reentrantCaller = new MockReentrantCaller(
       address(spoke1),
-      ISpoke.supply.selector
+      bytes4(keccak256('supply(uint256,uint256,address)'))
     );
 
     vm.mockFunction(
@@ -115,7 +115,7 @@ contract SpokeSupplyTest is Base {
     emit ISpoke.Supply({
       reserveId: _daiReserveId(spoke1),
       caller: bob,
-      user: bob,
+      positionId: _getPositionId(bob),
       suppliedShares: expectedShares,
       suppliedAmount: amount
     });
@@ -200,7 +200,7 @@ contract SpokeSupplyTest is Base {
     emit ISpoke.Supply({
       reserveId: _daiReserveId(spoke1),
       caller: bob,
-      user: bob,
+      positionId: _getPositionId(bob),
       suppliedShares: expectedShares,
       suppliedAmount: amount
     });
@@ -286,7 +286,7 @@ contract SpokeSupplyTest is Base {
     emit ISpoke.Supply({
       reserveId: _daiReserveId(spoke1),
       caller: carol,
-      user: carol,
+      positionId: _getPositionId(carol),
       suppliedShares: expectedShares,
       suppliedAmount: amount
     });
@@ -413,7 +413,7 @@ contract SpokeSupplyTest is Base {
     emit ISpoke.Supply({
       reserveId: reserveId,
       caller: carol,
-      user: carol,
+      positionId: _getPositionId(carol),
       suppliedShares: state.expectedShares,
       suppliedAmount: amount
     });
@@ -490,7 +490,7 @@ contract SpokeSupplyTest is Base {
     emit ISpoke.Supply({
       reserveId: _daiReserveId(spoke1),
       caller: carol,
-      user: carol,
+      positionId: _getPositionId(carol),
       suppliedShares: expectedShares,
       suppliedAmount: amount
     });
@@ -604,7 +604,7 @@ contract SpokeSupplyTest is Base {
     emit ISpoke.Supply({
       reserveId: reserveId,
       caller: carol,
-      user: carol,
+      positionId: _getPositionId(carol),
       suppliedShares: expectedShares,
       suppliedAmount: amount
     });

@@ -7,7 +7,10 @@ update:; forge update
 
 # Build & test
 build  :; forge build --sizes
-test   :; forge test -vvv
+test   :; forge test -vvv --no-match-path 'tests/fork/**'
+
+# Mainnet-fork upgrade-safety suite (requires RPC_MAINNET; pin a block with FORK_BLOCK=<n>)
+test-fork :; forge test -vvv --match-path 'tests/fork/**'
 
 # Utilities
 download :; cast etherscan-source --chain ${chain} -d src/etherscan/${chain}_${address} ${address}

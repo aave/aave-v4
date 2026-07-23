@@ -46,7 +46,7 @@ contract SpokeWithdrawTest is Base {
 
     MockReentrantCaller reentrantCaller = new MockReentrantCaller(
       address(spoke1),
-      ISpoke.withdraw.selector
+      bytes4(keccak256('withdraw(uint256,uint256,address)'))
     );
 
     vm.mockFunction(
@@ -78,7 +78,7 @@ contract SpokeWithdrawTest is Base {
 
     MockReentrantCaller reentrantCaller = new MockReentrantCaller(
       address(spoke1),
-      ISpoke.withdraw.selector
+      bytes4(keccak256('withdraw(uint256,uint256,address)'))
     );
 
     vm.mockFunction(
@@ -123,7 +123,13 @@ contract SpokeWithdrawTest is Base {
 
     // Bob withdraws immediately in the same block
     vm.expectEmit(address(spoke1));
-    emit ISpoke.Withdraw(_daiReserveId(spoke1), bob, bob, expectedSupplyShares, amount);
+    emit ISpoke.Withdraw(
+      _daiReserveId(spoke1),
+      bob,
+      _getPositionId(bob),
+      expectedSupplyShares,
+      amount
+    );
     CheckedWithdrawResult memory r = _checkedWithdraw(
       CheckedWithdrawParams({
         spoke: spoke1,

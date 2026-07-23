@@ -33,14 +33,24 @@ contract SpokeMulticall is Base {
 
     // Set up the multicall
     bytes[] memory calls = new bytes[](2);
-    calls[0] = abi.encodeCall(ISpoke.supply, (daiReserveId, supplyAmount, bob));
-    calls[1] = abi.encodeCall(ISpoke.setUsingAsCollateral, (daiReserveId, true, bob));
+    calls[0] = abi.encodeWithSignature(
+      'supply(uint256,uint256,address)',
+      daiReserveId,
+      supplyAmount,
+      bob
+    );
+    calls[1] = abi.encodeWithSignature(
+      'setUsingAsCollateral(uint256,bool,address)',
+      daiReserveId,
+      true,
+      bob
+    );
 
     vm.expectEmit(address(spoke1));
     emit ISpoke.Supply({
       reserveId: daiReserveId,
       caller: bob,
-      user: bob,
+      positionId: _getPositionId(bob),
       suppliedShares: hub1.previewAddByAssets(daiAssetId, supplyAmount),
       suppliedAmount: supplyAmount
     });
@@ -48,7 +58,7 @@ contract SpokeMulticall is Base {
     emit ISpoke.SetUsingAsCollateral({
       reserveId: daiReserveId,
       caller: bob,
-      user: bob,
+      positionId: _getPositionId(bob),
       usingAsCollateral: true
     });
 
@@ -92,15 +102,25 @@ contract SpokeMulticall is Base {
 
     // Set up the multicall
     bytes[] memory calls = new bytes[](3);
-    calls[0] = abi.encodeCall(ISpoke.supply, (_daiReserveId(spoke2), MAX_SUPPLY_AMOUNT, bob));
-    calls[1] = abi.encodeCall(ISpoke.setUsingAsCollateral, (_daiReserveId(spoke2), true, bob));
-    calls[2] = abi.encodeCall(ISpoke.updateUserRiskPremium, (bob));
+    calls[0] = abi.encodeWithSignature(
+      'supply(uint256,uint256,address)',
+      _daiReserveId(spoke2),
+      MAX_SUPPLY_AMOUNT,
+      bob
+    );
+    calls[1] = abi.encodeWithSignature(
+      'setUsingAsCollateral(uint256,bool,address)',
+      _daiReserveId(spoke2),
+      true,
+      bob
+    );
+    calls[2] = abi.encodeWithSignature('updateUserRiskPremium(address)', bob);
 
     vm.expectEmit(address(spoke2));
     emit ISpoke.Supply({
       reserveId: _daiReserveId(spoke2),
       caller: bob,
-      user: bob,
+      positionId: _getPositionId(bob),
       suppliedShares: hub1.previewAddByAssets(daiAssetId, MAX_SUPPLY_AMOUNT),
       suppliedAmount: MAX_SUPPLY_AMOUNT
     });
@@ -108,11 +128,14 @@ contract SpokeMulticall is Base {
     emit ISpoke.SetUsingAsCollateral({
       reserveId: _daiReserveId(spoke2),
       caller: bob,
-      user: bob,
+      positionId: _getPositionId(bob),
       usingAsCollateral: true
     });
     vm.expectEmit(address(spoke2));
-    emit ISpoke.UpdateUserRiskPremium(bob, _getCollateralRisk(spoke2, _daiReserveId(spoke2)));
+    emit ISpoke.UpdateUserRiskPremium(
+      _getPositionId(bob),
+      _getCollateralRisk(spoke2, _daiReserveId(spoke2))
+    );
 
     // Then he supplies dai and sets as collateral, so user rp should decrease
     vm.prank(bob);
@@ -245,10 +268,29 @@ contract SpokeMulticall is Base {
     uint256 borrowAmount = 80e18;
 
     bytes[] memory calls = new bytes[](4);
-    calls[0] = abi.encodeCall(ISpoke.supply, (_daiReserveId(spoke1), supplyAmount, alice));
-    calls[1] = abi.encodeCall(ISpoke.setUsingAsCollateral, (_daiReserveId(spoke1), true, alice));
-    calls[2] = abi.encodeCall(ISpoke.borrow, (_daiReserveId(spoke1), borrowAmount, alice));
-    calls[3] = abi.encodeCall(ISpoke.getUserDebt, (_daiReserveId(spoke1), alice));
+    calls[0] = abi.encodeWithSignature(
+      'supply(uint256,uint256,address)',
+      _daiReserveId(spoke1),
+      supplyAmount,
+      alice
+    );
+    calls[1] = abi.encodeWithSignature(
+      'setUsingAsCollateral(uint256,bool,address)',
+      _daiReserveId(spoke1),
+      true,
+      alice
+    );
+    calls[2] = abi.encodeWithSignature(
+      'borrow(uint256,uint256,address)',
+      _daiReserveId(spoke1),
+      borrowAmount,
+      alice
+    );
+    calls[3] = abi.encodeWithSignature(
+      'getUserDebt(uint256,address)',
+      _daiReserveId(spoke1),
+      alice
+    );
 
     vm.prank(alice);
     bytes[] memory ret = spoke1.multicall(calls);
@@ -264,9 +306,24 @@ contract SpokeMulticall is Base {
     uint256 supplyAmount = 120e18;
 
     bytes[] memory calls = new bytes[](3);
-    calls[0] = abi.encodeCall(ISpoke.supply, (_daiReserveId(spoke1), supplyAmount, alice));
-    calls[1] = abi.encodeCall(ISpoke.withdraw, (_daiReserveId(spoke1), 0, alice));
-    calls[2] = abi.encodeCall(ISpoke.setUsingAsCollateral, (_daiReserveId(spoke1), true, alice));
+    calls[0] = abi.encodeWithSignature(
+      'supply(uint256,uint256,address)',
+      _daiReserveId(spoke1),
+      supplyAmount,
+      alice
+    );
+    calls[1] = abi.encodeWithSignature(
+      'withdraw(uint256,uint256,address)',
+      _daiReserveId(spoke1),
+      0,
+      alice
+    );
+    calls[2] = abi.encodeWithSignature(
+      'setUsingAsCollateral(uint256,bool,address)',
+      _daiReserveId(spoke1),
+      true,
+      alice
+    );
 
     vm.prank(alice);
     vm.expectRevert(IHub.InvalidAmount.selector);

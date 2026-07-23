@@ -427,7 +427,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
     emit ISpoke.LiquidationCall({
       collateralReserveId: params.collateralReserveId,
       debtReserveId: params.debtReserveId,
-      user: params.user,
+      positionId: _getPositionId(params.user),
       liquidator: params.liquidator,
       receiveShares: params.receiveShares,
       debtAmountRestored: amountToRestore,
@@ -536,7 +536,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
             vm.expectEmit(address(params.spoke));
             emit ISpoke.ReportDeficit({
               reserveId: reserveId,
-              user: params.user,
+              positionId: _getPositionId(params.user),
               drawnShares: vars.userReservePosition.drawnShares,
               premiumDelta: premiumDelta
             });
@@ -566,7 +566,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
               vm.expectEmit(address(params.spoke));
               emit ISpoke.RefreshPremiumDebt({
                 reserveId: reserveId,
-                user: params.user,
+                positionId: _getPositionId(params.user),
                 premiumDelta: premiumDelta
               });
             } else {
@@ -583,7 +583,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
       if (!liquidationMetadata.hasDeficit && !riskPremiumOptimisation) {
         vm.expectEmit(address(params.spoke));
         emit ISpoke.UpdateUserRiskPremium({
-          user: params.user,
+          positionId: _getPositionId(params.user),
           riskPremium: expectedUserAccountData.riskPremium
         });
       }

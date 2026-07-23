@@ -92,7 +92,7 @@ contract TakerPositionManagerTest is TakerPositionManagerBaseTest {
     emit ISpoke.Withdraw(
       _daiReserveId(spoke1),
       address(positionManager),
-      alice,
+      _getPositionId(alice),
       expectedShares,
       amount
     );
@@ -176,7 +176,7 @@ contract TakerPositionManagerTest is TakerPositionManagerBaseTest {
     emit ISpoke.Withdraw(
       _daiReserveId(spoke1),
       address(positionManager),
-      alice,
+      _getPositionId(alice),
       expectedSupplyShares,
       supplyAmount
     );
@@ -247,7 +247,7 @@ contract TakerPositionManagerTest is TakerPositionManagerBaseTest {
     emit ISpoke.Withdraw(
       _daiReserveId(spoke1),
       address(positionManager),
-      alice,
+      _getPositionId(alice),
       expectedSupplyShares,
       supplyAmount
     );
@@ -345,7 +345,7 @@ contract TakerPositionManagerTest is TakerPositionManagerBaseTest {
     emit ISpoke.Withdraw(
       _daiReserveId(spoke1),
       address(positionManager),
-      alice,
+      _getPositionId(alice),
       expectedSupplyShares,
       expectedWithdrawAmount
     );
@@ -533,7 +533,7 @@ contract TakerPositionManagerTest is TakerPositionManagerBaseTest {
     emit ISpoke.Borrow(
       _daiReserveId(spoke1),
       address(positionManager),
-      alice,
+      _getPositionId(alice),
       expectedBorrowShares,
       borrowAmount
     );
@@ -703,7 +703,7 @@ contract TakerPositionManagerTest is TakerPositionManagerBaseTest {
     emit ISpoke.Borrow(
       _daiReserveId(spoke1),
       address(positionManager),
-      alice,
+      _getPositionId(alice),
       hub1.previewRestoreByAssets(daiAssetId, borrowAmount),
       borrowAmount
     );

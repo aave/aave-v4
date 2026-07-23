@@ -34,10 +34,12 @@ library LiquidationLogic {
     uint256 debtReserveId;
     address oracle;
     address user;
+    bytes32 positionId;
     ISpoke.LiquidationConfig liquidationConfig;
     uint256 debtToCover;
     ISpoke.UserAccountData userAccountData;
     address liquidator;
+    bytes32 liquidatorPositionId;
     bool receiveShares;
   }
 
@@ -57,6 +59,7 @@ library LiquidationLogic {
     ISpoke.LiquidationConfig liquidationConfig;
     address oracle;
     address user;
+    bytes32 positionId;
     uint256 debtToCover;
     uint256 healthFactor;
     uint256 totalDebtValueRay;
@@ -193,15 +196,15 @@ library LiquidationLogic {
   /// @return True if the liquidation results in deficit.
   function liquidateUser(
     mapping(uint256 reserveId => ISpoke.Reserve) storage reserves,
-    mapping(address user => mapping(uint256 reserveId => ISpoke.UserPosition)) storage userPositions,
-    mapping(address user => ISpoke.PositionStatus) storage positionStatus,
+    mapping(bytes32 positionId => mapping(uint256 reserveId => ISpoke.UserPosition)) storage userPositions,
+    mapping(bytes32 positionId => ISpoke.PositionStatus) storage positionStatus,
     mapping(uint256 reserveId => mapping(uint32 dynamicConfigKey => ISpoke.DynamicReserveConfig)) storage dynamicConfig,
     LiquidateUserParams memory params
   ) external returns (bool) {
     ISpoke.Reserve storage collateralReserve = reserves.get(params.collateralReserveId);
     ISpoke.Reserve storage debtReserve = reserves.get(params.debtReserveId);
 
-    ISpoke.UserPosition storage collateralUserPosition = userPositions[params.user][
+    ISpoke.UserPosition storage collateralUserPosition = userPositions[params.positionId][
       params.collateralReserveId
     ];
     ISpoke.DynamicReserveConfig storage collateralDynConfig = dynamicConfig[
@@ -224,6 +227,7 @@ library LiquidationLogic {
       liquidationConfig: params.liquidationConfig,
       oracle: params.oracle,
       user: params.user,
+      positionId: params.positionId,
       debtToCover: params.debtToCover,
       healthFactor: params.userAccountData.healthFactor,
       totalDebtValueRay: params.userAccountData.totalDebtValueRay,
@@ -233,11 +237,13 @@ library LiquidationLogic {
       receiveShares: params.receiveShares
     });
 
-    ISpoke.UserPosition storage debtUserPosition = userPositions[params.user][params.debtReserveId];
-    ISpoke.UserPosition storage collateralLiquidatorPosition = userPositions[params.liquidator][
-      params.collateralReserveId
+    ISpoke.UserPosition storage debtUserPosition = userPositions[params.positionId][
+      params.debtReserveId
     ];
-    ISpoke.PositionStatus storage userPositionStatus = positionStatus[params.user];
+    ISpoke.UserPosition storage collateralLiquidatorPosition = userPositions[
+      params.liquidatorPositionId
+    ][params.collateralReserveId];
+    ISpoke.PositionStatus storage userPositionStatus = positionStatus[params.positionId];
 
     return
       _executeLiquidation({
@@ -256,22 +262,22 @@ library LiquidationLogic {
   /// @param userPositions The mapping of user positions per reserve per user.
   /// @param positionStatus The mapping of position status per user.
   /// @param reserveCount The number of reserves.
-  /// @param user The address of the user.
+  /// @param positionId The identifier of the position to report deficit for.
   function notifyReportDeficit(
     mapping(uint256 reserveId => ISpoke.Reserve) storage reserves,
-    mapping(address user => mapping(uint256 reserveId => ISpoke.UserPosition)) storage userPositions,
-    mapping(address user => ISpoke.PositionStatus) storage positionStatus,
+    mapping(bytes32 positionId => mapping(uint256 reserveId => ISpoke.UserPosition)) storage userPositions,
+    mapping(bytes32 positionId => ISpoke.PositionStatus) storage positionStatus,
     uint256 reserveCount,
-    address user
+    bytes32 positionId
   ) external {
-    ISpoke.PositionStatus storage userPositionStatus = positionStatus[user];
+    ISpoke.PositionStatus storage userPositionStatus = positionStatus[positionId];
     userPositionStatus.riskPremium = 0;
 
     uint256 reserveId = reserveCount;
     while (
       (reserveId = userPositionStatus.nextBorrowing(reserveId)) != PositionStatusMap.NOT_FOUND
     ) {
-      ISpoke.UserPosition storage userPosition = userPositions[user][reserveId];
+      ISpoke.UserPosition storage userPosition = userPositions[positionId][reserveId];
       ISpoke.Reserve storage reserve = reserves[reserveId];
       IHubBase hub = reserve.hub;
       uint256 assetId = reserve.assetId;
@@ -296,10 +302,10 @@ library LiquidationLogic {
       userPosition.drawnShares -= debtComponents.drawnShares.toUint120();
       userPositionStatus.setBorrowing(reserveId, false);
 
-      emit ISpoke.ReportDeficit(reserveId, user, debtComponents.drawnShares, premiumDelta);
+      emit ISpoke.ReportDeficit(reserveId, positionId, debtComponents.drawnShares, premiumDelta);
     }
 
-    emit ISpoke.UpdateUserRiskPremium(user, 0);
+    emit ISpoke.UpdateUserRiskPremium(positionId, 0);
   }
 
   /// @notice Calculates the liquidation bonus at a given health factor.
@@ -425,7 +431,7 @@ library LiquidationLogic {
     emit ISpoke.LiquidationCall({
       collateralReserveId: params.collateralReserveId,
       debtReserveId: params.debtReserveId,
-      user: params.user,
+      positionId: params.positionId,
       liquidator: params.liquidator,
       receiveShares: params.receiveShares,
       debtAmountRestored: liquidateDebtResult.amountRestored,

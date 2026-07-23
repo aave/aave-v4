@@ -191,13 +191,13 @@ interface ISpoke is IAccessManaged, IIntentConsumer, IExtSload, IMulticall {
   /// @notice Emitted on the supply action.
   /// @param reserveId The reserve identifier of the underlying asset.
   /// @param caller The transaction initiator, and supplier of the underlying asset.
-  /// @param user The owner of the modified position.
+  /// @param positionId The identifier of the modified position.
   /// @param suppliedShares The amount of supply shares minted.
   /// @param suppliedAmount The amount of underlying asset supplied.
   event Supply(
     uint256 indexed reserveId,
     address indexed caller,
-    address indexed user,
+    bytes32 indexed positionId,
     uint256 suppliedShares,
     uint256 suppliedAmount
   );
@@ -205,13 +205,13 @@ interface ISpoke is IAccessManaged, IIntentConsumer, IExtSload, IMulticall {
   /// @notice Emitted on the withdraw action.
   /// @param reserveId The reserve identifier of the underlying asset.
   /// @param caller The transaction initiator, and recipient of the underlying asset being withdrawn.
-  /// @param user The owner of the modified position.
+  /// @param positionId The identifier of the modified position.
   /// @param withdrawnShares The amount of supply shares burned.
   /// @param withdrawnAmount The amount of underlying asset withdrawn.
   event Withdraw(
     uint256 indexed reserveId,
     address indexed caller,
-    address indexed user,
+    bytes32 indexed positionId,
     uint256 withdrawnShares,
     uint256 withdrawnAmount
   );
@@ -219,13 +219,13 @@ interface ISpoke is IAccessManaged, IIntentConsumer, IExtSload, IMulticall {
   /// @notice Emitted on the borrow action.
   /// @param reserveId The reserve identifier of the underlying asset.
   /// @param caller The transaction initiator, and recipient of the underlying asset being borrowed.
-  /// @param user The owner of the position on which debt is generated.
+  /// @param positionId The identifier of the modified position.
   /// @param drawnShares The amount of debt shares minted.
   /// @param drawnAmount The amount of underlying asset borrowed.
   event Borrow(
     uint256 indexed reserveId,
     address indexed caller,
-    address indexed user,
+    bytes32 indexed positionId,
     uint256 drawnShares,
     uint256 drawnAmount
   );
@@ -233,14 +233,14 @@ interface ISpoke is IAccessManaged, IIntentConsumer, IExtSload, IMulticall {
   /// @notice Emitted on the repay action.
   /// @param reserveId The reserve identifier of the underlying asset.
   /// @param caller The transaction initiator who is repaying the underlying asset.
-  /// @param user The owner of the position whose debt is being repaid.
+  /// @param positionId The identifier of the modified position.
   /// @param drawnShares The amount of drawn shares burned.
   /// @param totalAmountRepaid The amount of drawn and premium underlying assets repaid.
   /// @param premiumDelta A struct representing the changes to premium debt after repayment.
   event Repay(
     uint256 indexed reserveId,
     address indexed caller,
-    address indexed user,
+    bytes32 indexed positionId,
     uint256 drawnShares,
     uint256 totalAmountRepaid,
     IHubBase.PremiumDelta premiumDelta
@@ -249,7 +249,7 @@ interface ISpoke is IAccessManaged, IIntentConsumer, IExtSload, IMulticall {
   /// @dev Emitted when a borrower is liquidated.
   /// @param collateralReserveId The identifier of the reserve used as collateral, to receive as a result of the liquidation.
   /// @param debtReserveId The identifier of the reserve to be repaid with the liquidation.
-  /// @param user The address of the borrower getting liquidated.
+  /// @param positionId The identifier of the liquidated position.
   /// @param liquidator The address of the liquidator.
   /// @param receiveShares True if the liquidator received collateral in supplied shares rather than underlying assets.
   /// @param debtAmountRestored The amount of debt restored, expressed in asset units.
@@ -261,7 +261,7 @@ interface ISpoke is IAccessManaged, IIntentConsumer, IExtSload, IMulticall {
   event LiquidationCall(
     uint256 indexed collateralReserveId,
     uint256 indexed debtReserveId,
-    address indexed user,
+    bytes32 indexed positionId,
     address liquidator,
     bool receiveShares,
     uint256 debtAmountRestored,
@@ -274,12 +274,12 @@ interface ISpoke is IAccessManaged, IIntentConsumer, IExtSload, IMulticall {
 
   /// @notice Emitted when a reserve deficit is reported to the Hub.
   /// @param reserveId The identifier of the reserve.
-  /// @param user The address of the user.
+  /// @param positionId The identifier of the position with the deficit.
   /// @param drawnShares The amount of drawn shares reported as deficit.
   /// @param premiumDelta The premium delta data struct reported as deficit.
   event ReportDeficit(
     uint256 indexed reserveId,
-    address indexed user,
+    bytes32 indexed positionId,
     uint256 drawnShares,
     IHubBase.PremiumDelta premiumDelta
   );
@@ -287,28 +287,28 @@ interface ISpoke is IAccessManaged, IIntentConsumer, IExtSload, IMulticall {
   /// @notice Emitted on setUsingAsCollateral action.
   /// @param reserveId The reserve identifier of the underlying asset.
   /// @param caller The transaction initiator.
-  /// @param user The owner of the position being modified.
+  /// @param positionId The identifier of the position being modified.
   /// @param usingAsCollateral Whether the reserve is enabled or disabled as collateral.
   event SetUsingAsCollateral(
     uint256 indexed reserveId,
     address indexed caller,
-    address indexed user,
+    bytes32 indexed positionId,
     bool usingAsCollateral
   );
 
   /// @notice Emitted on updateUserRiskPremium action.
-  /// @param user The owner of the position being modified.
-  /// @param riskPremium The new risk premium (BPS) value of user.
-  event UpdateUserRiskPremium(address indexed user, uint256 riskPremium);
+  /// @param positionId The position identifier of the user whose risk premium is being updated.
+  /// @param riskPremium The new risk premium (BPS) value of the user.
+  event UpdateUserRiskPremium(bytes32 indexed positionId, uint256 riskPremium);
 
   /// @notice Emitted when a user's dynamic config is refreshed for all reserves to their latest config key.
-  /// @param user The address of the user.
-  event RefreshAllUserDynamicConfig(address indexed user);
+  /// @param positionId The position identifier of the user.
+  event RefreshAllUserDynamicConfig(bytes32 indexed positionId);
 
   /// @notice Emitted when a user's dynamic config is refreshed for a single reserve to its latest config key.
-  /// @param user The address of the user.
+  /// @param positionId The position identifier of the user.
   /// @param reserveId The identifier of the reserve.
-  event RefreshSingleUserDynamicConfig(address indexed user, uint256 reserveId);
+  event RefreshSingleUserDynamicConfig(bytes32 indexed positionId, uint256 reserveId);
 
   /// @notice Emitted on setUserPositionManager or renouncePositionManagerRole action.
   /// @param user The address of the user on whose behalf position manager can act.
@@ -318,11 +318,11 @@ interface ISpoke is IAccessManaged, IIntentConsumer, IExtSload, IMulticall {
 
   /// @notice Emitted on refreshPremiumDebt action.
   /// @param reserveId The identifier of the reserve.
-  /// @param user The address of the user.
+  /// @param positionId The position identifier of the user.
   /// @param premiumDelta The change in premium values.
   event RefreshPremiumDebt(
     uint256 indexed reserveId,
-    address indexed user,
+    bytes32 indexed positionId,
     IHubBase.PremiumDelta premiumDelta
   );
 
@@ -491,6 +491,23 @@ interface ISpoke is IAccessManaged, IIntentConsumer, IExtSload, IMulticall {
     address onBehalfOf
   ) external returns (uint256, uint256);
 
+  /// @notice Supplies an amount of underlying asset of the specified reserve.
+  /// @dev It reverts if the reserve associated with the given reserve identifier is not listed.
+  /// @dev The Spoke pulls the underlying asset from the caller, so prior token approval is required.
+  /// @dev Caller must be `onBehalfOf` or an authorized position manager for `onBehalfOf`.
+  /// @param reserveId The reserve identifier.
+  /// @param amount The amount of asset to supply.
+  /// @param onBehalfOf The owner of the position to add supply shares to.
+  /// @param positionSalt The salt to compute the position identifier.
+  /// @return The amount of shares supplied.
+  /// @return The amount of assets supplied.
+  function supply(
+    uint256 reserveId,
+    uint256 amount,
+    address onBehalfOf,
+    bytes32 positionSalt
+  ) external returns (uint256, uint256);
+
   /// @notice Withdraws a specified amount of underlying asset from the given reserve.
   /// @dev It reverts if the reserve associated with the given reserve identifier is not listed.
   /// @dev Providing an amount greater than the maximum withdrawable value signals a full withdrawal.
@@ -505,6 +522,24 @@ interface ISpoke is IAccessManaged, IIntentConsumer, IExtSload, IMulticall {
     uint256 reserveId,
     uint256 amount,
     address onBehalfOf
+  ) external returns (uint256, uint256);
+
+  /// @notice Withdraws a specified amount of underlying asset from the given reserve.
+  /// @dev It reverts if the reserve associated with the given reserve identifier is not listed.
+  /// @dev Providing an amount greater than the maximum withdrawable value signals a full withdrawal.
+  /// @dev Caller must be `onBehalfOf` or an authorized position manager for `onBehalfOf`.
+  /// @dev Caller receives the underlying asset withdrawn.
+  /// @param reserveId The identifier of the reserve.
+  /// @param amount The amount of asset to withdraw.
+  /// @param onBehalfOf The owner of position to remove supply shares from.
+  /// @param positionSalt The salt to compute the position identifier.
+  /// @return The amount of shares withdrawn.
+  /// @return The amount of assets withdrawn.
+  function withdraw(
+    uint256 reserveId,
+    uint256 amount,
+    address onBehalfOf,
+    bytes32 positionSalt
   ) external returns (uint256, uint256);
 
   /// @notice Borrows a specified amount of underlying asset from the given reserve.
@@ -523,6 +558,24 @@ interface ISpoke is IAccessManaged, IIntentConsumer, IExtSload, IMulticall {
     address onBehalfOf
   ) external returns (uint256, uint256);
 
+  /// @notice Borrows a specified amount of underlying asset from the given reserve.
+  /// @dev It reverts if the reserve associated with the given reserve identifier is not listed.
+  /// @dev It reverts if the user would borrow more than the maximum allowed number of borrowed reserves.
+  /// @dev Caller must be `onBehalfOf` or an authorized position manager for `onBehalfOf`.
+  /// @dev Caller receives the underlying asset borrowed.
+  /// @param reserveId The identifier of the reserve.
+  /// @param amount The amount of asset to borrow.
+  /// @param onBehalfOf The owner of the position against which debt is generated.
+  /// @param positionSalt The salt to compute the position identifier.
+  /// @return The amount of shares borrowed.
+  /// @return The amount of assets borrowed.
+  function borrow(
+    uint256 reserveId,
+    uint256 amount,
+    address onBehalfOf,
+    bytes32 positionSalt
+  ) external returns (uint256, uint256);
+
   /// @notice Repays a specified amount of underlying asset to a given reserve.
   /// @dev It reverts if the reserve associated with the given reserve identifier is not listed.
   /// @dev The Spoke pulls the underlying asset from the caller, so prior approval is required.
@@ -536,6 +589,23 @@ interface ISpoke is IAccessManaged, IIntentConsumer, IExtSload, IMulticall {
     uint256 reserveId,
     uint256 amount,
     address onBehalfOf
+  ) external returns (uint256, uint256);
+
+  /// @notice Repays a specified amount of underlying asset to a given reserve.
+  /// @dev It reverts if the reserve associated with the given reserve identifier is not listed.
+  /// @dev The Spoke pulls the underlying asset from the caller, so prior approval is required.
+  /// @dev Caller must be `onBehalfOf` or an authorized position manager for `onBehalfOf`.
+  /// @param reserveId The identifier of the reserve.
+  /// @param amount The amount of asset to repay.
+  /// @param onBehalfOf The owner of the position whose debt is repaid.
+  /// @param positionSalt The salt to compute the position identifier.
+  /// @return The amount of shares repaid.
+  /// @return The amount of assets repaid.
+  function repay(
+    uint256 reserveId,
+    uint256 amount,
+    address onBehalfOf,
+    bytes32 positionSalt
   ) external returns (uint256, uint256);
 
   /// @notice Liquidates a user position.
@@ -554,6 +624,26 @@ interface ISpoke is IAccessManaged, IIntentConsumer, IExtSload, IMulticall {
     bool receiveShares
   ) external;
 
+  /// @notice Liquidates a user position.
+  /// @dev It reverts if the reserves associated with any of the given reserve identifiers are not listed.
+  /// @dev The Spoke pulls underlying repaid debt assets from caller (Liquidator), hence it needs prior approval.
+  /// @param collateralReserveId The reserveId of the underlying asset used as collateral by the liquidated user.
+  /// @param debtReserveId The reserveId of the underlying asset borrowed by the liquidated user, to be repaid by Liquidator.
+  /// @param user The address of the user to liquidate.
+  /// @param positionSalt The salt to compute the position identifier.
+  /// @param liquidatorPositionSalt The salt to compute the position identifier.
+  /// @param debtToCover The desired amount of debt to cover.
+  /// @param receiveShares True to receive collateral in supplied shares, false to receive in underlying assets.
+  function liquidationCall(
+    uint256 collateralReserveId,
+    uint256 debtReserveId,
+    address user,
+    bytes32 positionSalt,
+    bytes32 liquidatorPositionSalt,
+    uint256 debtToCover,
+    bool receiveShares
+  ) external;
+
   /// @notice Allows suppliers to enable/disable a specific supplied reserve as collateral.
   /// @dev It reverts if the reserve associated with the given reserve identifier is not listed.
   /// @dev It reverts if the user exceeds the maximum allowed collateral reserves when enabling.
@@ -568,15 +658,43 @@ interface ISpoke is IAccessManaged, IIntentConsumer, IExtSload, IMulticall {
     address onBehalfOf
   ) external;
 
+  /// @notice Allows suppliers to enable/disable a specific supplied reserve as collateral.
+  /// @dev It reverts if the reserve associated with the given reserve identifier is not listed.
+  /// @dev It reverts if the user exceeds the maximum allowed collateral reserves when enabling.
+  /// @dev Reserves with zero supplied or zero collateral factor count towards the max allowed collateral reserves.
+  /// @dev Caller must be `onBehalfOf` or an authorized position manager for `onBehalfOf`.
+  /// @param reserveId The reserve identifier of the underlying asset.
+  /// @param usingAsCollateral True if the user wants to use the supply as collateral.
+  /// @param onBehalfOf The owner of the position being modified.
+  /// @param positionSalt The salt to compute the position identifier.
+  function setUsingAsCollateral(
+    uint256 reserveId,
+    bool usingAsCollateral,
+    address onBehalfOf,
+    bytes32 positionSalt
+  ) external;
+
   /// @notice Allows updating the risk premium on onBehalfOf position.
   /// @dev Caller must be `onBehalfOf`, an authorized position manager for `onBehalfOf`, or admin.
   /// @param onBehalfOf The owner of the position being modified.
   function updateUserRiskPremium(address onBehalfOf) external;
 
+  /// @notice Allows updating the risk premium on onBehalfOf position.
+  /// @dev Caller must be `onBehalfOf`, an authorized position manager for `onBehalfOf`, or admin.
+  /// @param onBehalfOf The owner of the position being modified.
+  /// @param positionSalt The salt to compute the position identifier.
+  function updateUserRiskPremium(address onBehalfOf, bytes32 positionSalt) external;
+
   /// @notice Allows updating the dynamic configuration for all collateral reserves on onBehalfOf position.
   /// @dev Caller must be `onBehalfOf`, an authorized position manager for `onBehalfOf`, or admin.
   /// @param onBehalfOf The owner of the position being modified.
   function updateUserDynamicConfig(address onBehalfOf) external;
+
+  /// @notice Allows updating the dynamic configuration for all collateral reserves on onBehalfOf position.
+  /// @dev Caller must be `onBehalfOf`, an authorized position manager for `onBehalfOf`, or admin.
+  /// @param onBehalfOf The owner of the position being modified.
+  /// @param positionSalt The salt to compute the position identifier.
+  function updateUserDynamicConfig(address onBehalfOf, bytes32 positionSalt) external;
 
   /// @notice Enables a user to grant or revoke approval for a position manager.
   /// @dev Allows approving inactive position managers.
@@ -690,6 +808,20 @@ interface ISpoke is IAccessManaged, IIntentConsumer, IExtSload, IMulticall {
   /// @return True if the reserve is borrowed by the user.
   function getUserReserveStatus(uint256 reserveId, address user) external view returns (bool, bool);
 
+  /// @notice Returns two flags indicating whether the reserve is used as collateral and whether it is borrowed by the user.
+  /// @dev It reverts if the reserve associated with the given reserve identifier is not listed.
+  /// @dev Even if enabled as collateral, it will only count towards user position if the collateral factor is greater than 0.
+  /// @param reserveId The identifier of the reserve.
+  /// @param user The address of the user.
+  /// @param positionSalt The salt to compute the position identifier.
+  /// @return True if the reserve is enabled as collateral by the user.
+  /// @return True if the reserve is borrowed by the user.
+  function getUserReserveStatus(
+    uint256 reserveId,
+    address user,
+    bytes32 positionSalt
+  ) external view returns (bool, bool);
+
   /// @notice Returns the amount of assets supplied by a specific user for a given reserve.
   /// @dev It reverts if the reserve associated with the given reserve identifier is not listed.
   /// @param reserveId The identifier of the reserve.
@@ -697,12 +829,36 @@ interface ISpoke is IAccessManaged, IIntentConsumer, IExtSload, IMulticall {
   /// @return The amount of assets supplied by the user.
   function getUserSuppliedAssets(uint256 reserveId, address user) external view returns (uint256);
 
+  /// @notice Returns the amount of assets supplied by a specific user for a given reserve.
+  /// @dev It reverts if the reserve associated with the given reserve identifier is not listed.
+  /// @param reserveId The identifier of the reserve.
+  /// @param user The address of the user.
+  /// @param positionSalt The salt to compute the position identifier.
+  /// @return The amount of assets supplied by the user.
+  function getUserSuppliedAssets(
+    uint256 reserveId,
+    address user,
+    bytes32 positionSalt
+  ) external view returns (uint256);
+
   /// @notice Returns the amount of shares supplied by a specific user for a given reserve.
   /// @dev It reverts if the reserve associated with the given reserve identifier is not listed.
   /// @param reserveId The identifier of the reserve.
   /// @param user The address of the user.
   /// @return The amount of shares supplied by the user.
   function getUserSuppliedShares(uint256 reserveId, address user) external view returns (uint256);
+
+  /// @notice Returns the amount of shares supplied by a specific user for a given reserve.
+  /// @dev It reverts if the reserve associated with the given reserve identifier is not listed.
+  /// @param reserveId The identifier of the reserve.
+  /// @param user The address of the user.
+  /// @param positionSalt The salt to compute the position identifier.
+  /// @return The amount of shares supplied by the user.
+  function getUserSuppliedShares(
+    uint256 reserveId,
+    address user,
+    bytes32 positionSalt
+  ) external view returns (uint256);
 
   /// @notice Returns the debt of a specific user for a given reserve.
   /// @dev It reverts if the reserve associated with the given reserve identifier is not listed.
@@ -713,6 +869,20 @@ interface ISpoke is IAccessManaged, IIntentConsumer, IExtSload, IMulticall {
   /// @return The amount of premium debt.
   function getUserDebt(uint256 reserveId, address user) external view returns (uint256, uint256);
 
+  /// @notice Returns the debt of a specific user for a given reserve.
+  /// @dev It reverts if the reserve associated with the given reserve identifier is not listed.
+  /// @dev The total debt of the user is the sum of drawn debt and premium debt.
+  /// @param reserveId The identifier of the reserve.
+  /// @param user The address of the user.
+  /// @param positionSalt The salt to compute the position identifier.
+  /// @return The amount of drawn debt.
+  /// @return The amount of premium debt.
+  function getUserDebt(
+    uint256 reserveId,
+    address user,
+    bytes32 positionSalt
+  ) external view returns (uint256, uint256);
+
   /// @notice Returns the total debt of a specific user for a given reserve.
   /// @dev It reverts if the reserve associated with the given reserve identifier is not listed.
   /// @dev The total debt of the user is the sum of drawn debt and premium debt.
@@ -721,12 +891,37 @@ interface ISpoke is IAccessManaged, IIntentConsumer, IExtSload, IMulticall {
   /// @return The total debt amount.
   function getUserTotalDebt(uint256 reserveId, address user) external view returns (uint256);
 
+  /// @notice Returns the total debt of a specific user for a given reserve.
+  /// @dev It reverts if the reserve associated with the given reserve identifier is not listed.
+  /// @dev The total debt of the user is the sum of drawn debt and premium debt.
+  /// @param reserveId The identifier of the reserve.
+  /// @param user The address of the user.
+  /// @param positionSalt The salt to compute the position identifier.
+  /// @return The total debt amount.
+  function getUserTotalDebt(
+    uint256 reserveId,
+    address user,
+    bytes32 positionSalt
+  ) external view returns (uint256);
+
   /// @notice Returns the full precision premium debt of a specific user for a given reserve.
   /// @dev It reverts if the reserve associated with the given reserve identifier is not listed.
   /// @param reserveId The identifier of the reserve.
   /// @param user The address of the user.
   /// @return The amount of premium debt, expressed in asset units and scaled by RAY.
   function getUserPremiumDebtRay(uint256 reserveId, address user) external view returns (uint256);
+
+  /// @notice Returns the full precision premium debt of a specific user for a given reserve.
+  /// @dev It reverts if the reserve associated with the given reserve identifier is not listed.
+  /// @param reserveId The identifier of the reserve.
+  /// @param user The address of the user.
+  /// @param positionSalt The salt to compute the position identifier.
+  /// @return The amount of premium debt, expressed in asset units and scaled by RAY.
+  function getUserPremiumDebtRay(
+    uint256 reserveId,
+    address user,
+    bytes32 positionSalt
+  ) external view returns (uint256);
 
   /// @notice Returns the user position struct in storage.
   /// @dev It reverts if the reserve associated with the given reserve identifier is not listed.
@@ -738,16 +933,47 @@ interface ISpoke is IAccessManaged, IIntentConsumer, IExtSload, IMulticall {
     address user
   ) external view returns (UserPosition memory);
 
+  /// @notice Returns the user position struct in storage.
+  /// @dev It reverts if the reserve associated with the given reserve identifier is not listed.
+  /// @param reserveId The identifier of the reserve.
+  /// @param user The address of the user.
+  /// @param positionSalt The salt to compute the position identifier.
+  /// @return The user position struct.
+  function getUserPosition(
+    uint256 reserveId,
+    address user,
+    bytes32 positionSalt
+  ) external view returns (UserPosition memory);
+
   /// @notice Returns the most up-to-date user account data information.
   /// @dev Utilizes user's current dynamic configuration of user position.
   /// @param user The address of the user.
   /// @return The user account data struct.
   function getUserAccountData(address user) external view returns (UserAccountData memory);
 
+  /// @notice Returns the most up-to-date user account data information.
+  /// @dev Utilizes user's current dynamic configuration of user position.
+  /// @param user The address of the user.
+  /// @param positionSalt The salt to compute the position identifier.
+  /// @return The user account data struct.
+  function getUserAccountData(
+    address user,
+    bytes32 positionSalt
+  ) external view returns (UserAccountData memory);
+
   /// @notice Returns the risk premium from the user's last position update.
   /// @param user The address of the user.
   /// @return The risk premium of the user from the last position update, expressed in BPS.
   function getUserLastRiskPremium(address user) external view returns (uint256);
+
+  /// @notice Returns the risk premium from the user's last position update.
+  /// @param user The address of the user.
+  /// @param positionSalt The salt to compute the position identifier.
+  /// @return The risk premium of the user from the last position update, expressed in BPS.
+  function getUserLastRiskPremium(
+    address user,
+    bytes32 positionSalt
+  ) external view returns (uint256);
 
   /// @notice Returns the liquidation bonus for a given health factor, based on the user's current dynamic configuration.
   /// @dev It reverts if the reserve associated with the given reserve identifier is not listed.
@@ -758,6 +984,20 @@ interface ISpoke is IAccessManaged, IIntentConsumer, IExtSload, IMulticall {
   function getLiquidationBonus(
     uint256 reserveId,
     address user,
+    uint256 healthFactor
+  ) external view returns (uint256);
+
+  /// @notice Returns the liquidation bonus for a given health factor, based on the user's current dynamic configuration.
+  /// @dev It reverts if the reserve associated with the given reserve identifier is not listed.
+  /// @param reserveId The identifier of the reserve.
+  /// @param user The address of the user.
+  /// @param positionSalt The salt to compute the position identifier.
+  /// @param healthFactor The health factor of the user, expressed in WAD.
+  /// @return The liquidation bonus for the user, expressed in BPS.
+  function getLiquidationBonus(
+    uint256 reserveId,
+    address user,
+    bytes32 positionSalt,
     uint256 healthFactor
   ) external view returns (uint256);
 

@@ -72,7 +72,7 @@ contract SpokeRepayEdgeCaseTest is Base {
     emit ISpoke.Repay(
       _daiReserveId(spoke1),
       bob,
-      bob,
+      _getPositionId(bob),
       0,
       baseRestored + premiumRestored,
       expectedPremiumDelta
@@ -428,7 +428,14 @@ contract SpokeRepayEdgeCaseTest is Base {
 
     vm.expectEmit(address(spoke1));
     // 0 drawn shares restored
-    emit ISpoke.Repay(_daiReserveId(spoke1), bob, bob, 0, repayAmount, expectedPremiumDelta);
+    emit ISpoke.Repay(
+      _daiReserveId(spoke1),
+      bob,
+      _getPositionId(bob),
+      0,
+      repayAmount,
+      expectedPremiumDelta
+    );
 
     CheckedRepayResult memory r = _checkedRepay(
       CheckedRepayParams({
@@ -561,7 +568,7 @@ contract SpokeRepayEdgeCaseTest is Base {
       emit ISpoke.Repay(
         _daiReserveId(spoke1),
         bob,
-        bob,
+        _getPositionId(bob),
         hub1.previewRestoreByAssets(daiAssetId, baseRestored),
         daiRepayAmount,
         expectedPremiumDelta
@@ -666,7 +673,7 @@ contract SpokeRepayEdgeCaseTest is Base {
     emit ISpoke.Repay(
       _daiReserveId(spoke1),
       bob,
-      bob,
+      _getPositionId(bob),
       hub1.previewRestoreByAssets(daiAssetId, daiRepayAmount),
       daiRepayAmount,
       expectedPremiumDelta

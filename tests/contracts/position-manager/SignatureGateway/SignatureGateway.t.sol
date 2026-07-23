@@ -71,7 +71,7 @@ contract SignatureGatewayTest is SignatureGatewayBaseTest {
 
     SharesAndAmount memory returnValues;
     vm.expectEmit(address(spoke1));
-    emit ISpoke.Supply(p.reserveId, address(gateway), alice, shares, p.amount);
+    emit ISpoke.Supply(p.reserveId, address(gateway), _getPositionId(alice), shares, p.amount);
 
     vm.prank(vm.randomAddress());
     (returnValues.shares, returnValues.amount) = gateway.supplyWithSig(p, signature);
@@ -107,7 +107,7 @@ contract SignatureGatewayTest is SignatureGatewayBaseTest {
     );
     SharesAndAmount memory returnValues;
     vm.expectEmit(address(spoke1));
-    emit ISpoke.Withdraw(p.reserveId, address(gateway), alice, shares, p.amount);
+    emit ISpoke.Withdraw(p.reserveId, address(gateway), _getPositionId(alice), shares, p.amount);
 
     vm.prank(vm.randomAddress());
     (returnValues.shares, returnValues.amount) = gateway.withdrawWithSig(p, signature);
@@ -144,7 +144,7 @@ contract SignatureGatewayTest is SignatureGatewayBaseTest {
     );
     SharesAndAmount memory returnValues;
     vm.expectEmit(address(spoke1));
-    emit ISpoke.Borrow(p.reserveId, address(gateway), alice, shares, p.amount);
+    emit ISpoke.Borrow(p.reserveId, address(gateway), _getPositionId(alice), shares, p.amount);
 
     vm.prank(vm.randomAddress());
     (returnValues.shares, returnValues.amount) = gateway.borrowWithSig(p, signature);
@@ -204,7 +204,7 @@ contract SignatureGatewayTest is SignatureGatewayBaseTest {
     emit ISpoke.Repay(
       p.reserveId,
       address(gateway),
-      alice,
+      _getPositionId(alice),
       shares,
       baseRestored + premiumRestored,
       _getExpectedPremiumDelta(spoke1, alice, p.reserveId, premiumRestored)
@@ -237,7 +237,12 @@ contract SignatureGatewayTest is SignatureGatewayBaseTest {
 
     if (_isUsingAsCollateral(spoke1, p.reserveId, alice) != p.useAsCollateral) {
       vm.expectEmit(address(spoke1));
-      emit ISpoke.SetUsingAsCollateral(p.reserveId, address(gateway), alice, p.useAsCollateral);
+      emit ISpoke.SetUsingAsCollateral(
+        p.reserveId,
+        address(gateway),
+        _getPositionId(alice),
+        p.useAsCollateral
+      );
     }
 
     vm.prank(vm.randomAddress());
@@ -274,7 +279,10 @@ contract SignatureGatewayTest is SignatureGatewayBaseTest {
     });
 
     vm.expectEmit(address(spoke1));
-    emit ISpoke.UpdateUserRiskPremium(alice, _calculateExpectedUserRP(spoke1, alice));
+    emit ISpoke.UpdateUserRiskPremium(
+      _getPositionId(alice),
+      _calculateExpectedUserRP(spoke1, alice)
+    );
 
     vm.prank(vm.randomAddress());
     gateway.updateUserRiskPremiumWithSig(p, signature);
@@ -294,7 +302,7 @@ contract SignatureGatewayTest is SignatureGatewayBaseTest {
     bytes memory signature = _sign(alicePk, _getTypedDataHash(gateway, p));
 
     vm.expectEmit(address(spoke1));
-    emit ISpoke.RefreshAllUserDynamicConfig(alice);
+    emit ISpoke.RefreshAllUserDynamicConfig(_getPositionId(alice));
 
     vm.prank(vm.randomAddress());
     gateway.updateUserDynamicConfigWithSig(p, signature);

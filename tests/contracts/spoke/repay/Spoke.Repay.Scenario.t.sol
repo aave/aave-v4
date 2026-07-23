@@ -1193,7 +1193,7 @@ contract SpokeRepayScenarioTest is Base {
       emit ISpoke.Repay(
         _daiReserveId(spoke1),
         bob,
-        bob,
+        _getPositionId(bob),
         hub1.previewRestoreByAssets(daiAssetId, baseRestored),
         action1.repayAmount,
         expectedPremiumDelta
@@ -1305,7 +1305,7 @@ contract SpokeRepayScenarioTest is Base {
       emit ISpoke.Repay(
         _daiReserveId(spoke1),
         bob,
-        bob,
+        _getPositionId(bob),
         hub1.previewRestoreByAssets(daiAssetId, baseRestored),
         action2.repayAmount,
         expectedPremiumDelta
@@ -1416,7 +1416,7 @@ contract SpokeRepayScenarioTest is Base {
       emit ISpoke.Repay(
         _daiReserveId(spoke1),
         bob,
-        bob,
+        _getPositionId(bob),
         hub1.previewRestoreByAssets(daiAssetId, baseRestored),
         baseRestored + premiumRestored,
         expectedPremiumDelta
@@ -1482,7 +1482,7 @@ contract SpokeRepayScenarioTest is Base {
       emit ISpoke.Repay(
         _daiReserveId(spoke1),
         bob,
-        bob,
+        _getPositionId(bob),
         hub1.previewRestoreByAssets(daiAssetId, baseRestored),
         drawnDebt + premiumDebt,
         expectedPremiumDelta

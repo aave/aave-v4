@@ -68,7 +68,7 @@ contract SpokePositionManagerTest is Base {
     emit ISpoke.Supply({
       reserveId: reserveId,
       caller: POSITION_MANAGER,
-      user: alice,
+      positionId: _getPositionId(alice),
       suppliedShares: hub1.previewAddByAssets(usdxAssetId, amount),
       suppliedAmount: amount
     });
@@ -127,7 +127,7 @@ contract SpokePositionManagerTest is Base {
     emit ISpoke.Withdraw({
       reserveId: reserveId,
       caller: POSITION_MANAGER,
-      user: alice,
+      positionId: _getPositionId(alice),
       withdrawnShares: hub1.previewRemoveByAssets(usdxAssetId, amount),
       withdrawnAmount: amount
     });
@@ -185,7 +185,7 @@ contract SpokePositionManagerTest is Base {
     emit ISpoke.Borrow({
       reserveId: reserveId,
       caller: POSITION_MANAGER,
-      user: alice,
+      positionId: _getPositionId(alice),
       drawnShares: hub1.previewRestoreByAssets(usdxAssetId, amount),
       drawnAmount: amount
     });
@@ -260,7 +260,7 @@ contract SpokePositionManagerTest is Base {
     emit ISpoke.Repay(
       reserveId,
       POSITION_MANAGER,
-      alice,
+      _getPositionId(alice),
       hub1.previewRestoreByAssets(usdxAssetId, repayAmount),
       repayAmount,
       expectedPremiumDelta
@@ -324,7 +324,7 @@ contract SpokePositionManagerTest is Base {
     emit ISpoke.SetUsingAsCollateral({
       reserveId: reserveId,
       caller: POSITION_MANAGER,
-      user: alice,
+      positionId: _getPositionId(alice),
       usingAsCollateral: usingAsCollateral
     });
     SpokeActions.setUsingAsCollateral({
@@ -385,7 +385,10 @@ contract SpokePositionManagerTest is Base {
     _approvePositionManager(alice);
 
     vm.expectEmit(address(spoke1));
-    emit ISpoke.UpdateUserRiskPremium(alice, _calculateExpectedUserRP(spoke1, alice));
+    emit ISpoke.UpdateUserRiskPremium(
+      _getPositionId(alice),
+      _calculateExpectedUserRP(spoke1, alice)
+    );
     vm.prank(POSITION_MANAGER);
     spoke1.updateUserRiskPremium(alice);
 
@@ -438,7 +441,7 @@ contract SpokePositionManagerTest is Base {
     _approvePositionManager(alice);
 
     vm.expectEmit(address(spoke1));
-    emit ISpoke.RefreshAllUserDynamicConfig(alice);
+    emit ISpoke.RefreshAllUserDynamicConfig(_getPositionId(alice));
     vm.prank(POSITION_MANAGER);
     spoke1.updateUserDynamicConfig(alice);
 

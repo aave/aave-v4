@@ -56,7 +56,7 @@ contract NativeTokenGatewayTest is Base {
     emit ISpoke.Supply(
       _wethReserveId(spoke1),
       address(nativeTokenGateway),
-      bob,
+      _getPositionId(bob),
       hub1.previewAddByAssets(wethAssetId, amount),
       amount
     );
@@ -94,7 +94,7 @@ contract NativeTokenGatewayTest is Base {
     vm.mockFunction(
       address(spoke1),
       address(reentrantCaller),
-      abi.encodeWithSelector(ISpoke.supply.selector)
+      abi.encodeWithSelector(bytes4(keccak256('supply(uint256,uint256,address)')))
     );
     vm.expectRevert(ReentrancyGuardTransient.ReentrancyGuardReentrantCall.selector);
     vm.prank(bob);
@@ -180,7 +180,7 @@ contract NativeTokenGatewayTest is Base {
     emit ISpoke.Supply(
       _wethReserveId(spoke1),
       address(nativeTokenGateway),
-      bob,
+      _getPositionId(bob),
       hub1.previewAddByAssets(wethAssetId, amount),
       amount
     );
@@ -232,7 +232,7 @@ contract NativeTokenGatewayTest is Base {
     emit ISpoke.Withdraw(
       _wethReserveId(spoke1),
       address(nativeTokenGateway),
-      bob,
+      _getPositionId(bob),
       hub1.previewRemoveByAssets(wethAssetId, amount),
       amount
     );
@@ -279,7 +279,7 @@ contract NativeTokenGatewayTest is Base {
     emit ISpoke.Withdraw(
       _wethReserveId(spoke1),
       address(nativeTokenGateway),
-      bob,
+      _getPositionId(bob),
       expectedSupplyShares,
       supplyAmount
     );
@@ -351,7 +351,7 @@ contract NativeTokenGatewayTest is Base {
     emit ISpoke.Withdraw(
       _wethReserveId(spoke1),
       address(nativeTokenGateway),
-      bob,
+      _getPositionId(bob),
       expectedSupplyShares,
       expectedWithdrawAmount
     );
@@ -384,7 +384,7 @@ contract NativeTokenGatewayTest is Base {
     vm.mockFunction(
       address(spoke1),
       address(reentrantCaller),
-      abi.encodeWithSelector(ISpoke.withdraw.selector)
+      abi.encodeWithSelector(bytes4(keccak256('withdraw(uint256,uint256,address)')))
     );
     vm.expectRevert(ReentrancyGuardTransient.ReentrancyGuardReentrantCall.selector);
     vm.prank(bob);
@@ -470,7 +470,7 @@ contract NativeTokenGatewayTest is Base {
     emit ISpoke.Borrow(
       _wethReserveId(spoke1),
       address(nativeTokenGateway),
-      bob,
+      _getPositionId(bob),
       hub1.previewRestoreByAssets(wethAssetId, borrowAmount),
       borrowAmount
     );
@@ -508,7 +508,7 @@ contract NativeTokenGatewayTest is Base {
     vm.mockFunction(
       address(spoke1),
       address(reentrantCaller),
-      abi.encodeWithSelector(ISpoke.borrow.selector)
+      abi.encodeWithSelector(bytes4(keccak256('borrow(uint256,uint256,address)')))
     );
     vm.expectRevert(ReentrancyGuardTransient.ReentrancyGuardReentrantCall.selector);
     vm.prank(bob);
@@ -620,7 +620,7 @@ contract NativeTokenGatewayTest is Base {
     emit ISpoke.Repay(
       _wethReserveId(spoke1),
       address(nativeTokenGateway),
-      bob,
+      _getPositionId(bob),
       hub1.previewRestoreByAssets(wethAssetId, baseRestored),
       repayAmount,
       expectedPremiumDelta
@@ -702,7 +702,7 @@ contract NativeTokenGatewayTest is Base {
       emit ISpoke.Repay(
         _wethReserveId(spoke1),
         address(nativeTokenGateway),
-        bob,
+        _getPositionId(bob),
         hub1.previewRestoreByAssets(wethAssetId, baseRestored),
         repaidAmount,
         expectedPremiumDelta
@@ -794,7 +794,7 @@ contract NativeTokenGatewayTest is Base {
     emit ISpoke.Repay(
       _wethReserveId(spoke1),
       address(nativeTokenGateway),
-      bob,
+      _getPositionId(bob),
       hub1.previewRestoreByAssets(wethAssetId, baseRestored),
       totalRepaid,
       expectedPremiumDelta
@@ -830,7 +830,7 @@ contract NativeTokenGatewayTest is Base {
     vm.mockFunction(
       address(spoke1),
       address(reentrantCaller),
-      abi.encodeWithSelector(ISpoke.repay.selector)
+      abi.encodeWithSelector(bytes4(keccak256('repay(uint256,uint256,address)')))
     );
     vm.expectRevert(ReentrancyGuardTransient.ReentrancyGuardReentrantCall.selector);
     vm.prank(bob);

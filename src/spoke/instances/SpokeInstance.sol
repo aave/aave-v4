@@ -7,7 +7,7 @@ import {Spoke} from 'src/spoke/Spoke.sol';
 /// @author Aave Labs
 /// @notice Implementation contract for the Spoke.
 contract SpokeInstance is Spoke {
-  uint64 public constant SPOKE_REVISION = 1;
+  uint64 public constant SPOKE_REVISION = 2;
 
   /// @dev Constructor.
   /// @dev During upgrade, must ensure that the new oracle is supporting existing assets on the Spoke and the replaced oracle.
