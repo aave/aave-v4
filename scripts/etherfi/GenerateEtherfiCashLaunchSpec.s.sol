@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 import {console2} from 'forge-std/console2.sol';
 
 import {EtherfiCashLaunchPayload} from 'src/etherfi/EtherfiCashLaunchPayload.sol';
-import {EtherfiCashOpMainnet} from 'src/etherfi/EtherfiCashOpMainnet.sol';
+import {AaveV4EtherfiCash, AaveV4EtherfiCashHubs, AaveV4EtherfiCashSpokes} from 'src/etherfi/AaveV4EtherfiCash.sol';
 import {EtherfiCashScriptBase} from 'scripts/etherfi/EtherfiCashScriptBase.s.sol';
 
 /// @title GenerateEtherfiCashLaunchSpec
@@ -14,10 +14,7 @@ import {EtherfiCashScriptBase} from 'scripts/etherfi/EtherfiCashScriptBase.s.sol
 ///   forge script scripts/etherfi/GenerateEtherfiCashLaunchSpec.s.sol --sig 'generate()' --rpc-url optimism
 contract GenerateEtherfiCashLaunchSpecScript is EtherfiCashScriptBase {
   function generate() external {
-    EtherfiCashLaunchPayload expectedPayload = new EtherfiCashLaunchPayload(
-      _instanceAddresses(),
-      _assetAddresses()
-    );
+    EtherfiCashLaunchPayload expectedPayload = new EtherfiCashLaunchPayload();
     EtherfiCashLaunchPayload.AssetSpec[] memory specs = expectedPayload.getAssetSpecs();
 
     address payloadAddress = vm.envOr('PAYLOAD', address(0));
@@ -39,9 +36,9 @@ contract GenerateEtherfiCashLaunchSpecScript is EtherfiCashScriptBase {
       '## Administration\n\n',
       '| Role | Holder |\n|---|---|\n',
       '| Instance owner / payload executor | Owner Safe ',
-      vm.toString(EtherfiCashOpMainnet.OWNER_SAFE),
+      vm.toString(AaveV4EtherfiCash.OWNER_SAFE),
       ' |\n| Caps + dynamic risk config operator | Operator Safe (Nonce Capital) ',
-      vm.toString(EtherfiCashOpMainnet.OPERATOR_SAFE),
+      vm.toString(AaveV4EtherfiCash.OPERATOR_SAFE),
       ' |\n\n',
       'Operator roles carved out by the payload: HUB_CAPS_OPERATOR_ROLE (201) for ',
       'updateSpokeCaps/updateSpokeAddCap/updateSpokeDrawCap on the HubConfigurator, and ',
@@ -72,19 +69,19 @@ contract GenerateEtherfiCashLaunchSpecScript is EtherfiCashScriptBase {
     md = string.concat(md, '\n### Addresses\n\n| Contract | Address |\n|---|---|\n');
     md = string.concat(md, _addrRow('Launch payload (phase 1, dormant config)', payloadAddress));
     md = string.concat(md, _addrRow('Activation payload (phase 2)', activationAddress));
-    md = string.concat(md, _addrRow('Owner Safe', EtherfiCashOpMainnet.OWNER_SAFE));
-    md = string.concat(md, _addrRow('Operator Safe', EtherfiCashOpMainnet.OPERATOR_SAFE));
-    md = string.concat(md, _addrRow('AccessManager', expectedPayload.ACCESS_MANAGER()));
+    md = string.concat(md, _addrRow('Owner Safe', AaveV4EtherfiCash.OWNER_SAFE));
+    md = string.concat(md, _addrRow('Operator Safe', AaveV4EtherfiCash.OPERATOR_SAFE));
+    md = string.concat(md, _addrRow('AccessManager', AaveV4EtherfiCash.ACCESS_MANAGER));
     md = string.concat(md, _addrRow('Config Engine', address(expectedPayload.CONFIG_ENGINE())));
-    md = string.concat(md, _addrRow('Hub', expectedPayload.HUB()));
-    md = string.concat(md, _addrRow('Hub Configurator', address(expectedPayload.HUB_CONFIGURATOR())));
-    md = string.concat(md, _addrRow('Cash Spoke', expectedPayload.CASH_SPOKE()));
+    md = string.concat(md, _addrRow('Hub', AaveV4EtherfiCashHubs.CASH_HUB));
+    md = string.concat(md, _addrRow('Hub Configurator', AaveV4EtherfiCash.HUB_CONFIGURATOR));
+    md = string.concat(md, _addrRow('Cash Spoke', AaveV4EtherfiCashSpokes.CASH_SPOKE));
     md = string.concat(
       md,
-      _addrRow('Spoke Configurator', address(expectedPayload.SPOKE_CONFIGURATOR()))
+      _addrRow('Spoke Configurator', AaveV4EtherfiCash.SPOKE_CONFIGURATOR)
     );
-    md = string.concat(md, _addrRow('IR Strategy', expectedPayload.IR_STRATEGY()));
-    md = string.concat(md, _addrRow('Treasury Spoke (fee receiver)', expectedPayload.FEE_RECEIVER()));
+    md = string.concat(md, _addrRow('IR Strategy', AaveV4EtherfiCashHubs.CASH_HUB_IR_STRATEGY));
+    md = string.concat(md, _addrRow('Treasury Spoke (fee receiver)', AaveV4EtherfiCashSpokes.TREASURY_SPOKE));
     for (uint256 i; i < specs.length; i++) {
       md = string.concat(md, _addrRow(specs[i].symbol, specs[i].underlying));
       md = string.concat(md, _addrRow(string.concat(specs[i].symbol, ' feed'), specs[i].priceFeed));

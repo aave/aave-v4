@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 import {console2} from 'forge-std/console2.sol';
 
 import {AaveV4Payload} from 'src/config-engine/AaveV4Payload.sol';
-import {EtherfiCashOpMainnet} from 'src/etherfi/EtherfiCashOpMainnet.sol';
+import {AaveV4EtherfiCash} from 'src/etherfi/AaveV4EtherfiCash.sol';
 import {EtherfiCashScriptBase} from 'scripts/etherfi/EtherfiCashScriptBase.s.sol';
 
 /// @title GenerateEtherfiCashSafeTx
@@ -29,7 +29,7 @@ contract GenerateEtherfiCashSafeTxScript is EtherfiCashScriptBase {
     address activation = vm.envAddress('ACTIVATION');
     _requireCode('activation payload', activation);
 
-    address ownerSafe = vm.envOr('ETHERFI_CASH_OWNER_SAFE', EtherfiCashOpMainnet.OWNER_SAFE);
+    address ownerSafe = AaveV4EtherfiCash.OWNER_SAFE;
     _requireCode('owner safe', ownerSafe);
 
     vm.createDir('output/etherfi', true);

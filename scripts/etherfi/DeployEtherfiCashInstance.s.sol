@@ -3,7 +3,8 @@ pragma solidity ^0.8.0;
 
 import {AaveV4DeployBatchBaseScript} from 'scripts/deploy/AaveV4DeployBatchBase.s.sol';
 import {InputUtils} from 'src/deployments/utils/libraries/InputUtils.sol';
-import {EtherfiCashOpMainnet} from 'src/etherfi/EtherfiCashOpMainnet.sol';
+import {AaveV4EtherfiCash} from 'src/etherfi/AaveV4EtherfiCash.sol';
+import {AaveV4EtherfiCashAssets} from 'src/etherfi/AaveV4EtherfiCash.sol';
 
 /// @title DeployEtherfiCashInstance
 /// @notice Deploys the ether.fi Cash Aave V4 instance on OP Mainnet (whitelabel): one hub
@@ -15,7 +16,7 @@ import {EtherfiCashOpMainnet} from 'src/etherfi/EtherfiCashOpMainnet.sol';
 ///   1. make deploy-precompile chain=optimism account=<keystore>
 ///   2. forge script scripts/etherfi/DeployEtherfiCashInstance.s.sol --rpc-url optimism \
 ///        --account <keystore> --broadcast --verify
-/// The deployment report (all addresses for EtherfiCashOpMainnet.sol) lands in
+/// The deployment report (all addresses for AaveV4EtherfiCash.sol) lands in
 /// output/reports/deployments/.
 ///
 /// After this run the Owner Safe holds: AccessManager DEFAULT_ADMIN (role 0), hub + spoke
@@ -36,7 +37,7 @@ contract DeployEtherfiCashInstanceScript is AaveV4DeployBatchBaseScript {
   }
 
   function _getDeployInputs() internal view override returns (InputUtils.FullDeployInputs memory) {
-    address ownerSafe = vm.envOr('ETHERFI_CASH_OWNER_SAFE', EtherfiCashOpMainnet.OWNER_SAFE);
+    address ownerSafe = AaveV4EtherfiCash.OWNER_SAFE;
 
     string[] memory hubLabels = new string[](1);
     hubLabels[0] = 'CASH_HUB';
@@ -58,7 +59,7 @@ contract DeployEtherfiCashInstanceScript is AaveV4DeployBatchBaseScript {
         spokeConfiguratorAdmin: ownerSafe,
         gatewayOwner: ownerSafe,
         positionManagerOwner: ownerSafe,
-        nativeWrapper: EtherfiCashOpMainnet.WETH,
+        nativeWrapper: AaveV4EtherfiCashAssets.WETH_UNDERLYING,
         deployNativeTokenGateway: true,
         deploySignatureGateway: false,
         deployPositionManagers: true,

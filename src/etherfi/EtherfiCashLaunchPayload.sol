@@ -2,7 +2,7 @@
 pragma solidity ^0.8.0;
 
 import {AaveV4Payload} from 'src/config-engine/AaveV4Payload.sol';
-import {EtherfiCashOpMainnet} from 'src/etherfi/EtherfiCashOpMainnet.sol';
+import {AaveV4EtherfiCash, AaveV4EtherfiCashHubs, AaveV4EtherfiCashSpokes, AaveV4EtherfiCashAssets, AaveV4EtherfiCashCaps} from 'src/etherfi/AaveV4EtherfiCash.sol';
 import {IAaveV4ConfigEngine} from 'src/config-engine/interfaces/IAaveV4ConfigEngine.sol';
 import {EngineFlags} from 'src/config-engine/libraries/EngineFlags.sol';
 import {IHubConfigurator} from 'src/hub/interfaces/IHubConfigurator.sol';
@@ -18,6 +18,9 @@ import {IAssetInterestRateStrategy} from 'src/hub/interfaces/IAssetInterestRateS
 /// executed by the OWNER Safe via a delegatecall Safe transaction — no Aave Governance V3).
 /// The executing Safe must hold the AccessManager admin role (0) and the configurator domain
 /// admin roles (200/400), which the instance deployment grants.
+///
+/// Every address comes from the AaveV4EtherfiCash address-book libraries; every parameter is a
+/// compile-time constant below — the payload takes no constructor arguments.
 ///
 /// PHASE 1 of the two-phase launch (config-dormant -> verify -> activate, mirroring the Aave V4
 /// Avalanche launch, proposal 504): this payload configures everything but registers every
@@ -36,78 +39,20 @@ import {IAssetInterestRateStrategy} from 'src/hub/interfaces/IAssetInterestRateS
 ///   5. Spoke liquidation config — target health factor 1.24, health factor for max bonus 0.90
 ///      (liquidation bonus factor kept at the deploy default).
 ///
-/// SAFE-DELEGATECALL SAFETY: this contract must never write storage — it holds only immutables
-/// and constants, so delegatecalling it from the Safe cannot corrupt Safe state.
-///
 /// Parameter source: "Proposal — Aave V4 Parameters by Nonce", 'Submit to AAVE' section
 /// (FINAL, 2026-07-23 17:25 revision):
 ///   - Only USDC and WETH are borrowable at launch; every other asset is collateral-only
 ///     (flat 0% curve, 0% liquidity fee, draw cap 0).
 ///   - Borrowable curves copied from the equivalent Aave asset with the liquidity fee halved.
 ///   - Risk premium (collateralRisk) is 0 bps across the board.
-///   - Caps come from EtherfiCashOpMainnet (final sheet values).
 ///
-/// An asset is only included when BOTH its underlying and its price feed address are set; unset
-/// (zero) entries are skipped so the payload can ship while some listings are still pending.
-/// Addresses are constructor-injected immutables (payload storage is unreadable during
-/// delegatecall execution); all risk parameters are compile-time constants below.
+/// An asset is only included when BOTH its underlying and its price source address are set in
+/// the address book; staged (zero) entries are skipped so future listings can be prepared
+/// without touching payload logic.
+///
+/// SAFE-DELEGATECALL SAFETY: this contract must never write storage — it holds only constants,
+/// so delegatecalling it from the Safe cannot corrupt Safe state.
 contract EtherfiCashLaunchPayload is AaveV4Payload {
-  /// @notice Addresses of the ether.fi Cash Aave V4 instance contracts.
-  struct InstanceAddresses {
-    address configEngine;
-    address hubConfigurator;
-    address hub;
-    address spokeConfigurator;
-    address cashSpoke;
-    address irStrategy;
-    address feeReceiver; // TreasurySpoke
-    address accessManager;
-    address ownerSafe; // executes this payload via delegatecall; retains operator selectors
-    address operatorSafe; // Nonce risk curator
-  }
-
-  /// @notice Underlying + price feed pairs for every launch asset. address(0) = skip.
-  struct AssetAddresses {
-    address usdc;
-    address usdcFeed;
-    address usdt;
-    address usdtFeed;
-    address eurc;
-    address eurcFeed;
-    address frxUsd;
-    address frxUsdFeed;
-    address weth;
-    address wethFeed;
-    address weEth;
-    address weEthFeed;
-    address eBtc;
-    address eBtcFeed;
-    address eUsd;
-    address eUsdFeed;
-    address ethfi;
-    address ethfiFeed;
-    address sEthfi;
-    address sEthfiFeed;
-    address op;
-    address opFeed;
-    address wHype;
-    address wHypeFeed;
-    address beHype;
-    address beHypeFeed;
-    address liquidEth;
-    address liquidEthFeed;
-    address liquidBtc;
-    address liquidBtcFeed;
-    address liquidUsd;
-    address liquidUsdFeed;
-    address liquidReserve;
-    address liquidReserveFeed;
-    address weEur;
-    address weEurFeed;
-    address liquidRwa;
-    address liquidRwaFeed;
-  }
-
   /// @notice Full per-asset launch configuration.
   struct AssetSpec {
     string symbol;
@@ -119,7 +64,7 @@ contract EtherfiCashLaunchPayload is AaveV4Payload {
     bool borrowable;
     uint256 liquidityFee; // BPS
     IAssetInterestRateStrategy.InterestRateData irData;
-    uint40 addCap; // whole tokens; 0 = TBD, supply blocked until follow-up
+    uint40 addCap; // whole tokens
     uint40 drawCap; // whole tokens
   }
 
@@ -144,134 +89,14 @@ contract EtherfiCashLaunchPayload is AaveV4Payload {
   uint32 internal constant BONUS_4_0 = 104_00;
   uint32 internal constant BONUS_5_0 = 105_00;
 
-  // ------------------------------------- instance wiring --------------------------------------
-  IHubConfigurator public immutable HUB_CONFIGURATOR;
-  address public immutable HUB;
-  ISpokeConfigurator public immutable SPOKE_CONFIGURATOR;
-  address public immutable CASH_SPOKE;
-  address public immutable IR_STRATEGY;
-  address public immutable FEE_RECEIVER;
-  address public immutable ACCESS_MANAGER;
-  address public immutable OWNER_SAFE;
-  address public immutable OPERATOR_SAFE;
-
-  // ---------------------------------------- underlyings ---------------------------------------
-  address public immutable USDC;
-  address public immutable USDT;
-  address public immutable EURC;
-  address public immutable FRXUSD;
-  address public immutable WETH;
-  address public immutable WEETH;
-  address public immutable EBTC;
-  address public immutable EUSD;
-  address public immutable ETHFI;
-  address public immutable SETHFI;
-  address public immutable OP;
-  address public immutable WHYPE;
-  address public immutable BEHYPE;
-  address public immutable LIQUID_ETH;
-  address public immutable LIQUID_BTC;
-  address public immutable LIQUID_USD;
-  address public immutable LIQUID_RESERVE;
-  address public immutable WEEUR;
-  address public immutable LIQUID_RWA;
-
-  // ---------------------------------------- price feeds ---------------------------------------
-  address public immutable USDC_FEED;
-  address public immutable USDT_FEED;
-  address public immutable EURC_FEED;
-  address public immutable FRXUSD_FEED;
-  address public immutable WETH_FEED;
-  address public immutable WEETH_FEED;
-  address public immutable EBTC_FEED;
-  address public immutable EUSD_FEED;
-  address public immutable ETHFI_FEED;
-  address public immutable SETHFI_FEED;
-  address public immutable OP_FEED;
-  address public immutable WHYPE_FEED;
-  address public immutable BEHYPE_FEED;
-  address public immutable LIQUID_ETH_FEED;
-  address public immutable LIQUID_BTC_FEED;
-  address public immutable LIQUID_USD_FEED;
-  address public immutable LIQUID_RESERVE_FEED;
-  address public immutable WEEUR_FEED;
-  address public immutable LIQUID_RWA_FEED;
-
-  error MissingInstanceAddress();
-
-  constructor(
-    InstanceAddresses memory instance,
-    AssetAddresses memory assets
-  ) AaveV4Payload(IAaveV4ConfigEngine(instance.configEngine)) {
-    require(
-      instance.hubConfigurator != address(0) &&
-        instance.hub != address(0) &&
-        instance.spokeConfigurator != address(0) &&
-        instance.cashSpoke != address(0) &&
-        instance.irStrategy != address(0) &&
-        instance.feeReceiver != address(0) &&
-        instance.accessManager != address(0) &&
-        instance.ownerSafe != address(0) &&
-        instance.operatorSafe != address(0),
-      MissingInstanceAddress()
-    );
-
-    HUB_CONFIGURATOR = IHubConfigurator(instance.hubConfigurator);
-    HUB = instance.hub;
-    SPOKE_CONFIGURATOR = ISpokeConfigurator(instance.spokeConfigurator);
-    CASH_SPOKE = instance.cashSpoke;
-    IR_STRATEGY = instance.irStrategy;
-    FEE_RECEIVER = instance.feeReceiver;
-    ACCESS_MANAGER = instance.accessManager;
-    OWNER_SAFE = instance.ownerSafe;
-    OPERATOR_SAFE = instance.operatorSafe;
-
-    USDC = assets.usdc;
-    USDC_FEED = assets.usdcFeed;
-    USDT = assets.usdt;
-    USDT_FEED = assets.usdtFeed;
-    EURC = assets.eurc;
-    EURC_FEED = assets.eurcFeed;
-    FRXUSD = assets.frxUsd;
-    FRXUSD_FEED = assets.frxUsdFeed;
-    WETH = assets.weth;
-    WETH_FEED = assets.wethFeed;
-    WEETH = assets.weEth;
-    WEETH_FEED = assets.weEthFeed;
-    EBTC = assets.eBtc;
-    EBTC_FEED = assets.eBtcFeed;
-    EUSD = assets.eUsd;
-    EUSD_FEED = assets.eUsdFeed;
-    ETHFI = assets.ethfi;
-    ETHFI_FEED = assets.ethfiFeed;
-    SETHFI = assets.sEthfi;
-    SETHFI_FEED = assets.sEthfiFeed;
-    OP = assets.op;
-    OP_FEED = assets.opFeed;
-    WHYPE = assets.wHype;
-    WHYPE_FEED = assets.wHypeFeed;
-    BEHYPE = assets.beHype;
-    BEHYPE_FEED = assets.beHypeFeed;
-    LIQUID_ETH = assets.liquidEth;
-    LIQUID_ETH_FEED = assets.liquidEthFeed;
-    LIQUID_BTC = assets.liquidBtc;
-    LIQUID_BTC_FEED = assets.liquidBtcFeed;
-    LIQUID_USD = assets.liquidUsd;
-    LIQUID_USD_FEED = assets.liquidUsdFeed;
-    LIQUID_RESERVE = assets.liquidReserve;
-    LIQUID_RESERVE_FEED = assets.liquidReserveFeed;
-    WEEUR = assets.weEur;
-    WEEUR_FEED = assets.weEurFeed;
-    LIQUID_RWA = assets.liquidRwa;
-    LIQUID_RWA_FEED = assets.liquidRwaFeed;
-  }
+  constructor() AaveV4Payload(IAaveV4ConfigEngine(AaveV4EtherfiCash.CONFIG_ENGINE)) {}
 
   // ============================================================================================
   //                                     asset specifications
   // ============================================================================================
 
-  /// @notice Launch asset specs, excluding any asset whose underlying or price feed is unset.
-  function getAssetSpecs() public view returns (AssetSpec[] memory specs) {
+  /// @notice Launch asset specs, excluding any asset whose underlying or price source is unset.
+  function getAssetSpecs() public pure returns (AssetSpec[] memory specs) {
     AssetSpec[19] memory all = _allAssetSpecs();
 
     uint256 count;
@@ -288,55 +113,55 @@ contract EtherfiCashLaunchPayload is AaveV4Payload {
     }
   }
 
-  function _allAssetSpecs() internal view returns (AssetSpec[19] memory specs) {
+  function _allAssetSpecs() internal pure returns (AssetSpec[19] memory specs) {
     // -------- borrowable reserves (final sheet: USDC and WETH only) --------
     // USDC — CF 95%, bonus 1%; fee 5%; kink 92%, base 0%, slope1 4%, slope2 10% (max 14%)
     specs[0] = AssetSpec({
       symbol: 'USDC',
-      underlying: USDC,
-      priceFeed: USDC_FEED,
+      underlying: AaveV4EtherfiCashAssets.USDC_UNDERLYING,
+      priceFeed: AaveV4EtherfiCashAssets.USDC_ORACLE,
       collateralFactor: 95_00,
       maxLiquidationBonus: BONUS_1_0,
       liquidationFee: LIQUIDATION_FEE,
       borrowable: true,
       liquidityFee: 5_00,
       irData: _ir(92_00, 0, 4_00, 10_00),
-      addCap: EtherfiCashOpMainnet.USDC_ADD_CAP,
-      drawCap: EtherfiCashOpMainnet.USDC_DRAW_CAP
+      addCap: AaveV4EtherfiCashCaps.USDC_ADD_CAP,
+      drawCap: AaveV4EtherfiCashCaps.USDC_DRAW_CAP
     });
     // WETH — CF 75%, bonus 3.5%; fee 7%; kink 92%, slope1 2.35%, slope2 14% (max 16.35%)
     specs[1] = AssetSpec({
       symbol: 'WETH',
-      underlying: WETH,
-      priceFeed: WETH_FEED,
+      underlying: AaveV4EtherfiCashAssets.WETH_UNDERLYING,
+      priceFeed: AaveV4EtherfiCashAssets.WETH_ORACLE,
       collateralFactor: 75_00,
       maxLiquidationBonus: BONUS_3_5,
       liquidationFee: LIQUIDATION_FEE,
       borrowable: true,
       liquidityFee: 7_00,
       irData: _ir(92_00, 0, 2_35, 14_00),
-      addCap: EtherfiCashOpMainnet.WETH_ADD_CAP,
-      drawCap: EtherfiCashOpMainnet.WETH_DRAW_CAP
+      addCap: AaveV4EtherfiCashCaps.WETH_ADD_CAP,
+      drawCap: AaveV4EtherfiCashCaps.WETH_DRAW_CAP
     });
 
     // -------- collateral-only reserves: flat 0% curve, 0% liquidity fee --------
-    specs[2] = _collateralOnly('USDT', USDT, USDT_FEED, 95_00, BONUS_1_0, EtherfiCashOpMainnet.USDT_ADD_CAP);
-    specs[3] = _collateralOnly('EURC', EURC, EURC_FEED, 95_00, BONUS_1_0, EtherfiCashOpMainnet.EURC_ADD_CAP);
-    specs[4] = _collateralOnly('frxUSD', FRXUSD, FRXUSD_FEED, 95_00, BONUS_1_0, EtherfiCashOpMainnet.FRXUSD_ADD_CAP);
-    specs[5] = _collateralOnly('weETH', WEETH, WEETH_FEED, 75_00, BONUS_3_5, EtherfiCashOpMainnet.WEETH_ADD_CAP);
-    specs[6] = _collateralOnly('eBTC', EBTC, EBTC_FEED, 72_00, BONUS_5_0, EtherfiCashOpMainnet.EBTC_ADD_CAP);
-    specs[7] = _collateralOnly('eUSD', EUSD, EUSD_FEED, 90_00, BONUS_2_0, EtherfiCashOpMainnet.EUSD_ADD_CAP);
-    specs[8] = _collateralOnly('ETHFI', ETHFI, ETHFI_FEED, 30_00, BONUS_5_0, EtherfiCashOpMainnet.ETHFI_ADD_CAP);
-    specs[9] = _collateralOnly('sETHFI', SETHFI, SETHFI_FEED, 30_00, BONUS_5_0, EtherfiCashOpMainnet.SETHFI_ADD_CAP);
-    specs[10] = _collateralOnly('OP', OP, OP_FEED, 30_00, BONUS_5_0, EtherfiCashOpMainnet.OP_ADD_CAP);
-    specs[11] = _collateralOnly('WHYPE', WHYPE, WHYPE_FEED, 65_00, BONUS_4_0, EtherfiCashOpMainnet.WHYPE_ADD_CAP);
-    specs[12] = _collateralOnly('beHYPE', BEHYPE, BEHYPE_FEED, 60_00, BONUS_5_0, EtherfiCashOpMainnet.BEHYPE_ADD_CAP);
-    specs[13] = _collateralOnly('liquidETH', LIQUID_ETH, LIQUID_ETH_FEED, 70_00, BONUS_5_0, EtherfiCashOpMainnet.LIQUID_ETH_ADD_CAP);
-    specs[14] = _collateralOnly('liquidBTC', LIQUID_BTC, LIQUID_BTC_FEED, 70_00, BONUS_5_0, EtherfiCashOpMainnet.LIQUID_BTC_ADD_CAP);
-    specs[15] = _collateralOnly('liquidUSD', LIQUID_USD, LIQUID_USD_FEED, 80_00, BONUS_2_0, EtherfiCashOpMainnet.LIQUID_USD_ADD_CAP);
-    specs[16] = _collateralOnly('liquidRESERVE', LIQUID_RESERVE, LIQUID_RESERVE_FEED, 80_00, BONUS_2_0, EtherfiCashOpMainnet.LIQUID_RESERVE_ADD_CAP);
-    specs[17] = _collateralOnly('weEUR', WEEUR, WEEUR_FEED, 80_00, BONUS_2_0, EtherfiCashOpMainnet.WEEUR_ADD_CAP);
-    specs[18] = _collateralOnly('liquidRWA', LIQUID_RWA, LIQUID_RWA_FEED, 80_00, BONUS_2_0, EtherfiCashOpMainnet.LIQUID_RWA_ADD_CAP);
+    specs[2] = _collateralOnly('USDT', AaveV4EtherfiCashAssets.USDT_UNDERLYING, AaveV4EtherfiCashAssets.USDT_ORACLE, 95_00, BONUS_1_0, AaveV4EtherfiCashCaps.USDT_ADD_CAP);
+    specs[3] = _collateralOnly('EURC', AaveV4EtherfiCashAssets.EURC_UNDERLYING, AaveV4EtherfiCashAssets.EURC_ORACLE, 95_00, BONUS_1_0, AaveV4EtherfiCashCaps.EURC_ADD_CAP);
+    specs[4] = _collateralOnly('frxUSD', AaveV4EtherfiCashAssets.FRXUSD_UNDERLYING, AaveV4EtherfiCashAssets.FRXUSD_ORACLE, 95_00, BONUS_1_0, AaveV4EtherfiCashCaps.FRXUSD_ADD_CAP);
+    specs[5] = _collateralOnly('weETH', AaveV4EtherfiCashAssets.WEETH_UNDERLYING, AaveV4EtherfiCashAssets.WEETH_ORACLE, 75_00, BONUS_3_5, AaveV4EtherfiCashCaps.WEETH_ADD_CAP);
+    specs[6] = _collateralOnly('eBTC', AaveV4EtherfiCashAssets.EBTC_UNDERLYING, AaveV4EtherfiCashAssets.EBTC_ORACLE, 72_00, BONUS_5_0, AaveV4EtherfiCashCaps.EBTC_ADD_CAP);
+    specs[7] = _collateralOnly('eUSD', AaveV4EtherfiCashAssets.EUSD_UNDERLYING, AaveV4EtherfiCashAssets.EUSD_ORACLE, 90_00, BONUS_2_0, AaveV4EtherfiCashCaps.EUSD_ADD_CAP);
+    specs[8] = _collateralOnly('ETHFI', AaveV4EtherfiCashAssets.ETHFI_UNDERLYING, AaveV4EtherfiCashAssets.ETHFI_ORACLE, 30_00, BONUS_5_0, AaveV4EtherfiCashCaps.ETHFI_ADD_CAP);
+    specs[9] = _collateralOnly('sETHFI', AaveV4EtherfiCashAssets.SETHFI_UNDERLYING, AaveV4EtherfiCashAssets.SETHFI_ORACLE, 30_00, BONUS_5_0, AaveV4EtherfiCashCaps.SETHFI_ADD_CAP);
+    specs[10] = _collateralOnly('OP', AaveV4EtherfiCashAssets.OP_UNDERLYING, AaveV4EtherfiCashAssets.OP_ORACLE, 30_00, BONUS_5_0, AaveV4EtherfiCashCaps.OP_ADD_CAP);
+    specs[11] = _collateralOnly('WHYPE', AaveV4EtherfiCashAssets.WHYPE_UNDERLYING, AaveV4EtherfiCashAssets.WHYPE_ORACLE, 65_00, BONUS_4_0, AaveV4EtherfiCashCaps.WHYPE_ADD_CAP);
+    specs[12] = _collateralOnly('beHYPE', AaveV4EtherfiCashAssets.BEHYPE_UNDERLYING, AaveV4EtherfiCashAssets.BEHYPE_ORACLE, 60_00, BONUS_5_0, AaveV4EtherfiCashCaps.BEHYPE_ADD_CAP);
+    specs[13] = _collateralOnly('liquidETH', AaveV4EtherfiCashAssets.LIQUID_ETH_UNDERLYING, AaveV4EtherfiCashAssets.LIQUID_ETH_ORACLE, 70_00, BONUS_5_0, AaveV4EtherfiCashCaps.LIQUID_ETH_ADD_CAP);
+    specs[14] = _collateralOnly('liquidBTC', AaveV4EtherfiCashAssets.LIQUID_BTC_UNDERLYING, AaveV4EtherfiCashAssets.LIQUID_BTC_ORACLE, 70_00, BONUS_5_0, AaveV4EtherfiCashCaps.LIQUID_BTC_ADD_CAP);
+    specs[15] = _collateralOnly('liquidUSD', AaveV4EtherfiCashAssets.LIQUID_USD_UNDERLYING, AaveV4EtherfiCashAssets.LIQUID_USD_ORACLE, 80_00, BONUS_2_0, AaveV4EtherfiCashCaps.LIQUID_USD_ADD_CAP);
+    specs[16] = _collateralOnly('liquidRESERVE', AaveV4EtherfiCashAssets.LIQUID_RESERVE_UNDERLYING, AaveV4EtherfiCashAssets.LIQUID_RESERVE_ORACLE, 80_00, BONUS_2_0, AaveV4EtherfiCashCaps.LIQUID_RESERVE_ADD_CAP);
+    specs[17] = _collateralOnly('weEUR', AaveV4EtherfiCashAssets.WEEUR_UNDERLYING, AaveV4EtherfiCashAssets.WEEUR_ORACLE, 80_00, BONUS_2_0, AaveV4EtherfiCashCaps.WEEUR_ADD_CAP);
+    specs[18] = _collateralOnly('liquidRWA', AaveV4EtherfiCashAssets.LIQUID_RWA_UNDERLYING, AaveV4EtherfiCashAssets.LIQUID_RWA_ORACLE, 80_00, BONUS_2_0, AaveV4EtherfiCashCaps.LIQUID_RWA_ADD_CAP);
   }
 
   function _ir(
@@ -373,7 +198,7 @@ contract EtherfiCashLaunchPayload is AaveV4Payload {
         borrowable: false,
         liquidityFee: 0,
         irData: _ir(99_00, 0, 0, 0), // flat 0% — no borrow use case at launch
-        addCap: addCap, // 0 = TBD pending seed-liquidity decisions; supply blocked until raised
+        addCap: addCap,
         drawCap: 0
       });
   }
@@ -385,13 +210,13 @@ contract EtherfiCashLaunchPayload is AaveV4Payload {
   /// @notice Labels the two new operator roles on the AccessManager.
   function accessManagerRoleUpdates()
     public
-    view
+    pure
     override
     returns (IAaveV4ConfigEngine.RoleUpdate[] memory updates)
   {
     updates = new IAaveV4ConfigEngine.RoleUpdate[](2);
     updates[0] = IAaveV4ConfigEngine.RoleUpdate({
-      authority: ACCESS_MANAGER,
+      authority: AaveV4EtherfiCash.ACCESS_MANAGER,
       roleId: HUB_CAPS_OPERATOR_ROLE,
       admin: EngineFlags.KEEP_CURRENT_UINT64,
       guardian: EngineFlags.KEEP_CURRENT_UINT64,
@@ -400,7 +225,7 @@ contract EtherfiCashLaunchPayload is AaveV4Payload {
       labelUpdate: false
     });
     updates[1] = IAaveV4ConfigEngine.RoleUpdate({
-      authority: ACCESS_MANAGER,
+      authority: AaveV4EtherfiCash.ACCESS_MANAGER,
       roleId: SPOKE_RISK_OPERATOR_ROLE,
       admin: EngineFlags.KEEP_CURRENT_UINT64,
       guardian: EngineFlags.KEEP_CURRENT_UINT64,
@@ -414,7 +239,7 @@ contract EtherfiCashLaunchPayload is AaveV4Payload {
   /// to the new granular operator roles (201/401).
   function accessManagerTargetFunctionRoleUpdates()
     public
-    view
+    pure
     override
     returns (IAaveV4ConfigEngine.TargetFunctionRoleUpdate[] memory updates)
   {
@@ -429,14 +254,14 @@ contract EtherfiCashLaunchPayload is AaveV4Payload {
 
     updates = new IAaveV4ConfigEngine.TargetFunctionRoleUpdate[](2);
     updates[0] = IAaveV4ConfigEngine.TargetFunctionRoleUpdate({
-      authority: ACCESS_MANAGER,
-      target: address(HUB_CONFIGURATOR),
+      authority: AaveV4EtherfiCash.ACCESS_MANAGER,
+      target: AaveV4EtherfiCash.HUB_CONFIGURATOR,
       selectors: hubSelectors,
       roleId: HUB_CAPS_OPERATOR_ROLE
     });
     updates[1] = IAaveV4ConfigEngine.TargetFunctionRoleUpdate({
-      authority: ACCESS_MANAGER,
-      target: address(SPOKE_CONFIGURATOR),
+      authority: AaveV4EtherfiCash.ACCESS_MANAGER,
+      target: AaveV4EtherfiCash.SPOKE_CONFIGURATOR,
       selectors: spokeSelectors,
       roleId: SPOKE_RISK_OPERATOR_ROLE
     });
@@ -447,24 +272,24 @@ contract EtherfiCashLaunchPayload is AaveV4Payload {
   /// from the domain-admin roles would otherwise strip the Owner Safe of cap/risk access.
   function accessManagerRoleMemberships()
     public
-    view
+    pure
     override
     returns (IAaveV4ConfigEngine.RoleMembership[] memory memberships)
   {
     memberships = new IAaveV4ConfigEngine.RoleMembership[](4);
-    memberships[0] = _grant(HUB_CAPS_OPERATOR_ROLE, OPERATOR_SAFE);
-    memberships[1] = _grant(SPOKE_RISK_OPERATOR_ROLE, OPERATOR_SAFE);
-    memberships[2] = _grant(HUB_CAPS_OPERATOR_ROLE, OWNER_SAFE);
-    memberships[3] = _grant(SPOKE_RISK_OPERATOR_ROLE, OWNER_SAFE);
+    memberships[0] = _grant(HUB_CAPS_OPERATOR_ROLE, AaveV4EtherfiCash.OPERATOR_SAFE);
+    memberships[1] = _grant(SPOKE_RISK_OPERATOR_ROLE, AaveV4EtherfiCash.OPERATOR_SAFE);
+    memberships[2] = _grant(HUB_CAPS_OPERATOR_ROLE, AaveV4EtherfiCash.OWNER_SAFE);
+    memberships[3] = _grant(SPOKE_RISK_OPERATOR_ROLE, AaveV4EtherfiCash.OWNER_SAFE);
   }
 
   function _grant(
     uint64 roleId,
     address account
-  ) internal view returns (IAaveV4ConfigEngine.RoleMembership memory) {
+  ) internal pure returns (IAaveV4ConfigEngine.RoleMembership memory) {
     return
       IAaveV4ConfigEngine.RoleMembership({
-        authority: ACCESS_MANAGER,
+        authority: AaveV4EtherfiCash.ACCESS_MANAGER,
         roleId: roleId,
         account: account,
         granted: true,
@@ -474,7 +299,7 @@ contract EtherfiCashLaunchPayload is AaveV4Payload {
 
   function hubAssetListings()
     public
-    view
+    pure
     override
     returns (IAaveV4ConfigEngine.AssetListing[] memory listings)
   {
@@ -482,12 +307,12 @@ contract EtherfiCashLaunchPayload is AaveV4Payload {
     listings = new IAaveV4ConfigEngine.AssetListing[](specs.length);
     for (uint256 i; i < specs.length; i++) {
       listings[i] = IAaveV4ConfigEngine.AssetListing({
-        hubConfigurator: HUB_CONFIGURATOR,
-        hub: HUB,
+        hubConfigurator: IHubConfigurator(AaveV4EtherfiCash.HUB_CONFIGURATOR),
+        hub: AaveV4EtherfiCashHubs.CASH_HUB,
         underlying: specs[i].underlying,
-        feeReceiver: FEE_RECEIVER,
+        feeReceiver: AaveV4EtherfiCashSpokes.TREASURY_SPOKE,
         liquidityFee: specs[i].liquidityFee,
-        irStrategy: IR_STRATEGY,
+        irStrategy: AaveV4EtherfiCashHubs.CASH_HUB_IR_STRATEGY,
         irData: specs[i].irData,
         tokenization: IAaveV4ConfigEngine.TokenizationSpokeConfig({
           addCap: 0,
@@ -501,7 +326,7 @@ contract EtherfiCashLaunchPayload is AaveV4Payload {
 
   function hubSpokeToAssetsAdditions()
     public
-    view
+    pure
     override
     returns (IAaveV4ConfigEngine.SpokeToAssetsAddition[] memory additions)
   {
@@ -526,16 +351,16 @@ contract EtherfiCashLaunchPayload is AaveV4Payload {
 
     additions = new IAaveV4ConfigEngine.SpokeToAssetsAddition[](1);
     additions[0] = IAaveV4ConfigEngine.SpokeToAssetsAddition({
-      hubConfigurator: HUB_CONFIGURATOR,
-      hub: HUB,
-      spoke: CASH_SPOKE,
+      hubConfigurator: IHubConfigurator(AaveV4EtherfiCash.HUB_CONFIGURATOR),
+      hub: AaveV4EtherfiCashHubs.CASH_HUB,
+      spoke: AaveV4EtherfiCashSpokes.CASH_SPOKE,
       assets: assets
     });
   }
 
   function spokeReserveListings()
     public
-    view
+    pure
     override
     returns (IAaveV4ConfigEngine.ReserveListing[] memory listings)
   {
@@ -543,9 +368,9 @@ contract EtherfiCashLaunchPayload is AaveV4Payload {
     listings = new IAaveV4ConfigEngine.ReserveListing[](specs.length);
     for (uint256 i; i < specs.length; i++) {
       listings[i] = IAaveV4ConfigEngine.ReserveListing({
-        spokeConfigurator: SPOKE_CONFIGURATOR,
-        spoke: CASH_SPOKE,
-        hub: HUB,
+        spokeConfigurator: ISpokeConfigurator(AaveV4EtherfiCash.SPOKE_CONFIGURATOR),
+        spoke: AaveV4EtherfiCashSpokes.CASH_SPOKE,
+        hub: AaveV4EtherfiCashHubs.CASH_HUB,
         underlying: specs[i].underlying,
         priceSource: specs[i].priceFeed,
         config: ISpoke.ReserveConfig({
@@ -566,14 +391,14 @@ contract EtherfiCashLaunchPayload is AaveV4Payload {
 
   function spokeLiquidationConfigUpdates()
     public
-    view
+    pure
     override
     returns (IAaveV4ConfigEngine.LiquidationConfigUpdate[] memory updates)
   {
     updates = new IAaveV4ConfigEngine.LiquidationConfigUpdate[](1);
     updates[0] = IAaveV4ConfigEngine.LiquidationConfigUpdate({
-      spokeConfigurator: SPOKE_CONFIGURATOR,
-      spoke: CASH_SPOKE,
+      spokeConfigurator: ISpokeConfigurator(AaveV4EtherfiCash.SPOKE_CONFIGURATOR),
+      spoke: AaveV4EtherfiCashSpokes.CASH_SPOKE,
       targetHealthFactor: TARGET_HEALTH_FACTOR,
       healthFactorForMaxBonus: HEALTH_FACTOR_FOR_MAX_BONUS,
       liquidationBonusFactor: EngineFlags.KEEP_CURRENT // deploy default, unchanged from core

@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {Script} from 'forge-std/Script.sol';
+
 import {console2} from 'forge-std/console2.sol';
 
 import {EtherfiCashLaunchPayload} from 'src/etherfi/EtherfiCashLaunchPayload.sol';
-import {EtherfiCashOpMainnet} from 'src/etherfi/EtherfiCashOpMainnet.sol';
+import {AaveV4EtherfiCash, AaveV4EtherfiCashHubs, AaveV4EtherfiCashSpokes} from 'src/etherfi/AaveV4EtherfiCash.sol';
 import {EtherfiCashScriptBase} from 'scripts/etherfi/EtherfiCashScriptBase.s.sol';
 import {IHub} from 'src/hub/interfaces/IHub.sol';
 import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
@@ -30,15 +30,12 @@ contract VerifyEtherfiCashLiveScript is EtherfiCashScriptBase {
     // (config payload) and phase 2 (activation payload); default checks the final live state
     bool expectActive = vm.envOr('EXPECT_ACTIVE', true);
 
-    // in-memory expectedPayload payload: same constants + address resolution as the deploy script
-    EtherfiCashLaunchPayload expectedPayload = new EtherfiCashLaunchPayload(
-      _instanceAddresses(),
-      _assetAddresses()
-    );
+    // in-memory reference: fully hardcoded from the address-book libraries
+    EtherfiCashLaunchPayload expectedPayload = new EtherfiCashLaunchPayload();
 
-    IHub hub = IHub(expectedPayload.HUB());
-    ISpoke spoke = ISpoke(expectedPayload.CASH_SPOKE());
-    IAssetInterestRateStrategy irStrategy = IAssetInterestRateStrategy(expectedPayload.IR_STRATEGY());
+    IHub hub = IHub(AaveV4EtherfiCashHubs.CASH_HUB);
+    ISpoke spoke = ISpoke(AaveV4EtherfiCashSpokes.CASH_SPOKE);
+    IAssetInterestRateStrategy irStrategy = IAssetInterestRateStrategy(AaveV4EtherfiCashHubs.CASH_HUB_IR_STRATEGY);
 
     EtherfiCashLaunchPayload.AssetSpec[] memory specs = expectedPayload.getAssetSpecs();
     console2.log('verifying', specs.length, 'assets against live state');
@@ -90,10 +87,10 @@ contract VerifyEtherfiCashLiveScript is EtherfiCashScriptBase {
     );
 
     // operator role wiring (Owner + Operator Safes, selector reassignments)
-    IAccessManager accessManager = IAccessManager(expectedPayload.ACCESS_MANAGER());
+    IAccessManager accessManager = IAccessManager(AaveV4EtherfiCash.ACCESS_MANAGER);
     uint64 hubRole = expectedPayload.HUB_CAPS_OPERATOR_ROLE();
     uint64 spokeRole = expectedPayload.SPOKE_RISK_OPERATOR_ROLE();
-    address[2] memory safes = [expectedPayload.OPERATOR_SAFE(), expectedPayload.OWNER_SAFE()];
+    address[2] memory safes = [AaveV4EtherfiCash.OPERATOR_SAFE, AaveV4EtherfiCash.OWNER_SAFE];
     for (uint256 i; i < safes.length; i++) {
       (bool isMember, ) = accessManager.hasRole(hubRole, safes[i]);
       _check('accessManager', 'hasRole(hubCaps)', isMember ? 1 : 0, 1);
@@ -104,7 +101,7 @@ contract VerifyEtherfiCashLiveScript is EtherfiCashScriptBase {
       'accessManager',
       'updateSpokeCaps role',
       accessManager.getTargetFunctionRole(
-        address(expectedPayload.HUB_CONFIGURATOR()),
+        AaveV4EtherfiCash.HUB_CONFIGURATOR,
         IHubConfigurator.updateSpokeCaps.selector
       ),
       hubRole
@@ -113,7 +110,7 @@ contract VerifyEtherfiCashLiveScript is EtherfiCashScriptBase {
       'accessManager',
       'updateDynamicReserveConfig role',
       accessManager.getTargetFunctionRole(
-        address(expectedPayload.SPOKE_CONFIGURATOR()),
+        AaveV4EtherfiCash.SPOKE_CONFIGURATOR,
         ISpokeConfigurator.updateDynamicReserveConfig.selector
       ),
       spokeRole

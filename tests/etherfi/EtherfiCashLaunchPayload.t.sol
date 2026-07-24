@@ -1,158 +1,36 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import 'tests/config-engine/BaseConfigEngine.t.sol';
+import {Test} from 'forge-std/Test.sol';
 
 import {EtherfiCashLaunchPayload} from 'src/etherfi/EtherfiCashLaunchPayload.sol';
-import {EtherfiCashActivationPayload} from 'src/etherfi/EtherfiCashActivationPayload.sol';
+import {AaveV4EtherfiCash, AaveV4EtherfiCashHubs, AaveV4EtherfiCashSpokes, AaveV4EtherfiCashAssets} from 'src/etherfi/AaveV4EtherfiCash.sol';
+import {IAaveV4ConfigEngine} from 'src/config-engine/interfaces/IAaveV4ConfigEngine.sol';
+import {IHubConfigurator} from 'src/hub/interfaces/IHubConfigurator.sol';
+import {ISpokeConfigurator} from 'src/spoke/interfaces/ISpokeConfigurator.sol';
 
-/// @dev Simulates the full ether.fi Cash launch payload through the production governance
-/// topology (PayloadsController -> Executor.executeTransaction -> delegatecall payload
-/// -> delegatecall engine) against a locally deployed Aave V4 instance, and asserts every
-/// resulting hub/spoke config matches the launch parameter sheet.
-contract EtherfiCashLaunchPayloadTest is BaseConfigEngineTest {
+/// @dev The payload is fully hardcoded from the AaveV4EtherfiCash address-book libraries, so
+/// these tests assert the generated actions and parameters DIRECTLY against the final
+/// parameter sheet ('Submit to AAVE' section, 2026-07-23 17:25 revision). Execution against a
+/// live instance is covered by the fork dress rehearsal (EtherfiCashLaunchFork.t.sol), which
+/// runs the full two-phase sequence and verifies the resulting on-chain state field by field.
+contract EtherfiCashLaunchPayloadTest is Test {
   uint256 internal constant NUM_ASSETS = 19;
-
-  address internal OPERATOR_SAFE = makeAddr('OPERATOR_SAFE');
 
   EtherfiCashLaunchPayload internal payload;
 
-  TestnetERC20[NUM_ASSETS] internal tokens;
-  MockPriceFeed[NUM_ASSETS] internal feeds;
+  function setUp() public {
+    payload = new EtherfiCashLaunchPayload();
+  }
 
-  function setUp() public override {
-    super.setUp();
-
-    string[NUM_ASSETS] memory symbols = [
-      'USDC',
-      'USDT',
-      'EURC',
-      'frxUSD',
-      'cWETH', // fresh mock; the env's WETH9 is already listed in the test setup
-      'weETH',
-      'eBTC',
-      'eUSD',
-      'ETHFI',
-      'sETHFI',
-      'OP',
-      'WHYPE',
-      'beHYPE',
-      'liquidETH',
-      'liquidBTC',
-      'liquidUSD',
-      'liquidRESERVE',
-      'weEUR',
-      'liquidRWA'
-    ];
-    uint8[NUM_ASSETS] memory decimalsList = [
-      uint8(6),
-      6,
-      6,
-      18,
-      18,
-      18,
-      8,
-      18,
-      18,
-      18,
-      18,
-      18,
-      18,
-      18,
-      8,
-      6,
-      6,
-      6,
-      6
-    ];
-
-    for (uint256 i; i < NUM_ASSETS; i++) {
-      tokens[i] = new TestnetERC20(symbols[i], symbols[i], decimalsList[i]);
-      feeds[i] = new MockPriceFeed(8, string.concat(symbols[i], '/USD'), 1e8);
+  function _spec(
+    string memory symbol
+  ) internal view returns (EtherfiCashLaunchPayload.AssetSpec memory) {
+    EtherfiCashLaunchPayload.AssetSpec[] memory specs = payload.getAssetSpecs();
+    for (uint256 i; i < specs.length; i++) {
+      if (keccak256(bytes(specs[i].symbol)) == keccak256(bytes(symbol))) return specs[i];
     }
-
-    payload = new EtherfiCashLaunchPayload(_instanceAddresses(), _assetAddresses());
-
-    // in production the Owner Safe (played here by the executor) holds the AccessManager admin
-    // role and the configurator domain-admin roles; the payload executes with its identity
-    vm.startPrank(ADMIN);
-    accessManager.grantRole(Roles.ACCESS_MANAGER_ADMIN_ROLE, address(executor), 0);
-    accessManager.grantRole(Roles.HUB_CONFIGURATOR_DOMAIN_ADMIN_ROLE, address(executor), 0);
-    accessManager.grantRole(Roles.SPOKE_CONFIGURATOR_DOMAIN_ADMIN_ROLE, address(executor), 0);
-    vm.stopPrank();
-  }
-
-  function _instanceAddresses()
-    internal
-    view
-    returns (EtherfiCashLaunchPayload.InstanceAddresses memory)
-  {
-    return
-      EtherfiCashLaunchPayload.InstanceAddresses({
-        configEngine: address(engine),
-        hubConfigurator: address(hubConfigurator),
-        hub: address(hub1()),
-        spokeConfigurator: address(spokeConfigurator),
-        cashSpoke: address(spoke1()),
-        irStrategy: address(irStrategy1()),
-        feeReceiver: FEE_RECEIVER,
-        accessManager: address(accessManager),
-        ownerSafe: address(executor), // the executor plays the Owner Safe in this topology
-        operatorSafe: OPERATOR_SAFE
-      });
-  }
-
-  function _assetAddresses()
-    internal
-    view
-    returns (EtherfiCashLaunchPayload.AssetAddresses memory)
-  {
-    return
-      EtherfiCashLaunchPayload.AssetAddresses({
-        usdc: address(tokens[0]),
-        usdcFeed: address(feeds[0]),
-        usdt: address(tokens[1]),
-        usdtFeed: address(feeds[1]),
-        eurc: address(tokens[2]),
-        eurcFeed: address(feeds[2]),
-        frxUsd: address(tokens[3]),
-        frxUsdFeed: address(feeds[3]),
-        weth: address(tokens[4]),
-        wethFeed: address(feeds[4]),
-        weEth: address(tokens[5]),
-        weEthFeed: address(feeds[5]),
-        eBtc: address(tokens[6]),
-        eBtcFeed: address(feeds[6]),
-        eUsd: address(tokens[7]),
-        eUsdFeed: address(feeds[7]),
-        ethfi: address(tokens[8]),
-        ethfiFeed: address(feeds[8]),
-        sEthfi: address(tokens[9]),
-        sEthfiFeed: address(feeds[9]),
-        op: address(tokens[10]),
-        opFeed: address(feeds[10]),
-        wHype: address(tokens[11]),
-        wHypeFeed: address(feeds[11]),
-        beHype: address(tokens[12]),
-        beHypeFeed: address(feeds[12]),
-        liquidEth: address(tokens[13]),
-        liquidEthFeed: address(feeds[13]),
-        liquidBtc: address(tokens[14]),
-        liquidBtcFeed: address(feeds[14]),
-        liquidUsd: address(tokens[15]),
-        liquidUsdFeed: address(feeds[15]),
-        liquidReserve: address(tokens[16]),
-        liquidReserveFeed: address(feeds[16]),
-        weEur: address(tokens[17]),
-        weEurFeed: address(feeds[17]),
-        liquidRwa: address(tokens[18]),
-        liquidRwaFeed: address(feeds[18])
-      });
-  }
-
-  function _executePayload() internal {
-    vm.prank(PAYLOADS_CONTROLLER);
-    executor.executeTransaction(address(payload), abi.encodeCall(AaveV4Payload.execute, ()));
+    revert('spec not found');
   }
 
   function test_specs_fullRoster() public view {
@@ -167,188 +45,150 @@ contract EtherfiCashLaunchPayloadTest is BaseConfigEngineTest {
     assertEq(borrowables, 2);
   }
 
-  function test_execute_listsAllAssetsOnHub() public {
-    _executePayload();
+  function test_specs_borrowableParameters() public view {
+    EtherfiCashLaunchPayload.AssetSpec memory usdc = _spec('USDC');
+    assertEq(usdc.underlying, AaveV4EtherfiCashAssets.USDC_UNDERLYING);
+    assertEq(usdc.priceFeed, AaveV4EtherfiCashAssets.USDC_ORACLE);
+    assertEq(usdc.collateralFactor, 95_00);
+    assertEq(usdc.maxLiquidationBonus, 101_00); // 1%
+    assertEq(usdc.liquidationFee, 10_00);
+    assertTrue(usdc.borrowable);
+    assertEq(usdc.liquidityFee, 5_00);
+    assertEq(usdc.irData.optimalUsageRatio, 92_00);
+    assertEq(usdc.irData.baseDrawnRate, 0);
+    assertEq(usdc.irData.rateGrowthBeforeOptimal, 4_00);
+    assertEq(usdc.irData.rateGrowthAfterOptimal, 10_00);
+    assertEq(usdc.addCap, 10_000_000);
+    assertEq(usdc.drawCap, 7_000_000);
+
+    EtherfiCashLaunchPayload.AssetSpec memory weth = _spec('WETH');
+    assertEq(weth.underlying, AaveV4EtherfiCashAssets.WETH_UNDERLYING);
+    assertEq(weth.collateralFactor, 75_00);
+    assertEq(weth.maxLiquidationBonus, 103_50); // 3.5%
+    assertTrue(weth.borrowable);
+    assertEq(weth.liquidityFee, 7_00);
+    assertEq(weth.irData.optimalUsageRatio, 92_00);
+    assertEq(weth.irData.rateGrowthBeforeOptimal, 2_35);
+    assertEq(weth.irData.rateGrowthAfterOptimal, 14_00);
+    assertEq(weth.addCap, 1_000);
+    assertEq(weth.drawCap, 100);
+  }
+
+  function test_specs_collateralOnlyParameters() public view {
+    // representative spot checks per the final sheet
+    EtherfiCashLaunchPayload.AssetSpec memory weEth = _spec('weETH');
+    assertEq(weEth.collateralFactor, 75_00);
+    assertEq(weEth.maxLiquidationBonus, 103_50);
+    assertEq(weEth.addCap, 1_000);
+
+    EtherfiCashLaunchPayload.AssetSpec memory usdt = _spec('USDT');
+    assertEq(usdt.collateralFactor, 95_00);
+    assertEq(usdt.addCap, 10_000_000);
+
+    EtherfiCashLaunchPayload.AssetSpec memory liquidUsd = _spec('liquidUSD');
+    assertEq(liquidUsd.collateralFactor, 80_00);
+    assertEq(liquidUsd.maxLiquidationBonus, 102_00);
+    assertEq(liquidUsd.addCap, 5_000_000);
+
+    EtherfiCashLaunchPayload.AssetSpec memory ethfi = _spec('ETHFI');
+    assertEq(ethfi.collateralFactor, 30_00);
+    assertEq(ethfi.maxLiquidationBonus, 105_00);
+    assertEq(ethfi.addCap, 2_000_000);
 
     EtherfiCashLaunchPayload.AssetSpec[] memory specs = payload.getAssetSpecs();
     for (uint256 i; i < specs.length; i++) {
-      uint256 assetId = hub1().getAssetId(specs[i].underlying);
-
-      IHub.Asset memory asset = hub1().getAsset(assetId);
-      assertEq(asset.liquidityFee, specs[i].liquidityFee, 'liquidity fee mismatch');
-
-      IAssetInterestRateStrategy.InterestRateData memory ir = irStrategy1().getInterestRateData(
-        assetId
-      );
-      assertEq(ir.optimalUsageRatio, specs[i].irData.optimalUsageRatio, 'kink mismatch');
-      assertEq(ir.baseDrawnRate, specs[i].irData.baseDrawnRate, 'base rate mismatch');
-      assertEq(
-        ir.rateGrowthBeforeOptimal,
-        specs[i].irData.rateGrowthBeforeOptimal,
-        'slope1 mismatch'
-      );
-      assertEq(
-        ir.rateGrowthAfterOptimal,
-        specs[i].irData.rateGrowthAfterOptimal,
-        'slope2 mismatch'
-      );
+      if (specs[i].borrowable) continue;
+      assertEq(specs[i].liquidityFee, 0, 'collateral-only must have 0 liquidity fee');
+      assertEq(specs[i].drawCap, 0, 'collateral-only must have 0 draw cap');
+      assertEq(specs[i].irData.optimalUsageRatio, 99_00, 'collateral-only flat curve kink');
+      assertEq(specs[i].irData.rateGrowthBeforeOptimal, 0);
+      assertEq(specs[i].irData.rateGrowthAfterOptimal, 0);
+      assertEq(specs[i].liquidationFee, 10_00, 'liquidation fee 10% everywhere');
     }
   }
 
-  function test_execute_registersCashSpokeWithCaps() public {
-    _executePayload();
-
-    EtherfiCashLaunchPayload.AssetSpec[] memory specs = payload.getAssetSpecs();
-    for (uint256 i; i < specs.length; i++) {
-      uint256 assetId = hub1().getAssetId(specs[i].underlying);
-      IHub.SpokeConfig memory config = hub1().getSpokeConfig(assetId, address(spoke1()));
-
-      assertFalse(config.active, 'spoke must register DORMANT (two-phase launch)');
-      assertFalse(config.halted, 'spoke halted for asset');
-      assertEq(config.addCap, specs[i].addCap, 'add cap mismatch');
-      assertEq(config.drawCap, specs[i].drawCap, 'draw cap mismatch');
-      assertEq(config.riskPremiumThreshold, 0, 'risk premium threshold not zero');
+  function test_actions_hubListings() public view {
+    IAaveV4ConfigEngine.AssetListing[] memory listings = payload.hubAssetListings();
+    assertEq(listings.length, NUM_ASSETS);
+    for (uint256 i; i < listings.length; i++) {
+      assertEq(address(listings[i].hubConfigurator), AaveV4EtherfiCash.HUB_CONFIGURATOR);
+      assertEq(listings[i].hub, AaveV4EtherfiCashHubs.CASH_HUB);
+      assertEq(listings[i].feeReceiver, AaveV4EtherfiCashSpokes.TREASURY_SPOKE);
+      assertEq(listings[i].irStrategy, AaveV4EtherfiCashHubs.CASH_HUB_IR_STRATEGY);
+      assertEq(listings[i].tokenization.proxyAdminOwner, address(0), 'no tokenization at launch');
     }
   }
 
-  function test_execute_listsReservesWithRiskParams() public {
-    _executePayload();
-
-    EtherfiCashLaunchPayload.AssetSpec[] memory specs = payload.getAssetSpecs();
-    for (uint256 i; i < specs.length; i++) {
-      uint256 assetId = hub1().getAssetId(specs[i].underlying);
-      uint256 reserveId = spoke1().getReserveId(address(hub1()), assetId);
-
-      ISpoke.ReserveConfig memory config = spoke1().getReserveConfig(reserveId);
-      assertEq(config.collateralRisk, 0, 'collateral risk not zero');
-      assertFalse(config.paused, 'reserve paused');
-      assertFalse(config.frozen, 'reserve frozen');
-      assertEq(config.borrowable, specs[i].borrowable, 'borrowable flag mismatch');
-      assertTrue(config.receiveSharesEnabled, 'receiveSharesEnabled not set');
-
-      ISpoke.DynamicReserveConfig memory dyn = spoke1().getDynamicReserveConfig(
-        reserveId,
-        uint32(DYNAMIC_CONFIG_KEY)
+  function test_actions_spokeRegistrationDormant() public view {
+    IAaveV4ConfigEngine.SpokeToAssetsAddition[] memory additions = payload
+      .hubSpokeToAssetsAdditions();
+    assertEq(additions.length, 1);
+    assertEq(additions[0].spoke, AaveV4EtherfiCashSpokes.CASH_SPOKE);
+    assertEq(additions[0].assets.length, NUM_ASSETS);
+    for (uint256 i; i < additions[0].assets.length; i++) {
+      assertFalse(
+        additions[0].assets[i].config.active,
+        'spoke must register DORMANT (two-phase launch)'
       );
-      assertEq(dyn.collateralFactor, specs[i].collateralFactor, 'collateral factor mismatch');
-      assertEq(dyn.maxLiquidationBonus, specs[i].maxLiquidationBonus, 'max liq bonus mismatch');
-      assertEq(dyn.liquidationFee, specs[i].liquidationFee, 'liquidation fee mismatch');
+      assertFalse(additions[0].assets[i].config.halted);
+      assertEq(additions[0].assets[i].config.riskPremiumThreshold, 0);
     }
   }
 
-  function test_activation_flipsAllSpokesActive() public {
-    _executePayload();
-
-    EtherfiCashActivationPayload activation = new EtherfiCashActivationPayload(
-      hub1(),
-      hubConfigurator
-    );
-    vm.prank(PAYLOADS_CONTROLLER);
-    executor.executeTransaction(
-      address(activation),
-      abi.encodeCall(EtherfiCashActivationPayload.execute, ())
-    );
-
-    EtherfiCashLaunchPayload.AssetSpec[] memory specs = payload.getAssetSpecs();
-    for (uint256 i; i < specs.length; i++) {
-      uint256 assetId = hub1().getAssetId(specs[i].underlying);
-      // the activation enumerates every spoke on every asset — check them all
-      uint256 spokeCount = hub1().getSpokeCount(assetId);
-      for (uint256 spokeId; spokeId < spokeCount; spokeId++) {
-        address spokeAddress = hub1().getSpokeAddress(assetId, spokeId);
-        assertTrue(
-          hub1().getSpokeConfig(assetId, spokeAddress).active,
-          'spoke not active after activation'
-        );
-      }
+  function test_actions_reserveListings() public view {
+    IAaveV4ConfigEngine.ReserveListing[] memory listings = payload.spokeReserveListings();
+    assertEq(listings.length, NUM_ASSETS);
+    for (uint256 i; i < listings.length; i++) {
+      assertEq(address(listings[i].spokeConfigurator), AaveV4EtherfiCash.SPOKE_CONFIGURATOR);
+      assertEq(listings[i].spoke, AaveV4EtherfiCashSpokes.CASH_SPOKE);
+      assertEq(listings[i].hub, AaveV4EtherfiCashHubs.CASH_HUB);
+      assertEq(listings[i].config.collateralRisk, 0, 'risk premium unused at launch');
+      assertFalse(listings[i].config.paused);
+      assertFalse(listings[i].config.frozen);
+      assertTrue(listings[i].config.receiveSharesEnabled);
     }
   }
 
-  function test_execute_grantsOperatorRoles() public {
-    _executePayload();
-
-    // both Safes hold the two new granular roles
-    (bool isMember, ) = accessManager.hasRole(payload.HUB_CAPS_OPERATOR_ROLE(), OPERATOR_SAFE);
-    assertTrue(isMember, 'operator safe missing hub caps role');
-    (isMember, ) = accessManager.hasRole(payload.SPOKE_RISK_OPERATOR_ROLE(), OPERATOR_SAFE);
-    assertTrue(isMember, 'operator safe missing spoke risk role');
-    (isMember, ) = accessManager.hasRole(payload.HUB_CAPS_OPERATOR_ROLE(), address(executor));
-    assertTrue(isMember, 'owner safe missing hub caps role');
-    (isMember, ) = accessManager.hasRole(payload.SPOKE_RISK_OPERATOR_ROLE(), address(executor));
-    assertTrue(isMember, 'owner safe missing spoke risk role');
-
-    // cap / dynamic-config selectors now map to the granular roles
-    assertEq(
-      accessManager.getTargetFunctionRole(
-        address(hubConfigurator),
-        IHubConfigurator.updateSpokeCaps.selector
-      ),
-      payload.HUB_CAPS_OPERATOR_ROLE()
-    );
-    assertEq(
-      accessManager.getTargetFunctionRole(
-        address(hubConfigurator),
-        IHubConfigurator.updateSpokeAddCap.selector
-      ),
-      payload.HUB_CAPS_OPERATOR_ROLE()
-    );
-    assertEq(
-      accessManager.getTargetFunctionRole(
-        address(hubConfigurator),
-        IHubConfigurator.updateSpokeDrawCap.selector
-      ),
-      payload.HUB_CAPS_OPERATOR_ROLE()
-    );
-    assertEq(
-      accessManager.getTargetFunctionRole(
-        address(spokeConfigurator),
-        ISpokeConfigurator.addDynamicReserveConfig.selector
-      ),
-      payload.SPOKE_RISK_OPERATOR_ROLE()
-    );
-    assertEq(
-      accessManager.getTargetFunctionRole(
-        address(spokeConfigurator),
-        ISpokeConfigurator.updateDynamicReserveConfig.selector
-      ),
-      payload.SPOKE_RISK_OPERATOR_ROLE()
-    );
+  function test_actions_liquidationConfig() public view {
+    IAaveV4ConfigEngine.LiquidationConfigUpdate[] memory updates = payload
+      .spokeLiquidationConfigUpdates();
+    assertEq(updates.length, 1);
+    assertEq(updates[0].spoke, AaveV4EtherfiCashSpokes.CASH_SPOKE);
+    assertEq(updates[0].targetHealthFactor, 1.24e18);
+    assertEq(updates[0].healthFactorForMaxBonus, 0.9e18);
   }
 
-  function test_execute_setsLiquidationConfig() public {
-    _executePayload();
+  function test_actions_operatorRoleWiring() public view {
+    // grants: both roles to both Safes
+    IAaveV4ConfigEngine.RoleMembership[] memory memberships = payload
+      .accessManagerRoleMemberships();
+    assertEq(memberships.length, 4);
+    assertEq(memberships[0].account, AaveV4EtherfiCash.OPERATOR_SAFE);
+    assertEq(memberships[0].roleId, payload.HUB_CAPS_OPERATOR_ROLE());
+    assertEq(memberships[1].account, AaveV4EtherfiCash.OPERATOR_SAFE);
+    assertEq(memberships[1].roleId, payload.SPOKE_RISK_OPERATOR_ROLE());
+    assertEq(memberships[2].account, AaveV4EtherfiCash.OWNER_SAFE);
+    assertEq(memberships[3].account, AaveV4EtherfiCash.OWNER_SAFE);
+    for (uint256 i; i < memberships.length; i++) {
+      assertTrue(memberships[i].granted);
+      assertEq(memberships[i].executionDelay, 0);
+      assertEq(memberships[i].authority, AaveV4EtherfiCash.ACCESS_MANAGER);
+    }
 
-    ISpoke.LiquidationConfig memory config = spoke1().getLiquidationConfig();
-    assertEq(config.targetHealthFactor, payload.TARGET_HEALTH_FACTOR());
-    assertEq(config.healthFactorForMaxBonus, payload.HEALTH_FACTOR_FOR_MAX_BONUS());
-  }
-
-  function test_unsetAssetIsSkipped() public {
-    EtherfiCashLaunchPayload.AssetAddresses memory assets = _assetAddresses();
-    assets.liquidRwa = address(0); // pending deployment at AIP stage
-
-    EtherfiCashLaunchPayload partialPayload = new EtherfiCashLaunchPayload(
-      _instanceAddresses(),
-      assets
-    );
-    assertEq(partialPayload.getAssetSpecs().length, NUM_ASSETS - 1);
-
-    vm.prank(PAYLOADS_CONTROLLER);
-    executor.executeTransaction(
-      address(partialPayload),
-      abi.encodeCall(AaveV4Payload.execute, ())
-    );
-
-    // skipped asset never touched the hub
-    vm.expectRevert();
-    hub1().getAssetId(address(tokens[18]));
-  }
-
-  function test_constructor_revertsOnMissingInstanceAddress() public {
-    EtherfiCashLaunchPayload.InstanceAddresses memory instance = _instanceAddresses();
-    instance.cashSpoke = address(0);
-
-    vm.expectRevert(EtherfiCashLaunchPayload.MissingInstanceAddress.selector);
-    new EtherfiCashLaunchPayload(instance, _assetAddresses());
+    // selector reassignments: hub caps -> 201, spoke dynamic config -> 401
+    IAaveV4ConfigEngine.TargetFunctionRoleUpdate[] memory fnUpdates = payload
+      .accessManagerTargetFunctionRoleUpdates();
+    assertEq(fnUpdates.length, 2);
+    assertEq(fnUpdates[0].target, AaveV4EtherfiCash.HUB_CONFIGURATOR);
+    assertEq(fnUpdates[0].roleId, payload.HUB_CAPS_OPERATOR_ROLE());
+    assertEq(fnUpdates[0].selectors.length, 3);
+    assertEq(fnUpdates[0].selectors[0], IHubConfigurator.updateSpokeCaps.selector);
+    assertEq(fnUpdates[0].selectors[1], IHubConfigurator.updateSpokeAddCap.selector);
+    assertEq(fnUpdates[0].selectors[2], IHubConfigurator.updateSpokeDrawCap.selector);
+    assertEq(fnUpdates[1].target, AaveV4EtherfiCash.SPOKE_CONFIGURATOR);
+    assertEq(fnUpdates[1].roleId, payload.SPOKE_RISK_OPERATOR_ROLE());
+    assertEq(fnUpdates[1].selectors.length, 2);
+    assertEq(fnUpdates[1].selectors[0], ISpokeConfigurator.addDynamicReserveConfig.selector);
+    assertEq(fnUpdates[1].selectors[1], ISpokeConfigurator.updateDynamicReserveConfig.selector);
   }
 }

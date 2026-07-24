@@ -6,20 +6,17 @@ import {console2} from 'forge-std/console2.sol';
 import {EtherfiCashLaunchPayload} from 'src/etherfi/EtherfiCashLaunchPayload.sol';
 import {EtherfiCashActivationPayload} from 'src/etherfi/EtherfiCashActivationPayload.sol';
 import {EtherfiCashScriptBase} from 'scripts/etherfi/EtherfiCashScriptBase.s.sol';
-import {IHub} from 'src/hub/interfaces/IHub.sol';
-import {IHubConfigurator} from 'src/hub/interfaces/IHubConfigurator.sol';
 
 /// @title DeployEtherfiCashLaunchPayload
 /// @notice Deploys both payloads of the two-phase launch on OP Mainnet at deterministic
 /// CREATE2 addresses — reviewers diff the verified on-chain bytecode against this source.
+/// Both payloads are fully hardcoded from the AaveV4EtherfiCash address-book libraries and
+/// take no constructor arguments.
 ///
 /// Usage:
 ///   dry run:   forge script scripts/etherfi/DeployEtherfiCashLaunchPayload.s.sol --rpc-url optimism
 ///   broadcast: forge script scripts/etherfi/DeployEtherfiCashLaunchPayload.s.sol --rpc-url optimism \
 ///              --account <keystore> --broadcast --verify
-///
-/// The script refuses to run while any instance address resolves to zero, and prints the
-/// included/skipped asset roster so nothing is listed (or dropped) silently.
 contract DeployEtherfiCashLaunchPayloadScript is EtherfiCashScriptBase {
   /// @dev CREATE2 salt; bump the suffix if a new payload version must be deployed.
   bytes32 internal constant SALT = keccak256('ETHERFI_CASH_AAVE_V4_LAUNCH_V1');
@@ -27,15 +24,9 @@ contract DeployEtherfiCashLaunchPayloadScript is EtherfiCashScriptBase {
   function run() external returns (address payloadAddress, address activationAddress) {
     _requireOpMainnet();
 
-    EtherfiCashLaunchPayload.InstanceAddresses memory instance = _instanceAddresses();
-    EtherfiCashLaunchPayload.AssetAddresses memory assets = _assetAddresses();
-
     vm.startBroadcast();
-    EtherfiCashLaunchPayload payload = new EtherfiCashLaunchPayload{salt: SALT}(instance, assets);
-    EtherfiCashActivationPayload activation = new EtherfiCashActivationPayload{salt: SALT}(
-      IHub(instance.hub),
-      IHubConfigurator(instance.hubConfigurator)
-    );
+    EtherfiCashLaunchPayload payload = new EtherfiCashLaunchPayload{salt: SALT}();
+    EtherfiCashActivationPayload activation = new EtherfiCashActivationPayload{salt: SALT}();
     vm.stopBroadcast();
 
     payloadAddress = address(payload);
@@ -52,6 +43,8 @@ contract DeployEtherfiCashLaunchPayloadScript is EtherfiCashScriptBase {
       console2.log(
         string.concat(
           '  ',
+          specs[i].symbol,
+          ' ',
           vm.toString(specs[i].underlying),
           specs[i].borrowable ? '  borrowable' : '  collateral-only',
           '  CF(bps):',
@@ -65,7 +58,7 @@ contract DeployEtherfiCashLaunchPayloadScript is EtherfiCashScriptBase {
     }
     if (specs.length < 19) {
       console2.log(
-        'WARNING: assets skipped (underlying or feed unset) - they will need a follow-up payload'
+        'WARNING: assets skipped (underlying or price source unset) - follow-up payload needed'
       );
     }
   }

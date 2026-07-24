@@ -1,9 +1,9 @@
 # ether.fi Cash Aave V4 Instance on OP Mainnet - Launch Specification
 
 > Status: PRE-DEPLOYMENT. All instance and payload addresses below are PREDICTED from a full fork
-> simulation run as the launch deployer. CREATE2 addresses reproduce exactly or revert; the
-> AaveOracle, Cash Spoke and launch payload additionally require the deployer to start at nonce 3
-> with no interleaved transactions. To be confirmed against the deployment report.
+> simulation run as the launch deployer (CREATE2, reproduce-or-revert). The AaveOracle and Cash
+> Spoke additionally require the deployer to start at nonce 3 with no interleaved transactions.
+> To be confirmed against the deployment report.
 
 ## Summary
 
@@ -56,8 +56,8 @@ Operator roles carved out by the payload: HUB_CAPS_OPERATOR_ROLE (201) for updat
 
 | Contract | Address |
 |---|---|
-| Launch payload (phase 1, dormant config) | 0x95774d58FcE03cED5F9498BF2298D7F879ec5a2F |
-| Activation payload (phase 2) | 0x3FF1105A884D3adA575adCD1DBBEB151f2E20654 |
+| Launch payload (phase 1, dormant config) | 0x74F38848f551f9ec237BfDf667db408e18Da07f4 |
+| Activation payload (phase 2) | 0x5F64dE77e63E9CDfF87d818FA373c8593b0b20f3 |
 | Owner Safe | 0x082B85ED50F1cd120C597EF860ece712e54CE844 |
 | Operator Safe | 0x23c30c38d73a0D1609ffAAe47aA7d6D1a3e46f03 |
 | AccessManager | 0x188d7173772499FB6375F23FdFd130CE6107286b |

@@ -5,7 +5,7 @@ import {Test} from 'forge-std/Test.sol';
 
 import {AaveV4Payload} from 'src/config-engine/AaveV4Payload.sol';
 import {EtherfiCashLaunchPayload} from 'src/etherfi/EtherfiCashLaunchPayload.sol';
-import {EtherfiCashOpMainnet} from 'src/etherfi/EtherfiCashOpMainnet.sol';
+import {AaveV4EtherfiCash} from 'src/etherfi/AaveV4EtherfiCash.sol';
 import {VerifyEtherfiCashLiveScript} from 'scripts/etherfi/VerifyEtherfiCashLive.s.sol';
 import {DeployEtherfiCashLaunchPayloadScript} from 'scripts/etherfi/DeployEtherfiCashLaunchPayload.s.sol';
 
@@ -32,7 +32,7 @@ contract SafeDelegateSimulator {
 ///   forge test --match-path tests/etherfi/EtherfiCashLaunchFork.t.sol --fork-url <op-rpc> -vv
 contract EtherfiCashLaunchForkTest is Test {
   function test_fork_fullLaunchRehearsal() public {
-    if (block.chainid != 10 || EtherfiCashOpMainnet.CONFIG_ENGINE == address(0)) {
+    if (block.chainid != 10 || AaveV4EtherfiCash.CONFIG_ENGINE == address(0)) {
       vm.skip(true);
     }
 
@@ -40,7 +40,7 @@ contract EtherfiCashLaunchForkTest is Test {
     DeployEtherfiCashLaunchPayloadScript deployScript = new DeployEtherfiCashLaunchPayloadScript();
     (address payload, address activation) = deployScript.run();
 
-    address ownerSafe = EtherfiCashOpMainnet.OWNER_SAFE;
+    address ownerSafe = AaveV4EtherfiCash.OWNER_SAFE;
     vm.etch(ownerSafe, address(new SafeDelegateSimulator()).code);
 
     // 2. phase 1: dormant configuration
