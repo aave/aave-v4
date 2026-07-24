@@ -12,6 +12,8 @@ import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 import {IAssetInterestRateStrategy} from 'src/hub/interfaces/IAssetInterestRateStrategy.sol';
 
 /// @title EtherfiCashLaunchPayload
+/// @author ether.fi
+/// - Discussion: https://governance.aave.com/t/arfc-deploy-a-dedicated-aave-v4-whitelabel-instance-fully-managed-by-etherfi-on-op-mainnet-to-power-ether-fi-cash/25314
 /// @notice Launch payload for the ether.fi Cash Aave V4 instance on OP Mainnet (whitelabel:
 /// executed by the OWNER Safe via a delegatecall Safe transaction — no Aave Governance V3).
 /// The executing Safe must hold the AccessManager admin role (0) and the configurator domain
