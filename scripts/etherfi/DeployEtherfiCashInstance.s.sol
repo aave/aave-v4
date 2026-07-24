@@ -28,6 +28,13 @@ contract DeployEtherfiCashInstanceScript is AaveV4DeployBatchBaseScript {
     return 10;
   }
 
+  /// @dev SKIP_PROMPT=true bypasses the interactive confirmation for non-interactive runs
+  /// (fork simulations, CI). The deployment summary is still logged.
+  function _executeUserPrompt() internal override {
+    if (vm.envOr('SKIP_PROMPT', false)) return;
+    super._executeUserPrompt();
+  }
+
   function _getDeployInputs() internal view override returns (InputUtils.FullDeployInputs memory) {
     address ownerSafe = vm.envOr('ETHERFI_CASH_OWNER_SAFE', EtherfiCashOpMainnet.OWNER_SAFE);
 

@@ -26,18 +26,28 @@ library EtherfiCashOpMainnet {
   address internal constant OPERATOR_SAFE = 0x23c30c38d73a0D1609ffAAe47aA7d6D1a3e46f03;
 
   // ---------------------------------------------------------------------------------------------
-  // ether.fi Cash Aave V4 instance — TBD until the instance deployment runs
-  // (scripts/etherfi/DeployEtherfiCashInstance.s.sol, or Aave Labs' canonical run).
-  // Fill from the deployment report in output/reports/deployments/.
+  // ether.fi Cash Aave V4 instance — PREDICTED from a full fork simulation of
+  // DeployEtherfiCashInstance + DeployEtherfiCashConfigEngine run as the launch deployer
+  // (0xf8a86ea1Ac39EC529814c377Bd484387D395421e), 2026-07-23.
+  // All addresses are CREATE2 via the Safe Singleton Factory (0x914d7Fec…43d7) with salts
+  // derived from (deployer, user salt, label) — reproducible regardless of nonce, and the
+  // factory reverts on mismatch, so the real deployment either produces exactly these
+  // addresses or fails loudly. Requires: same commit + compiler settings, same deployer,
+  // same salts. The preflight validator still blocks the pipeline until code exists here.
   // ---------------------------------------------------------------------------------------------
-  address internal constant ACCESS_MANAGER = address(0); // TBD
-  address internal constant CONFIG_ENGINE = address(0); // TBD
-  address internal constant HUB = address(0); // TBD
-  address internal constant HUB_CONFIGURATOR = address(0); // TBD
-  address internal constant CASH_SPOKE = address(0); // TBD
-  address internal constant SPOKE_CONFIGURATOR = address(0); // TBD
-  address internal constant IR_STRATEGY = address(0); // TBD
-  address internal constant TREASURY_SPOKE = address(0); // TBD (fee receiver spoke)
+  address internal constant ACCESS_MANAGER = 0x188d7173772499FB6375F23FdFd130CE6107286b;
+  address internal constant CONFIG_ENGINE = 0x84210b3087E952Be0f3610fD75f0f045995eAF22; // deployer-independent
+  address internal constant HUB = 0x66753c4e3fC84f1eD0e3C267C927284E9d90C572; // CASH_HUB proxy
+  address internal constant HUB_CONFIGURATOR = 0xA39bEf2fD611fb9c5a69D63277b4Af97a30F0dbC;
+  address internal constant CASH_SPOKE = 0x208fAF5F20abb9E23A8E004CC813415C54448D8e; // CASH_SPOKE proxy
+  address internal constant SPOKE_CONFIGURATOR = 0xFEe9E8cCE1c40D3bd9F025437D3A11cA0DAe9f8b;
+  address internal constant IR_STRATEGY = 0x51d07C362f9c4716F96EbEB63DB985EF9D2aCd7C;
+  address internal constant TREASURY_SPOKE = 0x7EB4d25F137868662350603A2863F682287b0768; // fee receiver spoke
+
+  // AaveOracle (CASH_SPOKE) predicted at 0xf71F96C9570459af50519532b1503cB19Af5acb1 — the ONE
+  // nonce-dependent address (plain `new` inside the spoke batch): valid only if the deployer's
+  // OP nonce is 3 when the precompile step starts and no other txs interleave. Confirm from the
+  // real deployment report. Not referenced by the payload (the spoke wires its own oracle).
 
   // ---------------------------------------------------------------------------------------------
   // Underlyings — all VERIFIED on-chain 2026-07-23 (source: 'Lend - Assets').
