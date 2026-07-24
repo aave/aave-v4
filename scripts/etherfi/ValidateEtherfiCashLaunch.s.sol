@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {Script} from 'forge-std/Script.sol';
+import {EtherfiCashScriptBase} from 'scripts/etherfi/EtherfiCashScriptBase.s.sol';
 import {console2} from 'forge-std/console2.sol';
 
 import {EtherfiCashOpMainnet} from 'src/etherfi/EtherfiCashOpMainnet.sol';
@@ -30,12 +30,12 @@ interface IPriceFeed {
 ///   - underlyings: have code, symbol() matches the expected asset, sane decimals
 ///   - feeds: have code, answer > 0, updated within the last 24h, 8 decimals (warn otherwise)
 /// Prints READY / NOT READY. Never broadcasts.
-contract ValidateEtherfiCashLaunchScript is Script {
+contract ValidateEtherfiCashLaunchScript is EtherfiCashScriptBase {
   uint256 internal blockers;
   uint256 internal warnings;
 
   function run() external {
-    require(block.chainid == 10, 'run against OP Mainnet (chainid 10)');
+    _requireOpMainnet();
 
     console2.log('=== instance contracts ===');
     _instance('ACCESS_MANAGER', EtherfiCashOpMainnet.ACCESS_MANAGER);

@@ -5,14 +5,14 @@ import {console2} from 'forge-std/console2.sol';
 
 import {EtherfiCashLaunchPayload} from 'src/etherfi/EtherfiCashLaunchPayload.sol';
 import {EtherfiCashOpMainnet} from 'src/etherfi/EtherfiCashOpMainnet.sol';
-import {DeployEtherfiCashLaunchPayloadScript} from 'scripts/etherfi/DeployEtherfiCashLaunchPayload.s.sol';
+import {EtherfiCashScriptBase} from 'scripts/etherfi/EtherfiCashScriptBase.s.sol';
 
 /// @title GenerateEtherfiCashLaunchSpec
 /// @notice Generates the launch specification document from the payload's own specs, so the
 /// document can never drift from what the contract actually does. Writes
 /// output/etherfi/launch-spec.md. Optional env: PAYLOAD (deployed address).
 ///   forge script scripts/etherfi/GenerateEtherfiCashLaunchSpec.s.sol --sig 'generate()' --rpc-url optimism
-contract GenerateEtherfiCashLaunchSpecScript is DeployEtherfiCashLaunchPayloadScript {
+contract GenerateEtherfiCashLaunchSpecScript is EtherfiCashScriptBase {
   function generate() external {
     EtherfiCashLaunchPayload expectedPayload = new EtherfiCashLaunchPayload(
       _instanceAddresses(),

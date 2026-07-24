@@ -25,9 +25,9 @@ import {IAssetInterestRateStrategy} from 'src/hub/interfaces/IAssetInterestRateS
 /// verified and the Owner Safe executes EtherfiCashActivationPayload (phase 2).
 ///
 /// Executes, in the AaveV4Payload fixed order:
-///   1. AccessManager actions — labels the two operator roles, reassigns the cap /
-///      dynamic-config selectors to them, and grants them to the Operator Safe (Nonce risk
-///      curator) and the Owner Safe.
+///   1. AccessManager actions, in the engine's fixed sub-order: grants the two operator roles
+///      to the Operator Safe (Nonce risk curator) and the Owner Safe, labels them, then
+///      reassigns the cap / dynamic-config selectors to them.
 ///   2. Hub asset listings — every launch asset, with its interest rate curve and liquidity fee.
 ///   3. Hub spoke-to-assets addition — registers the Cash Spoke for every launch asset with its
 ///      add/draw caps, DORMANT (active = false).

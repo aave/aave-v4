@@ -6,7 +6,7 @@ import {console2} from 'forge-std/console2.sol';
 
 import {EtherfiCashLaunchPayload} from 'src/etherfi/EtherfiCashLaunchPayload.sol';
 import {EtherfiCashOpMainnet} from 'src/etherfi/EtherfiCashOpMainnet.sol';
-import {DeployEtherfiCashLaunchPayloadScript} from 'scripts/etherfi/DeployEtherfiCashLaunchPayload.s.sol';
+import {EtherfiCashScriptBase} from 'scripts/etherfi/EtherfiCashScriptBase.s.sol';
 import {IHub} from 'src/hub/interfaces/IHub.sol';
 import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 import {IAssetInterestRateStrategy} from 'src/hub/interfaces/IAssetInterestRateStrategy.sol';
@@ -20,11 +20,11 @@ import {ISpokeConfigurator} from 'src/spoke/interfaces/ISpokeConfigurator.sol';
 /// Run after the payload executes (fork rehearsal or the real post-AIP state):
 ///   forge script scripts/etherfi/VerifyEtherfiCashLive.s.sol --rpc-url <optimism|fork>
 /// Reverts with a mismatch count if anything differs. Never broadcasts.
-contract VerifyEtherfiCashLiveScript is DeployEtherfiCashLaunchPayloadScript {
+contract VerifyEtherfiCashLiveScript is EtherfiCashScriptBase {
   uint256 internal mismatches;
 
   function verify() external returns (uint256) {
-    require(block.chainid == 10, 'run against OP Mainnet (chainid 10)');
+    _requireOpMainnet();
 
     // two-phase launch: EXPECT_ACTIVE=false verifies the dormant state between phase 1
     // (config payload) and phase 2 (activation payload); default checks the final live state

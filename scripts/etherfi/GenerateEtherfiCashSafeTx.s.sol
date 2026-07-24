@@ -5,7 +5,7 @@ import {console2} from 'forge-std/console2.sol';
 
 import {AaveV4Payload} from 'src/config-engine/AaveV4Payload.sol';
 import {EtherfiCashOpMainnet} from 'src/etherfi/EtherfiCashOpMainnet.sol';
-import {DeployEtherfiCashLaunchPayloadScript} from 'scripts/etherfi/DeployEtherfiCashLaunchPayload.s.sol';
+import {EtherfiCashScriptBase} from 'scripts/etherfi/EtherfiCashScriptBase.s.sol';
 
 /// @title GenerateEtherfiCashSafeTx
 /// @notice Produces the two Owner-Safe transactions of the two-phase launch:
@@ -19,19 +19,18 @@ import {DeployEtherfiCashLaunchPayloadScript} from 'scripts/etherfi/DeployEtherf
 /// Required env: PAYLOAD (launch payload), ACTIVATION (activation payload).
 ///   PAYLOAD=0x... ACTIVATION=0x... forge script scripts/etherfi/GenerateEtherfiCashSafeTx.s.sol \
 ///     --sig 'generate()' --rpc-url optimism
-contract GenerateEtherfiCashSafeTxScript is DeployEtherfiCashLaunchPayloadScript {
-  error NoCodeAtAddress(string name, address target);
+contract GenerateEtherfiCashSafeTxScript is EtherfiCashScriptBase {
 
   function generate() external {
-    require(block.chainid == 10, 'run against OP Mainnet (chainid 10)');
+    _requireOpMainnet();
 
     address payload = vm.envAddress('PAYLOAD');
-    require(payload.code.length > 0, NoCodeAtAddress('payload', payload));
+    _requireCode('payload', payload);
     address activation = vm.envAddress('ACTIVATION');
-    require(activation.code.length > 0, NoCodeAtAddress('activation payload', activation));
+    _requireCode('activation payload', activation);
 
     address ownerSafe = vm.envOr('ETHERFI_CASH_OWNER_SAFE', EtherfiCashOpMainnet.OWNER_SAFE);
-    require(ownerSafe.code.length > 0, NoCodeAtAddress('owner safe', ownerSafe));
+    _requireCode('owner safe', ownerSafe);
 
     vm.createDir('output/etherfi', true);
     vm.writeFile(

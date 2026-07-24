@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {Script} from 'forge-std/Script.sol';
+import {EtherfiCashScriptBase} from 'scripts/etherfi/EtherfiCashScriptBase.s.sol';
 import {console2} from 'forge-std/console2.sol';
 
 import {AaveV4ConfigEngine} from 'src/config-engine/AaveV4ConfigEngine.sol';
@@ -13,11 +13,11 @@ import {Create2Utils} from 'src/deployments/utils/libraries/Create2Utils.sol';
 /// deployer. The engine holds no state or permissions; payloads delegatecall into it.
 ///   forge script scripts/etherfi/DeployEtherfiCashConfigEngine.s.sol --rpc-url optimism \
 ///     --account <keystore> --broadcast --verify
-contract DeployEtherfiCashConfigEngineScript is Script {
+contract DeployEtherfiCashConfigEngineScript is EtherfiCashScriptBase {
   bytes32 internal constant SALT = keccak256('ETHERFI_CASH_AAVE_V4_CONFIG_ENGINE_V1');
 
   function run() external returns (address engine) {
-    require(block.chainid == 10, 'expected OP Mainnet (chainid 10)');
+    _requireOpMainnet();
 
     vm.startBroadcast();
     engine = Create2Utils.create2Deploy(SALT, type(AaveV4ConfigEngine).creationCode);
