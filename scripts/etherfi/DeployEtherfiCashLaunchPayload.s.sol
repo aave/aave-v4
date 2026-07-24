@@ -5,7 +5,10 @@ import {Script} from 'forge-std/Script.sol';
 import {console2} from 'forge-std/console2.sol';
 
 import {EtherfiCashLaunchPayload} from 'src/etherfi/EtherfiCashLaunchPayload.sol';
+import {EtherfiCashActivationPayload} from 'src/etherfi/EtherfiCashActivationPayload.sol';
 import {EtherfiCashOpMainnet} from 'src/etherfi/EtherfiCashOpMainnet.sol';
+import {IHub} from 'src/hub/interfaces/IHub.sol';
+import {IHubConfigurator} from 'src/hub/interfaces/IHubConfigurator.sol';
 
 /// @title DeployEtherfiCashLaunchPayload
 /// @notice Step 2 of the governance lifecycle: deploys the ether.fi Cash launch payload on
@@ -29,7 +32,7 @@ contract DeployEtherfiCashLaunchPayloadScript is Script {
   error WrongChain(uint256 chainId);
   error MissingInstanceAddress(string name);
 
-  function run() external returns (address payloadAddress) {
+  function run() external returns (address payloadAddress, address activationAddress) {
     require(block.chainid == 10, WrongChain(block.chainid));
 
     EtherfiCashLaunchPayload.InstanceAddresses memory instance = _instanceAddresses();
@@ -37,10 +40,16 @@ contract DeployEtherfiCashLaunchPayloadScript is Script {
 
     vm.startBroadcast();
     EtherfiCashLaunchPayload payload = new EtherfiCashLaunchPayload{salt: SALT}(instance, assets);
+    EtherfiCashActivationPayload activation = new EtherfiCashActivationPayload{salt: SALT}(
+      IHub(instance.hub),
+      IHubConfigurator(instance.hubConfigurator)
+    );
     vm.stopBroadcast();
 
     payloadAddress = address(payload);
-    console2.log('EtherfiCashLaunchPayload deployed at:', payloadAddress);
+    activationAddress = address(activation);
+    console2.log('EtherfiCashLaunchPayload (phase 1, dormant config) deployed at:', payloadAddress);
+    console2.log('EtherfiCashActivationPayload (phase 2) deployed at:', activationAddress);
     _logRoster(payload);
   }
 

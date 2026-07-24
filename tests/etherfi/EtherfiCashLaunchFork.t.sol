@@ -22,10 +22,12 @@ contract SafeDelegateSimulator {
 }
 
 /// @title EtherfiCashLaunchForkTest
-/// @notice Dress rehearsal of the whole launch on an OP Mainnet fork:
-///   1. deploys the payload with the pinned addresses,
-///   2. executes it in the Owner Safe's context (delegatecall, real roles, real instance),
-///   3. verifies the resulting hub/spoke state field by field (VerifyEtherfiCashLive).
+/// @notice Dress rehearsal of the whole two-phase launch on an OP Mainnet fork:
+///   1. deploys both payloads with the pinned addresses,
+///   2. phase 1: Owner-Safe-context delegatecall of the dormant-config launch payload,
+///   3. verifies the DORMANT state field by field,
+///   4. phase 2: Owner-Safe-context delegatecall of the activation payload,
+///   5. verifies the ACTIVE state field by field.
 /// Skips itself unless running against chainid 10 with the instance addresses pinned:
 ///   forge test --match-path tests/etherfi/EtherfiCashLaunchFork.t.sol --fork-url <op-rpc> -vv
 contract EtherfiCashLaunchForkTest is Test {
@@ -34,17 +36,27 @@ contract EtherfiCashLaunchForkTest is Test {
       vm.skip(true);
     }
 
-    // 1. deploy the payload exactly as the deploy script would (same address resolution)
+    // 1. deploy both payloads exactly as the deploy script would (same address resolution)
     DeployEtherfiCashLaunchPayloadScript deployScript = new DeployEtherfiCashLaunchPayloadScript();
-    address payload = deployScript.run();
+    (address payload, address activation) = deployScript.run();
 
-    // 2. execute in the Owner Safe's context
     address ownerSafe = EtherfiCashOpMainnet.OWNER_SAFE;
     vm.etch(ownerSafe, address(new SafeDelegateSimulator()).code);
+
+    // 2. phase 1: dormant configuration
     SafeDelegateSimulator(ownerSafe).exec(payload);
 
-    // 3. field-by-field verification of the live state
+    // 3. verify the dormant state
+    vm.setEnv('EXPECT_ACTIVE', 'false');
     uint256 verified = new VerifyEtherfiCashLiveScript().verify();
+    assertGt(verified, 0, 'nothing verified');
+
+    // 4. phase 2: activation
+    SafeDelegateSimulator(ownerSafe).exec(activation);
+
+    // 5. verify the live state
+    vm.setEnv('EXPECT_ACTIVE', 'true');
+    verified = new VerifyEtherfiCashLiveScript().verify();
     assertGt(verified, 0, 'nothing verified');
   }
 }

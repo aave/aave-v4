@@ -21,16 +21,21 @@ contract GenerateEtherfiCashLaunchSpecScript is DeployEtherfiCashLaunchPayloadSc
     EtherfiCashLaunchPayload.AssetSpec[] memory specs = expectedPayload.getAssetSpecs();
 
     address payloadAddress = vm.envOr('PAYLOAD', address(0));
+    address activationAddress = vm.envOr('ACTIVATION', address(0));
 
     string memory md = '# ether.fi Cash Aave V4 Instance on OP Mainnet - Launch Specification\n\n';
     md = string.concat(
       md,
       '## Summary\n\n',
-      'Activates the ether.fi Cash Aave V4 whitelabel instance on OP Mainnet: lists ',
+      'Two-phase launch of the ether.fi Cash Aave V4 whitelabel instance on OP Mainnet, ',
+      'mirroring the Aave V4 Avalanche activation (proposal 504). Phase 1 (launch payload) ',
+      'configures everything DORMANT: lists ',
       vm.toString(specs.length),
-      ' assets on the Hub, registers the Cash Spoke with per-asset caps, lists the reserves with ',
-      'their risk parameters, sets the Spoke liquidation configuration, and wires the operator ',
-      'roles. Executed by the Owner Safe via a delegatecall Safe transaction.\n\n',
+      ' assets on the Hub, registers the Cash Spoke with per-asset caps (active = false), lists ',
+      'the reserves with their risk parameters, sets the Spoke liquidation configuration, and ',
+      'wires the operator roles. After on-chain verification of the configured state, phase 2 ',
+      '(activation payload) enumerates and activates every (asset, spoke) pair. Both phases are ',
+      'executed by the Owner Safe via delegatecall Safe transactions.\n\n',
       '## Administration\n\n',
       '| Role | Holder |\n|---|---|\n',
       '| Instance owner / payload executor | Owner Safe ',
@@ -65,7 +70,8 @@ contract GenerateEtherfiCashLaunchSpecScript is DeployEtherfiCashLaunchPayloadSc
     }
 
     md = string.concat(md, '\n### Addresses\n\n| Contract | Address |\n|---|---|\n');
-    md = string.concat(md, _addrRow('Payload', payloadAddress));
+    md = string.concat(md, _addrRow('Launch payload (phase 1, dormant config)', payloadAddress));
+    md = string.concat(md, _addrRow('Activation payload (phase 2)', activationAddress));
     md = string.concat(md, _addrRow('Owner Safe', EtherfiCashOpMainnet.OWNER_SAFE));
     md = string.concat(md, _addrRow('Operator Safe', EtherfiCashOpMainnet.OPERATOR_SAFE));
     md = string.concat(md, _addrRow('AccessManager', expectedPayload.ACCESS_MANAGER()));

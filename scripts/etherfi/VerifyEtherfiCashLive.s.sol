@@ -26,6 +26,10 @@ contract VerifyEtherfiCashLiveScript is DeployEtherfiCashLaunchPayloadScript {
   function verify() external returns (uint256) {
     require(block.chainid == 10, 'run against OP Mainnet (chainid 10)');
 
+    // two-phase launch: EXPECT_ACTIVE=false verifies the dormant state between phase 1
+    // (config payload) and phase 2 (activation payload); default checks the final live state
+    bool expectActive = vm.envOr('EXPECT_ACTIVE', true);
+
     // in-memory expectedPayload payload: same constants + address resolution as the deploy script
     EtherfiCashLaunchPayload expectedPayload = new EtherfiCashLaunchPayload(
       _instanceAddresses(),
@@ -55,7 +59,7 @@ contract VerifyEtherfiCashLiveScript is DeployEtherfiCashLaunchPayloadScript {
       _check(spec.symbol, 'slope2', ir.rateGrowthAfterOptimal, spec.irData.rateGrowthAfterOptimal);
 
       IHub.SpokeConfig memory spokeConfig = hub.getSpokeConfig(assetId, address(spoke));
-      _check(spec.symbol, 'active', spokeConfig.active ? 1 : 0, 1);
+      _check(spec.symbol, 'active', spokeConfig.active ? 1 : 0, expectActive ? 1 : 0);
       _check(spec.symbol, 'halted', spokeConfig.halted ? 1 : 0, 0);
       _check(spec.symbol, 'addCap', spokeConfig.addCap, spec.addCap);
       _check(spec.symbol, 'drawCap', spokeConfig.drawCap, spec.drawCap);
@@ -116,7 +120,11 @@ contract VerifyEtherfiCashLiveScript is DeployEtherfiCashLaunchPayloadScript {
     );
 
     require(mismatches == 0, string.concat('MISMATCHES: ', vm.toString(mismatches)));
-    console2.log('VERIFIED: live state matches the launch payload spec');
+    console2.log(
+      expectActive
+        ? 'VERIFIED: live state matches the launch payload spec (ACTIVE)'
+        : 'VERIFIED: live state matches the launch payload spec (DORMANT - ready for activation)'
+    );
     return specs.length;
   }
 

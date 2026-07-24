@@ -54,25 +54,31 @@ log "stage 3/3: BROADCAST payload deployment to OP Mainnet with keystore '$accou
 read -r -p "deploy the payload for real? type 'yes' to continue: " ACK
 [[ "$ACK" == "yes" ]] || die "aborted by user"
 
-log "deploying payload"
+log "deploying both payloads (phase 1 config + phase 2 activation)"
 forge script scripts/etherfi/DeployEtherfiCashLaunchPayload.s.sol:DeployEtherfiCashLaunchPayloadScript \
   --rpc-url "$RPC" --account "$account" --broadcast --verify 2>&1 \
   | tee /tmp/etherfi-deploy.log | sed -n '/== Logs ==/,/^##/p'
-PAYLOAD=$(grep -o 'deployed at: 0x[0-9a-fA-F]\{40\}' /tmp/etherfi-deploy.log | awk '{print $3}' | head -1)
-[[ -n "$PAYLOAD" ]] || die "could not parse deployed payload address"
+PAYLOAD=$(grep 'EtherfiCashLaunchPayload (phase 1' /tmp/etherfi-deploy.log | grep -o '0x[0-9a-fA-F]\{40\}' | head -1)
+ACTIVATION=$(grep 'EtherfiCashActivationPayload (phase 2' /tmp/etherfi-deploy.log | grep -o '0x[0-9a-fA-F]\{40\}' | head -1)
+[[ -n "$PAYLOAD" && -n "$ACTIVATION" ]] || die "could not parse deployed payload addresses"
 
-log "generating Owner-Safe transaction (output/etherfi/safe-launch-tx.json)"
-PAYLOAD="$PAYLOAD" forge script scripts/etherfi/GenerateEtherfiCashSafeTx.s.sol:GenerateEtherfiCashSafeTxScript \
+log "generating Owner-Safe transactions (safe-launch-tx.json + safe-activation-tx.json)"
+PAYLOAD="$PAYLOAD" ACTIVATION="$ACTIVATION" \
+  forge script scripts/etherfi/GenerateEtherfiCashSafeTx.s.sol:GenerateEtherfiCashSafeTxScript \
   --sig 'generate()' --rpc-url "$RPC" 2>&1 | sed -n '/== Logs ==/,$p'
 
 log "generating launch spec (output/etherfi/launch-spec.md)"
-PAYLOAD="$PAYLOAD" forge script scripts/etherfi/GenerateEtherfiCashLaunchSpec.s.sol:GenerateEtherfiCashLaunchSpecScript \
+PAYLOAD="$PAYLOAD" ACTIVATION="$ACTIVATION" \
+  forge script scripts/etherfi/GenerateEtherfiCashLaunchSpec.s.sol:GenerateEtherfiCashLaunchSpecScript \
   --sig 'generate()' --rpc-url "$RPC" 2>&1 | sed -n '/== Logs ==/,$p'
 
 log "DONE"
-echo "payload:     $PAYLOAD (verified source on Etherscan)"
-echo "next steps:"
-echo "  1. share the payload address + output/etherfi/launch-spec.md for review"
-echo "  2. propose output/etherfi/safe-launch-tx.json from the Owner Safe"
+echo "phase 1 payload:    $PAYLOAD (verified source on Etherscan)"
+echo "phase 2 activation: $ACTIVATION"
+echo "next steps (two-phase launch):"
+echo "  1. share the payload addresses + output/etherfi/launch-spec.md for review"
+echo "  2. Owner Safe executes output/etherfi/safe-launch-tx.json"
 echo "     (operation = 1 / DELEGATECALL - Safe web Transaction Builder cannot do this; use safe-cli/SDK)"
-echo "  3. after Safe execution: make etherfi-verify"
+echo "  3. EXPECT_ACTIVE=false make etherfi-verify   # confirm the DORMANT configured state"
+echo "  4. Owner Safe executes output/etherfi/safe-activation-tx.json"
+echo "  5. make etherfi-verify                        # confirm the market is live"

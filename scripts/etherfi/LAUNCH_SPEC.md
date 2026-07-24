@@ -1,12 +1,13 @@
 # ether.fi Cash Aave V4 Instance on OP Mainnet - Launch Specification
 
 > Status: PRE-DEPLOYMENT. All instance and payload addresses below are PREDICTED from a full fork
-> simulation (CREATE2, deterministic) run as the launch deployer; the real deployment either
-> reproduces them exactly or reverts. To be confirmed against the deployment report.
+> simulation run as the launch deployer. CREATE2 addresses reproduce exactly or revert; the
+> AaveOracle, Cash Spoke and launch payload additionally require the deployer to start at nonce 3
+> with no interleaved transactions. To be confirmed against the deployment report.
 
 ## Summary
 
-Activates the ether.fi Cash Aave V4 whitelabel instance on OP Mainnet: lists 19 assets on the Hub, registers the Cash Spoke with per-asset caps, lists the reserves with their risk parameters, sets the Spoke liquidation configuration, and wires the operator roles. Executed by the Owner Safe via a delegatecall Safe transaction.
+Two-phase launch of the ether.fi Cash Aave V4 whitelabel instance on OP Mainnet, mirroring the Aave V4 Avalanche activation (proposal 504). Phase 1 (launch payload) configures everything DORMANT: lists 19 assets on the Hub, registers the Cash Spoke with per-asset caps (active = false), lists the reserves with their risk parameters, sets the Spoke liquidation configuration, and wires the operator roles. After on-chain verification of the configured state, phase 2 (activation payload) enumerates and activates every (asset, spoke) pair. Both phases are executed by the Owner Safe via delegatecall Safe transactions.
 
 ## Administration
 
@@ -55,7 +56,8 @@ Operator roles carved out by the payload: HUB_CAPS_OPERATOR_ROLE (201) for updat
 
 | Contract | Address |
 |---|---|
-| Payload | 0x3019f24AB89Ec95457be3158a257e1aF8e290890 |
+| Launch payload (phase 1, dormant config) | 0x95774d58FcE03cED5F9498BF2298D7F879ec5a2F |
+| Activation payload (phase 2) | 0x3FF1105A884D3adA575adCD1DBBEB151f2E20654 |
 | Owner Safe | 0x082B85ED50F1cd120C597EF860ece712e54CE844 |
 | Operator Safe | 0x23c30c38d73a0D1609ffAAe47aA7d6D1a3e46f03 |
 | AccessManager | 0x188d7173772499FB6375F23FdFd130CE6107286b |

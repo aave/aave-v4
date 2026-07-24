@@ -4,6 +4,7 @@ pragma solidity ^0.8.0;
 import 'tests/config-engine/BaseConfigEngine.t.sol';
 
 import {EtherfiCashLaunchPayload} from 'src/etherfi/EtherfiCashLaunchPayload.sol';
+import {EtherfiCashActivationPayload} from 'src/etherfi/EtherfiCashActivationPayload.sol';
 
 /// @dev Simulates the full ether.fi Cash launch payload through the production governance
 /// topology (PayloadsController -> Executor.executeTransaction -> delegatecall payload
@@ -202,7 +203,7 @@ contract EtherfiCashLaunchPayloadTest is BaseConfigEngineTest {
       uint256 assetId = hub1().getAssetId(specs[i].underlying);
       IHub.SpokeConfig memory config = hub1().getSpokeConfig(assetId, address(spoke1()));
 
-      assertTrue(config.active, 'spoke not active for asset');
+      assertFalse(config.active, 'spoke must register DORMANT (two-phase launch)');
       assertFalse(config.halted, 'spoke halted for asset');
       assertEq(config.addCap, specs[i].addCap, 'add cap mismatch');
       assertEq(config.drawCap, specs[i].drawCap, 'draw cap mismatch');
@@ -232,6 +233,34 @@ contract EtherfiCashLaunchPayloadTest is BaseConfigEngineTest {
       assertEq(dyn.collateralFactor, specs[i].collateralFactor, 'collateral factor mismatch');
       assertEq(dyn.maxLiquidationBonus, specs[i].maxLiquidationBonus, 'max liq bonus mismatch');
       assertEq(dyn.liquidationFee, specs[i].liquidationFee, 'liquidation fee mismatch');
+    }
+  }
+
+  function test_activation_flipsAllSpokesActive() public {
+    _executePayload();
+
+    EtherfiCashActivationPayload activation = new EtherfiCashActivationPayload(
+      hub1(),
+      hubConfigurator
+    );
+    vm.prank(PAYLOADS_CONTROLLER);
+    executor.executeTransaction(
+      address(activation),
+      abi.encodeCall(EtherfiCashActivationPayload.execute, ())
+    );
+
+    EtherfiCashLaunchPayload.AssetSpec[] memory specs = payload.getAssetSpecs();
+    for (uint256 i; i < specs.length; i++) {
+      uint256 assetId = hub1().getAssetId(specs[i].underlying);
+      // the activation enumerates every spoke on every asset — check them all
+      uint256 spokeCount = hub1().getSpokeCount(assetId);
+      for (uint256 spokeId; spokeId < spokeCount; spokeId++) {
+        address spokeAddress = hub1().getSpokeAddress(assetId, spokeId);
+        assertTrue(
+          hub1().getSpokeConfig(assetId, spokeAddress).active,
+          'spoke not active after activation'
+        );
+      }
     }
   }
 

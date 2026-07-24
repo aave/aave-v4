@@ -19,13 +19,18 @@ import {IAssetInterestRateStrategy} from 'src/hub/interfaces/IAssetInterestRateS
 /// The executing Safe must hold the AccessManager admin role (0) and the configurator domain
 /// admin roles (200/400), which the instance deployment grants.
 ///
+/// PHASE 1 of the two-phase launch (config-dormant -> verify -> activate, mirroring the Aave V4
+/// Avalanche launch, proposal 504): this payload configures everything but registers every
+/// spoke with active = false, so the market stays unusable until the on-chain state has been
+/// verified and the Owner Safe executes EtherfiCashActivationPayload (phase 2).
+///
 /// Executes, in the AaveV4Payload fixed order:
 ///   1. AccessManager actions — labels the two operator roles, reassigns the cap /
 ///      dynamic-config selectors to them, and grants them to the Operator Safe (Nonce risk
 ///      curator) and the Owner Safe.
 ///   2. Hub asset listings — every launch asset, with its interest rate curve and liquidity fee.
 ///   3. Hub spoke-to-assets addition — registers the Cash Spoke for every launch asset with its
-///      add/draw caps.
+///      add/draw caps, DORMANT (active = false).
 ///   4. Spoke reserve listings — lists every launch asset as a reserve on the Cash Spoke with its
 ///      collateral factor, max liquidation bonus and liquidation fee.
 ///   5. Spoke liquidation config — target health factor 1.24, health factor for max bonus 0.90
@@ -510,7 +515,10 @@ contract EtherfiCashLaunchPayload is AaveV4Payload {
           addCap: specs[i].addCap,
           drawCap: specs[i].drawCap,
           riskPremiumThreshold: 0,
-          active: true,
+          // DORMANT LAUNCH (two-phase, mirroring the Aave V4 Avalanche activation): the market
+          // is fully configured but unusable until EtherfiCashActivationPayload flips every
+          // spoke active — after the live state has been verified on-chain.
+          active: false,
           halted: false
         })
       });
