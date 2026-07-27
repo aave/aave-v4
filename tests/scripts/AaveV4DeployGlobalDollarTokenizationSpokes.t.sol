@@ -9,13 +9,15 @@ import {ITokenizationSpoke} from 'src/spoke/interfaces/ITokenizationSpoke.sol';
 import {BatchReports} from 'src/deployments/libraries/BatchReports.sol';
 
 import {ProxyHelper} from 'tests/utils/ProxyHelper.sol';
-import {AaveV4DeployPaxosTokenizationSpokes} from 'scripts/deploy/AaveV4DeployTokenizationSpoke.s.sol';
+import {AaveV4DeployGlobalDollarTokenizationSpokes} from 'scripts/deploy/AaveV4DeployTokenizationSpoke.s.sol';
 
-contract AaveV4DeployPaxosTokenizationSpokesTest is Test {
+contract AaveV4DeployGlobalDollarTokenizationSpokesTest is Test {
   // deprecated instances whose ProxyAdmins are owned by the PayloadsController
-  address internal constant DEPRECATED_WA_PAXOS_USDC = 0x4131E0B2E7AFeCEAf3d3b4225aA61a3B2B7535b8;
-  address internal constant DEPRECATED_WA_PAXOS_USDT = 0x8Dabe53E8cB991c57f0307F6f419E6D469b0deAA;
-  address internal constant DEPRECATED_WA_PAXOS_PT_USDG =
+  address internal constant DEPRECATED_WA_GLOBAL_DOLLAR_USDC =
+    0x4131E0B2E7AFeCEAf3d3b4225aA61a3B2B7535b8;
+  address internal constant DEPRECATED_WA_GLOBAL_DOLLAR_USDT =
+    0x8Dabe53E8cB991c57f0307F6f419E6D469b0deAA;
+  address internal constant DEPRECATED_WA_GLOBAL_DOLLAR_PT_USDG =
     0x27eF1140364948A0E30E248297FfDFE5a4091ec4;
   // GovernanceV3Ethereum.PAYLOADS_CONTROLLER
   address internal constant PAYLOADS_CONTROLLER = 0xdAbad81aF85554E9ae636395611C58F7eC1aAEc5;
@@ -25,11 +27,11 @@ contract AaveV4DeployPaxosTokenizationSpokesTest is Test {
   address internal constant CORE_USDC_TOKENIZATION_SPOKE =
     0x531E90a2376902DE8915789Fcc1075e3B0c153E7;
 
-  AaveV4DeployPaxosTokenizationSpokes internal _script;
+  AaveV4DeployGlobalDollarTokenizationSpokes internal _script;
 
   function setUp() public {
     vm.createSelectFork(vm.rpcUrl('mainnet'), 25544900);
-    _script = new AaveV4DeployPaxosTokenizationSpokes();
+    _script = new AaveV4DeployGlobalDollarTokenizationSpokes();
   }
 
   function test_run_deploysTokenizationSpokes() public {
@@ -38,15 +40,19 @@ contract AaveV4DeployPaxosTokenizationSpokesTest is Test {
 
     address[3] memory underlyings = [_script.USDC(), _script.USDT(), _script.PT_USDG_24SEP2026()];
     string[3] memory names = [
-      'Wrapped Aave Paxos USDC',
-      'Wrapped Aave Paxos USDT',
-      'Wrapped Aave Paxos PT_USDG_24SEP2026'
+      'Wrapped Aave Global Dollar USDC',
+      'Wrapped Aave Global Dollar USDT',
+      'Wrapped Aave Global Dollar PT_USDG_24SEP2026'
     ];
-    string[3] memory symbols = ['waPaxosUSDC', 'waPaxosUSDT', 'waPaxosPT_USDG_24SEP2026'];
+    string[3] memory symbols = [
+      'waGlobalDollarUSDC',
+      'waGlobalDollarUSDT',
+      'waGlobalDollarPT_USDG_24SEP2026'
+    ];
     address[3] memory deprecated = [
-      DEPRECATED_WA_PAXOS_USDC,
-      DEPRECATED_WA_PAXOS_USDT,
-      DEPRECATED_WA_PAXOS_PT_USDG
+      DEPRECATED_WA_GLOBAL_DOLLAR_USDC,
+      DEPRECATED_WA_GLOBAL_DOLLAR_USDT,
+      DEPRECATED_WA_GLOBAL_DOLLAR_PT_USDG
     ];
 
     for (uint256 i; i < reports.length; ++i) {
@@ -55,7 +61,7 @@ contract AaveV4DeployPaxosTokenizationSpokesTest is Test {
       assertGt(reports[i].tokenizationSpokeImplementation.code.length, 0);
       assertNotEq(proxy, deprecated[i]);
 
-      assertEq(ITokenizationSpoke(proxy).hub(), _script.PAXOS_HUB());
+      assertEq(ITokenizationSpoke(proxy).hub(), _script.GLOBAL_DOLLAR_HUB());
       assertEq(ITokenizationSpoke(proxy).asset(), underlyings[i]);
       assertEq(ITokenizationSpoke(proxy).name(), names[i]);
       assertEq(ITokenizationSpoke(proxy).symbol(), symbols[i]);
@@ -88,7 +94,7 @@ contract AaveV4DeployPaxosTokenizationSpokesTest is Test {
   }
 
   function test_constantsMatchOnchainState() public view {
-    assertEq(_script.PAXOS_HUB(), 0x62d63197660c080236193CA60b70E49A08E90368);
+    assertEq(_script.GLOBAL_DOLLAR_HUB(), 0x62d63197660c080236193CA60b70E49A08E90368);
 
     // the intended owner is the owner of the healthy mainnet TokenizationSpoke ProxyAdmins
     assertEq(
@@ -97,12 +103,24 @@ contract AaveV4DeployPaxosTokenizationSpokesTest is Test {
     );
 
     // deploy inputs must match the deprecated instances they replace
-    assertEq(ITokenizationSpoke(DEPRECATED_WA_PAXOS_USDC).asset(), _script.USDC());
-    assertEq(ITokenizationSpoke(DEPRECATED_WA_PAXOS_USDT).asset(), _script.USDT());
-    assertEq(ITokenizationSpoke(DEPRECATED_WA_PAXOS_PT_USDG).asset(), _script.PT_USDG_24SEP2026());
-    assertEq(ITokenizationSpoke(DEPRECATED_WA_PAXOS_USDC).hub(), _script.PAXOS_HUB());
-    assertEq(ITokenizationSpoke(DEPRECATED_WA_PAXOS_USDT).hub(), _script.PAXOS_HUB());
-    assertEq(ITokenizationSpoke(DEPRECATED_WA_PAXOS_PT_USDG).hub(), _script.PAXOS_HUB());
+    assertEq(ITokenizationSpoke(DEPRECATED_WA_GLOBAL_DOLLAR_USDC).asset(), _script.USDC());
+    assertEq(ITokenizationSpoke(DEPRECATED_WA_GLOBAL_DOLLAR_USDT).asset(), _script.USDT());
+    assertEq(
+      ITokenizationSpoke(DEPRECATED_WA_GLOBAL_DOLLAR_PT_USDG).asset(),
+      _script.PT_USDG_24SEP2026()
+    );
+    assertEq(
+      ITokenizationSpoke(DEPRECATED_WA_GLOBAL_DOLLAR_USDC).hub(),
+      _script.GLOBAL_DOLLAR_HUB()
+    );
+    assertEq(
+      ITokenizationSpoke(DEPRECATED_WA_GLOBAL_DOLLAR_USDT).hub(),
+      _script.GLOBAL_DOLLAR_HUB()
+    );
+    assertEq(
+      ITokenizationSpoke(DEPRECATED_WA_GLOBAL_DOLLAR_PT_USDG).hub(),
+      _script.GLOBAL_DOLLAR_HUB()
+    );
   }
 
   function test_tokenizationSpokeSaltMatchesOrchestrationFormula_fuzz(
@@ -112,8 +130,10 @@ contract AaveV4DeployPaxosTokenizationSpokesTest is Test {
     bytes32 userSalt = keccak256(bytes('chain 1_version 1'));
     bytes32 expectedRoot = bytes32(bytes20(deployer)) |
       (keccak256(abi.encode(orchestrationSalt, userSalt)) >> 160);
-    bytes32 expected = keccak256(abi.encode(expectedRoot, 'tokenization-spoke', 'waPaxosUSDC'));
+    bytes32 expected = keccak256(
+      abi.encode(expectedRoot, 'tokenization-spoke', 'waGlobalDollarUSDC')
+    );
 
-    assertEq(_script.tokenizationSpokeSalt(deployer, 'waPaxosUSDC'), expected);
+    assertEq(_script.tokenizationSpokeSalt(deployer, 'waGlobalDollarUSDC'), expected);
   }
 }

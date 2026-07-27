@@ -85,24 +85,24 @@ abstract contract AaveV4DeployTokenizationSpokeBase is Script {
   }
 }
 
-/// @title AaveV4DeployPaxosTokenizationSpokes
+/// @title AaveV4DeployGlobalDollarTokenizationSpokes
 /// @author Aave Labs
-/// @notice Deploys replacement TokenizationSpokes (USDC, USDT, PT_USDG_24SEP2026) for the Paxos Hub on
-///         Ethereum mainnet. The previously deployed instances are deprecated as their ProxyAdmins are
-///         owned by the PayloadsController and can never exercise ownership; the replacements set the
+/// @notice Deploys replacement TokenizationSpokes (USDC, USDT, PT_USDG_24SEP2026) for the Global Dollar
+///         Hub on Ethereum mainnet. The previously deployed instances are deprecated as their ProxyAdmins
+///         are owned by the PayloadsController and can never exercise ownership; the replacements set the
 ///         ProxyAdmin owner to the Protocol Security Council, matching all other mainnet
 ///         TokenizationSpokes. Activation on the Hub is performed separately by the Protocol Security
 ///         Council.
 /// @dev Usage:
 ///   forge clean && forge script \
-///     scripts/deploy/AaveV4DeployTokenizationSpoke.s.sol:AaveV4DeployPaxosTokenizationSpokes \
+///     scripts/deploy/AaveV4DeployTokenizationSpoke.s.sol:AaveV4DeployGlobalDollarTokenizationSpokes \
 ///     --rpc-url mainnet --account <acct> --slow (--broadcast --verify)
-contract AaveV4DeployPaxosTokenizationSpokes is AaveV4DeployTokenizationSpokeBase {
+contract AaveV4DeployGlobalDollarTokenizationSpokes is AaveV4DeployTokenizationSpokeBase {
   uint256 internal constant _ETHEREUM_CHAIN_ID = 1;
 
   // AaveV4EthereumHubs.PAXOS_HUB
   // https://github.com/aave-dao/aave-address-book/blob/7e444a1e73b538fd0b9e093e5156401d6fccca7d/src/AaveV4Ethereum.sol#L38
-  address public constant PAXOS_HUB = 0x62d63197660c080236193CA60b70E49A08E90368;
+  address public constant GLOBAL_DOLLAR_HUB = 0x62d63197660c080236193CA60b70E49A08E90368;
   // Protocol Security Council
   // https://etherscan.io/address/0x187AAE17d4931310B3fc75743e7F16Bdc9eD77e9
   address public constant PROTOCOL_SECURITY_COUNCIL = 0x187AAE17d4931310B3fc75743e7F16Bdc9eD77e9;
@@ -129,28 +129,28 @@ contract AaveV4DeployPaxosTokenizationSpokes is AaveV4DeployTokenizationSpokeBas
   ) internal view override returns (TokenizationSpokeDeployInputs[] memory inputs) {
     inputs = new TokenizationSpokeDeployInputs[](3);
     inputs[0] = TokenizationSpokeDeployInputs({
-      hub: PAXOS_HUB,
+      hub: GLOBAL_DOLLAR_HUB,
       underlying: USDC,
       proxyAdminOwner: PROTOCOL_SECURITY_COUNCIL,
-      shareName: 'Wrapped Aave Paxos USDC',
-      shareSymbol: 'waPaxosUSDC',
-      salt: tokenizationSpokeSalt(deployer, 'waPaxosUSDC')
+      shareName: 'Wrapped Aave Global Dollar USDC',
+      shareSymbol: 'waGlobalDollarUSDC',
+      salt: tokenizationSpokeSalt(deployer, 'waGlobalDollarUSDC')
     });
     inputs[1] = TokenizationSpokeDeployInputs({
-      hub: PAXOS_HUB,
+      hub: GLOBAL_DOLLAR_HUB,
       underlying: USDT,
       proxyAdminOwner: PROTOCOL_SECURITY_COUNCIL,
-      shareName: 'Wrapped Aave Paxos USDT',
-      shareSymbol: 'waPaxosUSDT',
-      salt: tokenizationSpokeSalt(deployer, 'waPaxosUSDT')
+      shareName: 'Wrapped Aave Global Dollar USDT',
+      shareSymbol: 'waGlobalDollarUSDT',
+      salt: tokenizationSpokeSalt(deployer, 'waGlobalDollarUSDT')
     });
     inputs[2] = TokenizationSpokeDeployInputs({
-      hub: PAXOS_HUB,
+      hub: GLOBAL_DOLLAR_HUB,
       underlying: PT_USDG_24SEP2026,
       proxyAdminOwner: PROTOCOL_SECURITY_COUNCIL,
-      shareName: 'Wrapped Aave Paxos PT_USDG_24SEP2026',
-      shareSymbol: 'waPaxosPT_USDG_24SEP2026',
-      salt: tokenizationSpokeSalt(deployer, 'waPaxosPT_USDG_24SEP2026')
+      shareName: 'Wrapped Aave Global Dollar PT_USDG_24SEP2026',
+      shareSymbol: 'waGlobalDollarPT_USDG_24SEP2026',
+      salt: tokenizationSpokeSalt(deployer, 'waGlobalDollarPT_USDG_24SEP2026')
     });
   }
 
@@ -159,6 +159,6 @@ contract AaveV4DeployPaxosTokenizationSpokes is AaveV4DeployTokenizationSpokeBas
   }
 
   function _deploymentName() internal pure override returns (string memory) {
-    return 'Paxos TokenizationSpokes';
+    return 'Global Dollar TokenizationSpokes';
   }
 }
