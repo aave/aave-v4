@@ -3,8 +3,7 @@ pragma solidity ^0.8.0;
 
 import {AaveV4DeployBatchBaseScript} from 'scripts/deploy/AaveV4DeployBatchBase.s.sol';
 import {InputUtils} from 'src/deployments/utils/libraries/InputUtils.sol';
-import {AaveV4EtherfiCash} from 'src/etherfi/AaveV4EtherfiCash.sol';
-import {AaveV4EtherfiCashAssets} from 'src/etherfi/AaveV4EtherfiCash.sol';
+import {AaveV4EtherfiCash, AaveV4EtherfiCashAssets} from 'src/etherfi/AaveV4EtherfiCash.sol';
 
 /// @title DeployEtherfiCashInstance
 /// @notice Deploys the ether.fi Cash Aave V4 instance on OP Mainnet (whitelabel): one hub
