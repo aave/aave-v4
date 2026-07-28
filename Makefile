@@ -82,3 +82,10 @@ etherfi-safe-tx :;
 # `make etherfi-launch-spec PAYLOAD=0x...`
 etherfi-launch-spec :;
 	forge script scripts/etherfi/GenerateEtherfiCashLaunchSpec.s.sol:GenerateEtherfiCashLaunchSpecScript --sig 'generate()' --rpc-url optimism
+
+# Deploy the stateless config engine (broadcast = 4 engine libraries + engine, all deterministic)
+# `make etherfi-deploy-engine account=<keystore>` (set dry=1 to simulate)
+etherfi-deploy-engine :;
+	forge script scripts/etherfi/DeployEtherfiCashConfigEngine.s.sol:DeployEtherfiCashConfigEngineScript \
+	--rpc-url optimism --account ${account} --slow \
+	$(if ${dry},, --broadcast --verify) \
