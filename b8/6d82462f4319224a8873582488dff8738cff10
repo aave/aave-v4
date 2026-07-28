@@ -1,0 +1,21 @@
+scripts/deploy/AaveV4DeployIsolatedHub.s.sol
+  s_be99d186a7a60d::t_bf92cc6a30fc94 77,79-80
+  s_be99d186a7a60d::t_cadd081f4eb80e 12-76,81-119
+  s_be99d186a7a60d::t_34cffc2e7eb961 78
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.6",
+  "base_commit_sha": "b86d82462f4319224a8873582488dff8738cff10",
+  "prompts": {},
+  "sessions": {
+    "s_be99d186a7a60d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "74d0db02-2ba2-43b2-b80f-4ee82f075fd1",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": null
+    }
+  }
+}

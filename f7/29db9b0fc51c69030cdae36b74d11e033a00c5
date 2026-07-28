@@ -1,0 +1,23 @@
+docs/overview.md
+  7276817b3976c89d 47,69,71
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.22",
+  "base_commit_sha": "f729db9b0fc51c69030cdae36b74d11e033a00c5",
+  "prompts": {
+    "7276817b3976c89d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "cca49d46-0833-4979-a26c-5842f4af2810",
+        "model": "claude-haiku-4-5-20251001"
+      },
+      "human_author": "defispartan <defispartan@gmail.com>",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 3,
+      "overriden_lines": 0
+    }
+  }
+}

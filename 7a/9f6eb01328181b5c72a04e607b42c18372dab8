@@ -1,0 +1,23 @@
+src/deployments/README.md
+  7b925b73115efc5c 19,89-95,99-102,104,106,108,205,231
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.22",
+  "base_commit_sha": "7a9f6eb01328181b5c72a04e607b42c18372dab8",
+  "prompts": {
+    "7b925b73115efc5c": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "9a6fd40f-1619-440a-9ae6-15d11edae335",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "YBM <31329384+yan-man@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 17,
+      "overriden_lines": 0
+    }
+  }
+}

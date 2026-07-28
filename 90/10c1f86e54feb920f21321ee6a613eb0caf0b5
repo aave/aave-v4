@@ -1,0 +1,44 @@
+src/config-engine/AaveV4Payload.sol
+  s_c31b2c628308b8::t_41740bafb54d99 458-482
+  s_c31b2c628308b8::t_50f161c3939b24 34
+  s_c31b2c628308b8::t_c136e7e3cd5e51 264-296
+tests/helpers/mocks/config-engine/AaveV4PayloadWrapper.sol
+  s_c31b2c628308b8::t_3a3655146c1945 231-258
+  s_c31b2c628308b8::t_7297cd4780198a 449-475
+  s_c31b2c628308b8::t_81455dc7765475 46-50
+tests/config-engine/FeeSharesMinterEngine.t.sol
+  s_c31b2c628308b8::t_c3e0ccc484533f 428-464
+  s_c31b2c628308b8::t_7fd45cb7578726 1-427,465
+tests/config-engine/BaseConfigEngine.t.sol
+  s_c31b2c628308b8::t_4b8c40d44c25e6 697-712
+  s_c31b2c628308b8::t_4b7c98c9079b21 36,38-39
+  s_c31b2c628308b8::t_36b99b470d01a4 663-683
+tests/config-engine/AaveV4Payload.t.sol
+  s_c31b2c628308b8::t_a60efbcf50ce90 1375-1492
+  s_c31b2c628308b8::t_1588a94767f11b 8-10,13,29-30
+src/config-engine/libraries/FeeSharesMinterEngine.sol
+  s_c31b2c628308b8::t_448db3a775b525 1-59
+src/config-engine/interfaces/IAaveV4ConfigEngine.sol
+  s_c31b2c628308b8::t_721f026e66a70e 9
+  s_c31b2c628308b8::t_56159d2e7d8a6b 466-480
+  s_c31b2c628308b8::t_12f26c836e2678 340-372
+src/config-engine/AaveV4ConfigEngine.sol
+  s_c31b2c628308b8::t_9275a7069f55db 130-146
+  s_c31b2c628308b8::t_759bb884ebf5b7 8
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.0",
+  "base_commit_sha": "9010c1f86e54feb920f21321ee6a613eb0caf0b5",
+  "prompts": {},
+  "sessions": {
+    "s_c31b2c628308b8": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "f47a4843-d642-4d72-89be-9da4a121c870",
+        "model": "claude-opus-4-7"
+      },
+      "human_author": "Alexandru Niculae <43644109+avniculae@users.noreply.github.com>"
+    }
+  }
+}

@@ -1,0 +1,14 @@
+.github/workflows/certora-fastRules.yml
+  h_71908bb6884da4 42,44-46,51-52
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.8",
+  "base_commit_sha": "009859cf6fd3de01e824ed04b26be23e68cff83d",
+  "prompts": {},
+  "humans": {
+    "h_71908bb6884da4": {
+      "author": "YBM <31329384+yan-man@users.noreply.github.com>"
+    }
+  }
+}
