@@ -1,12 +1,9 @@
 // SPDX-License-Identifier: LicenseRef-BUSL
 pragma solidity 0.8.28;
 
+import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 import {SpokeInstance} from 'src/spoke/instances/SpokeInstance.sol';
-
-/// @dev The ether.fi data provider used to recognize Cash Safes (a proxy; address is stable).
-interface IEtherFiDataProvider {
-  function isEtherFiSafe(address account) external view returns (bool);
-}
+import {IEtherFiDataProvider} from 'src/etherfi/interfaces/IEtherFiDataProvider.sol';
 
 /// @title EtherFiSpokeInstance
 /// @notice Aave v4 SpokeInstance for the ether.fi whitelabel instance: `borrow` is gated so only
@@ -14,7 +11,23 @@ interface IEtherFiDataProvider {
 ///         Supply, withdraw, repay, and liquidationCall are untouched — public LPs and liquidators
 ///         remain permissionless.
 /// @dev The check keys on `onBehalfOf` (the position owner), so it holds whether the safe borrows
-///      through its registered position manager or directly. The override deliberately adds no
+///      through its registered position manager or directly.
+///
+///      SECURITY INVARIANT — position manager listing: the check constrains who carries the debt,
+///      not where the borrowed funds go (the spoke pays out to `msg.sender`). The cash-v3
+///      LendGateway is the ONLY position manager that may ever be activated on this spoke via
+///      `updatePositionManager` — it mirrors this exact invariant in its own natspec ("no
+///      position manager other than this gateway is ever activated on the Spoke"), which is what
+///      keeps every exit from a safe's position inside the Cash rails (safe withdrawal delay or
+///      card settlement). In particular the stock Aave TakerPositionManager must never be listed:
+///      its `borrowOnBehalfOf` forwards borrowed funds to the delegated spender, so a safe-signed
+///      allowance (incl. the ERC-1271 `*WithSig` paths, which need no transaction from the safe)
+///      would let any spender route borrowed funds outside the Cash flow while the debt sits on
+///      the safe. For the same reason the stock position managers are not even deployed with this
+///      instance (see DeployEtherfiCashInstance), and EtherFiSafe must never implement ERC-1271
+///      `isValidSignature`.
+///
+///      The override deliberately adds no
 ///      modifiers and no logic beyond the check: the parent's nonReentrant + onlyPositionManager
 ///      run inside the super call (redeclaring nonReentrant here would self-deadlock on the shared
 ///      guard), and keeping the body to one check + super means upstream borrow changes flow
@@ -40,8 +53,9 @@ contract EtherFiSpokeInstance is SpokeInstance {
     uint16 maxUserReservesLimit_
   ) SpokeInstance(oracle_, maxUserReservesLimit_) {}
 
-  /// @notice Borrows `amount` of reserve `reserveId` for `onBehalfOf`, which must be an ether.fi
-  ///         Cash Safe.
+  /// @inheritdoc ISpoke
+  /// @dev Restricted relative to the base implementation: `onBehalfOf` must be an ether.fi Cash
+  ///      Safe (per EtherFiDataProvider.isEtherFiSafe), otherwise reverts with OnlyEtherFiSafe.
   function borrow(
     uint256 reserveId,
     uint256 amount,

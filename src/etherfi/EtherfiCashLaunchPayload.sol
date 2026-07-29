@@ -2,7 +2,13 @@
 pragma solidity ^0.8.0;
 
 import {AaveV4Payload} from 'src/config-engine/AaveV4Payload.sol';
-import {AaveV4EtherfiCash, AaveV4EtherfiCashHubs, AaveV4EtherfiCashSpokes, AaveV4EtherfiCashAssets, AaveV4EtherfiCashCaps} from 'src/etherfi/AaveV4EtherfiCash.sol';
+import {
+  AaveV4EtherfiCash,
+  AaveV4EtherfiCashHubs,
+  AaveV4EtherfiCashSpokes,
+  AaveV4EtherfiCashAssets,
+  AaveV4EtherfiCashCaps
+} from 'src/etherfi/AaveV4EtherfiCash.sol';
 import {IAaveV4ConfigEngine} from 'src/config-engine/interfaces/IAaveV4ConfigEngine.sol';
 import {EngineFlags} from 'src/config-engine/libraries/EngineFlags.sol';
 import {IHubConfigurator} from 'src/hub/interfaces/IHubConfigurator.sol';
@@ -145,23 +151,142 @@ contract EtherfiCashLaunchPayload is AaveV4Payload {
     });
 
     // -------- collateral-only reserves: flat 0% curve, 0% liquidity fee --------
-    specs[2] = _collateralOnly('USDT', AaveV4EtherfiCashAssets.USDT_UNDERLYING, AaveV4EtherfiCashAssets.USDT_ORACLE, 95_00, BONUS_1_0, AaveV4EtherfiCashCaps.USDT_ADD_CAP);
-    specs[3] = _collateralOnly('EURC', AaveV4EtherfiCashAssets.EURC_UNDERLYING, AaveV4EtherfiCashAssets.EURC_ORACLE, 95_00, BONUS_1_0, AaveV4EtherfiCashCaps.EURC_ADD_CAP);
-    specs[4] = _collateralOnly('frxUSD', AaveV4EtherfiCashAssets.FRXUSD_UNDERLYING, AaveV4EtherfiCashAssets.FRXUSD_ORACLE, 95_00, BONUS_1_0, AaveV4EtherfiCashCaps.FRXUSD_ADD_CAP);
-    specs[5] = _collateralOnly('weETH', AaveV4EtherfiCashAssets.WEETH_UNDERLYING, AaveV4EtherfiCashAssets.WEETH_ORACLE, 75_00, BONUS_3_5, AaveV4EtherfiCashCaps.WEETH_ADD_CAP);
-    specs[6] = _collateralOnly('eBTC', AaveV4EtherfiCashAssets.EBTC_UNDERLYING, AaveV4EtherfiCashAssets.EBTC_ORACLE, 72_00, BONUS_5_0, AaveV4EtherfiCashCaps.EBTC_ADD_CAP);
-    specs[7] = _collateralOnly('eUSD', AaveV4EtherfiCashAssets.EUSD_UNDERLYING, AaveV4EtherfiCashAssets.EUSD_ORACLE, 90_00, BONUS_2_0, AaveV4EtherfiCashCaps.EUSD_ADD_CAP);
-    specs[8] = _collateralOnly('ETHFI', AaveV4EtherfiCashAssets.ETHFI_UNDERLYING, AaveV4EtherfiCashAssets.ETHFI_ORACLE, 30_00, BONUS_5_0, AaveV4EtherfiCashCaps.ETHFI_ADD_CAP);
-    specs[9] = _collateralOnly('sETHFI', AaveV4EtherfiCashAssets.SETHFI_UNDERLYING, AaveV4EtherfiCashAssets.SETHFI_ORACLE, 30_00, BONUS_5_0, AaveV4EtherfiCashCaps.SETHFI_ADD_CAP);
-    specs[10] = _collateralOnly('OP', AaveV4EtherfiCashAssets.OP_UNDERLYING, AaveV4EtherfiCashAssets.OP_ORACLE, 30_00, BONUS_5_0, AaveV4EtherfiCashCaps.OP_ADD_CAP);
-    specs[11] = _collateralOnly('WHYPE', AaveV4EtherfiCashAssets.WHYPE_UNDERLYING, AaveV4EtherfiCashAssets.WHYPE_ORACLE, 65_00, BONUS_4_0, AaveV4EtherfiCashCaps.WHYPE_ADD_CAP);
-    specs[12] = _collateralOnly('beHYPE', AaveV4EtherfiCashAssets.BEHYPE_UNDERLYING, AaveV4EtherfiCashAssets.BEHYPE_ORACLE, 60_00, BONUS_5_0, AaveV4EtherfiCashCaps.BEHYPE_ADD_CAP);
-    specs[13] = _collateralOnly('liquidETH', AaveV4EtherfiCashAssets.LIQUID_ETH_UNDERLYING, AaveV4EtherfiCashAssets.LIQUID_ETH_ORACLE, 70_00, BONUS_5_0, AaveV4EtherfiCashCaps.LIQUID_ETH_ADD_CAP);
-    specs[14] = _collateralOnly('liquidBTC', AaveV4EtherfiCashAssets.LIQUID_BTC_UNDERLYING, AaveV4EtherfiCashAssets.LIQUID_BTC_ORACLE, 70_00, BONUS_5_0, AaveV4EtherfiCashCaps.LIQUID_BTC_ADD_CAP);
-    specs[15] = _collateralOnly('liquidUSD', AaveV4EtherfiCashAssets.LIQUID_USD_UNDERLYING, AaveV4EtherfiCashAssets.LIQUID_USD_ORACLE, 80_00, BONUS_2_0, AaveV4EtherfiCashCaps.LIQUID_USD_ADD_CAP);
-    specs[16] = _collateralOnly('liquidRESERVE', AaveV4EtherfiCashAssets.LIQUID_RESERVE_UNDERLYING, AaveV4EtherfiCashAssets.LIQUID_RESERVE_ORACLE, 80_00, BONUS_2_0, AaveV4EtherfiCashCaps.LIQUID_RESERVE_ADD_CAP);
-    specs[17] = _collateralOnly('weEUR', AaveV4EtherfiCashAssets.WEEUR_UNDERLYING, AaveV4EtherfiCashAssets.WEEUR_ORACLE, 80_00, BONUS_2_0, AaveV4EtherfiCashCaps.WEEUR_ADD_CAP);
-    specs[18] = _collateralOnly('liquidRWA', AaveV4EtherfiCashAssets.LIQUID_RWA_UNDERLYING, AaveV4EtherfiCashAssets.LIQUID_RWA_ORACLE, 80_00, BONUS_2_0, AaveV4EtherfiCashCaps.LIQUID_RWA_ADD_CAP);
+    specs[2] = _collateralOnly(
+      'USDT',
+      AaveV4EtherfiCashAssets.USDT_UNDERLYING,
+      AaveV4EtherfiCashAssets.USDT_ORACLE,
+      95_00,
+      BONUS_1_0,
+      AaveV4EtherfiCashCaps.USDT_ADD_CAP
+    );
+    specs[3] = _collateralOnly(
+      'EURC',
+      AaveV4EtherfiCashAssets.EURC_UNDERLYING,
+      AaveV4EtherfiCashAssets.EURC_ORACLE,
+      95_00,
+      BONUS_1_0,
+      AaveV4EtherfiCashCaps.EURC_ADD_CAP
+    );
+    specs[4] = _collateralOnly(
+      'frxUSD',
+      AaveV4EtherfiCashAssets.FRXUSD_UNDERLYING,
+      AaveV4EtherfiCashAssets.FRXUSD_ORACLE,
+      95_00,
+      BONUS_1_0,
+      AaveV4EtherfiCashCaps.FRXUSD_ADD_CAP
+    );
+    specs[5] = _collateralOnly(
+      'weETH',
+      AaveV4EtherfiCashAssets.WEETH_UNDERLYING,
+      AaveV4EtherfiCashAssets.WEETH_ORACLE,
+      75_00,
+      BONUS_3_5,
+      AaveV4EtherfiCashCaps.WEETH_ADD_CAP
+    );
+    specs[6] = _collateralOnly(
+      'eBTC',
+      AaveV4EtherfiCashAssets.EBTC_UNDERLYING,
+      AaveV4EtherfiCashAssets.EBTC_ORACLE,
+      72_00,
+      BONUS_5_0,
+      AaveV4EtherfiCashCaps.EBTC_ADD_CAP
+    );
+    specs[7] = _collateralOnly(
+      'eUSD',
+      AaveV4EtherfiCashAssets.EUSD_UNDERLYING,
+      AaveV4EtherfiCashAssets.EUSD_ORACLE,
+      90_00,
+      BONUS_2_0,
+      AaveV4EtherfiCashCaps.EUSD_ADD_CAP
+    );
+    specs[8] = _collateralOnly(
+      'ETHFI',
+      AaveV4EtherfiCashAssets.ETHFI_UNDERLYING,
+      AaveV4EtherfiCashAssets.ETHFI_ORACLE,
+      30_00,
+      BONUS_5_0,
+      AaveV4EtherfiCashCaps.ETHFI_ADD_CAP
+    );
+    specs[9] = _collateralOnly(
+      'sETHFI',
+      AaveV4EtherfiCashAssets.SETHFI_UNDERLYING,
+      AaveV4EtherfiCashAssets.SETHFI_ORACLE,
+      30_00,
+      BONUS_5_0,
+      AaveV4EtherfiCashCaps.SETHFI_ADD_CAP
+    );
+    specs[10] = _collateralOnly(
+      'OP',
+      AaveV4EtherfiCashAssets.OP_UNDERLYING,
+      AaveV4EtherfiCashAssets.OP_ORACLE,
+      30_00,
+      BONUS_5_0,
+      AaveV4EtherfiCashCaps.OP_ADD_CAP
+    );
+    specs[11] = _collateralOnly(
+      'WHYPE',
+      AaveV4EtherfiCashAssets.WHYPE_UNDERLYING,
+      AaveV4EtherfiCashAssets.WHYPE_ORACLE,
+      65_00,
+      BONUS_4_0,
+      AaveV4EtherfiCashCaps.WHYPE_ADD_CAP
+    );
+    specs[12] = _collateralOnly(
+      'beHYPE',
+      AaveV4EtherfiCashAssets.BEHYPE_UNDERLYING,
+      AaveV4EtherfiCashAssets.BEHYPE_ORACLE,
+      60_00,
+      BONUS_5_0,
+      AaveV4EtherfiCashCaps.BEHYPE_ADD_CAP
+    );
+    specs[13] = _collateralOnly(
+      'liquidETH',
+      AaveV4EtherfiCashAssets.LIQUID_ETH_UNDERLYING,
+      AaveV4EtherfiCashAssets.LIQUID_ETH_ORACLE,
+      70_00,
+      BONUS_5_0,
+      AaveV4EtherfiCashCaps.LIQUID_ETH_ADD_CAP
+    );
+    specs[14] = _collateralOnly(
+      'liquidBTC',
+      AaveV4EtherfiCashAssets.LIQUID_BTC_UNDERLYING,
+      AaveV4EtherfiCashAssets.LIQUID_BTC_ORACLE,
+      70_00,
+      BONUS_5_0,
+      AaveV4EtherfiCashCaps.LIQUID_BTC_ADD_CAP
+    );
+    specs[15] = _collateralOnly(
+      'liquidUSD',
+      AaveV4EtherfiCashAssets.LIQUID_USD_UNDERLYING,
+      AaveV4EtherfiCashAssets.LIQUID_USD_ORACLE,
+      80_00,
+      BONUS_2_0,
+      AaveV4EtherfiCashCaps.LIQUID_USD_ADD_CAP
+    );
+    specs[16] = _collateralOnly(
+      'liquidRESERVE',
+      AaveV4EtherfiCashAssets.LIQUID_RESERVE_UNDERLYING,
+      AaveV4EtherfiCashAssets.LIQUID_RESERVE_ORACLE,
+      80_00,
+      BONUS_2_0,
+      AaveV4EtherfiCashCaps.LIQUID_RESERVE_ADD_CAP
+    );
+    specs[17] = _collateralOnly(
+      'weEUR',
+      AaveV4EtherfiCashAssets.WEEUR_UNDERLYING,
+      AaveV4EtherfiCashAssets.WEEUR_ORACLE,
+      80_00,
+      BONUS_2_0,
+      AaveV4EtherfiCashCaps.WEEUR_ADD_CAP
+    );
+    specs[18] = _collateralOnly(
+      'liquidRWA',
+      AaveV4EtherfiCashAssets.LIQUID_RWA_UNDERLYING,
+      AaveV4EtherfiCashAssets.LIQUID_RWA_ORACLE,
+      80_00,
+      BONUS_2_0,
+      AaveV4EtherfiCashCaps.LIQUID_RWA_ADD_CAP
+    );
   }
 
   function _ir(

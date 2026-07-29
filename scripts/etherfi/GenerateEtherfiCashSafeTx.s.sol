@@ -20,7 +20,6 @@ import {EtherfiCashScriptBase} from 'scripts/etherfi/EtherfiCashScriptBase.s.sol
 ///   PAYLOAD=0x... ACTIVATION=0x... forge script scripts/etherfi/GenerateEtherfiCashSafeTx.s.sol \
 ///     --sig 'generate()' --rpc-url optimism
 contract GenerateEtherfiCashSafeTxScript is EtherfiCashScriptBase {
-
   function generate() external {
     _requireOpMainnet();
 

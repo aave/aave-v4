@@ -7,7 +7,12 @@ import {InputUtils} from 'src/deployments/utils/libraries/InputUtils.sol';
 import {MetadataLogger} from 'src/deployments/utils/MetadataLogger.sol';
 import {AaveV4DeployOrchestration} from 'src/deployments/orchestration/AaveV4DeployOrchestration.sol';
 import {BytecodeHelper} from 'src/deployments/utils/libraries/BytecodeHelper.sol';
-import {AaveV4EtherfiCash, AaveV4EtherfiCashHubs, AaveV4EtherfiCashSpokes, AaveV4EtherfiCashAssets} from 'src/etherfi/AaveV4EtherfiCash.sol';
+import {
+  AaveV4EtherfiCash,
+  AaveV4EtherfiCashHubs,
+  AaveV4EtherfiCashSpokes,
+  AaveV4EtherfiCashAssets
+} from 'src/etherfi/AaveV4EtherfiCash.sol';
 
 /// @title DeployEtherfiCashInstance
 /// @notice Deploys the ether.fi Cash Aave V4 instance on OP Mainnet (whitelabel): one hub
@@ -54,7 +59,7 @@ contract DeployEtherfiCashInstanceScript is AaveV4DeployBatchBaseScript {
         deployer,
         inputs,
         BytecodeHelper.getHubBytecode(),
-        vm.getCode('src/etherfi/EtherFiSpokeInstance.sol:EtherFiSpokeInstance')
+        BytecodeHelper.getEtherFiSpokeBytecode()
       );
     vm.stopBroadcast();
     logger.writeJsonReportMarket(report);
@@ -116,6 +121,26 @@ contract DeployEtherfiCashInstanceScript is AaveV4DeployBatchBaseScript {
       report.spokeInstanceBatchReports[0].report.spokeImplementation,
       AaveV4EtherfiCashSpokes.CASH_SPOKE_IMPLEMENTATION
     );
+
+    // must-not-exist set: deploySignatureGateway/deployPositionManagers are false, and the
+    // TakerPositionManager in particular must never exist on this instance (see the SECURITY
+    // INVARIANT note above deployPositionManagers)
+    _assertReportEntry('signatureGateway', report.gatewaysBatchReport.signatureGateway, address(0));
+    _assertReportEntry(
+      'giverPositionManager',
+      report.positionManagerBatchReport.giverPositionManager,
+      address(0)
+    );
+    _assertReportEntry(
+      'takerPositionManager',
+      report.positionManagerBatchReport.takerPositionManager,
+      address(0)
+    );
+    _assertReportEntry(
+      'configPositionManager',
+      report.positionManagerBatchReport.configPositionManager,
+      address(0)
+    );
   }
 
   function _assertReportEntry(string memory name, address actual, address expected) internal pure {
@@ -159,7 +184,15 @@ contract DeployEtherfiCashInstanceScript is AaveV4DeployBatchBaseScript {
         nativeWrapper: AaveV4EtherfiCashAssets.WETH_UNDERLYING,
         deployNativeTokenGateway: true,
         deploySignatureGateway: false,
-        deployPositionManagers: true,
+        // The stock position managers (Giver/Taker/Config) are deliberately NOT deployed: the
+        // cash-v3 LendGateway is the only position manager that may ever be activated on
+        // CASH_SPOKE. In particular the TakerPositionManager must never exist on this instance:
+        // its borrowOnBehalfOf forwards borrowed funds to the delegated spender, so a
+        // safe-signed credit delegation would move borrow proceeds outside the Cash flow while
+        // the debt sits on the safe — sidestepping the EtherFiSpokeInstance borrow gate's
+        // purpose. See the SECURITY INVARIANT note in EtherFiSpokeInstance and the matching
+        // invariant in cash-v3's LendGateway natspec.
+        deployPositionManagers: false,
         grantRoles: true,
         hubLabels: hubLabels,
         spokeLabels: spokeLabels,

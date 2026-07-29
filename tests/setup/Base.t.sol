@@ -152,6 +152,12 @@ abstract contract Base is BaseHelpers, BatchTestProcedures {
     _initEnvironment();
   }
 
+  /// @dev Bytecode used for every spoke deployment in the test env; virtual so whitelabel
+  /// spoke variants (e.g. EtherFiSpokeInstance) can re-run the full suite against their instance.
+  function _spokeBytecode() internal virtual returns (bytes memory) {
+    return BytecodeHelper.getSpokeBytecode();
+  }
+
   function _deployFixtures(
     uint256 numHubs,
     uint256 numSpokes
@@ -163,7 +169,7 @@ abstract contract Base is BaseHelpers, BatchTestProcedures {
       spokeCount: numSpokes,
       nativeWrapper: address(tokenList.weth),
       hubBytecode: BytecodeHelper.getHubBytecode(),
-      spokeBytecode: BytecodeHelper.getSpokeBytecode(),
+      spokeBytecode: _spokeBytecode(),
       salt: bytes32(vm.randomBytes(32))
     });
     for (uint256 i; i < numHubs; ++i) {

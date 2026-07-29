@@ -20,4 +20,10 @@ library BytecodeHelper {
   function getSpokeBytecode() internal view returns (bytes memory) {
     return vm.getCode('src/spoke/instances/SpokeInstance.sol:SpokeInstance');
   }
+
+  /// @notice Loads the creation bytecode for the EtherFiSpokeInstance contract.
+  /// @return The raw creation bytecode.
+  function getEtherFiSpokeBytecode() internal view returns (bytes memory) {
+    return vm.getCode('src/etherfi/EtherFiSpokeInstance.sol:EtherFiSpokeInstance');
+  }
 }
