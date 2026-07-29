@@ -24,6 +24,11 @@ cd "$(dirname "$0")/../.."
 MODE="${1:-rehearse}"
 RPC="${RPC_OPTIMISM:-https://mainnet.optimism.io}"
 
+# Canonical Aave LiquidationLogic link (see the etherfi section of the Makefile): pinned in
+# committed tooling so every machine builds byte-identical spoke bytecode. Overrides any
+# machine-local .env pin for everything this pipeline compiles.
+export FOUNDRY_LIBRARIES="src/spoke/libraries/LiquidationLogic.sol:LiquidationLogic:0x88dF535473C5adf1f57789734A05E555F7Deb8DB"
+
 log() { printf '\n\033[1m== %s ==\033[0m\n' "$*"; }
 die() { printf 'ERROR: %s\n' "$*" >&2; exit 1; }
 
