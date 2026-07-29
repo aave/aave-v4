@@ -4,7 +4,11 @@
 > simulation run as the launch deployer (CREATE2, reproduce-or-revert). The AaveOracle and Cash
 > Spoke additionally require the deployer to start at nonce 3 with no interleaved transactions.
 > To be confirmed against the deployment report. Spoke implementation: EtherFiSpokeInstance
-> (borrow gated to Cash Safes), linked against LiquidationLogic 0x818E84198224535FAeaEc1b583d3Ff6b812A5AF3.
+> (borrow gated to Cash Safes). LiquidationLogic: the addresses below were simulated with a
+> self-deployed library at 0x818E84198224535FAeaEc1b583d3Ff6b812A5AF3; per review, the deployment
+> will instead link the canonical library 0x88dF535473C5adf1f57789734A05E555F7Deb8DB (via
+> FOUNDRY_LIBRARIES) once it is available on OP Mainnet — the spoke implementation and payload
+> addresses will be re-pinned in the same pass as the pending gate/test changes.
 
 ## Summary
 
