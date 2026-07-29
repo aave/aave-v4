@@ -4,7 +4,12 @@ pragma solidity ^0.8.0;
 import {EtherfiCashScriptBase} from 'scripts/etherfi/EtherfiCashScriptBase.s.sol';
 import {console2} from 'forge-std/console2.sol';
 
-import {AaveV4EtherfiCash, AaveV4EtherfiCashHubs, AaveV4EtherfiCashSpokes, AaveV4EtherfiCashAssets} from 'src/etherfi/AaveV4EtherfiCash.sol';
+import {
+  AaveV4EtherfiCash,
+  AaveV4EtherfiCashHubs,
+  AaveV4EtherfiCashSpokes,
+  AaveV4EtherfiCashAssets
+} from 'src/etherfi/AaveV4EtherfiCash.sol';
 
 interface IERC20Metadata {
   function symbol() external view returns (string memory);
@@ -55,26 +60,54 @@ contract ValidateEtherfiCashLaunchScript is EtherfiCashScriptBase {
     _asset('USDC', AaveV4EtherfiCashAssets.USDC_UNDERLYING, AaveV4EtherfiCashAssets.USDC_ORACLE);
     _asset('USDT', AaveV4EtherfiCashAssets.USDT_UNDERLYING, AaveV4EtherfiCashAssets.USDT_ORACLE);
     _asset('EURC', AaveV4EtherfiCashAssets.EURC_UNDERLYING, AaveV4EtherfiCashAssets.EURC_ORACLE);
-    _asset('frxUSD', AaveV4EtherfiCashAssets.FRXUSD_UNDERLYING, AaveV4EtherfiCashAssets.FRXUSD_ORACLE);
+    _asset(
+      'frxUSD',
+      AaveV4EtherfiCashAssets.FRXUSD_UNDERLYING,
+      AaveV4EtherfiCashAssets.FRXUSD_ORACLE
+    );
     _asset('WETH', AaveV4EtherfiCashAssets.WETH_UNDERLYING, AaveV4EtherfiCashAssets.WETH_ORACLE);
     _asset('weETH', AaveV4EtherfiCashAssets.WEETH_UNDERLYING, AaveV4EtherfiCashAssets.WEETH_ORACLE);
     _asset('eBTC', AaveV4EtherfiCashAssets.EBTC_UNDERLYING, AaveV4EtherfiCashAssets.EBTC_ORACLE);
     _asset('eUSD', AaveV4EtherfiCashAssets.EUSD_UNDERLYING, AaveV4EtherfiCashAssets.EUSD_ORACLE);
     _asset('ETHFI', AaveV4EtherfiCashAssets.ETHFI_UNDERLYING, AaveV4EtherfiCashAssets.ETHFI_ORACLE);
-    _asset('sETHFI', AaveV4EtherfiCashAssets.SETHFI_UNDERLYING, AaveV4EtherfiCashAssets.SETHFI_ORACLE);
+    _asset(
+      'sETHFI',
+      AaveV4EtherfiCashAssets.SETHFI_UNDERLYING,
+      AaveV4EtherfiCashAssets.SETHFI_ORACLE
+    );
     _asset('OP', AaveV4EtherfiCashAssets.OP_UNDERLYING, AaveV4EtherfiCashAssets.OP_ORACLE);
     _asset('WHYPE', AaveV4EtherfiCashAssets.WHYPE_UNDERLYING, AaveV4EtherfiCashAssets.WHYPE_ORACLE);
-    _asset('beHYPE', AaveV4EtherfiCashAssets.BEHYPE_UNDERLYING, AaveV4EtherfiCashAssets.BEHYPE_ORACLE);
-    _asset('liquidETH', AaveV4EtherfiCashAssets.LIQUID_ETH_UNDERLYING, AaveV4EtherfiCashAssets.LIQUID_ETH_ORACLE);
-    _asset('liquidBTC', AaveV4EtherfiCashAssets.LIQUID_BTC_UNDERLYING, AaveV4EtherfiCashAssets.LIQUID_BTC_ORACLE);
-    _asset('liquidUSD', AaveV4EtherfiCashAssets.LIQUID_USD_UNDERLYING, AaveV4EtherfiCashAssets.LIQUID_USD_ORACLE);
+    _asset(
+      'beHYPE',
+      AaveV4EtherfiCashAssets.BEHYPE_UNDERLYING,
+      AaveV4EtherfiCashAssets.BEHYPE_ORACLE
+    );
+    _asset(
+      'liquidETH',
+      AaveV4EtherfiCashAssets.LIQUID_ETH_UNDERLYING,
+      AaveV4EtherfiCashAssets.LIQUID_ETH_ORACLE
+    );
+    _asset(
+      'liquidBTC',
+      AaveV4EtherfiCashAssets.LIQUID_BTC_UNDERLYING,
+      AaveV4EtherfiCashAssets.LIQUID_BTC_ORACLE
+    );
+    _asset(
+      'liquidUSD',
+      AaveV4EtherfiCashAssets.LIQUID_USD_UNDERLYING,
+      AaveV4EtherfiCashAssets.LIQUID_USD_ORACLE
+    );
     _asset(
       'liquidRESERVE',
       AaveV4EtherfiCashAssets.LIQUID_RESERVE_UNDERLYING,
       AaveV4EtherfiCashAssets.LIQUID_RESERVE_ORACLE
     );
     _asset('weEUR', AaveV4EtherfiCashAssets.WEEUR_UNDERLYING, AaveV4EtherfiCashAssets.WEEUR_ORACLE);
-    _asset('liquidRWA', AaveV4EtherfiCashAssets.LIQUID_RWA_UNDERLYING, AaveV4EtherfiCashAssets.LIQUID_RWA_ORACLE);
+    _asset(
+      'liquidRWA',
+      AaveV4EtherfiCashAssets.LIQUID_RWA_UNDERLYING,
+      AaveV4EtherfiCashAssets.LIQUID_RWA_ORACLE
+    );
 
     console2.log('=== result ===');
     console2.log('blockers:', blockers);

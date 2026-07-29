@@ -4,7 +4,11 @@ pragma solidity ^0.8.0;
 import {console2} from 'forge-std/console2.sol';
 
 import {EtherfiCashLaunchPayload} from 'src/etherfi/EtherfiCashLaunchPayload.sol';
-import {AaveV4EtherfiCash, AaveV4EtherfiCashHubs, AaveV4EtherfiCashSpokes} from 'src/etherfi/AaveV4EtherfiCash.sol';
+import {
+  AaveV4EtherfiCash,
+  AaveV4EtherfiCashHubs,
+  AaveV4EtherfiCashSpokes
+} from 'src/etherfi/AaveV4EtherfiCash.sol';
 import {EtherfiCashScriptBase} from 'scripts/etherfi/EtherfiCashScriptBase.s.sol';
 
 /// @title GenerateEtherfiCashLaunchSpec
@@ -76,12 +80,12 @@ contract GenerateEtherfiCashLaunchSpecScript is EtherfiCashScriptBase {
     md = string.concat(md, _addrRow('Hub', AaveV4EtherfiCashHubs.CASH_HUB));
     md = string.concat(md, _addrRow('Hub Configurator', AaveV4EtherfiCash.HUB_CONFIGURATOR));
     md = string.concat(md, _addrRow('Cash Spoke', AaveV4EtherfiCashSpokes.CASH_SPOKE));
+    md = string.concat(md, _addrRow('Spoke Configurator', AaveV4EtherfiCash.SPOKE_CONFIGURATOR));
+    md = string.concat(md, _addrRow('IR Strategy', AaveV4EtherfiCashHubs.CASH_HUB_IR_STRATEGY));
     md = string.concat(
       md,
-      _addrRow('Spoke Configurator', AaveV4EtherfiCash.SPOKE_CONFIGURATOR)
+      _addrRow('Treasury Spoke (fee receiver)', AaveV4EtherfiCashSpokes.TREASURY_SPOKE)
     );
-    md = string.concat(md, _addrRow('IR Strategy', AaveV4EtherfiCashHubs.CASH_HUB_IR_STRATEGY));
-    md = string.concat(md, _addrRow('Treasury Spoke (fee receiver)', AaveV4EtherfiCashSpokes.TREASURY_SPOKE));
     for (uint256 i; i < specs.length; i++) {
       md = string.concat(md, _addrRow(specs[i].symbol, specs[i].underlying));
       md = string.concat(md, _addrRow(string.concat(specs[i].symbol, ' feed'), specs[i].priceFeed));
@@ -139,8 +143,7 @@ contract GenerateEtherfiCashLaunchSpecScript is EtherfiCashScriptBase {
     uint256 frac = value % 100;
     if (frac == 0) return string.concat(vm.toString(whole), '%');
     if (frac % 10 == 0) return string.concat(vm.toString(whole), '.', vm.toString(frac / 10), '%');
-    return
-      string.concat(vm.toString(whole), '.', frac < 10 ? '0' : '', vm.toString(frac), '%');
+    return string.concat(vm.toString(whole), '.', frac < 10 ? '0' : '', vm.toString(frac), '%');
   }
 
   function _addrRow(string memory name, address a) internal view returns (string memory) {
