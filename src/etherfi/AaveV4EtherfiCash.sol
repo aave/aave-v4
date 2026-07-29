@@ -37,7 +37,7 @@ library AaveV4EtherfiCashHubs {
 
 /// @notice Spokes of the ether.fi Cash Aave V4 instance.
 library AaveV4EtherfiCashSpokes {
-  address internal constant CASH_SPOKE = 0x5Cb9831a3afB1c069e3aF0664fb360991f57d8B2; // PREDICTED (nonce 3 + exact sequence; EtherFiSpokeInstance)
+  address internal constant CASH_SPOKE = 0x6eAb1dC9eA3E6557dCE44B52c340a514a5ed5b83; // PREDICTED (nonce 3 + exact sequence; EtherFiSpokeInstance)
   address internal constant TREASURY_SPOKE = 0x7EB4d25F137868662350603A2863F682287b0768; // PREDICTED (fee receiver)
 }
 

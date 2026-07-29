@@ -56,7 +56,7 @@ Operator roles carved out by the payload: HUB_CAPS_OPERATOR_ROLE (201) for updat
 
 | Contract | Address |
 |---|---|
-| Launch payload (phase 1, dormant config) | 0x8f7FC401A8cAE9112c6Cfc622B94cfa2DE54B07D |
+| Launch payload (phase 1, dormant config) | 0x64732774a6B5000999BE63b172f7069f675b66EE |
 | Activation payload (phase 2) | 0x5F64dE77e63E9CDfF87d818FA373c8593b0b20f3 |
 | Owner Safe | 0x082B85ED50F1cd120C597EF860ece712e54CE844 |
 | Operator Safe | 0x23c30c38d73a0D1609ffAAe47aA7d6D1a3e46f03 |
@@ -64,7 +64,7 @@ Operator roles carved out by the payload: HUB_CAPS_OPERATOR_ROLE (201) for updat
 | Config Engine | 0x84210b3087E952Be0f3610fD75f0f045995eAF22 |
 | Hub | 0x66753c4e3fC84f1eD0e3C267C927284E9d90C572 |
 | Hub Configurator | 0xA39bEf2fD611fb9c5a69D63277b4Af97a30F0dbC |
-| Cash Spoke | 0x5Cb9831a3afB1c069e3aF0664fb360991f57d8B2 |
+| Cash Spoke | 0x6eAb1dC9eA3E6557dCE44B52c340a514a5ed5b83 |
 | Spoke Configurator | 0xFEe9E8cCE1c40D3bd9F025437D3A11cA0DAe9f8b |
 | IR Strategy | 0x51d07C362f9c4716F96EbEB63DB985EF9D2aCd7C |
 | Treasury Spoke (fee receiver) | 0x7EB4d25F137868662350603A2863F682287b0768 |
