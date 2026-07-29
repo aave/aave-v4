@@ -126,6 +126,7 @@ contract AddressesProviderRegistrationTest is BaseConfigEngineTest {
     listing.underlying = address(weth);
     listing.tokenization = IAaveV4ConfigEngine.TokenizationSpokeConfig({
       addCap: 1_000,
+      proxyAdminOwner: PROXY_ADMIN_OWNER,
       name: 'Aave WETH',
       symbol: 'aWETH'
     });
@@ -136,7 +137,7 @@ contract AddressesProviderRegistrationTest is BaseConfigEngineTest {
       address(weth),
       'Aave WETH',
       'aWETH',
-      address(this)
+      PROXY_ADMIN_OWNER
     );
 
     engine.executeHubAssetListings(_toAssetListingArray(listing));
@@ -170,6 +171,7 @@ contract AddressesProviderRegistrationTest is BaseConfigEngineTest {
     listing.underlying = address(weth);
     listing.tokenization = IAaveV4ConfigEngine.TokenizationSpokeConfig({
       addCap: 1_000,
+      proxyAdminOwner: PROXY_ADMIN_OWNER,
       name: 'Aave WETH',
       symbol: 'aWETH'
     });
@@ -181,7 +183,7 @@ contract AddressesProviderRegistrationTest is BaseConfigEngineTest {
       address(weth),
       'Aave WETH',
       'aWETH',
-      address(this)
+      PROXY_ADMIN_OWNER
     );
 
     engine.executeHubAssetListings(_toAssetListingArray(listing));

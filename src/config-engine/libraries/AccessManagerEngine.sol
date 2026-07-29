@@ -32,6 +32,8 @@ library AccessManagerEngine {
   }
 
   /// @notice Updates role configuration (admin, guardian, grant delay, label) via AccessManager.
+  /// @dev When labelUpdate is true, the existing label is cleared before relabeling, as required by
+  /// the AccessManagerEnumerable label tracking.
   /// @param updates The role updates to execute.
   function executeRoleUpdates(IAaveV4ConfigEngine.RoleUpdate[] calldata updates) external {
     uint256 length = updates.length;
@@ -47,6 +49,9 @@ library AccessManagerEngine {
         authority.setGrantDelay(updates[i].roleId, updates[i].grantDelay);
       }
       if (bytes(updates[i].label).length > 0) {
+        if (updates[i].labelUpdate) {
+          authority.labelRole(updates[i].roleId, '');
+        }
         authority.labelRole(updates[i].roleId, updates[i].label);
       }
     }
