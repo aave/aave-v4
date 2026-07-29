@@ -4,7 +4,6 @@ pragma solidity ^0.8.0;
 import {Test} from 'forge-std/Test.sol';
 
 import {EtherFiSpokeInstance} from 'src/etherfi/EtherFiSpokeInstance.sol';
-import {AaveV4EtherfiCash} from 'src/etherfi/AaveV4EtherfiCash.sol';
 
 contract MockOracle {
   function decimals() external pure returns (uint8) {
@@ -34,13 +33,13 @@ contract EtherFiSpokeGateTest is Test {
 
     // data provider says yes -> gate passes, parent borrow takes over (Unauthorized: no position manager)
     vm.mockCall(
-      AaveV4EtherfiCash.ETHERFI_DATA_PROVIDER,
+      spoke.ETHERFI_DATA_PROVIDER(),
       abi.encodeWithSignature('isEtherFiSafe(address)', fakeSafe),
       abi.encode(true)
     );
     vm.expectRevert(); // parent's Unauthorized (onlyPositionManager), NOT OnlyEtherFiSafe
     spoke.borrow(0, 1, fakeSafe);
 
-    assertEq(spoke.etherFiDataProvider(), AaveV4EtherfiCash.ETHERFI_DATA_PROVIDER);
+    assertEq(spoke.ETHERFI_DATA_PROVIDER(), 0xDC515Cb479a64552c5A11a57109C314E40A1A778);
   }
 }
