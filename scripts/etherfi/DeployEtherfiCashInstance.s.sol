@@ -31,6 +31,11 @@ import {
 /// configurator domain admin roles (200/400), hub/spoke admin roles, TreasurySpoke ownership,
 /// and proxy admin ownership — everything the launch payload's delegatecall execution needs.
 contract DeployEtherfiCashInstanceScript is AaveV4DeployBatchBaseScript {
+  string internal constant HUB_LABEL = 'CASH_HUB';
+  string internal constant SPOKE_LABEL = 'CASH_SPOKE';
+  /// @dev 19 launch reserves + room for stocks and future listings.
+  uint16 internal constant SPOKE_MAX_RESERVES_LIMIT = 64;
+
   constructor() AaveV4DeployBatchBaseScript('etherfi-cash-op') {}
 
   /// @notice Same flow as {AaveV4DeployBatchBaseScript.run}, with ONE substitution: the spoke
@@ -162,13 +167,13 @@ contract DeployEtherfiCashInstanceScript is AaveV4DeployBatchBaseScript {
     address ownerSafe = AaveV4EtherfiCash.OWNER_SAFE;
 
     string[] memory hubLabels = new string[](1);
-    hubLabels[0] = 'CASH_HUB';
+    hubLabels[0] = HUB_LABEL;
 
     string[] memory spokeLabels = new string[](1);
-    spokeLabels[0] = 'CASH_SPOKE';
+    spokeLabels[0] = SPOKE_LABEL;
 
     uint16[] memory spokeMaxReservesLimits = new uint16[](1);
-    spokeMaxReservesLimits[0] = 64; // 19 launch reserves + room for stocks and future listings
+    spokeMaxReservesLimits[0] = SPOKE_MAX_RESERVES_LIMIT;
 
     return
       InputUtils.FullDeployInputs({

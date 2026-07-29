@@ -1,12 +1,15 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-
 import {console2} from 'forge-std/console2.sol';
 
 import {EtherfiCashLaunchPayload} from 'src/etherfi/EtherfiCashLaunchPayload.sol';
 import {EtherFiSpokeInstance} from 'src/etherfi/EtherFiSpokeInstance.sol';
-import {AaveV4EtherfiCash, AaveV4EtherfiCashHubs, AaveV4EtherfiCashSpokes} from 'src/etherfi/AaveV4EtherfiCash.sol';
+import {
+  AaveV4EtherfiCash,
+  AaveV4EtherfiCashHubs,
+  AaveV4EtherfiCashSpokes
+} from 'src/etherfi/AaveV4EtherfiCash.sol';
 import {EtherfiCashScriptBase} from 'scripts/etherfi/EtherfiCashScriptBase.s.sol';
 import {IHub} from 'src/hub/interfaces/IHub.sol';
 import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
@@ -45,7 +48,9 @@ contract VerifyEtherfiCashLiveScript is EtherfiCashScriptBase {
 
     IHub hub = IHub(AaveV4EtherfiCashHubs.CASH_HUB);
     ISpoke spoke = ISpoke(AaveV4EtherfiCashSpokes.CASH_SPOKE);
-    IAssetInterestRateStrategy irStrategy = IAssetInterestRateStrategy(AaveV4EtherfiCashHubs.CASH_HUB_IR_STRATEGY);
+    IAssetInterestRateStrategy irStrategy = IAssetInterestRateStrategy(
+      AaveV4EtherfiCashHubs.CASH_HUB_IR_STRATEGY
+    );
 
     // the Cash Spoke must run the gated EtherFiSpokeInstance implementation: check the proxy's
     // EIP-1967 implementation slot against the registry, and that the implementation behind the
@@ -81,7 +86,12 @@ contract VerifyEtherfiCashLiveScript is EtherfiCashScriptBase {
       );
       _check(spec.symbol, 'kink', ir.optimalUsageRatio, spec.irData.optimalUsageRatio);
       _check(spec.symbol, 'baseRate', ir.baseDrawnRate, spec.irData.baseDrawnRate);
-      _check(spec.symbol, 'slope1', ir.rateGrowthBeforeOptimal, spec.irData.rateGrowthBeforeOptimal);
+      _check(
+        spec.symbol,
+        'slope1',
+        ir.rateGrowthBeforeOptimal,
+        spec.irData.rateGrowthBeforeOptimal
+      );
       _check(spec.symbol, 'slope2', ir.rateGrowthAfterOptimal, spec.irData.rateGrowthAfterOptimal);
 
       IHub.SpokeConfig memory spokeConfig = hub.getSpokeConfig(assetId, address(spoke));
@@ -107,7 +117,12 @@ contract VerifyEtherfiCashLiveScript is EtherfiCashScriptBase {
     }
 
     ISpoke.LiquidationConfig memory liq = spoke.getLiquidationConfig();
-    _check('spoke', 'targetHealthFactor', liq.targetHealthFactor, expectedPayload.TARGET_HEALTH_FACTOR());
+    _check(
+      'spoke',
+      'targetHealthFactor',
+      liq.targetHealthFactor,
+      expectedPayload.TARGET_HEALTH_FACTOR()
+    );
     _check(
       'spoke',
       'healthFactorForMaxBonus',
