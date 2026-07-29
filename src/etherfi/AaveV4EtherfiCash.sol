@@ -108,7 +108,7 @@ library AaveV4EtherfiCashAssets {
   address internal constant LIQUID_USD_ORACLE = 0x7E916FE60091497c74D4aEd43A7Cf348e40AE38C;
   uint8 internal constant LIQUID_USD_DECIMALS = 6;
 
-  address internal constant LIQUID_RESERVE_UNDERLYING = 0xE5d3854736e0D513aAE2D8D708Ad94d14Fd56A6a;
+  address internal constant LIQUID_RESERVE_UNDERLYING = 0xca5921DF65E2e1b0B98Ae91c0187BA80D4124898;
   address internal constant LIQUID_RESERVE_ORACLE = 0x6D7b3725Faa812FE5e29EB67068882A71228b0CB;
   uint8 internal constant LIQUID_RESERVE_DECIMALS = 18;
 
