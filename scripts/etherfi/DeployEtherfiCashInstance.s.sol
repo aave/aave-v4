@@ -7,7 +7,7 @@ import {InputUtils} from 'src/deployments/utils/libraries/InputUtils.sol';
 import {MetadataLogger} from 'src/deployments/utils/MetadataLogger.sol';
 import {AaveV4DeployOrchestration} from 'src/deployments/orchestration/AaveV4DeployOrchestration.sol';
 import {BytecodeHelper} from 'src/deployments/utils/libraries/BytecodeHelper.sol';
-import {AaveV4EtherfiCash, AaveV4EtherfiCashAssets} from 'src/etherfi/AaveV4EtherfiCash.sol';
+import {AaveV4EtherfiCash, AaveV4EtherfiCashHubs, AaveV4EtherfiCashSpokes, AaveV4EtherfiCashAssets} from 'src/etherfi/AaveV4EtherfiCash.sol';
 
 /// @title DeployEtherfiCashInstance
 /// @notice Deploys the ether.fi Cash Aave V4 instance on OP Mainnet (whitelabel): one hub
@@ -62,6 +62,64 @@ contract DeployEtherfiCashInstanceScript is AaveV4DeployBatchBaseScript {
     logger.logHeader1('batch deployment completed');
     logger.logHeader1('saving logs');
     logger.save({fileName: _outputFileName, withTimestamp: true});
+
+    // after the report is persisted: every deployed address must match the pinned registry,
+    // so a misconfiguration is caught here rather than at payload execution
+    _assertReportMatchesRegistry(report);
+  }
+
+  error ReportMismatch(string name, address actual, address expected);
+
+  /// @dev Reverts if any address in the deployment report differs from the AaveV4EtherfiCash
+  /// registry. Runs after the report JSON is saved so the actual addresses remain inspectable
+  /// on a mismatch.
+  function _assertReportMatchesRegistry(
+    OrchestrationReports.FullDeploymentReport memory report
+  ) internal pure {
+    _assertReportEntry(
+      'accessManager',
+      report.authorityBatchReport.accessManager,
+      AaveV4EtherfiCash.ACCESS_MANAGER
+    );
+    _assertReportEntry(
+      'hubConfigurator',
+      report.configuratorBatchReport.hubConfigurator,
+      AaveV4EtherfiCash.HUB_CONFIGURATOR
+    );
+    _assertReportEntry(
+      'spokeConfigurator',
+      report.configuratorBatchReport.spokeConfigurator,
+      AaveV4EtherfiCash.SPOKE_CONFIGURATOR
+    );
+    _assertReportEntry(
+      'treasurySpoke',
+      report.treasurySpokeBatchReport.treasurySpoke,
+      AaveV4EtherfiCashSpokes.TREASURY_SPOKE
+    );
+    _assertReportEntry(
+      'hub.CASH_HUB',
+      report.hubInstanceBatchReports[0].report.hubProxy,
+      AaveV4EtherfiCashHubs.CASH_HUB
+    );
+    _assertReportEntry(
+      'irStrategy.CASH_HUB',
+      report.hubInstanceBatchReports[0].report.irStrategy,
+      AaveV4EtherfiCashHubs.CASH_HUB_IR_STRATEGY
+    );
+    _assertReportEntry(
+      'spoke.CASH_SPOKE',
+      report.spokeInstanceBatchReports[0].report.spokeProxy,
+      AaveV4EtherfiCashSpokes.CASH_SPOKE
+    );
+    _assertReportEntry(
+      'spokeImplementation.CASH_SPOKE',
+      report.spokeInstanceBatchReports[0].report.spokeImplementation,
+      AaveV4EtherfiCashSpokes.CASH_SPOKE_IMPLEMENTATION
+    );
+  }
+
+  function _assertReportEntry(string memory name, address actual, address expected) internal pure {
+    require(actual == expected, ReportMismatch(name, actual, expected));
   }
 
   function _expectedChainId() internal pure override returns (uint256) {

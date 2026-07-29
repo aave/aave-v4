@@ -5,6 +5,7 @@ pragma solidity ^0.8.0;
 import {console2} from 'forge-std/console2.sol';
 
 import {EtherfiCashLaunchPayload} from 'src/etherfi/EtherfiCashLaunchPayload.sol';
+import {EtherFiSpokeInstance} from 'src/etherfi/EtherFiSpokeInstance.sol';
 import {AaveV4EtherfiCash, AaveV4EtherfiCashHubs, AaveV4EtherfiCashSpokes} from 'src/etherfi/AaveV4EtherfiCash.sol';
 import {EtherfiCashScriptBase} from 'scripts/etherfi/EtherfiCashScriptBase.s.sol';
 import {IHub} from 'src/hub/interfaces/IHub.sol';
@@ -21,6 +22,15 @@ import {ISpokeConfigurator} from 'src/spoke/interfaces/ISpokeConfigurator.sol';
 ///   forge script scripts/etherfi/VerifyEtherfiCashLive.s.sol --rpc-url <optimism|fork>
 /// Reverts with a mismatch count if anything differs. Never broadcasts.
 contract VerifyEtherfiCashLiveScript is EtherfiCashScriptBase {
+  /// @dev EIP-1967 implementation slot (same constant as tests/utils/ProxyHelper.sol).
+  bytes32 internal constant IMPLEMENTATION_SLOT =
+    0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc;
+
+  /// @dev Must equal EtherFiSpokeInstance.ETHERFI_DATA_PROVIDER (solc disallows type-level
+  /// access to that constant from here).
+  address internal constant EXPECTED_ETHERFI_DATA_PROVIDER =
+    0xDC515Cb479a64552c5A11a57109C314E40A1A778;
+
   uint256 internal mismatches;
 
   function verify() external returns (uint256) {
@@ -36,6 +46,25 @@ contract VerifyEtherfiCashLiveScript is EtherfiCashScriptBase {
     IHub hub = IHub(AaveV4EtherfiCashHubs.CASH_HUB);
     ISpoke spoke = ISpoke(AaveV4EtherfiCashSpokes.CASH_SPOKE);
     IAssetInterestRateStrategy irStrategy = IAssetInterestRateStrategy(AaveV4EtherfiCashHubs.CASH_HUB_IR_STRATEGY);
+
+    // the Cash Spoke must run the gated EtherFiSpokeInstance implementation: check the proxy's
+    // EIP-1967 implementation slot against the registry, and that the implementation behind the
+    // proxy reports the expected ether.fi data provider (a stock SpokeInstance would revert here)
+    address spokeImplementation = address(
+      uint160(uint256(vm.load(address(spoke), IMPLEMENTATION_SLOT)))
+    );
+    _check(
+      'spoke',
+      'implementation (EtherFiSpokeInstance)',
+      uint160(spokeImplementation),
+      uint160(AaveV4EtherfiCashSpokes.CASH_SPOKE_IMPLEMENTATION)
+    );
+    _check(
+      'spoke',
+      'ETHERFI_DATA_PROVIDER',
+      uint160(EtherFiSpokeInstance(address(spoke)).ETHERFI_DATA_PROVIDER()),
+      uint160(EXPECTED_ETHERFI_DATA_PROVIDER)
+    );
 
     EtherfiCashLaunchPayload.AssetSpec[] memory specs = expectedPayload.getAssetSpecs();
     console2.log('verifying', specs.length, 'assets against live state');

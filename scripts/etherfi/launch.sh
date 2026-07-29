@@ -6,7 +6,7 @@
 #   account=<keystore> scripts/etherfi/launch.sh broadcast   # the real thing (asks for confirmation)
 #
 # Stages:
-#   1. validate   read-only preflight of every address in EtherfiCashOpMainnet.sol
+#   1. validate   read-only preflight of every address in AaveV4EtherfiCash.sol
 #   2. rehearse   fork test: deploy payload, execute it in the Owner Safe's context
 #                 (delegatecall, real instance, real roles), verify state field by field
 #   3. broadcast  (broadcast mode only) deploy + verify the payload for real, then generate
@@ -33,7 +33,7 @@ forge script scripts/etherfi/ValidateEtherfiCashLaunch.s.sol:ValidateEtherfiCash
   --rpc-url "$RPC" 2>&1 | sed -n '/== Logs ==/,$p' | tee /tmp/etherfi-validate.log
 
 grep -q 'READY: all instance addresses resolve' /tmp/etherfi-validate.log \
-  || die "preflight NOT READY - fill the TBD addresses in src/etherfi/EtherfiCashOpMainnet.sol"
+  || die "preflight NOT READY - fill the TBD addresses in src/etherfi/AaveV4EtherfiCash.sol"
 
 # ---------------------------------------------------------------- stage 2: rehearse
 log "stage 2/3: dress rehearsal on an OP Mainnet fork (deploy + Safe-context execute + verify)"

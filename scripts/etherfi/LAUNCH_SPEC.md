@@ -3,7 +3,8 @@
 > Status: PRE-DEPLOYMENT. All instance and payload addresses below are PREDICTED from a full fork
 > simulation run as the launch deployer (CREATE2, reproduce-or-revert). The AaveOracle and Cash
 > Spoke additionally require the deployer to start at nonce 3 with no interleaved transactions.
-> To be confirmed against the deployment report.
+> To be confirmed against the deployment report. Spoke implementation: EtherFiSpokeInstance
+> (borrow gated to Cash Safes), linked against LiquidationLogic 0x818E84198224535FAeaEc1b583d3Ff6b812A5AF3.
 
 ## Summary
 
@@ -56,15 +57,15 @@ Operator roles carved out by the payload: HUB_CAPS_OPERATOR_ROLE (201) for updat
 
 | Contract | Address |
 |---|---|
-| Launch payload (phase 1, dormant config) | 0x7de5c5B3595F2Cc1b2f4C446773d3597374AbDa4 |
-| Activation payload (phase 2) | 0x5F64dE77e63E9CDfF87d818FA373c8593b0b20f3 |
+| Launch payload (phase 1, dormant config) | 0x2aD084eac1f5783f2d971B02e1063EAF19617BAB |
+| Activation payload (phase 2) | 0x7E30C8Fd5C59c929798911926cFaed02b0Cb5FbB |
 | Owner Safe | 0x082B85ED50F1cd120C597EF860ece712e54CE844 |
 | Operator Safe | 0x23c30c38d73a0D1609ffAAe47aA7d6D1a3e46f03 |
 | AccessManager | 0x188d7173772499FB6375F23FdFd130CE6107286b |
 | Config Engine | 0x84210b3087E952Be0f3610fD75f0f045995eAF22 |
 | Hub | 0x66753c4e3fC84f1eD0e3C267C927284E9d90C572 |
 | Hub Configurator | 0xA39bEf2fD611fb9c5a69D63277b4Af97a30F0dbC |
-| Cash Spoke | 0x6eAb1dC9eA3E6557dCE44B52c340a514a5ed5b83 |
+| Cash Spoke | 0xc5645c9956c088847616012855C786036A280a5C |
 | Spoke Configurator | 0xFEe9E8cCE1c40D3bd9F025437D3A11cA0DAe9f8b |
 | IR Strategy | 0x51d07C362f9c4716F96EbEB63DB985EF9D2aCd7C |
 | Treasury Spoke (fee receiver) | 0x7EB4d25F137868662350603A2863F682287b0768 |
