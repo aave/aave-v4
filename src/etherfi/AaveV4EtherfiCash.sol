@@ -22,6 +22,11 @@ library AaveV4EtherfiCash {
   address internal constant OWNER_SAFE = 0x082B85ED50F1cd120C597EF860ece712e54CE844;
   address internal constant OPERATOR_SAFE = 0x23c30c38d73a0D1609ffAAe47aA7d6D1a3e46f03; // Nonce risk curator
 
+  // ether.fi Cash system — VERIFIED (prod EtherFiDataProvider proxy on OP; isEtherFiSafe()
+  // answered on-chain 2026-07-29). Baked into EtherFiSpokeInstance as a compile-time constant,
+  // gating borrow() to ether.fi Cash Safes.
+  address internal constant ETHERFI_DATA_PROVIDER = 0xDC515Cb479a64552c5A11a57109C314E40A1A778;
+
   // instance — PREDICTED pending deployment
   address internal constant ACCESS_MANAGER = 0x188d7173772499FB6375F23FdFd130CE6107286b;
   address internal constant CONFIG_ENGINE = 0x84210b3087E952Be0f3610fD75f0f045995eAF22; // deployer-independent
@@ -37,7 +42,7 @@ library AaveV4EtherfiCashHubs {
 
 /// @notice Spokes of the ether.fi Cash Aave V4 instance.
 library AaveV4EtherfiCashSpokes {
-  address internal constant CASH_SPOKE = 0x208fAF5F20abb9E23A8E004CC813415C54448D8e; // PREDICTED (nonce 3 + exact sequence)
+  address internal constant CASH_SPOKE = 0x5Cb9831a3afB1c069e3aF0664fb360991f57d8B2; // PREDICTED (nonce 3 + exact sequence; EtherFiSpokeInstance)
   address internal constant TREASURY_SPOKE = 0x7EB4d25F137868662350603A2863F682287b0768; // PREDICTED (fee receiver)
 }
 
