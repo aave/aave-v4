@@ -56,7 +56,7 @@ Operator roles carved out by the payload: HUB_CAPS_OPERATOR_ROLE (201) for updat
 
 | Contract | Address |
 |---|---|
-| Launch payload (phase 1, dormant config) | 0x64732774a6B5000999BE63b172f7069f675b66EE |
+| Launch payload (phase 1, dormant config) | 0x7de5c5B3595F2Cc1b2f4C446773d3597374AbDa4 |
 | Activation payload (phase 2) | 0x5F64dE77e63E9CDfF87d818FA373c8593b0b20f3 |
 | Owner Safe | 0x082B85ED50F1cd120C597EF860ece712e54CE844 |
 | Operator Safe | 0x23c30c38d73a0D1609ffAAe47aA7d6D1a3e46f03 |
@@ -100,7 +100,7 @@ Operator roles carved out by the payload: HUB_CAPS_OPERATOR_ROLE (201) for updat
 | liquidBTC feed | 0xc5b599B15826d50b1f9Ef9dF7a68a14cCb4123b3 |
 | liquidUSD | 0x08c6F91e2B681FaF5e17227F2a44C307b3C1364C |
 | liquidUSD feed | 0x7E916FE60091497c74D4aEd43A7Cf348e40AE38C |
-| liquidRESERVE | 0xE5d3854736e0D513aAE2D8D708Ad94d14Fd56A6a |
+| liquidRESERVE | 0xca5921DF65E2e1b0B98Ae91c0187BA80D4124898 |
 | liquidRESERVE feed | 0x6D7b3725Faa812FE5e29EB67068882A71228b0CB |
 | weEUR | 0xcC476B1a49bcDf5192561e87b6Fb8ea78aa28C13 |
 | weEUR feed | 0x4fdc1B6638f277bc2468Fb910f833678DF119f26 |
