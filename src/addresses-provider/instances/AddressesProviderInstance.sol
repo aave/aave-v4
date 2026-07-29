@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: LicenseRef-BUSL
 pragma solidity 0.8.28;
 
-import {V4AddressesProvider} from 'src/addresses-provider/V4AddressesProvider.sol';
+import {AddressesProvider} from 'src/addresses-provider/AddressesProvider.sol';
 
-/// @title V4AddressesProviderInstance
+/// @title AddressesProviderInstance
 /// @author Aave Labs
-/// @notice Implementation contract for the V4AddressesProvider.
-contract V4AddressesProviderInstance is V4AddressesProvider {
+/// @notice Implementation contract for the AddressesProvider.
+contract AddressesProviderInstance is AddressesProvider {
   uint64 public constant ADDRESSES_PROVIDER_REVISION = 1;
 
   /// @dev Constructor.

@@ -10,11 +10,11 @@ import {
   TransparentUpgradeableProxy,
   ITransparentUpgradeableProxy
 } from 'src/dependencies/openzeppelin/TransparentUpgradeableProxy.sol';
-import {V4AddressesProviderInstance} from 'src/addresses-provider/instances/V4AddressesProviderInstance.sol';
-import {MockV4AddressesProviderInstance} from 'tests/helpers/mocks/MockV4AddressesProviderInstance.sol';
+import {AddressesProviderInstance} from 'src/addresses-provider/instances/AddressesProviderInstance.sol';
+import {MockAddressesProviderInstance} from 'tests/helpers/mocks/MockAddressesProviderInstance.sol';
 import {ProxyHelpers} from 'tests/helpers/commons/ProxyHelpers.sol';
 
-contract V4AddressesProviderUpgradeableTest is Test, ProxyHelpers {
+contract AddressesProviderUpgradeableTest is Test, ProxyHelpers {
   address internal OWNER = makeAddr('OWNER');
   address internal proxyAdminOwner = makeAddr('proxyAdminOwner');
 
@@ -23,7 +23,7 @@ contract V4AddressesProviderUpgradeableTest is Test, ProxyHelpers {
     vm.expectEmit(implAddress);
     emit Initializable.Initialized(type(uint64).max);
 
-    MockV4AddressesProviderInstance impl = new MockV4AddressesProviderInstance(revision);
+    MockAddressesProviderInstance impl = new MockAddressesProviderInstance(revision);
 
     assertEq(address(impl), implAddress);
     assertEq(impl.ADDRESSES_PROVIDER_REVISION(), revision);
@@ -36,7 +36,7 @@ contract V4AddressesProviderUpgradeableTest is Test, ProxyHelpers {
   function test_proxy_constructor_fuzz(uint64 revision) public {
     revision = uint64(bound(revision, 1, type(uint64).max));
 
-    MockV4AddressesProviderInstance impl = new MockV4AddressesProviderInstance(revision);
+    MockAddressesProviderInstance impl = new MockAddressesProviderInstance(revision);
     address proxyAddress = vm.computeCreateAddress(address(this), vm.getNonce(address(this)));
     address proxyAdminAddress = vm.computeCreateAddress(proxyAddress, 1);
 
@@ -63,25 +63,25 @@ contract V4AddressesProviderUpgradeableTest is Test, ProxyHelpers {
 
   function test_proxy_reinitialization_fuzz(uint64 initialRevision) public {
     initialRevision = uint64(bound(initialRevision, 1, type(uint64).max - 1));
-    MockV4AddressesProviderInstance impl = new MockV4AddressesProviderInstance(initialRevision);
+    MockAddressesProviderInstance impl = new MockAddressesProviderInstance(initialRevision);
     ITransparentUpgradeableProxy proxy = ITransparentUpgradeableProxy(_proxify(address(impl)));
 
     uint64 secondRevision = uint64(vm.randomUint(initialRevision + 1, type(uint64).max));
-    MockV4AddressesProviderInstance impl2 = new MockV4AddressesProviderInstance(secondRevision);
+    MockAddressesProviderInstance impl2 = new MockAddressesProviderInstance(secondRevision);
 
     vm.expectEmit(address(proxy));
     emit OwnableUpgradeable.OwnershipTransferred(OWNER, OWNER);
     vm.prank(_getProxyAdminAddress(address(proxy)));
     proxy.upgradeToAndCall(
       address(impl2),
-      abi.encodeCall(MockV4AddressesProviderInstance.initialize, (OWNER))
+      abi.encodeCall(MockAddressesProviderInstance.initialize, (OWNER))
     );
 
     assertEq(Ownable2StepUpgradeable(address(proxy)).owner(), OWNER);
   }
 
   function test_proxy_constructor_revertsWith_InvalidInitialization_ZeroRevision() public {
-    MockV4AddressesProviderInstance impl = new MockV4AddressesProviderInstance(0);
+    MockAddressesProviderInstance impl = new MockAddressesProviderInstance(0);
 
     vm.expectRevert(Initializable.InvalidInitialization.selector);
     _proxify(address(impl));
@@ -92,48 +92,48 @@ contract V4AddressesProviderUpgradeableTest is Test, ProxyHelpers {
   ) public {
     initialRevision = uint64(bound(initialRevision, 1, type(uint64).max));
 
-    MockV4AddressesProviderInstance impl = new MockV4AddressesProviderInstance(initialRevision);
+    MockAddressesProviderInstance impl = new MockAddressesProviderInstance(initialRevision);
     ITransparentUpgradeableProxy proxy = ITransparentUpgradeableProxy(_proxify(address(impl)));
 
     vm.expectRevert(Initializable.InvalidInitialization.selector);
     vm.prank(_getProxyAdminAddress(address(proxy)));
     proxy.upgradeToAndCall(
       address(impl),
-      abi.encodeCall(MockV4AddressesProviderInstance.initialize, (OWNER))
+      abi.encodeCall(MockAddressesProviderInstance.initialize, (OWNER))
     );
 
     uint64 secondRevision = uint64(vm.randomUint(0, initialRevision));
-    MockV4AddressesProviderInstance impl2 = new MockV4AddressesProviderInstance(secondRevision);
+    MockAddressesProviderInstance impl2 = new MockAddressesProviderInstance(secondRevision);
     vm.expectRevert(Initializable.InvalidInitialization.selector);
     vm.prank(_getProxyAdminAddress(address(proxy)));
     proxy.upgradeToAndCall(
       address(impl2),
-      abi.encodeCall(MockV4AddressesProviderInstance.initialize, (OWNER))
+      abi.encodeCall(MockAddressesProviderInstance.initialize, (OWNER))
     );
   }
 
   function test_proxy_constructor_revertsWith_InvalidAddress() public {
-    V4AddressesProviderInstance impl = new V4AddressesProviderInstance();
+    AddressesProviderInstance impl = new AddressesProviderInstance();
     vm.expectRevert(
       abi.encodeWithSelector(OwnableUpgradeable.OwnableInvalidOwner.selector, address(0))
     );
     new TransparentUpgradeableProxy(
       address(impl),
       proxyAdminOwner,
-      abi.encodeCall(V4AddressesProviderInstance.initialize, (address(0)))
+      abi.encodeCall(AddressesProviderInstance.initialize, (address(0)))
     );
   }
 
   function test_proxy_reinitialization_revertsWith_CallerNotProxyAdmin() public {
-    V4AddressesProviderInstance impl = new V4AddressesProviderInstance();
+    AddressesProviderInstance impl = new AddressesProviderInstance();
     ITransparentUpgradeableProxy proxy = ITransparentUpgradeableProxy(_proxify(address(impl)));
 
-    V4AddressesProviderInstance impl2 = new V4AddressesProviderInstance();
+    AddressesProviderInstance impl2 = new AddressesProviderInstance();
     vm.expectRevert();
     vm.prank(makeAddr('user'));
     proxy.upgradeToAndCall(
       address(impl2),
-      abi.encodeCall(V4AddressesProviderInstance.initialize, (OWNER))
+      abi.encodeCall(AddressesProviderInstance.initialize, (OWNER))
     );
   }
 
@@ -143,7 +143,7 @@ contract V4AddressesProviderUpgradeableTest is Test, ProxyHelpers {
         new TransparentUpgradeableProxy(
           impl,
           proxyAdminOwner,
-          abi.encodeCall(V4AddressesProviderInstance.initialize, (OWNER))
+          abi.encodeCall(AddressesProviderInstance.initialize, (OWNER))
         )
       );
   }

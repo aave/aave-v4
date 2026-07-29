@@ -5,7 +5,7 @@ import {Test} from 'forge-std/Test.sol';
 
 import {EngineUtils} from 'src/config-engine/libraries/EngineUtils.sol';
 import {IAaveV4ConfigEngine} from 'src/config-engine/interfaces/IAaveV4ConfigEngine.sol';
-import {IV4AddressesProvider} from 'src/addresses-provider/interfaces/IV4AddressesProvider.sol';
+import {IAddressesProvider} from 'src/addresses-provider/interfaces/IAddressesProvider.sol';
 
 /// @dev Wrapper to call EngineUtils library functions externally.
 contract EngineUtilsHarness {
@@ -30,7 +30,7 @@ contract EngineUtilsTest is Test {
   ) internal pure returns (IAaveV4ConfigEngine.AddressesProviderRegistration memory) {
     return
       IAaveV4ConfigEngine.AddressesProviderRegistration({
-        addressesProvider: IV4AddressesProvider(addressesProvider),
+        addressesProvider: IAddressesProvider(addressesProvider),
         register: register,
         name: name
       });

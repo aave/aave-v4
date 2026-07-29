@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {AaveV4AddressesProviderDeployProcedure} from 'src/deployments/procedures/deploy/addresses-provider/AaveV4AddressesProviderDeployProcedure.sol';
+import {AddressesProviderDeployProcedure} from 'src/deployments/procedures/deploy/addresses-provider/AddressesProviderDeployProcedure.sol';
 
-contract AaveV4AddressesProviderDeployProcedureWrapper is AaveV4AddressesProviderDeployProcedure {
+contract AddressesProviderDeployProcedureWrapper is AddressesProviderDeployProcedure {
   bool public IS_TEST = true;
 
   function deployAddressesProvider(

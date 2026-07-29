@@ -2,16 +2,16 @@
 pragma solidity ^0.8.0;
 
 import {BatchReports} from 'src/deployments/libraries/BatchReports.sol';
-import {AaveV4AddressesProviderDeployProcedure} from 'src/deployments/procedures/deploy/addresses-provider/AaveV4AddressesProviderDeployProcedure.sol';
+import {AddressesProviderDeployProcedure} from 'src/deployments/procedures/deploy/addresses-provider/AddressesProviderDeployProcedure.sol';
 
-/// @title AaveV4AddressesProviderBatch
+/// @title AddressesProviderBatch
 /// @author Aave Labs
-/// @notice Deploys the V4AddressesProvider contract, producing a batch report.
-contract AaveV4AddressesProviderBatch is AaveV4AddressesProviderDeployProcedure {
+/// @notice Deploys the AddressesProvider contract, producing a batch report.
+contract AddressesProviderBatch is AddressesProviderDeployProcedure {
   BatchReports.AddressesProviderBatchReport internal _report;
 
   /// @dev Constructor.
-  /// @param owner_ The owner of the V4AddressesProvider proxy admin and initializer.
+  /// @param owner_ The owner of the AddressesProvider proxy admin and initializer.
   /// @param salt_ The CREATE2 salt for deterministic deployment.
   constructor(address owner_, bytes32 salt_) {
     (

@@ -28,7 +28,7 @@ import {Create2TestHelper} from 'tests/utils/Create2TestHelper.sol';
 import {AaveV4Payload} from 'src/config-engine/AaveV4Payload.sol';
 import {AaveV4ConfigEngine} from 'src/config-engine/AaveV4ConfigEngine.sol';
 import {IAaveV4ConfigEngine} from 'src/config-engine/interfaces/IAaveV4ConfigEngine.sol';
-import {IV4AddressesProvider} from 'src/addresses-provider/interfaces/IV4AddressesProvider.sol';
+import {IAddressesProvider} from 'src/addresses-provider/interfaces/IAddressesProvider.sol';
 import {EngineFlags} from 'src/config-engine/libraries/EngineFlags.sol';
 import {AccessManagerEngine} from 'src/config-engine/libraries/AccessManagerEngine.sol';
 import {HubEngine} from 'src/config-engine/libraries/HubEngine.sol';
@@ -339,12 +339,12 @@ abstract contract BaseConfigEngineTest is Test, Create2TestHelper {
           symbol: ''
         }),
         hubRegistration: IAaveV4ConfigEngine.AddressesProviderRegistration({
-          addressesProvider: IV4AddressesProvider(address(0)),
+          addressesProvider: IAddressesProvider(address(0)),
           register: false,
           name: ''
         }),
         tokenizationSpokeRegistration: IAaveV4ConfigEngine.AddressesProviderRegistration({
-          addressesProvider: IV4AddressesProvider(address(0)),
+          addressesProvider: IAddressesProvider(address(0)),
           register: false,
           name: ''
         })
@@ -480,7 +480,7 @@ abstract contract BaseConfigEngineTest is Test, Create2TestHelper {
         config: _defaultReserveConfig(),
         dynamicConfig: _defaultDynamicReserveConfig(),
         spokeRegistration: IAaveV4ConfigEngine.AddressesProviderRegistration({
-          addressesProvider: IV4AddressesProvider(address(0)),
+          addressesProvider: IAddressesProvider(address(0)),
           register: false,
           name: ''
         })

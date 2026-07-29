@@ -4,23 +4,23 @@ pragma solidity ^0.8.0;
 import {Test} from 'forge-std/Test.sol';
 import {OwnableUpgradeable} from 'src/dependencies/openzeppelin-upgradeable/OwnableUpgradeable.sol';
 import {TransparentUpgradeableProxy} from 'src/dependencies/openzeppelin/TransparentUpgradeableProxy.sol';
-import {V4AddressesProvider} from 'src/addresses-provider/V4AddressesProvider.sol';
-import {V4AddressesProviderInstance} from 'src/addresses-provider/instances/V4AddressesProviderInstance.sol';
-import {IV4AddressesProvider} from 'src/addresses-provider/interfaces/IV4AddressesProvider.sol';
+import {AddressesProvider} from 'src/addresses-provider/AddressesProvider.sol';
+import {AddressesProviderInstance} from 'src/addresses-provider/instances/AddressesProviderInstance.sol';
+import {IAddressesProvider} from 'src/addresses-provider/interfaces/IAddressesProvider.sol';
 
-contract V4AddressesProviderTest is Test {
+contract AddressesProviderTest is Test {
   address internal OWNER = makeAddr('OWNER');
   address internal PROXY_ADMIN_OWNER = makeAddr('PROXY_ADMIN_OWNER');
 
-  V4AddressesProvider internal provider;
+  AddressesProvider internal provider;
 
   function setUp() public {
-    provider = V4AddressesProvider(
+    provider = AddressesProvider(
       address(
         new TransparentUpgradeableProxy(
-          address(new V4AddressesProviderInstance()),
+          address(new AddressesProviderInstance()),
           PROXY_ADMIN_OWNER,
-          abi.encodeCall(V4AddressesProviderInstance.initialize, (OWNER))
+          abi.encodeCall(AddressesProviderInstance.initialize, (OWNER))
         )
       )
     );
@@ -73,26 +73,20 @@ contract V4AddressesProviderTest is Test {
     );
   }
 
-  function test_setAddress() public {
+  function test_setEntry() public {
     bytes32 id = _id('CONFIG_ENGINE', 'PERIPHERY');
     address configEngine = makeAddr('CONFIG_ENGINE');
 
     vm.expectEmit(address(provider));
-    emit IV4AddressesProvider.AddressSet(
-      id,
-      'CONFIG_ENGINE',
-      'PERIPHERY',
-      address(0),
-      configEngine
-    );
+    emit IAddressesProvider.SetEntry(id, 'CONFIG_ENGINE', 'PERIPHERY', address(0), configEngine);
 
     vm.prank(OWNER);
-    provider.setAddress({name: 'CONFIG_ENGINE', tag: 'PERIPHERY', newAddress: configEngine});
+    provider.setEntry({name: 'CONFIG_ENGINE', tag: 'PERIPHERY', newAddress: configEngine});
 
     assertEq(provider.getAddress(id), configEngine);
     assertEq(provider.getAddress({name: 'CONFIG_ENGINE', tag: 'PERIPHERY'}), configEngine);
 
-    IV4AddressesProvider.AddressEntry memory entry = provider.getAddressEntry(id);
+    IAddressesProvider.Entry memory entry = provider.getEntry(id);
     assertEq(entry.addr, configEngine);
     assertEq(entry.name, 'CONFIG_ENGINE');
     assertEq(entry.tag, 'PERIPHERY');
@@ -110,35 +104,35 @@ contract V4AddressesProviderTest is Test {
     assertEq(addressIds[0], id);
   }
 
-  function test_setAddress_remove() public {
+  function test_setEntry_remove() public {
     bytes32 id = _id('CONFIG_ENGINE', 'PERIPHERY');
     address configEngine = makeAddr('CONFIG_ENGINE');
 
     vm.startPrank(OWNER);
-    provider.setAddress({name: 'CONFIG_ENGINE', tag: 'PERIPHERY', newAddress: configEngine});
-    provider.setAddress({name: 'CONFIG_ENGINE', tag: 'PERIPHERY', newAddress: address(0)});
+    provider.setEntry({name: 'CONFIG_ENGINE', tag: 'PERIPHERY', newAddress: configEngine});
+    provider.setEntry({name: 'CONFIG_ENGINE', tag: 'PERIPHERY', newAddress: address(0)});
     vm.stopPrank();
 
     assertEq(provider.getAddress(id), address(0));
-    assertEq(provider.getAddressEntry(id).tag, '');
-    assertEq(provider.getAddressEntry(id).name, '');
+    assertEq(provider.getEntry(id).tag, '');
+    assertEq(provider.getEntry(id).name, '');
     assertEq(provider.getIds('PERIPHERY').length, 0);
     assertEq(provider.getTags().length, 0);
     assertEq(provider.getAddressIds(configEngine).length, 0);
   }
 
-  function test_setAddress_removeThenSet() public {
+  function test_setEntry_removeThenSet() public {
     bytes32 id = _id('CONFIG_ENGINE', 'PERIPHERY');
     address newConfigEngine = makeAddr('NEW_CONFIG_ENGINE');
 
     vm.startPrank(OWNER);
-    provider.setAddress({
+    provider.setEntry({
       name: 'CONFIG_ENGINE',
       tag: 'PERIPHERY',
       newAddress: makeAddr('CONFIG_ENGINE')
     });
-    provider.setAddress({name: 'CONFIG_ENGINE', tag: 'PERIPHERY', newAddress: address(0)});
-    provider.setAddress({name: 'CONFIG_ENGINE', tag: 'PERIPHERY', newAddress: newConfigEngine});
+    provider.setEntry({name: 'CONFIG_ENGINE', tag: 'PERIPHERY', newAddress: address(0)});
+    provider.setEntry({name: 'CONFIG_ENGINE', tag: 'PERIPHERY', newAddress: newConfigEngine});
     vm.stopPrank();
 
     assertEq(provider.getAddress(id), newConfigEngine);
@@ -148,26 +142,26 @@ contract V4AddressesProviderTest is Test {
     assertEq(ids[0], id);
   }
 
-  function test_setAddress_revertsWith_AddressAlreadySet() public {
+  function test_setEntry_revertsWith_AddressAlreadySet() public {
     bytes32 id = _id('CONFIG_ENGINE', 'PERIPHERY');
     address configEngine = makeAddr('CONFIG_ENGINE');
 
     vm.startPrank(OWNER);
-    provider.setAddress({name: 'CONFIG_ENGINE', tag: 'PERIPHERY', newAddress: configEngine});
+    provider.setEntry({name: 'CONFIG_ENGINE', tag: 'PERIPHERY', newAddress: configEngine});
 
-    vm.expectRevert(abi.encodeWithSelector(IV4AddressesProvider.AddressAlreadySet.selector, id));
-    provider.setAddress({
+    vm.expectRevert(abi.encodeWithSelector(IAddressesProvider.AddressAlreadySet.selector, id));
+    provider.setEntry({
       name: 'CONFIG_ENGINE',
       tag: 'PERIPHERY',
       newAddress: makeAddr('NEW_CONFIG_ENGINE')
     });
 
-    vm.expectRevert(abi.encodeWithSelector(IV4AddressesProvider.AddressAlreadySet.selector, id));
-    provider.setAddress({name: 'CONFIG_ENGINE', tag: 'PERIPHERY', newAddress: configEngine});
+    vm.expectRevert(abi.encodeWithSelector(IAddressesProvider.AddressAlreadySet.selector, id));
+    provider.setEntry({name: 'CONFIG_ENGINE', tag: 'PERIPHERY', newAddress: configEngine});
     vm.stopPrank();
   }
 
-  function test_setAddress_noIdCollision() public {
+  function test_setEntry_noIdCollision() public {
     // With abi.encode, ('A_B', 'C') and ('A', 'B_C') resolve to distinct identifiers.
     bytes32 firstId = _id('A_B', 'C');
     bytes32 secondId = _id('A', 'B_C');
@@ -179,22 +173,22 @@ contract V4AddressesProviderTest is Test {
     address second = makeAddr('SECOND');
 
     vm.startPrank(OWNER);
-    provider.setAddress({name: 'A_B', tag: 'C', newAddress: first});
-    provider.setAddress({name: 'A', tag: 'B_C', newAddress: second});
+    provider.setEntry({name: 'A_B', tag: 'C', newAddress: first});
+    provider.setEntry({name: 'A', tag: 'B_C', newAddress: second});
     vm.stopPrank();
 
     assertEq(provider.getAddress({name: 'A_B', tag: 'C'}), first);
     assertEq(provider.getAddress({name: 'A', tag: 'B_C'}), second);
   }
 
-  function test_setAddress_sameAddressUnderMultipleIds() public {
+  function test_setEntry_sameAddressUnderMultipleIds() public {
     address configEngine = makeAddr('CONFIG_ENGINE');
 
     vm.startPrank(OWNER);
-    provider.setAddress({name: 'CONFIG_ENGINE', tag: 'PERIPHERY', newAddress: configEngine});
-    provider.setAddress({name: 'ENGINE', tag: 'PERIPHERY', newAddress: configEngine});
-    provider.setAddress({name: 'CONFIG_ENGINE', tag: 'ENGINE', newAddress: configEngine});
-    provider.setAddress({name: 'V3_CONFIG_ENGINE', tag: 'V3_PERIPHERY', newAddress: configEngine});
+    provider.setEntry({name: 'CONFIG_ENGINE', tag: 'PERIPHERY', newAddress: configEngine});
+    provider.setEntry({name: 'ENGINE', tag: 'PERIPHERY', newAddress: configEngine});
+    provider.setEntry({name: 'CONFIG_ENGINE', tag: 'ENGINE', newAddress: configEngine});
+    provider.setEntry({name: 'V3_CONFIG_ENGINE', tag: 'V3_PERIPHERY', newAddress: configEngine});
     vm.stopPrank();
 
     assertEq(provider.getAddress({name: 'CONFIG_ENGINE', tag: 'PERIPHERY'}), configEngine);
@@ -222,7 +216,7 @@ contract V4AddressesProviderTest is Test {
     assertEq(addressIds[2], _id('CONFIG_ENGINE', 'ENGINE'));
     assertEq(addressIds[3], _id('V3_CONFIG_ENGINE', 'V3_PERIPHERY'));
 
-    IV4AddressesProvider.AddressEntry[] memory entries = provider.getAddressEntries(configEngine);
+    IAddressesProvider.Entry[] memory entries = provider.getEntries(configEngine);
     assertEq(entries.length, 4);
     assertEq(entries[0].name, 'CONFIG_ENGINE');
     assertEq(entries[0].tag, 'PERIPHERY');
@@ -232,7 +226,7 @@ contract V4AddressesProviderTest is Test {
 
     // removing one entry does not affect the other entries of the same address
     vm.prank(OWNER);
-    provider.setAddress({name: 'ENGINE', tag: 'PERIPHERY', newAddress: address(0)});
+    provider.setEntry({name: 'ENGINE', tag: 'PERIPHERY', newAddress: address(0)});
 
     assertEq(provider.getAddress({name: 'ENGINE', tag: 'PERIPHERY'}), address(0));
     assertEq(provider.getAddress({name: 'CONFIG_ENGINE', tag: 'PERIPHERY'}), configEngine);
@@ -266,52 +260,52 @@ contract V4AddressesProviderTest is Test {
     assertEq(treasurySpokes.length, 1);
     assertEq(treasurySpokes[0], sharedSpoke);
 
-    IV4AddressesProvider.AddressEntry[] memory entries = provider.getAddressEntries(sharedSpoke);
+    IAddressesProvider.Entry[] memory entries = provider.getEntries(sharedSpoke);
     assertEq(entries.length, 3);
     assertEq(entries[0].tag, 'CANONICAL_SPOKE');
     assertEq(entries[1].tag, 'TOKENIZATION_SPOKE');
     assertEq(entries[2].tag, 'TREASURY_SPOKE');
   }
 
-  function test_setAddress_remove_revertsWith_AddressNotSet() public {
+  function test_setEntry_remove_revertsWith_AddressNotSet() public {
     bytes32 id = _id('CONFIG_ENGINE', 'PERIPHERY');
 
     vm.startPrank(OWNER);
-    vm.expectRevert(abi.encodeWithSelector(IV4AddressesProvider.AddressNotSet.selector, id));
-    provider.setAddress({name: 'CONFIG_ENGINE', tag: 'PERIPHERY', newAddress: address(0)});
+    vm.expectRevert(abi.encodeWithSelector(IAddressesProvider.AddressNotSet.selector, id));
+    provider.setEntry({name: 'CONFIG_ENGINE', tag: 'PERIPHERY', newAddress: address(0)});
 
-    provider.setAddress({
+    provider.setEntry({
       name: 'CONFIG_ENGINE',
       tag: 'PERIPHERY',
       newAddress: makeAddr('CONFIG_ENGINE')
     });
-    provider.setAddress({name: 'CONFIG_ENGINE', tag: 'PERIPHERY', newAddress: address(0)});
+    provider.setEntry({name: 'CONFIG_ENGINE', tag: 'PERIPHERY', newAddress: address(0)});
 
-    vm.expectRevert(abi.encodeWithSelector(IV4AddressesProvider.AddressNotSet.selector, id));
-    provider.setAddress({name: 'CONFIG_ENGINE', tag: 'PERIPHERY', newAddress: address(0)});
+    vm.expectRevert(abi.encodeWithSelector(IAddressesProvider.AddressNotSet.selector, id));
+    provider.setEntry({name: 'CONFIG_ENGINE', tag: 'PERIPHERY', newAddress: address(0)});
     vm.stopPrank();
   }
 
-  function test_setAddress_revertsWith_InvalidName() public {
-    vm.expectRevert(IV4AddressesProvider.InvalidName.selector);
+  function test_setEntry_revertsWith_InvalidName() public {
+    vm.expectRevert(IAddressesProvider.InvalidName.selector);
     vm.prank(OWNER);
-    provider.setAddress({name: '', tag: 'PERIPHERY', newAddress: makeAddr('CONFIG_ENGINE')});
+    provider.setEntry({name: '', tag: 'PERIPHERY', newAddress: makeAddr('CONFIG_ENGINE')});
   }
 
-  function test_setAddress_revertsWith_InvalidTag() public {
-    vm.expectRevert(IV4AddressesProvider.InvalidTag.selector);
+  function test_setEntry_revertsWith_InvalidTag() public {
+    vm.expectRevert(IAddressesProvider.InvalidTag.selector);
     vm.prank(OWNER);
-    provider.setAddress({name: 'CONFIG_ENGINE', tag: '', newAddress: makeAddr('CONFIG_ENGINE')});
+    provider.setEntry({name: 'CONFIG_ENGINE', tag: '', newAddress: makeAddr('CONFIG_ENGINE')});
   }
 
-  function test_setAddress_revertsWith_OwnableUnauthorizedAccount() public {
+  function test_setEntry_revertsWith_OwnableUnauthorizedAccount() public {
     address caller = makeAddr('caller');
 
     vm.expectRevert(
       abi.encodeWithSelector(OwnableUpgradeable.OwnableUnauthorizedAccount.selector, caller)
     );
     vm.prank(caller);
-    provider.setAddress({
+    provider.setEntry({
       name: 'CONFIG_ENGINE',
       tag: 'PERIPHERY',
       newAddress: makeAddr('CONFIG_ENGINE')
@@ -325,7 +319,7 @@ contract V4AddressesProviderTest is Test {
 
     vm.startPrank(OWNER);
     vm.expectEmit(address(provider));
-    emit IV4AddressesProvider.AddressSet(
+    emit IAddressesProvider.SetEntry(
       _id('CORE', 'CANONICAL_HUB'),
       'CORE',
       'CANONICAL_HUB',
@@ -342,9 +336,7 @@ contract V4AddressesProviderTest is Test {
     assertEq(provider.getCanonicalHub('PRIME'), primeHub);
     assertEq(provider.getAddress(_id('CORE', 'CANONICAL_HUB')), coreHub);
 
-    IV4AddressesProvider.AddressEntry memory entry = provider.getAddressEntry(
-      _id('CORE', 'CANONICAL_HUB')
-    );
+    IAddressesProvider.Entry memory entry = provider.getEntry(_id('CORE', 'CANONICAL_HUB'));
     assertEq(entry.name, 'CORE');
     assertEq(entry.tag, 'CANONICAL_HUB');
 
@@ -371,7 +363,7 @@ contract V4AddressesProviderTest is Test {
     provider.setCanonicalHub('CORE', address(0));
 
     vm.expectEmit(address(provider));
-    emit IV4AddressesProvider.AddressSet(
+    emit IAddressesProvider.SetEntry(
       _id('CORE', 'CANONICAL_HUB'),
       'CORE',
       'CANONICAL_HUB',
@@ -391,7 +383,7 @@ contract V4AddressesProviderTest is Test {
 
     vm.expectRevert(
       abi.encodeWithSelector(
-        IV4AddressesProvider.AddressAlreadySet.selector,
+        IAddressesProvider.AddressAlreadySet.selector,
         _id('CORE', 'CANONICAL_HUB')
       )
     );
@@ -416,7 +408,7 @@ contract V4AddressesProviderTest is Test {
   function test_setCanonicalHub_remove_revertsWith_AddressNotSet() public {
     vm.expectRevert(
       abi.encodeWithSelector(
-        IV4AddressesProvider.AddressNotSet.selector,
+        IAddressesProvider.AddressNotSet.selector,
         _id('CORE', 'CANONICAL_HUB')
       )
     );
@@ -425,7 +417,7 @@ contract V4AddressesProviderTest is Test {
   }
 
   function test_setCanonicalHub_revertsWith_InvalidName() public {
-    vm.expectRevert(IV4AddressesProvider.InvalidName.selector);
+    vm.expectRevert(IAddressesProvider.InvalidName.selector);
     vm.prank(OWNER);
     provider.setCanonicalHub('', makeAddr('CORE_HUB'));
   }
@@ -461,7 +453,7 @@ contract V4AddressesProviderTest is Test {
 
     vm.startPrank(OWNER);
     vm.expectEmit(address(provider));
-    emit IV4AddressesProvider.AddressSet(
+    emit IAddressesProvider.SetEntry(
       _id('MAIN', 'CANONICAL_SPOKE'),
       'MAIN',
       'CANONICAL_SPOKE',
@@ -551,7 +543,7 @@ contract V4AddressesProviderTest is Test {
 
     vm.expectRevert(
       abi.encodeWithSelector(
-        IV4AddressesProvider.AddressAlreadySet.selector,
+        IAddressesProvider.AddressAlreadySet.selector,
         _id('MAIN', 'CANONICAL_SPOKE')
       )
     );
@@ -594,7 +586,7 @@ contract V4AddressesProviderTest is Test {
   function test_setSpoke_remove_revertsWith_AddressNotSet() public {
     vm.expectRevert(
       abi.encodeWithSelector(
-        IV4AddressesProvider.AddressNotSet.selector,
+        IAddressesProvider.AddressNotSet.selector,
         _id('MAIN', 'CANONICAL_SPOKE')
       )
     );
@@ -605,13 +597,13 @@ contract V4AddressesProviderTest is Test {
   function test_setSpoke_revertsWith_InvalidName() public {
     vm.startPrank(OWNER);
 
-    vm.expectRevert(IV4AddressesProvider.InvalidName.selector);
+    vm.expectRevert(IAddressesProvider.InvalidName.selector);
     provider.setCanonicalSpoke('', makeAddr('MAIN_SPOKE'));
 
-    vm.expectRevert(IV4AddressesProvider.InvalidName.selector);
+    vm.expectRevert(IAddressesProvider.InvalidName.selector);
     provider.setTokenizationSpoke('', makeAddr('CORE_WETH_TOKENIZATION_SPOKE'));
 
-    vm.expectRevert(IV4AddressesProvider.InvalidName.selector);
+    vm.expectRevert(IAddressesProvider.InvalidName.selector);
     provider.setTreasurySpoke('', makeAddr('TREASURY_SPOKE'));
 
     vm.stopPrank();
@@ -803,7 +795,7 @@ contract V4AddressesProviderTest is Test {
     assertEq(firstTwo[0], _id('CORE', 'CANONICAL_HUB'));
     assertEq(firstTwo[1], _id('MAIN', 'CANONICAL_SPOKE'));
 
-    IV4AddressesProvider.AddressEntry[] memory entries = provider.getAddressEntries(shared, 1, 3);
+    IAddressesProvider.Entry[] memory entries = provider.getEntries(shared, 1, 3);
     assertEq(entries.length, 2);
     assertEq(entries[0].tag, 'CANONICAL_SPOKE');
     assertEq(entries[1].tag, 'TREASURY_SPOKE');

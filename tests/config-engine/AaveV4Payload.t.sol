@@ -670,7 +670,7 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
         liquidationFee: 10_00
       }),
       spokeRegistration: IAaveV4ConfigEngine.AddressesProviderRegistration({
-        addressesProvider: IV4AddressesProvider(address(0)),
+        addressesProvider: IAddressesProvider(address(0)),
         register: false,
         name: ''
       })

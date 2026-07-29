@@ -634,7 +634,7 @@ contract SpokeEngineTest is BaseConfigEngineTest {
         liquidationFee: 2_00
       }),
       spokeRegistration: IAaveV4ConfigEngine.AddressesProviderRegistration({
-        addressesProvider: IV4AddressesProvider(address(0)),
+        addressesProvider: IAddressesProvider(address(0)),
         register: false,
         name: ''
       })
@@ -932,7 +932,7 @@ contract SpokeEngineTest is BaseConfigEngineTest {
       config: _defaultReserveConfig(),
       dynamicConfig: _defaultDynamicReserveConfig(),
       spokeRegistration: IAaveV4ConfigEngine.AddressesProviderRegistration({
-        addressesProvider: IV4AddressesProvider(address(0)),
+        addressesProvider: IAddressesProvider(address(0)),
         register: false,
         name: ''
       })
@@ -947,7 +947,7 @@ contract SpokeEngineTest is BaseConfigEngineTest {
       config: _defaultReserveConfig(),
       dynamicConfig: _defaultDynamicReserveConfig(),
       spokeRegistration: IAaveV4ConfigEngine.AddressesProviderRegistration({
-        addressesProvider: IV4AddressesProvider(address(0)),
+        addressesProvider: IAddressesProvider(address(0)),
         register: false,
         name: ''
       })

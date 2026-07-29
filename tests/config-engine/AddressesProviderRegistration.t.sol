@@ -4,13 +4,13 @@ pragma solidity ^0.8.0;
 import 'tests/config-engine/BaseConfigEngine.t.sol';
 
 import {TransparentUpgradeableProxy} from 'src/dependencies/openzeppelin/TransparentUpgradeableProxy.sol';
-import {V4AddressesProviderInstance} from 'src/addresses-provider/instances/V4AddressesProviderInstance.sol';
+import {AddressesProviderInstance} from 'src/addresses-provider/instances/AddressesProviderInstance.sol';
 
-/// @notice Tests the optional V4AddressesProvider registration during Hub asset and Spoke reserve
+/// @notice Tests the optional AddressesProvider registration during Hub asset and Spoke reserve
 /// listings. The environment is intentionally left unseeded so the first listed asset/reserve has
 /// id 0, which is the gate for registering a newly configured Hub/Spoke.
 contract AddressesProviderRegistrationTest is BaseConfigEngineTest {
-  IV4AddressesProvider internal provider;
+  IAddressesProvider internal provider;
 
   function setUp() public override {
     super.setUp();
@@ -19,7 +19,7 @@ contract AddressesProviderRegistrationTest is BaseConfigEngineTest {
   }
 
   function _registration(
-    IV4AddressesProvider addressesProvider,
+    IAddressesProvider addressesProvider,
     string memory name
   ) internal pure returns (IAaveV4ConfigEngine.AddressesProviderRegistration memory) {
     return
@@ -30,14 +30,14 @@ contract AddressesProviderRegistrationTest is BaseConfigEngineTest {
       });
   }
 
-  function _deployAddressesProvider(address owner) internal returns (IV4AddressesProvider) {
+  function _deployAddressesProvider(address owner) internal returns (IAddressesProvider) {
     return
-      IV4AddressesProvider(
+      IAddressesProvider(
         address(
           new TransparentUpgradeableProxy(
-            address(new V4AddressesProviderInstance()),
+            address(new AddressesProviderInstance()),
             ADMIN,
-            abi.encodeCall(V4AddressesProviderInstance.initialize, (owner))
+            abi.encodeCall(AddressesProviderInstance.initialize, (owner))
           )
         )
       );
@@ -73,7 +73,7 @@ contract AddressesProviderRegistrationTest is BaseConfigEngineTest {
   function test_executeHubAssetListings_registerHub_revertsWhenNoProvider() public {
     IAaveV4ConfigEngine.AssetListing memory listing = _defaultAssetListing();
     listing.underlying = address(weth);
-    listing.hubRegistration = _registration(IV4AddressesProvider(address(0)), 'CORE');
+    listing.hubRegistration = _registration(IAddressesProvider(address(0)), 'CORE');
 
     vm.expectRevert(HubEngine.InvalidAddressesProviderRegistration.selector);
     engine.executeHubAssetListings(_toAssetListingArray(listing));
@@ -112,7 +112,7 @@ contract AddressesProviderRegistrationTest is BaseConfigEngineTest {
 
     vm.expectRevert(
       abi.encodeWithSelector(
-        IV4AddressesProvider.AddressAlreadySet.selector,
+        IAddressesProvider.AddressAlreadySet.selector,
         provider.getId('CORE', provider.CANONICAL_HUB_TAG())
       )
     );
@@ -232,7 +232,7 @@ contract AddressesProviderRegistrationTest is BaseConfigEngineTest {
     IAaveV4ConfigEngine.ReserveListing memory listing = _defaultReserveListing();
     listing.underlying = address(weth);
     listing.priceSource = _deployMockPriceFeed(spoke1(), tokenList[TOKEN_WETH].priceFeed);
-    listing.spokeRegistration = _registration(IV4AddressesProvider(address(0)), 'MAIN');
+    listing.spokeRegistration = _registration(IAddressesProvider(address(0)), 'MAIN');
 
     vm.expectRevert(SpokeEngine.InvalidAddressesProviderRegistration.selector);
     engine.executeSpokeReserveListings(_toReserveListingArray(listing));

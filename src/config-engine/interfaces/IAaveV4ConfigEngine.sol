@@ -6,7 +6,7 @@ import {ISpokeConfigurator} from 'src/spoke/interfaces/ISpokeConfigurator.sol';
 import {IHub} from 'src/hub/interfaces/IHub.sol';
 import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 import {IAssetInterestRateStrategy} from 'src/hub/interfaces/IAssetInterestRateStrategy.sol';
-import {IV4AddressesProvider} from 'src/addresses-provider/interfaces/IV4AddressesProvider.sol';
+import {IAddressesProvider} from 'src/addresses-provider/interfaces/IAddressesProvider.sol';
 
 /// @title IAaveV4ConfigEngine
 /// @author Aave Labs
@@ -25,14 +25,14 @@ interface IAaveV4ConfigEngine {
     string symbol;
   }
 
-  /// @notice Optional registration of a listed Hub or Spoke on the V4AddressesProvider.
+  /// @notice Optional registration of a listed Hub or Spoke on the AddressesProvider.
   /// @dev Left unset (the default), `register` is false and the registration is skipped.
   /// @dev All fields must be set when `register` is true, and left unset when false; reverts otherwise.
-  /// @dev addressesProvider The V4AddressesProvider to register the entry on.
+  /// @dev addressesProvider The AddressesProvider to register the entry on.
   /// @dev register Whether to register the entry on the addressesProvider.
   /// @dev name The name to register the entry under.
   struct AddressesProviderRegistration {
-    IV4AddressesProvider addressesProvider;
+    IAddressesProvider addressesProvider;
     bool register;
     string name;
   }
@@ -46,10 +46,10 @@ interface IAaveV4ConfigEngine {
   /// @dev irStrategy The address of the interest rate strategy contract.
   /// @dev irData The interest rate data to apply to the given asset.
   /// @dev tokenization The tokenization configuration for the asset.
-  /// @dev hubRegistration Optional registration of the Hub on the V4AddressesProvider; only allowed
+  /// @dev hubRegistration Optional registration of the Hub on the AddressesProvider; only allowed
   /// when the listed asset is the Hub's first (asset id 0), reverts otherwise.
   /// @dev tokenizationSpokeRegistration Optional registration of the deployed TokenizationSpoke on the
-  /// V4AddressesProvider; only allowed when a TokenizationSpoke is deployed for this listing.
+  /// AddressesProvider; only allowed when a TokenizationSpoke is deployed for this listing.
   struct AssetListing {
     IHubConfigurator hubConfigurator;
     address hub;
@@ -185,7 +185,7 @@ interface IAaveV4ConfigEngine {
   /// @dev priceSource The address of the price source.
   /// @dev config The configuration of the reserve.
   /// @dev dynamicConfig The dynamic configuration of the reserve.
-  /// @dev spokeRegistration Optional registration of the Spoke on the V4AddressesProvider; only allowed
+  /// @dev spokeRegistration Optional registration of the Spoke on the AddressesProvider; only allowed
   /// when the listed reserve is the Spoke's first (reserve id 0), reverts otherwise.
   struct ReserveListing {
     ISpokeConfigurator spokeConfigurator;

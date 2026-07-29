@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {V4AddressesProvider} from 'src/addresses-provider/V4AddressesProvider.sol';
+import {AddressesProvider} from 'src/addresses-provider/AddressesProvider.sol';
 
-contract MockV4AddressesProviderInstance is V4AddressesProvider {
+contract MockAddressesProviderInstance is AddressesProvider {
   bool public constant IS_TEST = true;
 
   uint64 public immutable ADDRESSES_PROVIDER_REVISION;
@@ -18,7 +18,7 @@ contract MockV4AddressesProviderInstance is V4AddressesProvider {
     _disableInitializers();
   }
 
-  /// @inheritdoc V4AddressesProvider
+  /// @inheritdoc AddressesProvider
   function initialize(address owner) external override reinitializer(ADDRESSES_PROVIDER_REVISION) {
     __Ownable_init(owner);
     __Ownable2Step_init();
