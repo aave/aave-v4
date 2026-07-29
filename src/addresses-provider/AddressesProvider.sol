@@ -254,10 +254,6 @@ abstract contract AddressesProvider is
     return _idToEntry[_getId({name: name, tag: tag})].addr;
   }
 
-  function _getId(string memory name, string memory tag) internal pure returns (bytes32) {
-    return keccak256(abi.encode(name, tag));
-  }
-
   function _toAddresses(bytes32[] memory ids) internal view returns (address[] memory) {
     address[] memory addresses = new address[](ids.length);
     for (uint256 i = 0; i < ids.length; i++) {
@@ -272,5 +268,9 @@ abstract contract AddressesProvider is
       entries[i] = _idToEntry[ids[i]];
     }
     return entries;
+  }
+
+  function _getId(string memory name, string memory tag) internal pure returns (bytes32) {
+    return keccak256(abi.encode(name, tag));
   }
 }

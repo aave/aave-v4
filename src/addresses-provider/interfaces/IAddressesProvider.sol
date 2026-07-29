@@ -251,13 +251,6 @@ interface IAddressesProvider {
   /// @return The list of treasury Spoke addresses in the slice.
   function getTreasurySpokes(uint256 start, uint256 end) external view returns (address[] memory);
 
-  /// @notice Returns the identifier of the entry associated with a name and tag.
-  /// @dev The identifier is the hash of the ABI-encoded name and tag.
-  /// @param name The name of the entry.
-  /// @param tag The tag grouping the entry.
-  /// @return The identifier of the entry.
-  function getId(string calldata name, string calldata tag) external pure returns (bytes32);
-
   /// @notice Returns the tag grouping all canonical Hubs.
   function CANONICAL_HUB_TAG() external view returns (string memory);
 
@@ -269,4 +262,11 @@ interface IAddressesProvider {
 
   /// @notice Returns the tag grouping all treasury Spokes.
   function TREASURY_SPOKE_TAG() external view returns (string memory);
+
+  /// @notice Returns the identifier of the entry associated with a name and tag.
+  /// @dev The identifier is the hash of the ABI-encoded name and tag.
+  /// @param name The name of the entry.
+  /// @param tag The tag grouping the entry.
+  /// @return The identifier of the entry.
+  function getId(string calldata name, string calldata tag) external pure returns (bytes32);
 }
