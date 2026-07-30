@@ -27,6 +27,12 @@ library AaveV4EtherfiCash {
   address internal constant CONFIG_ENGINE = 0x84210b3087E952Be0f3610fD75f0f045995eAF22; // deployer-independent
   address internal constant HUB_CONFIGURATOR = 0xA39bEf2fD611fb9c5a69D63277b4Af97a30F0dbC;
   address internal constant SPOKE_CONFIGURATOR = 0xFEe9E8cCE1c40D3bd9F025437D3A11cA0DAe9f8b;
+
+  // canonical Aave LiquidationLogic (same address as Ethereum mainnet; deployed on OP by the
+  // Aave/OP team — per review, the spoke links against this instead of a self-deployed copy).
+  // The etherfi make targets pin FOUNDRY_LIBRARIES to this value; the preflight validator
+  // blocks deployment until it has code on OP.
+  address internal constant LIQUIDATION_LOGIC = 0x88dF535473C5adf1f57789734A05E555F7Deb8DB;
 }
 
 /// @notice Hubs of the ether.fi Cash Aave V4 instance.
@@ -37,8 +43,8 @@ library AaveV4EtherfiCashHubs {
 
 /// @notice Spokes of the ether.fi Cash Aave V4 instance.
 library AaveV4EtherfiCashSpokes {
-  address internal constant CASH_SPOKE = 0x6eAb1dC9eA3E6557dCE44B52c340a514a5ed5b83; // PREDICTED (nonce 3 + exact sequence; EtherFiSpokeInstance)
-  address internal constant CASH_SPOKE_IMPLEMENTATION = 0x5826a76f3c484a5008A57Fd3904E07163889B813; // PREDICTED (nonce 3 + exact sequence; EtherFiSpokeInstance)
+  address internal constant CASH_SPOKE = 0xdffcC3536D932eb51Df51a7F5FA407c4270d5308; // PREDICTED (nonce 3 + exact sequence; EtherFiSpokeInstance, canonical-lib link)
+  address internal constant CASH_SPOKE_IMPLEMENTATION = 0xA1f75D801633a1941cae6670352d627884dC3b68; // PREDICTED (canonical-lib link)
   address internal constant TREASURY_SPOKE = 0x7EB4d25F137868662350603A2863F682287b0768; // PREDICTED (fee receiver)
 }
 

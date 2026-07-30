@@ -43,6 +43,7 @@ contract ValidateEtherfiCashLaunchScript is EtherfiCashScriptBase {
     _requireOpMainnet();
 
     console2.log('=== instance contracts ===');
+    _instance('LIQUIDATION_LOGIC (canonical)', AaveV4EtherfiCash.LIQUIDATION_LOGIC);
     _instance('ACCESS_MANAGER', AaveV4EtherfiCash.ACCESS_MANAGER);
     _instance('CONFIG_ENGINE', AaveV4EtherfiCash.CONFIG_ENGINE);
     _instance('HUB', AaveV4EtherfiCashHubs.CASH_HUB);

@@ -46,9 +46,19 @@ deploy-contracts :;
 	$(if ${dry},, --broadcast --verify) \
 
 # ether.fi Cash Aave V4 launch (OP Mainnet, whitelabel - Safe-administered)
-# Deploy the instance itself (hub/spoke/etc., admins = Owner Safe). Requires deploy-precompile first.
+#
+# The spoke links against the CANONICAL Aave LiquidationLogic (same address as Ethereum
+# mainnet, deployed on OP by the Aave/OP team). The pin lives HERE, in committed tooling,
+# instead of the machine-local .env the precompile script manages — every machine builds
+# byte-identical spoke bytecode, which is what makes the predicted addresses reproducible.
+# deploy-precompile is NOT part of the etherfi flow; etherfi-validate gates on the canonical
+# library having code on OP.
+ETHERFI_FOUNDRY_LIBRARIES = src/spoke/libraries/LiquidationLogic.sol:LiquidationLogic:0x88dF535473C5adf1f57789734A05E555F7Deb8DB
+
+# Deploy the instance itself (hub/spoke/etc., admins = Owner Safe).
 # `make etherfi-deploy-instance account=<keystore>` (set dry=1 to simulate)
 etherfi-deploy-instance :;
+	FOUNDRY_LIBRARIES=${ETHERFI_FOUNDRY_LIBRARIES} \
 	forge script scripts/etherfi/DeployEtherfiCashInstance.s.sol:DeployEtherfiCashInstanceScript \
 	--rpc-url optimism --account ${account} --slow \
 	$(if ${dry},, --broadcast --verify) \
