@@ -36,6 +36,9 @@ contract DeployEtherfiCashInstanceScript is AaveV4DeployBatchBaseScript {
   /// @dev 19 launch reserves + room for stocks and future listings.
   uint16 internal constant SPOKE_MAX_RESERVES_LIMIT = 64;
 
+  /// @dev Thrown when a deployment report entry differs from the expected address.
+  error ReportMismatch(string name, address actual, address expected);
+
   constructor() AaveV4DeployBatchBaseScript('etherfi-cash-op') {}
 
   /// @notice Same flow as {AaveV4DeployBatchBaseScript.run}, with ONE substitution: the spoke
@@ -77,8 +80,6 @@ contract DeployEtherfiCashInstanceScript is AaveV4DeployBatchBaseScript {
     // so a misconfiguration is caught here rather than at payload execution
     _assertReportMatchesRegistry(report);
   }
-
-  error ReportMismatch(string name, address actual, address expected);
 
   /// @dev Reverts if any address in the deployment report differs from the AaveV4EtherfiCash
   /// registry. Runs after the report JSON is saved so the actual addresses remain inspectable
