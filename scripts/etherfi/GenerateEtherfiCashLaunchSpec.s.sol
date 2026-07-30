@@ -86,6 +86,13 @@ contract GenerateEtherfiCashLaunchSpecScript is EtherfiCashScriptBase {
       md,
       _addrRow('Treasury Spoke (fee receiver)', AaveV4EtherfiCashSpokes.TREASURY_SPOKE)
     );
+    md = string.concat(
+      md,
+      _addrRow(
+        'LiquidationLogic (canonical, pre-deployed on OP)',
+        AaveV4EtherfiCash.LIQUIDATION_LOGIC
+      )
+    );
     for (uint256 i; i < specs.length; i++) {
       md = string.concat(md, _addrRow(specs[i].symbol, specs[i].underlying));
       md = string.concat(md, _addrRow(string.concat(specs[i].symbol, ' feed'), specs[i].priceFeed));

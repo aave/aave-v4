@@ -48,12 +48,33 @@ deploy-contracts :;
 # ether.fi Cash Aave V4 launch (OP Mainnet, whitelabel - Safe-administered)
 #
 # The spoke links against the CANONICAL Aave LiquidationLogic (same address as Ethereum
-# mainnet, deployed on OP by the Aave/OP team). The pin lives HERE, in committed tooling,
+# mainnet and Avalanche), pre-deployed on OP 2026-07-30 via
+# `make etherfi-predeploy-liquidationlogic` (below; idempotent — no-ops now that code
+# exists) and source-verified on OP Etherscan. The pin lives HERE, in committed tooling,
 # instead of the machine-local .env the precompile script manages — every machine builds
 # byte-identical spoke bytecode, which is what makes the predicted addresses reproducible.
-# deploy-precompile is NOT part of the etherfi flow; etherfi-validate gates on the canonical
-# library having code on OP.
+# deploy-precompile is NOT part of the etherfi flow; etherfi-validate gates on the
+# canonical library having code on OP.
 ETHERFI_FOUNDRY_LIBRARIES = src/spoke/libraries/LiquidationLogic.sol:LiquidationLogic:0x88dF535473C5adf1f57789734A05E555F7Deb8DB
+ETHERFI_LIQUIDATION_LOGIC = 0x88dF535473C5adf1f57789734A05E555F7Deb8DB
+
+# Step 0: pre-deploy the canonical LiquidationLogic on OP at the SAME address as Ethereum
+# mainnet (Safe Singleton Factory + canonical salt; init code reproduced from this repo's
+# source, so the address assertion proves byte-identical code). Broadcast from ANY funded
+# account EXCEPT the launch deployer — the script enforces this so the deployer stays at
+# nonce 3 for the instance deployment.
+# `make etherfi-predeploy-liquidationlogic account=<keystore>` (set dry=1 to simulate)
+etherfi-predeploy-liquidationlogic :;
+	forge script scripts/etherfi/PredeployLiquidationLogic.s.sol:PredeployLiquidationLogicScript \
+	--rpc-url optimism --account ${account} --slow \
+	$(if ${dry},, --broadcast) \
+
+# Verify the pre-deployed canonical LiquidationLogic source on OP Etherscan
+# (requires ETHERSCAN_API_KEY_OPTIMISM)
+# `make etherfi-verify-liquidationlogic`
+etherfi-verify-liquidationlogic :;
+	forge verify-contract ${ETHERFI_LIQUIDATION_LOGIC} \
+	src/spoke/libraries/LiquidationLogic.sol:LiquidationLogic --chain optimism --watch
 
 # Deploy the instance itself (hub/spoke/etc., admins = Owner Safe).
 # `make etherfi-deploy-instance account=<keystore>` (set dry=1 to simulate)

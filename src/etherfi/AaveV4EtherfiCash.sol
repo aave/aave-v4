@@ -28,11 +28,19 @@ library AaveV4EtherfiCash {
   address internal constant HUB_CONFIGURATOR = 0xA39bEf2fD611fb9c5a69D63277b4Af97a30F0dbC;
   address internal constant SPOKE_CONFIGURATOR = 0xFEe9E8cCE1c40D3bd9F025437D3A11cA0DAe9f8b;
 
-  // canonical Aave LiquidationLogic (same address as Ethereum mainnet; deployed on OP by the
-  // Aave/OP team — per review, the spoke links against this instead of a self-deployed copy).
-  // The etherfi make targets pin FOUNDRY_LIBRARIES to this value; the preflight validator
-  // blocks deployment until it has code on OP.
+  // canonical Aave LiquidationLogic (same address as Ethereum mainnet and Avalanche; per
+  // review, the spoke links against this instead of a self-deployed copy). Pre-deployed on
+  // OP 2026-07-30 via `make etherfi-predeploy-liquidationlogic` (Safe Singleton Factory +
+  // the canonical salt reproduce the address, which proves the code is byte-identical to
+  // the Ethereum mainnet library) and source-verified on OP Etherscan. The etherfi make
+  // targets pin FOUNDRY_LIBRARIES to this value; the preflight validator checks it has
+  // code on OP.
   address internal constant LIQUIDATION_LOGIC = 0x88dF535473C5adf1f57789734A05E555F7Deb8DB;
+
+  // launch deployer EOA — must act from nonce 3 with no interleaved transactions (the
+  // AaveOracle and Cash Spoke pins depend on it); every other launch transaction
+  // (LiquidationLogic pre-deploy, config engine) must come from a different account
+  address internal constant LAUNCH_DEPLOYER = 0xf8a86ea1Ac39EC529814c377Bd484387D395421e;
 }
 
 /// @notice Hubs of the ether.fi Cash Aave V4 instance.
