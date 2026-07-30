@@ -1,0 +1,33 @@
+scripts/deploy/AaveV4DeployTokenizationSpoke.s.sol
+  s_4a7481846e155d::t_01ca7e21dd0458 132,135-137,140,143-145,148,151-153
+  s_4a7481846e155d::t_ac84756040a798 162
+  s_4a7481846e155d::t_19e3eebaec0a9f 88,90-92,98,100,105
+tests/deployments/fork/GlobalDollarTokenizationSpokesActivation.t.sol
+  s_4a7481846e155d::t_fb0cb2c711debb 1-32,37-39,42,45-64,70-169,175-219
+  s_4a7481846e155d::t_7aa65bbe9592ff 35-36,40-41,43-44,65-69,170-174
+  s_4a7481846e155d::t_51686fea1ebb49 33-34
+tests/scripts/AaveV4DeployGlobalDollarTokenizationSpokes.t.sol
+  s_4a7481846e155d::t_8a98793ed14338 1-15,20-46,52-107,124-132,136-139
+  s_4a7481846e155d::t_7aa65bbe9592ff 16-19,47-51,108-123,133-135
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.16",
+  "base_commit_sha": "1ee6cdafd0615ba6ebafe04c8449edf7d67e353d",
+  "prompts": {},
+  "humans": {
+    "h_0f977de3f043fc": {
+      "author": "Alexandru Niculae <43644109+avniculae@users.noreply.github.com>"
+    }
+  },
+  "sessions": {
+    "s_4a7481846e155d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "ec9089b4-1ab8-4297-a582-2d48da2e8b44",
+        "model": "claude-opus-5"
+      },
+      "human_author": "Alexandru Niculae <43644109+avniculae@users.noreply.github.com>"
+    }
+  }
+}
