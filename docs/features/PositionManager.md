@@ -109,7 +109,7 @@ These operations do not move funds. They adjust how the Spoke treats a user's po
 
 Permissions are granted per `(Spoke, delegator, delegatee)` triple using a bitmap (`ConfigPermissionsMap`). Each of the three config operations can be delegated independently:
 
-- `setCanUpdateUsingAsCollateralPermission`
+- `setCanSetUsingAsCollateralPermission`
 - `setCanUpdateUserRiskPremiumPermission`
 - `setCanUpdateUserDynamicConfigPermission`
 
