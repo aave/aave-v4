@@ -19,7 +19,7 @@ A unified liquidity layer and modular architecture that enhances capital efficie
 - [Reinvestment Model](./docs/features/ReinvestmentModule.md)
 - [Siloed Borrowing](./docs/features/SiloedBorrowing.md)
 - [Isolation Mode](./docs/features/IsolationMode.md)
-- [Effeciency Mode](./docs/features/EfficiencyMode.md)
+- [Efficiency Mode](./docs/features/EfficiencyMode.md)
 - [Dynamic Configuration](./docs/features/DynamicConfiguration.md)
 - [Position Manager](./docs/features/PositionManager.md)
 - [Tokenization Spoke](./docs/features/TokenizationSpoke.md)
