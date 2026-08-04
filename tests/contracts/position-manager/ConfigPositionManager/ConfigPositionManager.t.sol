@@ -609,24 +609,26 @@ contract ConfigPositionManagerTest is ConfigPositionManagerBaseTest {
     vm.prank(alice);
     positionManager.setCanUpdateUserDynamicConfigPermission(address(spoke1), bob, true);
 
-    vm.expectEmit(address(spoke1));
-    emit ISpoke.RefreshAllUserDynamicConfig(alice);
+    vm.recordLogs();
     vm.expectEmit(address(positionManager));
     emit IConfigPositionManager.UpdateUserDynamicConfigOnBehalfOf(address(spoke1), bob, alice);
     vm.prank(bob);
     positionManager.updateUserDynamicConfigOnBehalfOf(address(spoke1), alice);
+
+    _assertDynamicConfigRefreshEventsNotEmitted();
   }
 
   function test_updateUserDynamicConfigOnBehalfOf_withGlobalPermission() public {
     vm.prank(alice);
     positionManager.setGlobalPermission(address(spoke1), bob, true);
 
-    vm.expectEmit(address(spoke1));
-    emit ISpoke.RefreshAllUserDynamicConfig(alice);
+    vm.recordLogs();
     vm.expectEmit(address(positionManager));
     emit IConfigPositionManager.UpdateUserDynamicConfigOnBehalfOf(address(spoke1), bob, alice);
     vm.prank(bob);
     positionManager.updateUserDynamicConfigOnBehalfOf(address(spoke1), alice);
+
+    _assertDynamicConfigRefreshEventsNotEmitted();
   }
 
   function test_updateUserDynamicConfigOnBehalfOf_revertsWith_CallerNotAllowed() public {

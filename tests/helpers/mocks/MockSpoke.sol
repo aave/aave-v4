@@ -57,7 +57,6 @@ contract MockSpoke is Spoke, Test {
 
     uint256 newRiskPremium = _processUserAccountData({user: onBehalfOf, refreshConfig: true})
       .riskPremium;
-    emit RefreshAllUserDynamicConfig(onBehalfOf);
     _notifyRiskPremiumUpdate(onBehalfOf, newRiskPremium);
 
     emit Borrow(reserveId, msg.sender, onBehalfOf, drawnShares, amount);

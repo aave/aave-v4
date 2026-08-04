@@ -687,7 +687,6 @@ abstract contract Spoke is
     address user
   ) internal returns (UserAccountData memory) {
     UserAccountData memory accountData = _processUserAccountData(user, true);
-    emit RefreshAllUserDynamicConfig(user);
     require(
       accountData.healthFactor >= HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
       HealthFactorBelowThreshold()
@@ -715,6 +714,7 @@ abstract contract Spoke is
     );
     bool borrowing;
     bool collateral;
+    bool dynamicConfigUpdated;
     while (true) {
       (reserveId, borrowing, collateral) = positionStatus.next(reserveId);
       if (reserveId == PositionStatusMap.NOT_FOUND) break;
@@ -723,14 +723,19 @@ abstract contract Spoke is
       Reserve storage reserve = _reserves[reserveId];
 
       uint256 assetPrice = IAaveOracle(ORACLE).getReservePrice(reserveId);
-      uint256 assetDecimals = reserve.decimals;
 
       if (collateral) {
-        uint256 collateralFactor = _dynamicConfig[reserveId][
-          refreshConfig
-            ? (userPosition.dynamicConfigKey = reserve.dynamicConfigKey)
-            : userPosition.dynamicConfigKey
-        ].collateralFactor;
+        if (refreshConfig) {
+          if (userPosition.dynamicConfigKey != reserve.dynamicConfigKey) {
+            userPosition.dynamicConfigKey = reserve.dynamicConfigKey;
+            if (!dynamicConfigUpdated) {
+              dynamicConfigUpdated = true;
+              emit RefreshAllUserDynamicConfig(user);
+            }
+          }
+        }
+        uint256 collateralFactor = _dynamicConfig[reserveId][userPosition.dynamicConfigKey]
+          .collateralFactor;
         if (collateralFactor > 0) {
           uint256 suppliedShares = userPosition.suppliedShares;
           if (suppliedShares > 0) {
@@ -738,7 +743,7 @@ abstract contract Spoke is
             uint256 userCollateralValue = reserve
               .hub
               .previewRemoveByShares(reserve.assetId, suppliedShares)
-              .toValue({decimals: assetDecimals, price: assetPrice});
+              .toValue({decimals: reserve.decimals, price: assetPrice});
             accountData.totalCollateralValue += userCollateralValue;
             collateralInfo.add(
               accountData.activeCollateralCount,
@@ -759,7 +764,7 @@ abstract contract Spoke is
         uint256 debtRay = debtComponents.drawnShares * debtComponents.drawnIndex +
           debtComponents.premiumDebtRay;
         accountData.totalDebtValueRay += debtRay.toValue({
-          decimals: assetDecimals,
+          decimals: reserve.decimals,
           price: assetPrice
         });
         accountData.borrowCount = accountData.borrowCount.uncheckedAdd(1);
@@ -813,7 +818,12 @@ abstract contract Spoke is
   }
 
   function _refreshDynamicConfig(address user, uint256 reserveId) internal {
-    _userPositions[user][reserveId].dynamicConfigKey = _reserves[reserveId].dynamicConfigKey;
+    uint32 dynamicConfigKey = _reserves[reserveId].dynamicConfigKey;
+    UserPosition storage userPosition = _userPositions[user][reserveId];
+    if (userPosition.dynamicConfigKey == dynamicConfigKey) {
+      return;
+    }
+    userPosition.dynamicConfigKey = dynamicConfigKey;
     emit RefreshSingleUserDynamicConfig(user, reserveId);
   }
 

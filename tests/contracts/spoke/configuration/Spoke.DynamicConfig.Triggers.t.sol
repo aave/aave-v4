@@ -305,6 +305,11 @@ contract SpokeDynamicConfigTriggersTest is Base {
       amount: 1e18,
       onBehalfOf: alice
     });
+    _addDynamicReserveConfig(
+      spoke1,
+      _wethReserveId(spoke1),
+      _getLatestDynamicReserveConfig(spoke1, _wethReserveId(spoke1))
+    );
 
     // when enabling, only the relevant asset is refreshed
     vm.expectEmit(address(spoke1));
@@ -318,14 +323,45 @@ contract SpokeDynamicConfigTriggersTest is Base {
     assertEq(userConfig[_wethReserveId(spoke1)], spokeConfig[_wethReserveId(spoke1)]);
     assertNotEq(abi.encode(userConfig), abi.encode(spokeConfig));
 
-    // when disabling all configs are refreshed
-    vm.expectEmit(address(spoke1));
-    emit ISpoke.RefreshAllUserDynamicConfig(alice);
+    DynamicConfigEntry[] memory beforeDisableConfig = _getUserDynConfigKeys(spoke1, alice);
+
+    // when disabling without stale enabled collateral, no dynamic config refresh is emitted
+    vm.recordLogs();
     vm.prank(alice);
     spoke1.setUsingAsCollateral(_usdxReserveId(spoke1), false, alice);
 
-    assertNotEq(_getUserDynConfigKeys(spoke1, alice), configs);
-    assertEq(_getSpokeDynConfigKeys(spoke1), _getUserDynConfigKeys(spoke1, alice));
+    _assertDynamicConfigRefreshEventsNotEmitted();
+    assertFalse(_isUsingAsCollateral(spoke1, _usdxReserveId(spoke1), alice));
+    assertEq(
+      spoke1.getUserPosition(_usdxReserveId(spoke1), alice).dynamicConfigKey,
+      beforeDisableConfig[_usdxReserveId(spoke1)].key
+    );
+    assertEq(
+      _getUserDynConfigKeys(spoke1, alice, _wethReserveId(spoke1)),
+      _getSpokeDynConfigKeys(spoke1)[_wethReserveId(spoke1)]
+    );
+  }
+
+  function test_usingAsCollateral_doesNotEmitDynamicConfigRefresh_whenConfigIsCurrent() public {
+    uint256 reserveId = _usdxReserveId(spoke1);
+
+    SpokeActions.supply({
+      spoke: spoke1,
+      reserveId: reserveId,
+      caller: alice,
+      amount: 1000e6,
+      onBehalfOf: alice
+    });
+
+    uint32 dynamicConfigKey = spoke1.getUserPosition(reserveId, alice).dynamicConfigKey;
+
+    vm.recordLogs();
+    vm.prank(alice);
+    spoke1.setUsingAsCollateral(reserveId, true, alice);
+
+    _assertDynamicConfigRefreshEventsNotEmitted();
+    assertTrue(_isUsingAsCollateral(spoke1, reserveId, alice));
+    assertEq(spoke1.getUserPosition(reserveId, alice).dynamicConfigKey, dynamicConfigKey);
   }
 
   function test_updateUserDynamicConfig_triggers_dynamicConfigUpdate() public {
@@ -361,6 +397,32 @@ contract SpokeDynamicConfigTriggersTest is Base {
     // user config should change
     assertNotEq(_getUserDynConfigKeys(spoke1, alice), configs);
     assertEq(_getSpokeDynConfigKeys(spoke1), _getUserDynConfigKeys(spoke1, alice));
+  }
+
+  function test_updateUserDynamicConfig_doesNotEmit_whenConfigIsCurrent() public {
+    SpokeActions.supplyCollateral({
+      spoke: spoke1,
+      reserveId: _usdxReserveId(spoke1),
+      caller: alice,
+      amount: 1000e6,
+      onBehalfOf: alice
+    });
+    SpokeActions.supplyCollateral({
+      spoke: spoke1,
+      reserveId: _wethReserveId(spoke1),
+      caller: alice,
+      amount: 1e18,
+      onBehalfOf: alice
+    });
+
+    DynamicConfigEntry[] memory configs = _getUserDynConfigKeys(spoke1, alice);
+
+    vm.recordLogs();
+    vm.prank(alice);
+    spoke1.updateUserDynamicConfig(alice);
+
+    _assertDynamicConfigRefreshEventsNotEmitted();
+    assertEq(_getUserDynConfigKeys(spoke1, alice), configs);
   }
 
   function test_updateUserDynamicConfig_reverts_when_not_authorized(address caller) public {
