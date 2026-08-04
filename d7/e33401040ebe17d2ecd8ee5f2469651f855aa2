@@ -1,0 +1,26 @@
+src/config-engine/libraries/HubEngine.sol
+  s_7ec280db1063f8::t_a3e404e8ded1b7 232,234,242
+  s_7ec280db1063f8::t_e1832e32e05b75 51
+src/config-engine/libraries/SpokeEngine.sol
+  s_7ec280db1063f8::t_e0cd1093cfc451 239-241
+  s_7ec280db1063f8::t_f651c185e9ea40 249
+  s_7ec280db1063f8::t_53777b7ad18de5 31,40
+src/addresses-provider/interfaces/IAddressesProvider.sol
+  s_7ec280db1063f8::t_7b5ddf2ad8f8c8 6,11,15
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.20",
+  "base_commit_sha": "d7e33401040ebe17d2ecd8ee5f2469651f855aa2",
+  "prompts": {},
+  "sessions": {
+    "s_7ec280db1063f8": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "f6eca046-101a-4f2f-995c-14a34db2a81c",
+        "model": "claude-opus-5"
+      },
+      "human_author": "Alexandru Niculae <43644109+avniculae@users.noreply.github.com>"
+    }
+  }
+}
