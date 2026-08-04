@@ -470,6 +470,39 @@ contract SpokeDynamicConfigTriggersTest is Base {
     assertNotEq(initialRP, newRP);
   }
 
+  function test_getUserAccountDataAfterDynamicConfigRefresh_previews_withoutUpdatingStorage()
+    public
+  {
+    uint256 reserveId = _usdxReserveId(spoke1);
+
+    SpokeActions.supplyCollateral({
+      spoke: spoke1,
+      reserveId: reserveId,
+      caller: alice,
+      amount: 1000e6,
+      onBehalfOf: alice
+    });
+
+    DynamicConfigEntry[] memory configs = _getUserDynConfigKeys(spoke1, alice);
+    ISpoke.UserAccountData memory staleAccountData = spoke1.getUserAccountData(alice);
+
+    _updateCollateralFactor(spoke1, reserveId, 95_00);
+
+    ISpoke.UserAccountData memory previewAccountData = spoke1
+      .getUserAccountDataAfterDynamicConfigRefresh(alice);
+
+    assertEq(_getUserDynConfigKeys(spoke1, alice), configs);
+    assertEq(spoke1.getUserAccountData(alice), staleAccountData);
+    assertNotEq(previewAccountData.avgCollateralFactor, staleAccountData.avgCollateralFactor);
+    assertEq(previewAccountData.avgCollateralFactor, 0.95e18);
+
+    vm.prank(alice);
+    spoke1.updateUserDynamicConfig(alice);
+
+    assertEq(spoke1.getUserAccountData(alice), previewAccountData);
+    assertEq(_getSpokeDynConfigKeys(spoke1), _getUserDynConfigKeys(spoke1, alice));
+  }
+
   function test_updateUserDynamicConfig_doesHFCheck() public {
     // Supply 1 collateral that is sufficient to cover debt
     SpokeActions.supplyCollateral({
