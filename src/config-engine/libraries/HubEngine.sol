@@ -48,7 +48,7 @@ library HubEngine {
         irData
       );
 
-      _registerHub(listings[i], assetId);
+      _registerHub(listings[i]);
       _deployAndRegisterTokenizationSpoke(listings[i], assetId);
     }
   }
@@ -229,12 +229,9 @@ library HubEngine {
   }
 
   /// @dev Registers the Hub on the AddressesProvider when requested.
-  /// @dev Only allowed when the listed asset is the Hub's first (asset id 0), to avoid registering an
+  /// @dev Only allowed when the listed asset is the Hub's only asset, to avoid registering an
   /// already-configured Hub; reverts otherwise.
-  function _registerHub(
-    IAaveV4ConfigEngine.AssetListing calldata listing,
-    uint256 assetId
-  ) private {
+  function _registerHub(IAaveV4ConfigEngine.AssetListing calldata listing) private {
     require(
       EngineUtils.isConsistentRegistration(listing.hubRegistration),
       InvalidAddressesProviderRegistration()
@@ -242,7 +239,7 @@ library HubEngine {
     if (!listing.hubRegistration.register) {
       return;
     }
-    require(assetId == 0, InvalidAddressesProviderRegistration());
+    require(IHub(listing.hub).getAssetCount() == 1, InvalidAddressesProviderRegistration());
     listing.hubRegistration.addressesProvider.setCanonicalHub(
       listing.hubRegistration.name,
       listing.hub

@@ -28,7 +28,7 @@ library SpokeEngine {
     uint256 length = listings.length;
     for (uint256 i; i < length; ++i) {
       uint256 assetId = IHubBase(listings[i].hub).getAssetId(listings[i].underlying);
-      uint256 reserveId = listings[i].spokeConfigurator.addReserve(
+      listings[i].spokeConfigurator.addReserve(
         listings[i].spoke,
         listings[i].hub,
         assetId,
@@ -37,7 +37,7 @@ library SpokeEngine {
         listings[i].dynamicConfig
       );
 
-      _registerSpoke(listings[i], reserveId);
+      _registerSpoke(listings[i]);
     }
   }
 
@@ -236,12 +236,9 @@ library SpokeEngine {
   }
 
   /// @dev Registers the Spoke on the AddressesProvider when requested.
-  /// @dev Only allowed when the listed reserve is the Spoke's first (reserve id 0), to avoid
-  /// registering an already-configured Spoke; reverts otherwise.
-  function _registerSpoke(
-    IAaveV4ConfigEngine.ReserveListing calldata listing,
-    uint256 reserveId
-  ) private {
+  /// @dev Only allowed when the listed reserve is the Spoke's only reserve, to avoid registering an
+  /// already-configured Spoke; reverts otherwise.
+  function _registerSpoke(IAaveV4ConfigEngine.ReserveListing calldata listing) private {
     require(
       EngineUtils.isConsistentRegistration(listing.spokeRegistration),
       InvalidAddressesProviderRegistration()
@@ -249,7 +246,7 @@ library SpokeEngine {
     if (!listing.spokeRegistration.register) {
       return;
     }
-    require(reserveId == 0, InvalidAddressesProviderRegistration());
+    require(ISpoke(listing.spoke).getReserveCount() == 1, InvalidAddressesProviderRegistration());
     listing.spokeRegistration.addressesProvider.setCanonicalSpoke(
       listing.spokeRegistration.name,
       listing.spoke

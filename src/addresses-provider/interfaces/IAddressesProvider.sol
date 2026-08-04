@@ -3,16 +3,16 @@ pragma solidity ^0.8.0;
 
 /// @title IAddressesProvider
 /// @author Aave Labs
-/// @notice Main registry of the Hub and Spoke addresses of an Aave V4 instance.
+/// @notice Interface for the AddressesProvider.
 interface IAddressesProvider {
   /// @notice Entry registered under an identifier.
-  /// @param addr The registered address.
   /// @param name The name of the entry.
   /// @param tag The tag grouping the entry.
+  /// @param addr The registered address.
   struct Entry {
-    address addr;
     string name;
     string tag;
+    address addr;
   }
 
   /// @notice Emitted when the address of an entry is updated.
