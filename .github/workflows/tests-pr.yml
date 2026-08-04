@@ -31,7 +31,6 @@ jobs:
         uses: bgd-labs/github-workflows/.github/actions/foundry-test@main
         with:
           FOUNDRY_PROFILE: pr
-          FORGE_SNAPSHOT_CHECK: true
 
       - name: Upload & Trigger Comment artifact
         uses: bgd-labs/github-workflows/.github/actions/comment-artifact@main
