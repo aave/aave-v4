@@ -71,6 +71,7 @@ contract TreasurySpokeTest is Base {
       assertEq(treasurySpoke.getSuppliedShares(address(hub2), underlying), 0);
     }
     assertEq(Ownable2Step(address(treasurySpoke)).owner(), TREASURY_ADMIN);
+    assertEq(treasurySpoke.owner(), TREASURY_ADMIN);
     assertEq(Ownable2Step(address(treasurySpoke)).pendingOwner(), address(0));
   }
 
