@@ -1,0 +1,19 @@
+docs/features/PositionManager.md
+  s_5db2b5201a7f7c::t_c5c75a653db39b 112
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.18",
+  "base_commit_sha": "8865a439ede539bad6de04a270bde0abdfa584d0",
+  "prompts": {},
+  "sessions": {
+    "s_5db2b5201a7f7c": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "bc8554f7-9dfc-47ed-9fde-16605098f59b",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "defispartan <defispartan@gmail.com>"
+    }
+  }
+}

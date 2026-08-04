@@ -1,0 +1,31 @@
+foundry.toml
+  s_3d435731c6c117::t_72b821064f15ab 77
+  s_3d435731c6c117::t_a169132d449628 93
+scripts/deploy/LibraryPreCompileSepolia.s.sol
+  s_3d435731c6c117::t_462983ee30ff97 1-6,8-13,16-17,19-38,51-55,73-74
+  s_3d435731c6c117::t_4c612ea4c3173d 7,14-15,18,39-50,56-72
+scripts/deploy/AaveV4DeploySepoliaChainlink.s.sol
+  s_3d435731c6c117::t_f9bc072f0d2e3d 1-139,141-231
+  s_3d435731c6c117::t_453974e9d75b54 140
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.18",
+  "base_commit_sha": "a603274e247456e9bc2bcb9f0a05faadd4068934",
+  "prompts": {},
+  "humans": {
+    "h_4ccb82aec19023": {
+      "author": "defispartan <defispartan@gmail.com>"
+    }
+  },
+  "sessions": {
+    "s_3d435731c6c117": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "b705f8ac-70e4-4b58-b6fd-9c0b489524a0",
+        "model": "claude-fable-5"
+      },
+      "human_author": "defispartan <defispartan@gmail.com>"
+    }
+  }
+}
