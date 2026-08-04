@@ -13,6 +13,6 @@ contract AaveV4AaveOracleDeployProcedure is AaveV4DeployProcedureBase {
   /// @return The address of the deployed AaveOracle contract.
   function _deployAaveOracle(uint8 decimals) internal returns (address) {
     require(decimals > 0, 'invalid oracle decimals');
-    return address(new AaveOracle({decimals_: decimals}));
+    return address(new AaveOracle({decimals_: decimals, baseCurrency_: address(0)}));
   }
 }

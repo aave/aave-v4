@@ -10,6 +10,7 @@ contract AaveOracleTest is Base {
   AaveOracle public oracle;
 
   uint8 private constant _oracleDecimals = 8;
+  address private constant _baseCurrency = address(0);
 
   address public deployer = makeAddr('DEPLOYER');
 
@@ -25,7 +26,7 @@ contract AaveOracleTest is Base {
     super.setUp();
 
     vm.startPrank(deployer);
-    oracle = new AaveOracle(_oracleDecimals);
+    oracle = new AaveOracle(_oracleDecimals, _baseCurrency);
     spoke1 = ISpoke(
       address(
         AaveV4TestOrchestration.deploySpokeImplementation(
@@ -40,18 +41,21 @@ contract AaveOracleTest is Base {
 
   function test_constructor() public {
     vm.prank(deployer);
-    oracle = new AaveOracle(_oracleDecimals);
+    oracle = new AaveOracle(_oracleDecimals, _baseCurrency);
 
     assertEq(oracle.spoke(), address(0));
+    assertEq(oracle.USD_ADDRESS(), address(0));
+    assertEq(oracle.BASE_CURRENCY(), _baseCurrency);
     test_decimals();
   }
 
-  function test_fuzz_constructor(uint8 decimals) public {
+  function test_fuzz_constructor(uint8 decimals, address baseCurrency) public {
     decimals = bound(decimals, 0, 18).toUint8();
-    oracle = new AaveOracle(decimals);
+    oracle = new AaveOracle(decimals, baseCurrency);
 
     assertEq(oracle.spoke(), address(0));
     assertEq(oracle.decimals(), decimals);
+    assertEq(oracle.BASE_CURRENCY(), baseCurrency);
   }
 
   function test_decimals() public view {
@@ -81,7 +85,7 @@ contract AaveOracleTest is Base {
 
   function test_setSpoke() public {
     vm.startPrank(deployer);
-    oracle = new AaveOracle(_oracleDecimals);
+    oracle = new AaveOracle(_oracleDecimals, _baseCurrency);
 
     address newSpoke = address(
       AaveV4TestOrchestration.deploySpokeImplementation(
@@ -144,10 +148,10 @@ contract AaveOracleTest is Base {
 
   function test_setReserveSource_revertsWith_OracleMismatch() public {
     vm.startPrank(deployer);
-    IAaveOracle newOracle = IAaveOracle(new AaveOracle(_oracleDecimals));
+    IAaveOracle newOracle = IAaveOracle(new AaveOracle(_oracleDecimals, _baseCurrency));
 
     // set new spoke to a separate oracle
-    address mismatchOracle = address(new AaveOracle(_oracleDecimals));
+    address mismatchOracle = address(new AaveOracle(_oracleDecimals, _baseCurrency));
     address newSpoke = address(
       AaveV4TestOrchestration.deploySpokeImplementation(
         mismatchOracle,

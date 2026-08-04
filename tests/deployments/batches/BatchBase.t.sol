@@ -30,6 +30,7 @@ import {AssetInterestRateStrategy} from 'src/hub/AssetInterestRateStrategy.sol';
 import {IAccessManagerEnumerable} from 'src/access/interfaces/IAccessManagerEnumerable.sol';
 import {TreasurySpoke} from 'src/spoke/TreasurySpoke.sol';
 import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
+import {IAaveOracle} from 'src/spoke/interfaces/IAaveOracle.sol';
 import {IPriceOracle} from 'src/spoke/interfaces/IPriceOracle.sol';
 
 contract BatchBaseTest is Create2TestHelper {

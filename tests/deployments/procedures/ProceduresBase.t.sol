@@ -66,7 +66,7 @@ contract ProceduresBase is Create2TestHelper {
     hubBytecode = vm.getCode('src/hub/instances/HubInstance.sol:HubInstance');
     spokeBytecode = vm.getCode('src/spoke/instances/SpokeInstance.sol:SpokeInstance');
     accessManager = address(new AccessManagerEnumerable(accessManagerAdmin));
-    aaveOracle = address(new AaveOracle(oracleDecimals));
+    aaveOracle = address(new AaveOracle(oracleDecimals, address(0)));
     salt = keccak256('testSalt');
   }
 

@@ -10,6 +10,12 @@ import {IAaveOracle, IPriceOracle} from 'src/spoke/interfaces/IAaveOracle.sol';
 /// @notice Provides reserve prices.
 /// @dev Oracles are spoke-specific, due to the usage of reserve id as index of the `_sources` mapping.
 contract AaveOracle is IAaveOracle {
+  /// @inheritdoc IAaveOracle
+  address public constant override USD_ADDRESS = address(0);
+
+  /// @inheritdoc IAaveOracle
+  address public immutable override BASE_CURRENCY;
+
   /// @dev The number of decimals for the oracle.
   uint8 private immutable DECIMALS;
 
@@ -25,9 +31,11 @@ contract AaveOracle is IAaveOracle {
   /// @dev Constructor.
   /// @dev `decimals` must match the Spoke's decimals for compatibility.
   /// @param decimals_ The number of decimals for the oracle.
-  constructor(uint8 decimals_) {
+  /// @param baseCurrency_ The base currency used for price quotes. Use `USD_ADDRESS` when quoting in USD.
+  constructor(uint8 decimals_, address baseCurrency_) {
     DEPLOYER = msg.sender;
     DECIMALS = decimals_;
+    BASE_CURRENCY = baseCurrency_;
   }
 
   /// @inheritdoc IAaveOracle

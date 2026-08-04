@@ -14,6 +14,7 @@ contract AaveV4AaveOracleDeployProcedureTest is ProceduresBase {
     address oracle = aaveV4AaveOracleDeployProcedureWrapper.deployAaveOracle(oracleDecimals);
     assertNotEq(oracle, address(0));
     assertEq(IAaveOracle(oracle).decimals(), oracleDecimals);
+    assertEq(IAaveOracle(oracle).BASE_CURRENCY(), IAaveOracle(oracle).USD_ADDRESS());
   }
 
   function test_deployAaveOracle_reverts_inputValidation() public {

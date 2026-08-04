@@ -40,6 +40,13 @@ interface IAaveOracle is IPriceOracle {
   /// @dev Thrown when the Spoke's oracle does not match the current oracle.
   error OracleMismatch();
 
+  /// @notice Returns the sentinel address used when prices are denominated in USD.
+  /// @dev Matches the Aave V3 convention: address(0) represents USD.
+  function USD_ADDRESS() external view returns (address);
+
+  /// @notice Returns the base currency used for price quotes.
+  function BASE_CURRENCY() external view returns (address);
+
   /// @notice Sets the address of the Spoke.
   /// @dev Can only be called once by the deployer.
   /// @dev The spoke should be set before any other function is called.

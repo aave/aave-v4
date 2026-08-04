@@ -41,6 +41,10 @@ contract AaveV4SpokeInstanceBatchTest is BatchBaseTest {
   function test_oracleWiring() public view {
     assertEq(IPriceOracle(report.aaveOracle).spoke(), report.spokeProxy);
     assertEq(IPriceOracle(report.aaveOracle).decimals(), 8);
+    assertEq(
+      IAaveOracle(report.aaveOracle).BASE_CURRENCY(),
+      IAaveOracle(report.aaveOracle).USD_ADDRESS()
+    );
   }
 
   function test_revert_zeroAuthority() public {

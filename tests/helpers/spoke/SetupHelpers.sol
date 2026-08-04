@@ -431,7 +431,7 @@ abstract contract SetupHelpers is CheckedActions, ConfigHelpers, MockHelpers {
     address deployer = makeAddr('deployer');
 
     vm.startPrank(deployer);
-    IAaveOracle oracle = new AaveOracle(8);
+    IAaveOracle oracle = new AaveOracle(8, address(0));
 
     ISpoke spoke = ISpoke(
       AaveV4TestOrchestration.proxify(
