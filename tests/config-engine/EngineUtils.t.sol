@@ -3,81 +3,134 @@ pragma solidity ^0.8.0;
 
 import {Test} from 'forge-std/Test.sol';
 
-import {EngineUtils} from 'src/config-engine/libraries/EngineUtils.sol';
-import {IAaveV4ConfigEngine} from 'src/config-engine/interfaces/IAaveV4ConfigEngine.sol';
+import {TransparentUpgradeableProxy} from 'src/dependencies/openzeppelin/TransparentUpgradeableProxy.sol';
+import {AddressesProviderInstance} from 'src/addresses-provider/instances/AddressesProviderInstance.sol';
 import {IAddressesProvider} from 'src/addresses-provider/interfaces/IAddressesProvider.sol';
+import {EngineUtils} from 'src/config-engine/libraries/EngineUtils.sol';
 
 /// @dev Wrapper to call EngineUtils library functions externally.
 contract EngineUtilsHarness {
-  function isConsistentRegistration(
-    IAaveV4ConfigEngine.AddressesProviderRegistration calldata registration
-  ) external pure returns (bool) {
-    return EngineUtils.isConsistentRegistration(registration);
+  function requireRegisteredHub(IAddressesProvider addressesProvider, address hub) external view {
+    EngineUtils.requireRegisteredHub(addressesProvider, hub);
+  }
+
+  function requireRegisteredSpoke(
+    IAddressesProvider addressesProvider,
+    address spoke
+  ) external view {
+    EngineUtils.requireRegisteredSpoke(addressesProvider, spoke);
+  }
+
+  function requireRegisteredCanonicalSpoke(
+    IAddressesProvider addressesProvider,
+    address spoke
+  ) external view {
+    EngineUtils.requireRegisteredCanonicalSpoke(addressesProvider, spoke);
   }
 }
 
 contract EngineUtilsTest is Test {
+  address internal HUB = makeAddr('HUB');
+  address internal SPOKE = makeAddr('SPOKE');
+
   EngineUtilsHarness internal _harness;
+  IAddressesProvider internal _provider;
 
   function setUp() public {
     _harness = new EngineUtilsHarness();
-  }
-
-  function _registration(
-    address addressesProvider,
-    bool register,
-    string memory name
-  ) internal pure returns (IAaveV4ConfigEngine.AddressesProviderRegistration memory) {
-    return
-      IAaveV4ConfigEngine.AddressesProviderRegistration({
-        addressesProvider: IAddressesProvider(addressesProvider),
-        register: register,
-        name: name
-      });
-  }
-
-  function test_isConsistentRegistration_register_allFieldsSet() public view {
-    assertTrue(_harness.isConsistentRegistration(_registration(address(1), true, 'CORE')));
-  }
-
-  function test_isConsistentRegistration_register_noProvider() public view {
-    assertFalse(_harness.isConsistentRegistration(_registration(address(0), true, 'CORE')));
-  }
-
-  function test_isConsistentRegistration_register_noName() public view {
-    assertFalse(_harness.isConsistentRegistration(_registration(address(1), true, '')));
-  }
-
-  function test_isConsistentRegistration_register_allFieldsUnset() public view {
-    assertFalse(_harness.isConsistentRegistration(_registration(address(0), true, '')));
-  }
-
-  function test_isConsistentRegistration_noRegister_allFieldsUnset() public view {
-    assertTrue(_harness.isConsistentRegistration(_registration(address(0), false, '')));
-  }
-
-  function test_isConsistentRegistration_noRegister_providerSet() public view {
-    assertFalse(_harness.isConsistentRegistration(_registration(address(1), false, '')));
-  }
-
-  function test_isConsistentRegistration_noRegister_nameSet() public view {
-    assertFalse(_harness.isConsistentRegistration(_registration(address(0), false, 'CORE')));
-  }
-
-  function test_isConsistentRegistration_noRegister_allFieldsSet() public view {
-    assertFalse(_harness.isConsistentRegistration(_registration(address(1), false, 'CORE')));
-  }
-
-  function test_fuzz_isConsistentRegistration(
-    address addressesProvider,
-    bool register,
-    string memory name
-  ) public view {
-    bool fieldsSet = addressesProvider != address(0) && bytes(name).length > 0;
-    bool fieldsUnset = addressesProvider == address(0) && bytes(name).length == 0;
-    assertEq(
-      _harness.isConsistentRegistration(_registration(addressesProvider, register, name)),
-      register ? fieldsSet : fieldsUnset
+    _provider = IAddressesProvider(
+      address(
+        new TransparentUpgradeableProxy(
+          address(new AddressesProviderInstance()),
+          makeAddr('PROXY_ADMIN_OWNER'),
+          abi.encodeCall(AddressesProviderInstance.initialize, (address(this)))
+        )
+      )
     );
+  }
+
+  function test_requireRegisteredHub() public {
+    _provider.setCanonicalHub('CORE', HUB);
+    _harness.requireRegisteredHub(_provider, HUB);
+  }
+
+  function test_requireRegisteredHub_revertsWith_HubNotRegistered() public {
+    vm.expectRevert(abi.encodeWithSelector(EngineUtils.HubNotRegistered.selector, HUB));
+    _harness.requireRegisteredHub(_provider, HUB);
+  }
+
+  function test_requireRegisteredHub_revertsWith_HubNotRegistered_otherTag() public {
+    _provider.setEntry({name: 'CORE', tag: 'PERIPHERY', newAddress: HUB});
+
+    vm.expectRevert(abi.encodeWithSelector(EngineUtils.HubNotRegistered.selector, HUB));
+    _harness.requireRegisteredHub(_provider, HUB);
+  }
+
+  function test_requireRegisteredHub_revertsWith_HubNotRegistered_spokeTag() public {
+    _provider.setCanonicalSpoke('CORE', HUB);
+
+    vm.expectRevert(abi.encodeWithSelector(EngineUtils.HubNotRegistered.selector, HUB));
+    _harness.requireRegisteredHub(_provider, HUB);
+  }
+
+  function test_requireRegisteredSpoke_canonicalTag() public {
+    _provider.setCanonicalSpoke('MAIN', SPOKE);
+    _harness.requireRegisteredSpoke(_provider, SPOKE);
+  }
+
+  function test_requireRegisteredSpoke_tokenizationTag() public {
+    _provider.setTokenizationSpoke('MAIN', SPOKE);
+    _harness.requireRegisteredSpoke(_provider, SPOKE);
+  }
+
+  function test_requireRegisteredSpoke_treasuryTag() public {
+    _provider.setTreasurySpoke('MAIN', SPOKE);
+    _harness.requireRegisteredSpoke(_provider, SPOKE);
+  }
+
+  function test_requireRegisteredSpoke_revertsWith_SpokeNotRegistered() public {
+    vm.expectRevert(abi.encodeWithSelector(EngineUtils.SpokeNotRegistered.selector, SPOKE));
+    _harness.requireRegisteredSpoke(_provider, SPOKE);
+  }
+
+  function test_requireRegisteredSpoke_revertsWith_SpokeNotRegistered_hubTag() public {
+    _provider.setCanonicalHub('MAIN', SPOKE);
+
+    vm.expectRevert(abi.encodeWithSelector(EngineUtils.SpokeNotRegistered.selector, SPOKE));
+    _harness.requireRegisteredSpoke(_provider, SPOKE);
+  }
+
+  function test_requireRegisteredCanonicalSpoke() public {
+    _provider.setCanonicalSpoke('MAIN', SPOKE);
+    _harness.requireRegisteredCanonicalSpoke(_provider, SPOKE);
+  }
+
+  function test_requireRegisteredCanonicalSpoke_revertsWith_CanonicalSpokeNotRegistered() public {
+    vm.expectRevert(
+      abi.encodeWithSelector(EngineUtils.CanonicalSpokeNotRegistered.selector, SPOKE)
+    );
+    _harness.requireRegisteredCanonicalSpoke(_provider, SPOKE);
+  }
+
+  function test_requireRegisteredCanonicalSpoke_revertsWith_CanonicalSpokeNotRegistered_tokenizationTag()
+    public
+  {
+    _provider.setTokenizationSpoke('MAIN', SPOKE);
+
+    vm.expectRevert(
+      abi.encodeWithSelector(EngineUtils.CanonicalSpokeNotRegistered.selector, SPOKE)
+    );
+    _harness.requireRegisteredCanonicalSpoke(_provider, SPOKE);
+  }
+
+  function test_requireRegisteredCanonicalSpoke_revertsWith_CanonicalSpokeNotRegistered_treasuryTag()
+    public
+  {
+    _provider.setTreasurySpoke('MAIN', SPOKE);
+
+    vm.expectRevert(
+      abi.encodeWithSelector(EngineUtils.CanonicalSpokeNotRegistered.selector, SPOKE)
+    );
+    _harness.requireRegisteredCanonicalSpoke(_provider, SPOKE);
   }
 }

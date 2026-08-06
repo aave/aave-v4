@@ -30,6 +30,12 @@ contract ConfigEngineGovernanceTopologyTest is BaseConfigEngineTest {
     // in production the Executor, not the payload or the engine, holds the configurator permissions
     vm.prank(ADMIN);
     accessManager.grantRole(Roles.HUB_CONFIGURATOR_DOMAIN_ADMIN_ROLE, address(executor), 0);
+
+    // in production the Executor owns the AddressesProvider; provider writes run in its context
+    vm.prank(address(engine));
+    AddressesProviderInstance(address(addressesProvider)).transferOwnership(address(executor));
+    vm.prank(address(executor));
+    AddressesProviderInstance(address(addressesProvider)).acceptOwnership();
   }
 
   function _executePayload(address target) internal {

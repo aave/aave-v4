@@ -157,6 +157,18 @@ abstract contract AddressesProvider is
   }
 
   /// @inheritdoc IAddressesProvider
+  function isRegistered(address addr, string calldata tag) external view returns (bool) {
+    bytes32 tagHash = keccak256(bytes(tag));
+    bytes32[] memory ids = _addressToIdSet[addr].values();
+    for (uint256 i = 0; i < ids.length; i++) {
+      if (keccak256(bytes(_idToEntry[ids[i]].tag)) == tagHash) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /// @inheritdoc IAddressesProvider
   function getCanonicalHub(string calldata name) external view returns (address) {
     return _getAddress({name: name, tag: CANONICAL_HUB_TAG});
   }

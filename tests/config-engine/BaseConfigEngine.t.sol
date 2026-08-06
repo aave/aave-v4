@@ -29,6 +29,8 @@ import {AaveV4Payload} from 'src/config-engine/AaveV4Payload.sol';
 import {AaveV4ConfigEngine} from 'src/config-engine/AaveV4ConfigEngine.sol';
 import {IAaveV4ConfigEngine} from 'src/config-engine/interfaces/IAaveV4ConfigEngine.sol';
 import {IAddressesProvider} from 'src/addresses-provider/interfaces/IAddressesProvider.sol';
+import {AddressesProviderInstance} from 'src/addresses-provider/instances/AddressesProviderInstance.sol';
+import {TransparentUpgradeableProxy} from 'src/dependencies/openzeppelin/TransparentUpgradeableProxy.sol';
 import {EngineFlags} from 'src/config-engine/libraries/EngineFlags.sol';
 import {AccessManagerEngine} from 'src/config-engine/libraries/AccessManagerEngine.sol';
 import {HubEngine} from 'src/config-engine/libraries/HubEngine.sol';
@@ -80,6 +82,7 @@ abstract contract BaseConfigEngineTest is Test, Create2TestHelper {
   address internal PROXY_ADMIN_OWNER = makeAddr('PROXY_ADMIN_OWNER');
 
   MockGovernanceExecutor internal executor;
+  IAddressesProvider internal addressesProvider;
   AaveV4ConfigEngine internal engine;
   IAccessManager internal accessManager;
   IHubConfigurator internal hubConfigurator;
@@ -158,10 +161,12 @@ abstract contract BaseConfigEngineTest is Test, Create2TestHelper {
     }
 
     executor = new MockGovernanceExecutor(PAYLOADS_CONTROLLER);
-    engine = new AaveV4ConfigEngine();
+    addressesProvider = _deployAddressesProvider(address(this));
+    engine = new AaveV4ConfigEngine(addressesProvider);
     positionManager = new PositionManagerBaseWrapper(address(engine));
 
     _setupRoles(report);
+    _registerTestEnv();
 
     vm.label(address(hubs[0]), 'hub1');
     vm.label(address(hubs[1]), 'hub2');
@@ -194,6 +199,48 @@ abstract contract BaseConfigEngineTest is Test, Create2TestHelper {
 
   function _assertExactEventCount(uint256 expectedCount) internal {
     assertEq(vm.getRecordedLogs().length, expectedCount);
+  }
+
+  function _deployAddressesProvider(address owner) internal returns (IAddressesProvider) {
+    return
+      IAddressesProvider(
+        address(
+          new TransparentUpgradeableProxy(
+            address(new AddressesProviderInstance()),
+            ADMIN,
+            abi.encodeCall(AddressesProviderInstance.initialize, (owner))
+          )
+        )
+      );
+  }
+
+  /// @dev Registers the test Hubs and Spokes on the AddressesProvider, then hands ownership to the
+  /// engine, which is the actor making the provider calls when tests invoke it directly.
+  function _registerTestEnv() internal {
+    for (uint256 i; i < NUM_HUBS; ++i) {
+      addressesProvider.setCanonicalHub(
+        string.concat('HUB_', vm.toString(i + 1)),
+        address(hubs[i])
+      );
+    }
+    for (uint256 i; i < NUM_SPOKES; ++i) {
+      addressesProvider.setCanonicalSpoke(
+        string.concat('SPOKE_', vm.toString(i + 1)),
+        address(spokes[i])
+      );
+    }
+    AddressesProviderInstance(address(addressesProvider)).transferOwnership(address(engine));
+    vm.prank(address(engine));
+    AddressesProviderInstance(address(addressesProvider)).acceptOwnership();
+  }
+
+  /// @dev Registers a Spoke on the AddressesProvider as the engine, the provider owner after setUp.
+  function _registerSpokeOnProvider(ISpoke spoke) internal {
+    vm.prank(address(engine));
+    addressesProvider.setCanonicalSpoke(
+      string.concat('SPOKE_', vm.toString(address(spoke))),
+      address(spoke)
+    );
   }
 
   function _deployNewSpoke() internal returns (ISpoke, IAaveOracle) {
@@ -342,17 +389,8 @@ abstract contract BaseConfigEngineTest is Test, Create2TestHelper {
           addCap: 0,
           proxyAdminOwner: address(0),
           name: '',
-          symbol: ''
-        }),
-        hubRegistration: IAaveV4ConfigEngine.AddressesProviderRegistration({
-          addressesProvider: IAddressesProvider(address(0)),
-          register: false,
-          name: ''
-        }),
-        tokenizationSpokeRegistration: IAaveV4ConfigEngine.AddressesProviderRegistration({
-          addressesProvider: IAddressesProvider(address(0)),
-          register: false,
-          name: ''
+          symbol: '',
+          registrationName: ''
         })
       });
   }
@@ -484,12 +522,7 @@ abstract contract BaseConfigEngineTest is Test, Create2TestHelper {
         underlying: address(weth),
         priceSource: address(priceFeedWeth),
         config: _defaultReserveConfig(),
-        dynamicConfig: _defaultDynamicReserveConfig(),
-        spokeRegistration: IAaveV4ConfigEngine.AddressesProviderRegistration({
-          addressesProvider: IAddressesProvider(address(0)),
-          register: false,
-          name: ''
-        })
+        dynamicConfig: _defaultDynamicReserveConfig()
       });
   }
 
@@ -534,6 +567,13 @@ abstract contract BaseConfigEngineTest is Test, Create2TestHelper {
     assertEq(actual.riskPremiumThreshold, expected.riskPremiumThreshold);
     assertEq(actual.active, expected.active);
     assertEq(actual.halted, expected.halted);
+  }
+
+  function _toAddressesProviderEntryUpdateArray(
+    IAaveV4ConfigEngine.AddressesProviderEntryUpdate memory item
+  ) internal pure returns (IAaveV4ConfigEngine.AddressesProviderEntryUpdate[] memory arr) {
+    arr = new IAaveV4ConfigEngine.AddressesProviderEntryUpdate[](1);
+    arr[0] = item;
   }
 
   function _toAssetConfigUpdateArray(

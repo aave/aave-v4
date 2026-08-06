@@ -312,6 +312,43 @@ contract AddressesProviderTest is Test {
     });
   }
 
+  function test_isRegistered() public {
+    address configEngine = makeAddr('CONFIG_ENGINE');
+
+    assertFalse(provider.isRegistered(configEngine, 'PERIPHERY'));
+
+    vm.prank(OWNER);
+    provider.setEntry({name: 'CONFIG_ENGINE', tag: 'PERIPHERY', newAddress: configEngine});
+
+    assertTrue(provider.isRegistered(configEngine, 'PERIPHERY'));
+    assertFalse(provider.isRegistered(configEngine, 'MISC'));
+    assertFalse(provider.isRegistered(makeAddr('OTHER'), 'PERIPHERY'));
+  }
+
+  function test_isRegistered_multipleTags() public {
+    address spoke = makeAddr('SPOKE');
+
+    vm.startPrank(OWNER);
+    provider.setCanonicalSpoke('MAIN', spoke);
+    provider.setEntry({name: 'MAIN', tag: 'BABYLON', newAddress: spoke});
+    vm.stopPrank();
+
+    assertTrue(provider.isRegistered(spoke, provider.CANONICAL_SPOKE_TAG()));
+    assertTrue(provider.isRegistered(spoke, 'BABYLON'));
+    assertFalse(provider.isRegistered(spoke, provider.CANONICAL_HUB_TAG()));
+  }
+
+  function test_isRegistered_afterRemove() public {
+    address configEngine = makeAddr('CONFIG_ENGINE');
+
+    vm.startPrank(OWNER);
+    provider.setEntry({name: 'CONFIG_ENGINE', tag: 'PERIPHERY', newAddress: configEngine});
+    provider.setEntry({name: 'CONFIG_ENGINE', tag: 'PERIPHERY', newAddress: address(0)});
+    vm.stopPrank();
+
+    assertFalse(provider.isRegistered(configEngine, 'PERIPHERY'));
+  }
+
   function test_setCanonicalHub() public {
     address coreHub = makeAddr('CORE_HUB');
     address plusHub = makeAddr('PLUS_HUB');

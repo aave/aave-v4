@@ -7,6 +7,7 @@ import {EngineUtils} from 'src/config-engine/libraries/EngineUtils.sol';
 import {IHubBase} from 'src/hub/interfaces/IHubBase.sol';
 import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 import {IAaveV4ConfigEngine} from 'src/config-engine/interfaces/IAaveV4ConfigEngine.sol';
+import {IAddressesProvider} from 'src/addresses-provider/interfaces/IAddressesProvider.sol';
 
 /// @title SpokeEngine
 /// @author Aave Labs
@@ -14,19 +15,18 @@ import {IAaveV4ConfigEngine} from 'src/config-engine/interfaces/IAaveV4ConfigEng
 library SpokeEngine {
   using SafeCast for uint256;
 
-  /// @dev Thrown when a canonical Spoke registration is requested for a listing that does not support
-  /// it: the listed reserve is not the Spoke's first (reserve id != 0), or the registration fields are
-  /// inconsistent with the `register` flag.
-  error InvalidAddressesProviderRegistration();
-
   /// @notice Lists new reserves on Spokes.
-  /// @dev Optionally registers the Spoke on the AddressesProvider.
+  /// @dev The Spoke must be registered on the AddressesProvider as a canonical Spoke.
   /// @param listings The reserve listings to execute.
+  /// @param addressesProvider The AddressesProvider authorizing the actions.
   function executeSpokeReserveListings(
-    IAaveV4ConfigEngine.ReserveListing[] calldata listings
+    IAaveV4ConfigEngine.ReserveListing[] calldata listings,
+    IAddressesProvider addressesProvider
   ) external {
     uint256 length = listings.length;
     for (uint256 i; i < length; ++i) {
+      EngineUtils.requireRegisteredCanonicalSpoke(addressesProvider, listings[i].spoke);
+
       uint256 assetId = IHubBase(listings[i].hub).getAssetId(listings[i].underlying);
       listings[i].spokeConfigurator.addReserve(
         listings[i].spoke,
@@ -36,18 +36,20 @@ library SpokeEngine {
         listings[i].config,
         listings[i].dynamicConfig
       );
-
-      _registerSpoke(listings[i]);
     }
   }
 
   /// @notice Updates reserve config on Spokes.
   /// @param updates The reserve config updates to execute.
+  /// @param addressesProvider The AddressesProvider authorizing the actions.
   function executeSpokeReserveConfigUpdates(
-    IAaveV4ConfigEngine.ReserveConfigUpdate[] calldata updates
+    IAaveV4ConfigEngine.ReserveConfigUpdate[] calldata updates,
+    IAddressesProvider addressesProvider
   ) external {
     uint256 length = updates.length;
     for (uint256 i; i < length; ++i) {
+      EngineUtils.requireRegisteredCanonicalSpoke(addressesProvider, updates[i].spoke);
+
       uint256 reserveId = _resolveReserveId(
         updates[i].spoke,
         updates[i].hub,
@@ -104,11 +106,15 @@ library SpokeEngine {
   /// are set, calls updateLiquidationConfig with the full struct. Otherwise, each non-KEEP_CURRENT
   /// field is updated individually via its dedicated setter. If no field is set, the update is skipped.
   /// @param updates The liquidation config updates to execute.
+  /// @param addressesProvider The AddressesProvider authorizing the actions.
   function executeSpokeLiquidationConfigUpdates(
-    IAaveV4ConfigEngine.LiquidationConfigUpdate[] calldata updates
+    IAaveV4ConfigEngine.LiquidationConfigUpdate[] calldata updates,
+    IAddressesProvider addressesProvider
   ) external {
     uint256 length = updates.length;
     for (uint256 i; i < length; ++i) {
+      EngineUtils.requireRegisteredCanonicalSpoke(addressesProvider, updates[i].spoke);
+
       bool updateTarget = updates[i].targetHealthFactor != EngineFlags.KEEP_CURRENT;
       bool updateMaxBonus = updates[i].healthFactorForMaxBonus != EngineFlags.KEEP_CURRENT;
       bool updateBonusFactor = updates[i].liquidationBonusFactor != EngineFlags.KEEP_CURRENT;
@@ -147,11 +153,15 @@ library SpokeEngine {
 
   /// @notice Adds dynamic reserve configs on Spokes.
   /// @param additions The dynamic reserve config additions to execute.
+  /// @param addressesProvider The AddressesProvider authorizing the actions.
   function executeSpokeDynamicReserveConfigAdditions(
-    IAaveV4ConfigEngine.DynamicReserveConfigAddition[] calldata additions
+    IAaveV4ConfigEngine.DynamicReserveConfigAddition[] calldata additions,
+    IAddressesProvider addressesProvider
   ) external {
     uint256 length = additions.length;
     for (uint256 i; i < length; ++i) {
+      EngineUtils.requireRegisteredCanonicalSpoke(addressesProvider, additions[i].spoke);
+
       uint256 reserveId = _resolveReserveId(
         additions[i].spoke,
         additions[i].hub,
@@ -169,11 +179,15 @@ library SpokeEngine {
   /// @dev Reads the current config, applies only the fields that differ from KEEP_CURRENT,
   /// and writes back. If no field is modified the external call is skipped entirely.
   /// @param updates The dynamic reserve config updates to execute.
+  /// @param addressesProvider The AddressesProvider authorizing the actions.
   function executeSpokeDynamicReserveConfigUpdates(
-    IAaveV4ConfigEngine.DynamicReserveConfigUpdate[] calldata updates
+    IAaveV4ConfigEngine.DynamicReserveConfigUpdate[] calldata updates,
+    IAddressesProvider addressesProvider
   ) external {
     uint256 length = updates.length;
     for (uint256 i; i < length; ++i) {
+      EngineUtils.requireRegisteredCanonicalSpoke(addressesProvider, updates[i].spoke);
+
       uint256 reserveId = _resolveReserveId(
         updates[i].spoke,
         updates[i].hub,
@@ -212,11 +226,15 @@ library SpokeEngine {
 
   /// @notice Updates position managers on Spokes.
   /// @param updates The position manager updates to execute on Spokes.
+  /// @param addressesProvider The AddressesProvider authorizing the actions.
   function executeSpokePositionManagerUpdates(
-    IAaveV4ConfigEngine.PositionManagerUpdate[] calldata updates
+    IAaveV4ConfigEngine.PositionManagerUpdate[] calldata updates,
+    IAddressesProvider addressesProvider
   ) external {
     uint256 length = updates.length;
     for (uint256 i; i < length; ++i) {
+      EngineUtils.requireRegisteredCanonicalSpoke(addressesProvider, updates[i].spoke);
+
       updates[i].spokeConfigurator.updatePositionManager(
         updates[i].spoke,
         updates[i].positionManager,
@@ -233,23 +251,5 @@ library SpokeEngine {
   ) private view returns (uint256) {
     uint256 assetId = IHubBase(hub).getAssetId(underlying);
     return ISpoke(spoke).getReserveId(hub, assetId);
-  }
-
-  /// @dev Registers the Spoke on the AddressesProvider when requested.
-  /// @dev Only allowed when the listed reserve is the Spoke's only reserve, to avoid registering an
-  /// already-configured Spoke; reverts otherwise.
-  function _registerSpoke(IAaveV4ConfigEngine.ReserveListing calldata listing) private {
-    require(
-      EngineUtils.isConsistentRegistration(listing.spokeRegistration),
-      InvalidAddressesProviderRegistration()
-    );
-    if (!listing.spokeRegistration.register) {
-      return;
-    }
-    require(ISpoke(listing.spoke).getReserveCount() == 1, InvalidAddressesProviderRegistration());
-    listing.spokeRegistration.addressesProvider.setCanonicalSpoke(
-      listing.spokeRegistration.name,
-      listing.spoke
-    );
   }
 }

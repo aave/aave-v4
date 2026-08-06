@@ -28,10 +28,24 @@ abstract contract AaveV4Payload {
   function execute() external {
     _preExecute();
     _executeAccessManagerActions();
+    _executeAddressesProviderActions();
     _executeHubActions();
     _executeSpokeActions();
     _executePositionManagerActions();
     _postExecute();
+  }
+
+  /// @notice Returns the AddressesProvider entry updates to execute. Override to provide updates.
+  /// @dev Executed before Hub and Spoke actions, so a Hub or Spoke can be registered and targeted
+  /// within the same payload.
+  /// @return An array of AddressesProviderEntryUpdate structs (empty by default).
+  function addressesProviderEntryUpdates()
+    public
+    view
+    virtual
+    returns (IAaveV4ConfigEngine.AddressesProviderEntryUpdate[] memory)
+  {
+    return new IAaveV4ConfigEngine.AddressesProviderEntryUpdate[](0);
   }
 
   /// @notice Returns the Hub asset listings to execute. Override to provide listings.
@@ -258,6 +272,17 @@ abstract contract AaveV4Payload {
     returns (IAaveV4ConfigEngine.PositionManagerRoleRenouncement[] memory)
   {
     return new IAaveV4ConfigEngine.PositionManagerRoleRenouncement[](0);
+  }
+
+  /// @notice Executes all AddressesProvider entry updates via delegatecall to the engine.
+  function _executeAddressesProviderActions() internal {
+    IAaveV4ConfigEngine.AddressesProviderEntryUpdate[]
+      memory updates = addressesProviderEntryUpdates();
+    if (updates.length > 0) {
+      _delegateCallEngine(
+        abi.encodeCall(IAaveV4ConfigEngine.executeAddressesProviderEntryUpdates, (updates))
+      );
+    }
   }
 
   /// @notice Executes all hub-related configuration actions via delegatecall to the engine.

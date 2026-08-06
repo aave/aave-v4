@@ -385,6 +385,7 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
 
   function test_execute_hubSpokeToAssetsAdditions() public {
     (ISpoke newSpoke, ) = _deployNewSpoke();
+    _registerSpokeOnProvider(newSpoke);
 
     IAaveV4ConfigEngine.SpokeToAssetsAddition[]
       memory additions = new IAaveV4ConfigEngine.SpokeToAssetsAddition[](1);
@@ -642,6 +643,40 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
     assertEq(spokeConfig.drawCap, 0);
   }
 
+  function test_execute_addressesProviderEntryUpdates_runBeforeHubAndSpokeActions() public {
+    (ISpoke newSpoke, ) = _deployNewSpoke();
+    _seedAsset(hub1(), irStrategy1(), address(newToken), 18);
+
+    // provider writes run in the payload's context here, so it must own the provider
+    vm.prank(address(engine));
+    AddressesProviderInstance(address(addressesProvider)).transferOwnership(address(payload));
+    vm.prank(address(payload));
+    AddressesProviderInstance(address(addressesProvider)).acceptOwnership();
+
+    // the payload registers the new Spoke and lists a reserve on it in the same execution;
+    // the listing only succeeds if the entry updates are executed first
+    payload.setAddressesProviderEntryUpdates(
+      _toAddressesProviderEntryUpdateArray(
+        IAaveV4ConfigEngine.AddressesProviderEntryUpdate({
+          name: 'NEW',
+          tag: addressesProvider.CANONICAL_SPOKE_TAG(),
+          addr: address(newSpoke)
+        })
+      )
+    );
+
+    IAaveV4ConfigEngine.ReserveListing memory listing = _defaultReserveListing();
+    listing.spoke = address(newSpoke);
+    listing.underlying = address(newToken);
+    listing.priceSource = _deployMockPriceFeed(newSpoke, address(priceFeedNew));
+    payload.setSpokeReserveListings(_toReserveListingArray(listing));
+
+    payload.execute();
+
+    assertEq(addressesProvider.getCanonicalSpoke('NEW'), address(newSpoke));
+    assertEq(newSpoke.getReserveCount(), 1);
+  }
+
   function test_execute_spokeReserveListings() public {
     uint256 newAssetId = _seedAsset(hub1(), irStrategy1(), address(newToken), 18);
     _seedSpokeOnAsset(hub1(), newAssetId, spoke1());
@@ -668,11 +703,6 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
         collateralFactor: 80_00,
         maxLiquidationBonus: 105_00,
         liquidationFee: 10_00
-      }),
-      spokeRegistration: IAaveV4ConfigEngine.AddressesProviderRegistration({
-        addressesProvider: IAddressesProvider(address(0)),
-        register: false,
-        name: ''
       })
     });
     payload.setSpokeReserveListings(listings);

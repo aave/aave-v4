@@ -184,6 +184,12 @@ interface IAddressesProvider {
     uint256 end
   ) external view returns (Entry[] memory);
 
+  /// @notice Returns whether an address is registered under a tag.
+  /// @param addr The registered address.
+  /// @param tag The tag grouping the entries.
+  /// @return True if at least one entry associates the address with the tag.
+  function isRegistered(address addr, string calldata tag) external view returns (bool);
+
   /// @notice Returns the canonical Hub associated with a name.
   /// @param name The name of the Hub.
   /// @return The address of the Hub, the zero address if none is registered.

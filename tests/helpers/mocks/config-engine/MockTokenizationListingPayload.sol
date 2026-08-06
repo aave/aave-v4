@@ -5,7 +5,6 @@ import {AaveV4Payload} from 'src/config-engine/AaveV4Payload.sol';
 import {IAaveV4ConfigEngine} from 'src/config-engine/interfaces/IAaveV4ConfigEngine.sol';
 import {IHubConfigurator} from 'src/hub/interfaces/IHubConfigurator.sol';
 import {IAssetInterestRateStrategy} from 'src/hub/interfaces/IAssetInterestRateStrategy.sol';
-import {IAddressesProvider} from 'src/addresses-provider/interfaces/IAddressesProvider.sol';
 
 /// @dev Production-style payload: all action data lives in immutables or literals. `execute()`
 /// runs via delegatecall inside the Executor, so payload storage is not readable at execution time.
@@ -58,17 +57,8 @@ contract MockTokenizationListingPayload is AaveV4Payload {
         addCap: 1000,
         proxyAdminOwner: PROXY_ADMIN_OWNER,
         name: 'Tokenized NEW',
-        symbol: 'tNEW'
-      }),
-      hubRegistration: IAaveV4ConfigEngine.AddressesProviderRegistration({
-        addressesProvider: IAddressesProvider(address(0)),
-        register: false,
-        name: ''
-      }),
-      tokenizationSpokeRegistration: IAaveV4ConfigEngine.AddressesProviderRegistration({
-        addressesProvider: IAddressesProvider(address(0)),
-        register: false,
-        name: ''
+        symbol: 'tNEW',
+        registrationName: 'TOKENIZED_NEW'
       })
     });
     return listings;
