@@ -1,0 +1,49 @@
+tests/contracts/spoke/position-manager/Spoke.MandatoryPositionManager.t.sol
+  s_5241371cedad0b::t_13abb10b3e8c49 137-157
+  s_5241371cedad0b::t_addc3fcbdd499d 1-3,5-6,170
+  s_5241371cedad0b::t_4b3364f700c093 4,7-136,158-169
+src/spoke/interfaces/ISpoke.sol
+  s_5241371cedad0b::t_4b3364f700c093 191-198,487-495,792-796
+src/spoke/Spoke.sol
+  s_5241371cedad0b::t_4b3364f700c093 225-233,676-680,937-938
+  s_5241371cedad0b::t_3332de9e4e6882 92,930-936
+src/deployments/utils/libraries/Roles.sol
+  s_5241371cedad0b::t_4b3364f700c093 132,139-140
+src/spoke/SpokeStorage.sol
+  s_5241371cedad0b::t_a272ab612056f9 40
+  s_5241371cedad0b::t_4b3364f700c093 38-39,42
+tests/deployments/procedures/deploy/roles/AaveV4SpokeRolesProcedure.t.sol
+  s_5241371cedad0b::t_4b3364f700c093 132,139-140
+snapshots/ConfigPositionManager.Operations.json
+  s_5241371cedad0b::t_3ca08f042184d2 10-12
+snapshots/GiverPositionManager.Operations.json
+  s_5241371cedad0b::t_69c4035301bf1e 2-3
+snapshots/NativeTokenGateway.Operations.json
+  s_5241371cedad0b::t_078a1675d8fb1d 2-7
+snapshots/SignatureGateway.Operations.json
+  s_5241371cedad0b::t_86b9ca99caed61 2-3,5-9
+snapshots/Spoke.Getters.json
+  s_5241371cedad0b::t_45cd930011cfe1 2-6
+snapshots/Spoke.Operations.ZeroRiskPremium.json
+  s_5241371cedad0b::t_0920fe9994688d 2-13,16-33
+snapshots/Spoke.Operations.json
+  s_5241371cedad0b::t_ccf8d79dd3afd2 2-13,16-33
+snapshots/TakerPositionManager.Operations.json
+  s_5241371cedad0b::t_558329e92d46fa 6,9-10
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.21",
+  "base_commit_sha": "267ab18e2e0f1a5854619f9888bc94f3923235b4",
+  "prompts": {},
+  "sessions": {
+    "s_5241371cedad0b": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019fd698-e9e3-7493-a118-11768d1fc775",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "AlbertoCentonze <11707683+AlbertoCentonze@users.noreply.github.com>"
+    }
+  }
+}
