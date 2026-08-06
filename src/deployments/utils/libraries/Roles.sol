@@ -129,7 +129,7 @@ library Roles {
 
   /// @notice Returns the function selectors associated with the Spoke Configurator role.
   function getSpokeConfiguratorRoleSelectors() internal pure returns (bytes4[] memory) {
-    bytes4[] memory selectors = new bytes4[](7);
+    bytes4[] memory selectors = new bytes4[](8);
     selectors[0] = ISpoke.updateLiquidationConfig.selector;
     selectors[1] = ISpoke.addReserve.selector;
     selectors[2] = ISpoke.updateReserveConfig.selector;
@@ -137,6 +137,7 @@ library Roles {
     selectors[4] = ISpoke.addDynamicReserveConfig.selector;
     selectors[5] = ISpoke.updatePositionManager.selector;
     selectors[6] = ISpoke.updateReservePriceSource.selector;
+    selectors[7] = ISpoke.updateGlobalPositionManager.selector;
     return selectors;
   }
 
@@ -144,7 +145,7 @@ library Roles {
 
   /// @notice Returns the function selectors associated with the SpokeConfigurator Domain Admin role.
   function getSpokeConfiguratorDomainAdminRoleSelectors() internal pure returns (bytes4[] memory) {
-    bytes4[] memory selectors = new bytes4[](24);
+    bytes4[] memory selectors = new bytes4[](25);
     selectors[0] = ISpokeConfigurator.updateReservePriceSource.selector;
     selectors[1] = ISpokeConfigurator.updateLiquidationTargetHealthFactor.selector;
     selectors[2] = ISpokeConfigurator.updateHealthFactorForMaxBonus.selector;
@@ -169,6 +170,7 @@ library Roles {
     selectors[21] = ISpokeConfigurator.pauseReserve.selector;
     selectors[22] = ISpokeConfigurator.freezeReserve.selector;
     selectors[23] = ISpokeConfigurator.updatePositionManager.selector;
+    selectors[24] = ISpokeConfigurator.updateGlobalPositionManager.selector;
     return selectors;
   }
 }

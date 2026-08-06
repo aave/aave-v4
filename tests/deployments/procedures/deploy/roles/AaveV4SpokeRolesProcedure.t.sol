@@ -129,7 +129,7 @@ contract AaveV4SpokeRolesProcedureTest is ProceduresBase {
   function test_getSpokeConfiguratorRoleSelectors() public view {
     bytes4[] memory selectors = aaveV4SpokeRolesProcedureWrapper
       .getSpokeConfiguratorRoleSelectors();
-    assertEq(selectors.length, 7);
+    assertEq(selectors.length, 8);
     assertEq(selectors[0], ISpoke.updateLiquidationConfig.selector);
     assertEq(selectors[1], ISpoke.addReserve.selector);
     assertEq(selectors[2], ISpoke.updateReserveConfig.selector);
@@ -137,6 +137,7 @@ contract AaveV4SpokeRolesProcedureTest is ProceduresBase {
     assertEq(selectors[4], ISpoke.addDynamicReserveConfig.selector);
     assertEq(selectors[5], ISpoke.updatePositionManager.selector);
     assertEq(selectors[6], ISpoke.updateReservePriceSource.selector);
+    assertEq(selectors[7], ISpoke.updateGlobalPositionManager.selector);
   }
 
   function test_canCall_spokePositionUpdaterRole() public {

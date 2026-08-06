@@ -79,9 +79,10 @@ contract SpokeConfiguratorGranularAccessControlTest is Base {
       LIQUIDATION_CONFIG_MANAGER_ROLE
     );
 
-    // Set up POSITION_MANAGER_ADMIN_ROLE permissions (1 function)
-    bytes4[] memory pmSelectors = new bytes4[](1);
+    // Set up POSITION_MANAGER_ADMIN_ROLE permissions (2 functions)
+    bytes4[] memory pmSelectors = new bytes4[](2);
     pmSelectors[0] = ISpokeConfigurator.updatePositionManager.selector;
+    pmSelectors[1] = ISpokeConfigurator.updateGlobalPositionManager.selector;
     manager.setTargetFunctionRole(
       address(spokeConfigurator),
       pmSelectors,
@@ -200,6 +201,9 @@ contract SpokeConfiguratorGranularAccessControlTest is Base {
 
     positionManagerAdminCalldata.push(
       abi.encodeCall(ISpokeConfigurator.updatePositionManager, (spokeAddr, newPM, true))
+    );
+    positionManagerAdminCalldata.push(
+      abi.encodeCall(ISpokeConfigurator.updateGlobalPositionManager, (spokeAddr, newPM, true))
     );
   }
 
@@ -414,5 +418,18 @@ contract SpokeConfiguratorGranularAccessControlTest is Base {
     });
 
     assertTrue(spoke.isPositionManagerActive(newPM));
+  }
+
+  function test_positionManagerAdmin_canCall_updateGlobalPositionManager() public {
+    address newPM = makeAddr('NEW_POSITION_MANAGER');
+
+    vm.prank(POSITION_MANAGER_ADMIN);
+    spokeConfigurator.updateGlobalPositionManager({
+      spoke: spokeAddr,
+      positionManager: newPM,
+      global: true
+    });
+
+    assertTrue(spoke.isGlobalPositionManager(newPM));
   }
 }

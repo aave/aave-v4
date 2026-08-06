@@ -105,9 +105,11 @@ interface ISpoke is IAccessManaged, IIntentConsumer, IExtSload, IMulticall {
   /// @notice Position manager configuration data.
   /// @dev approval The mapping of position manager user approvals.
   /// @dev active True if the position manager is active.
+  /// @dev global True if the position manager is approved for every user.
   struct PositionManagerConfig {
     mapping(address user => bool) approval;
     bool active;
+    bool global;
   }
 
   /// @notice User position status data.
@@ -187,6 +189,11 @@ interface ISpoke is IAccessManaged, IIntentConsumer, IExtSload, IMulticall {
   /// @param positionManager The address of the position manager.
   /// @param active True if position manager has become active.
   event UpdatePositionManager(address indexed positionManager, bool active);
+
+  /// @notice Emitted when the global status of a position manager is updated.
+  /// @param positionManager The address of the position manager.
+  /// @param global True if the position manager is approved for every user.
+  event UpdateGlobalPositionManager(address indexed positionManager, bool global);
 
   /// @notice Emitted on the supply action.
   /// @param reserveId The reserve identifier of the underlying asset.
@@ -475,6 +482,12 @@ interface ISpoke is IAccessManaged, IIntentConsumer, IExtSload, IMulticall {
   /// @param positionManager The address of the position manager.
   /// @param active True if positionManager is to be set as active.
   function updatePositionManager(address positionManager, bool active) external;
+
+  /// @notice Allows an approved caller (admin) to toggle the global status of a position manager.
+  /// @dev A global position manager must still be active to act on behalf of users.
+  /// @param positionManager The address of the position manager.
+  /// @param global True if the position manager should be approved for every user.
+  function updateGlobalPositionManager(address positionManager, bool global) external;
 
   /// @notice Supplies an amount of underlying asset of the specified reserve.
   /// @dev It reverts if the reserve associated with the given reserve identifier is not listed.
@@ -766,10 +779,16 @@ interface ISpoke is IAccessManaged, IIntentConsumer, IExtSload, IMulticall {
   /// @return True if positionManager is currently active.
   function isPositionManagerActive(address positionManager) external view returns (bool);
 
-  /// @notice Returns whether positionManager is active and approved by user.
+  /// @notice Returns whether positionManager is approved for every user.
+  /// @dev Global status does not imply that the position manager is active.
+  /// @param positionManager The address of the position manager.
+  /// @return True if positionManager is approved for every user.
+  function isGlobalPositionManager(address positionManager) external view returns (bool);
+
+  /// @notice Returns whether positionManager is active and approved by user or globally approved.
   /// @param user The address of the user.
   /// @param positionManager The address of the position manager.
-  /// @return True if positionManager is active and approved by user.
+  /// @return True if positionManager can act for the user.
   function isPositionManager(address user, address positionManager) external view returns (bool);
 
   /// @notice Returns the address of the external `LiquidationLogic` library.

@@ -24,6 +24,9 @@ contract SpokePositionManagerTest is Base {
     address user = vm.randomAddress();
     address positionManager = vm.randomAddress();
 
+    vm.prank(SPOKE_ADMIN);
+    spoke1.updateGlobalPositionManager(positionManager, false);
+
     if (!spoke1.isPositionManager(user, positionManager)) {
       vm.expectEmit(address(spoke1));
       emit ISpoke.SetUserPositionManager(user, positionManager, false);
@@ -38,6 +41,8 @@ contract SpokePositionManagerTest is Base {
     vm.setArbitraryStorage(address(spoke1));
 
     address user = vm.randomAddress();
+    vm.prank(SPOKE_ADMIN);
+    spoke1.updateGlobalPositionManager(POSITION_MANAGER, false);
     vm.prank(user);
     spoke1.setUserPositionManager(POSITION_MANAGER, false);
 

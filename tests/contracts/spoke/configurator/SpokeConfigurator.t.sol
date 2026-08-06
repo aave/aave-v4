@@ -803,4 +803,28 @@ contract SpokeConfiguratorTest is Base {
       assertEq(spoke.isPositionManagerActive(newPositionManager), active);
     }
   }
+
+  function test_updateGlobalPositionManager_revertsWith_AccessManagedUnauthorized() public {
+    vm.expectRevert(
+      abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, alice)
+    );
+    vm.prank(alice);
+    spokeConfigurator.updateGlobalPositionManager(spokeAddr, address(0), true);
+  }
+
+  function test_updateGlobalPositionManager() public {
+    address newPositionManager = makeAddr('NEW_POSITION_MANAGER');
+    for (uint256 i = 0; i < 2; i += 1) {
+      bool global = (i == 0) ? true : false;
+      vm.expectCall(
+        spokeAddr,
+        abi.encodeCall(ISpoke.updateGlobalPositionManager, (newPositionManager, global))
+      );
+      vm.expectEmit(address(spoke));
+      emit ISpoke.UpdateGlobalPositionManager(newPositionManager, global);
+      vm.prank(SPOKE_CONFIGURATOR_ADMIN);
+      spokeConfigurator.updateGlobalPositionManager(spokeAddr, newPositionManager, global);
+      assertEq(spoke.isGlobalPositionManager(newPositionManager), global);
+    }
+  }
 }

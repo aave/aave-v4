@@ -208,4 +208,14 @@ interface ISpokeConfigurator {
   /// @param positionManager The address of the position manager.
   /// @param active The new active flag.
   function updatePositionManager(address spoke, address positionManager, bool active) external;
+
+  /// @notice Updates the global flag of a spoke's position manager.
+  /// @param spoke The address of the Spoke.
+  /// @param positionManager The address of the position manager.
+  /// @param global The new global flag.
+  function updateGlobalPositionManager(
+    address spoke,
+    address positionManager,
+    bool global
+  ) external;
 }

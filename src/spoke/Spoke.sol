@@ -222,6 +222,12 @@ abstract contract Spoke is
   }
 
   /// @inheritdoc ISpoke
+  function updateGlobalPositionManager(address positionManager, bool global) external restricted {
+    _positionManager[positionManager].global = global;
+    emit UpdateGlobalPositionManager(positionManager, global);
+  }
+
+  /// @inheritdoc ISpoke
   function supply(
     uint256 reserveId,
     uint256 amount,
@@ -659,6 +665,11 @@ abstract contract Spoke is
   }
 
   /// @inheritdoc ISpoke
+  function isGlobalPositionManager(address positionManager) external view returns (bool) {
+    return _positionManager[positionManager].global;
+  }
+
+  /// @inheritdoc ISpoke
   function isPositionManager(address user, address positionManager) external view returns (bool) {
     return _isPositionManager(user, positionManager);
   }
@@ -905,11 +916,11 @@ abstract contract Spoke is
     return _reserves[reserveId].assetId == assetId && address(_reserves[reserveId].hub) == hub;
   }
 
-  /// @notice Returns whether `manager` is active and approved positionManager for `user`.
+  /// @notice Returns whether `manager` is active and approved for `user` or globally approved.
   function _isPositionManager(address user, address manager) internal view returns (bool) {
     if (user == manager) return true;
     PositionManagerConfig storage config = _positionManager[manager];
-    return config.active && config.approval[user];
+    return config.active && (config.global || config.approval[user]);
   }
 
   function _validateReserveConfig(ReserveConfig calldata config) internal pure {

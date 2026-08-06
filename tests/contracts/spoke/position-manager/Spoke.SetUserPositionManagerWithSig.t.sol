@@ -224,7 +224,9 @@ contract SpokeSetUserPositionManagersWithSigTest is Base {
       vm.expectEmit(address(spoke1));
       emit ISpoke.SetUserPositionManager(params.onBehalfOf, positionManager, approve);
       // overwrite cached lookup such that latest state is checked for duplicated entries
-      _lookup[positionManager] = approve && spoke1.isPositionManagerActive(positionManager);
+      _lookup[positionManager] =
+        spoke1.isPositionManagerActive(positionManager) &&
+        (spoke1.isGlobalPositionManager(positionManager) || approve);
     }
 
     vm.prank(vm.randomAddress());
