@@ -33,6 +33,12 @@ library AaveV4SpokeRolesProcedure {
     setupSpokeRole({
       accessManager: accessManager,
       spoke: spoke,
+      roleId: Roles.PUBLIC_ROLE,
+      selectors: Roles.getSpokePublicRoleSelectors()
+    });
+    setupSpokeRole({
+      accessManager: accessManager,
+      spoke: spoke,
       roleId: Roles.SPOKE_USER_POSITION_UPDATER_ROLE,
       selectors: Roles.getSpokePositionUpdaterRoleSelectors()
     });

@@ -101,6 +101,10 @@ contract AaveV4SpokeRolesProcedureTest is ProceduresBase {
     aaveV4SpokeRolesProcedureWrapper.setupSpokeRoles({accessManager: accessManager, spoke: spoke});
 
     assertEq(
+      IAccessManager(accessManager).getTargetFunctionRole(spoke, ISpoke.borrow.selector),
+      Roles.PUBLIC_ROLE
+    );
+    assertEq(
       IAccessManager(accessManager).getTargetFunctionRole(
         spoke,
         ISpoke.updateUserDynamicConfig.selector
@@ -111,6 +115,12 @@ contract AaveV4SpokeRolesProcedureTest is ProceduresBase {
       IAccessManager(accessManager).getTargetFunctionRole(spoke, ISpoke.addReserve.selector),
       Roles.SPOKE_CONFIGURATOR_ROLE
     );
+  }
+
+  function test_getSpokePublicRoleSelectors() public view {
+    bytes4[] memory selectors = aaveV4SpokeRolesProcedureWrapper.getSpokePublicRoleSelectors();
+    assertEq(selectors.length, 1);
+    assertEq(selectors[0], ISpoke.borrow.selector);
   }
 
   function _grantAdminToWrapper(address wrapper) internal {

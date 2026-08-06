@@ -42,6 +42,7 @@ import {ISpokeConfigurator} from 'src/spoke/interfaces/ISpokeConfigurator.sol';
 library Roles {
   // AccessManager roles
   uint64 public constant ACCESS_MANAGER_ADMIN_ROLE = 0;
+  uint64 public constant PUBLIC_ROLE = type(uint64).max;
 
   // Hub roles
   uint64 public constant HUB_DOMAIN_ADMIN_ROLE = 100;
@@ -118,6 +119,13 @@ library Roles {
   }
 
   // ─── Spoke selector getters ───
+
+  /// @notice Returns the function selectors associated with the public Spoke role.
+  function getSpokePublicRoleSelectors() internal pure returns (bytes4[] memory) {
+    bytes4[] memory selectors = new bytes4[](1);
+    selectors[0] = ISpoke.borrow.selector;
+    return selectors;
+  }
 
   /// @notice Returns the function selectors associated with the Spoke Position Updater role.
   function getSpokePositionUpdaterRoleSelectors() internal pure returns (bytes4[] memory) {
