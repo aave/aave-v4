@@ -17,6 +17,7 @@ contract AaveV4SpokeInstanceBatch is AaveV4SpokeDeployProcedure, AaveV4AaveOracl
   /// @param proxyAdminOwner_ The owner of the proxy admin.
   /// @param authority_ The access-control authority for the Spoke.
   /// @param spokeBytecode_ The creation bytecode of the Spoke implementation.
+  /// @param hook_ The hook invoked by the Spoke implementation.
   /// @param oracleDecimals_ The decimal precision for the AaveOracle.
   /// @param maxUserReservesLimit_ The maximum number of reserves a user can interact with.
   /// @param salt_ The CREATE2 salt for deterministic deployment.
@@ -24,6 +25,7 @@ contract AaveV4SpokeInstanceBatch is AaveV4SpokeDeployProcedure, AaveV4AaveOracl
     address proxyAdminOwner_,
     address authority_,
     bytes memory spokeBytecode_,
+    address hook_,
     uint8 oracleDecimals_,
     uint16 maxUserReservesLimit_,
     bytes32 salt_
@@ -33,6 +35,7 @@ contract AaveV4SpokeInstanceBatch is AaveV4SpokeDeployProcedure, AaveV4AaveOracl
       proxyAdminOwner: proxyAdminOwner_,
       authority: authority_,
       oracle: aaveOracle,
+      hook: hook_,
       spokeBytecode: spokeBytecode_,
       salt: salt_,
       maxUserReservesLimit: maxUserReservesLimit_

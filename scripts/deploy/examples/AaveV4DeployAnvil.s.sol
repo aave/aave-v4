@@ -4,6 +4,7 @@ pragma solidity ^0.8.0;
 import {AaveV4DeployBatchBaseScript} from 'scripts/deploy/AaveV4DeployBatchBase.s.sol';
 import {InputUtils} from 'src/deployments/utils/libraries/InputUtils.sol';
 import {WETH9} from 'src/dependencies/weth/WETH9.sol';
+import {NoOpSpokeHook} from 'src/spoke/hooks/NoOpSpokeHook.sol';
 
 /// @title AaveV4DeployAnvil
 /// @author Aave Labs
@@ -18,10 +19,12 @@ import {WETH9} from 'src/dependencies/weth/WETH9.sol';
 ///         Run: forge script scripts/deploy/examples/AaveV4DeployAnvil.s.sol --broadcast --rpc-url http://127.0.0.1:8545 --sender 0x70997970C51812dc3A010C7d01b50e0d17dc79C8 --unlocked
 contract AaveV4DeployAnvil is AaveV4DeployBatchBaseScript {
   address public weth;
+  address public spokeHook;
 
   /// @dev Constructor. Deploys a WETH9 instance for use as the native wrapper.
   constructor() AaveV4DeployBatchBaseScript('anvil-deploy') {
     weth = address(new WETH9());
+    spokeHook = address(new NoOpSpokeHook());
   }
 
   function _getDeployInputs()
@@ -50,6 +53,7 @@ contract AaveV4DeployAnvil is AaveV4DeployBatchBaseScript {
       gatewayOwner: address(2),
       positionManagerOwner: address(3),
       nativeWrapper: weth,
+      spokeHook: spokeHook,
       deployNativeTokenGateway: true,
       deploySignatureGateway: true,
       deployPositionManagers: true,

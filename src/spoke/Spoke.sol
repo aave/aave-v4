@@ -227,6 +227,7 @@ abstract contract Spoke is
     uint256 amount,
     address onBehalfOf
   ) external nonReentrant onlyPositionManager(onBehalfOf) returns (uint256, uint256) {
+    _executeHook(onBehalfOf);
     Reserve storage reserve = _reserves.get(reserveId);
     UserPosition storage userPosition = _userPositions[onBehalfOf][reserveId];
     _validateSupply(reserve.flags);
@@ -246,6 +247,7 @@ abstract contract Spoke is
     uint256 amount,
     address onBehalfOf
   ) external nonReentrant onlyPositionManager(onBehalfOf) returns (uint256, uint256) {
+    _executeHook(onBehalfOf);
     Reserve storage reserve = _reserves.get(reserveId);
     UserPosition storage userPosition = _userPositions[onBehalfOf][reserveId];
     _validateWithdraw(reserve.flags);
@@ -276,6 +278,7 @@ abstract contract Spoke is
     uint256 amount,
     address onBehalfOf
   ) external nonReentrant onlyPositionManager(onBehalfOf) returns (uint256, uint256) {
+    _executeHook(onBehalfOf);
     Reserve storage reserve = _reserves.get(reserveId);
     UserPosition storage userPosition = _userPositions[onBehalfOf][reserveId];
     PositionStatus storage positionStatus = _positionStatus[onBehalfOf];
@@ -307,6 +310,7 @@ abstract contract Spoke is
     uint256 amount,
     address onBehalfOf
   ) external nonReentrant onlyPositionManager(onBehalfOf) returns (uint256, uint256) {
+    _executeHook(onBehalfOf);
     Reserve storage reserve = _reserves.get(reserveId);
     UserPosition storage userPosition = _userPositions[onBehalfOf][reserveId];
     _validateRepay(reserve.flags);
@@ -351,6 +355,7 @@ abstract contract Spoke is
     uint256 debtToCover,
     bool receiveShares
   ) external nonReentrant {
+    _executeHook(user);
     UserAccountData memory userAccountData = _calculateUserAccountData(user);
     LiquidationLogic.LiquidateUserParams memory params = LiquidationLogic.LiquidateUserParams({
       collateralReserveId: collateralReserveId,
@@ -393,6 +398,7 @@ abstract contract Spoke is
     bool usingAsCollateral,
     address onBehalfOf
   ) external nonReentrant onlyPositionManager(onBehalfOf) {
+    _executeHook(onBehalfOf);
     Reserve storage reserve = _reserves.get(reserveId);
     PositionStatus storage positionStatus = _positionStatus[onBehalfOf];
     if (positionStatus.isUsingAsCollateral(reserveId) == usingAsCollateral) {
@@ -911,6 +917,9 @@ abstract contract Spoke is
     PositionManagerConfig storage config = _positionManager[manager];
     return config.active && config.approval[user];
   }
+
+  /// @dev Hook called before a permissionless action. No-op unless overridden by an implementation.
+  function _executeHook(address onBehalfOf) internal virtual {}
 
   function _validateReserveConfig(ReserveConfig calldata config) internal pure {
     require(config.collateralRisk <= MAX_ALLOWED_COLLATERAL_RISK, InvalidCollateralRisk());

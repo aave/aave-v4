@@ -17,6 +17,7 @@ library InputUtils {
   /// @dev gatewayOwner The owner of the native token and signature gateways.
   /// @dev positionManagerOwner The owner of the position manager contracts (giver/taker/config).
   /// @dev nativeWrapper The address of the native wrapper (required when deployNativeTokenGateway is true).
+  /// @dev spokeHook The hook contract invoked by every deployed Spoke.
   /// @dev deployNativeTokenGateway Whether to deploy the NativeTokenGateway.
   /// @dev deploySignatureGateway Whether to deploy the SignatureGateway.
   /// @dev deployPositionManagers Whether to deploy the position manager batch (giver/taker/config).
@@ -39,6 +40,7 @@ library InputUtils {
     address gatewayOwner;
     address positionManagerOwner;
     address nativeWrapper;
+    address spokeHook;
     bool deployNativeTokenGateway;
     bool deploySignatureGateway;
     bool deployPositionManagers;

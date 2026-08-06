@@ -13,6 +13,7 @@ contract AaveV4SpokeInstanceBatchTest is BatchBaseTest {
       proxyAdminOwner_: admin,
       authority_: accessManager,
       spokeBytecode_: spokeBytecode,
+      hook_: spokeHook,
       oracleDecimals_: 8,
       maxUserReservesLimit_: 128,
       salt_: salt
@@ -49,6 +50,7 @@ contract AaveV4SpokeInstanceBatchTest is BatchBaseTest {
       proxyAdminOwner_: admin,
       authority_: address(0),
       spokeBytecode_: spokeBytecode,
+      hook_: spokeHook,
       oracleDecimals_: 8,
       maxUserReservesLimit_: 128,
       salt_: salt
@@ -61,6 +63,7 @@ contract AaveV4SpokeInstanceBatchTest is BatchBaseTest {
       proxyAdminOwner_: address(0),
       authority_: accessManager,
       spokeBytecode_: spokeBytecode,
+      hook_: spokeHook,
       oracleDecimals_: 8,
       maxUserReservesLimit_: 128,
       salt_: salt
@@ -73,6 +76,7 @@ contract AaveV4SpokeInstanceBatchTest is BatchBaseTest {
       proxyAdminOwner_: admin,
       authority_: accessManager,
       spokeBytecode_: spokeBytecode,
+      hook_: spokeHook,
       oracleDecimals_: 0,
       maxUserReservesLimit_: 128,
       salt_: keccak256('zeroDecimalsSalt')
@@ -85,6 +89,7 @@ contract AaveV4SpokeInstanceBatchTest is BatchBaseTest {
       proxyAdminOwner_: admin,
       authority_: accessManager,
       spokeBytecode_: spokeBytecode,
+      hook_: spokeHook,
       oracleDecimals_: 8,
       maxUserReservesLimit_: 0,
       salt_: keccak256('zeroMaxReservesSalt')
@@ -96,6 +101,7 @@ contract AaveV4SpokeInstanceBatchTest is BatchBaseTest {
       proxyAdminOwner_: admin,
       authority_: accessManager,
       spokeBytecode_: spokeBytecode,
+      hook_: spokeHook,
       oracleDecimals_: 8,
       maxUserReservesLimit_: 128,
       salt_: keccak256('differentSalt')

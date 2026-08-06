@@ -26,6 +26,7 @@ import {IHub} from 'src/hub/interfaces/IHub.sol';
 import {IHubConfigurator} from 'src/hub/interfaces/IHubConfigurator.sol';
 import {IHubInstance} from 'src/deployments/utils/interfaces/IHubInstance.sol';
 import {ISpokeInstance} from 'src/deployments/utils/interfaces/ISpokeInstance.sol';
+import {NoOpSpokeHook} from 'src/spoke/hooks/NoOpSpokeHook.sol';
 import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 import {Create2Utils} from 'src/deployments/utils/libraries/Create2Utils.sol';
 import {TransparentUpgradeableProxy} from 'src/dependencies/openzeppelin/TransparentUpgradeableProxy.sol';
@@ -64,6 +65,7 @@ library AaveV4TestOrchestration {
     bytes32 salt
   ) external returns (TestTypes.TestEnvReport memory) {
     TestTypes.TestEnvReport memory report;
+    address spokeHook = address(new NoOpSpokeHook());
 
     report.hubReports = new TestTypes.TestHubReport[](hubCount);
     report.spokeReports = new TestTypes.TestSpokeReport[](spokeCount);
@@ -101,6 +103,7 @@ library AaveV4TestOrchestration {
           proxyAdminOwner: admin,
           authority: report.accessManager,
           spokeBytecode: spokeBytecode,
+          hook: spokeHook,
           oracleDecimals: DeployConstants.ORACLE_DECIMALS,
           maxUserReservesLimit: DeployConstants.MAX_ALLOWED_USER_RESERVES_LIMIT,
           salt: keccak256(abi.encodePacked(salt, 'spoke-', string(abi.encode(i))))
@@ -161,11 +164,13 @@ library AaveV4TestOrchestration {
     bytes32 salt
   ) external returns (TestTypes.TestSpokeReport memory) {
     TestTypes.TestSpokeReport memory report;
+    address spokeHook = address(new NoOpSpokeHook());
     BatchReports.SpokeInstanceBatchReport memory spokeReport = AaveV4DeployBase
       .deploySpokeInstanceBatch({
         proxyAdminOwner: proxyAdminOwner,
         authority: accessManager,
         spokeBytecode: spokeBytecode,
+        hook: spokeHook,
         oracleDecimals: DeployConstants.ORACLE_DECIMALS,
         maxUserReservesLimit: maxUserReservesLimit,
         salt: salt
@@ -432,7 +437,7 @@ library AaveV4TestOrchestration {
   ) internal returns (ISpokeInstance) {
     bytes memory initCode = abi.encodePacked(
       vm.getCode('src/spoke/instances/SpokeInstance.sol:SpokeInstance'),
-      abi.encode(oracle, maxUserReservesLimit)
+      abi.encode(oracle, maxUserReservesLimit, address(new NoOpSpokeHook()))
     );
     return ISpokeInstance(_create2Deploy(salt, initCode));
   }

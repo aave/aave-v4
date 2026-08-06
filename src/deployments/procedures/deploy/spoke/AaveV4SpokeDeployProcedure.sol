@@ -13,6 +13,7 @@ contract AaveV4SpokeDeployProcedure is AaveV4DeployProcedureBase {
   /// @param proxyAdminOwner The owner of the proxy admin contract.
   /// @param authority The access control authority address used to initialize the Spoke.
   /// @param oracle The oracle address used by the Spoke instance.
+  /// @param hook The hook invoked by the Spoke instance.
   /// @param spokeBytecode The creation bytecode of the Spoke implementation.
   /// @param maxUserReservesLimit The maximum number of reserves a single user can interact with.
   /// @param salt The CREATE2 salt for deterministic deployment.
@@ -22,6 +23,7 @@ contract AaveV4SpokeDeployProcedure is AaveV4DeployProcedureBase {
     address proxyAdminOwner,
     address authority,
     address oracle,
+    address hook,
     bytes memory spokeBytecode,
     uint16 maxUserReservesLimit,
     bytes32 salt
@@ -29,10 +31,11 @@ contract AaveV4SpokeDeployProcedure is AaveV4DeployProcedureBase {
     require(proxyAdminOwner != address(0), 'invalid proxy admin owner');
     require(authority != address(0), 'invalid authority');
     require(oracle != address(0), 'invalid oracle');
+    require(hook != address(0), 'invalid hook');
     require(maxUserReservesLimit > 0, 'invalid max user reserves limit');
     spokeImplementation = Create2Utils.create2Deploy({
       salt: salt,
-      bytecode: _getSpokeInstanceInitCode(spokeBytecode, oracle, maxUserReservesLimit)
+      bytecode: _getSpokeInstanceInitCode(spokeBytecode, oracle, maxUserReservesLimit, hook)
     });
     spokeProxy = Create2Utils.proxify({
       salt: salt,
@@ -47,12 +50,14 @@ contract AaveV4SpokeDeployProcedure is AaveV4DeployProcedureBase {
   /// @param spokeBytecode The creation bytecode of the Spoke implementation.
   /// @param oracle The oracle address to encode as a constructor argument.
   /// @param maxUserReservesLimit The maximum number of user reserves to encode as a constructor argument.
+  /// @param hook The hook address to encode as a constructor argument.
   /// @return The complete init code with encoded constructor arguments.
   function _getSpokeInstanceInitCode(
     bytes memory spokeBytecode,
     address oracle,
-    uint16 maxUserReservesLimit
+    uint16 maxUserReservesLimit,
+    address hook
   ) internal pure returns (bytes memory) {
-    return abi.encodePacked(spokeBytecode, abi.encode(oracle, maxUserReservesLimit));
+    return abi.encodePacked(spokeBytecode, abi.encode(oracle, maxUserReservesLimit, hook));
   }
 }

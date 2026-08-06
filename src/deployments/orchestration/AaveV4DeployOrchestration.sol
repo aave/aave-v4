@@ -217,6 +217,7 @@ library AaveV4DeployOrchestration {
         authority: authority,
         label: inputs.spokeLabels[i],
         spokeBytecode: spokeBytecode,
+        hook: inputs.spokeHook,
         maxUserReservesLimit: limitsLen > 0
           ? inputs.spokeMaxReservesLimits[i]
           : DeployConstants.MAX_ALLOWED_USER_RESERVES_LIMIT,
@@ -234,6 +235,7 @@ library AaveV4DeployOrchestration {
     address authority,
     string memory label,
     bytes memory spokeBytecode,
+    address hook,
     uint16 maxUserReservesLimit,
     uint8 oracleDecimals,
     bytes32 salt
@@ -246,6 +248,7 @@ library AaveV4DeployOrchestration {
       proxyAdminOwner: proxyAdminOwner,
       authority: authority,
       spokeBytecode: spokeBytecode,
+      hook: hook,
       oracleDecimals: oracleDecimals,
       maxUserReservesLimit: maxUserReservesLimit,
       salt: salt
@@ -312,6 +315,7 @@ library AaveV4DeployOrchestration {
     address proxyAdminOwner,
     address authority,
     bytes memory spokeBytecode,
+    address hook,
     uint8 oracleDecimals,
     uint16 maxUserReservesLimit,
     bytes32 salt
@@ -321,6 +325,7 @@ library AaveV4DeployOrchestration {
       proxyAdminOwner: proxyAdminOwner,
       authority: authority,
       spokeBytecode: spokeBytecode,
+      hook: hook,
       oracleDecimals: oracleDecimals,
       maxUserReservesLimit: maxUserReservesLimit,
       salt: salt

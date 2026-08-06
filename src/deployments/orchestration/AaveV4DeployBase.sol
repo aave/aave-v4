@@ -86,6 +86,7 @@ library AaveV4DeployBase {
   /// @param proxyAdminOwner The owner of the proxy admin.
   /// @param authority The access-control authority for the Spoke.
   /// @param spokeBytecode The creation bytecode of the SpokeInstance contract.
+  /// @param hook The hook invoked by the SpokeInstance contract.
   /// @param oracleDecimals The decimal precision for the AaveOracle.
   /// @param maxUserReservesLimit The maximum number of reserves a user can interact with.
   /// @param salt The CREATE2 salt for deterministic deployment.
@@ -94,6 +95,7 @@ library AaveV4DeployBase {
     address proxyAdminOwner,
     address authority,
     bytes memory spokeBytecode,
+    address hook,
     uint8 oracleDecimals,
     uint16 maxUserReservesLimit,
     bytes32 salt
@@ -102,6 +104,7 @@ library AaveV4DeployBase {
       proxyAdminOwner_: proxyAdminOwner,
       authority_: authority,
       spokeBytecode_: spokeBytecode,
+      hook_: hook,
       oracleDecimals_: oracleDecimals,
       maxUserReservesLimit_: maxUserReservesLimit,
       salt_: salt

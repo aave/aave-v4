@@ -31,6 +31,7 @@ import {IAccessManagerEnumerable} from 'src/access/interfaces/IAccessManagerEnum
 import {TreasurySpoke} from 'src/spoke/TreasurySpoke.sol';
 import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 import {IPriceOracle} from 'src/spoke/interfaces/IPriceOracle.sol';
+import {NoOpSpokeHook} from 'src/spoke/hooks/NoOpSpokeHook.sol';
 
 contract BatchBaseTest is Create2TestHelper {
   address public admin = makeAddr('admin');
@@ -38,6 +39,7 @@ contract BatchBaseTest is Create2TestHelper {
   bytes32 public salt;
   address public accessManager;
   address public nativeWrapper;
+  address public spokeHook;
   bytes internal hubBytecode;
   bytes internal spokeBytecode;
 
@@ -47,6 +49,7 @@ contract BatchBaseTest is Create2TestHelper {
 
     hubBytecode = vm.getCode('src/hub/instances/HubInstance.sol:HubInstance');
     spokeBytecode = vm.getCode('src/spoke/instances/SpokeInstance.sol:SpokeInstance');
+    spokeHook = address(new NoOpSpokeHook());
 
     // used Hub, Spoke, Configurator batches
     AaveV4AuthorityBatch authorityBatch = new AaveV4AuthorityBatch({admin_: admin, salt_: salt});

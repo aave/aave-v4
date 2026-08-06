@@ -2,6 +2,7 @@
 pragma solidity 0.8.28;
 
 import {Spoke} from 'src/spoke/Spoke.sol';
+import {ISpokeHook} from 'src/spoke/interfaces/ISpokeHook.sol';
 
 /// @title SpokeInstance
 /// @author Aave Labs
@@ -9,11 +10,21 @@ import {Spoke} from 'src/spoke/Spoke.sol';
 contract SpokeInstance is Spoke {
   uint64 public constant SPOKE_REVISION = 1;
 
+  /// @notice The hook invoked before permissionless Spoke actions.
+  ISpokeHook internal immutable HOOK;
+
   /// @dev Constructor.
   /// @dev During upgrade, must ensure that the new oracle is supporting existing assets on the Spoke and the replaced oracle.
   /// @param oracle_ The address of the oracle.
   /// @param maxUserReservesLimit_ The maximum number of collateral and borrow reserves a user can have.
-  constructor(address oracle_, uint16 maxUserReservesLimit_) Spoke(oracle_, maxUserReservesLimit_) {
+  /// @param hook_ The hook invoked before permissionless Spoke actions.
+  constructor(
+    address oracle_,
+    uint16 maxUserReservesLimit_,
+    address hook_
+  ) Spoke(oracle_, maxUserReservesLimit_) {
+    require(hook_.code.length > 0, InvalidAddress());
+    HOOK = ISpokeHook(hook_);
     _disableInitializers();
   }
 
@@ -29,5 +40,11 @@ contract SpokeInstance is Spoke {
       _liquidationConfig.targetHealthFactor = HEALTH_FACTOR_LIQUIDATION_THRESHOLD;
       emit UpdateLiquidationConfig(_liquidationConfig);
     }
+  }
+
+  function _executeHook(address onBehalfOf) internal override {
+    HOOK.onAction(
+      ISpokeHook.HookContext({caller: msg.sender, onBehalfOf: onBehalfOf, selector: msg.sig})
+    );
   }
 }

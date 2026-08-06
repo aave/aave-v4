@@ -6,6 +6,7 @@ import {AaveV4DeployBatchBaseScript} from 'scripts/deploy/AaveV4DeployBatchBase.
 import {InputUtils} from 'src/deployments/utils/libraries/InputUtils.sol';
 import {DeployConstants} from 'src/deployments/utils/libraries/DeployConstants.sol';
 import {WETH9} from 'src/dependencies/weth/WETH9.sol';
+import {NoOpSpokeHook} from 'src/spoke/hooks/NoOpSpokeHook.sol';
 
 contract AaveV4DeployBatchBaseScriptHarness is AaveV4DeployBatchBaseScript {
   // use harness to expose internal functions for testing
@@ -61,6 +62,7 @@ contract AaveV4DeployBatchBaseScriptTest is Test {
       gatewayOwner: makeAddr('gatewayOwner'),
       positionManagerOwner: makeAddr('positionManagerOwner'),
       nativeWrapper: address(new WETH9()),
+      spokeHook: address(new NoOpSpokeHook()),
       deployNativeTokenGateway: true,
       deploySignatureGateway: true,
       deployPositionManagers: true,
@@ -323,6 +325,7 @@ contract AaveV4DeployBatchBaseScriptTest is Test {
     assertEq(a.gatewayOwner, b.gatewayOwner, 'gateway owner');
     assertEq(a.positionManagerOwner, b.positionManagerOwner, 'position manager owner');
     assertEq(a.nativeWrapper, b.nativeWrapper, 'native wrapper');
+    assertEq(a.spokeHook, b.spokeHook, 'spoke hook');
     assertEq(a.deployNativeTokenGateway, b.deployNativeTokenGateway, 'deploy native token gateway');
     assertEq(a.deploySignatureGateway, b.deploySignatureGateway, 'deploy signature gateway');
     assertEq(a.deployPositionManagers, b.deployPositionManagers, 'deploy position managers');

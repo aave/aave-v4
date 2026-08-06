@@ -2,6 +2,7 @@
 pragma solidity ^0.8.0;
 
 import 'tests/utils/BatchTestProcedures.sol';
+import {NoOpSpokeHook} from 'src/spoke/hooks/NoOpSpokeHook.sol';
 
 contract AaveV4BatchDeploymentTest is BatchTestProcedures {
   function setUp() public override {
@@ -18,6 +19,7 @@ contract AaveV4BatchDeploymentTest is BatchTestProcedures {
       gatewayOwner: makeAddr('gatewayOwner'),
       positionManagerOwner: makeAddr('positionManagerOwner'),
       nativeWrapper: _weth9,
+      spokeHook: address(new NoOpSpokeHook()),
       deployNativeTokenGateway: true,
       deploySignatureGateway: true,
       deployPositionManagers: true,
@@ -366,6 +368,7 @@ contract AaveV4BatchDeploymentTest is BatchTestProcedures {
     deployInputs.grantRoles = false;
     deployInputs.deployNativeTokenGateway = deployNativeTokenGateway;
     deployInputs.deploySignatureGateway = deploySignatureGateway;
+    deployInputs.spokeHook = _inputs.spokeHook;
     if (withoutHubs) {
       deployInputs.hubLabels = new string[](0);
     } else {
@@ -401,6 +404,7 @@ contract AaveV4BatchDeploymentTest is BatchTestProcedures {
     deployInputs.grantRoles = true;
     deployInputs.deployNativeTokenGateway = deployNativeTokenGateway;
     deployInputs.deploySignatureGateway = deploySignatureGateway;
+    deployInputs.spokeHook = _inputs.spokeHook;
     if (withoutHubs) {
       deployInputs.hubLabels = new string[](0);
     } else {

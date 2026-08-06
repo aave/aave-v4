@@ -168,6 +168,7 @@ contract BatchTestProcedures is Test, Create2TestHelper, WETHDeployProcedure {
     inputs.spokeLabels = _spokeLabels;
     inputs.spokeMaxReservesLimits = _defaultSpokeMaxReservesLimits(_spokeLabels.length);
     inputs.nativeWrapper = _weth9;
+    inputs.spokeHook = _inputs.spokeHook;
     inputs.deployNativeTokenGateway = true;
     inputs.deploySignatureGateway = true;
     inputs.deployPositionManagers = true;
