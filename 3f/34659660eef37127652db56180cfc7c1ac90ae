@@ -1,0 +1,55 @@
+snapshots/TakerPositionManager.Operations.json
+  s_defb07f88d21bb::t_4f7a4f76815513 11
+  s_defb07f88d21bb::t_8ce2a9219f4fc3 6
+src/access/interfaces/IBorrowerEligibility.sol
+  s_defb07f88d21bb::t_eb8029c3760221 1-7,10
+  s_defb07f88d21bb::t_4c26095b19b8fd 8-9
+src/spoke/Spoke.sol
+  s_defb07f88d21bb::t_4c26095b19b8fd 278
+src/deployments/utils/libraries/Roles.sol
+  s_defb07f88d21bb::t_fd0e485f250e69 45
+  s_defb07f88d21bb::t_4c26095b19b8fd 123-129
+src/deployments/procedures/roles/AaveV4SpokeRolesProcedure.sol
+  s_defb07f88d21bb::t_4c26095b19b8fd 33-35,37-38
+  s_defb07f88d21bb::t_fd0e485f250e69 36
+tests/contracts/access/PermissionedBorrowingAccessManager.t.sol
+  s_defb07f88d21bb::t_4c26095b19b8fd 4-9,12-20,24-34,38-207
+  s_defb07f88d21bb::t_4f9d30955fc23f 1-3,10-11,21-23,35-37,208
+snapshots/SignatureGateway.Operations.json
+  s_defb07f88d21bb::t_4f7a4f76815513 10
+  s_defb07f88d21bb::t_cb1c7260fd3c18 2
+snapshots/Spoke.Operations.ZeroRiskPremium.json
+  s_defb07f88d21bb::t_4f7a4f76815513 34
+  s_defb07f88d21bb::t_b306df710c49d4 2-3
+snapshots/Spoke.Operations.json
+  s_defb07f88d21bb::t_4f7a4f76815513 34
+  s_defb07f88d21bb::t_6c9a56523db1c6 2-3
+tests/deployments/procedures/deploy/roles/AaveV4SpokeRolesProcedure.t.sol
+  s_defb07f88d21bb::t_4c26095b19b8fd 103-104,106,120-125
+  s_defb07f88d21bb::t_fd0e485f250e69 105
+src/access/PermissionedBorrowingAccessManager.sol
+  s_defb07f88d21bb::t_4c26095b19b8fd 4-5,7,15-43,45-47,50-52,54-60
+  s_defb07f88d21bb::t_eb8029c3760221 1-3,8-14,48-49,53,61
+  s_defb07f88d21bb::t_efda9779d4352a 6
+  s_defb07f88d21bb::t_fd0e485f250e69 44
+tests/helpers/mocks/deployments/procedures/AaveV4SpokeRolesProcedureWrapper.sol
+  s_defb07f88d21bb::t_4c26095b19b8fd 44-47
+snapshots/NativeTokenGateway.Operations.json
+  s_defb07f88d21bb::t_11f0ca7c71a2a4 2
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.21",
+  "base_commit_sha": "3f34659660eef37127652db56180cfc7c1ac90ae",
+  "prompts": {},
+  "sessions": {
+    "s_defb07f88d21bb": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019fd699-4479-77f3-8e77-6cb94b8ca924",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "AlbertoCentonze <11707683+AlbertoCentonze@users.noreply.github.com>"
+    }
+  }
+}
