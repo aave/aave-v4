@@ -40,6 +40,7 @@ library SpokeEngine {
   }
 
   /// @notice Updates reserve config on Spokes.
+  /// @dev The Spoke must be registered on the AddressesProvider as a canonical Spoke.
   /// @param updates The reserve config updates to execute.
   /// @param addressesProvider The AddressesProvider authorizing the actions.
   function executeSpokeReserveConfigUpdates(
@@ -105,6 +106,7 @@ library SpokeEngine {
   /// @dev If all three fields (targetHealthFactor, healthFactorForMaxBonus, liquidationBonusFactor)
   /// are set, calls updateLiquidationConfig with the full struct. Otherwise, each non-KEEP_CURRENT
   /// field is updated individually via its dedicated setter. If no field is set, the update is skipped.
+  /// @dev The Spoke must be registered on the AddressesProvider as a canonical Spoke.
   /// @param updates The liquidation config updates to execute.
   /// @param addressesProvider The AddressesProvider authorizing the actions.
   function executeSpokeLiquidationConfigUpdates(
@@ -152,6 +154,7 @@ library SpokeEngine {
   }
 
   /// @notice Adds dynamic reserve configs on Spokes.
+  /// @dev The Spoke must be registered on the AddressesProvider as a canonical Spoke.
   /// @param additions The dynamic reserve config additions to execute.
   /// @param addressesProvider The AddressesProvider authorizing the actions.
   function executeSpokeDynamicReserveConfigAdditions(
@@ -178,6 +181,7 @@ library SpokeEngine {
   /// @notice Updates dynamic reserve configs on Spokes.
   /// @dev Reads the current config, applies only the fields that differ from KEEP_CURRENT,
   /// and writes back. If no field is modified the external call is skipped entirely.
+  /// @dev The Spoke must be registered on the AddressesProvider as a canonical Spoke.
   /// @param updates The dynamic reserve config updates to execute.
   /// @param addressesProvider The AddressesProvider authorizing the actions.
   function executeSpokeDynamicReserveConfigUpdates(
@@ -225,6 +229,7 @@ library SpokeEngine {
   }
 
   /// @notice Updates position managers on Spokes.
+  /// @dev The Spoke must be registered on the AddressesProvider as a canonical Spoke.
   /// @param updates The position manager updates to execute on Spokes.
   /// @param addressesProvider The AddressesProvider authorizing the actions.
   function executeSpokePositionManagerUpdates(

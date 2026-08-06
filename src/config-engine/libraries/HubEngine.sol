@@ -60,6 +60,7 @@ library HubEngine {
   /// IR: strategy set → updateInterestRateStrategy; strategy kept + non-sentinel irData fields →
   /// read-modify-write via updateInterestRateData.
   /// Reinvestment: address set → updateReinvestmentController.
+  /// @dev The Hub must be registered on the AddressesProvider as a canonical Hub.
   /// @param updates The asset config updates to execute.
   /// @param addressesProvider The AddressesProvider authorizing the actions.
   function executeHubAssetConfigUpdates(
@@ -187,6 +188,7 @@ library HubEngine {
   }
 
   /// @notice Halts assets on Hubs.
+  /// @dev The Hub must be registered on the AddressesProvider as a canonical Hub.
   /// @param halts The asset halts to execute.
   /// @param addressesProvider The AddressesProvider authorizing the actions.
   function executeHubAssetHalts(
@@ -203,6 +205,7 @@ library HubEngine {
   }
 
   /// @notice Deactivates assets on Hubs.
+  /// @dev The Hub must be registered on the AddressesProvider as a canonical Hub.
   /// @param deactivations The asset deactivations to execute.
   /// @param addressesProvider The AddressesProvider authorizing the actions.
   function executeHubAssetDeactivations(
@@ -219,6 +222,7 @@ library HubEngine {
   }
 
   /// @notice Resets asset caps on Hubs.
+  /// @dev The Hub must be registered on the AddressesProvider as a canonical Hub.
   /// @param resets The asset caps resets to execute.
   /// @param addressesProvider The AddressesProvider authorizing the actions.
   function executeHubAssetCapsResets(

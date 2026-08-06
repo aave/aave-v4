@@ -14,6 +14,8 @@ import {IAddressesProvider} from 'src/addresses-provider/interfaces/IAddressesPr
 /// The engine is stateless and invoked via delegatecall from payload contracts.
 /// All numeric fields in config structs use uint256 so that type(uint256).max can serve as
 /// the universal KEEP_CURRENT sentinel. Boolean fields use uint256 (0=false, 1=true, KEEP_CURRENT=skip).
+/// Hub and Spoke actions revert when the targeted Hub or Spoke is not registered on the
+/// AddressesProvider; entries are managed via `executeAddressesProviderEntryUpdates`.
 interface IAaveV4ConfigEngine {
   /// @notice Parameters for tokenization of an asset on a Hub when listing the asset.
   /// @dev Tokenization is skipped only when all fields are unset. Otherwise `name`, `symbol`,
