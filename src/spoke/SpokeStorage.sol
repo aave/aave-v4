@@ -35,6 +35,9 @@ abstract contract SpokeStorage {
   /// @dev Map of position manager addresses to their configuration data.
   mapping(address positionManager => ISpoke.PositionManagerConfig) internal _positionManager;
 
+  /// @dev Map of function selectors to the only position manager allowed to call them.
+  mapping(bytes4 functionSelector => address positionManager) internal _mandatoryPositionManager;
+
   /// @dev Reserved storage space to allow for future layout updates.
-  uint256[50] private __gap;
+  uint256[49] private __gap;
 }

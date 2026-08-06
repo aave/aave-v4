@@ -89,6 +89,7 @@ abstract contract Spoke is
   /// @notice Modifier that checks if the caller is an approved positionManager for `onBehalfOf`.
   modifier onlyPositionManager(address onBehalfOf) {
     require(_isPositionManager({user: onBehalfOf, manager: msg.sender}), Unauthorized());
+    require(_isMandatoryPositionManager({selector: msg.sig, manager: msg.sender}), Unauthorized());
     _;
   }
 
@@ -219,6 +220,15 @@ abstract contract Spoke is
   function updatePositionManager(address positionManager, bool active) external restricted {
     _positionManager[positionManager].active = active;
     emit UpdatePositionManager(positionManager, active);
+  }
+
+  /// @inheritdoc ISpoke
+  function updateMandatoryPositionManager(
+    bytes4 functionSelector,
+    address positionManager
+  ) external restricted {
+    _mandatoryPositionManager[functionSelector] = positionManager;
+    emit UpdateMandatoryPositionManager(functionSelector, positionManager);
   }
 
   /// @inheritdoc ISpoke
@@ -664,6 +674,11 @@ abstract contract Spoke is
   }
 
   /// @inheritdoc ISpoke
+  function getMandatoryPositionManager(bytes4 functionSelector) external view returns (address) {
+    return _mandatoryPositionManager[functionSelector];
+  }
+
+  /// @inheritdoc ISpoke
   function getLiquidationLogic() external pure returns (address) {
     return address(LiquidationLogic);
   }
@@ -910,6 +925,15 @@ abstract contract Spoke is
     if (user == manager) return true;
     PositionManagerConfig storage config = _positionManager[manager];
     return config.active && config.approval[user];
+  }
+
+  /// @notice Returns whether `manager` may call the position-manager-gated function `selector`.
+  function _isMandatoryPositionManager(
+    bytes4 selector,
+    address manager
+  ) internal view returns (bool) {
+    address mandatoryPositionManager = _mandatoryPositionManager[selector];
+    return mandatoryPositionManager == address(0) || manager == mandatoryPositionManager;
   }
 
   function _validateReserveConfig(ReserveConfig calldata config) internal pure {

@@ -188,6 +188,14 @@ interface ISpoke is IAccessManaged, IIntentConsumer, IExtSload, IMulticall {
   /// @param active True if position manager has become active.
   event UpdatePositionManager(address indexed positionManager, bool active);
 
+  /// @notice Emitted when the mandatory position manager for a function is updated.
+  /// @param functionSelector The selector of the function restricted to the position manager.
+  /// @param positionManager The only position manager allowed to call the function, or zero to remove the restriction.
+  event UpdateMandatoryPositionManager(
+    bytes4 indexed functionSelector,
+    address indexed positionManager
+  );
+
   /// @notice Emitted on the supply action.
   /// @param reserveId The reserve identifier of the underlying asset.
   /// @param caller The transaction initiator, and supplier of the underlying asset.
@@ -475,6 +483,15 @@ interface ISpoke is IAccessManaged, IIntentConsumer, IExtSload, IMulticall {
   /// @param positionManager The address of the position manager.
   /// @param active True if positionManager is to be set as active.
   function updatePositionManager(address positionManager, bool active) external;
+
+  /// @notice Restricts a position-manager-gated function to a single position manager.
+  /// @dev Setting `positionManager` to the zero address removes the restriction.
+  /// @param functionSelector The selector of the function to restrict.
+  /// @param positionManager The only position manager allowed to call the function.
+  function updateMandatoryPositionManager(
+    bytes4 functionSelector,
+    address positionManager
+  ) external;
 
   /// @notice Supplies an amount of underlying asset of the specified reserve.
   /// @dev It reverts if the reserve associated with the given reserve identifier is not listed.
@@ -771,6 +788,11 @@ interface ISpoke is IAccessManaged, IIntentConsumer, IExtSload, IMulticall {
   /// @param positionManager The address of the position manager.
   /// @return True if positionManager is active and approved by user.
   function isPositionManager(address user, address positionManager) external view returns (bool);
+
+  /// @notice Returns the mandatory position manager for a function.
+  /// @param functionSelector The selector of the function.
+  /// @return The mandatory position manager, or the zero address if the function is unrestricted.
+  function getMandatoryPositionManager(bytes4 functionSelector) external view returns (address);
 
   /// @notice Returns the address of the external `LiquidationLogic` library.
   function getLiquidationLogic() external pure returns (address);
