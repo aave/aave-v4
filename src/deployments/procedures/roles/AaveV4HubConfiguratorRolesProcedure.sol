@@ -8,11 +8,16 @@ import {Roles} from 'src/deployments/utils/libraries/Roles.sol';
 /// @author Aave Labs
 /// @notice Procedures for granting and setting up HubConfigurator roles on the AccessManager.
 library AaveV4HubConfiguratorRolesProcedure {
-  /// @notice Grants the HubConfigurator domain admin role (200) to `admin`.
+  /// @notice Grants every HubConfigurator role (200-205) to `admin`.
   /// @param accessManager The address of the AccessManager contract.
-  /// @param admin The address to receive the HubConfigurator domain admin role.
+  /// @param admin The address to receive the HubConfigurator roles.
   function grantHubConfiguratorAllRoles(address accessManager, address admin) internal {
     grantHubConfiguratorRole(accessManager, Roles.HUB_CONFIGURATOR_DOMAIN_ADMIN_ROLE, admin);
+    grantHubConfiguratorRole(accessManager, Roles.HUB_CONFIGURATOR_SPOKE_ACTIVE_ROLE, admin);
+    grantHubConfiguratorRole(accessManager, Roles.HUB_CONFIGURATOR_SPOKE_HALTED_ROLE, admin);
+    grantHubConfiguratorRole(accessManager, Roles.HUB_CONFIGURATOR_LISTING_ROLE, admin);
+    grantHubConfiguratorRole(accessManager, Roles.HUB_CONFIGURATOR_EMERGENCY_ROLE, admin);
+    grantHubConfiguratorRole(accessManager, Roles.HUB_CONFIGURATOR_RISK_MANAGEMENT_ROLE, admin);
   }
 
   /// @notice Grants a specific HubConfigurator role to the given address.
@@ -25,7 +30,7 @@ library AaveV4HubConfiguratorRolesProcedure {
     IAccessManager(accessManager).grantRole({roleId: role, account: admin, executionDelay: 0});
   }
 
-  /// @notice Sets up the HubConfigurator domain admin role with all target selectors.
+  /// @notice Sets up every HubConfigurator role (200-205) with its target selectors.
   /// @param accessManager The address of the AccessManager contract.
   /// @param hubConfigurator The address of the HubConfigurator contract.
   function setupHubConfiguratorAllRoles(address accessManager, address hubConfigurator) internal {
@@ -34,6 +39,36 @@ library AaveV4HubConfiguratorRolesProcedure {
       hubConfigurator,
       Roles.HUB_CONFIGURATOR_DOMAIN_ADMIN_ROLE,
       Roles.getHubConfiguratorDomainAdminRoleSelectors()
+    );
+    setupHubConfiguratorRole(
+      accessManager,
+      hubConfigurator,
+      Roles.HUB_CONFIGURATOR_SPOKE_ACTIVE_ROLE,
+      Roles.getHubConfiguratorSpokeActiveRoleSelectors()
+    );
+    setupHubConfiguratorRole(
+      accessManager,
+      hubConfigurator,
+      Roles.HUB_CONFIGURATOR_SPOKE_HALTED_ROLE,
+      Roles.getHubConfiguratorSpokeHaltedRoleSelectors()
+    );
+    setupHubConfiguratorRole(
+      accessManager,
+      hubConfigurator,
+      Roles.HUB_CONFIGURATOR_LISTING_ROLE,
+      Roles.getHubConfiguratorListingRoleSelectors()
+    );
+    setupHubConfiguratorRole(
+      accessManager,
+      hubConfigurator,
+      Roles.HUB_CONFIGURATOR_EMERGENCY_ROLE,
+      Roles.getHubConfiguratorEmergencyRoleSelectors()
+    );
+    setupHubConfiguratorRole(
+      accessManager,
+      hubConfigurator,
+      Roles.HUB_CONFIGURATOR_RISK_MANAGEMENT_ROLE,
+      Roles.getHubConfiguratorRiskManagementRoleSelectors()
     );
   }
 

@@ -96,110 +96,87 @@ contract AaveV4AccessManagerRolesProcedureTest is ProceduresBase {
     );
     aaveV4AccessManagerRolesProcedureWrapper.labelAllRoles(accessManager);
 
-    IAccessManagerEnumerable accessManager = IAccessManagerEnumerable(accessManager);
+    IAccessManagerEnumerable am = IAccessManagerEnumerable(accessManager);
 
     // Hub roles
-    assertTrue(
-      accessManager.isRoleLabeled(Roles.HUB_DOMAIN_ADMIN_ROLE),
-      'HUB_DOMAIN_ADMIN labeled'
-    );
-    assertEq(accessManager.getLabelOfRole(Roles.HUB_DOMAIN_ADMIN_ROLE), 'HUB_DOMAIN_ADMIN_ROLE');
-    assertEq(accessManager.getRoleOfLabel('HUB_DOMAIN_ADMIN_ROLE'), Roles.HUB_DOMAIN_ADMIN_ROLE);
-
-    assertTrue(
-      accessManager.isRoleLabeled(Roles.HUB_CONFIGURATOR_ROLE),
-      'HUB_CONFIGURATOR labeled'
-    );
-    assertEq(accessManager.getLabelOfRole(Roles.HUB_CONFIGURATOR_ROLE), 'HUB_CONFIGURATOR_ROLE');
-    assertEq(accessManager.getRoleOfLabel('HUB_CONFIGURATOR_ROLE'), Roles.HUB_CONFIGURATOR_ROLE);
-
-    assertTrue(accessManager.isRoleLabeled(Roles.HUB_FEE_MINTER_ROLE), 'HUB_FEE_MINTER labeled');
-    assertEq(accessManager.getLabelOfRole(Roles.HUB_FEE_MINTER_ROLE), 'HUB_FEE_MINTER_ROLE');
-    assertEq(accessManager.getRoleOfLabel('HUB_FEE_MINTER_ROLE'), Roles.HUB_FEE_MINTER_ROLE);
-
-    assertTrue(
-      accessManager.isRoleLabeled(Roles.HUB_DEFICIT_ELIMINATOR_ROLE),
-      'HUB_DEFICIT_ELIMINATOR labeled'
-    );
-    assertEq(
-      accessManager.getLabelOfRole(Roles.HUB_DEFICIT_ELIMINATOR_ROLE),
-      'HUB_DEFICIT_ELIMINATOR_ROLE'
-    );
-    assertEq(
-      accessManager.getRoleOfLabel('HUB_DEFICIT_ELIMINATOR_ROLE'),
-      Roles.HUB_DEFICIT_ELIMINATOR_ROLE
-    );
+    _assertRoleLabeled(am, Roles.HUB_DOMAIN_ADMIN_ROLE, 'HUB_DOMAIN_ADMIN_ROLE');
+    _assertRoleLabeled(am, Roles.HUB_CONFIGURATOR_ROLE, 'HUB_CONFIGURATOR_ROLE');
+    _assertRoleLabeled(am, Roles.HUB_FEE_MINTER_ROLE, 'HUB_FEE_MINTER_ROLE');
+    _assertRoleLabeled(am, Roles.HUB_DEFICIT_ELIMINATOR_ROLE, 'HUB_DEFICIT_ELIMINATOR_ROLE');
 
     // HubConfigurator roles
-    assertTrue(
-      accessManager.isRoleLabeled(Roles.HUB_CONFIGURATOR_DOMAIN_ADMIN_ROLE),
-      'HUB_CONFIGURATOR_DOMAIN_ADMIN labeled'
-    );
-    assertEq(
-      accessManager.getLabelOfRole(Roles.HUB_CONFIGURATOR_DOMAIN_ADMIN_ROLE),
+    _assertRoleLabeled(
+      am,
+      Roles.HUB_CONFIGURATOR_DOMAIN_ADMIN_ROLE,
       'HUB_CONFIGURATOR_DOMAIN_ADMIN_ROLE'
     );
-    assertEq(
-      accessManager.getRoleOfLabel('HUB_CONFIGURATOR_DOMAIN_ADMIN_ROLE'),
-      Roles.HUB_CONFIGURATOR_DOMAIN_ADMIN_ROLE
+    _assertRoleLabeled(
+      am,
+      Roles.HUB_CONFIGURATOR_SPOKE_ACTIVE_ROLE,
+      'HUB_CONFIGURATOR_SPOKE_ACTIVE_ROLE'
+    );
+    _assertRoleLabeled(
+      am,
+      Roles.HUB_CONFIGURATOR_SPOKE_HALTED_ROLE,
+      'HUB_CONFIGURATOR_SPOKE_HALTED_ROLE'
+    );
+    _assertRoleLabeled(am, Roles.HUB_CONFIGURATOR_LISTING_ROLE, 'HUB_CONFIGURATOR_LISTING_ROLE');
+    _assertRoleLabeled(
+      am,
+      Roles.HUB_CONFIGURATOR_EMERGENCY_ROLE,
+      'HUB_CONFIGURATOR_EMERGENCY_ROLE'
+    );
+    _assertRoleLabeled(
+      am,
+      Roles.HUB_CONFIGURATOR_RISK_MANAGEMENT_ROLE,
+      'HUB_CONFIGURATOR_RISK_MANAGEMENT_ROLE'
     );
 
     // Spoke roles
-    assertTrue(
-      accessManager.isRoleLabeled(Roles.SPOKE_DOMAIN_ADMIN_ROLE),
-      'SPOKE_DOMAIN_ADMIN labeled'
-    );
-    assertEq(
-      accessManager.getLabelOfRole(Roles.SPOKE_DOMAIN_ADMIN_ROLE),
-      'SPOKE_DOMAIN_ADMIN_ROLE'
-    );
-    assertEq(
-      accessManager.getRoleOfLabel('SPOKE_DOMAIN_ADMIN_ROLE'),
-      Roles.SPOKE_DOMAIN_ADMIN_ROLE
-    );
-
-    assertTrue(
-      accessManager.isRoleLabeled(Roles.SPOKE_CONFIGURATOR_ROLE),
-      'SPOKE_CONFIGURATOR labeled'
-    );
-    assertEq(
-      accessManager.getLabelOfRole(Roles.SPOKE_CONFIGURATOR_ROLE),
-      'SPOKE_CONFIGURATOR_ROLE'
-    );
-    assertEq(
-      accessManager.getRoleOfLabel('SPOKE_CONFIGURATOR_ROLE'),
-      Roles.SPOKE_CONFIGURATOR_ROLE
-    );
-
-    assertTrue(
-      accessManager.isRoleLabeled(Roles.SPOKE_USER_POSITION_UPDATER_ROLE),
-      'SPOKE_USER_POSITION_UPDATER labeled'
-    );
-    assertEq(
-      accessManager.getLabelOfRole(Roles.SPOKE_USER_POSITION_UPDATER_ROLE),
+    _assertRoleLabeled(am, Roles.SPOKE_DOMAIN_ADMIN_ROLE, 'SPOKE_DOMAIN_ADMIN_ROLE');
+    _assertRoleLabeled(am, Roles.SPOKE_CONFIGURATOR_ROLE, 'SPOKE_CONFIGURATOR_ROLE');
+    _assertRoleLabeled(
+      am,
+      Roles.SPOKE_USER_POSITION_UPDATER_ROLE,
       'SPOKE_USER_POSITION_UPDATER_ROLE'
-    );
-    assertEq(
-      accessManager.getRoleOfLabel('SPOKE_USER_POSITION_UPDATER_ROLE'),
-      Roles.SPOKE_USER_POSITION_UPDATER_ROLE
     );
 
     // SpokeConfigurator roles
-    assertTrue(
-      accessManager.isRoleLabeled(Roles.SPOKE_CONFIGURATOR_DOMAIN_ADMIN_ROLE),
-      'SPOKE_CONFIGURATOR_DOMAIN_ADMIN labeled'
-    );
-    assertEq(
-      accessManager.getLabelOfRole(Roles.SPOKE_CONFIGURATOR_DOMAIN_ADMIN_ROLE),
+    _assertRoleLabeled(
+      am,
+      Roles.SPOKE_CONFIGURATOR_DOMAIN_ADMIN_ROLE,
       'SPOKE_CONFIGURATOR_DOMAIN_ADMIN_ROLE'
     );
-    assertEq(
-      accessManager.getRoleOfLabel('SPOKE_CONFIGURATOR_DOMAIN_ADMIN_ROLE'),
-      Roles.SPOKE_CONFIGURATOR_DOMAIN_ADMIN_ROLE
+    _assertRoleLabeled(am, Roles.SPOKE_CONFIGURATOR_PAUSE_ROLE, 'SPOKE_CONFIGURATOR_PAUSE_ROLE');
+    _assertRoleLabeled(am, Roles.SPOKE_CONFIGURATOR_FREEZE_ROLE, 'SPOKE_CONFIGURATOR_FREEZE_ROLE');
+    _assertRoleLabeled(
+      am,
+      Roles.SPOKE_CONFIGURATOR_LISTING_ROLE,
+      'SPOKE_CONFIGURATOR_LISTING_ROLE'
+    );
+    _assertRoleLabeled(
+      am,
+      Roles.SPOKE_CONFIGURATOR_EMERGENCY_ROLE,
+      'SPOKE_CONFIGURATOR_EMERGENCY_ROLE'
+    );
+    _assertRoleLabeled(
+      am,
+      Roles.SPOKE_CONFIGURATOR_RISK_MANAGEMENT_ROLE,
+      'SPOKE_CONFIGURATOR_RISK_MANAGEMENT_ROLE'
     );
 
     // Total label count
-    assertEq(accessManager.getRoleLabelCount(), 9, 'total label count');
+    assertEq(am.getRoleLabelCount(), 19, 'total label count');
+  }
+
+  function _assertRoleLabeled(
+    IAccessManagerEnumerable am,
+    uint64 role,
+    string memory label
+  ) internal view {
+    assertTrue(am.isRoleLabeled(role), string.concat(label, ' labeled'));
+    assertEq(am.getLabelOfRole(role), label);
+    assertEq(am.getRoleOfLabel(label), role);
   }
 
   function test_labelAllRoles_reverts_zeroAddress() public {

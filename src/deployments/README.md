@@ -109,12 +109,24 @@ Hub and spoke labels (provided via `FullDeployInputs.hubLabels` / `spokeLabels`)
 
 Roles are namespaced by contract domain: Hub (100-199), HubConfigurator (200-299), Spoke (300-399), SpokeConfigurator (400-499).
 
-For configurators, initially a single Domain Admin role (HUB_CONFIGURATOR_DOMAIN_ADMIN_ROLE = 200, SPOKE_CONFIGURATOR_DOMAIN_ADMIN_ROLE = 400) holds all target selectors. As more granular roles are introduced, they should be added at the next available ID (201, 202, ... / 401, 402, ...) and the corresponding selectors reassigned from the Domain Admin role to the new granular role:
+For configurators, a single Domain Admin role (HUB_CONFIGURATOR_DOMAIN_ADMIN_ROLE = 200, SPOKE_CONFIGURATOR_DOMAIN_ADMIN_ROLE = 400) initially held all target selectors. As more granular roles are introduced, they should be added at the next available ID (201, 202, ... / 401, 402, ...) and the corresponding selectors reassigned from the Domain Admin role to the new granular role:
 
 - Existing role IDs should never be overwritten or reused for a different purpose.
 - New roles are always appended with an incremented ID.
 - The Domain Admin role (200/400) only ever has its selector set shrink over time as selectors are divided into more granular roles.
 - Addresses holding the Domain Admin role should be granted the new granular role being added to retain their existing access.
+
+Each configurator is now broken down into five granular roles covering the same five concerns, plus the residual Domain Admin. A role never spans both configurators — a Hub role only holds HubConfigurator selectors and a Spoke role only holds SpokeConfigurator selectors — so Hub and Spoke access is always granted separately.
+
+The first two roles are named after the flag they own rather than after pause/freeze, because the Hub has no `paused`/`frozen` flags of its own: the equivalent state lives on the Spoke config the Hub holds for each asset.
+
+| Concern              | Hub role                              | Spoke role                              | Purpose                                                                                                                                                                                                                                                                                                   |
+| -------------------- | ------------------------------------- | --------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Prevent all activity | HUB_CONFIGURATOR_SPOKE_ACTIVE_ROLE    | SPOKE_CONFIGURATOR_PAUSE_ROLE           | Flips the flag that prevents all activity, in both directions. The Spoke `paused` flag, and the Hub's per-asset Spoke `active` flag which gates every Hub action.                                                                                                                                         |
+| Prevent new activity | HUB_CONFIGURATOR_SPOKE_HALTED_ROLE    | SPOKE_CONFIGURATOR_FREEZE_ROLE          | Flips the flag that prevents new activity, in both directions. The Spoke `frozen` flag, and the Hub's per-asset Spoke `halted` flag which gates the actions that instantly update liquidity.                                                                                                              |
+| Listing              | HUB_CONFIGURATOR_LISTING_ROLE         | SPOKE_CONFIGURATOR_LISTING_ROLE         | Onboards new assets, Spokes and reserves, and sets the properties fixed at listing time.                                                                                                                                                                                                                  |
+| Emergency            | HUB_CONFIGURATOR_EMERGENCY_ROLE       | SPOKE_CONFIGURATOR_EMERGENCY_ROLE       | The one-directional batch flag actions. Every selector only ever moves a target to a safer state (pause, freeze, deactivate, halt) and cannot revert it, so it can be held by a faster-moving entity than the two-way flag roles above. The Hub's batch cap resets are deliberately excluded — see below. |
+| Risk management      | HUB_CONFIGURATOR_RISK_MANAGEMENT_ROLE | SPOKE_CONFIGURATOR_RISK_MANAGEMENT_ROLE | The risk parameters of an already listed asset or reserve: caps, interest rates, collateral risk, dynamic configs, liquidation config.                                                                                                                                                                    |
 
 See `Roles.sol` NatSpec for the full role strategy and evolution guidelines. All roles are labeled on the `AccessManagerEnumerable` during deployment via `AaveV4AccessManagerRolesProcedure.labelAllRoles()`. Each role is labeled with its `Roles.sol` constant name (e.g., role 101 is labeled `"HUB_CONFIGURATOR_ROLE"`). Labels are queryable on-chain via `getLabelOfRole()` and `getRoleOfLabel()`.
 
@@ -135,11 +147,18 @@ See `Roles.sol` NatSpec for the full role strategy and evolution guidelines. All
 
 #### `HubConfigurator` Roles
 
-| ID  | Name                               | Granted To           | Functions                                        |
-| --- | ---------------------------------- | -------------------- | ------------------------------------------------ |
-| 200 | HUB_CONFIGURATOR_DOMAIN_ADMIN_ROLE | hubConfiguratorAdmin | All 22 HubConfigurator selectors (see Roles.sol) |
+| ID  | Name                                  | Granted To           | Functions                                                                                                                                        |
+| --- | ------------------------------------- | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 200 | HUB_CONFIGURATOR_DOMAIN_ADMIN_ROLE    | hubConfiguratorAdmin | updateLiquidityFee, updateFeeReceiver, updateFeeConfig, updateInterestRateStrategy, updateReinvestmentController, resetAssetCaps, resetSpokeCaps |
+| 201 | HUB_CONFIGURATOR_SPOKE_ACTIVE_ROLE    | hubConfiguratorAdmin | updateSpokeActive                                                                                                                                |
+| 202 | HUB_CONFIGURATOR_SPOKE_HALTED_ROLE    | hubConfiguratorAdmin | updateSpokeHalted                                                                                                                                |
+| 203 | HUB_CONFIGURATOR_LISTING_ROLE         | hubConfiguratorAdmin | addAsset, addAssetWithDecimals, addSpoke, addSpokeToAssets                                                                                       |
+| 204 | HUB_CONFIGURATOR_EMERGENCY_ROLE       | hubConfiguratorAdmin | deactivateAsset, haltAsset, deactivateSpoke, haltSpoke                                                                                           |
+| 205 | HUB_CONFIGURATOR_RISK_MANAGEMENT_ROLE | hubConfiguratorAdmin | updateSpokeAddCap, updateSpokeDrawCap, updateSpokeCaps, updateSpokeRiskPremiumThreshold, updateInterestRateData                                  |
 
-Domain admin role holds all selectors initially. Granular roles (201+) are carved out as needed.
+`resetAssetCaps` and `resetSpokeCaps` stay with the Domain Admin role. Zeroing caps is as one-directional as a halt, but only risk management can restore them, so it is left to governance rather than to a fast-moving emergency holder.
+
+`grantHubConfiguratorAllRoles` grants all six; further granular roles (206+) are carved out of 200 as needed.
 
 #### `Spoke` Roles (on Spoke contract)
 
@@ -151,11 +170,16 @@ Domain admin role holds all selectors initially. Granular roles (201+) are carve
 
 #### `SpokeConfigurator` Roles (on SpokeConfigurator contract)
 
-| ID  | Name                                 | Granted To             | Functions                                          |
-| --- | ------------------------------------ | ---------------------- | -------------------------------------------------- |
-| 400 | SPOKE_CONFIGURATOR_DOMAIN_ADMIN_ROLE | spokeConfiguratorAdmin | All 24 SpokeConfigurator selectors (see Roles.sol) |
+| ID  | Name                                    | Granted To             | Functions                                                                                                                                                                                                                                                                                                                                     |
+| --- | --------------------------------------- | ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 400 | SPOKE_CONFIGURATOR_DOMAIN_ADMIN_ROLE    | spokeConfiguratorAdmin | updateReservePriceSource, updatePositionManager                                                                                                                                                                                                                                                                                               |
+| 401 | SPOKE_CONFIGURATOR_PAUSE_ROLE           | spokeConfiguratorAdmin | updatePaused                                                                                                                                                                                                                                                                                                                                  |
+| 402 | SPOKE_CONFIGURATOR_FREEZE_ROLE          | spokeConfiguratorAdmin | updateFrozen                                                                                                                                                                                                                                                                                                                                  |
+| 403 | SPOKE_CONFIGURATOR_LISTING_ROLE         | spokeConfiguratorAdmin | addReserve, updateBorrowable, updateReceiveSharesEnabled                                                                                                                                                                                                                                                                                      |
+| 404 | SPOKE_CONFIGURATOR_EMERGENCY_ROLE       | spokeConfiguratorAdmin | pauseReserve, pauseAllReserves, freezeReserve, freezeAllReserves                                                                                                                                                                                                                                                                              |
+| 405 | SPOKE_CONFIGURATOR_RISK_MANAGEMENT_ROLE | spokeConfiguratorAdmin | updateCollateralRisk, addCollateralFactor, updateCollateralFactor, addMaxLiquidationBonus, updateMaxLiquidationBonus, addLiquidationFee, updateLiquidationFee, addDynamicReserveConfig, updateDynamicReserveConfig, updateLiquidationTargetHealthFactor, updateHealthFactorForMaxBonus, updateLiquidationBonusFactor, updateLiquidationConfig |
 
-Domain admin role holds all selectors initially. Granular roles (401+) are carved out as needed.
+`grantSpokeConfiguratorAllRoles` grants all six; further granular roles (406+) are carved out of 400 as needed.
 
 ## Data Flow
 
@@ -242,12 +266,12 @@ AaveV4DeployBatchBase.s.sol                         (Foundry script entry point)
     |     |       AaveV4HubRolesProcedure.grantHubAllRoles()         hubAdmin gets roles 101-103
     |     |       AaveV4HubRolesProcedure.grantHubRole()             HubConfigurator gets role 101
     |     |       AaveV4HubConfiguratorRolesProcedure.grantHubConfiguratorAllRoles()
-    |     |                                                          hubConfiguratorAdmin gets role 200
+    |     |                                                          hubConfiguratorAdmin gets roles 200-205
     |     |     _grantSpokeRoles()                  (if spokeLabels.length > 0)
     |     |       AaveV4SpokeRolesProcedure.grantSpokeAllRoles()     spokeAdmin gets roles 301-302
     |     |       AaveV4SpokeRolesProcedure.grantSpokeRole()         SpokeConfigurator gets role 301
     |     |       AaveV4SpokeConfiguratorRolesProcedure.grantSpokeConfiguratorAllRoles()
-    |     |                                                          spokeConfiguratorAdmin gets role 400
+    |     |                                                          spokeConfiguratorAdmin gets roles 400-405
     |     |     AaveV4AccessManagerRolesProcedure.replaceDefaultAdminRole()
     |     |       (if accessManagerAdmin != deployer)
     |     |       grant role 0 to accessManagerAdmin, revoke from deployer

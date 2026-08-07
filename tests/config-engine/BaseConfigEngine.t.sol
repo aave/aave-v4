@@ -230,6 +230,20 @@ abstract contract BaseConfigEngineTest is Test, Create2TestHelper {
     accessManager.renounceRole(Roles.ACCESS_MANAGER_ADMIN_ROLE, address(this));
   }
 
+  /// @dev Grants every HubConfigurator and SpokeConfigurator role, the full configurator
+  /// access the single domain admin role used to carry on its own. Caller must be an
+  /// AccessManager admin for the whole call.
+  function _grantConfiguratorRolesTo(address account) internal {
+    AaveV4HubConfiguratorRolesProcedure.grantHubConfiguratorAllRoles(
+      address(accessManager),
+      account
+    );
+    AaveV4SpokeConfiguratorRolesProcedure.grantSpokeConfiguratorAllRoles(
+      address(accessManager),
+      account
+    );
+  }
+
   function _seedAsset(
     IHub hub,
     AssetInterestRateStrategy strategy,
