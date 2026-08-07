@@ -1,0 +1,23 @@
+src/config-engine/libraries/HubEngine.sol
+  s_7ec280db1063f8::t_c227a7beb5e623 63,191,208,225
+src/config-engine/interfaces/IAaveV4ConfigEngine.sol
+  s_7ec280db1063f8::t_cd6175f519b10b 17-18
+src/config-engine/libraries/SpokeEngine.sol
+  s_7ec280db1063f8::t_c227a7beb5e623 43,109,157,184,232
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.21",
+  "base_commit_sha": "efa03cccbc99038aeb746aa9d7122d2cf222fb4d",
+  "prompts": {},
+  "sessions": {
+    "s_7ec280db1063f8": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "f6eca046-101a-4f2f-995c-14a34db2a81c",
+        "model": "claude-fable-5"
+      },
+      "human_author": "Alexandru Niculae <43644109+avniculae@users.noreply.github.com>"
+    }
+  }
+}
