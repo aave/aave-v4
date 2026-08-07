@@ -23,6 +23,9 @@ abstract contract AddressesProviderStorage {
   /// @dev An address may be registered under more than one entry.
   mapping(address addr => EnumerableSet.Bytes32Set) internal _addressToIdSet;
 
+  /// @dev Map of registered addresses and tag hashes to their respective number of entries.
+  mapping(address addr => mapping(bytes32 tagHash => uint256 count)) internal _addressToTagCount;
+
   /// @dev Reserved storage space to allow for future layout updates.
   uint256[50] private __gap;
 }

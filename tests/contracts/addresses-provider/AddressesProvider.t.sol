@@ -349,6 +349,21 @@ contract AddressesProviderTest is Test {
     assertFalse(provider.isRegistered(configEngine, 'PERIPHERY'));
   }
 
+  function test_isRegistered_multipleEntriesSameTag() public {
+    address configEngine = makeAddr('CONFIG_ENGINE');
+
+    vm.startPrank(OWNER);
+    provider.setEntry({name: 'CONFIG_ENGINE', tag: 'PERIPHERY', newAddress: configEngine});
+    provider.setEntry({name: 'ENGINE', tag: 'PERIPHERY', newAddress: configEngine});
+
+    provider.setEntry({name: 'CONFIG_ENGINE', tag: 'PERIPHERY', newAddress: address(0)});
+    assertTrue(provider.isRegistered(configEngine, 'PERIPHERY'));
+
+    provider.setEntry({name: 'ENGINE', tag: 'PERIPHERY', newAddress: address(0)});
+    assertFalse(provider.isRegistered(configEngine, 'PERIPHERY'));
+    vm.stopPrank();
+  }
+
   function test_setCanonicalHub() public {
     address coreHub = makeAddr('CORE_HUB');
     address plusHub = makeAddr('PLUS_HUB');

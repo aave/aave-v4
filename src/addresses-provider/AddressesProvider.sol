@@ -158,14 +158,7 @@ abstract contract AddressesProvider is
 
   /// @inheritdoc IAddressesProvider
   function isRegistered(address addr, string calldata tag) external view returns (bool) {
-    bytes32 tagHash = keccak256(bytes(tag));
-    bytes32[] memory ids = _addressToIdSet[addr].values();
-    for (uint256 i = 0; i < ids.length; i++) {
-      if (keccak256(bytes(_idToEntry[ids[i]].tag)) == tagHash) {
-        return true;
-      }
-    }
-    return false;
+    return _addressToTagCount[addr][keccak256(bytes(tag))] > 0;
   }
 
   /// @inheritdoc IAddressesProvider
@@ -250,13 +243,15 @@ abstract contract AddressesProvider is
         _tagsSet.remove(oldEntry.tag);
       }
       _addressToIdSet[oldEntry.addr].remove(id);
+      _addressToTagCount[oldEntry.addr][keccak256(bytes(oldEntry.tag))]--;
       delete _idToEntry[id];
     } else {
       require(oldEntry.addr == address(0), AddressAlreadySet(id));
-      _idToEntry[id] = Entry({addr: newAddress, name: name, tag: tag});
+      _idToEntry[id] = Entry({name: name, tag: tag, addr: newAddress});
       _tagToIdSet[tag].add(id);
       _tagsSet.add(tag);
       _addressToIdSet[newAddress].add(id);
+      _addressToTagCount[newAddress][keccak256(bytes(tag))]++;
     }
 
     emit SetEntry(id, name, tag, oldEntry.addr, newAddress);
