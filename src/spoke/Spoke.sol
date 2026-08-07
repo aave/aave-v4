@@ -280,6 +280,10 @@ abstract contract Spoke is
     UserPosition storage userPosition = _userPositions[onBehalfOf][reserveId];
     PositionStatus storage positionStatus = _positionStatus[onBehalfOf];
     _validateBorrow(reserve.flags);
+    require(
+      _isBorrowAllowed(msg.sender, onBehalfOf, reserveId, amount),
+      BorrowAccessDenied(msg.sender, onBehalfOf, reserveId, amount)
+    );
     IHubBase hub = reserve.hub;
 
     uint256 drawnShares = hub.draw(reserve.assetId, amount, msg.sender);
@@ -873,6 +877,17 @@ abstract contract Spoke is
     require(!flags.frozen(), ReserveFrozen());
     require(flags.borrowable(), ReserveNotBorrowable());
     // health factor is checked at the end of borrow action
+  }
+
+  /// @dev Compile-time extension point for additional borrow authorization.
+  /// @dev The default implementation preserves permissionless borrowing.
+  function _isBorrowAllowed(
+    address /* caller */,
+    address /* onBehalfOf */,
+    uint256 /* reserveId */,
+    uint256 /* amount */
+  ) internal view virtual returns (bool) {
+    return true;
   }
 
   function _validateRepay(ReserveFlags flags) internal pure {

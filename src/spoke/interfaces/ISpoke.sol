@@ -366,6 +366,9 @@ interface ISpoke is IAccessManaged, IIntentConsumer, IExtSload, IMulticall {
   /// @notice Thrown when an unauthorized caller attempts an action.
   error Unauthorized();
 
+  /// @notice Thrown when a borrow is rejected by the compile-time borrow authorization hook.
+  error BorrowAccessDenied(address caller, address onBehalfOf, uint256 reserveId, uint256 amount);
+
   /// @notice Thrown if a config key is uninitialized when updating a dynamic reserve config.
   error DynamicConfigKeyUninitialized();
 
