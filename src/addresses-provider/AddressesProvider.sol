@@ -41,26 +41,6 @@ abstract contract AddressesProvider is
   }
 
   /// @inheritdoc IAddressesProvider
-  function setCanonicalHub(string calldata name, address hub) external onlyOwner {
-    _setEntry({name: name, tag: CANONICAL_HUB_TAG, newAddress: hub});
-  }
-
-  /// @inheritdoc IAddressesProvider
-  function setCanonicalSpoke(string calldata name, address spoke) external onlyOwner {
-    _setEntry({name: name, tag: CANONICAL_SPOKE_TAG, newAddress: spoke});
-  }
-
-  /// @inheritdoc IAddressesProvider
-  function setTokenizationSpoke(string calldata name, address spoke) external onlyOwner {
-    _setEntry({name: name, tag: TOKENIZATION_SPOKE_TAG, newAddress: spoke});
-  }
-
-  /// @inheritdoc IAddressesProvider
-  function setTreasurySpoke(string calldata name, address spoke) external onlyOwner {
-    _setEntry({name: name, tag: TREASURY_SPOKE_TAG, newAddress: spoke});
-  }
-
-  /// @inheritdoc IAddressesProvider
   function getAddress(bytes32 id) external view returns (address) {
     return _idToEntry[id].addr;
   }
@@ -81,11 +61,6 @@ abstract contract AddressesProvider is
   }
 
   /// @inheritdoc IAddressesProvider
-  function getTags() external view returns (string[] memory) {
-    return _tagsSet.values();
-  }
-
-  /// @inheritdoc IAddressesProvider
   function getTags(uint256 start, uint256 end) external view returns (string[] memory) {
     return _tagsSet.values(start, end);
   }
@@ -96,22 +71,12 @@ abstract contract AddressesProvider is
   }
 
   /// @inheritdoc IAddressesProvider
-  function getIds(string calldata tag) external view returns (bytes32[] memory) {
-    return _tagToIdSet[tag].values();
-  }
-
-  /// @inheritdoc IAddressesProvider
   function getIds(
     string calldata tag,
     uint256 start,
     uint256 end
   ) external view returns (bytes32[] memory) {
     return _tagToIdSet[tag].values(start, end);
-  }
-
-  /// @inheritdoc IAddressesProvider
-  function getAddresses(string calldata tag) external view returns (address[] memory) {
-    return _toAddresses(_tagToIdSet[tag].values());
   }
 
   /// @inheritdoc IAddressesProvider
@@ -129,22 +94,12 @@ abstract contract AddressesProvider is
   }
 
   /// @inheritdoc IAddressesProvider
-  function getAddressIds(address addr) external view returns (bytes32[] memory) {
-    return _addressToIdSet[addr].values();
-  }
-
-  /// @inheritdoc IAddressesProvider
   function getAddressIds(
     address addr,
     uint256 start,
     uint256 end
   ) external view returns (bytes32[] memory) {
     return _addressToIdSet[addr].values(start, end);
-  }
-
-  /// @inheritdoc IAddressesProvider
-  function getEntries(address addr) external view returns (Entry[] memory) {
-    return _toEntries(_addressToIdSet[addr].values());
   }
 
   /// @inheritdoc IAddressesProvider
@@ -159,69 +114,6 @@ abstract contract AddressesProvider is
   /// @inheritdoc IAddressesProvider
   function isRegistered(address addr, string calldata tag) external view returns (bool) {
     return _addressToTagCount[addr][keccak256(bytes(tag))] > 0;
-  }
-
-  /// @inheritdoc IAddressesProvider
-  function getCanonicalHub(string calldata name) external view returns (address) {
-    return _getAddress({name: name, tag: CANONICAL_HUB_TAG});
-  }
-
-  /// @inheritdoc IAddressesProvider
-  function getCanonicalHubs() external view returns (address[] memory) {
-    return _toAddresses(_tagToIdSet[CANONICAL_HUB_TAG].values());
-  }
-
-  /// @inheritdoc IAddressesProvider
-  function getCanonicalHubs(uint256 start, uint256 end) external view returns (address[] memory) {
-    return _toAddresses(_tagToIdSet[CANONICAL_HUB_TAG].values(start, end));
-  }
-
-  /// @inheritdoc IAddressesProvider
-  function getCanonicalSpoke(string calldata name) external view returns (address) {
-    return _getAddress({name: name, tag: CANONICAL_SPOKE_TAG});
-  }
-
-  /// @inheritdoc IAddressesProvider
-  function getCanonicalSpokes() external view returns (address[] memory) {
-    return _toAddresses(_tagToIdSet[CANONICAL_SPOKE_TAG].values());
-  }
-
-  /// @inheritdoc IAddressesProvider
-  function getCanonicalSpokes(uint256 start, uint256 end) external view returns (address[] memory) {
-    return _toAddresses(_tagToIdSet[CANONICAL_SPOKE_TAG].values(start, end));
-  }
-
-  /// @inheritdoc IAddressesProvider
-  function getTokenizationSpoke(string calldata name) external view returns (address) {
-    return _getAddress({name: name, tag: TOKENIZATION_SPOKE_TAG});
-  }
-
-  /// @inheritdoc IAddressesProvider
-  function getTokenizationSpokes() external view returns (address[] memory) {
-    return _toAddresses(_tagToIdSet[TOKENIZATION_SPOKE_TAG].values());
-  }
-
-  /// @inheritdoc IAddressesProvider
-  function getTokenizationSpokes(
-    uint256 start,
-    uint256 end
-  ) external view returns (address[] memory) {
-    return _toAddresses(_tagToIdSet[TOKENIZATION_SPOKE_TAG].values(start, end));
-  }
-
-  /// @inheritdoc IAddressesProvider
-  function getTreasurySpoke(string calldata name) external view returns (address) {
-    return _getAddress({name: name, tag: TREASURY_SPOKE_TAG});
-  }
-
-  /// @inheritdoc IAddressesProvider
-  function getTreasurySpokes() external view returns (address[] memory) {
-    return _toAddresses(_tagToIdSet[TREASURY_SPOKE_TAG].values());
-  }
-
-  /// @inheritdoc IAddressesProvider
-  function getTreasurySpokes(uint256 start, uint256 end) external view returns (address[] memory) {
-    return _toAddresses(_tagToIdSet[TREASURY_SPOKE_TAG].values(start, end));
   }
 
   /// @inheritdoc IAddressesProvider

@@ -218,16 +218,18 @@ abstract contract BaseConfigEngineTest is Test, Create2TestHelper {
   /// engine, which is the actor making the provider calls when tests invoke it directly.
   function _registerTestEnv() internal {
     for (uint256 i; i < NUM_HUBS; ++i) {
-      addressesProvider.setCanonicalHub(
-        string.concat('HUB_', vm.toString(i + 1)),
-        address(hubs[i])
-      );
+      addressesProvider.setEntry({
+        name: string.concat('HUB_', vm.toString(i + 1)),
+        tag: addressesProvider.CANONICAL_HUB_TAG(),
+        newAddress: address(hubs[i])
+      });
     }
     for (uint256 i; i < NUM_SPOKES; ++i) {
-      addressesProvider.setCanonicalSpoke(
-        string.concat('SPOKE_', vm.toString(i + 1)),
-        address(spokes[i])
-      );
+      addressesProvider.setEntry({
+        name: string.concat('SPOKE_', vm.toString(i + 1)),
+        tag: addressesProvider.CANONICAL_SPOKE_TAG(),
+        newAddress: address(spokes[i])
+      });
     }
     AddressesProviderInstance(address(addressesProvider)).transferOwnership(address(engine));
     vm.prank(address(engine));
@@ -236,11 +238,13 @@ abstract contract BaseConfigEngineTest is Test, Create2TestHelper {
 
   /// @dev Registers a Spoke on the AddressesProvider as the engine, the provider owner after setUp.
   function _registerSpokeOnProvider(ISpoke spoke) internal {
+    string memory tag = addressesProvider.CANONICAL_SPOKE_TAG();
     vm.prank(address(engine));
-    addressesProvider.setCanonicalSpoke(
-      string.concat('SPOKE_', vm.toString(address(spoke))),
-      address(spoke)
-    );
+    addressesProvider.setEntry({
+      name: string.concat('SPOKE_', vm.toString(address(spoke))),
+      tag: tag,
+      newAddress: address(spoke)
+    });
   }
 
   function _deployNewSpoke() internal returns (ISpoke, IAaveOracle) {

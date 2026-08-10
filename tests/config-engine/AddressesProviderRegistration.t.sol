@@ -74,8 +74,14 @@ contract AddressesProviderRegistrationTest is BaseConfigEngineTest {
 
     engine.executeAddressesProviderEntryUpdates(updates);
 
-    assertEq(addressesProvider.getCanonicalHub('HUB_1'), address(0));
-    assertEq(addressesProvider.getCanonicalHub('CORE'), address(hub1()));
+    assertEq(
+      addressesProvider.getAddress({name: 'HUB_1', tag: addressesProvider.CANONICAL_HUB_TAG()}),
+      address(0)
+    );
+    assertEq(
+      addressesProvider.getAddress({name: 'CORE', tag: addressesProvider.CANONICAL_HUB_TAG()}),
+      address(hub1())
+    );
   }
 
   function test_executeAddressesProviderEntryUpdates_revertsWith_AddressAlreadySet() public {
@@ -477,7 +483,13 @@ contract AddressesProviderRegistrationTest is BaseConfigEngineTest {
 
     engine.executeHubAssetListings(_toAssetListingArray(listing));
 
-    assertEq(addressesProvider.getTokenizationSpoke('HUB1_WETH'), expectedProxy);
+    assertEq(
+      addressesProvider.getAddress({
+        name: 'HUB1_WETH',
+        tag: addressesProvider.TOKENIZATION_SPOKE_TAG()
+      }),
+      expectedProxy
+    );
     assertTrue(
       addressesProvider.isRegistered(expectedProxy, addressesProvider.TOKENIZATION_SPOKE_TAG())
     );

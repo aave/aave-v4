@@ -49,34 +49,6 @@ interface IAddressesProvider {
   /// @param newAddress The address to associate with the name and tag.
   function setEntry(string calldata name, string calldata tag, address newAddress) external;
 
-  /// @notice Registers the canonical Hub associated with a name.
-  /// @dev Registering the zero address removes the entry and its identifier from enumeration, it reverts if no address is registered.
-  /// @dev Reverts if an address is already registered under the identifier, it must be removed first.
-  /// @param name The name of the Hub.
-  /// @param hub The address of the Hub.
-  function setCanonicalHub(string calldata name, address hub) external;
-
-  /// @notice Registers the canonical Spoke associated with a name.
-  /// @dev Registering the zero address removes the entry and its identifier from enumeration, it reverts if no address is registered.
-  /// @dev Reverts if an address is already registered under the identifier, it must be removed first.
-  /// @param name The name of the Spoke.
-  /// @param spoke The address of the Spoke.
-  function setCanonicalSpoke(string calldata name, address spoke) external;
-
-  /// @notice Registers the tokenization Spoke associated with a name.
-  /// @dev Registering the zero address removes the entry and its identifier from enumeration, it reverts if no address is registered.
-  /// @dev Reverts if an address is already registered under the identifier, it must be removed first.
-  /// @param name The name of the Spoke.
-  /// @param spoke The address of the Spoke.
-  function setTokenizationSpoke(string calldata name, address spoke) external;
-
-  /// @notice Registers the treasury Spoke associated with a name.
-  /// @dev Registering the zero address removes the entry and its identifier from enumeration, it reverts if no address is registered.
-  /// @dev Reverts if an address is already registered under the identifier, it must be removed first.
-  /// @param name The name of the Spoke.
-  /// @param spoke The address of the Spoke.
-  function setTreasurySpoke(string calldata name, address spoke) external;
-
   /// @notice Returns the address associated with an identifier.
   /// @param id The identifier of the entry.
   /// @return The address of the entry, the zero address if none is registered.
@@ -96,9 +68,6 @@ interface IAddressesProvider {
   /// @notice Returns the number of tags with at least one registered entry.
   function getTagCount() external view returns (uint256);
 
-  /// @notice Returns all tags with at least one registered entry.
-  function getTags() external view returns (string[] memory);
-
   /// @notice Returns a slice of the tags with at least one registered entry.
   /// @dev Out-of-range bounds are clamped to the number of tags, it does not revert.
   /// @param start The start index of the slice.
@@ -111,11 +80,6 @@ interface IAddressesProvider {
   /// @return The number of entries.
   function getIdCount(string calldata tag) external view returns (uint256);
 
-  /// @notice Returns the identifiers of all entries grouped under a tag.
-  /// @param tag The tag grouping the entries.
-  /// @return The list of identifiers.
-  function getIds(string calldata tag) external view returns (bytes32[] memory);
-
   /// @notice Returns a slice of the identifiers of the entries grouped under a tag.
   /// @dev Out-of-range bounds are clamped to the number of entries, it does not revert.
   /// @param tag The tag grouping the entries.
@@ -127,11 +91,6 @@ interface IAddressesProvider {
     uint256 start,
     uint256 end
   ) external view returns (bytes32[] memory);
-
-  /// @notice Returns the addresses of all entries grouped under a tag.
-  /// @param tag The tag grouping the entries.
-  /// @return The list of addresses.
-  function getAddresses(string calldata tag) external view returns (address[] memory);
 
   /// @notice Returns a slice of the addresses of the entries grouped under a tag.
   /// @dev Out-of-range bounds are clamped to the number of entries, it does not revert.
@@ -150,11 +109,6 @@ interface IAddressesProvider {
   /// @return The number of entries.
   function getAddressIdCount(address addr) external view returns (uint256);
 
-  /// @notice Returns the identifiers of all entries registered for an address.
-  /// @param addr The registered address.
-  /// @return The list of identifiers.
-  function getAddressIds(address addr) external view returns (bytes32[] memory);
-
   /// @notice Returns a slice of the identifiers of the entries registered for an address.
   /// @dev Out-of-range bounds are clamped to the number of entries, it does not revert.
   /// @param addr The registered address.
@@ -166,11 +120,6 @@ interface IAddressesProvider {
     uint256 start,
     uint256 end
   ) external view returns (bytes32[] memory);
-
-  /// @notice Returns all entries registered for an address.
-  /// @param addr The registered address.
-  /// @return The list of entries.
-  function getEntries(address addr) external view returns (Entry[] memory);
 
   /// @notice Returns a slice of the entries registered for an address.
   /// @dev Out-of-range bounds are clamped to the number of entries, it does not revert.
@@ -189,73 +138,6 @@ interface IAddressesProvider {
   /// @param tag The tag grouping the entries.
   /// @return True if at least one entry associates the address with the tag.
   function isRegistered(address addr, string calldata tag) external view returns (bool);
-
-  /// @notice Returns the canonical Hub associated with a name.
-  /// @param name The name of the Hub.
-  /// @return The address of the Hub, the zero address if none is registered.
-  function getCanonicalHub(string calldata name) external view returns (address);
-
-  /// @notice Returns the addresses of all registered canonical Hubs.
-  /// @return The list of canonical Hub addresses.
-  function getCanonicalHubs() external view returns (address[] memory);
-
-  /// @notice Returns a slice of the addresses of the registered canonical Hubs.
-  /// @dev Out-of-range bounds are clamped to the number of entries, it does not revert.
-  /// @param start The start index of the slice.
-  /// @param end The end index of the slice.
-  /// @return The list of canonical Hub addresses in the slice.
-  function getCanonicalHubs(uint256 start, uint256 end) external view returns (address[] memory);
-
-  /// @notice Returns the canonical Spoke associated with a name.
-  /// @param name The name of the Spoke.
-  /// @return The address of the Spoke, the zero address if none is registered.
-  function getCanonicalSpoke(string calldata name) external view returns (address);
-
-  /// @notice Returns the addresses of all registered canonical Spokes.
-  /// @return The list of canonical Spoke addresses.
-  function getCanonicalSpokes() external view returns (address[] memory);
-
-  /// @notice Returns a slice of the addresses of the registered canonical Spokes.
-  /// @dev Out-of-range bounds are clamped to the number of entries, it does not revert.
-  /// @param start The start index of the slice.
-  /// @param end The end index of the slice.
-  /// @return The list of canonical Spoke addresses in the slice.
-  function getCanonicalSpokes(uint256 start, uint256 end) external view returns (address[] memory);
-
-  /// @notice Returns the tokenization Spoke associated with a name.
-  /// @param name The name of the Spoke.
-  /// @return The address of the Spoke, the zero address if none is registered.
-  function getTokenizationSpoke(string calldata name) external view returns (address);
-
-  /// @notice Returns the addresses of all registered tokenization Spokes.
-  /// @return The list of tokenization Spoke addresses.
-  function getTokenizationSpokes() external view returns (address[] memory);
-
-  /// @notice Returns a slice of the addresses of the registered tokenization Spokes.
-  /// @dev Out-of-range bounds are clamped to the number of entries, it does not revert.
-  /// @param start The start index of the slice.
-  /// @param end The end index of the slice.
-  /// @return The list of tokenization Spoke addresses in the slice.
-  function getTokenizationSpokes(
-    uint256 start,
-    uint256 end
-  ) external view returns (address[] memory);
-
-  /// @notice Returns the treasury Spoke associated with a name.
-  /// @param name The name of the Spoke.
-  /// @return The address of the Spoke, the zero address if none is registered.
-  function getTreasurySpoke(string calldata name) external view returns (address);
-
-  /// @notice Returns the addresses of all registered treasury Spokes.
-  /// @return The list of treasury Spoke addresses.
-  function getTreasurySpokes() external view returns (address[] memory);
-
-  /// @notice Returns a slice of the addresses of the registered treasury Spokes.
-  /// @dev Out-of-range bounds are clamped to the number of entries, it does not revert.
-  /// @param start The start index of the slice.
-  /// @param end The end index of the slice.
-  /// @return The list of treasury Spoke addresses in the slice.
-  function getTreasurySpokes(uint256 start, uint256 end) external view returns (address[] memory);
 
   /// @notice Returns the tag grouping all canonical Hubs.
   function CANONICAL_HUB_TAG() external view returns (string memory);

@@ -312,7 +312,11 @@ library HubEngine {
       proxyAdminOwner: tokenization.proxyAdminOwner
     });
 
-    addressesProvider.setTokenizationSpoke(tokenization.registrationName, proxy);
+    addressesProvider.setEntry(
+      tokenization.registrationName,
+      addressesProvider.TOKENIZATION_SPOKE_TAG(),
+      proxy
+    );
 
     listing.hubConfigurator.addSpoke(
       listing.hub,

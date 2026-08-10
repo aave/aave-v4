@@ -50,7 +50,7 @@ contract EngineUtilsTest is Test {
   }
 
   function test_requireRegisteredHub() public {
-    _provider.setCanonicalHub('CORE', HUB);
+    _provider.setEntry({name: 'CORE', tag: _provider.CANONICAL_HUB_TAG(), newAddress: HUB});
     _harness.requireRegisteredHub(_provider, HUB);
   }
 
@@ -67,24 +67,24 @@ contract EngineUtilsTest is Test {
   }
 
   function test_requireRegisteredHub_revertsWith_HubNotRegistered_spokeTag() public {
-    _provider.setCanonicalSpoke('CORE', HUB);
+    _provider.setEntry({name: 'CORE', tag: _provider.CANONICAL_SPOKE_TAG(), newAddress: HUB});
 
     vm.expectRevert(abi.encodeWithSelector(EngineUtils.HubNotRegistered.selector, HUB));
     _harness.requireRegisteredHub(_provider, HUB);
   }
 
   function test_requireRegisteredSpoke_canonicalTag() public {
-    _provider.setCanonicalSpoke('MAIN', SPOKE);
+    _provider.setEntry({name: 'MAIN', tag: _provider.CANONICAL_SPOKE_TAG(), newAddress: SPOKE});
     _harness.requireRegisteredSpoke(_provider, SPOKE);
   }
 
   function test_requireRegisteredSpoke_tokenizationTag() public {
-    _provider.setTokenizationSpoke('MAIN', SPOKE);
+    _provider.setEntry({name: 'MAIN', tag: _provider.TOKENIZATION_SPOKE_TAG(), newAddress: SPOKE});
     _harness.requireRegisteredSpoke(_provider, SPOKE);
   }
 
   function test_requireRegisteredSpoke_treasuryTag() public {
-    _provider.setTreasurySpoke('MAIN', SPOKE);
+    _provider.setEntry({name: 'MAIN', tag: _provider.TREASURY_SPOKE_TAG(), newAddress: SPOKE});
     _harness.requireRegisteredSpoke(_provider, SPOKE);
   }
 
@@ -94,14 +94,14 @@ contract EngineUtilsTest is Test {
   }
 
   function test_requireRegisteredSpoke_revertsWith_SpokeNotRegistered_hubTag() public {
-    _provider.setCanonicalHub('MAIN', SPOKE);
+    _provider.setEntry({name: 'MAIN', tag: _provider.CANONICAL_HUB_TAG(), newAddress: SPOKE});
 
     vm.expectRevert(abi.encodeWithSelector(EngineUtils.SpokeNotRegistered.selector, SPOKE));
     _harness.requireRegisteredSpoke(_provider, SPOKE);
   }
 
   function test_requireRegisteredCanonicalSpoke() public {
-    _provider.setCanonicalSpoke('MAIN', SPOKE);
+    _provider.setEntry({name: 'MAIN', tag: _provider.CANONICAL_SPOKE_TAG(), newAddress: SPOKE});
     _harness.requireRegisteredCanonicalSpoke(_provider, SPOKE);
   }
 
@@ -115,7 +115,7 @@ contract EngineUtilsTest is Test {
   function test_requireRegisteredCanonicalSpoke_revertsWith_CanonicalSpokeNotRegistered_tokenizationTag()
     public
   {
-    _provider.setTokenizationSpoke('MAIN', SPOKE);
+    _provider.setEntry({name: 'MAIN', tag: _provider.TOKENIZATION_SPOKE_TAG(), newAddress: SPOKE});
 
     vm.expectRevert(
       abi.encodeWithSelector(EngineUtils.CanonicalSpokeNotRegistered.selector, SPOKE)
@@ -126,7 +126,7 @@ contract EngineUtilsTest is Test {
   function test_requireRegisteredCanonicalSpoke_revertsWith_CanonicalSpokeNotRegistered_treasuryTag()
     public
   {
-    _provider.setTreasurySpoke('MAIN', SPOKE);
+    _provider.setEntry({name: 'MAIN', tag: _provider.TREASURY_SPOKE_TAG(), newAddress: SPOKE});
 
     vm.expectRevert(
       abi.encodeWithSelector(EngineUtils.CanonicalSpokeNotRegistered.selector, SPOKE)

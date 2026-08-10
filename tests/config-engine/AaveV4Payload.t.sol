@@ -673,7 +673,10 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
 
     payload.execute();
 
-    assertEq(addressesProvider.getCanonicalSpoke('NEW'), address(newSpoke));
+    assertEq(
+      addressesProvider.getAddress({name: 'NEW', tag: addressesProvider.CANONICAL_SPOKE_TAG()}),
+      address(newSpoke)
+    );
     assertEq(newSpoke.getReserveCount(), 1);
   }
 
