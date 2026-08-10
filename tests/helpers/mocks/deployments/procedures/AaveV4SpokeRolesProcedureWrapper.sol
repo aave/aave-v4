@@ -44,4 +44,8 @@ contract AaveV4SpokeRolesProcedureWrapper {
   function getSpokeConfiguratorRoleSelectors() external pure returns (bytes4[] memory) {
     return Roles.getSpokeConfiguratorRoleSelectors();
   }
+
+  function getSpokePositionTransferAdminRoleSelectors() external pure returns (bytes4[] memory) {
+    return Roles.getSpokePositionTransferAdminRoleSelectors();
+  }
 }

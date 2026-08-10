@@ -195,7 +195,7 @@ contract SpokeBorrowValidationTest is Base {
     });
 
     skip(skipTime);
-    vm.assume(spoke1.getReserveTotalDebt(daiReserveId) > drawCap);
+    vm.assume(_getReserveTotalDebt(spoke1, daiReserveId) > drawCap);
 
     // Additional supply to accrue interest
     SpokeActions.supply({

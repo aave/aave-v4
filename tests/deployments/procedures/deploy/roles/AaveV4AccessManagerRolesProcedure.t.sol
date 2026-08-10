@@ -184,6 +184,19 @@ contract AaveV4AccessManagerRolesProcedureTest is ProceduresBase {
       Roles.SPOKE_USER_POSITION_UPDATER_ROLE
     );
 
+    assertTrue(
+      accessManager.isRoleLabeled(Roles.SPOKE_POSITION_TRANSFER_ADMIN_ROLE),
+      'SPOKE_POSITION_TRANSFER_ADMIN labeled'
+    );
+    assertEq(
+      accessManager.getLabelOfRole(Roles.SPOKE_POSITION_TRANSFER_ADMIN_ROLE),
+      'SPOKE_POSITION_TRANSFER_ADMIN_ROLE'
+    );
+    assertEq(
+      accessManager.getRoleOfLabel('SPOKE_POSITION_TRANSFER_ADMIN_ROLE'),
+      Roles.SPOKE_POSITION_TRANSFER_ADMIN_ROLE
+    );
+
     // SpokeConfigurator roles
     assertTrue(
       accessManager.isRoleLabeled(Roles.SPOKE_CONFIGURATOR_DOMAIN_ADMIN_ROLE),
@@ -199,7 +212,7 @@ contract AaveV4AccessManagerRolesProcedureTest is ProceduresBase {
     );
 
     // Total label count
-    assertEq(accessManager.getRoleLabelCount(), 9, 'total label count');
+    assertEq(accessManager.getRoleLabelCount(), 10, 'total label count');
   }
 
   function test_labelAllRoles_reverts_zeroAddress() public {

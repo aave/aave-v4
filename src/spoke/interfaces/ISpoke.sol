@@ -188,6 +188,10 @@ interface ISpoke is IAccessManaged, IIntentConsumer, IExtSload, IMulticall {
   /// @param active True if position manager has become active.
   event UpdatePositionManager(address indexed positionManager, bool active);
 
+  /// @notice Emitted when the gate of the Spoke is updated.
+  /// @param gate The address of the gate, or the zero address if the gate is removed.
+  event UpdateGate(address indexed gate);
+
   /// @notice Emitted on the supply action.
   /// @param reserveId The reserve identifier of the underlying asset.
   /// @param caller The transaction initiator, and supplier of the underlying asset.
@@ -294,6 +298,18 @@ interface ISpoke is IAccessManaged, IIntentConsumer, IExtSload, IMulticall {
     address indexed caller,
     address indexed user,
     bool usingAsCollateral
+  );
+
+  /// @notice Emitted on the transferPosition action.
+  /// @param reserveId The reserve identifier of the underlying asset.
+  /// @param from The owner of the position the supply shares are transferred from.
+  /// @param to The owner of the position the supply shares are transferred to.
+  /// @param shares The amount of supply shares transferred.
+  event TransferPosition(
+    uint256 indexed reserveId,
+    address indexed from,
+    address indexed to,
+    uint256 shares
   );
 
   /// @notice Emitted on updateUserRiskPremium action.
@@ -414,6 +430,12 @@ interface ISpoke is IAccessManaged, IIntentConsumer, IExtSload, IMulticall {
   /// @notice Thrown when user attempts to exceed either the maximum allowed collateral or borrowed reserves.
   error MaximumUserReservesExceeded();
 
+  /// @notice Thrown when a gate is set and does not allow an action.
+  error GateAccessDenied();
+
+  /// @notice Thrown when a position transfer to self is attempted.
+  error SelfTransfer();
+
   /// @notice Updates the liquidation config.
   /// @param config The new liquidation config.
   function updateLiquidationConfig(LiquidationConfig calldata config) external;
@@ -475,6 +497,12 @@ interface ISpoke is IAccessManaged, IIntentConsumer, IExtSload, IMulticall {
   /// @param positionManager The address of the position manager.
   /// @param active True if positionManager is to be set as active.
   function updatePositionManager(address positionManager, bool active) external;
+
+  /// @notice Updates the gate of the Spoke.
+  /// @dev The gate is consulted on the supply, withdraw, borrow, repay and setUsingAsCollateral actions.
+  /// @dev Setting the gate to the zero address removes it, keeping all actions permissionless.
+  /// @param gate The address of the gate.
+  function updateGate(address gate) external;
 
   /// @notice Supplies an amount of underlying asset of the specified reserve.
   /// @dev It reverts if the reserve associated with the given reserve identifier is not listed.
@@ -568,6 +596,24 @@ interface ISpoke is IAccessManaged, IIntentConsumer, IExtSload, IMulticall {
     address onBehalfOf
   ) external;
 
+  /// @notice Transfers supply shares from one user position to another.
+  /// @dev It reverts if the reserve associated with the given reserve identifier is not listed.
+  /// @dev Providing more shares than held by the `from` position signals a full transfer.
+  /// @dev It reverts if the health factor of `from` falls below the liquidation threshold.
+  /// @dev Allowed while the reserve is frozen, blocked while it is paused.
+  /// @dev Does not enable the reserve as collateral on the `to` position.
+  /// @param reserveId The identifier of the reserve.
+  /// @param from The owner of the position to remove supply shares from.
+  /// @param to The owner of the position to add supply shares to.
+  /// @param shares The amount of supply shares to transfer.
+  /// @return The amount of supply shares transferred.
+  function transferPosition(
+    uint256 reserveId,
+    address from,
+    address to,
+    uint256 shares
+  ) external returns (uint256);
+
   /// @notice Allows updating the risk premium on onBehalfOf position.
   /// @dev Caller must be `onBehalfOf`, an authorized position manager for `onBehalfOf`, or admin.
   /// @param onBehalfOf The owner of the position being modified.
@@ -625,17 +671,6 @@ interface ISpoke is IAccessManaged, IIntentConsumer, IExtSload, IMulticall {
   /// @dev Count includes reserves that are not currently active.
   function getReserveCount() external view returns (uint256);
 
-  /// @notice Returns the total amount of supplied assets of a given reserve.
-  /// @param reserveId The identifier of the reserve.
-  /// @return The amount of supplied assets.
-  function getReserveSuppliedAssets(uint256 reserveId) external view returns (uint256);
-
-  /// @notice Returns the total amount of supplied shares of a given reserve.
-  /// @dev It reverts if the reserve associated with the given reserve identifier is not listed.
-  /// @param reserveId The identifier of the reserve.
-  /// @return The amount of supplied shares.
-  function getReserveSuppliedShares(uint256 reserveId) external view returns (uint256);
-
   /// @notice Returns the debt of a given reserve.
   /// @dev It reverts if the reserve associated with the given reserve identifier is not listed.
   /// @dev The total debt of the reserve is the sum of drawn debt and premium debt.
@@ -643,13 +678,6 @@ interface ISpoke is IAccessManaged, IIntentConsumer, IExtSload, IMulticall {
   /// @return The amount of drawn debt.
   /// @return The amount of premium debt.
   function getReserveDebt(uint256 reserveId) external view returns (uint256, uint256);
-
-  /// @notice Returns the total debt of a given reserve.
-  /// @dev It reverts if the reserve associated with the given reserve identifier is not listed.
-  /// @dev The total debt of the reserve is the sum of drawn debt and premium debt.
-  /// @param reserveId The identifier of the reserve.
-  /// @return The total debt amount.
-  function getReserveTotalDebt(uint256 reserveId) external view returns (uint256);
 
   /// @notice Returns the reserve identifier for a given asset in a Hub.
   /// @dev It reverts if no reserve is associated with the given asset identifier.
@@ -744,23 +772,6 @@ interface ISpoke is IAccessManaged, IIntentConsumer, IExtSload, IMulticall {
   /// @return The user account data struct.
   function getUserAccountData(address user) external view returns (UserAccountData memory);
 
-  /// @notice Returns the risk premium from the user's last position update.
-  /// @param user The address of the user.
-  /// @return The risk premium of the user from the last position update, expressed in BPS.
-  function getUserLastRiskPremium(address user) external view returns (uint256);
-
-  /// @notice Returns the liquidation bonus for a given health factor, based on the user's current dynamic configuration.
-  /// @dev It reverts if the reserve associated with the given reserve identifier is not listed.
-  /// @param reserveId The identifier of the reserve.
-  /// @param user The address of the user.
-  /// @param healthFactor The health factor of the user, expressed in WAD.
-  /// @return The liquidation bonus for the user, expressed in BPS.
-  function getLiquidationBonus(
-    uint256 reserveId,
-    address user,
-    uint256 healthFactor
-  ) external view returns (uint256);
-
   /// @notice Returns whether positionManager is currently activated by governance.
   /// @param positionManager The address of the position manager.
   /// @return True if positionManager is currently active.
@@ -771,6 +782,9 @@ interface ISpoke is IAccessManaged, IIntentConsumer, IExtSload, IMulticall {
   /// @param positionManager The address of the position manager.
   /// @return True if positionManager is active and approved by user.
   function isPositionManager(address user, address positionManager) external view returns (bool);
+
+  /// @notice Returns the address of the gate, or the zero address if no gate is set.
+  function getGate() external view returns (address);
 
   /// @notice Returns the address of the external `LiquidationLogic` library.
   function getLiquidationLogic() external pure returns (address);

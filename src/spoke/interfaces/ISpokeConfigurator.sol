@@ -208,4 +208,9 @@ interface ISpokeConfigurator {
   /// @param positionManager The address of the position manager.
   /// @param active The new active flag.
   function updatePositionManager(address spoke, address positionManager, bool active) external;
+
+  /// @notice Updates the gate of a spoke.
+  /// @param spoke The address of the Spoke.
+  /// @param gate The address of the gate, or the zero address to remove it.
+  function updateGate(address spoke, address gate) external;
 }

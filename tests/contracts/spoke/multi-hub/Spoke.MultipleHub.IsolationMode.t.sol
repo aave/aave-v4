@@ -287,7 +287,7 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
       'total supplied amount of asset B on new hub'
     );
     assertEq(
-      newSpoke.getReserveSuppliedAssets(isolationVars.reserveBId),
+      _getReserveSuppliedAssets(newSpoke, isolationVars.reserveBId),
       MAX_SUPPLY_AMOUNT,
       'total supplied amount of reserve B on new spoke'
     );

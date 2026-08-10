@@ -6,6 +6,7 @@ import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
 import {IERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
 import {IHub} from 'src/hub/interfaces/IHub.sol';
 import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
+import {LiquidationLogic} from 'src/spoke/libraries/LiquidationLogic.sol';
 import {IAccessManager} from 'src/dependencies/openzeppelin/IAccessManager.sol';
 import {Constants} from 'tests/helpers/spoke/Constants.sol';
 import {Types} from 'tests/helpers/spoke/Types.sol';
@@ -32,6 +33,53 @@ abstract contract QueryHelpers is HubHelpers, Constants, Types {
 
   function _reserveAssetId(ISpoke spoke, uint256 reserveId) internal view returns (uint256) {
     return spoke.getReserve(reserveId).assetId;
+  }
+
+  /// @dev Returns the total supplied assets of a reserve, as tracked by its Hub.
+  function _getReserveSuppliedAssets(
+    ISpoke spoke,
+    uint256 reserveId
+  ) internal view returns (uint256) {
+    ISpoke.Reserve memory reserve = spoke.getReserve(reserveId);
+    return IHub(address(reserve.hub)).getSpokeAddedAssets(reserve.assetId, address(spoke));
+  }
+
+  /// @dev Returns the total supplied shares of a reserve, as tracked by its Hub.
+  function _getReserveSuppliedShares(
+    ISpoke spoke,
+    uint256 reserveId
+  ) internal view returns (uint256) {
+    ISpoke.Reserve memory reserve = spoke.getReserve(reserveId);
+    return IHub(address(reserve.hub)).getSpokeAddedShares(reserve.assetId, address(spoke));
+  }
+
+  /// @dev Returns the total debt (drawn + premium) of a reserve.
+  function _getReserveTotalDebt(ISpoke spoke, uint256 reserveId) internal view returns (uint256) {
+    (uint256 drawnDebt, uint256 premiumDebt) = spoke.getReserveDebt(reserveId);
+    return drawnDebt + premiumDebt;
+  }
+
+  /// @dev Returns the liquidation bonus for a user at a given health factor, based on the user's
+  /// current dynamic configuration.
+  function _getLiquidationBonus(
+    ISpoke spoke,
+    uint256 reserveId,
+    address user,
+    uint256 healthFactor
+  ) internal view returns (uint256) {
+    ISpoke.LiquidationConfig memory liquidationConfig = spoke.getLiquidationConfig();
+    return
+      LiquidationLogic.calculateLiquidationBonus({
+        healthFactorForMaxBonus: liquidationConfig.healthFactorForMaxBonus,
+        liquidationBonusFactor: liquidationConfig.liquidationBonusFactor,
+        healthFactor: healthFactor,
+        maxLiquidationBonus: spoke
+          .getDynamicReserveConfig(
+            reserveId,
+            spoke.getUserPosition(reserveId, user).dynamicConfigKey
+          )
+          .maxLiquidationBonus
+      });
   }
 
   function _reserveId(ISpoke spoke, uint256 assetId) internal view returns (uint256) {
@@ -275,8 +323,10 @@ abstract contract QueryHelpers is HubHelpers, Constants, Types {
   }
 
   /// @dev get stored user risk premium from storage
+  /// @dev reads `_positionStatus[user].riskPremium` directly (slot 5 of SpokeStorage, member at base + 1)
   function _getUserRpStored(ISpoke spoke, address user) internal view returns (uint256) {
-    return spoke.getUserLastRiskPremium(user);
+    bytes32 slot = bytes32(uint256(keccak256(abi.encode(user, uint256(5)))) + 1);
+    return uint256(vm.load(address(spoke), slot)) & type(uint24).max;
   }
 
   function _isHealthy(ISpoke spoke, address user) internal view returns (bool) {
@@ -341,7 +391,7 @@ abstract contract QueryHelpers is HubHelpers, Constants, Types {
     IHub hub = IHub(address(spoke.getReserve(reserveId).hub));
     uint256 assetId = spoke.getReserve(reserveId).assetId;
     snap.totalSuppliedShares = hub.getSpokeAddedShares(assetId, address(spoke));
-    snap.totalSuppliedAmount = spoke.getReserveSuppliedAssets(reserveId);
+    snap.totalSuppliedAmount = hub.getSpokeAddedAssets(assetId, address(spoke));
     (snap.totalDrawnDebt, snap.totalPremiumDebt) = spoke.getReserveDebt(reserveId);
     snap.totalDebt = snap.totalDrawnDebt + snap.totalPremiumDebt;
   }

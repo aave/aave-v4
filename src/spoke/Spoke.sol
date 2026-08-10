@@ -24,6 +24,7 @@ import {ExtSload} from 'src/utils/ExtSload.sol';
 import {IAaveOracle} from 'src/spoke/interfaces/IAaveOracle.sol';
 import {IHubBase} from 'src/hub/interfaces/IHubBase.sol';
 import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
+import {ISpokeGate} from 'src/spoke/interfaces/ISpokeGate.sol';
 import {SpokeStorage} from 'src/spoke/SpokeStorage.sol';
 
 /// @title Spoke
@@ -222,6 +223,13 @@ abstract contract Spoke is
   }
 
   /// @inheritdoc ISpoke
+  function updateGate(address gate) external restricted {
+    require(gate == address(0) || gate.code.length > 0, InvalidAddress());
+    _gate = gate;
+    emit UpdateGate(gate);
+  }
+
+  /// @inheritdoc ISpoke
   function supply(
     uint256 reserveId,
     uint256 amount,
@@ -230,6 +238,7 @@ abstract contract Spoke is
     Reserve storage reserve = _reserves.get(reserveId);
     UserPosition storage userPosition = _userPositions[onBehalfOf][reserveId];
     _validateSupply(reserve.flags);
+    _validateGate(onBehalfOf, reserveId, amount);
 
     IERC20(reserve.underlying).safeTransferFrom(msg.sender, address(reserve.hub), amount);
     uint256 suppliedShares = reserve.hub.add(reserve.assetId, amount);
@@ -249,6 +258,7 @@ abstract contract Spoke is
     Reserve storage reserve = _reserves.get(reserveId);
     UserPosition storage userPosition = _userPositions[onBehalfOf][reserveId];
     _validateWithdraw(reserve.flags);
+    _validateGate(onBehalfOf, reserveId, amount);
     IHubBase hub = reserve.hub;
     uint256 assetId = reserve.assetId;
 
@@ -280,6 +290,7 @@ abstract contract Spoke is
     UserPosition storage userPosition = _userPositions[onBehalfOf][reserveId];
     PositionStatus storage positionStatus = _positionStatus[onBehalfOf];
     _validateBorrow(reserve.flags);
+    _validateGate(onBehalfOf, reserveId, amount);
     IHubBase hub = reserve.hub;
 
     uint256 drawnShares = hub.draw(reserve.assetId, amount, msg.sender);
@@ -310,6 +321,7 @@ abstract contract Spoke is
     Reserve storage reserve = _reserves.get(reserveId);
     UserPosition storage userPosition = _userPositions[onBehalfOf][reserveId];
     _validateRepay(reserve.flags);
+    _validateGate(onBehalfOf, reserveId, amount);
 
     uint256 drawnIndex = reserve.hub.getAssetDrawnIndex(reserve.assetId);
     (uint256 drawnDebtRestored, uint256 premiumDebtRayRestored) = userPosition
@@ -399,6 +411,7 @@ abstract contract Spoke is
       return;
     }
     _validateSetUsingAsCollateral(positionStatus, reserve.flags, usingAsCollateral);
+    _validateGate(onBehalfOf, reserveId, usingAsCollateral ? 1 : 0);
     positionStatus.setUsingAsCollateral(reserveId, usingAsCollateral);
 
     if (usingAsCollateral) {
@@ -409,6 +422,33 @@ abstract contract Spoke is
     }
 
     emit SetUsingAsCollateral(reserveId, msg.sender, onBehalfOf, usingAsCollateral);
+  }
+
+  /// @inheritdoc ISpoke
+  function transferPosition(
+    uint256 reserveId,
+    address from,
+    address to,
+    uint256 shares
+  ) external restricted nonReentrant returns (uint256) {
+    require(to != address(0), InvalidAddress());
+    require(from != to, SelfTransfer());
+    Reserve storage reserve = _reserves.get(reserveId);
+    _validateTransferPosition(reserve.flags);
+
+    UserPosition storage fromPosition = _userPositions[from][reserveId];
+    shares = MathUtils.min(shares, fromPosition.suppliedShares);
+    fromPosition.suppliedShares -= shares.toUint120();
+    _userPositions[to][reserveId].suppliedShares += shares.toUint120();
+
+    if (_positionStatus[from].isUsingAsCollateral(reserveId)) {
+      uint256 newRiskPremium = _refreshAndValidateUserAccountData(from).riskPremium;
+      _notifyRiskPremiumUpdate(from, newRiskPremium);
+    }
+
+    emit TransferPosition(reserveId, from, to, shares);
+
+    return shares;
   }
 
   /// @inheritdoc ISpoke
@@ -502,27 +542,9 @@ abstract contract Spoke is
   }
 
   /// @inheritdoc ISpoke
-  function getReserveSuppliedAssets(uint256 reserveId) external view returns (uint256) {
-    Reserve storage reserve = _reserves.get(reserveId);
-    return reserve.hub.getSpokeAddedAssets(reserve.assetId, address(this));
-  }
-
-  /// @inheritdoc ISpoke
-  function getReserveSuppliedShares(uint256 reserveId) external view returns (uint256) {
-    Reserve storage reserve = _reserves.get(reserveId);
-    return reserve.hub.getSpokeAddedShares(reserve.assetId, address(this));
-  }
-
-  /// @inheritdoc ISpoke
   function getReserveDebt(uint256 reserveId) external view returns (uint256, uint256) {
     Reserve storage reserve = _reserves.get(reserveId);
     return reserve.hub.getSpokeOwed(reserve.assetId, address(this));
-  }
-
-  /// @inheritdoc ISpoke
-  function getReserveTotalDebt(uint256 reserveId) external view returns (uint256) {
-    Reserve storage reserve = _reserves.get(reserveId);
-    return reserve.hub.getSpokeTotalOwed(reserve.assetId, address(this));
   }
 
   /// @inheritdoc ISpoke
@@ -625,32 +647,9 @@ abstract contract Spoke is
   }
 
   /// @inheritdoc ISpoke
-  function getUserLastRiskPremium(address user) external view returns (uint256) {
-    return _positionStatus[user].riskPremium;
-  }
-
-  /// @inheritdoc ISpoke
   function getUserAccountData(address user) external view returns (UserAccountData memory) {
     // SAFETY: function does not modify state when `refreshConfig` is false.
     return _castToView(_processUserAccountData)(user, false);
-  }
-
-  /// @inheritdoc ISpoke
-  function getLiquidationBonus(
-    uint256 reserveId,
-    address user,
-    uint256 healthFactor
-  ) external view returns (uint256) {
-    _reserves.get(reserveId);
-    return
-      LiquidationLogic.calculateLiquidationBonus({
-        healthFactorForMaxBonus: _liquidationConfig.healthFactorForMaxBonus,
-        liquidationBonusFactor: _liquidationConfig.liquidationBonusFactor,
-        healthFactor: healthFactor,
-        maxLiquidationBonus: _dynamicConfig[reserveId][
-          _userPositions[user][reserveId].dynamicConfigKey
-        ].maxLiquidationBonus
-      });
   }
 
   /// @inheritdoc ISpoke
@@ -661,6 +660,11 @@ abstract contract Spoke is
   /// @inheritdoc ISpoke
   function isPositionManager(address user, address positionManager) external view returns (bool) {
     return _isPositionManager(user, positionManager);
+  }
+
+  /// @inheritdoc ISpoke
+  function getGate() external view returns (address) {
+    return _gate;
   }
 
   /// @inheritdoc ISpoke
@@ -877,6 +881,27 @@ abstract contract Spoke is
 
   function _validateRepay(ReserveFlags flags) internal pure {
     require(!flags.paused(), ReservePaused());
+  }
+
+  function _validateTransferPosition(ReserveFlags flags) internal pure {
+    require(!flags.paused(), ReservePaused());
+  }
+
+  /// @dev Validates the action with the gate, when a gate is set.
+  function _validateGate(address onBehalfOf, uint256 reserveId, uint256 amount) internal view {
+    address gate = _gate;
+    if (gate != address(0)) {
+      require(
+        ISpokeGate(gate).isActionAllowed({
+          selector: msg.sig,
+          caller: msg.sender,
+          onBehalfOf: onBehalfOf,
+          reserveId: reserveId,
+          amount: amount
+        }),
+        GateAccessDenied()
+      );
+    }
   }
 
   function _validateSetUsingAsCollateral(

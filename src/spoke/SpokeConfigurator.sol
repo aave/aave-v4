@@ -288,6 +288,11 @@ contract SpokeConfigurator is AccessManaged, ISpokeConfigurator {
     ISpoke(spoke).updatePositionManager(positionManager, active);
   }
 
+  /// @inheritdoc ISpokeConfigurator
+  function updateGate(address spoke, address gate) external restricted {
+    ISpoke(spoke).updateGate(gate);
+  }
+
   /// @dev Returns the last dynamic config key of the reserve for the specified Spoke.
   function _getReserveLastDynamicConfigKey(
     address spoke,

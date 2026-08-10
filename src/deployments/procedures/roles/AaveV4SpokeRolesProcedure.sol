@@ -42,6 +42,12 @@ library AaveV4SpokeRolesProcedure {
       roleId: Roles.SPOKE_CONFIGURATOR_ROLE,
       selectors: Roles.getSpokeConfiguratorRoleSelectors()
     });
+    setupSpokeRole({
+      accessManager: accessManager,
+      spoke: spoke,
+      roleId: Roles.SPOKE_POSITION_TRANSFER_ADMIN_ROLE,
+      selectors: Roles.getSpokePositionTransferAdminRoleSelectors()
+    });
   }
 
   /// @notice Sets up a specific spoke role by assigning function selectors to the target.

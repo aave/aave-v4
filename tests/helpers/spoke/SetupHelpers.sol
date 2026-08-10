@@ -339,7 +339,7 @@ abstract contract SetupHelpers is CheckedActions, ConfigHelpers, MockHelpers {
       }
     }
 
-    assertEq(spoke.getReserveTotalDebt(reserveId), 0, 'reserve total debt not zero');
+    assertEq(_getReserveTotalDebt(spoke, reserveId), 0, 'reserve total debt not zero');
     assertEq(hub.getSpokeTotalOwed(assetId, address(spoke)), 0, 'hub spoke total debt not zero');
     assertEq(
       hub.getAssetTotalOwed(assetId),

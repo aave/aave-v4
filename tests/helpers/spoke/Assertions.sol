@@ -157,8 +157,8 @@ abstract contract Assertions is QueryHelpers {
     uint256 assetId = spoke.getReserve(reserveId).assetId;
     IHub hub = _hub(spoke, reserveId);
 
-    reserveDebt.totalDebt = spoke.getReserveTotalDebt(reserveId);
     (reserveDebt.drawnDebt, reserveDebt.premiumDebt) = spoke.getReserveDebt(reserveId);
+    reserveDebt.totalDebt = reserveDebt.drawnDebt + reserveDebt.premiumDebt;
 
     for (uint256 i = 0; i < users.length; ++i) {
       ISpoke.UserPosition memory userData = _getUserInfo(spoke, users[i], reserveId);
@@ -247,7 +247,7 @@ abstract contract Assertions is QueryHelpers {
       string.concat('reserve premium debt ', label)
     );
     assertApproxEqAbs(
-      spoke.getReserveTotalDebt(reserveId),
+      _getReserveTotalDebt(spoke, reserveId),
       expectedDrawnDebt + expectedPremiumDebt,
       3,
       string.concat('reserve total debt ', label)
@@ -276,7 +276,7 @@ abstract contract Assertions is QueryHelpers {
     string memory label
   ) internal view {
     assertApproxEqAbs(
-      spoke.getReserveSuppliedAssets(reserveId),
+      _getReserveSuppliedAssets(spoke, reserveId),
       expectedSuppliedAmount,
       3,
       string.concat('reserve supplied amount ', label)
@@ -434,16 +434,6 @@ abstract contract Assertions is QueryHelpers {
       hub.getSpokeAddedAssets(assetId, address(spoke)),
       expectedSuppliedAmount,
       string(abi.encodePacked('spoke supplied amount ', label))
-    );
-    assertEq(
-      spoke.getReserveSuppliedShares(reserveId),
-      expectedSuppliedShares,
-      string(abi.encodePacked('reserve supplied shares ', label))
-    );
-    assertEq(
-      spoke.getReserveSuppliedAssets(reserveId),
-      expectedSuppliedAmount,
-      string(abi.encodePacked('reserve supplied amount ', label))
     );
     assertEq(
       spoke.getUserSuppliedShares(reserveId, user),

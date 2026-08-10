@@ -69,7 +69,7 @@ contract SpokeWithdrawScenarioTest is Base {
     vm.assume(hub1.getAddedAssets(daiAssetId) > supplyAmount);
 
     // Give Bob enough dai to repay
-    uint256 repayAmount = spoke1.getReserveTotalDebt(_daiReserveId(spoke1));
+    uint256 repayAmount = _getReserveTotalDebt(spoke1, _daiReserveId(spoke1));
     deal(address(tokenList.dai), bob, repayAmount);
 
     SpokeActions.repay({

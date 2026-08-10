@@ -438,7 +438,7 @@ contract BatchTestProcedures is Test, Create2TestHelper, WETHDeployProcedure {
   }
 
   function _checkRoleLabels(IAccessManagerEnumerable accessManager) internal view {
-    assertEq(accessManager.getRoleLabelCount(), 9, 'role label count');
+    assertEq(accessManager.getRoleLabelCount(), 10, 'role label count');
 
     // Hub roles
     assertTrue(

@@ -7,8 +7,6 @@ contract SpokeGettersTest is Base {
   using LiquidationLogic for ISpoke.LiquidationConfig;
   using SafeCast for uint256;
 
-  ISpoke.LiquidationConfig internal _config;
-
   ISpoke internal spoke;
 
   function setUp() public virtual override {
@@ -105,85 +103,6 @@ contract SpokeGettersTest is Base {
     vm.stopPrank();
   }
 
-  function test_getLiquidationBonus_notConfigured() public {
-    uint256 reserveId = _daiReserveId(spoke);
-    uint256 healthFactor = WadRayMath.WAD;
-    test_getLiquidationBonus_fuzz_notConfigured(reserveId, healthFactor);
-  }
-
-  function test_getLiquidationBonus_fuzz_notConfigured(
-    uint256 reserveId,
-    uint256 healthFactor
-  ) public {
-    reserveId = bound(reserveId, 0, spoke.getReserveCount() - 1);
-    healthFactor = bound(healthFactor, 0, HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
-    uint256 liqBonus = spoke.getLiquidationBonus(reserveId, bob, healthFactor);
-
-    _config = spoke.getLiquidationConfig();
-    assertEq(
-      _config,
-      ISpoke.LiquidationConfig({
-        targetHealthFactor: WadRayMath.WAD.toUint128(),
-        healthFactorForMaxBonus: 0,
-        liquidationBonusFactor: 0
-      })
-    );
-
-    assertEq(
-      liqBonus,
-      LiquidationLogic.calculateLiquidationBonus({
-        healthFactorForMaxBonus: 0,
-        liquidationBonusFactor: 0,
-        healthFactor: healthFactor,
-        maxLiquidationBonus: _getLatestDynamicReserveConfig(spoke, reserveId).maxLiquidationBonus
-      }),
-      'calc should match'
-    );
-  }
-
-  function test_getLiquidationBonus_configured() public {
-    uint256 reserveId = _daiReserveId(spoke);
-    uint256 healthFactor = WadRayMath.WAD;
-    test_getLiquidationBonus_fuzz_configured(reserveId, healthFactor, 40_00, 0.9e18);
-  }
-
-  function test_getLiquidationBonus_fuzz_configured(
-    uint256 reserveId,
-    uint256 healthFactor,
-    uint16 liquidationBonusFactor,
-    uint64 healthFactorForMaxBonus
-  ) public {
-    reserveId = bound(reserveId, 0, spoke.getReserveCount() - 1);
-    healthFactor = bound(healthFactor, 0, HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
-    liquidationBonusFactor = bound(liquidationBonusFactor, 0, PercentageMath.PERCENTAGE_FACTOR)
-      .toUint16();
-    healthFactorForMaxBonus = bound(
-      healthFactorForMaxBonus,
-      0,
-      HEALTH_FACTOR_LIQUIDATION_THRESHOLD - 1
-    ).toUint64();
-
-    ISpoke.LiquidationConfig memory config = ISpoke.LiquidationConfig({
-      targetHealthFactor: WadRayMath.WAD.toUint128(),
-      healthFactorForMaxBonus: healthFactorForMaxBonus,
-      liquidationBonusFactor: liquidationBonusFactor
-    });
-    vm.prank(SPOKE_ADMIN);
-    spoke.updateLiquidationConfig(config);
-    _config = spoke.getLiquidationConfig();
-
-    assertEq(
-      spoke.getLiquidationBonus(reserveId, bob, healthFactor),
-      LiquidationLogic.calculateLiquidationBonus({
-        healthFactorForMaxBonus: healthFactorForMaxBonus,
-        liquidationBonusFactor: liquidationBonusFactor,
-        healthFactor: healthFactor,
-        maxLiquidationBonus: _getLatestDynamicReserveConfig(spoke, reserveId).maxLiquidationBonus
-      }),
-      'calc should match'
-    );
-  }
-
   /// @dev Basic user flow and check accounting getters working properly
   function test_protocol_getters() public {
     uint256 reserveId = _daiReserveId(spoke);
@@ -210,7 +129,7 @@ contract SpokeGettersTest is Base {
     (drawn, premium) = spoke.getReserveDebt(reserveId);
     assertEq(drawn, 0);
     assertEq(premium, 0);
-    assertEq(spoke.getReserveTotalDebt(reserveId), 0);
+    assertEq(_getReserveTotalDebt(spoke, reserveId), 0);
 
     // User supply
     assertEq(spoke.getUserSuppliedAssets(reserveId, alice), supplyAmount);
@@ -220,9 +139,9 @@ contract SpokeGettersTest is Base {
     );
 
     // Reserve supply
-    assertEq(spoke.getReserveSuppliedAssets(reserveId), supplyAmount);
+    assertEq(_getReserveSuppliedAssets(spoke, reserveId), supplyAmount);
     assertEq(
-      spoke.getReserveSuppliedShares(reserveId),
+      _getReserveSuppliedShares(spoke, reserveId),
       hub1.previewAddByAssets(assetId, supplyAmount)
     );
 
