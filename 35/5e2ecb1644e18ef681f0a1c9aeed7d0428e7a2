@@ -1,0 +1,120 @@
+src/spoke/interfaces/ISpokeGate.sol
+  s_31ad70093686af::t_1be20691605c32 1-23
+tests/deployments/procedures/deploy/roles/AaveV4SpokeRolesProcedure.t.sol
+  s_31ad70093686af::t_af37b5c6fd17ab 132,139-147
+src/deployments/procedures/roles/AaveV4AccessManagerRolesProcedure.sol
+  s_31ad70093686af::t_e7c6cd17c03b43 30
+tests/helpers/mocks/deployments/procedures/AaveV4SpokeRolesProcedureWrapper.sol
+  s_31ad70093686af::t_e6634b41c719a5 47-50
+tests/deployments/procedures/deploy/roles/AaveV4SpokeConfiguratorRolesProcedure.t.sol
+  s_31ad70093686af::t_6ead9065394e04 126
+  s_31ad70093686af::t_eeb794f14e603e 101
+tests/helpers/mocks/MockSpokeGate.sol
+  s_31ad70093686af::t_293f6068596b3a 32
+  s_31ad70093686af::t_d33da1b1e07db3 1-31,33-34
+tests/helpers/spoke/Assertions.sol
+  s_31ad70093686af::t_a363aae55d164a 161
+  s_31ad70093686af::t_26b420b19c9db2 279
+  s_31ad70093686af::t_efdcb152278fd4 250
+tests/contracts/spoke/misc/Spoke.Gate.t.sol
+  s_31ad70093686af::t_1dbdc4d49e2879 1-248,256-276,279-288,290-317
+  s_31ad70093686af::t_cc8c68ac157859 277-278,289
+  s_31ad70093686af::t_f6894386f5ac0d 249-255
+src/spoke/Spoke.sol
+  s_31ad70093686af::t_51d0403a437573 27
+  s_31ad70093686af::t_2ce453296bfe17 241
+  s_31ad70093686af::t_d79081544d61aa 324
+  s_31ad70093686af::t_452dfee14964d5 414
+  s_31ad70093686af::t_7b177c25ddaa2c 886-906
+  s_31ad70093686af::t_0f42ef3aa11a3a 666-669
+  s_31ad70093686af::t_b008c18bff58f2 226-231
+  s_31ad70093686af::t_5b28e52aec9f4b 428-453
+  s_31ad70093686af::t_6a6512c4897fe1 293
+  s_31ad70093686af::t_34e9f963c35f8a 261
+  s_31ad70093686af::t_c7d5923458407c 225
+  s_31ad70093686af::t_ebeaad795350f0 427
+  s_31ad70093686af::t_0dba5e77496cb7 665
+src/deployments/procedures/roles/AaveV4SpokeRolesProcedure.sol
+  s_31ad70093686af::t_97d82da2f78bd7 45-50
+src/spoke/interfaces/ISpoke.sol
+  s_31ad70093686af::t_736792734c1d0e 303-314,608
+  s_31ad70093686af::t_a259de8825f907 433-438
+  s_31ad70093686af::t_bd4084f43ff69f 191-194
+  s_31ad70093686af::t_86e6cd6762bfa4 501-506
+  s_31ad70093686af::t_40f4fad2847a75 786-788
+  s_31ad70093686af::t_605a8379bf5e56 599-607,609-616
+src/spoke/SpokeStorage.sol
+  s_31ad70093686af::t_14328864ca53ae 38-40,42
+src/deployments/utils/libraries/Roles.sol
+  s_31ad70093686af::t_b2959ab51f9827 181
+  s_31ad70093686af::t_3063e75406ba7a 59
+  s_31ad70093686af::t_c410d99b8f4dd8 133,140-148
+  s_31ad70093686af::t_4067e06c46bca8 156
+tests/helpers/spoke/QueryHelpers.sol
+  s_31ad70093686af::t_ce0fb8a28a2cdb 326
+  s_31ad70093686af::t_92a730fb9cf9d9 9
+  s_31ad70093686af::t_6e9ff10a7de534 38-81,394
+  s_31ad70093686af::t_8339b87c33f625 82-84,328-329
+src/spoke/interfaces/ISpokeConfigurator.sol
+  s_31ad70093686af::t_73d07965dc649a 211-215
+tests/contracts/spoke/misc/Spoke.TransferPosition.t.sol
+  s_31ad70093686af::t_d3467a15d2ec01 1-198
+src/spoke/SpokeConfigurator.sol
+  s_31ad70093686af::t_89d3eb7afcbd66 291-295
+tests/contracts/position-manager/NativeTokenGateway.t.sol
+  s_31ad70093686af::t_702e9ae0090fbf 332
+tests/contracts/position-manager/TakerPositionManager/TakerPositionManager.t.sol
+  s_31ad70093686af::t_60d51575062a05 321
+tests/contracts/spoke/borrow/Spoke.Borrow.Validation.t.sol
+  s_31ad70093686af::t_edb9eb06915f22 198
+tests/contracts/spoke/borrow/Spoke.Borrow.t.sol
+  s_31ad70093686af::t_37aed65baca7de 213,218
+tests/contracts/spoke/liquidation/Spoke.LiquidationCall.Base.t.sol
+  s_31ad70093686af::t_8fa90f0c3c854f 113-114,167-168,667,695-696
+tests/contracts/spoke/misc/Spoke.Getters.t.sol
+  s_31ad70093686af::t_7e4df98970c0e7 132,142,144
+tests/contracts/spoke/multi-hub/Spoke.MultipleHub.IsolationMode.t.sol
+  s_31ad70093686af::t_a18f04013c275c 290
+tests/contracts/spoke/withdraw/Spoke.Withdraw.Scenario.t.sol
+  s_31ad70093686af::t_38951f8a53ba5e 72
+tests/contracts/spoke/withdraw/Spoke.Withdraw.t.sol
+  s_31ad70093686af::t_7f663058767767 336,412
+tests/deployments/procedures/deploy/roles/AaveV4AccessManagerRolesProcedure.t.sol
+  s_31ad70093686af::t_9d12d2e96b0996 187-199,215
+tests/helpers/spoke/SetupHelpers.sol
+  s_31ad70093686af::t_fb030354614ddb 342
+tests/utils/BatchTestProcedures.sol
+  s_31ad70093686af::t_ec4a9142085375 441
+snapshots/ConfigPositionManager.Operations.json
+  s_31ad70093686af::t_e9db0b221caaf3 10-12
+snapshots/GiverPositionManager.Operations.json
+  s_31ad70093686af::t_7ded9800e14970 2-3
+snapshots/NativeTokenGateway.Operations.json
+  s_31ad70093686af::t_c42d0f4b954d34 2-7
+snapshots/SignatureGateway.Operations.json
+  s_31ad70093686af::t_01a363a58c42d1 2-3,5-9
+snapshots/Spoke.Getters.json
+  s_31ad70093686af::t_e03f20398894d9 2-6
+snapshots/Spoke.Operations.ZeroRiskPremium.json
+  s_31ad70093686af::t_bbb70863795616 2-13,16-33
+snapshots/Spoke.Operations.json
+  s_31ad70093686af::t_85769f45aa8d08 2-13,16-33
+snapshots/TakerPositionManager.Operations.json
+  s_31ad70093686af::t_261161ace49d43 6,9-10
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.21",
+  "base_commit_sha": "355e2ecb1644e18ef681f0a1c9aeed7d0428e7a2",
+  "prompts": {},
+  "sessions": {
+    "s_31ad70093686af": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "c52a16c8-3734-43bb-8a82-f6df83845e0e",
+        "model": "claude-fable-5"
+      },
+      "human_author": "Alexandru Niculae <43644109+avniculae@users.noreply.github.com>"
+    }
+  }
+}
