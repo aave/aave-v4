@@ -86,9 +86,9 @@ abstract contract Spoke is
   uint256 internal constant DUST_LIQUIDATION_THRESHOLD =
     LiquidationLogic.DUST_LIQUIDATION_THRESHOLD;
 
-  /// @notice Modifier that checks if the caller is an approved positionManager for `onBehalfOf`.
+  /// @notice Modifier that checks if the caller is authorized to act on the position of `onBehalfOf`.
   modifier onlyPositionManager(address onBehalfOf) {
-    require(_isPositionManager({user: onBehalfOf, manager: msg.sender}), Unauthorized());
+    require(_isAuthorizedPositionManagerCall(onBehalfOf), Unauthorized());
     _;
   }
 
@@ -910,6 +910,12 @@ abstract contract Spoke is
     if (user == manager) return true;
     PositionManagerConfig storage config = _positionManager[manager];
     return config.active && config.approval[user];
+  }
+
+  /// @notice Returns whether the current call is authorized to act on the position of `user`.
+  /// @dev The default implementation requires the caller to be `user` or an approved position manager for `user`.
+  function _isAuthorizedPositionManagerCall(address user) internal view virtual returns (bool) {
+    return _isPositionManager({user: user, manager: msg.sender});
   }
 
   function _validateReserveConfig(ReserveConfig calldata config) internal pure {
