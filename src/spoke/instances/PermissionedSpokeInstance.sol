@@ -19,11 +19,7 @@ contract PermissionedSpokeInstance is SpokeInstanceBase, IPermissionedSpoke {
   bytes32 private constant PermissionedSpokeStorageLocation =
     0xad19adda25bc112a506d1eb6b62266ed84c7e8969fba16c536d63fc20c4fda00;
 
-  function _getPermissionedSpokeStorage()
-    private
-    pure
-    returns (PermissionedSpokeStorage storage $)
-  {
+  function _permissionedSpokeStorage() private pure returns (PermissionedSpokeStorage storage $) {
     assembly {
       $.slot := PermissionedSpokeStorageLocation
     }
@@ -39,19 +35,19 @@ contract PermissionedSpokeInstance is SpokeInstanceBase, IPermissionedSpoke {
 
   /// @inheritdoc IPermissionedSpoke
   function updateMandatoryPositionManager(address mandatoryPositionManager) external restricted {
-    _getPermissionedSpokeStorage().mandatoryPositionManager = mandatoryPositionManager;
+    _permissionedSpokeStorage().mandatoryPositionManager = mandatoryPositionManager;
     emit UpdateMandatoryPositionManager(mandatoryPositionManager);
   }
 
   /// @inheritdoc IPermissionedSpoke
   function getMandatoryPositionManager() external view returns (address) {
-    return _getPermissionedSpokeStorage().mandatoryPositionManager;
+    return _permissionedSpokeStorage().mandatoryPositionManager;
   }
 
   /// @dev When a mandatory position manager is set, it replaces the default authorization and fully
   /// decides whether the call is allowed, based on the caller, the position owner and the calldata.
   function _isAuthorizedPositionManagerCall(address user) internal view override returns (bool) {
-    address mandatoryPositionManager = _getPermissionedSpokeStorage().mandatoryPositionManager;
+    address mandatoryPositionManager = _permissionedSpokeStorage().mandatoryPositionManager;
     if (mandatoryPositionManager == address(0)) {
       return super._isAuthorizedPositionManagerCall(user);
     }

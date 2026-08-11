@@ -1,0 +1,13 @@
+{
+  "borrow: mpm set": "306882",
+  "borrow: mpm unset": "295338",
+  "repay: partial, mpm set": "159424",
+  "repay: partial, mpm unset": "147880",
+  "supply: mpm set": "141038",
+  "supply: mpm unset": "129479",
+  "updateMandatoryPositionManager: set": "64530",
+  "usingAsCollateral: enable, mpm set": "73333",
+  "usingAsCollateral: enable, mpm unset": "61768",
+  "withdraw: partial, mpm set": "194270",
+  "withdraw: partial, mpm unset": "182725"
+}
