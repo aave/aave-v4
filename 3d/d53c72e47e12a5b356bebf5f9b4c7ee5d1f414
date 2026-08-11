@@ -1,0 +1,43 @@
+src/spoke/instances/PermissionedSpokeInstance.sol
+  s_31ad70093686af::t_68b405a13c44aa 42,48,54
+  s_31ad70093686af::t_12ca3148d854d4 13-30
+tests/helpers/spoke/QueryHelpers.sol
+  s_31ad70093686af::t_1fb8117f001d53 37-60
+  s_31ad70093686af::t_3d9e0a86b28cb9 368
+tests/contracts/position-manager/NativeTokenGateway.t.sol
+  s_31ad70093686af::t_f7f6276c3add8e 332
+tests/contracts/position-manager/TakerPositionManager/TakerPositionManager.t.sol
+  s_31ad70093686af::t_21802968bbf760 321
+tests/contracts/spoke/borrow/Spoke.Borrow.Validation.t.sol
+  s_31ad70093686af::t_e60a8bb7cfc42f 198
+tests/contracts/spoke/borrow/Spoke.Borrow.t.sol
+  s_31ad70093686af::t_9e5c3dabb078f5 213,218
+tests/contracts/spoke/misc/Spoke.Getters.t.sol
+  s_31ad70093686af::t_3e9a1cbf9a73c1 213,223,225
+tests/contracts/spoke/multi-hub/Spoke.MultipleHub.IsolationMode.t.sol
+  s_31ad70093686af::t_19424ddf79963f 290
+tests/contracts/spoke/withdraw/Spoke.Withdraw.Scenario.t.sol
+  s_31ad70093686af::t_5fdd619bd78ff8 72
+tests/contracts/spoke/withdraw/Spoke.Withdraw.t.sol
+  s_31ad70093686af::t_5025a5ded89d19 336,412
+tests/helpers/spoke/Assertions.sol
+  s_31ad70093686af::t_329d5c16811f5f 161,250,279
+tests/helpers/spoke/SetupHelpers.sol
+  s_31ad70093686af::t_c6c57d8137f914 342
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.21",
+  "base_commit_sha": "3dd53c72e47e12a5b356bebf5f9b4c7ee5d1f414",
+  "prompts": {},
+  "sessions": {
+    "s_31ad70093686af": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "c52a16c8-3734-43bb-8a82-f6df83845e0e",
+        "model": "claude-fable-5"
+      },
+      "human_author": "Alexandru Niculae <43644109+avniculae@users.noreply.github.com>"
+    }
+  }
+}
