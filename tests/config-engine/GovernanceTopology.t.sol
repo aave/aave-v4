@@ -28,8 +28,9 @@ contract ConfigEngineGovernanceTopologyTest is BaseConfigEngineTest {
     });
 
     // in production the Executor, not the payload or the engine, holds the configurator permissions
-    vm.prank(ADMIN);
-    accessManager.grantRole(Roles.HUB_CONFIGURATOR_DOMAIN_ADMIN_ROLE, address(executor), 0);
+    vm.startPrank(ADMIN);
+    _grantConfiguratorRolesTo(address(executor));
+    vm.stopPrank();
   }
 
   function _executePayload(address target) internal {

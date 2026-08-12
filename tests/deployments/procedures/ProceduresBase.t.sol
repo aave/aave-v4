@@ -92,4 +92,11 @@ contract ProceduresBase is Create2TestHelper {
       assertEq(delay, 0);
     }
   }
+
+  function _assertCannotCall(address target, bytes4[] memory selectors) internal view {
+    for (uint256 idx; idx < selectors.length; idx++) {
+      (bool allowed, ) = IAccessManager(accessManager).canCall(admin, target, selectors[idx]);
+      assertFalse(allowed);
+    }
+  }
 }
