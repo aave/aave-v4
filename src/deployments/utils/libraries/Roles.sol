@@ -19,35 +19,25 @@ import {ISpokeConfigurator} from 'src/spoke/interfaces/ISpokeConfigurator.sol';
 ///
 /// ## Role strategy
 ///
-/// A single authority contract will be used to manage the roles for all applicable contracts on a given chain.
+/// A single authority contract manages the roles for all applicable contracts on a given chain.
 /// Role IDs, selector mappings, and overall configuration should be kept identical
 /// across chains to avoid additional overhead and role divergence.
 ///
-/// Hub and Spoke roles remain granular (e.g. HUB_CONFIGURATOR_ROLE,
-/// HUB_FEE_MINTER_ROLE, HUB_DEFICIT_ELIMINATOR_ROLE each control a distinct set
-/// of selectors).
-///
-/// HubConfigurator and SpokeConfigurator follow a different approach: a single
-/// Domain Admin role per domain (HUB_CONFIGURATOR_DOMAIN_ADMIN_ROLE = 200,
-/// SPOKE_CONFIGURATOR_DOMAIN_ADMIN_ROLE = 400) initially held all target selectors.
-/// As more granular roles are introduced, they are added at the next available ID
-/// (201, 202, ... / 401, 402, ...) and the corresponding selectors are reassigned
-/// from the Domain Admin role to the new granular role:
-///   - Existing role IDs should never be overwritten or reused for a different purpose.
-///   - New roles are always appended with an incremented ID.
-///   - The Domain Admin role (200/400) only ever has its selector set shrink over
-///     time as selectors are divided into more granular roles.
-///   - Addresses holding the Domain Admin role should be granted the new
-///     granular role to retain their existing access.
+/// Role IDs are never reused for a different purpose. A new role is appended at the next
+/// available ID in its domain range, and its selectors are reassigned from the Domain Admin role
+/// of that domain (HUB_CONFIGURATOR_DOMAIN_ADMIN_ROLE = 200,
+/// SPOKE_CONFIGURATOR_DOMAIN_ADMIN_ROLE = 400), whose selector set only ever shrinks. Addresses
+/// holding the Domain Admin role should be granted the new granular role to retain their
+/// existing access.
 ///
 /// ## Configurator role breakdown
 ///
-/// Each configurator is broken down into five granular roles covering the same five
-/// concerns. A role never spans both configurators: a Hub role only holds
-/// HubConfigurator selectors and a Spoke role only holds SpokeConfigurator selectors,
-/// so Hub and Spoke access is always granted separately. The first two roles are named
-/// after the flag they own, because the Hub has no `paused`/`frozen` flags of its own —
-/// the equivalent state lives on the Spoke config it holds on each asset.
+/// Each configurator has five granular roles covering the same five concerns. A role never
+/// spans both configurators: a Hub role only holds HubConfigurator selectors and a Spoke role
+/// only holds SpokeConfigurator selectors, so Hub and Spoke access is always granted separately.
+/// The first two roles are named after the flag they own, because the Hub has no
+/// `paused`/`frozen` flags of its own — the equivalent state lives on the Spoke config it
+/// holds on each asset.
 ///
 ///   - HUB_CONFIGURATOR_SPOKE_ACTIVE_ROLE (201) / SPOKE_CONFIGURATOR_PAUSE_ROLE (401):
 ///     flips the flag that prevents all activity on a target, in both directions. The
