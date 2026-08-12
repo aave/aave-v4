@@ -1,71 +1,62 @@
-tests/deployments/orchestration/AaveV4TestOrchestration.sol
-  s_8f1683de01447a::t_b3fb2a0521c0cc 29,68,106,167,173,440
-tests/helpers/mocks/deployments/procedures/AaveV4SpokeDeployProcedureWrapper.sol
-  s_8f1683de01447a::t_a395841b978df3 13,23
-tests/deployments/batches/AaveV4SpokeInstanceBatch.t.sol
-  s_8f1683de01447a::t_d0563f9cd5ac43 16,53,66,79,92,104
-tests/utils/BatchTestProcedures.sol
-  s_8f1683de01447a::t_4f8abac6c3c14b 171
-src/deployments/orchestration/AaveV4DeployBase.sol
-  s_8f1683de01447a::t_420b3e8a2e5855 89,98,107
-src/spoke/hooks/NoOpSpokeHook.sol
-  s_8f1683de01447a::t_e5d3067bd90737 1-12
-src/deployments/utils/libraries/InputUtils.sol
-  s_8f1683de01447a::t_420b3e8a2e5855 20,43
-tests/deployments/procedures/deploy/spoke/AaveV4SpokeDeployProcedure.t.sol
-  s_8f1683de01447a::t_4f8abac6c3c14b 10
-  s_8f1683de01447a::t_a395841b978df3 5,9,14,23,41,52,63,74,79-87
-  s_8f1683de01447a::t_3239932b293e6a 88-89
-src/spoke/hooks/BaseSpokeHook.sol
-  s_8f1683de01447a::t_080bae114cc142 1-62
-src/deployments/procedures/deploy/spoke/AaveV4SpokeDeployProcedure.sol
-  s_8f1683de01447a::t_420b3e8a2e5855 16,26,34,38,53,58-59,61
-tests/contracts/spoke/hooks/Spoke.Hooks.t.sol
-  s_8f1683de01447a::t_74bd8d087c187c 1-3,9-10,63,84,120,122
-  s_8f1683de01447a::t_4f8abac6c3c14b 4-8,11-62,64-83,85-119,121
-src/deployments/batches/AaveV4SpokeInstanceBatch.sol
-  s_8f1683de01447a::t_420b3e8a2e5855 20,28,38
-tests/deployments/fork/PostDeploymentVerificationTest.t.sol
-  s_8f1683de01447a::t_bec649b6cc5e77 213,266
-src/spoke/interfaces/ISpokeHook.sol
-  s_8f1683de01447a::t_080bae114cc142 1-21
-tests/helpers/mocks/MockSpokeHook.sol
-  s_8f1683de01447a::t_74bd8d087c187c 1-53
-tests/scripts/AaveV4DeployBatchBaseScript.t.sol
-  s_8f1683de01447a::t_fb3307f1b172c0 328
-  s_8f1683de01447a::t_bec649b6cc5e77 9,65
-src/spoke/Spoke.sol
-  s_8f1683de01447a::t_080bae114cc142 230,250,281,313,358,401,921-922
-  s_8f1683de01447a::t_02fc8cec09099b 923
-src/deployments/orchestration/AaveV4DeployOrchestration.sol
-  s_8f1683de01447a::t_420b3e8a2e5855 220,238,251,318,328
-tests/deployments/AaveV4BatchDeployment.t.sol
-  s_8f1683de01447a::t_4f8abac6c3c14b 5,22,371,407
 scripts/deploy/examples/AaveV4DeployAnvil.s.sol
-  s_8f1683de01447a::t_bec649b6cc5e77 7,22,27,56
+  h_89d2da8ff33004 7,22,27,56
+src/deployments/batches/AaveV4SpokeInstanceBatch.sol
+  h_89d2da8ff33004 20,28,38
+src/deployments/orchestration/AaveV4DeployBase.sol
+  h_89d2da8ff33004 89,98,107
+src/deployments/orchestration/AaveV4DeployOrchestration.sol
+  h_89d2da8ff33004 220,238,251,318,328
+src/deployments/procedures/deploy/spoke/AaveV4SpokeDeployProcedure.sol
+  h_89d2da8ff33004 16,26,34,38,53,58-59,61
+src/deployments/utils/libraries/InputUtils.sol
+  h_89d2da8ff33004 20,43
+src/spoke/Spoke.sol
+  h_89d2da8ff33004 230,250,281,313,358,401,921-923
+src/spoke/hooks/BaseSpokeHook.sol
+  h_89d2da8ff33004 1-62
+src/spoke/hooks/NoOpSpokeHook.sol
+  h_89d2da8ff33004 1-12
 src/spoke/instances/SpokeInstance.sol
-  s_8f1683de01447a::t_f52c6c044184a0 20
-  s_8f1683de01447a::t_cb9fa25dc4b2b0 14
-  s_8f1683de01447a::t_e5d3067bd90737 5,13,15,21-25,27,44-46,48
-  s_8f1683de01447a::t_960e18a593de86 26
-  s_8f1683de01447a::t_4f8abac6c3c14b 47
-  s_8f1683de01447a::t_e0e0e7ed8fc11e 49
+  h_89d2da8ff33004 5,13-15,20-27,44-49
+src/spoke/interfaces/ISpokeHook.sol
+  h_89d2da8ff33004 1-21
+tests/contracts/spoke/hooks/Spoke.Hooks.t.sol
+  h_89d2da8ff33004 1-122
+tests/deployments/AaveV4BatchDeployment.t.sol
+  h_89d2da8ff33004 5,22,371,407
+tests/deployments/batches/AaveV4SpokeInstanceBatch.t.sol
+  h_89d2da8ff33004 16,53,66,79,92,104
 tests/deployments/batches/BatchBase.t.sol
-  s_8f1683de01447a::t_d0563f9cd5ac43 34,42,52
+  h_89d2da8ff33004 34,42,52
+tests/deployments/fork/PostDeploymentVerificationTest.t.sol
+  h_89d2da8ff33004 213,266
+tests/deployments/orchestration/AaveV4TestOrchestration.sol
+  h_89d2da8ff33004 29,68,106,167,173,440
+tests/deployments/procedures/deploy/spoke/AaveV4SpokeDeployProcedure.t.sol
+  h_89d2da8ff33004 5,9-10,14,23,41,52,63,74,79-89
+tests/helpers/mocks/MockSpokeHook.sol
+  h_89d2da8ff33004 1-53
+tests/helpers/mocks/deployments/procedures/AaveV4SpokeDeployProcedureWrapper.sol
+  h_89d2da8ff33004 13,23
+tests/scripts/AaveV4DeployBatchBaseScript.t.sol
+  h_89d2da8ff33004 9,65,328
+tests/utils/BatchTestProcedures.sol
+  h_89d2da8ff33004 171
 ---
 {
   "schema_version": "authorship/3.0.0",
-  "git_ai_version": "1.6.21",
+  "git_ai_version": "1.6.22",
   "base_commit_sha": "cd43553591bec3c7bdc954d145e7eb4c22f1a0ed",
   "prompts": {},
-  "sessions": {
-    "s_8f1683de01447a": {
-      "agent_id": {
-        "tool": "codex",
-        "id": "019fd63c-fe78-7382-b8a0-af2b82bbe579",
-        "model": "gpt-5.6-sol"
-      },
-      "human_author": "AlbertoCentonze <11707683+AlbertoCentonze@users.noreply.github.com>"
+  "humans": {
+    "h_0f977de3f043fc": {
+      "author": "Alexandru Niculae <43644109+avniculae@users.noreply.github.com>"
+    },
+    "h_89d2da8ff33004": {
+      "author": "AlbertoCentonze <11707683+AlbertoCentonze@users.noreply.github.com>"
+    },
+    "h_e42aa0fb58e660": {
+      "author": "Alexandru Niculae"
     }
   }
 }
