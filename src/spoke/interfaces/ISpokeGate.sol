@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: LicenseRef-BUSL
 pragma solidity ^0.8.0;
 
-/// @title IMandatoryPositionManager
+/// @title ISpokeGate
 /// @author Aave Labs
-/// @notice Interface for a mandatory position manager, which replaces the default position manager
-/// authorization on position actions of a permissioned Spoke.
-interface IMandatoryPositionManager {
+/// @notice Interface for a gate, which replaces the default position manager authorization on
+/// position actions of a permissioned Spoke.
+interface ISpokeGate {
   /// @notice Returns whether a position action on the Spoke is allowed.
   /// @dev It can preserve the default authorization by calling back `ISpoke.isPositionManager`.
   /// @param caller The transaction initiator on the Spoke.

@@ -1,13 +1,13 @@
 {
-  "borrow: mpm set": "306882",
-  "borrow: mpm unset": "295338",
-  "repay: partial, mpm set": "159424",
-  "repay: partial, mpm unset": "147880",
-  "supply: mpm set": "141038",
-  "supply: mpm unset": "129479",
-  "updateMandatoryPositionManager: set": "64530",
-  "usingAsCollateral: enable, mpm set": "73333",
-  "usingAsCollateral: enable, mpm unset": "61768",
-  "withdraw: partial, mpm set": "194270",
-  "withdraw: partial, mpm unset": "182725"
+  "borrow: gate set": "306868",
+  "borrow: gate unset": "295329",
+  "repay: partial, gate set": "159421",
+  "repay: partial, gate unset": "147882",
+  "supply: gate set": "141024",
+  "supply: gate unset": "129470",
+  "updateGate: set": "64794",
+  "usingAsCollateral: enable, gate set": "73297",
+  "usingAsCollateral: enable, gate unset": "61737",
+  "withdraw: partial, gate set": "194256",
+  "withdraw: partial, gate unset": "182716"
 }

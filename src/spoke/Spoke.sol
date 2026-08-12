@@ -88,7 +88,7 @@ abstract contract Spoke is
 
   /// @notice Modifier that checks if the caller is authorized to act on the position of `onBehalfOf`.
   modifier onlyPositionManager(address onBehalfOf) {
-    require(_isAuthorizedPositionManagerCall(onBehalfOf), Unauthorized());
+    require(_isAuthorizedPositionManagerCall(msg.sender, onBehalfOf, msg.data), Unauthorized());
     _;
   }
 
@@ -912,10 +912,14 @@ abstract contract Spoke is
     return config.active && config.approval[user];
   }
 
-  /// @notice Returns whether the current call is authorized to act on the position of `user`.
+  /// @notice Returns whether `caller` is authorized to act on the position of `user` for the given calldata.
   /// @dev The default implementation requires the caller to be `user` or an approved position manager for `user`.
-  function _isAuthorizedPositionManagerCall(address user) internal view virtual returns (bool) {
-    return _isPositionManager({user: user, manager: msg.sender});
+  function _isAuthorizedPositionManagerCall(
+    address caller,
+    address user,
+    bytes calldata
+  ) internal view virtual returns (bool) {
+    return _isPositionManager({user: user, manager: caller});
   }
 
   function _validateReserveConfig(ReserveConfig calldata config) internal pure {

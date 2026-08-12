@@ -2,17 +2,17 @@
 pragma solidity 0.8.28;
 
 import {SpokeInstanceBase} from 'src/spoke/instances/SpokeInstanceBase.sol';
-import {IMandatoryPositionManager} from 'src/spoke/interfaces/IMandatoryPositionManager.sol';
+import {ISpokeGate} from 'src/spoke/interfaces/ISpokeGate.sol';
 import {IPermissionedSpoke} from 'src/spoke/interfaces/IPermissionedSpoke.sol';
 
 /// @title PermissionedSpokeInstance
 /// @author Aave Labs
-/// @notice Spoke implementation with a configurable mandatory position manager, which replaces the
-/// default position manager authorization on position actions.
+/// @notice Spoke implementation with a configurable gate, which replaces the default position
+/// manager authorization on position actions.
 contract PermissionedSpokeInstance is SpokeInstanceBase, IPermissionedSpoke {
   /// @custom:storage-location erc7201:aave.storage.PermissionedSpoke
   struct PermissionedSpokeStorage {
-    address mandatoryPositionManager;
+    address gate;
   }
 
   // keccak256(abi.encode(uint256(keccak256('aave.storage.PermissionedSpoke')) - 1)) & ~bytes32(uint256(0xff))
@@ -34,28 +34,27 @@ contract PermissionedSpokeInstance is SpokeInstanceBase, IPermissionedSpoke {
   ) SpokeInstanceBase(oracle_, maxUserReservesLimit_) {}
 
   /// @inheritdoc IPermissionedSpoke
-  function updateMandatoryPositionManager(address mandatoryPositionManager) external restricted {
-    _permissionedSpokeStorage().mandatoryPositionManager = mandatoryPositionManager;
-    emit UpdateMandatoryPositionManager(mandatoryPositionManager);
+  function updateGate(address gate) external restricted {
+    _permissionedSpokeStorage().gate = gate;
+    emit UpdateGate(gate);
   }
 
   /// @inheritdoc IPermissionedSpoke
-  function getMandatoryPositionManager() external view returns (address) {
-    return _permissionedSpokeStorage().mandatoryPositionManager;
+  function getGate() external view returns (address) {
+    return _permissionedSpokeStorage().gate;
   }
 
-  /// @dev When a mandatory position manager is set, it replaces the default authorization and fully
-  /// decides whether the call is allowed, based on the caller, the position owner and the calldata.
-  function _isAuthorizedPositionManagerCall(address user) internal view override returns (bool) {
-    address mandatoryPositionManager = _permissionedSpokeStorage().mandatoryPositionManager;
-    if (mandatoryPositionManager == address(0)) {
-      return super._isAuthorizedPositionManagerCall(user);
+  /// @dev When a gate is set, it replaces the default authorization and fully decides whether the
+  /// call is allowed, based on the caller, the position owner and the calldata.
+  function _isAuthorizedPositionManagerCall(
+    address caller,
+    address user,
+    bytes calldata data
+  ) internal view override returns (bool) {
+    address gate = _permissionedSpokeStorage().gate;
+    if (gate == address(0)) {
+      return super._isAuthorizedPositionManagerCall(caller, user, data);
     }
-    return
-      IMandatoryPositionManager(mandatoryPositionManager).isCallAllowed({
-        caller: msg.sender,
-        onBehalfOf: user,
-        data: msg.data
-      });
+    return ISpokeGate(gate).isCallAllowed({caller: caller, onBehalfOf: user, data: data});
   }
 }

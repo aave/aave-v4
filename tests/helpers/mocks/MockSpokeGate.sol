@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {IMandatoryPositionManager} from 'src/spoke/interfaces/IMandatoryPositionManager.sol';
+import {ISpokeGate} from 'src/spoke/interfaces/ISpokeGate.sol';
 import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 
-/// @dev Mandatory position manager mock:
+/// @dev Gate mock:
 /// - `globalManager`s are allowed to act on behalf of any user (e.g. an RWA manager)
 /// - `gated` selectors additionally require the position owner to be `eligible`
 /// - otherwise falls back to the Spoke's default position manager authorization
-contract MockMandatoryPositionManager is IMandatoryPositionManager {
+contract MockSpokeGate is ISpokeGate {
   ISpoke public immutable SPOKE;
 
   mapping(address caller => bool) public globalManager;

@@ -5,16 +5,16 @@ pragma solidity ^0.8.0;
 /// @author Aave Labs
 /// @notice Interface for the permissioned functionality of a Spoke.
 interface IPermissionedSpoke {
-  /// @notice Emitted when the mandatory position manager is updated.
-  /// @param mandatoryPositionManager The address of the mandatory position manager, or the zero address if removed.
-  event UpdateMandatoryPositionManager(address indexed mandatoryPositionManager);
+  /// @notice Emitted when the gate is updated.
+  /// @param gate The address of the gate, or the zero address if removed.
+  event UpdateGate(address indexed gate);
 
-  /// @notice Updates the mandatory position manager.
+  /// @notice Updates the gate.
   /// @dev When set, it replaces the default position manager authorization on position actions.
   /// @dev Setting the zero address removes it, restoring the default authorization.
-  /// @param mandatoryPositionManager The address of the mandatory position manager.
-  function updateMandatoryPositionManager(address mandatoryPositionManager) external;
+  /// @param gate The address of the gate.
+  function updateGate(address gate) external;
 
-  /// @notice Returns the address of the mandatory position manager, or the zero address if unset.
-  function getMandatoryPositionManager() external view returns (address);
+  /// @notice Returns the address of the gate, or the zero address if unset.
+  function getGate() external view returns (address);
 }

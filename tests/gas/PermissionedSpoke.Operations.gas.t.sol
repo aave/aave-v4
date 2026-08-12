@@ -20,28 +20,26 @@ contract PermissionedSpokeOperations_Gas_Tests is PermissionedSpokeBase {
     });
   }
 
-  function test_updateMandatoryPositionManager() public {
+  function test_updateGate() public {
     vm.prank(ADMIN);
-    PermissionedSpokeInstance(address(spoke)).updateMandatoryPositionManager(
-      address(mandatoryPositionManager)
-    );
-    vm.snapshotGasLastCall(NAMESPACE, 'updateMandatoryPositionManager: set');
+    PermissionedSpokeInstance(address(spoke)).updateGate(address(gate));
+    vm.snapshotGasLastCall(NAMESPACE, 'updateGate: set');
   }
 
-  function test_operations_mandatoryPositionManagerUnset() public {
-    _snapshotOperations('mpm unset');
+  function test_operations_gateUnset() public {
+    _snapshotOperations('gate unset');
   }
 
-  function test_operations_mandatoryPositionManagerSet() public {
-    mandatoryPositionManager.setGated(ISpoke.supply.selector, true);
-    mandatoryPositionManager.setGated(ISpoke.withdraw.selector, true);
-    mandatoryPositionManager.setGated(ISpoke.borrow.selector, true);
-    mandatoryPositionManager.setGated(ISpoke.repay.selector, true);
-    mandatoryPositionManager.setGated(ISpoke.setUsingAsCollateral.selector, true);
-    mandatoryPositionManager.setEligible(alice, true);
-    _setMandatoryPositionManager(address(mandatoryPositionManager));
+  function test_operations_gateSet() public {
+    gate.setGated(ISpoke.supply.selector, true);
+    gate.setGated(ISpoke.withdraw.selector, true);
+    gate.setGated(ISpoke.borrow.selector, true);
+    gate.setGated(ISpoke.repay.selector, true);
+    gate.setGated(ISpoke.setUsingAsCollateral.selector, true);
+    gate.setEligible(alice, true);
+    _setGate(address(gate));
 
-    _snapshotOperations('mpm set');
+    _snapshotOperations('gate set');
   }
 
   function _snapshotOperations(string memory label) internal {

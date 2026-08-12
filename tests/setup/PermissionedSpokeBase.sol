@@ -5,13 +5,13 @@ import 'tests/setup/Base.t.sol';
 
 import {PermissionedSpokeInstance} from 'src/spoke/instances/PermissionedSpokeInstance.sol';
 import {IPermissionedSpoke} from 'src/spoke/interfaces/IPermissionedSpoke.sol';
-import {MockMandatoryPositionManager} from 'tests/helpers/mocks/MockMandatoryPositionManager.sol';
+import {MockSpokeGate} from 'tests/helpers/mocks/MockSpokeGate.sol';
 
 /// @dev Deploys a spoke with the `PermissionedSpokeInstance` implementation, two reserves on hub1
 /// (weth as collateral, usdx as borrowable) and a mock mandatory position manager.
 abstract contract PermissionedSpokeBase is Base {
   ISpoke internal spoke;
-  MockMandatoryPositionManager internal mandatoryPositionManager;
+  MockSpokeGate internal gate;
   address internal RWA_MANAGER = makeAddr('RWA_MANAGER');
 
   uint256 internal wethReserveId;
@@ -35,7 +35,7 @@ abstract contract PermissionedSpokeBase is Base {
     });
     _setupFixturesRoles(report);
     spoke = ISpoke(report.spokeReports[0].spoke);
-    mandatoryPositionManager = new MockMandatoryPositionManager(spoke);
+    gate = new MockSpokeGate(spoke);
 
     IHub.SpokeConfig memory spokeConfig = IHub.SpokeConfig({
       active: true,
@@ -98,10 +98,8 @@ abstract contract PermissionedSpokeBase is Base {
     });
   }
 
-  function _setMandatoryPositionManager(address newMandatoryPositionManager) internal {
+  function _setGate(address newGate) internal {
     vm.prank(ADMIN);
-    PermissionedSpokeInstance(address(spoke)).updateMandatoryPositionManager(
-      newMandatoryPositionManager
-    );
+    PermissionedSpokeInstance(address(spoke)).updateGate(newGate);
   }
 }
