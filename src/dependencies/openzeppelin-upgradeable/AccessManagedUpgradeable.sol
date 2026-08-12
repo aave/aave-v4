@@ -3,7 +3,6 @@
 
 pragma solidity ^0.8.20;
 
-import {AuthorityUtils} from '../openzeppelin/AuthorityUtils.sol';
 import {IAccessManager} from '../openzeppelin/IAccessManager.sol';
 import {IAccessManaged} from '../openzeppelin/IAccessManaged.sol';
 import {ContextUpgradeable} from './ContextUpgradeable.sol';
@@ -114,11 +113,10 @@ abstract contract AccessManagedUpgradeable is Initializable, ContextUpgradeable,
    */
   function _checkCanCall(address caller, bytes calldata data) internal virtual {
     AccessManagedStorage storage $ = _getAccessManagedStorage();
-    (bool immediate, uint32 delay) = AuthorityUtils.canCallWithDelay(
-      authority(),
+    (bool immediate, uint32 delay) = IAccessManager(authority()).canCall(
       caller,
       address(this),
-      bytes4(data[0:4])
+      data
     );
     if (!immediate) {
       if (delay > 0) {
