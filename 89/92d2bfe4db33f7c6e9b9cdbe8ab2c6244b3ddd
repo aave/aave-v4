@@ -1,0 +1,33 @@
+src/spoke/interfaces/IPermissionedSpoke.sol
+  s_31ad70093686af::t_c10785d9543798 8-10,12,15-16,18-19
+src/spoke/interfaces/ISpokeGate.sol
+  s_31ad70093686af::t_6eb9c70fe5289a 4-8
+src/spoke/Spoke.sol
+  s_31ad70093686af::t_296514ea6dc4cd 91,915,917-922
+src/spoke/instances/PermissionedSpokeInstance.sol
+  s_31ad70093686af::t_8adba505d1361b 5,10-11,15,37-39,43-44,47-56,58
+tests/contracts/spoke/misc/PermissionedSpoke.t.sol
+  s_31ad70093686af::t_4e7f5179efa106 7,21,23,26,28,31-33,35,47,52,56-57,77,90,130-131,165-166,181,223-224
+tests/gas/PermissionedSpoke.Operations.gas.t.sol
+  s_31ad70093686af::t_0abd2422908ef5 23,25-26,29-30,33-40,42
+tests/helpers/mocks/MockSpokeGate.sol
+  s_31ad70093686af::t_8a6563ec270b50 4,7,11
+tests/setup/PermissionedSpokeBase.sol
+  s_31ad70093686af::t_43bad9e43de292 8,14,38,101,103
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "8992d2bfe4db33f7c6e9b9cdbe8ab2c6244b3ddd",
+  "prompts": {},
+  "sessions": {
+    "s_31ad70093686af": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "c52a16c8-3734-43bb-8a82-f6df83845e0e",
+        "model": "claude-fable-5"
+      },
+      "human_author": "Alexandru Niculae <43644109+avniculae@users.noreply.github.com>"
+    }
+  }
+}
