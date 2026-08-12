@@ -1,0 +1,23 @@
+snapshots/Spoke.Operations.json
+  s_7ec280db1063f8::t_1970eec7252cf1 15
+snapshots/Spoke.Operations.ZeroRiskPremium.json
+  s_7ec280db1063f8::t_1970eec7252cf1 15
+snapshots/SignatureGateway.Operations.json
+  s_7ec280db1063f8::t_1970eec7252cf1 2-3,6,8
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.21",
+  "base_commit_sha": "b9847b49f136ec05310f0fc346fed112143b4542",
+  "prompts": {},
+  "sessions": {
+    "s_7ec280db1063f8": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "f6eca046-101a-4f2f-995c-14a34db2a81c",
+        "model": "claude-fable-5"
+      },
+      "human_author": "Alexandru Niculae <43644109+avniculae@users.noreply.github.com>"
+    }
+  }
+}

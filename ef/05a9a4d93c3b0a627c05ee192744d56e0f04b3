@@ -1,0 +1,25 @@
+tests/gas/PermissionedSpoke.Operations.gas.t.sol
+  s_31ad70093686af::t_a51960cc65ef97 1-67
+foundry.toml
+  s_31ad70093686af::t_fdf594103594e6 25,31
+src/spoke/instances/PermissionedSpokeInstance.sol
+  s_31ad70093686af::t_a12325a18e0701 22,38,44,50
+tests/setup/PermissionedSpokeBase.sol
+  s_31ad70093686af::t_9bc4353cb93de0 1-107
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "ef05a9a4d93c3b0a627c05ee192744d56e0f04b3",
+  "prompts": {},
+  "sessions": {
+    "s_31ad70093686af": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "c52a16c8-3734-43bb-8a82-f6df83845e0e",
+        "model": "claude-fable-5"
+      },
+      "human_author": "Alexandru Niculae <43644109+avniculae@users.noreply.github.com>"
+    }
+  }
+}
