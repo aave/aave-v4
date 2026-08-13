@@ -1,0 +1,13 @@
+{
+  "borrow: default manager": "302603",
+  "borrow: permissioned manager": "308697",
+  "repay: partial, default manager": "155164",
+  "repay: partial, permissioned manager": "155849",
+  "supply: default manager": "136432",
+  "supply: permissioned manager": "137066",
+  "updateAuthority: permissioned manager": "46444",
+  "usingAsCollateral: enable, default manager": "68435",
+  "usingAsCollateral: enable, permissioned manager": "69136",
+  "withdraw: partial, default manager": "190049",
+  "withdraw: partial, permissioned manager": "190700"
+}
