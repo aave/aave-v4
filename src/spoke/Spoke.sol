@@ -86,12 +86,6 @@ abstract contract Spoke is
   uint256 internal constant DUST_LIQUIDATION_THRESHOLD =
     LiquidationLogic.DUST_LIQUIDATION_THRESHOLD;
 
-  /// @notice Modifier that checks if the caller is an approved positionManager for `onBehalfOf`.
-  modifier onlyPositionManager(address onBehalfOf) {
-    require(_isPositionManager({user: onBehalfOf, manager: msg.sender}), Unauthorized());
-    _;
-  }
-
   /// @dev Constructor.
   /// @param oracle_ The address of the AaveOracle contract.
   /// @param maxUserReservesLimit_ The maximum number of collateral and borrow reserves a user can have.
@@ -226,7 +220,7 @@ abstract contract Spoke is
     uint256 reserveId,
     uint256 amount,
     address onBehalfOf
-  ) external nonReentrant onlyPositionManager(onBehalfOf) returns (uint256, uint256) {
+  ) external nonReentrant restricted returns (uint256, uint256) {
     Reserve storage reserve = _reserves.get(reserveId);
     UserPosition storage userPosition = _userPositions[onBehalfOf][reserveId];
     _validateSupply(reserve.flags);
@@ -245,7 +239,7 @@ abstract contract Spoke is
     uint256 reserveId,
     uint256 amount,
     address onBehalfOf
-  ) external nonReentrant onlyPositionManager(onBehalfOf) returns (uint256, uint256) {
+  ) external nonReentrant restricted returns (uint256, uint256) {
     Reserve storage reserve = _reserves.get(reserveId);
     UserPosition storage userPosition = _userPositions[onBehalfOf][reserveId];
     _validateWithdraw(reserve.flags);
@@ -275,7 +269,7 @@ abstract contract Spoke is
     uint256 reserveId,
     uint256 amount,
     address onBehalfOf
-  ) external nonReentrant onlyPositionManager(onBehalfOf) returns (uint256, uint256) {
+  ) external nonReentrant restricted returns (uint256, uint256) {
     Reserve storage reserve = _reserves.get(reserveId);
     UserPosition storage userPosition = _userPositions[onBehalfOf][reserveId];
     PositionStatus storage positionStatus = _positionStatus[onBehalfOf];
@@ -306,7 +300,7 @@ abstract contract Spoke is
     uint256 reserveId,
     uint256 amount,
     address onBehalfOf
-  ) external nonReentrant onlyPositionManager(onBehalfOf) returns (uint256, uint256) {
+  ) external nonReentrant restricted returns (uint256, uint256) {
     Reserve storage reserve = _reserves.get(reserveId);
     UserPosition storage userPosition = _userPositions[onBehalfOf][reserveId];
     _validateRepay(reserve.flags);
@@ -392,7 +386,7 @@ abstract contract Spoke is
     uint256 reserveId,
     bool usingAsCollateral,
     address onBehalfOf
-  ) external nonReentrant onlyPositionManager(onBehalfOf) {
+  ) external nonReentrant restricted {
     Reserve storage reserve = _reserves.get(reserveId);
     PositionStatus storage positionStatus = _positionStatus[onBehalfOf];
     if (positionStatus.isUsingAsCollateral(reserveId) == usingAsCollateral) {

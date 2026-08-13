@@ -125,6 +125,17 @@ interface IAccessManager {
   ) external view returns (bool allowed, uint32 delay);
 
   /**
+   * @dev Contextual overload of {canCall} that receives the complete target calldata.
+   * The default AccessManager implementation authorizes by selector, while derived managers may
+   * additionally inspect call arguments.
+   */
+  function canCall(
+    address caller,
+    address target,
+    bytes calldata data
+  ) external view returns (bool allowed, uint32 delay);
+
+  /**
    * @dev Expiration delay for scheduled proposals. Defaults to 1 week.
    *
    * IMPORTANT: Avoid overriding the expiration with 0. Otherwise every contract proposal will be expired immediately,

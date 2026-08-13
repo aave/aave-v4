@@ -53,7 +53,7 @@ contract SpokePositionManagerTest is Base {
     uint256 reserveId = _usdxReserveId(spoke1);
     uint256 amount = 100e6;
 
-    vm.expectRevert(ISpoke.Unauthorized.selector);
+    _expectPositionManagerUnauthorized();
     vm.prank(POSITION_MANAGER);
     spoke1.supply(reserveId, amount, alice);
 
@@ -85,7 +85,7 @@ contract SpokePositionManagerTest is Base {
     assertEq(spoke1.getUserSuppliedAssets(reserveId, alice), amount);
 
     _disablePositionManager();
-    vm.expectRevert(ISpoke.Unauthorized.selector);
+    _expectPositionManagerUnauthorized();
     SpokeActions.supply({
       spoke: spoke1,
       reserveId: reserveId,
@@ -106,7 +106,7 @@ contract SpokePositionManagerTest is Base {
       onBehalfOf: alice
     });
 
-    vm.expectRevert(ISpoke.Unauthorized.selector);
+    _expectPositionManagerUnauthorized();
     SpokeActions.withdraw({
       spoke: spoke1,
       reserveId: reserveId,
@@ -144,7 +144,7 @@ contract SpokePositionManagerTest is Base {
     assertEq(spoke1.getUserSuppliedAssets(reserveId, alice), amount);
 
     _disablePositionManager();
-    vm.expectRevert(ISpoke.Unauthorized.selector);
+    _expectPositionManagerUnauthorized();
     SpokeActions.withdraw({
       spoke: spoke1,
       reserveId: reserveId,
@@ -165,7 +165,7 @@ contract SpokePositionManagerTest is Base {
       onBehalfOf: alice
     });
 
-    vm.expectRevert(ISpoke.Unauthorized.selector);
+    _expectPositionManagerUnauthorized();
     SpokeActions.borrow({
       spoke: spoke1,
       reserveId: reserveId,
@@ -204,7 +204,7 @@ contract SpokePositionManagerTest is Base {
     assertTrue(_isBorrowing(spoke1, reserveId, alice));
 
     _disablePositionManager();
-    vm.expectRevert(ISpoke.Unauthorized.selector);
+    _expectPositionManagerUnauthorized();
     SpokeActions.borrow({
       spoke: spoke1,
       reserveId: reserveId,
@@ -232,7 +232,7 @@ contract SpokePositionManagerTest is Base {
       onBehalfOf: alice
     });
 
-    vm.expectRevert(ISpoke.Unauthorized.selector);
+    _expectPositionManagerUnauthorized();
     SpokeActions.repay({
       spoke: spoke1,
       reserveId: reserveId,
@@ -293,7 +293,7 @@ contract SpokePositionManagerTest is Base {
     assertFalse(_isBorrowing(spoke1, reserveId, alice));
 
     _disablePositionManager();
-    vm.expectRevert(ISpoke.Unauthorized.selector);
+    _expectPositionManagerUnauthorized();
     SpokeActions.repay({
       spoke: spoke1,
       reserveId: reserveId,
@@ -309,7 +309,7 @@ contract SpokePositionManagerTest is Base {
 
     bool usingAsCollateral = true;
 
-    vm.expectRevert(ISpoke.Unauthorized.selector);
+    _expectPositionManagerUnauthorized();
     SpokeActions.setUsingAsCollateral({
       spoke: spoke1,
       reserveId: reserveId,
@@ -338,7 +338,7 @@ contract SpokePositionManagerTest is Base {
     assertEq(_isUsingAsCollateral(spoke1, reserveId, alice), usingAsCollateral);
 
     _disablePositionManager();
-    vm.expectRevert(ISpoke.Unauthorized.selector);
+    _expectPositionManagerUnauthorized();
     SpokeActions.setUsingAsCollateral({
       spoke: spoke1,
       reserveId: reserveId,
@@ -399,6 +399,12 @@ contract SpokePositionManagerTest is Base {
     );
     vm.prank(POSITION_MANAGER);
     spoke1.updateUserRiskPremium(alice);
+  }
+
+  function _expectPositionManagerUnauthorized() internal {
+    vm.expectRevert(
+      abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, POSITION_MANAGER)
+    );
   }
 
   function test_onlyPositionManager_on_updateUserDynamicConfig() public {

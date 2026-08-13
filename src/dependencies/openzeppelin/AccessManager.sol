@@ -11,6 +11,7 @@ import {Multicall} from './Multicall.sol';
 import {Math} from './Math.sol';
 import {Time} from './Time.sol';
 import {Hashes} from './Hashes.sol';
+import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 
 /**
  * @dev AccessManager is a central contract to store the permissions of a system.
@@ -153,6 +154,62 @@ contract AccessManager is Context, Multicall, IAccessManager {
       (bool isMember, uint32 currentDelay) = hasRole(roleId, caller);
       return isMember ? (currentDelay == 0, currentDelay) : (false, 0);
     }
+  }
+
+  /// @inheritdoc IAccessManager
+  function canCall(
+    address caller,
+    address target,
+    bytes calldata data
+  ) public view virtual returns (bool immediate, uint32 delay) {
+    if (data.length < 4) return (false, 0);
+
+    if (_isPositionAction(bytes4(data))) {
+      (bool handled, bool allowed) = _isPositionActionAllowed(caller, target, data);
+      if (handled) return (allowed, 0);
+    }
+
+    return canCall(caller, target, bytes4(data));
+  }
+
+  /// @notice Returns whether a position action is allowed by its contextual policy.
+  /// @dev The default policy preserves the Spoke's position-manager authorization.
+  function _isPositionActionAllowed(
+    address caller,
+    address target,
+    bytes calldata data
+  ) internal view virtual returns (bool handled, bool allowed) {
+    (bool valid, address onBehalfOf) = _decodePositionAction(data);
+    if (!valid) return (false, false);
+
+    (bool success, bytes memory result) = target.staticcall(
+      abi.encodeCall(ISpoke.isPositionManager, (onBehalfOf, caller))
+    );
+    if (!success || result.length != 32) return (false, false);
+    return (true, abi.decode(result, (bool)));
+  }
+
+  /// @notice Decodes the position owner from supported position-action calldata.
+  function _decodePositionAction(
+    bytes calldata data
+  ) internal pure returns (bool valid, address onBehalfOf) {
+    if (data.length != 100 || !_isPositionAction(bytes4(data))) return (false, address(0));
+
+    uint256 encodedOnBehalfOf;
+    assembly ('memory-safe') {
+      encodedOnBehalfOf := calldataload(add(data.offset, 68))
+    }
+    if (encodedOnBehalfOf > type(uint160).max) return (false, address(0));
+    return (true, address(uint160(encodedOnBehalfOf)));
+  }
+
+  function _isPositionAction(bytes4 selector) internal pure returns (bool) {
+    return
+      selector == ISpoke.supply.selector ||
+      selector == ISpoke.withdraw.selector ||
+      selector == ISpoke.borrow.selector ||
+      selector == ISpoke.repay.selector ||
+      selector == ISpoke.setUsingAsCollateral.selector;
   }
 
   /// @inheritdoc IAccessManager
