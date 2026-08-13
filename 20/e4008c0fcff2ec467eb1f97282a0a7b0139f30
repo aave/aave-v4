@@ -1,0 +1,71 @@
+gas-snapshots/vyper-post-a3-bounded/SignatureGateway.Operations.json
+  s_79e03752657a2e::t_a48fd3972eef21 1-10
+gas-snapshots/vyper-post-a3-bounded/PositionManagerBase.Operations.json
+  s_79e03752657a2e::t_a48fd3972eef21 1-3
+scripts/build_vyper.py
+  s_79e03752657a2e::t_869c43f4c166ea 7,13-15,146-149
+gas-snapshots/vyper-post-a3-bounded/GiverPositionManager.Operations.json
+  s_79e03752657a2e::t_a48fd3972eef21 1-4
+gas-snapshots/vyper-post-a3-bounded/Spoke.Operations.json
+  s_79e03752657a2e::t_a48fd3972eef21 1-34
+gas-snapshots/vyper-unbounded-poc/GiverPositionManager.Operations.json
+  s_79e03752657a2e::t_aa985cf439eeb5 1-4
+vyper/src/spoke/SpokeInstance.vy
+  s_79e03752657a2e::t_6f6ad426976dd5 1359-1360,1362-1376,1378,1380-1392
+  s_79e03752657a2e::t_5899ecd07bc606 1361
+gas-snapshots/vyper-unbounded-poc/Spoke.Operations.json
+  s_79e03752657a2e::t_aa985cf439eeb5 1-34
+gas-snapshots/vyper-unbounded-poc/TokenizationSpoke.Operations.json
+  s_79e03752657a2e::t_aa985cf439eeb5 1-17
+Makefile
+  s_79e03752657a2e::t_869c43f4c166ea 19-31
+gas-snapshots/UNBOUNDED_POC.md
+  s_79e03752657a2e::t_aac5ab63247a3e 54-60
+  s_79e03752657a2e::t_869c43f4c166ea 1-53,61-93
+gas-snapshots/vyper-post-a3-bounded/NativeTokenGateway.Operations.json
+  s_79e03752657a2e::t_a48fd3972eef21 1-8
+gas-snapshots/vyper-post-a3-bounded/Spoke.Operations.ZeroRiskPremium.json
+  s_79e03752657a2e::t_a48fd3972eef21 1-34
+gas-snapshots/vyper-unbounded-poc/PositionManagerBase.Operations.json
+  s_79e03752657a2e::t_aa985cf439eeb5 1-3
+gas-snapshots/vyper-unbounded-poc/SignatureGateway.Operations.json
+  s_79e03752657a2e::t_aa985cf439eeb5 1-10
+gas-snapshots/vyper-post-a3-bounded/Hub.Operations.json
+  s_79e03752657a2e::t_a48fd3972eef21 1-18
+gas-snapshots/vyper-unbounded-poc/Spoke.Getters.json
+  s_79e03752657a2e::t_aa985cf439eeb5 1-7
+gas-snapshots/vyper-post-a3-bounded/TokenizationSpoke.Operations.json
+  s_79e03752657a2e::t_a48fd3972eef21 1-17
+gas-snapshots/vyper-unbounded-poc/Hub.Operations.json
+  s_79e03752657a2e::t_aa985cf439eeb5 1-18
+gas-snapshots/vyper-post-a3-bounded/ConfigPositionManager.Operations.json
+  s_79e03752657a2e::t_a48fd3972eef21 1-13
+gas-snapshots/vyper-post-a3-bounded/TakerPositionManager.Operations.json
+  s_79e03752657a2e::t_a48fd3972eef21 1-11
+gas-snapshots/vyper-unbounded-poc/Spoke.Operations.ZeroRiskPremium.json
+  s_79e03752657a2e::t_aa985cf439eeb5 1-34
+gas-snapshots/vyper-unbounded-poc/NativeTokenGateway.Operations.json
+  s_79e03752657a2e::t_aa985cf439eeb5 1-8
+gas-snapshots/vyper-unbounded-poc/TakerPositionManager.Operations.json
+  s_79e03752657a2e::t_aa985cf439eeb5 1-11
+gas-snapshots/vyper-unbounded-poc/ConfigPositionManager.Operations.json
+  s_79e03752657a2e::t_aa985cf439eeb5 1-13
+gas-snapshots/vyper-post-a3-bounded/Spoke.Getters.json
+  s_79e03752657a2e::t_a48fd3972eef21 1-7
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "20e4008c0fcff2ec467eb1f97282a0a7b0139f30",
+  "prompts": {},
+  "sessions": {
+    "s_79e03752657a2e": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019ffa71-5465-7fe0-8faf-43d0db8de960",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "AlbertoCentonze <11707683+AlbertoCentonze@users.noreply.github.com>"
+    }
+  }
+}
