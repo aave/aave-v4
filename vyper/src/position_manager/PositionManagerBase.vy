@@ -1,9 +1,9 @@
 # pragma version 0.5.0a3
 
-MAX_CALLS: constant(uint256) = 64
-MAX_CALLDATA: constant(uint256) = 4096
-MAX_RETURN_DATA: constant(uint256) = 4096
-MAX_SIGNATURE: constant(uint256) = 4096
+MAX_CALLS: constant(uint256) = 4
+MAX_CALLDATA: constant(uint256) = 512
+MAX_RETURN_DATA: constant(uint256) = 256
+MAX_SIGNATURE: constant(uint256) = 256
 
 
 struct Reserve:

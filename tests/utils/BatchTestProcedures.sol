@@ -316,9 +316,9 @@ contract BatchTestProcedures is Test, Create2TestHelper, WETHDeployProcedure {
     address spokeImplementation = ProxyHelper.getImplementation(report.report.spokeProxy);
     if (vm.envOr('TEST_VYPER', false)) {
       // SpokeInstance.vy deliberately keeps its compact native storage layout;
-      // initialized_state is slot 15 and stores the same uint64 sentinel.
+      // initialized_state is slot 14 and stores the same uint64 sentinel.
       assertEq(
-        uint64(uint256(vm.load(spokeImplementation, bytes32(uint256(15))))),
+        uint64(uint256(vm.load(spokeImplementation, bytes32(uint256(14))))),
         type(uint64).max,
         string.concat(label, ' implementation initializers disabled')
       );

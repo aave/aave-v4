@@ -13,6 +13,7 @@ VYPER = ROOT / ".venv" / "bin" / "vyper"
 SOURCE_ROOT = ROOT / "vyper" / "src"
 OUT_ROOT = ROOT / "out"
 EXPECTED_VERSION = "0.5.0a3"
+EXPECTED_OPTIMIZER = "O3"
 TARGETS = (
     SOURCE_ROOT / "access" / "AccessManagerEnumerable.vy",
     SOURCE_ROOT / "config_engine" / "TokenizationSpokeDeployer.vy",
@@ -89,7 +90,7 @@ def compile_target(source: Path) -> None:
         "--evm-version",
         "cancun",
         "-O",
-        "2",
+        "3",
         "--disable-bytecode-metadata",
         "--experimental-codegen",
         "-f",
@@ -110,6 +111,8 @@ def compile_target(source: Path) -> None:
     contract = combined[str(source)]
     if contract["settings_dict"].get("experimental_codegen") is not True:
         raise RuntimeError("Vyper target was not compiled with the Venom code generator")
+    if contract["settings_dict"].get("optimize") != EXPECTED_OPTIMIZER:
+        raise RuntimeError(f"expected Vyper optimizer {EXPECTED_OPTIMIZER}")
     artifact = {
         "abi": contract["abi"],
         "bytecode": {

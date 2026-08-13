@@ -37,6 +37,18 @@ struct Asset:
     feeReceiver: address
     deficitRay: uint200
 
+struct PackedAsset:
+    liquidityData: uint256
+    addedData: uint256
+    premiumOffsetRay: int200
+    debtData: uint256
+    indexData: uint256
+    underlying: address
+    irStrategy: address
+    reinvestmentController: address
+    feeReceiver: address
+    deficitRay: uint200
+
 struct AssetConfig:
     feeReceiver: address
     liquidityFee: uint16
@@ -53,6 +65,12 @@ struct SpokeData:
     riskPremiumThreshold: uint24
     active: bool
     halted: bool
+    deficitRay: uint200
+
+struct PackedSpokeData:
+    debtShares: uint256
+    premiumOffsetRay: int200
+    configData: uint256
     deficitRay: uint200
 
 struct SpokeConfig:
@@ -162,15 +180,131 @@ MAX_RISK_PREMIUM_THRESHOLD: public(constant(uint24)) = max_value(uint24)
 RAY: constant(uint256) = 10**27
 PERCENTAGE_FACTOR: constant(uint256) = 10**4
 MAX_ASSET_SPOKES: constant(uint256) = 256
+MASK_8: constant(uint256) = 2**8 - 1
+MASK_16: constant(uint256) = 2**16 - 1
+MASK_24: constant(uint256) = 2**24 - 1
+MASK_40: constant(uint256) = 2**40 - 1
+MASK_96: constant(uint256) = 2**96 - 1
+MASK_120: constant(uint256) = 2**120 - 1
 
 asset_count: uint256
-assets: HashMap[uint256, Asset]
-spokes: HashMap[uint256, HashMap[address, SpokeData]]
+assets: HashMap[uint256, PackedAsset]
+spokes: HashMap[uint256, HashMap[address, PackedSpokeData]]
 spoke_addresses: HashMap[uint256, DynArray[address, MAX_ASSET_SPOKES]]
 spoke_listed: HashMap[uint256, HashMap[address, bool]]
 underlying_to_asset_id: HashMap[address, uint256]
 authority_address: address
 initialized_state: uint256
+
+
+@internal
+@pure
+def _pack_asset(asset: Asset) -> PackedAsset:
+    return PackedAsset(
+        liquidityData=(
+            convert(asset.liquidity, uint256)
+            | convert(asset.realizedFees, uint256) << 120
+            | convert(asset.decimals, uint256) << 240
+        ),
+        addedData=convert(asset.addedShares, uint256) | convert(asset.swept, uint256) << 120,
+        premiumOffsetRay=asset.premiumOffsetRay,
+        debtData=(
+            convert(asset.drawnShares, uint256)
+            | convert(asset.premiumShares, uint256) << 120
+            | convert(asset.liquidityFee, uint256) << 240
+        ),
+        indexData=(
+            convert(asset.drawnIndex, uint256)
+            | convert(asset.drawnRate, uint256) << 120
+            | convert(asset.lastUpdateTimestamp, uint256) << 216
+        ),
+        underlying=asset.underlying,
+        irStrategy=asset.irStrategy,
+        reinvestmentController=asset.reinvestmentController,
+        feeReceiver=asset.feeReceiver,
+        deficitRay=asset.deficitRay,
+    )
+
+
+@internal
+@pure
+def _unpack_asset(packed: PackedAsset) -> Asset:
+    return Asset(
+        liquidity=convert(packed.liquidityData & MASK_120, uint120),
+        realizedFees=convert((packed.liquidityData >> 120) & MASK_120, uint120),
+        decimals=convert((packed.liquidityData >> 240) & MASK_8, uint8),
+        addedShares=convert(packed.addedData & MASK_120, uint120),
+        swept=convert((packed.addedData >> 120) & MASK_120, uint120),
+        premiumOffsetRay=packed.premiumOffsetRay,
+        drawnShares=convert(packed.debtData & MASK_120, uint120),
+        premiumShares=convert((packed.debtData >> 120) & MASK_120, uint120),
+        liquidityFee=convert((packed.debtData >> 240) & MASK_16, uint16),
+        drawnIndex=convert(packed.indexData & MASK_120, uint120),
+        drawnRate=convert((packed.indexData >> 120) & MASK_96, uint96),
+        lastUpdateTimestamp=convert((packed.indexData >> 216) & MASK_40, uint40),
+        underlying=packed.underlying,
+        irStrategy=packed.irStrategy,
+        reinvestmentController=packed.reinvestmentController,
+        feeReceiver=packed.feeReceiver,
+        deficitRay=packed.deficitRay,
+    )
+
+
+@internal
+@view
+def _load_asset(asset_id: uint256) -> Asset:
+    return self._unpack_asset(self.assets[asset_id])
+
+
+@internal
+def _store_asset(asset_id: uint256, asset: Asset):
+    self.assets[asset_id] = self._pack_asset(asset)
+
+
+@internal
+@pure
+def _pack_spoke(data: SpokeData) -> PackedSpokeData:
+    return PackedSpokeData(
+        debtShares=convert(data.drawnShares, uint256) | convert(data.premiumShares, uint256) << 120,
+        premiumOffsetRay=data.premiumOffsetRay,
+        configData=(
+            convert(data.addedShares, uint256)
+            | convert(data.addCap, uint256) << 120
+            | convert(data.drawCap, uint256) << 160
+            | convert(data.riskPremiumThreshold, uint256) << 200
+            | convert(data.active, uint256) << 224
+            | convert(data.halted, uint256) << 225
+        ),
+        deficitRay=data.deficitRay,
+    )
+
+
+@internal
+@pure
+def _unpack_spoke(packed: PackedSpokeData) -> SpokeData:
+    return SpokeData(
+        drawnShares=convert(packed.debtShares & MASK_120, uint120),
+        premiumShares=convert((packed.debtShares >> 120) & MASK_120, uint120),
+        premiumOffsetRay=packed.premiumOffsetRay,
+        addedShares=convert(packed.configData & MASK_120, uint120),
+        addCap=convert((packed.configData >> 120) & MASK_40, uint40),
+        drawCap=convert((packed.configData >> 160) & MASK_40, uint40),
+        riskPremiumThreshold=convert((packed.configData >> 200) & MASK_24, uint24),
+        active=(packed.configData >> 224) & 1 != 0,
+        halted=(packed.configData >> 225) & 1 != 0,
+        deficitRay=packed.deficitRay,
+    )
+
+
+@internal
+@view
+def _load_spoke(asset_id: uint256, spoke: address) -> SpokeData:
+    return self._unpack_spoke(self.spokes[asset_id][spoke])
+
+
+@internal
+def _store_spoke(asset_id: uint256, spoke: address, data: SpokeData):
+    self.spokes[asset_id][spoke] = self._pack_spoke(data)
 
 
 @deploy
@@ -315,22 +449,22 @@ def _drawn_rate(asset_id: uint256, asset: Asset, index: uint256) -> uint256:
 
 @internal
 def _accrue(asset_id: uint256):
-    asset: Asset = self.assets[asset_id]
+    asset: Asset = self._load_asset(asset_id)
     if convert(asset.lastUpdateTimestamp, uint256) == block.timestamp:
         return
     index: uint256 = self._drawn_index(asset)
     asset.realizedFees = self._u120(convert(asset.realizedFees, uint256) + self._unrealized_fees(asset, index))
     asset.drawnIndex = self._u120(index)
     asset.lastUpdateTimestamp = self._u40(block.timestamp)
-    self.assets[asset_id] = asset
+    self._store_asset(asset_id, asset)
 
 
 @internal
 def _update_rate(asset_id: uint256):
-    asset: Asset = self.assets[asset_id]
+    asset: Asset = self._load_asset(asset_id)
     rate: uint256 = self._drawn_rate(asset_id, asset, convert(asset.drawnIndex, uint256))
     asset.drawnRate = self._u96(rate)
-    self.assets[asset_id] = asset
+    self._store_asset(asset_id, asset)
     log UpdateAsset(assetId=asset_id, drawnIndex=convert(asset.drawnIndex, uint256), drawnRate=rate, accruedFees=convert(asset.realizedFees, uint256))
 
 
@@ -357,13 +491,13 @@ def _add_spoke(asset_id: uint256, spoke: address):
 
 @internal
 def _update_spoke_config(asset_id: uint256, spoke: address, config: SpokeConfig):
-    data: SpokeData = self.spokes[asset_id][spoke]
+    data: SpokeData = self._load_spoke(asset_id, spoke)
     data.addCap = config.addCap
     data.drawCap = config.drawCap
     data.riskPremiumThreshold = config.riskPremiumThreshold
     data.active = config.active
     data.halted = config.halted
-    self.spokes[asset_id][spoke] = data
+    self._store_spoke(asset_id, spoke, data)
     log UpdateSpokeConfig(assetId=asset_id, spoke=spoke, config=config)
 
 
@@ -407,7 +541,7 @@ def addAsset(underlying: address, decimals: uint8, feeReceiver: address, irStrat
         raw_revert(method_id("InvalidAddress()"))
     if decimals < MIN_ALLOWED_UNDERLYING_DECIMALS or decimals > MAX_ALLOWED_UNDERLYING_DECIMALS:
         raw_revert(method_id("InvalidAssetDecimals()"))
-    if self.assets[self.underlying_to_asset_id[underlying]].underlying == underlying:
+    if self._load_asset(self.underlying_to_asset_id[underlying]).underlying == underlying:
         raw_revert(method_id("UnderlyingAlreadyListed()"))
     asset_id: uint256 = self.asset_count
     self.asset_count += 1
@@ -420,7 +554,7 @@ def addAsset(underlying: address, decimals: uint8, feeReceiver: address, irStrat
         drawnIndex=convert(RAY, uint120), drawnRate=self._u96(rate), lastUpdateTimestamp=self._u40(block.timestamp),
         underlying=underlying, irStrategy=irStrategy, reinvestmentController=empty(address), feeReceiver=feeReceiver, deficitRay=0,
     )
-    self.assets[asset_id] = asset
+    self._store_asset(asset_id, asset)
     self._add_spoke(asset_id, feeReceiver)
     fee_config: SpokeConfig = SpokeConfig(addCap=MAX_ALLOWED_SPOKE_CAP, drawCap=0, riskPremiumThreshold=0, active=True, halted=False)
     self._update_spoke_config(asset_id, feeReceiver, fee_config)
@@ -454,19 +588,19 @@ def updateSpokeConfig(assetId: uint256, spoke: address, config: SpokeConfig):
 
 @internal
 def _mint_fee_shares(asset_id: uint256) -> uint256:
-    asset: Asset = self.assets[asset_id]
+    asset: Asset = self._load_asset(asset_id)
     fees: uint256 = convert(asset.realizedFees, uint256)
     shares: uint256 = self._to_added_shares_down(asset, fees)
     if shares == 0:
         return 0
-    receiver: SpokeData = self.spokes[asset_id][asset.feeReceiver]
+    receiver: SpokeData = self._load_spoke(asset_id, asset.feeReceiver)
     if not receiver.active:
         raw_revert(method_id("SpokeNotActive()"))
     asset.addedShares = self._u120(convert(asset.addedShares, uint256) + shares)
     receiver.addedShares = self._u120(convert(receiver.addedShares, uint256) + shares)
     asset.realizedFees = 0
-    self.assets[asset_id] = asset
-    self.spokes[asset_id][asset.feeReceiver] = receiver
+    self._store_asset(asset_id, asset)
+    self._store_spoke(asset_id, asset.feeReceiver, receiver)
     log MintFeeShares(assetId=asset_id, feeReceiver=asset.feeReceiver, shares=shares, assets=fees)
     return shares
 
@@ -477,7 +611,7 @@ def updateAssetConfig(assetId: uint256, config: AssetConfig, irData: Bytes[1024]
     if assetId >= self.asset_count:
         raw_revert(method_id("AssetNotListed()"))
     self._accrue(assetId)
-    asset: Asset = self.assets[assetId]
+    asset: Asset = self._load_asset(assetId)
     if convert(config.liquidityFee, uint256) > PERCENTAGE_FACTOR:
         raw_revert(method_id("InvalidLiquidityFee()"))
     if config.feeReceiver == empty(address) or config.irStrategy == empty(address):
@@ -487,27 +621,27 @@ def updateAssetConfig(assetId: uint256, config: AssetConfig, irData: Bytes[1024]
     asset.liquidityFee = config.liquidityFee
     asset.reinvestmentController = config.reinvestmentController
     old_receiver: address = asset.feeReceiver
-    self.assets[assetId] = asset
+    self._store_asset(assetId, asset)
     if old_receiver != config.feeReceiver:
         self._mint_fee_shares(assetId)
         old_config: SpokeConfig = SpokeConfig(
             addCap=0,
             drawCap=0,
             riskPremiumThreshold=0,
-            active=self.spokes[assetId][old_receiver].active,
-            halted=self.spokes[assetId][old_receiver].halted,
+            active=self._load_spoke(assetId, old_receiver).active,
+            halted=self._load_spoke(assetId, old_receiver).halted,
         )
         self._update_spoke_config(assetId, old_receiver, old_config)
-        asset = self.assets[assetId]
+        asset = self._load_asset(assetId)
         asset.feeReceiver = config.feeReceiver
-        self.assets[assetId] = asset
+        self._store_asset(assetId, asset)
         self._add_spoke(assetId, config.feeReceiver)
         fee_config: SpokeConfig = SpokeConfig(addCap=MAX_ALLOWED_SPOKE_CAP, drawCap=0, riskPremiumThreshold=0, active=True, halted=False)
         self._update_spoke_config(assetId, config.feeReceiver, fee_config)
-    asset = self.assets[assetId]
+    asset = self._load_asset(assetId)
     if config.irStrategy != asset.irStrategy:
         asset.irStrategy = config.irStrategy
-        self.assets[assetId] = asset
+        self._store_asset(assetId, asset)
         extcall IInterestRateStrategy(config.irStrategy).setInterestRateData(assetId, irData)
     elif len(irData) != 0:
         raw_revert(method_id("InvalidInterestRateStrategy()"))
@@ -521,7 +655,7 @@ def setInterestRateData(assetId: uint256, irData: Bytes[1024]):
     if assetId >= self.asset_count:
         raw_revert(method_id("AssetNotListed()"))
     self._accrue(assetId)
-    extcall IInterestRateStrategy(self.assets[assetId].irStrategy).setInterestRateData(assetId, irData)
+    extcall IInterestRateStrategy(self._load_asset(assetId).irStrategy).setInterestRateData(assetId, irData)
     self._update_rate(assetId)
 
 
@@ -545,8 +679,8 @@ def _asset_units(decimals: uint8) -> uint256:
 @external
 def add(assetId: uint256, amount: uint256) -> uint256:
     self._accrue(assetId)
-    asset: Asset = self.assets[assetId]
-    spoke: SpokeData = self.spokes[assetId][msg.sender]
+    asset: Asset = self._load_asset(assetId)
+    spoke: SpokeData = self._load_spoke(assetId, msg.sender)
     if amount == 0:
         raw_revert(method_id("InvalidAmount()"))
     if not spoke.active:
@@ -568,8 +702,8 @@ def add(assetId: uint256, amount: uint256) -> uint256:
     asset.addedShares = self._u120(convert(asset.addedShares, uint256) + shares)
     spoke.addedShares = self._u120(convert(spoke.addedShares, uint256) + shares)
     asset.liquidity = self._u120(liquidity)
-    self.assets[assetId] = asset
-    self.spokes[assetId][msg.sender] = spoke
+    self._store_asset(assetId, asset)
+    self._store_spoke(assetId, msg.sender, spoke)
     self._update_rate(assetId)
     log Add(assetId=assetId, spoke=msg.sender, shares=shares, amount=amount)
     return shares
@@ -578,8 +712,8 @@ def add(assetId: uint256, amount: uint256) -> uint256:
 @external
 def remove(assetId: uint256, amount: uint256, to: address) -> uint256:
     self._accrue(assetId)
-    asset: Asset = self.assets[assetId]
-    spoke: SpokeData = self.spokes[assetId][msg.sender]
+    asset: Asset = self._load_asset(assetId)
+    spoke: SpokeData = self._load_spoke(assetId, msg.sender)
     if to == self:
         raw_revert(method_id("InvalidAddress()"))
     if amount == 0:
@@ -597,8 +731,8 @@ def remove(assetId: uint256, amount: uint256, to: address) -> uint256:
     asset.addedShares -= shares_120
     spoke.addedShares -= shares_120
     asset.liquidity = self._u120(convert(asset.liquidity, uint256) - amount)
-    self.assets[assetId] = asset
-    self.spokes[assetId][msg.sender] = spoke
+    self._store_asset(assetId, asset)
+    self._store_spoke(assetId, msg.sender, spoke)
     self._update_rate(assetId)
     self._safe_transfer(asset.underlying, to, amount)
     log Remove(assetId=assetId, spoke=msg.sender, shares=shares, amount=amount)
@@ -608,8 +742,8 @@ def remove(assetId: uint256, amount: uint256, to: address) -> uint256:
 @external
 def draw(assetId: uint256, amount: uint256, to: address) -> uint256:
     self._accrue(assetId)
-    asset: Asset = self.assets[assetId]
-    spoke: SpokeData = self.spokes[assetId][msg.sender]
+    asset: Asset = self._load_asset(assetId)
+    spoke: SpokeData = self._load_spoke(assetId, msg.sender)
     if to == self:
         raw_revert(method_id("InvalidAddress()"))
     if amount == 0:
@@ -629,8 +763,8 @@ def draw(assetId: uint256, amount: uint256, to: address) -> uint256:
     asset.drawnShares = self._u120(convert(asset.drawnShares, uint256) + shares)
     spoke.drawnShares = self._u120(convert(spoke.drawnShares, uint256) + shares)
     asset.liquidity = self._u120(convert(asset.liquidity, uint256) - amount)
-    self.assets[assetId] = asset
-    self.spokes[assetId][msg.sender] = spoke
+    self._store_asset(assetId, asset)
+    self._store_spoke(assetId, msg.sender, spoke)
     self._update_rate(assetId)
     self._safe_transfer(asset.underlying, to, amount)
     log Draw(assetId=assetId, spoke=msg.sender, drawnShares=shares, drawnAmount=amount)
@@ -655,23 +789,23 @@ def _apply_one(index: uint256, shares: uint256, offset: int256, delta: PremiumDe
 
 @internal
 def _apply_premium(asset_id: uint256, spoke_address: address, delta: PremiumDelta):
-    asset: Asset = self.assets[asset_id]
-    spoke: SpokeData = self.spokes[asset_id][spoke_address]
+    asset: Asset = self._load_asset(asset_id)
+    spoke: SpokeData = self._load_spoke(asset_id, spoke_address)
     asset.premiumShares, asset.premiumOffsetRay = self._apply_one(convert(asset.drawnIndex, uint256), convert(asset.premiumShares, uint256), convert(asset.premiumOffsetRay, int256), delta)
     spoke.premiumShares, spoke.premiumOffsetRay = self._apply_one(convert(asset.drawnIndex, uint256), convert(spoke.premiumShares, uint256), convert(spoke.premiumOffsetRay, int256), delta)
     if spoke.riskPremiumThreshold != MAX_RISK_PREMIUM_THRESHOLD:
         maximum: uint256 = PercentageMath.percent_mul_up(convert(spoke.drawnShares, uint256), convert(spoke.riskPremiumThreshold, uint256))
         if convert(spoke.premiumShares, uint256) > maximum:
             raw_revert(method_id("InvalidPremiumChange()"))
-    self.assets[asset_id] = asset
-    self.spokes[asset_id][spoke_address] = spoke
+    self._store_asset(asset_id, asset)
+    self._store_spoke(asset_id, spoke_address, spoke)
 
 
 @external
 def restore(assetId: uint256, drawnAmount: uint256, premiumDelta: PremiumDelta) -> uint256:
     self._accrue(assetId)
-    asset: Asset = self.assets[assetId]
-    spoke: SpokeData = self.spokes[assetId][msg.sender]
+    asset: Asset = self._load_asset(assetId)
+    spoke: SpokeData = self._load_spoke(assetId, msg.sender)
     if drawnAmount == 0 and premiumDelta.restoredPremiumRay == 0:
         raw_revert(method_id("InvalidAmount()"))
     if not spoke.active:
@@ -687,17 +821,17 @@ def restore(assetId: uint256, drawnAmount: uint256, premiumDelta: PremiumDelta) 
     shares: uint256 = WadRayMath.ray_div_down(drawnAmount, convert(asset.drawnIndex, uint256))
     asset.drawnShares = self._u120(convert(asset.drawnShares, uint256) - shares)
     spoke.drawnShares = self._u120(convert(spoke.drawnShares, uint256) - shares)
-    self.assets[assetId] = asset
-    self.spokes[assetId][msg.sender] = spoke
+    self._store_asset(assetId, asset)
+    self._store_spoke(assetId, msg.sender, spoke)
     self._apply_premium(assetId, msg.sender, premiumDelta)
-    asset = self.assets[assetId]
+    asset = self._load_asset(assetId)
     premium_amount: uint256 = WadRayMath.from_ray_up(premiumDelta.restoredPremiumRay)
     liquidity: uint256 = convert(asset.liquidity, uint256) + drawnAmount + premium_amount
     balance: uint256 = staticcall IERC20(asset.underlying).balanceOf(self)
     if balance < liquidity:
         raw_revert(concat(method_id("InsufficientTransferred(uint256)"), convert(liquidity - balance, bytes32)))
     asset.liquidity = self._u120(liquidity)
-    self.assets[assetId] = asset
+    self._store_asset(assetId, asset)
     self._update_rate(assetId)
     log Restore(assetId=assetId, spoke=msg.sender, drawnShares=shares, premiumDelta=premiumDelta, drawnAmount=drawnAmount, premiumAmount=premium_amount)
     return shares
@@ -706,8 +840,8 @@ def restore(assetId: uint256, drawnAmount: uint256, premiumDelta: PremiumDelta) 
 @external
 def reportDeficit(assetId: uint256, drawnAmount: uint256, premiumDelta: PremiumDelta) -> (uint256, uint256):
     self._accrue(assetId)
-    asset: Asset = self.assets[assetId]
-    spoke: SpokeData = self.spokes[assetId][msg.sender]
+    asset: Asset = self._load_asset(assetId)
+    spoke: SpokeData = self._load_spoke(assetId, msg.sender)
     if drawnAmount == 0 and premiumDelta.restoredPremiumRay == 0:
         raw_revert(method_id("InvalidAmount()"))
     if not spoke.active:
@@ -721,16 +855,16 @@ def reportDeficit(assetId: uint256, drawnAmount: uint256, premiumDelta: PremiumD
     shares: uint256 = WadRayMath.ray_div_down(drawnAmount, convert(asset.drawnIndex, uint256))
     asset.drawnShares = self._u120(convert(asset.drawnShares, uint256) - shares)
     spoke.drawnShares = self._u120(convert(spoke.drawnShares, uint256) - shares)
-    self.assets[assetId] = asset
-    self.spokes[assetId][msg.sender] = spoke
+    self._store_asset(assetId, asset)
+    self._store_spoke(assetId, msg.sender, spoke)
     self._apply_premium(assetId, msg.sender, premiumDelta)
-    asset = self.assets[assetId]
-    spoke = self.spokes[assetId][msg.sender]
+    asset = self._load_asset(assetId)
+    spoke = self._load_spoke(assetId, msg.sender)
     deficit_ray: uint256 = shares * convert(asset.drawnIndex, uint256) + premiumDelta.restoredPremiumRay
     asset.deficitRay = self._u200(convert(asset.deficitRay, uint256) + deficit_ray)
     spoke.deficitRay = self._u200(convert(spoke.deficitRay, uint256) + deficit_ray)
-    self.assets[assetId] = asset
-    self.spokes[assetId][msg.sender] = spoke
+    self._store_asset(assetId, asset)
+    self._store_spoke(assetId, msg.sender, spoke)
     self._update_rate(assetId)
     log ReportDeficit(assetId=assetId, spoke=msg.sender, drawnShares=shares, premiumDelta=premiumDelta, deficitAmountRay=deficit_ray)
     return shares, WadRayMath.from_ray_up(deficit_ray)
@@ -739,7 +873,7 @@ def reportDeficit(assetId: uint256, drawnAmount: uint256, premiumDelta: PremiumD
 @external
 def refreshPremium(assetId: uint256, premiumDelta: PremiumDelta):
     self._accrue(assetId)
-    if not self.spokes[assetId][msg.sender].active:
+    if not self._load_spoke(assetId, msg.sender).active:
         raw_revert(method_id("SpokeNotActive()"))
     if premiumDelta.restoredPremiumRay != 0:
         raw_revert(method_id("InvalidPremiumChange()"))
@@ -752,9 +886,9 @@ def refreshPremium(assetId: uint256, premiumDelta: PremiumDelta):
 def eliminateDeficit(assetId: uint256, amount: uint256, coveredSpoke: address) -> (uint256, uint256):
     self._check_access(method_id("eliminateDeficit(uint256,uint256,address)"))
     self._accrue(assetId)
-    asset: Asset = self.assets[assetId]
-    caller: SpokeData = self.spokes[assetId][msg.sender]
-    covered: SpokeData = self.spokes[assetId][coveredSpoke]
+    asset: Asset = self._load_asset(assetId)
+    caller: SpokeData = self._load_spoke(assetId, msg.sender)
+    covered: SpokeData = self._load_spoke(assetId, coveredSpoke)
     covered_deficit_ray: uint256 = convert(covered.deficitRay, uint256)
     deficit_ray: uint256 = covered_deficit_ray
     if amount < WadRayMath.from_ray_up(covered_deficit_ray):
@@ -772,9 +906,9 @@ def eliminateDeficit(assetId: uint256, amount: uint256, coveredSpoke: address) -
     caller.addedShares -= shares_120
     asset.deficitRay = self._u200(convert(asset.deficitRay, uint256) - deficit_ray)
     covered.deficitRay = self._u200(convert(covered.deficitRay, uint256) - deficit_ray)
-    self.assets[assetId] = asset
-    self.spokes[assetId][msg.sender] = caller
-    self.spokes[assetId][coveredSpoke] = covered
+    self._store_asset(assetId, asset)
+    self._store_spoke(assetId, msg.sender, caller)
+    self._store_spoke(assetId, coveredSpoke, covered)
     self._update_rate(assetId)
     log EliminateDeficit(assetId=assetId, callerSpoke=msg.sender, coveredSpoke=coveredSpoke, shares=shares, deficitAmountRay=deficit_ray)
     return shares, deficit_amount
@@ -783,9 +917,9 @@ def eliminateDeficit(assetId: uint256, amount: uint256, coveredSpoke: address) -
 @external
 def payFeeShares(assetId: uint256, shares: uint256):
     self._accrue(assetId)
-    asset: Asset = self.assets[assetId]
-    sender: SpokeData = self.spokes[assetId][msg.sender]
-    receiver: SpokeData = self.spokes[assetId][asset.feeReceiver]
+    asset: Asset = self._load_asset(assetId)
+    sender: SpokeData = self._load_spoke(assetId, msg.sender)
+    receiver: SpokeData = self._load_spoke(assetId, asset.feeReceiver)
     if not sender.active:
         raw_revert(method_id("SpokeNotActive()"))
     if shares == 0:
@@ -797,8 +931,8 @@ def payFeeShares(assetId: uint256, shares: uint256):
         self._panic_arithmetic()
     sender.addedShares -= shares_120
     receiver.addedShares += shares_120
-    self.spokes[assetId][msg.sender] = sender
-    self.spokes[assetId][asset.feeReceiver] = receiver
+    self._store_spoke(assetId, msg.sender, sender)
+    self._store_spoke(assetId, asset.feeReceiver, receiver)
     self._update_rate(assetId)
     log TransferShares(assetId=assetId, sender=msg.sender, receiver=asset.feeReceiver, shares=shares)
 
@@ -806,9 +940,9 @@ def payFeeShares(assetId: uint256, shares: uint256):
 @external
 def transferShares(assetId: uint256, shares: uint256, toSpoke: address):
     self._accrue(assetId)
-    asset: Asset = self.assets[assetId]
-    sender: SpokeData = self.spokes[assetId][msg.sender]
-    receiver: SpokeData = self.spokes[assetId][toSpoke]
+    asset: Asset = self._load_asset(assetId)
+    sender: SpokeData = self._load_spoke(assetId, msg.sender)
+    receiver: SpokeData = self._load_spoke(assetId, toSpoke)
     if not sender.active or not receiver.active:
         raw_revert(method_id("SpokeNotActive()"))
     if sender.halted or receiver.halted:
@@ -827,8 +961,8 @@ def transferShares(assetId: uint256, shares: uint256, toSpoke: address):
         self._panic_arithmetic()
     sender.addedShares -= shares_120
     receiver.addedShares += shares_120
-    self.spokes[assetId][msg.sender] = sender
-    self.spokes[assetId][toSpoke] = receiver
+    self._store_spoke(assetId, msg.sender, sender)
+    self._store_spoke(assetId, toSpoke, receiver)
     self._update_rate(assetId)
     log TransferShares(assetId=assetId, sender=msg.sender, receiver=toSpoke, shares=shares)
 
@@ -838,7 +972,7 @@ def sweep(assetId: uint256, amount: uint256):
     if assetId >= self.asset_count:
         raw_revert(method_id("AssetNotListed()"))
     self._accrue(assetId)
-    asset: Asset = self.assets[assetId]
+    asset: Asset = self._load_asset(assetId)
     if msg.sender != asset.reinvestmentController:
         raw_revert(method_id("OnlyReinvestmentController()"))
     if amount == 0:
@@ -847,7 +981,7 @@ def sweep(assetId: uint256, amount: uint256):
         raw_revert(concat(method_id("InsufficientLiquidity(uint256)"), convert(asset.liquidity, bytes32)))
     asset.liquidity = self._u120(convert(asset.liquidity, uint256) - amount)
     asset.swept = self._u120(convert(asset.swept, uint256) + amount)
-    self.assets[assetId] = asset
+    self._store_asset(assetId, asset)
     self._update_rate(assetId)
     self._safe_transfer(asset.underlying, msg.sender, amount)
     log Sweep(assetId=assetId, reinvestmentController=msg.sender, amount=amount)
@@ -858,7 +992,7 @@ def reclaim(assetId: uint256, amount: uint256):
     if assetId >= self.asset_count:
         raw_revert(method_id("AssetNotListed()"))
     self._accrue(assetId)
-    asset: Asset = self.assets[assetId]
+    asset: Asset = self._load_asset(assetId)
     if msg.sender != asset.reinvestmentController:
         raw_revert(method_id("OnlyReinvestmentController()"))
     if amount == 0:
@@ -872,7 +1006,7 @@ def reclaim(assetId: uint256, amount: uint256):
     if amount_120 > asset.swept:
         self._panic_arithmetic()
     asset.swept -= amount_120
-    self.assets[assetId] = asset
+    self._store_asset(assetId, asset)
     self._update_rate(assetId)
     log Reclaim(assetId=assetId, reinvestmentController=msg.sender, amount=amount)
 
@@ -880,7 +1014,7 @@ def reclaim(assetId: uint256, amount: uint256):
 @external
 @view
 def isUnderlyingListed(underlying: address) -> bool:
-    return self.assets[self.underlying_to_asset_id[underlying]].underlying == underlying
+    return self._load_asset(self.underlying_to_asset_id[underlying]).underlying == underlying
 
 
 @external
@@ -892,56 +1026,56 @@ def getAssetCount() -> uint256:
 @external
 @view
 def previewAddByAssets(assetId: uint256, amount: uint256) -> uint256:
-    return self._to_added_shares_down(self.assets[assetId], amount)
+    return self._to_added_shares_down(self._load_asset(assetId), amount)
 
 
 @external
 @view
 def previewAddByShares(assetId: uint256, shares: uint256) -> uint256:
-    return self._to_added_assets_up(self.assets[assetId], shares)
+    return self._to_added_assets_up(self._load_asset(assetId), shares)
 
 
 @external
 @view
 def previewRemoveByAssets(assetId: uint256, amount: uint256) -> uint256:
-    return self._to_added_shares_up(self.assets[assetId], amount)
+    return self._to_added_shares_up(self._load_asset(assetId), amount)
 
 
 @external
 @view
 def previewRemoveByShares(assetId: uint256, shares: uint256) -> uint256:
-    return self._to_added_assets_down(self.assets[assetId], shares)
+    return self._to_added_assets_down(self._load_asset(assetId), shares)
 
 
 @external
 @view
 def previewDrawByAssets(assetId: uint256, amount: uint256) -> uint256:
-    return WadRayMath.ray_div_up(amount, self._drawn_index(self.assets[assetId]))
+    return WadRayMath.ray_div_up(amount, self._drawn_index(self._load_asset(assetId)))
 
 
 @external
 @view
 def previewDrawByShares(assetId: uint256, shares: uint256) -> uint256:
-    return WadRayMath.ray_mul_down(shares, self._drawn_index(self.assets[assetId]))
+    return WadRayMath.ray_mul_down(shares, self._drawn_index(self._load_asset(assetId)))
 
 
 @external
 @view
 def previewRestoreByAssets(assetId: uint256, amount: uint256) -> uint256:
-    return WadRayMath.ray_div_down(amount, self._drawn_index(self.assets[assetId]))
+    return WadRayMath.ray_div_down(amount, self._drawn_index(self._load_asset(assetId)))
 
 
 @external
 @view
 def previewRestoreByShares(assetId: uint256, shares: uint256) -> uint256:
-    return WadRayMath.ray_mul_up(shares, self._drawn_index(self.assets[assetId]))
+    return WadRayMath.ray_mul_up(shares, self._drawn_index(self._load_asset(assetId)))
 
 
 @external
 @view
 def getAssetId(underlying: address) -> uint256:
     asset_id: uint256 = self.underlying_to_asset_id[underlying]
-    if self.assets[asset_id].underlying != underlying:
+    if self._load_asset(asset_id).underlying != underlying:
         raw_revert(method_id("AssetNotListed()"))
     return asset_id
 
@@ -949,31 +1083,32 @@ def getAssetId(underlying: address) -> uint256:
 @external
 @view
 def getAssetUnderlyingAndDecimals(assetId: uint256) -> (address, uint8):
-    return self.assets[assetId].underlying, self.assets[assetId].decimals
+    asset: Asset = self._load_asset(assetId)
+    return asset.underlying, asset.decimals
 
 
 @external
 @view
 def getAssetDrawnIndex(assetId: uint256) -> uint256:
-    return self._drawn_index(self.assets[assetId])
+    return self._drawn_index(self._load_asset(assetId))
 
 
 @external
 @view
 def getAddedAssets(assetId: uint256) -> uint256:
-    return self._total_added_assets(self.assets[assetId])
+    return self._total_added_assets(self._load_asset(assetId))
 
 
 @external
 @view
 def getAddedShares(assetId: uint256) -> uint256:
-    return convert(self.assets[assetId].addedShares, uint256)
+    return convert(self._load_asset(assetId).addedShares, uint256)
 
 
 @external
 @view
 def getAssetOwed(assetId: uint256) -> (uint256, uint256):
-    asset: Asset = self.assets[assetId]
+    asset: Asset = self._load_asset(assetId)
     index: uint256 = self._drawn_index(asset)
     return WadRayMath.ray_mul_up(convert(asset.drawnShares, uint256), index), WadRayMath.from_ray_up(self._premium_ray(convert(asset.premiumShares, uint256), convert(asset.premiumOffsetRay, int256), index))
 
@@ -981,7 +1116,7 @@ def getAssetOwed(assetId: uint256) -> (uint256, uint256):
 @external
 @view
 def getAssetTotalOwed(assetId: uint256) -> uint256:
-    asset: Asset = self.assets[assetId]
+    asset: Asset = self._load_asset(assetId)
     index: uint256 = self._drawn_index(asset)
     return WadRayMath.ray_mul_up(convert(asset.drawnShares, uint256), index) + WadRayMath.from_ray_up(self._premium_ray(convert(asset.premiumShares, uint256), convert(asset.premiumOffsetRay, int256), index))
 
@@ -989,64 +1124,65 @@ def getAssetTotalOwed(assetId: uint256) -> uint256:
 @external
 @view
 def getAssetPremiumRay(assetId: uint256) -> uint256:
-    asset: Asset = self.assets[assetId]
+    asset: Asset = self._load_asset(assetId)
     return self._premium_ray(convert(asset.premiumShares, uint256), convert(asset.premiumOffsetRay, int256), self._drawn_index(asset))
 
 
 @external
 @view
 def getAssetDrawnShares(assetId: uint256) -> uint256:
-    return convert(self.assets[assetId].drawnShares, uint256)
+    return convert(self._load_asset(assetId).drawnShares, uint256)
 
 
 @external
 @view
 def getAssetPremiumData(assetId: uint256) -> (uint256, int256):
-    return convert(self.assets[assetId].premiumShares, uint256), convert(self.assets[assetId].premiumOffsetRay, int256)
+    asset: Asset = self._load_asset(assetId)
+    return convert(asset.premiumShares, uint256), convert(asset.premiumOffsetRay, int256)
 
 
 @external
 @view
 def getAssetLiquidity(assetId: uint256) -> uint256:
-    return convert(self.assets[assetId].liquidity, uint256)
+    return convert(self._load_asset(assetId).liquidity, uint256)
 
 
 @external
 @view
 def getAssetDeficitRay(assetId: uint256) -> uint256:
-    return convert(self.assets[assetId].deficitRay, uint256)
+    return convert(self._load_asset(assetId).deficitRay, uint256)
 
 
 @external
 @view
 def getAsset(assetId: uint256) -> Asset:
-    return self.assets[assetId]
+    return self._load_asset(assetId)
 
 
 @external
 @view
 def getAssetConfig(assetId: uint256) -> AssetConfig:
-    asset: Asset = self.assets[assetId]
+    asset: Asset = self._load_asset(assetId)
     return AssetConfig(feeReceiver=asset.feeReceiver, liquidityFee=asset.liquidityFee, irStrategy=asset.irStrategy, reinvestmentController=asset.reinvestmentController)
 
 
 @external
 @view
 def getAssetAccruedFees(assetId: uint256) -> uint256:
-    asset: Asset = self.assets[assetId]
+    asset: Asset = self._load_asset(assetId)
     return convert(asset.realizedFees, uint256) + self._unrealized_fees(asset, self._drawn_index(asset))
 
 
 @external
 @view
 def getAssetSwept(assetId: uint256) -> uint256:
-    return convert(self.assets[assetId].swept, uint256)
+    return convert(self._load_asset(assetId).swept, uint256)
 
 
 @external
 @view
 def getAssetDrawnRate(assetId: uint256) -> uint256:
-    asset: Asset = self.assets[assetId]
+    asset: Asset = self._load_asset(assetId)
     return self._drawn_rate(assetId, asset, self._drawn_index(asset))
 
 
@@ -1059,53 +1195,54 @@ def getSpokeCount(assetId: uint256) -> uint256:
 @external
 @view
 def getSpokeAddedAssets(assetId: uint256, spoke: address) -> uint256:
-    return self._to_added_assets_down(self.assets[assetId], convert(self.spokes[assetId][spoke].addedShares, uint256))
+    return self._to_added_assets_down(self._load_asset(assetId), convert(self._load_spoke(assetId, spoke).addedShares, uint256))
 
 
 @external
 @view
 def getSpokeAddedShares(assetId: uint256, spoke: address) -> uint256:
-    return convert(self.spokes[assetId][spoke].addedShares, uint256)
+    return convert(self._load_spoke(assetId, spoke).addedShares, uint256)
 
 
 @external
 @view
 def getSpokeOwed(assetId: uint256, spoke: address) -> (uint256, uint256):
-    asset: Asset = self.assets[assetId]
-    data: SpokeData = self.spokes[assetId][spoke]
+    asset: Asset = self._load_asset(assetId)
+    data: SpokeData = self._load_spoke(assetId, spoke)
     return self._spoke_drawn(asset, data), WadRayMath.from_ray_up(self._spoke_premium_ray(asset, data))
 
 
 @external
 @view
 def getSpokeTotalOwed(assetId: uint256, spoke: address) -> uint256:
-    asset: Asset = self.assets[assetId]
-    data: SpokeData = self.spokes[assetId][spoke]
+    asset: Asset = self._load_asset(assetId)
+    data: SpokeData = self._load_spoke(assetId, spoke)
     return self._spoke_drawn(asset, data) + WadRayMath.from_ray_up(self._spoke_premium_ray(asset, data))
 
 
 @external
 @view
 def getSpokePremiumRay(assetId: uint256, spoke: address) -> uint256:
-    return self._spoke_premium_ray(self.assets[assetId], self.spokes[assetId][spoke])
+    return self._spoke_premium_ray(self._load_asset(assetId), self._load_spoke(assetId, spoke))
 
 
 @external
 @view
 def getSpokeDrawnShares(assetId: uint256, spoke: address) -> uint256:
-    return convert(self.spokes[assetId][spoke].drawnShares, uint256)
+    return convert(self._load_spoke(assetId, spoke).drawnShares, uint256)
 
 
 @external
 @view
 def getSpokePremiumData(assetId: uint256, spoke: address) -> (uint256, int256):
-    return convert(self.spokes[assetId][spoke].premiumShares, uint256), convert(self.spokes[assetId][spoke].premiumOffsetRay, int256)
+    data: SpokeData = self._load_spoke(assetId, spoke)
+    return convert(data.premiumShares, uint256), convert(data.premiumOffsetRay, int256)
 
 
 @external
 @view
 def getSpokeDeficitRay(assetId: uint256, spoke: address) -> uint256:
-    return convert(self.spokes[assetId][spoke].deficitRay, uint256)
+    return convert(self._load_spoke(assetId, spoke).deficitRay, uint256)
 
 
 @external
@@ -1123,18 +1260,18 @@ def getSpokeAddress(assetId: uint256, index: uint256) -> address:
 @external
 @view
 def getSpoke(assetId: uint256, spoke: address) -> SpokeData:
-    return self.spokes[assetId][spoke]
+    return self._load_spoke(assetId, spoke)
 
 
 @external
 @view
 def getSpokeConfig(assetId: uint256, spoke: address) -> SpokeConfig:
-    data: SpokeData = self.spokes[assetId][spoke]
+    data: SpokeData = self._load_spoke(assetId, spoke)
     return SpokeConfig(addCap=data.addCap, drawCap=data.drawCap, riskPremiumThreshold=data.riskPremiumThreshold, active=data.active, halted=data.halted)
 
 
 @external
 def setAssetAddedShares(assetId: uint256, addedShares: uint256):
-    asset: Asset = self.assets[assetId]
+    asset: Asset = self._load_asset(assetId)
     asset.addedShares = self._u120(addedShares)
-    self.assets[assetId] = asset
+    self._store_asset(assetId, asset)
