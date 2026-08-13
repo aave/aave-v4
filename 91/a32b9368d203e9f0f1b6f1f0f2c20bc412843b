@@ -1,0 +1,89 @@
+vyper/src/position_manager/PositionManagerBase.vy
+  s_79e03752657a2e::t_df3dd89c969d41 3-6
+gas-snapshots/vyper-optimized/GiverPositionManager.Operations.json
+  s_79e03752657a2e::t_66001bdfd37e5d 1-4
+vyper/src/spoke/SpokeInstance.vy
+  s_79e03752657a2e::t_80dc18bc5f9a07 725-816,820-829,831-834,841-850,852-855,861-864
+  s_79e03752657a2e::t_c88abf8b14d26f 993,995,1008,1016,1040,1042,1069,1071,1095,1121,1147,1149
+  s_79e03752657a2e::t_197c5f8c7dd2ea 7,12,276
+  s_79e03752657a2e::t_f45c5b3cacc18d 1017-1020,1043-1046,1049,1072-1075,1078,1120,1132-1135,1145,1326-1329
+  s_79e03752657a2e::t_8a5af2c5a52e1a 884-889,894,903,953-956,960-966,968
+  s_79e03752657a2e::t_294f4ac546b3ba 866-868,891-892,895,958-959,967
+  s_79e03752657a2e::t_df3dd89c969d41 145,515,1185,1617-1618,1622
+  s_79e03752657a2e::t_8056fcdf50bb7f 27-35,260-265,273,275,278,342-447
+  s_79e03752657a2e::t_4829d71894feb6 1289,1299,1319,1336-1337,1344,1352,1386,1405-1406,1445,1447,1458-1459,1478,1490-1492,1541,1548,1550,1567,1589
+  s_79e03752657a2e::t_271855b0bb819b 1453-1456,1479,1495-1497,1508,1588
+  s_79e03752657a2e::t_93b41d63d15d28 1616
+  s_79e03752657a2e::t_d828639891bdae 1619
+  s_79e03752657a2e::t_26db46b583bb96 1624
+  s_79e03752657a2e::t_dba931fb87f782 478,628,650,658-659,675,698-699,708,714
+  s_4d50fedee78092::t_9e3b0ac643ba08 448-449
+gas-snapshots/vyper-optimized/Spoke.Getters.json
+  s_79e03752657a2e::t_66001bdfd37e5d 1-7
+gas-snapshots/vyper-optimized/Spoke.Operations.json
+  s_79e03752657a2e::t_66001bdfd37e5d 1-34
+gas-snapshots/vyper-optimized/Spoke.Operations.ZeroRiskPremium.json
+  s_79e03752657a2e::t_66001bdfd37e5d 1-34
+gas-snapshots/optimized-comparison.json
+  s_79e03752657a2e::t_66001bdfd37e5d 1-1210
+vyper/src/spoke/libraries/PositionStatusMap.vy
+  s_79e03752657a2e::t_197c5f8c7dd2ea 6-7,55-56,58-60,72-97
+  s_79e03752657a2e::t_8e5a0f75aba9b6 8-12,61-65
+scripts/build_vyper.py
+  s_79e03752657a2e::t_6437185471f07e 16,114-115
+  s_79e03752657a2e::t_f82c56d8a6a319 93
+vyper/storage-layouts/HubInstance.json
+  s_79e03752657a2e::t_80f22d622e211c 3-4
+gas-snapshots/vyper-optimized/SignatureGateway.Operations.json
+  s_79e03752657a2e::t_66001bdfd37e5d 1-10
+gas-snapshots/vyper-optimized/TokenizationSpoke.Operations.json
+  s_79e03752657a2e::t_66001bdfd37e5d 1-17
+vyper/src/hub/HubInstance.vy
+  s_79e03752657a2e::t_1066c2ff96447f 452,459,464,467,494,500,544,557,591,596,602-603,614,624,631-632,635,637,641,644,658,682-683,705-706,715-716,734-735,745-746,766-767,792-793,800-801,807-808,824-825,827,834,843-844,858-859,861-862,866-867,876,889-891,909-911,920-922,934-935,943-945,964-965,975,984,995,1009
+  s_79e03752657a2e::t_bcc5972d557f13 40-51,70-75,183-188,191-192,200-307
+  s_79e03752657a2e::t_b89110afd56a18 1017,1029,1035,1041,1047,1053,1059,1065,1071,1078,1086-1087,1093,1099,1105,1111,1119,1127,1134,1140-1141,1147,1153,1159,1165,1172,1179,1185,1198,1204,1210-1211,1218-1219,1226,1232,1238-1239,1245,1263,1269,1275,1277
+  s_79e03752657a2e::t_ae50c389f656ff 308-309
+gas-snapshots/vyper-optimized/ConfigPositionManager.Operations.json
+  s_79e03752657a2e::t_66001bdfd37e5d 1-13
+gas-snapshots/PERFORMANCE_DIARY.md
+  s_79e03752657a2e::t_0b5b821743a1b1 1-196
+gas-snapshots/vyper-optimized/PositionManagerBase.Operations.json
+  s_79e03752657a2e::t_66001bdfd37e5d 1-3
+gas-snapshots/vyper-optimized/Hub.Operations.json
+  s_79e03752657a2e::t_66001bdfd37e5d 1-18
+gas-snapshots/vyper-optimized/TakerPositionManager.Operations.json
+  s_79e03752657a2e::t_66001bdfd37e5d 1-11
+gas-snapshots/README.md
+  s_79e03752657a2e::t_0b5b821743a1b1 1,3-7,9,11-20,24,26-36,40-78,86-87,90-91
+vyper/src/harness/MockSpokeStorage.vy
+  s_79e03752657a2e::t_197c5f8c7dd2ea 67,136-137,157-158
+  s_79e03752657a2e::t_199df62080de33 13-16,34-38,56-59,64,66,69,88-124,131-132,135,142-143,145,150-151,156
+gas-snapshots/vyper-optimized/NativeTokenGateway.Operations.json
+  s_79e03752657a2e::t_66001bdfd37e5d 1-8
+tests/utils/BatchTestProcedures.sol
+  s_79e03752657a2e::t_e302aec62c540f 319,321
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "91a32b9368d203e9f0f1b6f1f0f2c20bc412843b",
+  "prompts": {},
+  "sessions": {
+    "s_4d50fedee78092": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019ffb1b-4510-7420-804d-1cc793d7514e",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "AlbertoCentonze <11707683+AlbertoCentonze@users.noreply.github.com>"
+    },
+    "s_79e03752657a2e": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019ffa71-5465-7fe0-8faf-43d0db8de960",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "AlbertoCentonze <11707683+AlbertoCentonze@users.noreply.github.com>"
+    }
+  }
+}
