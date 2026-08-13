@@ -1,0 +1,13 @@
+{
+  "renounceCanUpdateUserDynamicConfigPermission": "28037",
+  "renounceCanUpdateUserRiskPremiumPermission": "27971",
+  "renounceCanUpdateUsingAsCollateralPermission": "27994",
+  "renounceGlobalPermission": "27952",
+  "setCanSetUsingAsCollateralPermission": "50136",
+  "setCanUpdateUserDynamicConfigPermission": "50158",
+  "setCanUpdateUserRiskPremiumPermission": "50158",
+  "setGlobalPermission": "50110",
+  "setUsingAsCollateralOnBehalfOf": "103454",
+  "updateUserDynamicConfigOnBehalfOf": "259908",
+  "updateUserRiskPremiumOnBehalfOf": "392720"
+}

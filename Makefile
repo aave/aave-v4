@@ -14,6 +14,7 @@ vyper-install :; python3 -m venv .venv && .venv/bin/pip install -r vyper/require
 vyper-build   :; .venv/bin/python scripts/build_vyper.py
 vyper-test    : vyper-build
 	TEST_VYPER=true forge test -vvv
+vyper-gas-compare :; python3 scripts/compare_vyper_gas.py gas-snapshots/solidity gas-snapshots/vyper gas-snapshots
 
 # Utilities
 download :; cast etherscan-source --chain ${chain} -d src/etherscan/${chain}_${address} ${address}
