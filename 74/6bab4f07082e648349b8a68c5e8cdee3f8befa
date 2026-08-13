@@ -1,0 +1,24 @@
+tests/gas/PermissionedBorrow.Operations.gas.t.sol
+  s_fef46d571ae928::t_e187baf4b227d1 1-38,40-132
+  s_fef46d571ae928::t_3803e4bcb07202 39
+tests/helpers/mocks/MockBorrowerEligibility.sol
+  s_fef46d571ae928::t_e187baf4b227d1 1-16
+snapshots/PermissionedBorrow.Operations.json
+  s_fef46d571ae928::t_2d2da3add7727a 1-13
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "746bab4f07082e648349b8a68c5e8cdee3f8befa",
+  "prompts": {},
+  "sessions": {
+    "s_fef46d571ae928": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019ff615-9d86-7333-99d0-afdf41eeb642",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "AlbertoCentonze <11707683+AlbertoCentonze@users.noreply.github.com>"
+    }
+  }
+}
