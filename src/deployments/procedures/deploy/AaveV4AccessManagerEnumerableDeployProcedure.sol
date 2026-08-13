@@ -2,8 +2,8 @@
 pragma solidity ^0.8.0;
 
 import {Create2Utils} from 'src/deployments/utils/libraries/Create2Utils.sol';
+import {BytecodeHelper} from 'src/deployments/utils/libraries/BytecodeHelper.sol';
 import {AaveV4DeployProcedureBase} from 'src/deployments/procedures/AaveV4DeployProcedureBase.sol';
-import {AccessManagerEnumerable} from 'src/access/AccessManagerEnumerable.sol';
 
 /// @title AaveV4AccessManagerEnumerableDeployProcedure
 /// @author Aave Labs
@@ -18,7 +18,7 @@ contract AaveV4AccessManagerEnumerableDeployProcedure is AaveV4DeployProcedureBa
     return
       Create2Utils.create2Deploy(
         salt,
-        abi.encodePacked(type(AccessManagerEnumerable).creationCode, abi.encode(admin))
+        abi.encodePacked(BytecodeHelper.getAccessManagerEnumerableBytecode(), abi.encode(admin))
       );
   }
 }

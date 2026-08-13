@@ -28,6 +28,7 @@ import {Create2TestHelper} from 'tests/utils/Create2TestHelper.sol';
 import {AaveV4Payload} from 'src/config-engine/AaveV4Payload.sol';
 import {AaveV4ConfigEngine} from 'src/config-engine/AaveV4ConfigEngine.sol';
 import {IAaveV4ConfigEngine} from 'src/config-engine/interfaces/IAaveV4ConfigEngine.sol';
+import {ITokenizationSpokeDeployer} from 'src/config-engine/interfaces/ITokenizationSpokeDeployer.sol';
 import {EngineFlags} from 'src/config-engine/libraries/EngineFlags.sol';
 import {AccessManagerEngine} from 'src/config-engine/libraries/AccessManagerEngine.sol';
 import {HubEngine} from 'src/config-engine/libraries/HubEngine.sol';
@@ -80,6 +81,7 @@ abstract contract BaseConfigEngineTest is Test, Create2TestHelper {
 
   MockGovernanceExecutor internal executor;
   AaveV4ConfigEngine internal engine;
+  ITokenizationSpokeDeployer internal vyperTokenizationSpokeDeployer;
   IAccessManager internal accessManager;
   IHubConfigurator internal hubConfigurator;
   ISpokeConfigurator internal spokeConfigurator;
@@ -157,7 +159,25 @@ abstract contract BaseConfigEngineTest is Test, Create2TestHelper {
     }
 
     executor = new MockGovernanceExecutor(PAYLOADS_CONTROLLER);
-    engine = new AaveV4ConfigEngine();
+    if (vm.envOr('TEST_VYPER', false)) {
+      vyperTokenizationSpokeDeployer = ITokenizationSpokeDeployer(
+        vm.deployCode(
+          'TokenizationSpokeDeployer.vy:TokenizationSpokeDeployer',
+          abi.encode(
+            vm.getCode('TokenizationSpokeInstance.vy:TokenizationSpokeInstance'),
+            vm.getCode('TransparentUpgradeableProxy.sol:TransparentUpgradeableProxy')
+          )
+        )
+      );
+      engine = AaveV4ConfigEngine(
+        vm.deployCode(
+          'AaveV4ConfigEngine.vy:AaveV4ConfigEngine',
+          abi.encode(address(vyperTokenizationSpokeDeployer))
+        )
+      );
+    } else {
+      engine = new AaveV4ConfigEngine();
+    }
     positionManager = new PositionManagerBaseWrapper(address(engine));
 
     _setupRoles(report);
@@ -189,6 +209,78 @@ abstract contract BaseConfigEngineTest is Test, Create2TestHelper {
   }
   function irStrategy2() public view returns (AssetInterestRateStrategy) {
     return irStrategies[1];
+  }
+
+  function _computeTokenizationSpokeImplementationAddress(
+    address hub,
+    address underlying,
+    string memory name,
+    string memory symbol
+  ) internal view returns (address) {
+    if (vm.envOr('TEST_VYPER', false)) {
+      return
+        vyperTokenizationSpokeDeployer.computeImplementationAddress(
+          hub,
+          underlying,
+          name,
+          symbol
+        );
+    }
+    return TokenizationSpokeDeployer.computeImplementationAddress(hub, underlying, name, symbol);
+  }
+
+  function _computeTokenizationSpokeProxyAddress(
+    address hub,
+    address underlying,
+    string memory name,
+    string memory symbol,
+    address proxyAdminOwner
+  ) internal view returns (address) {
+    if (vm.envOr('TEST_VYPER', false)) {
+      return
+        vyperTokenizationSpokeDeployer.computeProxyAddress(
+          hub,
+          underlying,
+          name,
+          symbol,
+          proxyAdminOwner
+        );
+    }
+    return
+      TokenizationSpokeDeployer.computeProxyAddress(
+        hub,
+        underlying,
+        name,
+        symbol,
+        proxyAdminOwner
+      );
+  }
+
+  function _deployTokenizationSpoke(
+    address hub,
+    address underlying,
+    string memory name,
+    string memory symbol,
+    address proxyAdminOwner
+  ) internal returns (address) {
+    if (vm.envOr('TEST_VYPER', false)) {
+      return
+        vyperTokenizationSpokeDeployer.deploy(
+          hub,
+          underlying,
+          name,
+          symbol,
+          proxyAdminOwner
+        );
+    }
+    return
+      TokenizationSpokeDeployer.deploy({
+        hub: hub,
+        underlying: underlying,
+        name: name,
+        symbol: symbol,
+        proxyAdminOwner: proxyAdminOwner
+      });
   }
 
   function _assertExactEventCount(uint256 expectedCount) internal {

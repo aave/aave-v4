@@ -9,6 +9,9 @@ contract AaveOracleTest is Base {
 
   AaveOracle public oracle;
 
+  bool private _testVyper;
+  bytes private _vyperOracleCreationCode;
+
   uint8 private constant _oracleDecimals = 8;
 
   address public deployer = makeAddr('DEPLOYER');
@@ -24,8 +27,13 @@ contract AaveOracleTest is Base {
   function setUp() public override {
     super.setUp();
 
+    _testVyper = vm.envOr('TEST_VYPER', false);
+    if (_testVyper) {
+      _vyperOracleCreationCode = vm.getCode('AaveOracle.vy:AaveOracle');
+    }
+
     vm.startPrank(deployer);
-    oracle = new AaveOracle(_oracleDecimals);
+    oracle = _deployOracle(_oracleDecimals);
     spoke1 = ISpoke(
       address(
         AaveV4TestOrchestration.deploySpokeImplementation(
@@ -40,7 +48,7 @@ contract AaveOracleTest is Base {
 
   function test_constructor() public {
     vm.prank(deployer);
-    oracle = new AaveOracle(_oracleDecimals);
+    oracle = _deployOracle(_oracleDecimals);
 
     assertEq(oracle.spoke(), address(0));
     test_decimals();
@@ -48,7 +56,7 @@ contract AaveOracleTest is Base {
 
   function test_fuzz_constructor(uint8 decimals) public {
     decimals = bound(decimals, 0, 18).toUint8();
-    oracle = new AaveOracle(decimals);
+    oracle = _deployOracle(decimals);
 
     assertEq(oracle.spoke(), address(0));
     assertEq(oracle.decimals(), decimals);
@@ -81,7 +89,7 @@ contract AaveOracleTest is Base {
 
   function test_setSpoke() public {
     vm.startPrank(deployer);
-    oracle = new AaveOracle(_oracleDecimals);
+    oracle = _deployOracle(_oracleDecimals);
 
     address newSpoke = address(
       AaveV4TestOrchestration.deploySpokeImplementation(
@@ -144,10 +152,10 @@ contract AaveOracleTest is Base {
 
   function test_setReserveSource_revertsWith_OracleMismatch() public {
     vm.startPrank(deployer);
-    IAaveOracle newOracle = IAaveOracle(new AaveOracle(_oracleDecimals));
+    IAaveOracle newOracle = IAaveOracle(_deployOracle(_oracleDecimals));
 
     // set new spoke to a separate oracle
-    address mismatchOracle = address(new AaveOracle(_oracleDecimals));
+    address mismatchOracle = address(_deployOracle(_oracleDecimals));
     address newSpoke = address(
       AaveV4TestOrchestration.deploySpokeImplementation(
         mismatchOracle,
@@ -243,5 +251,17 @@ contract AaveOracleTest is Base {
 
   function _mockSourceLatestAnswer(address source, int256 price) internal {
     vm.mockCall(source, abi.encodeCall(IPriceFeed.latestAnswer, ()), abi.encode(price));
+  }
+
+  function _deployOracle(uint8 decimals_) internal returns (AaveOracle deployed) {
+    if (!_testVyper) return new AaveOracle(decimals_);
+
+    bytes memory initCode = bytes.concat(_vyperOracleCreationCode, abi.encode(decimals_));
+    address deployedAddress;
+    assembly ('memory-safe') {
+      deployedAddress := create(0, add(initCode, 0x20), mload(initCode))
+    }
+    require(deployedAddress != address(0), 'Vyper oracle deployment failed');
+    return AaveOracle(deployedAddress);
   }
 }

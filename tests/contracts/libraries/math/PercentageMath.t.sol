@@ -9,6 +9,9 @@ contract PercentageMathTest is Test {
 
   function setUp() public {
     w = new PercentageMathWrapper();
+    if (vm.envOr('TEST_VYPER', false)) {
+      vm.etch(address(w), vm.getDeployedCode('MathHarness.vy:MathHarness'));
+    }
   }
 
   function test_constants() public view {

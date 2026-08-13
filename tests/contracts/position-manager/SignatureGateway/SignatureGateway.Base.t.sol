@@ -9,7 +9,7 @@ contract SignatureGatewayBaseTest is Base, SignatureGatewayHelpers {
 
   function setUp() public virtual override {
     super.setUp();
-    gateway = ISignatureGateway(new SignatureGateway(ADMIN));
+    gateway = ISignatureGateway(_deploySignatureGateway(ADMIN));
 
     vm.prank(address(ADMIN));
     gateway.registerSpoke(address(spoke1), true);
@@ -69,5 +69,15 @@ contract SignatureGatewayBaseTest is Base, SignatureGatewayHelpers {
     uint256 deadline
   ) internal returns (ISignatureGateway.UpdateUserDynamicConfig memory) {
     return _updateDynamicConfigData(gateway, spoke, user, deadline);
+  }
+
+  function _deploySignatureGateway(address owner) internal returns (SignatureGateway) {
+    if (vm.envOr('TEST_VYPER', false)) {
+      return
+        SignatureGateway(
+          payable(vm.deployCode('SignatureGateway.vy:SignatureGateway', abi.encode(owner)))
+        );
+    }
+    return new SignatureGateway(owner);
   }
 }

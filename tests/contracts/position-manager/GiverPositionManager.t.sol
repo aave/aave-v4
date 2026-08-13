@@ -10,7 +10,18 @@ contract GiverPositionManagerTest is Base {
   function setUp() public virtual override {
     super.setUp();
 
-    positionManager = new GiverPositionManager(address(ADMIN));
+    if (vm.envOr('TEST_VYPER', false)) {
+      positionManager = GiverPositionManager(
+        payable(
+          vm.deployCode(
+            'GiverPositionManager.vy:GiverPositionManager',
+            abi.encode(address(ADMIN))
+          )
+        )
+      );
+    } else {
+      positionManager = new GiverPositionManager(address(ADMIN));
+    }
 
     vm.prank(SPOKE_ADMIN);
     spoke1.updatePositionManager(address(positionManager), true);

@@ -14,10 +14,13 @@ contract AaveV4SpokeConfiguratorDeployProcedure is AaveV4DeployProcedureBase {
   /// @return The address of the deployed SpokeConfigurator contract.
   function _deploySpokeConfigurator(address authority, bytes32 salt) internal returns (address) {
     require(authority != address(0), 'invalid authority');
+    bytes memory creationCode = vm.envOr('TEST_VYPER', false)
+      ? vm.getCode('SpokeConfigurator.vy:SpokeConfigurator')
+      : type(SpokeConfigurator).creationCode;
     return
       Create2Utils.create2Deploy(
         salt,
-        abi.encodePacked(type(SpokeConfigurator).creationCode, abi.encode(authority))
+        abi.encodePacked(creationCode, abi.encode(authority))
       );
   }
 }

@@ -25,9 +25,15 @@ abstract contract SetupHelpers is SpokeHelpers {
     string memory shareSymbol,
     address proxyAdminOwner
   ) internal pausePrank returns (ITokenizationSpoke) {
-    address tokenizationSpokeImpl = address(
-      new TokenizationSpokeInstance(address(hub), underlying)
-    );
+    address tokenizationSpokeImpl;
+    if (vm.envOr('TEST_VYPER', false)) {
+      tokenizationSpokeImpl = vm.deployCode(
+        'TokenizationSpokeInstance.vy:TokenizationSpokeInstance',
+        abi.encode(address(hub), underlying)
+      );
+    } else {
+      tokenizationSpokeImpl = address(new TokenizationSpokeInstance(address(hub), underlying));
+    }
     ITokenizationSpoke tokenizationSpoke = ITokenizationSpoke(
       AaveV4TestOrchestration.proxify(
         tokenizationSpokeImpl,

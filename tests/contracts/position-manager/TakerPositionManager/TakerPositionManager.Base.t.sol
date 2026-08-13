@@ -11,7 +11,7 @@ contract TakerPositionManagerBaseTest is Base, TakerPositionManagerHelpers {
   function setUp() public virtual override {
     super.setUp();
 
-    positionManager = new TakerPositionManager(address(ADMIN));
+    positionManager = _deployTakerPositionManager(address(ADMIN));
 
     vm.prank(SPOKE_ADMIN);
     spoke1.updatePositionManager(address(positionManager), true);
@@ -37,5 +37,17 @@ contract TakerPositionManagerBaseTest is Base, TakerPositionManagerHelpers {
     uint256 deadline
   ) internal returns (ITakerPositionManager.BorrowPermit memory) {
     return _approveBorrowData(positionManager, spoke1, spender, onBehalfOf, deadline);
+  }
+
+  function _deployTakerPositionManager(address owner) internal returns (TakerPositionManager) {
+    if (vm.envOr('TEST_VYPER', false)) {
+      return
+        TakerPositionManager(
+          payable(
+            vm.deployCode('TakerPositionManager.vy:TakerPositionManager', abi.encode(owner))
+          )
+        );
+    }
+    return new TakerPositionManager(owner);
   }
 }

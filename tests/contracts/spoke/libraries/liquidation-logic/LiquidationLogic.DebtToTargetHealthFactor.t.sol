@@ -10,6 +10,7 @@ contract LiquidationLogicDebtToTargetHealthFactorTest is LiquidationLogicBaseTes
 
   function setUp() public override {
     super.setUp();
+    _useVyperCalculationLogic();
     assetUnitList.push(1);
     assetUnitList.push(1e6);
     assetUnitList.push(1e18);

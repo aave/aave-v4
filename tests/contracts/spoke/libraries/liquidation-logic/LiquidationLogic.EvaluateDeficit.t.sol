@@ -8,6 +8,11 @@ import 'tests/contracts/spoke/libraries/liquidation-logic/LiquidationLogic.Base.
 /// debt reserve (DR) has 2 relevant states: empty (E) and non-empty (N)
 /// borrowed reserves count (BRC) has 2 relevant states: 1 (O) and >1 (M)
 contract LiquidationLogicEvaluateDeficitTest is LiquidationLogicBaseTest {
+  function setUp() public override {
+    super.setUp();
+    _useVyperCalculationLogic();
+  }
+
   /// Collateral reserve empty (CRE), supplied collaterals count 1 (SCCO), debt reserve empty (DRE), borrowed reserves count 1 (BRCO)
   function test_evaluateDeficit_CRE_SCCO_DRE_BRCO() public view {
     bool hasDeficit = liquidationLogicWrapper.evaluateDeficit({

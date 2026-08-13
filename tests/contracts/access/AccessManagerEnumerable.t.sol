@@ -33,7 +33,11 @@ contract AccessManagerEnumerableTest is Test {
   mapping(uint64 => EnumerableSet.UintSet) internal internalAdminOfRoles;
 
   function setUp() public virtual {
-    accessManagerEnumerable = new AccessManagerEnumerable(ADMIN);
+    accessManagerEnumerable = vm.envOr('TEST_VYPER', false)
+      ? AccessManagerEnumerable(
+        vm.deployCode('AccessManagerEnumerable.vy:AccessManagerEnumerable', abi.encode(ADMIN))
+      )
+      : new AccessManagerEnumerable(ADMIN);
   }
 
   function test_grantRole() public {
@@ -82,6 +86,56 @@ contract AccessManagerEnumerableTest is Test {
 
     assertTrue(accessManagerEnumerable.isRole(roleId));
     assertFalse(accessManagerEnumerable.isRole(999));
+  }
+
+  function test_scheduleAndExecute_delayedOperation() public {
+    uint64 roleId = 42;
+    uint32 executionDelay = 100;
+    address caller = makeAddr('delayedCaller');
+    AccessManagerCallTarget target = new AccessManagerCallTarget();
+    bytes4[] memory selectors = new bytes4[](1);
+    selectors[0] = target.setValue.selector;
+
+    vm.startPrank(ADMIN);
+    accessManagerEnumerable.setTargetFunctionRole(address(target), selectors, roleId);
+    accessManagerEnumerable.grantRole(roleId, caller, executionDelay);
+    vm.stopPrank();
+
+    bytes memory data = abi.encodeCall(target.setValue, (123));
+    vm.prank(caller);
+    (bytes32 operationId, uint32 nonce) = accessManagerEnumerable.schedule(
+      address(target),
+      data,
+      0
+    );
+    assertEq(nonce, 1);
+    assertEq(accessManagerEnumerable.getSchedule(operationId), block.timestamp + executionDelay);
+
+    vm.warp(block.timestamp + executionDelay);
+    vm.prank(caller);
+    assertEq(accessManagerEnumerable.execute(address(target), data), 1);
+    assertEq(target.value(), 123);
+    assertEq(accessManagerEnumerable.getSchedule(operationId), 0);
+  }
+
+  function test_cancel_delayedOperation() public {
+    uint64 roleId = 43;
+    address caller = makeAddr('cancelCaller');
+    AccessManagerCallTarget target = new AccessManagerCallTarget();
+    bytes4[] memory selectors = new bytes4[](1);
+    selectors[0] = target.setValue.selector;
+
+    vm.startPrank(ADMIN);
+    accessManagerEnumerable.setTargetFunctionRole(address(target), selectors, roleId);
+    accessManagerEnumerable.grantRole(roleId, caller, 1 days);
+    vm.stopPrank();
+
+    bytes memory data = abi.encodeCall(target.setValue, (456));
+    vm.prank(caller);
+    (bytes32 operationId, ) = accessManagerEnumerable.schedule(address(target), data, 0);
+    vm.prank(caller);
+    assertEq(accessManagerEnumerable.cancel(caller, address(target), data), 1);
+    assertEq(accessManagerEnumerable.getSchedule(operationId), 0);
   }
 
   function test_grantRole_fuzz(uint64 roleId, uint256 membersCount) public {
@@ -1398,5 +1452,13 @@ contract AccessManagerEnumerableTest is Test {
   function _getRandomRoleId() internal returns (uint64) {
     uint256 roleId = vm.randomUint(5, type(uint64).max - 1);
     return uint64(roleId);
+  }
+}
+
+contract AccessManagerCallTarget {
+  uint256 public value;
+
+  function setValue(uint256 newValue) external {
+    value = newValue;
   }
 }

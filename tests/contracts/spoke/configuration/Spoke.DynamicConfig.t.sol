@@ -13,10 +13,12 @@ contract SpokeDynamicConfigTest is Base {
   function setUp() public override {
     super.setUp();
     spoke = MockSpoke(address(spoke1));
-    address mockSpokeImpl = address(
-      new MockSpoke(address(spoke.ORACLE()), MAX_ALLOWED_USER_RESERVES_LIMIT)
-    );
-    vm.etch(address(spoke1), mockSpokeImpl.code);
+    if (!vm.envOr('TEST_VYPER', false)) {
+      address mockSpokeImpl = address(
+        new MockSpoke(address(spoke.ORACLE()), MAX_ALLOWED_USER_RESERVES_LIMIT)
+      );
+      vm.etch(address(spoke1), mockSpokeImpl.code);
+    }
   }
 
   function test_addDynamicReserveConfig_revertsWith_InvalidCollateralFactorAndMaxLiquidationBonus_liquidationBonus()

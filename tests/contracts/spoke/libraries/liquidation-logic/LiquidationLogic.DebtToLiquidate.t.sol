@@ -7,6 +7,11 @@ contract LiquidationLogicDebtToLiquidateTest is LiquidationLogicBaseTest {
   using MathUtils for uint256;
   using WadRayMath for uint256;
 
+  function setUp() public override {
+    super.setUp();
+    _useVyperCalculationLogic();
+  }
+
   /// function always returns min between reserve debt, debt to cover and debt to restore target health factor,
   /// unless it leaves dust, in which case it returns reserve debt
   function test_calculateDebtToLiquidate_fuzz(

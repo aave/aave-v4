@@ -14,6 +14,9 @@ contract SpokeUtilsTest is Base {
     super.setUp();
 
     w = new SpokeUtilsWrapper();
+    if (vm.envOr('TEST_VYPER', false)) {
+      vm.etch(address(w), vm.getDeployedCode('SpokeUtilsHarness.vy:SpokeUtilsHarness'));
+    }
 
     reserve0 = ISpoke.Reserve({
       underlying: address(tokenList.usdx),

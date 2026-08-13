@@ -15,7 +15,7 @@ contract AssetInterestRateStrategyTest is Base {
 
   function setUp() public override {
     super.setUp();
-    rateStrategy = new AssetInterestRateStrategy(address(hub1));
+    rateStrategy = _deployRateStrategy(address(hub1));
 
     rateData = IAssetInterestRateStrategy.InterestRateData({
       optimalUsageRatio: 80_00, // 80.00%
@@ -31,7 +31,7 @@ contract AssetInterestRateStrategyTest is Base {
 
   function test_deploy_revertsWith_InvalidAddress() public {
     vm.expectRevert(IAssetInterestRateStrategy.InvalidAddress.selector);
-    new AssetInterestRateStrategy(address(0));
+    _deployRateStrategy(address(0));
   }
 
   function test_maxDrawnRate() public view {
@@ -267,5 +267,17 @@ contract AssetInterestRateStrategyTest is Base {
 
     // deficit unused in the current IR strategy
     deficit = vm.randomUint();
+  }
+
+  function _deployRateStrategy(
+    address hub
+  ) internal returns (IAssetInterestRateStrategy strategy) {
+    if (vm.envOr('TEST_VYPER', false)) {
+      return
+        IAssetInterestRateStrategy(
+          vm.deployCode('AssetInterestRateStrategy.vy:AssetInterestRateStrategy', abi.encode(hub))
+        );
+    }
+    return IAssetInterestRateStrategy(address(new AssetInterestRateStrategy(hub)));
   }
 }

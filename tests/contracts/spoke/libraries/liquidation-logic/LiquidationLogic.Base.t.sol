@@ -13,10 +13,27 @@ contract LiquidationLogicBaseTest is Base {
 
   function setUp() public virtual override {
     super.setUp();
-    liquidationLogicWrapper = new LiquidationLogicWrapper(
-      makeAddr('borrower'),
-      makeAddr('liquidator')
-    );
+    address borrower = makeAddr('borrower');
+    address liquidator = makeAddr('liquidator');
+    if (vm.envOr('TEST_VYPER', false)) {
+      liquidationLogicWrapper = LiquidationLogicWrapper(
+        vm.deployCode(
+          'LiquidationLogicWrapper.vy:LiquidationLogicWrapper',
+          abi.encode(borrower, liquidator)
+        )
+      );
+    } else {
+      liquidationLogicWrapper = new LiquidationLogicWrapper(borrower, liquidator);
+    }
+  }
+
+  function _useVyperCalculationLogic() internal {
+    if (vm.envOr('TEST_VYPER', false)) {
+      vm.etch(
+        address(liquidationLogicWrapper),
+        vm.getDeployedCode('LiquidationLogicContract.vy:LiquidationLogicContract')
+      );
+    }
   }
 
   // generic bounds for liquidation logic params

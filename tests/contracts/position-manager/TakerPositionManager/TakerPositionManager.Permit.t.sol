@@ -5,9 +5,7 @@ import 'tests/contracts/position-manager/TakerPositionManager/TakerPositionManag
 
 contract TakerPositionManagerPermitTest is TakerPositionManagerBaseTest {
   function test_eip712Domain() public {
-    TakerPositionManager instance = new TakerPositionManager{salt: bytes32(vm.randomUint())}(
-      vm.randomAddress()
-    );
+    TakerPositionManager instance = _deployTakerPositionManager(vm.randomAddress());
     (
       bytes1 fields,
       string memory name,
@@ -28,9 +26,7 @@ contract TakerPositionManagerPermitTest is TakerPositionManagerBaseTest {
   }
 
   function test_DOMAIN_SEPARATOR() public {
-    TakerPositionManager instance = new TakerPositionManager{salt: bytes32(vm.randomUint())}(
-      vm.randomAddress()
-    );
+    TakerPositionManager instance = _deployTakerPositionManager(vm.randomAddress());
     bytes32 expectedDomainSeparator = keccak256(
       abi.encode(
         keccak256(

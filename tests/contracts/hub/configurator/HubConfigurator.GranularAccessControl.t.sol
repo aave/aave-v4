@@ -28,7 +28,20 @@ contract HubConfiguratorGranularAccessControlTest is Base {
     super.setUp();
 
     manager = IAccessManager(hub1.authority());
-    hubConfigurator = new HubConfigurator(address(manager));
+    if (vm.envOr('TEST_VYPER', false)) {
+      bytes memory initCode = abi.encodePacked(
+        vm.getCode('HubConfigurator.vy:HubConfigurator'),
+        abi.encode(address(manager))
+      );
+      address deployed;
+      assembly ('memory-safe') {
+        deployed := create(0, add(initCode, 0x20), mload(initCode))
+      }
+      require(deployed != address(0), 'Vyper HubConfigurator deployment failed');
+      hubConfigurator = IHubConfigurator(deployed);
+    } else {
+      hubConfigurator = new HubConfigurator(address(manager));
+    }
 
     // Grant HUB_CONFIGURATOR_ROLE to hubConfigurator so it can call hub functions
     vm.startPrank(ADMIN);

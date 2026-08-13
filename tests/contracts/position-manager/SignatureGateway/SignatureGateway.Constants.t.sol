@@ -6,7 +6,7 @@ import 'tests/contracts/position-manager/SignatureGateway/SignatureGateway.Base.
 contract SignatureGatewayConstantsTest is SignatureGatewayBaseTest {
   function test_constructor() public {
     vm.expectRevert();
-    new SignatureGateway(address(0));
+    _deploySignatureGateway(address(0));
 
     assertEq(Ownable2Step(address(gateway)).owner(), ADMIN);
     assertEq(Ownable2Step(address(gateway)).pendingOwner(), address(0));
@@ -14,9 +14,7 @@ contract SignatureGatewayConstantsTest is SignatureGatewayBaseTest {
   }
 
   function test_eip712Domain() public {
-    SignatureGateway instance = new SignatureGateway{salt: bytes32(vm.randomUint())}(
-      vm.randomAddress()
-    );
+    SignatureGateway instance = _deploySignatureGateway(vm.randomAddress());
     (
       bytes1 fields,
       string memory name,
@@ -37,9 +35,7 @@ contract SignatureGatewayConstantsTest is SignatureGatewayBaseTest {
   }
 
   function test_DOMAIN_SEPARATOR() public {
-    SignatureGateway instance = new SignatureGateway{salt: bytes32(vm.randomUint())}(
-      vm.randomAddress()
-    );
+    SignatureGateway instance = _deploySignatureGateway(vm.randomAddress());
     bytes32 expectedDomainSeparator = keccak256(
       abi.encode(
         keccak256(

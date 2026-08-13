@@ -26,7 +26,14 @@ contract AaveV4PayloadEmptyReturnsTest is BaseConfigEngineTest {
 
   function setUp() public override {
     super.setUp();
-    minimal = new MinimalAaveV4Payload(IAaveV4ConfigEngine(address(engine)));
+    minimal = vm.envOr('TEST_VYPER', false)
+      ? MinimalAaveV4Payload(
+        vm.deployCode(
+          'AaveV4PayloadWrapper.vy:AaveV4PayloadWrapper',
+          abi.encode(address(engine))
+        )
+      )
+      : new MinimalAaveV4Payload(IAaveV4ConfigEngine(address(engine)));
   }
 
   /// @dev Calling execute() on the minimal payload exercises _preExecute, _postExecute,

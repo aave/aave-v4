@@ -8,7 +8,14 @@ contract ExtSloadTest is Test {
   ExtSloadWrapper internal w;
 
   function setUp() public {
-    w = new ExtSloadWrapper();
+    if (vm.envOr('TEST_VYPER', false)) {
+      ExtSloadWrapper backend = new ExtSloadWrapper();
+      w = ExtSloadWrapper(
+        vm.deployCode('ExtSload.vy:ExtSload', abi.encode(address(backend)))
+      );
+    } else {
+      w = new ExtSloadWrapper();
+    }
   }
 
   function test_extSload(bytes32) public {

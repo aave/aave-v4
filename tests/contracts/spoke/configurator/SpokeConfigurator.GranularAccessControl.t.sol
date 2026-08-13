@@ -31,7 +31,20 @@ contract SpokeConfiguratorGranularAccessControlTest is Base {
     super.setUp();
 
     manager = IAccessManager(spoke1.authority());
-    spokeConfigurator = new SpokeConfigurator(address(manager));
+    if (vm.envOr('TEST_VYPER', false)) {
+      bytes memory initCode = abi.encodePacked(
+        vm.getCode('SpokeConfigurator.vy:SpokeConfigurator'),
+        abi.encode(address(manager))
+      );
+      address deployed;
+      assembly ('memory-safe') {
+        deployed := create(0, add(initCode, 0x20), mload(initCode))
+      }
+      require(deployed != address(0), 'Vyper SpokeConfigurator deployment failed');
+      spokeConfigurator = ISpokeConfigurator(deployed);
+    } else {
+      spokeConfigurator = new SpokeConfigurator(address(manager));
+    }
 
     // Grant SPOKE_CONFIGURATOR_ROLE to spokeConfigurator so it can call spoke functions
     vm.startPrank(ADMIN);

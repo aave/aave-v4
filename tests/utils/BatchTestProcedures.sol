@@ -313,17 +313,32 @@ contract BatchTestProcedures is Test, Create2TestHelper, WETHDeployProcedure {
       expectedMaxReservesLimit,
       string.concat(label, ' max user reserves limit')
     );
-    assertEq(
-      ProxyHelper.getProxyInitializedVersion(
-        ProxyHelper.getImplementation(report.report.spokeProxy)
-      ),
-      type(uint64).max,
-      string.concat(label, ' implementation initializers disabled')
-    );
+    address spokeImplementation = ProxyHelper.getImplementation(report.report.spokeProxy);
+    if (vm.envOr('TEST_VYPER', false)) {
+      // SpokeInstance.vy deliberately keeps its compact native storage layout;
+      // initialized_state is slot 15 and stores the same uint64 sentinel.
+      assertEq(
+        uint64(uint256(vm.load(spokeImplementation, bytes32(uint256(15))))),
+        type(uint64).max,
+        string.concat(label, ' implementation initializers disabled')
+      );
+    } else {
+      assertEq(
+        ProxyHelper.getProxyInitializedVersion(spokeImplementation),
+        type(uint64).max,
+        string.concat(label, ' implementation initializers disabled')
+      );
+    }
+    // Vyper stores immutable values in an appended runtime data section.  The
+    // artifact runtime omits that deployed suffix, so add one zero word for
+    // each immutable before applying the same immutable mask comparison.
+    bytes memory expectedSpokeRuntime = vm.envOr('TEST_VYPER', false)
+      ? abi.encodePacked(vm.getDeployedCode('SpokeInstance.vy:SpokeInstance'), new bytes(3 * 32))
+      : vm.getDeployedCode('src/spoke/instances/SpokeInstance.sol:SpokeInstance');
     // verify the non-immutable portions match
     _assertBytecodeMatchExcludingImmutables(
-      ProxyHelper.getImplementation(report.report.spokeProxy).code,
-      vm.getDeployedCode('src/spoke/instances/SpokeInstance.sol:SpokeInstance'),
+      spokeImplementation.code,
+      expectedSpokeRuntime,
       string.concat(label, ' spoke implementation bytecode')
     );
   }
@@ -389,7 +404,11 @@ contract BatchTestProcedures is Test, Create2TestHelper, WETHDeployProcedure {
     );
     assertEq(
       ProxyHelper.getImplementation(report.report.hubProxy).codehash,
-      keccak256(vm.getDeployedCode('src/hub/instances/HubInstance.sol:HubInstance')),
+      keccak256(
+        vm.envOr('TEST_VYPER', false)
+          ? vm.getDeployedCode('HubInstance.vy:HubInstance')
+          : vm.getDeployedCode('src/hub/instances/HubInstance.sol:HubInstance')
+      ),
       string.concat(label, ' hub implementation bytecode')
     );
   }

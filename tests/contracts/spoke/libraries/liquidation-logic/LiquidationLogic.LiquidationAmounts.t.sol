@@ -9,6 +9,11 @@ contract LiquidationLogicLiquidationAmountsTest is LiquidationLogicBaseTest {
   using WadRayMath for uint256;
   using LiquidationLogic for uint256;
 
+  function setUp() public override {
+    super.setUp();
+    _useVyperCalculationLogic();
+  }
+
   function test_calculateLiquidationAmounts_fuzz_EnoughCollateral_NoCollateralDust(
     LiquidationLogic.CalculateLiquidationAmountsParams memory params
   ) public {

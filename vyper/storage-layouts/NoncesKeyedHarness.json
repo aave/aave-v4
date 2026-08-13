@@ -1,0 +1,9 @@
+{
+  "NoncesKeyed": {
+    "nonces_by_owner": {
+      "type": "HashMap[address, HashMap[uint192, uint256]]",
+      "n_slots": 1,
+      "slot": 32250772508311209084988167691701467574361087543935393734537792978667026603776
+    }
+  }
+}

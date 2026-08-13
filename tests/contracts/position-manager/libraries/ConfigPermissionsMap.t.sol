@@ -16,6 +16,12 @@ contract ConfigPermissionsMapTest is Test {
 
   function setUp() public {
     w = new ConfigPermissionsMapWrapper();
+    if (vm.envOr('TEST_VYPER', false)) {
+      vm.etch(
+        address(w),
+        vm.getDeployedCode('ConfigPermissionsMapHarness.vy:ConfigPermissionsMapHarness')
+      );
+    }
   }
 
   function test_constants() public view {

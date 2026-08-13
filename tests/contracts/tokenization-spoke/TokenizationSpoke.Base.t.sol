@@ -24,4 +24,20 @@ contract TokenizationSpokeBaseTest is Base, TokenizationSpokeHelpers {
   function _simulateYield(ITokenizationSpoke vault, uint256 amount) internal {
     _simulateYield(vault, amount, address(spoke2), address(irStrategy));
   }
+
+  function _deployTokenizationSpokeImplementation(
+    address hub,
+    address underlying
+  ) internal returns (TokenizationSpokeInstance) {
+    if (vm.envOr('TEST_VYPER', false)) {
+      return
+        TokenizationSpokeInstance(
+          vm.deployCode(
+            'TokenizationSpokeInstance.vy:TokenizationSpokeInstance',
+            abi.encode(hub, underlying)
+          )
+        );
+    }
+    return new TokenizationSpokeInstance(hub, underlying);
+  }
 }

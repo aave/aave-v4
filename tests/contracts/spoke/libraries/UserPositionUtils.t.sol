@@ -32,6 +32,12 @@ contract UserPositionUtilsTest is Base {
 
   function setUp() public override {
     u = new UserPositionUtilsWrapper();
+    if (vm.envOr('TEST_VYPER', false)) {
+      vm.etch(
+        address(u),
+        vm.getDeployedCode('UserPositionUtilsHarness.vy:UserPositionUtilsHarness')
+      );
+    }
     hub = hub1;
     assetId = wethAssetId;
 
@@ -135,7 +141,7 @@ contract UserPositionUtilsTest is Base {
     _mockUserPremiumData(premiumShares, premiumOffsetRay);
     _mockHubDrawnIndex(drawnIndex);
 
-    (uint256 drawnDebt, uint256 premiumDebtRay) = u.getDebt(hub, assetId);
+    (uint256 drawnDebt, uint256 premiumDebtRay) = u.getDebtWithHub(hub, assetId);
     assertEq(drawnDebt, drawnShares.rayMulUp(drawnIndex));
     uint256 expectedPremiumDebtRay = _calculatePremiumDebtRay(
       premiumShares,
@@ -146,13 +152,13 @@ contract UserPositionUtilsTest is Base {
   }
 
   function test_getUserDebt_HubAndAssetId() public {
-    (uint256 drawnDebt, uint256 premiumDebtRay) = u.getDebt(hub, assetId);
+    (uint256 drawnDebt, uint256 premiumDebtRay) = u.getDebtWithHub(hub, assetId);
     assertEq(drawnDebt, 300e18);
     assertEq(premiumDebtRay, 248.5e18 * 1e27);
 
     _mockUserPremiumData(70e18, 0);
     _mockHubDrawnIndex(1.777777777777777777777777777e27);
-    (drawnDebt, premiumDebtRay) = u.getDebt(hub, assetId);
+    (drawnDebt, premiumDebtRay) = u.getDebtWithHub(hub, assetId);
     assertEq(drawnDebt, 355.555555555555555556e18);
     assertEq(premiumDebtRay, 124.44444444444444444444444439e45);
   }

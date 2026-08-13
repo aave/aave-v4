@@ -8,7 +8,11 @@ contract NoncesKeyedTest is Base {
   MockNoncesKeyed public mock;
 
   function setUp() public override {
-    mock = new MockNoncesKeyed();
+    if (vm.envOr('TEST_VYPER', false)) {
+      mock = MockNoncesKeyed(vm.deployCode('NoncesKeyedHarness.vy:NoncesKeyedHarness'));
+    } else {
+      mock = new MockNoncesKeyed();
+    }
   }
 
   function test_useNonce_monotonic(bytes32) public {

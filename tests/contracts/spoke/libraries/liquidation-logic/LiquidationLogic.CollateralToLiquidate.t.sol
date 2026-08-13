@@ -6,6 +6,11 @@ import 'tests/contracts/spoke/libraries/liquidation-logic/LiquidationLogic.Base.
 contract LiquidationLogicCollateralToLiquidateTest is LiquidationLogicBaseTest {
   using WadRayMath for uint256;
 
+  function setUp() public override {
+    super.setUp();
+    _useVyperCalculationLogic();
+  }
+
   function test_calculateCollateralToLiquidate_fuzz(
     LiquidationLogic.CalculateCollateralToLiquidateParams memory params
   ) public {

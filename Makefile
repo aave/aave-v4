@@ -9,6 +9,12 @@ update:; forge update
 build  :; forge build --sizes
 test   :; forge test -vvv
 
+# Vyper 0.5 implementation
+vyper-install :; python3 -m venv .venv && .venv/bin/pip install -r vyper/requirements.txt
+vyper-build   :; .venv/bin/python scripts/build_vyper.py
+vyper-test    : vyper-build
+	TEST_VYPER=true forge test -vvv
+
 # Utilities
 download :; cast etherscan-source --chain ${chain} -d src/etherscan/${chain}_${address} ${address}
 git-diff :

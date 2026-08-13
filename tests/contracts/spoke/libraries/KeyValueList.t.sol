@@ -8,9 +8,17 @@ import {KeyValueList} from 'src/spoke/libraries/KeyValueList.sol';
 contract KeyValueListTest is Test {
   using KeyValueList for KeyValueList.List;
 
+  KeyValueListWrapper internal wrapper;
+
+  function setUp() public {
+    wrapper = vm.envOr('TEST_VYPER', false)
+      ? KeyValueListWrapper(
+        vm.deployCode('KeyValueListHarness.vy:KeyValueListHarness')
+      )
+      : new KeyValueListWrapper();
+  }
+
   function test_add_unique() public {
-    /// @dev needed for reverts not to block the test
-    KeyValueListWrapper wrapper = new KeyValueListWrapper();
     KeyValueList.List memory list = KeyValueList.init(11);
 
     list = wrapper.add(list, 0, 1, 1);
@@ -48,70 +56,68 @@ contract KeyValueListTest is Test {
 
     uint256 returnedKey;
     uint256 returnedValue;
-    (returnedKey, returnedValue) = list.get(0);
+    (returnedKey, returnedValue) = wrapper.get(list, 0);
     assertEq(returnedKey, 1);
     assertEq(returnedValue, 1);
-    (returnedKey, returnedValue) = list.get(1);
+    (returnedKey, returnedValue) = wrapper.get(list, 1);
     assertEq(returnedKey, 100);
     assertEq(returnedValue, 1e15);
-    (returnedKey, returnedValue) = list.get(2);
+    (returnedKey, returnedValue) = wrapper.get(list, 2);
     assertEq(returnedKey, 100);
     assertEq(returnedValue, 5e20);
-    (returnedKey, returnedValue) = list.get(3);
+    (returnedKey, returnedValue) = wrapper.get(list, 3);
     assertEq(returnedKey, 5e4);
     assertEq(returnedValue, 5e20);
-    (returnedKey, returnedValue) = list.get(4);
+    (returnedKey, returnedValue) = wrapper.get(list, 4);
     assertEq(returnedKey, 5e4);
     assertEq(returnedValue, 1e12);
-    (returnedKey, returnedValue) = list.get(5);
+    (returnedKey, returnedValue) = wrapper.get(list, 5);
     assertEq(returnedKey, 45e6);
     assertEq(returnedValue, 2.5e50);
-    (returnedKey, returnedValue) = list.get(6);
+    (returnedKey, returnedValue) = wrapper.get(list, 6);
     assertEq(returnedKey, 45e6);
     assertEq(returnedValue, 10);
-    (returnedKey, returnedValue) = list.get(7);
+    (returnedKey, returnedValue) = wrapper.get(list, 7);
     assertEq(returnedKey, type(uint32).max - 1);
     assertEq(returnedValue, 10_000_000_000);
-    (returnedKey, returnedValue) = list.get(8);
+    (returnedKey, returnedValue) = wrapper.get(list, 8);
     assertEq(returnedKey, 0);
     assertEq(returnedValue, 0);
-    (returnedKey, returnedValue) = list.get(9);
+    (returnedKey, returnedValue) = wrapper.get(list, 9);
     assertEq(returnedKey, 0);
     assertEq(returnedValue, 0);
-    (returnedKey, returnedValue) = list.get(10);
+    (returnedKey, returnedValue) = wrapper.get(list, 10);
     assertEq(returnedKey, 5e6);
     assertEq(returnedValue, type(uint224).max - 1);
   }
 
   function test_fuzz_add(uint256 key, uint256 value) public {
-    /// @dev needed for reverts not to block the test
-    KeyValueListWrapper wrapper = new KeyValueListWrapper();
     KeyValueList.List memory list = KeyValueList.init(5);
 
     if (key >= KeyValueList.MAX_KEY || value >= KeyValueList.MAX_VALUE) {
       vm.expectRevert(KeyValueList.MaxDataSizeExceeded.selector);
       wrapper.add(list, 0, key, value);
     } else {
-      list.add(0, key, value);
+      list = wrapper.add(list, 0, key, value);
     }
 
     if (key < KeyValueList.MAX_KEY && value < KeyValueList.MAX_VALUE) {
-      (uint256 storedKey, uint256 storedValue) = list.get(0);
+      (uint256 storedKey, uint256 storedValue) = wrapper.get(list, 0);
       assertEq(storedKey, key);
       assertEq(storedValue, value);
     }
   }
 
-  function test_fuzz_add_unique(uint256 seed, uint256 size) public pure {
+  function test_fuzz_add_unique(uint256 seed, uint256 size) public view {
     size = bound(size, 1, 1e2);
     uint256[] memory keys = _generateRandomUint256Array(size, seed, 1, type(uint32).max - 1);
     uint256[] memory values = _generateRandomUint256Array(size, seed, 1, type(uint224).max - 1);
     KeyValueList.List memory list = KeyValueList.init(keys.length);
     for (uint256 i; i < keys.length; ++i) {
-      list.add(i, keys[i], values[i]);
+      list = wrapper.add(list, i, keys[i], values[i]);
     }
     for (uint256 i; i < keys.length; ++i) {
-      (uint256 key, uint256 value) = list.get(i);
+      (uint256 key, uint256 value) = wrapper.get(list, i);
       assertEq(key, keys[i]);
       assertEq(value, values[i]);
       // No key should return as 0 unless the set key is 0 or the cell is not initialized
@@ -121,13 +127,13 @@ contract KeyValueListTest is Test {
     }
   }
 
-  function test_fuzz_sortByKey(uint256[] memory seed) public pure {
+  function test_fuzz_sortByKey(uint256[] memory seed) public view {
     vm.assume(seed.length > 0);
     KeyValueList.List memory list = KeyValueList.init(seed.length);
     for (uint256 i; i < seed.length; ++i) {
-      list.add(i, _truncateKey(seed[i]), _truncateValue(seed[i]));
+      list = wrapper.add(list, i, _truncateKey(seed[i]), _truncateValue(seed[i]));
     }
-    list.sortByKey();
+    list = wrapper.sortByKey(list);
     _assertSortedOrder(list);
   }
 
@@ -135,13 +141,13 @@ contract KeyValueListTest is Test {
     length = bound(length, 1, 1e2);
     KeyValueList.List memory list = KeyValueList.init(length);
     for (uint256 i; i < length; ++i) {
-      list.add(i, _truncateKey(vm.randomUint()), _truncateValue(vm.randomUint()));
+      list = wrapper.add(list, i, _truncateKey(vm.randomUint()), _truncateValue(vm.randomUint()));
     }
-    list.sortByKey();
+    list = wrapper.sortByKey(list);
     _assertSortedOrder(list);
   }
 
-  function test_fuzz_sortByKey_with_collision(uint256[] memory seed) public pure {
+  function test_fuzz_sortByKey_with_collision(uint256[] memory seed) public view {
     vm.assume(seed.length > 10);
     uint256[] memory collisionKeys = new uint256[](seed.length / 10);
     for (uint256 i; i < collisionKeys.length; ++i) {
@@ -151,24 +157,25 @@ contract KeyValueListTest is Test {
     vm.assume(seed.length > 0);
     KeyValueList.List memory list = KeyValueList.init(seed.length);
     for (uint256 i; i < seed.length; ++i) {
-      list.add(
+      list = wrapper.add(
+        list,
         i,
         _truncateKey(collisionKeys[seed[i] % collisionKeys.length]),
         _truncateValue(seed[i])
       );
     }
-    list.sortByKey();
+    list = wrapper.sortByKey(list);
     _assertSortedOrder(list);
   }
 
-  function test_fuzz_get(uint256[] memory seed) public pure {
+  function test_fuzz_get(uint256[] memory seed) public view {
     vm.assume(seed.length > 0);
     KeyValueList.List memory list = KeyValueList.init(seed.length);
     for (uint256 i; i < seed.length; ++i) {
-      list.add(i, _truncateKey(seed[i]), _truncateValue(seed[i]));
+      list = wrapper.add(list, i, _truncateKey(seed[i]), _truncateValue(seed[i]));
     }
     for (uint256 i; i < seed.length; ++i) {
-      (uint256 key, uint256 value) = list.get(i);
+      (uint256 key, uint256 value) = wrapper.get(list, i);
       assertEq(key, _truncateKey(seed[i]));
       assertEq(value, _truncateValue(seed[i]));
     }
@@ -179,10 +186,10 @@ contract KeyValueListTest is Test {
     uint256 fillArrayTill = vm.randomUint(0, seed.length - 1);
     KeyValueList.List memory list = KeyValueList.init(seed.length);
     for (uint256 i; i < fillArrayTill; ++i) {
-      list.add(i, _truncateKey(seed[i]), _truncateValue(seed[i]));
+      list = wrapper.add(list, i, _truncateKey(seed[i]), _truncateValue(seed[i]));
     }
     for (uint256 i; i < seed.length; ++i) {
-      (uint256 key, uint256 value) = list.get(i);
+      (uint256 key, uint256 value) = wrapper.get(list, i);
       if (i < fillArrayTill) {
         assertEq(key, _truncateKey(seed[i]));
         assertEq(value, _truncateValue(seed[i]));
@@ -198,11 +205,11 @@ contract KeyValueListTest is Test {
     uint256 fillArrayTill = vm.randomUint(0, seed.length - 1);
     KeyValueList.List memory list = KeyValueList.init(seed.length);
     for (uint256 i; i < fillArrayTill; ++i) {
-      list.add(i, _truncateKey(seed[i]), _truncateValue(seed[i]));
+      list = wrapper.add(list, i, _truncateKey(seed[i]), _truncateValue(seed[i]));
     }
-    list.sortByKey();
+    list = wrapper.sortByKey(list);
     for (uint256 i; i < seed.length; ++i) {
-      (uint256 key, uint256 value) = list.get(i);
+      (uint256 key, uint256 value) = wrapper.get(list, i);
       if (i >= fillArrayTill) {
         assertEq(key, 0);
         assertEq(value, 0);
@@ -210,36 +217,36 @@ contract KeyValueListTest is Test {
     }
   }
 
-  function test_fuzz_uncheckedAt(uint256[] memory seed) public pure {
+  function test_fuzz_uncheckedAt(uint256[] memory seed) public view {
     vm.assume(seed.length > 0 && seed.length < 1e2);
     KeyValueList.List memory list = KeyValueList.init(seed.length);
     for (uint256 i; i < seed.length; ++i) {
-      list.add(i, _truncateKey(seed[i]), _truncateValue(seed[i]));
+      list = wrapper.add(list, i, _truncateKey(seed[i]), _truncateValue(seed[i]));
     }
     for (uint256 i; i < seed.length; ++i) {
-      (uint256 keyGet, uint256 valueGet) = list.get(i);
-      (uint256 keyUnsafe, uint256 valueUnsafe) = list.uncheckedAt(i);
+      (uint256 keyGet, uint256 valueGet) = wrapper.get(list, i);
+      (uint256 keyUnsafe, uint256 valueUnsafe) = wrapper.uncheckedAt(list, i);
       assertEq(keyGet, keyUnsafe);
       assertEq(valueGet, valueUnsafe);
     }
   }
 
-  function test_fuzz_pack_unpack_roundtrip(uint256 key, uint256 value) public pure {
+  function test_fuzz_pack_unpack_roundtrip(uint256 key, uint256 value) public view {
     key = bound(key, 0, KeyValueList.MAX_KEY - 1);
     value = bound(value, 0, KeyValueList.MAX_VALUE - 1);
 
-    uint256 packed = KeyValueList.pack(key, value);
-    (uint256 unpackedKey, uint256 unpackedValue) = KeyValueList.unpack(packed);
+    uint256 packed = wrapper.pack(key, value);
+    (uint256 unpackedKey, uint256 unpackedValue) = wrapper.unpack(packed);
 
     assertEq(key, unpackedKey);
     assertEq(value, unpackedValue);
   }
 
-  function _assertSortedOrder(KeyValueList.List memory list) internal pure {
+  function _assertSortedOrder(KeyValueList.List memory list) internal view {
     // validate sorted order
-    (uint256 prevKey, uint256 prevValue) = list.get(0);
-    for (uint256 i = 1; i < list.length(); ++i) {
-      (uint256 key, uint256 value) = list.get(i);
+    (uint256 prevKey, uint256 prevValue) = wrapper.get(list, 0);
+    for (uint256 i = 1; i < wrapper.length(list); ++i) {
+      (uint256 key, uint256 value) = wrapper.get(list, i);
       assertLe(prevKey, key);
       if (prevKey == key) {
         assertGe(prevValue, value);
@@ -286,5 +293,38 @@ contract KeyValueListWrapper {
     returnList = list;
     returnList.add(idx, key, value);
     return returnList;
+  }
+
+  function get(
+    KeyValueList.List memory list,
+    uint256 idx
+  ) external pure returns (uint256, uint256) {
+    return list.get(idx);
+  }
+
+  function uncheckedAt(
+    KeyValueList.List memory list,
+    uint256 idx
+  ) external pure returns (uint256, uint256) {
+    return list.uncheckedAt(idx);
+  }
+
+  function sortByKey(
+    KeyValueList.List memory list
+  ) external pure returns (KeyValueList.List memory) {
+    list.sortByKey();
+    return list;
+  }
+
+  function length(KeyValueList.List memory list) external pure returns (uint256) {
+    return list.length();
+  }
+
+  function pack(uint256 key, uint256 value) external pure returns (uint256) {
+    return KeyValueList.pack(key, value);
+  }
+
+  function unpack(uint256 data) external pure returns (uint256, uint256) {
+    return KeyValueList.unpack(data);
   }
 }

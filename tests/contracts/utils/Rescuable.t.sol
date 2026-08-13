@@ -8,7 +8,13 @@ contract RescuableTest is Base {
 
   function setUp() public virtual override {
     super.setUp();
-    rescuable = new RescuableWrapper(ADMIN);
+    if (vm.envOr('TEST_VYPER', false)) {
+      rescuable = RescuableWrapper(
+        payable(vm.deployCode('RescuableHarness.vy:RescuableHarness', abi.encode(ADMIN)))
+      );
+    } else {
+      rescuable = new RescuableWrapper(ADMIN);
+    }
   }
 
   function test_constructor() public view {

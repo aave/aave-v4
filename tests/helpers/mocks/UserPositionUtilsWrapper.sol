@@ -40,6 +40,10 @@ contract UserPositionUtilsWrapper {
     return UserPositionUtils.getDebt(_userPosition, hub, assetId);
   }
 
+  function getDebtWithHub(IHubBase hub, uint256 assetId) external view returns (uint256, uint256) {
+    return UserPositionUtils.getDebt(_userPosition, hub, assetId);
+  }
+
   function getDebt(uint256 drawnIndex) external view returns (uint256, uint256) {
     return UserPositionUtils.getDebt(_userPosition, drawnIndex);
   }

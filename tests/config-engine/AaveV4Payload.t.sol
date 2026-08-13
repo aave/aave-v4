@@ -10,7 +10,7 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
 
   function setUp() public override {
     super.setUp();
-    payload = new AaveV4PayloadWrapper(IAaveV4ConfigEngine(address(engine)));
+    payload = _deployPayload(address(engine));
 
     // Grant same roles to payload (since delegatecall makes msg.sender = payload)
     vm.startPrank(ADMIN);
@@ -22,6 +22,16 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
     payloadPositionManager = new PositionManagerBaseWrapper(address(payload));
 
     _seedFullEnvironment();
+  }
+
+  function _deployPayload(address configEngine) internal returns (AaveV4PayloadWrapper) {
+    if (vm.envOr('TEST_VYPER', false)) {
+      return
+        AaveV4PayloadWrapper(
+          vm.deployCode('AaveV4PayloadWrapper.vy:AaveV4PayloadWrapper', abi.encode(configEngine))
+        );
+    }
+    return new AaveV4PayloadWrapper(IAaveV4ConfigEngine(configEngine));
   }
 
   function test_execute_emptyPayload_noReverts() public {
@@ -599,7 +609,7 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
     payload.setHubAssetHalts(halts);
     payload.execute();
 
-    payload = new AaveV4PayloadWrapper(IAaveV4ConfigEngine(address(engine)));
+    payload = _deployPayload(address(engine));
     vm.prank(ADMIN);
     accessManager.grantRole(Roles.HUB_CONFIGURATOR_DOMAIN_ADMIN_ROLE, address(payload), 0);
 
@@ -845,7 +855,7 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
     (bool isMember, ) = accessManager.hasRole(Roles.HUB_CONFIGURATOR_ROLE, ACCOUNT);
     assertTrue(isMember);
 
-    payload = new AaveV4PayloadWrapper(IAaveV4ConfigEngine(address(engine)));
+    payload = _deployPayload(address(engine));
     vm.startPrank(ADMIN);
     accessManager.grantRole(Roles.HUB_CONFIGURATOR_DOMAIN_ADMIN_ROLE, address(payload), 0);
     accessManager.grantRole(Roles.SPOKE_CONFIGURATOR_DOMAIN_ADMIN_ROLE, address(payload), 0);
@@ -969,7 +979,7 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
 
   function test_constructor_revertsOnZeroAddress() public {
     vm.expectRevert(AaveV4Payload.InvalidConfigEngine.selector);
-    new AaveV4PayloadWrapper(IAaveV4ConfigEngine(address(0)));
+    _deployPayload(address(0));
   }
 
   function test_execute_positionManagerSpokeRegistrations() public {
@@ -1114,9 +1124,7 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
   // --- Unauthorized execute tests ---
 
   function test_execute_reverts_hubAction_withoutHubConfiguratorRole() public {
-    AaveV4PayloadWrapper freshPayload = new AaveV4PayloadWrapper(
-      IAaveV4ConfigEngine(address(engine))
-    );
+    AaveV4PayloadWrapper freshPayload = _deployPayload(address(engine));
 
     vm.startPrank(ADMIN);
     accessManager.grantRole(Roles.SPOKE_CONFIGURATOR_ROLE, address(freshPayload), 0);
@@ -1141,9 +1149,7 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
   }
 
   function test_execute_reverts_spokeAction_withoutSpokeConfiguratorRole() public {
-    AaveV4PayloadWrapper freshPayload = new AaveV4PayloadWrapper(
-      IAaveV4ConfigEngine(address(engine))
-    );
+    AaveV4PayloadWrapper freshPayload = _deployPayload(address(engine));
 
     vm.startPrank(ADMIN);
     accessManager.grantRole(Roles.HUB_CONFIGURATOR_ROLE, address(freshPayload), 0);
@@ -1166,9 +1172,7 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
   }
 
   function test_execute_reverts_accessManagerAction_withoutDefaultAdminRole() public {
-    AaveV4PayloadWrapper freshPayload = new AaveV4PayloadWrapper(
-      IAaveV4ConfigEngine(address(engine))
-    );
+    AaveV4PayloadWrapper freshPayload = _deployPayload(address(engine));
 
     vm.startPrank(ADMIN);
     accessManager.grantRole(Roles.HUB_CONFIGURATOR_ROLE, address(freshPayload), 0);
@@ -1197,9 +1201,7 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
   }
 
   function test_execute_reverts_positionManagerAction_withoutOwnership() public {
-    AaveV4PayloadWrapper freshPayload = new AaveV4PayloadWrapper(
-      IAaveV4ConfigEngine(address(engine))
-    );
+    AaveV4PayloadWrapper freshPayload = _deployPayload(address(engine));
 
     vm.startPrank(ADMIN);
     accessManager.grantRole(Roles.HUB_CONFIGURATOR_ROLE, address(freshPayload), 0);

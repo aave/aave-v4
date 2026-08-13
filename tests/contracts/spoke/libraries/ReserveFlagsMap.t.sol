@@ -15,6 +15,9 @@ contract ReserveFlagsMapTest is Test {
 
   function setUp() public {
     w = new ReserveFlagsMapWrapper();
+    if (vm.envOr('TEST_VYPER', false)) {
+      vm.etch(address(w), vm.getDeployedCode('ReserveFlagsMapHarness.vy:ReserveFlagsMapHarness'));
+    }
   }
 
   function test_constants() public view {

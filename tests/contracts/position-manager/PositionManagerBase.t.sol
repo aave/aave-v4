@@ -10,8 +10,27 @@ contract PositionManagerBaseTest is Base {
   function setUp() public virtual override {
     super.setUp();
 
-    positionManager = new PositionManagerBaseWrapper(address(ADMIN));
-    positionManager2 = new PositionManagerNoMulticall(address(ADMIN));
+    if (vm.envOr('TEST_VYPER', false)) {
+      positionManager = PositionManagerBaseWrapper(
+        payable(
+          vm.deployCode(
+            'PositionManagerBaseWrapper.vy:PositionManagerBaseWrapper',
+            abi.encode(address(ADMIN))
+          )
+        )
+      );
+      positionManager2 = PositionManagerNoMulticall(
+        payable(
+          vm.deployCode(
+            'PositionManagerNoMulticall.vy:PositionManagerNoMulticall',
+            abi.encode(address(ADMIN))
+          )
+        )
+      );
+    } else {
+      positionManager = new PositionManagerBaseWrapper(address(ADMIN));
+      positionManager2 = new PositionManagerNoMulticall(address(ADMIN));
+    }
 
     vm.startPrank(SPOKE_ADMIN);
     spoke1.updatePositionManager(address(positionManager), true);

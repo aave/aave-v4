@@ -143,6 +143,15 @@ abstract contract MathHelpers is QueryHelpers {
     address user,
     bool refreshConfig
   ) internal returns (ISpoke.UserAccountData memory) {
+    if (vm.envOr('TEST_VYPER', false)) {
+      uint256 vyperSnapshot = vm.snapshotState();
+      vm.prank(user);
+      ISpoke.UserAccountData memory vyperUserAccountData = MockSpoke(address(spoke))
+        .calculateUserAccountData(user, refreshConfig);
+      vm.revertToState(vyperSnapshot);
+      return vyperUserAccountData;
+    }
+
     uint256 snapshot = vm.snapshotState();
 
     address mockSpoke = address(new MockSpoke(spoke.ORACLE(), MAX_ALLOWED_USER_RESERVES_LIMIT));

@@ -110,16 +110,23 @@ abstract contract MockHelpers is CommonHelpers, Constants {
     });
     assertEq(hub.getAddedAssets(assetId), totalAddedAssets, '_mockSupplySharePrice: addedAssets');
 
-    uint256 _assetsSlot = 1;
-    uint256 _addedSharesOffset = 1;
-    vm.store(
-      address(hub),
-      bytes32(
-        uint256(SlotDerivation.deriveMapping({slot: bytes32(_assetsSlot), key: assetId})) +
-          _addedSharesOffset
-      ),
-      bytes32(addedShares)
-    );
+    if (vm.envOr('TEST_VYPER', false)) {
+      (bool success, ) = address(hub).call(
+        abi.encodeWithSignature('setAssetAddedShares(uint256,uint256)', assetId, addedShares)
+      );
+      require(success, '_mockSupplySharePrice: Vyper setter');
+    } else {
+      uint256 _assetsSlot = 1;
+      uint256 _addedSharesOffset = 1;
+      vm.store(
+        address(hub),
+        bytes32(
+          uint256(SlotDerivation.deriveMapping({slot: bytes32(_assetsSlot), key: assetId})) +
+            _addedSharesOffset
+        ),
+        bytes32(addedShares)
+      );
+    }
     assertEq(hub.getAddedShares(assetId), addedShares, '_mockSupplySharePrice: addedShares');
   }
 

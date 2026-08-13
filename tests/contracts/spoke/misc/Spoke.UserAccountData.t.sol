@@ -12,10 +12,12 @@ contract SpokeUserAccountDataTest is Base {
   function setUp() public override {
     super.setUp();
     spoke = MockSpoke(address(spoke1));
-    address mockSpokeImpl = address(
-      new MockSpoke(address(spoke.ORACLE()), MAX_ALLOWED_USER_RESERVES_LIMIT)
-    );
-    vm.etch(address(spoke1), mockSpokeImpl.code);
+    if (!vm.envOr('TEST_VYPER', false)) {
+      address mockSpokeImpl = address(
+        new MockSpoke(address(spoke.ORACLE()), MAX_ALLOWED_USER_RESERVES_LIMIT)
+      );
+      vm.etch(address(spoke1), mockSpokeImpl.code);
+    }
 
     _updateCollateralFactor(spoke, _wethReserveId(spoke), 80_00);
     _updateCollateralFactor(spoke, _wbtcReserveId(spoke), 70_00);
@@ -258,7 +260,17 @@ contract SpokeUserAccountDataTest is Base {
     bool refreshConfig,
     ISpoke.UserAccountData memory expectedUserAccountData
   ) internal {
-    spoke.mockStorage(user, accountDataInfo);
+    if (vm.envOr('TEST_VYPER', false)) {
+      address implementation = _getImplementationAddress(address(spoke));
+      address storageHarness = vm.deployCode('MockSpokeStorage.vy:MockSpokeStorage');
+      vm.prank(_getProxyAdminAddress(address(spoke)));
+      ITransparentUpgradeableProxy(address(spoke)).upgradeToAndCall(storageHarness, '');
+      spoke.mockStorage(user, accountDataInfo);
+      vm.prank(_getProxyAdminAddress(address(spoke)));
+      ITransparentUpgradeableProxy(address(spoke)).upgradeToAndCall(implementation, '');
+    } else {
+      spoke.mockStorage(user, accountDataInfo);
+    }
 
     ISpoke.UserAccountData memory userAccountData = spoke.calculateUserAccountData(
       user,

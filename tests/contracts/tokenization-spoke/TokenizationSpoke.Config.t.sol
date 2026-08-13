@@ -9,16 +9,19 @@ contract TokenizationSpokeConfigTest is TokenizationSpokeBaseTest {
     while (hub1.isUnderlyingListed(invalidUnderlying)) invalidUnderlying = vm.randomAddress();
 
     vm.expectRevert(IHub.AssetNotListed.selector);
-    new TokenizationSpokeInstance(address(hub1), invalidUnderlying);
+    _deployTokenizationSpokeImplementation(address(hub1), invalidUnderlying);
 
     vm.expectRevert();
-    new TokenizationSpokeInstance(address(0), vm.randomAddress());
+    _deployTokenizationSpokeImplementation(address(0), vm.randomAddress());
   }
 
   function test_constructor_asset_correctly_set() public {
     uint256 assetId = vm.randomUint(0, hub1.getAssetCount() - 1);
     address underlying = hub1.getAsset(assetId).underlying;
-    TokenizationSpokeInstance instance = new TokenizationSpokeInstance(address(hub1), underlying);
+    TokenizationSpokeInstance instance = _deployTokenizationSpokeImplementation(
+      address(hub1),
+      underlying
+    );
     assertEq(instance.hub(), address(hub1));
     assertEq(instance.assetId(), assetId);
     assertEq(instance.asset(), underlying);

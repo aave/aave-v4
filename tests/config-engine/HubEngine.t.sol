@@ -771,7 +771,7 @@ contract HubEngineTest is BaseConfigEngineTest {
     IHub.AssetConfig memory config = hub1().getAssetConfig(assetCountBefore);
     assertEq(config.feeReceiver, FEE_RECEIVER);
 
-    address predictedProxy = TokenizationSpokeDeployer.computeProxyAddress(
+    address predictedProxy = _computeTokenizationSpokeProxyAddress(
       address(hub1()),
       address(newToken),
       'Tokenized NEW',
@@ -803,7 +803,7 @@ contract HubEngineTest is BaseConfigEngineTest {
     // the skip path must not deploy or register a TokenizationSpoke: only the fee receiver spoke exists
     assertEq(hub1().getSpokeCount(expectedAssetId), 1);
 
-    address predictedProxy = TokenizationSpokeDeployer.computeProxyAddress(
+    address predictedProxy = _computeTokenizationSpokeProxyAddress(
       address(hub1()),
       address(newToken),
       '',
@@ -824,7 +824,7 @@ contract HubEngineTest is BaseConfigEngineTest {
       symbol: 'tNEW'
     });
 
-    address predictedProxy = TokenizationSpokeDeployer.computeProxyAddress(
+    address predictedProxy = _computeTokenizationSpokeProxyAddress(
       address(hub1()),
       address(newToken),
       'Tokenized NEW',
@@ -922,7 +922,7 @@ contract HubEngineTest is BaseConfigEngineTest {
     uint256 assetCountBefore = hub1().getAssetCount();
     engine.executeHubAssetListings(_toAssetListingArray(listing));
 
-    address predictedProxy = TokenizationSpokeDeployer.computeProxyAddress(
+    address predictedProxy = _computeTokenizationSpokeProxyAddress(
       address(hub1()),
       address(newToken),
       'Tokenized NEW',
@@ -958,7 +958,7 @@ contract HubEngineTest is BaseConfigEngineTest {
   }
 
   function test_computeImplementationAddress() public view {
-    address predicted = TokenizationSpokeDeployer.computeImplementationAddress(
+    address predicted = _computeTokenizationSpokeImplementationAddress(
       address(hub1()),
       address(newToken),
       'Tokenized NEW',
@@ -969,13 +969,13 @@ contract HubEngineTest is BaseConfigEngineTest {
 
   function test_tokenizationSpokeDeployer_deploy_revertsOnZeroProxyAdminOwner() public {
     vm.expectRevert(TokenizationSpokeDeployer.InvalidProxyAdminOwner.selector);
-    TokenizationSpokeDeployer.deploy({
-      hub: address(hub1()),
-      underlying: address(newToken),
-      name: 'Tokenized NEW',
-      symbol: 'tNEW',
-      proxyAdminOwner: address(0)
-    });
+    _deployTokenizationSpoke(
+      address(hub1()),
+      address(newToken),
+      'Tokenized NEW',
+      'tNEW',
+      address(0)
+    );
   }
 
   function test_executeHubSpokeToAssetsAdditions_revert_spokeAlreadyListed() public {

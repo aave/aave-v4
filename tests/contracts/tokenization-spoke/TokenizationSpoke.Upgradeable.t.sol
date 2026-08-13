@@ -169,6 +169,15 @@ contract TokenizationSpokeUpgradeableTest is TokenizationSpokeBaseTest {
   function _deployMockTokenizationSpokeInstance(
     uint64 revision
   ) internal returns (TokenizationSpokeInstance) {
+    if (vm.envOr('TEST_VYPER', false)) {
+      return
+        TokenizationSpokeInstance(
+          vm.deployCode(
+            'MockTokenizationSpokeInstance.vy:MockTokenizationSpokeInstance',
+            abi.encode(revision, address(hub1), address(tokenList.dai))
+          )
+        );
+    }
     return
       TokenizationSpokeInstance(
         address(new MockTokenizationSpokeInstance(revision, address(hub1), address(tokenList.dai)))

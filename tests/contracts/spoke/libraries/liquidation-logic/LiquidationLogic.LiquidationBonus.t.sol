@@ -7,6 +7,11 @@ contract LiquidationLogicLiquidationBonusTest is LiquidationLogicBaseTest {
   using PercentageMath for uint256;
   using SafeCast for uint256;
 
+  function setUp() public override {
+    super.setUp();
+    _useVyperCalculationLogic();
+  }
+
   function test_calculateLiquidationBonus_MinBonusDueToRounding() public view {
     uint256 liquidationBonus = liquidationLogicWrapper.calculateLiquidationBonus({
       healthFactorForMaxBonus: 0.8e18,

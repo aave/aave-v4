@@ -430,10 +430,19 @@ library AaveV4TestOrchestration {
     uint16 maxUserReservesLimit,
     bytes32 salt
   ) internal returns (ISpokeInstance) {
-    bytes memory initCode = abi.encodePacked(
-      vm.getCode('src/spoke/instances/SpokeInstance.sol:SpokeInstance'),
-      abi.encode(oracle, maxUserReservesLimit)
-    );
+    bool useVyper = vm.envOr('TEST_VYPER', false);
+    string memory artifact = useVyper
+      ? 'SpokeInstance.vy:SpokeInstance'
+      : 'src/spoke/instances/SpokeInstance.sol:SpokeInstance';
+    bytes memory constructorArgs = abi.encode(oracle, maxUserReservesLimit);
+    if (useVyper) {
+      address liquidationLogic = _create2Deploy(
+        salt,
+        vm.getCode('LiquidationLogicContract.vy:LiquidationLogicContract')
+      );
+      constructorArgs = abi.encode(liquidationLogic, oracle, maxUserReservesLimit);
+    }
+    bytes memory initCode = abi.encodePacked(vm.getCode(artifact), constructorArgs);
     return ISpokeInstance(_create2Deploy(salt, initCode));
   }
 

@@ -5,9 +5,7 @@ import 'tests/contracts/position-manager/ConfigPositionManager/ConfigPositionMan
 
 contract ConfigPositionManagerPermitTest is ConfigPositionManagerBaseTest {
   function test_eip712Domain() public {
-    ConfigPositionManager instance = new ConfigPositionManager{salt: bytes32(vm.randomUint())}(
-      vm.randomAddress()
-    );
+    ConfigPositionManager instance = _deployConfigPositionManager(vm.randomAddress());
     (
       bytes1 fields,
       string memory name,
@@ -28,9 +26,7 @@ contract ConfigPositionManagerPermitTest is ConfigPositionManagerBaseTest {
   }
 
   function test_DOMAIN_SEPARATOR() public {
-    ConfigPositionManager instance = new ConfigPositionManager{salt: bytes32(vm.randomUint())}(
-      vm.randomAddress()
-    );
+    ConfigPositionManager instance = _deployConfigPositionManager(vm.randomAddress());
     bytes32 expectedDomainSeparator = keccak256(
       abi.encode(
         keccak256(

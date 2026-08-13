@@ -2,21 +2,30 @@
 pragma solidity ^0.8.0;
 
 import 'tests/setup/Base.t.sol';
+import {MathUtilsWrapper} from 'tests/helpers/mocks/MathUtilsWrapper.sol';
 
 /// forge-config: default.allow_internal_expect_revert = true
 contract MathUtilsTest is Base {
   using SafeCast for uint256;
 
   int256 internal constant INT256_MAX = type(int256).max;
+  MathUtilsWrapper internal m;
 
-  function test_constants() public pure {
-    assertEq(MathUtils.SECONDS_PER_YEAR, 365 days);
+  function setUp() public override {
+    m = new MathUtilsWrapper();
+    if (vm.envOr('TEST_VYPER', false)) {
+      vm.etch(address(m), vm.getDeployedCode('MathHarness.vy:MathHarness'));
+    }
+  }
+
+  function test_constants() public view {
+    assertEq(m.SECONDS_PER_YEAR(), 365 days);
   }
 
   function test_calculateLinearInterest() public {
     uint40 previousTimestamp = uint40(vm.getBlockTimestamp());
     skip(365 days * 7);
-    assertEq(MathUtils.calculateLinearInterest(0.08e27, previousTimestamp), 1.56e27);
+    assertEq(m.calculateLinearInterest(0.08e27, previousTimestamp), 1.56e27);
   }
 
   function test_fuzz_calculateLinearInterest(
@@ -28,7 +37,7 @@ contract MathUtilsTest is Base {
     vm.warp(previousTimestamp);
     skip(skipTime);
     assertEq(
-      MathUtils.calculateLinearInterest(rate, previousTimestamp),
+      m.calculateLinearInterest(rate, previousTimestamp),
       1e27 + (uint256(rate) * uint256(skipTime)) / 365 days
     );
   }
@@ -44,7 +53,7 @@ contract MathUtilsTest is Base {
     currentTimestamp = bound(currentTimestamp, 1, MAX_SKIP_TIME).toUint40();
     vm.warp(currentTimestamp);
     vm.expectRevert();
-    MathUtils.calculateLinearInterest(uint96(vm.randomUint()), currentTimestamp + 1);
+    m.calculateLinearInterest(uint96(vm.randomUint()), currentTimestamp + 1);
   }
 
   function test_calculateLinearInterest_add_edge() public {
@@ -54,30 +63,30 @@ contract MathUtilsTest is Base {
 
     vm.warp(skipTime);
     assertEq(
-      MathUtils.calculateLinearInterest(rate, previousTimestamp),
+      m.calculateLinearInterest(rate, previousTimestamp),
       1e27 + (uint256(rate) * uint256(skipTime)) / 365 days
     );
 
     skipTime = type(uint120).max;
     vm.warp(skipTime);
     assertEq(
-      MathUtils.calculateLinearInterest(rate, previousTimestamp),
+      m.calculateLinearInterest(rate, previousTimestamp),
       1e27 + (uint256(rate) * uint256(skipTime)) / 365 days
     );
   }
 
-  function test_min(uint256 a, uint256 b) public pure {
-    assertEq(MathUtils.min(a, b), a < b ? a : b);
+  function test_min(uint256 a, uint256 b) public view {
+    assertEq(m.min(a, b), a < b ? a : b);
   }
 
   function test_add_positive_operand(uint256 a, int256 b) public {
     vm.assume(b >= 0);
     if (a > UINT256_MAX - uint256(b)) {
       vm.expectRevert(stdError.arithmeticError);
-      MathUtils.add(a, b);
+      m.add(a, b);
     } else {
       uint256 expected = a + uint256(b);
-      assertEq(MathUtils.add(a, b), expected);
+      assertEq(m.add(a, b), expected);
     }
   }
 
@@ -85,45 +94,45 @@ contract MathUtilsTest is Base {
     b = bound(b, type(int256).min + 1, 0); // -b doesn't overflow uint256
     if (a < uint256(-b)) {
       vm.expectRevert(stdError.arithmeticError);
-      MathUtils.add(a, b);
+      m.add(a, b);
     } else {
       uint256 expected = a - uint256(-b);
-      assertEq(MathUtils.add(a, b), expected);
+      assertEq(m.add(a, b), expected);
     }
   }
 
   function test_add_edge_cases() public {
-    assertEq(MathUtils.add(100, 0), 100);
-    assertEq(MathUtils.add(0, 50), 50);
+    assertEq(m.add(100, 0), 100);
+    assertEq(m.add(0, 50), 50);
 
     vm.expectRevert(stdError.arithmeticError);
-    MathUtils.add(0, -50);
+    m.add(0, -50);
 
-    assertEq(MathUtils.add(0, INT256_MAX), uint256(INT256_MAX));
-
-    vm.expectRevert(stdError.arithmeticError);
-    MathUtils.add(0, type(int256).min);
-
-    assertEq(MathUtils.add(uint256(INT256_MAX), type(int256).min + 1), 0);
+    assertEq(m.add(0, INT256_MAX), uint256(INT256_MAX));
 
     vm.expectRevert(stdError.arithmeticError);
-    MathUtils.add(UINT256_MAX, 1);
+    m.add(0, type(int256).min);
+
+    assertEq(m.add(uint256(INT256_MAX), type(int256).min + 1), 0);
+
+    vm.expectRevert(stdError.arithmeticError);
+    m.add(UINT256_MAX, 1);
   }
 
-  function test_zeroFloorSub(uint256 a, uint256 b) public pure {
-    assertEq(MathUtils.zeroFloorSub(a, b), a < b ? 0 : a - b);
+  function test_zeroFloorSub(uint256 a, uint256 b) public view {
+    assertEq(m.zeroFloorSub(a, b), a < b ? 0 : a - b);
   }
 
-  function test_uncheckedAdd(uint256 a, uint256 b) public pure {
-    uint256 result = MathUtils.uncheckedAdd(a, b);
+  function test_uncheckedAdd(uint256 a, uint256 b) public view {
+    uint256 result = m.uncheckedAdd(a, b);
     assertEq(result, b <= UINT256_MAX - a ? a + b : a - (UINT256_MAX - b) - 1);
   }
 
-  function test_signedSub(uint256 a, uint256 b) public pure {
+  function test_signedSub(uint256 a, uint256 b) public view {
     a = bound(a, 0, uint256(INT256_MAX));
     b = bound(b, 0, uint256(INT256_MAX));
 
-    int256 result = MathUtils.signedSub(a, b);
+    int256 result = m.signedSub(a, b);
     assertEq(result, int256(a) - int256(b));
 
     assertTrue(result >= type(int256).min);
@@ -133,19 +142,19 @@ contract MathUtilsTest is Base {
   function test_signedSub_revertsWith_SafeCastOverflowedUintToInt(uint256 a) public {
     a = bound(a, uint256(INT256_MAX) + 1, UINT256_MAX);
     vm.expectRevert(abi.encodeWithSelector(SafeCast.SafeCastOverflowedUintToInt.selector, a));
-    MathUtils.signedSub(a, 0);
+    m.signedSub(a, 0);
 
     vm.expectRevert(abi.encodeWithSelector(SafeCast.SafeCastOverflowedUintToInt.selector, a));
-    MathUtils.signedSub(0, a);
+    m.signedSub(0, a);
   }
 
-  function test_uncheckedSub(uint256 a, uint256 b) public pure {
+  function test_uncheckedSub(uint256 a, uint256 b) public view {
     uint256 result = a >= b ? a - b : UINT256_MAX - b + a + 1;
-    assertEq(MathUtils.uncheckedSub(a, b), result);
+    assertEq(m.uncheckedSub(a, b), result);
   }
 
-  function test_uncheckedExp(uint256 a, uint256 b) public pure {
-    uint256 result = MathUtils.uncheckedExp(a, b);
+  function test_uncheckedExp(uint256 a, uint256 b) public view {
+    uint256 result = m.uncheckedExp(a, b);
 
     uint256 expectedRes = 1;
     uint256 aPow = a;
@@ -167,34 +176,34 @@ contract MathUtilsTest is Base {
   function test_fuzz_divUp(uint256 a, uint256 b) external {
     if (b == 0) {
       vm.expectRevert();
-      MathUtils.divUp(a, b);
+      m.divUp(a, b);
     } else {
-      uint256 result = MathUtils.divUp(a, b);
+      uint256 result = m.divUp(a, b);
       assertEq(result, a / b + (a % b > 0 ? 1 : 0));
     }
   }
 
-  function test_mulDivDown_WithRemainder() external pure {
-    assertEq(MathUtils.mulDivDown(2, 13, 3), 8); // 26 / 3 = 8.666 -> floor -> 8
+  function test_mulDivDown_WithRemainder() external view {
+    assertEq(m.mulDivDown(2, 13, 3), 8); // 26 / 3 = 8.666 -> floor -> 8
   }
 
-  function test_mulDivDown_NoRemainder() external pure {
-    assertEq(MathUtils.mulDivDown(12, 6, 4), 18); // 72 / 4 = 18, no floor
+  function test_mulDivDown_NoRemainder() external view {
+    assertEq(m.mulDivDown(12, 6, 4), 18); // 72 / 4 = 18, no floor
   }
 
-  function test_mulDivDown_ZeroAOrB() external pure {
-    assertEq(MathUtils.mulDivDown(0, 10, 5), 0);
-    assertEq(MathUtils.mulDivDown(10, 0, 5), 0);
+  function test_mulDivDown_ZeroAOrB() external view {
+    assertEq(m.mulDivDown(0, 10, 5), 0);
+    assertEq(m.mulDivDown(10, 0, 5), 0);
   }
 
   function test_mulDivDown_RevertOnDivByZero() external {
     vm.expectRevert();
-    MathUtils.mulDivDown(10, 10, 0);
+    m.mulDivDown(10, 10, 0);
   }
 
   function test_mulDivDown_RevertOnOverflow() external {
     vm.expectRevert();
-    MathUtils.mulDivDown(UINT256_MAX, 2, 1); // max * 2 will overflow
+    m.mulDivDown(UINT256_MAX, 2, 1); // max * 2 will overflow
   }
 
   function test_fuzz_mulDivDown(uint256 a, uint256 b, uint256 c) external {
@@ -207,33 +216,33 @@ contract MathUtilsTest is Base {
 
     if (!safetyCheck || c == 0) {
       vm.expectRevert();
-      MathUtils.mulDivDown(a, b, c);
+      m.mulDivDown(a, b, c);
     } else {
-      assertEq(MathUtils.mulDivDown(a, b, c), result / c);
+      assertEq(m.mulDivDown(a, b, c), result / c);
     }
   }
 
-  function test_mulDivUp_WithRemainder() external pure {
-    assertEq(MathUtils.mulDivUp(5, 5, 3), 9); // 25 / 3 = 8.333 -> ceil -> 9
+  function test_mulDivUp_WithRemainder() external view {
+    assertEq(m.mulDivUp(5, 5, 3), 9); // 25 / 3 = 8.333 -> ceil -> 9
   }
 
-  function test_mulDivUp_NoRemainder() external pure {
-    assertEq(MathUtils.mulDivUp(12, 6, 4), 18); // 72 / 4 = 18, no ceil
+  function test_mulDivUp_NoRemainder() external view {
+    assertEq(m.mulDivUp(12, 6, 4), 18); // 72 / 4 = 18, no ceil
   }
 
-  function test_mulDivUp_ZeroAOrB() external pure {
-    assertEq(MathUtils.mulDivUp(0, 10, 5), 0);
-    assertEq(MathUtils.mulDivUp(10, 0, 5), 0);
+  function test_mulDivUp_ZeroAOrB() external view {
+    assertEq(m.mulDivUp(0, 10, 5), 0);
+    assertEq(m.mulDivUp(10, 0, 5), 0);
   }
 
   function test_mulDivUp_RevertOnDivByZero() external {
     vm.expectRevert();
-    MathUtils.mulDivUp(10, 10, 0);
+    m.mulDivUp(10, 10, 0);
   }
 
   function test_mulDivUp_RevertOnOverflow() external {
     vm.expectRevert();
-    MathUtils.mulDivUp(UINT256_MAX, 2, 1); // max * 2 will overflow
+    m.mulDivUp(UINT256_MAX, 2, 1); // max * 2 will overflow
   }
 
   function test_fuzz_mulDivUp(uint256 a, uint256 b, uint256 c) external {
@@ -245,9 +254,9 @@ contract MathUtilsTest is Base {
     }
     if (!safetyCheck || c == 0) {
       vm.expectRevert();
-      MathUtils.mulDivUp(a, b, c);
+      m.mulDivUp(a, b, c);
     } else {
-      assertEq(MathUtils.mulDivUp(a, b, c), result / c + (result % c > 0 ? 1 : 0));
+      assertEq(m.mulDivUp(a, b, c), result / c + (result % c > 0 ? 1 : 0));
     }
   }
 }

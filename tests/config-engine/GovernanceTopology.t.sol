@@ -62,7 +62,7 @@ contract ConfigEngineGovernanceTopologyTest is BaseConfigEngineTest {
 
   function test_hubAssetListing_tokenizationSpoke_deterministicAddress() public {
     uint256 expectedAssetId = hub1().getAssetCount();
-    address predictedProxy = TokenizationSpokeDeployer.computeProxyAddress(
+    address predictedProxy = _computeTokenizationSpokeProxyAddress(
       address(hub1()),
       address(newToken),
       'Tokenized NEW',

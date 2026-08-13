@@ -10,6 +10,12 @@ contract TreasurySpokeTest is Base {
 
   function setUp() public virtual override {
     super.setUp();
+    if (vm.envOr('TEST_VYPER', false)) {
+      vm.etch(
+        _getImplementationAddress(address(treasurySpoke)),
+        vm.getDeployedCode('TreasurySpokeInstance.vy:TreasurySpokeInstance')
+      );
+    }
     _testToken = new MockERC20();
     (hub2, ) = _hub2Fixture();
 

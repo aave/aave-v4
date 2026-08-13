@@ -13,7 +13,7 @@ contract ConfigPositionManagerBaseTest is Base, ConfigPositionManagerHelpers {
   function setUp() public virtual override {
     super.setUp();
 
-    positionManager = new ConfigPositionManager(address(ADMIN));
+    positionManager = _deployConfigPositionManager(address(ADMIN));
 
     emptyPermissions = ConfigPermissions.wrap(0);
 
@@ -117,5 +117,17 @@ contract ConfigPositionManagerBaseTest is Base, ConfigPositionManagerHelpers {
     address delegatee
   ) internal view returns (bool) {
     return _canUpdateUserDynamicConfig(positionManager, spoke, delegator, delegatee);
+  }
+
+  function _deployConfigPositionManager(address owner) internal returns (ConfigPositionManager) {
+    if (vm.envOr('TEST_VYPER', false)) {
+      return
+        ConfigPositionManager(
+          payable(
+            vm.deployCode('ConfigPositionManager.vy:ConfigPositionManager', abi.encode(owner))
+          )
+        );
+    }
+    return new ConfigPositionManager(owner);
   }
 }

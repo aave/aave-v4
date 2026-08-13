@@ -8,6 +8,12 @@ contract PositionStatusMapTest is Base {
 
   function setUp() public override {
     p = new PositionStatusMapWrapper();
+    if (vm.envOr('TEST_VYPER', false)) {
+      vm.etch(
+        address(p),
+        vm.getDeployedCode('PositionStatusMapHarness.vy:PositionStatusMapHarness')
+      );
+    }
   }
 
   function test_constants() public view {
@@ -276,7 +282,9 @@ contract PositionStatusMapTest is Base {
 
   function test_setters_use_correct_slot(uint256 a) public {
     uint256 bucket = a / 128;
-    bytes32 slot = keccak256(abi.encode(bucket, p.slot()));
+    bytes32 slot = vm.envOr('TEST_VYPER', false)
+      ? keccak256(abi.encode(p.slot(), bucket))
+      : keccak256(abi.encode(bucket, p.slot()));
 
     vm.record();
     p.setUsingAsCollateral(a, vm.randomBool());
@@ -306,7 +314,10 @@ contract PositionStatusMapTest is Base {
     (bytes32[] memory reads, bytes32[] memory writes) = vm.accesses(address(p));
     assertEq(writes.length, 0);
     assertEq(reads.length, 1);
-    assertEq(reads[0], keccak256(abi.encode(bucket, p.slot())));
+    bytes32 expectedSlot = vm.envOr('TEST_VYPER', false)
+      ? keccak256(abi.encode(p.slot(), bucket))
+      : keccak256(abi.encode(bucket, p.slot()));
+    assertEq(reads[0], expectedSlot);
   }
 
   function test_next(uint256 reserveCount) public {

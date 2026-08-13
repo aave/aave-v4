@@ -20,7 +20,9 @@ contract EngineFlagsTest is Test {
   EngineFlagsHarness internal _harness;
 
   function setUp() public {
-    _harness = new EngineFlagsHarness();
+    _harness = vm.envOr('TEST_VYPER', false)
+      ? EngineFlagsHarness(vm.deployCode('EngineFlagsHarness.vy:EngineFlagsHarness'))
+      : new EngineFlagsHarness();
   }
 
   function test_toBool_zero_returnsFalse() public view {

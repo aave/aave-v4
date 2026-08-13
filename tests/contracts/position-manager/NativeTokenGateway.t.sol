@@ -10,7 +10,7 @@ contract NativeTokenGatewayTest is Base {
   function setUp() public virtual override {
     super.setUp();
 
-    nativeTokenGateway = new NativeTokenGateway(address(tokenList.weth), address(ADMIN));
+    nativeTokenGateway = _deployNativeTokenGateway(address(tokenList.weth), address(ADMIN));
 
     vm.prank(SPOKE_ADMIN);
     spoke1.updatePositionManager(address(nativeTokenGateway), true);
@@ -23,7 +23,7 @@ contract NativeTokenGatewayTest is Base {
   }
 
   function test_constructor() public {
-    NativeTokenGateway gateway = new NativeTokenGateway(address(tokenList.weth), address(ADMIN));
+    NativeTokenGateway gateway = _deployNativeTokenGateway(address(tokenList.weth), address(ADMIN));
 
     assertEq(gateway.NATIVE_TOKEN_WRAPPER(), address(tokenList.weth));
     assertEq(gateway.owner(), address(ADMIN));
@@ -33,7 +33,7 @@ contract NativeTokenGatewayTest is Base {
 
   function test_constructor_revertsWith_InvalidAddress() public {
     vm.expectRevert(IPositionManagerBase.InvalidAddress.selector);
-    new NativeTokenGateway(address(0), address(ADMIN));
+    _deployNativeTokenGateway(address(0), address(ADMIN));
   }
 
   function test_supplyNative() public {
@@ -935,6 +935,24 @@ contract NativeTokenGatewayTest is Base {
 
     vm.expectRevert(IPositionManagerBase.UnsupportedAction.selector);
     nativeTokenGateway.multicall(calls);
+  }
+
+  function _deployNativeTokenGateway(
+    address wrapper,
+    address owner
+  ) internal returns (NativeTokenGateway) {
+    if (vm.envOr('TEST_VYPER', false)) {
+      return
+        NativeTokenGateway(
+          payable(
+            vm.deployCode(
+              'NativeTokenGateway.vy:NativeTokenGateway',
+              abi.encode(wrapper, owner)
+            )
+          )
+        );
+    }
+    return new NativeTokenGateway(wrapper, owner);
   }
 
   function _getUserData(address user) internal view returns (ISpoke.UserPosition memory) {
