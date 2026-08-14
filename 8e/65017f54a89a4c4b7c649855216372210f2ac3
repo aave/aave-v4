@@ -1,0 +1,21 @@
+snapshots/Spoke.Operations.json
+  s_fef46d571ae928::t_b4a8ec421e1c3a 2-3,9-13,16-19,24-33
+snapshots/Spoke.Operations.ZeroRiskPremium.json
+  s_fef46d571ae928::t_b4a8ec421e1c3a 2-3,9-13,16-19,24-33
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "8e65017f54a89a4c4b7c649855216372210f2ac3",
+  "prompts": {},
+  "sessions": {
+    "s_fef46d571ae928": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019ff615-9d86-7333-99d0-afdf41eeb642",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "AlbertoCentonze <11707683+AlbertoCentonze@users.noreply.github.com>"
+    }
+  }
+}
