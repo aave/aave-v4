@@ -14,8 +14,8 @@ contract PositionManagerBaseTest is Base {
     positionManager2 = new PositionManagerNoMulticall(address(ADMIN));
 
     vm.startPrank(SPOKE_ADMIN);
-    spoke1.updatePositionManager(address(positionManager), true);
-    spoke1.updatePositionManager(address(positionManager2), true);
+    _updatePositionManager(spoke1, address(positionManager), true);
+    _updatePositionManager(spoke1, address(positionManager2), true);
     vm.stopPrank();
   }
 
@@ -41,24 +41,32 @@ contract PositionManagerBaseTest is Base {
   }
 
   function test_setSelfAsUserPositionManagerWithSig() public {
-    ISpoke.PositionManagerUpdate[] memory updates = new ISpoke.PositionManagerUpdate[](1);
-    updates[0] = ISpoke.PositionManagerUpdate(address(positionManager), true);
+    IPositionManagerGate.PositionManagerUpdate[]
+      memory updates = new IPositionManagerGate.PositionManagerUpdate[](1);
+    updates[0] = IPositionManagerGate.PositionManagerUpdate(address(positionManager), true);
 
-    ISpoke.SetUserPositionManagers memory p = ISpoke.SetUserPositionManagers({
-      onBehalfOf: alice,
-      updates: updates,
-      nonce: spoke1.nonces(address(alice), _randomNonceKey()), // note: this typed sig is forwarded to spoke1
-      deadline: _warpBeforeRandomDeadline(MAX_SKIP_TIME)
-    });
+    IPositionManagerGate.SetUserPositionManagers memory p = IPositionManagerGate
+      .SetUserPositionManagers({
+        spoke: address(spoke1),
+        onBehalfOf: alice,
+        updates: updates,
+        nonce: IPositionManagerGate(spoke1.GATE()).nonces(address(alice), _randomNonceKey()), // note: this typed sig is forwarded to spoke1
+        deadline: _warpBeforeRandomDeadline(MAX_SKIP_TIME)
+      });
     bytes memory signature = _sign(alicePk, _getTypedDataHash(spoke1, p));
 
     vm.prank(ADMIN);
     positionManager.registerSpoke(address(spoke1), true);
 
-    assertFalse(spoke1.isPositionManager(alice, address(positionManager)));
+    assertFalse(_isPositionManager(spoke1, alice, address(positionManager)));
 
-    vm.expectEmit(address(spoke1));
-    emit ISpoke.SetUserPositionManager(alice, address(positionManager), p.updates[0].approve);
+    vm.expectEmit(spoke1.GATE());
+    emit IPositionManagerGate.SetUserPositionManager(
+      address(spoke1),
+      alice,
+      address(positionManager),
+      p.updates[0].approve
+    );
 
     vm.prank(vm.randomAddress());
     positionManager.setSelfAsUserPositionManagerWithSig(
@@ -70,8 +78,8 @@ contract PositionManagerBaseTest is Base {
       signature
     );
 
-    _assertNonceIncrement(ISignatureGateway(address(spoke1)), alice, p.nonce); // note: nonce consumed on spoke1
-    assertTrue(spoke1.isPositionManager(alice, address(positionManager)));
+    _assertNonceIncrement(IPositionManagerGate(spoke1.GATE()), alice, p.nonce);
+    assertTrue(_isPositionManager(spoke1, alice, address(positionManager)));
   }
 
   function test_permitReserveUnderlying_revertsWith_ReserveNotListed() public {
@@ -268,16 +276,16 @@ contract PositionManagerBaseTest is Base {
     address user = vm.randomAddress();
 
     vm.prank(user);
-    spoke1.setUserPositionManager(address(positionManager), true);
+    _setUserPositionManager(spoke1, address(positionManager), true);
     vm.prank(ADMIN);
     positionManager.registerSpoke(address(spoke1), true);
 
-    assertTrue(spoke1.isPositionManager(user, address(positionManager)));
+    assertTrue(_isPositionManager(spoke1, user, address(positionManager)));
 
     vm.prank(ADMIN);
     positionManager.renouncePositionManagerRole(address(spoke1), user);
 
-    assertFalse(spoke1.isPositionManager(user, address(positionManager)));
+    assertFalse(_isPositionManager(spoke1, user, address(positionManager)));
   }
 
   function test_renouncePositionManagerRole_revertsWith_OwnableUnauthorizedAccount() public {
@@ -285,7 +293,7 @@ contract PositionManagerBaseTest is Base {
     while (caller == ADMIN) caller = vm.randomAddress();
 
     vm.prank(caller);
-    spoke1.setUserPositionManager(address(positionManager), true);
+    _setUserPositionManager(spoke1, address(positionManager), true);
     vm.prank(ADMIN);
     positionManager.registerSpoke(address(spoke1), true);
 

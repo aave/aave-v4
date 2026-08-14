@@ -207,6 +207,7 @@ contract PostDeploymentVerificationTest is PostDeploymentVerificationBase, AaveV
       spokeConfiguratorAdmin: params.spokeConfiguratorAdmin,
       gatewayOwner: params.gatewayOwner,
       positionManagerOwner: params.positionManagerOwner,
+      spokeGate: address(0),
       nativeWrapper: (params.deployNativeTokenGateway && params.useValidNativeWrapper)
         ? weth
         : address(0),
@@ -261,6 +262,7 @@ contract PostDeploymentVerificationTest is PostDeploymentVerificationBase, AaveV
       spokeConfiguratorAdmin: makeAddr('spokeConfiguratorAdmin'),
       gatewayOwner: makeAddr('gatewayOwner'),
       positionManagerOwner: makeAddr('positionManagerOwner'),
+      spokeGate: address(0),
       nativeWrapper: weth,
       deployNativeTokenGateway: true,
       deploySignatureGateway: true,

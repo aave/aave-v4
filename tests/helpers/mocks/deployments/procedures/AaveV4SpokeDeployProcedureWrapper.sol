@@ -10,6 +10,7 @@ contract AaveV4SpokeDeployProcedureWrapper is AaveV4SpokeDeployProcedure {
     address proxyAdminOwner,
     address authority,
     address oracle,
+    address gate,
     bytes memory spokeBytecode,
     uint16 maxUserReservesLimit,
     bytes32 salt
@@ -19,6 +20,7 @@ contract AaveV4SpokeDeployProcedureWrapper is AaveV4SpokeDeployProcedure {
         proxyAdminOwner,
         authority,
         oracle,
+        gate,
         spokeBytecode,
         maxUserReservesLimit,
         salt

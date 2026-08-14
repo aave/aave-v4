@@ -793,14 +793,17 @@ contract SpokeConfiguratorTest is Base {
     for (uint256 i = 0; i < 2; i += 1) {
       bool active = (i == 0) ? true : false;
       vm.expectCall(
-        spokeAddr,
-        abi.encodeCall(ISpoke.updatePositionManager, (newPositionManager, active))
+        spoke.GATE(),
+        abi.encodeCall(
+          IPositionManagerGate.updatePositionManager,
+          (spokeAddr, newPositionManager, active)
+        )
       );
-      vm.expectEmit(address(spoke));
-      emit ISpoke.UpdatePositionManager(newPositionManager, active);
+      vm.expectEmit(spoke.GATE());
+      emit IPositionManagerGate.UpdatePositionManager(spokeAddr, newPositionManager, active);
       vm.prank(SPOKE_CONFIGURATOR_ADMIN);
       spokeConfigurator.updatePositionManager(spokeAddr, newPositionManager, active);
-      assertEq(spoke.isPositionManagerActive(newPositionManager), active);
+      assertEq(_isPositionManagerActive(spoke, newPositionManager), active);
     }
   }
 }

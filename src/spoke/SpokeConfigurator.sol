@@ -4,6 +4,7 @@ pragma solidity 0.8.28;
 import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
 import {AccessManaged} from 'src/dependencies/openzeppelin/AccessManaged.sol';
 import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
+import {IPositionManagerGate} from 'src/spoke/interfaces/IPositionManagerGate.sol';
 import {ISpokeConfigurator} from 'src/spoke/interfaces/ISpokeConfigurator.sol';
 
 /// @title SpokeConfigurator
@@ -285,7 +286,11 @@ contract SpokeConfigurator is AccessManaged, ISpokeConfigurator {
     address positionManager,
     bool active
   ) external restricted {
-    ISpoke(spoke).updatePositionManager(positionManager, active);
+    IPositionManagerGate(ISpoke(spoke).GATE()).updatePositionManager(
+      spoke,
+      positionManager,
+      active
+    );
   }
 
   /// @dev Returns the last dynamic config key of the reserve for the specified Spoke.

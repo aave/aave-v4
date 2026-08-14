@@ -7,6 +7,7 @@ import {Ownable2Step, Ownable} from 'src/dependencies/openzeppelin/Ownable2Step.
 import {IMulticall, Multicall} from 'src/utils/Multicall.sol';
 import {Rescuable} from 'src/utils/Rescuable.sol';
 import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
+import {IPositionManagerGate} from 'src/spoke/interfaces/IPositionManagerGate.sol';
 import {IPositionManagerBase} from 'src/position-manager/interfaces/IPositionManagerBase.sol';
 
 /// @title PositionManagerBase
@@ -45,11 +46,17 @@ abstract contract PositionManagerBase is IPositionManagerBase, Ownable2Step, Res
     uint256 deadline,
     bytes calldata signature
   ) external onlyRegisteredSpoke(spoke) {
-    ISpoke.PositionManagerUpdate[] memory updates = new ISpoke.PositionManagerUpdate[](1);
-    updates[0] = ISpoke.PositionManagerUpdate({positionManager: address(this), approve: approve});
+    IPositionManagerGate.PositionManagerUpdate[]
+      memory updates = new IPositionManagerGate.PositionManagerUpdate[](1);
+    updates[0] = IPositionManagerGate.PositionManagerUpdate({
+      positionManager: address(this),
+      approve: approve
+    });
+    IPositionManagerGate gate = IPositionManagerGate(ISpoke(spoke).GATE());
     try
-      ISpoke(spoke).setUserPositionManagersWithSig(
-        ISpoke.SetUserPositionManagers({
+      gate.setUserPositionManagersWithSig(
+        IPositionManagerGate.SetUserPositionManagers({
+          spoke: spoke,
           onBehalfOf: onBehalfOf,
           updates: updates,
           nonce: nonce,
@@ -90,7 +97,7 @@ abstract contract PositionManagerBase is IPositionManagerBase, Ownable2Step, Res
     address spoke,
     address user
   ) external onlyOwner onlyRegisteredSpoke(spoke) {
-    ISpoke(spoke).renouncePositionManagerRole(user);
+    IPositionManagerGate(ISpoke(spoke).GATE()).renouncePositionManagerRole(spoke, user);
   }
 
   /// @inheritdoc IMulticall

@@ -49,6 +49,7 @@ contract AaveV4DeployAnvil is AaveV4DeployBatchBaseScript {
       spokeConfiguratorAdmin: address(1),
       gatewayOwner: address(2),
       positionManagerOwner: address(3),
+      spokeGate: address(0),
       nativeWrapper: weth,
       deployNativeTokenGateway: true,
       deploySignatureGateway: true,

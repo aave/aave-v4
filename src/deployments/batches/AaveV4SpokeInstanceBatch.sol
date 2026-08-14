@@ -16,6 +16,7 @@ contract AaveV4SpokeInstanceBatch is AaveV4SpokeDeployProcedure, AaveV4AaveOracl
   /// @dev Constructor.
   /// @param proxyAdminOwner_ The owner of the proxy admin.
   /// @param authority_ The access-control authority for the Spoke.
+  /// @param gate_ The immutable gate for the Spoke.
   /// @param spokeBytecode_ The creation bytecode of the Spoke implementation.
   /// @param oracleDecimals_ The decimal precision for the AaveOracle.
   /// @param maxUserReservesLimit_ The maximum number of reserves a user can interact with.
@@ -23,6 +24,7 @@ contract AaveV4SpokeInstanceBatch is AaveV4SpokeDeployProcedure, AaveV4AaveOracl
   constructor(
     address proxyAdminOwner_,
     address authority_,
+    address gate_,
     bytes memory spokeBytecode_,
     uint8 oracleDecimals_,
     uint16 maxUserReservesLimit_,
@@ -33,6 +35,7 @@ contract AaveV4SpokeInstanceBatch is AaveV4SpokeDeployProcedure, AaveV4AaveOracl
       proxyAdminOwner: proxyAdminOwner_,
       authority: authority_,
       oracle: aaveOracle,
+      gate: gate_,
       spokeBytecode: spokeBytecode_,
       salt: salt_,
       maxUserReservesLimit: maxUserReservesLimit_
@@ -40,12 +43,14 @@ contract AaveV4SpokeInstanceBatch is AaveV4SpokeDeployProcedure, AaveV4AaveOracl
     IAaveOracle(aaveOracle).setSpoke(spokeProxy);
 
     require(ISpoke(spokeProxy).ORACLE() == aaveOracle, 'spoke oracle mismatch');
+    require(ISpoke(spokeProxy).GATE() == gate_, 'spoke gate mismatch');
     require(IAaveOracle(aaveOracle).spoke() == spokeProxy, 'oracle spoke mismatch');
 
     _report = BatchReports.SpokeInstanceBatchReport({
       aaveOracle: aaveOracle,
       spokeImplementation: spokeImplementation,
-      spokeProxy: spokeProxy
+      spokeProxy: spokeProxy,
+      gate: gate_
     });
   }
 

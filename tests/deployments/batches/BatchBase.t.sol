@@ -31,12 +31,14 @@ import {IAccessManagerEnumerable} from 'src/access/interfaces/IAccessManagerEnum
 import {TreasurySpoke} from 'src/spoke/TreasurySpoke.sol';
 import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 import {IPriceOracle} from 'src/spoke/interfaces/IPriceOracle.sol';
+import {PositionManagerGate} from 'src/spoke/gates/PositionManagerGate.sol';
 
 contract BatchBaseTest is Create2TestHelper {
   address public admin = makeAddr('admin');
   address public feeReceiver = makeAddr('feeReceiver');
   bytes32 public salt;
   address public accessManager;
+  address public gate;
   address public nativeWrapper;
   bytes internal hubBytecode;
   bytes internal spokeBytecode;
@@ -51,6 +53,7 @@ contract BatchBaseTest is Create2TestHelper {
     // used Hub, Spoke, Configurator batches
     AaveV4AuthorityBatch authorityBatch = new AaveV4AuthorityBatch({admin_: admin, salt_: salt});
     accessManager = authorityBatch.getReport().accessManager;
+    gate = address(new PositionManagerGate(accessManager));
 
     // used by Gateway batch
     nativeWrapper = address(new WETH9());

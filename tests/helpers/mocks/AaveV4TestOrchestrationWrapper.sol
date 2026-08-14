@@ -11,6 +11,17 @@ contract AaveV4TestOrchestrationWrapper {
     return address(AaveV4TestOrchestration.deploySpokeImplementation(oracle, maxUserReservesLimit));
   }
 
+  function deploySpokeImplementation(
+    address oracle,
+    uint16 maxUserReservesLimit,
+    address gate
+  ) external returns (address) {
+    return
+      address(
+        AaveV4TestOrchestration.deploySpokeImplementation(oracle, maxUserReservesLimit, gate)
+      );
+  }
+
   function deployHub(address authority, address proxyAdminOwner) external returns (address) {
     return address(AaveV4TestOrchestration.deployHub(authority, proxyAdminOwner));
   }

@@ -129,14 +129,13 @@ library Roles {
 
   /// @notice Returns the function selectors associated with the Spoke Configurator role.
   function getSpokeConfiguratorRoleSelectors() internal pure returns (bytes4[] memory) {
-    bytes4[] memory selectors = new bytes4[](7);
+    bytes4[] memory selectors = new bytes4[](6);
     selectors[0] = ISpoke.updateLiquidationConfig.selector;
     selectors[1] = ISpoke.addReserve.selector;
     selectors[2] = ISpoke.updateReserveConfig.selector;
     selectors[3] = ISpoke.updateDynamicReserveConfig.selector;
     selectors[4] = ISpoke.addDynamicReserveConfig.selector;
-    selectors[5] = ISpoke.updatePositionManager.selector;
-    selectors[6] = ISpoke.updateReservePriceSource.selector;
+    selectors[5] = ISpoke.updateReservePriceSource.selector;
     return selectors;
   }
 

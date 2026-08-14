@@ -41,12 +41,14 @@ import {ITreasurySpoke} from 'src/spoke/interfaces/ITreasurySpoke.sol';
 import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 import {IAccessManagerEnumerable} from 'src/access/interfaces/IAccessManagerEnumerable.sol';
 import {IAccessManager} from 'src/dependencies/openzeppelin/IAccessManager.sol';
+import {PositionManagerGate} from 'src/spoke/gates/PositionManagerGate.sol';
 import {ITokenizationSpoke} from 'src/spoke/interfaces/ITokenizationSpoke.sol';
 import {Create2TestHelper} from 'tests/utils/Create2TestHelper.sol';
 
 contract ProceduresBase is Create2TestHelper {
   address public owner = makeAddr('owner');
   address public accessManager;
+  address public gate;
   address public hub = makeAddr('hub');
   address public nativeWrapper = makeAddr('nativeWrapper');
   address public accessManagerAdmin = makeAddr('accessManagerAdmin');
@@ -66,6 +68,7 @@ contract ProceduresBase is Create2TestHelper {
     hubBytecode = vm.getCode('src/hub/instances/HubInstance.sol:HubInstance');
     spokeBytecode = vm.getCode('src/spoke/instances/SpokeInstance.sol:SpokeInstance');
     accessManager = address(new AccessManagerEnumerable(accessManagerAdmin));
+    gate = address(new PositionManagerGate(accessManager));
     aaveOracle = address(new AaveOracle(oracleDecimals));
     salt = keccak256('testSalt');
   }

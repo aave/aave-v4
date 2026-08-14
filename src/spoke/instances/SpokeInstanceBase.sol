@@ -13,7 +13,12 @@ abstract contract SpokeInstanceBase is Spoke {
   /// @dev During upgrade, must ensure that the new oracle is supporting existing assets on the Spoke and the replaced oracle.
   /// @param oracle_ The address of the oracle.
   /// @param maxUserReservesLimit_ The maximum number of collateral and borrow reserves a user can have.
-  constructor(address oracle_, uint16 maxUserReservesLimit_) Spoke(oracle_, maxUserReservesLimit_) {
+  /// @param gate_ The address of the gate authorizing position actions.
+  constructor(
+    address oracle_,
+    uint16 maxUserReservesLimit_,
+    address gate_
+  ) Spoke(oracle_, maxUserReservesLimit_, gate_) {
     _disableInitializers();
   }
 
@@ -21,7 +26,7 @@ abstract contract SpokeInstanceBase is Spoke {
   /// @dev The authority contract must implement the `AccessManaged` interface for access control.
   /// @param authority The address of the authority contract which manages permissions.
   function initialize(address authority) external virtual override reinitializer(SPOKE_REVISION) {
-    emit SetSpokeImmutables(ORACLE, MAX_USER_RESERVES_LIMIT);
+    emit SetSpokeImmutables(ORACLE, MAX_USER_RESERVES_LIMIT, GATE);
 
     require(authority != address(0), InvalidAddress());
     __AccessManaged_init(authority);

@@ -27,6 +27,7 @@ import {IHubConfigurator} from 'src/hub/interfaces/IHubConfigurator.sol';
 import {IHubInstance} from 'src/deployments/utils/interfaces/IHubInstance.sol';
 import {ISpokeInstance} from 'src/deployments/utils/interfaces/ISpokeInstance.sol';
 import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
+import {PositionManagerGate} from 'src/spoke/gates/PositionManagerGate.sol';
 import {Create2Utils} from 'src/deployments/utils/libraries/Create2Utils.sol';
 import {TransparentUpgradeableProxy} from 'src/dependencies/openzeppelin/TransparentUpgradeableProxy.sol';
 
@@ -72,6 +73,7 @@ library AaveV4TestOrchestration {
     report.accessManager = AaveV4DeployBase
       .deployAuthorityBatch({admin: admin, salt: salt})
       .accessManager;
+    address gate = address(new PositionManagerGate(report.accessManager));
 
     // Deploy TreasurySpoke Batch (single instance for all hubs)
     report.treasurySpoke = AaveV4DeployBase
@@ -100,6 +102,7 @@ library AaveV4TestOrchestration {
         .deploySpokeInstanceBatch({
           proxyAdminOwner: admin,
           authority: report.accessManager,
+          gate: gate,
           spokeBytecode: spokeBytecode,
           oracleDecimals: DeployConstants.ORACLE_DECIMALS,
           maxUserReservesLimit: DeployConstants.MAX_ALLOWED_USER_RESERVES_LIMIT,
@@ -161,10 +164,12 @@ library AaveV4TestOrchestration {
     bytes32 salt
   ) external returns (TestTypes.TestSpokeReport memory) {
     TestTypes.TestSpokeReport memory report;
+    address gate = address(new PositionManagerGate(accessManager));
     BatchReports.SpokeInstanceBatchReport memory spokeReport = AaveV4DeployBase
       .deploySpokeInstanceBatch({
         proxyAdminOwner: proxyAdminOwner,
         authority: accessManager,
+        gate: gate,
         spokeBytecode: spokeBytecode,
         oracleDecimals: DeployConstants.ORACLE_DECIMALS,
         maxUserReservesLimit: maxUserReservesLimit,
@@ -422,17 +427,27 @@ library AaveV4TestOrchestration {
     address oracle,
     uint16 maxUserReservesLimit
   ) internal returns (ISpokeInstance) {
-    return deploySpokeImplementation(oracle, maxUserReservesLimit, '');
+    address gate = address(new PositionManagerGate(address(1)));
+    return deploySpokeImplementation(oracle, maxUserReservesLimit, gate, '');
   }
 
   function deploySpokeImplementation(
     address oracle,
     uint16 maxUserReservesLimit,
+    address gate
+  ) internal returns (ISpokeInstance) {
+    return deploySpokeImplementation(oracle, maxUserReservesLimit, gate, '');
+  }
+
+  function deploySpokeImplementation(
+    address oracle,
+    uint16 maxUserReservesLimit,
+    address gate,
     bytes32 salt
   ) internal returns (ISpokeInstance) {
     bytes memory initCode = abi.encodePacked(
       vm.getCode('src/spoke/instances/SpokeInstance.sol:SpokeInstance'),
-      abi.encode(oracle, maxUserReservesLimit)
+      abi.encode(oracle, maxUserReservesLimit, gate)
     );
     return ISpokeInstance(_create2Deploy(salt, initCode));
   }

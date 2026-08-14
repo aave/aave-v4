@@ -27,8 +27,9 @@ contract MockSpoke is Spoke, Test {
 
   constructor(
     address oracle_,
-    uint16 maxUserReservesLimit_
-  ) Spoke(oracle_, maxUserReservesLimit_) {}
+    uint16 maxUserReservesLimit_,
+    address gate_
+  ) Spoke(oracle_, maxUserReservesLimit_, gate_) {}
 
   function initialize(address) external override {}
 
@@ -37,7 +38,7 @@ contract MockSpoke is Spoke, Test {
     uint256 reserveId,
     uint256 amount,
     address onBehalfOf
-  ) external nonReentrant onlyPositionManager(onBehalfOf) returns (uint256, uint256) {
+  ) external nonReentrant onlyPositionActionAllowed(onBehalfOf) returns (uint256, uint256) {
     Reserve storage reserve = _reserves.get(reserveId);
     UserPosition storage userPosition = _userPositions[onBehalfOf][reserveId];
     PositionStatus storage positionStatus = _positionStatus[onBehalfOf];

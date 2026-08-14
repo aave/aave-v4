@@ -15,11 +15,11 @@ contract NativeTokenGateway_Gas_Tests is Base {
     nativeTokenGateway = new NativeTokenGateway(address(tokenList.weth), address(ADMIN));
 
     vm.prank(SPOKE_ADMIN);
-    spoke1.updatePositionManager(address(nativeTokenGateway), true);
+    _updatePositionManager(spoke1, address(nativeTokenGateway), true);
     vm.prank(address(ADMIN));
     nativeTokenGateway.registerSpoke(address(spoke1), true);
     vm.prank(bob);
-    spoke1.setUserPositionManager(address(nativeTokenGateway), true);
+    _setUserPositionManager(spoke1, address(nativeTokenGateway), true);
 
     deal(address(tokenList.weth), MAX_SUPPLY_AMOUNT);
     deal(bob, MAX_SUPPLY_AMOUNT_WETH);
@@ -176,9 +176,9 @@ contract SignatureGateway_Gas_Tests is Base, SignatureGatewayHelpers {
     vm.prank(address(ADMIN));
     gateway.registerSpoke(address(spoke1), true);
     vm.prank(SPOKE_ADMIN);
-    spoke1.updatePositionManager(address(gateway), true);
+    _updatePositionManager(spoke1, address(gateway), true);
     vm.prank(alice);
-    spoke1.setUserPositionManager(address(gateway), true);
+    _setUserPositionManager(spoke1, address(gateway), true);
     vm.prank(alice);
     gateway.useNonce(nonceKey);
   }
@@ -370,19 +370,22 @@ contract SignatureGateway_Gas_Tests is Base, SignatureGatewayHelpers {
 
   function test_setSelfAsUserPositionManagerWithSig() public {
     vm.prank(alice);
-    spoke1.useNonce(nonceKey);
-    ISpoke.PositionManagerUpdate[] memory updates = new ISpoke.PositionManagerUpdate[](1);
-    updates[0] = ISpoke.PositionManagerUpdate(address(gateway), true);
-    ISpoke.SetUserPositionManagers memory p = ISpoke.SetUserPositionManagers({
-      onBehalfOf: alice,
-      updates: updates,
-      nonce: spoke1.nonces(alice, nonceKey), // note: this typed sig is forwarded to spoke
-      deadline: vm.getBlockTimestamp()
-    });
+    IPositionManagerGate(spoke1.GATE()).useNonce(nonceKey);
+    IPositionManagerGate.PositionManagerUpdate[]
+      memory updates = new IPositionManagerGate.PositionManagerUpdate[](1);
+    updates[0] = IPositionManagerGate.PositionManagerUpdate(address(gateway), true);
+    IPositionManagerGate.SetUserPositionManagers memory p = IPositionManagerGate
+      .SetUserPositionManagers({
+        spoke: address(spoke1),
+        onBehalfOf: alice,
+        updates: updates,
+        nonce: IPositionManagerGate(spoke1.GATE()).nonces(alice, nonceKey), // note: this typed sig is forwarded to spoke
+        deadline: vm.getBlockTimestamp()
+      });
     bytes memory signature = _sign(alicePk, _getTypedDataHash(spoke1, p));
 
     vm.prank(alice);
-    spoke1.setUserPositionManager(address(gateway), false);
+    _setUserPositionManager(spoke1, address(gateway), false);
 
     gateway.setSelfAsUserPositionManagerWithSig({
       spoke: address(spoke1),

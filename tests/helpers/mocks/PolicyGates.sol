@@ -8,17 +8,6 @@ interface IAllowlist {
   function isAllowed(address account) external view returns (bool);
 }
 
-/// @dev Gate replicating the default position-manager authorization.
-contract PositionManagerPolicyGate is ISpokeGate {
-  function isCallAllowed(
-    address caller,
-    address onBehalfOf,
-    bytes calldata
-  ) external view returns (bool) {
-    return ISpoke(msg.sender).isPositionManager(onBehalfOf, caller);
-  }
-}
-
 /// @dev Gate allowing a fixed global manager to act on behalf of any user (e.g. an RWA manager).
 contract GlobalManagerPolicyGate is ISpokeGate {
   address public immutable GLOBAL_MANAGER;
@@ -33,7 +22,7 @@ contract GlobalManagerPolicyGate is ISpokeGate {
     bytes calldata
   ) external view returns (bool) {
     if (caller == GLOBAL_MANAGER) return true;
-    return ISpoke(msg.sender).isPositionManager(onBehalfOf, caller);
+    return caller == onBehalfOf;
   }
 }
 
@@ -51,7 +40,7 @@ contract BorrowAllowlistPolicyGate is ISpokeGate {
     bytes calldata data
   ) external view returns (bool) {
     if (bytes4(data) == ISpoke.borrow.selector && !ALLOWLIST.isAllowed(onBehalfOf)) return false;
-    return ISpoke(msg.sender).isPositionManager(onBehalfOf, caller);
+    return caller == onBehalfOf;
   }
 }
 

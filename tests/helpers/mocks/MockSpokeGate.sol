@@ -2,12 +2,11 @@
 pragma solidity ^0.8.0;
 
 import {ISpokeGate} from 'src/spoke/interfaces/ISpokeGate.sol';
-import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 
 /// @dev Gate mock:
 /// - `globalManager`s are allowed to act on behalf of any user (e.g. an RWA manager)
 /// - `gated` selectors additionally require the position owner to be `eligible`
-/// - otherwise falls back to the calling Spoke's default position manager authorization
+/// - otherwise allows users to manage their own positions
 contract MockSpokeGate is ISpokeGate {
   mapping(address caller => bool) public globalManager;
   mapping(bytes4 selector => bool) public gated;
@@ -32,6 +31,6 @@ contract MockSpokeGate is ISpokeGate {
   ) external view returns (bool) {
     if (globalManager[caller]) return true;
     if (gated[bytes4(data)] && !eligible[onBehalfOf]) return false;
-    return ISpoke(msg.sender).isPositionManager(onBehalfOf, caller);
+    return caller == onBehalfOf;
   }
 }

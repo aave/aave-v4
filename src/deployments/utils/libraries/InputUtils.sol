@@ -16,6 +16,7 @@ library InputUtils {
   /// @dev spokeConfiguratorAdmin The admin granted all spoke configurator roles. Only used when grantRoles is true.
   /// @dev gatewayOwner The owner of the native token and signature gateways.
   /// @dev positionManagerOwner The owner of the position manager contracts (giver/taker/config).
+  /// @dev spokeGate Optional gate shared by deployed Spokes. A zero address deploys PositionManagerGate.
   /// @dev nativeWrapper The address of the native wrapper (required when deployNativeTokenGateway is true).
   /// @dev deployNativeTokenGateway Whether to deploy the NativeTokenGateway.
   /// @dev deploySignatureGateway Whether to deploy the SignatureGateway.
@@ -38,6 +39,7 @@ library InputUtils {
     address spokeConfiguratorAdmin;
     address gatewayOwner;
     address positionManagerOwner;
+    address spokeGate;
     address nativeWrapper;
     bool deployNativeTokenGateway;
     bool deploySignatureGateway;

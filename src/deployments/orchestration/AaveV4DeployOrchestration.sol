@@ -13,6 +13,8 @@ import {AaveV4SpokeConfiguratorRolesProcedure} from 'src/deployments/procedures/
 import {InputUtils} from 'src/deployments/utils/libraries/InputUtils.sol';
 import {Logger} from 'src/deployments/utils/Logger.sol';
 import {DeployConstants} from 'src/deployments/utils/libraries/DeployConstants.sol';
+import {Create2Utils} from 'src/deployments/utils/libraries/Create2Utils.sol';
+import {PositionManagerGate} from 'src/spoke/gates/PositionManagerGate.sol';
 
 /// @title AaveV4DeployOrchestration Library
 /// @author Aave Labs
@@ -47,6 +49,17 @@ library AaveV4DeployOrchestration {
     });
 
     address accessManager = report.authorityBatchReport.accessManager;
+
+    report.spokeGate = deployInputs.spokeGate;
+    if (report.spokeGate == address(0) && deployInputs.spokeLabels.length > 0) {
+      report.spokeGate = Create2Utils.create2Deploy({
+        salt: _deriveChildSalt(salt, 'gate', 'position-manager'),
+        bytecode: abi.encodePacked(
+          type(PositionManagerGate).creationCode,
+          abi.encode(accessManager)
+        )
+      });
+    }
 
     // Label all protocol roles
     logger.logHeader1('labeling roles');
@@ -88,6 +101,7 @@ library AaveV4DeployOrchestration {
     report.spokeInstanceBatchReports = _deploySpokes({
       logger: logger,
       authority: accessManager,
+      gate: report.spokeGate,
       inputs: deployInputs,
       spokeBytecode: spokeBytecode,
       salt: salt
@@ -201,6 +215,7 @@ library AaveV4DeployOrchestration {
   function _deploySpokes(
     Logger logger,
     address authority,
+    address gate,
     InputUtils.FullDeployInputs memory inputs,
     bytes memory spokeBytecode,
     bytes32 salt
@@ -215,6 +230,7 @@ library AaveV4DeployOrchestration {
         logger: logger,
         proxyAdminOwner: inputs.proxyAdminOwner,
         authority: authority,
+        gate: gate,
         label: inputs.spokeLabels[i],
         spokeBytecode: spokeBytecode,
         maxUserReservesLimit: limitsLen > 0
@@ -232,6 +248,7 @@ library AaveV4DeployOrchestration {
     Logger logger,
     address proxyAdminOwner,
     address authority,
+    address gate,
     string memory label,
     bytes memory spokeBytecode,
     uint16 maxUserReservesLimit,
@@ -245,6 +262,7 @@ library AaveV4DeployOrchestration {
       logger: logger,
       proxyAdminOwner: proxyAdminOwner,
       authority: authority,
+      gate: gate,
       spokeBytecode: spokeBytecode,
       oracleDecimals: oracleDecimals,
       maxUserReservesLimit: maxUserReservesLimit,
@@ -311,6 +329,7 @@ library AaveV4DeployOrchestration {
     Logger logger,
     address proxyAdminOwner,
     address authority,
+    address gate,
     bytes memory spokeBytecode,
     uint8 oracleDecimals,
     uint16 maxUserReservesLimit,
@@ -320,6 +339,7 @@ library AaveV4DeployOrchestration {
     report = AaveV4DeployBase.deploySpokeInstanceBatch({
       proxyAdminOwner: proxyAdminOwner,
       authority: authority,
+      gate: gate,
       spokeBytecode: spokeBytecode,
       oracleDecimals: oracleDecimals,
       maxUserReservesLimit: maxUserReservesLimit,
@@ -493,6 +513,7 @@ library AaveV4DeployOrchestration {
     logger.logDetail('Spoke', report.spokeProxy);
     logger.logDetail('SpokeImpl', report.spokeImplementation);
     logger.logDetail('AaveOracle', report.aaveOracle);
+    logger.logDetail('Gate', report.gate);
   }
 
   /// @dev Derives the root salt with deployer address in the first 160 bits

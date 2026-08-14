@@ -18,19 +18,22 @@ contract SignatureGatewaySetSelfAsUserPositionManagerTest is SignatureGatewayBas
   }
 
   function test_setSelfAsUserPositionManagerWithSig_forwards_correct_call() public {
-    ISpoke.PositionManagerUpdate[] memory updates = new ISpoke.PositionManagerUpdate[](1);
-    updates[0] = ISpoke.PositionManagerUpdate(address(gateway), vm.randomBool());
-    ISpoke.SetUserPositionManagers memory p = ISpoke.SetUserPositionManagers({
-      onBehalfOf: vm.randomAddress(),
-      updates: updates,
-      nonce: vm.randomUint(),
-      deadline: vm.randomUint()
-    });
+    IPositionManagerGate.PositionManagerUpdate[]
+      memory updates = new IPositionManagerGate.PositionManagerUpdate[](1);
+    updates[0] = IPositionManagerGate.PositionManagerUpdate(address(gateway), vm.randomBool());
+    IPositionManagerGate.SetUserPositionManagers memory p = IPositionManagerGate
+      .SetUserPositionManagers({
+        spoke: address(spoke1),
+        onBehalfOf: vm.randomAddress(),
+        updates: updates,
+        nonce: vm.randomUint(),
+        deadline: vm.randomUint()
+      });
     bytes memory signature = vm.randomBytes(72);
 
     vm.expectCall(
-      address(spoke1),
-      abi.encodeCall(ISpoke.setUserPositionManagersWithSig, (p, signature)),
+      spoke1.GATE(),
+      abi.encodeCall(IPositionManagerGate.setUserPositionManagersWithSig, (p, signature)),
       1
     );
     vm.prank(vm.randomAddress());
@@ -47,7 +50,7 @@ contract SignatureGatewaySetSelfAsUserPositionManagerTest is SignatureGatewayBas
   function test_setSelfAsUserPositionManagerWithSig_ignores_underlying_spoke_reverts() public {
     vm.mockCallRevert(
       address(spoke1),
-      ISpoke.setUserPositionManagersWithSig.selector,
+      IPositionManagerGate.setUserPositionManagersWithSig.selector,
       vm.randomBytes(64)
     );
 
@@ -61,27 +64,30 @@ contract SignatureGatewaySetSelfAsUserPositionManagerTest is SignatureGatewayBas
       signature: vm.randomBytes(72)
     });
 
-    assertFalse(spoke1.isPositionManager(alice, address(gateway)));
+    assertFalse(_isPositionManager(spoke1, alice, address(gateway)));
   }
 
   function test_setSelfAsUserPositionManagerWithSig() public {
     uint192 nonceKey = _randomNonceKey();
     vm.prank(alice);
-    spoke1.useNonce(nonceKey);
-    ISpoke.PositionManagerUpdate[] memory updates = new ISpoke.PositionManagerUpdate[](1);
-    updates[0] = ISpoke.PositionManagerUpdate(address(gateway), true);
-    ISpoke.SetUserPositionManagers memory p = ISpoke.SetUserPositionManagers({
-      onBehalfOf: alice,
-      updates: updates,
-      nonce: spoke1.nonces(alice, nonceKey), // note: this typed sig is forwarded to spoke
-      deadline: _warpBeforeRandomDeadline(MAX_SKIP_TIME)
-    });
+    IPositionManagerGate(spoke1.GATE()).useNonce(nonceKey);
+    IPositionManagerGate.PositionManagerUpdate[]
+      memory updates = new IPositionManagerGate.PositionManagerUpdate[](1);
+    updates[0] = IPositionManagerGate.PositionManagerUpdate(address(gateway), true);
+    IPositionManagerGate.SetUserPositionManagers memory p = IPositionManagerGate
+      .SetUserPositionManagers({
+        spoke: address(spoke1),
+        onBehalfOf: alice,
+        updates: updates,
+        nonce: IPositionManagerGate(spoke1.GATE()).nonces(alice, nonceKey), // note: this typed sig is forwarded to spoke
+        deadline: _warpBeforeRandomDeadline(MAX_SKIP_TIME)
+      });
     bytes memory signature = _sign(alicePk, _getTypedDataHash(spoke1, p));
 
     vm.prank(SPOKE_ADMIN);
-    spoke1.updatePositionManager(address(gateway), true);
+    _updatePositionManager(spoke1, address(gateway), true);
     vm.prank(alice);
-    spoke1.setUserPositionManager(address(gateway), false);
+    _setUserPositionManager(spoke1, address(gateway), false);
 
     gateway.setSelfAsUserPositionManagerWithSig({
       spoke: address(spoke1),
@@ -92,6 +98,6 @@ contract SignatureGatewaySetSelfAsUserPositionManagerTest is SignatureGatewayBas
       signature: signature
     });
 
-    assertTrue(spoke1.isPositionManager(alice, address(gateway)));
+    assertTrue(_isPositionManager(spoke1, alice, address(gateway)));
   }
 }

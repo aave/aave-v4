@@ -6,9 +6,11 @@ import 'tests/setup/Base.t.sol';
 contract SpokeUpgradeableTest is Base {
   address public proxyAdminOwner = makeAddr('proxyAdminOwner');
   address public oracle = makeAddr('AaveOracle');
+  address public gate;
 
   function setUp() public override {
     super.setUp();
+    gate = address(new PositionManagerGate(address(accessManager)));
     vm.mockCall(oracle, abi.encodeCall(IPriceOracle.decimals, ()), abi.encode(8));
   }
 
@@ -43,7 +45,7 @@ contract SpokeUpgradeableTest is Base {
     vm.expectEmit(spokeProxyAddress);
     emit IERC1967.Upgraded(address(spokeImpl));
     vm.expectEmit(spokeProxyAddress);
-    emit ISpoke.SetSpokeImmutables(oracle, MAX_ALLOWED_USER_RESERVES_LIMIT);
+    emit ISpoke.SetSpokeImmutables(oracle, MAX_ALLOWED_USER_RESERVES_LIMIT, gate);
     vm.expectEmit(spokeProxyAddress);
     emit IAccessManaged.AuthorityUpdated(address(accessManager));
     vm.expectEmit(spokeProxyAddress);
@@ -228,7 +230,7 @@ contract SpokeUpgradeableTest is Base {
   function _deployMockSpokeInstance(uint64 revision) internal returns (ISpokeInstance) {
     return
       ISpokeInstance(
-        address(new MockSpokeInstance(revision, oracle, MAX_ALLOWED_USER_RESERVES_LIMIT))
+        address(new MockSpokeInstance(revision, oracle, MAX_ALLOWED_USER_RESERVES_LIMIT, gate))
       );
   }
 }

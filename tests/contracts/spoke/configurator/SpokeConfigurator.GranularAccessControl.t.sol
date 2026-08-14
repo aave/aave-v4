@@ -413,6 +413,6 @@ contract SpokeConfiguratorGranularAccessControlTest is Base {
       active: true
     });
 
-    assertTrue(spoke.isPositionManagerActive(newPM));
+    assertTrue(_isPositionManagerActive(spoke, newPM));
   }
 }

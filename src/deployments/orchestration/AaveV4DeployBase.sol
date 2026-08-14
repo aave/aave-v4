@@ -85,6 +85,7 @@ library AaveV4DeployBase {
   /// @notice Deploys the Spoke instance batch containing the Spoke proxy, implementation, and AaveOracle.
   /// @param proxyAdminOwner The owner of the proxy admin.
   /// @param authority The access-control authority for the Spoke.
+  /// @param gate The immutable gate for the Spoke.
   /// @param spokeBytecode The creation bytecode of the SpokeInstance contract.
   /// @param oracleDecimals The decimal precision for the AaveOracle.
   /// @param maxUserReservesLimit The maximum number of reserves a user can interact with.
@@ -93,6 +94,7 @@ library AaveV4DeployBase {
   function deploySpokeInstanceBatch(
     address proxyAdminOwner,
     address authority,
+    address gate,
     bytes memory spokeBytecode,
     uint8 oracleDecimals,
     uint16 maxUserReservesLimit,
@@ -101,6 +103,7 @@ library AaveV4DeployBase {
     AaveV4SpokeInstanceBatch spokeInstanceBatch = new AaveV4SpokeInstanceBatch({
       proxyAdminOwner_: proxyAdminOwner,
       authority_: authority,
+      gate_: gate,
       spokeBytecode_: spokeBytecode,
       oracleDecimals_: oracleDecimals,
       maxUserReservesLimit_: maxUserReservesLimit,

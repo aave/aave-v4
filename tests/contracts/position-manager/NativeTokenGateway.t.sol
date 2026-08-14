@@ -13,7 +13,7 @@ contract NativeTokenGatewayTest is Base {
     nativeTokenGateway = new NativeTokenGateway(address(tokenList.weth), address(ADMIN));
 
     vm.prank(SPOKE_ADMIN);
-    spoke1.updatePositionManager(address(nativeTokenGateway), true);
+    _updatePositionManager(spoke1, address(nativeTokenGateway), true);
 
     vm.prank(address(ADMIN));
     nativeTokenGateway.registerSpoke(address(spoke1), true);
@@ -43,7 +43,7 @@ contract NativeTokenGatewayTest is Base {
   function test_supplyNative_fuzz(uint256 amount) public {
     amount = bound(amount, 1, MAX_SUPPLY_AMOUNT_WETH);
     vm.prank(bob);
-    spoke1.setUserPositionManager(address(nativeTokenGateway), true);
+    _setUserPositionManager(spoke1, address(nativeTokenGateway), true);
 
     uint256 prevUserBalance = bob.balance;
     uint256 prevHubBalance = tokenList.weth.balanceOf(address(hub1));
@@ -83,7 +83,7 @@ contract NativeTokenGatewayTest is Base {
 
   function test_supplyNative_revertsWith_ReentrancyGuardReentrantCall_spokeSupply() public {
     vm.prank(bob);
-    spoke1.setUserPositionManager(address(nativeTokenGateway), true);
+    _setUserPositionManager(spoke1, address(nativeTokenGateway), true);
 
     uint256 amount = 100e18;
     MockReentrantCaller reentrantCaller = new MockReentrantCaller(
@@ -103,7 +103,7 @@ contract NativeTokenGatewayTest is Base {
 
   function test_supplyNative_revertsWith_ReentrancyGuardReentrantCall_hubAdd() public {
     vm.prank(bob);
-    spoke1.setUserPositionManager(address(nativeTokenGateway), true);
+    _setUserPositionManager(spoke1, address(nativeTokenGateway), true);
 
     uint256 amount = 100e18;
     MockReentrantCaller reentrantCaller = new MockReentrantCaller(
@@ -167,7 +167,7 @@ contract NativeTokenGatewayTest is Base {
   function test_supplyAndCollateralNative_fuzz(uint256 amount) public {
     amount = bound(amount, 1, MAX_SUPPLY_AMOUNT_WETH);
     vm.prank(bob);
-    spoke1.setUserPositionManager(address(nativeTokenGateway), true);
+    _setUserPositionManager(spoke1, address(nativeTokenGateway), true);
 
     uint256 prevUserBalance = bob.balance;
     uint256 prevHubBalance = tokenList.weth.balanceOf(address(hub1));
@@ -220,7 +220,7 @@ contract NativeTokenGatewayTest is Base {
     uint256 expectedSupplyShares = hub1.previewAddByAssets(wethAssetId, MAX_SUPPLY_AMOUNT_WETH);
 
     vm.prank(bob);
-    spoke1.setUserPositionManager(address(nativeTokenGateway), true);
+    _setUserPositionManager(spoke1, address(nativeTokenGateway), true);
 
     uint256 prevUserBalance = bob.balance;
     uint256 prevHubBalance = tokenList.weth.balanceOf(address(hub1));
@@ -268,7 +268,7 @@ contract NativeTokenGatewayTest is Base {
     uint256 expectedSupplyShares = hub1.previewAddByAssets(wethAssetId, supplyAmount);
 
     vm.prank(bob);
-    spoke1.setUserPositionManager(address(nativeTokenGateway), true);
+    _setUserPositionManager(spoke1, address(nativeTokenGateway), true);
 
     uint256 prevUserBalance = bob.balance;
     uint256 prevHubBalance = tokenList.weth.balanceOf(address(hub1));
@@ -307,7 +307,7 @@ contract NativeTokenGatewayTest is Base {
     borrowAmount = bound(borrowAmount, 1, supplyAmount / 2);
 
     vm.prank(bob);
-    spoke1.setUserPositionManager(address(nativeTokenGateway), true);
+    _setUserPositionManager(spoke1, address(nativeTokenGateway), true);
 
     SpokeActions.supplyCollateral({
       spoke: spoke1,
@@ -373,7 +373,7 @@ contract NativeTokenGatewayTest is Base {
 
   function test_withdrawNative_revertsWith_ReentrancyGuardReentrantCall_spokeWithdraw() public {
     vm.prank(bob);
-    spoke1.setUserPositionManager(address(nativeTokenGateway), true);
+    _setUserPositionManager(spoke1, address(nativeTokenGateway), true);
 
     uint256 amount = 100e18;
     MockReentrantCaller reentrantCaller = new MockReentrantCaller(
@@ -393,7 +393,7 @@ contract NativeTokenGatewayTest is Base {
 
   function test_withdrawNative_revertsWith_ReentrancyGuardReentrantCall_hubRemove() public {
     vm.prank(bob);
-    spoke1.setUserPositionManager(address(nativeTokenGateway), true);
+    _setUserPositionManager(spoke1, address(nativeTokenGateway), true);
 
     uint256 amount = 100e18;
     MockReentrantCaller reentrantCaller = new MockReentrantCaller(
@@ -446,7 +446,7 @@ contract NativeTokenGatewayTest is Base {
     borrowAmount = bound(borrowAmount, 1, aliceSupplyAmount);
 
     vm.prank(bob);
-    spoke1.setUserPositionManager(address(nativeTokenGateway), true);
+    _setUserPositionManager(spoke1, address(nativeTokenGateway), true);
 
     SpokeActions.supplyCollateral({
       spoke: spoke1,
@@ -497,7 +497,7 @@ contract NativeTokenGatewayTest is Base {
 
   function test_borrowNative_revertsWith_ReentrancyGuardReentrantCall_spokeBorrow() public {
     vm.prank(bob);
-    spoke1.setUserPositionManager(address(nativeTokenGateway), true);
+    _setUserPositionManager(spoke1, address(nativeTokenGateway), true);
 
     uint256 amount = 100e18;
     MockReentrantCaller reentrantCaller = new MockReentrantCaller(
@@ -517,7 +517,7 @@ contract NativeTokenGatewayTest is Base {
 
   function test_borrowNative_revertsWith_ReentrancyGuardReentrantCall_hubDraw() public {
     vm.prank(bob);
-    spoke1.setUserPositionManager(address(nativeTokenGateway), true);
+    _setUserPositionManager(spoke1, address(nativeTokenGateway), true);
 
     uint256 amount = 100e18;
     MockReentrantCaller reentrantCaller = new MockReentrantCaller(
@@ -571,7 +571,7 @@ contract NativeTokenGatewayTest is Base {
     repayAmount = bound(repayAmount, 1, borrowAmount);
 
     vm.prank(bob);
-    spoke1.setUserPositionManager(address(nativeTokenGateway), true);
+    _setUserPositionManager(spoke1, address(nativeTokenGateway), true);
 
     SpokeActions.supplyCollateral({
       spoke: spoke1,
@@ -649,7 +649,7 @@ contract NativeTokenGatewayTest is Base {
     elapsedTime = bound(elapsedTime, 100 days, 400 days);
 
     vm.prank(bob);
-    spoke1.setUserPositionManager(address(nativeTokenGateway), true);
+    _setUserPositionManager(spoke1, address(nativeTokenGateway), true);
 
     SpokeActions.supplyCollateral({
       spoke: spoke1,
@@ -742,7 +742,7 @@ contract NativeTokenGatewayTest is Base {
     uint256 repayAmount = 15e18;
 
     vm.prank(bob);
-    spoke1.setUserPositionManager(address(nativeTokenGateway), true);
+    _setUserPositionManager(spoke1, address(nativeTokenGateway), true);
 
     SpokeActions.supplyCollateral({
       spoke: spoke1,
@@ -819,7 +819,7 @@ contract NativeTokenGatewayTest is Base {
 
   function test_repayNative_revertsWith_ReentrancyGuardReentrantCall_spokeRepay() public {
     vm.prank(bob);
-    spoke1.setUserPositionManager(address(nativeTokenGateway), true);
+    _setUserPositionManager(spoke1, address(nativeTokenGateway), true);
 
     uint256 amount = 100e18;
     MockReentrantCaller reentrantCaller = new MockReentrantCaller(
@@ -839,7 +839,7 @@ contract NativeTokenGatewayTest is Base {
 
   function test_repayNative_revertsWith_ReentrancyGuardReentrantCall_hubRestore() public {
     vm.prank(bob);
-    spoke1.setUserPositionManager(address(nativeTokenGateway), true);
+    _setUserPositionManager(spoke1, address(nativeTokenGateway), true);
 
     uint256 amount = 100e18;
     MockReentrantCaller reentrantCaller = new MockReentrantCaller(

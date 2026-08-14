@@ -18,10 +18,10 @@ contract ConfigPositionManagerBaseTest is Base, ConfigPositionManagerHelpers {
     emptyPermissions = ConfigPermissions.wrap(0);
 
     vm.prank(SPOKE_ADMIN);
-    spoke1.updatePositionManager(address(positionManager), true);
+    _updatePositionManager(spoke1, address(positionManager), true);
 
     vm.prank(alice);
-    spoke1.setUserPositionManager(address(positionManager), true);
+    _setUserPositionManager(spoke1, address(positionManager), true);
 
     vm.prank(ADMIN);
     positionManager.registerSpoke(address(spoke1), true);

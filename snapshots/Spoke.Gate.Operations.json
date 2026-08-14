@@ -1,0 +1,17 @@
+{
+  "borrow: borrow-allowlist policy": "302550",
+  "borrow: global-manager policy": "297141",
+  "borrow: position-manager policy": "297290",
+  "repay: partial, borrow-allowlist policy": "149851",
+  "repay: partial, global-manager policy": "149774",
+  "repay: partial, position-manager policy": "149923",
+  "supply: borrow-allowlist policy": "131268",
+  "supply: global-manager policy": "131191",
+  "supply: position-manager policy": "131340",
+  "usingAsCollateral: enable, borrow-allowlist policy": "63093",
+  "usingAsCollateral: enable, global-manager policy": "63016",
+  "usingAsCollateral: enable, position-manager policy": "63165",
+  "withdraw: partial, borrow-allowlist policy": "184831",
+  "withdraw: partial, global-manager policy": "184754",
+  "withdraw: partial, position-manager policy": "184903"
+}
