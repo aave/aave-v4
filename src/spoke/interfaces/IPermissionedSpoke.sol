@@ -10,11 +10,11 @@ interface IPermissionedSpoke {
   event UpdateGate(address indexed gate);
 
   /// @notice Updates the gate.
-  /// @dev When set, it replaces the default position manager authorization on position actions.
-  /// @dev Setting the zero address removes it, restoring the default authorization.
+  /// @dev The gate replaces the default position manager authorization on position actions.
+  /// @dev It reverts on the zero address; a gate is required from initialization onwards.
   /// @param gate The address of the gate.
   function updateGate(address gate) external;
 
-  /// @notice Returns the address of the gate, or the zero address if unset.
+  /// @notice Returns the address of the gate.
   function getGate() external view returns (address);
 }

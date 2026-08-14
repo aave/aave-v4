@@ -7,7 +7,8 @@ pragma solidity ^0.8.0;
 /// position actions of a permissioned Spoke.
 interface ISpokeGate {
   /// @notice Returns whether a position action on the Spoke is allowed.
-  /// @dev It can preserve the default authorization by calling back `ISpoke.isPositionManager`.
+  /// @dev Called by the Spoke, so it can preserve the default authorization by calling back
+  /// `ISpoke(msg.sender).isPositionManager`.
   /// @param caller The transaction initiator on the Spoke.
   /// @param onBehalfOf The owner of the position being modified.
   /// @param data The full calldata of the Spoke call, allowing per-action decoding.

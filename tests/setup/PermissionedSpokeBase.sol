@@ -3,16 +3,19 @@ pragma solidity ^0.8.0;
 
 import 'tests/setup/Base.t.sol';
 
+import {TransparentUpgradeableProxy} from 'src/dependencies/openzeppelin/TransparentUpgradeableProxy.sol';
+import {DeployConstants} from 'src/deployments/utils/libraries/DeployConstants.sol';
 import {PermissionedSpokeInstance} from 'src/spoke/instances/PermissionedSpokeInstance.sol';
 import {IPermissionedSpoke} from 'src/spoke/interfaces/IPermissionedSpoke.sol';
 import {MockSpokeGate} from 'tests/helpers/mocks/MockSpokeGate.sol';
 
-/// @dev Deploys a spoke with the `PermissionedSpokeInstance` implementation, two reserves on hub1
-/// (weth as collateral, usdx as borrowable) and a mock mandatory position manager.
+/// @dev Deploys a spoke with the `PermissionedSpokeInstance` implementation gated by a mock gate,
+/// with two reserves on hub1 (weth as collateral, usdx as borrowable).
 abstract contract PermissionedSpokeBase is Base {
   ISpoke internal spoke;
   MockSpokeGate internal gate;
   address internal RWA_MANAGER = makeAddr('RWA_MANAGER');
+  address internal PROXY_ADMIN_OWNER = makeAddr('PROXY_ADMIN_OWNER');
 
   uint256 internal wethReserveId;
   uint256 internal usdxReserveId;
@@ -20,22 +23,28 @@ abstract contract PermissionedSpokeBase is Base {
   function setUp() public virtual override {
     super.setUp();
 
-    // Deploy a fresh spoke with the PermissionedSpokeInstance implementation
-    TestTypes.TestEnvReport memory report = AaveV4TestOrchestration.deployTestEnv({
-      admin: ADMIN,
-      treasuryAdmin: TREASURY_ADMIN,
-      hubCount: 0,
-      spokeCount: 1,
-      nativeWrapper: address(tokenList.weth),
-      hubBytecode: BytecodeHelper.getHubBytecode(),
-      spokeBytecode: vm.getCode(
-        'src/spoke/instances/PermissionedSpokeInstance.sol:PermissionedSpokeInstance'
-      ),
-      salt: bytes32(vm.randomBytes(32))
+    gate = new MockSpokeGate();
+    spoke = _deployPermissionedSpoke(address(gate));
+  }
+
+  /// @dev Deploys a permissioned spoke with the given gate, mirroring the standard fixture config.
+  function _deployPermissionedSpoke(address newGate) internal returns (ISpoke newSpoke) {
+    AaveOracle oracle = new AaveOracle(8);
+    PermissionedSpokeInstance implementation = new PermissionedSpokeInstance({
+      oracle_: address(oracle),
+      maxUserReservesLimit_: DeployConstants.MAX_ALLOWED_USER_RESERVES_LIMIT
     });
-    _setupFixturesRoles(report);
-    spoke = ISpoke(report.spokeReports[0].spoke);
-    gate = new MockSpokeGate(spoke);
+    newSpoke = ISpoke(
+      address(
+        new TransparentUpgradeableProxy(
+          address(implementation),
+          PROXY_ADMIN_OWNER,
+          abi.encodeWithSignature('initialize(address,address)', address(accessManager), newGate)
+        )
+      )
+    );
+    oracle.setSpoke(address(newSpoke));
+    setUpRoles(hub1, newSpoke, accessManager);
 
     IHub.SpokeConfig memory spokeConfig = IHub.SpokeConfig({
       active: true,
@@ -46,10 +55,10 @@ abstract contract PermissionedSpokeBase is Base {
     });
 
     vm.startPrank(ADMIN);
-    wethReserveId = spoke.addReserve(
+    wethReserveId = newSpoke.addReserve(
       address(hub1),
       wethAssetId,
-      _deployMockPriceFeed(spoke, 2000e8),
+      _deployMockPriceFeed(newSpoke, 2000e8),
       _getDefaultReserveConfig(15_00),
       ISpoke.DynamicReserveConfig({
         collateralFactor: 80_00,
@@ -57,10 +66,10 @@ abstract contract PermissionedSpokeBase is Base {
         liquidationFee: 10_00
       })
     );
-    usdxReserveId = spoke.addReserve(
+    usdxReserveId = newSpoke.addReserve(
       address(hub1),
       usdxAssetId,
-      _deployMockPriceFeed(spoke, 1e8),
+      _deployMockPriceFeed(newSpoke, 1e8),
       _getDefaultReserveConfig(20_00),
       ISpoke.DynamicReserveConfig({
         collateralFactor: 78_00,
@@ -68,15 +77,15 @@ abstract contract PermissionedSpokeBase is Base {
         liquidationFee: 12_00
       })
     );
-    hub1.addSpoke(wethAssetId, address(spoke), spokeConfig);
-    hub1.addSpoke(usdxAssetId, address(spoke), spokeConfig);
+    hub1.addSpoke(wethAssetId, address(newSpoke), spokeConfig);
+    hub1.addSpoke(usdxAssetId, address(newSpoke), spokeConfig);
     vm.stopPrank();
 
     address[3] memory users = [alice, bob, RWA_MANAGER];
     for (uint256 i = 0; i < users.length; ++i) {
       vm.startPrank(users[i]);
-      tokenList.weth.approve(address(spoke), type(uint256).max);
-      tokenList.usdx.approve(address(spoke), type(uint256).max);
+      tokenList.weth.approve(address(newSpoke), type(uint256).max);
+      tokenList.usdx.approve(address(newSpoke), type(uint256).max);
       vm.stopPrank();
     }
   }
@@ -96,10 +105,5 @@ abstract contract PermissionedSpokeBase is Base {
       amount: amount,
       onBehalfOf: user
     });
-  }
-
-  function _setGate(address newGate) internal {
-    vm.prank(ADMIN);
-    PermissionedSpokeInstance(address(spoke)).updateGate(newGate);
   }
 }

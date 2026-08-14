@@ -4,7 +4,55 @@ pragma solidity ^0.8.0;
 import 'tests/setup/PermissionedSpokeBase.sol';
 
 contract PermissionedSpokeTest is PermissionedSpokeBase {
-  function test_defaultBehavior_withoutGate() public {
+  function test_initialize() public {
+    assertEq(PermissionedSpokeInstance(address(spoke)).getGate(), address(gate));
+
+    // the single-argument initializer is disabled
+    PermissionedSpokeInstance implementation = new PermissionedSpokeInstance({
+      oracle_: address(oracle1),
+      maxUserReservesLimit_: DeployConstants.MAX_ALLOWED_USER_RESERVES_LIMIT
+    });
+    vm.expectRevert(Initializable.InvalidInitialization.selector);
+    new TransparentUpgradeableProxy(
+      address(implementation),
+      PROXY_ADMIN_OWNER,
+      abi.encodeCall(ISpokeInstance.initialize, (address(accessManager)))
+    );
+
+    // the gate is required at initialization
+    vm.expectRevert(ISpoke.InvalidAddress.selector);
+    new TransparentUpgradeableProxy(
+      address(implementation),
+      PROXY_ADMIN_OWNER,
+      abi.encodeWithSignature('initialize(address,address)', address(accessManager), address(0))
+    );
+  }
+
+  function test_updateGate() public {
+    address newGate = address(new MockSpokeGate());
+
+    vm.expectEmit(address(spoke));
+    emit IPermissionedSpoke.UpdateGate(newGate);
+    vm.prank(ADMIN);
+    PermissionedSpokeInstance(address(spoke)).updateGate(newGate);
+
+    assertEq(PermissionedSpokeInstance(address(spoke)).getGate(), newGate);
+
+    // the gate cannot be unset
+    vm.expectRevert(ISpoke.InvalidAddress.selector);
+    vm.prank(ADMIN);
+    PermissionedSpokeInstance(address(spoke)).updateGate(address(0));
+  }
+
+  function test_updateGate_revertsIfUnauthorized() public {
+    vm.expectRevert(
+      abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, alice)
+    );
+    vm.prank(alice);
+    PermissionedSpokeInstance(address(spoke)).updateGate(address(gate));
+  }
+
+  function test_defaultBehaviorViaCallback() public {
     _supplyCollateralAndBorrow(alice, 100e6);
 
     // an unapproved caller still cannot act on behalf of alice
@@ -18,43 +66,8 @@ contract PermissionedSpokeTest is PermissionedSpokeBase {
     });
   }
 
-  function test_updateGate() public {
-    vm.expectEmit(address(spoke));
-    emit IPermissionedSpoke.UpdateGate(address(gate));
-
-    vm.prank(ADMIN);
-    PermissionedSpokeInstance(address(spoke)).updateGate(address(gate));
-
-    assertEq(PermissionedSpokeInstance(address(spoke)).getGate(), address(gate));
-  }
-
-  function test_updateGate_removal() public {
-    _setGate(address(gate));
-    _setGate(address(0));
-
-    assertEq(PermissionedSpokeInstance(address(spoke)).getGate(), address(0));
-
-    // default authorization is restored
-    SpokeActions.supply({
-      spoke: spoke,
-      reserveId: usdxReserveId,
-      caller: alice,
-      amount: 100e6,
-      onBehalfOf: alice
-    });
-  }
-
-  function test_updateGate_revertsIfUnauthorized() public {
-    vm.expectRevert(
-      abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, alice)
-    );
-    vm.prank(alice);
-    PermissionedSpokeInstance(address(spoke)).updateGate(address(gate));
-  }
-
   function test_permissionedBorrow() public {
     gate.setGated(ISpoke.borrow.selector, true);
-    _setGate(address(gate));
 
     // supply is not gated for ineligible users
     SpokeActions.supplyCollateral({
@@ -86,9 +99,7 @@ contract PermissionedSpokeTest is PermissionedSpokeBase {
     assertEq(spoke.getUserTotalDebt(usdxReserveId, alice), 100e6);
   }
 
-  function test_defaultApprovalsPreservedViaCallback() public {
-    _setGate(address(gate));
-
+  function test_approvedPositionManagersPreservedViaCallback() public {
     SpokeActions.supply({
       spoke: spoke,
       reserveId: usdxReserveId,
@@ -128,7 +139,6 @@ contract PermissionedSpokeTest is PermissionedSpokeBase {
   /// withdrawing on her behalf and re-supplying to bob, without any user approval.
   function test_forcedTransfer_viaGlobalManager() public {
     gate.setGlobalManager(RWA_MANAGER, true);
-    _setGate(address(gate));
 
     uint256 amount = 100e6;
     SpokeActions.supply({
@@ -163,7 +173,6 @@ contract PermissionedSpokeTest is PermissionedSpokeBase {
 
   function test_forcedWithdraw_stillValidatesHealthFactor() public {
     gate.setGlobalManager(RWA_MANAGER, true);
-    _setGate(address(gate));
 
     _supplyCollateralAndBorrow(alice, 100e6);
 
@@ -178,8 +187,6 @@ contract PermissionedSpokeTest is PermissionedSpokeBase {
   }
 
   function test_liquidationCallUnaffected() public {
-    _setGate(address(gate));
-
     SpokeActions.supply({
       spoke: spoke,
       reserveId: usdxReserveId,
@@ -203,9 +210,16 @@ contract PermissionedSpokeTest is PermissionedSpokeBase {
       pricePercentage: 90_00
     });
 
+    // gate everything; neither alice nor bob are eligible
+    gate.setGated(ISpoke.supply.selector, true);
+    gate.setGated(ISpoke.withdraw.selector, true);
+    gate.setGated(ISpoke.borrow.selector, true);
+    gate.setGated(ISpoke.repay.selector, true);
+    gate.setGated(ISpoke.setUsingAsCollateral.selector, true);
+    gate.setGated(ISpoke.liquidationCall.selector, true);
+
     uint256 debtBefore = spoke.getUserTotalDebt(usdxReserveId, alice);
 
-    // bob is neither eligible nor a global manager; liquidations are not gated
     SpokeActions.liquidationCall({
       spoke: spoke,
       collateralReserveId: wethReserveId,
@@ -221,7 +235,6 @@ contract PermissionedSpokeTest is PermissionedSpokeBase {
 
   function test_cannotBeBypassedWithMulticall() public {
     gate.setGated(ISpoke.borrow.selector, true);
-    _setGate(address(gate));
 
     bytes[] memory calls = new bytes[](1);
     calls[0] = abi.encodeCall(ISpoke.borrow, (usdxReserveId, 100e6, alice));

@@ -10,28 +10,20 @@ interface IAllowlist {
 
 /// @dev Gate replicating the default position-manager authorization.
 contract PositionManagerPolicyGate is ISpokeGate {
-  ISpoke public immutable SPOKE;
-
-  constructor(ISpoke spoke) {
-    SPOKE = spoke;
-  }
-
   function isCallAllowed(
     address caller,
     address onBehalfOf,
     bytes calldata
   ) external view returns (bool) {
-    return SPOKE.isPositionManager(onBehalfOf, caller);
+    return ISpoke(msg.sender).isPositionManager(onBehalfOf, caller);
   }
 }
 
 /// @dev Gate allowing a fixed global manager to act on behalf of any user (e.g. an RWA manager).
 contract GlobalManagerPolicyGate is ISpokeGate {
-  ISpoke public immutable SPOKE;
   address public immutable GLOBAL_MANAGER;
 
-  constructor(ISpoke spoke, address globalManager) {
-    SPOKE = spoke;
+  constructor(address globalManager) {
     GLOBAL_MANAGER = globalManager;
   }
 
@@ -41,17 +33,15 @@ contract GlobalManagerPolicyGate is ISpokeGate {
     bytes calldata
   ) external view returns (bool) {
     if (caller == GLOBAL_MANAGER) return true;
-    return SPOKE.isPositionManager(onBehalfOf, caller);
+    return ISpoke(msg.sender).isPositionManager(onBehalfOf, caller);
   }
 }
 
 /// @dev Gate restricting borrowing to allowlisted position owners.
 contract BorrowAllowlistPolicyGate is ISpokeGate {
-  ISpoke public immutable SPOKE;
   IAllowlist public immutable ALLOWLIST;
 
-  constructor(ISpoke spoke, IAllowlist allowlist) {
-    SPOKE = spoke;
+  constructor(IAllowlist allowlist) {
     ALLOWLIST = allowlist;
   }
 
@@ -61,7 +51,7 @@ contract BorrowAllowlistPolicyGate is ISpokeGate {
     bytes calldata data
   ) external view returns (bool) {
     if (bytes4(data) == ISpoke.borrow.selector && !ALLOWLIST.isAllowed(onBehalfOf)) return false;
-    return SPOKE.isPositionManager(onBehalfOf, caller);
+    return ISpoke(msg.sender).isPositionManager(onBehalfOf, caller);
   }
 }
 
