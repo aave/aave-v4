@@ -15,7 +15,7 @@ contract AaveV4TreasurySpokeDeployProcedure is AaveV4DeployProcedureBase {
   /// @return The address of the deployed transparent proxy contract.
   function _deployTreasurySpoke(address owner, bytes32 salt) internal returns (address) {
     require(owner != address(0), 'invalid owner');
-    address implementation = Create2Utils.create2Deploy(
+    address implementation = Create2Utils.create2DeployIdempotent(
       salt,
       type(TreasurySpokeInstance).creationCode
     );

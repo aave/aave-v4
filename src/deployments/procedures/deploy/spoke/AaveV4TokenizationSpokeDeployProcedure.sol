@@ -33,7 +33,7 @@ contract AaveV4TokenizationSpokeDeployProcedure is AaveV4DeployProcedureBase {
     require(bytes(shareName).length > 0, 'invalid share name');
     require(bytes(shareSymbol).length > 0, 'invalid share symbol');
 
-    tokenizationSpokeImplementation = Create2Utils.create2Deploy({
+    tokenizationSpokeImplementation = Create2Utils.create2DeployIdempotent({
       salt: salt,
       bytecode: _getTokenizationSpokeInstanceInitCode(hub, underlying)
     });
