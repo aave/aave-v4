@@ -57,6 +57,12 @@ import {
 
 // spoke
 import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
+import {IPositionManagerGate} from 'src/spoke/interfaces/IPositionManagerGate.sol';
+import {PositionManagerGate} from 'src/spoke/gates/PositionManagerGate.sol';
+import {
+  PositionManagerGateAdapter,
+  PositionManagerGateTestHelpers
+} from 'tests/helpers/spoke/PositionManagerGateAdapter.sol';
 import {TreasurySpoke, ITreasurySpoke} from 'src/spoke/TreasurySpoke.sol';
 import {TreasurySpokeInstance} from 'src/spoke/instances/TreasurySpokeInstance.sol';
 import {IPriceOracle} from 'src/spoke/interfaces/IPriceOracle.sol';
@@ -136,7 +142,8 @@ import {SpokeUtilsWrapper} from 'tests/helpers/mocks/SpokeUtilsWrapper.sol';
 
 import 'tests/utils/BatchTestProcedures.sol';
 
-abstract contract Base is BaseHelpers, BatchTestProcedures {
+abstract contract Base is BaseHelpers, BatchTestProcedures, PositionManagerGateTestHelpers {
+  using PositionManagerGateAdapter for ISpoke;
   using stdStorage for StdStorage;
   using WadRayMath for *;
   using SharesMath for uint256;
@@ -178,6 +185,7 @@ abstract contract Base is BaseHelpers, BatchTestProcedures {
     for (uint256 i; i < numSpokes; ++i) {
       _spokes.push(ISpoke(report.spokeReports[i].spoke));
       _oracles.push(IAaveOracle(report.spokeReports[i].aaveOracle));
+      _cachePositionManagerGate(ISpoke(report.spokeReports[i].spoke));
 
       vm.label(report.spokeReports[i].spoke, string.concat('spoke', string(abi.encode(i))));
       vm.label(report.spokeReports[i].aaveOracle, string.concat('oracle', string(abi.encode(i))));

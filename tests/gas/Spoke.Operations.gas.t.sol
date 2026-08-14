@@ -328,33 +328,36 @@ contract SpokeOperations_Gas_Tests is Base {
     (address user, uint256 userPk) = makeAddrAndKey('user');
     address positionManager = makeAddr('positionManager');
     vm.prank(SPOKE_ADMIN);
-    spoke.updatePositionManager({positionManager: positionManager, active: true});
+    _updatePositionManager(spoke, positionManager, true);
 
     uint192 nonceKey = 100;
     vm.prank(user);
-    spoke.useNonce(nonceKey);
+    IPositionManagerGate(spoke.GATE()).useNonce(nonceKey);
 
-    ISpoke.PositionManagerUpdate[] memory updates = new ISpoke.PositionManagerUpdate[](1);
-    updates[0] = ISpoke.PositionManagerUpdate(positionManager, true);
+    IPositionManagerGate.PositionManagerUpdate[]
+      memory updates = new IPositionManagerGate.PositionManagerUpdate[](1);
+    updates[0] = IPositionManagerGate.PositionManagerUpdate(positionManager, true);
 
-    ISpoke.SetUserPositionManagers memory p = ISpoke.SetUserPositionManagers({
-      onBehalfOf: user,
-      updates: updates,
-      nonce: spoke.nonces(user, nonceKey),
-      deadline: vm.getBlockTimestamp()
-    });
+    IPositionManagerGate.SetUserPositionManagers memory p = IPositionManagerGate
+      .SetUserPositionManagers({
+        spoke: address(spoke),
+        onBehalfOf: user,
+        updates: updates,
+        nonce: IPositionManagerGate(spoke.GATE()).nonces(user, nonceKey),
+        deadline: vm.getBlockTimestamp()
+      });
     (uint8 v, bytes32 r, bytes32 s) = vm.sign(userPk, _getTypedDataHash(spoke, p));
     bytes memory signature = abi.encodePacked(r, s, v);
 
-    spoke.setUserPositionManagersWithSig(p, signature);
+    _setUserPositionManagersWithSig(spoke, p, signature);
     vm.snapshotGasLastCall(NAMESPACE, 'setUserPositionManagersWithSig: enable');
 
     p.updates[0].approve = false;
-    p.nonce = spoke.nonces(user, nonceKey);
+    p.nonce = IPositionManagerGate(spoke.GATE()).nonces(user, nonceKey);
     (v, r, s) = vm.sign(userPk, _getTypedDataHash(spoke, p));
     signature = abi.encodePacked(r, s, v);
 
-    spoke.setUserPositionManagersWithSig(p, signature);
+    _setUserPositionManagersWithSig(spoke, p, signature);
     vm.snapshotGasLastCall(NAMESPACE, 'setUserPositionManagersWithSig: disable');
   }
 

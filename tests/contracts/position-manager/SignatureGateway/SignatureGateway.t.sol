@@ -9,12 +9,12 @@ contract SignatureGatewayTest is SignatureGatewayBaseTest {
   function setUp() public virtual override {
     super.setUp();
     vm.prank(SPOKE_ADMIN);
-    spoke1.updatePositionManager(address(gateway), true);
+    _updatePositionManager(spoke1, address(gateway), true);
     vm.prank(alice);
-    spoke1.setUserPositionManager(address(gateway), true);
+    _setUserPositionManager(spoke1, address(gateway), true);
 
-    assertTrue(spoke1.isPositionManagerActive(address(gateway)));
-    assertTrue(spoke1.isPositionManager(alice, address(gateway)));
+    assertTrue(_isPositionManagerActive(spoke1, address(gateway)));
+    assertTrue(_isPositionManager(spoke1, alice, address(gateway)));
   }
 
   function test_useNonce_monotonic(bytes32) public {
@@ -43,7 +43,10 @@ contract SignatureGatewayTest is SignatureGatewayBaseTest {
 
   function test_renouncePositionManagerRole() public {
     address user = vm.randomAddress();
-    vm.expectCall(address(spoke1), abi.encodeCall(ISpoke.renouncePositionManagerRole, (user)));
+    vm.expectCall(
+      spoke1.GATE(),
+      abi.encodeCall(IPositionManagerGate.renouncePositionManagerRole, (address(spoke1), user))
+    );
     vm.prank(ADMIN);
     gateway.renouncePositionManagerRole(address(spoke1), user);
   }
@@ -305,19 +308,27 @@ contract SignatureGatewayTest is SignatureGatewayBaseTest {
   }
 
   function test_setSelfAsUserPositionManagerWithSig() public {
-    ISpoke.PositionManagerUpdate[] memory updates = new ISpoke.PositionManagerUpdate[](1);
-    updates[0] = ISpoke.PositionManagerUpdate(address(gateway), true);
+    IPositionManagerGate.PositionManagerUpdate[]
+      memory updates = new IPositionManagerGate.PositionManagerUpdate[](1);
+    updates[0] = IPositionManagerGate.PositionManagerUpdate(address(gateway), true);
 
-    ISpoke.SetUserPositionManagers memory p = ISpoke.SetUserPositionManagers({
-      updates: updates,
-      onBehalfOf: alice,
-      nonce: spoke1.nonces(address(alice), _randomNonceKey()), // note: this typed sig is forwarded to spoke
-      deadline: _warpBeforeRandomDeadline(MAX_SKIP_TIME)
-    });
+    IPositionManagerGate.SetUserPositionManagers memory p = IPositionManagerGate
+      .SetUserPositionManagers({
+        spoke: address(spoke1),
+        updates: updates,
+        onBehalfOf: alice,
+        nonce: IPositionManagerGate(spoke1.GATE()).nonces(address(alice), _randomNonceKey()), // note: this typed sig is forwarded to spoke
+        deadline: _warpBeforeRandomDeadline(MAX_SKIP_TIME)
+      });
     bytes memory signature = _sign(alicePk, _getTypedDataHash(spoke1, p));
 
-    vm.expectEmit(address(spoke1));
-    emit ISpoke.SetUserPositionManager(alice, address(gateway), p.updates[0].approve);
+    vm.expectEmit(spoke1.GATE());
+    emit IPositionManagerGate.SetUserPositionManager(
+      address(spoke1),
+      alice,
+      address(gateway),
+      p.updates[0].approve
+    );
 
     vm.prank(vm.randomAddress());
     gateway.setSelfAsUserPositionManagerWithSig({
@@ -329,7 +340,7 @@ contract SignatureGatewayTest is SignatureGatewayBaseTest {
       signature: signature
     });
 
-    _assertNonceIncrement(ISignatureGateway(address(spoke1)), alice, p.nonce); // note: nonce consumed on spoke
+    _assertNonceIncrement(IPositionManagerGate(spoke1.GATE()), alice, p.nonce);
     _assertGatewayHasNoBalanceOrAllowance(spoke1, gateway, alice);
     _assertGatewayHasNoActivePosition(spoke1, gateway);
   }

@@ -3,12 +3,11 @@ pragma solidity ^0.8.0;
 
 /// @title ISpokeGate
 /// @author Aave Labs
-/// @notice Interface for a gate, which replaces the default position manager authorization on
-/// position actions of a permissioned Spoke.
+/// @notice Interface for the immutable policy contract authorizing position actions on a Spoke.
 interface ISpokeGate {
   /// @notice Returns whether a position action on the Spoke is allowed.
-  /// @dev Called by the Spoke, so it can preserve the default authorization by calling back
-  /// `ISpoke(msg.sender).isPositionManager`.
+  /// @dev Called by the Spoke. Implementations can be stateful and shared by multiple Spokes;
+  /// `msg.sender` identifies the calling Spoke.
   /// @param caller The transaction initiator on the Spoke.
   /// @param onBehalfOf The owner of the position being modified.
   /// @param data The full calldata of the Spoke call, allowing per-action decoding.

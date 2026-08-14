@@ -9,6 +9,11 @@ import {IAccessManager} from 'src/dependencies/openzeppelin/IAccessManager.sol';
 import {IHub} from 'src/hub/interfaces/IHub.sol';
 import {IHubConfigurator} from 'src/hub/interfaces/IHubConfigurator.sol';
 import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
+import {IPositionManagerGate} from 'src/spoke/interfaces/IPositionManagerGate.sol';
+import {
+  PositionManagerGateAdapter,
+  PositionManagerGateTestHelpers
+} from 'tests/helpers/spoke/PositionManagerGateAdapter.sol';
 import {ISpokeConfigurator} from 'src/spoke/interfaces/ISpokeConfigurator.sol';
 import {IAaveOracle} from 'src/spoke/interfaces/IAaveOracle.sol';
 import {IAssetInterestRateStrategy} from 'src/hub/interfaces/IAssetInterestRateStrategy.sol';
@@ -42,7 +47,8 @@ import {MockGovernanceExecutor} from 'tests/helpers/mocks/config-engine/MockGove
 import {MockPriceFeed} from 'tests/helpers/mocks/MockPriceFeed.sol';
 import {PositionManagerBaseWrapper} from 'tests/helpers/mocks/PositionManagerBaseWrapper.sol';
 
-abstract contract BaseConfigEngineTest is Test, Create2TestHelper {
+abstract contract BaseConfigEngineTest is Test, Create2TestHelper, PositionManagerGateTestHelpers {
+  using PositionManagerGateAdapter for ISpoke;
   uint256 internal constant NUM_HUBS = 2;
   uint256 internal constant NUM_SPOKES = 3;
   uint256 internal constant NUM_TOKENS = 4;
@@ -154,6 +160,7 @@ abstract contract BaseConfigEngineTest is Test, Create2TestHelper {
     for (uint256 i; i < NUM_SPOKES; ++i) {
       spokes[i] = ISpoke(report.spokeReports[i].spoke);
       oracles[i] = IAaveOracle(report.spokeReports[i].aaveOracle);
+      _cachePositionManagerGate(spokes[i]);
     }
 
     executor = new MockGovernanceExecutor(PAYLOADS_CONTROLLER);
@@ -206,7 +213,9 @@ abstract contract BaseConfigEngineTest is Test, Create2TestHelper {
     );
     AaveV4SpokeRolesProcedure.setupSpokeAllRoles(address(accessManager), report.spoke);
     vm.stopPrank();
-    return (ISpoke(report.spoke), IAaveOracle(report.aaveOracle));
+    ISpoke spoke = ISpoke(report.spoke);
+    _cachePositionManagerGate(spoke);
+    return (spoke, IAaveOracle(report.aaveOracle));
   }
 
   function _setupRoles(TestTypes.TestEnvReport memory report) internal {

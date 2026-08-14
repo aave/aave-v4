@@ -4,6 +4,7 @@ pragma solidity ^0.8.0;
 import {Test} from 'forge-std/Test.sol';
 import {INoncesKeyed} from 'src/utils/NoncesKeyed.sol';
 import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
+import {IPositionManagerGate} from 'src/spoke/interfaces/IPositionManagerGate.sol';
 import {EIP712Types} from 'tests/helpers/mocks/EIP712Types.sol';
 import {TestnetERC20} from 'tests/helpers/mocks/TestnetERC20.sol';
 import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
@@ -33,13 +34,13 @@ abstract contract EIP712Helpers is Test {
 
   function _getTypedDataHash(
     ISpoke spoke,
-    ISpoke.SetUserPositionManagers memory setUserPositionManagers
+    IPositionManagerGate.SetUserPositionManagers memory setUserPositionManagers
   ) internal view returns (bytes32) {
     return
       keccak256(
         abi.encodePacked(
           '\x19\x01',
-          spoke.DOMAIN_SEPARATOR(),
+          IPositionManagerGate(spoke.GATE()).DOMAIN_SEPARATOR(),
           vm.eip712HashStruct('SetUserPositionManagers', abi.encode(setUserPositionManagers))
         )
       );

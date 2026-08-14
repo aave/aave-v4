@@ -145,7 +145,9 @@ abstract contract MathHelpers is QueryHelpers {
   ) internal returns (ISpoke.UserAccountData memory) {
     uint256 snapshot = vm.snapshotState();
 
-    address mockSpoke = address(new MockSpoke(spoke.ORACLE(), MAX_ALLOWED_USER_RESERVES_LIMIT));
+    address mockSpoke = address(
+      new MockSpoke(spoke.ORACLE(), MAX_ALLOWED_USER_RESERVES_LIMIT, spoke.GATE())
+    );
 
     address implementation = _getImplementationAddress(address(spoke));
 

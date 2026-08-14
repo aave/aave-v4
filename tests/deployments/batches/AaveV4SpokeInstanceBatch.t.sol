@@ -12,6 +12,7 @@ contract AaveV4SpokeInstanceBatchTest is BatchBaseTest {
     spokeBatch = new AaveV4SpokeInstanceBatch({
       proxyAdminOwner_: admin,
       authority_: accessManager,
+      gate_: gate,
       spokeBytecode_: spokeBytecode,
       oracleDecimals_: 8,
       maxUserReservesLimit_: 128,
@@ -48,6 +49,7 @@ contract AaveV4SpokeInstanceBatchTest is BatchBaseTest {
     new AaveV4SpokeInstanceBatch({
       proxyAdminOwner_: admin,
       authority_: address(0),
+      gate_: gate,
       spokeBytecode_: spokeBytecode,
       oracleDecimals_: 8,
       maxUserReservesLimit_: 128,
@@ -60,6 +62,7 @@ contract AaveV4SpokeInstanceBatchTest is BatchBaseTest {
     new AaveV4SpokeInstanceBatch({
       proxyAdminOwner_: address(0),
       authority_: accessManager,
+      gate_: gate,
       spokeBytecode_: spokeBytecode,
       oracleDecimals_: 8,
       maxUserReservesLimit_: 128,
@@ -72,6 +75,7 @@ contract AaveV4SpokeInstanceBatchTest is BatchBaseTest {
     new AaveV4SpokeInstanceBatch({
       proxyAdminOwner_: admin,
       authority_: accessManager,
+      gate_: gate,
       spokeBytecode_: spokeBytecode,
       oracleDecimals_: 0,
       maxUserReservesLimit_: 128,
@@ -84,6 +88,7 @@ contract AaveV4SpokeInstanceBatchTest is BatchBaseTest {
     new AaveV4SpokeInstanceBatch({
       proxyAdminOwner_: admin,
       authority_: accessManager,
+      gate_: gate,
       spokeBytecode_: spokeBytecode,
       oracleDecimals_: 8,
       maxUserReservesLimit_: 0,
@@ -95,6 +100,7 @@ contract AaveV4SpokeInstanceBatchTest is BatchBaseTest {
     AaveV4SpokeInstanceBatch newBatch = new AaveV4SpokeInstanceBatch({
       proxyAdminOwner_: admin,
       authority_: accessManager,
+      gate_: gate,
       spokeBytecode_: spokeBytecode,
       oracleDecimals_: 8,
       maxUserReservesLimit_: 128,

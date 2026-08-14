@@ -2,12 +2,14 @@
 pragma solidity ^0.8.0;
 
 import 'tests/deployments/procedures/ProceduresBase.t.sol';
+import {IPositionManagerGate} from 'src/spoke/interfaces/IPositionManagerGate.sol';
 
 contract AaveV4SpokeRolesProcedureTest is ProceduresBase {
   AaveV4SpokeRolesProcedureWrapper public aaveV4SpokeRolesProcedureWrapper;
   function setUp() public override {
     super.setUp();
     aaveV4SpokeRolesProcedureWrapper = new AaveV4SpokeRolesProcedureWrapper();
+    vm.mockCall(spoke, abi.encodeCall(ISpoke.GATE, ()), abi.encode(gate));
   }
 
   function test_grantSpokeAllRoles_reverts() public {
@@ -111,6 +113,13 @@ contract AaveV4SpokeRolesProcedureTest is ProceduresBase {
       IAccessManager(accessManager).getTargetFunctionRole(spoke, ISpoke.addReserve.selector),
       Roles.SPOKE_CONFIGURATOR_ROLE
     );
+    assertEq(
+      IAccessManager(accessManager).getTargetFunctionRole(
+        gate,
+        IPositionManagerGate.updatePositionManager.selector
+      ),
+      Roles.SPOKE_CONFIGURATOR_ROLE
+    );
   }
 
   function _grantAdminToWrapper(address wrapper) internal {
@@ -129,14 +138,13 @@ contract AaveV4SpokeRolesProcedureTest is ProceduresBase {
   function test_getSpokeConfiguratorRoleSelectors() public view {
     bytes4[] memory selectors = aaveV4SpokeRolesProcedureWrapper
       .getSpokeConfiguratorRoleSelectors();
-    assertEq(selectors.length, 7);
+    assertEq(selectors.length, 6);
     assertEq(selectors[0], ISpoke.updateLiquidationConfig.selector);
     assertEq(selectors[1], ISpoke.addReserve.selector);
     assertEq(selectors[2], ISpoke.updateReserveConfig.selector);
     assertEq(selectors[3], ISpoke.updateDynamicReserveConfig.selector);
     assertEq(selectors[4], ISpoke.addDynamicReserveConfig.selector);
-    assertEq(selectors[5], ISpoke.updatePositionManager.selector);
-    assertEq(selectors[6], ISpoke.updateReservePriceSource.selector);
+    assertEq(selectors[5], ISpoke.updateReservePriceSource.selector);
   }
 
   function test_canCall_spokePositionUpdaterRole() public {
@@ -232,5 +240,13 @@ contract AaveV4SpokeRolesProcedureTest is ProceduresBase {
       assertTrue(allowed);
       assertEq(delay, 0);
     }
+
+    (bool gateAllowed, uint32 gateDelay) = IAccessManager(accessManager).canCall(
+      admin,
+      gate,
+      IPositionManagerGate.updatePositionManager.selector
+    );
+    assertTrue(gateAllowed);
+    assertEq(gateDelay, 0);
   }
 }

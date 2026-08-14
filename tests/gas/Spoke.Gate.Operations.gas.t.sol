@@ -1,28 +1,27 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import 'tests/setup/PermissionedSpokeBase.sol';
+import 'tests/setup/GateSpokeBase.sol';
 
 import {
-  PositionManagerPolicyGate,
   GlobalManagerPolicyGate,
   BorrowAllowlistPolicyGate,
   MockAllowlist
 } from 'tests/helpers/mocks/PolicyGates.sol';
 
 /// forge-config: default.isolate = true
-contract PermissionedSpokeOperations_Gas_Tests is PermissionedSpokeBase {
-  string internal NAMESPACE = 'PermissionedSpoke.Operations';
+contract SpokeGateOperations_Gas_Tests is GateSpokeBase {
+  string internal NAMESPACE = 'Spoke.Gate.Operations';
 
   /// @dev Same authorization as the standard spoke, routed through the gate.
   function test_operations_positionManagerPolicy() public {
-    ISpoke target = _deployPermissionedSpoke(address(new PositionManagerPolicyGate()));
+    ISpoke target = _deploySpokeWithGate(address(new PositionManagerGate(address(accessManager))));
     _snapshotOperations(target, 'position-manager policy');
   }
 
   /// @dev Horizon-style policy: a fixed global manager may act for any user.
   function test_operations_globalManagerPolicy() public {
-    ISpoke target = _deployPermissionedSpoke(address(new GlobalManagerPolicyGate(RWA_MANAGER)));
+    ISpoke target = _deploySpokeWithGate(address(new GlobalManagerPolicyGate(RWA_MANAGER)));
     _snapshotOperations(target, 'global-manager policy');
   }
 
@@ -30,7 +29,7 @@ contract PermissionedSpokeOperations_Gas_Tests is PermissionedSpokeBase {
   function test_operations_borrowAllowlistPolicy() public {
     MockAllowlist allowlist = new MockAllowlist();
     allowlist.setAllowed(alice, true);
-    ISpoke target = _deployPermissionedSpoke(address(new BorrowAllowlistPolicyGate(allowlist)));
+    ISpoke target = _deploySpokeWithGate(address(new BorrowAllowlistPolicyGate(allowlist)));
     _snapshotOperations(target, 'borrow-allowlist policy');
   }
 

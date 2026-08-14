@@ -402,7 +402,7 @@ contract SpokeDynamicConfigTriggersTest is Base {
     vm.prank(caller);
     spoke1.updateUserDynamicConfig(alice);
 
-    assertFalse(spoke1.isPositionManager(alice, POSITION_MANAGER));
+    assertFalse(_isPositionManager(spoke1, alice, POSITION_MANAGER));
     vm.expectRevert(
       abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, POSITION_MANAGER)
     );
@@ -410,10 +410,10 @@ contract SpokeDynamicConfigTriggersTest is Base {
     spoke1.updateUserDynamicConfig(alice);
 
     vm.prank(ADMIN);
-    spoke1.updatePositionManager({positionManager: POSITION_MANAGER, active: true});
+    _updatePositionManager(spoke1, POSITION_MANAGER, true);
 
     vm.prank(alice);
-    spoke1.setUserPositionManager(POSITION_MANAGER, true);
+    _setUserPositionManager(spoke1, POSITION_MANAGER, true);
 
     _updateUserDynamicConfig({caller: alice, existingConfigs: configs});
     _updateUserDynamicConfig({caller: POSITION_MANAGER, existingConfigs: configs});

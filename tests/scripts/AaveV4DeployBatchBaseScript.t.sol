@@ -60,6 +60,7 @@ contract AaveV4DeployBatchBaseScriptTest is Test {
       spokeConfiguratorAdmin: makeAddr('spokeConfiguratorAdmin'),
       gatewayOwner: makeAddr('gatewayOwner'),
       positionManagerOwner: makeAddr('positionManagerOwner'),
+      spokeGate: address(0),
       nativeWrapper: address(new WETH9()),
       deployNativeTokenGateway: true,
       deploySignatureGateway: true,

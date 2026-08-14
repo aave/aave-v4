@@ -20,10 +20,12 @@ library BatchReports {
   /// @dev spokeProxy The deployed Spoke proxy contract address.
   /// @dev spokeImplementation The deployed Spoke implementation contract address.
   /// @dev aaveOracle The deployed AaveOracle contract address.
+  /// @dev gate The immutable gate used by the Spoke.
   struct SpokeInstanceBatchReport {
     address spokeProxy;
     address spokeImplementation;
     address aaveOracle;
+    address gate;
   }
 
   /// @dev hubProxy The deployed Hub proxy contract address.

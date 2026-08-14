@@ -16,7 +16,7 @@ contract PositionManager_Gas_Tests is Base {
     positionManager = new PositionManagerBaseWrapper(address(ADMIN));
 
     vm.prank(SPOKE_ADMIN);
-    spoke1.updatePositionManager(address(positionManager), true);
+    _updatePositionManager(spoke1, address(positionManager), true);
 
     vm.prank(ADMIN);
     positionManager.registerSpoke(address(spoke1), true);
@@ -24,21 +24,24 @@ contract PositionManager_Gas_Tests is Base {
 
   function test_setSelfAsUserPositionManagerWithSig() public {
     vm.prank(alice);
-    spoke1.useNonce(nonceKey);
+    IPositionManagerGate(spoke1.GATE()).useNonce(nonceKey);
 
-    ISpoke.PositionManagerUpdate[] memory updates = new ISpoke.PositionManagerUpdate[](1);
-    updates[0] = ISpoke.PositionManagerUpdate(address(positionManager), true);
+    IPositionManagerGate.PositionManagerUpdate[]
+      memory updates = new IPositionManagerGate.PositionManagerUpdate[](1);
+    updates[0] = IPositionManagerGate.PositionManagerUpdate(address(positionManager), true);
 
-    ISpoke.SetUserPositionManagers memory p = ISpoke.SetUserPositionManagers({
-      onBehalfOf: alice,
-      updates: updates,
-      nonce: spoke1.nonces(alice, nonceKey),
-      deadline: vm.getBlockTimestamp()
-    });
+    IPositionManagerGate.SetUserPositionManagers memory p = IPositionManagerGate
+      .SetUserPositionManagers({
+        spoke: address(spoke1),
+        onBehalfOf: alice,
+        updates: updates,
+        nonce: IPositionManagerGate(spoke1.GATE()).nonces(alice, nonceKey),
+        deadline: vm.getBlockTimestamp()
+      });
     bytes memory signature = _sign(alicePk, _getTypedDataHash(spoke1, p));
 
     vm.prank(alice);
-    spoke1.setUserPositionManager(address(positionManager), false);
+    _setUserPositionManager(spoke1, address(positionManager), false);
 
     positionManager.setSelfAsUserPositionManagerWithSig({
       spoke: address(spoke1),
@@ -63,11 +66,11 @@ contract GiverPositionManager_Gas_Tests is Base {
 
     positionManager = new GiverPositionManager(address(ADMIN));
     vm.prank(SPOKE_ADMIN);
-    spoke1.updatePositionManager(address(positionManager), true);
+    _updatePositionManager(spoke1, address(positionManager), true);
     vm.prank(ADMIN);
     positionManager.registerSpoke(address(spoke1), true);
     vm.prank(alice);
-    spoke1.setUserPositionManager(address(positionManager), true);
+    _setUserPositionManager(spoke1, address(positionManager), true);
     vm.prank(bob);
     tokenList.dai.approve(address(positionManager), UINT256_MAX);
   }
@@ -141,11 +144,11 @@ contract TakerPositionManager_Gas_Tests is Base {
 
     positionManager = new TakerPositionManager(address(ADMIN));
     vm.prank(SPOKE_ADMIN);
-    spoke1.updatePositionManager(address(positionManager), true);
+    _updatePositionManager(spoke1, address(positionManager), true);
     vm.prank(ADMIN);
     positionManager.registerSpoke(address(spoke1), true);
     vm.prank(alice);
-    spoke1.setUserPositionManager(address(positionManager), true);
+    _setUserPositionManager(spoke1, address(positionManager), true);
   }
 
   function test_withdrawOnBehalfOf() public {
@@ -318,11 +321,11 @@ contract ConfigPositionManager_Gas_Tests is Base {
     positionManager = new ConfigPositionManager(address(ADMIN));
 
     vm.prank(SPOKE_ADMIN);
-    spoke1.updatePositionManager(address(positionManager), true);
+    _updatePositionManager(spoke1, address(positionManager), true);
     vm.prank(ADMIN);
     positionManager.registerSpoke(address(spoke1), true);
     vm.prank(alice);
-    spoke1.setUserPositionManager(address(positionManager), true);
+    _setUserPositionManager(spoke1, address(positionManager), true);
   }
 
   function test_setGlobalPermission() public {

@@ -112,15 +112,20 @@ contract PositionManagerEngineTest is BaseConfigEngineTest {
     );
 
     vm.prank(USER);
-    spoke1().setUserPositionManager(address(positionManager), true);
+    _setUserPositionManager(spoke1(), address(positionManager), true);
 
     vm.expectCall(
       address(positionManager),
       abi.encodeCall(IPositionManagerBase.renouncePositionManagerRole, (address(spoke1()), USER))
     );
 
-    vm.expectEmit(address(spoke1()));
-    emit ISpoke.SetUserPositionManager(USER, address(positionManager), false);
+    vm.expectEmit(spoke1().GATE());
+    emit IPositionManagerGate.SetUserPositionManager(
+      address(spoke1()),
+      USER,
+      address(positionManager),
+      false
+    );
 
     engine.executePositionManagerRoleRenouncements(
       _toPositionManagerRoleRenouncementArray(
@@ -132,7 +137,7 @@ contract PositionManagerEngineTest is BaseConfigEngineTest {
       )
     );
 
-    assertFalse(spoke1().isPositionManager(USER, address(positionManager)));
+    assertFalse(_isPositionManager(spoke1(), USER, address(positionManager)));
   }
 
   function test_executePositionManagerRoleRenouncements_revert() public {
@@ -204,7 +209,7 @@ contract PositionManagerEngineTest is BaseConfigEngineTest {
       )
     );
 
-    assertFalse(spoke1().isPositionManager(USER, address(positionManager)));
+    assertFalse(_isPositionManager(spoke1(), USER, address(positionManager)));
   }
 
   function test_executePositionManagerSpokeRegistrations_batchMultipleSpokes() public {

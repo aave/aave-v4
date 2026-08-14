@@ -8,6 +8,7 @@ import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
 import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
 import {IHub} from 'src/hub/interfaces/IHub.sol';
 import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
+import {PositionManagerGate} from 'src/spoke/gates/PositionManagerGate.sol';
 import {IAaveOracle} from 'src/spoke/interfaces/IAaveOracle.sol';
 import {AaveOracle} from 'src/spoke/AaveOracle.sol';
 import {AaveV4TestOrchestration} from 'tests/deployments/orchestration/AaveV4TestOrchestration.sol';
@@ -239,7 +240,9 @@ abstract contract SetupHelpers is CheckedActions, ConfigHelpers, MockHelpers {
     uint256 reserveId,
     uint256 debtAmount
   ) internal {
-    address mockSpoke = address(new MockSpoke(spoke.ORACLE(), MAX_ALLOWED_USER_RESERVES_LIMIT));
+    address mockSpoke = address(
+      new MockSpoke(spoke.ORACLE(), MAX_ALLOWED_USER_RESERVES_LIMIT, spoke.GATE())
+    );
 
     address implementation = _getImplementationAddress(address(spoke));
 
@@ -407,7 +410,8 @@ abstract contract SetupHelpers is CheckedActions, ConfigHelpers, MockHelpers {
     address currentImpl = _getImplementationAddress(address(spoke));
     ISpokeInstance newImpl = AaveV4TestOrchestration.deploySpokeImplementation(
       spoke.ORACLE(),
-      newLimit
+      newLimit,
+      spoke.GATE()
     );
     vm.etch(currentImpl, address(newImpl).code);
   }
@@ -432,11 +436,16 @@ abstract contract SetupHelpers is CheckedActions, ConfigHelpers, MockHelpers {
 
     vm.startPrank(deployer);
     IAaveOracle oracle = new AaveOracle(8);
+    PositionManagerGate gate = new PositionManagerGate(_accessManager);
 
     ISpoke spoke = ISpoke(
       AaveV4TestOrchestration.proxify(
         address(
-          AaveV4TestOrchestration.deploySpokeImplementation(address(oracle), maxUserReservesLimit)
+          AaveV4TestOrchestration.deploySpokeImplementation(
+            address(oracle),
+            maxUserReservesLimit,
+            address(gate)
+          )
         ),
         proxyAdminOwner,
         abi.encodeCall(ISpokeInstance.initialize, (_accessManager))

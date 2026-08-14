@@ -5,48 +5,52 @@ import 'tests/setup/Base.t.sol';
 
 contract SpokePositionManagerTest is Base {
   function test_setApprovalForPositionManager(bytes32) public {
-    vm.setArbitraryStorage(address(spoke1));
+    vm.setArbitraryStorage(spoke1.GATE());
 
     address user = vm.randomAddress();
     address positionManager = vm.randomAddress();
     bool approve = vm.randomBool();
 
-    vm.expectEmit(address(spoke1));
-    emit ISpoke.SetUserPositionManager(user, positionManager, approve);
+    vm.expectEmit(spoke1.GATE());
+    emit IPositionManagerGate.SetUserPositionManager(
+      address(spoke1),
+      user,
+      positionManager,
+      approve
+    );
 
     vm.prank(user);
-    spoke1.setUserPositionManager(positionManager, approve);
+    _setUserPositionManager(spoke1, positionManager, approve);
   }
 
   function test_renouncePositionManagerRole() public {
-    vm.setArbitraryStorage(address(spoke1));
-
     address user = vm.randomAddress();
     address positionManager = vm.randomAddress();
 
-    if (!spoke1.isPositionManager(user, positionManager)) {
-      vm.expectEmit(address(spoke1));
-      emit ISpoke.SetUserPositionManager(user, positionManager, false);
-    }
-    vm.prank(positionManager);
-    spoke1.renouncePositionManagerRole(user);
+    vm.prank(user);
+    _setUserPositionManager(spoke1, positionManager, true);
 
-    assertFalse(spoke1.isPositionManager(user, positionManager));
+    vm.expectEmit(spoke1.GATE());
+    emit IPositionManagerGate.SetUserPositionManager(address(spoke1), user, positionManager, false);
+    vm.prank(positionManager);
+    _renouncePositionManagerRole(spoke1, user);
+
+    assertFalse(_isPositionManager(spoke1, user, positionManager));
   }
 
   function test_renouncePositionManagerRole_noop_from_disabled() public {
-    vm.setArbitraryStorage(address(spoke1));
+    vm.setArbitraryStorage(spoke1.GATE());
 
     address user = vm.randomAddress();
     vm.prank(user);
-    spoke1.setUserPositionManager(POSITION_MANAGER, false);
+    _setUserPositionManager(spoke1, POSITION_MANAGER, false);
 
     vm.recordLogs();
     vm.prank(POSITION_MANAGER);
-    spoke1.renouncePositionManagerRole(user);
+    _renouncePositionManagerRole(spoke1, user);
 
     assertEq(vm.getRecordedLogs().length, 0);
-    assertFalse(spoke1.isPositionManager(user, POSITION_MANAGER));
+    assertFalse(_isPositionManager(spoke1, user, POSITION_MANAGER));
   }
 
   function test_onlyPositionManager_on_supply() public {
@@ -454,30 +458,30 @@ contract SpokePositionManagerTest is Base {
   }
 
   function _approvePositionManager(address who) internal {
-    assertFalse(spoke1.isPositionManager(who, POSITION_MANAGER));
-    assertFalse(spoke1.isPositionManagerActive(POSITION_MANAGER));
+    assertFalse(_isPositionManager(spoke1, who, POSITION_MANAGER));
+    assertFalse(_isPositionManagerActive(spoke1, POSITION_MANAGER));
 
-    vm.expectEmit(address(spoke1));
-    emit ISpoke.UpdatePositionManager(POSITION_MANAGER, true);
+    vm.expectEmit(spoke1.GATE());
+    emit IPositionManagerGate.UpdatePositionManager(address(spoke1), POSITION_MANAGER, true);
     vm.prank(SPOKE_ADMIN);
-    spoke1.updatePositionManager({positionManager: POSITION_MANAGER, active: true});
+    _updatePositionManager(spoke1, POSITION_MANAGER, true);
 
-    vm.expectEmit(address(spoke1));
-    emit ISpoke.SetUserPositionManager(who, POSITION_MANAGER, true);
+    vm.expectEmit(spoke1.GATE());
+    emit IPositionManagerGate.SetUserPositionManager(address(spoke1), who, POSITION_MANAGER, true);
     vm.prank(who);
-    spoke1.setUserPositionManager(POSITION_MANAGER, true);
+    _setUserPositionManager(spoke1, POSITION_MANAGER, true);
 
-    assertTrue(spoke1.isPositionManager(who, POSITION_MANAGER));
-    assertTrue(spoke1.isPositionManagerActive(POSITION_MANAGER));
+    assertTrue(_isPositionManager(spoke1, who, POSITION_MANAGER));
+    assertTrue(_isPositionManagerActive(spoke1, POSITION_MANAGER));
   }
 
   function _disablePositionManager() internal {
-    vm.expectEmit(address(spoke1));
-    emit ISpoke.UpdatePositionManager(POSITION_MANAGER, false);
+    vm.expectEmit(spoke1.GATE());
+    emit IPositionManagerGate.UpdatePositionManager(address(spoke1), POSITION_MANAGER, false);
     vm.prank(SPOKE_ADMIN);
-    spoke1.updatePositionManager({positionManager: POSITION_MANAGER, active: false});
+    _updatePositionManager(spoke1, POSITION_MANAGER, false);
 
-    assertFalse(spoke1.isPositionManagerActive(POSITION_MANAGER));
+    assertFalse(_isPositionManagerActive(spoke1, POSITION_MANAGER));
   }
 
   function _resetTokenAllowance(address who) internal {

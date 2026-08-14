@@ -10,8 +10,10 @@ contract SpokeInstance is SpokeInstanceBase {
   /// @dev Constructor.
   /// @param oracle_ The address of the oracle.
   /// @param maxUserReservesLimit_ The maximum number of collateral and borrow reserves a user can have.
+  /// @param gate_ The address of the gate authorizing position actions.
   constructor(
     address oracle_,
-    uint16 maxUserReservesLimit_
-  ) SpokeInstanceBase(oracle_, maxUserReservesLimit_) {}
+    uint16 maxUserReservesLimit_,
+    address gate_
+  ) SpokeInstanceBase(oracle_, maxUserReservesLimit_, gate_) {}
 }

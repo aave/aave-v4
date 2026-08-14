@@ -32,9 +32,6 @@ abstract contract SpokeStorage {
   mapping(address user => mapping(uint256 reserveId => ISpoke.UserPosition))
     internal _userPositions;
 
-  /// @dev Map of position manager addresses to their configuration data.
-  mapping(address positionManager => ISpoke.PositionManagerConfig) internal _positionManager;
-
   /// @dev Reserved storage space to allow for future layout updates.
-  uint256[50] private __gap;
+  uint256[51] private __gap;
 }

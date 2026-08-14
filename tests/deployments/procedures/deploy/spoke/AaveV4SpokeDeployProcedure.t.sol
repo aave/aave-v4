@@ -16,6 +16,7 @@ contract AaveV4SpokeDeployProcedureTest is ProceduresBase {
         owner,
         accessManager,
         aaveOracle,
+        gate,
         spokeBytecode,
         maxUserReservesLimit,
         salt
@@ -33,6 +34,7 @@ contract AaveV4SpokeDeployProcedureTest is ProceduresBase {
       proxyAdminOwner: address(0),
       authority: accessManager,
       oracle: aaveOracle,
+      gate: gate,
       spokeBytecode: spokeBytecode,
       maxUserReservesLimit: maxUserReservesLimit,
       salt: salt
@@ -43,6 +45,7 @@ contract AaveV4SpokeDeployProcedureTest is ProceduresBase {
       proxyAdminOwner: owner,
       authority: address(0),
       oracle: aaveOracle,
+      gate: gate,
       spokeBytecode: spokeBytecode,
       maxUserReservesLimit: maxUserReservesLimit,
       salt: salt
@@ -53,6 +56,7 @@ contract AaveV4SpokeDeployProcedureTest is ProceduresBase {
       proxyAdminOwner: owner,
       authority: accessManager,
       oracle: address(0),
+      gate: gate,
       spokeBytecode: spokeBytecode,
       maxUserReservesLimit: maxUserReservesLimit,
       salt: salt
@@ -63,6 +67,7 @@ contract AaveV4SpokeDeployProcedureTest is ProceduresBase {
       proxyAdminOwner: owner,
       authority: accessManager,
       oracle: aaveOracle,
+      gate: gate,
       spokeBytecode: spokeBytecode,
       maxUserReservesLimit: 0,
       salt: salt

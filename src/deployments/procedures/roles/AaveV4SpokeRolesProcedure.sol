@@ -3,6 +3,8 @@ pragma solidity ^0.8.0;
 
 import {IAccessManager} from 'src/dependencies/openzeppelin/IAccessManager.sol';
 import {Roles} from 'src/deployments/utils/libraries/Roles.sol';
+import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
+import {IPositionManagerGate} from 'src/spoke/interfaces/IPositionManagerGate.sol';
 
 /// @title AaveV4SpokeRolesProcedure Library
 /// @author Aave Labs
@@ -41,6 +43,15 @@ library AaveV4SpokeRolesProcedure {
       spoke: spoke,
       roleId: Roles.SPOKE_CONFIGURATOR_ROLE,
       selectors: Roles.getSpokeConfiguratorRoleSelectors()
+    });
+
+    bytes4[] memory gateSelectors = new bytes4[](1);
+    gateSelectors[0] = IPositionManagerGate.updatePositionManager.selector;
+    setupSpokeRole({
+      accessManager: accessManager,
+      spoke: ISpoke(spoke).GATE(),
+      roleId: Roles.SPOKE_CONFIGURATOR_ROLE,
+      selectors: gateSelectors
     });
   }
 

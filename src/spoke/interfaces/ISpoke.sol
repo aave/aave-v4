@@ -2,7 +2,6 @@
 pragma solidity ^0.8.0;
 
 import {IAccessManaged} from 'src/dependencies/openzeppelin/IAccessManaged.sol';
-import {IIntentConsumer} from 'src/interfaces/IIntentConsumer.sol';
 import {IMulticall} from 'src/interfaces/IMulticall.sol';
 import {IHubBase} from 'src/hub/interfaces/IHubBase.sol';
 import {IExtSload} from 'src/interfaces/IExtSload.sol';
@@ -12,27 +11,7 @@ type ReserveFlags is uint8;
 /// @title ISpoke
 /// @author Aave Labs
 /// @notice Full interface for Spoke.
-interface ISpoke is IAccessManaged, IIntentConsumer, IExtSload, IMulticall {
-  /// @notice Intent data to set user position managers with EIP712-typed signature.
-  /// @param onBehalfOf The address of the user on whose behalf position manager can act.
-  /// @param updates The array of position manager updates.
-  /// @param nonce The nonce for the signature.
-  /// @param deadline The deadline for the signature.
-  struct SetUserPositionManagers {
-    address onBehalfOf;
-    PositionManagerUpdate[] updates;
-    uint256 nonce;
-    uint256 deadline;
-  }
-
-  /// @notice Sub-Intent data to apply position manager update for user.
-  /// @param positionManager The address of the position manager.
-  /// @param approve True to approve the position manager, false to revoke approval.
-  struct PositionManagerUpdate {
-    address positionManager;
-    bool approve;
-  }
-
+interface ISpoke is IAccessManaged, IExtSload, IMulticall {
   /// @notice Reserve level data.
   /// @dev underlying The address of the underlying asset.
   /// @dev hub The address of the associated Hub.
@@ -102,14 +81,6 @@ interface ISpoke is IAccessManaged, IIntentConsumer, IExtSload, IMulticall {
     uint32 dynamicConfigKey;
   }
 
-  /// @notice Position manager configuration data.
-  /// @dev approval The mapping of position manager user approvals.
-  /// @dev active True if the position manager is active.
-  struct PositionManagerConfig {
-    mapping(address user => bool) approval;
-    bool active;
-  }
-
   /// @notice User position status data.
   /// @dev map The map of bitmap buckets for the position status.
   /// @dev riskPremium The risk premium of the user position, expressed in BPS.
@@ -139,7 +110,12 @@ interface ISpoke is IAccessManaged, IIntentConsumer, IExtSload, IMulticall {
   /// @notice Emitted when the immutable variables of the Spoke are set.
   /// @param oracle The address of the oracle.
   /// @param maxUserReservesLimit The max user reserves limit.
-  event SetSpokeImmutables(address indexed oracle, uint16 maxUserReservesLimit);
+  /// @param gate The immutable position-action gate.
+  event SetSpokeImmutables(
+    address indexed oracle,
+    uint16 maxUserReservesLimit,
+    address indexed gate
+  );
 
   /// @notice Emitted when a liquidation config is updated.
   /// @param config The new liquidation config.
@@ -182,11 +158,6 @@ interface ISpoke is IAccessManaged, IIntentConsumer, IExtSload, IMulticall {
     uint32 indexed dynamicConfigKey,
     DynamicReserveConfig config
   );
-
-  /// @notice Emitted on updatePositionManager action.
-  /// @param positionManager The address of the position manager.
-  /// @param active True if position manager has become active.
-  event UpdatePositionManager(address indexed positionManager, bool active);
 
   /// @notice Emitted on the supply action.
   /// @param reserveId The reserve identifier of the underlying asset.
@@ -309,12 +280,6 @@ interface ISpoke is IAccessManaged, IIntentConsumer, IExtSload, IMulticall {
   /// @param user The address of the user.
   /// @param reserveId The identifier of the reserve.
   event RefreshSingleUserDynamicConfig(address indexed user, uint256 reserveId);
-
-  /// @notice Emitted on setUserPositionManager or renouncePositionManagerRole action.
-  /// @param user The address of the user on whose behalf position manager can act.
-  /// @param positionManager The address of the position manager.
-  /// @param approve True if position manager approval was granted, false if it was revoked.
-  event SetUserPositionManager(address indexed user, address indexed positionManager, bool approve);
 
   /// @notice Emitted on refreshPremiumDebt action.
   /// @param reserveId The identifier of the reserve.
@@ -471,15 +436,10 @@ interface ISpoke is IAccessManaged, IIntentConsumer, IExtSload, IMulticall {
     DynamicReserveConfig calldata dynamicConfig
   ) external;
 
-  /// @notice Allows an approved caller (admin) to toggle the active status of position manager.
-  /// @param positionManager The address of the position manager.
-  /// @param active True if positionManager is to be set as active.
-  function updatePositionManager(address positionManager, bool active) external;
-
   /// @notice Supplies an amount of underlying asset of the specified reserve.
   /// @dev It reverts if the reserve associated with the given reserve identifier is not listed.
   /// @dev The Spoke pulls the underlying asset from the caller, so prior token approval is required.
-  /// @dev Caller must be `onBehalfOf` or an authorized position manager for `onBehalfOf`.
+  /// @dev Caller must be authorized by the Spoke's gate for `onBehalfOf`.
   /// @param reserveId The reserve identifier.
   /// @param amount The amount of asset to supply.
   /// @param onBehalfOf The owner of the position to add supply shares to.
@@ -494,7 +454,7 @@ interface ISpoke is IAccessManaged, IIntentConsumer, IExtSload, IMulticall {
   /// @notice Withdraws a specified amount of underlying asset from the given reserve.
   /// @dev It reverts if the reserve associated with the given reserve identifier is not listed.
   /// @dev Providing an amount greater than the maximum withdrawable value signals a full withdrawal.
-  /// @dev Caller must be `onBehalfOf` or an authorized position manager for `onBehalfOf`.
+  /// @dev Caller must be authorized by the Spoke's gate for `onBehalfOf`.
   /// @dev Caller receives the underlying asset withdrawn.
   /// @param reserveId The identifier of the reserve.
   /// @param amount The amount of asset to withdraw.
@@ -510,7 +470,7 @@ interface ISpoke is IAccessManaged, IIntentConsumer, IExtSload, IMulticall {
   /// @notice Borrows a specified amount of underlying asset from the given reserve.
   /// @dev It reverts if the reserve associated with the given reserve identifier is not listed.
   /// @dev It reverts if the user would borrow more than the maximum allowed number of borrowed reserves.
-  /// @dev Caller must be `onBehalfOf` or an authorized position manager for `onBehalfOf`.
+  /// @dev Caller must be authorized by the Spoke's gate for `onBehalfOf`.
   /// @dev Caller receives the underlying asset borrowed.
   /// @param reserveId The identifier of the reserve.
   /// @param amount The amount of asset to borrow.
@@ -526,7 +486,7 @@ interface ISpoke is IAccessManaged, IIntentConsumer, IExtSload, IMulticall {
   /// @notice Repays a specified amount of underlying asset to a given reserve.
   /// @dev It reverts if the reserve associated with the given reserve identifier is not listed.
   /// @dev The Spoke pulls the underlying asset from the caller, so prior approval is required.
-  /// @dev Caller must be `onBehalfOf` or an authorized position manager for `onBehalfOf`.
+  /// @dev Caller must be authorized by the Spoke's gate for `onBehalfOf`.
   /// @param reserveId The identifier of the reserve.
   /// @param amount The amount of asset to repay.
   /// @param onBehalfOf The owner of the position whose debt is repaid.
@@ -558,7 +518,7 @@ interface ISpoke is IAccessManaged, IIntentConsumer, IExtSload, IMulticall {
   /// @dev It reverts if the reserve associated with the given reserve identifier is not listed.
   /// @dev It reverts if the user exceeds the maximum allowed collateral reserves when enabling.
   /// @dev Reserves with zero supplied or zero collateral factor count towards the max allowed collateral reserves.
-  /// @dev Caller must be `onBehalfOf` or an authorized position manager for `onBehalfOf`.
+  /// @dev Caller must be authorized by the Spoke's gate for `onBehalfOf`.
   /// @param reserveId The reserve identifier of the underlying asset.
   /// @param usingAsCollateral True if the user wants to use the supply as collateral.
   /// @param onBehalfOf The owner of the position being modified.
@@ -569,34 +529,14 @@ interface ISpoke is IAccessManaged, IIntentConsumer, IExtSload, IMulticall {
   ) external;
 
   /// @notice Allows updating the risk premium on onBehalfOf position.
-  /// @dev Caller must be `onBehalfOf`, an authorized position manager for `onBehalfOf`, or admin.
+  /// @dev Caller must be authorized by the Spoke's gate for `onBehalfOf`, or be an admin.
   /// @param onBehalfOf The owner of the position being modified.
   function updateUserRiskPremium(address onBehalfOf) external;
 
   /// @notice Allows updating the dynamic configuration for all collateral reserves on onBehalfOf position.
-  /// @dev Caller must be `onBehalfOf`, an authorized position manager for `onBehalfOf`, or admin.
+  /// @dev Caller must be authorized by the Spoke's gate for `onBehalfOf`, or be an admin.
   /// @param onBehalfOf The owner of the position being modified.
   function updateUserDynamicConfig(address onBehalfOf) external;
-
-  /// @notice Enables a user to grant or revoke approval for a position manager.
-  /// @dev Allows approving inactive position managers.
-  /// @param positionManager The address of the position manager.
-  /// @param approve True to approve the position manager, false to revoke approval.
-  function setUserPositionManager(address positionManager, bool approve) external;
-
-  /// @notice Enables a user to grant or revoke approval for an array of position managers using an EIP712-typed intent.
-  /// @dev Uses keyed-nonces where for each key's namespace nonce is consumed sequentially.
-  /// @dev Allows duplicated updates and the last one is persisted. Allows approving inactive position managers.
-  /// @param params The structured setUserPositionManagers parameter.
-  /// @param signature The EIP712-compliant signature bytes.
-  function setUserPositionManagersWithSig(
-    SetUserPositionManagers calldata params,
-    bytes calldata signature
-  ) external;
-
-  /// @notice Allows position manager (as caller) to renounce their approval given by the user.
-  /// @param user The address of the user.
-  function renouncePositionManagerRole(address user) external;
 
   /// @notice Allows consuming a permit signature for the given reserve's underlying asset.
   /// @dev It reverts if the reserve associated with the given reserve identifier is not listed.
@@ -761,26 +701,14 @@ interface ISpoke is IAccessManaged, IIntentConsumer, IExtSload, IMulticall {
     uint256 healthFactor
   ) external view returns (uint256);
 
-  /// @notice Returns whether positionManager is currently activated by governance.
-  /// @param positionManager The address of the position manager.
-  /// @return True if positionManager is currently active.
-  function isPositionManagerActive(address positionManager) external view returns (bool);
-
-  /// @notice Returns whether positionManager is active and approved by user.
-  /// @param user The address of the user.
-  /// @param positionManager The address of the position manager.
-  /// @return True if positionManager is active and approved by user.
-  function isPositionManager(address user, address positionManager) external view returns (bool);
-
   /// @notice Returns the address of the external `LiquidationLogic` library.
   function getLiquidationLogic() external pure returns (address);
 
-  /// @notice Returns the type hash for the SetUserPositionManagers intent.
-  /// @return The bytes-encoded EIP-712 struct hash representing the intent.
-  function SET_USER_POSITION_MANAGERS_TYPEHASH() external view returns (bytes32);
-
   /// @notice Returns the address of the AaveOracle contract.
   function ORACLE() external view returns (address);
+
+  /// @notice Returns the immutable gate authorizing position actions.
+  function GATE() external view returns (address);
 
   /// @notice Returns the maximum allowed number of collateral and borrow reserves per user (each counted separately).
   function MAX_USER_RESERVES_LIMIT() external view returns (uint16);

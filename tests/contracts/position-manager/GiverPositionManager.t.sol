@@ -13,10 +13,10 @@ contract GiverPositionManagerTest is Base {
     positionManager = new GiverPositionManager(address(ADMIN));
 
     vm.prank(SPOKE_ADMIN);
-    spoke1.updatePositionManager(address(positionManager), true);
+    _updatePositionManager(spoke1, address(positionManager), true);
 
     vm.prank(alice);
-    spoke1.setUserPositionManager(address(positionManager), true);
+    _setUserPositionManager(spoke1, address(positionManager), true);
 
     vm.prank(ADMIN);
     positionManager.registerSpoke(address(spoke1), true);
@@ -452,7 +452,7 @@ contract GiverPositionManagerTest is Base {
     uint256 amount = 100e18;
 
     vm.prank(carol);
-    spoke1.setUserPositionManager(address(positionManager), true);
+    _setUserPositionManager(spoke1, address(positionManager), true);
 
     vm.prank(bob);
     tokenList.dai.approve(address(positionManager), UINT256_MAX);

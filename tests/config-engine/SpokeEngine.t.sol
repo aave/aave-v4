@@ -674,19 +674,23 @@ contract SpokeEngineTest is BaseConfigEngineTest {
       )
     );
 
-    vm.expectEmit(address(spoke1()));
-    emit ISpoke.UpdatePositionManager(address(positionManager), true);
+    vm.expectEmit(spoke1().GATE());
+    emit IPositionManagerGate.UpdatePositionManager(
+      address(spoke1()),
+      address(positionManager),
+      true
+    );
 
     engine.executeSpokePositionManagerUpdates(_toPositionManagerUpdateArray(update));
 
-    assertTrue(spoke1().isPositionManagerActive(address(positionManager)));
+    assertTrue(_isPositionManagerActive(spoke1(), address(positionManager)));
   }
 
   function test_executeSpokePositionManagerUpdates_deactivate() public {
     engine.executeSpokePositionManagerUpdates(
       _toPositionManagerUpdateArray(_defaultPositionManagerUpdate())
     );
-    assertTrue(spoke1().isPositionManagerActive(address(positionManager)));
+    assertTrue(_isPositionManagerActive(spoke1(), address(positionManager)));
 
     IAaveV4ConfigEngine.PositionManagerUpdate memory update = IAaveV4ConfigEngine
       .PositionManagerUpdate({
@@ -698,7 +702,7 @@ contract SpokeEngineTest is BaseConfigEngineTest {
 
     engine.executeSpokePositionManagerUpdates(_toPositionManagerUpdateArray(update));
 
-    assertFalse(spoke1().isPositionManagerActive(address(positionManager)));
+    assertFalse(_isPositionManagerActive(spoke1(), address(positionManager)));
   }
 
   function test_executeSpokeReserveConfigUpdates_multipleSpokes() public {
@@ -896,8 +900,8 @@ contract SpokeEngineTest is BaseConfigEngineTest {
 
     engine.executeSpokePositionManagerUpdates(updates);
 
-    assertTrue(spoke1().isPositionManagerActive(address(positionManager)));
-    assertTrue(spoke1().isPositionManagerActive(address(pm2)));
+    assertTrue(_isPositionManagerActive(spoke1(), address(positionManager)));
+    assertTrue(_isPositionManagerActive(spoke1(), address(pm2)));
   }
 
   function test_executeSpokeReserveListings_multipleReserves() public {

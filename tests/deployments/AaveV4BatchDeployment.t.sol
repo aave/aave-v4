@@ -17,6 +17,7 @@ contract AaveV4BatchDeploymentTest is BatchTestProcedures {
       spokeConfiguratorAdmin: makeAddr('spokeConfiguratorAdmin'),
       gatewayOwner: makeAddr('gatewayOwner'),
       positionManagerOwner: makeAddr('positionManagerOwner'),
+      spokeGate: address(0),
       nativeWrapper: _weth9,
       deployNativeTokenGateway: true,
       deploySignatureGateway: true,

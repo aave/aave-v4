@@ -1,21 +1,21 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import 'tests/setup/PermissionedSpokeBase.sol';
+import 'tests/setup/GateSpokeBase.sol';
 
-contract PermissionedSpokeTest is PermissionedSpokeBase {
+contract SpokeGateTest is GateSpokeBase {
   function test_constructor() public {
-    assertEq(PermissionedSpokeInstance(address(spoke)).GATE(), address(gate));
+    assertEq(spoke.GATE(), address(gate));
 
     vm.expectRevert(ISpoke.InvalidAddress.selector);
-    new PermissionedSpokeInstance({
+    new SpokeInstance({
       oracle_: address(oracle1),
       maxUserReservesLimit_: DeployConstants.MAX_ALLOWED_USER_RESERVES_LIMIT,
       gate_: address(0)
     });
   }
 
-  function test_defaultBehaviorViaCallback() public {
+  function test_gateControlsDefaultBehavior() public {
     _supplyCollateralAndBorrow(alice, 100e6);
 
     // an unapproved caller still cannot act on behalf of alice
@@ -62,9 +62,12 @@ contract PermissionedSpokeTest is PermissionedSpokeBase {
     assertEq(spoke.getUserTotalDebt(usdxReserveId, alice), 100e6);
   }
 
-  function test_approvedPositionManagersPreservedViaCallback() public {
+  function test_positionManagerPolicyLivesInGate() public {
+    PositionManagerGate positionManagerGate = new PositionManagerGate(address(accessManager));
+    ISpoke target = _deploySpokeWithGate(address(positionManagerGate));
+
     SpokeActions.supply({
-      spoke: spoke,
+      spoke: target,
       reserveId: usdxReserveId,
       caller: alice,
       amount: 100e6,
@@ -74,28 +77,28 @@ contract PermissionedSpokeTest is PermissionedSpokeBase {
     // bob is not an approved position manager for alice
     vm.expectRevert(ISpoke.Unauthorized.selector);
     SpokeActions.withdraw({
-      spoke: spoke,
+      spoke: target,
       reserveId: usdxReserveId,
       caller: bob,
       amount: 50e6,
       onBehalfOf: alice
     });
 
-    // approving bob as position manager makes the call pass through the callback
-    vm.prank(SPOKE_ADMIN);
-    spoke.updatePositionManager(bob, true);
+    // position-manager state and user approvals are owned by the gate
+    vm.prank(ADMIN);
+    positionManagerGate.updatePositionManager(address(target), bob, true);
     vm.prank(alice);
-    spoke.setUserPositionManager(bob, true);
+    positionManagerGate.setUserPositionManager(address(target), bob, true);
 
     SpokeActions.withdraw({
-      spoke: spoke,
+      spoke: target,
       reserveId: usdxReserveId,
       caller: bob,
       amount: 50e6,
       onBehalfOf: alice
     });
 
-    assertEq(spoke.getUserSuppliedAssets(usdxReserveId, alice), 50e6);
+    assertEq(target.getUserSuppliedAssets(usdxReserveId, alice), 50e6);
   }
 
   /// @dev Horizon-style forced transfer: the RWA manager moves alice's position to bob by

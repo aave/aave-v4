@@ -68,7 +68,7 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
 
     payload.execute();
 
-    assertTrue(spoke1().isPositionManagerActive(address(payloadPositionManager)));
+    assertTrue(_isPositionManagerActive(spoke1(), address(payloadPositionManager)));
   }
 
   function test_execute_accessManagerAction_delegatesCorrectly() public {
@@ -128,7 +128,7 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
     );
     assertTrue(spokeConfig.halted);
 
-    assertTrue(spoke1().isPositionManagerActive(address(payloadPositionManager)));
+    assertTrue(_isPositionManagerActive(spoke1(), address(payloadPositionManager)));
 
     (bool isMember, ) = accessManager.hasRole(Roles.HUB_CONFIGURATOR_ROLE, ACCOUNT);
     assertTrue(isMember);
@@ -826,7 +826,7 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
 
     payload.execute();
 
-    assertTrue(spoke1().isPositionManagerActive(address(payloadPositionManager)));
+    assertTrue(_isPositionManagerActive(spoke1(), address(payloadPositionManager)));
   }
 
   function test_execute_accessManagerRoleMemberships_revoke() public {
@@ -1010,8 +1010,8 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
     payload.execute();
 
     vm.prank(USER);
-    spoke1().setUserPositionManager(address(freshPm), true);
-    assertTrue(spoke1().isPositionManager(USER, address(freshPm)));
+    _setUserPositionManager(spoke1(), address(freshPm), true);
+    assertTrue(_isPositionManager(spoke1(), USER, address(freshPm)));
 
     IAaveV4ConfigEngine.PositionManagerRoleRenouncement[]
       memory renouncements = new IAaveV4ConfigEngine.PositionManagerRoleRenouncement[](1);
@@ -1022,14 +1022,19 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
     });
     payload.setPositionManagerRoleRenouncements(renouncements);
 
-    vm.expectEmit(address(spoke1()));
-    emit ISpoke.SetUserPositionManager(USER, address(freshPm), false);
+    vm.expectEmit(spoke1().GATE());
+    emit IPositionManagerGate.SetUserPositionManager(
+      address(spoke1()),
+      USER,
+      address(freshPm),
+      false
+    );
     payload.execute();
 
     // the position manager is still active on the Spoke, so isPositionManager being false
     // proves the approval itself was cleared
-    assertTrue(spoke1().isPositionManagerActive(address(freshPm)));
-    assertFalse(spoke1().isPositionManager(USER, address(freshPm)));
+    assertTrue(_isPositionManagerActive(spoke1(), address(freshPm)));
+    assertFalse(_isPositionManager(spoke1(), USER, address(freshPm)));
   }
 
   function test_execute_positionManagerDeregistrationWithRenouncement() public {
@@ -1055,8 +1060,8 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
     payload.execute();
 
     vm.prank(USER);
-    spoke1().setUserPositionManager(address(freshPm), true);
-    assertTrue(spoke1().isPositionManager(USER, address(freshPm)));
+    _setUserPositionManager(spoke1(), address(freshPm), true);
+    assertTrue(_isPositionManager(spoke1(), USER, address(freshPm)));
 
     // single payload winding down the position manager: renounce USER's role and deregister the Spoke
     regs[0].registered = false;
@@ -1072,14 +1077,19 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
     });
     payload.setPositionManagerRoleRenouncements(renouncements);
 
-    vm.expectEmit(address(spoke1()));
-    emit ISpoke.SetUserPositionManager(USER, address(freshPm), false);
+    vm.expectEmit(spoke1().GATE());
+    emit IPositionManagerGate.SetUserPositionManager(
+      address(spoke1()),
+      USER,
+      address(freshPm),
+      false
+    );
     payload.execute();
 
     // the position manager is still active on the Spoke, so isPositionManager being false
     // proves the approval itself was cleared
-    assertTrue(spoke1().isPositionManagerActive(address(freshPm)));
-    assertFalse(spoke1().isPositionManager(USER, address(freshPm)));
+    assertTrue(_isPositionManagerActive(spoke1(), address(freshPm)));
+    assertFalse(_isPositionManager(spoke1(), USER, address(freshPm)));
     assertFalse(freshPm.isSpokeRegistered(address(spoke1())));
   }
 

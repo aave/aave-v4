@@ -8,8 +8,8 @@ contract SignatureGateway_Unauthorized_PositionManagerNotActive_Test is Signatur
     super.setUp();
     _approveAllUnderlying(spoke1, alice, address(gateway));
 
-    assertFalse(spoke1.isPositionManagerActive(address(gateway)));
-    assertFalse(spoke1.isPositionManager(alice, address(gateway)));
+    assertFalse(_isPositionManagerActive(spoke1, address(gateway)));
+    assertFalse(_isPositionManager(spoke1, alice, address(gateway)));
   }
 
   function test_supplyWithSig_revertsWith_Unauthorized() public {
@@ -111,10 +111,10 @@ contract SignatureGateway_Unauthorized_PositionManagerActive_Test is
   function setUp() public override {
     super.setUp();
     vm.prank(SPOKE_ADMIN);
-    spoke1.updatePositionManager(address(gateway), true);
+    _updatePositionManager(spoke1, address(gateway), true);
     vm.prank(address(ADMIN));
     gateway.registerSpoke(address(spoke1), true);
-    assertTrue(spoke1.isPositionManagerActive(address(gateway)));
-    assertFalse(spoke1.isPositionManager(alice, address(gateway)));
+    assertTrue(_isPositionManagerActive(spoke1, address(gateway)));
+    assertFalse(_isPositionManager(spoke1, alice, address(gateway)));
   }
 }

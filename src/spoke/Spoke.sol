@@ -12,18 +12,17 @@ import {MathUtils} from 'src/libraries/math/MathUtils.sol';
 import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
 import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
 import {SpokeUtils} from 'src/spoke/libraries/SpokeUtils.sol';
-import {EIP712Hash} from 'src/spoke/libraries/EIP712Hash.sol';
 import {KeyValueList} from 'src/spoke/libraries/KeyValueList.sol';
 import {LiquidationLogic} from 'src/spoke/libraries/LiquidationLogic.sol';
 import {PositionStatusMap} from 'src/spoke/libraries/PositionStatusMap.sol';
 import {ReserveFlags, ReserveFlagsMap} from 'src/spoke/libraries/ReserveFlagsMap.sol';
 import {UserPositionUtils} from 'src/spoke/libraries/UserPositionUtils.sol';
-import {IntentConsumer} from 'src/utils/IntentConsumer.sol';
 import {Multicall} from 'src/utils/Multicall.sol';
 import {ExtSload} from 'src/utils/ExtSload.sol';
 import {IAaveOracle} from 'src/spoke/interfaces/IAaveOracle.sol';
 import {IHubBase} from 'src/hub/interfaces/IHubBase.sol';
 import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
+import {ISpokeGate} from 'src/spoke/interfaces/ISpokeGate.sol';
 import {SpokeStorage} from 'src/spoke/SpokeStorage.sol';
 
 /// @title Spoke
@@ -34,7 +33,6 @@ abstract contract Spoke is
   ISpoke,
   SpokeStorage,
   AccessManagedUpgradeable,
-  IntentConsumer,
   ExtSload,
   Multicall,
   ReentrancyGuardTransient
@@ -45,21 +43,19 @@ abstract contract Spoke is
   using PercentageMath for *;
   using WadRayMath for *;
   using SpokeUtils for *;
-  using EIP712Hash for *;
   using KeyValueList for KeyValueList.List;
   using PositionStatusMap for *;
   using ReserveFlagsMap for ReserveFlags;
   using UserPositionUtils for ISpoke.UserPosition;
 
   /// @inheritdoc ISpoke
-  bytes32 public constant SET_USER_POSITION_MANAGERS_TYPEHASH =
-    EIP712Hash.SET_USER_POSITION_MANAGERS_TYPEHASH;
-
-  /// @inheritdoc ISpoke
   uint16 public immutable MAX_USER_RESERVES_LIMIT;
 
   /// @inheritdoc ISpoke
   address public immutable ORACLE;
+
+  /// @inheritdoc ISpoke
+  address public immutable GATE;
 
   /// @dev The number of decimals used by the oracle.
   uint8 internal constant ORACLE_DECIMALS = SpokeUtils.ORACLE_DECIMALS;
@@ -86,20 +82,23 @@ abstract contract Spoke is
   uint256 internal constant DUST_LIQUIDATION_THRESHOLD =
     LiquidationLogic.DUST_LIQUIDATION_THRESHOLD;
 
-  /// @notice Modifier that checks if the caller is authorized to act on the position of `onBehalfOf`.
-  modifier onlyPositionManager(address onBehalfOf) {
-    require(_isAuthorizedPositionManagerCall(msg.sender, onBehalfOf, msg.data), Unauthorized());
+  /// @notice Modifier that asks the gate whether the caller can act on the position of `onBehalfOf`.
+  modifier onlyPositionActionAllowed(address onBehalfOf) {
+    require(_isPositionActionAllowed(msg.sender, onBehalfOf, msg.data), Unauthorized());
     _;
   }
 
   /// @dev Constructor.
   /// @param oracle_ The address of the AaveOracle contract.
   /// @param maxUserReservesLimit_ The maximum number of collateral and borrow reserves a user can have.
-  constructor(address oracle_, uint16 maxUserReservesLimit_) {
+  /// @param gate_ The address of the gate authorizing position actions.
+  constructor(address oracle_, uint16 maxUserReservesLimit_, address gate_) {
     require(IAaveOracle(oracle_).decimals() == ORACLE_DECIMALS, InvalidOracleDecimals());
     require(maxUserReservesLimit_ > 0, InvalidMaxUserReservesLimit());
+    require(gate_ != address(0), InvalidAddress());
     ORACLE = oracle_;
     MAX_USER_RESERVES_LIMIT = maxUserReservesLimit_;
+    GATE = gate_;
   }
 
   /// @dev To be overridden by the inheriting Spoke instance contract.
@@ -216,17 +215,11 @@ abstract contract Spoke is
   }
 
   /// @inheritdoc ISpoke
-  function updatePositionManager(address positionManager, bool active) external restricted {
-    _positionManager[positionManager].active = active;
-    emit UpdatePositionManager(positionManager, active);
-  }
-
-  /// @inheritdoc ISpoke
   function supply(
     uint256 reserveId,
     uint256 amount,
     address onBehalfOf
-  ) external nonReentrant onlyPositionManager(onBehalfOf) returns (uint256, uint256) {
+  ) external nonReentrant onlyPositionActionAllowed(onBehalfOf) returns (uint256, uint256) {
     Reserve storage reserve = _reserves.get(reserveId);
     UserPosition storage userPosition = _userPositions[onBehalfOf][reserveId];
     _validateSupply(reserve.flags);
@@ -245,7 +238,7 @@ abstract contract Spoke is
     uint256 reserveId,
     uint256 amount,
     address onBehalfOf
-  ) external nonReentrant onlyPositionManager(onBehalfOf) returns (uint256, uint256) {
+  ) external nonReentrant onlyPositionActionAllowed(onBehalfOf) returns (uint256, uint256) {
     Reserve storage reserve = _reserves.get(reserveId);
     UserPosition storage userPosition = _userPositions[onBehalfOf][reserveId];
     _validateWithdraw(reserve.flags);
@@ -275,7 +268,7 @@ abstract contract Spoke is
     uint256 reserveId,
     uint256 amount,
     address onBehalfOf
-  ) external nonReentrant onlyPositionManager(onBehalfOf) returns (uint256, uint256) {
+  ) external nonReentrant onlyPositionActionAllowed(onBehalfOf) returns (uint256, uint256) {
     Reserve storage reserve = _reserves.get(reserveId);
     UserPosition storage userPosition = _userPositions[onBehalfOf][reserveId];
     PositionStatus storage positionStatus = _positionStatus[onBehalfOf];
@@ -306,7 +299,7 @@ abstract contract Spoke is
     uint256 reserveId,
     uint256 amount,
     address onBehalfOf
-  ) external nonReentrant onlyPositionManager(onBehalfOf) returns (uint256, uint256) {
+  ) external nonReentrant onlyPositionActionAllowed(onBehalfOf) returns (uint256, uint256) {
     Reserve storage reserve = _reserves.get(reserveId);
     UserPosition storage userPosition = _userPositions[onBehalfOf][reserveId];
     _validateRepay(reserve.flags);
@@ -392,7 +385,7 @@ abstract contract Spoke is
     uint256 reserveId,
     bool usingAsCollateral,
     address onBehalfOf
-  ) external nonReentrant onlyPositionManager(onBehalfOf) {
+  ) external nonReentrant onlyPositionActionAllowed(onBehalfOf) {
     Reserve storage reserve = _reserves.get(reserveId);
     PositionStatus storage positionStatus = _positionStatus[onBehalfOf];
     if (positionStatus.isUsingAsCollateral(reserveId) == usingAsCollateral) {
@@ -413,7 +406,7 @@ abstract contract Spoke is
 
   /// @inheritdoc ISpoke
   function updateUserRiskPremium(address onBehalfOf) external nonReentrant {
-    if (!_isPositionManager({user: onBehalfOf, manager: msg.sender})) {
+    if (!_isPositionActionAllowed(msg.sender, onBehalfOf, msg.data)) {
       _checkCanCall(msg.sender, msg.data);
     }
     uint256 newRiskPremium = _calculateUserAccountData(onBehalfOf).riskPremium;
@@ -422,47 +415,11 @@ abstract contract Spoke is
 
   /// @inheritdoc ISpoke
   function updateUserDynamicConfig(address onBehalfOf) external nonReentrant {
-    if (!_isPositionManager({user: onBehalfOf, manager: msg.sender})) {
+    if (!_isPositionActionAllowed(msg.sender, onBehalfOf, msg.data)) {
       _checkCanCall(msg.sender, msg.data);
     }
     uint256 newRiskPremium = _refreshAndValidateUserAccountData(onBehalfOf).riskPremium;
     _notifyRiskPremiumUpdate(onBehalfOf, newRiskPremium);
-  }
-
-  /// @inheritdoc ISpoke
-  function setUserPositionManager(address positionManager, bool approve) external {
-    _setUserPositionManager({positionManager: positionManager, user: msg.sender, approve: approve});
-  }
-
-  /// @inheritdoc ISpoke
-  function setUserPositionManagersWithSig(
-    SetUserPositionManagers calldata params,
-    bytes calldata signature
-  ) external {
-    _verifyAndConsumeIntent({
-      signer: params.onBehalfOf,
-      intentHash: params.hash(),
-      nonce: params.nonce,
-      deadline: params.deadline,
-      signature: signature
-    });
-
-    for (uint256 i = 0; i < params.updates.length; ++i) {
-      _setUserPositionManager({
-        positionManager: params.updates[i].positionManager,
-        user: params.onBehalfOf,
-        approve: params.updates[i].approve
-      });
-    }
-  }
-
-  /// @inheritdoc ISpoke
-  function renouncePositionManagerRole(address onBehalfOf) external {
-    if (!_positionManager[msg.sender].approval[onBehalfOf]) {
-      return;
-    }
-    _positionManager[msg.sender].approval[onBehalfOf] = false;
-    emit SetUserPositionManager(onBehalfOf, msg.sender, false);
   }
 
   /// @inheritdoc ISpoke
@@ -654,16 +611,6 @@ abstract contract Spoke is
   }
 
   /// @inheritdoc ISpoke
-  function isPositionManagerActive(address positionManager) external view returns (bool) {
-    return _positionManager[positionManager].active;
-  }
-
-  /// @inheritdoc ISpoke
-  function isPositionManager(address user, address positionManager) external view returns (bool) {
-    return _isPositionManager(user, positionManager);
-  }
-
-  /// @inheritdoc ISpoke
   function getLiquidationLogic() external pure returns (address) {
     return address(LiquidationLogic);
   }
@@ -672,12 +619,6 @@ abstract contract Spoke is
     require(priceSource != address(0), InvalidAddress());
     IAaveOracle(ORACLE).setReserveSource(reserveId, priceSource);
     emit UpdateReservePriceSource(reserveId, priceSource);
-  }
-
-  function _setUserPositionManager(address positionManager, address user, bool approve) internal {
-    PositionManagerConfig storage config = _positionManager[positionManager];
-    config.approval[user] = approve;
-    emit SetUserPositionManager(user, positionManager, approve);
   }
 
   /// @notice Calculates and validates the user account data.
@@ -905,21 +846,13 @@ abstract contract Spoke is
     return _reserves[reserveId].assetId == assetId && address(_reserves[reserveId].hub) == hub;
   }
 
-  /// @notice Returns whether `manager` is active and approved positionManager for `user`.
-  function _isPositionManager(address user, address manager) internal view returns (bool) {
-    if (user == manager) return true;
-    PositionManagerConfig storage config = _positionManager[manager];
-    return config.active && config.approval[user];
-  }
-
-  /// @notice Returns whether `caller` is authorized to act on the position of `user` for the given calldata.
-  /// @dev The default implementation requires the caller to be `user` or an approved position manager for `user`.
-  function _isAuthorizedPositionManagerCall(
+  /// @notice Returns whether `caller` is allowed to act on the position of `user` for the given calldata.
+  function _isPositionActionAllowed(
     address caller,
     address user,
-    bytes calldata
-  ) internal view virtual returns (bool) {
-    return _isPositionManager({user: user, manager: caller});
+    bytes calldata data
+  ) internal view returns (bool) {
+    return ISpokeGate(GATE).isCallAllowed({caller: caller, onBehalfOf: user, data: data});
   }
 
   function _validateReserveConfig(ReserveConfig calldata config) internal pure {
@@ -937,10 +870,6 @@ abstract contract Spoke is
       InvalidCollateralFactorAndMaxLiquidationBonus()
     );
     require(config.liquidationFee <= PercentageMath.PERCENTAGE_FACTOR, InvalidLiquidationFee());
-  }
-
-  function _domainNameAndVersion() internal pure override returns (string memory, string memory) {
-    return ('Spoke', '1');
   }
 
   function _castToView(

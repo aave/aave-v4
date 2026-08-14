@@ -8,12 +8,12 @@ contract SignatureGateway_InsufficientAllowance_Test is SignatureGatewayBaseTest
     super.setUp();
 
     vm.prank(SPOKE_ADMIN);
-    spoke1.updatePositionManager(address(gateway), true);
+    _updatePositionManager(spoke1, address(gateway), true);
     vm.prank(alice);
-    spoke1.setUserPositionManager(address(gateway), true);
+    _setUserPositionManager(spoke1, address(gateway), true);
 
-    assertTrue(spoke1.isPositionManagerActive(address(gateway)));
-    assertTrue(spoke1.isPositionManager(alice, address(gateway)));
+    assertTrue(_isPositionManagerActive(spoke1, address(gateway)));
+    assertTrue(_isPositionManager(spoke1, alice, address(gateway)));
   }
 
   function test_supplyWithSig_revertsWith_ERC20InsufficientAllowance() public {
