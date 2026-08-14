@@ -1,0 +1,21 @@
+tests/gas/PermissionedBorrow.Operations.gas.t.sol
+  s_31ad70093686af::t_22c72707489388 8,113-124
+tests/helpers/mocks/GlobalManagerAccessManager.sol
+  s_31ad70093686af::t_7da28591a98a3e 1-31
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "fb9120e9ea60cf7c5844f099dc399ecfdb61eb72",
+  "prompts": {},
+  "sessions": {
+    "s_31ad70093686af": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "c52a16c8-3734-43bb-8a82-f6df83845e0e",
+        "model": "claude-fable-5"
+      },
+      "human_author": "Alexandru Niculae <43644109+avniculae@users.noreply.github.com>"
+    }
+  }
+}
