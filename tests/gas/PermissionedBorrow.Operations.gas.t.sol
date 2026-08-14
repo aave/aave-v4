@@ -5,6 +5,7 @@ import 'tests/setup/Base.t.sol';
 
 import {PermissionedBorrowAccessManager} from 'src/access/PermissionedBorrowAccessManager.sol';
 import {MockBorrowerEligibility} from 'tests/helpers/mocks/MockBorrowerEligibility.sol';
+import {GlobalManagerAccessManager} from 'tests/helpers/mocks/GlobalManagerAccessManager.sol';
 
 /// forge-config: default.isolate = true
 contract PermissionedBorrowOperations_Gas_Tests is Base {
@@ -107,6 +108,18 @@ contract PermissionedBorrowOperations_Gas_Tests is Base {
     defaultAccessManager.updateAuthority(address(spoke), address(permissionedAccessManager));
 
     _snapshotOperations('permissioned manager');
+  }
+
+  function test_operations_globalManagerAccessManager() public {
+    GlobalManagerAccessManager globalManager = new GlobalManagerAccessManager(
+      ADMIN,
+      spoke,
+      makeAddr('RWA_MANAGER')
+    );
+    vm.prank(ADMIN);
+    defaultAccessManager.updateAuthority(address(spoke), address(globalManager));
+
+    _snapshotOperations('global manager');
   }
 
   function _snapshotOperations(string memory label) internal {

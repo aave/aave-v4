@@ -1,13 +1,18 @@
 {
   "borrow: default manager": "302603",
+  "borrow: global manager": "302741",
   "borrow: permissioned manager": "308697",
   "repay: partial, default manager": "155164",
+  "repay: partial, global manager": "155302",
   "repay: partial, permissioned manager": "155849",
   "supply: default manager": "136432",
+  "supply: global manager": "136570",
   "supply: permissioned manager": "137066",
   "updateAuthority: permissioned manager": "46444",
   "usingAsCollateral: enable, default manager": "68435",
+  "usingAsCollateral: enable, global manager": "68573",
   "usingAsCollateral: enable, permissioned manager": "69136",
   "withdraw: partial, default manager": "190049",
+  "withdraw: partial, global manager": "190187",
   "withdraw: partial, permissioned manager": "190700"
 }
