@@ -3,6 +3,13 @@ pragma solidity ^0.8.0;
 
 import 'tests/setup/PermissionedSpokeBase.sol';
 
+import {
+  PositionManagerPolicyGate,
+  GlobalManagerPolicyGate,
+  BorrowAllowlistPolicyGate,
+  MockAllowlist
+} from 'tests/helpers/mocks/PolicyGates.sol';
+
 /// forge-config: default.isolate = true
 contract PermissionedSpokeOperations_Gas_Tests is PermissionedSpokeBase {
   string internal NAMESPACE = 'PermissionedSpoke.Operations';
@@ -30,16 +37,24 @@ contract PermissionedSpokeOperations_Gas_Tests is PermissionedSpokeBase {
     _snapshotOperations('gate unset');
   }
 
-  function test_operations_gateSet() public {
-    gate.setGated(ISpoke.supply.selector, true);
-    gate.setGated(ISpoke.withdraw.selector, true);
-    gate.setGated(ISpoke.borrow.selector, true);
-    gate.setGated(ISpoke.repay.selector, true);
-    gate.setGated(ISpoke.setUsingAsCollateral.selector, true);
-    gate.setEligible(alice, true);
-    _setGate(address(gate));
+  /// @dev Same authorization as the standard spoke, routed through the gate.
+  function test_operations_positionManagerPolicy() public {
+    _setGate(address(new PositionManagerPolicyGate(spoke)));
+    _snapshotOperations('position-manager policy');
+  }
 
-    _snapshotOperations('gate set');
+  /// @dev Horizon-style policy: a fixed global manager may act for any user.
+  function test_operations_globalManagerPolicy() public {
+    _setGate(address(new GlobalManagerPolicyGate(spoke, RWA_MANAGER)));
+    _snapshotOperations('global-manager policy');
+  }
+
+  /// @dev EtherFi-style policy: borrowing restricted to an external allowlist.
+  function test_operations_borrowAllowlistPolicy() public {
+    MockAllowlist allowlist = new MockAllowlist();
+    allowlist.setAllowed(alice, true);
+    _setGate(address(new BorrowAllowlistPolicyGate(spoke, allowlist)));
+    _snapshotOperations('borrow-allowlist policy');
   }
 
   function _snapshotOperations(string memory label) internal {
