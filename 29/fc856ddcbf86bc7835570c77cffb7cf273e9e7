@@ -1,0 +1,23 @@
+tests/gas/PermissionedSpoke.Operations.gas.t.sol
+  s_31ad70093686af::t_efa924d392c3d9 6-12,40-50,52-57
+tests/helpers/mocks/PolicyGates.sol
+  s_31ad70093686af::t_285a19e7ce9927 1-74
+snapshots/PermissionedSpoke.Operations.json
+  s_31ad70093686af::t_d12f4ed793bdd4 2,4-6,8-10,12-13,15,17-22
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "29fc856ddcbf86bc7835570c77cffb7cf273e9e7",
+  "prompts": {},
+  "sessions": {
+    "s_31ad70093686af": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "c52a16c8-3734-43bb-8a82-f6df83845e0e",
+        "model": "claude-fable-5"
+      },
+      "human_author": "Alexandru Niculae <43644109+avniculae@users.noreply.github.com>"
+    }
+  }
+}
