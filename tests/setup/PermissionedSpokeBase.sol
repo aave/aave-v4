@@ -6,7 +6,6 @@ import 'tests/setup/Base.t.sol';
 import {TransparentUpgradeableProxy} from 'src/dependencies/openzeppelin/TransparentUpgradeableProxy.sol';
 import {DeployConstants} from 'src/deployments/utils/libraries/DeployConstants.sol';
 import {PermissionedSpokeInstance} from 'src/spoke/instances/PermissionedSpokeInstance.sol';
-import {IPermissionedSpoke} from 'src/spoke/interfaces/IPermissionedSpoke.sol';
 import {MockSpokeGate} from 'tests/helpers/mocks/MockSpokeGate.sol';
 
 /// @dev Deploys a spoke with the `PermissionedSpokeInstance` implementation gated by a mock gate,
@@ -32,14 +31,15 @@ abstract contract PermissionedSpokeBase is Base {
     AaveOracle oracle = new AaveOracle(8);
     PermissionedSpokeInstance implementation = new PermissionedSpokeInstance({
       oracle_: address(oracle),
-      maxUserReservesLimit_: DeployConstants.MAX_ALLOWED_USER_RESERVES_LIMIT
+      maxUserReservesLimit_: DeployConstants.MAX_ALLOWED_USER_RESERVES_LIMIT,
+      gate_: newGate
     });
     newSpoke = ISpoke(
       address(
         new TransparentUpgradeableProxy(
           address(implementation),
           PROXY_ADMIN_OWNER,
-          abi.encodeWithSignature('initialize(address,address)', address(accessManager), newGate)
+          abi.encodeCall(ISpokeInstance.initialize, (address(accessManager)))
         )
       )
     );

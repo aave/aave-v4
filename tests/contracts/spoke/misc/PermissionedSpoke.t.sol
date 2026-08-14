@@ -4,52 +4,15 @@ pragma solidity ^0.8.0;
 import 'tests/setup/PermissionedSpokeBase.sol';
 
 contract PermissionedSpokeTest is PermissionedSpokeBase {
-  function test_initialize() public {
-    assertEq(PermissionedSpokeInstance(address(spoke)).getGate(), address(gate));
+  function test_constructor() public {
+    assertEq(PermissionedSpokeInstance(address(spoke)).GATE(), address(gate));
 
-    // the single-argument initializer is disabled
-    PermissionedSpokeInstance implementation = new PermissionedSpokeInstance({
+    vm.expectRevert(ISpoke.InvalidAddress.selector);
+    new PermissionedSpokeInstance({
       oracle_: address(oracle1),
-      maxUserReservesLimit_: DeployConstants.MAX_ALLOWED_USER_RESERVES_LIMIT
+      maxUserReservesLimit_: DeployConstants.MAX_ALLOWED_USER_RESERVES_LIMIT,
+      gate_: address(0)
     });
-    vm.expectRevert(Initializable.InvalidInitialization.selector);
-    new TransparentUpgradeableProxy(
-      address(implementation),
-      PROXY_ADMIN_OWNER,
-      abi.encodeCall(ISpokeInstance.initialize, (address(accessManager)))
-    );
-
-    // the gate is required at initialization
-    vm.expectRevert(ISpoke.InvalidAddress.selector);
-    new TransparentUpgradeableProxy(
-      address(implementation),
-      PROXY_ADMIN_OWNER,
-      abi.encodeWithSignature('initialize(address,address)', address(accessManager), address(0))
-    );
-  }
-
-  function test_updateGate() public {
-    address newGate = address(new MockSpokeGate());
-
-    vm.expectEmit(address(spoke));
-    emit IPermissionedSpoke.UpdateGate(newGate);
-    vm.prank(ADMIN);
-    PermissionedSpokeInstance(address(spoke)).updateGate(newGate);
-
-    assertEq(PermissionedSpokeInstance(address(spoke)).getGate(), newGate);
-
-    // the gate cannot be unset
-    vm.expectRevert(ISpoke.InvalidAddress.selector);
-    vm.prank(ADMIN);
-    PermissionedSpokeInstance(address(spoke)).updateGate(address(0));
-  }
-
-  function test_updateGate_revertsIfUnauthorized() public {
-    vm.expectRevert(
-      abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, alice)
-    );
-    vm.prank(alice);
-    PermissionedSpokeInstance(address(spoke)).updateGate(address(gate));
   }
 
   function test_defaultBehaviorViaCallback() public {
