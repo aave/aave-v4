@@ -132,16 +132,16 @@ interface IAddressesProvider {
   /// @return True if at least one entry associates the address with the tag.
   function isRegistered(address addr, string calldata tag) external view returns (bool);
 
-  /// @notice Returns the tag grouping all canonical Hubs.
+  /// @notice Returns the tag grouping all Canonical Hubs.
   function CANONICAL_HUB_TAG() external view returns (string memory);
 
-  /// @notice Returns the tag grouping all canonical Spokes.
+  /// @notice Returns the tag grouping all Canonical Spokes.
   function CANONICAL_SPOKE_TAG() external view returns (string memory);
 
-  /// @notice Returns the tag grouping all tokenization Spokes.
+  /// @notice Returns the tag grouping all Tokenization Spokes.
   function TOKENIZATION_SPOKE_TAG() external view returns (string memory);
 
-  /// @notice Returns the tag grouping all treasury Spokes.
+  /// @notice Returns the tag grouping all Treasury Spokes.
   function TREASURY_SPOKE_TAG() external view returns (string memory);
 
   /// @notice Returns the identifier of the entry associated with a name and tag.

@@ -10,9 +10,9 @@ import {IAddressesProvider} from 'src/addresses-provider/interfaces/IAddressesPr
 /// @author Aave Labs
 /// @notice Main registry of Aave V4 contract addresses.
 abstract contract AddressesProvider is
+  IAddressesProvider,
   AddressesProviderStorage,
-  Ownable2StepUpgradeable,
-  IAddressesProvider
+  Ownable2StepUpgradeable
 {
   using EnumerableSet for *;
 
@@ -113,7 +113,7 @@ abstract contract AddressesProvider is
 
   /// @inheritdoc IAddressesProvider
   function isRegistered(address addr, string calldata tag) external view returns (bool) {
-    return _addressToTagCount[addr][keccak256(bytes(tag))] > 0;
+    return _addressToTagToIdCount[addr][keccak256(bytes(tag))] > 0;
   }
 
   /// @inheritdoc IAddressesProvider
@@ -135,7 +135,7 @@ abstract contract AddressesProvider is
         _tagsSet.remove(oldEntry.tag);
       }
       _addressToIdSet[oldEntry.addr].remove(id);
-      _addressToTagCount[oldEntry.addr][keccak256(bytes(oldEntry.tag))]--;
+      _addressToTagToIdCount[oldEntry.addr][keccak256(bytes(oldEntry.tag))]--;
       delete _idToEntry[id];
     } else {
       require(oldEntry.addr == address(0), AddressAlreadySet(id));
@@ -143,7 +143,7 @@ abstract contract AddressesProvider is
       _tagToIdSet[tag].add(id);
       _tagsSet.add(tag);
       _addressToIdSet[newAddress].add(id);
-      _addressToTagCount[newAddress][keccak256(bytes(tag))]++;
+      _addressToTagToIdCount[newAddress][keccak256(bytes(tag))]++;
     }
 
     emit SetEntry(id, name, tag, newAddress);
