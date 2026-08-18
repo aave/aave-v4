@@ -19,15 +19,8 @@ interface IAddressesProvider {
   /// @param id The identifier of the entry.
   /// @param name The name of the entry.
   /// @param tag The tag grouping the entry.
-  /// @param oldAddress The previous address of the entry.
-  /// @param newAddress The new address of the entry.
-  event SetEntry(
-    bytes32 indexed id,
-    string name,
-    string tag,
-    address indexed oldAddress,
-    address indexed newAddress
-  );
+  /// @param newAddress The new address of the entry, the zero address if the entry is removed.
+  event SetEntry(bytes32 indexed id, string name, string tag, address indexed newAddress);
 
   /// @notice Thrown when the specified tag is invalid.
   error InvalidTag();

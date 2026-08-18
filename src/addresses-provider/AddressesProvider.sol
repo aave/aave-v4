@@ -146,7 +146,7 @@ abstract contract AddressesProvider is
       _addressToTagCount[newAddress][keccak256(bytes(tag))]++;
     }
 
-    emit SetEntry(id, name, tag, oldEntry.addr, newAddress);
+    emit SetEntry(id, name, tag, newAddress);
   }
 
   function _getAddress(string memory name, string memory tag) internal view returns (address) {

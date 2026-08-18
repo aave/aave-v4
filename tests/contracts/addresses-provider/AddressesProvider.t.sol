@@ -78,7 +78,7 @@ contract AddressesProviderTest is Test {
     address configEngine = makeAddr('CONFIG_ENGINE');
 
     vm.expectEmit(address(provider));
-    emit IAddressesProvider.SetEntry(id, 'CONFIG_ENGINE', 'PERIPHERY', address(0), configEngine);
+    emit IAddressesProvider.SetEntry(id, 'CONFIG_ENGINE', 'PERIPHERY', configEngine);
 
     vm.prank(OWNER);
     provider.setEntry({name: 'CONFIG_ENGINE', tag: 'PERIPHERY', newAddress: configEngine});
