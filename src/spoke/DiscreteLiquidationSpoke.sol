@@ -23,9 +23,9 @@ abstract contract DiscreteLiquidationSpoke is IDiscreteLiquidationSpoke, Spoke {
   /// @inheritdoc IDiscreteLiquidationSpoke
   function discreteLiquidationCall(
     uint256 collateralReserveId,
-    uint256 debtReserveId,
+    uint256[] calldata debtReserveIds,
+    uint256[] calldata debtAmounts,
     address user,
-    uint256 debtToCover,
     uint256 maxCollateralToReceive
   ) external nonReentrant {
     require(msg.sender == _liquidationManager, Unauthorized());
@@ -34,11 +34,11 @@ abstract contract DiscreteLiquidationSpoke is IDiscreteLiquidationSpoke, Spoke {
     DiscreteLiquidationLogic.LiquidateUserParams memory params = DiscreteLiquidationLogic
       .LiquidateUserParams({
         collateralReserveId: collateralReserveId,
-        debtReserveId: debtReserveId,
+        debtReserveIds: debtReserveIds,
+        debtAmounts: debtAmounts,
         liquidationConfig: _liquidationConfig,
         oracle: ORACLE,
         user: user,
-        debtToCover: debtToCover,
         maxCollateralToReceive: maxCollateralToReceive,
         userAccountData: userAccountData,
         liquidator: msg.sender
