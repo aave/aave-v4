@@ -1,0 +1,30 @@
+src/spoke/DiscreteLiquidationSpoke.sol
+  s_8c8a76dc05e2bc::t_72ecf813ea148a 1-74
+foundry.toml
+  s_8c8a76dc05e2bc::t_4d69ba09ca6e1d 26
+tests/unit/Spoke/Liquidations/Spoke.DiscreteLiquidationCall.t.sol
+  s_8c8a76dc05e2bc::t_b544b47610a505 1-449
+  s_8c8a76dc05e2bc::t_86e61bb4285ff4 450-454
+src/spoke/interfaces/IDiscreteLiquidationSpoke.sol
+  s_8c8a76dc05e2bc::t_cd5bf7a7bc2da3 1-70
+src/spoke/libraries/DiscreteLiquidationLogic.sol
+  s_8c8a76dc05e2bc::t_24e4d2a4034c46 1-372
+src/spoke/instances/DiscreteLiquidationSpokeInstance.sol
+  s_8c8a76dc05e2bc::t_35597dd907cbb7 1-34
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "aa37440761fb61c7fce7d46d6ba0cd4f7dbbbeb7",
+  "prompts": {},
+  "sessions": {
+    "s_8c8a76dc05e2bc": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "2ba790ed-65ff-4843-8257-9fecbd7871d7",
+        "model": "claude-fable-5"
+      },
+      "human_author": "Alexandru Niculae <43644109+avniculae@users.noreply.github.com>"
+    }
+  }
+}
