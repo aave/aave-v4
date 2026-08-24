@@ -41,16 +41,6 @@ library LiquidationLogic {
     bool receiveShares;
   }
 
-  /// @notice Caller-supplied overrides to the canonical liquidation sizing.
-  /// @dev maxCollateralToRemove The maximum total amount of collateral to remove from the user, expressed in asset units. `type(uint256).max` for no cap.
-  /// @dev dustThreshold The liquidation dust threshold (in value terms). Zero disables dust protection.
-  /// @dev bypassTargetHealthFactor True to size the repaid debt to the full reserve debt instead of the target health factor.
-  struct LiquidationOverrides {
-    uint256 maxCollateralToRemove;
-    uint256 dustThreshold;
-    bool bypassTargetHealthFactor;
-  }
-
   struct ExecuteLiquidationParams {
     IHubBase collateralHub;
     uint256 collateralAssetId;
@@ -68,7 +58,6 @@ library LiquidationLogic {
     address oracle;
     address user;
     uint256 debtToCover;
-    LiquidationOverrides overrides;
     uint256 healthFactor;
     uint256 totalDebtValueRay;
     uint256 activeCollateralCount;
@@ -145,7 +134,6 @@ library LiquidationLogic {
     uint256 liquidationBonus;
     uint256 healthFactor;
     uint256 targetHealthFactor;
-    LiquidationOverrides overrides;
   }
 
   struct CalculateCollateralToLiquidateParams {
@@ -156,17 +144,6 @@ library LiquidationLogic {
     uint256 drawnSharesToLiquidate;
     uint256 premiumDebtRayToLiquidate;
     uint256 drawnIndex;
-    uint256 debtAssetUnit;
-    uint256 debtAssetPrice;
-    uint256 liquidationBonus;
-  }
-
-  struct CalculateDebtFromCollateralParams {
-    IHubBase collateralReserveHub;
-    uint256 collateralReserveAssetId;
-    uint256 collateralSharesToLiquidate;
-    uint256 collateralAssetUnit;
-    uint256 collateralAssetPrice;
     uint256 debtAssetUnit;
     uint256 debtAssetPrice;
     uint256 liquidationBonus;
@@ -185,7 +162,6 @@ library LiquidationLogic {
     uint256 debtAssetDecimals;
     uint256 debtAssetPrice;
     uint256 debtToCover;
-    LiquidationOverrides overrides;
     uint256 collateralFactor;
     uint256 healthFactorForMaxBonus;
     uint256 liquidationBonusFactor;
@@ -214,15 +190,13 @@ library LiquidationLogic {
   /// @param positionStatus The mapping of position status per user.
   /// @param dynamicConfig The mapping of dynamic config per reserve per dynamic config key.
   /// @param params The liquidate user params.
-  /// @param overrides The liquidation overrides.
   /// @return True if the liquidation results in deficit.
   function liquidateUser(
     mapping(uint256 reserveId => ISpoke.Reserve) storage reserves,
     mapping(address user => mapping(uint256 reserveId => ISpoke.UserPosition)) storage userPositions,
     mapping(address user => ISpoke.PositionStatus) storage positionStatus,
     mapping(uint256 reserveId => mapping(uint32 dynamicConfigKey => ISpoke.DynamicReserveConfig)) storage dynamicConfig,
-    LiquidateUserParams memory params,
-    LiquidationOverrides memory overrides
+    LiquidateUserParams memory params
   ) external returns (bool) {
     ISpoke.Reserve storage collateralReserve = reserves.get(params.collateralReserveId);
     ISpoke.Reserve storage debtReserve = reserves.get(params.debtReserveId);
@@ -251,7 +225,6 @@ library LiquidationLogic {
       oracle: params.oracle,
       user: params.user,
       debtToCover: params.debtToCover,
-      overrides: overrides,
       healthFactor: params.userAccountData.healthFactor,
       totalDebtValueRay: params.userAccountData.totalDebtValueRay,
       activeCollateralCount: params.userAccountData.activeCollateralCount,
@@ -411,7 +384,6 @@ library LiquidationLogic {
         debtAssetDecimals: params.debtAssetDecimals,
         debtAssetPrice: IAaveOracle(params.oracle).getReservePrice(params.debtReserveId),
         debtToCover: params.debtToCover,
-        overrides: params.overrides,
         collateralFactor: params.collateralDynConfig.collateralFactor,
         healthFactorForMaxBonus: params.liquidationConfig.healthFactorForMaxBonus,
         liquidationBonusFactor: params.liquidationConfig.liquidationBonusFactor,
@@ -604,8 +576,7 @@ library LiquidationLogic {
     // To prevent accumulation of dust, one of the following conditions is enforced:
     // 1. liquidate all debt
     // 2. liquidate all collateral
-    // 3. leave at least `overrides.dustThreshold` of collateral and debt (in value terms)
-    // The threshold is zero when dust protection is bypassed, so conditions are trivially met.
+    // 3. leave at least `DUST_LIQUIDATION_THRESHOLD` of collateral and debt (in value terms)
     (uint256 drawnSharesToLiquidate, uint256 premiumDebtRayToLiquidate) = _calculateDebtToLiquidate(
       CalculateDebtToLiquidateParams({
         drawnShares: params.drawnShares,
@@ -619,8 +590,7 @@ library LiquidationLogic {
         collateralFactor: params.collateralFactor,
         liquidationBonus: liquidationBonus,
         healthFactor: params.healthFactor,
-        targetHealthFactor: params.targetHealthFactor,
-        overrides: params.overrides
+        targetHealthFactor: params.targetHealthFactor
       })
     );
 
@@ -649,7 +619,7 @@ library LiquidationLogic {
         collateralRemaining.toValue({
           decimals: params.collateralAssetDecimals,
           price: params.collateralAssetPrice
-        }) < params.overrides.dustThreshold;
+        }) < DUST_LIQUIDATION_THRESHOLD;
     }
 
     // debt is fully liquidated if and only if all drawn shares are liquidated
@@ -662,17 +632,17 @@ library LiquidationLogic {
       // - `debtRayToLiquidate` is decreased if `collateralSharesToLiquidate > params.suppliedShares` (if so, debt dust could remain).
       // - `debtRayToLiquidate` is increased if `(leavesCollateralDust && drawnSharesToLiquidate < params.drawnShares)`,
       // ensuring collateral reserve is fully liquidated (potentially bypassing the target health factor).
-      uint256 debtRayToLiquidate = _calculateDebtFromCollateral(
-        CalculateDebtFromCollateralParams({
-          collateralReserveHub: params.collateralReserveHub,
-          collateralReserveAssetId: params.collateralReserveAssetId,
-          collateralSharesToLiquidate: collateralSharesToLiquidate,
-          collateralAssetUnit: collateralAssetUnit,
-          collateralAssetPrice: params.collateralAssetPrice,
-          debtAssetUnit: debtAssetUnit,
-          debtAssetPrice: params.debtAssetPrice,
-          liquidationBonus: liquidationBonus
-        })
+      uint256 debtRayToLiquidate = Math.mulDiv(
+        params.collateralReserveHub.previewAddByShares(
+          params.collateralReserveAssetId,
+          collateralSharesToLiquidate
+        ),
+        params.collateralAssetPrice *
+          debtAssetUnit *
+          PercentageMath.PERCENTAGE_FACTOR *
+          WadRayMath.RAY,
+        params.debtAssetPrice * collateralAssetUnit * liquidationBonus,
+        Math.Rounding.Ceil
       );
 
       if (debtRayToLiquidate <= params.premiumDebtRay) {
@@ -708,24 +678,6 @@ library LiquidationLogic {
           ).min(params.suppliedShares);
         }
       }
-    }
-
-    // `maxCollateralToRemove` bounds the total collateral removed from the user; when the cap binds,
-    // the repayment is resized to exactly consume it
-    if (params.overrides.maxCollateralToRemove != type(uint256).max) {
-      (
-        collateralSharesToLiquidate,
-        drawnSharesToLiquidate,
-        premiumDebtRayToLiquidate
-      ) = _applyMaxCollateralToRemove({
-          params: params,
-          collateralAssetUnit: collateralAssetUnit,
-          debtAssetUnit: debtAssetUnit,
-          liquidationBonus: liquidationBonus,
-          collateralSharesToLiquidate: collateralSharesToLiquidate,
-          drawnSharesToLiquidate: drawnSharesToLiquidate,
-          premiumDebtRayToLiquidate: premiumDebtRayToLiquidate
-        });
     }
 
     // revert if the liquidator does not intend to cover the necessary debt to prevent dust from remaining
@@ -776,116 +728,6 @@ library LiquidationLogic {
     return collateralSharesToLiquidate;
   }
 
-  /// @notice Calculates the amount of debt that should be liquidated based on liquidated collateral shares.
-  /// @dev Inverse of `_calculateCollateralToLiquidate`, rounding in favor of the protocol.
-  /// @return The amount of debt that should be liquidated, expressed in units of debt asset and scaled by RAY.
-  function _calculateDebtFromCollateral(
-    CalculateDebtFromCollateralParams memory params
-  ) internal view returns (uint256) {
-    return
-      Math.mulDiv(
-        params.collateralReserveHub.previewAddByShares(
-          params.collateralReserveAssetId,
-          params.collateralSharesToLiquidate
-        ),
-        params.collateralAssetPrice *
-          params.debtAssetUnit *
-          PercentageMath.PERCENTAGE_FACTOR *
-          WadRayMath.RAY,
-        params.debtAssetPrice * params.collateralAssetUnit * params.liquidationBonus,
-        Math.Rounding.Ceil
-      );
-  }
-
-  /// @notice Applies the `maxCollateralToRemove` cap to the liquidation amounts.
-  /// @dev When the cap binds, the repayment is resized to exactly consume it, using the inverse of the
-  /// bonus pricing, without exceeding the amounts computed from the debt sizing. Since the cap binds
-  /// below the user's collateral balance, the remaining collateral and debt must respect the dust threshold.
-  /// @return The amount of collateral shares to liquidate.
-  /// @return The amount of drawn shares to liquidate.
-  /// @return The amount of premium debt to liquidate.
-  function _applyMaxCollateralToRemove(
-    CalculateLiquidationAmountsParams memory params,
-    uint256 collateralAssetUnit,
-    uint256 debtAssetUnit,
-    uint256 liquidationBonus,
-    uint256 collateralSharesToLiquidate,
-    uint256 drawnSharesToLiquidate,
-    uint256 premiumDebtRayToLiquidate
-  ) internal view returns (uint256, uint256, uint256) {
-    uint256 maxCollateralSharesToRemove = params.collateralReserveHub.previewAddByAssets(
-      params.collateralReserveAssetId,
-      params.overrides.maxCollateralToRemove
-    );
-    if (collateralSharesToLiquidate <= maxCollateralSharesToRemove) {
-      return (collateralSharesToLiquidate, drawnSharesToLiquidate, premiumDebtRayToLiquidate);
-    }
-
-    collateralSharesToLiquidate = maxCollateralSharesToRemove;
-    uint256 debtRayToLiquidate = _calculateDebtFromCollateral(
-      CalculateDebtFromCollateralParams({
-        collateralReserveHub: params.collateralReserveHub,
-        collateralReserveAssetId: params.collateralReserveAssetId,
-        collateralSharesToLiquidate: collateralSharesToLiquidate,
-        collateralAssetUnit: collateralAssetUnit,
-        collateralAssetPrice: params.collateralAssetPrice,
-        debtAssetUnit: debtAssetUnit,
-        debtAssetPrice: params.debtAssetPrice,
-        liquidationBonus: liquidationBonus
-      })
-    );
-
-    if (debtRayToLiquidate <= premiumDebtRayToLiquidate) {
-      // `premiumDebtRayToLiquidate` may exceed `debtRayToLiquidate` as a result of rounding up to asset units, ensuring full utilization of assets
-      premiumDebtRayToLiquidate = debtRayToLiquidate.roundRayUp().min(premiumDebtRayToLiquidate);
-      drawnSharesToLiquidate = 0;
-    } else {
-      // `drawnSharesToLiquidate` may exceed the amount computed from the debt sizing due to rounding, in which case the repayment stands
-      drawnSharesToLiquidate = (debtRayToLiquidate - premiumDebtRayToLiquidate)
-        .divUp(params.drawnIndex)
-        .min(drawnSharesToLiquidate);
-    }
-
-    if (params.overrides.dustThreshold > 0 && drawnSharesToLiquidate < params.drawnShares) {
-      _validateRemainingDust({
-        params: params,
-        collateralSharesToLiquidate: collateralSharesToLiquidate,
-        drawnSharesToLiquidate: drawnSharesToLiquidate,
-        premiumDebtRayToLiquidate: premiumDebtRayToLiquidate
-      });
-    }
-
-    return (collateralSharesToLiquidate, drawnSharesToLiquidate, premiumDebtRayToLiquidate);
-  }
-
-  /// @dev Reverts unless the remaining collateral and debt balances both respect the dust threshold.
-  function _validateRemainingDust(
-    CalculateLiquidationAmountsParams memory params,
-    uint256 collateralSharesToLiquidate,
-    uint256 drawnSharesToLiquidate,
-    uint256 premiumDebtRayToLiquidate
-  ) internal view {
-    uint256 collateralValueRemaining = params
-      .collateralReserveHub
-      .previewRemoveByShares(
-        params.collateralReserveAssetId,
-        params.suppliedShares.uncheckedSub(collateralSharesToLiquidate)
-      )
-      .toValue({decimals: params.collateralAssetDecimals, price: params.collateralAssetPrice});
-    uint256 debtValueRayRemaining = ((params.drawnShares - drawnSharesToLiquidate) *
-      params.drawnIndex +
-      params.premiumDebtRay -
-      premiumDebtRayToLiquidate).toValue({
-        decimals: params.debtAssetDecimals,
-        price: params.debtAssetPrice
-      });
-    require(
-      collateralValueRemaining >= params.overrides.dustThreshold &&
-        debtValueRayRemaining >= params.overrides.dustThreshold.toRay(),
-      ISpoke.MustNotLeaveDust()
-    );
-  }
-
   /// @notice Calculates the amount of drawn shares and premium debt that should be liquidated.
   /// @dev Returned values do not exceed `params.debtToCover`, except when all debt must be repaid due to remaining dust.
   /// @return The amount of drawn shares to liquidate. Does not exceed `params.drawnShares`.
@@ -893,21 +735,17 @@ library LiquidationLogic {
   function _calculateDebtToLiquidate(
     CalculateDebtToLiquidateParams memory params
   ) internal pure returns (uint256, uint256) {
-    // when target health factor sizing is bypassed, size to the full debt of the reserve,
-    // equivalent to an infinite target health factor
-    uint256 debtRayToTarget = params.overrides.bypassTargetHealthFactor
-      ? params.drawnShares * params.drawnIndex + params.premiumDebtRay
-      : _calculateDebtToTargetHealthFactor(
-        CalculateDebtToTargetHealthFactorParams({
-          totalDebtValueRay: params.totalDebtValueRay,
-          debtAssetUnit: params.debtAssetUnit,
-          debtAssetPrice: params.debtAssetPrice,
-          collateralFactor: params.collateralFactor,
-          liquidationBonus: params.liquidationBonus,
-          healthFactor: params.healthFactor,
-          targetHealthFactor: params.targetHealthFactor
-        })
-      );
+    uint256 debtRayToTarget = _calculateDebtToTargetHealthFactor(
+      CalculateDebtToTargetHealthFactorParams({
+        totalDebtValueRay: params.totalDebtValueRay,
+        debtAssetUnit: params.debtAssetUnit,
+        debtAssetPrice: params.debtAssetPrice,
+        collateralFactor: params.collateralFactor,
+        liquidationBonus: params.liquidationBonus,
+        healthFactor: params.healthFactor,
+        targetHealthFactor: params.targetHealthFactor
+      })
+    );
 
     // `premiumDebtRayToLiquidate` may exceed `debtRayToTarget` as a result of rounding up to asset units, ensuring full utilization of assets
     uint256 premiumDebtRayToLiquidate = debtRayToTarget.roundRayUp().min(params.premiumDebtRay);
@@ -941,7 +779,7 @@ library LiquidationLogic {
     // debt is fully liquidated if and only if all drawn shares are liquidated (premium debt is always liquidated first)
     bool leavesDebtDust = (drawnSharesToLiquidate < params.drawnShares) &&
       debtRayRemaining.toValue({decimals: params.debtAssetDecimals, price: params.debtAssetPrice}) <
-        params.overrides.dustThreshold.toRay();
+        DUST_LIQUIDATION_THRESHOLD.toRay();
 
     if (leavesDebtDust) {
       // target health factor is bypassed to prevent leaving dust

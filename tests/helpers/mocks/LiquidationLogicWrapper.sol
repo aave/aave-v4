@@ -170,28 +170,12 @@ contract LiquidationLogicWrapper {
 
   function liquidateUser(LiquidationLogic.LiquidateUserParams memory params) public returns (bool) {
     return
-      liquidateUser(
-        params,
-        LiquidationLogic.LiquidationOverrides({
-          maxCollateralToRemove: type(uint256).max,
-          dustThreshold: LiquidationLogic.DUST_LIQUIDATION_THRESHOLD,
-          bypassTargetHealthFactor: false
-        })
-      );
-  }
-
-  function liquidateUser(
-    LiquidationLogic.LiquidateUserParams memory params,
-    LiquidationLogic.LiquidationOverrides memory overrides
-  ) public returns (bool) {
-    return
       LiquidationLogic.liquidateUser(
         _reserves,
         _userPositions,
         _positionStatuses,
         _dynamicConfig,
-        params,
-        overrides
+        params
       );
   }
 

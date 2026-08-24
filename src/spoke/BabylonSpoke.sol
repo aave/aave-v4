@@ -2,6 +2,7 @@
 pragma solidity 0.8.28;
 
 import {LiquidationLogic} from 'src/spoke/libraries/LiquidationLogic.sol';
+import {BabylonLiquidationLogic} from 'src/spoke/libraries/BabylonLiquidationLogic.sol';
 import {IBabylonSpoke} from 'src/spoke/interfaces/IBabylonSpoke.sol';
 import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 import {Spoke} from 'src/spoke/Spoke.sol';
@@ -50,21 +51,50 @@ abstract contract BabylonSpoke is IBabylonSpoke, Spoke {
     // dust protection and target health factor sizing are bypassed if either reserve has the corresponding flag set
     LiquidationBypass storage collateralBypass = _liquidationBypass[collateralReserveId];
     LiquidationBypass storage debtBypass = _liquidationBypass[debtReserveId];
-    _liquidationCall({
-      collateralReserveId: collateralReserveId,
-      debtReserveId: debtReserveId,
-      user: user,
-      debtToCover: debtToCover,
-      receiveShares: receiveShares,
-      overrides: LiquidationLogic.LiquidationOverrides({
-        maxCollateralToRemove: maxCollateralToRemove,
-        dustThreshold: collateralBypass.bypassLiquidationDust || debtBypass.bypassLiquidationDust
-          ? 0
-          : DUST_LIQUIDATION_THRESHOLD,
-        bypassTargetHealthFactor: collateralBypass.bypassTargetHealthFactor ||
-          debtBypass.bypassTargetHealthFactor
-      })
+
+    UserAccountData memory userAccountData = _calculateUserAccountData(user);
+    BabylonLiquidationLogic.LiquidateUserParams memory params = BabylonLiquidationLogic
+      .LiquidateUserParams({
+        collateralReserveId: collateralReserveId,
+        debtReserveId: debtReserveId,
+        liquidationConfig: _liquidationConfig,
+        oracle: ORACLE,
+        user: user,
+        debtToCover: debtToCover,
+        overrides: BabylonLiquidationLogic.LiquidationOverrides({
+          maxCollateralToRemove: maxCollateralToRemove,
+          dustThreshold: collateralBypass.bypassLiquidationDust || debtBypass.bypassLiquidationDust
+            ? 0
+            : DUST_LIQUIDATION_THRESHOLD,
+          bypassTargetHealthFactor: collateralBypass.bypassTargetHealthFactor ||
+            debtBypass.bypassTargetHealthFactor
+        }),
+        userAccountData: userAccountData,
+        liquidator: msg.sender,
+        receiveShares: receiveShares
+      });
+
+    bool isUserInDeficit = BabylonLiquidationLogic.liquidateUser({
+      reserves: _reserves,
+      userPositions: _userPositions,
+      positionStatus: _positionStatus,
+      dynamicConfig: _dynamicConfig,
+      params: params
     });
+
+    if (isUserInDeficit) {
+      // report deficit for all debt reserves, including the reserve being repaid
+      LiquidationLogic.notifyReportDeficit(
+        _reserves,
+        _userPositions,
+        _positionStatus,
+        _reserveCount,
+        user
+      );
+    } else {
+      uint256 newRiskPremium = _calculateUserAccountData(user).riskPremium;
+      _notifyRiskPremiumUpdate(user, newRiskPremium);
+    }
   }
 
   /// @inheritdoc IBabylonSpoke

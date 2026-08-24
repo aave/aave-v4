@@ -195,7 +195,6 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
         debtAssetDecimals: spoke.getReserve(debtReserveId).decimals,
         debtAssetPrice: IPriceOracle(spoke.ORACLE()).getReservePrice(debtReserveId),
         debtToCover: debtToCover,
-        overrides: _neutralOverrides(),
         collateralFactor: spoke
           .getDynamicReserveConfig(
             collateralReserveId,

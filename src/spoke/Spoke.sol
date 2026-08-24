@@ -351,29 +351,6 @@ abstract contract Spoke is
     uint256 debtToCover,
     bool receiveShares
   ) external virtual nonReentrant {
-    _liquidationCall({
-      collateralReserveId: collateralReserveId,
-      debtReserveId: debtReserveId,
-      user: user,
-      debtToCover: debtToCover,
-      receiveShares: receiveShares,
-      overrides: LiquidationLogic.LiquidationOverrides({
-        maxCollateralToRemove: type(uint256).max,
-        dustThreshold: DUST_LIQUIDATION_THRESHOLD,
-        bypassTargetHealthFactor: false
-      })
-    });
-  }
-
-  /// @dev Liquidates a user position, applying the given liquidation overrides.
-  function _liquidationCall(
-    uint256 collateralReserveId,
-    uint256 debtReserveId,
-    address user,
-    uint256 debtToCover,
-    bool receiveShares,
-    LiquidationLogic.LiquidationOverrides memory overrides
-  ) internal {
     UserAccountData memory userAccountData = _calculateUserAccountData(user);
     LiquidationLogic.LiquidateUserParams memory params = LiquidationLogic.LiquidateUserParams({
       collateralReserveId: collateralReserveId,
@@ -392,8 +369,7 @@ abstract contract Spoke is
       userPositions: _userPositions,
       positionStatus: _positionStatus,
       dynamicConfig: _dynamicConfig,
-      params: params,
-      overrides: overrides
+      params: params
     });
 
     if (isUserInDeficit) {
