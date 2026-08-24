@@ -69,6 +69,7 @@ contract LiquidationLogicExecuteLiquidationTest is LiquidationLogicBaseTest {
       oracle: address(oracle1),
       user: makeAddr('user'),
       debtToCover: 3e18,
+      overrides: _neutralOverrides(),
       healthFactor: 0.8e18,
       totalDebtValueRay: 10_000e26 * WadRayMath.RAY,
       activeCollateralCount: 1,

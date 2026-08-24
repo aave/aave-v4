@@ -122,7 +122,8 @@ contract LiquidationLogicBaseTest is Base {
         collateralFactor: debtToTargetParams.collateralFactor,
         liquidationBonus: debtToTargetParams.liquidationBonus,
         healthFactor: debtToTargetParams.healthFactor,
-        targetHealthFactor: debtToTargetParams.targetHealthFactor
+        targetHealthFactor: debtToTargetParams.targetHealthFactor,
+        overrides: _neutralOverrides()
       });
   }
 
@@ -233,6 +234,7 @@ contract LiquidationLogicBaseTest is Base {
   function _bound(
     LiquidationLogic.CalculateLiquidationAmountsParams memory params
   ) internal virtual returns (LiquidationLogic.CalculateLiquidationAmountsParams memory) {
+    params.overrides = _neutralOverrides();
     (
       params.healthFactorForMaxBonus,
       params.liquidationBonusFactor,
@@ -357,7 +359,22 @@ contract LiquidationLogicBaseTest is Base {
         collateralFactor: params.collateralFactor,
         liquidationBonus: liquidationBonus,
         healthFactor: params.healthFactor,
-        targetHealthFactor: params.targetHealthFactor
+        targetHealthFactor: params.targetHealthFactor,
+        overrides: _neutralOverrides()
+      });
+  }
+
+  /// @dev Returns liquidation overrides matching the canonical liquidation behavior.
+  function _neutralOverrides()
+    internal
+    pure
+    returns (LiquidationLogic.LiquidationOverrides memory)
+  {
+    return
+      LiquidationLogic.LiquidationOverrides({
+        maxCollateralToRemove: type(uint256).max,
+        dustThreshold: LiquidationLogic.DUST_LIQUIDATION_THRESHOLD,
+        bypassTargetHealthFactor: false
       });
   }
 
