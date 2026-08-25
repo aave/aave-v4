@@ -1,0 +1,28 @@
+src/spoke/instances/PermissionedSpokeInstance.sol
+  s_8edb99a82f115a::t_3ee4c383453a17 4-6,13-16,26
+  s_8edb99a82f115a::t_4d4824b151abe3 10-11
+  s_8edb99a82f115a::t_60dbd56d6461c8 12
+src/spoke/PermissionedSpoke.sol
+  s_8edb99a82f115a::t_9e8b3c9b7ab72b 4-5,12-40
+  s_8edb99a82f115a::t_66438724cf0ae9 1-3,6-11,41
+snapshots/PermissionedSpoke.Operations.json
+  s_8edb99a82f115a::t_81d5e28373eb2a 2-16
+src/spoke/instances/SpokeInstance.sol
+  s_8edb99a82f115a::t_055616efeea8f4 4,9-11,13,16-32
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.24",
+  "base_commit_sha": "0ea8e3021951273c9649f576f3dd8863185bf9f9",
+  "prompts": {},
+  "sessions": {
+    "s_8edb99a82f115a": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "eef1846f-483e-488d-9f7c-f625a7b2a5cd",
+        "model": "claude-fable-5"
+      },
+      "human_author": "Alexandru Niculae <43644109+avniculae@users.noreply.github.com>"
+    }
+  }
+}
