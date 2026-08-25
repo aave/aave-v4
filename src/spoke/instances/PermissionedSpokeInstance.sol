@@ -1,16 +1,19 @@
 // SPDX-License-Identifier: LicenseRef-BUSL
 pragma solidity 0.8.28;
 
-import {SpokeInstanceBase} from 'src/spoke/instances/SpokeInstanceBase.sol';
-import {ISpokeGate} from 'src/spoke/interfaces/ISpokeGate.sol';
+import {Spoke} from 'src/spoke/Spoke.sol';
+import {PermissionedSpoke} from 'src/spoke/PermissionedSpoke.sol';
+import {SpokeInstance} from 'src/spoke/instances/SpokeInstance.sol';
 
 /// @title PermissionedSpokeInstance
 /// @author Aave Labs
-/// @notice Spoke implementation where a gate replaces the default position manager authorization
-/// on position actions.
-contract PermissionedSpokeInstance is SpokeInstanceBase {
-  /// @notice The gate deciding whether position actions are allowed.
-  address public immutable GATE;
+/// @notice Implementation contract for the PermissionedSpoke.
+contract PermissionedSpokeInstance is SpokeInstance, PermissionedSpoke {
+  /// @dev Applies the gate authorization of the PermissionedSpoke.
+  modifier onlyPositionManager(address onBehalfOf) override(Spoke, PermissionedSpoke) {
+    _checkCallAllowed(msg.sender, onBehalfOf, msg.data);
+    _;
+  }
 
   /// @dev Constructor.
   /// @param oracle_ The address of the oracle.
@@ -20,24 +23,5 @@ contract PermissionedSpokeInstance is SpokeInstanceBase {
     address oracle_,
     uint16 maxUserReservesLimit_,
     address gate_
-  ) SpokeInstanceBase(oracle_, maxUserReservesLimit_) {
-    require(gate_ != address(0), InvalidAddress());
-    GATE = gate_;
-  }
-
-  /// @dev The gate fully decides whether the call is allowed, based on the caller, the position
-  /// owner and the calldata. It can preserve the default authorization by calling back
-  /// `isPositionManager`.
-  modifier onlyPositionManager(address onBehalfOf) override {
-    _checkCallAllowed(onBehalfOf);
-    _;
-  }
-
-  /// @dev Reverts if the gate disallows the current call on the position of `onBehalfOf`.
-  function _checkCallAllowed(address onBehalfOf) internal view {
-    require(
-      ISpokeGate(GATE).isCallAllowed({caller: msg.sender, onBehalfOf: onBehalfOf, data: msg.data}),
-      Unauthorized()
-    );
-  }
+  ) SpokeInstance(oracle_, maxUserReservesLimit_) PermissionedSpoke(gate_) {}
 }
