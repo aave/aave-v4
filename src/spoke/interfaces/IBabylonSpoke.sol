@@ -20,9 +20,6 @@ interface IBabylonSpoke is ISpoke {
   /// @param bypass The new liquidation bypass flags.
   event UpdateLiquidationBypass(uint256 indexed reserveId, LiquidationBypass bypass);
 
-  /// @notice Thrown when a max collateral to remove input is zero.
-  error InvalidMaxCollateralToRemove();
-
   /// @notice Thrown when the disabled canonical liquidation entry point is called.
   error UnsupportedLiquidationCall();
 

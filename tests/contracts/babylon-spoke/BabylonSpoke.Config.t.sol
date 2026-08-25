@@ -68,11 +68,13 @@ contract BabylonSpokeConfigTest is BabylonSpokeBaseTest {
     );
   }
 
-  function test_liquidationCall_revertsWith_InvalidMaxCollateralToRemove() public {
+  /// @dev A zero cap degenerates to a zero-amount liquidation, which the Hub rejects on restore,
+  /// consistent with the canonical liquidation behavior.
+  function test_liquidationCall_zeroMaxCollateralToRemove_revertsWith_InvalidAmount() public {
     _setupPosition(2100e18, 0.98e18);
 
     vm.prank(liquidator);
-    vm.expectRevert(IBabylonSpoke.InvalidMaxCollateralToRemove.selector);
+    vm.expectRevert(IHub.InvalidAmount.selector);
     babylonSpoke.liquidationCall(
       _daiReserveId(spoke1),
       _usdxReserveId(spoke1),
