@@ -8,13 +8,14 @@ interface IAllowlist {
   function isAllowed(address account) external view returns (bool);
 }
 
-/// @dev Gate replicating the default position-manager authorization.
+/// @dev Gate replicating the default authorization.
 contract PositionManagerPolicyGate is ISpokeGate {
   function isCallAllowed(
     address caller,
     address onBehalfOf,
-    bytes calldata
+    bytes calldata data
   ) external view returns (bool) {
+    if (bytes4(data) == ISpoke.liquidationCall.selector) return true;
     return ISpoke(msg.sender).isPositionManager(onBehalfOf, caller);
   }
 }
@@ -30,9 +31,10 @@ contract GlobalManagerPolicyGate is ISpokeGate {
   function isCallAllowed(
     address caller,
     address onBehalfOf,
-    bytes calldata
+    bytes calldata data
   ) external view returns (bool) {
     if (caller == GLOBAL_MANAGER) return true;
+    if (bytes4(data) == ISpoke.liquidationCall.selector) return true;
     return ISpoke(msg.sender).isPositionManager(onBehalfOf, caller);
   }
 }
@@ -51,6 +53,7 @@ contract BorrowAllowlistPolicyGate is ISpokeGate {
     bytes calldata data
   ) external view returns (bool) {
     if (bytes4(data) == ISpoke.borrow.selector && !ALLOWLIST.isAllowed(onBehalfOf)) return false;
+    if (bytes4(data) == ISpoke.liquidationCall.selector) return true;
     return ISpoke(msg.sender).isPositionManager(onBehalfOf, caller);
   }
 }

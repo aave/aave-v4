@@ -6,19 +6,11 @@ import {ISpokeGate} from 'src/spoke/interfaces/ISpokeGate.sol';
 
 /// @title PermissionedSpoke
 /// @author Aave Labs
-/// @notice Spoke where a gate replaces the default position manager authorization on position
-/// actions.
+/// @notice Spoke where a gate replaces the default authorization on position actions and
+/// liquidations.
 abstract contract PermissionedSpoke is Spoke {
-  /// @notice The gate deciding whether position actions are allowed.
+  /// @notice The gate deciding whether position actions and liquidations are allowed.
   address public immutable GATE;
-
-  /// @dev The gate fully decides whether the call is allowed, based on the caller, the position
-  /// owner and the calldata. It can preserve the default authorization by calling back
-  /// `isPositionManager`.
-  modifier onlyPositionManager(address onBehalfOf) virtual override {
-    _checkCallAllowed(msg.sender, onBehalfOf, msg.data);
-    _;
-  }
 
   /// @dev Constructor.
   /// @param gate_ The address of the gate.
@@ -27,15 +19,14 @@ abstract contract PermissionedSpoke is Spoke {
     GATE = gate_;
   }
 
-  /// @dev Reverts if the gate disallows `caller` performing the call `data` on the position of `onBehalfOf`.
-  function _checkCallAllowed(
+  /// @dev The gate fully decides whether the call is allowed, based on the caller, the position
+  /// owner and the calldata. It can preserve the default authorization by calling back
+  /// `isPositionManager` and allowing `liquidationCall`.
+  function _isAllowed(
     address caller,
-    address onBehalfOf,
+    address user,
     bytes calldata data
-  ) internal view {
-    require(
-      ISpokeGate(GATE).isCallAllowed({caller: caller, onBehalfOf: onBehalfOf, data: data}),
-      Unauthorized()
-    );
+  ) internal view virtual override returns (bool) {
+    return ISpokeGate(GATE).isCallAllowed({caller: caller, onBehalfOf: user, data: data});
   }
 }

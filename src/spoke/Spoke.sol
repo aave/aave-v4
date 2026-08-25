@@ -86,10 +86,9 @@ abstract contract Spoke is
   uint256 internal constant DUST_LIQUIDATION_THRESHOLD =
     LiquidationLogic.DUST_LIQUIDATION_THRESHOLD;
 
-  /// @notice Modifier that checks if the caller is an approved positionManager for `onBehalfOf`.
-  /// @dev Virtual to allow instances to replace the authorization scheme of position actions.
-  modifier onlyPositionManager(address onBehalfOf) virtual {
-    require(_isPositionManager({user: onBehalfOf, manager: msg.sender}), Unauthorized());
+  /// @notice Modifier that checks if the caller is allowed to perform the call on the position of `onBehalfOf`.
+  modifier onlyAllowed(address onBehalfOf) {
+    require(_isAllowed(msg.sender, onBehalfOf, msg.data), Unauthorized());
     _;
   }
 
@@ -227,7 +226,7 @@ abstract contract Spoke is
     uint256 reserveId,
     uint256 amount,
     address onBehalfOf
-  ) external nonReentrant onlyPositionManager(onBehalfOf) returns (uint256, uint256) {
+  ) external nonReentrant onlyAllowed(onBehalfOf) returns (uint256, uint256) {
     Reserve storage reserve = _reserves.get(reserveId);
     UserPosition storage userPosition = _userPositions[onBehalfOf][reserveId];
     _validateSupply(reserve.flags);
@@ -246,7 +245,7 @@ abstract contract Spoke is
     uint256 reserveId,
     uint256 amount,
     address onBehalfOf
-  ) external nonReentrant onlyPositionManager(onBehalfOf) returns (uint256, uint256) {
+  ) external nonReentrant onlyAllowed(onBehalfOf) returns (uint256, uint256) {
     Reserve storage reserve = _reserves.get(reserveId);
     UserPosition storage userPosition = _userPositions[onBehalfOf][reserveId];
     _validateWithdraw(reserve.flags);
@@ -276,7 +275,7 @@ abstract contract Spoke is
     uint256 reserveId,
     uint256 amount,
     address onBehalfOf
-  ) external nonReentrant onlyPositionManager(onBehalfOf) returns (uint256, uint256) {
+  ) external nonReentrant onlyAllowed(onBehalfOf) returns (uint256, uint256) {
     Reserve storage reserve = _reserves.get(reserveId);
     UserPosition storage userPosition = _userPositions[onBehalfOf][reserveId];
     PositionStatus storage positionStatus = _positionStatus[onBehalfOf];
@@ -307,7 +306,7 @@ abstract contract Spoke is
     uint256 reserveId,
     uint256 amount,
     address onBehalfOf
-  ) external nonReentrant onlyPositionManager(onBehalfOf) returns (uint256, uint256) {
+  ) external nonReentrant onlyAllowed(onBehalfOf) returns (uint256, uint256) {
     Reserve storage reserve = _reserves.get(reserveId);
     UserPosition storage userPosition = _userPositions[onBehalfOf][reserveId];
     _validateRepay(reserve.flags);
@@ -351,7 +350,7 @@ abstract contract Spoke is
     address user,
     uint256 debtToCover,
     bool receiveShares
-  ) external nonReentrant {
+  ) external nonReentrant onlyAllowed(user) {
     UserAccountData memory userAccountData = _calculateUserAccountData(user);
     LiquidationLogic.LiquidateUserParams memory params = LiquidationLogic.LiquidateUserParams({
       collateralReserveId: collateralReserveId,
@@ -393,7 +392,7 @@ abstract contract Spoke is
     uint256 reserveId,
     bool usingAsCollateral,
     address onBehalfOf
-  ) external nonReentrant onlyPositionManager(onBehalfOf) {
+  ) external nonReentrant onlyAllowed(onBehalfOf) {
     Reserve storage reserve = _reserves.get(reserveId);
     PositionStatus storage positionStatus = _positionStatus[onBehalfOf];
     if (positionStatus.isUsingAsCollateral(reserveId) == usingAsCollateral) {
@@ -911,6 +910,18 @@ abstract contract Spoke is
     if (user == manager) return true;
     PositionManagerConfig storage config = _positionManager[manager];
     return config.active && config.approval[user];
+  }
+
+  /// @notice Returns whether `caller` is allowed to perform the call `data` on the position of `user`.
+  /// @dev The default implementation allows anyone to liquidate and requires the caller to be `user`
+  /// or one of its approved position managers otherwise.
+  function _isAllowed(
+    address caller,
+    address user,
+    bytes calldata data
+  ) internal view virtual returns (bool) {
+    if (bytes4(data) == this.liquidationCall.selector) return true;
+    return _isPositionManager({user: user, manager: caller});
   }
 
   function _validateReserveConfig(ReserveConfig calldata config) internal pure {

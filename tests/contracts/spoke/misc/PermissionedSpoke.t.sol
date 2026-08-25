@@ -149,7 +149,7 @@ contract PermissionedSpokeTest is PermissionedSpokeBase {
     });
   }
 
-  function test_liquidationCallUnaffected() public {
+  function test_liquidationCallGated() public {
     SpokeActions.supply({
       spoke: spoke,
       reserveId: usdxReserveId,
@@ -173,13 +173,21 @@ contract PermissionedSpokeTest is PermissionedSpokeBase {
       pricePercentage: 90_00
     });
 
-    // gate everything; neither alice nor bob are eligible
-    gate.setGated(ISpoke.supply.selector, true);
-    gate.setGated(ISpoke.withdraw.selector, true);
-    gate.setGated(ISpoke.borrow.selector, true);
-    gate.setGated(ISpoke.repay.selector, true);
-    gate.setGated(ISpoke.setUsingAsCollateral.selector, true);
     gate.setGated(ISpoke.liquidationCall.selector, true);
+
+    vm.expectRevert(ISpoke.Unauthorized.selector);
+    SpokeActions.liquidationCall({
+      spoke: spoke,
+      collateralReserveId: wethReserveId,
+      debtReserveId: usdxReserveId,
+      user: alice,
+      debtToCover: type(uint256).max,
+      receiveShares: false,
+      caller: bob
+    });
+
+    // ungated liquidations preserve the default permissionless behavior via the gate
+    gate.setGated(ISpoke.liquidationCall.selector, false);
 
     uint256 debtBefore = spoke.getUserTotalDebt(usdxReserveId, alice);
 
