@@ -237,6 +237,13 @@ contract AddressesProviderRegistrationTest is BaseConfigEngineTest {
     engine.executeSpokeReserveListings(_toReserveListingArray(_defaultReserveListing()));
   }
 
+  function test_executeSpokeReserveListings_revertsWith_HubNotRegistered() public {
+    _unregisterHub1();
+
+    vm.expectRevert(abi.encodeWithSelector(EngineUtils.HubNotRegistered.selector, address(hub1())));
+    engine.executeSpokeReserveListings(_toReserveListingArray(_defaultReserveListing()));
+  }
+
   function test_executeSpokeReserveConfigUpdates_revertsWith_CanonicalSpokeNotRegistered() public {
     _unregisterSpoke1();
 

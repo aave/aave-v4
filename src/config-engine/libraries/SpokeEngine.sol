@@ -17,6 +17,7 @@ library SpokeEngine {
 
   /// @notice Lists new reserves on Spokes.
   /// @dev The Spoke must be registered on the AddressesProvider as a canonical Spoke.
+  /// @dev The Hub must be registered on the AddressesProvider as a canonical Hub.
   /// @param listings The reserve listings to execute.
   /// @param addressesProvider The AddressesProvider authorizing the actions.
   function executeSpokeReserveListings(
@@ -26,6 +27,7 @@ library SpokeEngine {
     uint256 length = listings.length;
     for (uint256 i; i < length; ++i) {
       EngineUtils.requireRegisteredCanonicalSpoke(addressesProvider, listings[i].spoke);
+      EngineUtils.requireRegisteredHub(addressesProvider, listings[i].hub);
 
       uint256 assetId = IHubBase(listings[i].hub).getAssetId(listings[i].underlying);
       listings[i].spokeConfigurator.addReserve(
