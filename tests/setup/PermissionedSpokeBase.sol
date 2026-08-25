@@ -22,8 +22,13 @@ abstract contract PermissionedSpokeBase is Base {
   function setUp() public virtual override {
     super.setUp();
 
+    spoke = _deployPermissionedSpoke(_deployGate());
+  }
+
+  /// @dev Deploys the gate used by the permissioned spoke; overridable to test other gates.
+  function _deployGate() internal virtual returns (address) {
     gate = new MockSpokeGate();
-    spoke = _deployPermissionedSpoke(address(gate));
+    return address(gate);
   }
 
   /// @dev Deploys a permissioned spoke with the given gate, mirroring the standard fixture config.
