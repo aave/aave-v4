@@ -1,0 +1,24 @@
+src/spoke/Spoke.sol
+  s_8edb99a82f115a::t_54f679edac7088 89-92
+src/spoke/instances/PermissionedSpokeInstance.sol
+  s_8edb99a82f115a::t_8e6efd68f15c30 32-37
+  s_8edb99a82f115a::t_6251533d1576f2 31,38-41
+snapshots/PermissionedSpoke.Operations.json
+  s_8edb99a82f115a::t_8fac86bbb180fe 2-16
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.24",
+  "base_commit_sha": "38ac1f2b87d14534d4766f86d64f8fbe4d9b4cc1",
+  "prompts": {},
+  "sessions": {
+    "s_8edb99a82f115a": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "eef1846f-483e-488d-9f7c-f625a7b2a5cd",
+        "model": "claude-fable-5"
+      },
+      "human_author": "Alexandru Niculae <43644109+avniculae@users.noreply.github.com>"
+    }
+  }
+}
