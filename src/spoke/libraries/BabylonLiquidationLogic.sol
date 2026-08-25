@@ -12,6 +12,7 @@ import {UserPositionUtils} from 'src/spoke/libraries/UserPositionUtils.sol';
 import {ReserveFlags} from 'src/spoke/libraries/ReserveFlagsMap.sol';
 import {IHubBase} from 'src/hub/interfaces/IHubBase.sol';
 import {IAaveOracle} from 'src/spoke/interfaces/IAaveOracle.sol';
+import {IBabylonSpoke} from 'src/spoke/interfaces/IBabylonSpoke.sol';
 import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 
 /// @title BabylonLiquidationLogic library
@@ -201,6 +202,10 @@ library BabylonLiquidationLogic {
       params.debtAssetId
     );
 
+    require(
+      params.overrides.maxCollateralToRemove > 0,
+      IBabylonSpoke.InvalidMaxCollateralToRemove()
+    );
     LiquidationLogic._validateLiquidationCall(
       LiquidationLogic.ValidateLiquidationCallParams({
         user: params.user,

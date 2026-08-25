@@ -46,8 +46,6 @@ abstract contract BabylonSpoke is IBabylonSpoke, Spoke {
     uint256 maxCollateralToRemove,
     bool receiveShares
   ) external nonReentrant {
-    require(maxCollateralToRemove > 0, InvalidMaxCollateralToRemove());
-
     // dust protection and target health factor sizing are bypassed if either reserve has the corresponding flag set
     LiquidationBypass storage collateralBypass = _liquidationBypass[collateralReserveId];
     LiquidationBypass storage debtBypass = _liquidationBypass[debtReserveId];
