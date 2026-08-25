@@ -28,11 +28,16 @@ contract PermissionedSpokeInstance is SpokeInstanceBase {
   /// @dev The gate fully decides whether the call is allowed, based on the caller, the position
   /// owner and the calldata. It can preserve the default authorization by calling back
   /// `isPositionManager`.
-  function _isAuthorizedPositionManagerCall(
-    address caller,
-    address user,
-    bytes calldata data
-  ) internal view override returns (bool) {
-    return ISpokeGate(GATE).isCallAllowed({caller: caller, onBehalfOf: user, data: data});
+  modifier onlyPositionManager(address onBehalfOf) override {
+    _checkCallAllowed(onBehalfOf);
+    _;
+  }
+
+  /// @dev Reverts if the gate disallows the current call on the position of `onBehalfOf`.
+  function _checkCallAllowed(address onBehalfOf) internal view {
+    require(
+      ISpokeGate(GATE).isCallAllowed({caller: msg.sender, onBehalfOf: onBehalfOf, data: msg.data}),
+      Unauthorized()
+    );
   }
 }
