@@ -14,6 +14,9 @@ contract AaveV4PayloadWrapper is AaveV4Payload {
   uint256 public postExecuteOrder;
   uint256 private _callCounter;
 
+  // AddressesProvider action storage
+  IAaveV4ConfigEngine.AddressesProviderEntryUpdate[] private _addressesProviderEntryUpdates;
+
   // Hub action storage
   IAaveV4ConfigEngine.AssetListing[] private _hubAssetListings;
   IAaveV4ConfigEngine.AssetConfigUpdate[] private _hubAssetConfigUpdates;
@@ -54,6 +57,16 @@ contract AaveV4PayloadWrapper is AaveV4Payload {
   function _postExecute() internal override {
     postExecuteCalled = true;
     postExecuteOrder = ++_callCounter;
+  }
+
+  // AddressesProvider setters
+  function setAddressesProviderEntryUpdates(
+    IAaveV4ConfigEngine.AddressesProviderEntryUpdate[] memory items
+  ) external {
+    delete _addressesProviderEntryUpdates;
+    for (uint256 i = 0; i < items.length; i++) {
+      _addressesProviderEntryUpdates.push(items[i]);
+    }
   }
 
   // Hub setters
@@ -221,6 +234,15 @@ contract AaveV4PayloadWrapper is AaveV4Payload {
     for (uint256 i = 0; i < items.length; i++) {
       _accessManagerTargetAdminDelayUpdates.push(items[i]);
     }
+  }
+
+  function addressesProviderEntryUpdates()
+    public
+    view
+    override
+    returns (IAaveV4ConfigEngine.AddressesProviderEntryUpdate[] memory)
+  {
+    return _addressesProviderEntryUpdates;
   }
 
   function hubAssetListings()

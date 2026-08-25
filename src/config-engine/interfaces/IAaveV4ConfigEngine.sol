@@ -6,6 +6,7 @@ import {ISpokeConfigurator} from 'src/spoke/interfaces/ISpokeConfigurator.sol';
 import {IHub} from 'src/hub/interfaces/IHub.sol';
 import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 import {IAssetInterestRateStrategy} from 'src/hub/interfaces/IAssetInterestRateStrategy.sol';
+import {IAddressesProvider} from 'src/addresses-provider/interfaces/IAddressesProvider.sol';
 
 /// @title IAaveV4ConfigEngine
 /// @author Aave Labs
@@ -13,22 +14,37 @@ import {IAssetInterestRateStrategy} from 'src/hub/interfaces/IAssetInterestRateS
 /// The engine is stateless and invoked via delegatecall from payload contracts.
 /// All numeric fields in config structs use uint256 so that type(uint256).max can serve as
 /// the universal KEEP_CURRENT sentinel. Boolean fields use uint256 (0=false, 1=true, KEEP_CURRENT=skip).
+/// Hub and Spoke actions revert when the targeted Hub or Spoke is not registered on the
+/// AddressesProvider; entries are managed via `executeAddressesProviderEntryUpdates`.
 interface IAaveV4ConfigEngine {
   /// @notice Parameters for tokenization of an asset on a Hub when listing the asset.
-  /// @dev Tokenization is skipped only when all fields are unset. Otherwise `name`, `symbol` and
-  /// `proxyAdminOwner` are all required; a partially set config reverts.
+  /// @dev Tokenization is skipped only when all fields are unset. Otherwise `name`, `symbol`,
+  /// `proxyAdminOwner` and `registrationName` are all required; a partially set config reverts.
   /// @dev addCap The add cap for the TokenizationSpoke.
   /// @dev proxyAdminOwner The owner to set on the ProxyAdmin of the deployed TokenizationSpoke (address(0) when unset).
   /// @dev name The name for the TokenizationSpoke ('' when unset).
   /// @dev symbol The symbol for the TokenizationSpoke ('' when unset).
+  /// @dev registrationName The name to register the deployed TokenizationSpoke under on the AddressesProvider ('' when unset).
   struct TokenizationSpokeConfig {
     uint256 addCap;
     address proxyAdminOwner;
     string name;
     string symbol;
+    string registrationName;
+  }
+
+  /// @notice Parameters for updating an entry on the AddressesProvider.
+  /// @dev name The name of the entry.
+  /// @dev tag The tag grouping the entry.
+  /// @dev addr The address to register; the zero address removes the entry.
+  struct AddressesProviderEntryUpdate {
+    string name;
+    string tag;
+    address addr;
   }
 
   /// @notice Parameters for listing a new asset on a Hub.
+  /// @dev The Hub must be registered on the AddressesProvider as a canonical Hub.
   /// @dev hubConfigurator The HubConfigurator to use for this action.
   /// @dev hub The address of the Hub.
   /// @dev underlying The address of the underlying asset.
@@ -163,6 +179,7 @@ interface IAaveV4ConfigEngine {
   }
 
   /// @notice Parameters for listing a new reserve on a Spoke.
+  /// @dev The Spoke must be registered on the AddressesProvider as a canonical Spoke.
   /// @dev spokeConfigurator The SpokeConfigurator to use for this action.
   /// @dev spoke The address of the Spoke.
   /// @dev hub The address of the Hub.
@@ -342,6 +359,14 @@ interface IAaveV4ConfigEngine {
     uint32 newDelay;
   }
 
+  /// @notice Updates entries on the AddressesProvider.
+  /// @dev Hubs and Spokes must be registered on the AddressesProvider before other engine actions
+  /// can target them; this is the action to register (or unregister) them.
+  /// @param updates The entry updates to execute.
+  function executeAddressesProviderEntryUpdates(
+    AddressesProviderEntryUpdate[] calldata updates
+  ) external;
+
   /// @notice Lists new assets on Hubs via the HubConfigurator.
   /// @param listings The asset listings to execute.
   function executeHubAssetListings(AssetListing[] calldata listings) external;
@@ -438,4 +463,7 @@ interface IAaveV4ConfigEngine {
   /// @notice Updates target admin delays via AccessManager.
   /// @param updates The target admin delay updates to execute.
   function executeTargetAdminDelayUpdates(TargetAdminDelayUpdate[] calldata updates) external;
+
+  /// @notice Returns the AddressesProvider used to authorize and register engine actions.
+  function ADDRESSES_PROVIDER() external view returns (IAddressesProvider);
 }

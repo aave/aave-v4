@@ -40,6 +40,10 @@ contract AaveV4PayloadEmptyReturnsTest is BaseConfigEngineTest {
     minimal.execute();
   }
 
+  function test_addressesProviderEntryUpdates_returnsEmpty() public view {
+    assertEq(minimal.addressesProviderEntryUpdates().length, 0);
+  }
+
   function test_hubAssetListings_returnsEmpty() public view {
     assertEq(minimal.hubAssetListings().length, 0);
   }

@@ -3,11 +3,13 @@ pragma solidity ^0.8.0;
 
 import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
 import {EngineFlags} from 'src/config-engine/libraries/EngineFlags.sol';
+import {EngineUtils} from 'src/config-engine/libraries/EngineUtils.sol';
 import {TokenizationSpokeDeployer} from 'src/config-engine/libraries/TokenizationSpokeDeployer.sol';
 import {IHubBase} from 'src/hub/interfaces/IHubBase.sol';
 import {IHub} from 'src/hub/interfaces/IHub.sol';
 import {IAssetInterestRateStrategy} from 'src/hub/interfaces/IAssetInterestRateStrategy.sol';
 import {IAaveV4ConfigEngine} from 'src/config-engine/interfaces/IAaveV4ConfigEngine.sol';
+import {IAddressesProvider} from 'src/addresses-provider/interfaces/IAddressesProvider.sol';
 
 /// @title HubEngine
 /// @author Aave Labs
@@ -20,18 +22,26 @@ library HubEngine {
   error InvalidIrDataWithNewStrategy();
 
   /// @dev Thrown when a tokenization config is partially set. Either all fields are unset (no
-  /// TokenizationSpoke) or `name`, `symbol` and `proxyAdminOwner` must all be provided.
+  /// TokenizationSpoke) or `name`, `symbol`, `proxyAdminOwner` and `registrationName` must all be
+  /// provided.
   error InvalidTokenizationSpokeConfig();
 
   /// @notice Lists new assets on Hubs via the HubConfigurator.
+  /// @dev The Hub must be registered on the AddressesProvider as a canonical Hub.
   /// @dev When tokenization data is set, also deploys a TokenizationSpoke (impl + proxy) via
-  /// CREATE2 and registers it on the Hub for the listed asset.
+  /// CREATE2 and registers it on the AddressesProvider and on the Hub for the listed asset.
   /// @param listings The asset listings to execute.
-  function executeHubAssetListings(IAaveV4ConfigEngine.AssetListing[] calldata listings) external {
+  /// @param addressesProvider The AddressesProvider authorizing and registering the actions.
+  function executeHubAssetListings(
+    IAaveV4ConfigEngine.AssetListing[] calldata listings,
+    IAddressesProvider addressesProvider
+  ) external {
     uint256 length = listings.length;
     for (uint256 i; i < length; ++i) {
+      EngineUtils.requireRegisteredHub(addressesProvider, listings[i].hub);
+
       bytes memory irData = abi.encode(listings[i].irData);
-      listings[i].hubConfigurator.addAsset(
+      uint256 assetId = listings[i].hubConfigurator.addAsset(
         listings[i].hub,
         listings[i].underlying,
         listings[i].feeReceiver,
@@ -40,7 +50,7 @@ library HubEngine {
         irData
       );
 
-      _deployAndRegisterTokenizationSpoke(listings[i]);
+      _deployAndRegisterTokenizationSpoke(listings[i], assetId, addressesProvider);
     }
   }
 
@@ -50,12 +60,17 @@ library HubEngine {
   /// IR: strategy set → updateInterestRateStrategy; strategy kept + non-sentinel irData fields →
   /// read-modify-write via updateInterestRateData.
   /// Reinvestment: address set → updateReinvestmentController.
+  /// @dev The Hub must be registered on the AddressesProvider as a canonical Hub.
   /// @param updates The asset config updates to execute.
+  /// @param addressesProvider The AddressesProvider authorizing the actions.
   function executeHubAssetConfigUpdates(
-    IAaveV4ConfigEngine.AssetConfigUpdate[] calldata updates
+    IAaveV4ConfigEngine.AssetConfigUpdate[] calldata updates,
+    IAddressesProvider addressesProvider
   ) external {
     uint256 length = updates.length;
     for (uint256 i; i < length; ++i) {
+      EngineUtils.requireRegisteredHub(addressesProvider, updates[i].hub);
+
       uint256 assetId = IHubBase(updates[i].hub).getAssetId(updates[i].underlying);
 
       bool updateFee = updates[i].liquidityFee != EngineFlags.KEEP_CURRENT;
@@ -95,12 +110,18 @@ library HubEngine {
   }
 
   /// @notice Registers Spokes for multiple assets on Hubs.
+  /// @dev The Hub and the added Spoke must both be registered on the AddressesProvider.
   /// @param additions The Spoke-to-assets additions to execute.
+  /// @param addressesProvider The AddressesProvider authorizing the actions.
   function executeHubSpokeToAssetsAdditions(
-    IAaveV4ConfigEngine.SpokeToAssetsAddition[] calldata additions
+    IAaveV4ConfigEngine.SpokeToAssetsAddition[] calldata additions,
+    IAddressesProvider addressesProvider
   ) external {
     uint256 length = additions.length;
     for (uint256 i; i < length; ++i) {
+      EngineUtils.requireRegisteredHub(addressesProvider, additions[i].hub);
+      EngineUtils.requireRegisteredSpoke(addressesProvider, additions[i].spoke);
+
       uint256 assetsLength = additions[i].assets.length;
       uint256[] memory assetIds = new uint256[](assetsLength);
       IHub.SpokeConfig[] memory configs = new IHub.SpokeConfig[](assetsLength);
@@ -122,12 +143,18 @@ library HubEngine {
   /// Caps: both set → updateSpokeCaps; only add → updateSpokeAddCap; only draw → updateSpokeDrawCap.
   /// Risk premium threshold: set → updateSpokeRiskPremiumThreshold.
   /// Status: active set → updateSpokeActive; halted set → updateSpokeHalted.
+  /// @dev The Hub and the Spoke must both be registered on the AddressesProvider.
   /// @param updates The Spoke config updates to execute.
+  /// @param addressesProvider The AddressesProvider authorizing the actions.
   function executeHubSpokeConfigUpdates(
-    IAaveV4ConfigEngine.SpokeConfigUpdate[] calldata updates
+    IAaveV4ConfigEngine.SpokeConfigUpdate[] calldata updates,
+    IAddressesProvider addressesProvider
   ) external {
     uint256 length = updates.length;
     for (uint256 i; i < length; ++i) {
+      EngineUtils.requireRegisteredHub(addressesProvider, updates[i].hub);
+      EngineUtils.requireRegisteredSpoke(addressesProvider, updates[i].spoke);
+
       uint256 assetId = IHubBase(updates[i].hub).getAssetId(updates[i].underlying);
 
       _updateSpokeCaps(assetId, updates[i]);
@@ -161,46 +188,69 @@ library HubEngine {
   }
 
   /// @notice Halts assets on Hubs.
+  /// @dev The Hub must be registered on the AddressesProvider as a canonical Hub.
   /// @param halts The asset halts to execute.
-  function executeHubAssetHalts(IAaveV4ConfigEngine.AssetHalt[] calldata halts) external {
+  /// @param addressesProvider The AddressesProvider authorizing the actions.
+  function executeHubAssetHalts(
+    IAaveV4ConfigEngine.AssetHalt[] calldata halts,
+    IAddressesProvider addressesProvider
+  ) external {
     uint256 length = halts.length;
     for (uint256 i; i < length; ++i) {
+      EngineUtils.requireRegisteredHub(addressesProvider, halts[i].hub);
+
       uint256 assetId = IHubBase(halts[i].hub).getAssetId(halts[i].underlying);
       halts[i].hubConfigurator.haltAsset(halts[i].hub, assetId);
     }
   }
 
   /// @notice Deactivates assets on Hubs.
+  /// @dev The Hub must be registered on the AddressesProvider as a canonical Hub.
   /// @param deactivations The asset deactivations to execute.
+  /// @param addressesProvider The AddressesProvider authorizing the actions.
   function executeHubAssetDeactivations(
-    IAaveV4ConfigEngine.AssetDeactivation[] calldata deactivations
+    IAaveV4ConfigEngine.AssetDeactivation[] calldata deactivations,
+    IAddressesProvider addressesProvider
   ) external {
     uint256 length = deactivations.length;
     for (uint256 i; i < length; ++i) {
+      EngineUtils.requireRegisteredHub(addressesProvider, deactivations[i].hub);
+
       uint256 assetId = IHubBase(deactivations[i].hub).getAssetId(deactivations[i].underlying);
       deactivations[i].hubConfigurator.deactivateAsset(deactivations[i].hub, assetId);
     }
   }
 
   /// @notice Resets asset caps on Hubs.
+  /// @dev The Hub must be registered on the AddressesProvider as a canonical Hub.
   /// @param resets The asset caps resets to execute.
+  /// @param addressesProvider The AddressesProvider authorizing the actions.
   function executeHubAssetCapsResets(
-    IAaveV4ConfigEngine.AssetCapsReset[] calldata resets
+    IAaveV4ConfigEngine.AssetCapsReset[] calldata resets,
+    IAddressesProvider addressesProvider
   ) external {
     uint256 length = resets.length;
     for (uint256 i; i < length; ++i) {
+      EngineUtils.requireRegisteredHub(addressesProvider, resets[i].hub);
+
       uint256 assetId = IHubBase(resets[i].hub).getAssetId(resets[i].underlying);
       resets[i].hubConfigurator.resetAssetCaps(resets[i].hub, assetId);
     }
   }
 
   /// @notice Deactivates Spokes on Hubs.
+  /// @dev The Hub and the Spoke must both be registered on the AddressesProvider.
   /// @param deactivations The Spoke deactivations to execute.
+  /// @param addressesProvider The AddressesProvider authorizing the actions.
   function executeHubSpokeDeactivations(
-    IAaveV4ConfigEngine.SpokeDeactivation[] calldata deactivations
+    IAaveV4ConfigEngine.SpokeDeactivation[] calldata deactivations,
+    IAddressesProvider addressesProvider
   ) external {
     uint256 length = deactivations.length;
     for (uint256 i; i < length; ++i) {
+      EngineUtils.requireRegisteredHub(addressesProvider, deactivations[i].hub);
+      EngineUtils.requireRegisteredSpoke(addressesProvider, deactivations[i].spoke);
+
       deactivations[i].hubConfigurator.deactivateSpoke(
         deactivations[i].hub,
         deactivations[i].spoke
@@ -209,32 +259,50 @@ library HubEngine {
   }
 
   /// @notice Resets Spoke caps on Hubs.
+  /// @dev The Hub and the Spoke must both be registered on the AddressesProvider.
   /// @param resets The Spoke caps resets to execute.
+  /// @param addressesProvider The AddressesProvider authorizing the actions.
   function executeHubSpokeCapsResets(
-    IAaveV4ConfigEngine.SpokeCapsReset[] calldata resets
+    IAaveV4ConfigEngine.SpokeCapsReset[] calldata resets,
+    IAddressesProvider addressesProvider
   ) external {
     uint256 length = resets.length;
     for (uint256 i; i < length; ++i) {
+      EngineUtils.requireRegisteredHub(addressesProvider, resets[i].hub);
+      EngineUtils.requireRegisteredSpoke(addressesProvider, resets[i].spoke);
+
       resets[i].hubConfigurator.resetSpokeCaps(resets[i].hub, resets[i].spoke);
     }
   }
 
-  /// @dev Deploys a TokenizationSpoke (impl + proxy) via CREATE2 and registers it on the Hub.
-  /// Skipped only when the tokenization config is fully unset; a partially set config reverts
-  /// instead of being silently ignored.
+  /// @dev Deploys a TokenizationSpoke (impl + proxy) via CREATE2 and registers it on the
+  /// AddressesProvider and on the Hub. Skipped only when the tokenization config is fully unset;
+  /// a partially set config reverts instead of being silently ignored.
   function _deployAndRegisterTokenizationSpoke(
-    IAaveV4ConfigEngine.AssetListing calldata listing
+    IAaveV4ConfigEngine.AssetListing calldata listing,
+    uint256 assetId,
+    IAddressesProvider addressesProvider
   ) private {
     IAaveV4ConfigEngine.TokenizationSpokeConfig calldata tokenization = listing.tokenization;
 
     bool hasName = bytes(tokenization.name).length > 0;
     bool hasSymbol = bytes(tokenization.symbol).length > 0;
     bool hasProxyAdminOwner = tokenization.proxyAdminOwner != address(0);
+    bool hasRegistrationName = bytes(tokenization.registrationName).length > 0;
 
-    if (!hasName && !hasSymbol && !hasProxyAdminOwner && tokenization.addCap == 0) {
+    if (
+      !hasName &&
+      !hasSymbol &&
+      !hasProxyAdminOwner &&
+      !hasRegistrationName &&
+      tokenization.addCap == 0
+    ) {
       return;
     }
-    require(hasName && hasSymbol && hasProxyAdminOwner, InvalidTokenizationSpokeConfig());
+    require(
+      hasName && hasSymbol && hasProxyAdminOwner && hasRegistrationName,
+      InvalidTokenizationSpokeConfig()
+    );
 
     address proxy = TokenizationSpokeDeployer.deploy({
       hub: listing.hub,
@@ -244,7 +312,11 @@ library HubEngine {
       proxyAdminOwner: tokenization.proxyAdminOwner
     });
 
-    uint256 assetId = IHubBase(listing.hub).getAssetId(listing.underlying);
+    addressesProvider.setEntry(
+      tokenization.registrationName,
+      addressesProvider.TOKENIZATION_SPOKE_TAG(),
+      proxy
+    );
 
     listing.hubConfigurator.addSpoke(
       listing.hub,

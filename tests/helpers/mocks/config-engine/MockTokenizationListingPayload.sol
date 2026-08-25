@@ -57,7 +57,8 @@ contract MockTokenizationListingPayload is AaveV4Payload {
         addCap: 1000,
         proxyAdminOwner: PROXY_ADMIN_OWNER,
         name: 'Tokenized NEW',
-        symbol: 'tNEW'
+        symbol: 'tNEW',
+        registrationName: 'TOKENIZED_NEW'
       })
     });
     return listings;
