@@ -25,6 +25,6 @@ contract PermissionedSpokeInstance is SpokeInstance, PermissionedSpoke {
     address user,
     bytes calldata data
   ) internal view override(Spoke, PermissionedSpoke) returns (bool) {
-    return super._isAllowed(caller, user, data);
+    return PermissionedSpoke._isAllowed(caller, user, data);
   }
 }
