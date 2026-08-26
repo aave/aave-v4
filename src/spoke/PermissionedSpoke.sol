@@ -6,8 +6,8 @@ import {ISpokeGate} from 'src/spoke/interfaces/ISpokeGate.sol';
 
 /// @title PermissionedSpoke
 /// @author Aave Labs
-/// @notice Spoke where a gate replaces the default authorization on position actions and
-/// liquidations.
+/// @notice Spoke where a gate replaces the default authorization on position actions, liquidations
+/// and user risk premium updates.
 abstract contract PermissionedSpoke is Spoke {
   /// @notice The gate deciding whether position actions and liquidations are allowed.
   address public immutable GATE;
@@ -28,5 +28,15 @@ abstract contract PermissionedSpoke is Spoke {
     bytes calldata data
   ) internal view virtual override returns (bool) {
     return ISpokeGate(GATE).isCallAllowed({caller: caller, onBehalfOf: user, data: data});
+  }
+
+  function _domainNameAndVersion()
+    internal
+    pure
+    virtual
+    override
+    returns (string memory, string memory)
+  {
+    return ('PermissionedSpoke', '1');
   }
 }

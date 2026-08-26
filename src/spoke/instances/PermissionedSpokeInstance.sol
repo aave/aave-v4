@@ -27,4 +27,14 @@ contract PermissionedSpokeInstance is SpokeInstance, PermissionedSpoke {
   ) internal view override(Spoke, PermissionedSpoke) returns (bool) {
     return PermissionedSpoke._isAllowed(caller, user, data);
   }
+
+  /// @dev Resolves the diamond inheritance to the EIP712 domain of the PermissionedSpoke.
+  function _domainNameAndVersion()
+    internal
+    pure
+    override(Spoke, PermissionedSpoke)
+    returns (string memory, string memory)
+  {
+    return PermissionedSpoke._domainNameAndVersion();
+  }
 }

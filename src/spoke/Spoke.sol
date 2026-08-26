@@ -413,7 +413,7 @@ abstract contract Spoke is
 
   /// @inheritdoc ISpoke
   function updateUserRiskPremium(address onBehalfOf) external nonReentrant {
-    if (!_isPositionManager({user: onBehalfOf, manager: msg.sender})) {
+    if (!_isAllowed(msg.sender, onBehalfOf, msg.data)) {
       _checkCanCall(msg.sender, msg.data);
     }
     uint256 newRiskPremium = _calculateUserAccountData(onBehalfOf).riskPremium;
@@ -422,7 +422,7 @@ abstract contract Spoke is
 
   /// @inheritdoc ISpoke
   function updateUserDynamicConfig(address onBehalfOf) external nonReentrant {
-    if (!_isPositionManager({user: onBehalfOf, manager: msg.sender})) {
+    if (!_isAllowed(msg.sender, onBehalfOf, msg.data)) {
       _checkCanCall(msg.sender, msg.data);
     }
     uint256 newRiskPremium = _refreshAndValidateUserAccountData(onBehalfOf).riskPremium;
@@ -941,7 +941,13 @@ abstract contract Spoke is
     require(config.liquidationFee <= PercentageMath.PERCENTAGE_FACTOR, InvalidLiquidationFee());
   }
 
-  function _domainNameAndVersion() internal pure override returns (string memory, string memory) {
+  function _domainNameAndVersion()
+    internal
+    pure
+    virtual
+    override
+    returns (string memory, string memory)
+  {
     return ('Spoke', '1');
   }
 

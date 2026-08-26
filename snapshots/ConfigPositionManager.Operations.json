@@ -8,6 +8,6 @@
   "setCanUpdateUserRiskPremiumPermission": "50158",
   "setGlobalPermission": "50110",
   "setUsingAsCollateralOnBehalfOf": "78009",
-  "updateUserDynamicConfigOnBehalfOf": "52342",
-  "updateUserRiskPremiumOnBehalfOf": "140135"
+  "updateUserDynamicConfigOnBehalfOf": "52523",
+  "updateUserRiskPremiumOnBehalfOf": "140316"
 }

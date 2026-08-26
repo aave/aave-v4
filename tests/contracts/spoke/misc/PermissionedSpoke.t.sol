@@ -214,4 +214,92 @@ contract PermissionedSpokeTest is PermissionedSpokeBase {
     vm.prank(alice);
     spoke.multicall(calls);
   }
+
+  function test_updateUserRiskPremium_gated() public {
+    _supplyCollateralAndBorrow(alice, 100e6);
+
+    // the gate denies, so the call falls back to the admin check
+    gate.setGated(ISpoke.updateUserRiskPremium.selector, true);
+    vm.expectRevert(
+      abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, alice)
+    );
+    vm.prank(alice);
+    spoke.updateUserRiskPremium(alice);
+
+    // the gate can authorize a caller that is not a position manager of alice
+    gate.setGlobalManager(RWA_MANAGER, true);
+    vm.prank(RWA_MANAGER);
+    spoke.updateUserRiskPremium(alice);
+  }
+
+  function test_updateUserDynamicConfig_gated() public {
+    _supplyCollateralAndBorrow(alice, 100e6);
+
+    gate.setGated(ISpoke.updateUserDynamicConfig.selector, true);
+    vm.expectRevert(
+      abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, alice)
+    );
+    vm.prank(alice);
+    spoke.updateUserDynamicConfig(alice);
+
+    gate.setGlobalManager(RWA_MANAGER, true);
+    vm.prank(RWA_MANAGER);
+    spoke.updateUserDynamicConfig(alice);
+  }
+
+  function test_eip712Domain() public view {
+    (
+      bytes1 fields,
+      string memory name,
+      string memory version,
+      uint256 chainId,
+      address verifyingContract,
+      bytes32 salt,
+      uint256[] memory extensions
+    ) = IERC5267(address(spoke)).eip712Domain();
+
+    assertEq(fields, bytes1(0x0f));
+    assertEq(name, 'PermissionedSpoke');
+    assertEq(version, '1');
+    assertEq(chainId, block.chainid);
+    assertEq(verifyingContract, address(spoke));
+    assertEq(salt, bytes32(0));
+    assertEq(extensions.length, 0);
+  }
+
+  function test_DOMAIN_SEPARATOR() public view {
+    bytes32 expectedDomainSeparator = keccak256(
+      abi.encode(
+        keccak256(
+          'EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)'
+        ),
+        keccak256('PermissionedSpoke'),
+        keccak256('1'),
+        block.chainid,
+        address(spoke)
+      )
+    );
+    assertEq(spoke.DOMAIN_SEPARATOR(), expectedDomainSeparator);
+    assertNotEq(spoke.DOMAIN_SEPARATOR(), spoke1.DOMAIN_SEPARATOR());
+  }
+
+  function test_setUserPositionManagersWithSig() public {
+    vm.prank(SPOKE_ADMIN);
+    spoke.updatePositionManager({positionManager: POSITION_MANAGER, active: true});
+
+    ISpoke.PositionManagerUpdate[] memory updates = new ISpoke.PositionManagerUpdate[](1);
+    updates[0] = ISpoke.PositionManagerUpdate(POSITION_MANAGER, true);
+    ISpoke.SetUserPositionManagers memory params = ISpoke.SetUserPositionManagers({
+      onBehalfOf: alice,
+      updates: updates,
+      nonce: spoke.nonces(alice, 0),
+      deadline: block.timestamp + 1
+    });
+
+    (uint8 v, bytes32 r, bytes32 s) = vm.sign(alicePk, _getTypedDataHash(spoke, params));
+
+    spoke.setUserPositionManagersWithSig(params, abi.encodePacked(r, s, v));
+
+    assertTrue(spoke.isPositionManager(alice, POSITION_MANAGER));
+  }
 }
