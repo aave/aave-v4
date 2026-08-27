@@ -1,0 +1,19 @@
+src/spoke/BabylonSpoke.sol
+  s_602c0abcbd103d::t_63d3ee283d7dd2 15-24,28,52,94-101
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "0e3e50d13fc6990ba7b7bedde5baaba895c18bdd",
+  "prompts": {},
+  "sessions": {
+    "s_602c0abcbd103d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "1ea1deba-813b-43d3-807f-1e851ba7b60a",
+        "model": "claude-fable-5"
+      },
+      "human_author": "Alexandru Niculae <43644109+avniculae@users.noreply.github.com>"
+    }
+  }
+}
