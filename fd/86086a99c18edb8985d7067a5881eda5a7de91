@@ -1,0 +1,26 @@
+src/spoke/libraries/BabylonLiquidationLogic.sol
+  s_602c0abcbd103d::t_bae875b92191ff 75,78,83-93,95-101,103-107,109-123,127,132,143,146-176
+  s_602c0abcbd103d::t_a404be589e7207 48-49,73-74,76-77,79,82,177-187,200,210,227-235,240,242,245-249,292-294,328-344,347,350-351,353,357,360-364
+snapshots/BabylonSpoke.Operations.json
+  s_602c0abcbd103d::t_8608f1ba4238e8 4-8
+src/spoke/interfaces/IBabylonSpoke.sol
+  s_602c0abcbd103d::t_395047270cfa14 40,69
+tests/contracts/spoke/liquidation/Spoke.BabylonLiquidationCall.t.sol
+  s_602c0abcbd103d::t_574ade30f6c757 264,298,364
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "fd86086a99c18edb8985d7067a5881eda5a7de91",
+  "prompts": {},
+  "sessions": {
+    "s_602c0abcbd103d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "1ea1deba-813b-43d3-807f-1e851ba7b60a",
+        "model": "claude-fable-5"
+      },
+      "human_author": "Alexandru Niculae <43644109+avniculae@users.noreply.github.com>"
+    }
+  }
+}

@@ -1,0 +1,43 @@
+src/spoke/libraries/BabylonLiquidationLogic.sol
+  s_602c0abcbd103d::t_fddbb0545aa793 1-568
+src/spoke/BabylonSpoke.sol
+  s_602c0abcbd103d::t_a5ec5b8ed59065 5,54-82,84-97
+tests/helpers/mocks/BabylonLiquidationLogicWrapper.sol
+  s_602c0abcbd103d::t_fef081a79eff86 1-19
+snapshots/Hub.Operations.json
+  s_602c0abcbd103d::t_347fad66663f24 17
+snapshots/PositionManagerBase.Operations.json
+  s_602c0abcbd103d::t_e360a1e4567615 2
+snapshots/SignatureGateway.Operations.json
+  s_602c0abcbd103d::t_ae9b8fc5b64418 3-5,7-9
+snapshots/Spoke.Operations.ZeroRiskPremium.json
+  s_602c0abcbd103d::t_88d56afbadc245 4-8,10-11,15
+snapshots/Spoke.Operations.json
+  s_602c0abcbd103d::t_3cdd6efe0ca5f5 4-8,10-11,15
+src/spoke/libraries/LiquidationLogic.sol
+  s_602c0abcbd103d::t_518f04e82a003d 199,579,593,622,635-645,738-748,782
+tests/contracts/babylon-spoke/BabylonLiquidationLogic.LiquidationAmounts.t.sol
+  s_602c0abcbd103d::t_25f4d5296291a0 1-482
+tests/contracts/spoke/libraries/liquidation-logic/LiquidationLogic.Base.t.sol
+  s_602c0abcbd103d::t_a34bfd40e88263 125,360
+tests/helpers/mocks/LiquidationLogicWrapper.sol
+  s_602c0abcbd103d::t_3e89697db74706 178
+src/spoke/Spoke.sol
+  s_602c0abcbd103d::t_2397d47ac60dc1 372
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.24",
+  "base_commit_sha": "a7eef533f352a0d1f956b6b88281357f14c7f521",
+  "prompts": {},
+  "sessions": {
+    "s_602c0abcbd103d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "1ea1deba-813b-43d3-807f-1e851ba7b60a",
+        "model": "claude-fable-5"
+      },
+      "human_author": "Alexandru Niculae <43644109+avniculae@users.noreply.github.com>"
+    }
+  }
+}

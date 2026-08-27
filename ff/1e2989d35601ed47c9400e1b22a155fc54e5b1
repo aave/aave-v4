@@ -1,0 +1,21 @@
+tests/config-engine/AddressesProviderRegistration.t.sol
+  s_362baa90fa8fa5::t_3da94a8c800578 240-246
+src/config-engine/libraries/SpokeEngine.sol
+  s_362baa90fa8fa5::t_dba740c8be43c3 20,30
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.24",
+  "base_commit_sha": "ff1e2989d35601ed47c9400e1b22a155fc54e5b1",
+  "prompts": {},
+  "sessions": {
+    "s_362baa90fa8fa5": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "1cd8ae8d-6afb-4fd4-9c20-ca30d0300035",
+        "model": "claude-fable-5"
+      },
+      "human_author": "Alexandru Niculae <43644109+avniculae@users.noreply.github.com>"
+    }
+  }
+}

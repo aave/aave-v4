@@ -1,0 +1,59 @@
+src/spoke/libraries/BabylonLiquidationLogic.sol
+  s_602c0abcbd103d::t_5d5cc187e5af0f 20-22,31,41,53,65-90,121,141-142,147,168-169,183-184,200-201,233,235-238,250,254,264,277,292-293,307,362-363,374,382-383,411,415,417-421,424,434-435,471,484,487-488,505
+foundry.toml
+  s_602c0abcbd103d::t_7218737c207908 31
+tests/helpers/mocks/BabylonLiquidationLogicWrapper.sol
+  s_602c0abcbd103d::t_1695ff77d81610 9,15
+src/spoke/BabylonSpoke.sol
+  s_602c0abcbd103d::t_a969a60724ef80 54-65,72-74
+snapshots/SignatureGateway.Operations.json
+  s_602c0abcbd103d::t_39211b23132c4b 3,8
+snapshots/Spoke.Operations.ZeroRiskPremium.json
+  s_602c0abcbd103d::t_12fa71bdc1d8a6 4-9,11
+snapshots/Spoke.Operations.json
+  s_602c0abcbd103d::t_53b823fce87329 4-9,11
+snapshots/TakerPositionManager.Operations.json
+  s_602c0abcbd103d::t_870d6b3a596276 5
+src/spoke/Spoke.sol
+  s_602c0abcbd103d::t_26708da7ce3c81 364-365
+src/spoke/libraries/LiquidationLogic.sol
+  s_602c0abcbd103d::t_65d73caff8324b 21-22,44,70,80,97,118,129,145,159,182,244-245,379-380,406-407,420-421,436-437,609-610,625-626,694-695,765-766
+tests/contracts/babylon-spoke/BabylonLiquidationLogic.LiquidationAmounts.t.sol
+  s_602c0abcbd103d::t_3d67fcd2127a63 49-50,56,75-82,110,129-136,171,190-197,229,248-255,281,300-307,344,363-370,400,419-426,450,469-476
+tests/contracts/spoke/libraries/liquidation-logic/LiquidationLogic.Base.t.sol
+  s_602c0abcbd103d::t_d9203b464ca26c 80-81,126-127,336-337,363-364
+tests/contracts/spoke/libraries/liquidation-logic/LiquidationLogic.CollateralToLiquidate.t.sol
+  s_602c0abcbd103d::t_d6a99a659dad32 71-72
+tests/contracts/spoke/libraries/liquidation-logic/LiquidationLogic.DebtToTargetHealthFactor.t.sol
+  s_602c0abcbd103d::t_5e3bcc9b907ce7 65-66,87-88,107-108
+tests/contracts/spoke/libraries/liquidation-logic/LiquidationLogic.ExecuteLiquidation.t.sol
+  s_602c0abcbd103d::t_b3b70fdbe3bede 77-78
+tests/contracts/spoke/libraries/liquidation-logic/LiquidationLogic.LiquidateCollateral.t.sol
+  s_602c0abcbd103d::t_6cbc1a66c11b26 81-82,134-135,151-152
+tests/contracts/spoke/libraries/liquidation-logic/LiquidationLogic.LiquidateDebt.t.sol
+  s_602c0abcbd103d::t_1044573c1161e1 139-140,180-181,195-196,227-228,254-255
+tests/contracts/spoke/libraries/liquidation-logic/LiquidationLogic.LiquidateUser.t.sol
+  s_602c0abcbd103d::t_793ad4865a6920 69-70
+tests/contracts/spoke/libraries/liquidation-logic/LiquidationLogic.LiquidationAmounts.t.sol
+  s_602c0abcbd103d::t_36b7898da3ba4a 212-213,273-274
+tests/contracts/spoke/libraries/liquidation-logic/LiquidationLogic.ValidateLiquidationCall.t.sol
+  s_602c0abcbd103d::t_9e67ced5ea9c9a 27-28
+tests/contracts/spoke/liquidation/Spoke.LiquidationCall.Base.t.sol
+  s_602c0abcbd103d::t_87fa032b4fb984 172-173,220-221
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.24",
+  "base_commit_sha": "30ffcf975c1fa8ef5913d4c8265d732fef7632c1",
+  "prompts": {},
+  "sessions": {
+    "s_602c0abcbd103d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "1ea1deba-813b-43d3-807f-1e851ba7b60a",
+        "model": "claude-fable-5"
+      },
+      "human_author": "Alexandru Niculae <43644109+avniculae@users.noreply.github.com>"
+    }
+  }
+}

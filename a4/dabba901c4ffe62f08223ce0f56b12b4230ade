@@ -1,0 +1,19 @@
+tests/contracts/babylon-spoke/BabylonSpoke.Config.t.sol
+  s_602c0abcbd103d::t_f9313f3bd4142b 71-73,77
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.24",
+  "base_commit_sha": "a4dabba901c4ffe62f08223ce0f56b12b4230ade",
+  "prompts": {},
+  "sessions": {
+    "s_602c0abcbd103d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "1ea1deba-813b-43d3-807f-1e851ba7b60a",
+        "model": "claude-fable-5"
+      },
+      "human_author": "Alexandru Niculae <43644109+avniculae@users.noreply.github.com>"
+    }
+  }
+}

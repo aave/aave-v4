@@ -1,0 +1,40 @@
+src/spoke/interfaces/ISpokeGate.sol
+  s_8edb99a82f115a::t_e514fea6b735dc 6-7,9,12
+tests/contracts/spoke/misc/PermissionedSpoke.t.sol
+  s_8edb99a82f115a::t_1f2084d960d7d4 217-304
+src/spoke/Spoke.sol
+  s_8edb99a82f115a::t_f13c4bc53e096a 944-950
+  s_8edb99a82f115a::t_171c3a26dd928e 416
+  s_8edb99a82f115a::t_32c3936ef4b26c 425
+src/spoke/instances/PermissionedSpokeInstance.sol
+  s_8edb99a82f115a::t_15a754b4370e06 30-39
+src/spoke/PermissionedSpoke.sol
+  s_8edb99a82f115a::t_57353ac37a5537 9-10
+  s_8edb99a82f115a::t_3f5adae6f3b622 32-41
+snapshots/ConfigPositionManager.Operations.json
+  s_8edb99a82f115a::t_6ba89e74de88c4 11-12
+snapshots/SignatureGateway.Operations.json
+  s_8edb99a82f115a::t_6ae58e102f39e6 3,7-8
+snapshots/TakerPositionManager.Operations.json
+  s_8edb99a82f115a::t_1f1d3b2b04feba 5
+snapshots/Spoke.Operations.ZeroRiskPremium.json
+  s_8edb99a82f115a::t_3b897372582bf4 10-11,20-23
+snapshots/Spoke.Operations.json
+  s_8edb99a82f115a::t_b5a55dd4fb105f 10-11,20-23
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.24",
+  "base_commit_sha": "b264e0682ac863bf33dad2fb3bf553dc476864dd",
+  "prompts": {},
+  "sessions": {
+    "s_8edb99a82f115a": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "eef1846f-483e-488d-9f7c-f625a7b2a5cd",
+        "model": "claude-opus-5"
+      },
+      "human_author": "Alexandru Niculae <43644109+avniculae@users.noreply.github.com>"
+    }
+  }
+}

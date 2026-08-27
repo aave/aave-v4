@@ -1,0 +1,21 @@
+snapshots/BabylonSpoke.Operations.json
+  s_602c0abcbd103d::t_d66428a2084269 4-8
+src/spoke/libraries/BabylonLiquidationLogic.sol
+  s_602c0abcbd103d::t_2d0f50de0d872e 71,76,86,107,154,163,169-180,183,186,189-190,197,207,210-211,218,221-222,307
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "07b48dadfe9694d00ff7a5996b0e8a6b6557aac7",
+  "prompts": {},
+  "sessions": {
+    "s_602c0abcbd103d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "1ea1deba-813b-43d3-807f-1e851ba7b60a",
+        "model": "claude-fable-5"
+      },
+      "human_author": "Alexandru Niculae <43644109+avniculae@users.noreply.github.com>"
+    }
+  }
+}
