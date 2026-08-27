@@ -1,0 +1,23 @@
+.github/workflows/comment.yml
+  s_d66fe0e500f172::t_01c23088a79752 19
+.github/workflows/tests-merge.yml
+  s_d66fe0e500f172::t_01c23088a79752 12,23,28,32
+.github/workflows/tests-pr.yml
+  s_d66fe0e500f172::t_01c23088a79752 9,20,25,28,31,37
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "d37d6871cb5c0b9416434f3930321d46835f0a75",
+  "prompts": {},
+  "sessions": {
+    "s_d66fe0e500f172": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "6d72ae24-f89f-443a-a78f-dbd4e07be4ba",
+        "model": "claude-fable-5"
+      },
+      "human_author": "DhairyaSethi <55102840+DhairyaSethi@users.noreply.github.com>"
+    }
+  }
+}
