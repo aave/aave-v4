@@ -16,7 +16,7 @@ contract AaveV4AccessManagerEnumerableDeployProcedure is AaveV4DeployProcedureBa
   function _deployAccessManagerEnumerable(address admin, bytes32 salt) internal returns (address) {
     require(admin != address(0), 'invalid admin');
     return
-      Create2Utils.create2Deploy(
+      Create2Utils.create2DeployIdempotent(
         salt,
         abi.encodePacked(type(AccessManagerEnumerable).creationCode, abi.encode(admin))
       );
