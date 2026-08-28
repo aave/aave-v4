@@ -98,6 +98,12 @@ contract PermissionedSpokeTest is PermissionedSpokeBase {
     assertEq(spoke.getUserSuppliedAssets(usdxReserveId, alice), 50e6);
   }
 
+  function test_isPositionManager_preservesUnderlyingSemantics() public {
+    gate.setGlobalManager(RWA_MANAGER, true);
+
+    assertFalse(spoke.isPositionManager(alice, RWA_MANAGER));
+  }
+
   /// @dev Horizon-style forced transfer: the RWA manager moves alice's position to bob by
   /// withdrawing on her behalf and re-supplying to bob, without any user approval.
   function test_forcedTransfer_viaGlobalManager() public {
@@ -205,5 +211,35 @@ contract PermissionedSpokeTest is PermissionedSpokeBase {
     vm.expectRevert(ISpoke.Unauthorized.selector);
     vm.prank(alice);
     spoke.multicall(calls);
+  }
+
+  function test_updateUserRiskPremium_gated() public {
+    _supplyCollateralAndBorrow(alice, 100e6);
+
+    gate.setGated(ISpoke.updateUserRiskPremium.selector, true);
+    vm.expectRevert(
+      abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, alice)
+    );
+    vm.prank(alice);
+    spoke.updateUserRiskPremium(alice);
+
+    gate.setGlobalManager(RWA_MANAGER, true);
+    vm.prank(RWA_MANAGER);
+    spoke.updateUserRiskPremium(alice);
+  }
+
+  function test_updateUserDynamicConfig_gated() public {
+    _supplyCollateralAndBorrow(alice, 100e6);
+
+    gate.setGated(ISpoke.updateUserDynamicConfig.selector, true);
+    vm.expectRevert(
+      abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, alice)
+    );
+    vm.prank(alice);
+    spoke.updateUserDynamicConfig(alice);
+
+    gate.setGlobalManager(RWA_MANAGER, true);
+    vm.prank(RWA_MANAGER);
+    spoke.updateUserDynamicConfig(alice);
   }
 }

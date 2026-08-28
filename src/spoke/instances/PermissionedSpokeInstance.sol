@@ -9,12 +9,6 @@ import {SpokeInstance} from 'src/spoke/instances/SpokeInstance.sol';
 /// @author Aave Labs
 /// @notice Implementation contract for the PermissionedSpoke.
 contract PermissionedSpokeInstance is SpokeInstance, PermissionedSpoke {
-  /// @dev Applies the gate authorization of the PermissionedSpoke.
-  modifier onlyPositionManager(address onBehalfOf) override(Spoke, PermissionedSpoke) {
-    _checkCallAllowed(msg.sender, onBehalfOf, msg.data);
-    _;
-  }
-
   /// @dev Constructor.
   /// @param oracle_ The address of the oracle.
   /// @param maxUserReservesLimit_ The maximum number of collateral and borrow reserves a user can have.
@@ -24,4 +18,20 @@ contract PermissionedSpokeInstance is SpokeInstance, PermissionedSpoke {
     uint16 maxUserReservesLimit_,
     address gate_
   ) SpokeInstance(oracle_, maxUserReservesLimit_) PermissionedSpoke(gate_) {}
+
+  /// @dev Resolves the diamond inheritance to the gate authorization of the PermissionedSpoke.
+  function _isPositionManager(
+    address user,
+    address manager
+  ) internal view override(Spoke, PermissionedSpoke) returns (bool) {
+    return PermissionedSpoke._isPositionManager(user, manager);
+  }
+
+  /// @dev Resolves the diamond inheritance while preserving position manager query semantics.
+  function isPositionManager(
+    address user,
+    address positionManager
+  ) external view override(Spoke, PermissionedSpoke) returns (bool) {
+    return Spoke._isPositionManager(user, positionManager);
+  }
 }

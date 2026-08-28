@@ -87,8 +87,7 @@ abstract contract Spoke is
     LiquidationLogic.DUST_LIQUIDATION_THRESHOLD;
 
   /// @notice Modifier that checks if the caller is an approved positionManager for `onBehalfOf`.
-  /// @dev Virtual to allow instances to replace the authorization scheme of position actions.
-  modifier onlyPositionManager(address onBehalfOf) virtual {
+  modifier onlyPositionManager(address onBehalfOf) {
     require(_isPositionManager({user: onBehalfOf, manager: msg.sender}), Unauthorized());
     _;
   }
@@ -660,7 +659,10 @@ abstract contract Spoke is
   }
 
   /// @inheritdoc ISpoke
-  function isPositionManager(address user, address positionManager) external view returns (bool) {
+  function isPositionManager(
+    address user,
+    address positionManager
+  ) external view virtual returns (bool) {
     return _isPositionManager(user, positionManager);
   }
 
@@ -907,7 +909,10 @@ abstract contract Spoke is
   }
 
   /// @notice Returns whether `manager` is active and approved positionManager for `user`.
-  function _isPositionManager(address user, address manager) internal view returns (bool) {
+  function _isPositionManager(
+    address user,
+    address manager
+  ) internal view virtual returns (bool) {
     if (user == manager) return true;
     PositionManagerConfig storage config = _positionManager[manager];
     return config.active && config.approval[user];
