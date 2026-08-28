@@ -1,0 +1,30 @@
+src/config-engine/libraries/SpokeEngine.sol
+  s_4234357a097dc9::t_7b63ed92bb2c20 147
+  s_4234357a097dc9::t_9ce69e322ffc7d 8
+tests/config-engine/BaseConfigEngine.t.sol
+  s_4234357a097dc9::t_66e98a25d62603 223
+tests/config-engine/SpokeEngine.t.sol
+  s_4234357a097dc9::t_79ba7514f8d9a3 647,649-650
+tests/deployments/procedures/deploy/roles/AaveV4SpokeConfiguratorRolesProcedure.t.sol
+  s_4234357a097dc9::t_00d56393a66300 101
+src/config-engine/interfaces/IAaveV4ConfigEngine.sol
+  s_4234357a097dc9::t_64c3ce938dc425 222
+src/deployments/utils/libraries/Roles.sol
+  s_4234357a097dc9::t_76f75e9de9774a 156
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "97ddba2248b724eb9fba0e100f5f0f0616d90f07",
+  "prompts": {},
+  "sessions": {
+    "s_4234357a097dc9": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e46603eb-682a-4e30-8a94-e7285f89e305",
+        "model": "claude-fable-5"
+      },
+      "human_author": "Alexandru Niculae <43644109+avniculae@users.noreply.github.com>"
+    }
+  }
+}
