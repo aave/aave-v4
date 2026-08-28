@@ -27,8 +27,12 @@ jobs:
       - name: Run Forge size
         uses: aave-dao/github-workflows/.github/actions/foundry-size@main
 
+      - name: Run Gas report
+        uses: bgd-labs/github-workflows/.github/actions/foundry-gas-report@main
+
       - name: Run Forge tests
         id: test
         uses: aave-dao/github-workflows/.github/actions/foundry-test@main
         with:
           FOUNDRY_PROFILE: ci
+          FORGE_SNAPSHOT_CHECK: true
