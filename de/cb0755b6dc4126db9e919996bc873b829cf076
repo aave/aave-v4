@@ -1,0 +1,24 @@
+tests/setup/BabylonBase.t.sol
+  s_4234357a097dc9::t_6391841c4939fe 1-203
+tests/contracts/spoke/liquidation/Spoke.BabylonLiquidationCall.Base.t.sol
+  s_4234357a097dc9::t_430c54fa879163 98,100,103,105,112,114,127,130,141,144,152-153,169-170,178,184,190-191,196-197,203-204,219-222,224-228,240-241,249,256,264,306,309,316,334,343-344,347,366,372,374-375,384,388,393,396,400-401,414,416,443,456-457,471,487,533,536,539,559-560,588,618,635,680,682,702,724,733,837,839,888-889,894-895
+  s_4234357a097dc9::t_02d6d7f87ed9e6 65,68
+  s_4234357a097dc9::t_c2ad579913b7db 4,14
+  s_4234357a097dc9::t_51525fb0f52887 321-329
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "decb0755b6dc4126db9e919996bc873b829cf076",
+  "prompts": {},
+  "sessions": {
+    "s_4234357a097dc9": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e46603eb-682a-4e30-8a94-e7285f89e305",
+        "model": "claude-fable-5"
+      },
+      "human_author": "Alexandru Niculae <43644109+avniculae@users.noreply.github.com>"
+    }
+  }
+}
