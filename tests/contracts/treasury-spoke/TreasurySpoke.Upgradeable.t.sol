@@ -57,6 +57,7 @@ contract TreasurySpokeUpgradeableTest is Base {
 
     assertEq(_getProxyInitializedVersion(address(proxy)), revision);
     assertEq(Ownable2Step(address(proxy)).owner(), TREASURY_ADMIN);
+    assertEq(ITreasurySpoke(address(proxy)).owner(), TREASURY_ADMIN);
   }
 
   function test_proxy_reinitialization_fuzz(uint64 initialRevision) public {
