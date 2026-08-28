@@ -75,6 +75,7 @@ abstract contract BaseConfigEngineTest is Test, Create2TestHelper {
   address internal ACCOUNT = makeAddr('ACCOUNT');
   address internal TARGET = makeAddr('TARGET');
   address internal USER = makeAddr('USER');
+  address internal TREASURY_SPOKE_HUB;
   address internal PAYLOADS_CONTROLLER = makeAddr('PAYLOADS_CONTROLLER');
   address internal PROXY_ADMIN_OWNER = makeAddr('PROXY_ADMIN_OWNER');
 
@@ -133,6 +134,7 @@ abstract contract BaseConfigEngineTest is Test, Create2TestHelper {
     TestTypes.TestEnvReport memory report = AaveV4TestOrchestration.deployTestEnv({
       admin: ADMIN,
       treasuryAdmin: ADMIN,
+      hub: TREASURY_SPOKE_HUB,
       hubCount: NUM_HUBS,
       spokeCount: NUM_SPOKES,
       nativeWrapper: address(weth),

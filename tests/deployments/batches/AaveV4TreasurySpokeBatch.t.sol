@@ -9,7 +9,7 @@ contract AaveV4TreasurySpokeBatchTest is BatchBaseTest {
 
   function setUp() public override {
     super.setUp();
-    treasurySpokeBatch = new AaveV4TreasurySpokeBatch({owner_: admin, salt_: salt});
+    treasurySpokeBatch = new AaveV4TreasurySpokeBatch({owner_: admin, salt_: salt, hub_: TreasurySpokeHub});
     report = treasurySpokeBatch.getReport();
   }
 
@@ -27,13 +27,14 @@ contract AaveV4TreasurySpokeBatchTest is BatchBaseTest {
 
   function test_revert_zeroOwner() public {
     vm.expectRevert('invalid owner');
-    new AaveV4TreasurySpokeBatch({owner_: address(0), salt_: keccak256('zeroOwnerSalt')});
+    new AaveV4TreasurySpokeBatch({owner_: address(0), salt_: keccak256('zeroOwnerSalt'), hub_: address(0)});
   }
 
   function test_differentSaltProducesDifferentAddress() public {
     AaveV4TreasurySpokeBatch newBatch = new AaveV4TreasurySpokeBatch({
       owner_: admin,
-      salt_: keccak256('differentSalt')
+      salt_: keccak256('differentSalt'),
+      hub_: TreasurySpokeHub
     });
     assertNotEq(report.treasurySpoke, newBatch.getReport().treasurySpoke);
   }

@@ -13,8 +13,9 @@ contract AaveV4TreasurySpokeBatch is AaveV4TreasurySpokeDeployProcedure {
   /// @dev Constructor.
   /// @param owner_ The owner of the TreasurySpoke proxy admin and initializer.
   /// @param salt_ The CREATE2 salt for deterministic deployment.
-  constructor(address owner_, bytes32 salt_) {
-    address treasurySpoke = _deployTreasurySpoke({owner: owner_, salt: salt_});
+  /// @param hub_ The hub connected with Treasury Spoke.
+  constructor(address owner_, bytes32 salt_, address hub_) {
+    address treasurySpoke = _deployTreasurySpoke({owner: owner_, salt: salt_, hub: hub_});
     _report = BatchReports.TreasurySpokeBatchReport({treasurySpoke: treasurySpoke});
   }
 

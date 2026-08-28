@@ -159,6 +159,7 @@ abstract contract Base is BaseHelpers, BatchTestProcedures {
     report = AaveV4TestOrchestration.deployTestEnv({
       admin: ADMIN,
       treasuryAdmin: TREASURY_ADMIN,
+      hub: TreasurySpokeHub,
       hubCount: numHubs,
       spokeCount: numSpokes,
       nativeWrapper: address(tokenList.weth),
