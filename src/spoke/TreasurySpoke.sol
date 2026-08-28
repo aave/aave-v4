@@ -1,10 +1,14 @@
 // SPDX-License-Identifier: LicenseRef-BUSL
 pragma solidity 0.8.28;
 
+/// OwnableUpgradeable is only imported to override function owner defined in IOwnable.sol
+import {OwnableUpgradeable} from 'src/dependencies/openzeppelin-upgradeable/OwnableUpgradeable.sol';
 import {Ownable2StepUpgradeable} from 'src/dependencies/openzeppelin-upgradeable/Ownable2StepUpgradeable.sol';
 import {SafeERC20, IERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
 import {MathUtils} from 'src/libraries/math/MathUtils.sol';
 import {IHubBase} from 'src/hub/interfaces/IHubBase.sol';
+/// IOwnable is only imported to override function owner defined in IOwnable.sol
+import {IOwnable} from 'src/interfaces/IOwnable.sol';
 import {ITreasurySpoke} from 'src/spoke/interfaces/ITreasurySpoke.sol';
 
 /// @title TreasurySpoke
@@ -17,6 +21,14 @@ abstract contract TreasurySpoke is ITreasurySpoke, Ownable2StepUpgradeable {
 
   /// @dev To be overridden by the inheriting TreasurySpoke instance contract.
   function initialize(address owner) external virtual;
+
+  /* function that overrides function owner defined in IOwnable.sol
+  using secure code of OwnableUpgradeable
+  and propagates its effects to contracts inherited from TreasurySpoke */
+  function owner() public view override(IOwnable, OwnableUpgradeable) returns(address) {
+    /// Call secure code of OwnableUpgradeable
+    return super.owner();
+  }
 
   /// @inheritdoc ITreasurySpoke
   function supply(
