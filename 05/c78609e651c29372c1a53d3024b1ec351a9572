@@ -1,0 +1,31 @@
+src/spoke/libraries/BabylonLiquidationLogic.sol
+  s_602c0abcbd103d::t_ea979edd48fe4d 287-306,308,310-311,316,319-321,323-324,328,331-332,335,340-342,361-375
+  s_602c0abcbd103d::t_15cdb80b5f4412 135-136,216-241,244-245,247,250,253-254,258,262-263,267-268,272,276-277,280,282,284,286
+  s_602c0abcbd103d::t_1ee3a8f770af7c 392,395,398-400,403-406,495
+tests/contracts/spoke/liquidation/Spoke.BabylonLiquidationCall.t.sol
+  s_602c0abcbd103d::t_cd16618bf08ee6 335,338,341-343,345-346
+  s_602c0abcbd103d::t_e273bda8a1e552 285-287,290-292,295-308
+src/spoke/interfaces/IBabylonSpoke.sol
+  s_602c0abcbd103d::t_2329ec3306e769 22,26-28,31,34-36,39,42,44,80-82,84-85
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "05c78609e651c29372c1a53d3024b1ec351a9572",
+  "prompts": {},
+  "humans": {
+    "h_0f977de3f043fc": {
+      "author": "Alexandru Niculae <43644109+avniculae@users.noreply.github.com>"
+    }
+  },
+  "sessions": {
+    "s_602c0abcbd103d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "1ea1deba-813b-43d3-807f-1e851ba7b60a",
+        "model": "claude-fable-5"
+      },
+      "human_author": "Alexandru Niculae <43644109+avniculae@users.noreply.github.com>"
+    }
+  }
+}
