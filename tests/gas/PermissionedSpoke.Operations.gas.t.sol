@@ -113,10 +113,7 @@ contract PermissionedSpokeOperations_Gas_Tests is PermissionedSpokeBase {
     skip(100);
     vm.prank(alice);
     target.updateUserRiskPremium(alice);
-    vm.snapshotGasLastFrame(
-      NAMESPACE,
-      string.concat('updateUserRiskPremium: 1 borrow, ', label)
-    );
+    vm.snapshotGasLastFrame(NAMESPACE, string.concat('updateUserRiskPremium: 1 borrow, ', label));
   }
 
   function _snapshotUpdateUserDynamicConfig(ISpoke target, string memory label) internal {

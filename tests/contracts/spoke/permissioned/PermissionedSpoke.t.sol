@@ -13,11 +13,7 @@ contract PermissionedSpokeTest is PermissionedSpokeBase {
     vm.expectRevert(ISpoke.InvalidAddress.selector);
     vm.deployCode(
       PERMISSIONED_SPOKE_INSTANCE_ARTIFACT,
-      abi.encode(
-        address(oracle1),
-        DeployConstants.MAX_ALLOWED_USER_RESERVES_LIMIT,
-        address(0)
-      )
+      abi.encode(address(oracle1), DeployConstants.MAX_ALLOWED_USER_RESERVES_LIMIT, address(0))
     );
   }
 
@@ -73,10 +69,7 @@ contract PermissionedSpokeTest is PermissionedSpokeBase {
     gate.setGlobalManager(bob, true);
     bytes memory data = abi.encodeCall(ISpoke.supply, (usdxReserveId, amount, alice));
 
-    vm.expectCall(
-      address(gate),
-      abi.encodeCall(ISpokeGate.isCallAllowed, (bob, alice, data))
-    );
+    vm.expectCall(address(gate), abi.encodeCall(ISpokeGate.isCallAllowed, (bob, alice, data)));
     SpokeActions.supply({
       spoke: spoke,
       reserveId: usdxReserveId,

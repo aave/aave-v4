@@ -38,11 +38,7 @@ abstract contract PermissionedSpokeBase is Base {
     AaveOracle oracle = new AaveOracle(8);
     address implementation = vm.deployCode(
       PERMISSIONED_SPOKE_INSTANCE_ARTIFACT,
-      abi.encode(
-        address(oracle),
-        DeployConstants.MAX_ALLOWED_USER_RESERVES_LIMIT,
-        newGate
-      )
+      abi.encode(address(oracle), DeployConstants.MAX_ALLOWED_USER_RESERVES_LIMIT, newGate)
     );
     newSpoke = ISpoke(
       address(
