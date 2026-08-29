@@ -15,7 +15,7 @@ contract PermissionedSpokeTest is PermissionedSpokeBase {
     });
   }
 
-  function test_defaultBehaviorViaCallback() public {
+  function test_defaultBehaviorViaLocalFallback() public {
     _supplyCollateralAndBorrow(alice, 100e6);
 
     // an unapproved caller still cannot act on behalf of alice
@@ -62,7 +62,7 @@ contract PermissionedSpokeTest is PermissionedSpokeBase {
     assertEq(spoke.getUserTotalDebt(usdxReserveId, alice), 100e6);
   }
 
-  function test_approvedPositionManagersPreservedViaCallback() public {
+  function test_approvedPositionManagersPreservedViaLocalFallback() public {
     SpokeActions.supply({
       spoke: spoke,
       reserveId: usdxReserveId,
@@ -81,7 +81,7 @@ contract PermissionedSpokeTest is PermissionedSpokeBase {
       onBehalfOf: alice
     });
 
-    // approving bob as position manager makes the call pass through the callback
+    // approving bob as position manager makes the local default authorization pass
     vm.prank(SPOKE_ADMIN);
     spoke.updatePositionManager(bob, true);
     vm.prank(alice);

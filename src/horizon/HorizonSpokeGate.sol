@@ -37,11 +37,10 @@ contract HorizonSpokeGate is Ownable, IHorizonSpokeGate {
   /// @inheritdoc ISpokeGate
   function isCallAllowed(
     address caller,
-    address onBehalfOf,
+    address,
     bytes calldata data
-  ) external view returns (bool) {
+  ) external view returns (ISpokeGate.CallPolicy) {
     bytes4 selector = bytes4(data);
-    if (selector == ISpoke.liquidationCall.selector) return true;
     if (
       (selector == ISpoke.supply.selector ||
         selector == ISpoke.withdraw.selector ||
@@ -49,8 +48,8 @@ contract HorizonSpokeGate is Ownable, IHorizonSpokeGate {
         selector == ISpoke.setUsingAsCollateral.selector) &&
       isReserveManager({reserveId: uint256(bytes32(data[4:36])), manager: caller})
     ) {
-      return true;
+      return ISpokeGate.CallPolicy.ALLOW;
     }
-    return ISpoke(msg.sender).isPositionManager(onBehalfOf, caller);
+    return ISpokeGate.CallPolicy.USE_DEFAULT;
   }
 }
