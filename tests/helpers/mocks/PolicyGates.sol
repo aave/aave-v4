@@ -10,13 +10,12 @@ interface IAllowlist {
 
 /// @dev Gate replicating the default authorization.
 contract PositionManagerPolicyGate is ISpokeGate {
-  function isCallAllowed(
-    address caller,
-    address onBehalfOf,
-    bytes calldata data
-  ) external view returns (bool) {
-    if (bytes4(data) == ISpoke.liquidationCall.selector) return true;
-    return ISpoke(msg.sender).isPositionManager(onBehalfOf, caller);
+  function getCallPolicy(
+    address,
+    address,
+    bytes calldata
+  ) external pure returns (CallPolicy) {
+    return CallPolicy.USE_DEFAULT;
   }
 }
 
@@ -28,14 +27,13 @@ contract GlobalManagerPolicyGate is ISpokeGate {
     GLOBAL_MANAGER = globalManager;
   }
 
-  function isCallAllowed(
+  function getCallPolicy(
     address caller,
-    address onBehalfOf,
-    bytes calldata data
-  ) external view returns (bool) {
-    if (caller == GLOBAL_MANAGER) return true;
-    if (bytes4(data) == ISpoke.liquidationCall.selector) return true;
-    return ISpoke(msg.sender).isPositionManager(onBehalfOf, caller);
+    address,
+    bytes calldata
+  ) external view returns (CallPolicy) {
+    if (caller == GLOBAL_MANAGER) return CallPolicy.ALLOW;
+    return CallPolicy.USE_DEFAULT;
   }
 }
 
@@ -47,14 +45,15 @@ contract BorrowAllowlistPolicyGate is ISpokeGate {
     ALLOWLIST = allowlist;
   }
 
-  function isCallAllowed(
-    address caller,
+  function getCallPolicy(
+    address,
     address onBehalfOf,
     bytes calldata data
-  ) external view returns (bool) {
-    if (bytes4(data) == ISpoke.borrow.selector && !ALLOWLIST.isAllowed(onBehalfOf)) return false;
-    if (bytes4(data) == ISpoke.liquidationCall.selector) return true;
-    return ISpoke(msg.sender).isPositionManager(onBehalfOf, caller);
+  ) external view returns (CallPolicy) {
+    if (bytes4(data) == ISpoke.borrow.selector && !ALLOWLIST.isAllowed(onBehalfOf)) {
+      return CallPolicy.DENY;
+    }
+    return CallPolicy.USE_DEFAULT;
   }
 }
 
