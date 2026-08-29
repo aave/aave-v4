@@ -16,10 +16,14 @@ MAX_DECIMALS = IntVal(18)
 MIN_DRAWN_INDEX = RAY
 MAX_DRAWN_INDEX = 100 * RAY
 MAX_SUPPLY_PRICE = IntVal(100)
+MAX_COLLATERAL_RISK = IntVal(1000_00)
 
 MIN_LIQUIDATION_BONUS = PERCENTAGE_FACTOR
 MAX_LIQUIDATION_BONUS = PERCENTAGE_FACTOR * PERCENTAGE_FACTOR - 1
 DUST_LIQUIDATION_THRESHOLD = IntVal(1000 * 10**26)
+
+UINT256_MAX = IntVal(2**256 - 1)
+SECONDS_PER_YEAR = IntVal(365 * 24 * 60 * 60)
 
 
 def mulDivDown(a, num, den):
@@ -61,11 +65,22 @@ def fromRayUp(a):
 def toRay(a):
     return a * RAY
 
+
 def min(a, b):
     return If(a <= b, a, b)
 
+
+def percentMulUp(value, percentage):
+    return (value * percentage + PERCENTAGE_FACTOR - 1) / PERCENTAGE_FACTOR
+
+
+def percentMulDown(value, percentage):
+    return (value * percentage) / PERCENTAGE_FACTOR
+
+
 def zeroFloorSub(a, b):
     return If(a > b, a - b, 0)
+
 
 def toAddedSharesDown(assets, totalAddedAssets, addedShares):
     return mulDivDown(
@@ -145,39 +160,64 @@ def toValue(amount, decimals, price):
 
 
 def proveValid(s, propertyDescription, property, assumptions=[], variables=[]):
-    propertyDescriptionOutput = f"-- VALID Property: {propertyDescription} --"
-    print("=" * len(propertyDescriptionOutput))
+    propertyDescriptionOutput = f'-- VALID Property: {propertyDescription} --'
+    print('=' * len(propertyDescriptionOutput))
     print(propertyDescriptionOutput)
 
     result = s.check(Not(property), *assumptions)
     if result == sat:
-        print("❌ Property is not valid:")
+        print('❌ Property is not valid:')
         print(s.model())
         for variable, variableName in variables:
-            print(f"{variableName}: {s.model().eval(variable)}")
+            print(f'{variableName}: {s.model().eval(variable)}')
     elif result == unsat:
-        print(f"✅ Property is valid.")
+        print(f'✅ Property is valid.')
     elif result == unknown:
-        print("❓ Timed out or unknown.")
+        print('❓ Timed out or unknown.')
 
-    print("=" * len(propertyDescriptionOutput))
+    print('=' * len(propertyDescriptionOutput))
 
 
 def proveSatisfiable(s, propertyDescription, property, assumptions=[], variables=[]):
-    propertyDescriptionOutput = f"-- SATISFIABLE Property: {propertyDescription} --"
-    print("=" * len(propertyDescriptionOutput))
+    propertyDescriptionOutput = f'-- SATISFIABLE Property: {propertyDescription} --'
+    print('=' * len(propertyDescriptionOutput))
     print(propertyDescriptionOutput)
 
     result = s.check(property, *assumptions)
     if result == sat:
-        print("✅ Property is satisfiable")
+        print('✅ Property is satisfiable')
         m = s.model()
         print(m)
         for variable, variableName in variables:
-            print(f"{variableName}: {m.eval(variable)}")
+            print(f'{variableName}: {m.eval(variable)}')
     elif result == unsat:
-        print("❌ Property is unsatisfiable.")
+        print('❌ Property is unsatisfiable.')
     elif result == unknown:
-        print("❓ Timed out or unknown.")
+        print('❓ Timed out or unknown.')
 
-    print("=" * len(propertyDescriptionOutput))
+    print('=' * len(propertyDescriptionOutput))
+
+
+def maximise(expression, propertyDescription, assumptions=[], variables=[]):
+    propertyDescriptionOutput = f'-- MAXIMISE: {propertyDescription} --'
+    print('=' * len(propertyDescriptionOutput))
+    print(propertyDescriptionOutput)
+
+    s = Optimize()
+    for assumption in assumptions:
+        s.add(assumption)
+
+    s.maximize(expression)
+
+    result = s.check()
+    if result == sat:
+        m = s.model()
+        print(f'✅ Maximum found: {m.eval(expression)}')
+        for variable, variableName in variables:
+            print(f'{variableName}: {m.eval(variable)}')
+    elif result == unsat:
+        print('❌ Unsatisfiable (no maximum).')
+    elif result == unknown:
+        print('❓ Timed out or unknown.')
+
+    print('=' * len(propertyDescriptionOutput))
