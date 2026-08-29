@@ -40,6 +40,11 @@ library BatchReports {
     address treasurySpoke;
   }
 
+  /// @dev feeSharesMinter The deployed FeeSharesMinter contract address.
+  struct FeeSharesMinterBatchReport {
+    address feeSharesMinter;
+  }
+
   /// @dev signatureGateway The deployed SignatureGateway contract address.
   /// @dev nativeGateway The deployed NativeTokenGateway contract address.
   struct GatewaysBatchReport {

@@ -13,6 +13,7 @@ contract AaveV4BatchDeploymentTest is BatchTestProcedures {
       hubAdmin: makeAddr('hubAdmin'),
       hubConfiguratorAdmin: makeAddr('hubConfiguratorAdmin'),
       treasurySpokeOwner: makeAddr('treasurySpokeOwner'),
+      feeSharesMinterOwner: makeAddr('feeSharesMinterOwner'),
       spokeAdmin: makeAddr('spokeAdmin'),
       spokeConfiguratorAdmin: makeAddr('spokeConfiguratorAdmin'),
       gatewayOwner: makeAddr('gatewayOwner'),
@@ -101,6 +102,20 @@ contract AaveV4BatchDeploymentTest is BatchTestProcedures {
   /// @dev Reverts as treasurySpoke is always deployed and owner is required
   function testAaveV4BatchDeployment_fuzz_withZeroTreasurySpokeOwner(bool grantRoles) public {
     _inputs.treasurySpokeOwner = address(0);
+    _inputs.grantRoles = grantRoles;
+
+    (bool isExpectedError, bytes memory errorMessage) = _getExpectedError();
+    if (isExpectedError) {
+      vm.expectRevert(errorMessage);
+      this.checkedV4Deployment();
+    } else {
+      checkedV4Deployment();
+    }
+  }
+
+  /// @dev Reverts as feeSharesMinter is always deployed and owner is required
+  function testAaveV4BatchDeployment_fuzz_withZeroFeeSharesMinterOwner(bool grantRoles) public {
+    _inputs.feeSharesMinterOwner = address(0);
     _inputs.grantRoles = grantRoles;
 
     (bool isExpectedError, bytes memory errorMessage) = _getExpectedError();
@@ -434,6 +449,7 @@ contract AaveV4BatchDeploymentTest is BatchTestProcedures {
     assertNotEq(deployInputs.accessManagerAdmin, address(0));
     assertNotEq(deployInputs.hubConfiguratorAdmin, address(0));
     assertNotEq(deployInputs.treasurySpokeOwner, address(0));
+    assertNotEq(deployInputs.feeSharesMinterOwner, address(0));
     assertNotEq(deployInputs.proxyAdminOwner, address(0));
     assertNotEq(deployInputs.spokeConfiguratorAdmin, address(0));
     assertNotEq(deployInputs.gatewayOwner, address(0));
@@ -449,11 +465,12 @@ contract AaveV4BatchDeploymentTest is BatchTestProcedures {
   ///      1. AuthorityBatch (deployer as initial admin)
   ///      2. ConfiguratorBatch
   ///      3. TreasurySpokeBatch (treasurySpokeOwner)
-  ///      4. Hubs (proxyAdminOwner)
-  ///      5. Spokes (proxyAdminOwner)
-  ///      6. Gateways (gatewayOwner, nativeWrapper)
-  ///      7. PositionManagers (positionManagerOwner)
-  ///      8. Roles (hubAdmin, hubConfiguratorAdmin, spokeAdmin, spokeConfiguratorAdmin, accessManagerAdmin)
+  ///      4. FeeSharesMinterBatch (feeSharesMinterOwner)
+  ///      5. Hubs (proxyAdminOwner)
+  ///      6. Spokes (proxyAdminOwner)
+  ///      7. Gateways (gatewayOwner, nativeWrapper)
+  ///      8. PositionManagers (positionManagerOwner)
+  ///      9. Roles (hubAdmin, hubConfiguratorAdmin, spokeAdmin, spokeConfiguratorAdmin, accessManagerAdmin)
   function _getExpectedError()
     internal
     view
@@ -467,7 +484,12 @@ contract AaveV4BatchDeploymentTest is BatchTestProcedures {
       return (true, bytes('invalid owner'));
     }
 
-    // 3. hubs and spokes require proxy admin owner when deployed
+    // 3. fee shares minter requires owner
+    if (_inputs.feeSharesMinterOwner == address(0)) {
+      return (true, bytes('invalid owner'));
+    }
+
+    // 5. hubs and spokes require proxy admin owner when deployed
     if (
       (_inputs.hubLabels.length > 0 || _inputs.spokeLabels.length > 0) &&
       _inputs.proxyAdminOwner == address(0)
@@ -475,7 +497,7 @@ contract AaveV4BatchDeploymentTest is BatchTestProcedures {
       return (true, bytes('invalid proxy admin owner'));
     }
 
-    // 4. gateways: native gateway checks nativeWrapper, then owner;
+    // 6. gateways: native gateway checks nativeWrapper, then owner;
     //    signature gateway checks owner
     if (_inputs.deployNativeTokenGateway && _inputs.nativeWrapper == address(0)) {
       return (true, bytes('invalid native wrapper'));
@@ -487,7 +509,7 @@ contract AaveV4BatchDeploymentTest is BatchTestProcedures {
       return (true, bytes('invalid owner'));
     }
 
-    // 5. position managers require owner when deployed
+    // 7. position managers require owner when deployed
     if (_inputs.deployPositionManagers && _inputs.positionManagerOwner == address(0)) {
       return (true, bytes('invalid owner'));
     }

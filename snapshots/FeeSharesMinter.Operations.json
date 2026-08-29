@@ -1,0 +1,9 @@
+{
+  "onReport": "117135",
+  "setConfig: cold": "59220",
+  "setConfig: disable": "37308",
+  "setConfig: warm": "42120",
+  "setWorkflowConfig: cold": "72976",
+  "setWorkflowConfig: deactivate": "35952",
+  "setWorkflowConfig: warm": "35964"
+}

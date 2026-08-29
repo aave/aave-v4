@@ -31,6 +31,7 @@ abstract contract AaveV4Payload {
     _executeHubActions();
     _executeSpokeActions();
     _executePositionManagerActions();
+    _executeFeeSharesMinterActions();
     _postExecute();
   }
 
@@ -260,6 +261,39 @@ abstract contract AaveV4Payload {
     return new IAaveV4ConfigEngine.PositionManagerRoleRenouncement[](0);
   }
 
+  /// @notice Returns the per-asset FeeSharesMinter configs to execute. Override to provide configs.
+  /// @return An array of FeeSharesMinterConfig structs (empty by default).
+  function feeSharesMinterConfigs()
+    public
+    view
+    virtual
+    returns (IAaveV4ConfigEngine.FeeSharesMinterConfig[] memory)
+  {
+    return new IAaveV4ConfigEngine.FeeSharesMinterConfig[](0);
+  }
+
+  /// @notice Returns the hub-wide FeeSharesMinter configs to execute. Override to provide configs.
+  /// @return An array of FeeSharesMinterHubConfig structs (empty by default).
+  function feeSharesMinterHubConfigs()
+    public
+    view
+    virtual
+    returns (IAaveV4ConfigEngine.FeeSharesMinterHubConfig[] memory)
+  {
+    return new IAaveV4ConfigEngine.FeeSharesMinterHubConfig[](0);
+  }
+
+  /// @notice Returns the FeeSharesMinter workflow configs to execute. Override to provide configs.
+  /// @return An array of FeeSharesMinterWorkflowConfig structs (empty by default).
+  function feeSharesMinterWorkflowConfigs()
+    public
+    view
+    virtual
+    returns (IAaveV4ConfigEngine.FeeSharesMinterWorkflowConfig[] memory)
+  {
+    return new IAaveV4ConfigEngine.FeeSharesMinterWorkflowConfig[](0);
+  }
+
   /// @notice Executes all hub-related configuration actions via delegatecall to the engine.
   function _executeHubActions() internal {
     IAaveV4ConfigEngine.AssetListing[] memory listings = hubAssetListings();
@@ -419,6 +453,31 @@ abstract contract AaveV4Payload {
     if (spokeRegs.length > 0) {
       _delegateCallEngine(
         abi.encodeCall(IAaveV4ConfigEngine.executePositionManagerSpokeRegistrations, (spokeRegs))
+      );
+    }
+  }
+
+  /// @notice Executes all FeeSharesMinter configuration actions via delegatecall to the engine.
+  function _executeFeeSharesMinterActions() internal {
+    IAaveV4ConfigEngine.FeeSharesMinterWorkflowConfig[]
+      memory workflowConfigs = feeSharesMinterWorkflowConfigs();
+    if (workflowConfigs.length > 0) {
+      _delegateCallEngine(
+        abi.encodeCall(IAaveV4ConfigEngine.executeFeeSharesMinterWorkflowConfigs, (workflowConfigs))
+      );
+    }
+
+    IAaveV4ConfigEngine.FeeSharesMinterConfig[] memory configs = feeSharesMinterConfigs();
+    if (configs.length > 0) {
+      _delegateCallEngine(
+        abi.encodeCall(IAaveV4ConfigEngine.executeFeeSharesMinterConfigs, (configs))
+      );
+    }
+
+    IAaveV4ConfigEngine.FeeSharesMinterHubConfig[] memory hubConfigs = feeSharesMinterHubConfigs();
+    if (hubConfigs.length > 0) {
+      _delegateCallEngine(
+        abi.encodeCall(IAaveV4ConfigEngine.executeFeeSharesMinterHubConfigs, (hubConfigs))
       );
     }
   }
