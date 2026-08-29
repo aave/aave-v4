@@ -1,0 +1,21 @@
+snapshots/BabylonSpoke.Operations.json
+  s_4234357a097dc9::t_99f8cfa91c6a68 9,14
+tests/setup/BabylonBase.t.sol
+  s_4234357a097dc9::t_4cec86ae8d95f8 29-30
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "159e029262e23af8f6e4768ea329a37fa8ba11b4",
+  "prompts": {},
+  "sessions": {
+    "s_4234357a097dc9": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e46603eb-682a-4e30-8a94-e7285f89e305",
+        "model": "claude-fable-5"
+      },
+      "human_author": "Alexandru Niculae <43644109+avniculae@users.noreply.github.com>"
+    }
+  }
+}

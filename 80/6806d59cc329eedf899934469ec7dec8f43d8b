@@ -1,0 +1,48 @@
+tests/gas/BabylonSpoke.Operations.gas.t.sol
+  s_602c0abcbd103d::t_9589d67b9858eb 27
+  s_602c0abcbd103d::t_d5d7f03c07b86b 100-124
+  s_602c0abcbd103d::t_04348f87777f71 15-20,23,34,43,52,95,125-177
+src/spoke/interfaces/IBabylonSpoke.sol
+  s_602c0abcbd103d::t_e45111b438c42b 84,96-99
+  s_602c0abcbd103d::t_4562595f270359 11-17
+  s_602c0abcbd103d::t_c40827e0bc2cbb 53-54
+  s_602c0abcbd103d::t_80b507981f59f1 55-65
+tests/contracts/spoke/liquidation/Spoke.BabylonLiquidationCall.t.sol
+  s_602c0abcbd103d::t_d5d7f03c07b86b 152-154,156-160,162,165-166,168-171
+  s_602c0abcbd103d::t_9589d67b9858eb 35-37,122,126,128,130-133,136,141-151,155,161,163-164,167,179,211,219,227,235,244,260,282,291
+  s_602c0abcbd103d::t_8e06573346f041 22-26,30,299
+src/spoke/BabylonSpoke.sol
+  h_0f977de3f043fc 59
+  s_602c0abcbd103d::t_98ca62d59df583 4-7,17-18,20-23,25,29,38-58,60,85
+  s_602c0abcbd103d::t_84414a8541678f 61-63
+  s_602c0abcbd103d::t_ab923f8f7267b6 86
+  s_602c0abcbd103d::t_8265fa2bc6755a 91,127-129
+src/spoke/Spoke.sol
+  s_602c0abcbd103d::t_c40827e0bc2cbb 888
+  s_602c0abcbd103d::t_ff2fd75fd46abd 347-348
+tests/gas/Spoke.Operations.gas.t.sol
+  s_602c0abcbd103d::t_c19191c992cd1a 35,237,253
+snapshots/BabylonSpoke.Operations.json
+  h_0f977de3f043fc 2-10,15,17,19-28
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "806806d59cc329eedf899934469ec7dec8f43d8b",
+  "prompts": {},
+  "humans": {
+    "h_0f977de3f043fc": {
+      "author": "Alexandru Niculae <43644109+avniculae@users.noreply.github.com>"
+    }
+  },
+  "sessions": {
+    "s_602c0abcbd103d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "1ea1deba-813b-43d3-807f-1e851ba7b60a",
+        "model": "claude-fable-5"
+      },
+      "human_author": "Alexandru Niculae <43644109+avniculae@users.noreply.github.com>"
+    }
+  }
+}
