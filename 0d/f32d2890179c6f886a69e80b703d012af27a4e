@@ -1,0 +1,33 @@
+tests/gas/PermissionedSpoke.Operations.gas.t.sol
+  s_f9d3a438256120::t_f8752a0a1ad886 4
+  s_f9d3a438256120::t_64fe4b14cb19ae 19-20,26-27,34-35,67,70-80,82-87,89-96,100,103-107,109,125-143
+  s_f9d3a438256120::t_d11fb720944a8a 21,68-69,81,88,97-99,101-102,108,110-124
+  s_f9d3a438256120::t_d8a38d0ab83afa 144
+snapshots/PermissionedSpoke.Operations.json
+  s_f9d3a438256120::t_ba7c5ffe491679 2-13,17-20
+tests/contracts/spoke/misc/PermissionedSpoke.t.sol
+  s_f9d3a438256120::t_64fe4b14cb19ae 6,67-68,70-73,75-78,80-150
+  s_f9d3a438256120::t_f8752a0a1ad886 4
+  s_f9d3a438256120::t_69747fc148fe76 5
+  s_f9d3a438256120::t_70d2c4e356b84f 151
+  s_f9d3a438256120::t_cd84d9e84b5deb 69,74,79
+tests/contracts/horizon/HorizonSpokeGate.t.sol
+  s_f9d3a438256120::t_f8752a0a1ad886 4
+  s_f9d3a438256120::t_64fe4b14cb19ae 53-79
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "0df32d2890179c6f886a69e80b703d012af27a4e",
+  "prompts": {},
+  "sessions": {
+    "s_f9d3a438256120": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a04e52-b690-7103-b402-945ae1523285",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": null
+    }
+  }
+}
