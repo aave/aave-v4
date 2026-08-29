@@ -350,7 +350,7 @@ abstract contract Spoke is
     address user,
     uint256 debtToCover,
     bool receiveShares
-  ) external nonReentrant {
+  ) external virtual nonReentrant {
     UserAccountData memory userAccountData = _calculateUserAccountData(user);
     LiquidationLogic.LiquidateUserParams memory params = LiquidationLogic.LiquidateUserParams({
       collateralReserveId: collateralReserveId,
@@ -392,7 +392,7 @@ abstract contract Spoke is
     uint256 reserveId,
     bool usingAsCollateral,
     address onBehalfOf
-  ) external nonReentrant onlyPositionManager(onBehalfOf) {
+  ) public virtual nonReentrant onlyPositionManager(onBehalfOf) {
     Reserve storage reserve = _reserves.get(reserveId);
     PositionStatus storage positionStatus = _positionStatus[onBehalfOf];
     if (positionStatus.isUsingAsCollateral(reserveId) == usingAsCollateral) {
@@ -883,7 +883,7 @@ abstract contract Spoke is
     PositionStatus storage positionStatus,
     ReserveFlags flags,
     bool usingAsCollateral
-  ) internal view {
+  ) internal view virtual {
     require(!flags.paused(), ReservePaused());
     if (usingAsCollateral) {
       // disabling as collateral is allowed when reserve is frozen
