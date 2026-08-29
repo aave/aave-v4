@@ -5,12 +5,14 @@ import 'tests/setup/Base.t.sol';
 
 import {TransparentUpgradeableProxy} from 'src/dependencies/openzeppelin/TransparentUpgradeableProxy.sol';
 import {DeployConstants} from 'src/deployments/utils/libraries/DeployConstants.sol';
-import {PermissionedSpokeInstance} from 'src/spoke/instances/PermissionedSpokeInstance.sol';
 import {MockSpokeGate} from 'tests/helpers/mocks/MockSpokeGate.sol';
 
 /// @dev Deploys a spoke with the `PermissionedSpokeInstance` implementation gated by a mock gate,
 /// with two reserves on hub1 (weth as collateral, usdx as borrowable).
 abstract contract PermissionedSpokeBase is Base {
+  string internal constant PERMISSIONED_SPOKE_INSTANCE_ARTIFACT =
+    'src/spoke/instances/PermissionedSpokeInstance.sol:PermissionedSpokeInstance';
+
   ISpoke internal spoke;
   MockSpokeGate internal gate;
   address internal RWA_MANAGER = makeAddr('RWA_MANAGER');
@@ -34,15 +36,18 @@ abstract contract PermissionedSpokeBase is Base {
   /// @dev Deploys a permissioned spoke with the given gate, mirroring the standard fixture config.
   function _deployPermissionedSpoke(address newGate) internal returns (ISpoke newSpoke) {
     AaveOracle oracle = new AaveOracle(8);
-    PermissionedSpokeInstance implementation = new PermissionedSpokeInstance({
-      oracle_: address(oracle),
-      maxUserReservesLimit_: DeployConstants.MAX_ALLOWED_USER_RESERVES_LIMIT,
-      gate_: newGate
-    });
+    address implementation = vm.deployCode(
+      PERMISSIONED_SPOKE_INSTANCE_ARTIFACT,
+      abi.encode(
+        address(oracle),
+        DeployConstants.MAX_ALLOWED_USER_RESERVES_LIMIT,
+        newGate
+      )
+    );
     newSpoke = ISpoke(
       address(
         new TransparentUpgradeableProxy(
-          address(implementation),
+          implementation,
           PROXY_ADMIN_OWNER,
           abi.encodeCall(ISpokeInstance.initialize, (address(accessManager)))
         )

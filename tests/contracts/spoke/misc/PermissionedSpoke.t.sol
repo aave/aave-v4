@@ -3,18 +3,22 @@ pragma solidity ^0.8.0;
 
 import 'tests/contracts/spoke/permissioned/PermissionedSpoke.Base.t.sol';
 
+import {PermissionedSpoke} from 'src/spoke/PermissionedSpoke.sol';
 import {ISpokeGate} from 'src/spoke/interfaces/ISpokeGate.sol';
 
 contract PermissionedSpokeTest is PermissionedSpokeBase {
   function test_constructor() public {
-    assertEq(PermissionedSpokeInstance(address(spoke)).GATE(), address(gate));
+    assertEq(PermissionedSpoke(address(spoke)).GATE(), address(gate));
 
     vm.expectRevert(ISpoke.InvalidAddress.selector);
-    new PermissionedSpokeInstance({
-      oracle_: address(oracle1),
-      maxUserReservesLimit_: DeployConstants.MAX_ALLOWED_USER_RESERVES_LIMIT,
-      gate_: address(0)
-    });
+    vm.deployCode(
+      PERMISSIONED_SPOKE_INSTANCE_ARTIFACT,
+      abi.encode(
+        address(oracle1),
+        DeployConstants.MAX_ALLOWED_USER_RESERVES_LIMIT,
+        address(0)
+      )
+    );
   }
 
   function test_defaultBehaviorViaCallback() public {

@@ -16,9 +16,31 @@ contract PermissionedSpokeOperations_Gas_Tests is PermissionedSpokeBase {
 
   /// @dev Same authorization as the standard spoke, routed through the gate.
   function test_operations_positionManagerPolicy() public {
-    address policy = address(new PositionManagerPolicyGate());
-    _snapshotOperations(_deployPermissionedSpoke(policy), 'position-manager policy');
-    _snapshotExtendedOperations(policy, 'position-manager policy');
+    _snapshotOperations(
+      _deployPermissionedSpoke(address(new PositionManagerPolicyGate())),
+      'position-manager policy'
+    );
+  }
+
+  function test_updateUserRiskPremium_positionManagerPolicy() public {
+    _snapshotUpdateUserRiskPremium(
+      _deployPermissionedSpoke(address(new PositionManagerPolicyGate())),
+      'position-manager policy'
+    );
+  }
+
+  function test_updateUserDynamicConfig_positionManagerPolicy() public {
+    _snapshotUpdateUserDynamicConfig(
+      _deployPermissionedSpoke(address(new PositionManagerPolicyGate())),
+      'position-manager policy'
+    );
+  }
+
+  function test_liquidationCall_positionManagerPolicy() public {
+    _snapshotLiquidationCall(
+      _deployPermissionedSpoke(address(new PositionManagerPolicyGate())),
+      'position-manager policy'
+    );
   }
 
   /// @dev Horizon-style policy: a fixed global manager may act for any user.
@@ -47,26 +69,25 @@ contract PermissionedSpokeOperations_Gas_Tests is PermissionedSpokeBase {
 
     vm.startPrank(alice);
     target.supply(usdxReserveId, 1000e6, alice);
-    vm.snapshotGasLastCall(NAMESPACE, string.concat('supply: ', label));
+    vm.snapshotGasLastFrame(NAMESPACE, string.concat('supply: ', label));
 
     target.setUsingAsCollateral(usdxReserveId, true, alice);
-    vm.snapshotGasLastCall(NAMESPACE, string.concat('usingAsCollateral: enable, ', label));
+    vm.snapshotGasLastFrame(NAMESPACE, string.concat('usingAsCollateral: enable, ', label));
 
     target.borrow(usdxReserveId, 100e6, alice);
-    vm.snapshotGasLastCall(NAMESPACE, string.concat('borrow: ', label));
+    vm.snapshotGasLastFrame(NAMESPACE, string.concat('borrow: ', label));
 
     skip(100);
 
     target.repay(usdxReserveId, 50e6, alice);
-    vm.snapshotGasLastCall(NAMESPACE, string.concat('repay: partial, ', label));
+    vm.snapshotGasLastFrame(NAMESPACE, string.concat('repay: partial, ', label));
 
     target.withdraw(usdxReserveId, 100e6, alice);
-    vm.snapshotGasLastCall(NAMESPACE, string.concat('withdraw: partial, ', label));
+    vm.snapshotGasLastFrame(NAMESPACE, string.concat('withdraw: partial, ', label));
     vm.stopPrank();
   }
 
-  function _snapshotExtendedOperations(address policy, string memory label) internal {
-    ISpoke target = _deployPermissionedSpoke(policy);
+  function _snapshotUpdateUserRiskPremium(ISpoke target, string memory label) internal {
     SpokeActions.supply({
       spoke: target,
       reserveId: wethReserveId,
@@ -92,20 +113,25 @@ contract PermissionedSpokeOperations_Gas_Tests is PermissionedSpokeBase {
     skip(100);
     vm.prank(alice);
     target.updateUserRiskPremium(alice);
-    vm.snapshotGasLastCall(NAMESPACE, string.concat('updateUserRiskPremium: 1 borrow, ', label));
+    vm.snapshotGasLastFrame(
+      NAMESPACE,
+      string.concat('updateUserRiskPremium: 1 borrow, ', label)
+    );
+  }
 
-    target = _deployPermissionedSpoke(policy);
+  function _snapshotUpdateUserDynamicConfig(ISpoke target, string memory label) internal {
     vm.prank(alice);
     target.setUsingAsCollateral(usdxReserveId, true, alice);
     _updateLiquidationFee(target, usdxReserveId, 10_00);
     vm.prank(alice);
     target.updateUserDynamicConfig(alice);
-    vm.snapshotGasLastCall(
+    vm.snapshotGasLastFrame(
       NAMESPACE,
       string.concat('updateUserDynamicConfig: 1 collateral, ', label)
     );
+  }
 
-    target = _deployPermissionedSpoke(policy);
+  function _snapshotLiquidationCall(ISpoke target, string memory label) internal {
     _updateMaxLiquidationBonus(target, usdxReserveId, 105_00);
     _updateLiquidationFee(target, usdxReserveId, 10_00);
     SpokeActions.supply({
@@ -140,6 +166,6 @@ contract PermissionedSpokeOperations_Gas_Tests is PermissionedSpokeBase {
       receiveShares: false,
       caller: bob
     });
-    vm.snapshotGasLastCall(NAMESPACE, string.concat('liquidationCall: full, ', label));
+    vm.snapshotGasLastFrame(NAMESPACE, string.concat('liquidationCall: full, ', label));
   }
 }
