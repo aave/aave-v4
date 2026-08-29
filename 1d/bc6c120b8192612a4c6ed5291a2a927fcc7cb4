@@ -1,0 +1,24 @@
+tests/contracts/spoke/liquidation/Spoke.LiquidationCall.t.sol
+  s_602c0abcbd103d::t_ef7c5cc17e6f8f 484
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "1dbc6c120b8192612a4c6ed5291a2a927fcc7cb4",
+  "prompts": {},
+  "humans": {
+    "h_0f977de3f043fc": {
+      "author": "Alexandru Niculae <43644109+avniculae@users.noreply.github.com>"
+    }
+  },
+  "sessions": {
+    "s_602c0abcbd103d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "1ea1deba-813b-43d3-807f-1e851ba7b60a",
+        "model": "claude-fable-5"
+      },
+      "human_author": "Alexandru Niculae <43644109+avniculae@users.noreply.github.com>"
+    }
+  }
+}
