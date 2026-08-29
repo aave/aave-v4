@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import 'tests/setup/PermissionedSpokeBase.sol';
+import 'tests/contracts/spoke/permissioned/PermissionedSpoke.Base.t.sol';
 
 import {
   PositionManagerPolicyGate,
@@ -16,22 +16,23 @@ contract PermissionedSpokeOperations_Gas_Tests is PermissionedSpokeBase {
 
   /// @dev Same authorization as the standard spoke, routed through the gate.
   function test_operations_positionManagerPolicy() public {
-    ISpoke target = _deployPermissionedSpoke(address(new PositionManagerPolicyGate()));
-    _snapshotOperations(target, 'position-manager policy');
+    address policy = address(new PositionManagerPolicyGate());
+    _snapshotOperations(_deployPermissionedSpoke(policy), 'position-manager policy');
+    _snapshotExtendedOperations(policy, 'position-manager policy');
   }
 
   /// @dev Horizon-style policy: a fixed global manager may act for any user.
   function test_operations_globalManagerPolicy() public {
-    ISpoke target = _deployPermissionedSpoke(address(new GlobalManagerPolicyGate(RWA_MANAGER)));
-    _snapshotOperations(target, 'global-manager policy');
+    address policy = address(new GlobalManagerPolicyGate(RWA_MANAGER));
+    _snapshotOperations(_deployPermissionedSpoke(policy), 'global-manager policy');
   }
 
   /// @dev EtherFi-style policy: borrowing restricted to an external allowlist.
   function test_operations_borrowAllowlistPolicy() public {
     MockAllowlist allowlist = new MockAllowlist();
     allowlist.setAllowed(alice, true);
-    ISpoke target = _deployPermissionedSpoke(address(new BorrowAllowlistPolicyGate(allowlist)));
-    _snapshotOperations(target, 'borrow-allowlist policy');
+    address policy = address(new BorrowAllowlistPolicyGate(allowlist));
+    _snapshotOperations(_deployPermissionedSpoke(policy), 'borrow-allowlist policy');
   }
 
   function _snapshotOperations(ISpoke target, string memory label) internal {
@@ -62,5 +63,83 @@ contract PermissionedSpokeOperations_Gas_Tests is PermissionedSpokeBase {
     target.withdraw(usdxReserveId, 100e6, alice);
     vm.snapshotGasLastCall(NAMESPACE, string.concat('withdraw: partial, ', label));
     vm.stopPrank();
+  }
+
+  function _snapshotExtendedOperations(address policy, string memory label) internal {
+    ISpoke target = _deployPermissionedSpoke(policy);
+    SpokeActions.supply({
+      spoke: target,
+      reserveId: wethReserveId,
+      caller: bob,
+      amount: 1000e18,
+      onBehalfOf: bob
+    });
+    SpokeActions.supplyCollateral({
+      spoke: target,
+      reserveId: usdxReserveId,
+      caller: alice,
+      amount: 2000e6,
+      onBehalfOf: alice
+    });
+    SpokeActions.borrow({
+      spoke: target,
+      reserveId: wethReserveId,
+      caller: alice,
+      amount: 0.25e18,
+      onBehalfOf: alice
+    });
+
+    skip(100);
+    vm.prank(alice);
+    target.updateUserRiskPremium(alice);
+    vm.snapshotGasLastCall(NAMESPACE, string.concat('updateUserRiskPremium: 1 borrow, ', label));
+
+    target = _deployPermissionedSpoke(policy);
+    vm.prank(alice);
+    target.setUsingAsCollateral(usdxReserveId, true, alice);
+    _updateLiquidationFee(target, usdxReserveId, 10_00);
+    vm.prank(alice);
+    target.updateUserDynamicConfig(alice);
+    vm.snapshotGasLastCall(
+      NAMESPACE,
+      string.concat('updateUserDynamicConfig: 1 collateral, ', label)
+    );
+
+    target = _deployPermissionedSpoke(policy);
+    _updateMaxLiquidationBonus(target, usdxReserveId, 105_00);
+    _updateLiquidationFee(target, usdxReserveId, 10_00);
+    SpokeActions.supply({
+      spoke: target,
+      reserveId: wethReserveId,
+      caller: bob,
+      amount: 1000e18,
+      onBehalfOf: bob
+    });
+    SpokeActions.supplyCollateral({
+      spoke: target,
+      reserveId: usdxReserveId,
+      caller: alice,
+      amount: 1_000_000e6,
+      onBehalfOf: alice
+    });
+    _borrowToBeLiquidatableWithPriceChange({
+      spoke: target,
+      user: alice,
+      reserveId: wethReserveId,
+      collateralReserveId: usdxReserveId,
+      desiredHf: 1.05e18,
+      pricePercentage: 85_00
+    });
+    skip(100);
+    SpokeActions.liquidationCall({
+      spoke: target,
+      collateralReserveId: usdxReserveId,
+      debtReserveId: wethReserveId,
+      user: alice,
+      debtToCover: type(uint256).max,
+      receiveShares: false,
+      caller: bob
+    });
+    vm.snapshotGasLastCall(NAMESPACE, string.concat('liquidationCall: full, ', label));
   }
 }

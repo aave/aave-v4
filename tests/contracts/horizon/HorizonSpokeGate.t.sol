@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import 'tests/setup/PermissionedSpokeBase.sol';
+import 'tests/contracts/spoke/permissioned/PermissionedSpoke.Base.t.sol';
 
 import {Ownable} from 'src/dependencies/openzeppelin/Ownable.sol';
 import {HorizonSpokeGate} from 'src/horizon/HorizonSpokeGate.sol';
@@ -48,6 +48,33 @@ contract HorizonSpokeGateTest is PermissionedSpokeBase {
       active: false
     });
     assertFalse(horizonGate.isReserveManager(usdxReserveId, RWA_MANAGER));
+  }
+
+  function test_revokedManagerCannotAct() public {
+    _authorizeManager(usdxReserveId, RWA_MANAGER);
+    SpokeActions.supply({
+      spoke: spoke,
+      reserveId: usdxReserveId,
+      caller: alice,
+      amount: 100e6,
+      onBehalfOf: alice
+    });
+
+    vm.prank(GATE_OWNER);
+    horizonGate.updateReserveManager({
+      reserveId: usdxReserveId,
+      manager: RWA_MANAGER,
+      active: false
+    });
+
+    vm.expectRevert(ISpoke.Unauthorized.selector);
+    SpokeActions.withdraw({
+      spoke: spoke,
+      reserveId: usdxReserveId,
+      caller: RWA_MANAGER,
+      amount: 100e6,
+      onBehalfOf: alice
+    });
   }
 
   function test_forcedTransfer() public {

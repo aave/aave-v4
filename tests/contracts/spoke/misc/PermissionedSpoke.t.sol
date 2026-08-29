@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import 'tests/setup/PermissionedSpokeBase.sol';
+import 'tests/contracts/spoke/permissioned/PermissionedSpoke.Base.t.sol';
+
+import {ISpokeGate} from 'src/spoke/interfaces/ISpokeGate.sol';
 
 contract PermissionedSpokeTest is PermissionedSpokeBase {
   function test_constructor() public {
@@ -60,6 +62,91 @@ contract PermissionedSpokeTest is PermissionedSpokeBase {
     });
 
     assertEq(spoke.getUserTotalDebt(usdxReserveId, alice), 100e6);
+  }
+
+  function test_gateReceivesExactCallContext() public {
+    uint256 amount = 100e6;
+    gate.setGlobalManager(bob, true);
+    bytes memory data = abi.encodeCall(ISpoke.supply, (usdxReserveId, amount, alice));
+
+    vm.expectCall(
+      address(gate),
+      abi.encodeCall(ISpokeGate.isCallAllowed, (bob, alice, data))
+    );
+    SpokeActions.supply({
+      spoke: spoke,
+      reserveId: usdxReserveId,
+      caller: bob,
+      amount: amount,
+      onBehalfOf: alice
+    });
+  }
+
+  function test_permissionedSupply_denied() public {
+    gate.setGated(ISpoke.supply.selector, true);
+
+    vm.expectRevert(ISpoke.Unauthorized.selector);
+    SpokeActions.supply({
+      spoke: spoke,
+      reserveId: usdxReserveId,
+      caller: alice,
+      amount: 100e6,
+      onBehalfOf: alice
+    });
+  }
+
+  function test_permissionedWithdraw_denied() public {
+    SpokeActions.supply({
+      spoke: spoke,
+      reserveId: usdxReserveId,
+      caller: alice,
+      amount: 100e6,
+      onBehalfOf: alice
+    });
+    gate.setGated(ISpoke.withdraw.selector, true);
+
+    vm.expectRevert(ISpoke.Unauthorized.selector);
+    SpokeActions.withdraw({
+      spoke: spoke,
+      reserveId: usdxReserveId,
+      caller: alice,
+      amount: 50e6,
+      onBehalfOf: alice
+    });
+  }
+
+  function test_permissionedRepay_denied() public {
+    _supplyCollateralAndBorrow(alice, 100e6);
+    gate.setGated(ISpoke.repay.selector, true);
+
+    vm.expectRevert(ISpoke.Unauthorized.selector);
+    SpokeActions.repay({
+      spoke: spoke,
+      reserveId: usdxReserveId,
+      caller: alice,
+      amount: 50e6,
+      onBehalfOf: alice
+    });
+  }
+
+  function test_permissionedSetUsingAsCollateral_denied() public {
+    SpokeActions.supply({
+      spoke: spoke,
+      reserveId: usdxReserveId,
+      caller: alice,
+      amount: 100e6,
+      onBehalfOf: alice
+    });
+    gate.setGated(ISpoke.setUsingAsCollateral.selector, true);
+
+    vm.expectRevert(ISpoke.Unauthorized.selector);
+    SpokeActions.setUsingAsCollateral({
+      spoke: spoke,
+      reserveId: usdxReserveId,
+      caller: alice,
+      usingAsCollateral: true,
+      onBehalfOf: alice
+    });
   }
 
   function test_approvedPositionManagersPreservedViaCallback() public {
