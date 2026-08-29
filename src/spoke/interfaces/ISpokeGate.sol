@@ -19,7 +19,7 @@ interface ISpokeGate {
   /// @param onBehalfOf The owner of the position being modified.
   /// @param data The full calldata of the Spoke call, allowing per-action decoding.
   /// @return The policy to apply to the call.
-  function getCallPolicy(
+  function isCallAllowed(
     address caller,
     address onBehalfOf,
     bytes calldata data

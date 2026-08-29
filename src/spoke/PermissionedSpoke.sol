@@ -25,7 +25,7 @@ abstract contract PermissionedSpoke is Spoke {
     address user,
     bytes calldata data
   ) internal view virtual override returns (bool) {
-    ISpokeGate.CallPolicy policy = ISpokeGate(GATE).getCallPolicy({
+    ISpokeGate.CallPolicy policy = ISpokeGate(GATE).isCallAllowed({
       caller: caller,
       onBehalfOf: user,
       data: data

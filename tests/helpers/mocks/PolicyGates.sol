@@ -10,7 +10,7 @@ interface IAllowlist {
 
 /// @dev Gate replicating the default authorization.
 contract PositionManagerPolicyGate is ISpokeGate {
-  function getCallPolicy(
+  function isCallAllowed(
     address,
     address,
     bytes calldata
@@ -27,7 +27,7 @@ contract GlobalManagerPolicyGate is ISpokeGate {
     GLOBAL_MANAGER = globalManager;
   }
 
-  function getCallPolicy(
+  function isCallAllowed(
     address caller,
     address,
     bytes calldata
@@ -45,7 +45,7 @@ contract BorrowAllowlistPolicyGate is ISpokeGate {
     ALLOWLIST = allowlist;
   }
 
-  function getCallPolicy(
+  function isCallAllowed(
     address,
     address onBehalfOf,
     bytes calldata data

@@ -35,7 +35,7 @@ contract HorizonSpokeGate is Ownable, IHorizonSpokeGate {
   }
 
   /// @inheritdoc ISpokeGate
-  function getCallPolicy(
+  function isCallAllowed(
     address caller,
     address,
     bytes calldata data

@@ -24,7 +24,7 @@ contract MockSpokeGate is ISpokeGate {
     eligible[user] = value;
   }
 
-  function getCallPolicy(
+  function isCallAllowed(
     address caller,
     address onBehalfOf,
     bytes calldata data
