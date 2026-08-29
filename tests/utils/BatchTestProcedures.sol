@@ -67,10 +67,11 @@ contract BatchTestProcedures is Test, Create2TestHelper, WETHDeployProcedure {
   function checkedV4Deployment() public {
     bytes memory hubBytecode = BytecodeHelper.getHubBytecode();
     bytes memory spokeBytecode = BytecodeHelper.getSpokeBytecode();
+    bytes memory babylonSpokeBytecode = BytecodeHelper.getBabylonSpokeBytecode();
 
     vm.startPrank(_deployer);
     OrchestrationReports.FullDeploymentReport memory report = AaveV4DeployOrchestration
-      .deployAaveV4(_logger, _deployer, _inputs, hubBytecode, spokeBytecode);
+      .deployAaveV4(_logger, _deployer, _inputs, hubBytecode, spokeBytecode, babylonSpokeBytecode);
     vm.stopPrank();
     _checkDeployment({report: report, inputs: _inputs});
   }
@@ -167,6 +168,8 @@ contract BatchTestProcedures is Test, Create2TestHelper, WETHDeployProcedure {
     inputs.hubLabels = _hubLabels;
     inputs.spokeLabels = _spokeLabels;
     inputs.spokeMaxReservesLimits = _defaultSpokeMaxReservesLimits(_spokeLabels.length);
+    inputs.babylonSpokeLabels = new string[](0);
+    inputs.babylonSpokeMaxReservesLimits = new uint16[](0);
     inputs.nativeWrapper = _weth9;
     inputs.deployNativeTokenGateway = true;
     inputs.deploySignatureGateway = true;
@@ -438,7 +441,7 @@ contract BatchTestProcedures is Test, Create2TestHelper, WETHDeployProcedure {
   }
 
   function _checkRoleLabels(IAccessManagerEnumerable accessManager) internal view {
-    assertEq(accessManager.getRoleLabelCount(), 9, 'role label count');
+    assertEq(accessManager.getRoleLabelCount(), 10, 'role label count');
 
     // Hub roles
     assertTrue(

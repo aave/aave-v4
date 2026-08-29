@@ -152,6 +152,7 @@ Snapshot files generated:
 - `Spoke.Operations.json`: Gas for user-facing Spoke operations.
 - `Spoke.Operations.ZeroRiskPremium.json`: Same scenarios as `Spoke.Operations.json` but with Collateral Risk set to 0, to show baseline gas excluding risk-premium computation.
 - `Spoke.Getters.json`: Gas for getters across different combinations of supplies/borrows.
+- `BabylonSpoke.Operations.json`: Same operations as `Spoke.Operations.json` on the BabylonSpoke, plus the manager-gated liquidations.
 - `NativeTokenGateway.Operations.json`: Gas for native-asset (ETH) gateway flows.
 - `SignatureGateway.Operations.json`: Gas for EIP-712 meta-transactions.
 

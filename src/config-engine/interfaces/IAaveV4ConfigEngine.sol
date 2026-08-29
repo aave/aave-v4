@@ -218,6 +218,17 @@ interface IAaveV4ConfigEngine {
     uint256 liquidationBonusFactor;
   }
 
+  /// @notice Parameters for updating the Babylon liquidation config on a BabylonSpoke.
+  /// @dev The update is performed directly on the spoke, not through a SpokeConfigurator.
+  /// @dev spoke The address of the BabylonSpoke.
+  /// @dev liquidationManager The only address allowed to perform liquidations on the Spoke.
+  /// @dev managedCollateralReserveId The identifier of the only reserve usable as collateral.
+  struct BabylonLiquidationConfigUpdate {
+    address spoke;
+    address liquidationManager;
+    uint256 managedCollateralReserveId;
+  }
+
   /// @notice Parameters for adding a dynamic reserve config on a Spoke.
   /// @dev spokeConfigurator The SpokeConfigurator to use for this action.
   /// @dev spoke The address of the Spoke.
@@ -390,6 +401,12 @@ interface IAaveV4ConfigEngine {
   /// @param updates The liquidation config updates to execute.
   function executeSpokeLiquidationConfigUpdates(
     LiquidationConfigUpdate[] calldata updates
+  ) external;
+
+  /// @notice Executes Babylon liquidation config updates on BabylonSpokes.
+  /// @param updates The Babylon liquidation config updates to execute.
+  function executeBabylonLiquidationConfigUpdates(
+    BabylonLiquidationConfigUpdate[] calldata updates
   ) external;
 
   /// @notice Adds dynamic reserve configs on Spokes.
