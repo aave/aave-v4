@@ -2,6 +2,7 @@
 pragma solidity ^0.8.0;
 
 import {IHub} from 'src/hub/interfaces/IHub.sol';
+import {IBabylonSpoke} from 'src/spoke/interfaces/IBabylonSpoke.sol';
 import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 import {IHubConfigurator} from 'src/hub/interfaces/IHubConfigurator.sol';
 import {ISpokeConfigurator} from 'src/spoke/interfaces/ISpokeConfigurator.sol';
@@ -56,6 +57,7 @@ library Roles {
   uint64 public constant SPOKE_DOMAIN_ADMIN_ROLE = 300;
   uint64 public constant SPOKE_CONFIGURATOR_ROLE = 301;
   uint64 public constant SPOKE_USER_POSITION_UPDATER_ROLE = 302;
+  uint64 public constant BABYLON_SPOKE_CONFIGURATOR_ROLE = 303;
 
   // SpokeConfigurator roles — granularize as needed with new roles appended
   uint64 public constant SPOKE_CONFIGURATOR_DOMAIN_ADMIN_ROLE = 400;
@@ -137,6 +139,13 @@ library Roles {
     selectors[4] = ISpoke.addDynamicReserveConfig.selector;
     selectors[5] = ISpoke.updatePositionManager.selector;
     selectors[6] = ISpoke.updateReservePriceSource.selector;
+    return selectors;
+  }
+
+  /// @notice Returns the function selectors associated with the Babylon Spoke Configurator role.
+  function getBabylonSpokeConfiguratorRoleSelectors() internal pure returns (bytes4[] memory) {
+    bytes4[] memory selectors = new bytes4[](1);
+    selectors[0] = IBabylonSpoke.updateBabylonLiquidationConfig.selector;
     return selectors;
   }
 

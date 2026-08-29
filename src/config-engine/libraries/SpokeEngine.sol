@@ -5,6 +5,7 @@ import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
 import {EngineFlags} from 'src/config-engine/libraries/EngineFlags.sol';
 import {IHubBase} from 'src/hub/interfaces/IHubBase.sol';
 import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
+import {IBabylonSpoke} from 'src/spoke/interfaces/IBabylonSpoke.sol';
 import {IAaveV4ConfigEngine} from 'src/config-engine/interfaces/IAaveV4ConfigEngine.sol';
 
 /// @title SpokeEngine
@@ -133,6 +134,20 @@ library SpokeEngine {
           );
         }
       }
+    }
+  }
+
+  /// @notice Executes Babylon liquidation config updates on BabylonSpokes.
+  /// @param updates The Babylon liquidation config updates to execute.
+  function executeBabylonLiquidationConfigUpdates(
+    IAaveV4ConfigEngine.BabylonLiquidationConfigUpdate[] calldata updates
+  ) external {
+    uint256 length = updates.length;
+    for (uint256 i; i < length; ++i) {
+      IBabylonSpoke(updates[i].spoke).updateBabylonLiquidationConfig(
+        updates[i].liquidationManager,
+        updates[i].managedCollateralReserveId
+      );
     }
   }
 

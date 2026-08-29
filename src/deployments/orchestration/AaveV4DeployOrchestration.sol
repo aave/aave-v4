@@ -26,13 +26,15 @@ library AaveV4DeployOrchestration {
   /// @param deployInputs The full set of deployment configuration inputs.
   /// @param hubBytecode The creation bytecode of the HubInstance contract.
   /// @param spokeBytecode The creation bytecode of the SpokeInstance contract.
+  /// @param babylonSpokeBytecode The creation bytecode of the BabylonSpokeInstance contract.
   /// @return report The full deployment report containing all batch sub-reports.
   function deployAaveV4(
     Logger logger,
     address deployer,
     InputUtils.FullDeployInputs memory deployInputs,
     bytes memory hubBytecode,
-    bytes memory spokeBytecode
+    bytes memory spokeBytecode,
+    bytes memory babylonSpokeBytecode
   ) internal returns (OrchestrationReports.FullDeploymentReport memory report) {
     bytes32 salt = _deriveSalt({deployer: deployer, salt: deployInputs.salt});
     report.salt = deployInputs.salt;
@@ -73,6 +75,7 @@ library AaveV4DeployOrchestration {
     // Validate label uniqueness (duplicate labels produce identical CREATE2 salts)
     InputUtils.validateUniqueLabels(deployInputs.hubLabels, 'hub');
     InputUtils.validateUniqueLabels(deployInputs.spokeLabels, 'spoke');
+    InputUtils.validateUniqueLabels(deployInputs.babylonSpokeLabels, 'babylonSpoke');
 
     // Deploy Hub Batches
     report.hubInstanceBatchReports = _deployHubs({
@@ -90,6 +93,15 @@ library AaveV4DeployOrchestration {
       authority: accessManager,
       inputs: deployInputs,
       spokeBytecode: spokeBytecode,
+      salt: salt
+    });
+
+    // Deploy Babylon Spoke Instance Batches
+    report.babylonSpokeInstanceBatchReports = _deployBabylonSpokes({
+      logger: logger,
+      authority: accessManager,
+      inputs: deployInputs,
+      babylonSpokeBytecode: babylonSpokeBytecode,
       salt: salt
     });
 
@@ -124,12 +136,19 @@ library AaveV4DeployOrchestration {
           hubConfiguratorAdmin: deployInputs.hubConfiguratorAdmin
         });
       }
-      if (deployInputs.spokeLabels.length > 0) {
+      if (deployInputs.spokeLabels.length > 0 || deployInputs.babylonSpokeLabels.length > 0) {
         _grantSpokeRoles({
           logger: logger,
           report: report,
           spokeAdmin: deployInputs.spokeAdmin,
           spokeConfiguratorAdmin: deployInputs.spokeConfiguratorAdmin
+        });
+      }
+      if (deployInputs.babylonSpokeLabels.length > 0) {
+        _grantBabylonSpokeRoles({
+          logger: logger,
+          report: report,
+          spokeAdmin: deployInputs.spokeAdmin
         });
       }
 
@@ -226,6 +245,67 @@ library AaveV4DeployOrchestration {
     }
     logger.logNewLine();
     return spokeBatchReports;
+  }
+
+  function _deployBabylonSpokes(
+    Logger logger,
+    address authority,
+    InputUtils.FullDeployInputs memory inputs,
+    bytes memory babylonSpokeBytecode,
+    bytes32 salt
+  ) internal returns (OrchestrationReports.SpokeDeploymentReport[] memory spokeBatchReports) {
+    uint256 spokeCount = inputs.babylonSpokeLabels.length;
+    uint256 limitsLen = inputs.babylonSpokeMaxReservesLimits.length;
+    require(
+      limitsLen == spokeCount || limitsLen == 0,
+      'babylon spoke labels/limits length mismatch'
+    );
+    spokeBatchReports = new OrchestrationReports.SpokeDeploymentReport[](spokeCount);
+    for (uint256 i; i < spokeCount; ++i) {
+      bytes32 childSalt = _deriveChildSalt(salt, 'babylonSpoke', inputs.babylonSpokeLabels[i]);
+      spokeBatchReports[i] = _deployBabylonSpoke({
+        logger: logger,
+        proxyAdminOwner: inputs.proxyAdminOwner,
+        authority: authority,
+        label: inputs.babylonSpokeLabels[i],
+        babylonSpokeBytecode: babylonSpokeBytecode,
+        maxUserReservesLimit: limitsLen > 0
+          ? inputs.babylonSpokeMaxReservesLimits[i]
+          : DeployConstants.MAX_ALLOWED_USER_RESERVES_LIMIT,
+        oracleDecimals: DeployConstants.ORACLE_DECIMALS,
+        salt: childSalt
+      });
+    }
+    logger.logNewLine();
+    return spokeBatchReports;
+  }
+
+  function _deployBabylonSpoke(
+    Logger logger,
+    address proxyAdminOwner,
+    address authority,
+    string memory label,
+    bytes memory babylonSpokeBytecode,
+    uint16 maxUserReservesLimit,
+    uint8 oracleDecimals,
+    bytes32 salt
+  ) internal returns (OrchestrationReports.SpokeDeploymentReport memory) {
+    OrchestrationReports.SpokeDeploymentReport memory spokeReport;
+
+    spokeReport.label = label;
+    logger.logHeader1('deploying AaveV4BabylonSpokeInstanceBatch');
+    spokeReport.report = AaveV4DeployBase.deployBabylonSpokeInstanceBatch({
+      proxyAdminOwner: proxyAdminOwner,
+      authority: authority,
+      babylonSpokeBytecode: babylonSpokeBytecode,
+      oracleDecimals: oracleDecimals,
+      maxUserReservesLimit: maxUserReservesLimit,
+      salt: salt
+    });
+    _logSpokeReport({logger: logger, report: spokeReport.report, label: label});
+    _setupBabylonSpokeRoles({logger: logger, report: spokeReport.report, accessManager: authority});
+
+    return spokeReport;
   }
 
   function _deploySpoke(
@@ -408,6 +488,18 @@ library AaveV4DeployOrchestration {
     });
   }
 
+  function _setupBabylonSpokeRoles(
+    Logger logger,
+    BatchReports.SpokeInstanceBatchReport memory report,
+    address accessManager
+  ) internal {
+    logger.logHeader1('setting Babylon Spoke roles');
+    AaveV4SpokeRolesProcedure.setupBabylonSpokeAllRoles({
+      accessManager: accessManager,
+      spoke: report.spokeProxy
+    });
+  }
+
   function _setupHubRoles(
     Logger logger,
     BatchReports.HubInstanceBatchReport memory report,
@@ -470,6 +562,21 @@ library AaveV4DeployOrchestration {
     AaveV4SpokeConfiguratorRolesProcedure.grantSpokeConfiguratorAllRoles({
       accessManager: accessManager,
       admin: spokeConfiguratorAdmin
+    });
+  }
+
+  function _grantBabylonSpokeRoles(
+    Logger logger,
+    OrchestrationReports.FullDeploymentReport memory report,
+    address spokeAdmin
+  ) internal {
+    address accessManager = report.authorityBatchReport.accessManager;
+
+    logger.logHeader1('granting Babylon Spoke Configurator role to', spokeAdmin);
+    AaveV4SpokeRolesProcedure.grantSpokeRole({
+      accessManager: accessManager,
+      role: Roles.BABYLON_SPOKE_CONFIGURATOR_ROLE,
+      admin: spokeAdmin
     });
   }
 

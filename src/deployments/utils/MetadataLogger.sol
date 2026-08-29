@@ -67,6 +67,31 @@ contract MetadataLogger is Logger {
     _writeGroup('spokeImplementation', spokeImplEntries);
     _writeGroup('oracle', oracleEntries);
 
+    // Group babylon spokes by property type
+    uint256 babylonSpokeLen = report.babylonSpokeInstanceBatchReports.length;
+    Logger.AddressEntry[] memory babylonSpokeEntries = new Logger.AddressEntry[](babylonSpokeLen);
+    Logger.AddressEntry[] memory babylonSpokeImplEntries = new Logger.AddressEntry[](
+      babylonSpokeLen
+    );
+    Logger.AddressEntry[] memory babylonOracleEntries = new Logger.AddressEntry[](babylonSpokeLen);
+    for (uint256 i; i < babylonSpokeLen; i++) {
+      babylonSpokeEntries[i] = Logger.AddressEntry({
+        label: report.babylonSpokeInstanceBatchReports[i].label,
+        value: report.babylonSpokeInstanceBatchReports[i].report.spokeProxy
+      });
+      babylonSpokeImplEntries[i] = Logger.AddressEntry({
+        label: report.babylonSpokeInstanceBatchReports[i].label,
+        value: report.babylonSpokeInstanceBatchReports[i].report.spokeImplementation
+      });
+      babylonOracleEntries[i] = Logger.AddressEntry({
+        label: report.babylonSpokeInstanceBatchReports[i].label,
+        value: report.babylonSpokeInstanceBatchReports[i].report.aaveOracle
+      });
+    }
+    _writeGroup('babylonSpoke', babylonSpokeEntries);
+    _writeGroup('babylonSpokeImplementation', babylonSpokeImplEntries);
+    _writeGroup('babylonOracle', babylonOracleEntries);
+
     if (report.gatewaysBatchReport.signatureGateway != address(0)) {
       _write('signatureGateway', report.gatewaysBatchReport.signatureGateway);
     }

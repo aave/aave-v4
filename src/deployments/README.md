@@ -24,7 +24,7 @@ The deploy script constructs a `FullDeployInputs` struct (see `src/deployments/u
 make deploy-precompile
 ```
 
-This deploys `LiquidationLogic` via CREATE2 and writes `FOUNDRY_LIBRARIES` to `.env` so Foundry can link `SpokeInstance` bytecode on the next compilation. See [LiquidationLogic Pre-deployment](#liquidationlogic-pre-deployment) for details.
+This deploys `LiquidationLogic` and `BabylonLiquidationLogic` via CREATE2 and writes `FOUNDRY_LIBRARIES` to `.env` so Foundry can link the spoke instance bytecodes on the next compilation. See [LiquidationLogic Pre-deployment](#liquidationlogic-pre-deployment) for details.
 
 ### 3. Deploy Remaining Contracts
 
@@ -32,7 +32,11 @@ This deploys `LiquidationLogic` via CREATE2 and writes `FOUNDRY_LIBRARIES` to `.
 make deploy-contracts
 ```
 
-This runs `AaveV4DeployOrchestration.deployAaveV4()`, which deploys batches in order: AccessManager → role labeling → Configurators → Configurator role setup → TreasurySpoke → Hubs → Spokes → Gateways → PositionManagers → role grants → DEFAULT_ADMIN transfer.
+This runs `AaveV4DeployOrchestration.deployAaveV4()`, which deploys batches in order: AccessManager → role labeling → Configurators → Configurator role setup → TreasurySpoke → Hubs → Spokes → BabylonSpokes → Gateways → PositionManagers → role grants → DEFAULT_ADMIN transfer.
+
+### BabylonSpoke
+
+`BabylonSpoke` instances are deployed by the orchestration when `babylonSpokeLabels` is set, reusing the spoke deploy procedure. The spoke admin is granted the `BABYLON_SPOKE_CONFIGURATOR_ROLE`, which gates `updateBabylonLiquidationConfig` directly on the spoke.
 
 ### TokenizationSpoke
 
@@ -46,7 +50,7 @@ This requires a **two-step deploy** because Foundry needs to re-compile with the
 
 **Step 1 — `LibraryPreCompile.s.sol`** (separate transaction):
 
-1. `SpokeDeployUtils.deployLiquidationLogic()` deploys it via CREATE2 with `salt=0`
+1. `SpokeDeployUtils` deploys `LiquidationLogic` and `BabylonLiquidationLogic` via CREATE2 with `salt=0`
 2. Writes `FOUNDRY_LIBRARIES=src/spoke/libraries/LiquidationLogic.sol:LiquidationLogic:0x<address>` to `.env` via FFI
 3. On re-run: if the library is already deployed (has code), skips. If `FOUNDRY_LIBRARIES` exists but the library isn't deployed (wrong chain/fork), deletes the stale entry and asks you to run again
 

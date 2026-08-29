@@ -22,13 +22,29 @@ library SpokeDeployUtils {
     return Create2Utils.create2Deploy(salt, bytecode);
   }
 
+  /// @notice Deploys BabylonLiquidationLogic via CREATE2.
+  /// @dev The CREATE2 factory must already be deployed on the target chain.
+  /// @param salt The CREATE2 salt for deterministic deployment.
+  /// @return The deployed library address.
+  function deployBabylonLiquidationLogic(bytes32 salt) internal returns (address) {
+    bytes memory bytecode = vm.getCode(
+      'src/spoke/libraries/BabylonLiquidationLogic.sol:BabylonLiquidationLogic'
+    );
+    return Create2Utils.create2Deploy(salt, bytecode);
+  }
+
   /// @notice Returns the FOUNDRY_LIBRARIES-compatible string for library linking.
-  function getLibraryString(address liquidationLogic) internal pure returns (string memory) {
+  function getLibraryString(
+    address liquidationLogic,
+    address babylonLiquidationLogic
+  ) internal pure returns (string memory) {
     return
       string(
         abi.encodePacked(
           'src/spoke/libraries/LiquidationLogic.sol:LiquidationLogic:',
-          vm.toString(liquidationLogic)
+          vm.toString(liquidationLogic),
+          ',src/spoke/libraries/BabylonLiquidationLogic.sol:BabylonLiquidationLogic:',
+          vm.toString(babylonLiquidationLogic)
         )
       );
   }
@@ -37,8 +53,9 @@ library SpokeDeployUtils {
   /// @param salt The CREATE2 salt for deterministic deployment.
   function _deployAndWriteLibrariesConfig(bytes32 salt) internal {
     address liquidationLogic = deployLiquidationLogic(salt);
+    address babylonLiquidationLogic = deployBabylonLiquidationLogic(salt);
 
-    string memory librariesSolcString = getLibraryString(liquidationLogic);
+    string memory librariesSolcString = getLibraryString(liquidationLogic, babylonLiquidationLogic);
 
     string memory sedCommand = string(
       abi.encodePacked('echo FOUNDRY_LIBRARIES=', librariesSolcString, ' >> .env')
