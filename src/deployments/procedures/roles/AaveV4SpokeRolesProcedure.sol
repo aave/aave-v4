@@ -44,6 +44,19 @@ library AaveV4SpokeRolesProcedure {
     });
   }
 
+  /// @notice Sets up all babylon spoke roles by assigning their target function selectors.
+  /// @param accessManager The address of the AccessManager contract.
+  /// @param spoke The address of the BabylonSpoke contract.
+  function setupBabylonSpokeAllRoles(address accessManager, address spoke) internal {
+    setupSpokeAllRoles(accessManager, spoke);
+    setupSpokeRole({
+      accessManager: accessManager,
+      spoke: spoke,
+      roleId: Roles.BABYLON_SPOKE_CONFIGURATOR_ROLE,
+      selectors: Roles.getBabylonSpokeConfiguratorRoleSelectors()
+    });
+  }
+
   /// @notice Sets up a specific spoke role by assigning function selectors to the target.
   /// @param accessManager The address of the AccessManager contract.
   /// @param spoke The address of the Spoke contract.

@@ -27,6 +27,7 @@ library AaveV4AccessManagerRolesProcedure {
     am.labelRole(Roles.SPOKE_DOMAIN_ADMIN_ROLE, 'SPOKE_DOMAIN_ADMIN_ROLE');
     am.labelRole(Roles.SPOKE_CONFIGURATOR_ROLE, 'SPOKE_CONFIGURATOR_ROLE');
     am.labelRole(Roles.SPOKE_USER_POSITION_UPDATER_ROLE, 'SPOKE_USER_POSITION_UPDATER_ROLE');
+    am.labelRole(Roles.BABYLON_SPOKE_CONFIGURATOR_ROLE, 'BABYLON_SPOKE_CONFIGURATOR_ROLE');
 
     // SpokeConfigurator roles
     am.labelRole(

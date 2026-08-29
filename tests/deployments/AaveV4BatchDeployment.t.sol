@@ -2,6 +2,8 @@
 pragma solidity ^0.8.0;
 
 import 'tests/utils/BatchTestProcedures.sol';
+import {IBabylonSpoke} from 'src/spoke/interfaces/IBabylonSpoke.sol';
+import {BatchReports} from 'src/deployments/libraries/BatchReports.sol';
 
 contract AaveV4BatchDeploymentTest is BatchTestProcedures {
   function setUp() public override {
@@ -25,6 +27,8 @@ contract AaveV4BatchDeploymentTest is BatchTestProcedures {
       hubLabels: _hubLabels,
       spokeLabels: _spokeLabels,
       spokeMaxReservesLimits: _defaultSpokeMaxReservesLimits(_spokeLabels.length),
+      babylonSpokeLabels: new string[](0),
+      babylonSpokeMaxReservesLimits: new uint16[](0),
       salt: bytes32(0)
     });
   }
@@ -293,10 +297,11 @@ contract AaveV4BatchDeploymentTest is BatchTestProcedures {
 
     bytes memory hubBytecode = BytecodeHelper.getHubBytecode();
     bytes memory spokeBytecode = BytecodeHelper.getSpokeBytecode();
+    bytes memory babylonSpokeBytecode = BytecodeHelper.getBabylonSpokeBytecode();
 
     vm.startPrank(_deployer);
     OrchestrationReports.FullDeploymentReport memory report = AaveV4DeployOrchestration
-      .deployAaveV4(_logger, _deployer, _inputs, hubBytecode, spokeBytecode);
+      .deployAaveV4(_logger, _deployer, _inputs, hubBytecode, spokeBytecode, babylonSpokeBytecode);
     vm.stopPrank();
 
     IAccessManagerEnumerable accessManager = IAccessManagerEnumerable(
@@ -324,15 +329,52 @@ contract AaveV4BatchDeploymentTest is BatchTestProcedures {
     );
   }
 
+  function testAaveV4BatchDeployment_withBabylonSpoke() public {
+    _inputs.babylonSpokeLabels = new string[](1);
+    _inputs.babylonSpokeLabels[0] = 'babylonSpoke1';
+
+    bytes memory hubBytecode = BytecodeHelper.getHubBytecode();
+    bytes memory spokeBytecode = BytecodeHelper.getSpokeBytecode();
+    bytes memory babylonSpokeBytecode = BytecodeHelper.getBabylonSpokeBytecode();
+
+    vm.startPrank(_deployer);
+    OrchestrationReports.FullDeploymentReport memory report = AaveV4DeployOrchestration
+      .deployAaveV4(_logger, _deployer, _inputs, hubBytecode, spokeBytecode, babylonSpokeBytecode);
+    vm.stopPrank();
+
+    assertEq(report.babylonSpokeInstanceBatchReports.length, 1, 'babylon spoke report count');
+    BatchReports.SpokeInstanceBatchReport memory babylonReport = report
+      .babylonSpokeInstanceBatchReports[0]
+      .report;
+    assertNotEq(babylonReport.spokeProxy, address(0), 'babylon spoke proxy');
+    assertNotEq(babylonReport.spokeImplementation, address(0), 'babylon spoke implementation');
+    assertNotEq(babylonReport.aaveOracle, address(0), 'babylon spoke oracle');
+    assertEq(
+      IAccessManaged(babylonReport.spokeProxy).authority(),
+      report.authorityBatchReport.accessManager,
+      'babylon spoke authority'
+    );
+
+    // the babylon config selector is wired to the granular role, granted to the spoke admin
+    (bool immediate, ) = IAccessManagerEnumerable(report.authorityBatchReport.accessManager)
+      .canCall(
+        _inputs.spokeAdmin,
+        babylonReport.spokeProxy,
+        IBabylonSpoke.updateBabylonLiquidationConfig.selector
+      );
+    assertTrue(immediate, 'spoke admin can update the babylon liquidation config');
+  }
+
   function testAaveV4BatchDeployment_accessManagerAdminSameAsDeployer() public {
     _inputs.accessManagerAdmin = _deployer;
 
     bytes memory hubBytecode = BytecodeHelper.getHubBytecode();
     bytes memory spokeBytecode = BytecodeHelper.getSpokeBytecode();
+    bytes memory babylonSpokeBytecode = BytecodeHelper.getBabylonSpokeBytecode();
 
     vm.startPrank(_deployer);
     OrchestrationReports.FullDeploymentReport memory report = AaveV4DeployOrchestration
-      .deployAaveV4(_logger, _deployer, _inputs, hubBytecode, spokeBytecode);
+      .deployAaveV4(_logger, _deployer, _inputs, hubBytecode, spokeBytecode, babylonSpokeBytecode);
     vm.stopPrank();
 
     IAccessManagerEnumerable accessManager = IAccessManagerEnumerable(
@@ -378,6 +420,8 @@ contract AaveV4BatchDeploymentTest is BatchTestProcedures {
       deployInputs.spokeLabels = _inputs.spokeLabels;
       deployInputs.spokeMaxReservesLimits = _inputs.spokeMaxReservesLimits;
     }
+    deployInputs.babylonSpokeLabels = new string[](0);
+    deployInputs.babylonSpokeMaxReservesLimits = new uint16[](0);
     _deployer = deployer;
     _inputs = deployInputs;
 
@@ -413,6 +457,8 @@ contract AaveV4BatchDeploymentTest is BatchTestProcedures {
       deployInputs.spokeLabels = _inputs.spokeLabels;
       deployInputs.spokeMaxReservesLimits = _inputs.spokeMaxReservesLimits;
     }
+    deployInputs.babylonSpokeLabels = new string[](0);
+    deployInputs.babylonSpokeMaxReservesLimits = new uint16[](0);
     _deployer = deployer;
     _inputs = deployInputs;
 

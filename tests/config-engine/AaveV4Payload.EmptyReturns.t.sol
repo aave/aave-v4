@@ -88,6 +88,10 @@ contract AaveV4PayloadEmptyReturnsTest is BaseConfigEngineTest {
     assertEq(minimal.spokeLiquidationConfigUpdates().length, 0);
   }
 
+  function test_babylonLiquidationConfigUpdates_returnsEmpty() public view {
+    assertEq(minimal.babylonLiquidationConfigUpdates().length, 0);
+  }
+
   function test_spokeDynamicReserveConfigAdditions_returnsEmpty() public view {
     assertEq(minimal.spokeDynamicReserveConfigAdditions().length, 0);
   }
