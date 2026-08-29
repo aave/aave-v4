@@ -1,0 +1,44 @@
+src/spoke/PermissionedSpoke.sol
+  s_18846865398641::t_26fbc566cdafeb 9-10,22,28-36
+tests/gas/PermissionedSpoke.Operations.gas.t.sol
+  s_18846865398641::t_53260e594342c3 78-79
+  s_18846865398641::t_088324178959c6 6-7,39-77
+tests/contracts/spoke/misc/PermissionedSpoke.t.sol
+  s_18846865398641::t_e7da4033f96f56 18,65,84
+tests/helpers/mocks/PolicyGates.sol
+  s_18846865398641::t_26fbc566cdafeb 13-18,30,32-36,48-49,52-56
+src/horizon/HorizonSpokeGate.sol
+  s_18846865398641::t_26fbc566cdafeb 38,40,42,51,53
+src/spoke/interfaces/ISpokeGate.sol
+  s_18846865398641::t_26fbc566cdafeb 6,9-16,21-22,26
+snapshots/PermissionedSpoke.Operations.json
+  s_8edb99a82f115a::t_83448ae30ca7cc 2-6,8-10,12-14,16-18,20
+  s_18846865398641::t_1ce41263732cba 19
+  s_18846865398641::t_818c44869d7772 7,11,15
+tests/helpers/mocks/MockSpokeGate.sol
+  s_18846865398641::t_26fbc566cdafeb 9,27,31-34
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "c7f1c710be4c8944f6822375e2cb97c21a70962a",
+  "prompts": {},
+  "sessions": {
+    "s_18846865398641": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a04295-0b37-7bd3-8128-e23c80cddf62",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": null
+    },
+    "s_8edb99a82f115a": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "eef1846f-483e-488d-9f7c-f625a7b2a5cd",
+        "model": "claude-opus-5"
+      },
+      "human_author": "Alexandru Niculae <43644109+avniculae@users.noreply.github.com>"
+    }
+  }
+}
