@@ -13,14 +13,6 @@ import {IHorizonSpokeGate} from 'src/horizon/interfaces/IHorizonSpokeGate.sol';
 /// transfers via withdraw and re-supply, forced repayments), but never borrow. Liquidations are
 /// permissionless and all other calls follow the default position manager authorization.
 contract HorizonSpokeGate is Ownable, IHorizonSpokeGate {
-  /// @dev Reserve-manager action selectors, indexed by their least-significant byte.
-  /// This relies on every other selector routed through the gate having a different trailing byte.
-  uint256 internal constant _RESERVE_MANAGER_ACTIONS_BITMAP =
-    (uint256(1) << uint8(uint32(ISpoke.supply.selector))) |
-      (uint256(1) << uint8(uint32(ISpoke.withdraw.selector))) |
-      (uint256(1) << uint8(uint32(ISpoke.repay.selector))) |
-      (uint256(1) << uint8(uint32(ISpoke.setUsingAsCollateral.selector)));
-
   mapping(uint256 reserveId => mapping(address manager => bool)) internal _reserveManagers;
 
   /// @dev Constructor.
@@ -51,9 +43,10 @@ contract HorizonSpokeGate is Ownable, IHorizonSpokeGate {
     bytes4 selector = bytes4(data);
     if (selector == ISpoke.liquidationCall.selector) return true;
     if (
-      (_RESERVE_MANAGER_ACTIONS_BITMAP &
-        (uint256(1) << uint8(uint32(selector)))) !=
-      0 &&
+      (selector == ISpoke.supply.selector ||
+        selector == ISpoke.withdraw.selector ||
+        selector == ISpoke.repay.selector ||
+        selector == ISpoke.setUsingAsCollateral.selector) &&
       isReserveManager({reserveId: uint256(bytes32(data[4:36])), manager: caller})
     ) {
       return true;

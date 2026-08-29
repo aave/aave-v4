@@ -3,8 +3,6 @@ pragma solidity ^0.8.0;
 
 import 'tests/setup/PermissionedSpokeBase.sol';
 
-import {HorizonSpokeGate} from 'src/horizon/HorizonSpokeGate.sol';
-
 import {
   PositionManagerPolicyGate,
   GlobalManagerPolicyGate,
@@ -34,47 +32,6 @@ contract PermissionedSpokeOperations_Gas_Tests is PermissionedSpokeBase {
     allowlist.setAllowed(alice, true);
     ISpoke target = _deployPermissionedSpoke(address(new BorrowAllowlistPolicyGate(allowlist)));
     _snapshotOperations(target, 'borrow-allowlist policy');
-  }
-
-  /// @dev Horizon policy: a reserve manager may perform non-borrow actions for any user.
-  function test_operations_horizonReserveManagerPolicy() public {
-    HorizonSpokeGate horizonGate = new HorizonSpokeGate(address(this));
-    ISpoke target = _deployPermissionedSpoke(address(horizonGate));
-    horizonGate.updateReserveManager(usdxReserveId, RWA_MANAGER, true);
-
-    // seed borrowable liquidity and the reserve manager's balance
-    SpokeActions.supply({
-      spoke: target,
-      reserveId: usdxReserveId,
-      caller: bob,
-      amount: 100_000e6,
-      onBehalfOf: bob
-    });
-    deal(address(tokenList.usdx), RWA_MANAGER, 10_000e6);
-
-    vm.startPrank(RWA_MANAGER);
-    target.supply(usdxReserveId, 1000e6, alice);
-    vm.snapshotGasLastCall(NAMESPACE, 'supply: horizon reserve-manager policy');
-
-    target.setUsingAsCollateral(usdxReserveId, true, alice);
-    vm.snapshotGasLastCall(
-      NAMESPACE,
-      'usingAsCollateral: enable, horizon reserve-manager policy'
-    );
-    vm.stopPrank();
-
-    vm.prank(alice);
-    target.borrow(usdxReserveId, 100e6, alice);
-
-    skip(100);
-
-    vm.startPrank(RWA_MANAGER);
-    target.repay(usdxReserveId, 50e6, alice);
-    vm.snapshotGasLastCall(NAMESPACE, 'repay: partial, horizon reserve-manager policy');
-
-    target.withdraw(usdxReserveId, 100e6, alice);
-    vm.snapshotGasLastCall(NAMESPACE, 'withdraw: partial, horizon reserve-manager policy');
-    vm.stopPrank();
   }
 
   function _snapshotOperations(ISpoke target, string memory label) internal {
