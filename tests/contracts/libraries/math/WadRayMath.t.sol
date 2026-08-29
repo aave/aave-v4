@@ -265,4 +265,45 @@ contract WadRayMathDifferentialTest is Test {
     test_roundRayUp_fuzz(maxA);
     test_roundRayUp_fuzz(maxA + 1);
   }
+
+  function test_dewadifyUp() public view {
+    assertEq(w.dewadifyUp(0), 0);
+    assertEq(w.dewadifyUp(1e18), 1);
+    assertEq(w.dewadifyUp(2.5e18), 3);
+    assertEq(w.dewadifyUp(369), 1);
+  }
+
+  function test_rayToBpsDown() public view {
+    assertEq(w.rayToBpsDown(0), 0);
+    assertEq(w.rayToBpsDown(1e27), 1e4);
+    assertEq(w.rayToBpsDown(0.5e27), 0.5e4);
+  }
+
+  function test_rayToBpsUp() public view {
+    assertEq(w.rayToBpsUp(0), 0);
+    assertEq(w.rayToBpsUp(1e27), 1e4);
+    assertEq(w.rayToBpsUp(0.5e27 + 1), 0.5e4 + 1);
+  }
+
+  function test_fuzz_dewadifyUp(uint256 a) public view {
+    assertEq(w.dewadifyUp(a), w.wadMulUp(a, 1));
+  }
+
+  function test_fuzz_rayToBpsDown(uint256 a) public {
+    if (!(a == 0 || !(a > UINT256_MAX / w.PERCENTAGE_FACTOR()))) {
+      vm.expectRevert();
+      w.rayToBpsDown(a);
+    } else {
+      assertEq(w.rayToBpsDown(a), w.rayMulDown(a, w.PERCENTAGE_FACTOR()));
+    }
+  }
+
+  function test_fuzz_rayToBpsUp(uint256 a) public {
+    if (!(a == 0 || !(a > UINT256_MAX / w.PERCENTAGE_FACTOR()))) {
+      vm.expectRevert();
+      w.rayToBpsUp(a);
+    } else {
+      assertEq(w.rayToBpsUp(a), w.rayMulUp(a, w.PERCENTAGE_FACTOR()));
+    }
+  }
 }
