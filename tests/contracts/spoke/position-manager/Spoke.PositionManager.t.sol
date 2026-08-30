@@ -49,7 +49,7 @@ contract SpokePositionManagerTest is Base {
     assertFalse(spoke1.isPositionManager(user, POSITION_MANAGER));
   }
 
-  function test_onlyPositionManager_on_supply() public {
+  function test_onlyAllowed_on_supply() public {
     uint256 reserveId = _usdxReserveId(spoke1);
     uint256 amount = 100e6;
 
@@ -95,7 +95,7 @@ contract SpokePositionManagerTest is Base {
     });
   }
 
-  function test_onlyPositionManager_on_withdraw() public {
+  function test_onlyAllowed_on_withdraw() public {
     uint256 reserveId = _usdxReserveId(spoke1);
     uint256 amount = 100e6;
     SpokeActions.supply({
@@ -154,7 +154,7 @@ contract SpokePositionManagerTest is Base {
     });
   }
 
-  function test_onlyPositionManager_on_borrow() public {
+  function test_onlyAllowed_on_borrow() public {
     uint256 reserveId = _usdxReserveId(spoke1);
     uint256 amount = 100e6;
     SpokeActions.supplyCollateral({
@@ -214,7 +214,7 @@ contract SpokePositionManagerTest is Base {
     });
   }
 
-  function test_onlyPositionManager_on_repay() public {
+  function test_onlyAllowed_on_repay() public {
     uint256 reserveId = _usdxReserveId(spoke1);
     uint256 amount = 100e6;
     SpokeActions.supplyCollateral({
@@ -303,7 +303,7 @@ contract SpokePositionManagerTest is Base {
     });
   }
 
-  function test_onlyPositionManager_on_usingAsCollateral() public {
+  function test_onlyAllowed_on_usingAsCollateral() public {
     uint256 reserveId = _usdxReserveId(spoke1);
     assertFalse(_isUsingAsCollateral(spoke1, reserveId, alice));
 
@@ -348,7 +348,7 @@ contract SpokePositionManagerTest is Base {
     });
   }
 
-  function test_onlyPositionManager_on_updateUserRiskPremium() public {
+  function test_onlyAllowed_on_updateUserRiskPremium() public {
     _openSupplyPosition(spoke1, _usdxReserveId(spoke1), 1500e6);
     SpokeActions.supplyCollateral({
       spoke: spoke1,
@@ -401,7 +401,7 @@ contract SpokePositionManagerTest is Base {
     spoke1.updateUserRiskPremium(alice);
   }
 
-  function test_onlyPositionManager_on_updateUserDynamicConfig() public {
+  function test_onlyAllowed_on_updateUserDynamicConfig() public {
     _openSupplyPosition(spoke1, _usdxReserveId(spoke1), 1500e6);
     SpokeActions.supplyCollateral({
       spoke: spoke1,
