@@ -1,0 +1,90 @@
+# pragma version 0.5.0b1
+
+error InvalidInitialization:
+    pass
+
+error OwnableInvalidOwner:
+    arg0: address
+
+error OwnableUnauthorizedAccount:
+    arg0: address
+
+event OwnershipTransferred:
+    previousOwner: indexed(address)
+    newOwner: indexed(address)
+
+event OwnershipTransferStarted:
+    previousOwner: indexed(address)
+    newOwner: indexed(address)
+
+event Initialized:
+    version: uint64
+
+@external
+def initialize(owner: address):
+    ...
+
+
+@view
+@external
+def owner() -> address:
+    ...
+
+
+@view
+@external
+def pendingOwner() -> address:
+    ...
+
+
+@external
+def transferOwnership(newOwner: address):
+    ...
+
+
+@external
+def acceptOwnership():
+    ...
+
+
+@external
+def renounceOwnership():
+    ...
+
+
+@external
+def supply(hub: address, underlying: address, amount: uint256) -> (uint256, uint256):
+    ...
+
+
+@external
+def supplySkimmed(hub: address, underlying: address, amount: uint256) -> (uint256, uint256):
+    ...
+
+
+@external
+def withdraw(hub: address, underlying: address, amount: uint256) -> (uint256, uint256):
+    ...
+
+
+@external
+def transfer(token: address, to: address, amount: uint256):
+    ...
+
+
+@view
+@external
+def getSuppliedAssets(hub: address, underlying: address) -> uint256:
+    ...
+
+
+@view
+@external
+def getSuppliedShares(hub: address, underlying: address) -> uint256:
+    ...
+
+
+@view
+@external
+def SPOKE_REVISION() -> uint64:
+    ...

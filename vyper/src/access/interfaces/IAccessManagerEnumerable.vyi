@@ -1,0 +1,463 @@
+# pragma version 0.5.0b1
+
+error AccessManagerAlreadyScheduled:
+    arg0: bytes32
+
+error AccessManagerBadConfirmation:
+    pass
+
+error AccessManagerExpired:
+    arg0: bytes32
+
+error AccessManagerInvalidInitialAdmin:
+    arg0: address
+
+error AccessManagerLabelAlreadyUsed:
+    arg0: String[128]
+    arg1: uint64
+
+error AccessManagerLockedRole:
+    arg0: uint64
+
+error AccessManagerNotReady:
+    arg0: bytes32
+
+error AccessManagerNotScheduled:
+    arg0: bytes32
+
+error AccessManagerRoleAlreadyLabeled:
+    arg0: uint64
+
+error AccessManagerUnauthorizedAccount:
+    arg0: address
+    arg1: uint64
+
+error AccessManagerUnauthorizedCall:
+    arg0: address
+    arg1: address
+    arg2: bytes4
+
+error AccessManagerUnauthorizedCancel:
+    arg0: address
+    arg1: address
+    arg2: address
+    arg3: bytes4
+
+error AccessManagerUnauthorizedConsume:
+    arg0: address
+
+error AccessManagerUnlabeledRole:
+    arg0: uint64
+
+error AccessManagerUnregisteredLabel:
+    arg0: String[128]
+
+struct Access:
+    since: uint48
+    delay: uint32
+
+struct Schedule:
+    timepoint: uint48
+    nonce: uint32
+
+event OperationScheduled:
+    operationId: indexed(bytes32)
+    nonce: indexed(uint32)
+    schedule: uint48
+    caller: address
+    target: address
+    data: Bytes[32768]
+
+event OperationExecuted:
+    operationId: indexed(bytes32)
+    nonce: indexed(uint32)
+
+event OperationCanceled:
+    operationId: indexed(bytes32)
+    nonce: indexed(uint32)
+
+event RoleLabel:
+    roleId: indexed(uint64)
+    label: String[128]
+
+event RoleGranted:
+    roleId: indexed(uint64)
+    account: indexed(address)
+    delay: uint32
+    since: uint48
+    newMember: bool
+
+event RoleRevoked:
+    roleId: indexed(uint64)
+    account: indexed(address)
+
+event RoleAdminChanged:
+    roleId: indexed(uint64)
+    admin: indexed(uint64)
+
+event RoleGuardianChanged:
+    roleId: indexed(uint64)
+    guardian: indexed(uint64)
+
+event RoleGrantDelayChanged:
+    roleId: indexed(uint64)
+    delay: uint32
+    since: uint48
+
+event TargetClosed:
+    target: indexed(address)
+    closed: bool
+
+event TargetFunctionRoleUpdated:
+    target: indexed(address)
+    selector: bytes4
+    roleId: indexed(uint64)
+
+event TargetAdminDelayUpdated:
+    target: indexed(address)
+    delay: uint32
+    since: uint48
+
+@view
+@external
+def canCall(caller: address, target: address, selector: bytes4) -> (bool, uint32):
+    ...
+
+
+@pure
+@external
+def expiration() -> uint32:
+    ...
+
+
+@pure
+@external
+def minSetback() -> uint32:
+    ...
+
+
+@view
+@external
+def isTargetClosed(target: address) -> bool:
+    ...
+
+
+@view
+@external
+def getTargetFunctionRole(target: address, selector: bytes4) -> uint64:
+    ...
+
+
+@view
+@external
+def getTargetAdminDelay(target: address) -> uint32:
+    ...
+
+
+@view
+@external
+def getRoleAdmin(roleId: uint64) -> uint64:
+    ...
+
+
+@view
+@external
+def getRoleGuardian(roleId: uint64) -> uint64:
+    ...
+
+
+@view
+@external
+def getRoleGrantDelay(roleId: uint64) -> uint32:
+    ...
+
+
+@view
+@external
+def getAccess(roleId: uint64, account: address) -> (uint48, uint32, uint32, uint48):
+    ...
+
+
+@view
+@external
+def hasRole(roleId: uint64, account: address) -> (bool, uint32):
+    ...
+
+
+@external
+def labelRole(roleId: uint64, label: String[128]):
+    ...
+
+
+@external
+def grantRole(roleId: uint64, account: address, executionDelay: uint32):
+    ...
+
+
+@external
+def revokeRole(roleId: uint64, account: address):
+    ...
+
+
+@external
+def renounceRole(roleId: uint64, callerConfirmation: address):
+    ...
+
+
+@external
+def setRoleAdmin(roleId: uint64, admin: uint64):
+    ...
+
+
+@external
+def setRoleGuardian(roleId: uint64, guardian: uint64):
+    ...
+
+
+@external
+def setGrantDelay(roleId: uint64, newDelay: uint32):
+    ...
+
+
+@external
+def setTargetFunctionRole(target: address, selectors: DynArray[bytes4, INF], roleId: uint64):
+    ...
+
+
+@external
+def setTargetAdminDelay(target: address, newDelay: uint32):
+    ...
+
+
+@external
+def setTargetClosed(target: address, closed: bool):
+    ...
+
+
+@view
+@external
+def getSchedule(id: bytes32) -> uint48:
+    ...
+
+
+@view
+@external
+def getNonce(id: bytes32) -> uint32:
+    ...
+
+
+@view
+@external
+def hashOperation(caller: address, target: address, data: Bytes[32768]) -> bytes32:
+    ...
+
+
+@external
+def schedule(target: address, data: Bytes[32768], when: uint48) -> (bytes32, uint32):
+    ...
+
+
+@payable
+@external
+def execute(target: address, data: Bytes[32768]) -> uint32:
+    ...
+
+
+@external
+def cancel(caller: address, target: address, data: Bytes[32768]) -> uint32:
+    ...
+
+
+@external
+def consumeScheduledOp(caller: address, data: Bytes[32768]):
+    ...
+
+
+@external
+def updateAuthority(target: address, newAuthority: address):
+    ...
+
+
+@external
+def multicall(data: DynArray[Bytes[32768], 64]) -> DynArray[Bytes[32768], 64]:
+    ...
+
+
+@view
+@external
+def getRole(index: uint256) -> uint64:
+    ...
+
+
+@view
+@external
+def getRoleCount() -> uint256:
+    ...
+
+
+@view
+@external
+def getRoles(start: uint256, end: uint256) -> DynArray[uint64, INF]:
+    ...
+
+
+@view
+@external
+def isRole(roleId: uint64) -> bool:
+    ...
+
+
+@view
+@external
+def getAdminRole(index: uint256) -> uint64:
+    ...
+
+
+@view
+@external
+def getAdminRoleCount() -> uint256:
+    ...
+
+
+@view
+@external
+def getAdminRoles(start: uint256, end: uint256) -> DynArray[uint64, INF]:
+    ...
+
+
+@view
+@external
+def isAdminRole(adminRoleId: uint64) -> bool:
+    ...
+
+
+@view
+@external
+def getRoleMember(roleId: uint64, index: uint256) -> address:
+    ...
+
+
+@view
+@external
+def getRoleMemberCount(roleId: uint64) -> uint256:
+    ...
+
+
+@view
+@external
+def getRoleMembers(roleId: uint64, start: uint256, end: uint256) -> DynArray[address, INF]:
+    ...
+
+
+@view
+@external
+def getRoleOfAdminRole(adminRoleId: uint64, index: uint256) -> uint64:
+    ...
+
+
+@view
+@external
+def getRoleOfAdminRoleCount(adminRoleId: uint64) -> uint256:
+    ...
+
+
+@view
+@external
+def getRolesOfAdminRole(adminRoleId: uint64, start: uint256, end: uint256) -> DynArray[uint64, INF]:
+    ...
+
+
+@view
+@external
+def getRoleTarget(roleId: uint64, index: uint256) -> address:
+    ...
+
+
+@view
+@external
+def getRoleTargetCount(roleId: uint64) -> uint256:
+    ...
+
+
+@view
+@external
+def getRoleTargets(roleId: uint64, start: uint256, end: uint256) -> DynArray[address, INF]:
+    ...
+
+
+@view
+@external
+def getRoleTargetSelector(roleId: uint64, target: address, index: uint256) -> bytes4:
+    ...
+
+
+@view
+@external
+def getRoleTargetSelectorCount(roleId: uint64, target: address) -> uint256:
+    ...
+
+
+@view
+@external
+def getRoleTargetSelectors(roleId: uint64, target: address, start: uint256, end: uint256) -> DynArray[bytes4, INF]:
+    ...
+
+
+@view
+@external
+def getRoleOfTargetSelector(target: address, selector: bytes4) -> uint64:
+    ...
+
+
+@view
+@external
+def getRoleLabel(index: uint256) -> String[128]:
+    ...
+
+
+@view
+@external
+def getRoleLabelCount() -> uint256:
+    ...
+
+
+@view
+@external
+def getRoleLabels(start: uint256, end: uint256) -> Bytes[INF]:
+    ...
+
+
+@view
+@external
+def isLabelAssigned(label: String[128]) -> bool:
+    ...
+
+
+@view
+@external
+def isRoleLabeled(roleId: uint64) -> bool:
+    ...
+
+
+@view
+@external
+def getLabelOfRole(roleId: uint64) -> String[128]:
+    ...
+
+
+@view
+@external
+def getRoleOfLabel(label: String[128]) -> uint64:
+    ...
+
+
+@view
+@external
+def ADMIN_ROLE() -> uint64:
+    ...
+
+
+@view
+@external
+def PUBLIC_ROLE() -> uint64:
+    ...

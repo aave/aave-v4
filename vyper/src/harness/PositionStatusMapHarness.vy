@@ -2,8 +2,6 @@
 
 from spoke.libraries import PositionStatusMap
 
-initializes: PositionStatusMap
-
 MAX_BUCKET_SCAN: constant(uint256) = 8192
 
 position_map: HashMap[uint256, uint256]

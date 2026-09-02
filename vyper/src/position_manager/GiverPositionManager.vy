@@ -1,45 +1,13 @@
 # pragma version 0.5.0b1
 
 from position_manager import PositionManagerBase
+from spoke.interfaces import ISpoke
+from position_manager.interfaces import IGiverPositionManager
+
+implements: IGiverPositionManager
 
 initializes: PositionManagerBase
 exports: PositionManagerBase.__interface__
-
-
-error RepayOnBehalfMaxUintNotAllowed:
-    pass
-
-struct Reserve:
-    underlying: address
-    hub: address
-    assetId: uint16
-    decimals: uint8
-    collateralRisk: uint24
-    flags: uint8
-    dynamicConfigKey: uint32
-
-interface ISpoke:
-    def getReserve(reserveId: uint256) -> Reserve: view
-    def getUserTotalDebt(reserveId: uint256, user: address) -> uint256: view
-    def supply(reserveId: uint256, amount: uint256, onBehalfOf: address) -> (uint256, uint256): nonpayable
-    def repay(reserveId: uint256, amount: uint256, onBehalfOf: address) -> (uint256, uint256): nonpayable
-
-
-event SupplyOnBehalfOf:
-    spoke: indexed(address)
-    caller: indexed(address)
-    onBehalfOf: indexed(address)
-    reserveId: uint256
-    suppliedShares: uint256
-    suppliedAmount: uint256
-
-event RepayOnBehalfOf:
-    spoke: indexed(address)
-    caller: indexed(address)
-    onBehalfOf: indexed(address)
-    reserveId: uint256
-    repaidShares: uint256
-    repaidAmount: uint256
 
 
 @deploy
@@ -90,7 +58,7 @@ def supplyOnBehalfOf(
     onBehalfOf: address,
 ) -> (uint256, uint256):
     PositionManagerBase._check_registered(spoke)
-    reserve: Reserve = staticcall ISpoke(spoke).getReserve(reserveId)
+    reserve: ISpoke.Reserve = staticcall ISpoke(spoke).getReserve(reserveId)
     self._safe_transfer_from(reserve.underlying, msg.sender, self, amount)
     self._force_approve(reserve.underlying, spoke, amount)
     supplied_shares: uint256 = 0
@@ -98,7 +66,7 @@ def supplyOnBehalfOf(
     supplied_shares, supplied_amount = extcall ISpoke(spoke).supply(
         reserveId, amount, onBehalfOf
     )
-    log SupplyOnBehalfOf(
+    log IGiverPositionManager.SupplyOnBehalfOf(
         spoke=spoke,
         caller=msg.sender,
         onBehalfOf=onBehalfOf,
@@ -118,8 +86,8 @@ def repayOnBehalfOf(
 ) -> (uint256, uint256):
     PositionManagerBase._check_registered(spoke)
     if amount == max_value(uint256):
-        raise RepayOnBehalfMaxUintNotAllowed()
-    reserve: Reserve = staticcall ISpoke(spoke).getReserve(reserveId)
+        raise IGiverPositionManager.RepayOnBehalfMaxUintNotAllowed()
+    reserve: ISpoke.Reserve = staticcall ISpoke(spoke).getReserve(reserveId)
     total_debt: uint256 = staticcall ISpoke(spoke).getUserTotalDebt(reserveId, onBehalfOf)
     repay_amount: uint256 = min(amount, total_debt)
     self._safe_transfer_from(reserve.underlying, msg.sender, self, repay_amount)
@@ -129,7 +97,7 @@ def repayOnBehalfOf(
     repaid_shares, repaid_amount = extcall ISpoke(spoke).repay(
         reserveId, repay_amount, onBehalfOf
     )
-    log RepayOnBehalfOf(
+    log IGiverPositionManager.RepayOnBehalfOf(
         spoke=spoke,
         caller=msg.sender,
         onBehalfOf=onBehalfOf,

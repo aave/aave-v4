@@ -1,8 +1,6 @@
 #pragma version 0.5.0b1
 
-error InvalidAccountNonce:
-    arg0: address
-    arg1: uint256
+from utils.interfaces import INoncesKeyed
 
 nonces_by_owner: HashMap[address, HashMap[uint192, uint256]]
 
@@ -25,7 +23,7 @@ def _use_checked_nonce(owner: address, key_nonce: uint256):
     key: uint192 = convert(key_nonce // 2**64, uint192)
     current: uint256 = self._use_nonce(owner, key)
     if key_nonce != current:
-        raise InvalidAccountNonce(owner, current)
+        raise INoncesKeyed.InvalidAccountNonce(owner, current)
 
 
 @external

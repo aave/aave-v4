@@ -1,0 +1,205 @@
+# pragma version 0.5.0b1
+
+error InvalidSignature:
+    pass
+
+struct Action:
+    spoke: address
+    reserveId: uint256
+    amount: uint256
+    onBehalfOf: address
+    nonce: uint256
+    deadline: uint256
+
+struct SetUsingAsCollateral:
+    spoke: address
+    reserveId: uint256
+    useAsCollateral: bool
+    onBehalfOf: address
+    nonce: uint256
+    deadline: uint256
+
+struct UpdateUserConfig:
+    spoke: address
+    onBehalfOf: address
+    nonce: uint256
+    deadline: uint256
+
+@view
+@external
+def owner() -> address:
+    ...
+
+
+@view
+@external
+def pendingOwner() -> address:
+    ...
+
+
+@external
+def transferOwnership(newOwner: address):
+    ...
+
+
+@external
+def acceptOwnership():
+    ...
+
+
+@external
+def renounceOwnership():
+    ...
+
+
+@external
+def registerSpoke(spoke: address, registered: bool):
+    ...
+
+
+@view
+@external
+def isSpokeRegistered(spoke: address) -> bool:
+    ...
+
+
+@view
+@external
+def getReserveUnderlying(spoke: address, reserveId: uint256) -> address:
+    ...
+
+
+@external
+def setSelfAsUserPositionManagerWithSig(spoke: address, onBehalfOf: address, approve: bool, nonce: uint256, deadline: uint256, signature: Bytes[INF]):
+    ...
+
+
+@external
+def permitReserveUnderlying(spoke: address, reserveId: uint256, onBehalfOf: address, permitValue: uint256, deadline: uint256, permitV: uint8, permitR: bytes32, permitS: bytes32):
+    ...
+
+
+@external
+def renouncePositionManagerRole(spoke: address, user: address):
+    ...
+
+
+@external
+def multicall(data: DynArray[Bytes[512], 4]) -> DynArray[Bytes[256], 4]:
+    ...
+
+
+@external
+def rescueToken(token: address, to: address, amount: uint256):
+    ...
+
+
+@external
+def rescueNative(to: address, amount: uint256):
+    ...
+
+
+@view
+@external
+def rescueGuardian() -> address:
+    ...
+
+
+@external
+def useNonce(key: uint192) -> uint256:
+    ...
+
+
+@view
+@external
+def nonces(owner: address, key: uint192) -> uint256:
+    ...
+
+
+@view
+@external
+def DOMAIN_SEPARATOR() -> bytes32:
+    ...
+
+
+@view
+@external
+def eip712Domain() -> (bytes1, String[32], String[8], uint256, address, bytes32, DynArray[uint256, INF]):
+    ...
+
+
+@external
+def supplyWithSig(params: Action, signature: Bytes[INF]) -> (uint256, uint256):
+    ...
+
+
+@external
+def withdrawWithSig(params: Action, signature: Bytes[INF]) -> (uint256, uint256):
+    ...
+
+
+@external
+def borrowWithSig(params: Action, signature: Bytes[INF]) -> (uint256, uint256):
+    ...
+
+
+@external
+def repayWithSig(params: Action, signature: Bytes[INF]) -> (uint256, uint256):
+    ...
+
+
+@external
+def setUsingAsCollateralWithSig(params: SetUsingAsCollateral, signature: Bytes[INF]):
+    ...
+
+
+@external
+def updateUserRiskPremiumWithSig(params: UpdateUserConfig, signature: Bytes[INF]):
+    ...
+
+
+@external
+def updateUserDynamicConfigWithSig(params: UpdateUserConfig, signature: Bytes[INF]):
+    ...
+
+
+@view
+@external
+def SUPPLY_TYPEHASH() -> bytes32:
+    ...
+
+
+@view
+@external
+def WITHDRAW_TYPEHASH() -> bytes32:
+    ...
+
+
+@view
+@external
+def BORROW_TYPEHASH() -> bytes32:
+    ...
+
+
+@view
+@external
+def REPAY_TYPEHASH() -> bytes32:
+    ...
+
+
+@view
+@external
+def SET_USING_AS_COLLATERAL_TYPEHASH() -> bytes32:
+    ...
+
+
+@view
+@external
+def UPDATE_USER_RISK_PREMIUM_TYPEHASH() -> bytes32:
+    ...
+
+
+@view
+@external
+def UPDATE_USER_DYNAMIC_CONFIG_TYPEHASH() -> bytes32:
+    ...

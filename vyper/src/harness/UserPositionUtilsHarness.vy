@@ -1,30 +1,25 @@
 # pragma version 0.5.0b1
 
 from spoke.libraries import UserPositionUtils
+from hub.interfaces import IHub
+from spoke.interfaces import ISpoke
 
-initializes: UserPositionUtils
-
-
-interface IHub:
-    def getAssetDrawnIndex(assetId: uint256) -> uint256: view
-
-
-user_position: UserPositionUtils.UserPosition
+user_position: ISpoke.UserPosition
 
 
 @external
-def setUserPosition(position: UserPositionUtils.UserPosition):
+def setUserPosition(position: ISpoke.UserPosition):
     self.user_position = position
 
 
 @external
 @view
-def getUserPosition() -> UserPositionUtils.UserPosition:
+def getUserPosition() -> ISpoke.UserPosition:
     return self.user_position
 
 
 @external
-def applyPremiumDelta(delta: UserPositionUtils.PremiumDelta):
+def applyPremiumDelta(delta: IHub.PremiumDelta):
     shares: int256 = convert(self.user_position.premiumShares, int256) + delta.sharesDelta
     offset: int256 = convert(self.user_position.premiumOffsetRay, int256) + delta.offsetRayDelta
     self.user_position.premiumShares = convert(shares, uint120)
@@ -38,7 +33,7 @@ def calculatePremiumDelta(
     drawnIndex: uint256,
     riskPremium: uint256,
     restoredPremiumRay: uint256,
-) -> UserPositionUtils.PremiumDelta:
+) -> IHub.PremiumDelta:
     return UserPositionUtils.calculate_premium_delta(
         self.user_position,
         drawnSharesTaken,

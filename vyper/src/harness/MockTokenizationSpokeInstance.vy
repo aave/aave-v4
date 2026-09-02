@@ -1,12 +1,9 @@
 # pragma version 0.5.0b1
+from hub.interfaces import IHub
 
 
 error InvalidInitialization:
     pass
-
-interface IHub:
-    def getAssetId(underlying: address) -> uint256: view
-
 
 event SetTokenizationSpokeImmutables:
     hub: indexed(address)

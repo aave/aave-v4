@@ -1,54 +1,12 @@
 # pragma version 0.5.0b1
+from hub.interfaces import IHub
+from hub.interfaces import IHubConfigurator
+from dependencies.openzeppelin import IAuthority
+from dependencies.openzeppelin import IERC20Metadata
 
 
-error AccessManagedUnauthorized:
-    arg0: address
 
-error InvalidAddress:
-    pass
-
-error MismatchedConfigs:
-    pass
-
-error SafeCastOverflowedUintDowncast:
-    arg0: uint8
-    arg1: uint256
-
-struct AssetConfig:
-    feeReceiver: address
-    liquidityFee: uint16
-    irStrategy: address
-    reinvestmentController: address
-
-struct SpokeConfig:
-    addCap: uint40
-    drawCap: uint40
-    riskPremiumThreshold: uint24
-    active: bool
-    halted: bool
-
-interface IAuthority:
-    def canCall(caller: address, target: address, selector: bytes4) -> (bool, uint32): view
-
-interface IERC20Metadata:
-    def decimals() -> uint8: view
-
-interface IHub:
-    def addAsset(underlying: address, decimals: uint8, feeReceiver: address, irStrategy: address, irData: Bytes[INF]) -> uint256: nonpayable
-    def updateAssetConfig(assetId: uint256, config: AssetConfig, irData: Bytes[INF]): nonpayable
-    def getAssetConfig(assetId: uint256) -> AssetConfig: view
-    def getSpokeCount(assetId: uint256) -> uint256: view
-    def getSpokeAddress(assetId: uint256, index: uint256) -> address: view
-    def getSpokeConfig(assetId: uint256, spoke: address) -> SpokeConfig: view
-    def updateSpokeConfig(assetId: uint256, spoke: address, config: SpokeConfig): nonpayable
-    def addSpoke(assetId: uint256, spoke: address, config: SpokeConfig): nonpayable
-    def getAssetCount() -> uint256: view
-    def isSpokeListed(assetId: uint256, spoke: address) -> bool: view
-    def setInterestRateData(assetId: uint256, irData: Bytes[INF]): nonpayable
-
-
-event AuthorityUpdated:
-    authority: address
+implements: IHubConfigurator
 
 
 MAX_ITEMS: constant(uint256) = 256
@@ -58,9 +16,9 @@ authority_address: address
 @deploy
 def __init__(authority_: address):
     if authority_ == empty(address):
-        raise InvalidAddress()
+        raise IHubConfigurator.InvalidAddress()
     self.authority_address = authority_
-    log AuthorityUpdated(authority=authority_)
+    log IHubConfigurator.AuthorityUpdated(authority=authority_)
 
 
 @internal
@@ -70,14 +28,14 @@ def _check_access(selector: Bytes[4]):
     delay: uint32 = 0
     allowed, delay = staticcall IAuthority(self.authority_address).canCall(msg.sender, self, convert(selector, bytes4))
     if not allowed:
-        raise AccessManagedUnauthorized(msg.sender)
+        raise IHubConfigurator.AccessManagedUnauthorized(msg.sender)
 
 
 @internal
 @pure
 def _u16(cast_value: uint256) -> uint16:
     if cast_value > convert(max_value(uint16), uint256):
-        raise SafeCastOverflowedUintDowncast(16, cast_value)
+        raise IHubConfigurator.SafeCastOverflowedUintDowncast(16, cast_value)
     return convert(cast_value, uint16)
 
 
@@ -85,7 +43,7 @@ def _u16(cast_value: uint256) -> uint16:
 @pure
 def _u40(cast_value: uint256) -> uint40:
     if cast_value > convert(max_value(uint40), uint256):
-        raise SafeCastOverflowedUintDowncast(40, cast_value)
+        raise IHubConfigurator.SafeCastOverflowedUintDowncast(40, cast_value)
     return convert(cast_value, uint40)
 
 
@@ -93,7 +51,7 @@ def _u40(cast_value: uint256) -> uint40:
 @pure
 def _u24(cast_value: uint256) -> uint24:
     if cast_value > convert(max_value(uint24), uint256):
-        raise SafeCastOverflowedUintDowncast(24, cast_value)
+        raise IHubConfigurator.SafeCastOverflowedUintDowncast(24, cast_value)
     return convert(cast_value, uint24)
 
 
@@ -106,9 +64,9 @@ def authority() -> address:
 @external
 def setAuthority(newAuthority: address):
     if msg.sender != self.authority_address:
-        raise AccessManagedUnauthorized(msg.sender)
+        raise IHubConfigurator.AccessManagedUnauthorized(msg.sender)
     self.authority_address = newAuthority
-    log AuthorityUpdated(authority=newAuthority)
+    log IHubConfigurator.AuthorityUpdated(authority=newAuthority)
 
 
 @external
@@ -119,7 +77,7 @@ def isConsumingScheduledOp() -> bytes4:
 
 @internal
 def _update_liquidity_fee(hub: address, asset_id: uint256, liquidity_fee: uint256):
-    config: AssetConfig = staticcall IHub(hub).getAssetConfig(asset_id)
+    config: IHub.AssetConfig = staticcall IHub(hub).getAssetConfig(asset_id)
     config.liquidityFee = self._u16(liquidity_fee)
     extcall IHub(hub).updateAssetConfig(asset_id, config, b"")
 
@@ -150,7 +108,7 @@ def updateLiquidityFee(hub: address, assetId: uint256, liquidityFee: uint256):
 @external
 def updateFeeReceiver(hub: address, assetId: uint256, feeReceiver: address):
     self._check_access(method_id("updateFeeReceiver(address,uint256,address)"))
-    config: AssetConfig = staticcall IHub(hub).getAssetConfig(assetId)
+    config: IHub.AssetConfig = staticcall IHub(hub).getAssetConfig(assetId)
     config.feeReceiver = feeReceiver
     extcall IHub(hub).updateAssetConfig(assetId, config, b"")
 
@@ -158,7 +116,7 @@ def updateFeeReceiver(hub: address, assetId: uint256, feeReceiver: address):
 @external
 def updateFeeConfig(hub: address, assetId: uint256, liquidityFee: uint256, feeReceiver: address):
     self._check_access(method_id("updateFeeConfig(address,uint256,uint256,address)"))
-    config: AssetConfig = staticcall IHub(hub).getAssetConfig(assetId)
+    config: IHub.AssetConfig = staticcall IHub(hub).getAssetConfig(assetId)
     config.liquidityFee = self._u16(liquidityFee)
     config.feeReceiver = feeReceiver
     extcall IHub(hub).updateAssetConfig(assetId, config, b"")
@@ -167,7 +125,7 @@ def updateFeeConfig(hub: address, assetId: uint256, liquidityFee: uint256, feeRe
 @external
 def updateInterestRateStrategy(hub: address, assetId: uint256, irStrategy: address, irData: Bytes[INF]):
     self._check_access(method_id("updateInterestRateStrategy(address,uint256,address,bytes)"))
-    config: AssetConfig = staticcall IHub(hub).getAssetConfig(assetId)
+    config: IHub.AssetConfig = staticcall IHub(hub).getAssetConfig(assetId)
     config.irStrategy = irStrategy
     extcall IHub(hub).updateAssetConfig(assetId, config, irData)
 
@@ -175,7 +133,7 @@ def updateInterestRateStrategy(hub: address, assetId: uint256, irStrategy: addre
 @external
 def updateReinvestmentController(hub: address, assetId: uint256, reinvestmentController: address):
     self._check_access(method_id("updateReinvestmentController(address,uint256,address)"))
-    config: AssetConfig = staticcall IHub(hub).getAssetConfig(assetId)
+    config: IHub.AssetConfig = staticcall IHub(hub).getAssetConfig(assetId)
     config.reinvestmentController = reinvestmentController
     extcall IHub(hub).updateAssetConfig(assetId, config, b"")
 
@@ -187,7 +145,7 @@ def _reset_asset(hub: address, asset_id: uint256, action: uint256):
         if i >= count:
             break
         spoke: address = staticcall IHub(hub).getSpokeAddress(asset_id, i)
-        config: SpokeConfig = staticcall IHub(hub).getSpokeConfig(asset_id, spoke)
+        config: IHub.SpokeConfig = staticcall IHub(hub).getSpokeConfig(asset_id, spoke)
         if action == 0:
             config.addCap = 0
             config.drawCap = 0
@@ -217,16 +175,16 @@ def haltAsset(hub: address, assetId: uint256):
 
 
 @external
-def addSpoke(hub: address, spoke: address, assetId: uint256, config: SpokeConfig):
+def addSpoke(hub: address, spoke: address, assetId: uint256, config: IHub.SpokeConfig):
     self._check_access(method_id("addSpoke(address,address,uint256,(uint40,uint40,uint24,bool,bool))"))
     extcall IHub(hub).addSpoke(assetId, spoke, config)
 
 
 @external
-def addSpokeToAssets(hub: address, spoke: address, assetIds: DynArray[uint256, INF], configs: DynArray[SpokeConfig, INF]):
+def addSpokeToAssets(hub: address, spoke: address, assetIds: DynArray[uint256, INF], configs: DynArray[IHub.SpokeConfig, INF]):
     self._check_access(method_id("addSpokeToAssets(address,address,uint256[],(uint40,uint40,uint24,bool,bool)[])"))
     if len(assetIds) != len(configs):
-        raise MismatchedConfigs()
+        raise IHubConfigurator.MismatchedConfigs()
     i: uint256 = 0
     for asset_id: uint256 in assetIds:
         extcall IHub(hub).addSpoke(asset_id, spoke, configs[i])
@@ -235,7 +193,7 @@ def addSpokeToAssets(hub: address, spoke: address, assetIds: DynArray[uint256, I
 
 @internal
 def _update_spoke_field(hub: address, asset_id: uint256, spoke: address, field: uint256, field_value: uint256):
-    config: SpokeConfig = staticcall IHub(hub).getSpokeConfig(asset_id, spoke)
+    config: IHub.SpokeConfig = staticcall IHub(hub).getSpokeConfig(asset_id, spoke)
     if field == 0:
         config.active = field_value != 0
     elif field == 1:
@@ -282,7 +240,7 @@ def updateSpokeRiskPremiumThreshold(hub: address, assetId: uint256, spoke: addre
 @external
 def updateSpokeCaps(hub: address, assetId: uint256, spoke: address, addCap: uint256, drawCap: uint256):
     self._check_access(method_id("updateSpokeCaps(address,uint256,address,uint256,uint256)"))
-    config: SpokeConfig = staticcall IHub(hub).getSpokeConfig(assetId, spoke)
+    config: IHub.SpokeConfig = staticcall IHub(hub).getSpokeConfig(assetId, spoke)
     config.addCap = self._u40(addCap)
     config.drawCap = self._u40(drawCap)
     extcall IHub(hub).updateSpokeConfig(assetId, spoke, config)
@@ -295,7 +253,7 @@ def _update_spoke_assets(hub: address, spoke: address, action: uint256):
         if asset_id >= count:
             break
         if staticcall IHub(hub).isSpokeListed(asset_id, spoke):
-            config: SpokeConfig = staticcall IHub(hub).getSpokeConfig(asset_id, spoke)
+            config: IHub.SpokeConfig = staticcall IHub(hub).getSpokeConfig(asset_id, spoke)
             if action == 0:
                 config.active = False
             elif action == 1:

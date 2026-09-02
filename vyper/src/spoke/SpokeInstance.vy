@@ -8,105 +8,14 @@ from spoke.libraries import ReserveFlagsMap
 from spoke.libraries import PositionStatusMap
 from spoke.libraries import SpokeUtils
 from spoke.libraries import UserPositionUtils
+from hub.interfaces import IHub
+from spoke.interfaces import ISpoke
+from spoke.interfaces import IAaveOracle
+from spoke.interfaces import ILiquidationLogic
+from dependencies.openzeppelin import IAuthority
+from dependencies.openzeppelin import IERC1271
 
-initializes: SharesMath
-initializes: PositionStatusMap
-initializes: ReserveFlagsMap
-initializes: SpokeUtils
-initializes: UserPositionUtils
-
-
-error AccessManagedUnauthorized:
-    arg0: address
-
-error AssetNotListed:
-    pass
-
-error DynamicConfigKeyUninitialized:
-    pass
-
-error HealthFactorBelowThreshold:
-    pass
-
-error InvalidAccountNonce:
-    arg0: address
-    arg1: uint256
-
-error InvalidAddress:
-    pass
-
-error InvalidAssetDecimals:
-    pass
-
-error InvalidAssetId:
-    pass
-
-error InvalidCollateralFactor:
-    pass
-
-error InvalidCollateralFactorAndMaxLiquidationBonus:
-    pass
-
-error InvalidCollateralRisk:
-    pass
-
-error InvalidInitialization:
-    pass
-
-error InvalidLiquidationConfig:
-    pass
-
-error InvalidLiquidationFee:
-    pass
-
-error InvalidMaxUserReservesLimit:
-    pass
-
-error InvalidOracleDecimals:
-    pass
-
-error InvalidSignature:
-    pass
-
-error MaximumDynamicConfigKeyReached:
-    pass
-
-error MaximumUserReservesExceeded:
-    pass
-
-error ReentrancyGuardReentrantCall:
-    pass
-
-error ReserveExists:
-    pass
-
-error ReserveFrozen:
-    pass
-
-error ReserveNotBorrowable:
-    pass
-
-error ReserveNotListed:
-    pass
-
-error ReservePaused:
-    pass
-
-error SafeCastOverflowedUintDowncast:
-    arg0: uint8
-    arg1: uint256
-
-error Unauthorized:
-    pass
-
-struct Reserve:
-    underlying: address
-    hub: address
-    assetId: uint16
-    decimals: uint8
-    collateralRisk: uint24
-    flags: uint8
-    dynamicConfigKey: uint32
+implements: ISpoke
 
 struct PackedReserve:
     underlying: address
@@ -117,216 +26,9 @@ struct PackedUserPosition:
     premiumOffsetRay: int200
     supplyData: uint256
 
-struct ReserveConfig:
-    collateralRisk: uint24
-    paused: bool
-    frozen: bool
-    borrowable: bool
-    receiveSharesEnabled: bool
-
-struct DynamicReserveConfig:
-    collateralFactor: uint16
-    maxLiquidationBonus: uint32
-    liquidationFee: uint16
-
-struct LiquidationConfig:
-    targetHealthFactor: uint128
-    healthFactorForMaxBonus: uint64
-    liquidationBonusFactor: uint16
-
-struct UserAccountData:
-    riskPremium: uint256
-    avgCollateralFactor: uint256
-    healthFactor: uint256
-    totalCollateralValue: uint256
-    totalDebtValueRay: uint256
-    activeCollateralCount: uint256
-    borrowCount: uint256
-
-struct PositionManagerUpdate:
-    positionManager: address
-    approve: bool
-
-struct SetUserPositionManagers:
-    onBehalfOf: address
-    updates: DynArray[PositionManagerUpdate, 1024]
-    nonce: uint256
-    deadline: uint256
-
 struct CollateralInfo:
     risk: uint256
     collateralValue: uint256
-
-struct ValidateLiquidationCallParams:
-    user: address
-    liquidator: address
-    collateralReserveFlags: uint8
-    debtReserveFlags: uint8
-    suppliedShares: uint256
-    drawnShares: uint256
-    debtToCover: uint256
-    collateralFactor: uint256
-    isUsingAsCollateral: bool
-    healthFactor: uint256
-    receiveShares: bool
-
-struct CalculateLiquidationAmountsParams:
-    collateralReserveHub: address
-    collateralReserveAssetId: uint256
-    suppliedShares: uint256
-    collateralAssetDecimals: uint256
-    collateralAssetPrice: uint256
-    drawnShares: uint256
-    premiumDebtRay: uint256
-    drawnIndex: uint256
-    totalDebtValueRay: uint256
-    debtAssetDecimals: uint256
-    debtAssetPrice: uint256
-    debtToCover: uint256
-    collateralFactor: uint256
-    healthFactorForMaxBonus: uint256
-    liquidationBonusFactor: uint256
-    maxLiquidationBonus: uint256
-    targetHealthFactor: uint256
-    healthFactor: uint256
-    liquidationFee: uint256
-
-struct LiquidationAmounts:
-    collateralSharesToLiquidate: uint256
-    collateralSharesToLiquidator: uint256
-    drawnSharesToLiquidate: uint256
-    premiumDebtRayToLiquidate: uint256
-
-interface IAuthority:
-    def canCall(caller: address, target: address, selector: bytes4) -> (bool, uint32): view
-
-interface IAaveOracle:
-    def decimals() -> uint8: view
-    def setReserveSource(reserveId: uint256, source: address): nonpayable
-    def getReservePrice(reserveId: uint256) -> uint256: view
-
-interface IHub:
-    def getAssetUnderlyingAndDecimals(assetId: uint256) -> (address, uint8): view
-    def add(assetId: uint256, amount: uint256) -> uint256: nonpayable
-    def remove(assetId: uint256, amount: uint256, to: address) -> uint256: nonpayable
-    def draw(assetId: uint256, amount: uint256, to: address) -> uint256: nonpayable
-    def restore(assetId: uint256, drawnAmount: uint256, premiumDelta: UserPositionUtils.PremiumDelta) -> uint256: nonpayable
-    def refreshPremium(assetId: uint256, premiumDelta: UserPositionUtils.PremiumDelta): nonpayable
-    def reportDeficit(assetId: uint256, drawnAmount: uint256, premiumDelta: UserPositionUtils.PremiumDelta) -> (uint256, uint256): nonpayable
-    def transferShares(assetId: uint256, shares: uint256, toSpoke: address): nonpayable
-    def payFeeShares(assetId: uint256, shares: uint256): nonpayable
-    def previewRemoveByShares(assetId: uint256, shares: uint256) -> uint256: view
-    def previewRemoveByAssets(assetId: uint256, amount: uint256) -> uint256: view
-    def previewAddByAssets(assetId: uint256, amount: uint256) -> uint256: view
-    def previewDrawByAssets(assetId: uint256, amount: uint256) -> uint256: view
-    def getAssetDrawnIndex(assetId: uint256) -> uint256: view
-    def getSpokeAddedAssets(assetId: uint256, spoke: address) -> uint256: view
-    def getSpokeAddedShares(assetId: uint256, spoke: address) -> uint256: view
-    def getSpokeOwed(assetId: uint256, spoke: address) -> (uint256, uint256): view
-    def getSpokeTotalOwed(assetId: uint256, spoke: address) -> uint256: view
-
-interface IERC1271:
-    def isValidSignature(hash: bytes32, signature: Bytes[INF]) -> bytes4: view
-
-interface ILiquidationLogic:
-    def validateLiquidationCall(params: ValidateLiquidationCallParams) -> bool: view
-    def calculateLiquidationAmounts(params: CalculateLiquidationAmountsParams) -> LiquidationAmounts: view
-
-
-event Initialized:
-    version: uint64
-event AuthorityUpdated:
-    authority: address
-event SetSpokeImmutables:
-    oracle: indexed(address)
-    maxUserReservesLimit: uint16
-event UpdateLiquidationConfig:
-    config: LiquidationConfig
-event AddReserve:
-    reserveId: indexed(uint256)
-    assetId: indexed(uint256)
-    hub: indexed(address)
-event UpdateReserveConfig:
-    reserveId: indexed(uint256)
-    config: ReserveConfig
-event UpdateReservePriceSource:
-    reserveId: indexed(uint256)
-    priceSource: indexed(address)
-event AddDynamicReserveConfig:
-    reserveId: indexed(uint256)
-    dynamicConfigKey: indexed(uint32)
-    config: DynamicReserveConfig
-event UpdateDynamicReserveConfig:
-    reserveId: indexed(uint256)
-    dynamicConfigKey: indexed(uint32)
-    config: DynamicReserveConfig
-event UpdatePositionManager:
-    positionManager: indexed(address)
-    active: bool
-event Supply:
-    reserveId: indexed(uint256)
-    caller: indexed(address)
-    user: indexed(address)
-    suppliedShares: uint256
-    suppliedAmount: uint256
-event Withdraw:
-    reserveId: indexed(uint256)
-    caller: indexed(address)
-    user: indexed(address)
-    withdrawnShares: uint256
-    withdrawnAmount: uint256
-event Borrow:
-    reserveId: indexed(uint256)
-    caller: indexed(address)
-    user: indexed(address)
-    drawnShares: uint256
-    drawnAmount: uint256
-event Repay:
-    reserveId: indexed(uint256)
-    caller: indexed(address)
-    user: indexed(address)
-    drawnShares: uint256
-    totalAmountRepaid: uint256
-    premiumDelta: UserPositionUtils.PremiumDelta
-event SetUsingAsCollateral:
-    reserveId: indexed(uint256)
-    caller: indexed(address)
-    user: indexed(address)
-    usingAsCollateral: bool
-event UpdateUserRiskPremium:
-    user: indexed(address)
-    riskPremium: uint256
-event RefreshAllUserDynamicConfig:
-    user: indexed(address)
-event RefreshSingleUserDynamicConfig:
-    user: indexed(address)
-    reserveId: uint256
-event SetUserPositionManager:
-    user: indexed(address)
-    positionManager: indexed(address)
-    approve: bool
-event RefreshPremiumDebt:
-    reserveId: indexed(uint256)
-    user: indexed(address)
-    premiumDelta: UserPositionUtils.PremiumDelta
-event LiquidationCall:
-    collateralReserveId: indexed(uint256)
-    debtReserveId: indexed(uint256)
-    user: indexed(address)
-    liquidator: address
-    receiveShares: bool
-    debtAmountRestored: uint256
-    drawnSharesLiquidated: uint256
-    premiumDelta: UserPositionUtils.PremiumDelta
-    collateralAmountRemoved: uint256
-    collateralSharesLiquidated: uint256
-    collateralSharesToLiquidator: uint256
-event ReportDeficit:
-    reserveId: indexed(uint256)
-    user: indexed(address)
-    drawnShares: uint256
-    premiumDelta: UserPositionUtils.PremiumDelta
-
 
 SPOKE_REVISION: public(constant(uint64)) = 1
 SET_USER_POSITION_MANAGERS_TYPEHASH: public(constant(bytes32)) = 0xba01f7bf3d3674c63670ec4a78b0d56aac1ad6e8c84468920b9e61bfe0b9851a
@@ -353,7 +55,7 @@ MAX_USER_RESERVES_LIMIT: public(immutable(uint16))
 LIQUIDATION_LOGIC: immutable(address)
 
 reserve_count: uint256
-liquidation_config: LiquidationConfig
+liquidation_config: ISpoke.LiquidationConfig
 reserves: HashMap[uint256, PackedReserve]
 hub_asset_to_reserve: HashMap[address, HashMap[uint256, uint256]]
 dynamic_configs: HashMap[uint256, HashMap[uint32, uint256]]
@@ -374,14 +76,14 @@ reentrancy_lock: transient(bool)
 @deploy
 def __init__(liquidationLogic_: address, oracle_: address, maxUserReservesLimit_: uint16):
     if staticcall IAaveOracle(oracle_).decimals() != 8:
-        raise InvalidOracleDecimals()
+        raise ISpoke.InvalidOracleDecimals()
     if maxUserReservesLimit_ == 0:
-        raise InvalidMaxUserReservesLimit()
+        raise ISpoke.InvalidMaxUserReservesLimit()
     ORACLE = oracle_
     MAX_USER_RESERVES_LIMIT = maxUserReservesLimit_
     LIQUIDATION_LOGIC = liquidationLogic_
     self.initialized_state = convert(max_value(uint64), uint256)
-    log Initialized(version=max_value(uint64))
+    log ISpoke.Initialized(version=max_value(uint64))
 
 
 @internal
@@ -393,7 +95,7 @@ def _panic_arithmetic():
 @internal
 def _enter_nonreentrant():
     if self.reentrancy_lock:
-        raise ReentrancyGuardReentrantCall()
+        raise ISpoke.ReentrancyGuardReentrantCall()
     self.reentrancy_lock = True
 
 
@@ -406,7 +108,7 @@ def _exit_nonreentrant():
 @pure
 def _u120(cast_value: uint256) -> uint120:
     if cast_value > convert(max_value(uint120), uint256):
-        raise SafeCastOverflowedUintDowncast(120, cast_value)
+        raise ISpoke.SafeCastOverflowedUintDowncast(120, cast_value)
     return convert(cast_value, uint120)
 
 
@@ -414,7 +116,7 @@ def _u120(cast_value: uint256) -> uint120:
 @pure
 def _u32(cast_value: uint256) -> uint32:
     if cast_value > convert(max_value(uint32), uint256):
-        raise SafeCastOverflowedUintDowncast(32, cast_value)
+        raise ISpoke.SafeCastOverflowedUintDowncast(32, cast_value)
     return convert(cast_value, uint32)
 
 
@@ -422,13 +124,13 @@ def _u32(cast_value: uint256) -> uint32:
 @pure
 def _u24(cast_value: uint256) -> uint24:
     if cast_value > convert(max_value(uint24), uint256):
-        raise SafeCastOverflowedUintDowncast(24, cast_value)
+        raise ISpoke.SafeCastOverflowedUintDowncast(24, cast_value)
     return convert(cast_value, uint24)
 
 
 @internal
 @pure
-def _pack_reserve(reserve: Reserve) -> PackedReserve:
+def _pack_reserve(reserve: ISpoke.Reserve) -> PackedReserve:
     config_data: uint256 = convert(reserve.hub, uint256)
     config_data |= convert(reserve.assetId, uint256) << 160
     config_data |= convert(reserve.decimals, uint256) << 176
@@ -440,9 +142,9 @@ def _pack_reserve(reserve: Reserve) -> PackedReserve:
 
 @internal
 @pure
-def _unpack_reserve(packed: PackedReserve) -> Reserve:
+def _unpack_reserve(packed: PackedReserve) -> ISpoke.Reserve:
     data: uint256 = packed.configData
-    return Reserve(
+    return ISpoke.Reserve(
         underlying=packed.underlying,
         hub=convert(data & MASK_160, address),
         assetId=convert((data >> 160) & MASK_16, uint16),
@@ -455,18 +157,18 @@ def _unpack_reserve(packed: PackedReserve) -> Reserve:
 
 @internal
 @view
-def _load_reserve(reserve_id: uint256) -> Reserve:
+def _load_reserve(reserve_id: uint256) -> ISpoke.Reserve:
     return self._unpack_reserve(self.reserves[reserve_id])
 
 
 @internal
-def _store_reserve(reserve_id: uint256, reserve: Reserve):
+def _store_reserve(reserve_id: uint256, reserve: ISpoke.Reserve):
     self.reserves[reserve_id] = self._pack_reserve(reserve)
 
 
 @internal
 @pure
-def _pack_dynamic_config(config: DynamicReserveConfig) -> uint256:
+def _pack_dynamic_config(config: ISpoke.DynamicReserveConfig) -> uint256:
     return (
         convert(config.collateralFactor, uint256)
         | convert(config.maxLiquidationBonus, uint256) << 16
@@ -476,8 +178,8 @@ def _pack_dynamic_config(config: DynamicReserveConfig) -> uint256:
 
 @internal
 @pure
-def _unpack_dynamic_config(data: uint256) -> DynamicReserveConfig:
-    return DynamicReserveConfig(
+def _unpack_dynamic_config(data: uint256) -> ISpoke.DynamicReserveConfig:
+    return ISpoke.DynamicReserveConfig(
         collateralFactor=convert(data & MASK_16, uint16),
         maxLiquidationBonus=convert((data >> 16) & MASK_32, uint32),
         liquidationFee=convert((data >> 48) & MASK_16, uint16),
@@ -486,18 +188,18 @@ def _unpack_dynamic_config(data: uint256) -> DynamicReserveConfig:
 
 @internal
 @view
-def _load_dynamic_config(reserve_id: uint256, key: uint32) -> DynamicReserveConfig:
+def _load_dynamic_config(reserve_id: uint256, key: uint32) -> ISpoke.DynamicReserveConfig:
     return self._unpack_dynamic_config(self.dynamic_configs[reserve_id][key])
 
 
 @internal
-def _store_dynamic_config(reserve_id: uint256, key: uint32, config: DynamicReserveConfig):
+def _store_dynamic_config(reserve_id: uint256, key: uint32, config: ISpoke.DynamicReserveConfig):
     self.dynamic_configs[reserve_id][key] = self._pack_dynamic_config(config)
 
 
 @internal
 @pure
-def _pack_user_position(position: UserPositionUtils.UserPosition) -> PackedUserPosition:
+def _pack_user_position(position: ISpoke.UserPosition) -> PackedUserPosition:
     return PackedUserPosition(
         debtShares=(
             convert(position.drawnShares, uint256)
@@ -513,8 +215,8 @@ def _pack_user_position(position: UserPositionUtils.UserPosition) -> PackedUserP
 
 @internal
 @pure
-def _unpack_user_position(packed: PackedUserPosition) -> UserPositionUtils.UserPosition:
-    return UserPositionUtils.UserPosition(
+def _unpack_user_position(packed: PackedUserPosition) -> ISpoke.UserPosition:
+    return ISpoke.UserPosition(
         drawnShares=convert(packed.debtShares & MASK_120, uint120),
         premiumShares=convert((packed.debtShares >> 120) & MASK_120, uint120),
         premiumOffsetRay=packed.premiumOffsetRay,
@@ -525,12 +227,12 @@ def _unpack_user_position(packed: PackedUserPosition) -> UserPositionUtils.UserP
 
 @internal
 @view
-def _load_user_position(user: address, reserve_id: uint256) -> UserPositionUtils.UserPosition:
+def _load_user_position(user: address, reserve_id: uint256) -> ISpoke.UserPosition:
     return self._unpack_user_position(self.user_positions[user][reserve_id])
 
 
 @internal
-def _store_user_position(user: address, reserve_id: uint256, position: UserPositionUtils.UserPosition):
+def _store_user_position(user: address, reserve_id: uint256, position: ISpoke.UserPosition):
     self.user_positions[user][reserve_id] = self._pack_user_position(position)
 
 
@@ -541,7 +243,7 @@ def _check_access(selector: Bytes[4]):
     delay: uint32 = 0
     allowed, delay = staticcall IAuthority(self.authority_address).canCall(msg.sender, self, convert(selector, bytes4))
     if not allowed:
-        raise AccessManagedUnauthorized(msg.sender)
+        raise ISpoke.AccessManagedUnauthorized(msg.sender)
 
 
 @internal
@@ -560,14 +262,14 @@ def _is_position_manager(user: address, manager: address) -> bool:
 @view
 def _only_position_manager(user: address):
     if not self._is_position_manager(user, msg.sender):
-        raise Unauthorized()
+        raise ISpoke.Unauthorized()
 
 
 @internal
 @view
-def _require_reserve(reserve_id: uint256) -> Reserve:
+def _require_reserve(reserve_id: uint256) -> ISpoke.Reserve:
     if reserve_id >= self.reserve_count:
-        raise ReserveNotListed()
+        raise ISpoke.ReserveNotListed()
     return self._load_reserve(reserve_id)
 
 
@@ -599,7 +301,7 @@ def _use_checked_nonce(owner: address, key_nonce: uint256):
     nonce: uint64 = convert(self.nonces_by_owner[owner][key] & (2**64 - 1), uint64)
     current: uint256 = self._pack_nonce(key, nonce)
     if key_nonce != current:
-        raise InvalidAccountNonce(owner, current)
+        raise ISpoke.InvalidAccountNonce(owner, current)
     self.nonces_by_owner[owner][key] = convert(unsafe_add(nonce, 1), uint256)
 
 
@@ -628,17 +330,17 @@ def _valid_signature(signer: address, digest: bytes32, signature: Bytes[INF]) ->
 def initialize(authority: address):
     initialized: uint64 = convert(self.initialized_state & (2**64 - 1), uint64)
     if initialized >= SPOKE_REVISION:
-        raise InvalidInitialization()
-    log SetSpokeImmutables(oracle=ORACLE, maxUserReservesLimit=MAX_USER_RESERVES_LIMIT)
+        raise ISpoke.InvalidInitialization()
+    log ISpoke.SetSpokeImmutables(oracle=ORACLE, maxUserReservesLimit=MAX_USER_RESERVES_LIMIT)
     if authority == empty(address):
-        raise InvalidAddress()
+        raise ISpoke.InvalidAddress()
     self.initialized_state = convert(SPOKE_REVISION, uint256)
     self.authority_address = authority
-    log AuthorityUpdated(authority=authority)
+    log ISpoke.AuthorityUpdated(authority=authority)
     if self.liquidation_config.targetHealthFactor == 0:
         self.liquidation_config.targetHealthFactor = convert(HEALTH_FACTOR_LIQUIDATION_THRESHOLD, uint128)
-        log UpdateLiquidationConfig(config=self.liquidation_config)
-    log Initialized(version=SPOKE_REVISION)
+        log ISpoke.UpdateLiquidationConfig(config=self.liquidation_config)
+    log ISpoke.Initialized(version=SPOKE_REVISION)
 
 
 @external
@@ -650,9 +352,9 @@ def authority() -> address:
 @external
 def setAuthority(newAuthority: address):
     if msg.sender != self.authority_address:
-        raise AccessManagedUnauthorized(msg.sender)
+        raise ISpoke.AccessManagedUnauthorized(msg.sender)
     self.authority_address = newAuthority
-    log AuthorityUpdated(authority=newAuthority)
+    log ISpoke.AuthorityUpdated(authority=newAuthority)
 
 
 @external
@@ -689,43 +391,43 @@ def nonces(owner: address, key: uint192) -> uint256:
 
 
 @external
-def updateLiquidationConfig(config: LiquidationConfig):
+def updateLiquidationConfig(config: ISpoke.LiquidationConfig):
     self._check_access(method_id("updateLiquidationConfig((uint128,uint64,uint16))"))
     if (convert(config.targetHealthFactor, uint256) < HEALTH_FACTOR_LIQUIDATION_THRESHOLD
         or convert(config.liquidationBonusFactor, uint256) > 10**4
         or convert(config.healthFactorForMaxBonus, uint256) >= HEALTH_FACTOR_LIQUIDATION_THRESHOLD):
-        raise InvalidLiquidationConfig()
+        raise ISpoke.InvalidLiquidationConfig()
     self.liquidation_config = config
-    log UpdateLiquidationConfig(config=config)
+    log ISpoke.UpdateLiquidationConfig(config=config)
 
 
 @internal
 @pure
-def _validate_dynamic(config: DynamicReserveConfig):
+def _validate_dynamic(config: ISpoke.DynamicReserveConfig):
     cf: uint256 = convert(config.collateralFactor, uint256)
     bonus: uint256 = convert(config.maxLiquidationBonus, uint256)
     if cf >= 10**4 or bonus < 10**4 or PercentageMath.percent_mul_up(bonus, cf) >= 10**4:
-        raise InvalidCollateralFactorAndMaxLiquidationBonus()
+        raise ISpoke.InvalidCollateralFactorAndMaxLiquidationBonus()
     if convert(config.liquidationFee, uint256) > 10**4:
-        raise InvalidLiquidationFee()
+        raise ISpoke.InvalidLiquidationFee()
 
 
 @external
-def addReserve(hub: address, assetId: uint256, priceSource: address, config: ReserveConfig, dynamicConfig: DynamicReserveConfig) -> uint256:
+def addReserve(hub: address, assetId: uint256, priceSource: address, config: ISpoke.ReserveConfig, dynamicConfig: ISpoke.DynamicReserveConfig) -> uint256:
     self._check_access(method_id("addReserve(address,uint256,address,(uint24,bool,bool,bool,bool),(uint16,uint32,uint16))"))
     if hub == empty(address):
-        raise InvalidAddress()
+        raise ISpoke.InvalidAddress()
     if assetId > MAX_ALLOWED_ASSET_ID:
-        raise InvalidAssetId()
+        raise ISpoke.InvalidAssetId()
     candidate: uint256 = self.hub_asset_to_reserve[hub][assetId]
-    existing: Reserve = self._load_reserve(candidate)
+    existing: ISpoke.Reserve = self._load_reserve(candidate)
     if existing.hub == hub and convert(existing.assetId, uint256) == assetId:
-        raise ReserveExists()
+        raise ISpoke.ReserveExists()
     if convert(config.collateralRisk, uint256) > MAX_ALLOWED_COLLATERAL_RISK:
-        raise InvalidCollateralRisk()
+        raise ISpoke.InvalidCollateralRisk()
     self._validate_dynamic(dynamicConfig)
     if priceSource == empty(address):
-        raise InvalidAddress()
+        raise ISpoke.InvalidAddress()
     reserve_id: uint256 = self.reserve_count
     self.reserve_count += 1
     if self.reserve_count > MAX_RESERVES:
@@ -735,12 +437,12 @@ def addReserve(hub: address, assetId: uint256, priceSource: address, config: Res
     decimals: uint8 = 0
     underlying, decimals = staticcall IHub(hub).getAssetUnderlyingAndDecimals(assetId)
     if underlying == empty(address):
-        raise AssetNotListed()
+        raise ISpoke.AssetNotListed()
     if decimals > 18:
-        raise InvalidAssetDecimals()
+        raise ISpoke.InvalidAssetDecimals()
     extcall IAaveOracle(ORACLE).setReserveSource(reserve_id, priceSource)
     flags: uint8 = ReserveFlagsMap.create(config.paused, config.frozen, config.borrowable, config.receiveSharesEnabled)
-    self._store_reserve(reserve_id, Reserve(
+    self._store_reserve(reserve_id, ISpoke.Reserve(
         underlying=underlying,
         hub=hub,
         assetId=convert(assetId, uint16),
@@ -750,23 +452,23 @@ def addReserve(hub: address, assetId: uint256, priceSource: address, config: Res
         dynamicConfigKey=0,
     ))
     self._store_dynamic_config(reserve_id, 0, dynamicConfig)
-    log UpdateReservePriceSource(reserveId=reserve_id, priceSource=priceSource)
-    log AddReserve(reserveId=reserve_id, assetId=assetId, hub=hub)
-    log UpdateReserveConfig(reserveId=reserve_id, config=config)
-    log AddDynamicReserveConfig(reserveId=reserve_id, dynamicConfigKey=0, config=dynamicConfig)
+    log ISpoke.UpdateReservePriceSource(reserveId=reserve_id, priceSource=priceSource)
+    log ISpoke.AddReserve(reserveId=reserve_id, assetId=assetId, hub=hub)
+    log ISpoke.UpdateReserveConfig(reserveId=reserve_id, config=config)
+    log ISpoke.AddDynamicReserveConfig(reserveId=reserve_id, dynamicConfigKey=0, config=dynamicConfig)
     return reserve_id
 
 
 @external
-def updateReserveConfig(reserveId: uint256, config: ReserveConfig):
+def updateReserveConfig(reserveId: uint256, config: ISpoke.ReserveConfig):
     self._check_access(method_id("updateReserveConfig(uint256,(uint24,bool,bool,bool,bool))"))
-    reserve: Reserve = self._require_reserve(reserveId)
+    reserve: ISpoke.Reserve = self._require_reserve(reserveId)
     if convert(config.collateralRisk, uint256) > MAX_ALLOWED_COLLATERAL_RISK:
-        raise InvalidCollateralRisk()
+        raise ISpoke.InvalidCollateralRisk()
     reserve.collateralRisk = config.collateralRisk
     reserve.flags = ReserveFlagsMap.create(config.paused, config.frozen, config.borrowable, config.receiveSharesEnabled)
     self._store_reserve(reserveId, reserve)
-    log UpdateReserveConfig(reserveId=reserveId, config=config)
+    log ISpoke.UpdateReserveConfig(reserveId=reserveId, config=config)
 
 
 @external
@@ -774,45 +476,45 @@ def updateReservePriceSource(reserveId: uint256, priceSource: address):
     self._check_access(method_id("updateReservePriceSource(uint256,address)"))
     self._require_reserve(reserveId)
     if priceSource == empty(address):
-        raise InvalidAddress()
+        raise ISpoke.InvalidAddress()
     extcall IAaveOracle(ORACLE).setReserveSource(reserveId, priceSource)
-    log UpdateReservePriceSource(reserveId=reserveId, priceSource=priceSource)
+    log ISpoke.UpdateReservePriceSource(reserveId=reserveId, priceSource=priceSource)
 
 
 @external
-def addDynamicReserveConfig(reserveId: uint256, dynamicConfig: DynamicReserveConfig) -> uint32:
+def addDynamicReserveConfig(reserveId: uint256, dynamicConfig: ISpoke.DynamicReserveConfig) -> uint32:
     self._check_access(method_id("addDynamicReserveConfig(uint256,(uint16,uint32,uint16))"))
-    reserve: Reserve = self._require_reserve(reserveId)
+    reserve: ISpoke.Reserve = self._require_reserve(reserveId)
     if reserve.dynamicConfigKey == max_value(uint32):
-        raise MaximumDynamicConfigKeyReached()
+        raise ISpoke.MaximumDynamicConfigKeyReached()
     self._validate_dynamic(dynamicConfig)
     key: uint32 = reserve.dynamicConfigKey + 1
     reserve.dynamicConfigKey = key
     self._store_reserve(reserveId, reserve)
     self._store_dynamic_config(reserveId, key, dynamicConfig)
-    log AddDynamicReserveConfig(reserveId=reserveId, dynamicConfigKey=key, config=dynamicConfig)
+    log ISpoke.AddDynamicReserveConfig(reserveId=reserveId, dynamicConfigKey=key, config=dynamicConfig)
     return key
 
 
 @external
-def updateDynamicReserveConfig(reserveId: uint256, dynamicConfigKey: uint32, dynamicConfig: DynamicReserveConfig):
+def updateDynamicReserveConfig(reserveId: uint256, dynamicConfigKey: uint32, dynamicConfig: ISpoke.DynamicReserveConfig):
     self._check_access(method_id("updateDynamicReserveConfig(uint256,uint32,(uint16,uint32,uint16))"))
     self._require_reserve(reserveId)
-    current: DynamicReserveConfig = self._load_dynamic_config(reserveId, dynamicConfigKey)
+    current: ISpoke.DynamicReserveConfig = self._load_dynamic_config(reserveId, dynamicConfigKey)
     if current.maxLiquidationBonus == 0:
-        raise DynamicConfigKeyUninitialized()
+        raise ISpoke.DynamicConfigKeyUninitialized()
     if dynamicConfig.collateralFactor == 0:
-        raise InvalidCollateralFactor()
+        raise ISpoke.InvalidCollateralFactor()
     self._validate_dynamic(dynamicConfig)
     self._store_dynamic_config(reserveId, dynamicConfigKey, dynamicConfig)
-    log UpdateDynamicReserveConfig(reserveId=reserveId, dynamicConfigKey=dynamicConfigKey, config=dynamicConfig)
+    log ISpoke.UpdateDynamicReserveConfig(reserveId=reserveId, dynamicConfigKey=dynamicConfigKey, config=dynamicConfig)
 
 
 @external
 def updatePositionManager(positionManager: address, active: bool):
     self._check_access(method_id("updatePositionManager(address,bool)"))
     self.position_manager_active[positionManager] = convert(active, uint256)
-    log UpdatePositionManager(positionManager=positionManager, active=active)
+    log ISpoke.UpdatePositionManager(positionManager=positionManager, active=active)
 
 
 @internal
@@ -956,15 +658,15 @@ def _refresh_configs(user: address):
         reserve_id = self._next_collateral(user, reserve_id)
         if reserve_id == PositionStatusMap.NOT_FOUND:
             break
-        position: UserPositionUtils.UserPosition = self._load_user_position(user, reserve_id)
+        position: ISpoke.UserPosition = self._load_user_position(user, reserve_id)
         position.dynamicConfigKey = self._load_reserve(reserve_id).dynamicConfigKey
         self._store_user_position(user, reserve_id, position)
 
 
 @internal
 @view
-def _account_data(user: address) -> UserAccountData:
-    account: UserAccountData = UserAccountData(
+def _account_data(user: address) -> ISpoke.UserAccountData:
+    account: ISpoke.UserAccountData = ISpoke.UserAccountData(
         riskPremium=0,
         avgCollateralFactor=0,
         healthFactor=max_value(uint256),
@@ -981,11 +683,11 @@ def _account_data(user: address) -> UserAccountData:
         reserve_id, borrowing, collateral = self._next_position(user, reserve_id)
         if reserve_id == PositionStatusMap.NOT_FOUND:
             break
-        reserve: Reserve = self._load_reserve(reserve_id)
-        position: UserPositionUtils.UserPosition = self._load_user_position(user, reserve_id)
+        reserve: ISpoke.Reserve = self._load_reserve(reserve_id)
+        position: ISpoke.UserPosition = self._load_user_position(user, reserve_id)
         price: uint256 = staticcall IAaveOracle(ORACLE).getReservePrice(reserve_id)
         if collateral:
-            dynamic: DynamicReserveConfig = self._load_dynamic_config(reserve_id, position.dynamicConfigKey)
+            dynamic: ISpoke.DynamicReserveConfig = self._load_dynamic_config(reserve_id, position.dynamicConfigKey)
             if dynamic.collateralFactor > 0 and position.suppliedShares > 0:
                 assets: uint256 = staticcall IHub(reserve.hub).previewRemoveByShares(convert(reserve.assetId, uint256), convert(position.suppliedShares, uint256))
                 collateral_value: uint256 = SpokeUtils.to_value(assets, convert(reserve.decimals, uint256), price)
@@ -1048,27 +750,27 @@ def _notify_risk_premium(user: address, new_risk_premium: uint256):
         reserve_id = self._next_borrowing(user, reserve_id)
         if reserve_id == PositionStatusMap.NOT_FOUND:
             break
-        reserve: Reserve = self._load_reserve(reserve_id)
-        position: UserPositionUtils.UserPosition = self._load_user_position(user, reserve_id)
+        reserve: ISpoke.Reserve = self._load_reserve(reserve_id)
+        position: ISpoke.UserPosition = self._load_user_position(user, reserve_id)
         index: uint256 = staticcall IHub(reserve.hub).getAssetDrawnIndex(convert(reserve.assetId, uint256))
-        delta: UserPositionUtils.PremiumDelta = UserPositionUtils.calculate_premium_delta(position, 0, index, new_risk_premium, 0)
+        delta: IHub.PremiumDelta = UserPositionUtils.calculate_premium_delta(position, 0, index, new_risk_premium, 0)
         extcall IHub(reserve.hub).refreshPremium(convert(reserve.assetId, uint256), delta)
         new_shares: int256 = convert(position.premiumShares, int256) + delta.sharesDelta
         new_offset: int256 = convert(position.premiumOffsetRay, int256) + delta.offsetRayDelta
         position.premiumShares = convert(new_shares, uint120)
         position.premiumOffsetRay = convert(new_offset, int200)
         self._store_user_position(user, reserve_id, position)
-        log RefreshPremiumDebt(reserveId=reserve_id, user=user, premiumDelta=delta)
-    log UpdateUserRiskPremium(user=user, riskPremium=new_risk_premium)
+        log ISpoke.RefreshPremiumDebt(reserveId=reserve_id, user=user, premiumDelta=delta)
+    log ISpoke.UpdateUserRiskPremium(user=user, riskPremium=new_risk_premium)
 
 
 @internal
-def _refresh_validate(user: address) -> UserAccountData:
+def _refresh_validate(user: address) -> ISpoke.UserAccountData:
     self._refresh_configs(user)
-    account: UserAccountData = self._account_data(user)
-    log RefreshAllUserDynamicConfig(user=user)
+    account: ISpoke.UserAccountData = self._account_data(user)
+    log ISpoke.RefreshAllUserDynamicConfig(user=user)
     if account.healthFactor < HEALTH_FACTOR_LIQUIDATION_THRESHOLD:
-        raise HealthFactorBelowThreshold()
+        raise ISpoke.HealthFactorBelowThreshold()
     return account
 
 
@@ -1076,17 +778,17 @@ def _refresh_validate(user: address) -> UserAccountData:
 def supply(reserveId: uint256, amount: uint256, onBehalfOf: address) -> (uint256, uint256):
     self._enter_nonreentrant()
     self._only_position_manager(onBehalfOf)
-    reserve: Reserve = self._require_reserve(reserveId)
+    reserve: ISpoke.Reserve = self._require_reserve(reserveId)
     if ReserveFlagsMap.paused(reserve.flags):
-        raise ReservePaused()
+        raise ISpoke.ReservePaused()
     if ReserveFlagsMap.frozen(reserve.flags):
-        raise ReserveFrozen()
+        raise ISpoke.ReserveFrozen()
     self._safe_transfer_from(reserve.underlying, msg.sender, reserve.hub, amount)
     supplied_shares: uint256 = extcall IHub(reserve.hub).add(convert(reserve.assetId, uint256), amount)
-    position: UserPositionUtils.UserPosition = self._load_user_position(onBehalfOf, reserveId)
+    position: ISpoke.UserPosition = self._load_user_position(onBehalfOf, reserveId)
     position.suppliedShares = self._u120(convert(position.suppliedShares, uint256) + supplied_shares)
     self._store_user_position(onBehalfOf, reserveId, position)
-    log Supply(reserveId=reserveId, caller=msg.sender, user=onBehalfOf, suppliedShares=supplied_shares, suppliedAmount=amount)
+    log ISpoke.Supply(reserveId=reserveId, caller=msg.sender, user=onBehalfOf, suppliedShares=supplied_shares, suppliedAmount=amount)
     self._exit_nonreentrant()
     return supplied_shares, amount
 
@@ -1095,10 +797,10 @@ def supply(reserveId: uint256, amount: uint256, onBehalfOf: address) -> (uint256
 def withdraw(reserveId: uint256, amount: uint256, onBehalfOf: address) -> (uint256, uint256):
     self._enter_nonreentrant()
     self._only_position_manager(onBehalfOf)
-    reserve: Reserve = self._require_reserve(reserveId)
+    reserve: ISpoke.Reserve = self._require_reserve(reserveId)
     if ReserveFlagsMap.paused(reserve.flags):
-        raise ReservePaused()
-    position: UserPositionUtils.UserPosition = self._load_user_position(onBehalfOf, reserveId)
+        raise ISpoke.ReservePaused()
+    position: ISpoke.UserPosition = self._load_user_position(onBehalfOf, reserveId)
     maximum: uint256 = staticcall IHub(reserve.hub).previewRemoveByShares(convert(reserve.assetId, uint256), convert(position.suppliedShares, uint256))
     withdrawn_amount: uint256 = min(amount, maximum)
     withdrawn_shares: uint256 = extcall IHub(reserve.hub).remove(convert(reserve.assetId, uint256), withdrawn_amount, msg.sender)
@@ -1111,9 +813,9 @@ def withdraw(reserveId: uint256, amount: uint256, onBehalfOf: address) -> (uint2
     collateral: bool = False
     _borrowing, collateral = self._reserve_status(onBehalfOf, reserveId)
     if collateral:
-        account: UserAccountData = self._refresh_validate(onBehalfOf)
+        account: ISpoke.UserAccountData = self._refresh_validate(onBehalfOf)
         self._notify_risk_premium(onBehalfOf, account.riskPremium)
-    log Withdraw(reserveId=reserveId, caller=msg.sender, user=onBehalfOf, withdrawnShares=withdrawn_shares, withdrawnAmount=withdrawn_amount)
+    log ISpoke.Withdraw(reserveId=reserveId, caller=msg.sender, user=onBehalfOf, withdrawnShares=withdrawn_shares, withdrawnAmount=withdrawn_amount)
     self._exit_nonreentrant()
     return withdrawn_shares, withdrawn_amount
 
@@ -1122,15 +824,15 @@ def withdraw(reserveId: uint256, amount: uint256, onBehalfOf: address) -> (uint2
 def borrow(reserveId: uint256, amount: uint256, onBehalfOf: address) -> (uint256, uint256):
     self._enter_nonreentrant()
     self._only_position_manager(onBehalfOf)
-    reserve: Reserve = self._require_reserve(reserveId)
+    reserve: ISpoke.Reserve = self._require_reserve(reserveId)
     if ReserveFlagsMap.paused(reserve.flags):
-        raise ReservePaused()
+        raise ISpoke.ReservePaused()
     if ReserveFlagsMap.frozen(reserve.flags):
-        raise ReserveFrozen()
+        raise ISpoke.ReserveFrozen()
     if not ReserveFlagsMap.borrowable(reserve.flags):
-        raise ReserveNotBorrowable()
+        raise ISpoke.ReserveNotBorrowable()
     drawn_shares: uint256 = extcall IHub(reserve.hub).draw(convert(reserve.assetId, uint256), amount, msg.sender)
-    position: UserPositionUtils.UserPosition = self._load_user_position(onBehalfOf, reserveId)
+    position: ISpoke.UserPosition = self._load_user_position(onBehalfOf, reserveId)
     position.drawnShares = self._u120(convert(position.drawnShares, uint256) + drawn_shares)
     self._store_user_position(onBehalfOf, reserveId, position)
     borrowing: bool = False
@@ -1138,11 +840,11 @@ def borrow(reserveId: uint256, amount: uint256, onBehalfOf: address) -> (uint256
     borrowing, _collateral = self._reserve_status(onBehalfOf, reserveId)
     if not borrowing:
         if MAX_USER_RESERVES_LIMIT != max_value(uint16) and self._borrow_count(onBehalfOf) >= convert(MAX_USER_RESERVES_LIMIT, uint256):
-            raise MaximumUserReservesExceeded()
+            raise ISpoke.MaximumUserReservesExceeded()
         self._set_borrowing(onBehalfOf, reserveId, True)
-    account: UserAccountData = self._refresh_validate(onBehalfOf)
+    account: ISpoke.UserAccountData = self._refresh_validate(onBehalfOf)
     self._notify_risk_premium(onBehalfOf, account.riskPremium)
-    log Borrow(reserveId=reserveId, caller=msg.sender, user=onBehalfOf, drawnShares=drawn_shares, drawnAmount=amount)
+    log ISpoke.Borrow(reserveId=reserveId, caller=msg.sender, user=onBehalfOf, drawnShares=drawn_shares, drawnAmount=amount)
     self._exit_nonreentrant()
     return drawn_shares, amount
 
@@ -1151,15 +853,15 @@ def borrow(reserveId: uint256, amount: uint256, onBehalfOf: address) -> (uint256
 def borrowWithoutHfCheck(reserveId: uint256, amount: uint256, onBehalfOf: address) -> (uint256, uint256):
     self._enter_nonreentrant()
     self._only_position_manager(onBehalfOf)
-    reserve: Reserve = self._require_reserve(reserveId)
+    reserve: ISpoke.Reserve = self._require_reserve(reserveId)
     if ReserveFlagsMap.paused(reserve.flags):
-        raise ReservePaused()
+        raise ISpoke.ReservePaused()
     if ReserveFlagsMap.frozen(reserve.flags):
-        raise ReserveFrozen()
+        raise ISpoke.ReserveFrozen()
     if not ReserveFlagsMap.borrowable(reserve.flags):
-        raise ReserveNotBorrowable()
+        raise ISpoke.ReserveNotBorrowable()
     drawn_shares: uint256 = extcall IHub(reserve.hub).draw(convert(reserve.assetId, uint256), amount, msg.sender)
-    position: UserPositionUtils.UserPosition = self._load_user_position(onBehalfOf, reserveId)
+    position: ISpoke.UserPosition = self._load_user_position(onBehalfOf, reserveId)
     position.drawnShares = self._u120(convert(position.drawnShares, uint256) + drawn_shares)
     self._store_user_position(onBehalfOf, reserveId, position)
     borrowing: bool = False
@@ -1167,13 +869,13 @@ def borrowWithoutHfCheck(reserveId: uint256, amount: uint256, onBehalfOf: addres
     borrowing, _collateral = self._reserve_status(onBehalfOf, reserveId)
     if not borrowing:
         if MAX_USER_RESERVES_LIMIT != max_value(uint16) and self._borrow_count(onBehalfOf) >= convert(MAX_USER_RESERVES_LIMIT, uint256):
-            raise MaximumUserReservesExceeded()
+            raise ISpoke.MaximumUserReservesExceeded()
         self._set_borrowing(onBehalfOf, reserveId, True)
     self._refresh_configs(onBehalfOf)
-    account: UserAccountData = self._account_data(onBehalfOf)
-    log RefreshAllUserDynamicConfig(user=onBehalfOf)
+    account: ISpoke.UserAccountData = self._account_data(onBehalfOf)
+    log ISpoke.RefreshAllUserDynamicConfig(user=onBehalfOf)
     self._notify_risk_premium(onBehalfOf, account.riskPremium)
-    log Borrow(reserveId=reserveId, caller=msg.sender, user=onBehalfOf, drawnShares=drawn_shares, drawnAmount=amount)
+    log ISpoke.Borrow(reserveId=reserveId, caller=msg.sender, user=onBehalfOf, drawnShares=drawn_shares, drawnAmount=amount)
     self._exit_nonreentrant()
     return drawn_shares, amount
 
@@ -1182,16 +884,16 @@ def borrowWithoutHfCheck(reserveId: uint256, amount: uint256, onBehalfOf: addres
 def repay(reserveId: uint256, amount: uint256, onBehalfOf: address) -> (uint256, uint256):
     self._enter_nonreentrant()
     self._only_position_manager(onBehalfOf)
-    reserve: Reserve = self._require_reserve(reserveId)
+    reserve: ISpoke.Reserve = self._require_reserve(reserveId)
     if ReserveFlagsMap.paused(reserve.flags):
-        raise ReservePaused()
-    position: UserPositionUtils.UserPosition = self._load_user_position(onBehalfOf, reserveId)
+        raise ISpoke.ReservePaused()
+    position: ISpoke.UserPosition = self._load_user_position(onBehalfOf, reserveId)
     index: uint256 = staticcall IHub(reserve.hub).getAssetDrawnIndex(convert(reserve.assetId, uint256))
     drawn_restored: uint256 = 0
     premium_restored_ray: uint256 = 0
     drawn_restored, premium_restored_ray = UserPositionUtils.calculate_restore_amount(position, index, amount)
     restored_shares: uint256 = WadRayMath.ray_div_down(drawn_restored, index)
-    delta: UserPositionUtils.PremiumDelta = UserPositionUtils.calculate_premium_delta(
+    delta: IHub.PremiumDelta = UserPositionUtils.calculate_premium_delta(
         position,
         restored_shares,
         index,
@@ -1212,7 +914,7 @@ def repay(reserveId: uint256, amount: uint256, onBehalfOf: address) -> (uint256,
     if position.drawnShares == 0:
         self._set_borrowing(onBehalfOf, reserveId, False)
     self._store_user_position(onBehalfOf, reserveId, position)
-    log Repay(reserveId=reserveId, caller=msg.sender, user=onBehalfOf, drawnShares=restored_shares, totalAmountRepaid=total_restored, premiumDelta=delta)
+    log ISpoke.Repay(reserveId=reserveId, caller=msg.sender, user=onBehalfOf, drawnShares=restored_shares, totalAmountRepaid=total_restored, premiumDelta=delta)
     self._exit_nonreentrant()
     return restored_shares, total_restored
 
@@ -1221,7 +923,7 @@ def repay(reserveId: uint256, amount: uint256, onBehalfOf: address) -> (uint256,
 def setUsingAsCollateral(reserveId: uint256, usingAsCollateral: bool, onBehalfOf: address):
     self._enter_nonreentrant()
     self._only_position_manager(onBehalfOf)
-    reserve: Reserve = self._require_reserve(reserveId)
+    reserve: ISpoke.Reserve = self._require_reserve(reserveId)
     _borrowing: bool = False
     collateral: bool = False
     _borrowing, collateral = self._reserve_status(onBehalfOf, reserveId)
@@ -1229,22 +931,22 @@ def setUsingAsCollateral(reserveId: uint256, usingAsCollateral: bool, onBehalfOf
         self._exit_nonreentrant()
         return
     if ReserveFlagsMap.paused(reserve.flags):
-        raise ReservePaused()
+        raise ISpoke.ReservePaused()
     if usingAsCollateral:
         if ReserveFlagsMap.frozen(reserve.flags):
-            raise ReserveFrozen()
+            raise ISpoke.ReserveFrozen()
         if MAX_USER_RESERVES_LIMIT != max_value(uint16) and self._collateral_count(onBehalfOf) >= convert(MAX_USER_RESERVES_LIMIT, uint256):
-            raise MaximumUserReservesExceeded()
+            raise ISpoke.MaximumUserReservesExceeded()
     self._set_using_as_collateral(onBehalfOf, reserveId, usingAsCollateral)
     if usingAsCollateral:
-        position: UserPositionUtils.UserPosition = self._load_user_position(onBehalfOf, reserveId)
+        position: ISpoke.UserPosition = self._load_user_position(onBehalfOf, reserveId)
         position.dynamicConfigKey = reserve.dynamicConfigKey
         self._store_user_position(onBehalfOf, reserveId, position)
-        log RefreshSingleUserDynamicConfig(user=onBehalfOf, reserveId=reserveId)
+        log ISpoke.RefreshSingleUserDynamicConfig(user=onBehalfOf, reserveId=reserveId)
     else:
-        account: UserAccountData = self._refresh_validate(onBehalfOf)
+        account: ISpoke.UserAccountData = self._refresh_validate(onBehalfOf)
         self._notify_risk_premium(onBehalfOf, account.riskPremium)
-    log SetUsingAsCollateral(reserveId=reserveId, caller=msg.sender, user=onBehalfOf, usingAsCollateral=usingAsCollateral)
+    log ISpoke.SetUsingAsCollateral(reserveId=reserveId, caller=msg.sender, user=onBehalfOf, usingAsCollateral=usingAsCollateral)
     self._exit_nonreentrant()
 
 
@@ -1253,7 +955,7 @@ def updateUserRiskPremium(onBehalfOf: address):
     self._enter_nonreentrant()
     if not self._is_position_manager(onBehalfOf, msg.sender):
         self._check_access(method_id("updateUserRiskPremium(address)"))
-    account: UserAccountData = self._account_data(onBehalfOf)
+    account: ISpoke.UserAccountData = self._account_data(onBehalfOf)
     self._notify_risk_premium(onBehalfOf, account.riskPremium)
     self._exit_nonreentrant()
 
@@ -1263,7 +965,7 @@ def updateUserDynamicConfig(onBehalfOf: address):
     self._enter_nonreentrant()
     if not self._is_position_manager(onBehalfOf, msg.sender):
         self._check_access(method_id("updateUserDynamicConfig(address)"))
-    account: UserAccountData = self._refresh_validate(onBehalfOf)
+    account: ISpoke.UserAccountData = self._refresh_validate(onBehalfOf)
     self._notify_risk_premium(onBehalfOf, account.riskPremium)
     self._exit_nonreentrant()
 
@@ -1273,13 +975,13 @@ def setUserPositionManager(positionManager: address, approve: bool):
     approval: uint256 = convert(approve, uint256)
     self.position_manager_approval[positionManager][msg.sender] = approval
     self.position_manager_approval_state[positionManager][msg.sender] = 1 + approval
-    log SetUserPositionManager(user=msg.sender, positionManager=positionManager, approve=approve)
+    log ISpoke.SetUserPositionManager(user=msg.sender, positionManager=positionManager, approve=approve)
 
 
 @external
-def setUserPositionManagersWithSig(params: SetUserPositionManagers, signature: Bytes[INF]):
+def setUserPositionManagersWithSig(params: ISpoke.SetUserPositionManagers, signature: Bytes[INF]):
     if block.timestamp > params.deadline:
-        raise InvalidSignature()
+        raise ISpoke.InvalidSignature()
     update_hashes: DynArray[bytes32, 1024] = []
     for i: uint256 in range(1024):
         if i >= len(params.updates):
@@ -1297,16 +999,16 @@ def setUserPositionManagersWithSig(params: SetUserPositionManagers, signature: B
     ))
     digest: bytes32 = keccak256(concat(b"\x19\x01", self._domain_separator(), intent_hash))
     if not self._valid_signature(params.onBehalfOf, digest, signature):
-        raise InvalidSignature()
+        raise ISpoke.InvalidSignature()
     self._use_checked_nonce(params.onBehalfOf, params.nonce)
     for i: uint256 in range(1024):
         if i >= len(params.updates):
             break
-        update: PositionManagerUpdate = params.updates[i]
+        update: ISpoke.PositionManagerUpdate = params.updates[i]
         approval: uint256 = convert(update.approve, uint256)
         self.position_manager_approval[update.positionManager][params.onBehalfOf] = approval
         self.position_manager_approval_state[update.positionManager][params.onBehalfOf] = 1 + approval
-        log SetUserPositionManager(user=params.onBehalfOf, positionManager=update.positionManager, approve=update.approve)
+        log ISpoke.SetUserPositionManager(user=params.onBehalfOf, positionManager=update.positionManager, approve=update.approve)
 
 
 @external
@@ -1316,12 +1018,12 @@ def renouncePositionManagerRole(onBehalfOf: address):
         return
     self.position_manager_approval[msg.sender][onBehalfOf] = 0
     self.position_manager_approval_state[msg.sender][onBehalfOf] = 1
-    log SetUserPositionManager(user=onBehalfOf, positionManager=msg.sender, approve=False)
+    log ISpoke.SetUserPositionManager(user=onBehalfOf, positionManager=msg.sender, approve=False)
 
 
 @external
 def permitReserve(reserveId: uint256, onBehalfOf: address, permitValue: uint256, deadline: uint256, permitV: uint8, permitR: bytes32, permitS: bytes32):
-    reserve: Reserve = self._require_reserve(reserveId)
+    reserve: ISpoke.Reserve = self._require_reserve(reserveId)
     _permit_success: bool = False
     _permit_response: Bytes[1] = b""
     _permit_success, _permit_response = raw_call(
@@ -1343,7 +1045,7 @@ def permitReserve(reserveId: uint256, onBehalfOf: address, permitValue: uint256,
 
 @external
 @view
-def getLiquidationConfig() -> LiquidationConfig:
+def getLiquidationConfig() -> ISpoke.LiquidationConfig:
     return self.liquidation_config
 
 
@@ -1356,28 +1058,28 @@ def getReserveCount() -> uint256:
 @external
 @view
 def getReserveSuppliedAssets(reserveId: uint256) -> uint256:
-    reserve: Reserve = self._require_reserve(reserveId)
+    reserve: ISpoke.Reserve = self._require_reserve(reserveId)
     return staticcall IHub(reserve.hub).getSpokeAddedAssets(convert(reserve.assetId, uint256), self)
 
 
 @external
 @view
 def getReserveSuppliedShares(reserveId: uint256) -> uint256:
-    reserve: Reserve = self._require_reserve(reserveId)
+    reserve: ISpoke.Reserve = self._require_reserve(reserveId)
     return staticcall IHub(reserve.hub).getSpokeAddedShares(convert(reserve.assetId, uint256), self)
 
 
 @external
 @view
 def getReserveDebt(reserveId: uint256) -> (uint256, uint256):
-    reserve: Reserve = self._require_reserve(reserveId)
+    reserve: ISpoke.Reserve = self._require_reserve(reserveId)
     return staticcall IHub(reserve.hub).getSpokeOwed(convert(reserve.assetId, uint256), self)
 
 
 @external
 @view
 def getReserveTotalDebt(reserveId: uint256) -> uint256:
-    reserve: Reserve = self._require_reserve(reserveId)
+    reserve: ISpoke.Reserve = self._require_reserve(reserveId)
     return staticcall IHub(reserve.hub).getSpokeTotalOwed(convert(reserve.assetId, uint256), self)
 
 
@@ -1385,24 +1087,24 @@ def getReserveTotalDebt(reserveId: uint256) -> uint256:
 @view
 def getReserveId(hub: address, assetId: uint256) -> uint256:
     reserve_id: uint256 = self.hub_asset_to_reserve[hub][assetId]
-    reserve: Reserve = self._load_reserve(reserve_id)
+    reserve: ISpoke.Reserve = self._load_reserve(reserve_id)
     if reserve.hub != hub or convert(reserve.assetId, uint256) != assetId:
-        raise ReserveNotListed()
+        raise ISpoke.ReserveNotListed()
     return reserve_id
 
 
 @external
 @view
-def getReserve(reserveId: uint256) -> Reserve:
+def getReserve(reserveId: uint256) -> ISpoke.Reserve:
     self._require_reserve(reserveId)
     return self._load_reserve(reserveId)
 
 
 @external
 @view
-def getReserveConfig(reserveId: uint256) -> ReserveConfig:
-    reserve: Reserve = self._require_reserve(reserveId)
-    return ReserveConfig(
+def getReserveConfig(reserveId: uint256) -> ISpoke.ReserveConfig:
+    reserve: ISpoke.Reserve = self._require_reserve(reserveId)
+    return ISpoke.ReserveConfig(
         collateralRisk=reserve.collateralRisk,
         paused=ReserveFlagsMap.paused(reserve.flags),
         frozen=ReserveFlagsMap.frozen(reserve.flags),
@@ -1413,7 +1115,7 @@ def getReserveConfig(reserveId: uint256) -> ReserveConfig:
 
 @external
 @view
-def getDynamicReserveConfig(reserveId: uint256, dynamicConfigKey: uint32) -> DynamicReserveConfig:
+def getDynamicReserveConfig(reserveId: uint256, dynamicConfigKey: uint32) -> ISpoke.DynamicReserveConfig:
     self._require_reserve(reserveId)
     return self._load_dynamic_config(reserveId, dynamicConfigKey)
 
@@ -1431,8 +1133,8 @@ def getUserReserveStatus(reserveId: uint256, user: address) -> (bool, bool):
 @external
 @view
 def getUserSuppliedAssets(reserveId: uint256, user: address) -> uint256:
-    reserve: Reserve = self._require_reserve(reserveId)
-    position: UserPositionUtils.UserPosition = self._load_user_position(user, reserveId)
+    reserve: ISpoke.Reserve = self._require_reserve(reserveId)
+    position: ISpoke.UserPosition = self._load_user_position(user, reserveId)
     return staticcall IHub(reserve.hub).previewRemoveByShares(convert(reserve.assetId, uint256), convert(position.suppliedShares, uint256))
 
 
@@ -1446,7 +1148,7 @@ def getUserSuppliedShares(reserveId: uint256, user: address) -> uint256:
 @internal
 @view
 def _user_debt(reserve_id: uint256, user: address) -> (uint256, uint256):
-    reserve: Reserve = self._require_reserve(reserve_id)
+    reserve: ISpoke.Reserve = self._require_reserve(reserve_id)
     index: uint256 = staticcall IHub(reserve.hub).getAssetDrawnIndex(convert(reserve.assetId, uint256))
     return UserPositionUtils.get_debt(self._load_user_position(user, reserve_id), index)
 
@@ -1480,7 +1182,7 @@ def getUserPremiumDebtRay(reserveId: uint256, user: address) -> uint256:
 
 @external
 @view
-def getUserPosition(reserveId: uint256, user: address) -> UserPositionUtils.UserPosition:
+def getUserPosition(reserveId: uint256, user: address) -> ISpoke.UserPosition:
     self._require_reserve(reserveId)
     return self._load_user_position(user, reserveId)
 
@@ -1493,7 +1195,7 @@ def getUserLastRiskPremium(user: address) -> uint256:
 
 @external
 @view
-def getUserAccountData(user: address) -> UserAccountData:
+def getUserAccountData(user: address) -> ISpoke.UserAccountData:
     return self._account_data(user)
 
 
@@ -1501,7 +1203,7 @@ def getUserAccountData(user: address) -> UserAccountData:
 @view
 def getLiquidationBonus(reserveId: uint256, user: address, healthFactor: uint256) -> uint256:
     self._require_reserve(reserveId)
-    position: UserPositionUtils.UserPosition = self._load_user_position(user, reserveId)
+    position: ISpoke.UserPosition = self._load_user_position(user, reserveId)
     maximum: uint256 = convert(self._load_dynamic_config(reserveId, position.dynamicConfigKey).maxLiquidationBonus, uint256)
     if healthFactor <= convert(self.liquidation_config.healthFactorForMaxBonus, uint256):
         return maximum
@@ -1533,7 +1235,7 @@ def getLiquidationLogic() -> address:
 
 
 @external
-def calculateUserAccountData(user: address, refreshConfig: bool) -> UserAccountData:
+def calculateUserAccountData(user: address, refreshConfig: bool) -> ISpoke.UserAccountData:
     if refreshConfig:
         self._refresh_configs(user)
     return self._account_data(user)
@@ -1541,7 +1243,7 @@ def calculateUserAccountData(user: address, refreshConfig: bool) -> UserAccountD
 
 @external
 def setReserveDynamicConfigKey(reserveId: uint256, configKey: uint32):
-    reserve: Reserve = self._load_reserve(reserveId)
+    reserve: ISpoke.Reserve = self._load_reserve(reserveId)
     reserve.dynamicConfigKey = configKey
     self._store_reserve(reserveId, reserve)
 
@@ -1554,12 +1256,12 @@ def _report_deficit(user: address):
         reserve_id = self._next_borrowing(user, reserve_id)
         if reserve_id == PositionStatusMap.NOT_FOUND:
             break
-        reserve: Reserve = self._load_reserve(reserve_id)
-        position: UserPositionUtils.UserPosition = self._load_user_position(user, reserve_id)
+        reserve: ISpoke.Reserve = self._load_reserve(reserve_id)
+        position: ISpoke.UserPosition = self._load_user_position(user, reserve_id)
         drawn_shares: uint256 = convert(position.drawnShares, uint256)
         index: uint256 = staticcall IHub(reserve.hub).getAssetDrawnIndex(convert(reserve.assetId, uint256))
         premium_ray: uint256 = UserPositionUtils.calculate_premium_ray(position, index)
-        delta: UserPositionUtils.PremiumDelta = UserPositionUtils.calculate_premium_delta(
+        delta: IHub.PremiumDelta = UserPositionUtils.calculate_premium_delta(
             position,
             drawn_shares,
             index,
@@ -1576,26 +1278,26 @@ def _report_deficit(user: address):
         position.drawnShares = 0
         self._store_user_position(user, reserve_id, position)
         self._set_borrowing(user, reserve_id, False)
-        log ReportDeficit(reserveId=reserve_id, user=user, drawnShares=drawn_shares, premiumDelta=delta)
-    log UpdateUserRiskPremium(user=user, riskPremium=0)
+        log ISpoke.ReportDeficit(reserveId=reserve_id, user=user, drawnShares=drawn_shares, premiumDelta=delta)
+    log ISpoke.UpdateUserRiskPremium(user=user, riskPremium=0)
 
 
 @external
 def liquidationCall(collateralReserveId: uint256, debtReserveId: uint256, user: address, debtToCover: uint256, receiveShares: bool):
     self._enter_nonreentrant()
-    account: UserAccountData = self._account_data(user)
-    collateral_reserve: Reserve = self._require_reserve(collateralReserveId)
-    debt_reserve: Reserve = self._require_reserve(debtReserveId)
-    collateral_position: UserPositionUtils.UserPosition = self._load_user_position(user, collateralReserveId)
-    debt_position: UserPositionUtils.UserPosition = self._load_user_position(user, debtReserveId)
-    dynamic: DynamicReserveConfig = self._load_dynamic_config(collateralReserveId, collateral_position.dynamicConfigKey)
+    account: ISpoke.UserAccountData = self._account_data(user)
+    collateral_reserve: ISpoke.Reserve = self._require_reserve(collateralReserveId)
+    debt_reserve: ISpoke.Reserve = self._require_reserve(debtReserveId)
+    collateral_position: ISpoke.UserPosition = self._load_user_position(user, collateralReserveId)
+    debt_position: ISpoke.UserPosition = self._load_user_position(user, debtReserveId)
+    dynamic: ISpoke.DynamicReserveConfig = self._load_dynamic_config(collateralReserveId, collateral_position.dynamicConfigKey)
     drawn_index: uint256 = staticcall IHub(debt_reserve.hub).getAssetDrawnIndex(convert(debt_reserve.assetId, uint256))
     premium_ray: uint256 = UserPositionUtils.calculate_premium_ray(debt_position, drawn_index)
     _collateral_borrowing: bool = False
     is_using_as_collateral: bool = False
     _collateral_borrowing, is_using_as_collateral = self._reserve_status(user, collateralReserveId)
 
-    validate_params: ValidateLiquidationCallParams = ValidateLiquidationCallParams(
+    validate_params: ILiquidationLogic.ValidateLiquidationCallParams = ILiquidationLogic.ValidateLiquidationCallParams(
         user=user,
         liquidator=msg.sender,
         collateralReserveFlags=collateral_reserve.flags,
@@ -1610,7 +1312,7 @@ def liquidationCall(collateralReserveId: uint256, debtReserveId: uint256, user: 
     )
     _validated: bool = staticcall ILiquidationLogic(LIQUIDATION_LOGIC).validateLiquidationCall(validate_params)
 
-    amount_params: CalculateLiquidationAmountsParams = CalculateLiquidationAmountsParams(
+    amount_params: ILiquidationLogic.CalculateLiquidationAmountsParams = ILiquidationLogic.CalculateLiquidationAmountsParams(
         collateralReserveHub=collateral_reserve.hub,
         collateralReserveAssetId=convert(collateral_reserve.assetId, uint256),
         suppliedShares=convert(collateral_position.suppliedShares, uint256),
@@ -1631,7 +1333,7 @@ def liquidationCall(collateralReserveId: uint256, debtReserveId: uint256, user: 
         healthFactor=account.healthFactor,
         liquidationFee=convert(dynamic.liquidationFee, uint256),
     )
-    amounts: LiquidationAmounts = staticcall ILiquidationLogic(LIQUIDATION_LOGIC).calculateLiquidationAmounts(amount_params)
+    amounts: ILiquidationLogic.LiquidationAmounts = staticcall ILiquidationLogic(LIQUIDATION_LOGIC).calculateLiquidationAmounts(amount_params)
 
     shares_to_liquidate: uint120 = self._u120(amounts.collateralSharesToLiquidate)
     if shares_to_liquidate > collateral_position.suppliedShares:
@@ -1644,7 +1346,7 @@ def liquidationCall(collateralReserveId: uint256, debtReserveId: uint256, user: 
     )
     if amounts.collateralSharesToLiquidator > 0:
         if receiveShares:
-            liquidator_position: UserPositionUtils.UserPosition = self._load_user_position(msg.sender, collateralReserveId)
+            liquidator_position: ISpoke.UserPosition = self._load_user_position(msg.sender, collateralReserveId)
             liquidator_position.suppliedShares = self._u120(convert(liquidator_position.suppliedShares, uint256) + amounts.collateralSharesToLiquidator)
             self._store_user_position(msg.sender, collateralReserveId, liquidator_position)
         else:
@@ -1665,7 +1367,7 @@ def liquidationCall(collateralReserveId: uint256, debtReserveId: uint256, user: 
     if debtReserveId == collateralReserveId:
         debt_position = self._load_user_position(user, debtReserveId)
 
-    premium_delta: UserPositionUtils.PremiumDelta = UserPositionUtils.calculate_premium_delta(
+    premium_delta: IHub.PremiumDelta = UserPositionUtils.calculate_premium_delta(
         debt_position,
         amounts.drawnSharesToLiquidate,
         drawn_index,
@@ -1687,7 +1389,7 @@ def liquidationCall(collateralReserveId: uint256, debtReserveId: uint256, user: 
         self._set_borrowing(user, debtReserveId, False)
     self._store_user_position(user, debtReserveId, debt_position)
 
-    log LiquidationCall(
+    log ISpoke.LiquidationCall(
         collateralReserveId=collateralReserveId,
         debtReserveId=debtReserveId,
         user=user,
@@ -1706,7 +1408,7 @@ def liquidationCall(collateralReserveId: uint256, debtReserveId: uint256, user: 
     if deficit:
         self._report_deficit(user)
     else:
-        updated: UserAccountData = self._account_data(user)
+        updated: ISpoke.UserAccountData = self._account_data(user)
         self._notify_risk_premium(user, updated.riskPremium)
     self._exit_nonreentrant()
 

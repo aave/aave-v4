@@ -1,8 +1,7 @@
 #pragma version 0.5.0b1
 
+from utils.interfaces import IRescuable
 
-error OnlyRescueGuardian:
-    pass
 
 @view
 @abstract
@@ -14,7 +13,7 @@ def _rescue_guardian() -> address:
 @view
 def _check_rescue_guardian():
     if self._rescue_guardian() != msg.sender:
-        raise OnlyRescueGuardian()
+        raise IRescuable.OnlyRescueGuardian()
 
 
 @external

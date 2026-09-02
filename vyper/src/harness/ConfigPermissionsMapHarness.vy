@@ -2,9 +2,6 @@
 
 from position_manager.libraries import ConfigPermissionsMap
 
-initializes: ConfigPermissionsMap
-
-
 struct ConfigPermissionValues:
     canSetUsingAsCollateral: bool
     canUpdateUserRiskPremium: bool

@@ -2,8 +2,6 @@
 
 from spoke.libraries import EIP712Hash
 
-initializes: EIP712Hash
-
 MAX_UPDATES: constant(uint256) = 256
 
 struct PositionManagerUpdate:

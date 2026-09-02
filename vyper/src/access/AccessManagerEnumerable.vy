@@ -1,60 +1,12 @@
 # pragma version 0.5.0b1
+from dependencies.openzeppelin import IAccessManaged
+from access.interfaces import IAccessManagerEnumerable
+
+implements: IAccessManagerEnumerable
 
 # Native Vyper implementation of Aave V4's enumerable AccessManager.  The
 # protocol uses immediate role administration; delayed-operation entrypoints
 # are included for ABI compatibility and use the same operation identifiers.
-
-error AccessManagerAlreadyScheduled:
-    arg0: bytes32
-
-error AccessManagerBadConfirmation:
-    pass
-
-error AccessManagerExpired:
-    arg0: bytes32
-
-error AccessManagerInvalidInitialAdmin:
-    arg0: address
-
-error AccessManagerLabelAlreadyUsed:
-    arg0: String[MAX_LABEL]
-    arg1: uint64
-
-error AccessManagerLockedRole:
-    arg0: uint64
-
-error AccessManagerNotReady:
-    arg0: bytes32
-
-error AccessManagerNotScheduled:
-    arg0: bytes32
-
-error AccessManagerRoleAlreadyLabeled:
-    arg0: uint64
-
-error AccessManagerUnauthorizedAccount:
-    arg0: address
-    arg1: uint64
-
-error AccessManagerUnauthorizedCall:
-    arg0: address
-    arg1: address
-    arg2: bytes4
-
-error AccessManagerUnauthorizedCancel:
-    arg0: address
-    arg1: address
-    arg2: address
-    arg3: bytes4
-
-error AccessManagerUnauthorizedConsume:
-    arg0: address
-
-error AccessManagerUnlabeledRole:
-    arg0: uint64
-
-error AccessManagerUnregisteredLabel:
-    arg0: String[MAX_LABEL]
 
 MAX_ITEMS: constant(uint256) = 1024
 MAX_SELECTORS: constant(uint256) = 256
@@ -65,76 +17,7 @@ MAX_RETURN: constant(uint256) = 32768
 ADMIN_ROLE: public(constant(uint64)) = 0
 PUBLIC_ROLE: public(constant(uint64)) = max_value(uint64)
 
-struct Access:
-    since: uint48
-    delay: uint32
-
-struct Schedule:
-    timepoint: uint48
-    nonce: uint32
-
-interface IAccessManaged:
-    def isConsumingScheduledOp() -> bytes4: view
-
-event OperationScheduled:
-    operationId: indexed(bytes32)
-    nonce: indexed(uint32)
-    schedule: uint48
-    caller: address
-    target: address
-    data: Bytes[MAX_CALLDATA]
-
-event OperationExecuted:
-    operationId: indexed(bytes32)
-    nonce: indexed(uint32)
-
-event OperationCanceled:
-    operationId: indexed(bytes32)
-    nonce: indexed(uint32)
-
-event RoleLabel:
-    roleId: indexed(uint64)
-    label: String[MAX_LABEL]
-
-event RoleGranted:
-    roleId: indexed(uint64)
-    account: indexed(address)
-    delay: uint32
-    since: uint48
-    newMember: bool
-
-event RoleRevoked:
-    roleId: indexed(uint64)
-    account: indexed(address)
-
-event RoleAdminChanged:
-    roleId: indexed(uint64)
-    admin: indexed(uint64)
-
-event RoleGuardianChanged:
-    roleId: indexed(uint64)
-    guardian: indexed(uint64)
-
-event RoleGrantDelayChanged:
-    roleId: indexed(uint64)
-    delay: uint32
-    since: uint48
-
-event TargetClosed:
-    target: indexed(address)
-    closed: bool
-
-event TargetFunctionRoleUpdated:
-    target: indexed(address)
-    selector: bytes4
-    roleId: indexed(uint64)
-
-event TargetAdminDelayUpdated:
-    target: indexed(address)
-    delay: uint32
-    since: uint48
-
-role_access: HashMap[uint64, HashMap[address, Access]]
+role_access: HashMap[uint64, HashMap[address, IAccessManagerEnumerable.Access]]
 role_admin: HashMap[uint64, uint64]
 role_guardian: HashMap[uint64, uint64]
 role_grant_delay: HashMap[uint64, uint32]
@@ -143,7 +26,7 @@ target_closed: HashMap[address, bool]
 target_admin_delay: HashMap[address, uint32]
 target_roles: HashMap[address, HashMap[bytes4, uint64]]
 
-schedules: HashMap[bytes32, Schedule]
+schedules: HashMap[bytes32, IAccessManagerEnumerable.Schedule]
 execution_id: transient(bytes32)
 
 roles: HashMap[uint256, uint64]
@@ -178,13 +61,13 @@ label_role: HashMap[bytes32, uint64]
 @deploy
 def __init__(initialAdmin: address):
     if initialAdmin == empty(address):
-        raise AccessManagerInvalidInitialAdmin(initialAdmin)
+        raise IAccessManagerEnumerable.AccessManagerInvalidInitialAdmin(initialAdmin)
     since: uint48 = convert(max(block.timestamp, 1), uint48)
-    self.role_access[ADMIN_ROLE][initialAdmin] = Access(since=since, delay=0)
+    self.role_access[ADMIN_ROLE][initialAdmin] = IAccessManagerEnumerable.Access(since=since, delay=0)
     self.role_members[ADMIN_ROLE][0] = initialAdmin
     self.role_members_count[ADMIN_ROLE] = 1
     self.role_member_index[ADMIN_ROLE][initialAdmin] = 1
-    log RoleGranted(roleId=ADMIN_ROLE, account=initialAdmin, delay=0, since=since, newMember=True)
+    log IAccessManagerEnumerable.RoleGranted(roleId=ADMIN_ROLE, account=initialAdmin, delay=0, since=since, newMember=True)
 
 
 @internal
@@ -192,7 +75,7 @@ def __init__(initialAdmin: address):
 def _has_role(role_id: uint64, account: address) -> (bool, uint32):
     if role_id == PUBLIC_ROLE:
         return True, 0
-    access: Access = self.role_access[role_id][account]
+    access: IAccessManagerEnumerable.Access = self.role_access[role_id][account]
     return access.since != 0 and convert(access.since, uint256) <= block.timestamp, access.delay
 
 
@@ -203,7 +86,7 @@ def _require_role(role_id: uint64):
     _delay: uint32 = 0
     member, _delay = self._has_role(role_id, msg.sender)
     if not member or _delay != 0:
-        raise AccessManagerUnauthorizedAccount(msg.sender, role_id)
+        raise IAccessManagerEnumerable.AccessManagerUnauthorizedAccount(msg.sender, role_id)
 
 
 @internal
@@ -235,15 +118,15 @@ def _can_call_data(caller: address, target: address, data: Bytes[MAX_CALLDATA]) 
 
 @internal
 def _consume_schedule(operation_id: bytes32) -> uint32:
-    schedule_data: Schedule = self.schedules[operation_id]
+    schedule_data: IAccessManagerEnumerable.Schedule = self.schedules[operation_id]
     if schedule_data.timepoint == 0:
-        raise AccessManagerNotScheduled(operation_id)
+        raise IAccessManagerEnumerable.AccessManagerNotScheduled(operation_id)
     if convert(schedule_data.timepoint, uint256) > block.timestamp:
-        raise AccessManagerNotReady(operation_id)
+        raise IAccessManagerEnumerable.AccessManagerNotReady(operation_id)
     if convert(schedule_data.timepoint, uint256) + 7 * 24 * 60 * 60 <= block.timestamp:
-        raise AccessManagerExpired(operation_id)
+        raise IAccessManagerEnumerable.AccessManagerExpired(operation_id)
     self.schedules[operation_id].timepoint = 0
-    log OperationExecuted(operationId=operation_id, nonce=schedule_data.nonce)
+    log IAccessManagerEnumerable.OperationExecuted(operationId=operation_id, nonce=schedule_data.nonce)
     return schedule_data.nonce
 
 
@@ -362,7 +245,7 @@ def _add_selector(role_id: uint64, target: address, selector: bytes4):
 def _set_selector_role(target: address, selector: bytes4, role_id: uint64):
     old_role: uint64 = self.tracked_selector_role[target][selector]
     self.target_roles[target][selector] = role_id
-    log TargetFunctionRoleUpdated(target=target, selector=selector, roleId=role_id)
+    log IAccessManagerEnumerable.TargetFunctionRoleUpdated(target=target, selector=selector, roleId=role_id)
     self._track_role(role_id)
     if old_role == role_id:
         return
@@ -447,7 +330,7 @@ def getRoleGrantDelay(roleId: uint64) -> uint32:
 @external
 @view
 def getAccess(roleId: uint64, account: address) -> (uint48, uint32, uint32, uint48):
-    access: Access = self.role_access[roleId][account]
+    access: IAccessManagerEnumerable.Access = self.role_access[roleId][account]
     return access.since, access.delay, 0, 0
 
 
@@ -461,12 +344,12 @@ def hasRole(roleId: uint64, account: address) -> (bool, uint32):
 def labelRole(roleId: uint64, label: String[MAX_LABEL]):
     self._require_admin()
     if roleId == ADMIN_ROLE or roleId == PUBLIC_ROLE:
-        raise AccessManagerLockedRole(roleId)
+        raise IAccessManagerEnumerable.AccessManagerLockedRole(roleId)
     old_label: String[MAX_LABEL] = self.role_label[roleId]
     has_old: bool = len(old_label) != 0
     if len(label) == 0:
         if not has_old:
-            raise AccessManagerUnlabeledRole(roleId)
+            raise IAccessManagerEnumerable.AccessManagerUnlabeledRole(roleId)
         old_hash: bytes32 = keccak256(old_label)
         position: uint256 = self.label_index[old_hash]
         index: uint256 = position - 1
@@ -480,13 +363,13 @@ def labelRole(roleId: uint64, label: String[MAX_LABEL]):
         self.label_index[old_hash] = 0
         self.label_role[old_hash] = 0
         self.role_label[roleId] = ""
-        log RoleLabel(roleId=roleId, label=label)
+        log IAccessManagerEnumerable.RoleLabel(roleId=roleId, label=label)
         return
     if has_old:
-        raise AccessManagerRoleAlreadyLabeled(roleId)
+        raise IAccessManagerEnumerable.AccessManagerRoleAlreadyLabeled(roleId)
     label_hash: bytes32 = keccak256(label)
     if self.label_index[label_hash] != 0:
-        raise AccessManagerLabelAlreadyUsed(label, self.label_role[label_hash])
+        raise IAccessManagerEnumerable.AccessManagerLabelAlreadyUsed(label, self.label_role[label_hash])
     self._track_role(roleId)
     count: uint256 = self.labels_count
     self.labels[count] = label
@@ -494,15 +377,15 @@ def labelRole(roleId: uint64, label: String[MAX_LABEL]):
     self.label_index[label_hash] = count + 1
     self.label_role[label_hash] = roleId
     self.role_label[roleId] = label
-    log RoleLabel(roleId=roleId, label=label)
+    log IAccessManagerEnumerable.RoleLabel(roleId=roleId, label=label)
 
 
 @external
 def grantRole(roleId: uint64, account: address, executionDelay: uint32):
     self._require_role(self.role_admin[roleId])
     if roleId == PUBLIC_ROLE:
-        raise AccessManagerLockedRole(roleId)
-    access: Access = self.role_access[roleId][account]
+        raise IAccessManagerEnumerable.AccessManagerLockedRole(roleId)
+    access: IAccessManagerEnumerable.Access = self.role_access[roleId][account]
     new_member: bool = access.since == 0
     since: uint48 = access.since
     if new_member:
@@ -514,43 +397,43 @@ def grantRole(roleId: uint64, account: address, executionDelay: uint32):
         self.role_members_count[roleId] = count + 1
         self.role_member_index[roleId][account] = count + 1
         self._track_role(roleId)
-    self.role_access[roleId][account] = Access(since=since, delay=executionDelay)
-    log RoleGranted(roleId=roleId, account=account, delay=executionDelay, since=since, newMember=new_member)
+    self.role_access[roleId][account] = IAccessManagerEnumerable.Access(since=since, delay=executionDelay)
+    log IAccessManagerEnumerable.RoleGranted(roleId=roleId, account=account, delay=executionDelay, since=since, newMember=new_member)
 
 
 @external
 def revokeRole(roleId: uint64, account: address):
     self._require_role(self.role_admin[roleId])
     if roleId == PUBLIC_ROLE:
-        raise AccessManagerLockedRole(roleId)
+        raise IAccessManagerEnumerable.AccessManagerLockedRole(roleId)
     if self.role_access[roleId][account].since == 0:
         return
-    self.role_access[roleId][account] = empty(Access)
+    self.role_access[roleId][account] = empty(IAccessManagerEnumerable.Access)
     self._remove_member(roleId, account)
-    log RoleRevoked(roleId=roleId, account=account)
+    log IAccessManagerEnumerable.RoleRevoked(roleId=roleId, account=account)
 
 
 @external
 def renounceRole(roleId: uint64, callerConfirmation: address):
     if callerConfirmation != msg.sender:
-        raise AccessManagerBadConfirmation()
+        raise IAccessManagerEnumerable.AccessManagerBadConfirmation()
     if roleId == PUBLIC_ROLE:
-        raise AccessManagerLockedRole(roleId)
+        raise IAccessManagerEnumerable.AccessManagerLockedRole(roleId)
     if self.role_access[roleId][callerConfirmation].since == 0:
         return
-    self.role_access[roleId][callerConfirmation] = empty(Access)
+    self.role_access[roleId][callerConfirmation] = empty(IAccessManagerEnumerable.Access)
     self._remove_member(roleId, callerConfirmation)
-    log RoleRevoked(roleId=roleId, account=callerConfirmation)
+    log IAccessManagerEnumerable.RoleRevoked(roleId=roleId, account=callerConfirmation)
 
 
 @external
 def setRoleAdmin(roleId: uint64, admin: uint64):
     self._require_admin()
     if roleId == ADMIN_ROLE or roleId == PUBLIC_ROLE:
-        raise AccessManagerLockedRole(roleId)
+        raise IAccessManagerEnumerable.AccessManagerLockedRole(roleId)
     old_admin: uint64 = self.role_admin[roleId]
     self.role_admin[roleId] = admin
-    log RoleAdminChanged(roleId=roleId, admin=admin)
+    log IAccessManagerEnumerable.RoleAdminChanged(roleId=roleId, admin=admin)
     self._track_role(roleId)
     if old_admin != admin:
         if old_admin != ADMIN_ROLE:
@@ -562,19 +445,19 @@ def setRoleAdmin(roleId: uint64, admin: uint64):
 def setRoleGuardian(roleId: uint64, guardian: uint64):
     self._require_admin()
     if roleId == ADMIN_ROLE or roleId == PUBLIC_ROLE:
-        raise AccessManagerLockedRole(roleId)
+        raise IAccessManagerEnumerable.AccessManagerLockedRole(roleId)
     self.role_guardian[roleId] = guardian
     self._track_role(roleId)
-    log RoleGuardianChanged(roleId=roleId, guardian=guardian)
+    log IAccessManagerEnumerable.RoleGuardianChanged(roleId=roleId, guardian=guardian)
 
 
 @external
 def setGrantDelay(roleId: uint64, newDelay: uint32):
     self._require_admin()
     if roleId == PUBLIC_ROLE:
-        raise AccessManagerLockedRole(roleId)
+        raise IAccessManagerEnumerable.AccessManagerLockedRole(roleId)
     self.role_grant_delay[roleId] = newDelay
-    log RoleGrantDelayChanged(roleId=roleId, delay=newDelay, since=convert(block.timestamp, uint48))
+    log IAccessManagerEnumerable.RoleGrantDelayChanged(roleId=roleId, delay=newDelay, since=convert(block.timestamp, uint48))
 
 
 @external
@@ -588,14 +471,14 @@ def setTargetFunctionRole(target: address, selectors: DynArray[bytes4, INF], rol
 def setTargetAdminDelay(target: address, newDelay: uint32):
     self._require_admin()
     self.target_admin_delay[target] = newDelay
-    log TargetAdminDelayUpdated(target=target, delay=newDelay, since=convert(block.timestamp, uint48))
+    log IAccessManagerEnumerable.TargetAdminDelayUpdated(target=target, delay=newDelay, since=convert(block.timestamp, uint48))
 
 
 @external
 def setTargetClosed(target: address, closed: bool):
     self._require_admin()
     self.target_closed[target] = closed
-    log TargetClosed(target=target, closed=closed)
+    log IAccessManagerEnumerable.TargetClosed(target=target, closed=closed)
 
 
 @external
@@ -622,22 +505,22 @@ def hashOperation(caller: address, target: address, data: Bytes[MAX_CALLDATA]) -
 @external
 def schedule(target: address, data: Bytes[MAX_CALLDATA], when: uint48) -> (bytes32, uint32):
     if len(data) < 4:
-        raise AccessManagerUnauthorizedCall(msg.sender, target, empty(bytes4))
+        raise IAccessManagerEnumerable.AccessManagerUnauthorizedCall(msg.sender, target, empty(bytes4))
     immediate: bool = False
     setback: uint32 = 0
     immediate, setback = self._can_call_data(msg.sender, target, data)
     selector: bytes4 = convert(slice(data, 0, 4), bytes4)
     minimum_when: uint256 = block.timestamp + convert(setback, uint256)
     if setback == 0 or (when != 0 and convert(when, uint256) < minimum_when):
-        raise AccessManagerUnauthorizedCall(msg.sender, target, selector)
+        raise IAccessManagerEnumerable.AccessManagerUnauthorizedCall(msg.sender, target, selector)
     scheduled_when: uint48 = convert(max(convert(when, uint256), minimum_when), uint48)
     operation_id: bytes32 = keccak256(abi_encode(msg.sender, target, data))
     previous: uint48 = self.schedules[operation_id].timepoint
     if previous != 0 and convert(previous, uint256) + 7 * 24 * 60 * 60 > block.timestamp:
-        raise AccessManagerAlreadyScheduled(operation_id)
+        raise IAccessManagerEnumerable.AccessManagerAlreadyScheduled(operation_id)
     nonce: uint32 = unsafe_add(self.schedules[operation_id].nonce, 1)
-    self.schedules[operation_id] = Schedule(timepoint=scheduled_when, nonce=nonce)
-    log OperationScheduled(
+    self.schedules[operation_id] = IAccessManagerEnumerable.Schedule(timepoint=scheduled_when, nonce=nonce)
+    log IAccessManagerEnumerable.OperationScheduled(
         operationId=operation_id,
         nonce=nonce,
         schedule=scheduled_when,
@@ -652,13 +535,13 @@ def schedule(target: address, data: Bytes[MAX_CALLDATA], when: uint48) -> (bytes
 @payable
 def execute(target: address, data: Bytes[MAX_CALLDATA]) -> uint32:
     if len(data) < 4:
-        raise AccessManagerUnauthorizedCall(msg.sender, target, empty(bytes4))
+        raise IAccessManagerEnumerable.AccessManagerUnauthorizedCall(msg.sender, target, empty(bytes4))
     selector: bytes4 = convert(slice(data, 0, 4), bytes4)
     immediate: bool = False
     delay: uint32 = 0
     immediate, delay = self._can_call_data(msg.sender, target, data)
     if not immediate and delay == 0:
-        raise AccessManagerUnauthorizedCall(msg.sender, target, selector)
+        raise IAccessManagerEnumerable.AccessManagerUnauthorizedCall(msg.sender, target, selector)
     operation_id: bytes32 = keccak256(abi_encode(msg.sender, target, data))
     nonce: uint32 = 0
     scheduled: uint48 = self.schedules[operation_id].timepoint
@@ -678,7 +561,7 @@ def cancel(caller: address, target: address, data: Bytes[MAX_CALLDATA]) -> uint3
         selector = convert(slice(data, 0, 4), bytes4)
     operation_id: bytes32 = keccak256(abi_encode(caller, target, data))
     if self.schedules[operation_id].timepoint == 0:
-        raise AccessManagerNotScheduled(operation_id)
+        raise IAccessManagerEnumerable.AccessManagerNotScheduled(operation_id)
     if caller != msg.sender:
         is_admin: bool = False
         _admin_delay: uint32 = 0
@@ -688,10 +571,10 @@ def cancel(caller: address, target: address, data: Bytes[MAX_CALLDATA]) -> uint3
         _guardian_delay: uint32 = 0
         is_guardian, _guardian_delay = self._has_role(guardian_role, msg.sender)
         if not is_admin and not is_guardian:
-            raise AccessManagerUnauthorizedCancel(msg.sender, caller, target, selector)
+            raise IAccessManagerEnumerable.AccessManagerUnauthorizedCancel(msg.sender, caller, target, selector)
     self.schedules[operation_id].timepoint = 0
     nonce: uint32 = self.schedules[operation_id].nonce
-    log OperationCanceled(operationId=operation_id, nonce=nonce)
+    log IAccessManagerEnumerable.OperationCanceled(operationId=operation_id, nonce=nonce)
     return nonce
 
 
@@ -699,7 +582,7 @@ def cancel(caller: address, target: address, data: Bytes[MAX_CALLDATA]) -> uint3
 def consumeScheduledOp(caller: address, data: Bytes[MAX_CALLDATA]):
     consuming_selector: bytes4 = staticcall IAccessManaged(msg.sender).isConsumingScheduledOp()
     if consuming_selector != convert(method_id("isConsumingScheduledOp()"), bytes4):
-        raise AccessManagerUnauthorizedConsume(msg.sender)
+        raise IAccessManagerEnumerable.AccessManagerUnauthorizedConsume(msg.sender)
     self._consume_schedule(keccak256(abi_encode(caller, msg.sender, data)))
 
 
@@ -929,7 +812,7 @@ def isRoleLabeled(roleId: uint64) -> bool:
 def getLabelOfRole(roleId: uint64) -> String[MAX_LABEL]:
     label: String[MAX_LABEL] = self.role_label[roleId]
     if len(label) == 0:
-        raise AccessManagerUnlabeledRole(roleId)
+        raise IAccessManagerEnumerable.AccessManagerUnlabeledRole(roleId)
     return label
 
 
@@ -938,5 +821,5 @@ def getLabelOfRole(roleId: uint64) -> String[MAX_LABEL]:
 def getRoleOfLabel(label: String[MAX_LABEL]) -> uint64:
     label_hash: bytes32 = keccak256(label)
     if self.label_index[label_hash] == 0:
-        raise AccessManagerUnregisteredLabel(label)
+        raise IAccessManagerEnumerable.AccessManagerUnregisteredLabel(label)
     return self.label_role[label_hash]

@@ -6,53 +6,9 @@ from libraries.math import PercentageMath
 from libraries.math import WadRayMath
 from spoke.libraries import ReserveFlagsMap
 from spoke.libraries import SpokeUtils
-
-initializes: SharesMath
-initializes: PercentageMath
-initializes: WadRayMath
-initializes: ReserveFlagsMap
-initializes: SpokeUtils
-
-
-error CannotReceiveShares:
-    pass
-
-error HealthFactorNotBelowThreshold:
-    pass
-
-error InvalidDebtToCover:
-    pass
-
-error MustNotLeaveDust:
-    pass
-
-error ReserveNotBorrowed:
-    pass
-
-error ReserveNotEnabledAsCollateral:
-    pass
-
-error ReserveNotSupplied:
-    pass
-
-error ReservePaused:
-    pass
-
-error SelfLiquidation:
-    pass
-
-struct ValidateLiquidationCallParams:
-    user: address
-    liquidator: address
-    collateralReserveFlags: uint8
-    debtReserveFlags: uint8
-    suppliedShares: uint256
-    drawnShares: uint256
-    debtToCover: uint256
-    collateralFactor: uint256
-    isUsingAsCollateral: bool
-    healthFactor: uint256
-    receiveShares: bool
+from hub.interfaces import IHub
+from spoke.interfaces import ISpoke
+from spoke.interfaces import ILiquidationLogic
 
 struct CalculateDebtToTargetHealthFactorParams:
     totalDebtValueRay: uint256
@@ -89,39 +45,6 @@ struct CalculateCollateralToLiquidateParams:
     debtAssetPrice: uint256
     liquidationBonus: uint256
 
-struct CalculateLiquidationAmountsParams:
-    collateralReserveHub: address
-    collateralReserveAssetId: uint256
-    suppliedShares: uint256
-    collateralAssetDecimals: uint256
-    collateralAssetPrice: uint256
-    drawnShares: uint256
-    premiumDebtRay: uint256
-    drawnIndex: uint256
-    totalDebtValueRay: uint256
-    debtAssetDecimals: uint256
-    debtAssetPrice: uint256
-    debtToCover: uint256
-    collateralFactor: uint256
-    healthFactorForMaxBonus: uint256
-    liquidationBonusFactor: uint256
-    maxLiquidationBonus: uint256
-    targetHealthFactor: uint256
-    healthFactor: uint256
-    liquidationFee: uint256
-
-struct LiquidationAmounts:
-    collateralSharesToLiquidate: uint256
-    collateralSharesToLiquidator: uint256
-    drawnSharesToLiquidate: uint256
-    premiumDebtRayToLiquidate: uint256
-
-interface IHub:
-    def previewRemoveByShares(assetId: uint256, shares: uint256) -> uint256: view
-    def previewAddByShares(assetId: uint256, shares: uint256) -> uint256: view
-    def previewAddByAssets(assetId: uint256, amount: uint256) -> uint256: view
-
-
 HEALTH_FACTOR_LIQUIDATION_THRESHOLD: constant(uint256) = 10**18
 DUST_LIQUIDATION_THRESHOLD: constant(uint256) = 1000 * 10**26
 PERCENTAGE_FACTOR: constant(uint256) = 10**4
@@ -155,23 +78,23 @@ def calculate_liquidation_bonus(
 
 
 @pure
-def validate_liquidation_call(params: ValidateLiquidationCallParams):
+def validate_liquidation_call(params: ILiquidationLogic.ValidateLiquidationCallParams):
     if params.user == params.liquidator:
-        raise SelfLiquidation()
+        raise ISpoke.SelfLiquidation()
     if params.debtToCover == 0:
-        raise InvalidDebtToCover()
+        raise ISpoke.InvalidDebtToCover()
     if ReserveFlagsMap.paused(params.collateralReserveFlags) or ReserveFlagsMap.paused(params.debtReserveFlags):
-        raise ReservePaused()
+        raise ISpoke.ReservePaused()
     if params.suppliedShares == 0:
-        raise ReserveNotSupplied()
+        raise ISpoke.ReserveNotSupplied()
     if params.drawnShares == 0:
-        raise ReserveNotBorrowed()
+        raise ISpoke.ReserveNotBorrowed()
     if params.healthFactor >= HEALTH_FACTOR_LIQUIDATION_THRESHOLD:
-        raise HealthFactorNotBelowThreshold()
+        raise ISpoke.HealthFactorNotBelowThreshold()
     if params.collateralFactor == 0 or not params.isUsingAsCollateral:
-        raise ReserveNotEnabledAsCollateral()
+        raise ISpoke.ReserveNotEnabledAsCollateral()
     if params.receiveShares and (ReserveFlagsMap.frozen(params.collateralReserveFlags) or not ReserveFlagsMap.receive_shares_enabled(params.collateralReserveFlags)):
-        raise CannotReceiveShares()
+        raise ISpoke.CannotReceiveShares()
 
 
 @pure
@@ -235,7 +158,7 @@ def calculate_collateral_to_liquidate(params: CalculateCollateralToLiquidatePara
 
 
 @view
-def calculate_liquidation_amounts(params: CalculateLiquidationAmountsParams) -> LiquidationAmounts:
+def calculate_liquidation_amounts(params: ILiquidationLogic.CalculateLiquidationAmountsParams) -> ILiquidationLogic.LiquidationAmounts:
     collateral_unit: uint256 = 10 ** params.collateralAssetDecimals
     debt_unit: uint256 = 10 ** params.debtAssetDecimals
     bonus: uint256 = self.calculate_liquidation_bonus(
@@ -307,13 +230,13 @@ def calculate_liquidation_amounts(params: CalculateLiquidationAmountsParams) -> 
 
     amount_to_restore: uint256 = WadRayMath.ray_mul_up(drawn_to_liquidate, params.drawnIndex) + WadRayMath.from_ray_up(premium_to_liquidate)
     if params.debtToCover < amount_to_restore:
-        raise MustNotLeaveDust()
+        raise ISpoke.MustNotLeaveDust()
     fee_shares: uint256 = SharesMath._mul_div_up(
         collateral_to_liquidate,
         params.liquidationFee * (bonus - PERCENTAGE_FACTOR),
         bonus * PERCENTAGE_FACTOR,
     )
-    return LiquidationAmounts(
+    return ILiquidationLogic.LiquidationAmounts(
         collateralSharesToLiquidate=collateral_to_liquidate,
         collateralSharesToLiquidator=collateral_to_liquidate - fee_shares,
         drawnSharesToLiquidate=drawn_to_liquidate,

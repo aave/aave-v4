@@ -1,0 +1,100 @@
+# pragma version 0.5.0b1
+
+error InterestRateDataNotSet:
+    arg0: uint256
+
+error InvalidAddress:
+    pass
+
+error InvalidMaxDrawnRate:
+    pass
+
+error InvalidOptimalUsageRatio:
+    pass
+
+error OnlyHub:
+    pass
+
+struct InterestRateData:
+    optimalUsageRatio: uint16
+    baseDrawnRate: uint32
+    rateGrowthBeforeOptimal: uint32
+    rateGrowthAfterOptimal: uint32
+
+event UpdateInterestRateData:
+    hub: indexed(address)
+    assetId: indexed(uint256)
+    optimalUsageRatio: uint256
+    baseDrawnRate: uint256
+    rateGrowthBeforeOptimal: uint256
+    rateGrowthAfterOptimal: uint256
+
+@view
+@external
+def calculateInterestRate(assetId: uint256, liquidity: uint256, drawn: uint256, deficit: uint256, swept: uint256) -> uint256:
+    ...
+
+
+@external
+def setInterestRateData(assetId: uint256, data: Bytes[INF]):
+    ...
+
+
+@view
+@external
+def getInterestRateData(assetId: uint256) -> InterestRateData:
+    ...
+
+
+@view
+@external
+def getOptimalUsageRatio(assetId: uint256) -> uint256:
+    ...
+
+
+@view
+@external
+def getBaseDrawnRate(assetId: uint256) -> uint256:
+    ...
+
+
+@view
+@external
+def getRateGrowthBeforeOptimal(assetId: uint256) -> uint256:
+    ...
+
+
+@view
+@external
+def getRateGrowthAfterOptimal(assetId: uint256) -> uint256:
+    ...
+
+
+@view
+@external
+def getMaxDrawnRate(assetId: uint256) -> uint256:
+    ...
+
+
+@view
+@external
+def MAX_ALLOWED_DRAWN_RATE() -> uint256:
+    ...
+
+
+@view
+@external
+def MIN_OPTIMAL_RATIO() -> uint256:
+    ...
+
+
+@view
+@external
+def MAX_OPTIMAL_RATIO() -> uint256:
+    ...
+
+
+@view
+@external
+def HUB() -> address:
+    ...

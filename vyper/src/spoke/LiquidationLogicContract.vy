@@ -1,9 +1,9 @@
 # pragma version 0.5.0b1
 
 from spoke.libraries import LiquidationLogic
+from spoke.interfaces import ILiquidationLogic
 
-initializes: LiquidationLogic
-
+implements: ILiquidationLogic
 
 @external
 @pure
@@ -12,8 +12,8 @@ def calculateLiquidationBonus(healthFactorForMaxBonus: uint256, liquidationBonus
 
 
 @external
-@pure
-def validateLiquidationCall(params: LiquidationLogic.ValidateLiquidationCallParams) -> bool:
+@view
+def validateLiquidationCall(params: ILiquidationLogic.ValidateLiquidationCallParams) -> bool:
     LiquidationLogic.validate_liquidation_call(params)
     return True
 
@@ -38,7 +38,7 @@ def calculateCollateralToLiquidate(params: LiquidationLogic.CalculateCollateralT
 
 @external
 @view
-def calculateLiquidationAmounts(params: LiquidationLogic.CalculateLiquidationAmountsParams) -> LiquidationLogic.LiquidationAmounts:
+def calculateLiquidationAmounts(params: ILiquidationLogic.CalculateLiquidationAmountsParams) -> ILiquidationLogic.LiquidationAmounts:
     return LiquidationLogic.calculate_liquidation_amounts(params)
 
 

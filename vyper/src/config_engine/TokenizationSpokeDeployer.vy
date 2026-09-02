@@ -1,16 +1,13 @@
 # pragma version 0.5.0b1
+from config_engine.interfaces import ITokenizationSpokeDeployer
+
+implements: ITokenizationSpokeDeployer
 
 # Vyper counterpart of TokenizationSpokeDeployer.  Creation code is supplied
 # once at deployment so the contract can deploy the pinned Vyper
 # TokenizationSpoke implementation and the repository's transparent proxy via
 # the Safe Singleton Factory without embedding either large blob in runtime
 # code.
-
-error Create2AddressDerivationFailure:
-    pass
-
-error InvalidProxyAdminOwner:
-    pass
 
 MAX_IMPLEMENTATION_CODE: constant(uint256) = 12288
 MAX_PROXY_CODE: constant(uint256) = 6144
@@ -81,10 +78,10 @@ def _deploy(salt: bytes32, creation_code: Bytes[MAX_FACTORY_CALL]) -> address:
         max_outsize=32,
     )
     if len(result) < 20:
-        raise Create2AddressDerivationFailure()
+        raise ITokenizationSpokeDeployer.Create2AddressDerivationFailure()
     deployed: address = convert(convert(slice(result, 0, 20), bytes20), address)
     if deployed != expected:
-        raise Create2AddressDerivationFailure()
+        raise ITokenizationSpokeDeployer.Create2AddressDerivationFailure()
     return deployed
 
 
@@ -121,7 +118,7 @@ def deploy(
     proxyAdminOwner: address,
 ) -> address:
     if proxyAdminOwner == empty(address):
-        raise InvalidProxyAdminOwner()
+        raise ITokenizationSpokeDeployer.InvalidProxyAdminOwner()
 
     implementation: address = self._deploy(
         self._implementation_salt(hub, underlying, name, symbol),

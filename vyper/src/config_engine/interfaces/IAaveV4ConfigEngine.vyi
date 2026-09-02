@@ -1,0 +1,284 @@
+# pragma version 0.5.0b1
+
+from hub.interfaces import IHub
+
+from hub.interfaces import IAssetInterestRateStrategy
+
+from spoke.interfaces import ISpoke
+
+error InvalidBoolValue:
+    arg0: uint256
+
+error InvalidIrDataWithNewStrategy:
+    pass
+
+error InvalidTokenizationSpokeConfig:
+    pass
+
+error SafeCastOverflowedUintDowncast:
+    arg0: uint8
+    arg1: uint256
+
+struct TokenizationSpokeConfig:
+    addCap: uint256
+    proxyAdminOwner: address
+    name: String[128]
+    symbol: String[128]
+
+struct AssetListing:
+    hubConfigurator: address
+    hub: address
+    underlying: address
+    feeReceiver: address
+    liquidityFee: uint256
+    irStrategy: address
+    irData: IAssetInterestRateStrategy.InterestRateData
+    tokenization: TokenizationSpokeConfig
+
+struct AssetConfigUpdate:
+    hubConfigurator: address
+    hub: address
+    underlying: address
+    liquidityFee: uint256
+    feeReceiver: address
+    irStrategy: address
+    irData: IAssetInterestRateStrategy.InterestRateData
+    reinvestmentController: address
+
+struct SpokeAssetConfig:
+    underlying: address
+    config: IHub.SpokeConfig
+
+struct SpokeToAssetsAddition:
+    hubConfigurator: address
+    hub: address
+    spoke: address
+    assets: DynArray[SpokeAssetConfig, 32]
+
+struct SpokeConfigUpdate:
+    hubConfigurator: address
+    hub: address
+    underlying: address
+    spoke: address
+    addCap: uint256
+    drawCap: uint256
+    riskPremiumThreshold: uint256
+    active: uint256
+    halted: uint256
+
+struct AssetHalt:
+    hubConfigurator: address
+    hub: address
+    underlying: address
+
+struct AssetDeactivation:
+    hubConfigurator: address
+    hub: address
+    underlying: address
+
+struct AssetCapsReset:
+    hubConfigurator: address
+    hub: address
+    underlying: address
+
+struct SpokeDeactivation:
+    hubConfigurator: address
+    hub: address
+    spoke: address
+
+struct SpokeCapsReset:
+    hubConfigurator: address
+    hub: address
+    spoke: address
+
+struct ReserveListing:
+    spokeConfigurator: address
+    spoke: address
+    hub: address
+    underlying: address
+    priceSource: address
+    config: ISpoke.ReserveConfig
+    dynamicConfig: ISpoke.DynamicReserveConfig
+
+struct ReserveConfigUpdate:
+    spokeConfigurator: address
+    spoke: address
+    hub: address
+    underlying: address
+    priceSource: address
+    collateralRisk: uint256
+    paused: uint256
+    frozen: uint256
+    borrowable: uint256
+    receiveSharesEnabled: uint256
+
+struct LiquidationConfigUpdate:
+    spokeConfigurator: address
+    spoke: address
+    targetHealthFactor: uint256
+    healthFactorForMaxBonus: uint256
+    liquidationBonusFactor: uint256
+
+struct DynamicReserveConfigAddition:
+    spokeConfigurator: address
+    spoke: address
+    hub: address
+    underlying: address
+    dynamicConfig: ISpoke.DynamicReserveConfig
+
+struct DynamicReserveConfigUpdate:
+    spokeConfigurator: address
+    spoke: address
+    hub: address
+    underlying: address
+    dynamicConfigKey: uint256
+    collateralFactor: uint256
+    maxLiquidationBonus: uint256
+    liquidationFee: uint256
+
+struct PositionManagerUpdate:
+    spokeConfigurator: address
+    spoke: address
+    positionManager: address
+    active: bool
+
+struct SpokeRegistration:
+    positionManager: address
+    spoke: address
+    registered: bool
+
+struct PositionManagerRoleRenouncement:
+    positionManager: address
+    spoke: address
+    user: address
+
+struct RoleMembership:
+    authority: address
+    roleId: uint64
+    account: address
+    granted: bool
+    executionDelay: uint32
+
+struct RoleUpdate:
+    authority: address
+    roleId: uint64
+    admin: uint64
+    guardian: uint64
+    grantDelay: uint32
+    label: String[128]
+    labelUpdate: bool
+
+struct TargetFunctionRoleUpdate:
+    authority: address
+    target: address
+    selectors: DynArray[bytes4, 64]
+    roleId: uint64
+
+struct TargetAdminDelayUpdate:
+    authority: address
+    target: address
+    newDelay: uint32
+
+@external
+def executeHubAssetListings(listings: DynArray[AssetListing, 32]):
+    ...
+
+
+@external
+def executeHubAssetConfigUpdates(updates: DynArray[AssetConfigUpdate, INF]):
+    ...
+
+
+@external
+def executeHubSpokeToAssetsAdditions(additions: DynArray[SpokeToAssetsAddition, 32]):
+    ...
+
+
+@external
+def executeHubSpokeConfigUpdates(updates: DynArray[SpokeConfigUpdate, INF]):
+    ...
+
+
+@external
+def executeHubAssetHalts(halts: DynArray[AssetHalt, INF]):
+    ...
+
+
+@external
+def executeHubAssetDeactivations(deactivations: DynArray[AssetDeactivation, INF]):
+    ...
+
+
+@external
+def executeHubAssetCapsResets(resets: DynArray[AssetCapsReset, INF]):
+    ...
+
+
+@external
+def executeHubSpokeDeactivations(deactivations: DynArray[SpokeDeactivation, INF]):
+    ...
+
+
+@external
+def executeHubSpokeCapsResets(resets: DynArray[SpokeCapsReset, INF]):
+    ...
+
+
+@external
+def executeSpokeReserveListings(listings: DynArray[ReserveListing, INF]):
+    ...
+
+
+@external
+def executeSpokeReserveConfigUpdates(updates: DynArray[ReserveConfigUpdate, INF]):
+    ...
+
+
+@external
+def executeSpokeLiquidationConfigUpdates(updates: DynArray[LiquidationConfigUpdate, INF]):
+    ...
+
+
+@external
+def executeSpokeDynamicReserveConfigAdditions(additions: DynArray[DynamicReserveConfigAddition, INF]):
+    ...
+
+
+@external
+def executeSpokeDynamicReserveConfigUpdates(updates: DynArray[DynamicReserveConfigUpdate, INF]):
+    ...
+
+
+@external
+def executeSpokePositionManagerUpdates(updates: DynArray[PositionManagerUpdate, INF]):
+    ...
+
+
+@external
+def executePositionManagerSpokeRegistrations(registrations: DynArray[SpokeRegistration, INF]):
+    ...
+
+
+@external
+def executePositionManagerRoleRenouncements(renouncements: DynArray[PositionManagerRoleRenouncement, INF]):
+    ...
+
+
+@external
+def executeRoleMemberships(memberships: DynArray[RoleMembership, INF]):
+    ...
+
+
+@external
+def executeRoleUpdates(updates: DynArray[RoleUpdate, 32]):
+    ...
+
+
+@external
+def executeTargetFunctionRoleUpdates(updates: DynArray[TargetFunctionRoleUpdate, 32]):
+    ...
+
+
+@external
+def executeTargetAdminDelayUpdates(updates: DynArray[TargetAdminDelayUpdate, INF]):
+    ...

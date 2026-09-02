@@ -3,27 +3,13 @@
 from hub.libraries import Premium
 from libraries.math import PercentageMath
 from libraries.math import WadRayMath
+from hub.interfaces import IHub
+from spoke.interfaces import ISpoke
 
-initializes: Premium
-initializes: PercentageMath
-initializes: WadRayMath
-
-
-struct UserPosition:
-    drawnShares: uint120
-    premiumShares: uint120
-    premiumOffsetRay: int200
-    suppliedShares: uint120
-    dynamicConfigKey: uint32
-
-struct PremiumDelta:
-    sharesDelta: int256
-    offsetRayDelta: int256
-    restoredPremiumRay: uint256
 
 
 @pure
-def calculate_premium_ray(position: UserPosition, drawn_index: uint256) -> uint256:
+def calculate_premium_ray(position: ISpoke.UserPosition, drawn_index: uint256) -> uint256:
     return Premium.calculate_premium_ray(
         convert(position.premiumShares, uint256),
         convert(position.premiumOffsetRay, int256),
@@ -32,7 +18,7 @@ def calculate_premium_ray(position: UserPosition, drawn_index: uint256) -> uint2
 
 
 @pure
-def get_debt(position: UserPosition, drawn_index: uint256) -> (uint256, uint256):
+def get_debt(position: ISpoke.UserPosition, drawn_index: uint256) -> (uint256, uint256):
     return (
         WadRayMath.ray_mul_up(convert(position.drawnShares, uint256), drawn_index),
         self.calculate_premium_ray(position, drawn_index),
@@ -40,7 +26,7 @@ def get_debt(position: UserPosition, drawn_index: uint256) -> (uint256, uint256)
 
 
 @pure
-def calculate_restore_amount(position: UserPosition, drawn_index: uint256, amount: uint256) -> (uint256, uint256):
+def calculate_restore_amount(position: ISpoke.UserPosition, drawn_index: uint256, amount: uint256) -> (uint256, uint256):
     drawn_debt: uint256 = 0
     premium_debt_ray: uint256 = 0
     drawn_debt, premium_debt_ray = self.get_debt(position, drawn_index)
@@ -54,12 +40,12 @@ def calculate_restore_amount(position: UserPosition, drawn_index: uint256, amoun
 
 @pure
 def calculate_premium_delta(
-    position: UserPosition,
+    position: ISpoke.UserPosition,
     drawn_shares_taken: uint256,
     drawn_index: uint256,
     risk_premium: uint256,
     restored_premium_ray: uint256,
-) -> PremiumDelta:
+) -> IHub.PremiumDelta:
     old_shares: uint256 = convert(position.premiumShares, uint256)
     old_offset: int256 = convert(position.premiumOffsetRay, int256)
     premium_debt_ray: uint256 = self.calculate_premium_ray(position, drawn_index)
@@ -71,7 +57,7 @@ def calculate_premium_delta(
         convert(new_shares * drawn_index, int256)
         - convert(premium_debt_ray - restored_premium_ray, int256)
     )
-    return PremiumDelta(
+    return IHub.PremiumDelta(
         sharesDelta=convert(new_shares, int256) - convert(old_shares, int256),
         offsetRayDelta=new_offset - old_offset,
         restoredPremiumRay=restored_premium_ray,

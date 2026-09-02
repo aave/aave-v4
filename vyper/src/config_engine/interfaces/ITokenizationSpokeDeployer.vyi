@@ -1,0 +1,23 @@
+# pragma version 0.5.0b1
+
+error Create2AddressDerivationFailure:
+    pass
+
+error InvalidProxyAdminOwner:
+    pass
+
+@external
+def deploy(hub: address, underlying: address, name: String[128], symbol: String[128], proxyAdminOwner: address) -> address:
+    ...
+
+
+@view
+@external
+def computeImplementationAddress(hub: address, underlying: address, name: String[128], symbol: String[128]) -> address:
+    ...
+
+
+@view
+@external
+def computeProxyAddress(hub: address, underlying: address, name: String[128], symbol: String[128], proxyAdminOwner: address) -> address:
+    ...

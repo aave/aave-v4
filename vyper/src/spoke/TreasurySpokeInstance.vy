@@ -1,35 +1,8 @@
 #pragma version 0.5.0b1
+from hub.interfaces import IHub
+from spoke.interfaces import ITreasurySpoke
 
-
-error InvalidInitialization:
-    pass
-
-error OwnableInvalidOwner:
-    arg0: address
-
-error OwnableUnauthorizedAccount:
-    arg0: address
-
-interface IHub:
-    def getAssetId(underlying: address) -> uint256: view
-    def getSpokeAddedAssets(assetId: uint256, spoke: address) -> uint256: view
-    def getSpokeAddedShares(assetId: uint256, spoke: address) -> uint256: view
-    def add(assetId: uint256, amount: uint256) -> uint256: nonpayable
-    def remove(assetId: uint256, amount: uint256, to: address) -> uint256: nonpayable
-
-
-event OwnershipTransferred:
-    previousOwner: indexed(address)
-    newOwner: indexed(address)
-
-
-event OwnershipTransferStarted:
-    previousOwner: indexed(address)
-    newOwner: indexed(address)
-
-
-event Initialized:
-    version: uint64
+implements: ITreasurySpoke
 
 
 SPOKE_REVISION: public(constant(uint64)) = 1
@@ -44,7 +17,7 @@ initialized_state: uint256
 @view
 def _check_owner():
     if msg.sender != self.owner_address:
-        raise OwnableUnauthorizedAccount(msg.sender)
+        raise ITreasurySpoke.OwnableUnauthorizedAccount(msg.sender)
 
 
 @internal
@@ -88,7 +61,7 @@ def _supply(hub: address, underlying: address, amount: uint256, skim: bool) -> (
 @deploy
 def __init__():
     self.initialized_state = convert(max_value(uint64), uint256)
-    log Initialized(version=max_value(uint64))
+    log ITreasurySpoke.Initialized(version=max_value(uint64))
 
 
 @external
@@ -96,16 +69,16 @@ def initialize(owner: address):
     initialized: uint64 = convert(self.initialized_state & (2**64 - 1), uint64)
     initializing: bool = (self.initialized_state & (1 << 64)) != 0
     if initializing or initialized >= SPOKE_REVISION:
-        raise InvalidInitialization()
+        raise ITreasurySpoke.InvalidInitialization()
     if owner == empty(address):
-        raise OwnableInvalidOwner(owner)
+        raise ITreasurySpoke.OwnableInvalidOwner(owner)
 
     self.initialized_state = convert(SPOKE_REVISION, uint256)
     previous_owner: address = self.owner_address
     self.pending_owner_address = empty(address)
     self.owner_address = owner
-    log OwnershipTransferred(previousOwner=previous_owner, newOwner=owner)
-    log Initialized(version=SPOKE_REVISION)
+    log ITreasurySpoke.OwnershipTransferred(previousOwner=previous_owner, newOwner=owner)
+    log ITreasurySpoke.Initialized(version=SPOKE_REVISION)
 
 
 @external
@@ -124,17 +97,17 @@ def pendingOwner() -> address:
 def transferOwnership(newOwner: address):
     self._check_owner()
     self.pending_owner_address = newOwner
-    log OwnershipTransferStarted(previousOwner=self.owner_address, newOwner=newOwner)
+    log ITreasurySpoke.OwnershipTransferStarted(previousOwner=self.owner_address, newOwner=newOwner)
 
 
 @external
 def acceptOwnership():
     if msg.sender != self.pending_owner_address:
-        raise OwnableUnauthorizedAccount(msg.sender)
+        raise ITreasurySpoke.OwnableUnauthorizedAccount(msg.sender)
     previous_owner: address = self.owner_address
     self.pending_owner_address = empty(address)
     self.owner_address = msg.sender
-    log OwnershipTransferred(previousOwner=previous_owner, newOwner=msg.sender)
+    log ITreasurySpoke.OwnershipTransferred(previousOwner=previous_owner, newOwner=msg.sender)
 
 
 @external
@@ -143,7 +116,7 @@ def renounceOwnership():
     previous_owner: address = self.owner_address
     self.pending_owner_address = empty(address)
     self.owner_address = empty(address)
-    log OwnershipTransferred(previousOwner=previous_owner, newOwner=empty(address))
+    log ITreasurySpoke.OwnershipTransferred(previousOwner=previous_owner, newOwner=empty(address))
 
 
 @external

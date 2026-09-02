@@ -3,58 +3,15 @@
 from position_manager import PositionManagerBase
 from position_manager.libraries import EIP712Hash
 from utils import NoncesKeyed
+from spoke.interfaces import ISpoke
+from position_manager.interfaces import ISignatureGateway
+
+implements: ISignatureGateway
 
 initializes: PositionManagerBase
-initializes: EIP712Hash
 initializes: NoncesKeyed
 exports: PositionManagerBase.__interface__
 exports: NoncesKeyed.__interface__
-
-
-error InvalidSignature:
-    pass
-
-struct Reserve:
-    underlying: address
-    hub: address
-    assetId: uint16
-    decimals: uint8
-    collateralRisk: uint24
-    flags: uint8
-    dynamicConfigKey: uint32
-
-struct Action:
-    spoke: address
-    reserveId: uint256
-    amount: uint256
-    onBehalfOf: address
-    nonce: uint256
-    deadline: uint256
-
-struct SetUsingAsCollateral:
-    spoke: address
-    reserveId: uint256
-    useAsCollateral: bool
-    onBehalfOf: address
-    nonce: uint256
-    deadline: uint256
-
-struct UpdateUserConfig:
-    spoke: address
-    onBehalfOf: address
-    nonce: uint256
-    deadline: uint256
-
-interface ISpoke:
-    def getReserve(reserveId: uint256) -> Reserve: view
-    def getUserTotalDebt(reserveId: uint256, user: address) -> uint256: view
-    def supply(reserveId: uint256, amount: uint256, onBehalfOf: address) -> (uint256, uint256): nonpayable
-    def withdraw(reserveId: uint256, amount: uint256, onBehalfOf: address) -> (uint256, uint256): nonpayable
-    def borrow(reserveId: uint256, amount: uint256, onBehalfOf: address) -> (uint256, uint256): nonpayable
-    def repay(reserveId: uint256, amount: uint256, onBehalfOf: address) -> (uint256, uint256): nonpayable
-    def setUsingAsCollateral(reserveId: uint256, status: bool, onBehalfOf: address): nonpayable
-    def updateUserRiskPremium(user: address): nonpayable
-    def updateUserDynamicConfig(user: address): nonpayable
 
 
 SUPPLY_TYPEHASH: public(constant(bytes32)) = 0xe85497eb293c001e8483fe105efadd1d50aa0dadfc0570b27058031dfceab2e6
@@ -89,20 +46,20 @@ def _domain_separator() -> bytes32:
 @internal
 def _verify(signer: address, intent_hash: bytes32, nonce: uint256, deadline: uint256, signature: Bytes[INF]):
     if block.timestamp > deadline or len(signature) != 65:
-        raise InvalidSignature()
+        raise ISignatureGateway.InvalidSignature()
     digest: bytes32 = keccak256(concat(b"\x19\x01", self._domain_separator(), intent_hash))
     r: bytes32 = convert(slice(signature, 0, 32), bytes32)
     s: bytes32 = convert(slice(signature, 32, 32), bytes32)
     v: uint256 = convert(slice(signature, 64, 1), uint256)
     recovered: address = ecrecover(digest, v, r, s)
     if recovered == empty(address) or recovered != signer:
-        raise InvalidSignature()
+        raise ISignatureGateway.InvalidSignature()
     NoncesKeyed._use_checked_nonce(signer, nonce)
 
 
 @internal
 @view
-def _reserve(spoke: address, reserve_id: uint256) -> Reserve:
+def _reserve(spoke: address, reserve_id: uint256) -> ISpoke.Reserve:
     return staticcall ISpoke(spoke).getReserve(reserve_id)
 
 
@@ -150,22 +107,22 @@ def eip712Domain() -> (bytes1, String[32], String[8], uint256, address, bytes32,
 
 
 @external
-def supplyWithSig(params: Action, signature: Bytes[INF]) -> (uint256, uint256):
+def supplyWithSig(params: ISignatureGateway.Action, signature: Bytes[INF]) -> (uint256, uint256):
     PositionManagerBase._check_registered(params.spoke)
     intent_hash: bytes32 = EIP712Hash.hash_action(SUPPLY_TYPEHASH, params.spoke, params.reserveId, params.amount, params.onBehalfOf, params.nonce, params.deadline)
     self._verify(params.onBehalfOf, intent_hash, params.nonce, params.deadline, signature)
-    reserve: Reserve = self._reserve(params.spoke, params.reserveId)
+    reserve: ISpoke.Reserve = self._reserve(params.spoke, params.reserveId)
     self._safe_transfer_from(reserve.underlying, params.onBehalfOf, self, params.amount)
     self._force_approve(reserve.underlying, params.spoke, params.amount)
     return extcall ISpoke(params.spoke).supply(params.reserveId, params.amount, params.onBehalfOf)
 
 
 @external
-def withdrawWithSig(params: Action, signature: Bytes[INF]) -> (uint256, uint256):
+def withdrawWithSig(params: ISignatureGateway.Action, signature: Bytes[INF]) -> (uint256, uint256):
     PositionManagerBase._check_registered(params.spoke)
     intent_hash: bytes32 = EIP712Hash.hash_action(WITHDRAW_TYPEHASH, params.spoke, params.reserveId, params.amount, params.onBehalfOf, params.nonce, params.deadline)
     self._verify(params.onBehalfOf, intent_hash, params.nonce, params.deadline, signature)
-    reserve: Reserve = self._reserve(params.spoke, params.reserveId)
+    reserve: ISpoke.Reserve = self._reserve(params.spoke, params.reserveId)
     shares: uint256 = 0
     withdrawn: uint256 = 0
     shares, withdrawn = extcall ISpoke(params.spoke).withdraw(params.reserveId, params.amount, params.onBehalfOf)
@@ -174,11 +131,11 @@ def withdrawWithSig(params: Action, signature: Bytes[INF]) -> (uint256, uint256)
 
 
 @external
-def borrowWithSig(params: Action, signature: Bytes[INF]) -> (uint256, uint256):
+def borrowWithSig(params: ISignatureGateway.Action, signature: Bytes[INF]) -> (uint256, uint256):
     PositionManagerBase._check_registered(params.spoke)
     intent_hash: bytes32 = EIP712Hash.hash_action(BORROW_TYPEHASH, params.spoke, params.reserveId, params.amount, params.onBehalfOf, params.nonce, params.deadline)
     self._verify(params.onBehalfOf, intent_hash, params.nonce, params.deadline, signature)
-    reserve: Reserve = self._reserve(params.spoke, params.reserveId)
+    reserve: ISpoke.Reserve = self._reserve(params.spoke, params.reserveId)
     shares: uint256 = 0
     borrowed: uint256 = 0
     shares, borrowed = extcall ISpoke(params.spoke).borrow(params.reserveId, params.amount, params.onBehalfOf)
@@ -187,11 +144,11 @@ def borrowWithSig(params: Action, signature: Bytes[INF]) -> (uint256, uint256):
 
 
 @external
-def repayWithSig(params: Action, signature: Bytes[INF]) -> (uint256, uint256):
+def repayWithSig(params: ISignatureGateway.Action, signature: Bytes[INF]) -> (uint256, uint256):
     PositionManagerBase._check_registered(params.spoke)
     intent_hash: bytes32 = EIP712Hash.hash_action(REPAY_TYPEHASH, params.spoke, params.reserveId, params.amount, params.onBehalfOf, params.nonce, params.deadline)
     self._verify(params.onBehalfOf, intent_hash, params.nonce, params.deadline, signature)
-    reserve: Reserve = self._reserve(params.spoke, params.reserveId)
+    reserve: ISpoke.Reserve = self._reserve(params.spoke, params.reserveId)
     debt: uint256 = staticcall ISpoke(params.spoke).getUserTotalDebt(params.reserveId, params.onBehalfOf)
     repay_amount: uint256 = min(params.amount, debt)
     self._safe_transfer_from(reserve.underlying, params.onBehalfOf, self, repay_amount)
@@ -200,7 +157,7 @@ def repayWithSig(params: Action, signature: Bytes[INF]) -> (uint256, uint256):
 
 
 @external
-def setUsingAsCollateralWithSig(params: SetUsingAsCollateral, signature: Bytes[INF]):
+def setUsingAsCollateralWithSig(params: ISignatureGateway.SetUsingAsCollateral, signature: Bytes[INF]):
     PositionManagerBase._check_registered(params.spoke)
     intent_hash: bytes32 = EIP712Hash.hash_collateral(params.spoke, params.reserveId, params.useAsCollateral, params.onBehalfOf, params.nonce, params.deadline)
     self._verify(params.onBehalfOf, intent_hash, params.nonce, params.deadline, signature)
@@ -208,7 +165,7 @@ def setUsingAsCollateralWithSig(params: SetUsingAsCollateral, signature: Bytes[I
 
 
 @external
-def updateUserRiskPremiumWithSig(params: UpdateUserConfig, signature: Bytes[INF]):
+def updateUserRiskPremiumWithSig(params: ISignatureGateway.UpdateUserConfig, signature: Bytes[INF]):
     PositionManagerBase._check_registered(params.spoke)
     intent_hash: bytes32 = EIP712Hash.hash_update(UPDATE_USER_RISK_PREMIUM_TYPEHASH, params.spoke, params.onBehalfOf, params.nonce, params.deadline)
     self._verify(params.onBehalfOf, intent_hash, params.nonce, params.deadline, signature)
@@ -216,7 +173,7 @@ def updateUserRiskPremiumWithSig(params: UpdateUserConfig, signature: Bytes[INF]
 
 
 @external
-def updateUserDynamicConfigWithSig(params: UpdateUserConfig, signature: Bytes[INF]):
+def updateUserDynamicConfigWithSig(params: ISignatureGateway.UpdateUserConfig, signature: Bytes[INF]):
     PositionManagerBase._check_registered(params.spoke)
     intent_hash: bytes32 = EIP712Hash.hash_update(UPDATE_USER_DYNAMIC_CONFIG_TYPEHASH, params.spoke, params.onBehalfOf, params.nonce, params.deadline)
     self._verify(params.onBehalfOf, intent_hash, params.nonce, params.deadline, signature)

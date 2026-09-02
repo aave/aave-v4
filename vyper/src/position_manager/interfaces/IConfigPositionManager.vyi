@@ -1,0 +1,246 @@
+# pragma version 0.5.0b1
+
+error DelegateeNotAllowed:
+    pass
+
+error InvalidSignature:
+    pass
+
+struct Permit:
+    spoke: address
+    delegator: address
+    delegatee: address
+    status: bool
+    nonce: uint256
+    deadline: uint256
+
+event UpdateConfigPermissions:
+    spoke: indexed(address)
+    delegator: indexed(address)
+    delegatee: indexed(address)
+    oldPermissions: uint8
+    newPermissions: uint8
+
+event SetUsingAsCollateralOnBehalfOf:
+    spoke: indexed(address)
+    caller: indexed(address)
+    onBehalfOf: indexed(address)
+    reserveId: uint256
+    usingAsCollateral: bool
+
+event UpdateUserRiskPremiumOnBehalfOf:
+    spoke: indexed(address)
+    caller: indexed(address)
+    onBehalfOf: indexed(address)
+
+event UpdateUserDynamicConfigOnBehalfOf:
+    spoke: indexed(address)
+    caller: indexed(address)
+    onBehalfOf: indexed(address)
+
+@view
+@external
+def owner() -> address:
+    ...
+
+
+@view
+@external
+def pendingOwner() -> address:
+    ...
+
+
+@external
+def transferOwnership(newOwner: address):
+    ...
+
+
+@external
+def acceptOwnership():
+    ...
+
+
+@external
+def renounceOwnership():
+    ...
+
+
+@external
+def registerSpoke(spoke: address, registered: bool):
+    ...
+
+
+@view
+@external
+def isSpokeRegistered(spoke: address) -> bool:
+    ...
+
+
+@view
+@external
+def getReserveUnderlying(spoke: address, reserveId: uint256) -> address:
+    ...
+
+
+@external
+def setSelfAsUserPositionManagerWithSig(spoke: address, onBehalfOf: address, approve: bool, nonce: uint256, deadline: uint256, signature: Bytes[INF]):
+    ...
+
+
+@external
+def permitReserveUnderlying(spoke: address, reserveId: uint256, onBehalfOf: address, permitValue: uint256, deadline: uint256, permitV: uint8, permitR: bytes32, permitS: bytes32):
+    ...
+
+
+@external
+def renouncePositionManagerRole(spoke: address, user: address):
+    ...
+
+
+@external
+def multicall(data: DynArray[Bytes[512], 4]) -> DynArray[Bytes[256], 4]:
+    ...
+
+
+@external
+def rescueToken(token: address, to: address, amount: uint256):
+    ...
+
+
+@external
+def rescueNative(to: address, amount: uint256):
+    ...
+
+
+@view
+@external
+def rescueGuardian() -> address:
+    ...
+
+
+@external
+def useNonce(key: uint192) -> uint256:
+    ...
+
+
+@view
+@external
+def nonces(owner: address, key: uint192) -> uint256:
+    ...
+
+
+@view
+@external
+def DOMAIN_SEPARATOR() -> bytes32:
+    ...
+
+
+@view
+@external
+def eip712Domain() -> (bytes1, String[32], String[8], uint256, address, bytes32, DynArray[uint256, INF]):
+    ...
+
+
+@external
+def setGlobalPermission(spoke: address, delegatee: address, status: bool):
+    ...
+
+
+@external
+def setCanSetUsingAsCollateralPermission(spoke: address, delegatee: address, status: bool):
+    ...
+
+
+@external
+def setCanUpdateUserRiskPremiumPermission(spoke: address, delegatee: address, status: bool):
+    ...
+
+
+@external
+def setCanUpdateUserDynamicConfigPermission(spoke: address, delegatee: address, status: bool):
+    ...
+
+
+@external
+def setGlobalPermissionWithSig(params: Permit, signature: Bytes[INF]):
+    ...
+
+
+@external
+def setCanSetUsingAsCollateralPermissionWithSig(params: Permit, signature: Bytes[INF]):
+    ...
+
+
+@external
+def setCanUpdateUserRiskPremiumPermissionWithSig(params: Permit, signature: Bytes[INF]):
+    ...
+
+
+@external
+def setCanUpdateUserDynamicConfigPermissionWithSig(params: Permit, signature: Bytes[INF]):
+    ...
+
+
+@external
+def renounceGlobalPermission(spoke: address, delegator: address):
+    ...
+
+
+@external
+def renounceCanUpdateUsingAsCollateralPermission(spoke: address, delegator: address):
+    ...
+
+
+@external
+def renounceCanUpdateUserRiskPremiumPermission(spoke: address, delegator: address):
+    ...
+
+
+@external
+def renounceCanUpdateUserDynamicConfigPermission(spoke: address, delegator: address):
+    ...
+
+
+@external
+def setUsingAsCollateralOnBehalfOf(spoke: address, reserveId: uint256, usingAsCollateral: bool, onBehalfOf: address):
+    ...
+
+
+@external
+def updateUserRiskPremiumOnBehalfOf(spoke: address, onBehalfOf: address):
+    ...
+
+
+@external
+def updateUserDynamicConfigOnBehalfOf(spoke: address, onBehalfOf: address):
+    ...
+
+
+@view
+@external
+def getConfigPermissions(spoke: address, delegatee: address, onBehalfOf: address) -> (bool, bool, bool):
+    ...
+
+
+@view
+@external
+def SET_GLOBAL_PERMISSION_PERMIT_TYPEHASH() -> bytes32:
+    ...
+
+
+@view
+@external
+def SET_CAN_SET_USING_AS_COLLATERAL_PERMISSION_PERMIT_TYPEHASH() -> bytes32:
+    ...
+
+
+@view
+@external
+def SET_CAN_UPDATE_USER_RISK_PREMIUM_PERMISSION_PERMIT_TYPEHASH() -> bytes32:
+    ...
+
+
+@view
+@external
+def SET_CAN_UPDATE_USER_DYNAMIC_CONFIG_PERMISSION_PERMIT_TYPEHASH() -> bytes32:
+    ...

@@ -1,46 +1,9 @@
 #pragma version 0.5.0b1
+from spoke.interfaces import ISpoke
+from spoke.interfaces import IPriceFeed
+from spoke.interfaces import IAaveOracle
 
-
-error InvalidAddress:
-    pass
-
-error InvalidPrice:
-    arg0: uint256
-
-error InvalidSource:
-    arg0: uint256
-
-error InvalidSourceDecimals:
-    arg0: uint256
-
-error OnlyDeployer:
-    pass
-
-error OnlySpoke:
-    pass
-
-error OracleMismatch:
-    pass
-
-error SpokeAlreadySet:
-    pass
-
-interface ISpoke:
-    def ORACLE() -> address: view
-
-
-interface IPriceFeed:
-    def decimals() -> uint8: view
-    def latestAnswer() -> int256: view
-
-
-event UpdateReserveSource:
-    reserveId: indexed(uint256)
-    source: indexed(address)
-
-
-event SetSpoke:
-    spoke: indexed(address)
+implements: IAaveOracle
 
 
 DECIMALS: immutable(uint8)
@@ -61,36 +24,36 @@ def __init__(decimals_: uint8):
 def _get_source_price(reserve_id: uint256) -> uint256:
     source: address = self.sources[reserve_id]
     if source == empty(address):
-        raise InvalidSource(reserve_id)
+        raise IAaveOracle.InvalidSource(reserve_id)
     price: int256 = staticcall IPriceFeed(source).latestAnswer()
     if price <= 0:
-        raise InvalidPrice(reserve_id)
+        raise IAaveOracle.InvalidPrice(reserve_id)
     return convert(price, uint256)
 
 
 @external
 def setSpoke(spoke_: address):
     if msg.sender != DEPLOYER:
-        raise OnlyDeployer()
+        raise IAaveOracle.OnlyDeployer()
     if spoke_ == empty(address):
-        raise InvalidAddress()
+        raise IAaveOracle.InvalidAddress()
     if self.spoke != empty(address):
-        raise SpokeAlreadySet()
+        raise IAaveOracle.SpokeAlreadySet()
     if staticcall ISpoke(spoke_).ORACLE() != self:
-        raise OracleMismatch()
+        raise IAaveOracle.OracleMismatch()
     self.spoke = spoke_
-    log SetSpoke(spoke=spoke_)
+    log IAaveOracle.SetSpoke(spoke=spoke_)
 
 
 @external
 def setReserveSource(reserveId: uint256, source: address):
     if msg.sender != self.spoke:
-        raise OnlySpoke()
+        raise IAaveOracle.OnlySpoke()
     if staticcall IPriceFeed(source).decimals() != DECIMALS:
-        raise InvalidSourceDecimals(reserveId)
+        raise IAaveOracle.InvalidSourceDecimals(reserveId)
     self.sources[reserveId] = source
     self._get_source_price(reserveId)
-    log UpdateReserveSource(reserveId=reserveId, source=source)
+    log IAaveOracle.UpdateReserveSource(reserveId=reserveId, source=source)
 
 
 @external

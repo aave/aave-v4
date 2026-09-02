@@ -1,0 +1,611 @@
+# pragma version 0.5.0b1
+
+error AccessManagedUnauthorized:
+    arg0: address
+
+error AddCapExceeded:
+    arg0: uint256
+
+error AssetNotListed:
+    pass
+
+error DrawCapExceeded:
+    arg0: uint256
+
+error InsufficientLiquidity:
+    arg0: uint256
+
+error InsufficientTransferred:
+    arg0: uint256
+
+error InvalidAddress:
+    pass
+
+error InvalidAmount:
+    pass
+
+error InvalidAssetDecimals:
+    pass
+
+error InvalidInitialization:
+    pass
+
+error InvalidInterestRateStrategy:
+    pass
+
+error InvalidLiquidityFee:
+    pass
+
+error InvalidPremiumChange:
+    pass
+
+error InvalidReinvestmentController:
+    pass
+
+error InvalidShares:
+    pass
+
+error OnlyReinvestmentController:
+    pass
+
+error SafeCastOverflowedIntDowncast:
+    arg0: uint8
+    arg1: int256
+
+error SafeCastOverflowedUintDowncast:
+    arg0: uint8
+    arg1: uint256
+
+error SpokeAlreadyListed:
+    pass
+
+error SpokeHalted:
+    pass
+
+error SpokeNotActive:
+    pass
+
+error SpokeNotListed:
+    pass
+
+error SurplusDrawnDeficitReported:
+    arg0: uint256
+
+error SurplusDrawnRestored:
+    arg0: uint256
+
+error SurplusPremiumRayDeficitReported:
+    arg0: uint256
+
+error SurplusPremiumRayRestored:
+    arg0: uint256
+
+error UnderlyingAlreadyListed:
+    pass
+
+struct PremiumDelta:
+    sharesDelta: int256
+    offsetRayDelta: int256
+    restoredPremiumRay: uint256
+
+struct Asset:
+    liquidity: uint120
+    realizedFees: uint120
+    decimals: uint8
+    addedShares: uint120
+    swept: uint120
+    premiumOffsetRay: int200
+    drawnShares: uint120
+    premiumShares: uint120
+    liquidityFee: uint16
+    drawnIndex: uint120
+    drawnRate: uint96
+    lastUpdateTimestamp: uint40
+    underlying: address
+    irStrategy: address
+    reinvestmentController: address
+    feeReceiver: address
+    deficitRay: uint200
+
+struct AssetConfig:
+    feeReceiver: address
+    liquidityFee: uint16
+    irStrategy: address
+    reinvestmentController: address
+
+struct SpokeData:
+    drawnShares: uint120
+    premiumShares: uint120
+    premiumOffsetRay: int200
+    addedShares: uint120
+    addCap: uint40
+    drawCap: uint40
+    riskPremiumThreshold: uint24
+    active: bool
+    halted: bool
+    deficitRay: uint200
+
+struct SpokeConfig:
+    addCap: uint40
+    drawCap: uint40
+    riskPremiumThreshold: uint24
+    active: bool
+    halted: bool
+
+event Initialized:
+    version: uint64
+
+event AuthorityUpdated:
+    authority: address
+
+event AddAsset:
+    assetId: indexed(uint256)
+    underlying: indexed(address)
+    decimals: uint8
+
+event UpdateAsset:
+    assetId: indexed(uint256)
+    drawnIndex: uint256
+    drawnRate: uint256
+    accruedFees: uint256
+
+event UpdateAssetConfig:
+    assetId: indexed(uint256)
+    config: AssetConfig
+
+event AddSpoke:
+    assetId: indexed(uint256)
+    spoke: indexed(address)
+
+event UpdateSpokeConfig:
+    assetId: indexed(uint256)
+    spoke: indexed(address)
+    config: SpokeConfig
+
+event MintFeeShares:
+    assetId: indexed(uint256)
+    feeReceiver: indexed(address)
+    shares: uint256
+    assets: uint256
+
+event Sweep:
+    assetId: indexed(uint256)
+    reinvestmentController: indexed(address)
+    amount: uint256
+
+event Reclaim:
+    assetId: indexed(uint256)
+    reinvestmentController: indexed(address)
+    amount: uint256
+
+event EliminateDeficit:
+    assetId: indexed(uint256)
+    callerSpoke: indexed(address)
+    coveredSpoke: indexed(address)
+    shares: uint256
+    deficitAmountRay: uint256
+
+event Add:
+    assetId: indexed(uint256)
+    spoke: indexed(address)
+    shares: uint256
+    amount: uint256
+
+event Remove:
+    assetId: indexed(uint256)
+    spoke: indexed(address)
+    shares: uint256
+    amount: uint256
+
+event Draw:
+    assetId: indexed(uint256)
+    spoke: indexed(address)
+    drawnShares: uint256
+    drawnAmount: uint256
+
+event Restore:
+    assetId: indexed(uint256)
+    spoke: indexed(address)
+    drawnShares: uint256
+    premiumDelta: PremiumDelta
+    drawnAmount: uint256
+    premiumAmount: uint256
+
+event RefreshPremium:
+    assetId: indexed(uint256)
+    spoke: indexed(address)
+    premiumDelta: PremiumDelta
+
+event ReportDeficit:
+    assetId: indexed(uint256)
+    spoke: indexed(address)
+    drawnShares: uint256
+    premiumDelta: PremiumDelta
+    deficitAmountRay: uint256
+
+event TransferShares:
+    assetId: indexed(uint256)
+    sender: indexed(address)
+    receiver: indexed(address)
+    shares: uint256
+
+@external
+def initialize(authority: address):
+    ...
+
+
+@view
+@external
+def authority() -> address:
+    ...
+
+
+@external
+def setAuthority(newAuthority: address):
+    ...
+
+
+@pure
+@external
+def isConsumingScheduledOp() -> bytes4:
+    ...
+
+
+@external
+def addAsset(underlying: address, decimals: uint8, feeReceiver: address, irStrategy: address, irData: Bytes[INF]) -> uint256:
+    ...
+
+
+@external
+def addSpoke(assetId: uint256, spoke: address, config: SpokeConfig):
+    ...
+
+
+@external
+def updateSpokeConfig(assetId: uint256, spoke: address, config: SpokeConfig):
+    ...
+
+
+@external
+def updateAssetConfig(assetId: uint256, config: AssetConfig, irData: Bytes[INF]):
+    ...
+
+
+@external
+def setInterestRateData(assetId: uint256, irData: Bytes[INF]):
+    ...
+
+
+@external
+def mintFeeShares(assetId: uint256) -> uint256:
+    ...
+
+
+@external
+def add(assetId: uint256, amount: uint256) -> uint256:
+    ...
+
+
+@external
+def remove(assetId: uint256, amount: uint256, to: address) -> uint256:
+    ...
+
+
+@external
+def draw(assetId: uint256, amount: uint256, to: address) -> uint256:
+    ...
+
+
+@external
+def restore(assetId: uint256, drawnAmount: uint256, premiumDelta: PremiumDelta) -> uint256:
+    ...
+
+
+@external
+def reportDeficit(assetId: uint256, drawnAmount: uint256, premiumDelta: PremiumDelta) -> (uint256, uint256):
+    ...
+
+
+@external
+def refreshPremium(assetId: uint256, premiumDelta: PremiumDelta):
+    ...
+
+
+@external
+def eliminateDeficit(assetId: uint256, amount: uint256, coveredSpoke: address) -> (uint256, uint256):
+    ...
+
+
+@external
+def payFeeShares(assetId: uint256, shares: uint256):
+    ...
+
+
+@external
+def transferShares(assetId: uint256, shares: uint256, toSpoke: address):
+    ...
+
+
+@external
+def sweep(assetId: uint256, amount: uint256):
+    ...
+
+
+@external
+def reclaim(assetId: uint256, amount: uint256):
+    ...
+
+
+@view
+@external
+def isUnderlyingListed(underlying: address) -> bool:
+    ...
+
+
+@view
+@external
+def getAssetCount() -> uint256:
+    ...
+
+
+@view
+@external
+def previewAddByAssets(assetId: uint256, amount: uint256) -> uint256:
+    ...
+
+
+@view
+@external
+def previewAddByShares(assetId: uint256, shares: uint256) -> uint256:
+    ...
+
+
+@view
+@external
+def previewRemoveByAssets(assetId: uint256, amount: uint256) -> uint256:
+    ...
+
+
+@view
+@external
+def previewRemoveByShares(assetId: uint256, shares: uint256) -> uint256:
+    ...
+
+
+@view
+@external
+def previewDrawByAssets(assetId: uint256, amount: uint256) -> uint256:
+    ...
+
+
+@view
+@external
+def previewDrawByShares(assetId: uint256, shares: uint256) -> uint256:
+    ...
+
+
+@view
+@external
+def previewRestoreByAssets(assetId: uint256, amount: uint256) -> uint256:
+    ...
+
+
+@view
+@external
+def previewRestoreByShares(assetId: uint256, shares: uint256) -> uint256:
+    ...
+
+
+@view
+@external
+def getAssetId(underlying: address) -> uint256:
+    ...
+
+
+@view
+@external
+def getAssetUnderlyingAndDecimals(assetId: uint256) -> (address, uint8):
+    ...
+
+
+@view
+@external
+def getAssetDrawnIndex(assetId: uint256) -> uint256:
+    ...
+
+
+@view
+@external
+def getAddedAssets(assetId: uint256) -> uint256:
+    ...
+
+
+@view
+@external
+def getAddedShares(assetId: uint256) -> uint256:
+    ...
+
+
+@view
+@external
+def getAssetOwed(assetId: uint256) -> (uint256, uint256):
+    ...
+
+
+@view
+@external
+def getAssetTotalOwed(assetId: uint256) -> uint256:
+    ...
+
+
+@view
+@external
+def getAssetPremiumRay(assetId: uint256) -> uint256:
+    ...
+
+
+@view
+@external
+def getAssetDrawnShares(assetId: uint256) -> uint256:
+    ...
+
+
+@view
+@external
+def getAssetPremiumData(assetId: uint256) -> (uint256, int256):
+    ...
+
+
+@view
+@external
+def getAssetLiquidity(assetId: uint256) -> uint256:
+    ...
+
+
+@view
+@external
+def getAssetDeficitRay(assetId: uint256) -> uint256:
+    ...
+
+
+@view
+@external
+def getAsset(assetId: uint256) -> Asset:
+    ...
+
+
+@view
+@external
+def getAssetConfig(assetId: uint256) -> AssetConfig:
+    ...
+
+
+@view
+@external
+def getAssetAccruedFees(assetId: uint256) -> uint256:
+    ...
+
+
+@view
+@external
+def getAssetSwept(assetId: uint256) -> uint256:
+    ...
+
+
+@view
+@external
+def getAssetDrawnRate(assetId: uint256) -> uint256:
+    ...
+
+
+@view
+@external
+def getSpokeCount(assetId: uint256) -> uint256:
+    ...
+
+
+@view
+@external
+def getSpokeAddedAssets(assetId: uint256, spoke: address) -> uint256:
+    ...
+
+
+@view
+@external
+def getSpokeAddedShares(assetId: uint256, spoke: address) -> uint256:
+    ...
+
+
+@view
+@external
+def getSpokeOwed(assetId: uint256, spoke: address) -> (uint256, uint256):
+    ...
+
+
+@view
+@external
+def getSpokeTotalOwed(assetId: uint256, spoke: address) -> uint256:
+    ...
+
+
+@view
+@external
+def getSpokePremiumRay(assetId: uint256, spoke: address) -> uint256:
+    ...
+
+
+@view
+@external
+def getSpokeDrawnShares(assetId: uint256, spoke: address) -> uint256:
+    ...
+
+
+@view
+@external
+def getSpokePremiumData(assetId: uint256, spoke: address) -> (uint256, int256):
+    ...
+
+
+@view
+@external
+def getSpokeDeficitRay(assetId: uint256, spoke: address) -> uint256:
+    ...
+
+
+@view
+@external
+def isSpokeListed(assetId: uint256, spoke: address) -> bool:
+    ...
+
+
+@view
+@external
+def getSpokeAddress(assetId: uint256, index: uint256) -> address:
+    ...
+
+
+@view
+@external
+def getSpoke(assetId: uint256, spoke: address) -> SpokeData:
+    ...
+
+
+@view
+@external
+def getSpokeConfig(assetId: uint256, spoke: address) -> SpokeConfig:
+    ...
+
+
+@external
+def setAssetAddedShares(assetId: uint256, addedShares: uint256):
+    ...
+
+
+@view
+@external
+def HUB_REVISION() -> uint64:
+    ...
+
+
+@view
+@external
+def MAX_ALLOWED_UNDERLYING_DECIMALS() -> uint8:
+    ...
+
+
+@view
+@external
+def MIN_ALLOWED_UNDERLYING_DECIMALS() -> uint8:
+    ...
+
+
+@view
+@external
+def MAX_ALLOWED_SPOKE_CAP() -> uint40:
+    ...
+
+
+@view
+@external
+def MAX_RISK_PREMIUM_THRESHOLD() -> uint24:
+    ...

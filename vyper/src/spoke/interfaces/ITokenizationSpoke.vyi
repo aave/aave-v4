@@ -1,0 +1,340 @@
+# pragma version 0.5.0b1
+
+error ERC20InsufficientAllowance:
+    arg0: address
+    arg1: uint256
+    arg2: uint256
+
+error ERC20InsufficientBalance:
+    arg0: address
+    arg1: uint256
+    arg2: uint256
+
+error ERC20InvalidApprover:
+    arg0: address
+
+error ERC20InvalidReceiver:
+    arg0: address
+
+error ERC20InvalidSender:
+    arg0: address
+
+error ERC20InvalidSpender:
+    arg0: address
+
+error InvalidAccountNonce:
+    arg0: address
+    arg1: uint256
+
+error InvalidInitialization:
+    pass
+
+error InvalidSignature:
+    pass
+
+struct Action:
+    actor: address
+    amount: uint256
+    receiver: address
+    nonce: uint256
+    deadline: uint256
+
+event SetTokenizationSpokeImmutables:
+    hub: indexed(address)
+    assetId: indexed(uint256)
+
+event Initialized:
+    version: uint64
+
+event Transfer:
+    sender: indexed(address)
+    receiver: indexed(address)
+    value: uint256
+
+event Approval:
+    owner: indexed(address)
+    spender: indexed(address)
+    value: uint256
+
+event Deposit:
+    sender: indexed(address)
+    owner: indexed(address)
+    assets: uint256
+    shares: uint256
+
+event Withdraw:
+    sender: indexed(address)
+    receiver: indexed(address)
+    owner: indexed(address)
+    assets: uint256
+    shares: uint256
+
+@external
+def initialize(shareName: String[128], shareSymbol: String[128]):
+    ...
+
+
+@view
+@external
+def name() -> String[128]:
+    ...
+
+
+@view
+@external
+def symbol() -> String[128]:
+    ...
+
+
+@view
+@external
+def decimals() -> uint8:
+    ...
+
+
+@view
+@external
+def totalSupply() -> uint256:
+    ...
+
+
+@view
+@external
+def balanceOf(account: address) -> uint256:
+    ...
+
+
+@external
+def transfer(receiver: address, amount: uint256) -> bool:
+    ...
+
+
+@view
+@external
+def allowance(owner: address, spender: address) -> uint256:
+    ...
+
+
+@external
+def approve(spender: address, amount: uint256) -> bool:
+    ...
+
+
+@external
+def transferFrom(sender: address, receiver: address, amount: uint256) -> bool:
+    ...
+
+
+@view
+@external
+def hub() -> address:
+    ...
+
+
+@view
+@external
+def assetId() -> uint256:
+    ...
+
+
+@view
+@external
+def asset() -> address:
+    ...
+
+
+@view
+@external
+def DOMAIN_SEPARATOR() -> bytes32:
+    ...
+
+
+@view
+@external
+def eip712Domain() -> (bytes1, String[32], String[8], uint256, address, bytes32, DynArray[uint256, INF]):
+    ...
+
+
+@view
+@external
+def nonces(owner: address, key: uint192) -> uint256:
+    ...
+
+
+@external
+def useNonce(key: uint192) -> uint256:
+    ...
+
+
+@external
+def usePermitNonce() -> uint256:
+    ...
+
+
+@external
+def permit(owner: address, spender: address, amount: uint256, deadline: uint256, v: uint8, r: bytes32, s: bytes32):
+    ...
+
+
+@external
+def renounceAllowance(owner: address):
+    ...
+
+
+@view
+@external
+def previewDeposit(assets: uint256) -> uint256:
+    ...
+
+
+@view
+@external
+def previewMint(shares: uint256) -> uint256:
+    ...
+
+
+@view
+@external
+def previewWithdraw(assets: uint256) -> uint256:
+    ...
+
+
+@view
+@external
+def previewRedeem(shares: uint256) -> uint256:
+    ...
+
+
+@view
+@external
+def convertToShares(assets: uint256) -> uint256:
+    ...
+
+
+@view
+@external
+def convertToAssets(shares: uint256) -> uint256:
+    ...
+
+
+@view
+@external
+def totalAssets() -> uint256:
+    ...
+
+
+@view
+@external
+def maxDeposit(_receiver: address) -> uint256:
+    ...
+
+
+@view
+@external
+def maxMint(receiver: address) -> uint256:
+    ...
+
+
+@view
+@external
+def maxWithdraw(owner: address) -> uint256:
+    ...
+
+
+@view
+@external
+def maxRedeem(owner: address) -> uint256:
+    ...
+
+
+@external
+def deposit(assets: uint256, receiver: address) -> uint256:
+    ...
+
+
+@external
+def mint(shares: uint256, receiver: address) -> uint256:
+    ...
+
+
+@external
+def withdraw(assets: uint256, receiver: address, owner: address) -> uint256:
+    ...
+
+
+@external
+def redeem(shares: uint256, receiver: address, owner: address) -> uint256:
+    ...
+
+
+@external
+def depositWithSig(params: Action, signature: Bytes[INF]) -> uint256:
+    ...
+
+
+@external
+def mintWithSig(params: Action, signature: Bytes[INF]) -> uint256:
+    ...
+
+
+@external
+def withdrawWithSig(params: Action, signature: Bytes[INF]) -> uint256:
+    ...
+
+
+@external
+def redeemWithSig(params: Action, signature: Bytes[INF]) -> uint256:
+    ...
+
+
+@external
+def depositWithPermit(assets: uint256, receiver: address, deadline: uint256, v: uint8, r: bytes32, s: bytes32) -> uint256:
+    ...
+
+
+@view
+@external
+def SPOKE_REVISION() -> uint64:
+    ...
+
+
+@view
+@external
+def PERMIT_NONCE_NAMESPACE() -> uint192:
+    ...
+
+
+@view
+@external
+def PERMIT_TYPEHASH() -> bytes32:
+    ...
+
+
+@view
+@external
+def DEPOSIT_TYPEHASH() -> bytes32:
+    ...
+
+
+@view
+@external
+def MINT_TYPEHASH() -> bytes32:
+    ...
+
+
+@view
+@external
+def WITHDRAW_TYPEHASH() -> bytes32:
+    ...
+
+
+@view
+@external
+def REDEEM_TYPEHASH() -> bytes32:
+    ...
+
+
+@view
+@external
+def MAX_ALLOWED_SPOKE_CAP() -> uint40:
+    ...

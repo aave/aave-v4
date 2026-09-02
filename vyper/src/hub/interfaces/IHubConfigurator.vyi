@@ -1,0 +1,145 @@
+# pragma version 0.5.0b1
+
+from hub.interfaces import IHub
+
+error AccessManagedUnauthorized:
+    arg0: address
+
+error InvalidAddress:
+    pass
+
+error MismatchedConfigs:
+    pass
+
+error SafeCastOverflowedUintDowncast:
+    arg0: uint8
+    arg1: uint256
+
+event AuthorityUpdated:
+    authority: address
+
+@view
+@external
+def authority() -> address:
+    ...
+
+
+@external
+def setAuthority(newAuthority: address):
+    ...
+
+
+@pure
+@external
+def isConsumingScheduledOp() -> bytes4:
+    ...
+
+
+@external
+def addAsset(hub: address, underlying: address, feeReceiver: address, liquidityFee: uint256, irStrategy: address, irData: Bytes[INF]) -> uint256:
+    ...
+
+
+@external
+def addAssetWithDecimals(hub: address, underlying: address, decimals: uint8, feeReceiver: address, liquidityFee: uint256, irStrategy: address, irData: Bytes[INF]) -> uint256:
+    ...
+
+
+@external
+def updateLiquidityFee(hub: address, assetId: uint256, liquidityFee: uint256):
+    ...
+
+
+@external
+def updateFeeReceiver(hub: address, assetId: uint256, feeReceiver: address):
+    ...
+
+
+@external
+def updateFeeConfig(hub: address, assetId: uint256, liquidityFee: uint256, feeReceiver: address):
+    ...
+
+
+@external
+def updateInterestRateStrategy(hub: address, assetId: uint256, irStrategy: address, irData: Bytes[INF]):
+    ...
+
+
+@external
+def updateReinvestmentController(hub: address, assetId: uint256, reinvestmentController: address):
+    ...
+
+
+@external
+def resetAssetCaps(hub: address, assetId: uint256):
+    ...
+
+
+@external
+def deactivateAsset(hub: address, assetId: uint256):
+    ...
+
+
+@external
+def haltAsset(hub: address, assetId: uint256):
+    ...
+
+
+@external
+def addSpoke(hub: address, spoke: address, assetId: uint256, config: IHub.SpokeConfig):
+    ...
+
+
+@external
+def addSpokeToAssets(hub: address, spoke: address, assetIds: DynArray[uint256, INF], configs: DynArray[IHub.SpokeConfig, INF]):
+    ...
+
+
+@external
+def updateSpokeActive(hub: address, assetId: uint256, spoke: address, active: bool):
+    ...
+
+
+@external
+def updateSpokeHalted(hub: address, assetId: uint256, spoke: address, halted: bool):
+    ...
+
+
+@external
+def updateSpokeAddCap(hub: address, assetId: uint256, spoke: address, addCap: uint256):
+    ...
+
+
+@external
+def updateSpokeDrawCap(hub: address, assetId: uint256, spoke: address, drawCap: uint256):
+    ...
+
+
+@external
+def updateSpokeRiskPremiumThreshold(hub: address, assetId: uint256, spoke: address, riskPremiumThreshold: uint256):
+    ...
+
+
+@external
+def updateSpokeCaps(hub: address, assetId: uint256, spoke: address, addCap: uint256, drawCap: uint256):
+    ...
+
+
+@external
+def deactivateSpoke(hub: address, spoke: address):
+    ...
+
+
+@external
+def haltSpoke(hub: address, spoke: address):
+    ...
+
+
+@external
+def resetSpokeCaps(hub: address, spoke: address):
+    ...
+
+
+@external
+def updateInterestRateData(hub: address, assetId: uint256, irData: Bytes[INF]):
+    ...

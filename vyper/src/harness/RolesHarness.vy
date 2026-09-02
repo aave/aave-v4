@@ -2,9 +2,6 @@
 
 from deployments.utils.libraries import Roles
 
-initializes: Roles
-
-
 @external
 @pure
 def ACCESS_MANAGER_ADMIN_ROLE() -> uint64: return Roles.ACCESS_MANAGER_ADMIN_ROLE

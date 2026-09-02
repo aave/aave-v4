@@ -4,10 +4,9 @@ from hub.libraries import Premium
 from libraries import Errors
 from libraries.math import WadRayMath
 from spoke.libraries import LiquidationLogic
-
-initializes: Premium
-initializes: LiquidationLogic
-
+from hub.interfaces import IHub
+from spoke.interfaces import IAaveOracle
+from spoke.interfaces import ILiquidationLogic
 
 error SafeCastOverflowedUintDowncast:
     arg0: uint8
@@ -22,11 +21,6 @@ struct UserPosition:
     premiumOffsetRay: int200
     suppliedShares: uint120
     dynamicConfigKey: uint32
-
-struct PremiumDelta:
-    sharesDelta: int256
-    offsetRayDelta: int256
-    restoredPremiumRay: uint256
 
 
 struct Reserve:
@@ -81,7 +75,7 @@ struct LiquidateDebtParams:
 
 struct LiquidateDebtResult:
     amountRestored: uint256
-    premiumDelta: PremiumDelta
+    premiumDelta: IHub.PremiumDelta
     isDebtPositionEmpty: bool
 
 struct ExecuteLiquidationParams:
@@ -120,17 +114,6 @@ struct LiquidateUserParams:
     receiveShares: bool
 
 
-interface IHub:
-    def previewRemoveByShares(assetId: uint256, shares: uint256) -> uint256: view
-    def remove(assetId: uint256, amount: uint256, to: address) -> uint256: nonpayable
-    def payFeeShares(assetId: uint256, shares: uint256): nonpayable
-    def restore(assetId: uint256, drawnAmount: uint256, premiumDelta: PremiumDelta) -> uint256: nonpayable
-    def getAssetDrawnIndex(assetId: uint256) -> uint256: view
-
-interface IOracle:
-    def getReservePrice(reserveId: uint256) -> uint256: view
-
-
 event LiquidationCall:
     collateralReserveId: indexed(uint256)
     debtReserveId: indexed(uint256)
@@ -139,7 +122,7 @@ event LiquidationCall:
     receiveShares: bool
     debtAmountRestored: uint256
     drawnSharesLiquidated: uint256
-    premiumDelta: PremiumDelta
+    premiumDelta: IHub.PremiumDelta
     collateralAmountRemoved: uint256
     collateralSharesLiquidated: uint256
     collateralSharesToLiquidator: uint256
@@ -205,7 +188,7 @@ def _calculate_premium_delta(
     drawn_index: uint256,
     risk_premium_: uint256,
     restored_premium_ray: uint256,
-) -> PremiumDelta:
+) -> IHub.PremiumDelta:
     premium_debt_ray: uint256 = self._calculate_premium_ray(position, drawn_index)
     if drawn_shares_taken > convert(position.drawnShares, uint256) or restored_premium_ray > premium_debt_ray:
         self._panic_arithmetic()
@@ -213,7 +196,7 @@ def _calculate_premium_delta(
     product: uint256 = remaining_shares * risk_premium_
     new_shares: uint256 = product // 10**4 + convert(product % 10**4 != 0, uint256)
     new_offset: int256 = convert(new_shares * drawn_index, int256) - convert(premium_debt_ray - restored_premium_ray, int256)
-    return PremiumDelta(
+    return IHub.PremiumDelta(
         sharesDelta=convert(new_shares, int256) - convert(position.premiumShares, int256),
         offsetRayDelta=new_offset - convert(position.premiumOffsetRay, int256),
         restoredPremiumRay=restored_premium_ray,
@@ -432,7 +415,7 @@ def getLiquidatorBorrowingStatus(reserveId: uint256) -> bool:
 
 @external
 @pure
-def validateLiquidationCall(params: LiquidationLogic.ValidateLiquidationCallParams) -> bool:
+def validateLiquidationCall(params: ILiquidationLogic.ValidateLiquidationCallParams) -> bool:
     LiquidationLogic.validate_liquidation_call(params)
     return True
 
@@ -463,7 +446,7 @@ def calculateCollateralToLiquidate(params: LiquidationLogic.CalculateCollateralT
 
 @external
 @view
-def calculateLiquidationAmounts(params: LiquidationLogic.CalculateLiquidationAmountsParams) -> LiquidationLogic.LiquidationAmounts:
+def calculateLiquidationAmounts(params: ILiquidationLogic.CalculateLiquidationAmountsParams) -> ILiquidationLogic.LiquidationAmounts:
     return LiquidationLogic.calculate_liquidation_amounts(params)
 
 
@@ -508,7 +491,7 @@ def liquidateCollateral(params: LiquidateCollateralParams) -> LiquidateCollatera
 @internal
 def _liquidate_debt(user: address, storage_reserve_id: uint256, params: LiquidateDebtParams) -> LiquidateDebtResult:
     position: UserPosition = self.user_positions[user][storage_reserve_id]
-    premium_delta: PremiumDelta = self._calculate_premium_delta(
+    premium_delta: IHub.PremiumDelta = self._calculate_premium_delta(
         position,
         params.drawnSharesToLiquidate,
         params.drawnIndex,
@@ -543,7 +526,7 @@ def _execute(params: ExecuteLiquidationParams) -> bool:
     debt_position: UserPosition = self.user_positions[params.user][self.debt_reserve_id]
     drawn_index: uint256 = staticcall IHub(params.debtHub).getAssetDrawnIndex(params.debtAssetId)
     premium_ray: uint256 = self._calculate_premium_ray(debt_position, drawn_index)
-    validate_params: LiquidationLogic.ValidateLiquidationCallParams = LiquidationLogic.ValidateLiquidationCallParams(
+    validate_params: ILiquidationLogic.ValidateLiquidationCallParams = ILiquidationLogic.ValidateLiquidationCallParams(
         user=params.user,
         liquidator=params.liquidator,
         collateralReserveFlags=params.collateralReserveFlags,
@@ -557,18 +540,18 @@ def _execute(params: ExecuteLiquidationParams) -> bool:
         receiveShares=params.receiveShares,
     )
     LiquidationLogic.validate_liquidation_call(validate_params)
-    amount_params: LiquidationLogic.CalculateLiquidationAmountsParams = LiquidationLogic.CalculateLiquidationAmountsParams(
+    amount_params: ILiquidationLogic.CalculateLiquidationAmountsParams = ILiquidationLogic.CalculateLiquidationAmountsParams(
         collateralReserveHub=params.collateralHub,
         collateralReserveAssetId=params.collateralAssetId,
         suppliedShares=convert(collateral_position.suppliedShares, uint256),
         collateralAssetDecimals=params.collateralAssetDecimals,
-        collateralAssetPrice=staticcall IOracle(params.oracle).getReservePrice(params.collateralReserveId),
+        collateralAssetPrice=staticcall IAaveOracle(params.oracle).getReservePrice(params.collateralReserveId),
         drawnShares=convert(debt_position.drawnShares, uint256),
         premiumDebtRay=premium_ray,
         drawnIndex=drawn_index,
         totalDebtValueRay=params.totalDebtValueRay,
         debtAssetDecimals=params.debtAssetDecimals,
-        debtAssetPrice=staticcall IOracle(params.oracle).getReservePrice(params.debtReserveId),
+        debtAssetPrice=staticcall IAaveOracle(params.oracle).getReservePrice(params.debtReserveId),
         debtToCover=params.debtToCover,
         collateralFactor=convert(params.collateralDynConfig.collateralFactor, uint256),
         healthFactorForMaxBonus=convert(params.liquidationConfig.healthFactorForMaxBonus, uint256),
@@ -578,7 +561,7 @@ def _execute(params: ExecuteLiquidationParams) -> bool:
         healthFactor=params.healthFactor,
         liquidationFee=convert(params.collateralDynConfig.liquidationFee, uint256),
     )
-    amounts: LiquidationLogic.LiquidationAmounts = LiquidationLogic.calculate_liquidation_amounts(amount_params)
+    amounts: ILiquidationLogic.LiquidationAmounts = LiquidationLogic.calculate_liquidation_amounts(amount_params)
     collateral_result: LiquidateCollateralResult = self._liquidate_collateral(
         params.user,
         self.collateral_reserve_id,

@@ -2,8 +2,6 @@
 
 from position_manager.libraries import EIP712Hash
 
-initializes: EIP712Hash
-
 struct Action:
     spoke: address
     reserveId: uint256

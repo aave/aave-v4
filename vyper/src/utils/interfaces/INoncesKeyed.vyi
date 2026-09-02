@@ -1,0 +1,14 @@
+# pragma version 0.5.0b1
+
+error InvalidAccountNonce:
+    arg0: address
+    arg1: uint256
+
+@external
+def useNonce(key: uint192) -> uint256:
+    ...
+
+@view
+@external
+def nonces(owner: address, key: uint192) -> uint256:
+    ...

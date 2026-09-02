@@ -3,80 +3,15 @@
 from position_manager import PositionManagerBase
 from position_manager.libraries import EIP712Hash
 from utils import NoncesKeyed
+from spoke.interfaces import ISpoke
+from position_manager.interfaces import ITakerPositionManager
+
+implements: ITakerPositionManager
 
 initializes: PositionManagerBase
-initializes: EIP712Hash
 initializes: NoncesKeyed
 exports: PositionManagerBase.__interface__
 exports: NoncesKeyed.__interface__
-
-
-error InsufficientBorrowAllowance:
-    arg0: uint256
-    arg1: uint256
-
-error InsufficientWithdrawAllowance:
-    arg0: uint256
-    arg1: uint256
-
-error InvalidSignature:
-    pass
-
-struct Reserve:
-    underlying: address
-    hub: address
-    assetId: uint16
-    decimals: uint8
-    collateralRisk: uint24
-    flags: uint8
-    dynamicConfigKey: uint32
-
-struct Permit:
-    spoke: address
-    reserveId: uint256
-    owner: address
-    spender: address
-    amount: uint256
-    nonce: uint256
-    deadline: uint256
-
-interface ISpoke:
-    def getReserve(reserveId: uint256) -> Reserve: view
-    def getUserSuppliedAssets(reserveId: uint256, user: address) -> uint256: view
-    def getUserTotalDebt(reserveId: uint256, user: address) -> uint256: view
-    def withdraw(reserveId: uint256, amount: uint256, onBehalfOf: address) -> (uint256, uint256): nonpayable
-    def borrow(reserveId: uint256, amount: uint256, onBehalfOf: address) -> (uint256, uint256): nonpayable
-
-
-event WithdrawApproval:
-    spoke: indexed(address)
-    owner: indexed(address)
-    spender: indexed(address)
-    reserveId: uint256
-    amount: uint256
-
-event BorrowApproval:
-    spoke: indexed(address)
-    owner: indexed(address)
-    spender: indexed(address)
-    reserveId: uint256
-    amount: uint256
-
-event WithdrawOnBehalfOf:
-    spoke: indexed(address)
-    caller: indexed(address)
-    onBehalfOf: indexed(address)
-    reserveId: uint256
-    withdrawnShares: uint256
-    withdrawnAmount: uint256
-
-event BorrowOnBehalfOf:
-    spoke: indexed(address)
-    caller: indexed(address)
-    onBehalfOf: indexed(address)
-    reserveId: uint256
-    drawnShares: uint256
-    drawnAmount: uint256
 
 
 WITHDRAW_PERMIT_TYPEHASH: public(constant(bytes32)) = 0x9e6642fd4c06a4c1a5e201f1e41c6b7892fcf06859c796b054c510b80e2a0a3f
@@ -109,27 +44,27 @@ def _domain_separator() -> bytes32:
 @internal
 def _verify(signer: address, intent_hash: bytes32, nonce: uint256, deadline: uint256, signature: Bytes[INF]):
     if block.timestamp > deadline or len(signature) != 65:
-        raise InvalidSignature()
+        raise ITakerPositionManager.InvalidSignature()
     digest: bytes32 = keccak256(concat(b"\x19\x01", self._domain_separator(), intent_hash))
     r: bytes32 = convert(slice(signature, 0, 32), bytes32)
     s: bytes32 = convert(slice(signature, 32, 32), bytes32)
     v: uint256 = convert(slice(signature, 64, 1), uint256)
     recovered: address = ecrecover(digest, v, r, s)
     if recovered == empty(address) or recovered != signer:
-        raise InvalidSignature()
+        raise ITakerPositionManager.InvalidSignature()
     NoncesKeyed._use_checked_nonce(signer, nonce)
 
 
 @internal
 def _update_withdraw(spoke: address, reserve_id: uint256, owner: address, spender: address, amount: uint256):
     self.withdraw_allowances[spoke][reserve_id][owner][spender] = amount
-    log WithdrawApproval(spoke=spoke, owner=owner, spender=spender, reserveId=reserve_id, amount=amount)
+    log ITakerPositionManager.WithdrawApproval(spoke=spoke, owner=owner, spender=spender, reserveId=reserve_id, amount=amount)
 
 
 @internal
 def _update_borrow(spoke: address, reserve_id: uint256, owner: address, spender: address, amount: uint256):
     self.borrow_allowances[spoke][reserve_id][owner][spender] = amount
-    log BorrowApproval(spoke=spoke, owner=owner, spender=spender, reserveId=reserve_id, amount=amount)
+    log ITakerPositionManager.BorrowApproval(spoke=spoke, owner=owner, spender=spender, reserveId=reserve_id, amount=amount)
 
 
 @internal
@@ -168,7 +103,7 @@ def approveBorrow(spoke: address, reserveId: uint256, spender: address, amount: 
 
 
 @external
-def approveWithdrawWithSig(params: Permit, signature: Bytes[INF]):
+def approveWithdrawWithSig(params: ITakerPositionManager.Permit, signature: Bytes[INF]):
     PositionManagerBase._check_registered(params.spoke)
     intent_hash: bytes32 = EIP712Hash.hash_reserve_permit(
         WITHDRAW_PERMIT_TYPEHASH,
@@ -185,7 +120,7 @@ def approveWithdrawWithSig(params: Permit, signature: Bytes[INF]):
 
 
 @external
-def approveBorrowWithSig(params: Permit, signature: Bytes[INF]):
+def approveBorrowWithSig(params: ITakerPositionManager.Permit, signature: Bytes[INF]):
     PositionManagerBase._check_registered(params.spoke)
     intent_hash: bytes32 = EIP712Hash.hash_reserve_permit(
         BORROW_PERMIT_TYPEHASH,
@@ -230,10 +165,10 @@ def borrowAllowance(spoke: address, reserveId: uint256, owner: address, spender:
 @external
 def withdrawOnBehalfOf(spoke: address, reserveId: uint256, amount: uint256, onBehalfOf: address) -> (uint256, uint256):
     PositionManagerBase._check_registered(spoke)
-    reserve: Reserve = staticcall ISpoke(spoke).getReserve(reserveId)
+    reserve: ISpoke.Reserve = staticcall ISpoke(spoke).getReserve(reserveId)
     allowance: uint256 = self.withdraw_allowances[spoke][reserveId][onBehalfOf][msg.sender]
     if allowance < amount:
-        raise InsufficientWithdrawAllowance(allowance, amount)
+        raise ITakerPositionManager.InsufficientWithdrawAllowance(allowance, amount)
     supplied_before: uint256 = 0
     if allowance != max_value(uint256):
         supplied_before = staticcall ISpoke(spoke).getUserSuppliedAssets(reserveId, onBehalfOf)
@@ -245,17 +180,17 @@ def withdrawOnBehalfOf(spoke: address, reserveId: uint256, amount: uint256, onBe
         consumed: uint256 = supplied_before - supplied_after
         self._update_withdraw(spoke, reserveId, onBehalfOf, msg.sender, allowance - min(allowance, consumed))
     self._safe_transfer(reserve.underlying, msg.sender, withdrawn)
-    log WithdrawOnBehalfOf(spoke=spoke, caller=msg.sender, onBehalfOf=onBehalfOf, reserveId=reserveId, withdrawnShares=shares, withdrawnAmount=withdrawn)
+    log ITakerPositionManager.WithdrawOnBehalfOf(spoke=spoke, caller=msg.sender, onBehalfOf=onBehalfOf, reserveId=reserveId, withdrawnShares=shares, withdrawnAmount=withdrawn)
     return shares, withdrawn
 
 
 @external
 def borrowOnBehalfOf(spoke: address, reserveId: uint256, amount: uint256, onBehalfOf: address) -> (uint256, uint256):
     PositionManagerBase._check_registered(spoke)
-    reserve: Reserve = staticcall ISpoke(spoke).getReserve(reserveId)
+    reserve: ISpoke.Reserve = staticcall ISpoke(spoke).getReserve(reserveId)
     allowance: uint256 = self.borrow_allowances[spoke][reserveId][onBehalfOf][msg.sender]
     if allowance < amount:
-        raise InsufficientBorrowAllowance(allowance, amount)
+        raise ITakerPositionManager.InsufficientBorrowAllowance(allowance, amount)
     borrowed_before: uint256 = 0
     if allowance != max_value(uint256):
         borrowed_before = staticcall ISpoke(spoke).getUserTotalDebt(reserveId, onBehalfOf)
@@ -267,7 +202,7 @@ def borrowOnBehalfOf(spoke: address, reserveId: uint256, amount: uint256, onBeha
         consumed: uint256 = borrowed_after - borrowed_before
         self._update_borrow(spoke, reserveId, onBehalfOf, msg.sender, allowance - min(allowance, consumed))
     self._safe_transfer(reserve.underlying, msg.sender, borrowed)
-    log BorrowOnBehalfOf(spoke=spoke, caller=msg.sender, onBehalfOf=onBehalfOf, reserveId=reserveId, drawnShares=shares, drawnAmount=borrowed)
+    log ITakerPositionManager.BorrowOnBehalfOf(spoke=spoke, caller=msg.sender, onBehalfOf=onBehalfOf, reserveId=reserveId, drawnShares=shares, drawnAmount=borrowed)
     return shares, borrowed
 
 

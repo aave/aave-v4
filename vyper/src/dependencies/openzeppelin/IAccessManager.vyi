@@ -1,0 +1,33 @@
+# pragma version 0.5.0b1
+
+@external
+def grantRole(roleId: uint64, account: address, executionDelay: uint32):
+    ...
+
+@external
+def revokeRole(roleId: uint64, account: address):
+    ...
+
+@external
+def setRoleAdmin(roleId: uint64, admin: uint64):
+    ...
+
+@external
+def setRoleGuardian(roleId: uint64, guardian: uint64):
+    ...
+
+@external
+def setGrantDelay(roleId: uint64, newDelay: uint32):
+    ...
+
+@external
+def labelRole(roleId: uint64, label: String[INF]):
+    ...
+
+@external
+def setTargetFunctionRole(target: address, selectors: DynArray[bytes4, INF], roleId: uint64):
+    ...
+
+@external
+def setTargetAdminDelay(target: address, newDelay: uint32):
+    ...

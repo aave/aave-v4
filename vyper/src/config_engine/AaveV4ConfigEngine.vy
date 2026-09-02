@@ -1,22 +1,20 @@
 # pragma version 0.5.0b1
+from hub.interfaces import IHub
+from hub.interfaces import IAssetInterestRateStrategy
+from hub.interfaces import IHubConfigurator
+from spoke.interfaces import ISpoke
+from spoke.interfaces import ISpokeConfigurator
+from position_manager.interfaces import IPositionManager
+from dependencies.openzeppelin import IAccessManager
+from config_engine.interfaces import ITokenizationSpokeDeployer
+from config_engine.interfaces import IAaveV4ConfigEngine
+
+implements: IAaveV4ConfigEngine
 
 # Stateless Vyper implementation of the Aave V4 configuration engine.  It is
 # intentionally suitable for both direct calls and governance payload
 # delegatecalls: all state changes are performed on the supplied protocol
 # contracts and this contract has no storage.
-
-error InvalidBoolValue:
-    arg0: uint256
-
-error InvalidIrDataWithNewStrategy:
-    pass
-
-error InvalidTokenizationSpokeConfig:
-    pass
-
-error SafeCastOverflowedUintDowncast:
-    arg0: uint8
-    arg1: uint256
 
 MAX_UPDATES: constant(uint256) = 32
 MAX_ASSETS: constant(uint256) = 32
@@ -31,270 +29,6 @@ KEEP_CURRENT_UINT32: constant(uint32) = max_value(uint32) - 23
 KEEP_CURRENT_UINT16: constant(uint16) = max_value(uint16) - 61
 
 
-struct InterestRateData:
-    optimalUsageRatio: uint16
-    baseDrawnRate: uint32
-    rateGrowthBeforeOptimal: uint32
-    rateGrowthAfterOptimal: uint32
-
-struct TokenizationSpokeConfig:
-    addCap: uint256
-    proxyAdminOwner: address
-    name: String[MAX_STRING]
-    symbol: String[MAX_STRING]
-
-struct AssetListing:
-    hubConfigurator: address
-    hub: address
-    underlying: address
-    feeReceiver: address
-    liquidityFee: uint256
-    irStrategy: address
-    irData: InterestRateData
-    tokenization: TokenizationSpokeConfig
-
-struct AssetConfigUpdate:
-    hubConfigurator: address
-    hub: address
-    underlying: address
-    liquidityFee: uint256
-    feeReceiver: address
-    irStrategy: address
-    irData: InterestRateData
-    reinvestmentController: address
-
-struct HubSpokeConfig:
-    addCap: uint40
-    drawCap: uint40
-    riskPremiumThreshold: uint24
-    active: bool
-    halted: bool
-
-struct SpokeAssetConfig:
-    underlying: address
-    config: HubSpokeConfig
-
-struct SpokeToAssetsAddition:
-    hubConfigurator: address
-    hub: address
-    spoke: address
-    assets: DynArray[SpokeAssetConfig, MAX_ASSETS]
-
-struct SpokeConfigUpdate:
-    hubConfigurator: address
-    hub: address
-    underlying: address
-    spoke: address
-    addCap: uint256
-    drawCap: uint256
-    riskPremiumThreshold: uint256
-    active: uint256
-    halted: uint256
-
-struct AssetHalt:
-    hubConfigurator: address
-    hub: address
-    underlying: address
-
-struct AssetDeactivation:
-    hubConfigurator: address
-    hub: address
-    underlying: address
-
-struct AssetCapsReset:
-    hubConfigurator: address
-    hub: address
-    underlying: address
-
-struct SpokeDeactivation:
-    hubConfigurator: address
-    hub: address
-    spoke: address
-
-struct SpokeCapsReset:
-    hubConfigurator: address
-    hub: address
-    spoke: address
-
-struct ReserveConfig:
-    collateralRisk: uint24
-    paused: bool
-    frozen: bool
-    borrowable: bool
-    receiveSharesEnabled: bool
-
-struct DynamicReserveConfig:
-    collateralFactor: uint16
-    maxLiquidationBonus: uint32
-    liquidationFee: uint16
-
-struct LiquidationConfig:
-    targetHealthFactor: uint128
-    healthFactorForMaxBonus: uint64
-    liquidationBonusFactor: uint16
-
-struct ReserveListing:
-    spokeConfigurator: address
-    spoke: address
-    hub: address
-    underlying: address
-    priceSource: address
-    config: ReserveConfig
-    dynamicConfig: DynamicReserveConfig
-
-struct ReserveConfigUpdate:
-    spokeConfigurator: address
-    spoke: address
-    hub: address
-    underlying: address
-    priceSource: address
-    collateralRisk: uint256
-    paused: uint256
-    frozen: uint256
-    borrowable: uint256
-    receiveSharesEnabled: uint256
-
-struct LiquidationConfigUpdate:
-    spokeConfigurator: address
-    spoke: address
-    targetHealthFactor: uint256
-    healthFactorForMaxBonus: uint256
-    liquidationBonusFactor: uint256
-
-struct DynamicReserveConfigAddition:
-    spokeConfigurator: address
-    spoke: address
-    hub: address
-    underlying: address
-    dynamicConfig: DynamicReserveConfig
-
-struct DynamicReserveConfigUpdate:
-    spokeConfigurator: address
-    spoke: address
-    hub: address
-    underlying: address
-    dynamicConfigKey: uint256
-    collateralFactor: uint256
-    maxLiquidationBonus: uint256
-    liquidationFee: uint256
-
-struct PositionManagerUpdate:
-    spokeConfigurator: address
-    spoke: address
-    positionManager: address
-    active: bool
-
-struct SpokeRegistration:
-    positionManager: address
-    spoke: address
-    registered: bool
-
-struct PositionManagerRoleRenouncement:
-    positionManager: address
-    spoke: address
-    user: address
-
-struct RoleMembership:
-    authority: address
-    roleId: uint64
-    account: address
-    granted: bool
-    executionDelay: uint32
-
-struct RoleUpdate:
-    authority: address
-    roleId: uint64
-    admin: uint64
-    guardian: uint64
-    grantDelay: uint32
-    label: String[MAX_STRING]
-    labelUpdate: bool
-
-struct TargetFunctionRoleUpdate:
-    authority: address
-    target: address
-    selectors: DynArray[bytes4, MAX_SELECTORS]
-    roleId: uint64
-
-struct TargetAdminDelayUpdate:
-    authority: address
-    target: address
-    newDelay: uint32
-
-struct AssetConfig:
-    feeReceiver: address
-    liquidityFee: uint16
-    irStrategy: address
-    reinvestmentController: address
-
-
-interface IHub:
-    def getAssetId(underlying: address) -> uint256: view
-    def getAssetConfig(assetId: uint256) -> AssetConfig: view
-
-interface IInterestRateStrategy:
-    def getInterestRateData(assetId: uint256) -> InterestRateData: view
-
-interface IHubConfigurator:
-    def addAsset(hub: address, underlying: address, feeReceiver: address, liquidityFee: uint256, irStrategy: address, irData: Bytes[INF]) -> uint256: nonpayable
-    def updateFeeConfig(hub: address, assetId: uint256, liquidityFee: uint256, feeReceiver: address): nonpayable
-    def updateLiquidityFee(hub: address, assetId: uint256, liquidityFee: uint256): nonpayable
-    def updateFeeReceiver(hub: address, assetId: uint256, feeReceiver: address): nonpayable
-    def updateInterestRateStrategy(hub: address, assetId: uint256, irStrategy: address, irData: Bytes[INF]): nonpayable
-    def updateInterestRateData(hub: address, assetId: uint256, irData: Bytes[INF]): nonpayable
-    def updateReinvestmentController(hub: address, assetId: uint256, reinvestmentController: address): nonpayable
-    def addSpoke(hub: address, spoke: address, assetId: uint256, config: HubSpokeConfig): nonpayable
-    def addSpokeToAssets(hub: address, spoke: address, assetIds: DynArray[uint256, INF], configs: DynArray[HubSpokeConfig, INF]): nonpayable
-    def updateSpokeCaps(hub: address, assetId: uint256, spoke: address, addCap: uint256, drawCap: uint256): nonpayable
-    def updateSpokeAddCap(hub: address, assetId: uint256, spoke: address, addCap: uint256): nonpayable
-    def updateSpokeDrawCap(hub: address, assetId: uint256, spoke: address, drawCap: uint256): nonpayable
-    def updateSpokeRiskPremiumThreshold(hub: address, assetId: uint256, spoke: address, riskPremiumThreshold: uint256): nonpayable
-    def updateSpokeActive(hub: address, assetId: uint256, spoke: address, active: bool): nonpayable
-    def updateSpokeHalted(hub: address, assetId: uint256, spoke: address, halted: bool): nonpayable
-    def haltAsset(hub: address, assetId: uint256): nonpayable
-    def deactivateAsset(hub: address, assetId: uint256): nonpayable
-    def resetAssetCaps(hub: address, assetId: uint256): nonpayable
-    def deactivateSpoke(hub: address, spoke: address): nonpayable
-    def resetSpokeCaps(hub: address, spoke: address): nonpayable
-
-interface ISpoke:
-    def getReserveId(hub: address, assetId: uint256) -> uint256: view
-    def getDynamicReserveConfig(reserveId: uint256, dynamicConfigKey: uint32) -> DynamicReserveConfig: view
-
-interface ISpokeConfigurator:
-    def addReserve(spoke: address, hub: address, assetId: uint256, priceSource: address, config: ReserveConfig, dynamicConfig: DynamicReserveConfig) -> uint256: nonpayable
-    def updateReservePriceSource(spoke: address, reserveId: uint256, priceSource: address): nonpayable
-    def updateCollateralRisk(spoke: address, reserveId: uint256, collateralRisk: uint256): nonpayable
-    def updatePaused(spoke: address, reserveId: uint256, paused: bool): nonpayable
-    def updateFrozen(spoke: address, reserveId: uint256, frozen: bool): nonpayable
-    def updateBorrowable(spoke: address, reserveId: uint256, borrowable: bool): nonpayable
-    def updateReceiveSharesEnabled(spoke: address, reserveId: uint256, receiveSharesEnabled: bool): nonpayable
-    def updateLiquidationConfig(spoke: address, config: LiquidationConfig): nonpayable
-    def updateLiquidationTargetHealthFactor(spoke: address, targetHealthFactor: uint256): nonpayable
-    def updateHealthFactorForMaxBonus(spoke: address, healthFactorForMaxBonus: uint256): nonpayable
-    def updateLiquidationBonusFactor(spoke: address, liquidationBonusFactor: uint256): nonpayable
-    def addDynamicReserveConfig(spoke: address, reserveId: uint256, dynamicConfig: DynamicReserveConfig) -> uint32: nonpayable
-    def updateDynamicReserveConfig(spoke: address, reserveId: uint256, dynamicConfigKey: uint32, dynamicConfig: DynamicReserveConfig): nonpayable
-    def updatePositionManager(spoke: address, positionManager: address, active: bool): nonpayable
-
-interface IPositionManager:
-    def registerSpoke(spoke: address, registered: bool): nonpayable
-    def renouncePositionManagerRole(spoke: address, user: address): nonpayable
-
-interface IAccessManager:
-    def grantRole(roleId: uint64, account: address, executionDelay: uint32): nonpayable
-    def revokeRole(roleId: uint64, account: address): nonpayable
-    def setRoleAdmin(roleId: uint64, admin: uint64): nonpayable
-    def setRoleGuardian(roleId: uint64, guardian: uint64): nonpayable
-    def setGrantDelay(roleId: uint64, newDelay: uint32): nonpayable
-    def labelRole(roleId: uint64, label: String[MAX_STRING]): nonpayable
-    def setTargetFunctionRole(target: address, selectors: DynArray[bytes4, INF], roleId: uint64): nonpayable
-    def setTargetAdminDelay(target: address, newDelay: uint32): nonpayable
-
-interface ITokenizationSpokeDeployer:
-    def deploy(hub: address, underlying: address, name: String[MAX_STRING], symbol: String[MAX_STRING], proxyAdminOwner: address) -> address: nonpayable
-
-
 TOKENIZATION_SPOKE_DEPLOYER: immutable(address)
 
 
@@ -307,7 +41,7 @@ def __init__(tokenizationSpokeDeployer: address):
 @pure
 def _to_bool(flag: uint256) -> bool:
     if flag > 1:
-        raise InvalidBoolValue(flag)
+        raise IAaveV4ConfigEngine.InvalidBoolValue(flag)
     return flag == 1
 
 
@@ -315,7 +49,7 @@ def _to_bool(flag: uint256) -> bool:
 @pure
 def _u128(cast_value: uint256) -> uint128:
     if cast_value > convert(max_value(uint128), uint256):
-        raise SafeCastOverflowedUintDowncast(128, cast_value)
+        raise IAaveV4ConfigEngine.SafeCastOverflowedUintDowncast(128, cast_value)
     return convert(cast_value, uint128)
 
 
@@ -323,7 +57,7 @@ def _u128(cast_value: uint256) -> uint128:
 @pure
 def _u64(cast_value: uint256) -> uint64:
     if cast_value > convert(max_value(uint64), uint256):
-        raise SafeCastOverflowedUintDowncast(64, cast_value)
+        raise IAaveV4ConfigEngine.SafeCastOverflowedUintDowncast(64, cast_value)
     return convert(cast_value, uint64)
 
 
@@ -331,7 +65,7 @@ def _u64(cast_value: uint256) -> uint64:
 @pure
 def _u32(cast_value: uint256) -> uint32:
     if cast_value > convert(max_value(uint32), uint256):
-        raise SafeCastOverflowedUintDowncast(32, cast_value)
+        raise IAaveV4ConfigEngine.SafeCastOverflowedUintDowncast(32, cast_value)
     return convert(cast_value, uint32)
 
 
@@ -339,7 +73,7 @@ def _u32(cast_value: uint256) -> uint32:
 @pure
 def _u16(cast_value: uint256) -> uint16:
     if cast_value > convert(max_value(uint16), uint256):
-        raise SafeCastOverflowedUintDowncast(16, cast_value)
+        raise IAaveV4ConfigEngine.SafeCastOverflowedUintDowncast(16, cast_value)
     return convert(cast_value, uint16)
 
 
@@ -347,7 +81,7 @@ def _u16(cast_value: uint256) -> uint16:
 @pure
 def _u40(cast_value: uint256) -> uint40:
     if cast_value > convert(max_value(uint40), uint256):
-        raise SafeCastOverflowedUintDowncast(40, cast_value)
+        raise IAaveV4ConfigEngine.SafeCastOverflowedUintDowncast(40, cast_value)
     return convert(cast_value, uint40)
 
 
@@ -364,8 +98,8 @@ def _reserve_id(spoke: address, hub: address, underlying: address) -> uint256:
 
 
 @external
-def executeHubAssetListings(listings: DynArray[AssetListing, MAX_UPDATES]):
-    for listing: AssetListing in listings:
+def executeHubAssetListings(listings: DynArray[IAaveV4ConfigEngine.AssetListing, MAX_UPDATES]):
+    for listing: IAaveV4ConfigEngine.AssetListing in listings:
         extcall IHubConfigurator(listing.hubConfigurator).addAsset(
             listing.hub,
             listing.underlying,
@@ -380,7 +114,7 @@ def executeHubAssetListings(listings: DynArray[AssetListing, MAX_UPDATES]):
         if not has_name and not has_symbol and not has_owner and listing.tokenization.addCap == 0:
             continue
         if not has_name or not has_symbol or not has_owner:
-            raise InvalidTokenizationSpokeConfig()
+            raise IAaveV4ConfigEngine.InvalidTokenizationSpokeConfig()
         proxy: address = extcall ITokenizationSpokeDeployer(TOKENIZATION_SPOKE_DEPLOYER).deploy(
             listing.hub,
             listing.underlying,
@@ -389,7 +123,7 @@ def executeHubAssetListings(listings: DynArray[AssetListing, MAX_UPDATES]):
             listing.tokenization.proxyAdminOwner,
         )
         asset_id: uint256 = self._asset_id(listing.hub, listing.underlying)
-        config: HubSpokeConfig = HubSpokeConfig(
+        config: IHub.SpokeConfig = IHub.SpokeConfig(
             addCap=self._u40(listing.tokenization.addCap),
             drawCap=0,
             riskPremiumThreshold=0,
@@ -400,8 +134,8 @@ def executeHubAssetListings(listings: DynArray[AssetListing, MAX_UPDATES]):
 
 
 @external
-def executeHubAssetConfigUpdates(updates: DynArray[AssetConfigUpdate, INF]):
-    for update: AssetConfigUpdate in updates:
+def executeHubAssetConfigUpdates(updates: DynArray[IAaveV4ConfigEngine.AssetConfigUpdate, INF]):
+    for update: IAaveV4ConfigEngine.AssetConfigUpdate in updates:
         asset_id: uint256 = self._asset_id(update.hub, update.underlying)
         update_fee: bool = update.liquidityFee != KEEP_CURRENT
         update_receiver: bool = update.feeReceiver != KEEP_CURRENT_ADDRESS
@@ -419,7 +153,7 @@ def executeHubAssetConfigUpdates(updates: DynArray[AssetConfigUpdate, INF]):
                 or update.irData.rateGrowthBeforeOptimal == KEEP_CURRENT_UINT32
                 or update.irData.rateGrowthAfterOptimal == KEEP_CURRENT_UINT32
             ):
-                raise InvalidIrDataWithNewStrategy()
+                raise IAaveV4ConfigEngine.InvalidIrDataWithNewStrategy()
             extcall IHubConfigurator(update.hubConfigurator).updateInterestRateStrategy(
                 update.hub, asset_id, update.irStrategy, abi_encode(update.irData)
             )
@@ -429,8 +163,8 @@ def executeHubAssetConfigUpdates(updates: DynArray[AssetConfigUpdate, INF]):
             update_before: bool = update.irData.rateGrowthBeforeOptimal != KEEP_CURRENT_UINT32
             update_after: bool = update.irData.rateGrowthAfterOptimal != KEEP_CURRENT_UINT32
             if update_optimal or update_base or update_before or update_after:
-                asset_config: AssetConfig = staticcall IHub(update.hub).getAssetConfig(asset_id)
-                current: InterestRateData = staticcall IInterestRateStrategy(asset_config.irStrategy).getInterestRateData(asset_id)
+                asset_config: IHub.AssetConfig = staticcall IHub(update.hub).getAssetConfig(asset_id)
+                current: IAssetInterestRateStrategy.InterestRateData = staticcall IAssetInterestRateStrategy(asset_config.irStrategy).getInterestRateData(asset_id)
                 if update_optimal:
                     current.optimalUsageRatio = update.irData.optimalUsageRatio
                 if update_base:
@@ -446,19 +180,19 @@ def executeHubAssetConfigUpdates(updates: DynArray[AssetConfigUpdate, INF]):
 
 
 @external
-def executeHubSpokeToAssetsAdditions(additions: DynArray[SpokeToAssetsAddition, MAX_UPDATES]):
-    for addition: SpokeToAssetsAddition in additions:
+def executeHubSpokeToAssetsAdditions(additions: DynArray[IAaveV4ConfigEngine.SpokeToAssetsAddition, MAX_UPDATES]):
+    for addition: IAaveV4ConfigEngine.SpokeToAssetsAddition in additions:
         asset_ids: DynArray[uint256, MAX_ASSETS] = []
-        configs: DynArray[HubSpokeConfig, MAX_ASSETS] = []
-        for item: SpokeAssetConfig in addition.assets:
+        configs: DynArray[IHub.SpokeConfig, MAX_ASSETS] = []
+        for item: IAaveV4ConfigEngine.SpokeAssetConfig in addition.assets:
             asset_ids.append(self._asset_id(addition.hub, item.underlying))
             configs.append(item.config)
         extcall IHubConfigurator(addition.hubConfigurator).addSpokeToAssets(addition.hub, addition.spoke, asset_ids, configs)
 
 
 @external
-def executeHubSpokeConfigUpdates(updates: DynArray[SpokeConfigUpdate, INF]):
-    for update: SpokeConfigUpdate in updates:
+def executeHubSpokeConfigUpdates(updates: DynArray[IAaveV4ConfigEngine.SpokeConfigUpdate, INF]):
+    for update: IAaveV4ConfigEngine.SpokeConfigUpdate in updates:
         asset_id: uint256 = self._asset_id(update.hub, update.underlying)
         update_add: bool = update.addCap != KEEP_CURRENT
         update_draw: bool = update.drawCap != KEEP_CURRENT
@@ -477,38 +211,38 @@ def executeHubSpokeConfigUpdates(updates: DynArray[SpokeConfigUpdate, INF]):
 
 
 @external
-def executeHubAssetHalts(halts: DynArray[AssetHalt, INF]):
-    for item: AssetHalt in halts:
+def executeHubAssetHalts(halts: DynArray[IAaveV4ConfigEngine.AssetHalt, INF]):
+    for item: IAaveV4ConfigEngine.AssetHalt in halts:
         extcall IHubConfigurator(item.hubConfigurator).haltAsset(item.hub, self._asset_id(item.hub, item.underlying))
 
 
 @external
-def executeHubAssetDeactivations(deactivations: DynArray[AssetDeactivation, INF]):
-    for item: AssetDeactivation in deactivations:
+def executeHubAssetDeactivations(deactivations: DynArray[IAaveV4ConfigEngine.AssetDeactivation, INF]):
+    for item: IAaveV4ConfigEngine.AssetDeactivation in deactivations:
         extcall IHubConfigurator(item.hubConfigurator).deactivateAsset(item.hub, self._asset_id(item.hub, item.underlying))
 
 
 @external
-def executeHubAssetCapsResets(resets: DynArray[AssetCapsReset, INF]):
-    for item: AssetCapsReset in resets:
+def executeHubAssetCapsResets(resets: DynArray[IAaveV4ConfigEngine.AssetCapsReset, INF]):
+    for item: IAaveV4ConfigEngine.AssetCapsReset in resets:
         extcall IHubConfigurator(item.hubConfigurator).resetAssetCaps(item.hub, self._asset_id(item.hub, item.underlying))
 
 
 @external
-def executeHubSpokeDeactivations(deactivations: DynArray[SpokeDeactivation, INF]):
-    for item: SpokeDeactivation in deactivations:
+def executeHubSpokeDeactivations(deactivations: DynArray[IAaveV4ConfigEngine.SpokeDeactivation, INF]):
+    for item: IAaveV4ConfigEngine.SpokeDeactivation in deactivations:
         extcall IHubConfigurator(item.hubConfigurator).deactivateSpoke(item.hub, item.spoke)
 
 
 @external
-def executeHubSpokeCapsResets(resets: DynArray[SpokeCapsReset, INF]):
-    for item: SpokeCapsReset in resets:
+def executeHubSpokeCapsResets(resets: DynArray[IAaveV4ConfigEngine.SpokeCapsReset, INF]):
+    for item: IAaveV4ConfigEngine.SpokeCapsReset in resets:
         extcall IHubConfigurator(item.hubConfigurator).resetSpokeCaps(item.hub, item.spoke)
 
 
 @external
-def executeSpokeReserveListings(listings: DynArray[ReserveListing, INF]):
-    for listing: ReserveListing in listings:
+def executeSpokeReserveListings(listings: DynArray[IAaveV4ConfigEngine.ReserveListing, INF]):
+    for listing: IAaveV4ConfigEngine.ReserveListing in listings:
         extcall ISpokeConfigurator(listing.spokeConfigurator).addReserve(
             listing.spoke,
             listing.hub,
@@ -520,8 +254,8 @@ def executeSpokeReserveListings(listings: DynArray[ReserveListing, INF]):
 
 
 @external
-def executeSpokeReserveConfigUpdates(updates: DynArray[ReserveConfigUpdate, INF]):
-    for update: ReserveConfigUpdate in updates:
+def executeSpokeReserveConfigUpdates(updates: DynArray[IAaveV4ConfigEngine.ReserveConfigUpdate, INF]):
+    for update: IAaveV4ConfigEngine.ReserveConfigUpdate in updates:
         reserve_id: uint256 = self._reserve_id(update.spoke, update.hub, update.underlying)
         if update.priceSource != KEEP_CURRENT_ADDRESS:
             extcall ISpokeConfigurator(update.spokeConfigurator).updateReservePriceSource(update.spoke, reserve_id, update.priceSource)
@@ -538,13 +272,13 @@ def executeSpokeReserveConfigUpdates(updates: DynArray[ReserveConfigUpdate, INF]
 
 
 @external
-def executeSpokeLiquidationConfigUpdates(updates: DynArray[LiquidationConfigUpdate, INF]):
-    for update: LiquidationConfigUpdate in updates:
+def executeSpokeLiquidationConfigUpdates(updates: DynArray[IAaveV4ConfigEngine.LiquidationConfigUpdate, INF]):
+    for update: IAaveV4ConfigEngine.LiquidationConfigUpdate in updates:
         update_target: bool = update.targetHealthFactor != KEEP_CURRENT
         update_max_bonus: bool = update.healthFactorForMaxBonus != KEEP_CURRENT
         update_bonus_factor: bool = update.liquidationBonusFactor != KEEP_CURRENT
         if update_target and update_max_bonus and update_bonus_factor:
-            config: LiquidationConfig = LiquidationConfig(
+            config: ISpoke.LiquidationConfig = ISpoke.LiquidationConfig(
                 targetHealthFactor=self._u128(update.targetHealthFactor),
                 healthFactorForMaxBonus=self._u64(update.healthFactorForMaxBonus),
                 liquidationBonusFactor=self._u16(update.liquidationBonusFactor),
@@ -560,8 +294,8 @@ def executeSpokeLiquidationConfigUpdates(updates: DynArray[LiquidationConfigUpda
 
 
 @external
-def executeSpokeDynamicReserveConfigAdditions(additions: DynArray[DynamicReserveConfigAddition, INF]):
-    for addition: DynamicReserveConfigAddition in additions:
+def executeSpokeDynamicReserveConfigAdditions(additions: DynArray[IAaveV4ConfigEngine.DynamicReserveConfigAddition, INF]):
+    for addition: IAaveV4ConfigEngine.DynamicReserveConfigAddition in additions:
         extcall ISpokeConfigurator(addition.spokeConfigurator).addDynamicReserveConfig(
             addition.spoke,
             self._reserve_id(addition.spoke, addition.hub, addition.underlying),
@@ -570,11 +304,11 @@ def executeSpokeDynamicReserveConfigAdditions(additions: DynArray[DynamicReserve
 
 
 @external
-def executeSpokeDynamicReserveConfigUpdates(updates: DynArray[DynamicReserveConfigUpdate, INF]):
-    for update: DynamicReserveConfigUpdate in updates:
+def executeSpokeDynamicReserveConfigUpdates(updates: DynArray[IAaveV4ConfigEngine.DynamicReserveConfigUpdate, INF]):
+    for update: IAaveV4ConfigEngine.DynamicReserveConfigUpdate in updates:
         reserve_id: uint256 = self._reserve_id(update.spoke, update.hub, update.underlying)
         key: uint32 = self._u32(update.dynamicConfigKey)
-        current: DynamicReserveConfig = staticcall ISpoke(update.spoke).getDynamicReserveConfig(reserve_id, key)
+        current: ISpoke.DynamicReserveConfig = staticcall ISpoke(update.spoke).getDynamicReserveConfig(reserve_id, key)
         changed: bool = False
         if update.collateralFactor != KEEP_CURRENT:
             current.collateralFactor = self._u16(update.collateralFactor)
@@ -590,26 +324,26 @@ def executeSpokeDynamicReserveConfigUpdates(updates: DynArray[DynamicReserveConf
 
 
 @external
-def executeSpokePositionManagerUpdates(updates: DynArray[PositionManagerUpdate, INF]):
-    for update: PositionManagerUpdate in updates:
+def executeSpokePositionManagerUpdates(updates: DynArray[IAaveV4ConfigEngine.PositionManagerUpdate, INF]):
+    for update: IAaveV4ConfigEngine.PositionManagerUpdate in updates:
         extcall ISpokeConfigurator(update.spokeConfigurator).updatePositionManager(update.spoke, update.positionManager, update.active)
 
 
 @external
-def executePositionManagerSpokeRegistrations(registrations: DynArray[SpokeRegistration, INF]):
-    for registration: SpokeRegistration in registrations:
+def executePositionManagerSpokeRegistrations(registrations: DynArray[IAaveV4ConfigEngine.SpokeRegistration, INF]):
+    for registration: IAaveV4ConfigEngine.SpokeRegistration in registrations:
         extcall IPositionManager(registration.positionManager).registerSpoke(registration.spoke, registration.registered)
 
 
 @external
-def executePositionManagerRoleRenouncements(renouncements: DynArray[PositionManagerRoleRenouncement, INF]):
-    for renouncement: PositionManagerRoleRenouncement in renouncements:
+def executePositionManagerRoleRenouncements(renouncements: DynArray[IAaveV4ConfigEngine.PositionManagerRoleRenouncement, INF]):
+    for renouncement: IAaveV4ConfigEngine.PositionManagerRoleRenouncement in renouncements:
         extcall IPositionManager(renouncement.positionManager).renouncePositionManagerRole(renouncement.spoke, renouncement.user)
 
 
 @external
-def executeRoleMemberships(memberships: DynArray[RoleMembership, INF]):
-    for membership: RoleMembership in memberships:
+def executeRoleMemberships(memberships: DynArray[IAaveV4ConfigEngine.RoleMembership, INF]):
+    for membership: IAaveV4ConfigEngine.RoleMembership in memberships:
         if membership.granted:
             extcall IAccessManager(membership.authority).grantRole(membership.roleId, membership.account, membership.executionDelay)
         else:
@@ -617,8 +351,8 @@ def executeRoleMemberships(memberships: DynArray[RoleMembership, INF]):
 
 
 @external
-def executeRoleUpdates(updates: DynArray[RoleUpdate, MAX_UPDATES]):
-    for update: RoleUpdate in updates:
+def executeRoleUpdates(updates: DynArray[IAaveV4ConfigEngine.RoleUpdate, MAX_UPDATES]):
+    for update: IAaveV4ConfigEngine.RoleUpdate in updates:
         if update.admin != KEEP_CURRENT_UINT64:
             extcall IAccessManager(update.authority).setRoleAdmin(update.roleId, update.admin)
         if update.guardian != KEEP_CURRENT_UINT64:
@@ -632,12 +366,12 @@ def executeRoleUpdates(updates: DynArray[RoleUpdate, MAX_UPDATES]):
 
 
 @external
-def executeTargetFunctionRoleUpdates(updates: DynArray[TargetFunctionRoleUpdate, MAX_UPDATES]):
-    for update: TargetFunctionRoleUpdate in updates:
+def executeTargetFunctionRoleUpdates(updates: DynArray[IAaveV4ConfigEngine.TargetFunctionRoleUpdate, MAX_UPDATES]):
+    for update: IAaveV4ConfigEngine.TargetFunctionRoleUpdate in updates:
         extcall IAccessManager(update.authority).setTargetFunctionRole(update.target, update.selectors, update.roleId)
 
 
 @external
-def executeTargetAdminDelayUpdates(updates: DynArray[TargetAdminDelayUpdate, INF]):
-    for update: TargetAdminDelayUpdate in updates:
+def executeTargetAdminDelayUpdates(updates: DynArray[IAaveV4ConfigEngine.TargetAdminDelayUpdate, INF]):
+    for update: IAaveV4ConfigEngine.TargetAdminDelayUpdate in updates:
         extcall IAccessManager(update.authority).setTargetAdminDelay(update.target, update.newDelay)

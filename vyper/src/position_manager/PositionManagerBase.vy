@@ -1,61 +1,11 @@
 # pragma version 0.5.0b1
-
-error InvalidAddress:
-    pass
-
-error OwnableInvalidOwner:
-    arg0: address
-
-error OwnableUnauthorizedAccount:
-    arg0: address
-
-error SpokeNotRegistered:
-    pass
-
-error UnsupportedAction:
-    pass
+from spoke.interfaces import ISpoke
+from position_manager.interfaces import IPositionManager
 
 MAX_CALLS: constant(uint256) = 4
 MAX_CALLDATA: constant(uint256) = 512
 MAX_RETURN_DATA: constant(uint256) = 256
 MAX_SIGNATURE: constant(uint256) = 256
-
-
-struct Reserve:
-    underlying: address
-    hub: address
-    assetId: uint16
-    decimals: uint8
-    collateralRisk: uint24
-    flags: uint8
-    dynamicConfigKey: uint32
-
-struct PositionManagerUpdate:
-    positionManager: address
-    approve: bool
-
-struct SetUserPositionManagers:
-    onBehalfOf: address
-    updates: DynArray[PositionManagerUpdate, 1]
-    nonce: uint256
-    deadline: uint256
-
-interface ISpoke:
-    def getReserve(reserveId: uint256) -> Reserve: view
-    def renouncePositionManagerRole(user: address): nonpayable
-
-
-event OwnershipTransferred:
-    previousOwner: indexed(address)
-    newOwner: indexed(address)
-
-event OwnershipTransferStarted:
-    previousOwner: indexed(address)
-    newOwner: indexed(address)
-
-event RegisterSpoke:
-    spoke: indexed(address)
-    registered: bool
 
 
 owner_address: address
@@ -72,23 +22,23 @@ def _multicall_enabled() -> bool:
 @internal
 def _initialize_owner(initial_owner: address):
     if initial_owner == empty(address):
-        raise OwnableInvalidOwner(initial_owner)
+        raise IPositionManager.OwnableInvalidOwner(initial_owner)
     self.owner_address = initial_owner
-    log OwnershipTransferred(previousOwner=empty(address), newOwner=initial_owner)
+    log IPositionManager.OwnershipTransferred(previousOwner=empty(address), newOwner=initial_owner)
 
 
 @internal
 @view
 def _check_owner():
     if msg.sender != self.owner_address:
-        raise OwnableUnauthorizedAccount(msg.sender)
+        raise IPositionManager.OwnableUnauthorizedAccount(msg.sender)
 
 
 @internal
 @view
 def _check_registered(spoke: address):
     if not self.registered_spokes[spoke]:
-        raise SpokeNotRegistered()
+        raise IPositionManager.SpokeNotRegistered()
 
 
 @internal
@@ -121,17 +71,17 @@ def pendingOwner() -> address:
 def transferOwnership(newOwner: address):
     self._check_owner()
     self.pending_owner_address = newOwner
-    log OwnershipTransferStarted(previousOwner=self.owner_address, newOwner=newOwner)
+    log IPositionManager.OwnershipTransferStarted(previousOwner=self.owner_address, newOwner=newOwner)
 
 
 @external
 def acceptOwnership():
     if msg.sender != self.pending_owner_address:
-        raise OwnableUnauthorizedAccount(msg.sender)
+        raise IPositionManager.OwnableUnauthorizedAccount(msg.sender)
     old_owner: address = self.owner_address
     self.pending_owner_address = empty(address)
     self.owner_address = msg.sender
-    log OwnershipTransferred(previousOwner=old_owner, newOwner=msg.sender)
+    log IPositionManager.OwnershipTransferred(previousOwner=old_owner, newOwner=msg.sender)
 
 
 @external
@@ -140,16 +90,16 @@ def renounceOwnership():
     old_owner: address = self.owner_address
     self.pending_owner_address = empty(address)
     self.owner_address = empty(address)
-    log OwnershipTransferred(previousOwner=old_owner, newOwner=empty(address))
+    log IPositionManager.OwnershipTransferred(previousOwner=old_owner, newOwner=empty(address))
 
 
 @external
 def registerSpoke(spoke: address, registered: bool):
     self._check_owner()
     if spoke == empty(address):
-        raise InvalidAddress()
+        raise IPositionManager.InvalidAddress()
     self.registered_spokes[spoke] = registered
-    log RegisterSpoke(spoke=spoke, registered=registered)
+    log IPositionManager.RegisterSpoke(spoke=spoke, registered=registered)
 
 
 @external
@@ -161,7 +111,7 @@ def isSpokeRegistered(spoke: address) -> bool:
 @external
 @view
 def getReserveUnderlying(spoke: address, reserveId: uint256) -> address:
-    reserve: Reserve = staticcall ISpoke(spoke).getReserve(reserveId)
+    reserve: ISpoke.Reserve = staticcall ISpoke(spoke).getReserve(reserveId)
     return reserve.underlying
 
 
@@ -175,10 +125,10 @@ def setSelfAsUserPositionManagerWithSig(
     signature: Bytes[INF],
 ):
     self._check_registered(spoke)
-    updates: DynArray[PositionManagerUpdate, 1] = [
-        PositionManagerUpdate(positionManager=self, approve=approve)
+    updates: DynArray[ISpoke.PositionManagerUpdate, 1] = [
+        ISpoke.PositionManagerUpdate(positionManager=self, approve=approve)
     ]
-    params: SetUserPositionManagers = SetUserPositionManagers(
+    params: ISpoke.SetUserPositionManagers = ISpoke.SetUserPositionManagers(
         onBehalfOf=onBehalfOf,
         updates=updates,
         nonce=nonce,
@@ -207,7 +157,7 @@ def permitReserveUnderlying(
     permitS: bytes32,
 ):
     self._check_registered(spoke)
-    reserve: Reserve = staticcall ISpoke(spoke).getReserve(reserveId)
+    reserve: ISpoke.Reserve = staticcall ISpoke(spoke).getReserve(reserveId)
     underlying: address = reserve.underlying
     success: bool = raw_call(
         underlying,
@@ -229,7 +179,7 @@ def renouncePositionManagerRole(spoke: address, user: address):
 @external
 def multicall(data: DynArray[Bytes[MAX_CALLDATA], MAX_CALLS]) -> DynArray[Bytes[MAX_RETURN_DATA], MAX_CALLS]:
     if not self._multicall_enabled():
-        raise UnsupportedAction()
+        raise IPositionManager.UnsupportedAction()
     results: DynArray[Bytes[MAX_RETURN_DATA], MAX_CALLS] = []
     for call_data: Bytes[MAX_CALLDATA] in data:
         success: bool = False

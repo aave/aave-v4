@@ -1,0 +1,152 @@
+# pragma version 0.5.0b1
+
+from spoke.interfaces import ISpoke
+
+error AccessManagedUnauthorized:
+    arg0: address
+
+error InvalidAddress:
+    pass
+
+error SafeCastOverflowedUintDowncast:
+    arg0: uint8
+    arg1: uint256
+
+event AuthorityUpdated:
+    authority: address
+
+@view
+@external
+def authority() -> address:
+    ...
+
+
+@external
+def setAuthority(newAuthority: address):
+    ...
+
+
+@pure
+@external
+def isConsumingScheduledOp() -> bytes4:
+    ...
+
+
+@external
+def updateReservePriceSource(spoke: address, reserveId: uint256, priceSource: address):
+    ...
+
+
+@external
+def updateLiquidationTargetHealthFactor(spoke: address, targetHealthFactor: uint256):
+    ...
+
+
+@external
+def updateHealthFactorForMaxBonus(spoke: address, healthFactorForMaxBonus: uint256):
+    ...
+
+
+@external
+def updateLiquidationBonusFactor(spoke: address, liquidationBonusFactor: uint256):
+    ...
+
+
+@external
+def updateLiquidationConfig(spoke: address, liquidationConfig: ISpoke.LiquidationConfig):
+    ...
+
+
+@external
+def addReserve(spoke: address, hub: address, assetId: uint256, priceSource: address, config: ISpoke.ReserveConfig, dynamicConfig: ISpoke.DynamicReserveConfig) -> uint256:
+    ...
+
+
+@external
+def updatePaused(spoke: address, reserveId: uint256, paused: bool):
+    ...
+
+
+@external
+def updateFrozen(spoke: address, reserveId: uint256, frozen: bool):
+    ...
+
+
+@external
+def updateBorrowable(spoke: address, reserveId: uint256, borrowable: bool):
+    ...
+
+
+@external
+def updateReceiveSharesEnabled(spoke: address, reserveId: uint256, receiveSharesEnabled: bool):
+    ...
+
+
+@external
+def updateCollateralRisk(spoke: address, reserveId: uint256, collateralRisk: uint256):
+    ...
+
+
+@external
+def addCollateralFactor(spoke: address, reserveId: uint256, collateralFactor: uint16) -> uint32:
+    ...
+
+
+@external
+def updateCollateralFactor(spoke: address, reserveId: uint256, dynamicConfigKey: uint32, collateralFactor: uint16):
+    ...
+
+
+@external
+def addMaxLiquidationBonus(spoke: address, reserveId: uint256, maxLiquidationBonus: uint256) -> uint32:
+    ...
+
+
+@external
+def updateMaxLiquidationBonus(spoke: address, reserveId: uint256, dynamicConfigKey: uint32, maxLiquidationBonus: uint256):
+    ...
+
+
+@external
+def addLiquidationFee(spoke: address, reserveId: uint256, liquidationFee: uint256) -> uint32:
+    ...
+
+
+@external
+def updateLiquidationFee(spoke: address, reserveId: uint256, dynamicConfigKey: uint32, liquidationFee: uint256):
+    ...
+
+
+@external
+def addDynamicReserveConfig(spoke: address, reserveId: uint256, dynamicConfig: ISpoke.DynamicReserveConfig) -> uint32:
+    ...
+
+
+@external
+def updateDynamicReserveConfig(spoke: address, reserveId: uint256, dynamicConfigKey: uint32, dynamicConfig: ISpoke.DynamicReserveConfig):
+    ...
+
+
+@external
+def pauseAllReserves(spoke: address):
+    ...
+
+
+@external
+def freezeAllReserves(spoke: address):
+    ...
+
+
+@external
+def pauseReserve(spoke: address, reserveId: uint256):
+    ...
+
+
+@external
+def freezeReserve(spoke: address, reserveId: uint256):
+    ...
+
+
+@external
+def updatePositionManager(spoke: address, positionManager: address, active: bool):
+    ...

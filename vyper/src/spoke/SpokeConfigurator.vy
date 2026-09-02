@@ -1,62 +1,10 @@
 # pragma version 0.5.0b1
+from spoke.interfaces import ISpoke
+from spoke.interfaces import ISpokeConfigurator
+from dependencies.openzeppelin import IAuthority
 
 
-error AccessManagedUnauthorized:
-    arg0: address
-
-error InvalidAddress:
-    pass
-
-error SafeCastOverflowedUintDowncast:
-    arg0: uint8
-    arg1: uint256
-
-struct LiquidationConfig:
-    targetHealthFactor: uint128
-    healthFactorForMaxBonus: uint64
-    liquidationBonusFactor: uint16
-
-struct ReserveConfig:
-    collateralRisk: uint24
-    paused: bool
-    frozen: bool
-    borrowable: bool
-    receiveSharesEnabled: bool
-
-struct DynamicReserveConfig:
-    collateralFactor: uint16
-    maxLiquidationBonus: uint32
-    liquidationFee: uint16
-
-struct Reserve:
-    underlying: address
-    hub: address
-    assetId: uint16
-    decimals: uint8
-    collateralRisk: uint24
-    flags: uint8
-    dynamicConfigKey: uint32
-
-interface IAuthority:
-    def canCall(caller: address, target: address, selector: bytes4) -> (bool, uint32): view
-
-interface ISpoke:
-    def updateReservePriceSource(reserveId: uint256, priceSource: address): nonpayable
-    def getLiquidationConfig() -> LiquidationConfig: view
-    def updateLiquidationConfig(config: LiquidationConfig): nonpayable
-    def addReserve(hub: address, assetId: uint256, priceSource: address, config: ReserveConfig, dynamicConfig: DynamicReserveConfig) -> uint256: nonpayable
-    def getReserveConfig(reserveId: uint256) -> ReserveConfig: view
-    def updateReserveConfig(reserveId: uint256, config: ReserveConfig): nonpayable
-    def getDynamicReserveConfig(reserveId: uint256, dynamicConfigKey: uint32) -> DynamicReserveConfig: view
-    def addDynamicReserveConfig(reserveId: uint256, dynamicConfig: DynamicReserveConfig) -> uint32: nonpayable
-    def updateDynamicReserveConfig(reserveId: uint256, dynamicConfigKey: uint32, dynamicConfig: DynamicReserveConfig): nonpayable
-    def getReserveCount() -> uint256: view
-    def updatePositionManager(positionManager: address, active: bool): nonpayable
-    def getReserve(reserveId: uint256) -> Reserve: view
-
-
-event AuthorityUpdated:
-    authority: address
+implements: ISpokeConfigurator
 
 
 MAX_RESERVES: constant(uint256) = 256
@@ -66,9 +14,9 @@ authority_address: address
 @deploy
 def __init__(authority_: address):
     if authority_ == empty(address):
-        raise InvalidAddress()
+        raise ISpokeConfigurator.InvalidAddress()
     self.authority_address = authority_
-    log AuthorityUpdated(authority=authority_)
+    log ISpokeConfigurator.AuthorityUpdated(authority=authority_)
 
 
 @internal
@@ -78,14 +26,14 @@ def _check_access(selector: Bytes[4]):
     delay: uint32 = 0
     allowed, delay = staticcall IAuthority(self.authority_address).canCall(msg.sender, self, convert(selector, bytes4))
     if not allowed:
-        raise AccessManagedUnauthorized(msg.sender)
+        raise ISpokeConfigurator.AccessManagedUnauthorized(msg.sender)
 
 
 @internal
 @pure
 def _u128(cast_value: uint256) -> uint128:
     if cast_value > convert(max_value(uint128), uint256):
-        raise SafeCastOverflowedUintDowncast(128, cast_value)
+        raise ISpokeConfigurator.SafeCastOverflowedUintDowncast(128, cast_value)
     return convert(cast_value, uint128)
 
 
@@ -93,7 +41,7 @@ def _u128(cast_value: uint256) -> uint128:
 @pure
 def _u64(cast_value: uint256) -> uint64:
     if cast_value > convert(max_value(uint64), uint256):
-        raise SafeCastOverflowedUintDowncast(64, cast_value)
+        raise ISpokeConfigurator.SafeCastOverflowedUintDowncast(64, cast_value)
     return convert(cast_value, uint64)
 
 
@@ -101,7 +49,7 @@ def _u64(cast_value: uint256) -> uint64:
 @pure
 def _u32(cast_value: uint256) -> uint32:
     if cast_value > convert(max_value(uint32), uint256):
-        raise SafeCastOverflowedUintDowncast(32, cast_value)
+        raise ISpokeConfigurator.SafeCastOverflowedUintDowncast(32, cast_value)
     return convert(cast_value, uint32)
 
 
@@ -109,7 +57,7 @@ def _u32(cast_value: uint256) -> uint32:
 @pure
 def _u24(cast_value: uint256) -> uint24:
     if cast_value > convert(max_value(uint24), uint256):
-        raise SafeCastOverflowedUintDowncast(24, cast_value)
+        raise ISpokeConfigurator.SafeCastOverflowedUintDowncast(24, cast_value)
     return convert(cast_value, uint24)
 
 
@@ -117,7 +65,7 @@ def _u24(cast_value: uint256) -> uint24:
 @pure
 def _u16(cast_value: uint256) -> uint16:
     if cast_value > convert(max_value(uint16), uint256):
-        raise SafeCastOverflowedUintDowncast(16, cast_value)
+        raise ISpokeConfigurator.SafeCastOverflowedUintDowncast(16, cast_value)
     return convert(cast_value, uint16)
 
 
@@ -130,9 +78,9 @@ def authority() -> address:
 @external
 def setAuthority(newAuthority: address):
     if msg.sender != self.authority_address:
-        raise AccessManagedUnauthorized(msg.sender)
+        raise ISpokeConfigurator.AccessManagedUnauthorized(msg.sender)
     self.authority_address = newAuthority
-    log AuthorityUpdated(authority=newAuthority)
+    log ISpokeConfigurator.AuthorityUpdated(authority=newAuthority)
 
 
 @external
@@ -150,7 +98,7 @@ def updateReservePriceSource(spoke: address, reserveId: uint256, priceSource: ad
 @external
 def updateLiquidationTargetHealthFactor(spoke: address, targetHealthFactor: uint256):
     self._check_access(method_id("updateLiquidationTargetHealthFactor(address,uint256)"))
-    config: LiquidationConfig = staticcall ISpoke(spoke).getLiquidationConfig()
+    config: ISpoke.LiquidationConfig = staticcall ISpoke(spoke).getLiquidationConfig()
     config.targetHealthFactor = self._u128(targetHealthFactor)
     extcall ISpoke(spoke).updateLiquidationConfig(config)
 
@@ -158,7 +106,7 @@ def updateLiquidationTargetHealthFactor(spoke: address, targetHealthFactor: uint
 @external
 def updateHealthFactorForMaxBonus(spoke: address, healthFactorForMaxBonus: uint256):
     self._check_access(method_id("updateHealthFactorForMaxBonus(address,uint256)"))
-    config: LiquidationConfig = staticcall ISpoke(spoke).getLiquidationConfig()
+    config: ISpoke.LiquidationConfig = staticcall ISpoke(spoke).getLiquidationConfig()
     config.healthFactorForMaxBonus = self._u64(healthFactorForMaxBonus)
     extcall ISpoke(spoke).updateLiquidationConfig(config)
 
@@ -166,26 +114,26 @@ def updateHealthFactorForMaxBonus(spoke: address, healthFactorForMaxBonus: uint2
 @external
 def updateLiquidationBonusFactor(spoke: address, liquidationBonusFactor: uint256):
     self._check_access(method_id("updateLiquidationBonusFactor(address,uint256)"))
-    config: LiquidationConfig = staticcall ISpoke(spoke).getLiquidationConfig()
+    config: ISpoke.LiquidationConfig = staticcall ISpoke(spoke).getLiquidationConfig()
     config.liquidationBonusFactor = self._u16(liquidationBonusFactor)
     extcall ISpoke(spoke).updateLiquidationConfig(config)
 
 
 @external
-def updateLiquidationConfig(spoke: address, liquidationConfig: LiquidationConfig):
+def updateLiquidationConfig(spoke: address, liquidationConfig: ISpoke.LiquidationConfig):
     self._check_access(method_id("updateLiquidationConfig(address,(uint128,uint64,uint16))"))
     extcall ISpoke(spoke).updateLiquidationConfig(liquidationConfig)
 
 
 @external
-def addReserve(spoke: address, hub: address, assetId: uint256, priceSource: address, config: ReserveConfig, dynamicConfig: DynamicReserveConfig) -> uint256:
+def addReserve(spoke: address, hub: address, assetId: uint256, priceSource: address, config: ISpoke.ReserveConfig, dynamicConfig: ISpoke.DynamicReserveConfig) -> uint256:
     self._check_access(method_id("addReserve(address,address,uint256,address,(uint24,bool,bool,bool,bool),(uint16,uint32,uint16))"))
     return extcall ISpoke(spoke).addReserve(hub, assetId, priceSource, config, dynamicConfig)
 
 
 @internal
 def _update_reserve_flag(spoke: address, reserve_id: uint256, field: uint256, enabled: bool):
-    config: ReserveConfig = staticcall ISpoke(spoke).getReserveConfig(reserve_id)
+    config: ISpoke.ReserveConfig = staticcall ISpoke(spoke).getReserveConfig(reserve_id)
     if field == 0:
         config.paused = enabled
     elif field == 1:
@@ -224,7 +172,7 @@ def updateReceiveSharesEnabled(spoke: address, reserveId: uint256, receiveShares
 @external
 def updateCollateralRisk(spoke: address, reserveId: uint256, collateralRisk: uint256):
     self._check_access(method_id("updateCollateralRisk(address,uint256,uint256)"))
-    config: ReserveConfig = staticcall ISpoke(spoke).getReserveConfig(reserveId)
+    config: ISpoke.ReserveConfig = staticcall ISpoke(spoke).getReserveConfig(reserveId)
     config.collateralRisk = self._u24(collateralRisk)
     extcall ISpoke(spoke).updateReserveConfig(reserveId, config)
 
@@ -232,13 +180,13 @@ def updateCollateralRisk(spoke: address, reserveId: uint256, collateralRisk: uin
 @internal
 @view
 def _last_key(spoke: address, reserve_id: uint256) -> uint32:
-    reserve: Reserve = staticcall ISpoke(spoke).getReserve(reserve_id)
+    reserve: ISpoke.Reserve = staticcall ISpoke(spoke).getReserve(reserve_id)
     return reserve.dynamicConfigKey
 
 
 @internal
 def _add_dynamic_field(spoke: address, reserve_id: uint256, field: uint256, field_value: uint256) -> uint32:
-    config: DynamicReserveConfig = staticcall ISpoke(spoke).getDynamicReserveConfig(reserve_id, self._last_key(spoke, reserve_id))
+    config: ISpoke.DynamicReserveConfig = staticcall ISpoke(spoke).getDynamicReserveConfig(reserve_id, self._last_key(spoke, reserve_id))
     if field == 0:
         config.collateralFactor = self._u16(field_value)
     elif field == 1:
@@ -250,7 +198,7 @@ def _add_dynamic_field(spoke: address, reserve_id: uint256, field: uint256, fiel
 
 @internal
 def _update_dynamic_field(spoke: address, reserve_id: uint256, key: uint32, field: uint256, field_value: uint256):
-    config: DynamicReserveConfig = staticcall ISpoke(spoke).getDynamicReserveConfig(reserve_id, key)
+    config: ISpoke.DynamicReserveConfig = staticcall ISpoke(spoke).getDynamicReserveConfig(reserve_id, key)
     if field == 0:
         config.collateralFactor = self._u16(field_value)
     elif field == 1:
@@ -297,13 +245,13 @@ def updateLiquidationFee(spoke: address, reserveId: uint256, dynamicConfigKey: u
 
 
 @external
-def addDynamicReserveConfig(spoke: address, reserveId: uint256, dynamicConfig: DynamicReserveConfig) -> uint32:
+def addDynamicReserveConfig(spoke: address, reserveId: uint256, dynamicConfig: ISpoke.DynamicReserveConfig) -> uint32:
     self._check_access(method_id("addDynamicReserveConfig(address,uint256,(uint16,uint32,uint16))"))
     return extcall ISpoke(spoke).addDynamicReserveConfig(reserveId, dynamicConfig)
 
 
 @external
-def updateDynamicReserveConfig(spoke: address, reserveId: uint256, dynamicConfigKey: uint32, dynamicConfig: DynamicReserveConfig):
+def updateDynamicReserveConfig(spoke: address, reserveId: uint256, dynamicConfigKey: uint32, dynamicConfig: ISpoke.DynamicReserveConfig):
     self._check_access(method_id("updateDynamicReserveConfig(address,uint256,uint32,(uint16,uint32,uint16))"))
     extcall ISpoke(spoke).updateDynamicReserveConfig(reserveId, dynamicConfigKey, dynamicConfig)
 

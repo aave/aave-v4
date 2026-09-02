@@ -2,9 +2,6 @@
 
 from spoke.libraries import SpokeUtils
 
-initializes: SpokeUtils
-
-
 error ReserveNotListed:
     pass
 

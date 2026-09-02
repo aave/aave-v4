@@ -2,9 +2,6 @@
 
 from spoke.libraries import ReserveFlagsMap
 
-initializes: ReserveFlagsMap
-
-
 @external
 @pure
 def create(initPaused: bool, initFrozen: bool, initBorrowable: bool, initReceiveSharesEnabled: bool) -> uint8:

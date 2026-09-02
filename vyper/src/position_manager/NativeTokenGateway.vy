@@ -1,40 +1,14 @@
 # pragma version 0.5.0b1
 
 from position_manager import PositionManagerBase
+from spoke.interfaces import ISpoke
+from position_manager.interfaces import INativeTokenGateway
+from position_manager.interfaces import IPositionManager
+
+implements: INativeTokenGateway
 
 initializes: PositionManagerBase
 exports: PositionManagerBase.__interface__
-
-
-error InvalidAmount:
-    pass
-
-error NativeAmountMismatch:
-    pass
-
-error NotNativeWrappedAsset:
-    pass
-
-error ReentrancyGuardReentrantCall:
-    pass
-
-struct Reserve:
-    underlying: address
-    hub: address
-    assetId: uint16
-    decimals: uint8
-    collateralRisk: uint24
-    flags: uint8
-    dynamicConfigKey: uint32
-
-interface ISpoke:
-    def getReserve(reserveId: uint256) -> Reserve: view
-    def getUserTotalDebt(reserveId: uint256, user: address) -> uint256: view
-    def supply(reserveId: uint256, amount: uint256, onBehalfOf: address) -> (uint256, uint256): nonpayable
-    def setUsingAsCollateral(reserveId: uint256, status: bool, onBehalfOf: address): nonpayable
-    def withdraw(reserveId: uint256, amount: uint256, onBehalfOf: address) -> (uint256, uint256): nonpayable
-    def borrow(reserveId: uint256, amount: uint256, onBehalfOf: address) -> (uint256, uint256): nonpayable
-    def repay(reserveId: uint256, amount: uint256, onBehalfOf: address) -> (uint256, uint256): nonpayable
 
 
 NATIVE_TOKEN_WRAPPER: public(immutable(address))
@@ -44,7 +18,7 @@ reentrancy_lock: bool
 @deploy
 def __init__(nativeTokenWrapper: address, initialOwner: address):
     if nativeTokenWrapper == empty(address):
-        raise PositionManagerBase.InvalidAddress()
+        raise IPositionManager.InvalidAddress()
     NATIVE_TOKEN_WRAPPER = nativeTokenWrapper
     PositionManagerBase._initialize_owner(initialOwner)
 
@@ -58,7 +32,7 @@ def _multicall_enabled() -> bool:
 @internal
 def _enter():
     if self.reentrancy_lock:
-        raise ReentrancyGuardReentrantCall()
+        raise INativeTokenGateway.ReentrancyGuardReentrantCall()
     self.reentrancy_lock = True
 
 
@@ -70,7 +44,7 @@ def _exit():
 @internal
 @view
 def _reserve_underlying(spoke: address, reserve_id: uint256) -> address:
-    reserve: Reserve = staticcall ISpoke(spoke).getReserve(reserve_id)
+    reserve: ISpoke.Reserve = staticcall ISpoke(spoke).getReserve(reserve_id)
     return reserve.underlying
 
 
@@ -78,9 +52,9 @@ def _reserve_underlying(spoke: address, reserve_id: uint256) -> address:
 @view
 def _validate(underlying: address, amount: uint256):
     if underlying != NATIVE_TOKEN_WRAPPER:
-        raise NotNativeWrappedAsset()
+        raise INativeTokenGateway.NotNativeWrappedAsset()
     if amount == 0:
-        raise InvalidAmount()
+        raise INativeTokenGateway.InvalidAmount()
 
 
 @internal
@@ -130,7 +104,7 @@ def supplyNative(spoke: address, reserveId: uint256, amount: uint256) -> (uint25
     self._enter()
     PositionManagerBase._check_registered(spoke)
     if msg.value != amount:
-        raise NativeAmountMismatch()
+        raise INativeTokenGateway.NativeAmountMismatch()
     shares: uint256 = 0
     supplied: uint256 = 0
     shares, supplied = self._supply_native(spoke, reserveId, msg.sender, amount)
@@ -144,7 +118,7 @@ def supplyAsCollateralNative(spoke: address, reserveId: uint256, amount: uint256
     self._enter()
     PositionManagerBase._check_registered(spoke)
     if msg.value != amount:
-        raise NativeAmountMismatch()
+        raise INativeTokenGateway.NativeAmountMismatch()
     shares: uint256 = 0
     supplied: uint256 = 0
     shares, supplied = self._supply_native(spoke, reserveId, msg.sender, amount)
@@ -189,7 +163,7 @@ def repayNative(spoke: address, reserveId: uint256, amount: uint256) -> (uint256
     self._enter()
     PositionManagerBase._check_registered(spoke)
     if msg.value != amount:
-        raise NativeAmountMismatch()
+        raise INativeTokenGateway.NativeAmountMismatch()
     underlying: address = self._reserve_underlying(spoke, reserveId)
     self._validate(underlying, amount)
     total_debt: uint256 = staticcall ISpoke(spoke).getUserTotalDebt(reserveId, msg.sender)
@@ -210,4 +184,4 @@ def repayNative(spoke: address, reserveId: uint256, amount: uint256) -> (uint256
 @payable
 def __default__():
     if msg.sender != NATIVE_TOKEN_WRAPPER:
-        raise PositionManagerBase.UnsupportedAction()
+        raise IPositionManager.UnsupportedAction()

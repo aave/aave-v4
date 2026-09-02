@@ -1,0 +1,51 @@
+# pragma version 0.5.0b1
+
+struct ValidateLiquidationCallParams:
+    user: address
+    liquidator: address
+    collateralReserveFlags: uint8
+    debtReserveFlags: uint8
+    suppliedShares: uint256
+    drawnShares: uint256
+    debtToCover: uint256
+    collateralFactor: uint256
+    isUsingAsCollateral: bool
+    healthFactor: uint256
+    receiveShares: bool
+
+struct CalculateLiquidationAmountsParams:
+    collateralReserveHub: address
+    collateralReserveAssetId: uint256
+    suppliedShares: uint256
+    collateralAssetDecimals: uint256
+    collateralAssetPrice: uint256
+    drawnShares: uint256
+    premiumDebtRay: uint256
+    drawnIndex: uint256
+    totalDebtValueRay: uint256
+    debtAssetDecimals: uint256
+    debtAssetPrice: uint256
+    debtToCover: uint256
+    collateralFactor: uint256
+    healthFactorForMaxBonus: uint256
+    liquidationBonusFactor: uint256
+    maxLiquidationBonus: uint256
+    targetHealthFactor: uint256
+    healthFactor: uint256
+    liquidationFee: uint256
+
+struct LiquidationAmounts:
+    collateralSharesToLiquidate: uint256
+    collateralSharesToLiquidator: uint256
+    drawnSharesToLiquidate: uint256
+    premiumDebtRayToLiquidate: uint256
+
+@view
+@external
+def validateLiquidationCall(params: ValidateLiquidationCallParams) -> bool:
+    ...
+
+@view
+@external
+def calculateLiquidationAmounts(params: CalculateLiquidationAmountsParams) -> LiquidationAmounts:
+    ...

@@ -1,0 +1,11 @@
+# pragma version 0.5.0b1
+
+@view
+@external
+def decimals() -> uint8:
+    ...
+
+@view
+@external
+def latestAnswer() -> int256:
+    ...

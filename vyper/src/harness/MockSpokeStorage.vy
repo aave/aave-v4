@@ -1,4 +1,5 @@
 # pragma version 0.5.0b1
+from hub.interfaces import IHub
 
 
 error SafeCastOverflowedUintDowncast:
@@ -50,11 +51,6 @@ struct AccountDataInfo:
     drawnDebtAmounts: DynArray[uint256, 256]
     realizedPremiumAmountsRay: DynArray[uint256, 256]
     accruedPremiumAmounts: DynArray[uint256, 256]
-
-interface IHub:
-    def previewAddByAssets(assetId: uint256, amount: uint256) -> uint256: view
-    def previewDrawByAssets(assetId: uint256, amount: uint256) -> uint256: view
-
 
 RAY: constant(uint256) = 10**27
 MASK_16: constant(uint256) = 2**16 - 1
