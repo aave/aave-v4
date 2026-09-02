@@ -13,8 +13,8 @@ test   :; forge test -vvv
 vyper-install :; python3 -m venv .venv && .venv/bin/pip install -r vyper/requirements.txt
 vyper-build   :; .venv/bin/python scripts/build_vyper.py
 vyper-test    : vyper-build
-	TEST_VYPER=true forge test -vvv
-vyper-gas-compare :; python3 scripts/compare_vyper_gas.py gas-snapshots/solidity gas-snapshots/vyper gas-snapshots
+	FOUNDRY_PROFILE=vyper TEST_VYPER=true forge test -vvv
+vyper-gas-compare :; python3 scripts/compare_vyper_gas.py gas-snapshots/solidity gas-snapshots/vyper-b1-unbounded gas-snapshots/comparison-b1-unbounded
 
 # Utilities
 download :; cast etherscan-source --chain ${chain} -d src/etherscan/${chain}_${address} ${address}

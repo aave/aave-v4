@@ -12,11 +12,11 @@ make vyper-build
 make vyper-test
 ```
 
-`scripts/build_vyper.py` produces Foundry-compatible artifacts in `out/`. The
-build always passes `--experimental-codegen` and rejects any artifact whose
-compiler settings do not confirm `experimental_codegen: true`. This makes
-Venom a mandatory, verified property of every Vyper artifact rather than
-relying on a compiler default. Builds otherwise use `-O 3`, Cancun, and
+`scripts/build_vyper.py` produces Foundry-compatible artifacts in
+`out-vyper/`. The build always passes `--experimental-codegen` and rejects any
+artifact whose compiler settings do not confirm `experimental_codegen: true`.
+This makes Venom a mandatory, verified property of every Vyper artifact rather
+than relying on a compiler default. Builds otherwise use `-O 3`, Cancun, and
 disabled bytecode metadata.
 
 The Solidity tests select Vyper artifacts when `TEST_VYPER=true`. The full
@@ -24,6 +24,11 @@ suite is used rather than a hand-picked subset so deployment, upgradeability,
 access control, Hub, Spoke, liquidation, tokenization, position-manager,
 gateway, config-engine, utility, and differential-library behavior are all
 exercised together.
+
+The `vyper` Foundry profile keeps these artifacts separate from Solidity's
+additional Hub and Spoke compiler-profile artifacts. This avoids ambiguous
+library resolution in Forge 1.8.x without changing Vyper compiler settings or
+production bytecode.
 
 `ExtSload` is the single opcode-compatibility boundary: Vyper 0.5.0b1 has no
 arbitrary-slot storage-load builtin or inline assembly, so its Vyper ABI shell

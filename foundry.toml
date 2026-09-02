@@ -7,6 +7,7 @@ fs_permissions = [
   { access = "read", path = "tests/helpers/mocks/JsonBindings.sol" },
   { access = "read", path = "./config" },
   { access = "read", path = "./out" },
+  { access = "read", path = "./out-vyper" },
   { access = "read-write", path = "./output" }
 ]
 skip = ["tests/helpers/mocks/JsonBindings.sol"]
@@ -51,6 +52,11 @@ runs = 10000
 gas_snapshot_check = true
 test = 'tests/gas'
 isolate = true
+
+[profile.vyper]
+out = 'out-vyper'
+additional_compiler_profiles = []
+compilation_restrictions = []
 
 [profile.coverage]
 optimizer = true

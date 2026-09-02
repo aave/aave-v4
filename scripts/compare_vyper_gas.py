@@ -71,7 +71,11 @@ def _build_comparison(
     return {
         "methodology": {
             "solidity_command": "forge test --mp 'tests/gas/**' -vv",
-            "vyper_command": "TEST_VYPER=true forge test --mp 'tests/gas/**' -vv",
+            "vyper_command": (
+                "FOUNDRY_PROFILE=vyper TEST_VYPER=true "
+                "forge test --mp 'tests/gas/**' -vv"
+            ),
+            "foundry": "1.8.0",
             "vyper_compiler": "0.5.0b1",
             "vyper_codegen": "Venom (--experimental-codegen)",
             "evm_version": "cancun",
@@ -126,7 +130,9 @@ def _render_markdown(comparison: dict[str, object]) -> str:
         "",
         "These are matched runs of the repository's `tests/gas/**` suite. The Solidity run",
         "uses the repository compiler profiles; the Vyper run uses Vyper 0.5.0b1 with",
-        "Venom enforced through `--experimental-codegen`. Both target Cancun.",
+        "Venom enforced through `--experimental-codegen`. Both use verified Foundry 1.8.0",
+        "and target Cancun; the Vyper profile isolates artifacts from Solidity's additional",
+        "compiler profiles without changing production bytecode settings.",
         "",
         "Each run passed 86/86 tests. The snapshots contain",
         f"{overall['operations']} measured operations across {overall['snapshot_files']} files.",
@@ -216,8 +222,9 @@ def _render_markdown(comparison: dict[str, object]) -> str:
             "",
             "The signed position-manager setup rows also include an extra persistent",
             "write used to preserve explicit boolean state under Foundry arbitrary-storage",
-            "testing. The empty-account getter and Tokenization Spoke `permit` beat",
-            "Solidity; 14 operations are byte-for-byte equal in the snapshots.",
+            "testing.",
+            f"{overall['improved']} operations beat Solidity and {overall['unchanged']} are",
+            "byte-for-byte equal in the snapshots.",
         ]
     )
 
@@ -229,7 +236,7 @@ def _render_markdown(comparison: dict[str, object]) -> str:
             "```sh",
             "forge test --mp 'tests/gas/**' -vv",
             ".venv/bin/python scripts/build_vyper.py",
-            "TEST_VYPER=true forge test --mp 'tests/gas/**' -vv",
+            "FOUNDRY_PROFILE=vyper TEST_VYPER=true forge test --mp 'tests/gas/**' -vv",
             "python3 scripts/compare_vyper_gas.py gas-snapshots/solidity \\",
             "  gas-snapshots/vyper-b1-unbounded gas-snapshots/comparison-b1-unbounded",
             "```",

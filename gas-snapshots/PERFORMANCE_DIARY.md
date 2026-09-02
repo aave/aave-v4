@@ -218,6 +218,22 @@ and call/ABI overhead rather than sparse traversal, which is now fixed.
 - Gas suite: 86/86 passing, 137 recorded operations.
 - Full b1 suite: 2,064 passing and zero failing; one pre-existing `pending rft`
   test remains skipped.
+
+## 8. Latest-main and Forge 1.8 refresh
+
+Upstream main `4d86c2d3` changed Forge/forge-std integration and gas snapshot
+cheatcodes but no production Solidity contracts. The Vyper tree therefore
+required no behavioral port for this update. A dedicated Foundry `vyper`
+profile now writes artifacts to `out-vyper/` and omits Solidity-only additional
+compiler profiles, avoiding Forge 1.8.x's ambiguous incremental resolution of
+the two legitimate `LiquidationLogic` artifacts.
+
+Matched gas runs used the checksummed official Forge 1.8.0 release and passed
+86/86 tests in each mode. The latest-main scenario index is 17,999,249 for
+Solidity and 22,743,051 for Vyper: +4,743,802 gas (+26.36%). Three operations
+beat Solidity, 12 are equal, and 122 are above Solidity. The full Vyper profile
+passes 2,064 tests with zero failures and the one pre-existing skip.
+
 - Focused Hub suite: 313/313 passing.
 - Focused position-manager suite: 277/277 passing.
 - Final b1 Spoke runtime bytecode: 21,923 bytes, 2,653 bytes under EIP-170.
