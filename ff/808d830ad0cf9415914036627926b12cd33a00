@@ -1,0 +1,99 @@
+vyper/src/position_manager/SignatureGateway.vy
+  s_79e03752657a2e::t_d8a669354764be 14-16,92,99
+vyper/src/harness/MockTreasurySpokeInstance.vy
+  s_79e03752657a2e::t_d8a669354764be 4-9,44,46
+vyper/src/spoke/AaveOracle.vy
+  s_79e03752657a2e::t_87731d1cde4259 7-15,64,67,90
+  s_79e03752657a2e::t_d8a669354764be 4-6,16-27,74,76,78,80,88
+vyper/src/spoke/libraries/LiquidationLogic.vy
+  s_79e03752657a2e::t_6a3b28bbfdff2d 4,134
+  s_79e03752657a2e::t_d8a669354764be 17-43,160,162,164,166,168,170,172,174,310
+vyper/src/spoke/SpokeConfigurator.vy
+  s_79e03752657a2e::t_d8a669354764be 4-13,69,81,88,96,104,112,120,133
+vyper/src/spoke/TreasurySpokeInstance.vy
+  s_79e03752657a2e::t_d8a669354764be 4-12,47,99,101,133
+vyper/src/utils/Rescuable.vy
+  s_79e03752657a2e::t_d8a669354764be 4-6,17
+vyper/src/harness/MockTokenizationSpokeInstance.vy
+  s_79e03752657a2e::t_d8a669354764be 4-6,47
+vyper/src/libraries/math/MathUtils.vy
+  s_79e03752657a2e::t_6a3b28bbfdff2d 3,17
+  s_79e03752657a2e::t_d8a669354764be 4-7,63,65
+vyper/src/hub/HubConfigurator.vy
+  s_79e03752657a2e::t_d8a669354764be 4-16,61,73,80,88,96,109,229
+vyper/src/hub/libraries/SharesMath.vy
+  s_79e03752657a2e::t_d8a669354764be 3-5,19,46
+vyper/src/harness/KeyValueListHarness.vy
+  s_79e03752657a2e::t_d8a669354764be 3-5,33
+vyper/src/libraries/Errors.vy
+  s_79e03752657a2e::t_6a3b28bbfdff2d 1-4
+vyper/src/position_manager/ConfigPositionManager.vy
+  s_79e03752657a2e::t_d6316ed18f18ba 107
+  s_79e03752657a2e::t_d8a669354764be 16-21,93,100,256,276,285
+vyper/src/position_manager/GiverPositionManager.vy
+  s_79e03752657a2e::t_d8a669354764be 9-11,121
+vyper/src/access/AccessManagerEnumerable.vy
+  s_79e03752657a2e::t_d8a669354764be 7-58,181,206,240,242,244,464,469,486,489,504,525,536,538,550,565,575,625,632,637,655,661,681,691,702,932,941
+vyper/src/spoke/libraries/SpokeUtils.vy
+  s_79e03752657a2e::t_6a3b28bbfdff2d 3,10
+  s_79e03752657a2e::t_d8a669354764be 4
+vyper/src/spoke/TokenizationSpokeInstance.vy
+  s_79e03752657a2e::t_d8a669354764be 4-35,162,179,186,193,195,205,212,221,224,233,235,238,304,418,424
+vyper/src/hub/libraries/Premium.vy
+  s_79e03752657a2e::t_6a3b28bbfdff2d 3,13
+  s_79e03752657a2e::t_d8a669354764be 5-9,22,28
+  s_79e03752657a2e::t_561faf291c9c8c 4
+vyper/src/harness/LiquidationLogicWrapper.vy
+  s_79e03752657a2e::t_6a3b28bbfdff2d 4,171
+  s_79e03752657a2e::t_d8a669354764be 12-18,178,186,231
+vyper/src/hub/HubInstance.vy
+  s_79e03752657a2e::t_d8a669354764be 17-99,407,414,422,430,438,446,570,594,596,612,627,629,631,658,660,669,671,684,698,702,704,706,733,742,752,771,773,775,784,787,804,806,808,810,834,836,838,840,868,870,872,885,896,898,900,904,906,918,932,934,938,940,963,965,983,985,1010,1012,1033,1035,1037,1059,1063,1065,1079,1083,1085,1089,1165
+  s_79e03752657a2e::t_15d735a695dea8 847
+  s_79e03752657a2e::t_34b64d966268b3 780,812,845,1042,1067
+  s_79e03752657a2e::t_6a3b28bbfdff2d 5,453
+vyper/src/config_engine/AaveV4Payload.vy
+  s_79e03752657a2e::t_87731d1cde4259 356
+vyper/src/spoke/SpokeInstance.vy
+  s_79e03752657a2e::t_d8a669354764be 19-101,377,379,396,409,417,425,544,563,570,602,631,634,653,697,708,710,717,719,723,725,728,738,740,765,777,787,803,805,1071,1081,1083,1100,1127,1129,1131,1141,1156,1158,1160,1170,1187,1232,1235,1237,1282,1300,1390,1720,1724,1728,1742,1746
+  s_79e03752657a2e::t_6a3b28bbfdff2d 4,390
+vyper/src/config_engine/TokenizationSpokeDeployer.vy
+  s_79e03752657a2e::t_d8a669354764be 9-14,84,87,124
+vyper/src/utils/NoncesKeyed.vy
+  s_79e03752657a2e::t_d8a669354764be 3-6,28
+vyper/src/position_manager/PositionManagerBase.vy
+  s_79e03752657a2e::t_d8a669354764be 3-17,75,84,91,130,150,232
+  s_79e03752657a2e::t_87731d1cde4259 245
+vyper/src/position_manager/NativeTokenGateway.vy
+  s_79e03752657a2e::t_0fbacca7172893 47,213
+  s_79e03752657a2e::t_d8a669354764be 9-20,61,81,83,133,147,192
+vyper/src/harness/SpokeUtilsHarness.vy
+  s_79e03752657a2e::t_d8a669354764be 8-10,34
+vyper/src/hub/AssetInterestRateStrategy.vy
+  s_79e03752657a2e::t_d8a669354764be 10-24,52,59,64,72,137
+vyper/src/position_manager/TakerPositionManager.vy
+  s_79e03752657a2e::t_d8a669354764be 14-24,112,119,236,258
+vyper/src/config_engine/AaveV4ConfigEngine.vy
+  s_79e03752657a2e::t_d8a669354764be 8-20,310,318,326,334,342,350,383,422
+vyper/src/harness/AaveV4PayloadWrapper.vy
+  s_79e03752657a2e::t_d8a669354764be 9-11,52
+vyper/src/harness/EngineFlagsHarness.vy
+  s_79e03752657a2e::t_d8a669354764be 4-6,11
+vyper/src/harness/MockSpokeStorage.vy
+  s_79e03752657a2e::t_d8a669354764be 4-7,80,88
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "ff808d830ad0cf9415914036627926b12cd33a00",
+  "prompts": {},
+  "sessions": {
+    "s_79e03752657a2e": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019ffa71-5465-7fe0-8faf-43d0db8de960",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "AlbertoCentonze <11707683+AlbertoCentonze@users.noreply.github.com>"
+    }
+  }
+}
