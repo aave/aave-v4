@@ -1,0 +1,162 @@
+vyper/src/position_manager/interfaces/IConfigPositionManager.vyi
+  s_79e03752657a2e::t_298447c96d4967 1-246
+vyper/src/dependencies/openzeppelin/IERC1271.vyi
+  s_79e03752657a2e::t_151b051558bba0 1-6
+vyper/src/utils/Rescuable.vy
+  s_79e03752657a2e::t_93d4f8366ca977 3,16
+vyper/src/spoke/interfaces/ISpoke.vyi
+  s_79e03752657a2e::t_89b97850ff2c71 1-254,279-593
+  s_79e03752657a2e::t_cb31001e121c77 255-278
+vyper/src/spoke/SpokeInstance.vy
+  s_79e03752657a2e::t_c57ad5ff8f5261 1300,1315,1336
+  s_79e03752657a2e::t_77ba91ba6d0ade 13-16
+  s_79e03752657a2e::t_f8f882edc6faf1 11
+  s_79e03752657a2e::t_89b97850ff2c71 12,18,58,79,81,86,98,111,119,127,133,145,147,160,165,171,181-182,191,196,202,218-219,230,235,246,265,270,272,304,333-334,336,339,342-343,355,357,394,399,401,406,410,412,416,419,421,423,425,427,430,440,442,445,455-458,463,465,467,471,479,481,485,487,489,495,500,503,505,507,510,517,661,668-669,686-687,690,753-754,756,763-764,768,770-771,773,781,783,785,788,791,800,802-803,816,818,827,829,831,833,835,843,845,847,856,858,860,862,864,872,875-876,878,887,889-890,896,917,926,934,937,939,942,945,947,949,958,968,978,982,984,1002,1007,1011,1021,1026,1048,1061,1068,1075,1082,1090,1092,1098,1105-1107,1118,1136-1137,1151,1185,1198,1206,1238,1246,1259-1260,1264,1281-1282,1288-1293,1349,1370,1392,1411
+vyper/src/harness/UserPositionUtilsHarness.vy
+  s_79e03752657a2e::t_718fd176acbc4e 4-5,7,11,17,22,36
+vyper/src/config_engine/AaveV4Payload.vy
+  s_79e03752657a2e::t_ae4ec246a5a365 2,25,31,37,43,49,55,61,67,73,79,85,91,97,103,109,115,121,127,133,139,145,179,185,191,197,203,209,215,221,227,233,239,245,251,257,263,269,275,281,287,293,299
+vyper/src/position_manager/PositionManagerBase.vy
+  s_79e03752657a2e::t_4860dee1cb01b3 3,25,27,34,41,74,80,84,93,100,102,182
+  s_79e03752657a2e::t_c1ae0d0e7f95e2 2,114,128-129,131,160
+vyper/src/hub/interfaces/IAssetInterestRateStrategy.vyi
+  s_79e03752657a2e::t_ddd7b4eee3d767 3-17,23-30,32-37,42,46-93,95,99
+  s_79e03752657a2e::t_6bdd171e1ace72 20-22
+  s_79e03752657a2e::t_bb8a761df308f5 1-2,18-19,31,38-41,43-45,94,96-98,100
+vyper/src/spoke/SpokeConfigurator.vy
+  s_79e03752657a2e::t_574dc76623afa8 2
+  s_79e03752657a2e::t_e27bec13f531d3 3-4,7,17,19,29,36,44,52,60,68,81,83,101,109,117,123,129,136,175,183,189,201,248,254
+vyper/src/config_engine/interfaces/IAaveV4ConfigEngine.vyi
+  s_79e03752657a2e::t_a8392fea2e9610 25-26,56,168,174
+  s_79e03752657a2e::t_ae4ec246a5a365 1-24,27-55,57-167,169-173,175-284
+vyper/src/access/interfaces/IAccessManagerEnumerable.vyi
+  s_79e03752657a2e::t_dceb39247c3b1f 1-15,17-52,54-68,70-80,82-463
+  s_79e03752657a2e::t_649a8160d12db1 16,53,69,81
+vyper/src/spoke/AaveOracle.vy
+  s_79e03752657a2e::t_c1ae0d0e7f95e2 2-3
+  s_79e03752657a2e::t_dceb39247c3b1f 4,6,27,30,37,39,41,43,45,51,53,56
+vyper/src/spoke/libraries/UserPositionUtils.vy
+  s_79e03752657a2e::t_89b97850ff2c71 6-7,12,21,29,43,48,60
+vyper/src/spoke/interfaces/IAaveOracle.vyi
+  s_79e03752657a2e::t_dceb39247c3b1f 3-33,35,38,41-46,49,53-70
+  s_79e03752657a2e::t_151b051558bba0 1-2,34,36-37,39-40,47-48,50-52,71
+vyper/src/utils/NoncesKeyed.vy
+  s_79e03752657a2e::t_93d4f8366ca977 3,26
+vyper/src/spoke/interfaces/ILiquidationLogic.vyi
+  s_79e03752657a2e::t_77ba91ba6d0ade 1-51
+vyper/src/harness/AaveV4PayloadWrapper.vy
+  s_79e03752657a2e::t_ae4ec246a5a365 4,27-47,80,84,88,92,96,100,104,108,112,116,120,124,128,132,136,140,144,148,152,156,160,166,171,176,181,186,191,196,201,206,211,216,221,226,231,236,241,246,251,256,261,266,272,277-279,285,290-292,298-300,306-308,314-316,322-324,330-332,338-340,346-348,354-356,362-364,370-372,378-380,386-388,394,399,404-406,412-414,420-422
+vyper/src/utils/interfaces/INoncesKeyed.vyi
+  s_79e03752657a2e::t_93d4f8366ca977 1-14
+vyper/src/position_manager/TakerPositionManager.vy
+  s_79e03752657a2e::t_298447c96d4967 7-9,47,54,61,67,106,123,171,183,193,205
+  s_79e03752657a2e::t_c1ae0d0e7f95e2 6,168,190
+vyper/src/config_engine/interfaces/ITokenizationSpokeDeployer.vyi
+  s_79e03752657a2e::t_dceb39247c3b1f 3-8,10-22
+  s_79e03752657a2e::t_bb8a761df308f5 1-2,9,23
+vyper/src/dependencies/openzeppelin/IAccessManager.vyi
+  s_79e03752657a2e::t_bb8a761df308f5 1-33
+vyper/src/harness/LiquidationLogicWrapper.vy
+  s_79e03752657a2e::t_cb31001e121c77 9,418,449,529,543,564
+  s_79e03752657a2e::t_4efd636c5ce680 78,125,191,199,494
+  s_79e03752657a2e::t_c1ae0d0e7f95e2 7-8,548,554
+vyper/src/hub/HubConfigurator.vy
+  s_79e03752657a2e::t_e27bec13f531d3 3-5,9,19,21,31,38,46,54,67,69,80,111,119,128,136,148,178,184,187,196,243,256
+  s_79e03752657a2e::t_574dc76623afa8 2
+vyper/src/position_manager/interfaces/IGiverPositionManager.vyi
+  s_79e03752657a2e::t_298447c96d4967 1-111
+vyper/src/harness/MockSpokeStorage.vy
+  s_79e03752657a2e::t_c1ae0d0e7f95e2 2
+vyper/src/dependencies/openzeppelin/IAccessManaged.vyi
+  s_79e03752657a2e::t_151b051558bba0 1-6
+vyper/src/spoke/TokenizationSpokeInstance.vy
+  s_79e03752657a2e::t_dceb39247c3b1f 3,5,54,75,92,99,106,108,110,118,125,128,134,137,140,146,148,151,154,201,210,217,221-222,331,337,469,478,487,496
+  s_79e03752657a2e::t_c1ae0d0e7f95e2 2,398,420
+vyper/src/spoke/interfaces/ISpokeConfigurator.vyi
+  s_79e03752657a2e::t_e27bec13f531d3 1-152
+vyper/src/dependencies/openzeppelin/IERC20.vyi
+  s_79e03752657a2e::t_151b051558bba0 1-6
+vyper/src/dependencies/openzeppelin/IERC20Metadata.vyi
+  s_79e03752657a2e::t_151b051558bba0 1-6
+vyper/src/utils/interfaces/IRescuable.vyi
+  s_79e03752657a2e::t_93d4f8366ca977 1-17
+vyper/src/position_manager/interfaces/INativeTokenGateway.vyi
+  s_79e03752657a2e::t_298447c96d4967 1-126
+vyper/src/hub/interfaces/IInterestRateStrategy.vyi
+  s_79e03752657a2e::t_151b051558bba0 1-16
+vyper/src/spoke/LiquidationLogicContract.vy
+  s_79e03752657a2e::t_c146b2175e7788 15
+  s_79e03752657a2e::t_31975730a579f9 4,6,16,41
+vyper/src/hub/AssetInterestRateStrategy.vy
+  s_79e03752657a2e::t_ddd7b4eee3d767 5-7,18,24,31,33,36,44,47,59,90,107,109
+vyper/src/position_manager/interfaces/ITakerPositionManager.vyi
+  s_79e03752657a2e::t_298447c96d4967 1-217
+vyper/src/position_manager/SignatureGateway.vy
+  s_79e03752657a2e::t_298447c96d4967 7-9,49,56,110,121,134,147,160,168,176
+  s_79e03752657a2e::t_c1ae0d0e7f95e2 6,62,114,125,138,151
+vyper/src/position_manager/NativeTokenGateway.vy
+  s_79e03752657a2e::t_c1ae0d0e7f95e2 4,47
+  s_79e03752657a2e::t_4860dee1cb01b3 6,21,187
+  s_79e03752657a2e::t_298447c96d4967 5,8,35,55,57,107,121,166
+  s_79e03752657a2e::t_810d3ae0d41ed1 7
+vyper/src/config_engine/TokenizationSpokeDeployer.vy
+  s_79e03752657a2e::t_dceb39247c3b1f 2-4,81,84,121
+vyper/src/spoke/interfaces/ITokenizationSpoke.vyi
+  s_79e03752657a2e::t_dceb39247c3b1f 1-340
+vyper/src/hub/HubInstance.vy
+  s_79e03752657a2e::t_89b97850ff2c71 9,14,61,90-91,114,119,125,143-144,160,165,172,182,189,197,205,213,221,243,259,271,279,285,291,297,303,311,323,327,332,338,345,350,354-355,362,369,371,374-375,387,389,402,404,406,412,420,422-425,430,433,435,441,444,446,452,457,459,465,470,473,475,477,479,481,488,500,508,510,517,527,543-544,546,548,550,555,559,562,569,576-577,579,581,583,585,587,599,606-607,609,611,613,615,620,622,631,637,643,645,647,652-654,660,666,668-669,671,673,675,679,681,693,697,702,704-705,707,709,713,715,730,735,738,740,743,750-752,758,760,774,781-783,785,787,798,804-806,808,810,812,817,828,834,836,838,840,842,848,854,856,858,860,864,872,940,947,972,980,988,1001,1019,1025-1027,1033,1046,1071-1072,1079-1080,1099,1123,1129-1131,1136
+  s_79e03752657a2e::t_77ba91ba6d0ade 10-12
+vyper/src/position_manager/interfaces/IPositionManager.vyi
+  s_79e03752657a2e::t_4860dee1cb01b3 3-56,59-80,82,86-106,108-109
+  s_79e03752657a2e::t_bb8a761df308f5 1-2,57-58,81,83-85,107
+vyper/src/spoke/libraries/LiquidationLogic.vy
+  s_79e03752657a2e::t_cb31001e121c77 10-11,81,83,85,87,89,91,93,95,97,161,233,239
+  s_79e03752657a2e::t_c1ae0d0e7f95e2 9
+vyper/src/dependencies/openzeppelin/IAuthority.vyi
+  s_79e03752657a2e::t_151b051558bba0 1-6
+vyper/src/access/AccessManagerEnumerable.vy
+  s_79e03752657a2e::t_dceb39247c3b1f 3-5,20,29,64,66,70,78,89,121,123,125,127,129,248,333,347,352,366,369,372,380,387-388,400-401,408,411,413,419,421,424,426,433,436,448,451,458,460,474,481,508,515,520,522-523,538,544,564,574,577,585,815,824
+  s_79e03752657a2e::t_c1ae0d0e7f95e2 2
+vyper/src/spoke/interfaces/IPriceFeed.vyi
+  s_79e03752657a2e::t_151b051558bba0 1-11
+vyper/src/position_manager/ConfigPositionManager.vy
+  s_79e03752657a2e::t_c1ae0d0e7f95e2 7
+  s_79e03752657a2e::t_4860dee1cb01b3 9,64
+  s_79e03752657a2e::t_298447c96d4967 8,11,50,57,68,106,157,164,171,178,213,220,233,235,242,244
+  s_79e03752657a2e::t_ac42738c3be19e 10
+vyper/src/position_manager/interfaces/ISignatureGateway.vyi
+  s_79e03752657a2e::t_298447c96d4967 1-205
+vyper/src/config_engine/AaveV4ConfigEngine.vy
+  s_79e03752657a2e::t_8fdff1c7a99a45 2-9,126,166-167,186,281,311
+  s_79e03752657a2e::t_ae4ec246a5a365 10-12,44,52,60,68,76,84,101-102,117,137-138,156,183-184,187,194-195,214-215,220-221,226-227,232-233,238-239,244-245,257-258,275-276,297-298,307-308,327-328,333-334,339-340,345-346,354-355,369-370,375-376
+vyper/src/hub/interfaces/IHub.vyi
+  s_79e03752657a2e::t_89b97850ff2c71 1-611
+vyper/src/spoke/TreasurySpokeInstance.vy
+  s_79e03752657a2e::t_c1ae0d0e7f95e2 2
+  s_79e03752657a2e::t_dceb39247c3b1f 3,5,20,64,72,74,80-81,100,106,110,119
+vyper/src/hub/interfaces/IHubConfigurator.vyi
+  s_79e03752657a2e::t_e27bec13f531d3 1-145
+vyper/src/position_manager/GiverPositionManager.vy
+  s_79e03752657a2e::t_c1ae0d0e7f95e2 4,61,90
+  s_79e03752657a2e::t_298447c96d4967 5-7,69,89,100
+vyper/src/harness/MockTokenizationSpokeInstance.vy
+  s_79e03752657a2e::t_c1ae0d0e7f95e2 2
+vyper/src/spoke/interfaces/ITreasurySpoke.vyi
+  s_79e03752657a2e::t_dceb39247c3b1f 1-90
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "7706982e8b67430fcec90fc2c22e7d5b6f357978",
+  "prompts": {},
+  "sessions": {
+    "s_79e03752657a2e": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019ffa71-5465-7fe0-8faf-43d0db8de960",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "AlbertoCentonze <11707683+AlbertoCentonze@users.noreply.github.com>"
+    }
+  }
+}
