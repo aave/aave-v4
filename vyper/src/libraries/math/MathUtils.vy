@@ -1,4 +1,4 @@
-#pragma version 0.5.0a3
+#pragma version 0.5.0b1
 
 RAY: constant(uint256) = 10**27
 SECONDS_PER_YEAR: constant(uint256) = 365 * 24 * 60 * 60

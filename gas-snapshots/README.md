@@ -1,90 +1,90 @@
-# Solidity vs optimized Vyper gas snapshots
+# Solidity vs Vyper gas snapshots
 
-These are matched runs of the repository's `tests/gas/**` suite. Solidity uses
-the repository compiler profiles. Vyper uses pinned Vyper 0.5.0a3, Cancun,
-Venom (`--experimental-codegen`), and the experimental aggressive optimizer
-level (`-O 3`). Each run passed 86/86 tests and records 137 operations across
-11 snapshot files.
+These matched runs use the repository's `tests/gas/**` suite: 86 tests and 137
+recorded operations across 11 snapshot files. Solidity uses the repository
+compiler profiles. The final Vyper run uses official Vyper 0.5.0b1, Cancun,
+Venom (`--experimental-codegen`), and `-O 3`.
 
-The scenario-sum index is a comparison device, not the cost of one transaction:
+The scenario-sum index is a comparison device, not one transaction:
 
-| Implementation | Scenario index | vs Solidity | vs initial Vyper |
+| Implementation | Scenario index | vs Solidity | vs prior stage |
 |---|---:|---:|---:|
 | Solidity | 18,046,597 | — | — |
 | Initial Vyper 0.5.0a3 | 47,114,515 | +161.07% | — |
-| Optimized Vyper POC | 24,053,993 | +33.29% | -48.95% |
+| Optimized Vyper 0.5.0a3 | 24,053,993 | +33.29% | -48.95% vs initial |
+| Vyper 0.5.0b1, bounded control | 22,008,357 | +21.95% | -8.50% vs optimized a3 |
+| Vyper 0.5.0b1, parity-oriented runtime arrays | 22,754,778 | +26.09% | +3.39% vs bounded b1 |
 
-The optimized POC removes 23,060,522 gas from the initial Vyper index. One
-operation beats Solidity, 14 are equal, and 122 remain above Solidity. The
-magnitude of the remaining regressions is much smaller than in the initial
-port.
+The official b1 compiler reduces the optimized a3 index by 8.50% before the
+runtime-array migration. Preserving unbounded behavior where b1 permits it adds
+746,421 gas to the bounded b1 control in these small scenarios, but the final
+parity-oriented build is still 1,299,215 gas (-5.40%) below optimized a3.
 
-## Category totals
+## Final category totals
 
-| Snapshot | Ops | Solidity | Optimized Vyper | Delta | Delta % |
+| Snapshot | Ops | Solidity | Vyper b1 | Delta | Delta % |
 |---|---:|---:|---:|---:|---:|
-| ConfigPositionManager.Operations.json | 11 | 582,821 | 651,467 | +68,646 | +11.78% |
-| GiverPositionManager.Operations.json | 2 | 319,569 | 393,831 | +74,262 | +23.24% |
-| Hub.Operations.json | 16 | 1,583,520 | 2,127,323 | +543,803 | +34.34% |
-| NativeTokenGateway.Operations.json | 6 | 987,939 | 1,245,171 | +257,232 | +26.04% |
-| PositionManagerBase.Operations.json | 1 | 75,041 | 146,411 | +71,370 | +95.11% |
-| SignatureGateway.Operations.json | 8 | 991,321 | 1,265,275 | +273,954 | +27.64% |
-| Spoke.Getters.json | 5 | 405,161 | 654,761 | +249,600 | +61.61% |
-| Spoke.Operations.ZeroRiskPremium.json | 32 | 4,942,161 | 6,798,599 | +1,856,438 | +37.56% |
-| Spoke.Operations.json | 32 | 5,611,075 | 7,744,574 | +2,133,499 | +38.02% |
-| TakerPositionManager.Operations.json | 9 | 885,399 | 1,024,309 | +138,910 | +15.69% |
-| TokenizationSpoke.Operations.json | 15 | 1,662,590 | 2,002,272 | +339,682 | +20.43% |
+| ConfigPositionManager.Operations.json | 11 | 582,821 | 626,022 | +43,201 | +7.41% |
+| GiverPositionManager.Operations.json | 2 | 319,569 | 375,300 | +55,731 | +17.44% |
+| Hub.Operations.json | 16 | 1,583,520 | 2,007,873 | +424,353 | +26.80% |
+| NativeTokenGateway.Operations.json | 6 | 987,939 | 1,184,176 | +196,237 | +19.86% |
+| PositionManagerBase.Operations.json | 1 | 75,041 | 121,012 | +45,971 | +61.26% |
+| SignatureGateway.Operations.json | 8 | 991,321 | 1,176,013 | +184,692 | +18.63% |
+| Spoke.Getters.json | 5 | 405,161 | 578,239 | +173,078 | +42.72% |
+| Spoke.Operations.ZeroRiskPremium.json | 32 | 4,942,161 | 6,496,483 | +1,554,322 | +31.45% |
+| Spoke.Operations.json | 32 | 5,611,075 | 7,308,448 | +1,697,373 | +30.25% |
+| TakerPositionManager.Operations.json | 9 | 885,399 | 980,975 | +95,576 | +10.79% |
+| TokenizationSpoke.Operations.json | 15 | 1,662,590 | 1,900,237 | +237,647 | +14.29% |
 
-## Representative operations
+Two operations beat Solidity, 14 are equal, and 121 remain above Solidity.
+The complete per-operation table is in
+`comparison-b1-unbounded/comparison.json`.
 
-| Operation | Solidity | Initial Vyper | Optimized Vyper |
-|---|---:|---:|---:|
-| Hub add | 91,610 | 176,001 | 116,324 |
-| Hub draw | 109,072 | 178,547 | 132,465 |
-| Spoke borrow, first | 269,297 | 602,706 | 354,830 |
-| Spoke liquidation, partial | 365,078 | 808,538 | 510,871 |
-| Spoke repay, partial | 142,713 | 233,940 | 184,078 |
-| Spoke supply, no borrow | 127,753 | 216,216 | 159,606 |
-| Empty account-data getter | 13,014 | 217,592 | 22,939 |
-| Permit + repay multicall | 166,334 | 1,528,877 | 204,718 |
+## Runtime-array parity and compiler limits
 
-`TokenizationSpoke.permit` remains the one Vyper win: 61,818 versus 62,766
-gas (-1.51%).
+The final build uses `DynArray[T, INF]` for supported top-level ABI-static
+arrays, `Bytes[INF]` for signatures and interest-rate data, mapping-plus-length
+storage for persistent enumerable collections, and raw runtime ABI decoding for
+Spoke `multicall(bytes[])`. Abstract payload methods use unbounded return types
+where their element structures are ABI-static.
 
-## POC compatibility limits
+Official 0.5.0b1 still rejects nested unbounded dynamic shapes such as
+`DynArray[Bytes[INF], INF]`, dynamic structs containing unbounded arrays or
+strings, and unbounded storage arrays. It also requires `raw_call` to have a
+literal finite `max_outsize`. Consequently:
 
-The optimized Vyper build is intentionally a theoretical POC, not an ABI-domain
-equivalent production replacement. Selectors remain compatible, but bounded
-Vyper types restrict accepted values:
+- Spoke multicall has unbounded call count and per-call input size, but each
+  delegated result is capped at 256 bytes.
+- Position-manager and AccessManager multicalls remain source-level bounded
+  because their existing fallbacks/module composition cannot express an
+  unbounded nested return with b1.
+- Four config-engine update families whose structs contain strings or nested
+  arrays retain finite source bounds.
+- Harness-only storage arrays remain bounded; production enumerable Hub and
+  AccessManager collections use mapping-plus-length storage.
 
-- Spoke multicall: at most 4 calls, 512 bytes per call, and 256 bytes returned
-  per call.
-- Position-manager multicall: the same 4 / 512 / 256 bounds.
-- General Spoke and ERC-1271 signatures: at most 256 bytes.
-- `SetUserPositionManagers.updates` remains capped at 1024 because the full
-  Solidity fuzz suite exercises that domain.
-
-These limits are a direct consequence of Vyper 0.5.0a3 lacking production-ready
-unbounded dynamic-array support. They must not be treated as transparent
-optimizations.
+These are compiler residuals, not gas-driven design choices.
 
 ## Artifacts
 
 - `solidity/`: matched Solidity snapshots.
 - `vyper/`: initial Vyper 0.5.0a3 snapshots.
-- `vyper-optimized/`: final optimized Vyper snapshots.
-- `comparison.json`: initial Vyper versus Solidity.
-- `optimized-comparison.json`: optimized Vyper versus Solidity.
-- `PERFORMANCE_DIARY.md`: measurements and compiler-facing hotspot notes.
+- `vyper-optimized/`: optimized Vyper 0.5.0a3 snapshots.
+- `vyper-b1-bounded/`: official b1 bounded control.
+- `vyper-b1-unbounded/`: final parity-oriented b1 snapshots.
+- `comparison-b1-unbounded/`: generated final comparison and tables.
+- `PERFORMANCE_DIARY.md`: compiler-facing findings and staged measurements.
 
 ## Reproduce
 
 ```sh
-forge test --mp 'tests/gas/**' -vv
+forge test --match-path 'tests/gas/**' -vv
 .venv/bin/python scripts/build_vyper.py
-TEST_VYPER=true forge test --mp 'tests/gas/**' -vv
-python3 scripts/compare_vyper_gas.py \
-  gas-snapshots/solidity gas-snapshots/vyper-optimized /tmp/vyper-gas-comparison
+TEST_VYPER=true forge test --match-path 'tests/gas/**' -vv
+.venv/bin/python scripts/compare_vyper_gas.py \
+  gas-snapshots/solidity \
+  gas-snapshots/vyper-b1-unbounded \
+  gas-snapshots/comparison-b1-unbounded
 ```
 
 Foundry writes both implementations to `snapshots/*.json`; copy each completed

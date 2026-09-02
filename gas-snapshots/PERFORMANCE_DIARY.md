@@ -1,11 +1,37 @@
-# Vyper 0.5.0a3 performance diary
+# Vyper 0.5 performance diary
 
 This diary records performance findings from the Aave v4 Vyper POC for Vyper
-core developers. Measurements use Cancun, Vyper 0.5.0a3, Venom via
-`--experimental-codegen`, and the repository's matched 137-operation gas suite.
-The final build uses `-O 3`; intermediate builds used `-O 2` where noted.
+core developers. Measurements use Cancun, Venom via `--experimental-codegen`,
+and the repository's matched 137-operation gas suite. The final build uses
+official Vyper 0.5.0b1 and `-O 3`; earlier milestones used 0.5.0a3.
 
-## Cumulative progress
+## Official 0.5.0b1 and runtime-array results
+
+| Milestone | Scenario index | vs Solidity | vs previous |
+|---|---:|---:|---:|
+| Optimized 0.5.0a3 | 24,053,993 | +33.29% | — |
+| 0.5.0b1 bounded control | 22,008,357 | +21.95% | -8.50% |
+| 0.5.0b1 parity-oriented runtime arrays | 22,754,778 | +26.09% | +3.39% |
+
+The official b1 release provides top-level `Bytes[INF]`, `String[INF]`, and
+`DynArray[T, INF]` for ABI-static `T` under Venom. The POC now uses these for
+signatures, interest-rate data, oracle batch getters, configurator batches, and
+abstract payload methods. Production persistent enumerable arrays were replaced
+with mapping-plus-length storage. Spoke multicall uses raw runtime decoding to
+accept an unbounded `bytes[]` call count and unbounded per-call input size.
+
+The runtime path is not a gas optimization in the small benchmark domain: it
+adds 746,421 gas (+3.39%) versus the bounded b1 control. It is retained because
+unbounded behavior is a feature-parity requirement. Even with that cost, the
+final b1 build is 1,299,215 gas (-5.40%) below optimized a3.
+
+The remaining compiler gaps are nested unbounded dynamic types, unbounded
+storage arrays, and unbounded `raw_call` returndata. Vyper 0.5.0b1 rejects
+`DynArray[Bytes[INF], INF]` and dynamic structs containing unbounded arrays or
+strings, and `raw_call` still requires a literal finite `max_outsize`. The POC
+isolates those residual bounds instead of describing them as optimizations.
+
+## Cumulative 0.5.0a3 progress
 
 | Milestone | Scenario index | Change from initial Vyper |
 |---|---:|---:|
@@ -85,7 +111,7 @@ Expose or recognize common `popcount`, `clz`/`fls`, and set-bit iteration
 patterns. Straightforward fixed loops are catastrophically expensive here,
 while the constant-step bit algorithms are compact and predictable.
 
-## 3. Bounded dynamic ABI values charge for the maximum, not the value
+## 3. Bounded dynamic ABI values charge for the maximum, not the value (a3)
 
 ### Observation
 
@@ -108,7 +134,7 @@ reduced the reserved memory further.
 | permit + supply + collateral | 1,554,342 | 198,963 | 166,114 |
 | supply + collateral | 1,516,228 | 178,730 | 146,316 |
 
-The final POC bounds are 4 calls, 512 bytes of calldata per call, and 256 bytes
+The optimized a3 POC bounds were 4 calls, 512 bytes of calldata per call, and 256 bytes
 of returndata per call. Signatures are capped at 256 bytes. These are semantic
 domain restrictions, not production-transparent optimizations.
 
@@ -123,7 +149,7 @@ language-level opportunity. Short of that, codegen should allocate/copy based
 on runtime length rather than eagerly reflecting maximum bounds. Zero-copy
 calldata slices and direct ABI forwarding would help router and multicall code.
 
-## 4. Unbounded-array compiler experiments are not ready on the tested base
+## 4. Pre-b1 unbounded-array experiments were not ready
 
 An experimental dynamic-allocation/unbounded-array compiler branch was tested
 against the POC. It regressed signature and EIP-712 behavior, so it was not used
@@ -131,7 +157,9 @@ for final measurements. On stock 0.5.0a3, attempting to manually decode a
 runtime calldata slice typed as `Bytes[INF]` also triggered a compiler
 `CodegenPanic` when converting it to a bounded `Bytes[4096]` value.
 
-The final result therefore uses stock 0.5.0a3 plus explicit bounded POC types.
+That a3 result therefore used stock 0.5.0a3 plus explicit bounded POC types.
+Official 0.5.0b1 supersedes the experimental compiler for supported top-level
+runtime arrays; the nested-dynamic and `raw_call` limitations above remain.
 
 ## 5. Aggressive Venom is a code-size optimization here, not a gas win
 
@@ -167,7 +195,7 @@ For upgradeable contracts, a structural compatibility check would be more
 useful than exact pretty-printed type equality, or the error should be a normal
 diagnostic rather than an internal compiler panic.
 
-## Remaining measured gaps
+## Remaining measured gaps in optimized 0.5.0a3
 
 After the implementation fixes, the largest categories versus Solidity are:
 
@@ -188,9 +216,8 @@ and call/ABI overhead rather than sparse traversal, which is now fixed.
 ## Validation
 
 - Gas suite: 86/86 passing, 137 recorded operations.
-- Full suite: 2,063 passing after correcting a Vyper-specific deployment test
-  that hardcoded the old `initialized_state` slot; one pre-existing
-  `pending rft` test remains skipped.
+- Full b1 suite: 2,064 passing and zero failing; one pre-existing `pending rft`
+  test remains skipped.
 - Focused Hub suite: 313/313 passing.
 - Focused position-manager suite: 277/277 passing.
-- Spoke runtime bytecode: 21,602 bytes under EIP-170.
+- Final b1 Spoke runtime bytecode: 21,923 bytes, 2,653 bytes under EIP-170.

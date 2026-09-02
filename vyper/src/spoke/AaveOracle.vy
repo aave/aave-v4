@@ -1,4 +1,4 @@
-#pragma version 0.5.0a3
+#pragma version 0.5.0b1
 
 
 interface ISpoke:
@@ -89,8 +89,8 @@ def getReservePrice(reserveId: uint256) -> uint256:
 
 @external
 @view
-def getReservesPrices(reserveIds: DynArray[uint256, 1024]) -> DynArray[uint256, 1024]:
-    prices: DynArray[uint256, 1024] = []
+def getReservesPrices(reserveIds: DynArray[uint256, INF]) -> DynArray[uint256, INF]:
+    prices: DynArray[uint256, INF] = []
     for reserve_id: uint256 in reserveIds:
         prices.append(self._get_source_price(reserve_id))
     return prices

@@ -1,4 +1,4 @@
-# pragma version 0.5.0a3
+# pragma version 0.5.0b1
 
 
 struct AssetConfig:
@@ -21,8 +21,8 @@ interface IERC20Metadata:
     def decimals() -> uint8: view
 
 interface IHub:
-    def addAsset(underlying: address, decimals: uint8, feeReceiver: address, irStrategy: address, irData: Bytes[1024]) -> uint256: nonpayable
-    def updateAssetConfig(assetId: uint256, config: AssetConfig, irData: Bytes[1024]): nonpayable
+    def addAsset(underlying: address, decimals: uint8, feeReceiver: address, irStrategy: address, irData: Bytes[INF]) -> uint256: nonpayable
+    def updateAssetConfig(assetId: uint256, config: AssetConfig, irData: Bytes[INF]): nonpayable
     def getAssetConfig(assetId: uint256) -> AssetConfig: view
     def getSpokeCount(assetId: uint256) -> uint256: view
     def getSpokeAddress(assetId: uint256, index: uint256) -> address: view
@@ -31,7 +31,7 @@ interface IHub:
     def addSpoke(assetId: uint256, spoke: address, config: SpokeConfig): nonpayable
     def getAssetCount() -> uint256: view
     def isSpokeListed(assetId: uint256, spoke: address) -> bool: view
-    def setInterestRateData(assetId: uint256, irData: Bytes[1024]): nonpayable
+    def setInterestRateData(assetId: uint256, irData: Bytes[INF]): nonpayable
 
 
 event AuthorityUpdated:
@@ -112,7 +112,7 @@ def _update_liquidity_fee(hub: address, asset_id: uint256, liquidity_fee: uint25
 
 
 @external
-def addAsset(hub: address, underlying: address, feeReceiver: address, liquidityFee: uint256, irStrategy: address, irData: Bytes[1024]) -> uint256:
+def addAsset(hub: address, underlying: address, feeReceiver: address, liquidityFee: uint256, irStrategy: address, irData: Bytes[INF]) -> uint256:
     self._check_access(method_id("addAsset(address,address,address,uint256,address,bytes)"))
     decimals: uint8 = staticcall IERC20Metadata(underlying).decimals()
     asset_id: uint256 = extcall IHub(hub).addAsset(underlying, decimals, feeReceiver, irStrategy, irData)
@@ -121,7 +121,7 @@ def addAsset(hub: address, underlying: address, feeReceiver: address, liquidityF
 
 
 @external
-def addAssetWithDecimals(hub: address, underlying: address, decimals: uint8, feeReceiver: address, liquidityFee: uint256, irStrategy: address, irData: Bytes[1024]) -> uint256:
+def addAssetWithDecimals(hub: address, underlying: address, decimals: uint8, feeReceiver: address, liquidityFee: uint256, irStrategy: address, irData: Bytes[INF]) -> uint256:
     self._check_access(method_id("addAssetWithDecimals(address,address,uint8,address,uint256,address,bytes)"))
     asset_id: uint256 = extcall IHub(hub).addAsset(underlying, decimals, feeReceiver, irStrategy, irData)
     self._update_liquidity_fee(hub, asset_id, liquidityFee)
@@ -152,7 +152,7 @@ def updateFeeConfig(hub: address, assetId: uint256, liquidityFee: uint256, feeRe
 
 
 @external
-def updateInterestRateStrategy(hub: address, assetId: uint256, irStrategy: address, irData: Bytes[1024]):
+def updateInterestRateStrategy(hub: address, assetId: uint256, irStrategy: address, irData: Bytes[INF]):
     self._check_access(method_id("updateInterestRateStrategy(address,uint256,address,bytes)"))
     config: AssetConfig = staticcall IHub(hub).getAssetConfig(assetId)
     config.irStrategy = irStrategy
@@ -210,14 +210,14 @@ def addSpoke(hub: address, spoke: address, assetId: uint256, config: SpokeConfig
 
 
 @external
-def addSpokeToAssets(hub: address, spoke: address, assetIds: DynArray[uint256, MAX_ITEMS], configs: DynArray[SpokeConfig, MAX_ITEMS]):
+def addSpokeToAssets(hub: address, spoke: address, assetIds: DynArray[uint256, INF], configs: DynArray[SpokeConfig, INF]):
     self._check_access(method_id("addSpokeToAssets(address,address,uint256[],(uint40,uint40,uint24,bool,bool)[])"))
     if len(assetIds) != len(configs):
         raw_revert(method_id("MismatchedConfigs()"))
-    for i: uint256 in range(MAX_ITEMS):
-        if i >= len(assetIds):
-            break
-        extcall IHub(hub).addSpoke(assetIds[i], spoke, configs[i])
+    i: uint256 = 0
+    for asset_id: uint256 in assetIds:
+        extcall IHub(hub).addSpoke(asset_id, spoke, configs[i])
+        i += 1
 
 
 @internal
@@ -312,6 +312,6 @@ def resetSpokeCaps(hub: address, spoke: address):
 
 
 @external
-def updateInterestRateData(hub: address, assetId: uint256, irData: Bytes[1024]):
+def updateInterestRateData(hub: address, assetId: uint256, irData: Bytes[INF]):
     self._check_access(method_id("updateInterestRateData(address,uint256,bytes)"))
     extcall IHub(hub).setInterestRateData(assetId, irData)

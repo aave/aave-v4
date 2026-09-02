@@ -1,4 +1,4 @@
-# pragma version 0.5.0a3
+# pragma version 0.5.0b1
 
 from config_engine import AaveV4Payload
 
@@ -164,8 +164,8 @@ def hubAssetListings() -> DynArray[AaveV4Payload.AssetListing, AaveV4Payload.MAX
 
 @external
 @view
-def hubAssetConfigUpdates() -> DynArray[AaveV4Payload.AssetConfigUpdate, AaveV4Payload.MAX_UPDATES]:
-    return self.hub_asset_config_updates
+def hubAssetConfigUpdates() -> DynArray[AaveV4Payload.AssetConfigUpdate, INF]:
+    return self._hub_asset_config_updates()
 
 @external
 @view
@@ -174,68 +174,68 @@ def hubSpokeToAssetsAdditions() -> DynArray[AaveV4Payload.SpokeToAssetsAddition,
 
 @external
 @view
-def hubSpokeConfigUpdates() -> DynArray[AaveV4Payload.SpokeConfigUpdate, AaveV4Payload.MAX_UPDATES]:
-    return self.hub_spoke_config_updates
+def hubSpokeConfigUpdates() -> DynArray[AaveV4Payload.SpokeConfigUpdate, INF]:
+    return self._hub_spoke_config_updates()
 
 @external
 @view
-def hubAssetHalts() -> DynArray[AaveV4Payload.AssetHalt, AaveV4Payload.MAX_UPDATES]:
-    return self.hub_asset_halts
+def hubAssetHalts() -> DynArray[AaveV4Payload.AssetHalt, INF]:
+    return self._hub_asset_halts()
 
 @external
 @view
-def hubAssetDeactivations() -> DynArray[AaveV4Payload.AssetDeactivation, AaveV4Payload.MAX_UPDATES]:
-    return self.hub_asset_deactivations
+def hubAssetDeactivations() -> DynArray[AaveV4Payload.AssetDeactivation, INF]:
+    return self._hub_asset_deactivations()
 
 @external
 @view
-def hubAssetCapsResets() -> DynArray[AaveV4Payload.AssetCapsReset, AaveV4Payload.MAX_UPDATES]:
-    return self.hub_asset_caps_resets
+def hubAssetCapsResets() -> DynArray[AaveV4Payload.AssetCapsReset, INF]:
+    return self._hub_asset_caps_resets()
 
 @external
 @view
-def hubSpokeDeactivations() -> DynArray[AaveV4Payload.SpokeDeactivation, AaveV4Payload.MAX_UPDATES]:
-    return self.hub_spoke_deactivations
+def hubSpokeDeactivations() -> DynArray[AaveV4Payload.SpokeDeactivation, INF]:
+    return self._hub_spoke_deactivations()
 
 @external
 @view
-def hubSpokeCapsResets() -> DynArray[AaveV4Payload.SpokeCapsReset, AaveV4Payload.MAX_UPDATES]:
-    return self.hub_spoke_caps_resets
+def hubSpokeCapsResets() -> DynArray[AaveV4Payload.SpokeCapsReset, INF]:
+    return self._hub_spoke_caps_resets()
 
 @external
 @view
-def spokeReserveListings() -> DynArray[AaveV4Payload.ReserveListing, AaveV4Payload.MAX_UPDATES]:
-    return self.spoke_reserve_listings
+def spokeReserveListings() -> DynArray[AaveV4Payload.ReserveListing, INF]:
+    return self._spoke_reserve_listings()
 
 @external
 @view
-def spokeReserveConfigUpdates() -> DynArray[AaveV4Payload.ReserveConfigUpdate, AaveV4Payload.MAX_UPDATES]:
-    return self.spoke_reserve_config_updates
+def spokeReserveConfigUpdates() -> DynArray[AaveV4Payload.ReserveConfigUpdate, INF]:
+    return self._spoke_reserve_config_updates()
 
 @external
 @view
-def spokeLiquidationConfigUpdates() -> DynArray[AaveV4Payload.LiquidationConfigUpdate, AaveV4Payload.MAX_UPDATES]:
-    return self.spoke_liquidation_config_updates
+def spokeLiquidationConfigUpdates() -> DynArray[AaveV4Payload.LiquidationConfigUpdate, INF]:
+    return self._spoke_liquidation_config_updates()
 
 @external
 @view
-def spokeDynamicReserveConfigAdditions() -> DynArray[AaveV4Payload.DynamicReserveConfigAddition, AaveV4Payload.MAX_UPDATES]:
-    return self.spoke_dynamic_reserve_config_additions
+def spokeDynamicReserveConfigAdditions() -> DynArray[AaveV4Payload.DynamicReserveConfigAddition, INF]:
+    return self._spoke_dynamic_reserve_config_additions()
 
 @external
 @view
-def spokeDynamicReserveConfigUpdates() -> DynArray[AaveV4Payload.DynamicReserveConfigUpdate, AaveV4Payload.MAX_UPDATES]:
-    return self.spoke_dynamic_reserve_config_updates
+def spokeDynamicReserveConfigUpdates() -> DynArray[AaveV4Payload.DynamicReserveConfigUpdate, INF]:
+    return self._spoke_dynamic_reserve_config_updates()
 
 @external
 @view
-def spokePositionManagerUpdates() -> DynArray[AaveV4Payload.PositionManagerUpdate, AaveV4Payload.MAX_UPDATES]:
-    return self.spoke_position_manager_updates
+def spokePositionManagerUpdates() -> DynArray[AaveV4Payload.PositionManagerUpdate, INF]:
+    return self._spoke_position_manager_updates()
 
 @external
 @view
-def accessManagerRoleMemberships() -> DynArray[AaveV4Payload.RoleMembership, AaveV4Payload.MAX_UPDATES]:
-    return self.access_manager_role_memberships
+def accessManagerRoleMemberships() -> DynArray[AaveV4Payload.RoleMembership, INF]:
+    return self._access_manager_role_memberships()
 
 @external
 @view
@@ -249,18 +249,18 @@ def accessManagerTargetFunctionRoleUpdates() -> DynArray[AaveV4Payload.TargetFun
 
 @external
 @view
-def accessManagerTargetAdminDelayUpdates() -> DynArray[AaveV4Payload.TargetAdminDelayUpdate, AaveV4Payload.MAX_UPDATES]:
-    return self.access_manager_target_admin_delay_updates
+def accessManagerTargetAdminDelayUpdates() -> DynArray[AaveV4Payload.TargetAdminDelayUpdate, INF]:
+    return self._access_manager_target_admin_delay_updates()
 
 @external
 @view
-def positionManagerSpokeRegistrations() -> DynArray[AaveV4Payload.SpokeRegistration, AaveV4Payload.MAX_UPDATES]:
-    return self.position_manager_spoke_registrations
+def positionManagerSpokeRegistrations() -> DynArray[AaveV4Payload.SpokeRegistration, INF]:
+    return self._position_manager_spoke_registrations()
 
 @external
 @view
-def positionManagerRoleRenouncements() -> DynArray[AaveV4Payload.PositionManagerRoleRenouncement, AaveV4Payload.MAX_UPDATES]:
-    return self.position_manager_role_renouncements
+def positionManagerRoleRenouncements() -> DynArray[AaveV4Payload.PositionManagerRoleRenouncement, INF]:
+    return self._position_manager_role_renouncements()
 
 
 @view
@@ -270,8 +270,11 @@ def _hub_asset_listings() -> DynArray[AaveV4Payload.AssetListing, AaveV4Payload.
 
 @view
 @override(AaveV4Payload)
-def _hub_asset_config_updates() -> DynArray[AaveV4Payload.AssetConfigUpdate, AaveV4Payload.MAX_UPDATES]:
-    return self.hub_asset_config_updates
+def _hub_asset_config_updates() -> DynArray[AaveV4Payload.AssetConfigUpdate, INF]:
+    result: DynArray[AaveV4Payload.AssetConfigUpdate, INF] = []
+    for item: AaveV4Payload.AssetConfigUpdate in self.hub_asset_config_updates:
+        result.append(item)
+    return result
 
 @view
 @override(AaveV4Payload)
@@ -280,68 +283,107 @@ def _hub_spoke_to_assets_additions() -> DynArray[AaveV4Payload.SpokeToAssetsAddi
 
 @view
 @override(AaveV4Payload)
-def _hub_spoke_config_updates() -> DynArray[AaveV4Payload.SpokeConfigUpdate, AaveV4Payload.MAX_UPDATES]:
-    return self.hub_spoke_config_updates
+def _hub_spoke_config_updates() -> DynArray[AaveV4Payload.SpokeConfigUpdate, INF]:
+    result: DynArray[AaveV4Payload.SpokeConfigUpdate, INF] = []
+    for item: AaveV4Payload.SpokeConfigUpdate in self.hub_spoke_config_updates:
+        result.append(item)
+    return result
 
 @view
 @override(AaveV4Payload)
-def _hub_asset_halts() -> DynArray[AaveV4Payload.AssetHalt, AaveV4Payload.MAX_UPDATES]:
-    return self.hub_asset_halts
+def _hub_asset_halts() -> DynArray[AaveV4Payload.AssetHalt, INF]:
+    result: DynArray[AaveV4Payload.AssetHalt, INF] = []
+    for item: AaveV4Payload.AssetHalt in self.hub_asset_halts:
+        result.append(item)
+    return result
 
 @view
 @override(AaveV4Payload)
-def _hub_asset_deactivations() -> DynArray[AaveV4Payload.AssetDeactivation, AaveV4Payload.MAX_UPDATES]:
-    return self.hub_asset_deactivations
+def _hub_asset_deactivations() -> DynArray[AaveV4Payload.AssetDeactivation, INF]:
+    result: DynArray[AaveV4Payload.AssetDeactivation, INF] = []
+    for item: AaveV4Payload.AssetDeactivation in self.hub_asset_deactivations:
+        result.append(item)
+    return result
 
 @view
 @override(AaveV4Payload)
-def _hub_asset_caps_resets() -> DynArray[AaveV4Payload.AssetCapsReset, AaveV4Payload.MAX_UPDATES]:
-    return self.hub_asset_caps_resets
+def _hub_asset_caps_resets() -> DynArray[AaveV4Payload.AssetCapsReset, INF]:
+    result: DynArray[AaveV4Payload.AssetCapsReset, INF] = []
+    for item: AaveV4Payload.AssetCapsReset in self.hub_asset_caps_resets:
+        result.append(item)
+    return result
 
 @view
 @override(AaveV4Payload)
-def _hub_spoke_deactivations() -> DynArray[AaveV4Payload.SpokeDeactivation, AaveV4Payload.MAX_UPDATES]:
-    return self.hub_spoke_deactivations
+def _hub_spoke_deactivations() -> DynArray[AaveV4Payload.SpokeDeactivation, INF]:
+    result: DynArray[AaveV4Payload.SpokeDeactivation, INF] = []
+    for item: AaveV4Payload.SpokeDeactivation in self.hub_spoke_deactivations:
+        result.append(item)
+    return result
 
 @view
 @override(AaveV4Payload)
-def _hub_spoke_caps_resets() -> DynArray[AaveV4Payload.SpokeCapsReset, AaveV4Payload.MAX_UPDATES]:
-    return self.hub_spoke_caps_resets
+def _hub_spoke_caps_resets() -> DynArray[AaveV4Payload.SpokeCapsReset, INF]:
+    result: DynArray[AaveV4Payload.SpokeCapsReset, INF] = []
+    for item: AaveV4Payload.SpokeCapsReset in self.hub_spoke_caps_resets:
+        result.append(item)
+    return result
 
 @view
 @override(AaveV4Payload)
-def _spoke_reserve_listings() -> DynArray[AaveV4Payload.ReserveListing, AaveV4Payload.MAX_UPDATES]:
-    return self.spoke_reserve_listings
+def _spoke_reserve_listings() -> DynArray[AaveV4Payload.ReserveListing, INF]:
+    result: DynArray[AaveV4Payload.ReserveListing, INF] = []
+    for item: AaveV4Payload.ReserveListing in self.spoke_reserve_listings:
+        result.append(item)
+    return result
 
 @view
 @override(AaveV4Payload)
-def _spoke_reserve_config_updates() -> DynArray[AaveV4Payload.ReserveConfigUpdate, AaveV4Payload.MAX_UPDATES]:
-    return self.spoke_reserve_config_updates
+def _spoke_reserve_config_updates() -> DynArray[AaveV4Payload.ReserveConfigUpdate, INF]:
+    result: DynArray[AaveV4Payload.ReserveConfigUpdate, INF] = []
+    for item: AaveV4Payload.ReserveConfigUpdate in self.spoke_reserve_config_updates:
+        result.append(item)
+    return result
 
 @view
 @override(AaveV4Payload)
-def _spoke_liquidation_config_updates() -> DynArray[AaveV4Payload.LiquidationConfigUpdate, AaveV4Payload.MAX_UPDATES]:
-    return self.spoke_liquidation_config_updates
+def _spoke_liquidation_config_updates() -> DynArray[AaveV4Payload.LiquidationConfigUpdate, INF]:
+    result: DynArray[AaveV4Payload.LiquidationConfigUpdate, INF] = []
+    for item: AaveV4Payload.LiquidationConfigUpdate in self.spoke_liquidation_config_updates:
+        result.append(item)
+    return result
 
 @view
 @override(AaveV4Payload)
-def _spoke_dynamic_reserve_config_additions() -> DynArray[AaveV4Payload.DynamicReserveConfigAddition, AaveV4Payload.MAX_UPDATES]:
-    return self.spoke_dynamic_reserve_config_additions
+def _spoke_dynamic_reserve_config_additions() -> DynArray[AaveV4Payload.DynamicReserveConfigAddition, INF]:
+    result: DynArray[AaveV4Payload.DynamicReserveConfigAddition, INF] = []
+    for item: AaveV4Payload.DynamicReserveConfigAddition in self.spoke_dynamic_reserve_config_additions:
+        result.append(item)
+    return result
 
 @view
 @override(AaveV4Payload)
-def _spoke_dynamic_reserve_config_updates() -> DynArray[AaveV4Payload.DynamicReserveConfigUpdate, AaveV4Payload.MAX_UPDATES]:
-    return self.spoke_dynamic_reserve_config_updates
+def _spoke_dynamic_reserve_config_updates() -> DynArray[AaveV4Payload.DynamicReserveConfigUpdate, INF]:
+    result: DynArray[AaveV4Payload.DynamicReserveConfigUpdate, INF] = []
+    for item: AaveV4Payload.DynamicReserveConfigUpdate in self.spoke_dynamic_reserve_config_updates:
+        result.append(item)
+    return result
 
 @view
 @override(AaveV4Payload)
-def _spoke_position_manager_updates() -> DynArray[AaveV4Payload.PositionManagerUpdate, AaveV4Payload.MAX_UPDATES]:
-    return self.spoke_position_manager_updates
+def _spoke_position_manager_updates() -> DynArray[AaveV4Payload.PositionManagerUpdate, INF]:
+    result: DynArray[AaveV4Payload.PositionManagerUpdate, INF] = []
+    for item: AaveV4Payload.PositionManagerUpdate in self.spoke_position_manager_updates:
+        result.append(item)
+    return result
 
 @view
 @override(AaveV4Payload)
-def _access_manager_role_memberships() -> DynArray[AaveV4Payload.RoleMembership, AaveV4Payload.MAX_UPDATES]:
-    return self.access_manager_role_memberships
+def _access_manager_role_memberships() -> DynArray[AaveV4Payload.RoleMembership, INF]:
+    result: DynArray[AaveV4Payload.RoleMembership, INF] = []
+    for item: AaveV4Payload.RoleMembership in self.access_manager_role_memberships:
+        result.append(item)
+    return result
 
 @view
 @override(AaveV4Payload)
@@ -355,15 +397,24 @@ def _access_manager_target_function_role_updates() -> DynArray[AaveV4Payload.Tar
 
 @view
 @override(AaveV4Payload)
-def _access_manager_target_admin_delay_updates() -> DynArray[AaveV4Payload.TargetAdminDelayUpdate, AaveV4Payload.MAX_UPDATES]:
-    return self.access_manager_target_admin_delay_updates
+def _access_manager_target_admin_delay_updates() -> DynArray[AaveV4Payload.TargetAdminDelayUpdate, INF]:
+    result: DynArray[AaveV4Payload.TargetAdminDelayUpdate, INF] = []
+    for item: AaveV4Payload.TargetAdminDelayUpdate in self.access_manager_target_admin_delay_updates:
+        result.append(item)
+    return result
 
 @view
 @override(AaveV4Payload)
-def _position_manager_spoke_registrations() -> DynArray[AaveV4Payload.SpokeRegistration, AaveV4Payload.MAX_UPDATES]:
-    return self.position_manager_spoke_registrations
+def _position_manager_spoke_registrations() -> DynArray[AaveV4Payload.SpokeRegistration, INF]:
+    result: DynArray[AaveV4Payload.SpokeRegistration, INF] = []
+    for item: AaveV4Payload.SpokeRegistration in self.position_manager_spoke_registrations:
+        result.append(item)
+    return result
 
 @view
 @override(AaveV4Payload)
-def _position_manager_role_renouncements() -> DynArray[AaveV4Payload.PositionManagerRoleRenouncement, AaveV4Payload.MAX_UPDATES]:
-    return self.position_manager_role_renouncements
+def _position_manager_role_renouncements() -> DynArray[AaveV4Payload.PositionManagerRoleRenouncement, INF]:
+    result: DynArray[AaveV4Payload.PositionManagerRoleRenouncement, INF] = []
+    for item: AaveV4Payload.PositionManagerRoleRenouncement in self.position_manager_role_renouncements:
+        result.append(item)
+    return result

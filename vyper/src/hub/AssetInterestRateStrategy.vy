@@ -1,4 +1,4 @@
-#pragma version 0.5.0a3
+#pragma version 0.5.0b1
 
 from hub import BasicInterestRateStrategy
 from libraries.math import WadRayMath
@@ -39,7 +39,7 @@ def __init__(hub: address):
 
 
 @external
-def setInterestRateData(assetId: uint256, data: Bytes[128]):
+def setInterestRateData(assetId: uint256, data: Bytes[INF]):
     if msg.sender != HUB:
         raw_revert(method_id("OnlyHub()"))
 

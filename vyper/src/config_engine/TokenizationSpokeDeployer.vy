@@ -1,4 +1,4 @@
-# pragma version 0.5.0a3
+# pragma version 0.5.0b1
 
 # Vyper counterpart of TokenizationSpokeDeployer.  Creation code is supplied
 # once at deployment so the contract can deploy the pinned Vyper

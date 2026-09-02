@@ -1,4 +1,4 @@
-#pragma version 0.5.0a3
+#pragma version 0.5.0b1
 
 nonces_by_owner: HashMap[address, HashMap[uint192, uint256]]
 

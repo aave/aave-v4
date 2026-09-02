@@ -1,4 +1,4 @@
-# pragma version 0.5.0a3
+# pragma version 0.5.0b1
 
 # Reusable Vyper governance-payload base. Concrete payloads override each
 # action getter and the execution hooks. Keeping the orchestration in this
@@ -213,7 +213,7 @@ def _hub_asset_listings() -> DynArray[AssetListing, MAX_UPDATES]:
 
 @view
 @abstract
-def _hub_asset_config_updates() -> DynArray[AssetConfigUpdate, MAX_UPDATES]:
+def _hub_asset_config_updates() -> DynArray[AssetConfigUpdate, INF]:
     ...
 
 
@@ -225,79 +225,79 @@ def _hub_spoke_to_assets_additions() -> DynArray[SpokeToAssetsAddition, MAX_UPDA
 
 @view
 @abstract
-def _hub_spoke_config_updates() -> DynArray[SpokeConfigUpdate, MAX_UPDATES]:
+def _hub_spoke_config_updates() -> DynArray[SpokeConfigUpdate, INF]:
     ...
 
 
 @view
 @abstract
-def _hub_asset_halts() -> DynArray[AssetHalt, MAX_UPDATES]:
+def _hub_asset_halts() -> DynArray[AssetHalt, INF]:
     ...
 
 
 @view
 @abstract
-def _hub_asset_deactivations() -> DynArray[AssetDeactivation, MAX_UPDATES]:
+def _hub_asset_deactivations() -> DynArray[AssetDeactivation, INF]:
     ...
 
 
 @view
 @abstract
-def _hub_asset_caps_resets() -> DynArray[AssetCapsReset, MAX_UPDATES]:
+def _hub_asset_caps_resets() -> DynArray[AssetCapsReset, INF]:
     ...
 
 
 @view
 @abstract
-def _hub_spoke_deactivations() -> DynArray[SpokeDeactivation, MAX_UPDATES]:
+def _hub_spoke_deactivations() -> DynArray[SpokeDeactivation, INF]:
     ...
 
 
 @view
 @abstract
-def _hub_spoke_caps_resets() -> DynArray[SpokeCapsReset, MAX_UPDATES]:
+def _hub_spoke_caps_resets() -> DynArray[SpokeCapsReset, INF]:
     ...
 
 
 @view
 @abstract
-def _spoke_reserve_listings() -> DynArray[ReserveListing, MAX_UPDATES]:
+def _spoke_reserve_listings() -> DynArray[ReserveListing, INF]:
     ...
 
 
 @view
 @abstract
-def _spoke_reserve_config_updates() -> DynArray[ReserveConfigUpdate, MAX_UPDATES]:
+def _spoke_reserve_config_updates() -> DynArray[ReserveConfigUpdate, INF]:
     ...
 
 
 @view
 @abstract
-def _spoke_liquidation_config_updates() -> DynArray[LiquidationConfigUpdate, MAX_UPDATES]:
+def _spoke_liquidation_config_updates() -> DynArray[LiquidationConfigUpdate, INF]:
     ...
 
 
 @view
 @abstract
-def _spoke_dynamic_reserve_config_additions() -> DynArray[DynamicReserveConfigAddition, MAX_UPDATES]:
+def _spoke_dynamic_reserve_config_additions() -> DynArray[DynamicReserveConfigAddition, INF]:
     ...
 
 
 @view
 @abstract
-def _spoke_dynamic_reserve_config_updates() -> DynArray[DynamicReserveConfigUpdate, MAX_UPDATES]:
+def _spoke_dynamic_reserve_config_updates() -> DynArray[DynamicReserveConfigUpdate, INF]:
     ...
 
 
 @view
 @abstract
-def _spoke_position_manager_updates() -> DynArray[PositionManagerUpdate, MAX_UPDATES]:
+def _spoke_position_manager_updates() -> DynArray[PositionManagerUpdate, INF]:
     ...
 
 
 @view
 @abstract
-def _access_manager_role_memberships() -> DynArray[RoleMembership, MAX_UPDATES]:
+def _access_manager_role_memberships() -> DynArray[RoleMembership, INF]:
     ...
 
 
@@ -315,19 +315,19 @@ def _access_manager_target_function_role_updates() -> DynArray[TargetFunctionRol
 
 @view
 @abstract
-def _access_manager_target_admin_delay_updates() -> DynArray[TargetAdminDelayUpdate, MAX_UPDATES]:
+def _access_manager_target_admin_delay_updates() -> DynArray[TargetAdminDelayUpdate, INF]:
     ...
 
 
 @view
 @abstract
-def _position_manager_spoke_registrations() -> DynArray[SpokeRegistration, MAX_UPDATES]:
+def _position_manager_spoke_registrations() -> DynArray[SpokeRegistration, INF]:
     ...
 
 
 @view
 @abstract
-def _position_manager_role_renouncements() -> DynArray[PositionManagerRoleRenouncement, MAX_UPDATES]:
+def _position_manager_role_renouncements() -> DynArray[PositionManagerRoleRenouncement, INF]:
     ...
 
 
@@ -342,7 +342,7 @@ def _post_execute():
 
 
 @internal
-def _delegate_call_engine(call_data: Bytes[MAX_ENGINE_CALLDATA]):
+def _delegate_call_engine(call_data: Bytes[INF]):
     success: bool = False
     result: Bytes[MAX_REVERT_DATA] = b""
     success, result = raw_call(
@@ -360,7 +360,7 @@ def _delegate_call_engine(call_data: Bytes[MAX_ENGINE_CALLDATA]):
 def execute():
     self._pre_execute()
 
-    memberships: DynArray[RoleMembership, MAX_UPDATES] = self._access_manager_role_memberships()
+    memberships: DynArray[RoleMembership, INF] = self._access_manager_role_memberships()
     if len(memberships) > 0:
         self._delegate_call_engine(
             concat(method_id("executeRoleMemberships((address,uint64,address,bool,uint32)[])"), abi_encode(memberships))
@@ -378,7 +378,7 @@ def execute():
             concat(method_id("executeTargetFunctionRoleUpdates((address,address,bytes4[],uint64)[])"), abi_encode(target_role_updates))
         )
 
-    target_delay_updates: DynArray[TargetAdminDelayUpdate, MAX_UPDATES] = self._access_manager_target_admin_delay_updates()
+    target_delay_updates: DynArray[TargetAdminDelayUpdate, INF] = self._access_manager_target_admin_delay_updates()
     if len(target_delay_updates) > 0:
         self._delegate_call_engine(
             concat(method_id("executeTargetAdminDelayUpdates((address,address,uint32)[])"), abi_encode(target_delay_updates))
@@ -390,7 +390,7 @@ def execute():
             concat(method_id("executeHubAssetListings((address,address,address,address,uint256,address,(uint16,uint32,uint32,uint32),(uint256,address,string,string))[])"), abi_encode(listings))
         )
 
-    asset_updates: DynArray[AssetConfigUpdate, MAX_UPDATES] = self._hub_asset_config_updates()
+    asset_updates: DynArray[AssetConfigUpdate, INF] = self._hub_asset_config_updates()
     if len(asset_updates) > 0:
         self._delegate_call_engine(
             concat(method_id("executeHubAssetConfigUpdates((address,address,address,uint256,address,address,(uint16,uint32,uint32,uint32),address)[])"), abi_encode(asset_updates))
@@ -402,85 +402,85 @@ def execute():
             concat(method_id("executeHubSpokeToAssetsAdditions((address,address,address,(address,(uint40,uint40,uint24,bool,bool))[])[])"), abi_encode(spoke_additions))
         )
 
-    spoke_updates: DynArray[SpokeConfigUpdate, MAX_UPDATES] = self._hub_spoke_config_updates()
+    spoke_updates: DynArray[SpokeConfigUpdate, INF] = self._hub_spoke_config_updates()
     if len(spoke_updates) > 0:
         self._delegate_call_engine(
             concat(method_id("executeHubSpokeConfigUpdates((address,address,address,address,uint256,uint256,uint256,uint256,uint256)[])"), abi_encode(spoke_updates))
         )
 
-    halts: DynArray[AssetHalt, MAX_UPDATES] = self._hub_asset_halts()
+    halts: DynArray[AssetHalt, INF] = self._hub_asset_halts()
     if len(halts) > 0:
         self._delegate_call_engine(
             concat(method_id("executeHubAssetHalts((address,address,address)[])"), abi_encode(halts))
         )
 
-    asset_deactivations: DynArray[AssetDeactivation, MAX_UPDATES] = self._hub_asset_deactivations()
+    asset_deactivations: DynArray[AssetDeactivation, INF] = self._hub_asset_deactivations()
     if len(asset_deactivations) > 0:
         self._delegate_call_engine(
             concat(method_id("executeHubAssetDeactivations((address,address,address)[])"), abi_encode(asset_deactivations))
         )
 
-    asset_resets: DynArray[AssetCapsReset, MAX_UPDATES] = self._hub_asset_caps_resets()
+    asset_resets: DynArray[AssetCapsReset, INF] = self._hub_asset_caps_resets()
     if len(asset_resets) > 0:
         self._delegate_call_engine(
             concat(method_id("executeHubAssetCapsResets((address,address,address)[])"), abi_encode(asset_resets))
         )
 
-    spoke_deactivations: DynArray[SpokeDeactivation, MAX_UPDATES] = self._hub_spoke_deactivations()
+    spoke_deactivations: DynArray[SpokeDeactivation, INF] = self._hub_spoke_deactivations()
     if len(spoke_deactivations) > 0:
         self._delegate_call_engine(
             concat(method_id("executeHubSpokeDeactivations((address,address,address)[])"), abi_encode(spoke_deactivations))
         )
 
-    spoke_resets: DynArray[SpokeCapsReset, MAX_UPDATES] = self._hub_spoke_caps_resets()
+    spoke_resets: DynArray[SpokeCapsReset, INF] = self._hub_spoke_caps_resets()
     if len(spoke_resets) > 0:
         self._delegate_call_engine(
             concat(method_id("executeHubSpokeCapsResets((address,address,address)[])"), abi_encode(spoke_resets))
         )
 
-    reserve_listings: DynArray[ReserveListing, MAX_UPDATES] = self._spoke_reserve_listings()
+    reserve_listings: DynArray[ReserveListing, INF] = self._spoke_reserve_listings()
     if len(reserve_listings) > 0:
         self._delegate_call_engine(
             concat(method_id("executeSpokeReserveListings((address,address,address,address,address,(uint24,bool,bool,bool,bool),(uint16,uint32,uint16))[])"), abi_encode(reserve_listings))
         )
 
-    reserve_updates: DynArray[ReserveConfigUpdate, MAX_UPDATES] = self._spoke_reserve_config_updates()
+    reserve_updates: DynArray[ReserveConfigUpdate, INF] = self._spoke_reserve_config_updates()
     if len(reserve_updates) > 0:
         self._delegate_call_engine(
             concat(method_id("executeSpokeReserveConfigUpdates((address,address,address,address,address,uint256,uint256,uint256,uint256,uint256)[])"), abi_encode(reserve_updates))
         )
 
-    liquidation_updates: DynArray[LiquidationConfigUpdate, MAX_UPDATES] = self._spoke_liquidation_config_updates()
+    liquidation_updates: DynArray[LiquidationConfigUpdate, INF] = self._spoke_liquidation_config_updates()
     if len(liquidation_updates) > 0:
         self._delegate_call_engine(
             concat(method_id("executeSpokeLiquidationConfigUpdates((address,address,uint256,uint256,uint256)[])"), abi_encode(liquidation_updates))
         )
 
-    dynamic_additions: DynArray[DynamicReserveConfigAddition, MAX_UPDATES] = self._spoke_dynamic_reserve_config_additions()
+    dynamic_additions: DynArray[DynamicReserveConfigAddition, INF] = self._spoke_dynamic_reserve_config_additions()
     if len(dynamic_additions) > 0:
         self._delegate_call_engine(
             concat(method_id("executeSpokeDynamicReserveConfigAdditions((address,address,address,address,(uint16,uint32,uint16))[])"), abi_encode(dynamic_additions))
         )
 
-    dynamic_updates: DynArray[DynamicReserveConfigUpdate, MAX_UPDATES] = self._spoke_dynamic_reserve_config_updates()
+    dynamic_updates: DynArray[DynamicReserveConfigUpdate, INF] = self._spoke_dynamic_reserve_config_updates()
     if len(dynamic_updates) > 0:
         self._delegate_call_engine(
             concat(method_id("executeSpokeDynamicReserveConfigUpdates((address,address,address,address,uint256,uint256,uint256,uint256)[])"), abi_encode(dynamic_updates))
         )
 
-    manager_updates: DynArray[PositionManagerUpdate, MAX_UPDATES] = self._spoke_position_manager_updates()
+    manager_updates: DynArray[PositionManagerUpdate, INF] = self._spoke_position_manager_updates()
     if len(manager_updates) > 0:
         self._delegate_call_engine(
             concat(method_id("executeSpokePositionManagerUpdates((address,address,address,bool)[])"), abi_encode(manager_updates))
         )
 
-    renouncements: DynArray[PositionManagerRoleRenouncement, MAX_UPDATES] = self._position_manager_role_renouncements()
+    renouncements: DynArray[PositionManagerRoleRenouncement, INF] = self._position_manager_role_renouncements()
     if len(renouncements) > 0:
         self._delegate_call_engine(
             concat(method_id("executePositionManagerRoleRenouncements((address,address,address)[])"), abi_encode(renouncements))
         )
 
-    registrations: DynArray[SpokeRegistration, MAX_UPDATES] = self._position_manager_spoke_registrations()
+    registrations: DynArray[SpokeRegistration, INF] = self._position_manager_spoke_registrations()
     if len(registrations) > 0:
         self._delegate_call_engine(
             concat(method_id("executePositionManagerSpokeRegistrations((address,address,bool)[])"), abi_encode(registrations))

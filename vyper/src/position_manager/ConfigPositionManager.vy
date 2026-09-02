@@ -1,4 +1,4 @@
-# pragma version 0.5.0a3
+# pragma version 0.5.0b1
 
 from position_manager import PositionManagerBase
 from position_manager.libraries import ConfigPermissionsMap
@@ -82,7 +82,7 @@ def _domain_separator() -> bytes32:
 
 
 @internal
-def _verify(signer: address, intent_hash: bytes32, nonce: uint256, deadline: uint256, signature: Bytes[65]):
+def _verify(signer: address, intent_hash: bytes32, nonce: uint256, deadline: uint256, signature: Bytes[INF]):
     if block.timestamp > deadline or len(signature) != 65:
         raw_revert(method_id("InvalidSignature()"))
     digest: bytes32 = keccak256(concat(b"\x19\x01", self._domain_separator(), intent_hash))
@@ -140,7 +140,7 @@ def _set_dynamic(spoke: address, delegator: address, delegatee: address, status:
 
 
 @internal
-def _verify_permission(params: Permit, signature: Bytes[65], typehash: bytes32):
+def _verify_permission(params: Permit, signature: Bytes[INF], typehash: bytes32):
     intent_hash: bytes32 = EIP712Hash.hash_permission(
         typehash,
         params.spoke,
@@ -161,8 +161,8 @@ def DOMAIN_SEPARATOR() -> bytes32:
 
 @external
 @view
-def eip712Domain() -> (bytes1, String[32], String[8], uint256, address, bytes32, DynArray[uint256, 1]):
-    extensions: DynArray[uint256, 1] = []
+def eip712Domain() -> (bytes1, String[32], String[8], uint256, address, bytes32, DynArray[uint256, INF]):
+    extensions: DynArray[uint256, INF] = []
     return 0x0f, "ConfigPositionManager", "1", chain.id, self, empty(bytes32), extensions
 
 
@@ -191,28 +191,28 @@ def setCanUpdateUserDynamicConfigPermission(spoke: address, delegatee: address, 
 
 
 @external
-def setGlobalPermissionWithSig(params: Permit, signature: Bytes[65]):
+def setGlobalPermissionWithSig(params: Permit, signature: Bytes[INF]):
     PositionManagerBase._check_registered(params.spoke)
     self._verify_permission(params, signature, SET_GLOBAL_PERMISSION_PERMIT_TYPEHASH)
     self._set_global(params.spoke, params.delegator, params.delegatee, params.status)
 
 
 @external
-def setCanSetUsingAsCollateralPermissionWithSig(params: Permit, signature: Bytes[65]):
+def setCanSetUsingAsCollateralPermissionWithSig(params: Permit, signature: Bytes[INF]):
     PositionManagerBase._check_registered(params.spoke)
     self._verify_permission(params, signature, SET_CAN_SET_USING_AS_COLLATERAL_PERMISSION_PERMIT_TYPEHASH)
     self._set_collateral(params.spoke, params.delegator, params.delegatee, params.status)
 
 
 @external
-def setCanUpdateUserRiskPremiumPermissionWithSig(params: Permit, signature: Bytes[65]):
+def setCanUpdateUserRiskPremiumPermissionWithSig(params: Permit, signature: Bytes[INF]):
     PositionManagerBase._check_registered(params.spoke)
     self._verify_permission(params, signature, SET_CAN_UPDATE_USER_RISK_PREMIUM_PERMISSION_PERMIT_TYPEHASH)
     self._set_risk(params.spoke, params.delegator, params.delegatee, params.status)
 
 
 @external
-def setCanUpdateUserDynamicConfigPermissionWithSig(params: Permit, signature: Bytes[65]):
+def setCanUpdateUserDynamicConfigPermissionWithSig(params: Permit, signature: Bytes[INF]):
     PositionManagerBase._check_registered(params.spoke)
     self._verify_permission(params, signature, SET_CAN_UPDATE_USER_DYNAMIC_CONFIG_PERMISSION_PERMIT_TYPEHASH)
     self._set_dynamic(params.spoke, params.delegator, params.delegatee, params.status)

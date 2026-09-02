@@ -1,4 +1,4 @@
-# pragma version 0.5.0a3
+# pragma version 0.5.0b1
 
 VIRTUAL_ASSETS: public(constant(uint256)) = 10**6
 VIRTUAL_SHARES: public(constant(uint256)) = 10**6

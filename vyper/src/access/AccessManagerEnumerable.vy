@@ -1,4 +1,4 @@
-# pragma version 0.5.0a3
+# pragma version 0.5.0b1
 
 # Native Vyper implementation of Aave V4's enumerable AccessManager.  The
 # protocol uses immediate role administration; delayed-operation entrypoints
@@ -94,23 +94,30 @@ target_roles: HashMap[address, HashMap[bytes4, uint64]]
 schedules: HashMap[bytes32, Schedule]
 execution_id: transient(bytes32)
 
-roles: DynArray[uint64, MAX_ITEMS]
+roles: HashMap[uint256, uint64]
+roles_count: uint256
 role_index: HashMap[uint64, uint256]
-admin_roles: DynArray[uint64, MAX_ITEMS]
+admin_roles: HashMap[uint256, uint64]
+admin_roles_count: uint256
 admin_role_index: HashMap[uint64, uint256]
-admin_managed_roles: HashMap[uint64, DynArray[uint64, MAX_ITEMS]]
+admin_managed_roles: HashMap[uint64, HashMap[uint256, uint64]]
+admin_managed_roles_count: HashMap[uint64, uint256]
 admin_managed_index: HashMap[uint64, HashMap[uint64, uint256]]
 
-role_members: HashMap[uint64, DynArray[address, MAX_ITEMS]]
+role_members: HashMap[uint64, HashMap[uint256, address]]
+role_members_count: HashMap[uint64, uint256]
 role_member_index: HashMap[uint64, HashMap[address, uint256]]
 
-role_targets: HashMap[uint64, DynArray[address, MAX_ITEMS]]
+role_targets: HashMap[uint64, HashMap[uint256, address]]
+role_targets_count: HashMap[uint64, uint256]
 role_target_index: HashMap[uint64, HashMap[address, uint256]]
-role_target_selectors: HashMap[uint64, HashMap[address, DynArray[bytes4, MAX_SELECTORS]]]
+role_target_selectors: HashMap[uint64, HashMap[address, HashMap[uint256, bytes4]]]
+role_target_selectors_count: HashMap[uint64, HashMap[address, uint256]]
 role_target_selector_index: HashMap[uint64, HashMap[address, HashMap[bytes4, uint256]]]
 tracked_selector_role: HashMap[address, HashMap[bytes4, uint64]]
 
-labels: DynArray[String[MAX_LABEL], MAX_ITEMS]
+labels: HashMap[uint256, String[MAX_LABEL]]
+labels_count: uint256
 label_index: HashMap[bytes32, uint256]
 role_label: HashMap[uint64, String[MAX_LABEL]]
 label_role: HashMap[bytes32, uint64]
@@ -122,7 +129,8 @@ def __init__(initialAdmin: address):
         raw_revert(concat(method_id("AccessManagerInvalidInitialAdmin(address)"), convert(initialAdmin, bytes32)))
     since: uint48 = convert(max(block.timestamp, 1), uint48)
     self.role_access[ADMIN_ROLE][initialAdmin] = Access(since=since, delay=0)
-    self.role_members[ADMIN_ROLE].append(initialAdmin)
+    self.role_members[ADMIN_ROLE][0] = initialAdmin
+    self.role_members_count[ADMIN_ROLE] = 1
     self.role_member_index[ADMIN_ROLE][initialAdmin] = 1
     log RoleGranted(roleId=ADMIN_ROLE, account=initialAdmin, delay=0, since=since, newMember=True)
 
@@ -197,16 +205,20 @@ def _consume_schedule(operation_id: bytes32) -> uint32:
 def _track_role(role_id: uint64):
     if role_id == ADMIN_ROLE or role_id == PUBLIC_ROLE or self.role_index[role_id] != 0:
         return
-    self.roles.append(role_id)
-    self.role_index[role_id] = len(self.roles)
+    count: uint256 = self.roles_count
+    self.roles[count] = role_id
+    self.roles_count = count + 1
+    self.role_index[role_id] = count + 1
 
 
 @internal
 def _track_admin_role(admin: uint64):
     if admin == ADMIN_ROLE or self.admin_role_index[admin] != 0:
         return
-    self.admin_roles.append(admin)
-    self.admin_role_index[admin] = len(self.admin_roles)
+    count: uint256 = self.admin_roles_count
+    self.admin_roles[count] = admin
+    self.admin_roles_count = count + 1
+    self.admin_role_index[admin] = count + 1
 
 
 @internal
@@ -215,12 +227,13 @@ def _remove_managed_role(admin: uint64, role_id: uint64):
     if position == 0:
         return
     index: uint256 = position - 1
-    last_index: uint256 = len(self.admin_managed_roles[admin]) - 1
+    last_index: uint256 = self.admin_managed_roles_count[admin] - 1
     if index != last_index:
         moved: uint64 = self.admin_managed_roles[admin][last_index]
         self.admin_managed_roles[admin][index] = moved
         self.admin_managed_index[admin][moved] = position
-    self.admin_managed_roles[admin].pop()
+    self.admin_managed_roles[admin][last_index] = 0
+    self.admin_managed_roles_count[admin] = last_index
     self.admin_managed_index[admin][role_id] = 0
 
 
@@ -229,8 +242,10 @@ def _add_managed_role(admin: uint64, role_id: uint64):
     if admin == ADMIN_ROLE or self.admin_managed_index[admin][role_id] != 0:
         return
     self._track_admin_role(admin)
-    self.admin_managed_roles[admin].append(role_id)
-    self.admin_managed_index[admin][role_id] = len(self.admin_managed_roles[admin])
+    count: uint256 = self.admin_managed_roles_count[admin]
+    self.admin_managed_roles[admin][count] = role_id
+    self.admin_managed_roles_count[admin] = count + 1
+    self.admin_managed_index[admin][role_id] = count + 1
 
 
 @internal
@@ -239,12 +254,13 @@ def _remove_member(role_id: uint64, account: address):
     if position == 0:
         return
     index: uint256 = position - 1
-    last_index: uint256 = len(self.role_members[role_id]) - 1
+    last_index: uint256 = self.role_members_count[role_id] - 1
     if index != last_index:
         moved: address = self.role_members[role_id][last_index]
         self.role_members[role_id][index] = moved
         self.role_member_index[role_id][moved] = position
-    self.role_members[role_id].pop()
+    self.role_members[role_id][last_index] = empty(address)
+    self.role_members_count[role_id] = last_index
     self.role_member_index[role_id][account] = 0
 
 
@@ -254,12 +270,13 @@ def _remove_target(role_id: uint64, target: address):
     if position == 0:
         return
     index: uint256 = position - 1
-    last_index: uint256 = len(self.role_targets[role_id]) - 1
+    last_index: uint256 = self.role_targets_count[role_id] - 1
     if index != last_index:
         moved: address = self.role_targets[role_id][last_index]
         self.role_targets[role_id][index] = moved
         self.role_target_index[role_id][moved] = position
-    self.role_targets[role_id].pop()
+    self.role_targets[role_id][last_index] = empty(address)
+    self.role_targets_count[role_id] = last_index
     self.role_target_index[role_id][target] = 0
 
 
@@ -269,25 +286,30 @@ def _remove_selector(role_id: uint64, target: address, selector: bytes4):
     if position == 0:
         return
     index: uint256 = position - 1
-    last_index: uint256 = len(self.role_target_selectors[role_id][target]) - 1
+    last_index: uint256 = self.role_target_selectors_count[role_id][target] - 1
     if index != last_index:
         moved: bytes4 = self.role_target_selectors[role_id][target][last_index]
         self.role_target_selectors[role_id][target][index] = moved
         self.role_target_selector_index[role_id][target][moved] = position
-    self.role_target_selectors[role_id][target].pop()
+    self.role_target_selectors[role_id][target][last_index] = empty(bytes4)
+    self.role_target_selectors_count[role_id][target] = last_index
     self.role_target_selector_index[role_id][target][selector] = 0
-    if len(self.role_target_selectors[role_id][target]) == 0:
+    if self.role_target_selectors_count[role_id][target] == 0:
         self._remove_target(role_id, target)
 
 
 @internal
 def _add_selector(role_id: uint64, target: address, selector: bytes4):
     if self.role_target_selector_index[role_id][target][selector] == 0:
-        self.role_target_selectors[role_id][target].append(selector)
-        self.role_target_selector_index[role_id][target][selector] = len(self.role_target_selectors[role_id][target])
+        selector_count: uint256 = self.role_target_selectors_count[role_id][target]
+        self.role_target_selectors[role_id][target][selector_count] = selector
+        self.role_target_selectors_count[role_id][target] = selector_count + 1
+        self.role_target_selector_index[role_id][target][selector] = selector_count + 1
     if self.role_target_index[role_id][target] == 0:
-        self.role_targets[role_id].append(target)
-        self.role_target_index[role_id][target] = len(self.role_targets[role_id])
+        target_count: uint256 = self.role_targets_count[role_id]
+        self.role_targets[role_id][target_count] = target
+        self.role_targets_count[role_id] = target_count + 1
+        self.role_target_index[role_id][target] = target_count + 1
 
 
 @internal
@@ -402,12 +424,13 @@ def labelRole(roleId: uint64, label: String[MAX_LABEL]):
         old_hash: bytes32 = keccak256(old_label)
         position: uint256 = self.label_index[old_hash]
         index: uint256 = position - 1
-        last_index: uint256 = len(self.labels) - 1
+        last_index: uint256 = self.labels_count - 1
         if index != last_index:
             moved: String[MAX_LABEL] = self.labels[last_index]
             self.labels[index] = moved
             self.label_index[keccak256(moved)] = position
-        self.labels.pop()
+        self.labels[last_index] = ""
+        self.labels_count = last_index
         self.label_index[old_hash] = 0
         self.label_role[old_hash] = 0
         self.role_label[roleId] = ""
@@ -424,8 +447,10 @@ def labelRole(roleId: uint64, label: String[MAX_LABEL]):
             )
         )
     self._track_role(roleId)
-    self.labels.append(label)
-    self.label_index[label_hash] = len(self.labels)
+    count: uint256 = self.labels_count
+    self.labels[count] = label
+    self.labels_count = count + 1
+    self.label_index[label_hash] = count + 1
     self.label_role[label_hash] = roleId
     self.role_label[roleId] = label
     log RoleLabel(roleId=roleId, label=label)
@@ -443,8 +468,10 @@ def grantRole(roleId: uint64, account: address, executionDelay: uint32):
         since = convert(block.timestamp + convert(self.role_grant_delay[roleId], uint256), uint48)
         if since == 0:
             since = 1
-        self.role_members[roleId].append(account)
-        self.role_member_index[roleId][account] = len(self.role_members[roleId])
+        count: uint256 = self.role_members_count[roleId]
+        self.role_members[roleId][count] = account
+        self.role_members_count[roleId] = count + 1
+        self.role_member_index[roleId][account] = count + 1
         self._track_role(roleId)
     self.role_access[roleId][account] = Access(since=since, delay=executionDelay)
     log RoleGranted(roleId=roleId, account=account, delay=executionDelay, since=since, newMember=new_member)
@@ -510,7 +537,7 @@ def setGrantDelay(roleId: uint64, newDelay: uint32):
 
 
 @external
-def setTargetFunctionRole(target: address, selectors: DynArray[bytes4, MAX_SELECTORS], roleId: uint64):
+def setTargetFunctionRole(target: address, selectors: DynArray[bytes4, INF], roleId: uint64):
     self._require_admin()
     for selector: bytes4 in selectors:
         self._set_selector_role(target, selector, roleId)
@@ -667,20 +694,18 @@ def getRole(index: uint256) -> uint64:
 @external
 @view
 def getRoleCount() -> uint256:
-    return len(self.roles)
+    return self.roles_count
 
 
 @external
 @view
-def getRoles(start: uint256, end: uint256) -> DynArray[uint64, MAX_ITEMS]:
+def getRoles(start: uint256, end: uint256) -> DynArray[uint64, INF]:
     lower: uint256 = 0
     upper: uint256 = 0
-    lower, upper = self._slice_end(start, end, len(self.roles))
-    result: DynArray[uint64, MAX_ITEMS] = []
-    for i: uint256 in range(MAX_ITEMS):
-        if lower + i >= upper:
-            break
-        result.append(self.roles[lower + i])
+    lower, upper = self._slice_end(start, end, self.roles_count)
+    result: DynArray[uint64, INF] = []
+    for i: uint256 in range(lower, upper, bound=115792089237316195423570985008687907853269984665640564039457584007913129639935):
+        result.append(self.roles[i])
     return result
 
 
@@ -699,20 +724,18 @@ def getAdminRole(index: uint256) -> uint64:
 @external
 @view
 def getAdminRoleCount() -> uint256:
-    return len(self.admin_roles)
+    return self.admin_roles_count
 
 
 @external
 @view
-def getAdminRoles(start: uint256, end: uint256) -> DynArray[uint64, MAX_ITEMS]:
+def getAdminRoles(start: uint256, end: uint256) -> DynArray[uint64, INF]:
     lower: uint256 = 0
     upper: uint256 = 0
-    lower, upper = self._slice_end(start, end, len(self.admin_roles))
-    result: DynArray[uint64, MAX_ITEMS] = []
-    for i: uint256 in range(MAX_ITEMS):
-        if lower + i >= upper:
-            break
-        result.append(self.admin_roles[lower + i])
+    lower, upper = self._slice_end(start, end, self.admin_roles_count)
+    result: DynArray[uint64, INF] = []
+    for i: uint256 in range(lower, upper, bound=115792089237316195423570985008687907853269984665640564039457584007913129639935):
+        result.append(self.admin_roles[i])
     return result
 
 
@@ -731,20 +754,18 @@ def getRoleMember(roleId: uint64, index: uint256) -> address:
 @external
 @view
 def getRoleMemberCount(roleId: uint64) -> uint256:
-    return len(self.role_members[roleId])
+    return self.role_members_count[roleId]
 
 
 @external
 @view
-def getRoleMembers(roleId: uint64, start: uint256, end: uint256) -> DynArray[address, MAX_ITEMS]:
+def getRoleMembers(roleId: uint64, start: uint256, end: uint256) -> DynArray[address, INF]:
     lower: uint256 = 0
     upper: uint256 = 0
-    lower, upper = self._slice_end(start, end, len(self.role_members[roleId]))
-    result: DynArray[address, MAX_ITEMS] = []
-    for i: uint256 in range(MAX_ITEMS):
-        if lower + i >= upper:
-            break
-        result.append(self.role_members[roleId][lower + i])
+    lower, upper = self._slice_end(start, end, self.role_members_count[roleId])
+    result: DynArray[address, INF] = []
+    for i: uint256 in range(lower, upper, bound=115792089237316195423570985008687907853269984665640564039457584007913129639935):
+        result.append(self.role_members[roleId][i])
     return result
 
 
@@ -757,20 +778,18 @@ def getRoleOfAdminRole(adminRoleId: uint64, index: uint256) -> uint64:
 @external
 @view
 def getRoleOfAdminRoleCount(adminRoleId: uint64) -> uint256:
-    return len(self.admin_managed_roles[adminRoleId])
+    return self.admin_managed_roles_count[adminRoleId]
 
 
 @external
 @view
-def getRolesOfAdminRole(adminRoleId: uint64, start: uint256, end: uint256) -> DynArray[uint64, MAX_ITEMS]:
+def getRolesOfAdminRole(adminRoleId: uint64, start: uint256, end: uint256) -> DynArray[uint64, INF]:
     lower: uint256 = 0
     upper: uint256 = 0
-    lower, upper = self._slice_end(start, end, len(self.admin_managed_roles[adminRoleId]))
-    result: DynArray[uint64, MAX_ITEMS] = []
-    for i: uint256 in range(MAX_ITEMS):
-        if lower + i >= upper:
-            break
-        result.append(self.admin_managed_roles[adminRoleId][lower + i])
+    lower, upper = self._slice_end(start, end, self.admin_managed_roles_count[adminRoleId])
+    result: DynArray[uint64, INF] = []
+    for i: uint256 in range(lower, upper, bound=115792089237316195423570985008687907853269984665640564039457584007913129639935):
+        result.append(self.admin_managed_roles[adminRoleId][i])
     return result
 
 
@@ -783,20 +802,18 @@ def getRoleTarget(roleId: uint64, index: uint256) -> address:
 @external
 @view
 def getRoleTargetCount(roleId: uint64) -> uint256:
-    return len(self.role_targets[roleId])
+    return self.role_targets_count[roleId]
 
 
 @external
 @view
-def getRoleTargets(roleId: uint64, start: uint256, end: uint256) -> DynArray[address, MAX_ITEMS]:
+def getRoleTargets(roleId: uint64, start: uint256, end: uint256) -> DynArray[address, INF]:
     lower: uint256 = 0
     upper: uint256 = 0
-    lower, upper = self._slice_end(start, end, len(self.role_targets[roleId]))
-    result: DynArray[address, MAX_ITEMS] = []
-    for i: uint256 in range(MAX_ITEMS):
-        if lower + i >= upper:
-            break
-        result.append(self.role_targets[roleId][lower + i])
+    lower, upper = self._slice_end(start, end, self.role_targets_count[roleId])
+    result: DynArray[address, INF] = []
+    for i: uint256 in range(lower, upper, bound=115792089237316195423570985008687907853269984665640564039457584007913129639935):
+        result.append(self.role_targets[roleId][i])
     return result
 
 
@@ -809,20 +826,18 @@ def getRoleTargetSelector(roleId: uint64, target: address, index: uint256) -> by
 @external
 @view
 def getRoleTargetSelectorCount(roleId: uint64, target: address) -> uint256:
-    return len(self.role_target_selectors[roleId][target])
+    return self.role_target_selectors_count[roleId][target]
 
 
 @external
 @view
-def getRoleTargetSelectors(roleId: uint64, target: address, start: uint256, end: uint256) -> DynArray[bytes4, MAX_SELECTORS]:
+def getRoleTargetSelectors(roleId: uint64, target: address, start: uint256, end: uint256) -> DynArray[bytes4, INF]:
     lower: uint256 = 0
     upper: uint256 = 0
-    lower, upper = self._slice_end(start, end, len(self.role_target_selectors[roleId][target]))
-    result: DynArray[bytes4, MAX_SELECTORS] = []
-    for i: uint256 in range(MAX_SELECTORS):
-        if lower + i >= upper:
-            break
-        result.append(self.role_target_selectors[roleId][target][lower + i])
+    lower, upper = self._slice_end(start, end, self.role_target_selectors_count[roleId][target])
+    result: DynArray[bytes4, INF] = []
+    for i: uint256 in range(lower, upper, bound=115792089237316195423570985008687907853269984665640564039457584007913129639935):
+        result.append(self.role_target_selectors[roleId][target][i])
     return result
 
 
@@ -841,21 +856,27 @@ def getRoleLabel(index: uint256) -> String[MAX_LABEL]:
 @external
 @view
 def getRoleLabelCount() -> uint256:
-    return len(self.labels)
+    return self.labels_count
 
 
 @external
 @view
-def getRoleLabels(start: uint256, end: uint256) -> DynArray[String[MAX_LABEL], MAX_ITEMS]:
+@raw_return
+def getRoleLabels(start: uint256, end: uint256) -> Bytes[INF]:
     lower: uint256 = 0
     upper: uint256 = 0
-    lower, upper = self._slice_end(start, end, len(self.labels))
-    result: DynArray[String[MAX_LABEL], MAX_ITEMS] = []
-    for i: uint256 in range(MAX_ITEMS):
-        if lower + i >= upper:
-            break
-        result.append(self.labels[lower + i])
-    return result
+    lower, upper = self._slice_end(start, end, self.labels_count)
+    count: uint256 = upper - lower
+    heads: Bytes[INF] = b""
+    tails: Bytes[INF] = b""
+    output_offset: uint256 = 32 * count
+    for i: uint256 in range(lower, upper, bound=115792089237316195423570985008687907853269984665640564039457584007913129639935):
+        label: String[MAX_LABEL] = self.labels[i]
+        encoded_label: Bytes[INF] = abi_encode(label, ensure_tuple=False)
+        heads = concat(heads, convert(output_offset, bytes32))
+        tails = concat(tails, encoded_label)
+        output_offset += len(encoded_label)
+    return concat(convert(32, bytes32), convert(count, bytes32), heads, tails)
 
 
 @external

@@ -1,4 +1,4 @@
-# pragma version 0.5.0a3
+# pragma version 0.5.0b1
 
 from position_manager import PositionManagerBase
 from position_manager.libraries import EIP712Hash
@@ -84,7 +84,7 @@ def _domain_separator() -> bytes32:
 
 
 @internal
-def _verify(signer: address, intent_hash: bytes32, nonce: uint256, deadline: uint256, signature: Bytes[65]):
+def _verify(signer: address, intent_hash: bytes32, nonce: uint256, deadline: uint256, signature: Bytes[INF]):
     if block.timestamp > deadline or len(signature) != 65:
         raw_revert(method_id("InvalidSignature()"))
     digest: bytes32 = keccak256(concat(b"\x19\x01", self._domain_separator(), intent_hash))
@@ -141,13 +141,13 @@ def DOMAIN_SEPARATOR() -> bytes32:
 
 @external
 @view
-def eip712Domain() -> (bytes1, String[32], String[8], uint256, address, bytes32, DynArray[uint256, 1]):
-    extensions: DynArray[uint256, 1] = []
+def eip712Domain() -> (bytes1, String[32], String[8], uint256, address, bytes32, DynArray[uint256, INF]):
+    extensions: DynArray[uint256, INF] = []
     return 0x0f, "SignatureGateway", "1", chain.id, self, empty(bytes32), extensions
 
 
 @external
-def supplyWithSig(params: Action, signature: Bytes[65]) -> (uint256, uint256):
+def supplyWithSig(params: Action, signature: Bytes[INF]) -> (uint256, uint256):
     PositionManagerBase._check_registered(params.spoke)
     intent_hash: bytes32 = EIP712Hash.hash_action(SUPPLY_TYPEHASH, params.spoke, params.reserveId, params.amount, params.onBehalfOf, params.nonce, params.deadline)
     self._verify(params.onBehalfOf, intent_hash, params.nonce, params.deadline, signature)
@@ -158,7 +158,7 @@ def supplyWithSig(params: Action, signature: Bytes[65]) -> (uint256, uint256):
 
 
 @external
-def withdrawWithSig(params: Action, signature: Bytes[65]) -> (uint256, uint256):
+def withdrawWithSig(params: Action, signature: Bytes[INF]) -> (uint256, uint256):
     PositionManagerBase._check_registered(params.spoke)
     intent_hash: bytes32 = EIP712Hash.hash_action(WITHDRAW_TYPEHASH, params.spoke, params.reserveId, params.amount, params.onBehalfOf, params.nonce, params.deadline)
     self._verify(params.onBehalfOf, intent_hash, params.nonce, params.deadline, signature)
@@ -171,7 +171,7 @@ def withdrawWithSig(params: Action, signature: Bytes[65]) -> (uint256, uint256):
 
 
 @external
-def borrowWithSig(params: Action, signature: Bytes[65]) -> (uint256, uint256):
+def borrowWithSig(params: Action, signature: Bytes[INF]) -> (uint256, uint256):
     PositionManagerBase._check_registered(params.spoke)
     intent_hash: bytes32 = EIP712Hash.hash_action(BORROW_TYPEHASH, params.spoke, params.reserveId, params.amount, params.onBehalfOf, params.nonce, params.deadline)
     self._verify(params.onBehalfOf, intent_hash, params.nonce, params.deadline, signature)
@@ -184,7 +184,7 @@ def borrowWithSig(params: Action, signature: Bytes[65]) -> (uint256, uint256):
 
 
 @external
-def repayWithSig(params: Action, signature: Bytes[65]) -> (uint256, uint256):
+def repayWithSig(params: Action, signature: Bytes[INF]) -> (uint256, uint256):
     PositionManagerBase._check_registered(params.spoke)
     intent_hash: bytes32 = EIP712Hash.hash_action(REPAY_TYPEHASH, params.spoke, params.reserveId, params.amount, params.onBehalfOf, params.nonce, params.deadline)
     self._verify(params.onBehalfOf, intent_hash, params.nonce, params.deadline, signature)
@@ -197,7 +197,7 @@ def repayWithSig(params: Action, signature: Bytes[65]) -> (uint256, uint256):
 
 
 @external
-def setUsingAsCollateralWithSig(params: SetUsingAsCollateral, signature: Bytes[65]):
+def setUsingAsCollateralWithSig(params: SetUsingAsCollateral, signature: Bytes[INF]):
     PositionManagerBase._check_registered(params.spoke)
     intent_hash: bytes32 = EIP712Hash.hash_collateral(params.spoke, params.reserveId, params.useAsCollateral, params.onBehalfOf, params.nonce, params.deadline)
     self._verify(params.onBehalfOf, intent_hash, params.nonce, params.deadline, signature)
@@ -205,7 +205,7 @@ def setUsingAsCollateralWithSig(params: SetUsingAsCollateral, signature: Bytes[6
 
 
 @external
-def updateUserRiskPremiumWithSig(params: UpdateUserConfig, signature: Bytes[65]):
+def updateUserRiskPremiumWithSig(params: UpdateUserConfig, signature: Bytes[INF]):
     PositionManagerBase._check_registered(params.spoke)
     intent_hash: bytes32 = EIP712Hash.hash_update(UPDATE_USER_RISK_PREMIUM_TYPEHASH, params.spoke, params.onBehalfOf, params.nonce, params.deadline)
     self._verify(params.onBehalfOf, intent_hash, params.nonce, params.deadline, signature)
@@ -213,7 +213,7 @@ def updateUserRiskPremiumWithSig(params: UpdateUserConfig, signature: Bytes[65])
 
 
 @external
-def updateUserDynamicConfigWithSig(params: UpdateUserConfig, signature: Bytes[65]):
+def updateUserDynamicConfigWithSig(params: UpdateUserConfig, signature: Bytes[INF]):
     PositionManagerBase._check_registered(params.spoke)
     intent_hash: bytes32 = EIP712Hash.hash_update(UPDATE_USER_DYNAMIC_CONFIG_TYPEHASH, params.spoke, params.onBehalfOf, params.nonce, params.deadline)
     self._verify(params.onBehalfOf, intent_hash, params.nonce, params.deadline, signature)

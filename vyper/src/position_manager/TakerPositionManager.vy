@@ -1,4 +1,4 @@
-# pragma version 0.5.0a3
+# pragma version 0.5.0b1
 
 from position_manager import PositionManagerBase
 from position_manager.libraries import EIP712Hash
@@ -96,7 +96,7 @@ def _domain_separator() -> bytes32:
 
 
 @internal
-def _verify(signer: address, intent_hash: bytes32, nonce: uint256, deadline: uint256, signature: Bytes[65]):
+def _verify(signer: address, intent_hash: bytes32, nonce: uint256, deadline: uint256, signature: Bytes[INF]):
     if block.timestamp > deadline or len(signature) != 65:
         raw_revert(method_id("InvalidSignature()"))
     digest: bytes32 = keccak256(concat(b"\x19\x01", self._domain_separator(), intent_hash))
@@ -139,8 +139,8 @@ def DOMAIN_SEPARATOR() -> bytes32:
 
 @external
 @view
-def eip712Domain() -> (bytes1, String[32], String[8], uint256, address, bytes32, DynArray[uint256, 1]):
-    extensions: DynArray[uint256, 1] = []
+def eip712Domain() -> (bytes1, String[32], String[8], uint256, address, bytes32, DynArray[uint256, INF]):
+    extensions: DynArray[uint256, INF] = []
     return 0x0f, "TakerPositionManager", "1", chain.id, self, empty(bytes32), extensions
 
 
@@ -157,7 +157,7 @@ def approveBorrow(spoke: address, reserveId: uint256, spender: address, amount: 
 
 
 @external
-def approveWithdrawWithSig(params: Permit, signature: Bytes[65]):
+def approveWithdrawWithSig(params: Permit, signature: Bytes[INF]):
     PositionManagerBase._check_registered(params.spoke)
     intent_hash: bytes32 = EIP712Hash.hash_reserve_permit(
         WITHDRAW_PERMIT_TYPEHASH,
@@ -174,7 +174,7 @@ def approveWithdrawWithSig(params: Permit, signature: Bytes[65]):
 
 
 @external
-def approveBorrowWithSig(params: Permit, signature: Bytes[65]):
+def approveBorrowWithSig(params: Permit, signature: Bytes[INF]):
     PositionManagerBase._check_registered(params.spoke)
     intent_hash: bytes32 = EIP712Hash.hash_reserve_permit(
         BORROW_PERMIT_TYPEHASH,

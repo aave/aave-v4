@@ -1,4 +1,4 @@
-# pragma version 0.5.0a3
+# pragma version 0.5.0b1
 
 
 struct SpokeConfig:
@@ -148,7 +148,7 @@ def _recover(digest: bytes32, v: uint256, r: bytes32, s: bytes32) -> address:
 
 
 @internal
-def _verify_intent(signer: address, intent_hash: bytes32, nonce: uint256, deadline: uint256, signature: Bytes[65]):
+def _verify_intent(signer: address, intent_hash: bytes32, nonce: uint256, deadline: uint256, signature: Bytes[INF]):
     if block.timestamp > deadline or len(signature) != 65:
         raw_revert(method_id("InvalidSignature()"))
     digest: bytes32 = keccak256(concat(b"\x19\x01", self._domain_separator(), intent_hash))
@@ -385,8 +385,8 @@ def DOMAIN_SEPARATOR() -> bytes32:
 
 @external
 @view
-def eip712Domain() -> (bytes1, String[32], String[8], uint256, address, bytes32, DynArray[uint256, 1]):
-    extensions: DynArray[uint256, 1] = []
+def eip712Domain() -> (bytes1, String[32], String[8], uint256, address, bytes32, DynArray[uint256, INF]):
+    extensions: DynArray[uint256, INF] = []
     return 0x0f, "Tokenization Spoke", "1", chain.id, self, empty(bytes32), extensions
 
 
@@ -548,7 +548,7 @@ def redeem(shares: uint256, receiver: address, owner: address) -> uint256:
 
 
 @external
-def depositWithSig(params: Action, signature: Bytes[65]) -> uint256:
+def depositWithSig(params: Action, signature: Bytes[INF]) -> uint256:
     intent_hash: bytes32 = keccak256(abi_encode(DEPOSIT_TYPEHASH, params.actor, params.amount, params.receiver, params.nonce, params.deadline))
     self._verify_intent(params.actor, intent_hash, params.nonce, params.deadline, signature)
     shares: uint256 = self._preview_deposit(params.amount)
@@ -557,7 +557,7 @@ def depositWithSig(params: Action, signature: Bytes[65]) -> uint256:
 
 
 @external
-def mintWithSig(params: Action, signature: Bytes[65]) -> uint256:
+def mintWithSig(params: Action, signature: Bytes[INF]) -> uint256:
     intent_hash: bytes32 = keccak256(abi_encode(MINT_TYPEHASH, params.actor, params.amount, params.receiver, params.nonce, params.deadline))
     self._verify_intent(params.actor, intent_hash, params.nonce, params.deadline, signature)
     assets: uint256 = self._preview_mint(params.amount)
@@ -566,7 +566,7 @@ def mintWithSig(params: Action, signature: Bytes[65]) -> uint256:
 
 
 @external
-def withdrawWithSig(params: Action, signature: Bytes[65]) -> uint256:
+def withdrawWithSig(params: Action, signature: Bytes[INF]) -> uint256:
     intent_hash: bytes32 = keccak256(abi_encode(WITHDRAW_TYPEHASH, params.actor, params.amount, params.receiver, params.nonce, params.deadline))
     self._verify_intent(params.actor, intent_hash, params.nonce, params.deadline, signature)
     shares: uint256 = self._preview_withdraw(params.amount)
@@ -575,7 +575,7 @@ def withdrawWithSig(params: Action, signature: Bytes[65]) -> uint256:
 
 
 @external
-def redeemWithSig(params: Action, signature: Bytes[65]) -> uint256:
+def redeemWithSig(params: Action, signature: Bytes[INF]) -> uint256:
     intent_hash: bytes32 = keccak256(abi_encode(REDEEM_TYPEHASH, params.actor, params.amount, params.receiver, params.nonce, params.deadline))
     self._verify_intent(params.actor, intent_hash, params.nonce, params.deadline, signature)
     assets: uint256 = self._preview_redeem(params.amount)

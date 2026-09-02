@@ -1,4 +1,4 @@
-# pragma version 0.5.0a3
+# pragma version 0.5.0b1
 
 from hub.libraries import Premium
 from hub.libraries import SharesMath
@@ -87,7 +87,7 @@ interface IERC20:
     def balanceOf(account: address) -> uint256: view
 
 interface IInterestRateStrategy:
-    def setInterestRateData(assetId: uint256, data: Bytes[1024]): nonpayable
+    def setInterestRateData(assetId: uint256, data: Bytes[INF]): nonpayable
     def calculateInterestRate(assetId: uint256, liquidity: uint256, drawn: uint256, deficit: uint256, swept: uint256) -> uint256: view
 
 
@@ -179,7 +179,7 @@ MAX_ALLOWED_SPOKE_CAP: public(constant(uint40)) = max_value(uint40)
 MAX_RISK_PREMIUM_THRESHOLD: public(constant(uint24)) = max_value(uint24)
 RAY: constant(uint256) = 10**27
 PERCENTAGE_FACTOR: constant(uint256) = 10**4
-MAX_ASSET_SPOKES: constant(uint256) = 256
+SPOKE_COUNT_KEY: constant(uint256) = max_value(uint256)
 MASK_8: constant(uint256) = 2**8 - 1
 MASK_16: constant(uint256) = 2**16 - 1
 MASK_24: constant(uint256) = 2**24 - 1
@@ -190,7 +190,7 @@ MASK_120: constant(uint256) = 2**120 - 1
 asset_count: uint256
 assets: HashMap[uint256, PackedAsset]
 spokes: HashMap[uint256, HashMap[address, PackedSpokeData]]
-spoke_addresses: HashMap[uint256, DynArray[address, MAX_ASSET_SPOKES]]
+spoke_addresses: HashMap[uint256, HashMap[uint256, bytes32]]
 spoke_listed: HashMap[uint256, HashMap[address, bool]]
 underlying_to_asset_id: HashMap[address, uint256]
 authority_address: address
@@ -485,7 +485,9 @@ def _add_spoke(asset_id: uint256, spoke: address):
     if self.spoke_listed[asset_id][spoke]:
         raw_revert(method_id("SpokeAlreadyListed()"))
     self.spoke_listed[asset_id][spoke] = True
-    self.spoke_addresses[asset_id].append(spoke)
+    count: uint256 = convert(self.spoke_addresses[asset_id][SPOKE_COUNT_KEY], uint256)
+    self.spoke_addresses[asset_id][count] = convert(spoke, bytes32)
+    self.spoke_addresses[asset_id][SPOKE_COUNT_KEY] = convert(count + 1, bytes32)
     log AddSpoke(assetId=asset_id, spoke=spoke)
 
 
@@ -535,7 +537,7 @@ def isConsumingScheduledOp() -> bytes4:
 
 
 @external
-def addAsset(underlying: address, decimals: uint8, feeReceiver: address, irStrategy: address, irData: Bytes[1024]) -> uint256:
+def addAsset(underlying: address, decimals: uint8, feeReceiver: address, irStrategy: address, irData: Bytes[INF]) -> uint256:
     self._check_access(method_id("addAsset(address,uint8,address,address,bytes)"))
     if underlying == empty(address) or feeReceiver == empty(address) or irStrategy == empty(address):
         raw_revert(method_id("InvalidAddress()"))
@@ -606,7 +608,7 @@ def _mint_fee_shares(asset_id: uint256) -> uint256:
 
 
 @external
-def updateAssetConfig(assetId: uint256, config: AssetConfig, irData: Bytes[1024]):
+def updateAssetConfig(assetId: uint256, config: AssetConfig, irData: Bytes[INF]):
     self._check_access(method_id("updateAssetConfig(uint256,(address,uint16,address,address),bytes)"))
     if assetId >= self.asset_count:
         raw_revert(method_id("AssetNotListed()"))
@@ -650,7 +652,7 @@ def updateAssetConfig(assetId: uint256, config: AssetConfig, irData: Bytes[1024]
 
 
 @external
-def setInterestRateData(assetId: uint256, irData: Bytes[1024]):
+def setInterestRateData(assetId: uint256, irData: Bytes[INF]):
     self._check_access(method_id("setInterestRateData(uint256,bytes)"))
     if assetId >= self.asset_count:
         raw_revert(method_id("AssetNotListed()"))
@@ -1189,7 +1191,7 @@ def getAssetDrawnRate(assetId: uint256) -> uint256:
 @external
 @view
 def getSpokeCount(assetId: uint256) -> uint256:
-    return len(self.spoke_addresses[assetId])
+    return convert(self.spoke_addresses[assetId][SPOKE_COUNT_KEY], uint256)
 
 
 @external
@@ -1254,7 +1256,7 @@ def isSpokeListed(assetId: uint256, spoke: address) -> bool:
 @external
 @view
 def getSpokeAddress(assetId: uint256, index: uint256) -> address:
-    return self.spoke_addresses[assetId][index]
+    return convert(self.spoke_addresses[assetId][index], address)
 
 
 @external

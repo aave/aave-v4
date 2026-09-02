@@ -260,6 +260,21 @@ contract SpokeMulticall is Base {
     assertEq(ret[3], abi.encode(borrowAmount, 0));
   }
 
+  function test_multicall_runtimeUnboundedInput() public {
+    bytes[] memory calls = new bytes[](5);
+    for (uint256 i = 0; i < calls.length; ++i) {
+      calls[i] = abi.encodeWithSelector(ISpoke.getReserveCount.selector);
+    }
+    calls[4] = bytes.concat(calls[4], new bytes(600));
+
+    bytes[] memory ret = spoke1.multicall(calls);
+
+    assertEq(ret.length, calls.length);
+    for (uint256 i = 0; i < ret.length; ++i) {
+      assertEq(abi.decode(ret[i], (uint256)), spoke1.getReserveCount());
+    }
+  }
+
   function test_multicall_forwards_first_revert() public {
     uint256 supplyAmount = 120e18;
 

@@ -1,4 +1,4 @@
-# pragma version 0.5.0a3
+# pragma version 0.5.0b1
 
 from hub.libraries import SharesMath
 from libraries.math import PercentageMath
@@ -142,7 +142,7 @@ interface IHub:
     def getSpokeTotalOwed(assetId: uint256, spoke: address) -> uint256: view
 
 interface IERC1271:
-    def isValidSignature(hash: bytes32, signature: Bytes[256]) -> bytes4: view
+    def isValidSignature(hash: bytes32, signature: Bytes[INF]) -> bytes4: view
 
 interface ILiquidationLogic:
     def validateLiquidationCall(params: ValidateLiquidationCallParams) -> bool: view
@@ -281,6 +281,9 @@ position_manager_approval: HashMap[address, HashMap[address, uint256]]
 nonces_by_owner: HashMap[address, HashMap[uint192, uint256]]
 authority_address: address
 initialized_state: uint256
+# Nonzero tri-state marker: 1 is explicitly disabled, 2 is explicitly enabled.
+# The canonical approval mapping remains Solidity-compatible 0/1.
+position_manager_approval_state: HashMap[address, HashMap[address, uint256]]
 reentrancy_lock: transient(bool)
 
 
@@ -460,7 +463,13 @@ def _check_access(selector: Bytes[4]):
 @internal
 @view
 def _is_position_manager(user: address, manager: address) -> bool:
-    return user == manager or (self.position_manager_active[manager] != 0 and self.position_manager_approval[manager][user] != 0)
+    approval_state: uint256 = self.position_manager_approval_state[manager][user]
+    approved: bool = self.position_manager_approval[manager][user] != 0
+    if approval_state == 1:
+        approved = False
+    elif approval_state == 2:
+        approved = True
+    return user == manager or (self.position_manager_active[manager] != 0 and approved)
 
 
 @internal
@@ -512,7 +521,7 @@ def _use_checked_nonce(owner: address, key_nonce: uint256):
 
 @internal
 @view
-def _valid_signature(signer: address, digest: bytes32, signature: Bytes[256]) -> bool:
+def _valid_signature(signer: address, digest: bytes32, signature: Bytes[INF]) -> bool:
     if len(signature) == 65:
         r: bytes32 = convert(slice(signature, 0, 32), bytes32)
         s: bytes32 = convert(slice(signature, 32, 32), bytes32)
@@ -576,8 +585,8 @@ def DOMAIN_SEPARATOR() -> bytes32:
 
 @external
 @view
-def eip712Domain() -> (bytes1, String[16], String[8], uint256, address, bytes32, DynArray[uint256, 1]):
-    extensions: DynArray[uint256, 1] = []
+def eip712Domain() -> (bytes1, String[16], String[8], uint256, address, bytes32, DynArray[uint256, INF]):
+    extensions: DynArray[uint256, INF] = []
     return 0x0f, "Spoke", "1", chain.id, self, empty(bytes32), extensions
 
 
@@ -1177,12 +1186,14 @@ def updateUserDynamicConfig(onBehalfOf: address):
 
 @external
 def setUserPositionManager(positionManager: address, approve: bool):
-    self.position_manager_approval[positionManager][msg.sender] = convert(approve, uint256)
+    approval: uint256 = convert(approve, uint256)
+    self.position_manager_approval[positionManager][msg.sender] = approval
+    self.position_manager_approval_state[positionManager][msg.sender] = 1 + approval
     log SetUserPositionManager(user=msg.sender, positionManager=positionManager, approve=approve)
 
 
 @external
-def setUserPositionManagersWithSig(params: SetUserPositionManagers, signature: Bytes[256]):
+def setUserPositionManagersWithSig(params: SetUserPositionManagers, signature: Bytes[INF]):
     if block.timestamp > params.deadline:
         raw_revert(method_id("InvalidSignature()"))
     update_hashes: DynArray[bytes32, 1024] = []
@@ -1208,15 +1219,19 @@ def setUserPositionManagersWithSig(params: SetUserPositionManagers, signature: B
         if i >= len(params.updates):
             break
         update: PositionManagerUpdate = params.updates[i]
-        self.position_manager_approval[update.positionManager][params.onBehalfOf] = convert(update.approve, uint256)
+        approval: uint256 = convert(update.approve, uint256)
+        self.position_manager_approval[update.positionManager][params.onBehalfOf] = approval
+        self.position_manager_approval_state[update.positionManager][params.onBehalfOf] = 1 + approval
         log SetUserPositionManager(user=params.onBehalfOf, positionManager=update.positionManager, approve=update.approve)
 
 
 @external
 def renouncePositionManagerRole(onBehalfOf: address):
-    if self.position_manager_approval[msg.sender][onBehalfOf] == 0:
+    approval_state: uint256 = self.position_manager_approval_state[msg.sender][onBehalfOf]
+    if approval_state == 1 or (approval_state == 0 and self.position_manager_approval[msg.sender][onBehalfOf] == 0):
         return
     self.position_manager_approval[msg.sender][onBehalfOf] = 0
+    self.position_manager_approval_state[msg.sender][onBehalfOf] = 1
     log SetUserPositionManager(user=onBehalfOf, positionManager=msg.sender, approve=False)
 
 
@@ -1614,11 +1629,48 @@ def liquidationCall(collateralReserveId: uint256, debtReserveId: uint256, user: 
 
 @external
 @raw_return
-def multicall(data: DynArray[Bytes[512], 4]) -> Bytes[1344]:
-    results: DynArray[Bytes[256], 4] = []
-    for i: uint256 in range(4):
-        if i >= len(data):
-            break
-        result: Bytes[256] = raw_call(self, data[i], max_outsize=256, is_delegate_call=True)
-        results.append(result)
-    return abi_encode(results)
+def __default__() -> Bytes[INF]:
+    # Nested unbounded dynamic arrays are not yet a source-level type in b1,
+    # so decode the standard `bytes[]` ABI through its unbounded offset list.
+    if len(msg.data) < 68 or slice(msg.data, 0, 4) != method_id("multicall(bytes[])"):
+        raw_revert(b"")
+
+    array_start: uint256 = 4 + convert(slice(msg.data, 4, 32), uint256)
+    if array_start > len(msg.data) - 32:
+        raw_revert(b"")
+    count: uint256 = convert(slice(msg.data, array_start, 32), uint256)
+    heads_size: uint256 = 32 + 32 * count
+    if heads_size > len(msg.data) - array_start:
+        raw_revert(b"")
+
+    element_offsets: DynArray[uint256, INF] = abi_decode(
+        slice(msg.data, array_start, heads_size),
+        DynArray[uint256, INF],
+        unwrap_tuple=False,
+    )
+    element_heads_start: uint256 = array_start + 32
+    heads: Bytes[INF] = b""
+    tails: Bytes[INF] = b""
+    output_offset: uint256 = 32 * count
+    for element_offset: uint256 in element_offsets:
+        element_start: uint256 = element_heads_start + element_offset
+        if element_start > len(msg.data) - 32:
+            raw_revert(b"")
+        element_length: uint256 = convert(slice(msg.data, element_start, 32), uint256)
+        payload_start: uint256 = element_start + 32
+        if element_length > len(msg.data) - payload_start:
+            raw_revert(b"")
+
+        call_data: Bytes[INF] = slice(msg.data, payload_start, element_length)
+        result: Bytes[256] = raw_call(
+            self,
+            call_data,
+            max_outsize=256,
+            is_delegate_call=True,
+        )
+        encoded_result: Bytes[INF] = abi_encode(result, ensure_tuple=False)
+        heads = concat(heads, convert(output_offset, bytes32))
+        tails = concat(tails, encoded_result)
+        output_offset += len(encoded_result)
+
+    return concat(convert(32, bytes32), convert(count, bytes32), heads, tails)

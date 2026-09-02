@@ -1,4 +1,4 @@
-# pragma version 0.5.0a3
+# pragma version 0.5.0b1
 
 SET_USER_POSITION_MANAGERS_TYPEHASH: public(constant(bytes32)) = 0xba01f7bf3d3674c63670ec4a78b0d56aac1ad6e8c84468920b9e61bfe0b9851a
 POSITION_MANAGER_UPDATE: public(constant(bytes32)) = 0x187dbd227227274b90655fb4011fc21dd749e8966fc040bd91e0b92609202565

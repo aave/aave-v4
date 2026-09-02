@@ -1,4 +1,4 @@
-# pragma version 0.5.0a3
+# pragma version 0.5.0b1
 
 MAX_CALLS: constant(uint256) = 4
 MAX_CALLDATA: constant(uint256) = 512
@@ -169,7 +169,7 @@ def setSelfAsUserPositionManagerWithSig(
     approve: bool,
     nonce: uint256,
     deadline: uint256,
-    signature: Bytes[MAX_SIGNATURE],
+    signature: Bytes[INF],
 ):
     self._check_registered(spoke)
     updates: DynArray[PositionManagerUpdate, 1] = [

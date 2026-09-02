@@ -1,4 +1,4 @@
-# pragma version 0.5.0a3
+# pragma version 0.5.0b1
 
 MAX_LIST: constant(uint256) = 1024
 MAX_KEY: constant(uint256) = 2**32 - 1

@@ -1,4 +1,4 @@
-#pragma version 0.5.0a3
+#pragma version 0.5.0b1
 
 WAD_DECIMALS: constant(uint256) = 18
 WAD: constant(uint256) = 10**18
