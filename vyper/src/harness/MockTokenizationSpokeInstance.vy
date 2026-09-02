@@ -1,6 +1,9 @@
 # pragma version 0.5.0b1
 
 
+error InvalidInitialization:
+    pass
+
 interface IHub:
     def getAssetId(underlying: address) -> uint256: view
 
@@ -41,7 +44,7 @@ def SPOKE_REVISION() -> uint64:
 def initialize(shareName: String[128], shareSymbol: String[128]):
     initialized: uint64 = convert(self.initialized_state & (2**64 - 1), uint64)
     if (self.initialized_state & (1 << 64)) != 0 or initialized >= spoke_revision:
-        raw_revert(method_id("InvalidInitialization()"))
+        raise InvalidInitialization()
     self.initialized_state = convert(spoke_revision, uint256)
     self.token_name = shareName
     self.token_symbol = shareSymbol

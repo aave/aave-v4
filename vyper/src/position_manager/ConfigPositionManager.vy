@@ -13,6 +13,12 @@ exports: PositionManagerBase.__interface__
 exports: NoncesKeyed.__interface__
 
 
+error DelegateeNotAllowed:
+    pass
+
+error InvalidSignature:
+    pass
+
 struct Permit:
     spoke: address
     delegator: address
@@ -84,21 +90,21 @@ def _domain_separator() -> bytes32:
 @internal
 def _verify(signer: address, intent_hash: bytes32, nonce: uint256, deadline: uint256, signature: Bytes[INF]):
     if block.timestamp > deadline or len(signature) != 65:
-        raw_revert(method_id("InvalidSignature()"))
+        raise InvalidSignature()
     digest: bytes32 = keccak256(concat(b"\x19\x01", self._domain_separator(), intent_hash))
     r: bytes32 = convert(slice(signature, 0, 32), bytes32)
     s: bytes32 = convert(slice(signature, 32, 32), bytes32)
     v: uint256 = convert(slice(signature, 64, 1), uint256)
     recovered: address = ecrecover(digest, v, r, s)
     if recovered == empty(address) or recovered != signer:
-        raw_revert(method_id("InvalidSignature()"))
+        raise InvalidSignature()
     NoncesKeyed._use_checked_nonce(signer, nonce)
 
 
 @internal
 def _update_permissions(spoke: address, delegator: address, delegatee: address, old_permissions: uint8, new_permissions: uint8):
     if delegatee == empty(address):
-        raw_revert(method_id("InvalidAddress()"))
+        raise PositionManagerBase.InvalidAddress()
     if old_permissions == new_permissions:
         return
     self.config[spoke][delegator][delegatee] = new_permissions
@@ -247,7 +253,7 @@ def setUsingAsCollateralOnBehalfOf(spoke: address, reserveId: uint256, usingAsCo
     PositionManagerBase._check_registered(spoke)
     permissions: uint8 = self.config[spoke][onBehalfOf][msg.sender]
     if not ConfigPermissionsMap.can_set_using_as_collateral(permissions):
-        raw_revert(method_id("DelegateeNotAllowed()"))
+        raise DelegateeNotAllowed()
     current_status: bool = False
     borrowing: bool = False
     current_status, borrowing = staticcall ISpoke(spoke).getUserReserveStatus(reserveId, onBehalfOf)
@@ -267,7 +273,7 @@ def setUsingAsCollateralOnBehalfOf(spoke: address, reserveId: uint256, usingAsCo
 def updateUserRiskPremiumOnBehalfOf(spoke: address, onBehalfOf: address):
     PositionManagerBase._check_registered(spoke)
     if not ConfigPermissionsMap.can_update_user_risk_premium(self.config[spoke][onBehalfOf][msg.sender]):
-        raw_revert(method_id("DelegateeNotAllowed()"))
+        raise DelegateeNotAllowed()
     extcall ISpoke(spoke).updateUserRiskPremium(onBehalfOf)
     log UpdateUserRiskPremiumOnBehalfOf(spoke=spoke, caller=msg.sender, onBehalfOf=onBehalfOf)
 
@@ -276,7 +282,7 @@ def updateUserRiskPremiumOnBehalfOf(spoke: address, onBehalfOf: address):
 def updateUserDynamicConfigOnBehalfOf(spoke: address, onBehalfOf: address):
     PositionManagerBase._check_registered(spoke)
     if not ConfigPermissionsMap.can_update_user_dynamic_config(self.config[spoke][onBehalfOf][msg.sender]):
-        raw_revert(method_id("DelegateeNotAllowed()"))
+        raise DelegateeNotAllowed()
     extcall ISpoke(spoke).updateUserDynamicConfig(onBehalfOf)
     log UpdateUserDynamicConfigOnBehalfOf(spoke=spoke, caller=msg.sender, onBehalfOf=onBehalfOf)
 

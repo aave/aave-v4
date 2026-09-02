@@ -1,6 +1,16 @@
 # pragma version 0.5.0b1
 
 
+error AccessManagedUnauthorized:
+    arg0: address
+
+error InvalidAddress:
+    pass
+
+error SafeCastOverflowedUintDowncast:
+    arg0: uint8
+    arg1: uint256
+
 struct LiquidationConfig:
     targetHealthFactor: uint128
     healthFactorForMaxBonus: uint64
@@ -56,7 +66,7 @@ authority_address: address
 @deploy
 def __init__(authority_: address):
     if authority_ == empty(address):
-        raw_revert(method_id("InvalidAddress()"))
+        raise InvalidAddress()
     self.authority_address = authority_
     log AuthorityUpdated(authority=authority_)
 
@@ -68,14 +78,14 @@ def _check_access(selector: Bytes[4]):
     delay: uint32 = 0
     allowed, delay = staticcall IAuthority(self.authority_address).canCall(msg.sender, self, convert(selector, bytes4))
     if not allowed:
-        raw_revert(concat(method_id("AccessManagedUnauthorized(address)"), convert(msg.sender, bytes32)))
+        raise AccessManagedUnauthorized(msg.sender)
 
 
 @internal
 @pure
 def _u128(cast_value: uint256) -> uint128:
     if cast_value > convert(max_value(uint128), uint256):
-        raw_revert(concat(method_id("SafeCastOverflowedUintDowncast(uint8,uint256)"), convert(128, bytes32), convert(cast_value, bytes32)))
+        raise SafeCastOverflowedUintDowncast(128, cast_value)
     return convert(cast_value, uint128)
 
 
@@ -83,7 +93,7 @@ def _u128(cast_value: uint256) -> uint128:
 @pure
 def _u64(cast_value: uint256) -> uint64:
     if cast_value > convert(max_value(uint64), uint256):
-        raw_revert(concat(method_id("SafeCastOverflowedUintDowncast(uint8,uint256)"), convert(64, bytes32), convert(cast_value, bytes32)))
+        raise SafeCastOverflowedUintDowncast(64, cast_value)
     return convert(cast_value, uint64)
 
 
@@ -91,7 +101,7 @@ def _u64(cast_value: uint256) -> uint64:
 @pure
 def _u32(cast_value: uint256) -> uint32:
     if cast_value > convert(max_value(uint32), uint256):
-        raw_revert(concat(method_id("SafeCastOverflowedUintDowncast(uint8,uint256)"), convert(32, bytes32), convert(cast_value, bytes32)))
+        raise SafeCastOverflowedUintDowncast(32, cast_value)
     return convert(cast_value, uint32)
 
 
@@ -99,7 +109,7 @@ def _u32(cast_value: uint256) -> uint32:
 @pure
 def _u24(cast_value: uint256) -> uint24:
     if cast_value > convert(max_value(uint24), uint256):
-        raw_revert(concat(method_id("SafeCastOverflowedUintDowncast(uint8,uint256)"), convert(24, bytes32), convert(cast_value, bytes32)))
+        raise SafeCastOverflowedUintDowncast(24, cast_value)
     return convert(cast_value, uint24)
 
 
@@ -107,7 +117,7 @@ def _u24(cast_value: uint256) -> uint24:
 @pure
 def _u16(cast_value: uint256) -> uint16:
     if cast_value > convert(max_value(uint16), uint256):
-        raw_revert(concat(method_id("SafeCastOverflowedUintDowncast(uint8,uint256)"), convert(16, bytes32), convert(cast_value, bytes32)))
+        raise SafeCastOverflowedUintDowncast(16, cast_value)
     return convert(cast_value, uint16)
 
 
@@ -120,7 +130,7 @@ def authority() -> address:
 @external
 def setAuthority(newAuthority: address):
     if msg.sender != self.authority_address:
-        raw_revert(concat(method_id("AccessManagedUnauthorized(address)"), convert(msg.sender, bytes32)))
+        raise AccessManagedUnauthorized(msg.sender)
     self.authority_address = newAuthority
     log AuthorityUpdated(authority=newAuthority)
 

@@ -1,12 +1,20 @@
 # pragma version 0.5.0b1
 
 from hub.libraries import Premium
+from libraries import Errors
 from libraries.math import WadRayMath
 from spoke.libraries import LiquidationLogic
 
 initializes: Premium
 initializes: LiquidationLogic
 
+
+error SafeCastOverflowedUintDowncast:
+    arg0: uint8
+    arg1: uint256
+
+error SafeERC20FailedOperation:
+    arg0: address
 
 struct UserPosition:
     drawnShares: uint120
@@ -160,14 +168,14 @@ def __init__(borrower_: address, liquidator_: address):
 @internal
 @pure
 def _panic_arithmetic():
-    raw_revert(concat(method_id("Panic(uint256)"), convert(17, bytes32)))
+    raise Errors.Panic(17)
 
 
 @internal
 @pure
 def _u120(cast_value: uint256) -> uint120:
     if cast_value > convert(max_value(uint120), uint256):
-        raw_revert(concat(method_id("SafeCastOverflowedUintDowncast(uint8,uint256)"), convert(120, bytes32), convert(cast_value, bytes32)))
+        raise SafeCastOverflowedUintDowncast(120, cast_value)
     return convert(cast_value, uint120)
 
 
@@ -175,7 +183,7 @@ def _u120(cast_value: uint256) -> uint120:
 @pure
 def _u32(cast_value: uint256) -> uint32:
     if cast_value > convert(max_value(uint32), uint256):
-        raw_revert(concat(method_id("SafeCastOverflowedUintDowncast(uint8,uint256)"), convert(32, bytes32), convert(cast_value, bytes32)))
+        raise SafeCastOverflowedUintDowncast(32, cast_value)
     return convert(cast_value, uint32)
 
 
@@ -220,7 +228,7 @@ def _safe_transfer_from(token: address, owner: address, recipient: address, amou
         max_outsize=32,
     )
     if len(response) != 0 and not convert(response, bool):
-        raw_revert(method_id("SafeERC20FailedOperation(address)"))
+        raise SafeERC20FailedOperation(token)
 
 
 @external

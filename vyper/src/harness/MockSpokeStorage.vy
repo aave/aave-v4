@@ -1,6 +1,10 @@
 # pragma version 0.5.0b1
 
 
+error SafeCastOverflowedUintDowncast:
+    arg0: uint8
+    arg1: uint256
+
 struct Reserve:
     underlying: address
     hub: address
@@ -73,7 +77,7 @@ user_positions: HashMap[address, HashMap[uint256, PackedUserPosition]]
 @pure
 def _u120(cast_value: uint256) -> uint120:
     if cast_value > convert(max_value(uint120), uint256):
-        raw_revert(concat(method_id("SafeCastOverflowedUintDowncast(uint8,uint256)"), convert(120, bytes32), convert(cast_value, bytes32)))
+        raise SafeCastOverflowedUintDowncast(120, cast_value)
     return convert(cast_value, uint120)
 
 
@@ -81,7 +85,7 @@ def _u120(cast_value: uint256) -> uint120:
 @pure
 def _u32(cast_value: uint256) -> uint32:
     if cast_value > convert(max_value(uint32), uint256):
-        raw_revert(concat(method_id("SafeCastOverflowedUintDowncast(uint8,uint256)"), convert(32, bytes32), convert(cast_value, bytes32)))
+        raise SafeCastOverflowedUintDowncast(32, cast_value)
     return convert(cast_value, uint32)
 
 

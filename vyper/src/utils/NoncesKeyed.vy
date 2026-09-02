@@ -1,5 +1,9 @@
 #pragma version 0.5.0b1
 
+error InvalidAccountNonce:
+    arg0: address
+    arg1: uint256
+
 nonces_by_owner: HashMap[address, HashMap[uint192, uint256]]
 
 
@@ -21,13 +25,7 @@ def _use_checked_nonce(owner: address, key_nonce: uint256):
     key: uint192 = convert(key_nonce // 2**64, uint192)
     current: uint256 = self._use_nonce(owner, key)
     if key_nonce != current:
-        raw_revert(
-            concat(
-                method_id("InvalidAccountNonce(address,uint256)"),
-                convert(owner, bytes32),
-                convert(current, bytes32),
-            )
-        )
+        raise InvalidAccountNonce(owner, current)
 
 
 @external

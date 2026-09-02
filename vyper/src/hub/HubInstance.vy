@@ -2,6 +2,7 @@
 
 from hub.libraries import Premium
 from hub.libraries import SharesMath
+from libraries import Errors
 from libraries.math import MathUtils
 from libraries.math import PercentageMath
 from libraries.math import WadRayMath
@@ -12,6 +13,89 @@ initializes: MathUtils
 initializes: PercentageMath
 initializes: WadRayMath
 
+
+error AccessManagedUnauthorized:
+    arg0: address
+
+error AddCapExceeded:
+    arg0: uint256
+
+error AssetNotListed:
+    pass
+
+error DrawCapExceeded:
+    arg0: uint256
+
+error InsufficientLiquidity:
+    arg0: uint256
+
+error InsufficientTransferred:
+    arg0: uint256
+
+error InvalidAddress:
+    pass
+
+error InvalidAmount:
+    pass
+
+error InvalidAssetDecimals:
+    pass
+
+error InvalidInitialization:
+    pass
+
+error InvalidInterestRateStrategy:
+    pass
+
+error InvalidLiquidityFee:
+    pass
+
+error InvalidPremiumChange:
+    pass
+
+error InvalidReinvestmentController:
+    pass
+
+error InvalidShares:
+    pass
+
+error OnlyReinvestmentController:
+    pass
+
+error SafeCastOverflowedIntDowncast:
+    arg0: uint8
+    arg1: int256
+
+error SafeCastOverflowedUintDowncast:
+    arg0: uint8
+    arg1: uint256
+
+error SpokeAlreadyListed:
+    pass
+
+error SpokeHalted:
+    pass
+
+error SpokeNotActive:
+    pass
+
+error SpokeNotListed:
+    pass
+
+error SurplusDrawnDeficitReported:
+    arg0: uint256
+
+error SurplusDrawnRestored:
+    arg0: uint256
+
+error SurplusPremiumRayDeficitReported:
+    arg0: uint256
+
+error SurplusPremiumRayRestored:
+    arg0: uint256
+
+error UnderlyingAlreadyListed:
+    pass
 
 struct PremiumDelta:
     sharesDelta: int256
@@ -320,14 +404,14 @@ def _check_access(selector: Bytes[4]):
     delay: uint32 = 0
     allowed, delay = staticcall IAuthority(self.authority_address).canCall(msg.sender, self, convert(selector, bytes4))
     if not allowed:
-        raw_revert(concat(method_id("AccessManagedUnauthorized(address)"), convert(msg.sender, bytes32)))
+        raise AccessManagedUnauthorized(msg.sender)
 
 
 @internal
 @pure
 def _u120(cast_value: uint256) -> uint120:
     if cast_value > convert(max_value(uint120), uint256):
-        raw_revert(concat(method_id("SafeCastOverflowedUintDowncast(uint8,uint256)"), convert(120, bytes32), convert(cast_value, bytes32)))
+        raise SafeCastOverflowedUintDowncast(120, cast_value)
     return convert(cast_value, uint120)
 
 
@@ -335,7 +419,7 @@ def _u120(cast_value: uint256) -> uint120:
 @pure
 def _u96(cast_value: uint256) -> uint96:
     if cast_value > convert(max_value(uint96), uint256):
-        raw_revert(concat(method_id("SafeCastOverflowedUintDowncast(uint8,uint256)"), convert(96, bytes32), convert(cast_value, bytes32)))
+        raise SafeCastOverflowedUintDowncast(96, cast_value)
     return convert(cast_value, uint96)
 
 
@@ -343,7 +427,7 @@ def _u96(cast_value: uint256) -> uint96:
 @pure
 def _u40(cast_value: uint256) -> uint40:
     if cast_value > convert(max_value(uint40), uint256):
-        raw_revert(concat(method_id("SafeCastOverflowedUintDowncast(uint8,uint256)"), convert(40, bytes32), convert(cast_value, bytes32)))
+        raise SafeCastOverflowedUintDowncast(40, cast_value)
     return convert(cast_value, uint40)
 
 
@@ -351,7 +435,7 @@ def _u40(cast_value: uint256) -> uint40:
 @pure
 def _u200(cast_value: uint256) -> uint200:
     if cast_value > convert(max_value(uint200), uint256):
-        raw_revert(concat(method_id("SafeCastOverflowedUintDowncast(uint8,uint256)"), convert(200, bytes32), convert(cast_value, bytes32)))
+        raise SafeCastOverflowedUintDowncast(200, cast_value)
     return convert(cast_value, uint200)
 
 
@@ -359,14 +443,14 @@ def _u200(cast_value: uint256) -> uint200:
 @pure
 def _i200(cast_value: int256) -> int200:
     if cast_value > convert(max_value(int200), int256) or cast_value < convert(min_value(int200), int256):
-        raw_revert(concat(method_id("SafeCastOverflowedIntDowncast(uint8,int256)"), convert(200, bytes32), convert(cast_value, bytes32)))
+        raise SafeCastOverflowedIntDowncast(200, cast_value)
     return convert(cast_value, int200)
 
 
 @internal
 @pure
 def _panic_arithmetic():
-    raw_revert(concat(method_id("Panic(uint256)"), convert(convert(17, uint256), bytes32)))
+    raise Errors.Panic(convert(17, uint256))
 
 
 @internal
@@ -483,7 +567,7 @@ def _spoke_premium_ray(asset: Asset, spoke: SpokeData) -> uint256:
 @internal
 def _add_spoke(asset_id: uint256, spoke: address):
     if self.spoke_listed[asset_id][spoke]:
-        raw_revert(method_id("SpokeAlreadyListed()"))
+        raise SpokeAlreadyListed()
     self.spoke_listed[asset_id][spoke] = True
     count: uint256 = convert(self.spoke_addresses[asset_id][SPOKE_COUNT_KEY], uint256)
     self.spoke_addresses[asset_id][count] = convert(spoke, bytes32)
@@ -507,9 +591,9 @@ def _update_spoke_config(asset_id: uint256, spoke: address, config: SpokeConfig)
 def initialize(authority: address):
     initialized: uint64 = convert(self.initialized_state & (2**64 - 1), uint64)
     if initialized >= HUB_REVISION:
-        raw_revert(method_id("InvalidInitialization()"))
+        raise InvalidInitialization()
     if authority == empty(address):
-        raw_revert(method_id("InvalidAddress()"))
+        raise InvalidAddress()
     self.initialized_state = convert(HUB_REVISION, uint256)
     self.authority_address = authority
     log AuthorityUpdated(authority=authority)
@@ -525,7 +609,7 @@ def authority() -> address:
 @external
 def setAuthority(newAuthority: address):
     if msg.sender != self.authority_address:
-        raw_revert(concat(method_id("AccessManagedUnauthorized(address)"), convert(msg.sender, bytes32)))
+        raise AccessManagedUnauthorized(msg.sender)
     self.authority_address = newAuthority
     log AuthorityUpdated(authority=newAuthority)
 
@@ -540,11 +624,11 @@ def isConsumingScheduledOp() -> bytes4:
 def addAsset(underlying: address, decimals: uint8, feeReceiver: address, irStrategy: address, irData: Bytes[INF]) -> uint256:
     self._check_access(method_id("addAsset(address,uint8,address,address,bytes)"))
     if underlying == empty(address) or feeReceiver == empty(address) or irStrategy == empty(address):
-        raw_revert(method_id("InvalidAddress()"))
+        raise InvalidAddress()
     if decimals < MIN_ALLOWED_UNDERLYING_DECIMALS or decimals > MAX_ALLOWED_UNDERLYING_DECIMALS:
-        raw_revert(method_id("InvalidAssetDecimals()"))
+        raise InvalidAssetDecimals()
     if self._load_asset(self.underlying_to_asset_id[underlying]).underlying == underlying:
-        raw_revert(method_id("UnderlyingAlreadyListed()"))
+        raise UnderlyingAlreadyListed()
     asset_id: uint256 = self.asset_count
     self.asset_count += 1
     self.underlying_to_asset_id[underlying] = asset_id
@@ -571,9 +655,9 @@ def addAsset(underlying: address, decimals: uint8, feeReceiver: address, irStrat
 def addSpoke(assetId: uint256, spoke: address, config: SpokeConfig):
     self._check_access(method_id("addSpoke(uint256,address,(uint40,uint40,uint24,bool,bool))"))
     if assetId >= self.asset_count:
-        raw_revert(method_id("AssetNotListed()"))
+        raise AssetNotListed()
     if spoke == empty(address):
-        raw_revert(method_id("InvalidAddress()"))
+        raise InvalidAddress()
     self._add_spoke(assetId, spoke)
     self._update_spoke_config(assetId, spoke, config)
 
@@ -582,9 +666,9 @@ def addSpoke(assetId: uint256, spoke: address, config: SpokeConfig):
 def updateSpokeConfig(assetId: uint256, spoke: address, config: SpokeConfig):
     self._check_access(method_id("updateSpokeConfig(uint256,address,(uint40,uint40,uint24,bool,bool))"))
     if assetId >= self.asset_count:
-        raw_revert(method_id("AssetNotListed()"))
+        raise AssetNotListed()
     if not self.spoke_listed[assetId][spoke]:
-        raw_revert(method_id("SpokeNotListed()"))
+        raise SpokeNotListed()
     self._update_spoke_config(assetId, spoke, config)
 
 
@@ -597,7 +681,7 @@ def _mint_fee_shares(asset_id: uint256) -> uint256:
         return 0
     receiver: SpokeData = self._load_spoke(asset_id, asset.feeReceiver)
     if not receiver.active:
-        raw_revert(method_id("SpokeNotActive()"))
+        raise SpokeNotActive()
     asset.addedShares = self._u120(convert(asset.addedShares, uint256) + shares)
     receiver.addedShares = self._u120(convert(receiver.addedShares, uint256) + shares)
     asset.realizedFees = 0
@@ -611,15 +695,15 @@ def _mint_fee_shares(asset_id: uint256) -> uint256:
 def updateAssetConfig(assetId: uint256, config: AssetConfig, irData: Bytes[INF]):
     self._check_access(method_id("updateAssetConfig(uint256,(address,uint16,address,address),bytes)"))
     if assetId >= self.asset_count:
-        raw_revert(method_id("AssetNotListed()"))
+        raise AssetNotListed()
     self._accrue(assetId)
     asset: Asset = self._load_asset(assetId)
     if convert(config.liquidityFee, uint256) > PERCENTAGE_FACTOR:
-        raw_revert(method_id("InvalidLiquidityFee()"))
+        raise InvalidLiquidityFee()
     if config.feeReceiver == empty(address) or config.irStrategy == empty(address):
-        raw_revert(method_id("InvalidAddress()"))
+        raise InvalidAddress()
     if config.reinvestmentController == empty(address) and asset.swept != 0:
-        raw_revert(method_id("InvalidReinvestmentController()"))
+        raise InvalidReinvestmentController()
     asset.liquidityFee = config.liquidityFee
     asset.reinvestmentController = config.reinvestmentController
     old_receiver: address = asset.feeReceiver
@@ -646,7 +730,7 @@ def updateAssetConfig(assetId: uint256, config: AssetConfig, irData: Bytes[INF])
         self._store_asset(assetId, asset)
         extcall IInterestRateStrategy(config.irStrategy).setInterestRateData(assetId, irData)
     elif len(irData) != 0:
-        raw_revert(method_id("InvalidInterestRateStrategy()"))
+        raise InvalidInterestRateStrategy()
     self._update_rate(assetId)
     log UpdateAssetConfig(assetId=assetId, config=config)
 
@@ -655,7 +739,7 @@ def updateAssetConfig(assetId: uint256, config: AssetConfig, irData: Bytes[INF])
 def setInterestRateData(assetId: uint256, irData: Bytes[INF]):
     self._check_access(method_id("setInterestRateData(uint256,bytes)"))
     if assetId >= self.asset_count:
-        raw_revert(method_id("AssetNotListed()"))
+        raise AssetNotListed()
     self._accrue(assetId)
     extcall IInterestRateStrategy(self._load_asset(assetId).irStrategy).setInterestRateData(assetId, irData)
     self._update_rate(assetId)
@@ -665,7 +749,7 @@ def setInterestRateData(assetId: uint256, irData: Bytes[INF]):
 def mintFeeShares(assetId: uint256) -> uint256:
     self._check_access(method_id("mintFeeShares(uint256)"))
     if assetId >= self.asset_count:
-        raw_revert(method_id("AssetNotListed()"))
+        raise AssetNotListed()
     self._accrue(assetId)
     result: uint256 = self._mint_fee_shares(assetId)
     self._update_rate(assetId)
@@ -684,23 +768,23 @@ def add(assetId: uint256, amount: uint256) -> uint256:
     asset: Asset = self._load_asset(assetId)
     spoke: SpokeData = self._load_spoke(assetId, msg.sender)
     if amount == 0:
-        raw_revert(method_id("InvalidAmount()"))
+        raise InvalidAmount()
     if not spoke.active:
-        raw_revert(method_id("SpokeNotActive()"))
+        raise SpokeNotActive()
     if spoke.halted:
-        raw_revert(method_id("SpokeHalted()"))
+        raise SpokeHalted()
     if spoke.addCap != MAX_ALLOWED_SPOKE_CAP:
         cap: uint256 = convert(spoke.addCap, uint256) * self._asset_units(asset.decimals)
         required: uint256 = self._to_added_assets_up(asset, convert(spoke.addedShares, uint256)) + amount
         if cap < required:
-            raw_revert(concat(method_id("AddCapExceeded(uint256)"), convert(spoke.addCap, bytes32)))
+            raise AddCapExceeded(convert(spoke.addCap, uint256))
     liquidity: uint256 = convert(asset.liquidity, uint256) + amount
     balance: uint256 = staticcall IERC20(asset.underlying).balanceOf(self)
     if balance < liquidity:
-        raw_revert(concat(method_id("InsufficientTransferred(uint256)"), convert(liquidity - balance, bytes32)))
+        raise InsufficientTransferred(liquidity - balance)
     shares: uint256 = self._to_added_shares_down(asset, amount)
     if shares == 0:
-        raw_revert(method_id("InvalidShares()"))
+        raise InvalidShares()
     asset.addedShares = self._u120(convert(asset.addedShares, uint256) + shares)
     spoke.addedShares = self._u120(convert(spoke.addedShares, uint256) + shares)
     asset.liquidity = self._u120(liquidity)
@@ -717,15 +801,15 @@ def remove(assetId: uint256, amount: uint256, to: address) -> uint256:
     asset: Asset = self._load_asset(assetId)
     spoke: SpokeData = self._load_spoke(assetId, msg.sender)
     if to == self:
-        raw_revert(method_id("InvalidAddress()"))
+        raise InvalidAddress()
     if amount == 0:
-        raw_revert(method_id("InvalidAmount()"))
+        raise InvalidAmount()
     if not spoke.active:
-        raw_revert(method_id("SpokeNotActive()"))
+        raise SpokeNotActive()
     if spoke.halted:
-        raw_revert(method_id("SpokeHalted()"))
+        raise SpokeHalted()
     if amount > convert(asset.liquidity, uint256):
-        raw_revert(concat(method_id("InsufficientLiquidity(uint256)"), convert(asset.liquidity, bytes32)))
+        raise InsufficientLiquidity(convert(asset.liquidity, uint256))
     shares: uint256 = self._to_added_shares_up(asset, amount)
     shares_120: uint120 = self._u120(shares)
     if shares_120 > asset.addedShares or shares_120 > spoke.addedShares:
@@ -747,20 +831,20 @@ def draw(assetId: uint256, amount: uint256, to: address) -> uint256:
     asset: Asset = self._load_asset(assetId)
     spoke: SpokeData = self._load_spoke(assetId, msg.sender)
     if to == self:
-        raw_revert(method_id("InvalidAddress()"))
+        raise InvalidAddress()
     if amount == 0:
-        raw_revert(method_id("InvalidAmount()"))
+        raise InvalidAmount()
     if not spoke.active:
-        raw_revert(method_id("SpokeNotActive()"))
+        raise SpokeNotActive()
     if spoke.halted:
-        raw_revert(method_id("SpokeHalted()"))
+        raise SpokeHalted()
     if spoke.drawCap != MAX_ALLOWED_SPOKE_CAP:
         owed: uint256 = self._spoke_drawn(asset, spoke) + WadRayMath.from_ray_up(self._spoke_premium_ray(asset, spoke)) + WadRayMath.from_ray_up(convert(spoke.deficitRay, uint256))
         cap: uint256 = convert(spoke.drawCap, uint256) * self._asset_units(asset.decimals)
         if cap < owed + amount:
-            raw_revert(concat(method_id("DrawCapExceeded(uint256)"), convert(spoke.drawCap, bytes32)))
+            raise DrawCapExceeded(convert(spoke.drawCap, uint256))
     if amount > convert(asset.liquidity, uint256):
-        raw_revert(concat(method_id("InsufficientLiquidity(uint256)"), convert(asset.liquidity, bytes32)))
+        raise InsufficientLiquidity(convert(asset.liquidity, uint256))
     shares: uint256 = WadRayMath.ray_div_up(amount, convert(asset.drawnIndex, uint256))
     asset.drawnShares = self._u120(convert(asset.drawnShares, uint256) + shares)
     spoke.drawnShares = self._u120(convert(spoke.drawnShares, uint256) + shares)
@@ -781,11 +865,11 @@ def _apply_one(index: uint256, shares: uint256, offset: int256, delta: PremiumDe
     new_offset: int256 = offset + delta.offsetRayDelta
     after: uint256 = Premium.calculate_premium_ray(new_shares, new_offset, index)
     if after + delta.restoredPremiumRay != before:
-        raw_revert(method_id("InvalidPremiumChange()"))
+        raise InvalidPremiumChange()
     if new_shares > convert(max_value(uint120), uint256):
-        raw_revert(concat(method_id("SafeCastOverflowedUintDowncast(uint8,uint256)"), convert(120, bytes32), convert(new_shares, bytes32)))
+        raise SafeCastOverflowedUintDowncast(120, new_shares)
     if new_offset > convert(max_value(int200), int256) or new_offset < convert(min_value(int200), int256):
-        raw_revert(concat(method_id("SafeCastOverflowedIntDowncast(uint8,int256)"), convert(200, bytes32), convert(new_offset, bytes32)))
+        raise SafeCastOverflowedIntDowncast(200, new_offset)
     return convert(new_shares, uint120), convert(new_offset, int200)
 
 
@@ -798,7 +882,7 @@ def _apply_premium(asset_id: uint256, spoke_address: address, delta: PremiumDelt
     if spoke.riskPremiumThreshold != MAX_RISK_PREMIUM_THRESHOLD:
         maximum: uint256 = PercentageMath.percent_mul_up(convert(spoke.drawnShares, uint256), convert(spoke.riskPremiumThreshold, uint256))
         if convert(spoke.premiumShares, uint256) > maximum:
-            raw_revert(method_id("InvalidPremiumChange()"))
+            raise InvalidPremiumChange()
     self._store_asset(asset_id, asset)
     self._store_spoke(asset_id, spoke_address, spoke)
 
@@ -809,17 +893,17 @@ def restore(assetId: uint256, drawnAmount: uint256, premiumDelta: PremiumDelta) 
     asset: Asset = self._load_asset(assetId)
     spoke: SpokeData = self._load_spoke(assetId, msg.sender)
     if drawnAmount == 0 and premiumDelta.restoredPremiumRay == 0:
-        raw_revert(method_id("InvalidAmount()"))
+        raise InvalidAmount()
     if not spoke.active:
-        raw_revert(method_id("SpokeNotActive()"))
+        raise SpokeNotActive()
     if spoke.halted:
-        raw_revert(method_id("SpokeHalted()"))
+        raise SpokeHalted()
     drawn: uint256 = self._spoke_drawn(asset, spoke)
     premium_ray: uint256 = self._spoke_premium_ray(asset, spoke)
     if drawnAmount > drawn:
-        raw_revert(concat(method_id("SurplusDrawnRestored(uint256)"), convert(drawn, bytes32)))
+        raise SurplusDrawnRestored(drawn)
     if premiumDelta.restoredPremiumRay > premium_ray:
-        raw_revert(concat(method_id("SurplusPremiumRayRestored(uint256)"), convert(premium_ray, bytes32)))
+        raise SurplusPremiumRayRestored(premium_ray)
     shares: uint256 = WadRayMath.ray_div_down(drawnAmount, convert(asset.drawnIndex, uint256))
     asset.drawnShares = self._u120(convert(asset.drawnShares, uint256) - shares)
     spoke.drawnShares = self._u120(convert(spoke.drawnShares, uint256) - shares)
@@ -831,7 +915,7 @@ def restore(assetId: uint256, drawnAmount: uint256, premiumDelta: PremiumDelta) 
     liquidity: uint256 = convert(asset.liquidity, uint256) + drawnAmount + premium_amount
     balance: uint256 = staticcall IERC20(asset.underlying).balanceOf(self)
     if balance < liquidity:
-        raw_revert(concat(method_id("InsufficientTransferred(uint256)"), convert(liquidity - balance, bytes32)))
+        raise InsufficientTransferred(liquidity - balance)
     asset.liquidity = self._u120(liquidity)
     self._store_asset(assetId, asset)
     self._update_rate(assetId)
@@ -845,15 +929,15 @@ def reportDeficit(assetId: uint256, drawnAmount: uint256, premiumDelta: PremiumD
     asset: Asset = self._load_asset(assetId)
     spoke: SpokeData = self._load_spoke(assetId, msg.sender)
     if drawnAmount == 0 and premiumDelta.restoredPremiumRay == 0:
-        raw_revert(method_id("InvalidAmount()"))
+        raise InvalidAmount()
     if not spoke.active:
-        raw_revert(method_id("SpokeNotActive()"))
+        raise SpokeNotActive()
     drawn: uint256 = self._spoke_drawn(asset, spoke)
     premium_ray: uint256 = self._spoke_premium_ray(asset, spoke)
     if drawnAmount > drawn:
-        raw_revert(concat(method_id("SurplusDrawnDeficitReported(uint256)"), convert(drawn, bytes32)))
+        raise SurplusDrawnDeficitReported(drawn)
     if premiumDelta.restoredPremiumRay > premium_ray:
-        raw_revert(concat(method_id("SurplusPremiumRayDeficitReported(uint256)"), convert(premium_ray, bytes32)))
+        raise SurplusPremiumRayDeficitReported(premium_ray)
     shares: uint256 = WadRayMath.ray_div_down(drawnAmount, convert(asset.drawnIndex, uint256))
     asset.drawnShares = self._u120(convert(asset.drawnShares, uint256) - shares)
     spoke.drawnShares = self._u120(convert(spoke.drawnShares, uint256) - shares)
@@ -876,9 +960,9 @@ def reportDeficit(assetId: uint256, drawnAmount: uint256, premiumDelta: PremiumD
 def refreshPremium(assetId: uint256, premiumDelta: PremiumDelta):
     self._accrue(assetId)
     if not self._load_spoke(assetId, msg.sender).active:
-        raw_revert(method_id("SpokeNotActive()"))
+        raise SpokeNotActive()
     if premiumDelta.restoredPremiumRay != 0:
-        raw_revert(method_id("InvalidPremiumChange()"))
+        raise InvalidPremiumChange()
     self._apply_premium(assetId, msg.sender, premiumDelta)
     self._update_rate(assetId)
     log RefreshPremium(assetId=assetId, spoke=msg.sender, premiumDelta=premiumDelta)
@@ -896,9 +980,9 @@ def eliminateDeficit(assetId: uint256, amount: uint256, coveredSpoke: address) -
     if amount < WadRayMath.from_ray_up(covered_deficit_ray):
         deficit_ray = WadRayMath.to_ray(amount)
     if not caller.active:
-        raw_revert(method_id("SpokeNotActive()"))
+        raise SpokeNotActive()
     if deficit_ray == 0:
-        raw_revert(method_id("InvalidAmount()"))
+        raise InvalidAmount()
     deficit_amount: uint256 = WadRayMath.from_ray_up(deficit_ray)
     shares: uint256 = self._to_added_shares_up(asset, deficit_amount)
     shares_120: uint120 = self._u120(shares)
@@ -923,9 +1007,9 @@ def payFeeShares(assetId: uint256, shares: uint256):
     sender: SpokeData = self._load_spoke(assetId, msg.sender)
     receiver: SpokeData = self._load_spoke(assetId, asset.feeReceiver)
     if not sender.active:
-        raw_revert(method_id("SpokeNotActive()"))
+        raise SpokeNotActive()
     if shares == 0:
-        raw_revert(method_id("InvalidShares()"))
+        raise InvalidShares()
     shares_120: uint120 = self._u120(shares)
     if shares_120 > sender.addedShares:
         self._panic_arithmetic()
@@ -946,16 +1030,16 @@ def transferShares(assetId: uint256, shares: uint256, toSpoke: address):
     sender: SpokeData = self._load_spoke(assetId, msg.sender)
     receiver: SpokeData = self._load_spoke(assetId, toSpoke)
     if not sender.active or not receiver.active:
-        raw_revert(method_id("SpokeNotActive()"))
+        raise SpokeNotActive()
     if sender.halted or receiver.halted:
-        raw_revert(method_id("SpokeHalted()"))
+        raise SpokeHalted()
     if shares == 0:
-        raw_revert(method_id("InvalidShares()"))
+        raise InvalidShares()
     if receiver.addCap != MAX_ALLOWED_SPOKE_CAP:
         cap: uint256 = convert(receiver.addCap, uint256) * self._asset_units(asset.decimals)
         required: uint256 = self._to_added_assets_up(asset, convert(receiver.addedShares, uint256) + shares)
         if cap < required:
-            raw_revert(concat(method_id("AddCapExceeded(uint256)"), convert(receiver.addCap, bytes32)))
+            raise AddCapExceeded(convert(receiver.addCap, uint256))
     shares_120: uint120 = self._u120(shares)
     if shares_120 > sender.addedShares:
         self._panic_arithmetic()
@@ -972,15 +1056,15 @@ def transferShares(assetId: uint256, shares: uint256, toSpoke: address):
 @external
 def sweep(assetId: uint256, amount: uint256):
     if assetId >= self.asset_count:
-        raw_revert(method_id("AssetNotListed()"))
+        raise AssetNotListed()
     self._accrue(assetId)
     asset: Asset = self._load_asset(assetId)
     if msg.sender != asset.reinvestmentController:
-        raw_revert(method_id("OnlyReinvestmentController()"))
+        raise OnlyReinvestmentController()
     if amount == 0:
-        raw_revert(method_id("InvalidAmount()"))
+        raise InvalidAmount()
     if amount > convert(asset.liquidity, uint256):
-        raw_revert(concat(method_id("InsufficientLiquidity(uint256)"), convert(asset.liquidity, bytes32)))
+        raise InsufficientLiquidity(convert(asset.liquidity, uint256))
     asset.liquidity = self._u120(convert(asset.liquidity, uint256) - amount)
     asset.swept = self._u120(convert(asset.swept, uint256) + amount)
     self._store_asset(assetId, asset)
@@ -992,17 +1076,17 @@ def sweep(assetId: uint256, amount: uint256):
 @external
 def reclaim(assetId: uint256, amount: uint256):
     if assetId >= self.asset_count:
-        raw_revert(method_id("AssetNotListed()"))
+        raise AssetNotListed()
     self._accrue(assetId)
     asset: Asset = self._load_asset(assetId)
     if msg.sender != asset.reinvestmentController:
-        raw_revert(method_id("OnlyReinvestmentController()"))
+        raise OnlyReinvestmentController()
     if amount == 0:
-        raw_revert(method_id("InvalidAmount()"))
+        raise InvalidAmount()
     liquidity: uint256 = convert(asset.liquidity, uint256) + amount
     balance: uint256 = staticcall IERC20(asset.underlying).balanceOf(self)
     if balance < liquidity:
-        raw_revert(concat(method_id("InsufficientTransferred(uint256)"), convert(liquidity - balance, bytes32)))
+        raise InsufficientTransferred(liquidity - balance)
     asset.liquidity = self._u120(liquidity)
     amount_120: uint120 = self._u120(amount)
     if amount_120 > asset.swept:
@@ -1078,7 +1162,7 @@ def previewRestoreByShares(assetId: uint256, shares: uint256) -> uint256:
 def getAssetId(underlying: address) -> uint256:
     asset_id: uint256 = self.underlying_to_asset_id[underlying]
     if self._load_asset(asset_id).underlying != underlying:
-        raw_revert(method_id("AssetNotListed()"))
+        raise AssetNotListed()
     return asset_id
 
 

@@ -1,6 +1,7 @@
 # pragma version 0.5.0b1
 
 from hub.libraries import SharesMath
+from libraries import Errors
 from libraries.math import PercentageMath
 from libraries.math import WadRayMath
 from spoke.libraries import ReserveFlagsMap
@@ -14,6 +15,89 @@ initializes: ReserveFlagsMap
 initializes: SpokeUtils
 initializes: UserPositionUtils
 
+
+error AccessManagedUnauthorized:
+    arg0: address
+
+error AssetNotListed:
+    pass
+
+error DynamicConfigKeyUninitialized:
+    pass
+
+error HealthFactorBelowThreshold:
+    pass
+
+error InvalidAccountNonce:
+    arg0: address
+    arg1: uint256
+
+error InvalidAddress:
+    pass
+
+error InvalidAssetDecimals:
+    pass
+
+error InvalidAssetId:
+    pass
+
+error InvalidCollateralFactor:
+    pass
+
+error InvalidCollateralFactorAndMaxLiquidationBonus:
+    pass
+
+error InvalidCollateralRisk:
+    pass
+
+error InvalidInitialization:
+    pass
+
+error InvalidLiquidationConfig:
+    pass
+
+error InvalidLiquidationFee:
+    pass
+
+error InvalidMaxUserReservesLimit:
+    pass
+
+error InvalidOracleDecimals:
+    pass
+
+error InvalidSignature:
+    pass
+
+error MaximumDynamicConfigKeyReached:
+    pass
+
+error MaximumUserReservesExceeded:
+    pass
+
+error ReentrancyGuardReentrantCall:
+    pass
+
+error ReserveExists:
+    pass
+
+error ReserveFrozen:
+    pass
+
+error ReserveNotBorrowable:
+    pass
+
+error ReserveNotListed:
+    pass
+
+error ReservePaused:
+    pass
+
+error SafeCastOverflowedUintDowncast:
+    arg0: uint8
+    arg1: uint256
+
+error Unauthorized:
+    pass
 
 struct Reserve:
     underlying: address
@@ -290,9 +374,9 @@ reentrancy_lock: transient(bool)
 @deploy
 def __init__(liquidationLogic_: address, oracle_: address, maxUserReservesLimit_: uint16):
     if staticcall IAaveOracle(oracle_).decimals() != 8:
-        raw_revert(method_id("InvalidOracleDecimals()"))
+        raise InvalidOracleDecimals()
     if maxUserReservesLimit_ == 0:
-        raw_revert(method_id("InvalidMaxUserReservesLimit()"))
+        raise InvalidMaxUserReservesLimit()
     ORACLE = oracle_
     MAX_USER_RESERVES_LIMIT = maxUserReservesLimit_
     LIQUIDATION_LOGIC = liquidationLogic_
@@ -303,13 +387,13 @@ def __init__(liquidationLogic_: address, oracle_: address, maxUserReservesLimit_
 @internal
 @pure
 def _panic_arithmetic():
-    raw_revert(concat(method_id("Panic(uint256)"), convert(convert(17, uint256), bytes32)))
+    raise Errors.Panic(convert(17, uint256))
 
 
 @internal
 def _enter_nonreentrant():
     if self.reentrancy_lock:
-        raw_revert(method_id("ReentrancyGuardReentrantCall()"))
+        raise ReentrancyGuardReentrantCall()
     self.reentrancy_lock = True
 
 
@@ -322,7 +406,7 @@ def _exit_nonreentrant():
 @pure
 def _u120(cast_value: uint256) -> uint120:
     if cast_value > convert(max_value(uint120), uint256):
-        raw_revert(concat(method_id("SafeCastOverflowedUintDowncast(uint8,uint256)"), convert(120, bytes32), convert(cast_value, bytes32)))
+        raise SafeCastOverflowedUintDowncast(120, cast_value)
     return convert(cast_value, uint120)
 
 
@@ -330,7 +414,7 @@ def _u120(cast_value: uint256) -> uint120:
 @pure
 def _u32(cast_value: uint256) -> uint32:
     if cast_value > convert(max_value(uint32), uint256):
-        raw_revert(concat(method_id("SafeCastOverflowedUintDowncast(uint8,uint256)"), convert(32, bytes32), convert(cast_value, bytes32)))
+        raise SafeCastOverflowedUintDowncast(32, cast_value)
     return convert(cast_value, uint32)
 
 
@@ -338,7 +422,7 @@ def _u32(cast_value: uint256) -> uint32:
 @pure
 def _u24(cast_value: uint256) -> uint24:
     if cast_value > convert(max_value(uint24), uint256):
-        raw_revert(concat(method_id("SafeCastOverflowedUintDowncast(uint8,uint256)"), convert(24, bytes32), convert(cast_value, bytes32)))
+        raise SafeCastOverflowedUintDowncast(24, cast_value)
     return convert(cast_value, uint24)
 
 
@@ -457,7 +541,7 @@ def _check_access(selector: Bytes[4]):
     delay: uint32 = 0
     allowed, delay = staticcall IAuthority(self.authority_address).canCall(msg.sender, self, convert(selector, bytes4))
     if not allowed:
-        raw_revert(concat(method_id("AccessManagedUnauthorized(address)"), convert(msg.sender, bytes32)))
+        raise AccessManagedUnauthorized(msg.sender)
 
 
 @internal
@@ -476,14 +560,14 @@ def _is_position_manager(user: address, manager: address) -> bool:
 @view
 def _only_position_manager(user: address):
     if not self._is_position_manager(user, msg.sender):
-        raw_revert(method_id("Unauthorized()"))
+        raise Unauthorized()
 
 
 @internal
 @view
 def _require_reserve(reserve_id: uint256) -> Reserve:
     if reserve_id >= self.reserve_count:
-        raw_revert(method_id("ReserveNotListed()"))
+        raise ReserveNotListed()
     return self._load_reserve(reserve_id)
 
 
@@ -515,7 +599,7 @@ def _use_checked_nonce(owner: address, key_nonce: uint256):
     nonce: uint64 = convert(self.nonces_by_owner[owner][key] & (2**64 - 1), uint64)
     current: uint256 = self._pack_nonce(key, nonce)
     if key_nonce != current:
-        raw_revert(concat(method_id("InvalidAccountNonce(address,uint256)"), convert(owner, bytes32), convert(current, bytes32)))
+        raise InvalidAccountNonce(owner, current)
     self.nonces_by_owner[owner][key] = convert(unsafe_add(nonce, 1), uint256)
 
 
@@ -544,10 +628,10 @@ def _valid_signature(signer: address, digest: bytes32, signature: Bytes[INF]) ->
 def initialize(authority: address):
     initialized: uint64 = convert(self.initialized_state & (2**64 - 1), uint64)
     if initialized >= SPOKE_REVISION:
-        raw_revert(method_id("InvalidInitialization()"))
+        raise InvalidInitialization()
     log SetSpokeImmutables(oracle=ORACLE, maxUserReservesLimit=MAX_USER_RESERVES_LIMIT)
     if authority == empty(address):
-        raw_revert(method_id("InvalidAddress()"))
+        raise InvalidAddress()
     self.initialized_state = convert(SPOKE_REVISION, uint256)
     self.authority_address = authority
     log AuthorityUpdated(authority=authority)
@@ -566,7 +650,7 @@ def authority() -> address:
 @external
 def setAuthority(newAuthority: address):
     if msg.sender != self.authority_address:
-        raw_revert(concat(method_id("AccessManagedUnauthorized(address)"), convert(msg.sender, bytes32)))
+        raise AccessManagedUnauthorized(msg.sender)
     self.authority_address = newAuthority
     log AuthorityUpdated(authority=newAuthority)
 
@@ -610,7 +694,7 @@ def updateLiquidationConfig(config: LiquidationConfig):
     if (convert(config.targetHealthFactor, uint256) < HEALTH_FACTOR_LIQUIDATION_THRESHOLD
         or convert(config.liquidationBonusFactor, uint256) > 10**4
         or convert(config.healthFactorForMaxBonus, uint256) >= HEALTH_FACTOR_LIQUIDATION_THRESHOLD):
-        raw_revert(method_id("InvalidLiquidationConfig()"))
+        raise InvalidLiquidationConfig()
     self.liquidation_config = config
     log UpdateLiquidationConfig(config=config)
 
@@ -621,27 +705,27 @@ def _validate_dynamic(config: DynamicReserveConfig):
     cf: uint256 = convert(config.collateralFactor, uint256)
     bonus: uint256 = convert(config.maxLiquidationBonus, uint256)
     if cf >= 10**4 or bonus < 10**4 or PercentageMath.percent_mul_up(bonus, cf) >= 10**4:
-        raw_revert(method_id("InvalidCollateralFactorAndMaxLiquidationBonus()"))
+        raise InvalidCollateralFactorAndMaxLiquidationBonus()
     if convert(config.liquidationFee, uint256) > 10**4:
-        raw_revert(method_id("InvalidLiquidationFee()"))
+        raise InvalidLiquidationFee()
 
 
 @external
 def addReserve(hub: address, assetId: uint256, priceSource: address, config: ReserveConfig, dynamicConfig: DynamicReserveConfig) -> uint256:
     self._check_access(method_id("addReserve(address,uint256,address,(uint24,bool,bool,bool,bool),(uint16,uint32,uint16))"))
     if hub == empty(address):
-        raw_revert(method_id("InvalidAddress()"))
+        raise InvalidAddress()
     if assetId > MAX_ALLOWED_ASSET_ID:
-        raw_revert(method_id("InvalidAssetId()"))
+        raise InvalidAssetId()
     candidate: uint256 = self.hub_asset_to_reserve[hub][assetId]
     existing: Reserve = self._load_reserve(candidate)
     if existing.hub == hub and convert(existing.assetId, uint256) == assetId:
-        raw_revert(method_id("ReserveExists()"))
+        raise ReserveExists()
     if convert(config.collateralRisk, uint256) > MAX_ALLOWED_COLLATERAL_RISK:
-        raw_revert(method_id("InvalidCollateralRisk()"))
+        raise InvalidCollateralRisk()
     self._validate_dynamic(dynamicConfig)
     if priceSource == empty(address):
-        raw_revert(method_id("InvalidAddress()"))
+        raise InvalidAddress()
     reserve_id: uint256 = self.reserve_count
     self.reserve_count += 1
     if self.reserve_count > MAX_RESERVES:
@@ -651,9 +735,9 @@ def addReserve(hub: address, assetId: uint256, priceSource: address, config: Res
     decimals: uint8 = 0
     underlying, decimals = staticcall IHub(hub).getAssetUnderlyingAndDecimals(assetId)
     if underlying == empty(address):
-        raw_revert(method_id("AssetNotListed()"))
+        raise AssetNotListed()
     if decimals > 18:
-        raw_revert(method_id("InvalidAssetDecimals()"))
+        raise InvalidAssetDecimals()
     extcall IAaveOracle(ORACLE).setReserveSource(reserve_id, priceSource)
     flags: uint8 = ReserveFlagsMap.create(config.paused, config.frozen, config.borrowable, config.receiveSharesEnabled)
     self._store_reserve(reserve_id, Reserve(
@@ -678,7 +762,7 @@ def updateReserveConfig(reserveId: uint256, config: ReserveConfig):
     self._check_access(method_id("updateReserveConfig(uint256,(uint24,bool,bool,bool,bool))"))
     reserve: Reserve = self._require_reserve(reserveId)
     if convert(config.collateralRisk, uint256) > MAX_ALLOWED_COLLATERAL_RISK:
-        raw_revert(method_id("InvalidCollateralRisk()"))
+        raise InvalidCollateralRisk()
     reserve.collateralRisk = config.collateralRisk
     reserve.flags = ReserveFlagsMap.create(config.paused, config.frozen, config.borrowable, config.receiveSharesEnabled)
     self._store_reserve(reserveId, reserve)
@@ -690,7 +774,7 @@ def updateReservePriceSource(reserveId: uint256, priceSource: address):
     self._check_access(method_id("updateReservePriceSource(uint256,address)"))
     self._require_reserve(reserveId)
     if priceSource == empty(address):
-        raw_revert(method_id("InvalidAddress()"))
+        raise InvalidAddress()
     extcall IAaveOracle(ORACLE).setReserveSource(reserveId, priceSource)
     log UpdateReservePriceSource(reserveId=reserveId, priceSource=priceSource)
 
@@ -700,7 +784,7 @@ def addDynamicReserveConfig(reserveId: uint256, dynamicConfig: DynamicReserveCon
     self._check_access(method_id("addDynamicReserveConfig(uint256,(uint16,uint32,uint16))"))
     reserve: Reserve = self._require_reserve(reserveId)
     if reserve.dynamicConfigKey == max_value(uint32):
-        raw_revert(method_id("MaximumDynamicConfigKeyReached()"))
+        raise MaximumDynamicConfigKeyReached()
     self._validate_dynamic(dynamicConfig)
     key: uint32 = reserve.dynamicConfigKey + 1
     reserve.dynamicConfigKey = key
@@ -716,9 +800,9 @@ def updateDynamicReserveConfig(reserveId: uint256, dynamicConfigKey: uint32, dyn
     self._require_reserve(reserveId)
     current: DynamicReserveConfig = self._load_dynamic_config(reserveId, dynamicConfigKey)
     if current.maxLiquidationBonus == 0:
-        raw_revert(method_id("DynamicConfigKeyUninitialized()"))
+        raise DynamicConfigKeyUninitialized()
     if dynamicConfig.collateralFactor == 0:
-        raw_revert(method_id("InvalidCollateralFactor()"))
+        raise InvalidCollateralFactor()
     self._validate_dynamic(dynamicConfig)
     self._store_dynamic_config(reserveId, dynamicConfigKey, dynamicConfig)
     log UpdateDynamicReserveConfig(reserveId=reserveId, dynamicConfigKey=dynamicConfigKey, config=dynamicConfig)
@@ -984,7 +1068,7 @@ def _refresh_validate(user: address) -> UserAccountData:
     account: UserAccountData = self._account_data(user)
     log RefreshAllUserDynamicConfig(user=user)
     if account.healthFactor < HEALTH_FACTOR_LIQUIDATION_THRESHOLD:
-        raw_revert(method_id("HealthFactorBelowThreshold()"))
+        raise HealthFactorBelowThreshold()
     return account
 
 
@@ -994,9 +1078,9 @@ def supply(reserveId: uint256, amount: uint256, onBehalfOf: address) -> (uint256
     self._only_position_manager(onBehalfOf)
     reserve: Reserve = self._require_reserve(reserveId)
     if ReserveFlagsMap.paused(reserve.flags):
-        raw_revert(method_id("ReservePaused()"))
+        raise ReservePaused()
     if ReserveFlagsMap.frozen(reserve.flags):
-        raw_revert(method_id("ReserveFrozen()"))
+        raise ReserveFrozen()
     self._safe_transfer_from(reserve.underlying, msg.sender, reserve.hub, amount)
     supplied_shares: uint256 = extcall IHub(reserve.hub).add(convert(reserve.assetId, uint256), amount)
     position: UserPositionUtils.UserPosition = self._load_user_position(onBehalfOf, reserveId)
@@ -1013,7 +1097,7 @@ def withdraw(reserveId: uint256, amount: uint256, onBehalfOf: address) -> (uint2
     self._only_position_manager(onBehalfOf)
     reserve: Reserve = self._require_reserve(reserveId)
     if ReserveFlagsMap.paused(reserve.flags):
-        raw_revert(method_id("ReservePaused()"))
+        raise ReservePaused()
     position: UserPositionUtils.UserPosition = self._load_user_position(onBehalfOf, reserveId)
     maximum: uint256 = staticcall IHub(reserve.hub).previewRemoveByShares(convert(reserve.assetId, uint256), convert(position.suppliedShares, uint256))
     withdrawn_amount: uint256 = min(amount, maximum)
@@ -1040,11 +1124,11 @@ def borrow(reserveId: uint256, amount: uint256, onBehalfOf: address) -> (uint256
     self._only_position_manager(onBehalfOf)
     reserve: Reserve = self._require_reserve(reserveId)
     if ReserveFlagsMap.paused(reserve.flags):
-        raw_revert(method_id("ReservePaused()"))
+        raise ReservePaused()
     if ReserveFlagsMap.frozen(reserve.flags):
-        raw_revert(method_id("ReserveFrozen()"))
+        raise ReserveFrozen()
     if not ReserveFlagsMap.borrowable(reserve.flags):
-        raw_revert(method_id("ReserveNotBorrowable()"))
+        raise ReserveNotBorrowable()
     drawn_shares: uint256 = extcall IHub(reserve.hub).draw(convert(reserve.assetId, uint256), amount, msg.sender)
     position: UserPositionUtils.UserPosition = self._load_user_position(onBehalfOf, reserveId)
     position.drawnShares = self._u120(convert(position.drawnShares, uint256) + drawn_shares)
@@ -1054,7 +1138,7 @@ def borrow(reserveId: uint256, amount: uint256, onBehalfOf: address) -> (uint256
     borrowing, _collateral = self._reserve_status(onBehalfOf, reserveId)
     if not borrowing:
         if MAX_USER_RESERVES_LIMIT != max_value(uint16) and self._borrow_count(onBehalfOf) >= convert(MAX_USER_RESERVES_LIMIT, uint256):
-            raw_revert(method_id("MaximumUserReservesExceeded()"))
+            raise MaximumUserReservesExceeded()
         self._set_borrowing(onBehalfOf, reserveId, True)
     account: UserAccountData = self._refresh_validate(onBehalfOf)
     self._notify_risk_premium(onBehalfOf, account.riskPremium)
@@ -1069,11 +1153,11 @@ def borrowWithoutHfCheck(reserveId: uint256, amount: uint256, onBehalfOf: addres
     self._only_position_manager(onBehalfOf)
     reserve: Reserve = self._require_reserve(reserveId)
     if ReserveFlagsMap.paused(reserve.flags):
-        raw_revert(method_id("ReservePaused()"))
+        raise ReservePaused()
     if ReserveFlagsMap.frozen(reserve.flags):
-        raw_revert(method_id("ReserveFrozen()"))
+        raise ReserveFrozen()
     if not ReserveFlagsMap.borrowable(reserve.flags):
-        raw_revert(method_id("ReserveNotBorrowable()"))
+        raise ReserveNotBorrowable()
     drawn_shares: uint256 = extcall IHub(reserve.hub).draw(convert(reserve.assetId, uint256), amount, msg.sender)
     position: UserPositionUtils.UserPosition = self._load_user_position(onBehalfOf, reserveId)
     position.drawnShares = self._u120(convert(position.drawnShares, uint256) + drawn_shares)
@@ -1083,7 +1167,7 @@ def borrowWithoutHfCheck(reserveId: uint256, amount: uint256, onBehalfOf: addres
     borrowing, _collateral = self._reserve_status(onBehalfOf, reserveId)
     if not borrowing:
         if MAX_USER_RESERVES_LIMIT != max_value(uint16) and self._borrow_count(onBehalfOf) >= convert(MAX_USER_RESERVES_LIMIT, uint256):
-            raw_revert(method_id("MaximumUserReservesExceeded()"))
+            raise MaximumUserReservesExceeded()
         self._set_borrowing(onBehalfOf, reserveId, True)
     self._refresh_configs(onBehalfOf)
     account: UserAccountData = self._account_data(onBehalfOf)
@@ -1100,7 +1184,7 @@ def repay(reserveId: uint256, amount: uint256, onBehalfOf: address) -> (uint256,
     self._only_position_manager(onBehalfOf)
     reserve: Reserve = self._require_reserve(reserveId)
     if ReserveFlagsMap.paused(reserve.flags):
-        raw_revert(method_id("ReservePaused()"))
+        raise ReservePaused()
     position: UserPositionUtils.UserPosition = self._load_user_position(onBehalfOf, reserveId)
     index: uint256 = staticcall IHub(reserve.hub).getAssetDrawnIndex(convert(reserve.assetId, uint256))
     drawn_restored: uint256 = 0
@@ -1145,12 +1229,12 @@ def setUsingAsCollateral(reserveId: uint256, usingAsCollateral: bool, onBehalfOf
         self._exit_nonreentrant()
         return
     if ReserveFlagsMap.paused(reserve.flags):
-        raw_revert(method_id("ReservePaused()"))
+        raise ReservePaused()
     if usingAsCollateral:
         if ReserveFlagsMap.frozen(reserve.flags):
-            raw_revert(method_id("ReserveFrozen()"))
+            raise ReserveFrozen()
         if MAX_USER_RESERVES_LIMIT != max_value(uint16) and self._collateral_count(onBehalfOf) >= convert(MAX_USER_RESERVES_LIMIT, uint256):
-            raw_revert(method_id("MaximumUserReservesExceeded()"))
+            raise MaximumUserReservesExceeded()
     self._set_using_as_collateral(onBehalfOf, reserveId, usingAsCollateral)
     if usingAsCollateral:
         position: UserPositionUtils.UserPosition = self._load_user_position(onBehalfOf, reserveId)
@@ -1195,7 +1279,7 @@ def setUserPositionManager(positionManager: address, approve: bool):
 @external
 def setUserPositionManagersWithSig(params: SetUserPositionManagers, signature: Bytes[INF]):
     if block.timestamp > params.deadline:
-        raw_revert(method_id("InvalidSignature()"))
+        raise InvalidSignature()
     update_hashes: DynArray[bytes32, 1024] = []
     for i: uint256 in range(1024):
         if i >= len(params.updates):
@@ -1213,7 +1297,7 @@ def setUserPositionManagersWithSig(params: SetUserPositionManagers, signature: B
     ))
     digest: bytes32 = keccak256(concat(b"\x19\x01", self._domain_separator(), intent_hash))
     if not self._valid_signature(params.onBehalfOf, digest, signature):
-        raw_revert(method_id("InvalidSignature()"))
+        raise InvalidSignature()
     self._use_checked_nonce(params.onBehalfOf, params.nonce)
     for i: uint256 in range(1024):
         if i >= len(params.updates):
@@ -1303,7 +1387,7 @@ def getReserveId(hub: address, assetId: uint256) -> uint256:
     reserve_id: uint256 = self.hub_asset_to_reserve[hub][assetId]
     reserve: Reserve = self._load_reserve(reserve_id)
     if reserve.hub != hub or convert(reserve.assetId, uint256) != assetId:
-        raw_revert(method_id("ReserveNotListed()"))
+        raise ReserveNotListed()
     return reserve_id
 
 
@@ -1633,15 +1717,15 @@ def __default__() -> Bytes[INF]:
     # Nested unbounded dynamic arrays are not yet a source-level type in b1,
     # so decode the standard `bytes[]` ABI through its unbounded offset list.
     if len(msg.data) < 68 or slice(msg.data, 0, 4) != method_id("multicall(bytes[])"):
-        raw_revert(b"")
+        raise
 
     array_start: uint256 = 4 + convert(slice(msg.data, 4, 32), uint256)
     if array_start > len(msg.data) - 32:
-        raw_revert(b"")
+        raise
     count: uint256 = convert(slice(msg.data, array_start, 32), uint256)
     heads_size: uint256 = 32 + 32 * count
     if heads_size > len(msg.data) - array_start:
-        raw_revert(b"")
+        raise
 
     element_offsets: DynArray[uint256, INF] = abi_decode(
         slice(msg.data, array_start, heads_size),
@@ -1655,11 +1739,11 @@ def __default__() -> Bytes[INF]:
     for element_offset: uint256 in element_offsets:
         element_start: uint256 = element_heads_start + element_offset
         if element_start > len(msg.data) - 32:
-            raw_revert(b"")
+            raise
         element_length: uint256 = convert(slice(msg.data, element_start, 32), uint256)
         payload_start: uint256 = element_start + 32
         if element_length > len(msg.data) - payload_start:
-            raw_revert(b"")
+            raise
 
         call_data: Bytes[INF] = slice(msg.data, payload_start, element_length)
         result: Bytes[256] = raw_call(

@@ -1,5 +1,20 @@
 # pragma version 0.5.0b1
 
+error InvalidAddress:
+    pass
+
+error OwnableInvalidOwner:
+    arg0: address
+
+error OwnableUnauthorizedAccount:
+    arg0: address
+
+error SpokeNotRegistered:
+    pass
+
+error UnsupportedAction:
+    pass
+
 MAX_CALLS: constant(uint256) = 4
 MAX_CALLDATA: constant(uint256) = 512
 MAX_RETURN_DATA: constant(uint256) = 256
@@ -57,9 +72,7 @@ def _multicall_enabled() -> bool:
 @internal
 def _initialize_owner(initial_owner: address):
     if initial_owner == empty(address):
-        raw_revert(
-            concat(method_id("OwnableInvalidOwner(address)"), convert(initial_owner, bytes32))
-        )
+        raise OwnableInvalidOwner(initial_owner)
     self.owner_address = initial_owner
     log OwnershipTransferred(previousOwner=empty(address), newOwner=initial_owner)
 
@@ -68,19 +81,14 @@ def _initialize_owner(initial_owner: address):
 @view
 def _check_owner():
     if msg.sender != self.owner_address:
-        raw_revert(
-            concat(
-                method_id("OwnableUnauthorizedAccount(address)"),
-                convert(msg.sender, bytes32),
-            )
-        )
+        raise OwnableUnauthorizedAccount(msg.sender)
 
 
 @internal
 @view
 def _check_registered(spoke: address):
     if not self.registered_spokes[spoke]:
-        raw_revert(method_id("SpokeNotRegistered()"))
+        raise SpokeNotRegistered()
 
 
 @internal
@@ -119,12 +127,7 @@ def transferOwnership(newOwner: address):
 @external
 def acceptOwnership():
     if msg.sender != self.pending_owner_address:
-        raw_revert(
-            concat(
-                method_id("OwnableUnauthorizedAccount(address)"),
-                convert(msg.sender, bytes32),
-            )
-        )
+        raise OwnableUnauthorizedAccount(msg.sender)
     old_owner: address = self.owner_address
     self.pending_owner_address = empty(address)
     self.owner_address = msg.sender
@@ -144,7 +147,7 @@ def renounceOwnership():
 def registerSpoke(spoke: address, registered: bool):
     self._check_owner()
     if spoke == empty(address):
-        raw_revert(method_id("InvalidAddress()"))
+        raise InvalidAddress()
     self.registered_spokes[spoke] = registered
     log RegisterSpoke(spoke=spoke, registered=registered)
 
@@ -226,7 +229,7 @@ def renouncePositionManagerRole(spoke: address, user: address):
 @external
 def multicall(data: DynArray[Bytes[MAX_CALLDATA], MAX_CALLS]) -> DynArray[Bytes[MAX_RETURN_DATA], MAX_CALLS]:
     if not self._multicall_enabled():
-        raw_revert(method_id("UnsupportedAction()"))
+        raise UnsupportedAction()
     results: DynArray[Bytes[MAX_RETURN_DATA], MAX_CALLS] = []
     for call_data: Bytes[MAX_CALLDATA] in data:
         success: bool = False
@@ -239,6 +242,7 @@ def multicall(data: DynArray[Bytes[MAX_CALLDATA], MAX_CALLS]) -> DynArray[Bytes[
             revert_on_failure=False,
         )
         if not success:
+            # Preserve arbitrary downstream revert data; it cannot be represented by a static error.
             raw_revert(result)
         results.append(result)
     return results

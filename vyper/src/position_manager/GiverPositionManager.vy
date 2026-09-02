@@ -6,6 +6,9 @@ initializes: PositionManagerBase
 exports: PositionManagerBase.__interface__
 
 
+error RepayOnBehalfMaxUintNotAllowed:
+    pass
+
 struct Reserve:
     underlying: address
     hub: address
@@ -115,7 +118,7 @@ def repayOnBehalfOf(
 ) -> (uint256, uint256):
     PositionManagerBase._check_registered(spoke)
     if amount == max_value(uint256):
-        raw_revert(method_id("RepayOnBehalfMaxUintNotAllowed()"))
+        raise RepayOnBehalfMaxUintNotAllowed()
     reserve: Reserve = staticcall ISpoke(spoke).getReserve(reserveId)
     total_debt: uint256 = staticcall ISpoke(spoke).getUserTotalDebt(reserveId, onBehalfOf)
     repay_amount: uint256 = min(amount, total_debt)

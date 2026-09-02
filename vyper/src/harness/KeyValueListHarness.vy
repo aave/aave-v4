@@ -1,5 +1,8 @@
 # pragma version 0.5.0b1
 
+error MaxDataSizeExceeded:
+    pass
+
 MAX_LIST: constant(uint256) = 1024
 MAX_KEY: constant(uint256) = 2**32 - 1
 MAX_VALUE: constant(uint256) = 2**224 - 1
@@ -27,7 +30,7 @@ def _unpack(data: uint256) -> (uint256, uint256):
 @pure
 def add(list: List, idx: uint256, key: uint256, packed_value: uint256) -> List:
     if key >= MAX_KEY or packed_value >= MAX_VALUE:
-        raw_revert(method_id("MaxDataSizeExceeded()"))
+        raise MaxDataSizeExceeded()
     result: List = list
     result.inner[idx] = self._pack(key, packed_value)
     return result

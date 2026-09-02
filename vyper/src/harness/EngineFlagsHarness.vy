@@ -1,11 +1,14 @@
 # pragma version 0.5.0b1
 
 
+error InvalidBoolValue:
+    arg0: uint256
+
 @external
 @pure
 def toBool(flag: uint256) -> bool:
     if flag > 1:
-        raw_revert(concat(method_id("InvalidBoolValue(uint256)"), convert(flag, bytes32)))
+        raise InvalidBoolValue(flag)
     return flag == 1
 
 

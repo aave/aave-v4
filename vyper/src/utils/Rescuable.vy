@@ -1,6 +1,9 @@
 #pragma version 0.5.0b1
 
 
+error OnlyRescueGuardian:
+    pass
+
 @view
 @abstract
 def _rescue_guardian() -> address:
@@ -11,7 +14,7 @@ def _rescue_guardian() -> address:
 @view
 def _check_rescue_guardian():
     if self._rescue_guardian() != msg.sender:
-        raw_revert(method_id("OnlyRescueGuardian()"))
+        raise OnlyRescueGuardian()
 
 
 @external

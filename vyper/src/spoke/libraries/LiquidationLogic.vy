@@ -1,6 +1,7 @@
 # pragma version 0.5.0b1
 
 from hub.libraries import SharesMath
+from libraries import Errors
 from libraries.math import PercentageMath
 from libraries.math import WadRayMath
 from spoke.libraries import ReserveFlagsMap
@@ -12,6 +13,33 @@ initializes: WadRayMath
 initializes: ReserveFlagsMap
 initializes: SpokeUtils
 
+
+error CannotReceiveShares:
+    pass
+
+error HealthFactorNotBelowThreshold:
+    pass
+
+error InvalidDebtToCover:
+    pass
+
+error MustNotLeaveDust:
+    pass
+
+error ReserveNotBorrowed:
+    pass
+
+error ReserveNotEnabledAsCollateral:
+    pass
+
+error ReserveNotSupplied:
+    pass
+
+error ReservePaused:
+    pass
+
+error SelfLiquidation:
+    pass
 
 struct ValidateLiquidationCallParams:
     user: address
@@ -103,7 +131,7 @@ WAD: constant(uint256) = 10**18
 
 @pure
 def _panic_arithmetic():
-    raw_revert(concat(method_id("Panic(uint256)"), convert(17, bytes32)))
+    raise Errors.Panic(17)
 
 
 @pure
@@ -129,21 +157,21 @@ def calculate_liquidation_bonus(
 @pure
 def validate_liquidation_call(params: ValidateLiquidationCallParams):
     if params.user == params.liquidator:
-        raw_revert(method_id("SelfLiquidation()"))
+        raise SelfLiquidation()
     if params.debtToCover == 0:
-        raw_revert(method_id("InvalidDebtToCover()"))
+        raise InvalidDebtToCover()
     if ReserveFlagsMap.paused(params.collateralReserveFlags) or ReserveFlagsMap.paused(params.debtReserveFlags):
-        raw_revert(method_id("ReservePaused()"))
+        raise ReservePaused()
     if params.suppliedShares == 0:
-        raw_revert(method_id("ReserveNotSupplied()"))
+        raise ReserveNotSupplied()
     if params.drawnShares == 0:
-        raw_revert(method_id("ReserveNotBorrowed()"))
+        raise ReserveNotBorrowed()
     if params.healthFactor >= HEALTH_FACTOR_LIQUIDATION_THRESHOLD:
-        raw_revert(method_id("HealthFactorNotBelowThreshold()"))
+        raise HealthFactorNotBelowThreshold()
     if params.collateralFactor == 0 or not params.isUsingAsCollateral:
-        raw_revert(method_id("ReserveNotEnabledAsCollateral()"))
+        raise ReserveNotEnabledAsCollateral()
     if params.receiveShares and (ReserveFlagsMap.frozen(params.collateralReserveFlags) or not ReserveFlagsMap.receive_shares_enabled(params.collateralReserveFlags)):
-        raw_revert(method_id("CannotReceiveShares()"))
+        raise CannotReceiveShares()
 
 
 @pure
@@ -279,7 +307,7 @@ def calculate_liquidation_amounts(params: CalculateLiquidationAmountsParams) -> 
 
     amount_to_restore: uint256 = WadRayMath.ray_mul_up(drawn_to_liquidate, params.drawnIndex) + WadRayMath.from_ray_up(premium_to_liquidate)
     if params.debtToCover < amount_to_restore:
-        raw_revert(method_id("MustNotLeaveDust()"))
+        raise MustNotLeaveDust()
     fee_shares: uint256 = SharesMath._mul_div_up(
         collateral_to_liquidate,
         params.liquidationFee * (bonus - PERCENTAGE_FACTOR),

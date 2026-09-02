@@ -1,5 +1,10 @@
 #pragma version 0.5.0b1
 
+from libraries import Errors
+
+error SafeCastOverflowedUintToInt:
+    arg0: uint256
+
 RAY: constant(uint256) = 10**27
 SECONDS_PER_YEAR: constant(uint256) = 365 * 24 * 60 * 60
 UINT256_MAX: constant(uint256) = max_value(uint256)
@@ -9,7 +14,7 @@ INT256_MIN_ABS: constant(uint256) = 2**255
 
 @pure
 def _panic_arithmetic():
-    raw_revert(concat(method_id("Panic(uint256)"), convert(17, bytes32)))
+    raise Errors.Panic(17)
 
 
 @view
@@ -55,9 +60,9 @@ def unchecked_add(a: uint256, b: uint256) -> uint256:
 @pure
 def signed_sub(a: uint256, b: uint256) -> int256:
     if a > INT256_MAX:
-        raw_revert(concat(method_id("SafeCastOverflowedUintToInt(uint256)"), convert(a, bytes32)))
+        raise SafeCastOverflowedUintToInt(a)
     if b > INT256_MAX:
-        raw_revert(concat(method_id("SafeCastOverflowedUintToInt(uint256)"), convert(b, bytes32)))
+        raise SafeCastOverflowedUintToInt(b)
     return convert(a, int256) - convert(b, int256)
 
 

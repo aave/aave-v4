@@ -1,5 +1,8 @@
 # pragma version 0.5.0b1
 
+error MathOverflowedMulDiv:
+    pass
+
 VIRTUAL_ASSETS: public(constant(uint256)) = 10**6
 VIRTUAL_SHARES: public(constant(uint256)) = 10**6
 
@@ -13,7 +16,7 @@ def _mul_div_down(x: uint256, y: uint256, denominator: uint256) -> uint256:
     if prod1 == 0:
         return prod0 // denominator
     if denominator <= prod1:
-        raw_revert(method_id("MathOverflowedMulDiv()"))
+        raise MathOverflowedMulDiv()
 
     remainder: uint256 = uint256_mulmod(x, y, denominator)
     prod1 = unsafe_sub(prod1, convert(remainder > prod0, uint256))
@@ -40,7 +43,7 @@ def _mul_div_up(x: uint256, y: uint256, denominator: uint256) -> uint256:
     result: uint256 = self._mul_div_down(x, y, denominator)
     if uint256_mulmod(x, y, denominator) != 0:
         if result == max_value(uint256):
-            raw_revert(method_id("MathOverflowedMulDiv()"))
+            raise MathOverflowedMulDiv()
         result += 1
     return result
 

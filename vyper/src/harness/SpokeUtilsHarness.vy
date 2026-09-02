@@ -5,6 +5,9 @@ from spoke.libraries import SpokeUtils
 initializes: SpokeUtils
 
 
+error ReserveNotListed:
+    pass
+
 struct Reserve:
     underlying: address
     hub: address
@@ -28,7 +31,7 @@ def setReserve(reserveId: uint256, reserve: Reserve):
 def get(reserveId: uint256) -> Reserve:
     reserve: Reserve = self.reserves[reserveId]
     if reserve.hub == empty(address):
-        raw_revert(method_id("ReserveNotListed()"))
+        raise ReserveNotListed()
     return reserve
 
 

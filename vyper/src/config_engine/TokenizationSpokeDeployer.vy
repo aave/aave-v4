@@ -6,6 +6,12 @@
 # the Safe Singleton Factory without embedding either large blob in runtime
 # code.
 
+error Create2AddressDerivationFailure:
+    pass
+
+error InvalidProxyAdminOwner:
+    pass
+
 MAX_IMPLEMENTATION_CODE: constant(uint256) = 12288
 MAX_PROXY_CODE: constant(uint256) = 6144
 MAX_INIT_DATA: constant(uint256) = 1024
@@ -75,10 +81,10 @@ def _deploy(salt: bytes32, creation_code: Bytes[MAX_FACTORY_CALL]) -> address:
         max_outsize=32,
     )
     if len(result) < 20:
-        raw_revert(method_id("Create2AddressDerivationFailure()"))
+        raise Create2AddressDerivationFailure()
     deployed: address = convert(convert(slice(result, 0, 20), bytes20), address)
     if deployed != expected:
-        raw_revert(method_id("Create2AddressDerivationFailure()"))
+        raise Create2AddressDerivationFailure()
     return deployed
 
 
@@ -115,7 +121,7 @@ def deploy(
     proxyAdminOwner: address,
 ) -> address:
     if proxyAdminOwner == empty(address):
-        raw_revert(method_id("InvalidProxyAdminOwner()"))
+        raise InvalidProxyAdminOwner()
 
     implementation: address = self._deploy(
         self._implementation_salt(hub, underlying, name, symbol),

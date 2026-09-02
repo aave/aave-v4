@@ -6,6 +6,18 @@ initializes: PositionManagerBase
 exports: PositionManagerBase.__interface__
 
 
+error InvalidAmount:
+    pass
+
+error NativeAmountMismatch:
+    pass
+
+error NotNativeWrappedAsset:
+    pass
+
+error ReentrancyGuardReentrantCall:
+    pass
+
 struct Reserve:
     underlying: address
     hub: address
@@ -32,7 +44,7 @@ reentrancy_lock: bool
 @deploy
 def __init__(nativeTokenWrapper: address, initialOwner: address):
     if nativeTokenWrapper == empty(address):
-        raw_revert(method_id("InvalidAddress()"))
+        raise PositionManagerBase.InvalidAddress()
     NATIVE_TOKEN_WRAPPER = nativeTokenWrapper
     PositionManagerBase._initialize_owner(initialOwner)
 
@@ -46,7 +58,7 @@ def _multicall_enabled() -> bool:
 @internal
 def _enter():
     if self.reentrancy_lock:
-        raw_revert(method_id("ReentrancyGuardReentrantCall()"))
+        raise ReentrancyGuardReentrantCall()
     self.reentrancy_lock = True
 
 
@@ -66,9 +78,9 @@ def _reserve_underlying(spoke: address, reserve_id: uint256) -> address:
 @view
 def _validate(underlying: address, amount: uint256):
     if underlying != NATIVE_TOKEN_WRAPPER:
-        raw_revert(method_id("NotNativeWrappedAsset()"))
+        raise NotNativeWrappedAsset()
     if amount == 0:
-        raw_revert(method_id("InvalidAmount()"))
+        raise InvalidAmount()
 
 
 @internal
@@ -118,7 +130,7 @@ def supplyNative(spoke: address, reserveId: uint256, amount: uint256) -> (uint25
     self._enter()
     PositionManagerBase._check_registered(spoke)
     if msg.value != amount:
-        raw_revert(method_id("NativeAmountMismatch()"))
+        raise NativeAmountMismatch()
     shares: uint256 = 0
     supplied: uint256 = 0
     shares, supplied = self._supply_native(spoke, reserveId, msg.sender, amount)
@@ -132,7 +144,7 @@ def supplyAsCollateralNative(spoke: address, reserveId: uint256, amount: uint256
     self._enter()
     PositionManagerBase._check_registered(spoke)
     if msg.value != amount:
-        raw_revert(method_id("NativeAmountMismatch()"))
+        raise NativeAmountMismatch()
     shares: uint256 = 0
     supplied: uint256 = 0
     shares, supplied = self._supply_native(spoke, reserveId, msg.sender, amount)
@@ -177,7 +189,7 @@ def repayNative(spoke: address, reserveId: uint256, amount: uint256) -> (uint256
     self._enter()
     PositionManagerBase._check_registered(spoke)
     if msg.value != amount:
-        raw_revert(method_id("NativeAmountMismatch()"))
+        raise NativeAmountMismatch()
     underlying: address = self._reserve_underlying(spoke, reserveId)
     self._validate(underlying, amount)
     total_debt: uint256 = staticcall ISpoke(spoke).getUserTotalDebt(reserveId, msg.sender)
@@ -198,4 +210,4 @@ def repayNative(spoke: address, reserveId: uint256, amount: uint256) -> (uint256
 @payable
 def __default__():
     if msg.sender != NATIVE_TOKEN_WRAPPER:
-        raw_revert(method_id("UnsupportedAction()"))
+        raise PositionManagerBase.UnsupportedAction()

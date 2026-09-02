@@ -1,6 +1,12 @@
 # pragma version 0.5.0b1
 
 
+error InvalidInitialization:
+    pass
+
+error OwnableInvalidOwner:
+    arg0: address
+
 event OwnershipTransferred:
     previousOwner: indexed(address)
     newOwner: indexed(address)
@@ -35,14 +41,9 @@ def initialize(owner: address):
     initialized: uint64 = convert(self.initialized_state & (2**64 - 1), uint64)
     initializing: bool = (self.initialized_state & (1 << 64)) != 0
     if initializing or initialized >= spoke_revision:
-        raw_revert(method_id("InvalidInitialization()"))
+        raise InvalidInitialization()
     if owner == empty(address):
-        raw_revert(
-            concat(
-                method_id("OwnableInvalidOwner(address)"),
-                convert(owner, bytes32),
-            )
-        )
+        raise OwnableInvalidOwner(owner)
     self.initialized_state = convert(spoke_revision, uint256)
     previous_owner: address = self.owner_address
     self.pending_owner_address = empty(address)

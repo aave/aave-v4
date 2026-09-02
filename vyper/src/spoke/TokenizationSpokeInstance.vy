@@ -1,6 +1,38 @@
 # pragma version 0.5.0b1
 
 
+error ERC20InsufficientAllowance:
+    arg0: address
+    arg1: uint256
+    arg2: uint256
+
+error ERC20InsufficientBalance:
+    arg0: address
+    arg1: uint256
+    arg2: uint256
+
+error ERC20InvalidApprover:
+    arg0: address
+
+error ERC20InvalidReceiver:
+    arg0: address
+
+error ERC20InvalidSender:
+    arg0: address
+
+error ERC20InvalidSpender:
+    arg0: address
+
+error InvalidAccountNonce:
+    arg0: address
+    arg1: uint256
+
+error InvalidInitialization:
+    pass
+
+error InvalidSignature:
+    pass
+
 struct SpokeConfig:
     addCap: uint40
     drawCap: uint40
@@ -127,13 +159,7 @@ def _use_checked_nonce(owner: address, key_nonce: uint256):
     key: uint192 = convert(key_nonce // 2**64, uint192)
     current: uint256 = self._use_nonce(owner, key)
     if current != key_nonce:
-        raw_revert(
-            concat(
-                method_id("InvalidAccountNonce(address,uint256)"),
-                convert(owner, bytes32),
-                convert(current, bytes32),
-            )
-        )
+        raise InvalidAccountNonce(owner, current)
 
 
 @internal
@@ -150,23 +176,23 @@ def _recover(digest: bytes32, v: uint256, r: bytes32, s: bytes32) -> address:
 @internal
 def _verify_intent(signer: address, intent_hash: bytes32, nonce: uint256, deadline: uint256, signature: Bytes[INF]):
     if block.timestamp > deadline or len(signature) != 65:
-        raw_revert(method_id("InvalidSignature()"))
+        raise InvalidSignature()
     digest: bytes32 = keccak256(concat(b"\x19\x01", self._domain_separator(), intent_hash))
     r: bytes32 = convert(slice(signature, 0, 32), bytes32)
     s: bytes32 = convert(slice(signature, 32, 32), bytes32)
     v: uint256 = convert(slice(signature, 64, 1), uint256)
     recovered: address = self._recover(digest, v, r, s)
     if recovered == empty(address) or recovered != signer:
-        raw_revert(method_id("InvalidSignature()"))
+        raise InvalidSignature()
     self._use_checked_nonce(signer, nonce)
 
 
 @internal
 def _approve(owner: address, spender: address, amount: uint256):
     if owner == empty(address):
-        raw_revert(concat(method_id("ERC20InvalidApprover(address)"), convert(owner, bytes32)))
+        raise ERC20InvalidApprover(owner)
     if spender == empty(address):
-        raw_revert(concat(method_id("ERC20InvalidSpender(address)"), convert(spender, bytes32)))
+        raise ERC20InvalidSpender(spender)
     self.allowances[owner][spender] = amount
     log Approval(owner=owner, spender=spender, value=amount)
 
@@ -176,21 +202,14 @@ def _spend_allowance(owner: address, spender: address, amount: uint256):
     current: uint256 = self.allowances[owner][spender]
     if current != max_value(uint256):
         if current < amount:
-            raw_revert(
-                concat(
-                    method_id("ERC20InsufficientAllowance(address,uint256,uint256)"),
-                    convert(spender, bytes32),
-                    convert(current, bytes32),
-                    convert(amount, bytes32),
-                )
-            )
+            raise ERC20InsufficientAllowance(spender, current, amount)
         self.allowances[owner][spender] = current - amount
 
 
 @internal
 def _mint(receiver: address, amount: uint256):
     if receiver == empty(address):
-        raw_revert(concat(method_id("ERC20InvalidReceiver(address)"), convert(receiver, bytes32)))
+        raise ERC20InvalidReceiver(receiver)
     self.total_supply += amount
     self.balances[receiver] += amount
     log Transfer(sender=empty(address), receiver=receiver, value=amount)
@@ -199,17 +218,10 @@ def _mint(receiver: address, amount: uint256):
 @internal
 def _burn(owner: address, amount: uint256):
     if owner == empty(address):
-        raw_revert(concat(method_id("ERC20InvalidSender(address)"), convert(owner, bytes32)))
+        raise ERC20InvalidSender(owner)
     balance: uint256 = self.balances[owner]
     if balance < amount:
-        raw_revert(
-            concat(
-                method_id("ERC20InsufficientBalance(address,uint256,uint256)"),
-                convert(owner, bytes32),
-                convert(balance, bytes32),
-                convert(amount, bytes32),
-            )
-        )
+        raise ERC20InsufficientBalance(owner, balance, amount)
     self.balances[owner] = balance - amount
     self.total_supply -= amount
     log Transfer(sender=owner, receiver=empty(address), value=amount)
@@ -218,19 +230,12 @@ def _burn(owner: address, amount: uint256):
 @internal
 def _transfer(sender: address, receiver: address, amount: uint256):
     if sender == empty(address):
-        raw_revert(concat(method_id("ERC20InvalidSender(address)"), convert(sender, bytes32)))
+        raise ERC20InvalidSender(sender)
     if receiver == empty(address):
-        raw_revert(concat(method_id("ERC20InvalidReceiver(address)"), convert(receiver, bytes32)))
+        raise ERC20InvalidReceiver(receiver)
     balance: uint256 = self.balances[sender]
     if balance < amount:
-        raw_revert(
-            concat(
-                method_id("ERC20InsufficientBalance(address,uint256,uint256)"),
-                convert(sender, bytes32),
-                convert(balance, bytes32),
-                convert(amount, bytes32),
-            )
-        )
+        raise ERC20InsufficientBalance(sender, balance, amount)
     self.balances[sender] = balance - amount
     self.balances[receiver] += amount
     log Transfer(sender=sender, receiver=receiver, value=amount)
@@ -296,7 +301,7 @@ def _withdraw(caller: address, receiver: address, owner: address, assets: uint25
 def initialize(shareName: String[128], shareSymbol: String[128]):
     initialized: uint64 = convert(self.initialized_state & (2**64 - 1), uint64)
     if (self.initialized_state & (1 << 64)) != 0 or initialized >= SPOKE_REVISION:
-        raw_revert(method_id("InvalidInitialization()"))
+        raise InvalidInitialization()
     self.initialized_state = convert(SPOKE_REVISION, uint256)
     self.token_name = shareName
     self.token_symbol = shareSymbol
@@ -410,13 +415,13 @@ def usePermitNonce() -> uint256:
 @external
 def permit(owner: address, spender: address, amount: uint256, deadline: uint256, v: uint8, r: bytes32, s: bytes32):
     if block.timestamp > deadline or owner == empty(address):
-        raw_revert(method_id("InvalidSignature()"))
+        raise InvalidSignature()
     nonce: uint256 = self._use_nonce(owner, PERMIT_NONCE_NAMESPACE)
     intent_hash: bytes32 = keccak256(abi_encode(PERMIT_TYPEHASH, owner, spender, amount, nonce, deadline))
     digest: bytes32 = keccak256(concat(b"\x19\x01", self._domain_separator(), intent_hash))
     recovered: address = self._recover(digest, convert(v, uint256), r, s)
     if recovered == empty(address) or recovered != owner:
-        raw_revert(method_id("InvalidSignature()"))
+        raise InvalidSignature()
     self._approve(owner, spender, amount)
 
 

@@ -1,6 +1,19 @@
 # pragma version 0.5.0b1
 
 
+error AccessManagedUnauthorized:
+    arg0: address
+
+error InvalidAddress:
+    pass
+
+error MismatchedConfigs:
+    pass
+
+error SafeCastOverflowedUintDowncast:
+    arg0: uint8
+    arg1: uint256
+
 struct AssetConfig:
     feeReceiver: address
     liquidityFee: uint16
@@ -45,7 +58,7 @@ authority_address: address
 @deploy
 def __init__(authority_: address):
     if authority_ == empty(address):
-        raw_revert(method_id("InvalidAddress()"))
+        raise InvalidAddress()
     self.authority_address = authority_
     log AuthorityUpdated(authority=authority_)
 
@@ -57,14 +70,14 @@ def _check_access(selector: Bytes[4]):
     delay: uint32 = 0
     allowed, delay = staticcall IAuthority(self.authority_address).canCall(msg.sender, self, convert(selector, bytes4))
     if not allowed:
-        raw_revert(concat(method_id("AccessManagedUnauthorized(address)"), convert(msg.sender, bytes32)))
+        raise AccessManagedUnauthorized(msg.sender)
 
 
 @internal
 @pure
 def _u16(cast_value: uint256) -> uint16:
     if cast_value > convert(max_value(uint16), uint256):
-        raw_revert(concat(method_id("SafeCastOverflowedUintDowncast(uint8,uint256)"), convert(16, bytes32), convert(cast_value, bytes32)))
+        raise SafeCastOverflowedUintDowncast(16, cast_value)
     return convert(cast_value, uint16)
 
 
@@ -72,7 +85,7 @@ def _u16(cast_value: uint256) -> uint16:
 @pure
 def _u40(cast_value: uint256) -> uint40:
     if cast_value > convert(max_value(uint40), uint256):
-        raw_revert(concat(method_id("SafeCastOverflowedUintDowncast(uint8,uint256)"), convert(40, bytes32), convert(cast_value, bytes32)))
+        raise SafeCastOverflowedUintDowncast(40, cast_value)
     return convert(cast_value, uint40)
 
 
@@ -80,7 +93,7 @@ def _u40(cast_value: uint256) -> uint40:
 @pure
 def _u24(cast_value: uint256) -> uint24:
     if cast_value > convert(max_value(uint24), uint256):
-        raw_revert(concat(method_id("SafeCastOverflowedUintDowncast(uint8,uint256)"), convert(24, bytes32), convert(cast_value, bytes32)))
+        raise SafeCastOverflowedUintDowncast(24, cast_value)
     return convert(cast_value, uint24)
 
 
@@ -93,7 +106,7 @@ def authority() -> address:
 @external
 def setAuthority(newAuthority: address):
     if msg.sender != self.authority_address:
-        raw_revert(concat(method_id("AccessManagedUnauthorized(address)"), convert(msg.sender, bytes32)))
+        raise AccessManagedUnauthorized(msg.sender)
     self.authority_address = newAuthority
     log AuthorityUpdated(authority=newAuthority)
 
@@ -213,7 +226,7 @@ def addSpoke(hub: address, spoke: address, assetId: uint256, config: SpokeConfig
 def addSpokeToAssets(hub: address, spoke: address, assetIds: DynArray[uint256, INF], configs: DynArray[SpokeConfig, INF]):
     self._check_access(method_id("addSpokeToAssets(address,address,uint256[],(uint40,uint40,uint24,bool,bool)[])"))
     if len(assetIds) != len(configs):
-        raw_revert(method_id("MismatchedConfigs()"))
+        raise MismatchedConfigs()
     i: uint256 = 0
     for asset_id: uint256 in assetIds:
         extcall IHub(hub).addSpoke(asset_id, spoke, configs[i])

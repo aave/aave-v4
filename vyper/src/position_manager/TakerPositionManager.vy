@@ -11,6 +11,17 @@ exports: PositionManagerBase.__interface__
 exports: NoncesKeyed.__interface__
 
 
+error InsufficientBorrowAllowance:
+    arg0: uint256
+    arg1: uint256
+
+error InsufficientWithdrawAllowance:
+    arg0: uint256
+    arg1: uint256
+
+error InvalidSignature:
+    pass
+
 struct Reserve:
     underlying: address
     hub: address
@@ -98,14 +109,14 @@ def _domain_separator() -> bytes32:
 @internal
 def _verify(signer: address, intent_hash: bytes32, nonce: uint256, deadline: uint256, signature: Bytes[INF]):
     if block.timestamp > deadline or len(signature) != 65:
-        raw_revert(method_id("InvalidSignature()"))
+        raise InvalidSignature()
     digest: bytes32 = keccak256(concat(b"\x19\x01", self._domain_separator(), intent_hash))
     r: bytes32 = convert(slice(signature, 0, 32), bytes32)
     s: bytes32 = convert(slice(signature, 32, 32), bytes32)
     v: uint256 = convert(slice(signature, 64, 1), uint256)
     recovered: address = ecrecover(digest, v, r, s)
     if recovered == empty(address) or recovered != signer:
-        raw_revert(method_id("InvalidSignature()"))
+        raise InvalidSignature()
     NoncesKeyed._use_checked_nonce(signer, nonce)
 
 
@@ -222,7 +233,7 @@ def withdrawOnBehalfOf(spoke: address, reserveId: uint256, amount: uint256, onBe
     reserve: Reserve = staticcall ISpoke(spoke).getReserve(reserveId)
     allowance: uint256 = self.withdraw_allowances[spoke][reserveId][onBehalfOf][msg.sender]
     if allowance < amount:
-        raw_revert(concat(method_id("InsufficientWithdrawAllowance(uint256,uint256)"), convert(allowance, bytes32), convert(amount, bytes32)))
+        raise InsufficientWithdrawAllowance(allowance, amount)
     supplied_before: uint256 = 0
     if allowance != max_value(uint256):
         supplied_before = staticcall ISpoke(spoke).getUserSuppliedAssets(reserveId, onBehalfOf)
@@ -244,7 +255,7 @@ def borrowOnBehalfOf(spoke: address, reserveId: uint256, amount: uint256, onBeha
     reserve: Reserve = staticcall ISpoke(spoke).getReserve(reserveId)
     allowance: uint256 = self.borrow_allowances[spoke][reserveId][onBehalfOf][msg.sender]
     if allowance < amount:
-        raw_revert(concat(method_id("InsufficientBorrowAllowance(uint256,uint256)"), convert(allowance, bytes32), convert(amount, bytes32)))
+        raise InsufficientBorrowAllowance(allowance, amount)
     borrowed_before: uint256 = 0
     if allowance != max_value(uint256):
         borrowed_before = staticcall ISpoke(spoke).getUserTotalDebt(reserveId, onBehalfOf)

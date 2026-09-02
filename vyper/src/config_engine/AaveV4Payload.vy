@@ -353,6 +353,7 @@ def _delegate_call_engine(call_data: Bytes[INF]):
         revert_on_failure=False,
     )
     if not success:
+        # Preserve arbitrary downstream revert data; it cannot be represented by a static error.
         raw_revert(result)
 
 

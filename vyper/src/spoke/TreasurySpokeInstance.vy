@@ -1,6 +1,15 @@
 #pragma version 0.5.0b1
 
 
+error InvalidInitialization:
+    pass
+
+error OwnableInvalidOwner:
+    arg0: address
+
+error OwnableUnauthorizedAccount:
+    arg0: address
+
 interface IHub:
     def getAssetId(underlying: address) -> uint256: view
     def getSpokeAddedAssets(assetId: uint256, spoke: address) -> uint256: view
@@ -35,12 +44,7 @@ initialized_state: uint256
 @view
 def _check_owner():
     if msg.sender != self.owner_address:
-        raw_revert(
-            concat(
-                method_id("OwnableUnauthorizedAccount(address)"),
-                convert(msg.sender, bytes32),
-            )
-        )
+        raise OwnableUnauthorizedAccount(msg.sender)
 
 
 @internal
@@ -92,14 +96,9 @@ def initialize(owner: address):
     initialized: uint64 = convert(self.initialized_state & (2**64 - 1), uint64)
     initializing: bool = (self.initialized_state & (1 << 64)) != 0
     if initializing or initialized >= SPOKE_REVISION:
-        raw_revert(method_id("InvalidInitialization()"))
+        raise InvalidInitialization()
     if owner == empty(address):
-        raw_revert(
-            concat(
-                method_id("OwnableInvalidOwner(address)"),
-                convert(owner, bytes32),
-            )
-        )
+        raise OwnableInvalidOwner(owner)
 
     self.initialized_state = convert(SPOKE_REVISION, uint256)
     previous_owner: address = self.owner_address
@@ -131,12 +130,7 @@ def transferOwnership(newOwner: address):
 @external
 def acceptOwnership():
     if msg.sender != self.pending_owner_address:
-        raw_revert(
-            concat(
-                method_id("OwnableUnauthorizedAccount(address)"),
-                convert(msg.sender, bytes32),
-            )
-        )
+        raise OwnableUnauthorizedAccount(msg.sender)
     previous_owner: address = self.owner_address
     self.pending_owner_address = empty(address)
     self.owner_address = msg.sender

@@ -6,6 +6,9 @@ initializes: AaveV4Payload
 exports: AaveV4Payload.execute
 
 
+error InvalidConfigEngine:
+    pass
+
 CONFIG_ENGINE: public(immutable(address))
 
 event PreExecuteCalled:
@@ -46,7 +49,7 @@ position_manager_role_renouncements: DynArray[AaveV4Payload.PositionManagerRoleR
 @deploy
 def __init__(configEngine: address):
     if configEngine == empty(address):
-        raw_revert(method_id("InvalidConfigEngine()"))
+        raise InvalidConfigEngine()
     CONFIG_ENGINE = configEngine
 
 

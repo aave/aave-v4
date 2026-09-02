@@ -1,11 +1,13 @@
 # pragma version 0.5.0b1
 
+from libraries import Errors
+
 WAD_DECIMALS: constant(uint256) = 18
 
 
 @pure
 def _panic_arithmetic():
-    raw_revert(concat(method_id("Panic(uint256)"), convert(17, bytes32)))
+    raise Errors.Panic(17)
 
 
 @pure

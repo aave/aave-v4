@@ -7,6 +7,21 @@ initializes: BasicInterestRateStrategy
 exports: BasicInterestRateStrategy.calculateInterestRate
 
 
+error InterestRateDataNotSet:
+    arg0: uint256
+
+error InvalidAddress:
+    pass
+
+error InvalidMaxDrawnRate:
+    pass
+
+error InvalidOptimalUsageRatio:
+    pass
+
+error OnlyHub:
+    pass
+
 struct InterestRateData:
     optimalUsageRatio: uint16
     baseDrawnRate: uint32
@@ -34,19 +49,19 @@ interest_rate_data: HashMap[uint256, InterestRateData]
 @deploy
 def __init__(hub: address):
     if hub == empty(address):
-        raw_revert(method_id("InvalidAddress()"))
+        raise InvalidAddress()
     HUB = hub
 
 
 @external
 def setInterestRateData(assetId: uint256, data: Bytes[INF]):
     if msg.sender != HUB:
-        raw_revert(method_id("OnlyHub()"))
+        raise OnlyHub()
 
     rate_data: InterestRateData = abi_decode(data, InterestRateData)
     optimal_usage_ratio: uint256 = convert(rate_data.optimalUsageRatio, uint256)
     if optimal_usage_ratio < MIN_OPTIMAL_RATIO or optimal_usage_ratio > MAX_OPTIMAL_RATIO:
-        raw_revert(method_id("InvalidOptimalUsageRatio()"))
+        raise InvalidOptimalUsageRatio()
 
     max_rate: uint256 = (
         convert(rate_data.baseDrawnRate, uint256)
@@ -54,7 +69,7 @@ def setInterestRateData(assetId: uint256, data: Bytes[INF]):
         + convert(rate_data.rateGrowthAfterOptimal, uint256)
     )
     if max_rate > MAX_ALLOWED_DRAWN_RATE:
-        raw_revert(method_id("InvalidMaxDrawnRate()"))
+        raise InvalidMaxDrawnRate()
 
     self.interest_rate_data[assetId] = rate_data
     log UpdateInterestRateData(
@@ -119,12 +134,7 @@ def _calculate_interest_rate(
 ) -> uint256:
     rate_data: InterestRateData = self.interest_rate_data[asset_id]
     if rate_data.optimalUsageRatio == 0:
-        raw_revert(
-            concat(
-                method_id("InterestRateDataNotSet(uint256)"),
-                convert(asset_id, bytes32),
-            )
-        )
+        raise InterestRateDataNotSet(asset_id)
 
     current_drawn_rate_ray: uint256 = WadRayMath.bps_to_ray(
         convert(rate_data.baseDrawnRate, uint256)
