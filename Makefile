@@ -38,9 +38,12 @@ deploy-precompile :;
 	--rpc-url ${chain} --account ${account} --ffi \
 	$(if ${dry},, --broadcast --verify) \
 
+# Deployment verification suites (scripts/verification), kept out of the protocol test suite
+verify-arc :; FOUNDRY_PROFILE=verification forge test
+
 # Step 2: Deploy contracts + grant roles to deployer
-# `make deploy-contracts`
+# `make deploy-contracts script=AaveV4DeployArc`
 deploy-contracts :;
-	FOUNDRY_PROFILE=${chain} forge clean && forge script scripts/deploy/AaveV4DeployBatch.s.sol:AaveV4DeployBatchScript \
+	FOUNDRY_PROFILE=${chain} forge clean && forge script scripts/deploy/${script}.s.sol:${script} \
 	--rpc-url ${chain} --account ${account} --slow \
 	$(if ${dry},, --broadcast --verify) \

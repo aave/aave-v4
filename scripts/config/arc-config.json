@@ -1,0 +1,22 @@
+{
+  "deployer": "0x623f1C807fE1088439e129ebF3B9c92a63a0F5cD",
+  "report": "output/reports/deployments/arc.json",
+  "assets": {
+    "USDC": {
+      "underlying": "0x3600000000000000000000000000000000000000",
+      "priceSource": "0x729cFd10FC10A908aE9F9b35245cB6Ee14D44D6B"
+    },
+    "EURC": {
+      "underlying": "0xbEf5f6d51CB62b58e6A8f77868681825C6fe21c1",
+      "priceSource": "0x1aBa23B4733aa96919C4434c1b9AC25bE9550d58"
+    },
+    "cirBTC": {
+      "underlying": "0x171A4217b86A807A64eB94757Db6849fb4bDbAA0",
+      "priceSource": "0x7777547914e03BCbB04Ae034942765a0dbb26aE3"
+    },
+    "wETH": {
+      "underlying": "0x128cC466B61f542da60c70e3aA11c10e19B84EDB",
+      "priceSource": "0x2c7Dc3567b3490f53A8d32625d766834dd023F60"
+    }
+  }
+}

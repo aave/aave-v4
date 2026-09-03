@@ -5,7 +5,7 @@ out = 'out'
 libs = ['lib']
 fs_permissions = [
   { access = "read", path = "tests/helpers/mocks/JsonBindings.sol" },
-  { access = "read", path = "./config" },
+  { access = "read", path = "./scripts/config" },
   { access = "read", path = "./out" },
   { access = "read-write", path = "./output" }
 ]
@@ -47,6 +47,12 @@ runs = 5000
 [profile.ci.fuzz]
 runs = 10000
 
+# Deployment verification suites under scripts/verification, deliberately outside the default
+# `test` path so they are not part of the protocol test suite. Run with
+# `FOUNDRY_PROFILE=verification forge test` or `make verify-arc`.
+[profile.verification]
+test = 'scripts/verification'
+
 [profile.gas]
 gas_snapshot_check = true
 test = 'tests/gas'
@@ -74,6 +80,7 @@ zkevm = "${RPC_ZKEVM}"
 gnosis = "${RPC_GNOSIS}"
 bnb = "${RPC_BNB}"
 celo = "${RPC_CELO}"
+arc = "${RPC_ARC}"
 anvil = "http://127.0.0.1:8545"
 
 [etherscan]

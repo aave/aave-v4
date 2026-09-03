@@ -1,0 +1,20 @@
+{
+  "accessManagerAdmin": "0x187AAE17d4931310B3fc75743e7F16Bdc9eD77e9",
+  "proxyAdminOwner": "0x187AAE17d4931310B3fc75743e7F16Bdc9eD77e9",
+  "hubAdmin": "0x187AAE17d4931310B3fc75743e7F16Bdc9eD77e9",
+  "hubConfiguratorAdmin": "0x8e79b0541122d3822eC93082cEB1ab03EDBc1Fd5",
+  "treasurySpokeOwner": "0x187AAE17d4931310B3fc75743e7F16Bdc9eD77e9",
+  "spokeAdmin": "0x187AAE17d4931310B3fc75743e7F16Bdc9eD77e9",
+  "spokeConfiguratorAdmin": "0x8e79b0541122d3822eC93082cEB1ab03EDBc1Fd5",
+  "gatewayOwner": "0x187AAE17d4931310B3fc75743e7F16Bdc9eD77e9",
+  "positionManagerOwner": "0x187AAE17d4931310B3fc75743e7F16Bdc9eD77e9",
+  "nativeWrapper": "0x0000000000000000000000000000000000000000",
+  "deployNativeTokenGateway": false,
+  "deploySignatureGateway": true,
+  "deployPositionManagers": true,
+  "grantRoles": false,
+  "hubLabels": ["core"],
+  "spokeLabels": ["main", "forex"],
+  "spokeMaxReservesLimits": [],
+  "salt": "0x6a0678a1d5c9463ae84593b24e9d375399648f16b8a7af3482e942502da606a9"
+}
