@@ -12,7 +12,7 @@ contract HubOperations_Gas_Tests is Base {
     vm.startPrank(address(spoke1));
     tokenList.usdx.transferFrom(alice, address(hub1), 1000e6);
     hub1.add(usdxAssetId, 1000e6);
-    vm.snapshotGasLastCall('Hub.Operations', 'add');
+    vm.snapshotGasLastFrame('Hub.Operations', 'add');
 
     vm.startSnapshotGas('Hub.Operations', 'add: with transfer');
     tokenList.usdx.transferFrom(alice, address(hub1), 1000e6);
@@ -26,10 +26,10 @@ contract HubOperations_Gas_Tests is Base {
     tokenList.usdx.transferFrom(alice, address(hub1), 1000e6);
     hub1.add(usdxAssetId, 1000e6);
     hub1.remove(usdxAssetId, 500e6, alice);
-    vm.snapshotGasLastCall('Hub.Operations', 'remove: partial');
+    vm.snapshotGasLastFrame('Hub.Operations', 'remove: partial');
     skip(100);
     hub1.remove(usdxAssetId, 500e6, alice);
-    vm.snapshotGasLastCall('Hub.Operations', 'remove: full');
+    vm.snapshotGasLastFrame('Hub.Operations', 'remove: full');
     vm.stopPrank();
   }
 
@@ -46,7 +46,7 @@ contract HubOperations_Gas_Tests is Base {
     skip(100);
 
     hub1.draw(daiAssetId, 500e18, alice);
-    vm.snapshotGasLastCall('Hub.Operations', 'draw');
+    vm.snapshotGasLastFrame('Hub.Operations', 'draw');
     vm.stopPrank();
   }
 
@@ -86,7 +86,7 @@ contract HubOperations_Gas_Tests is Base {
     (drawnRemaining, premiumRemaining) = hub1.getSpokeOwed(daiAssetId, address(spoke1));
     tokenList.dai.transferFrom(alice, address(hub1), drawnRemaining / 2);
     hub1.restore(daiAssetId, drawnRemaining / 2, ZERO_PREMIUM_DELTA);
-    vm.snapshotGasLastCall('Hub.Operations', 'restore: partial');
+    vm.snapshotGasLastFrame('Hub.Operations', 'restore: partial');
 
     skip(100);
 
@@ -107,7 +107,7 @@ contract HubOperations_Gas_Tests is Base {
       )
     });
     hub1.restore(daiAssetId, drawnRemaining, premiumDelta);
-    vm.snapshotGasLastCall('Hub.Operations', 'restore: full');
+    vm.snapshotGasLastFrame('Hub.Operations', 'restore: full');
     vm.stopPrank();
   }
 
@@ -210,7 +210,7 @@ contract HubOperations_Gas_Tests is Base {
 
     vm.prank(address(spoke1));
     hub1.refreshPremium(daiAssetId, premiumDelta);
-    vm.snapshotGasLastCall('Hub.Operations', 'refreshPremium');
+    vm.snapshotGasLastFrame('Hub.Operations', 'refreshPremium');
   }
 
   function test_mintFeeShares() public {
@@ -228,7 +228,7 @@ contract HubOperations_Gas_Tests is Base {
     skip(100);
 
     HubActions.mintFeeShares({hub: hub1, assetId: daiAssetId, caller: ADMIN});
-    vm.snapshotGasLastCall('Hub.Operations', 'mintFeeShares');
+    vm.snapshotGasLastFrame('Hub.Operations', 'mintFeeShares');
   }
 
   function test_payFee_transferShares() public {
@@ -250,13 +250,13 @@ contract HubOperations_Gas_Tests is Base {
 
     vm.prank(address(spoke1));
     hub1.payFeeShares(daiAssetId, 100e18);
-    vm.snapshotGasLastCall('Hub.Operations', 'payFee');
+    vm.snapshotGasLastFrame('Hub.Operations', 'payFee');
 
     skip(100);
 
     vm.prank(address(spoke1));
     hub1.transferShares(daiAssetId, 100e18, address(spoke2));
-    vm.snapshotGasLastCall('Hub.Operations', 'transferShares');
+    vm.snapshotGasLastFrame('Hub.Operations', 'transferShares');
   }
 
   function test_deficit() public {
@@ -289,16 +289,16 @@ contract HubOperations_Gas_Tests is Base {
 
     vm.prank(address(spoke1));
     hub1.reportDeficit(daiAssetId, drawnDebt, premiumDelta);
-    vm.snapshotGasLastCall('Hub.Operations', 'reportDeficit');
+    vm.snapshotGasLastFrame('Hub.Operations', 'reportDeficit');
 
     vm.prank(address(spoke1));
     hub1.eliminateDeficit(daiAssetId, 100e18, address(spoke1));
-    vm.snapshotGasLastCall('Hub.Operations', 'eliminateDeficit: partial');
+    vm.snapshotGasLastFrame('Hub.Operations', 'eliminateDeficit: partial');
 
     uint256 deficitRay = hub1.getAssetDeficitRay(daiAssetId);
 
     vm.prank(address(spoke1));
     hub1.eliminateDeficit(daiAssetId, deficitRay.fromRayUp(), address(spoke1));
-    vm.snapshotGasLastCall('Hub.Operations', 'eliminateDeficit: full');
+    vm.snapshotGasLastFrame('Hub.Operations', 'eliminateDeficit: full');
   }
 }

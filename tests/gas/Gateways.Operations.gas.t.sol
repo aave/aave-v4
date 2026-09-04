@@ -37,7 +37,7 @@ contract NativeTokenGateway_Gas_Tests is Base {
 
     vm.prank(bob);
     nativeTokenGateway.supplyNative{value: amount}(address(spoke1), _wethReserveId(spoke1), amount);
-    vm.snapshotGasLastCall(NAMESPACE, 'supplyNative');
+    vm.snapshotGasLastFrame(NAMESPACE, 'supplyNative');
   }
 
   function test_supplyAndCollateralNative() public {
@@ -56,7 +56,7 @@ contract NativeTokenGateway_Gas_Tests is Base {
       _wethReserveId(spoke1),
       amount
     );
-    vm.snapshotGasLastCall(NAMESPACE, 'supplyAsCollateralNative');
+    vm.snapshotGasLastFrame(NAMESPACE, 'supplyAsCollateralNative');
   }
 
   function test_withdrawNative() public {
@@ -78,11 +78,11 @@ contract NativeTokenGateway_Gas_Tests is Base {
 
     vm.prank(bob);
     nativeTokenGateway.withdrawNative(address(spoke1), _wethReserveId(spoke1), amount);
-    vm.snapshotGasLastCall(NAMESPACE, 'withdrawNative: partial');
+    vm.snapshotGasLastFrame(NAMESPACE, 'withdrawNative: partial');
 
     vm.prank(bob);
     nativeTokenGateway.withdrawNative(address(spoke1), _wethReserveId(spoke1), UINT256_MAX);
-    vm.snapshotGasLastCall(NAMESPACE, 'withdrawNative: full');
+    vm.snapshotGasLastFrame(NAMESPACE, 'withdrawNative: full');
   }
 
   function test_borrowNative() public {
@@ -114,7 +114,7 @@ contract NativeTokenGateway_Gas_Tests is Base {
 
     vm.prank(bob);
     nativeTokenGateway.borrowNative(address(spoke1), _wethReserveId(spoke1), borrowAmount);
-    vm.snapshotGasLastCall(NAMESPACE, 'borrowNative');
+    vm.snapshotGasLastFrame(NAMESPACE, 'borrowNative');
   }
 
   function test_repayNative() public {
@@ -158,7 +158,7 @@ contract NativeTokenGateway_Gas_Tests is Base {
       _wethReserveId(spoke1),
       repayAmount
     );
-    vm.snapshotGasLastCall(NAMESPACE, 'repayNative');
+    vm.snapshotGasLastFrame(NAMESPACE, 'repayNative');
   }
 }
 
@@ -209,7 +209,7 @@ contract SignatureGateway_Gas_Tests is Base, SignatureGatewayHelpers {
     });
 
     gateway.supplyWithSig(p, signature);
-    vm.snapshotGasLastCall(NAMESPACE, 'supplyWithSig');
+    vm.snapshotGasLastFrame(NAMESPACE, 'supplyWithSig');
   }
 
   function test_withdrawWithSig() public {
@@ -239,7 +239,7 @@ contract SignatureGateway_Gas_Tests is Base, SignatureGatewayHelpers {
     });
 
     gateway.withdrawWithSig(p, signature);
-    vm.snapshotGasLastCall(NAMESPACE, 'withdrawWithSig');
+    vm.snapshotGasLastFrame(NAMESPACE, 'withdrawWithSig');
   }
 
   function test_borrowWithSig() public {
@@ -268,7 +268,7 @@ contract SignatureGateway_Gas_Tests is Base, SignatureGatewayHelpers {
     bytes memory signature = _sign(alicePk, _getTypedDataHash(gateway, p));
 
     gateway.borrowWithSig(p, signature);
-    vm.snapshotGasLastCall(NAMESPACE, 'borrowWithSig');
+    vm.snapshotGasLastFrame(NAMESPACE, 'borrowWithSig');
   }
 
   function test_repayWithSig() public {
@@ -311,7 +311,7 @@ contract SignatureGateway_Gas_Tests is Base, SignatureGatewayHelpers {
     bytes memory signature = _sign(alicePk, _getTypedDataHash(gateway, p));
 
     gateway.repayWithSig(p, signature);
-    vm.snapshotGasLastCall(NAMESPACE, 'repayWithSig');
+    vm.snapshotGasLastFrame(NAMESPACE, 'repayWithSig');
   }
 
   function test_setUsingAsCollateralWithSig() public {
@@ -333,7 +333,7 @@ contract SignatureGateway_Gas_Tests is Base, SignatureGatewayHelpers {
     bytes memory signature = _sign(alicePk, _getTypedDataHash(gateway, p));
 
     gateway.setUsingAsCollateralWithSig(p, signature);
-    vm.snapshotGasLastCall(NAMESPACE, 'setUsingAsCollateralWithSig');
+    vm.snapshotGasLastFrame(NAMESPACE, 'setUsingAsCollateralWithSig');
   }
 
   function test_updateUserRiskPremiumWithSig() public {
@@ -349,7 +349,7 @@ contract SignatureGateway_Gas_Tests is Base, SignatureGatewayHelpers {
     spoke1.updateUserRiskPremium(alice);
 
     gateway.updateUserRiskPremiumWithSig(p, signature);
-    vm.snapshotGasLastCall(NAMESPACE, 'updateUserRiskPremiumWithSig');
+    vm.snapshotGasLastFrame(NAMESPACE, 'updateUserRiskPremiumWithSig');
   }
 
   function test_updateUserDynamicConfigWithSig() public {
@@ -365,7 +365,7 @@ contract SignatureGateway_Gas_Tests is Base, SignatureGatewayHelpers {
     spoke1.updateUserDynamicConfig(alice);
 
     gateway.updateUserDynamicConfigWithSig(p, signature);
-    vm.snapshotGasLastCall(NAMESPACE, 'updateUserDynamicConfigWithSig');
+    vm.snapshotGasLastFrame(NAMESPACE, 'updateUserDynamicConfigWithSig');
   }
 
   function test_setSelfAsUserPositionManagerWithSig() public {
@@ -392,6 +392,6 @@ contract SignatureGateway_Gas_Tests is Base, SignatureGatewayHelpers {
       deadline: p.deadline,
       signature: signature
     });
-    vm.snapshotGasLastCall(NAMESPACE, 'setSelfAsUserPositionManagerWithSig');
+    vm.snapshotGasLastFrame(NAMESPACE, 'setSelfAsUserPositionManagerWithSig');
   }
 }
