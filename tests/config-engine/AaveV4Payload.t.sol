@@ -14,7 +14,12 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
 
     // Grant same roles to payload (since delegatecall makes msg.sender = payload)
     vm.startPrank(ADMIN);
-    _grantConfiguratorRolesTo(address(payload));
+    accessManager.grantRole(Roles.HUB_CONFIGURATOR_DOMAIN_BASE_ROLE, address(payload), 0);
+    accessManager.grantRole(Roles.HUB_CONFIGURATOR_RISK_MANAGEMENT_ROLE, address(payload), 0);
+    accessManager.grantRole(Roles.HUB_CONFIGURATOR_EMERGENCY_ROLE, address(payload), 0);
+    accessManager.grantRole(Roles.SPOKE_CONFIGURATOR_DOMAIN_BASE_ROLE, address(payload), 0);
+    accessManager.grantRole(Roles.SPOKE_CONFIGURATOR_RISK_MANAGEMENT_ROLE, address(payload), 0);
+    accessManager.grantRole(Roles.SPOKE_CONFIGURATOR_EMERGENCY_ROLE, address(payload), 0);
     accessManager.grantRole(Roles.ACCESS_MANAGER_ADMIN_ROLE, address(payload), 0);
     vm.stopPrank();
 
@@ -600,7 +605,9 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
 
     payload = new AaveV4PayloadWrapper(IAaveV4ConfigEngine(address(engine)));
     vm.startPrank(ADMIN);
-    _grantConfiguratorRolesTo(address(payload));
+    accessManager.grantRole(Roles.HUB_CONFIGURATOR_DOMAIN_BASE_ROLE, address(payload), 0);
+    accessManager.grantRole(Roles.HUB_CONFIGURATOR_RISK_MANAGEMENT_ROLE, address(payload), 0);
+    accessManager.grantRole(Roles.HUB_CONFIGURATOR_EMERGENCY_ROLE, address(payload), 0);
     vm.stopPrank();
 
     IAaveV4ConfigEngine.AssetDeactivation[]
@@ -847,7 +854,12 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
 
     payload = new AaveV4PayloadWrapper(IAaveV4ConfigEngine(address(engine)));
     vm.startPrank(ADMIN);
-    _grantConfiguratorRolesTo(address(payload));
+    accessManager.grantRole(Roles.HUB_CONFIGURATOR_DOMAIN_BASE_ROLE, address(payload), 0);
+    accessManager.grantRole(Roles.HUB_CONFIGURATOR_RISK_MANAGEMENT_ROLE, address(payload), 0);
+    accessManager.grantRole(Roles.HUB_CONFIGURATOR_EMERGENCY_ROLE, address(payload), 0);
+    accessManager.grantRole(Roles.SPOKE_CONFIGURATOR_DOMAIN_BASE_ROLE, address(payload), 0);
+    accessManager.grantRole(Roles.SPOKE_CONFIGURATOR_RISK_MANAGEMENT_ROLE, address(payload), 0);
+    accessManager.grantRole(Roles.SPOKE_CONFIGURATOR_EMERGENCY_ROLE, address(payload), 0);
     accessManager.grantRole(Roles.ACCESS_MANAGER_ADMIN_ROLE, address(payload), 0);
     vm.stopPrank();
 

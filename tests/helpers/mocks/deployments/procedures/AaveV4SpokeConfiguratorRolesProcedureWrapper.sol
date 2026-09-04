@@ -36,24 +36,8 @@ contract AaveV4SpokeConfiguratorRolesProcedureWrapper {
     );
   }
 
-  function getSpokeConfiguratorDomainAdminRoleSelectors() external pure returns (bytes4[] memory) {
-    return Roles.getSpokeConfiguratorDomainAdminRoleSelectors();
-  }
-
-  function getSpokeConfiguratorPauseRoleSelectors() external pure returns (bytes4[] memory) {
-    return Roles.getSpokeConfiguratorPauseRoleSelectors();
-  }
-
-  function getSpokeConfiguratorFreezeRoleSelectors() external pure returns (bytes4[] memory) {
-    return Roles.getSpokeConfiguratorFreezeRoleSelectors();
-  }
-
-  function getSpokeConfiguratorListingRoleSelectors() external pure returns (bytes4[] memory) {
-    return Roles.getSpokeConfiguratorListingRoleSelectors();
-  }
-
-  function getSpokeConfiguratorEmergencyRoleSelectors() external pure returns (bytes4[] memory) {
-    return Roles.getSpokeConfiguratorEmergencyRoleSelectors();
+  function getSpokeConfiguratorDomainBaseRoleSelectors() external pure returns (bytes4[] memory) {
+    return Roles.getSpokeConfiguratorDomainBaseRoleSelectors();
   }
 
   function getSpokeConfiguratorRiskManagementRoleSelectors()
@@ -62,5 +46,9 @@ contract AaveV4SpokeConfiguratorRolesProcedureWrapper {
     returns (bytes4[] memory)
   {
     return Roles.getSpokeConfiguratorRiskManagementRoleSelectors();
+  }
+
+  function getSpokeConfiguratorEmergencyRoleSelectors() external pure returns (bytes4[] memory) {
+    return Roles.getSpokeConfiguratorEmergencyRoleSelectors();
   }
 }

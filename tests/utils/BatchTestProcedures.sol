@@ -438,14 +438,11 @@ contract BatchTestProcedures is Test, Create2TestHelper, WETHDeployProcedure {
   }
 
   function _checkRoleLabels(IAccessManagerEnumerable accessManager) internal view {
-    assertEq(accessManager.getRoleLabelCount(), 19, 'role label count');
+    assertEq(accessManager.getRoleLabelCount(), 13, 'role label count');
 
     // Hub roles
-    assertTrue(
-      accessManager.isRoleLabeled(Roles.HUB_DOMAIN_ADMIN_ROLE),
-      'HUB_DOMAIN_ADMIN labeled'
-    );
-    assertEq(accessManager.getLabelOfRole(Roles.HUB_DOMAIN_ADMIN_ROLE), 'HUB_DOMAIN_ADMIN_ROLE');
+    assertTrue(accessManager.isRoleLabeled(Roles.HUB_DOMAIN_BASE_ROLE), 'HUB_DOMAIN_BASE labeled');
+    assertEq(accessManager.getLabelOfRole(Roles.HUB_DOMAIN_BASE_ROLE), 'HUB_DOMAIN_BASE_ROLE');
     assertEq(accessManager.getLabelOfRole(Roles.HUB_CONFIGURATOR_ROLE), 'HUB_CONFIGURATOR_ROLE');
     assertEq(accessManager.getLabelOfRole(Roles.HUB_FEE_MINTER_ROLE), 'HUB_FEE_MINTER_ROLE');
     assertEq(
@@ -455,35 +452,20 @@ contract BatchTestProcedures is Test, Create2TestHelper, WETHDeployProcedure {
 
     // HubConfigurator roles
     assertEq(
-      accessManager.getLabelOfRole(Roles.HUB_CONFIGURATOR_DOMAIN_ADMIN_ROLE),
-      'HUB_CONFIGURATOR_DOMAIN_ADMIN_ROLE'
-    );
-    assertEq(
-      accessManager.getLabelOfRole(Roles.HUB_CONFIGURATOR_SPOKE_ACTIVE_ROLE),
-      'HUB_CONFIGURATOR_SPOKE_ACTIVE_ROLE'
-    );
-    assertEq(
-      accessManager.getLabelOfRole(Roles.HUB_CONFIGURATOR_SPOKE_HALTED_ROLE),
-      'HUB_CONFIGURATOR_SPOKE_HALTED_ROLE'
-    );
-    assertEq(
-      accessManager.getLabelOfRole(Roles.HUB_CONFIGURATOR_LISTING_ROLE),
-      'HUB_CONFIGURATOR_LISTING_ROLE'
-    );
-    assertEq(
-      accessManager.getLabelOfRole(Roles.HUB_CONFIGURATOR_EMERGENCY_ROLE),
-      'HUB_CONFIGURATOR_EMERGENCY_ROLE'
+      accessManager.getLabelOfRole(Roles.HUB_CONFIGURATOR_DOMAIN_BASE_ROLE),
+      'HUB_CONFIGURATOR_DOMAIN_BASE_ROLE'
     );
     assertEq(
       accessManager.getLabelOfRole(Roles.HUB_CONFIGURATOR_RISK_MANAGEMENT_ROLE),
       'HUB_CONFIGURATOR_RISK_MANAGEMENT_ROLE'
     );
+    assertEq(
+      accessManager.getLabelOfRole(Roles.HUB_CONFIGURATOR_EMERGENCY_ROLE),
+      'HUB_CONFIGURATOR_EMERGENCY_ROLE'
+    );
 
     // Spoke roles
-    assertEq(
-      accessManager.getLabelOfRole(Roles.SPOKE_DOMAIN_ADMIN_ROLE),
-      'SPOKE_DOMAIN_ADMIN_ROLE'
-    );
+    assertEq(accessManager.getLabelOfRole(Roles.SPOKE_DOMAIN_BASE_ROLE), 'SPOKE_DOMAIN_BASE_ROLE');
     assertEq(
       accessManager.getLabelOfRole(Roles.SPOKE_CONFIGURATOR_ROLE),
       'SPOKE_CONFIGURATOR_ROLE'
@@ -495,28 +477,16 @@ contract BatchTestProcedures is Test, Create2TestHelper, WETHDeployProcedure {
 
     // SpokeConfigurator roles
     assertEq(
-      accessManager.getLabelOfRole(Roles.SPOKE_CONFIGURATOR_DOMAIN_ADMIN_ROLE),
-      'SPOKE_CONFIGURATOR_DOMAIN_ADMIN_ROLE'
-    );
-    assertEq(
-      accessManager.getLabelOfRole(Roles.SPOKE_CONFIGURATOR_PAUSE_ROLE),
-      'SPOKE_CONFIGURATOR_PAUSE_ROLE'
-    );
-    assertEq(
-      accessManager.getLabelOfRole(Roles.SPOKE_CONFIGURATOR_FREEZE_ROLE),
-      'SPOKE_CONFIGURATOR_FREEZE_ROLE'
-    );
-    assertEq(
-      accessManager.getLabelOfRole(Roles.SPOKE_CONFIGURATOR_LISTING_ROLE),
-      'SPOKE_CONFIGURATOR_LISTING_ROLE'
-    );
-    assertEq(
-      accessManager.getLabelOfRole(Roles.SPOKE_CONFIGURATOR_EMERGENCY_ROLE),
-      'SPOKE_CONFIGURATOR_EMERGENCY_ROLE'
+      accessManager.getLabelOfRole(Roles.SPOKE_CONFIGURATOR_DOMAIN_BASE_ROLE),
+      'SPOKE_CONFIGURATOR_DOMAIN_BASE_ROLE'
     );
     assertEq(
       accessManager.getLabelOfRole(Roles.SPOKE_CONFIGURATOR_RISK_MANAGEMENT_ROLE),
       'SPOKE_CONFIGURATOR_RISK_MANAGEMENT_ROLE'
+    );
+    assertEq(
+      accessManager.getLabelOfRole(Roles.SPOKE_CONFIGURATOR_EMERGENCY_ROLE),
+      'SPOKE_CONFIGURATOR_EMERGENCY_ROLE'
     );
   }
 
@@ -807,34 +777,53 @@ contract BatchTestProcedures is Test, Create2TestHelper, WETHDeployProcedure {
     InputUtils.FullDeployInputs memory inputs
   ) internal view {
     address hubConfigurator = report.configuratorBatchReport.hubConfigurator;
-    uint64[] memory roles = new uint64[](6);
-    roles[0] = Roles.HUB_CONFIGURATOR_DOMAIN_ADMIN_ROLE;
-    roles[1] = Roles.HUB_CONFIGURATOR_SPOKE_ACTIVE_ROLE;
-    roles[2] = Roles.HUB_CONFIGURATOR_SPOKE_HALTED_ROLE;
-    roles[3] = Roles.HUB_CONFIGURATOR_LISTING_ROLE;
-    roles[4] = Roles.HUB_CONFIGURATOR_EMERGENCY_ROLE;
-    roles[5] = Roles.HUB_CONFIGURATOR_RISK_MANAGEMENT_ROLE;
 
-    for (uint256 r; r < roles.length; r++) {
-      bytes4[] memory selectors = _selectorsOfHubConfiguratorRole(roles[r]);
+    _checkHubConfiguratorRole(
+      accessManager,
+      hubConfigurator,
+      inputs,
+      Roles.HUB_CONFIGURATOR_DOMAIN_BASE_ROLE,
+      Roles.getHubConfiguratorDomainBaseRoleSelectors()
+    );
+    _checkHubConfiguratorRole(
+      accessManager,
+      hubConfigurator,
+      inputs,
+      Roles.HUB_CONFIGURATOR_RISK_MANAGEMENT_ROLE,
+      Roles.getHubConfiguratorRiskManagementRoleSelectors()
+    );
+    _checkHubConfiguratorRole(
+      accessManager,
+      hubConfigurator,
+      inputs,
+      Roles.HUB_CONFIGURATOR_EMERGENCY_ROLE,
+      Roles.getHubConfiguratorEmergencyRoleSelectors()
+    );
+  }
 
+  function _checkHubConfiguratorRole(
+    IAccessManagerEnumerable accessManager,
+    address hubConfigurator,
+    InputUtils.FullDeployInputs memory inputs,
+    uint64 role,
+    bytes4[] memory selectors
+  ) internal view {
+    for (uint256 i; i < selectors.length; i++) {
+      assertEq(
+        accessManager.getTargetFunctionRole(hubConfigurator, selectors[i]),
+        role,
+        'HubConfigurator selector role mapping'
+      );
+    }
+
+    if (inputs.grantRoles && inputs.hubLabels.length > 0) {
       for (uint256 i; i < selectors.length; i++) {
-        assertEq(
-          accessManager.getTargetFunctionRole(hubConfigurator, selectors[i]),
-          roles[r],
-          'HubConfigurator selector role mapping'
+        (bool allowed, ) = accessManager.canCall(
+          inputs.hubConfiguratorAdmin,
+          hubConfigurator,
+          selectors[i]
         );
-      }
-
-      if (inputs.grantRoles && inputs.hubLabels.length > 0) {
-        for (uint256 i; i < selectors.length; i++) {
-          (bool allowed, ) = accessManager.canCall(
-            inputs.hubConfiguratorAdmin,
-            hubConfigurator,
-            selectors[i]
-          );
-          assertTrue(allowed, 'HubConfigurator admin canCall selector');
-        }
+        assertTrue(allowed, 'HubConfigurator admin canCall selector');
       }
     }
   }
@@ -845,74 +834,55 @@ contract BatchTestProcedures is Test, Create2TestHelper, WETHDeployProcedure {
     InputUtils.FullDeployInputs memory inputs
   ) internal view {
     address spokeConfigurator = report.configuratorBatchReport.spokeConfigurator;
-    uint64[] memory roles = new uint64[](6);
-    roles[0] = Roles.SPOKE_CONFIGURATOR_DOMAIN_ADMIN_ROLE;
-    roles[1] = Roles.SPOKE_CONFIGURATOR_PAUSE_ROLE;
-    roles[2] = Roles.SPOKE_CONFIGURATOR_FREEZE_ROLE;
-    roles[3] = Roles.SPOKE_CONFIGURATOR_LISTING_ROLE;
-    roles[4] = Roles.SPOKE_CONFIGURATOR_EMERGENCY_ROLE;
-    roles[5] = Roles.SPOKE_CONFIGURATOR_RISK_MANAGEMENT_ROLE;
 
-    for (uint256 r; r < roles.length; r++) {
-      bytes4[] memory selectors = _selectorsOfSpokeConfiguratorRole(roles[r]);
+    _checkSpokeConfiguratorRole(
+      accessManager,
+      spokeConfigurator,
+      inputs,
+      Roles.SPOKE_CONFIGURATOR_DOMAIN_BASE_ROLE,
+      Roles.getSpokeConfiguratorDomainBaseRoleSelectors()
+    );
+    _checkSpokeConfiguratorRole(
+      accessManager,
+      spokeConfigurator,
+      inputs,
+      Roles.SPOKE_CONFIGURATOR_RISK_MANAGEMENT_ROLE,
+      Roles.getSpokeConfiguratorRiskManagementRoleSelectors()
+    );
+    _checkSpokeConfiguratorRole(
+      accessManager,
+      spokeConfigurator,
+      inputs,
+      Roles.SPOKE_CONFIGURATOR_EMERGENCY_ROLE,
+      Roles.getSpokeConfiguratorEmergencyRoleSelectors()
+    );
+  }
 
+  function _checkSpokeConfiguratorRole(
+    IAccessManagerEnumerable accessManager,
+    address spokeConfigurator,
+    InputUtils.FullDeployInputs memory inputs,
+    uint64 role,
+    bytes4[] memory selectors
+  ) internal view {
+    for (uint256 i; i < selectors.length; i++) {
+      assertEq(
+        accessManager.getTargetFunctionRole(spokeConfigurator, selectors[i]),
+        role,
+        'SpokeConfigurator selector role mapping'
+      );
+    }
+
+    if (inputs.grantRoles && inputs.spokeLabels.length > 0) {
       for (uint256 i; i < selectors.length; i++) {
-        assertEq(
-          accessManager.getTargetFunctionRole(spokeConfigurator, selectors[i]),
-          roles[r],
-          'SpokeConfigurator selector role mapping'
+        (bool allowed, ) = accessManager.canCall(
+          inputs.spokeConfiguratorAdmin,
+          spokeConfigurator,
+          selectors[i]
         );
-      }
-
-      if (inputs.grantRoles && inputs.spokeLabels.length > 0) {
-        for (uint256 i; i < selectors.length; i++) {
-          (bool allowed, ) = accessManager.canCall(
-            inputs.spokeConfiguratorAdmin,
-            spokeConfigurator,
-            selectors[i]
-          );
-          assertTrue(allowed, 'SpokeConfigurator admin canCall selector');
-        }
+        assertTrue(allowed, 'SpokeConfigurator admin canCall selector');
       }
     }
-  }
-
-  function _selectorsOfHubConfiguratorRole(uint64 role) internal pure returns (bytes4[] memory) {
-    if (role == Roles.HUB_CONFIGURATOR_DOMAIN_ADMIN_ROLE) {
-      return Roles.getHubConfiguratorDomainAdminRoleSelectors();
-    }
-    if (role == Roles.HUB_CONFIGURATOR_SPOKE_ACTIVE_ROLE) {
-      return Roles.getHubConfiguratorSpokeActiveRoleSelectors();
-    }
-    if (role == Roles.HUB_CONFIGURATOR_SPOKE_HALTED_ROLE) {
-      return Roles.getHubConfiguratorSpokeHaltedRoleSelectors();
-    }
-    if (role == Roles.HUB_CONFIGURATOR_LISTING_ROLE) {
-      return Roles.getHubConfiguratorListingRoleSelectors();
-    }
-    if (role == Roles.HUB_CONFIGURATOR_EMERGENCY_ROLE) {
-      return Roles.getHubConfiguratorEmergencyRoleSelectors();
-    }
-    return Roles.getHubConfiguratorRiskManagementRoleSelectors();
-  }
-
-  function _selectorsOfSpokeConfiguratorRole(uint64 role) internal pure returns (bytes4[] memory) {
-    if (role == Roles.SPOKE_CONFIGURATOR_DOMAIN_ADMIN_ROLE) {
-      return Roles.getSpokeConfiguratorDomainAdminRoleSelectors();
-    }
-    if (role == Roles.SPOKE_CONFIGURATOR_PAUSE_ROLE) {
-      return Roles.getSpokeConfiguratorPauseRoleSelectors();
-    }
-    if (role == Roles.SPOKE_CONFIGURATOR_FREEZE_ROLE) {
-      return Roles.getSpokeConfiguratorFreezeRoleSelectors();
-    }
-    if (role == Roles.SPOKE_CONFIGURATOR_LISTING_ROLE) {
-      return Roles.getSpokeConfiguratorListingRoleSelectors();
-    }
-    if (role == Roles.SPOKE_CONFIGURATOR_EMERGENCY_ROLE) {
-      return Roles.getSpokeConfiguratorEmergencyRoleSelectors();
-    }
-    return Roles.getSpokeConfiguratorRiskManagementRoleSelectors();
   }
 
   function _checkGatewayRoles(
