@@ -3,28 +3,34 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 import os
 import subprocess
+from functools import cache
 from pathlib import Path
+from vyper_abi import check_surface
 
 
 ROOT = Path(__file__).resolve().parents[1]
 VYPER = Path(os.environ.get("VYPER_BIN", ROOT / ".venv" / "bin" / "vyper"))
 SOURCE_ROOT = ROOT / "vyper" / "src"
-OUT_ROOT = ROOT / "out-vyper"
+OUT_ROOT = Path(os.environ.get("VYPER_OUT", ROOT / "out-vyper"))
+OPTIMIZER = os.environ.get("VYPER_OPTIMIZER", "3")
 EXPECTED_VERSION = "0.5.0b2"
-EXPECTED_OPTIMIZER = "O3"
+EXPECTED_OPTIMIZER = {"2": "gas", "3": "O3"}[OPTIMIZER]
 TARGETS = (
     SOURCE_ROOT / "access" / "AccessManagerEnumerable.vy",
     SOURCE_ROOT / "config_engine" / "TokenizationSpokeDeployer.vy",
     SOURCE_ROOT / "config_engine" / "AaveV4ConfigEngine.vy",
     SOURCE_ROOT / "harness" / "AaveV4PayloadWrapper.vy",
     SOURCE_ROOT / "harness" / "MathHarness.vy",
+    SOURCE_ROOT / "harness" / "SafeERC20Harness.vy",
     SOURCE_ROOT / "harness" / "EngineFlagsHarness.vy",
     SOURCE_ROOT / "harness" / "KeyValueListHarness.vy",
     SOURCE_ROOT / "hub" / "AssetInterestRateStrategy.vy",
     SOURCE_ROOT / "hub" / "HubInstance.vy",
+    SOURCE_ROOT / "harness" / "MockHubInstance.vy",
     SOURCE_ROOT / "hub" / "HubConfigurator.vy",
     SOURCE_ROOT / "harness" / "RescuableHarness.vy",
     SOURCE_ROOT / "harness" / "NoncesKeyedHarness.vy",
@@ -35,6 +41,7 @@ TARGETS = (
     SOURCE_ROOT / "harness" / "LiquidationLogicWrapper.vy",
     SOURCE_ROOT / "harness" / "MockSpokeStorage.vy",
     SOURCE_ROOT / "spoke" / "SpokeInstance.vy",
+    SOURCE_ROOT / "harness" / "MockSpokeInstance.vy",
     SOURCE_ROOT / "spoke" / "TreasurySpokeInstance.vy",
     SOURCE_ROOT / "spoke" / "TokenizationSpokeInstance.vy",
     SOURCE_ROOT / "harness" / "MockTreasurySpokeInstance.vy",
@@ -56,6 +63,10 @@ TARGETS = (
     SOURCE_ROOT / "position_manager" / "ConfigPositionManager.vy",
 )
 STORAGE_LAYOUTS = {
+    SOURCE_ROOT / "harness" / "MockHubInstance.vy": ROOT
+    / "vyper"
+    / "storage-layouts"
+    / "MockHubInstance.json",
     SOURCE_ROOT / "hub" / "HubInstance.vy": ROOT
     / "vyper"
     / "storage-layouts"
@@ -83,6 +94,24 @@ STORAGE_LAYOUTS = {
 }
 
 
+@cache
+def compiler_provenance() -> dict:
+    compiler_python = VYPER.parent / "python"
+    code = "from importlib.metadata import distribution; print(distribution('vyper').read_text('direct_url.json'))"
+    result = subprocess.run(
+        [str(compiler_python), "-c", code], check=True, capture_output=True, text=True
+    )
+    provenance = json.loads(result.stdout)
+    expected = (
+        (ROOT / "vyper" / "requirements.txt").read_text().strip().rsplit("@", 1)[-1]
+    )
+    if provenance.get("vcs_info", {}).get("commit_id") != expected:
+        raise RuntimeError(
+            "installed Vyper commit does not match vyper/requirements.txt"
+        )
+    return provenance
+
+
 def compile_target(source: Path) -> None:
     command = [
         str(VYPER),
@@ -91,7 +120,7 @@ def compile_target(source: Path) -> None:
         "--evm-version",
         "cancun",
         "-O",
-        "3",
+        OPTIMIZER,
         "--disable-bytecode-metadata",
         "--experimental-codegen",
         "-f",
@@ -101,7 +130,12 @@ def compile_target(source: Path) -> None:
     storage_layout = STORAGE_LAYOUTS.get(source)
     if storage_layout is not None:
         command[1:1] = ["--storage-layout-file", str(storage_layout)]
-    completed = subprocess.run(command, capture_output=True, text=True)
+    completed = subprocess.run(
+        command,
+        capture_output=True,
+        text=True,
+        env={**os.environ, "PYTHONHASHSEED": "0"},
+    )
     if completed.returncode != 0:
         raise RuntimeError(completed.stderr or completed.stdout)
     combined = json.loads(completed.stdout)
@@ -111,7 +145,9 @@ def compile_target(source: Path) -> None:
 
     contract = combined[str(source)]
     if contract["settings_dict"].get("experimental_codegen") is not True:
-        raise RuntimeError("Vyper target was not compiled with the Venom code generator")
+        raise RuntimeError(
+            "Vyper target was not compiled with the Venom code generator"
+        )
     if contract["settings_dict"].get("optimize") != EXPECTED_OPTIMIZER:
         raise RuntimeError(f"expected Vyper optimizer {EXPECTED_OPTIMIZER}")
     artifact = {
@@ -129,17 +165,30 @@ def compile_target(source: Path) -> None:
         },
         "methodIdentifiers": contract["method_identifiers"],
         "metadata": {
-            "compiler": {"version": version},
+            "compiler": {"version": version, "provenance": compiler_provenance()},
             "language": "Vyper",
             "settings": contract["settings_dict"],
-            "sources": {str(source.relative_to(ROOT)): {}},
+            "sources": {
+                str(p.relative_to(ROOT)): {
+                    "sha256": hashlib.sha256(p.read_bytes()).hexdigest()
+                }
+                for p in sorted(SOURCE_ROOT.rglob("*"))
+                if p.suffix in (".vy", ".vyi")
+            },
+            "build": {
+                "pythonHashSeed": "0",
+                "requirements": (ROOT / "vyper" / "requirements.txt")
+                .read_text()
+                .strip(),
+            },
         },
     }
+    check_surface(source, artifact)
     artifact_dir = OUT_ROOT / source.name
     artifact_dir.mkdir(parents=True, exist_ok=True)
     artifact_path = artifact_dir / f"{source.stem}.json"
     artifact_path.write_text(json.dumps(artifact, indent=2) + "\n")
-    print(f"Compiled {source.relative_to(ROOT)} -> {artifact_path.relative_to(ROOT)}")
+    print(f"Compiled {source.relative_to(ROOT)} -> {artifact_path}", flush=True)
 
 
 def main() -> None:

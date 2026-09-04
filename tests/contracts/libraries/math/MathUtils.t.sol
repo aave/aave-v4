@@ -259,4 +259,9 @@ contract MathUtilsTest is Base {
       assertEq(m.mulDivUp(a, b, c), result / c + (result % c > 0 ? 1 : 0));
     }
   }
+
+  function test_compat_addMinimumSignedOperand() public {
+    vm.expectRevert(stdError.arithmeticError);
+    m.add(type(uint256).max, type(int256).min);
+  }
 }

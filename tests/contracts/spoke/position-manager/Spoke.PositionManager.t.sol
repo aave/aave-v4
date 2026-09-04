@@ -35,7 +35,8 @@ contract SpokePositionManagerTest is Base {
   }
 
   function test_renouncePositionManagerRole_noop_from_disabled() public {
-    vm.setArbitraryStorage(address(spoke1));
+    // Use canonical state: arbitrary-storage mode may refill an explicitly zeroed
+    // Vyper mapping slot. This test verifies a deliberately disabled permission.
 
     address user = vm.randomAddress();
     vm.prank(user);

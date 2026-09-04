@@ -1,0 +1,79 @@
+{
+  "source_revision": "44751e4e",
+  "compiler_requirement": "vyper @ git+https://github.com/vyperlang/vyper.git@8af5e83c10af4f065cc660fe20293dac11fdff83",
+  "python_hash_seed": "0",
+  "measurements": [
+    {
+      "contract": "Hub",
+      "variant": "WithHelpers",
+      "optimizer": 2,
+      "runtime_bytes": 17445,
+      "immutable_bytes": 0,
+      "deployed_bytes": 17445,
+      "eip170_remaining": 7131
+    },
+    {
+      "contract": "Hub",
+      "variant": "WithHelpers",
+      "optimizer": 3,
+      "runtime_bytes": 15548,
+      "immutable_bytes": 0,
+      "deployed_bytes": 15548,
+      "eip170_remaining": 9028
+    },
+    {
+      "contract": "Hub",
+      "variant": "WithoutHelpers",
+      "optimizer": 2,
+      "runtime_bytes": 17379,
+      "immutable_bytes": 0,
+      "deployed_bytes": 17379,
+      "eip170_remaining": 7197
+    },
+    {
+      "contract": "Hub",
+      "variant": "WithoutHelpers",
+      "optimizer": 3,
+      "runtime_bytes": 15482,
+      "immutable_bytes": 0,
+      "deployed_bytes": 15482,
+      "eip170_remaining": 9094
+    },
+    {
+      "contract": "Spoke",
+      "variant": "WithHelpers",
+      "optimizer": 2,
+      "runtime_bytes": 25292,
+      "immutable_bytes": 96,
+      "deployed_bytes": 25388,
+      "eip170_remaining": -812
+    },
+    {
+      "contract": "Spoke",
+      "variant": "WithHelpers",
+      "optimizer": 3,
+      "runtime_bytes": 22339,
+      "immutable_bytes": 96,
+      "deployed_bytes": 22435,
+      "eip170_remaining": 2141
+    },
+    {
+      "contract": "Spoke",
+      "variant": "WithoutHelpers",
+      "optimizer": 2,
+      "runtime_bytes": 24614,
+      "immutable_bytes": 96,
+      "deployed_bytes": 24710,
+      "eip170_remaining": -134
+    },
+    {
+      "contract": "Spoke",
+      "variant": "WithoutHelpers",
+      "optimizer": 3,
+      "runtime_bytes": 21725,
+      "immutable_bytes": 96,
+      "deployed_bytes": 21821,
+      "eip170_remaining": 2755
+    }
+  ]
+}

@@ -1,0 +1,1182 @@
+{
+  "sourceBase": "44751e4e",
+  "compilerCommit": "8af5e83c10af4f065cc660fe20293dac11fdff83",
+  "testCommand": "FOUNDRY_PROFILE=vyper TEST_VYPER=true forge test -vv",
+  "passed": 2076,
+  "failed": 0,
+  "skipped": 1,
+  "fuzzRuns": 1000,
+  "fuzzSeed": "0x640",
+  "artifacts": {
+    "ConfigPermissionsMapHarness.vy": {
+      "creationSha256": "5d7b1f9c477040e7804af75a2261a46bdf0ea3297aaafda26896ee5149b59869",
+      "runtimeSha256": "eaf438df391593bce20da5bf421f0ce5035466409a8c5a6cc1230c8a31ae4074",
+      "runtimeBytes": 580,
+      "compiler": {
+        "version": "0.5.0b2"
+      },
+      "settings": {
+        "optimize": "O3",
+        "evm_version": "cancun",
+        "experimental_codegen": true,
+        "venom_flags": {
+          "level": "O3",
+          "disable_inlining": false,
+          "disable_cse": false,
+          "disable_sccp": false,
+          "disable_load_elimination": false,
+          "disable_dead_store_elimination": false,
+          "disable_algebraic_optimization": false,
+          "disable_branch_optimization": false,
+          "disable_assert_elimination": false,
+          "disable_mem2var": false,
+          "disable_simplify_cfg": false,
+          "disable_remove_unused_variables": false,
+          "inline_threshold": 30
+        }
+      }
+    },
+    "SpokeConfigurator.vy": {
+      "creationSha256": "e10148b6de911bc92e304210e7bc4e140c65c451f7259f97a91a18aa9abb62fc",
+      "runtimeSha256": "a3a3ce55b6e943ba85b3003cb9cf2ffdf17dc35235f5a9b0a83d93b7e3fb30eb",
+      "runtimeBytes": 5124,
+      "compiler": {
+        "version": "0.5.0b2"
+      },
+      "settings": {
+        "optimize": "O3",
+        "evm_version": "cancun",
+        "experimental_codegen": true,
+        "venom_flags": {
+          "level": "O3",
+          "disable_inlining": false,
+          "disable_cse": false,
+          "disable_sccp": false,
+          "disable_load_elimination": false,
+          "disable_dead_store_elimination": false,
+          "disable_algebraic_optimization": false,
+          "disable_branch_optimization": false,
+          "disable_assert_elimination": false,
+          "disable_mem2var": false,
+          "disable_simplify_cfg": false,
+          "disable_remove_unused_variables": false,
+          "inline_threshold": 30
+        }
+      }
+    },
+    "KeyValueListHarness.vy": {
+      "creationSha256": "1bfb09bd0eb61b639ae15ff9cf643462cfee7aa7ec5369e8249fc88ac350c627",
+      "runtimeSha256": "6a7d3bd6e9950b7252314e127d4ce15754a561cafb26a1bea6289b0f73db2f6a",
+      "runtimeBytes": 1086,
+      "compiler": {
+        "version": "0.5.0b2"
+      },
+      "settings": {
+        "optimize": "O3",
+        "evm_version": "cancun",
+        "experimental_codegen": true,
+        "venom_flags": {
+          "level": "O3",
+          "disable_inlining": false,
+          "disable_cse": false,
+          "disable_sccp": false,
+          "disable_load_elimination": false,
+          "disable_dead_store_elimination": false,
+          "disable_algebraic_optimization": false,
+          "disable_branch_optimization": false,
+          "disable_assert_elimination": false,
+          "disable_mem2var": false,
+          "disable_simplify_cfg": false,
+          "disable_remove_unused_variables": false,
+          "inline_threshold": 30
+        }
+      }
+    },
+    "HubConfigurator.vy": {
+      "creationSha256": "37c44663e6127d246e4c4e1ef45d09c5d83d8c168dfe74952cb259353d8af434",
+      "runtimeSha256": "b0d40373e5ef55c530c98233986333365201d191cc5801683f7346e65a7127da",
+      "runtimeBytes": 7575,
+      "compiler": {
+        "version": "0.5.0b2"
+      },
+      "settings": {
+        "optimize": "O3",
+        "evm_version": "cancun",
+        "experimental_codegen": true,
+        "venom_flags": {
+          "level": "O3",
+          "disable_inlining": false,
+          "disable_cse": false,
+          "disable_sccp": false,
+          "disable_load_elimination": false,
+          "disable_dead_store_elimination": false,
+          "disable_algebraic_optimization": false,
+          "disable_branch_optimization": false,
+          "disable_assert_elimination": false,
+          "disable_mem2var": false,
+          "disable_simplify_cfg": false,
+          "disable_remove_unused_variables": false,
+          "inline_threshold": 30
+        }
+      }
+    },
+    "ReserveFlagsMapHarness.vy": {
+      "creationSha256": "0d3b3ec93279ff26018b617c19d16264b606d82e96ed8e4abf1a19a35b227da9",
+      "runtimeSha256": "90dd4775c25ddadc19741787f5d5c080d807b9b3738ec84ab3700bb52273ceda",
+      "runtimeBytes": 713,
+      "compiler": {
+        "version": "0.5.0b2"
+      },
+      "settings": {
+        "optimize": "O3",
+        "evm_version": "cancun",
+        "experimental_codegen": true,
+        "venom_flags": {
+          "level": "O3",
+          "disable_inlining": false,
+          "disable_cse": false,
+          "disable_sccp": false,
+          "disable_load_elimination": false,
+          "disable_dead_store_elimination": false,
+          "disable_algebraic_optimization": false,
+          "disable_branch_optimization": false,
+          "disable_assert_elimination": false,
+          "disable_mem2var": false,
+          "disable_simplify_cfg": false,
+          "disable_remove_unused_variables": false,
+          "inline_threshold": 30
+        }
+      }
+    },
+    "GiverPositionManager.vy": {
+      "creationSha256": "7e935d11c576a47deebb3ec69061855a17e395d43d9977f10b0937c9237f35d7",
+      "runtimeSha256": "991282a5037f66ff9eee9ca78931f6666408f8f6550e649cf556ef0107b16718",
+      "runtimeBytes": 3516,
+      "compiler": {
+        "version": "0.5.0b2"
+      },
+      "settings": {
+        "optimize": "O3",
+        "evm_version": "cancun",
+        "experimental_codegen": true,
+        "venom_flags": {
+          "level": "O3",
+          "disable_inlining": false,
+          "disable_cse": false,
+          "disable_sccp": false,
+          "disable_load_elimination": false,
+          "disable_dead_store_elimination": false,
+          "disable_algebraic_optimization": false,
+          "disable_branch_optimization": false,
+          "disable_assert_elimination": false,
+          "disable_mem2var": false,
+          "disable_simplify_cfg": false,
+          "disable_remove_unused_variables": false,
+          "inline_threshold": 30
+        }
+      }
+    },
+    "NativeTokenGateway.vy": {
+      "creationSha256": "a51df62d4cc99280d39456e698109c1324d3d1ff234c1bd2db556264f246fb1b",
+      "runtimeSha256": "7ccc181c776a3af8929ee14a5f0b5611a6d06b0349f39a657a8aefabb5f9c610",
+      "runtimeBytes": 3809,
+      "compiler": {
+        "version": "0.5.0b2"
+      },
+      "settings": {
+        "optimize": "O3",
+        "evm_version": "cancun",
+        "experimental_codegen": true,
+        "venom_flags": {
+          "level": "O3",
+          "disable_inlining": false,
+          "disable_cse": false,
+          "disable_sccp": false,
+          "disable_load_elimination": false,
+          "disable_dead_store_elimination": false,
+          "disable_algebraic_optimization": false,
+          "disable_branch_optimization": false,
+          "disable_assert_elimination": false,
+          "disable_mem2var": false,
+          "disable_simplify_cfg": false,
+          "disable_remove_unused_variables": false,
+          "inline_threshold": 30
+        }
+      }
+    },
+    "PositionStatusMapHarness.vy": {
+      "creationSha256": "4d4cb27fd7e646398c23076cbb4b3960eb1bb1c962b53f1147feed9ae7f50755",
+      "runtimeSha256": "0725157a4a88052aa5200a8c28e0fcfc71c88c9c34d86a256a43f78b27892f91",
+      "runtimeBytes": 2844,
+      "compiler": {
+        "version": "0.5.0b2"
+      },
+      "settings": {
+        "optimize": "O3",
+        "evm_version": "cancun",
+        "experimental_codegen": true,
+        "venom_flags": {
+          "level": "O3",
+          "disable_inlining": false,
+          "disable_cse": false,
+          "disable_sccp": false,
+          "disable_load_elimination": false,
+          "disable_dead_store_elimination": false,
+          "disable_algebraic_optimization": false,
+          "disable_branch_optimization": false,
+          "disable_assert_elimination": false,
+          "disable_mem2var": false,
+          "disable_simplify_cfg": false,
+          "disable_remove_unused_variables": false,
+          "inline_threshold": 30
+        }
+      }
+    },
+    "NoncesKeyedHarness.vy": {
+      "creationSha256": "be283e0b93932688d159d0be4664faa6bb757fa54213ed60621bc0e3dd71ef3f",
+      "runtimeSha256": "df4d66a661de27ff4c082bf9673f8fa93579d0ebd1427f29fa5c4208f5bede8a",
+      "runtimeBytes": 429,
+      "compiler": {
+        "version": "0.5.0b2"
+      },
+      "settings": {
+        "optimize": "O3",
+        "evm_version": "cancun",
+        "experimental_codegen": true,
+        "venom_flags": {
+          "level": "O3",
+          "disable_inlining": false,
+          "disable_cse": false,
+          "disable_sccp": false,
+          "disable_load_elimination": false,
+          "disable_dead_store_elimination": false,
+          "disable_algebraic_optimization": false,
+          "disable_branch_optimization": false,
+          "disable_assert_elimination": false,
+          "disable_mem2var": false,
+          "disable_simplify_cfg": false,
+          "disable_remove_unused_variables": false,
+          "inline_threshold": 30
+        }
+      }
+    },
+    "AaveOracle.vy": {
+      "creationSha256": "2b76c5e2cb0a854e2d5b11e820f94dabce0cde02eab58f5e7d635985a50ade5b",
+      "runtimeSha256": "093ca2e22398b9e6d0e5ebdbf034ce379b28f8f0568f13a8b38700a35456cedb",
+      "runtimeBytes": 1200,
+      "compiler": {
+        "version": "0.5.0b2"
+      },
+      "settings": {
+        "optimize": "O3",
+        "evm_version": "cancun",
+        "experimental_codegen": true,
+        "venom_flags": {
+          "level": "O3",
+          "disable_inlining": false,
+          "disable_cse": false,
+          "disable_sccp": false,
+          "disable_load_elimination": false,
+          "disable_dead_store_elimination": false,
+          "disable_algebraic_optimization": false,
+          "disable_branch_optimization": false,
+          "disable_assert_elimination": false,
+          "disable_mem2var": false,
+          "disable_simplify_cfg": false,
+          "disable_remove_unused_variables": false,
+          "inline_threshold": 30
+        }
+      }
+    },
+    "TreasurySpokeInstance.vy": {
+      "creationSha256": "b94969702f7c5414c72d6f4a659d32abed59a55e5ffcab50e52374de161fceb0",
+      "runtimeSha256": "4db4cc9ba7d854cfdfac13c58efbcbaf04eb0b72239b7230c1a4040f09214543",
+      "runtimeBytes": 2213,
+      "compiler": {
+        "version": "0.5.0b2"
+      },
+      "settings": {
+        "optimize": "O3",
+        "evm_version": "cancun",
+        "experimental_codegen": true,
+        "venom_flags": {
+          "level": "O3",
+          "disable_inlining": false,
+          "disable_cse": false,
+          "disable_sccp": false,
+          "disable_load_elimination": false,
+          "disable_dead_store_elimination": false,
+          "disable_algebraic_optimization": false,
+          "disable_branch_optimization": false,
+          "disable_assert_elimination": false,
+          "disable_mem2var": false,
+          "disable_simplify_cfg": false,
+          "disable_remove_unused_variables": false,
+          "inline_threshold": 30
+        }
+      }
+    },
+    "LiquidationLogicContract.vy": {
+      "creationSha256": "bcd4cf62fe40b2b1dd15af958a4f3f659971ae3a934773d8944e480a19bb2997",
+      "runtimeSha256": "ab71d6159e28ca542ef1087969606601aeea1c506e334e651cb43ac02564fea5",
+      "runtimeBytes": 3515,
+      "compiler": {
+        "version": "0.5.0b2"
+      },
+      "settings": {
+        "optimize": "O3",
+        "evm_version": "cancun",
+        "experimental_codegen": true,
+        "venom_flags": {
+          "level": "O3",
+          "disable_inlining": false,
+          "disable_cse": false,
+          "disable_sccp": false,
+          "disable_load_elimination": false,
+          "disable_dead_store_elimination": false,
+          "disable_algebraic_optimization": false,
+          "disable_branch_optimization": false,
+          "disable_assert_elimination": false,
+          "disable_mem2var": false,
+          "disable_simplify_cfg": false,
+          "disable_remove_unused_variables": false,
+          "inline_threshold": 30
+        }
+      }
+    },
+    "RescuableHarness.vy": {
+      "creationSha256": "967c550fe9c2176b58fa4b012aa4248e9565647dce66cc07bdee2bf2aeb9b822",
+      "runtimeSha256": "1c2e16549c35fa6e53d682d2a3f0cadce5493da7c3f95bf2623566a0ff4911dd",
+      "runtimeBytes": 369,
+      "compiler": {
+        "version": "0.5.0b2"
+      },
+      "settings": {
+        "optimize": "O3",
+        "evm_version": "cancun",
+        "experimental_codegen": true,
+        "venom_flags": {
+          "level": "O3",
+          "disable_inlining": false,
+          "disable_cse": false,
+          "disable_sccp": false,
+          "disable_load_elimination": false,
+          "disable_dead_store_elimination": false,
+          "disable_algebraic_optimization": false,
+          "disable_branch_optimization": false,
+          "disable_assert_elimination": false,
+          "disable_mem2var": false,
+          "disable_simplify_cfg": false,
+          "disable_remove_unused_variables": false,
+          "inline_threshold": 30
+        }
+      }
+    },
+    "AaveV4ConfigEngine.vy": {
+      "creationSha256": "8d72efd513ea665a63ac4e39788229e0211db95c73e6d125c552f38f4bf5804f",
+      "runtimeSha256": "538065877d9b994ee6d576d8f46d8a0648b2f89cec462cde62113d4c593a68cc",
+      "runtimeBytes": 13117,
+      "compiler": {
+        "version": "0.5.0b2"
+      },
+      "settings": {
+        "optimize": "O3",
+        "evm_version": "cancun",
+        "experimental_codegen": true,
+        "venom_flags": {
+          "level": "O3",
+          "disable_inlining": false,
+          "disable_cse": false,
+          "disable_sccp": false,
+          "disable_load_elimination": false,
+          "disable_dead_store_elimination": false,
+          "disable_algebraic_optimization": false,
+          "disable_branch_optimization": false,
+          "disable_assert_elimination": false,
+          "disable_mem2var": false,
+          "disable_simplify_cfg": false,
+          "disable_remove_unused_variables": false,
+          "inline_threshold": 30
+        }
+      }
+    },
+    "LiquidationLogicWrapper.vy": {
+      "creationSha256": "d3476661db2b4215711f2fa1596167c1bcf1276d8640a2fb0212403229c7a61c",
+      "runtimeSha256": "e7c28f4b20c5355d174d6a61deec489ed9be329a8d7fed00d3b4ff678e9ecd6e",
+      "runtimeBytes": 11025,
+      "compiler": {
+        "version": "0.5.0b2"
+      },
+      "settings": {
+        "optimize": "O3",
+        "evm_version": "cancun",
+        "experimental_codegen": true,
+        "venom_flags": {
+          "level": "O3",
+          "disable_inlining": false,
+          "disable_cse": false,
+          "disable_sccp": false,
+          "disable_load_elimination": false,
+          "disable_dead_store_elimination": false,
+          "disable_algebraic_optimization": false,
+          "disable_branch_optimization": false,
+          "disable_assert_elimination": false,
+          "disable_mem2var": false,
+          "disable_simplify_cfg": false,
+          "disable_remove_unused_variables": false,
+          "inline_threshold": 30
+        }
+      }
+    },
+    "ConfigPositionManager.vy": {
+      "creationSha256": "5721bc73990d335333afa7d5ccbdcce977a842b52b54154947aa9832a36db5c0",
+      "runtimeSha256": "4d40fd2d8fa757bc6644564f77b88746975c13376451126d9f87bf957b1fd698",
+      "runtimeBytes": 7389,
+      "compiler": {
+        "version": "0.5.0b2"
+      },
+      "settings": {
+        "optimize": "O3",
+        "evm_version": "cancun",
+        "experimental_codegen": true,
+        "venom_flags": {
+          "level": "O3",
+          "disable_inlining": false,
+          "disable_cse": false,
+          "disable_sccp": false,
+          "disable_load_elimination": false,
+          "disable_dead_store_elimination": false,
+          "disable_algebraic_optimization": false,
+          "disable_branch_optimization": false,
+          "disable_assert_elimination": false,
+          "disable_mem2var": false,
+          "disable_simplify_cfg": false,
+          "disable_remove_unused_variables": false,
+          "inline_threshold": 30
+        }
+      }
+    },
+    "MathHarness.vy": {
+      "creationSha256": "1cf35bb2c9b71376c4fb4ea31cab81c592e47d9bf0853f4738db519e1c1063de",
+      "runtimeSha256": "b30c8f81d8e2daafd991f79cc41e7b99044106f2ed3fea8ff0138d33d434ad1f",
+      "runtimeBytes": 2727,
+      "compiler": {
+        "version": "0.5.0b2"
+      },
+      "settings": {
+        "optimize": "O3",
+        "evm_version": "cancun",
+        "experimental_codegen": true,
+        "venom_flags": {
+          "level": "O3",
+          "disable_inlining": false,
+          "disable_cse": false,
+          "disable_sccp": false,
+          "disable_load_elimination": false,
+          "disable_dead_store_elimination": false,
+          "disable_algebraic_optimization": false,
+          "disable_branch_optimization": false,
+          "disable_assert_elimination": false,
+          "disable_mem2var": false,
+          "disable_simplify_cfg": false,
+          "disable_remove_unused_variables": false,
+          "inline_threshold": 30
+        }
+      }
+    },
+    "EngineFlagsHarness.vy": {
+      "creationSha256": "d3f0a13ff37b24596ba9ff1c83b019379286c746e872b0748e831c1fe0c593ec",
+      "runtimeSha256": "b3b67970ca020f91446c419422fff50c30694d7e012f574c40d34bfe3759656b",
+      "runtimeBytes": 114,
+      "compiler": {
+        "version": "0.5.0b2"
+      },
+      "settings": {
+        "optimize": "O3",
+        "evm_version": "cancun",
+        "experimental_codegen": true,
+        "venom_flags": {
+          "level": "O3",
+          "disable_inlining": false,
+          "disable_cse": false,
+          "disable_sccp": false,
+          "disable_load_elimination": false,
+          "disable_dead_store_elimination": false,
+          "disable_algebraic_optimization": false,
+          "disable_branch_optimization": false,
+          "disable_assert_elimination": false,
+          "disable_mem2var": false,
+          "disable_simplify_cfg": false,
+          "disable_remove_unused_variables": false,
+          "inline_threshold": 30
+        }
+      }
+    },
+    "AaveV4PayloadWrapper.vy": {
+      "creationSha256": "43a00e2f14b71d96502b1666b1a01eb16cf47d3fa7dda5aed067c4793cae78d7",
+      "runtimeSha256": "9a6e650b4322cd802d84534deda6ecdef3141f3058e1145b01673d707f4f8d6f",
+      "runtimeBytes": 23910,
+      "compiler": {
+        "version": "0.5.0b2"
+      },
+      "settings": {
+        "optimize": "O3",
+        "evm_version": "cancun",
+        "experimental_codegen": true,
+        "venom_flags": {
+          "level": "O3",
+          "disable_inlining": false,
+          "disable_cse": false,
+          "disable_sccp": false,
+          "disable_load_elimination": false,
+          "disable_dead_store_elimination": false,
+          "disable_algebraic_optimization": false,
+          "disable_branch_optimization": false,
+          "disable_assert_elimination": false,
+          "disable_mem2var": false,
+          "disable_simplify_cfg": false,
+          "disable_remove_unused_variables": false,
+          "inline_threshold": 30
+        }
+      }
+    },
+    "SignatureGateway.vy": {
+      "creationSha256": "178077c8edfe5b9931ab2a702986102852e1738ea214e66fbfcf73a05e01506d",
+      "runtimeSha256": "fe89449fcc52322472d52937e5c7e5c6ef1d4d0feb8d2f6b483d997740fef92a",
+      "runtimeBytes": 8054,
+      "compiler": {
+        "version": "0.5.0b2"
+      },
+      "settings": {
+        "optimize": "O3",
+        "evm_version": "cancun",
+        "experimental_codegen": true,
+        "venom_flags": {
+          "level": "O3",
+          "disable_inlining": false,
+          "disable_cse": false,
+          "disable_sccp": false,
+          "disable_load_elimination": false,
+          "disable_dead_store_elimination": false,
+          "disable_algebraic_optimization": false,
+          "disable_branch_optimization": false,
+          "disable_assert_elimination": false,
+          "disable_mem2var": false,
+          "disable_simplify_cfg": false,
+          "disable_remove_unused_variables": false,
+          "inline_threshold": 30
+        }
+      }
+    },
+    "MockTreasurySpokeInstance.vy": {
+      "creationSha256": "a76f1aede8a5dd5fe51276779301f958e8f2b04f1f1b139746c9f0ead8954adb",
+      "runtimeSha256": "152c803b62be1466423d9083354542b3706a006a640b49831054a72cfef7bbf0",
+      "runtimeBytes": 559,
+      "compiler": {
+        "version": "0.5.0b2"
+      },
+      "settings": {
+        "optimize": "O3",
+        "evm_version": "cancun",
+        "experimental_codegen": true,
+        "venom_flags": {
+          "level": "O3",
+          "disable_inlining": false,
+          "disable_cse": false,
+          "disable_sccp": false,
+          "disable_load_elimination": false,
+          "disable_dead_store_elimination": false,
+          "disable_algebraic_optimization": false,
+          "disable_branch_optimization": false,
+          "disable_assert_elimination": false,
+          "disable_mem2var": false,
+          "disable_simplify_cfg": false,
+          "disable_remove_unused_variables": false,
+          "inline_threshold": 30
+        }
+      }
+    },
+    "TokenizationSpokeDeployer.vy": {
+      "creationSha256": "56bf7a188c0fbe5e28e2bd43a908d2f04f4d715da063d81eeace3cb5156b511f",
+      "runtimeSha256": "8458ec80fa97312d804cdaa077391e190a654e64699e7df0eead4d9fd0353247",
+      "runtimeBytes": 1655,
+      "compiler": {
+        "version": "0.5.0b2"
+      },
+      "settings": {
+        "optimize": "O3",
+        "evm_version": "cancun",
+        "experimental_codegen": true,
+        "venom_flags": {
+          "level": "O3",
+          "disable_inlining": false,
+          "disable_cse": false,
+          "disable_sccp": false,
+          "disable_load_elimination": false,
+          "disable_dead_store_elimination": false,
+          "disable_algebraic_optimization": false,
+          "disable_branch_optimization": false,
+          "disable_assert_elimination": false,
+          "disable_mem2var": false,
+          "disable_simplify_cfg": false,
+          "disable_remove_unused_variables": false,
+          "inline_threshold": 30
+        }
+      }
+    },
+    "TokenizationSpokeInstance.vy": {
+      "creationSha256": "6fc8d3fa8c86982d7d4d5d3f215aba12f62963d482b64a5eebbf391e2cf2ad8a",
+      "runtimeSha256": "8ee1876f303d576f29eb50af980e0a1efb1ca071451e2bfd554a0bea43b55394",
+      "runtimeBytes": 8677,
+      "compiler": {
+        "version": "0.5.0b2"
+      },
+      "settings": {
+        "optimize": "O3",
+        "evm_version": "cancun",
+        "experimental_codegen": true,
+        "venom_flags": {
+          "level": "O3",
+          "disable_inlining": false,
+          "disable_cse": false,
+          "disable_sccp": false,
+          "disable_load_elimination": false,
+          "disable_dead_store_elimination": false,
+          "disable_algebraic_optimization": false,
+          "disable_branch_optimization": false,
+          "disable_assert_elimination": false,
+          "disable_mem2var": false,
+          "disable_simplify_cfg": false,
+          "disable_remove_unused_variables": false,
+          "inline_threshold": 30
+        }
+      }
+    },
+    "PositionManagerEIP712HashHarness.vy": {
+      "creationSha256": "ebf66933424233a43cadc0db937ad62e0a3a0534196d33f246ac4b0d1fe0e7aa",
+      "runtimeSha256": "b4198a51c9c1aeda290006fd69a3b5be743541c9c7ca7ad6e45cffdf23bd6995",
+      "runtimeBytes": 1828,
+      "compiler": {
+        "version": "0.5.0b2"
+      },
+      "settings": {
+        "optimize": "O3",
+        "evm_version": "cancun",
+        "experimental_codegen": true,
+        "venom_flags": {
+          "level": "O3",
+          "disable_inlining": false,
+          "disable_cse": false,
+          "disable_sccp": false,
+          "disable_load_elimination": false,
+          "disable_dead_store_elimination": false,
+          "disable_algebraic_optimization": false,
+          "disable_branch_optimization": false,
+          "disable_assert_elimination": false,
+          "disable_mem2var": false,
+          "disable_simplify_cfg": false,
+          "disable_remove_unused_variables": false,
+          "inline_threshold": 30
+        }
+      }
+    },
+    "ExtSload.vy": {
+      "creationSha256": "2b040039275e5be259cceaf620b622679243b3d8bbb6fbcf94e67221bb663bf2",
+      "runtimeSha256": "6f77314247aa9a875dfd34431ebd0eb20d1240b1745cb6e5407e38fb8528c21a",
+      "runtimeBytes": 744,
+      "compiler": {
+        "version": "0.5.0b2"
+      },
+      "settings": {
+        "optimize": "O3",
+        "evm_version": "cancun",
+        "experimental_codegen": true,
+        "venom_flags": {
+          "level": "O3",
+          "disable_inlining": false,
+          "disable_cse": false,
+          "disable_sccp": false,
+          "disable_load_elimination": false,
+          "disable_dead_store_elimination": false,
+          "disable_algebraic_optimization": false,
+          "disable_branch_optimization": false,
+          "disable_assert_elimination": false,
+          "disable_mem2var": false,
+          "disable_simplify_cfg": false,
+          "disable_remove_unused_variables": false,
+          "inline_threshold": 30
+        }
+      }
+    },
+    "UserPositionUtilsHarness.vy": {
+      "creationSha256": "75f7940d31f5cb5dd011ba23829debac3bb4c478278001fa1be091d05219a578",
+      "runtimeSha256": "c54e217866bc4a7c6359da717f9a44425dfbcaa08f2b040772a38f363ad5afcc",
+      "runtimeBytes": 1655,
+      "compiler": {
+        "version": "0.5.0b2"
+      },
+      "settings": {
+        "optimize": "O3",
+        "evm_version": "cancun",
+        "experimental_codegen": true,
+        "venom_flags": {
+          "level": "O3",
+          "disable_inlining": false,
+          "disable_cse": false,
+          "disable_sccp": false,
+          "disable_load_elimination": false,
+          "disable_dead_store_elimination": false,
+          "disable_algebraic_optimization": false,
+          "disable_branch_optimization": false,
+          "disable_assert_elimination": false,
+          "disable_mem2var": false,
+          "disable_simplify_cfg": false,
+          "disable_remove_unused_variables": false,
+          "inline_threshold": 30
+        }
+      }
+    },
+    "MockTokenizationSpokeInstance.vy": {
+      "creationSha256": "0273538c55b4309fa19f0e4fd6faf263b3ff5194eba145d8aafb534e42af1fb7",
+      "runtimeSha256": "f3b262879019c98f1f09709dbbcf50bdf0aae063b823d6ba282beb0b8aa0bec1",
+      "runtimeBytes": 708,
+      "compiler": {
+        "version": "0.5.0b2"
+      },
+      "settings": {
+        "optimize": "O3",
+        "evm_version": "cancun",
+        "experimental_codegen": true,
+        "venom_flags": {
+          "level": "O3",
+          "disable_inlining": false,
+          "disable_cse": false,
+          "disable_sccp": false,
+          "disable_load_elimination": false,
+          "disable_dead_store_elimination": false,
+          "disable_algebraic_optimization": false,
+          "disable_branch_optimization": false,
+          "disable_assert_elimination": false,
+          "disable_mem2var": false,
+          "disable_simplify_cfg": false,
+          "disable_remove_unused_variables": false,
+          "inline_threshold": 30
+        }
+      }
+    },
+    "PositionManagerNoMulticall.vy": {
+      "creationSha256": "5d1d279436813b9f27a5b4254e799c027af862b7fef6fc21a482a3b1590e3162",
+      "runtimeSha256": "87d8245a6b7fb36a473c9a87694c562d1cbf360ace0835f2e86c8b1759befe86",
+      "runtimeBytes": 2071,
+      "compiler": {
+        "version": "0.5.0b2"
+      },
+      "settings": {
+        "optimize": "O3",
+        "evm_version": "cancun",
+        "experimental_codegen": true,
+        "venom_flags": {
+          "level": "O3",
+          "disable_inlining": false,
+          "disable_cse": false,
+          "disable_sccp": false,
+          "disable_load_elimination": false,
+          "disable_dead_store_elimination": false,
+          "disable_algebraic_optimization": false,
+          "disable_branch_optimization": false,
+          "disable_assert_elimination": false,
+          "disable_mem2var": false,
+          "disable_simplify_cfg": false,
+          "disable_remove_unused_variables": false,
+          "inline_threshold": 30
+        }
+      }
+    },
+    "MockSpokeStorage.vy": {
+      "creationSha256": "27b8f416dc8713e9304995475252cb3b027e94549998ec89f8031274ae3d6e92",
+      "runtimeSha256": "409d972d1a40271d6f06483dccb2f5e62e0fdd37eb589e03aa0f60dcf3bed64b",
+      "runtimeBytes": 2270,
+      "compiler": {
+        "version": "0.5.0b2"
+      },
+      "settings": {
+        "optimize": "O3",
+        "evm_version": "cancun",
+        "experimental_codegen": true,
+        "venom_flags": {
+          "level": "O3",
+          "disable_inlining": false,
+          "disable_cse": false,
+          "disable_sccp": false,
+          "disable_load_elimination": false,
+          "disable_dead_store_elimination": false,
+          "disable_algebraic_optimization": false,
+          "disable_branch_optimization": false,
+          "disable_assert_elimination": false,
+          "disable_mem2var": false,
+          "disable_simplify_cfg": false,
+          "disable_remove_unused_variables": false,
+          "inline_threshold": 30
+        }
+      }
+    },
+    "HubInstance.vy": {
+      "creationSha256": "b5a68d4ce71dc0510cedc853d412531facd45cea03ff104b59fed8bc00fb1264",
+      "runtimeSha256": "6cc76378b97622e29d4e4cc40a4dd37393bff61e9b7025adb88758911223d866",
+      "runtimeBytes": 16100,
+      "compiler": {
+        "version": "0.5.0b2"
+      },
+      "settings": {
+        "optimize": "O3",
+        "evm_version": "cancun",
+        "experimental_codegen": true,
+        "venom_flags": {
+          "level": "O3",
+          "disable_inlining": false,
+          "disable_cse": false,
+          "disable_sccp": false,
+          "disable_load_elimination": false,
+          "disable_dead_store_elimination": false,
+          "disable_algebraic_optimization": false,
+          "disable_branch_optimization": false,
+          "disable_assert_elimination": false,
+          "disable_mem2var": false,
+          "disable_simplify_cfg": false,
+          "disable_remove_unused_variables": false,
+          "inline_threshold": 30
+        }
+      }
+    },
+    "SpokeInstance.vy": {
+      "creationSha256": "5a777aa6b05704c75e2f68562fb26a72b693263665d2a632c3feb06d40c6a995",
+      "runtimeSha256": "04d4a5252b4b06ed85ecfe61720684ac4a762b08b12bd94f14ff66658eb4663a",
+      "runtimeBytes": 23299,
+      "compiler": {
+        "version": "0.5.0b2"
+      },
+      "settings": {
+        "optimize": "O3",
+        "evm_version": "cancun",
+        "experimental_codegen": true,
+        "venom_flags": {
+          "level": "O3",
+          "disable_inlining": false,
+          "disable_cse": false,
+          "disable_sccp": false,
+          "disable_load_elimination": false,
+          "disable_dead_store_elimination": false,
+          "disable_algebraic_optimization": false,
+          "disable_branch_optimization": false,
+          "disable_assert_elimination": false,
+          "disable_mem2var": false,
+          "disable_simplify_cfg": false,
+          "disable_remove_unused_variables": false,
+          "inline_threshold": 30
+        }
+      }
+    },
+    "MockSpokeInstance.vy": {
+      "creationSha256": "b479c2817f0f8284804f6e56331cb26130c7e81603cc67a479b2fca5871cc1a8",
+      "runtimeSha256": "2c828e2d5fcc7d61221b8624801122c4690ac6418950da659d3b06cd815825fa",
+      "runtimeBytes": 23914,
+      "compiler": {
+        "version": "0.5.0b2"
+      },
+      "settings": {
+        "optimize": "O3",
+        "evm_version": "cancun",
+        "experimental_codegen": true,
+        "venom_flags": {
+          "level": "O3",
+          "disable_inlining": false,
+          "disable_cse": false,
+          "disable_sccp": false,
+          "disable_load_elimination": false,
+          "disable_dead_store_elimination": false,
+          "disable_algebraic_optimization": false,
+          "disable_branch_optimization": false,
+          "disable_assert_elimination": false,
+          "disable_mem2var": false,
+          "disable_simplify_cfg": false,
+          "disable_remove_unused_variables": false,
+          "inline_threshold": 30
+        }
+      }
+    },
+    "SpokeEIP712HashHarness.vy": {
+      "creationSha256": "53c71cd4cda43a18eae0c45a7afda283c8004f58f54754bb5f8e26db42441def",
+      "runtimeSha256": "07c054b5c95aea1ef1c2a24b6965794aaec96978a74daa1ccdf54f66d66d96f0",
+      "runtimeBytes": 1374,
+      "compiler": {
+        "version": "0.5.0b2"
+      },
+      "settings": {
+        "optimize": "O3",
+        "evm_version": "cancun",
+        "experimental_codegen": true,
+        "venom_flags": {
+          "level": "O3",
+          "disable_inlining": false,
+          "disable_cse": false,
+          "disable_sccp": false,
+          "disable_load_elimination": false,
+          "disable_dead_store_elimination": false,
+          "disable_algebraic_optimization": false,
+          "disable_branch_optimization": false,
+          "disable_assert_elimination": false,
+          "disable_mem2var": false,
+          "disable_simplify_cfg": false,
+          "disable_remove_unused_variables": false,
+          "inline_threshold": 30
+        }
+      }
+    },
+    "RolesHarness.vy": {
+      "creationSha256": "94ff5bdfcbd4f162ac69fe8aa1e017c0fd9475ec218a09938b79c78981a8c90f",
+      "runtimeSha256": "4d54ff8d829f8055428bd089e7437415a542309a5a27749f96372101d41d7424",
+      "runtimeBytes": 316,
+      "compiler": {
+        "version": "0.5.0b2"
+      },
+      "settings": {
+        "optimize": "O3",
+        "evm_version": "cancun",
+        "experimental_codegen": true,
+        "venom_flags": {
+          "level": "O3",
+          "disable_inlining": false,
+          "disable_cse": false,
+          "disable_sccp": false,
+          "disable_load_elimination": false,
+          "disable_dead_store_elimination": false,
+          "disable_algebraic_optimization": false,
+          "disable_branch_optimization": false,
+          "disable_assert_elimination": false,
+          "disable_mem2var": false,
+          "disable_simplify_cfg": false,
+          "disable_remove_unused_variables": false,
+          "inline_threshold": 30
+        }
+      }
+    },
+    "TakerPositionManager.vy": {
+      "creationSha256": "7f3e03a5fca58ccd2b6be9b83370d894a626475e2f1087c3d51e2f730a155564",
+      "runtimeSha256": "4fdf2598b74ca7e6407211dd5ceafb8356512aafef5131478e162f7f0d8c2843",
+      "runtimeBytes": 7088,
+      "compiler": {
+        "version": "0.5.0b2"
+      },
+      "settings": {
+        "optimize": "O3",
+        "evm_version": "cancun",
+        "experimental_codegen": true,
+        "venom_flags": {
+          "level": "O3",
+          "disable_inlining": false,
+          "disable_cse": false,
+          "disable_sccp": false,
+          "disable_load_elimination": false,
+          "disable_dead_store_elimination": false,
+          "disable_algebraic_optimization": false,
+          "disable_branch_optimization": false,
+          "disable_assert_elimination": false,
+          "disable_mem2var": false,
+          "disable_simplify_cfg": false,
+          "disable_remove_unused_variables": false,
+          "inline_threshold": 30
+        }
+      }
+    },
+    "SpokeUtilsHarness.vy": {
+      "creationSha256": "935f957fd0c432dbda4b80a7ef902e59fb162f3852f9dfe8268987d44e9aeed1",
+      "runtimeSha256": "82d4e6e633f1c325958a0855f2cd20e913771489c7efcbf3696233e83652a6f8",
+      "runtimeBytes": 407,
+      "compiler": {
+        "version": "0.5.0b2"
+      },
+      "settings": {
+        "optimize": "O3",
+        "evm_version": "cancun",
+        "experimental_codegen": true,
+        "venom_flags": {
+          "level": "O3",
+          "disable_inlining": false,
+          "disable_cse": false,
+          "disable_sccp": false,
+          "disable_load_elimination": false,
+          "disable_dead_store_elimination": false,
+          "disable_algebraic_optimization": false,
+          "disable_branch_optimization": false,
+          "disable_assert_elimination": false,
+          "disable_mem2var": false,
+          "disable_simplify_cfg": false,
+          "disable_remove_unused_variables": false,
+          "inline_threshold": 30
+        }
+      }
+    },
+    "MockHubInstance.vy": {
+      "creationSha256": "42b358a75d3d0a913c9c47b3ae9eeb00861af275ef45a8ed3cbb7fd742be15f0",
+      "runtimeSha256": "686f91cc67efbfd93efd0651c79c45a7dd5b6ec444e8c3ce9ceb38f04b86889c",
+      "runtimeBytes": 16166,
+      "compiler": {
+        "version": "0.5.0b2"
+      },
+      "settings": {
+        "optimize": "O3",
+        "evm_version": "cancun",
+        "experimental_codegen": true,
+        "venom_flags": {
+          "level": "O3",
+          "disable_inlining": false,
+          "disable_cse": false,
+          "disable_sccp": false,
+          "disable_load_elimination": false,
+          "disable_dead_store_elimination": false,
+          "disable_algebraic_optimization": false,
+          "disable_branch_optimization": false,
+          "disable_assert_elimination": false,
+          "disable_mem2var": false,
+          "disable_simplify_cfg": false,
+          "disable_remove_unused_variables": false,
+          "inline_threshold": 30
+        }
+      }
+    },
+    "PositionManagerBaseWrapper.vy": {
+      "creationSha256": "75f0cfa0591d182ddc0409f3276c617a9c9157d63bec9a41c8768ad408a02a38",
+      "runtimeSha256": "8f18a4dd42b78e2cc8599a651072ca422dbdd130910ef0b2b3bc605c61b38558",
+      "runtimeBytes": 2569,
+      "compiler": {
+        "version": "0.5.0b2"
+      },
+      "settings": {
+        "optimize": "O3",
+        "evm_version": "cancun",
+        "experimental_codegen": true,
+        "venom_flags": {
+          "level": "O3",
+          "disable_inlining": false,
+          "disable_cse": false,
+          "disable_sccp": false,
+          "disable_load_elimination": false,
+          "disable_dead_store_elimination": false,
+          "disable_algebraic_optimization": false,
+          "disable_branch_optimization": false,
+          "disable_assert_elimination": false,
+          "disable_mem2var": false,
+          "disable_simplify_cfg": false,
+          "disable_remove_unused_variables": false,
+          "inline_threshold": 30
+        }
+      }
+    },
+    "AccessManagerEnumerable.vy": {
+      "creationSha256": "631c2a9453e0ab221215f6ca5e0ccad46f80c95f7085caea72bf5f05a0ace25a",
+      "runtimeSha256": "d8e967e0db428d196c3babff7f53baf0785556afeea8a036fccc89bb47bc7930",
+      "runtimeBytes": 15488,
+      "compiler": {
+        "version": "0.5.0b2"
+      },
+      "settings": {
+        "optimize": "O3",
+        "evm_version": "cancun",
+        "experimental_codegen": true,
+        "venom_flags": {
+          "level": "O3",
+          "disable_inlining": false,
+          "disable_cse": false,
+          "disable_sccp": false,
+          "disable_load_elimination": false,
+          "disable_dead_store_elimination": false,
+          "disable_algebraic_optimization": false,
+          "disable_branch_optimization": false,
+          "disable_assert_elimination": false,
+          "disable_mem2var": false,
+          "disable_simplify_cfg": false,
+          "disable_remove_unused_variables": false,
+          "inline_threshold": 30
+        }
+      }
+    },
+    "SafeERC20Harness.vy": {
+      "creationSha256": "c1c24701ae286225cc3dbf9539c31169c12aa7f261f804c44940ec48c89f67ba",
+      "runtimeSha256": "c4b2ca6e271474f9aba3003a312bba22e16004ff2c72ed9c3205e02517ce5248",
+      "runtimeBytes": 465,
+      "compiler": {
+        "version": "0.5.0b2"
+      },
+      "settings": {
+        "optimize": "O3",
+        "evm_version": "cancun",
+        "experimental_codegen": true,
+        "venom_flags": {
+          "level": "O3",
+          "disable_inlining": false,
+          "disable_cse": false,
+          "disable_sccp": false,
+          "disable_load_elimination": false,
+          "disable_dead_store_elimination": false,
+          "disable_algebraic_optimization": false,
+          "disable_branch_optimization": false,
+          "disable_assert_elimination": false,
+          "disable_mem2var": false,
+          "disable_simplify_cfg": false,
+          "disable_remove_unused_variables": false,
+          "inline_threshold": 30
+        }
+      }
+    },
+    "AssetInterestRateStrategy.vy": {
+      "creationSha256": "374ab6f9a10e5219eb6a7728f5564e633ef33faa92c7c8357ffc6f81b318a0de",
+      "runtimeSha256": "3a07182efd7df73a21c87434eeb4a7869578f9b5fc038d0d24437a85e1185743",
+      "runtimeBytes": 1500,
+      "compiler": {
+        "version": "0.5.0b2"
+      },
+      "settings": {
+        "optimize": "O3",
+        "evm_version": "cancun",
+        "experimental_codegen": true,
+        "venom_flags": {
+          "level": "O3",
+          "disable_inlining": false,
+          "disable_cse": false,
+          "disable_sccp": false,
+          "disable_load_elimination": false,
+          "disable_dead_store_elimination": false,
+          "disable_algebraic_optimization": false,
+          "disable_branch_optimization": false,
+          "disable_assert_elimination": false,
+          "disable_mem2var": false,
+          "disable_simplify_cfg": false,
+          "disable_remove_unused_variables": false,
+          "inline_threshold": 30
+        }
+      }
+    }
+  },
+  "foundry": "1.8.1+982849d3140c01fd3b72905759581a132df7aa98",
+  "referenceCompatibilityTests": {
+    "command": "FOUNDRY_PROFILE=vyper TEST_VYPER=false forge test --match-test test_compat -vv",
+    "passed": 12,
+    "failed": 0,
+    "skipped": 0
+  },
+  "solidityGasTests": {
+    "command": "TEST_VYPER=false FOUNDRY_SNAPSHOTS=<isolated-output> forge test --match-path 'tests/gas/**' -vv",
+    "passed": 86,
+    "failed": 0,
+    "skipped": 0
+  },
+  "followup": {
+    "change": "AaveV4Payload native full revert propagation",
+    "command": "FOUNDRY_PROFILE=vyper TEST_VYPER=true forge test --match-path 'tests/config-engine/**' -vv",
+    "passed": 206,
+    "failed": 0,
+    "skipped": 0,
+    "artifact": "AaveV4PayloadWrapper.vy",
+    "runtimeSha256": "9f1b86b98c106cf25c74bdecdace018f67c2e985cc5b5c6f6d021cc5cac69855"
+  }
+}

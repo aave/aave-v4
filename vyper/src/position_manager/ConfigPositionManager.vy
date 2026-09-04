@@ -1,5 +1,6 @@
 # pragma version 0.5.0b2
 
+from utils import SignatureChecker
 from position_manager import PositionManagerBase
 from position_manager.libraries import ConfigPermissionsMap
 from position_manager.libraries import EIP712Hash
@@ -46,14 +47,10 @@ def _domain_separator() -> bytes32:
 
 @internal
 def _verify(signer: address, intent_hash: bytes32, nonce: uint256, deadline: uint256, signature: Bytes[INF]):
-    if block.timestamp > deadline or len(signature) != 65:
+    if block.timestamp > deadline:
         raise IConfigPositionManager.InvalidSignature()
     digest: bytes32 = keccak256(concat(b"\x19\x01", self._domain_separator(), intent_hash))
-    r: bytes32 = convert(slice(signature, 0, 32), bytes32)
-    s: bytes32 = convert(slice(signature, 32, 32), bytes32)
-    v: uint256 = convert(slice(signature, 64, 1), uint256)
-    recovered: address = ecrecover(digest, v, r, s)
-    if recovered == empty(address) or recovered != signer:
+    if not SignatureChecker.is_valid_signature_now(signer, digest, signature):
         raise IConfigPositionManager.InvalidSignature()
     NoncesKeyed._use_checked_nonce(signer, nonce)
 

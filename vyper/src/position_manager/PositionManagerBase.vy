@@ -1,6 +1,10 @@
 # pragma version 0.5.0b2
+from utils import SafeERC20
 from spoke.interfaces import ISpoke
 from position_manager.interfaces import IPositionManager
+
+error ReturndataTooLarge:
+    maximum: uint256
 
 MAX_CALLS: constant(uint256) = 4
 MAX_CALLDATA: constant(uint256) = 512
@@ -43,16 +47,7 @@ def _check_registered(spoke: address):
 
 @internal
 def _safe_transfer(token: address, to: address, amount: uint256):
-    result: Bytes[32] = raw_call(
-        token,
-        concat(
-            method_id("transfer(address,uint256)"),
-            convert(to, bytes32),
-            convert(amount, bytes32),
-        ),
-        max_outsize=32,
-    )
-    assert len(result) == 0 or abi_decode(result, bool)
+    SafeERC20.safe_transfer(token, to, amount)
 
 
 @external
@@ -106,13 +101,6 @@ def registerSpoke(spoke: address, registered: bool):
 @view
 def isSpokeRegistered(spoke: address) -> bool:
     return self.registered_spokes[spoke]
-
-
-@external
-@view
-def getReserveUnderlying(spoke: address, reserveId: uint256) -> address:
-    reserve: ISpoke.Reserve = staticcall ISpoke(spoke).getReserve(reserveId)
-    return reserve.underlying
 
 
 @external
@@ -182,19 +170,16 @@ def multicall(data: DynArray[Bytes[MAX_CALLDATA], MAX_CALLS]) -> DynArray[Bytes[
         raise IPositionManager.UnsupportedAction()
     results: DynArray[Bytes[MAX_RETURN_DATA], MAX_CALLS] = []
     for call_data: Bytes[MAX_CALLDATA] in data:
-        success: bool = False
-        result: Bytes[MAX_RETURN_DATA] = b""
-        success, result = raw_call(
+        # Native failure propagation preserves the entire downstream revert payload.
+        result: Bytes[MAX_RETURN_DATA + 1] = raw_call(
             self,
             call_data,
-            max_outsize=MAX_RETURN_DATA,
+            max_outsize=MAX_RETURN_DATA + 1,
             is_delegate_call=True,
-            revert_on_failure=False,
         )
-        if not success:
-            # Preserve arbitrary downstream revert data; it cannot be represented by a static error.
-            raw_revert(result)
-        results.append(result)
+        if len(result) > MAX_RETURN_DATA:
+            raise ReturndataTooLarge(MAX_RETURN_DATA)
+        results.append(convert(result, Bytes[MAX_RETURN_DATA]))
     return results
 
 

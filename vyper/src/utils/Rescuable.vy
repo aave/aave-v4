@@ -1,5 +1,6 @@
 #pragma version 0.5.0b2
 
+from utils import SafeERC20
 from utils.interfaces import IRescuable
 
 
@@ -19,16 +20,7 @@ def _check_rescue_guardian():
 @external
 def rescueToken(token: address, to: address, amount: uint256):
     self._check_rescue_guardian()
-    result: Bytes[32] = raw_call(
-        token,
-        concat(
-            method_id("transfer(address,uint256)"),
-            convert(to, bytes32),
-            convert(amount, bytes32),
-        ),
-        max_outsize=32,
-    )
-    assert len(result) == 0 or abi_decode(result, bool)
+    SafeERC20.safe_transfer(token, to, amount)
 
 
 @external

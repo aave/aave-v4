@@ -29,7 +29,7 @@ def setAuthority(newAuthority: address):
     ...
 
 
-@pure
+@view
 @external
 def isConsumingScheduledOp() -> bytes4:
     ...

@@ -1,0 +1,38 @@
+[
+  {
+    "mode": "baseline",
+    "run": 1,
+    "bytes": 23299,
+    "sha256": "057e011948416ddf6437ea32511aed092b255d97b899880e593a0f1403c133ce"
+  },
+  {
+    "mode": "baseline",
+    "run": 2,
+    "bytes": 23299,
+    "sha256": "bc394a18bdd112ff16428869eaf364ca3801d6661137f1bef2fa50a57b833143"
+  },
+  {
+    "mode": "stable-ties",
+    "run": 1,
+    "bytes": 23304,
+    "sha256": "58bcca118ebc7141b4a388f189b3b4c5a5861d602419b9fe1279e1c17de161c5"
+  },
+  {
+    "mode": "stable-ties",
+    "run": 2,
+    "bytes": 23304,
+    "sha256": "58bcca118ebc7141b4a388f189b3b4c5a5861d602419b9fe1279e1c17de161c5"
+  },
+  {
+    "mode": "stable-ties",
+    "run": 3,
+    "bytes": 23304,
+    "sha256": "58bcca118ebc7141b4a388f189b3b4c5a5861d602419b9fe1279e1c17de161c5"
+  },
+  {
+    "mode": "stable-ties",
+    "run": 4,
+    "bytes": 23304,
+    "sha256": "58bcca118ebc7141b4a388f189b3b4c5a5861d602419b9fe1279e1c17de161c5"
+  }
+]

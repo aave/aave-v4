@@ -11,7 +11,6 @@ MAX_ASSETS: constant(uint256) = 32
 MAX_SELECTORS: constant(uint256) = 64
 MAX_STRING: constant(uint256) = 128
 MAX_ENGINE_CALLDATA: constant(uint256) = 262144
-MAX_REVERT_DATA: constant(uint256) = 4096
 
 
 @view
@@ -158,18 +157,8 @@ def _post_execute():
 
 @internal
 def _delegate_call_engine(call_data: Bytes[INF]):
-    success: bool = False
-    result: Bytes[MAX_REVERT_DATA] = b""
-    success, result = raw_call(
-        self._config_engine(),
-        call_data,
-        max_outsize=MAX_REVERT_DATA,
-        is_delegate_call=True,
-        revert_on_failure=False,
-    )
-    if not success:
-        # Preserve arbitrary downstream revert data; it cannot be represented by a static error.
-        raw_revert(result)
+    # Native failure propagation retains the entire downstream revert payload.
+    raw_call(self._config_engine(), call_data, max_outsize=0, is_delegate_call=True)
 
 
 @external

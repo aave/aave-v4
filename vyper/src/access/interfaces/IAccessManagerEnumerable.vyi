@@ -66,7 +66,7 @@ event OperationScheduled:
     schedule: uint48
     caller: address
     target: address
-    data: Bytes[32768]
+    data: Bytes[INF]
 
 event OperationExecuted:
     operationId: indexed(bytes32)
@@ -248,28 +248,28 @@ def getNonce(id: bytes32) -> uint32:
 
 @view
 @external
-def hashOperation(caller: address, target: address, data: Bytes[32768]) -> bytes32:
+def hashOperation(caller: address, target: address, data: Bytes[INF]) -> bytes32:
     ...
 
 
 @external
-def schedule(target: address, data: Bytes[32768], when: uint48) -> (bytes32, uint32):
+def schedule(target: address, data: Bytes[INF], when: uint48) -> (bytes32, uint32):
     ...
 
 
 @payable
 @external
-def execute(target: address, data: Bytes[32768]) -> uint32:
+def execute(target: address, data: Bytes[INF]) -> uint32:
     ...
 
 
 @external
-def cancel(caller: address, target: address, data: Bytes[32768]) -> uint32:
+def cancel(caller: address, target: address, data: Bytes[INF]) -> uint32:
     ...
 
 
 @external
-def consumeScheduledOp(caller: address, data: Bytes[32768]):
+def consumeScheduledOp(caller: address, data: Bytes[INF]):
     ...
 
 

@@ -242,4 +242,22 @@ contract TakerPositionManagerPermitTest is TakerPositionManagerBaseTest {
     vm.prank(alice);
     positionManager.approveBorrowWithSig(p, signature);
   }
+
+  function test_compat_ERC1271AllowanceIntent() public {
+    MockERC1271Wallet wallet = new MockERC1271Wallet(alice);
+    ITakerPositionManager.WithdrawPermit memory p = _withdrawPermitData(
+      bob,
+      address(wallet),
+      block.timestamp + 1 days
+    );
+    bytes32 digest = _getTypedDataHash(positionManager, p);
+    vm.prank(alice);
+    wallet.approveHash(digest);
+    positionManager.approveWithdrawWithSig(p, new bytes(513));
+    assertEq(
+      positionManager.withdrawAllowance(p.spoke, p.reserveId, address(wallet), bob),
+      p.amount
+    );
+    _assertNonceIncrement(positionManager, address(wallet), p.nonce);
+  }
 }

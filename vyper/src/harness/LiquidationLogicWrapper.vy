@@ -1,5 +1,6 @@
 # pragma version 0.5.0b2
 
+from utils import SafeERC20
 from hub.libraries import Premium
 from libraries import Errors
 from libraries.math import WadRayMath
@@ -11,9 +12,6 @@ from spoke.interfaces import ILiquidationLogic
 error SafeCastOverflowedUintDowncast:
     arg0: uint8
     arg1: uint256
-
-error SafeERC20FailedOperation:
-    arg0: address
 
 struct UserPosition:
     drawnShares: uint120
@@ -205,13 +203,7 @@ def _calculate_premium_delta(
 
 @internal
 def _safe_transfer_from(token: address, owner: address, recipient: address, amount: uint256):
-    response: Bytes[32] = raw_call(
-        token,
-        concat(method_id("transferFrom(address,address,uint256)"), convert(owner, bytes32), convert(recipient, bytes32), convert(amount, bytes32)),
-        max_outsize=32,
-    )
-    if len(response) != 0 and not convert(response, bool):
-        raise SafeERC20FailedOperation(token)
+    SafeERC20.safe_transfer_from(token, owner, recipient, amount)
 
 
 @external

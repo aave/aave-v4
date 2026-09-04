@@ -1,5 +1,7 @@
 # pragma version 0.5.0b2
 
+from utils import SafeERC20
+from utils import SignatureChecker
 from position_manager import PositionManagerBase
 from position_manager.libraries import EIP712Hash
 from utils import NoncesKeyed
@@ -45,14 +47,10 @@ def _domain_separator() -> bytes32:
 
 @internal
 def _verify(signer: address, intent_hash: bytes32, nonce: uint256, deadline: uint256, signature: Bytes[INF]):
-    if block.timestamp > deadline or len(signature) != 65:
+    if block.timestamp > deadline:
         raise ISignatureGateway.InvalidSignature()
     digest: bytes32 = keccak256(concat(b"\x19\x01", self._domain_separator(), intent_hash))
-    r: bytes32 = convert(slice(signature, 0, 32), bytes32)
-    s: bytes32 = convert(slice(signature, 32, 32), bytes32)
-    v: uint256 = convert(slice(signature, 64, 1), uint256)
-    recovered: address = ecrecover(digest, v, r, s)
-    if recovered == empty(address) or recovered != signer:
+    if not SignatureChecker.is_valid_signature_now(signer, digest, signature):
         raise ISignatureGateway.InvalidSignature()
     NoncesKeyed._use_checked_nonce(signer, nonce)
 
@@ -65,32 +63,17 @@ def _reserve(spoke: address, reserve_id: uint256) -> ISpoke.Reserve:
 
 @internal
 def _safe_transfer(token: address, to: address, amount: uint256):
-    result: Bytes[32] = raw_call(
-        token,
-        concat(method_id("transfer(address,uint256)"), convert(to, bytes32), convert(amount, bytes32)),
-        max_outsize=32,
-    )
-    assert len(result) == 0 or abi_decode(result, bool)
+    SafeERC20.safe_transfer(token, to, amount)
 
 
 @internal
 def _safe_transfer_from(token: address, owner: address, to: address, amount: uint256):
-    result: Bytes[32] = raw_call(
-        token,
-        concat(method_id("transferFrom(address,address,uint256)"), convert(owner, bytes32), convert(to, bytes32), convert(amount, bytes32)),
-        max_outsize=32,
-    )
-    assert len(result) == 0 or abi_decode(result, bool)
+    SafeERC20.safe_transfer_from(token, owner, to, amount)
 
 
 @internal
 def _force_approve(token: address, spender: address, amount: uint256):
-    result: Bytes[32] = raw_call(
-        token,
-        concat(method_id("approve(address,uint256)"), convert(spender, bytes32), convert(amount, bytes32)),
-        max_outsize=32,
-    )
-    assert len(result) == 0 or abi_decode(result, bool)
+    SafeERC20.force_approve(token, spender, amount)
 
 
 @external

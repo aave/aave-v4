@@ -4,6 +4,10 @@ This tree contains the Vyper implementation of Aave V4, compiled with Vyper
 0.5.0b2 at merge commit `8af5e83c` (PR #5232). The compiler commit is pinned in
 `requirements.txt` and every source file also has an exact version pragma.
 
+This is a fresh-deployment prototype, not a complete behavioral or storage-compatible
+replacement for existing Solidity proxies. See the current status and native
+compiler gaps in [the compiler feedback diary](../gas-snapshots/COMPILER_FEEDBACK_DIARY.md).
+
 ## Build and test
 
 ```sh
@@ -17,7 +21,10 @@ make vyper-test
 artifact whose compiler settings do not confirm `experimental_codegen: true`.
 This makes Venom a mandatory, verified property of every Vyper artifact rather
 than relying on a compiler default. Builds otherwise use `-O 3`, Cancun, and
-disabled bytecode metadata.
+disabled bytecode metadata. `VYPER_OPTIMIZER=2` selects an explicit O2 experiment;
+O3 remains the default. Builds fix `PYTHONHASHSEED=0`, retain source hashes, and
+check production ABI function allowlists. Harness-only methods are compiled into
+separate native module wrappers.
 
 The Solidity tests select Vyper artifacts when `TEST_VYPER=true`. The full
 suite is used rather than a hand-picked subset so deployment, upgradeability,
@@ -30,12 +37,13 @@ additional Hub and Spoke compiler-profile artifacts. This avoids ambiguous
 library resolution in Forge 1.8.x without changing Vyper compiler settings or
 production bytecode.
 
-`ExtSload` is the single opcode-compatibility boundary: Vyper 0.5.0b2 has no
+`ExtSload` is a standalone test compatibility boundary, not production Spoke support: Vyper 0.5.0b2 has no
 arbitrary-slot storage-load builtin or inline assembly, so its Vyper ABI shell
 delegatecalls a stateless backend for each raw `SLOAD` primitive. Its public
 batch array is runtime-unbounded. The dedicated ExtSload Solidity suite runs
 against that Vyper shell and verifies that reads come from the shell's own
-arbitrary storage, including batched and dirty-calldata cases.
+arbitrary storage, including batched and dirty-calldata cases. Production Spoke
+still does not implement `extSload`/`extSloads`; the artifact metadata lists this gap.
 
 ## Vyper 0.5 features
 
@@ -54,8 +62,8 @@ restrictions.
 
 The pinned compiler includes PR #5232's amortized local unbounded-array append.
 Spoke's signed position-manager batch therefore accumulates its update hashes
-in `DynArray[bytes32, INF]`; batches can preserve the Solidity API domain
-without quadratic copying. Persistent enumerable collections remain
+in `DynArray[bytes32, INF]`; the accumulator avoids quadratic copying. The input struct still limits a batch
+to 1,024 updates; this does not preserve the full Solidity input domain. Persistent enumerable collections remain
 mapping-plus-length because the compiler change does not apply to storage, and
 short finite internal batches remain bounded where direct measurements show
 that the unbounded allocator's fixed cost is higher.

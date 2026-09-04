@@ -1,5 +1,8 @@
 # pragma version 0.5.0b2
 
+from utils import SafeERC20
+from utils import AccessManaged
+from utils import SignatureChecker
 from hub.libraries import SharesMath
 from libraries import Errors
 from libraries.math import PercentageMath
@@ -15,6 +18,9 @@ from spoke.interfaces import ILiquidationLogic
 from dependencies.openzeppelin import IAuthority
 from dependencies.openzeppelin import IERC1271
 
+initializes: AccessManaged
+exports: AccessManaged.__interface__
+
 implements: ISpoke
 
 struct PackedReserve:
@@ -26,9 +32,11 @@ struct PackedUserPosition:
     premiumOffsetRay: int200
     supplyData: uint256
 
-struct CollateralInfo:
-    risk: uint256
-    collateralValue: uint256
+error MaxDataSizeExceeded:
+    pass
+
+error ReturndataTooLarge:
+    maximum: uint256
 
 SPOKE_REVISION: public(constant(uint64)) = 1
 SET_USER_POSITION_MANAGERS_TYPEHASH: public(constant(bytes32)) = 0xba01f7bf3d3674c63670ec4a78b0d56aac1ad6e8c84468920b9e61bfe0b9851a
@@ -40,7 +48,6 @@ ERC1271_MAGIC: constant(bytes4) = 0x1626ba7e
 HEALTH_FACTOR_LIQUIDATION_THRESHOLD: constant(uint256) = 10**18
 MAX_ALLOWED_COLLATERAL_RISK: constant(uint256) = 1000_00
 MAX_ALLOWED_ASSET_ID: constant(uint256) = 2**16 - 1
-MAX_RESERVES: constant(uint256) = 256
 RAY: constant(uint256) = 10**27
 WAD: constant(uint256) = 10**18
 MASK_8: constant(uint256) = 2**8 - 1
@@ -67,9 +74,6 @@ position_manager_approval: HashMap[address, HashMap[address, uint256]]
 nonces_by_owner: HashMap[address, HashMap[uint192, uint256]]
 authority_address: address
 initialized_state: uint256
-# Nonzero tri-state marker: 1 is explicitly disabled, 2 is explicitly enabled.
-# The canonical approval mapping remains Solidity-compatible 0/1.
-position_manager_approval_state: HashMap[address, HashMap[address, uint256]]
 reentrancy_lock: transient(bool)
 
 
@@ -237,25 +241,14 @@ def _store_user_position(user: address, reserve_id: uint256, position: ISpoke.Us
 
 
 @internal
-@view
 def _check_access(selector: Bytes[4]):
-    allowed: bool = False
-    delay: uint32 = 0
-    allowed, delay = staticcall IAuthority(self.authority_address).canCall(msg.sender, self, convert(selector, bytes4))
-    if not allowed:
-        raise ISpoke.AccessManagedUnauthorized(msg.sender)
+    AccessManaged.check_access(self.authority_address, convert(selector, bytes4), slice(msg.data, 0, len(msg.data)))
 
 
 @internal
 @view
 def _is_position_manager(user: address, manager: address) -> bool:
-    approval_state: uint256 = self.position_manager_approval_state[manager][user]
-    approved: bool = self.position_manager_approval[manager][user] != 0
-    if approval_state == 1:
-        approved = False
-    elif approval_state == 2:
-        approved = True
-    return user == manager or (self.position_manager_active[manager] != 0 and approved)
+    return user == manager or (self.position_manager_active[manager] != 0 and self.position_manager_approval[manager][user] != 0)
 
 
 @internal
@@ -275,12 +268,7 @@ def _require_reserve(reserve_id: uint256) -> ISpoke.Reserve:
 
 @internal
 def _safe_transfer_from(token: address, owner: address, receiver: address, amount: uint256):
-    result: Bytes[32] = raw_call(
-        token,
-        concat(method_id("transferFrom(address,address,uint256)"), convert(owner, bytes32), convert(receiver, bytes32), convert(amount, bytes32)),
-        max_outsize=32,
-    )
-    assert len(result) == 0 or abi_decode(result, bool)
+    SafeERC20.safe_transfer_from(token, owner, receiver, amount)
 
 
 @internal
@@ -308,22 +296,7 @@ def _use_checked_nonce(owner: address, key_nonce: uint256):
 @internal
 @view
 def _valid_signature(signer: address, digest: bytes32, signature: Bytes[INF]) -> bool:
-    if len(signature) == 65:
-        r: bytes32 = convert(slice(signature, 0, 32), bytes32)
-        s: bytes32 = convert(slice(signature, 32, 32), bytes32)
-        v: uint256 = convert(slice(signature, 64, 1), uint256)
-        if ecrecover(digest, v, r, s) == signer and signer != empty(address):
-            return True
-    success: bool = False
-    response: Bytes[32] = b""
-    success, response = raw_call(
-        signer,
-        concat(method_id("isValidSignature(bytes32,bytes)"), abi_encode(digest, signature)),
-        max_outsize=32,
-        is_static_call=True,
-        revert_on_failure=False,
-    )
-    return success and len(response) >= 4 and convert(slice(response, 0, 4), bytes4) == ERC1271_MAGIC
+    return SignatureChecker.is_valid_signature_now(signer, digest, signature)
 
 
 @external
@@ -353,14 +326,9 @@ def authority() -> address:
 def setAuthority(newAuthority: address):
     if msg.sender != self.authority_address:
         raise ISpoke.AccessManagedUnauthorized(msg.sender)
+    AccessManaged.validate_authority(newAuthority)
     self.authority_address = newAuthority
     log ISpoke.AuthorityUpdated(authority=newAuthority)
-
-
-@external
-@pure
-def isConsumingScheduledOp() -> bytes4:
-    return empty(bytes4)
 
 
 @external
@@ -430,8 +398,6 @@ def addReserve(hub: address, assetId: uint256, priceSource: address, config: ISp
         raise ISpoke.InvalidAddress()
     reserve_id: uint256 = self.reserve_count
     self.reserve_count += 1
-    if self.reserve_count > MAX_RESERVES:
-        self._panic_arithmetic()
     self.hub_asset_to_reserve[hub][assetId] = reserve_id
     underlying: address = empty(address)
     decimals: uint8 = 0
@@ -553,7 +519,7 @@ def _next_position(user: address, from_reserve_id: uint256) -> (uint256, bool, b
     set_bit_id: uint256 = PositionStatusMap.fls(
         PositionStatusMap.isolate_until(word, from_reserve_id)
     )
-    for _i: uint256 in range(2):
+    for _i: uint256 in range(bucket, bound=115792089237316195423570985008687907853269984665640564039457584007913129639935):
         if set_bit_id != 256 or bucket == 0:
             break
         bucket -= 1
@@ -575,7 +541,7 @@ def _next_borrowing(user: address, from_reserve_id: uint256) -> uint256:
             from_reserve_id,
         )
     )
-    for _i: uint256 in range(2):
+    for _i: uint256 in range(bucket, bound=115792089237316195423570985008687907853269984665640564039457584007913129639935):
         if set_bit_id != 256 or bucket == 0:
             break
         bucket -= 1
@@ -597,7 +563,7 @@ def _next_collateral(user: address, from_reserve_id: uint256) -> uint256:
             from_reserve_id,
         )
     )
-    for _i: uint256 in range(2):
+    for _i: uint256 in range(bucket, bound=115792089237316195423570985008687907853269984665640564039457584007913129639935):
         if set_bit_id != 256 or bucket == 0:
             break
         bucket -= 1
@@ -620,7 +586,7 @@ def _collateral_count(user: address) -> uint256:
             reserve_count_,
         )
     )
-    for _i: uint256 in range(2):
+    for _i: uint256 in range(bucket, bound=115792089237316195423570985008687907853269984665640564039457584007913129639935):
         if bucket == 0:
             break
         bucket -= 1
@@ -641,7 +607,7 @@ def _borrow_count(user: address) -> uint256:
             reserve_count_,
         )
     )
-    for _i: uint256 in range(2):
+    for _i: uint256 in range(bucket, bound=115792089237316195423570985008687907853269984665640564039457584007913129639935):
         if bucket == 0:
             break
         bucket -= 1
@@ -654,13 +620,13 @@ def _borrow_count(user: address) -> uint256:
 @internal
 def _refresh_configs(user: address):
     reserve_id: uint256 = self.reserve_count
-    for _i: uint256 in range(MAX_RESERVES):
+    for _i: uint256 in range(self.reserve_count, bound=115792089237316195423570985008687907853269984665640564039457584007913129639935):
         reserve_id = self._next_collateral(user, reserve_id)
         if reserve_id == PositionStatusMap.NOT_FOUND:
             break
-        position: ISpoke.UserPosition = self._load_user_position(user, reserve_id)
-        position.dynamicConfigKey = self._load_reserve(reserve_id).dynamicConfigKey
-        self._store_user_position(user, reserve_id, position)
+        supply_data: uint256 = self.user_positions[user][reserve_id].supplyData
+        key: uint256 = (self.reserves[reserve_id].configData >> 216) & MASK_32
+        self.user_positions[user][reserve_id].supplyData = (supply_data & MASK_120) | (key << 120)
 
 
 @internal
@@ -675,9 +641,9 @@ def _account_data(user: address) -> ISpoke.UserAccountData:
         activeCollateralCount=0,
         borrowCount=0,
     )
-    collateral_info: DynArray[CollateralInfo, MAX_RESERVES] = []
+    collateral_info: DynArray[uint256, INF] = []
     reserve_id: uint256 = self.reserve_count
-    for _i: uint256 in range(MAX_RESERVES):
+    for _i: uint256 in range(self.reserve_count, bound=115792089237316195423570985008687907853269984665640564039457584007913129639935):
         borrowing: bool = False
         collateral: bool = False
         reserve_id, borrowing, collateral = self._next_position(user, reserve_id)
@@ -694,7 +660,9 @@ def _account_data(user: address) -> ISpoke.UserAccountData:
                 account.totalCollateralValue += collateral_value
                 account.avgCollateralFactor += convert(dynamic.collateralFactor, uint256) * collateral_value
                 account.activeCollateralCount += 1
-                collateral_info.append(CollateralInfo(risk=convert(reserve.collateralRisk, uint256), collateralValue=collateral_value))
+                if collateral_value >= 2**224 - 1:
+                    raise MaxDataSizeExceeded()
+                collateral_info.append(((2**32 - 1 - convert(reserve.collateralRisk, uint256)) << 224) | collateral_value)
         if borrowing:
             index: uint256 = staticcall IHub(reserve.hub).getAssetDrawnIndex(convert(reserve.assetId, uint256))
             premium_ray: uint256 = UserPositionUtils.calculate_premium_ray(position, index)
@@ -709,17 +677,19 @@ def _account_data(user: address) -> ISpoke.UserAccountData:
         )
     if account.totalCollateralValue > 0:
         account.avgCollateralFactor = WadRayMath.bps_to_wad(account.avgCollateralFactor) // account.totalCollateralValue
+    if account.totalDebtValueRay == 0:
+        return account
     # Stable insertion sort: risk ascending, and collateral value descending for equal risks.
-    for i: uint256 in range(MAX_RESERVES):
+    for i: uint256 in range(len(collateral_info), bound=115792089237316195423570985008687907853269984665640564039457584007913129639935):
         if i >= len(collateral_info):
             break
         j: uint256 = i
-        for _k: uint256 in range(MAX_RESERVES):
+        for _k: uint256 in range(i, bound=115792089237316195423570985008687907853269984665640564039457584007913129639935):
             if j == 0:
                 break
-            left: CollateralInfo = collateral_info[j - 1]
-            right: CollateralInfo = collateral_info[j]
-            if left.risk < right.risk or (left.risk == right.risk and left.collateralValue >= right.collateralValue):
+            left: uint256 = collateral_info[j - 1]
+            right: uint256 = collateral_info[j]
+            if left >= right:
                 break
             collateral_info[j - 1] = right
             collateral_info[j] = left
@@ -727,11 +697,11 @@ def _account_data(user: address) -> ISpoke.UserAccountData:
     total_debt_value: uint256 = WadRayMath.from_ray_up(account.totalDebtValueRay)
     debt_left: uint256 = total_debt_value
     weighted_risk: uint256 = 0
-    for i: uint256 in range(MAX_RESERVES):
+    for i: uint256 in range(len(collateral_info), bound=115792089237316195423570985008687907853269984665640564039457584007913129639935):
         if i >= len(collateral_info) or debt_left == 0:
             break
-        covered: uint256 = min(collateral_info[i].collateralValue, debt_left)
-        weighted_risk += covered * collateral_info[i].risk
+        covered: uint256 = min((collateral_info[i] & (2**224 - 1)), debt_left)
+        weighted_risk += covered * (2**32 - 1 - (collateral_info[i] >> 224))
         debt_left -= covered
     if debt_left < total_debt_value:
         denominator: uint256 = total_debt_value - debt_left
@@ -746,7 +716,7 @@ def _notify_risk_premium(user: address, new_risk_premium: uint256):
         return
     self.risk_premium[user] = self._u24(new_risk_premium)
     reserve_id: uint256 = self.reserve_count
-    for _i: uint256 in range(MAX_RESERVES):
+    for _i: uint256 in range(self.reserve_count, bound=115792089237316195423570985008687907853269984665640564039457584007913129639935):
         reserve_id = self._next_borrowing(user, reserve_id)
         if reserve_id == PositionStatusMap.NOT_FOUND:
             break
@@ -850,37 +820,6 @@ def borrow(reserveId: uint256, amount: uint256, onBehalfOf: address) -> (uint256
 
 
 @external
-def borrowWithoutHfCheck(reserveId: uint256, amount: uint256, onBehalfOf: address) -> (uint256, uint256):
-    self._enter_nonreentrant()
-    self._only_position_manager(onBehalfOf)
-    reserve: ISpoke.Reserve = self._require_reserve(reserveId)
-    if ReserveFlagsMap.paused(reserve.flags):
-        raise ISpoke.ReservePaused()
-    if ReserveFlagsMap.frozen(reserve.flags):
-        raise ISpoke.ReserveFrozen()
-    if not ReserveFlagsMap.borrowable(reserve.flags):
-        raise ISpoke.ReserveNotBorrowable()
-    drawn_shares: uint256 = extcall IHub(reserve.hub).draw(convert(reserve.assetId, uint256), amount, msg.sender)
-    position: ISpoke.UserPosition = self._load_user_position(onBehalfOf, reserveId)
-    position.drawnShares = self._u120(convert(position.drawnShares, uint256) + drawn_shares)
-    self._store_user_position(onBehalfOf, reserveId, position)
-    borrowing: bool = False
-    _collateral: bool = False
-    borrowing, _collateral = self._reserve_status(onBehalfOf, reserveId)
-    if not borrowing:
-        if MAX_USER_RESERVES_LIMIT != max_value(uint16) and self._borrow_count(onBehalfOf) >= convert(MAX_USER_RESERVES_LIMIT, uint256):
-            raise ISpoke.MaximumUserReservesExceeded()
-        self._set_borrowing(onBehalfOf, reserveId, True)
-    self._refresh_configs(onBehalfOf)
-    account: ISpoke.UserAccountData = self._account_data(onBehalfOf)
-    log ISpoke.RefreshAllUserDynamicConfig(user=onBehalfOf)
-    self._notify_risk_premium(onBehalfOf, account.riskPremium)
-    log ISpoke.Borrow(reserveId=reserveId, caller=msg.sender, user=onBehalfOf, drawnShares=drawn_shares, drawnAmount=amount)
-    self._exit_nonreentrant()
-    return drawn_shares, amount
-
-
-@external
 def repay(reserveId: uint256, amount: uint256, onBehalfOf: address) -> (uint256, uint256):
     self._enter_nonreentrant()
     self._only_position_manager(onBehalfOf)
@@ -974,7 +913,6 @@ def updateUserDynamicConfig(onBehalfOf: address):
 def setUserPositionManager(positionManager: address, approve: bool):
     approval: uint256 = convert(approve, uint256)
     self.position_manager_approval[positionManager][msg.sender] = approval
-    self.position_manager_approval_state[positionManager][msg.sender] = 1 + approval
     log ISpoke.SetUserPositionManager(user=msg.sender, positionManager=positionManager, approve=approve)
 
 
@@ -1007,17 +945,14 @@ def setUserPositionManagersWithSig(params: ISpoke.SetUserPositionManagers, signa
         update: ISpoke.PositionManagerUpdate = params.updates[i]
         approval: uint256 = convert(update.approve, uint256)
         self.position_manager_approval[update.positionManager][params.onBehalfOf] = approval
-        self.position_manager_approval_state[update.positionManager][params.onBehalfOf] = 1 + approval
         log ISpoke.SetUserPositionManager(user=params.onBehalfOf, positionManager=update.positionManager, approve=update.approve)
 
 
 @external
 def renouncePositionManagerRole(onBehalfOf: address):
-    approval_state: uint256 = self.position_manager_approval_state[msg.sender][onBehalfOf]
-    if approval_state == 1 or (approval_state == 0 and self.position_manager_approval[msg.sender][onBehalfOf] == 0):
+    if self.position_manager_approval[msg.sender][onBehalfOf] == 0:
         return
     self.position_manager_approval[msg.sender][onBehalfOf] = 0
-    self.position_manager_approval_state[msg.sender][onBehalfOf] = 1
     log ISpoke.SetUserPositionManager(user=onBehalfOf, positionManager=msg.sender, approve=False)
 
 
@@ -1234,25 +1169,11 @@ def getLiquidationLogic() -> address:
     return LIQUIDATION_LOGIC
 
 
-@external
-def calculateUserAccountData(user: address, refreshConfig: bool) -> ISpoke.UserAccountData:
-    if refreshConfig:
-        self._refresh_configs(user)
-    return self._account_data(user)
-
-
-@external
-def setReserveDynamicConfigKey(reserveId: uint256, configKey: uint32):
-    reserve: ISpoke.Reserve = self._load_reserve(reserveId)
-    reserve.dynamicConfigKey = configKey
-    self._store_reserve(reserveId, reserve)
-
-
 @internal
 def _report_deficit(user: address):
     self.risk_premium[user] = 0
     reserve_id: uint256 = self.reserve_count
-    for _i: uint256 in range(MAX_RESERVES):
+    for _i: uint256 in range(self.reserve_count, bound=115792089237316195423570985008687907853269984665640564039457584007913129639935):
         reserve_id = self._next_borrowing(user, reserve_id)
         if reserve_id == PositionStatusMap.NOT_FOUND:
             break
@@ -1435,8 +1356,8 @@ def __default__() -> Bytes[INF]:
         unwrap_tuple=False,
     )
     element_heads_start: uint256 = array_start + 32
-    heads: Bytes[INF] = b""
-    tails: Bytes[INF] = b""
+    heads: DynArray[bytes32, INF] = []
+    tails: DynArray[bytes32, INF] = []
     output_offset: uint256 = 32 * count
     for element_offset: uint256 in element_offsets:
         element_start: uint256 = element_heads_start + element_offset
@@ -1448,15 +1369,22 @@ def __default__() -> Bytes[INF]:
             raise
 
         call_data: Bytes[INF] = slice(msg.data, payload_start, element_length)
-        result: Bytes[256] = raw_call(
+        result: Bytes[257] = raw_call(
             self,
             call_data,
-            max_outsize=256,
+            max_outsize=257,
             is_delegate_call=True,
         )
+        if len(result) > 256:
+            raise ReturndataTooLarge(256)
         encoded_result: Bytes[INF] = abi_encode(result, ensure_tuple=False)
-        heads = concat(heads, convert(output_offset, bytes32))
-        tails = concat(tails, encoded_result)
+        heads.append(convert(output_offset, bytes32))
+        for word: uint256 in range(9):
+            if word * 32 >= len(encoded_result):
+                break
+            tails.append(convert(slice(encoded_result, word * 32, 32), bytes32))
         output_offset += len(encoded_result)
 
-    return concat(convert(32, bytes32), convert(count, bytes32), heads, tails)
+    encoded_heads: Bytes[INF] = abi_encode(heads, ensure_tuple=False)
+    encoded_tails: Bytes[INF] = abi_encode(tails, ensure_tuple=False)
+    return concat(convert(32, bytes32), convert(count, bytes32), slice(encoded_heads, 32, len(encoded_heads) - 32), slice(encoded_tails, 32, len(encoded_tails) - 32))

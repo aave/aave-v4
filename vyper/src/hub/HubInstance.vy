@@ -1,5 +1,7 @@
 # pragma version 0.5.0b2
 
+from utils import SafeERC20
+from utils import AccessManaged
 from hub.libraries import Premium
 from hub.libraries import SharesMath
 from libraries import Errors
@@ -10,6 +12,9 @@ from hub.interfaces import IHub
 from hub.interfaces import IInterestRateStrategy
 from dependencies.openzeppelin import IAuthority
 from dependencies.openzeppelin import IERC20
+
+initializes: AccessManaged
+exports: AccessManaged.__interface__
 
 implements: IHub
 
@@ -173,13 +178,8 @@ def __init__():
 
 
 @internal
-@view
 def _check_access(selector: Bytes[4]):
-    allowed: bool = False
-    delay: uint32 = 0
-    allowed, delay = staticcall IAuthority(self.authority_address).canCall(msg.sender, self, convert(selector, bytes4))
-    if not allowed:
-        raise IHub.AccessManagedUnauthorized(msg.sender)
+    AccessManaged.check_access(self.authority_address, convert(selector, bytes4), slice(msg.data, 0, len(msg.data)))
 
 
 @internal
@@ -230,12 +230,7 @@ def _panic_arithmetic():
 
 @internal
 def _safe_transfer(token: address, receiver: address, amount: uint256):
-    result: Bytes[32] = raw_call(
-        token,
-        concat(method_id("transfer(address,uint256)"), convert(receiver, bytes32), convert(amount, bytes32)),
-        max_outsize=32,
-    )
-    assert len(result) == 0 or abi_decode(result, bool)
+    SafeERC20.safe_transfer(token, receiver, amount)
 
 
 @internal
@@ -315,7 +310,8 @@ def _accrue(asset_id: uint256):
     asset.realizedFees = self._u120(convert(asset.realizedFees, uint256) + self._unrealized_fees(asset, index))
     asset.drawnIndex = self._u120(index)
     asset.lastUpdateTimestamp = self._u40(block.timestamp)
-    self._store_asset(asset_id, asset)
+    self.assets[asset_id].liquidityData = self._pack_asset(asset).liquidityData
+    self.assets[asset_id].indexData = self._pack_asset(asset).indexData
 
 
 @internal
@@ -323,7 +319,7 @@ def _update_rate(asset_id: uint256):
     asset: IHub.Asset = self._load_asset(asset_id)
     rate: uint256 = self._drawn_rate(asset_id, asset, convert(asset.drawnIndex, uint256))
     asset.drawnRate = self._u96(rate)
-    self._store_asset(asset_id, asset)
+    self.assets[asset_id].indexData = self._pack_asset(asset).indexData
     log IHub.UpdateAsset(assetId=asset_id, drawnIndex=convert(asset.drawnIndex, uint256), drawnRate=rate, accruedFees=convert(asset.realizedFees, uint256))
 
 
@@ -385,14 +381,9 @@ def authority() -> address:
 def setAuthority(newAuthority: address):
     if msg.sender != self.authority_address:
         raise IHub.AccessManagedUnauthorized(msg.sender)
+    AccessManaged.validate_authority(newAuthority)
     self.authority_address = newAuthority
     log IHub.AuthorityUpdated(authority=newAuthority)
-
-
-@external
-@pure
-def isConsumingScheduledOp() -> bytes4:
-    return empty(bytes4)
 
 
 @external
@@ -1129,10 +1120,3 @@ def getSpoke(assetId: uint256, spoke: address) -> IHub.SpokeData:
 def getSpokeConfig(assetId: uint256, spoke: address) -> IHub.SpokeConfig:
     data: IHub.SpokeData = self._load_spoke(assetId, spoke)
     return IHub.SpokeConfig(addCap=data.addCap, drawCap=data.drawCap, riskPremiumThreshold=data.riskPremiumThreshold, active=data.active, halted=data.halted)
-
-
-@external
-def setAssetAddedShares(assetId: uint256, addedShares: uint256):
-    asset: IHub.Asset = self._load_asset(assetId)
-    asset.addedShares = self._u120(addedShares)
-    self._store_asset(assetId, asset)

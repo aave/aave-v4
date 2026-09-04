@@ -46,7 +46,9 @@ def add_signed(a: uint256, b: int256) -> uint256:
         if a > UINT256_MAX - positive:
             self._panic_arithmetic()
         return a + positive
-    magnitude: uint256 = INT256_MIN_ABS if b == min_value(int256) else convert(-b, uint256)
+    if b == min_value(int256):
+        self._panic_arithmetic()
+    magnitude: uint256 = convert(-b, uint256)
     if a < magnitude:
         self._panic_arithmetic()
     return a - magnitude

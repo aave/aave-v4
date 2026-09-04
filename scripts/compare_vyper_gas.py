@@ -75,7 +75,7 @@ def _build_comparison(
                 "FOUNDRY_PROFILE=vyper TEST_VYPER=true "
                 "forge test --mp 'tests/gas/**' -vv"
             ),
-            "foundry": "1.8.0",
+            "foundry": "not recorded",
             "vyper_compiler": "0.5.0b2+commit.8af5e83c",
             "vyper_codegen": "Venom (--experimental-codegen)",
             "evm_version": "cancun",
@@ -131,11 +131,11 @@ def _render_markdown(comparison: dict[str, object]) -> str:
         "These are matched runs of the repository's `tests/gas/**` suite. The Solidity run",
         "uses the repository compiler profiles; the Vyper run uses Vyper 0.5.0b2 at",
         "merge commit `8af5e83c` (PR #5232), with Venom enforced through",
-        "`--experimental-codegen`. Both use verified Foundry 1.8.0 and target Cancun;",
+        f"`--experimental-codegen`. Recorded Foundry version: {comparison['methodology']['foundry']}; target Cancun.",
         "the Vyper profile isolates artifacts from Solidity's additional",
         "compiler profiles without changing production bytecode settings.",
         "",
-        "Each run passed 86/86 tests. The snapshots contain",
+        "The snapshots contain",
         f"{overall['operations']} measured operations across {overall['snapshot_files']} files.",
         "",
         "The sum across independent scenarios is a comparison index, not the cost of a",
@@ -210,20 +210,10 @@ def _render_markdown(comparison: dict[str, object]) -> str:
             "",
             "## Interpretation",
             "",
-            "The two Spoke operation files contribute most of the absolute delta. The",
-            "Vyper implementation uses the same compact position bitmap strategy as the",
-            "Solidity implementation, but manual packed-storage conversion, internal",
-            "struct materialization, and cross-contract ABI work remain more expensive.",
+            "These measurements do not isolate the cause of a performance difference or",
+            "establish full behavioral equivalence. See COMPILER_FEEDBACK_DIARY.md for",
+            "the implementation status, current API limits, compiler examples, and test evidence.",
             "",
-            "Spoke multicall now accepts an unbounded `bytes[]` ABI domain through raw",
-            "runtime decoding because Vyper 0.5.0b2 cannot type nested unbounded dynamic",
-            "arrays directly. That parity path is slower than the bounded decoder in the",
-            "small measured cases. Vyper also still requires a finite `raw_call` output",
-            "bound, so each delegated result remains capped at 256 bytes.",
-            "",
-            "The signed position-manager setup rows also include an extra persistent",
-            "write used to preserve explicit boolean state under Foundry arbitrary-storage",
-            "testing.",
             f"{overall['improved']} operations beat Solidity and {overall['unchanged']} are",
             "byte-for-byte equal in the snapshots.",
         ]
@@ -238,8 +228,7 @@ def _render_markdown(comparison: dict[str, object]) -> str:
             "forge test --mp 'tests/gas/**' -vv",
             ".venv/bin/python scripts/build_vyper.py",
             "FOUNDRY_PROFILE=vyper TEST_VYPER=true forge test --mp 'tests/gas/**' -vv",
-            "python3 scripts/compare_vyper_gas.py gas-snapshots/solidity \\",
-            "  gas-snapshots/vyper-b2-amortized-restored gas-snapshots/comparison-b2-amortized",
+            "python3 scripts/compare_vyper_gas.py <solidity-snapshots> <vyper-snapshots> <output> --foundry-version <version>",
             "```",
             "",
             "Foundry writes both implementations to `snapshots/*.json`, so copy each run",
@@ -256,11 +245,13 @@ def main() -> None:
     parser.add_argument("solidity_dir", type=Path)
     parser.add_argument("vyper_dir", type=Path)
     parser.add_argument("output_dir", type=Path)
+    parser.add_argument("--foundry-version", default="not recorded")
     args = parser.parse_args()
 
     comparison = _build_comparison(
         _load_snapshots(args.solidity_dir), _load_snapshots(args.vyper_dir)
     )
+    comparison["methodology"]["foundry"] = args.foundry_version
     args.output_dir.mkdir(parents=True, exist_ok=True)
     (args.output_dir / "comparison.json").write_text(
         json.dumps(comparison, indent=2) + "\n"

@@ -1,10 +1,13 @@
 # pragma version 0.5.0b2
+from utils import AccessManaged
 from hub.interfaces import IHub
 from hub.interfaces import IHubConfigurator
 from dependencies.openzeppelin import IAuthority
 from dependencies.openzeppelin import IERC20Metadata
 
 
+initializes: AccessManaged
+exports: AccessManaged.__interface__
 
 implements: IHubConfigurator
 
@@ -22,13 +25,8 @@ def __init__(authority_: address):
 
 
 @internal
-@view
 def _check_access(selector: Bytes[4]):
-    allowed: bool = False
-    delay: uint32 = 0
-    allowed, delay = staticcall IAuthority(self.authority_address).canCall(msg.sender, self, convert(selector, bytes4))
-    if not allowed:
-        raise IHubConfigurator.AccessManagedUnauthorized(msg.sender)
+    AccessManaged.check_access(self.authority_address, convert(selector, bytes4), slice(msg.data, 0, len(msg.data)))
 
 
 @internal
@@ -65,14 +63,9 @@ def authority() -> address:
 def setAuthority(newAuthority: address):
     if msg.sender != self.authority_address:
         raise IHubConfigurator.AccessManagedUnauthorized(msg.sender)
+    AccessManaged.validate_authority(newAuthority)
     self.authority_address = newAuthority
     log IHubConfigurator.AuthorityUpdated(authority=newAuthority)
-
-
-@external
-@pure
-def isConsumingScheduledOp() -> bytes4:
-    return empty(bytes4)
 
 
 @internal

@@ -239,13 +239,12 @@ abstract contract SetupHelpers is CheckedActions, ConfigHelpers, MockHelpers {
     uint256 reserveId,
     uint256 debtAmount
   ) internal {
-    if (vm.envOr('TEST_VYPER', false)) {
-      vm.prank(user);
-      MockSpoke(address(spoke)).borrowWithoutHfCheck(reserveId, debtAmount, user);
-      return;
-    }
-
-    address mockSpoke = address(new MockSpoke(spoke.ORACLE(), MAX_ALLOWED_USER_RESERVES_LIMIT));
+    address mockSpoke = vm.envOr('TEST_VYPER', false)
+      ? vm.deployCode(
+        'MockSpokeInstance.vy:MockSpokeInstance',
+        abi.encode(spoke.getLiquidationLogic(), spoke.ORACLE(), MAX_ALLOWED_USER_RESERVES_LIMIT)
+      )
+      : address(new MockSpoke(spoke.ORACLE(), MAX_ALLOWED_USER_RESERVES_LIMIT));
 
     address implementation = _getImplementationAddress(address(spoke));
 

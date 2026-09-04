@@ -8,6 +8,9 @@ implements: IAccessManagerEnumerable
 # protocol uses immediate role administration; delayed-operation entrypoints
 # are included for ABI compatibility and use the same operation identifiers.
 
+error ReturndataTooLarge:
+    maximum: uint256
+
 MAX_ITEMS: constant(uint256) = 1024
 MAX_SELECTORS: constant(uint256) = 256
 MAX_LABEL: constant(uint256) = 128
@@ -101,7 +104,7 @@ def _require_admin():
 
 @internal
 @view
-def _can_call_data(caller: address, target: address, data: Bytes[MAX_CALLDATA]) -> (bool, uint32):
+def _can_call_data(caller: address, target: address, data: Bytes[INF]) -> (bool, uint32):
     if len(data) < 4 or self.target_closed[target]:
         return False, 0
     selector: bytes4 = convert(slice(data, 0, 4), bytes4)
@@ -498,12 +501,12 @@ def getNonce(id: bytes32) -> uint32:
 
 @external
 @view
-def hashOperation(caller: address, target: address, data: Bytes[MAX_CALLDATA]) -> bytes32:
+def hashOperation(caller: address, target: address, data: Bytes[INF]) -> bytes32:
     return keccak256(abi_encode(caller, target, data))
 
 
 @external
-def schedule(target: address, data: Bytes[MAX_CALLDATA], when: uint48) -> (bytes32, uint32):
+def schedule(target: address, data: Bytes[INF], when: uint48) -> (bytes32, uint32):
     if len(data) < 4:
         raise IAccessManagerEnumerable.AccessManagerUnauthorizedCall(msg.sender, target, empty(bytes4))
     immediate: bool = False
@@ -533,7 +536,7 @@ def schedule(target: address, data: Bytes[MAX_CALLDATA], when: uint48) -> (bytes
 
 @external
 @payable
-def execute(target: address, data: Bytes[MAX_CALLDATA]) -> uint32:
+def execute(target: address, data: Bytes[INF]) -> uint32:
     if len(data) < 4:
         raise IAccessManagerEnumerable.AccessManagerUnauthorizedCall(msg.sender, target, empty(bytes4))
     selector: bytes4 = convert(slice(data, 0, 4), bytes4)
@@ -555,7 +558,7 @@ def execute(target: address, data: Bytes[MAX_CALLDATA]) -> uint32:
 
 
 @external
-def cancel(caller: address, target: address, data: Bytes[MAX_CALLDATA]) -> uint32:
+def cancel(caller: address, target: address, data: Bytes[INF]) -> uint32:
     selector: bytes4 = empty(bytes4)
     if len(data) >= 4:
         selector = convert(slice(data, 0, 4), bytes4)
@@ -579,7 +582,7 @@ def cancel(caller: address, target: address, data: Bytes[MAX_CALLDATA]) -> uint3
 
 
 @external
-def consumeScheduledOp(caller: address, data: Bytes[MAX_CALLDATA]):
+def consumeScheduledOp(caller: address, data: Bytes[INF]):
     consuming_selector: bytes4 = staticcall IAccessManaged(msg.sender).isConsumingScheduledOp()
     if consuming_selector != convert(method_id("isConsumingScheduledOp()"), bytes4):
         raise IAccessManagerEnumerable.AccessManagerUnauthorizedConsume(msg.sender)
@@ -596,8 +599,10 @@ def updateAuthority(target: address, newAuthority: address):
 def multicall(data: DynArray[Bytes[MAX_CALLDATA], 64]) -> DynArray[Bytes[MAX_RETURN], 64]:
     results: DynArray[Bytes[MAX_RETURN], 64] = []
     for call_data: Bytes[MAX_CALLDATA] in data:
-        result: Bytes[MAX_RETURN] = raw_call(self, call_data, max_outsize=MAX_RETURN, is_delegate_call=True)
-        results.append(result)
+        result: Bytes[MAX_RETURN + 1] = raw_call(self, call_data, max_outsize=MAX_RETURN + 1, is_delegate_call=True)
+        if len(result) > MAX_RETURN:
+            raise ReturndataTooLarge(MAX_RETURN)
+        results.append(convert(result, Bytes[MAX_RETURN]))
     return results
 
 
@@ -783,16 +788,21 @@ def getRoleLabels(start: uint256, end: uint256) -> Bytes[INF]:
     upper: uint256 = 0
     lower, upper = self._slice_end(start, end, self.labels_count)
     count: uint256 = upper - lower
-    heads: Bytes[INF] = b""
-    tails: Bytes[INF] = b""
+    heads: DynArray[bytes32, INF] = []
+    tails: DynArray[bytes32, INF] = []
     output_offset: uint256 = 32 * count
     for i: uint256 in range(lower, upper, bound=115792089237316195423570985008687907853269984665640564039457584007913129639935):
         label: String[MAX_LABEL] = self.labels[i]
         encoded_label: Bytes[INF] = abi_encode(label, ensure_tuple=False)
-        heads = concat(heads, convert(output_offset, bytes32))
-        tails = concat(tails, encoded_label)
+        heads.append(convert(output_offset, bytes32))
+        for word: uint256 in range(5):
+            if word * 32 >= len(encoded_label):
+                break
+            tails.append(convert(slice(encoded_label, word * 32, 32), bytes32))
         output_offset += len(encoded_label)
-    return concat(convert(32, bytes32), convert(count, bytes32), heads, tails)
+    encoded_heads: Bytes[INF] = abi_encode(heads, ensure_tuple=False)
+    encoded_tails: Bytes[INF] = abi_encode(tails, ensure_tuple=False)
+    return concat(convert(32, bytes32), convert(count, bytes32), slice(encoded_heads, 32, len(encoded_heads) - 32), slice(encoded_tails, 32, len(encoded_tails) - 32))
 
 
 @external

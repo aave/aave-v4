@@ -13,10 +13,16 @@ contract SpokeDynamicConfigTest is Base {
   function setUp() public override {
     super.setUp();
     spoke = MockSpoke(address(spoke1));
-    if (!vm.envOr('TEST_VYPER', false)) {
-      address mockSpokeImpl = address(
-        new MockSpoke(address(spoke.ORACLE()), MAX_ALLOWED_USER_RESERVES_LIMIT)
-      );
+    address mockSpokeImpl = vm.envOr('TEST_VYPER', false)
+      ? vm.deployCode(
+        'MockSpokeInstance.vy:MockSpokeInstance',
+        abi.encode(spoke.getLiquidationLogic(), spoke.ORACLE(), MAX_ALLOWED_USER_RESERVES_LIMIT)
+      )
+      : address(new MockSpoke(address(spoke.ORACLE()), MAX_ALLOWED_USER_RESERVES_LIMIT));
+    if (vm.envOr('TEST_VYPER', false)) {
+      vm.prank(_getProxyAdminAddress(address(spoke1)));
+      ITransparentUpgradeableProxy(address(spoke1)).upgradeToAndCall(mockSpokeImpl, '');
+    } else {
       vm.etch(address(spoke1), mockSpokeImpl.code);
     }
   }

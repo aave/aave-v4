@@ -1,0 +1,78 @@
+{
+  "compiler": {
+    "url": "https://github.com/vyperlang/vyper.git",
+    "vcs_info": {
+      "vcs": "git",
+      "commit_id": "8af5e83c10af4f065cc660fe20293dac11fdff83",
+      "requested_revision": "8af5e83c10af4f065cc660fe20293dac11fdff83"
+    }
+  },
+  "measurements": [
+    {
+      "contract": "Spoke",
+      "optimizer": 3,
+      "pythonHashSeed": 0,
+      "run": 1,
+      "runtimeBytes": 23299,
+      "deployedBytes": 23395,
+      "sha256": "f407851e4c0d79a404ade1f4bfb69d4c00dc629f9b7a2b98fb33bbfc72be02ca"
+    },
+    {
+      "contract": "Spoke",
+      "optimizer": 3,
+      "pythonHashSeed": 0,
+      "run": 2,
+      "runtimeBytes": 23299,
+      "deployedBytes": 23395,
+      "sha256": "f74fe3c81143d2803a666ba284766cc11bbad2594d0c2254cd1e654126c0afd9"
+    },
+    {
+      "contract": "Spoke",
+      "optimizer": 3,
+      "pythonHashSeed": 1,
+      "run": 1,
+      "runtimeBytes": 23299,
+      "deployedBytes": 23395,
+      "sha256": "5ad451ab357f6c4321cf76524d6c8a6c511591802185a22e400272480b42af30"
+    },
+    {
+      "contract": "Spoke",
+      "optimizer": 2,
+      "pythonHashSeed": 0,
+      "run": 1,
+      "runtimeBytes": 26811,
+      "deployedBytes": 26907,
+      "sha256": "b4c6b17f52bdeed9b5510a98805a4261cd4d6d49f3225acb8a37a5df1110bf11"
+    },
+    {
+      "contract": "Hub",
+      "optimizer": 2,
+      "pythonHashSeed": 0,
+      "run": 1,
+      "runtimeBytes": 18269,
+      "deployedBytes": 18269,
+      "sha256": "538256b5007c57fc39ee4457096943c0d483d052179ed0da02edd57ae120c80a"
+    },
+    {
+      "contract": "Hub",
+      "optimizer": 3,
+      "pythonHashSeed": 0,
+      "run": 1,
+      "runtimeBytes": 16100,
+      "deployedBytes": 16100,
+      "sha256": "6cc76378b97622e29d4e4cc40a4dd37393bff61e9b7025adb88758911223d866"
+    }
+  ],
+  "surfaceChecks": [
+    {
+      "artifact": "Hub",
+      "baselineRejected": true,
+      "reason": "HubInstance.vy: production ABI drift: extra=['setAssetAddedShares(uint256,uint256)'], missing=[]"
+    },
+    {
+      "artifact": "Spoke",
+      "baselineRejected": true,
+      "reason": "SpokeInstance.vy: production ABI drift: extra=['borrowWithoutHfCheck(uint256,uint256,address)', 'calculateUserAccountData(address,bool)', 'setReserveDynamicConfigKey(uint256,uint32)'], missing=['extSload(bytes32)', 'extSloads(bytes32[])']"
+    }
+  ]
+}

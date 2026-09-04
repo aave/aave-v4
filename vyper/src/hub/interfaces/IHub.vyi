@@ -245,7 +245,7 @@ def setAuthority(newAuthority: address):
     ...
 
 
-@pure
+@view
 @external
 def isConsumingScheduledOp() -> bytes4:
     ...
@@ -576,9 +576,7 @@ def getSpokeConfig(assetId: uint256, spoke: address) -> SpokeConfig:
     ...
 
 
-@external
-def setAssetAddedShares(assetId: uint256, addedShares: uint256):
-    ...
+
 
 
 @view

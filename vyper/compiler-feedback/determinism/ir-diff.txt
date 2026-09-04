@@ -1,0 +1,176 @@
+--- baseline-1.ir
+
++++ baseline-2.ir
+
+@@ -9257,20 +9257,20 @@
+
+ 
+   inl118_833_if_exit:  ; OUT=[inl118_835_extcall_cont, inl118_833_if_exit_split_119_extcall_fail]
+-      %9192 = 256
++      %9192 = 672
+       %inl118_30 = %alloca_inl118_8_332:2 ; from "internal 126 _report_deficit(address)_runtime"
+       invoke @"internal 15 _load_reserve(uint256)_runtime", %inl118_30, %9192 ; from "internal 126 _report_deficit(address)_runtime"
+       %9193 = 224
+-      %9194 = 256
++      %9194 = 672
+       %9195 = 896
+       mcopy %9195, %9194, %9193      ; from "internal 126 _report_deficit(address)_runtime"
+-      %9196 = 736
++      %9196 = 512
+       %9197 = %3068
+       %inl118_35 = %alloca_inl118_8_332:2 ; from "internal 126 _report_deficit(address)_runtime"
+       invoke @"internal 43 _load_user_position(address,uint256)_runtime", %inl118_35, %9197, %9196 ; from "internal 126 _report_deficit(address)_runtime"
+       %9198 = 160
+-      %9199 = 736
+-      %9200 = 480
++      %9199 = 512
++      %9200 = 256
+       mcopy %9200, %9199, %9198      ; from "internal 126 _report_deficit(address)_runtime"
+-      %9201 = 480
++      %9201 = 256
+       %inl118_39 = mload %9201       ; from "internal 126 _report_deficit(address)_runtime"
+       %9202 = 928
+@@ -9314,6 +9314,6 @@
+
+       %5315 = iszero %5314
+       assert %5315                   ; from "internal 126 _report_deficit(address)_runtime"
+-      %9223 = 640
+-      %9224 = 480
++      %9223 = 416
++      %9224 = 256
+       %9225 = %inl118_39
+       %9220 = 0x600
+@@ -9321,10 +9321,10 @@
+
+       %9226 = %inl118_70
+       %9227 = 0
+-      %9221 = 480
++      %9221 = 256
+       %9222 = %inl118_70
+       %inl118_76 = invoke @"internal 64 calculate_premium_ray(UserPosition,uint256)_runtime", %9222, %9221 ; from "internal 126 _report_deficit(address)_runtime"
+       invoke @"internal 74 calculate_premium_delta(UserPosition,uint256,uint256,uint256,uint256)_runtime", %inl118_76, %9227, %9226, %9225, %9224, %9223 ; from "internal 126 _report_deficit(address)_runtime"
+       %9228 = 96
+-      %9229 = 640
++      %9229 = 416
+       %9230 = 0x460
+       mcopy %9230, %9229, %9228      ; from "internal 126 _report_deficit(address)_runtime"
+@@ -9383,5 +9383,5 @@
+
+       %9258 = 896
+       mcopy %9258, %9257, %9256      ; from "internal 126 _report_deficit(address)_runtime"
+-      %9259 = 512
++      %9259 = 288
+       %inl118_128 = mload %9259      ; from "internal 126 _report_deficit(address)_runtime"
+       %9260 = %inl118_128
+@@ -9413,7 +9413,7 @@
+
+       assert %inl118_141             ; from "internal 126 _report_deficit(address)_runtime"
+       %9273 = %inl118_133
+-      %9274 = 512
++      %9274 = 288
+       mstore %9274, %9273            ; from "internal 126 _report_deficit(address)_runtime"
+-      %9275 = 544
++      %9275 = 320
+       %inl118_144 = mload %9275      ; from "internal 126 _report_deficit(address)_runtime"
+       %9281 = %inl118_144
+@@ -9440,12 +9440,12 @@
+
+       assert %inl118_155             ; from "internal 126 _report_deficit(address)_runtime"
+       %9287 = %inl118_147
+-      %9288 = 544
++      %9288 = 320
+       mstore %9288, %9287            ; from "internal 126 _report_deficit(address)_runtime"
+       %9289 = 0
+-      %9290 = 480
++      %9290 = 256
+       mstore %9290, %9289            ; from "internal 126 _report_deficit(address)_runtime"
+       %9291 = %3068
+       %inl118_159 = %alloca_inl118_8_332:2 ; from "internal 126 _report_deficit(address)_runtime"
+-      %9292 = 480
++      %9292 = 256
+       invoke @"internal 46 _store_user_position(address,uint256,UserPosition)_runtime", %9292, %inl118_159, %9291 ; from "internal 126 _report_deficit(address)_runtime"
+       %9293 = %3068
+@@ -14582,18 +14582,18 @@
+
+ 
+   755_if_exit:  ; OUT=[757_extcall_cont, 755_if_exit_split_756_extcall_fail]
+-      %192 = 416
++      %192 = 256
+       %48 = %alloca_26_15:2
+       invoke @"internal 15 _load_reserve(uint256)_runtime", %48, %192
+       %193 = 224
+-      %194 = 416
++      %194 = 256
+       %195 = 896
+       mcopy %195, %194, %193
+-      %196 = 640
++      %196 = 480
+       %197 = %1
+       %53 = %alloca_26_15:2
+       invoke @"internal 43 _load_user_position(address,uint256)_runtime", %53, %197, %196
+       %198 = 160
+-      %199 = 640
+-      %200 = 256
++      %199 = 480
++      %200 = 736
+       mcopy %200, %199, %198
+       %201 = 928
+@@ -14649,6 +14649,6 @@
+
+       %178 = iszero %177
+       assert %178
+-      %225 = 800
+-      %226 = 256
++      %225 = 640
++      %226 = 736
+       %227 = 0
+       %224 = 0x560
+@@ -14658,5 +14658,5 @@
+
+       invoke @"internal 74 calculate_premium_delta(UserPosition,uint256,uint256,uint256,uint256)_runtime", %229, %228, %85, %227, %226, %225
+       %230 = 96
+-      %231 = 800
++      %231 = 640
+       %232 = 0x460
+       mcopy %232, %231, %230
+@@ -14674,5 +14674,5 @@
+
+       mstore %237, %96
+       %238 = 96
+-      %239 = 800
++      %239 = 640
+       %240 = 0x500
+       mcopy %240, %239, %238
+@@ -14691,5 +14691,5 @@
+
+ 
+   759_extcall_cont:  ; OUT=[749_for_cond]
+-      %248 = 288
++      %248 = 768
+       %112 = mload %248
+       %249 = %112
+@@ -14712,5 +14712,5 @@
+
+       %120 = iszero %161
+       assert %120
+-      %258 = 320
++      %258 = 800
+       %123 = mload %258
+       %264 = %123
+@@ -14745,12 +14745,12 @@
+
+       assert %142
+       %270 = %117
+-      %271 = 288
++      %271 = 768
+       mstore %271, %270
+       %276 = %126
+-      %277 = 320
++      %277 = 800
+       mstore %277, %276
+       %278 = %1
+       %145 = %alloca_26_15:2
+-      %279 = 256
++      %279 = 736
+       invoke @"internal 46 _store_user_position(address,uint256,UserPosition)_runtime", %279, %145, %278
+       %280 = 96

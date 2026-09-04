@@ -1,0 +1,257 @@
+--- /dev/null
++++ b/vyper/src/utils/Delay.vy
+@@ -0,0 +1,30 @@
++# pragma version 0.5.0b2
++# OpenZeppelin Time.Delay: after[32], before[32], effect[48].
++@internal
++@view
++def get_full(packed: uint112) -> (uint32, uint32, uint48):
++    after: uint32 = convert(convert(packed, uint256) & 0xffffffff, uint32)
++    before: uint32 = convert((convert(packed, uint256) >> 32) & 0xffffffff, uint32)
++    effect: uint48 = convert(packed >> 64, uint48)
++    if effect <= convert(block.timestamp, uint48):
++        return after, 0, 0
++    return before, after, effect
++
++@internal
++@view
++def get(packed: uint112) -> uint32:
++    current: uint32 = 0
++    pending: uint32 = 0
++    effect: uint48 = 0
++    current, pending, effect = self.get_full(packed)
++    return current
++
++@internal
++@view
++def with_update(packed: uint112, new_delay: uint32, min_setback: uint32) -> (uint112, uint48):
++    current: uint32 = self.get(packed)
++    reduction: uint32 = 0
++    if current > new_delay:
++        reduction = current - new_delay
++    effect: uint48 = convert(block.timestamp, uint48) + convert(max(min_setback, reduction), uint48)
++    return (convert(effect, uint112) << 64) | (convert(current, uint112) << 32) | convert(new_delay, uint112), effect
+--- a/vyper/src/access/interfaces/IAccessManagerEnumerable.vyi
++++ b/vyper/src/access/interfaces/IAccessManagerEnumerable.vyi
+@@ -54,7 +54,7 @@
+ 
+ struct Access:
+     since: uint48
+-    delay: uint32
++    delay: uint112
+ 
+ struct Schedule:
+     timepoint: uint48
+--- a/vyper/src/access/AccessManagerEnumerable.vy
++++ b/vyper/src/access/AccessManagerEnumerable.vy
+@@ -1,12 +1,11 @@
+ # pragma version 0.5.0b2
+ from dependencies.openzeppelin import IAccessManaged
++from utils import Delay
+ from access.interfaces import IAccessManagerEnumerable
+ 
+ implements: IAccessManagerEnumerable
+ 
+-# Native Vyper implementation of Aave V4's enumerable AccessManager.  The
+-# protocol uses immediate role administration; delayed-operation entrypoints
+-# are included for ABI compatibility and use the same operation identifiers.
++# Enumerable AccessManager with scheduled execution and delayed role administration.
+ 
+ error ReturndataTooLarge:
+     maximum: uint256
+@@ -23,10 +22,10 @@
+ role_access: HashMap[uint64, HashMap[address, IAccessManagerEnumerable.Access]]
+ role_admin: HashMap[uint64, uint64]
+ role_guardian: HashMap[uint64, uint64]
+-role_grant_delay: HashMap[uint64, uint32]
++role_grant_delay: HashMap[uint64, uint112]
+ 
+ target_closed: HashMap[address, bool]
+-target_admin_delay: HashMap[address, uint32]
++target_admin_delay: HashMap[address, uint112]
+ target_roles: HashMap[address, HashMap[bytes4, uint64]]
+ 
+ schedules: HashMap[bytes32, IAccessManagerEnumerable.Schedule]
+@@ -79,44 +78,64 @@
+     if role_id == PUBLIC_ROLE:
+         return True, 0
+     access: IAccessManagerEnumerable.Access = self.role_access[role_id][account]
+-    return access.since != 0 and convert(access.since, uint256) <= block.timestamp, access.delay
+-
+-
+-@internal
+-@view
+-def _require_role(role_id: uint64):
+-    member: bool = False
+-    _delay: uint32 = 0
+-    member, _delay = self._has_role(role_id, msg.sender)
+-    if not member or _delay != 0:
+-        raise IAccessManagerEnumerable.AccessManagerUnauthorizedAccount(msg.sender, role_id)
+-
+-
+-@internal
+-@view
+-def _require_admin():
+-    if msg.sender == self and len(msg.data) >= 4:
+-        selector: bytes4 = convert(slice(msg.data, 0, 4), bytes4)
+-        if self.execution_id == keccak256(concat(convert(self, bytes32), convert(selector, bytes32))):
+-            return
+-    self._require_role(ADMIN_ROLE)
++    return access.since != 0 and convert(access.since, uint256) <= block.timestamp, Delay.get(access.delay)
++
++
++@internal
++@view
++def _admin_restrictions(data: Bytes[INF]) -> (bool, uint64, uint32):
++    if len(data) < 4:
++        return False, 0, 0
++    selector: bytes4 = convert(slice(data, 0, 4), bytes4)
++    if selector in [method_id("labelRole(uint64,string)", output_type=bytes4), method_id("setRoleAdmin(uint64,uint64)", output_type=bytes4), method_id("setRoleGuardian(uint64,uint64)", output_type=bytes4), method_id("setGrantDelay(uint64,uint32)", output_type=bytes4), method_id("setTargetAdminDelay(address,uint32)", output_type=bytes4)]:
++        return True, ADMIN_ROLE, 0
++    if selector in [method_id("updateAuthority(address,address)", output_type=bytes4), method_id("setTargetClosed(address,bool)", output_type=bytes4), method_id("setTargetFunctionRole(address,bytes4[],uint64)", output_type=bytes4)]:
++        target: address = convert(slice(data, 4, 32), address)
++        return True, ADMIN_ROLE, Delay.get(self.target_admin_delay[target])
++    if selector in [method_id("grantRole(uint64,address,uint32)", output_type=bytes4), method_id("revokeRole(uint64,address)", output_type=bytes4)]:
++        role_id: uint64 = convert(slice(data, 4, 32), uint64)
++        return True, self.role_admin[role_id], 0
++    return False, self.target_roles[self][selector], 0
+ 
+ 
+ @internal
+ @view
+ def _can_call_data(caller: address, target: address, data: Bytes[INF]) -> (bool, uint32):
+-    if len(data) < 4 or self.target_closed[target]:
++    if len(data) < 4:
+         return False, 0
+     selector: bytes4 = convert(slice(data, 0, 4), bytes4)
++    if caller == self:
++        return self.execution_id == keccak256(concat(convert(target, bytes32), convert(selector, bytes32))), 0
+     role_id: uint64 = self.target_roles[target][selector]
++    operation_delay: uint32 = 0
++    restricted: bool = False
+     if target == self:
+-        role_id = ADMIN_ROLE
++        restricted, role_id, operation_delay = self._admin_restrictions(data)
++    if not restricted and self.target_closed[target]:
++        return False, 0
+     member: bool = False
+     delay: uint32 = 0
+     member, delay = self._has_role(role_id, caller)
+     if not member:
+         return False, 0
++    delay = max(delay, operation_delay)
+     return delay == 0, delay
++
++
++@internal
++def _require_admin():
++    data: Bytes[INF] = slice(msg.data, 0, len(msg.data))
++    immediate: bool = False
++    delay: uint32 = 0
++    immediate, delay = self._can_call_data(msg.sender, self, data)
++    if not immediate:
++        if delay == 0:
++            restricted: bool = False
++            role_id: uint64 = 0
++            operation_delay: uint32 = 0
++            restricted, role_id, operation_delay = self._admin_restrictions(data)
++            raise IAccessManagerEnumerable.AccessManagerUnauthorizedAccount(msg.sender, role_id)
++        self._consume_schedule(keccak256(abi_encode(msg.sender, self, data)))
+ 
+ 
+ @internal
+@@ -309,7 +328,7 @@
+ @external
+ @view
+ def getTargetAdminDelay(target: address) -> uint32:
+-    return self.target_admin_delay[target]
++    return Delay.get(self.target_admin_delay[target])
+ 
+ 
+ @external
+@@ -327,14 +346,18 @@
+ @external
+ @view
+ def getRoleGrantDelay(roleId: uint64) -> uint32:
+-    return self.role_grant_delay[roleId]
++    return Delay.get(self.role_grant_delay[roleId])
+ 
+ 
+ @external
+ @view
+ def getAccess(roleId: uint64, account: address) -> (uint48, uint32, uint32, uint48):
+     access: IAccessManagerEnumerable.Access = self.role_access[roleId][account]
+-    return access.since, access.delay, 0, 0
++    current: uint32 = 0
++    pending: uint32 = 0
++    effect: uint48 = 0
++    current, pending, effect = Delay.get_full(access.delay)
++    return access.since, current, pending, effect
+ 
+ 
+ @external
+@@ -385,14 +408,14 @@
+ 
+ @external
+ def grantRole(roleId: uint64, account: address, executionDelay: uint32):
+-    self._require_role(self.role_admin[roleId])
++    self._require_admin()
+     if roleId == PUBLIC_ROLE:
+         raise IAccessManagerEnumerable.AccessManagerLockedRole(roleId)
+     access: IAccessManagerEnumerable.Access = self.role_access[roleId][account]
+     new_member: bool = access.since == 0
+     since: uint48 = access.since
+     if new_member:
+-        since = convert(block.timestamp + convert(self.role_grant_delay[roleId], uint256), uint48)
++        since = convert(block.timestamp, uint48) + convert(Delay.get(self.role_grant_delay[roleId]), uint48)
+         if since == 0:
+             since = 1
+         count: uint256 = self.role_members_count[roleId]
+@@ -400,13 +423,17 @@
+         self.role_members_count[roleId] = count + 1
+         self.role_member_index[roleId][account] = count + 1
+         self._track_role(roleId)
+-    self.role_access[roleId][account] = IAccessManagerEnumerable.Access(since=since, delay=executionDelay)
++        access.since = since
++        access.delay = convert(executionDelay, uint112)
++    else:
++        access.delay, since = Delay.with_update(access.delay, executionDelay, 0)
++    self.role_access[roleId][account] = access
+     log IAccessManagerEnumerable.RoleGranted(roleId=roleId, account=account, delay=executionDelay, since=since, newMember=new_member)
+ 
+ 
+ @external
+ def revokeRole(roleId: uint64, account: address):
+-    self._require_role(self.role_admin[roleId])
++    self._require_admin()
+     if roleId == PUBLIC_ROLE:
+         raise IAccessManagerEnumerable.AccessManagerLockedRole(roleId)
+     if self.role_access[roleId][account].since == 0:
+@@ -459,8 +486,11 @@
+     self._require_admin()
+     if roleId == PUBLIC_ROLE:
+         raise IAccessManagerEnumerable.AccessManagerLockedRole(roleId)
+-    self.role_grant_delay[roleId] = newDelay
+-    log IAccessManagerEnumerable.RoleGrantDelayChanged(roleId=roleId, delay=newDelay, since=convert(block.timestamp, uint48))
++    updated: uint112 = 0
++    effect: uint48 = 0
++    updated, effect = Delay.with_update(self.role_grant_delay[roleId], newDelay, 5 * 24 * 60 * 60)
++    self.role_grant_delay[roleId] = updated
++    log IAccessManagerEnumerable.RoleGrantDelayChanged(roleId=roleId, delay=newDelay, since=effect)
+ 
+ 
+ @external
+@@ -473,8 +503,11 @@
+ @external
+ def setTargetAdminDelay(target: address, newDelay: uint32):
+     self._require_admin()
+-    self.target_admin_delay[target] = newDelay
+-    log IAccessManagerEnumerable.TargetAdminDelayUpdated(target=target, delay=newDelay, since=convert(block.timestamp, uint48))
++    updated: uint112 = 0
++    effect: uint48 = 0
++    updated, effect = Delay.with_update(self.target_admin_delay[target], newDelay, 5 * 24 * 60 * 60)
++    self.target_admin_delay[target] = updated
++    log IAccessManagerEnumerable.TargetAdminDelayUpdated(target=target, delay=newDelay, since=effect)
+ 
+ 
+ @external

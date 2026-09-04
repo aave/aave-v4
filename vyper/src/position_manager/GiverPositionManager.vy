@@ -1,5 +1,6 @@
 # pragma version 0.5.0b2
 
+from utils import SafeERC20
 from position_manager import PositionManagerBase
 from spoke.interfaces import ISpoke
 from position_manager.interfaces import IGiverPositionManager
@@ -23,31 +24,12 @@ def _multicall_enabled() -> bool:
 
 @internal
 def _safe_transfer_from(token: address, owner: address, to: address, amount: uint256):
-    result: Bytes[32] = raw_call(
-        token,
-        concat(
-            method_id("transferFrom(address,address,uint256)"),
-            convert(owner, bytes32),
-            convert(to, bytes32),
-            convert(amount, bytes32),
-        ),
-        max_outsize=32,
-    )
-    assert len(result) == 0 or abi_decode(result, bool)
+    SafeERC20.safe_transfer_from(token, owner, to, amount)
 
 
 @internal
 def _force_approve(token: address, spender: address, amount: uint256):
-    result: Bytes[32] = raw_call(
-        token,
-        concat(
-            method_id("approve(address,uint256)"),
-            convert(spender, bytes32),
-            convert(amount, bytes32),
-        ),
-        max_outsize=32,
-    )
-    assert len(result) == 0 or abi_decode(result, bool)
+    SafeERC20.force_approve(token, spender, amount)
 
 
 @external

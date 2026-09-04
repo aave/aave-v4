@@ -5,6 +5,7 @@ import {CommonHelpers} from 'tests/helpers/commons/CommonHelpers.sol';
 import {Constants} from 'tests/helpers/hub/Constants.sol';
 import {HubActions} from 'tests/helpers/hub/HubActions.sol';
 import {SlotDerivation} from 'src/dependencies/openzeppelin/SlotDerivation.sol';
+import {ITransparentUpgradeableProxy} from 'src/dependencies/openzeppelin/TransparentUpgradeableProxy.sol';
 import {IHub} from 'src/hub/interfaces/IHub.sol';
 import {
   IAssetInterestRateStrategy,
@@ -111,10 +112,16 @@ abstract contract MockHelpers is CommonHelpers, Constants {
     assertEq(hub.getAddedAssets(assetId), totalAddedAssets, '_mockSupplySharePrice: addedAssets');
 
     if (vm.envOr('TEST_VYPER', false)) {
+      address implementation = _getImplementationAddress(address(hub));
+      address wrapper = vm.deployCode('MockHubInstance.vy:MockHubInstance');
+      vm.prank(_getProxyAdminAddress(address(hub)));
+      ITransparentUpgradeableProxy(address(hub)).upgradeToAndCall(wrapper, '');
       (bool success, ) = address(hub).call(
         abi.encodeWithSignature('setAssetAddedShares(uint256,uint256)', assetId, addedShares)
       );
       require(success, '_mockSupplySharePrice: Vyper setter');
+      vm.prank(_getProxyAdminAddress(address(hub)));
+      ITransparentUpgradeableProxy(address(hub)).upgradeToAndCall(implementation, '');
     } else {
       uint256 _assetsSlot = 1;
       uint256 _addedSharesOffset = 1;

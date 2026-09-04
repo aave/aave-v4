@@ -261,13 +261,18 @@ contract SpokeUserAccountDataTest is Base {
     ISpoke.UserAccountData memory expectedUserAccountData
   ) internal {
     if (vm.envOr('TEST_VYPER', false)) {
-      address implementation = _getImplementationAddress(address(spoke));
+      address liquidationLogic = spoke.getLiquidationLogic();
+      address oracle = spoke.ORACLE();
       address storageHarness = vm.deployCode('MockSpokeStorage.vy:MockSpokeStorage');
       vm.prank(_getProxyAdminAddress(address(spoke)));
       ITransparentUpgradeableProxy(address(spoke)).upgradeToAndCall(storageHarness, '');
       spoke.mockStorage(user, accountDataInfo);
+      address wrapper = vm.deployCode(
+        'MockSpokeInstance.vy:MockSpokeInstance',
+        abi.encode(liquidationLogic, oracle, MAX_ALLOWED_USER_RESERVES_LIMIT)
+      );
       vm.prank(_getProxyAdminAddress(address(spoke)));
-      ITransparentUpgradeableProxy(address(spoke)).upgradeToAndCall(implementation, '');
+      ITransparentUpgradeableProxy(address(spoke)).upgradeToAndCall(wrapper, '');
     } else {
       spoke.mockStorage(user, accountDataInfo);
     }

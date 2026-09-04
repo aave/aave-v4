@@ -1,0 +1,32 @@
+{
+  "compiler_requirement": "vyper @ git+https://github.com/vyperlang/vyper.git@8af5e83c10af4f065cc660fe20293dac11fdff83",
+  "optimizer": "O2",
+  "experimental_codegen": true,
+  "cases": [
+    {
+      "source": "vyper/compiler-feedback/cases/nested_bytes_array.vy",
+      "supported": false,
+      "diagnostic": "vyper.exceptions.StructureException: DynArray element types cannot contain unbounded sequence types\n\n  contract \"vyper/compiler-feedback/cases/nested_bytes_array.vy:4\", function \"echo\", line 4:26 \n       3 @pure\n  ---> 4 def echo(values: DynArray[Bytes[INF], INF]) -> DynArray[Bytes[INF], INF]:\n  ---------------------------------^\n       5     return values\n\n"
+    },
+    {
+      "source": "vyper/compiler-feedback/cases/nested_struct_array.vy",
+      "supported": false,
+      "diagnostic": "vyper.exceptions.StructureException: Structs cannot contain unbounded sequence types\n\n  contract \"vyper/compiler-feedback/cases/nested_struct_array.vy:4\", line 4:12 \n       3     owner: address\n  ---> 4     values: DynArray[uint256, INF]\n  -------------------^\n       5 @external\n\n"
+    },
+    {
+      "source": "vyper/compiler-feedback/cases/runtime_return_data.vy",
+      "supported": false,
+      "diagnostic": "vyper.exceptions.TypeMismatch: Given reference has type INF, expected uint256\n\n  contract \"vyper/compiler-feedback/cases/runtime_return_data.vy:4\", function \"forward\", line 4:46 \n       3 def forward(target: address, data: Bytes[INF]) -> Bytes[INF]:\n  ---> 4     return raw_call(target, data, max_outsize=INF)\n  -----------------------------------------------------^\n       5\n\n"
+    },
+    {
+      "source": "vyper/compiler-feedback/cases/unbounded_storage.vy",
+      "supported": false,
+      "diagnostic": "vyper.exceptions.StructureException: Module variables cannot use unbounded sequence types\n\n  contract \"vyper/compiler-feedback/cases/unbounded_storage.vy:2\", line 2:8 \n       1 # pragma version 0.5.0b2\n  ---> 2 values: DynArray[uint256, INF]\n  ---------------^\n       3 @external\n\n"
+    },
+    {
+      "source": "vyper/compiler-feedback/cases/unbounded_storage_string.vy",
+      "supported": false,
+      "diagnostic": "vyper.exceptions.StructureException: Module variables cannot use unbounded sequence types\n\n  contract \"vyper/compiler-feedback/cases/unbounded_storage_string.vy:2\", line 2:13 \n       1 # pragma version 0.5.0b2\n  ---> 2 name: public(String[INF])\n  --------------------^\n       3 @external\n\n"
+    }
+  ]
+}

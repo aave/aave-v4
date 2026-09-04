@@ -21,3 +21,10 @@ def _multicall_enabled() -> bool:
 @payable
 def __default__():
     pass
+
+
+@external
+@view
+def getReserveUnderlying(spoke: address, reserveId: uint256) -> address:
+    reserve: PositionManagerBase.ISpoke.Reserve = staticcall PositionManagerBase.ISpoke(spoke).getReserve(reserveId)
+    return reserve.underlying

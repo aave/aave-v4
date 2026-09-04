@@ -506,4 +506,24 @@ contract ConfigPositionManagerPermitTest is ConfigPositionManagerBaseTest {
     vm.prank(alice);
     positionManager.setCanUpdateUserDynamicConfigPermissionWithSig(p, signature);
   }
+
+  function test_compat_ERC1271PermissionIntent() public {
+    MockERC1271Wallet wallet = new MockERC1271Wallet(alice);
+    IConfigPositionManager.SetGlobalPermissionPermit memory p = _setGlobalPermissionPermitData(
+      bob,
+      address(wallet),
+      true,
+      block.timestamp + 1 days
+    );
+    bytes32 digest = _getTypedDataHash(positionManager, p);
+    vm.prank(alice);
+    wallet.approveHash(digest);
+    positionManager.setGlobalPermissionWithSig(p, new bytes(513));
+    IConfigPositionManager.ConfigPermissionValues memory permissions = positionManager
+      .getConfigPermissions(address(spoke1), bob, address(wallet));
+    assertTrue(permissions.canSetUsingAsCollateral);
+    assertTrue(permissions.canUpdateUserRiskPremium);
+    assertTrue(permissions.canUpdateUserDynamicConfig);
+    _assertNonceIncrement(positionManager, address(wallet), p.nonce);
+  }
 }

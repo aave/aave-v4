@@ -145,4 +145,23 @@ contract TokenizationSpokeWithSigTest is TokenizationSpokeBaseTest {
     _assertNonceIncrement(vault, alice, p.nonce);
     _assertVaultHasNoBalanceOrAllowance(vault, alice);
   }
+
+  function test_compat_ERC1271DepositIntent() public {
+    MockERC1271Wallet wallet = new MockERC1271Wallet(alice);
+    ITokenizationSpoke.TokenizedDeposit memory p = _depositData(
+      vault,
+      address(wallet),
+      block.timestamp + 1 days
+    );
+    deal(vault.asset(), address(wallet), p.assets);
+    SpokeActions.approve({vault: vault, owner: address(wallet), amount: p.assets});
+    bytes32 digest = _getTypedDataHash(vault, p);
+    vm.prank(alice);
+    wallet.approveHash(digest);
+    uint256 expectedShares = vault.previewDeposit(p.assets);
+    uint256 shares = vault.depositWithSig(p, new bytes(513));
+    assertEq(shares, expectedShares);
+    assertEq(vault.balanceOf(p.receiver), shares);
+    _assertNonceIncrement(vault, address(wallet), p.nonce);
+  }
 }

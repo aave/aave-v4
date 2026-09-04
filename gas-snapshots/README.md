@@ -1,5 +1,14 @@
 # Solidity vs Vyper gas snapshots
 
+The current corrected build measures **22,277,132 gas versus 17,999,249 for
+Solidity (+23.77%)** across 137 matched scenarios. This is 0.20% below the prior
+Vyper index; some getter scenarios regress. See the
+[current comparison](comparison-parity-fixes/README.md) and
+[compiler feedback diary](COMPILER_FEEDBACK_DIARY.md) for validation, compiler
+examples, bytecode sizes, and remaining correctness/API restrictions.
+
+The tables below preserve historical measurements before those corrections.
+
 These matched runs use the repository's `tests/gas/**` suite: 86 tests and 137
 recorded operations across 11 snapshot files. The latest pair uses verified
 Foundry 1.8.0 after merging upstream main `4d86c2d3`. Solidity uses the
@@ -25,7 +34,7 @@ the scenario-sum index. PR #5232 alone is neutral in this suite because its
 arrays usually receive four or fewer appends. Restoring an unbounded local
 hash accumulator exposes the optimization on batches up to 1,024 elements.
 
-## Final category totals
+## Historical category totals
 
 | Snapshot | Ops | Solidity | Vyper b2 | Delta | Delta % |
 |---|---:|---:|---:|---:|---:|
@@ -47,7 +56,7 @@ The complete per-operation table is in
 
 ## Runtime-array parity and compiler limits
 
-The final build uses `DynArray[T, INF]` for supported top-level ABI-static
+The historical build uses `DynArray[T, INF]` for supported top-level ABI-static
 arrays, `Bytes[INF]` for signatures and interest-rate data, mapping-plus-length
 storage for persistent enumerable collections, and raw runtime ABI decoding for
 Spoke `multicall(bytes[])`. Abstract payload methods use unbounded return types
@@ -68,7 +77,9 @@ literal finite `max_outsize`. Consequently:
 - Harness-only storage arrays remain bounded; production enumerable Hub and
   AccessManager collections use mapping-plus-length storage.
 
-These are compiler residuals, not gas-driven design choices.
+These restrictions reflect compiler limits, but their exact finite values are port
+choices. They do not establish behavioral equivalence. The diary also lists
+implementation omissions that need no compiler changes.
 
 ## Artifacts
 
@@ -81,9 +92,21 @@ These are compiler residuals, not gas-driven design choices.
 - `vyper-b2-amortized/`: PR #5232 compiler-only result.
 - `vyper-b2-amortized-restored/`: final result with the hash append restored.
 - `comparison-b2-amortized/`: generated final comparison and tables.
-- `PERFORMANCE_DIARY.md`: compiler-facing findings and staged measurements.
+- `COMPILER_FEEDBACK_DIARY.md`: compiler-facing findings and staged measurements.
 
-## Reproduce
+## Reproduce the current comparison
+
+```sh
+.venv/bin/python scripts/build_vyper.py
+FOUNDRY_PROFILE=vyper TEST_VYPER=true FOUNDRY_SNAPSHOTS=gas-snapshots/vyper-parity-fixes forge test --match-path 'tests/gas/**' -vv
+TEST_VYPER=false FOUNDRY_SNAPSHOTS=gas-snapshots/solidity-parity-fixes forge test --match-path 'tests/gas/**' -vv
+.venv/bin/python scripts/compare_vyper_gas.py gas-snapshots/solidity-parity-fixes gas-snapshots/vyper-parity-fixes gas-snapshots/comparison-parity-fixes --foundry-version 1.8.1
+```
+
+Rebuilding may produce a different Spoke bytecode hash even with the same seed.
+Associate new measurements with their artifacts rather than reusing old hashes.
+
+## Reproduce the historical comparison
 
 ```sh
 forge test --match-path 'tests/gas/**' -vv

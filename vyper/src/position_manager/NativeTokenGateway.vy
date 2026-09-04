@@ -1,5 +1,6 @@
 # pragma version 0.5.0b2
 
+from utils import SafeERC20
 from position_manager import PositionManagerBase
 from spoke.interfaces import ISpoke
 from position_manager.interfaces import INativeTokenGateway
@@ -59,16 +60,7 @@ def _validate(underlying: address, amount: uint256):
 
 @internal
 def _force_approve(spender: address, amount: uint256):
-    result: Bytes[32] = raw_call(
-        NATIVE_TOKEN_WRAPPER,
-        concat(
-            method_id("approve(address,uint256)"),
-            convert(spender, bytes32),
-            convert(amount, bytes32),
-        ),
-        max_outsize=32,
-    )
-    assert len(result) == 0 or abi_decode(result, bool)
+    SafeERC20.force_approve(NATIVE_TOKEN_WRAPPER, spender, amount)
 
 
 @internal

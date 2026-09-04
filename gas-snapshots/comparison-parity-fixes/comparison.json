@@ -1,0 +1,1211 @@
+{
+  "methodology": {
+    "solidity_command": "forge test --mp 'tests/gas/**' -vv",
+    "vyper_command": "FOUNDRY_PROFILE=vyper TEST_VYPER=true forge test --mp 'tests/gas/**' -vv",
+    "foundry": "1.8.1",
+    "vyper_compiler": "0.5.0b2+commit.8af5e83c",
+    "vyper_codegen": "Venom (--experimental-codegen)",
+    "evm_version": "cancun",
+    "forge_test_cases_per_run": 86,
+    "note": "Totals sum independent snapshot scenarios and are a comparison index, not the gas cost of one transaction."
+  },
+  "overall": {
+    "snapshot_files": 11,
+    "operations": 137,
+    "improved": 1,
+    "unchanged": 13,
+    "regressed": 123,
+    "solidity_gas": 17999249,
+    "vyper_gas": 22277132,
+    "delta_gas": 4277883,
+    "delta_percent": 23.77
+  },
+  "categories": [
+    {
+      "snapshot": "ConfigPositionManager.Operations.json",
+      "operations": 11,
+      "solidity_gas": 582821,
+      "vyper_gas": 639227,
+      "delta_gas": 56406,
+      "delta_percent": 9.68
+    },
+    {
+      "snapshot": "GiverPositionManager.Operations.json",
+      "operations": 2,
+      "solidity_gas": 319569,
+      "vyper_gas": 367201,
+      "delta_gas": 47632,
+      "delta_percent": 14.91
+    },
+    {
+      "snapshot": "Hub.Operations.json",
+      "operations": 16,
+      "solidity_gas": 1583520,
+      "vyper_gas": 1976051,
+      "delta_gas": 392531,
+      "delta_percent": 24.79
+    },
+    {
+      "snapshot": "NativeTokenGateway.Operations.json",
+      "operations": 6,
+      "solidity_gas": 987939,
+      "vyper_gas": 1161931,
+      "delta_gas": 173992,
+      "delta_percent": 17.61
+    },
+    {
+      "snapshot": "PositionManagerBase.Operations.json",
+      "operations": 1,
+      "solidity_gas": 75041,
+      "vyper_gas": 89162,
+      "delta_gas": 14121,
+      "delta_percent": 18.82
+    },
+    {
+      "snapshot": "SignatureGateway.Operations.json",
+      "operations": 8,
+      "solidity_gas": 991297,
+      "vyper_gas": 1149841,
+      "delta_gas": 158544,
+      "delta_percent": 15.99
+    },
+    {
+      "snapshot": "Spoke.Getters.json",
+      "operations": 5,
+      "solidity_gas": 405161,
+      "vyper_gas": 639053,
+      "delta_gas": 233892,
+      "delta_percent": 57.73
+    },
+    {
+      "snapshot": "Spoke.Operations.ZeroRiskPremium.json",
+      "operations": 32,
+      "solidity_gas": 4918553,
+      "vyper_gas": 6305709,
+      "delta_gas": 1387156,
+      "delta_percent": 28.2
+    },
+    {
+      "snapshot": "Spoke.Operations.json",
+      "operations": 32,
+      "solidity_gas": 5587371,
+      "vyper_gas": 7086536,
+      "delta_gas": 1499165,
+      "delta_percent": 26.83
+    },
+    {
+      "snapshot": "TakerPositionManager.Operations.json",
+      "operations": 9,
+      "solidity_gas": 885387,
+      "vyper_gas": 973097,
+      "delta_gas": 87710,
+      "delta_percent": 9.91
+    },
+    {
+      "snapshot": "TokenizationSpoke.Operations.json",
+      "operations": 15,
+      "solidity_gas": 1662590,
+      "vyper_gas": 1889324,
+      "delta_gas": 226734,
+      "delta_percent": 13.64
+    }
+  ],
+  "operations": [
+    {
+      "snapshot": "ConfigPositionManager.Operations.json",
+      "operation": "renounceCanUpdateUserDynamicConfigPermission",
+      "solidity_gas": 28037,
+      "vyper_gas": 28037,
+      "delta_gas": 0,
+      "delta_percent": 0.0
+    },
+    {
+      "snapshot": "ConfigPositionManager.Operations.json",
+      "operation": "renounceCanUpdateUserRiskPremiumPermission",
+      "solidity_gas": 27971,
+      "vyper_gas": 27971,
+      "delta_gas": 0,
+      "delta_percent": 0.0
+    },
+    {
+      "snapshot": "ConfigPositionManager.Operations.json",
+      "operation": "renounceCanUpdateUsingAsCollateralPermission",
+      "solidity_gas": 27994,
+      "vyper_gas": 27994,
+      "delta_gas": 0,
+      "delta_percent": 0.0
+    },
+    {
+      "snapshot": "ConfigPositionManager.Operations.json",
+      "operation": "renounceGlobalPermission",
+      "solidity_gas": 27952,
+      "vyper_gas": 27952,
+      "delta_gas": 0,
+      "delta_percent": 0.0
+    },
+    {
+      "snapshot": "ConfigPositionManager.Operations.json",
+      "operation": "setCanSetUsingAsCollateralPermission",
+      "solidity_gas": 50136,
+      "vyper_gas": 50136,
+      "delta_gas": 0,
+      "delta_percent": 0.0
+    },
+    {
+      "snapshot": "ConfigPositionManager.Operations.json",
+      "operation": "setCanUpdateUserDynamicConfigPermission",
+      "solidity_gas": 50158,
+      "vyper_gas": 50158,
+      "delta_gas": 0,
+      "delta_percent": 0.0
+    },
+    {
+      "snapshot": "ConfigPositionManager.Operations.json",
+      "operation": "setCanUpdateUserRiskPremiumPermission",
+      "solidity_gas": 50158,
+      "vyper_gas": 50158,
+      "delta_gas": 0,
+      "delta_percent": 0.0
+    },
+    {
+      "snapshot": "ConfigPositionManager.Operations.json",
+      "operation": "setGlobalPermission",
+      "solidity_gas": 50110,
+      "vyper_gas": 50110,
+      "delta_gas": 0,
+      "delta_percent": 0.0
+    },
+    {
+      "snapshot": "ConfigPositionManager.Operations.json",
+      "operation": "setUsingAsCollateralOnBehalfOf",
+      "solidity_gas": 77828,
+      "vyper_gas": 86041,
+      "delta_gas": 8213,
+      "delta_percent": 10.55
+    },
+    {
+      "snapshot": "ConfigPositionManager.Operations.json",
+      "operation": "updateUserDynamicConfigOnBehalfOf",
+      "solidity_gas": 52342,
+      "vyper_gas": 65395,
+      "delta_gas": 13053,
+      "delta_percent": 24.94
+    },
+    {
+      "snapshot": "ConfigPositionManager.Operations.json",
+      "operation": "updateUserRiskPremiumOnBehalfOf",
+      "solidity_gas": 140135,
+      "vyper_gas": 175275,
+      "delta_gas": 35140,
+      "delta_percent": 25.08
+    },
+    {
+      "snapshot": "GiverPositionManager.Operations.json",
+      "operation": "repayOnBehalfOf",
+      "solidity_gas": 176497,
+      "vyper_gas": 205013,
+      "delta_gas": 28516,
+      "delta_percent": 16.16
+    },
+    {
+      "snapshot": "GiverPositionManager.Operations.json",
+      "operation": "supplyOnBehalfOf",
+      "solidity_gas": 143072,
+      "vyper_gas": 162188,
+      "delta_gas": 19116,
+      "delta_percent": 13.36
+    },
+    {
+      "snapshot": "Hub.Operations.json",
+      "operation": "add",
+      "solidity_gas": 91610,
+      "vyper_gas": 109118,
+      "delta_gas": 17508,
+      "delta_percent": 19.11
+    },
+    {
+      "snapshot": "Hub.Operations.json",
+      "operation": "add: with transfer",
+      "solidity_gas": 112942,
+      "vyper_gas": 130450,
+      "delta_gas": 17508,
+      "delta_percent": 15.5
+    },
+    {
+      "snapshot": "Hub.Operations.json",
+      "operation": "draw",
+      "solidity_gas": 109072,
+      "vyper_gas": 124230,
+      "delta_gas": 15158,
+      "delta_percent": 13.9
+    },
+    {
+      "snapshot": "Hub.Operations.json",
+      "operation": "eliminateDeficit: full",
+      "solidity_gas": 77541,
+      "vyper_gas": 95873,
+      "delta_gas": 18332,
+      "delta_percent": 23.64
+    },
+    {
+      "snapshot": "Hub.Operations.json",
+      "operation": "eliminateDeficit: partial",
+      "solidity_gas": 87146,
+      "vyper_gas": 105479,
+      "delta_gas": 18333,
+      "delta_percent": 21.04
+    },
+    {
+      "snapshot": "Hub.Operations.json",
+      "operation": "mintFeeShares",
+      "solidity_gas": 87668,
+      "vyper_gas": 108024,
+      "delta_gas": 20356,
+      "delta_percent": 23.22
+    },
+    {
+      "snapshot": "Hub.Operations.json",
+      "operation": "payFee",
+      "solidity_gas": 75720,
+      "vyper_gas": 100787,
+      "delta_gas": 25067,
+      "delta_percent": 33.1
+    },
+    {
+      "snapshot": "Hub.Operations.json",
+      "operation": "refreshPremium",
+      "solidity_gas": 75289,
+      "vyper_gas": 93290,
+      "delta_gas": 18001,
+      "delta_percent": 23.91
+    },
+    {
+      "snapshot": "Hub.Operations.json",
+      "operation": "remove: full",
+      "solidity_gas": 80564,
+      "vyper_gas": 97789,
+      "delta_gas": 17225,
+      "delta_percent": 21.38
+    },
+    {
+      "snapshot": "Hub.Operations.json",
+      "operation": "remove: partial",
+      "solidity_gas": 85702,
+      "vyper_gas": 102878,
+      "delta_gas": 17176,
+      "delta_percent": 20.04
+    },
+    {
+      "snapshot": "Hub.Operations.json",
+      "operation": "reportDeficit",
+      "solidity_gas": 116908,
+      "vyper_gas": 142629,
+      "delta_gas": 25721,
+      "delta_percent": 22.0
+    },
+    {
+      "snapshot": "Hub.Operations.json",
+      "operation": "restore: full",
+      "solidity_gas": 81488,
+      "vyper_gas": 105992,
+      "delta_gas": 24504,
+      "delta_percent": 30.07
+    },
+    {
+      "snapshot": "Hub.Operations.json",
+      "operation": "restore: full - with transfer",
+      "solidity_gas": 188919,
+      "vyper_gas": 270851,
+      "delta_gas": 81932,
+      "delta_percent": 43.37
+    },
+    {
+      "snapshot": "Hub.Operations.json",
+      "operation": "restore: partial",
+      "solidity_gas": 90198,
+      "vyper_gas": 114684,
+      "delta_gas": 24486,
+      "delta_percent": 27.15
+    },
+    {
+      "snapshot": "Hub.Operations.json",
+      "operation": "restore: partial - with transfer",
+      "solidity_gas": 148213,
+      "vyper_gas": 172699,
+      "delta_gas": 24486,
+      "delta_percent": 16.52
+    },
+    {
+      "snapshot": "Hub.Operations.json",
+      "operation": "transferShares",
+      "solidity_gas": 74540,
+      "vyper_gas": 101278,
+      "delta_gas": 26738,
+      "delta_percent": 35.87
+    },
+    {
+      "snapshot": "NativeTokenGateway.Operations.json",
+      "operation": "borrowNative",
+      "solidity_gas": 238707,
+      "vyper_gas": 296081,
+      "delta_gas": 57374,
+      "delta_percent": 24.04
+    },
+    {
+      "snapshot": "NativeTokenGateway.Operations.json",
+      "operation": "repayNative",
+      "solidity_gas": 172321,
+      "vyper_gas": 200837,
+      "delta_gas": 28516,
+      "delta_percent": 16.55
+    },
+    {
+      "snapshot": "NativeTokenGateway.Operations.json",
+      "operation": "supplyAsCollateralNative",
+      "solidity_gas": 165113,
+      "vyper_gas": 188996,
+      "delta_gas": 23883,
+      "delta_percent": 14.46
+    },
+    {
+      "snapshot": "NativeTokenGateway.Operations.json",
+      "operation": "supplyNative",
+      "solidity_gas": 139728,
+      "vyper_gas": 158247,
+      "delta_gas": 18519,
+      "delta_percent": 13.25
+    },
+    {
+      "snapshot": "NativeTokenGateway.Operations.json",
+      "operation": "withdrawNative: full",
+      "solidity_gas": 129898,
+      "vyper_gas": 151835,
+      "delta_gas": 21937,
+      "delta_percent": 16.89
+    },
+    {
+      "snapshot": "NativeTokenGateway.Operations.json",
+      "operation": "withdrawNative: partial",
+      "solidity_gas": 142172,
+      "vyper_gas": 165935,
+      "delta_gas": 23763,
+      "delta_percent": 16.71
+    },
+    {
+      "snapshot": "PositionManagerBase.Operations.json",
+      "operation": "setSelfAsUserPositionManagerWithSig",
+      "solidity_gas": 75041,
+      "vyper_gas": 89162,
+      "delta_gas": 14121,
+      "delta_percent": 18.82
+    },
+    {
+      "snapshot": "SignatureGateway.Operations.json",
+      "operation": "borrowWithSig",
+      "solidity_gas": 222144,
+      "vyper_gas": 262301,
+      "delta_gas": 40157,
+      "delta_percent": 18.08
+    },
+    {
+      "snapshot": "SignatureGateway.Operations.json",
+      "operation": "repayWithSig",
+      "solidity_gas": 192501,
+      "vyper_gas": 221029,
+      "delta_gas": 28528,
+      "delta_percent": 14.82
+    },
+    {
+      "snapshot": "SignatureGateway.Operations.json",
+      "operation": "setSelfAsUserPositionManagerWithSig",
+      "solidity_gas": 75138,
+      "vyper_gas": 89259,
+      "delta_gas": 14121,
+      "delta_percent": 18.79
+    },
+    {
+      "snapshot": "SignatureGateway.Operations.json",
+      "operation": "setUsingAsCollateralWithSig",
+      "solidity_gas": 85368,
+      "vyper_gas": 94115,
+      "delta_gas": 8747,
+      "delta_percent": 10.25
+    },
+    {
+      "snapshot": "SignatureGateway.Operations.json",
+      "operation": "supplyWithSig",
+      "solidity_gas": 155914,
+      "vyper_gas": 174432,
+      "delta_gas": 18518,
+      "delta_percent": 11.88
+    },
+    {
+      "snapshot": "SignatureGateway.Operations.json",
+      "operation": "updateUserDynamicConfigWithSig",
+      "solidity_gas": 63113,
+      "vyper_gas": 76166,
+      "delta_gas": 13053,
+      "delta_percent": 20.68
+    },
+    {
+      "snapshot": "SignatureGateway.Operations.json",
+      "operation": "updateUserRiskPremiumWithSig",
+      "solidity_gas": 61995,
+      "vyper_gas": 74172,
+      "delta_gas": 12177,
+      "delta_percent": 19.64
+    },
+    {
+      "snapshot": "SignatureGateway.Operations.json",
+      "operation": "withdrawWithSig",
+      "solidity_gas": 135124,
+      "vyper_gas": 158367,
+      "delta_gas": 23243,
+      "delta_percent": 17.2
+    },
+    {
+      "snapshot": "Spoke.Getters.json",
+      "operation": "getUserAccountData: supplies: 0, borrows: 0",
+      "solidity_gas": 13014,
+      "vyper_gas": 24730,
+      "delta_gas": 11716,
+      "delta_percent": 90.03
+    },
+    {
+      "snapshot": "Spoke.Getters.json",
+      "operation": "getUserAccountData: supplies: 1, borrows: 0",
+      "solidity_gas": 56072,
+      "vyper_gas": 82728,
+      "delta_gas": 26656,
+      "delta_percent": 47.54
+    },
+    {
+      "snapshot": "Spoke.Getters.json",
+      "operation": "getUserAccountData: supplies: 2, borrows: 0",
+      "solidity_gas": 89894,
+      "vyper_gas": 131058,
+      "delta_gas": 41164,
+      "delta_percent": 45.79
+    },
+    {
+      "snapshot": "Spoke.Getters.json",
+      "operation": "getUserAccountData: supplies: 2, borrows: 1",
+      "solidity_gas": 112389,
+      "vyper_gas": 177861,
+      "delta_gas": 65472,
+      "delta_percent": 58.25
+    },
+    {
+      "snapshot": "Spoke.Getters.json",
+      "operation": "getUserAccountData: supplies: 2, borrows: 2",
+      "solidity_gas": 133792,
+      "vyper_gas": 222676,
+      "delta_gas": 88884,
+      "delta_percent": 66.43
+    },
+    {
+      "snapshot": "Spoke.Operations.ZeroRiskPremium.json",
+      "operation": "borrow: first",
+      "solidity_gas": 199509,
+      "vyper_gas": 247987,
+      "delta_gas": 48478,
+      "delta_percent": 24.3
+    },
+    {
+      "snapshot": "Spoke.Operations.ZeroRiskPremium.json",
+      "operation": "borrow: second action, same reserve",
+      "solidity_gas": 179375,
+      "vyper_gas": 227649,
+      "delta_gas": 48274,
+      "delta_percent": 26.91
+    },
+    {
+      "snapshot": "Spoke.Operations.ZeroRiskPremium.json",
+      "operation": "liquidationCall (receiveShares): full",
+      "solidity_gas": 309664,
+      "vyper_gas": 386882,
+      "delta_gas": 77218,
+      "delta_percent": 24.94
+    },
+    {
+      "snapshot": "Spoke.Operations.ZeroRiskPremium.json",
+      "operation": "liquidationCall (receiveShares): partial",
+      "solidity_gas": 309127,
+      "vyper_gas": 386282,
+      "delta_gas": 77155,
+      "delta_percent": 24.96
+    },
+    {
+      "snapshot": "Spoke.Operations.ZeroRiskPremium.json",
+      "operation": "liquidationCall (reportDeficit): full",
+      "solidity_gas": 374581,
+      "vyper_gas": 467831,
+      "delta_gas": 93250,
+      "delta_percent": 24.89
+    },
+    {
+      "snapshot": "Spoke.Operations.ZeroRiskPremium.json",
+      "operation": "liquidationCall: full",
+      "solidity_gas": 328352,
+      "vyper_gas": 405231,
+      "delta_gas": 76879,
+      "delta_percent": 23.41
+    },
+    {
+      "snapshot": "Spoke.Operations.ZeroRiskPremium.json",
+      "operation": "liquidationCall: partial",
+      "solidity_gas": 327815,
+      "vyper_gas": 404631,
+      "delta_gas": 76816,
+      "delta_percent": 23.43
+    },
+    {
+      "snapshot": "Spoke.Operations.ZeroRiskPremium.json",
+      "operation": "permitReserve + repay (multicall)",
+      "solidity_gas": 169938,
+      "vyper_gas": 218331,
+      "delta_gas": 48393,
+      "delta_percent": 28.48
+    },
+    {
+      "snapshot": "Spoke.Operations.ZeroRiskPremium.json",
+      "operation": "permitReserve + supply (multicall)",
+      "solidity_gas": 151663,
+      "vyper_gas": 196497,
+      "delta_gas": 44834,
+      "delta_percent": 29.56
+    },
+    {
+      "snapshot": "Spoke.Operations.ZeroRiskPremium.json",
+      "operation": "permitReserve + supply + enable collateral (multicall)",
+      "solidity_gas": 166090,
+      "vyper_gas": 213555,
+      "delta_gas": 47465,
+      "delta_percent": 28.58
+    },
+    {
+      "snapshot": "Spoke.Operations.ZeroRiskPremium.json",
+      "operation": "repay: full",
+      "solidity_gas": 129276,
+      "vyper_gas": 156311,
+      "delta_gas": 27035,
+      "delta_percent": 20.91
+    },
+    {
+      "snapshot": "Spoke.Operations.ZeroRiskPremium.json",
+      "operation": "repay: partial",
+      "solidity_gas": 134234,
+      "vyper_gas": 161309,
+      "delta_gas": 27075,
+      "delta_percent": 20.17
+    },
+    {
+      "snapshot": "Spoke.Operations.ZeroRiskPremium.json",
+      "operation": "setUserPositionManagersWithSig: disable",
+      "solidity_gas": 46772,
+      "vyper_gas": 60893,
+      "delta_gas": 14121,
+      "delta_percent": 30.19
+    },
+    {
+      "snapshot": "Spoke.Operations.ZeroRiskPremium.json",
+      "operation": "setUserPositionManagersWithSig: enable",
+      "solidity_gas": 68684,
+      "vyper_gas": 82805,
+      "delta_gas": 14121,
+      "delta_percent": 20.56
+    },
+    {
+      "snapshot": "Spoke.Operations.ZeroRiskPremium.json",
+      "operation": "supply + enable collateral (multicall)",
+      "solidity_gas": 146316,
+      "vyper_gas": 191717,
+      "delta_gas": 45401,
+      "delta_percent": 31.03
+    },
+    {
+      "snapshot": "Spoke.Operations.ZeroRiskPremium.json",
+      "operation": "supply: 0 borrows, collateral disabled",
+      "solidity_gas": 127753,
+      "vyper_gas": 151217,
+      "delta_gas": 23464,
+      "delta_percent": 18.37
+    },
+    {
+      "snapshot": "Spoke.Operations.ZeroRiskPremium.json",
+      "operation": "supply: 0 borrows, collateral enabled",
+      "solidity_gas": 110724,
+      "vyper_gas": 134188,
+      "delta_gas": 23464,
+      "delta_percent": 21.19
+    },
+    {
+      "snapshot": "Spoke.Operations.ZeroRiskPremium.json",
+      "operation": "supply: second action, same reserve",
+      "solidity_gas": 110653,
+      "vyper_gas": 134117,
+      "delta_gas": 23464,
+      "delta_percent": 21.21
+    },
+    {
+      "snapshot": "Spoke.Operations.ZeroRiskPremium.json",
+      "operation": "updateUserDynamicConfig: 1 collateral",
+      "solidity_gas": 76251,
+      "vyper_gas": 97711,
+      "delta_gas": 21460,
+      "delta_percent": 28.14
+    },
+    {
+      "snapshot": "Spoke.Operations.ZeroRiskPremium.json",
+      "operation": "updateUserDynamicConfig: 2 collaterals",
+      "solidity_gas": 92825,
+      "vyper_gas": 122238,
+      "delta_gas": 29413,
+      "delta_percent": 31.69
+    },
+    {
+      "snapshot": "Spoke.Operations.ZeroRiskPremium.json",
+      "operation": "updateUserRiskPremium: 1 borrow",
+      "solidity_gas": 104446,
+      "vyper_gas": 153186,
+      "delta_gas": 48740,
+      "delta_percent": 46.67
+    },
+    {
+      "snapshot": "Spoke.Operations.ZeroRiskPremium.json",
+      "operation": "updateUserRiskPremium: 2 borrows",
+      "solidity_gas": 114563,
+      "vyper_gas": 159619,
+      "delta_gas": 45056,
+      "delta_percent": 39.33
+    },
+    {
+      "snapshot": "Spoke.Operations.ZeroRiskPremium.json",
+      "operation": "usingAsCollateral: 0 borrows, enable",
+      "solidity_gas": 59616,
+      "vyper_gas": 68354,
+      "delta_gas": 8738,
+      "delta_percent": 14.66
+    },
+    {
+      "snapshot": "Spoke.Operations.ZeroRiskPremium.json",
+      "operation": "usingAsCollateral: 1 borrow, disable",
+      "solidity_gas": 114490,
+      "vyper_gas": 167592,
+      "delta_gas": 53102,
+      "delta_percent": 46.38
+    },
+    {
+      "snapshot": "Spoke.Operations.ZeroRiskPremium.json",
+      "operation": "usingAsCollateral: 1 borrow, enable",
+      "solidity_gas": 42504,
+      "vyper_gas": 51242,
+      "delta_gas": 8738,
+      "delta_percent": 20.56
+    },
+    {
+      "snapshot": "Spoke.Operations.ZeroRiskPremium.json",
+      "operation": "usingAsCollateral: 2 borrows, disable",
+      "solidity_gas": 138182,
+      "vyper_gas": 212697,
+      "delta_gas": 74515,
+      "delta_percent": 53.93
+    },
+    {
+      "snapshot": "Spoke.Operations.ZeroRiskPremium.json",
+      "operation": "usingAsCollateral: 2 borrows, enable",
+      "solidity_gas": 42516,
+      "vyper_gas": 51254,
+      "delta_gas": 8738,
+      "delta_percent": 20.55
+    },
+    {
+      "snapshot": "Spoke.Operations.ZeroRiskPremium.json",
+      "operation": "withdraw: 0 borrows, full",
+      "solidity_gas": 135058,
+      "vyper_gas": 174709,
+      "delta_gas": 39651,
+      "delta_percent": 29.36
+    },
+    {
+      "snapshot": "Spoke.Operations.ZeroRiskPremium.json",
+      "operation": "withdraw: 0 borrows, partial",
+      "solidity_gas": 140394,
+      "vyper_gas": 180177,
+      "delta_gas": 39783,
+      "delta_percent": 28.34
+    },
+    {
+      "snapshot": "Spoke.Operations.ZeroRiskPremium.json",
+      "operation": "withdraw: 1 borrow, partial",
+      "solidity_gas": 169591,
+      "vyper_gas": 231013,
+      "delta_gas": 61422,
+      "delta_percent": 36.22
+    },
+    {
+      "snapshot": "Spoke.Operations.ZeroRiskPremium.json",
+      "operation": "withdraw: 2 borrows, partial",
+      "solidity_gas": 186292,
+      "vyper_gas": 271106,
+      "delta_gas": 84814,
+      "delta_percent": 45.53
+    },
+    {
+      "snapshot": "Spoke.Operations.ZeroRiskPremium.json",
+      "operation": "withdraw: non collateral",
+      "solidity_gas": 111299,
+      "vyper_gas": 137378,
+      "delta_gas": 26079,
+      "delta_percent": 23.43
+    },
+    {
+      "snapshot": "Spoke.Operations.json",
+      "operation": "borrow: first",
+      "solidity_gas": 269297,
+      "vyper_gas": 329340,
+      "delta_gas": 60043,
+      "delta_percent": 22.3
+    },
+    {
+      "snapshot": "Spoke.Operations.json",
+      "operation": "borrow: second action, same reserve",
+      "solidity_gas": 212163,
+      "vyper_gas": 272098,
+      "delta_gas": 59935,
+      "delta_percent": 28.25
+    },
+    {
+      "snapshot": "Spoke.Operations.json",
+      "operation": "liquidationCall (receiveShares): full",
+      "solidity_gas": 342545,
+      "vyper_gas": 431948,
+      "delta_gas": 89403,
+      "delta_percent": 26.1
+    },
+    {
+      "snapshot": "Spoke.Operations.json",
+      "operation": "liquidationCall (receiveShares): partial",
+      "solidity_gas": 342008,
+      "vyper_gas": 431348,
+      "delta_gas": 89340,
+      "delta_percent": 26.12
+    },
+    {
+      "snapshot": "Spoke.Operations.json",
+      "operation": "liquidationCall (reportDeficit): full",
+      "solidity_gas": 366749,
+      "vyper_gas": 460950,
+      "delta_gas": 94201,
+      "delta_percent": 25.69
+    },
+    {
+      "snapshot": "Spoke.Operations.json",
+      "operation": "liquidationCall: full",
+      "solidity_gas": 361233,
+      "vyper_gas": 450297,
+      "delta_gas": 89064,
+      "delta_percent": 24.66
+    },
+    {
+      "snapshot": "Spoke.Operations.json",
+      "operation": "liquidationCall: partial",
+      "solidity_gas": 360696,
+      "vyper_gas": 449697,
+      "delta_gas": 89001,
+      "delta_percent": 24.67
+    },
+    {
+      "snapshot": "Spoke.Operations.json",
+      "operation": "permitReserve + repay (multicall)",
+      "solidity_gas": 166334,
+      "vyper_gas": 212804,
+      "delta_gas": 46470,
+      "delta_percent": 27.94
+    },
+    {
+      "snapshot": "Spoke.Operations.json",
+      "operation": "permitReserve + supply (multicall)",
+      "solidity_gas": 151663,
+      "vyper_gas": 196497,
+      "delta_gas": 44834,
+      "delta_percent": 29.56
+    },
+    {
+      "snapshot": "Spoke.Operations.json",
+      "operation": "permitReserve + supply + enable collateral (multicall)",
+      "solidity_gas": 166090,
+      "vyper_gas": 213555,
+      "delta_gas": 47465,
+      "delta_percent": 28.58
+    },
+    {
+      "snapshot": "Spoke.Operations.json",
+      "operation": "repay: full",
+      "solidity_gas": 123355,
+      "vyper_gas": 150784,
+      "delta_gas": 27429,
+      "delta_percent": 22.24
+    },
+    {
+      "snapshot": "Spoke.Operations.json",
+      "operation": "repay: partial",
+      "solidity_gas": 142713,
+      "vyper_gas": 170278,
+      "delta_gas": 27565,
+      "delta_percent": 19.31
+    },
+    {
+      "snapshot": "Spoke.Operations.json",
+      "operation": "setUserPositionManagersWithSig: disable",
+      "solidity_gas": 46772,
+      "vyper_gas": 60893,
+      "delta_gas": 14121,
+      "delta_percent": 30.19
+    },
+    {
+      "snapshot": "Spoke.Operations.json",
+      "operation": "setUserPositionManagersWithSig: enable",
+      "solidity_gas": 68684,
+      "vyper_gas": 82805,
+      "delta_gas": 14121,
+      "delta_percent": 20.56
+    },
+    {
+      "snapshot": "Spoke.Operations.json",
+      "operation": "supply + enable collateral (multicall)",
+      "solidity_gas": 146316,
+      "vyper_gas": 191717,
+      "delta_gas": 45401,
+      "delta_percent": 31.03
+    },
+    {
+      "snapshot": "Spoke.Operations.json",
+      "operation": "supply: 0 borrows, collateral disabled",
+      "solidity_gas": 127753,
+      "vyper_gas": 151217,
+      "delta_gas": 23464,
+      "delta_percent": 18.37
+    },
+    {
+      "snapshot": "Spoke.Operations.json",
+      "operation": "supply: 0 borrows, collateral enabled",
+      "solidity_gas": 110724,
+      "vyper_gas": 134188,
+      "delta_gas": 23464,
+      "delta_percent": 21.19
+    },
+    {
+      "snapshot": "Spoke.Operations.json",
+      "operation": "supply: second action, same reserve",
+      "solidity_gas": 110653,
+      "vyper_gas": 134117,
+      "delta_gas": 23464,
+      "delta_percent": 21.21
+    },
+    {
+      "snapshot": "Spoke.Operations.json",
+      "operation": "updateUserDynamicConfig: 1 collateral",
+      "solidity_gas": 76251,
+      "vyper_gas": 97711,
+      "delta_gas": 21460,
+      "delta_percent": 28.14
+    },
+    {
+      "snapshot": "Spoke.Operations.json",
+      "operation": "updateUserDynamicConfig: 2 collaterals",
+      "solidity_gas": 92825,
+      "vyper_gas": 122238,
+      "delta_gas": 29413,
+      "delta_percent": 31.69
+    },
+    {
+      "snapshot": "Spoke.Operations.json",
+      "operation": "updateUserRiskPremium: 1 borrow",
+      "solidity_gas": 158658,
+      "vyper_gas": 211242,
+      "delta_gas": 52584,
+      "delta_percent": 33.14
+    },
+    {
+      "snapshot": "Spoke.Operations.json",
+      "operation": "updateUserRiskPremium: 2 borrows",
+      "solidity_gas": 210210,
+      "vyper_gas": 271156,
+      "delta_gas": 60946,
+      "delta_percent": 28.99
+    },
+    {
+      "snapshot": "Spoke.Operations.json",
+      "operation": "usingAsCollateral: 0 borrows, enable",
+      "solidity_gas": 59616,
+      "vyper_gas": 68354,
+      "delta_gas": 8738,
+      "delta_percent": 14.66
+    },
+    {
+      "snapshot": "Spoke.Operations.json",
+      "operation": "usingAsCollateral: 1 borrow, disable",
+      "solidity_gas": 168699,
+      "vyper_gas": 225648,
+      "delta_gas": 56949,
+      "delta_percent": 33.76
+    },
+    {
+      "snapshot": "Spoke.Operations.json",
+      "operation": "usingAsCollateral: 1 borrow, enable",
+      "solidity_gas": 42504,
+      "vyper_gas": 51242,
+      "delta_gas": 8738,
+      "delta_percent": 20.56
+    },
+    {
+      "snapshot": "Spoke.Operations.json",
+      "operation": "usingAsCollateral: 2 borrows, disable",
+      "solidity_gas": 241825,
+      "vyper_gas": 323983,
+      "delta_gas": 82158,
+      "delta_percent": 33.97
+    },
+    {
+      "snapshot": "Spoke.Operations.json",
+      "operation": "usingAsCollateral: 2 borrows, enable",
+      "solidity_gas": 42516,
+      "vyper_gas": 51254,
+      "delta_gas": 8738,
+      "delta_percent": 20.55
+    },
+    {
+      "snapshot": "Spoke.Operations.json",
+      "operation": "withdraw: 0 borrows, full",
+      "solidity_gas": 135058,
+      "vyper_gas": 174709,
+      "delta_gas": 39651,
+      "delta_percent": 29.36
+    },
+    {
+      "snapshot": "Spoke.Operations.json",
+      "operation": "withdraw: 0 borrows, partial",
+      "solidity_gas": 140394,
+      "vyper_gas": 180177,
+      "delta_gas": 39783,
+      "delta_percent": 28.34
+    },
+    {
+      "snapshot": "Spoke.Operations.json",
+      "operation": "withdraw: 1 borrow, partial",
+      "solidity_gas": 221298,
+      "vyper_gas": 286569,
+      "delta_gas": 65271,
+      "delta_percent": 29.49
+    },
+    {
+      "snapshot": "Spoke.Operations.json",
+      "operation": "withdraw: 2 borrows, partial",
+      "solidity_gas": 270470,
+      "vyper_gas": 360246,
+      "delta_gas": 89776,
+      "delta_percent": 33.19
+    },
+    {
+      "snapshot": "Spoke.Operations.json",
+      "operation": "withdraw: non collateral",
+      "solidity_gas": 111299,
+      "vyper_gas": 137474,
+      "delta_gas": 26175,
+      "delta_percent": 23.52
+    },
+    {
+      "snapshot": "TakerPositionManager.Operations.json",
+      "operation": "approveBorrow",
+      "solidity_gas": 49807,
+      "vyper_gas": 49807,
+      "delta_gas": 0,
+      "delta_percent": 0.0
+    },
+    {
+      "snapshot": "TakerPositionManager.Operations.json",
+      "operation": "approveBorrowWithSig",
+      "solidity_gas": 65689,
+      "vyper_gas": 65689,
+      "delta_gas": 0,
+      "delta_percent": 0.0
+    },
+    {
+      "snapshot": "TakerPositionManager.Operations.json",
+      "operation": "approveWithdraw",
+      "solidity_gas": 49816,
+      "vyper_gas": 49816,
+      "delta_gas": 0,
+      "delta_percent": 0.0
+    },
+    {
+      "snapshot": "TakerPositionManager.Operations.json",
+      "operation": "approveWithdrawWithSig",
+      "solidity_gas": 65631,
+      "vyper_gas": 65643,
+      "delta_gas": 12,
+      "delta_percent": 0.02
+    },
+    {
+      "snapshot": "TakerPositionManager.Operations.json",
+      "operation": "borrowOnBehalfOf",
+      "solidity_gas": 332512,
+      "vyper_gas": 375182,
+      "delta_gas": 42670,
+      "delta_percent": 12.83
+    },
+    {
+      "snapshot": "TakerPositionManager.Operations.json",
+      "operation": "renounceBorrowAllowance",
+      "solidity_gas": 27929,
+      "vyper_gas": 27929,
+      "delta_gas": 0,
+      "delta_percent": 0.0
+    },
+    {
+      "snapshot": "TakerPositionManager.Operations.json",
+      "operation": "renounceWithdrawAllowance",
+      "solidity_gas": 27983,
+      "vyper_gas": 27983,
+      "delta_gas": 0,
+      "delta_percent": 0.0
+    },
+    {
+      "snapshot": "TakerPositionManager.Operations.json",
+      "operation": "withdrawOnBehalfOf: full",
+      "solidity_gas": 127209,
+      "vyper_gas": 148474,
+      "delta_gas": 21265,
+      "delta_percent": 16.72
+    },
+    {
+      "snapshot": "TakerPositionManager.Operations.json",
+      "operation": "withdrawOnBehalfOf: partial",
+      "solidity_gas": 138811,
+      "vyper_gas": 162574,
+      "delta_gas": 23763,
+      "delta_percent": 17.12
+    },
+    {
+      "snapshot": "TokenizationSpoke.Operations.json",
+      "operation": "deposit",
+      "solidity_gas": 118614,
+      "vyper_gas": 135464,
+      "delta_gas": 16850,
+      "delta_percent": 14.21
+    },
+    {
+      "snapshot": "TokenizationSpoke.Operations.json",
+      "operation": "depositWithSig",
+      "solidity_gas": 129518,
+      "vyper_gas": 145630,
+      "delta_gas": 16112,
+      "delta_percent": 12.44
+    },
+    {
+      "snapshot": "TokenizationSpoke.Operations.json",
+      "operation": "mint",
+      "solidity_gas": 118251,
+      "vyper_gas": 135528,
+      "delta_gas": 17277,
+      "delta_percent": 14.61
+    },
+    {
+      "snapshot": "TokenizationSpoke.Operations.json",
+      "operation": "mintWithSig",
+      "solidity_gas": 129130,
+      "vyper_gas": 145676,
+      "delta_gas": 16546,
+      "delta_percent": 12.81
+    },
+    {
+      "snapshot": "TokenizationSpoke.Operations.json",
+      "operation": "permit",
+      "solidity_gas": 62766,
+      "vyper_gas": 61759,
+      "delta_gas": -1007,
+      "delta_percent": -1.6
+    },
+    {
+      "snapshot": "TokenizationSpoke.Operations.json",
+      "operation": "redeem: on behalf, full",
+      "solidity_gas": 95212,
+      "vyper_gas": 111421,
+      "delta_gas": 16209,
+      "delta_percent": 17.02
+    },
+    {
+      "snapshot": "TokenizationSpoke.Operations.json",
+      "operation": "redeem: on behalf, partial",
+      "solidity_gas": 119015,
+      "vyper_gas": 135421,
+      "delta_gas": 16406,
+      "delta_percent": 13.78
+    },
+    {
+      "snapshot": "TokenizationSpoke.Operations.json",
+      "operation": "redeem: self, full",
+      "solidity_gas": 94282,
+      "vyper_gas": 110828,
+      "delta_gas": 16546,
+      "delta_percent": 17.55
+    },
+    {
+      "snapshot": "TokenizationSpoke.Operations.json",
+      "operation": "redeem: self, partial",
+      "solidity_gas": 113482,
+      "vyper_gas": 130028,
+      "delta_gas": 16546,
+      "delta_percent": 14.58
+    },
+    {
+      "snapshot": "TokenizationSpoke.Operations.json",
+      "operation": "redeemWithSig",
+      "solidity_gas": 128864,
+      "vyper_gas": 144598,
+      "delta_gas": 15734,
+      "delta_percent": 12.21
+    },
+    {
+      "snapshot": "TokenizationSpoke.Operations.json",
+      "operation": "withdraw: on behalf, full",
+      "solidity_gas": 95646,
+      "vyper_gas": 111551,
+      "delta_gas": 15905,
+      "delta_percent": 16.63
+    },
+    {
+      "snapshot": "TokenizationSpoke.Operations.json",
+      "operation": "withdraw: on behalf, partial",
+      "solidity_gas": 119557,
+      "vyper_gas": 135551,
+      "delta_gas": 15994,
+      "delta_percent": 13.38
+    },
+    {
+      "snapshot": "TokenizationSpoke.Operations.json",
+      "operation": "withdraw: self, full",
+      "solidity_gas": 94824,
+      "vyper_gas": 110958,
+      "delta_gas": 16134,
+      "delta_percent": 17.01
+    },
+    {
+      "snapshot": "TokenizationSpoke.Operations.json",
+      "operation": "withdraw: self, partial",
+      "solidity_gas": 114024,
+      "vyper_gas": 130158,
+      "delta_gas": 16134,
+      "delta_percent": 14.15
+    },
+    {
+      "snapshot": "TokenizationSpoke.Operations.json",
+      "operation": "withdrawWithSig",
+      "solidity_gas": 129405,
+      "vyper_gas": 144753,
+      "delta_gas": 15348,
+      "delta_percent": 11.86
+    }
+  ]
+}

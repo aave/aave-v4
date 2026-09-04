@@ -292,7 +292,7 @@ def setAuthority(newAuthority: address):
     ...
 
 
-@pure
+@view
 @external
 def isConsumingScheduledOp() -> bytes4:
     ...
@@ -371,9 +371,7 @@ def borrow(reserveId: uint256, amount: uint256, onBehalfOf: address) -> (uint256
     ...
 
 
-@external
-def borrowWithoutHfCheck(reserveId: uint256, amount: uint256, onBehalfOf: address) -> (uint256, uint256):
-    ...
+
 
 
 @external
@@ -554,14 +552,10 @@ def getLiquidationLogic() -> address:
     ...
 
 
-@external
-def calculateUserAccountData(user: address, refreshConfig: bool) -> UserAccountData:
-    ...
 
 
-@external
-def setReserveDynamicConfigKey(reserveId: uint256, configKey: uint32):
-    ...
+
+
 
 
 @external

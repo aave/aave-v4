@@ -466,4 +466,20 @@ contract SignatureGatewayTest is SignatureGatewayBaseTest {
     _assertGatewayHasNoBalanceOrAllowance(spoke1, gateway, alice);
     _assertGatewayHasNoActivePosition(spoke1, gateway);
   }
+
+  function test_compat_ERC1271RiskPremiumIntent() public {
+    MockERC1271Wallet wallet = new MockERC1271Wallet(alice);
+    vm.prank(address(wallet));
+    spoke1.setUserPositionManager(address(gateway), true);
+    ISignatureGateway.UpdateUserRiskPremium memory p = _updateRiskPremiumData(
+      spoke1,
+      address(wallet),
+      block.timestamp + 1 days
+    );
+    bytes32 digest = _getTypedDataHash(gateway, p);
+    vm.prank(alice);
+    wallet.approveHash(digest);
+    gateway.updateUserRiskPremiumWithSig(p, new bytes(513));
+    _assertNonceIncrement(gateway, address(wallet), p.nonce);
+  }
 }

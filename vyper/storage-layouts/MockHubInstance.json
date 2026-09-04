@@ -1,0 +1,44 @@
+{
+  "HubInstance": {
+    "asset_count": {
+      "type": "uint256",
+      "n_slots": 1,
+      "slot": 0
+    },
+    "assets": {
+      "type": "HashMap[uint256, PackedAsset]",
+      "n_slots": 1,
+      "slot": 1
+    },
+    "spokes": {
+      "type": "HashMap[uint256, HashMap[address, PackedSpokeData]]",
+      "n_slots": 1,
+      "slot": 2
+    },
+    "spoke_addresses": {
+      "type": "HashMap[uint256, HashMap[uint256, bytes32]]",
+      "n_slots": 1,
+      "slot": 3
+    },
+    "spoke_listed": {
+      "type": "HashMap[uint256, HashMap[address, bool]]",
+      "n_slots": 1,
+      "slot": 4
+    },
+    "underlying_to_asset_id": {
+      "type": "HashMap[address, uint256]",
+      "n_slots": 1,
+      "slot": 5
+    },
+    "authority_address": {
+      "type": "address",
+      "n_slots": 1,
+      "slot": 109953455752606422573437920188507504950042604195039080537717645949022044948992
+    },
+    "initialized_state": {
+      "type": "uint256",
+      "n_slots": 1,
+      "slot": 108904022758810753673719992590105913556127789646572562039383141376366747609600
+    }
+  }
+}

@@ -88,10 +88,6 @@ def isSpokeRegistered(spoke: address) -> bool:
     ...
 
 
-@view
-@external
-def getReserveUnderlying(spoke: address, reserveId: uint256) -> address:
-    ...
 
 
 @external
