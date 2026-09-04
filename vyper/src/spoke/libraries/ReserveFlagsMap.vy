@@ -1,4 +1,4 @@
-# pragma version 0.5.0b1
+# pragma version 0.5.0b2
 
 PAUSED_MASK: public(constant(uint8)) = 1
 FROZEN_MASK: public(constant(uint8)) = 2

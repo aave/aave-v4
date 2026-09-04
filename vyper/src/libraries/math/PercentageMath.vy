@@ -1,4 +1,4 @@
-#pragma version 0.5.0b1
+#pragma version 0.5.0b2
 
 PERCENTAGE_FACTOR: constant(uint256) = 10**4
 UINT256_MAX: constant(uint256) = max_value(uint256)

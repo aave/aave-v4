@@ -4,15 +4,16 @@
 from __future__ import annotations
 
 import json
+import os
 import subprocess
 from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
-VYPER = ROOT / ".venv" / "bin" / "vyper"
+VYPER = Path(os.environ.get("VYPER_BIN", ROOT / ".venv" / "bin" / "vyper"))
 SOURCE_ROOT = ROOT / "vyper" / "src"
 OUT_ROOT = ROOT / "out-vyper"
-EXPECTED_VERSION = "0.5.0b1"
+EXPECTED_VERSION = "0.5.0b2"
 EXPECTED_OPTIMIZER = "O3"
 TARGETS = (
     SOURCE_ROOT / "access" / "AccessManagerEnumerable.vy",

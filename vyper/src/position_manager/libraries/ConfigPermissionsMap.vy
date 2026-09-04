@@ -1,4 +1,4 @@
-# pragma version 0.5.0b1
+# pragma version 0.5.0b2
 
 CAN_SET_USING_AS_COLLATERAL_MASK: public(constant(uint8)) = 1
 CAN_UPDATE_USER_RISK_PREMIUM_MASK: public(constant(uint8)) = 2

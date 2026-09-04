@@ -1,8 +1,8 @@
 # Aave V4 Vyper implementation
 
-This tree contains the Vyper implementation of Aave V4, compiled with the
-official Vyper 0.5.0b1 prerelease. The version is pinned in `requirements.txt`
-and every source file also has an exact version pragma.
+This tree contains the Vyper implementation of Aave V4, compiled with Vyper
+0.5.0b2 at merge commit `8af5e83c` (PR #5232). The compiler commit is pinned in
+`requirements.txt` and every source file also has an exact version pragma.
 
 ## Build and test
 
@@ -30,7 +30,7 @@ additional Hub and Spoke compiler-profile artifacts. This avoids ambiguous
 library resolution in Forge 1.8.x without changing Vyper compiler settings or
 production bytecode.
 
-`ExtSload` is the single opcode-compatibility boundary: Vyper 0.5.0b1 has no
+`ExtSload` is the single opcode-compatibility boundary: Vyper 0.5.0b2 has no
 arbitrary-slot storage-load builtin or inline assembly, so its Vyper ABI shell
 delegatecalls a stateless backend for each raw `SLOAD` primitive. Its public
 batch array is runtime-unbounded. The dedicated ExtSload Solidity suite runs
@@ -45,9 +45,17 @@ manager multicall policy. It also uses transient storage for reentrancy and
 execution context, modules for reusable library logic, immutable values, and
 the Venom code generator.
 
-Vyper 0.5.0b1 runtime allocation is used for supported top-level
+Vyper 0.5.0b2 runtime allocation is used for supported top-level
 `DynArray[T, INF]`, `Bytes[INF]`, and abstract method return types. Spoke
-`multicall(bytes[])` uses raw ABI dispatch because b1 cannot yet type nested
+`multicall(bytes[])` uses raw ABI dispatch because b2 cannot yet type nested
 unbounded dynamic arrays. Remaining finite bounds are documented in
 `gas-snapshots/README.md`; they are compiler limitations, not gas-driven API
 restrictions.
+
+The pinned compiler includes PR #5232's amortized local unbounded-array append.
+Spoke's signed position-manager batch therefore accumulates its update hashes
+in `DynArray[bytes32, INF]`; batches can preserve the Solidity API domain
+without quadratic copying. Persistent enumerable collections remain
+mapping-plus-length because the compiler change does not apply to storage, and
+short finite internal batches remain bounded where direct measurements show
+that the unbounded allocator's fixed cost is higher.

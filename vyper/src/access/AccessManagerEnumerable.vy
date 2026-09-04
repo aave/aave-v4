@@ -1,4 +1,4 @@
-# pragma version 0.5.0b1
+# pragma version 0.5.0b2
 from dependencies.openzeppelin import IAccessManaged
 from access.interfaces import IAccessManagerEnumerable
 

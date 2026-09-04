@@ -1,4 +1,4 @@
-# pragma version 0.5.0b1
+# pragma version 0.5.0b2
 
 from hub.libraries import Premium
 from libraries.math import PercentageMath

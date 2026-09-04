@@ -1,4 +1,4 @@
-# pragma version 0.5.0b1
+# pragma version 0.5.0b2
 
 ACCESS_MANAGER_ADMIN_ROLE: public(constant(uint64)) = 0
 HUB_DOMAIN_ADMIN_ROLE: public(constant(uint64)) = 100

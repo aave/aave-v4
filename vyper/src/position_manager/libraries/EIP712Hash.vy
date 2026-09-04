@@ -1,4 +1,4 @@
-# pragma version 0.5.0b1
+# pragma version 0.5.0b2
 
 SUPPLY_TYPEHASH: public(constant(bytes32)) = 0xe85497eb293c001e8483fe105efadd1d50aa0dadfc0570b27058031dfceab2e6
 WITHDRAW_TYPEHASH: public(constant(bytes32)) = 0x0bc73eb58cf4068a29b9593ef18c0d26b3b4453bd2155424a90cb26a22f41d7f

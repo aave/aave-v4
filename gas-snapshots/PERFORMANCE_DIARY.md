@@ -3,15 +3,18 @@
 This diary records performance findings from the Aave v4 Vyper POC for Vyper
 core developers. Measurements use Cancun, Venom via `--experimental-codegen`,
 and the repository's matched 137-operation gas suite. The final build uses
-official Vyper 0.5.0b1 and `-O 3`; earlier milestones used 0.5.0a3.
+Vyper 0.5.0b2 at PR #5232's merge commit and `-O 3`; earlier milestones used
+0.5.0a3 and official 0.5.0b1.
 
-## Official 0.5.0b1 and runtime-array results
+## Runtime-array results through 0.5.0b2
 
 | Milestone | Scenario index | vs Solidity | vs previous |
 |---|---:|---:|---:|
 | Optimized 0.5.0a3 | 24,053,993 | +33.29% | — |
 | 0.5.0b1 bounded control | 22,008,357 | +21.95% | -8.50% |
-| 0.5.0b1 parity-oriented runtime arrays | 22,754,778 | +26.09% | +3.39% |
+| 0.5.0b1 parity-oriented runtime arrays | 22,743,051 | +26.36% | +3.34% |
+| 0.5.0b2 PR #5232 compiler-only | 22,750,281 | +26.40% | +0.03% |
+| 0.5.0b2 restored hash append | 22,321,268 | +24.01% | -1.89% |
 
 The official b1 release provides top-level `Bytes[INF]`, `String[INF]`, and
 `DynArray[T, INF]` for ABI-static `T` under Venom. The POC now uses these for
@@ -20,13 +23,14 @@ abstract payload methods. Production persistent enumerable arrays were replaced
 with mapping-plus-length storage. Spoke multicall uses raw runtime decoding to
 accept an unbounded `bytes[]` call count and unbounded per-call input size.
 
-The runtime path is not a gas optimization in the small benchmark domain: it
-adds 746,421 gas (+3.39%) versus the bounded b1 control. It is retained because
-unbounded behavior is a feature-parity requirement. Even with that cost, the
-final b1 build is 1,299,215 gas (-5.40%) below optimized a3.
+The b1 runtime path was not a gas optimization in the small benchmark domain:
+it added 734,694 gas (+3.34%) versus the bounded control. It was retained
+because unbounded behavior is a feature-parity requirement. PR #5232 makes
+long local appends efficient enough to recover 429,013 gas (-1.89%) after one
+previously bounded accumulator is restored to `DynArray[bytes32, INF]`.
 
 The remaining compiler gaps are nested unbounded dynamic types, unbounded
-storage arrays, and unbounded `raw_call` returndata. Vyper 0.5.0b1 rejects
+storage arrays, and unbounded `raw_call` returndata. Vyper 0.5.0b2 rejects
 `DynArray[Bytes[INF], INF]` and dynamic structs containing unbounded arrays or
 strings, and `raw_call` still requires a literal finite `max_outsize`. The POC
 isolates those residual bounds instead of describing them as optimizations.
@@ -216,7 +220,7 @@ and call/ABI overhead rather than sparse traversal, which is now fixed.
 ## Validation
 
 - Gas suite: 86/86 passing, 137 recorded operations.
-- Full b1 suite: 2,064 passing and zero failing; one pre-existing `pending rft`
+- Full b2 suite: 2,064 passing and zero failing; one pre-existing `pending rft`
   test remains skipped.
 
 ## 8. Latest-main and Forge 1.8 refresh
@@ -237,3 +241,55 @@ passes 2,064 tests with zero failures and the one pre-existing skip.
 - Focused Hub suite: 313/313 passing.
 - Focused position-manager suite: 277/277 passing.
 - Final b1 Spoke runtime bytecode: 21,923 bytes, 2,653 bytes under EIP-170.
+- Final b2 Spoke runtime bytecode: 22,339 bytes, 2,237 bytes under EIP-170.
+
+## 9. PR #5232 amortizes local unbounded appends
+
+Vyper PR #5232 changes a local `DynArray[T, INF]` from reallocating and copying
+on every append to a pointer-and-capacity cell whose capacity doubles. This
+changes repeated append from quadratic to amortized linear behavior. The exact
+compiler control uses parent `5c3c019b`; the tested build uses merge commit
+`8af5e83c`, both identifying as 0.5.0b2.
+
+With unchanged Aave sources, the matched scenario index moves from 22,743,060
+to 22,750,281: +7,221 gas (+0.03%). This is expected because most measured
+arrays receive zero to four appends, where maintaining capacity adds a small
+fixed cost. A direct `DynArray[uint256, INF]` append benchmark shows the actual
+crossover and asymptotic gain:
+
+| Appends | Before PR | After PR | Change |
+|---:|---:|---:|---:|
+| 4 | 23,079 | 23,483 | +1.75% |
+| 16 | 27,949 | 27,227 | -2.58% |
+| 32 | 36,350 | 31,822 | -12.46% |
+| 64 | 65,360 | 40,797 | -37.58% |
+| 100 | 139,742 | 51,235 | -63.34% |
+| 256 | 2,486,355 | 94,435 | -96.20% |
+| 500 | 32,076,611 | 164,363 | -99.49% |
+| 1,000 | 496,552,687 | 313,942 | -99.94% |
+
+The audit found one gas-motivated bound worth reversing. Spoke's signed batch
+position-manager flow accumulated at most 1,024 update hashes in a bounded
+local array. Restoring that accumulator and its encoded buffer to unbounded
+types reduces the b2 scenario index from 22,750,281 to 22,321,268: -429,013
+gas (-1.89%). The individual signature update paths save roughly 22% to 32%,
+and multicalls containing one save roughly 12% to 14%. The final Vyper gap to
+Solidity falls from +26.40% to +24.01%.
+
+Other prior append changes should not be reversed:
+
+- Hub and AccessManager enumerable collections moved from bounded storage
+  arrays to mapping-plus-length storage. PR #5232 only optimizes local arrays,
+  and unbounded storage arrays remain unsupported.
+- Spoke multicall and AccessManager role-label results have ABI-dynamic element
+  types. Vyper still rejects unbounded arrays of dynamic elements, so their raw
+  ABI paths remain necessary.
+- Account-data collateral collection is short in the tested domain, where the
+  unbounded allocator's fixed cost regresses gas.
+- Config-engine batches are capped at 32. A representative two-array benchmark
+  at 32 elements costs 36,442 gas bounded versus 51,151 unbounded, so those
+  locals remain bounded.
+
+The result is deliberately selective: feature-parity arrays stay unbounded,
+the long local hash accumulator is restored, and finite internal arrays remain
+bounded where the compiler feature does not apply or measurement rejects it.

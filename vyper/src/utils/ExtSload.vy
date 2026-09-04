@@ -1,4 +1,4 @@
-# pragma version 0.5.0b1
+# pragma version 0.5.0b2
 
 # Vyper 0.5 does not expose an arbitrary-slot SLOAD builtin. Keep the Aave
 # ExtSload ABI in Vyper and delegate only that unavailable opcode-level
@@ -26,7 +26,7 @@ def extSload(slot: bytes32) -> bytes32:
 
 @external
 def extSloads(slots: DynArray[bytes32, INF]) -> DynArray[bytes32, INF]:
-    # `raw_call` still requires a finite return bound in 0.5.0b1. Calling the
+    # `raw_call` still requires a finite return bound in 0.5.0b2. Calling the
     # backend's scalar primitive keeps this public array genuinely unbounded.
     results: DynArray[bytes32, INF] = []
     for slot: bytes32 in slots:

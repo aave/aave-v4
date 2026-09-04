@@ -1,4 +1,4 @@
-#pragma version 0.5.0b1
+#pragma version 0.5.0b2
 
 from libraries.math import WadRayMath
 from libraries.math import PercentageMath

@@ -1,4 +1,4 @@
-# pragma version 0.5.0b1
+# pragma version 0.5.0b2
 
 from config_engine import AaveV4Payload
 from config_engine.interfaces import IAaveV4ConfigEngine

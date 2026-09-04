@@ -1,0 +1,11 @@
+{
+  "approveBorrow": "49807",
+  "approveBorrowWithSig": "65689",
+  "approveWithdraw": "49816",
+  "approveWithdrawWithSig": "65631",
+  "borrowOnBehalfOf": "370066",
+  "renounceBorrowAllowance": "27929",
+  "renounceWithdrawAllowance": "27983",
+  "withdrawOnBehalfOf: full": "154630",
+  "withdrawOnBehalfOf: partial": "168730"
+}

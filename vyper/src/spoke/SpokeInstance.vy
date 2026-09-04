@@ -1,4 +1,4 @@
-# pragma version 0.5.0b1
+# pragma version 0.5.0b2
 
 from hub.libraries import SharesMath
 from libraries import Errors
@@ -982,13 +982,13 @@ def setUserPositionManager(positionManager: address, approve: bool):
 def setUserPositionManagersWithSig(params: ISpoke.SetUserPositionManagers, signature: Bytes[INF]):
     if block.timestamp > params.deadline:
         raise ISpoke.InvalidSignature()
-    update_hashes: DynArray[bytes32, 1024] = []
+    update_hashes: DynArray[bytes32, INF] = []
     for i: uint256 in range(1024):
         if i >= len(params.updates):
             break
         update_hash: bytes32 = keccak256(abi_encode(POSITION_MANAGER_UPDATE_TYPEHASH, params.updates[i].positionManager, params.updates[i].approve))
         update_hashes.append(update_hash)
-    encoded_hashes: Bytes[32800] = abi_encode(update_hashes, ensure_tuple=False)
+    encoded_hashes: Bytes[INF] = abi_encode(update_hashes, ensure_tuple=False)
     updates_digest: bytes32 = keccak256(slice(encoded_hashes, 32, len(encoded_hashes) - 32))
     intent_hash: bytes32 = keccak256(abi_encode(
         SET_USER_POSITION_MANAGERS_TYPEHASH,
@@ -1416,7 +1416,7 @@ def liquidationCall(collateralReserveId: uint256, debtReserveId: uint256, user: 
 @external
 @raw_return
 def __default__() -> Bytes[INF]:
-    # Nested unbounded dynamic arrays are not yet a source-level type in b1,
+    # Nested unbounded dynamic arrays are not yet a source-level type in b2,
     # so decode the standard `bytes[]` ABI through its unbounded offset list.
     if len(msg.data) < 68 or slice(msg.data, 0, 4) != method_id("multicall(bytes[])"):
         raise

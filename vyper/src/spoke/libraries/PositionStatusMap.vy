@@ -1,4 +1,4 @@
-# pragma version 0.5.0b1
+# pragma version 0.5.0b2
 
 NOT_FOUND: public(constant(uint256)) = max_value(uint256)
 BORROWING_MASK: public(constant(uint256)) = 38597363079105398474523661669562635951089994888546854679819194669304376546645

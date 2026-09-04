@@ -1,4 +1,4 @@
-# pragma version 0.5.0b1
+# pragma version 0.5.0b2
 
 from position_manager import PositionManagerBase
 from position_manager.libraries import ConfigPermissionsMap

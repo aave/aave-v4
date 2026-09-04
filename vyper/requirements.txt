@@ -1,1 +1,1 @@
-vyper==0.5.0b1
+vyper @ git+https://github.com/vyperlang/vyper.git@8af5e83c10af4f065cc660fe20293dac11fdff83
