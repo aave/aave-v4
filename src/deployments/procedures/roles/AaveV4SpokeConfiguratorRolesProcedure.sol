@@ -8,16 +8,13 @@ import {Roles} from 'src/deployments/utils/libraries/Roles.sol';
 /// @author Aave Labs
 /// @notice Procedures for granting and setting up SpokeConfigurator roles on the AccessManager.
 library AaveV4SpokeConfiguratorRolesProcedure {
-  /// @notice Grants every SpokeConfigurator role (400-405) to `admin`.
+  /// @notice Grants every SpokeConfigurator role (400-402) to `admin`.
   /// @param accessManager The address of the AccessManager contract.
   /// @param admin The address to receive the SpokeConfigurator roles.
   function grantSpokeConfiguratorAllRoles(address accessManager, address admin) internal {
-    grantSpokeConfiguratorRole(accessManager, Roles.SPOKE_CONFIGURATOR_DOMAIN_ADMIN_ROLE, admin);
-    grantSpokeConfiguratorRole(accessManager, Roles.SPOKE_CONFIGURATOR_PAUSE_ROLE, admin);
-    grantSpokeConfiguratorRole(accessManager, Roles.SPOKE_CONFIGURATOR_FREEZE_ROLE, admin);
-    grantSpokeConfiguratorRole(accessManager, Roles.SPOKE_CONFIGURATOR_LISTING_ROLE, admin);
-    grantSpokeConfiguratorRole(accessManager, Roles.SPOKE_CONFIGURATOR_EMERGENCY_ROLE, admin);
+    grantSpokeConfiguratorRole(accessManager, Roles.SPOKE_CONFIGURATOR_DOMAIN_BASE_ROLE, admin);
     grantSpokeConfiguratorRole(accessManager, Roles.SPOKE_CONFIGURATOR_RISK_MANAGEMENT_ROLE, admin);
+    grantSpokeConfiguratorRole(accessManager, Roles.SPOKE_CONFIGURATOR_EMERGENCY_ROLE, admin);
   }
 
   /// @notice Grants a specific SpokeConfigurator role to the given address.
@@ -30,7 +27,7 @@ library AaveV4SpokeConfiguratorRolesProcedure {
     IAccessManager(accessManager).grantRole({roleId: role, account: admin, executionDelay: 0});
   }
 
-  /// @notice Sets up every SpokeConfigurator role (400-405) with its target selectors.
+  /// @notice Sets up every SpokeConfigurator role (400-402) with its target selectors.
   function setupSpokeConfiguratorAllRoles(
     address accessManager,
     address spokeConfigurator
@@ -38,38 +35,20 @@ library AaveV4SpokeConfiguratorRolesProcedure {
     setupSpokeConfiguratorRole(
       accessManager,
       spokeConfigurator,
-      Roles.SPOKE_CONFIGURATOR_DOMAIN_ADMIN_ROLE,
-      Roles.getSpokeConfiguratorDomainAdminRoleSelectors()
-    );
-    setupSpokeConfiguratorRole(
-      accessManager,
-      spokeConfigurator,
-      Roles.SPOKE_CONFIGURATOR_PAUSE_ROLE,
-      Roles.getSpokeConfiguratorPauseRoleSelectors()
-    );
-    setupSpokeConfiguratorRole(
-      accessManager,
-      spokeConfigurator,
-      Roles.SPOKE_CONFIGURATOR_FREEZE_ROLE,
-      Roles.getSpokeConfiguratorFreezeRoleSelectors()
-    );
-    setupSpokeConfiguratorRole(
-      accessManager,
-      spokeConfigurator,
-      Roles.SPOKE_CONFIGURATOR_LISTING_ROLE,
-      Roles.getSpokeConfiguratorListingRoleSelectors()
-    );
-    setupSpokeConfiguratorRole(
-      accessManager,
-      spokeConfigurator,
-      Roles.SPOKE_CONFIGURATOR_EMERGENCY_ROLE,
-      Roles.getSpokeConfiguratorEmergencyRoleSelectors()
+      Roles.SPOKE_CONFIGURATOR_DOMAIN_BASE_ROLE,
+      Roles.getSpokeConfiguratorDomainBaseRoleSelectors()
     );
     setupSpokeConfiguratorRole(
       accessManager,
       spokeConfigurator,
       Roles.SPOKE_CONFIGURATOR_RISK_MANAGEMENT_ROLE,
       Roles.getSpokeConfiguratorRiskManagementRoleSelectors()
+    );
+    setupSpokeConfiguratorRole(
+      accessManager,
+      spokeConfigurator,
+      Roles.SPOKE_CONFIGURATOR_EMERGENCY_ROLE,
+      Roles.getSpokeConfiguratorEmergencyRoleSelectors()
     );
   }
 
