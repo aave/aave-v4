@@ -1,0 +1,21 @@
+{
+  "accessManagerAdmin": "0x187AAE17d4931310B3fc75743e7F16Bdc9eD77e9",
+  "proxyAdminOwner": "0x187AAE17d4931310B3fc75743e7F16Bdc9eD77e9",
+  "treasurySpokeOwner": "0x187AAE17d4931310B3fc75743e7F16Bdc9eD77e9",
+  "gatewayOwner": "0x187AAE17d4931310B3fc75743e7F16Bdc9eD77e9",
+  "positionManagerOwner": "0x187AAE17d4931310B3fc75743e7F16Bdc9eD77e9",
+  "hubConfiguratorAdmin": "0x1111111111111111111111111111111111111111",
+  "spokeConfiguratorAdmin": "0x1111111111111111111111111111111111111111",
+  "governanceExecutor": "0x9390B1735def18560c509E2d0bc090E9d6BA257a",
+  "hubAdmin": "0x0000000000000000000000000000000000000000",
+  "spokeAdmin": "0x0000000000000000000000000000000000000000",
+  "nativeWrapper": "0x4200000000000000000000000000000000000006",
+  "deployNativeTokenGateway": true,
+  "deploySignatureGateway": true,
+  "deployPositionManagers": true,
+  "grantRoles": false,
+  "hubLabels": ["core"],
+  "spokeLabels": ["main"],
+  "spokeMaxReservesLimits": [],
+  "salt": "0xd72c0dea5ad283a0bacbf56534163edcc6b58ca0c36cc3607fcb4ad4d73597d5"
+}
