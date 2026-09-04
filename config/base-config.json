@@ -1,0 +1,5 @@
+{
+  "report": "output/reports/deployments/base.json",
+  "deployer": "0x0000000000000000000000000000000000000000",
+  "assets": []
+}

@@ -876,7 +876,8 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
       admin: Roles.HUB_CONFIGURATOR_ROLE,
       guardian: Roles.HUB_DEFICIT_ELIMINATOR_ROLE,
       grantDelay: 3600,
-      label: 'FEE_UPDATER'
+      label: 'FEE_UPDATER',
+      labelUpdate: false
     });
     payload.setAccessManagerRoleUpdates(updates);
 
@@ -1021,9 +1022,93 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
     });
     payload.setPositionManagerRoleRenouncements(renouncements);
 
+    vm.expectEmit(address(spoke1()));
+    emit ISpoke.SetUserPositionManager(USER, address(freshPm), false);
     payload.execute();
 
+    // the position manager is still active on the Spoke, so isPositionManager being false
+    // proves the approval itself was cleared
+    assertTrue(spoke1().isPositionManagerActive(address(freshPm)));
     assertFalse(spoke1().isPositionManager(USER, address(freshPm)));
+  }
+
+  function test_execute_positionManagerDeregistrationWithRenouncement() public {
+    PositionManagerBaseWrapper freshPm = new PositionManagerBaseWrapper(address(payload));
+    IAaveV4ConfigEngine.SpokeRegistration[]
+      memory regs = new IAaveV4ConfigEngine.SpokeRegistration[](1);
+    regs[0] = IAaveV4ConfigEngine.SpokeRegistration({
+      positionManager: address(freshPm),
+      spoke: address(spoke1()),
+      registered: true
+    });
+    payload.setPositionManagerSpokeRegistrations(regs);
+
+    IAaveV4ConfigEngine.PositionManagerUpdate[]
+      memory pmUpdates = new IAaveV4ConfigEngine.PositionManagerUpdate[](1);
+    pmUpdates[0] = IAaveV4ConfigEngine.PositionManagerUpdate({
+      spokeConfigurator: spokeConfigurator,
+      spoke: address(spoke1()),
+      positionManager: address(freshPm),
+      active: true
+    });
+    payload.setSpokePositionManagerUpdates(pmUpdates);
+    payload.execute();
+
+    vm.prank(USER);
+    spoke1().setUserPositionManager(address(freshPm), true);
+    assertTrue(spoke1().isPositionManager(USER, address(freshPm)));
+
+    // single payload winding down the position manager: renounce USER's role and deregister the Spoke
+    regs[0].registered = false;
+    payload.setPositionManagerSpokeRegistrations(regs);
+    payload.setSpokePositionManagerUpdates(new IAaveV4ConfigEngine.PositionManagerUpdate[](0));
+
+    IAaveV4ConfigEngine.PositionManagerRoleRenouncement[]
+      memory renouncements = new IAaveV4ConfigEngine.PositionManagerRoleRenouncement[](1);
+    renouncements[0] = IAaveV4ConfigEngine.PositionManagerRoleRenouncement({
+      positionManager: address(freshPm),
+      spoke: address(spoke1()),
+      user: USER
+    });
+    payload.setPositionManagerRoleRenouncements(renouncements);
+
+    vm.expectEmit(address(spoke1()));
+    emit ISpoke.SetUserPositionManager(USER, address(freshPm), false);
+    payload.execute();
+
+    // the position manager is still active on the Spoke, so isPositionManager being false
+    // proves the approval itself was cleared
+    assertTrue(spoke1().isPositionManagerActive(address(freshPm)));
+    assertFalse(spoke1().isPositionManager(USER, address(freshPm)));
+    assertFalse(freshPm.isSpokeRegistered(address(spoke1())));
+  }
+
+  function test_execute_positionManagerRegistrationWithRenouncement_reverts() public {
+    PositionManagerBaseWrapper freshPm = new PositionManagerBaseWrapper(address(payload));
+
+    // single payload bundling the Spoke registration and the role renouncement.
+    // renouncements run before registrations, so the renounce executes while the
+    // Spoke is not yet registered and reverts.
+    IAaveV4ConfigEngine.SpokeRegistration[]
+      memory regs = new IAaveV4ConfigEngine.SpokeRegistration[](1);
+    regs[0] = IAaveV4ConfigEngine.SpokeRegistration({
+      positionManager: address(freshPm),
+      spoke: address(spoke1()),
+      registered: true
+    });
+    payload.setPositionManagerSpokeRegistrations(regs);
+
+    IAaveV4ConfigEngine.PositionManagerRoleRenouncement[]
+      memory renouncements = new IAaveV4ConfigEngine.PositionManagerRoleRenouncement[](1);
+    renouncements[0] = IAaveV4ConfigEngine.PositionManagerRoleRenouncement({
+      positionManager: address(freshPm),
+      spoke: address(spoke1()),
+      user: USER
+    });
+    payload.setPositionManagerRoleRenouncements(renouncements);
+
+    vm.expectRevert(IPositionManagerBase.SpokeNotRegistered.selector);
+    payload.execute();
   }
 
   // --- Unauthorized execute tests ---

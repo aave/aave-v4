@@ -39,8 +39,30 @@ deploy-precompile :;
 	$(if ${dry},, --broadcast --verify) \
 
 # Step 2: Deploy contracts + grant roles to deployer
-# `make deploy-contracts`
+# `make deploy-contracts script=AaveV4DeployBase`
 deploy-contracts :;
-	FOUNDRY_PROFILE=${chain} forge clean && forge script scripts/deploy/AaveV4DeployBatch.s.sol:AaveV4DeployBatchScript \
+	FOUNDRY_PROFILE=${chain} forge clean && forge script scripts/deploy/${script}.s.sol:${script} \
+	--rpc-url ${chain} --account ${account} --slow \
+	$(if ${dry},, --broadcast --verify) \
+
+# Step 3: Configure the market and halt every listed asset on the Hub
+# `make configure-market chain=base account=<keystore-name> script=AaveV4ConfigureBase`
+configure-market :;
+	FOUNDRY_PROFILE=${chain} forge script scripts/config/${script}.s.sol:${script} \
+	--rpc-url ${chain} --account ${account} --slow \
+	$(if ${dry},, --broadcast) \
+
+# Step 4: Hand the market over and verify the deployer holds nothing
+# `make relinquish-market chain=base account=<keystore-name> script=AaveV4RelinquishBase`
+relinquish-market :;
+	FOUNDRY_PROFILE=${chain} forge script scripts/config/${script}.s.sol:${script} \
+	--rpc-url ${chain} --account ${account} --slow \
+	$(if ${dry},, --broadcast) \
+
+# Deploys the AaveV4ConfigEngine governance payloads delegatecall into. Independent of the steps
+# above: the engine is stateless and sits at a deterministic address.
+# `make deploy-config-engine chain=base account=<keystore-name> script=DeployBaseConfigEngine`
+deploy-config-engine :;
+	FOUNDRY_PROFILE=${chain} forge script scripts/config/${script}.s.sol:${script} \
 	--rpc-url ${chain} --account ${account} --slow \
 	$(if ${dry},, --broadcast --verify) \
