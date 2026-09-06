@@ -1,0 +1,1068 @@
+{
+  "source_revision": "1f7129042fe57e24bfc4c934be5088514cb93503",
+  "machine": "arm64",
+  "versions": {
+    "solidity": "solc, the solidity compiler commandline interface\nVersion: 0.8.28+commit.7893614a.Darwin.appleclang",
+    "vyper": "0.5.0b2+commit.8af5e83c"
+  },
+  "targets": {
+    "solidity": {
+      "HubInstance": "src/hub/instances/HubInstance.sol",
+      "SpokeInstance": "src/spoke/instances/SpokeInstance.sol",
+      "AccessManagerEnumerable": "src/access/AccessManagerEnumerable.sol",
+      "SignatureGateway": "src/position-manager/SignatureGateway.sol",
+      "TakerPositionManager": "src/position-manager/TakerPositionManager.sol",
+      "ConfigPositionManager": "src/position-manager/ConfigPositionManager.sol",
+      "GiverPositionManager": "src/position-manager/GiverPositionManager.sol",
+      "NativeTokenGateway": "src/position-manager/NativeTokenGateway.sol",
+      "TokenizationSpokeInstance": "src/spoke/instances/TokenizationSpokeInstance.sol",
+      "TreasurySpokeInstance": "src/spoke/instances/TreasurySpokeInstance.sol",
+      "AssetInterestRateStrategy": "src/hub/AssetInterestRateStrategy.sol",
+      "HubConfigurator": "src/hub/HubConfigurator.sol",
+      "SpokeConfigurator": "src/spoke/SpokeConfigurator.sol",
+      "AaveOracle": "src/spoke/AaveOracle.sol",
+      "AaveV4ConfigEngine": "src/config-engine/AaveV4ConfigEngine.sol",
+      "LiquidationLogic": "src/spoke/libraries/LiquidationLogic.sol",
+      "TokenizationSpokeDeployer": "src/config-engine/libraries/TokenizationSpokeDeployer.sol",
+      "HubEngine": "src/config-engine/libraries/HubEngine.sol",
+      "SpokeEngine": "src/config-engine/libraries/SpokeEngine.sol",
+      "AccessManagerEngine": "src/config-engine/libraries/AccessManagerEngine.sol",
+      "PositionManagerEngine": "src/config-engine/libraries/PositionManagerEngine.sol"
+    },
+    "vyper": {
+      "HubInstance": "hub/HubInstance.vy",
+      "SpokeInstance": "spoke/SpokeInstance.vy",
+      "AccessManagerEnumerable": "access/AccessManagerEnumerable.vy",
+      "SignatureGateway": "position_manager/SignatureGateway.vy",
+      "TakerPositionManager": "position_manager/TakerPositionManager.vy",
+      "ConfigPositionManager": "position_manager/ConfigPositionManager.vy",
+      "GiverPositionManager": "position_manager/GiverPositionManager.vy",
+      "NativeTokenGateway": "position_manager/NativeTokenGateway.vy",
+      "TokenizationSpokeInstance": "spoke/TokenizationSpokeInstance.vy",
+      "TreasurySpokeInstance": "spoke/TreasurySpokeInstance.vy",
+      "AssetInterestRateStrategy": "hub/AssetInterestRateStrategy.vy",
+      "HubConfigurator": "hub/HubConfigurator.vy",
+      "SpokeConfigurator": "spoke/SpokeConfigurator.vy",
+      "AaveOracle": "spoke/AaveOracle.vy",
+      "AaveV4ConfigEngine": "config_engine/AaveV4ConfigEngine.vy",
+      "LiquidationLogicContract": "spoke/LiquidationLogicContract.vy",
+      "TokenizationSpokeDeployer": "config_engine/TokenizationSpokeDeployer.vy"
+    }
+  },
+  "jobs": {
+    "solidity": [
+      {
+        "label": "default",
+        "settings": {
+          "evmVersion": "cancun",
+          "optimizer": {
+            "enabled": true,
+            "runs": 44444444
+          },
+          "viaIR": false,
+          "metadata": {
+            "bytecodeHash": "none",
+            "appendCBOR": false
+          },
+          "outputSelection": {
+            "src/access/AccessManagerEnumerable.sol": {
+              "AccessManagerEnumerable": [
+                "abi",
+                "evm.bytecode.object",
+                "evm.deployedBytecode.object"
+              ]
+            },
+            "src/position-manager/SignatureGateway.sol": {
+              "SignatureGateway": [
+                "abi",
+                "evm.bytecode.object",
+                "evm.deployedBytecode.object"
+              ]
+            },
+            "src/position-manager/TakerPositionManager.sol": {
+              "TakerPositionManager": [
+                "abi",
+                "evm.bytecode.object",
+                "evm.deployedBytecode.object"
+              ]
+            },
+            "src/position-manager/ConfigPositionManager.sol": {
+              "ConfigPositionManager": [
+                "abi",
+                "evm.bytecode.object",
+                "evm.deployedBytecode.object"
+              ]
+            },
+            "src/position-manager/GiverPositionManager.sol": {
+              "GiverPositionManager": [
+                "abi",
+                "evm.bytecode.object",
+                "evm.deployedBytecode.object"
+              ]
+            },
+            "src/position-manager/NativeTokenGateway.sol": {
+              "NativeTokenGateway": [
+                "abi",
+                "evm.bytecode.object",
+                "evm.deployedBytecode.object"
+              ]
+            },
+            "src/spoke/instances/TokenizationSpokeInstance.sol": {
+              "TokenizationSpokeInstance": [
+                "abi",
+                "evm.bytecode.object",
+                "evm.deployedBytecode.object"
+              ]
+            },
+            "src/spoke/instances/TreasurySpokeInstance.sol": {
+              "TreasurySpokeInstance": [
+                "abi",
+                "evm.bytecode.object",
+                "evm.deployedBytecode.object"
+              ]
+            },
+            "src/hub/AssetInterestRateStrategy.sol": {
+              "AssetInterestRateStrategy": [
+                "abi",
+                "evm.bytecode.object",
+                "evm.deployedBytecode.object"
+              ]
+            },
+            "src/hub/HubConfigurator.sol": {
+              "HubConfigurator": [
+                "abi",
+                "evm.bytecode.object",
+                "evm.deployedBytecode.object"
+              ]
+            },
+            "src/spoke/SpokeConfigurator.sol": {
+              "SpokeConfigurator": [
+                "abi",
+                "evm.bytecode.object",
+                "evm.deployedBytecode.object"
+              ]
+            },
+            "src/spoke/AaveOracle.sol": {
+              "AaveOracle": [
+                "abi",
+                "evm.bytecode.object",
+                "evm.deployedBytecode.object"
+              ]
+            },
+            "src/config-engine/AaveV4ConfigEngine.sol": {
+              "AaveV4ConfigEngine": [
+                "abi",
+                "evm.bytecode.object",
+                "evm.deployedBytecode.object"
+              ]
+            },
+            "src/spoke/libraries/LiquidationLogic.sol": {
+              "LiquidationLogic": [
+                "abi",
+                "evm.bytecode.object",
+                "evm.deployedBytecode.object"
+              ]
+            },
+            "src/config-engine/libraries/TokenizationSpokeDeployer.sol": {
+              "TokenizationSpokeDeployer": [
+                "abi",
+                "evm.bytecode.object",
+                "evm.deployedBytecode.object"
+              ]
+            },
+            "src/config-engine/libraries/HubEngine.sol": {
+              "HubEngine": [
+                "abi",
+                "evm.bytecode.object",
+                "evm.deployedBytecode.object"
+              ]
+            },
+            "src/config-engine/libraries/SpokeEngine.sol": {
+              "SpokeEngine": [
+                "abi",
+                "evm.bytecode.object",
+                "evm.deployedBytecode.object"
+              ]
+            },
+            "src/config-engine/libraries/AccessManagerEngine.sol": {
+              "AccessManagerEngine": [
+                "abi",
+                "evm.bytecode.object",
+                "evm.deployedBytecode.object"
+              ]
+            },
+            "src/config-engine/libraries/PositionManagerEngine.sol": {
+              "PositionManagerEngine": [
+                "abi",
+                "evm.bytecode.object",
+                "evm.deployedBytecode.object"
+              ]
+            }
+          }
+        },
+        "source_sha256": {
+          "src/hub/instances/HubInstance.sol": "fcde314b28c698747f66a6aa10b9f38d156ec75c40bd1f7712d17e5db57fd8ca",
+          "src/hub/Hub.sol": "6f072ed7e2713cdb817c6e8453f0bf5981effb47dd545edc9c144a9526a52339",
+          "src/dependencies/openzeppelin-upgradeable/AccessManagedUpgradeable.sol": "bdd725a299dbef01b80afecd5edbefc1a6a7a37569e394a1675de25889b54376",
+          "src/dependencies/openzeppelin/AuthorityUtils.sol": "7e7cb37dcaf91bbb2b4d816c0cba6600eeabf43debd9b9db969468854be644bd",
+          "src/dependencies/openzeppelin/IAuthority.sol": "9ce658dd85d1b335afa12274a94ecdbe0ad6882e72efea1abc94ee377d96c4f4",
+          "src/dependencies/openzeppelin/IAccessManager.sol": "8aea6de8ecb55c012c44fdd4d59a9df543a475b8a8d29648a190c54e2a2c83de",
+          "src/dependencies/openzeppelin/IAccessManaged.sol": "38bbb1e64838beb9511241ed6c6cd9ddab2309ce077450268ff49d46bac2b930",
+          "src/dependencies/openzeppelin-upgradeable/ContextUpgradeable.sol": "69cf4ab085138235b93e2ad1f37bd4c03bc00419adf2ceaf3d118ee2a43d1386",
+          "src/dependencies/openzeppelin-upgradeable/Initializable.sol": "b9d7260a5c6d3bbb51042c563c8cbae6000b541ff5a7b74da705e515c6803ca1",
+          "src/dependencies/openzeppelin/EnumerableSet.sol": "2a4a2e04ff5871defa5c142d139130e9e93a1778f7ceeb83d851f1fdd3aaf5a2",
+          "src/dependencies/openzeppelin/Arrays.sol": "3cd30e8d0c6419f9627e4b9dcce19e839059d2b5b5e8699698b8cf41076284fa",
+          "src/dependencies/openzeppelin/Comparators.sol": "0c0edebbf78b12cdae697730753a6f10848ada3da1dc52999f89263a72a9845e",
+          "src/dependencies/openzeppelin/SlotDerivation.sol": "261ca9f93dd908b2a3097fe3282c98247db21d600e98066de60d2a1b0c8a4f22",
+          "src/dependencies/openzeppelin/StorageSlot.sol": "eb50d38c381b98ef3ee30916532f9fe32fa05e0a3dc482cee2c5cdaa8d480fa8",
+          "src/dependencies/openzeppelin/Math.sol": "047142a81dd81dce0849008216030a0eaf56df524bc6c895f549c12ddfbc2a6b",
+          "src/dependencies/openzeppelin/Panic.sol": "585635034bdf7225813a166918acfa36aa227a3607072643b12de5958f2c0894",
+          "src/dependencies/openzeppelin/SafeCast.sol": "1802fbaa9ec7b60696c8e9729f9e654bce3af9958a275b157fec62aee04d1edb",
+          "src/dependencies/openzeppelin/SafeERC20.sol": "ad12160860fdc8799c86a35322c85a4710fdcc89d31de700e4848e46f2b7f9b1",
+          "src/dependencies/openzeppelin/IERC20.sol": "ff3b57e02672a6c5bc3828afbddb37fd8f42c03a690835890d14c882582a2025",
+          "src/dependencies/openzeppelin/IERC1363.sol": "411bb322ba64327e39cd8d61fc426e77a6f51aba59afe5321df655cb88865c76",
+          "src/dependencies/openzeppelin/IERC165.sol": "3cccfc4b888d1fe9af3e36883e31c991874a615563cf3ce1e0f9c43fe640ad85",
+          "src/libraries/math/MathUtils.sol": "cee560651d66c64fa6977f7c8e8fb9d0397e887237cc7382aba182b8ee58b6b9",
+          "src/libraries/math/PercentageMath.sol": "7d7ef5ccf48ed48a9678178f02a01649399ead7ed4477f037eb62854ae1f6fb1",
+          "src/libraries/math/WadRayMath.sol": "ac8b39d30dd358e93610fc0c101885de07519d5810648a150856ae078e48bf45",
+          "src/hub/libraries/AssetLogic.sol": "37eff53a860a6b3b830f137082a01d0fd64520b5720b16e9f00e7013f11f597c",
+          "src/hub/libraries/SharesMath.sol": "e8f4d929bb68722186f43a58134dcbbd434015d8f5788b461f23ff1b63d3c057",
+          "src/hub/libraries/Premium.sol": "1d11e20706342c293d524a3b676a3ddc76e21894520b3e4b174ae569f3138998",
+          "src/hub/interfaces/IBasicInterestRateStrategy.sol": "ac54fd647a0281e6d357e58ac43cd5c1d88eed45a18e098562a4e0e4772068ed",
+          "src/hub/interfaces/IHub.sol": "4a66008a858eefc836e768963e3c130f9b63d4acb318e253a3ba2ff09e92e01c",
+          "src/hub/interfaces/IHubBase.sol": "0fe4842c6956a16638b910e6719519bc000cd6eae1c56b6297b20337e1f531d9",
+          "src/hub/HubStorage.sol": "eb8c861d29dcc4458ce73cd943438be5512865c48e221af72a2217945fea0337",
+          "src/spoke/instances/SpokeInstance.sol": "188e0eccf68b4322e47a4c29bf689ff1cac7dd1b5ffab41f4b483323a5fc8157",
+          "src/spoke/Spoke.sol": "91aea8bfb868d3d55c5d12cb9b40c5d44a97d8c7f6fa4c0b5219a58155aa1529",
+          "src/dependencies/openzeppelin/IERC20Permit.sol": "81885b3285bc039ec41f6d35e302b142e31a00289d6636fed823f2f4908fc6a7",
+          "src/dependencies/openzeppelin/ReentrancyGuardTransient.sol": "4dd5d024d5c9cd30a8af49d4327c937e792ac0fc195d7670d5e9aa8413f4a3f5",
+          "src/dependencies/openzeppelin/TransientSlot.sol": "e9d98b427a46f9e0d5b84c7b152bc2558b7792e897bfe5e609ccf855eb61c759",
+          "src/spoke/libraries/SpokeUtils.sol": "4f0647263143fd3e9b5e69347328989876122c8dcdc72725f43e70fb2da5eb78",
+          "src/spoke/interfaces/ISpoke.sol": "c5ad0f57edfa767a2308ebbc6c1498b6e06edbf866b37a9b947bac9d3ab29118",
+          "src/interfaces/IIntentConsumer.sol": "b5b31edee7e2c3931234e1454c61b54d05b55cc379e56265cd537484d6b5eb8f",
+          "src/interfaces/INoncesKeyed.sol": "8a76768b1195360c9063db764a61457e8fe842375f8c708fc1327da671a1b967",
+          "src/interfaces/IMulticall.sol": "cf709e0b552c2fe892bd564f3bb26f826bdfe39c4771696fb2f82921963bafea",
+          "src/interfaces/IExtSload.sol": "67c2e9c7b91d05d467bd23fd4a32115eec3112b423c72d204409c83ffc59a6f0",
+          "src/spoke/libraries/EIP712Hash.sol": "3a7f64d5011ba285c463bc4f9371e7660952cb95348c654a9b044b50a1a0c28c",
+          "src/spoke/interfaces/ITokenizationSpoke.sol": "275b42ffadc6046354979a2a63cf2cab374a3331c57a38d913fe1be9972ad9bf",
+          "src/dependencies/openzeppelin/IERC2612.sol": "fd14c59cc96009f52b6472d0121080a1cd925ef995aa7036be8cc9aef1152116",
+          "src/dependencies/openzeppelin/IERC4626.sol": "4d05c2100a33854b05c3a64111922f3e8344080ab7ca276af28709e23991e198",
+          "src/dependencies/openzeppelin/IERC20Metadata.sol": "79fab0e2b112a13caa8cbfe292b1a0376ae3302fa1f8ac3f20a0e9711c1e7371",
+          "src/spoke/libraries/KeyValueList.sol": "effe14ec1705b44993c8c31deb1f046c314aecdf17d65a2e57111d77e5e18bd9",
+          "src/spoke/libraries/LiquidationLogic.sol": "2b15538f71061a6e57e321e985fb65b7d07c5304a7668046aaa12a8d14d6d3f8",
+          "src/spoke/libraries/PositionStatusMap.sol": "7b2c252775864081563a0b71b653590f5f788277ca17da9761d471aae04285a3",
+          "src/dependencies/solady/LibBit.sol": "7848ea2fe68f371b7419c2075aeeb73cfad536b9ad5e7603e8bd0397e1d0bf35",
+          "src/spoke/libraries/UserPositionUtils.sol": "0e9edb3eddcacd16d49af94dd8103ca16953ddd005aa18a3812358656fb945cc",
+          "src/spoke/libraries/ReserveFlagsMap.sol": "033bd5931bd8e701c5b276e7ee12baacdd4dc17139e1d421ea346969e152a595",
+          "src/spoke/interfaces/IAaveOracle.sol": "cd3eed7d011a5def5003386a704fdf5bec2f272f90354712b42f6210ccf036eb",
+          "src/spoke/interfaces/IPriceOracle.sol": "c9bd0c8ac585f1073b686262f6d9f40f796eee75fed1cb80e7512208690556e5",
+          "src/utils/IntentConsumer.sol": "a76dfd8c03a6afa72fab577dac2d4687053dce22d32ddfc28efb9ac3d6f67c28",
+          "src/dependencies/solady/EIP712.sol": "81756465532b211c883052c4a7b460dac4c52e0865bf1f76acf5b999ce11b147",
+          "src/dependencies/openzeppelin/SignatureChecker.sol": "c46d44ca5d7e7d545cccb95bd40e897e76e4453f3c10883771919312f1fd8fa0",
+          "src/dependencies/openzeppelin/ECDSA.sol": "70ca1c7cc9651c664bb335d0fcbb8950203df9076c8be76bb8201769dfbe96a1",
+          "src/dependencies/openzeppelin/IERC1271.sol": "e8535fe575d78d6fddbbc479f41404383c2b1f397f2b6bc1f08cf7a33d16bd7e",
+          "src/dependencies/openzeppelin/IERC7913.sol": "6bedf28aed766673f0cf7d0ab1d59372abb4afce88f1ea262fe9162d759a6fd9",
+          "src/dependencies/openzeppelin/Bytes.sol": "2f58f2c9581246d8f36e8e0e83a482e7e46e0d3faebef7b50e076dfff5be2611",
+          "src/utils/NoncesKeyed.sol": "9b722fa588cb847eb4f238a7275d695150fb1a300e0431af2bfe9fd7be6eb9ff",
+          "src/utils/Multicall.sol": "f4e0282b56dd1b65d3c8785c41c3b380fde59bcd91dadce14f721b3d6b4ae5b2",
+          "src/utils/ExtSload.sol": "61ea5b9d834b84520302798aaad72f49652aa758ecbe45c4f9f9a903c9bed6db",
+          "src/spoke/SpokeStorage.sol": "b75e2ebdc48619b47a056bcfb7657f21d4ddcdf418eb860041c37bda47181c11",
+          "src/access/AccessManagerEnumerable.sol": "e06eb938d4f21f5162327316f919b0941c7fd99261f00d54582ee0660cd8c457",
+          "src/dependencies/openzeppelin/AccessManager.sol": "d1b4f5a3f4a30b31d2bdb7c96e212071f05ea9639f9c26b8a04fbbc346e41199",
+          "src/dependencies/openzeppelin/Address.sol": "5d50f8e29a69280c843e72a1796b0a1badf87614bcf44f3e7ced5b0088a206cf",
+          "src/dependencies/openzeppelin/Errors.sol": "53849afe438d0efee34785f88fe6e446b2e9884c413e95b9f1442acc341cc6c2",
+          "src/dependencies/openzeppelin/LowLevelCall.sol": "457c9be266bdbfca09698912dbdd17b22a072a779419643c03613151e38401e5",
+          "src/dependencies/openzeppelin/Context.sol": "9bb175b967c51c52e9818d94481b63c1fbfa0b1896fdf54f215d9197cf165ce1",
+          "src/dependencies/openzeppelin/Multicall.sol": "145bbd47a40800ac8a5df937961f1b6802c2a19d9bc72305291b604d45efb7d1",
+          "src/dependencies/openzeppelin/Time.sol": "daf34d895850ba98529001c1dda2bf66d978779936fdc7e3c0619a70a21d469a",
+          "src/dependencies/openzeppelin/Hashes.sol": "5b2ab02903f94815f7495610c4ce023d95224795067abe02c4fc00f98f2c046b",
+          "src/access/interfaces/IAccessManagerEnumerable.sol": "0c5c7a5265e051b1f901e40f94b6c012bd3b5f1f096daf87a4fc9c8e87cc874b",
+          "src/position-manager/SignatureGateway.sol": "a38531907ffcda204ecf7dff064ed63163739b2450ae26173e4668a711dacfe9",
+          "src/position-manager/libraries/EIP712Hash.sol": "40074b48a96f50f1171408e0e3c615d49ebd1ed9ffe9588ca14bd7bd432d36e4",
+          "src/position-manager/interfaces/IConfigPositionManager.sol": "7ef8fe54745504f981c954d9eb68f561eb9d480cdb443a98c58567b788fa39f1",
+          "src/position-manager/interfaces/IPositionManagerIntentBase.sol": "c34573504f9d45dfd44187adfff6970de64a614ad6764e7052bd81e1881587e4",
+          "src/position-manager/interfaces/IPositionManagerBase.sol": "0e799fc6084287f4a029022b4482030e74e291dfd639b7aa116da5cb1b852349",
+          "src/interfaces/IRescuable.sol": "b409d8317806ae21439e560248e72cf9be755962dde3dffb7b89761cd2486ec2",
+          "src/position-manager/interfaces/ISignatureGateway.sol": "f56e172b2ad4bd2f40a2aaf7aee36665418a5978f777cb7ad5fc973ca7fa7e0c",
+          "src/position-manager/interfaces/ITakerPositionManager.sol": "53fa058cf21532b3d76bec24dfea0f8d37121221df48a42ee6fdfb8257887e0a",
+          "src/position-manager/PositionManagerIntentBase.sol": "93641310cf9a0c53b4307bdaec3d3722a44af73ebf8d1024e7fbd15d16a260a6",
+          "src/position-manager/PositionManagerBase.sol": "a4d460dc4b8e9027eaa87d937d002d0ce822701c3b1039ef8cb45b5909a510ae",
+          "src/dependencies/openzeppelin/Ownable2Step.sol": "b4b4beb705bbf1fd74c976dcf6abbbb66f4c42bda81fbddc347a7830ea38ef68",
+          "src/dependencies/openzeppelin/Ownable.sol": "84858151748f0e3c889a27f51f802295f64453946fd4242556b55378226a25a8",
+          "src/utils/Rescuable.sol": "37e5f09da05508b55fe6029c320c035d5654565a8341879c8f51d91e0542d25b",
+          "src/position-manager/TakerPositionManager.sol": "79ba707f79a4cb7ce27b9e72e8536b394268852e47593b69428bc4be3a592cbb",
+          "src/position-manager/ConfigPositionManager.sol": "459420dadff1748df3dd6e78e66890d8059db288e17d42695bc211a7698de22d",
+          "src/position-manager/libraries/ConfigPermissionsMap.sol": "e8e179be6a10091b61dc9c4991217e2619a1ef531f7f852dfab43678c3e93fe9",
+          "src/position-manager/GiverPositionManager.sol": "ba695c282eb04557b61785fd952d4f1d89731a1fb7c1ccd70a79c5445e3cfabb",
+          "src/position-manager/interfaces/IGiverPositionManager.sol": "d41fe12d8743366985ea3fbd620d418161748ad174fbf26ad358aac2d5615bb2",
+          "src/position-manager/NativeTokenGateway.sol": "0f8704772bec3ff905e995b6e2dedd8ccef1b3b165d97e617def1ab46e590612",
+          "src/position-manager/interfaces/INativeWrapper.sol": "e5c09740b124c83177d9b753dfcf8ed280958df42e2c043de5848b0189dfc100",
+          "src/position-manager/interfaces/INativeTokenGateway.sol": "dc45e65ea3959d5032f91f5d7c103acd840b535e4a3c99fec38622c30a24aa93",
+          "src/spoke/instances/TokenizationSpokeInstance.sol": "2ab5a4b8968add3b1e07ae51c53904de0137f9ec93c7fa82019030b0256aa720",
+          "src/spoke/TokenizationSpoke.sol": "c68cccf89c898bce67b2b810f7cf454da0a237728c596a747cd11b0f22f88ae4",
+          "src/dependencies/openzeppelin-upgradeable/ERC20Upgradeable.sol": "154728ccfc4e728bcddb8a321e35ee3c3a4bc3c637a48eeddaa478903a5f836b",
+          "src/dependencies/openzeppelin/draft-IERC6093.sol": "13a9b14ac1fb40da7973650687e4c74849b75d83c8aa4077cc8df61b25dfae09",
+          "src/spoke/instances/TreasurySpokeInstance.sol": "10d63b7e8daedad541675972e0067fba193af4432565f4c5ded94ca77da64df5",
+          "src/spoke/TreasurySpoke.sol": "e744ea89edebfab504d5f18bf388d0c5441321e441fbc2e7ecb8921deddac45e",
+          "src/dependencies/openzeppelin-upgradeable/Ownable2StepUpgradeable.sol": "62bf5ee128da8bdaf418d1a105172480922e9b032d605f425431f2806275e710",
+          "src/dependencies/openzeppelin-upgradeable/OwnableUpgradeable.sol": "5818e9966ad2d21bec2d31b329a631f3d1478f1bb7c47a6fcb4695c0570d3bc0",
+          "src/spoke/interfaces/ITreasurySpoke.sol": "6fb0efe988a7e80dd1ee8ffde0421a69885a24e4b823b679fc0496893cb39749",
+          "src/hub/AssetInterestRateStrategy.sol": "bc2681fe753931e8d2430d4da1a797264fcbe56b2dca731841ecd81f8efb52bd",
+          "src/hub/interfaces/IAssetInterestRateStrategy.sol": "7d08cedf896255c9fff28cdc5c2dccb487aa284dc97d5de1584723c4b305affd",
+          "src/hub/HubConfigurator.sol": "76d493fd97f03b3ee632d46164e40310336e63065e4227ae0d0efd3fcf503d68",
+          "src/dependencies/openzeppelin/AccessManaged.sol": "c34056e4e7f48a81870182071befd3eb011318f07395a228bd096980f67a1b55",
+          "src/hub/interfaces/IHubConfigurator.sol": "460ef46a23f6a4f8cc4ba1474c72f1a3f3cfabf5889db92593b3fadd1e142ac1",
+          "src/spoke/SpokeConfigurator.sol": "1b8a8a5cc191a9da31151f051c1bd54dff42e93b20db9d5ddbaef7e94d5eb66e",
+          "src/spoke/interfaces/ISpokeConfigurator.sol": "b05f7f734a20bf53e542efc0ade877cfdb3cacd3db5c1aa723dfa648accf3e3f",
+          "src/spoke/AaveOracle.sol": "801001e503b4f9a1c8693b4d5435a4f7dfa8d42e43046dcfd08eee4bf201ad24",
+          "src/spoke/interfaces/IPriceFeed.sol": "3d0d169d7837b5618489d0e4940a80ea322be1a1c2038bef61ddfabf86d4948a",
+          "src/config-engine/AaveV4ConfigEngine.sol": "5e93197dd7c35540125b49c21a629935de7012b01daeb0cb724046350239264a",
+          "src/config-engine/libraries/HubEngine.sol": "8b9c32e4f3e2a4e6f39ec9daa4b6fe1d6d245c49c74684cc9de3ebf329eba66d",
+          "src/config-engine/libraries/EngineFlags.sol": "3c558fe413441938b328af48b6ef1f5af6095c4abeb9902c4c300b70a73e0e10",
+          "src/config-engine/libraries/TokenizationSpokeDeployer.sol": "96c7e90c4d32d35e264004a8c769e9239937eb301637da8a7656b8c3b217ad91",
+          "src/dependencies/openzeppelin/TransparentUpgradeableProxy.sol": "7d8284afbb1b0ba5248d0617b596aeafb7dbe5a1270cf7228ebd454137e0b141",
+          "src/dependencies/openzeppelin/ERC1967Utils.sol": "0669c05fc2745d8a602106c91926f8288819aae346b3d7f77594b22439b8fd7a",
+          "src/dependencies/openzeppelin/IBeacon.sol": "7bfa24c931b899450a27732f5b5f42384cf772a9c58dbeeffca53e9b4bd5bd1a",
+          "src/dependencies/openzeppelin/IERC1967.sol": "b81a9546a0431c2fd8f948f80fa43a5afd2a18a12586ee8d1f1b0b5db86f1f14",
+          "src/dependencies/openzeppelin/ERC1967Proxy.sol": "aff8bbb8d5a5e533beae03118ec22d3a39cae275def2fcd1792acec8f3acfed8",
+          "src/dependencies/openzeppelin/Proxy.sol": "ec451d7d22611016de9a7934fdfe44ef6264ce1894eb5e194bf33fa84ec9e305",
+          "src/dependencies/openzeppelin/ProxyAdmin.sol": "826b63eea2c35df9b6a88cc4224ce859495f451139e5a777c1eed3693a53f4a4",
+          "src/deployments/utils/libraries/Create2Utils.sol": "6c0b8d8f017e482638a075634b36f1592710b89f3de39ff7d2c4efdbc3c4bf3d",
+          "src/config-engine/interfaces/IAaveV4ConfigEngine.sol": "b869d98a1937e8fa910e13a42cb40b6d3c3ed80b6ba55bb6f28341bca1c03a0a",
+          "src/config-engine/libraries/SpokeEngine.sol": "47b5037a2c5bd82f31b1c045a0937e27b44e5532c5a622f0826247699459883f",
+          "src/config-engine/libraries/AccessManagerEngine.sol": "70973c79c86af4734d18a271f95a2f4b14cd222e18a6b905bf3c66d7cd00f537",
+          "src/config-engine/libraries/PositionManagerEngine.sol": "52a7bb21cadb1c985833557992e0644d97b83c969501b8f1325812a1f76ffd93"
+        }
+      },
+      {
+        "label": "hub",
+        "settings": {
+          "evmVersion": "cancun",
+          "optimizer": {
+            "enabled": true,
+            "runs": 22300
+          },
+          "viaIR": true,
+          "metadata": {
+            "bytecodeHash": "none",
+            "appendCBOR": false
+          },
+          "outputSelection": {
+            "src/hub/instances/HubInstance.sol": {
+              "HubInstance": [
+                "abi",
+                "evm.bytecode.object",
+                "evm.deployedBytecode.object"
+              ]
+            }
+          }
+        },
+        "source_sha256": {
+          "src/hub/instances/HubInstance.sol": "fcde314b28c698747f66a6aa10b9f38d156ec75c40bd1f7712d17e5db57fd8ca",
+          "src/hub/Hub.sol": "6f072ed7e2713cdb817c6e8453f0bf5981effb47dd545edc9c144a9526a52339",
+          "src/dependencies/openzeppelin-upgradeable/AccessManagedUpgradeable.sol": "bdd725a299dbef01b80afecd5edbefc1a6a7a37569e394a1675de25889b54376",
+          "src/dependencies/openzeppelin/AuthorityUtils.sol": "7e7cb37dcaf91bbb2b4d816c0cba6600eeabf43debd9b9db969468854be644bd",
+          "src/dependencies/openzeppelin/IAuthority.sol": "9ce658dd85d1b335afa12274a94ecdbe0ad6882e72efea1abc94ee377d96c4f4",
+          "src/dependencies/openzeppelin/IAccessManager.sol": "8aea6de8ecb55c012c44fdd4d59a9df543a475b8a8d29648a190c54e2a2c83de",
+          "src/dependencies/openzeppelin/IAccessManaged.sol": "38bbb1e64838beb9511241ed6c6cd9ddab2309ce077450268ff49d46bac2b930",
+          "src/dependencies/openzeppelin-upgradeable/ContextUpgradeable.sol": "69cf4ab085138235b93e2ad1f37bd4c03bc00419adf2ceaf3d118ee2a43d1386",
+          "src/dependencies/openzeppelin-upgradeable/Initializable.sol": "b9d7260a5c6d3bbb51042c563c8cbae6000b541ff5a7b74da705e515c6803ca1",
+          "src/dependencies/openzeppelin/EnumerableSet.sol": "2a4a2e04ff5871defa5c142d139130e9e93a1778f7ceeb83d851f1fdd3aaf5a2",
+          "src/dependencies/openzeppelin/Arrays.sol": "3cd30e8d0c6419f9627e4b9dcce19e839059d2b5b5e8699698b8cf41076284fa",
+          "src/dependencies/openzeppelin/Comparators.sol": "0c0edebbf78b12cdae697730753a6f10848ada3da1dc52999f89263a72a9845e",
+          "src/dependencies/openzeppelin/SlotDerivation.sol": "261ca9f93dd908b2a3097fe3282c98247db21d600e98066de60d2a1b0c8a4f22",
+          "src/dependencies/openzeppelin/StorageSlot.sol": "eb50d38c381b98ef3ee30916532f9fe32fa05e0a3dc482cee2c5cdaa8d480fa8",
+          "src/dependencies/openzeppelin/Math.sol": "047142a81dd81dce0849008216030a0eaf56df524bc6c895f549c12ddfbc2a6b",
+          "src/dependencies/openzeppelin/Panic.sol": "585635034bdf7225813a166918acfa36aa227a3607072643b12de5958f2c0894",
+          "src/dependencies/openzeppelin/SafeCast.sol": "1802fbaa9ec7b60696c8e9729f9e654bce3af9958a275b157fec62aee04d1edb",
+          "src/dependencies/openzeppelin/SafeERC20.sol": "ad12160860fdc8799c86a35322c85a4710fdcc89d31de700e4848e46f2b7f9b1",
+          "src/dependencies/openzeppelin/IERC20.sol": "ff3b57e02672a6c5bc3828afbddb37fd8f42c03a690835890d14c882582a2025",
+          "src/dependencies/openzeppelin/IERC1363.sol": "411bb322ba64327e39cd8d61fc426e77a6f51aba59afe5321df655cb88865c76",
+          "src/dependencies/openzeppelin/IERC165.sol": "3cccfc4b888d1fe9af3e36883e31c991874a615563cf3ce1e0f9c43fe640ad85",
+          "src/libraries/math/MathUtils.sol": "cee560651d66c64fa6977f7c8e8fb9d0397e887237cc7382aba182b8ee58b6b9",
+          "src/libraries/math/PercentageMath.sol": "7d7ef5ccf48ed48a9678178f02a01649399ead7ed4477f037eb62854ae1f6fb1",
+          "src/libraries/math/WadRayMath.sol": "ac8b39d30dd358e93610fc0c101885de07519d5810648a150856ae078e48bf45",
+          "src/hub/libraries/AssetLogic.sol": "37eff53a860a6b3b830f137082a01d0fd64520b5720b16e9f00e7013f11f597c",
+          "src/hub/libraries/SharesMath.sol": "e8f4d929bb68722186f43a58134dcbbd434015d8f5788b461f23ff1b63d3c057",
+          "src/hub/libraries/Premium.sol": "1d11e20706342c293d524a3b676a3ddc76e21894520b3e4b174ae569f3138998",
+          "src/hub/interfaces/IBasicInterestRateStrategy.sol": "ac54fd647a0281e6d357e58ac43cd5c1d88eed45a18e098562a4e0e4772068ed",
+          "src/hub/interfaces/IHub.sol": "4a66008a858eefc836e768963e3c130f9b63d4acb318e253a3ba2ff09e92e01c",
+          "src/hub/interfaces/IHubBase.sol": "0fe4842c6956a16638b910e6719519bc000cd6eae1c56b6297b20337e1f531d9",
+          "src/hub/HubStorage.sol": "eb8c861d29dcc4458ce73cd943438be5512865c48e221af72a2217945fea0337",
+          "src/spoke/instances/SpokeInstance.sol": "188e0eccf68b4322e47a4c29bf689ff1cac7dd1b5ffab41f4b483323a5fc8157",
+          "src/spoke/Spoke.sol": "91aea8bfb868d3d55c5d12cb9b40c5d44a97d8c7f6fa4c0b5219a58155aa1529",
+          "src/dependencies/openzeppelin/IERC20Permit.sol": "81885b3285bc039ec41f6d35e302b142e31a00289d6636fed823f2f4908fc6a7",
+          "src/dependencies/openzeppelin/ReentrancyGuardTransient.sol": "4dd5d024d5c9cd30a8af49d4327c937e792ac0fc195d7670d5e9aa8413f4a3f5",
+          "src/dependencies/openzeppelin/TransientSlot.sol": "e9d98b427a46f9e0d5b84c7b152bc2558b7792e897bfe5e609ccf855eb61c759",
+          "src/spoke/libraries/SpokeUtils.sol": "4f0647263143fd3e9b5e69347328989876122c8dcdc72725f43e70fb2da5eb78",
+          "src/spoke/interfaces/ISpoke.sol": "c5ad0f57edfa767a2308ebbc6c1498b6e06edbf866b37a9b947bac9d3ab29118",
+          "src/interfaces/IIntentConsumer.sol": "b5b31edee7e2c3931234e1454c61b54d05b55cc379e56265cd537484d6b5eb8f",
+          "src/interfaces/INoncesKeyed.sol": "8a76768b1195360c9063db764a61457e8fe842375f8c708fc1327da671a1b967",
+          "src/interfaces/IMulticall.sol": "cf709e0b552c2fe892bd564f3bb26f826bdfe39c4771696fb2f82921963bafea",
+          "src/interfaces/IExtSload.sol": "67c2e9c7b91d05d467bd23fd4a32115eec3112b423c72d204409c83ffc59a6f0",
+          "src/spoke/libraries/EIP712Hash.sol": "3a7f64d5011ba285c463bc4f9371e7660952cb95348c654a9b044b50a1a0c28c",
+          "src/spoke/interfaces/ITokenizationSpoke.sol": "275b42ffadc6046354979a2a63cf2cab374a3331c57a38d913fe1be9972ad9bf",
+          "src/dependencies/openzeppelin/IERC2612.sol": "fd14c59cc96009f52b6472d0121080a1cd925ef995aa7036be8cc9aef1152116",
+          "src/dependencies/openzeppelin/IERC4626.sol": "4d05c2100a33854b05c3a64111922f3e8344080ab7ca276af28709e23991e198",
+          "src/dependencies/openzeppelin/IERC20Metadata.sol": "79fab0e2b112a13caa8cbfe292b1a0376ae3302fa1f8ac3f20a0e9711c1e7371",
+          "src/spoke/libraries/KeyValueList.sol": "effe14ec1705b44993c8c31deb1f046c314aecdf17d65a2e57111d77e5e18bd9",
+          "src/spoke/libraries/LiquidationLogic.sol": "2b15538f71061a6e57e321e985fb65b7d07c5304a7668046aaa12a8d14d6d3f8",
+          "src/spoke/libraries/PositionStatusMap.sol": "7b2c252775864081563a0b71b653590f5f788277ca17da9761d471aae04285a3",
+          "src/dependencies/solady/LibBit.sol": "7848ea2fe68f371b7419c2075aeeb73cfad536b9ad5e7603e8bd0397e1d0bf35",
+          "src/spoke/libraries/UserPositionUtils.sol": "0e9edb3eddcacd16d49af94dd8103ca16953ddd005aa18a3812358656fb945cc",
+          "src/spoke/libraries/ReserveFlagsMap.sol": "033bd5931bd8e701c5b276e7ee12baacdd4dc17139e1d421ea346969e152a595",
+          "src/spoke/interfaces/IAaveOracle.sol": "cd3eed7d011a5def5003386a704fdf5bec2f272f90354712b42f6210ccf036eb",
+          "src/spoke/interfaces/IPriceOracle.sol": "c9bd0c8ac585f1073b686262f6d9f40f796eee75fed1cb80e7512208690556e5",
+          "src/utils/IntentConsumer.sol": "a76dfd8c03a6afa72fab577dac2d4687053dce22d32ddfc28efb9ac3d6f67c28",
+          "src/dependencies/solady/EIP712.sol": "81756465532b211c883052c4a7b460dac4c52e0865bf1f76acf5b999ce11b147",
+          "src/dependencies/openzeppelin/SignatureChecker.sol": "c46d44ca5d7e7d545cccb95bd40e897e76e4453f3c10883771919312f1fd8fa0",
+          "src/dependencies/openzeppelin/ECDSA.sol": "70ca1c7cc9651c664bb335d0fcbb8950203df9076c8be76bb8201769dfbe96a1",
+          "src/dependencies/openzeppelin/IERC1271.sol": "e8535fe575d78d6fddbbc479f41404383c2b1f397f2b6bc1f08cf7a33d16bd7e",
+          "src/dependencies/openzeppelin/IERC7913.sol": "6bedf28aed766673f0cf7d0ab1d59372abb4afce88f1ea262fe9162d759a6fd9",
+          "src/dependencies/openzeppelin/Bytes.sol": "2f58f2c9581246d8f36e8e0e83a482e7e46e0d3faebef7b50e076dfff5be2611",
+          "src/utils/NoncesKeyed.sol": "9b722fa588cb847eb4f238a7275d695150fb1a300e0431af2bfe9fd7be6eb9ff",
+          "src/utils/Multicall.sol": "f4e0282b56dd1b65d3c8785c41c3b380fde59bcd91dadce14f721b3d6b4ae5b2",
+          "src/utils/ExtSload.sol": "61ea5b9d834b84520302798aaad72f49652aa758ecbe45c4f9f9a903c9bed6db",
+          "src/spoke/SpokeStorage.sol": "b75e2ebdc48619b47a056bcfb7657f21d4ddcdf418eb860041c37bda47181c11",
+          "src/access/AccessManagerEnumerable.sol": "e06eb938d4f21f5162327316f919b0941c7fd99261f00d54582ee0660cd8c457",
+          "src/dependencies/openzeppelin/AccessManager.sol": "d1b4f5a3f4a30b31d2bdb7c96e212071f05ea9639f9c26b8a04fbbc346e41199",
+          "src/dependencies/openzeppelin/Address.sol": "5d50f8e29a69280c843e72a1796b0a1badf87614bcf44f3e7ced5b0088a206cf",
+          "src/dependencies/openzeppelin/Errors.sol": "53849afe438d0efee34785f88fe6e446b2e9884c413e95b9f1442acc341cc6c2",
+          "src/dependencies/openzeppelin/LowLevelCall.sol": "457c9be266bdbfca09698912dbdd17b22a072a779419643c03613151e38401e5",
+          "src/dependencies/openzeppelin/Context.sol": "9bb175b967c51c52e9818d94481b63c1fbfa0b1896fdf54f215d9197cf165ce1",
+          "src/dependencies/openzeppelin/Multicall.sol": "145bbd47a40800ac8a5df937961f1b6802c2a19d9bc72305291b604d45efb7d1",
+          "src/dependencies/openzeppelin/Time.sol": "daf34d895850ba98529001c1dda2bf66d978779936fdc7e3c0619a70a21d469a",
+          "src/dependencies/openzeppelin/Hashes.sol": "5b2ab02903f94815f7495610c4ce023d95224795067abe02c4fc00f98f2c046b",
+          "src/access/interfaces/IAccessManagerEnumerable.sol": "0c5c7a5265e051b1f901e40f94b6c012bd3b5f1f096daf87a4fc9c8e87cc874b",
+          "src/position-manager/SignatureGateway.sol": "a38531907ffcda204ecf7dff064ed63163739b2450ae26173e4668a711dacfe9",
+          "src/position-manager/libraries/EIP712Hash.sol": "40074b48a96f50f1171408e0e3c615d49ebd1ed9ffe9588ca14bd7bd432d36e4",
+          "src/position-manager/interfaces/IConfigPositionManager.sol": "7ef8fe54745504f981c954d9eb68f561eb9d480cdb443a98c58567b788fa39f1",
+          "src/position-manager/interfaces/IPositionManagerIntentBase.sol": "c34573504f9d45dfd44187adfff6970de64a614ad6764e7052bd81e1881587e4",
+          "src/position-manager/interfaces/IPositionManagerBase.sol": "0e799fc6084287f4a029022b4482030e74e291dfd639b7aa116da5cb1b852349",
+          "src/interfaces/IRescuable.sol": "b409d8317806ae21439e560248e72cf9be755962dde3dffb7b89761cd2486ec2",
+          "src/position-manager/interfaces/ISignatureGateway.sol": "f56e172b2ad4bd2f40a2aaf7aee36665418a5978f777cb7ad5fc973ca7fa7e0c",
+          "src/position-manager/interfaces/ITakerPositionManager.sol": "53fa058cf21532b3d76bec24dfea0f8d37121221df48a42ee6fdfb8257887e0a",
+          "src/position-manager/PositionManagerIntentBase.sol": "93641310cf9a0c53b4307bdaec3d3722a44af73ebf8d1024e7fbd15d16a260a6",
+          "src/position-manager/PositionManagerBase.sol": "a4d460dc4b8e9027eaa87d937d002d0ce822701c3b1039ef8cb45b5909a510ae",
+          "src/dependencies/openzeppelin/Ownable2Step.sol": "b4b4beb705bbf1fd74c976dcf6abbbb66f4c42bda81fbddc347a7830ea38ef68",
+          "src/dependencies/openzeppelin/Ownable.sol": "84858151748f0e3c889a27f51f802295f64453946fd4242556b55378226a25a8",
+          "src/utils/Rescuable.sol": "37e5f09da05508b55fe6029c320c035d5654565a8341879c8f51d91e0542d25b",
+          "src/position-manager/TakerPositionManager.sol": "79ba707f79a4cb7ce27b9e72e8536b394268852e47593b69428bc4be3a592cbb",
+          "src/position-manager/ConfigPositionManager.sol": "459420dadff1748df3dd6e78e66890d8059db288e17d42695bc211a7698de22d",
+          "src/position-manager/libraries/ConfigPermissionsMap.sol": "e8e179be6a10091b61dc9c4991217e2619a1ef531f7f852dfab43678c3e93fe9",
+          "src/position-manager/GiverPositionManager.sol": "ba695c282eb04557b61785fd952d4f1d89731a1fb7c1ccd70a79c5445e3cfabb",
+          "src/position-manager/interfaces/IGiverPositionManager.sol": "d41fe12d8743366985ea3fbd620d418161748ad174fbf26ad358aac2d5615bb2",
+          "src/position-manager/NativeTokenGateway.sol": "0f8704772bec3ff905e995b6e2dedd8ccef1b3b165d97e617def1ab46e590612",
+          "src/position-manager/interfaces/INativeWrapper.sol": "e5c09740b124c83177d9b753dfcf8ed280958df42e2c043de5848b0189dfc100",
+          "src/position-manager/interfaces/INativeTokenGateway.sol": "dc45e65ea3959d5032f91f5d7c103acd840b535e4a3c99fec38622c30a24aa93",
+          "src/spoke/instances/TokenizationSpokeInstance.sol": "2ab5a4b8968add3b1e07ae51c53904de0137f9ec93c7fa82019030b0256aa720",
+          "src/spoke/TokenizationSpoke.sol": "c68cccf89c898bce67b2b810f7cf454da0a237728c596a747cd11b0f22f88ae4",
+          "src/dependencies/openzeppelin-upgradeable/ERC20Upgradeable.sol": "154728ccfc4e728bcddb8a321e35ee3c3a4bc3c637a48eeddaa478903a5f836b",
+          "src/dependencies/openzeppelin/draft-IERC6093.sol": "13a9b14ac1fb40da7973650687e4c74849b75d83c8aa4077cc8df61b25dfae09",
+          "src/spoke/instances/TreasurySpokeInstance.sol": "10d63b7e8daedad541675972e0067fba193af4432565f4c5ded94ca77da64df5",
+          "src/spoke/TreasurySpoke.sol": "e744ea89edebfab504d5f18bf388d0c5441321e441fbc2e7ecb8921deddac45e",
+          "src/dependencies/openzeppelin-upgradeable/Ownable2StepUpgradeable.sol": "62bf5ee128da8bdaf418d1a105172480922e9b032d605f425431f2806275e710",
+          "src/dependencies/openzeppelin-upgradeable/OwnableUpgradeable.sol": "5818e9966ad2d21bec2d31b329a631f3d1478f1bb7c47a6fcb4695c0570d3bc0",
+          "src/spoke/interfaces/ITreasurySpoke.sol": "6fb0efe988a7e80dd1ee8ffde0421a69885a24e4b823b679fc0496893cb39749",
+          "src/hub/AssetInterestRateStrategy.sol": "bc2681fe753931e8d2430d4da1a797264fcbe56b2dca731841ecd81f8efb52bd",
+          "src/hub/interfaces/IAssetInterestRateStrategy.sol": "7d08cedf896255c9fff28cdc5c2dccb487aa284dc97d5de1584723c4b305affd",
+          "src/hub/HubConfigurator.sol": "76d493fd97f03b3ee632d46164e40310336e63065e4227ae0d0efd3fcf503d68",
+          "src/dependencies/openzeppelin/AccessManaged.sol": "c34056e4e7f48a81870182071befd3eb011318f07395a228bd096980f67a1b55",
+          "src/hub/interfaces/IHubConfigurator.sol": "460ef46a23f6a4f8cc4ba1474c72f1a3f3cfabf5889db92593b3fadd1e142ac1",
+          "src/spoke/SpokeConfigurator.sol": "1b8a8a5cc191a9da31151f051c1bd54dff42e93b20db9d5ddbaef7e94d5eb66e",
+          "src/spoke/interfaces/ISpokeConfigurator.sol": "b05f7f734a20bf53e542efc0ade877cfdb3cacd3db5c1aa723dfa648accf3e3f",
+          "src/spoke/AaveOracle.sol": "801001e503b4f9a1c8693b4d5435a4f7dfa8d42e43046dcfd08eee4bf201ad24",
+          "src/spoke/interfaces/IPriceFeed.sol": "3d0d169d7837b5618489d0e4940a80ea322be1a1c2038bef61ddfabf86d4948a",
+          "src/config-engine/AaveV4ConfigEngine.sol": "5e93197dd7c35540125b49c21a629935de7012b01daeb0cb724046350239264a",
+          "src/config-engine/libraries/HubEngine.sol": "8b9c32e4f3e2a4e6f39ec9daa4b6fe1d6d245c49c74684cc9de3ebf329eba66d",
+          "src/config-engine/libraries/EngineFlags.sol": "3c558fe413441938b328af48b6ef1f5af6095c4abeb9902c4c300b70a73e0e10",
+          "src/config-engine/libraries/TokenizationSpokeDeployer.sol": "96c7e90c4d32d35e264004a8c769e9239937eb301637da8a7656b8c3b217ad91",
+          "src/dependencies/openzeppelin/TransparentUpgradeableProxy.sol": "7d8284afbb1b0ba5248d0617b596aeafb7dbe5a1270cf7228ebd454137e0b141",
+          "src/dependencies/openzeppelin/ERC1967Utils.sol": "0669c05fc2745d8a602106c91926f8288819aae346b3d7f77594b22439b8fd7a",
+          "src/dependencies/openzeppelin/IBeacon.sol": "7bfa24c931b899450a27732f5b5f42384cf772a9c58dbeeffca53e9b4bd5bd1a",
+          "src/dependencies/openzeppelin/IERC1967.sol": "b81a9546a0431c2fd8f948f80fa43a5afd2a18a12586ee8d1f1b0b5db86f1f14",
+          "src/dependencies/openzeppelin/ERC1967Proxy.sol": "aff8bbb8d5a5e533beae03118ec22d3a39cae275def2fcd1792acec8f3acfed8",
+          "src/dependencies/openzeppelin/Proxy.sol": "ec451d7d22611016de9a7934fdfe44ef6264ce1894eb5e194bf33fa84ec9e305",
+          "src/dependencies/openzeppelin/ProxyAdmin.sol": "826b63eea2c35df9b6a88cc4224ce859495f451139e5a777c1eed3693a53f4a4",
+          "src/deployments/utils/libraries/Create2Utils.sol": "6c0b8d8f017e482638a075634b36f1592710b89f3de39ff7d2c4efdbc3c4bf3d",
+          "src/config-engine/interfaces/IAaveV4ConfigEngine.sol": "b869d98a1937e8fa910e13a42cb40b6d3c3ed80b6ba55bb6f28341bca1c03a0a",
+          "src/config-engine/libraries/SpokeEngine.sol": "47b5037a2c5bd82f31b1c045a0937e27b44e5532c5a622f0826247699459883f",
+          "src/config-engine/libraries/AccessManagerEngine.sol": "70973c79c86af4734d18a271f95a2f4b14cd222e18a6b905bf3c66d7cd00f537",
+          "src/config-engine/libraries/PositionManagerEngine.sol": "52a7bb21cadb1c985833557992e0644d97b83c969501b8f1325812a1f76ffd93"
+        }
+      },
+      {
+        "label": "spoke",
+        "settings": {
+          "evmVersion": "cancun",
+          "optimizer": {
+            "enabled": true,
+            "runs": 750
+          },
+          "viaIR": true,
+          "metadata": {
+            "bytecodeHash": "none",
+            "appendCBOR": false
+          },
+          "outputSelection": {
+            "src/spoke/instances/SpokeInstance.sol": {
+              "SpokeInstance": [
+                "abi",
+                "evm.bytecode.object",
+                "evm.deployedBytecode.object"
+              ]
+            }
+          }
+        },
+        "source_sha256": {
+          "src/hub/instances/HubInstance.sol": "fcde314b28c698747f66a6aa10b9f38d156ec75c40bd1f7712d17e5db57fd8ca",
+          "src/hub/Hub.sol": "6f072ed7e2713cdb817c6e8453f0bf5981effb47dd545edc9c144a9526a52339",
+          "src/dependencies/openzeppelin-upgradeable/AccessManagedUpgradeable.sol": "bdd725a299dbef01b80afecd5edbefc1a6a7a37569e394a1675de25889b54376",
+          "src/dependencies/openzeppelin/AuthorityUtils.sol": "7e7cb37dcaf91bbb2b4d816c0cba6600eeabf43debd9b9db969468854be644bd",
+          "src/dependencies/openzeppelin/IAuthority.sol": "9ce658dd85d1b335afa12274a94ecdbe0ad6882e72efea1abc94ee377d96c4f4",
+          "src/dependencies/openzeppelin/IAccessManager.sol": "8aea6de8ecb55c012c44fdd4d59a9df543a475b8a8d29648a190c54e2a2c83de",
+          "src/dependencies/openzeppelin/IAccessManaged.sol": "38bbb1e64838beb9511241ed6c6cd9ddab2309ce077450268ff49d46bac2b930",
+          "src/dependencies/openzeppelin-upgradeable/ContextUpgradeable.sol": "69cf4ab085138235b93e2ad1f37bd4c03bc00419adf2ceaf3d118ee2a43d1386",
+          "src/dependencies/openzeppelin-upgradeable/Initializable.sol": "b9d7260a5c6d3bbb51042c563c8cbae6000b541ff5a7b74da705e515c6803ca1",
+          "src/dependencies/openzeppelin/EnumerableSet.sol": "2a4a2e04ff5871defa5c142d139130e9e93a1778f7ceeb83d851f1fdd3aaf5a2",
+          "src/dependencies/openzeppelin/Arrays.sol": "3cd30e8d0c6419f9627e4b9dcce19e839059d2b5b5e8699698b8cf41076284fa",
+          "src/dependencies/openzeppelin/Comparators.sol": "0c0edebbf78b12cdae697730753a6f10848ada3da1dc52999f89263a72a9845e",
+          "src/dependencies/openzeppelin/SlotDerivation.sol": "261ca9f93dd908b2a3097fe3282c98247db21d600e98066de60d2a1b0c8a4f22",
+          "src/dependencies/openzeppelin/StorageSlot.sol": "eb50d38c381b98ef3ee30916532f9fe32fa05e0a3dc482cee2c5cdaa8d480fa8",
+          "src/dependencies/openzeppelin/Math.sol": "047142a81dd81dce0849008216030a0eaf56df524bc6c895f549c12ddfbc2a6b",
+          "src/dependencies/openzeppelin/Panic.sol": "585635034bdf7225813a166918acfa36aa227a3607072643b12de5958f2c0894",
+          "src/dependencies/openzeppelin/SafeCast.sol": "1802fbaa9ec7b60696c8e9729f9e654bce3af9958a275b157fec62aee04d1edb",
+          "src/dependencies/openzeppelin/SafeERC20.sol": "ad12160860fdc8799c86a35322c85a4710fdcc89d31de700e4848e46f2b7f9b1",
+          "src/dependencies/openzeppelin/IERC20.sol": "ff3b57e02672a6c5bc3828afbddb37fd8f42c03a690835890d14c882582a2025",
+          "src/dependencies/openzeppelin/IERC1363.sol": "411bb322ba64327e39cd8d61fc426e77a6f51aba59afe5321df655cb88865c76",
+          "src/dependencies/openzeppelin/IERC165.sol": "3cccfc4b888d1fe9af3e36883e31c991874a615563cf3ce1e0f9c43fe640ad85",
+          "src/libraries/math/MathUtils.sol": "cee560651d66c64fa6977f7c8e8fb9d0397e887237cc7382aba182b8ee58b6b9",
+          "src/libraries/math/PercentageMath.sol": "7d7ef5ccf48ed48a9678178f02a01649399ead7ed4477f037eb62854ae1f6fb1",
+          "src/libraries/math/WadRayMath.sol": "ac8b39d30dd358e93610fc0c101885de07519d5810648a150856ae078e48bf45",
+          "src/hub/libraries/AssetLogic.sol": "37eff53a860a6b3b830f137082a01d0fd64520b5720b16e9f00e7013f11f597c",
+          "src/hub/libraries/SharesMath.sol": "e8f4d929bb68722186f43a58134dcbbd434015d8f5788b461f23ff1b63d3c057",
+          "src/hub/libraries/Premium.sol": "1d11e20706342c293d524a3b676a3ddc76e21894520b3e4b174ae569f3138998",
+          "src/hub/interfaces/IBasicInterestRateStrategy.sol": "ac54fd647a0281e6d357e58ac43cd5c1d88eed45a18e098562a4e0e4772068ed",
+          "src/hub/interfaces/IHub.sol": "4a66008a858eefc836e768963e3c130f9b63d4acb318e253a3ba2ff09e92e01c",
+          "src/hub/interfaces/IHubBase.sol": "0fe4842c6956a16638b910e6719519bc000cd6eae1c56b6297b20337e1f531d9",
+          "src/hub/HubStorage.sol": "eb8c861d29dcc4458ce73cd943438be5512865c48e221af72a2217945fea0337",
+          "src/spoke/instances/SpokeInstance.sol": "188e0eccf68b4322e47a4c29bf689ff1cac7dd1b5ffab41f4b483323a5fc8157",
+          "src/spoke/Spoke.sol": "91aea8bfb868d3d55c5d12cb9b40c5d44a97d8c7f6fa4c0b5219a58155aa1529",
+          "src/dependencies/openzeppelin/IERC20Permit.sol": "81885b3285bc039ec41f6d35e302b142e31a00289d6636fed823f2f4908fc6a7",
+          "src/dependencies/openzeppelin/ReentrancyGuardTransient.sol": "4dd5d024d5c9cd30a8af49d4327c937e792ac0fc195d7670d5e9aa8413f4a3f5",
+          "src/dependencies/openzeppelin/TransientSlot.sol": "e9d98b427a46f9e0d5b84c7b152bc2558b7792e897bfe5e609ccf855eb61c759",
+          "src/spoke/libraries/SpokeUtils.sol": "4f0647263143fd3e9b5e69347328989876122c8dcdc72725f43e70fb2da5eb78",
+          "src/spoke/interfaces/ISpoke.sol": "c5ad0f57edfa767a2308ebbc6c1498b6e06edbf866b37a9b947bac9d3ab29118",
+          "src/interfaces/IIntentConsumer.sol": "b5b31edee7e2c3931234e1454c61b54d05b55cc379e56265cd537484d6b5eb8f",
+          "src/interfaces/INoncesKeyed.sol": "8a76768b1195360c9063db764a61457e8fe842375f8c708fc1327da671a1b967",
+          "src/interfaces/IMulticall.sol": "cf709e0b552c2fe892bd564f3bb26f826bdfe39c4771696fb2f82921963bafea",
+          "src/interfaces/IExtSload.sol": "67c2e9c7b91d05d467bd23fd4a32115eec3112b423c72d204409c83ffc59a6f0",
+          "src/spoke/libraries/EIP712Hash.sol": "3a7f64d5011ba285c463bc4f9371e7660952cb95348c654a9b044b50a1a0c28c",
+          "src/spoke/interfaces/ITokenizationSpoke.sol": "275b42ffadc6046354979a2a63cf2cab374a3331c57a38d913fe1be9972ad9bf",
+          "src/dependencies/openzeppelin/IERC2612.sol": "fd14c59cc96009f52b6472d0121080a1cd925ef995aa7036be8cc9aef1152116",
+          "src/dependencies/openzeppelin/IERC4626.sol": "4d05c2100a33854b05c3a64111922f3e8344080ab7ca276af28709e23991e198",
+          "src/dependencies/openzeppelin/IERC20Metadata.sol": "79fab0e2b112a13caa8cbfe292b1a0376ae3302fa1f8ac3f20a0e9711c1e7371",
+          "src/spoke/libraries/KeyValueList.sol": "effe14ec1705b44993c8c31deb1f046c314aecdf17d65a2e57111d77e5e18bd9",
+          "src/spoke/libraries/LiquidationLogic.sol": "2b15538f71061a6e57e321e985fb65b7d07c5304a7668046aaa12a8d14d6d3f8",
+          "src/spoke/libraries/PositionStatusMap.sol": "7b2c252775864081563a0b71b653590f5f788277ca17da9761d471aae04285a3",
+          "src/dependencies/solady/LibBit.sol": "7848ea2fe68f371b7419c2075aeeb73cfad536b9ad5e7603e8bd0397e1d0bf35",
+          "src/spoke/libraries/UserPositionUtils.sol": "0e9edb3eddcacd16d49af94dd8103ca16953ddd005aa18a3812358656fb945cc",
+          "src/spoke/libraries/ReserveFlagsMap.sol": "033bd5931bd8e701c5b276e7ee12baacdd4dc17139e1d421ea346969e152a595",
+          "src/spoke/interfaces/IAaveOracle.sol": "cd3eed7d011a5def5003386a704fdf5bec2f272f90354712b42f6210ccf036eb",
+          "src/spoke/interfaces/IPriceOracle.sol": "c9bd0c8ac585f1073b686262f6d9f40f796eee75fed1cb80e7512208690556e5",
+          "src/utils/IntentConsumer.sol": "a76dfd8c03a6afa72fab577dac2d4687053dce22d32ddfc28efb9ac3d6f67c28",
+          "src/dependencies/solady/EIP712.sol": "81756465532b211c883052c4a7b460dac4c52e0865bf1f76acf5b999ce11b147",
+          "src/dependencies/openzeppelin/SignatureChecker.sol": "c46d44ca5d7e7d545cccb95bd40e897e76e4453f3c10883771919312f1fd8fa0",
+          "src/dependencies/openzeppelin/ECDSA.sol": "70ca1c7cc9651c664bb335d0fcbb8950203df9076c8be76bb8201769dfbe96a1",
+          "src/dependencies/openzeppelin/IERC1271.sol": "e8535fe575d78d6fddbbc479f41404383c2b1f397f2b6bc1f08cf7a33d16bd7e",
+          "src/dependencies/openzeppelin/IERC7913.sol": "6bedf28aed766673f0cf7d0ab1d59372abb4afce88f1ea262fe9162d759a6fd9",
+          "src/dependencies/openzeppelin/Bytes.sol": "2f58f2c9581246d8f36e8e0e83a482e7e46e0d3faebef7b50e076dfff5be2611",
+          "src/utils/NoncesKeyed.sol": "9b722fa588cb847eb4f238a7275d695150fb1a300e0431af2bfe9fd7be6eb9ff",
+          "src/utils/Multicall.sol": "f4e0282b56dd1b65d3c8785c41c3b380fde59bcd91dadce14f721b3d6b4ae5b2",
+          "src/utils/ExtSload.sol": "61ea5b9d834b84520302798aaad72f49652aa758ecbe45c4f9f9a903c9bed6db",
+          "src/spoke/SpokeStorage.sol": "b75e2ebdc48619b47a056bcfb7657f21d4ddcdf418eb860041c37bda47181c11",
+          "src/access/AccessManagerEnumerable.sol": "e06eb938d4f21f5162327316f919b0941c7fd99261f00d54582ee0660cd8c457",
+          "src/dependencies/openzeppelin/AccessManager.sol": "d1b4f5a3f4a30b31d2bdb7c96e212071f05ea9639f9c26b8a04fbbc346e41199",
+          "src/dependencies/openzeppelin/Address.sol": "5d50f8e29a69280c843e72a1796b0a1badf87614bcf44f3e7ced5b0088a206cf",
+          "src/dependencies/openzeppelin/Errors.sol": "53849afe438d0efee34785f88fe6e446b2e9884c413e95b9f1442acc341cc6c2",
+          "src/dependencies/openzeppelin/LowLevelCall.sol": "457c9be266bdbfca09698912dbdd17b22a072a779419643c03613151e38401e5",
+          "src/dependencies/openzeppelin/Context.sol": "9bb175b967c51c52e9818d94481b63c1fbfa0b1896fdf54f215d9197cf165ce1",
+          "src/dependencies/openzeppelin/Multicall.sol": "145bbd47a40800ac8a5df937961f1b6802c2a19d9bc72305291b604d45efb7d1",
+          "src/dependencies/openzeppelin/Time.sol": "daf34d895850ba98529001c1dda2bf66d978779936fdc7e3c0619a70a21d469a",
+          "src/dependencies/openzeppelin/Hashes.sol": "5b2ab02903f94815f7495610c4ce023d95224795067abe02c4fc00f98f2c046b",
+          "src/access/interfaces/IAccessManagerEnumerable.sol": "0c5c7a5265e051b1f901e40f94b6c012bd3b5f1f096daf87a4fc9c8e87cc874b",
+          "src/position-manager/SignatureGateway.sol": "a38531907ffcda204ecf7dff064ed63163739b2450ae26173e4668a711dacfe9",
+          "src/position-manager/libraries/EIP712Hash.sol": "40074b48a96f50f1171408e0e3c615d49ebd1ed9ffe9588ca14bd7bd432d36e4",
+          "src/position-manager/interfaces/IConfigPositionManager.sol": "7ef8fe54745504f981c954d9eb68f561eb9d480cdb443a98c58567b788fa39f1",
+          "src/position-manager/interfaces/IPositionManagerIntentBase.sol": "c34573504f9d45dfd44187adfff6970de64a614ad6764e7052bd81e1881587e4",
+          "src/position-manager/interfaces/IPositionManagerBase.sol": "0e799fc6084287f4a029022b4482030e74e291dfd639b7aa116da5cb1b852349",
+          "src/interfaces/IRescuable.sol": "b409d8317806ae21439e560248e72cf9be755962dde3dffb7b89761cd2486ec2",
+          "src/position-manager/interfaces/ISignatureGateway.sol": "f56e172b2ad4bd2f40a2aaf7aee36665418a5978f777cb7ad5fc973ca7fa7e0c",
+          "src/position-manager/interfaces/ITakerPositionManager.sol": "53fa058cf21532b3d76bec24dfea0f8d37121221df48a42ee6fdfb8257887e0a",
+          "src/position-manager/PositionManagerIntentBase.sol": "93641310cf9a0c53b4307bdaec3d3722a44af73ebf8d1024e7fbd15d16a260a6",
+          "src/position-manager/PositionManagerBase.sol": "a4d460dc4b8e9027eaa87d937d002d0ce822701c3b1039ef8cb45b5909a510ae",
+          "src/dependencies/openzeppelin/Ownable2Step.sol": "b4b4beb705bbf1fd74c976dcf6abbbb66f4c42bda81fbddc347a7830ea38ef68",
+          "src/dependencies/openzeppelin/Ownable.sol": "84858151748f0e3c889a27f51f802295f64453946fd4242556b55378226a25a8",
+          "src/utils/Rescuable.sol": "37e5f09da05508b55fe6029c320c035d5654565a8341879c8f51d91e0542d25b",
+          "src/position-manager/TakerPositionManager.sol": "79ba707f79a4cb7ce27b9e72e8536b394268852e47593b69428bc4be3a592cbb",
+          "src/position-manager/ConfigPositionManager.sol": "459420dadff1748df3dd6e78e66890d8059db288e17d42695bc211a7698de22d",
+          "src/position-manager/libraries/ConfigPermissionsMap.sol": "e8e179be6a10091b61dc9c4991217e2619a1ef531f7f852dfab43678c3e93fe9",
+          "src/position-manager/GiverPositionManager.sol": "ba695c282eb04557b61785fd952d4f1d89731a1fb7c1ccd70a79c5445e3cfabb",
+          "src/position-manager/interfaces/IGiverPositionManager.sol": "d41fe12d8743366985ea3fbd620d418161748ad174fbf26ad358aac2d5615bb2",
+          "src/position-manager/NativeTokenGateway.sol": "0f8704772bec3ff905e995b6e2dedd8ccef1b3b165d97e617def1ab46e590612",
+          "src/position-manager/interfaces/INativeWrapper.sol": "e5c09740b124c83177d9b753dfcf8ed280958df42e2c043de5848b0189dfc100",
+          "src/position-manager/interfaces/INativeTokenGateway.sol": "dc45e65ea3959d5032f91f5d7c103acd840b535e4a3c99fec38622c30a24aa93",
+          "src/spoke/instances/TokenizationSpokeInstance.sol": "2ab5a4b8968add3b1e07ae51c53904de0137f9ec93c7fa82019030b0256aa720",
+          "src/spoke/TokenizationSpoke.sol": "c68cccf89c898bce67b2b810f7cf454da0a237728c596a747cd11b0f22f88ae4",
+          "src/dependencies/openzeppelin-upgradeable/ERC20Upgradeable.sol": "154728ccfc4e728bcddb8a321e35ee3c3a4bc3c637a48eeddaa478903a5f836b",
+          "src/dependencies/openzeppelin/draft-IERC6093.sol": "13a9b14ac1fb40da7973650687e4c74849b75d83c8aa4077cc8df61b25dfae09",
+          "src/spoke/instances/TreasurySpokeInstance.sol": "10d63b7e8daedad541675972e0067fba193af4432565f4c5ded94ca77da64df5",
+          "src/spoke/TreasurySpoke.sol": "e744ea89edebfab504d5f18bf388d0c5441321e441fbc2e7ecb8921deddac45e",
+          "src/dependencies/openzeppelin-upgradeable/Ownable2StepUpgradeable.sol": "62bf5ee128da8bdaf418d1a105172480922e9b032d605f425431f2806275e710",
+          "src/dependencies/openzeppelin-upgradeable/OwnableUpgradeable.sol": "5818e9966ad2d21bec2d31b329a631f3d1478f1bb7c47a6fcb4695c0570d3bc0",
+          "src/spoke/interfaces/ITreasurySpoke.sol": "6fb0efe988a7e80dd1ee8ffde0421a69885a24e4b823b679fc0496893cb39749",
+          "src/hub/AssetInterestRateStrategy.sol": "bc2681fe753931e8d2430d4da1a797264fcbe56b2dca731841ecd81f8efb52bd",
+          "src/hub/interfaces/IAssetInterestRateStrategy.sol": "7d08cedf896255c9fff28cdc5c2dccb487aa284dc97d5de1584723c4b305affd",
+          "src/hub/HubConfigurator.sol": "76d493fd97f03b3ee632d46164e40310336e63065e4227ae0d0efd3fcf503d68",
+          "src/dependencies/openzeppelin/AccessManaged.sol": "c34056e4e7f48a81870182071befd3eb011318f07395a228bd096980f67a1b55",
+          "src/hub/interfaces/IHubConfigurator.sol": "460ef46a23f6a4f8cc4ba1474c72f1a3f3cfabf5889db92593b3fadd1e142ac1",
+          "src/spoke/SpokeConfigurator.sol": "1b8a8a5cc191a9da31151f051c1bd54dff42e93b20db9d5ddbaef7e94d5eb66e",
+          "src/spoke/interfaces/ISpokeConfigurator.sol": "b05f7f734a20bf53e542efc0ade877cfdb3cacd3db5c1aa723dfa648accf3e3f",
+          "src/spoke/AaveOracle.sol": "801001e503b4f9a1c8693b4d5435a4f7dfa8d42e43046dcfd08eee4bf201ad24",
+          "src/spoke/interfaces/IPriceFeed.sol": "3d0d169d7837b5618489d0e4940a80ea322be1a1c2038bef61ddfabf86d4948a",
+          "src/config-engine/AaveV4ConfigEngine.sol": "5e93197dd7c35540125b49c21a629935de7012b01daeb0cb724046350239264a",
+          "src/config-engine/libraries/HubEngine.sol": "8b9c32e4f3e2a4e6f39ec9daa4b6fe1d6d245c49c74684cc9de3ebf329eba66d",
+          "src/config-engine/libraries/EngineFlags.sol": "3c558fe413441938b328af48b6ef1f5af6095c4abeb9902c4c300b70a73e0e10",
+          "src/config-engine/libraries/TokenizationSpokeDeployer.sol": "96c7e90c4d32d35e264004a8c769e9239937eb301637da8a7656b8c3b217ad91",
+          "src/dependencies/openzeppelin/TransparentUpgradeableProxy.sol": "7d8284afbb1b0ba5248d0617b596aeafb7dbe5a1270cf7228ebd454137e0b141",
+          "src/dependencies/openzeppelin/ERC1967Utils.sol": "0669c05fc2745d8a602106c91926f8288819aae346b3d7f77594b22439b8fd7a",
+          "src/dependencies/openzeppelin/IBeacon.sol": "7bfa24c931b899450a27732f5b5f42384cf772a9c58dbeeffca53e9b4bd5bd1a",
+          "src/dependencies/openzeppelin/IERC1967.sol": "b81a9546a0431c2fd8f948f80fa43a5afd2a18a12586ee8d1f1b0b5db86f1f14",
+          "src/dependencies/openzeppelin/ERC1967Proxy.sol": "aff8bbb8d5a5e533beae03118ec22d3a39cae275def2fcd1792acec8f3acfed8",
+          "src/dependencies/openzeppelin/Proxy.sol": "ec451d7d22611016de9a7934fdfe44ef6264ce1894eb5e194bf33fa84ec9e305",
+          "src/dependencies/openzeppelin/ProxyAdmin.sol": "826b63eea2c35df9b6a88cc4224ce859495f451139e5a777c1eed3693a53f4a4",
+          "src/deployments/utils/libraries/Create2Utils.sol": "6c0b8d8f017e482638a075634b36f1592710b89f3de39ff7d2c4efdbc3c4bf3d",
+          "src/config-engine/interfaces/IAaveV4ConfigEngine.sol": "b869d98a1937e8fa910e13a42cb40b6d3c3ed80b6ba55bb6f28341bca1c03a0a",
+          "src/config-engine/libraries/SpokeEngine.sol": "47b5037a2c5bd82f31b1c045a0937e27b44e5532c5a622f0826247699459883f",
+          "src/config-engine/libraries/AccessManagerEngine.sol": "70973c79c86af4734d18a271f95a2f4b14cd222e18a6b905bf3c66d7cd00f537",
+          "src/config-engine/libraries/PositionManagerEngine.sol": "52a7bb21cadb1c985833557992e0644d97b83c969501b8f1325812a1f76ffd93"
+        }
+      }
+    ],
+    "vyper": [
+      {
+        "label": "production",
+        "settings": {
+          "evmVersion": "cancun",
+          "optimize": "O3",
+          "experimentalCodegen": true,
+          "bytecodeMetadata": false,
+          "outputSelection": {
+            "hub/HubInstance.vy": [
+              "abi",
+              "evm.bytecode.object",
+              "evm.deployedBytecode.object"
+            ],
+            "spoke/SpokeInstance.vy": [
+              "abi",
+              "evm.bytecode.object",
+              "evm.deployedBytecode.object"
+            ],
+            "access/AccessManagerEnumerable.vy": [
+              "abi",
+              "evm.bytecode.object",
+              "evm.deployedBytecode.object"
+            ],
+            "position_manager/SignatureGateway.vy": [
+              "abi",
+              "evm.bytecode.object",
+              "evm.deployedBytecode.object"
+            ],
+            "position_manager/TakerPositionManager.vy": [
+              "abi",
+              "evm.bytecode.object",
+              "evm.deployedBytecode.object"
+            ],
+            "position_manager/ConfigPositionManager.vy": [
+              "abi",
+              "evm.bytecode.object",
+              "evm.deployedBytecode.object"
+            ],
+            "position_manager/GiverPositionManager.vy": [
+              "abi",
+              "evm.bytecode.object",
+              "evm.deployedBytecode.object"
+            ],
+            "position_manager/NativeTokenGateway.vy": [
+              "abi",
+              "evm.bytecode.object",
+              "evm.deployedBytecode.object"
+            ],
+            "spoke/TokenizationSpokeInstance.vy": [
+              "abi",
+              "evm.bytecode.object",
+              "evm.deployedBytecode.object"
+            ],
+            "spoke/TreasurySpokeInstance.vy": [
+              "abi",
+              "evm.bytecode.object",
+              "evm.deployedBytecode.object"
+            ],
+            "hub/AssetInterestRateStrategy.vy": [
+              "abi",
+              "evm.bytecode.object",
+              "evm.deployedBytecode.object"
+            ],
+            "hub/HubConfigurator.vy": [
+              "abi",
+              "evm.bytecode.object",
+              "evm.deployedBytecode.object"
+            ],
+            "spoke/SpokeConfigurator.vy": [
+              "abi",
+              "evm.bytecode.object",
+              "evm.deployedBytecode.object"
+            ],
+            "spoke/AaveOracle.vy": [
+              "abi",
+              "evm.bytecode.object",
+              "evm.deployedBytecode.object"
+            ],
+            "config_engine/AaveV4ConfigEngine.vy": [
+              "abi",
+              "evm.bytecode.object",
+              "evm.deployedBytecode.object"
+            ],
+            "spoke/LiquidationLogicContract.vy": [
+              "abi",
+              "evm.bytecode.object",
+              "evm.deployedBytecode.object"
+            ],
+            "config_engine/TokenizationSpokeDeployer.vy": [
+              "abi",
+              "evm.bytecode.object",
+              "evm.deployedBytecode.object"
+            ]
+          }
+        },
+        "source_sha256": {
+          "spoke/SpokeConfigurator.vy": "4b88f079eb69cac8c2157a6937912f89f5792d3c84a4973a5f9c0f57eb80027c",
+          "spoke/AaveOracle.vy": "bacd7866500d00eac61648ebe3047620a62b5a56d77e2eb4e8b1c85c2f488eb8",
+          "spoke/TreasurySpokeInstance.vy": "721b0b670c860e33c0a5198c0cca60d906d2d48b3446a6e216a2d4afb7b5ff65",
+          "spoke/LiquidationLogicContract.vy": "0110b8b213cd12afdf692cabf7b4b2fccdd6e487e06ba50fcafc391cccbc0492",
+          "spoke/TokenizationSpokeInstance.vy": "50ec6e1bb9e7812939ea998012d513cab8a3a73987098f9a71a3f2e8b80854f0",
+          "spoke/SpokeInstance.vy": "a08127e402e8714e162692e3c19e6c82cbcf4fe25c85b94a3e745e53c4b2538e",
+          "spoke/libraries/EIP712Hash.vy": "7c3a6c4f7d0acc340fded6c21b1218accc6fdfcbbcc20b1d084d377b0d5d5a98",
+          "spoke/libraries/SpokeUtils.vy": "199ec5d85afcfe5ec2fde721189bfea7c05921acd96e2c90c630eac95fe79580",
+          "spoke/libraries/ReserveFlagsMap.vy": "4ec46bc35e941f790c3ba98c05cbfa58254a8bd10a2be017912f7e47b0ba32dc",
+          "spoke/libraries/UserPositionUtils.vy": "ecdd5995c60102ba7e5bc287617fc1a12884384e7ec2bf2aa0ac6e7e1cbccb17",
+          "spoke/libraries/LiquidationLogic.vy": "fc6aced46e3ac159422c3425be3fc510ed7a04da54d97501940f1b0ad391c4b8",
+          "spoke/libraries/PositionStatusMap.vy": "9c995394c0c627bbb49b47893941ebc5b3dcdff31b9a27fffb4b7f0bc63f4264",
+          "spoke/interfaces/ITokenizationSpoke.vyi": "b67ed672895281664e8202b7e65054ed61d8e9c5c2e781c467ba6f773349e5bb",
+          "spoke/interfaces/ISpoke.vyi": "a90c73c149ae02817219854d938b61aed042a9fd29023498d3625594273bd80e",
+          "spoke/interfaces/ISpokeConfigurator.vyi": "4331101dde6704c43f1ab4abbccf64b70ba300e40a6b75997f2c7e1ebad1b22a",
+          "spoke/interfaces/IPriceFeed.vyi": "0012ae0e22358605a5e768135e005541d5bcbfe99797b1ded33dc83042047218",
+          "spoke/interfaces/IAaveOracle.vyi": "403acdf4ab7da3e331b50d878609a3c0eb0a3c5209f141e5b6bdc0f91f3b7fc4",
+          "spoke/interfaces/ITreasurySpoke.vyi": "e00a1b15c5b6940cfd734caa0d7b6e65db44647530f4f1e6a84cf0cea546f7c9",
+          "spoke/interfaces/ILiquidationLogic.vyi": "a589f3c8a0a0c149c05d849aad4d4e4a57caf6be3521c29235df9b2e470f3f24",
+          "access/AccessManagerEnumerable.vy": "dd0393475ae5e04331f144cbadfc9ff5410edcca8f9c0c70827e7723553f034a",
+          "access/interfaces/IAccessManagerEnumerable.vyi": "c3709a86ec2dbec1617c4e8ca44986fb631731f2483ba311b380821f65904a74",
+          "position_manager/GiverPositionManager.vy": "3c0db518b62cb4d63aaaa416d589babc3ef498483cfe6d46b6094bdf5c86eed3",
+          "position_manager/NativeTokenGateway.vy": "407e2b9bb1e7285bad7e03136a17cff2b5d540155c9719ec6af50dbe4fa0b449",
+          "position_manager/PositionManagerBase.vy": "dad38d3552ecefb3454bf25d1191814fa7e5d557137dfd695728fabffc517c02",
+          "position_manager/ConfigPositionManager.vy": "0b2f2f9b4f22a48bc68c05c0f061a506e534c88c023e504dc065ea1e7ca75458",
+          "position_manager/SignatureGateway.vy": "d941da728fa125a16febff8d14f863ae8e0a377a69f20e4b8be2fcb7dad58bca",
+          "position_manager/TakerPositionManager.vy": "0c7f8e2e4042e3dbce99e25363a96fcb12a7494ec7b6e4ab9555be3a37f0312b",
+          "position_manager/libraries/EIP712Hash.vy": "c0734ee6158351e88c81e3a4f0432b974a192eaded4cea21aeabc6e60939f1bf",
+          "position_manager/libraries/ConfigPermissionsMap.vy": "ed0738d8c2e1cdda1854153cd3c16f3562753ae67483f92b4a4e7d3bdf6b9169",
+          "position_manager/interfaces/IConfigPositionManager.vyi": "bdb5ace9e4780babc2a34912ab93d466305ae53f37e75ca7e02e7a1cd6575243",
+          "position_manager/interfaces/ITakerPositionManager.vyi": "6fd956162357c511522e1c1355fe3a06176300608b9e026532362db585366a9b",
+          "position_manager/interfaces/INativeTokenGateway.vyi": "b7bb80d08ce05d73fb7e787929db7a208ec5d00b9c4a1613fa59f7485038bfe6",
+          "position_manager/interfaces/IGiverPositionManager.vyi": "88932a0a5de7ba3fd14517aba0168be841ac16b81be88a22f93cece77e99a24c",
+          "position_manager/interfaces/ISignatureGateway.vyi": "331ae32d1a336cecc45990748e01f3ea5a0bb2e73646b1f6638050378f124e78",
+          "position_manager/interfaces/IPositionManager.vyi": "9eb48435d1114ca1d326d67a8d088bc783beb58319c7648dadca8faa0eef47e0",
+          "dependencies/openzeppelin/IERC20.vyi": "e7e21a72e1a5a71a6c9c3f5ef6e5835161964006c2b99f92d607ff83a6329a3e",
+          "dependencies/openzeppelin/IAuthority.vyi": "90d394829355e3b2fb3977b44941798376e9c8f38e95e873e3ed9212d1a751e6",
+          "dependencies/openzeppelin/IAccessManager.vyi": "1da5830005038b4dbba0ca56074ece453e0c215f63030acd17d6756f592a0df8",
+          "dependencies/openzeppelin/IAccessManaged.vyi": "54d3a7d4b8d0420dd8cf392380d6139838bee873d9f153ed200e80b66c65a7cf",
+          "dependencies/openzeppelin/IERC20Metadata.vyi": "d076e0819f3ce42d6757a43a0cd0daaec6fc501bfa3d83e3d460c30e9a71e006",
+          "dependencies/openzeppelin/IERC1271.vyi": "69305f527d7b965c512c63d323bac58dbdf6987475ae4035337b3a5813cd19b8",
+          "libraries/Errors.vy": "8cb6f3a017cef81d7327fd2e45106e625d22c9fe13d84c1200998b8289ec57dd",
+          "libraries/math/PercentageMath.vy": "226356a9742af2044a6270d19bc77964be70ff8ae38560b91846bb1629e91658",
+          "libraries/math/MathUtils.vy": "259183ea924b1532e4d0935efe5e14575e145bedec695fd3ca2bba325fde8062",
+          "libraries/math/WadRayMath.vy": "ffee3e6bf583d7484de4a1702a2181ec95d0793a8929f76cf073687a2d2d814b",
+          "utils/NoncesKeyed.vy": "4f82680deee9114d9f9d9a06da5d6073bb7a575a7c6ed8529cbe0b41313b25a5",
+          "utils/AccessManaged.vy": "97ea1fbc05f51ccc3e34c3b25905e7a6edc5de34a5b35b4f99998f9e67235273",
+          "utils/SignatureChecker.vy": "e3244a1dae6bf701b64c208562dc2a8bb301a303fb72d1435d9fb67e9de0cb08",
+          "utils/Rescuable.vy": "8701aa6a9a89c5afe5809a719c5b3cc3e69a06b95f6e1768bbca7fc2dda5a556",
+          "utils/SafeERC20.vy": "2c8289f7aeb21abc11c5c3126525927568383e2d2469961e636bd8f5b266ed8b",
+          "utils/ExtSload.vy": "3bdde4426c28fbe716bd4d709c76bbbbf3b1b19e30f55b97db6f88121d1026cc",
+          "utils/interfaces/INoncesKeyed.vyi": "2d0ea6509f8bfcbe33c7ffd69847433c3a1b5ac7d733d8b4b0c06c04e086f318",
+          "utils/interfaces/IRescuable.vyi": "e324740e1480c31f48bac788d3b13ff418b26369bb8551c5b835ae2ce3669c5a",
+          "config_engine/AaveV4Payload.vy": "6fd6969f3f5eb1f039e354418b69cef1418ec174c5501d6b6fe846801d1bb6cd",
+          "config_engine/AaveV4ConfigEngine.vy": "7be830c988abd7104d0108bb4eb43cf7ce38ba783ae97ba42c32077452e4e107",
+          "config_engine/TokenizationSpokeDeployer.vy": "dd824e59f6c3d233b7bfa99bb41a2f7716b40e0d68245655dd9bd6e5d518ca73",
+          "config_engine/interfaces/IAaveV4ConfigEngine.vyi": "082340e7aa44fe1ed9a9877475f681c3dd51499d04d9f9ccda22ecd880372912",
+          "config_engine/interfaces/ITokenizationSpokeDeployer.vyi": "c502dd1d494561d62986ede87641101dc4d9d357c32f0bb7b8cfe9d10b10f59f",
+          "hub/HubConfigurator.vy": "750a40f99875f3e59d1101bd97d76d172d700607f2d9b2ddc0957e23ba003cba",
+          "hub/BasicInterestRateStrategy.vy": "ca377f777daf71dc9ed934e6ceb3b284c692a1c32a108e87a1cd6b562b2c96fd",
+          "hub/HubInstance.vy": "277392d18435e5f3cf338c0aae20a65825ae786d182de2c70cfac4b136dfc29f",
+          "hub/AssetInterestRateStrategy.vy": "b3742e72c07e04cba516c0bbed81b775467ea92f837a82a333df87ef4a5b84cc",
+          "hub/libraries/Premium.vy": "d9d36412d04c4aae1c149a45ac7a440c7ace012aaf6902b15820844c12450c1c",
+          "hub/libraries/SharesMath.vy": "1f177d1b0c8348324dac08f6aa25e254cca35803dec1ed33c25ff242992467d6",
+          "hub/interfaces/IAssetInterestRateStrategy.vyi": "6d5b946d31bd37a42c81a052d27d26f2422a4152e7bff999e3a97f73ef3efcb9",
+          "hub/interfaces/IHub.vyi": "9e6290643a9b40f90e07139a73386d186ffd5a11a89edfdf14d6e2c33293f3af",
+          "hub/interfaces/IHubConfigurator.vyi": "d62a173d64424ee101baa8b8cd1709e1c9c7ab36a7c06b8b5dee29409faf2416",
+          "hub/interfaces/IInterestRateStrategy.vyi": "9c699157ff732be74ec468b84ccbc31c2d7f44abd79d0915fd3f9120b8199728",
+          "deployments/utils/libraries/Roles.vy": "00dbc153a53200ec4f8d2acb2bacf66f7baa250a1edd71adaec1b91133873747"
+        }
+      }
+    ]
+  },
+  "runs": [
+    {
+      "repetition": 1,
+      "language": "solidity",
+      "stages": {
+        "default": {
+          "wall_seconds": 3.061591375,
+          "cpu_seconds": 3.055521,
+          "emitted": [
+            "src/access/AccessManagerEnumerable.sol:AccessManagerEnumerable",
+            "src/config-engine/AaveV4ConfigEngine.sol:AaveV4ConfigEngine",
+            "src/config-engine/libraries/AccessManagerEngine.sol:AccessManagerEngine",
+            "src/config-engine/libraries/HubEngine.sol:HubEngine",
+            "src/config-engine/libraries/PositionManagerEngine.sol:PositionManagerEngine",
+            "src/config-engine/libraries/SpokeEngine.sol:SpokeEngine",
+            "src/config-engine/libraries/TokenizationSpokeDeployer.sol:TokenizationSpokeDeployer",
+            "src/hub/AssetInterestRateStrategy.sol:AssetInterestRateStrategy",
+            "src/hub/HubConfigurator.sol:HubConfigurator",
+            "src/position-manager/ConfigPositionManager.sol:ConfigPositionManager",
+            "src/position-manager/GiverPositionManager.sol:GiverPositionManager",
+            "src/position-manager/NativeTokenGateway.sol:NativeTokenGateway",
+            "src/position-manager/SignatureGateway.sol:SignatureGateway",
+            "src/position-manager/TakerPositionManager.sol:TakerPositionManager",
+            "src/spoke/AaveOracle.sol:AaveOracle",
+            "src/spoke/SpokeConfigurator.sol:SpokeConfigurator",
+            "src/spoke/instances/TokenizationSpokeInstance.sol:TokenizationSpokeInstance",
+            "src/spoke/instances/TreasurySpokeInstance.sol:TreasurySpokeInstance",
+            "src/spoke/libraries/LiquidationLogic.sol:LiquidationLogic"
+          ]
+        },
+        "hub": {
+          "wall_seconds": 1.7708694999999999,
+          "cpu_seconds": 1.7618769999999997,
+          "emitted": [
+            "src/hub/instances/HubInstance.sol:HubInstance"
+          ]
+        },
+        "spoke": {
+          "wall_seconds": 2.1989163329999997,
+          "cpu_seconds": 2.190431,
+          "emitted": [
+            "src/spoke/instances/SpokeInstance.sol:SpokeInstance"
+          ]
+        }
+      },
+      "wall_seconds": 7.031377207999999,
+      "cpu_seconds": 7.007828999999999
+    },
+    {
+      "repetition": 1,
+      "language": "vyper",
+      "stages": {
+        "production": {
+          "wall_seconds": 30.443781291,
+          "cpu_seconds": 30.390500000000003,
+          "emitted": [
+            "access/AccessManagerEnumerable.vy:AccessManagerEnumerable",
+            "config_engine/AaveV4ConfigEngine.vy:AaveV4ConfigEngine",
+            "config_engine/TokenizationSpokeDeployer.vy:TokenizationSpokeDeployer",
+            "hub/AssetInterestRateStrategy.vy:AssetInterestRateStrategy",
+            "hub/HubConfigurator.vy:HubConfigurator",
+            "hub/HubInstance.vy:HubInstance",
+            "position_manager/ConfigPositionManager.vy:ConfigPositionManager",
+            "position_manager/GiverPositionManager.vy:GiverPositionManager",
+            "position_manager/NativeTokenGateway.vy:NativeTokenGateway",
+            "position_manager/SignatureGateway.vy:SignatureGateway",
+            "position_manager/TakerPositionManager.vy:TakerPositionManager",
+            "spoke/AaveOracle.vy:AaveOracle",
+            "spoke/LiquidationLogicContract.vy:LiquidationLogicContract",
+            "spoke/SpokeConfigurator.vy:SpokeConfigurator",
+            "spoke/SpokeInstance.vy:SpokeInstance",
+            "spoke/TokenizationSpokeInstance.vy:TokenizationSpokeInstance",
+            "spoke/TreasurySpokeInstance.vy:TreasurySpokeInstance"
+          ]
+        }
+      },
+      "wall_seconds": 30.443781291,
+      "cpu_seconds": 30.390500000000003
+    },
+    {
+      "repetition": 2,
+      "language": "vyper",
+      "stages": {
+        "production": {
+          "wall_seconds": 30.111995957999994,
+          "cpu_seconds": 30.088209,
+          "emitted": [
+            "access/AccessManagerEnumerable.vy:AccessManagerEnumerable",
+            "config_engine/AaveV4ConfigEngine.vy:AaveV4ConfigEngine",
+            "config_engine/TokenizationSpokeDeployer.vy:TokenizationSpokeDeployer",
+            "hub/AssetInterestRateStrategy.vy:AssetInterestRateStrategy",
+            "hub/HubConfigurator.vy:HubConfigurator",
+            "hub/HubInstance.vy:HubInstance",
+            "position_manager/ConfigPositionManager.vy:ConfigPositionManager",
+            "position_manager/GiverPositionManager.vy:GiverPositionManager",
+            "position_manager/NativeTokenGateway.vy:NativeTokenGateway",
+            "position_manager/SignatureGateway.vy:SignatureGateway",
+            "position_manager/TakerPositionManager.vy:TakerPositionManager",
+            "spoke/AaveOracle.vy:AaveOracle",
+            "spoke/LiquidationLogicContract.vy:LiquidationLogicContract",
+            "spoke/SpokeConfigurator.vy:SpokeConfigurator",
+            "spoke/SpokeInstance.vy:SpokeInstance",
+            "spoke/TokenizationSpokeInstance.vy:TokenizationSpokeInstance",
+            "spoke/TreasurySpokeInstance.vy:TreasurySpokeInstance"
+          ]
+        }
+      },
+      "wall_seconds": 30.111995957999994,
+      "cpu_seconds": 30.088209
+    },
+    {
+      "repetition": 2,
+      "language": "solidity",
+      "stages": {
+        "default": {
+          "wall_seconds": 3.0878441659999964,
+          "cpu_seconds": 3.078737000000001,
+          "emitted": [
+            "src/access/AccessManagerEnumerable.sol:AccessManagerEnumerable",
+            "src/config-engine/AaveV4ConfigEngine.sol:AaveV4ConfigEngine",
+            "src/config-engine/libraries/AccessManagerEngine.sol:AccessManagerEngine",
+            "src/config-engine/libraries/HubEngine.sol:HubEngine",
+            "src/config-engine/libraries/PositionManagerEngine.sol:PositionManagerEngine",
+            "src/config-engine/libraries/SpokeEngine.sol:SpokeEngine",
+            "src/config-engine/libraries/TokenizationSpokeDeployer.sol:TokenizationSpokeDeployer",
+            "src/hub/AssetInterestRateStrategy.sol:AssetInterestRateStrategy",
+            "src/hub/HubConfigurator.sol:HubConfigurator",
+            "src/position-manager/ConfigPositionManager.sol:ConfigPositionManager",
+            "src/position-manager/GiverPositionManager.sol:GiverPositionManager",
+            "src/position-manager/NativeTokenGateway.sol:NativeTokenGateway",
+            "src/position-manager/SignatureGateway.sol:SignatureGateway",
+            "src/position-manager/TakerPositionManager.sol:TakerPositionManager",
+            "src/spoke/AaveOracle.sol:AaveOracle",
+            "src/spoke/SpokeConfigurator.sol:SpokeConfigurator",
+            "src/spoke/instances/TokenizationSpokeInstance.sol:TokenizationSpokeInstance",
+            "src/spoke/instances/TreasurySpokeInstance.sol:TreasurySpokeInstance",
+            "src/spoke/libraries/LiquidationLogic.sol:LiquidationLogic"
+          ]
+        },
+        "hub": {
+          "wall_seconds": 1.7711296250000004,
+          "cpu_seconds": 1.7618670000000014,
+          "emitted": [
+            "src/hub/instances/HubInstance.sol:HubInstance"
+          ]
+        },
+        "spoke": {
+          "wall_seconds": 2.242640332999997,
+          "cpu_seconds": 2.2314630000000104,
+          "emitted": [
+            "src/spoke/instances/SpokeInstance.sol:SpokeInstance"
+          ]
+        }
+      },
+      "wall_seconds": 7.101614123999994,
+      "cpu_seconds": 7.072067000000013
+    },
+    {
+      "repetition": 3,
+      "language": "solidity",
+      "stages": {
+        "default": {
+          "wall_seconds": 3.069092000000012,
+          "cpu_seconds": 3.060194999999997,
+          "emitted": [
+            "src/access/AccessManagerEnumerable.sol:AccessManagerEnumerable",
+            "src/config-engine/AaveV4ConfigEngine.sol:AaveV4ConfigEngine",
+            "src/config-engine/libraries/AccessManagerEngine.sol:AccessManagerEngine",
+            "src/config-engine/libraries/HubEngine.sol:HubEngine",
+            "src/config-engine/libraries/PositionManagerEngine.sol:PositionManagerEngine",
+            "src/config-engine/libraries/SpokeEngine.sol:SpokeEngine",
+            "src/config-engine/libraries/TokenizationSpokeDeployer.sol:TokenizationSpokeDeployer",
+            "src/hub/AssetInterestRateStrategy.sol:AssetInterestRateStrategy",
+            "src/hub/HubConfigurator.sol:HubConfigurator",
+            "src/position-manager/ConfigPositionManager.sol:ConfigPositionManager",
+            "src/position-manager/GiverPositionManager.sol:GiverPositionManager",
+            "src/position-manager/NativeTokenGateway.sol:NativeTokenGateway",
+            "src/position-manager/SignatureGateway.sol:SignatureGateway",
+            "src/position-manager/TakerPositionManager.sol:TakerPositionManager",
+            "src/spoke/AaveOracle.sol:AaveOracle",
+            "src/spoke/SpokeConfigurator.sol:SpokeConfigurator",
+            "src/spoke/instances/TokenizationSpokeInstance.sol:TokenizationSpokeInstance",
+            "src/spoke/instances/TreasurySpokeInstance.sol:TreasurySpokeInstance",
+            "src/spoke/libraries/LiquidationLogic.sol:LiquidationLogic"
+          ]
+        },
+        "hub": {
+          "wall_seconds": 1.7916861249999982,
+          "cpu_seconds": 1.7834520000000034,
+          "emitted": [
+            "src/hub/instances/HubInstance.sol:HubInstance"
+          ]
+        },
+        "spoke": {
+          "wall_seconds": 2.210533374999997,
+          "cpu_seconds": 2.2019390000000043,
+          "emitted": [
+            "src/spoke/instances/SpokeInstance.sol:SpokeInstance"
+          ]
+        }
+      },
+      "wall_seconds": 7.071311500000007,
+      "cpu_seconds": 7.0455860000000055
+    },
+    {
+      "repetition": 3,
+      "language": "vyper",
+      "stages": {
+        "production": {
+          "wall_seconds": 30.360573833000004,
+          "cpu_seconds": 30.315659999999998,
+          "emitted": [
+            "access/AccessManagerEnumerable.vy:AccessManagerEnumerable",
+            "config_engine/AaveV4ConfigEngine.vy:AaveV4ConfigEngine",
+            "config_engine/TokenizationSpokeDeployer.vy:TokenizationSpokeDeployer",
+            "hub/AssetInterestRateStrategy.vy:AssetInterestRateStrategy",
+            "hub/HubConfigurator.vy:HubConfigurator",
+            "hub/HubInstance.vy:HubInstance",
+            "position_manager/ConfigPositionManager.vy:ConfigPositionManager",
+            "position_manager/GiverPositionManager.vy:GiverPositionManager",
+            "position_manager/NativeTokenGateway.vy:NativeTokenGateway",
+            "position_manager/SignatureGateway.vy:SignatureGateway",
+            "position_manager/TakerPositionManager.vy:TakerPositionManager",
+            "spoke/AaveOracle.vy:AaveOracle",
+            "spoke/LiquidationLogicContract.vy:LiquidationLogicContract",
+            "spoke/SpokeConfigurator.vy:SpokeConfigurator",
+            "spoke/SpokeInstance.vy:SpokeInstance",
+            "spoke/TokenizationSpokeInstance.vy:TokenizationSpokeInstance",
+            "spoke/TreasurySpokeInstance.vy:TreasurySpokeInstance"
+          ]
+        }
+      },
+      "wall_seconds": 30.360573833000004,
+      "cpu_seconds": 30.315659999999998
+    }
+  ],
+  "summary": {
+    "solidity": {
+      "wall_seconds": 7.071311500000007,
+      "cpu_seconds": 7.0455860000000055
+    },
+    "vyper": {
+      "wall_seconds": 30.360573833000004,
+      "cpu_seconds": 30.315659999999998
+    }
+  }
+}

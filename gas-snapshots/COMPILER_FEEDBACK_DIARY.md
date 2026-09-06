@@ -6,6 +6,67 @@ and the repository's matched 137-operation gas suite. The historical baseline bu
 Vyper 0.5.0b2 at PR #5232's merge commit and `-O 3`; earlier milestones used
 0.5.0a3 and official 0.5.0b1.
 
+## September 6, 2026: production compilation time
+
+Direct, uncached compiler invocations for the matched production scope take a
+median **7.071 seconds in Solidity** versus **30.361 seconds in Vyper** across
+three serial samples: Vyper takes **4.29 times as long**. Median child CPU time
+is 7.046 seconds versus 30.316 seconds. This measures the pinned port/compiler,
+not the unapplied PR #5240 candidate.
+
+The scope includes the 15 production API contracts and required deployable
+helpers: 21 Solidity targets versus 17 Vyper targets because Solidity splits
+the config engine into external libraries. Both emit ABI, creation bytecode,
+and runtime bytecode for Cancun, with bytecode metadata disabled. Solidity uses
+the repository's default/Hub/Spoke optimizer profiles; Vyper uses Venom O3 and
+its production layout overrides. All six builds emitted every selected target.
+
+No tests, mocks, harnesses, test wrappers, Foundry invocation, or deployment
+orchestration enter this measurement. Necessary production imports and embedded
+deployment code do. Fresh compiler processes run serially with no incremental
+artifact cache; OS caches are not flushed. Input preparation and report writing
+are excluded symmetrically. Existing port feature gaps mean this is a comparison
+of the current implementations, not proof of identical semantic work.
+
+[Full methodology and samples](compilation-time/README.md),
+[machine-readable results](compilation-time/results.json), and the reproducible
+runner `scripts/benchmark_compilation.py` preserve the scope, input hashes,
+compiler versions, settings, and timing boundary.
+
+## September 6, 2026: native multicall arrays (PR #5240)
+
+[PR #5240 experiment](pr5240/README.md) tests native
+unbounded multicall arrays against the exact open-PR head. It reduces the
+measured AccessManager administrative calls from roughly 36 million gas to
+128–277 thousand gas without reducing existing per-call byte limits. The
+standard 137-operation gas index is effectively unchanged. The candidate
+patch is retained separately from the pinned production sources.
+
+The tested open-PR head is `b8a11e8d1921ec65e416ece24e7eb0831f3249a1`.
+The compiler-only control has unchanged gas; adopting `DynArray[Bytes[N], INF]`
+in the AccessManager and position-manager multicalls produces the savings.
+The existing per-element byte bounds are preserved.
+
+| AccessManager operation | Before | Native outer arrays | Reduction |
+|---|---:|---:|---:|
+| setTargetFunctionRole | 36,394,915 | 276,990 | 99.24% |
+| schedule | 36,252,857 | 127,757 | 99.65% |
+| Managed call including schedule consumption | 36,264,480 | 140,917 | 99.61% |
+
+This avoids issue #5244's large fixed outer-array reservation in these contracts;
+the unchanged bounded-array minimal source still reproduces the compiler issue.
+The four-byte call in the minimal control falls from 34,050,129 to 953 gas under
+O3 when its unused sibling's outer array is changed to INF. Issues #5246 and
+#5247 remain: runtime successful returndata and fully unbounded nested elements
+are still unsupported.
+
+Validation: 2,079 passing full-suite tests, zero failures, one existing skip;
+three positive domain tests cover expanded call counts, an empty batch, and
+exact dynamic return encoding. The retained experiment includes source changes,
+compiler provenance, source/bytecode hashes, and three matched snapshot sets.
+The production compiler pin and production sources have not been changed by
+this experiment.
+
 ## September 5, 2026: parity corrections and compiler feedback
 
 This entry supersedes earlier claims of full equivalence. The historical green

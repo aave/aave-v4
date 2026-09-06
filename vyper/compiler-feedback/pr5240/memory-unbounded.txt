@@ -1,0 +1,24 @@
+Compiling 1 files with Solc 0.8.28
+Solc 0.8.28 finished in 29.56ms
+Compiler run successful!
+
+Ran 4 tests for test/MemoryAllocation.t.sol:MemoryAllocationTest
+[PASS] test_Large_O2() (gas: 235787)
+Logs:
+  Large O2 length(bytes4) call gas: 948
+
+[PASS] test_Large_O3() (gas: 203322)
+Logs:
+  Large O3 length(bytes4) call gas: 953
+
+[PASS] test_Small_O2() (gas: 233578)
+Logs:
+  Small O2 length(bytes4) call gas: 948
+
+[PASS] test_Small_O3() (gas: 201118)
+Logs:
+  Small O3 length(bytes4) call gas: 953
+
+Suite result: ok. 4 passed; 0 failed; 0 skipped; finished in 503.50µs (1.03ms CPU time)
+
+Ran 1 test suite in 5.58ms (503.50µs CPU time): 4 tests passed, 0 failed, 0 skipped (4 total tests)

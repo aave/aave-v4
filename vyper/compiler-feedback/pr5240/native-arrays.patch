@@ -1,0 +1,120 @@
+--- a/vyper/requirements.txt
++++ b/vyper/requirements.txt
+@@ -1 +1 @@
+-vyper @ git+https://github.com/vyperlang/vyper.git@8af5e83c10af4f065cc660fe20293dac11fdff83
++vyper @ git+https://github.com/vyperlang/vyper.git@b8a11e8d1921ec65e416ece24e7eb0831f3249a1
+--- a/vyper/src/access/AccessManagerEnumerable.vy
++++ b/vyper/src/access/AccessManagerEnumerable.vy
+@@ -596,8 +596,8 @@
+ 
+ 
+ @external
+-def multicall(data: DynArray[Bytes[MAX_CALLDATA], 64]) -> DynArray[Bytes[MAX_RETURN], 64]:
+-    results: DynArray[Bytes[MAX_RETURN], 64] = []
++def multicall(data: DynArray[Bytes[MAX_CALLDATA], INF]) -> DynArray[Bytes[MAX_RETURN], INF]:
++    results: DynArray[Bytes[MAX_RETURN], INF] = []
+     for call_data: Bytes[MAX_CALLDATA] in data:
+         result: Bytes[MAX_RETURN + 1] = raw_call(self, call_data, max_outsize=MAX_RETURN + 1, is_delegate_call=True)
+         if len(result) > MAX_RETURN:
+--- a/vyper/src/access/interfaces/IAccessManagerEnumerable.vyi
++++ b/vyper/src/access/interfaces/IAccessManagerEnumerable.vyi
+@@ -279,7 +279,7 @@
+ 
+ 
+ @external
+-def multicall(data: DynArray[Bytes[32768], 64]) -> DynArray[Bytes[32768], 64]:
++def multicall(data: DynArray[Bytes[32768], INF]) -> DynArray[Bytes[32768], INF]:
+     ...
+ 
+ 
+--- a/vyper/src/position_manager/PositionManagerBase.vy
++++ b/vyper/src/position_manager/PositionManagerBase.vy
+@@ -165,10 +165,10 @@
+ 
+ 
+ @external
+-def multicall(data: DynArray[Bytes[MAX_CALLDATA], MAX_CALLS]) -> DynArray[Bytes[MAX_RETURN_DATA], MAX_CALLS]:
++def multicall(data: DynArray[Bytes[MAX_CALLDATA], INF]) -> DynArray[Bytes[MAX_RETURN_DATA], INF]:
+     if not self._multicall_enabled():
+         raise IPositionManager.UnsupportedAction()
+-    results: DynArray[Bytes[MAX_RETURN_DATA], MAX_CALLS] = []
++    results: DynArray[Bytes[MAX_RETURN_DATA], INF] = []
+     for call_data: Bytes[MAX_CALLDATA] in data:
+         # Native failure propagation preserves the entire downstream revert payload.
+         result: Bytes[MAX_RETURN_DATA + 1] = raw_call(
+--- a/vyper/src/position_manager/interfaces/IConfigPositionManager.vyi
++++ b/vyper/src/position_manager/interfaces/IConfigPositionManager.vyi
+@@ -94,7 +94,7 @@
+ 
+ 
+ @external
+-def multicall(data: DynArray[Bytes[512], 4]) -> DynArray[Bytes[256], 4]:
++def multicall(data: DynArray[Bytes[512], INF]) -> DynArray[Bytes[256], INF]:
+     ...
+ 
+ 
+--- a/vyper/src/position_manager/interfaces/IGiverPositionManager.vyi
++++ b/vyper/src/position_manager/interfaces/IGiverPositionManager.vyi
+@@ -75,7 +75,7 @@
+ 
+ 
+ @external
+-def multicall(data: DynArray[Bytes[512], 4]) -> DynArray[Bytes[256], 4]:
++def multicall(data: DynArray[Bytes[512], INF]) -> DynArray[Bytes[256], INF]:
+     ...
+ 
+ 
+@@ -104,4 +104,3 @@
+ def repayOnBehalfOf(spoke: address, reserveId: uint256, amount: uint256, onBehalfOf: address) -> (uint256, uint256):
+     ...
+ 
+-
+--- a/vyper/src/position_manager/interfaces/INativeTokenGateway.vyi
++++ b/vyper/src/position_manager/interfaces/INativeTokenGateway.vyi
+@@ -68,7 +68,7 @@
+ 
+ 
+ @external
+-def multicall(data: DynArray[Bytes[512], 4]) -> DynArray[Bytes[256], 4]:
++def multicall(data: DynArray[Bytes[512], INF]) -> DynArray[Bytes[256], INF]:
+     ...
+ 
+ 
+--- a/vyper/src/position_manager/interfaces/IPositionManager.vyi
++++ b/vyper/src/position_manager/interfaces/IPositionManager.vyi
+@@ -83,7 +83,7 @@
+ 
+ 
+ @external
+-def multicall(data: DynArray[Bytes[512], 4]) -> DynArray[Bytes[256], 4]:
++def multicall(data: DynArray[Bytes[512], INF]) -> DynArray[Bytes[256], INF]:
+     ...
+ 
+ 
+@@ -102,4 +102,3 @@
+ def rescueGuardian() -> address:
+     ...
+ 
+-
+--- a/vyper/src/position_manager/interfaces/ISignatureGateway.vyi
++++ b/vyper/src/position_manager/interfaces/ISignatureGateway.vyi
+@@ -81,7 +81,7 @@
+ 
+ 
+ @external
+-def multicall(data: DynArray[Bytes[512], 4]) -> DynArray[Bytes[256], 4]:
++def multicall(data: DynArray[Bytes[512], INF]) -> DynArray[Bytes[256], INF]:
+     ...
+ 
+ 
+--- a/vyper/src/position_manager/interfaces/ITakerPositionManager.vyi
++++ b/vyper/src/position_manager/interfaces/ITakerPositionManager.vyi
+@@ -106,7 +106,7 @@
+ 
+ 
+ @external
+-def multicall(data: DynArray[Bytes[512], 4]) -> DynArray[Bytes[256], 4]:
++def multicall(data: DynArray[Bytes[512], INF]) -> DynArray[Bytes[256], INF]:
+     ...
+ 
+ 

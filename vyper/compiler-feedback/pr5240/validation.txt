@@ -1,0 +1,22 @@
+Source revision: 1f7129042fe57e24bfc4c934be5088514cb93503
+Pinned compiler: 8af5e83c10af4f065cc660fe20293dac11fdff83
+PR #5240 compiler: b8a11e8d1921ec65e416ece24e7eb0831f3249a1
+Foundry: 1.8.1
+Vyper: 0.5.0b2, Venom, O3, Cancun, metadata disabled, PYTHONHASHSEED=0
+
+Each of the three gas stages:
+87 tests passed, 0 failed, 0 skipped (86 standard gas tests + 1 AccessManager measurement)
+
+Full candidate run:
+FOUNDRY_PROFILE=vyper TEST_VYPER=true forge test -vv
+Ran 204 test suites in 344.24s (5918.62s CPU time): 2079 tests passed, 0 failed, 1 skipped (2080 total tests)
+Fuzz seed: 0x640; 1000 runs per fuzz test.
+
+Isolated positive domain run:
+3 tests passed, 0 failed, 0 skipped. See domain-tests.txt.
+
+Memory allocation reproducer:
+4 tests passed with bounded outer arrays; 4 passed with unbounded outer arrays.
+Both variants compiled with the exact PR head, tested at O2 and O3.
+
+Pinned compiler requirement, production sources, original snapshots, and pinned Vyper artifacts restored/preserved after experiment.

@@ -1,0 +1,131 @@
+No files changed, compilation skipped
+
+Ran 1 test for tests/gas/PositionManagers.Operations.gas.t.sol:PositionManager_Gas_Tests
+[PASS] test_setSelfAsUserPositionManagerWithSig() (gas: 226842)
+Suite result: ok. 1 passed; 0 failed; 0 skipped; finished in 23.49ms (442.71µs CPU time)
+
+Ran 2 tests for tests/gas/PositionManagers.Operations.gas.t.sol:GiverPositionManager_Gas_Tests
+[PASS] test_repayOnBehalfOf() (gas: 1104480)
+[PASS] test_supplyOnBehalfOf() (gas: 330979)
+Suite result: ok. 2 passed; 0 failed; 0 skipped; finished in 24.05ms (1.01ms CPU time)
+
+Ran 1 test for tests/compiler/PR5240.gas.t.sol:PR5240GasTest
+[PASS] test_accessManagerGas() (gas: 109058785)
+Logs:
+  setTargetFunctionRole: 36394915
+  schedule: 36252857
+  managed call including consumeScheduledOp: 36264480
+
+Suite result: ok. 1 passed; 0 failed; 0 skipped; finished in 24.90ms (1.45ms CPU time)
+
+Ran 8 tests for tests/gas/PositionManagers.Operations.gas.t.sol:TakerPositionManager_Gas_Tests
+[PASS] test_approveBorrow() (gas: 69192)
+[PASS] test_approveBorrowWithSig() (gas: 155465)
+[PASS] test_approveWithdraw() (gas: 69199)
+[PASS] test_approveWithdrawWithSig() (gas: 155428)
+[PASS] test_borrowOnBehalfOf() (gas: 901100)
+[PASS] test_renounceBorrowAllowance() (gas: 93688)
+[PASS] test_renounceWithdrawAllowance() (gas: 93729)
+[PASS] test_withdrawOnBehalfOf() (gas: 699652)
+Suite result: ok. 8 passed; 0 failed; 0 skipped; finished in 27.03ms (3.89ms CPU time)
+
+Ran 5 tests for tests/gas/Gateways.Operations.gas.t.sol:NativeTokenGateway_Gas_Tests
+[PASS] test_borrowNative() (gas: 1120607)
+[PASS] test_repayNative() (gas: 1191822)
+[PASS] test_supplyAndCollateralNative() (gas: 362455)
+[PASS] test_supplyNative() (gas: 331914)
+[PASS] test_withdrawNative() (gas: 621232)
+Suite result: ok. 5 passed; 0 failed; 0 skipped; finished in 27.49ms (2.99ms CPU time)
+
+Ran 9 tests for tests/gas/Hub.Operations.gas.t.sol:HubOperations_Gas_Tests
+[PASS] test_add() (gas: 315053)
+[PASS] test_deficit() (gas: 1671173)
+[PASS] test_draw() (gas: 483580)
+[PASS] test_mintFeeShares() (gas: 590184)
+[PASS] test_payFee_transferShares() (gas: 1129263)
+[PASS] test_refreshPremium() (gas: 842679)
+[PASS] test_remove() (gas: 377528)
+[PASS] test_restore() (gas: 1221786)
+[PASS] test_restore_with_transfer() (gas: 1222449)
+Suite result: ok. 9 passed; 0 failed; 0 skipped; finished in 27.44ms (5.39ms CPU time)
+
+Ran 5 tests for tests/gas/Spoke.Getters.gas.t.sol:SpokeGetters_Gas_Tests
+[PASS] test_getUserAccountData() (gas: 35378)
+[PASS] test_getUserAccountData_oneSupplies() (gas: 354054)
+[PASS] test_getUserAccountData_twoSupplies() (gas: 642653)
+[PASS] test_getUserAccountData_twoSupplies_oneBorrows() (gas: 1308549)
+[PASS] test_getUserAccountData_twoSupplies_twoBorrows() (gas: 2038815)
+Suite result: ok. 5 passed; 0 failed; 0 skipped; finished in 27.44ms (2.93ms CPU time)
+
+Ran 9 tests for tests/gas/TokenizationSpoke.Operations.gas.t.sol:TokenizationSpokeOperations_Gas_Tests
+[PASS] test_deposit() (gas: 146395)
+[PASS] test_depositWithSig() (gas: 230669)
+[PASS] test_mint() (gas: 188038)
+[PASS] test_mintWithSig() (gas: 274416)
+[PASS] test_permit() (gas: 113906)
+[PASS] test_redeem() (gas: 1006161)
+[PASS] test_redeemWithSig() (gas: 363426)
+[PASS] test_withdraw() (gas: 970777)
+[PASS] test_withdrawWithSig() (gas: 363498)
+Suite result: ok. 9 passed; 0 failed; 0 skipped; finished in 28.44ms (4.92ms CPU time)
+
+Ran 11 tests for tests/gas/PositionManagers.Operations.gas.t.sol:ConfigPositionManager_Gas_Tests
+[PASS] test_renounceCanUpdateUserDynamicConfigPermission() (gas: 93952)
+[PASS] test_renounceCanUpdateUserRiskPremiumPermission() (gas: 93842)
+[PASS] test_renounceCanUpdateUsingAsCollateralPermission() (gas: 93843)
+[PASS] test_renounceGlobalPermission() (gas: 93758)
+[PASS] test_setCanSetUsingAsCollateralPermission() (gas: 69551)
+[PASS] test_setCanUpdateUserDynamicConfigPermission() (gas: 69592)
+[PASS] test_setCanUpdateUserRiskPremiumPermission() (gas: 69593)
+[PASS] test_setGlobalPermission() (gas: 69483)
+[PASS] test_setUsingAsCollateralOnBehalfOf_fuzz_withGlobalPermission() (gas: 158886)
+[PASS] test_updateUserDynamicConfigOnBehalfOf_withGlobalPermission() (gas: 136040)
+[PASS] test_updateUserRiskPremiumOnBehalfOf_withGlobalPermission() (gas: 843776)
+Suite result: ok. 11 passed; 0 failed; 0 skipped; finished in 28.73ms (1.69ms CPU time)
+
+Ran 14 tests for tests/gas/Spoke.Operations.gas.t.sol:SpokeOperations_Gas_Tests
+[PASS] test_borrow() (gas: 1641579)
+[PASS] test_liquidation_full() (gas: 2461736)
+[PASS] test_liquidation_partial() (gas: 2461134)
+[PASS] test_liquidation_receiveShares_full() (gas: 2443402)
+[PASS] test_liquidation_receiveShares_partial() (gas: 2442802)
+[PASS] test_liquidation_reportDeficit_full() (gas: 2443601)
+[PASS] test_multicall_ops() (gas: 1762751)
+[PASS] test_repay() (gas: 1069359)
+[PASS] test_setUserPositionManagersWithSig() (gas: 346155)
+[PASS] test_supply() (gas: 661353)
+[PASS] test_updateRiskPremium() (gas: 1663426)
+[PASS] test_updateUserDynamicConfig() (gas: 711177)
+[PASS] test_usingAsCollateral() (gas: 1881895)
+[PASS] test_withdraw() (gas: 2513039)
+Suite result: ok. 14 passed; 0 failed; 0 skipped; finished in 28.67ms (23.21ms CPU time)
+
+Ran 14 tests for tests/gas/Spoke.Operations.gas.t.sol:SpokeOperations_ZeroRiskPremium_Gas_Tests
+[PASS] test_borrow() (gas: 1358373)
+[PASS] test_liquidation_full() (gas: 2303662)
+[PASS] test_liquidation_partial() (gas: 2303060)
+[PASS] test_liquidation_receiveShares_full() (gas: 2285328)
+[PASS] test_liquidation_receiveShares_partial() (gas: 2284728)
+[PASS] test_liquidation_reportDeficit_full() (gas: 2356674)
+[PASS] test_multicall_ops() (gas: 1676182)
+[PASS] test_repay() (gas: 967410)
+[PASS] test_setUserPositionManagersWithSig() (gas: 350609)
+[PASS] test_supply() (gas: 664034)
+[PASS] test_updateRiskPremium() (gas: 1242171)
+[PASS] test_updateUserDynamicConfig() (gas: 715631)
+[PASS] test_usingAsCollateral() (gas: 1461679)
+[PASS] test_withdraw() (gas: 2117325)
+Suite result: ok. 14 passed; 0 failed; 0 skipped; finished in 28.69ms (21.58ms CPU time)
+
+Ran 8 tests for tests/gas/Gateways.Operations.gas.t.sol:SignatureGateway_Gas_Tests
+[PASS] test_borrowWithSig() (gas: 881592)
+[PASS] test_repayWithSig() (gas: 1115438)
+[PASS] test_setSelfAsUserPositionManagerWithSig() (gas: 220146)
+[PASS] test_setUsingAsCollateralWithSig() (gas: 326492)
+[PASS] test_supplyWithSig() (gas: 486379)
+[PASS] test_updateUserDynamicConfigWithSig() (gas: 171381)
+[PASS] test_updateUserRiskPremiumWithSig() (gas: 167426)
+[PASS] test_withdrawWithSig() (gas: 495787)
+Suite result: ok. 8 passed; 0 failed; 0 skipped; finished in 28.94ms (4.96ms CPU time)
+
+Ran 12 test suites in 34.01ms (325.30ms CPU time): 87 tests passed, 0 failed, 0 skipped (87 total tests)
