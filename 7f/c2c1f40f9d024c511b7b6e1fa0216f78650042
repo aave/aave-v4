@@ -1,0 +1,19 @@
+reports/mutation-survivors.json
+  s_7a7e115edc4e72::t_eecce2cd8fb23c 20,22,24-29,101-160
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.2",
+  "base_commit_sha": "7fc2c1f40f9d024c511b7b6e1fa0216f78650042",
+  "prompts": {},
+  "sessions": {
+    "s_7a7e115edc4e72": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_f7f0086d9ffehSzC7sauMk5S0K",
+        "model": "k3-256k"
+      },
+      "human_author": "AlbertoCentonze <11707683+AlbertoCentonze@users.noreply.github.com>"
+    }
+  }
+}
