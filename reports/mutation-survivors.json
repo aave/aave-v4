@@ -17,16 +17,16 @@
     "never",
     "-vv"
   ],
-  "updated": "2026-09-08T16:26:58.574581+00:00",
+  "updated": "2026-09-08T16:41:11.774552+00:00",
   "summary": {
-    "filesCompleted": 2,
+    "filesCompleted": 5,
     "totalFiles": 177,
-    "mutationScorePct": 94.9,
-    "killed": 131,
-    "survived": 7,
-    "invalid": 19,
-    "skipped": 20,
-    "timedOut": 0
+    "mutationScorePct": 93.0,
+    "killed": 172,
+    "survived": 13,
+    "invalid": 45,
+    "skipped": 40,
+    "timedOut": 23
   },
   "survivors": [
     {
@@ -98,6 +98,66 @@
       "classification": "coverage-gap",
       "rationale": "Same as line 91: distinguishable only when mod(d, c) >= 2^255 (requires c > 2^255 and a*b wrapping into that range). Practically unreachable by random fuzzing; the original code is correct.",
       "killCondition": "Directed edge test with c > 2^255 and a*b chosen so (a*b) % c >= 2^255."
+    },
+    {
+      "file": "src/access/AccessManagerEnumerable.sol",
+      "line": 356,
+      "function": "_trackRoleLabel",
+      "original": "bytes(oldLabel).length > 0",
+      "mutated": "bytes(oldLabel).length != 0",
+      "classification": "equivalent",
+      "rationale": "Byte array length is an unsigned integer; length > 0 and length != 0 are the same predicate.",
+      "killCondition": "None. Provably unkillable."
+    },
+    {
+      "file": "src/access/AccessManagerEnumerable.sol",
+      "line": 318,
+      "function": "_trackRole",
+      "original": "roleId == PUBLIC_ROLE",
+      "mutated": "roleId >= PUBLIC_ROLE",
+      "classification": "equivalent",
+      "rationale": "PUBLIC_ROLE = type(uint64).max. For unsigned integers, x >= type(uint64).max is true exactly when x == type(uint64).max. Identical behavior.",
+      "killCondition": "None. Provably unkillable."
+    },
+    {
+      "file": "src/access/AccessManagerEnumerable.sol",
+      "line": 318,
+      "function": "_trackRole",
+      "original": "roleId == ADMIN_ROLE",
+      "mutated": "roleId <= ADMIN_ROLE",
+      "classification": "equivalent",
+      "rationale": "ADMIN_ROLE = type(uint64).min = 0. For unsigned integers, x <= 0 is true exactly when x == 0, so the mutated condition is identical to the original.",
+      "killCondition": "None. Provably unkillable."
+    },
+    {
+      "file": "src/access/AccessManagerEnumerable.sol",
+      "line": 386,
+      "function": "_trackRoleTargetSelector",
+      "original": "_roleToTargetToSelectorSet[oldRoleId][target].length() == 0",
+      "mutated": "_roleToTargetToSelectorSet[oldRoleId][target].length() <= 0",
+      "classification": "equivalent",
+      "rationale": "EnumerableSet length() returns uint256; length == 0 and length <= 0 are the same predicate for unsigned values.",
+      "killCondition": "None. Provably unkillable."
+    },
+    {
+      "file": "src/access/AccessManagerEnumerable.sol",
+      "line": 391,
+      "function": "_trackRoleTargetSelector",
+      "original": "roleId != ADMIN_ROLE",
+      "mutated": "roleId > ADMIN_ROLE",
+      "classification": "equivalent",
+      "rationale": "ADMIN_ROLE = 0. For unsigned integers, x != 0 and x > 0 are the same predicate.",
+      "killCondition": "None. Provably unkillable."
+    },
+    {
+      "file": "src/access/AccessManagerEnumerable.sol",
+      "line": 391,
+      "function": "_trackRoleTargetSelector",
+      "original": "roleId != ADMIN_ROLE",
+      "mutated": "roleId >= ADMIN_ROLE",
+      "classification": "coverage-gap",
+      "rationale": "roleId >= 0 is always true for uint64, so the mutant tracks targets/selectors even when roleId is ADMIN_ROLE (0), which the contract documents as excluded from tracking. The distinguishing input is setTargetFunctionRole with roleId = ADMIN_ROLE followed by a read of the role-0 enumeration getters; the suite never exercises that combination. The original code is correct.",
+      "killCondition": "Directed test: call setTargetFunctionRole(target, selector, ADMIN_ROLE), then assert getRoleTargetCount(ADMIN_ROLE) == 0 (or equivalent role-0 getters remain empty)."
     }
   ]
 }
