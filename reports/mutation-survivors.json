@@ -1,0 +1,103 @@
+{
+  "campaign": "2026-09-08-2524fe40",
+  "commit": "2524fe4018a42750300e114f2a8c4355df62a878",
+  "forgeVersion": "forge Version: 1.8.1",
+  "flags": [
+    "--mutation-jobs",
+    "4",
+    "--mutation-timeout",
+    "600",
+    "--mutation-optimizer-runs",
+    "200",
+    "--fuzz-runs",
+    "1000",
+    "--fuzz-seed",
+    "0x640",
+    "--color",
+    "never",
+    "-vv"
+  ],
+  "updated": "2026-09-08T16:25:13.145166+00:00",
+  "summary": {
+    "filesCompleted": 2,
+    "totalFiles": 177,
+    "mutationScorePct": 94.9,
+    "killed": 131,
+    "survived": 7,
+    "invalid": 19,
+    "skipped": 20,
+    "timedOut": 0
+  },
+  "survivors": [
+    {
+      "file": "src/libraries/math/MathUtils.sol",
+      "line": 25,
+      "function": "calculateLinearInterest",
+      "original": "gt(lastUpdateTimestamp, timestamp())",
+      "mutated": "sgt(lastUpdateTimestamp, timestamp())",
+      "classification": "equivalent",
+      "rationale": "gt and sgt differ only when an operand has bit 255 set. lastUpdateTimestamp is uint40 and block timestamps cannot approach 2^255, so both opcodes agree on every reachable input.",
+      "killCondition": "None. Only a meaningless vm.warp(2^255) test would distinguish them."
+    },
+    {
+      "file": "src/libraries/math/MathUtils.sol",
+      "line": 36,
+      "function": "min",
+      "original": "mul(xor(a, b), lt(a, b))",
+      "mutated": "div(xor(a, b), lt(a, b))",
+      "classification": "equivalent",
+      "rationale": "The second operand is boolean. When lt(a,b)=1: x*1 = x/1. When lt(a,b)=0: x*0 = 0 and EVM div(x,0) returns 0 rather than reverting. Identical for all inputs.",
+      "killCondition": "None. Provably unkillable."
+    },
+    {
+      "file": "src/libraries/math/MathUtils.sol",
+      "line": 91,
+      "function": "divUp",
+      "original": "gt(mod(a, b), 0)",
+      "mutated": "sgt(mod(a, b), 0)",
+      "classification": "coverage-gap",
+      "rationale": "Distinguishable only when mod(a, b) >= 2^255, which requires a divisor above 2^255. The fuzz domain includes such inputs but the sampling probability is ~2^-255 per run, so 1,000 runs never hit it. The original code is correct.",
+      "killCondition": "Directed edge test, e.g. assertEq(MathUtils.divUp(2**255, 2**255 + 1), 2)."
+    },
+    {
+      "file": "src/libraries/math/MathUtils.sol",
+      "line": 104,
+      "function": "mulDivDown",
+      "original": "or(iszero(b), iszero(gt(a, div(not(0), b))))",
+      "mutated": "xor(iszero(b), iszero(gt(a, div(not(0), b))))",
+      "classification": "coverage-gap",
+      "rationale": "or and xor differ only when both operands are 1, i.e. b = 0 (iszero(b)=1) and a = 0 (div(max,0)=0, so iszero(gt(a,0))=1). For mulDivDown(0, 0, c!=0) the original returns 0 while the mutant reverts. test_mulDivDown_ZeroAOrB covers (0,10,5) and (10,0,5) but not (0,0,c), and random fuzzing never draws 0 and 0 simultaneously. The original code is correct. mulDivUp line 120 has the identical guard with the same gap.",
+      "killCondition": "Directed edge tests: assertEq(MathUtils.mulDivDown(0, 0, 5), 0) and assertEq(MathUtils.mulDivUp(0, 0, 5), 0)."
+    },
+    {
+      "file": "src/libraries/math/MathUtils.sol",
+      "line": 43,
+      "function": "zeroFloorSub",
+      "original": "mul(sub(a, b), gt(a, b))",
+      "mutated": "div(sub(a, b), gt(a, b))",
+      "classification": "equivalent",
+      "rationale": "Same pattern as line 36: boolean second operand, and EVM division by zero returns 0. x*1 = x/1 and x*0 = div(x,0) = 0 for all inputs.",
+      "killCondition": "None. Provably unkillable."
+    },
+    {
+      "file": "src/libraries/math/MathUtils.sol",
+      "line": 50,
+      "function": "add",
+      "original": "b >= 0",
+      "mutated": "b > 0",
+      "classification": "equivalent",
+      "rationale": "Differs only at b = 0: the original returns a + uint256(0), the mutant returns a - uint256(-0); both equal a. test_add_edge_cases already exercises b = 0 and cannot distinguish them.",
+      "killCondition": "None. Provably unkillable."
+    },
+    {
+      "file": "src/libraries/math/MathUtils.sol",
+      "line": 125,
+      "function": "mulDivUp",
+      "original": "gt(mod(d, c), 0)",
+      "mutated": "sgt(mod(d, c), 0)",
+      "classification": "coverage-gap",
+      "rationale": "Same as line 91: distinguishable only when mod(d, c) >= 2^255 (requires c > 2^255 and a*b wrapping into that range). Practically unreachable by random fuzzing; the original code is correct.",
+      "killCondition": "Directed edge test with c > 2^255 and a*b chosen so (a*b) % c >= 2^255."
+    }
+  ]
+}
