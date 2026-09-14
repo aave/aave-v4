@@ -1,0 +1,256 @@
+gas-snapshots/vyper-b1-unbounded/Spoke.Operations.json
+  s_79e03752657a2e::t_90e5c43be4ee7a 1-34
+vyper/src/utils/NoncesKeyed.vy
+  s_79e03752657a2e::t_4c8c51fe9fd330 1
+vyper/src/harness/ReserveFlagsMapHarness.vy
+  s_79e03752657a2e::t_4c8c51fe9fd330 1
+vyper/src/config_engine/AaveV4Payload.vy
+  s_79e03752657a2e::t_7010061ee5ac5b 216,228,234,240,246,252,258,264,270,276,282,288,294,300,318,324,330,363,381,393,405,411,417,423,429,435,441,447,453,459,465,471,477,483
+  s_79e03752657a2e::t_4c8c51fe9fd330 1
+  s_79e03752657a2e::t_c44bf9bad7a3d4 345
+vyper/src/harness/EngineFlagsHarness.vy
+  s_79e03752657a2e::t_4c8c51fe9fd330 1
+snapshots/Spoke.Operations.json
+  s_79e03752657a2e::t_86ca6c3f29205b 2-3,9-33
+  s_79e03752657a2e::t_4475c98b2098df 4-8
+snapshots/NativeTokenGateway.Operations.json
+  s_79e03752657a2e::t_86ca6c3f29205b 2-7
+vyper/src/spoke/libraries/LiquidationLogic.vy
+  s_79e03752657a2e::t_4c8c51fe9fd330 1
+vyper/src/spoke/LiquidationLogicContract.vy
+  s_79e03752657a2e::t_4c8c51fe9fd330 1
+snapshots/SignatureGateway.Operations.json
+  s_79e03752657a2e::t_86ca6c3f29205b 2-9
+tests/contracts/spoke/misc/Spoke.Multicall.t.sol
+  s_79e03752657a2e::t_366e3370b96aaf 263-277
+vyper/src/harness/UserPositionUtilsHarness.vy
+  s_79e03752657a2e::t_4c8c51fe9fd330 1
+gas-snapshots/README.md
+  s_79e03752657a2e::t_6f6abb6ab7e0ed 1,3-6,8,10,14-16,18-21,23,25,27-66,72-76,81,83-87
+vyper/src/position_manager/ConfigPositionManager.vy
+  s_79e03752657a2e::t_4c8c51fe9fd330 1
+  s_79e03752657a2e::t_adec21819ef5c4 85,143,194,201,208,215
+  s_79e03752657a2e::t_026fbbf3cff6a4 164-165
+vyper/src/position_manager/libraries/EIP712Hash.vy
+  s_79e03752657a2e::t_4c8c51fe9fd330 1
+vyper/src/position_manager/SignatureGateway.vy
+  s_79e03752657a2e::t_4c8c51fe9fd330 1
+  s_79e03752657a2e::t_adec21819ef5c4 87,150,161,174,187,200,208,216
+  s_79e03752657a2e::t_026fbbf3cff6a4 144-145
+gas-snapshots/vyper-b1-bounded/Hub.Operations.json
+  s_79e03752657a2e::t_c3e56928022a76 1-18
+gas-snapshots/vyper-b1-bounded/Spoke.Getters.json
+  s_79e03752657a2e::t_c3e56928022a76 1-7
+gas-snapshots/vyper-b1-bounded/Spoke.Operations.json
+  s_79e03752657a2e::t_c3e56928022a76 1-34
+vyper/src/harness/ConfigPermissionsMapHarness.vy
+  s_79e03752657a2e::t_4c8c51fe9fd330 1
+vyper/src/position_manager/PositionManagerBase.vy
+  s_79e03752657a2e::t_4c8c51fe9fd330 1
+  s_79e03752657a2e::t_adec21819ef5c4 172
+vyper/src/position_manager/PositionManagerBaseWrapper.vy
+  s_79e03752657a2e::t_4c8c51fe9fd330 1
+gas-snapshots/vyper-b1-bounded/ConfigPositionManager.Operations.json
+  s_79e03752657a2e::t_c3e56928022a76 1-13
+vyper/README.md
+  s_79e03752657a2e::t_c061a5477c57a6 4-5,15-19,28,30-33,42-48
+vyper/src/hub/HubConfigurator.vy
+  s_79e03752657a2e::t_f94f837c696d1b 213,217-220
+  s_79e03752657a2e::t_7ecaf5b533d2cc 24-25,34,115,124,155,315
+  s_79e03752657a2e::t_4c8c51fe9fd330 1
+vyper/src/position_manager/libraries/ConfigPermissionsMap.vy
+  s_79e03752657a2e::t_4c8c51fe9fd330 1
+vyper/src/position_manager/TakerPositionManager.vy
+  s_79e03752657a2e::t_4c8c51fe9fd330 1
+  s_79e03752657a2e::t_026fbbf3cff6a4 142-143
+  s_79e03752657a2e::t_adec21819ef5c4 99,160,177
+scripts/build_vyper.py
+  s_79e03752657a2e::t_0d464bc1895c8e 15
+vyper/src/harness/LiquidationLogicWrapper.vy
+  s_79e03752657a2e::t_4c8c51fe9fd330 1
+vyper/src/config_engine/TokenizationSpokeDeployer.vy
+  s_79e03752657a2e::t_4c8c51fe9fd330 1
+vyper/src/harness/MockSpokeStorage.vy
+  s_79e03752657a2e::t_4c8c51fe9fd330 1
+vyper/src/harness/MockTokenizationSpokeInstance.vy
+  s_79e03752657a2e::t_4c8c51fe9fd330 1
+vyper/src/libraries/math/PercentageMath.vy
+  s_79e03752657a2e::t_4c8c51fe9fd330 1
+vyper/src/harness/PositionManagerEIP712HashHarness.vy
+  s_79e03752657a2e::t_4c8c51fe9fd330 1
+gas-snapshots/vyper-b1-bounded/TakerPositionManager.Operations.json
+  s_79e03752657a2e::t_c3e56928022a76 1-11
+vyper/src/position_manager/GiverPositionManager.vy
+  s_79e03752657a2e::t_4c8c51fe9fd330 1
+vyper/src/deployments/utils/libraries/Roles.vy
+  s_79e03752657a2e::t_4c8c51fe9fd330 1
+gas-snapshots/vyper-b1-unbounded/SignatureGateway.Operations.json
+  s_79e03752657a2e::t_90e5c43be4ee7a 1-10
+gas-snapshots/vyper-b1-unbounded/Spoke.Operations.ZeroRiskPremium.json
+  s_79e03752657a2e::t_90e5c43be4ee7a 1-34
+gas-snapshots/vyper-b1-unbounded/GiverPositionManager.Operations.json
+  s_79e03752657a2e::t_90e5c43be4ee7a 1-4
+snapshots/TakerPositionManager.Operations.json
+  s_79e03752657a2e::t_86ca6c3f29205b 6,9-10
+snapshots/PositionManagerBase.Operations.json
+  s_79e03752657a2e::t_86ca6c3f29205b 2
+vyper/src/spoke/libraries/PositionStatusMap.vy
+  s_79e03752657a2e::t_4c8c51fe9fd330 1
+gas-snapshots/comparison-b1-unbounded/comparison.json
+  s_79e03752657a2e::t_a9d80ccb2d0cba 1-1210
+vyper/src/harness/AaveV4PayloadWrapper.vy
+  s_79e03752657a2e::t_128ed70ecddb18 168,178,183,188,193,198,203,208,213,218,223,228,233,238,253,258,263,274-277,287-290,295-298,303-306,311-314,319-322,327-330,335-338,343-346,351-354,359-362,367-370,375-378,383-386,401-404,409-412,417-420
+  s_79e03752657a2e::t_4c8c51fe9fd330 1
+  s_79e03752657a2e::t_7010061ee5ac5b 167,177,182,187,192,197,202,207,212,217,222,227,232,237,252,257,262,273,286,294,302,310,318,326,334,342,350,358,366,374,382,400,408,416
+gas-snapshots/PERFORMANCE_DIARY.md
+  s_79e03752657a2e::t_a125206eac9239 219
+  s_79e03752657a2e::t_0bf1cd68ab014b 1,4-6,8-34,114,137,152,160-162,198,220,223
+vyper/src/config_engine/AaveV4ConfigEngine.vy
+  s_79e03752657a2e::t_14fa191f06d881 278
+  s_79e03752657a2e::t_7ecaf5b533d2cc 226,230-231
+  s_79e03752657a2e::t_4c8c51fe9fd330 1
+  s_79e03752657a2e::t_f94f837c696d1b 234,390,447,467,473,479,485,491,497,510,528,550,560,580,586,592,598,628
+vyper/src/harness/RolesHarness.vy
+  s_79e03752657a2e::t_4c8c51fe9fd330 1
+vyper/src/spoke/libraries/SpokeUtils.vy
+  s_79e03752657a2e::t_4c8c51fe9fd330 1
+gas-snapshots/vyper-b1-bounded/NativeTokenGateway.Operations.json
+  s_79e03752657a2e::t_c3e56928022a76 1-8
+gas-snapshots/vyper-b1-unbounded/TakerPositionManager.Operations.json
+  s_79e03752657a2e::t_90e5c43be4ee7a 1-11
+vyper/src/harness/PositionStatusMapHarness.vy
+  s_79e03752657a2e::t_4c8c51fe9fd330 1
+snapshots/GiverPositionManager.Operations.json
+  s_79e03752657a2e::t_86ca6c3f29205b 2-3
+gas-snapshots/vyper-b1-bounded/Spoke.Operations.ZeroRiskPremium.json
+  s_79e03752657a2e::t_c3e56928022a76 1-34
+gas-snapshots/vyper-b1-unbounded/TokenizationSpoke.Operations.json
+  s_79e03752657a2e::t_90e5c43be4ee7a 1-17
+vyper/src/harness/SpokeUtilsHarness.vy
+  s_79e03752657a2e::t_4c8c51fe9fd330 1
+vyper/src/harness/MathHarness.vy
+  s_79e03752657a2e::t_4c8c51fe9fd330 1
+vyper/src/spoke/TokenizationSpokeInstance.vy
+  s_79e03752657a2e::t_026fbbf3cff6a4 388-389
+  s_79e03752657a2e::t_4c8c51fe9fd330 1
+  s_79e03752657a2e::t_adec21819ef5c4 151,551,560,569,578
+gas-snapshots/vyper-b1-bounded/SignatureGateway.Operations.json
+  s_79e03752657a2e::t_c3e56928022a76 1-10
+vyper/src/hub/libraries/Premium.vy
+  s_79e03752657a2e::t_4c8c51fe9fd330 1
+vyper/src/spoke/libraries/ReserveFlagsMap.vy
+  s_79e03752657a2e::t_4c8c51fe9fd330 1
+gas-snapshots/vyper-b1-bounded/PositionManagerBase.Operations.json
+  s_79e03752657a2e::t_c3e56928022a76 1-3
+vyper/src/hub/HubInstance.vy
+  s_79e03752657a2e::t_4c8c51fe9fd330 1
+  s_79e03752657a2e::t_7ecaf5b533d2cc 90,540,611,655
+  s_79e03752657a2e::t_79d255390badfe 182,193,488-490,1194,1259
+vyper/src/harness/SpokeEIP712HashHarness.vy
+  s_79e03752657a2e::t_4c8c51fe9fd330 1
+vyper/src/libraries/math/MathUtils.vy
+  s_79e03752657a2e::t_4c8c51fe9fd330 1
+vyper/src/spoke/TreasurySpokeInstance.vy
+  s_79e03752657a2e::t_4c8c51fe9fd330 1
+snapshots/Spoke.Operations.ZeroRiskPremium.json
+  s_79e03752657a2e::t_86ca6c3f29205b 2-3,9-33
+  s_79e03752657a2e::t_9cb79ec69df931 4-8
+vyper/src/harness/KeyValueListHarness.vy
+  s_79e03752657a2e::t_4c8c51fe9fd330 1
+vyper/src/position_manager/PositionManagerNoMulticall.vy
+  s_79e03752657a2e::t_4c8c51fe9fd330 1
+gas-snapshots/vyper-b1-bounded/TokenizationSpoke.Operations.json
+  s_79e03752657a2e::t_c3e56928022a76 1-17
+vyper/requirements.txt
+  s_79e03752657a2e::t_0d464bc1895c8e 1
+vyper/src/harness/RescuableHarness.vy
+  s_79e03752657a2e::t_4c8c51fe9fd330 1
+vyper/src/hub/BasicInterestRateStrategy.vy
+  s_79e03752657a2e::t_4c8c51fe9fd330 1
+vyper/src/spoke/libraries/EIP712Hash.vy
+  s_79e03752657a2e::t_4c8c51fe9fd330 1
+vyper/src/access/AccessManagerEnumerable.vy
+  s_79e03752657a2e::t_4c8c51fe9fd330 1
+  s_79e03752657a2e::t_752271903591aa 427,432-433,450-453,471-474
+  s_79e03752657a2e::t_14fa191f06d881 540
+  s_79e03752657a2e::t_e1bb71739373af 208-211,218-221,230,235-236,245-248,257,262-263,273,278-279,289,294-295,297,304-307,309-312
+  s_79e03752657a2e::t_c76fd7a6be6db8 97-98,100-101,103-104,107-108,111-112,114-115,119-120,132-133
+  s_79e03752657a2e::t_f611111df22b88 697,702,705-708,727,732,735-738,757,762,765-768,781,786,789-792,805,810,813-816,829,834,837-840,859,868
+  s_79e03752657a2e::t_74014769414c73 864-865,869-879
+vyper/src/libraries/math/WadRayMath.vy
+  s_79e03752657a2e::t_4c8c51fe9fd330 1
+vyper/src/position_manager/NativeTokenGateway.vy
+  s_79e03752657a2e::t_4c8c51fe9fd330 1
+vyper/src/harness/NoncesKeyedHarness.vy
+  s_79e03752657a2e::t_4c8c51fe9fd330 1
+vyper/src/hub/AssetInterestRateStrategy.vy
+  s_79e03752657a2e::t_4c8c51fe9fd330 1
+  s_79e03752657a2e::t_7ecaf5b533d2cc 42
+vyper/storage-layouts/HubInstance.json
+  s_79e03752657a2e::t_79d255390badfe 5
+scripts/compare_vyper_gas.py
+  s_79e03752657a2e::t_62431b8b02381a 138,206-209,211-215,217-220,233-234
+  s_79e03752657a2e::t_0d464bc1895c8e 75,128
+snapshots/ConfigPositionManager.Operations.json
+  s_79e03752657a2e::t_86ca6c3f29205b 10-12
+vyper/src/spoke/SpokeInstance.vy
+  s_79e03752657a2e::t_026fbbf3cff6a4 588-589
+  s_79e03752657a2e::t_6ae3e8c42a01a9 1632-1676
+  s_79e03752657a2e::t_4ec48dc174d756 284-286,466-472,1190-1191,1223-1224,1230-1231,1234
+  s_79e03752657a2e::t_4c8c51fe9fd330 1
+  s_79e03752657a2e::t_c8db4431bbf755 1189,1222
+  s_79e03752657a2e::t_adec21819ef5c4 145,524,1196
+vyper/src/spoke/AaveOracle.vy
+  s_79e03752657a2e::t_1348f36e814dd7 92-93
+  s_79e03752657a2e::t_4c8c51fe9fd330 1
+vyper/src/spoke/SpokeConfigurator.vy
+  s_79e03752657a2e::t_4c8c51fe9fd330 1
+vyper/src/utils/Rescuable.vy
+  s_79e03752657a2e::t_4c8c51fe9fd330 1
+vyper/src/hub/libraries/SharesMath.vy
+  s_79e03752657a2e::t_4c8c51fe9fd330 1
+gas-snapshots/vyper-b1-unbounded/Spoke.Getters.json
+  s_79e03752657a2e::t_90e5c43be4ee7a 1-7
+gas-snapshots/comparison-b1-unbounded/README.md
+  s_79e03752657a2e::t_ecc50456c60d16 14,71-85,93-94
+  s_79e03752657a2e::t_a9d80ccb2d0cba 1-13,15-70,86-92,95-99
+gas-snapshots/vyper-b1-unbounded/Hub.Operations.json
+  s_79e03752657a2e::t_90e5c43be4ee7a 1-18
+gas-snapshots/vyper-b1-unbounded/ConfigPositionManager.Operations.json
+  s_79e03752657a2e::t_90e5c43be4ee7a 1-13
+gas-snapshots/vyper-b1-unbounded/NativeTokenGateway.Operations.json
+  s_79e03752657a2e::t_90e5c43be4ee7a 1-8
+vyper/src/utils/ExtSload.vy
+  s_79e03752657a2e::t_4c8c51fe9fd330 1
+  s_79e03752657a2e::t_1d62b6022252b2 28-40
+gas-snapshots/vyper-b1-unbounded/PositionManagerBase.Operations.json
+  s_79e03752657a2e::t_90e5c43be4ee7a 1-3
+vyper/src/spoke/libraries/UserPositionUtils.vy
+  s_79e03752657a2e::t_4c8c51fe9fd330 1
+vyper/src/harness/MockTreasurySpokeInstance.vy
+  s_79e03752657a2e::t_4c8c51fe9fd330 1
+gas-snapshots/vyper-b1-bounded/GiverPositionManager.Operations.json
+  s_79e03752657a2e::t_c3e56928022a76 1-4
+snapshots/Hub.Operations.json
+  s_79e03752657a2e::t_4ef14d63a54819 2-17
+snapshots/Spoke.Getters.json
+  s_79e03752657a2e::t_a53d39b50849bd 2-6
+snapshots/TokenizationSpoke.Operations.json
+  s_79e03752657a2e::t_3aa446007873d8 2-16
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "fb1a21a6a78bf7200b468faef3176140202818bc",
+  "prompts": {},
+  "sessions": {
+    "s_79e03752657a2e": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019ffa71-5465-7fe0-8faf-43d0db8de960",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "AlbertoCentonze <11707683+AlbertoCentonze@users.noreply.github.com>"
+    }
+  }
+}

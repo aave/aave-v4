@@ -1,0 +1,274 @@
+src/deployments/orchestration/AaveV4DeployOrchestration.sol
+  s_3280b3ccfb0e02::t_753152841d6ed5 57-60
+  s_3280b3ccfb0e02::t_afa5fc8fbe8995 104,332,342
+  s_3280b3ccfb0e02::t_cacd018ad2841f 16-17,53-56,61-63,218,233,251,265,516
+tests/contracts/spoke/libraries/EIP712Hash.t.sol
+  s_3280b3ccfb0e02::t_d3bb42317cb677 7-8,13,17,19,23,28,31-34,89-92,99-103
+  s_3280b3ccfb0e02::t_524329f71ec0a5 70,96
+  s_3280b3ccfb0e02::t_ae0ea4f1c3ac4d 79-80
+tests/gas/Gateways.Operations.gas.t.sol
+  s_3280b3ccfb0e02::t_4b58c04a6ecf60 18,22,179,181,388
+  s_3280b3ccfb0e02::t_99941ae46ddcee 373
+  s_3280b3ccfb0e02::t_753152841d6ed5 374-375,377-384
+  s_3280b3ccfb0e02::t_524329f71ec0a5 376
+tests/contracts/position-manager/SignatureGateway/SignatureGateway.SetSelfAsUserPositionManagerWithSig.t.sol
+  s_3280b3ccfb0e02::t_4b58c04a6ecf60 67,88,90,101
+  s_3280b3ccfb0e02::t_753152841d6ed5 21-22,24-31,74-75,77-84
+  s_3280b3ccfb0e02::t_524329f71ec0a5 23,76
+  s_3280b3ccfb0e02::t_99941ae46ddcee 73
+  s_3280b3ccfb0e02::t_16b7d12de5708e 35-36,53
+snapshots/ConfigPositionManager.Operations.json
+  s_3280b3ccfb0e02::t_1bbfed07d5f87b 10-12
+tests/contracts/spoke/configurator/SpokeConfigurator.GranularAccessControl.t.sol
+  s_3280b3ccfb0e02::t_4b58c04a6ecf60 416
+snapshots/Spoke.Operations.ZeroRiskPremium.json
+  s_3280b3ccfb0e02::t_1bbfed07d5f87b 2-33
+tests/contracts/position-manager/ConfigPositionManager/ConfigPositionManager.Base.t.sol
+  s_3280b3ccfb0e02::t_4b58c04a6ecf60 21,24
+tests/contracts/spoke/misc/Spoke.UserAccountData.t.sol
+  s_3280b3ccfb0e02::t_90998d4d81512a 16
+tests/deployments/procedures/deploy/spoke/AaveV4SpokeDeployProcedure.t.sol
+  s_3280b3ccfb0e02::t_051f8d1f2b9fe3 19,37,48,59,70
+tests/contracts/spoke/configuration/Spoke.DynamicConfig.t.sol
+  s_3280b3ccfb0e02::t_90998d4d81512a 17
+tests/gas/Spoke.Gate.Operations.gas.t.sol
+  s_3280b3ccfb0e02::t_4086822735e994 18
+  s_3280b3ccfb0e02::t_aa5971069b6b9b 4,13-14,24,32
+tests/deployments/AaveV4BatchDeployment.t.sol
+  s_3280b3ccfb0e02::t_12382d40708d08 20
+snapshots/Spoke.Gate.Operations.json
+  s_3280b3ccfb0e02::t_1bbfed07d5f87b 2-17
+  s_3280b3ccfb0e02::t_ceacc377226c12 1
+tests/deployments/fork/PostDeploymentVerificationTest.t.sol
+  s_3280b3ccfb0e02::t_12382d40708d08 210,265
+snapshots/TokenizationSpoke.Operations.json
+  s_3280b3ccfb0e02::t_1bbfed07d5f87b 5,11,16
+src/deployments/utils/libraries/InputUtils.sol
+  s_3280b3ccfb0e02::t_cacd018ad2841f 19,42
+tests/contracts/position-manager/SignatureGateway/SignatureGateway.t.sol
+  s_3280b3ccfb0e02::t_16b7d12de5708e 46-49
+  s_3280b3ccfb0e02::t_753152841d6ed5 311-312,315-322
+  s_3280b3ccfb0e02::t_80e59fc27c72fe 343
+  s_3280b3ccfb0e02::t_524329f71ec0a5 313
+  s_3280b3ccfb0e02::t_19ccf86dffc122 326-331
+  s_3280b3ccfb0e02::t_a8be14c9e97c20 325
+  s_3280b3ccfb0e02::t_4b58c04a6ecf60 12,14,16-17
+  s_3280b3ccfb0e02::t_01dde9b79c32c3 314
+src/spoke/interfaces/ISpoke.sol
+  s_3280b3ccfb0e02::t_191d4a4fac11a0 14,113,442,457,473,489,521,532,537,710-711
+  s_3280b3ccfb0e02::t_753152841d6ed5 114-118
+  s_3280b3ccfb0e02::t_28cd94b90d608d 712
+tests/contracts/spoke/position-manager/Spoke.SetUserPositionManagerWithSig.t.sol
+  s_3280b3ccfb0e02::t_753152841d6ed5 94-97,105-108,126-129,148-161,182-185,214-217,242-245,346-355,419-420,422-429
+  s_3280b3ccfb0e02::t_97bf4cbbbac89c 5,74,78,80,84,91
+  s_3280b3ccfb0e02::t_c68025d3c32d2f 19-20,24,27,32
+  s_3280b3ccfb0e02::t_7dd405df857f4c 186,203,219,231,269,408
+  s_3280b3ccfb0e02::t_19ccf86dffc122 194,256-261,399
+  s_3280b3ccfb0e02::t_1d1d3b830f5cd7 69,85
+  s_3280b3ccfb0e02::t_c7f79a10c59133 238
+  s_3280b3ccfb0e02::t_5bbd66a39721b9 15,144,306,382
+  s_3280b3ccfb0e02::t_424e9bf2db3335 45,48,51,63,66
+  s_3280b3ccfb0e02::t_4b58c04a6ecf60 116,136,175,201,205,228,263,267,273,297,331,372,406,410
+  s_3280b3ccfb0e02::t_a8be14c9e97c20 192,255,397
+  s_3280b3ccfb0e02::t_524329f71ec0a5 193,218,235,283,309,315,341,385,398,418,421
+tests/contracts/position-manager/SignatureGateway/SignatureGateway.Reverts.InsufficientAllowance.t.sol
+  s_3280b3ccfb0e02::t_4b58c04a6ecf60 11,13,15-16
+tests/deployments/batches/AaveV4SpokeInstanceBatch.t.sol
+  s_3280b3ccfb0e02::t_051f8d1f2b9fe3 15,52,65,78,91,103
+tests/contracts/spoke/position-manager/Spoke.PositionManager.t.sol
+  s_3280b3ccfb0e02::t_4b58c04a6ecf60 23,36,38,46,50,53,461-462,472,474-475,484
+  s_3280b3ccfb0e02::t_753152841d6ed5 470
+  s_3280b3ccfb0e02::t_5bbd66a39721b9 467,482
+  s_3280b3ccfb0e02::t_c7f79a10c59133 8,42
+  s_3280b3ccfb0e02::t_c68025d3c32d2f 30-34
+  s_3280b3ccfb0e02::t_19ccf86dffc122 15-20,465,480
+  s_3280b3ccfb0e02::t_a8be14c9e97c20 14,464,469,479
+scripts/deploy/examples/AaveV4DeployAnvil.s.sol
+  s_3280b3ccfb0e02::t_12382d40708d08 52
+tests/contracts/spoke/configuration/Spoke.DynamicConfig.Triggers.t.sol
+  s_3280b3ccfb0e02::t_5bbd66a39721b9 413
+  s_3280b3ccfb0e02::t_4b58c04a6ecf60 405,416
+tests/helpers/spoke/PositionManagerGateAdapter.sol
+  s_3280b3ccfb0e02::t_4086822735e994 61,65
+  s_3280b3ccfb0e02::t_2dee833f70f055 48-49,63-64,67-73,75-77,79-84,86-92,94-95
+  s_3280b3ccfb0e02::t_041a5059a2e40b 1-9,11-13,15-18,21,23-25,27-47
+  s_3280b3ccfb0e02::t_c68025d3c32d2f 10,14,22,26,50-60,62,66,74,78,85,93
+  s_3280b3ccfb0e02::t_1241f210b89cc3 19-20
+tests/setup/GateSpokeBase.sol
+  s_3280b3ccfb0e02::t_aa5971069b6b9b 8,11,13,26,29-30,32
+tests/contracts/spoke/misc/Spoke.Upgradeable.t.sol
+  s_3280b3ccfb0e02::t_90998d4d81512a 9,13,48,233
+src/deployments/libraries/BatchReports.sol
+  s_3280b3ccfb0e02::t_cacd018ad2841f 23,28
+tests/config-engine/SpokeEngine.t.sol
+  s_3280b3ccfb0e02::t_a8be14c9e97c20 677
+  s_3280b3ccfb0e02::t_4b58c04a6ecf60 686,693,705,903-904
+  s_3280b3ccfb0e02::t_19ccf86dffc122 678-682
+src/spoke/libraries/PositionManagerGateEIP712Hash.sol
+  s_3280b3ccfb0e02::t_2b408f44dfdd36 1-48
+tests/config-engine/PositionManagerEngine.t.sol
+  s_3280b3ccfb0e02::t_4b58c04a6ecf60 115,140,212
+  s_3280b3ccfb0e02::t_a8be14c9e97c20 122
+  s_3280b3ccfb0e02::t_19ccf86dffc122 123-128
+src/deployments/orchestration/AaveV4DeployBase.sol
+  s_3280b3ccfb0e02::t_cacd018ad2841f 88,97,106
+src/deployments/libraries/OrchestrationReports.sol
+  s_3280b3ccfb0e02::t_cacd018ad2841f 31,41
+snapshots/TakerPositionManager.Operations.json
+  s_3280b3ccfb0e02::t_1bbfed07d5f87b 6,9-10
+src/spoke/instances/SpokeInstanceBase.sol
+  s_3280b3ccfb0e02::t_8baec44340fbba 16-21,29
+tests/contracts/position-manager/SignatureGateway/SignatureGateway.Reverts.Unauthorized.t.sol
+  s_3280b3ccfb0e02::t_4b58c04a6ecf60 11-12,114,117-118
+src/deployments/procedures/roles/AaveV4SpokeRolesProcedure.sol
+  s_3280b3ccfb0e02::t_71737c8515474b 6-7,47-54
+  s_3280b3ccfb0e02::t_be81b8a7a31e3b 55
+tests/gas/PositionManagers.Operations.gas.t.sol
+  s_3280b3ccfb0e02::t_524329f71ec0a5 31
+  s_3280b3ccfb0e02::t_753152841d6ed5 29-30,33-40
+  s_3280b3ccfb0e02::t_4b58c04a6ecf60 19,44,69,73,147,151,324,328
+  s_3280b3ccfb0e02::t_99941ae46ddcee 27
+  s_3280b3ccfb0e02::t_dba19e929b7b46 28,32
+tests/config-engine/BaseConfigEngine.t.sol
+  s_3280b3ccfb0e02::t_041a5059a2e40b 51
+  s_3280b3ccfb0e02::t_d3bb42317cb677 12
+  s_3280b3ccfb0e02::t_c68025d3c32d2f 163,216-218
+  s_3280b3ccfb0e02::t_2dee833f70f055 13-16,50
+snapshots/GiverPositionManager.Operations.json
+  s_3280b3ccfb0e02::t_1bbfed07d5f87b 2-3
+tests/helpers/mocks/AaveV4TestOrchestrationWrapper.sol
+  s_3280b3ccfb0e02::t_7929d9273bb670 16-19
+  s_3280b3ccfb0e02::t_753152841d6ed5 20-22
+  s_3280b3ccfb0e02::t_9251b3b2d931c9 14-15
+  s_3280b3ccfb0e02::t_272abc41182a97 23-24
+tests/contracts/spoke/misc/Spoke.Gate.t.sol
+  s_3280b3ccfb0e02::t_aa5971069b6b9b 4,6,8,11,18,65-68,70,80,87-89,91,94,101
+snapshots/Spoke.Getters.json
+  s_3280b3ccfb0e02::t_1bbfed07d5f87b 2-6
+src/spoke/gates/PositionManagerGate.sol
+  s_3280b3ccfb0e02::t_2b408f44dfdd36 1-6,8-98,100-122
+  s_3280b3ccfb0e02::t_d9935d60c0d856 7,99
+src/position-manager/PositionManagerBase.sol
+  s_3280b3ccfb0e02::t_753152841d6ed5 49-50
+  s_3280b3ccfb0e02::t_c9e6c0564d0a59 10,51-55,57-59,100
+src/spoke/instances/SpokeInstance.sol
+  s_3280b3ccfb0e02::t_8baec44340fbba 13,16-18
+src/spoke/Spoke.sol
+  s_3280b3ccfb0e02::t_8baec44340fbba 25,57-59,85-87,94-95,98,101,222,241,271,302,388,409,418,849-850,853-855
+tests/deployments/procedures/ProceduresBase.t.sol
+  s_3280b3ccfb0e02::t_051f8d1f2b9fe3 44,51,71
+src/spoke/interfaces/IPositionManagerGate.sol
+  s_3280b3ccfb0e02::t_2b408f44dfdd36 2,4-5,8,10-18,21-24,26-27,29-69
+  s_3280b3ccfb0e02::t_4086822735e994 28
+snapshots/Spoke.Operations.json
+  s_3280b3ccfb0e02::t_1bbfed07d5f87b 2-33
+tests/deployments/orchestration/AaveV4TestOrchestration.sol
+  s_3280b3ccfb0e02::t_9251b3b2d931c9 430-431
+  s_3280b3ccfb0e02::t_d3bb42317cb677 30,76,167,172
+  s_3280b3ccfb0e02::t_12382d40708d08 105
+  s_3280b3ccfb0e02::t_7929d9273bb670 437-445,450
+snapshots/PositionManagerBase.Operations.json
+  s_3280b3ccfb0e02::t_0d6de68548de73 2
+tests/helpers/mocks/MockSpoke.sol
+  s_3280b3ccfb0e02::t_7929d9273bb670 30-32,41
+src/spoke/SpokeConfigurator.sol
+  s_3280b3ccfb0e02::t_c9e6c0564d0a59 7,289-293
+snapshots/NativeTokenGateway.Operations.json
+  s_3280b3ccfb0e02::t_1bbfed07d5f87b 2-7
+tests/contracts/position-manager/PositionManagerBase.t.sol
+  s_3280b3ccfb0e02::t_4b58c04a6ecf60 17-18,61,82,279,283,288,296
+  s_3280b3ccfb0e02::t_753152841d6ed5 44-45,48-55
+  s_3280b3ccfb0e02::t_524329f71ec0a5 46
+  s_3280b3ccfb0e02::t_a8be14c9e97c20 63
+  s_3280b3ccfb0e02::t_80e59fc27c72fe 81
+  s_3280b3ccfb0e02::t_19ccf86dffc122 64-69
+  s_3280b3ccfb0e02::t_87197d115ad6ba 47
+tests/helpers/mocks/EIP712Types.sol
+  s_3280b3ccfb0e02::t_59143861dbe5a8 11
+tests/contracts/spoke/configurator/SpokeConfigurator.t.sol
+  s_3280b3ccfb0e02::t_16b7d12de5708e 796-800
+  s_3280b3ccfb0e02::t_a8be14c9e97c20 802
+  s_3280b3ccfb0e02::t_4b58c04a6ecf60 806
+  s_3280b3ccfb0e02::t_19ccf86dffc122 803
+tests/helpers/mocks/MockSpokeGate.sol
+  s_3280b3ccfb0e02::t_411d0d2d18ba74 9,34
+tests/contracts/position-manager/GiverPositionManager.t.sol
+  s_3280b3ccfb0e02::t_4b58c04a6ecf60 16,19,455
+tests/helpers/mocks/deployments/procedures/AaveV4SpokeDeployProcedureWrapper.sol
+  s_3280b3ccfb0e02::t_7929d9273bb670 13,23
+tests/config-engine/AaveV4Payload.t.sol
+  s_3280b3ccfb0e02::t_4b58c04a6ecf60 71,131,829,1013-1014,1036-1037,1063-1064,1091-1092
+  s_3280b3ccfb0e02::t_a8be14c9e97c20 1025,1080
+  s_3280b3ccfb0e02::t_19ccf86dffc122 1026-1031,1081-1086
+tests/deployments/procedures/deploy/roles/AaveV4SpokeRolesProcedure.t.sol
+  s_3280b3ccfb0e02::t_d5246bd8ff30c2 5
+  s_3280b3ccfb0e02::t_1d1d3b830f5cd7 141
+  s_3280b3ccfb0e02::t_b434009b7e0abb 12,116-122,243-250
+  s_3280b3ccfb0e02::t_16b7d12de5708e 147
+src/deployments/utils/libraries/Roles.sol
+  s_3280b3ccfb0e02::t_c9e6c0564d0a59 132,138
+tests/contracts/position-manager/SignatureGateway/SignatureGateway.Reverts.SpokeNotRegistered.t.sol
+  s_3280b3ccfb0e02::t_4b58c04a6ecf60 11,13,17-18
+tests/scripts/AaveV4DeployBatchBaseScript.t.sol
+  s_3280b3ccfb0e02::t_12382d40708d08 63
+tests/contracts/position-manager/TakerPositionManager/TakerPositionManager.Base.t.sol
+  s_3280b3ccfb0e02::t_4b58c04a6ecf60 17,20
+snapshots/SignatureGateway.Operations.json
+  s_3280b3ccfb0e02::t_1bbfed07d5f87b 2-9
+src/spoke/interfaces/ISpokeGate.sol
+  s_3280b3ccfb0e02::t_8baec44340fbba 6,9-10
+tests/helpers/spoke/SetupHelpers.sol
+  s_3280b3ccfb0e02::t_d3bb42317cb677 413-414
+  s_3280b3ccfb0e02::t_7929d9273bb670 11,243-245,439,444-448
+src/deployments/batches/AaveV4SpokeInstanceBatch.sol
+  s_3280b3ccfb0e02::t_cacd018ad2841f 19,27,38,46,52-53
+tests/helpers/mocks/PolicyGates.sol
+  s_3280b3ccfb0e02::t_411d0d2d18ba74 25,43
+tests/gas/Spoke.Operations.gas.t.sol
+  s_3280b3ccfb0e02::t_753152841d6ed5 337-338,341-348
+  s_3280b3ccfb0e02::t_4b58c04a6ecf60 352,360
+  s_3280b3ccfb0e02::t_524329f71ec0a5 339
+  s_3280b3ccfb0e02::t_5bbd66a39721b9 331
+  s_3280b3ccfb0e02::t_99941ae46ddcee 335
+  s_3280b3ccfb0e02::t_4410c8dd33e33f 356
+  s_3280b3ccfb0e02::t_199b034a17d6e5 336,340
+tests/helpers/spoke/EIP712Helpers.sol
+  s_3280b3ccfb0e02::t_524329f71ec0a5 37
+  s_3280b3ccfb0e02::t_c305478b6514d8 43
+  s_3280b3ccfb0e02::t_59143861dbe5a8 7
+tests/contracts/position-manager/NativeTokenGateway.t.sol
+  s_3280b3ccfb0e02::t_4b58c04a6ecf60 16,46,86,106,170,223,271,310,376,396,449,500,520,574,652,745,822,842
+src/deployments/procedures/deploy/spoke/AaveV4SpokeDeployProcedure.sol
+  s_3280b3ccfb0e02::t_cacd018ad2841f 16,26,34,38,53,58-59,61
+tests/helpers/mocks/MockSpokeInstance.sol
+  s_3280b3ccfb0e02::t_7929d9273bb670 17,22-24,31
+tests/helpers/spoke/MathHelpers.sol
+  s_3280b3ccfb0e02::t_d3bb42317cb677 148-150
+tests/deployments/batches/BatchBase.t.sol
+  s_3280b3ccfb0e02::t_051f8d1f2b9fe3 34,41,56
+tests/helpers/mocks/JsonBindings.sol
+  s_3280b3ccfb0e02::t_6a2b2a125bc6e3 45
+src/spoke/SpokeStorage.sol
+  s_3280b3ccfb0e02::t_8baec44340fbba 36
+tests/setup/Base.t.sol
+  s_3280b3ccfb0e02::t_2dee833f70f055 62-65,145
+  s_3280b3ccfb0e02::t_041a5059a2e40b 146
+  s_3280b3ccfb0e02::t_7929d9273bb670 60-61
+  s_3280b3ccfb0e02::t_c68025d3c32d2f 188
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "b28335783ae290c4577d574cb6dbe68478dc210a",
+  "prompts": {},
+  "sessions": {
+    "s_3280b3ccfb0e02": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a000a7-5433-7fa0-a47f-1ab7196101e4",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "AlbertoCentonze <11707683+AlbertoCentonze@users.noreply.github.com>"
+    }
+  }
+}

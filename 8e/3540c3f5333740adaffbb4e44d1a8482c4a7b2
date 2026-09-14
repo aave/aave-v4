@@ -1,0 +1,29 @@
+tests/helpers/mocks/PolicyGates.sol
+  s_18846865398641::t_700ca0317116c1 13,30,48
+src/horizon/HorizonSpokeGate.sol
+  s_18846865398641::t_700ca0317116c1 38
+src/spoke/PermissionedSpoke.sol
+  s_18846865398641::t_700ca0317116c1 28
+snapshots/PermissionedSpoke.Operations.json
+  s_18846865398641::t_5ab58d923aa20b 2-3,5-7,9-11,13-15,17-19,21
+tests/helpers/mocks/MockSpokeGate.sol
+  s_18846865398641::t_700ca0317116c1 27
+src/spoke/interfaces/ISpokeGate.sol
+  s_18846865398641::t_700ca0317116c1 22
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "8e3540c3f5333740adaffbb4e44d1a8482c4a7b2",
+  "prompts": {},
+  "sessions": {
+    "s_18846865398641": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a04295-0b37-7bd3-8128-e23c80cddf62",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "AlbertoCentonze <11707683+AlbertoCentonze@users.noreply.github.com>"
+    }
+  }
+}

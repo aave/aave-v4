@@ -1,0 +1,35 @@
+tests/gas/PermissionedSpoke.Operations.gas.t.sol
+  s_f9d3a438256120::t_d11fb720944a8a 21,28,37,70-71,83,90,99-101,103-104,110,112-126
+  s_f9d3a438256120::t_f8752a0a1ad886 4
+  s_f9d3a438256120::t_64fe4b14cb19ae 19-20,26-27,35-36,69,72-82,84-89,91-98,102,105-109,111,127-145
+  s_f9d3a438256120::t_d8a38d0ab83afa 146
+tests/contracts/spoke/permissioned/PermissionedSpoke.Base.t.sol
+  s_f9d3a438256120::t_f8752a0a1ad886 1-114
+snapshots/PermissionedSpoke.Operations.json
+  s_f9d3a438256120::t_ba7c5ffe491679 2-19,23-26
+tests/contracts/horizon/HorizonSpokeGate.t.sol
+  s_f9d3a438256120::t_64fe4b14cb19ae 53-79
+  s_f9d3a438256120::t_f8752a0a1ad886 4
+tests/contracts/spoke/misc/PermissionedSpoke.t.sol
+  s_f9d3a438256120::t_64fe4b14cb19ae 6-7,75-76,78-81,83-86,88-93,95,97,99-171
+  s_f9d3a438256120::t_cd84d9e84b5deb 8-14,77,82,87,94,96,98
+  s_f9d3a438256120::t_f8752a0a1ad886 4
+  s_f9d3a438256120::t_69747fc148fe76 5
+  s_f9d3a438256120::t_70d2c4e356b84f 172
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "69d6e63fc31b0592b570ccc2614b28539f8a62ec",
+  "prompts": {},
+  "sessions": {
+    "s_f9d3a438256120": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a04e52-b690-7103-b402-945ae1523285",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "AlbertoCentonze <11707683+AlbertoCentonze@users.noreply.github.com>"
+    }
+  }
+}

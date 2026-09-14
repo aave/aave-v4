@@ -1,0 +1,100 @@
+snapshots/TokenizationSpoke.Operations.json
+  s_79e03752657a2e::t_04ac11678109c9 2-16
+snapshots/TakerPositionManager.Operations.json
+  s_79e03752657a2e::t_0dd36f75f6a373 11
+  s_79e03752657a2e::t_04ac11678109c9 6,9-10
+Makefile
+  s_79e03752657a2e::t_41841e3b70f808 16
+  s_79e03752657a2e::t_5ef80e0a8e19c2 17
+gas-snapshots/solidity/Spoke.Operations.json
+  s_79e03752657a2e::t_40cb136bcc43a8 4-8,11
+scripts/build_vyper.py
+  s_79e03752657a2e::t_0b6805cddede80 14
+gas-snapshots/README.md
+  s_79e03752657a2e::t_a538808df4381f 4-6,13,17,19-22,28-31,33-40,84
+gas-snapshots/vyper-b1-unbounded/TakerPositionManager.Operations.json
+  s_79e03752657a2e::t_5ef46433768757 3,6,9-10
+vyper/README.md
+  s_79e03752657a2e::t_5345fb2ff64b59 17-19
+  s_79e03752657a2e::t_3198f0ca181566 16
+  s_79e03752657a2e::t_5ef80e0a8e19c2 15,28-31
+  s_79e03752657a2e::t_9f191e7bca71bf 32
+snapshots/Spoke.Operations.ZeroRiskPremium.json
+  s_79e03752657a2e::t_04ac11678109c9 2-33
+  s_79e03752657a2e::t_0dd36f75f6a373 34
+gas-snapshots/comparison-b1-unbounded/README.md
+  s_79e03752657a2e::t_5ef46433768757 14-17,23-26,28-33,39-46,48,66-69,95
+  s_79e03752657a2e::t_c25c92aaba065f 5-7,86-88
+gas-snapshots/vyper-b1-unbounded/Spoke.Getters.json
+  s_79e03752657a2e::t_5ef46433768757 3-6
+snapshots/ConfigPositionManager.Operations.json
+  s_79e03752657a2e::t_04ac11678109c9 10-12
+gas-snapshots/solidity/SignatureGateway.Operations.json
+  s_79e03752657a2e::t_40cb136bcc43a8 3,5
+gas-snapshots/solidity/Spoke.Operations.ZeroRiskPremium.json
+  s_79e03752657a2e::t_40cb136bcc43a8 4-8,11
+.gitignore
+  s_79e03752657a2e::t_0b6805cddede80 4
+gas-snapshots/vyper-b1-unbounded/NativeTokenGateway.Operations.json
+  s_79e03752657a2e::t_5ef46433768757 2-7
+snapshots/PositionManagerBase.Operations.json
+  s_79e03752657a2e::t_04ac11678109c9 2
+gas-snapshots/vyper-b1-unbounded/SignatureGateway.Operations.json
+  s_79e03752657a2e::t_5ef46433768757 2-3,5-7,9
+gas-snapshots/comparison-b1-unbounded/comparison.json
+  s_79e03752657a2e::t_5ef46433768757 4-5,15-21,28-30,36-38,44-46,52-54,67-70,76-78,83-86,91-94,99-102,108-110,182-184,198-200,206-208,214-216,222-223,230-231,238-240,246-248,254-255,262-264,270-272,278-280,286-288,294-296,302-304,310-312,318-320,326-328,334-336,342-344,350-352,358-360,366-368,374-376,382-384,390-392,406-408,413-416,429-432,438-440,446-448,462-464,478-480,486-488,494-496,502-504,510-512,518-520,525-528,533-536,541-544,549-552,557-560,566-568,574-576,581-584,590-592,598-600,622-624,630-632,638-640,646-648,670-672,678-680,686-688,694-696,702-704,710-712,718-720,726-728,734-736,742-744,750-752,758-760,766-768,774-776,781-784,789-792,797-800,805-808,813-816,822-824,830-832,837-840,846-848,854-856,878-880,886-888,894-896,902-904,926-928,934-936,942-944,950-952,958-960,966-968,974-976,982-984,990-992,998-1000,1006-1008,1014-1016,1030-1032,1045,1047-1048,1054-1056,1078-1080,1086-1088,1094-1096,1102-1104,1110-1112,1118-1120,1134-1136,1142-1144,1150-1152,1158-1160,1166-1168,1174-1176,1182-1184,1190-1192,1198-1200,1206-1208
+snapshots/Hub.Operations.json
+  s_79e03752657a2e::t_04ac11678109c9 2-17
+snapshots/NativeTokenGateway.Operations.json
+  s_79e03752657a2e::t_04ac11678109c9 2-7
+snapshots/SignatureGateway.Operations.json
+  s_79e03752657a2e::t_0dd36f75f6a373 10
+  s_79e03752657a2e::t_04ac11678109c9 2-9
+foundry.toml
+  s_79e03752657a2e::t_d33a29d74c8bc7 10
+  s_79e03752657a2e::t_41841e3b70f808 56,58-60
+  s_79e03752657a2e::t_0b6805cddede80 57
+snapshots/Spoke.Operations.json
+  s_79e03752657a2e::t_0dd36f75f6a373 34
+  s_79e03752657a2e::t_04ac11678109c9 2-33
+gas-snapshots/solidity/TakerPositionManager.Operations.json
+  s_79e03752657a2e::t_40cb136bcc43a8 5
+snapshots/Spoke.Getters.json
+  s_79e03752657a2e::t_04ac11678109c9 2-6
+gas-snapshots/vyper-b1-unbounded/GiverPositionManager.Operations.json
+  s_79e03752657a2e::t_5ef46433768757 2-3
+gas-snapshots/vyper-b1-unbounded/Spoke.Operations.json
+  s_79e03752657a2e::t_5ef46433768757 2-13,16-19,22-33
+gas-snapshots/vyper-b1-unbounded/Spoke.Operations.ZeroRiskPremium.json
+  s_79e03752657a2e::t_5ef46433768757 2-13,16-19,22-33
+gas-snapshots/vyper-b1-unbounded/Hub.Operations.json
+  s_79e03752657a2e::t_5ef46433768757 2-17
+gas-snapshots/vyper-b1-unbounded/TokenizationSpoke.Operations.json
+  s_79e03752657a2e::t_5ef46433768757 2-5,7-16
+gas-snapshots/vyper-b1-unbounded/ConfigPositionManager.Operations.json
+  s_79e03752657a2e::t_5ef46433768757 10,12
+gas-snapshots/PERFORMANCE_DIARY.md
+  s_79e03752657a2e::t_3198f0ca181566 236
+  s_79e03752657a2e::t_5ef80e0a8e19c2 221-235
+snapshots/GiverPositionManager.Operations.json
+  s_79e03752657a2e::t_04ac11678109c9 2-3
+scripts/compare_vyper_gas.py
+  s_79e03752657a2e::t_a538808df4381f 133-135,225-227
+  s_79e03752657a2e::t_8f2959411a78c8 74-78,239
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "28355f74a3daad9e61b6583dd01e026cdec60289",
+  "prompts": {},
+  "sessions": {
+    "s_79e03752657a2e": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019ffa71-5465-7fe0-8faf-43d0db8de960",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "AlbertoCentonze <11707683+AlbertoCentonze@users.noreply.github.com>"
+    }
+  }
+}
