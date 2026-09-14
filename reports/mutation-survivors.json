@@ -17,16 +17,16 @@
     "never",
     "-vv"
   ],
-  "updated": "2026-09-08T16:41:11.774552+00:00",
+  "updated": "2026-09-14T10:03:21.838143+00:00",
   "summary": {
-    "filesCompleted": 5,
+    "filesCompleted": 6,
     "totalFiles": 177,
-    "mutationScorePct": 93.0,
-    "killed": 172,
-    "survived": 13,
-    "invalid": 45,
-    "skipped": 40,
-    "timedOut": 23
+    "mutationScorePct": 90.8,
+    "killed": 228,
+    "survived": 23,
+    "invalid": 78,
+    "skipped": 72,
+    "timedOut": 51
   },
   "survivors": [
     {
@@ -158,6 +158,106 @@
       "classification": "coverage-gap",
       "rationale": "roleId >= 0 is always true for uint64, so the mutant tracks targets/selectors even when roleId is ADMIN_ROLE (0), which the contract documents as excluded from tracking. The distinguishing input is setTargetFunctionRole with roleId = ADMIN_ROLE followed by a read of the role-0 enumeration getters; the suite never exercises that combination. The original code is correct.",
       "killCondition": "Directed test: call setTargetFunctionRole(target, selector, ADMIN_ROLE), then assert getRoleTargetCount(ADMIN_ROLE) == 0 (or equivalent role-0 getters remain empty)."
+    },
+    {
+      "file": "src/config-engine/AaveV4Payload.sol",
+      "line": 329,
+      "function": "_executeSpokeActions",
+      "original": "reserveListings.length > 0",
+      "mutated": "reserveListings.length != 0",
+      "classification": "equivalent",
+      "rationale": "Array length is an unsigned integer; length > 0 and length != 0 are the same predicate.",
+      "killCondition": "None. Provably unkillable."
+    },
+    {
+      "file": "src/config-engine/AaveV4Payload.sol",
+      "line": 378,
+      "function": "_executeAccessManagerActions",
+      "original": "memberships.length > 0",
+      "mutated": "memberships.length >= 0",
+      "classification": "equivalent",
+      "rationale": "An unsigned length is always >= 0, so the mutant executes the guarded delegatecall even for an empty array. The engine functions are plain for-loops: an empty array runs zero iterations with no state change and no revert, so the extra call is observable only through gas, which the suite does not assert on.",
+      "killCondition": "None. No state divergence is possible."
+    },
+    {
+      "file": "src/config-engine/AaveV4Payload.sol",
+      "line": 293,
+      "function": "_executeHubActions",
+      "original": "assetHalts.length > 0",
+      "mutated": "assetHalts.length >= 0",
+      "classification": "equivalent",
+      "rationale": "An unsigned length is always >= 0, so the mutant executes the guarded delegatecall even for an empty array. The engine functions are plain for-loops: an empty array runs zero iterations with no state change and no revert, so the extra call is observable only through gas, which the suite does not assert on.",
+      "killCondition": "None. No state divergence is possible."
+    },
+    {
+      "file": "src/config-engine/AaveV4Payload.sol",
+      "line": 385,
+      "function": "_executeAccessManagerActions",
+      "original": "roleUpdates.length > 0",
+      "mutated": "roleUpdates.length != 0",
+      "classification": "equivalent",
+      "rationale": "Array length is an unsigned integer; length > 0 and length != 0 are the same predicate.",
+      "killCondition": "None. Provably unkillable."
+    },
+    {
+      "file": "src/config-engine/AaveV4Payload.sol",
+      "line": 298,
+      "function": "_executeHubActions",
+      "original": "assetDeactivations.length > 0",
+      "mutated": "assetDeactivations.length >= 0",
+      "classification": "equivalent",
+      "rationale": "An unsigned length is always >= 0, so the mutant executes the guarded delegatecall even for an empty array. The engine functions are plain for-loops: an empty array runs zero iterations with no state change and no revert, so the extra call is observable only through gas, which the suite does not assert on.",
+      "killCondition": "None. No state divergence is possible."
+    },
+    {
+      "file": "src/config-engine/AaveV4Payload.sol",
+      "line": 337,
+      "function": "_executeSpokeActions",
+      "original": "reserveConfigUpdates.length > 0",
+      "mutated": "reserveConfigUpdates.length != 0",
+      "classification": "equivalent",
+      "rationale": "Array length is an unsigned integer; length > 0 and length != 0 are the same predicate.",
+      "killCondition": "None. Provably unkillable."
+    },
+    {
+      "file": "src/config-engine/AaveV4Payload.sol",
+      "line": 419,
+      "function": "_executePositionManagerActions",
+      "original": "spokeRegs.length > 0",
+      "mutated": "spokeRegs.length >= 0",
+      "classification": "equivalent",
+      "rationale": "An unsigned length is always >= 0, so the mutant executes the guarded delegatecall even for an empty array. The engine functions are plain for-loops: an empty array runs zero iterations with no state change and no revert, so the extra call is observable only through gas, which the suite does not assert on.",
+      "killCondition": "None. No state divergence is possible."
+    },
+    {
+      "file": "src/config-engine/AaveV4Payload.sol",
+      "line": 368,
+      "function": "_executeSpokeActions",
+      "original": "pmUpdates.length > 0",
+      "mutated": "pmUpdates.length != 0",
+      "classification": "equivalent",
+      "rationale": "Array length is an unsigned integer; length > 0 and length != 0 are the same predicate.",
+      "killCondition": "None. Provably unkillable."
+    },
+    {
+      "file": "src/config-engine/AaveV4Payload.sol",
+      "line": 286,
+      "function": "_executeHubActions",
+      "original": "spokeConfigUpdates.length > 0",
+      "mutated": "spokeConfigUpdates.length >= 0",
+      "classification": "equivalent",
+      "rationale": "An unsigned length is always >= 0, so the mutant executes the guarded delegatecall even for an empty array. The engine functions are plain for-loops: an empty array runs zero iterations with no state change and no revert, so the extra call is observable only through gas, which the suite does not assert on.",
+      "killCondition": "None. No state divergence is possible."
+    },
+    {
+      "file": "src/config-engine/AaveV4Payload.sol",
+      "line": 368,
+      "function": "_executeSpokeActions",
+      "original": "pmUpdates.length > 0",
+      "mutated": "pmUpdates.length >= 0",
+      "classification": "equivalent",
+      "rationale": "An unsigned length is always >= 0, so the mutant executes the guarded delegatecall even for an empty array. The engine functions are plain for-loops: an empty array runs zero iterations with no state change and no revert, so the extra call is observable only through gas, which the suite does not assert on.",
+      "killCondition": "None. No state divergence is possible."
     }
   ]
 }
