@@ -17,7 +17,7 @@
     "never",
     "-vv"
   ],
-  "updated": "2026-09-14T11:25:17.455366+00:00",
+  "updated": "2026-09-14T11:25:34.829385+00:00",
   "summary": {
     "filesCompleted": 6,
     "totalFiles": 177,
@@ -162,9 +162,12 @@
     {
       "file": "src/access/AccessManagerEnumerable.sol",
       "line": 384,
+      "function": "_trackRoleTargetSelector",
       "original": "oldRoleId != ADMIN_ROLE",
       "mutated": "oldRoleId > ADMIN_ROLE",
-      "classification": "unclassified"
+      "classification": "equivalent",
+      "rationale": "ADMIN_ROLE = 0; for unsigned values x != 0 and x > 0 are identical.",
+      "killCondition": "None. Provably unkillable."
     },
     {
       "file": "src/access/AccessManagerEnumerable.sol",
