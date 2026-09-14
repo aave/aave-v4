@@ -182,6 +182,7 @@ abstract contract BabylonBase is Base {
     internal
     returns (ConfigData.AddReserveParams[] memory paramsList)
   {
+    // every reserve is fee-free: BabylonSpoke rejects a liquidation fee, which its liquidations never charge
     paramsList = new ConfigData.AddReserveParams[](5);
     paramsList[0] = ConfigData.AddReserveParams({
       spoke: address(spoke4),
@@ -192,11 +193,10 @@ abstract contract BabylonBase is Base {
       dynamicConfig: ISpoke.DynamicReserveConfig({
         collateralFactor: 80_00,
         maxLiquidationBonus: 105_00,
-        liquidationFee: 10_00
+        liquidationFee: 0
       })
     });
-    // the managed collateral reserve: non-borrowable, keeping its supply share price at one,
-    // and fee-free, as babylon liquidations never charge the liquidation fee
+    // the managed collateral reserve: non-borrowable, keeping its supply share price at one
     paramsList[1] = ConfigData.AddReserveParams({
       spoke: address(spoke4),
       hub: address(hub1),
@@ -224,7 +224,7 @@ abstract contract BabylonBase is Base {
       dynamicConfig: ISpoke.DynamicReserveConfig({
         collateralFactor: 78_00,
         maxLiquidationBonus: 102_00,
-        liquidationFee: 10_00
+        liquidationFee: 0
       })
     });
     paramsList[3] = ConfigData.AddReserveParams({
@@ -236,7 +236,7 @@ abstract contract BabylonBase is Base {
       dynamicConfig: ISpoke.DynamicReserveConfig({
         collateralFactor: 78_00,
         maxLiquidationBonus: 101_00,
-        liquidationFee: 12_00
+        liquidationFee: 0
       })
     });
     paramsList[4] = ConfigData.AddReserveParams({
@@ -248,7 +248,7 @@ abstract contract BabylonBase is Base {
       dynamicConfig: ISpoke.DynamicReserveConfig({
         collateralFactor: 78_00,
         maxLiquidationBonus: 101_50,
-        liquidationFee: 15_00
+        liquidationFee: 0
       })
     });
   }

@@ -516,6 +516,7 @@ contract SpokeBabylonLiquidationCallBaseTest is BabylonBase, SpokeLiquidationCal
 
     vm.expectEmit(address(babylonSpoke));
     emit IBabylonSpoke.BabylonLiquidationCallSummary({
+      collateralReserveId: collateralReserveId,
       user: params.user,
       liquidator: liquidationManager,
       collateralAmountRemoved: liquidationMetadata.totalCollateralAmountRemoved,

@@ -226,7 +226,7 @@ abstract contract Spoke is
     uint256 reserveId,
     uint256 amount,
     address onBehalfOf
-  ) external nonReentrant onlyPositionManager(onBehalfOf) returns (uint256, uint256) {
+  ) external virtual nonReentrant onlyPositionManager(onBehalfOf) returns (uint256, uint256) {
     Reserve storage reserve = _reserves.get(reserveId);
     UserPosition storage userPosition = _userPositions[onBehalfOf][reserveId];
     _validateSupply(reserve.flags);
@@ -245,7 +245,7 @@ abstract contract Spoke is
     uint256 reserveId,
     uint256 amount,
     address onBehalfOf
-  ) external nonReentrant onlyPositionManager(onBehalfOf) returns (uint256, uint256) {
+  ) external virtual nonReentrant onlyPositionManager(onBehalfOf) returns (uint256, uint256) {
     Reserve storage reserve = _reserves.get(reserveId);
     UserPosition storage userPosition = _userPositions[onBehalfOf][reserveId];
     _validateWithdraw(reserve.flags);
@@ -275,7 +275,7 @@ abstract contract Spoke is
     uint256 reserveId,
     uint256 amount,
     address onBehalfOf
-  ) external nonReentrant onlyPositionManager(onBehalfOf) returns (uint256, uint256) {
+  ) external virtual nonReentrant onlyPositionManager(onBehalfOf) returns (uint256, uint256) {
     Reserve storage reserve = _reserves.get(reserveId);
     UserPosition storage userPosition = _userPositions[onBehalfOf][reserveId];
     PositionStatus storage positionStatus = _positionStatus[onBehalfOf];
@@ -306,7 +306,7 @@ abstract contract Spoke is
     uint256 reserveId,
     uint256 amount,
     address onBehalfOf
-  ) external nonReentrant onlyPositionManager(onBehalfOf) returns (uint256, uint256) {
+  ) external virtual nonReentrant onlyPositionManager(onBehalfOf) returns (uint256, uint256) {
     Reserve storage reserve = _reserves.get(reserveId);
     UserPosition storage userPosition = _userPositions[onBehalfOf][reserveId];
     _validateRepay(reserve.flags);
@@ -412,7 +412,7 @@ abstract contract Spoke is
   }
 
   /// @inheritdoc ISpoke
-  function updateUserRiskPremium(address onBehalfOf) external nonReentrant {
+  function updateUserRiskPremium(address onBehalfOf) external virtual nonReentrant {
     if (!_isPositionManager({user: onBehalfOf, manager: msg.sender})) {
       _checkCanCall(msg.sender, msg.data);
     }
@@ -421,7 +421,7 @@ abstract contract Spoke is
   }
 
   /// @inheritdoc ISpoke
-  function updateUserDynamicConfig(address onBehalfOf) external nonReentrant {
+  function updateUserDynamicConfig(address onBehalfOf) external virtual nonReentrant {
     if (!_isPositionManager({user: onBehalfOf, manager: msg.sender})) {
       _checkCanCall(msg.sender, msg.data);
     }
@@ -852,30 +852,30 @@ abstract contract Spoke is
   function _validateUpdateDynamicReserveConfig(
     DynamicReserveConfig storage currentConfig,
     DynamicReserveConfig calldata newConfig
-  ) internal view {
+  ) internal view virtual {
     // sufficient check since maxLiquidationBonus is always >= 100_00
     require(currentConfig.maxLiquidationBonus > 0, DynamicConfigKeyUninitialized());
     require(newConfig.collateralFactor > 0, InvalidCollateralFactor());
     _validateDynamicReserveConfig(newConfig);
   }
 
-  function _validateSupply(ReserveFlags flags) internal pure {
+  function _validateSupply(ReserveFlags flags) internal pure virtual {
     require(!flags.paused(), ReservePaused());
     require(!flags.frozen(), ReserveFrozen());
   }
 
-  function _validateWithdraw(ReserveFlags flags) internal pure {
+  function _validateWithdraw(ReserveFlags flags) internal pure virtual {
     require(!flags.paused(), ReservePaused());
   }
 
-  function _validateBorrow(ReserveFlags flags) internal pure {
+  function _validateBorrow(ReserveFlags flags) internal pure virtual {
     require(!flags.paused(), ReservePaused());
     require(!flags.frozen(), ReserveFrozen());
     require(flags.borrowable(), ReserveNotBorrowable());
     // health factor is checked at the end of borrow action
   }
 
-  function _validateRepay(ReserveFlags flags) internal pure {
+  function _validateRepay(ReserveFlags flags) internal pure virtual {
     require(!flags.paused(), ReservePaused());
   }
 
@@ -912,13 +912,15 @@ abstract contract Spoke is
     return config.active && config.approval[user];
   }
 
-  function _validateReserveConfig(ReserveConfig calldata config) internal pure {
+  function _validateReserveConfig(ReserveConfig calldata config) internal pure virtual {
     require(config.collateralRisk <= MAX_ALLOWED_COLLATERAL_RISK, InvalidCollateralRisk());
   }
 
   /// @dev Enforces compatible `maxLiquidationBonus` and `collateralFactor` so at the moment debt is created
   /// there is enough collateral to cover liquidation.
-  function _validateDynamicReserveConfig(DynamicReserveConfig calldata config) internal pure {
+  function _validateDynamicReserveConfig(
+    DynamicReserveConfig calldata config
+  ) internal pure virtual {
     require(
       config.collateralFactor < PercentageMath.PERCENTAGE_FACTOR &&
         config.maxLiquidationBonus >= PercentageMath.PERCENTAGE_FACTOR &&

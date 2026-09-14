@@ -19,6 +19,11 @@ contract BabylonSpokeOperations_Gas_Tests is BabylonBase, SpokeOperations_Gas_Te
     babylonSpoke.updateBabylonLiquidationConfig(bob, reserveId.usdx);
   }
 
+  /// @dev Babylon liquidations never charge the fee, and the managed collateral reserve rejects one.
+  function _collateralLiquidationFee() internal pure override returns (uint16) {
+    return 0;
+  }
+
   function test_liquidation_partial() public override {
     _liquidationSetup(85_00);
 
@@ -48,7 +53,6 @@ contract BabylonSpokeOperations_Gas_Tests is BabylonBase, SpokeOperations_Gas_Te
 
   function test_liquidation_multiDebt_partial() public {
     _updateMaxLiquidationBonus(spoke, _usdxReserveId(spoke), 105_00);
-    _updateLiquidationFee(spoke, _usdxReserveId(spoke), 10_00);
 
     vm.prank(bob);
     spoke.supply(reserveId.dai, 1_000_000e18, bob);
@@ -147,7 +151,8 @@ contract BabylonSpokeOperations_Gas_Tests is BabylonBase, SpokeOperations_Gas_Te
   function test_updateUserDynamicConfig() public override {
     vm.startPrank(alice);
     spoke.setUsingAsCollateral(reserveId.usdx, true, alice);
-    _updateLiquidationFee(spoke, reserveId.usdx, 10_00);
+    // bump the reserve's dynamic config key without configuring a fee on the managed collateral
+    _updateMaxLiquidationBonus(spoke, reserveId.usdx, 105_00);
 
     spoke.updateUserDynamicConfig(alice);
     vm.snapshotGasLastFrame(NAMESPACE, 'updateUserDynamicConfig: 1 collateral');

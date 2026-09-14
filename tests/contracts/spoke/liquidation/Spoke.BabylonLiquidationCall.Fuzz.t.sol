@@ -65,11 +65,8 @@ abstract contract SpokeBabylonLiquidationCallHelperTest is SpokeBabylonLiquidati
     for (uint256 i = 0; i < spoke.getReserveCount(); i++) {
       _updateMaxLiquidationBonus(spoke, i, _randomMaxLiquidationBonus(spoke, i));
       _updateCollateralFactor(spoke, i, 1); // temporary value to have full range of possibility for liquidation fee
-      _updateLiquidationFee(
-        spoke,
-        i,
-        vm.randomUint(MIN_LIQUIDATION_FEE, MAX_LIQUIDATION_FEE).toUint16()
-      );
+      // BabylonSpoke rejects a liquidation fee, which its liquidations never charge
+      _updateLiquidationFee(spoke, i, 0);
       _updateCollateralFactor(spoke, i, _randomCollateralFactor(spoke, i));
       _updateCollateralRisk(
         spoke,

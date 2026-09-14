@@ -371,9 +371,15 @@ contract SpokeOperations_Gas_Tests is Base {
     vm.stopPrank();
   }
 
+  /// @dev Liquidation fee configured on the collateral reserve by the liquidation setups. The
+  /// BabylonSpoke suite overrides it to zero: its managed collateral reserve must stay fee-free.
+  function _collateralLiquidationFee() internal pure virtual returns (uint16) {
+    return 10_00;
+  }
+
   function _liquidationSetup(uint256 pricePercentage) internal {
     _updateMaxLiquidationBonus(spoke, _usdxReserveId(spoke), 105_00);
-    _updateLiquidationFee(spoke, _usdxReserveId(spoke), 10_00);
+    _updateLiquidationFee(spoke, _usdxReserveId(spoke), _collateralLiquidationFee());
 
     vm.prank(bob);
     spoke.supply(reserveId.dai, 1_000_000e18, bob);

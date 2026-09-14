@@ -15,7 +15,7 @@ import {Spoke} from 'src/spoke/Spoke.sol';
 /// @author Aave Labs
 /// @notice Spoke variant for the Babylon integration: liquidations are restricted to a configured
 /// liquidation manager and sized by a collateral cap instead of a target health factor. Users can
-/// register at most one reserve as collateral.
+/// register at most one reserve as collateral, and reserves cannot charge a liquidation fee.
 abstract contract BabylonSpoke is IBabylonSpoke, Spoke {
   using SafeCast for uint256;
   using SpokeUtils for *;
@@ -47,7 +47,7 @@ abstract contract BabylonSpoke is IBabylonSpoke, Spoke {
     address,
     uint256,
     bool
-  ) public pure virtual override(ISpoke, Spoke) {
+  ) external pure virtual override(ISpoke, Spoke) {
     revert UnsupportedLiquidationCall();
   }
 
@@ -118,6 +118,15 @@ abstract contract BabylonSpoke is IBabylonSpoke, Spoke {
       );
     }
     super.setUsingAsCollateral(reserveId, usingAsCollateral, onBehalfOf);
+  }
+
+  /// @dev Rejects a non-zero liquidation fee on every reserve: only the managed collateral reserve
+  /// can be enabled as collateral, and Babylon liquidations never charge the fee.
+  function _validateDynamicReserveConfig(
+    DynamicReserveConfig calldata config
+  ) internal pure virtual override {
+    super._validateDynamicReserveConfig(config);
+    require(config.liquidationFee == 0, UnsupportedLiquidationFee());
   }
 
   /// @dev Restricts users to at most one registered collateral.

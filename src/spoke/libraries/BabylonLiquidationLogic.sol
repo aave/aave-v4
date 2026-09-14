@@ -242,6 +242,7 @@ library BabylonLiquidationLogic {
     });
 
     emit IBabylonSpoke.BabylonLiquidationCallSummary({
+      collateralReserveId: params.collateralReserveId,
       user: params.user,
       liquidator: params.liquidator,
       collateralAmountRemoved: collateralAmountRemoved,

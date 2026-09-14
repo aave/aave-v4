@@ -57,6 +57,50 @@ contract SpokeBabylonLiquidationCallTest is SpokeBabylonLiquidationCallBaseTest 
     assertEq(managedCollateralReserveId, debtReserveId, 'managed collateral reserve id');
   }
 
+  function test_revert_addDynamicReserveConfig_nonZeroLiquidationFee() public {
+    ISpoke.DynamicReserveConfig memory config = _getLatestDynamicReserveConfig(
+      spoke4,
+      debtReserveId
+    );
+    config.liquidationFee = 1;
+
+    vm.expectRevert(IBabylonSpoke.UnsupportedLiquidationFee.selector);
+    vm.prank(SPOKE_ADMIN);
+    spoke4.addDynamicReserveConfig(debtReserveId, config);
+  }
+
+  function test_revert_addReserve_nonZeroLiquidationFee() public {
+    ISpoke.DynamicReserveConfig memory config = ISpoke.DynamicReserveConfig({
+      collateralFactor: 10_00,
+      maxLiquidationBonus: 110_00,
+      liquidationFee: 1
+    });
+    address priceSource = _deployMockPriceFeed(spoke4, 1e8);
+
+    vm.expectRevert(IBabylonSpoke.UnsupportedLiquidationFee.selector);
+    vm.prank(SPOKE_ADMIN);
+    spoke4.addReserve(
+      address(hub1),
+      usdzAssetId,
+      priceSource,
+      _getDefaultReserveConfig(10_00),
+      config
+    );
+  }
+
+  function test_revert_updateDynamicReserveConfig_nonZeroLiquidationFee() public {
+    uint32 dynamicConfigKey = spoke4.getReserve(debtReserveId).dynamicConfigKey;
+    ISpoke.DynamicReserveConfig memory config = _getLatestDynamicReserveConfig(
+      spoke4,
+      debtReserveId
+    );
+    config.liquidationFee = 1;
+
+    vm.expectRevert(IBabylonSpoke.UnsupportedLiquidationFee.selector);
+    vm.prank(SPOKE_ADMIN);
+    spoke4.updateDynamicReserveConfig(debtReserveId, dynamicConfigKey, config);
+  }
+
   function test_revert_updateBabylonLiquidationConfig_unauthorized() public {
     vm.expectRevert(
       abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, alice)
@@ -294,6 +338,7 @@ contract SpokeBabylonLiquidationCallTest is SpokeBabylonLiquidationCallBaseTest 
     });
     vm.expectEmit(true, true, false, false, address(babylonSpoke));
     emit IBabylonSpoke.BabylonLiquidationCallSummary({
+      collateralReserveId: collateralReserveId,
       user: user,
       liquidator: liquidationManager,
       collateralAmountRemoved: 0,

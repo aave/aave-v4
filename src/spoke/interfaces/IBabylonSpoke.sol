@@ -45,11 +45,13 @@ interface IBabylonSpoke is ISpoke {
   );
 
   /// @dev Emitted once per Babylon liquidation, after all repayments.
+  /// @param collateralReserveId The identifier of the managed collateral reserve removed by the liquidation.
   /// @param user The address of the borrower getting liquidated.
   /// @param liquidator The address of the liquidator.
   /// @param collateralAmountRemoved The total amount of collateral removed, expressed in asset units.
   /// @param collateralSharesLiquidated The total amount of collateral shares liquidated.
   event BabylonLiquidationCallSummary(
+    uint256 indexed collateralReserveId,
     address indexed user,
     address indexed liquidator,
     uint256 collateralAmountRemoved,
@@ -67,6 +69,9 @@ interface IBabylonSpoke is ISpoke {
 
   /// @notice Thrown when registering a reserve other than the managed collateral reserve as collateral.
   error UnsupportedCollateralReserve();
+
+  /// @notice Thrown when a reserve is configured with a non-zero liquidation fee.
+  error UnsupportedLiquidationFee();
 
   /// @notice Updates the Babylon liquidation config.
   /// @dev The managed collateral reserve must be listed. It is intended to be set once at
