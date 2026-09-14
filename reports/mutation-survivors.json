@@ -19,15 +19,15 @@
     "--block-gas-limit",
     "10000000000"
   ],
-  "updated": "2026-09-14T16:17:10.490255+00:00",
+  "updated": "2026-09-14T17:44:22.038268+00:00",
   "summary": {
-    "filesCompleted": 8,
+    "filesCompleted": 9,
     "totalFiles": 177,
-    "mutationScorePct": 87.7,
-    "killed": 271,
-    "survived": 38,
-    "invalid": 74,
-    "skipped": 117,
+    "mutationScorePct": 87.0,
+    "killed": 300,
+    "survived": 45,
+    "invalid": 86,
+    "skipped": 146,
     "timedOut": 28
   },
   "survivors": [
@@ -410,6 +410,76 @@
       "classification": "equivalent",
       "rationale": "As a for-loop update expression, pre- and post-increment both increment i by 1; the expression value is unused.",
       "killCondition": "None. Provably unkillable."
+    },
+    {
+      "file": "src/config-engine/libraries/EngineFlags.sol",
+      "line": 24,
+      "function": "KEEP_CURRENT_UINT16 constant",
+      "original": "type(uint16).max - 61",
+      "mutated": "type(uint16).max ^ 61",
+      "classification": "equivalent",
+      "rationale": "The sentinel is only ever compared symbolically (x == KEEP_CURRENT...) against the same compiled value, so its exact bit pattern is arbitrary. Both forms are within a few hundred of type max and cannot collide with realistic inputs. No test asserts the raw value.",
+      "killCondition": "None. Only a test hardcoding the sentinel value itself would distinguish them."
+    },
+    {
+      "file": "src/config-engine/libraries/EngineFlags.sol",
+      "line": 36,
+      "function": "toBool",
+      "original": "flag == ENABLED",
+      "mutated": "flag <= ENABLED",
+      "classification": "equivalent",
+      "rationale": "ENABLED = 1, DISABLED = 0. The require becomes flag <= 1 || flag == 0, true exactly for flag in {0, 1} \u2014 the same set as the original.",
+      "killCondition": "None. Provably unkillable."
+    },
+    {
+      "file": "src/config-engine/libraries/EngineFlags.sol",
+      "line": 36,
+      "function": "toBool",
+      "original": "flag == DISABLED",
+      "mutated": "flag <= DISABLED",
+      "classification": "equivalent",
+      "rationale": "The require becomes flag == 1 || flag <= 0, again true exactly for flag in {0, 1}.",
+      "killCondition": "None. Provably unkillable."
+    },
+    {
+      "file": "src/config-engine/libraries/EngineFlags.sol",
+      "line": 13,
+      "function": "KEEP_CURRENT constant",
+      "original": "type(uint256).max - 652",
+      "mutated": "type(uint256).max ^ 652",
+      "classification": "equivalent",
+      "rationale": "The sentinel is only ever compared symbolically (x == KEEP_CURRENT...) against the same compiled value, so its exact bit pattern is arbitrary. Both forms are within a few hundred of type max and cannot collide with realistic inputs. No test asserts the raw value.",
+      "killCondition": "None. Only a test hardcoding the sentinel value itself would distinguish them."
+    },
+    {
+      "file": "src/config-engine/libraries/EngineFlags.sol",
+      "line": 37,
+      "function": "toBool",
+      "original": "flag == ENABLED",
+      "mutated": "flag >= ENABLED",
+      "classification": "equivalent",
+      "rationale": "Only flag in {0, 1} reaches the return (the require reverts otherwise); on that domain flag >= 1 and flag == 1 coincide.",
+      "killCondition": "None. Provably unkillable."
+    },
+    {
+      "file": "src/config-engine/libraries/EngineFlags.sol",
+      "line": 21,
+      "function": "KEEP_CURRENT_UINT32 constant",
+      "original": "type(uint32).max - 23",
+      "mutated": "type(uint32).max ^ 23",
+      "classification": "equivalent",
+      "rationale": "The sentinel is only ever compared symbolically (x == KEEP_CURRENT...) against the same compiled value, so its exact bit pattern is arbitrary. Both forms are within a few hundred of type max and cannot collide with realistic inputs. No test asserts the raw value.",
+      "killCondition": "None. Only a test hardcoding the sentinel value itself would distinguish them."
+    },
+    {
+      "file": "src/config-engine/libraries/EngineFlags.sol",
+      "line": 18,
+      "function": "KEEP_CURRENT_UINT64 constant",
+      "original": "type(uint64).max - 46",
+      "mutated": "type(uint64).max ^ 46",
+      "classification": "equivalent",
+      "rationale": "The sentinel is only ever compared symbolically (x == KEEP_CURRENT...) against the same compiled value, so its exact bit pattern is arbitrary. Both forms are within a few hundred of type max and cannot collide with realistic inputs. No test asserts the raw value.",
+      "killCondition": "None. Only a test hardcoding the sentinel value itself would distinguish them."
     }
   ]
 }
