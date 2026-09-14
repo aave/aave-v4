@@ -19,7 +19,7 @@
     "--block-gas-limit",
     "10000000000"
   ],
-  "updated": "2026-09-14T15:51:27.747986+00:00",
+  "updated": "2026-09-14T16:17:10.490255+00:00",
   "summary": {
     "filesCompleted": 8,
     "totalFiles": 177,
@@ -328,7 +328,7 @@
       "original": "i < length",
       "mutated": "i != length",
       "classification": "equivalent",
-      "rationale": "The counter starts at 0 and increments by 1, so it reaches length exactly; i < length and i != length are identical loop conditions.",
+      "rationale": "The counter increments by 1 from 0 and stops at length, so i < length and i != length admit the same iterations for every reachable execution.",
       "killCondition": "None. Provably unkillable."
     },
     {
@@ -338,7 +338,7 @@
       "original": "++i",
       "mutated": "i++",
       "classification": "equivalent",
-      "rationale": "In loop-update position the value is discarded; pre- and post-increment have the same side effect.",
+      "rationale": "As a for-loop update expression, pre- and post-increment both increment i by 1; the expression value is unused.",
       "killCondition": "None. Provably unkillable."
     },
     {
@@ -358,7 +358,7 @@
       "original": "i < length",
       "mutated": "i != length",
       "classification": "equivalent",
-      "rationale": "The counter starts at 0 and increments by 1, so it reaches length exactly; i < length and i != length are identical loop conditions.",
+      "rationale": "The counter increments by 1 from 0 and stops at length, so i < length and i != length admit the same iterations for every reachable execution.",
       "killCondition": "None. Provably unkillable."
     },
     {
@@ -368,7 +368,7 @@
       "original": "i < length",
       "mutated": "i != length",
       "classification": "equivalent",
-      "rationale": "The counter starts at 0 and increments by 1, so it reaches length exactly; i < length and i != length are identical loop conditions.",
+      "rationale": "The counter increments by 1 from 0 and stops at length, so i < length and i != length admit the same iterations for every reachable execution.",
       "killCondition": "None. Provably unkillable."
     },
     {
@@ -378,7 +378,7 @@
       "original": "++i",
       "mutated": "i++",
       "classification": "equivalent",
-      "rationale": "In loop-update position the value is discarded; pre- and post-increment have the same side effect.",
+      "rationale": "As a for-loop update expression, pre- and post-increment both increment i by 1; the expression value is unused.",
       "killCondition": "None. Provably unkillable."
     },
     {
@@ -388,7 +388,7 @@
       "original": "++i",
       "mutated": "i++",
       "classification": "equivalent",
-      "rationale": "In loop-update position the value is discarded; pre- and post-increment have the same side effect.",
+      "rationale": "As a for-loop update expression, pre- and post-increment both increment i by 1; the expression value is unused.",
       "killCondition": "None. Provably unkillable."
     },
     {
@@ -398,7 +398,7 @@
       "original": "i < length",
       "mutated": "i != length",
       "classification": "equivalent",
-      "rationale": "The counter starts at 0 and increments by 1, so it reaches length exactly; i < length and i != length are identical loop conditions.",
+      "rationale": "The counter increments by 1 from 0 and stops at length, so i < length and i != length admit the same iterations for every reachable execution.",
       "killCondition": "None. Provably unkillable."
     },
     {
@@ -408,7 +408,7 @@
       "original": "++i",
       "mutated": "i++",
       "classification": "equivalent",
-      "rationale": "In loop-update position the value is discarded; pre- and post-increment have the same side effect.",
+      "rationale": "As a for-loop update expression, pre- and post-increment both increment i by 1; the expression value is unused.",
       "killCondition": "None. Provably unkillable."
     }
   ]
