@@ -15,17 +15,19 @@
     "0x640",
     "--color",
     "never",
-    "-vv"
+    "-vv",
+    "--block-gas-limit",
+    "10000000000"
   ],
-  "updated": "2026-09-14T11:25:34.829385+00:00",
+  "updated": "2026-09-14T15:51:27.747986+00:00",
   "summary": {
-    "filesCompleted": 6,
+    "filesCompleted": 8,
     "totalFiles": 177,
-    "mutationScorePct": 88.7,
-    "killed": 228,
-    "survived": 29,
-    "invalid": 64,
-    "skipped": 103,
+    "mutationScorePct": 87.7,
+    "killed": 271,
+    "survived": 38,
+    "invalid": 74,
+    "skipped": 117,
     "timedOut": 28
   },
   "survivors": [
@@ -318,6 +320,96 @@
       "classification": "equivalent",
       "rationale": "An unsigned length is always >= 0, so the mutant executes the guarded delegatecall even for an empty array. The engine functions are plain for-loops: an empty array runs zero iterations with no state change and no revert, so the extra call is observable only through gas, which the suite does not assert on.",
       "killCondition": "None. No state divergence is possible."
+    },
+    {
+      "file": "src/config-engine/libraries/AccessManagerEngine.sol",
+      "line": 18,
+      "function": "executeRoleMemberships",
+      "original": "i < length",
+      "mutated": "i != length",
+      "classification": "equivalent",
+      "rationale": "The counter starts at 0 and increments by 1, so it reaches length exactly; i < length and i != length are identical loop conditions.",
+      "killCondition": "None. Provably unkillable."
+    },
+    {
+      "file": "src/config-engine/libraries/AccessManagerEngine.sol",
+      "line": 18,
+      "function": "executeRoleMemberships",
+      "original": "++i",
+      "mutated": "i++",
+      "classification": "equivalent",
+      "rationale": "In loop-update position the value is discarded; pre- and post-increment have the same side effect.",
+      "killCondition": "None. Provably unkillable."
+    },
+    {
+      "file": "src/config-engine/libraries/AccessManagerEngine.sol",
+      "line": 51,
+      "function": "executeRoleUpdates",
+      "original": "bytes(updates[i].label).length > 0",
+      "mutated": "bytes(updates[i].label).length != 0",
+      "classification": "equivalent",
+      "rationale": "Byte array length is unsigned; > 0 and != 0 are the same predicate.",
+      "killCondition": "None. Provably unkillable."
+    },
+    {
+      "file": "src/config-engine/libraries/AccessManagerEngine.sol",
+      "line": 40,
+      "function": "executeRoleUpdates",
+      "original": "i < length",
+      "mutated": "i != length",
+      "classification": "equivalent",
+      "rationale": "The counter starts at 0 and increments by 1, so it reaches length exactly; i < length and i != length are identical loop conditions.",
+      "killCondition": "None. Provably unkillable."
+    },
+    {
+      "file": "src/config-engine/libraries/AccessManagerEngine.sol",
+      "line": 66,
+      "function": "executeTargetFunctionRoleUpdates",
+      "original": "i < length",
+      "mutated": "i != length",
+      "classification": "equivalent",
+      "rationale": "The counter starts at 0 and increments by 1, so it reaches length exactly; i < length and i != length are identical loop conditions.",
+      "killCondition": "None. Provably unkillable."
+    },
+    {
+      "file": "src/config-engine/libraries/AccessManagerEngine.sol",
+      "line": 40,
+      "function": "executeRoleUpdates",
+      "original": "++i",
+      "mutated": "i++",
+      "classification": "equivalent",
+      "rationale": "In loop-update position the value is discarded; pre- and post-increment have the same side effect.",
+      "killCondition": "None. Provably unkillable."
+    },
+    {
+      "file": "src/config-engine/libraries/AccessManagerEngine.sol",
+      "line": 66,
+      "function": "executeTargetFunctionRoleUpdates",
+      "original": "++i",
+      "mutated": "i++",
+      "classification": "equivalent",
+      "rationale": "In loop-update position the value is discarded; pre- and post-increment have the same side effect.",
+      "killCondition": "None. Provably unkillable."
+    },
+    {
+      "file": "src/config-engine/libraries/AccessManagerEngine.sol",
+      "line": 81,
+      "function": "executeTargetAdminDelayUpdates",
+      "original": "i < length",
+      "mutated": "i != length",
+      "classification": "equivalent",
+      "rationale": "The counter starts at 0 and increments by 1, so it reaches length exactly; i < length and i != length are identical loop conditions.",
+      "killCondition": "None. Provably unkillable."
+    },
+    {
+      "file": "src/config-engine/libraries/AccessManagerEngine.sol",
+      "line": 81,
+      "function": "executeTargetAdminDelayUpdates",
+      "original": "++i",
+      "mutated": "i++",
+      "classification": "equivalent",
+      "rationale": "In loop-update position the value is discarded; pre- and post-increment have the same side effect.",
+      "killCondition": "None. Provably unkillable."
     }
   ]
 }
