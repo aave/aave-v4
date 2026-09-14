@@ -6,7 +6,7 @@
     "--mutation-jobs",
     "4",
     "--mutation-timeout",
-    "600",
+    "1800",
     "--mutation-optimizer-runs",
     "200",
     "--fuzz-runs",
@@ -17,16 +17,16 @@
     "never",
     "-vv"
   ],
-  "updated": "2026-09-14T10:03:21.838143+00:00",
+  "updated": "2026-09-14T11:25:17.455366+00:00",
   "summary": {
     "filesCompleted": 6,
     "totalFiles": 177,
-    "mutationScorePct": 90.8,
+    "mutationScorePct": 88.7,
     "killed": 228,
-    "survived": 23,
-    "invalid": 78,
-    "skipped": 72,
-    "timedOut": 51
+    "survived": 29,
+    "invalid": 64,
+    "skipped": 103,
+    "timedOut": 28
   },
   "survivors": [
     {
@@ -101,6 +101,16 @@
     },
     {
       "file": "src/access/AccessManagerEnumerable.sol",
+      "line": 386,
+      "function": "_trackRoleTargetSelector",
+      "original": "_roleToTargetToSelectorSet[oldRoleId][target].length() == 0",
+      "mutated": "_roleToTargetToSelectorSet[oldRoleId][target].length() <= 0",
+      "classification": "equivalent",
+      "rationale": "EnumerableSet length() returns uint256; length == 0 and length <= 0 are the same predicate for unsigned values.",
+      "killCondition": "None. Provably unkillable."
+    },
+    {
+      "file": "src/access/AccessManagerEnumerable.sol",
       "line": 356,
       "function": "_trackRoleLabel",
       "original": "bytes(oldLabel).length > 0",
@@ -111,32 +121,22 @@
     },
     {
       "file": "src/access/AccessManagerEnumerable.sol",
-      "line": 318,
-      "function": "_trackRole",
-      "original": "roleId == PUBLIC_ROLE",
-      "mutated": "roleId >= PUBLIC_ROLE",
-      "classification": "equivalent",
-      "rationale": "PUBLIC_ROLE = type(uint64).max. For unsigned integers, x >= type(uint64).max is true exactly when x == type(uint64).max. Identical behavior.",
-      "killCondition": "None. Provably unkillable."
-    },
-    {
-      "file": "src/access/AccessManagerEnumerable.sol",
-      "line": 318,
-      "function": "_trackRole",
-      "original": "roleId == ADMIN_ROLE",
-      "mutated": "roleId <= ADMIN_ROLE",
-      "classification": "equivalent",
-      "rationale": "ADMIN_ROLE = type(uint64).min = 0. For unsigned integers, x <= 0 is true exactly when x == 0, so the mutated condition is identical to the original.",
-      "killCondition": "None. Provably unkillable."
-    },
-    {
-      "file": "src/access/AccessManagerEnumerable.sol",
-      "line": 386,
+      "line": 380,
       "function": "_trackRoleTargetSelector",
-      "original": "_roleToTargetToSelectorSet[oldRoleId][target].length() == 0",
-      "mutated": "_roleToTargetToSelectorSet[oldRoleId][target].length() <= 0",
+      "original": "oldRoleId == roleId",
+      "mutated": "oldRoleId > roleId",
+      "classification": "coverage-gap",
+      "rationale": "When a selector is re-assigned to the same role, the original returns early; the mutant removes and re-adds the selector (and possibly the target), which shuffles EnumerableSet enumeration order. Set contents stay equal, so only order-sensitive getter assertions can observe it; the suite never re-assigns a selector to its current role.",
+      "killCondition": "Directed test: setTargetFunctionRole to role R twice, then assert getRoleSelectors(R)/getRoleTargets(R) enumeration order is unchanged."
+    },
+    {
+      "file": "src/access/AccessManagerEnumerable.sol",
+      "line": 243,
+      "function": "isRoleLabeled",
+      "original": "bytes(_roleToLabel[roleId]).length > 0",
+      "mutated": "bytes(_roleToLabel[roleId]).length != 0",
       "classification": "equivalent",
-      "rationale": "EnumerableSet length() returns uint256; length == 0 and length <= 0 are the same predicate for unsigned values.",
+      "rationale": "String length is unsigned; > 0 and != 0 are the same predicate.",
       "killCondition": "None. Provably unkillable."
     },
     {
@@ -151,13 +151,70 @@
     },
     {
       "file": "src/access/AccessManagerEnumerable.sol",
-      "line": 391,
-      "function": "_trackRoleTargetSelector",
-      "original": "roleId != ADMIN_ROLE",
-      "mutated": "roleId >= ADMIN_ROLE",
-      "classification": "coverage-gap",
-      "rationale": "roleId >= 0 is always true for uint64, so the mutant tracks targets/selectors even when roleId is ADMIN_ROLE (0), which the contract documents as excluded from tracking. The distinguishing input is setTargetFunctionRole with roleId = ADMIN_ROLE followed by a read of the role-0 enumeration getters; the suite never exercises that combination. The original code is correct.",
-      "killCondition": "Directed test: call setTargetFunctionRole(target, selector, ADMIN_ROLE), then assert getRoleTargetCount(ADMIN_ROLE) == 0 (or equivalent role-0 getters remain empty)."
+      "line": 359,
+      "function": "_trackRoleLabel",
+      "original": "bytes(label).length == 0",
+      "mutated": "bytes(label).length <= 0",
+      "classification": "equivalent",
+      "rationale": "Byte array length is unsigned; == 0 and <= 0 are the same predicate.",
+      "killCondition": "None. Provably unkillable."
+    },
+    {
+      "file": "src/access/AccessManagerEnumerable.sol",
+      "line": 384,
+      "original": "oldRoleId != ADMIN_ROLE",
+      "mutated": "oldRoleId > ADMIN_ROLE",
+      "classification": "unclassified"
+    },
+    {
+      "file": "src/access/AccessManagerEnumerable.sol",
+      "line": 331,
+      "function": "_trackAdminRole",
+      "original": "oldAdmin != ADMIN_ROLE",
+      "mutated": "oldAdmin > ADMIN_ROLE",
+      "classification": "equivalent",
+      "rationale": "ADMIN_ROLE = 0; for unsigned values x != 0 and x > 0 are identical.",
+      "killCondition": "None. Provably unkillable."
+    },
+    {
+      "file": "src/access/AccessManagerEnumerable.sol",
+      "line": 318,
+      "function": "_trackRole",
+      "original": "roleId == PUBLIC_ROLE",
+      "mutated": "roleId >= PUBLIC_ROLE",
+      "classification": "equivalent",
+      "rationale": "PUBLIC_ROLE = type(uint64).max. For unsigned integers, x >= type(uint64).max is true exactly when x == type(uint64).max. Identical behavior.",
+      "killCondition": "None. Provably unkillable."
+    },
+    {
+      "file": "src/access/AccessManagerEnumerable.sol",
+      "line": 362,
+      "function": "_trackRoleLabel",
+      "original": "delete _labelToRole[oldLabel]",
+      "mutated": "assert(true)",
+      "classification": "equivalent",
+      "rationale": "The mutant leaves a stale _labelToRole[oldLabel] entry, but the mapping is private and every read (getRoleOfLabel line 256, the error argument at line 369) is guarded by _labelsSet.contains(label), which is false after removal. Re-adding the label overwrites the entry. The stale value is unobservable; the delete is storage hygiene and gas refund only.",
+      "killCondition": "None. Unobservable through the contract API."
+    },
+    {
+      "file": "src/access/AccessManagerEnumerable.sol",
+      "line": 335,
+      "function": "_trackAdminRole",
+      "original": "admin != ADMIN_ROLE",
+      "mutated": "admin > ADMIN_ROLE",
+      "classification": "equivalent",
+      "rationale": "ADMIN_ROLE = 0; for unsigned values x != 0 and x > 0 are identical.",
+      "killCondition": "None. Provably unkillable."
+    },
+    {
+      "file": "src/access/AccessManagerEnumerable.sol",
+      "line": 318,
+      "function": "_trackRole",
+      "original": "roleId == ADMIN_ROLE",
+      "mutated": "roleId <= ADMIN_ROLE",
+      "classification": "equivalent",
+      "rationale": "ADMIN_ROLE = type(uint64).min = 0. For unsigned integers, x <= 0 is true exactly when x == 0, so the mutated condition is identical to the original.",
+      "killCondition": "None. Provably unkillable."
     },
     {
       "file": "src/config-engine/AaveV4Payload.sol",
