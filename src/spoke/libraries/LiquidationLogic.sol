@@ -192,20 +192,20 @@ library LiquidationLogic {
   /// @param params The liquidate user params.
   /// @return True if the liquidation results in deficit.
   function liquidateUser(
-    mapping(uint256 reserveId => ISpoke.Reserve) storage reserves,
-    mapping(address user => mapping(uint256 reserveId => ISpoke.UserPosition)) storage userPositions,
+    mapping(bytes32 reserveBucket => ISpoke.Reserve) storage reserves,
+    mapping(address user => mapping(bytes32 reserveBucket => ISpoke.UserPosition)) storage userPositions,
     mapping(address user => ISpoke.PositionStatus) storage positionStatus,
-    mapping(uint256 reserveId => mapping(uint32 dynamicConfigKey => ISpoke.DynamicReserveConfig)) storage dynamicConfig,
+    mapping(bytes32 reserveBucket => mapping(uint32 dynamicConfigKey => ISpoke.DynamicReserveConfig)) storage dynamicConfig,
     LiquidateUserParams memory params
   ) external returns (bool) {
     ISpoke.Reserve storage collateralReserve = reserves.get(params.collateralReserveId);
     ISpoke.Reserve storage debtReserve = reserves.get(params.debtReserveId);
 
     ISpoke.UserPosition storage collateralUserPosition = userPositions[params.user][
-      params.collateralReserveId
+      PositionStatusMap.reserveBucket(params.collateralReserveId)
     ];
     ISpoke.DynamicReserveConfig storage collateralDynConfig = dynamicConfig[
-      params.collateralReserveId
+      PositionStatusMap.reserveBucket(params.collateralReserveId)
     ][collateralUserPosition.dynamicConfigKey];
 
     ExecuteLiquidationParams memory executeLiquidationParams = ExecuteLiquidationParams({
@@ -233,9 +233,9 @@ library LiquidationLogic {
       receiveShares: params.receiveShares
     });
 
-    ISpoke.UserPosition storage debtUserPosition = userPositions[params.user][params.debtReserveId];
+    ISpoke.UserPosition storage debtUserPosition = userPositions[params.user][PositionStatusMap.reserveBucket(params.debtReserveId)];
     ISpoke.UserPosition storage collateralLiquidatorPosition = userPositions[params.liquidator][
-      params.collateralReserveId
+      PositionStatusMap.reserveBucket(params.collateralReserveId)
     ];
     ISpoke.PositionStatus storage userPositionStatus = positionStatus[params.user];
 
@@ -258,8 +258,8 @@ library LiquidationLogic {
   /// @param reserveCount The number of reserves.
   /// @param user The address of the user.
   function notifyReportDeficit(
-    mapping(uint256 reserveId => ISpoke.Reserve) storage reserves,
-    mapping(address user => mapping(uint256 reserveId => ISpoke.UserPosition)) storage userPositions,
+    mapping(bytes32 reserveBucket => ISpoke.Reserve) storage reserves,
+    mapping(address user => mapping(bytes32 reserveBucket => ISpoke.UserPosition)) storage userPositions,
     mapping(address user => ISpoke.PositionStatus) storage positionStatus,
     uint256 reserveCount,
     address user
@@ -271,8 +271,8 @@ library LiquidationLogic {
     while (
       (reserveId = userPositionStatus.nextBorrowing(reserveId)) != PositionStatusMap.NOT_FOUND
     ) {
-      ISpoke.UserPosition storage userPosition = userPositions[user][reserveId];
-      ISpoke.Reserve storage reserve = reserves[reserveId];
+      ISpoke.UserPosition storage userPosition = userPositions[user][PositionStatusMap.reserveBucket(reserveId)];
+      ISpoke.Reserve storage reserve = reserves[PositionStatusMap.reserveBucket(reserveId)];
       IHubBase hub = reserve.hub;
       uint256 assetId = reserve.assetId;
 

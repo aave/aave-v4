@@ -141,7 +141,7 @@ abstract contract Spoke is
     _updateReservePriceSource(reserveId, priceSource);
 
     uint32 dynamicConfigKey; // 0 as first key to use
-    _reserves[reserveId] = Reserve({
+    _reserves[PositionStatusMap.reserveBucket(reserveId)] = Reserve({
       underlying: underlying,
       hub: IHubBase(hub),
       assetId: assetId.toUint16(),
@@ -155,7 +155,7 @@ abstract contract Spoke is
       }),
       dynamicConfigKey: dynamicConfigKey
     });
-    _dynamicConfig[reserveId][dynamicConfigKey] = dynamicConfig;
+    _dynamicConfig[PositionStatusMap.reserveBucket(reserveId)][dynamicConfigKey] = dynamicConfig;
 
     emit AddReserve(reserveId, assetId, hub);
     emit UpdateReserveConfig(reserveId, config);
@@ -193,12 +193,12 @@ abstract contract Spoke is
     DynamicReserveConfig calldata dynamicConfig
   ) external restricted returns (uint32) {
     require(reserveId < _reserveCount, ReserveNotListed());
-    uint32 dynamicConfigKey = _reserves[reserveId].dynamicConfigKey;
+    uint32 dynamicConfigKey = _reserves[PositionStatusMap.reserveBucket(reserveId)].dynamicConfigKey;
     require(dynamicConfigKey < MAX_ALLOWED_DYNAMIC_CONFIG_KEY, MaximumDynamicConfigKeyReached());
     _validateDynamicReserveConfig(dynamicConfig);
     dynamicConfigKey = dynamicConfigKey.uncheckedAdd(1).toUint32();
-    _reserves[reserveId].dynamicConfigKey = dynamicConfigKey;
-    _dynamicConfig[reserveId][dynamicConfigKey] = dynamicConfig;
+    _reserves[PositionStatusMap.reserveBucket(reserveId)].dynamicConfigKey = dynamicConfigKey;
+    _dynamicConfig[PositionStatusMap.reserveBucket(reserveId)][dynamicConfigKey] = dynamicConfig;
     emit AddDynamicReserveConfig(reserveId, dynamicConfigKey, dynamicConfig);
     return dynamicConfigKey;
   }
@@ -210,8 +210,8 @@ abstract contract Spoke is
     DynamicReserveConfig calldata dynamicConfig
   ) external restricted {
     require(reserveId < _reserveCount, ReserveNotListed());
-    _validateUpdateDynamicReserveConfig(_dynamicConfig[reserveId][dynamicConfigKey], dynamicConfig);
-    _dynamicConfig[reserveId][dynamicConfigKey] = dynamicConfig;
+    _validateUpdateDynamicReserveConfig(_dynamicConfig[PositionStatusMap.reserveBucket(reserveId)][dynamicConfigKey], dynamicConfig);
+    _dynamicConfig[PositionStatusMap.reserveBucket(reserveId)][dynamicConfigKey] = dynamicConfig;
     emit UpdateDynamicReserveConfig(reserveId, dynamicConfigKey, dynamicConfig);
   }
 
@@ -228,7 +228,7 @@ abstract contract Spoke is
     address onBehalfOf
   ) external nonReentrant onlyPositionManager(onBehalfOf) returns (uint256, uint256) {
     Reserve storage reserve = _reserves.get(reserveId);
-    UserPosition storage userPosition = _userPositions[onBehalfOf][reserveId];
+    UserPosition storage userPosition = _userPositions[onBehalfOf][PositionStatusMap.reserveBucket(reserveId)];
     _validateSupply(reserve.flags);
 
     IERC20(reserve.underlying).safeTransferFrom(msg.sender, address(reserve.hub), amount);
@@ -247,7 +247,7 @@ abstract contract Spoke is
     address onBehalfOf
   ) external nonReentrant onlyPositionManager(onBehalfOf) returns (uint256, uint256) {
     Reserve storage reserve = _reserves.get(reserveId);
-    UserPosition storage userPosition = _userPositions[onBehalfOf][reserveId];
+    UserPosition storage userPosition = _userPositions[onBehalfOf][PositionStatusMap.reserveBucket(reserveId)];
     _validateWithdraw(reserve.flags);
     IHubBase hub = reserve.hub;
     uint256 assetId = reserve.assetId;
@@ -277,7 +277,7 @@ abstract contract Spoke is
     address onBehalfOf
   ) external nonReentrant onlyPositionManager(onBehalfOf) returns (uint256, uint256) {
     Reserve storage reserve = _reserves.get(reserveId);
-    UserPosition storage userPosition = _userPositions[onBehalfOf][reserveId];
+    UserPosition storage userPosition = _userPositions[onBehalfOf][PositionStatusMap.reserveBucket(reserveId)];
     PositionStatus storage positionStatus = _positionStatus[onBehalfOf];
     _validateBorrow(reserve.flags);
     IHubBase hub = reserve.hub;
@@ -308,7 +308,7 @@ abstract contract Spoke is
     address onBehalfOf
   ) external nonReentrant onlyPositionManager(onBehalfOf) returns (uint256, uint256) {
     Reserve storage reserve = _reserves.get(reserveId);
-    UserPosition storage userPosition = _userPositions[onBehalfOf][reserveId];
+    UserPosition storage userPosition = _userPositions[onBehalfOf][PositionStatusMap.reserveBucket(reserveId)];
     _validateRepay(reserve.flags);
 
     uint256 drawnIndex = reserve.hub.getAssetDrawnIndex(reserve.assetId);
@@ -475,7 +475,7 @@ abstract contract Spoke is
     bytes32 permitR,
     bytes32 permitS
   ) external {
-    Reserve storage reserve = _reserves[reserveId];
+    Reserve storage reserve = _reserves[PositionStatusMap.reserveBucket(reserveId)];
     address underlying = reserve.underlying;
     require(underlying != address(0), ReserveNotListed());
     try
@@ -556,7 +556,7 @@ abstract contract Spoke is
     uint32 dynamicConfigKey
   ) external view returns (DynamicReserveConfig memory) {
     _reserves.get(reserveId);
-    return _dynamicConfig[reserveId][dynamicConfigKey];
+    return _dynamicConfig[PositionStatusMap.reserveBucket(reserveId)][dynamicConfigKey];
   }
 
   /// @inheritdoc ISpoke
@@ -575,20 +575,20 @@ abstract contract Spoke is
     return
       reserve.hub.previewRemoveByShares(
         reserve.assetId,
-        _userPositions[user][reserveId].suppliedShares
+        _userPositions[user][PositionStatusMap.reserveBucket(reserveId)].suppliedShares
       );
   }
 
   /// @inheritdoc ISpoke
   function getUserSuppliedShares(uint256 reserveId, address user) external view returns (uint256) {
     _reserves.get(reserveId);
-    return _userPositions[user][reserveId].suppliedShares;
+    return _userPositions[user][PositionStatusMap.reserveBucket(reserveId)].suppliedShares;
   }
 
   /// @inheritdoc ISpoke
   function getUserDebt(uint256 reserveId, address user) external view returns (uint256, uint256) {
     Reserve storage reserve = _reserves.get(reserveId);
-    UserPosition storage userPosition = _userPositions[user][reserveId];
+    UserPosition storage userPosition = _userPositions[user][PositionStatusMap.reserveBucket(reserveId)];
     (uint256 drawnDebt, uint256 premiumDebtRay) = userPosition.getDebt(
       reserve.hub,
       reserve.assetId
@@ -599,7 +599,7 @@ abstract contract Spoke is
   /// @inheritdoc ISpoke
   function getUserTotalDebt(uint256 reserveId, address user) external view returns (uint256) {
     Reserve storage reserve = _reserves.get(reserveId);
-    UserPosition storage userPosition = _userPositions[user][reserveId];
+    UserPosition storage userPosition = _userPositions[user][PositionStatusMap.reserveBucket(reserveId)];
     (uint256 drawnDebt, uint256 premiumDebtRay) = userPosition.getDebt(
       reserve.hub,
       reserve.assetId
@@ -610,7 +610,7 @@ abstract contract Spoke is
   /// @inheritdoc ISpoke
   function getUserPremiumDebtRay(uint256 reserveId, address user) external view returns (uint256) {
     Reserve storage reserve = _reserves.get(reserveId);
-    UserPosition storage userPosition = _userPositions[user][reserveId];
+    UserPosition storage userPosition = _userPositions[user][PositionStatusMap.reserveBucket(reserveId)];
     (, uint256 premiumDebtRay) = userPosition.getDebt(reserve.hub, reserve.assetId);
     return premiumDebtRay;
   }
@@ -621,7 +621,7 @@ abstract contract Spoke is
     address user
   ) external view returns (UserPosition memory) {
     _reserves.get(reserveId);
-    return _userPositions[user][reserveId];
+    return _userPositions[user][PositionStatusMap.reserveBucket(reserveId)];
   }
 
   /// @inheritdoc ISpoke
@@ -647,8 +647,8 @@ abstract contract Spoke is
         healthFactorForMaxBonus: _liquidationConfig.healthFactorForMaxBonus,
         liquidationBonusFactor: _liquidationConfig.liquidationBonusFactor,
         healthFactor: healthFactor,
-        maxLiquidationBonus: _dynamicConfig[reserveId][
-          _userPositions[user][reserveId].dynamicConfigKey
+        maxLiquidationBonus: _dynamicConfig[PositionStatusMap.reserveBucket(reserveId)][
+          _userPositions[user][PositionStatusMap.reserveBucket(reserveId)].dynamicConfigKey
         ].maxLiquidationBonus
       });
   }
@@ -719,14 +719,14 @@ abstract contract Spoke is
       (reserveId, borrowing, collateral) = positionStatus.next(reserveId);
       if (reserveId == PositionStatusMap.NOT_FOUND) break;
 
-      UserPosition storage userPosition = _userPositions[user][reserveId];
-      Reserve storage reserve = _reserves[reserveId];
+      UserPosition storage userPosition = _userPositions[user][PositionStatusMap.reserveBucket(reserveId)];
+      Reserve storage reserve = _reserves[PositionStatusMap.reserveBucket(reserveId)];
 
       uint256 assetPrice = IAaveOracle(ORACLE).getReservePrice(reserveId);
       uint256 assetDecimals = reserve.decimals;
 
       if (collateral) {
-        uint256 collateralFactor = _dynamicConfig[reserveId][
+        uint256 collateralFactor = _dynamicConfig[PositionStatusMap.reserveBucket(reserveId)][
           refreshConfig
             ? (userPosition.dynamicConfigKey = reserve.dynamicConfigKey)
             : userPosition.dynamicConfigKey
@@ -813,7 +813,7 @@ abstract contract Spoke is
   }
 
   function _refreshDynamicConfig(address user, uint256 reserveId) internal {
-    _userPositions[user][reserveId].dynamicConfigKey = _reserves[reserveId].dynamicConfigKey;
+    _userPositions[user][PositionStatusMap.reserveBucket(reserveId)].dynamicConfigKey = _reserves[PositionStatusMap.reserveBucket(reserveId)].dynamicConfigKey;
     emit RefreshSingleUserDynamicConfig(user, reserveId);
   }
 
@@ -828,8 +828,8 @@ abstract contract Spoke is
 
     uint256 reserveId = _reserveCount;
     while ((reserveId = positionStatus.nextBorrowing(reserveId)) != PositionStatusMap.NOT_FOUND) {
-      UserPosition storage userPosition = _userPositions[user][reserveId];
-      Reserve storage reserve = _reserves[reserveId];
+      UserPosition storage userPosition = _userPositions[user][PositionStatusMap.reserveBucket(reserveId)];
+      Reserve storage reserve = _reserves[PositionStatusMap.reserveBucket(reserveId)];
       uint256 assetId = reserve.assetId;
       IHubBase hub = reserve.hub;
 
@@ -902,7 +902,7 @@ abstract contract Spoke is
     uint256 assetId,
     uint256 reserveId
   ) internal view returns (bool) {
-    return _reserves[reserveId].assetId == assetId && address(_reserves[reserveId].hub) == hub;
+    return _reserves[PositionStatusMap.reserveBucket(reserveId)].assetId == assetId && address(_reserves[PositionStatusMap.reserveBucket(reserveId)].hub) == hub;
   }
 
   /// @notice Returns whether `manager` is active and approved positionManager for `user`.
