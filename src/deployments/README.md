@@ -51,8 +51,8 @@ This requires a **two-step deploy** because Foundry needs to re-compile with the
 **Step 1 — `LibraryPreCompile.s.sol`** (separate transaction):
 
 1. `SpokeDeployUtils` deploys `LiquidationLogic` and `BabylonLiquidationLogic` via CREATE2 with `salt=0`
-2. Writes `FOUNDRY_LIBRARIES=src/spoke/libraries/LiquidationLogic.sol:LiquidationLogic:0x<address>` to `.env` via FFI
-3. On re-run: if the library is already deployed (has code), skips. If `FOUNDRY_LIBRARIES` exists but the library isn't deployed (wrong chain/fork), deletes the stale entry and asks you to run again
+2. Writes both entries, comma separated, as `FOUNDRY_LIBRARIES=<path>:LiquidationLogic:0x<address>,<path>:BabylonLiquidationLogic:0x<address>` to `.env` via FFI
+3. On re-run: if both libraries are already deployed (have code), skips. If `FOUNDRY_LIBRARIES` exists but a library isn't deployed (wrong chain/fork), deletes the stale entry and asks you to run again
 
 **Step 2 — Main deploy script** (next invocation):
 
