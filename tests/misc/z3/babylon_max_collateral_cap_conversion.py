@@ -1,8 +1,8 @@
-# Analyzes the conversion of the remaining removal cap (assets) into `maxRemovableShares` in
-# BabylonLiquidationLogic._liquidateDebtReserves, performed before each repayment:
+# Analyzes the conversion of the removal cap (assets) into `maxRemovableShares` in
+# BabylonLiquidationLogic._executeLiquidation:
 #
 #   uint256 maxRemovableShares = params.collateralHub
-#     .previewAddByAssets(params.collateralAssetId, remainingCollateralToRemove)
+#     .previewAddByAssets(params.collateralAssetId, params.maxCollateralToRemove)
 #     .min(collateralUserPosition.suppliedShares);
 #
 # When the cap is enforced, exactly `maxRemovableShares` shares are removed and the payout is

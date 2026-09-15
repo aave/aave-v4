@@ -255,11 +255,6 @@ library AaveV4DeployOrchestration {
     bytes32 salt
   ) internal returns (OrchestrationReports.SpokeDeploymentReport[] memory spokeBatchReports) {
     uint256 spokeCount = inputs.babylonSpokeLabels.length;
-    uint256 limitsLen = inputs.babylonSpokeMaxReservesLimits.length;
-    require(
-      limitsLen == spokeCount || limitsLen == 0,
-      'babylon spoke labels/limits length mismatch'
-    );
     spokeBatchReports = new OrchestrationReports.SpokeDeploymentReport[](spokeCount);
     for (uint256 i; i < spokeCount; ++i) {
       bytes32 childSalt = _deriveChildSalt(salt, 'babylonSpoke', inputs.babylonSpokeLabels[i]);
@@ -269,9 +264,6 @@ library AaveV4DeployOrchestration {
         authority: authority,
         label: inputs.babylonSpokeLabels[i],
         babylonSpokeBytecode: babylonSpokeBytecode,
-        maxUserReservesLimit: limitsLen > 0
-          ? inputs.babylonSpokeMaxReservesLimits[i]
-          : DeployConstants.MAX_ALLOWED_USER_RESERVES_LIMIT,
         oracleDecimals: DeployConstants.ORACLE_DECIMALS,
         salt: childSalt
       });
@@ -286,7 +278,6 @@ library AaveV4DeployOrchestration {
     address authority,
     string memory label,
     bytes memory babylonSpokeBytecode,
-    uint16 maxUserReservesLimit,
     uint8 oracleDecimals,
     bytes32 salt
   ) internal returns (OrchestrationReports.SpokeDeploymentReport memory) {
@@ -299,7 +290,6 @@ library AaveV4DeployOrchestration {
       authority: authority,
       babylonSpokeBytecode: babylonSpokeBytecode,
       oracleDecimals: oracleDecimals,
-      maxUserReservesLimit: maxUserReservesLimit,
       salt: salt
     });
     _logSpokeReport({logger: logger, report: spokeReport.report, label: label});

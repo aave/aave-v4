@@ -6,7 +6,8 @@ import {IBabylonSpoke} from 'src/spoke/interfaces/IBabylonSpoke.sol';
 
 /// @dev Extends the base environment with a fourth spoke running the Babylon spoke instance.
 /// The spoke mirrors spoke1's reserves and liquidation config, with the managed collateral
-/// reserve (wbtc) non-borrowable and fee-free, as expected in production.
+/// reserve (wbtc) non-borrowable, every reserve fee-free and users limited to one collateral and
+/// one debt reserve, as in production.
 abstract contract BabylonBase is Base {
   IBabylonSpoke internal babylonSpoke;
   ISpoke internal spoke4;
@@ -59,24 +60,12 @@ abstract contract BabylonBase is Base {
     });
   }
 
-  function _arr(uint256 a) internal pure returns (uint256[] memory arr) {
-    arr = new uint256[](1);
-    arr[0] = a;
-  }
-
-  function _arr(uint256 a, uint256 b) internal pure returns (uint256[] memory arr) {
-    arr = new uint256[](2);
-    arr[0] = a;
-    arr[1] = b;
-  }
-
   function _deployBabylonSpoke() internal {
     vm.startPrank(ADMIN);
-    TestTypes.TestSpokeReport memory report = AaveV4TestOrchestration.deployTestSpoke({
+    TestTypes.TestSpokeReport memory report = AaveV4TestOrchestration.deployTestBabylonSpoke({
       proxyAdminOwner: ADMIN,
       accessManager: address(accessManager),
-      spokeBytecode: BytecodeHelper.getBabylonSpokeBytecode(),
-      maxUserReservesLimit: DeployConstants.MAX_ALLOWED_USER_RESERVES_LIMIT,
+      babylonSpokeBytecode: BytecodeHelper.getBabylonSpokeBytecode(),
       // deterministic salt: the spoke address enters signed payloads measured by the gas suite
       salt: keccak256('babylon-spoke')
     });

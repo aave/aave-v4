@@ -7,13 +7,13 @@ import 'tests/contracts/spoke/liquidation/Spoke.BabylonLiquidationCall.Base.t.so
 /// Canonical scenarios 1 and 2 are rederived as a single-collateral health factor decrease
 /// scenario. Scenario 4 is dropped (the liquidator never receives shares), scenarios 6 and 7 are
 /// dropped (no target health factor sizing) and scenario 8 is dropped (the liquidation fee is
-/// never charged, so splitting liquidations cannot grief the treasury). Cap sizing, skipped debt
-/// reserves and per debt reserve events are covered by the unit suite.
+/// never charged, so splitting liquidations cannot grief the treasury). Cap sizing is covered by
+/// the unit suite.
 contract SpokeBabylonLiquidationCallScenariosTest is SpokeBabylonLiquidationCallBaseTest {
   using SafeCast for *;
 
   bytes4 internal constant BABYLON_LIQUIDATION_CALL_SELECTOR =
-    bytes4(keccak256('liquidationCall(uint256[],uint256[],address,uint256)'));
+    bytes4(keccak256('liquidationCall(uint256,uint256,address,uint256)'));
 
   address public user = makeAddr('user');
 
@@ -67,7 +67,7 @@ contract SpokeBabylonLiquidationCallScenariosTest is SpokeBabylonLiquidationCall
     );
     vm.expectRevert(ReentrancyGuardTransient.ReentrancyGuardReentrantCall.selector);
     vm.prank(liquidationManager);
-    babylonSpoke.liquidationCall(_arr(debtReserveId), _arr(UINT256_MAX), user, UINT256_MAX);
+    babylonSpoke.liquidationCall(debtReserveId, UINT256_MAX, user, UINT256_MAX);
   }
 
   function test_liquidationCall_revertsWith_ReentrancyGuardReentrantCall_hubRestore() public {
@@ -88,7 +88,7 @@ contract SpokeBabylonLiquidationCallScenariosTest is SpokeBabylonLiquidationCall
     );
     vm.expectRevert(ReentrancyGuardTransient.ReentrancyGuardReentrantCall.selector);
     vm.prank(liquidationManager);
-    babylonSpoke.liquidationCall(_arr(debtReserveId), _arr(UINT256_MAX), user, UINT256_MAX);
+    babylonSpoke.liquidationCall(debtReserveId, UINT256_MAX, user, UINT256_MAX);
   }
 
   function test_liquidationCall_revertsWith_ReentrancyGuardReentrantCall_hubRefreshPremium()
@@ -113,7 +113,7 @@ contract SpokeBabylonLiquidationCallScenariosTest is SpokeBabylonLiquidationCall
     uint256 debtToCover = spoke4.getUserTotalDebt(debtReserveId, user) / 2;
     vm.expectRevert(ReentrancyGuardTransient.ReentrancyGuardReentrantCall.selector);
     vm.prank(liquidationManager);
-    babylonSpoke.liquidationCall(_arr(debtReserveId), _arr(debtToCover), user, UINT256_MAX);
+    babylonSpoke.liquidationCall(debtReserveId, debtToCover, user, UINT256_MAX);
   }
 
   function test_liquidationCall_revertsWith_ReentrancyGuardReentrantCall_hubReportDeficit() public {
@@ -134,7 +134,7 @@ contract SpokeBabylonLiquidationCallScenariosTest is SpokeBabylonLiquidationCall
     );
     vm.expectRevert(ReentrancyGuardTransient.ReentrancyGuardReentrantCall.selector);
     vm.prank(liquidationManager);
-    babylonSpoke.liquidationCall(_arr(debtReserveId), _arr(UINT256_MAX), user, UINT256_MAX);
+    babylonSpoke.liquidationCall(debtReserveId, UINT256_MAX, user, UINT256_MAX);
   }
 
   // User is solvent, but the health factor decreases after liquidation due to a high liquidation
@@ -194,8 +194,8 @@ contract SpokeBabylonLiquidationCallScenariosTest is SpokeBabylonLiquidationCall
     //   - Debt: 2000 DAI (premium first, then drawn)
     _checkedBabylonLiquidationCall(
       CheckedBabylonLiquidationCallParams({
-        debtReserveIds: _arr(_daiReserveId(spoke4)),
-        debtToCoverAmounts: _arr(2000e18),
+        debtReserveId: _daiReserveId(spoke4),
+        debtToCover: 2000e18,
         user: user,
         maxCollateralToRemove: UINT256_MAX,
         isSolvent: true
@@ -262,8 +262,8 @@ contract SpokeBabylonLiquidationCallScenariosTest is SpokeBabylonLiquidationCall
     //   - Debt: 79 wei of DAI
     _checkedBabylonLiquidationCall(
       CheckedBabylonLiquidationCallParams({
-        debtReserveIds: _arr(_daiReserveId(spoke4)),
-        debtToCoverAmounts: _arr(UINT256_MAX),
+        debtReserveId: _daiReserveId(spoke4),
+        debtToCover: UINT256_MAX,
         user: user,
         maxCollateralToRemove: UINT256_MAX,
         isSolvent: true
@@ -351,7 +351,7 @@ contract SpokeBabylonLiquidationCallScenariosTest is SpokeBabylonLiquidationCall
     // Perform liquidation
     // 1 drawn share of DAI is liquidated = 1.1 wei of DAI = 2.211 wei of USD = 2.211 wei of WETH = 1.7688 wei of WETH shares
     vm.prank(liquidationManager);
-    babylonSpoke.liquidationCall(_arr(_daiReserveId(spoke4)), _arr(UINT256_MAX), user, UINT256_MAX);
+    babylonSpoke.liquidationCall(_daiReserveId(spoke4), UINT256_MAX, user, UINT256_MAX);
 
     // User position after liquidation
     ISpoke.UserPosition memory userCollateralPositionAfter = spoke4.getUserPosition(
@@ -382,106 +382,5 @@ contract SpokeBabylonLiquidationCallScenariosTest is SpokeBabylonLiquidationCall
       0,
       'User should have 0 premium offset after liquidation'
     );
-  }
-
-  // A full multi-debt liquidation consuming all collateral reports deficit on every debt reserve.
-  function test_liquidationCall_scenario_multiDebtDeficit() public {
-    _setManagedCollateralReserve(_wethReserveId(spoke4));
-
-    // Collateral: 1 WETH ($2000); Debts: 500 USDX and DAI debt pushing the health factor to 0.5
-    _increaseCollateralSupply(spoke4, _wethReserveId(spoke4), 1e18, user);
-    _increaseReserveDebtNoCollateral(spoke4, _usdxReserveId(spoke4), 500e6, user);
-    _makeUserLiquidatable(spoke4, user, _daiReserveId(spoke4), 0.5e18);
-
-    _checkedBabylonLiquidationCall(
-      CheckedBabylonLiquidationCallParams({
-        debtReserveIds: _arr(_daiReserveId(spoke4), _usdxReserveId(spoke4)),
-        debtToCoverAmounts: _arr(UINT256_MAX, UINT256_MAX),
-        user: user,
-        maxCollateralToRemove: UINT256_MAX,
-        isSolvent: false
-      })
-    );
-
-    // the collateral is fully consumed and the remaining debt is written off as deficit
-    assertEq(
-      spoke4.getUserSuppliedShares(_wethReserveId(spoke4), user),
-      0,
-      'collateral fully removed'
-    );
-    assertEq(spoke4.getUserTotalDebt(_daiReserveId(spoke4), user), 0, 'dai debt cleared');
-    assertEq(spoke4.getUserTotalDebt(_usdxReserveId(spoke4), user), 0, 'usdx debt cleared');
-    assertGt(
-      _hub(spoke4, _daiReserveId(spoke4)).getAssetDeficitRay(
-        _reserveAssetId(spoke4, _daiReserveId(spoke4))
-      ),
-      0,
-      'dai deficit reported'
-    );
-  }
-
-  /// @dev a halted peripheral asset won't block a liquidation
-  function test_scenario_halted_asset() public {
-    _setManagedCollateralReserve(_wethReserveId(spoke4));
-    uint256 debtReserveId = _daiReserveId(spoke4);
-
-    _increaseCollateralSupply(spoke4, collateralReserveId, 10e18, user);
-    // borrow usdx as peripheral debt asset not directly involved in liquidation
-    _openSupplyPositionNoCollateral(spoke4, _usdxReserveId(spoke4), 100e6);
-    SpokeActions.borrow({
-      spoke: spoke4,
-      reserveId: _usdxReserveId(spoke4),
-      caller: user,
-      amount: 100e6,
-      onBehalfOf: user
-    });
-    _makeUserLiquidatable(spoke4, user, debtReserveId, 0.95e18);
-
-    // set spoke halted
-    IHub hub = _hub(spoke4, _usdxReserveId(spoke4));
-    _updateSpokeHalted(hub, usdxAssetId, address(spoke4), true);
-
-    _openSupplyPosition(spoke4, collateralReserveId, MAX_SUPPLY_AMOUNT);
-
-    vm.expectCall(
-      address(hub),
-      abi.encodeWithSelector(IHubBase.refreshPremium.selector, usdxAssetId)
-    );
-
-    vm.prank(liquidationManager);
-    babylonSpoke.liquidationCall(_arr(debtReserveId), _arr(UINT256_MAX), user, UINT256_MAX);
-  }
-
-  /// @dev a halted peripheral asset won't block a liquidation with deficit
-  function test_scenario_halted_asset_with_deficit() public {
-    _setManagedCollateralReserve(_wethReserveId(spoke4));
-    uint256 debtReserveId = _daiReserveId(spoke4);
-
-    _increaseCollateralSupply(spoke4, collateralReserveId, 10e18, user);
-    // borrow usdx as peripheral debt asset not directly involved in liquidation
-    _openSupplyPositionNoCollateral(spoke4, _usdxReserveId(spoke4), 100e6);
-    SpokeActions.borrow({
-      spoke: spoke4,
-      reserveId: _usdxReserveId(spoke4),
-      caller: user,
-      amount: 100e6,
-      onBehalfOf: user
-    });
-    // make user unhealthy to result in deficit
-    _makeUserLiquidatable(spoke4, user, debtReserveId, 0.5e18);
-
-    // set spoke halted
-    IHub hub = _hub(spoke4, _usdxReserveId(spoke4));
-    _updateSpokeHalted(hub, usdxAssetId, address(spoke4), true);
-
-    _openSupplyPosition(spoke4, collateralReserveId, MAX_SUPPLY_AMOUNT);
-
-    vm.expectCall(
-      address(hub),
-      abi.encodeWithSelector(IHubBase.reportDeficit.selector, usdxAssetId)
-    );
-
-    vm.prank(liquidationManager);
-    babylonSpoke.liquidationCall(_arr(debtReserveId), _arr(UINT256_MAX), user, UINT256_MAX);
   }
 }

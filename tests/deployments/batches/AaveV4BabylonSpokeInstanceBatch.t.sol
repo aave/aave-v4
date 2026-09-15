@@ -14,7 +14,6 @@ contract AaveV4BabylonSpokeInstanceBatchTest is BatchBaseTest {
       authority_: accessManager,
       babylonSpokeBytecode_: babylonSpokeBytecode,
       oracleDecimals_: 8,
-      maxUserReservesLimit_: 128,
       salt_: salt
     });
     report = babylonSpokeBatch.getReport();
@@ -34,8 +33,9 @@ contract AaveV4BabylonSpokeInstanceBatchTest is BatchBaseTest {
     assertEq(ISpoke(report.spokeProxy).ORACLE(), report.aaveOracle);
   }
 
+  /// @dev The BabylonSpoke fixes one collateral and one debt reserve per user.
   function test_spokeMaxUserReservesLimit() public view {
-    assertEq(ISpoke(report.spokeProxy).MAX_USER_RESERVES_LIMIT(), 128);
+    assertEq(ISpoke(report.spokeProxy).MAX_USER_RESERVES_LIMIT(), 1);
   }
 
   function test_oracleWiring() public view {
@@ -50,7 +50,6 @@ contract AaveV4BabylonSpokeInstanceBatchTest is BatchBaseTest {
       authority_: address(0),
       babylonSpokeBytecode_: babylonSpokeBytecode,
       oracleDecimals_: 8,
-      maxUserReservesLimit_: 128,
       salt_: salt
     });
   }
@@ -62,7 +61,6 @@ contract AaveV4BabylonSpokeInstanceBatchTest is BatchBaseTest {
       authority_: accessManager,
       babylonSpokeBytecode_: babylonSpokeBytecode,
       oracleDecimals_: 8,
-      maxUserReservesLimit_: 128,
       salt_: salt
     });
   }
@@ -74,20 +72,7 @@ contract AaveV4BabylonSpokeInstanceBatchTest is BatchBaseTest {
       authority_: accessManager,
       babylonSpokeBytecode_: babylonSpokeBytecode,
       oracleDecimals_: 0,
-      maxUserReservesLimit_: 128,
       salt_: keccak256('zeroDecimalsSalt')
-    });
-  }
-
-  function test_revert_zeroMaxUserReservesLimit() public {
-    vm.expectRevert('invalid max user reserves limit');
-    new AaveV4BabylonSpokeInstanceBatch({
-      proxyAdminOwner_: admin,
-      authority_: accessManager,
-      babylonSpokeBytecode_: babylonSpokeBytecode,
-      oracleDecimals_: 8,
-      maxUserReservesLimit_: 0,
-      salt_: keccak256('zeroMaxReservesSalt')
     });
   }
 
@@ -97,7 +82,6 @@ contract AaveV4BabylonSpokeInstanceBatchTest is BatchBaseTest {
       authority_: accessManager,
       babylonSpokeBytecode_: babylonSpokeBytecode,
       oracleDecimals_: 8,
-      maxUserReservesLimit_: 128,
       salt_: keccak256('differentSalt')
     });
     assertNotEq(report.spokeProxy, newBatch.getReport().spokeProxy);

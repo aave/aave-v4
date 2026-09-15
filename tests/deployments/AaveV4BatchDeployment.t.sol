@@ -28,7 +28,6 @@ contract AaveV4BatchDeploymentTest is BatchTestProcedures {
       spokeLabels: _spokeLabels,
       spokeMaxReservesLimits: _defaultSpokeMaxReservesLimits(_spokeLabels.length),
       babylonSpokeLabels: new string[](0),
-      babylonSpokeMaxReservesLimits: new uint16[](0),
       salt: bytes32(0)
     });
   }
@@ -350,6 +349,11 @@ contract AaveV4BatchDeploymentTest is BatchTestProcedures {
     assertNotEq(babylonReport.spokeImplementation, address(0), 'babylon spoke implementation');
     assertNotEq(babylonReport.aaveOracle, address(0), 'babylon spoke oracle');
     assertEq(
+      ISpoke(babylonReport.spokeProxy).MAX_USER_RESERVES_LIMIT(),
+      1,
+      'babylon spoke user reserves limit'
+    );
+    assertEq(
       IAccessManaged(babylonReport.spokeProxy).authority(),
       report.authorityBatchReport.accessManager,
       'babylon spoke authority'
@@ -421,7 +425,6 @@ contract AaveV4BatchDeploymentTest is BatchTestProcedures {
       deployInputs.spokeMaxReservesLimits = _inputs.spokeMaxReservesLimits;
     }
     deployInputs.babylonSpokeLabels = new string[](0);
-    deployInputs.babylonSpokeMaxReservesLimits = new uint16[](0);
     _deployer = deployer;
     _inputs = deployInputs;
 
@@ -458,7 +461,6 @@ contract AaveV4BatchDeploymentTest is BatchTestProcedures {
       deployInputs.spokeMaxReservesLimits = _inputs.spokeMaxReservesLimits;
     }
     deployInputs.babylonSpokeLabels = new string[](0);
-    deployInputs.babylonSpokeMaxReservesLimits = new uint16[](0);
     _deployer = deployer;
     _inputs = deployInputs;
 

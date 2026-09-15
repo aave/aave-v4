@@ -115,7 +115,6 @@ library AaveV4DeployBase {
   /// @param authority The access-control authority for the BabylonSpoke.
   /// @param babylonSpokeBytecode The creation bytecode of the BabylonSpokeInstance contract.
   /// @param oracleDecimals The decimal precision for the AaveOracle.
-  /// @param maxUserReservesLimit The maximum number of reserves a user can interact with.
   /// @param salt The CREATE2 salt for deterministic deployment.
   /// @return The BabylonSpoke instance batch report.
   function deployBabylonSpokeInstanceBatch(
@@ -123,7 +122,6 @@ library AaveV4DeployBase {
     address authority,
     bytes memory babylonSpokeBytecode,
     uint8 oracleDecimals,
-    uint16 maxUserReservesLimit,
     bytes32 salt
   ) internal returns (BatchReports.SpokeInstanceBatchReport memory) {
     AaveV4BabylonSpokeInstanceBatch babylonSpokeInstanceBatch = new AaveV4BabylonSpokeInstanceBatch({
@@ -131,7 +129,6 @@ library AaveV4DeployBase {
         authority_: authority,
         babylonSpokeBytecode_: babylonSpokeBytecode,
         oracleDecimals_: oracleDecimals,
-        maxUserReservesLimit_: maxUserReservesLimit,
         salt_: salt
       });
     return babylonSpokeInstanceBatch.getReport();

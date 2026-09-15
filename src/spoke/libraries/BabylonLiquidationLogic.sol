@@ -9,7 +9,7 @@ import {SpokeUtils} from 'src/spoke/libraries/SpokeUtils.sol';
 import {LiquidationLogic} from 'src/spoke/libraries/LiquidationLogic.sol';
 import {PositionStatusMap} from 'src/spoke/libraries/PositionStatusMap.sol';
 import {UserPositionUtils} from 'src/spoke/libraries/UserPositionUtils.sol';
-import {ReserveFlags, ReserveFlagsMap} from 'src/spoke/libraries/ReserveFlagsMap.sol';
+import {ReserveFlags} from 'src/spoke/libraries/ReserveFlagsMap.sol';
 import {IHubBase} from 'src/hub/interfaces/IHubBase.sol';
 import {IAaveOracle} from 'src/spoke/interfaces/IAaveOracle.sol';
 import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
@@ -24,17 +24,15 @@ library BabylonLiquidationLogic {
   using WadRayMath for uint256;
   using SpokeUtils for *;
   using UserPositionUtils for ISpoke.UserPosition;
-  using ReserveFlagsMap for ReserveFlags;
   using PositionStatusMap for ISpoke.PositionStatus;
 
   struct LiquidateUserParams {
     uint256 collateralReserveId;
-    uint256[] debtReserveIds;
-    uint256[] debtToCoverAmounts;
-    uint256 reserveCount;
+    uint256 debtReserveId;
     address oracle;
     address user;
     ISpoke.LiquidationConfig liquidationConfig;
+    uint256 debtToCover;
     uint256 maxCollateralToRemove;
     ISpoke.UserAccountData userAccountData;
     address liquidator;
@@ -47,60 +45,27 @@ library BabylonLiquidationLogic {
     uint256 collateralReserveId;
     ReserveFlags collateralReserveFlags;
     ISpoke.DynamicReserveConfig collateralDynConfig;
-    uint256[] debtReserveIds;
-    uint256[] debtToCoverAmounts;
+    IHubBase debtHub;
+    uint256 debtAssetId;
+    uint256 debtAssetDecimals;
+    address debtUnderlying;
+    uint256 debtReserveId;
+    ReserveFlags debtReserveFlags;
     ISpoke.LiquidationConfig liquidationConfig;
     address oracle;
     address user;
-    uint256 maxCollateralToRemove;
-    uint256 healthFactor;
-    uint256 reserveCount;
-    address liquidator;
-  }
-
-  struct ValidateLiquidationCallParams {
-    address user;
-    address liquidator;
-    uint256[] debtReserveIds;
-    uint256[] debtToCoverAmounts;
-    uint256 collateralReserveId;
-    ReserveFlags collateralReserveFlags;
-    uint256 suppliedShares;
-    uint256 collateralFactor;
-    uint256 healthFactor;
-  }
-
-  struct LiquidateDebtReservesParams {
-    IHubBase collateralHub;
-    uint256 collateralAssetId;
-    uint256 collateralAssetUnit;
-    uint256 collateralAssetPrice;
-    uint256 liquidationBonus;
-    uint256[] debtReserveIds;
-    uint256[] debtToCoverAmounts;
-    address oracle;
-    address user;
-    address liquidator;
-    uint256 maxCollateralToRemove;
-    uint256 suppliedShares;
-  }
-
-  struct LiquidateDebtReserveParams {
-    IHubBase collateralHub;
-    uint256 collateralAssetId;
-    uint256 collateralAssetUnit;
-    uint256 collateralAssetPrice;
-    uint256 liquidationBonus;
-    IHubBase debtHub;
-    uint256 debtAssetId;
-    address debtUnderlying;
-    uint256 debtAssetUnit;
-    uint256 debtReserveId;
     uint256 debtToCover;
-    address oracle;
-    address user;
+    uint256 maxCollateralToRemove;
+    uint256 healthFactor;
+    uint256 activeCollateralCount;
+    uint256 borrowCount;
     address liquidator;
-    uint256 maxRemovableShares;
+  }
+
+  struct LiquidationResult {
+    bool isUserInDeficit;
+    uint256 liquidationBonus;
+    uint256 collateralAmountRemoved;
   }
 
   struct CalculateLiquidationAmountsParams {
@@ -108,12 +73,12 @@ library BabylonLiquidationLogic {
     uint256 collateralReserveAssetId;
     uint256 collateralAssetUnit;
     uint256 collateralAssetPrice;
-    uint256 liquidationBonus;
     uint256 drawnShares;
     uint256 premiumDebtRay;
     uint256 drawnIndex;
     uint256 debtAssetUnit;
     uint256 debtAssetPrice;
+    uint256 liquidationBonus;
     uint256 debtToCover;
     uint256 maxRemovableShares;
   }
@@ -125,38 +90,31 @@ library BabylonLiquidationLogic {
   }
 
   /// @notice Liquidates a user position with cap-bounded sizing.
-  /// @dev The health factor is validated once at entry, not per debt reserve: with multiple debt
-  /// reserves, an intermediate repayment can restore the health factor above the threshold while the
-  /// removal cap is not yet reached, and repayment must be able to continue so the collateral
-  /// removal can be completed. Over-liquidation is bounded by `maxCollateralToRemove` and by the liquidation
-  /// manager restriction on the caller.
-  /// @dev The liquidation fee is not charged: the liquidator receives the full removed collateral. The
-  /// collateral reserve is expected to be configured with a zero liquidation fee.
-  /// @dev A debt reserve the user no longer borrows is skipped, so repayments cannot be blocked
-  /// by front-running liquidations.
+  /// @dev The liquidation fee is not charged: the liquidator receives the full removed collateral.
   /// @param reserves The mapping of reserves per reserve id.
   /// @param userPositions The mapping of user positions per user per reserve.
   /// @param positionStatus The mapping of position status per user.
   /// @param dynamicConfig The mapping of dynamic config per reserve per dynamic config key.
   /// @param params The liquidate user params.
-  /// @return True if the liquidation results in deficit.
+  /// @return The liquidation result.
   function liquidateUser(
     mapping(uint256 reserveId => ISpoke.Reserve) storage reserves,
     mapping(address user => mapping(uint256 reserveId => ISpoke.UserPosition)) storage userPositions,
     mapping(address user => ISpoke.PositionStatus) storage positionStatus,
     mapping(uint256 reserveId => mapping(uint32 dynamicConfigKey => ISpoke.DynamicReserveConfig)) storage dynamicConfig,
     LiquidateUserParams memory params
-  ) external returns (bool) {
+  ) external returns (LiquidationResult memory) {
     ISpoke.Reserve storage collateralReserve = reserves.get(params.collateralReserveId);
+    ISpoke.Reserve storage debtReserve = reserves.get(params.debtReserveId);
     ISpoke.UserPosition storage collateralUserPosition = userPositions[params.user][
       params.collateralReserveId
     ];
 
     return
       _executeLiquidation({
-        reserves: reserves,
-        userPositions: userPositions,
         collateralUserPosition: collateralUserPosition,
+        debtUserPosition: userPositions[params.user][params.debtReserveId],
+        collateralLiquidatorPosition: userPositions[params.liquidator][params.collateralReserveId],
         userPositionStatus: positionStatus[params.user],
         params: ExecuteLiquidationParams({
           collateralHub: collateralReserve.hub,
@@ -167,201 +125,90 @@ library BabylonLiquidationLogic {
           collateralDynConfig: dynamicConfig[params.collateralReserveId][
             collateralUserPosition.dynamicConfigKey
           ],
-          debtReserveIds: params.debtReserveIds,
-          debtToCoverAmounts: params.debtToCoverAmounts,
+          debtHub: debtReserve.hub,
+          debtAssetId: debtReserve.assetId,
+          debtAssetDecimals: debtReserve.decimals,
+          debtUnderlying: debtReserve.underlying,
+          debtReserveId: params.debtReserveId,
+          debtReserveFlags: debtReserve.flags,
           liquidationConfig: params.liquidationConfig,
           oracle: params.oracle,
           user: params.user,
+          debtToCover: params.debtToCover,
           maxCollateralToRemove: params.maxCollateralToRemove,
           healthFactor: params.userAccountData.healthFactor,
-          reserveCount: params.reserveCount,
+          activeCollateralCount: params.userAccountData.activeCollateralCount,
+          borrowCount: params.userAccountData.borrowCount,
           liquidator: params.liquidator
         })
       });
   }
 
-  /// @dev Executes the liquidation.
-  /// @param reserves The mapping of reserves per reserve id.
-  /// @param userPositions The mapping of user positions per user per reserve.
+  /// @dev Executes the liquidation: repays the debt reserve and removes the priced collateral,
+  /// bounded by `params.maxCollateralToRemove`.
+  /// @dev The repayment runs even when the cap allows no collateral removal, so debt can be
+  /// liquidated when the corresponding collateral amount to receive is zero.
   /// @param collateralUserPosition User's collateral position.
+  /// @param debtUserPosition User's debt position.
+  /// @param collateralLiquidatorPosition Liquidator's collateral position.
   /// @param userPositionStatus User's position status.
   /// @param params The execute liquidation params.
-  /// @return True if the liquidation results in deficit.
+  /// @return The liquidation result.
   function _executeLiquidation(
-    mapping(uint256 reserveId => ISpoke.Reserve) storage reserves,
-    mapping(address user => mapping(uint256 reserveId => ISpoke.UserPosition)) storage userPositions,
     ISpoke.UserPosition storage collateralUserPosition,
+    ISpoke.UserPosition storage debtUserPosition,
+    ISpoke.UserPosition storage collateralLiquidatorPosition,
     ISpoke.PositionStatus storage userPositionStatus,
     ExecuteLiquidationParams memory params
-  ) internal returns (bool) {
-    _validateLiquidationCall(
-      reserves,
-      userPositionStatus,
-      ValidateLiquidationCallParams({
-        user: params.user,
-        liquidator: params.liquidator,
-        debtReserveIds: params.debtReserveIds,
-        debtToCoverAmounts: params.debtToCoverAmounts,
-        collateralReserveId: params.collateralReserveId,
-        collateralReserveFlags: params.collateralReserveFlags,
-        suppliedShares: collateralUserPosition.suppliedShares,
-        collateralFactor: params.collateralDynConfig.collateralFactor,
-        healthFactor: params.healthFactor
-      })
-    );
-
-    // the collateral pricing is constant across the debt reserves repaid: the bonus is derived
-    // from the entry health factor and the collateral price is read once
-    LiquidateDebtReservesParams memory liquidateDebtReservesParams = LiquidateDebtReservesParams({
-      collateralHub: params.collateralHub,
-      collateralAssetId: params.collateralAssetId,
-      collateralAssetUnit: MathUtils.uncheckedExp(10, params.collateralAssetDecimals),
-      collateralAssetPrice: IAaveOracle(params.oracle).getReservePrice(params.collateralReserveId),
-      liquidationBonus: LiquidationLogic.calculateLiquidationBonus({
-        healthFactorForMaxBonus: params.liquidationConfig.healthFactorForMaxBonus,
-        liquidationBonusFactor: params.liquidationConfig.liquidationBonusFactor,
-        healthFactor: params.healthFactor,
-        maxLiquidationBonus: params.collateralDynConfig.maxLiquidationBonus
-      }),
-      debtReserveIds: params.debtReserveIds,
-      debtToCoverAmounts: params.debtToCoverAmounts,
-      oracle: params.oracle,
-      user: params.user,
-      liquidator: params.liquidator,
-      maxCollateralToRemove: params.maxCollateralToRemove,
-      suppliedShares: collateralUserPosition.suppliedShares
-    });
-
-    (uint256 collateralSharesRemoved, uint256 collateralAmountRemoved) = _liquidateDebtReserves({
-      reserves: reserves,
-      userPositions: userPositions,
-      collateralUserPosition: collateralUserPosition,
-      collateralLiquidatorPosition: userPositions[params.liquidator][params.collateralReserveId],
-      userPositionStatus: userPositionStatus,
-      params: liquidateDebtReservesParams
-    });
-
-    emit IBabylonSpoke.BabylonLiquidationCallSummary({
-      collateralReserveId: params.collateralReserveId,
-      user: params.user,
-      liquidator: params.liquidator,
-      collateralAmountRemoved: collateralAmountRemoved,
-      collateralSharesLiquidated: collateralSharesRemoved
-    });
-
-    return
-      collateralUserPosition.suppliedShares == 0 &&
-      userPositionStatus.nextBorrowing(params.reserveCount) != PositionStatusMap.NOT_FOUND;
-  }
-
-  /// @dev Repays the listed debt reserves in order, each removing its priced collateral, bounded
-  /// by `params.maxCollateralToRemove` in total. The remaining cap is tracked in asset terms and
-  /// converted into removable shares before each repayment.
-  /// @dev No further repayments once the removal cap is fully consumed.
-  /// @param reserves The mapping of reserves per reserve id.
-  /// @param userPositions The mapping of user positions per user per reserve.
-  /// @param collateralUserPosition User's collateral position.
-  /// @param collateralLiquidatorPosition Liquidator's collateral position.
-  /// @param userPositionStatus The position status of the user being liquidated.
-  /// @param params The liquidate debt reserves params.
-  /// @return The total amount of collateral shares removed.
-  /// @return The total amount of collateral removed, expressed in asset units. Does not exceed
-  /// `params.maxCollateralToRemove`.
-  function _liquidateDebtReserves(
-    mapping(uint256 reserveId => ISpoke.Reserve) storage reserves,
-    mapping(address user => mapping(uint256 reserveId => ISpoke.UserPosition)) storage userPositions,
-    ISpoke.UserPosition storage collateralUserPosition,
-    ISpoke.UserPosition storage collateralLiquidatorPosition,
-    ISpoke.PositionStatus storage userPositionStatus,
-    LiquidateDebtReservesParams memory params
-  ) internal returns (uint256, uint256) {
-    uint256 totalCollateralSharesRemoved;
-    uint256 totalCollateralAmountRemoved;
-    for (uint256 i = 0; i < params.debtReserveIds.length; ++i) {
-      // rounded down so the removed collateral cannot exceed the remaining cap
-      uint256 maxRemovableShares = params
-        .collateralHub
-        .previewAddByAssets(
-          params.collateralAssetId,
-          params.maxCollateralToRemove - totalCollateralAmountRemoved
-        )
-        .min(params.suppliedShares - totalCollateralSharesRemoved);
-      // no further repayments once the removal cap is consumed; the first repayment always runs,
-      // so debt can be liquidated even when the corresponding collateral amount to receive is zero
-      if (maxRemovableShares == 0 && i > 0) break;
-
-      ISpoke.Reserve storage debtReserve = reserves.get(params.debtReserveIds[i]);
-
-      LiquidateDebtReserveParams memory liquidateDebtReserveParams = LiquidateDebtReserveParams({
-        collateralHub: params.collateralHub,
-        collateralAssetId: params.collateralAssetId,
-        collateralAssetUnit: params.collateralAssetUnit,
-        collateralAssetPrice: params.collateralAssetPrice,
-        liquidationBonus: params.liquidationBonus,
-        debtHub: debtReserve.hub,
-        debtAssetId: debtReserve.assetId,
-        debtUnderlying: debtReserve.underlying,
-        debtAssetUnit: MathUtils.uncheckedExp(10, debtReserve.decimals),
-        debtReserveId: params.debtReserveIds[i],
-        debtToCover: params.debtToCoverAmounts[i],
-        oracle: params.oracle,
-        user: params.user,
-        liquidator: params.liquidator,
-        maxRemovableShares: maxRemovableShares
-      });
-      (uint256 collateralSharesRemoved, uint256 collateralAmountRemoved) = _liquidateDebtReserve(
-        userPositions[params.user][params.debtReserveIds[i]],
-        collateralUserPosition,
-        collateralLiquidatorPosition,
-        userPositionStatus,
-        liquidateDebtReserveParams
-      );
-      totalCollateralSharesRemoved += collateralSharesRemoved;
-      totalCollateralAmountRemoved += collateralAmountRemoved;
-    }
-
-    return (totalCollateralSharesRemoved, totalCollateralAmountRemoved);
-  }
-
-  /// @dev Repays a single debt reserve and removes the corresponding collateral.
-  /// @dev A debt reserve the user no longer borrows is skipped: liquidations front-running this
-  /// call cannot make it revert.
-  /// @param debtUserPosition User's debt position.
-  /// @param collateralUserPosition User's collateral position.
-  /// @param collateralLiquidatorPosition Liquidator's collateral position.
-  /// @param userPositionStatus The position status of the user being liquidated.
-  /// @param params The liquidate debt reserve params.
-  /// @return The amount of collateral shares removed. Does not exceed `params.maxRemovableShares`.
-  /// @return The amount of collateral removed, expressed in asset units.
-  function _liquidateDebtReserve(
-    ISpoke.UserPosition storage debtUserPosition,
-    ISpoke.UserPosition storage collateralUserPosition,
-    ISpoke.UserPosition storage collateralLiquidatorPosition,
-    ISpoke.PositionStatus storage userPositionStatus,
-    LiquidateDebtReserveParams memory params
-  ) internal returns (uint256, uint256) {
+  ) internal returns (LiquidationResult memory) {
     UserPositionUtils.DebtComponents memory debtComponents = debtUserPosition.getDebtComponents(
       params.debtHub,
       params.debtAssetId
     );
-    if (debtComponents.drawnShares == 0) {
-      return (0, 0);
-    }
+
+    LiquidationLogic._validateLiquidationCall(
+      LiquidationLogic.ValidateLiquidationCallParams({
+        user: params.user,
+        liquidator: params.liquidator,
+        collateralReserveFlags: params.collateralReserveFlags,
+        debtReserveFlags: params.debtReserveFlags,
+        suppliedShares: collateralUserPosition.suppliedShares,
+        drawnShares: debtComponents.drawnShares,
+        debtToCover: params.debtToCover,
+        collateralFactor: params.collateralDynConfig.collateralFactor,
+        isUsingAsCollateral: userPositionStatus.isUsingAsCollateral(params.collateralReserveId),
+        healthFactor: params.healthFactor,
+        receiveShares: false
+      })
+    );
+
+    uint256 liquidationBonus = LiquidationLogic.calculateLiquidationBonus({
+      healthFactorForMaxBonus: params.liquidationConfig.healthFactorForMaxBonus,
+      liquidationBonusFactor: params.liquidationConfig.liquidationBonusFactor,
+      healthFactor: params.healthFactor,
+      maxLiquidationBonus: params.collateralDynConfig.maxLiquidationBonus
+    });
 
     LiquidationAmounts memory liquidationAmounts = _calculateLiquidationAmounts(
       CalculateLiquidationAmountsParams({
         collateralReserveHub: params.collateralHub,
         collateralReserveAssetId: params.collateralAssetId,
-        collateralAssetUnit: params.collateralAssetUnit,
-        collateralAssetPrice: params.collateralAssetPrice,
-        liquidationBonus: params.liquidationBonus,
+        collateralAssetUnit: MathUtils.uncheckedExp(10, params.collateralAssetDecimals),
+        collateralAssetPrice: IAaveOracle(params.oracle).getReservePrice(
+          params.collateralReserveId
+        ),
         drawnShares: debtComponents.drawnShares,
         premiumDebtRay: debtComponents.premiumDebtRay,
         drawnIndex: debtComponents.drawnIndex,
-        debtAssetUnit: params.debtAssetUnit,
+        debtAssetUnit: MathUtils.uncheckedExp(10, params.debtAssetDecimals),
         debtAssetPrice: IAaveOracle(params.oracle).getReservePrice(params.debtReserveId),
+        liquidationBonus: liquidationBonus,
         debtToCover: params.debtToCover,
-        maxRemovableShares: params.maxRemovableShares
+        // rounded down so the removed collateral cannot exceed the cap
+        maxRemovableShares: params
+          .collateralHub
+          .previewAddByAssets(params.collateralAssetId, params.maxCollateralToRemove)
+          .min(collateralUserPosition.suppliedShares)
       })
     );
 
@@ -397,6 +244,7 @@ library BabylonLiquidationLogic {
       );
 
     emit IBabylonSpoke.BabylonLiquidationCall({
+      collateralReserveId: params.collateralReserveId,
       debtReserveId: params.debtReserveId,
       user: params.user,
       liquidator: params.liquidator,
@@ -407,10 +255,17 @@ library BabylonLiquidationLogic {
       collateralSharesLiquidated: liquidationAmounts.collateralSharesToLiquidate
     });
 
-    return (
-      liquidationAmounts.collateralSharesToLiquidate,
-      liquidateCollateralResult.amountRemoved
-    );
+    return
+      LiquidationResult({
+        isUserInDeficit: LiquidationLogic._evaluateDeficit({
+          isCollateralPositionEmpty: liquidateCollateralResult.isCollateralPositionEmpty,
+          isDebtPositionEmpty: liquidateDebtResult.isDebtPositionEmpty,
+          activeCollateralCount: params.activeCollateralCount,
+          borrowCount: params.borrowCount
+        }),
+        liquidationBonus: liquidationBonus,
+        collateralAmountRemoved: liquidateCollateralResult.amountRemoved
+      });
   }
 
   /// @notice Calculates the liquidation amounts.
@@ -494,48 +349,5 @@ library BabylonLiquidationLogic {
         drawnSharesToLiquidate: drawnSharesToLiquidate,
         premiumDebtRayToLiquidate: premiumDebtRayToLiquidate
       });
-  }
-
-  /// @notice Validates the liquidation call.
-  /// @dev All debt reserves are validated upfront: repayment amounts must be non-zero, debt
-  /// reserves must be unique and must not be paused.
-  /// @param reserves The mapping of reserves per reserve id.
-  /// @param userPositionStatus The position status of the user being liquidated.
-  /// @param params The validate liquidation call params.
-  function _validateLiquidationCall(
-    mapping(uint256 reserveId => ISpoke.Reserve) storage reserves,
-    ISpoke.PositionStatus storage userPositionStatus,
-    ValidateLiquidationCallParams memory params
-  ) internal view {
-    require(params.user != params.liquidator, ISpoke.SelfLiquidation());
-    require(
-      params.debtReserveIds.length > 0 &&
-        params.debtReserveIds.length == params.debtToCoverAmounts.length,
-      IBabylonSpoke.InvalidLiquidationCallArguments()
-    );
-    require(!params.collateralReserveFlags.paused(), ISpoke.ReservePaused());
-    require(params.suppliedShares > 0, ISpoke.ReserveNotSupplied());
-    require(
-      params.healthFactor < LiquidationLogic.HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
-      ISpoke.HealthFactorNotBelowThreshold()
-    );
-    require(
-      params.collateralFactor > 0 &&
-        userPositionStatus.isUsingAsCollateral(params.collateralReserveId),
-      ISpoke.ReserveNotEnabledAsCollateral()
-    );
-
-    for (uint256 i = 0; i < params.debtReserveIds.length; ++i) {
-      uint256 debtReserveId = params.debtReserveIds[i];
-      require(params.debtToCoverAmounts[i] > 0, ISpoke.InvalidDebtToCover());
-      require(!reserves.get(debtReserveId).flags.paused(), ISpoke.ReservePaused());
-      // quadratic duplicate scan; the list is bounded by the user's borrowed reserves
-      for (uint256 j = 0; j < i; ++j) {
-        require(
-          params.debtReserveIds[j] != debtReserveId,
-          IBabylonSpoke.InvalidLiquidationCallArguments()
-        );
-      }
-    }
   }
 }

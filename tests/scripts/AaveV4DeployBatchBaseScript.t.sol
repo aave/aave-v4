@@ -69,7 +69,6 @@ contract AaveV4DeployBatchBaseScriptTest is Test {
       spokeLabels: _toArray('spoke1', 'spoke2', 'spoke3'),
       spokeMaxReservesLimits: _defaultSpokeMaxReservesLimits(3),
       babylonSpokeLabels: new string[](0),
-      babylonSpokeMaxReservesLimits: new uint16[](0),
       salt: bytes32(0)
     });
 

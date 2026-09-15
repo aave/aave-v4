@@ -1,4 +1,4 @@
-# Analyzes the cap-binding resize in BabylonLiquidationLogic._liquidateDebtReserve:
+# Analyzes the cap-binding resize in BabylonLiquidationLogic._calculateLiquidationAmounts:
 #
 #   if (collateralSharesToLiquidate > maxRemovableShares) {
 #     collateralSharesToLiquidate = maxRemovableShares;

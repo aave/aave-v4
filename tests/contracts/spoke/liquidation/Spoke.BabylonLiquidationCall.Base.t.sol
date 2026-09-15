@@ -9,8 +9,8 @@ import {BabylonLiquidationLogic} from 'src/spoke/libraries/BabylonLiquidationLog
 /// @dev Assertion engine for the Babylon liquidation suites, mirroring the canonical
 /// `SpokeLiquidationCallBaseTest` pipeline for the manager-gated, cap-bounded `liquidationCall`.
 /// The engine relies on the managed collateral reserve keeping a supply share price of exactly
-/// one (it is not borrowable in production), which it asserts, so collateral previews taken
-/// before the call stay exact across the per debt reserve removals.
+/// one (it is not borrowable in production), which it asserts, so the collateral preview taken
+/// before the call stays exact.
 contract SpokeBabylonLiquidationCallBaseTest is BabylonBase, SpokeLiquidationCallBaseTest {
   using SafeCast for *;
   using PercentageMath for *;
@@ -19,32 +19,23 @@ contract SpokeBabylonLiquidationCallBaseTest is BabylonBase, SpokeLiquidationCal
   using MathUtils for uint256;
 
   struct CheckedBabylonLiquidationCallParams {
-    uint256[] debtReserveIds;
-    uint256[] debtToCoverAmounts;
+    uint256 debtReserveId;
+    uint256 debtToCover;
     address user;
     uint256 maxCollateralToRemove;
     bool isSolvent;
   }
 
-  struct BabylonDebtReserveMetadata {
-    uint256 debtReserveId;
-    uint256 debtToCover;
+  struct BabylonLiquidationMetadata {
+    uint256 maxRemovableShares;
     uint256 collateralSharesToLiquidate;
     uint256 collateralAmountRemoved;
     uint256 drawnSharesToLiquidate;
     uint256 premiumDebtRayToLiquidate;
     uint256 debtAssetsToRestore;
     IHubBase.PremiumDelta premiumDelta;
-    bool fullDebtReserveLiquidated;
-    bool skipped;
-  }
-
-  struct BabylonLiquidationMetadata {
-    BabylonDebtReserveMetadata[] debtReserves;
-    uint256 maxRemovableShares;
-    uint256 totalCollateralSharesLiquidated;
-    uint256 totalCollateralAmountRemoved;
     uint256 liquidationBonus;
+    bool fullDebtReserveLiquidated;
     bool collateralCapEnforced;
     bool hasDeficit;
   }
@@ -52,10 +43,10 @@ contract SpokeBabylonLiquidationCallBaseTest is BabylonBase, SpokeLiquidationCal
   struct BabylonAccountsSnapshot {
     ISpoke.UserAccountData userAccountData;
     uint256 userLastRiskPremium;
-    LiquidationBalanceSnapshot[] userBalanceInfo;
-    LiquidationBalanceSnapshot[] liquidatorBalanceInfo;
-    LiquidationBalanceSnapshot[] debtHubBalanceInfo;
-    LiquidationBalanceSnapshot[] spokeBalanceInfo;
+    LiquidationBalanceSnapshot userBalanceInfo;
+    LiquidationBalanceSnapshot liquidatorBalanceInfo;
+    LiquidationBalanceSnapshot debtHubBalanceInfo;
+    LiquidationBalanceSnapshot spokeBalanceInfo;
     LiquidationBalanceSnapshot collateralHubBalanceInfo;
   }
 
@@ -170,40 +161,32 @@ contract SpokeBabylonLiquidationCallBaseTest is BabylonBase, SpokeLiquidationCal
   function _getBabylonAccountsInfo(
     CheckedBabylonLiquidationCallParams memory params
   ) internal virtual returns (BabylonAccountsSnapshot memory snapshot) {
-    uint256 debtReserveCount = params.debtReserveIds.length;
     snapshot.userAccountData = spoke4.getUserAccountData(params.user);
     snapshot.userLastRiskPremium = spoke4.getUserLastRiskPremium(params.user);
-    snapshot.userBalanceInfo = new LiquidationBalanceSnapshot[](debtReserveCount);
-    snapshot.liquidatorBalanceInfo = new LiquidationBalanceSnapshot[](debtReserveCount);
-    snapshot.debtHubBalanceInfo = new LiquidationBalanceSnapshot[](debtReserveCount);
-    snapshot.spokeBalanceInfo = new LiquidationBalanceSnapshot[](debtReserveCount);
-    for (uint256 i = 0; i < debtReserveCount; i++) {
-      uint256 debtReserveId = params.debtReserveIds[i];
-      snapshot.userBalanceInfo[i] = _getBalanceInfo(
-        spoke4,
-        params.user,
-        collateralReserveId,
-        debtReserveId
-      );
-      snapshot.liquidatorBalanceInfo[i] = _getBalanceInfo(
-        spoke4,
-        liquidationManager,
-        collateralReserveId,
-        debtReserveId
-      );
-      snapshot.debtHubBalanceInfo[i] = _getBalanceInfo(
-        spoke4,
-        address(_hub(spoke4, debtReserveId)),
-        collateralReserveId,
-        debtReserveId
-      );
-      snapshot.spokeBalanceInfo[i] = _getBalanceInfo(
-        spoke4,
-        address(spoke4),
-        collateralReserveId,
-        debtReserveId
-      );
-    }
+    snapshot.userBalanceInfo = _getBalanceInfo(
+      spoke4,
+      params.user,
+      collateralReserveId,
+      params.debtReserveId
+    );
+    snapshot.liquidatorBalanceInfo = _getBalanceInfo(
+      spoke4,
+      liquidationManager,
+      collateralReserveId,
+      params.debtReserveId
+    );
+    snapshot.debtHubBalanceInfo = _getBalanceInfo(
+      spoke4,
+      address(_hub(spoke4, params.debtReserveId)),
+      collateralReserveId,
+      params.debtReserveId
+    );
+    snapshot.spokeBalanceInfo = _getBalanceInfo(
+      spoke4,
+      address(spoke4),
+      collateralReserveId,
+      params.debtReserveId
+    );
     snapshot.collateralHubBalanceInfo = _getBalanceInfo(
       spoke4,
       address(_hub(spoke4, collateralReserveId)),
@@ -240,8 +223,8 @@ contract SpokeBabylonLiquidationCallBaseTest is BabylonBase, SpokeLiquidationCal
     CheckedBabylonLiquidationCallParams memory params,
     ISpoke.UserAccountData memory userAccountDataBefore
   ) internal virtual returns (BabylonLiquidationMetadata memory metadata) {
-    // the engine relies on collateral previews taken before the call staying exact across the
-    // per debt reserve removals, which holds if and only if the collateral supply share price is one
+    // the engine relies on the collateral preview taken before the call staying exact, which
+    // holds if and only if the collateral supply share price is one
     IHubBase collateralHub = _hub(spoke4, collateralReserveId);
     uint256 collateralAssetId = _reserveAssetId(spoke4, collateralReserveId);
     assertEq(
@@ -250,7 +233,6 @@ contract SpokeBabylonLiquidationCallBaseTest is BabylonBase, SpokeLiquidationCal
       'managed collateral share price must be one'
     );
 
-    metadata.debtReserves = new BabylonDebtReserveMetadata[](params.debtReserveIds.length);
     metadata.liquidationBonus = spoke4.getLiquidationBonus(
       collateralReserveId,
       params.user,
@@ -260,120 +242,70 @@ contract SpokeBabylonLiquidationCallBaseTest is BabylonBase, SpokeLiquidationCal
       .previewAddByAssets(collateralAssetId, params.maxCollateralToRemove)
       .min(spoke4.getUserPosition(collateralReserveId, params.user).suppliedShares);
 
-    uint256 remainingShares = metadata.maxRemovableShares;
-    for (uint256 i = 0; i < params.debtReserveIds.length; i++) {
-      BabylonDebtReserveMetadata memory debtReserveMetadata = metadata.debtReserves[i];
-      debtReserveMetadata.debtReserveId = params.debtReserveIds[i];
-      debtReserveMetadata.debtToCover = params.debtToCoverAmounts[i];
-
-      if (spoke4.getUserPosition(debtReserveMetadata.debtReserveId, params.user).drawnShares == 0) {
-        debtReserveMetadata.skipped = true;
-        continue;
-      }
-
-      BabylonLiquidationLogic.LiquidationAmounts
-        memory liquidationAmounts = babylonLiquidationLogicWrapper.calculateLiquidationAmounts(
+    BabylonLiquidationLogic.LiquidationAmounts
+      memory liquidationAmounts = babylonLiquidationLogicWrapper.calculateLiquidationAmounts(
+        _getCalculateBabylonLiquidationAmountsParams(
+          params.user,
+          params.debtReserveId,
+          params.debtToCover,
+          metadata.liquidationBonus,
+          metadata.maxRemovableShares
+        )
+      );
+    // the cap is enforced if the unbounded sizing would remove more shares
+    metadata.collateralCapEnforced =
+      babylonLiquidationLogicWrapper
+        .calculateLiquidationAmounts(
           _getCalculateBabylonLiquidationAmountsParams(
             params.user,
-            debtReserveMetadata.debtReserveId,
-            debtReserveMetadata.debtToCover,
+            params.debtReserveId,
+            params.debtToCover,
             metadata.liquidationBonus,
-            remainingShares
+            UINT256_MAX
           )
-        );
-      // the cap is enforced on this debt reserve if the unbounded sizing would remove more shares
-      metadata.collateralCapEnforced =
-        metadata.collateralCapEnforced ||
-        babylonLiquidationLogicWrapper
-          .calculateLiquidationAmounts(
-            _getCalculateBabylonLiquidationAmountsParams(
-              params.user,
-              debtReserveMetadata.debtReserveId,
-              debtReserveMetadata.debtToCover,
-              metadata.liquidationBonus,
-              UINT256_MAX
-            )
-          )
-          .collateralSharesToLiquidate >
-          remainingShares;
+        )
+        .collateralSharesToLiquidate > metadata.maxRemovableShares;
 
-      debtReserveMetadata.collateralSharesToLiquidate = liquidationAmounts
-        .collateralSharesToLiquidate;
-      // exact at a collateral share price of one
-      debtReserveMetadata.collateralAmountRemoved = collateralHub.previewRemoveByShares(
-        collateralAssetId,
-        liquidationAmounts.collateralSharesToLiquidate
-      );
-      debtReserveMetadata.drawnSharesToLiquidate = liquidationAmounts.drawnSharesToLiquidate;
-      debtReserveMetadata.premiumDebtRayToLiquidate = liquidationAmounts.premiumDebtRayToLiquidate;
-      debtReserveMetadata.debtAssetsToRestore = _calculateDebtAssetsToRestore({
-        drawnSharesToLiquidate: liquidationAmounts.drawnSharesToLiquidate,
-        premiumDebtRayToLiquidate: liquidationAmounts.premiumDebtRayToLiquidate,
-        drawnIndex: _reserveDrawnIndex(spoke4, debtReserveMetadata.debtReserveId)
-      });
-      debtReserveMetadata.premiumDelta = _getExpectedPremiumDeltaForRestore(
-        spoke4,
-        params.user,
-        debtReserveMetadata.debtReserveId,
-        debtReserveMetadata.debtAssetsToRestore
-      );
-      debtReserveMetadata.fullDebtReserveLiquidated =
-        liquidationAmounts.drawnSharesToLiquidate ==
-        _getUserDrawnShares(spoke4, debtReserveMetadata.debtReserveId, params.user);
+    metadata.collateralSharesToLiquidate = liquidationAmounts.collateralSharesToLiquidate;
+    // exact at a collateral share price of one
+    metadata.collateralAmountRemoved = collateralHub.previewRemoveByShares(
+      collateralAssetId,
+      liquidationAmounts.collateralSharesToLiquidate
+    );
+    metadata.drawnSharesToLiquidate = liquidationAmounts.drawnSharesToLiquidate;
+    metadata.premiumDebtRayToLiquidate = liquidationAmounts.premiumDebtRayToLiquidate;
+    metadata.debtAssetsToRestore = _calculateDebtAssetsToRestore({
+      drawnSharesToLiquidate: liquidationAmounts.drawnSharesToLiquidate,
+      premiumDebtRayToLiquidate: liquidationAmounts.premiumDebtRayToLiquidate,
+      drawnIndex: _reserveDrawnIndex(spoke4, params.debtReserveId)
+    });
+    metadata.premiumDelta = _getExpectedPremiumDeltaForRestore(
+      spoke4,
+      params.user,
+      params.debtReserveId,
+      metadata.debtAssetsToRestore
+    );
+    metadata.fullDebtReserveLiquidated =
+      liquidationAmounts.drawnSharesToLiquidate ==
+      _getUserDrawnShares(spoke4, params.debtReserveId, params.user);
 
-      metadata.totalCollateralSharesLiquidated += debtReserveMetadata.collateralSharesToLiquidate;
-      metadata.totalCollateralAmountRemoved += debtReserveMetadata.collateralAmountRemoved;
-      remainingShares -= debtReserveMetadata.collateralSharesToLiquidate;
-      if (remainingShares == 0) {
-        // the removal cap is consumed: the loop stops and later debt reserves are never processed
-        for (uint256 j = i + 1; j < metadata.debtReserves.length; j++) {
-          metadata.debtReserves[j].debtReserveId = params.debtReserveIds[j];
-          metadata.debtReserves[j].debtToCover = params.debtToCoverAmounts[j];
-          metadata.debtReserves[j].skipped = true;
-        }
-        break;
-      }
-    }
-
+    // the user borrows a single reserve, so the position is in deficit once its collateral is
+    // exhausted with debt left in that reserve
     metadata.hasDeficit =
-      metadata.totalCollateralSharesLiquidated ==
+      metadata.collateralSharesToLiquidate ==
         spoke4.getUserPosition(collateralReserveId, params.user).suppliedShares &&
-      _userBorrowsAfterRepayments(params, metadata);
-  }
-
-  /// @dev True if the user still borrows any reserve after the expected repayments.
-  function _userBorrowsAfterRepayments(
-    CheckedBabylonLiquidationCallParams memory params,
-    BabylonLiquidationMetadata memory metadata
-  ) internal view returns (bool) {
-    for (uint256 reserveId = 0; reserveId < spoke4.getReserveCount(); reserveId++) {
-      if (!_isBorrowing(spoke4, reserveId, params.user)) {
-        continue;
-      }
-      uint256 drawnShares = spoke4.getUserPosition(reserveId, params.user).drawnShares;
-      for (uint256 i = 0; i < metadata.debtReserves.length; i++) {
-        if (
-          metadata.debtReserves[i].debtReserveId == reserveId && !metadata.debtReserves[i].skipped
-        ) {
-          drawnShares -= metadata.debtReserves[i].drawnSharesToLiquidate;
-        }
-      }
-      if (drawnShares > 0) {
-        return true;
-      }
-    }
-    return false;
+      !metadata.fullDebtReserveLiquidated;
   }
 
   // calculate expected user account data after liquidation; the user has a single registered
-  // collateral by construction, which collapses the canonical multi-collateral recompute
+  // collateral and a single debt reserve by construction, which collapses the canonical recompute
   function _calculateExpectedBabylonUserAccountData(
     CheckedBabylonLiquidationCallParams memory params,
     BabylonLiquidationMetadata memory liquidationMetadata
   ) internal virtual returns (ISpoke.UserAccountData memory expectedUserAccountData) {
     uint256 userSuppliedShares = spoke4
       .getUserPosition(collateralReserveId, params.user)
-      .suppliedShares - liquidationMetadata.totalCollateralSharesLiquidated;
+      .suppliedShares - liquidationMetadata.collateralSharesToLiquidate;
     uint256 userSuppliedValue;
 
     if (
@@ -382,11 +314,9 @@ contract SpokeBabylonLiquidationCallBaseTest is BabylonBase, SpokeLiquidationCal
       IHubBase hub = _hub(spoke4, collateralReserveId);
       uint256 assetId = _reserveAssetId(spoke4, collateralReserveId);
       uint256 userSuppliedAssets = userSuppliedShares.mulDivDown(
-        hub.getAddedAssets(assetId) -
-          liquidationMetadata.totalCollateralAmountRemoved +
-          VIRTUAL_ASSETS,
+        hub.getAddedAssets(assetId) - liquidationMetadata.collateralAmountRemoved + VIRTUAL_ASSETS,
         hub.getAddedShares(assetId) -
-          liquidationMetadata.totalCollateralSharesLiquidated +
+          liquidationMetadata.collateralSharesToLiquidate +
           VIRTUAL_SHARES
       );
       userSuppliedValue = _convertAmountToValue(spoke4, collateralReserveId, userSuppliedAssets);
@@ -396,33 +326,20 @@ contract SpokeBabylonLiquidationCallBaseTest is BabylonBase, SpokeLiquidationCal
         _getCollateralFactor(spoke4, collateralReserveId, params.user) * userSuppliedValue;
     }
 
-    for (
-      uint256 reserveId = 0;
-      reserveId < spoke4.getReserveCount() && !liquidationMetadata.hasDeficit;
-      reserveId++
-    ) {
-      if (!_isBorrowing(spoke4, reserveId, params.user)) {
-        continue;
+    if (!liquidationMetadata.hasDeficit) {
+      uint256 userDrawnShares = spoke4
+        .getUserPosition(params.debtReserveId, params.user)
+        .drawnShares - liquidationMetadata.drawnSharesToLiquidate;
+      if (userDrawnShares > 0) {
+        expectedUserAccountData.borrowCount = 1;
+        expectedUserAccountData.totalDebtValueRay = _convertAmountToValue(
+          spoke4,
+          params.debtReserveId,
+          userDrawnShares * _reserveDrawnIndex(spoke4, params.debtReserveId) +
+            _calculatePremiumDebtRay(spoke4, params.debtReserveId, params.user) -
+            liquidationMetadata.premiumDebtRayToLiquidate
+        );
       }
-
-      uint256 userDrawnShares = spoke4.getUserPosition(reserveId, params.user).drawnShares;
-      uint256 userPremiumDebtRay = _calculatePremiumDebtRay(spoke4, reserveId, params.user);
-      for (uint256 i = 0; i < liquidationMetadata.debtReserves.length; i++) {
-        BabylonDebtReserveMetadata memory debtReserveMetadata = liquidationMetadata.debtReserves[i];
-        if (debtReserveMetadata.debtReserveId == reserveId && !debtReserveMetadata.skipped) {
-          userDrawnShares -= debtReserveMetadata.drawnSharesToLiquidate;
-          userPremiumDebtRay -= debtReserveMetadata.premiumDebtRayToLiquidate;
-        }
-      }
-      if (userDrawnShares == 0) {
-        continue;
-      }
-      expectedUserAccountData.borrowCount++;
-      expectedUserAccountData.totalDebtValueRay += _convertAmountToValue(
-        spoke4,
-        reserveId,
-        userDrawnShares * _reserveDrawnIndex(spoke4, reserveId) + userPremiumDebtRay
-      );
     }
 
     if (expectedUserAccountData.totalDebtValueRay > 0) {
@@ -471,56 +388,40 @@ contract SpokeBabylonLiquidationCallBaseTest is BabylonBase, SpokeLiquidationCal
       0
     );
 
-    for (uint256 i = 0; i < liquidationMetadata.debtReserves.length; i++) {
-      BabylonDebtReserveMetadata memory debtReserveMetadata = liquidationMetadata.debtReserves[i];
-      if (debtReserveMetadata.skipped) {
-        continue;
-      }
-      IHubBase debtHub = _hub(spoke4, debtReserveMetadata.debtReserveId);
-
-      if (debtReserveMetadata.collateralSharesToLiquidate > 0) {
-        vm.expectCall(
-          address(collateralHub),
-          abi.encodeCall(
-            IHubBase.remove,
-            (collateralAssetId, debtReserveMetadata.collateralAmountRemoved, liquidationManager)
-          )
-        );
-      }
+    if (liquidationMetadata.collateralSharesToLiquidate > 0) {
       vm.expectCall(
-        address(debtHub),
+        address(collateralHub),
         abi.encodeCall(
-          IHubBase.restore,
-          (
-            _reserveAssetId(spoke4, debtReserveMetadata.debtReserveId),
-            debtReserveMetadata.debtAssetsToRestore -
-              debtReserveMetadata.premiumDebtRayToLiquidate.fromRayUp(),
-            debtReserveMetadata.premiumDelta
-          )
-        ),
-        1
+          IHubBase.remove,
+          (collateralAssetId, liquidationMetadata.collateralAmountRemoved, liquidationManager)
+        )
       );
-
-      vm.expectEmit(address(babylonSpoke));
-      emit IBabylonSpoke.BabylonLiquidationCall({
-        debtReserveId: debtReserveMetadata.debtReserveId,
-        user: params.user,
-        liquidator: liquidationManager,
-        debtAmountRestored: debtReserveMetadata.debtAssetsToRestore,
-        drawnSharesLiquidated: debtReserveMetadata.drawnSharesToLiquidate,
-        premiumDelta: debtReserveMetadata.premiumDelta,
-        collateralAmountRemoved: debtReserveMetadata.collateralAmountRemoved,
-        collateralSharesLiquidated: debtReserveMetadata.collateralSharesToLiquidate
-      });
     }
+    vm.expectCall(
+      address(_hub(spoke4, params.debtReserveId)),
+      abi.encodeCall(
+        IHubBase.restore,
+        (
+          _reserveAssetId(spoke4, params.debtReserveId),
+          liquidationMetadata.debtAssetsToRestore -
+            liquidationMetadata.premiumDebtRayToLiquidate.fromRayUp(),
+          liquidationMetadata.premiumDelta
+        )
+      ),
+      1
+    );
 
     vm.expectEmit(address(babylonSpoke));
-    emit IBabylonSpoke.BabylonLiquidationCallSummary({
+    emit IBabylonSpoke.BabylonLiquidationCall({
       collateralReserveId: collateralReserveId,
+      debtReserveId: params.debtReserveId,
       user: params.user,
       liquidator: liquidationManager,
-      collateralAmountRemoved: liquidationMetadata.totalCollateralAmountRemoved,
-      collateralSharesLiquidated: liquidationMetadata.totalCollateralSharesLiquidated
+      debtAmountRestored: liquidationMetadata.debtAssetsToRestore,
+      drawnSharesLiquidated: liquidationMetadata.drawnSharesToLiquidate,
+      premiumDelta: liquidationMetadata.premiumDelta,
+      collateralAmountRemoved: liquidationMetadata.collateralAmountRemoved,
+      collateralSharesLiquidated: liquidationMetadata.collateralSharesToLiquidate
     });
 
     _expectBabylonPremiumRefreshOrDeficit(
@@ -540,114 +441,98 @@ contract SpokeBabylonLiquidationCallBaseTest is BabylonBase, SpokeLiquidationCal
     bool riskPremiumOptimisation = accountsInfoBefore.userLastRiskPremium == 0 &&
       expectedUserAccountData.riskPremium == 0;
 
-    for (uint256 i = spoke4.getReserveCount(); i != 0; ) {
-      i--;
-      uint256 reserveId = i;
-      if (!_isBorrowing(spoke4, reserveId, params.user)) {
-        continue;
-      }
-      ISpoke.UserPosition memory userReservePosition = spoke4.getUserPosition(
-        reserveId,
-        params.user
-      );
+    ISpoke.UserPosition memory userReservePosition = spoke4.getUserPosition(
+      params.debtReserveId,
+      params.user
+    );
+    userReservePosition.drawnShares -= liquidationMetadata.drawnSharesToLiquidate.toUint120();
+    userReservePosition.premiumShares = uint256(userReservePosition.premiumShares)
+      .add(liquidationMetadata.premiumDelta.sharesDelta)
+      .toUint120();
+    userReservePosition.premiumOffsetRay = (userReservePosition.premiumOffsetRay +
+      liquidationMetadata.premiumDelta.offsetRayDelta).toInt200();
+    if (userReservePosition.drawnShares == 0) {
+      return;
+    }
 
-      for (uint256 j = 0; j < liquidationMetadata.debtReserves.length; j++) {
-        BabylonDebtReserveMetadata memory debtReserveMetadata = liquidationMetadata.debtReserves[j];
-        if (debtReserveMetadata.debtReserveId == reserveId && !debtReserveMetadata.skipped) {
-          userReservePosition.drawnShares -= debtReserveMetadata.drawnSharesToLiquidate.toUint120();
-          userReservePosition.premiumShares = uint256(userReservePosition.premiumShares)
-            .add(debtReserveMetadata.premiumDelta.sharesDelta)
-            .toUint120();
-          userReservePosition.premiumOffsetRay = (userReservePosition.premiumOffsetRay +
-            debtReserveMetadata.premiumDelta.offsetRayDelta).toInt200();
-        }
-      }
-      if (userReservePosition.drawnShares == 0) {
-        continue;
-      }
+    IHub targetHub = _hub(spoke4, params.debtReserveId);
+    uint256 assetId = _reserveAssetId(spoke4, params.debtReserveId);
+    uint256 userReserveDrawnDebt = targetHub.previewRestoreByShares(
+      assetId,
+      userReservePosition.drawnShares
+    );
 
-      IHub targetHub = _hub(spoke4, reserveId);
-      uint256 assetId = _reserveAssetId(spoke4, reserveId);
-      uint256 userReserveDrawnDebt = targetHub.previewRestoreByShares(
+    if (liquidationMetadata.hasDeficit) {
+      uint256 premiumDebtRay = _calculatePremiumDebtRay(
+        targetHub,
         assetId,
-        userReservePosition.drawnShares
+        userReservePosition.premiumShares,
+        userReservePosition.premiumOffsetRay
       );
-
-      if (liquidationMetadata.hasDeficit) {
-        uint256 premiumDebtRay = _calculatePremiumDebtRay(
-          targetHub,
-          assetId,
-          userReservePosition.premiumShares,
-          userReservePosition.premiumOffsetRay
-        );
-        IHubBase.PremiumDelta memory premiumDelta = _getExpectedPremiumDelta({
-          hub: targetHub,
-          assetId: assetId,
-          oldPremiumShares: userReservePosition.premiumShares,
-          oldPremiumOffsetRay: userReservePosition.premiumOffsetRay,
-          drawnShares: 0, // risk premium is 0
-          riskPremium: 0,
-          restoredPremiumRay: premiumDebtRay
-        });
-
-        vm.expectCall(
-          address(targetHub),
-          abi.encodeCall(IHubBase.reportDeficit, (assetId, userReserveDrawnDebt, premiumDelta)),
-          1
-        );
-        vm.expectEmit(address(spoke4));
-        emit ISpoke.ReportDeficit({
-          reserveId: reserveId,
-          user: params.user,
-          drawnShares: userReservePosition.drawnShares,
-          premiumDelta: premiumDelta
-        });
-      } else {
-        vm.expectCall(
-          address(targetHub),
-          abi.encodeWithSelector(IHubBase.reportDeficit.selector, assetId),
-          0
-        );
-
-        if (!riskPremiumOptimisation) {
-          IHubBase.PremiumDelta memory premiumDelta = _getExpectedPremiumDelta({
-            hub: targetHub,
-            assetId: assetId,
-            oldPremiumShares: userReservePosition.premiumShares,
-            oldPremiumOffsetRay: userReservePosition.premiumOffsetRay,
-            drawnShares: userReservePosition.drawnShares,
-            riskPremium: expectedUserAccountData.riskPremium,
-            restoredPremiumRay: 0
-          });
-
-          vm.expectCall(
-            address(targetHub),
-            abi.encodeCall(IHubBase.refreshPremium, (assetId, premiumDelta)),
-            1
-          );
-          vm.expectEmit(address(spoke4));
-          emit ISpoke.RefreshPremiumDebt({
-            reserveId: reserveId,
-            user: params.user,
-            premiumDelta: premiumDelta
-          });
-        } else {
-          vm.expectCall(
-            address(targetHub),
-            abi.encodeWithSelector(IHubBase.refreshPremium.selector, assetId),
-            0
-          );
-        }
-      }
-    }
-
-    if (!liquidationMetadata.hasDeficit && !riskPremiumOptimisation) {
-      vm.expectEmit(address(spoke4));
-      emit ISpoke.UpdateUserRiskPremium({
-        user: params.user,
-        riskPremium: expectedUserAccountData.riskPremium
+      IHubBase.PremiumDelta memory premiumDelta = _getExpectedPremiumDelta({
+        hub: targetHub,
+        assetId: assetId,
+        oldPremiumShares: userReservePosition.premiumShares,
+        oldPremiumOffsetRay: userReservePosition.premiumOffsetRay,
+        drawnShares: 0, // risk premium is 0
+        riskPremium: 0,
+        restoredPremiumRay: premiumDebtRay
       });
+
+      vm.expectCall(
+        address(targetHub),
+        abi.encodeCall(IHubBase.reportDeficit, (assetId, userReserveDrawnDebt, premiumDelta)),
+        1
+      );
+      vm.expectEmit(address(spoke4));
+      emit ISpoke.ReportDeficit({
+        reserveId: params.debtReserveId,
+        user: params.user,
+        drawnShares: userReservePosition.drawnShares,
+        premiumDelta: premiumDelta
+      });
+      return;
     }
+
+    vm.expectCall(
+      address(targetHub),
+      abi.encodeWithSelector(IHubBase.reportDeficit.selector, assetId),
+      0
+    );
+    if (riskPremiumOptimisation) {
+      vm.expectCall(
+        address(targetHub),
+        abi.encodeWithSelector(IHubBase.refreshPremium.selector, assetId),
+        0
+      );
+      return;
+    }
+
+    IHubBase.PremiumDelta memory refreshDelta = _getExpectedPremiumDelta({
+      hub: targetHub,
+      assetId: assetId,
+      oldPremiumShares: userReservePosition.premiumShares,
+      oldPremiumOffsetRay: userReservePosition.premiumOffsetRay,
+      drawnShares: userReservePosition.drawnShares,
+      riskPremium: expectedUserAccountData.riskPremium,
+      restoredPremiumRay: 0
+    });
+    vm.expectCall(
+      address(targetHub),
+      abi.encodeCall(IHubBase.refreshPremium, (assetId, refreshDelta)),
+      1
+    );
+    vm.expectEmit(address(spoke4));
+    emit ISpoke.RefreshPremiumDebt({
+      reserveId: params.debtReserveId,
+      user: params.user,
+      premiumDelta: refreshDelta
+    });
+    vm.expectEmit(address(spoke4));
+    emit ISpoke.UpdateUserRiskPremium({
+      user: params.user,
+      riskPremium: expectedUserAccountData.riskPremium
+    });
   }
 
   function _checkBabylonHealthFactor(
@@ -658,13 +543,13 @@ contract SpokeBabylonLiquidationCallBaseTest is BabylonBase, SpokeLiquidationCal
   ) internal virtual {
     // the cap can never be exceeded, and is exactly consumed when enforced
     assertLe(
-      liquidationMetadata.totalCollateralSharesLiquidated,
+      liquidationMetadata.collateralSharesToLiquidate,
       liquidationMetadata.maxRemovableShares,
       'health factor: removal cap exceeded'
     );
     if (liquidationMetadata.collateralCapEnforced) {
       assertEq(
-        liquidationMetadata.totalCollateralSharesLiquidated,
+        liquidationMetadata.collateralSharesToLiquidate,
         liquidationMetadata.maxRemovableShares,
         'health factor: enforced removal cap not exactly consumed'
       );
@@ -679,21 +564,13 @@ contract SpokeBabylonLiquidationCallBaseTest is BabylonBase, SpokeLiquidationCal
       return;
     }
 
-    // aggregate debt value repaid across the debt reserves
-    uint256 debtValueRayRepaid;
-    for (uint256 i = 0; i < liquidationMetadata.debtReserves.length; i++) {
-      BabylonDebtReserveMetadata memory debtReserveMetadata = liquidationMetadata.debtReserves[i];
-      if (debtReserveMetadata.skipped) {
-        continue;
-      }
-      debtValueRayRepaid += _convertAmountToValue(
-        spoke4,
-        debtReserveMetadata.debtReserveId,
-        debtReserveMetadata.drawnSharesToLiquidate *
-          _reserveDrawnIndex(spoke4, debtReserveMetadata.debtReserveId) +
-          debtReserveMetadata.premiumDebtRayToLiquidate
-      );
-    }
+    uint256 debtValueRayRepaid = _convertAmountToValue(
+      spoke4,
+      params.debtReserveId,
+      liquidationMetadata.drawnSharesToLiquidate *
+        _reserveDrawnIndex(spoke4, params.debtReserveId) +
+        liquidationMetadata.premiumDebtRayToLiquidate
+    );
     if (debtValueRayRepaid == 0) {
       return;
     }
@@ -736,110 +613,110 @@ contract SpokeBabylonLiquidationCallBaseTest is BabylonBase, SpokeLiquidationCal
       true,
       'user position status: using as collateral'
     );
-    for (uint256 i = 0; i < liquidationMetadata.debtReserves.length; i++) {
-      BabylonDebtReserveMetadata memory debtReserveMetadata = liquidationMetadata.debtReserves[i];
-      if (debtReserveMetadata.skipped) {
-        continue;
-      }
-      bool isBorrowing = _isBorrowing(spoke4, debtReserveMetadata.debtReserveId, params.user);
-      assertTrue(
-        !debtReserveMetadata.fullDebtReserveLiquidated
-          ? (isBorrowing || liquidationMetadata.hasDeficit)
-          : !isBorrowing,
-        'user position status: borrowing'
-      );
-    }
+    bool isBorrowing = _isBorrowing(spoke4, params.debtReserveId, params.user);
+    assertTrue(
+      !liquidationMetadata.fullDebtReserveLiquidated
+        ? (isBorrowing || liquidationMetadata.hasDeficit)
+        : !isBorrowing,
+      'user position status: borrowing'
+    );
   }
 
   function _checkBabylonBalances(
-    CheckedBabylonLiquidationCallParams memory params,
     BabylonAccountsSnapshot memory accountsInfoBefore,
     BabylonAccountsSnapshot memory accountsInfoAfter,
     BabylonLiquidationMetadata memory liquidationMetadata
   ) internal virtual {
     // collateral side: the liquidator always receives underlying assets
     assertEq(
-      accountsInfoAfter.liquidatorBalanceInfo[0].collateralErc20Balance,
-      accountsInfoBefore.liquidatorBalanceInfo[0].collateralErc20Balance +
-        liquidationMetadata.totalCollateralAmountRemoved,
+      accountsInfoAfter.liquidatorBalanceInfo.collateralErc20Balance,
+      accountsInfoBefore.liquidatorBalanceInfo.collateralErc20Balance +
+        liquidationMetadata.collateralAmountRemoved,
       'liquidator collateral erc20 balance'
     );
     assertEq(
-      accountsInfoAfter.userBalanceInfo[0].collateralErc20Balance,
-      accountsInfoBefore.userBalanceInfo[0].collateralErc20Balance,
+      accountsInfoAfter.userBalanceInfo.collateralErc20Balance,
+      accountsInfoBefore.userBalanceInfo.collateralErc20Balance,
       'user collateral erc20 balance'
     );
     assertEq(
       accountsInfoAfter.collateralHubBalanceInfo.collateralErc20Balance,
       accountsInfoBefore.collateralHubBalanceInfo.collateralErc20Balance -
-        liquidationMetadata.totalCollateralAmountRemoved,
+        liquidationMetadata.collateralAmountRemoved,
       'collateral hub erc20 balance'
     );
     assertApproxEqAbs(
-      accountsInfoAfter.userBalanceInfo[0].suppliedInSpoke,
-      accountsInfoBefore.userBalanceInfo[0].suppliedInSpoke -
-        liquidationMetadata.totalCollateralAmountRemoved,
+      accountsInfoAfter.userBalanceInfo.suppliedInSpoke,
+      accountsInfoBefore.userBalanceInfo.suppliedInSpoke -
+        liquidationMetadata.collateralAmountRemoved,
       2,
       'user supplied in spoke'
     );
     // the liquidator never receives supplied shares
     assertEq(
-      accountsInfoAfter.liquidatorBalanceInfo[0].suppliedInSpoke,
-      accountsInfoBefore.liquidatorBalanceInfo[0].suppliedInSpoke,
+      accountsInfoAfter.liquidatorBalanceInfo.suppliedInSpoke,
+      accountsInfoBefore.liquidatorBalanceInfo.suppliedInSpoke,
       'liquidator supplied in spoke'
     );
 
-    // debt side, per debt reserve
-    for (uint256 i = 0; i < liquidationMetadata.debtReserves.length; i++) {
-      BabylonDebtReserveMetadata memory debtReserveMetadata = liquidationMetadata.debtReserves[i];
-      uint256 restored = debtReserveMetadata.skipped ? 0 : debtReserveMetadata.debtAssetsToRestore;
-
+    // debt side
+    assertEq(
+      accountsInfoAfter.liquidatorBalanceInfo.debtErc20Balance,
+      accountsInfoBefore.liquidatorBalanceInfo.debtErc20Balance -
+        liquidationMetadata.debtAssetsToRestore,
+      'liquidator debt erc20 balance'
+    );
+    assertEq(
+      accountsInfoAfter.debtHubBalanceInfo.debtErc20Balance,
+      accountsInfoBefore.debtHubBalanceInfo.debtErc20Balance +
+        liquidationMetadata.debtAssetsToRestore,
+      'debt hub erc20 balance'
+    );
+    if (liquidationMetadata.hasDeficit) {
       assertEq(
-        accountsInfoAfter.liquidatorBalanceInfo[i].debtErc20Balance,
-        accountsInfoBefore.liquidatorBalanceInfo[i].debtErc20Balance -
-          _restoredForReserve(liquidationMetadata, debtReserveMetadata.debtReserveId),
-        'liquidator debt erc20 balance'
+        accountsInfoAfter.userBalanceInfo.borrowedFromSpoke,
+        0,
+        'user borrowed from spoke: deficit'
       );
-      assertEq(
-        accountsInfoAfter.debtHubBalanceInfo[i].debtErc20Balance,
-        accountsInfoBefore.debtHubBalanceInfo[i].debtErc20Balance +
-          _restoredForReserve(liquidationMetadata, debtReserveMetadata.debtReserveId),
-        'debt hub erc20 balance'
-      );
-      if (liquidationMetadata.hasDeficit) {
-        assertEq(
-          accountsInfoAfter.userBalanceInfo[i].borrowedFromSpoke,
-          0,
-          'user borrowed from spoke: deficit'
-        );
-      } else if (!debtReserveMetadata.skipped) {
-        assertApproxEqAbs(
-          accountsInfoAfter.userBalanceInfo[i].borrowedFromSpoke,
-          accountsInfoBefore.userBalanceInfo[i].borrowedFromSpoke - restored,
-          2,
-          'user borrowed from spoke'
-        );
-      }
-      assertEq(
-        accountsInfoAfter.spokeBalanceInfo[i].debtErc20Balance,
-        accountsInfoBefore.spokeBalanceInfo[i].debtErc20Balance,
-        'spoke debt erc20 balance'
+    } else {
+      assertApproxEqAbs(
+        accountsInfoAfter.userBalanceInfo.borrowedFromSpoke,
+        accountsInfoBefore.userBalanceInfo.borrowedFromSpoke -
+          liquidationMetadata.debtAssetsToRestore,
+        2,
+        'user borrowed from spoke'
       );
     }
+    assertEq(
+      accountsInfoAfter.spokeBalanceInfo.debtErc20Balance,
+      accountsInfoBefore.spokeBalanceInfo.debtErc20Balance,
+      'spoke debt erc20 balance'
+    );
   }
 
-  /// @dev Total debt assets restored for a reserve across the metadata entries (a reserve appears at most once).
-  function _restoredForReserve(
-    BabylonLiquidationMetadata memory metadata,
-    uint256 reserveId
-  ) internal pure returns (uint256 restored) {
-    for (uint256 i = 0; i < metadata.debtReserves.length; i++) {
-      if (
-        metadata.debtReserves[i].debtReserveId == reserveId && !metadata.debtReserves[i].skipped
-      ) {
-        restored += metadata.debtReserves[i].debtAssetsToRestore;
-      }
+  /// @dev The returned data must match the sizing the call performed and the state it left.
+  function _checkBabylonReturnData(
+    BabylonLiquidationMetadata memory liquidationMetadata,
+    BabylonAccountsSnapshot memory accountsInfoAfter,
+    uint256 liquidationBonus,
+    uint256 collateralAmountRemoved,
+    ISpoke.UserAccountData memory userAccountDataAfter
+  ) internal virtual {
+    assertEq(liquidationBonus, liquidationMetadata.liquidationBonus, 'returned liquidation bonus');
+    assertEq(
+      collateralAmountRemoved,
+      liquidationMetadata.collateralAmountRemoved,
+      'returned collateral amount removed'
+    );
+    ISpoke.UserAccountData memory expectedUserAccountDataAfter;
+    if (!liquidationMetadata.hasDeficit) {
+      expectedUserAccountDataAfter = accountsInfoAfter.userAccountData;
     }
+    assertEq(
+      abi.encode(userAccountDataAfter),
+      abi.encode(expectedUserAccountDataAfter),
+      'returned user account data'
+    );
   }
 
   function _checkedBabylonLiquidationCall(
@@ -872,12 +749,16 @@ contract SpokeBabylonLiquidationCallBaseTest is BabylonBase, SpokeLiquidationCal
     );
 
     vm.prank(liquidationManager);
-    babylonSpoke.liquidationCall(
-      params.debtReserveIds,
-      params.debtToCoverAmounts,
-      params.user,
-      params.maxCollateralToRemove
-    );
+    (
+      uint256 liquidationBonus,
+      uint256 collateralAmountRemoved,
+      ISpoke.UserAccountData memory userAccountDataAfter
+    ) = babylonSpoke.liquidationCall(
+        params.debtReserveId,
+        params.debtToCover,
+        params.user,
+        params.maxCollateralToRemove
+      );
 
     BabylonAccountsSnapshot memory accountsInfoAfter = _getBabylonAccountsInfo(params);
 
@@ -888,6 +769,13 @@ contract SpokeBabylonLiquidationCallBaseTest is BabylonBase, SpokeLiquidationCal
         'user account data'
       );
     }
+    _checkBabylonReturnData(
+      liquidationMetadata,
+      accountsInfoAfter,
+      liquidationBonus,
+      collateralAmountRemoved,
+      userAccountDataAfter
+    );
     _checkBabylonHealthFactor(
       params,
       accountsInfoBefore,
@@ -895,19 +783,17 @@ contract SpokeBabylonLiquidationCallBaseTest is BabylonBase, SpokeLiquidationCal
       accountsInfoAfter.userAccountData
     );
     _checkBabylonPositionStatus(params, liquidationMetadata);
-    _checkBabylonBalances(params, accountsInfoBefore, accountsInfoAfter, liquidationMetadata);
+    _checkBabylonBalances(accountsInfoBefore, accountsInfoAfter, liquidationMetadata);
 
     _assertHubLiquidity(
       _hub(spoke4, collateralReserveId),
       _reserveAssetId(spoke4, collateralReserveId),
       'collateral'
     );
-    for (uint256 i = 0; i < params.debtReserveIds.length; i++) {
-      _assertHubLiquidity(
-        _hub(spoke4, params.debtReserveIds[i]),
-        _reserveAssetId(spoke4, params.debtReserveIds[i]),
-        'debt'
-      );
-    }
+    _assertHubLiquidity(
+      _hub(spoke4, params.debtReserveId),
+      _reserveAssetId(spoke4, params.debtReserveId),
+      'debt'
+    );
   }
 }

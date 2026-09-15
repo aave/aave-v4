@@ -2,7 +2,6 @@
 pragma solidity 0.8.28;
 
 import {BabylonSpoke} from 'src/spoke/BabylonSpoke.sol';
-import {Spoke} from 'src/spoke/Spoke.sol';
 
 /// @title BabylonSpokeInstance
 /// @author Aave Labs
@@ -13,8 +12,7 @@ contract BabylonSpokeInstance is BabylonSpoke {
   /// @dev Constructor.
   /// @dev During upgrade, must ensure that the new oracle is supporting existing assets on the Spoke and the replaced oracle.
   /// @param oracle_ The address of the oracle.
-  /// @param maxUserReservesLimit_ The maximum number of collateral and borrow reserves a user can have.
-  constructor(address oracle_, uint16 maxUserReservesLimit_) Spoke(oracle_, maxUserReservesLimit_) {
+  constructor(address oracle_) BabylonSpoke(oracle_) {
     _disableInitializers();
   }
 

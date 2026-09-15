@@ -28,7 +28,7 @@ contract BabylonSpokeOperations_Gas_Tests is BabylonBase, SpokeOperations_Gas_Te
     _liquidationSetup(85_00);
 
     vm.startPrank(bob);
-    babylonSpoke.liquidationCall(_arr(reserveId.dai), _arr(100_000e18), alice, 2_000_000e6);
+    babylonSpoke.liquidationCall(reserveId.dai, 100_000e18, alice, 2_000_000e6);
     vm.snapshotGasLastFrame(NAMESPACE, 'liquidationCall: partial');
     vm.stopPrank();
   }
@@ -37,7 +37,7 @@ contract BabylonSpokeOperations_Gas_Tests is BabylonBase, SpokeOperations_Gas_Te
     _liquidationSetup(85_00);
 
     vm.startPrank(bob);
-    babylonSpoke.liquidationCall(_arr(reserveId.dai), _arr(UINT256_MAX), alice, 2_000_000e6);
+    babylonSpoke.liquidationCall(reserveId.dai, UINT256_MAX, alice, 2_000_000e6);
     vm.snapshotGasLastFrame(NAMESPACE, 'liquidationCall: full');
     vm.stopPrank();
   }
@@ -46,41 +46,8 @@ contract BabylonSpokeOperations_Gas_Tests is BabylonBase, SpokeOperations_Gas_Te
     _liquidationSetup(85_00);
 
     vm.startPrank(bob);
-    babylonSpoke.liquidationCall(_arr(reserveId.dai), _arr(100_000e18), alice, 50_000e6);
+    babylonSpoke.liquidationCall(reserveId.dai, 100_000e18, alice, 50_000e6);
     vm.snapshotGasLastFrame(NAMESPACE, 'liquidationCall (collateralCapEnforced): partial');
-    vm.stopPrank();
-  }
-
-  function test_liquidation_multiDebt_partial() public {
-    _updateMaxLiquidationBonus(spoke, _usdxReserveId(spoke), 105_00);
-
-    vm.prank(bob);
-    spoke.supply(reserveId.dai, 1_000_000e18, bob);
-
-    vm.startPrank(alice);
-    spoke.supply(reserveId.usdx, 1_000_000e6, alice);
-    spoke.setUsingAsCollateral(reserveId.usdx, true, alice);
-    spoke.borrow(reserveId.weth, 1e18, alice);
-    vm.stopPrank();
-
-    _borrowToBeLiquidatableWithPriceChange(
-      spoke,
-      alice,
-      reserveId.dai,
-      reserveId.usdx,
-      1.05e18,
-      85_00
-    );
-    skip(100);
-
-    vm.startPrank(bob);
-    babylonSpoke.liquidationCall(
-      _arr(reserveId.weth, reserveId.dai),
-      _arr(UINT256_MAX, 100_000e18),
-      alice,
-      2_000_000e6
-    );
-    vm.snapshotGasLastFrame(NAMESPACE, 'liquidationCall (multiDebt): partial');
     vm.stopPrank();
   }
 
@@ -88,8 +55,52 @@ contract BabylonSpokeOperations_Gas_Tests is BabylonBase, SpokeOperations_Gas_Te
     _liquidationSetup(45_00);
 
     vm.startPrank(bob);
-    babylonSpoke.liquidationCall(_arr(reserveId.dai), _arr(UINT256_MAX), alice, 2_000_000e6);
+    babylonSpoke.liquidationCall(reserveId.dai, UINT256_MAX, alice, 2_000_000e6);
     vm.snapshotGasLastFrame(NAMESPACE, 'liquidationCall (reportDeficit): full');
+    vm.stopPrank();
+  }
+
+  /// @dev Users borrow a single reserve on the BabylonSpoke: the two-borrow steps are not measured.
+  function test_withdraw() public override {
+    vm.startPrank(alice);
+    spoke.supply(reserveId.usdx, 100e6, alice);
+    spoke.setUsingAsCollateral(reserveId.usdx, true, alice);
+
+    spoke.withdraw(reserveId.usdx, 1e6, alice);
+    vm.snapshotGasLastFrame(NAMESPACE, 'withdraw: 0 borrows, partial');
+
+    skip(100);
+
+    spoke.withdraw(reserveId.usdx, UINT256_MAX, alice);
+    vm.snapshotGasLastFrame(NAMESPACE, 'withdraw: 0 borrows, full');
+
+    spoke.supply(reserveId.usdx, 10000e6, alice);
+    spoke.borrow(reserveId.dai, 1e18, alice);
+    skip(100);
+
+    spoke.withdraw(reserveId.usdx, 1e6, alice);
+    vm.snapshotGasLastFrame(NAMESPACE, 'withdraw: 1 borrow, partial');
+    spoke.supply(reserveId.weth, 1000e18, alice);
+
+    spoke.withdraw(reserveId.weth, UINT256_MAX, alice);
+    vm.snapshotGasLastFrame(NAMESPACE, 'withdraw: non collateral');
+    vm.stopPrank();
+  }
+
+  /// @dev Users borrow a single reserve on the BabylonSpoke: the two-borrow step is not measured.
+  function test_updateRiskPremium() public override {
+    vm.prank(bob);
+    spoke.supply(reserveId.dai, 1000e18, bob);
+
+    vm.startPrank(alice);
+    spoke.supply(reserveId.usdx, 2000e6, alice);
+    spoke.setUsingAsCollateral(reserveId.usdx, true, alice);
+
+    spoke.borrow(reserveId.dai, 500e18, alice);
+    skip(100);
+
+    spoke.updateUserRiskPremium(alice);
+    vm.snapshotGasLastFrame(NAMESPACE, 'updateUserRiskPremium: 1 borrow');
     vm.stopPrank();
   }
 

@@ -10,8 +10,8 @@ import {IAaveOracle} from 'src/spoke/interfaces/IAaveOracle.sol';
 /// @title AaveV4BabylonSpokeInstanceBatch
 /// @author Aave Labs
 /// @notice Deploys a BabylonSpoke (proxy + implementation) and its AaveOracle, producing a batch report.
-/// @dev Reuses the canonical Spoke deploy procedure: the BabylonSpoke instance has the identical
-/// constructor and initializer.
+/// @dev Reuses the canonical Spoke deploy procedure with the BabylonSpoke constructor, which fixes
+/// the user reserves limit at one and only takes the oracle.
 contract AaveV4BabylonSpokeInstanceBatch is
   AaveV4SpokeDeployProcedure,
   AaveV4AaveOracleDeployProcedure
@@ -23,24 +23,21 @@ contract AaveV4BabylonSpokeInstanceBatch is
   /// @param authority_ The access-control authority for the BabylonSpoke.
   /// @param babylonSpokeBytecode_ The creation bytecode of the BabylonSpoke implementation.
   /// @param oracleDecimals_ The decimal precision for the AaveOracle.
-  /// @param maxUserReservesLimit_ The maximum number of reserves a user can interact with.
   /// @param salt_ The CREATE2 salt for deterministic deployment.
   constructor(
     address proxyAdminOwner_,
     address authority_,
     bytes memory babylonSpokeBytecode_,
     uint8 oracleDecimals_,
-    uint16 maxUserReservesLimit_,
     bytes32 salt_
   ) {
     address aaveOracle = _deployAaveOracle(oracleDecimals_);
-    (address spokeProxy, address spokeImplementation) = _deployUpgradeableSpokeInstance({
+    (address spokeProxy, address spokeImplementation) = _deployUpgradeableBabylonSpokeInstance({
       proxyAdminOwner: proxyAdminOwner_,
       authority: authority_,
       oracle: aaveOracle,
-      spokeBytecode: babylonSpokeBytecode_,
-      salt: salt_,
-      maxUserReservesLimit: maxUserReservesLimit_
+      babylonSpokeBytecode: babylonSpokeBytecode_,
+      salt: salt_
     });
     IAaveOracle(aaveOracle).setSpoke(spokeProxy);
 

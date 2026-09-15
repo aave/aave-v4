@@ -61,7 +61,7 @@ contract SpokeOperations_Gas_Tests is Base {
     vm.stopPrank();
   }
 
-  function test_withdraw() public {
+  function test_withdraw() public virtual {
     vm.startPrank(alice);
     spoke.supply(reserveId.usdx, 100e6, alice);
     spoke.setUsingAsCollateral(reserveId.usdx, true, alice);
@@ -212,7 +212,7 @@ contract SpokeOperations_Gas_Tests is Base {
     vm.stopPrank();
   }
 
-  function test_updateRiskPremium() public {
+  function test_updateRiskPremium() public virtual {
     vm.prank(bob);
     spoke.supply(reserveId.dai, 1000e18, bob);
 

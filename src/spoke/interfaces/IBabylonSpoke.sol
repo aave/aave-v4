@@ -24,7 +24,8 @@ interface IBabylonSpoke is ISpoke {
     uint256 managedCollateralReserveId
   );
 
-  /// @dev Emitted for each debt reserve repaid during a Babylon liquidation.
+  /// @dev Emitted when a borrower is liquidated.
+  /// @param collateralReserveId The identifier of the managed collateral reserve removed by the liquidation.
   /// @param debtReserveId The identifier of the repaid debt reserve.
   /// @param user The address of the borrower getting liquidated.
   /// @param liquidator The address of the liquidator.
@@ -34,6 +35,7 @@ interface IBabylonSpoke is ISpoke {
   /// @param collateralAmountRemoved The amount of collateral removed, expressed in asset units.
   /// @param collateralSharesLiquidated The amount of collateral shares liquidated.
   event BabylonLiquidationCall(
+    uint256 indexed collateralReserveId,
     uint256 indexed debtReserveId,
     address indexed user,
     address liquidator,
@@ -44,28 +46,8 @@ interface IBabylonSpoke is ISpoke {
     uint256 collateralSharesLiquidated
   );
 
-  /// @dev Emitted once per Babylon liquidation, after all repayments.
-  /// @param collateralReserveId The identifier of the managed collateral reserve removed by the liquidation.
-  /// @param user The address of the borrower getting liquidated.
-  /// @param liquidator The address of the liquidator.
-  /// @param collateralAmountRemoved The total amount of collateral removed, expressed in asset units.
-  /// @param collateralSharesLiquidated The total amount of collateral shares liquidated.
-  event BabylonLiquidationCallSummary(
-    uint256 indexed collateralReserveId,
-    address indexed user,
-    address indexed liquidator,
-    uint256 collateralAmountRemoved,
-    uint256 collateralSharesLiquidated
-  );
-
-  /// @notice Thrown when the debt reserve and amount arrays are empty or of different lengths.
-  error InvalidLiquidationCallArguments();
-
   /// @notice Thrown when the disabled canonical liquidation entry point is called.
   error UnsupportedLiquidationCall();
-
-  /// @notice Thrown when registering a reserve as collateral while another one is registered.
-  error CollateralLimitExceeded();
 
   /// @notice Thrown when registering a reserve other than the managed collateral reserve as collateral.
   error UnsupportedCollateralReserve();
@@ -85,27 +67,32 @@ interface IBabylonSpoke is ISpoke {
   ) external;
 
   /// @notice Liquidates a user position with cap-bounded sizing.
-  /// @dev Caller must be the configured liquidation manager, with prior approval for the repaid debt assets.
-  /// @dev The health factor is validated once at entry: an intermediate repayment restoring it must
-  /// not block completing the collateral removal, which is bounded by `maxCollateralToRemove`.
-  /// @dev Each debt reserve is repaid up to its cover amount, capped at the user's full debt, with
-  /// no target health factor sizing; the removed collateral is priced with the canonical bonus
-  /// formula from the entry health factor. When the priced removal exceeds the remaining cap, the
-  /// final repayment is resized to exactly consume it and later debt reserves are left untouched.
-  /// A debt reserve the user no longer borrows is skipped, so front-running repayments cannot
-  /// block the call.
+  /// @dev Caller must be the configured liquidation manager, with prior approval for the repaid debt asset.
+  /// @dev The repayment is sized up to `debtToCover`, capped at the user's debt, with no target health
+  /// factor sizing; the removed collateral is priced with the canonical bonus formula. When the priced
+  /// removal exceeds `maxCollateralToRemove`, the repayment is resized to exactly consume it.
   /// @dev No dust validation and no liquidation fee: the liquidator receives the full removed
   /// collateral of the managed collateral reserve, always in underlying assets.
-  /// @param debtReserveIds The reserveIds of the underlying assets borrowed by the liquidated user, in repayment order.
-  /// @param debtToCoverAmounts The desired amount of debt to cover per debt reserve.
+  /// @param debtReserveId The reserveId of the underlying asset borrowed by the liquidated user.
+  /// @param debtToCover The desired amount of debt to cover.
   /// @param user The address of the user to liquidate.
-  /// @param maxCollateralToRemove The maximum total amount of collateral to remove from the user, expressed in asset units.
+  /// @param maxCollateralToRemove The maximum amount of collateral to remove from the user, expressed in asset units.
+  /// @return liquidationBonus The liquidation bonus applied, expressed in BPS.
+  /// @return collateralAmountRemoved The amount of collateral removed, expressed in asset units.
+  /// @return userAccountDataAfter The user account data after the liquidation, zeroed when the
+  /// position ended in deficit.
   function liquidationCall(
-    uint256[] calldata debtReserveIds,
-    uint256[] calldata debtToCoverAmounts,
+    uint256 debtReserveId,
+    uint256 debtToCover,
     address user,
     uint256 maxCollateralToRemove
-  ) external;
+  )
+    external
+    returns (
+      uint256 liquidationBonus,
+      uint256 collateralAmountRemoved,
+      UserAccountData memory userAccountDataAfter
+    );
 
   /// @notice Returns the Babylon liquidation config.
   /// @return The address of the liquidation manager.

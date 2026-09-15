@@ -4,10 +4,10 @@ pragma solidity ^0.8.0;
 import 'tests/contracts/spoke/liquidation/Spoke.BabylonLiquidationCall.Base.t.sol';
 
 /// @dev Fuzz matrix mirroring the canonical `SpokeLiquidationCallHelperTest` shapes for the
-/// babylon liquidation call. The ManyCollaterals shapes are dropped (users register a single
-/// collateral) and the canonical `receiveShares` dimension is replaced by fuzzing the removal
-/// cap and the debt reserve arrays. The LiquidationFeeZero variant is dropped (the fee is never
-/// charged) along with TargetHealthFactorOne (no target health factor sizing).
+/// babylon liquidation call. The ManyCollaterals and ManyDebts shapes are dropped (users hold a
+/// single collateral and a single debt reserve) and the canonical `receiveShares` dimension is
+/// replaced by fuzzing the removal cap. The LiquidationFeeZero variant is dropped (the fee is
+/// never charged) along with TargetHealthFactorOne (no target health factor sizing).
 abstract contract SpokeBabylonLiquidationCallHelperTest is SpokeBabylonLiquidationCallBaseTest {
   using WadRayMath for uint256;
   using SafeCast for uint256;
@@ -106,19 +106,11 @@ abstract contract SpokeBabylonLiquidationCallHelperTest is SpokeBabylonLiquidati
     }
     _makeUserLiquidatable(spoke, user, debtReserveId, newHealthFactor);
 
-    // repay all borrowed reserves; the fuzzed cover seeds the primary debt reserve. The cover
-    // must repay at least one drawn share, so the repayment cannot floor to a zero restore
-    uint256[] memory debtReserveIds = _userDebtReserveIds();
-    uint256[] memory debtToCoverAmounts = new uint256[](debtReserveIds.length);
-    for (uint256 i = 0; i < debtReserveIds.length; ++i) {
-      uint256 userDebt = spoke.getUserTotalDebt(debtReserveIds[i], user);
-      uint256 minCover = _reserveDrawnIndex(spoke, debtReserveIds[i]).fromRayUp();
-      uint256 maxCover = _max(minCover, userDebt * 2);
-      debtToCoverAmounts[i] = debtReserveIds[i] == debtReserveId
-        ? bound(debtToCover, minCover, maxCover)
-        : vm.randomUint(minCover, maxCover);
-      _fundLiquidationManager(debtReserveIds[i], maxCover);
-    }
+    // the cover must repay at least one drawn share, so the repayment cannot floor to a zero restore
+    uint256 minCover = _reserveDrawnIndex(spoke, debtReserveId).fromRayUp();
+    uint256 maxCover = _max(minCover, spoke.getUserTotalDebt(debtReserveId, user) * 2);
+    debtToCover = bound(debtToCover, minCover, maxCover);
+    _fundLiquidationManager(debtReserveId, maxCover);
 
     // the cap spans from a single collateral share's worth up to twice the user's collateral
     maxCollateralToRemove = bound(
@@ -132,8 +124,8 @@ abstract contract SpokeBabylonLiquidationCallHelperTest is SpokeBabylonLiquidati
 
     _checkedBabylonLiquidationCall(
       CheckedBabylonLiquidationCallParams({
-        debtReserveIds: debtReserveIds,
-        debtToCoverAmounts: debtToCoverAmounts,
+        debtReserveId: debtReserveId,
+        debtToCover: debtToCover,
         user: user,
         maxCollateralToRemove: maxCollateralToRemove,
         isSolvent: isSolvent
@@ -191,76 +183,6 @@ abstract contract SpokeBabylonLiquidationCallHelperTest is SpokeBabylonLiquidati
     });
   }
 
-  function test_liquidationCall_fuzz_OneCollateral_ManyDebts_UserSolvent(
-    uint256 collateralReserveId,
-    uint256 debtReserveId,
-    uint256 debtToCover,
-    uint256 maxCollateralToRemove
-  ) public virtual {
-    (collateralReserveId, debtReserveId) = _bound(collateralReserveId, debtReserveId);
-    _setManagedCollateralReserve(collateralReserveId);
-    _processAdditionalSetup(collateralReserveId, debtReserveId);
-
-    _increaseCollateralSupply(
-      spoke,
-      collateralReserveId,
-      _convertValueToAmount(spoke, collateralReserveId, baseAmountValue),
-      user
-    );
-
-    _processAdditionalDebtReserves();
-
-    _testLiquidationCall({
-      debtReserveId: debtReserveId,
-      debtToCover: debtToCover,
-      maxCollateralToRemove: maxCollateralToRemove,
-      isSolvent: true
-    });
-  }
-
-  function test_liquidationCall_fuzz_OneCollateral_ManyDebts_UserInsolvent(
-    uint256 collateralReserveId,
-    uint256 debtReserveId,
-    uint256 debtToCover,
-    uint256 maxCollateralToRemove
-  ) public virtual {
-    (collateralReserveId, debtReserveId) = _bound(collateralReserveId, debtReserveId);
-    _setManagedCollateralReserve(collateralReserveId);
-    _processAdditionalSetup(collateralReserveId, debtReserveId);
-
-    _increaseCollateralSupply(
-      spoke,
-      collateralReserveId,
-      _convertValueToAmount(spoke, collateralReserveId, baseAmountValue),
-      user
-    );
-
-    _processAdditionalDebtReserves();
-
-    _testLiquidationCall({
-      debtReserveId: debtReserveId,
-      debtToCover: debtToCover,
-      maxCollateralToRemove: maxCollateralToRemove,
-      isSolvent: false
-    });
-  }
-
-  /// @dev The debt reserves the user borrows, in reserve id order.
-  function _userDebtReserveIds() internal view returns (uint256[] memory ids) {
-    uint256 reserveCount = spoke.getReserveCount();
-    uint256[] memory borrowed = new uint256[](reserveCount);
-    uint256 count;
-    for (uint256 i = 0; i < reserveCount; ++i) {
-      if (_isBorrowing(spoke, i, user)) {
-        borrowed[count++] = i;
-      }
-    }
-    ids = new uint256[](count);
-    for (uint256 i = 0; i < count; ++i) {
-      ids[i] = borrowed[i];
-    }
-  }
-
   // calculates the max borrow amount that ensures user will be healthy after skipping time as well
   function _calculateMaxHealthyBorrowValue(address addr) internal returns (uint256) {
     uint256 maxBorrowValue = _getRequiredDebtValueForHf(
@@ -282,33 +204,6 @@ abstract contract SpokeBabylonLiquidationCallHelperTest is SpokeBabylonLiquidati
     );
 
     return maxBorrowValue;
-  }
-
-  function _processAdditionalDebtReserves() internal {
-    uint256 count = vm.randomUint(1, spoke.getReserveCount() * 2);
-    // accounts for borrow share price increase due to time skip (and borrow drawn rate)
-    // ensures user is healthy enough to borrow
-    uint256 borrowableValue = _calculateMaxHealthyBorrowValue(user);
-    uint256 borrows;
-    for (uint256 i = 0; i < count; i++) {
-      uint256 reserveId = vm.randomUint(0, spoke.getReserveCount() - 1);
-      // never borrow the managed collateral: its supply share price must stay at one
-      if (reserveId == collateralReserveId || !spoke.getReserveConfig(reserveId).borrowable) {
-        continue;
-      }
-      uint256 maxBorrowAmount = _min(
-        _convertValueToAmount(spoke, reserveId, borrowableValue),
-        _calculateMaxSupplyAmount(spoke, reserveId)
-      );
-      if (maxBorrowAmount == 0) {
-        require(borrows > 0, 'No borrow operations');
-        break;
-      }
-      uint256 amount = vm.randomUint(1, maxBorrowAmount);
-      borrowableValue -= _convertAmountToValue(spoke, reserveId, amount);
-      _increaseReserveDebtNoCollateral(spoke, reserveId, amount, user);
-      borrows++;
-    }
   }
 }
 
@@ -444,10 +339,8 @@ contract SpokeBabylonLiquidationCallTest_NoPremium is SpokeBabylonLiquidationCal
     BabylonAccountsSnapshot memory /* accountsInfoBefore */,
     BabylonLiquidationMetadata memory /* liquidationMetadata */
   ) internal view virtual override {
-    for (uint256 i = 0; i < params.debtReserveIds.length; i++) {
-      (, uint256 premiumDebt) = spoke.getUserDebt(params.debtReserveIds[i], params.user);
-      assertEq(premiumDebt, 0, 'No premium');
-    }
+    (, uint256 premiumDebt) = spoke.getUserDebt(params.debtReserveId, params.user);
+    assertEq(premiumDebt, 0, 'No premium');
   }
 }
 
@@ -532,26 +425,22 @@ contract SpokeBabylonLiquidationCallTest_LiquidatorHistory is
   ) internal virtual override {
     super._processAdditionalSetup(collateralReserveId, debtReserveId);
 
-    // the liquidation manager holds its own position: a single registered collateral with
-    // borrow history, never borrowing the managed collateral
+    // the liquidation manager holds its own position: the single registered collateral with
+    // borrow history in the debt reserve, which is the only reserve it may borrow
     _increaseCollateralSupply(
       spoke,
       collateralReserveId,
       _convertValueToAmount(spoke, collateralReserveId, 1_000e26),
       liquidationManager
     );
-    uint256 count = vm.randomUint(1, spoke.getReserveCount() * 2);
+    uint256 count = vm.randomUint(1, 3);
     for (uint256 i = 0; i < count; ++i) {
-      uint256 reserveId = vm.randomUint(0, spoke.getReserveCount() - 1);
-      if (reserveId == collateralReserveId || !spoke.getReserveConfig(reserveId).borrowable) {
-        continue;
-      }
       ISpoke.UserAccountData memory managerAccountData = spoke.getUserAccountData(
         liquidationManager
       );
       uint256 maxBorrowAmount = _convertValueToAmount(
         spoke,
-        reserveId,
+        debtReserveId,
         managerAccountData.healthFactor <= 1.5e18
           ? 0
           : _getRequiredDebtValueForHf(spoke, liquidationManager, 1.5e18)
@@ -561,7 +450,7 @@ contract SpokeBabylonLiquidationCallTest_LiquidatorHistory is
       }
       _increaseReserveDebtNoCollateral(
         spoke,
-        reserveId,
+        debtReserveId,
         vm.randomUint(1, maxBorrowAmount),
         liquidationManager
       );

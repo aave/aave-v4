@@ -218,7 +218,6 @@ contract PostDeploymentVerificationTest is PostDeploymentVerificationBase, AaveV
       spokeLabels: spokeLabels,
       spokeMaxReservesLimits: new uint16[](0),
       babylonSpokeLabels: new string[](0),
-      babylonSpokeMaxReservesLimits: new uint16[](0),
       salt: params.salt
     });
 
@@ -272,7 +271,6 @@ contract PostDeploymentVerificationTest is PostDeploymentVerificationBase, AaveV
       spokeLabels: spokeLabels,
       spokeMaxReservesLimits: new uint16[](0),
       babylonSpokeLabels: new string[](0),
-      babylonSpokeMaxReservesLimits: new uint16[](0),
       salt: keccak256('test-salt')
     });
   }
