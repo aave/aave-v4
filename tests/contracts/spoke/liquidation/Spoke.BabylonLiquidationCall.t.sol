@@ -267,6 +267,58 @@ contract SpokeBabylonLiquidationCallTest is SpokeBabylonLiquidationCallBaseTest 
     babylonSpoke.liquidationCall(usdxReserveId, 1e6, user, 1e8);
   }
 
+  function test_revert_liquidationCall_selfLiquidation() public {
+    vm.expectRevert(ISpoke.SelfLiquidation.selector);
+    vm.prank(liquidationManager);
+    babylonSpoke.liquidationCall(debtReserveId, 1e18, liquidationManager, 1e8);
+  }
+
+  function test_revert_liquidationCall_collateralReservePaused() public {
+    _setUpLiquidatableUser(100_000e26, 0.95e18);
+    _updateReservePausedFlag(spoke4, collateralReserveId, true);
+
+    vm.expectRevert(ISpoke.ReservePaused.selector);
+    vm.prank(liquidationManager);
+    babylonSpoke.liquidationCall(debtReserveId, 1e18, user, 1e8);
+  }
+
+  /// @dev Reachable when the managed collateral reserve is updated while a user still holds its
+  /// collateral under the previous one.
+  function test_revert_liquidationCall_collateralReserveNotSupplied() public {
+    _setUpLiquidatableUser(100_000e26, 0.95e18);
+    _setManagedCollateralReserve(_usdxReserveId(spoke4));
+
+    vm.expectRevert(ISpoke.ReserveNotSupplied.selector);
+    vm.prank(liquidationManager);
+    babylonSpoke.liquidationCall(debtReserveId, 1e18, user, 1e8);
+  }
+
+  /// @dev Reachable when the managed collateral reserve is updated to one the user supplied
+  /// without registering it as collateral.
+  function test_revert_liquidationCall_collateralReserveNotEnabledAsCollateral() public {
+    _setUpLiquidatableUser(100_000e26, 0.95e18);
+    uint256 usdxReserveId = _usdxReserveId(spoke4);
+    _deal(spoke4, usdxReserveId, user, 1e6);
+    SpokeActions.approve({
+      spoke: spoke4,
+      reserveId: usdxReserveId,
+      owner: user,
+      amount: UINT256_MAX
+    });
+    SpokeActions.supply({
+      spoke: spoke4,
+      reserveId: usdxReserveId,
+      caller: user,
+      amount: 1e6,
+      onBehalfOf: user
+    });
+    _setManagedCollateralReserve(usdxReserveId);
+
+    vm.expectRevert(ISpoke.ReserveNotEnabledAsCollateral.selector);
+    vm.prank(liquidationManager);
+    babylonSpoke.liquidationCall(debtReserveId, 1e18, user, 1e8);
+  }
+
   /// @dev Drives a partial liquidation through the full assertion engine.
   function test_liquidationCall_checked_partial() public {
     _setUpLiquidatableUser(100_000e26, 0.95e18);
@@ -278,8 +330,7 @@ contract SpokeBabylonLiquidationCallTest is SpokeBabylonLiquidationCallBaseTest 
         debtReserveId: debtReserveId,
         debtToCover: debtToCover,
         user: user,
-        maxCollateralToRemove: spoke4.getUserSuppliedAssets(collateralReserveId, user) * 2,
-        isSolvent: true
+        maxCollateralToRemove: spoke4.getUserSuppliedAssets(collateralReserveId, user) * 2
       })
     );
   }

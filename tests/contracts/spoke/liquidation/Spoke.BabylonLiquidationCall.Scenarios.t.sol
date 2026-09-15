@@ -197,8 +197,7 @@ contract SpokeBabylonLiquidationCallScenariosTest is SpokeBabylonLiquidationCall
         debtReserveId: _daiReserveId(spoke4),
         debtToCover: 2000e18,
         user: user,
-        maxCollateralToRemove: UINT256_MAX,
-        isSolvent: true
+        maxCollateralToRemove: UINT256_MAX
       })
     );
 
@@ -265,8 +264,7 @@ contract SpokeBabylonLiquidationCallScenariosTest is SpokeBabylonLiquidationCall
         debtReserveId: _daiReserveId(spoke4),
         debtToCover: UINT256_MAX,
         user: user,
-        maxCollateralToRemove: UINT256_MAX,
-        isSolvent: true
+        maxCollateralToRemove: UINT256_MAX
       })
     );
 

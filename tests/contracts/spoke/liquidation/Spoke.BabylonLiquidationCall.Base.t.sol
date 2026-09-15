@@ -23,7 +23,6 @@ contract SpokeBabylonLiquidationCallBaseTest is BabylonBase, SpokeLiquidationCal
     uint256 debtToCover;
     address user;
     uint256 maxCollateralToRemove;
-    bool isSolvent;
   }
 
   struct BabylonLiquidationMetadata {
@@ -555,12 +554,8 @@ contract SpokeBabylonLiquidationCallBaseTest is BabylonBase, SpokeLiquidationCal
       );
     }
 
-    if (liquidationMetadata.hasDeficit || userAccountDataAfter.totalDebtValueRay == 0) {
-      assertEq(
-        userAccountDataAfter.healthFactor,
-        liquidationMetadata.hasDeficit ? userAccountDataAfter.healthFactor : UINT256_MAX,
-        'health factor: no remaining debt'
-      );
+    if (userAccountDataAfter.totalDebtValueRay == 0) {
+      assertEq(userAccountDataAfter.healthFactor, UINT256_MAX, 'health factor: no remaining debt');
       return;
     }
 
@@ -762,13 +757,11 @@ contract SpokeBabylonLiquidationCallBaseTest is BabylonBase, SpokeLiquidationCal
 
     BabylonAccountsSnapshot memory accountsInfoAfter = _getBabylonAccountsInfo(params);
 
-    if (!liquidationMetadata.hasDeficit) {
-      assertEq(
-        abi.encode(accountsInfoAfter.userAccountData),
-        abi.encode(expectedUserAccountData),
-        'user account data'
-      );
-    }
+    assertEq(
+      abi.encode(accountsInfoAfter.userAccountData),
+      abi.encode(expectedUserAccountData),
+      'user account data'
+    );
     _checkBabylonReturnData(
       liquidationMetadata,
       accountsInfoAfter,

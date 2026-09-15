@@ -127,8 +127,7 @@ abstract contract SpokeBabylonLiquidationCallHelperTest is SpokeBabylonLiquidati
         debtReserveId: debtReserveId,
         debtToCover: debtToCover,
         user: user,
-        maxCollateralToRemove: maxCollateralToRemove,
-        isSolvent: isSolvent
+        maxCollateralToRemove: maxCollateralToRemove
       })
     );
   }
