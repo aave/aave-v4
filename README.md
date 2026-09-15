@@ -163,7 +163,8 @@ You can find all audit reports under [audits](./audits/):
 
 - [2026-02-05 - Aave V4 - Blackthorn](./audits/2026-02-05_Aave-V4_Blackthorn.pdf)
 - [2026-02-10 - Aave V4 - TrailOfBits](./audits/2026-02-10_Aave-V4_TrailOfBits.pdf)
-- [2026-02-19 - Aave V4 - ChainSecurity](./audits/2026-02-19_Aave-V4_ChainSecurity.pdf)
+- [2026-01-28 - Aave V4 - ChainSecurity](./audits/2026-01-28_Aave-V4_ChainSecurity.pdf)
+- [2026-03-23 - Aave V4 - ChainSecurity](./audits/2026-03-23_Aave-V4_ChainSecurity.pdf)
 
 ### Bug Bounty
 

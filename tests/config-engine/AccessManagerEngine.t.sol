@@ -3,6 +3,8 @@ pragma solidity ^0.8.0;
 
 import 'tests/config-engine/BaseConfigEngine.t.sol';
 
+import {IAccessManagerEnumerable} from 'src/access/interfaces/IAccessManagerEnumerable.sol';
+
 contract AccessManagerEngineTest is BaseConfigEngineTest {
   // Default Roles :
   uint64 constant DEFAULT_ADMIN_ROLE = 0;
@@ -218,7 +220,8 @@ contract AccessManagerEngineTest is BaseConfigEngineTest {
           admin: TEST_ADMIN_ROLE_ID,
           guardian: TEST_GUARDIAN_ROLE_ID,
           grantDelay: TEST_GRANT_DELAY,
-          label: 'FEE_UPDATER'
+          label: 'FEE_UPDATER',
+          labelUpdate: false
         })
       )
     );
@@ -244,7 +247,8 @@ contract AccessManagerEngineTest is BaseConfigEngineTest {
           admin: TEST_ADMIN_ROLE_ID,
           guardian: EngineFlags.KEEP_CURRENT_UINT64,
           grantDelay: EngineFlags.KEEP_CURRENT_UINT32,
-          label: ''
+          label: '',
+          labelUpdate: false
         })
       )
     );
@@ -268,7 +272,8 @@ contract AccessManagerEngineTest is BaseConfigEngineTest {
           admin: EngineFlags.KEEP_CURRENT_UINT64,
           guardian: TEST_GUARDIAN_ROLE_ID,
           grantDelay: EngineFlags.KEEP_CURRENT_UINT32,
-          label: ''
+          label: '',
+          labelUpdate: false
         })
       )
     );
@@ -293,7 +298,8 @@ contract AccessManagerEngineTest is BaseConfigEngineTest {
           admin: EngineFlags.KEEP_CURRENT_UINT64,
           guardian: EngineFlags.KEEP_CURRENT_UINT64,
           grantDelay: TEST_GRANT_DELAY,
-          label: ''
+          label: '',
+          labelUpdate: false
         })
       )
     );
@@ -315,10 +321,70 @@ contract AccessManagerEngineTest is BaseConfigEngineTest {
           admin: EngineFlags.KEEP_CURRENT_UINT64,
           guardian: EngineFlags.KEEP_CURRENT_UINT64,
           grantDelay: EngineFlags.KEEP_CURRENT_UINT32,
-          label: 'FEE_UPDATER'
+          label: 'FEE_UPDATER',
+          labelUpdate: false
         })
       )
     );
+  }
+
+  function test_executeRoleUpdates_relabel() public {
+    engine.executeRoleUpdates(_toRoleUpdateArray(_labelOnlyUpdate('FEE_UPDATER', false)));
+
+    engine.executeRoleUpdates(_toRoleUpdateArray(_labelOnlyUpdate('RISK_UPDATER', true)));
+
+    IAccessManagerEnumerable enumerable = IAccessManagerEnumerable(address(accessManager));
+    assertEq(enumerable.getLabelOfRole(TEST_ROLE_ID), 'RISK_UPDATER');
+    assertTrue(enumerable.isLabelAssigned('RISK_UPDATER'));
+    assertFalse(enumerable.isLabelAssigned('FEE_UPDATER'));
+  }
+
+  function test_executeRoleUpdates_relabel_sameLabel() public {
+    engine.executeRoleUpdates(_toRoleUpdateArray(_labelOnlyUpdate('FEE_UPDATER', false)));
+
+    engine.executeRoleUpdates(_toRoleUpdateArray(_labelOnlyUpdate('FEE_UPDATER', true)));
+
+    IAccessManagerEnumerable enumerable = IAccessManagerEnumerable(address(accessManager));
+    assertEq(enumerable.getLabelOfRole(TEST_ROLE_ID), 'FEE_UPDATER');
+    assertTrue(enumerable.isLabelAssigned('FEE_UPDATER'));
+  }
+
+  function test_executeRoleUpdates_relabel_withoutFlag_reverts() public {
+    engine.executeRoleUpdates(_toRoleUpdateArray(_labelOnlyUpdate('FEE_UPDATER', false)));
+
+    vm.expectRevert(
+      abi.encodeWithSelector(
+        IAccessManagerEnumerable.AccessManagerRoleAlreadyLabeled.selector,
+        TEST_ROLE_ID
+      )
+    );
+    engine.executeRoleUpdates(_toRoleUpdateArray(_labelOnlyUpdate('RISK_UPDATER', false)));
+  }
+
+  function test_executeRoleUpdates_labelUpdate_onUnlabeledRole_reverts() public {
+    vm.expectRevert(
+      abi.encodeWithSelector(
+        IAccessManagerEnumerable.AccessManagerUnlabeledRole.selector,
+        TEST_ROLE_ID
+      )
+    );
+    engine.executeRoleUpdates(_toRoleUpdateArray(_labelOnlyUpdate('FEE_UPDATER', true)));
+  }
+
+  function _labelOnlyUpdate(
+    string memory label,
+    bool labelUpdate
+  ) internal view returns (IAaveV4ConfigEngine.RoleUpdate memory) {
+    return
+      IAaveV4ConfigEngine.RoleUpdate({
+        authority: address(accessManager),
+        roleId: TEST_ROLE_ID,
+        admin: EngineFlags.KEEP_CURRENT_UINT64,
+        guardian: EngineFlags.KEEP_CURRENT_UINT64,
+        grantDelay: EngineFlags.KEEP_CURRENT_UINT32,
+        label: label,
+        labelUpdate: labelUpdate
+      });
   }
 
   function test_executeRoleUpdates_noneChanged() public {
@@ -331,7 +397,8 @@ contract AccessManagerEngineTest is BaseConfigEngineTest {
           admin: EngineFlags.KEEP_CURRENT_UINT64,
           guardian: EngineFlags.KEEP_CURRENT_UINT64,
           grantDelay: EngineFlags.KEEP_CURRENT_UINT32,
-          label: ''
+          label: '',
+          labelUpdate: false
         })
       )
     );
@@ -358,7 +425,8 @@ contract AccessManagerEngineTest is BaseConfigEngineTest {
           admin: admin,
           guardian: guardian,
           grantDelay: grantDelay,
-          label: 'FUZZ_LABEL'
+          label: 'FUZZ_LABEL',
+          labelUpdate: IAccessManagerEnumerable(address(accessManager)).isRoleLabeled(roleId)
         })
       )
     );
@@ -388,7 +456,8 @@ contract AccessManagerEngineTest is BaseConfigEngineTest {
           admin: TEST_ADMIN_ROLE_ID,
           guardian: EngineFlags.KEEP_CURRENT_UINT64,
           grantDelay: EngineFlags.KEEP_CURRENT_UINT32,
-          label: ''
+          label: '',
+          labelUpdate: false
         })
       )
     );
