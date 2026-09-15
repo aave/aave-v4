@@ -40,25 +40,25 @@ contract TokenizationSpokeOperations_Gas_Tests is Base, TokenizationSpokeHelpers
   function test_deposit() public {
     vm.prank(alice);
     daiTokenizationSpoke.deposit(1000e18, alice);
-    vm.snapshotGasLastCall(NAMESPACE, 'deposit');
+    vm.snapshotGasLastFrame(NAMESPACE, 'deposit');
   }
 
   function test_mint() public {
     uint256 shares = daiTokenizationSpoke.previewMint(1000e18);
     vm.prank(alice);
     daiTokenizationSpoke.mint(shares, alice);
-    vm.snapshotGasLastCall(NAMESPACE, 'mint');
+    vm.snapshotGasLastFrame(NAMESPACE, 'mint');
   }
 
   function test_withdraw() public {
     vm.startPrank(alice);
     daiTokenizationSpoke.deposit(1000e18, alice);
     daiTokenizationSpoke.withdraw(500e18, alice, alice);
-    vm.snapshotGasLastCall(NAMESPACE, 'withdraw: self, partial');
+    vm.snapshotGasLastFrame(NAMESPACE, 'withdraw: self, partial');
 
     uint256 balance = daiTokenizationSpoke.maxWithdraw(alice);
     daiTokenizationSpoke.withdraw(balance, alice, alice);
-    vm.snapshotGasLastCall(NAMESPACE, 'withdraw: self, full');
+    vm.snapshotGasLastFrame(NAMESPACE, 'withdraw: self, full');
 
     daiTokenizationSpoke.deposit(1000e18, alice);
     daiTokenizationSpoke.approve(bob, 1000e18);
@@ -66,11 +66,11 @@ contract TokenizationSpokeOperations_Gas_Tests is Base, TokenizationSpokeHelpers
 
     vm.startPrank(bob);
     daiTokenizationSpoke.withdraw(500e18, bob, alice);
-    vm.snapshotGasLastCall(NAMESPACE, 'withdraw: on behalf, partial');
+    vm.snapshotGasLastFrame(NAMESPACE, 'withdraw: on behalf, partial');
 
     balance = daiTokenizationSpoke.maxWithdraw(alice);
     daiTokenizationSpoke.withdraw(balance, bob, alice);
-    vm.snapshotGasLastCall(NAMESPACE, 'withdraw: on behalf, full');
+    vm.snapshotGasLastFrame(NAMESPACE, 'withdraw: on behalf, full');
     vm.stopPrank();
   }
 
@@ -79,11 +79,11 @@ contract TokenizationSpokeOperations_Gas_Tests is Base, TokenizationSpokeHelpers
     daiTokenizationSpoke.deposit(1000e18, alice);
     uint256 shares = daiTokenizationSpoke.balanceOf(alice);
     daiTokenizationSpoke.redeem(shares / 2, alice, alice);
-    vm.snapshotGasLastCall(NAMESPACE, 'redeem: self, partial');
+    vm.snapshotGasLastFrame(NAMESPACE, 'redeem: self, partial');
 
     shares = daiTokenizationSpoke.maxRedeem(alice);
     daiTokenizationSpoke.redeem(shares, alice, alice);
-    vm.snapshotGasLastCall(NAMESPACE, 'redeem: self, full');
+    vm.snapshotGasLastFrame(NAMESPACE, 'redeem: self, full');
 
     daiTokenizationSpoke.deposit(1000e18, alice);
     daiTokenizationSpoke.approve(bob, 1000e18);
@@ -92,11 +92,11 @@ contract TokenizationSpokeOperations_Gas_Tests is Base, TokenizationSpokeHelpers
     vm.startPrank(bob);
     shares = daiTokenizationSpoke.balanceOf(alice);
     daiTokenizationSpoke.redeem(shares / 2, bob, alice);
-    vm.snapshotGasLastCall(NAMESPACE, 'redeem: on behalf, partial');
+    vm.snapshotGasLastFrame(NAMESPACE, 'redeem: on behalf, partial');
 
     shares = daiTokenizationSpoke.maxRedeem(alice);
     daiTokenizationSpoke.redeem(shares, bob, alice);
-    vm.snapshotGasLastCall(NAMESPACE, 'redeem: on behalf, full');
+    vm.snapshotGasLastFrame(NAMESPACE, 'redeem: on behalf, full');
     vm.stopPrank();
   }
 
@@ -112,7 +112,7 @@ contract TokenizationSpokeOperations_Gas_Tests is Base, TokenizationSpokeHelpers
     SpokeActions.approve({vault: daiTokenizationSpoke, owner: alice, amount: p.assets});
 
     daiTokenizationSpoke.depositWithSig(p, signature);
-    vm.snapshotGasLastCall(NAMESPACE, 'depositWithSig');
+    vm.snapshotGasLastFrame(NAMESPACE, 'depositWithSig');
   }
 
   function test_mintWithSig() public {
@@ -127,7 +127,7 @@ contract TokenizationSpokeOperations_Gas_Tests is Base, TokenizationSpokeHelpers
     SpokeActions.approve({vault: daiTokenizationSpoke, owner: alice, amount: p.shares});
 
     daiTokenizationSpoke.mintWithSig(p, signature);
-    vm.snapshotGasLastCall(NAMESPACE, 'mintWithSig');
+    vm.snapshotGasLastFrame(NAMESPACE, 'mintWithSig');
   }
 
   function test_withdrawWithSig() public {
@@ -144,7 +144,7 @@ contract TokenizationSpokeOperations_Gas_Tests is Base, TokenizationSpokeHelpers
     daiTokenizationSpoke.deposit(p.assets, alice);
 
     daiTokenizationSpoke.withdrawWithSig(p, signature);
-    vm.snapshotGasLastCall(NAMESPACE, 'withdrawWithSig');
+    vm.snapshotGasLastFrame(NAMESPACE, 'withdrawWithSig');
   }
 
   function test_redeemWithSig() public {
@@ -161,7 +161,7 @@ contract TokenizationSpokeOperations_Gas_Tests is Base, TokenizationSpokeHelpers
     daiTokenizationSpoke.mint(p.shares, alice);
 
     daiTokenizationSpoke.redeemWithSig(p, signature);
-    vm.snapshotGasLastCall(NAMESPACE, 'redeemWithSig');
+    vm.snapshotGasLastFrame(NAMESPACE, 'redeemWithSig');
   }
 
   function test_permit() public {
@@ -178,7 +178,7 @@ contract TokenizationSpokeOperations_Gas_Tests is Base, TokenizationSpokeHelpers
     emit IERC20.Approval(p.owner, p.spender, p.value);
 
     daiTokenizationSpoke.permit(p.owner, p.spender, p.value, p.deadline, v, r, s);
-    vm.snapshotGasLastCall(NAMESPACE, 'permit');
+    vm.snapshotGasLastFrame(NAMESPACE, 'permit');
 
     assertEq(daiTokenizationSpoke.allowance(p.owner, p.spender), p.value);
   }
