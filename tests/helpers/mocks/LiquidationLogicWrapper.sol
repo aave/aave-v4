@@ -18,11 +18,11 @@ contract LiquidationLogicWrapper {
   using PositionStatusMap for ISpoke.PositionStatus;
   using ReserveFlagsMap for ReserveFlags;
 
-  mapping(uint256 reserveId => ISpoke.Reserve) internal _reserves;
-  mapping(address user => mapping(uint256 reserveId => ISpoke.UserPosition))
+  mapping(bytes32 reserveBucket => ISpoke.Reserve) internal _reserves;
+  mapping(address user => mapping(bytes32 reserveBucket => ISpoke.UserPosition))
     internal _userPositions;
   mapping(address user => ISpoke.PositionStatus) internal _positionStatuses;
-  mapping(uint256 reserveId => mapping(uint32 dynamicConfigKey => ISpoke.DynamicReserveConfig))
+  mapping(bytes32 reserveBucket => mapping(uint32 dynamicConfigKey => ISpoke.DynamicReserveConfig))
     internal _dynamicConfig;
   address internal _borrower;
   address internal _liquidator;
@@ -47,38 +47,38 @@ contract LiquidationLogicWrapper {
   }
 
   function setCollateralReserveHub(IHub hub) public {
-    _reserves[_collateralReserveId].hub = hub;
+    _reserves[PositionStatusMap.reserveBucket(_collateralReserveId)].hub = hub;
   }
 
   function setCollateralReserveDecimals(uint256 decimals) public {
-    _reserves[_collateralReserveId].decimals = decimals.toUint8();
+    _reserves[PositionStatusMap.reserveBucket(_collateralReserveId)].decimals = decimals.toUint8();
   }
 
   function setCollateralReserveAssetId(uint256 assetId) public {
-    _reserves[_collateralReserveId].assetId = assetId.toUint16();
+    _reserves[PositionStatusMap.reserveBucket(_collateralReserveId)].assetId = assetId.toUint16();
   }
 
   function setCollateralReserveFlags(ReserveFlags flags) public {
-    _reserves[_collateralReserveId].flags = flags;
+    _reserves[PositionStatusMap.reserveBucket(_collateralReserveId)].flags = flags;
   }
 
   function setDynamicCollateralConfig(
     ISpoke.DynamicReserveConfig memory newDynamicCollateralConfig
   ) public {
-    uint32 dynamicConfigKey = _userPositions[_borrower][_collateralReserveId].dynamicConfigKey;
-    _dynamicConfig[_collateralReserveId][dynamicConfigKey] = newDynamicCollateralConfig;
+    uint32 dynamicConfigKey = _userPositions[_borrower][PositionStatusMap.reserveBucket(_collateralReserveId)].dynamicConfigKey;
+    _dynamicConfig[PositionStatusMap.reserveBucket(_collateralReserveId)][dynamicConfigKey] = newDynamicCollateralConfig;
   }
 
   function setCollateralPositionSuppliedShares(uint256 suppliedShares) public {
-    _userPositions[_borrower][_collateralReserveId].suppliedShares = suppliedShares.toUint120();
+    _userPositions[_borrower][PositionStatusMap.reserveBucket(_collateralReserveId)].suppliedShares = suppliedShares.toUint120();
   }
 
   function setCollateralPositionDynamicConfigKey(uint256 dynamicConfigKey) public {
-    _userPositions[_borrower][_collateralReserveId].dynamicConfigKey = dynamicConfigKey.toUint24();
+    _userPositions[_borrower][PositionStatusMap.reserveBucket(_collateralReserveId)].dynamicConfigKey = dynamicConfigKey.toUint24();
   }
 
   function setLiquidatorPositionSuppliedShares(address liquidator, uint256 suppliedShares) public {
-    _userPositions[liquidator][_collateralReserveId].suppliedShares = suppliedShares.toUint120();
+    _userPositions[liquidator][PositionStatusMap.reserveBucket(_collateralReserveId)].suppliedShares = suppliedShares.toUint120();
   }
 
   function setDebtReserveId(uint256 reserveId) public {
@@ -86,35 +86,35 @@ contract LiquidationLogicWrapper {
   }
 
   function setDebtReserveHub(IHub hub) public {
-    _reserves[_debtReserveId].hub = hub;
+    _reserves[PositionStatusMap.reserveBucket(_debtReserveId)].hub = hub;
   }
 
   function setDebtReserveDecimals(uint256 decimals) public {
-    _reserves[_debtReserveId].decimals = decimals.toUint8();
+    _reserves[PositionStatusMap.reserveBucket(_debtReserveId)].decimals = decimals.toUint8();
   }
 
   function setDebtReserveAssetId(uint256 assetId) public {
-    _reserves[_debtReserveId].assetId = assetId.toUint16();
+    _reserves[PositionStatusMap.reserveBucket(_debtReserveId)].assetId = assetId.toUint16();
   }
 
   function setDebtReserveUnderlying(address underlying) public {
-    _reserves[_debtReserveId].underlying = underlying;
+    _reserves[PositionStatusMap.reserveBucket(_debtReserveId)].underlying = underlying;
   }
 
   function setDebtReserveFlags(ReserveFlags flags) public {
-    _reserves[_debtReserveId].flags = flags;
+    _reserves[PositionStatusMap.reserveBucket(_debtReserveId)].flags = flags;
   }
 
   function setDebtPositionDrawnShares(uint256 drawnShares) public {
-    _userPositions[_borrower][_debtReserveId].drawnShares = drawnShares.toUint120();
+    _userPositions[_borrower][PositionStatusMap.reserveBucket(_debtReserveId)].drawnShares = drawnShares.toUint120();
   }
 
   function setDebtPositionPremiumShares(uint256 premiumShares) public {
-    _userPositions[_borrower][_debtReserveId].premiumShares = premiumShares.toUint120();
+    _userPositions[_borrower][PositionStatusMap.reserveBucket(_debtReserveId)].premiumShares = premiumShares.toUint120();
   }
 
   function setDebtPositionPremiumOffsetRay(int256 premiumOffsetRay) public {
-    _userPositions[_borrower][_debtReserveId].premiumOffsetRay = premiumOffsetRay.toInt200();
+    _userPositions[_borrower][PositionStatusMap.reserveBucket(_debtReserveId)].premiumOffsetRay = premiumOffsetRay.toInt200();
   }
 
   function setBorrowerCollateralStatus(uint256 reserveId, bool status) public {
@@ -138,8 +138,8 @@ contract LiquidationLogicWrapper {
   ) public returns (LiquidationLogic.LiquidateCollateralResult memory) {
     return
       LiquidationLogic._liquidateCollateral(
-        _userPositions[_borrower][_collateralReserveId],
-        _userPositions[_liquidator][_collateralReserveId],
+        _userPositions[_borrower][PositionStatusMap.reserveBucket(_collateralReserveId)],
+        _userPositions[_liquidator][PositionStatusMap.reserveBucket(_collateralReserveId)],
         params
       );
   }
@@ -149,7 +149,7 @@ contract LiquidationLogicWrapper {
   ) public returns (LiquidationLogic.LiquidateDebtResult memory) {
     return
       LiquidationLogic._liquidateDebt(
-        _userPositions[_borrower][_debtReserveId],
+        _userPositions[_borrower][PositionStatusMap.reserveBucket(_debtReserveId)],
         _positionStatuses[_borrower],
         params
       );
@@ -160,9 +160,9 @@ contract LiquidationLogicWrapper {
   ) public returns (bool) {
     return
       LiquidationLogic._executeLiquidation(
-        _userPositions[_borrower][_collateralReserveId],
-        _userPositions[_borrower][_debtReserveId],
-        _userPositions[_liquidator][_collateralReserveId],
+        _userPositions[_borrower][PositionStatusMap.reserveBucket(_collateralReserveId)],
+        _userPositions[_borrower][PositionStatusMap.reserveBucket(_debtReserveId)],
+        _userPositions[_liquidator][PositionStatusMap.reserveBucket(_collateralReserveId)],
         _positionStatuses[_borrower],
         params
       );
@@ -180,19 +180,19 @@ contract LiquidationLogicWrapper {
   }
 
   function getCollateralReserve() public view returns (ISpoke.Reserve memory) {
-    return _reserves[_collateralReserveId];
+    return _reserves[PositionStatusMap.reserveBucket(_collateralReserveId)];
   }
 
   function getCollateralPosition(address user) public view returns (ISpoke.UserPosition memory) {
-    return _userPositions[user][_collateralReserveId];
+    return _userPositions[user][PositionStatusMap.reserveBucket(_collateralReserveId)];
   }
 
   function getDebtReserve() public view returns (ISpoke.Reserve memory) {
-    return _reserves[_debtReserveId];
+    return _reserves[PositionStatusMap.reserveBucket(_debtReserveId)];
   }
 
   function getDebtPosition(address user) public view returns (ISpoke.UserPosition memory) {
-    return _userPositions[user][_debtReserveId];
+    return _userPositions[user][PositionStatusMap.reserveBucket(_debtReserveId)];
   }
 
   function getBorrowerCollateralStatus(uint256 reserveId) public view returns (bool) {

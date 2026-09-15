@@ -206,6 +206,15 @@ library PositionStatusMap {
     }
   }
 
+  /// @notice Hashes bucketIndex and bucketMask in a bytes32 after encoding them, the result will be used as mapping key in spokes's internal data structures
+
+  function reserveBucket(uint256 reserveId) internal pure returns (bytes32 bucketKey) {
+    uint256 bucket = reserveId.bucketId();
+    uint256 bucketMask = (1 << (reserveId % 128)) | (1 << (reserveId % 128) + 1);
+    bucketKey = keccak256(abi.encode(bucket, bucketMask));
+    return (bucketKey);
+  }
+
   /// @notice Isolates the borrowing bits from word.
   function isolateBorrowing(uint256 word) internal pure returns (uint256 ret) {
     assembly ('memory-safe') {

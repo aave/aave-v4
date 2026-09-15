@@ -3,6 +3,7 @@ pragma solidity ^0.8.20;
 
 import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
 import {MathUtils} from 'src/libraries/math/MathUtils.sol';
+import {PositionStatusMap} from 'src/spoke/libraries/PositionStatusMap.sol';
 import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 
 /// @title SpokeUtils library
@@ -13,14 +14,14 @@ library SpokeUtils {
   uint8 public constant ORACLE_DECIMALS = 8;
 
   /// @notice Returns the reserve for a given reserve id.
-  /// @param reserves The mapping of reserves per reserve id.
+  /// @param reserves The mapping of reserves per reserve id bucket data.
   /// @param reserveId The identifier of the reserve.
   /// @return The reserve.
   function get(
-    mapping(uint256 reserveId => ISpoke.Reserve) storage reserves,
+    mapping(bytes32 reserveBucket => ISpoke.Reserve) storage reserves,
     uint256 reserveId
   ) internal view returns (ISpoke.Reserve storage) {
-    ISpoke.Reserve storage reserve = reserves[reserveId];
+    ISpoke.Reserve storage reserve = reserves[PositionStatusMap.reserveBucket(reserveId)];
     require(address(reserve.hub) != address(0), ISpoke.ReserveNotListed());
     return reserve;
   }
