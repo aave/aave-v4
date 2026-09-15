@@ -71,8 +71,7 @@ contract SignatureGateway_InsufficientAllowance_Test is SignatureGatewayBaseTest
         IERC20Errors.ERC20InsufficientAllowance.selector,
         address(gateway),
         0,
-        p.amount,
-        address(_underlying(spoke1, p.reserveId))
+        p.amount
       )
     );
     vm.prank(vm.randomAddress());
