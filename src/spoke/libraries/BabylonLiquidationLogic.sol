@@ -106,41 +106,51 @@ library BabylonLiquidationLogic {
   ) external returns (LiquidationResult memory) {
     ISpoke.Reserve storage collateralReserve = reserves.get(params.collateralReserveId);
     ISpoke.Reserve storage debtReserve = reserves.get(params.debtReserveId);
+
     ISpoke.UserPosition storage collateralUserPosition = userPositions[params.user][
       params.collateralReserveId
     ];
+    ISpoke.DynamicReserveConfig storage collateralDynConfig = dynamicConfig[
+      params.collateralReserveId
+    ][collateralUserPosition.dynamicConfigKey];
+
+    ExecuteLiquidationParams memory executeLiquidationParams = ExecuteLiquidationParams({
+      collateralHub: collateralReserve.hub,
+      collateralAssetId: collateralReserve.assetId,
+      collateralAssetDecimals: collateralReserve.decimals,
+      collateralReserveId: params.collateralReserveId,
+      collateralReserveFlags: collateralReserve.flags,
+      collateralDynConfig: collateralDynConfig,
+      debtHub: debtReserve.hub,
+      debtAssetId: debtReserve.assetId,
+      debtAssetDecimals: debtReserve.decimals,
+      debtUnderlying: debtReserve.underlying,
+      debtReserveId: params.debtReserveId,
+      debtReserveFlags: debtReserve.flags,
+      liquidationConfig: params.liquidationConfig,
+      oracle: params.oracle,
+      user: params.user,
+      debtToCover: params.debtToCover,
+      maxCollateralToRemove: params.maxCollateralToRemove,
+      healthFactor: params.userAccountData.healthFactor,
+      activeCollateralCount: params.userAccountData.activeCollateralCount,
+      borrowCount: params.userAccountData.borrowCount,
+      liquidator: params.liquidator
+    });
+
+    ISpoke.UserPosition storage debtUserPosition = userPositions[params.user][params.debtReserveId];
+    ISpoke.UserPosition storage collateralLiquidatorPosition = userPositions[params.liquidator][
+      params.collateralReserveId
+    ];
+    ISpoke.PositionStatus storage userPositionStatus = positionStatus[params.user];
 
     return
       _executeLiquidation({
         collateralUserPosition: collateralUserPosition,
-        debtUserPosition: userPositions[params.user][params.debtReserveId],
-        collateralLiquidatorPosition: userPositions[params.liquidator][params.collateralReserveId],
-        userPositionStatus: positionStatus[params.user],
-        params: ExecuteLiquidationParams({
-          collateralHub: collateralReserve.hub,
-          collateralAssetId: collateralReserve.assetId,
-          collateralAssetDecimals: collateralReserve.decimals,
-          collateralReserveId: params.collateralReserveId,
-          collateralReserveFlags: collateralReserve.flags,
-          collateralDynConfig: dynamicConfig[params.collateralReserveId][
-            collateralUserPosition.dynamicConfigKey
-          ],
-          debtHub: debtReserve.hub,
-          debtAssetId: debtReserve.assetId,
-          debtAssetDecimals: debtReserve.decimals,
-          debtUnderlying: debtReserve.underlying,
-          debtReserveId: params.debtReserveId,
-          debtReserveFlags: debtReserve.flags,
-          liquidationConfig: params.liquidationConfig,
-          oracle: params.oracle,
-          user: params.user,
-          debtToCover: params.debtToCover,
-          maxCollateralToRemove: params.maxCollateralToRemove,
-          healthFactor: params.userAccountData.healthFactor,
-          activeCollateralCount: params.userAccountData.activeCollateralCount,
-          borrowCount: params.userAccountData.borrowCount,
-          liquidator: params.liquidator
-        })
+        debtUserPosition: debtUserPosition,
+        collateralLiquidatorPosition: collateralLiquidatorPosition,
+        userPositionStatus: userPositionStatus,
+        params: executeLiquidationParams
       });
   }
 
