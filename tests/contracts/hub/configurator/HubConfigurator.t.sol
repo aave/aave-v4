@@ -332,7 +332,8 @@ contract HubConfiguratorTest is Base {
     // Change the fee receiver
     address newTreasurySpoke = AaveV4TestOrchestration.deployTestTreasurySpoke({
       owner: HUB_ADMIN,
-      salt: bytes32('newTreasurySpoke1')
+      salt: bytes32('newTreasurySpoke1'),
+      hub: TreasurySpokeHub
     });
     vm.prank(HUB_CONFIGURATOR_ADMIN);
     hubConfigurator.updateFeeReceiver(address(hub1), daiAssetId, newTreasurySpoke);
@@ -403,7 +404,8 @@ contract HubConfiguratorTest is Base {
     // Change the fee receiver
     address newTreasurySpoke = AaveV4TestOrchestration.deployTestTreasurySpoke({
       owner: HUB_ADMIN,
-      salt: bytes32('newTreasurySpoke2')
+      salt: bytes32('newTreasurySpoke2'),
+      hub: TreasurySpokeHub
     });
     vm.prank(HUB_CONFIGURATOR_ADMIN);
     hubConfigurator.updateFeeReceiver(address(hub1), daiAssetId, newTreasurySpoke);

@@ -38,6 +38,7 @@ contract SpokeMultipleHubBase is Base {
     TestTypes.TestEnvReport memory report = AaveV4TestOrchestration.deployTestEnv({
       admin: ADMIN,
       treasuryAdmin: ADMIN,
+      hub: TreasurySpokeHub,
       hubCount: 2,
       spokeCount: 2,
       nativeWrapper: makeAddr('nativeWrapper'),

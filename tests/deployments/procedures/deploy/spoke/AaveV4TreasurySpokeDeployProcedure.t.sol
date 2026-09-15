@@ -13,7 +13,8 @@ contract AaveV4TreasurySpokeDeployProcedureTest is ProceduresBase {
   function test_deployTreasurySpoke() public {
     address treasurySpoke = aaveV4TreasurySpokeDeployProcedureWrapper.deployTreasurySpoke(
       owner,
-      salt
+      salt,
+      hub
     );
     assertEq(Ownable(treasurySpoke).owner(), owner);
     assertEq(Ownable(ProxyHelper.getProxyAdmin(treasurySpoke)).owner(), owner);
@@ -21,6 +22,6 @@ contract AaveV4TreasurySpokeDeployProcedureTest is ProceduresBase {
 
   function test_deployTreasurySpoke_reverts() public {
     vm.expectRevert('invalid owner');
-    aaveV4TreasurySpokeDeployProcedureWrapper.deployTreasurySpoke({owner: address(0), salt: salt});
+    aaveV4TreasurySpokeDeployProcedureWrapper.deployTreasurySpoke({owner: address(0), salt: salt, hub: hub});
   }
 }

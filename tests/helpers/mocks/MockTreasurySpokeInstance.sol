@@ -13,7 +13,7 @@ contract MockTreasurySpokeInstance is TreasurySpoke {
    * @dev It sets the spoke revision and disables the initializers.
    * @param spokeRevision_ The revision of the spoke contract.
    */
-  constructor(uint64 spokeRevision_) {
+  constructor(uint64 spokeRevision_, address _hub) TreasurySpoke(_hub) {
     SPOKE_REVISION = spokeRevision_;
     _disableInitializers();
   }

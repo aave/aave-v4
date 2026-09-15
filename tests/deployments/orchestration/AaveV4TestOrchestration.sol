@@ -61,7 +61,8 @@ library AaveV4TestOrchestration {
     address nativeWrapper,
     bytes memory hubBytecode,
     bytes memory spokeBytecode,
-    bytes32 salt
+    bytes32 salt,
+    address hub
   ) external returns (TestTypes.TestEnvReport memory) {
     TestTypes.TestEnvReport memory report;
 
@@ -77,7 +78,8 @@ library AaveV4TestOrchestration {
     report.treasurySpoke = AaveV4DeployBase
       .deployTreasurySpokeBatch({
         owner: treasuryAdmin,
-        salt: keccak256(abi.encodePacked(salt, 'treasurySpoke'))
+        salt: keccak256(abi.encodePacked(salt, 'treasurySpoke')),
+        hub: hub
       })
       .treasurySpoke;
 
@@ -197,9 +199,10 @@ library AaveV4TestOrchestration {
 
   function deployTestTreasurySpoke(
     address owner,
-    bytes32 salt
+    bytes32 salt,
+    address hub
   ) external returns (address treasurySpoke) {
-    return AaveV4DeployBase.deployTreasurySpokeBatch({owner: owner, salt: salt}).treasurySpoke;
+    return AaveV4DeployBase.deployTreasurySpokeBatch({owner: owner, salt: salt, hub: hub}).treasurySpoke;
   }
 
   function configureHubsSpokes(ConfigData.AddSpokeParams[] memory paramsList) external {

@@ -10,7 +10,7 @@ contract TreasurySpokeInstance is TreasurySpoke {
   uint64 public constant SPOKE_REVISION = 1;
 
   /// @dev Constructor.
-  constructor() {
+  constructor(address _hub) TreasurySpoke(_hub) {
     _disableInitializers();
   }
 

@@ -36,6 +36,7 @@ contract BatchBaseTest is Create2TestHelper {
   address public admin = makeAddr('admin');
   address public feeReceiver = makeAddr('feeReceiver');
   bytes32 public salt;
+  address public TreasurySpokeHub;
   address public accessManager;
   address public nativeWrapper;
   bytes internal hubBytecode;

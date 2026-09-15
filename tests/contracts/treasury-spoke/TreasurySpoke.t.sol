@@ -48,7 +48,7 @@ contract TreasurySpokeTest is Base {
   }
 
   function test_deploy_reverts_on_invalid_params() public {
-    TreasurySpokeInstance impl = new TreasurySpokeInstance();
+    TreasurySpokeInstance impl = new TreasurySpokeInstance(TreasurySpokeHub);
     vm.expectRevert(
       abi.encodeWithSelector(OwnableUpgradeable.OwnableInvalidOwner.selector, address(0))
     );
