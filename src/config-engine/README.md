@@ -36,14 +36,15 @@ The four groups, and the virtual functions in each, are listed below.
 
 #### Spoke actions (`_executeSpokeActions`)
 
-| Function                               | Struct                         | Purpose                                                                                |
-| -------------------------------------- | ------------------------------ | -------------------------------------------------------------------------------------- |
-| `spokeReserveListings()`               | `ReserveListing`               | List a new reserve on a Spoke                                                          |
-| `spokeReserveConfigUpdates()`          | `ReserveConfigUpdate`          | Update price source, collateral risk, paused, frozen, borrowable, receiveSharesEnabled |
-| `spokeLiquidationConfigUpdates()`      | `LiquidationConfigUpdate`      | Update liquidation config                                                              |
-| `spokeDynamicReserveConfigAdditions()` | `DynamicReserveConfigAddition` | Add a dynamic reserve config                                                           |
-| `spokeDynamicReserveConfigUpdates()`   | `DynamicReserveConfigUpdate`   | Update a dynamic reserve config                                                        |
-| `spokePositionManagerUpdates()`        | `PositionManagerUpdate`        | Activate/deactivate a PositionManager on a Spoke                                       |
+| Function                               | Struct                           | Purpose                                                                                                    |
+| -------------------------------------- | -------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| `spokeReserveListings()`               | `ReserveListing`                 | List a new reserve on a Spoke                                                                              |
+| `spokeReserveConfigUpdates()`          | `ReserveConfigUpdate`            | Update price source, collateral risk, paused, frozen, borrowable, receiveSharesEnabled                     |
+| `spokeLiquidationConfigUpdates()`      | `LiquidationConfigUpdate`        | Update liquidation config                                                                                  |
+| `babylonLiquidationConfigUpdates()`    | `BabylonLiquidationConfigUpdate` | Update the liquidation manager and managed collateral reserve of a BabylonSpoke (calls the spoke directly) |
+| `spokeDynamicReserveConfigAdditions()` | `DynamicReserveConfigAddition`   | Add a dynamic reserve config                                                                               |
+| `spokeDynamicReserveConfigUpdates()`   | `DynamicReserveConfigUpdate`     | Update a dynamic reserve config                                                                            |
+| `spokePositionManagerUpdates()`        | `PositionManagerUpdate`          | Activate/deactivate a PositionManager on a Spoke                                                           |
 
 #### AccessManager actions (`_executeAccessManagerActions`)
 

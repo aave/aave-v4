@@ -129,7 +129,7 @@ abstract contract Spoke is
     require(assetId <= MAX_ALLOWED_ASSET_ID, InvalidAssetId());
     require(!_isAssetIdListed(hub, assetId, _hubAssetIdToReserveId[hub][assetId]), ReserveExists());
 
-    _validateReserveConfig(config);
+    _validateReserveConfig(_reserveCount, config);
     _validateDynamicReserveConfig(dynamicConfig);
     uint256 reserveId = _reserveCount++;
     _hubAssetIdToReserveId[hub][assetId] = reserveId;
@@ -170,7 +170,7 @@ abstract contract Spoke is
     ReserveConfig calldata config
   ) external restricted {
     Reserve storage reserve = _reserves.get(reserveId);
-    _validateReserveConfig(config);
+    _validateReserveConfig(reserveId, config);
     reserve.collateralRisk = config.collateralRisk;
     reserve.flags = ReserveFlagsMap.create({
       initPaused: config.paused,
@@ -226,7 +226,7 @@ abstract contract Spoke is
     uint256 reserveId,
     uint256 amount,
     address onBehalfOf
-  ) external nonReentrant onlyPositionManager(onBehalfOf) returns (uint256, uint256) {
+  ) external virtual nonReentrant onlyPositionManager(onBehalfOf) returns (uint256, uint256) {
     Reserve storage reserve = _reserves.get(reserveId);
     UserPosition storage userPosition = _userPositions[onBehalfOf][reserveId];
     _validateSupply(reserve.flags);
@@ -245,7 +245,7 @@ abstract contract Spoke is
     uint256 reserveId,
     uint256 amount,
     address onBehalfOf
-  ) external nonReentrant onlyPositionManager(onBehalfOf) returns (uint256, uint256) {
+  ) external virtual nonReentrant onlyPositionManager(onBehalfOf) returns (uint256, uint256) {
     Reserve storage reserve = _reserves.get(reserveId);
     UserPosition storage userPosition = _userPositions[onBehalfOf][reserveId];
     _validateWithdraw(reserve.flags);
@@ -275,7 +275,7 @@ abstract contract Spoke is
     uint256 reserveId,
     uint256 amount,
     address onBehalfOf
-  ) external nonReentrant onlyPositionManager(onBehalfOf) returns (uint256, uint256) {
+  ) external virtual nonReentrant onlyPositionManager(onBehalfOf) returns (uint256, uint256) {
     Reserve storage reserve = _reserves.get(reserveId);
     UserPosition storage userPosition = _userPositions[onBehalfOf][reserveId];
     PositionStatus storage positionStatus = _positionStatus[onBehalfOf];
@@ -306,7 +306,7 @@ abstract contract Spoke is
     uint256 reserveId,
     uint256 amount,
     address onBehalfOf
-  ) external nonReentrant onlyPositionManager(onBehalfOf) returns (uint256, uint256) {
+  ) external virtual nonReentrant onlyPositionManager(onBehalfOf) returns (uint256, uint256) {
     Reserve storage reserve = _reserves.get(reserveId);
     UserPosition storage userPosition = _userPositions[onBehalfOf][reserveId];
     _validateRepay(reserve.flags);
@@ -350,7 +350,7 @@ abstract contract Spoke is
     address user,
     uint256 debtToCover,
     bool receiveShares
-  ) external nonReentrant {
+  ) external virtual nonReentrant {
     UserAccountData memory userAccountData = _calculateUserAccountData(user);
     LiquidationLogic.LiquidateUserParams memory params = LiquidationLogic.LiquidateUserParams({
       collateralReserveId: collateralReserveId,
@@ -392,7 +392,7 @@ abstract contract Spoke is
     uint256 reserveId,
     bool usingAsCollateral,
     address onBehalfOf
-  ) external nonReentrant onlyPositionManager(onBehalfOf) {
+  ) public virtual nonReentrant onlyPositionManager(onBehalfOf) {
     Reserve storage reserve = _reserves.get(reserveId);
     PositionStatus storage positionStatus = _positionStatus[onBehalfOf];
     if (positionStatus.isUsingAsCollateral(reserveId) == usingAsCollateral) {
@@ -412,7 +412,7 @@ abstract contract Spoke is
   }
 
   /// @inheritdoc ISpoke
-  function updateUserRiskPremium(address onBehalfOf) external nonReentrant {
+  function updateUserRiskPremium(address onBehalfOf) external virtual nonReentrant {
     if (!_isPositionManager({user: onBehalfOf, manager: msg.sender})) {
       _checkCanCall(msg.sender, msg.data);
     }
@@ -421,7 +421,7 @@ abstract contract Spoke is
   }
 
   /// @inheritdoc ISpoke
-  function updateUserDynamicConfig(address onBehalfOf) external nonReentrant {
+  function updateUserDynamicConfig(address onBehalfOf) external virtual nonReentrant {
     if (!_isPositionManager({user: onBehalfOf, manager: msg.sender})) {
       _checkCanCall(msg.sender, msg.data);
     }
@@ -852,30 +852,30 @@ abstract contract Spoke is
   function _validateUpdateDynamicReserveConfig(
     DynamicReserveConfig storage currentConfig,
     DynamicReserveConfig calldata newConfig
-  ) internal view {
+  ) internal view virtual {
     // sufficient check since maxLiquidationBonus is always >= 100_00
     require(currentConfig.maxLiquidationBonus > 0, DynamicConfigKeyUninitialized());
     require(newConfig.collateralFactor > 0, InvalidCollateralFactor());
     _validateDynamicReserveConfig(newConfig);
   }
 
-  function _validateSupply(ReserveFlags flags) internal pure {
+  function _validateSupply(ReserveFlags flags) internal pure virtual {
     require(!flags.paused(), ReservePaused());
     require(!flags.frozen(), ReserveFrozen());
   }
 
-  function _validateWithdraw(ReserveFlags flags) internal pure {
+  function _validateWithdraw(ReserveFlags flags) internal pure virtual {
     require(!flags.paused(), ReservePaused());
   }
 
-  function _validateBorrow(ReserveFlags flags) internal pure {
+  function _validateBorrow(ReserveFlags flags) internal pure virtual {
     require(!flags.paused(), ReservePaused());
     require(!flags.frozen(), ReserveFrozen());
     require(flags.borrowable(), ReserveNotBorrowable());
     // health factor is checked at the end of borrow action
   }
 
-  function _validateRepay(ReserveFlags flags) internal pure {
+  function _validateRepay(ReserveFlags flags) internal pure virtual {
     require(!flags.paused(), ReservePaused());
   }
 
@@ -883,7 +883,7 @@ abstract contract Spoke is
     PositionStatus storage positionStatus,
     ReserveFlags flags,
     bool usingAsCollateral
-  ) internal view {
+  ) internal view virtual {
     require(!flags.paused(), ReservePaused());
     if (usingAsCollateral) {
       // disabling as collateral is allowed when reserve is frozen
@@ -912,13 +912,18 @@ abstract contract Spoke is
     return config.active && config.approval[user];
   }
 
-  function _validateReserveConfig(ReserveConfig calldata config) internal pure {
+  function _validateReserveConfig(
+    uint256 /* reserveId */,
+    ReserveConfig calldata config
+  ) internal view virtual {
     require(config.collateralRisk <= MAX_ALLOWED_COLLATERAL_RISK, InvalidCollateralRisk());
   }
 
   /// @dev Enforces compatible `maxLiquidationBonus` and `collateralFactor` so at the moment debt is created
   /// there is enough collateral to cover liquidation.
-  function _validateDynamicReserveConfig(DynamicReserveConfig calldata config) internal pure {
+  function _validateDynamicReserveConfig(
+    DynamicReserveConfig calldata config
+  ) internal pure virtual {
     require(
       config.collateralFactor < PercentageMath.PERCENTAGE_FACTOR &&
         config.maxLiquidationBonus >= PercentageMath.PERCENTAGE_FACTOR &&

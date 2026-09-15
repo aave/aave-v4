@@ -43,6 +43,38 @@ contract AaveV4SpokeDeployProcedure is AaveV4DeployProcedureBase {
     return (spokeProxy, spokeImplementation);
   }
 
+  /// @notice Deploys a BabylonSpoke implementation via CREATE2 and sets up a transparent proxy.
+  /// @dev The BabylonSpoke fixes the user reserves limit in its bytecode, so only the oracle is encoded.
+  /// @param proxyAdminOwner The owner of the proxy admin contract.
+  /// @param authority The access control authority address used to initialize the BabylonSpoke.
+  /// @param oracle The oracle address used by the BabylonSpoke instance.
+  /// @param babylonSpokeBytecode The creation bytecode of the BabylonSpoke implementation.
+  /// @param salt The CREATE2 salt for deterministic deployment.
+  /// @return spokeProxy The address of the deployed transparent proxy.
+  /// @return spokeImplementation The address of the deployed BabylonSpoke implementation contract.
+  function _deployUpgradeableBabylonSpokeInstance(
+    address proxyAdminOwner,
+    address authority,
+    address oracle,
+    bytes memory babylonSpokeBytecode,
+    bytes32 salt
+  ) internal returns (address spokeProxy, address spokeImplementation) {
+    require(proxyAdminOwner != address(0), 'invalid proxy admin owner');
+    require(authority != address(0), 'invalid authority');
+    require(oracle != address(0), 'invalid oracle');
+    spokeImplementation = Create2Utils.create2Deploy({
+      salt: salt,
+      bytecode: abi.encodePacked(babylonSpokeBytecode, abi.encode(oracle))
+    });
+    spokeProxy = Create2Utils.proxify({
+      salt: salt,
+      logic: spokeImplementation,
+      initialOwner: proxyAdminOwner,
+      data: abi.encodeCall(ISpokeInstance.initialize, (authority))
+    });
+    return (spokeProxy, spokeImplementation);
+  }
+
   /// @notice Constructs the full init code for a Spoke instance by appending constructor arguments.
   /// @param spokeBytecode The creation bytecode of the Spoke implementation.
   /// @param oracle The oracle address to encode as a constructor argument.

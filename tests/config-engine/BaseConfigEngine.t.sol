@@ -2,6 +2,7 @@
 pragma solidity ^0.8.0;
 
 import {Test} from 'forge-std/Test.sol';
+import {IBabylonSpoke} from 'src/spoke/interfaces/IBabylonSpoke.sol';
 
 import {Ownable} from 'src/dependencies/openzeppelin/Ownable.sol';
 
@@ -207,6 +208,21 @@ abstract contract BaseConfigEngineTest is Test, Create2TestHelper {
     AaveV4SpokeRolesProcedure.setupSpokeAllRoles(address(accessManager), report.spoke);
     vm.stopPrank();
     return (ISpoke(report.spoke), IAaveOracle(report.aaveOracle));
+  }
+
+  function _deployNewBabylonSpoke() internal returns (IBabylonSpoke, IAaveOracle) {
+    vm.startPrank(ADMIN);
+    TestTypes.TestSpokeReport memory report = AaveV4TestOrchestration.deployTestSpoke(
+      ADMIN,
+      address(accessManager),
+      BytecodeHelper.getBabylonSpokeBytecode(),
+      type(uint16).max,
+      keccak256(abi.encodePacked('new-babylon-spoke', gasleft()))
+    );
+    AaveV4SpokeRolesProcedure.setupBabylonSpokeAllRoles(address(accessManager), report.spoke);
+    accessManager.grantRole(Roles.BABYLON_SPOKE_CONFIGURATOR_ROLE, address(engine), 0);
+    vm.stopPrank();
+    return (IBabylonSpoke(report.spoke), IAaveOracle(report.aaveOracle));
   }
 
   function _setupRoles(TestTypes.TestEnvReport memory report) internal {

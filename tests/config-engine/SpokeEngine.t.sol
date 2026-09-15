@@ -2,6 +2,7 @@
 pragma solidity ^0.8.0;
 
 import 'tests/config-engine/BaseConfigEngine.t.sol';
+import {IBabylonSpoke} from 'src/spoke/interfaces/IBabylonSpoke.sol';
 
 contract SpokeEngineTest is BaseConfigEngineTest {
   function setUp() public override {
@@ -605,6 +606,58 @@ contract SpokeEngineTest is BaseConfigEngineTest {
     engine.executeSpokeDynamicReserveConfigAdditions(
       _toDynamicReserveConfigAdditionArray(addition)
     );
+  }
+
+  function test_executeBabylonLiquidationConfigUpdates() public {
+    (IBabylonSpoke babylonSpoke, ) = _deployNewBabylonSpoke();
+
+    // list a reserve on the babylon spoke so the managed collateral reserve exists
+    uint256 newAssetId = _seedAsset(hub1(), irStrategy1(), address(newToken), 18);
+    _seedSpokeOnAsset(hub1(), newAssetId, ISpoke(address(babylonSpoke)));
+    IAaveV4ConfigEngine.ReserveListing memory listing = IAaveV4ConfigEngine.ReserveListing({
+      spokeConfigurator: spokeConfigurator,
+      spoke: address(babylonSpoke),
+      hub: address(hub1()),
+      underlying: address(newToken),
+      priceSource: address(priceFeedNew),
+      config: ISpoke.ReserveConfig({
+        collateralRisk: 50_00,
+        paused: false,
+        frozen: false,
+        borrowable: false,
+        receiveSharesEnabled: true
+      }),
+      dynamicConfig: ISpoke.DynamicReserveConfig({
+        collateralFactor: 80_00,
+        maxLiquidationBonus: 105_00,
+        liquidationFee: 0
+      })
+    });
+    engine.executeSpokeReserveListings(_toReserveListingArray(listing));
+
+    address liquidationManager = makeAddr('babylonLiquidationManager');
+    IAaveV4ConfigEngine.BabylonLiquidationConfigUpdate[]
+      memory updates = new IAaveV4ConfigEngine.BabylonLiquidationConfigUpdate[](1);
+    updates[0] = IAaveV4ConfigEngine.BabylonLiquidationConfigUpdate({
+      spoke: address(babylonSpoke),
+      liquidationManager: liquidationManager,
+      managedCollateralReserveId: 0
+    });
+
+    // the engine updates the babylon spoke directly, without a SpokeConfigurator
+    vm.expectCall(
+      address(babylonSpoke),
+      abi.encodeCall(IBabylonSpoke.updateBabylonLiquidationConfig, (liquidationManager, 0))
+    );
+    vm.expectEmit(address(babylonSpoke));
+    emit IBabylonSpoke.UpdateBabylonLiquidationConfig(liquidationManager, 0);
+
+    engine.executeBabylonLiquidationConfigUpdates(updates);
+
+    (address manager, uint256 managedCollateralReserveId) = babylonSpoke
+      .getBabylonLiquidationConfig();
+    assertEq(manager, liquidationManager, 'liquidation manager');
+    assertEq(managedCollateralReserveId, 0, 'managed collateral reserve id');
   }
 
   function test_executeSpokeReserveListings() public {

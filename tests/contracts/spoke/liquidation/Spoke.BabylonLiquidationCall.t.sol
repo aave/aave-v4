@@ -1,0 +1,718 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+import 'tests/contracts/spoke/liquidation/Spoke.BabylonLiquidationCall.Base.t.sol';
+
+contract SpokeBabylonLiquidationCallTest is SpokeBabylonLiquidationCallBaseTest {
+  using WadRayMath for uint256;
+  using PercentageMath for uint256;
+  using MathUtils for uint256;
+
+  address internal user = makeAddr('user');
+  uint256 internal debtReserveId;
+
+  function setUp() public virtual override {
+    super.setUp();
+    debtReserveId = _daiReserveId(spoke4);
+  }
+
+  /// @dev Supplies `collateralValue` (in units of Value) of collateral for `user` and borrows the
+  /// debt reserve so the user health factor lands at `healthFactor`.
+  function _setUpLiquidatableUser(uint256 collateralValue, uint256 healthFactor) internal {
+    _setUpLiquidatableUser(user, debtReserveId, collateralValue, healthFactor);
+  }
+
+  function _expectedRemovedValue(uint256 debtValueCovered) internal view returns (uint256) {
+    return _expectedRemovedValue(user, debtValueCovered);
+  }
+
+  function _expectedRepaidValue(uint256 removedValue) internal view returns (uint256) {
+    return _expectedRepaidValue(user, removedValue);
+  }
+
+  function test_updateBabylonLiquidationConfig() public {
+    address newManager = makeAddr('newManager');
+    _updateReserveBorrowableFlag(spoke4, debtReserveId, false);
+
+    vm.expectEmit(address(babylonSpoke));
+    emit IBabylonSpoke.UpdateBabylonLiquidationConfig(newManager, debtReserveId);
+    vm.prank(ADMIN);
+    babylonSpoke.updateBabylonLiquidationConfig(newManager, debtReserveId);
+
+    (address manager, uint256 managedCollateralReserveId) = babylonSpoke
+      .getBabylonLiquidationConfig();
+    assertEq(manager, newManager, 'liquidation manager');
+    assertEq(managedCollateralReserveId, debtReserveId, 'managed collateral reserve id');
+  }
+
+  function test_revert_addDynamicReserveConfig_nonZeroLiquidationFee() public {
+    ISpoke.DynamicReserveConfig memory config = _getLatestDynamicReserveConfig(
+      spoke4,
+      debtReserveId
+    );
+    config.liquidationFee = 1;
+
+    vm.expectRevert(IBabylonSpoke.UnsupportedLiquidationFee.selector);
+    vm.prank(SPOKE_ADMIN);
+    spoke4.addDynamicReserveConfig(debtReserveId, config);
+  }
+
+  function test_revert_addReserve_nonZeroLiquidationFee() public {
+    ISpoke.DynamicReserveConfig memory config = ISpoke.DynamicReserveConfig({
+      collateralFactor: 10_00,
+      maxLiquidationBonus: 110_00,
+      liquidationFee: 1
+    });
+    address priceSource = _deployMockPriceFeed(spoke4, 1e8);
+
+    vm.expectRevert(IBabylonSpoke.UnsupportedLiquidationFee.selector);
+    vm.prank(SPOKE_ADMIN);
+    spoke4.addReserve(
+      address(hub1),
+      usdzAssetId,
+      priceSource,
+      _getDefaultReserveConfig(10_00),
+      config
+    );
+  }
+
+  function test_revert_updateDynamicReserveConfig_nonZeroLiquidationFee() public {
+    uint32 dynamicConfigKey = spoke4.getReserve(debtReserveId).dynamicConfigKey;
+    ISpoke.DynamicReserveConfig memory config = _getLatestDynamicReserveConfig(
+      spoke4,
+      debtReserveId
+    );
+    config.liquidationFee = 1;
+
+    vm.expectRevert(IBabylonSpoke.UnsupportedLiquidationFee.selector);
+    vm.prank(SPOKE_ADMIN);
+    spoke4.updateDynamicReserveConfig(debtReserveId, dynamicConfigKey, config);
+  }
+
+  function test_revert_updateBabylonLiquidationConfig_unauthorized() public {
+    vm.expectRevert(
+      abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, alice)
+    );
+    vm.prank(alice);
+    babylonSpoke.updateBabylonLiquidationConfig(alice, collateralReserveId);
+  }
+
+  function test_revert_updateBabylonLiquidationConfig_reserveNotListed() public {
+    uint256 unlistedReserveId = spoke4.getReserveCount();
+
+    vm.expectRevert(ISpoke.ReserveNotListed.selector);
+    vm.prank(ADMIN);
+    babylonSpoke.updateBabylonLiquidationConfig(liquidationManager, unlistedReserveId);
+  }
+
+  function test_revert_updateBabylonLiquidationConfig_borrowableReserve() public {
+    // a user holds a single debt reserve, which can never be the collateral being seized
+    vm.expectRevert(IBabylonSpoke.UnsupportedBorrowableCollateral.selector);
+    vm.prank(ADMIN);
+    babylonSpoke.updateBabylonLiquidationConfig(liquidationManager, debtReserveId);
+  }
+
+  function test_revert_updateReserveConfig_borrowableManagedCollateral() public {
+    ISpoke.ReserveConfig memory config = spoke4.getReserveConfig(collateralReserveId);
+    config.borrowable = true;
+
+    vm.expectRevert(IBabylonSpoke.UnsupportedBorrowableCollateral.selector);
+    vm.prank(SPOKE_ADMIN);
+    spoke4.updateReserveConfig(collateralReserveId, config);
+  }
+
+  /// @dev The guard is scoped to the managed collateral reserve: every other reserve stays
+  /// borrowable, and a reserve being listed is never the managed one.
+  function test_updateReserveConfig_borrowableOtherReserve() public {
+    ISpoke.ReserveConfig memory config = spoke4.getReserveConfig(debtReserveId);
+    config.borrowable = true;
+
+    vm.prank(SPOKE_ADMIN);
+    spoke4.updateReserveConfig(debtReserveId, config);
+
+    assertTrue(spoke4.getReserveConfig(debtReserveId).borrowable, 'debt reserve borrowable');
+  }
+
+  /// @dev A reserve being listed is never the managed collateral reserve, which is always already
+  /// listed. Before the config is set the stored id reads as zero, so the first reserve of a spoke
+  /// must still be listable as borrowable.
+  function test_addReserve_borrowableFirstReserve() public {
+    // Setup
+    ISpoke freshSpoke = _deployUnconfiguredBabylonSpoke();
+
+    // Act
+    uint256 reserveId = _addBorrowableReserve(freshSpoke);
+
+    // Assert: the first reserve is listed and borrowable
+    assertEq(reserveId, 0, 'first reserve id');
+    assertTrue(freshSpoke.getReserveConfig(reserveId).borrowable, 'first reserve borrowable');
+  }
+
+  /// @dev The listing exemption does not let a borrowable reserve through: designating it as the
+  /// managed collateral reserve is what rejects it.
+  function test_revert_updateBabylonLiquidationConfig_borrowableFirstReserve() public {
+    // Setup: the borrowable first reserve the listing exemption allowed through
+    ISpoke freshSpoke = _deployUnconfiguredBabylonSpoke();
+    uint256 reserveId = _addBorrowableReserve(freshSpoke);
+
+    // Act & Assert
+    vm.expectRevert(IBabylonSpoke.UnsupportedBorrowableCollateral.selector);
+    vm.prank(ADMIN);
+    IBabylonSpoke(address(freshSpoke)).updateBabylonLiquidationConfig(
+      liquidationManager,
+      reserveId
+    );
+  }
+
+  /// @dev A babylon spoke with no reserve listed and no liquidation config, so its managed
+  /// collateral reserve id reads as zero.
+  function _deployUnconfiguredBabylonSpoke() private returns (ISpoke) {
+    vm.startPrank(ADMIN);
+    TestTypes.TestSpokeReport memory report = AaveV4TestOrchestration.deployTestBabylonSpoke({
+      proxyAdminOwner: ADMIN,
+      accessManager: address(accessManager),
+      babylonSpokeBytecode: BytecodeHelper.getBabylonSpokeBytecode(),
+      salt: keccak256('unconfigured-babylon-spoke')
+    });
+    AaveV4SpokeRolesProcedure.setupBabylonSpokeAllRoles(address(accessManager), report.spoke);
+    vm.stopPrank();
+
+    (, uint256 managedCollateralReserveId) = IBabylonSpoke(report.spoke)
+      .getBabylonLiquidationConfig();
+    assertEq(managedCollateralReserveId, 0, 'managed collateral reserve id reads as zero');
+    assertEq(ISpoke(report.spoke).getReserveCount(), 0, 'no reserve listed');
+
+    return ISpoke(report.spoke);
+  }
+
+  function _addBorrowableReserve(ISpoke spoke) private returns (uint256) {
+    address priceSource = _deployMockPriceFeed(spoke, 1e8);
+
+    vm.prank(SPOKE_ADMIN);
+    return
+      spoke.addReserve(
+        address(hub1),
+        usdzAssetId,
+        priceSource,
+        ISpoke.ReserveConfig({
+          paused: false,
+          frozen: false,
+          borrowable: true,
+          receiveSharesEnabled: true,
+          collateralRisk: 10_00
+        }),
+        ISpoke.DynamicReserveConfig({
+          collateralFactor: 10_00,
+          maxLiquidationBonus: 110_00,
+          liquidationFee: 0
+        })
+      );
+  }
+
+  function test_userReservesLimit() public view {
+    assertEq(spoke4.MAX_USER_RESERVES_LIMIT(), 1, 'one collateral and one debt reserve per user');
+  }
+
+  function test_setUsingAsCollateral_managedCollateralReserve() public {
+    vm.startPrank(alice);
+    spoke4.setUsingAsCollateral(collateralReserveId, true, alice);
+
+    // the managed collateral can be disabled and registered again
+    spoke4.setUsingAsCollateral(collateralReserveId, false, alice);
+    spoke4.setUsingAsCollateral(collateralReserveId, true, alice);
+    vm.stopPrank();
+
+    (bool isUsingAsCollateral, ) = spoke4.getUserReserveStatus(collateralReserveId, alice);
+    assertTrue(isUsingAsCollateral, 'managed collateral registered');
+  }
+
+  function test_revert_setUsingAsCollateral_unsupportedCollateralReserve() public {
+    vm.expectRevert(IBabylonSpoke.UnsupportedCollateralReserve.selector);
+    vm.prank(alice);
+    spoke4.setUsingAsCollateral(debtReserveId, true, alice);
+  }
+
+  /// @dev Reachable when the managed collateral reserve is updated while a user still has the
+  /// previous one registered: the user reserves limit of one rejects the second collateral.
+  function test_revert_setUsingAsCollateral_secondCollateral() public {
+    vm.prank(alice);
+    spoke4.setUsingAsCollateral(collateralReserveId, true, alice);
+    _setManagedCollateralReserve(debtReserveId);
+
+    vm.expectRevert(ISpoke.MaximumUserReservesExceeded.selector);
+    vm.prank(alice);
+    spoke4.setUsingAsCollateral(debtReserveId, true, alice);
+  }
+
+  /// @dev The user reserves limit of one rejects borrowing a second debt reserve.
+  function test_revert_borrow_secondDebtReserve() public {
+    _increaseCollateralSupply(
+      spoke4,
+      collateralReserveId,
+      _convertValueToAmount(spoke4, collateralReserveId, 100_000e26),
+      user
+    );
+    _makeUserLiquidatable(spoke4, user, debtReserveId, 1.5e18);
+    uint256 usdxReserveId = _usdxReserveId(spoke4);
+    _openSupplyPositionNoCollateral(spoke4, usdxReserveId, 1e6);
+
+    vm.expectRevert(ISpoke.MaximumUserReservesExceeded.selector);
+    vm.prank(user);
+    spoke4.borrow(usdxReserveId, 1e6, user);
+  }
+
+  function test_revert_liquidationCall_notLiquidationManager() public {
+    _setUpLiquidatableUser(100_000e26, 0.95e18);
+
+    vm.expectRevert(ISpoke.Unauthorized.selector);
+    vm.prank(alice);
+    babylonSpoke.liquidationCall(debtReserveId, 1e18, user, 1e8);
+  }
+
+  function test_revert_liquidationCall_canonicalSignatureUnsupported() public {
+    _setUpLiquidatableUser(100_000e26, 0.95e18);
+
+    vm.expectRevert(IBabylonSpoke.UnsupportedLiquidationCall.selector);
+    vm.prank(liquidationManager);
+    babylonSpoke.liquidationCall(collateralReserveId, debtReserveId, user, 1e18, false);
+  }
+
+  function test_revert_liquidationCall_healthFactorNotBelowThreshold() public {
+    // Setup: healthy borrow position
+    _increaseCollateralSupply(
+      spoke4,
+      collateralReserveId,
+      _convertValueToAmount(spoke4, collateralReserveId, 100_000e26),
+      user
+    );
+    uint256 borrowAmount = _convertValueToAmount(spoke4, debtReserveId, 10_000e26);
+    _openSupplyPositionNoCollateral(spoke4, debtReserveId, borrowAmount);
+    SpokeActions.borrow({
+      spoke: spoke4,
+      reserveId: debtReserveId,
+      caller: user,
+      amount: borrowAmount,
+      onBehalfOf: user
+    });
+
+    // Act & Assert
+    vm.expectRevert(ISpoke.HealthFactorNotBelowThreshold.selector);
+    vm.prank(liquidationManager);
+    babylonSpoke.liquidationCall(debtReserveId, 1e18, user, 1e8);
+  }
+
+  function test_revert_liquidationCall_invalidDebtToCover() public {
+    _setUpLiquidatableUser(100_000e26, 0.95e18);
+
+    vm.expectRevert(ISpoke.InvalidDebtToCover.selector);
+    vm.prank(liquidationManager);
+    babylonSpoke.liquidationCall(debtReserveId, 0, user, 1e8);
+  }
+
+  /// @dev A zero cap degenerates to a zero-amount repayment, which the Hub rejects.
+  function test_revert_liquidationCall_zeroMaxCollateralToRemove() public {
+    _setUpLiquidatableUser(100_000e26, 0.95e18);
+
+    vm.expectRevert(IHub.InvalidAmount.selector);
+    vm.prank(liquidationManager);
+    babylonSpoke.liquidationCall(debtReserveId, 1e18, user, 0);
+  }
+
+  /// @dev A repayment whose bonus-priced collateral removal floors to zero shares fits under a
+  /// zero cap: debt can be liquidated even when there is no collateral left to receive.
+  function test_liquidationCall_zeroCollateralRemoved() public {
+    // Setup: a repayment small enough that its bonus-priced collateral removal floors to zero
+    _setUpLiquidatableUser(100_000e26, 0.95e18);
+    uint256 debtToCover = 1e14;
+    _fundLiquidationManager(debtReserveId, debtToCover);
+    uint256 debtBefore = spoke4.getUserTotalDebt(debtReserveId, user);
+    uint256 suppliedBefore = spoke4.getUserSuppliedAssets(collateralReserveId, user);
+    assertEq(_expectedRemovedShares(0), 0, 'zero cap in shares');
+
+    // Act
+    vm.prank(liquidationManager);
+    (, uint256 collateralAmountRemoved, ) = babylonSpoke.liquidationCall(
+      debtReserveId,
+      debtToCover,
+      user,
+      0
+    );
+
+    // Assert: the debt is repaid while no collateral is removed
+    assertApproxEqAbs(
+      debtBefore - spoke4.getUserTotalDebt(debtReserveId, user),
+      debtToCover,
+      2,
+      'debt repaid'
+    );
+    assertEq(
+      spoke4.getUserSuppliedAssets(collateralReserveId, user),
+      suppliedBefore,
+      'no collateral removed'
+    );
+    assertEq(collateralAmountRemoved, 0, 'returned collateral amount removed');
+  }
+
+  function test_revert_liquidationCall_debtReservePaused() public {
+    _setUpLiquidatableUser(100_000e26, 0.95e18);
+    _updateReservePausedFlag(spoke4, debtReserveId, true);
+
+    vm.expectRevert(ISpoke.ReservePaused.selector);
+    vm.prank(liquidationManager);
+    babylonSpoke.liquidationCall(debtReserveId, 1e18, user, 1e8);
+  }
+
+  function test_revert_liquidationCall_debtReserveNotBorrowed() public {
+    _setUpLiquidatableUser(100_000e26, 0.95e18);
+    uint256 usdxReserveId = _usdxReserveId(spoke4);
+    _fundLiquidationManager(usdxReserveId, 1e6);
+
+    vm.expectRevert(ISpoke.ReserveNotBorrowed.selector);
+    vm.prank(liquidationManager);
+    babylonSpoke.liquidationCall(usdxReserveId, 1e6, user, 1e8);
+  }
+
+  function test_revert_liquidationCall_selfLiquidation() public {
+    vm.expectRevert(ISpoke.SelfLiquidation.selector);
+    vm.prank(liquidationManager);
+    babylonSpoke.liquidationCall(debtReserveId, 1e18, liquidationManager, 1e8);
+  }
+
+  function test_revert_liquidationCall_collateralReservePaused() public {
+    _setUpLiquidatableUser(100_000e26, 0.95e18);
+    _updateReservePausedFlag(spoke4, collateralReserveId, true);
+
+    vm.expectRevert(ISpoke.ReservePaused.selector);
+    vm.prank(liquidationManager);
+    babylonSpoke.liquidationCall(debtReserveId, 1e18, user, 1e8);
+  }
+
+  /// @dev Reachable when the managed collateral reserve is updated while a user still holds its
+  /// collateral under the previous one.
+  function test_revert_liquidationCall_collateralReserveNotSupplied() public {
+    _setUpLiquidatableUser(100_000e26, 0.95e18);
+    _setManagedCollateralReserve(_usdxReserveId(spoke4));
+
+    vm.expectRevert(ISpoke.ReserveNotSupplied.selector);
+    vm.prank(liquidationManager);
+    babylonSpoke.liquidationCall(debtReserveId, 1e18, user, 1e8);
+  }
+
+  /// @dev Reachable when the managed collateral reserve is updated to one the user supplied
+  /// without registering it as collateral.
+  function test_revert_liquidationCall_collateralReserveNotEnabledAsCollateral() public {
+    _setUpLiquidatableUser(100_000e26, 0.95e18);
+    uint256 usdxReserveId = _usdxReserveId(spoke4);
+    _deal(spoke4, usdxReserveId, user, 1e6);
+    SpokeActions.approve({
+      spoke: spoke4,
+      reserveId: usdxReserveId,
+      owner: user,
+      amount: UINT256_MAX
+    });
+    SpokeActions.supply({
+      spoke: spoke4,
+      reserveId: usdxReserveId,
+      caller: user,
+      amount: 1e6,
+      onBehalfOf: user
+    });
+    _setManagedCollateralReserve(usdxReserveId);
+
+    vm.expectRevert(ISpoke.ReserveNotEnabledAsCollateral.selector);
+    vm.prank(liquidationManager);
+    babylonSpoke.liquidationCall(debtReserveId, 1e18, user, 1e8);
+  }
+
+  /// @dev Drives a partial liquidation through the full assertion engine.
+  function test_liquidationCall_checked_partial() public {
+    _setUpLiquidatableUser(100_000e26, 0.95e18);
+    uint256 debtToCover = spoke4.getUserTotalDebt(debtReserveId, user) / 2;
+    _fundLiquidationManager(debtReserveId, debtToCover);
+
+    _checkedBabylonLiquidationCall(
+      CheckedBabylonLiquidationCallParams({
+        debtReserveId: debtReserveId,
+        debtToCover: debtToCover,
+        user: user,
+        maxCollateralToRemove: spoke4.getUserSuppliedAssets(collateralReserveId, user) * 2
+      })
+    );
+  }
+
+  function test_liquidationCall_collateralCapNotReached() public {
+    // Setup
+    _setUpLiquidatableUser(100_000e26, 0.95e18);
+    uint256 debtBefore = spoke4.getUserTotalDebt(debtReserveId, user);
+    uint256 debtToCover = debtBefore / 2;
+    _fundLiquidationManager(debtReserveId, debtToCover);
+
+    uint256 debtValueCovered = _convertAmountToValue(spoke4, debtReserveId, debtToCover);
+    uint256 expectedRemovedValue = _expectedRemovedValue(debtValueCovered);
+    uint256 userSuppliedBefore = spoke4.getUserSuppliedAssets(collateralReserveId, user);
+    IERC20 collateralUnderlying = _getAssetUnderlyingByReserveId(spoke4, collateralReserveId);
+    uint256 liquidatorCollateralBefore = collateralUnderlying.balanceOf(liquidationManager);
+    uint256 maxCollateralToRemove = userSuppliedBefore * 2; // above the priced removal
+
+    // Act
+    vm.expectEmit(true, true, true, false, address(babylonSpoke));
+    emit IBabylonSpoke.BabylonLiquidationCall({
+      collateralReserveId: collateralReserveId,
+      debtReserveId: debtReserveId,
+      user: user,
+      liquidator: liquidationManager,
+      debtAmountRestored: 0,
+      drawnSharesLiquidated: 0,
+      premiumDelta: ZERO_PREMIUM_DELTA,
+      collateralAmountRemoved: 0,
+      collateralSharesLiquidated: 0
+    });
+    vm.prank(liquidationManager);
+    babylonSpoke.liquidationCall(debtReserveId, debtToCover, user, maxCollateralToRemove);
+
+    // Assert: the requested debt is repaid and the removed collateral is priced by the canonical bonus formula
+    assertApproxEqAbs(
+      debtBefore - spoke4.getUserTotalDebt(debtReserveId, user),
+      debtToCover,
+      2,
+      'repaid debt'
+    );
+    assertApproxEqRel(
+      _convertAmountToValue(
+        spoke4,
+        collateralReserveId,
+        userSuppliedBefore - spoke4.getUserSuppliedAssets(collateralReserveId, user)
+      ),
+      expectedRemovedValue,
+      0.0001e18,
+      'removed collateral value'
+    );
+    assertApproxEqRel(
+      _convertAmountToValue(
+        spoke4,
+        collateralReserveId,
+        collateralUnderlying.balanceOf(liquidationManager) - liquidatorCollateralBefore
+      ),
+      expectedRemovedValue,
+      0.0001e18,
+      'liquidator collateral value'
+    );
+  }
+
+  function test_liquidationCall_collateralCapEnforced() public {
+    // Setup
+    _setUpLiquidatableUser(100_000e26, 0.95e18);
+    uint256 debtBefore = spoke4.getUserTotalDebt(debtReserveId, user);
+    uint256 debtToCover = debtBefore / 2;
+    _fundLiquidationManager(debtReserveId, debtToCover);
+
+    uint256 debtValueCovered = _convertAmountToValue(spoke4, debtReserveId, debtToCover);
+    // cap the removal at half of what the canonical bonus formula would remove
+    uint256 maxCollateralToRemove = _convertValueToAmount(
+      spoke4,
+      collateralReserveId,
+      _expectedRemovedValue(debtValueCovered) / 2
+    );
+    uint256 capValue = _convertAmountToValue(spoke4, collateralReserveId, maxCollateralToRemove);
+    uint256 expectedRemovedShares = _expectedRemovedShares(maxCollateralToRemove);
+    uint256 expectedRepaid = _convertValueToAmount(
+      spoke4,
+      debtReserveId,
+      _expectedRepaidValue(capValue)
+    );
+    uint256 debtBalanceBefore = _getAssetUnderlyingByReserveId(spoke4, debtReserveId).balanceOf(
+      liquidationManager
+    );
+    uint256 userSuppliedSharesBefore = spoke4.getUserSuppliedShares(collateralReserveId, user);
+    IERC20 collateralUnderlying = _getAssetUnderlyingByReserveId(spoke4, collateralReserveId);
+    uint256 liquidatorCollateralBefore = collateralUnderlying.balanceOf(liquidationManager);
+
+    // Act
+    vm.prank(liquidationManager);
+    (, uint256 collateralAmountRemoved, ) = babylonSpoke.liquidationCall(
+      debtReserveId,
+      debtToCover,
+      user,
+      maxCollateralToRemove
+    );
+
+    // Assert: the cap is exactly consumed and the repayment is resized to its inverse value
+    assertEq(
+      userSuppliedSharesBefore - spoke4.getUserSuppliedShares(collateralReserveId, user),
+      expectedRemovedShares,
+      'removed collateral shares'
+    );
+    uint256 repaid = debtBefore - spoke4.getUserTotalDebt(debtReserveId, user);
+    assertLt(repaid, debtToCover, 'repaid below requested');
+    assertApproxEqRel(repaid, expectedRepaid, 0.0001e18, 'repaid debt');
+    assertApproxEqAbs(
+      debtBalanceBefore -
+        _getAssetUnderlyingByReserveId(spoke4, debtReserveId).balanceOf(liquidationManager),
+      repaid,
+      2,
+      'liquidator debt spent'
+    );
+    uint256 liquidatorCollateralReceived = collateralUnderlying.balanceOf(liquidationManager) -
+      liquidatorCollateralBefore;
+    assertApproxEqRel(
+      _convertAmountToValue(spoke4, collateralReserveId, liquidatorCollateralReceived),
+      capValue,
+      0.0001e18,
+      'liquidator collateral value'
+    );
+    assertEq(
+      collateralAmountRemoved,
+      liquidatorCollateralReceived,
+      'returned collateral amount removed'
+    );
+  }
+
+  function test_liquidationCall_fullDebtRepay() public {
+    // Setup
+    _setUpLiquidatableUser(100_000e26, 0.95e18);
+    uint256 debtToCover = spoke4.getUserTotalDebt(debtReserveId, user);
+    _fundLiquidationManager(debtReserveId, debtToCover);
+    uint256 maxCollateralToRemove = spoke4.getUserSuppliedAssets(collateralReserveId, user) * 2;
+
+    // Act
+    vm.prank(liquidationManager);
+    babylonSpoke.liquidationCall(debtReserveId, debtToCover, user, maxCollateralToRemove);
+
+    // Assert: debt is fully cleared with no dust validation and no deficit
+    assertEq(spoke4.getUserTotalDebt(debtReserveId, user), 0, 'user debt');
+    (, bool isBorrowing) = spoke4.getUserReserveStatus(debtReserveId, user);
+    assertFalse(isBorrowing, 'user borrowing status');
+    assertEq(_getUserHealthFactor(spoke4, user), UINT256_MAX, 'user health factor');
+    assertGt(spoke4.getUserSuppliedAssets(collateralReserveId, user), 0, 'remaining collateral');
+  }
+
+  function test_liquidationCall_noDustValidation() public {
+    // Setup: small position, so both the remaining debt and collateral end up below the canonical
+    // dust threshold; the Babylon liquidation must not revert with MustNotLeaveDust
+    _setUpLiquidatableUser(2_000e26, 0.9e18);
+    uint256 debtBefore = spoke4.getUserTotalDebt(debtReserveId, user);
+    uint256 debtToCover = debtBefore - _convertValueToAmount(spoke4, debtReserveId, 500e26);
+    _fundLiquidationManager(debtReserveId, debtToCover);
+    uint256 maxCollateralToRemove = spoke4.getUserSuppliedAssets(collateralReserveId, user) * 2;
+
+    // Act
+    vm.prank(liquidationManager);
+    babylonSpoke.liquidationCall(debtReserveId, debtToCover, user, maxCollateralToRemove);
+
+    // Assert: sub-dust debt and collateral remain
+    uint256 remainingDebtValue = _convertAmountToValue(
+      spoke4,
+      debtReserveId,
+      spoke4.getUserTotalDebt(debtReserveId, user)
+    );
+    uint256 remainingCollateralValue = _convertAmountToValue(
+      spoke4,
+      collateralReserveId,
+      spoke4.getUserSuppliedAssets(collateralReserveId, user)
+    );
+    assertGt(remainingDebtValue, 0, 'remaining debt');
+    assertLt(remainingDebtValue, LiquidationLogic.DUST_LIQUIDATION_THRESHOLD, 'debt below dust');
+    assertGt(remainingCollateralValue, 0, 'remaining collateral');
+    assertLt(
+      remainingCollateralValue,
+      LiquidationLogic.DUST_LIQUIDATION_THRESHOLD,
+      'collateral below dust'
+    );
+  }
+
+  /// @dev The call returns the bonus it priced with, the collateral it removed and the account
+  /// data it left, so the liquidation manager does not recompute them.
+  function test_liquidationCall_returnsLiquidationData() public {
+    // Setup
+    _setUpLiquidatableUser(100_000e26, 0.95e18);
+    uint256 debtToCover = spoke4.getUserTotalDebt(debtReserveId, user) / 2;
+    _fundLiquidationManager(debtReserveId, debtToCover);
+    uint256 expectedLiquidationBonus = spoke4.getLiquidationBonus(
+      collateralReserveId,
+      user,
+      _getUserHealthFactor(spoke4, user)
+    );
+    IERC20 collateralUnderlying = _getAssetUnderlyingByReserveId(spoke4, collateralReserveId);
+    uint256 liquidatorCollateralBefore = collateralUnderlying.balanceOf(liquidationManager);
+    uint256 maxCollateralToRemove = spoke4.getUserSuppliedAssets(collateralReserveId, user) * 2;
+
+    // Act
+    vm.prank(liquidationManager);
+    (
+      uint256 liquidationBonus,
+      uint256 collateralAmountRemoved,
+      ISpoke.UserAccountData memory userAccountDataAfter
+    ) = babylonSpoke.liquidationCall(debtReserveId, debtToCover, user, maxCollateralToRemove);
+
+    // Assert
+    assertEq(liquidationBonus, expectedLiquidationBonus, 'liquidation bonus');
+    assertEq(
+      collateralAmountRemoved,
+      collateralUnderlying.balanceOf(liquidationManager) - liquidatorCollateralBefore,
+      'collateral amount removed'
+    );
+    assertGt(collateralAmountRemoved, 0, 'collateral removed');
+    assertEq(
+      abi.encode(userAccountDataAfter),
+      abi.encode(spoke4.getUserAccountData(user)),
+      'user account data after'
+    );
+  }
+
+  function test_liquidationCall_frozenCollateralReserve() public {
+    // Setup
+    _setUpLiquidatableUser(100_000e26, 0.95e18);
+    _updateReserveFrozenFlag(spoke4, collateralReserveId, true);
+
+    uint256 debtBefore = spoke4.getUserTotalDebt(debtReserveId, user);
+    uint256 debtToCover = debtBefore / 2;
+    _fundLiquidationManager(debtReserveId, debtToCover);
+    uint256 maxCollateralToRemove = spoke4.getUserSuppliedAssets(collateralReserveId, user) * 2;
+
+    // Act: the liquidator receives underlying assets, so a frozen collateral reserve is liquidatable
+    vm.prank(liquidationManager);
+    babylonSpoke.liquidationCall(debtReserveId, debtToCover, user, maxCollateralToRemove);
+
+    // Assert
+    assertApproxEqAbs(
+      debtBefore - spoke4.getUserTotalDebt(debtReserveId, user),
+      debtToCover,
+      2,
+      'repaid debt'
+    );
+  }
+
+  function test_liquidationCall_deficit() public {
+    // Setup: insolvent position where removing all collateral cannot clear the debt
+    _setUpLiquidatableUser(2_000e26, 0.5e18);
+    uint256 debtToCover = _convertValueToAmount(spoke4, debtReserveId, 2_500e26);
+    _fundLiquidationManager(debtReserveId, debtToCover);
+    uint256 maxCollateralToRemove = spoke4.getUserSuppliedAssets(collateralReserveId, user) * 2;
+
+    // Act
+    vm.expectEmit(true, true, false, false, address(babylonSpoke));
+    emit ISpoke.ReportDeficit({
+      reserveId: debtReserveId,
+      user: user,
+      drawnShares: 0,
+      premiumDelta: ZERO_PREMIUM_DELTA
+    });
+    vm.prank(liquidationManager);
+    (, , ISpoke.UserAccountData memory userAccountDataAfter) = babylonSpoke.liquidationCall(
+      debtReserveId,
+      debtToCover,
+      user,
+      maxCollateralToRemove
+    );
+
+    // Assert: all collateral is removed and the remaining debt is written off as deficit
+    assertEq(spoke4.getUserSuppliedShares(collateralReserveId, user), 0, 'user collateral');
+    assertEq(spoke4.getUserTotalDebt(debtReserveId, user), 0, 'user debt');
+    (, bool isBorrowing) = spoke4.getUserReserveStatus(debtReserveId, user);
+    assertFalse(isBorrowing, 'user borrowing status');
+    assertEq(spoke4.getUserLastRiskPremium(user), 0, 'user risk premium');
+    // the returned account data is zeroed once the position ends in deficit
+    ISpoke.UserAccountData memory zeroed;
+    assertEq(abi.encode(userAccountDataAfter), abi.encode(zeroed), 'user account data after');
+  }
+}
