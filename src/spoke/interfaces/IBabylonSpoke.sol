@@ -55,8 +55,12 @@ interface IBabylonSpoke is ISpoke {
   /// @notice Thrown when a reserve is configured with a non-zero liquidation fee.
   error UnsupportedLiquidationFee();
 
+  /// @notice Thrown when setting a borrowable reserve as the managed collateral reserve.
+  error UnsupportedBorrowableCollateral();
+
   /// @notice Updates the Babylon liquidation config.
-  /// @dev The managed collateral reserve must be listed. It is intended to be set once at
+  /// @dev The managed collateral reserve must be listed and not borrowable: a user holds a single
+  /// debt reserve, which can never be the collateral being seized. It is intended to be set once at
   /// initialization: users can only enable the configured reserve as collateral, so changing it
   /// with live positions leaves collateral registered under the previous reserve unliquidatable.
   /// @param liquidationManager The only address allowed to perform liquidations on this Spoke.

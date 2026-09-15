@@ -5,6 +5,7 @@ import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
 import {SpokeUtils} from 'src/spoke/libraries/SpokeUtils.sol';
 import {LiquidationLogic} from 'src/spoke/libraries/LiquidationLogic.sol';
 import {BabylonLiquidationLogic} from 'src/spoke/libraries/BabylonLiquidationLogic.sol';
+import {ReserveFlags, ReserveFlagsMap} from 'src/spoke/libraries/ReserveFlagsMap.sol';
 import {IBabylonSpoke} from 'src/spoke/interfaces/IBabylonSpoke.sol';
 import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 import {Spoke} from 'src/spoke/Spoke.sol';
@@ -13,10 +14,12 @@ import {Spoke} from 'src/spoke/Spoke.sol';
 /// @author Aave Labs
 /// @notice Spoke variant for the Babylon integration: liquidations are restricted to a configured
 /// liquidation manager and sized by a collateral cap instead of a target health factor. Users hold
-/// at most one collateral and one debt reserve, and reserves cannot charge a liquidation fee.
+/// at most one collateral and one debt reserve, the managed collateral reserve is never borrowable
+/// and reserves cannot charge a liquidation fee.
 abstract contract BabylonSpoke is IBabylonSpoke, Spoke {
   using SafeCast for uint256;
   using SpokeUtils for *;
+  using ReserveFlagsMap for ReserveFlags;
 
   /// @dev The storage slot for the BabylonSpoke storage struct.
   /// @dev keccak256(abi.encode(uint256(keccak256("aave-v4.storage.BabylonSpoke")) - 1)) & ~bytes32(uint256(0xff))
@@ -35,7 +38,10 @@ abstract contract BabylonSpoke is IBabylonSpoke, Spoke {
     address liquidationManager,
     uint256 managedCollateralReserveId
   ) external restricted {
-    _reserves.get(managedCollateralReserveId);
+    require(
+      !_reserves.get(managedCollateralReserveId).flags.borrowable(),
+      UnsupportedBorrowableCollateral()
+    );
 
     BabylonSpokeStorage storage babylonSpokeStorage = _getBabylonSpokeStorage();
     babylonSpokeStorage.liquidationManager = liquidationManager;
@@ -128,6 +134,22 @@ abstract contract BabylonSpoke is IBabylonSpoke, Spoke {
       );
     }
     super.setUsingAsCollateral(reserveId, usingAsCollateral, onBehalfOf);
+  }
+
+  /// @dev The managed collateral reserve is never borrowable: a user holds a single debt reserve,
+  /// which can never be the collateral being seized. A reserve being listed is skipped, since the
+  /// managed collateral reserve is always already listed.
+  function _validateReserveConfig(
+    uint256 reserveId,
+    ReserveConfig calldata config
+  ) internal view virtual override {
+    super._validateReserveConfig(reserveId, config);
+    require(
+      !config.borrowable ||
+        reserveId == _reserveCount ||
+        reserveId != _getBabylonSpokeStorage().managedCollateralReserveId,
+      UnsupportedBorrowableCollateral()
+    );
   }
 
   /// @dev Rejects a non-zero liquidation fee on every reserve: only the managed collateral reserve

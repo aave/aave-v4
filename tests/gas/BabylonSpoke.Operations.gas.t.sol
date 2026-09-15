@@ -15,6 +15,7 @@ contract BabylonSpokeOperations_Gas_Tests is BabylonBase, SpokeOperations_Gas_Te
     // reserves so the snapshots stay comparable
     spoke = spoke4;
     reserveId = _getReserveIds(spoke);
+    _updateReserveBorrowableFlag(spoke, reserveId.usdx, false);
     vm.prank(ADMIN);
     babylonSpoke.updateBabylonLiquidationConfig(bob, reserveId.usdx);
   }
@@ -202,23 +203,24 @@ contract BabylonSpokeOperations_Gas_Tests is BabylonBase, SpokeOperations_Gas_Te
     spoke.multicall(calls);
     vm.snapshotGasLastFrame(NAMESPACE, 'permitReserve + supply (multicall)');
 
-    spoke.borrow(reserveId.usdx, 500e6, bob);
+    // the managed collateral reserve is never borrowable, so the debt reserve is used here
+    spoke.borrow(reserveId.dai, 500e18, bob);
 
-    // repayWithPermit (usdx)
-    tokenList.usdx.approve(address(spoke), 0);
+    // repayWithPermit (dai)
+    tokenList.dai.approve(address(spoke), 0);
     permit = EIP712Types.Permit({
       owner: bob,
       spender: address(spoke),
-      value: 500e6,
-      nonce: tokenList.usdx.nonces(bob),
+      value: 500e18,
+      nonce: tokenList.dai.nonces(bob),
       deadline: vm.getBlockTimestamp()
     });
-    (v, r, s) = vm.sign(bobPk, _getTypedDataHash(tokenList.usdx, permit));
+    (v, r, s) = vm.sign(bobPk, _getTypedDataHash(tokenList.dai, permit));
     calls[0] = abi.encodeCall(
       ISpoke.permitReserve,
-      (reserveId.usdx, permit.owner, permit.value, permit.deadline, v, r, s)
+      (reserveId.dai, permit.owner, permit.value, permit.deadline, v, r, s)
     );
-    calls[1] = abi.encodeCall(ISpoke.repay, (reserveId.usdx, permit.value, permit.owner));
+    calls[1] = abi.encodeCall(ISpoke.repay, (reserveId.dai, permit.value, permit.owner));
     spoke.multicall(calls);
     vm.snapshotGasLastFrame(NAMESPACE, 'permitReserve + repay (multicall)');
 

@@ -32,6 +32,7 @@ contract SpokeBabylonLiquidationCallTest is SpokeBabylonLiquidationCallBaseTest 
 
   function test_updateBabylonLiquidationConfig() public {
     address newManager = makeAddr('newManager');
+    _updateReserveBorrowableFlag(spoke4, debtReserveId, false);
 
     vm.expectEmit(address(babylonSpoke));
     emit IBabylonSpoke.UpdateBabylonLiquidationConfig(newManager, debtReserveId);
@@ -102,6 +103,110 @@ contract SpokeBabylonLiquidationCallTest is SpokeBabylonLiquidationCallBaseTest 
     vm.expectRevert(ISpoke.ReserveNotListed.selector);
     vm.prank(ADMIN);
     babylonSpoke.updateBabylonLiquidationConfig(liquidationManager, unlistedReserveId);
+  }
+
+  function test_revert_updateBabylonLiquidationConfig_borrowableReserve() public {
+    // a user holds a single debt reserve, which can never be the collateral being seized
+    vm.expectRevert(IBabylonSpoke.UnsupportedBorrowableCollateral.selector);
+    vm.prank(ADMIN);
+    babylonSpoke.updateBabylonLiquidationConfig(liquidationManager, debtReserveId);
+  }
+
+  function test_revert_updateReserveConfig_borrowableManagedCollateral() public {
+    ISpoke.ReserveConfig memory config = spoke4.getReserveConfig(collateralReserveId);
+    config.borrowable = true;
+
+    vm.expectRevert(IBabylonSpoke.UnsupportedBorrowableCollateral.selector);
+    vm.prank(SPOKE_ADMIN);
+    spoke4.updateReserveConfig(collateralReserveId, config);
+  }
+
+  /// @dev The guard is scoped to the managed collateral reserve: every other reserve stays
+  /// borrowable, and a reserve being listed is never the managed one.
+  function test_updateReserveConfig_borrowableOtherReserve() public {
+    ISpoke.ReserveConfig memory config = spoke4.getReserveConfig(debtReserveId);
+    config.borrowable = true;
+
+    vm.prank(SPOKE_ADMIN);
+    spoke4.updateReserveConfig(debtReserveId, config);
+
+    assertTrue(spoke4.getReserveConfig(debtReserveId).borrowable, 'debt reserve borrowable');
+  }
+
+  /// @dev A reserve being listed is never the managed collateral reserve, which is always already
+  /// listed. Before the config is set the stored id reads as zero, so the first reserve of a spoke
+  /// must still be listable as borrowable.
+  function test_addReserve_borrowableFirstReserve() public {
+    // Setup
+    ISpoke freshSpoke = _deployUnconfiguredBabylonSpoke();
+
+    // Act
+    uint256 reserveId = _addBorrowableReserve(freshSpoke);
+
+    // Assert: the first reserve is listed and borrowable
+    assertEq(reserveId, 0, 'first reserve id');
+    assertTrue(freshSpoke.getReserveConfig(reserveId).borrowable, 'first reserve borrowable');
+  }
+
+  /// @dev The listing exemption does not let a borrowable reserve through: designating it as the
+  /// managed collateral reserve is what rejects it.
+  function test_revert_updateBabylonLiquidationConfig_borrowableFirstReserve() public {
+    // Setup: the borrowable first reserve the listing exemption allowed through
+    ISpoke freshSpoke = _deployUnconfiguredBabylonSpoke();
+    uint256 reserveId = _addBorrowableReserve(freshSpoke);
+
+    // Act & Assert
+    vm.expectRevert(IBabylonSpoke.UnsupportedBorrowableCollateral.selector);
+    vm.prank(ADMIN);
+    IBabylonSpoke(address(freshSpoke)).updateBabylonLiquidationConfig(
+      liquidationManager,
+      reserveId
+    );
+  }
+
+  /// @dev A babylon spoke with no reserve listed and no liquidation config, so its managed
+  /// collateral reserve id reads as zero.
+  function _deployUnconfiguredBabylonSpoke() private returns (ISpoke) {
+    vm.startPrank(ADMIN);
+    TestTypes.TestSpokeReport memory report = AaveV4TestOrchestration.deployTestBabylonSpoke({
+      proxyAdminOwner: ADMIN,
+      accessManager: address(accessManager),
+      babylonSpokeBytecode: BytecodeHelper.getBabylonSpokeBytecode(),
+      salt: keccak256('unconfigured-babylon-spoke')
+    });
+    AaveV4SpokeRolesProcedure.setupBabylonSpokeAllRoles(address(accessManager), report.spoke);
+    vm.stopPrank();
+
+    (, uint256 managedCollateralReserveId) = IBabylonSpoke(report.spoke)
+      .getBabylonLiquidationConfig();
+    assertEq(managedCollateralReserveId, 0, 'managed collateral reserve id reads as zero');
+    assertEq(ISpoke(report.spoke).getReserveCount(), 0, 'no reserve listed');
+
+    return ISpoke(report.spoke);
+  }
+
+  function _addBorrowableReserve(ISpoke spoke) private returns (uint256) {
+    address priceSource = _deployMockPriceFeed(spoke, 1e8);
+
+    vm.prank(SPOKE_ADMIN);
+    return
+      spoke.addReserve(
+        address(hub1),
+        usdzAssetId,
+        priceSource,
+        ISpoke.ReserveConfig({
+          paused: false,
+          frozen: false,
+          borrowable: true,
+          receiveSharesEnabled: true,
+          collateralRisk: 10_00
+        }),
+        ISpoke.DynamicReserveConfig({
+          collateralFactor: 10_00,
+          maxLiquidationBonus: 110_00,
+          liquidationFee: 0
+        })
+      );
   }
 
   function test_userReservesLimit() public view {

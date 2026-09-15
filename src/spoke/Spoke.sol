@@ -129,7 +129,7 @@ abstract contract Spoke is
     require(assetId <= MAX_ALLOWED_ASSET_ID, InvalidAssetId());
     require(!_isAssetIdListed(hub, assetId, _hubAssetIdToReserveId[hub][assetId]), ReserveExists());
 
-    _validateReserveConfig(config);
+    _validateReserveConfig(_reserveCount, config);
     _validateDynamicReserveConfig(dynamicConfig);
     uint256 reserveId = _reserveCount++;
     _hubAssetIdToReserveId[hub][assetId] = reserveId;
@@ -170,7 +170,7 @@ abstract contract Spoke is
     ReserveConfig calldata config
   ) external restricted {
     Reserve storage reserve = _reserves.get(reserveId);
-    _validateReserveConfig(config);
+    _validateReserveConfig(reserveId, config);
     reserve.collateralRisk = config.collateralRisk;
     reserve.flags = ReserveFlagsMap.create({
       initPaused: config.paused,
@@ -912,7 +912,10 @@ abstract contract Spoke is
     return config.active && config.approval[user];
   }
 
-  function _validateReserveConfig(ReserveConfig calldata config) internal pure virtual {
+  function _validateReserveConfig(
+    uint256 /* reserveId */,
+    ReserveConfig calldata config
+  ) internal view virtual {
     require(config.collateralRisk <= MAX_ALLOWED_COLLATERAL_RISK, InvalidCollateralRisk());
   }
 

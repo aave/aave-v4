@@ -58,9 +58,11 @@ contract SpokeBabylonLiquidationCallBaseTest is BabylonBase, SpokeLiquidationCal
     collateralReserveId = _wbtcReserveId(spoke4);
   }
 
-  /// @dev Points the Babylon liquidation config at another managed collateral reserve.
+  /// @dev Points the Babylon liquidation config at another managed collateral reserve, which is
+  /// never borrowable.
   function _setManagedCollateralReserve(uint256 reserveId) internal {
     collateralReserveId = reserveId;
+    _updateReserveBorrowableFlag(spoke4, reserveId, false);
     vm.prank(ADMIN);
     babylonSpoke.updateBabylonLiquidationConfig(liquidationManager, reserveId);
   }
