@@ -691,28 +691,17 @@ contract SpokeBabylonLiquidationCallBaseTest is BabylonBase, SpokeLiquidationCal
     );
   }
 
-  /// @dev The returned data must match the sizing the call performed and the state it left.
+  /// @dev The returned data must match the sizing the call performed.
   function _checkBabylonReturnData(
     BabylonLiquidationMetadata memory liquidationMetadata,
-    BabylonAccountsSnapshot memory accountsInfoAfter,
     uint256 liquidationBonus,
-    uint256 collateralAmountRemoved,
-    ISpoke.UserAccountData memory userAccountDataAfter
+    uint256 collateralAmountRemoved
   ) internal virtual {
     assertEq(liquidationBonus, liquidationMetadata.liquidationBonus, 'returned liquidation bonus');
     assertEq(
       collateralAmountRemoved,
       liquidationMetadata.collateralAmountRemoved,
       'returned collateral amount removed'
-    );
-    ISpoke.UserAccountData memory expectedUserAccountDataAfter;
-    if (!liquidationMetadata.hasDeficit) {
-      expectedUserAccountDataAfter = accountsInfoAfter.userAccountData;
-    }
-    assertEq(
-      abi.encode(userAccountDataAfter),
-      abi.encode(expectedUserAccountDataAfter),
-      'returned user account data'
     );
   }
 
@@ -746,16 +735,12 @@ contract SpokeBabylonLiquidationCallBaseTest is BabylonBase, SpokeLiquidationCal
     );
 
     vm.prank(liquidationManager);
-    (
-      uint256 liquidationBonus,
-      uint256 collateralAmountRemoved,
-      ISpoke.UserAccountData memory userAccountDataAfter
-    ) = babylonSpoke.liquidationCall(
-        params.debtReserveId,
-        params.debtToCover,
-        params.user,
-        params.maxCollateralToRemove
-      );
+    (uint256 liquidationBonus, uint256 collateralAmountRemoved) = babylonSpoke.liquidationCall(
+      params.debtReserveId,
+      params.debtToCover,
+      params.user,
+      params.maxCollateralToRemove
+    );
 
     BabylonAccountsSnapshot memory accountsInfoAfter = _getBabylonAccountsInfo(params);
 
@@ -764,13 +749,7 @@ contract SpokeBabylonLiquidationCallBaseTest is BabylonBase, SpokeLiquidationCal
       abi.encode(expectedUserAccountData),
       'user account data'
     );
-    _checkBabylonReturnData(
-      liquidationMetadata,
-      accountsInfoAfter,
-      liquidationBonus,
-      collateralAmountRemoved,
-      userAccountDataAfter
-    );
+    _checkBabylonReturnData(liquidationMetadata, liquidationBonus, collateralAmountRemoved);
     _checkBabylonHealthFactor(
       params,
       accountsInfoBefore,

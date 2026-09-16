@@ -55,15 +55,7 @@ abstract contract BabylonSpoke is IBabylonSpoke, Spoke {
     uint256 debtToCover,
     address user,
     uint256 maxCollateralToRemove
-  )
-    external
-    nonReentrant
-    returns (
-      uint256 liquidationBonus,
-      uint256 collateralAmountRemoved,
-      UserAccountData memory userAccountDataAfter
-    )
-  {
+  ) external nonReentrant returns (uint256 liquidationBonus, uint256 collateralAmountRemoved) {
     BabylonSpokeStorage storage babylonSpokeStorage = _getBabylonSpokeStorage();
     require(msg.sender == babylonSpokeStorage.liquidationManager, Unauthorized());
 
@@ -96,11 +88,11 @@ abstract contract BabylonSpoke is IBabylonSpoke, Spoke {
         user
       );
     } else {
-      userAccountDataAfter = _calculateUserAccountData(user);
-      _notifyRiskPremiumUpdate(user, userAccountDataAfter.riskPremium);
+      uint256 newRiskPremium = _calculateUserAccountData(user).riskPremium;
+      _notifyRiskPremiumUpdate(user, newRiskPremium);
     }
 
-    return (result.liquidationBonus, result.collateralAmountRemoved, userAccountDataAfter);
+    return (result.liquidationBonus, result.collateralAmountRemoved);
   }
 
   /// @inheritdoc IBabylonSpoke

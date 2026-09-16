@@ -83,20 +83,12 @@ interface IBabylonSpoke is ISpoke {
   /// @param maxCollateralToRemove The maximum amount of collateral to remove from the user, expressed in asset units.
   /// @return liquidationBonus The liquidation bonus applied, expressed in BPS.
   /// @return collateralAmountRemoved The amount of collateral removed, expressed in asset units.
-  /// @return userAccountDataAfter The user account data after the liquidation, zeroed when the
-  /// position ended in deficit.
   function liquidationCall(
     uint256 debtReserveId,
     uint256 debtToCover,
     address user,
     uint256 maxCollateralToRemove
-  )
-    external
-    returns (
-      uint256 liquidationBonus,
-      uint256 collateralAmountRemoved,
-      UserAccountData memory userAccountDataAfter
-    );
+  ) external returns (uint256 liquidationBonus, uint256 collateralAmountRemoved);
 
   /// @notice Returns the Babylon liquidation config.
   /// @return The address of the liquidation manager.

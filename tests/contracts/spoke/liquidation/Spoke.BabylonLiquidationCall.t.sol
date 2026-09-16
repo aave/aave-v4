@@ -331,7 +331,7 @@ contract SpokeBabylonLiquidationCallTest is SpokeBabylonLiquidationCallBaseTest 
 
     // Act
     vm.prank(liquidationManager);
-    (, uint256 collateralAmountRemoved, ) = babylonSpoke.liquidationCall(
+    (, uint256 collateralAmountRemoved) = babylonSpoke.liquidationCall(
       debtReserveId,
       debtToCover,
       user,
@@ -529,7 +529,7 @@ contract SpokeBabylonLiquidationCallTest is SpokeBabylonLiquidationCallBaseTest 
 
     // Act
     vm.prank(liquidationManager);
-    (, uint256 collateralAmountRemoved, ) = babylonSpoke.liquidationCall(
+    (, uint256 collateralAmountRemoved) = babylonSpoke.liquidationCall(
       debtReserveId,
       debtToCover,
       user,
@@ -620,8 +620,8 @@ contract SpokeBabylonLiquidationCallTest is SpokeBabylonLiquidationCallBaseTest 
     );
   }
 
-  /// @dev The call returns the bonus it priced with, the collateral it removed and the account
-  /// data it left, so the liquidation manager does not recompute them.
+  /// @dev The call returns the bonus it priced with and the collateral it removed, so the
+  /// liquidation manager does not recompute them.
   function test_liquidationCall_returnsLiquidationData() public {
     // Setup
     _setUpLiquidatableUser(100_000e26, 0.95e18);
@@ -638,11 +638,12 @@ contract SpokeBabylonLiquidationCallTest is SpokeBabylonLiquidationCallBaseTest 
 
     // Act
     vm.prank(liquidationManager);
-    (
-      uint256 liquidationBonus,
-      uint256 collateralAmountRemoved,
-      ISpoke.UserAccountData memory userAccountDataAfter
-    ) = babylonSpoke.liquidationCall(debtReserveId, debtToCover, user, maxCollateralToRemove);
+    (uint256 liquidationBonus, uint256 collateralAmountRemoved) = babylonSpoke.liquidationCall(
+      debtReserveId,
+      debtToCover,
+      user,
+      maxCollateralToRemove
+    );
 
     // Assert
     assertEq(liquidationBonus, expectedLiquidationBonus, 'liquidation bonus');
@@ -652,11 +653,6 @@ contract SpokeBabylonLiquidationCallTest is SpokeBabylonLiquidationCallBaseTest 
       'collateral amount removed'
     );
     assertGt(collateralAmountRemoved, 0, 'collateral removed');
-    assertEq(
-      abi.encode(userAccountDataAfter),
-      abi.encode(spoke4.getUserAccountData(user)),
-      'user account data after'
-    );
   }
 
   function test_liquidationCall_frozenCollateralReserve() public {
@@ -698,12 +694,7 @@ contract SpokeBabylonLiquidationCallTest is SpokeBabylonLiquidationCallBaseTest 
       premiumDelta: ZERO_PREMIUM_DELTA
     });
     vm.prank(liquidationManager);
-    (, , ISpoke.UserAccountData memory userAccountDataAfter) = babylonSpoke.liquidationCall(
-      debtReserveId,
-      debtToCover,
-      user,
-      maxCollateralToRemove
-    );
+    babylonSpoke.liquidationCall(debtReserveId, debtToCover, user, maxCollateralToRemove);
 
     // Assert: all collateral is removed and the remaining debt is written off as deficit
     assertEq(spoke4.getUserSuppliedShares(collateralReserveId, user), 0, 'user collateral');
@@ -711,8 +702,5 @@ contract SpokeBabylonLiquidationCallTest is SpokeBabylonLiquidationCallBaseTest 
     (, bool isBorrowing) = spoke4.getUserReserveStatus(debtReserveId, user);
     assertFalse(isBorrowing, 'user borrowing status');
     assertEq(spoke4.getUserLastRiskPremium(user), 0, 'user risk premium');
-    // the returned account data is zeroed once the position ends in deficit
-    ISpoke.UserAccountData memory zeroed;
-    assertEq(abi.encode(userAccountDataAfter), abi.encode(zeroed), 'user account data after');
   }
 }
