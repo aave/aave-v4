@@ -15,11 +15,16 @@ library SpokeDeployUtils {
 
   /// @notice Deploys LiquidationLogic via CREATE2.
   /// @dev The CREATE2 factory must already be deployed on the target chain.
+  /// @dev Idempotent: the salt is a fixed constant and the Safe Singleton Factory is
+  ///      permissionless, so the deterministic address can already be occupied, either by a
+  ///      previous run of this step or by a third party. Any contract at that address must have
+  ///      been created from this exact creation code, so reusing it is safe and keeps this
+  ///      mandatory first deployment step from being blockable or non-repeatable.
   /// @param salt The CREATE2 salt for deterministic deployment.
   /// @return The deployed library address.
   function deployLiquidationLogic(bytes32 salt) internal returns (address) {
     bytes memory bytecode = vm.getCode('src/spoke/libraries/LiquidationLogic.sol:LiquidationLogic');
-    return Create2Utils.create2Deploy(salt, bytecode);
+    return Create2Utils.create2DeployIdempotent(salt, bytecode);
   }
 
   /// @notice Returns the FOUNDRY_LIBRARIES-compatible string for library linking.
