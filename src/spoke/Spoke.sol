@@ -87,7 +87,8 @@ abstract contract Spoke is
     LiquidationLogic.DUST_LIQUIDATION_THRESHOLD;
 
   /// @notice Modifier that checks if the caller is an approved positionManager for `onBehalfOf`.
-  modifier onlyPositionManager(address onBehalfOf) {
+  /// @dev Virtual to allow instances to replace the authorization scheme of position actions.
+  modifier onlyPositionManager(address onBehalfOf) virtual {
     require(_isPositionManager({user: onBehalfOf, manager: msg.sender}), Unauthorized());
     _;
   }
