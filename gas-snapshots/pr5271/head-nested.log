@@ -1,0 +1,8 @@
+Error compiling: vyper/compiler-feedback/pr5271/Nested.vy
+vyper.exceptions.StructureException: DynArray element types cannot contain unbounded sequence types
+
+  contract "vyper/compiler-feedback/pr5271/Nested.vy:4", function "echo", line 4:26
+       3 @pure
+  ---> 4 def echo(values: DynArray[Bytes[INF], INF]) -> DynArray[Bytes[INF], INF]:
+  ---------------------------------^
+       5     return values

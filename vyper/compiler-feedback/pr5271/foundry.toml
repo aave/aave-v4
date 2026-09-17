@@ -1,0 +1,9 @@
+[profile.default]
+src = "src"
+test = "test"
+out = "out"
+solc_version = "0.8.28"
+evm_version = "cancun"
+gas_limit = 1099511627776
+fs_permissions = [{ access = "read", path = "./out" }]
+fuzz.runs = 128

@@ -106,7 +106,7 @@ def _calculate_interest_rate(
 ) -> uint256:
     rate_data: IAssetInterestRateStrategy.InterestRateData = self.interest_rate_data[asset_id]
     if rate_data.optimalUsageRatio == 0:
-        raise IAssetInterestRateStrategy.InterestRateDataNotSet(asset_id)
+        raise IAssetInterestRateStrategy.InterestRateDataNotSet(arg0=asset_id)
 
     current_drawn_rate_ray: uint256 = WadRayMath.bps_to_ray(
         convert(rate_data.baseDrawnRate, uint256)

@@ -15,7 +15,7 @@ def _call(token: address, data: Bytes[100]):
     # Default failure handling preserves the complete downstream revert data.
     response: Bytes[32] = raw_call(token, data, max_outsize=32)
     if not self._accepted(token, response):
-        raise SafeERC20FailedOperation(token)
+        raise SafeERC20FailedOperation(token=token)
 
 @internal
 def safe_transfer(token: address, receiver: address, amount: uint256):

@@ -149,14 +149,14 @@ def __init__(borrower_: address, liquidator_: address):
 @internal
 @pure
 def _panic_arithmetic():
-    raise Errors.Panic(17)
+    raise Errors.Panic(arg0=17)
 
 
 @internal
 @pure
 def _u120(cast_value: uint256) -> uint120:
     if cast_value > convert(max_value(uint120), uint256):
-        raise SafeCastOverflowedUintDowncast(120, cast_value)
+        raise SafeCastOverflowedUintDowncast(arg0=120, arg1=cast_value)
     return convert(cast_value, uint120)
 
 
@@ -164,7 +164,7 @@ def _u120(cast_value: uint256) -> uint120:
 @pure
 def _u32(cast_value: uint256) -> uint32:
     if cast_value > convert(max_value(uint32), uint256):
-        raise SafeCastOverflowedUintDowncast(32, cast_value)
+        raise SafeCastOverflowedUintDowncast(arg0=32, arg1=cast_value)
     return convert(cast_value, uint32)
 
 

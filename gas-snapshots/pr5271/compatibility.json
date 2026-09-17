@@ -1,0 +1,776 @@
+{
+  "baseline": {
+    "version": "0.5.0b2",
+    "provenance": {
+      "url": "https://github.com/vyperlang/vyper.git",
+      "vcs_info": {
+        "vcs": "git",
+        "commit_id": "6f1aefb5909d0faaae580ad5c78e07426482aedb",
+        "requested_revision": "6f1aefb5909d0faaae580ad5c78e07426482aedb"
+      }
+    }
+  },
+  "head": {
+    "version": "0.5.0b2",
+    "provenance": {
+      "url": "https://github.com/vyperlang/vyper.git",
+      "vcs_info": {
+        "vcs": "git",
+        "commit_id": "58a453d402388cc1744db37082ec1e4f850550e5",
+        "requested_revision": "58a453d402388cc1744db37082ec1e4f850550e5"
+      }
+    }
+  },
+  "source_hashes": {
+    "vyper/src/access/AccessManagerEnumerable.vy": {
+      "sha256": "4fefbaec1d52999b550c459b2c14e65843382b986dc1dc4503b51f25447e5496"
+    },
+    "vyper/src/access/interfaces/IAccessManagerEnumerable.vyi": {
+      "sha256": "c3709a86ec2dbec1617c4e8ca44986fb631731f2483ba311b380821f65904a74"
+    },
+    "vyper/src/config_engine/AaveV4ConfigEngine.vy": {
+      "sha256": "279f7a50aabcee7e3c1cbe25f858ca4bc229f5c6ae314be7437d5b556292fb52"
+    },
+    "vyper/src/config_engine/AaveV4Payload.vy": {
+      "sha256": "6fd6969f3f5eb1f039e354418b69cef1418ec174c5501d6b6fe846801d1bb6cd"
+    },
+    "vyper/src/config_engine/TokenizationSpokeDeployer.vy": {
+      "sha256": "dd824e59f6c3d233b7bfa99bb41a2f7716b40e0d68245655dd9bd6e5d518ca73"
+    },
+    "vyper/src/config_engine/interfaces/IAaveV4ConfigEngine.vyi": {
+      "sha256": "082340e7aa44fe1ed9a9877475f681c3dd51499d04d9f9ccda22ecd880372912"
+    },
+    "vyper/src/config_engine/interfaces/ITokenizationSpokeDeployer.vyi": {
+      "sha256": "c502dd1d494561d62986ede87641101dc4d9d357c32f0bb7b8cfe9d10b10f59f"
+    },
+    "vyper/src/dependencies/openzeppelin/IAccessManaged.vyi": {
+      "sha256": "54d3a7d4b8d0420dd8cf392380d6139838bee873d9f153ed200e80b66c65a7cf"
+    },
+    "vyper/src/dependencies/openzeppelin/IAccessManager.vyi": {
+      "sha256": "1da5830005038b4dbba0ca56074ece453e0c215f63030acd17d6756f592a0df8"
+    },
+    "vyper/src/dependencies/openzeppelin/IAuthority.vyi": {
+      "sha256": "90d394829355e3b2fb3977b44941798376e9c8f38e95e873e3ed9212d1a751e6"
+    },
+    "vyper/src/dependencies/openzeppelin/IERC1271.vyi": {
+      "sha256": "69305f527d7b965c512c63d323bac58dbdf6987475ae4035337b3a5813cd19b8"
+    },
+    "vyper/src/dependencies/openzeppelin/IERC20.vyi": {
+      "sha256": "e7e21a72e1a5a71a6c9c3f5ef6e5835161964006c2b99f92d607ff83a6329a3e"
+    },
+    "vyper/src/dependencies/openzeppelin/IERC20Metadata.vyi": {
+      "sha256": "d076e0819f3ce42d6757a43a0cd0daaec6fc501bfa3d83e3d460c30e9a71e006"
+    },
+    "vyper/src/deployments/utils/libraries/Roles.vy": {
+      "sha256": "00dbc153a53200ec4f8d2acb2bacf66f7baa250a1edd71adaec1b91133873747"
+    },
+    "vyper/src/harness/AaveV4PayloadWrapper.vy": {
+      "sha256": "838cea4bf0b0639569e5e90470f2c88136a35e17584535e474151d82bf80ba8b"
+    },
+    "vyper/src/harness/ConfigPermissionsMapHarness.vy": {
+      "sha256": "911abdc1b2ae1459b02db1246ee64d113ee8e1a58cee9e324d3a3369e041f204"
+    },
+    "vyper/src/harness/EngineFlagsHarness.vy": {
+      "sha256": "0c54e2f2b2aa52326df80ba71c092a4f59fe036ad470007ee56a8bbf94189145"
+    },
+    "vyper/src/harness/KeyValueListHarness.vy": {
+      "sha256": "72f6add5f289ae5b33af518815ff7defdf43136c1b7faaf9682e71ae369afd16"
+    },
+    "vyper/src/harness/LiquidationLogicWrapper.vy": {
+      "sha256": "1f07fc09c4c5e3fef45196cc8a06454bebddf4e9c2b0c8e9d1cb1361b90cf2d5"
+    },
+    "vyper/src/harness/MathHarness.vy": {
+      "sha256": "79daf05224cd06bfb4103c4f4d2b6ad8ad695f12e73c924899b623ead99c9761"
+    },
+    "vyper/src/harness/MockHubInstance.vy": {
+      "sha256": "60aab3e3fc017980b9b10c1aa9d98393d375092cca7ca073ad4dff39e8a2eefb"
+    },
+    "vyper/src/harness/MockSpokeInstance.vy": {
+      "sha256": "08fc4412410b2818bb1b2cb217354ad5e8ca99d46be3cb6b8cfb6a42ff4e37ac"
+    },
+    "vyper/src/harness/MockSpokeStorage.vy": {
+      "sha256": "a292df5892e135ed1bd6579222b80467b4e05f4bacf6eaf2c283e2dec13af30d"
+    },
+    "vyper/src/harness/MockTokenizationSpokeInstance.vy": {
+      "sha256": "60d1235082dfa905146b43825cbdd67129564a93a607d5b318fb88a91c68ba97"
+    },
+    "vyper/src/harness/MockTreasurySpokeInstance.vy": {
+      "sha256": "9b73c3fa611f776d3f7fe52327c74e4dcc868b94781b3e425dc97c7b381b536d"
+    },
+    "vyper/src/harness/NoncesKeyedHarness.vy": {
+      "sha256": "b580a84c2ed941eab2db46bd96db5bb4ef0c57dc539f2d2a3dc4dc5b39d98452"
+    },
+    "vyper/src/harness/PositionManagerEIP712HashHarness.vy": {
+      "sha256": "f8335e51f983311df3c37106902059dfadf90a00958e8579872e305b6d5af64b"
+    },
+    "vyper/src/harness/PositionStatusMapHarness.vy": {
+      "sha256": "c1f9ff99a96c450f63fb3b55cf6bbec9be5ed2f4ba6306f8f033b520e7aaf158"
+    },
+    "vyper/src/harness/RescuableHarness.vy": {
+      "sha256": "0ab2335796c097fb64fa9b8c7dfa37b1798413aa868cda4ddd72d1dff7ef5d1c"
+    },
+    "vyper/src/harness/ReserveFlagsMapHarness.vy": {
+      "sha256": "c5ffa43b1902cb7a978061fc1edc0af8645001adeb06c44392c36017d46986cf"
+    },
+    "vyper/src/harness/RolesHarness.vy": {
+      "sha256": "a7b840896bd2f8787888f6ee7bdf55c9b915e9723f164bc1b780e5d9a34fdeb6"
+    },
+    "vyper/src/harness/SafeERC20Harness.vy": {
+      "sha256": "cc18885484f036f45979767180fef749eb7d43508b333d621d441f765341ad08"
+    },
+    "vyper/src/harness/SpokeEIP712HashHarness.vy": {
+      "sha256": "412c2e985040edb8d8d235bef200fd92620c874a022a0c190a61fb9e791a5ae7"
+    },
+    "vyper/src/harness/SpokeUtilsHarness.vy": {
+      "sha256": "dfb0d6236c6cdae137c9c74d4c85d597dd742ca825101ee2caec3446eceeb364"
+    },
+    "vyper/src/harness/UserPositionUtilsHarness.vy": {
+      "sha256": "3ef68cdfd0e59439d9d00cc805403ab183351a37aa1e3313285f999edb16105e"
+    },
+    "vyper/src/hub/AssetInterestRateStrategy.vy": {
+      "sha256": "2a671344e472389d9cf9a9d9d1619ec4ea18f5eefd8d3f082bb773fb1e1601aa"
+    },
+    "vyper/src/hub/BasicInterestRateStrategy.vy": {
+      "sha256": "ca377f777daf71dc9ed934e6ceb3b284c692a1c32a108e87a1cd6b562b2c96fd"
+    },
+    "vyper/src/hub/HubConfigurator.vy": {
+      "sha256": "fe30869da34d290453e52f92a51427758e5a2b833c7c8ef538c88f8d4b758a9f"
+    },
+    "vyper/src/hub/HubInstance.vy": {
+      "sha256": "0701694f6bce0b78c846e42f2e507ab3fedb9aee47ae81df62918a708ebc0254"
+    },
+    "vyper/src/hub/interfaces/IAssetInterestRateStrategy.vyi": {
+      "sha256": "6d5b946d31bd37a42c81a052d27d26f2422a4152e7bff999e3a97f73ef3efcb9"
+    },
+    "vyper/src/hub/interfaces/IHub.vyi": {
+      "sha256": "9e6290643a9b40f90e07139a73386d186ffd5a11a89edfdf14d6e2c33293f3af"
+    },
+    "vyper/src/hub/interfaces/IHubConfigurator.vyi": {
+      "sha256": "d62a173d64424ee101baa8b8cd1709e1c9c7ab36a7c06b8b5dee29409faf2416"
+    },
+    "vyper/src/hub/interfaces/IInterestRateStrategy.vyi": {
+      "sha256": "9c699157ff732be74ec468b84ccbc31c2d7f44abd79d0915fd3f9120b8199728"
+    },
+    "vyper/src/hub/libraries/Premium.vy": {
+      "sha256": "9058fec9e345b0f02d98f42fc5975dd386eca06d70219bca6ed551248170eb51"
+    },
+    "vyper/src/hub/libraries/SharesMath.vy": {
+      "sha256": "1f177d1b0c8348324dac08f6aa25e254cca35803dec1ed33c25ff242992467d6"
+    },
+    "vyper/src/libraries/Errors.vy": {
+      "sha256": "8cb6f3a017cef81d7327fd2e45106e625d22c9fe13d84c1200998b8289ec57dd"
+    },
+    "vyper/src/libraries/math/MathUtils.vy": {
+      "sha256": "6cffca5a2e825dca43b4bb34dcabbf434338ac9ebe8cadfa1b78a9ebb257fb57"
+    },
+    "vyper/src/libraries/math/PercentageMath.vy": {
+      "sha256": "226356a9742af2044a6270d19bc77964be70ff8ae38560b91846bb1629e91658"
+    },
+    "vyper/src/libraries/math/WadRayMath.vy": {
+      "sha256": "ffee3e6bf583d7484de4a1702a2181ec95d0793a8929f76cf073687a2d2d814b"
+    },
+    "vyper/src/position_manager/ConfigPositionManager.vy": {
+      "sha256": "0b2f2f9b4f22a48bc68c05c0f061a506e534c88c023e504dc065ea1e7ca75458"
+    },
+    "vyper/src/position_manager/GiverPositionManager.vy": {
+      "sha256": "3c0db518b62cb4d63aaaa416d589babc3ef498483cfe6d46b6094bdf5c86eed3"
+    },
+    "vyper/src/position_manager/NativeTokenGateway.vy": {
+      "sha256": "407e2b9bb1e7285bad7e03136a17cff2b5d540155c9719ec6af50dbe4fa0b449"
+    },
+    "vyper/src/position_manager/PositionManagerBase.vy": {
+      "sha256": "1778d4649bf9cb49fc19d789dbcbb5facfac1475a3a7ce83df4ba2a26917d9a7"
+    },
+    "vyper/src/position_manager/PositionManagerBaseWrapper.vy": {
+      "sha256": "ef5e7e9802c791b61e3a7f830a66c87b205dd1755fd0a9b0dd972ca2924cd9e7"
+    },
+    "vyper/src/position_manager/PositionManagerNoMulticall.vy": {
+      "sha256": "e01791fe84c3fbcfbf6162aad0d6ce7a084edb5824ddaffc5d176d10ab0e31b8"
+    },
+    "vyper/src/position_manager/SignatureGateway.vy": {
+      "sha256": "d941da728fa125a16febff8d14f863ae8e0a377a69f20e4b8be2fcb7dad58bca"
+    },
+    "vyper/src/position_manager/TakerPositionManager.vy": {
+      "sha256": "06720ec9c29f6f16877474fcc894db7ff77278f5aea5ec8348ce563a0398f6b6"
+    },
+    "vyper/src/position_manager/interfaces/IConfigPositionManager.vyi": {
+      "sha256": "bdb5ace9e4780babc2a34912ab93d466305ae53f37e75ca7e02e7a1cd6575243"
+    },
+    "vyper/src/position_manager/interfaces/IGiverPositionManager.vyi": {
+      "sha256": "88932a0a5de7ba3fd14517aba0168be841ac16b81be88a22f93cece77e99a24c"
+    },
+    "vyper/src/position_manager/interfaces/INativeTokenGateway.vyi": {
+      "sha256": "b7bb80d08ce05d73fb7e787929db7a208ec5d00b9c4a1613fa59f7485038bfe6"
+    },
+    "vyper/src/position_manager/interfaces/IPositionManager.vyi": {
+      "sha256": "9eb48435d1114ca1d326d67a8d088bc783beb58319c7648dadca8faa0eef47e0"
+    },
+    "vyper/src/position_manager/interfaces/ISignatureGateway.vyi": {
+      "sha256": "331ae32d1a336cecc45990748e01f3ea5a0bb2e73646b1f6638050378f124e78"
+    },
+    "vyper/src/position_manager/interfaces/ITakerPositionManager.vyi": {
+      "sha256": "6fd956162357c511522e1c1355fe3a06176300608b9e026532362db585366a9b"
+    },
+    "vyper/src/position_manager/libraries/ConfigPermissionsMap.vy": {
+      "sha256": "ed0738d8c2e1cdda1854153cd3c16f3562753ae67483f92b4a4e7d3bdf6b9169"
+    },
+    "vyper/src/position_manager/libraries/EIP712Hash.vy": {
+      "sha256": "c0734ee6158351e88c81e3a4f0432b974a192eaded4cea21aeabc6e60939f1bf"
+    },
+    "vyper/src/spoke/AaveOracle.vy": {
+      "sha256": "3824645945a930003b386332a106f5a354beaa3ecee64c784fc08abb4a1c72d5"
+    },
+    "vyper/src/spoke/LiquidationLogicContract.vy": {
+      "sha256": "0110b8b213cd12afdf692cabf7b4b2fccdd6e487e06ba50fcafc391cccbc0492"
+    },
+    "vyper/src/spoke/SpokeConfigurator.vy": {
+      "sha256": "43d5491cc5d156b32a1d6799c24cfe0c400b3b49e518dda6aecf6cb8019a0025"
+    },
+    "vyper/src/spoke/SpokeInstance.vy": {
+      "sha256": "b852ce7572475d6abb656cdceb7e44276489cab2a6424ef19dcf9372ba6cae91"
+    },
+    "vyper/src/spoke/TokenizationSpokeInstance.vy": {
+      "sha256": "c00787367884ec6b85980261b648aa3390142f676c2da838b7c328c4ba260693"
+    },
+    "vyper/src/spoke/TreasurySpokeInstance.vy": {
+      "sha256": "16c25fb3cfac100df5324890c2392fddd92e68c38f3f7d1fedee98b2923018f8"
+    },
+    "vyper/src/spoke/interfaces/IAaveOracle.vyi": {
+      "sha256": "403acdf4ab7da3e331b50d878609a3c0eb0a3c5209f141e5b6bdc0f91f3b7fc4"
+    },
+    "vyper/src/spoke/interfaces/ILiquidationLogic.vyi": {
+      "sha256": "a589f3c8a0a0c149c05d849aad4d4e4a57caf6be3521c29235df9b2e470f3f24"
+    },
+    "vyper/src/spoke/interfaces/IPriceFeed.vyi": {
+      "sha256": "0012ae0e22358605a5e768135e005541d5bcbfe99797b1ded33dc83042047218"
+    },
+    "vyper/src/spoke/interfaces/ISpoke.vyi": {
+      "sha256": "a90c73c149ae02817219854d938b61aed042a9fd29023498d3625594273bd80e"
+    },
+    "vyper/src/spoke/interfaces/ISpokeConfigurator.vyi": {
+      "sha256": "4331101dde6704c43f1ab4abbccf64b70ba300e40a6b75997f2c7e1ebad1b22a"
+    },
+    "vyper/src/spoke/interfaces/ITokenizationSpoke.vyi": {
+      "sha256": "b67ed672895281664e8202b7e65054ed61d8e9c5c2e781c467ba6f773349e5bb"
+    },
+    "vyper/src/spoke/interfaces/ITreasurySpoke.vyi": {
+      "sha256": "e00a1b15c5b6940cfd734caa0d7b6e65db44647530f4f1e6a84cf0cea546f7c9"
+    },
+    "vyper/src/spoke/libraries/EIP712Hash.vy": {
+      "sha256": "7c3a6c4f7d0acc340fded6c21b1218accc6fdfcbbcc20b1d084d377b0d5d5a98"
+    },
+    "vyper/src/spoke/libraries/LiquidationLogic.vy": {
+      "sha256": "7beeffff21aa43c2fb0dbe8e0a07b8b81b54eab73b3bad3563b2a744e2faebf1"
+    },
+    "vyper/src/spoke/libraries/PositionStatusMap.vy": {
+      "sha256": "9c995394c0c627bbb49b47893941ebc5b3dcdff31b9a27fffb4b7f0bc63f4264"
+    },
+    "vyper/src/spoke/libraries/ReserveFlagsMap.vy": {
+      "sha256": "4ec46bc35e941f790c3ba98c05cbfa58254a8bd10a2be017912f7e47b0ba32dc"
+    },
+    "vyper/src/spoke/libraries/SpokeUtils.vy": {
+      "sha256": "540a81b586ac08311934b44ab2b4f1139344f57fba21a3c802c1dc160b446f42"
+    },
+    "vyper/src/spoke/libraries/UserPositionUtils.vy": {
+      "sha256": "ecdd5995c60102ba7e5bc287617fc1a12884384e7ec2bf2aa0ac6e7e1cbccb17"
+    },
+    "vyper/src/utils/AccessManaged.vy": {
+      "sha256": "28c85db0daf7d7038218417d60a1c43816633acc549f11b88d6a432fb76b7fa1"
+    },
+    "vyper/src/utils/ExtSload.vy": {
+      "sha256": "3bdde4426c28fbe716bd4d709c76bbbbf3b1b19e30f55b97db6f88121d1026cc"
+    },
+    "vyper/src/utils/NoncesKeyed.vy": {
+      "sha256": "45a2a598233da1ed5fd13af50b2ad18b80fad8c2945641d7455037f41d1664bd"
+    },
+    "vyper/src/utils/Rescuable.vy": {
+      "sha256": "8701aa6a9a89c5afe5809a719c5b3cc3e69a06b95f6e1768bbca7fc2dda5a556"
+    },
+    "vyper/src/utils/SafeERC20.vy": {
+      "sha256": "ff3fe3af6edd70fb49f021eaf5fe7e595433b627afb4e9c0eee0e516a99893a5"
+    },
+    "vyper/src/utils/SignatureChecker.vy": {
+      "sha256": "55da09552b1b3283f0ba03db7ae12b6c4caa3cf9ffc1d9a54729559e7dd12711"
+    },
+    "vyper/src/utils/interfaces/INoncesKeyed.vyi": {
+      "sha256": "2d0ea6509f8bfcbe33c7ffd69847433c3a1b5ac7d733d8b4b0c06c04e086f318"
+    },
+    "vyper/src/utils/interfaces/IRescuable.vyi": {
+      "sha256": "e324740e1480c31f48bac788d3b13ff418b26369bb8551c5b835ae2ce3669c5a"
+    }
+  },
+  "settings": {
+    "optimize": "O3",
+    "evm_version": "cancun",
+    "experimental_codegen": true,
+    "venom_flags": {
+      "level": "O3",
+      "disable_inlining": false,
+      "disable_cse": false,
+      "disable_sccp": false,
+      "disable_load_elimination": false,
+      "disable_dead_store_elimination": false,
+      "disable_algebraic_optimization": false,
+      "disable_branch_optimization": false,
+      "disable_assert_elimination": false,
+      "disable_mem2var": false,
+      "disable_simplify_cfg": false,
+      "disable_remove_unused_variables": false,
+      "inline_threshold": 30
+    }
+  },
+  "checks": "All 41 artifacts have identical creation/runtime bytecode, ABI, selectors and source hashes.",
+  "artifacts": {
+    "ConfigPermissionsMapHarness": {
+      "checks": {
+        "bytecode": true,
+        "deployedBytecode": true,
+        "abi": true,
+        "methodIdentifiers": true,
+        "sources": true
+      },
+      "runtime_bytes": 580,
+      "runtime_sha256": "eaf438df391593bce20da5bf421f0ce5035466409a8c5a6cc1230c8a31ae4074"
+    },
+    "SpokeConfigurator": {
+      "checks": {
+        "bytecode": true,
+        "deployedBytecode": true,
+        "abi": true,
+        "methodIdentifiers": true,
+        "sources": true
+      },
+      "runtime_bytes": 5123,
+      "runtime_sha256": "5c2fad4b69082a0a063e11e38c77e0239fdd3d46940c849f0482cbdd61cc35fe"
+    },
+    "KeyValueListHarness": {
+      "checks": {
+        "bytecode": true,
+        "deployedBytecode": true,
+        "abi": true,
+        "methodIdentifiers": true,
+        "sources": true
+      },
+      "runtime_bytes": 1092,
+      "runtime_sha256": "a4de9c95aa596ce6b1fc17d7b78fe5477fccd6bf7aeceb517a86a735f872f0d3"
+    },
+    "HubConfigurator": {
+      "checks": {
+        "bytecode": true,
+        "deployedBytecode": true,
+        "abi": true,
+        "methodIdentifiers": true,
+        "sources": true
+      },
+      "runtime_bytes": 7321,
+      "runtime_sha256": "6ddaf863d2de8f9f200dd7cd1d63682c84853fa8139b7472a1225f2453f1a486"
+    },
+    "ReserveFlagsMapHarness": {
+      "checks": {
+        "bytecode": true,
+        "deployedBytecode": true,
+        "abi": true,
+        "methodIdentifiers": true,
+        "sources": true
+      },
+      "runtime_bytes": 713,
+      "runtime_sha256": "90dd4775c25ddadc19741787f5d5c080d807b9b3738ec84ab3700bb52273ceda"
+    },
+    "GiverPositionManager": {
+      "checks": {
+        "bytecode": true,
+        "deployedBytecode": true,
+        "abi": true,
+        "methodIdentifiers": true,
+        "sources": true
+      },
+      "runtime_bytes": 3491,
+      "runtime_sha256": "11a6cb8bc1d7efe4a79eb3f7e7ea8dd6812446cd341f276f218902185839b1a0"
+    },
+    "NativeTokenGateway": {
+      "checks": {
+        "bytecode": true,
+        "deployedBytecode": true,
+        "abi": true,
+        "methodIdentifiers": true,
+        "sources": true
+      },
+      "runtime_bytes": 3784,
+      "runtime_sha256": "26466374f85434d4fa86317097b3e2e6efd861445eb0c6a94e4fcdb96c2e5033"
+    },
+    "PositionStatusMapHarness": {
+      "checks": {
+        "bytecode": true,
+        "deployedBytecode": true,
+        "abi": true,
+        "methodIdentifiers": true,
+        "sources": true
+      },
+      "runtime_bytes": 2844,
+      "runtime_sha256": "0725157a4a88052aa5200a8c28e0fcfc71c88c9c34d86a256a43f78b27892f91"
+    },
+    "NoncesKeyedHarness": {
+      "checks": {
+        "bytecode": true,
+        "deployedBytecode": true,
+        "abi": true,
+        "methodIdentifiers": true,
+        "sources": true
+      },
+      "runtime_bytes": 429,
+      "runtime_sha256": "df4d66a661de27ff4c082bf9673f8fa93579d0ebd1427f29fa5c4208f5bede8a"
+    },
+    "AaveOracle": {
+      "checks": {
+        "bytecode": true,
+        "deployedBytecode": true,
+        "abi": true,
+        "methodIdentifiers": true,
+        "sources": true
+      },
+      "runtime_bytes": 1197,
+      "runtime_sha256": "ff260cbb42f6861b055a10c2e98330d810953ee20488acc36c21caab41aee979"
+    },
+    "TreasurySpokeInstance": {
+      "checks": {
+        "bytecode": true,
+        "deployedBytecode": true,
+        "abi": true,
+        "methodIdentifiers": true,
+        "sources": true
+      },
+      "runtime_bytes": 2213,
+      "runtime_sha256": "4db4cc9ba7d854cfdfac13c58efbcbaf04eb0b72239b7230c1a4040f09214543"
+    },
+    "LiquidationLogicContract": {
+      "checks": {
+        "bytecode": true,
+        "deployedBytecode": true,
+        "abi": true,
+        "methodIdentifiers": true,
+        "sources": true
+      },
+      "runtime_bytes": 3515,
+      "runtime_sha256": "ab71d6159e28ca542ef1087969606601aeea1c506e334e651cb43ac02564fea5"
+    },
+    "RescuableHarness": {
+      "checks": {
+        "bytecode": true,
+        "deployedBytecode": true,
+        "abi": true,
+        "methodIdentifiers": true,
+        "sources": true
+      },
+      "runtime_bytes": 369,
+      "runtime_sha256": "1c2e16549c35fa6e53d682d2a3f0cadce5493da7c3f95bf2623566a0ff4911dd"
+    },
+    "AaveV4ConfigEngine": {
+      "checks": {
+        "bytecode": true,
+        "deployedBytecode": true,
+        "abi": true,
+        "methodIdentifiers": true,
+        "sources": true
+      },
+      "runtime_bytes": 13109,
+      "runtime_sha256": "6871d6809f7c50dae5205f04e21ab4194901bdf89c30669510a10c223907ee9b"
+    },
+    "LiquidationLogicWrapper": {
+      "checks": {
+        "bytecode": true,
+        "deployedBytecode": true,
+        "abi": true,
+        "methodIdentifiers": true,
+        "sources": true
+      },
+      "runtime_bytes": 11025,
+      "runtime_sha256": "e7c28f4b20c5355d174d6a61deec489ed9be329a8d7fed00d3b4ff678e9ecd6e"
+    },
+    "ConfigPositionManager": {
+      "checks": {
+        "bytecode": true,
+        "deployedBytecode": true,
+        "abi": true,
+        "methodIdentifiers": true,
+        "sources": true
+      },
+      "runtime_bytes": 7278,
+      "runtime_sha256": "c65bf11aaa1964d8be063035b92607bade33ee0ebf361f7e8f4fbb13b24c08c9"
+    },
+    "MathHarness": {
+      "checks": {
+        "bytecode": true,
+        "deployedBytecode": true,
+        "abi": true,
+        "methodIdentifiers": true,
+        "sources": true
+      },
+      "runtime_bytes": 2727,
+      "runtime_sha256": "b30c8f81d8e2daafd991f79cc41e7b99044106f2ed3fea8ff0138d33d434ad1f"
+    },
+    "EngineFlagsHarness": {
+      "checks": {
+        "bytecode": true,
+        "deployedBytecode": true,
+        "abi": true,
+        "methodIdentifiers": true,
+        "sources": true
+      },
+      "runtime_bytes": 114,
+      "runtime_sha256": "b3b67970ca020f91446c419422fff50c30694d7e012f574c40d34bfe3759656b"
+    },
+    "AaveV4PayloadWrapper": {
+      "checks": {
+        "bytecode": true,
+        "deployedBytecode": true,
+        "abi": true,
+        "methodIdentifiers": true,
+        "sources": true
+      },
+      "runtime_bytes": 23726,
+      "runtime_sha256": "8449a24f9f396a436b44fb56554dfc6703f7f80454392d861b235a12d88855bc"
+    },
+    "SignatureGateway": {
+      "checks": {
+        "bytecode": true,
+        "deployedBytecode": true,
+        "abi": true,
+        "methodIdentifiers": true,
+        "sources": true
+      },
+      "runtime_bytes": 7960,
+      "runtime_sha256": "daf07e8b72bbd7d13c8d9b9856c14ab19e58ca9ab9407a1df76288e48ff8c426"
+    },
+    "MockTreasurySpokeInstance": {
+      "checks": {
+        "bytecode": true,
+        "deployedBytecode": true,
+        "abi": true,
+        "methodIdentifiers": true,
+        "sources": true
+      },
+      "runtime_bytes": 559,
+      "runtime_sha256": "152c803b62be1466423d9083354542b3706a006a640b49831054a72cfef7bbf0"
+    },
+    "TokenizationSpokeDeployer": {
+      "checks": {
+        "bytecode": true,
+        "deployedBytecode": true,
+        "abi": true,
+        "methodIdentifiers": true,
+        "sources": true
+      },
+      "runtime_bytes": 1599,
+      "runtime_sha256": "4b13065214753ebbf10da689fd462e456ee917f211015b78c77bc0d991a77d04"
+    },
+    "TokenizationSpokeInstance": {
+      "checks": {
+        "bytecode": true,
+        "deployedBytecode": true,
+        "abi": true,
+        "methodIdentifiers": true,
+        "sources": true
+      },
+      "runtime_bytes": 8553,
+      "runtime_sha256": "f811d20232eb49fad573687fb778440cd0e3af44339a7518bb78082c61c54fa9"
+    },
+    "PositionManagerEIP712HashHarness": {
+      "checks": {
+        "bytecode": true,
+        "deployedBytecode": true,
+        "abi": true,
+        "methodIdentifiers": true,
+        "sources": true
+      },
+      "runtime_bytes": 1828,
+      "runtime_sha256": "b4198a51c9c1aeda290006fd69a3b5be743541c9c7ca7ad6e45cffdf23bd6995"
+    },
+    "ExtSload": {
+      "checks": {
+        "bytecode": true,
+        "deployedBytecode": true,
+        "abi": true,
+        "methodIdentifiers": true,
+        "sources": true
+      },
+      "runtime_bytes": 745,
+      "runtime_sha256": "455458947cd3b7c625e01482a8104e38459f9f1df16b16b4a28932b0cb5396cf"
+    },
+    "UserPositionUtilsHarness": {
+      "checks": {
+        "bytecode": true,
+        "deployedBytecode": true,
+        "abi": true,
+        "methodIdentifiers": true,
+        "sources": true
+      },
+      "runtime_bytes": 1655,
+      "runtime_sha256": "c54e217866bc4a7c6359da717f9a44425dfbcaa08f2b040772a38f363ad5afcc"
+    },
+    "MockTokenizationSpokeInstance": {
+      "checks": {
+        "bytecode": true,
+        "deployedBytecode": true,
+        "abi": true,
+        "methodIdentifiers": true,
+        "sources": true
+      },
+      "runtime_bytes": 708,
+      "runtime_sha256": "f3b262879019c98f1f09709dbbcf50bdf0aae063b823d6ba282beb0b8aa0bec1"
+    },
+    "PositionManagerNoMulticall": {
+      "checks": {
+        "bytecode": true,
+        "deployedBytecode": true,
+        "abi": true,
+        "methodIdentifiers": true,
+        "sources": true
+      },
+      "runtime_bytes": 2047,
+      "runtime_sha256": "30f81fcf87c6361e4b2b73d8d31839d2c7fcae3a5eaaa5cb7370b85926a70fb9"
+    },
+    "MockSpokeStorage": {
+      "checks": {
+        "bytecode": true,
+        "deployedBytecode": true,
+        "abi": true,
+        "methodIdentifiers": true,
+        "sources": true
+      },
+      "runtime_bytes": 2270,
+      "runtime_sha256": "409d972d1a40271d6f06483dccb2f5e62e0fdd37eb589e03aa0f60dcf3bed64b"
+    },
+    "HubInstance": {
+      "checks": {
+        "bytecode": true,
+        "deployedBytecode": true,
+        "abi": true,
+        "methodIdentifiers": true,
+        "sources": true
+      },
+      "runtime_bytes": 16088,
+      "runtime_sha256": "5bf0edbd52df3ba0af9d56288fc4735608806d823ca4341426a9517c767de9c9"
+    },
+    "SpokeInstance": {
+      "checks": {
+        "bytecode": true,
+        "deployedBytecode": true,
+        "abi": true,
+        "methodIdentifiers": true,
+        "sources": true
+      },
+      "runtime_bytes": 23128,
+      "runtime_sha256": "a434f743bb614de1039274dce1e08c220d2cbfd06de1355e23fc40451f04e7a2"
+    },
+    "MockSpokeInstance": {
+      "checks": {
+        "bytecode": true,
+        "deployedBytecode": true,
+        "abi": true,
+        "methodIdentifiers": true,
+        "sources": true
+      },
+      "runtime_bytes": 23743,
+      "runtime_sha256": "7dbfaac8da6c42615ec710ad17c54043039214545ef9cedcc393d617f54611a5"
+    },
+    "SpokeEIP712HashHarness": {
+      "checks": {
+        "bytecode": true,
+        "deployedBytecode": true,
+        "abi": true,
+        "methodIdentifiers": true,
+        "sources": true
+      },
+      "runtime_bytes": 1374,
+      "runtime_sha256": "07c054b5c95aea1ef1c2a24b6965794aaec96978a74daa1ccdf54f66d66d96f0"
+    },
+    "RolesHarness": {
+      "checks": {
+        "bytecode": true,
+        "deployedBytecode": true,
+        "abi": true,
+        "methodIdentifiers": true,
+        "sources": true
+      },
+      "runtime_bytes": 316,
+      "runtime_sha256": "4d54ff8d829f8055428bd089e7437415a542309a5a27749f96372101d41d7424"
+    },
+    "TakerPositionManager": {
+      "checks": {
+        "bytecode": true,
+        "deployedBytecode": true,
+        "abi": true,
+        "methodIdentifiers": true,
+        "sources": true
+      },
+      "runtime_bytes": 6975,
+      "runtime_sha256": "3ba604888555c2100315cdbfa0c7466fa82fc04c7ac8cfb3fae3711897ad9474"
+    },
+    "SpokeUtilsHarness": {
+      "checks": {
+        "bytecode": true,
+        "deployedBytecode": true,
+        "abi": true,
+        "methodIdentifiers": true,
+        "sources": true
+      },
+      "runtime_bytes": 407,
+      "runtime_sha256": "82d4e6e633f1c325958a0855f2cd20e913771489c7efcbf3696233e83652a6f8"
+    },
+    "MockHubInstance": {
+      "checks": {
+        "bytecode": true,
+        "deployedBytecode": true,
+        "abi": true,
+        "methodIdentifiers": true,
+        "sources": true
+      },
+      "runtime_bytes": 16154,
+      "runtime_sha256": "13865e984cc5cf3cbc11286ae78fc34e4bcab06665a5e45fa1cb1d93bde456ae"
+    },
+    "PositionManagerBaseWrapper": {
+      "checks": {
+        "bytecode": true,
+        "deployedBytecode": true,
+        "abi": true,
+        "methodIdentifiers": true,
+        "sources": true
+      },
+      "runtime_bytes": 2545,
+      "runtime_sha256": "0600838321b7e5b5143f4f365f17192abd29fffd058f40d593b6d5e5745837ab"
+    },
+    "AccessManagerEnumerable": {
+      "checks": {
+        "bytecode": true,
+        "deployedBytecode": true,
+        "abi": true,
+        "methodIdentifiers": true,
+        "sources": true
+      },
+      "runtime_bytes": 15490,
+      "runtime_sha256": "70bb5f8e3003015a63fb301eae68b421d6f3b387a1a12d7667fe9f06a0d9cb37"
+    },
+    "SafeERC20Harness": {
+      "checks": {
+        "bytecode": true,
+        "deployedBytecode": true,
+        "abi": true,
+        "methodIdentifiers": true,
+        "sources": true
+      },
+      "runtime_bytes": 464,
+      "runtime_sha256": "2e551c3a011532e6e3336aef75eebce088ca09ccac89c15f45b60ab448513b1a"
+    },
+    "AssetInterestRateStrategy": {
+      "checks": {
+        "bytecode": true,
+        "deployedBytecode": true,
+        "abi": true,
+        "methodIdentifiers": true,
+        "sources": true
+      },
+      "runtime_bytes": 1500,
+      "runtime_sha256": "3a07182efd7df73a21c87434eeb4a7869578f9b5fc038d0d24437a85e1185743"
+    }
+  }
+}

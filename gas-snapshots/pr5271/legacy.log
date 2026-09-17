@@ -1,0 +1,8 @@
+Error compiling: vyper/compiler-feedback/pr5271/Unbounded.vy
+vyper.exceptions.StructureException: unbounded sequence types require --experimental-codegen
+
+  contract "vyper/compiler-feedback/pr5271/Unbounded.vy:3", function "forward", line 3:35
+       2 @external
+  ---> 3 def forward(target: address, data: Bytes[INF]) -> Bytes[INF]:
+  ------------------------------------------^
+       4     return raw_call(target, data, max_outsize=INF)

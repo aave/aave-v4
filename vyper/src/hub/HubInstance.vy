@@ -186,7 +186,7 @@ def _check_access(selector: Bytes[4]):
 @pure
 def _u120(cast_value: uint256) -> uint120:
     if cast_value > convert(max_value(uint120), uint256):
-        raise IHub.SafeCastOverflowedUintDowncast(120, cast_value)
+        raise IHub.SafeCastOverflowedUintDowncast(arg0=120, arg1=cast_value)
     return convert(cast_value, uint120)
 
 
@@ -194,7 +194,7 @@ def _u120(cast_value: uint256) -> uint120:
 @pure
 def _u96(cast_value: uint256) -> uint96:
     if cast_value > convert(max_value(uint96), uint256):
-        raise IHub.SafeCastOverflowedUintDowncast(96, cast_value)
+        raise IHub.SafeCastOverflowedUintDowncast(arg0=96, arg1=cast_value)
     return convert(cast_value, uint96)
 
 
@@ -202,7 +202,7 @@ def _u96(cast_value: uint256) -> uint96:
 @pure
 def _u40(cast_value: uint256) -> uint40:
     if cast_value > convert(max_value(uint40), uint256):
-        raise IHub.SafeCastOverflowedUintDowncast(40, cast_value)
+        raise IHub.SafeCastOverflowedUintDowncast(arg0=40, arg1=cast_value)
     return convert(cast_value, uint40)
 
 
@@ -210,7 +210,7 @@ def _u40(cast_value: uint256) -> uint40:
 @pure
 def _u200(cast_value: uint256) -> uint200:
     if cast_value > convert(max_value(uint200), uint256):
-        raise IHub.SafeCastOverflowedUintDowncast(200, cast_value)
+        raise IHub.SafeCastOverflowedUintDowncast(arg0=200, arg1=cast_value)
     return convert(cast_value, uint200)
 
 
@@ -218,14 +218,14 @@ def _u200(cast_value: uint256) -> uint200:
 @pure
 def _i200(cast_value: int256) -> int200:
     if cast_value > convert(max_value(int200), int256) or cast_value < convert(min_value(int200), int256):
-        raise IHub.SafeCastOverflowedIntDowncast(200, cast_value)
+        raise IHub.SafeCastOverflowedIntDowncast(arg0=200, arg1=cast_value)
     return convert(cast_value, int200)
 
 
 @internal
 @pure
 def _panic_arithmetic():
-    raise Errors.Panic(convert(17, uint256))
+    raise Errors.Panic(arg0=convert(17, uint256))
 
 
 @internal
@@ -380,7 +380,7 @@ def authority() -> address:
 @external
 def setAuthority(newAuthority: address):
     if msg.sender != self.authority_address:
-        raise IHub.AccessManagedUnauthorized(msg.sender)
+        raise IHub.AccessManagedUnauthorized(arg0=msg.sender)
     AccessManaged.validate_authority(newAuthority)
     self.authority_address = newAuthority
     log IHub.AuthorityUpdated(authority=newAuthority)
@@ -543,11 +543,11 @@ def add(assetId: uint256, amount: uint256) -> uint256:
         cap: uint256 = convert(spoke.addCap, uint256) * self._asset_units(asset.decimals)
         required: uint256 = self._to_added_assets_up(asset, convert(spoke.addedShares, uint256)) + amount
         if cap < required:
-            raise IHub.AddCapExceeded(convert(spoke.addCap, uint256))
+            raise IHub.AddCapExceeded(arg0=convert(spoke.addCap, uint256))
     liquidity: uint256 = convert(asset.liquidity, uint256) + amount
     balance: uint256 = staticcall IERC20(asset.underlying).balanceOf(self)
     if balance < liquidity:
-        raise IHub.InsufficientTransferred(liquidity - balance)
+        raise IHub.InsufficientTransferred(arg0=liquidity - balance)
     shares: uint256 = self._to_added_shares_down(asset, amount)
     if shares == 0:
         raise IHub.InvalidShares()
@@ -575,7 +575,7 @@ def remove(assetId: uint256, amount: uint256, to: address) -> uint256:
     if spoke.halted:
         raise IHub.SpokeHalted()
     if amount > convert(asset.liquidity, uint256):
-        raise IHub.InsufficientLiquidity(convert(asset.liquidity, uint256))
+        raise IHub.InsufficientLiquidity(arg0=convert(asset.liquidity, uint256))
     shares: uint256 = self._to_added_shares_up(asset, amount)
     shares_120: uint120 = self._u120(shares)
     if shares_120 > asset.addedShares or shares_120 > spoke.addedShares:
@@ -608,9 +608,9 @@ def draw(assetId: uint256, amount: uint256, to: address) -> uint256:
         owed: uint256 = self._spoke_drawn(asset, spoke) + WadRayMath.from_ray_up(self._spoke_premium_ray(asset, spoke)) + WadRayMath.from_ray_up(convert(spoke.deficitRay, uint256))
         cap: uint256 = convert(spoke.drawCap, uint256) * self._asset_units(asset.decimals)
         if cap < owed + amount:
-            raise IHub.DrawCapExceeded(convert(spoke.drawCap, uint256))
+            raise IHub.DrawCapExceeded(arg0=convert(spoke.drawCap, uint256))
     if amount > convert(asset.liquidity, uint256):
-        raise IHub.InsufficientLiquidity(convert(asset.liquidity, uint256))
+        raise IHub.InsufficientLiquidity(arg0=convert(asset.liquidity, uint256))
     shares: uint256 = WadRayMath.ray_div_up(amount, convert(asset.drawnIndex, uint256))
     asset.drawnShares = self._u120(convert(asset.drawnShares, uint256) + shares)
     spoke.drawnShares = self._u120(convert(spoke.drawnShares, uint256) + shares)
@@ -633,9 +633,9 @@ def _apply_one(index: uint256, shares: uint256, offset: int256, delta: IHub.Prem
     if after + delta.restoredPremiumRay != before:
         raise IHub.InvalidPremiumChange()
     if new_shares > convert(max_value(uint120), uint256):
-        raise IHub.SafeCastOverflowedUintDowncast(120, new_shares)
+        raise IHub.SafeCastOverflowedUintDowncast(arg0=120, arg1=new_shares)
     if new_offset > convert(max_value(int200), int256) or new_offset < convert(min_value(int200), int256):
-        raise IHub.SafeCastOverflowedIntDowncast(200, new_offset)
+        raise IHub.SafeCastOverflowedIntDowncast(arg0=200, arg1=new_offset)
     return convert(new_shares, uint120), convert(new_offset, int200)
 
 
@@ -667,9 +667,9 @@ def restore(assetId: uint256, drawnAmount: uint256, premiumDelta: IHub.PremiumDe
     drawn: uint256 = self._spoke_drawn(asset, spoke)
     premium_ray: uint256 = self._spoke_premium_ray(asset, spoke)
     if drawnAmount > drawn:
-        raise IHub.SurplusDrawnRestored(drawn)
+        raise IHub.SurplusDrawnRestored(arg0=drawn)
     if premiumDelta.restoredPremiumRay > premium_ray:
-        raise IHub.SurplusPremiumRayRestored(premium_ray)
+        raise IHub.SurplusPremiumRayRestored(arg0=premium_ray)
     shares: uint256 = WadRayMath.ray_div_down(drawnAmount, convert(asset.drawnIndex, uint256))
     asset.drawnShares = self._u120(convert(asset.drawnShares, uint256) - shares)
     spoke.drawnShares = self._u120(convert(spoke.drawnShares, uint256) - shares)
@@ -681,7 +681,7 @@ def restore(assetId: uint256, drawnAmount: uint256, premiumDelta: IHub.PremiumDe
     liquidity: uint256 = convert(asset.liquidity, uint256) + drawnAmount + premium_amount
     balance: uint256 = staticcall IERC20(asset.underlying).balanceOf(self)
     if balance < liquidity:
-        raise IHub.InsufficientTransferred(liquidity - balance)
+        raise IHub.InsufficientTransferred(arg0=liquidity - balance)
     asset.liquidity = self._u120(liquidity)
     self._store_asset(assetId, asset)
     self._update_rate(assetId)
@@ -701,9 +701,9 @@ def reportDeficit(assetId: uint256, drawnAmount: uint256, premiumDelta: IHub.Pre
     drawn: uint256 = self._spoke_drawn(asset, spoke)
     premium_ray: uint256 = self._spoke_premium_ray(asset, spoke)
     if drawnAmount > drawn:
-        raise IHub.SurplusDrawnDeficitReported(drawn)
+        raise IHub.SurplusDrawnDeficitReported(arg0=drawn)
     if premiumDelta.restoredPremiumRay > premium_ray:
-        raise IHub.SurplusPremiumRayDeficitReported(premium_ray)
+        raise IHub.SurplusPremiumRayDeficitReported(arg0=premium_ray)
     shares: uint256 = WadRayMath.ray_div_down(drawnAmount, convert(asset.drawnIndex, uint256))
     asset.drawnShares = self._u120(convert(asset.drawnShares, uint256) - shares)
     spoke.drawnShares = self._u120(convert(spoke.drawnShares, uint256) - shares)
@@ -805,7 +805,7 @@ def transferShares(assetId: uint256, shares: uint256, toSpoke: address):
         cap: uint256 = convert(receiver.addCap, uint256) * self._asset_units(asset.decimals)
         required: uint256 = self._to_added_assets_up(asset, convert(receiver.addedShares, uint256) + shares)
         if cap < required:
-            raise IHub.AddCapExceeded(convert(receiver.addCap, uint256))
+            raise IHub.AddCapExceeded(arg0=convert(receiver.addCap, uint256))
     shares_120: uint120 = self._u120(shares)
     if shares_120 > sender.addedShares:
         self._panic_arithmetic()
@@ -830,7 +830,7 @@ def sweep(assetId: uint256, amount: uint256):
     if amount == 0:
         raise IHub.InvalidAmount()
     if amount > convert(asset.liquidity, uint256):
-        raise IHub.InsufficientLiquidity(convert(asset.liquidity, uint256))
+        raise IHub.InsufficientLiquidity(arg0=convert(asset.liquidity, uint256))
     asset.liquidity = self._u120(convert(asset.liquidity, uint256) - amount)
     asset.swept = self._u120(convert(asset.swept, uint256) + amount)
     self._store_asset(assetId, asset)
@@ -852,7 +852,7 @@ def reclaim(assetId: uint256, amount: uint256):
     liquidity: uint256 = convert(asset.liquidity, uint256) + amount
     balance: uint256 = staticcall IERC20(asset.underlying).balanceOf(self)
     if balance < liquidity:
-        raise IHub.InsufficientTransferred(liquidity - balance)
+        raise IHub.InsufficientTransferred(arg0=liquidity - balance)
     asset.liquidity = self._u120(liquidity)
     amount_120: uint120 = self._u120(amount)
     if amount_120 > asset.swept:

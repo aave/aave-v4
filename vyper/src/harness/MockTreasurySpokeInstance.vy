@@ -43,7 +43,7 @@ def initialize(owner: address):
     if initializing or initialized >= spoke_revision:
         raise InvalidInitialization()
     if owner == empty(address):
-        raise OwnableInvalidOwner(owner)
+        raise OwnableInvalidOwner(arg0=owner)
     self.initialized_state = convert(spoke_revision, uint256)
     previous_owner: address = self.owner_address
     self.pending_owner_address = empty(address)

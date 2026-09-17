@@ -14,7 +14,7 @@ INT256_MIN_ABS: constant(uint256) = 2**255
 
 @pure
 def _panic_arithmetic():
-    raise Errors.Panic(17)
+    raise Errors.Panic(arg0=17)
 
 
 @view
@@ -62,9 +62,9 @@ def unchecked_add(a: uint256, b: uint256) -> uint256:
 @pure
 def signed_sub(a: uint256, b: uint256) -> int256:
     if a > INT256_MAX:
-        raise SafeCastOverflowedUintToInt(a)
+        raise SafeCastOverflowedUintToInt(arg0=a)
     if b > INT256_MAX:
-        raise SafeCastOverflowedUintToInt(b)
+        raise SafeCastOverflowedUintToInt(arg0=b)
     return convert(a, int256) - convert(b, int256)
 
 

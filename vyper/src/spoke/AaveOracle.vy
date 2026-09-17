@@ -24,10 +24,10 @@ def __init__(decimals_: uint8):
 def _get_source_price(reserve_id: uint256) -> uint256:
     source: address = self.sources[reserve_id]
     if source == empty(address):
-        raise IAaveOracle.InvalidSource(reserve_id)
+        raise IAaveOracle.InvalidSource(arg0=reserve_id)
     price: int256 = staticcall IPriceFeed(source).latestAnswer()
     if price <= 0:
-        raise IAaveOracle.InvalidPrice(reserve_id)
+        raise IAaveOracle.InvalidPrice(arg0=reserve_id)
     return convert(price, uint256)
 
 
@@ -50,7 +50,7 @@ def setReserveSource(reserveId: uint256, source: address):
     if msg.sender != self.spoke:
         raise IAaveOracle.OnlySpoke()
     if staticcall IPriceFeed(source).decimals() != DECIMALS:
-        raise IAaveOracle.InvalidSourceDecimals(reserveId)
+        raise IAaveOracle.InvalidSourceDecimals(arg0=reserveId)
     self.sources[reserveId] = source
     self._get_source_price(reserveId)
     log IAaveOracle.UpdateReserveSource(reserveId=reserveId, source=source)

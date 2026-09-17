@@ -1,0 +1,39 @@
+No files changed, compilation skipped
+
+Ran 9 tests for test/PR5271.t.sol:PR5271Test
+[PASS] testFuzz_failure(uint256) (runs: 128, μ: 18996699, ~: 12804215)
+[PASS] testFuzz_success(uint256) (runs: 128, μ: 21672529, ~: 14306063)
+[PASS] test_boundedOutputRemainsBounded() (gas: 51148671)
+[PASS] test_delegateContext() (gas: 35606)
+[PASS] test_failureBoundaries() (gas: 78144088)
+[PASS] test_gasByReturnSize() (gas: 56469819)
+Logs:
+  return bytes: 0
+  bounded call gas: 17293
+  unbounded call gas: 3169
+  return bytes: 32
+  bounded call gas: 17328
+  unbounded call gas: 3199
+  return bytes: 256
+  bounded call gas: 17590
+  unbounded call gas: 3444
+  return bytes: 4096
+  bounded call gas: 22614
+  unbounded call gas: 8323
+  return bytes: 32768
+  bounded call gas: 85012
+  unbounded call gas: 74970
+  return bytes: 32769
+  bounded call gas: 85043
+  unbounded call gas: 75074
+
+[PASS] test_successBoundaries() (gas: 161611524)
+[PASS] test_twoLiveBuffers() (gas: 25146853)
+[PASS] test_unusedSiblingMemoryCoupling() (gas: 68640910)
+Logs:
+  32-byte unbounded call gas: 3199
+  same call with unused bounded sibling: 34054425
+
+Suite result: ok. 9 passed; 0 failed; 0 skipped; finished in 6.31s (14.57s CPU time)
+
+Ran 1 test suite in 6.31s (6.31s CPU time): 9 tests passed, 0 failed, 0 skipped (9 total tests)

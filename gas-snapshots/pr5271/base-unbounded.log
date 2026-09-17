@@ -1,0 +1,8 @@
+Error compiling: vyper/compiler-feedback/pr5271/Unbounded.vy
+vyper.exceptions.TypeMismatch: Given reference has type INF, expected uint256
+
+  contract "vyper/compiler-feedback/pr5271/Unbounded.vy:4", function "forward", line 4:46
+       3 def forward(target: address, data: Bytes[INF]) -> Bytes[INF]:
+  ---> 4     return raw_call(target, data, max_outsize=INF)
+  -----------------------------------------------------^
+       5

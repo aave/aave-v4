@@ -33,7 +33,7 @@ def _check_access(selector: Bytes[4]):
 @pure
 def _u16(cast_value: uint256) -> uint16:
     if cast_value > convert(max_value(uint16), uint256):
-        raise IHubConfigurator.SafeCastOverflowedUintDowncast(16, cast_value)
+        raise IHubConfigurator.SafeCastOverflowedUintDowncast(arg0=16, arg1=cast_value)
     return convert(cast_value, uint16)
 
 
@@ -41,7 +41,7 @@ def _u16(cast_value: uint256) -> uint16:
 @pure
 def _u40(cast_value: uint256) -> uint40:
     if cast_value > convert(max_value(uint40), uint256):
-        raise IHubConfigurator.SafeCastOverflowedUintDowncast(40, cast_value)
+        raise IHubConfigurator.SafeCastOverflowedUintDowncast(arg0=40, arg1=cast_value)
     return convert(cast_value, uint40)
 
 
@@ -49,7 +49,7 @@ def _u40(cast_value: uint256) -> uint40:
 @pure
 def _u24(cast_value: uint256) -> uint24:
     if cast_value > convert(max_value(uint24), uint256):
-        raise IHubConfigurator.SafeCastOverflowedUintDowncast(24, cast_value)
+        raise IHubConfigurator.SafeCastOverflowedUintDowncast(arg0=24, arg1=cast_value)
     return convert(cast_value, uint24)
 
 
@@ -62,7 +62,7 @@ def authority() -> address:
 @external
 def setAuthority(newAuthority: address):
     if msg.sender != self.authority_address:
-        raise IHubConfigurator.AccessManagedUnauthorized(msg.sender)
+        raise IHubConfigurator.AccessManagedUnauthorized(arg0=msg.sender)
     AccessManaged.validate_authority(newAuthority)
     self.authority_address = newAuthority
     log IHubConfigurator.AuthorityUpdated(authority=newAuthority)

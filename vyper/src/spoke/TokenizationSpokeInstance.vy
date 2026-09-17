@@ -74,7 +74,7 @@ def _use_checked_nonce(owner: address, key_nonce: uint256):
     key: uint192 = convert(key_nonce // 2**64, uint192)
     current: uint256 = self._use_nonce(owner, key)
     if current != key_nonce:
-        raise ITokenizationSpoke.InvalidAccountNonce(owner, current)
+        raise ITokenizationSpoke.InvalidAccountNonce(arg0=owner, arg1=current)
 
 
 @internal
@@ -102,9 +102,9 @@ def _verify_intent(signer: address, intent_hash: bytes32, nonce: uint256, deadli
 @internal
 def _approve(owner: address, spender: address, amount: uint256):
     if owner == empty(address):
-        raise ITokenizationSpoke.ERC20InvalidApprover(owner)
+        raise ITokenizationSpoke.ERC20InvalidApprover(arg0=owner)
     if spender == empty(address):
-        raise ITokenizationSpoke.ERC20InvalidSpender(spender)
+        raise ITokenizationSpoke.ERC20InvalidSpender(arg0=spender)
     self.allowances[owner][spender] = amount
     log ITokenizationSpoke.Approval(owner=owner, spender=spender, value=amount)
 
@@ -114,14 +114,14 @@ def _spend_allowance(owner: address, spender: address, amount: uint256):
     current: uint256 = self.allowances[owner][spender]
     if current != max_value(uint256):
         if current < amount:
-            raise ITokenizationSpoke.ERC20InsufficientAllowance(spender, current, amount)
+            raise ITokenizationSpoke.ERC20InsufficientAllowance(arg0=spender, arg1=current, arg2=amount)
         self.allowances[owner][spender] = current - amount
 
 
 @internal
 def _mint(receiver: address, amount: uint256):
     if receiver == empty(address):
-        raise ITokenizationSpoke.ERC20InvalidReceiver(receiver)
+        raise ITokenizationSpoke.ERC20InvalidReceiver(arg0=receiver)
     self.total_supply += amount
     self.balances[receiver] += amount
     log ITokenizationSpoke.Transfer(sender=empty(address), receiver=receiver, value=amount)
@@ -130,10 +130,10 @@ def _mint(receiver: address, amount: uint256):
 @internal
 def _burn(owner: address, amount: uint256):
     if owner == empty(address):
-        raise ITokenizationSpoke.ERC20InvalidSender(owner)
+        raise ITokenizationSpoke.ERC20InvalidSender(arg0=owner)
     balance: uint256 = self.balances[owner]
     if balance < amount:
-        raise ITokenizationSpoke.ERC20InsufficientBalance(owner, balance, amount)
+        raise ITokenizationSpoke.ERC20InsufficientBalance(arg0=owner, arg1=balance, arg2=amount)
     self.balances[owner] = balance - amount
     self.total_supply -= amount
     log ITokenizationSpoke.Transfer(sender=owner, receiver=empty(address), value=amount)
@@ -142,12 +142,12 @@ def _burn(owner: address, amount: uint256):
 @internal
 def _transfer(sender: address, receiver: address, amount: uint256):
     if sender == empty(address):
-        raise ITokenizationSpoke.ERC20InvalidSender(sender)
+        raise ITokenizationSpoke.ERC20InvalidSender(arg0=sender)
     if receiver == empty(address):
-        raise ITokenizationSpoke.ERC20InvalidReceiver(receiver)
+        raise ITokenizationSpoke.ERC20InvalidReceiver(arg0=receiver)
     balance: uint256 = self.balances[sender]
     if balance < amount:
-        raise ITokenizationSpoke.ERC20InsufficientBalance(sender, balance, amount)
+        raise ITokenizationSpoke.ERC20InsufficientBalance(arg0=sender, arg1=balance, arg2=amount)
     self.balances[sender] = balance - amount
     self.balances[receiver] += amount
     log ITokenizationSpoke.Transfer(sender=sender, receiver=receiver, value=amount)

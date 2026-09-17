@@ -23,7 +23,7 @@ def _use_checked_nonce(owner: address, key_nonce: uint256):
     key: uint192 = convert(key_nonce // 2**64, uint192)
     current: uint256 = self._use_nonce(owner, key)
     if key_nonce != current:
-        raise INoncesKeyed.InvalidAccountNonce(owner, current)
+        raise INoncesKeyed.InvalidAccountNonce(arg0=owner, arg1=current)
 
 
 @external

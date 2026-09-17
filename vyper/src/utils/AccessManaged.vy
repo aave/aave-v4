@@ -14,7 +14,7 @@ consuming_schedule: transient(bool)
 @view
 def validate_authority(authority: address):
     if not authority.is_contract:
-        raise AccessManagedInvalidAuthority(authority)
+        raise AccessManagedInvalidAuthority(authority=authority)
 
 @internal
 def check_access(authority: address, selector: bytes4, data: Bytes[INF]):
@@ -40,7 +40,7 @@ def check_access(authority: address, selector: bytes4, data: Bytes[INF]):
             delay = 0
     if not immediate:
         if delay == 0:
-            raise AccessManagedUnauthorized(msg.sender)
+            raise AccessManagedUnauthorized(caller=msg.sender)
         self.consuming_schedule = True
         extcall IAccessManager(authority).consumeScheduledOp(msg.sender, data)
         self.consuming_schedule = False

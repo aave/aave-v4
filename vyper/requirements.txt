@@ -1,1 +1,1 @@
-vyper @ git+https://github.com/vyperlang/vyper.git@8af5e83c10af4f065cc660fe20293dac11fdff83
+vyper @ git+https://github.com/vyperlang/vyper.git@1180f3e171cf0569e6d5ec01e916d9b289e12724

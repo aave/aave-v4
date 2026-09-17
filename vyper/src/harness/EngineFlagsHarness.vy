@@ -8,7 +8,7 @@ error InvalidBoolValue:
 @pure
 def toBool(flag: uint256) -> bool:
     if flag > 1:
-        raise InvalidBoolValue(flag)
+        raise InvalidBoolValue(arg0=flag)
     return flag == 1
 
 

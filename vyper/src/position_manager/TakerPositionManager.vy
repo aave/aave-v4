@@ -161,7 +161,7 @@ def withdrawOnBehalfOf(spoke: address, reserveId: uint256, amount: uint256, onBe
     reserve: ISpoke.Reserve = staticcall ISpoke(spoke).getReserve(reserveId)
     allowance: uint256 = self.withdraw_allowances[spoke][reserveId][onBehalfOf][msg.sender]
     if allowance < amount:
-        raise ITakerPositionManager.InsufficientWithdrawAllowance(allowance, amount)
+        raise ITakerPositionManager.InsufficientWithdrawAllowance(arg0=allowance, arg1=amount)
     supplied_before: uint256 = 0
     if allowance != max_value(uint256):
         supplied_before = staticcall ISpoke(spoke).getUserSuppliedAssets(reserveId, onBehalfOf)
@@ -183,7 +183,7 @@ def borrowOnBehalfOf(spoke: address, reserveId: uint256, amount: uint256, onBeha
     reserve: ISpoke.Reserve = staticcall ISpoke(spoke).getReserve(reserveId)
     allowance: uint256 = self.borrow_allowances[spoke][reserveId][onBehalfOf][msg.sender]
     if allowance < amount:
-        raise ITakerPositionManager.InsufficientBorrowAllowance(allowance, amount)
+        raise ITakerPositionManager.InsufficientBorrowAllowance(arg0=allowance, arg1=amount)
     borrowed_before: uint256 = 0
     if allowance != max_value(uint256):
         borrowed_before = staticcall ISpoke(spoke).getUserTotalDebt(reserveId, onBehalfOf)

@@ -26,7 +26,7 @@ def _multicall_enabled() -> bool:
 @internal
 def _initialize_owner(initial_owner: address):
     if initial_owner == empty(address):
-        raise IPositionManager.OwnableInvalidOwner(initial_owner)
+        raise IPositionManager.OwnableInvalidOwner(arg0=initial_owner)
     self.owner_address = initial_owner
     log IPositionManager.OwnershipTransferred(previousOwner=empty(address), newOwner=initial_owner)
 
@@ -35,7 +35,7 @@ def _initialize_owner(initial_owner: address):
 @view
 def _check_owner():
     if msg.sender != self.owner_address:
-        raise IPositionManager.OwnableUnauthorizedAccount(msg.sender)
+        raise IPositionManager.OwnableUnauthorizedAccount(arg0=msg.sender)
 
 
 @internal
@@ -72,7 +72,7 @@ def transferOwnership(newOwner: address):
 @external
 def acceptOwnership():
     if msg.sender != self.pending_owner_address:
-        raise IPositionManager.OwnableUnauthorizedAccount(msg.sender)
+        raise IPositionManager.OwnableUnauthorizedAccount(arg0=msg.sender)
     old_owner: address = self.owner_address
     self.pending_owner_address = empty(address)
     self.owner_address = msg.sender
@@ -178,7 +178,7 @@ def multicall(data: DynArray[Bytes[MAX_CALLDATA], MAX_CALLS]) -> DynArray[Bytes[
             is_delegate_call=True,
         )
         if len(result) > MAX_RETURN_DATA:
-            raise ReturndataTooLarge(MAX_RETURN_DATA)
+            raise ReturndataTooLarge(maximum=MAX_RETURN_DATA)
         results.append(convert(result, Bytes[MAX_RETURN_DATA]))
     return results
 

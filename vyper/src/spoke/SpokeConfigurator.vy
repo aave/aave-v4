@@ -32,7 +32,7 @@ def _check_access(selector: Bytes[4]):
 @pure
 def _u128(cast_value: uint256) -> uint128:
     if cast_value > convert(max_value(uint128), uint256):
-        raise ISpokeConfigurator.SafeCastOverflowedUintDowncast(128, cast_value)
+        raise ISpokeConfigurator.SafeCastOverflowedUintDowncast(arg0=128, arg1=cast_value)
     return convert(cast_value, uint128)
 
 
@@ -40,7 +40,7 @@ def _u128(cast_value: uint256) -> uint128:
 @pure
 def _u64(cast_value: uint256) -> uint64:
     if cast_value > convert(max_value(uint64), uint256):
-        raise ISpokeConfigurator.SafeCastOverflowedUintDowncast(64, cast_value)
+        raise ISpokeConfigurator.SafeCastOverflowedUintDowncast(arg0=64, arg1=cast_value)
     return convert(cast_value, uint64)
 
 
@@ -48,7 +48,7 @@ def _u64(cast_value: uint256) -> uint64:
 @pure
 def _u32(cast_value: uint256) -> uint32:
     if cast_value > convert(max_value(uint32), uint256):
-        raise ISpokeConfigurator.SafeCastOverflowedUintDowncast(32, cast_value)
+        raise ISpokeConfigurator.SafeCastOverflowedUintDowncast(arg0=32, arg1=cast_value)
     return convert(cast_value, uint32)
 
 
@@ -56,7 +56,7 @@ def _u32(cast_value: uint256) -> uint32:
 @pure
 def _u24(cast_value: uint256) -> uint24:
     if cast_value > convert(max_value(uint24), uint256):
-        raise ISpokeConfigurator.SafeCastOverflowedUintDowncast(24, cast_value)
+        raise ISpokeConfigurator.SafeCastOverflowedUintDowncast(arg0=24, arg1=cast_value)
     return convert(cast_value, uint24)
 
 
@@ -64,7 +64,7 @@ def _u24(cast_value: uint256) -> uint24:
 @pure
 def _u16(cast_value: uint256) -> uint16:
     if cast_value > convert(max_value(uint16), uint256):
-        raise ISpokeConfigurator.SafeCastOverflowedUintDowncast(16, cast_value)
+        raise ISpokeConfigurator.SafeCastOverflowedUintDowncast(arg0=16, arg1=cast_value)
     return convert(cast_value, uint16)
 
 
@@ -77,7 +77,7 @@ def authority() -> address:
 @external
 def setAuthority(newAuthority: address):
     if msg.sender != self.authority_address:
-        raise ISpokeConfigurator.AccessManagedUnauthorized(msg.sender)
+        raise ISpokeConfigurator.AccessManagedUnauthorized(arg0=msg.sender)
     AccessManaged.validate_authority(newAuthority)
     self.authority_address = newAuthority
     log ISpokeConfigurator.AuthorityUpdated(authority=newAuthority)

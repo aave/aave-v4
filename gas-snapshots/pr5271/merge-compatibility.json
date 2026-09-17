@@ -1,0 +1,207 @@
+{
+  "compiler_commit": "1180f3e171cf0569e6d5ec01e916d9b289e12724",
+  "abi_and_selectors_unchanged_targets": 41,
+  "unchanged_production_layouts": 17,
+  "all_production_below_eip170": true,
+  "aggregate_production_deployed_bytes": 128772,
+  "artifacts": {
+    "AaveOracle": {
+      "runtime_bytes": 1197,
+      "bytecode_matches_experimental_head": true,
+      "immutable_bytes": 64,
+      "deployed_bytes": 1261
+    },
+    "AaveV4ConfigEngine": {
+      "runtime_bytes": 13109,
+      "bytecode_matches_experimental_head": true,
+      "immutable_bytes": 32,
+      "deployed_bytes": 13141
+    },
+    "AaveV4PayloadWrapper": {
+      "runtime_bytes": 23726,
+      "bytecode_matches_experimental_head": true
+    },
+    "AccessManagerEnumerable": {
+      "runtime_bytes": 15490,
+      "bytecode_matches_experimental_head": true,
+      "immutable_bytes": 0,
+      "deployed_bytes": 15490
+    },
+    "AssetInterestRateStrategy": {
+      "runtime_bytes": 1500,
+      "bytecode_matches_experimental_head": true,
+      "immutable_bytes": 32,
+      "deployed_bytes": 1532
+    },
+    "ConfigPermissionsMapHarness": {
+      "runtime_bytes": 580,
+      "bytecode_matches_experimental_head": true
+    },
+    "ConfigPositionManager": {
+      "runtime_bytes": 7278,
+      "bytecode_matches_experimental_head": true,
+      "immutable_bytes": 0,
+      "deployed_bytes": 7278
+    },
+    "EngineFlagsHarness": {
+      "runtime_bytes": 114,
+      "bytecode_matches_experimental_head": true
+    },
+    "ExtSload": {
+      "runtime_bytes": 745,
+      "bytecode_matches_experimental_head": true
+    },
+    "GiverPositionManager": {
+      "runtime_bytes": 3491,
+      "bytecode_matches_experimental_head": true,
+      "immutable_bytes": 0,
+      "deployed_bytes": 3491
+    },
+    "HubConfigurator": {
+      "runtime_bytes": 7321,
+      "bytecode_matches_experimental_head": true,
+      "immutable_bytes": 0,
+      "deployed_bytes": 7321
+    },
+    "HubInstance": {
+      "runtime_bytes": 16088,
+      "bytecode_matches_experimental_head": true,
+      "immutable_bytes": 0,
+      "deployed_bytes": 16088
+    },
+    "KeyValueListHarness": {
+      "runtime_bytes": 1092,
+      "bytecode_matches_experimental_head": true
+    },
+    "LiquidationLogicContract": {
+      "runtime_bytes": 3515,
+      "bytecode_matches_experimental_head": true,
+      "immutable_bytes": 0,
+      "deployed_bytes": 3515
+    },
+    "LiquidationLogicWrapper": {
+      "runtime_bytes": 11025,
+      "bytecode_matches_experimental_head": true
+    },
+    "MathHarness": {
+      "runtime_bytes": 2727,
+      "bytecode_matches_experimental_head": true
+    },
+    "MockHubInstance": {
+      "runtime_bytes": 16154,
+      "bytecode_matches_experimental_head": true
+    },
+    "MockSpokeInstance": {
+      "runtime_bytes": 23743,
+      "bytecode_matches_experimental_head": true
+    },
+    "MockSpokeStorage": {
+      "runtime_bytes": 2270,
+      "bytecode_matches_experimental_head": true
+    },
+    "MockTokenizationSpokeInstance": {
+      "runtime_bytes": 708,
+      "bytecode_matches_experimental_head": true
+    },
+    "MockTreasurySpokeInstance": {
+      "runtime_bytes": 559,
+      "bytecode_matches_experimental_head": true
+    },
+    "NativeTokenGateway": {
+      "runtime_bytes": 3784,
+      "bytecode_matches_experimental_head": true,
+      "immutable_bytes": 32,
+      "deployed_bytes": 3816
+    },
+    "NoncesKeyedHarness": {
+      "runtime_bytes": 429,
+      "bytecode_matches_experimental_head": true
+    },
+    "PositionManagerBaseWrapper": {
+      "runtime_bytes": 2545,
+      "bytecode_matches_experimental_head": true
+    },
+    "PositionManagerEIP712HashHarness": {
+      "runtime_bytes": 1828,
+      "bytecode_matches_experimental_head": true
+    },
+    "PositionManagerNoMulticall": {
+      "runtime_bytes": 2047,
+      "bytecode_matches_experimental_head": true
+    },
+    "PositionStatusMapHarness": {
+      "runtime_bytes": 2844,
+      "bytecode_matches_experimental_head": true
+    },
+    "RescuableHarness": {
+      "runtime_bytes": 369,
+      "bytecode_matches_experimental_head": true
+    },
+    "ReserveFlagsMapHarness": {
+      "runtime_bytes": 713,
+      "bytecode_matches_experimental_head": true
+    },
+    "RolesHarness": {
+      "runtime_bytes": 316,
+      "bytecode_matches_experimental_head": true
+    },
+    "SafeERC20Harness": {
+      "runtime_bytes": 464,
+      "bytecode_matches_experimental_head": true
+    },
+    "SignatureGateway": {
+      "runtime_bytes": 7960,
+      "bytecode_matches_experimental_head": true,
+      "immutable_bytes": 0,
+      "deployed_bytes": 7960
+    },
+    "SpokeConfigurator": {
+      "runtime_bytes": 5123,
+      "bytecode_matches_experimental_head": true,
+      "immutable_bytes": 0,
+      "deployed_bytes": 5123
+    },
+    "SpokeEIP712HashHarness": {
+      "runtime_bytes": 1374,
+      "bytecode_matches_experimental_head": true
+    },
+    "SpokeInstance": {
+      "runtime_bytes": 23128,
+      "bytecode_matches_experimental_head": true,
+      "immutable_bytes": 96,
+      "deployed_bytes": 23224
+    },
+    "SpokeUtilsHarness": {
+      "runtime_bytes": 407,
+      "bytecode_matches_experimental_head": true
+    },
+    "TakerPositionManager": {
+      "runtime_bytes": 6975,
+      "bytecode_matches_experimental_head": true,
+      "immutable_bytes": 0,
+      "deployed_bytes": 6975
+    },
+    "TokenizationSpokeDeployer": {
+      "runtime_bytes": 1599,
+      "bytecode_matches_experimental_head": true,
+      "immutable_bytes": 0,
+      "deployed_bytes": 1599
+    },
+    "TokenizationSpokeInstance": {
+      "runtime_bytes": 8553,
+      "bytecode_matches_experimental_head": true,
+      "immutable_bytes": 192,
+      "deployed_bytes": 8745
+    },
+    "TreasurySpokeInstance": {
+      "runtime_bytes": 2213,
+      "bytecode_matches_experimental_head": true,
+      "immutable_bytes": 0,
+      "deployed_bytes": 2213
+    },
+    "UserPositionUtilsHarness": {
+      "runtime_bytes": 1655,
+      "bytecode_matches_experimental_head": true
+    }
+  }
+}

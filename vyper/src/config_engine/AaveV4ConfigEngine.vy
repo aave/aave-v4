@@ -41,7 +41,7 @@ def __init__(tokenizationSpokeDeployer: address):
 @pure
 def _to_bool(flag: uint256) -> bool:
     if flag > 1:
-        raise IAaveV4ConfigEngine.InvalidBoolValue(flag)
+        raise IAaveV4ConfigEngine.InvalidBoolValue(arg0=flag)
     return flag == 1
 
 
@@ -49,7 +49,7 @@ def _to_bool(flag: uint256) -> bool:
 @pure
 def _u128(cast_value: uint256) -> uint128:
     if cast_value > convert(max_value(uint128), uint256):
-        raise IAaveV4ConfigEngine.SafeCastOverflowedUintDowncast(128, cast_value)
+        raise IAaveV4ConfigEngine.SafeCastOverflowedUintDowncast(arg0=128, arg1=cast_value)
     return convert(cast_value, uint128)
 
 
@@ -57,7 +57,7 @@ def _u128(cast_value: uint256) -> uint128:
 @pure
 def _u64(cast_value: uint256) -> uint64:
     if cast_value > convert(max_value(uint64), uint256):
-        raise IAaveV4ConfigEngine.SafeCastOverflowedUintDowncast(64, cast_value)
+        raise IAaveV4ConfigEngine.SafeCastOverflowedUintDowncast(arg0=64, arg1=cast_value)
     return convert(cast_value, uint64)
 
 
@@ -65,7 +65,7 @@ def _u64(cast_value: uint256) -> uint64:
 @pure
 def _u32(cast_value: uint256) -> uint32:
     if cast_value > convert(max_value(uint32), uint256):
-        raise IAaveV4ConfigEngine.SafeCastOverflowedUintDowncast(32, cast_value)
+        raise IAaveV4ConfigEngine.SafeCastOverflowedUintDowncast(arg0=32, arg1=cast_value)
     return convert(cast_value, uint32)
 
 
@@ -73,7 +73,7 @@ def _u32(cast_value: uint256) -> uint32:
 @pure
 def _u16(cast_value: uint256) -> uint16:
     if cast_value > convert(max_value(uint16), uint256):
-        raise IAaveV4ConfigEngine.SafeCastOverflowedUintDowncast(16, cast_value)
+        raise IAaveV4ConfigEngine.SafeCastOverflowedUintDowncast(arg0=16, arg1=cast_value)
     return convert(cast_value, uint16)
 
 
@@ -81,7 +81,7 @@ def _u16(cast_value: uint256) -> uint16:
 @pure
 def _u40(cast_value: uint256) -> uint40:
     if cast_value > convert(max_value(uint40), uint256):
-        raise IAaveV4ConfigEngine.SafeCastOverflowedUintDowncast(40, cast_value)
+        raise IAaveV4ConfigEngine.SafeCastOverflowedUintDowncast(arg0=40, arg1=cast_value)
     return convert(cast_value, uint40)
 
 

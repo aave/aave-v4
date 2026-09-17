@@ -54,7 +54,7 @@ WAD: constant(uint256) = 10**18
 
 @pure
 def _panic_arithmetic():
-    raise Errors.Panic(17)
+    raise Errors.Panic(arg0=17)
 
 
 @pure

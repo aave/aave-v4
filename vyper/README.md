@@ -1,7 +1,7 @@
 # Aave V4 Vyper implementation
 
 This tree contains the Vyper implementation of Aave V4, compiled with Vyper
-0.5.0b2 at merge commit `8af5e83c` (PR #5232). The compiler commit is pinned in
+0.5.0b2 at merge commit `1180f3e171cf0569e6d5ec01e916d9b289e12724` (PR #5271). The compiler commit is pinned in
 `requirements.txt` and every source file also has an exact version pragma.
 
 This is a fresh-deployment prototype, not a complete behavioral or storage-compatible
@@ -67,3 +67,11 @@ to 1,024 updates; this does not preserve the full Solidity input domain. Persist
 mapping-plus-length because the compiler change does not apply to storage, and
 short finite internal batches remain bounded where direct measurements show
 that the unbounded allocator's fixed cost is higher.
+
+The pin also includes PR #5271: Venom supports `raw_call(..., max_outsize=INF)`
+to capture complete successful returndata as `Bytes[INF]`, or `(bool, Bytes[INF])`
+with `revert_on_failure=False`. Focused regression fixtures and reproduction
+instructions are in [the PR #5271 report](../gas-snapshots/pr5271/README.md).
+This compiler upgrade does not change the port's existing bounded call sites:
+fully unbounded nested multicall results still need additional compiler support.
+Custom-error calls use declared keyword arguments, as required by the newer compiler.

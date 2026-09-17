@@ -18,7 +18,7 @@ initialized_state: uint256
 @view
 def _check_owner():
     if msg.sender != self.owner_address:
-        raise ITreasurySpoke.OwnableUnauthorizedAccount(msg.sender)
+        raise ITreasurySpoke.OwnableUnauthorizedAccount(arg0=msg.sender)
 
 
 @internal
@@ -53,7 +53,7 @@ def initialize(owner: address):
     if initializing or initialized >= SPOKE_REVISION:
         raise ITreasurySpoke.InvalidInitialization()
     if owner == empty(address):
-        raise ITreasurySpoke.OwnableInvalidOwner(owner)
+        raise ITreasurySpoke.OwnableInvalidOwner(arg0=owner)
 
     self.initialized_state = convert(SPOKE_REVISION, uint256)
     previous_owner: address = self.owner_address
@@ -85,7 +85,7 @@ def transferOwnership(newOwner: address):
 @external
 def acceptOwnership():
     if msg.sender != self.pending_owner_address:
-        raise ITreasurySpoke.OwnableUnauthorizedAccount(msg.sender)
+        raise ITreasurySpoke.OwnableUnauthorizedAccount(arg0=msg.sender)
     previous_owner: address = self.owner_address
     self.pending_owner_address = empty(address)
     self.owner_address = msg.sender

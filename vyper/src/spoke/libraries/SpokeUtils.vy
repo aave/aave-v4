@@ -7,7 +7,7 @@ WAD_DECIMALS: constant(uint256) = 18
 
 @pure
 def _panic_arithmetic():
-    raise Errors.Panic(17)
+    raise Errors.Panic(arg0=17)
 
 
 @pure

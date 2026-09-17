@@ -93,7 +93,7 @@ def __init__(liquidationLogic_: address, oracle_: address, maxUserReservesLimit_
 @internal
 @pure
 def _panic_arithmetic():
-    raise Errors.Panic(convert(17, uint256))
+    raise Errors.Panic(arg0=convert(17, uint256))
 
 
 @internal
@@ -112,7 +112,7 @@ def _exit_nonreentrant():
 @pure
 def _u120(cast_value: uint256) -> uint120:
     if cast_value > convert(max_value(uint120), uint256):
-        raise ISpoke.SafeCastOverflowedUintDowncast(120, cast_value)
+        raise ISpoke.SafeCastOverflowedUintDowncast(arg0=120, arg1=cast_value)
     return convert(cast_value, uint120)
 
 
@@ -120,7 +120,7 @@ def _u120(cast_value: uint256) -> uint120:
 @pure
 def _u32(cast_value: uint256) -> uint32:
     if cast_value > convert(max_value(uint32), uint256):
-        raise ISpoke.SafeCastOverflowedUintDowncast(32, cast_value)
+        raise ISpoke.SafeCastOverflowedUintDowncast(arg0=32, arg1=cast_value)
     return convert(cast_value, uint32)
 
 
@@ -128,7 +128,7 @@ def _u32(cast_value: uint256) -> uint32:
 @pure
 def _u24(cast_value: uint256) -> uint24:
     if cast_value > convert(max_value(uint24), uint256):
-        raise ISpoke.SafeCastOverflowedUintDowncast(24, cast_value)
+        raise ISpoke.SafeCastOverflowedUintDowncast(arg0=24, arg1=cast_value)
     return convert(cast_value, uint24)
 
 
@@ -289,7 +289,7 @@ def _use_checked_nonce(owner: address, key_nonce: uint256):
     nonce: uint64 = convert(self.nonces_by_owner[owner][key] & (2**64 - 1), uint64)
     current: uint256 = self._pack_nonce(key, nonce)
     if key_nonce != current:
-        raise ISpoke.InvalidAccountNonce(owner, current)
+        raise ISpoke.InvalidAccountNonce(arg0=owner, arg1=current)
     self.nonces_by_owner[owner][key] = convert(unsafe_add(nonce, 1), uint256)
 
 
@@ -325,7 +325,7 @@ def authority() -> address:
 @external
 def setAuthority(newAuthority: address):
     if msg.sender != self.authority_address:
-        raise ISpoke.AccessManagedUnauthorized(msg.sender)
+        raise ISpoke.AccessManagedUnauthorized(arg0=msg.sender)
     AccessManaged.validate_authority(newAuthority)
     self.authority_address = newAuthority
     log ISpoke.AuthorityUpdated(authority=newAuthority)
@@ -1376,7 +1376,7 @@ def __default__() -> Bytes[INF]:
             is_delegate_call=True,
         )
         if len(result) > 256:
-            raise ReturndataTooLarge(256)
+            raise ReturndataTooLarge(maximum=256)
         encoded_result: Bytes[INF] = abi_encode(result, ensure_tuple=False)
         heads.append(convert(output_offset, bytes32))
         for word: uint256 in range(9):

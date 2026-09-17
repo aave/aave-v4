@@ -13,7 +13,7 @@ ERC1271_MAGIC: constant(bytes32) = 0x1626ba7e00000000000000000000000000000000000
 @pure
 def recover(digest: bytes32, v: uint256, r: bytes32, s: bytes32) -> address:
     if convert(s, uint256) > HALF_ORDER:
-        raise ECDSAInvalidSignatureS(s)
+        raise ECDSAInvalidSignatureS(s=s)
     signer: address = ecrecover(digest, v, r, s)
     if signer == empty(address):
         raise ECDSAInvalidSignature()
