@@ -8,22 +8,28 @@ Inputs live in `config/base.json` and `config/base-config.json`. Scripts are `sc
 
 ## The end state
 
-The market reproduces what the live **Ethereum** V4 market runs with. That map was read off the chain itself rather than inferred, and the tests assert it.
+The market reproduces what the live **Avalanche** V4 market runs with, member counts included. That map was read off the chain itself rather than inferred, and the tests assert it.
 
-**Roles.** The Security Council Safe admins the AccessManager. Its executor is what actually executes the Council's configuration payloads, so it holds the two configurator domain admin roles — alongside the Council itself and the DAO's own governance executor, which can both reach the configurators directly.
+**Roles.** The Security Council Safe admins the AccessManager. Its executor is what actually executes the Council's configuration payloads, so it is the executor — not the Council — that holds the two configurator domain admin roles.
 
-| Role                                  | Holder                                                   |
-| ------------------------------------- | -------------------------------------------------------- |
-| `0` ACCESS_MANAGER_ADMIN              | Security Council **+** governance executor               |
-| `101` HUB_CONFIGURATOR_ROLE           | the HubConfigurator                                      |
-| `200` HUB_CONFIGURATOR_DOMAIN_ADMIN   | Council **+** Council executor **+** governance executor |
-| `301` SPOKE_CONFIGURATOR_ROLE         | the SpokeConfigurator                                    |
-| `400` SPOKE_CONFIGURATOR_DOMAIN_ADMIN | Council **+** Council executor **+** governance executor |
-| `100`, `102`, `103`, `300`, `302`     | nobody                                                   |
+| Role                                  | Holder                                     | Members |
+| ------------------------------------- | ------------------------------------------ | ------- |
+| `0` ACCESS_MANAGER_ADMIN              | Security Council **+** governance executor | 2       |
+| `101` HUB_CONFIGURATOR_ROLE           | the HubConfigurator                        | 1       |
+| `200` HUB_CONFIGURATOR_DOMAIN_ADMIN   | Council executor **+** governance executor | 2       |
+| `301` SPOKE_CONFIGURATOR_ROLE         | the SpokeConfigurator                      | 1       |
+| `400` SPOKE_CONFIGURATOR_DOMAIN_ADMIN | Council executor                           | 1       |
+| `100`, `102`, `103`, `300`, `302`     | nobody                                     | 0       |
 
 The five empty roles reach the Hub and Spokes directly rather than through a configurator, and are unheld on both live markets: nothing at launch calls `mintFeeShares`, `eliminateDeficit` or the user position updaters, and role `0` can grant them when something does. `config/base.json` therefore carries `hubAdmin` and `spokeAdmin` as the zero address, and `AaveV4BaseHandover.verifyRoleHolders` asserts those roles are empty rather than only asserting the deployer is not in them.
 
-The two configurator domain admin roles carry the same three holders, which is Ethereum's shape. Avalanche differs — it grants neither role to the Council and keeps the governance executor off role `400` — but that asymmetry has no counterpart in how the market is operated, and the Council holding role `0` could grant itself both at any time regardless. `test_relinquishGrantsTheEthereumRoleMap` pins the exact member count of each role, so an extra holder fails the test rather than passing unnoticed.
+**The Council does not hold roles `200` and `400` itself.** Ethereum grants it both directly, Avalanche grants it neither, and this follows Avalanche. That is a choice of default posture rather than of capability — on either market the Council holds role `0` and can grant itself either role whenever it wants.
+
+**Role `400` is the Council executor alone**, which is Avalanche's shape too and the asymmetry worth knowing about before writing a payload: the DAO's governance executor can reach the HubConfigurator but not the SpokeConfigurator. Reserve configs, caps, price sources and spoke-side halting all go through the Council executor.
+
+Worth recording, because it is not obvious and will come up again: **this map cannot be produced by `grantRoles: true`.** Deploy-time granting runs `grantHubAllRoles`/`grantSpokeAllRoles`, which require a non-zero `hubAdmin`/`spokeAdmin` and put it in roles `101`, `102`, `103`, `301` and `302`, and `replaceDefaultAdminRole`, which drops the deployer from role `0`. Read Arc's live map and that is exactly what it looks like — Arc role `101` is the HubConfigurator plus the Council, `102` and `103` are the Council, role `0` is the Council alone. Ethereum and Avalanche do not look like that precisely because their roles were granted after deploy, which is what `AaveV4RelinquishBase` does here.
+
+`verifyRoleHolders` and `test_relinquishGrantsTheAvalancheRoleMap` both pin the exact member count of every role, so an extra holder fails the handover rather than passing unnoticed.
 
 **Ownership.** Everything ends up with the Security Council, which is how both live markets read on-chain today.
 

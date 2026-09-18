@@ -249,8 +249,9 @@ contract AaveV4BaseConfigureAndRelinquishTest is Test, Create2TestHelper, AaveV4
     assertEq(config.drawCap, 0, 'tokenization draw cap');
   }
 
-  /// @notice The handover reproduces the role map of the live Ethereum market.
-  function test_relinquishGrantsTheEthereumRoleMap() public {
+  /// @notice The handover reproduces the role map of the live Avalanche market, member counts
+  ///         included, so an extra holder fails rather than passing unnoticed.
+  function test_relinquishGrantsTheAvalancheRoleMap() public {
     _configure();
     _relinquish();
 
@@ -259,19 +260,20 @@ contract AaveV4BaseConfigureAndRelinquishTest is Test, Create2TestHelper, AaveV4
 
     _assertHasRole(Roles.ACCESS_MANAGER_ADMIN_ROLE, _targets.securityCouncil, true);
     _assertHasRole(Roles.ACCESS_MANAGER_ADMIN_ROLE, _targets.governanceExecutor, true);
+    _assertRoleMemberCount(Roles.ACCESS_MANAGER_ADMIN_ROLE, 2);
 
-    // both configurator domain admin roles carry the same three holders
-    address[3] memory admins = [
-      _targets.securityCouncil,
-      _targets.councilExecutor,
-      _targets.governanceExecutor
-    ];
-    for (uint256 i; i < admins.length; ++i) {
-      _assertHasRole(Roles.HUB_CONFIGURATOR_DOMAIN_ADMIN_ROLE, admins[i], true);
-      _assertHasRole(Roles.SPOKE_CONFIGURATOR_DOMAIN_ADMIN_ROLE, admins[i], true);
-    }
-    _assertRoleMemberCount(Roles.HUB_CONFIGURATOR_DOMAIN_ADMIN_ROLE, admins.length);
-    _assertRoleMemberCount(Roles.SPOKE_CONFIGURATOR_DOMAIN_ADMIN_ROLE, admins.length);
+    // the Council reaches the configurators through its executor rather than holding either domain
+    // admin role itself, which is Avalanche's shape and not Ethereum's
+    _assertHasRole(Roles.HUB_CONFIGURATOR_DOMAIN_ADMIN_ROLE, _targets.councilExecutor, true);
+    _assertHasRole(Roles.HUB_CONFIGURATOR_DOMAIN_ADMIN_ROLE, _targets.governanceExecutor, true);
+    _assertHasRole(Roles.HUB_CONFIGURATOR_DOMAIN_ADMIN_ROLE, _targets.securityCouncil, false);
+    _assertRoleMemberCount(Roles.HUB_CONFIGURATOR_DOMAIN_ADMIN_ROLE, 2);
+
+    // role 400 is the Council executor alone: the governance executor is off it too
+    _assertHasRole(Roles.SPOKE_CONFIGURATOR_DOMAIN_ADMIN_ROLE, _targets.councilExecutor, true);
+    _assertHasRole(Roles.SPOKE_CONFIGURATOR_DOMAIN_ADMIN_ROLE, _targets.governanceExecutor, false);
+    _assertHasRole(Roles.SPOKE_CONFIGURATOR_DOMAIN_ADMIN_ROLE, _targets.securityCouncil, false);
+    _assertRoleMemberCount(Roles.SPOKE_CONFIGURATOR_DOMAIN_ADMIN_ROLE, 1);
 
     // the roles that reach the Hub and Spokes directly are left unheld
     _assertRoleEmpty(Roles.HUB_DOMAIN_ADMIN_ROLE);
@@ -280,9 +282,11 @@ contract AaveV4BaseConfigureAndRelinquishTest is Test, Create2TestHelper, AaveV4
     _assertRoleEmpty(Roles.SPOKE_DOMAIN_ADMIN_ROLE);
     _assertRoleEmpty(Roles.SPOKE_USER_POSITION_UPDATER_ROLE);
 
-    // the configurators keep the roles they call the Hub and Spokes with
+    // the configurators keep the roles they call the Hub and Spokes with, and hold them alone
     _assertHasRole(Roles.HUB_CONFIGURATOR_ROLE, _market.hubConfigurator, true);
+    _assertRoleMemberCount(Roles.HUB_CONFIGURATOR_ROLE, 1);
     _assertHasRole(Roles.SPOKE_CONFIGURATOR_ROLE, _market.spokeConfigurator, true);
+    _assertRoleMemberCount(Roles.SPOKE_CONFIGURATOR_ROLE, 1);
   }
 
   /// @notice After the handover the deployer can no longer configure or grant.
@@ -340,6 +344,32 @@ contract AaveV4BaseConfigureAndRelinquishTest is Test, Create2TestHelper, AaveV4
 
     vm.expectRevert(
       abi.encodeWithSelector(AaveV4BaseHandover.RoleNotEmpty.selector, Roles.HUB_FEE_MINTER_ROLE)
+    );
+    this.verifyHandover();
+  }
+
+  /// @notice Verification fails if a domain admin role gains a holder the end state does not call
+  ///         for, even though every expected holder is still in place.
+  /// @dev The Council on role 200 is the specific regression worth pinning: it is what Ethereum
+  ///      runs with, so it is the plausible way this drifts back.
+  function test_verifyRejectsExtraDomainAdmin() public {
+    _configure();
+    _relinquish();
+
+    vm.prank(_targets.securityCouncil);
+    IAccessManager(_market.accessManager).grantRole(
+      Roles.HUB_CONFIGURATOR_DOMAIN_ADMIN_ROLE,
+      _targets.securityCouncil,
+      0
+    );
+
+    vm.expectRevert(
+      abi.encodeWithSelector(
+        AaveV4BaseHandover.UnexpectedRoleMemberCount.selector,
+        Roles.HUB_CONFIGURATOR_DOMAIN_ADMIN_ROLE,
+        3,
+        2
+      )
     );
     this.verifyHandover();
   }

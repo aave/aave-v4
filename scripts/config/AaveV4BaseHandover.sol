@@ -20,25 +20,30 @@ import {IHub} from 'src/hub/interfaces/IHub.sol';
 /// deployer drops its own, because revoking the AccessManager admin role first would strand the
 /// rest.
 ///
-/// The end state reproduces the live Ethereum V4 market:
+/// The end state reproduces the live Avalanche V4 market exactly, member counts included:
 ///
-/// | role                                    | holder                                             |
-/// | --------------------------------------- | -------------------------------------------------- |
-/// | 0   ACCESS_MANAGER_ADMIN                | Security Council + governance executor             |
-/// | 101 HUB_CONFIGURATOR_ROLE               | the HubConfigurator                                |
-/// | 200 HUB_CONFIGURATOR_DOMAIN_ADMIN       | Council + Council executor + governance executor   |
-/// | 301 SPOKE_CONFIGURATOR_ROLE             | the SpokeConfigurator                              |
-/// | 400 SPOKE_CONFIGURATOR_DOMAIN_ADMIN     | Council + Council executor + governance executor   |
-/// | 100, 102, 103, 300, 302                 | nobody                                             |
+/// | role                                    | holder                                 | members |
+/// | --------------------------------------- | -------------------------------------- | ------- |
+/// | 0   ACCESS_MANAGER_ADMIN                | Security Council + governance executor | 2       |
+/// | 101 HUB_CONFIGURATOR_ROLE               | the HubConfigurator                    | 1       |
+/// | 200 HUB_CONFIGURATOR_DOMAIN_ADMIN       | Council executor + governance executor | 2       |
+/// | 301 SPOKE_CONFIGURATOR_ROLE             | the SpokeConfigurator                  | 1       |
+/// | 400 SPOKE_CONFIGURATOR_DOMAIN_ADMIN     | Council executor                       | 1       |
+/// | 100, 102, 103, 300, 302                 | nobody                                 | 0       |
 ///
 /// Roles 100, 102, 103, 300 and 302 reach the Hub and Spokes directly rather than through a
 /// configurator, and are left unheld on both live markets: nothing at launch calls `mintFeeShares`,
 /// `eliminateDeficit` or the user position updaters, and role 0 can grant them when something does.
 ///
-/// The two configurator domain admin roles carry the same three holders, which is what Ethereum runs
-/// with. Avalanche differs — it grants neither role to the Council and keeps the governance executor
-/// off role 400 — but that asymmetry has no counterpart in how the market is operated, and the
-/// Council holding role 0 could grant itself both at any time regardless.
+/// The Security Council reaches the configurators through its executor rather than holding roles 200
+/// and 400 itself. Ethereum grants it both directly, Avalanche grants it neither, and this follows
+/// Avalanche. That is a choice of default posture rather than of capability: the Council holds role
+/// 0 on either market and can grant itself either role whenever it wants.
+///
+/// Role 400 carrying the Council executor alone is Avalanche's shape too, and it is the asymmetry
+/// worth knowing about before writing a payload: the DAO's governance executor can reach the
+/// HubConfigurator but not the SpokeConfigurator, so reserve configs, caps, price sources and
+/// spoke-side halting all have to go through the Council executor.
 library AaveV4BaseHandover {
   /// @notice Thrown when the deployer still holds a role after the handover.
   error RoleNotRelinquished(uint64 role);
@@ -46,6 +51,9 @@ library AaveV4BaseHandover {
   error RoleNotGranted(uint64 role, address account);
   /// @notice Thrown when a role that must be left unheld has a member.
   error RoleNotEmpty(uint64 role);
+  /// @notice Thrown when a role holds a different number of members than the end state calls for,
+  /// which is what catches a holder nothing here knows to look for.
+  error UnexpectedRoleMemberCount(uint64 role, uint256 members, uint256 expected);
   /// @notice Thrown when a contract is not owned by its end-state holder.
   error UnexpectedOwner(address target, address owner);
   /// @notice Thrown when a Spoke registered on the Hub is not a transparent proxy, so it has no
@@ -103,26 +111,28 @@ library AaveV4BaseHandover {
       adminToAdd: targets.governanceExecutor
     });
 
-    address[3] memory admins = configuratorAdmins(targets);
-    for (uint256 i; i < admins.length; ++i) {
+    address[2] memory hubAdmins = hubConfiguratorAdmins(targets);
+    for (uint256 i; i < hubAdmins.length; ++i) {
       AaveV4HubConfiguratorRolesProcedure.grantHubConfiguratorAllRoles({
         accessManager: market.accessManager,
-        admin: admins[i]
-      });
-      AaveV4SpokeConfiguratorRolesProcedure.grantSpokeConfiguratorAllRoles({
-        accessManager: market.accessManager,
-        admin: admins[i]
+        admin: hubAdmins[i]
       });
     }
+
+    AaveV4SpokeConfiguratorRolesProcedure.grantSpokeConfiguratorAllRoles({
+      accessManager: market.accessManager,
+      admin: targets.councilExecutor
+    });
   }
 
   /// @notice The three addresses that hold both configurator domain admin roles.
   /// @param targets The addresses the market is handed over to.
   /// @return The Council, its executor and the governance executor.
-  function configuratorAdmins(
+  /// @dev Role 400 is not derived from this: Avalanche grants it to the Council executor alone.
+  function hubConfiguratorAdmins(
     AaveV4BaseConfigInputs.Handover memory targets
-  ) internal pure returns (address[3] memory) {
-    return [targets.securityCouncil, targets.councilExecutor, targets.governanceExecutor];
+  ) internal pure returns (address[2] memory) {
+    return [targets.councilExecutor, targets.governanceExecutor];
   }
 
   /// @notice Starts the ownership transfer of every position manager and gateway to the Council.
@@ -212,16 +222,22 @@ library AaveV4BaseHandover {
   ) internal view {
     _requireRole(market, Roles.ACCESS_MANAGER_ADMIN_ROLE, targets.securityCouncil);
     _requireRole(market, Roles.ACCESS_MANAGER_ADMIN_ROLE, targets.governanceExecutor);
+    _requireRoleMemberCount(market, Roles.ACCESS_MANAGER_ADMIN_ROLE, 2);
 
-    address[3] memory admins = configuratorAdmins(targets);
-    for (uint256 i; i < admins.length; ++i) {
-      _requireRole(market, Roles.HUB_CONFIGURATOR_DOMAIN_ADMIN_ROLE, admins[i]);
-      _requireRole(market, Roles.SPOKE_CONFIGURATOR_DOMAIN_ADMIN_ROLE, admins[i]);
+    address[2] memory hubAdmins = hubConfiguratorAdmins(targets);
+    for (uint256 i; i < hubAdmins.length; ++i) {
+      _requireRole(market, Roles.HUB_CONFIGURATOR_DOMAIN_ADMIN_ROLE, hubAdmins[i]);
     }
+    _requireRoleMemberCount(market, Roles.HUB_CONFIGURATOR_DOMAIN_ADMIN_ROLE, hubAdmins.length);
+
+    _requireRole(market, Roles.SPOKE_CONFIGURATOR_DOMAIN_ADMIN_ROLE, targets.councilExecutor);
+    _requireRoleMemberCount(market, Roles.SPOKE_CONFIGURATOR_DOMAIN_ADMIN_ROLE, 1);
 
     // the configurators keep calling the Hub and Spokes on the Council's behalf
     _requireRole(market, Roles.HUB_CONFIGURATOR_ROLE, market.hubConfigurator);
+    _requireRoleMemberCount(market, Roles.HUB_CONFIGURATOR_ROLE, 1);
     _requireRole(market, Roles.SPOKE_CONFIGURATOR_ROLE, market.spokeConfigurator);
+    _requireRoleMemberCount(market, Roles.SPOKE_CONFIGURATOR_ROLE, 1);
 
     _requireRoleEmpty(market, Roles.HUB_DOMAIN_ADMIN_ROLE);
     _requireRoleEmpty(market, Roles.HUB_FEE_MINTER_ROLE);
@@ -319,6 +335,17 @@ library AaveV4BaseHandover {
       IAccessManagerEnumerable(market.accessManager).getRoleMemberCount(role) == 0,
       RoleNotEmpty(role)
     );
+  }
+
+  /// @dev Pins the exact size of a role, so an extra holder fails the handover even when every
+  /// expected holder is in place.
+  function _requireRoleMemberCount(
+    AaveV4BaseConfigInputs.Market memory market,
+    uint64 role,
+    uint256 expected
+  ) private view {
+    uint256 members = IAccessManagerEnumerable(market.accessManager).getRoleMemberCount(role);
+    require(members == expected, UnexpectedRoleMemberCount(role, members, expected));
   }
 
   function _requireProxyAdminOwner(address proxy, address expectedOwner) private view {
