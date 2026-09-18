@@ -36,7 +36,7 @@ This runs `AaveV4DeployOrchestration.deployAaveV4()`, which deploys batches in o
 
 ### BabylonSpoke
 
-`BabylonSpoke` instances are deployed by the orchestration when `babylonSpokeLabels` is set, reusing the spoke deploy procedure and the canonical spoke roles. Each instance takes its liquidation manager (`babylonLiquidationManagers`) and its managed collateral reserve id (`babylonManagedCollateralReserveIds`) as constructor arguments, both parallel to `babylonSpokeLabels`; they are immutable, so changing either means a new implementation. The user reserves limit is fixed at one in the bytecode (one collateral and one debt reserve per user). The managed collateral reserve can never be borrowable: listing it, updating its config and upgrading a spoke where it is already listed all revert when the flag is set.
+`BabylonSpoke` instances are deployed by the orchestration when `babylonSpokeLabels` is set, reusing the spoke deploy procedure and the canonical spoke roles. Each instance takes its liquidation manager and its managed collateral reserve id as constructor arguments, read from `babylonLiquidationManagers` and `babylonManagedCollateralReserveIds`, both parallel to `babylonSpokeLabels`. Both values are immutable, so changing either means a new implementation. The user reserves limit is fixed at one in the bytecode, one collateral and one debt reserve per user. The managed collateral reserve can never be borrowable. Listing it, updating its config and upgrading a spoke where it is already listed all revert when the flag is set.
 
 ### TokenizationSpoke
 

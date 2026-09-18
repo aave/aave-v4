@@ -8,7 +8,7 @@ import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 /// @author Aave Labs
 /// @notice Full interface for the BabylonSpoke.
 interface IBabylonSpoke is ISpoke {
-  /// @notice Emitted on initialization, reporting the immutables specific to the BabylonSpoke.
+  /// @notice Emitted when the immutable variables specific to the BabylonSpoke are set.
   /// @param liquidationManager The only address allowed to perform liquidations on this Spoke.
   /// @param managedCollateralReserveId The identifier of the only reserve usable as collateral.
   event SetBabylonSpokeImmutables(address liquidationManager, uint256 managedCollateralReserveId);
