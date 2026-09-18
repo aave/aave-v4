@@ -45,12 +45,13 @@ deploy-contracts :;
 	--rpc-url ${chain} --account ${account} --slow \
 	$(if ${dry},, --broadcast --verify) \
 
-# Step 3: Configure the market and halt every listed asset on the Hub
+# Step 3: Configure the market and halt every listed asset on the Hub.
+# Verifies as well, because listing a tokenized asset deploys its TokenizationSpoke here.
 # `make configure-market chain=base account=<keystore-name> script=AaveV4ConfigureBase`
 configure-market :;
 	FOUNDRY_PROFILE=${chain} forge script scripts/config/${script}.s.sol:${script} \
 	--rpc-url ${chain} --account ${account} --slow \
-	$(if ${dry},, --broadcast) \
+	$(if ${dry},, --broadcast --verify) \
 
 # Step 4: Hand the market over and verify the deployer holds nothing
 # `make relinquish-market chain=base account=<keystore-name> script=AaveV4RelinquishBase`
@@ -66,3 +67,14 @@ deploy-config-engine :;
 	FOUNDRY_PROFILE=${chain} forge script scripts/config/${script}.s.sol:${script} \
 	--rpc-url ${chain} --account ${account} --slow \
 	$(if ${dry},, --broadcast --verify) \
+
+# Base equities market, chain id 8453. Every target takes the cast wallet keystore account to
+# broadcast from, and `dry=true` to simulate instead: `make base-deploy account=<keystore-name>`.
+# Run them in order; see docs/base-deploy.md for what goes between the steps.
+base-account :; cast wallet address --account ${account}
+
+base-precompile :; make deploy-precompile chain=base account=${account} dry=${dry}
+base-deploy :; make deploy-contracts chain=base account=${account} script=AaveV4DeployBase dry=${dry}
+base-configure :; make configure-market chain=base account=${account} script=AaveV4ConfigureBase dry=${dry}
+base-relinquish :; make relinquish-market chain=base account=${account} script=AaveV4RelinquishBase dry=${dry}
+base-config-engine :; make deploy-config-engine chain=base account=${account} script=DeployBaseConfigEngine dry=${dry}

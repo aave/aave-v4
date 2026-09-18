@@ -1,13 +1,17 @@
 // SPDX-License-Identifier: LicenseRef-BUSL
 pragma solidity ^0.8.0;
 
+import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
+
 import {Vm} from 'forge-std/Vm.sol';
 
 /// @title AaveV4BaseConfigInputs
 /// @author Aave Labs
 /// @notice Reads the inputs shared by the Base configuration and handover scripts: the addresses of
-/// a deployed Base market, the handover targets, and the assets to list.
+/// a deployed Base market, the handover targets, and the assets to list with their risk parameters.
 library AaveV4BaseConfigInputs {
+  using SafeCast for uint256;
+
   Vm internal constant vm = Vm(address(uint160(uint256(keccak256('hevm cheat code')))));
 
   /// @dev Deploy inputs, which also carry the handover targets.
@@ -50,13 +54,45 @@ library AaveV4BaseConfigInputs {
     address positionManagerOwner;
   }
 
-  /// @notice An asset to list, with the price feed its Spoke reserves read it through.
+  /// @notice An asset to list, with the price feed its Spoke reserves read it through and the risk
+  /// parameters it is listed with.
+  /// @dev symbol The underlying's symbol, used for error reporting and logging only.
+  /// @dev priceSource The price feed of the asset, which must report 8 decimals.
+  /// @dev liquidityFee The protocol fee on drawn and premium liquidity growth, in BPS.
+  /// @dev optimalUsageRatio The usage ratio the rate curve kinks at, in BPS.
+  /// @dev baseDrawnRate The drawn rate at zero usage, in BPS.
+  /// @dev rateGrowthBeforeOptimal The rate added between zero and optimal usage, in BPS.
+  /// @dev rateGrowthAfterOptimal The rate added between optimal and full usage, in BPS.
+  /// @dev addCap The most the Spoke can add, in whole assets.
+  /// @dev drawCap The most the Spoke can draw, in whole assets.
+  /// @dev riskPremiumThreshold The highest ratio of premium to drawn shares the Spoke can reach, in
+  /// BPS.
+  /// @dev collateralFactor The share of the asset's value usable as collateral, in BPS.
+  /// @dev maxLiquidationBonus The largest bonus a liquidator is paid, in BPS, where 100_00 is 0.00%.
+  /// @dev liquidationFee The protocol's cut of that bonus, in BPS.
+  /// @dev borrowable Whether the reserve can be drawn from.
+  /// @dev receiveSharesEnabled Whether a liquidator can take collateral as shares.
   /// @dev tokenize Whether a tokenization spoke is deployed for the asset and registered on the Hub.
+  /// @dev tokenizationAddCap The most that tokenization spoke can add, in whole assets.
   struct Asset {
     string symbol;
     address underlying;
     address priceSource;
+    uint16 liquidityFee;
+    uint16 optimalUsageRatio;
+    uint32 baseDrawnRate;
+    uint32 rateGrowthBeforeOptimal;
+    uint32 rateGrowthAfterOptimal;
+    uint40 addCap;
+    uint40 drawCap;
+    uint24 riskPremiumThreshold;
+    uint16 collateralFactor;
+    uint32 maxLiquidationBonus;
+    uint16 liquidationFee;
+    bool borrowable;
+    bool receiveSharesEnabled;
     bool tokenize;
+    uint40 tokenizationAddCap;
   }
 
   /// @notice Thrown when the deploy inputs declare anything other than a single Hub.
@@ -115,9 +151,8 @@ library AaveV4BaseConfigInputs {
     handover.positionManagerOwner = vm.parseJsonAddress(json, '.positionManagerOwner');
   }
 
-  /// @notice Reads the assets to list.
-  /// @dev The list is empty until the launch set and its risk parameters are decided, which
-  /// configures the market without listing anything. Filling it in needs no change here.
+  /// @notice Reads the assets to list, with their risk parameters.
+  /// @dev An empty list configures the market without listing anything, which is a valid run.
   /// @return assets The assets, in the order they are declared in the configuration inputs.
   function readAssets() internal view returns (Asset[] memory assets) {
     string memory json = vm.readFile(CONFIG_PATH);
@@ -129,13 +164,7 @@ library AaveV4BaseConfigInputs {
 
     assets = new Asset[](count);
     for (uint256 i; i < count; ++i) {
-      string memory path = _assetPath(i);
-      assets[i] = Asset({
-        symbol: vm.parseJsonString(json, string.concat(path, '.symbol')),
-        underlying: vm.parseJsonAddress(json, string.concat(path, '.underlying')),
-        priceSource: vm.parseJsonAddress(json, string.concat(path, '.priceSource')),
-        tokenize: vm.parseJsonBool(json, string.concat(path, '.tokenize'))
-      });
+      assets[i] = _readAsset(json, _assetPath(i));
     }
   }
 
@@ -171,6 +200,52 @@ library AaveV4BaseConfigInputs {
   /// @return The ProxyAdmin address.
   function proxyAdmin(address proxy) internal view returns (address) {
     return address(uint160(uint256(vm.load(proxy, ERC1967_ADMIN_SLOT))));
+  }
+
+  /// @dev Assigns field by field rather than building a struct literal, so that each cheatcode call
+  /// writes straight into the returned struct.
+  function _readAsset(
+    string memory json,
+    string memory path
+  ) private pure returns (Asset memory asset) {
+    asset.symbol = vm.parseJsonString(json, string.concat(path, '.symbol'));
+    asset.underlying = vm.parseJsonAddress(json, string.concat(path, '.underlying'));
+    asset.priceSource = vm.parseJsonAddress(json, string.concat(path, '.priceSource'));
+
+    asset.liquidityFee = _uint(json, path, 'liquidityFee').toUint16();
+    asset.optimalUsageRatio = _uint(json, path, 'optimalUsageRatio').toUint16();
+    asset.baseDrawnRate = _uint(json, path, 'baseDrawnRate').toUint32();
+    asset.rateGrowthBeforeOptimal = _uint(json, path, 'rateGrowthBeforeOptimal').toUint32();
+    asset.rateGrowthAfterOptimal = _uint(json, path, 'rateGrowthAfterOptimal').toUint32();
+
+    asset.addCap = _uint(json, path, 'addCap').toUint40();
+    asset.drawCap = _uint(json, path, 'drawCap').toUint40();
+    asset.riskPremiumThreshold = _uint(json, path, 'riskPremiumThreshold').toUint24();
+
+    asset.collateralFactor = _uint(json, path, 'collateralFactor').toUint16();
+    asset.maxLiquidationBonus = _uint(json, path, 'maxLiquidationBonus').toUint32();
+    asset.liquidationFee = _uint(json, path, 'liquidationFee').toUint16();
+    asset.borrowable = _bool(json, path, 'borrowable');
+    asset.receiveSharesEnabled = _bool(json, path, 'receiveSharesEnabled');
+
+    asset.tokenize = _bool(json, path, 'tokenize');
+    asset.tokenizationAddCap = _uint(json, path, 'tokenizationAddCap').toUint40();
+  }
+
+  function _uint(
+    string memory json,
+    string memory path,
+    string memory field
+  ) private pure returns (uint256) {
+    return vm.parseJsonUint(json, string.concat(path, '.', field));
+  }
+
+  function _bool(
+    string memory json,
+    string memory path,
+    string memory field
+  ) private pure returns (bool) {
+    return vm.parseJsonBool(json, string.concat(path, '.', field));
   }
 
   function _assetPath(uint256 index) private pure returns (string memory) {

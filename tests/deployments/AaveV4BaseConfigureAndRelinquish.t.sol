@@ -23,6 +23,7 @@ import {IHub} from 'src/hub/interfaces/IHub.sol';
 import {IHubBase} from 'src/hub/interfaces/IHubBase.sol';
 import {IHubConfigurator} from 'src/hub/interfaces/IHubConfigurator.sol';
 import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
+import {IAssetInterestRateStrategy} from 'src/hub/interfaces/IAssetInterestRateStrategy.sol';
 
 import {Create2TestHelper} from 'tests/utils/Create2TestHelper.sol';
 
@@ -31,15 +32,18 @@ import {Test} from 'forge-std/Test.sol';
 /// @title AaveV4BaseConfigureAndRelinquishTest
 /// @author Aave Labs
 /// @notice Runs the whole Base operator path on a local deployment: deploy from config/base.json
-///         with roles deferred, list a set of assets with the launch parameters, halt, then hand
-///         over to the Security Council and the governance executor.
-/// @dev config/base-config.json carries no assets yet, so the launch set is mocked here rather than
-///      read from it: the point of these tests is the configuration and handover machinery, which
-///      has to keep working for whatever set eventually lands there.
+///         with roles deferred, list the launch set with its risk parameters, halt, then hand over
+///         to the Security Council and the governance executor.
+/// @dev Drives the real launch set from config/base-config.json, with mock token and feed code
+///      etched at each configured address. The assets themselves only exist on Base mainnet — and
+///      the Coinbase equities are natively handled there, carrying a single `0xef` code byte the EVM
+///      cannot execute — so they cannot be reached from a local run or a fork. Etching keeps the
+///      configured parameters, which are what this has to catch a mistake in, going through the
+///      configurators for real.
 contract AaveV4BaseConfigureAndRelinquishTest is Test, Create2TestHelper, AaveV4DeployBase {
   /// @dev Matches `DeployConstants.ORACLE_DECIMALS`, which `AaveOracle` enforces on price sources.
   uint8 internal constant PRICE_FEED_DECIMALS = DeployConstants.ORACLE_DECIMALS;
-  uint8 internal constant MOCK_ASSET_DECIMALS = 18;
+  uint8 internal constant MOCK_ASSET_DECIMALS = 8;
   uint256 internal constant MOCK_PRICE = 1e8;
 
   address internal _deployer = makeAddr('deployer');
@@ -51,8 +55,11 @@ contract AaveV4BaseConfigureAndRelinquishTest is Test, Create2TestHelper, AaveV4
   function setUp() public {
     _etchCreate2Factory();
 
-    _assets.push(_mockAsset('WETH', true));
-    _assets.push(_mockAsset('USDC', false));
+    AaveV4BaseConfigInputs.Asset[] memory assets = AaveV4BaseConfigInputs.readAssets();
+    for (uint256 i; i < assets.length; ++i) {
+      _etchAsset(assets[i]);
+      _assets.push(assets[i]);
+    }
 
     InputUtils.FullDeployInputs memory inputs = _loadWarningsAndSanitizeInputs(
       _getDeployInputs(),
@@ -118,12 +125,86 @@ contract AaveV4BaseConfigureAndRelinquishTest is Test, Create2TestHelper, AaveV4
         address spoke = IHub(_market.hub).getSpokeAddress(assetIds[i], j);
         assertTrue(IHub(_market.hub).getSpokeConfig(assetIds[i], spoke).halted, 'spoke halted');
       }
+    }
+  }
+
+  /// @notice Every configured risk parameter reaches the Hub and the Spokes it was meant for.
+  function test_configureAppliesTheRiskParameters() public {
+    uint256[] memory assetIds = _configure();
+
+    for (uint256 i; i < _assets.length; ++i) {
+      AaveV4BaseConfigInputs.Asset memory asset = _assets[i];
+      assertEq(
+        IHub(_market.hub).getAssetConfig(assetIds[i]).liquidityFee,
+        asset.liquidityFee,
+        'liquidity fee'
+      );
 
       for (uint256 j; j < _market.spokes.length; ++j) {
-        ISpoke.ReserveConfig memory config = ISpoke(_market.spokes[j]).getReserveConfig(i);
+        ISpoke spoke = ISpoke(_market.spokes[j]);
+        uint256 reserveId = spoke.getReserveId(_market.hub, assetIds[i]);
+
+        IHub.SpokeConfig memory spokeConfig = IHub(_market.hub).getSpokeConfig(
+          assetIds[i],
+          address(spoke)
+        );
+        assertEq(spokeConfig.addCap, asset.addCap, 'add cap');
+        assertEq(spokeConfig.drawCap, asset.drawCap, 'draw cap');
+        assertEq(
+          spokeConfig.riskPremiumThreshold,
+          asset.riskPremiumThreshold,
+          'risk premium threshold'
+        );
+
+        ISpoke.ReserveConfig memory config = spoke.getReserveConfig(reserveId);
         assertEq(config.collateralRisk, AaveV4BaseParameters.COLLATERAL_RISK, 'collateral risk');
-        assertFalse(config.borrowable, 'borrowable');
+        assertEq(config.borrowable, asset.borrowable, 'borrowable');
+        assertEq(config.receiveSharesEnabled, asset.receiveSharesEnabled, 'receive shares');
+        assertFalse(config.paused, 'paused');
+        assertFalse(config.frozen, 'frozen');
+
+        ISpoke.DynamicReserveConfig memory dynamicConfig = spoke.getDynamicReserveConfig(
+          reserveId,
+          spoke.getReserve(reserveId).dynamicConfigKey
+        );
+        assertEq(dynamicConfig.collateralFactor, asset.collateralFactor, 'collateral factor');
+        assertEq(
+          dynamicConfig.maxLiquidationBonus,
+          asset.maxLiquidationBonus,
+          'max liquidation bonus'
+        );
+        assertEq(dynamicConfig.liquidationFee, asset.liquidationFee, 'liquidation fee');
+
+        assertEq(
+          abi.encode(spoke.getLiquidationConfig()),
+          abi.encode(AaveV4BaseParameters.liquidationConfig()),
+          'liquidation config'
+        );
       }
+    }
+  }
+
+  /// @notice The rate curve of each asset reaches the Hub's interest rate strategy.
+  function test_configureAppliesTheInterestRateCurves() public {
+    uint256[] memory assetIds = _configure();
+
+    for (uint256 i; i < _assets.length; ++i) {
+      IAssetInterestRateStrategy.InterestRateData memory irData = IAssetInterestRateStrategy(
+        _market.irStrategy
+      ).getInterestRateData(assetIds[i]);
+
+      assertEq(irData.optimalUsageRatio, _assets[i].optimalUsageRatio, 'optimal usage ratio');
+      assertEq(irData.baseDrawnRate, _assets[i].baseDrawnRate, 'base drawn rate');
+      assertEq(
+        irData.rateGrowthBeforeOptimal,
+        _assets[i].rateGrowthBeforeOptimal,
+        'rate growth before optimal'
+      );
+      assertEq(
+        irData.rateGrowthAfterOptimal,
+        _assets[i].rateGrowthAfterOptimal,
+        'rate growth after optimal'
+      );
     }
   }
 
@@ -147,18 +228,25 @@ contract AaveV4BaseConfigureAndRelinquishTest is Test, Create2TestHelper, AaveV4
     _assertManagersWired();
   }
 
-  /// @notice The tokenized asset's share token follows the live Ethereum and Avalanche naming.
-  function test_tokenizationSpokeNaming() public {
-    _configure();
+  /// @notice The tokenized asset's share token follows the live Ethereum and Avalanche naming, and
+  ///         its spoke is registered supply-only under its own cap.
+  function test_tokenizationSpoke() public {
+    uint256[] memory assetIds = _configure();
+    uint256 index = _tokenizedAssetIndex();
+    uint256 assetId = assetIds[index];
 
-    address tokenizationSpoke = _tokenizationSpokeOf(0);
-    assertEq(IERC20Metadata(tokenizationSpoke).name(), 'Wrapped Aave Core WETH', 'share name');
-    assertEq(IERC20Metadata(tokenizationSpoke).symbol(), 'waCoreWETH', 'share symbol');
+    address tokenizationSpoke = _tokenizationSpokeOf(assetId);
+    assertEq(IERC20Metadata(tokenizationSpoke).name(), 'Wrapped Aave Equities USDC', 'share name');
+    assertEq(IERC20Metadata(tokenizationSpoke).symbol(), 'waEquitiesUSDC', 'share symbol');
     assertEq(
       Ownable(AaveV4BaseConfigInputs.proxyAdmin(tokenizationSpoke)).owner(),
       _targets.proxyAdminOwner,
       'tokenization spoke proxy admin'
     );
+
+    IHub.SpokeConfig memory config = IHub(_market.hub).getSpokeConfig(assetId, tokenizationSpoke);
+    assertEq(config.addCap, _assets[index].tokenizationAddCap, 'tokenization add cap');
+    assertEq(config.drawCap, 0, 'tokenization draw cap');
   }
 
   /// @notice The handover reproduces the role map of the live Ethereum market.
@@ -268,7 +356,7 @@ contract AaveV4BaseConfigureAndRelinquishTest is Test, Create2TestHelper, AaveV4
     vm.expectRevert(
       abi.encodeWithSelector(
         AaveV4BaseHandover.UnexpectedOwner.selector,
-        AaveV4BaseConfigInputs.proxyAdmin(_tokenizationSpokeOf(0)),
+        AaveV4BaseConfigInputs.proxyAdmin(_tokenizationSpokeOf(_tokenizedAssetIndex())),
         foreignOwner
       )
     );
@@ -384,25 +472,25 @@ contract AaveV4BaseConfigureAndRelinquishTest is Test, Create2TestHelper, AaveV4
     return IHub(_market.hub).getSpokeAddress(assetId, spokeCount - 1);
   }
 
-  function _mockAsset(
-    string memory symbol,
-    bool tokenize
-  ) internal returns (AaveV4BaseConfigInputs.Asset memory asset) {
-    asset = AaveV4BaseConfigInputs.Asset({
-      symbol: symbol,
-      underlying: makeAddr(string.concat(symbol, '-underlying')),
-      priceSource: makeAddr(string.concat(symbol, '-priceSource')),
-      tokenize: tokenize
-    });
+  /// @dev The launch set tokenizes exactly one asset, and asset ids follow the order it is read in.
+  function _tokenizedAssetIndex() internal view returns (uint256 index) {
+    for (uint256 i; i < _assets.length; ++i) {
+      if (_assets[i].tokenize) return i;
+    }
+    revert('no tokenized asset configured');
+  }
 
+  /// @dev Puts a token and a feed where the launch set expects them, so that the configured
+  ///      addresses are the ones the configurators are handed.
+  function _etchAsset(AaveV4BaseConfigInputs.Asset memory asset) internal {
     deployCodeTo(
       'TestnetERC20.sol:TestnetERC20',
-      abi.encode(symbol, symbol, MOCK_ASSET_DECIMALS),
+      abi.encode(asset.symbol, asset.symbol, MOCK_ASSET_DECIMALS),
       asset.underlying
     );
     deployCodeTo(
       'MockPriceFeed.sol:MockPriceFeed',
-      abi.encode(PRICE_FEED_DECIMALS, string.concat(symbol, ' / USD'), MOCK_PRICE),
+      abi.encode(PRICE_FEED_DECIMALS, string.concat(asset.symbol, ' / USD'), MOCK_PRICE),
       asset.priceSource
     );
   }

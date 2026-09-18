@@ -29,8 +29,9 @@ import {ISpokeConfigurator} from 'src/spoke/interfaces/ISpokeConfigurator.sol';
 /// deployer therefore takes the two configurator domain admin roles and passes the configurators
 /// the roles they call the Hub and Spokes with, before configuring.
 ///
-/// The asset list is empty until the launch set is decided, in which case this configures the
-/// market — roles, liquidation configs and manager wiring — and lists nothing. See
+/// Each asset is listed with the risk parameters carried in config/base-config.json, and then halted
+/// on the Hub, which is what keeps the market closed until governance opens it. An empty asset list
+/// configures the market — roles, liquidation configs and manager wiring — and lists nothing. See
 /// `AaveV4BaseParameters` and docs/base-deploy.md.
 library AaveV4BaseConfiguration {
   /// @notice Thrown when the AccessManager carries a non-zero delay, which would defer the
@@ -67,8 +68,8 @@ library AaveV4BaseConfiguration {
 
     assetIds = new uint256[](assets.length);
     for (uint256 i; i < assets.length; ++i) {
-      uint256 assetId = listAssetOnHub(market, assets[i].underlying);
-      listAssetOnSpokes(market, assetId, assets[i].priceSource);
+      uint256 assetId = listAssetOnHub(market, assets[i]);
+      listAssetOnSpokes(market, assetId, assets[i]);
       if (assets[i].tokenize) {
         deployTokenizationSpoke(market, assets[i], assetId, proxyAdminOwner);
       }
@@ -182,28 +183,28 @@ library AaveV4BaseConfiguration {
     }
   }
 
-  /// @notice Lists an asset on the Hub with the launch rate curve and liquidity fee.
+  /// @notice Lists an asset on the Hub with its rate curve and liquidity fee.
   /// @param market The deployed Base market.
-  /// @param underlying The underlying asset to list.
+  /// @param asset The asset to list.
   /// @return The Hub asset id of the listed asset.
   function listAssetOnHub(
     AaveV4BaseConfigInputs.Market memory market,
-    address underlying
+    AaveV4BaseConfigInputs.Asset memory asset
   ) internal returns (uint256) {
     IAssetInterestRateStrategy.InterestRateData memory irData = IAssetInterestRateStrategy
       .InterestRateData({
-        optimalUsageRatio: AaveV4BaseParameters.OPTIMAL_USAGE_RATIO,
-        baseDrawnRate: AaveV4BaseParameters.BASE_DRAWN_RATE,
-        rateGrowthBeforeOptimal: AaveV4BaseParameters.RATE_GROWTH_BEFORE_OPTIMAL,
-        rateGrowthAfterOptimal: AaveV4BaseParameters.RATE_GROWTH_AFTER_OPTIMAL
+        optimalUsageRatio: asset.optimalUsageRatio,
+        baseDrawnRate: asset.baseDrawnRate,
+        rateGrowthBeforeOptimal: asset.rateGrowthBeforeOptimal,
+        rateGrowthAfterOptimal: asset.rateGrowthAfterOptimal
       });
 
     return
       IHubConfigurator(market.hubConfigurator).addAsset({
         hub: market.hub,
-        underlying: underlying,
+        underlying: asset.underlying,
         feeReceiver: market.treasurySpoke,
-        liquidityFee: AaveV4BaseParameters.LIQUIDITY_FEE,
+        liquidityFee: asset.liquidityFee,
         irStrategy: market.irStrategy,
         irData: abi.encode(irData)
       });
@@ -212,20 +213,20 @@ library AaveV4BaseConfiguration {
   /// @notice Registers every Spoke for the asset and lists the reserve on each of them.
   /// @param market The deployed Base market.
   /// @param assetId The Hub asset id.
-  /// @param priceSource The price feed for the asset.
+  /// @param asset The asset being listed.
   function listAssetOnSpokes(
     AaveV4BaseConfigInputs.Market memory market,
     uint256 assetId,
-    address priceSource
+    AaveV4BaseConfigInputs.Asset memory asset
   ) internal {
     uint256[] memory assetIds = new uint256[](1);
     assetIds[0] = assetId;
 
     IHub.SpokeConfig[] memory configs = new IHub.SpokeConfig[](1);
     configs[0] = IHub.SpokeConfig({
-      addCap: AaveV4BaseParameters.ADD_CAP,
-      drawCap: AaveV4BaseParameters.DRAW_CAP,
-      riskPremiumThreshold: AaveV4BaseParameters.RISK_PREMIUM_THRESHOLD,
+      addCap: asset.addCap,
+      drawCap: asset.drawCap,
+      riskPremiumThreshold: asset.riskPremiumThreshold,
       active: true,
       halted: false
     });
@@ -234,13 +235,13 @@ library AaveV4BaseConfiguration {
       collateralRisk: AaveV4BaseParameters.COLLATERAL_RISK,
       paused: false,
       frozen: false,
-      borrowable: AaveV4BaseParameters.BORROWABLE,
-      receiveSharesEnabled: AaveV4BaseParameters.RECEIVE_SHARES_ENABLED
+      borrowable: asset.borrowable,
+      receiveSharesEnabled: asset.receiveSharesEnabled
     });
     ISpoke.DynamicReserveConfig memory dynamicConfig = ISpoke.DynamicReserveConfig({
-      collateralFactor: AaveV4BaseParameters.COLLATERAL_FACTOR,
-      maxLiquidationBonus: AaveV4BaseParameters.MAX_LIQUIDATION_BONUS,
-      liquidationFee: AaveV4BaseParameters.LIQUIDATION_FEE
+      collateralFactor: asset.collateralFactor,
+      maxLiquidationBonus: asset.maxLiquidationBonus,
+      liquidationFee: asset.liquidationFee
     });
 
     for (uint256 i; i < market.spokes.length; ++i) {
@@ -254,7 +255,7 @@ library AaveV4BaseConfiguration {
         spoke: market.spokes[i],
         hub: market.hub,
         assetId: assetId,
-        priceSource: priceSource,
+        priceSource: asset.priceSource,
         config: config,
         dynamicConfig: dynamicConfig
       });
@@ -297,9 +298,9 @@ library AaveV4BaseConfiguration {
       spoke: proxy,
       assetId: assetId,
       config: IHub.SpokeConfig({
-        addCap: AaveV4BaseParameters.TOKENIZATION_ADD_CAP,
+        addCap: asset.tokenizationAddCap,
         drawCap: 0,
-        riskPremiumThreshold: AaveV4BaseParameters.RISK_PREMIUM_THRESHOLD,
+        riskPremiumThreshold: asset.riskPremiumThreshold,
         active: true,
         halted: false
       })

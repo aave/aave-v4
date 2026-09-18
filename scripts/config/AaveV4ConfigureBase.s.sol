@@ -11,10 +11,9 @@ import {console2 as console} from 'forge-std/console2.sol';
 /// @author Aave Labs
 /// @notice Configures the Base market from config/base-config.json, then halts every asset it
 /// listed on the Hub.
-/// @dev Run after the deploy script and before `AaveV4RelinquishBase`. The asset list is empty until
-/// the launch set is decided, in which case this grants the roles, applies the liquidation configs
-/// and wires the position managers without listing anything. See `AaveV4BaseParameters` and
-/// docs/base-deploy.md.
+/// @dev Run after the deploy script and before `AaveV4RelinquishBase`. An empty asset list grants
+/// the roles, applies the liquidation configs and wires the position managers without listing
+/// anything. See `AaveV4BaseParameters` and docs/base-deploy.md.
 contract AaveV4ConfigureBase is Script {
   /// @notice Reads the inputs and configures the market as the broadcasting deployer.
   function run() external {
