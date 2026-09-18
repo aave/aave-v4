@@ -1,0 +1,23 @@
+src/spoke/interfaces/IBabylonSpoke.sol
+  s_8735c0799a11e7::t_ef4118b242b483 51
+tests/contracts/spoke/configuration/BabylonSpoke.Config.t.sol
+  s_8735c0799a11e7::t_f9159e70ffdc5b 30-39
+tests/deployments/batches/AaveV4BabylonSpokeInstanceBatch.t.sol
+  s_8735c0799a11e7::t_0757a2e9c896f0 5,52-81
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "771b242b8df1dabe759ad9dcd5f5282e9be3fad6",
+  "prompts": {},
+  "sessions": {
+    "s_8735c0799a11e7": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "3b79ae1e-863b-4fc1-bc48-ba957ce7e0b8",
+        "model": "claude-fable-5-1"
+      },
+      "human_author": "Alexandru Niculae <43644109+avniculae@users.noreply.github.com>"
+    }
+  }
+}
