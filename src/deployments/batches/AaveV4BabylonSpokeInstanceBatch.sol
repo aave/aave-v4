@@ -11,7 +11,8 @@ import {IAaveOracle} from 'src/spoke/interfaces/IAaveOracle.sol';
 /// @author Aave Labs
 /// @notice Deploys a BabylonSpoke (proxy + implementation) and its AaveOracle, producing a batch report.
 /// @dev Reuses the canonical Spoke deploy procedure with the BabylonSpoke constructor, which fixes
-/// the user reserves limit at one and only takes the oracle.
+/// the user reserves limit at one and takes the oracle, the liquidation manager and the managed
+/// collateral reserve.
 contract AaveV4BabylonSpokeInstanceBatch is
   AaveV4SpokeDeployProcedure,
   AaveV4AaveOracleDeployProcedure
@@ -21,12 +22,16 @@ contract AaveV4BabylonSpokeInstanceBatch is
   /// @dev Constructor.
   /// @param proxyAdminOwner_ The owner of the proxy admin.
   /// @param authority_ The access-control authority for the BabylonSpoke.
+  /// @param liquidationManager_ The only address allowed to perform liquidations on the BabylonSpoke.
+  /// @param managedCollateralReserveId_ The identifier of the only reserve usable as collateral.
   /// @param babylonSpokeBytecode_ The creation bytecode of the BabylonSpoke implementation.
   /// @param oracleDecimals_ The decimal precision for the AaveOracle.
   /// @param salt_ The CREATE2 salt for deterministic deployment.
   constructor(
     address proxyAdminOwner_,
     address authority_,
+    address liquidationManager_,
+    uint256 managedCollateralReserveId_,
     bytes memory babylonSpokeBytecode_,
     uint8 oracleDecimals_,
     bytes32 salt_
@@ -36,6 +41,8 @@ contract AaveV4BabylonSpokeInstanceBatch is
       proxyAdminOwner: proxyAdminOwner_,
       authority: authority_,
       oracle: aaveOracle,
+      liquidationManager: liquidationManager_,
+      managedCollateralReserveId: managedCollateralReserveId_,
       babylonSpokeBytecode: babylonSpokeBytecode_,
       salt: salt_
     });

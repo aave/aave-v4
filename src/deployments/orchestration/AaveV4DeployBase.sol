@@ -113,6 +113,8 @@ library AaveV4DeployBase {
   /// @notice Deploys the BabylonSpoke instance batch containing the proxy, implementation, and AaveOracle.
   /// @param proxyAdminOwner The owner of the proxy admin.
   /// @param authority The access-control authority for the BabylonSpoke.
+  /// @param liquidationManager The only address allowed to perform liquidations on the BabylonSpoke.
+  /// @param managedCollateralReserveId The identifier of the only reserve usable as collateral.
   /// @param babylonSpokeBytecode The creation bytecode of the BabylonSpokeInstance contract.
   /// @param oracleDecimals The decimal precision for the AaveOracle.
   /// @param salt The CREATE2 salt for deterministic deployment.
@@ -120,6 +122,8 @@ library AaveV4DeployBase {
   function deployBabylonSpokeInstanceBatch(
     address proxyAdminOwner,
     address authority,
+    address liquidationManager,
+    uint256 managedCollateralReserveId,
     bytes memory babylonSpokeBytecode,
     uint8 oracleDecimals,
     bytes32 salt
@@ -127,6 +131,8 @@ library AaveV4DeployBase {
     AaveV4BabylonSpokeInstanceBatch babylonSpokeInstanceBatch = new AaveV4BabylonSpokeInstanceBatch({
         proxyAdminOwner_: proxyAdminOwner,
         authority_: authority,
+        liquidationManager_: liquidationManager,
+        managedCollateralReserveId_: managedCollateralReserveId,
         babylonSpokeBytecode_: babylonSpokeBytecode,
         oracleDecimals_: oracleDecimals,
         salt_: salt

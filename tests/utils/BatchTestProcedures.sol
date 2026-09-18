@@ -169,6 +169,8 @@ contract BatchTestProcedures is Test, Create2TestHelper, WETHDeployProcedure {
     inputs.spokeLabels = _spokeLabels;
     inputs.spokeMaxReservesLimits = _defaultSpokeMaxReservesLimits(_spokeLabels.length);
     inputs.babylonSpokeLabels = new string[](0);
+    inputs.babylonLiquidationManagers = new address[](0);
+    inputs.babylonManagedCollateralReserveIds = new uint256[](0);
     inputs.nativeWrapper = _weth9;
     inputs.deployNativeTokenGateway = true;
     inputs.deploySignatureGateway = true;
@@ -440,7 +442,7 @@ contract BatchTestProcedures is Test, Create2TestHelper, WETHDeployProcedure {
   }
 
   function _checkRoleLabels(IAccessManagerEnumerable accessManager) internal view {
-    assertEq(accessManager.getRoleLabelCount(), 10, 'role label count');
+    assertEq(accessManager.getRoleLabelCount(), 9, 'role label count');
 
     // Hub roles
     assertTrue(

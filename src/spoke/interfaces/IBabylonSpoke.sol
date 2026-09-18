@@ -8,21 +8,10 @@ import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 /// @author Aave Labs
 /// @notice Full interface for the BabylonSpoke.
 interface IBabylonSpoke is ISpoke {
-  /// @dev liquidationManager The only address allowed to perform liquidations on this Spoke.
-  /// @dev managedCollateralReserveId The identifier of the only reserve usable as collateral.
-  /// @custom:storage-location erc7201:aave-v4.storage.BabylonSpoke
-  struct BabylonSpokeStorage {
-    address liquidationManager;
-    uint96 managedCollateralReserveId;
-  }
-
-  /// @notice Emitted when the Babylon liquidation config is updated.
+  /// @notice Emitted on initialization, reporting the immutables specific to the BabylonSpoke.
   /// @param liquidationManager The only address allowed to perform liquidations on this Spoke.
   /// @param managedCollateralReserveId The identifier of the only reserve usable as collateral.
-  event UpdateBabylonLiquidationConfig(
-    address liquidationManager,
-    uint256 managedCollateralReserveId
-  );
+  event SetBabylonSpokeImmutables(address liquidationManager, uint256 managedCollateralReserveId);
 
   /// @dev Emitted when a borrower is liquidated.
   /// @param collateralReserveId The identifier of the managed collateral reserve removed by the liquidation.
@@ -55,23 +44,11 @@ interface IBabylonSpoke is ISpoke {
   /// @notice Thrown when a reserve is configured with a non-zero liquidation fee.
   error UnsupportedLiquidationFee();
 
-  /// @notice Thrown when setting a borrowable reserve as the managed collateral reserve.
+  /// @notice Thrown when the managed collateral reserve is configured as borrowable.
   error UnsupportedBorrowableCollateral();
 
-  /// @notice Updates the Babylon liquidation config.
-  /// @dev The managed collateral reserve must be listed and not borrowable: a user holds a single
-  /// debt reserve, which can never be the collateral being seized. It is intended to be set once at
-  /// initialization: users can only enable the configured reserve as collateral, so changing it
-  /// with live positions leaves collateral registered under the previous reserve unliquidatable.
-  /// @param liquidationManager The only address allowed to perform liquidations on this Spoke.
-  /// @param managedCollateralReserveId The identifier of the only reserve usable as collateral.
-  function updateBabylonLiquidationConfig(
-    address liquidationManager,
-    uint256 managedCollateralReserveId
-  ) external;
-
   /// @notice Liquidates a user position with cap-bounded sizing.
-  /// @dev Caller must be the configured liquidation manager, with prior approval for the repaid debt asset.
+  /// @dev Caller must be the liquidation manager, with prior approval for the repaid debt asset.
   /// @dev The repayment is sized up to `debtToCover`, capped at the user's debt, with no target health
   /// factor sizing; the removed collateral is priced with the canonical bonus formula. When the priced
   /// removal exceeds `maxCollateralToRemove`, the repayment is resized to exactly consume it.
@@ -90,8 +67,9 @@ interface IBabylonSpoke is ISpoke {
     uint256 maxCollateralToRemove
   ) external returns (uint256 liquidationBonus, uint256 collateralAmountRemoved);
 
-  /// @notice Returns the Babylon liquidation config.
-  /// @return The address of the liquidation manager.
-  /// @return The identifier of the managed collateral reserve.
-  function getBabylonLiquidationConfig() external view returns (address, uint256);
+  /// @notice Returns the only address allowed to perform liquidations on this Spoke.
+  function LIQUIDATION_MANAGER() external view returns (address);
+
+  /// @notice Returns the identifier of the only reserve usable as collateral.
+  function MANAGED_COLLATERAL_RESERVE_ID() external view returns (uint256);
 }

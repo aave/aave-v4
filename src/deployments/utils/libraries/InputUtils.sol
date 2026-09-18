@@ -28,6 +28,8 @@ library InputUtils {
   /// @dev spokeLabels An array of spoke labels; the number of spoke labels defines the number of spokes to deploy.
   /// @dev spokeMaxReservesLimits Per-spoke max user reserves limit (parallel to spokeLabels).
   /// @dev babylonSpokeLabels An array of babylon spoke labels; their number defines the number of babylon spokes to deploy. Babylon spokes fix the user reserves limit at one.
+  /// @dev babylonLiquidationManagers Per-babylon-spoke liquidation manager, the only address allowed to liquidate on it (parallel to babylonSpokeLabels).
+  /// @dev babylonManagedCollateralReserveIds Per-babylon-spoke identifier of the only reserve usable as collateral (parallel to babylonSpokeLabels).
   /// @dev salt Root salt for deterministic CREATE2 deployment; orchestration derives per-batch salts.
   struct FullDeployInputs {
     address accessManagerAdmin;
@@ -48,6 +50,8 @@ library InputUtils {
     string[] spokeLabels;
     uint16[] spokeMaxReservesLimits;
     string[] babylonSpokeLabels;
+    address[] babylonLiquidationManagers;
+    uint256[] babylonManagedCollateralReserveIds;
     bytes32 salt;
   }
 

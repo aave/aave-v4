@@ -6,8 +6,9 @@ import {IBabylonSpoke} from 'src/spoke/interfaces/IBabylonSpoke.sol';
 
 /// @dev Extends the base environment with a fourth spoke running the Babylon spoke instance.
 /// The spoke mirrors spoke1's reserves and liquidation config, with the managed collateral
-/// reserve (wbtc) non-borrowable, every reserve fee-free and users limited to one collateral and
-/// one debt reserve, as in production.
+/// reserve (wbtc by default) non-borrowable, every reserve fee-free and users limited to one
+/// collateral and one debt reserve, as in production. The liquidation manager and the managed
+/// collateral reserve are constructor arguments, overridable through the two hooks.
 abstract contract BabylonBase is Base {
   IBabylonSpoke internal babylonSpoke;
   ISpoke internal spoke4;
@@ -18,6 +19,17 @@ abstract contract BabylonBase is Base {
     super.setUp();
     _deployBabylonSpoke();
     _configureBabylonSpoke();
+  }
+
+  /// @dev The liquidation manager baked into the babylon spoke.
+  function _babylonLiquidationManager() internal view virtual returns (address) {
+    return liquidationManager;
+  }
+
+  /// @dev The managed collateral reserve baked into the babylon spoke: the index of the reserve in
+  /// `_getBabylonReserveParams`, wbtc by default.
+  function _babylonManagedCollateralReserveId() internal view virtual returns (uint256) {
+    return 1;
   }
 
   /// @dev Supplies liquidity from a fresh user without registering it as collateral: only the
@@ -65,12 +77,13 @@ abstract contract BabylonBase is Base {
     TestTypes.TestSpokeReport memory report = AaveV4TestOrchestration.deployTestBabylonSpoke({
       proxyAdminOwner: ADMIN,
       accessManager: address(accessManager),
+      liquidationManager: _babylonLiquidationManager(),
+      managedCollateralReserveId: _babylonManagedCollateralReserveId(),
       babylonSpokeBytecode: BytecodeHelper.getBabylonSpokeBytecode(),
       // deterministic salt: the spoke address enters signed payloads measured by the gas suite
       salt: keccak256('babylon-spoke')
     });
-    AaveV4SpokeRolesProcedure.setupBabylonSpokeAllRoles(address(accessManager), report.spoke);
-    accessManager.grantRole(Roles.BABYLON_SPOKE_CONFIGURATOR_ROLE, ADMIN, 0);
+    AaveV4SpokeRolesProcedure.setupSpokeAllRoles(address(accessManager), report.spoke);
     vm.stopPrank();
 
     spoke4 = ISpoke(report.spoke);
@@ -100,9 +113,6 @@ abstract contract BabylonBase is Base {
 
     accessManager.renounceRole(Roles.HUB_CONFIGURATOR_ROLE, address(this));
     accessManager.renounceRole(Roles.SPOKE_CONFIGURATOR_ROLE, address(this));
-
-    vm.prank(ADMIN);
-    babylonSpoke.updateBabylonLiquidationConfig(liquidationManager, _wbtcReserveId(spoke4));
   }
 
   function _approveTokenListForBabylonSpoke() internal {
@@ -172,73 +182,30 @@ abstract contract BabylonBase is Base {
     returns (ConfigData.AddReserveParams[] memory paramsList)
   {
     // every reserve is fee-free: BabylonSpoke rejects a liquidation fee, which its liquidations never charge
-    paramsList = new ConfigData.AddReserveParams[](5);
-    paramsList[0] = ConfigData.AddReserveParams({
-      spoke: address(spoke4),
-      hub: address(hub1),
-      assetId: wethAssetId,
-      priceSource: _deployMockPriceFeed(spoke4, 2000e8),
-      config: _getDefaultReserveConfig(15_00),
-      dynamicConfig: ISpoke.DynamicReserveConfig({
-        collateralFactor: 80_00,
-        maxLiquidationBonus: 105_00,
-        liquidationFee: 0
-      })
-    });
-    // the managed collateral reserve: non-borrowable, keeping its supply share price at one
-    paramsList[1] = ConfigData.AddReserveParams({
-      spoke: address(spoke4),
-      hub: address(hub1),
-      assetId: wbtcAssetId,
-      priceSource: _deployMockPriceFeed(spoke4, 50_000e8),
-      config: ISpoke.ReserveConfig({
-        paused: false,
-        frozen: false,
-        borrowable: false,
-        receiveSharesEnabled: true,
-        collateralRisk: 15_00
-      }),
-      dynamicConfig: ISpoke.DynamicReserveConfig({
-        collateralFactor: 75_00,
-        maxLiquidationBonus: 103_00,
-        liquidationFee: 0
-      })
-    });
-    paramsList[2] = ConfigData.AddReserveParams({
-      spoke: address(spoke4),
-      hub: address(hub1),
-      assetId: daiAssetId,
-      priceSource: _deployMockPriceFeed(spoke4, 1e8),
-      config: _getDefaultReserveConfig(20_00),
-      dynamicConfig: ISpoke.DynamicReserveConfig({
-        collateralFactor: 78_00,
-        maxLiquidationBonus: 102_00,
-        liquidationFee: 0
-      })
-    });
-    paramsList[3] = ConfigData.AddReserveParams({
-      spoke: address(spoke4),
-      hub: address(hub1),
-      assetId: usdxAssetId,
-      priceSource: _deployMockPriceFeed(spoke4, 1e8),
-      config: _getDefaultReserveConfig(50_00),
-      dynamicConfig: ISpoke.DynamicReserveConfig({
-        collateralFactor: 78_00,
-        maxLiquidationBonus: 101_00,
-        liquidationFee: 0
-      })
-    });
-    paramsList[4] = ConfigData.AddReserveParams({
-      spoke: address(spoke4),
-      hub: address(hub1),
-      assetId: usdyAssetId,
-      priceSource: _deployMockPriceFeed(spoke4, 1e8),
-      config: _getDefaultReserveConfig(50_00),
-      dynamicConfig: ISpoke.DynamicReserveConfig({
-        collateralFactor: 78_00,
-        maxLiquidationBonus: 101_50,
-        liquidationFee: 0
-      })
-    });
+    uint256[5] memory assetIds = [wethAssetId, wbtcAssetId, daiAssetId, usdxAssetId, usdyAssetId];
+    uint256[5] memory prices = [uint256(2000e8), 50_000e8, 1e8, 1e8, 1e8];
+    uint24[5] memory collateralRisks = [uint24(15_00), 15_00, 20_00, 50_00, 50_00];
+    uint16[5] memory collateralFactors = [uint16(80_00), 75_00, 78_00, 78_00, 78_00];
+    uint32[5] memory maxLiquidationBonuses = [uint32(105_00), 103_00, 102_00, 101_00, 101_50];
+    paramsList = new ConfigData.AddReserveParams[](assetIds.length);
+    for (uint256 i; i < assetIds.length; ++i) {
+      ISpoke.ReserveConfig memory config = _getDefaultReserveConfig(collateralRisks[i]);
+      // the managed collateral reserve is never borrowable, keeping its supply share price at one
+      if (i == _babylonManagedCollateralReserveId()) {
+        config.borrowable = false;
+      }
+      paramsList[i] = ConfigData.AddReserveParams({
+        spoke: address(spoke4),
+        hub: address(hub1),
+        assetId: assetIds[i],
+        priceSource: _deployMockPriceFeed(spoke4, prices[i]),
+        config: config,
+        dynamicConfig: ISpoke.DynamicReserveConfig({
+          collateralFactor: collateralFactors[i],
+          maxLiquidationBonus: maxLiquidationBonuses[i],
+          liquidationFee: 0
+        })
+      });
+    }
   }
 }

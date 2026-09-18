@@ -8,7 +8,7 @@
   "liquidationCall: partial": "360696",
   "permitReserve + repay (multicall)": "166334",
   "permitReserve + supply (multicall)": "151663",
-  "permitReserve + supply + enable collateral (multicall)": "166114",
+  "permitReserve + supply + enable collateral (multicall)": "166090",
   "repay: full": "123355",
   "repay: partial": "142713",
   "setUserPositionManagersWithSig: disable": "46772",

@@ -28,6 +28,8 @@ contract AaveV4BatchDeploymentTest is BatchTestProcedures {
       spokeLabels: _spokeLabels,
       spokeMaxReservesLimits: _defaultSpokeMaxReservesLimits(_spokeLabels.length),
       babylonSpokeLabels: new string[](0),
+      babylonLiquidationManagers: new address[](0),
+      babylonManagedCollateralReserveIds: new uint256[](0),
       salt: bytes32(0)
     });
   }
@@ -329,8 +331,13 @@ contract AaveV4BatchDeploymentTest is BatchTestProcedures {
   }
 
   function testAaveV4BatchDeployment_withBabylonSpoke() public {
+    address liquidationManager = makeAddr('babylonLiquidationManager');
     _inputs.babylonSpokeLabels = new string[](1);
     _inputs.babylonSpokeLabels[0] = 'babylonSpoke1';
+    _inputs.babylonLiquidationManagers = new address[](1);
+    _inputs.babylonLiquidationManagers[0] = liquidationManager;
+    _inputs.babylonManagedCollateralReserveIds = new uint256[](1);
+    _inputs.babylonManagedCollateralReserveIds[0] = 2;
 
     bytes memory hubBytecode = BytecodeHelper.getHubBytecode();
     bytes memory spokeBytecode = BytecodeHelper.getSpokeBytecode();
@@ -359,14 +366,41 @@ contract AaveV4BatchDeploymentTest is BatchTestProcedures {
       'babylon spoke authority'
     );
 
-    // the babylon config selector is wired to the granular role, granted to the spoke admin
-    (bool immediate, ) = IAccessManagerEnumerable(report.authorityBatchReport.accessManager)
-      .canCall(
-        _inputs.spokeAdmin,
-        babylonReport.spokeProxy,
-        IBabylonSpoke.updateBabylonLiquidationConfig.selector
-      );
-    assertTrue(immediate, 'spoke admin can update the babylon liquidation config');
+    assertEq(
+      IBabylonSpoke(babylonReport.spokeProxy).LIQUIDATION_MANAGER(),
+      liquidationManager,
+      'babylon spoke liquidation manager'
+    );
+    assertEq(
+      IBabylonSpoke(babylonReport.spokeProxy).MANAGED_COLLATERAL_RESERVE_ID(),
+      2,
+      'babylon spoke managed collateral reserve id'
+    );
+  }
+
+  function testAaveV4BatchDeployment_revert_babylonInputsLengthMismatch() public {
+    _inputs.babylonSpokeLabels = new string[](1);
+    _inputs.babylonSpokeLabels[0] = 'babylonSpoke1';
+    _inputs.babylonLiquidationManagers = new address[](1);
+    _inputs.babylonLiquidationManagers[0] = makeAddr('babylonLiquidationManager');
+    // reserve ids left empty
+
+    vm.expectRevert('babylon spoke labels/managers/reserve ids length mismatch');
+    this.externalDeployAaveV4(_inputs);
+  }
+
+  /// @dev External entry point so `vm.expectRevert` binds to the whole deployment.
+  function externalDeployAaveV4(InputUtils.FullDeployInputs memory inputs) external {
+    vm.startPrank(_deployer);
+    AaveV4DeployOrchestration.deployAaveV4(
+      _logger,
+      _deployer,
+      inputs,
+      BytecodeHelper.getHubBytecode(),
+      BytecodeHelper.getSpokeBytecode(),
+      BytecodeHelper.getBabylonSpokeBytecode()
+    );
+    vm.stopPrank();
   }
 
   function testAaveV4BatchDeployment_accessManagerAdminSameAsDeployer() public {
@@ -425,6 +459,8 @@ contract AaveV4BatchDeploymentTest is BatchTestProcedures {
       deployInputs.spokeMaxReservesLimits = _inputs.spokeMaxReservesLimits;
     }
     deployInputs.babylonSpokeLabels = new string[](0);
+    deployInputs.babylonLiquidationManagers = new address[](0);
+    deployInputs.babylonManagedCollateralReserveIds = new uint256[](0);
     _deployer = deployer;
     _inputs = deployInputs;
 
@@ -461,6 +497,8 @@ contract AaveV4BatchDeploymentTest is BatchTestProcedures {
       deployInputs.spokeMaxReservesLimits = _inputs.spokeMaxReservesLimits;
     }
     deployInputs.babylonSpokeLabels = new string[](0);
+    deployInputs.babylonLiquidationManagers = new address[](0);
+    deployInputs.babylonManagedCollateralReserveIds = new uint256[](0);
     _deployer = deployer;
     _inputs = deployInputs;
 

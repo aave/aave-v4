@@ -5,8 +5,9 @@ import 'tests/contracts/spoke/liquidation/Spoke.BabylonLiquidationCall.Base.t.so
 
 /// @dev Fuzz matrix mirroring the canonical `SpokeLiquidationCallHelperTest` shapes for the
 /// babylon liquidation call. The ManyCollaterals and ManyDebts shapes are dropped (users hold a
-/// single collateral and a single debt reserve) and the canonical `receiveShares` dimension is
-/// replaced by fuzzing the removal cap. The LiquidationFeeZero variant is dropped (the fee is
+/// single collateral and a single debt reserve), the collateral is fixed to the managed reserve
+/// baked into the spoke and the canonical `receiveShares` dimension is replaced by fuzzing the
+/// removal cap. The LiquidationFeeZero variant is dropped (the fee is
 /// never charged) along with TargetHealthFactorOne (no target health factor sizing).
 abstract contract SpokeBabylonLiquidationCallHelperTest is SpokeBabylonLiquidationCallBaseTest {
   using WadRayMath for uint256;
@@ -24,14 +25,10 @@ abstract contract SpokeBabylonLiquidationCallHelperTest is SpokeBabylonLiquidati
     spoke = spoke4;
   }
 
-  /// @dev Bounds the managed collateral reserve over all reserves and the debt reserve over the
-  /// borrowable reserves, excluding the collateral so its supply share price stays at one.
-  function _bound(
-    uint256 collateralReserveId,
-    uint256 debtReserveId
-  ) internal view returns (uint256, uint256) {
+  /// @dev Bounds the debt reserve over the borrowable reserves, excluding the managed collateral
+  /// so its supply share price stays at one.
+  function _boundDebtReserve(uint256 debtReserveId) internal view returns (uint256) {
     uint256 reserveCount = spoke.getReserveCount();
-    collateralReserveId = bound(collateralReserveId, 0, reserveCount - 1);
     uint256[] memory candidates = new uint256[](reserveCount);
     uint256 count;
     for (uint256 i = 0; i < reserveCount; ++i) {
@@ -39,7 +36,7 @@ abstract contract SpokeBabylonLiquidationCallHelperTest is SpokeBabylonLiquidati
         candidates[count++] = i;
       }
     }
-    return (collateralReserveId, candidates[bound(debtReserveId, 0, count - 1)]);
+    return candidates[bound(debtReserveId, 0, count - 1)];
   }
 
   function _processAdditionalSetup(
@@ -133,13 +130,11 @@ abstract contract SpokeBabylonLiquidationCallHelperTest is SpokeBabylonLiquidati
   }
 
   function test_liquidationCall_fuzz_OneCollateral_OneDebt_UserSolvent(
-    uint256 collateralReserveId,
     uint256 debtReserveId,
     uint256 debtToCover,
     uint256 maxCollateralToRemove
   ) public virtual {
-    (collateralReserveId, debtReserveId) = _bound(collateralReserveId, debtReserveId);
-    _setManagedCollateralReserve(collateralReserveId);
+    debtReserveId = _boundDebtReserve(debtReserveId);
     _processAdditionalSetup(collateralReserveId, debtReserveId);
 
     _increaseCollateralSupply(
@@ -158,13 +153,11 @@ abstract contract SpokeBabylonLiquidationCallHelperTest is SpokeBabylonLiquidati
   }
 
   function test_liquidationCall_fuzz_OneCollateral_OneDebt_UserInsolvent(
-    uint256 collateralReserveId,
     uint256 debtReserveId,
     uint256 debtToCover,
     uint256 maxCollateralToRemove
   ) public virtual {
-    (collateralReserveId, debtReserveId) = _bound(collateralReserveId, debtReserveId);
-    _setManagedCollateralReserve(collateralReserveId);
+    debtReserveId = _boundDebtReserve(debtReserveId);
     _processAdditionalSetup(collateralReserveId, debtReserveId);
 
     _increaseCollateralSupply(

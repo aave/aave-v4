@@ -55,16 +55,7 @@ contract SpokeBabylonLiquidationCallBaseTest is BabylonBase, SpokeLiquidationCal
   function setUp() public virtual override(BabylonBase, LiquidationLogicBaseTest) {
     super.setUp();
     babylonLiquidationLogicWrapper = new BabylonLiquidationLogicWrapper();
-    collateralReserveId = _wbtcReserveId(spoke4);
-  }
-
-  /// @dev Points the Babylon liquidation config at another managed collateral reserve, which is
-  /// never borrowable.
-  function _setManagedCollateralReserve(uint256 reserveId) internal {
-    collateralReserveId = reserveId;
-    _updateReserveBorrowableFlag(spoke4, reserveId, false);
-    vm.prank(ADMIN);
-    babylonSpoke.updateBabylonLiquidationConfig(liquidationManager, reserveId);
+    collateralReserveId = babylonSpoke.MANAGED_COLLATERAL_RESERVE_ID();
   }
 
   /// @dev Supplies `collateralValue` (in units of Value) of collateral for `user` and borrows the

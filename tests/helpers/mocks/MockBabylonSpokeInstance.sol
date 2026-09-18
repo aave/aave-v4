@@ -1,31 +1,32 @@
-// SPDX-License-Identifier: LicenseRef-BUSL
-pragma solidity 0.8.28;
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
 
 import {BabylonSpoke} from 'src/spoke/BabylonSpoke.sol';
 
-/// @title BabylonSpokeInstance
-/// @author Aave Labs
-/// @notice Implementation contract for the BabylonSpoke.
-contract BabylonSpokeInstance is BabylonSpoke {
-  uint64 public constant SPOKE_REVISION = 1;
+contract MockBabylonSpokeInstance is BabylonSpoke {
+  bool public constant IS_TEST = true;
 
-  /// @dev Constructor.
-  /// @dev During upgrade, must ensure that the new oracle is supporting existing assets on the Spoke and the replaced oracle.
-  /// @param oracle_ The address of the oracle.
-  /// @param liquidationManager_ The only address allowed to perform liquidations on this Spoke.
-  /// @param managedCollateralReserveId_ The identifier of the only reserve usable as collateral.
+  uint64 public immutable SPOKE_REVISION;
+
+  /**
+   * @dev Constructor.
+   * @dev It sets the spoke revision and disables the initializers.
+   * @param spokeRevision_ The revision of the spoke contract.
+   * @param oracle_ The address of the oracle.
+   * @param liquidationManager_ The only address allowed to perform liquidations on this Spoke.
+   * @param managedCollateralReserveId_ The identifier of the only reserve usable as collateral.
+   */
   constructor(
+    uint64 spokeRevision_,
     address oracle_,
     address liquidationManager_,
     uint256 managedCollateralReserveId_
   ) BabylonSpoke(oracle_, liquidationManager_, managedCollateralReserveId_) {
+    SPOKE_REVISION = spokeRevision_;
     _disableInitializers();
   }
 
   /// @notice Initializer.
-  /// @dev The authority contract must implement the `AccessManaged` interface for access control.
-  /// @dev When upgrading a Spoke with listed reserves, the managed collateral reserve must not be
-  /// borrowable.
   /// @param authority The address of the authority contract which manages permissions.
   function initialize(address authority) external override reinitializer(SPOKE_REVISION) {
     emit SetSpokeImmutables(ORACLE, MAX_USER_RESERVES_LIMIT);

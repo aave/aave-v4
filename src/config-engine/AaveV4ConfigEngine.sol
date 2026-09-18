@@ -75,13 +75,6 @@ contract AaveV4ConfigEngine is IAaveV4ConfigEngine {
   }
 
   /// @inheritdoc IAaveV4ConfigEngine
-  function executeBabylonLiquidationConfigUpdates(
-    BabylonLiquidationConfigUpdate[] calldata updates
-  ) external {
-    SpokeEngine.executeBabylonLiquidationConfigUpdates(updates);
-  }
-
-  /// @inheritdoc IAaveV4ConfigEngine
   function executeSpokeDynamicReserveConfigAdditions(
     DynamicReserveConfigAddition[] calldata additions
   ) external {

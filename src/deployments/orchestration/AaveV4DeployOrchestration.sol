@@ -144,13 +144,6 @@ library AaveV4DeployOrchestration {
           spokeConfiguratorAdmin: deployInputs.spokeConfiguratorAdmin
         });
       }
-      if (deployInputs.babylonSpokeLabels.length > 0) {
-        _grantBabylonSpokeRoles({
-          logger: logger,
-          report: report,
-          spokeAdmin: deployInputs.spokeAdmin
-        });
-      }
 
       if (deployInputs.accessManagerAdmin != initialAdmin) {
         logger.logHeader1(
@@ -255,6 +248,11 @@ library AaveV4DeployOrchestration {
     bytes32 salt
   ) internal returns (OrchestrationReports.SpokeDeploymentReport[] memory spokeBatchReports) {
     uint256 spokeCount = inputs.babylonSpokeLabels.length;
+    require(
+      inputs.babylonLiquidationManagers.length == spokeCount &&
+        inputs.babylonManagedCollateralReserveIds.length == spokeCount,
+      'babylon spoke labels/managers/reserve ids length mismatch'
+    );
     spokeBatchReports = new OrchestrationReports.SpokeDeploymentReport[](spokeCount);
     for (uint256 i; i < spokeCount; ++i) {
       bytes32 childSalt = _deriveChildSalt(salt, 'babylonSpoke', inputs.babylonSpokeLabels[i]);
@@ -262,6 +260,8 @@ library AaveV4DeployOrchestration {
         logger: logger,
         proxyAdminOwner: inputs.proxyAdminOwner,
         authority: authority,
+        liquidationManager: inputs.babylonLiquidationManagers[i],
+        managedCollateralReserveId: inputs.babylonManagedCollateralReserveIds[i],
         label: inputs.babylonSpokeLabels[i],
         babylonSpokeBytecode: babylonSpokeBytecode,
         oracleDecimals: DeployConstants.ORACLE_DECIMALS,
@@ -276,6 +276,8 @@ library AaveV4DeployOrchestration {
     Logger logger,
     address proxyAdminOwner,
     address authority,
+    address liquidationManager,
+    uint256 managedCollateralReserveId,
     string memory label,
     bytes memory babylonSpokeBytecode,
     uint8 oracleDecimals,
@@ -288,12 +290,14 @@ library AaveV4DeployOrchestration {
     spokeReport.report = AaveV4DeployBase.deployBabylonSpokeInstanceBatch({
       proxyAdminOwner: proxyAdminOwner,
       authority: authority,
+      liquidationManager: liquidationManager,
+      managedCollateralReserveId: managedCollateralReserveId,
       babylonSpokeBytecode: babylonSpokeBytecode,
       oracleDecimals: oracleDecimals,
       salt: salt
     });
     _logSpokeReport({logger: logger, report: spokeReport.report, label: label});
-    _setupBabylonSpokeRoles({logger: logger, report: spokeReport.report, accessManager: authority});
+    _setupSpokeRoles({logger: logger, report: spokeReport.report, accessManager: authority});
 
     return spokeReport;
   }
@@ -478,18 +482,6 @@ library AaveV4DeployOrchestration {
     });
   }
 
-  function _setupBabylonSpokeRoles(
-    Logger logger,
-    BatchReports.SpokeInstanceBatchReport memory report,
-    address accessManager
-  ) internal {
-    logger.logHeader1('setting Babylon Spoke roles');
-    AaveV4SpokeRolesProcedure.setupBabylonSpokeAllRoles({
-      accessManager: accessManager,
-      spoke: report.spokeProxy
-    });
-  }
-
   function _setupHubRoles(
     Logger logger,
     BatchReports.HubInstanceBatchReport memory report,
@@ -552,21 +544,6 @@ library AaveV4DeployOrchestration {
     AaveV4SpokeConfiguratorRolesProcedure.grantSpokeConfiguratorAllRoles({
       accessManager: accessManager,
       admin: spokeConfiguratorAdmin
-    });
-  }
-
-  function _grantBabylonSpokeRoles(
-    Logger logger,
-    OrchestrationReports.FullDeploymentReport memory report,
-    address spokeAdmin
-  ) internal {
-    address accessManager = report.authorityBatchReport.accessManager;
-
-    logger.logHeader1('granting Babylon Spoke Configurator role to', spokeAdmin);
-    AaveV4SpokeRolesProcedure.grantSpokeRole({
-      accessManager: accessManager,
-      role: Roles.BABYLON_SPOKE_CONFIGURATOR_ROLE,
-      admin: spokeAdmin
     });
   }
 

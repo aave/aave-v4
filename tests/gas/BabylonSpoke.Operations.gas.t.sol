@@ -10,14 +10,20 @@ contract BabylonSpokeOperations_Gas_Tests is BabylonBase, SpokeOperations_Gas_Te
     super.setUp();
     NAMESPACE = 'BabylonSpoke.Operations';
 
-    // the inherited suite runs against the engine-deployed babylon spoke; bob acts as the
-    // liquidation manager over the usdx managed collateral, matching the canonical liquidation
-    // reserves so the snapshots stay comparable
+    // the inherited suite runs against the engine-deployed babylon spoke
     spoke = spoke4;
     reserveId = _getReserveIds(spoke);
-    _updateReserveBorrowableFlag(spoke, reserveId.usdx, false);
-    vm.prank(ADMIN);
-    babylonSpoke.updateBabylonLiquidationConfig(bob, reserveId.usdx);
+  }
+
+  /// @dev bob acts as the liquidation manager, matching the canonical liquidator.
+  function _babylonLiquidationManager() internal view override returns (address) {
+    return bob;
+  }
+
+  /// @dev usdx is the managed collateral, matching the canonical liquidation reserves so the
+  /// snapshots stay comparable.
+  function _babylonManagedCollateralReserveId() internal pure override returns (uint256) {
+    return 3;
   }
 
   /// @dev Babylon liquidations never charge the fee, and the managed collateral reserve rejects one.

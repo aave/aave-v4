@@ -151,17 +151,6 @@ abstract contract AaveV4Payload {
   }
 
   /// @notice Returns the Spoke liquidation config updates to execute. Override to provide updates.
-  /// @notice Babylon liquidation config updates to execute.
-  /// @return An array of BabylonLiquidationConfigUpdate structs (empty by default).
-  function babylonLiquidationConfigUpdates()
-    public
-    view
-    virtual
-    returns (IAaveV4ConfigEngine.BabylonLiquidationConfigUpdate[] memory)
-  {
-    return new IAaveV4ConfigEngine.BabylonLiquidationConfigUpdate[](0);
-  }
-
   /// @return An array of LiquidationConfigUpdate structs (empty by default).
   function spokeLiquidationConfigUpdates()
     public
@@ -356,17 +345,6 @@ abstract contract AaveV4Payload {
     if (liqConfigUpdates.length > 0) {
       _delegateCallEngine(
         abi.encodeCall(IAaveV4ConfigEngine.executeSpokeLiquidationConfigUpdates, (liqConfigUpdates))
-      );
-    }
-
-    IAaveV4ConfigEngine.BabylonLiquidationConfigUpdate[]
-      memory babylonLiqConfigUpdates = babylonLiquidationConfigUpdates();
-    if (babylonLiqConfigUpdates.length > 0) {
-      _delegateCallEngine(
-        abi.encodeCall(
-          IAaveV4ConfigEngine.executeBabylonLiquidationConfigUpdates,
-          (babylonLiqConfigUpdates)
-        )
       );
     }
 

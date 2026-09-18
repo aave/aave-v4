@@ -178,6 +178,8 @@ library AaveV4TestOrchestration {
   function deployTestBabylonSpoke(
     address proxyAdminOwner,
     address accessManager,
+    address liquidationManager,
+    uint256 managedCollateralReserveId,
     bytes memory babylonSpokeBytecode,
     bytes32 salt
   ) external returns (TestTypes.TestSpokeReport memory) {
@@ -186,6 +188,8 @@ library AaveV4TestOrchestration {
       .deployBabylonSpokeInstanceBatch({
         proxyAdminOwner: proxyAdminOwner,
         authority: accessManager,
+        liquidationManager: liquidationManager,
+        managedCollateralReserveId: managedCollateralReserveId,
         babylonSpokeBytecode: babylonSpokeBytecode,
         oracleDecimals: DeployConstants.ORACLE_DECIMALS,
         salt: salt
