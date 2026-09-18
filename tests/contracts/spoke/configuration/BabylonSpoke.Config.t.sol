@@ -28,6 +28,20 @@ contract BabylonSpokeConfigTest is BabylonBase {
   }
 
   /// @dev The managed collateral reserve is listed non-borrowable, so nobody can hold debt in it.
+  /// @dev The user reserves limit of one rejects borrowing a second debt reserve.
+  function test_revert_borrow_secondDebtReserve() public {
+    uint256 usdxReserveId = _usdxReserveId(spoke4);
+    _increaseCollateralSupply(spoke4, collateralReserveId, 10e8, alice);
+    _openSupplyPositionNoCollateral(spoke4, debtReserveId, 1000e18);
+    _openSupplyPositionNoCollateral(spoke4, usdxReserveId, 1000e6);
+
+    vm.startPrank(alice);
+    spoke4.borrow(debtReserveId, 1e18, alice);
+    vm.expectRevert(ISpoke.MaximumUserReservesExceeded.selector);
+    spoke4.borrow(usdxReserveId, 1e6, alice);
+    vm.stopPrank();
+  }
+
   function test_revert_borrow_managedCollateralReserve() public {
     _openSupplyPositionNoCollateral(spoke4, collateralReserveId, 1e8);
     _increaseCollateralSupply(spoke4, collateralReserveId, 1e8, alice);
@@ -243,6 +257,46 @@ contract BabylonSpokeConfigTest is BabylonBase {
     vm.expectRevert(IBabylonSpoke.UnsupportedLiquidationFee.selector);
     vm.prank(SPOKE_ADMIN);
     spoke4.updateDynamicReserveConfig(debtReserveId, dynamicConfigKey, config);
+  }
+
+  /// @dev The overrides keep the canonical access control.
+  function test_revert_addReserve_unauthorized() public {
+    vm.expectRevert(
+      abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, alice)
+    );
+    vm.prank(alice);
+    spoke4.addReserve(
+      address(hub1),
+      usdzAssetId,
+      address(0),
+      _getDefaultReserveConfig(10_00),
+      _getFreshDynamicReserveConfig()
+    );
+  }
+
+  function test_revert_updateReserveConfig_unauthorized() public {
+    ISpoke.ReserveConfig memory config = spoke4.getReserveConfig(collateralReserveId);
+
+    vm.expectRevert(
+      abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, alice)
+    );
+    vm.prank(alice);
+    spoke4.updateReserveConfig(collateralReserveId, config);
+  }
+
+  /// @dev The guard reacts to the borrowable flag only: the managed reserve stays configurable.
+  function test_updateReserveConfig_managedCollateralReserve() public {
+    ISpoke.ReserveConfig memory config = spoke4.getReserveConfig(collateralReserveId);
+    config.frozen = true;
+
+    vm.prank(SPOKE_ADMIN);
+    spoke4.updateReserveConfig(collateralReserveId, config);
+
+    assertTrue(spoke4.getReserveConfig(collateralReserveId).frozen, 'managed reserve frozen');
+    assertFalse(
+      spoke4.getReserveConfig(collateralReserveId).borrowable,
+      'managed reserve not borrowable'
+    );
   }
 
   function test_revert_updateReserveConfig_borrowableManagedCollateral() public {

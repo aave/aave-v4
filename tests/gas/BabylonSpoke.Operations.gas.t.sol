@@ -23,7 +23,7 @@ contract BabylonSpokeOperations_Gas_Tests is BabylonBase, SpokeOperations_Gas_Te
   /// @dev usdx is the managed collateral, matching the canonical liquidation reserves so the
   /// snapshots stay comparable.
   function _babylonManagedCollateralReserveId() internal pure override returns (uint256) {
-    return 3;
+    return BABYLON_USDX_RESERVE_INDEX;
   }
 
   /// @dev Babylon liquidations never charge the fee, and the managed collateral reserve rejects one.

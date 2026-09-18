@@ -3,12 +3,13 @@ pragma solidity ^0.8.0;
 
 import 'tests/contracts/spoke/liquidation/Spoke.BabylonLiquidationCall.Base.t.sol';
 
-/// @dev Babylon liquidation scenarios, mirroring the canonical `SpokeLiquidationCallScenariosTest`
-/// on the managed collateral reserve baked into the spoke. Canonical scenarios 1 and 2 are rederived as a single-collateral health factor decrease
-/// scenario. Scenario 4 is dropped (the liquidator never receives shares), scenarios 6 and 7 are
-/// dropped (no target health factor sizing) and scenario 8 is dropped (the liquidation fee is
-/// never charged, so splitting liquidations cannot grief the treasury). Cap sizing is covered by
-/// the unit suite.
+/// @dev Babylon liquidation scenarios, mirroring the canonical `SpokeLiquidationCallScenariosTest`.
+/// The spoke is deployed with weth as the managed collateral reserve so the canonical numbers hold
+/// verbatim. Canonical scenarios 1 and 2 are rederived as a single-collateral health factor
+/// decrease scenario. Scenario 4 is dropped (the liquidator never receives shares), scenarios 6
+/// and 7 are dropped (no target health factor sizing) and scenario 8 is dropped (the liquidation
+/// fee is never charged, so splitting liquidations cannot grief the treasury). Cap sizing is
+/// covered by the unit suite.
 contract SpokeBabylonLiquidationCallScenariosTest is SpokeBabylonLiquidationCallBaseTest {
   using SafeCast for *;
 
@@ -16,6 +17,10 @@ contract SpokeBabylonLiquidationCallScenariosTest is SpokeBabylonLiquidationCall
     bytes4(keccak256('liquidationCall(uint256,uint256,address,uint256)'));
 
   address public user = makeAddr('user');
+
+  function _babylonManagedCollateralReserveId() internal pure override returns (uint256) {
+    return BABYLON_WETH_RESERVE_INDEX;
+  }
 
   function setUp() public virtual override {
     super.setUp();
@@ -50,13 +55,8 @@ contract SpokeBabylonLiquidationCallScenariosTest is SpokeBabylonLiquidationCall
   }
 
   function test_liquidationCall_revertsWith_ReentrancyGuardReentrantCall_hubRemove() public {
-    uint256 debtReserveId = _wethReserveId(spoke4);
-    _increaseCollateralSupply(
-      spoke4,
-      collateralReserveId,
-      _convertValueToAmount(spoke4, collateralReserveId, 100_000e26),
-      user
-    );
+    uint256 debtReserveId = _daiReserveId(spoke4);
+    _increaseCollateralSupply(spoke4, collateralReserveId, 100000e18, user);
     _makeUserLiquidatable(spoke4, user, debtReserveId, 0.999e18);
 
     MockReentrantCaller reentrantCaller = new MockReentrantCaller(
@@ -75,13 +75,8 @@ contract SpokeBabylonLiquidationCallScenariosTest is SpokeBabylonLiquidationCall
   }
 
   function test_liquidationCall_revertsWith_ReentrancyGuardReentrantCall_hubRestore() public {
-    uint256 debtReserveId = _wethReserveId(spoke4);
-    _increaseCollateralSupply(
-      spoke4,
-      collateralReserveId,
-      _convertValueToAmount(spoke4, collateralReserveId, 100_000e26),
-      user
-    );
+    uint256 debtReserveId = _daiReserveId(spoke4);
+    _increaseCollateralSupply(spoke4, collateralReserveId, 100000e18, user);
     _makeUserLiquidatable(spoke4, user, debtReserveId, 0.999e18);
 
     MockReentrantCaller reentrantCaller = new MockReentrantCaller(
@@ -102,13 +97,8 @@ contract SpokeBabylonLiquidationCallScenariosTest is SpokeBabylonLiquidationCall
   function test_liquidationCall_revertsWith_ReentrancyGuardReentrantCall_hubRefreshPremium()
     public
   {
-    uint256 debtReserveId = _wethReserveId(spoke4);
-    _increaseCollateralSupply(
-      spoke4,
-      collateralReserveId,
-      _convertValueToAmount(spoke4, collateralReserveId, 100_000e26),
-      user
-    );
+    uint256 debtReserveId = _daiReserveId(spoke4);
+    _increaseCollateralSupply(spoke4, collateralReserveId, 100000e18, user);
     _makeUserLiquidatable(spoke4, user, debtReserveId, 0.999e18);
 
     MockReentrantCaller reentrantCaller = new MockReentrantCaller(
@@ -129,13 +119,8 @@ contract SpokeBabylonLiquidationCallScenariosTest is SpokeBabylonLiquidationCall
   }
 
   function test_liquidationCall_revertsWith_ReentrancyGuardReentrantCall_hubReportDeficit() public {
-    uint256 debtReserveId = _wethReserveId(spoke4);
-    _increaseCollateralSupply(
-      spoke4,
-      collateralReserveId,
-      _convertValueToAmount(spoke4, collateralReserveId, 100_000e26),
-      user
-    );
+    uint256 debtReserveId = _daiReserveId(spoke4);
+    _increaseCollateralSupply(spoke4, collateralReserveId, 100000e18, user);
     _makeUserLiquidatable(spoke4, user, debtReserveId, 0.5e18);
 
     MockReentrantCaller reentrantCaller = new MockReentrantCaller(
@@ -156,10 +141,6 @@ contract SpokeBabylonLiquidationCallScenariosTest is SpokeBabylonLiquidationCall
   // User is solvent, but the health factor decreases after liquidation due to a high liquidation
   // bonus: with a single collateral, the decrease happens if and only if lb * cf > hf.
   function test_liquidationCall_scenario_healthFactorDecrease() public {
-    // the managed collateral takes the canonical scenario's WETH parameters: $2000, cf 80%, risk 5%
-    _mockReservePrice({spoke: spoke4, reserveId: collateralReserveId, price: 2000e8});
-    _updateCollateralFactor(spoke4, collateralReserveId, 80_00);
-    _updateCollateralRisk(spoke4, collateralReserveId, 5_00);
     // A high liquidation bonus will be applied
     _updateMaxLiquidationBonus(spoke4, collateralReserveId, 124_00);
 
@@ -179,9 +160,9 @@ contract SpokeBabylonLiquidationCallScenariosTest is SpokeBabylonLiquidationCall
     );
 
     // Collateral and debt composition
-    //   - Collateral: 2 WBTC ($4000 at the mocked price)
+    //   - Collateral: 2 WETH ($4000)
     //   - Debt: 3150 DAI
-    _increaseCollateralSupply(spoke4, collateralReserveId, 2e8, user);
+    _increaseCollateralSupply(spoke4, collateralReserveId, 2e18, user);
     _increaseReserveDebtNoCollateral(spoke4, _daiReserveId(spoke4), 3150e18, user);
 
     ISpoke.UserAccountData memory userAccountData = spoke4.getUserAccountData(user);
@@ -209,7 +190,7 @@ contract SpokeBabylonLiquidationCallScenariosTest is SpokeBabylonLiquidationCall
     );
 
     // Liquidated amounts for a 2000 DAI cover:
-    //   - Collateral: $2000 * 1.24 = $2480 = 1.24 WBTC
+    //   - Collateral: $2000 * 1.24 = $2480 = 1.24 WETH
     //   - Debt: 2000 DAI (premium first, then drawn)
     _checkedBabylonLiquidationCall(
       CheckedBabylonLiquidationCallParams({
@@ -250,21 +231,19 @@ contract SpokeBabylonLiquidationCallScenariosTest is SpokeBabylonLiquidationCall
   function test_liquidationCall_scenario3() public {
     // Liquidation bonus: 0
     _updateMaxLiquidationBonus(spoke4, collateralReserveId, 100_00);
-    _updateCollateralFactor(spoke4, collateralReserveId, 80_00);
 
-    // One wei of collateral is worth 100 wei of debt: the debt price absorbs the 10-decimal gap
-    // between WBTC and DAI
+    // The collateral has a price 100 times higher than the debt
     _mockReservePrice({spoke: spoke4, reserveId: collateralReserveId, price: 100e8});
-    _mockReservePrice({spoke: spoke4, reserveId: _daiReserveId(spoke4), price: 1e18});
+    _mockReservePrice({spoke: spoke4, reserveId: _daiReserveId(spoke4), price: 1e8});
 
-    // Collateral: 1 wei of WBTC
+    // Collateral: 1 wei of WETH
     _increaseCollateralSupply(spoke4, collateralReserveId, 1, user);
 
-    // Max borrow: 79 wei of DAI (collateral factor of the managed collateral is 80%)
+    // Max borrow: 79 wei of DAI (collateral factor of WETH is 80%)
     assertEq(_getCollateralFactor(spoke4, collateralReserveId), 80_00);
     _increaseReserveDebtNoCollateral(spoke4, _daiReserveId(spoke4), 79, user);
 
-    // Decrease the collateral price by 10% to make user unhealthy
+    // Decrease WETH price by 10% to make user unhealthy
     _mockReservePriceByPercent({spoke: spoke4, reserveId: collateralReserveId, percentage: 90_00});
 
     // User is liquidatable
@@ -301,23 +280,21 @@ contract SpokeBabylonLiquidationCallScenariosTest is SpokeBabylonLiquidationCall
   function test_liquidationCall_scenario5() public {
     // Liquidation bonus: 0
     _updateMaxLiquidationBonus(spoke4, collateralReserveId, 100_00);
-    _updateCollateralFactor(spoke4, collateralReserveId, 80_00);
 
     // Supply share price: 1.25
     _mockSupplySharePrice({
       hub: hub1,
-      assetId: wbtcAssetId,
+      assetId: wethAssetId,
       totalAddedAssets: 12_500.25e6,
       addedShares: 10_000e6,
       spoke: address(spoke4)
     });
 
-    // One wei of collateral is worth one wei of debt: the debt price absorbs the 10-decimal gap
-    // between WBTC and DAI
+    // The collateral and debt have the same price
     _mockReservePrice({spoke: spoke4, reserveId: collateralReserveId, price: 1e8});
-    _mockReservePrice({spoke: spoke4, reserveId: _daiReserveId(spoke4), price: 1e18});
+    _mockReservePrice({spoke: spoke4, reserveId: _daiReserveId(spoke4), price: 1e8});
 
-    // Collateral: 3 wei of WBTC -> 2 shares = 2.5 wei
+    // Collateral: 3 wei of WETH -> 2 shares = 2.5 WETH
     _increaseCollateralSupply(spoke4, collateralReserveId, 3, user);
 
     // Mock drawn rate to 10%
@@ -346,7 +323,7 @@ contract SpokeBabylonLiquidationCallScenariosTest is SpokeBabylonLiquidationCall
       collateralReserveId,
       user
     );
-    assertEq(userCollateralPositionBefore.suppliedShares, 2, 'User should have 2 shares of WBTC');
+    assertEq(userCollateralPositionBefore.suppliedShares, 2, 'User should have 2 shares of WETH');
     ISpoke.UserPosition memory userDebtPositionBefore = spoke4.getUserPosition(
       _daiReserveId(spoke4),
       user
@@ -360,7 +337,7 @@ contract SpokeBabylonLiquidationCallScenariosTest is SpokeBabylonLiquidationCall
     );
 
     // Perform liquidation
-    // 1 drawn share of DAI is liquidated = 1.1 wei of DAI = 2.211 wei of value = 2.211 wei of WBTC = 1.7688 WBTC shares
+    // 1 drawn share of DAI is liquidated = 1.1 wei of DAI = 2.211 wei of USD = 2.211 wei of WETH = 1.7688 wei of WETH shares
     vm.prank(liquidationManager);
     babylonSpoke.liquidationCall(_daiReserveId(spoke4), UINT256_MAX, user, UINT256_MAX);
 
@@ -372,7 +349,7 @@ contract SpokeBabylonLiquidationCallScenariosTest is SpokeBabylonLiquidationCall
     assertEq(
       userCollateralPositionAfter.suppliedShares,
       1,
-      'User should have 1 share of WBTC after liquidation'
+      'User should have 1 share of WETH after liquidation'
     );
     ISpoke.UserPosition memory userDebtPositionAfter = spoke4.getUserPosition(
       _daiReserveId(spoke4),

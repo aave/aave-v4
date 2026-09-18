@@ -3,6 +3,7 @@ pragma solidity ^0.8.0;
 
 import 'tests/utils/BatchTestProcedures.sol';
 import {IBabylonSpoke} from 'src/spoke/interfaces/IBabylonSpoke.sol';
+import {IAccessManager} from 'src/dependencies/openzeppelin/IAccessManager.sol';
 import {BatchReports} from 'src/deployments/libraries/BatchReports.sol';
 
 contract AaveV4BatchDeploymentTest is BatchTestProcedures {
@@ -375,6 +376,15 @@ contract AaveV4BatchDeploymentTest is BatchTestProcedures {
       IBabylonSpoke(babylonReport.spokeProxy).MANAGED_COLLATERAL_RESERVE_ID(),
       2,
       'babylon spoke managed collateral reserve id'
+    );
+    // the babylon spoke carries the canonical spoke roles
+    assertEq(
+      IAccessManager(report.authorityBatchReport.accessManager).getTargetFunctionRole(
+        babylonReport.spokeProxy,
+        ISpoke.addReserve.selector
+      ),
+      Roles.SPOKE_CONFIGURATOR_ROLE,
+      'babylon spoke configurator role wiring'
     );
   }
 

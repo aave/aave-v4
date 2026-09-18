@@ -30,21 +30,13 @@ contract SpokeBabylonLiquidationCallTest is SpokeBabylonLiquidationCallBaseTest 
     return _expectedRepaidValue(user, removedValue);
   }
 
-  /// @dev The user reserves limit of one rejects borrowing a second debt reserve.
-  function test_revert_borrow_secondDebtReserve() public {
-    _increaseCollateralSupply(
-      spoke4,
-      collateralReserveId,
-      _convertValueToAmount(spoke4, collateralReserveId, 100_000e26),
-      user
-    );
-    _makeUserLiquidatable(spoke4, user, debtReserveId, 1.5e18);
-    uint256 usdxReserveId = _usdxReserveId(spoke4);
-    _openSupplyPositionNoCollateral(spoke4, usdxReserveId, 1e6);
+  /// @dev The managed collateral reserve never carries debt, so it is never a valid debt reserve.
+  function test_revert_liquidationCall_managedCollateralReserveAsDebt() public {
+    _setUpLiquidatableUser(100_000e26, 0.95e18);
 
-    vm.expectRevert(ISpoke.MaximumUserReservesExceeded.selector);
-    vm.prank(user);
-    spoke4.borrow(usdxReserveId, 1e6, user);
+    vm.expectRevert(ISpoke.ReserveNotBorrowed.selector);
+    vm.prank(liquidationManager);
+    babylonSpoke.liquidationCall(collateralReserveId, 1e18, user, 1e8);
   }
 
   function test_revert_liquidationCall_notLiquidationManager() public {

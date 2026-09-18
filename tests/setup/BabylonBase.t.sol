@@ -15,6 +15,11 @@ abstract contract BabylonBase is Base {
   IAaveOracle internal oracle4;
   address internal liquidationManager = makeAddr('liquidationManager');
 
+  /// @dev Positions of the reserves in `_getBabylonReserveParams`, hence their reserve ids.
+  uint256 internal constant BABYLON_WETH_RESERVE_INDEX = 0;
+  uint256 internal constant BABYLON_WBTC_RESERVE_INDEX = 1;
+  uint256 internal constant BABYLON_USDX_RESERVE_INDEX = 3;
+
   function setUp() public virtual override {
     super.setUp();
     _deployBabylonSpoke();
@@ -26,10 +31,9 @@ abstract contract BabylonBase is Base {
     return liquidationManager;
   }
 
-  /// @dev The managed collateral reserve baked into the babylon spoke: the index of the reserve in
-  /// `_getBabylonReserveParams`, wbtc by default.
+  /// @dev The managed collateral reserve baked into the babylon spoke, wbtc by default.
   function _babylonManagedCollateralReserveId() internal view virtual returns (uint256) {
-    return 1;
+    return BABYLON_WBTC_RESERVE_INDEX;
   }
 
   /// @dev Supplies liquidity from a fresh user without registering it as collateral: only the

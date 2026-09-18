@@ -162,6 +162,24 @@ contract BabylonLiquidationLogicLiquidationAmountsTest is BabylonLiquidationLogi
     );
   }
 
+  /// @dev A cap equal to the priced removal is not enforced: the unbounded sizing stands.
+  function test_calculateLiquidationAmounts_CapEqualsUnboundedRemoval() public {
+    _mockFixedSharePrice();
+    BabylonLiquidationLogic.LiquidationAmounts
+      memory liquidationAmounts = babylonLiquidationLogicWrapper.calculateLiquidationAmounts(
+        _getParams({debtToCover: 2.1e18, maxRemovableShares: 4032e6})
+      );
+
+    assertEq(
+      liquidationAmounts,
+      BabylonLiquidationLogic.LiquidationAmounts({
+        collateralSharesToLiquidate: 4032e6,
+        drawnSharesToLiquidate: 1e18,
+        premiumDebtRayToLiquidate: 0.5e18 * 1e27
+      })
+    );
+  }
+
   function test_calculateLiquidationAmounts_CapEnforced_PremiumOnly() public {
     _mockFixedSharePrice();
     // the cap prices to 240 shares * 1.25 * $1 / (120% * $2000) = 0.125 < premium 0.5

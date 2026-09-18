@@ -39,10 +39,7 @@ abstract contract SpokeBabylonLiquidationCallHelperTest is SpokeBabylonLiquidati
     return candidates[bound(debtReserveId, 0, count - 1)];
   }
 
-  function _processAdditionalSetup(
-    uint256 collateralReserveId,
-    uint256 debtReserveId
-  ) internal virtual {
+  function _processAdditionalSetup(uint256 debtReserveId) internal virtual {
     skipTime = vm.randomUint(0, 10 * 365 days);
     baseAmountValue = vm.randomUint(MIN_AMOUNT_IN_BASE_CURRENCY, MAX_AMOUNT_IN_BASE_CURRENCY);
 
@@ -135,7 +132,7 @@ abstract contract SpokeBabylonLiquidationCallHelperTest is SpokeBabylonLiquidati
     uint256 maxCollateralToRemove
   ) public virtual {
     debtReserveId = _boundDebtReserve(debtReserveId);
-    _processAdditionalSetup(collateralReserveId, debtReserveId);
+    _processAdditionalSetup(debtReserveId);
 
     _increaseCollateralSupply(
       spoke,
@@ -158,7 +155,7 @@ abstract contract SpokeBabylonLiquidationCallHelperTest is SpokeBabylonLiquidati
     uint256 maxCollateralToRemove
   ) public virtual {
     debtReserveId = _boundDebtReserve(debtReserveId);
-    _processAdditionalSetup(collateralReserveId, debtReserveId);
+    _processAdditionalSetup(debtReserveId);
 
     _increaseCollateralSupply(
       spoke,
@@ -200,21 +197,15 @@ abstract contract SpokeBabylonLiquidationCallHelperTest is SpokeBabylonLiquidati
 }
 
 contract SpokeBabylonLiquidationCallTest_SmallPosition is SpokeBabylonLiquidationCallHelperTest {
-  function _processAdditionalSetup(
-    uint256 collateralReserveId,
-    uint256 debtReserveId
-  ) internal virtual override {
-    super._processAdditionalSetup(collateralReserveId, debtReserveId);
+  function _processAdditionalSetup(uint256 debtReserveId) internal virtual override {
+    super._processAdditionalSetup(debtReserveId);
     baseAmountValue = vm.randomUint(MIN_AMOUNT_IN_BASE_CURRENCY, 10_000e26);
   }
 }
 
 contract SpokeBabylonLiquidationCallTest_LargePosition is SpokeBabylonLiquidationCallHelperTest {
-  function _processAdditionalSetup(
-    uint256 collateralReserveId,
-    uint256 debtReserveId
-  ) internal virtual override {
-    super._processAdditionalSetup(collateralReserveId, debtReserveId);
+  function _processAdditionalSetup(uint256 debtReserveId) internal virtual override {
+    super._processAdditionalSetup(debtReserveId);
     baseAmountValue = vm.randomUint(100_000e26, MAX_AMOUNT_IN_BASE_CURRENCY);
   }
 }
@@ -222,11 +213,8 @@ contract SpokeBabylonLiquidationCallTest_LargePosition is SpokeBabylonLiquidatio
 contract SpokeBabylonLiquidationCallTest_NoLiquidationBonus is
   SpokeBabylonLiquidationCallHelperTest
 {
-  function _processAdditionalSetup(
-    uint256 collateralReserveId,
-    uint256 debtReserveId
-  ) internal virtual override {
-    super._processAdditionalSetup(collateralReserveId, debtReserveId);
+  function _processAdditionalSetup(uint256 debtReserveId) internal virtual override {
+    super._processAdditionalSetup(debtReserveId);
     _updateMaxLiquidationBonus(spoke, collateralReserveId, 100_00);
   }
 
@@ -245,11 +233,8 @@ contract SpokeBabylonLiquidationCallTest_SmallLiquidationBonus is
   using PercentageMath for *;
   using SafeCast for uint256;
 
-  function _processAdditionalSetup(
-    uint256 collateralReserveId,
-    uint256 debtReserveId
-  ) internal virtual override {
-    super._processAdditionalSetup(collateralReserveId, debtReserveId);
+  function _processAdditionalSetup(uint256 debtReserveId) internal virtual override {
+    super._processAdditionalSetup(debtReserveId);
     _updateCollateralFactor(spoke, collateralReserveId, 1); // temporary value to have full range of possibility for liquidation bonus
     _updateMaxLiquidationBonus(
       spoke,
@@ -283,11 +268,8 @@ contract SpokeBabylonLiquidationCallTest_LargeLiquidationBonus is
   using PercentageMath for *;
   using SafeCast for *;
 
-  function _processAdditionalSetup(
-    uint256 collateralReserveId,
-    uint256 debtReserveId
-  ) internal virtual override {
-    super._processAdditionalSetup(collateralReserveId, debtReserveId);
+  function _processAdditionalSetup(uint256 debtReserveId) internal virtual override {
+    super._processAdditionalSetup(debtReserveId);
     _updateCollateralFactor(spoke, collateralReserveId, 1); // temporary value to have full range of possibility for liquidation bonus
     _updateMaxLiquidationBonus(
       spoke,
@@ -316,11 +298,8 @@ contract SpokeBabylonLiquidationCallTest_LargeLiquidationBonus is
 }
 
 contract SpokeBabylonLiquidationCallTest_NoPremium is SpokeBabylonLiquidationCallHelperTest {
-  function _processAdditionalSetup(
-    uint256 collateralReserveId,
-    uint256 debtReserveId
-  ) internal virtual override {
-    super._processAdditionalSetup(collateralReserveId, debtReserveId);
+  function _processAdditionalSetup(uint256 debtReserveId) internal virtual override {
+    super._processAdditionalSetup(debtReserveId);
     for (uint256 i = 0; i < spoke.getReserveCount(); i++) {
       _updateCollateralRisk(spoke, i, 0);
     }
@@ -342,11 +321,8 @@ contract SpokeBabylonLiquidationCallTest_Premium is SpokeBabylonLiquidationCallH
 
   uint256 internal premiumDebtReserveId;
 
-  function _processAdditionalSetup(
-    uint256 collateralReserveId,
-    uint256 debtReserveId
-  ) internal virtual override {
-    super._processAdditionalSetup(collateralReserveId, debtReserveId);
+  function _processAdditionalSetup(uint256 debtReserveId) internal virtual override {
+    super._processAdditionalSetup(debtReserveId);
     premiumDebtReserveId = debtReserveId;
     skipTime = vm.randomUint(1, 10 * 365 days);
     _updateCollateralRisk(
@@ -385,11 +361,8 @@ contract SpokeBabylonLiquidationCallTest_Premium is SpokeBabylonLiquidationCallH
 }
 
 contract SpokeBabylonLiquidationCallTest_NoTimeSkip is SpokeBabylonLiquidationCallHelperTest {
-  function _processAdditionalSetup(
-    uint256 collateralReserveId,
-    uint256 debtReserveId
-  ) internal virtual override {
-    super._processAdditionalSetup(collateralReserveId, debtReserveId);
+  function _processAdditionalSetup(uint256 debtReserveId) internal virtual override {
+    super._processAdditionalSetup(debtReserveId);
     skipTime = 0;
   }
 
@@ -411,11 +384,8 @@ contract SpokeBabylonLiquidationCallTest_NoTimeSkip is SpokeBabylonLiquidationCa
 contract SpokeBabylonLiquidationCallTest_LiquidatorHistory is
   SpokeBabylonLiquidationCallHelperTest
 {
-  function _processAdditionalSetup(
-    uint256 collateralReserveId,
-    uint256 debtReserveId
-  ) internal virtual override {
-    super._processAdditionalSetup(collateralReserveId, debtReserveId);
+  function _processAdditionalSetup(uint256 debtReserveId) internal virtual override {
+    super._processAdditionalSetup(debtReserveId);
 
     // the liquidation manager holds its own position: the single registered collateral with
     // borrow history in the debt reserve, which is the only reserve it may borrow
