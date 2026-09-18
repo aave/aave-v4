@@ -54,7 +54,10 @@ contract SpokeBabylonLiquidationCallBaseTest is BabylonBase, SpokeLiquidationCal
 
   function setUp() public virtual override(BabylonBase, LiquidationLogicBaseTest) {
     super.setUp();
-    babylonLiquidationLogicWrapper = new BabylonLiquidationLogicWrapper();
+    babylonLiquidationLogicWrapper = new BabylonLiquidationLogicWrapper(
+      makeAddr('borrower'),
+      makeAddr('liquidator')
+    );
     collateralReserveId = babylonSpoke.MANAGED_COLLATERAL_RESERVE_ID();
   }
 
