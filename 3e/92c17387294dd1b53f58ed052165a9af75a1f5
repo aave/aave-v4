@@ -1,0 +1,29 @@
+tests/contracts/spoke/libraries/babylon-liquidation-logic/BabylonLiquidationLogic.Base.t.sol
+  s_8735c0799a11e7::t_372e7429d1b9d4 1-180
+tests/contracts/spoke/libraries/babylon-liquidation-logic/BabylonLiquidationLogic.ExecuteLiquidation.t.sol
+  s_8735c0799a11e7::t_2f4021c0af784b 1-386
+tests/contracts/spoke/libraries/babylon-liquidation-logic/BabylonLiquidationLogic.LiquidateUser.t.sol
+  s_8735c0799a11e7::t_457df0cf253a5f 1-265
+tests/contracts/spoke/libraries/babylon-liquidation-logic/BabylonLiquidationLogic.LiquidationAmounts.t.sol
+  s_8735c0799a11e7::t_988ed37ec36bba 1-275
+tests/contracts/spoke/liquidation/Spoke.BabylonLiquidationCall.Base.t.sol
+  s_8735c0799a11e7::t_79e3532e8082e5 57-60
+tests/helpers/mocks/BabylonLiquidationLogicWrapper.sol
+  s_8735c0799a11e7::t_8ff0367972f109 4-7,9,11-12,16-147,150,153-168
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "3e92c17387294dd1b53f58ed052165a9af75a1f5",
+  "prompts": {},
+  "sessions": {
+    "s_8735c0799a11e7": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "3b79ae1e-863b-4fc1-bc48-ba957ce7e0b8",
+        "model": "claude-fable-5-1"
+      },
+      "human_author": "Alexandru Niculae <43644109+avniculae@users.noreply.github.com>"
+    }
+  }
+}
