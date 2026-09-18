@@ -19,6 +19,9 @@ contract AaveV4BaseDeployConfigTest is PostDeploymentVerificationBase, AaveV4Dep
   address internal constant V4_SECURITY_COUNCIL = 0x187AAE17d4931310B3fc75743e7F16Bdc9eD77e9;
   /// @dev `GovernanceV3Base.EXECUTOR_LVL_1`.
   address internal constant GOVERNANCE_EXECUTOR = 0x9390B1735def18560c509E2d0bc090E9d6BA257a;
+  /// @dev The V4 Security Council executor on Base, owned by the Council Safe. It is what executes
+  ///      the Council's configuration payloads, so it holds roles 200 and 400.
+  address internal constant COUNCIL_EXECUTOR = 0xA9D9923A1ADC1200771aaaA38CFeD6A5b8483d70;
   address internal constant WETH = 0x4200000000000000000000000000000000000006;
   address internal constant USDC = 0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913;
   /// @dev The `PriceCapAdapterStable` Aave V3 Base already prices USDC through, capped at $1.04.
@@ -34,9 +37,9 @@ contract AaveV4BaseDeployConfigTest is PostDeploymentVerificationBase, AaveV4Dep
     assertEq(_expectedChainId(), BASE_CHAIN_ID);
   }
 
-  /// @dev The Security Council owns the market outright. The V4 Security Council executor is not
-  ///      deployed on Base yet, so both configurator domain admin fields are still the placeholder:
-  ///      update these assertions together with config/base.json once it is.
+  /// @dev The Security Council owns the market outright, and its executor takes the two configurator
+  ///      domain admin roles. That is the Avalanche split: every ownership sits with the Council,
+  ///      and the Council/governance separation lives entirely in the role map.
   function test_deployInputs() public view {
     InputUtils.FullDeployInputs memory inputs = _getDeployInputs();
 
@@ -48,8 +51,8 @@ contract AaveV4BaseDeployConfigTest is PostDeploymentVerificationBase, AaveV4Dep
 
     // the domain admin roles end up with whoever executes the Council's configuration payloads,
     // which is not the Safe that owns the market
-    assertEq(inputs.hubConfiguratorAdmin, PLACEHOLDER_ADDRESS, 'hubConfiguratorAdmin');
-    assertEq(inputs.spokeConfiguratorAdmin, PLACEHOLDER_ADDRESS, 'spokeConfiguratorAdmin');
+    assertEq(inputs.hubConfiguratorAdmin, COUNCIL_EXECUTOR, 'hubConfiguratorAdmin');
+    assertEq(inputs.spokeConfiguratorAdmin, COUNCIL_EXECUTOR, 'spokeConfiguratorAdmin');
 
     // roles 100-103 and 300-302 are left unheld, as on the live Ethereum and Avalanche markets
     assertEq(inputs.hubAdmin, address(0), 'hubAdmin');
@@ -75,7 +78,7 @@ contract AaveV4BaseDeployConfigTest is PostDeploymentVerificationBase, AaveV4Dep
     AaveV4BaseConfigInputs.Handover memory targets = AaveV4BaseConfigInputs.readHandover();
 
     assertEq(targets.securityCouncil, V4_SECURITY_COUNCIL, 'securityCouncil');
-    assertEq(targets.councilExecutor, PLACEHOLDER_ADDRESS, 'councilExecutor');
+    assertEq(targets.councilExecutor, COUNCIL_EXECUTOR, 'councilExecutor');
     assertEq(targets.governanceExecutor, GOVERNANCE_EXECUTOR, 'governanceExecutor');
     assertEq(targets.proxyAdminOwner, V4_SECURITY_COUNCIL, 'proxyAdminOwner');
     assertEq(targets.treasurySpokeOwner, V4_SECURITY_COUNCIL, 'treasurySpokeOwner');
@@ -121,6 +124,9 @@ contract AaveV4BaseDeployConfigTest is PostDeploymentVerificationBase, AaveV4Dep
       assertEq(asset.symbol, symbols[i], 'symbol');
       assertEq(asset.underlying, underlyings[i], 'underlying');
       assertEq(asset.priceSource, priceSources[i], 'price source');
+      // declared, not read off the token: the equities carry a single `0xef` code byte that no EVM
+      // executing their code can call into
+      assertEq(asset.decimals, 8, 'decimals');
       assertEq(asset.collateralFactor, collateralFactors[i], 'collateral factor');
       assertEq(asset.addCap, addCaps[i], 'add cap');
 
@@ -148,6 +154,7 @@ contract AaveV4BaseDeployConfigTest is PostDeploymentVerificationBase, AaveV4Dep
     assertEq(usdc.symbol, 'USDC', 'USDC symbol');
     assertEq(usdc.underlying, USDC, 'USDC underlying');
     assertEq(usdc.priceSource, USDC_PRICE_SOURCE, 'USDC price source');
+    assertEq(usdc.decimals, 6, 'USDC decimals');
 
     // borrowable and never collateral, so the bonus is the 0.00% floor the Spoke validation accepts
     assertTrue(usdc.borrowable, 'USDC borrowable');
@@ -181,11 +188,19 @@ contract AaveV4BaseDeployConfigTest is PostDeploymentVerificationBase, AaveV4Dep
     assertEq(config.liquidationBonusFactor, 90_00, 'liquidation bonus factor');
   }
 
-  /// @notice A deploy on Base itself refuses to read the placeholder address.
-  function test_deployRevertsOnBaseWithPlaceholders() public {
+  /// @notice Every address a Base deploy reads is resolved, so the placeholder guard lets it run.
+  /// @dev The inverse of what this asserted while the Council executor was undeployed. The guard in
+  ///      `AaveV4DeployBase` stays as a net for a future edit that reintroduces a placeholder.
+  function test_deployInputsAreResolvedOnBase() public {
     vm.chainId(BASE_CHAIN_ID);
-    vm.expectRevert(abi.encodeWithSelector(PlaceholderAddress.selector, 'hubConfiguratorAdmin'));
-    this.readDeployInputs();
+    InputUtils.FullDeployInputs memory inputs = this.readDeployInputs();
+
+    assertTrue(inputs.hubConfiguratorAdmin != PLACEHOLDER_ADDRESS, 'hubConfiguratorAdmin');
+    assertTrue(inputs.spokeConfiguratorAdmin != PLACEHOLDER_ADDRESS, 'spokeConfiguratorAdmin');
+    assertTrue(
+      AaveV4BaseConfigInputs.readHandover().governanceExecutor != PLACEHOLDER_ADDRESS,
+      'governanceExecutor'
+    );
   }
 
   /// @dev Exposes the deploy inputs externally, so that `vm.expectRevert` sees a nested call.

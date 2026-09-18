@@ -137,6 +137,16 @@ After step 4 the Council has one thing left to do: `acceptOwnership()` on each o
 
 See `src/deployments/README.md` for what the orchestration does and why the library pre-deploy is a separate step.
 
+### Step 1 lands on the same LiquidationLogic as every other market
+
+`0x88dF535473C5adf1f57789734A05E555F7Deb8DB`, which is where Ethereum and Avalanche have it and what every Spoke on both links against.
+
+That is a CREATE2 result through the Safe Singleton Factory, which is already on Base, so the address follows from the creation code and the salt alone. `SpokeDeployUtils.LIQUIDATION_LOGIC_SALT` is `0x2bdf`, read back off the Ethereum deployment transaction — its calldata to the factory is the salt followed by the creation code. This used to pass a zero salt, which lands on `0x818E84198224535FAeaEc1b583d3Ff6b812A5AF3` instead; that is what Arc runs, and it is the same bytecode at a different address.
+
+The creation code has to stay byte-identical for the address to hold. LiquidationLogic is not in `compilation_restrictions`, so it builds under the default profile rather than the Spoke's via-ir one, and `optimizer_runs`, `evm_version`, `solc_version` or `bytecode_hash` moving there moves the address. `tests/deployments/utils/LiquidationLogicAddress.t.sol` pins both the creation code hash and the resulting address, so that fails the suite rather than quietly producing a new deployment. (The Makefile's `FOUNDRY_PROFILE=base` is not a risk here: no `[profile.base]` exists, so it resolves to the default profile unchanged.)
+
+**Do not skip step 1.** `.env` carries the library address in `FOUNDRY_LIBRARIES`, and the link happens at compile time with no on-chain check, so going straight to step 2 produces Spokes linked to an address that holds no code on Base. When `FOUNDRY_LIBRARIES` is set but the library is missing on the target chain, `LibraryPreCompile` deletes the line and reverts with `RETRY AGAIN`; that is the guard working, and the second run deploys it and rewrites the line.
+
 ## Configuration is direct calls, not a payload
 
 Every `HubConfigurator` and `SpokeConfigurator` function is `external restricted`, gated per target function on the AccessManager. An EOA holding the role calls them directly, which is what the configuration script does. `AaveV4ConfigEngine` is not used here: it is invoked by delegatecall, and a forge script broadcasting from an EOA cannot delegatecall. The engine is the path for governance payloads once the market is handed over — including the payload that unhalts it — which is why the domain admin roles end up with the Council executor.

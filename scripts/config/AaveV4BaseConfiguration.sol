@@ -184,6 +184,12 @@ library AaveV4BaseConfiguration {
   }
 
   /// @notice Lists an asset on the Hub with its rate curve and liquidity fee.
+  /// @dev Declares the underlying's decimals rather than letting `addAsset` read them off the token.
+  /// The Coinbase equities are handled natively by the Base client and hold a single `0xef` code
+  /// byte, so a `decimals()` call on them reverts in any EVM that executes their code — which
+  /// includes the simulation `forge script` runs before broadcasting. Nothing else in the
+  /// configuration path touches the underlying: the Hub stores the decimals it is given and
+  /// `Spoke.addReserve` reads them back off the Hub.
   /// @param market The deployed Base market.
   /// @param asset The asset to list.
   /// @return The Hub asset id of the listed asset.
@@ -200,9 +206,10 @@ library AaveV4BaseConfiguration {
       });
 
     return
-      IHubConfigurator(market.hubConfigurator).addAsset({
+      IHubConfigurator(market.hubConfigurator).addAssetWithDecimals({
         hub: market.hub,
         underlying: asset.underlying,
+        decimals: asset.decimals,
         feeReceiver: market.treasurySpoke,
         liquidityFee: asset.liquidityFee,
         irStrategy: market.irStrategy,

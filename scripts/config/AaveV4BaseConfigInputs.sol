@@ -58,6 +58,10 @@ library AaveV4BaseConfigInputs {
   /// parameters it is listed with.
   /// @dev symbol The underlying's symbol, used for error reporting and logging only.
   /// @dev priceSource The price feed of the asset, which must report 8 decimals.
+  /// @dev decimals The underlying's own decimals, declared rather than read off the token. The
+  /// Coinbase equities are handled natively by the Base client and carry a single `0xef` code byte,
+  /// which the EVM cannot execute, so `decimals()` on them reverts under any local or forked run —
+  /// including the simulation `forge script` does before it broadcasts.
   /// @dev liquidityFee The protocol fee on drawn and premium liquidity growth, in BPS.
   /// @dev optimalUsageRatio The usage ratio the rate curve kinks at, in BPS.
   /// @dev baseDrawnRate The drawn rate at zero usage, in BPS.
@@ -78,6 +82,7 @@ library AaveV4BaseConfigInputs {
     string symbol;
     address underlying;
     address priceSource;
+    uint8 decimals;
     uint16 liquidityFee;
     uint16 optimalUsageRatio;
     uint32 baseDrawnRate;
@@ -211,6 +216,7 @@ library AaveV4BaseConfigInputs {
     asset.symbol = vm.parseJsonString(json, string.concat(path, '.symbol'));
     asset.underlying = vm.parseJsonAddress(json, string.concat(path, '.underlying'));
     asset.priceSource = vm.parseJsonAddress(json, string.concat(path, '.priceSource'));
+    asset.decimals = _uint(json, path, 'decimals').toUint8();
 
     asset.liquidityFee = _uint(json, path, 'liquidityFee').toUint16();
     asset.optimalUsageRatio = _uint(json, path, 'optimalUsageRatio').toUint16();

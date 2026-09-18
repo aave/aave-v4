@@ -43,7 +43,6 @@ import {Test} from 'forge-std/Test.sol';
 contract AaveV4BaseConfigureAndRelinquishTest is Test, Create2TestHelper, AaveV4DeployBase {
   /// @dev Matches `DeployConstants.ORACLE_DECIMALS`, which `AaveOracle` enforces on price sources.
   uint8 internal constant PRICE_FEED_DECIMALS = DeployConstants.ORACLE_DECIMALS;
-  uint8 internal constant MOCK_ASSET_DECIMALS = 8;
   uint256 internal constant MOCK_PRICE = 1e8;
 
   address internal _deployer = makeAddr('deployer');
@@ -515,7 +514,7 @@ contract AaveV4BaseConfigureAndRelinquishTest is Test, Create2TestHelper, AaveV4
   function _etchAsset(AaveV4BaseConfigInputs.Asset memory asset) internal {
     deployCodeTo(
       'TestnetERC20.sol:TestnetERC20',
-      abi.encode(asset.symbol, asset.symbol, MOCK_ASSET_DECIMALS),
+      abi.encode(asset.symbol, asset.symbol, asset.decimals),
       asset.underlying
     );
     deployCodeTo(
