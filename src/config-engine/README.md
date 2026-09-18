@@ -8,7 +8,7 @@ The `AaveV4ConfigEngine` is a helper smart contract to abstract best practices w
 
 Based on experience reviewing governance payloads for Aave V3, the config engine provides a type-safe, composable interface that covers the most common administrative operations: Hub configuration, Spoke configuration, AccessManager role management, and PositionManager administration.
 
-The engine itself is **stateless** — it never stores data of its own. Payloads invoke it via `delegatecall`, so every external call the engine makes executes in the payload's (governance executor's) context and with the executor's permissions.
+The engine itself is **stateless** — it never stores data of its own. Payloads invoke it via `delegatecall`, so every external call the engine makes executes in the governance executor's context and with the executor's permissions. See [Execution context](#execution-context) for the full topology.
 
 ## How to use the engine?
 
@@ -22,17 +22,17 @@ The four groups, and the virtual functions in each, are listed below.
 
 #### Hub actions (`_executeHubActions`)
 
-| Function                      | Struct                  | Purpose                                                                                               |
-| ----------------------------- | ----------------------- | ----------------------------------------------------------------------------------------------------- |
-| `hubAssetListings()`          | `AssetListing`          | List a new asset on a Hub. Optionally deploys a TokenizationSpoke if `symbol` `and name` are defined. |
-| `hubAssetConfigUpdates()`     | `AssetConfigUpdate`     | Update fee config, IR strategy/data, reinvestment controller                                          |
-| `hubSpokeToAssetsAdditions()` | `SpokeToAssetsAddition` | Register a Spoke for multiple assets                                                                  |
-| `hubSpokeConfigUpdates()`     | `SpokeConfigUpdate`     | Update Spoke caps, risk premium threshold, active/halted                                              |
-| `hubAssetHalts()`             | `AssetHalt`             | Halt an asset                                                                                         |
-| `hubAssetDeactivations()`     | `AssetDeactivation`     | Deactivate an asset                                                                                   |
-| `hubAssetCapsResets()`        | `AssetCapsReset`        | Reset asset caps                                                                                      |
-| `hubSpokeDeactivations()`     | `SpokeDeactivation`     | Deactivate a Spoke                                                                                    |
-| `hubSpokeCapsResets()`        | `SpokeCapsReset`        | Reset Spoke caps                                                                                      |
+| Function                      | Struct                  | Purpose                                                                                                                                        |
+| ----------------------------- | ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| `hubAssetListings()`          | `AssetListing`          | List a new asset on a Hub. Optionally deploys a TokenizationSpoke if all tokenization params are set (`name`, `symbol` and `proxyAdminOwner`). |
+| `hubAssetConfigUpdates()`     | `AssetConfigUpdate`     | Update fee config, IR strategy/data, reinvestment controller                                                                                   |
+| `hubSpokeToAssetsAdditions()` | `SpokeToAssetsAddition` | Register a Spoke for multiple assets                                                                                                           |
+| `hubSpokeConfigUpdates()`     | `SpokeConfigUpdate`     | Update Spoke caps, risk premium threshold, active/halted                                                                                       |
+| `hubAssetHalts()`             | `AssetHalt`             | Halt an asset                                                                                                                                  |
+| `hubAssetDeactivations()`     | `AssetDeactivation`     | Deactivate an asset                                                                                                                            |
+| `hubAssetCapsResets()`        | `AssetCapsReset`        | Reset asset caps                                                                                                                               |
+| `hubSpokeDeactivations()`     | `SpokeDeactivation`     | Deactivate a Spoke                                                                                                                             |
+| `hubSpokeCapsResets()`        | `SpokeCapsReset`        | Reset Spoke caps                                                                                                                               |
 
 #### Spoke actions (`_executeSpokeActions`)
 
@@ -100,8 +100,11 @@ When `execute()` is called, actions run in the following fixed order:
    5. Dynamic reserve config updates
    6. Position manager updates
 5. **PositionManager actions** (in order):
-   1. Spoke registrations
-   2. Role renouncements
+   1. Spoke PositionManager Role renouncements
+   2. Spoke registrations
+
+   Spoke PositionManager role renouncements run first because renouncing requires the Spoke to still be registered on the position manager — this allows renouncing and deregistering the same Spoke in one payload.
+
 6. `_postExecute()`
 
 ### The `KEEP_CURRENT` sentinel pattern
@@ -129,7 +132,7 @@ Several engine functions inspect which fields differ from `KEEP_CURRENT` and cho
 - **Reserve config** (`SpokeEngine.executeSpokeReserveConfigUpdates`) — each flag (priceSource, collateralRisk, paused, frozen, borrowable, receiveSharesEnabled) is updated individually only when it differs from `KEEP_CURRENT` / `KEEP_CURRENT_ADDRESS`.
 - **Liquidation config** (`SpokeEngine.executeSpokeLiquidationConfigUpdates`) — calls `updateLiquidationConfig` when all three fields change, otherwise updates each field individually.
 - **Dynamic reserve config** (`SpokeEngine.executeSpokeDynamicReserveConfigUpdates`) — reads the current on-chain config, patches only the non-sentinel fields, and writes back the merged result. If nothing changed, the external call is skipped entirely.
-- **Role update** (`AccessManagerEngine.executeRoleUpdates`) — a single `RoleUpdate` struct can update any combination of admin (`uint64`), guardian (`uint64`), grant delay (`uint32`), and label (`string`). Fields set to their type-max sentinel (`KEEP_CURRENT_UINT64` / `KEEP_CURRENT_UINT32`) or empty string are skipped.
+- **Role update** (`AccessManagerEngine.executeRoleUpdates`) — a single `RoleUpdate` struct can update any combination of admin (`uint64`), guardian (`uint64`), grant delay (`uint32`), and label (`string`). Fields set to their type-max sentinel (`KEEP_CURRENT_UINT64` / `KEEP_CURRENT_UINT32`) or empty string are skipped. Set `labelUpdate` to `true` to relabel an already-labeled role — the existing label is cleared first (required by the AccessManagerEnumerable label tracking); with `labelUpdate` `false`, labeling an already-labeled role reverts. Clearing a label without setting a new one is not expressible through the engine and requires a direct `labelRole` call.
 
 ### Delegatecall architecture
 
@@ -142,6 +145,15 @@ Several engine functions inspect which fields differ from `KEEP_CURRENT` and cho
 
 When a payload calls `execute()`, `AaveV4Payload` delegate-calls into `AaveV4ConfigEngine`, which in turn delegate-calls into the appropriate sub-engine. This two-level delegatecall chain means:
 
-- All sub-engine code runs in the **payload's storage and `msg.sender` context** (i.e. the governance executor).
 - Neither the config engine nor the sub-engines hold any storage, permissions, or admin keys.
 - All HubConfigurator, SpokeConfigurator, AccessManager, and PositionManager calls originate from the governance executor's address.
+
+### Execution context
+
+In production the payload itself executes via delegatecall: the PayloadsController **calls** `Executor.executeTransaction`, which **delegatecalls** `payload.execute()`. Since `msg.sender` is preserved across delegatecall, for all engine code:
+
+- `address(this)` is the **Executor**. It is the identity holding permissions, and the address external calls originate from.
+- `msg.sender` is the **PayloadsController**. It must never be used, for ownership, permissions, or anything else. Deriving an owner from `msg.sender` is bad practice: any address a deployment or configuration needs (e.g. `TokenizationSpokeConfig.proxyAdminOwner`) must be passed explicitly in the action structs.
+- Payload storage is not readable during execution: action data must live in immutables, constants, or literals returned by the overridden virtual functions.
+
+Tests for engine actions must replicate this topology (see `tests/config-engine/GovernanceTopology.t.sol`); calling the engine directly from a test contract produces a different `msg.sender` and can hide context-dependent bugs.

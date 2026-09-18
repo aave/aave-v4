@@ -39,8 +39,42 @@ deploy-precompile :;
 	$(if ${dry},, --broadcast --verify) \
 
 # Step 2: Deploy contracts + grant roles to deployer
-# `make deploy-contracts`
+# `make deploy-contracts script=AaveV4DeployBase`
 deploy-contracts :;
-	FOUNDRY_PROFILE=${chain} forge clean && forge script scripts/deploy/AaveV4DeployBatch.s.sol:AaveV4DeployBatchScript \
+	FOUNDRY_PROFILE=${chain} forge clean && forge script scripts/deploy/${script}.s.sol:${script} \
 	--rpc-url ${chain} --account ${account} --slow \
 	$(if ${dry},, --broadcast --verify) \
+
+# Step 3: Configure the market and halt every listed asset on the Hub.
+# Verifies as well, because listing a tokenized asset deploys its TokenizationSpoke here.
+# `make configure-market chain=base account=<keystore-name> script=AaveV4ConfigureBase`
+configure-market :;
+	FOUNDRY_PROFILE=${chain} forge script scripts/config/${script}.s.sol:${script} \
+	--rpc-url ${chain} --account ${account} --slow \
+	$(if ${dry},, --broadcast --verify) \
+
+# Step 4: Hand the market over and verify the deployer holds nothing
+# `make relinquish-market chain=base account=<keystore-name> script=AaveV4RelinquishBase`
+relinquish-market :;
+	FOUNDRY_PROFILE=${chain} forge script scripts/config/${script}.s.sol:${script} \
+	--rpc-url ${chain} --account ${account} --slow \
+	$(if ${dry},, --broadcast) \
+
+# Deploys the AaveV4ConfigEngine governance payloads delegatecall into. Independent of the steps
+# above: the engine is stateless and sits at a deterministic address.
+# `make deploy-config-engine chain=base account=<keystore-name> script=DeployBaseConfigEngine`
+deploy-config-engine :;
+	FOUNDRY_PROFILE=${chain} forge script scripts/config/${script}.s.sol:${script} \
+	--rpc-url ${chain} --account ${account} --slow \
+	$(if ${dry},, --broadcast --verify) \
+
+# Base equities market, chain id 8453. Every target takes the cast wallet keystore account to
+# broadcast from, and `dry=true` to simulate instead: `make base-deploy account=<keystore-name>`.
+# Run them in order; see docs/base-deploy.md for what goes between the steps.
+base-account :; cast wallet address --account ${account}
+
+base-precompile :; make deploy-precompile chain=base account=${account} dry=${dry}
+base-deploy :; make deploy-contracts chain=base account=${account} script=AaveV4DeployBase dry=${dry}
+base-configure :; make configure-market chain=base account=${account} script=AaveV4ConfigureBase dry=${dry}
+base-relinquish :; make relinquish-market chain=base account=${account} script=AaveV4RelinquishBase dry=${dry}
+base-config-engine :; make deploy-config-engine chain=base account=${account} script=DeployBaseConfigEngine dry=${dry}
