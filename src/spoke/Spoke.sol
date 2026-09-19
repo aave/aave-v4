@@ -106,7 +106,7 @@ abstract contract Spoke is
   function initialize(address authority) external virtual;
 
   /// @inheritdoc ISpoke
-  function updateLiquidationConfig(LiquidationConfig calldata config) external restricted {
+  function updateLiquidationConfig(LiquidationConfig calldata config) external virtual restricted {
     require(
       config.targetHealthFactor >= HEALTH_FACTOR_LIQUIDATION_THRESHOLD &&
         config.liquidationBonusFactor <= PercentageMath.PERCENTAGE_FACTOR &&
@@ -182,7 +182,10 @@ abstract contract Spoke is
   }
 
   /// @inheritdoc ISpoke
-  function updateReservePriceSource(uint256 reserveId, address priceSource) external restricted {
+  function updateReservePriceSource(
+    uint256 reserveId,
+    address priceSource
+  ) external virtual restricted {
     require(reserveId < _reserveCount, ReserveNotListed());
     _updateReservePriceSource(reserveId, priceSource);
   }
@@ -191,7 +194,7 @@ abstract contract Spoke is
   function addDynamicReserveConfig(
     uint256 reserveId,
     DynamicReserveConfig calldata dynamicConfig
-  ) external restricted returns (uint32) {
+  ) external virtual restricted returns (uint32) {
     require(reserveId < _reserveCount, ReserveNotListed());
     uint32 dynamicConfigKey = _reserves[reserveId].dynamicConfigKey;
     require(dynamicConfigKey < MAX_ALLOWED_DYNAMIC_CONFIG_KEY, MaximumDynamicConfigKeyReached());
@@ -208,7 +211,7 @@ abstract contract Spoke is
     uint256 reserveId,
     uint32 dynamicConfigKey,
     DynamicReserveConfig calldata dynamicConfig
-  ) external restricted {
+  ) external virtual restricted {
     require(reserveId < _reserveCount, ReserveNotListed());
     _validateUpdateDynamicReserveConfig(_dynamicConfig[reserveId][dynamicConfigKey], dynamicConfig);
     _dynamicConfig[reserveId][dynamicConfigKey] = dynamicConfig;
@@ -216,7 +219,7 @@ abstract contract Spoke is
   }
 
   /// @inheritdoc ISpoke
-  function updatePositionManager(address positionManager, bool active) external restricted {
+  function updatePositionManager(address positionManager, bool active) external virtual restricted {
     _positionManager[positionManager].active = active;
     emit UpdatePositionManager(positionManager, active);
   }
@@ -430,7 +433,7 @@ abstract contract Spoke is
   }
 
   /// @inheritdoc ISpoke
-  function setUserPositionManager(address positionManager, bool approve) external {
+  function setUserPositionManager(address positionManager, bool approve) external virtual {
     _setUserPositionManager({positionManager: positionManager, user: msg.sender, approve: approve});
   }
 
@@ -438,7 +441,7 @@ abstract contract Spoke is
   function setUserPositionManagersWithSig(
     SetUserPositionManagers calldata params,
     bytes calldata signature
-  ) external {
+  ) external virtual {
     _verifyAndConsumeIntent({
       signer: params.onBehalfOf,
       intentHash: params.hash(),
@@ -457,7 +460,7 @@ abstract contract Spoke is
   }
 
   /// @inheritdoc ISpoke
-  function renouncePositionManagerRole(address onBehalfOf) external {
+  function renouncePositionManagerRole(address onBehalfOf) external virtual {
     if (!_positionManager[msg.sender].approval[onBehalfOf]) {
       return;
     }
@@ -474,7 +477,7 @@ abstract contract Spoke is
     uint8 permitV,
     bytes32 permitR,
     bytes32 permitS
-  ) external {
+  ) external virtual {
     Reserve storage reserve = _reserves[reserveId];
     address underlying = reserve.underlying;
     require(underlying != address(0), ReserveNotListed());
