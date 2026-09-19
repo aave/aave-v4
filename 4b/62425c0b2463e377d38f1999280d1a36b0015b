@@ -1,0 +1,25 @@
+src/spoke/BabylonSpoke.sol
+  s_8735c0799a11e7::t_248b7d11dda7ed 13-17,89,100,119,128,140-142,150-151
+src/spoke/instances/BabylonSpokeInstance.sol
+  s_8735c0799a11e7::t_30fbb0fc3949df 27
+src/spoke/interfaces/IBabylonSpoke.sol
+  s_8735c0799a11e7::t_d1677ece41c154 50-55
+src/spoke/libraries/BabylonLiquidationLogic.sol
+  s_8735c0799a11e7::t_289fac95fd1de1 157-158
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "4b62425c0b2463e377d38f1999280d1a36b0015b",
+  "prompts": {},
+  "sessions": {
+    "s_8735c0799a11e7": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "3b79ae1e-863b-4fc1-bc48-ba957ce7e0b8",
+        "model": "claude-fable-5-1"
+      },
+      "human_author": "Alexandru Niculae <43644109+avniculae@users.noreply.github.com>"
+    }
+  }
+}
