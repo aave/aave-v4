@@ -1,0 +1,19 @@
+tests/misc/z3/babylon_resized_debt.py
+  s_8735c0799a11e7::t_ac5e2906eeaac1 7-8,15-18,82,89-93,95-97,101-109
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "f51a5688516854d6139cab77a33ff369d0e2f29d",
+  "prompts": {},
+  "sessions": {
+    "s_8735c0799a11e7": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "3b79ae1e-863b-4fc1-bc48-ba957ce7e0b8",
+        "model": "claude-fable-5-1"
+      },
+      "human_author": "Alexandru Niculae <43644109+avniculae@users.noreply.github.com>"
+    }
+  }
+}
