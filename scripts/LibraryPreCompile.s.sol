@@ -6,10 +6,10 @@ import {console2 as console} from 'forge-std/console2.sol';
 import {SpokeDeployUtils} from 'scripts/utils/SpokeDeployUtils.sol';
 
 /**
- * @dev Deploy LiquidationLogic library using CREATE2 and save the output
- *      to FOUNDRY_LIBRARIES env variable in .env file.
+ * @dev Deploy the LiquidationLogic and BabylonLiquidationLogic libraries using CREATE2 and save the
+ *      output to FOUNDRY_LIBRARIES env variable in .env file.
  *      This preprocessing step is required before running the main Deploy script,
- *      as SpokeInstance depends on LiquidationLogic as an external library.
+ *      as the spoke instances depend on them as external libraries.
  *
  *      The script will ask you to re-execute if FOUNDRY_LIBRARIES is set but the
  *      library is not deployed, due to setting mutation of bytecode that could
@@ -23,9 +23,10 @@ contract LibraryPreCompile is Script {
     bool found = SpokeDeployUtils._librariesPathExists();
 
     if (found) {
-      address lastLib = SpokeDeployUtils._getLiquidationLogicAddress();
-      if (lastLib.code.length > 0) {
-        console.log('[LibraryPreCompile] LiquidationLogic detected. Skipping re-deployment.');
+      (address liquidationLogic, address babylonLiquidationLogic) = SpokeDeployUtils
+        ._getLibraryAddresses();
+      if (liquidationLogic.code.length > 0 && babylonLiquidationLogic.code.length > 0) {
+        console.log('[LibraryPreCompile] Liquidation libraries detected. Skipping re-deployment.');
         return;
       } else {
         SpokeDeployUtils._deleteLibrariesPath();

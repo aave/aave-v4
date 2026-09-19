@@ -18,13 +18,13 @@ Copy `.env.example` and set:
 
 The deploy script constructs a `FullDeployInputs` struct (see `src/deployments/utils/libraries/InputUtils.sol`) with admin addresses, hub/spoke labels, CREATE2 salt, and gateway flags. Override `_getDeployInputs()` in your chain-specific script (extends `AaveV4DeployBatchBase.s.sol`) to provide these values. Any zero-address admin fields default to the deployer.
 
-### 2. Pre-deploy LiquidationLogic (required for spokes)
+### 2. Pre-deploy the liquidation libraries (required for spokes)
 
 ```bash
 make deploy-precompile
 ```
 
-This deploys `LiquidationLogic` via CREATE2 and writes `FOUNDRY_LIBRARIES` to `.env` so Foundry can link `SpokeInstance` bytecode on the next compilation. See [LiquidationLogic Pre-deployment](#liquidationlogic-pre-deployment) for details.
+This deploys `LiquidationLogic` and `BabylonLiquidationLogic` via CREATE2 and writes `FOUNDRY_LIBRARIES` to `.env` so Foundry can link the spoke instance bytecodes on the next compilation. See [LiquidationLogic Pre-deployment](#liquidationlogic-pre-deployment) for details.
 
 ### 3. Deploy Remaining Contracts
 
@@ -32,28 +32,32 @@ This deploys `LiquidationLogic` via CREATE2 and writes `FOUNDRY_LIBRARIES` to `.
 make deploy-contracts
 ```
 
-This runs `AaveV4DeployOrchestration.deployAaveV4()`, which deploys batches in order: AccessManager → role labeling → Configurators → Configurator role setup → TreasurySpoke → Hubs → Spokes → Gateways → PositionManagers → role grants → DEFAULT_ADMIN transfer.
+This runs `AaveV4DeployOrchestration.deployAaveV4()`, which deploys batches in order: AccessManager → role labeling → Configurators → Configurator role setup → TreasurySpoke → Hubs → Spokes → BabylonSpokes → Gateways → PositionManagers → role grants → DEFAULT_ADMIN transfer.
+
+### BabylonSpoke
+
+`BabylonSpoke` instances are deployed by the orchestration when `babylonSpokeLabels` is set, reusing the spoke deploy procedure and the canonical spoke roles. Each instance takes its liquidation manager and its managed collateral reserve id as constructor arguments, read from `babylonLiquidationManagers` and `babylonManagedCollateralReserveIds`, both parallel to `babylonSpokeLabels`. Both values are immutable, so changing either means a new implementation. The user reserves limit is fixed at one in the bytecode, one collateral and one debt reserve per user. The managed collateral reserve can never be borrowable. Listing it, updating its config and upgrading a spoke where it is already listed all revert when the flag is set.
 
 ### TokenizationSpoke
 
 `TokenizationSpoke` is **not** deployed by the orchestration, because it requires an asset to already be listed on a Hub and Spoke. Each `TokenizationSpoke` instance should be deployed separately after asset listing, one per asset.
 
-### LiquidationLogic Pre-deployment
+### Liquidation Library Pre-deployment
 
-`LiquidationLogic` is an external Solidity library used by `Spoke.sol` (via `SpokeInstance`). Because it has `external` functions, the compiler emits it as a separate contract that `SpokeInstance` calls via `DELEGATECALL` at runtime. When Solidity compiles `SpokeInstance`, it leaves placeholder references (`__$<hash>$__`) in the bytecode where the library address should go. You cannot deploy `SpokeInstance` until those placeholders are replaced with a real on-chain address.
+`LiquidationLogic` and `BabylonLiquidationLogic` are external Solidity libraries used by `Spoke.sol` (via `SpokeInstance`) and `BabylonSpoke.sol` (via `BabylonSpokeInstance`). Because they have `external` functions, the compiler emits each as a separate contract that the instances call via `DELEGATECALL` at runtime. When Solidity compiles the instances, it leaves placeholder references (`__$<hash>$__`) in the bytecode where the library addresses should go. You cannot deploy `SpokeInstance` or `BabylonSpokeInstance` until those placeholders are replaced with real on-chain addresses.
 
 This requires a **two-step deploy** because Foundry needs to re-compile with the library address baked into the bytecode:
 
 **Step 1 — `LibraryPreCompile.s.sol`** (separate transaction):
 
-1. `SpokeDeployUtils.deployLiquidationLogic()` deploys it via CREATE2 with `salt=0`
-2. Writes `FOUNDRY_LIBRARIES=src/spoke/libraries/LiquidationLogic.sol:LiquidationLogic:0x<address>` to `.env` via FFI
-3. On re-run: if the library is already deployed (has code), skips. If `FOUNDRY_LIBRARIES` exists but the library isn't deployed (wrong chain/fork), deletes the stale entry and asks you to run again
+1. `SpokeDeployUtils` deploys `LiquidationLogic` and `BabylonLiquidationLogic` via CREATE2 with `salt=0`
+2. Writes both entries, comma separated, as `FOUNDRY_LIBRARIES=<path>:LiquidationLogic:0x<address>,<path>:BabylonLiquidationLogic:0x<address>` to `.env` via FFI
+3. On re-run: if both libraries are already deployed (have code), skips. If `FOUNDRY_LIBRARIES` exists but a library isn't deployed (wrong chain/fork), deletes the stale entry and asks you to run again
 
 **Step 2 — Main deploy script** (next invocation):
 
-1. Foundry reads `.env` at startup, sees `FOUNDRY_LIBRARIES`, and at compile time replaces all `__$<hash>$__` placeholders in `SpokeInstance`'s bytecode with the library address
-2. `AaveV4SpokeInstanceBatch` deploys `SpokeInstance` with fully linked bytecode
+1. Foundry reads `.env` at startup, sees `FOUNDRY_LIBRARIES`, and at compile time replaces all `__$<hash>$__` placeholders in the `SpokeInstance` and `BabylonSpokeInstance` bytecode with the library addresses
+2. `AaveV4SpokeInstanceBatch` deploys `SpokeInstance` and `AaveV4BabylonSpokeInstanceBatch` deploys `BabylonSpokeInstance` with fully linked bytecode
 
 ## Architecture
 
@@ -68,6 +72,7 @@ src/deployments/
     AaveV4TreasurySpokeBatch    TreasurySpoke (single instance, proxy + impl)
     AaveV4HubInstanceBatch      HubInstance (proxy + impl), InterestRateStrategy
     AaveV4SpokeInstanceBatch    SpokeInstance (proxy + impl), AaveOracle
+    AaveV4BabylonSpokeInstanceBatch  BabylonSpokeInstance (proxy + impl), AaveOracle
     AaveV4GatewayBatch          NativeTokenGateway, SignatureGateway
     AaveV4PositionManagerBatch  GiverPositionManager, TakerPositionManager, ConfigPositionManager
 
@@ -97,11 +102,11 @@ src/deployments/
 
 ### Labels and Deterministic Deployment
 
-Hub and spoke labels (provided via `FullDeployInputs.hubLabels` / `spokeLabels`) drive deterministic addressing and identify instances in deployment reports.
+Hub, spoke and Babylon spoke labels (provided via `FullDeployInputs.hubLabels` / `spokeLabels` / `babylonSpokeLabels`) drive deterministic addressing and identify instances in deployment reports. Each Babylon spoke label is paired by index with `babylonLiquidationManagers` and `babylonManagedCollateralReserveIds`, which become constructor immutables of the `BabylonSpokeInstance`.
 
-**Salt derivation** — Deployed addresses are deterministic, derived from three inputs: the deployer address, the user-provided salt, and the instance label. First, `_deriveSalt` combines the deployer address and user salt into a root salt. Then, for each hub or spoke, `_deriveChildSalt` hashes the root salt with the contract type (`"hub"` or `"spoke"`) and the label to produce a unique child salt. This child salt is passed to `Create2Utils.create2Deploy()`. Because the deployer address is embedded in the root salt, different deployers produce valid, unique deployed contract addresses even with identical labels and user salt.
+**Salt derivation** — Deployed addresses are deterministic, derived from three inputs: the deployer address, the user-provided salt, and the instance label. First, `_deriveSalt` combines the deployer address and user salt into a root salt. Then, for each hub, spoke or Babylon spoke, `_deriveChildSalt` hashes the root salt with the contract type (`"hub"`, `"spoke"` or `"babylonSpoke"`) and the label to produce a unique child salt. This child salt is passed to `Create2Utils.create2Deploy()`. Because the deployer address is embedded in the root salt, different deployers produce valid, unique deployed contract addresses even with identical labels and user salt.
 
-**Duplicate label protection** — Before deploying any hubs or spokes, the orchestration validates unique labels for each array. Duplicate hub labels or duplicate spoke labels will revert. Hub and spoke labels are validated independently. A hub and a spoke can share the same label since they use different `contractType` strings in salt derivation.
+**Duplicate label protection** — Before deploying any hubs or spokes, the orchestration validates unique labels for each array. Duplicate hub, spoke or Babylon spoke labels will revert. The three arrays are validated independently. A hub, a spoke and a Babylon spoke can share the same label since they use different `contractType` strings in salt derivation and are written under different groups in the deployment report.
 
 **CREATE2 collision protection** — `Create2Utils.create2Deploy()` computes the deterministic address from the salt and bytecode before deploying. If a contract already exists at that address (e.g. same salt and bytecode were used in a previous deployment), it reverts with `ContractAlreadyDeployed()`. This prevents silent no-ops or collisions when re-running a deploy script.
 
@@ -201,7 +206,7 @@ AaveV4DeployBatchBase.s.sol                         (Foundry script entry point)
     |     |       new AaveV4TreasurySpokeBatch(owner, salt)
     |     |         Create2Utils.create2Deploy() --> TreasurySpoke
     |     |
-    |     +-- InputUtils.validateUniqueLabels()      revert on duplicate hub or spoke labels
+    |     +-- InputUtils.validateUniqueLabels()      revert on duplicate hub, spoke or babylon spoke labels
     |     |
     |     +-- _deployHubs(hubLabels)                for each hub label:
     |     |     _deployHub()
@@ -225,6 +230,16 @@ AaveV4DeployBatchBase.s.sol                         (Foundry script entry point)
     |     |         AaveV4SpokeRolesProcedure.setupSpokeAllRoles()
     |     |           AccessManager.setTargetFunctionRole()  (selector -> role mappings for Spoke)
     |     |
+    |     +-- _deployBabylonSpokes(babylonSpokeLabels)  for each babylon spoke label:
+    |     |     _deployBabylonSpoke()
+    |     |       AaveV4DeployBase.deployBabylonSpokeInstanceBatch()
+    |     |         new AaveV4BabylonSpokeInstanceBatch(proxyAdmin, authority, liquidationManager, managedCollateralReserveId, bytecode, ...)
+    |     |           new AaveOracle()             (non-deterministic, needs setSpoke post-deploy)
+    |     |           Create2Utils.proxify()    --> BabylonSpokeInstance (proxy + impl)
+    |     |       _setupSpokeRoles()
+    |     |         AaveV4SpokeRolesProcedure.setupSpokeAllRoles()
+    |     |           AccessManager.setTargetFunctionRole()  (selector -> role mappings for Spoke)
+    |     |
     |     +-- _deployGatewayBatch()                 (if deployNativeTokenGateway || deploySignatureGateway)
     |     |     AaveV4DeployBase.deployGatewaysBatch()
     |     |       new AaveV4GatewayBatch(owner, nativeWrapper, deployNativeTokenGateway, deploySignatureGateway, salt)
@@ -243,7 +258,7 @@ AaveV4DeployBatchBase.s.sol                         (Foundry script entry point)
     |     |       AaveV4HubRolesProcedure.grantHubRole()             HubConfigurator gets role 101
     |     |       AaveV4HubConfiguratorRolesProcedure.grantHubConfiguratorAllRoles()
     |     |                                                          hubConfiguratorAdmin gets role 200
-    |     |     _grantSpokeRoles()                  (if spokeLabels.length > 0)
+    |     |     _grantSpokeRoles()                  (if spokeLabels.length > 0 || babylonSpokeLabels.length > 0)
     |     |       AaveV4SpokeRolesProcedure.grantSpokeAllRoles()     spokeAdmin gets roles 301-302
     |     |       AaveV4SpokeRolesProcedure.grantSpokeRole()         SpokeConfigurator gets role 301
     |     |       AaveV4SpokeConfiguratorRolesProcedure.grantSpokeConfiguratorAllRoles()
