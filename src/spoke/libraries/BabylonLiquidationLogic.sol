@@ -154,10 +154,8 @@ library BabylonLiquidationLogic {
       });
   }
 
-  /// @dev Executes the liquidation: repays the debt reserve and removes the priced collateral,
-  /// bounded by `params.maxCollateralToRemove`.
-  /// @dev The repayment runs even when the cap allows no collateral removal, so debt can be
-  /// liquidated when the corresponding collateral amount to receive is zero.
+  /// @dev Repays the debt reserve and removes the priced collateral, bounded by the removal cap.
+  /// @dev The repayment runs even when no collateral can be removed, so debt is liquidatable when the collateral to receive rounds to zero.
   /// @param collateralUserPosition User's collateral position.
   /// @param debtUserPosition User's debt position.
   /// @param collateralLiquidatorPosition Liquidator's collateral position.

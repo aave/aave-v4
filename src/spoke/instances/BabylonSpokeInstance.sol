@@ -24,8 +24,7 @@ contract BabylonSpokeInstance is BabylonSpoke {
 
   /// @notice Initializer.
   /// @dev The authority contract must implement the `AccessManaged` interface for access control.
-  /// @dev When upgrading a Spoke with listed reserves, the managed collateral reserve must not be
-  /// borrowable.
+  /// @dev Reverts with `UnsupportedBorrowableCollateral` if the managed collateral reserve is already listed as borrowable.
   /// @param authority The address of the authority contract which manages permissions.
   function initialize(address authority) external override reinitializer(SPOKE_REVISION) {
     emit SetSpokeImmutables(ORACLE, MAX_USER_RESERVES_LIMIT);

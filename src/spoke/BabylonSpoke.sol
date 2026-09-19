@@ -10,10 +10,11 @@ import {Spoke} from 'src/spoke/Spoke.sol';
 
 /// @title BabylonSpoke
 /// @author Aave Labs
-/// @notice Spoke variant for the Babylon integration: liquidations are restricted to an immutable
-/// liquidation manager and sized by a collateral cap instead of a target health factor. Users hold
-/// at most one collateral and one debt reserve, the managed collateral reserve is never borrowable
-/// and reserves cannot charge a liquidation fee.
+/// @notice Spoke variant for the Babylon integration, with liquidations restricted to a liquidation
+/// manager and sized by a collateral removal cap instead of a target health factor.
+/// @dev Users hold at most one collateral and one debt reserve.
+/// @dev Only the managed collateral reserve can be enabled as collateral, and it can never be borrowable.
+/// @dev Reserves cannot charge a liquidation fee, and the liquidator always receives collateral in underlying assets.
 abstract contract BabylonSpoke is IBabylonSpoke, Spoke {
   using ReserveFlagsMap for ReserveFlags;
 
@@ -85,8 +86,7 @@ abstract contract BabylonSpoke is IBabylonSpoke, Spoke {
     return (result.liquidationBonus, result.collateralAmountRemoved);
   }
 
-  /// @dev The canonical liquidation entry point is disabled on this Spoke: liquidations execute
-  /// through the manager-gated, cap-bounded `liquidationCall` overload.
+  /// @dev Reverts with `UnsupportedLiquidationCall`, liquidations execute through the cap-bounded overload.
   function liquidationCall(
     uint256,
     uint256,
@@ -97,7 +97,7 @@ abstract contract BabylonSpoke is IBabylonSpoke, Spoke {
     revert UnsupportedLiquidationCall();
   }
 
-  /// @dev The managed collateral reserve is never borrowable.
+  /// @dev Overrides Spoke `addReserve` function to reject listing the managed collateral reserve as borrowable.
   function addReserve(
     address hub,
     uint256 assetId,
@@ -116,7 +116,7 @@ abstract contract BabylonSpoke is IBabylonSpoke, Spoke {
     return reserveId;
   }
 
-  /// @dev The managed collateral reserve is never borrowable.
+  /// @dev Overrides Spoke `updateReserveConfig` function to reject making the managed collateral reserve borrowable.
   function updateReserveConfig(
     uint256 reserveId,
     ReserveConfig calldata config
@@ -125,7 +125,7 @@ abstract contract BabylonSpoke is IBabylonSpoke, Spoke {
     _validateManagedCollateralReserve(reserveId);
   }
 
-  /// @dev Only the managed collateral reserve can be registered as collateral.
+  /// @dev Overrides Spoke `setUsingAsCollateral` function to allow enabling only the managed collateral reserve as collateral.
   function setUsingAsCollateral(
     uint256 reserveId,
     bool usingAsCollateral,
@@ -137,9 +137,9 @@ abstract contract BabylonSpoke is IBabylonSpoke, Spoke {
     super.setUsingAsCollateral(reserveId, usingAsCollateral, onBehalfOf);
   }
 
-  /// @dev Reverts when the managed collateral reserve is borrowable: a user holds a single debt
-  /// reserve, which can never be the collateral being seized. A reserve that is not listed yet has
-  /// no flags set, so the check passes until it is.
+  /// @dev Reverts with `UnsupportedBorrowableCollateral` if the reserve is the managed collateral reserve and is borrowable.
+  /// @dev A reserve that is not listed yet has no flags set, so it passes the check.
+  /// @param reserveId The identifier of the reserve to validate.
   function _validateManagedCollateralReserve(uint256 reserveId) internal view {
     require(
       reserveId != MANAGED_COLLATERAL_RESERVE_ID || !_reserves[reserveId].flags.borrowable(),
@@ -147,8 +147,8 @@ abstract contract BabylonSpoke is IBabylonSpoke, Spoke {
     );
   }
 
-  /// @dev Rejects a non-zero liquidation fee on every reserve: only the managed collateral reserve
-  /// can be enabled as collateral, and Babylon liquidations never charge the fee.
+  /// @dev Overrides Spoke `_validateDynamicReserveConfig` function to reject a non-zero liquidation fee.
+  /// @dev Babylon liquidations never charge the fee, so no reserve needs one.
   function _validateDynamicReserveConfig(
     DynamicReserveConfig calldata config
   ) internal pure virtual override {
