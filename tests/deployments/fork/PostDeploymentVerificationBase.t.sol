@@ -102,6 +102,28 @@ abstract contract PostDeploymentVerificationBase is BatchTestProcedures {
         string.concat('$.oracle.', label)
       );
     }
+
+    uint256 babylonSpokeCount = _inputs.babylonSpokeLabels.length;
+    report.babylonSpokeInstanceBatchReports = new OrchestrationReports.SpokeDeploymentReport[](
+      babylonSpokeCount
+    );
+    for (uint256 i; i < babylonSpokeCount; i++) {
+      string memory label = _inputs.babylonSpokeLabels[i];
+      report.babylonSpokeInstanceBatchReports[i].label = label;
+
+      report.babylonSpokeInstanceBatchReports[i].report.spokeProxy = vm.parseJsonAddress(
+        json,
+        string.concat('$.babylonSpoke.', label)
+      );
+      report.babylonSpokeInstanceBatchReports[i].report.spokeImplementation = vm.parseJsonAddress(
+        json,
+        string.concat('$.babylonSpokeImplementation.', label)
+      );
+      report.babylonSpokeInstanceBatchReports[i].report.aaveOracle = vm.parseJsonAddress(
+        json,
+        string.concat('$.babylonOracle.', label)
+      );
+    }
   }
 
   /// @notice Deploys all contracts, serializes the JSON report in memory, parses it back, and verifies.

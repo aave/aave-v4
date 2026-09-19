@@ -31,6 +31,7 @@ contract PostDeploymentVerificationTest is PostDeploymentVerificationBase, AaveV
     bytes32 salt;
     uint8 hubCount;
     uint8 spokeCount;
+    uint8 babylonSpokeCount;
   }
 
   function setUp() public override(PostDeploymentVerificationBase) {
@@ -142,6 +143,37 @@ contract PostDeploymentVerificationTest is PostDeploymentVerificationBase, AaveV
     _sanitizeAndDeploy(inputs);
   }
 
+  /// deploy without babylon spokes
+  function test_withoutBabylonSpokes() public {
+    InputUtils.FullDeployInputs memory inputs = _defaultInputs();
+    inputs.babylonSpokeLabels = new string[](0);
+    inputs.babylonLiquidationManagers = new address[](0);
+    inputs.babylonManagedCollateralReserveIds = new uint256[](0);
+    _sanitizeAndDeploy(inputs);
+  }
+
+  /// deploy with multiple babylon spokes
+  function test_multipleBabylonSpokes() public {
+    InputUtils.FullDeployInputs memory inputs = _defaultInputs();
+
+    string[] memory babylonSpokeLabels = new string[](2);
+    babylonSpokeLabels[0] = 'babylonMainnet';
+    babylonSpokeLabels[1] = 'babylonLrt';
+    inputs.babylonSpokeLabels = babylonSpokeLabels;
+
+    address[] memory babylonLiquidationManagers = new address[](2);
+    babylonLiquidationManagers[0] = makeAddr('babylonLiquidationManagerMainnet');
+    babylonLiquidationManagers[1] = makeAddr('babylonLiquidationManagerLrt');
+    inputs.babylonLiquidationManagers = babylonLiquidationManagers;
+
+    uint256[] memory babylonManagedCollateralReserveIds = new uint256[](2);
+    babylonManagedCollateralReserveIds[0] = 0;
+    babylonManagedCollateralReserveIds[1] = 3;
+    inputs.babylonManagedCollateralReserveIds = babylonManagedCollateralReserveIds;
+
+    _sanitizeAndDeploy(inputs);
+  }
+
   /// deploy minimal deployment with no gateways, position managers, or roles
   function test_minimalDeploy() public {
     InputUtils.FullDeployInputs memory inputs = _defaultInputs();
@@ -186,6 +218,7 @@ contract PostDeploymentVerificationTest is PostDeploymentVerificationBase, AaveV
   function testFuzz_postDeploymentCheck(FuzzParams memory params) public {
     params.hubCount = uint8(bound(params.hubCount, 1, 10));
     params.spokeCount = uint8(bound(params.spokeCount, 0, 10));
+    params.babylonSpokeCount = uint8(bound(params.babylonSpokeCount, 0, 3));
 
     string[] memory hubLabels = new string[](params.hubCount);
     for (uint256 i; i < params.hubCount; i++) {
@@ -195,6 +228,17 @@ contract PostDeploymentVerificationTest is PostDeploymentVerificationBase, AaveV
     string[] memory spokeLabels = new string[](params.spokeCount);
     for (uint256 i; i < params.spokeCount; i++) {
       spokeLabels[i] = string.concat('spoke', vm.toString(i));
+    }
+
+    string[] memory babylonSpokeLabels = new string[](params.babylonSpokeCount);
+    address[] memory babylonLiquidationManagers = new address[](params.babylonSpokeCount);
+    uint256[] memory babylonManagedCollateralReserveIds = new uint256[](params.babylonSpokeCount);
+    for (uint256 i; i < params.babylonSpokeCount; i++) {
+      babylonSpokeLabels[i] = string.concat('babylonSpoke', vm.toString(i));
+      babylonLiquidationManagers[i] = makeAddr(
+        string.concat('babylonLiquidationManager', vm.toString(i))
+      );
+      babylonManagedCollateralReserveIds[i] = i;
     }
 
     InputUtils.FullDeployInputs memory inputs = InputUtils.FullDeployInputs({
@@ -217,9 +261,9 @@ contract PostDeploymentVerificationTest is PostDeploymentVerificationBase, AaveV
       hubLabels: hubLabels,
       spokeLabels: spokeLabels,
       spokeMaxReservesLimits: new uint16[](0),
-      babylonSpokeLabels: new string[](0),
-      babylonLiquidationManagers: new address[](0),
-      babylonManagedCollateralReserveIds: new uint256[](0),
+      babylonSpokeLabels: babylonSpokeLabels,
+      babylonLiquidationManagers: babylonLiquidationManagers,
+      babylonManagedCollateralReserveIds: babylonManagedCollateralReserveIds,
       salt: params.salt
     });
 
@@ -254,6 +298,13 @@ contract PostDeploymentVerificationTest is PostDeploymentVerificationBase, AaveV
     spokeLabels[0] = 'mainnet';
     spokeLabels[1] = 'lrt';
 
+    string[] memory babylonSpokeLabels = new string[](1);
+    babylonSpokeLabels[0] = 'babylon';
+    address[] memory babylonLiquidationManagers = new address[](1);
+    babylonLiquidationManagers[0] = makeAddr('babylonLiquidationManager');
+    uint256[] memory babylonManagedCollateralReserveIds = new uint256[](1);
+    babylonManagedCollateralReserveIds[0] = 1;
+
     inputs = InputUtils.FullDeployInputs({
       accessManagerAdmin: makeAddr('accessManagerAdmin'),
       proxyAdminOwner: makeAddr('proxyAdminOwner'),
@@ -272,9 +323,9 @@ contract PostDeploymentVerificationTest is PostDeploymentVerificationBase, AaveV
       hubLabels: hubLabels,
       spokeLabels: spokeLabels,
       spokeMaxReservesLimits: new uint16[](0),
-      babylonSpokeLabels: new string[](0),
-      babylonLiquidationManagers: new address[](0),
-      babylonManagedCollateralReserveIds: new uint256[](0),
+      babylonSpokeLabels: babylonSpokeLabels,
+      babylonLiquidationManagers: babylonLiquidationManagers,
+      babylonManagedCollateralReserveIds: babylonManagedCollateralReserveIds,
       salt: keccak256('test-salt')
     });
   }

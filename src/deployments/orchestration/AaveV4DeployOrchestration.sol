@@ -578,7 +578,7 @@ library AaveV4DeployOrchestration {
 
   /// @dev Derives a child salt from a base salt, contract type, and label.
   /// @param baseSalt The base salt to derive the child salt from.
-  /// @param contractType The type of the contract (e.g. 'hub', 'spoke').
+  /// @param contractType The type of the contract (e.g. 'hub', 'spoke', 'babylonSpoke').
   /// @param label The label of the contract to be deployed.
   /// @return The derived child salt.
   function _deriveChildSalt(

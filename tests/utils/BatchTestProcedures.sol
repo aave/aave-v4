@@ -29,6 +29,7 @@ import {BytecodeHelper} from 'src/deployments/utils/libraries/BytecodeHelper.sol
 import {IAccessManagerEnumerable} from 'src/access/interfaces/IAccessManagerEnumerable.sol';
 import {IAssetInterestRateStrategy} from 'src/hub/interfaces/IAssetInterestRateStrategy.sol';
 import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
+import {IBabylonSpoke} from 'src/spoke/interfaces/IBabylonSpoke.sol';
 import {IHub} from 'src/hub/interfaces/IHub.sol';
 import {ITreasurySpoke} from 'src/spoke/interfaces/ITreasurySpoke.sol';
 import {IAaveOracle} from 'src/spoke/interfaces/IAaveOracle.sol';
@@ -41,6 +42,7 @@ contract BatchTestProcedures is Test, Create2TestHelper, WETHDeployProcedure {
 
   string[] internal _hubLabels;
   string[] internal _spokeLabels;
+  string[] internal _babylonSpokeLabels;
   bytes4[] internal _spokePositionUpdaterRoleSelectors;
   bytes4[] internal _spokeConfiguratorRoleSelectors;
   bytes4[] internal _hubFeeMinterRoleSelectors;
@@ -60,6 +62,7 @@ contract BatchTestProcedures is Test, Create2TestHelper, WETHDeployProcedure {
     _logger = new Logger('dummy/path');
     _hubLabels = ['hub1', 'hub2', 'hub3'];
     _spokeLabels = ['spoke1', 'spoke2', 'spoke3'];
+    _babylonSpokeLabels = ['babylonSpoke1'];
 
     _etchCreate2Factory();
   }
@@ -90,6 +93,7 @@ contract BatchTestProcedures is Test, Create2TestHelper, WETHDeployProcedure {
     InputUtils.FullDeployInputs memory inputs
   ) internal view {
     _checkSpokeBatchDeployments({report: report, inputs: inputs});
+    _checkBabylonSpokeBatchDeployments({report: report, inputs: inputs});
     _checkHubBatchDeployments({report: report, inputs: inputs});
     _checkConfiguratorBatchDeployments({report: report});
     _checkGatewayBatchDeployments({report: report, inputs: inputs});
@@ -168,9 +172,13 @@ contract BatchTestProcedures is Test, Create2TestHelper, WETHDeployProcedure {
     inputs.hubLabels = _hubLabels;
     inputs.spokeLabels = _spokeLabels;
     inputs.spokeMaxReservesLimits = _defaultSpokeMaxReservesLimits(_spokeLabels.length);
-    inputs.babylonSpokeLabels = new string[](0);
-    inputs.babylonLiquidationManagers = new address[](0);
-    inputs.babylonManagedCollateralReserveIds = new uint256[](0);
+    inputs.babylonSpokeLabels = _babylonSpokeLabels;
+    inputs.babylonLiquidationManagers = _defaultBabylonLiquidationManagers(
+      _babylonSpokeLabels.length
+    );
+    inputs.babylonManagedCollateralReserveIds = _defaultBabylonManagedCollateralReserveIds(
+      _babylonSpokeLabels.length
+    );
     inputs.nativeWrapper = _weth9;
     inputs.deployNativeTokenGateway = true;
     inputs.deploySignatureGateway = true;
@@ -185,6 +193,26 @@ contract BatchTestProcedures is Test, Create2TestHelper, WETHDeployProcedure {
     limits = new uint16[](count);
     for (uint256 i; i < count; i++) {
       limits[i] = DeployConstants.MAX_ALLOWED_USER_RESERVES_LIMIT;
+    }
+  }
+
+  function _defaultBabylonLiquidationManagers(
+    uint256 count
+  ) internal pure returns (address[] memory managers) {
+    managers = new address[](count);
+    for (uint256 i; i < count; i++) {
+      managers[i] = address(
+        uint160(uint256(keccak256(abi.encode('babylonLiquidationManager', i))))
+      );
+    }
+  }
+
+  function _defaultBabylonManagedCollateralReserveIds(
+    uint256 count
+  ) internal pure returns (uint256[] memory reserveIds) {
+    reserveIds = new uint256[](count);
+    for (uint256 i; i < count; i++) {
+      reserveIds[i] = i;
     }
   }
 
@@ -258,6 +286,23 @@ contract BatchTestProcedures is Test, Create2TestHelper, WETHDeployProcedure {
       );
       assertNotEq(report.spokeInstanceBatchReports[i].report.aaveOracle, address(0), 'AaveOracle');
     }
+    for (uint256 i = 0; i < report.babylonSpokeInstanceBatchReports.length; i++) {
+      assertNotEq(
+        report.babylonSpokeInstanceBatchReports[i].report.spokeProxy,
+        address(0),
+        'BabylonSpokeProxy'
+      );
+      assertNotEq(
+        report.babylonSpokeInstanceBatchReports[i].report.spokeImplementation,
+        address(0),
+        'BabylonSpokeImplementation'
+      );
+      assertNotEq(
+        report.babylonSpokeInstanceBatchReports[i].report.aaveOracle,
+        address(0),
+        'BabylonAaveOracle'
+      );
+    }
     assertEq(
       report.hubInstanceBatchReports.length,
       inputs.hubLabels.length,
@@ -267,6 +312,11 @@ contract BatchTestProcedures is Test, Create2TestHelper, WETHDeployProcedure {
       report.spokeInstanceBatchReports.length,
       inputs.spokeLabels.length,
       'SpokeInstanceBatchReportsLength'
+    );
+    assertEq(
+      report.babylonSpokeInstanceBatchReports.length,
+      inputs.babylonSpokeLabels.length,
+      'BabylonSpokeInstanceBatchReportsLength'
     );
   }
 
@@ -285,8 +335,39 @@ contract BatchTestProcedures is Test, Create2TestHelper, WETHDeployProcedure {
         expectedMaxReservesLimit: inputs.spokeMaxReservesLimits.length > i
           ? inputs.spokeMaxReservesLimits[i]
           : DeployConstants.MAX_ALLOWED_USER_RESERVES_LIMIT,
+        artifact: 'src/spoke/instances/SpokeInstance.sol:SpokeInstance',
         label: label
       });
+      _checkOracleDeployment({report: spokeReport, label: label});
+    }
+  }
+
+  function _checkBabylonSpokeBatchDeployments(
+    OrchestrationReports.FullDeploymentReport memory report,
+    InputUtils.FullDeployInputs memory inputs
+  ) internal view {
+    string memory globalLabel = 'BabylonSpokeDeployment';
+    for (uint256 i = 0; i < inputs.babylonSpokeLabels.length; i++) {
+      string memory label = string.concat(globalLabel, ', ', inputs.babylonSpokeLabels[i]);
+      OrchestrationReports.SpokeDeploymentReport memory spokeReport = report
+        .babylonSpokeInstanceBatchReports[i];
+      _checkSpokeDeployment({
+        report: spokeReport,
+        accessManager: report.authorityBatchReport.accessManager,
+        expectedMaxReservesLimit: 1,
+        artifact: 'src/spoke/instances/BabylonSpokeInstance.sol:BabylonSpokeInstance',
+        label: label
+      });
+      assertEq(
+        IBabylonSpoke(spokeReport.report.spokeProxy).LIQUIDATION_MANAGER(),
+        inputs.babylonLiquidationManagers[i],
+        string.concat(label, ' liquidation manager')
+      );
+      assertEq(
+        IBabylonSpoke(spokeReport.report.spokeProxy).MANAGED_COLLATERAL_RESERVE_ID(),
+        inputs.babylonManagedCollateralReserveIds[i],
+        string.concat(label, ' managed collateral reserve id')
+      );
       _checkOracleDeployment({report: spokeReport, label: label});
     }
   }
@@ -295,6 +376,7 @@ contract BatchTestProcedures is Test, Create2TestHelper, WETHDeployProcedure {
     OrchestrationReports.SpokeDeploymentReport memory report,
     address accessManager,
     uint16 expectedMaxReservesLimit,
+    string memory artifact,
     string memory label
   ) internal view {
     assertEq(
@@ -327,7 +409,7 @@ contract BatchTestProcedures is Test, Create2TestHelper, WETHDeployProcedure {
     // verify the non-immutable portions match
     _assertBytecodeMatchExcludingImmutables(
       ProxyHelper.getImplementation(report.report.spokeProxy).code,
-      vm.getDeployedCode('src/spoke/instances/SpokeInstance.sol:SpokeInstance'),
+      vm.getDeployedCode(artifact),
       string.concat(label, ' spoke implementation bytecode')
     );
   }
@@ -498,7 +580,7 @@ contract BatchTestProcedures is Test, Create2TestHelper, WETHDeployProcedure {
     OrchestrationReports.FullDeploymentReport memory report,
     InputUtils.FullDeployInputs memory inputs
   ) internal view {
-    if (inputs.spokeLabels.length > 0 && inputs.grantRoles) {
+    if (_hasSpokes(inputs) && inputs.grantRoles) {
       assertEq(
         accessManager.getRoleMemberCount(Roles.SPOKE_CONFIGURATOR_ROLE),
         2,
@@ -523,41 +605,60 @@ contract BatchTestProcedures is Test, Create2TestHelper, WETHDeployProcedure {
     }
 
     for (uint256 i = 0; i < inputs.spokeLabels.length; i++) {
-      for (uint256 j = 0; j < _spokeConfiguratorRoleSelectors.length; j++) {
-        assertEq(
-          accessManager.getTargetFunctionRole(
-            report.spokeInstanceBatchReports[i].report.spokeProxy,
-            _spokeConfiguratorRoleSelectors[j]
-          ),
-          Roles.SPOKE_CONFIGURATOR_ROLE,
-          'SpokeConfiguratorRole target function'
-        );
+      _checkSpokeConfiguratorRolesOnSpoke({
+        accessManager: accessManager,
+        report: report,
+        inputs: inputs,
+        spokeProxy: report.spokeInstanceBatchReports[i].report.spokeProxy
+      });
+    }
+    for (uint256 i = 0; i < inputs.babylonSpokeLabels.length; i++) {
+      _checkSpokeConfiguratorRolesOnSpoke({
+        accessManager: accessManager,
+        report: report,
+        inputs: inputs,
+        spokeProxy: report.babylonSpokeInstanceBatchReports[i].report.spokeProxy
+      });
+    }
+  }
 
-        (bool allowed, uint32 delay) = accessManager.canCall(
-          report.configuratorBatchReport.spokeConfigurator,
-          report.spokeInstanceBatchReports[i].report.spokeProxy,
-          _spokeConfiguratorRoleSelectors[j]
-        );
-        assertEq(
-          allowed,
-          inputs.grantRoles ? true : false,
-          'SpokeConfiguratorRole allowed - configurator'
-        );
-        assertEq(delay, 0, 'SpokeConfiguratorRole delay - configurator');
+  function _checkSpokeConfiguratorRolesOnSpoke(
+    IAccessManagerEnumerable accessManager,
+    OrchestrationReports.FullDeploymentReport memory report,
+    InputUtils.FullDeployInputs memory inputs,
+    address spokeProxy
+  ) internal view {
+    for (uint256 j = 0; j < _spokeConfiguratorRoleSelectors.length; j++) {
+      assertEq(
+        accessManager.getTargetFunctionRole(spokeProxy, _spokeConfiguratorRoleSelectors[j]),
+        Roles.SPOKE_CONFIGURATOR_ROLE,
+        'SpokeConfiguratorRole target function'
+      );
 
-        // spoke admin role encompasses spoke configurator role
-        (allowed, delay) = accessManager.canCall(
-          inputs.spokeAdmin,
-          report.spokeInstanceBatchReports[i].report.spokeProxy,
-          _spokeConfiguratorRoleSelectors[j]
-        );
-        assertEq(
-          allowed,
-          inputs.grantRoles ? true : false,
-          'SpokeConfiguratorRole allowed - spoke admin'
-        );
-        assertEq(delay, 0, 'SpokeConfiguratorRole delay - spoke admin');
-      }
+      (bool allowed, uint32 delay) = accessManager.canCall(
+        report.configuratorBatchReport.spokeConfigurator,
+        spokeProxy,
+        _spokeConfiguratorRoleSelectors[j]
+      );
+      assertEq(
+        allowed,
+        inputs.grantRoles ? true : false,
+        'SpokeConfiguratorRole allowed - configurator'
+      );
+      assertEq(delay, 0, 'SpokeConfiguratorRole delay - configurator');
+
+      // spoke admin role encompasses spoke configurator role
+      (allowed, delay) = accessManager.canCall(
+        inputs.spokeAdmin,
+        spokeProxy,
+        _spokeConfiguratorRoleSelectors[j]
+      );
+      assertEq(
+        allowed,
+        inputs.grantRoles ? true : false,
+        'SpokeConfiguratorRole allowed - spoke admin'
+      );
+      assertEq(delay, 0, 'SpokeConfiguratorRole delay - spoke admin');
     }
   }
 
@@ -566,7 +667,7 @@ contract BatchTestProcedures is Test, Create2TestHelper, WETHDeployProcedure {
     OrchestrationReports.FullDeploymentReport memory report,
     InputUtils.FullDeployInputs memory inputs
   ) internal view {
-    if (inputs.spokeLabels.length > 0 && inputs.grantRoles) {
+    if (_hasSpokes(inputs) && inputs.grantRoles) {
       assertEq(
         accessManager.getRoleMemberCount(Roles.SPOKE_USER_POSITION_UPDATER_ROLE),
         1,
@@ -586,34 +687,52 @@ contract BatchTestProcedures is Test, Create2TestHelper, WETHDeployProcedure {
     }
 
     for (uint256 i = 0; i < inputs.spokeLabels.length; i++) {
-      address proxyAdminOwner = Ownable(
-        ProxyHelper.getProxyAdmin(report.spokeInstanceBatchReports[i].report.spokeProxy)
-      ).owner();
-      assertEq(
-        proxyAdminOwner,
-        inputs.proxyAdminOwner,
-        string.concat(inputs.spokeLabels[i], ' proxy admin owner')
-      );
-
-      for (uint256 j = 0; j < _spokePositionUpdaterRoleSelectors.length; j++) {
-        (bool allowed, uint32 delay) = accessManager.canCall(
-          inputs.spokeAdmin,
-          report.spokeInstanceBatchReports[i].report.spokeProxy,
-          _spokePositionUpdaterRoleSelectors[j]
-        );
-        assertEq(allowed, inputs.grantRoles ? true : false, 'SpokePositionUpdaterRole allowed');
-        assertEq(delay, 0, 'SpokePositionUpdaterRole delay');
-
-        assertEq(
-          accessManager.getTargetFunctionRole(
-            report.spokeInstanceBatchReports[i].report.spokeProxy,
-            _spokePositionUpdaterRoleSelectors[j]
-          ),
-          Roles.SPOKE_USER_POSITION_UPDATER_ROLE,
-          'SpokePositionUpdaterRole target function'
-        );
-      }
+      _checkSpokeAdminRolesOnSpoke({
+        accessManager: accessManager,
+        inputs: inputs,
+        spokeProxy: report.spokeInstanceBatchReports[i].report.spokeProxy,
+        label: inputs.spokeLabels[i]
+      });
     }
+    for (uint256 i = 0; i < inputs.babylonSpokeLabels.length; i++) {
+      _checkSpokeAdminRolesOnSpoke({
+        accessManager: accessManager,
+        inputs: inputs,
+        spokeProxy: report.babylonSpokeInstanceBatchReports[i].report.spokeProxy,
+        label: inputs.babylonSpokeLabels[i]
+      });
+    }
+  }
+
+  function _checkSpokeAdminRolesOnSpoke(
+    IAccessManagerEnumerable accessManager,
+    InputUtils.FullDeployInputs memory inputs,
+    address spokeProxy,
+    string memory label
+  ) internal view {
+    address proxyAdminOwner = Ownable(ProxyHelper.getProxyAdmin(spokeProxy)).owner();
+    assertEq(proxyAdminOwner, inputs.proxyAdminOwner, string.concat(label, ' proxy admin owner'));
+
+    for (uint256 j = 0; j < _spokePositionUpdaterRoleSelectors.length; j++) {
+      (bool allowed, uint32 delay) = accessManager.canCall(
+        inputs.spokeAdmin,
+        spokeProxy,
+        _spokePositionUpdaterRoleSelectors[j]
+      );
+      assertEq(allowed, inputs.grantRoles ? true : false, 'SpokePositionUpdaterRole allowed');
+      assertEq(delay, 0, 'SpokePositionUpdaterRole delay');
+
+      assertEq(
+        accessManager.getTargetFunctionRole(spokeProxy, _spokePositionUpdaterRoleSelectors[j]),
+        Roles.SPOKE_USER_POSITION_UPDATER_ROLE,
+        'SpokePositionUpdaterRole target function'
+      );
+    }
+  }
+
+  /// @dev Spoke roles are granted when canonical or babylon spokes are deployed.
+  function _hasSpokes(InputUtils.FullDeployInputs memory inputs) internal pure returns (bool) {
+    return inputs.spokeLabels.length > 0 || inputs.babylonSpokeLabels.length > 0;
   }
 
   function _checkHubRoles(
@@ -809,7 +928,7 @@ contract BatchTestProcedures is Test, Create2TestHelper, WETHDeployProcedure {
       );
     }
 
-    if (inputs.grantRoles && inputs.spokeLabels.length > 0) {
+    if (inputs.grantRoles && _hasSpokes(inputs)) {
       for (uint256 i; i < selectors.length; i++) {
         (bool allowed, ) = accessManager.canCall(
           inputs.spokeConfiguratorAdmin,
@@ -899,6 +1018,22 @@ contract BatchTestProcedures is Test, Create2TestHelper, WETHDeployProcedure {
       _assertHasCode(
         report.spokeInstanceBatchReports[i].report.aaveOracle,
         string.concat('oracle: ', label)
+      );
+    }
+
+    for (uint256 i; i < report.babylonSpokeInstanceBatchReports.length; i++) {
+      string memory label = report.babylonSpokeInstanceBatchReports[i].label;
+      _assertHasCode(
+        report.babylonSpokeInstanceBatchReports[i].report.spokeProxy,
+        string.concat('babylon spoke proxy: ', label)
+      );
+      _assertHasCode(
+        report.babylonSpokeInstanceBatchReports[i].report.spokeImplementation,
+        string.concat('babylon spoke impl: ', label)
+      );
+      _assertHasCode(
+        report.babylonSpokeInstanceBatchReports[i].report.aaveOracle,
+        string.concat('babylon oracle: ', label)
       );
     }
 

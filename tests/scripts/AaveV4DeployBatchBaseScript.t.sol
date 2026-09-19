@@ -50,6 +50,16 @@ contract AaveV4DeployBatchBaseScriptTest is Test {
   function setUp() public {
     _harness = new AaveV4DeployBatchBaseScriptHarness();
 
+    string[] memory babylonSpokeLabels = new string[](2);
+    babylonSpokeLabels[0] = 'babylonSpoke1';
+    babylonSpokeLabels[1] = 'babylonSpoke2';
+    address[] memory babylonLiquidationManagers = new address[](2);
+    babylonLiquidationManagers[0] = makeAddr('babylonLiquidationManager1');
+    babylonLiquidationManagers[1] = makeAddr('babylonLiquidationManager2');
+    uint256[] memory babylonManagedCollateralReserveIds = new uint256[](2);
+    babylonManagedCollateralReserveIds[0] = 1;
+    babylonManagedCollateralReserveIds[1] = 2;
+
     _inputs = InputUtils.FullDeployInputs({
       accessManagerAdmin: makeAddr('accessManagerAdmin'),
       proxyAdminOwner: makeAddr('proxyAdminOwner'),
@@ -68,9 +78,9 @@ contract AaveV4DeployBatchBaseScriptTest is Test {
       hubLabels: _toArray('hub1', 'hub2', 'hub3'),
       spokeLabels: _toArray('spoke1', 'spoke2', 'spoke3'),
       spokeMaxReservesLimits: _defaultSpokeMaxReservesLimits(3),
-      babylonSpokeLabels: new string[](0),
-      babylonLiquidationManagers: new address[](0),
-      babylonManagedCollateralReserveIds: new uint256[](0),
+      babylonSpokeLabels: babylonSpokeLabels,
+      babylonLiquidationManagers: babylonLiquidationManagers,
+      babylonManagedCollateralReserveIds: babylonManagedCollateralReserveIds,
       salt: bytes32(0)
     });
 
@@ -302,6 +312,20 @@ contract AaveV4DeployBatchBaseScriptTest is Test {
     _harness.loadWarningsAndSanitizeInputs(_inputs, _deployer);
   }
 
+  function test_loadWarningsAndSanitizeInputs_revertsWith_duplicateBabylonSpokeLabel() public {
+    _inputs.babylonSpokeLabels = ['babylonSpoke1', 'babylonSpoke1'];
+
+    vm.expectRevert('duplicate babylonSpoke label: babylonSpoke1');
+    _harness.loadWarningsAndSanitizeInputs(_inputs, _deployer);
+  }
+
+  function test_loadWarningsAndSanitizeInputs_revertsWith_babylonInputsLengthMismatch() public {
+    _inputs.babylonManagedCollateralReserveIds = new uint256[](1);
+
+    vm.expectRevert('babylon spoke labels/managers/reserve ids length mismatch');
+    _harness.loadWarningsAndSanitizeInputs(_inputs, _deployer);
+  }
+
   function test_loadWarningsAndSanitizeInputs_withZeroSalt() public {
     _inputs.salt = bytes32(0);
     InputUtils.FullDeployInputs memory sanitized = _harness.loadWarningsAndSanitizeInputs(
@@ -332,6 +356,17 @@ contract AaveV4DeployBatchBaseScriptTest is Test {
     assertEq(a.grantRoles, b.grantRoles, 'grant roles');
     assertEq(a.hubLabels, b.hubLabels, 'hub labels');
     assertEq(a.spokeLabels, b.spokeLabels, 'spoke labels');
+    assertEq(a.babylonSpokeLabels, b.babylonSpokeLabels, 'babylon spoke labels');
+    assertEq(
+      a.babylonLiquidationManagers,
+      b.babylonLiquidationManagers,
+      'babylon liquidation managers'
+    );
+    assertEq(
+      a.babylonManagedCollateralReserveIds,
+      b.babylonManagedCollateralReserveIds,
+      'babylon managed collateral reserve ids'
+    );
     assertEq(a.salt, b.salt, 'salt');
     assertEq(abi.encode(a), abi.encode(b));
   }

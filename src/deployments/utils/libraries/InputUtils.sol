@@ -57,7 +57,7 @@ library InputUtils {
 
   /// @notice Reverts if any two labels in the array are identical.
   /// @param labels The array of labels to validate.
-  /// @param kind A descriptor used in the revert message (e.g. "hub", "spoke").
+  /// @param kind A descriptor used in the revert message (e.g. "hub", "spoke", "babylonSpoke").
   function validateUniqueLabels(string[] memory labels, string memory kind) internal pure {
     for (uint256 i; i < labels.length; i++) {
       for (uint256 j = i + 1; j < labels.length; j++) {
