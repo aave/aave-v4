@@ -18,7 +18,7 @@ import {Spoke} from 'src/spoke/Spoke.sol';
 abstract contract BabylonSpoke is IBabylonSpoke, Spoke {
   using ReserveFlagsMap for ReserveFlags;
 
-  /// @dev Users hold at most one collateral and one debt reserve.
+  /// @dev The maximum number of reserves a user can hold as collateral and as debt, each.
   uint16 internal constant USER_RESERVES_LIMIT = 1;
 
   /// @inheritdoc IBabylonSpoke

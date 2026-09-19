@@ -308,8 +308,7 @@ contract BabylonSpokeConfigTest is BabylonBase {
     spoke4.updateReserveConfig(collateralReserveId, config);
   }
 
-  /// @dev The guard is scoped to the managed collateral reserve: every other reserve stays
-  /// borrowable, and a reserve being listed is never the managed one.
+  /// @dev The guard is scoped to the managed collateral reserve, every other reserve stays borrowable.
   function test_updateReserveConfig_borrowableOtherReserve() public {
     ISpoke.ReserveConfig memory config = spoke4.getReserveConfig(debtReserveId);
     config.borrowable = true;
@@ -341,5 +340,14 @@ contract BabylonSpokeConfigTest is BabylonBase {
     vm.expectRevert(IBabylonSpoke.UnsupportedCollateralReserve.selector);
     vm.prank(alice);
     spoke4.setUsingAsCollateral(debtReserveId, true, alice);
+  }
+
+  /// @dev The guard only applies when enabling a reserve as collateral, disabling follows the canonical path.
+  function test_setUsingAsCollateral_disableOtherReserve() public {
+    vm.prank(alice);
+    spoke4.setUsingAsCollateral(debtReserveId, false, alice);
+
+    (bool isUsingAsCollateral, ) = spoke4.getUserReserveStatus(debtReserveId, alice);
+    assertFalse(isUsingAsCollateral, 'other reserve not registered as collateral');
   }
 }

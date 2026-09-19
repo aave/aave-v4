@@ -49,6 +49,7 @@ interface IBabylonSpoke is ISpoke {
 
   /// @notice Liquidates a user position, bounded by a collateral removal cap.
   /// @dev It reverts if the caller is not the liquidation manager.
+  /// @dev It reverts if the debt reserve or the managed collateral reserve is not listed.
   /// @dev The Spoke pulls underlying repaid debt assets from caller (Liquidator), hence it needs prior approval.
   /// @dev The repayment covers premium debt first, up to the desired cover and the user's debt, with no target health factor sizing.
   /// @dev The removed collateral is priced with the canonical bonus formula. If it exceeds the removal cap, the repayment is resized to exactly consume the cap.

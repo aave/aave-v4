@@ -71,10 +71,6 @@ contract BabylonLiquidationLogicWrapper {
     _userPositions[_borrower][_collateralReserveId].suppliedShares = suppliedShares.toUint120();
   }
 
-  function setLiquidatorPositionSuppliedShares(address liquidator, uint256 suppliedShares) public {
-    _userPositions[liquidator][_collateralReserveId].suppliedShares = suppliedShares.toUint120();
-  }
-
   function setDebtReserveId(uint256 reserveId) public {
     _debtReserveId = reserveId;
   }
@@ -157,10 +153,6 @@ contract BabylonLiquidationLogicWrapper {
 
   function getDebtPosition(address user) public view returns (ISpoke.UserPosition memory) {
     return _userPositions[user][_debtReserveId];
-  }
-
-  function getBorrowerCollateralStatus(uint256 reserveId) public view returns (bool) {
-    return _positionStatuses[_borrower].isUsingAsCollateral(reserveId);
   }
 
   function getBorrowerBorrowingStatus(uint256 reserveId) public view returns (bool) {
