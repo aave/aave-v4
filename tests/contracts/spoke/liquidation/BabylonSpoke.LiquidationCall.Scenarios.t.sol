@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import 'tests/contracts/spoke/liquidation/Spoke.BabylonLiquidationCall.Base.t.sol';
+import 'tests/contracts/spoke/liquidation/BabylonSpoke.LiquidationCall.Base.t.sol';
 
 /// @dev Babylon liquidation scenarios, mirroring the canonical `SpokeLiquidationCallScenariosTest`.
 /// The spoke is deployed with weth as the managed collateral reserve so the canonical numbers hold
@@ -10,7 +10,7 @@ import 'tests/contracts/spoke/liquidation/Spoke.BabylonLiquidationCall.Base.t.so
 /// and 7 are dropped (no target health factor sizing) and scenario 8 is dropped (the liquidation
 /// fee is never charged, so splitting liquidations cannot grief the treasury). Cap sizing is
 /// covered by the unit suite.
-contract SpokeBabylonLiquidationCallScenariosTest is SpokeBabylonLiquidationCallBaseTest {
+contract BabylonSpokeLiquidationCallScenariosTest is BabylonSpokeLiquidationCallBaseTest {
   using SafeCast for *;
 
   bytes4 internal constant BABYLON_LIQUIDATION_CALL_SELECTOR =

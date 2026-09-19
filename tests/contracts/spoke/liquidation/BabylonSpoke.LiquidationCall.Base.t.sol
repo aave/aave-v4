@@ -11,7 +11,7 @@ import {BabylonLiquidationLogic} from 'src/spoke/libraries/BabylonLiquidationLog
 /// The engine relies on the managed collateral reserve keeping a supply share price of exactly
 /// one (it is not borrowable in production), which it asserts, so the collateral preview taken
 /// before the call stays exact.
-contract SpokeBabylonLiquidationCallBaseTest is BabylonBase, SpokeLiquidationCallBaseTest {
+contract BabylonSpokeLiquidationCallBaseTest is BabylonBase, SpokeLiquidationCallBaseTest {
   using SafeCast for *;
   using PercentageMath for *;
   using WadRayMath for *;

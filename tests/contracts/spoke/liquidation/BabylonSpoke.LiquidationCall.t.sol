@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import 'tests/contracts/spoke/liquidation/Spoke.BabylonLiquidationCall.Base.t.sol';
+import 'tests/contracts/spoke/liquidation/BabylonSpoke.LiquidationCall.Base.t.sol';
 
-contract SpokeBabylonLiquidationCallTest is SpokeBabylonLiquidationCallBaseTest {
+contract BabylonSpokeLiquidationCallTest is BabylonSpokeLiquidationCallBaseTest {
   using WadRayMath for uint256;
   using PercentageMath for uint256;
   using MathUtils for uint256;

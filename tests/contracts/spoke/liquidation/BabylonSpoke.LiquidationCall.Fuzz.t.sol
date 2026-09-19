@@ -1,15 +1,15 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import 'tests/contracts/spoke/liquidation/Spoke.BabylonLiquidationCall.Base.t.sol';
+import 'tests/contracts/spoke/liquidation/BabylonSpoke.LiquidationCall.Base.t.sol';
 
 /// @dev Fuzz matrix mirroring the canonical `SpokeLiquidationCallHelperTest` shapes for the
 /// babylon liquidation call. The ManyCollaterals and ManyDebts shapes are dropped (users hold a
 /// single collateral and a single debt reserve), the collateral is fixed to the managed reserve
 /// baked into the spoke and the canonical `receiveShares` dimension is replaced by fuzzing the
-/// removal cap. The LiquidationFeeZero variant is dropped (the fee is
-/// never charged) along with TargetHealthFactorOne (no target health factor sizing).
-abstract contract SpokeBabylonLiquidationCallHelperTest is SpokeBabylonLiquidationCallBaseTest {
+/// removal cap. The LiquidationFeeZero variant is dropped (the fee is never charged) along with
+/// TargetHealthFactorOne (no target health factor sizing).
+abstract contract BabylonSpokeLiquidationCallHelperTest is BabylonSpokeLiquidationCallBaseTest {
   using WadRayMath for uint256;
   using SafeCast for uint256;
   using PercentageMath for uint256;
@@ -39,7 +39,7 @@ abstract contract SpokeBabylonLiquidationCallHelperTest is SpokeBabylonLiquidati
     return candidates[bound(debtReserveId, 0, count - 1)];
   }
 
-  function _processAdditionalSetup(uint256 debtReserveId) internal virtual {
+  function _processAdditionalSetup(uint256 /* debtReserveId */) internal virtual {
     skipTime = vm.randomUint(0, 10 * 365 days);
     baseAmountValue = vm.randomUint(MIN_AMOUNT_IN_BASE_CURRENCY, MAX_AMOUNT_IN_BASE_CURRENCY);
 
@@ -196,22 +196,22 @@ abstract contract SpokeBabylonLiquidationCallHelperTest is SpokeBabylonLiquidati
   }
 }
 
-contract SpokeBabylonLiquidationCallTest_SmallPosition is SpokeBabylonLiquidationCallHelperTest {
+contract BabylonSpokeLiquidationCallTest_SmallPosition is BabylonSpokeLiquidationCallHelperTest {
   function _processAdditionalSetup(uint256 debtReserveId) internal virtual override {
     super._processAdditionalSetup(debtReserveId);
     baseAmountValue = vm.randomUint(MIN_AMOUNT_IN_BASE_CURRENCY, 10_000e26);
   }
 }
 
-contract SpokeBabylonLiquidationCallTest_LargePosition is SpokeBabylonLiquidationCallHelperTest {
+contract BabylonSpokeLiquidationCallTest_LargePosition is BabylonSpokeLiquidationCallHelperTest {
   function _processAdditionalSetup(uint256 debtReserveId) internal virtual override {
     super._processAdditionalSetup(debtReserveId);
     baseAmountValue = vm.randomUint(100_000e26, MAX_AMOUNT_IN_BASE_CURRENCY);
   }
 }
 
-contract SpokeBabylonLiquidationCallTest_NoLiquidationBonus is
-  SpokeBabylonLiquidationCallHelperTest
+contract BabylonSpokeLiquidationCallTest_NoLiquidationBonus is
+  BabylonSpokeLiquidationCallHelperTest
 {
   function _processAdditionalSetup(uint256 debtReserveId) internal virtual override {
     super._processAdditionalSetup(debtReserveId);
@@ -227,8 +227,8 @@ contract SpokeBabylonLiquidationCallTest_NoLiquidationBonus is
   }
 }
 
-contract SpokeBabylonLiquidationCallTest_SmallLiquidationBonus is
-  SpokeBabylonLiquidationCallHelperTest
+contract BabylonSpokeLiquidationCallTest_SmallLiquidationBonus is
+  BabylonSpokeLiquidationCallHelperTest
 {
   using PercentageMath for *;
   using SafeCast for uint256;
@@ -262,8 +262,8 @@ contract SpokeBabylonLiquidationCallTest_SmallLiquidationBonus is
   }
 }
 
-contract SpokeBabylonLiquidationCallTest_LargeLiquidationBonus is
-  SpokeBabylonLiquidationCallHelperTest
+contract BabylonSpokeLiquidationCallTest_LargeLiquidationBonus is
+  BabylonSpokeLiquidationCallHelperTest
 {
   using PercentageMath for *;
   using SafeCast for *;
@@ -297,7 +297,7 @@ contract SpokeBabylonLiquidationCallTest_LargeLiquidationBonus is
   }
 }
 
-contract SpokeBabylonLiquidationCallTest_NoPremium is SpokeBabylonLiquidationCallHelperTest {
+contract BabylonSpokeLiquidationCallTest_NoPremium is BabylonSpokeLiquidationCallHelperTest {
   function _processAdditionalSetup(uint256 debtReserveId) internal virtual override {
     super._processAdditionalSetup(debtReserveId);
     for (uint256 i = 0; i < spoke.getReserveCount(); i++) {
@@ -315,7 +315,7 @@ contract SpokeBabylonLiquidationCallTest_NoPremium is SpokeBabylonLiquidationCal
   }
 }
 
-contract SpokeBabylonLiquidationCallTest_Premium is SpokeBabylonLiquidationCallHelperTest {
+contract BabylonSpokeLiquidationCallTest_Premium is BabylonSpokeLiquidationCallHelperTest {
   using SafeCast for uint256;
   using PercentageMath for uint256;
 
@@ -360,7 +360,7 @@ contract SpokeBabylonLiquidationCallTest_Premium is SpokeBabylonLiquidationCallH
   }
 }
 
-contract SpokeBabylonLiquidationCallTest_NoTimeSkip is SpokeBabylonLiquidationCallHelperTest {
+contract BabylonSpokeLiquidationCallTest_NoTimeSkip is BabylonSpokeLiquidationCallHelperTest {
   function _processAdditionalSetup(uint256 debtReserveId) internal virtual override {
     super._processAdditionalSetup(debtReserveId);
     skipTime = 0;
@@ -381,8 +381,8 @@ contract SpokeBabylonLiquidationCallTest_NoTimeSkip is SpokeBabylonLiquidationCa
   }
 }
 
-contract SpokeBabylonLiquidationCallTest_LiquidatorHistory is
-  SpokeBabylonLiquidationCallHelperTest
+contract BabylonSpokeLiquidationCallTest_LiquidatorHistory is
+  BabylonSpokeLiquidationCallHelperTest
 {
   function _processAdditionalSetup(uint256 debtReserveId) internal virtual override {
     super._processAdditionalSetup(debtReserveId);
