@@ -26,13 +26,15 @@ library AaveV4DeployOrchestration {
   /// @param deployInputs The full set of deployment configuration inputs.
   /// @param hubBytecode The creation bytecode of the HubInstance contract.
   /// @param spokeBytecode The creation bytecode of the SpokeInstance contract.
+  /// @param babylonSpokeBytecode The creation bytecode of the BabylonSpokeInstance contract.
   /// @return report The full deployment report containing all batch sub-reports.
   function deployAaveV4(
     Logger logger,
     address deployer,
     InputUtils.FullDeployInputs memory deployInputs,
     bytes memory hubBytecode,
-    bytes memory spokeBytecode
+    bytes memory spokeBytecode,
+    bytes memory babylonSpokeBytecode
   ) internal returns (OrchestrationReports.FullDeploymentReport memory report) {
     bytes32 salt = _deriveSalt({deployer: deployer, salt: deployInputs.salt});
     report.salt = deployInputs.salt;
@@ -73,6 +75,7 @@ library AaveV4DeployOrchestration {
     // Validate label uniqueness (duplicate labels produce identical CREATE2 salts)
     InputUtils.validateUniqueLabels(deployInputs.hubLabels, 'hub');
     InputUtils.validateUniqueLabels(deployInputs.spokeLabels, 'spoke');
+    InputUtils.validateUniqueLabels(deployInputs.babylonSpokeLabels, 'babylonSpoke');
 
     // Deploy Hub Batches
     report.hubInstanceBatchReports = _deployHubs({
@@ -90,6 +93,15 @@ library AaveV4DeployOrchestration {
       authority: accessManager,
       inputs: deployInputs,
       spokeBytecode: spokeBytecode,
+      salt: salt
+    });
+
+    // Deploy Babylon Spoke Instance Batches
+    report.babylonSpokeInstanceBatchReports = _deployBabylonSpokes({
+      logger: logger,
+      authority: accessManager,
+      inputs: deployInputs,
+      babylonSpokeBytecode: babylonSpokeBytecode,
       salt: salt
     });
 
@@ -124,7 +136,7 @@ library AaveV4DeployOrchestration {
           hubConfiguratorAdmin: deployInputs.hubConfiguratorAdmin
         });
       }
-      if (deployInputs.spokeLabels.length > 0) {
+      if (deployInputs.spokeLabels.length > 0 || deployInputs.babylonSpokeLabels.length > 0) {
         _grantSpokeRoles({
           logger: logger,
           report: report,
@@ -226,6 +238,68 @@ library AaveV4DeployOrchestration {
     }
     logger.logNewLine();
     return spokeBatchReports;
+  }
+
+  function _deployBabylonSpokes(
+    Logger logger,
+    address authority,
+    InputUtils.FullDeployInputs memory inputs,
+    bytes memory babylonSpokeBytecode,
+    bytes32 salt
+  ) internal returns (OrchestrationReports.SpokeDeploymentReport[] memory spokeBatchReports) {
+    uint256 spokeCount = inputs.babylonSpokeLabels.length;
+    require(
+      inputs.babylonLiquidationManagers.length == spokeCount &&
+        inputs.babylonManagedCollateralReserveIds.length == spokeCount,
+      'babylon spoke labels/managers/reserve ids length mismatch'
+    );
+    spokeBatchReports = new OrchestrationReports.SpokeDeploymentReport[](spokeCount);
+    for (uint256 i; i < spokeCount; ++i) {
+      bytes32 childSalt = _deriveChildSalt(salt, 'babylonSpoke', inputs.babylonSpokeLabels[i]);
+      spokeBatchReports[i] = _deployBabylonSpoke({
+        logger: logger,
+        proxyAdminOwner: inputs.proxyAdminOwner,
+        authority: authority,
+        liquidationManager: inputs.babylonLiquidationManagers[i],
+        managedCollateralReserveId: inputs.babylonManagedCollateralReserveIds[i],
+        label: inputs.babylonSpokeLabels[i],
+        babylonSpokeBytecode: babylonSpokeBytecode,
+        oracleDecimals: DeployConstants.ORACLE_DECIMALS,
+        salt: childSalt
+      });
+    }
+    logger.logNewLine();
+    return spokeBatchReports;
+  }
+
+  function _deployBabylonSpoke(
+    Logger logger,
+    address proxyAdminOwner,
+    address authority,
+    address liquidationManager,
+    uint256 managedCollateralReserveId,
+    string memory label,
+    bytes memory babylonSpokeBytecode,
+    uint8 oracleDecimals,
+    bytes32 salt
+  ) internal returns (OrchestrationReports.SpokeDeploymentReport memory) {
+    OrchestrationReports.SpokeDeploymentReport memory spokeReport;
+
+    spokeReport.label = label;
+    logger.logHeader1('deploying AaveV4BabylonSpokeInstanceBatch');
+    spokeReport.report = AaveV4DeployBase.deployBabylonSpokeInstanceBatch({
+      proxyAdminOwner: proxyAdminOwner,
+      authority: authority,
+      liquidationManager: liquidationManager,
+      managedCollateralReserveId: managedCollateralReserveId,
+      babylonSpokeBytecode: babylonSpokeBytecode,
+      oracleDecimals: oracleDecimals,
+      salt: salt
+    });
+    _logSpokeReport({logger: logger, report: spokeReport.report, label: label});
+    _setupSpokeRoles({logger: logger, report: spokeReport.report, accessManager: authority});
+
+    return spokeReport;
   }
 
   function _deploySpoke(
@@ -504,7 +578,7 @@ library AaveV4DeployOrchestration {
 
   /// @dev Derives a child salt from a base salt, contract type, and label.
   /// @param baseSalt The base salt to derive the child salt from.
-  /// @param contractType The type of the contract (e.g. 'hub', 'spoke').
+  /// @param contractType The type of the contract (e.g. 'hub', 'spoke', 'babylonSpoke').
   /// @param label The label of the contract to be deployed.
   /// @return The derived child salt.
   function _deriveChildSalt(

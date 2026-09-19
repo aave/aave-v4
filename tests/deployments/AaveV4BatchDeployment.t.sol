@@ -25,6 +25,11 @@ contract AaveV4BatchDeploymentTest is BatchTestProcedures {
       hubLabels: _hubLabels,
       spokeLabels: _spokeLabels,
       spokeMaxReservesLimits: _defaultSpokeMaxReservesLimits(_spokeLabels.length),
+      babylonSpokeLabels: _babylonSpokeLabels,
+      babylonLiquidationManagers: _defaultBabylonLiquidationManagers(_babylonSpokeLabels.length),
+      babylonManagedCollateralReserveIds: _defaultBabylonManagedCollateralReserveIds(
+        _babylonSpokeLabels.length
+      ),
       salt: bytes32(0)
     });
   }
@@ -293,10 +298,11 @@ contract AaveV4BatchDeploymentTest is BatchTestProcedures {
 
     bytes memory hubBytecode = BytecodeHelper.getHubBytecode();
     bytes memory spokeBytecode = BytecodeHelper.getSpokeBytecode();
+    bytes memory babylonSpokeBytecode = BytecodeHelper.getBabylonSpokeBytecode();
 
     vm.startPrank(_deployer);
     OrchestrationReports.FullDeploymentReport memory report = AaveV4DeployOrchestration
-      .deployAaveV4(_logger, _deployer, _inputs, hubBytecode, spokeBytecode);
+      .deployAaveV4(_logger, _deployer, _inputs, hubBytecode, spokeBytecode, babylonSpokeBytecode);
     vm.stopPrank();
 
     IAccessManagerEnumerable accessManager = IAccessManagerEnumerable(
@@ -324,15 +330,81 @@ contract AaveV4BatchDeploymentTest is BatchTestProcedures {
     );
   }
 
+  function testAaveV4BatchDeployment_withoutBabylonSpokes() public {
+    _inputs.babylonSpokeLabels = new string[](0);
+    _inputs.babylonLiquidationManagers = new address[](0);
+    _inputs.babylonManagedCollateralReserveIds = new uint256[](0);
+    checkedV4Deployment();
+  }
+
+  function testAaveV4BatchDeployment_withMultipleBabylonSpokes() public {
+    _inputs.babylonSpokeLabels = new string[](3);
+    _inputs.babylonSpokeLabels[0] = 'babylonMain';
+    _inputs.babylonSpokeLabels[1] = 'babylonLrt';
+    _inputs.babylonSpokeLabels[2] = 'babylonBase';
+    _inputs.babylonLiquidationManagers = _defaultBabylonLiquidationManagers(3);
+    _inputs.babylonManagedCollateralReserveIds = _defaultBabylonManagedCollateralReserveIds(3);
+    checkedV4Deployment();
+  }
+
+  function testAaveV4BatchDeployment_withOnlyBabylonSpokes() public {
+    _inputs.spokeLabels = new string[](0);
+    _inputs.spokeMaxReservesLimits = new uint16[](0);
+    checkedV4Deployment();
+  }
+
+  function testAaveV4BatchDeployment_withDuplicateBabylonSpokeLabels_reverts() public {
+    _inputs.babylonSpokeLabels = new string[](2);
+    _inputs.babylonSpokeLabels[0] = 'babylonMain';
+    _inputs.babylonSpokeLabels[1] = 'babylonMain';
+    _inputs.babylonLiquidationManagers = _defaultBabylonLiquidationManagers(2);
+    _inputs.babylonManagedCollateralReserveIds = _defaultBabylonManagedCollateralReserveIds(2);
+
+    vm.expectRevert('duplicate babylonSpoke label: babylonMain');
+    this.checkedV4Deployment();
+  }
+
+  function testAaveV4BatchDeployment_withSharedSpokeAndBabylonSpokeLabel() public {
+    _inputs.babylonSpokeLabels = new string[](1);
+    _inputs.babylonSpokeLabels[0] = _inputs.spokeLabels[0];
+    checkedV4Deployment();
+  }
+
+  function testAaveV4BatchDeployment_revert_babylonInputsLengthMismatch() public {
+    _inputs.babylonSpokeLabels = new string[](1);
+    _inputs.babylonSpokeLabels[0] = 'babylonSpoke1';
+    _inputs.babylonLiquidationManagers = new address[](1);
+    _inputs.babylonLiquidationManagers[0] = makeAddr('babylonLiquidationManager');
+    _inputs.babylonManagedCollateralReserveIds = new uint256[](0);
+
+    vm.expectRevert('babylon spoke labels/managers/reserve ids length mismatch');
+    this.externalDeployAaveV4(_inputs);
+  }
+
+  /// @dev External entry point so `vm.expectRevert` binds to the whole deployment.
+  function externalDeployAaveV4(InputUtils.FullDeployInputs memory inputs) external {
+    vm.startPrank(_deployer);
+    AaveV4DeployOrchestration.deployAaveV4(
+      _logger,
+      _deployer,
+      inputs,
+      BytecodeHelper.getHubBytecode(),
+      BytecodeHelper.getSpokeBytecode(),
+      BytecodeHelper.getBabylonSpokeBytecode()
+    );
+    vm.stopPrank();
+  }
+
   function testAaveV4BatchDeployment_accessManagerAdminSameAsDeployer() public {
     _inputs.accessManagerAdmin = _deployer;
 
     bytes memory hubBytecode = BytecodeHelper.getHubBytecode();
     bytes memory spokeBytecode = BytecodeHelper.getSpokeBytecode();
+    bytes memory babylonSpokeBytecode = BytecodeHelper.getBabylonSpokeBytecode();
 
     vm.startPrank(_deployer);
     OrchestrationReports.FullDeploymentReport memory report = AaveV4DeployOrchestration
-      .deployAaveV4(_logger, _deployer, _inputs, hubBytecode, spokeBytecode);
+      .deployAaveV4(_logger, _deployer, _inputs, hubBytecode, spokeBytecode, babylonSpokeBytecode);
     vm.stopPrank();
 
     IAccessManagerEnumerable accessManager = IAccessManagerEnumerable(
@@ -360,6 +432,7 @@ contract AaveV4BatchDeploymentTest is BatchTestProcedures {
     address deployer,
     bool withoutHubs,
     bool withoutSpokes,
+    bool withoutBabylonSpokes,
     bool deployNativeTokenGateway,
     bool deploySignatureGateway
   ) public {
@@ -378,6 +451,15 @@ contract AaveV4BatchDeploymentTest is BatchTestProcedures {
       deployInputs.spokeLabels = _inputs.spokeLabels;
       deployInputs.spokeMaxReservesLimits = _inputs.spokeMaxReservesLimits;
     }
+    if (withoutBabylonSpokes) {
+      deployInputs.babylonSpokeLabels = new string[](0);
+      deployInputs.babylonLiquidationManagers = new address[](0);
+      deployInputs.babylonManagedCollateralReserveIds = new uint256[](0);
+    } else {
+      deployInputs.babylonSpokeLabels = _inputs.babylonSpokeLabels;
+      deployInputs.babylonLiquidationManagers = _inputs.babylonLiquidationManagers;
+      deployInputs.babylonManagedCollateralReserveIds = _inputs.babylonManagedCollateralReserveIds;
+    }
     _deployer = deployer;
     _inputs = deployInputs;
 
@@ -395,6 +477,7 @@ contract AaveV4BatchDeploymentTest is BatchTestProcedures {
     address deployer,
     bool withoutHubs,
     bool withoutSpokes,
+    bool withoutBabylonSpokes,
     bool deployNativeTokenGateway,
     bool deploySignatureGateway
   ) public {
@@ -412,6 +495,15 @@ contract AaveV4BatchDeploymentTest is BatchTestProcedures {
     } else {
       deployInputs.spokeLabels = _inputs.spokeLabels;
       deployInputs.spokeMaxReservesLimits = _inputs.spokeMaxReservesLimits;
+    }
+    if (withoutBabylonSpokes) {
+      deployInputs.babylonSpokeLabels = new string[](0);
+      deployInputs.babylonLiquidationManagers = new address[](0);
+      deployInputs.babylonManagedCollateralReserveIds = new uint256[](0);
+    } else {
+      deployInputs.babylonSpokeLabels = _inputs.babylonSpokeLabels;
+      deployInputs.babylonLiquidationManagers = _inputs.babylonLiquidationManagers;
+      deployInputs.babylonManagedCollateralReserveIds = _inputs.babylonManagedCollateralReserveIds;
     }
     _deployer = deployer;
     _inputs = deployInputs;
@@ -469,8 +561,7 @@ contract AaveV4BatchDeploymentTest is BatchTestProcedures {
 
     // 3. hubs and spokes require proxy admin owner when deployed
     if (
-      (_inputs.hubLabels.length > 0 || _inputs.spokeLabels.length > 0) &&
-      _inputs.proxyAdminOwner == address(0)
+      (_inputs.hubLabels.length > 0 || _hasSpokes(_inputs)) && _inputs.proxyAdminOwner == address(0)
     ) {
       return (true, bytes('invalid proxy admin owner'));
     }
@@ -494,7 +585,7 @@ contract AaveV4BatchDeploymentTest is BatchTestProcedures {
 
     if (_inputs.grantRoles) {
       bool hasHubs = _inputs.hubLabels.length > 0;
-      bool hasSpokes = _inputs.spokeLabels.length > 0;
+      bool hasSpokes = _hasSpokes(_inputs);
 
       if (
         (hasHubs &&

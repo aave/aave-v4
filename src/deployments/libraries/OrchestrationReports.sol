@@ -34,6 +34,7 @@ library OrchestrationReports {
     BatchReports.ConfiguratorBatchReport configuratorBatchReport;
     BatchReports.TreasurySpokeBatchReport treasurySpokeBatchReport;
     SpokeDeploymentReport[] spokeInstanceBatchReports;
+    SpokeDeploymentReport[] babylonSpokeInstanceBatchReports;
     HubDeploymentReport[] hubInstanceBatchReports;
     BatchReports.GatewaysBatchReport gatewaysBatchReport;
     BatchReports.PositionManagerBatchReport positionManagerBatchReport;

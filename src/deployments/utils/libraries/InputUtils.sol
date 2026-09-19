@@ -27,6 +27,9 @@ library InputUtils {
   /// @dev hubLabels An array of hub labels; the number of hub labels defines the number of hubs to deploy.
   /// @dev spokeLabels An array of spoke labels; the number of spoke labels defines the number of spokes to deploy.
   /// @dev spokeMaxReservesLimits Per-spoke max user reserves limit (parallel to spokeLabels).
+  /// @dev babylonSpokeLabels An array of babylon spoke labels; their number defines the number of babylon spokes to deploy. Babylon spokes fix the user reserves limit at one.
+  /// @dev babylonLiquidationManagers Per-babylon-spoke liquidation manager, the only address allowed to liquidate on it (parallel to babylonSpokeLabels).
+  /// @dev babylonManagedCollateralReserveIds Per-babylon-spoke identifier of the only reserve usable as collateral (parallel to babylonSpokeLabels).
   /// @dev salt Root salt for deterministic CREATE2 deployment; orchestration derives per-batch salts.
   struct FullDeployInputs {
     address accessManagerAdmin;
@@ -46,12 +49,15 @@ library InputUtils {
     string[] hubLabels;
     string[] spokeLabels;
     uint16[] spokeMaxReservesLimits;
+    string[] babylonSpokeLabels;
+    address[] babylonLiquidationManagers;
+    uint256[] babylonManagedCollateralReserveIds;
     bytes32 salt;
   }
 
   /// @notice Reverts if any two labels in the array are identical.
   /// @param labels The array of labels to validate.
-  /// @param kind A descriptor used in the revert message (e.g. "hub", "spoke").
+  /// @param kind A descriptor used in the revert message (e.g. "hub", "spoke", "babylonSpoke").
   function validateUniqueLabels(string[] memory labels, string memory kind) internal pure {
     for (uint256 i; i < labels.length; i++) {
       for (uint256 j = i + 1; j < labels.length; j++) {

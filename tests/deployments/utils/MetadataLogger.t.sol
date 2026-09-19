@@ -39,6 +39,14 @@ contract MetadataLoggerTest is Test {
     report.spokeInstanceBatchReports[1].report.spokeImplementation = makeAddr('spokeImpl-lrt');
     report.spokeInstanceBatchReports[1].report.aaveOracle = makeAddr('oracle-lrt');
 
+    report.babylonSpokeInstanceBatchReports = new OrchestrationReports.SpokeDeploymentReport[](1);
+    report.babylonSpokeInstanceBatchReports[0].label = 'babylon';
+    report.babylonSpokeInstanceBatchReports[0].report.spokeProxy = makeAddr('babylonSpoke');
+    report.babylonSpokeInstanceBatchReports[0].report.spokeImplementation = makeAddr(
+      'babylonSpokeImpl'
+    );
+    report.babylonSpokeInstanceBatchReports[0].report.aaveOracle = makeAddr('babylonOracle');
+
     report.gatewaysBatchReport.nativeGateway = makeAddr('nativeGateway');
     report.gatewaysBatchReport.signatureGateway = makeAddr('signatureGateway');
 
@@ -107,6 +115,20 @@ contract MetadataLoggerTest is Test {
     assertEq(
       vm.parseJsonAddress(json, '$.spoke.lrt'),
       report.spokeInstanceBatchReports[1].report.spokeProxy
+    );
+
+    // Babylon spokes
+    assertEq(
+      vm.parseJsonAddress(json, '$.babylonSpoke.babylon'),
+      report.babylonSpokeInstanceBatchReports[0].report.spokeProxy
+    );
+    assertEq(
+      vm.parseJsonAddress(json, '$.babylonSpokeImplementation.babylon'),
+      report.babylonSpokeInstanceBatchReports[0].report.spokeImplementation
+    );
+    assertEq(
+      vm.parseJsonAddress(json, '$.babylonOracle.babylon'),
+      report.babylonSpokeInstanceBatchReports[0].report.aaveOracle
     );
 
     // Gateways
@@ -236,6 +258,7 @@ contract MetadataLoggerTest is Test {
     report.treasurySpokeBatchReport.treasurySpoke = makeAddr('ts');
     report.hubInstanceBatchReports = new OrchestrationReports.HubDeploymentReport[](0);
     report.spokeInstanceBatchReports = new OrchestrationReports.SpokeDeploymentReport[](0);
+    report.babylonSpokeInstanceBatchReports = new OrchestrationReports.SpokeDeploymentReport[](0);
 
     logger.writeJsonReportMarket(report);
     string memory json = logger.getJson();

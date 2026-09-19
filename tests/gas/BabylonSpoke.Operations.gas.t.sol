@@ -1,0 +1,241 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+import 'tests/setup/BabylonBase.t.sol';
+import 'tests/gas/Spoke.Operations.gas.t.sol';
+
+/// forge-config: default.isolate = true
+contract BabylonSpokeOperations_Gas_Tests is BabylonBase, SpokeOperations_Gas_Tests {
+  function setUp() public override(BabylonBase, SpokeOperations_Gas_Tests) {
+    super.setUp();
+    NAMESPACE = 'BabylonSpoke.Operations';
+
+    // the inherited suite runs against the engine-deployed babylon spoke
+    spoke = spoke4;
+    reserveId = _getReserveIds(spoke);
+  }
+
+  /// @dev bob acts as the liquidation manager, matching the canonical liquidator.
+  function _babylonLiquidationManager() internal view override returns (address) {
+    return bob;
+  }
+
+  /// @dev usdx is the managed collateral, matching the canonical liquidation reserves so the
+  /// snapshots stay comparable.
+  function _babylonManagedCollateralReserveId() internal pure override returns (uint256) {
+    return BABYLON_USDX_RESERVE_INDEX;
+  }
+
+  /// @dev Babylon liquidations never charge the fee, and the managed collateral reserve rejects one.
+  function _collateralLiquidationFee() internal pure override returns (uint16) {
+    return 0;
+  }
+
+  function test_liquidation_partial() public override {
+    _liquidationSetup(85_00);
+
+    vm.startPrank(bob);
+    babylonSpoke.liquidationCall(reserveId.dai, 100_000e18, alice, 2_000_000e6);
+    vm.snapshotGasLastFrame(NAMESPACE, 'liquidationCall: partial');
+    vm.stopPrank();
+  }
+
+  function test_liquidation_full() public override {
+    _liquidationSetup(85_00);
+
+    vm.startPrank(bob);
+    babylonSpoke.liquidationCall(reserveId.dai, UINT256_MAX, alice, 2_000_000e6);
+    vm.snapshotGasLastFrame(NAMESPACE, 'liquidationCall: full');
+    vm.stopPrank();
+  }
+
+  function test_liquidation_collateralCapEnforced_partial() public {
+    _liquidationSetup(85_00);
+
+    vm.startPrank(bob);
+    babylonSpoke.liquidationCall(reserveId.dai, 100_000e18, alice, 50_000e6);
+    vm.snapshotGasLastFrame(NAMESPACE, 'liquidationCall (collateralCapEnforced): partial');
+    vm.stopPrank();
+  }
+
+  function test_liquidation_reportDeficit_full() public override {
+    _liquidationSetup(45_00);
+
+    vm.startPrank(bob);
+    babylonSpoke.liquidationCall(reserveId.dai, UINT256_MAX, alice, 2_000_000e6);
+    vm.snapshotGasLastFrame(NAMESPACE, 'liquidationCall (reportDeficit): full');
+    vm.stopPrank();
+  }
+
+  /// @dev Users borrow a single reserve on the BabylonSpoke: the two-borrow steps are not measured.
+  function test_withdraw() public override {
+    vm.startPrank(alice);
+    spoke.supply(reserveId.usdx, 100e6, alice);
+    spoke.setUsingAsCollateral(reserveId.usdx, true, alice);
+
+    spoke.withdraw(reserveId.usdx, 1e6, alice);
+    vm.snapshotGasLastFrame(NAMESPACE, 'withdraw: 0 borrows, partial');
+
+    skip(100);
+
+    spoke.withdraw(reserveId.usdx, UINT256_MAX, alice);
+    vm.snapshotGasLastFrame(NAMESPACE, 'withdraw: 0 borrows, full');
+
+    spoke.supply(reserveId.usdx, 10000e6, alice);
+    spoke.borrow(reserveId.dai, 1e18, alice);
+    skip(100);
+
+    spoke.withdraw(reserveId.usdx, 1e6, alice);
+    vm.snapshotGasLastFrame(NAMESPACE, 'withdraw: 1 borrow, partial');
+    spoke.supply(reserveId.weth, 1000e18, alice);
+
+    spoke.withdraw(reserveId.weth, UINT256_MAX, alice);
+    vm.snapshotGasLastFrame(NAMESPACE, 'withdraw: non collateral');
+    vm.stopPrank();
+  }
+
+  /// @dev Users borrow a single reserve on the BabylonSpoke: the two-borrow step is not measured.
+  function test_updateRiskPremium() public override {
+    vm.prank(bob);
+    spoke.supply(reserveId.dai, 1000e18, bob);
+
+    vm.startPrank(alice);
+    spoke.supply(reserveId.usdx, 2000e6, alice);
+    spoke.setUsingAsCollateral(reserveId.usdx, true, alice);
+
+    spoke.borrow(reserveId.dai, 500e18, alice);
+    skip(100);
+
+    spoke.updateUserRiskPremium(alice);
+    vm.snapshotGasLastFrame(NAMESPACE, 'updateUserRiskPremium: 1 borrow');
+    vm.stopPrank();
+  }
+
+  /// @dev Only the managed collateral reserve (usdx) can be registered as collateral.
+  function test_supply() public override {
+    vm.startPrank(alice);
+    spoke.supply(reserveId.usdx, 1000e6, alice);
+    vm.snapshotGasLastFrame(NAMESPACE, 'supply: 0 borrows, collateral disabled');
+
+    spoke.supply(reserveId.usdx, 1000e6, alice);
+    vm.snapshotGasLastFrame(NAMESPACE, 'supply: second action, same reserve');
+
+    spoke.setUsingAsCollateral(reserveId.usdx, true, alice);
+    spoke.supply(reserveId.usdx, 1000e6, alice);
+    vm.snapshotGasLastFrame(NAMESPACE, 'supply: 0 borrows, collateral enabled');
+    vm.stopPrank();
+  }
+
+  /// @dev Only the managed collateral reserve (usdx) can be registered as collateral.
+  function test_borrow() public override {
+    vm.startPrank(bob);
+    spoke.supply(reserveId.dai, 1000e18, bob);
+    spoke.supply(reserveId.usdx, 1000e6, bob);
+    spoke.setUsingAsCollateral(reserveId.usdx, true, bob);
+    spoke.borrow(reserveId.dai, 500e18, bob);
+    skip(100);
+    spoke.borrow(reserveId.dai, 1e18, bob);
+    vm.stopPrank();
+
+    skip(100);
+
+    vm.startPrank(alice);
+    spoke.supply(reserveId.usdx, 1000e6, alice);
+    spoke.setUsingAsCollateral(reserveId.usdx, true, alice);
+
+    spoke.borrow(reserveId.dai, 500e18, alice);
+    vm.snapshotGasLastFrame(NAMESPACE, 'borrow: first');
+
+    skip(100);
+
+    spoke.borrow(reserveId.dai, 1e18, alice);
+    vm.snapshotGasLastFrame(NAMESPACE, 'borrow: second action, same reserve');
+    vm.stopPrank();
+  }
+
+  /// @dev A single collateral can be registered on the BabylonSpoke, and it cannot be disabled
+  /// while backing a borrow: enable and disable are measured with no borrows.
+  function test_usingAsCollateral() public override {
+    vm.startPrank(alice);
+    spoke.setUsingAsCollateral(reserveId.usdx, true, alice);
+    vm.snapshotGasLastFrame(NAMESPACE, 'usingAsCollateral: 0 borrows, enable');
+
+    spoke.setUsingAsCollateral(reserveId.usdx, false, alice);
+    vm.snapshotGasLastFrame(NAMESPACE, 'usingAsCollateral: 0 borrows, disable');
+    vm.stopPrank();
+  }
+
+  /// @dev A single collateral can be registered on the BabylonSpoke.
+  function test_updateUserDynamicConfig() public override {
+    vm.startPrank(alice);
+    spoke.setUsingAsCollateral(reserveId.usdx, true, alice);
+    // bump the reserve's dynamic config key without configuring a fee on the managed collateral
+    _updateMaxLiquidationBonus(spoke, reserveId.usdx, 105_00);
+
+    spoke.updateUserDynamicConfig(alice);
+    vm.snapshotGasLastFrame(NAMESPACE, 'updateUserDynamicConfig: 1 collateral');
+    vm.stopPrank();
+  }
+
+  /// @dev A single collateral can be registered on the BabylonSpoke: the wbtc supply-and-enable
+  /// multicall is not measured.
+  function test_multicall_ops() public override {
+    vm.startPrank(bob);
+    spoke.supply(reserveId.dai, 1000e18, bob);
+    spoke.supply(reserveId.usdx, 1000e6, bob);
+
+    bytes[] memory calls = new bytes[](2);
+    calls[0] = abi.encodeCall(ISpoke.supply, (reserveId.usdx, 1000e6, bob));
+    calls[1] = abi.encodeCall(ISpoke.setUsingAsCollateral, (reserveId.usdx, true, bob));
+
+    spoke.multicall(calls);
+    vm.snapshotGasLastFrame(NAMESPACE, 'supply + enable collateral (multicall)');
+
+    // supplyWithPermit (dai)
+    tokenList.dai.approve(address(spoke), 0);
+    EIP712Types.Permit memory permit = EIP712Types.Permit({
+      owner: bob,
+      spender: address(spoke),
+      value: 1000e6,
+      nonce: tokenList.dai.nonces(bob),
+      deadline: vm.getBlockTimestamp()
+    });
+    (uint8 v, bytes32 r, bytes32 s) = vm.sign(bobPk, _getTypedDataHash(tokenList.dai, permit));
+    calls[0] = abi.encodeCall(
+      ISpoke.permitReserve,
+      (reserveId.dai, permit.owner, permit.value, permit.deadline, v, r, s)
+    );
+    calls[1] = abi.encodeCall(ISpoke.supply, (reserveId.dai, permit.value, permit.owner));
+    spoke.multicall(calls);
+    vm.snapshotGasLastFrame(NAMESPACE, 'permitReserve + supply (multicall)');
+
+    // the managed collateral reserve is never borrowable, so the debt reserve is used here
+    spoke.borrow(reserveId.dai, 500e18, bob);
+
+    // repayWithPermit (dai)
+    tokenList.dai.approve(address(spoke), 0);
+    permit = EIP712Types.Permit({
+      owner: bob,
+      spender: address(spoke),
+      value: 500e18,
+      nonce: tokenList.dai.nonces(bob),
+      deadline: vm.getBlockTimestamp()
+    });
+    (v, r, s) = vm.sign(bobPk, _getTypedDataHash(tokenList.dai, permit));
+    calls[0] = abi.encodeCall(
+      ISpoke.permitReserve,
+      (reserveId.dai, permit.owner, permit.value, permit.deadline, v, r, s)
+    );
+    calls[1] = abi.encodeCall(ISpoke.repay, (reserveId.dai, permit.value, permit.owner));
+    spoke.multicall(calls);
+    vm.snapshotGasLastFrame(NAMESPACE, 'permitReserve + repay (multicall)');
+
+    vm.stopPrank();
+  }
+
+  /// @dev The liquidator always receives underlying assets on the BabylonSpoke.
+  function test_liquidation_receiveShares_partial() public override {}
+
+  /// @dev The liquidator always receives underlying assets on the BabylonSpoke.
+  function test_liquidation_receiveShares_full() public override {}
+}
