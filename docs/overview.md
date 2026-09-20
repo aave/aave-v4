@@ -44,7 +44,7 @@ A Hub can have an unspecified number of Spokes, each one contributing to the tot
 
 ## Hub
 
-The Hub is immutable and serves as the central coordinator for liquidity management in Aave V4. The design allows for multiple Hubs to exist, with each Hub maintaining oversight of its own set of Spokes. Each Hub sets the add/draw caps for its Spokes and enforces crucial accounting invariants. The design objective was to make the Hub as simple as possible.
+The Hub is the central liquidity coordinator between Spokes in Aave V4. Multiple Hubs can operate independently, each managing its own set of Spokes. Hubs pool liquidity across Spokes—when a Spoke borrows for users, the liquidity comes from the Hub's pool, which is replenished by suppliers across all connected Spokes. Each Hub sets add/draw caps for its Spokes and enforces accounting invariants. The design objective is to keep the Hub as simple as possible.
 
 The key aspects of the Hub include:
 
@@ -66,9 +66,9 @@ The key aspects of the Hub include:
 
 ## Spokes
 
-The Spokes are upgradeable and the primary components responsible for facilitating supplying and borrowing functionalities for specific assets within the Aave V4 ecosystem. They can register into Hubs and are allowed to draw (borrow) liquidity from them. The nature of the Spoke is not specific and can be anything: crypto-based, RWA-based, DEX-LPs-based, and so on.
+Spokes are the entry-point for all core user actions (supply, borrow, repay, withdraw) in Aave V4. They register with Hubs and draw liquidity from them. Each Spoke is tailored to specific asset classes and can handle diverse types: crypto-based, RWA-based, DEX-LP-based, and so on.
 
-Users interact with the Spokes, which then interact directly with the Hubs. The Spokes manage the following aspects:
+All user interactions occur through Spokes, which route actions to the appropriate Hub for liquidity coordination. The Spokes manage the following aspects:
 
 - Triggering transfers into the Hubs for user `supply` calls.
 - Handling supplying and borrowing functionality.
