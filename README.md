@@ -13,8 +13,16 @@ A unified liquidity layer and modular architecture that enhances capital efficie
 
 ## Documentation
 
-- [Aave V4 Overview](./docs/overview.md)
 - [Aave V4 Docs](https://aave.com/docs/aave-v4)
+- [Aave V4 Overview](./docs/overview.md)
+- [Liquidation Engine](./docs/features/LiquidationEngine.md)
+- [Reinvestment Model](./docs/features/ReinvestmentModule.md)
+- [Siloed Borrowing](./docs/features/SiloedBorrowing.md)
+- [Isolation Mode](./docs/features/IsolationMode.md)
+- [Efficiency Mode](./docs/features/EfficiencyMode.md)
+- [Dynamic Configuration](./docs/features/DynamicConfiguration.md)
+- [Position Manager](./docs/features/PositionManager.md)
+- [Tokenization Spoke](./docs/features/TokenizationSpoke.md)
 
 ## Architecture
 
