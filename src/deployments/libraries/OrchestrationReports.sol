@@ -24,6 +24,7 @@ library OrchestrationReports {
   /// @dev authorityBatchReport AccessManager deployment report.
   /// @dev configuratorBatchReport Configurator deployment report.
   /// @dev treasurySpokeBatchReport TreasurySpoke deployment report.
+  /// @dev feeSharesMinterBatchReport FeeSharesMinter deployment report.
   /// @dev spokeInstanceBatchReports Per-spoke deployment reports.
   /// @dev hubInstanceBatchReports Per-hub deployment reports.
   /// @dev gatewaysBatchReport Gateway deployment report.
@@ -33,6 +34,7 @@ library OrchestrationReports {
     BatchReports.AuthorityBatchReport authorityBatchReport;
     BatchReports.ConfiguratorBatchReport configuratorBatchReport;
     BatchReports.TreasurySpokeBatchReport treasurySpokeBatchReport;
+    BatchReports.FeeSharesMinterBatchReport feeSharesMinterBatchReport;
     SpokeDeploymentReport[] spokeInstanceBatchReports;
     HubDeploymentReport[] hubInstanceBatchReports;
     BatchReports.GatewaysBatchReport gatewaysBatchReport;

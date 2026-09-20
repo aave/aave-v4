@@ -19,6 +19,7 @@ contract PostDeploymentVerificationTest is PostDeploymentVerificationBase, AaveV
     address hubAdmin;
     address hubConfiguratorAdmin;
     address treasurySpokeOwner;
+    address feeSharesMinterOwner;
     address spokeAdmin;
     address spokeConfiguratorAdmin;
     address gatewayOwner;
@@ -203,6 +204,7 @@ contract PostDeploymentVerificationTest is PostDeploymentVerificationBase, AaveV
       hubAdmin: params.hubAdmin,
       hubConfiguratorAdmin: params.hubConfiguratorAdmin,
       treasurySpokeOwner: params.treasurySpokeOwner,
+      feeSharesMinterOwner: params.feeSharesMinterOwner,
       spokeAdmin: params.spokeAdmin,
       spokeConfiguratorAdmin: params.spokeConfiguratorAdmin,
       gatewayOwner: params.gatewayOwner,
@@ -257,6 +259,7 @@ contract PostDeploymentVerificationTest is PostDeploymentVerificationBase, AaveV
       hubAdmin: makeAddr('hubAdmin'),
       hubConfiguratorAdmin: makeAddr('hubConfiguratorAdmin'),
       treasurySpokeOwner: makeAddr('treasurySpokeOwner'),
+      feeSharesMinterOwner: makeAddr('feeSharesMinterOwner'),
       spokeAdmin: makeAddr('spokeAdmin'),
       spokeConfiguratorAdmin: makeAddr('spokeConfiguratorAdmin'),
       gatewayOwner: makeAddr('gatewayOwner'),

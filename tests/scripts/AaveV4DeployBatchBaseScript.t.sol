@@ -56,6 +56,7 @@ contract AaveV4DeployBatchBaseScriptTest is Test {
       hubAdmin: makeAddr('hubAdmin'),
       hubConfiguratorAdmin: makeAddr('hubConfiguratorAdmin'),
       treasurySpokeOwner: makeAddr('treasurySpokeOwner'),
+      feeSharesMinterOwner: makeAddr('feeSharesMinterOwner'),
       spokeAdmin: makeAddr('spokeAdmin'),
       spokeConfiguratorAdmin: makeAddr('spokeConfiguratorAdmin'),
       gatewayOwner: makeAddr('gatewayOwner'),
@@ -105,6 +106,7 @@ contract AaveV4DeployBatchBaseScriptTest is Test {
       expected.accessManagerAdmin = _deployer;
     } else {
       expected.treasurySpokeOwner = _deployer;
+      expected.feeSharesMinterOwner = _deployer;
       expected.proxyAdminOwner = _deployer;
     }
     assertEq(sanitized, expected);
@@ -123,6 +125,7 @@ contract AaveV4DeployBatchBaseScriptTest is Test {
     } else {
       // when grantRoles=false, treasurySpokeOwner and proxyAdminOwner always default to deployer
       expected.treasurySpokeOwner = _deployer;
+      expected.feeSharesMinterOwner = _deployer;
       expected.proxyAdminOwner = _deployer;
     }
     assertEq(sanitized, expected);
@@ -140,6 +143,7 @@ contract AaveV4DeployBatchBaseScriptTest is Test {
       expected.spokeAdmin = _deployer;
     } else {
       expected.treasurySpokeOwner = _deployer;
+      expected.feeSharesMinterOwner = _deployer;
       expected.proxyAdminOwner = _deployer;
     }
     assertEq(sanitized, expected);
@@ -159,6 +163,7 @@ contract AaveV4DeployBatchBaseScriptTest is Test {
       expected.hubConfiguratorAdmin = _deployer;
     } else {
       expected.treasurySpokeOwner = _deployer;
+      expected.feeSharesMinterOwner = _deployer;
       expected.proxyAdminOwner = _deployer;
     }
     assertEq(sanitized, expected);
@@ -178,6 +183,7 @@ contract AaveV4DeployBatchBaseScriptTest is Test {
       expected.spokeConfiguratorAdmin = _deployer;
     } else {
       expected.treasurySpokeOwner = _deployer;
+      expected.feeSharesMinterOwner = _deployer;
       expected.proxyAdminOwner = _deployer;
     }
     assertEq(sanitized, expected);
@@ -196,6 +202,7 @@ contract AaveV4DeployBatchBaseScriptTest is Test {
     expected.proxyAdminOwner = _deployer;
     if (!grantRoles) {
       expected.treasurySpokeOwner = _deployer;
+      expected.feeSharesMinterOwner = _deployer;
     }
     assertEq(sanitized, expected);
   }
@@ -213,6 +220,7 @@ contract AaveV4DeployBatchBaseScriptTest is Test {
     // treasurySpokeOwner always defaults to deployer (in both grantRoles branches)
     expected.treasurySpokeOwner = _deployer;
     if (!grantRoles) {
+      expected.feeSharesMinterOwner = _deployer;
       expected.proxyAdminOwner = _deployer;
     }
     assertEq(sanitized, expected);
@@ -229,6 +237,7 @@ contract AaveV4DeployBatchBaseScriptTest is Test {
     expected.gatewayOwner = _deployer;
     if (!grantRoles) {
       expected.treasurySpokeOwner = _deployer;
+      expected.feeSharesMinterOwner = _deployer;
       expected.proxyAdminOwner = _deployer;
     }
     assertEq(sanitized, expected);
@@ -247,6 +256,7 @@ contract AaveV4DeployBatchBaseScriptTest is Test {
     expected.positionManagerOwner = _deployer;
     if (!grantRoles) {
       expected.treasurySpokeOwner = _deployer;
+      expected.feeSharesMinterOwner = _deployer;
       expected.proxyAdminOwner = _deployer;
     }
     assertEq(sanitized, expected);
@@ -280,6 +290,7 @@ contract AaveV4DeployBatchBaseScriptTest is Test {
     expected.nativeWrapper = address(0);
     if (!grantRoles) {
       expected.treasurySpokeOwner = _deployer;
+      expected.feeSharesMinterOwner = _deployer;
       expected.proxyAdminOwner = _deployer;
     }
     assertEq(sanitized, expected);
@@ -317,6 +328,7 @@ contract AaveV4DeployBatchBaseScriptTest is Test {
     assertEq(a.hubAdmin, b.hubAdmin, 'hub admin');
     assertEq(a.hubConfiguratorAdmin, b.hubConfiguratorAdmin, 'hub configurator admin');
     assertEq(a.treasurySpokeOwner, b.treasurySpokeOwner, 'treasury spoke owner');
+    assertEq(a.feeSharesMinterOwner, b.feeSharesMinterOwner, 'fee shares minter owner');
     assertEq(a.proxyAdminOwner, b.proxyAdminOwner, 'proxy admin owner');
     assertEq(a.spokeConfiguratorAdmin, b.spokeConfiguratorAdmin, 'spoke configurator admin');
     assertEq(a.spokeAdmin, b.spokeAdmin, 'spoke admin');
