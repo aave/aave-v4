@@ -3,10 +3,10 @@ from commons import *
 
 s = Solver()
 
-debtToCover = Int("debtToCover")
+debtToCover = Int('debtToCover')
 s.add(0 <= debtToCover, debtToCover <= MAX_SUPPLY_AMOUNT)
 
-rawPremiumDebtRayToLiquidate = Int("rawPremiumDebtRayToLiquidate")
+rawPremiumDebtRayToLiquidate = Int('rawPremiumDebtRayToLiquidate')
 s.add(
     0 <= rawPremiumDebtRayToLiquidate, rawPremiumDebtRayToLiquidate <= MAX_SUPPLY_AMOUNT
 )
@@ -25,7 +25,7 @@ actualPremiumDebtRayToLiquidate = If(
 
 proveValid(
     s,
-    "debtToCover is enforced correctly when premiumDebtRayToLiquidate is calculated",
+    'debtToCover is enforced correctly when premiumDebtRayToLiquidate is calculated',
     actualPremiumDebtRayToLiquidate == expectedPremiumDebtRayToLiquidate,
 )
 
@@ -37,6 +37,6 @@ actualPremiumDebtRayToLiquidate2 = If(
 
 proveValid(
     s,
-    "debtToCover is enforced correctly when premiumDebtRayToLiquidate is calculated",
+    'debtToCover is enforced correctly when premiumDebtRayToLiquidate is calculated',
     actualPremiumDebtRayToLiquidate2 == expectedPremiumDebtRayToLiquidate,
 )

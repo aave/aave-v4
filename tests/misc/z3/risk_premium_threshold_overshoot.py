@@ -1,12 +1,6 @@
 # Proves that the proposed RiskPremiumThreshold formula strictly bounds the aggregate risk premium
 # for any number of users, given any individual risk premium <= MAX_COLLATERAL_RISK.
-from z3 import *
-
-PERCENTAGE_FACTOR = IntVal(100_00)
-MAX_COLLATERAL_RISK = IntVal(1000_00)
-
-def percentMulUp(value, percentage):
-    return (value * percentage + PERCENTAGE_FACTOR - 1) / PERCENTAGE_FACTOR
+from commons import *
 
 # ∀ drawnShares_i ≥ 1, ∀ riskPremium_i ≤ MAX_COLLATERAL_RISK,
 # we want to minimize RISK_PREMIUM_THRESHOLD such that:
@@ -35,11 +29,14 @@ N = Int('numberOfUsers')
 s = Solver()
 
 s.add(1 <= N)
-s.add(0 <= drawnShares, drawnShares <= 10 ** 30)
+s.add(0 <= drawnShares, drawnShares <= MAX_SUPPLY_AMOUNT)
 s.add(0 <= riskPremium, riskPremium <= MAX_COLLATERAL_RISK)
 
 totalDrawn = N * drawnShares
 premiumShares = percentMulUp(drawnShares, riskPremium)
-s.add(Not(N * premiumShares <= percentMulUp(totalDrawn, RISK_PREMIUM_THRESHOLD)))
 
-print(s.model() if s.check() == sat else 'no counterexample')
+proveValid(
+    s,
+    'Risk premium threshold bounds aggregate risk premium for any number of users',
+    N * premiumShares <= percentMulUp(totalDrawn, RISK_PREMIUM_THRESHOLD),
+)
