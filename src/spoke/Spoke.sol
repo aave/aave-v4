@@ -402,7 +402,9 @@ abstract contract Spoke is
     positionStatus.setUsingAsCollateral(reserveId, usingAsCollateral);
 
     if (usingAsCollateral) {
-      _refreshDynamicConfig(onBehalfOf, reserveId);
+      if (_userPositions[onBehalfOf][reserveId].dynamicConfigKey != reserve.dynamicConfigKey) {
+        _refreshDynamicConfig(onBehalfOf, reserveId);
+      }
     } else {
       uint256 newRiskPremium = _refreshAndValidateUserAccountData(onBehalfOf).riskPremium;
       _notifyRiskPremiumUpdate(onBehalfOf, newRiskPremium);
@@ -812,7 +814,9 @@ abstract contract Spoke is
     return accountData;
   }
 
-  function _refreshDynamicConfig(address user, uint256 reserveId) internal {
+  /// @notice refresh a single user dynamic config 
+  /// @dev It is called in `setUsingAsCollateral` when a user sets an asset as collateral, but only if the user's `dynamicConfigKey` and the reserve's `dynamicConfigKey` are different. If the keys are identical, this function is not called.
+   function _refreshDynamicConfig(address user, uint256 reserveId) internal {
     _userPositions[user][reserveId].dynamicConfigKey = _reserves[reserveId].dynamicConfigKey;
     emit RefreshSingleUserDynamicConfig(user, reserveId);
   }
