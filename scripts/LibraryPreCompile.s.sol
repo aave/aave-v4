@@ -7,7 +7,8 @@ import {SpokeDeployUtils} from 'scripts/utils/SpokeDeployUtils.sol';
 
 /**
  * @dev Deploy LiquidationLogic library using CREATE2 and save the output
- *      to FOUNDRY_LIBRARIES env variable in .env file.
+ *      to FOUNDRY_LIBRARIES env variable in .env file. The salt is the one the live markets used,
+ *      so the library lands on the same address every other V4 market links against.
  *      This preprocessing step is required before running the main Deploy script,
  *      as SpokeInstance depends on LiquidationLogic as an external library.
  *
@@ -37,7 +38,7 @@ contract LibraryPreCompile is Script {
     }
 
     vm.startBroadcast();
-    SpokeDeployUtils._deployAndWriteLibrariesConfig(bytes32(0));
+    SpokeDeployUtils._deployAndWriteLibrariesConfig(SpokeDeployUtils.LIQUIDATION_LOGIC_SALT);
     vm.stopBroadcast();
 
     console.log('LibraryPreCompile: FOUNDRY_LIBRARIES set. Run the main deploy script.');
