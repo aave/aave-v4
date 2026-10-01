@@ -181,3 +181,55 @@ contract AaveV4DeployMapleCorrelatedSpoke is AaveV4DeployCorrelatedSpokeBase {
     return 'Maple Correlated Spoke';
   }
 }
+
+/// @title AaveV4DeployArcMapleSpoke
+/// @author Aave Labs
+/// @notice Deploys the Maple Spoke (syrupUSDC collateral against USDC) on the Core Hub, Arc. Reserve,
+///         price source, cap and liquidation configuration are performed separately by the Protocol
+///         Security Council after deployment.
+/// @dev Usage (make sure FOUNDRY_LIBRARIES is populated in .env with the Arc LiquidationLogic address):
+///   forge clean && forge script \
+///     scripts/deploy/AaveV4DeployCorrelatedSpoke.s.sol:AaveV4DeployArcMapleSpoke \
+///     --rpc-url arc --account <acct> --slow (--broadcast)
+contract AaveV4DeployArcMapleSpoke is AaveV4DeployCorrelatedSpokeBase {
+  uint256 internal constant _ARC_CHAIN_ID = 5042;
+
+  // AaveV4Arc.ACCESS_MANAGER
+  // https://github.com/aave-dao/aave-address-book/blob/f08dbd218a1da7ea1ac3bb0e387652fdb9f98042/src/AaveV4Arc.sol#L8
+  address public constant ACCESS_MANAGER = 0x24761DB265998ba1D38E8a29031cF72C2CeF3A7D;
+  // Protocol Security Council
+  // https://explorer.arc.io/address/0x187AAE17d4931310B3fc75743e7F16Bdc9eD77e9
+  address public constant PROTOCOL_SECURITY_COUNCIL = 0x187AAE17d4931310B3fc75743e7F16Bdc9eD77e9;
+
+  uint256 internal constant _VERSION = 1;
+  string internal constant _SPOKE_LABEL = 'MAPLE_SPOKE';
+
+  function spokeSalt(address deployer) public view returns (bytes32) {
+    bytes32 userSalt = keccak256(
+      bytes(string.concat('chain ', vm.toString(block.chainid), '_version ', vm.toString(_VERSION)))
+    );
+    bytes32 rootSalt = AaveV4DeployOrchestration._deriveSalt(deployer, userSalt);
+    return AaveV4DeployOrchestration._deriveChildSalt(rootSalt, 'spoke', _SPOKE_LABEL);
+  }
+
+  function _getDeployInputs(
+    address deployer
+  ) internal view override returns (SpokeDeployInputs memory) {
+    return
+      SpokeDeployInputs({
+        proxyAdminOwner: PROTOCOL_SECURITY_COUNCIL,
+        authority: ACCESS_MANAGER,
+        oracleDecimals: DeployConstants.ORACLE_DECIMALS,
+        maxUserReservesLimit: DeployConstants.MAX_ALLOWED_USER_RESERVES_LIMIT,
+        salt: spokeSalt(deployer)
+      });
+  }
+
+  function _expectedChainId() internal pure override returns (uint256) {
+    return _ARC_CHAIN_ID;
+  }
+
+  function _deploymentName() internal pure override returns (string memory) {
+    return 'Arc Maple Spoke';
+  }
+}

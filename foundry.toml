@@ -74,6 +74,7 @@ zkevm = "${RPC_ZKEVM}"
 gnosis = "${RPC_GNOSIS}"
 bnb = "${RPC_BNB}"
 celo = "${RPC_CELO}"
+arc = "${RPC_ARC}"
 anvil = "http://127.0.0.1:8545"
 
 [etherscan]
