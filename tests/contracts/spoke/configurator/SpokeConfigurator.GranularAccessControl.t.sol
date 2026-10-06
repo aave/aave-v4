@@ -20,6 +20,8 @@ contract SpokeConfiguratorGranularAccessControlTest is Base {
 
   address public spokeAddr;
   ISpoke public spoke;
+  address public hubAddr;
+  address public underlying;
   uint256 public reserveId;
 
   // Arrays storing calldata for each role's functions
@@ -42,25 +44,30 @@ contract SpokeConfiguratorGranularAccessControlTest is Base {
     manager.grantRole(LIQUIDATION_CONFIG_MANAGER_ROLE, LIQUIDATION_CONFIG_MANAGER, 0);
     manager.grantRole(POSITION_MANAGER_ADMIN_ROLE, POSITION_MANAGER_ADMIN, 0);
 
-    // Set up RESERVE_MANAGER_ROLE permissions (18 functions)
-    bytes4[] memory reserveSelectors = new bytes4[](18);
+    // Set up RESERVE_MANAGER_ROLE permissions (22 functions)
+    bytes4[] memory reserveSelectors = new bytes4[](22);
     reserveSelectors[0] = ISpokeConfigurator.updateReservePriceSource.selector;
     reserveSelectors[1] = ISpokeConfigurator.addReserve.selector;
     reserveSelectors[2] = ISpokeConfigurator.updatePaused.selector;
-    reserveSelectors[3] = ISpokeConfigurator.updateFrozen.selector;
-    reserveSelectors[4] = ISpokeConfigurator.updateBorrowable.selector;
-    reserveSelectors[5] = ISpokeConfigurator.updateReceiveSharesEnabled.selector;
-    reserveSelectors[6] = ISpokeConfigurator.updateCollateralRisk.selector;
-    reserveSelectors[7] = ISpokeConfigurator.addCollateralFactor.selector;
-    reserveSelectors[8] = ISpokeConfigurator.updateCollateralFactor.selector;
-    reserveSelectors[9] = ISpokeConfigurator.addMaxLiquidationBonus.selector;
-    reserveSelectors[10] = ISpokeConfigurator.updateMaxLiquidationBonus.selector;
-    reserveSelectors[11] = ISpokeConfigurator.addLiquidationFee.selector;
-    reserveSelectors[12] = ISpokeConfigurator.updateLiquidationFee.selector;
-    reserveSelectors[13] = ISpokeConfigurator.addDynamicReserveConfig.selector;
-    reserveSelectors[14] = ISpokeConfigurator.updateDynamicReserveConfig.selector;
-    reserveSelectors[15] = ISpokeConfigurator.pauseAllReserves.selector;
-    reserveSelectors[16] = ISpokeConfigurator.freezeAllReserves.selector;
+    reserveSelectors[3] = ISpokeConfigurator.updateBorrowable.selector;
+    reserveSelectors[4] = ISpokeConfigurator.updateReceiveSharesEnabled.selector;
+    reserveSelectors[5] = ISpokeConfigurator.updateCollateralRisk.selector;
+    reserveSelectors[6] = ISpokeConfigurator.addCollateralFactor.selector;
+    reserveSelectors[7] = ISpokeConfigurator.updateCollateralFactor.selector;
+    reserveSelectors[8] = ISpokeConfigurator.addMaxLiquidationBonus.selector;
+    reserveSelectors[9] = ISpokeConfigurator.updateMaxLiquidationBonus.selector;
+    reserveSelectors[10] = ISpokeConfigurator.addLiquidationFee.selector;
+    reserveSelectors[11] = ISpokeConfigurator.updateLiquidationFee.selector;
+    reserveSelectors[12] = ISpokeConfigurator.addDynamicReserveConfig.selector;
+    reserveSelectors[13] = ISpokeConfigurator.updateDynamicReserveConfig.selector;
+    reserveSelectors[14] = ISpokeConfigurator.pauseAllReserves.selector;
+    reserveSelectors[15] = ISpokeConfigurator.pauseReserve.selector;
+    reserveSelectors[16] = ISpokeConfigurator.freezeReserve.selector;
+    reserveSelectors[17] = ISpokeConfigurator.unfreezeReserve.selector;
+    reserveSelectors[18] = ISpokeConfigurator.freezeSpoke.selector;
+    reserveSelectors[19] = ISpokeConfigurator.unfreezeSpoke.selector;
+    reserveSelectors[20] = ISpokeConfigurator.zeroCollateralFactor.selector;
+    reserveSelectors[21] = ISpokeConfigurator.restoreCollateralFactor.selector;
     manager.setTargetFunctionRole(
       address(spokeConfigurator),
       reserveSelectors,
@@ -93,7 +100,9 @@ contract SpokeConfiguratorGranularAccessControlTest is Base {
     // Set up test data
     spokeAddr = address(spoke1);
     spoke = ISpoke(spokeAddr);
-    reserveId = 0;
+    hubAddr = address(hub1);
+    underlying = address(tokenList.weth);
+    reserveId = _wethReserveId(spoke);
 
     // Build calldata arrays for testing
     _buildReserveManagerCalldata();
@@ -112,60 +121,91 @@ contract SpokeConfiguratorGranularAccessControlTest is Base {
     reserveManagerCalldata.push(
       abi.encodeCall(
         ISpokeConfigurator.updateReservePriceSource,
-        (spokeAddr, reserveId, newPriceSource)
+        (spokeAddr, hubAddr, underlying, newPriceSource)
       )
     );
     // Skipping addReserve as it requires more complex setup
     reserveManagerCalldata.push(
-      abi.encodeCall(ISpokeConfigurator.updatePaused, (spokeAddr, reserveId, true))
+      abi.encodeCall(ISpokeConfigurator.updatePaused, (spokeAddr, hubAddr, underlying, true))
     );
     reserveManagerCalldata.push(
-      abi.encodeCall(ISpokeConfigurator.updateFrozen, (spokeAddr, reserveId, true))
+      abi.encodeCall(ISpokeConfigurator.updateBorrowable, (spokeAddr, hubAddr, underlying, false))
     );
     reserveManagerCalldata.push(
-      abi.encodeCall(ISpokeConfigurator.updateBorrowable, (spokeAddr, reserveId, false))
+      abi.encodeCall(
+        ISpokeConfigurator.updateReceiveSharesEnabled,
+        (spokeAddr, hubAddr, underlying, false)
+      )
     );
     reserveManagerCalldata.push(
-      abi.encodeCall(ISpokeConfigurator.updateReceiveSharesEnabled, (spokeAddr, reserveId, false))
+      abi.encodeCall(
+        ISpokeConfigurator.updateCollateralRisk,
+        (spokeAddr, hubAddr, underlying, 50_00)
+      )
     );
     reserveManagerCalldata.push(
-      abi.encodeCall(ISpokeConfigurator.updateCollateralRisk, (spokeAddr, reserveId, 50_00))
+      abi.encodeCall(
+        ISpokeConfigurator.addCollateralFactor,
+        (spokeAddr, hubAddr, underlying, 75_00)
+      )
     );
     reserveManagerCalldata.push(
-      abi.encodeCall(ISpokeConfigurator.addCollateralFactor, (spokeAddr, reserveId, 75_00))
+      abi.encodeCall(
+        ISpokeConfigurator.updateCollateralFactor,
+        (spokeAddr, hubAddr, underlying, 0, 70_00)
+      )
     );
     reserveManagerCalldata.push(
-      abi.encodeCall(ISpokeConfigurator.updateCollateralFactor, (spokeAddr, reserveId, 0, 70_00))
-    );
-    reserveManagerCalldata.push(
-      abi.encodeCall(ISpokeConfigurator.addMaxLiquidationBonus, (spokeAddr, reserveId, 115_00))
+      abi.encodeCall(
+        ISpokeConfigurator.addMaxLiquidationBonus,
+        (spokeAddr, hubAddr, underlying, 115_00)
+      )
     );
     reserveManagerCalldata.push(
       abi.encodeCall(
         ISpokeConfigurator.updateMaxLiquidationBonus,
-        (spokeAddr, reserveId, 0, 112_00)
+        (spokeAddr, hubAddr, underlying, 0, 112_00)
       )
     );
     reserveManagerCalldata.push(
-      abi.encodeCall(ISpokeConfigurator.addLiquidationFee, (spokeAddr, reserveId, 8_00))
+      abi.encodeCall(ISpokeConfigurator.addLiquidationFee, (spokeAddr, hubAddr, underlying, 8_00))
     );
     reserveManagerCalldata.push(
-      abi.encodeCall(ISpokeConfigurator.updateLiquidationFee, (spokeAddr, reserveId, 0, 6_00))
+      abi.encodeCall(
+        ISpokeConfigurator.updateLiquidationFee,
+        (spokeAddr, hubAddr, underlying, 0, 6_00)
+      )
     );
     reserveManagerCalldata.push(
       abi.encodeCall(
         ISpokeConfigurator.addDynamicReserveConfig,
-        (spokeAddr, reserveId, dynamicConfig)
+        (spokeAddr, hubAddr, underlying, dynamicConfig)
       )
     );
     reserveManagerCalldata.push(
       abi.encodeCall(
         ISpokeConfigurator.updateDynamicReserveConfig,
-        (spokeAddr, reserveId, 0, dynamicConfig)
+        (spokeAddr, hubAddr, underlying, 0, dynamicConfig)
       )
     );
     reserveManagerCalldata.push(abi.encodeCall(ISpokeConfigurator.pauseAllReserves, (spokeAddr)));
-    reserveManagerCalldata.push(abi.encodeCall(ISpokeConfigurator.freezeAllReserves, (spokeAddr)));
+    reserveManagerCalldata.push(
+      abi.encodeCall(ISpokeConfigurator.pauseReserve, (spokeAddr, hubAddr, underlying))
+    );
+    reserveManagerCalldata.push(
+      abi.encodeCall(ISpokeConfigurator.freezeReserve, (spokeAddr, hubAddr, underlying))
+    );
+    reserveManagerCalldata.push(
+      abi.encodeCall(ISpokeConfigurator.unfreezeReserve, (spokeAddr, hubAddr, underlying))
+    );
+    reserveManagerCalldata.push(abi.encodeCall(ISpokeConfigurator.freezeSpoke, (spokeAddr)));
+    reserveManagerCalldata.push(abi.encodeCall(ISpokeConfigurator.unfreezeSpoke, (spokeAddr)));
+    reserveManagerCalldata.push(
+      abi.encodeCall(ISpokeConfigurator.zeroCollateralFactor, (spokeAddr, hubAddr, underlying))
+    );
+    reserveManagerCalldata.push(
+      abi.encodeCall(ISpokeConfigurator.restoreCollateralFactor, (spokeAddr, hubAddr, underlying))
+    );
   }
 
   function _buildLiquidationConfigManagerCalldata() internal {
@@ -351,16 +391,17 @@ contract SpokeConfiguratorGranularAccessControlTest is Base {
 
   function test_reserveManager_canCall_updatePaused() public {
     vm.prank(RESERVE_MANAGER);
-    spokeConfigurator.updatePaused(spokeAddr, reserveId, true);
+    spokeConfigurator.updatePaused(spokeAddr, hubAddr, underlying, true);
 
     assertTrue(spoke.getReserveConfig(reserveId).paused);
   }
 
-  function test_reserveManager_canCall_updateFrozen() public {
+  function test_reserveManager_canCall_freezeReserve() public {
     vm.prank(RESERVE_MANAGER);
-    spokeConfigurator.updateFrozen(spokeAddr, reserveId, true);
+    spokeConfigurator.freezeReserve(spokeAddr, hubAddr, underlying);
 
     assertTrue(spoke.getReserveConfig(reserveId).frozen);
+    assertEq(_getLatestDynamicReserveConfig(spoke, reserveId).collateralFactor, 0);
   }
 
   function test_reserveManager_canCall_pauseAllReserves() public {
@@ -372,12 +413,13 @@ contract SpokeConfiguratorGranularAccessControlTest is Base {
     }
   }
 
-  function test_reserveManager_canCall_freezeAllReserves() public {
+  function test_reserveManager_canCall_freezeSpoke() public {
     vm.prank(RESERVE_MANAGER);
-    spokeConfigurator.freezeAllReserves(spokeAddr);
+    spokeConfigurator.freezeSpoke(spokeAddr);
 
     for (uint256 i = 0; i < spoke.getReserveCount(); ++i) {
       assertTrue(spoke.getReserveConfig(i).frozen);
+      assertEq(_getLatestDynamicReserveConfig(spoke, i).collateralFactor, 0);
     }
   }
 
