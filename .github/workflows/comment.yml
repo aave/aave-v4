@@ -16,6 +16,6 @@ permissions:
 
 jobs:
   comment:
-    uses: bgd-labs/github-workflows/.github/workflows/comment.yml@main
+    uses: aave-dao/github-workflows/.github/workflows/comment.yml@main
     secrets:
       READ_ONLY_PAT: ${{ secrets.READ_ONLY_PAT }}

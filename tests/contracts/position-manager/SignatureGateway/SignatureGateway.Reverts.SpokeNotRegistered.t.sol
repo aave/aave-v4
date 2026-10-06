@@ -74,9 +74,7 @@ contract SignatureGateway_SpokeNotRegistered_Test is SignatureGatewayBaseTest {
   ) public {
     bytes memory signature = vm.randomBytes(32);
 
-    vm.expectRevert(
-      abi.encodeWithSelector(IPositionManagerBase.SpokeNotRegistered.selector, address(gateway))
-    );
+    vm.expectRevert(IPositionManagerBase.SpokeNotRegistered.selector);
     vm.prank(vm.randomAddress());
     gateway.updateUserRiskPremiumWithSig(p, signature);
   }
@@ -86,9 +84,7 @@ contract SignatureGateway_SpokeNotRegistered_Test is SignatureGatewayBaseTest {
   ) public {
     bytes memory signature = vm.randomBytes(32);
 
-    vm.expectRevert(
-      abi.encodeWithSelector(IPositionManagerBase.SpokeNotRegistered.selector, address(gateway))
-    );
+    vm.expectRevert(IPositionManagerBase.SpokeNotRegistered.selector);
     vm.prank(vm.randomAddress());
     gateway.updateUserDynamicConfigWithSig(p, signature);
   }

@@ -9,7 +9,7 @@ on:
 jobs:
   lint:
     name: Prettier lint check
-    uses: bgd-labs/github-workflows/.github/workflows/foundry-lint-prettier.yml@main
+    uses: aave-dao/github-workflows/.github/workflows/foundry-lint-prettier.yml@main
   test:
     name: Foundry build n test
     runs-on: ubuntu-latest
@@ -20,15 +20,15 @@ jobs:
           token: ${{ secrets.READ_ONLY_PAT || github.token }}
 
       - name: Run Foundry setup
-        uses: bgd-labs/github-workflows/.github/actions/foundry-setup@main
+        uses: aave-dao/github-workflows/.github/actions/foundry-setup@main
         with:
           FOUNDRY_VERSION: stable
 
       - name: Run Forge size
-        uses: bgd-labs/github-workflows/.github/actions/foundry-size@main
+        uses: aave-dao/github-workflows/.github/actions/foundry-size@main
 
       - name: Run Forge tests
         id: test
-        uses: bgd-labs/github-workflows/.github/actions/foundry-test@main
+        uses: aave-dao/github-workflows/.github/actions/foundry-test@main
         with:
           FOUNDRY_PROFILE: ci
