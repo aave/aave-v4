@@ -1,0 +1,39 @@
+tests/contracts/spoke/configurator/SpokeConfigurator.GranularAccessControl.t.sol
+  s_b3156abe964aba::t_789ce017a864c0 34
+tests/contracts/hub/configurator/HubConfigurator.GranularAccessControl.t.sol
+  s_b3156abe964aba::t_789ce017a864c0 31
+tests/utils/BatchTestProcedures.sol
+  s_b3156abe964aba::t_a2a730038ffbdb 93,98-125,128-141,144-146
+tests/setup/Base.t.sol
+  s_b3156abe964aba::t_789ce017a864c0 62-63,843-867
+  s_b3156abe964aba::t_840bb33a146d1e 868
+tests/deployments/orchestration/AaveV4TestOrchestration.sol
+  s_b3156abe964aba::t_c634238013c0ac 115
+tests/deployments/procedures/deploy/spoke/AaveV4SpokeConfiguratorDeployProcedure.t.sol
+  s_b3156abe964aba::t_2bfc4c9cf67b85 9,16-25,28,30-43
+tests/deployments/procedures/deploy/hub/AaveV4HubConfiguratorDeployProcedure.t.sol
+  s_b3156abe964aba::t_2bfc4c9cf67b85 8,15-24,27,29-30,35-40
+  s_b3156abe964aba::t_6f289736b21ce3 41-43
+tests/deployments/batches/AaveV4ConfiguratorBatch.t.sol
+  s_b3156abe964aba::t_b966f31e57ae74 13,23,25,28-29,32-43,49,59,68,74-82
+tests/helpers/mocks/deployments/procedures/AaveV4HubConfiguratorDeployProcedureWrapper.sol
+  s_b3156abe964aba::t_c634238013c0ac 9-14
+tests/helpers/mocks/deployments/procedures/AaveV4SpokeConfiguratorDeployProcedureWrapper.sol
+  s_b3156abe964aba::t_c634238013c0ac 9-14
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "d8a0c195983c5536960163a8447e533482a8cf24",
+  "prompts": {},
+  "sessions": {
+    "s_b3156abe964aba": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "6546e81d-cda2-4205-a961-bc35c12e7458",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "DhairyaSethi <55102840+DhairyaSethi@users.noreply.github.com>"
+    }
+  }
+}
