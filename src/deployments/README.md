@@ -64,7 +64,7 @@ scripts/deploy/
 src/deployments/
   batches/                    Batch constructors -- deploy related contracts together
     AaveV4AuthorityBatch        AccessManagerEnumerable
-    AaveV4ConfiguratorBatch     HubConfigurator, SpokeConfigurator
+    AaveV4ConfiguratorBatch     HubConfiguratorInstance, SpokeConfiguratorInstance (proxy + impl each)
     AaveV4TreasurySpokeBatch    TreasurySpoke (single instance, proxy + impl)
     AaveV4HubInstanceBatch      HubInstance (proxy + impl), InterestRateStrategy
     AaveV4SpokeInstanceBatch    SpokeInstance (proxy + impl), AaveOracle
@@ -153,7 +153,7 @@ Domain admin role holds all selectors initially. Granular roles (201+) are carve
 
 | ID  | Name                                 | Granted To             | Functions                                          |
 | --- | ------------------------------------ | ---------------------- | -------------------------------------------------- |
-| 400 | SPOKE_CONFIGURATOR_DOMAIN_ADMIN_ROLE | spokeConfiguratorAdmin | All 24 SpokeConfigurator selectors (see Roles.sol) |
+| 400 | SPOKE_CONFIGURATOR_DOMAIN_ADMIN_ROLE | spokeConfiguratorAdmin | All 27 SpokeConfigurator selectors (see Roles.sol) |
 
 Domain admin role holds all selectors initially. Granular roles (401+) are carved out as needed.
 
@@ -184,11 +184,13 @@ AaveV4DeployBatchBase.s.sol                         (Foundry script entry point)
     |     |
     |     +-- _deployConfiguratorBatch()
     |     |     AaveV4DeployBase.deployConfiguratorBatch()
-    |     |       new AaveV4ConfiguratorBatch(hubAuth, spokeAuth, salt)
-    |     |         AaveV4HubConfiguratorDeployProcedure._deployHubConfigurator()
-    |     |           Create2Utils.create2Deploy() --> HubConfigurator
-    |     |         AaveV4SpokeConfiguratorDeployProcedure._deploySpokeConfigurator()
-    |     |           Create2Utils.create2Deploy() --> SpokeConfigurator
+    |     |       new AaveV4ConfiguratorBatch(proxyAdminOwner, hubAuth, spokeAuth, salt)
+    |     |         AaveV4HubConfiguratorDeployProcedure._deployUpgradeableHubConfigurator()
+    |     |           Create2Utils.create2Deploy() --> HubConfiguratorInstance (impl)
+    |     |           Create2Utils.proxify() --> TransparentUpgradeableProxy (initialize(hubAuth))
+    |     |         AaveV4SpokeConfiguratorDeployProcedure._deployUpgradeableSpokeConfigurator()
+    |     |           Create2Utils.create2Deploy() --> SpokeConfiguratorInstance (impl)
+    |     |           Create2Utils.proxify() --> TransparentUpgradeableProxy (initialize(spokeAuth))
     |     |
     |     +-- _setupConfiguratorRoles()
     |     |     AaveV4HubConfiguratorRolesProcedure.setupHubConfiguratorAllRoles()
