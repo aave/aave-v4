@@ -28,7 +28,7 @@ contract HubConfiguratorGranularAccessControlTest is Base {
     super.setUp();
 
     manager = IAccessManager(hub1.authority());
-    hubConfigurator = new HubConfigurator(address(manager));
+    hubConfigurator = _deployHubConfigurator(address(manager));
 
     // Grant HUB_CONFIGURATOR_ROLE to hubConfigurator so it can call hub functions
     vm.startPrank(ADMIN);

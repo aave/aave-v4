@@ -31,7 +31,7 @@ contract SpokeConfiguratorGranularAccessControlTest is Base {
     super.setUp();
 
     manager = IAccessManager(spoke1.authority());
-    spokeConfigurator = new SpokeConfigurator(address(manager));
+    spokeConfigurator = _deploySpokeConfigurator(address(manager));
 
     // Grant SPOKE_CONFIGURATOR_ROLE to spokeConfigurator so it can call spoke functions
     vm.startPrank(ADMIN);

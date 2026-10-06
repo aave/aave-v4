@@ -112,6 +112,7 @@ library AaveV4TestOrchestration {
     // Deploy Configurator Batches with AccessManager as authority
     BatchReports.ConfiguratorBatchReport memory configuratorReport = AaveV4DeployBase
       .deployConfiguratorBatch({
+        proxyAdminOwner: admin,
         hubConfiguratorAuthority: report.accessManager,
         spokeConfiguratorAuthority: report.accessManager,
         salt: keccak256(abi.encodePacked(salt, 'configurator'))
