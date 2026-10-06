@@ -331,6 +331,71 @@ contract SpokeEngineTest is BaseConfigEngineTest {
     );
   }
 
+  function test_executeSpokeReserveConfigUpdates_frozenEnabled_alreadyFrozen_zeroesLiftedCollateralFactor()
+    public
+  {
+    uint256 reserveId = _getReserveId(0, TOKEN_WETH);
+    engine.executeSpokeReserveConfigUpdates(
+      _toReserveConfigUpdateArray(_frozenOnlyUpdate(EngineFlags.ENABLED))
+    );
+    IAaveV4ConfigEngine.DynamicReserveConfigAddition
+      memory addition = _defaultDynamicReserveConfigAddition();
+    addition.dynamicConfig = ISpoke.DynamicReserveConfig({
+      collateralFactor: 70_00,
+      maxLiquidationBonus: 106_00,
+      liquidationFee: 5_00
+    });
+    engine.executeSpokeDynamicReserveConfigAdditions(
+      _toDynamicReserveConfigAdditionArray(addition)
+    );
+    uint32 liftedKey = spoke1().getReserve(reserveId).dynamicConfigKey;
+    assertTrue(spoke1().getReserveConfig(reserveId).frozen);
+    assertEq(spoke1().getDynamicReserveConfig(reserveId, liftedKey).collateralFactor, 70_00);
+    uint32 savedKeyBefore = spokeConfigurator.getSavedDynamicConfigKey(
+      address(spoke1()),
+      address(hub1()),
+      address(weth)
+    );
+    assertEq(spoke1().getDynamicReserveConfig(reserveId, savedKeyBefore).collateralFactor, 80_00);
+
+    vm.expectCall(
+      address(spokeConfigurator),
+      abi.encodeCall(
+        ISpokeConfigurator.freezeReserve,
+        (address(spoke1()), address(hub1()), address(weth))
+      ),
+      1
+    );
+    vm.expectEmit(address(spokeConfigurator));
+    emit ISpokeConfigurator.SavedDynamicConfigKeyUpdated(
+      address(spoke1()),
+      address(hub1()),
+      address(weth),
+      reserveId,
+      savedKeyBefore,
+      liftedKey
+    );
+    engine.executeSpokeReserveConfigUpdates(
+      _toReserveConfigUpdateArray(_frozenOnlyUpdate(EngineFlags.ENABLED))
+    );
+
+    assertTrue(spoke1().getReserveConfig(reserveId).frozen);
+    assertEq(spoke1().getReserve(reserveId).dynamicConfigKey, liftedKey + 1);
+    _assertDynamicReserveConfig(
+      reserveId,
+      liftedKey + 1,
+      ISpoke.DynamicReserveConfig({
+        collateralFactor: 0,
+        maxLiquidationBonus: 106_00,
+        liquidationFee: 5_00
+      })
+    );
+    assertEq(
+      spokeConfigurator.getSavedDynamicConfigKey(address(spoke1()), address(hub1()), address(weth)),
+      liftedKey
+    );
+  }
+
   function test_executeSpokeReserveConfigUpdates_frozenDisabled_unfreezesOnly() public {
     uint256 reserveId = _getReserveId(0, TOKEN_WETH);
     IAaveV4ConfigEngine.DynamicReserveConfigAddition

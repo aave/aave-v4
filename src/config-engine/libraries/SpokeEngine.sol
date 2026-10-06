@@ -32,8 +32,8 @@ library SpokeEngine {
   }
 
   /// @notice Updates reserve config on Spokes.
-  /// @dev `frozen` dispatches to `freezeReserve` (which also zeroes the collateral factor) or
-  /// `unfreezeReserve`, and only when the on-chain frozen flag differs.
+  /// @dev `frozen` dispatches to `freezeReserve` (which also zeroes the collateral factor) unless the
+  /// reserve is already frozen with a zero collateral factor, or to `unfreezeReserve` if the reserve is frozen.
   /// @param updates The reserve config updates to execute.
   function executeSpokeReserveConfigUpdates(
     IAaveV4ConfigEngine.ReserveConfigUpdate[] calldata updates
@@ -209,14 +209,19 @@ library SpokeEngine {
     }
   }
 
-  /// @dev Freezes or unfreezes the reserve when the requested state differs from the on-chain flag.
+  /// @dev Skips the configurator call when it would revert for having nothing to change.
   function _updateFrozen(IAaveV4ConfigEngine.ReserveConfigUpdate calldata update) private {
-    bool frozen = EngineFlags.toBool(update.frozen);
+    ISpoke spoke = ISpoke(update.spoke);
     uint256 reserveId = _resolveReserveId(update.spoke, update.hub, update.underlying);
-    if (ISpoke(update.spoke).getReserveConfig(reserveId).frozen == frozen) return;
-    if (frozen) {
-      update.spokeConfigurator.freezeReserve(update.spoke, update.hub, update.underlying);
-    } else {
+    bool isFrozen = spoke.getReserveConfig(reserveId).frozen;
+    if (EngineFlags.toBool(update.frozen)) {
+      uint256 latestCollateralFactor = spoke
+        .getDynamicReserveConfig(reserveId, spoke.getReserve(reserveId).dynamicConfigKey)
+        .collateralFactor;
+      if (!isFrozen || latestCollateralFactor != 0) {
+        update.spokeConfigurator.freezeReserve(update.spoke, update.hub, update.underlying);
+      }
+    } else if (isFrozen) {
       update.spokeConfigurator.unfreezeReserve(update.spoke, update.hub, update.underlying);
     }
   }
