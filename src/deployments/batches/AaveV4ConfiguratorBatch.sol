@@ -5,9 +5,6 @@ import {BatchReports} from 'src/deployments/libraries/BatchReports.sol';
 import {AaveV4HubConfiguratorDeployProcedure} from 'src/deployments/procedures/deploy/hub/AaveV4HubConfiguratorDeployProcedure.sol';
 import {AaveV4SpokeConfiguratorDeployProcedure} from 'src/deployments/procedures/deploy/spoke/AaveV4SpokeConfiguratorDeployProcedure.sol';
 
-/// @title AaveV4ConfiguratorBatch
-/// @author Aave Labs
-/// @notice Deploys the HubConfigurator and SpokeConfigurator contracts, producing a batch report.
 contract AaveV4ConfiguratorBatch is
   AaveV4HubConfiguratorDeployProcedure,
   AaveV4SpokeConfiguratorDeployProcedure
@@ -15,26 +12,38 @@ contract AaveV4ConfiguratorBatch is
   BatchReports.ConfiguratorBatchReport internal _report;
 
   /// @dev Constructor.
+  /// @param proxyAdminOwner_ The owner of the proxy admin of both configurators.
   /// @param hubConfiguratorAuthority_ The authority for the HubConfigurator.
   /// @param spokeConfiguratorAuthority_ The authority for the SpokeConfigurator.
   /// @param salt_ The CREATE2 salt for deterministic deployment.
   constructor(
+    address proxyAdminOwner_,
     address hubConfiguratorAuthority_,
     address spokeConfiguratorAuthority_,
     bytes32 salt_
   ) {
-    address hubConfigurator = _deployHubConfigurator({
-      authority: hubConfiguratorAuthority_,
-      salt: salt_
-    });
-    address spokeConfigurator = _deploySpokeConfigurator({
-      authority: spokeConfiguratorAuthority_,
-      salt: salt_
-    });
+    (
+      address hubConfiguratorProxy,
+      address hubConfiguratorImplementation
+    ) = _deployUpgradeableHubConfigurator({
+        proxyAdminOwner: proxyAdminOwner_,
+        authority: hubConfiguratorAuthority_,
+        salt: salt_
+      });
+    (
+      address spokeConfiguratorProxy,
+      address spokeConfiguratorImplementation
+    ) = _deployUpgradeableSpokeConfigurator({
+        proxyAdminOwner: proxyAdminOwner_,
+        authority: spokeConfiguratorAuthority_,
+        salt: salt_
+      });
 
     _report = BatchReports.ConfiguratorBatchReport({
-      hubConfigurator: hubConfigurator,
-      spokeConfigurator: spokeConfigurator
+      hubConfigurator: hubConfiguratorProxy,
+      hubConfiguratorImplementation: hubConfiguratorImplementation,
+      spokeConfigurator: spokeConfiguratorProxy,
+      spokeConfiguratorImplementation: spokeConfiguratorImplementation
     });
   }
 

@@ -55,6 +55,7 @@ library AaveV4DeployOrchestration {
     // Deploy Configurator Batch with AccessManager as authority
     report.configuratorBatchReport = _deployConfiguratorBatch({
       logger: logger,
+      proxyAdminOwner: deployInputs.proxyAdminOwner,
       hubConfiguratorAuthority: accessManager,
       spokeConfiguratorAuthority: accessManager,
       salt: salt
@@ -289,6 +290,7 @@ library AaveV4DeployOrchestration {
 
   function _deployConfiguratorBatch(
     Logger logger,
+    address proxyAdminOwner,
     address hubConfiguratorAuthority,
     address spokeConfiguratorAuthority,
     bytes32 salt
@@ -296,13 +298,16 @@ library AaveV4DeployOrchestration {
     logger.logHeader1('deploying ConfiguratorBatch');
 
     report = AaveV4DeployBase.deployConfiguratorBatch({
+      proxyAdminOwner: proxyAdminOwner,
       hubConfiguratorAuthority: hubConfiguratorAuthority,
       spokeConfiguratorAuthority: spokeConfiguratorAuthority,
       salt: salt
     });
 
     logger.log('HubConfigurator', report.hubConfigurator);
+    logger.log('HubConfiguratorImplementation', report.hubConfiguratorImplementation);
     logger.log('SpokeConfigurator', report.spokeConfigurator);
+    logger.log('SpokeConfiguratorImplementation', report.spokeConfiguratorImplementation);
     logger.logNewLine();
     return report;
   }
