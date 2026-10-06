@@ -17,6 +17,7 @@ contract HubConfiguratorGranularAccessControlTest is Base {
   IAccessManager public manager;
 
   uint256 public assetId;
+  address public underlying;
   address public spokeAddr;
   bytes public encodedIrData;
 
@@ -72,6 +73,7 @@ contract HubConfiguratorGranularAccessControlTest is Base {
 
     // Set up test data
     assetId = daiAssetId;
+    underlying = address(tokenList.dai);
     spokeAddr = address(spoke1);
     encodedIrData = abi.encode(
       IAssetInterestRateStrategy.InterestRateData({
@@ -94,42 +96,47 @@ contract HubConfiguratorGranularAccessControlTest is Base {
 
     // Note: Skipping addAsset overloads as they require more complex setup
     assetManagerCalldata.push(
-      abi.encodeCall(IHubConfigurator.updateLiquidityFee, (address(hub1), assetId, 10_00))
+      abi.encodeCall(IHubConfigurator.updateLiquidityFee, (address(hub1), underlying, 10_00))
     );
     assetManagerCalldata.push(
-      abi.encodeCall(IHubConfigurator.updateFeeReceiver, (address(hub1), assetId, newFeeReceiver))
+      abi.encodeCall(
+        IHubConfigurator.updateFeeReceiver,
+        (address(hub1), underlying, newFeeReceiver)
+      )
     );
     assetManagerCalldata.push(
       abi.encodeCall(
         IHubConfigurator.updateFeeConfig,
-        (address(hub1), assetId, 5_00, newFeeReceiver)
+        (address(hub1), underlying, 5_00, newFeeReceiver)
       )
     );
     assetManagerCalldata.push(
       abi.encodeCall(
         IHubConfigurator.updateInterestRateStrategy,
-        (address(hub1), assetId, newIrStrategy, encodedIrData)
+        (address(hub1), underlying, newIrStrategy, encodedIrData)
       )
     );
     assetManagerCalldata.push(
       abi.encodeCall(
         IHubConfigurator.updateReinvestmentController,
-        (address(hub1), assetId, newController)
+        (address(hub1), underlying, newController)
       )
     );
     assetManagerCalldata.push(
       abi.encodeCall(
         IHubConfigurator.updateInterestRateData,
-        (address(hub1), assetId, encodedIrData)
+        (address(hub1), underlying, encodedIrData)
       )
     );
     assetManagerCalldata.push(
-      abi.encodeCall(IHubConfigurator.resetAssetCaps, (address(hub1), assetId))
+      abi.encodeCall(IHubConfigurator.resetAssetCaps, (address(hub1), underlying))
     );
     assetManagerCalldata.push(
-      abi.encodeCall(IHubConfigurator.deactivateAsset, (address(hub1), assetId))
+      abi.encodeCall(IHubConfigurator.deactivateAsset, (address(hub1), underlying))
     );
-    assetManagerCalldata.push(abi.encodeCall(IHubConfigurator.haltAsset, (address(hub1), assetId)));
+    assetManagerCalldata.push(
+      abi.encodeCall(IHubConfigurator.haltAsset, (address(hub1), underlying))
+    );
   }
 
   function _buildSpokeManagerCalldata() internal {
@@ -142,40 +149,55 @@ contract HubConfiguratorGranularAccessControlTest is Base {
       riskPremiumThreshold: 0
     });
 
-    uint256[] memory assetIds = new uint256[](1);
-    assetIds[0] = assetId;
+    address[] memory underlyings = new address[](1);
+    underlyings[0] = underlying;
     IHub.SpokeConfig[] memory configs = new IHub.SpokeConfig[](1);
     configs[0] = config;
 
     spokeManagerCalldata.push(
-      abi.encodeCall(IHubConfigurator.addSpoke, (address(hub1), newSpoke, assetId, config))
+      abi.encodeCall(IHubConfigurator.addSpoke, (address(hub1), newSpoke, underlying, config))
     );
     spokeManagerCalldata.push(
       abi.encodeCall(
         IHubConfigurator.addSpokeToAssets,
-        (address(hub1), makeAddr('NEW_SPOKE_2'), assetIds, configs)
+        (address(hub1), makeAddr('NEW_SPOKE_2'), underlyings, configs)
       )
     );
     spokeManagerCalldata.push(
-      abi.encodeCall(IHubConfigurator.updateSpokeActive, (address(hub1), assetId, spokeAddr, false))
+      abi.encodeCall(
+        IHubConfigurator.updateSpokeActive,
+        (address(hub1), underlying, spokeAddr, false)
+      )
     );
     spokeManagerCalldata.push(
-      abi.encodeCall(IHubConfigurator.updateSpokeHalted, (address(hub1), assetId, spokeAddr, true))
+      abi.encodeCall(
+        IHubConfigurator.updateSpokeHalted,
+        (address(hub1), underlying, spokeAddr, true)
+      )
     );
     spokeManagerCalldata.push(
-      abi.encodeCall(IHubConfigurator.updateSpokeAddCap, (address(hub1), assetId, spokeAddr, 5000))
+      abi.encodeCall(
+        IHubConfigurator.updateSpokeAddCap,
+        (address(hub1), underlying, spokeAddr, 5000)
+      )
     );
     spokeManagerCalldata.push(
-      abi.encodeCall(IHubConfigurator.updateSpokeDrawCap, (address(hub1), assetId, spokeAddr, 2500))
+      abi.encodeCall(
+        IHubConfigurator.updateSpokeDrawCap,
+        (address(hub1), underlying, spokeAddr, 2500)
+      )
     );
     spokeManagerCalldata.push(
       abi.encodeCall(
         IHubConfigurator.updateSpokeRiskPremiumThreshold,
-        (address(hub1), assetId, spokeAddr, 500)
+        (address(hub1), underlying, spokeAddr, 500)
       )
     );
     spokeManagerCalldata.push(
-      abi.encodeCall(IHubConfigurator.updateSpokeCaps, (address(hub1), assetId, spokeAddr, 100, 50))
+      abi.encodeCall(
+        IHubConfigurator.updateSpokeCaps,
+        (address(hub1), underlying, spokeAddr, 100, 50)
+      )
     );
     spokeManagerCalldata.push(
       abi.encodeCall(IHubConfigurator.deactivateSpoke, (address(hub1), spokeAddr))
@@ -242,14 +264,14 @@ contract HubConfiguratorGranularAccessControlTest is Base {
 
   function test_assetManager_canCall_updateLiquidityFee() public {
     vm.prank(ASSET_MANAGER);
-    hubConfigurator.updateLiquidityFee(address(hub1), assetId, 10_00);
+    hubConfigurator.updateLiquidityFee(address(hub1), underlying, 10_00);
 
     assertEq(hub1.getAssetConfig(assetId).liquidityFee, 10_00);
   }
 
   function test_assetManager_canCall_resetAssetCaps() public {
     vm.prank(ASSET_MANAGER);
-    hubConfigurator.resetAssetCaps(address(hub1), assetId);
+    hubConfigurator.resetAssetCaps(address(hub1), underlying);
 
     IHub.SpokeConfig memory config = hub1.getSpokeConfig(assetId, spokeAddr);
     assertEq(config.addCap, 0);
@@ -258,7 +280,7 @@ contract HubConfiguratorGranularAccessControlTest is Base {
 
   function test_assetManager_canCall_deactivateAsset() public {
     vm.prank(ASSET_MANAGER);
-    hubConfigurator.deactivateAsset(address(hub1), assetId);
+    hubConfigurator.deactivateAsset(address(hub1), underlying);
 
     IHub.SpokeConfig memory config = hub1.getSpokeConfig(assetId, spokeAddr);
     assertFalse(config.active);
@@ -266,7 +288,7 @@ contract HubConfiguratorGranularAccessControlTest is Base {
 
   function test_assetManager_canCall_haltAsset() public {
     vm.prank(ASSET_MANAGER);
-    hubConfigurator.haltAsset(address(hub1), assetId);
+    hubConfigurator.haltAsset(address(hub1), underlying);
 
     IHub.SpokeConfig memory config = hub1.getSpokeConfig(assetId, spokeAddr);
     assertTrue(config.halted);
@@ -283,28 +305,28 @@ contract HubConfiguratorGranularAccessControlTest is Base {
     });
 
     vm.prank(SPOKE_MANAGER);
-    hubConfigurator.addSpoke(address(hub1), newSpoke, assetId, config);
+    hubConfigurator.addSpoke(address(hub1), newSpoke, underlying, config);
 
     assertTrue(hub1.isSpokeListed(assetId, newSpoke));
   }
 
   function test_spokeManager_canCall_updateSpokeActive() public {
     vm.prank(SPOKE_MANAGER);
-    hubConfigurator.updateSpokeActive(address(hub1), assetId, spokeAddr, false);
+    hubConfigurator.updateSpokeActive(address(hub1), underlying, spokeAddr, false);
 
     assertFalse(hub1.getSpokeConfig(assetId, spokeAddr).active);
   }
 
   function test_spokeManager_canCall_updateSpokeHalted() public {
     vm.prank(SPOKE_MANAGER);
-    hubConfigurator.updateSpokeHalted(address(hub1), assetId, spokeAddr, true);
+    hubConfigurator.updateSpokeHalted(address(hub1), underlying, spokeAddr, true);
 
     assertTrue(hub1.getSpokeConfig(assetId, spokeAddr).halted);
   }
 
   function test_spokeManager_canCall_updateSpokeCaps() public {
     vm.prank(SPOKE_MANAGER);
-    hubConfigurator.updateSpokeCaps(address(hub1), assetId, spokeAddr, 100, 50);
+    hubConfigurator.updateSpokeCaps(address(hub1), underlying, spokeAddr, 100, 50);
 
     IHub.SpokeConfig memory config = hub1.getSpokeConfig(assetId, spokeAddr);
     assertEq(config.addCap, 100);
