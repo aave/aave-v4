@@ -2,6 +2,7 @@
 pragma solidity ^0.8.0;
 
 import 'tests/contracts/tokenization-spoke/TokenizationSpoke.Base.t.sol';
+import {Errors} from 'src/dependencies/openzeppelin/Errors.sol';
 
 contract TokenizationSpokeConfigTest is TokenizationSpokeBaseTest {
   function test_initialize_reverts_when_invalid_setup() public {
@@ -21,6 +22,19 @@ contract TokenizationSpokeConfigTest is TokenizationSpokeBaseTest {
       impl,
       ADMIN,
       _initializeCalldata(address(0), address(tokenList.dai))
+    );
+  }
+
+  function test_initialize_reverts_when_hub_has_no_code() public {
+    address impl = address(new TokenizationSpokeInstance());
+    address hubWithoutCode = makeAddr('hubWithoutCode');
+
+    // the proxy constructor surfaces the empty revert from the call to a code-less hub as FailedCall
+    vm.expectRevert(Errors.FailedCall.selector);
+    new TransparentUpgradeableProxy(
+      impl,
+      ADMIN,
+      _initializeCalldata(hubWithoutCode, address(tokenList.dai))
     );
   }
 
