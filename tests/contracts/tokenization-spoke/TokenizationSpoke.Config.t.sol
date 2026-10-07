@@ -124,13 +124,13 @@ contract TokenizationSpokeConfigTest is TokenizationSpokeBaseTest {
   }
 
   function _initializeCalldata(
-    address hub_,
-    address underlying_
+    address hub,
+    address underlying
   ) internal pure returns (bytes memory) {
     return
       abi.encodeCall(
         TokenizationSpokeInstance.initialize,
-        (hub_, underlying_, SHARE_NAME, SHARE_SYMBOL)
+        (hub, underlying, SHARE_NAME, SHARE_SYMBOL)
       );
   }
 }
