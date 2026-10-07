@@ -5,6 +5,9 @@ import {AaveV4DeployProcedureBase} from 'src/deployments/procedures/AaveV4Deploy
 import {Create2Utils} from 'src/deployments/utils/libraries/Create2Utils.sol';
 import {SpokeConfiguratorInstance} from 'src/spoke/instances/SpokeConfiguratorInstance.sol';
 
+/// @title AaveV4SpokeConfiguratorDeployProcedure
+/// @author Aave Labs
+/// @notice Deploys the upgradeable SpokeConfigurator contract for configuring Spoke instances.
 contract AaveV4SpokeConfiguratorDeployProcedure is AaveV4DeployProcedureBase {
   /// @notice Deploys a SpokeConfigurator implementation via CREATE2 and sets up a transparent proxy.
   /// @param proxyAdminOwner The owner of the proxy admin contract.

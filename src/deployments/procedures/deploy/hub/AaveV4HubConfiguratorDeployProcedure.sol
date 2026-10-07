@@ -5,6 +5,9 @@ import {Create2Utils} from 'src/deployments/utils/libraries/Create2Utils.sol';
 import {AaveV4DeployProcedureBase} from 'src/deployments/procedures/AaveV4DeployProcedureBase.sol';
 import {HubConfiguratorInstance} from 'src/hub/instances/HubConfiguratorInstance.sol';
 
+/// @title AaveV4HubConfiguratorDeployProcedure
+/// @author Aave Labs
+/// @notice Deploys the upgradeable HubConfigurator contract for configuring the Hub.
 contract AaveV4HubConfiguratorDeployProcedure is AaveV4DeployProcedureBase {
   /// @notice Deploys a HubConfigurator implementation via CREATE2 and sets up a transparent proxy.
   /// @param proxyAdminOwner The owner of the proxy admin contract.
