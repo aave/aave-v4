@@ -1,0 +1,31 @@
+scripts/deploy/AaveV4DeployBatchBase.s.sol
+  s_4f5261c6e21dbb::t_209aefa48340fa 18-21
+  s_4f5261c6e21dbb::t_f1842ba7531aaf 134,136-154
+tests/utils/BatchTestProcedures.sol
+  s_4f5261c6e21dbb::t_64bf9cc5251ab5 675-679
+tests/scripts/AaveV4DeployBatchBaseScript.t.sol
+  s_4f5261c6e21dbb::t_64bf9cc5251ab5 98,115,124,133,152,171,188,207,223,241,255-285,307,369-375
+  s_4f5261c6e21dbb::t_6e24040739e7f0 286-287,376-377
+src/deployments/utils/libraries/InputUtils.sol
+  s_4f5261c6e21dbb::t_fb58fa6f3c8b67 10
+  s_4f5261c6e21dbb::t_94bd69650496d6 13-14
+  s_4f5261c6e21dbb::t_3ba8d13d08ad1f 24-25
+tests/deployments/fork/PostDeploymentVerificationTest.t.sol
+  s_4f5261c6e21dbb::t_185c7cd6f40c80 108-109,154-155,186-187,229-232,244-245,247-259
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "62cf641234abaf664c8e7cc6fa8e4cef6c25c09e",
+  "prompts": {},
+  "sessions": {
+    "s_4f5261c6e21dbb": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "af35560e-00c7-4b1d-9586-dde333921e50",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "DhairyaSethi <55102840+DhairyaSethi@users.noreply.github.com>"
+    }
+  }
+}
