@@ -1,0 +1,29 @@
+snapshots/ConfigPositionManager.Operations.json
+  s_4f5261c6e21dbb::t_4858f104fa1f11 2-10
+snapshots/TakerPositionManager.Operations.json
+  s_4f5261c6e21dbb::t_a39b715480dcdb 2-8
+src/position-manager/TakerPositionManager.sol
+  s_4f5261c6e21dbb::t_3baa7457b47b36 193,320,331
+src/position-manager/interfaces/ITakerPositionManager.sol
+  s_4f5261c6e21dbb::t_1f600f6ae801f1 46,48,54,56,60,62,68,70,112,125,135,148
+tests/contracts/position-manager/TakerPositionManager/TakerPositionManager.Permit.t.sol
+  s_4f5261c6e21dbb::t_ea5c1e622df381 88,179
+tests/contracts/position-manager/TakerPositionManager/TakerPositionManager.t.sol
+  s_4f5261c6e21dbb::t_e312d538fc0757 13,34,102,186,448,469,812-813,815-816,837-838,840-841
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "8d5b226ca062f802b647441de59610fb0df806d5",
+  "prompts": {},
+  "sessions": {
+    "s_4f5261c6e21dbb": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "af35560e-00c7-4b1d-9586-dde333921e50",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "DhairyaSethi <55102840+DhairyaSethi@users.noreply.github.com>"
+    }
+  }
+}
