@@ -1,0 +1,32 @@
+tests/helpers/mocks/MockTokenizationSpokeInstance.sol
+  s_2f6dddbd868477::t_ba0cdbd1d9c74f 23-24,28
+src/spoke/TokenizationSpoke.sol
+  s_2f6dddbd868477::t_e0346dddf70286 14,20-25,61-64,66,242,247,252,257,272,276,279,314,319,324,329,334,428-429,435,445,449
+  s_2f6dddbd868477::t_ba0cdbd1d9c74f 46-47,52,55-56,60
+tests/contracts/tokenization-spoke/TokenizationSpoke.LegacyUpgrade.t.sol
+  s_2f6dddbd868477::t_e0346dddf70286 58-60
+src/spoke/instances/TokenizationSpokeInstance.sol
+  s_2f6dddbd868477::t_ba0cdbd1d9c74f 18-19,23-24,28
+tests/contracts/tokenization-spoke/TokenizationSpoke.Config.t.sol
+  s_2f6dddbd868477::t_ba0cdbd1d9c74f 127-128,133
+src/spoke/TokenizationSpokeStorage.sol
+  s_2f6dddbd868477::t_e0346dddf70286 1-26
+snapshots/TokenizationSpoke.Operations.json
+  s_2f6dddbd868477::t_03017f5a71c222 2-5,7-16
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "230887929f00fbbb197b146541b7ed7e43ccb234",
+  "prompts": {},
+  "sessions": {
+    "s_2f6dddbd868477": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "52eda097-9f9d-49e1-848d-3540693350bb",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "DhairyaSethi <55102840+DhairyaSethi@users.noreply.github.com>"
+    }
+  }
+}
