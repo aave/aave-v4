@@ -175,28 +175,6 @@ library AaveV4TestOrchestration {
     return report;
   }
 
-  function deployTestTokenizationSpoke(
-    address tokenizationSpokeImplementation,
-    address hub,
-    address underlying,
-    address proxyAdminOwner,
-    string memory shareName,
-    string memory shareSymbol,
-    bytes32 salt
-  ) external returns (address tokenizationSpokeProxy) {
-    BatchReports.TokenizationSpokeBatchReport memory report = AaveV4DeployBase
-      .deployTokenizationSpokeBatch({
-        tokenizationSpokeImplementation: tokenizationSpokeImplementation,
-        hub: hub,
-        underlying: underlying,
-        proxyAdminOwner: proxyAdminOwner,
-        shareName: shareName,
-        shareSymbol: shareSymbol,
-        salt: salt
-      });
-    return report.tokenizationSpokeProxy;
-  }
-
   function deployTestTreasurySpoke(
     address owner,
     bytes32 salt
