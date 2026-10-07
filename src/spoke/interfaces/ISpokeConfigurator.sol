@@ -235,7 +235,7 @@ interface ISpokeConfigurator {
   error ReserveNotFrozen();
 
   /// @notice Thrown when restoring the collateral factor of a frozen reserve.
-  error ReserveFrozen();
+  error CannotRestoreFrozenReserve();
 
   /// @notice Thrown when zeroing the collateral factor of a reserve whose latest collateral factor is already zero.
   error CollateralFactorAlreadyZero();
@@ -361,6 +361,8 @@ interface ISpokeConfigurator {
 
   /// @notice Updates an existing collateral factor of a reserve at the specified key.
   /// @dev Updating the saved key changes the dynamic config re-added by `restoreCollateralFactor`.
+  /// @dev Raising the collateral factor of a key with a zero collateral factor applies to every
+  /// position bound to that key, including while the reserve is frozen.
   /// @param spoke The address of the Spoke.
   /// @param hub The address of the Hub.
   /// @param underlying The address of the underlying asset.
@@ -389,6 +391,8 @@ interface ISpokeConfigurator {
 
   /// @notice Updates an existing liquidation bonus of a reserve at the specified key.
   /// @dev Updating the saved key changes the dynamic config re-added by `restoreCollateralFactor`.
+  /// @dev Reverts on a key with a zero collateral factor, since the Spoke rejects zero collateral
+  /// factors on update; use the `add*` variant during a freeze.
   /// @param spoke The address of the Spoke.
   /// @param hub The address of the Hub.
   /// @param underlying The address of the underlying asset.
@@ -417,6 +421,8 @@ interface ISpokeConfigurator {
 
   /// @notice Updates an existing liquidation fee of a reserve at the specified key.
   /// @dev Updating the saved key changes the dynamic config re-added by `restoreCollateralFactor`.
+  /// @dev Reverts on a key with a zero collateral factor, since the Spoke rejects zero collateral
+  /// factors on update; use the `add*` variant during a freeze.
   /// @param spoke The address of the Spoke.
   /// @param hub The address of the Hub.
   /// @param underlying The address of the underlying asset.
@@ -447,6 +453,8 @@ interface ISpokeConfigurator {
 
   /// @notice Updates the dynamic config of a reserve at the specified key.
   /// @dev Updating the saved key changes the dynamic config re-added by `restoreCollateralFactor`.
+  /// @dev Raising the collateral factor of a key with a zero collateral factor applies to every
+  /// position bound to that key, including while the reserve is frozen.
   /// @param spoke The address of the Spoke.
   /// @param hub The address of the Hub.
   /// @param underlying The address of the underlying asset.
@@ -512,8 +520,9 @@ interface ISpokeConfigurator {
   /// @notice Restores the collateral factor of a reserve by re-adding the full dynamic config at the saved key.
   /// @dev The re-added config is the one stored at the saved key, including its max liquidation bonus and
   /// liquidation fee; changes made to those fields on later keys are not carried over.
-  /// @dev Reserves whose collateral factor was zeroed before the saved key was tracked have no saved key and
-  /// read key 0, which re-adds the listing config.
+  /// @dev The saved key is only tracked through this configurator. If the collateral factor is zeroed directly
+  /// on the Spoke, the saved key is stale and restore re-adds the older saved config; reserves zeroed before
+  /// the saved key was tracked read key 0, which re-adds the listing config.
   /// @dev Reverts if the reserve is frozen, if the latest collateral factor is non-zero, or if the collateral
   /// factor at the saved key is zero.
   /// @param spoke The address of the Spoke.

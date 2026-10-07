@@ -435,7 +435,7 @@ abstract contract SpokeConfigurator is AccessManagedUpgradeable, ISpokeConfigura
     address underlying
   ) external restricted returns (uint32) {
     ReserveKey memory key = _resolveReserveKey(spoke, hub, underlying);
-    require(!key.spoke.getReserveConfig(key.reserveId).frozen, ReserveFrozen());
+    require(!key.spoke.getReserveConfig(key.reserveId).frozen, CannotRestoreFrozenReserve());
     (uint32 oldKey, ISpoke.DynamicReserveConfig memory oldConfig) = _getLatestDynamicConfig(key);
     require(oldConfig.collateralFactor == 0, CollateralFactorNotZero());
     ISpoke.DynamicReserveConfig memory savedConfig = key.spoke.getDynamicReserveConfig(
