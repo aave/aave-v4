@@ -20,11 +20,11 @@ contract MockTokenizationSpokeInstance is TokenizationSpoke {
 
   /// @inheritdoc TokenizationSpoke
   function initialize(
-    address hub_,
-    address underlying_,
+    address hub,
+    address underlying,
     string memory shareName,
     string memory shareSymbol
   ) external override reinitializer(SPOKE_REVISION) {
-    __TokenizationSpoke_init(hub_, underlying_, shareName, shareSymbol);
+    __TokenizationSpoke_init(hub, underlying, shareName, shareSymbol);
   }
 }

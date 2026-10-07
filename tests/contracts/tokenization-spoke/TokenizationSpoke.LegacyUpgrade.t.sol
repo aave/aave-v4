@@ -6,9 +6,6 @@ import {LegacyTokenizationSpokeInstance} from 'tests/helpers/mocks/LegacyTokeniz
 
 /// @dev Upgrades a revision 1 proxy (Hub binding in implementation immutables) to the canonical implementation.
 contract TokenizationSpokeLegacyUpgradeTest is TokenizationSpokeBaseTest {
-  bytes32 internal constant TOKENIZATION_SPOKE_STORAGE_SLOT =
-    0x245f623a0b50d834ae2ab712581dfcde6f97f1be388fe2ccaeb274dc99041500;
-
   ITokenizationSpoke internal legacyVault;
   TestnetERC20 internal asset;
 
@@ -58,11 +55,9 @@ contract TokenizationSpokeLegacyUpgradeTest is TokenizationSpokeBaseTest {
 
   function test_upgrade_preserves_state() public {
     assertEq(ProxyHelper.getProxyInitializedVersion(address(legacyVault)), 1);
-    assertEq(vm.load(address(legacyVault), TOKENIZATION_SPOKE_STORAGE_SLOT), bytes32(0));
-    assertEq(
-      vm.load(address(legacyVault), bytes32(uint256(TOKENIZATION_SPOKE_STORAGE_SLOT) + 1)),
-      bytes32(0)
-    );
+    // TokenizationSpokeStorage slots must be unused by revision 1
+    assertEq(vm.load(address(legacyVault), bytes32(uint256(0))), bytes32(0));
+    assertEq(vm.load(address(legacyVault), bytes32(uint256(1))), bytes32(0));
 
     Snapshot memory pre = _snapshot();
     address newImpl = address(new TokenizationSpokeInstance());

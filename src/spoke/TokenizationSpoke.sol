@@ -11,12 +11,18 @@ import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
 import {MathUtils} from 'src/libraries/math/MathUtils.sol';
 import {IntentConsumer} from 'src/utils/IntentConsumer.sol';
 import {IHub} from 'src/hub/interfaces/IHub.sol';
+import {TokenizationSpokeStorage} from 'src/spoke/TokenizationSpokeStorage.sol';
 import {ITokenizationSpoke} from 'src/spoke/interfaces/ITokenizationSpoke.sol';
 
 /// @title TokenizationSpoke
 /// @author Aave Labs
 /// @notice ERC4626 compliant wrapper to tokenize one listed asset of the connected Hub.
-abstract contract TokenizationSpoke is ITokenizationSpoke, ERC20Upgradeable, IntentConsumer {
+abstract contract TokenizationSpoke is
+  ITokenizationSpoke,
+  TokenizationSpokeStorage,
+  ERC20Upgradeable,
+  IntentConsumer
+{
   using SafeERC20 for IERC20;
   using EIP712Hash for *;
   using MathUtils for uint256;
@@ -35,48 +41,29 @@ abstract contract TokenizationSpoke is ITokenizationSpoke, ERC20Upgradeable, Int
   /// @inheritdoc ITokenizationSpoke
   bytes32 public constant REDEEM_TYPEHASH = EIP712Hash.TOKENIZED_REDEEM_TYPEHASH;
 
-  /// @custom:storage-location erc7201:aave-v4.storage.TokenizationSpoke
-  struct TokenizationSpokeStorage {
-    address hub;
-    uint8 decimals;
-    uint40 maxAllowedSpokeCap;
-    address asset;
-    uint96 assetId;
-  }
-
-  /// @dev The storage slot for the TokenizationSpoke storage struct.
-  bytes32 private constant NAMESPACE_SLOT =
-    // keccak256(abi.encode(uint256(keccak256("aave-v4.storage.TokenizationSpoke")) - 1)) & ~bytes32(uint256(0xff))
-    0x245f623a0b50d834ae2ab712581dfcde6f97f1be388fe2ccaeb274dc99041500;
-
   /// @dev To be overridden by the inheriting TokenizationSpokeInstance contract.
   function initialize(
-    address hub_,
-    address underlying_,
+    address hub,
+    address underlying,
     string memory shareName,
     string memory shareSymbol
   ) external virtual;
 
-  /// @dev Binds the vault to the Hub asset of `underlying_` and sets the share token's ERC20 name and symbol.
+  /// @dev Binds the vault to the Hub asset of `underlying` and sets the share token's ERC20 name and symbol.
   /// @dev Must be called at every initialization, including upgrades: revision 1 held the Hub binding in immutables.
   function __TokenizationSpoke_init(
-    address hub_,
-    address underlying_,
+    address hub,
+    address underlying,
     string memory shareName,
     string memory shareSymbol
   ) internal onlyInitializing {
-    require(hub_ != address(0), InvalidAddress());
-    uint256 assetId_ = IHub(hub_).getAssetId(underlying_); // reverts if invalid
-    (address asset_, uint8 decimals_) = IHub(hub_).getAssetUnderlyingAndDecimals(assetId_);
+    require(hub != address(0), InvalidAddress());
+    _hub = hub;
+    _assetId = IHub(hub).getAssetId(underlying).toUint96(); // reverts if invalid
+    (_asset, _decimals) = IHub(hub).getAssetUnderlyingAndDecimals(_assetId);
+    _maxAllowedSpokeCap = IHub(hub).MAX_ALLOWED_SPOKE_CAP();
 
-    TokenizationSpokeStorage storage $ = _getTokenizationSpokeStorage();
-    $.hub = hub_;
-    $.decimals = decimals_;
-    $.maxAllowedSpokeCap = IHub(hub_).MAX_ALLOWED_SPOKE_CAP();
-    $.asset = asset_;
-    $.assetId = assetId_.toUint96();
-
-    emit SetTokenizationSpokeImmutables(hub_, assetId_);
+    emit SetTokenizationSpokeImmutables(hub, _assetId);
 
     __ERC20_init(shareName, shareSymbol);
   }
@@ -252,26 +239,22 @@ abstract contract TokenizationSpoke is ITokenizationSpoke, ERC20Upgradeable, Int
 
   /// @inheritdoc IERC4626
   function previewDeposit(uint256 assets) public view virtual returns (uint256) {
-    (IHub hub_, uint256 assetId_) = _hubAndAssetId();
-    return hub_.previewAddByAssets(assetId_, assets);
+    return IHub(_hub).previewAddByAssets(_assetId, assets);
   }
 
   /// @inheritdoc IERC4626
   function previewMint(uint256 shares) public view virtual returns (uint256) {
-    (IHub hub_, uint256 assetId_) = _hubAndAssetId();
-    return hub_.previewAddByShares(assetId_, shares);
+    return IHub(_hub).previewAddByShares(_assetId, shares);
   }
 
   /// @inheritdoc IERC4626
   function previewWithdraw(uint256 assets) public view virtual returns (uint256) {
-    (IHub hub_, uint256 assetId_) = _hubAndAssetId();
-    return hub_.previewRemoveByAssets(assetId_, assets);
+    return IHub(_hub).previewRemoveByAssets(_assetId, assets);
   }
 
   /// @inheritdoc IERC4626
   function previewRedeem(uint256 shares) public view virtual returns (uint256) {
-    (IHub hub_, uint256 assetId_) = _hubAndAssetId();
-    return hub_.previewRemoveByShares(assetId_, shares);
+    return IHub(_hub).previewRemoveByShares(_assetId, shares);
   }
 
   /// @inheritdoc IERC4626
@@ -286,15 +269,14 @@ abstract contract TokenizationSpoke is ITokenizationSpoke, ERC20Upgradeable, Int
 
   /// @inheritdoc IERC4626
   function maxDeposit(address) public view returns (uint256) {
-    TokenizationSpokeStorage storage $ = _getTokenizationSpokeStorage();
-    IHub.SpokeConfig memory config = IHub($.hub).getSpokeConfig($.assetId, address(this));
+    IHub.SpokeConfig memory config = IHub(_hub).getSpokeConfig(_assetId, address(this));
     if (!config.active || config.halted) {
       return 0;
     }
-    if (config.addCap == $.maxAllowedSpokeCap) {
+    if (config.addCap == _maxAllowedSpokeCap) {
       return type(uint256).max;
     }
-    uint256 allowed = config.addCap * MathUtils.uncheckedExp(10, $.decimals);
+    uint256 allowed = config.addCap * MathUtils.uncheckedExp(10, _decimals);
     uint256 balance = previewMint(totalSupply());
     return allowed.zeroFloorSub(balance);
   }
@@ -329,27 +311,27 @@ abstract contract TokenizationSpoke is ITokenizationSpoke, ERC20Upgradeable, Int
 
   /// @inheritdoc ITokenizationSpoke
   function MAX_ALLOWED_SPOKE_CAP() public view returns (uint40) {
-    return _getTokenizationSpokeStorage().maxAllowedSpokeCap;
+    return _maxAllowedSpokeCap;
   }
 
   /// @inheritdoc ITokenizationSpoke
   function hub() public view returns (address) {
-    return _getTokenizationSpokeStorage().hub;
+    return _hub;
   }
 
   /// @inheritdoc ITokenizationSpoke
   function assetId() public view returns (uint256) {
-    return _getTokenizationSpokeStorage().assetId;
+    return _assetId;
   }
 
   /// @inheritdoc IERC4626
   function asset() public view returns (address) {
-    return _getTokenizationSpokeStorage().asset;
+    return _asset;
   }
 
   /// @inheritdoc IERC20Metadata
   function decimals() public view override(ERC20Upgradeable, IERC20Metadata) returns (uint8) {
-    return _getTokenizationSpokeStorage().decimals;
+    return _decimals;
   }
 
   /// @inheritdoc IERC20Permit
@@ -443,16 +425,14 @@ abstract contract TokenizationSpoke is ITokenizationSpoke, ERC20Upgradeable, Int
   /// @dev Pulls the underlying asset from `from` and deposits it into the Hub.
   /// @dev Added shares in the Hub should match the minted shares in `_deposit`.
   function _pullAndDepositAssets(address from, uint256 amount) internal virtual {
-    TokenizationSpokeStorage storage $ = _getTokenizationSpokeStorage();
-    IERC20($.asset).safeTransferFrom(from, $.hub, amount);
-    IHub($.hub).add($.assetId, amount);
+    IERC20(_asset).safeTransferFrom(from, _hub, amount);
+    IHub(_hub).add(_assetId, amount);
   }
 
   /// @dev Removes the underlying asset from the Hub and pushes it to `to`.
   /// @dev Removed shares in the Hub should match the burned shares in `_withdraw`.
   function _removeAndPushAssets(address to, uint256 amount) internal virtual {
-    (IHub hub_, uint256 assetId_) = _hubAndAssetId();
-    hub_.remove(assetId_, amount, to);
+    IHub(_hub).remove(_assetId, amount, to);
   }
 
   /// @dev Hook that is called after any deposit or mint.
@@ -462,27 +442,11 @@ abstract contract TokenizationSpoke is ITokenizationSpoke, ERC20Upgradeable, Int
   function _beforeWithdraw(uint256 assets, uint256 shares) internal virtual {}
 
   function _maxRemovableAssets() internal view returns (uint256) {
-    (IHub hub_, uint256 assetId_) = _hubAndAssetId();
-    IHub.SpokeConfig memory config = hub_.getSpokeConfig(assetId_, address(this));
+    IHub.SpokeConfig memory config = IHub(_hub).getSpokeConfig(_assetId, address(this));
     if (!config.active || config.halted) {
       return 0;
     }
-    return hub_.getAssetLiquidity(assetId_);
-  }
-
-  function _hubAndAssetId() internal view returns (IHub, uint256) {
-    TokenizationSpokeStorage storage $ = _getTokenizationSpokeStorage();
-    return (IHub($.hub), $.assetId);
-  }
-
-  function _getTokenizationSpokeStorage()
-    private
-    pure
-    returns (TokenizationSpokeStorage storage $)
-  {
-    assembly ('memory-safe') {
-      $.slot := NAMESPACE_SLOT
-    }
+    return IHub(_hub).getAssetLiquidity(_assetId);
   }
 
   function _domainNameAndVersion() internal pure override returns (string memory, string memory) {
