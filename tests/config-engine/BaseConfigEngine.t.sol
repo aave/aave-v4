@@ -34,6 +34,8 @@ import {HubEngine} from 'src/config-engine/libraries/HubEngine.sol';
 import {SpokeEngine} from 'src/config-engine/libraries/SpokeEngine.sol';
 import {PositionManagerEngine} from 'src/config-engine/libraries/PositionManagerEngine.sol';
 import {TokenizationSpokeDeployer} from 'src/config-engine/libraries/TokenizationSpokeDeployer.sol';
+import {TokenizationSpokeInstance} from 'src/spoke/instances/TokenizationSpokeInstance.sol';
+import {ITokenizationSpoke} from 'src/spoke/interfaces/ITokenizationSpoke.sol';
 
 import {WETH9} from 'src/dependencies/weth/WETH9.sol';
 import {TestnetERC20} from 'tests/helpers/mocks/TestnetERC20.sol';
@@ -157,7 +159,7 @@ abstract contract BaseConfigEngineTest is Test, Create2TestHelper {
     }
 
     executor = new MockGovernanceExecutor(PAYLOADS_CONTROLLER);
-    engine = new AaveV4ConfigEngine();
+    engine = new AaveV4ConfigEngine(address(new TokenizationSpokeInstance()));
     positionManager = new PositionManagerBaseWrapper(address(engine));
 
     _setupRoles(report);

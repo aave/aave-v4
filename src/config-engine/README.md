@@ -148,6 +148,10 @@ When a payload calls `execute()`, `AaveV4Payload` delegate-calls into `AaveV4Con
 - Neither the config engine nor the sub-engines hold any storage, permissions, or admin keys.
 - All HubConfigurator, SpokeConfigurator, AccessManager, and PositionManager calls originate from the governance executor's address.
 
+### TokenizationSpoke implementation
+
+`AaveV4ConfigEngine` takes the canonical `TokenizationSpokeInstance` implementation in its constructor and exposes it as `TOKENIZATION_SPOKE_IMPLEMENTATION`. The implementation holds no Hub or asset specific state. A listing with tokenization set deploys only a `TransparentUpgradeableProxy` pointing to it, initialized with `initialize(hub, underlying, name, symbol)`. Proxy addresses are CREATE2-deterministic and can be pre-computed with `TokenizationSpokeDeployer.computeProxyAddress`.
+
 ### Execution context
 
 In production the payload itself executes via delegatecall: the PayloadsController **calls** `Executor.executeTransaction`, which **delegatecalls** `payload.execute()`. Since `msg.sender` is preserved across delegatecall, for all engine code:

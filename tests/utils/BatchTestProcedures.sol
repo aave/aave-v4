@@ -31,6 +31,7 @@ import {IAssetInterestRateStrategy} from 'src/hub/interfaces/IAssetInterestRateS
 import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 import {IHub} from 'src/hub/interfaces/IHub.sol';
 import {ITreasurySpoke} from 'src/spoke/interfaces/ITreasurySpoke.sol';
+import {ITokenizationSpoke} from 'src/spoke/interfaces/ITokenizationSpoke.sol';
 import {IAaveOracle} from 'src/spoke/interfaces/IAaveOracle.sol';
 import {INativeTokenGateway} from 'src/position-manager/interfaces/INativeTokenGateway.sol';
 
@@ -236,6 +237,11 @@ contract BatchTestProcedures is Test, Create2TestHelper, WETHDeployProcedure {
     assertNotEq(report.configuratorBatchReport.spokeConfigurator, address(0), 'SpokeConfigurator');
     assertNotEq(report.configuratorBatchReport.hubConfigurator, address(0), 'HubConfigurator');
     assertNotEq(report.treasurySpokeBatchReport.treasurySpoke, address(0), 'TreasurySpoke');
+    assertNotEq(
+      report.tokenizationSpokeImplementationBatchReport.tokenizationSpokeImplementation,
+      address(0),
+      'TokenizationSpokeImplementation'
+    );
     for (uint256 i = 0; i < report.hubInstanceBatchReports.length; i++) {
       assertNotEq(report.hubInstanceBatchReports[i].report.hubProxy, address(0), 'Hub');
       assertNotEq(
@@ -362,6 +368,7 @@ contract BatchTestProcedures is Test, Create2TestHelper, WETHDeployProcedure {
       _checkInterestRateStrategyDeployment({report: hubReport, label: label});
     }
     _checkTreasurySpokeDeployment(report);
+    _checkTokenizationSpokeImplementationDeployment(report);
   }
 
   function _checkHubDeployment(
@@ -412,6 +419,24 @@ contract BatchTestProcedures is Test, Create2TestHelper, WETHDeployProcedure {
       report.treasurySpokeBatchReport.treasurySpoke,
       address(0),
       'treasury spoke deployed'
+    );
+  }
+
+  function _checkTokenizationSpokeImplementationDeployment(
+    OrchestrationReports.FullDeploymentReport memory report
+  ) internal view {
+    address implementation = report
+      .tokenizationSpokeImplementationBatchReport
+      .tokenizationSpokeImplementation;
+    assertEq(
+      ProxyHelper.getProxyInitializedVersion(implementation),
+      type(uint64).max,
+      'tokenization spoke implementation initializers disabled'
+    );
+    assertEq(
+      ITokenizationSpoke(implementation).hub(),
+      address(0),
+      'tokenization spoke implementation unbound'
     );
   }
 
@@ -865,6 +890,10 @@ contract BatchTestProcedures is Test, Create2TestHelper, WETHDeployProcedure {
     _assertHasCode(report.configuratorBatchReport.hubConfigurator, 'hubConfigurator');
     _assertHasCode(report.configuratorBatchReport.spokeConfigurator, 'spokeConfigurator');
     _assertHasCode(report.treasurySpokeBatchReport.treasurySpoke, 'treasurySpoke');
+    _assertHasCode(
+      report.tokenizationSpokeImplementationBatchReport.tokenizationSpokeImplementation,
+      'tokenizationSpokeImplementation'
+    );
 
     for (uint256 i; i < report.hubInstanceBatchReports.length; i++) {
       string memory label = report.hubInstanceBatchReports[i].label;

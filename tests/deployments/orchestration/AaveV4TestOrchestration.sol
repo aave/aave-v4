@@ -176,6 +176,7 @@ library AaveV4TestOrchestration {
   }
 
   function deployTestTokenizationSpoke(
+    address tokenizationSpokeImplementation,
     address hub,
     address underlying,
     address proxyAdminOwner,
@@ -185,6 +186,7 @@ library AaveV4TestOrchestration {
   ) external returns (address tokenizationSpokeProxy) {
     BatchReports.TokenizationSpokeBatchReport memory report = AaveV4DeployBase
       .deployTokenizationSpokeBatch({
+        tokenizationSpokeImplementation: tokenizationSpokeImplementation,
         hub: hub,
         underlying: underlying,
         proxyAdminOwner: proxyAdminOwner,
