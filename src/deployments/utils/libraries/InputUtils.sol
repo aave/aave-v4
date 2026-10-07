@@ -7,11 +7,11 @@ pragma solidity ^0.8.0;
 library InputUtils {
   /// @dev accessManagerAdmin The default admin of the access manager. Only used when grantRoles is true.
   /// @dev proxyAdminOwner The owner of the Hub and Spoke ProxyAdmin contracts. Required at deploy time (constructor arg).
-  ///      When grantRoles is `false`, defaults to the deployer; ownership can be transferred post-deployment.
+  ///      When grantRoles is `false`, must be address(0) (defaults to the deployer) or the deployer.
   /// @dev hubAdmin The admin of the hub. Only used when grantRoles is true.
   /// @dev hubConfiguratorAdmin The admin granted all hub configurator roles. Only used when grantRoles is true.
-  /// @dev treasurySpokeOwner The owner of the TreasurySpoke (Ownable). Required at deploy time (constructor arg).
-  ///      When grantRoles is `false`, defaults to the deployer; ownership can be transferred post-deployment.
+  /// @dev treasurySpokeOwner The owner of the TreasurySpoke (Ownable) and its ProxyAdmin. Required at deploy time.
+  ///      When grantRoles is `false`, must be address(0) (defaults to the deployer) or the deployer.
   /// @dev spokeAdmin The spoke admin. Only used when grantRoles is true.
   /// @dev spokeConfiguratorAdmin The admin granted all spoke configurator roles. Only used when grantRoles is true.
   /// @dev gatewayOwner The owner of the native token and signature gateways.
@@ -21,8 +21,8 @@ library InputUtils {
   /// @dev deploySignatureGateway Whether to deploy the SignatureGateway.
   /// @dev deployPositionManagers Whether to deploy the position manager batch (giver/taker/config).
   /// @dev grantRoles Whether to grant roles during deployment. When `false`, only deploy-time ownership
-  ///      addresses (proxyAdminOwner, treasurySpokeOwner) are set, defaulting
-  ///      to the deployer. The deployer also retains the AccessManager ACCESS_MANAGER_ADMIN_ROLE.
+  ///      addresses (proxyAdminOwner, treasurySpokeOwner) are set, and both must be
+  ///      the deployer. The deployer also retains the AccessManager ACCESS_MANAGER_ADMIN_ROLE.
   ///      All role grants and admin transfers are deferred to a later action.
   /// @dev hubLabels An array of hub labels; the number of hub labels defines the number of hubs to deploy.
   /// @dev spokeLabels An array of spoke labels; the number of spoke labels defines the number of spokes to deploy.

@@ -15,6 +15,10 @@ import {Script} from 'forge-std/Script.sol';
 abstract contract AaveV4DeployBatchBaseScript is Script {
   /// @dev Thrown when deployNativeTokenGateway is true but nativeWrapper is address(0), causing deployment to revert.
   error NativeWrapperRequired();
+  /// @dev Thrown when grantRoles is false and proxyAdminOwner is neither address(0) nor the deployer.
+  error ProxyAdminOwnerMustBeDeployer();
+  /// @dev Thrown when grantRoles is false and treasurySpokeOwner is neither address(0) nor the deployer.
+  error TreasurySpokeOwnerMustBeDeployer();
 
   struct Lines {
     string[] s;
@@ -127,14 +131,27 @@ abstract contract AaveV4DeployBatchBaseScript is Script {
       }
     } else {
       // when grantRoles is false, roles are deferred to a later governance action
-      // These three admin addresses are still required at deploy time so they default to the deployer
-      // ACCESS_MANAGER_ADMIN_ROLE is also retained by the deployer
+      // The deployer retains ACCESS_MANAGER_ADMIN_ROLE, so the deploy-time owners must be the deployer too
       _logWarning('roles: deferred (not granted during deployment)');
-      _logWarning(string.concat('treasury spoke owner', message, outcome));
-      sanitizedInputs.treasurySpokeOwner = deployer;
-
-      _logWarning(string.concat('proxy admin owner', message, outcome));
-      sanitizedInputs.proxyAdminOwner = deployer;
+      string memory deferred = string.concat(
+        ' is deployer [',
+        vm.toString(deployer),
+        ']; roles deferred'
+      );
+      if (inputs.treasurySpokeOwner == address(0)) {
+        _logWarning(string.concat('treasury spoke owner', message, outcome));
+        sanitizedInputs.treasurySpokeOwner = deployer;
+      } else {
+        require(inputs.treasurySpokeOwner == deployer, TreasurySpokeOwnerMustBeDeployer());
+        _logWarning(string.concat('treasury spoke owner', deferred));
+      }
+      if (inputs.proxyAdminOwner == address(0)) {
+        _logWarning(string.concat('proxy admin owner', message, outcome));
+        sanitizedInputs.proxyAdminOwner = deployer;
+      } else {
+        require(inputs.proxyAdminOwner == deployer, ProxyAdminOwnerMustBeDeployer());
+        _logWarning(string.concat('proxy admin owner', deferred));
+      }
     }
     if (inputs.gatewayOwner == address(0)) {
       _logWarning(string.concat('gateway owner', message, outcome));
