@@ -3,15 +3,15 @@ pragma solidity ^0.8.0;
 
 import {BatchReports} from 'src/deployments/libraries/BatchReports.sol';
 import {AaveV4TokenizationSpokeDeployProcedure} from 'src/deployments/procedures/deploy/spoke/AaveV4TokenizationSpokeDeployProcedure.sol';
-import {ITokenizationSpoke} from 'src/spoke/interfaces/ITokenizationSpoke.sol';
 
 /// @title AaveV4TokenizationSpokeBatch
 /// @author Aave Labs
-/// @notice Deploys a TokenizationSpoke instance (proxy + implementation), producing a batch report.
+/// @notice Deploys a TokenizationSpoke proxy pointing to the canonical implementation, producing a batch report.
 contract AaveV4TokenizationSpokeBatch is AaveV4TokenizationSpokeDeployProcedure {
   BatchReports.TokenizationSpokeBatchReport internal _report;
 
   /// @dev Constructor.
+  /// @param tokenizationSpokeImplementation_ The address of the canonical TokenizationSpoke implementation.
   /// @param hub_ The address of the Hub the TokenizationSpoke connects to.
   /// @param underlying_ The address of the underlying asset to tokenize.
   /// @param proxyAdminOwner_ The owner of the proxy admin.
@@ -19,6 +19,7 @@ contract AaveV4TokenizationSpokeBatch is AaveV4TokenizationSpokeDeployProcedure 
   /// @param shareSymbol_ The symbol of the share token.
   /// @param salt_ The CREATE2 salt for deterministic deployment.
   constructor(
+    address tokenizationSpokeImplementation_,
     address hub_,
     address underlying_,
     address proxyAdminOwner_,
@@ -26,21 +27,19 @@ contract AaveV4TokenizationSpokeBatch is AaveV4TokenizationSpokeDeployProcedure 
     string memory shareSymbol_,
     bytes32 salt_
   ) {
-    (
-      address tokenizationSpokeProxy,
-      address tokenizationSpokeImplementation
-    ) = _deployUpgradeableTokenizationSpokeInstance({
-        hub: hub_,
-        underlying: underlying_,
-        proxyAdminOwner: proxyAdminOwner_,
-        shareName: shareName_,
-        shareSymbol: shareSymbol_,
-        salt: salt_
-      });
+    address tokenizationSpokeProxy = _deployTokenizationSpokeProxy({
+      implementation: tokenizationSpokeImplementation_,
+      hub: hub_,
+      underlying: underlying_,
+      proxyAdminOwner: proxyAdminOwner_,
+      shareName: shareName_,
+      shareSymbol: shareSymbol_,
+      salt: salt_
+    });
 
     _report = BatchReports.TokenizationSpokeBatchReport({
-      tokenizationSpokeImplementation: tokenizationSpokeImplementation,
-      tokenizationSpokeProxy: tokenizationSpokeProxy
+      tokenizationSpokeProxy: tokenizationSpokeProxy,
+      tokenizationSpokeImplementation: tokenizationSpokeImplementation_
     });
   }
 

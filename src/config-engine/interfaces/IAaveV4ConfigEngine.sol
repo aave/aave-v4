@@ -342,7 +342,15 @@ interface IAaveV4ConfigEngine {
     uint32 newDelay;
   }
 
+  /// @notice Thrown when the TokenizationSpoke implementation is the zero address.
+  error InvalidTokenizationSpokeImplementation();
+
+  /// @notice Returns the canonical TokenizationSpokeInstance implementation used by TokenizationSpoke proxies
+  /// deployed on asset listings.
+  function TOKENIZATION_SPOKE_IMPLEMENTATION() external view returns (address);
+
   /// @notice Lists new assets on Hubs via the HubConfigurator.
+  /// @dev Deploys a TokenizationSpoke proxy pointing to `TOKENIZATION_SPOKE_IMPLEMENTATION` when tokenization is set.
   /// @param listings The asset listings to execute.
   function executeHubAssetListings(AssetListing[] calldata listings) external;
 
