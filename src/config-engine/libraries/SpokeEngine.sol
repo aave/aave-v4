@@ -13,6 +13,10 @@ import {IAaveV4ConfigEngine} from 'src/config-engine/interfaces/IAaveV4ConfigEng
 library SpokeEngine {
   using SafeCast for uint256;
 
+  /// @dev Thrown when a reserve listing field carries a KEEP_CURRENT sentinel. A listing has no
+  /// current value to keep, so a sentinel there is always a drafting mistake.
+  error KeepCurrentInListing();
+
   /// @notice Lists new reserves on Spokes.
   /// @param listings The reserve listings to execute.
   function executeSpokeReserveListings(
@@ -20,6 +24,7 @@ library SpokeEngine {
   ) external {
     uint256 length = listings.length;
     for (uint256 i; i < length; ++i) {
+      require(!_hasKeepCurrent(listings[i]), KeepCurrentInListing());
       uint256 assetId = IHubBase(listings[i].hub).getAssetId(listings[i].underlying);
       listings[i].spokeConfigurator.addReserve(
         listings[i].spoke,
@@ -214,6 +219,17 @@ library SpokeEngine {
         updates[i].active
       );
     }
+  }
+
+  /// @dev Returns true if any reserve listing field carries the KEEP_CURRENT sentinel of its width.
+  function _hasKeepCurrent(
+    IAaveV4ConfigEngine.ReserveListing calldata listing
+  ) private pure returns (bool) {
+    return
+      listing.priceSource == EngineFlags.KEEP_CURRENT_ADDRESS ||
+      listing.dynamicConfig.collateralFactor == EngineFlags.KEEP_CURRENT_UINT16 ||
+      listing.dynamicConfig.maxLiquidationBonus == EngineFlags.KEEP_CURRENT_UINT32 ||
+      listing.dynamicConfig.liquidationFee == EngineFlags.KEEP_CURRENT_UINT16;
   }
 
   /// @dev Resolves the reserve ID from spoke, hub, and underlying addresses.
