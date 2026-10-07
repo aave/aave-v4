@@ -855,6 +855,33 @@ contract HubEngineTest is BaseConfigEngineTest {
     assertEq(tsConfig.addCap, 1000);
   }
 
+  function test_executeHubAssetListings_tokenization_revertsWith_ContractAlreadyDeployed() public {
+    IAaveV4ConfigEngine.AssetListing memory listing = _defaultAssetListing();
+    listing.underlying = address(newToken);
+    listing.tokenization = IAaveV4ConfigEngine.TokenizationSpokeConfig({
+      addCap: 1000,
+      proxyAdminOwner: PROXY_ADMIN_OWNER,
+      name: 'Tokenized NEW',
+      symbol: 'tNEW'
+    });
+
+    address predictedProxy = TokenizationSpokeDeployer.computeProxyAddress(
+      engine.TOKENIZATION_SPOKE_IMPLEMENTATION(),
+      address(hub1()),
+      address(newToken),
+      'Tokenized NEW',
+      'tNEW',
+      PROXY_ADMIN_OWNER
+    );
+    vm.etch(predictedProxy, hex'00');
+    uint256 assetCountBefore = hub1().getAssetCount();
+
+    vm.expectRevert(Create2Utils.ContractAlreadyDeployed.selector);
+    engine.executeHubAssetListings(_toAssetListingArray(listing));
+
+    assertEq(hub1().getAssetCount(), assetCountBefore);
+  }
+
   function test_executeHubAssetListings_tokenization_revertsOnEmptyName() public {
     IAaveV4ConfigEngine.AssetListing memory listing = _defaultAssetListing();
     listing.underlying = address(newToken);
