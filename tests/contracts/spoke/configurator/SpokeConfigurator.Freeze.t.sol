@@ -543,10 +543,13 @@ contract SpokeConfiguratorFreezeTest is SpokeConfiguratorBaseTest {
     assertEq(_savedKey(spoke, reserveId), savedKey);
   }
 
-  function test_restoreCollateralFactor_revertsWith_ReserveFrozen() public {
+  function test_restoreCollateralFactor_revertsWith_CannotRestoreFrozenReserve() public {
     _freezeReserve(reserveId);
 
-    vm.expectRevert(ISpokeConfigurator.ReserveFrozen.selector, address(spokeConfigurator));
+    vm.expectRevert(
+      ISpokeConfigurator.CannotRestoreFrozenReserve.selector,
+      address(spokeConfigurator)
+    );
     vm.prank(SPOKE_CONFIGURATOR_ADMIN);
     spokeConfigurator.restoreCollateralFactor(spokeAddr, hubAddr, underlying);
   }
@@ -754,6 +757,76 @@ contract SpokeConfiguratorFreezeTest is SpokeConfiguratorBaseTest {
     vm.expectRevert(ISpoke.HealthFactorBelowThreshold.selector);
     vm.prank(bob);
     spoke.updateUserDynamicConfig(bob);
+  }
+
+  function test_restoreCollateralFactor_staleSavedKeyAfterDirectSpokeZero() public {
+    ISpoke.DynamicReserveConfig memory savedConfig = _config(70_00, 110_00, 5_00);
+    uint32 savedKey = _addDynamicConfig(reserveId, savedConfig);
+    _zeroCollateralFactor(reserveId);
+    _addCollateralFactor(reserveId, 40_00);
+    ISpoke.DynamicReserveConfig memory latest = _getLatestDynamicReserveConfig(spoke, reserveId);
+
+    // a SPOKE_CONFIGURATOR_ROLE holder zeroes the collateral factor directly on the Spoke
+    vm.prank(SPOKE_ADMIN);
+    spoke.addDynamicReserveConfig(reserveId, _withCollateralFactor(latest, 0));
+    assertEq(_savedKey(spoke, reserveId), savedKey);
+
+    _restoreCollateralFactor(reserveId);
+
+    assertEq(_getLatestDynamicReserveConfig(spoke, reserveId), savedConfig);
+  }
+
+  function test_updateCollateralFactor_onZeroedKeyWhileFrozen_liftsCollateralFactor() public {
+    uint32 savedKey = _addDynamicConfig(reserveId, _config(70_00, 110_00, 5_00));
+    _freezeReserve(reserveId);
+    uint32 zeroKey = _latestKey(spoke, reserveId);
+    (address hub, address asset) = _reserveAddresses(reserveId);
+
+    vm.prank(SPOKE_CONFIGURATOR_ADMIN);
+    spokeConfigurator.updateCollateralFactor(spokeAddr, hub, asset, zeroKey, 30_00);
+
+    assertTrue(spoke.getReserveConfig(reserveId).frozen);
+    assertEq(_latestKey(spoke, reserveId), zeroKey);
+    assertEq(_getLatestDynamicReserveConfig(spoke, reserveId).collateralFactor, 30_00);
+    assertEq(_savedKey(spoke, reserveId), savedKey);
+
+    _unfreezeReserve(reserveId);
+    vm.expectRevert(ISpokeConfigurator.CollateralFactorNotZero.selector);
+    vm.prank(SPOKE_CONFIGURATOR_ADMIN);
+    spokeConfigurator.restoreCollateralFactor(spokeAddr, hub, asset);
+  }
+
+  function test_updateMaxLiquidationBonus_onZeroedKey_revertsWith_InvalidCollateralFactor() public {
+    _freezeReserve(reserveId);
+    uint32 zeroKey = _latestKey(spoke, reserveId);
+    (address hub, address asset) = _reserveAddresses(reserveId);
+
+    vm.expectRevert(ISpoke.InvalidCollateralFactor.selector);
+    vm.prank(SPOKE_CONFIGURATOR_ADMIN);
+    spokeConfigurator.updateMaxLiquidationBonus(spokeAddr, hub, asset, zeroKey, 105_00);
+  }
+
+  function test_upgrade_preservesSavedDynamicConfigKey() public {
+    uint32 savedKey = _addDynamicConfig(reserveId, _config(70_00, 110_00, 5_00));
+    _freezeReserve(reserveId);
+    assertEq(_savedKey(spoke, reserveId), savedKey);
+
+    address proxyAdmin = _getProxyAdminAddress(address(spokeConfigurator));
+    address newImplementation = address(new SpokeConfiguratorInstance());
+    vm.prank(Ownable(proxyAdmin).owner());
+    ProxyAdmin(proxyAdmin).upgradeAndCall(
+      ITransparentUpgradeableProxy(address(spokeConfigurator)),
+      newImplementation,
+      ''
+    );
+
+    assertEq(_getImplementationAddress(address(spokeConfigurator)), newImplementation);
+    assertEq(_savedKey(spoke, reserveId), savedKey);
+    assertEq(IAccessManaged(address(spokeConfigurator)).authority(), spoke.authority());
+
+    _unfreezeReserve(reserveId);
+    _restoreCollateralFactor(reserveId);
+    assertEq(_getLatestDynamicReserveConfig(spoke, reserveId), _config(70_00, 110_00, 5_00));
   }
 
   function _openCollateralizedBorrow(address user) internal returns (uint256, uint256) {
