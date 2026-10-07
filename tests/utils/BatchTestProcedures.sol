@@ -49,6 +49,8 @@ contract BatchTestProcedures is Test, Create2TestHelper, WETHDeployProcedure {
   address internal _deployer = makeAddr('deployer');
   // Skip native wrapper check when nativeWrapper address is not available (e.g. post-deployment JSON report)
   bool internal _skipNativeWrapperCheck;
+  // Skip TokenizationSpoke implementation checks for reports predating the canonical implementation
+  bool internal _skipTokenizationSpokeImplementationCheck;
 
   function setUp() public virtual {
     _spokePositionUpdaterRoleSelectors = Roles.getSpokePositionUpdaterRoleSelectors();
@@ -188,7 +190,7 @@ contract BatchTestProcedures is Test, Create2TestHelper, WETHDeployProcedure {
   function _checkFullReport(
     OrchestrationReports.FullDeploymentReport memory report,
     InputUtils.FullDeployInputs memory inputs
-  ) internal pure {
+  ) internal view {
     if (inputs.deployNativeTokenGateway) {
       assertNotEq(report.gatewaysBatchReport.nativeGateway, address(0), 'NativeGateway');
     } else {
@@ -237,11 +239,13 @@ contract BatchTestProcedures is Test, Create2TestHelper, WETHDeployProcedure {
     assertNotEq(report.configuratorBatchReport.spokeConfigurator, address(0), 'SpokeConfigurator');
     assertNotEq(report.configuratorBatchReport.hubConfigurator, address(0), 'HubConfigurator');
     assertNotEq(report.treasurySpokeBatchReport.treasurySpoke, address(0), 'TreasurySpoke');
-    assertNotEq(
-      report.tokenizationSpokeImplementationBatchReport.tokenizationSpokeImplementation,
-      address(0),
-      'TokenizationSpokeImplementation'
-    );
+    if (!_skipTokenizationSpokeImplementationCheck) {
+      assertNotEq(
+        report.tokenizationSpokeImplementationBatchReport.tokenizationSpokeImplementation,
+        address(0),
+        'TokenizationSpokeImplementation'
+      );
+    }
     for (uint256 i = 0; i < report.hubInstanceBatchReports.length; i++) {
       assertNotEq(report.hubInstanceBatchReports[i].report.hubProxy, address(0), 'Hub');
       assertNotEq(
@@ -368,7 +372,9 @@ contract BatchTestProcedures is Test, Create2TestHelper, WETHDeployProcedure {
       _checkInterestRateStrategyDeployment({report: hubReport, label: label});
     }
     _checkTreasurySpokeDeployment(report);
-    _checkTokenizationSpokeImplementationDeployment(report);
+    if (!_skipTokenizationSpokeImplementationCheck) {
+      _checkTokenizationSpokeImplementationDeployment(report);
+    }
   }
 
   function _checkHubDeployment(
@@ -890,10 +896,12 @@ contract BatchTestProcedures is Test, Create2TestHelper, WETHDeployProcedure {
     _assertHasCode(report.configuratorBatchReport.hubConfigurator, 'hubConfigurator');
     _assertHasCode(report.configuratorBatchReport.spokeConfigurator, 'spokeConfigurator');
     _assertHasCode(report.treasurySpokeBatchReport.treasurySpoke, 'treasurySpoke');
-    _assertHasCode(
-      report.tokenizationSpokeImplementationBatchReport.tokenizationSpokeImplementation,
-      'tokenizationSpokeImplementation'
-    );
+    if (!_skipTokenizationSpokeImplementationCheck) {
+      _assertHasCode(
+        report.tokenizationSpokeImplementationBatchReport.tokenizationSpokeImplementation,
+        'tokenizationSpokeImplementation'
+      );
+    }
 
     for (uint256 i; i < report.hubInstanceBatchReports.length; i++) {
       string memory label = report.hubInstanceBatchReports[i].label;
