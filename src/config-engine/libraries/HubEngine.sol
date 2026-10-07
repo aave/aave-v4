@@ -24,10 +24,14 @@ library HubEngine {
   error InvalidTokenizationSpokeConfig();
 
   /// @notice Lists new assets on Hubs via the HubConfigurator.
-  /// @dev When tokenization data is set, also deploys a TokenizationSpoke (impl + proxy) via
-  /// CREATE2 and registers it on the Hub for the listed asset.
+  /// @dev When tokenization data is set, also deploys a TokenizationSpoke proxy via CREATE2 and
+  /// registers it on the Hub for the listed asset.
   /// @param listings The asset listings to execute.
-  function executeHubAssetListings(IAaveV4ConfigEngine.AssetListing[] calldata listings) external {
+  /// @param tokenizationSpokeImplementation The TokenizationSpokeInstance implementation for deployed proxies.
+  function executeHubAssetListings(
+    IAaveV4ConfigEngine.AssetListing[] calldata listings,
+    address tokenizationSpokeImplementation
+  ) external {
     uint256 length = listings.length;
     for (uint256 i; i < length; ++i) {
       bytes memory irData = abi.encode(listings[i].irData);
@@ -40,7 +44,7 @@ library HubEngine {
         irData
       );
 
-      _deployAndRegisterTokenizationSpoke(listings[i]);
+      _deployAndRegisterTokenizationSpoke(listings[i], tokenizationSpokeImplementation);
     }
   }
 
@@ -219,11 +223,12 @@ library HubEngine {
     }
   }
 
-  /// @dev Deploys a TokenizationSpoke (impl + proxy) via CREATE2 and registers it on the Hub.
+  /// @dev Deploys a TokenizationSpoke proxy via CREATE2 and registers it on the Hub.
   /// Skipped only when the tokenization config is fully unset; a partially set config reverts
   /// instead of being silently ignored.
   function _deployAndRegisterTokenizationSpoke(
-    IAaveV4ConfigEngine.AssetListing calldata listing
+    IAaveV4ConfigEngine.AssetListing calldata listing,
+    address tokenizationSpokeImplementation
   ) private {
     IAaveV4ConfigEngine.TokenizationSpokeConfig calldata tokenization = listing.tokenization;
 
@@ -237,6 +242,7 @@ library HubEngine {
     require(hasName && hasSymbol && hasProxyAdminOwner, InvalidTokenizationSpokeConfig());
 
     address proxy = TokenizationSpokeDeployer.deploy({
+      implementation: tokenizationSpokeImplementation,
       hub: listing.hub,
       underlying: listing.underlying,
       name: tokenization.name,

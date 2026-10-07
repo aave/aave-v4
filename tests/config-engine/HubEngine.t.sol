@@ -772,6 +772,7 @@ contract HubEngineTest is BaseConfigEngineTest {
     assertEq(config.feeReceiver, FEE_RECEIVER);
 
     address predictedProxy = TokenizationSpokeDeployer.computeProxyAddress(
+      engine.TOKENIZATION_SPOKE_IMPLEMENTATION(),
       address(hub1()),
       address(newToken),
       'Tokenized NEW',
@@ -788,6 +789,19 @@ contract HubEngineTest is BaseConfigEngineTest {
       PROXY_ADMIN_OWNER,
       'TokenizationSpoke ProxyAdmin owner should be the declared proxyAdminOwner'
     );
+
+    assertEq(
+      ProxyHelper.getImplementation(predictedProxy),
+      engine.TOKENIZATION_SPOKE_IMPLEMENTATION(),
+      'TokenizationSpoke proxy should point to the engine implementation'
+    );
+    ITokenizationSpoke tokenizationSpoke = ITokenizationSpoke(predictedProxy);
+    assertEq(tokenizationSpoke.hub(), address(hub1()));
+    assertEq(tokenizationSpoke.assetId(), assetCountBefore);
+    assertEq(tokenizationSpoke.asset(), address(newToken));
+    assertEq(tokenizationSpoke.decimals(), newToken.decimals());
+    assertEq(tokenizationSpoke.name(), 'Tokenized NEW');
+    assertEq(tokenizationSpoke.symbol(), 'tNEW');
   }
 
   function test_executeHubAssetListings_noTokenization() public {
@@ -804,6 +818,7 @@ contract HubEngineTest is BaseConfigEngineTest {
     assertEq(hub1().getSpokeCount(expectedAssetId), 1);
 
     address predictedProxy = TokenizationSpokeDeployer.computeProxyAddress(
+      engine.TOKENIZATION_SPOKE_IMPLEMENTATION(),
       address(hub1()),
       address(newToken),
       '',
@@ -825,6 +840,7 @@ contract HubEngineTest is BaseConfigEngineTest {
     });
 
     address predictedProxy = TokenizationSpokeDeployer.computeProxyAddress(
+      engine.TOKENIZATION_SPOKE_IMPLEMENTATION(),
       address(hub1()),
       address(newToken),
       'Tokenized NEW',
@@ -923,6 +939,7 @@ contract HubEngineTest is BaseConfigEngineTest {
     engine.executeHubAssetListings(_toAssetListingArray(listing));
 
     address predictedProxy = TokenizationSpokeDeployer.computeProxyAddress(
+      engine.TOKENIZATION_SPOKE_IMPLEMENTATION(),
       address(hub1()),
       address(newToken),
       'Tokenized NEW',
@@ -957,19 +974,21 @@ contract HubEngineTest is BaseConfigEngineTest {
     assertEq(hub2().getAssetCount(), hub2CountBefore + 1);
   }
 
-  function test_computeImplementationAddress() public view {
-    address predicted = TokenizationSpokeDeployer.computeImplementationAddress(
-      address(hub1()),
-      address(newToken),
-      'Tokenized NEW',
-      'tNEW'
-    );
-    assertNotEq(predicted, address(0));
+  function test_constructor_setsTokenizationSpokeImplementation() public {
+    address impl = address(new TokenizationSpokeInstance());
+    assertEq(new AaveV4ConfigEngine(impl).TOKENIZATION_SPOKE_IMPLEMENTATION(), impl);
+  }
+
+  function test_constructor_revertsWith_InvalidTokenizationSpokeImplementation() public {
+    vm.expectRevert(IAaveV4ConfigEngine.InvalidTokenizationSpokeImplementation.selector);
+    new AaveV4ConfigEngine(address(0));
   }
 
   function test_tokenizationSpokeDeployer_deploy_revertsOnZeroProxyAdminOwner() public {
+    address implementation = engine.TOKENIZATION_SPOKE_IMPLEMENTATION();
     vm.expectRevert(TokenizationSpokeDeployer.InvalidProxyAdminOwner.selector);
     TokenizationSpokeDeployer.deploy({
+      implementation: implementation,
       hub: address(hub1()),
       underlying: address(newToken),
       name: 'Tokenized NEW',

@@ -35,6 +35,8 @@ abstract contract PostDeploymentVerificationBase is BatchTestProcedures {
       '$.spokeConfigurator'
     );
     report.treasurySpokeBatchReport.treasurySpoke = vm.parseJsonAddress(json, '$.treasurySpoke');
+    report.tokenizationSpokeImplementationBatchReport.tokenizationSpokeImplementation = vm
+      .parseJsonAddress(json, '$.tokenizationSpokeImplementation');
     report.salt = vm.parseJsonBytes32(json, '$.salt');
 
     // Optional fields (conditionally written by MetadataLogger)
