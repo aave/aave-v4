@@ -7,6 +7,31 @@ contract HubDrawTest is Base {
   using SharesMath for uint256;
   using SafeCast for uint256;
 
+  function test_draw_sameSpokeThatAddedLiquidity_keepsSeparateAccounting() public {
+    uint256 amount = 100e18;
+
+    HubActions.add({
+      hub: hub1,
+      assetId: daiAssetId,
+      caller: address(spoke1),
+      amount: amount,
+      user: bob
+    });
+
+    uint256 liquidityBeforeDraw = hub1.getAssetLiquidity(daiAssetId);
+    uint256 spokeAddedSharesBeforeDraw = hub1.getSpokeAddedShares(daiAssetId, address(spoke1));
+
+    vm.prank(address(spoke1));
+    hub1.draw({assetId: daiAssetId, amount: amount, to: alice});
+
+    // Added shares and drawn shares are independent ledgers; draw does not net against prior adds.
+    assertEq(hub1.getAssetLiquidity(daiAssetId), liquidityBeforeDraw - amount);
+    assertEq(hub1.getSpokeAddedShares(daiAssetId, address(spoke1)), spokeAddedSharesBeforeDraw);
+    assertGt(hub1.getSpokeAddedShares(daiAssetId, address(spoke1)), 0);
+    assertGt(hub1.getSpokeDrawnShares(daiAssetId, address(spoke1)), 0);
+    _assertHubLiquidity(hub1, daiAssetId, 'hub1.draw');
+  }
+
   function test_draw_fuzz_amounts_same_block(uint256 assetId, uint256 amount) public {
     assetId = bound(assetId, 0, hub1.getAssetCount() - 3); // Exclude usdy & usdz
     amount = bound(amount, 1, MAX_SUPPLY_AMOUNT);
