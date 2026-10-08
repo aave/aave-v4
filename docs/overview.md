@@ -2,7 +2,7 @@
 
 Aave V4 introduces an architectural redesign centered around the Hub, enabling protocol flexibility and capital efficiency. This innovative architecture allows the Governor (e.g., the Aave DAO) to dynamically manage Spokes, adding new borrowing capabilities and removing outdated ones without requiring costly liquidity migrations.
 
-The protocol implements sophisticated risk management through its Risk Premiums system, where each asset receives a specific risk factor (called Collateral Risk) ranging from 0 to 1000_00 (BPS) based on the asset's implied volatility, market conditions, liquidity, risk, etc. Base drawn rates are determined purely by utilisation, while risk premium rates are adjusted according to collateral risk profiles, from low‑risk pristine‑quality assets (such as ETH) to higher‑risk collateral, scaling borrowing costs proportionally.
+The protocol implements sophisticated risk management through its Risk Premium system, where each asset receives a specific risk factor (called Collateral Risk) ranging from `0` to `1000_00` (BPS) based on the asset's implied volatility, market conditions, liquidity, risk, etc. Base drawn rates are determined purely by utilization, while risk premium rates are adjusted according to collateral risk profiles, from low‑risk pristine‑quality assets (such as ETH) to higher‑risk collateral, scaling borrowing costs proportionally.
 
 By providing preferential rates for stronger collateral and optimizing capital efficiency, Aave V4 creates a more robust lending environment that accurately prices risk and rewards. Consequently, the protocol attracts higher-quality collateral, while offering improved yields for suppliers and lower fees for borrowers utilizing safer collateral assets.
 
@@ -38,16 +38,17 @@ flowchart TD
   class LP,BR,S1,S2,S3,HUB box;
 ```
 
-Spokes are individual modules that can connect to one or more Hubs. They route user actions (`supply`,`withdraw`, `borrow` and `repay`) to the appropriate Hub based on reserve configuration and available caps. Whenever liquidity is restored on the Hub, the Spoke accrues a base interest (determined by an interest rate strategy at the Hub level) and a premium debt based on the Risk Premium (determined by the collateral composition of the user that triggered the action).
+Spokes are individual modules that can connect to one or more Hubs. They route user actions (`supply`, `withdraw`, `borrow` and `repay`) to the appropriate Hub based on reserve configuration and available caps. Whenever liquidity is drawn from the Hub, the Spoke accrues a base interest (determined by an interest rate strategy at the Hub level) and a premium debt based on the Risk Premium (determined by the collateral composition of the user that triggered the action).
 
 A Hub can have an unspecified number of Spokes, each one contributing to the total outstanding debt and to the interest generated. The Hub manages the basic accounting (total liquidity vs available), the interest rates, and the spoke-specific add and draw caps, among other parameters.
 
 ## Hub
 
-The Hub is immutable and serves as the central coordinator for liquidity management in Aave V4. The design allows for multiple Hubs to exist, with each Hub maintaining oversight of its own set of Spokes. Each Hub sets the add/draw caps for its Spokes and enforces crucial accounting invariants. The design objective was to make the Hub as simple as possible.
+The Hub is upgradeable and serves as the central coordinator for liquidity management in Aave V4, architected to be as simple as possible. The design allows for multiple Hubs to exist, with each Hub maintaining oversight of its own set of Spokes. Each Hub sets the add/draw caps for its Spokes and enforces crucial accounting invariants.
 
 The key aspects of the Hub include:
 
+- Registering and listing assets supported by the protocol.
 - Maintaining a registry of authorized Spokes for each supported asset.
 - Spoke-specific configurations including:
   - Liquidity caps to limit Spoke drawing and adding
@@ -58,11 +59,10 @@ The key aspects of the Hub include:
 - Managing interest rate strategy per asset, defining the optimal usage ratio, base drawn rate, and rate slopes, among other parameters.
 - Managing the access controls for the Governor entity authorized to execute emergency controls, the authorized entity which can call `mintFeeShares`, and general access controls via the `AccessManager` authority.
 - Setting the liquidity fee per asset, determining the share of interest revenue retained by the protocol.
-- Enforcing accounting invariants:
-  1. Total borrowed shares == sum of Spoke debt shares
-  2. Hub added assets amount >= sum of Spoke added assets amount (converted from shares)
-  3. Hub added shares == sum of Spoke added shares
-  4. Supply share price and drawn index cannot decrease (remains constant or increases)
+- Enforcing accounting and solvency invariants:
+  1. Hub level aggregate fields == sum across all per-Spoke fields (`addedShares`, `drawnShares`, `premiumShares`, `premiumOffsetRay`, `deficitRay`)
+  2. Supply share price and drawn index cannot decrease (remains constant or increases)
+  3. Hub's actual token balance for a given asset is always >= internally tracked available liquidity (`asset.liquidity`)
 
 ## Spokes
 
@@ -79,6 +79,9 @@ Users interact with the Spokes, which then interact directly with the Hubs. The 
 - Employing reentrancy guards for extra protection against reentrancy attacks, even though the Hub, Interest Rate Strategy, and Price Feeds are trusted and Aave V4 does not support tokens with callbacks.
 - Enforcing position constraints through a configurable `MAX_USER_RESERVES_LIMIT` which limits the number of collateral Reserves and the number of borrow Reserves a user can have (each counted separately).
 - Configuring and enforcing per-reserve liquidation parameters at the Spoke level.
+- Enforcing position safety invariants:
+  1. Users without collateral cannot assume debt
+  2. No user action can worsen their position's health factor below the liquidation threshold
 
 # Risk Premium
 
@@ -86,7 +89,7 @@ The debt interest of each user is directly impacted by the quality of the assets
 
 ## Collateral Risk
 
-The Collateral Risk $CR_i$ is specified by the quality of the asset $i$, which is a BPS value, ranging from 0 to 1000_00. A value of 0 means highest quality and risk-free, while a value of 1000_00 signifies the lowest quality and maximum risk possible for a collateral.
+The Collateral Risk $CR_i$ is specified by the quality of the asset $i$, which is a BPS value, ranging from `0` to `1000_00`. A value of `0` means highest quality and risk-free, while a value of `1000_00` signifies the lowest quality and maximum risk possible for a collateral.
 
 This parameter is configurable and part of the Spoke's risk parameters. This means the same asset can have a different Collateral Risk value across Spokes.
 
@@ -138,9 +141,11 @@ $RP_u = f(CR_0, C_{u,0}, P_0) = CR_0$
 
 $RP_u = f(CR_i, C_{u, i}, P_i) = \frac{CR_0C_{u,0}P_0 + CR_1C_{u,1}P_1}{C_{u,0}P_0+C_{u,1}P_1}$
 
+> **Note:** If the user's total collateral value is insufficient to cover all outstanding debt (e.g., in a deficit scenario), the algorithm terminates early once all collateral has been exhausted. The Risk Premium is computed using only the collateral value available, and the remaining uncovered debt is ignored in the calculation.
+
 ## Premium Offset
 
-Operationally, the premium is implemented via additional virtual debt shares (“premium shares”) that increase interest accrual but are never repayable principal. We separate this component from principal interest by tracking a premium offset in asset units. At borrow time, the offset is set so that, in asset terms, it exactly equals the value of the premium shares. As time elapses, interest accrues on the premium shares causing their asset value to exceed the offset; the excess is the premium. Premium shares are recorded in share units. The premium offset is recorded in asset units.
+Operationally, the premium is implemented via additional virtual debt shares (“premium shares”) that increase interest accrual but are never repayable principal. The protocol separates this component from principal interest by tracking a premium offset in asset units. At borrow time, the offset is set so that, in asset terms, it exactly equals the value of the premium shares. As time elapses, interest accrues on the premium shares causing their asset value to exceed the offset; the excess is the premium. Premium shares are recorded in share units. The premium offset is recorded in asset units.
 
 A user’s accrued premium debt at any time equals the assets value of their premium drawn shares minus the premium offset. When a user’s Risk Premium changes, the system refreshes premium accounting (via the Hub’s `refreshPremium` mechanism) to recalibrate premium shares and the offset without changing the user’s total accrued premium amount.
 
@@ -153,7 +158,7 @@ The refresh mechanism preserves the total premium debt while updating the premiu
 - The user's previously accrued premium debt remains unchanged
 - Future premium accrual reflects the updated Risk Premium
 
-Actions that trigger a premium refresh include events that can change $RP_u$, such as `setUsingAsCollateral` when disabling collateral, `withdraw` when withdrawing collateral, `borrow` when increasing debt, `liquidationCall` (non-deficit path), and explicit `updateUserRiskPremium` updates (user-initiated or permissioned by the Governor). In these flows, `refreshPremium` updates premium shares and the offset so the total premium debt stays constant, while future accrual reflects the new Risk Premium.
+Actions that trigger a premium refresh include events that can change $RP_u$, such as `setUsingAsCollateral` when disabling collateral, `withdraw` when withdrawing collateral, `borrow` operations, `liquidationCall` (non-deficit path), and explicit `updateUserRiskPremium` updates (user-initiated or permissioned by the Governor). In these flows, `refreshPremium` updates premium shares and the offset so the total premium debt stays constant, while future accrual reflects the new Risk Premium.
 
 # Interest Accrual
 
@@ -184,7 +189,7 @@ $ΔD_{u,ibase} = R_{sbase,i}D_{u,ibase}$
 
 ## Premium Debt
 
-Premium Debt is the portion of a user’s debt that represents the additional interest accumulated due to the quality of user’s collateral assets (i.e., their Risk Premium on top of the base drawn rate).
+Premium Debt is the portion of a user’s debt that represents the additional interest accumulated due to the quality of the user’s collateral assets (i.e., their Risk Premium on top of the base drawn rate).
 
 $D_{u,premium}$ is a running total of the extra interest accrued on user u
 
@@ -202,8 +207,8 @@ The Reinvestment Module offers an optional tool to support capital efficiency wh
 
 - **Governance‑Controlled**: The Governor manages all funds allocated to reinvestment strategies. Decisions on strategy selection, risk parameters, and operational guidelines are exclusively governance responsibilities.
 - **Interest Rate Neutral**: Swept liquidity remains part of the usage ratio denominator, so sweeping funds to external strategies does not affect the drawn rate experienced by users.
-- **Opt‑In for Users**: Participation in reinvestment is not compulsory. Reinvestment is enabled at the Hub level on a per-asset basis; users choose whether to interact with a reinvestment-enabled asset by supplying to a spoke Reserve that is connected to that Hub asset. Users who prefer not to participate can supply to spoke Reserves linked to Hub assets without an active reinvestment controller.
-- **Enhanced Yields**: By deploying otherwise idle liquidity into external strategies, opt‑in liquidity providers can earn incremental returns on top of borrower interest.
+- **Opt‑In for Users**: Participation in reinvestment is not compulsory. Reinvestment is enabled at the Hub level on a per-asset basis; users choose whether to interact with a reinvestment-enabled asset by supplying to a spoke Reserve that is connected to that Hub asset. Since the reinvestment controller is a governance-controlled parameter that can be activated at any time, it is the Governor's responsibility to properly communicate any planned activation and its timeframe in advance. This gives existing suppliers the opportunity to withdraw their funds if they wish to opt out.
+- **New Yield Opportunities**: By deploying otherwise idle liquidity into external strategies, liquidity providers opting in can potentially earn incremental returns on top of borrower interest.
 - **Risk Allocation**: Losses arising from reinvestment strategies are absorbed by the Governor, who defines the coverage method, shielding liquidity providers from direct strategy‑specific risk exposure.
 - **Optional by Design**: The module can remain disabled without affecting core supply and borrow functionality. When inactive, all liquidity stays in the Hub.
 
@@ -211,11 +216,11 @@ The reinvestment infrastructure enables the protocol to optimize capital efficie
 
 # Dynamic Risk Configuration
 
-One of the major risk‑side limitations of V3 lies in its single, global risk configuration per asset. This design creates significant governance overhead and potential user harm through unexpected liquidations, as any parameter change, in particular lowering the liquidation threshold, immediately affects every open position.
+One of the major risk‑side limitations of Aave V3 lies in its single, global risk configuration per asset. This design creates significant governance overhead and potential user friction through unexpected liquidations, as any parameter change, in particular lowering the liquidation threshold, immediately affects every open position.
 
 Aave V4 makes it possible for multiple risk configurations to exist side‑by‑side. Whenever the Governor adjusts collateralization parameters (currently the Collateral Factor (CF), Max Liquidation Bonus (LB) or Liquidation Fee (LF)), the protocol adds a new configuration instead of replacing the old one. Earlier configurations continue to govern positions opened under them while updated parameters apply to new positions. In particular cases where there could be a negative impact to the protocol, the Governor may decide to trigger an authorized update of existing positions to the latest parameters.
 
-Every time the Governor adjusts the collateralization parameters, it corresponds to a new configuration. These configurations are stored in a bounded dictionary of up to ~4.29B entries (2^32) identified by incremental keys, with each Reserve holding the key that points to the current active configuration.
+In most cases, when the Governor adjusts the collateralization parameters, it corresponds to a new configuration. It is in rare cases that the Governor will update existing configurations. These configurations are stored in a bounded dictionary of up to ~4.29B entries (2^32) identified by incremental keys, with each Reserve holding the key that points to the current active configuration.
 
 Each user position also stores the key corresponding to the active configuration when that position became risk-bearing. This key is refreshed whenever the user performs specific actions, but may continue to reference a prior configuration even if there are changes on the dynamic risk configuration between user interactions.
 
@@ -223,15 +228,15 @@ Each user position also stores the key corresponding to the active configuration
 
 Dynamic configuration keys allow parameter updates without affecting existing open positions. The Governor retains the ability to update parameters of old keys. However, during normal operations the system updates upon user interaction without requiring governance intervention.
 
-## Design
+## Design Choices
 
 Dynamic configuration extends the reserve model with a per‑reserve mapping that holds every historic configuration key, referenced by a `dynamicConfigKey`. Collateralization parameters now reside inside the dynamic mapping rather than the static reserve record; this set comprises the Collateral Factor (CF), the Maximum Liquidation Bonus (LB) and the Liquidation Fee (LF).
 
-Each Reserve stores the latest `dynamicConfigKey`, which represents the current up-to-date risk configuration. In contrast, every user position retains a snapshot of the active `dynamicConfigKey` corresponding to the configuration in effect at the time of its last risk-increasing event. This snapshot is refreshed across all assets of a user position only when the user performs an action which elevates the risk posed to the system, such as disabling an asset as collateral, withdrawing, or borrowing. When a user designates a new asset as collateral, only the `dynamicConfigKey` snapshot of the asset in play is refreshed.
+Each Reserve stores the latest `dynamicConfigKey`, which represents the current up-to-date risk configuration. In contrast, every user position retains a snapshot of the active `dynamicConfigKey` corresponding to the configuration in effect at the time of its last risk-increasing event. This snapshot is refreshed across all assets of a user position only when the user performs an action which elevates the risk posed to the system, such as disabling an asset as collateral, withdrawing collateral, or borrowing. When a user designates a new asset as collateral, only the `dynamicConfigKey` snapshot of the asset in play is refreshed.
 
 ### Automatic Rebinding and Hard Safety Guard
 
-When a user attempts a health‑decreasing action, the engine checks the latest configuration for each collateral in the position. If the position remains sustainable under this configuration, the engine rebinds the snapshot to this latest key and allows the action to proceed. However, if the latest configuration would leave the position under‑collateralized, the engine blocks the action by reverting.
+When a user attempts a health‑decreasing action, the engine tentatively applies the action and then evaluates the resulting position against the latest dynamic configuration for each collateral. If the position is healthy after both the action and the configuration update, the engine rebinds the snapshot to the latest key and commits the action. However, if the resulting position would be under‑collateralized with the latest configuration, the engine reverts the entire action.
 
 ### Feature Notes
 
@@ -241,27 +246,28 @@ The architecture of dynamic configuration comes with several practical constrain
 2. For a given user position, the snapshot updates to the latest key on:
    1. `setUsingAsCollateral` updates a single Reserve when enabling and all Reserves when disabling
    2. `borrow`
-   3. `withdraw`
-3. The snapshot does **not** update on actions that reduce risk exposure of the system:
+   3. `withdraw` when the withdrawn Reserve had been set as collateral
+3. The snapshot does **not** update on actions that do not increase the risk exposure of the system:
    1. `supply`
    2. `repay`
    3. `liquidationCall` as liquidations will always improve the health of a user position
    4. `updateUserRiskPremium`
+   5. `withdraw` when the withdrawn Reserve had **not** been set as collateral
 4. Dynamic Risk Configurations can be adjusted by the Governor utilizing the following methods:
    1. `addDynamicReserveConfig` creates a new risk configuration and increments the latest `dynamicConfigKey`. User positions created or subsequently updated bind to this latest `dynamicConfigKey`.
    2. `updateDynamicReserveConfig` updates a prior configuration, affecting existing positions bound to that `dynamicConfigKey`.
-5. For a given user position, the Governor or the user can refresh the Dynamic Risk Configuration of that position:
+5. For a given user position, the Governor, the user, or a Position Manager enabled by the user can refresh the Dynamic Risk Configuration of that position:
    1. `updateUserDynamicConfig` updates the user's snapshots to the latest `dynamicConfigKey` for all collateral Reserves. Upon successful update, it also refreshes the user's risk premium to reflect any changes in collateral factors.
 
 # Liquidation Engine
 
-Aave V4 introduces a redesigned liquidation mechanism that replaces the fixed close‑factor logic used in V3. Instead of always seizing a fixed percentage of a user’s debt and collateral, Aave V4 allows liquidators to repay just enough debt and seize just enough collateral to bring the borrower’s health factor (HF) back to a configurable Target Health Factor (`TargetHealthFactor >= HEALTH_FACTOR_LIQUIDATION_THRESHOLD`). The mechanism adopts a Dutch‑auction style variable liquidation bonus. It also implements safeguards against “dust” which ensures that liquidations do not result in remaining dust collateral or debt unless the respective corresponding debt or collateral Reserves are fully liquidated. These changes aim to improve user experience and reduce the chance of protocol‑level bad debt.
+Aave V4 introduces a redesigned liquidation mechanism that replaces the fixed close‑factor logic used in Aave V3. Instead of always seizing a fixed percentage of a user’s debt and collateral, Aave V4 allows liquidators to repay just enough debt and seize just enough collateral to bring the borrower’s health factor (HF) back to a configurable Target Health Factor (`TargetHealthFactor >= HEALTH_FACTOR_LIQUIDATION_THRESHOLD`). The mechanism adopts a Dutch‑auction style variable liquidation bonus. It also implements safeguards against “dust” which ensures that liquidations do not result in remaining dust collateral or debt unless the respective corresponding debt or collateral Reserves are fully liquidated. These changes aim to improve user experience and reduce the chance of protocol‑level bad debt.
 
 ## Key Differences from Aave V3
 
-- **Target Health Factor vs Close Factor:** In V3, the default close factor is 50% (with a 100% close factor when HF < 0.95 or when liquidation amounts are under a given base currency threshold). Liquidators would typically repay half of a borrower’s debt and seize half of their collateral. Aave V4 removes the default close‑factor: the maximum a liquidator can repay (in situations that do not result in dust collateral or debt remaining) is the amount needed to bring the borrower back to the `TargetHealthFactor` determined by the Governor.
-- **Dynamic Dust Handling during Liquidations**: Both V3 and V4 revert when the remaining amount is below a hard‑coded threshold, while dynamically adjusting the maximum debt that can be liquidated and, if the liquidator opts to fully repay, allow full repayment to prevent dust. However, Aave V4 allows more flexibility because of removing the close-factor and facilitating the liquidation steps required to bring the position back to the target HF. Dust may still remain if either the collateral or debt Reserve is fully liquidated.
-- **Dutch‑Auction Style Liquidation Bonus:** V3 applies a static liquidation bonus that does not depend on the borrower’s health factor. Aave V4 introduces a variable liquidation bonus that increases linearly as the health factor decreases. Governance can specify two spoke‑wide parameters that shape the liquidation bonus: `healthFactorForMaxBonus` and `liquidationBonusFactor`.
+- **Target Health Factor vs Close Factor:** In Aave V3, the default close factor is 50% (with a 100% close factor when HF < 0.95 or when liquidation amounts are under a given base currency threshold). Liquidators would typically repay half of a borrower’s debt and seize a corresponding amount of their collateral. Aave V4 removes the default close factor: the maximum a liquidator can repay (in situations that do not result in dust collateral or debt remaining) is the amount needed to bring the borrower back to the `TargetHealthFactor` determined by the Governor.
+- **Dynamic Dust Handling during Liquidations**: Similar to Aave V3, Aave V4 uses a dust threshold of `$1_000` to prevent residual positions that are uneconomical to liquidate. If the remaining debt or collateral post-liquidation were to fall below this threshold, the protocol expands the liquidation to fully exhaust the smaller side, or reverts if the liquidator's intended `debtToCover` is insufficient. However, whereas Aave V3's close factor is a hard constraint, Aave V4 allows more flexibility by selectively bypassing the target HF enforcement in order to prevent dust accumulation.
+- **Dutch‑Auction Style Liquidation Bonus:** Aave V3 applies a static liquidation bonus that does not depend on the borrower’s health factor. Aave V4 introduces a variable liquidation bonus that increases linearly as the health factor decreases. Governance can specify two spoke‑wide parameters that determine the liquidation bonus calculation: `healthFactorForMaxBonus` and `liquidationBonusFactor`.
 
 ## Parameters and Configuration
 
@@ -270,7 +276,7 @@ Aave V4 exposes several configurable parameters that influence liquidation:
 | **Parameter**                | **Description**                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           | **Constraints**                                               |
 | ---------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------- |
 | `TargetHealthFactor`         | A spoke‑wide value set by the Governor representing the HF to which a borrower should be restored after liquidation. Liquidators repay only enough debt to reach this HF under normal circumstances that do not result in dust collateral or debt remaining.                                                                                                                                                                                                                                              | Must be ≥ the `HEALTH_FACTOR_LIQUIDATION_THRESHOLD` constant. |
-| `DUST_LIQUIDATION_THRESHOLD` | Hard‑coded threshold used to prevent extremely small leftover of debt and/or collateral. The maximum debt that can be liquidated is increased to ensure that debt or collateral dust less than this threshold does not remain unless the corresponding collateral or debt Reserve is fully liquidated.                                                                                                                                                                                                    | Hard‑coded constant set to 1_000 USD in value units.          |
+| `DUST_LIQUIDATION_THRESHOLD` | Hard‑coded threshold used to prevent extremely small leftover of debt and/or collateral. The maximum debt that can be liquidated is increased to ensure that debt or collateral dust less than this threshold does not remain unless the corresponding collateral or debt Reserve is fully liquidated.                                                                                                                                                                                                    | Hard‑coded constant set to `$1_000` in value units.           |
 | `maxLiquidationBonus`        | Per dynamic reserve config defined maximum liquidation bonus for a collateral, expressed in basis points (BPS). A value of 105_00 means there is 5% extra seized collateral over the amount of debt repaid in value units.                                                                                                                                                                                                                                                                                | Must be ≥ 100_00                                              |
 | `healthFactorForMaxBonus`    | Spoke‑wide value expressed in WAD units defining the HF below which the max bonus applies. It must be less than `HEALTH_FACTOR_LIQUIDATION_THRESHOLD` to avoid division‑by‑zero.                                                                                                                                                                                                                                                                                                                          | Must be < `HEALTH_FACTOR_LIQUIDATION_THRESHOLD`.              |
 | `liquidationBonusFactor`     | Spoke‑wide percentage (expressed in BPS) specifying the fraction of the max bonus earned at the threshold `HEALTH_FACTOR_LIQUIDATION_THRESHOLD`. It defines the minimum bonus; e.g., a factor of 80_00 yields a bonus equal to 80% of the max bonus when HF equals the liquidation threshold.                                                                                                                                                                                                             | Must be ≤ 100_00                                              |
@@ -281,15 +287,15 @@ Aave V4 exposes several configurable parameters that influence liquidation:
 The following high‑level steps outline the Aave V4 liquidation flow:
 
 1. **Check Eligibility:** When a borrower’s HF drops below the `HEALTH_FACTOR_LIQUIDATION_THRESHOLD`, anyone can trigger a liquidation; however, users are not allowed to liquidate their own positions. The protocol retrieves the borrower’s total debt value, current HF, and total collateral value, including only Reserves with `usingAsCollateral` enabled and CF > 0. Liquidations of frozen Reserves are allowed. If other Reserves in the user position (not the target being liquidated or seized) are paused, liquidations are not blocked.
-2. **Determine Debt to Repay:** Based on the Target Health Factor `TargetHealthFactor`, the protocol computes the debt that must be repaid to restore the borrower’s HF to `TargetHealthFactor`. The required repayment amount depends on the borrower’s current debt and collateral (CF, LB, HF).
+2. **Determine Debt to Repay:** The protocol computes the debt that must be repaid to restore the borrower’s HF to `TargetHealthFactor`. The required repayment amount depends on the borrower’s current debt and collateral (CF, LB, HF).
 3. **Handle Dust Debt:** If the borrower’s remaining debt after a standard liquidation would be below the `DUST_LIQUIDATION_THRESHOLD`, and the liquidator intends to fully repay the debt, the protocol increases the allowable debt that can be liquidated, so that the entire debt can be covered. However, dust may still remain if the liquidator targets debt equal to the full amount of the collateral Reserve $C_i$ being seized (i.e., $Δ C_i = C_i$), then a residual debt $D_{dust} > 0$ can remain when there are multiple collateral Reserves ($N_{coll} > 1$). If there is a single collateral Reserve ($N_{coll} = 1$), the residual, along with any other existing debt across all Reserves, is recorded as a protocol deficit.
 4. **Calculate Collateral to Seize and Handle Collateral Dust**: Convert the debt to be repaid into the collateral asset’s value and apply the liquidation bonus for this specific liquidation. By this point the bonus is fixed (not variable during execution) based on the position’s HF at the start of liquidation and the Reserve’s `maxLiquidationBonus`. The formula in this step just computes that liquidation bonus and the resulting collateral to transfer. If the chosen collateral is not sufficient, all of that collateral is seized and the repaid debt is recomputed. Lastly, collateral dust is accounted for.
-5. **Apply Debt Repayment & Transfer Collateral**: Reduce the borrower’s debt amount by the repaid amount. Transfer the corresponding collateral to the liquidator with the liquidation bonus applied, minus the protocol fee (as in V3). If `receiveSharesEnabled` is true for the collateral Reserve and the Reserve is not frozen, the liquidator can opt to receive added shares directly instead of underlying assets by setting the `receiveShares` parameter to true. Added shares accrue yield in the Hub, providing a more capital-efficient liquidation mechanism. The fee portion is sent to the protocol/fee receiver via the Hub as shares, accrues yield there, and the shares are assigned directly via Hub accounting.
-6. **Emit Events and Update State:** A `LiquidationCall` event is emitted containing details of the liquidation. The borrower’s and Reserve’s interest indices are updated. If the borrower still has debt outstanding and no remaining collateral, the system will record a protocol deficit. Reporting deficit is allowed even when the reporting Spoke is halted (as long as it’s active).
+5. **Apply Debt Repayment & Transfer Collateral**: Reduce the borrower’s debt amount by the repaid amount. Transfer the corresponding collateral to the liquidator with the liquidation bonus applied, minus the protocol fee (as in Aave V3). If `receiveSharesEnabled` is true for the collateral Reserve and the Reserve is not frozen, the liquidator can opt to receive added shares directly instead of underlying assets by setting the `receiveShares` parameter to true. Added shares accrue yield in the Hub, providing a more capital-efficient liquidation mechanism. The fee portion is sent to the protocol/fee receiver via the Hub as shares, accrues yield there, and the shares are assigned directly via Hub accounting.
+6. **Emit Events and Update State:** A `LiquidationCall` event is emitted containing details of the liquidation. The borrower’s and Reserve’s debt amounts are updated. If the borrower still has debt outstanding and no remaining collateral, the system will record a protocol deficit. Reporting deficit is allowed even when the reporting Spoke is halted (as long as it’s active).
 
 ## Dust and Rounding Considerations
 
-Aave V4 introduces a dynamic dust prevention mechanism. If the debt remaining after a standard liquidation is below the `DUST_LIQUIDATION_THRESHOLD` (e.g., $1_000 in value units), the protocol increases the maximum debt that can be liquidated to allow full repayment, provided the liquidator has indicated intent to fully cover the debt; otherwise, the liquidation reverts under the dust condition. Dust may still remain on either the collateral Reserve or debt Reserve if the corresponding debt or collateral Reserve, respectively, is fully exhausted.
+Aave V4 introduces a dynamic dust prevention mechanism. If the debt remaining after a standard liquidation is below the `DUST_LIQUIDATION_THRESHOLD` (e.g., `$1_000` in value units), the protocol increases the maximum debt that can be liquidated to allow full repayment, provided the liquidator has indicated intent to fully cover the debt; otherwise, the liquidation reverts under the dust condition. Dust may still remain on either the collateral Reserve or debt Reserve if the corresponding debt or collateral Reserve, respectively, is fully exhausted.
 
 A deficit is only reported if, after liquidation, the borrower has no more collateral left across any of their Reserves and debt still remains.
 
@@ -329,6 +335,6 @@ $$
 
 where
 
-- $HF\_LIQ\_THRESHOLD$: configured as a spoke-wide constant. Represents the health factor threshold under which the user becomes liquidatable. Equals 1.
+- $HF\_LIQ\_THRESHOLD$: a spoke-wide constant. Represents the health factor threshold under which the user becomes liquidatable. Equals 1.
 - $hf_{beforeLiq}$: per user. Represents the user’s health factor before liquidation.
 - $hfForMaxBonus$: per Spoke. Represents the health factor threshold under which the protocol awards the maximum liquidation bonus.
