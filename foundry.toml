@@ -6,6 +6,7 @@ libs = ['lib']
 fs_permissions = [
   { access = "read", path = "tests/helpers/mocks/JsonBindings.sol" },
   { access = "read", path = "./config" },
+  { access = "read", path = "./scripts/markets" },
   { access = "read", path = "./out" },
   { access = "read-write", path = "./output" }
 ]
@@ -76,6 +77,7 @@ zkevm = "${RPC_ZKEVM}"
 gnosis = "${RPC_GNOSIS}"
 bnb = "${RPC_BNB}"
 celo = "${RPC_CELO}"
+sepolia = "${RPC_SEPOLIA}"
 anvil = "http://127.0.0.1:8545"
 
 [etherscan]
@@ -91,3 +93,4 @@ zkevm = { key = "${ETHERSCAN_API_KEY_ZKEVM}", chainId = 1101 }
 gnosis = { key = "${ETHERSCAN_API_KEY_GNOSIS}", chainId = 100 }
 bnb = { key = "${ETHERSCAN_API_KEY_BNB}", chainId = 56 }
 celo = { key = "${ETHERSCAN_API_KEY_CELO}", chainId = 42220 }
+sepolia = { key = "${ETHERSCAN_API_KEY_SEPOLIA}", chainId = 11155111 }

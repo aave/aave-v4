@@ -44,3 +44,17 @@ deploy-contracts :;
 	FOUNDRY_PROFILE=${chain} forge clean && forge script scripts/deploy/AaveV4DeployBatch.s.sol:AaveV4DeployBatchScript \
 	--rpc-url ${chain} --account ${account} --slow \
 	$(if ${dry},, --broadcast --verify) \
+
+# Babylon market. Run in order; see scripts/markets/babylon/README.md for what goes between the steps.
+# `make babylon-deploy chain=sepolia account=<keystore-name>`, add `dry=true` to simulate
+babylon-precompile :; make deploy-precompile chain=${chain} account=${account} dry=${dry}
+
+babylon-deploy :;
+	forge clean && forge script scripts/markets/babylon/AaveV4DeployBabylon.s.sol:AaveV4DeployBabylon \
+	--rpc-url ${chain} --account ${account} --slow \
+	$(if ${dry},, --broadcast --verify) \
+
+babylon-handover :;
+	forge script scripts/markets/babylon/AaveV4BabylonHandover.s.sol:AaveV4BabylonHandover \
+	--rpc-url ${chain} --account ${account} --slow \
+	$(if ${dry},, --broadcast) \

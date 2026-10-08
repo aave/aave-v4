@@ -1,0 +1,9 @@
+{
+  "salt": "0x894075935527788dcca90ad5e59f77ad3121f0ad6823f8f0a87e5f60e6e86ed9",
+  "hubLabel": "babylon",
+  "babylonSpokeLabel": "babylon",
+  "liquidationManager": "0x0000000000000000000000000000000000000000",
+  "managedCollateralReserveId": 0,
+  "admin": "0x0000000000000000000000000000000000000000",
+  "report": ""
+}
