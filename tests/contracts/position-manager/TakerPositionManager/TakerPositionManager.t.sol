@@ -10,7 +10,7 @@ contract TakerPositionManagerTest is TakerPositionManagerBaseTest {
     amount = bound(amount, 1, MAX_SUPPLY_AMOUNT_DAI);
 
     vm.expectEmit(address(positionManager));
-    emit ITakerPositionManager.WithdrawApproval(address(spoke1), reserveId, alice, spender, amount);
+    emit ITakerPositionManager.WithdrawApproval(address(spoke1), alice, spender, reserveId, amount);
     vm.prank(alice);
     positionManager.approveWithdraw(address(spoke1), reserveId, spender, amount);
 
@@ -31,7 +31,7 @@ contract TakerPositionManagerTest is TakerPositionManagerBaseTest {
     positionManager.approveWithdraw(address(spoke1), reserveId, bob, initialAllowance);
 
     vm.expectEmit(address(positionManager));
-    emit ITakerPositionManager.WithdrawApproval(address(spoke1), reserveId, alice, bob, 0);
+    emit ITakerPositionManager.WithdrawApproval(address(spoke1), alice, bob, reserveId, 0);
     vm.prank(bob);
     positionManager.renounceWithdrawAllowance(address(spoke1), reserveId, alice);
 
@@ -99,9 +99,9 @@ contract TakerPositionManagerTest is TakerPositionManagerBaseTest {
     vm.expectEmit(address(positionManager));
     emit ITakerPositionManager.WithdrawApproval(
       address(spoke1),
-      _daiReserveId(spoke1),
       alice,
       bob,
+      _daiReserveId(spoke1),
       expectedAllowance
     );
     vm.expectEmit(address(positionManager));
@@ -183,9 +183,9 @@ contract TakerPositionManagerTest is TakerPositionManagerBaseTest {
     vm.expectEmit(address(positionManager));
     emit ITakerPositionManager.WithdrawApproval(
       address(spoke1),
-      _daiReserveId(spoke1),
       alice,
       bob,
+      _daiReserveId(spoke1),
       expectedAllowance
     );
     vm.expectEmit(address(positionManager));
@@ -445,7 +445,7 @@ contract TakerPositionManagerTest is TakerPositionManagerBaseTest {
     amount = bound(amount, 1, MAX_SUPPLY_AMOUNT_DAI);
 
     vm.expectEmit(address(positionManager));
-    emit ITakerPositionManager.BorrowApproval(address(spoke1), reserveId, alice, spender, amount);
+    emit ITakerPositionManager.BorrowApproval(address(spoke1), alice, spender, reserveId, amount);
     vm.prank(alice);
     positionManager.approveBorrow(address(spoke1), reserveId, spender, amount);
 
@@ -466,7 +466,7 @@ contract TakerPositionManagerTest is TakerPositionManagerBaseTest {
     positionManager.approveBorrow(address(spoke1), reserveId, bob, initialAllowance);
 
     vm.expectEmit(address(positionManager));
-    emit ITakerPositionManager.BorrowApproval(address(spoke1), reserveId, alice, bob, 0);
+    emit ITakerPositionManager.BorrowApproval(address(spoke1), alice, bob, reserveId, 0);
     vm.prank(bob);
     positionManager.renounceBorrowAllowance(address(spoke1), reserveId, alice);
 
@@ -809,11 +809,11 @@ contract TakerPositionManagerTest is TakerPositionManagerBaseTest {
       if (
         entries[i].topics[0] == sig &&
         entries[i].topics[1] == bytes32(uint256(uint160(spoke))) &&
-        entries[i].topics[2] == bytes32(reserveId) &&
-        entries[i].topics[3] == bytes32(uint256(uint160(owner)))
+        entries[i].topics[2] == bytes32(uint256(uint160(owner))) &&
+        entries[i].topics[3] == bytes32(uint256(uint160(spender)))
       ) {
-        (address logSpender, uint256 logAmount) = abi.decode(entries[i].data, (address, uint256));
-        assertEq(logSpender, spender);
+        (uint256 logReserveId, uint256 logAmount) = abi.decode(entries[i].data, (uint256, uint256));
+        assertEq(logReserveId, reserveId);
         assertEq(logAmount, amount);
         return;
       }
@@ -834,11 +834,11 @@ contract TakerPositionManagerTest is TakerPositionManagerBaseTest {
       if (
         entries[i].topics[0] == sig &&
         entries[i].topics[1] == bytes32(uint256(uint160(spoke))) &&
-        entries[i].topics[2] == bytes32(reserveId) &&
-        entries[i].topics[3] == bytes32(uint256(uint160(owner)))
+        entries[i].topics[2] == bytes32(uint256(uint160(owner))) &&
+        entries[i].topics[3] == bytes32(uint256(uint160(spender)))
       ) {
-        (address logSpender, uint256 logAmount) = abi.decode(entries[i].data, (address, uint256));
-        assertEq(logSpender, spender);
+        (uint256 logReserveId, uint256 logAmount) = abi.decode(entries[i].data, (uint256, uint256));
+        assertEq(logReserveId, reserveId);
         assertEq(logAmount, amount);
         return;
       }
