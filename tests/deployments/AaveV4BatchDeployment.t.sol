@@ -462,17 +462,14 @@ contract AaveV4BatchDeploymentTest is BatchTestProcedures {
     // 1. deployer is initial admin for access manager
     if (_deployer == address(0)) return (true, bytes('invalid admin'));
 
-    // 2. treasury spoke requires owner
-    if (_inputs.treasurySpokeOwner == address(0)) {
-      return (true, bytes('invalid owner'));
+    // 2. configurators are always deployed behind proxies and require proxy admin owner
+    if (_inputs.proxyAdminOwner == address(0)) {
+      return (true, bytes('invalid proxy admin owner'));
     }
 
-    // 3. hubs and spokes require proxy admin owner when deployed
-    if (
-      (_inputs.hubLabels.length > 0 || _inputs.spokeLabels.length > 0) &&
-      _inputs.proxyAdminOwner == address(0)
-    ) {
-      return (true, bytes('invalid proxy admin owner'));
+    // 3. treasury spoke requires owner
+    if (_inputs.treasurySpokeOwner == address(0)) {
+      return (true, bytes('invalid owner'));
     }
 
     // 4. gateways: native gateway checks nativeWrapper, then owner;

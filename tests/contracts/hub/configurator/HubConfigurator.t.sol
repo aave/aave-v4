@@ -7,6 +7,7 @@ contract HubConfiguratorTest is Base {
   using SafeCast for uint256;
 
   uint256 internal _assetId;
+  address internal _assetUnderlying;
   bytes internal _encodedIrData;
 
   address[4] public spokeAddresses;
@@ -19,6 +20,7 @@ contract HubConfiguratorTest is Base {
     super.setUp();
     _grantHubConfiguratorRole(hub1, address(hubConfigurator));
     _assetId = daiAssetId;
+    _assetUnderlying = address(tokenList.dai);
     _encodedIrData = abi.encode(
       IAssetInterestRateStrategy.InterestRateData({
         optimalUsageRatio: 90_00, // 90.00%
@@ -197,6 +199,15 @@ contract HubConfiguratorTest is Base {
       abi.encodeCall(IHub.updateAssetConfig, (hub1.getAssetCount(), expectedConfig, new bytes(0)))
     );
 
+    _expectAddAssetEvents(
+      underlying,
+      expectedAssetId,
+      feeReceiver,
+      liquidityFee,
+      irStrategy,
+      abi.decode(_encodedIrData, (IAssetInterestRateStrategy.InterestRateData))
+    );
+
     vm.prank(HUB_CONFIGURATOR_ADMIN);
     _assetId = _addAsset(
       fetchErc20Decimals,
@@ -221,34 +232,49 @@ contract HubConfiguratorTest is Base {
       abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, alice)
     );
     vm.prank(alice);
-    hubConfigurator.updateLiquidityFee(address(hub1), vm.randomUint(), vm.randomUint());
+    hubConfigurator.updateLiquidityFee(address(hub1), vm.randomAddress(), vm.randomUint());
   }
 
   function test_updateLiquidityFee_revertsWith_InvalidLiquidityFee() public {
     _assetId = vm.randomUint(0, hub1.getAssetCount() - 1);
+    _assetUnderlying = _hub1Underlying(_assetId);
     uint16 liquidityFee = uint16(
       vm.randomUint(PercentageMath.PERCENTAGE_FACTOR + 1, type(uint16).max)
     );
 
     vm.expectRevert(IHub.InvalidLiquidityFee.selector);
     vm.prank(HUB_CONFIGURATOR_ADMIN);
-    hubConfigurator.updateLiquidityFee(address(hub1), _assetId, liquidityFee);
+    hubConfigurator.updateLiquidityFee(address(hub1), _assetUnderlying, liquidityFee);
   }
 
   function test_updateLiquidityFee_fuzz(uint256 assetId, uint16 liquidityFee) public {
     _assetId = bound(assetId, 0, hub1.getAssetCount() - 1);
+    _assetUnderlying = _hub1Underlying(_assetId);
     liquidityFee = uint16(bound(liquidityFee, 0, PercentageMath.PERCENTAGE_FACTOR));
 
     IHub.AssetConfig memory expectedConfig = hub1.getAssetConfig(_assetId);
+    uint256 oldLiquidityFee = expectedConfig.liquidityFee;
     expectedConfig.liquidityFee = liquidityFee;
 
     vm.expectCall(
       address(hub1),
       abi.encodeCall(IHub.updateAssetConfig, (_assetId, expectedConfig, new bytes(0)))
     );
+    vm.expectEmit(address(hubConfigurator));
+    emit IHubConfigurator.LiquidityFeeUpdated(
+      address(hub1),
+      _assetUnderlying,
+      _assetId,
+      oldLiquidityFee,
+      liquidityFee
+    );
 
     vm.prank(HUB_CONFIGURATOR_ADMIN);
-    hubConfigurator.updateLiquidityFee(address(hub1), _assetId, expectedConfig.liquidityFee);
+    hubConfigurator.updateLiquidityFee(
+      address(hub1),
+      _assetUnderlying,
+      expectedConfig.liquidityFee
+    );
 
     assertEq(hub1.getAssetConfig(_assetId), expectedConfig);
   }
@@ -261,15 +287,16 @@ contract HubConfiguratorTest is Base {
       abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, caller)
     );
     vm.prank(caller);
-    hubConfigurator.updateFeeReceiver(address(hub1), vm.randomUint(), vm.randomAddress());
+    hubConfigurator.updateFeeReceiver(address(hub1), vm.randomAddress(), vm.randomAddress());
   }
 
   function test_updateFeeReceiver_revertsWith_InvalidAddress_spoke() public {
     _assetId = vm.randomUint(0, hub1.getAssetCount() - 1);
+    _assetUnderlying = _hub1Underlying(_assetId);
 
     vm.expectRevert(IHub.InvalidAddress.selector, address(hub1));
     vm.prank(HUB_CONFIGURATOR_ADMIN);
-    hubConfigurator.updateFeeReceiver(address(hub1), _assetId, address(0));
+    hubConfigurator.updateFeeReceiver(address(hub1), _assetUnderlying, address(0));
   }
 
   function test_updateFeeReceiver_fuzz(address feeReceiver) public {
@@ -290,8 +317,18 @@ contract HubConfiguratorTest is Base {
         vm.expectRevert(IHub.SpokeAlreadyListed.selector, address(hub1));
       }
     }
+    if (expectedConfig.feeReceiver == feeReceiver) {
+      vm.expectEmit(address(hubConfigurator));
+      emit IHubConfigurator.FeeReceiverUpdated(
+        address(hub1),
+        _assetUnderlying,
+        _assetId,
+        oldConfig.feeReceiver,
+        feeReceiver
+      );
+    }
     vm.prank(HUB_CONFIGURATOR_ADMIN);
-    hubConfigurator.updateFeeReceiver(address(hub1), _assetId, feeReceiver);
+    hubConfigurator.updateFeeReceiver(address(hub1), _assetUnderlying, feeReceiver);
 
     assertEq(hub1.getAssetConfig(_assetId), expectedConfig);
   }
@@ -303,7 +340,7 @@ contract HubConfiguratorTest is Base {
     address feeReceiver = address(spoke1);
     vm.expectRevert(IHub.SpokeAlreadyListed.selector, address(hub1));
     vm.prank(HUB_CONFIGURATOR_ADMIN);
-    hubConfigurator.updateFeeReceiver(address(hub1), _assetId, feeReceiver);
+    hubConfigurator.updateFeeReceiver(address(hub1), _assetUnderlying, feeReceiver);
   }
 
   /// @dev Test update fee receiver and fees can still be withdrawn from old fee receiver
@@ -335,7 +372,7 @@ contract HubConfiguratorTest is Base {
       salt: bytes32('newTreasurySpoke1')
     });
     vm.prank(HUB_CONFIGURATOR_ADMIN);
-    hubConfigurator.updateFeeReceiver(address(hub1), daiAssetId, newTreasurySpoke);
+    hubConfigurator.updateFeeReceiver(address(hub1), address(tokenList.dai), newTreasurySpoke);
 
     assertEq(
       hub1.getAssetConfig(daiAssetId).feeReceiver,
@@ -406,7 +443,7 @@ contract HubConfiguratorTest is Base {
       salt: bytes32('newTreasurySpoke2')
     });
     vm.prank(HUB_CONFIGURATOR_ADMIN);
-    hubConfigurator.updateFeeReceiver(address(hub1), daiAssetId, newTreasurySpoke);
+    hubConfigurator.updateFeeReceiver(address(hub1), address(tokenList.dai), newTreasurySpoke);
 
     // Ensure fee receiver was updated
     assertEq(
@@ -475,7 +512,7 @@ contract HubConfiguratorTest is Base {
     vm.prank(caller);
     hubConfigurator.updateFeeConfig({
       hub: address(hub1),
-      assetId: vm.randomUint(),
+      underlying: vm.randomAddress(),
       liquidityFee: vm.randomUint(),
       feeReceiver: vm.randomAddress()
     });
@@ -483,15 +520,17 @@ contract HubConfiguratorTest is Base {
 
   function test_updateFeeConfig_revertsWith_InvalidAddress_spoke() public {
     uint256 assetId = vm.randomUint(0, hub1.getAssetCount() - 1);
+    address underlying = _hub1Underlying(assetId);
     uint256 liquidityFee = vm.randomUint(1, PercentageMath.PERCENTAGE_FACTOR);
 
     vm.expectRevert(IHub.InvalidAddress.selector, address(hub1));
     vm.prank(HUB_CONFIGURATOR_ADMIN);
-    hubConfigurator.updateFeeConfig(address(hub1), assetId, liquidityFee, address(0));
+    hubConfigurator.updateFeeConfig(address(hub1), underlying, liquidityFee, address(0));
   }
 
   function test_updateFeeConfig_revertsWith_InvalidLiquidityFee() public {
     uint256 assetId = vm.randomUint(0, hub1.getAssetCount() - 1);
+    address underlying = _hub1Underlying(assetId);
     uint16 liquidityFee = uint16(
       vm.randomUint(PercentageMath.PERCENTAGE_FACTOR + 1, type(uint16).max)
     );
@@ -499,7 +538,7 @@ contract HubConfiguratorTest is Base {
 
     vm.expectRevert(IHub.InvalidLiquidityFee.selector, address(hub1));
     vm.prank(HUB_CONFIGURATOR_ADMIN);
-    hubConfigurator.updateFeeConfig(address(hub1), assetId, liquidityFee, feeReceiver);
+    hubConfigurator.updateFeeConfig(address(hub1), underlying, liquidityFee, feeReceiver);
   }
 
   function test_updateFeeConfig_fuzz(
@@ -510,6 +549,7 @@ contract HubConfiguratorTest is Base {
     assetId_ = bound(assetId_, 0, hub1.getAssetCount() - 1);
     liquidityFee = uint16(bound(liquidityFee, 0, PercentageMath.PERCENTAGE_FACTOR));
     assumeNotZeroAddress(feeReceiver);
+    address underlying = _hub1Underlying(assetId_);
 
     IHub.AssetConfig memory oldConfig = hub1.getAssetConfig(assetId_);
     IHub.AssetConfig memory expectedConfig = hub1.getAssetConfig(assetId_);
@@ -528,8 +568,26 @@ contract HubConfiguratorTest is Base {
         vm.expectRevert(IHub.SpokeAlreadyListed.selector, address(hub1));
       }
     }
+    if (expectedConfig.feeReceiver == feeReceiver) {
+      vm.expectEmit(address(hubConfigurator));
+      emit IHubConfigurator.LiquidityFeeUpdated(
+        address(hub1),
+        underlying,
+        assetId_,
+        oldConfig.liquidityFee,
+        liquidityFee
+      );
+      vm.expectEmit(address(hubConfigurator));
+      emit IHubConfigurator.FeeReceiverUpdated(
+        address(hub1),
+        underlying,
+        assetId_,
+        oldConfig.feeReceiver,
+        feeReceiver
+      );
+    }
     vm.prank(HUB_CONFIGURATOR_ADMIN);
-    hubConfigurator.updateFeeConfig(address(hub1), assetId_, liquidityFee, feeReceiver);
+    hubConfigurator.updateFeeConfig(address(hub1), underlying, liquidityFee, feeReceiver);
     assertEq(hub1.getAssetConfig(assetId_), expectedConfig);
   }
 
@@ -552,45 +610,81 @@ contract HubConfiguratorTest is Base {
     vm.prank(caller);
     hubConfigurator.updateInterestRateStrategy(
       address(hub1),
-      vm.randomUint(),
+      vm.randomAddress(),
       vm.randomAddress(),
       _encodedIrData
     );
   }
 
   function test_updateInterestRateStrategy() public {
-    address irStrategy = makeAddr('newDrawnRateStrategy');
+    address newIrStrategy = address(new AssetInterestRateStrategy(address(hub1)));
 
     IHub.AssetConfig memory expectedConfig = hub1.getAssetConfig(_assetId);
-    expectedConfig.irStrategy = irStrategy;
-    _mockDrawnRateBps({irStrategy: irStrategy, drawnRateBps: 5_00});
+    address oldIrStrategy = expectedConfig.irStrategy;
+    IAssetInterestRateStrategy.InterestRateData memory oldIrData = IAssetInterestRateStrategy(
+      oldIrStrategy
+    ).getInterestRateData(_assetId);
+    expectedConfig.irStrategy = newIrStrategy;
 
     vm.expectCall(
       address(hub1),
       abi.encodeCall(IHub.updateAssetConfig, (_assetId, expectedConfig, _encodedIrData))
     );
+    vm.expectEmit(address(hubConfigurator));
+    emit IHubConfigurator.InterestRateStrategyUpdated(
+      address(hub1),
+      _assetUnderlying,
+      _assetId,
+      oldIrStrategy,
+      newIrStrategy
+    );
+    vm.expectEmit(address(hubConfigurator));
+    emit IHubConfigurator.InterestRateDataUpdated(
+      address(hub1),
+      _assetUnderlying,
+      _assetId,
+      oldIrData,
+      abi.decode(_encodedIrData, (IAssetInterestRateStrategy.InterestRateData))
+    );
 
     vm.prank(HUB_CONFIGURATOR_ADMIN);
-    hubConfigurator.updateInterestRateStrategy(address(hub1), _assetId, irStrategy, _encodedIrData);
+    hubConfigurator.updateInterestRateStrategy(
+      address(hub1),
+      _assetUnderlying,
+      newIrStrategy,
+      _encodedIrData
+    );
 
     assertEq(hub1.getAssetConfig(_assetId), expectedConfig);
   }
 
   function test_updateInterestRateStrategy_revertsWith_InvalidAddress_irStrategy() public {
     _assetId = vm.randomUint(0, hub1.getAssetCount() - 1);
+    _assetUnderlying = _hub1Underlying(_assetId);
 
     vm.expectRevert(IHub.InvalidAddress.selector, address(hub1));
     vm.prank(HUB_CONFIGURATOR_ADMIN);
-    hubConfigurator.updateInterestRateStrategy(address(hub1), _assetId, address(0), _encodedIrData);
+    hubConfigurator.updateInterestRateStrategy(
+      address(hub1),
+      _assetUnderlying,
+      address(0),
+      _encodedIrData
+    );
   }
 
   function test_updateInterestRateStrategy_revertsWith_DrawnRateStrategyReverts() public {
     _assetId = vm.randomUint(0, hub1.getAssetCount() - 1);
+    _assetUnderlying = _hub1Underlying(_assetId);
     address irStrategy = makeAddr('newDrawnRateStrategy');
 
     vm.expectRevert();
     vm.prank(HUB_CONFIGURATOR_ADMIN);
-    hubConfigurator.updateInterestRateStrategy(address(hub1), _assetId, irStrategy, _encodedIrData);
+    hubConfigurator.updateInterestRateStrategy(
+      address(hub1),
+      _assetUnderlying,
+      irStrategy,
+      _encodedIrData
+    );
   }
 
   function test_updateInterestRateStrategy_revertsWith_InvalidInterestRateStrategy() public {
@@ -598,7 +692,7 @@ contract HubConfiguratorTest is Base {
     vm.prank(HUB_CONFIGURATOR_ADMIN);
     hubConfigurator.updateInterestRateStrategy(
       address(hub1),
-      _assetId,
+      _assetUnderlying,
       address(irStrategy),
       _encodedIrData
     );
@@ -614,7 +708,7 @@ contract HubConfiguratorTest is Base {
     vm.prank(caller);
     hubConfigurator.updateReinvestmentController(
       address(hub1),
-      vm.randomUint(),
+      vm.randomAddress(),
       vm.randomAddress()
     );
   }
@@ -622,13 +716,26 @@ contract HubConfiguratorTest is Base {
   function test_updateReinvestmentController() public {
     address reinvestmentController = makeAddr('newReinvestmentController');
     IHub.AssetConfig memory expectedConfig = hub1.getAssetConfig(_assetId);
+    address oldReinvestmentController = expectedConfig.reinvestmentController;
     expectedConfig.reinvestmentController = reinvestmentController;
     vm.expectCall(
       address(hub1),
       abi.encodeCall(IHub.updateAssetConfig, (_assetId, expectedConfig, new bytes(0)))
     );
+    vm.expectEmit(address(hubConfigurator));
+    emit IHubConfigurator.ReinvestmentControllerUpdated(
+      address(hub1),
+      _assetUnderlying,
+      _assetId,
+      oldReinvestmentController,
+      reinvestmentController
+    );
     vm.prank(HUB_CONFIGURATOR_ADMIN);
-    hubConfigurator.updateReinvestmentController(address(hub1), _assetId, reinvestmentController);
+    hubConfigurator.updateReinvestmentController(
+      address(hub1),
+      _assetUnderlying,
+      reinvestmentController
+    );
 
     assertEq(hub1.getAssetConfig(_assetId), expectedConfig);
   }
@@ -638,10 +745,11 @@ contract HubConfiguratorTest is Base {
       abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, alice)
     );
     vm.prank(alice);
-    hubConfigurator.resetAssetCaps(address(hub1), _assetId);
+    hubConfigurator.resetAssetCaps(address(hub1), _assetUnderlying);
   }
 
   function test_resetAssetCaps() public {
+    assertEq(hub1.getSpokeCount(_assetId), spokeAddresses.length, 'spoke count');
     for (uint256 i; i < spokeAddresses.length; i++) {
       IHub.SpokeConfig memory spokeConfig = hub1.getSpokeConfig(_assetId, spokeAddresses[i]);
       spokeConfig.addCap = 0;
@@ -653,9 +761,12 @@ contract HubConfiguratorTest is Base {
 
       riskPremiumThresholdsPerSpoke[spokeAddresses[i]] = spokeConfig.riskPremiumThreshold;
     }
+    for (uint256 i; i < spokeAddresses.length; i++) {
+      _expectSpokeCapsEvents(_assetId, hub1.getSpokeAddress(_assetId, i), 0, 0);
+    }
 
     vm.prank(HUB_CONFIGURATOR_ADMIN);
-    hubConfigurator.resetAssetCaps(address(hub1), _assetId);
+    hubConfigurator.resetAssetCaps(address(hub1), _assetUnderlying);
 
     for (uint256 i; i < spokeAddresses.length; i++) {
       IHub.SpokeConfig memory spokeConfig = hub1.getSpokeConfig(_assetId, spokeAddresses[i]);
@@ -670,10 +781,11 @@ contract HubConfiguratorTest is Base {
       abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, alice)
     );
     vm.prank(alice);
-    hubConfigurator.deactivateAsset(address(hub1), _assetId);
+    hubConfigurator.deactivateAsset(address(hub1), _assetUnderlying);
   }
 
   function test_deactivateAsset() public {
+    assertEq(hub1.getSpokeCount(_assetId), spokeAddresses.length, 'spoke count');
     for (uint256 i; i < spokeAddresses.length; i++) {
       IHub.SpokeConfig memory spokeConfig = hub1.getSpokeConfig(_assetId, spokeAddresses[i]);
       spokeConfig.active = false;
@@ -682,9 +794,12 @@ contract HubConfiguratorTest is Base {
         abi.encodeCall(IHub.updateSpokeConfig, (_assetId, spokeAddresses[i], spokeConfig))
       );
     }
+    for (uint256 i; i < spokeAddresses.length; i++) {
+      _expectSpokeActiveEvent(_assetId, hub1.getSpokeAddress(_assetId, i), false);
+    }
 
     vm.prank(HUB_CONFIGURATOR_ADMIN);
-    hubConfigurator.deactivateAsset(address(hub1), _assetId);
+    hubConfigurator.deactivateAsset(address(hub1), _assetUnderlying);
 
     for (uint256 i; i < spokeAddresses.length; i++) {
       IHub.SpokeConfig memory spokeConfig = hub1.getSpokeConfig(_assetId, spokeAddresses[i]);
@@ -697,10 +812,11 @@ contract HubConfiguratorTest is Base {
       abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, alice)
     );
     vm.prank(alice);
-    hubConfigurator.haltAsset(address(hub1), _assetId);
+    hubConfigurator.haltAsset(address(hub1), _assetUnderlying);
   }
 
   function test_haltAsset() public {
+    assertEq(hub1.getSpokeCount(_assetId), spokeAddresses.length, 'spoke count');
     for (uint256 i; i < spokeAddresses.length; i++) {
       IHub.SpokeConfig memory spokeConfig = hub1.getSpokeConfig(_assetId, spokeAddresses[i]);
       spokeConfig.halted = true;
@@ -709,9 +825,12 @@ contract HubConfiguratorTest is Base {
         abi.encodeCall(IHub.updateSpokeConfig, (_assetId, spokeAddresses[i], spokeConfig))
       );
     }
+    for (uint256 i; i < spokeAddresses.length; i++) {
+      _expectSpokeHaltedEvent(_assetId, hub1.getSpokeAddress(_assetId, i), true);
+    }
 
     vm.prank(HUB_CONFIGURATOR_ADMIN);
-    hubConfigurator.haltAsset(address(hub1), _assetId);
+    hubConfigurator.haltAsset(address(hub1), _assetUnderlying);
 
     for (uint256 i; i < spokeAddresses.length; i++) {
       IHub.SpokeConfig memory spokeConfig = hub1.getSpokeConfig(_assetId, spokeAddresses[i]);
@@ -725,7 +844,7 @@ contract HubConfiguratorTest is Base {
     );
     vm.prank(alice);
     IHub.SpokeConfig memory spokeConfig;
-    hubConfigurator.addSpoke(address(hub1), vm.randomAddress(), 0, spokeConfig);
+    hubConfigurator.addSpoke(address(hub1), vm.randomAddress(), vm.randomAddress(), spokeConfig);
   }
 
   function test_addSpoke() public {
@@ -741,8 +860,29 @@ contract HubConfiguratorTest is Base {
 
     vm.expectEmit(address(hub1));
     emit IHub.AddSpoke(daiAssetId, newSpoke);
+    _expectAddSpokeEvents(daiAssetId, newSpoke, daiSpokeConfig);
     vm.prank(HUB_CONFIGURATOR_ADMIN);
-    hubConfigurator.addSpoke(address(hub1), newSpoke, daiAssetId, daiSpokeConfig);
+    hubConfigurator.addSpoke(address(hub1), newSpoke, address(tokenList.dai), daiSpokeConfig);
+
+    assertEq(hub1.getSpokeConfig(daiAssetId, newSpoke), daiSpokeConfig);
+  }
+
+  function test_addSpoke_inactiveHalted() public {
+    address newSpoke = makeAddr('newSpoke');
+
+    IHub.SpokeConfig memory daiSpokeConfig = IHub.SpokeConfig({
+      active: false,
+      halted: true,
+      addCap: 0,
+      drawCap: 0,
+      riskPremiumThreshold: 0
+    });
+
+    vm.expectEmit(address(hub1));
+    emit IHub.AddSpoke(daiAssetId, newSpoke);
+    _expectAddSpokeEvents(daiAssetId, newSpoke, daiSpokeConfig);
+    vm.prank(HUB_CONFIGURATOR_ADMIN);
+    hubConfigurator.addSpoke(address(hub1), newSpoke, address(tokenList.dai), daiSpokeConfig);
 
     assertEq(hub1.getSpokeConfig(daiAssetId, newSpoke), daiSpokeConfig);
   }
@@ -755,15 +895,15 @@ contract HubConfiguratorTest is Base {
     hubConfigurator.addSpokeToAssets(
       address(hub1),
       vm.randomAddress(),
-      new uint256[](0),
+      new address[](0),
       new IHub.SpokeConfig[](0)
     );
   }
 
   function test_addSpokeToAssets_revertsWith_MismatchedConfigs() public {
-    uint256[] memory assetIds = new uint256[](2);
-    assetIds[0] = daiAssetId;
-    assetIds[1] = wethAssetId;
+    address[] memory underlyings = new address[](2);
+    underlyings[0] = address(tokenList.dai);
+    underlyings[1] = address(tokenList.weth);
 
     IHub.SpokeConfig[] memory spokeConfigs = new IHub.SpokeConfig[](3);
     spokeConfigs[0] = IHub.SpokeConfig({
@@ -790,15 +930,38 @@ contract HubConfiguratorTest is Base {
 
     vm.expectRevert(IHubConfigurator.MismatchedConfigs.selector);
     vm.prank(HUB_CONFIGURATOR_ADMIN);
-    hubConfigurator.addSpokeToAssets(address(hub1), spoke, assetIds, spokeConfigs);
+    hubConfigurator.addSpokeToAssets(address(hub1), spoke, underlyings, spokeConfigs);
+  }
+
+  function test_addSpokeToAssets_revertsWith_AssetNotListed() public {
+    address newSpoke = makeAddr('newSpoke');
+    address[] memory underlyings = new address[](2);
+    underlyings[0] = address(tokenList.dai);
+    underlyings[1] = makeAddr('unlistedUnderlying');
+
+    IHub.SpokeConfig[] memory spokeConfigs = new IHub.SpokeConfig[](2);
+    spokeConfigs[0] = IHub.SpokeConfig({
+      addCap: 1,
+      drawCap: 2,
+      active: true,
+      halted: false,
+      riskPremiumThreshold: 0
+    });
+    spokeConfigs[1] = spokeConfigs[0];
+
+    vm.expectRevert(IHub.AssetNotListed.selector, address(hub1));
+    vm.prank(HUB_CONFIGURATOR_ADMIN);
+    hubConfigurator.addSpokeToAssets(address(hub1), newSpoke, underlyings, spokeConfigs);
+
+    assertFalse(hub1.isSpokeListed(daiAssetId, newSpoke));
   }
 
   function test_addSpokeToAssets() public {
     address newSpoke = makeAddr('newSpoke');
 
-    uint256[] memory assetIds = new uint256[](2);
-    assetIds[0] = daiAssetId;
-    assetIds[1] = wethAssetId;
+    address[] memory underlyings = new address[](2);
+    underlyings[0] = address(tokenList.dai);
+    underlyings[1] = address(tokenList.weth);
 
     IHub.SpokeConfig memory daiSpokeConfig = IHub.SpokeConfig({
       active: true,
@@ -821,10 +984,12 @@ contract HubConfiguratorTest is Base {
 
     vm.expectEmit(address(hub1));
     emit IHub.AddSpoke(daiAssetId, newSpoke);
+    _expectAddSpokeEvents(daiAssetId, newSpoke, daiSpokeConfig);
     vm.expectEmit(address(hub1));
     emit IHub.AddSpoke(wethAssetId, newSpoke);
+    _expectAddSpokeEvents(wethAssetId, newSpoke, wethSpokeConfig);
     vm.prank(HUB_CONFIGURATOR_ADMIN);
-    hubConfigurator.addSpokeToAssets(address(hub1), newSpoke, assetIds, spokeConfigs);
+    hubConfigurator.addSpokeToAssets(address(hub1), newSpoke, underlyings, spokeConfigs);
 
     IHub.SpokeConfig memory daiSpokeData = hub1.getSpokeConfig(daiAssetId, newSpoke);
     IHub.SpokeConfig memory wethSpokeData = hub1.getSpokeConfig(wethAssetId, newSpoke);
@@ -838,7 +1003,7 @@ contract HubConfiguratorTest is Base {
       abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, alice)
     );
     vm.prank(alice);
-    hubConfigurator.updateSpokeHalted(address(hub1), _assetId, spokeAddresses[0], false);
+    hubConfigurator.updateSpokeHalted(address(hub1), _assetUnderlying, spokeAddresses[0], false);
   }
 
   function test_updateSpokeHalted() public {
@@ -850,8 +1015,9 @@ contract HubConfiguratorTest is Base {
         address(hub1),
         abi.encodeCall(IHub.updateSpokeConfig, (_assetId, spoke, expectedSpokeConfig))
       );
+      _expectSpokeHaltedEvent(_assetId, spoke, halted);
       vm.prank(HUB_CONFIGURATOR_ADMIN);
-      hubConfigurator.updateSpokeHalted(address(hub1), _assetId, spoke, halted);
+      hubConfigurator.updateSpokeHalted(address(hub1), _assetUnderlying, spoke, halted);
       assertEq(hub1.getSpokeConfig(_assetId, spoke), expectedSpokeConfig);
     }
   }
@@ -861,7 +1027,7 @@ contract HubConfiguratorTest is Base {
       abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, alice)
     );
     vm.prank(alice);
-    hubConfigurator.updateSpokeActive(address(hub1), _assetId, spokeAddresses[0], true);
+    hubConfigurator.updateSpokeActive(address(hub1), _assetUnderlying, spokeAddresses[0], true);
   }
 
   function test_updateSpokeActive() public {
@@ -873,8 +1039,9 @@ contract HubConfiguratorTest is Base {
         address(hub1),
         abi.encodeCall(IHub.updateSpokeConfig, (_assetId, spoke, expectedSpokeConfig))
       );
+      _expectSpokeActiveEvent(_assetId, spoke, active);
       vm.prank(HUB_CONFIGURATOR_ADMIN);
-      hubConfigurator.updateSpokeActive(address(hub1), _assetId, spoke, active);
+      hubConfigurator.updateSpokeActive(address(hub1), _assetUnderlying, spoke, active);
       assertEq(hub1.getSpokeConfig(_assetId, spoke), expectedSpokeConfig);
     }
   }
@@ -884,19 +1051,29 @@ contract HubConfiguratorTest is Base {
       abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, alice)
     );
     vm.prank(alice);
-    hubConfigurator.updateSpokeAddCap(address(hub1), _assetId, spokeAddresses[0], 100);
+    hubConfigurator.updateSpokeAddCap(address(hub1), _assetUnderlying, spokeAddresses[0], 100);
   }
 
   function test_updateSpokeAddCap() public {
     uint40 newAddCap = 100;
     IHub.SpokeConfig memory expectedSpokeConfig = hub1.getSpokeConfig(_assetId, spoke);
+    uint256 oldAddCap = expectedSpokeConfig.addCap;
     expectedSpokeConfig.addCap = newAddCap;
     vm.expectCall(
       address(hub1),
       abi.encodeCall(IHub.updateSpokeConfig, (_assetId, spoke, expectedSpokeConfig))
     );
+    vm.expectEmit(address(hubConfigurator));
+    emit IHubConfigurator.SpokeAddCapUpdated(
+      address(hub1),
+      _assetUnderlying,
+      _assetId,
+      spoke,
+      oldAddCap,
+      newAddCap
+    );
     vm.prank(HUB_CONFIGURATOR_ADMIN);
-    hubConfigurator.updateSpokeAddCap(address(hub1), _assetId, spoke, newAddCap);
+    hubConfigurator.updateSpokeAddCap(address(hub1), _assetUnderlying, spoke, newAddCap);
     assertEq(hub1.getSpokeConfig(_assetId, spoke), expectedSpokeConfig);
   }
 
@@ -905,19 +1082,29 @@ contract HubConfiguratorTest is Base {
       abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, alice)
     );
     vm.prank(alice);
-    hubConfigurator.updateSpokeDrawCap(address(hub1), _assetId, spokeAddresses[0], 100);
+    hubConfigurator.updateSpokeDrawCap(address(hub1), _assetUnderlying, spokeAddresses[0], 100);
   }
 
   function test_updateSpokeDrawCap() public {
     uint40 newDrawCap = 100;
     IHub.SpokeConfig memory expectedSpokeConfig = hub1.getSpokeConfig(_assetId, spoke);
+    uint256 oldDrawCap = expectedSpokeConfig.drawCap;
     expectedSpokeConfig.drawCap = newDrawCap;
     vm.expectCall(
       address(hub1),
       abi.encodeCall(IHub.updateSpokeConfig, (_assetId, spoke, expectedSpokeConfig))
     );
+    vm.expectEmit(address(hubConfigurator));
+    emit IHubConfigurator.SpokeDrawCapUpdated(
+      address(hub1),
+      _assetUnderlying,
+      _assetId,
+      spoke,
+      oldDrawCap,
+      newDrawCap
+    );
     vm.prank(HUB_CONFIGURATOR_ADMIN);
-    hubConfigurator.updateSpokeDrawCap(address(hub1), _assetId, spoke, newDrawCap);
+    hubConfigurator.updateSpokeDrawCap(address(hub1), _assetUnderlying, spoke, newDrawCap);
     assertEq(hub1.getSpokeConfig(_assetId, spoke), expectedSpokeConfig);
   }
 
@@ -928,7 +1115,7 @@ contract HubConfiguratorTest is Base {
     vm.prank(alice);
     hubConfigurator.updateSpokeRiskPremiumThreshold(
       address(hub1),
-      _assetId,
+      _assetUnderlying,
       spokeAddresses[0],
       100
     );
@@ -937,15 +1124,25 @@ contract HubConfiguratorTest is Base {
   function test_updateSpokeRiskPremiumThreshold() public {
     uint24 newRiskPremiumThreshold = 100;
     IHub.SpokeConfig memory expectedSpokeConfig = hub1.getSpokeConfig(_assetId, spoke);
+    uint256 oldRiskPremiumThreshold = expectedSpokeConfig.riskPremiumThreshold;
     expectedSpokeConfig.riskPremiumThreshold = newRiskPremiumThreshold;
     vm.expectCall(
       address(hub1),
       abi.encodeCall(IHub.updateSpokeConfig, (_assetId, spoke, expectedSpokeConfig))
     );
+    vm.expectEmit(address(hubConfigurator));
+    emit IHubConfigurator.SpokeRiskPremiumThresholdUpdated(
+      address(hub1),
+      _assetUnderlying,
+      _assetId,
+      spoke,
+      oldRiskPremiumThreshold,
+      newRiskPremiumThreshold
+    );
     vm.prank(HUB_CONFIGURATOR_ADMIN);
     hubConfigurator.updateSpokeRiskPremiumThreshold(
       address(hub1),
-      _assetId,
+      _assetUnderlying,
       spoke,
       newRiskPremiumThreshold
     );
@@ -957,7 +1154,7 @@ contract HubConfiguratorTest is Base {
       abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, alice)
     );
     vm.prank(alice);
-    hubConfigurator.updateSpokeCaps(address(hub1), _assetId, spokeAddresses[0], 100, 100);
+    hubConfigurator.updateSpokeCaps(address(hub1), _assetUnderlying, spokeAddresses[0], 100, 100);
   }
 
   function test_updateSpokeCaps() public {
@@ -970,8 +1167,9 @@ contract HubConfiguratorTest is Base {
       address(hub1),
       abi.encodeCall(IHub.updateSpokeConfig, (_assetId, spoke, expectedSpokeConfig))
     );
+    _expectSpokeCapsEvents(_assetId, spoke, newAddCap, newDrawCap);
     vm.prank(HUB_CONFIGURATOR_ADMIN);
-    hubConfigurator.updateSpokeCaps(address(hub1), _assetId, spoke, newAddCap, newDrawCap);
+    hubConfigurator.updateSpokeCaps(address(hub1), _assetUnderlying, spoke, newAddCap, newDrawCap);
     assertEq(hub1.getSpokeConfig(_assetId, spoke), expectedSpokeConfig);
   }
 
@@ -996,9 +1194,11 @@ contract HubConfiguratorTest is Base {
         address(hub1),
         abi.encodeCall(IHub.updateSpokeConfig, (assetId, address(spoke3), expectedSpokeConfig))
       );
+      _expectSpokeActiveEvent(assetId, address(spoke3), false);
     }
 
     for (uint256 assetId = 4; assetId < hub1.getAssetCount(); ++assetId) {
+      assertFalse(hub1.isSpokeListed(assetId, address(spoke3)));
       vm.expectCall(address(hub1), abi.encodeCall(IHub.isSpokeListed, (assetId, address(spoke3))));
     }
 
@@ -1032,9 +1232,11 @@ contract HubConfiguratorTest is Base {
         address(hub1),
         abi.encodeCall(IHub.updateSpokeConfig, (assetId, address(spoke3), expectedSpokeConfig))
       );
+      _expectSpokeHaltedEvent(assetId, address(spoke3), true);
     }
 
     for (uint256 assetId = 4; assetId < hub1.getAssetCount(); ++assetId) {
+      assertFalse(hub1.isSpokeListed(assetId, address(spoke3)));
       vm.expectCall(address(hub1), abi.encodeCall(IHub.isSpokeListed, (assetId, address(spoke3))));
     }
 
@@ -1069,11 +1271,13 @@ contract HubConfiguratorTest is Base {
         address(hub1),
         abi.encodeCall(IHub.updateSpokeConfig, (assetId, address(spoke3), expectedSpokeConfig))
       );
+      _expectSpokeCapsEvents(assetId, address(spoke3), 0, 0);
 
       riskPremiumThresholdsPerAsset[assetId] = expectedSpokeConfig.riskPremiumThreshold;
     }
 
     for (uint256 assetId = 4; assetId < hub1.getAssetCount(); ++assetId) {
+      assertFalse(hub1.isSpokeListed(assetId, address(spoke3)));
       vm.expectCall(address(hub1), abi.encodeCall(IHub.isSpokeListed, (assetId, address(spoke3))));
     }
 
@@ -1093,7 +1297,7 @@ contract HubConfiguratorTest is Base {
       abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, alice)
     );
     vm.prank(alice);
-    hubConfigurator.updateInterestRateData(address(hub1), _assetId, vm.randomBytes(32));
+    hubConfigurator.updateInterestRateData(address(hub1), _assetUnderlying, vm.randomBytes(32));
   }
 
   function test_updateInterestRateData() public {
@@ -1104,15 +1308,372 @@ contract HubConfiguratorTest is Base {
         rateGrowthBeforeOptimal: 5_00, // 5.00%
         rateGrowthAfterOptimal: 5_00 // 5.00%
       });
+    IAssetInterestRateStrategy.InterestRateData memory oldIrData = irStrategy.getInterestRateData(
+      _assetId
+    );
 
     vm.expectCall(
       address(hub1),
       abi.encodeCall(IHub.setInterestRateData, (_assetId, abi.encode(newIrData)))
     );
+    vm.expectEmit(address(hubConfigurator));
+    emit IHubConfigurator.InterestRateDataUpdated(
+      address(hub1),
+      _assetUnderlying,
+      _assetId,
+      oldIrData,
+      newIrData
+    );
     vm.prank(HUB_CONFIGURATOR_ADMIN);
-    hubConfigurator.updateInterestRateData(address(hub1), _assetId, abi.encode(newIrData));
+    hubConfigurator.updateInterestRateData(address(hub1), _assetUnderlying, abi.encode(newIrData));
 
     assertEq(irStrategy.getInterestRateData(_assetId), newIrData);
+  }
+
+  function test_updateInterestRateData_emitsDistinctOldAndNewData() public {
+    IAssetInterestRateStrategy.InterestRateData memory newIrData = _distinctIrData();
+    assertEq(irStrategy.getInterestRateData(_assetId), _defaultIrData);
+
+    vm.expectEmit(address(hubConfigurator));
+    emit IHubConfigurator.InterestRateDataUpdated(
+      address(hub1),
+      _assetUnderlying,
+      _assetId,
+      _defaultIrData,
+      newIrData
+    );
+    vm.prank(HUB_CONFIGURATOR_ADMIN);
+    hubConfigurator.updateInterestRateData(address(hub1), _assetUnderlying, abi.encode(newIrData));
+
+    assertEq(irStrategy.getInterestRateData(_assetId), newIrData);
+  }
+
+  function test_updateInterestRateStrategy_emitsDistinctOldAndNewData() public {
+    address oldIrStrategy = hub1.getAssetConfig(_assetId).irStrategy;
+    address newIrStrategy = address(new AssetInterestRateStrategy(address(hub1)));
+    IAssetInterestRateStrategy.InterestRateData memory newIrData = _distinctIrData();
+    assertEq(
+      IAssetInterestRateStrategy(oldIrStrategy).getInterestRateData(_assetId),
+      _defaultIrData
+    );
+
+    vm.expectEmit(address(hubConfigurator));
+    emit IHubConfigurator.InterestRateStrategyUpdated(
+      address(hub1),
+      _assetUnderlying,
+      _assetId,
+      oldIrStrategy,
+      newIrStrategy
+    );
+    vm.expectEmit(address(hubConfigurator));
+    emit IHubConfigurator.InterestRateDataUpdated(
+      address(hub1),
+      _assetUnderlying,
+      _assetId,
+      _defaultIrData,
+      newIrData
+    );
+    vm.prank(HUB_CONFIGURATOR_ADMIN);
+    hubConfigurator.updateInterestRateStrategy(
+      address(hub1),
+      _assetUnderlying,
+      newIrStrategy,
+      abi.encode(newIrData)
+    );
+
+    assertEq(hub1.getAssetConfig(_assetId).irStrategy, newIrStrategy);
+    assertEq(IAssetInterestRateStrategy(newIrStrategy).getInterestRateData(_assetId), newIrData);
+  }
+
+  function test_revertsWith_AssetNotListed() public {
+    address unlisted = makeAddr('unlistedUnderlying');
+    assertFalse(hub1.isUnderlyingListed(unlisted));
+    IHub.SpokeConfig memory spokeConfig;
+
+    bytes[] memory calls = new bytes[](16);
+    calls[0] = abi.encodeCall(IHubConfigurator.updateLiquidityFee, (address(hub1), unlisted, 1));
+    calls[1] = abi.encodeCall(
+      IHubConfigurator.updateFeeReceiver,
+      (address(hub1), unlisted, makeAddr('newFeeReceiver'))
+    );
+    calls[2] = abi.encodeCall(
+      IHubConfigurator.updateFeeConfig,
+      (address(hub1), unlisted, 1, makeAddr('newFeeReceiver'))
+    );
+    calls[3] = abi.encodeCall(
+      IHubConfigurator.updateInterestRateStrategy,
+      (address(hub1), unlisted, address(irStrategy), _encodedIrData)
+    );
+    calls[4] = abi.encodeCall(
+      IHubConfigurator.updateReinvestmentController,
+      (address(hub1), unlisted, makeAddr('newReinvestmentController'))
+    );
+    calls[5] = abi.encodeCall(
+      IHubConfigurator.updateInterestRateData,
+      (address(hub1), unlisted, _encodedIrData)
+    );
+    calls[6] = abi.encodeCall(IHubConfigurator.resetAssetCaps, (address(hub1), unlisted));
+    calls[7] = abi.encodeCall(IHubConfigurator.deactivateAsset, (address(hub1), unlisted));
+    calls[8] = abi.encodeCall(IHubConfigurator.haltAsset, (address(hub1), unlisted));
+    calls[9] = abi.encodeCall(
+      IHubConfigurator.addSpoke,
+      (address(hub1), makeAddr('newSpoke'), unlisted, spokeConfig)
+    );
+    calls[10] = abi.encodeCall(
+      IHubConfigurator.updateSpokeActive,
+      (address(hub1), unlisted, spoke, false)
+    );
+    calls[11] = abi.encodeCall(
+      IHubConfigurator.updateSpokeHalted,
+      (address(hub1), unlisted, spoke, true)
+    );
+    calls[12] = abi.encodeCall(
+      IHubConfigurator.updateSpokeAddCap,
+      (address(hub1), unlisted, spoke, 1)
+    );
+    calls[13] = abi.encodeCall(
+      IHubConfigurator.updateSpokeDrawCap,
+      (address(hub1), unlisted, spoke, 1)
+    );
+    calls[14] = abi.encodeCall(
+      IHubConfigurator.updateSpokeRiskPremiumThreshold,
+      (address(hub1), unlisted, spoke, 1)
+    );
+    calls[15] = abi.encodeCall(
+      IHubConfigurator.updateSpokeCaps,
+      (address(hub1), unlisted, spoke, 1, 1)
+    );
+
+    for (uint256 i; i < calls.length; ++i) {
+      vm.prank(HUB_CONFIGURATOR_ADMIN);
+      (bool ok, bytes memory ret) = address(hubConfigurator).call(calls[i]);
+      assertFalse(ok);
+      assertEq(ret, abi.encodeWithSelector(IHub.AssetNotListed.selector));
+    }
+  }
+
+  function test_implementation_initialize_revertsWith_InvalidInitialization() public {
+    HubConfiguratorInstance impl = HubConfiguratorInstance(
+      _getImplementationAddress(address(hubConfigurator))
+    );
+    assertEq(_getProxyInitializedVersion(address(impl)), type(uint64).max);
+
+    address authority = hub1.authority();
+
+    vm.expectRevert(Initializable.InvalidInitialization.selector);
+    impl.initialize(authority);
+  }
+
+  function test_proxy_initialize_revertsWith_InvalidInitialization() public {
+    assertEq(_getProxyInitializedVersion(address(hubConfigurator)), 1);
+    address authority = hub1.authority();
+
+    vm.expectRevert(Initializable.InvalidInitialization.selector);
+    HubConfiguratorInstance(address(hubConfigurator)).initialize(authority);
+  }
+
+  function test_revision() public view {
+    assertEq(HubConfiguratorInstance(address(hubConfigurator)).HUB_CONFIGURATOR_REVISION(), 1);
+  }
+
+  function test_proxy_constructor_revertsWith_InvalidAddress() public {
+    address impl = address(new HubConfiguratorInstance());
+
+    vm.expectRevert(IHubConfigurator.InvalidAddress.selector);
+    new TransparentUpgradeableProxy(
+      impl,
+      ADMIN,
+      abi.encodeCall(HubConfiguratorInstance.initialize, (address(0)))
+    );
+  }
+
+  function test_initialize_revertsWith_InvalidAddress() public {
+    HubConfiguratorInstance proxy = HubConfiguratorInstance(
+      address(new TransparentUpgradeableProxy(address(new HubConfiguratorInstance()), ADMIN, ''))
+    );
+    assertEq(_getProxyInitializedVersion(address(proxy)), 0);
+
+    vm.expectRevert(IHubConfigurator.InvalidAddress.selector);
+    proxy.initialize(address(0));
+
+    proxy.initialize(hub1.authority());
+    assertEq(_getProxyInitializedVersion(address(proxy)), 1);
+    assertEq(IAccessManaged(address(proxy)).authority(), hub1.authority());
+  }
+
+  function _expectAddAssetEvents(
+    address underlying,
+    uint256 assetId,
+    address feeReceiver,
+    uint256 liquidityFee,
+    address irStrategy,
+    IAssetInterestRateStrategy.InterestRateData memory irData
+  ) internal {
+    IAssetInterestRateStrategy.InterestRateData memory emptyIrData;
+    vm.expectEmit(address(hubConfigurator));
+    emit IHubConfigurator.LiquidityFeeUpdated(address(hub1), underlying, assetId, 0, liquidityFee);
+    vm.expectEmit(address(hubConfigurator));
+    emit IHubConfigurator.FeeReceiverUpdated(
+      address(hub1),
+      underlying,
+      assetId,
+      address(0),
+      feeReceiver
+    );
+    vm.expectEmit(address(hubConfigurator));
+    emit IHubConfigurator.InterestRateStrategyUpdated(
+      address(hub1),
+      underlying,
+      assetId,
+      address(0),
+      irStrategy
+    );
+    vm.expectEmit(address(hubConfigurator));
+    emit IHubConfigurator.InterestRateDataUpdated(
+      address(hub1),
+      underlying,
+      assetId,
+      emptyIrData,
+      irData
+    );
+    vm.expectEmit(address(hubConfigurator));
+    emit IHubConfigurator.ReinvestmentControllerUpdated(
+      address(hub1),
+      underlying,
+      assetId,
+      address(0),
+      address(0)
+    );
+  }
+
+  function _expectAddSpokeEvents(
+    uint256 assetId,
+    address spoke_,
+    IHub.SpokeConfig memory config
+  ) internal {
+    address underlying = _hub1Underlying(assetId);
+    vm.expectEmit(address(hubConfigurator));
+    emit IHubConfigurator.SpokeAddCapUpdated(
+      address(hub1),
+      underlying,
+      assetId,
+      spoke_,
+      0,
+      config.addCap
+    );
+    vm.expectEmit(address(hubConfigurator));
+    emit IHubConfigurator.SpokeDrawCapUpdated(
+      address(hub1),
+      underlying,
+      assetId,
+      spoke_,
+      0,
+      config.drawCap
+    );
+    vm.expectEmit(address(hubConfigurator));
+    emit IHubConfigurator.SpokeRiskPremiumThresholdUpdated(
+      address(hub1),
+      underlying,
+      assetId,
+      spoke_,
+      0,
+      config.riskPremiumThreshold
+    );
+    vm.expectEmit(address(hubConfigurator));
+    emit IHubConfigurator.SpokeActiveUpdated(
+      address(hub1),
+      underlying,
+      assetId,
+      spoke_,
+      false,
+      config.active
+    );
+    vm.expectEmit(address(hubConfigurator));
+    emit IHubConfigurator.SpokeHaltedUpdated(
+      address(hub1),
+      underlying,
+      assetId,
+      spoke_,
+      false,
+      config.halted
+    );
+  }
+
+  /// @dev Reads the old values from the current hub state, so call before the configurator call.
+  function _expectSpokeCapsEvents(
+    uint256 assetId,
+    address spoke_,
+    uint256 newAddCap,
+    uint256 newDrawCap
+  ) internal {
+    IHub.SpokeConfig memory oldConfig = hub1.getSpokeConfig(assetId, spoke_);
+    address underlying = _hub1Underlying(assetId);
+    vm.expectEmit(address(hubConfigurator));
+    emit IHubConfigurator.SpokeAddCapUpdated(
+      address(hub1),
+      underlying,
+      assetId,
+      spoke_,
+      oldConfig.addCap,
+      newAddCap
+    );
+    vm.expectEmit(address(hubConfigurator));
+    emit IHubConfigurator.SpokeDrawCapUpdated(
+      address(hub1),
+      underlying,
+      assetId,
+      spoke_,
+      oldConfig.drawCap,
+      newDrawCap
+    );
+  }
+
+  /// @dev Reads the old value from the current hub state, so call before the configurator call.
+  function _expectSpokeActiveEvent(uint256 assetId, address spoke_, bool newActive) internal {
+    address underlying = _hub1Underlying(assetId);
+    bool oldActive = hub1.getSpokeConfig(assetId, spoke_).active;
+    vm.expectEmit(address(hubConfigurator));
+    emit IHubConfigurator.SpokeActiveUpdated(
+      address(hub1),
+      underlying,
+      assetId,
+      spoke_,
+      oldActive,
+      newActive
+    );
+  }
+
+  /// @dev Reads the old value from the current hub state, so call before the configurator call.
+  function _expectSpokeHaltedEvent(uint256 assetId, address spoke_, bool newHalted) internal {
+    address underlying = _hub1Underlying(assetId);
+    bool oldHalted = hub1.getSpokeConfig(assetId, spoke_).halted;
+    vm.expectEmit(address(hubConfigurator));
+    emit IHubConfigurator.SpokeHaltedUpdated(
+      address(hub1),
+      underlying,
+      assetId,
+      spoke_,
+      oldHalted,
+      newHalted
+    );
+  }
+
+  function _distinctIrData()
+    internal
+    pure
+    returns (IAssetInterestRateStrategy.InterestRateData memory)
+  {
+    return
+      IAssetInterestRateStrategy.InterestRateData({
+        optimalUsageRatio: 80_00, // 80.00%
+        baseDrawnRate: 4_00, // 4.00%
+        rateGrowthBeforeOptimal: 6_00, // 6.00%
+        rateGrowthAfterOptimal: 7_00 // 7.00%
+      });
+  }
+
+  function _hub1Underlying(uint256 assetId) internal view returns (address underlying) {
+    (underlying, ) = hub1.getAssetUnderlyingAndDecimals(assetId);
   }
 
   function _addAsset(

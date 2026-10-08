@@ -29,16 +29,19 @@ library AaveV4DeployBase {
   }
 
   /// @notice Deploys the configurator batch containing HubConfigurator and SpokeConfigurator.
+  /// @param proxyAdminOwner The owner of the proxy admin of both configurators.
   /// @param hubConfiguratorAuthority The authority for the HubConfigurator.
   /// @param spokeConfiguratorAuthority The authority for the SpokeConfigurator.
   /// @param salt The CREATE2 salt for deterministic deployment.
   /// @return The configurator batch report.
   function deployConfiguratorBatch(
+    address proxyAdminOwner,
     address hubConfiguratorAuthority,
     address spokeConfiguratorAuthority,
     bytes32 salt
   ) internal returns (BatchReports.ConfiguratorBatchReport memory) {
     AaveV4ConfiguratorBatch configuratorBatch = new AaveV4ConfiguratorBatch({
+      proxyAdminOwner_: proxyAdminOwner,
       hubConfiguratorAuthority_: hubConfiguratorAuthority,
       spokeConfiguratorAuthority_: spokeConfiguratorAuthority,
       salt_: salt

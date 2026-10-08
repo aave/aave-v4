@@ -55,7 +55,10 @@ contract HubEngineTest is BaseConfigEngineTest {
 
     vm.expectCall(
       address(hubConfigurator),
-      abi.encodeCall(IHubConfigurator.updateFeeConfig, (address(hub1()), assetId, 7_00, ACCOUNT))
+      abi.encodeCall(
+        IHubConfigurator.updateFeeConfig,
+        (address(hub1()), address(weth), 7_00, ACCOUNT)
+      )
     );
     engine.executeHubAssetConfigUpdates(_toAssetConfigUpdateArray(update));
 
@@ -79,7 +82,7 @@ contract HubEngineTest is BaseConfigEngineTest {
 
     vm.expectCall(
       address(hubConfigurator),
-      abi.encodeCall(IHubConfigurator.updateLiquidityFee, (address(hub1()), assetId, 9_00))
+      abi.encodeCall(IHubConfigurator.updateLiquidityFee, (address(hub1()), address(weth), 9_00))
     );
     engine.executeHubAssetConfigUpdates(_toAssetConfigUpdateArray(update));
 
@@ -122,7 +125,7 @@ contract HubEngineTest is BaseConfigEngineTest {
 
     vm.expectCall(
       address(hubConfigurator),
-      abi.encodeCall(IHubConfigurator.updateFeeReceiver, (address(hub1()), assetId, ACCOUNT))
+      abi.encodeCall(IHubConfigurator.updateFeeReceiver, (address(hub1()), address(weth), ACCOUNT))
     );
     engine.executeHubAssetConfigUpdates(_toAssetConfigUpdateArray(update));
 
@@ -166,7 +169,7 @@ contract HubEngineTest is BaseConfigEngineTest {
       address(hubConfigurator),
       abi.encodeCall(
         IHubConfigurator.updateInterestRateStrategy,
-        (address(hub1()), assetId, address(newStrategy), abi.encode(IR_DATA))
+        (address(hub1()), address(weth), address(newStrategy), abi.encode(IR_DATA))
       )
     );
     engine.executeHubAssetConfigUpdates(_toAssetConfigUpdateArray(update));
@@ -234,7 +237,7 @@ contract HubEngineTest is BaseConfigEngineTest {
       address(hubConfigurator),
       abi.encodeCall(
         IHubConfigurator.updateInterestRateData,
-        (address(hub1()), assetId, abi.encode(newIrData))
+        (address(hub1()), address(weth), abi.encode(newIrData))
       )
     );
     engine.executeHubAssetConfigUpdates(_toAssetConfigUpdateArray(update));
@@ -283,7 +286,7 @@ contract HubEngineTest is BaseConfigEngineTest {
       address(hubConfigurator),
       abi.encodeCall(
         IHubConfigurator.updateReinvestmentController,
-        (address(hub1()), assetId, REINVESTMENT_CONTROLLER)
+        (address(hub1()), address(weth), REINVESTMENT_CONTROLLER)
       )
     );
     engine.executeHubAssetConfigUpdates(_toAssetConfigUpdateArray(update));
@@ -327,7 +330,7 @@ contract HubEngineTest is BaseConfigEngineTest {
       address(hubConfigurator),
       abi.encodeCall(
         IHubConfigurator.updateSpokeCaps,
-        (address(hub1()), assetId, address(spoke1()), 1000, 500)
+        (address(hub1()), address(weth), address(spoke1()), 1000, 500)
       )
     );
 
@@ -392,7 +395,7 @@ contract HubEngineTest is BaseConfigEngineTest {
       address(hubConfigurator),
       abi.encodeCall(
         IHubConfigurator.updateSpokeAddCap,
-        (address(hub1()), assetId, address(spoke1()), 2000)
+        (address(hub1()), address(weth), address(spoke1()), 2000)
       )
     );
     engine.executeHubSpokeConfigUpdates(_toSpokeConfigUpdateArray(update));
@@ -439,7 +442,7 @@ contract HubEngineTest is BaseConfigEngineTest {
       address(hubConfigurator),
       abi.encodeCall(
         IHubConfigurator.updateSpokeDrawCap,
-        (address(hub1()), assetId, address(spoke1()), 300)
+        (address(hub1()), address(weth), address(spoke1()), 300)
       )
     );
     engine.executeHubSpokeConfigUpdates(_toSpokeConfigUpdateArray(update));
@@ -522,7 +525,7 @@ contract HubEngineTest is BaseConfigEngineTest {
       address(hubConfigurator),
       abi.encodeCall(
         IHubConfigurator.updateSpokeHalted,
-        (address(hub1()), assetId, address(spoke1()), true)
+        (address(hub1()), address(weth), address(spoke1()), true)
       )
     );
     engine.executeHubSpokeConfigUpdates(_toSpokeConfigUpdateArray(update));
@@ -545,7 +548,7 @@ contract HubEngineTest is BaseConfigEngineTest {
       address(hubConfigurator),
       abi.encodeCall(
         IHubConfigurator.updateSpokeRiskPremiumThreshold,
-        (address(hub1()), assetId, address(spoke1()), 300)
+        (address(hub1()), address(weth), address(spoke1()), 300)
       )
     );
     engine.executeHubSpokeConfigUpdates(_toSpokeConfigUpdateArray(update));
