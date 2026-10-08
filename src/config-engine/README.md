@@ -138,14 +138,14 @@ Several engine functions inspect which fields differ from `KEEP_CURRENT` and cho
 
 ### Delegatecall architecture
 
-`AaveV4ConfigEngine` forwards each action to one of four libraries, linked as external functions:
+`AaveV4ConfigEngine` stores four deployed sub-engine contract addresses as immutables:
 
-- `HubEngine` handles all Hub configurator operations, and deploys TokenizationSpokes through `TokenizationSpokeDeployer`
-- `SpokeEngine` handles all Spoke configurator operations
-- `AccessManagerEngine` handles all AccessManager operations
-- `PositionManagerEngine` handles all PositionManager operations
+- `HUB_ENGINE` — handles all Hub configurator operations
+- `SPOKE_ENGINE` — handles all Spoke configurator operations
+- `ACCESS_MANAGER_ENGINE` — handles all AccessManager operations
+- `POSITION_MANAGER_ENGINE` — handles all PositionManager operations
 
-When a payload calls `execute()`, `AaveV4Payload` delegate-calls into `AaveV4ConfigEngine`. Calls to external library functions compile to `DELEGATECALL`, so the library code also runs in the caller's context. This two-level delegatecall chain means:
+When a payload calls `execute()`, `AaveV4Payload` delegate-calls into `AaveV4ConfigEngine`, which in turn delegate-calls into the appropriate sub-engine. This two-level delegatecall chain means:
 
 - Neither the config engine nor the sub-engines hold any storage, permissions, or admin keys.
 - All HubConfigurator, SpokeConfigurator, AccessManager, and PositionManager calls originate from the governance executor's address.
